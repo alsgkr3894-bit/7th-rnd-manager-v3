@@ -1,0 +1,340 @@
+/* ══════════════════════════════════════
+   헤더
+══════════════════════════════════════ */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #1c3d39;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.20);
+}
+
+.header-main {
+  border-bottom: none;
+}
+
+.header-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* ══════════════════════════════════════
+   로고
+══════════════════════════════════════ */
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px 8px;
+  transition: background 0.15s;
+  text-decoration: none;
+}
+.logo-area:hover { background: rgba(255,255,255,0.08); }
+
+.logo-img {
+  height: 26px;
+  width: auto;
+  object-fit: contain;
+}
+
+.logo-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+}
+
+/* ══════════════════════════════════════
+   메인 탭 네비
+══════════════════════════════════════ */
+.tab-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+
+.tab-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 16px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.62);
+  border-radius: 6px;
+  white-space: nowrap;
+  transition: color 0.14s, background 0.14s;
+  cursor: pointer;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+}
+
+.tab-link:hover {
+  color: rgba(255,255,255,0.92);
+  background: rgba(255,255,255,0.09);
+}
+
+.tab-link.active {
+  color: #ffffff;
+  background: rgba(255,255,255,0.17);
+  font-weight: 600;
+}
+
+/* 캐럿 */
+.caret {
+  font-size: 9px;
+  opacity: 0.5;
+  transition: opacity 0.14s, transform 0.14s;
+}
+.tab-link:hover .caret,
+.tab-link.active .caret {
+  opacity: 0.9;
+}
+
+/* ══════════════════════════════════════
+   서브 네비 바
+══════════════════════════════════════ */
+.sub-nav-bar {
+  display: none;
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.sub-nav-bar.show {
+  display: block;
+}
+
+.sub-nav-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 6px 24px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+/* 서브 네비 링크 — 기본 tab-link 재정의 */
+.sub-nav-bar .tab-link {
+  padding: 5px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--muted);
+  border-radius: 5px;
+  background: none;
+}
+
+.sub-nav-bar .tab-link:hover {
+  color: var(--text);
+  background: var(--bg);
+}
+
+.sub-nav-bar .tab-link.active {
+  color: var(--accent);
+  background: var(--accent-light);
+  font-weight: 600;
+}
+
+/* ══════════════════════════════════════
+   서브 네비 — 그룹 구조 (원가계산용)
+══════════════════════════════════════ */
+.sub-nav-grouped {
+  align-items: flex-start;
+  padding: 8px 24px;
+  gap: 0;
+}
+
+.sub-nav-group-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 6px;
+}
+
+.sub-nav-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 2px 12px;
+  opacity: 0.55;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.sub-nav-group-spacer {
+  visibility: hidden;
+}
+
+.sub-nav-group-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.sub-nav-sep {
+  width: 1px;
+  background: var(--line);
+  margin: 4px 8px;
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════
+   메인 영역
+══════════════════════════════════════ */
+.app-main {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 28px 24px;
+}
+
+.section { width: 100%; }
+.section.hidden { display: none; }
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--accent-light);
+}
+
+/* 에러 배너 */
+#app-error {
+  background: var(--c-error-bg);
+  color: var(--c-error);
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  border-bottom: 1px solid #f5c6c2;
+}
+
+/* ══════════════════════════════════════
+   다크 모드 오버라이드
+══════════════════════════════════════ */
+[data-theme="dark"] .app-header {
+  background: #0e2420;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.40);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .app-header {
+    background: #0e2420;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.40);
+  }
+}
+
+[data-theme="dark"] .sub-nav-bar {
+  background: var(--panel);
+  border-bottom-color: var(--line);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sub-nav-bar {
+    background: var(--panel);
+    border-bottom-color: var(--line);
+  }
+}
+
+/* 다크모드 토글 버튼 */
+.theme-toggle {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 15px;
+  color: rgba(255,255,255,0.65);
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+  background: none;
+  border: none;
+}
+.theme-toggle:hover {
+  background: rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.92);
+}
+
+/* ══════════════════════════════════════
+   반응형
+══════════════════════════════════════ */
+@media (max-width: 900px) {
+  .header-inner {
+    flex-direction: column;
+    height: auto;
+    padding: 10px 16px;
+    gap: 6px;
+    align-items: flex-start;
+  }
+
+  /* 탭 가로 스크롤 — 줄바꿈 없이 한 줄 유지 */
+  .tab-nav {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+
+  .sub-nav-inner {
+    padding: 5px 16px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .sub-nav-inner::-webkit-scrollbar { display: none; }
+
+  .app-main { padding: 16px 14px; }
+}
+
+/* 태블릿 */
+@media (max-width: 768px) {
+  /* 원가계산 서브네비 그룹 — 세로 스택 */
+  .sub-nav-grouped {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 6px 16px;
+    gap: 0;
+  }
+  .sub-nav-group-wrap {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 2px 0;
+  }
+  .sub-nav-group-label {
+    width: 100%;
+    padding: 4px 8px 2px;
+  }
+  .sub-nav-group-links {
+    flex-wrap: wrap;
+  }
+  .sub-nav-sep { display: none; }
+  .sub-nav-group-spacer { display: none; }
+}
+
+@media (max-width: 480px) {
+  .header-inner { padding: 8px 12px; }
+  .tab-link { padding: 6px 10px; font-size: 12px; }
+  .section-title { font-size: 16px; }
+  .app-main { padding: 12px 10px; }
+}
