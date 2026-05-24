@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
-import { initDB, getAll, clearStore, ALL_STORES, DB_NAME, DB_VERSION, hasStore } from '@/lib/db';
+import { initDB, getAll, clearStore, ALL_STORES, DB_NAME, DB_VERSION, hasStore, deleteDatabase } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { getSetting, setSetting } from '@/lib/settings';
 
@@ -27,6 +27,7 @@ export default function Page() {
   const [stats, setStats] = useState(null);
   const [busy, setBusy] = useState(false);
   const [confirmingReset, setConfirmingReset] = useState(false);
+  const [confirmingRecreate, setConfirmingRecreate] = useState(false);
 
   // 환경 설정
   const [theme, setTheme] = useState('light');
@@ -83,6 +84,21 @@ export default function Page() {
     setSetting(key, value);
     setter(value);
     showToast(message, 'ok');
+  }
+
+  async function handleRecreate() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await deleteDatabase(DB_NAME);
+      showToast('DB 삭제 완료. 새로고침합니다…', 'ok');
+      // 1초 후 자동 새로고침 — 새 페이지 로드 시 최신 schema로 DB 자동 생성
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (err) {
+      console.error('[Recreate] 실패:', err);
+      showToast('DB 재생성 실패: ' + err.message, 'err');
+      setBusy(false);
+    }
   }
 
   async function handleReset() {
@@ -246,35 +262,76 @@ export default function Page() {
 
       {/* 7. 위험 영역 */}
       <div className="card" style={{marginTop:16,borderColor:'var(--negative-soft)'}}>
-        <h3 style={{fontSize:15,fontWeight:700,marginBottom:8,color:'var(--negative)'}}>위험 영역</h3>
-        <p style={{fontSize:13,color:'var(--text-2)',marginBottom:16}}>
-          모든 데이터를 삭제합니다. 백업이 필요한 경우 먼저 <b>데이터 백업</b> 메뉴에서 다운로드하세요.
-        </p>
-        {!confirmingReset ? (
-          <button
-            className="btn"
-            onClick={() => setConfirmingReset(true)}
-            disabled={!ready || busy || totalRows === 0}
-            style={{color:'var(--negative)',borderColor:'var(--negative)'}}
-          >
-            모든 데이터 초기화
-          </button>
-        ) : (
-          <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
-            <span style={{color:'var(--negative)',fontWeight:600,fontSize:13}}>
-              정말 모든 데이터를 삭제할까요? ({formatNumber(totalRows)}건)
-            </span>
-            <button className="btn" disabled={busy} onClick={() => setConfirmingReset(false)}>취소</button>
+        <h3 style={{fontSize:15,fontWeight:700,marginBottom:16,color:'var(--negative)'}}>위험 영역</h3>
+
+        {/* 모든 데이터 초기화 */}
+        <div style={{paddingBottom:16,borderBottom:'1px solid var(--border)'}}>
+          <div style={{fontWeight:700,fontSize:14,marginBottom:4}}>모든 데이터 초기화</div>
+          <p style={{fontSize:13,color:'var(--text-2)',marginBottom:12}}>
+            모든 store의 데이터를 삭제합니다. schema는 유지되며 빈 store로 남습니다.
+            <br/>백업이 필요한 경우 먼저 <b>데이터 백업</b> 메뉴에서 다운로드하세요.
+          </p>
+          {!confirmingReset ? (
             <button
-              className="btn primary"
-              disabled={busy}
-              onClick={handleReset}
-              style={{background:'var(--negative)'}}
+              className="btn"
+              onClick={() => setConfirmingReset(true)}
+              disabled={!ready || busy || totalRows === 0}
+              style={{color:'var(--negative)',borderColor:'var(--negative)'}}
             >
-              {busy ? '삭제 중…' : '정말 삭제'}
+              모든 데이터 초기화
             </button>
-          </div>
-        )}
+          ) : (
+            <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+              <span style={{color:'var(--negative)',fontWeight:600,fontSize:13}}>
+                정말 모든 데이터를 삭제할까요? ({formatNumber(totalRows)}건)
+              </span>
+              <button className="btn" disabled={busy} onClick={() => setConfirmingReset(false)}>취소</button>
+              <button
+                className="btn primary"
+                disabled={busy}
+                onClick={handleReset}
+                style={{background:'var(--negative)'}}
+              >
+                {busy ? '삭제 중…' : '정말 삭제'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* DB 완전 재생성 */}
+        <div style={{paddingTop:16}}>
+          <div style={{fontWeight:700,fontSize:14,marginBottom:4}}>DB 완전 재생성</div>
+          <p style={{fontSize:13,color:'var(--text-2)',marginBottom:12}}>
+            DB 자체를 삭제하고 최신 schema로 새로 생성합니다.
+            <br/>schema 업그레이드가 누락된 경우(<code>NotFoundError</code>) 해결 가능.
+            <br/>실행 후 페이지가 자동 새로고침되며 모든 데이터는 사라집니다.
+          </p>
+          {!confirmingRecreate ? (
+            <button
+              className="btn"
+              onClick={() => setConfirmingRecreate(true)}
+              disabled={!ready || busy}
+              style={{color:'var(--negative)',borderColor:'var(--negative)'}}
+            >
+              DB 완전 재생성
+            </button>
+          ) : (
+            <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+              <span style={{color:'var(--negative)',fontWeight:600,fontSize:13}}>
+                DB를 삭제하고 새로 만들까요? (모든 데이터 사라짐)
+              </span>
+              <button className="btn" disabled={busy} onClick={() => setConfirmingRecreate(false)}>취소</button>
+              <button
+                className="btn primary"
+                disabled={busy}
+                onClick={handleRecreate}
+                style={{background:'var(--negative)'}}
+              >
+                {busy ? '재생성 중…' : '정말 재생성'}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );
