@@ -7,6 +7,7 @@ import CommandPalette from './CommandPalette';
 import { ToastContainer } from './Toast';
 import { Icon } from './icons';
 import { applyAllSettings } from '@/lib/settings';
+import { ensureSession } from '@/lib/session';
 
 const MOBILE_TABS = [
   { href: '/',                    label: '홈',     icon: Icon.home },
@@ -36,6 +37,9 @@ export default function AppShell({ children }) {
 
   // 사용자 설정 (다크모드/밀도/알림) 페이지 진입 시 적용
   useEffect(() => { applyAllSettings(); }, []);
+
+  // 새 브라우저 세션이면 마지막 로그인 시각 갱신
+  useEffect(() => { ensureSession(); }, []);
 
   // 모바일 nav 닫기 on route change
   useEffect(() => { setMobileNav(false); }, [pathname]);

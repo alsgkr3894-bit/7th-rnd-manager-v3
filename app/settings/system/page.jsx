@@ -6,6 +6,7 @@ import { showToast } from '@/components/Toast';
 import { initDB, getAll, clearStore, ALL_STORES, DB_NAME, DB_VERSION, hasStore, deleteDatabase } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { getSetting, setSetting } from '@/lib/settings';
+import { Toggle } from '@/components/ui/Toggle';
 
 /**
  * 시스템 설정 페이지
@@ -363,25 +364,6 @@ function SettingsRow({ name, desc, control, last }) {
       </div>
       <div style={{flex:'0 0 auto'}}>{control}</div>
     </div>
-  );
-}
-
-function Toggle({ value, onChange }) {
-  return (
-    <button
-      onClick={() => onChange(!value)}
-      aria-pressed={value}
-      style={{
-        width:44,height:24,borderRadius:12,border:'none',cursor:'pointer',
-        background:value ? 'var(--accent)' : 'var(--border-strong)',
-        transition:'background 200ms',position:'relative',
-      }}
-    >
-      <span style={{
-        position:'absolute',top:3,left:value ? 22 : 3,
-        width:18,height:18,borderRadius:'50%',background:'white',transition:'left 200ms',
-      }} />
-    </button>
   );
 }
 

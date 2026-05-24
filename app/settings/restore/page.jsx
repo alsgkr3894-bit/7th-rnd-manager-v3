@@ -17,6 +17,7 @@ import {
 import { downloadJson, makeFileName, readFileAsText } from '@/lib/download';
 import { addEntry } from '@/lib/backup-history';
 import { formatNumber } from '@/lib/format';
+import { Toggle } from '@/components/ui/Toggle';
 
 /**
  * 데이터 복원 페이지
@@ -412,25 +413,3 @@ export default function Page() {
   );
 }
 
-/* ============================================================
-   하위 컴포넌트
-============================================================ */
-
-function Toggle({ value, onChange }) {
-  return (
-    <button
-      onClick={() => onChange(!value)}
-      aria-pressed={value}
-      style={{
-        width:44,height:24,borderRadius:12,border:'none',cursor:'pointer',
-        background:value ? 'var(--accent)' : 'var(--border-strong)',
-        transition:'background 200ms',position:'relative',flex:'0 0 auto',
-      }}
-    >
-      <span style={{
-        position:'absolute',top:3,left:value ? 22 : 3,
-        width:18,height:18,borderRadius:'50%',background:'white',transition:'left 200ms',
-      }} />
-    </button>
-  );
-}

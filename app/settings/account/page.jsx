@@ -4,6 +4,9 @@ import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { getProfile, setProfile, getInitial } from '@/lib/profile';
+import { getLastLogin, getCachedIP, fetchClientIP } from '@/lib/session';
+import { formatRelative } from '@/lib/format';
+import { SettingTile } from '@/components/ui/SettingTile';
 
 /**
  * 계정 관리 페이지
@@ -46,10 +49,26 @@ export default function Page() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', team: '', role: '' });
 
+  // 세션 정보
+  const [lastLogin, setLastLogin] = useState(null);
+  const [ipEntry, setIpEntry]     = useState(null); // { ip, at } | null
+  const [ipLoading, setIpLoading] = useState(true);
+
   useEffect(() => {
     const p = getProfile();
     setProfileState(p);
     setForm(p);
+
+    setLastLogin(getLastLogin());
+
+    // 캐시된 IP 먼저 즉시 표시 → 백그라운드에서 최신 IP fetch
+    const cached = getCachedIP();
+    if (cached) setIpEntry(cached);
+
+    fetchClientIP().then(entry => {
+      if (entry) setIpEntry(entry);
+      setIpLoading(false);
+    });
   }, []);
 
   function startEdit() {
@@ -189,6 +208,36 @@ export default function Page() {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* 세션 정보 — 마지막 로그인 / 접속 IP */}
+      <div className="card" style={{marginTop:16}}>
+        <h3 style={{fontSize:15,fontWeight:700,marginBottom:4}}>세션 정보</h3>
+        <p style={{fontSize:13,color:'var(--text-3)',marginBottom:16}}>
+          현재 브라우저 세션 기준 마지막 로그인 시각과 접속 IP입니다.
+          IP는 외부 공개 API(<span style={{fontFamily:'monospace'}}>api.ipify.org</span>)로 조회합니다.
+        </p>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:16}}>
+          <SettingTile variant="tile"
+            label="마지막 로그인"
+            value={lastLogin ? new Date(lastLogin).toLocaleString('ko-KR') : '기록 없음'}
+            sub={lastLogin ? formatRelative(lastLogin) : '새 브라우저 세션이 시작되면 기록됩니다'}
+          />
+          <SettingTile variant="tile"
+            label="접속 IP"
+            value={
+              ipEntry ? ipEntry.ip
+              : ipLoading ? '조회 중…'
+              : '외부 미연결'
+            }
+            sub={
+              ipEntry ? `갱신: ${new Date(ipEntry.at).toLocaleString('ko-KR')}`
+              : ipLoading ? '잠시만 기다려 주세요'
+              : '외부 API 호출 실패 (오프라인 또는 차단)'
+            }
+            mono
+          />
         </div>
       </div>
 

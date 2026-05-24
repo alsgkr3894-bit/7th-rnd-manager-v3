@@ -14,8 +14,10 @@ import {
   hasStore,
 } from '@/lib/db';
 import { downloadJson, makeFileName } from '@/lib/download';
-import { formatNumber } from '@/lib/format';
+import { formatNumber, formatRelative } from '@/lib/format';
 import { getHistory, addEntry, getLastBackupAt } from '@/lib/backup-history';
+import { Toggle } from '@/components/ui/Toggle';
+import { SettingTile } from '@/components/ui/SettingTile';
 
 /**
  * 데이터 백업 페이지
@@ -138,17 +140,17 @@ export default function Page() {
 
       {/* 요약 카드 */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:16,marginTop:24}}>
-        <SummaryCard
+        <SettingTile
           label="마지막 백업"
           value={lastBackupAt ? formatRelative(lastBackupAt) : '없음'}
           sub={lastBackupAt ? new Date(lastBackupAt).toLocaleString('ko-KR') : '아직 백업하지 않았습니다'}
         />
-        <SummaryCard
+        <SettingTile
           label="선택된 모듈"
           value={`${selectedKeys.length} / ${MODULE_KEYS.length}`}
           sub={selectedKeys.map(k => MODULE_GROUPS[k].label).join(' · ') || '선택된 항목 없음'}
         />
-        <SummaryCard
+        <SettingTile
           label="선택된 데이터"
           value={`${formatNumber(selectedRows)}건`}
           sub={ready ? '백업 파일 예상 크기는 데이터에 따라 다릅니다' : 'DB 초기화 중…'}
@@ -243,52 +245,3 @@ export default function Page() {
   );
 }
 
-/* ============================================================
-   하위 컴포넌트
-============================================================ */
-
-function SummaryCard({ label, value, sub, num = false }) {
-  return (
-    <div className="card" style={{padding:'18px 22px'}}>
-      <div style={{fontSize:12,color:'var(--text-3)',marginBottom:6}}>{label}</div>
-      <div className={num ? 'num' : ''} style={{fontSize:20,fontWeight:700,marginBottom:4}}>{value}</div>
-      {sub && (
-        <div style={{fontSize:11,color:'var(--text-3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{sub}</div>
-      )}
-    </div>
-  );
-}
-
-function Toggle({ value, onChange }) {
-  return (
-    <button
-      onClick={() => onChange(!value)}
-      aria-pressed={value}
-      style={{
-        width:44,height:24,borderRadius:12,border:'none',cursor:'pointer',
-        background:value ? 'var(--accent)' : 'var(--border-strong)',
-        transition:'background 200ms',position:'relative',flex:'0 0 auto',
-      }}
-    >
-      <span style={{
-        position:'absolute',top:3,left:value ? 22 : 3,
-        width:18,height:18,borderRadius:'50%',background:'white',transition:'left 200ms',
-      }} />
-    </button>
-  );
-}
-
-/** ISO 시각 → "방금 전" / "10분 전" / "어제" 같은 상대 표시 */
-function formatRelative(iso) {
-  const t = new Date(iso).getTime();
-  if (isNaN(t)) return '-';
-  const diff = Date.now() - t;
-  const m = Math.floor(diff / 60_000);
-  if (m < 1) return '방금 전';
-  if (m < 60) return `${m}분 전`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}시간 전`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d}일 전`;
-  return new Date(iso).toLocaleDateString('ko-KR');
-}
