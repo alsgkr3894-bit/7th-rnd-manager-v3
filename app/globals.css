@@ -462,6 +462,8 @@ button { font-family: inherit; cursor: pointer; }
 .btn.block { width: 100%; }
 
 .kpi-card { display: flex; flex-direction: column; justify-content: space-between; min-height: 200px; }
+.kpi-clickable { transition: transform 180ms ease, box-shadow 180ms ease; }
+.kpi-clickable:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
 .kpi-card .label { color: var(--text-3); font-size: 13px; font-weight: 600; }
 .kpi-card .label .pill {
   background: var(--accent-soft); color: var(--accent-text);

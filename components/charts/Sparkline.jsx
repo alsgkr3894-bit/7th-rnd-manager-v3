@@ -4,19 +4,29 @@ import { useEffect, useId, useRef } from 'react';
 export function Sparkline({ data, color = 'var(--accent)', fill = true, height = 56 }) {
   const lineRef = useRef(null);
   const w = 320, h = height, pad = 4;
-  const min = Math.min(...data), max = Math.max(...data);
-  const span = max - min || 1;
-  const step = (w - pad * 2) / (data.length - 1);
-  const pts = data.map((v, i) => [pad + i * step, h - pad - ((v - min) / span) * (h - pad * 2)]);
-  const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
-  const dArea = d + ` L ${(w - pad).toFixed(1)} ${(h - pad).toFixed(1)} L ${pad} ${(h - pad).toFixed(1)} Z`;
   // SSR/CSR hydration mismatch 회피: Math.random() 대신 React 18 useId() 사용
   const reactId = useId();
   const gid = `sp-${reactId.replace(/:/g, '')}`;
 
+  // 빈 데이터 / 단일 포인트 가드
+  const safeData = Array.isArray(data) ? data : [];
+  const allZero = safeData.length > 0 && safeData.every(v => !v);
+  const hasData = safeData.length >= 2 && !allZero;
+
+  const min = hasData ? Math.min(...safeData) : 0;
+  const max = hasData ? Math.max(...safeData) : 1;
+  const span = max - min || 1;
+  const step = hasData ? (w - pad * 2) / (safeData.length - 1) : 0;
+  const pts = hasData
+    ? safeData.map((v, i) => [pad + i * step, h - pad - ((v - min) / span) * (h - pad * 2)])
+    : [];
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  const dArea = hasData ? d + ` L ${(w - pad).toFixed(1)} ${(h - pad).toFixed(1)} L ${pad} ${(h - pad).toFixed(1)} Z` : '';
+
+  // hook은 분기 전에 무조건 호출 (Rules of Hooks)
   useEffect(() => {
     const el = lineRef.current;
-    if (!el) return;
+    if (!el || !hasData) return;
     const len = el.getTotalLength();
     el.style.strokeDasharray = len;
     el.style.strokeDashoffset = len;
@@ -25,7 +35,20 @@ export function Sparkline({ data, color = 'var(--accent)', fill = true, height =
       el.style.transition = 'stroke-dashoffset 900ms cubic-bezier(0.16, 1, 0.3, 1)';
       el.style.strokeDashoffset = '0';
     }));
-  }, [data]);
+  }, [data, hasData]);
+
+  // 모든 값이 0이면 회색 점선 placeholder 표시
+  if (allZero) {
+    return (
+      <svg className="spark" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+        <line
+          x1={pad} y1={h / 2} x2={w - pad} y2={h / 2}
+          stroke="var(--border)" strokeWidth="1.5"
+          strokeDasharray="4 4" strokeLinecap="round"
+        />
+      </svg>
+    );
+  }
 
   return (
     <svg className="spark" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
@@ -41,9 +64,13 @@ export function Sparkline({ data, color = 'var(--accent)', fill = true, height =
         </>
       )}
       <path ref={lineRef} d={d} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]} r="3" fill={color}
-        style={{opacity:0, animation:'fade-in 200ms 920ms ease both'}} />
-      <circle className="spark-pulse-ring" cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]} r="3" fill={color} opacity="0" />
+      {hasData && (
+        <>
+          <circle cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]} r="3" fill={color}
+            style={{opacity:0, animation:'fade-in 200ms 920ms ease both'}} />
+          <circle className="spark-pulse-ring" cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]} r="3" fill={color} opacity="0" />
+        </>
+      )}
     </svg>
   );
 }
