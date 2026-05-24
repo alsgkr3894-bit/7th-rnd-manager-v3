@@ -8,10 +8,16 @@ import { formatNumber } from '@/lib/format';
 import { getSetting, setSetting } from '@/lib/settings';
 
 /**
- * 시스템 설정 — 앱/DB 정보 표시 + DB 초기화.
+ * 시스템 설정 페이지
  *
- * 다크모드/밀도/알림 토글은 우측 상단 tweaks 패널에 있으므로 제거.
- * 이 페이지는 시스템 정보와 위험한 작업(DB 초기화) 전용.
+ * 구성:
+ *   1. 환경 설정 (다크 모드, 화면 밀도)
+ *   2. 원가 계산 정책 (자동 재계산 / 미연동 차단 / 반올림 방식)
+ *   3. 알림 (미매칭 / 원가율 35% 초과)
+ *   4. 지역 / 언어 (정보 표시, read-only)
+ *   5. 앱 정보
+ *   6. 저장소 상태
+ *   7. 위험 영역 (모든 데이터 초기화)
  */
 
 const APP_VERSION = '0.1.0';
@@ -22,25 +28,28 @@ export default function Page() {
   const [busy, setBusy] = useState(false);
   const [confirmingReset, setConfirmingReset] = useState(false);
 
-  // 사용자 환경 설정 (localStorage)
+  // 환경 설정
   const [theme, setTheme] = useState('light');
   const [density, setDensity] = useState('normal');
-  const [notifications, setNotifications] = useState('on');
+  // 원가 정책
+  const [autoRecalc, setAutoRecalc] = useState('on');
+  const [strictPosting, setStrictPosting] = useState('on');
+  const [roundMode, setRoundMode] = useState('round');
+  // 알림
+  const [unmatchedAlert, setUnmatchedAlert] = useState('on');
+  const [costRateAlert, setCostRateAlert] = useState('on');
 
-  // 페이지 mount 시 현재 설정값 읽어오기
   useEffect(() => {
+    // 설정 로드
     setTheme(getSetting('theme'));
     setDensity(getSetting('density'));
-    setNotifications(getSetting('notifications'));
-  }, []);
+    setAutoRecalc(getSetting('autoRecalc'));
+    setStrictPosting(getSetting('strictPosting'));
+    setRoundMode(getSetting('roundMode'));
+    setUnmatchedAlert(getSetting('unmatchedAlert'));
+    setCostRateAlert(getSetting('costRateAlert'));
 
-  function updateSetting(key, value, setter, message) {
-    setSetting(key, value);
-    setter(value);
-    showToast(message, 'ok');
-  }
-
-  useEffect(() => {
+    // DB 초기화
     (async () => {
       try {
         await initDB();
@@ -66,106 +75,127 @@ export default function Page() {
     setStats(result);
   }
 
+  function updateSetting(key, value, setter, message) {
+    setSetting(key, value);
+    setter(value);
+    showToast(message, 'ok');
+  }
+
   async function handleReset() {
     if (busy) return;
     setBusy(true);
     try {
       for (const name of ALL_STORES) {
-        try {
-          await clearStore(name);
-        } catch (err) {
-          console.warn(`[Settings/System] ${name} 초기화 실패 (skip):`, err);
-        }
+        try { await clearStore(name); } catch (err) { console.warn(`[Reset] ${name} skip:`, err); }
       }
       await refreshStats();
       setConfirmingReset(false);
       showToast('모든 데이터가 초기화되었습니다.', 'ok');
     } catch (err) {
-      console.error('[Settings/System] 초기화 실패:', err);
+      console.error('[Reset] 실패:', err);
       showToast('초기화 중 오류가 발생했습니다.', 'err');
     } finally {
       setBusy(false);
     }
   }
 
-  const totalRows = stats
-    ? Object.values(stats).reduce((sum, n) => sum + n, 0)
-    : 0;
+  const totalRows = stats ? Object.values(stats).reduce((s, n) => s + n, 0) : 0;
 
   return (
     <main className="main">
       <PageHeader
         breadcrumb={["설정 / 백업", "시스템 설정"]}
         title="시스템 설정"
-        sub="앱 정보와 저장소 상태를 확인하고 데이터를 관리하세요"
+        sub="환경, 원가 정책, 알림 등을 관리하세요. 변경은 즉시 적용됩니다."
       />
 
-      {/* 환경 설정 */}
-      <div className="card" style={{marginTop:24}}>
-        <h3 style={{fontSize:15,fontWeight:700,marginBottom:16}}>환경 설정</h3>
-        <div style={{display:'flex',flexDirection:'column',gap:14}}>
+      {/* 1. 환경 설정 */}
+      <SettingsGroup title="환경 설정" style={{marginTop:24}}>
+        <SettingsRow
+          name="다크 모드"
+          desc="어두운 배경으로 전환합니다"
+          control={<Toggle value={theme === 'dark'} onChange={(on) => updateSetting('theme', on ? 'dark' : 'light', setTheme, '다크 모드 ' + (on ? '설정' : '해제'))} />}
+        />
+        <SettingsRow
+          name="화면 밀도"
+          desc="표·카드 간격을 조절합니다"
+          control={
+            <Segmented
+              value={density}
+              options={[{value:'normal',label:'기본'},{value:'compact',label:'촘촘'}]}
+              onChange={(v) => updateSetting('density', v, setDensity, v === 'compact' ? '촘촘 밀도 적용' : '기본 밀도 적용')}
+            />
+          }
+          last
+        />
+      </SettingsGroup>
 
-          {/* 다크모드 토글 */}
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 0',borderBottom:'1px solid var(--border)'}}>
-            <div>
-              <div style={{fontWeight:700}}>다크 모드</div>
-              <div style={{fontSize:13,color:'var(--text-3)',marginTop:2}}>어두운 배경으로 전환합니다</div>
-            </div>
-            <button
-              onClick={() => updateSetting('theme', theme === 'dark' ? 'light' : 'dark', setTheme, '다크 모드가 ' + (theme === 'dark' ? '해제' : '설정') + '되었습니다')}
-              style={{width:44,height:24,borderRadius:12,border:'none',cursor:'pointer',background:theme === 'dark' ? 'var(--accent)' : 'var(--border-strong)',transition:'background 200ms',position:'relative'}}
-              aria-label="다크 모드 토글"
-            >
-              <span style={{position:'absolute',top:3,left:theme === 'dark' ? 22 : 3,width:18,height:18,borderRadius:'50%',background:'white',transition:'left 200ms'}}></span>
-            </button>
-          </div>
+      {/* 2. 원가 계산 정책 */}
+      <SettingsGroup title="원가 계산 정책">
+        <SettingsRow
+          name="단가 변경 시 원가표 자동 재계산"
+          desc="제때 단가가 변경되면 모든 원가표를 자동으로 다시 계산합니다."
+          control={<Toggle value={autoRecalc === 'on'} onChange={(on) => updateSetting('autoRecalc', on ? 'on' : 'off', setAutoRecalc, '자동 재계산 ' + (on ? 'ON' : 'OFF'))} />}
+        />
+        <SettingsRow
+          name="미연동 재료 차단"
+          desc="제때 단가에 등록되지 않은 재료가 포함된 메뉴는 원가표 발행을 차단합니다."
+          control={<Toggle value={strictPosting === 'on'} onChange={(on) => updateSetting('strictPosting', on ? 'on' : 'off', setStrictPosting, '미연동 차단 ' + (on ? 'ON' : 'OFF'))} />}
+        />
+        <SettingsRow
+          name="원가 반올림 방식"
+          desc="g·개당 단가에서 원 단위 환산 시 적용"
+          control={
+            <Segmented
+              value={roundMode}
+              options={[
+                {value:'round',label:'반올림'},
+                {value:'ceil', label:'올림'},
+                {value:'floor',label:'내림'},
+              ]}
+              onChange={(v) => updateSetting('roundMode', v, setRoundMode, ({round:'반올림',ceil:'올림',floor:'내림'}[v]) + ' 적용')}
+            />
+          }
+          last
+        />
+      </SettingsGroup>
 
-          {/* 화면 밀도 */}
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 0',borderBottom:'1px solid var(--border)',gap:16}}>
-            <div>
-              <div style={{fontWeight:700}}>화면 밀도</div>
-              <div style={{fontSize:13,color:'var(--text-3)',marginTop:2}}>표·카드 간격을 조절합니다</div>
-            </div>
-            <div style={{display:'flex',gap:6}}>
-              {[
-                { value: 'normal',  label: '기본' },
-                { value: 'compact', label: '촘촘' },
-              ].map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => updateSetting('density', opt.value, setDensity, opt.label + ' 밀도가 적용되었습니다')}
-                  style={{
-                    padding: '6px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                    border: '1px solid ' + (density === opt.value ? 'var(--accent)' : 'var(--border)'),
-                    borderRadius: 8,
-                    background: density === opt.value ? 'var(--accent-soft)' : 'var(--surface)',
-                    color: density === opt.value ? 'var(--accent-text)' : 'var(--text-2)',
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
+      {/* 3. 알림 */}
+      <SettingsGroup title="알림">
+        <SettingsRow
+          name="미매칭 메뉴 알림"
+          desc="판매량 업로드 후 매칭되지 않은 메뉴가 있으면 홈에 알림을 표시합니다."
+          control={<Toggle value={unmatchedAlert === 'on'} onChange={(on) => updateSetting('unmatchedAlert', on ? 'on' : 'off', setUnmatchedAlert, '미매칭 알림 ' + (on ? 'ON' : 'OFF'))} />}
+        />
+        <SettingsRow
+          name="원가율 35% 초과 알림"
+          desc="재계산 후 원가율 35% 초과 메뉴가 새로 생기면 빨간 알림을 표시합니다."
+          control={<Toggle value={costRateAlert === 'on'} onChange={(on) => updateSetting('costRateAlert', on ? 'on' : 'off', setCostRateAlert, '원가율 알림 ' + (on ? 'ON' : 'OFF'))} />}
+          last
+        />
+      </SettingsGroup>
 
-          {/* 알림 */}
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 0'}}>
-            <div>
-              <div style={{fontWeight:700}}>알림</div>
-              <div style={{fontSize:13,color:'var(--text-3)',marginTop:2}}>단가 변동·업로드 등 알림 표시 (향후 알림 시스템 연동)</div>
-            </div>
-            <button
-              onClick={() => updateSetting('notifications', notifications === 'on' ? 'off' : 'on', setNotifications, '알림이 ' + (notifications === 'on' ? '해제' : '설정') + '되었습니다')}
-              style={{width:44,height:24,borderRadius:12,border:'none',cursor:'pointer',background:notifications === 'on' ? 'var(--accent)' : 'var(--border-strong)',transition:'background 200ms',position:'relative'}}
-              aria-label="알림 토글"
-            >
-              <span style={{position:'absolute',top:3,left:notifications === 'on' ? 22 : 3,width:18,height:18,borderRadius:'50%',background:'white',transition:'left 200ms'}}></span>
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* 4. 지역 / 언어 (read-only 정보 표시) */}
+      <SettingsGroup title="지역 / 언어">
+        <SettingsRow
+          name="언어"
+          desc="UI 텍스트 표시 언어 (현재 한국어 고정)"
+          control={<StaticValue>한국어</StaticValue>}
+        />
+        <SettingsRow
+          name="시간대"
+          desc="모든 일시 표시·자동 작업의 기준 시간대"
+          control={<StaticValue>Asia/Seoul (KST · UTC+9)</StaticValue>}
+        />
+        <SettingsRow
+          name="통화"
+          desc="원가·판매가·매출 표시 통화"
+          control={<StaticValue>원 (KRW)</StaticValue>}
+          last
+        />
+      </SettingsGroup>
 
-      {/* 앱 정보 */}
+      {/* 5. 앱 정보 */}
       <div className="card" style={{marginTop:16}}>
         <h3 style={{fontSize:15,fontWeight:700,marginBottom:16}}>앱 정보</h3>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:24}}>
@@ -176,7 +206,7 @@ export default function Page() {
         </div>
       </div>
 
-      {/* 저장소 상태 */}
+      {/* 6. 저장소 상태 */}
       <div className="card" style={{marginTop:16}}>
         <h3 style={{fontSize:15,fontWeight:700,marginBottom:16}}>저장소 상태</h3>
         {!ready ? (
@@ -203,16 +233,13 @@ export default function Page() {
             )}
 
             <div style={{marginTop:16,display:'flex',justifyContent:'flex-end'}}>
-              <button className="btn" onClick={refreshStats} disabled={busy}>
-                <Icon.chevDown style={{width:14,height:14,transform:'rotate(0deg)'}}/>
-                새로고침
-              </button>
+              <button className="btn" onClick={refreshStats} disabled={busy}>새로고침</button>
             </div>
           </>
         )}
       </div>
 
-      {/* 위험 영역: DB 초기화 */}
+      {/* 7. 위험 영역 */}
       <div className="card" style={{marginTop:16,borderColor:'var(--negative-soft)'}}>
         <h3 style={{fontSize:15,fontWeight:700,marginBottom:8,color:'var(--negative)'}}>위험 영역</h3>
         <p style={{fontSize:13,color:'var(--text-2)',marginBottom:16}}>
@@ -245,6 +272,91 @@ export default function Page() {
         )}
       </div>
     </main>
+  );
+}
+
+/* ============================================================
+   하위 컴포넌트
+============================================================ */
+
+function SettingsGroup({ title, children, style }) {
+  return (
+    <div className="card" style={{marginTop: style?.marginTop ?? 16}}>
+      <h3 style={{fontSize:15,fontWeight:700,marginBottom:4}}>{title}</h3>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function SettingsRow({ name, desc, control, last }) {
+  return (
+    <div style={{
+      display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,
+      padding:'14px 0',
+      borderBottom: last ? 'none' : '1px solid var(--border)',
+    }}>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontWeight:700,fontSize:14}}>{name}</div>
+        <div style={{fontSize:12,color:'var(--text-3)',marginTop:2}}>{desc}</div>
+      </div>
+      <div style={{flex:'0 0 auto'}}>{control}</div>
+    </div>
+  );
+}
+
+function Toggle({ value, onChange }) {
+  return (
+    <button
+      onClick={() => onChange(!value)}
+      aria-pressed={value}
+      style={{
+        width:44,height:24,borderRadius:12,border:'none',cursor:'pointer',
+        background:value ? 'var(--accent)' : 'var(--border-strong)',
+        transition:'background 200ms',position:'relative',
+      }}
+    >
+      <span style={{
+        position:'absolute',top:3,left:value ? 22 : 3,
+        width:18,height:18,borderRadius:'50%',background:'white',transition:'left 200ms',
+      }} />
+    </button>
+  );
+}
+
+function Segmented({ value, options, onChange }) {
+  return (
+    <div style={{display:'flex',gap:6}}>
+      {options.map(opt => {
+        const active = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            style={{
+              padding:'6px 14px',fontSize:13,fontWeight:600,cursor:'pointer',
+              border:'1px solid ' + (active ? 'var(--accent)' : 'var(--border)'),
+              borderRadius:8,
+              background: active ? 'var(--accent-soft)' : 'var(--surface)',
+              color: active ? 'var(--accent-text)' : 'var(--text-2)',
+            }}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function StaticValue({ children }) {
+  return (
+    <div style={{
+      fontSize:13,fontWeight:600,color:'var(--text-2)',
+      padding:'6px 12px',borderRadius:8,
+      background:'var(--surface-2)',border:'1px solid var(--border)',
+    }}>
+      {children}
+    </div>
   );
 }
 
