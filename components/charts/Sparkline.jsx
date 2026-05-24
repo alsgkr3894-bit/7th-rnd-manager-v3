@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 
 export function Sparkline({ data, color = 'var(--accent)', fill = true, height = 56 }) {
   const lineRef = useRef(null);
@@ -10,7 +10,9 @@ export function Sparkline({ data, color = 'var(--accent)', fill = true, height =
   const pts = data.map((v, i) => [pad + i * step, h - pad - ((v - min) / span) * (h - pad * 2)]);
   const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
   const dArea = d + ` L ${(w - pad).toFixed(1)} ${(h - pad).toFixed(1)} L ${pad} ${(h - pad).toFixed(1)} Z`;
-  const gid = useRef('sp-' + Math.random().toString(36).slice(2, 8)).current;
+  // SSR/CSR hydration mismatch 회피: Math.random() 대신 React 18 useId() 사용
+  const reactId = useId();
+  const gid = `sp-${reactId.replace(/:/g, '')}`;
 
   useEffect(() => {
     const el = lineRef.current;
