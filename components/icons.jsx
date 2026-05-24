@@ -1,0 +1,35 @@
+'use client';
+
+// 아이콘 세트 (1.6px stroke, SVG)
+const stroke = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.6,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
+export const Icon = {
+  home:     (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>,
+  chart:    (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M4 4v16h16"/><path d="M7 15l3-4 3 2 5-7"/></svg>,
+  box:      (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5v-9Z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/></svg>,
+  calc:     (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0M8 19h2M12 19h2M16 19h0"/></svg>,
+  doc:      (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M14 3v4h4M8 13h8M8 17h5"/></svg>,
+  note:     (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M4 5a2 2 0 0 1 2-2h11l3 3v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M8 8h6M8 12h8M8 16h5"/></svg>,
+  gear:     (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.86l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.86-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.08a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.86.34l-.06.06A2 2 0 1 1 4.2 16.93l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.08A1.7 1.7 0 0 0 4.6 8.89a1.7 1.7 0 0 0-.34-1.86l-.06-.06A2 2 0 1 1 7.03 4.14l.06.06a1.7 1.7 0 0 0 1.86.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.08a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.86-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.86V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.08a1.7 1.7 0 0 0-1.55 1Z"/></svg>,
+  search:   (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>,
+  bell:     (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M6 8a6 6 0 1 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9Z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>,
+  chevDown: (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="m6 9 6 6 6-6"/></svg>,
+  chevRight:(p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="m9 6 6 6-6 6"/></svg>,
+  plus:     (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M12 5v14M5 12h14"/></svg>,
+  arrowUp:  (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M12 19V5M5 12l7-7 7 7"/></svg>,
+  arrowDown:(p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M12 5v14M5 12l7 7 7-7"/></svg>,
+  upload:   (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 18v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/></svg>,
+  download: (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M12 4v12M6 12l6 6 6-6"/><path d="M4 20h16"/></svg>,
+  pizza:    (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M12 3 4 19a1 1 0 0 0 1 1.4l7 .6 7-.6a1 1 0 0 0 1-1.4Z"/><circle cx="10" cy="10" r="1"/><circle cx="14" cy="13" r="1"/><circle cx="11" cy="15" r="1"/></svg>,
+  beaker:   (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M9 3h6M10 3v6L5 19a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 19l-5-10V3"/><path d="M7.5 14h9"/></svg>,
+  tag:      (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9Z"/><circle cx="8" cy="8" r="1.5"/></svg>,
+  alert:    (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M12 9v4M12 17h0"/><path d="m11 3-9 16a1 1 0 0 0 .9 1.5h18.2A1 1 0 0 0 22 19L13 3a1 1 0 0 0-2 0Z"/></svg>,
+  check:    (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="m4 12 5 5L20 6"/></svg>,
+  more:     (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><circle cx="5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="19" cy="12" r="1.4" fill="currentColor"/></svg>,
+};
