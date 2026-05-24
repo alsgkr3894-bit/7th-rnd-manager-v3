@@ -12,8 +12,9 @@ const NAV_MAIN = [
     { id: 'menu-sales-unmatched', label: '미매칭 관리',    href: '/menu-sales/unmatched', badge: 4 },
   ]},
   { id: 'jette', label: '제때상품관리', icon: Icon.box, children: [
-    { id: 'jette-price-compare', label: '상품 가격 비교', href: '/jette/price-compare' },
-    { id: 'jette-shipment',      label: '범용상품 출고량', href: '/jette/shipment' },
+    { id: 'jette-price-compare', label: '상품 가격 비교',     href: '/jette/price-compare' },
+    { id: 'jette-shipment',      label: '범용상품 출고량',    href: '/jette/shipment' },
+    { id: 'jette-settings',      label: '설정',              href: '/jette/settings' },
   ]},
   { id: 'cost', label: '원가계산', icon: Icon.calc, children: [
     { id: 'cost-pizza-summary',    label: '피자 종합 원가표',   href: '/cost/pizza-summary' },
