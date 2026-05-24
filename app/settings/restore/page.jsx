@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
-import { initDB, importAll } from '@/lib/db';
+import { initDB, importAll, hasStore, ALL_STORES } from '@/lib/db';
 import { readFileAsText } from '@/lib/download';
 import { formatNumber } from '@/lib/format';
 
@@ -53,18 +53,42 @@ export default function Page() {
     if (!parsed || busy) return;
     setBusy(true);
     try {
-      await importAll(parsed);
-      showToast('복원이 완료되었습니다. 새로고침 후 데이터를 확인하세요.', 'ok');
+      const result = await importAll(parsed);
+      const { imported, skipped, errors } = result || {};
+
+      if (errors && errors.length > 0) {
+        // 부분 성공
+        showToast(
+          `복원 일부 완료 — 성공 ${imported}개 / 건너뜀 ${skipped}개. ` +
+          `'시스템 설정 → DB 완전 재생성' 후 다시 시도하면 전체 복원됩니다.`,
+          'warn'
+        );
+        console.warn('[Restore] 일부 실패:', errors);
+      } else {
+        showToast(`복원이 완료되었습니다. (${imported}개 store)`, 'ok');
+      }
       setParsed(null);
       setConfirming(false);
       if (fileRef.current) fileRef.current.value = '';
     } catch (err) {
       console.error('[Restore] 복원 실패:', err);
-      showToast('복원 중 오류가 발생했습니다: ' + err.message, 'err');
+      // schema 불일치 추정 시 안내
+      const isSchemaIssue = String(err.message || '').includes('object stores was not found');
+      const hint = isSchemaIssue
+        ? ' (해결: 시스템 설정 → 위험 영역 → "DB 완전 재생성" 후 다시 시도)'
+        : '';
+      showToast('복원 중 오류: ' + err.message + hint, 'err');
     } finally {
       setBusy(false);
     }
   }
+
+  // 백업 파일에 있는 store 중 현재 DB에 없는 것 (schema 누락 추정)
+  const missingStores = parsed && ready
+    ? Object.keys(parsed.stores).filter(name =>
+        ALL_STORES.includes(name) && !hasStore(name)
+      )
+    : [];
 
   const summary = parsed
     ? Object.entries(parsed.stores)
@@ -132,6 +156,26 @@ export default function Page() {
                   <div className="num" style={{fontSize:16,fontWeight:600}}>{formatNumber(s.count)}건</div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* schema 불일치 경고 — 백업 store 일부가 DB에 없을 때 */}
+          {missingStores.length > 0 && (
+            <div style={{padding:16,background:'var(--warn-soft)',borderRadius:8,marginTop:12,border:'1px solid var(--warn-soft)'}}>
+              <div style={{display:'flex',gap:12,alignItems:'flex-start'}}>
+                <Icon.alert style={{width:16,height:16,color:'var(--warn)',marginTop:2,flex:'0 0 16px'}}/>
+                <div style={{fontSize:13,color:'var(--text-1)',lineHeight:1.6,flex:1}}>
+                  <b style={{color:'var(--warn)'}}>일부 store가 현재 DB에 없습니다.</b>
+                  <br/>
+                  <span className="num" style={{fontSize:12}}>
+                    {missingStores.slice(0, 5).join(', ')}{missingStores.length > 5 ? ` 외 ${missingStores.length - 5}개` : ''}
+                  </span>
+                  <br/>
+                  이대로 복원하면 해당 store는 건너뜁니다. 전체 복원을 원하면 먼저
+                  <b> 시스템 설정 → 위험 영역 → "DB 완전 재생성" </b>
+                  을 실행한 후 다시 시도하세요.
+                </div>
+              </div>
             </div>
           )}
 
