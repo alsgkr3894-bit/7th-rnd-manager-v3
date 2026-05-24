@@ -461,7 +461,8 @@ button { font-family: inherit; cursor: pointer; }
 .btn.lg { padding: 16px 22px; font-size: 15px; border-radius: 14px; }
 .btn.block { width: 100%; }
 
-.kpi-card { display: flex; flex-direction: column; justify-content: space-between; min-height: 200px; }
+.kpi-card { display: flex; flex-direction: column; justify-content: space-between; min-height: 200px; color: var(--text-1); }
+.kpi-card .value { color: var(--text-1); }
 .kpi-clickable { transition: transform 180ms ease, box-shadow 180ms ease; }
 .kpi-clickable:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
 .kpi-card .label { color: var(--text-3); font-size: 13px; font-weight: 600; }
@@ -636,6 +637,7 @@ button { font-family: inherit; cursor: pointer; }
   align-items: center;
   padding: 14px 4px;
   border-bottom: 1px solid var(--divider);
+  color: var(--text-1);
 }
 .tx-row:last-child { border-bottom: 0; }
 .tx-row .ico {

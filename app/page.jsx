@@ -33,7 +33,7 @@ export default function HomePage() {
   const [top, setTop] = useState([]);
   const [activities, setActivities] = useState([]);
 
-  // 차트 탭
+  // 차트 탭 (month | year)
   const [chartTab, setChartTab] = useState('month');
   const [chartKey, setChartKey] = useState(0);
   const [hoveredCat, setHoveredCat] = useState(null);
@@ -59,7 +59,7 @@ export default function HomePage() {
           getNoteKpi(),
           getSalesTrend('month'),
           getCategoryShare(),
-          getTopMenus(5),
+          getTopMenus(5, '피자', true),
           getRecentActivities(8),
         ]);
         setSalesKpi(s);
@@ -143,7 +143,11 @@ export default function HomePage() {
         {/* KPI 1: 판매량 — 클릭 시 판매량 비교로 이동 */}
         <button className="card kpi-card kpi-clickable" onClick={() => router.push('/menu-sales/rank-compare')} style={kpiButtonStyle}>
           <div>
-            <div className="label">이번 달 누적 판매량</div>
+            <div className="label">
+              {salesKpi?.year && salesKpi?.month
+                ? `${salesKpi.year}년 ${salesKpi.month}월 판매량`
+                : '최근 판매량'}
+            </div>
             <div className="value num">{fmtKRW(salesCount)}<span className="unit">개</span></div>
             <div className="trend">
               {salesKpi?.deltaPct == null ? (
@@ -221,11 +225,13 @@ export default function HomePage() {
           <div className="card-header">
             <div>
               <div className="card-title">메뉴 총 판매량 추이</div>
-              <div className="card-sub">월 단위 비교 · 최근 6개월</div>
+              <div className="card-sub">
+                {chartTab === 'year' ? '연 단위 합산 · 최근 5년' : '월 단위 비교 · 최근 6개월'}
+              </div>
             </div>
             <div className="chart-tabs">
-              <button className={chartTab==='week'?'active':''} onClick={()=>setChartTab('week')}>주별</button>
               <button className={chartTab==='month'?'active':''} onClick={()=>setChartTab('month')}>월별</button>
+              <button className={chartTab==='year'?'active':''} onClick={()=>setChartTab('year')}>년별</button>
             </div>
           </div>
           {isTrendEmpty ? (
@@ -239,13 +245,21 @@ export default function HomePage() {
           ) : trend ? (
             <>
               <div className="chart-legend">
-                <span><span className="dot" style={{background:'#3182F6'}}></span>이번 연도</span>
-                <span><span className="dot" style={{background:'#B0B8C1'}}></span>지난 연도 동월</span>
+                {trend.mode === 'year' ? (
+                  <span><span className="dot" style={{background:'#3182F6'}}></span>연간 판매량</span>
+                ) : (
+                  <>
+                    <span><span className="dot" style={{background:'#3182F6'}}></span>이번 연도</span>
+                    <span><span className="dot" style={{background:'#B0B8C1'}}></span>지난 연도 동월</span>
+                  </>
+                )}
               </div>
               <AreaChart key={chartKey}
                 labels={trend.labels}
-                series={[{ name:'이번 연도', data:trend.thisYear }, { name:'지난 연도', data:trend.lastYear }]}
-                colors={['#3182F6','#B0B8C1']}
+                series={trend.mode === 'year'
+                  ? [{ name:'연간 판매량', data:trend.thisYear }]
+                  : [{ name:'이번 연도', data:trend.thisYear }, { name:'지난 연도', data:trend.lastYear }]}
+                colors={trend.mode === 'year' ? ['#3182F6'] : ['#3182F6','#B0B8C1']}
                 formatY={(v) => fmtKRW(v) + '개'}
               />
             </>
@@ -256,13 +270,18 @@ export default function HomePage() {
 
         <div className="card ring-card">
           <div className="card-header">
-            <div><div className="card-title">카테고리별 비중</div><div className="card-sub">이번 달 판매량 기준</div></div>
+            <div>
+              <div className="card-title">카테고리별 비중</div>
+              <div className="card-sub">
+                {salesKpi?.year && salesKpi?.month ? `${salesKpi.year}년 ${salesKpi.month}월 기준` : '데이터 없음'}
+              </div>
+            </div>
             <button className="link" onClick={()=>router.push('/menu-sales/rank')}>자세히</button>
           </div>
           {donut?.total === 0 ? (
             <EmptyState
               icon={<Icon.pizza style={{width:32,height:32}}/>}
-              title="이번 달 데이터 없음"
+              title="데이터 없음"
               desc="판매량을 업로드하면 카테고리 비중이 표시됩니다"
             />
           ) : donut ? (
@@ -298,7 +317,12 @@ export default function HomePage() {
       <div className="mid-row motion-stagger">
         <div className="card tx-card">
           <div className="card-header">
-            <div><div className="card-title">메뉴 판매 순위 TOP 5</div><div className="card-sub">이번 달 누적</div></div>
+            <div>
+              <div className="card-title">메뉴 판매 순위 TOP 5</div>
+              <div className="card-sub">
+                {salesKpi?.year && salesKpi?.month ? `${salesKpi.year}년 ${salesKpi.month}월 · 피자 카테고리` : '데이터 없음'}
+              </div>
+            </div>
             <button className="link accent" onClick={()=>router.push('/menu-sales/rank')}>전체 순위 →</button>
           </div>
           {top.length === 0 ? (
