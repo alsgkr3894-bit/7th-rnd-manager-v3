@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
-import { fmtKRW, fmtShort } from '@/lib/fmt';
+import { fmtKRW, fmtShort } from '@/lib/format';
 
 export function AreaChart({ series, labels, height = 240, colors, formatY }) {
   const w = 760, h = height, padL = 36, padR = 12, padT = 16, padB = 28;

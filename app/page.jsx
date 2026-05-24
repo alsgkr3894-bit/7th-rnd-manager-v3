@@ -7,7 +7,7 @@ import { AreaChart } from '@/components/charts/AreaChart';
 import { Donut } from '@/components/charts/Donut';
 import { useCountUp } from '@/lib/useCountUp';
 import { showToast } from '@/components/Toast';
-import { fmtKRW } from '@/lib/fmt';
+import { fmtKRW } from '@/lib/format';
 import { CHART_DATA, DONUT_CATS } from '@/lib/data';
 
 export default function HomePage() {
