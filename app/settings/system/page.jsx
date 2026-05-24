@@ -130,7 +130,22 @@ export default function Page() {
         />
       </SettingsGroup>
 
-      {/* 2. 원가 계산 정책 */}
+      {/* 2. 알림 (자주 ON/OFF — 환경 다음으로 자주 변경) */}
+      <SettingsGroup title="알림">
+        <SettingsRow
+          name="미매칭 메뉴 알림"
+          desc="판매량 업로드 후 매칭되지 않은 메뉴가 있으면 홈에 알림을 표시합니다."
+          control={<Toggle value={unmatchedAlert === 'on'} onChange={(on) => updateSetting('unmatchedAlert', on ? 'on' : 'off', setUnmatchedAlert, '미매칭 알림 ' + (on ? 'ON' : 'OFF'))} />}
+        />
+        <SettingsRow
+          name="원가율 35% 초과 알림"
+          desc="재계산 후 원가율 35% 초과 메뉴가 새로 생기면 빨간 알림을 표시합니다."
+          control={<Toggle value={costRateAlert === 'on'} onChange={(on) => updateSetting('costRateAlert', on ? 'on' : 'off', setCostRateAlert, '원가율 알림 ' + (on ? 'ON' : 'OFF'))} />}
+          last
+        />
+      </SettingsGroup>
+
+      {/* 3. 원가 계산 정책 (한 번 설정 후 거의 변경 없음 — 사업 정책) */}
       <SettingsGroup title="원가 계산 정책">
         <SettingsRow
           name="단가 변경 시 원가표 자동 재계산"
@@ -156,21 +171,6 @@ export default function Page() {
               onChange={(v) => updateSetting('roundMode', v, setRoundMode, ({round:'반올림',ceil:'올림',floor:'내림'}[v]) + ' 적용')}
             />
           }
-          last
-        />
-      </SettingsGroup>
-
-      {/* 3. 알림 */}
-      <SettingsGroup title="알림">
-        <SettingsRow
-          name="미매칭 메뉴 알림"
-          desc="판매량 업로드 후 매칭되지 않은 메뉴가 있으면 홈에 알림을 표시합니다."
-          control={<Toggle value={unmatchedAlert === 'on'} onChange={(on) => updateSetting('unmatchedAlert', on ? 'on' : 'off', setUnmatchedAlert, '미매칭 알림 ' + (on ? 'ON' : 'OFF'))} />}
-        />
-        <SettingsRow
-          name="원가율 35% 초과 알림"
-          desc="재계산 후 원가율 35% 초과 메뉴가 새로 생기면 빨간 알림을 표시합니다."
-          control={<Toggle value={costRateAlert === 'on'} onChange={(on) => updateSetting('costRateAlert', on ? 'on' : 'off', setCostRateAlert, '원가율 알림 ' + (on ? 'ON' : 'OFF'))} />}
           last
         />
       </SettingsGroup>
