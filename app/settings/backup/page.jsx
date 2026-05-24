@@ -239,16 +239,6 @@ export default function Page() {
         )}
       </div>
 
-      {/* v2 마이그레이션 안내 */}
-      <div className="card" style={{marginTop:16,background:'var(--accent-soft)',borderColor:'var(--accent-soft)'}}>
-        <div style={{display:'flex',gap:12,alignItems:'flex-start'}}>
-          <Icon.alert style={{width:16,height:16,color:'var(--accent)',marginTop:2,flex:'0 0 16px'}}/>
-          <div style={{fontSize:13,color:'var(--text-2)',lineHeight:1.6}}>
-            <b>v2 데이터를 v3로 이전</b>하려면 v2의 백업 파일을 <b>설정 / 백업 → 데이터 복원</b>에서 업로드하세요.
-            <br/>v2와 v3는 별도 IndexedDB라 직접 공유되지 않습니다.
-          </div>
-        </div>
-      </div>
     </main>
   );
 }

@@ -102,7 +102,7 @@ export default function Page() {
       <PageHeader
         breadcrumb={["설정 / 백업", "데이터 복원"]}
         title="데이터 복원"
-        sub="JSON 백업 파일을 업로드하여 IndexedDB로 복원 (v2/v3 백업 모두 지원)"
+        sub="JSON 백업 파일을 업로드하여 IndexedDB로 복원"
       />
 
       {/* 1. 파일 선택 */}
@@ -117,7 +117,7 @@ export default function Page() {
           style={{fontSize:13}}
         />
         <p style={{fontSize:12,color:'var(--text-3)',marginTop:8}}>
-          v2 또는 v3에서 다운로드한 JSON 파일을 선택하세요.
+          이전에 다운로드한 v3 백업 JSON 파일을 선택하세요.
         </p>
       </div>
 
