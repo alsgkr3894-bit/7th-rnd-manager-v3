@@ -11,6 +11,7 @@ import {
   MODULE_GROUPS,
   MODULE_KEYS,
   ALL_STORES,
+  hasStore,
 } from '@/lib/db';
 import { downloadJson, makeFileName } from '@/lib/download';
 import { formatNumber } from '@/lib/format';
@@ -56,6 +57,10 @@ export default function Page() {
   async function refreshStats() {
     const result = {};
     for (const name of ALL_STORES) {
+      if (!hasStore(name)) {
+        result[name] = 0;
+        continue;
+      }
       try {
         const rows = await getAll(name);
         result[name] = rows.length;

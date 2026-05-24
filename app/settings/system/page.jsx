@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
-import { initDB, getAll, clearStore, ALL_STORES, DB_NAME, DB_VERSION } from '@/lib/db';
+import { initDB, getAll, clearStore, ALL_STORES, DB_NAME, DB_VERSION, hasStore } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { getSetting, setSetting } from '@/lib/settings';
 
@@ -65,6 +65,10 @@ export default function Page() {
   async function refreshStats() {
     const result = {};
     for (const name of ALL_STORES) {
+      if (!hasStore(name)) {
+        result[name] = 0;
+        continue;
+      }
       try {
         const rows = await getAll(name);
         result[name] = rows.length;
@@ -86,6 +90,7 @@ export default function Page() {
     setBusy(true);
     try {
       for (const name of ALL_STORES) {
+        if (!hasStore(name)) continue;
         try { await clearStore(name); } catch (err) { console.warn(`[Reset] ${name} skip:`, err); }
       }
       await refreshStats();
