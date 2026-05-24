@@ -6,6 +6,7 @@ import TopBar from './TopBar';
 import CommandPalette from './CommandPalette';
 import { ToastContainer } from './Toast';
 import { Icon } from './icons';
+import { applyAllSettings } from '@/lib/settings';
 
 const MOBILE_TABS = [
   { href: '/',                    label: '홈',     icon: Icon.home },
@@ -32,6 +33,9 @@ export default function AppShell({ children }) {
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   }, []);
+
+  // 사용자 설정 (다크모드/밀도/알림) 페이지 진입 시 적용
+  useEffect(() => { applyAllSettings(); }, []);
 
   // 모바일 nav 닫기 on route change
   useEffect(() => { setMobileNav(false); }, [pathname]);
