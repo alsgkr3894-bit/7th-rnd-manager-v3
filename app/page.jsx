@@ -31,6 +31,7 @@ export default function HomePage() {
   const [trend, setTrend] = useState(null);
   const [donut, setDonut] = useState(null);
   const [top, setTop] = useState([]);
+  const [bottom, setBottom] = useState([]);
   const [activities, setActivities] = useState([]);
 
   // 차트 탭 (month | year)
@@ -53,13 +54,14 @@ export default function HomePage() {
       try {
         await initDB();
         setProfile(getProfile());
-        const [s, c, n, td, dn, tp, ac] = await Promise.all([
+        const [s, c, n, td, dn, tp, bt, ac] = await Promise.all([
           getSalesKpi(),
           getCostRateKpi(),
           getNoteKpi(),
           getSalesTrend('month'),
           getCategoryShare(),
-          getTopMenus(5, '피자', true),
+          getTopMenus(5, '피자', true, 'desc'),
+          getTopMenus(5, '피자', true, 'asc'),
           getRecentActivities(8),
         ]);
         setSalesKpi(s);
@@ -68,6 +70,7 @@ export default function HomePage() {
         setTrend(td);
         setDonut(dn);
         setTop(tp);
+        setBottom(bt);
         setActivities(ac);
       } catch (err) {
         console.error('[Home] 데이터 로드 실패:', err);
@@ -313,41 +316,28 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 하단 행: 순위 + 활동 */}
+      {/* 하단 행: TOP 5 + 워스트 5 */}
       <div className="mid-row motion-stagger">
-        <div className="card tx-card">
-          <div className="card-header">
-            <div>
-              <div className="card-title">메뉴 판매 순위 TOP 5</div>
-              <div className="card-sub">
-                {salesKpi?.year && salesKpi?.month ? `${salesKpi.year}년 ${salesKpi.month}월 · 피자 카테고리` : '데이터 없음'}
-              </div>
-            </div>
-            <button className="link accent" onClick={()=>router.push('/menu-sales/rank')}>전체 순위 →</button>
-          </div>
-          {top.length === 0 ? (
-            <EmptyState
-              icon={<Icon.chart style={{width:32,height:32}}/>}
-              title="순위 데이터 없음"
-              desc="판매량 업로드 후 표시됩니다"
-              compact
-            />
-          ) : (
-            <div className="rank-list">
-              {top.map(r => (
-                <button key={r.rank} className="rank-row"
-                  onClick={() => router.push(`/menu-sales/rank?menu=${encodeURIComponent(r.name)}`)}
-                  style={rowButtonStyle}
-                >
-                  <div className="rank-num num">{r.rank}</div>
-                  <div className="rank-name">{r.name}</div>
-                  <Icon.chevRight className="chev" style={{width:16,height:16}}/>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <RankCard
+          title="메뉴 판매 베스트 5"
+          sub={salesKpi?.year && salesKpi?.month ? `${salesKpi.year}년 ${salesKpi.month}월 · 피자 카테고리` : '데이터 없음'}
+          items={top}
+          emptyTitle="순위 데이터 없음"
+          accent="up"
+          router={router}
+        />
+        <RankCard
+          title="메뉴 판매 워스트 5"
+          sub={salesKpi?.year && salesKpi?.month ? `${salesKpi.year}년 ${salesKpi.month}월 · 피자 카테고리` : '데이터 없음'}
+          items={bottom}
+          emptyTitle="워스트 데이터 없음"
+          accent="down"
+          router={router}
+        />
+      </div>
 
+      {/* 최근 활동 (단독 행) */}
+      <div className="motion-stagger" style={{marginTop:16}}>
         <div className="card">
           <div className="card-header">
             <div><div className="card-title">최근 활동</div><div className="card-sub">업로드 · 노트</div></div>
@@ -431,6 +421,43 @@ const ACT_META = {
   'upload':       { ico: <Icon.upload style={{width:18,height:18}}/>, color: 'var(--text-2)',      bg: 'var(--surface-2)' },
   'note':         { ico: <Icon.beaker style={{width:18,height:18}}/>, color: '#6B3FCB',            bg: '#F0EBFF' },
 };
+
+function RankCard({ title, sub, items, emptyTitle, accent, router }) {
+  return (
+    <div className="card tx-card">
+      <div className="card-header">
+        <div>
+          <div className="card-title">{title}</div>
+          <div className="card-sub">{sub}</div>
+        </div>
+        <button className="link accent" onClick={() => router.push('/menu-sales/rank-compare')}>전체 →</button>
+      </div>
+      {items.length === 0 ? (
+        <EmptyState
+          icon={<Icon.chart style={{width:32,height:32}}/>}
+          title={emptyTitle}
+          desc="판매량 업로드 후 표시됩니다"
+          compact
+        />
+      ) : (
+        <div className="rank-list">
+          {items.map(r => (
+            <button key={r.rank} className="rank-row"
+              onClick={() => router.push(`/menu-sales/rank-compare?menu=${encodeURIComponent(r.name)}`)}
+              style={rowButtonStyle}
+            >
+              <div className="rank-num num"
+                style={accent === 'down' ? { background: 'var(--negative-soft)', color: 'var(--negative)' } : undefined}
+              >{r.rank}</div>
+              <div className="rank-name">{r.name}</div>
+              <Icon.chevRight className="chev" style={{width:16,height:16}}/>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function EmptyState({ icon, title, desc, action, onAction, compact }) {
   return (

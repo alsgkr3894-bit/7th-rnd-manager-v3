@@ -10,6 +10,7 @@ import {
   saveSalesUpload,
   checkMonthExists,
   getUploadedFiles,
+  deleteSalesFile,
 } from '@/lib/sales';
 import { UploadStepBar } from '@/components/sales/UploadStepBar';
 import { UploadDropzone } from '@/components/sales/UploadDropzone';
@@ -161,6 +162,17 @@ export default function Page() {
     setStage('idle');
   }
 
+  async function handleDeleteFile(fileId, year, month) {
+    try {
+      await deleteSalesFile(fileId);
+      showToast(`${year}년 ${month}월 데이터를 삭제했습니다`, 'ok');
+      refreshHistory();
+    } catch (err) {
+      console.error('[upload] 삭제 실패:', err);
+      showToast('삭제 중 오류가 발생했습니다', 'err');
+    }
+  }
+
   return (
     <main className="main">
       <PageHeader
@@ -190,7 +202,7 @@ export default function Page() {
         />
       )}
 
-      <UploadHistory files={history} />
+      <UploadHistory files={history} onDelete={handleDeleteFile} />
     </main>
   );
 }

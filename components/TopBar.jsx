@@ -2,10 +2,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from './icons';
+import { getProfile, getInitial } from '@/lib/profile';
 
 export default function TopBar({ onOpenPalette, onToggleSidebar }) {
   const [notifOpen, setNotifOpen] = useState(false);
+  const [profile, setProfile] = useState(null);
   const notifRef = useRef(null);
+
+  useEffect(() => { setProfile(getProfile()); }, []);
 
   useEffect(() => {
     if (!notifOpen) return;
@@ -87,10 +91,10 @@ export default function TopBar({ onOpenPalette, onToggleSidebar }) {
       </div>
 
       <div className="profile">
-        <div className="avatar">민</div>
+        <div className="avatar">{profile ? getInitial(profile.name) : '?'}</div>
         <div className="who">
-          <div className="name">민혁 책임</div>
-          <div className="role">R&amp;D팀</div>
+          <div className="name">{profile?.name || '...'}</div>
+          <div className="role">{profile?.team || profile?.role || ''}</div>
         </div>
       </div>
     </div>
