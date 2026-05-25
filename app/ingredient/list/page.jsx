@@ -12,14 +12,22 @@ import {
   getCategoryStyle,
 } from '@/lib/ingredient';
 
+const SORT_OPTIONS = [
+  { id: 'default',    label: '기본' },
+  { id: 'name',       label: '이름순' },
+  { id: 'price-desc', label: '단가↑' },
+  { id: 'price-asc',  label: '단가↓' },
+];
+
 export default function Page() {
-  const [rows,       setRows]       = useState([]);
-  const [priceDate,  setPriceDate]  = useState(null);
-  const [loading,    setLoading]    = useState(true);
-  const [search,     setSearch]     = useState('');
-  const [catFilter,  setCatFilter]  = useState('all');
-  const [deletePending,setDeletePending]= useState(null);
-  const [showHidden,   setShowHidden]   = useState(false);
+  const [rows,          setRows]          = useState([]);
+  const [priceDate,     setPriceDate]     = useState(null);
+  const [loading,       setLoading]       = useState(true);
+  const [search,        setSearch]        = useState('');
+  const [catFilter,     setCatFilter]     = useState('all');
+  const [sort,          setSort]          = useState('default');
+  const [deletePending, setDeletePending] = useState(null);
+  const [showHidden,    setShowHidden]    = useState(false);
 
   const loadAll = useCallback(async () => {
     await initDB();
@@ -27,7 +35,6 @@ export default function Page() {
     const latest = files[0] || null;
     setPriceDate(latest?.updateDate || null);
     if (!latest) { setRows([]); return; }
-
     const [priceRows, metaMap] = await Promise.all([
       getPriceRowsByFileId(latest.id),
       getIngredientMetaMap(),
@@ -63,7 +70,9 @@ export default function Page() {
     return ['all', ...Array.from(used).sort((a, b) => a.localeCompare(b, 'ko'))];
   }, [managedRows]);
 
-  const hiddenCount = useMemo(() => managedRows.filter(r => r.excluded).length, [managedRows]);
+  const hiddenCount  = useMemo(() => managedRows.filter(r => r.excluded).length,           [managedRows]);
+  const uncategorized = managedRows.filter(r => !r.excluded && !r.category).length;
+  const visibleCount  = managedRows.filter(r => !r.excluded).length;
 
   const filtered = useMemo(() => {
     let list = showHidden ? managedRows : managedRows.filter(r => !r.excluded);
@@ -71,14 +80,16 @@ export default function Page() {
     else if (catFilter !== 'all') list = list.filter(r => r.category === catFilter);
     const q = search.trim().toLowerCase();
     if (q) list = list.filter(r =>
-      (r.productName || '').toLowerCase().includes(q) ||
+      (r.ingredientName || r.displayName || r.productName || '').toLowerCase().includes(q) ||
       (r.productCode || '').toLowerCase().includes(q)
     );
+    if (sort === 'name')
+      return [...list].sort((a, b) =>
+        (a.ingredientName || a.displayName || '').localeCompare(b.ingredientName || b.displayName || '', 'ko'));
+    if (sort === 'price-desc') return [...list].sort((a, b) => (b.priceWithTax || 0) - (a.priceWithTax || 0));
+    if (sort === 'price-asc')  return [...list].sort((a, b) => (a.priceWithTax || 0) - (b.priceWithTax || 0));
     return list;
-  }, [managedRows, catFilter, search, showHidden]);
-
-  const uncategorized = managedRows.filter(r => !r.excluded && !r.category).length;
-  const visibleCount  = managedRows.filter(r => !r.excluded).length;
+  }, [managedRows, catFilter, search, showHidden, sort]);
 
   const sub = loading
     ? '로딩 중…'
@@ -88,13 +99,8 @@ export default function Page() {
 
   return (
     <main className="main">
-      <PageHeader
-        breadcrumb={['식자재', '식자재 리스트']}
-        title="식자재 리스트"
-        sub={sub}
-      />
+      <PageHeader breadcrumb={['식자재', '식자재 리스트']} title="식자재 리스트" sub={sub}/>
 
-      {/* 제때 데이터 없음 */}
       {!loading && !priceDate && (
         <div className="card" style={{marginTop:24, minHeight:180, display:'grid', placeItems:'center'}}>
           <div style={{textAlign:'center', color:'var(--text-3)'}}>
@@ -105,7 +111,6 @@ export default function Page() {
         </div>
       )}
 
-      {/* 관리된 식자재 없음 */}
       {!loading && priceDate && managedRows.length === 0 && (
         <div className="card" style={{marginTop:24, minHeight:160, display:'grid', placeItems:'center'}}>
           <div style={{textAlign:'center', color:'var(--text-3)'}}>
@@ -116,10 +121,43 @@ export default function Page() {
         </div>
       )}
 
-      {/* 필터 */}
+      {/* 카테고리별 요약 카드 */}
+      {managedRows.length > 0 && (
+        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(88px, 1fr))', gap:8, marginTop:8}}>
+          <div className="card" style={{padding:'10px 14px', cursor:'pointer',
+            outline: catFilter === 'all' ? '2px solid var(--accent)' : 'none', outlineOffset:2}}
+            onClick={() => setCatFilter('all')}>
+            <div style={{fontSize:11, color:'var(--text-3)'}}>전체</div>
+            <div style={{fontSize:22, fontWeight:800, color:'var(--text-1)', lineHeight:1.2, marginTop:2}}>{visibleCount}</div>
+          </div>
+          {categories.filter(c => c !== 'all').map(c => {
+            const cnt = managedRows.filter(r => r.category === c && !r.excluded).length;
+            if (!cnt) return null;
+            const cs = getCategoryStyle(c);
+            return (
+              <div key={c} className="card" style={{padding:'10px 14px', cursor:'pointer',
+                outline: catFilter === c ? `2px solid ${cs.color}` : 'none', outlineOffset:2}}
+                onClick={() => setCatFilter(catFilter === c ? 'all' : c)}>
+                <div style={{fontSize:11, color: cs.color, fontWeight:600}}>{c}</div>
+                <div style={{fontSize:22, fontWeight:800, color: cs.color, lineHeight:1.2, marginTop:2}}>{cnt}</div>
+              </div>
+            );
+          })}
+          {uncategorized > 0 && (
+            <div className="card" style={{padding:'10px 14px', cursor:'pointer',
+              outline: catFilter === '__none__' ? '2px solid var(--warn)' : 'none', outlineOffset:2}}
+              onClick={() => setCatFilter(catFilter === '__none__' ? 'all' : '__none__')}>
+              <div style={{fontSize:11, color:'var(--warn)', fontWeight:600}}>미분류</div>
+              <div style={{fontSize:22, fontWeight:800, color:'var(--warn)', lineHeight:1.2, marginTop:2}}>{uncategorized}</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 필터 + 정렬 */}
       {managedRows.length > 0 && (
         <>
-          <div style={{display:'flex', gap:6, flexWrap:'wrap', margin:'16px 0 8px', alignItems:'center'}}>
+          <div style={{display:'flex', gap:6, flexWrap:'wrap', margin:'16px 0 4px', alignItems:'center'}}>
             <span style={{fontSize:12, color:'var(--text-3)', marginRight:4}}>분류</span>
             {categories.map(c => (
               <button key={c}
@@ -140,9 +178,19 @@ export default function Page() {
               <button className={'chip' + (showHidden ? ' active' : '')}
                 style={{marginLeft:'auto', color: showHidden ? undefined : 'var(--text-3)'}}
                 onClick={() => setShowHidden(v => !v)}>
-                {showHidden ? `숨김 포함 중 (${hiddenCount})` : `숨김 항목 ${hiddenCount}개`}
+                {showHidden ? `숨김 포함 중 (${hiddenCount})` : `숨김 ${hiddenCount}개`}
               </button>
             )}
+          </div>
+          <div style={{display:'flex', gap:4, alignItems:'center', marginBottom:4}}>
+            <span style={{fontSize:12, color:'var(--text-3)', marginRight:4}}>정렬</span>
+            {SORT_OPTIONS.map(s => (
+              <button key={s.id}
+                className={'chip' + (sort === s.id ? ' active' : '')}
+                onClick={() => setSort(s.id)}>
+                {s.label}
+              </button>
+            ))}
           </div>
           <FilterBar search={search} onSearch={setSearch}/>
         </>
@@ -150,7 +198,7 @@ export default function Page() {
 
       {/* 테이블 */}
       {managedRows.length > 0 && (
-        <div className="card table-card" style={{marginTop:12}}>
+        <div className="card table-card" style={{marginTop:8}}>
           {filtered.length === 0 ? (
             <div style={{padding:'40px 0', textAlign:'center', color:'var(--text-3)', fontSize:13}}>
               조건에 맞는 항목이 없습니다
@@ -174,15 +222,12 @@ export default function Page() {
                 </thead>
                 <tbody>
                   {filtered.map(r => (
-                    <IngredientRow
-                      key={r.productCode}
-                      r={r}
+                    <IngredientRow key={r.productCode || r.id} r={r}
                       deletePending={deletePending === r.productCode}
                       onDeleteStart={() => setDeletePending(r.productCode)}
                       onDeleteCancel={() => setDeletePending(null)}
                       onDeleteConfirm={() => handleExclude(r.productCode)}
-                      onRestore={() => handleRestore(r.productCode)}
-                    />
+                      onRestore={() => handleRestore(r.productCode)}/>
                   ))}
                 </tbody>
               </table>
@@ -197,9 +242,8 @@ export default function Page() {
   );
 }
 
-// ── 행 컴포넌트 ───────────────────────────────────────────────
-
 function IngredientRow({ r, deletePending, onDeleteStart, onDeleteCancel, onDeleteConfirm, onRestore }) {
+  const name = r.ingredientName || r.displayName || r.productName;
   const unitLabel = r.baseQuantity && r.baseUnitType
     ? `${formatNumber(r.baseQuantity)}${r.baseUnitType}` : '-';
   const unitPriceLabel = r.unitPrice != null
@@ -210,9 +254,7 @@ function IngredientRow({ r, deletePending, onDeleteStart, onDeleteCancel, onDele
     <tr style={{opacity: r.excluded ? .5 : 1, background: r.excluded ? 'var(--surface-2)' : undefined}}>
       <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{r.productCode || '-'}</td>
       <td style={{fontWeight:600}}>
-        <span title={r.productName !== r.displayName ? `원본: ${r.productName}` : undefined}>
-          {r.displayName || r.productName}
-        </span>
+        <span title={r.productName !== name ? `원본: ${r.productName}` : undefined}>{name}</span>
       </td>
       <td style={{fontSize:12, color:'var(--text-2)'}}>{r.temperature || '-'}</td>
       <td style={{fontSize:12, color:'var(--text-2)'}}>{r.salesUnit || '-'}</td>
@@ -220,50 +262,36 @@ function IngredientRow({ r, deletePending, onDeleteStart, onDeleteCancel, onDele
       <td className="num right" style={{fontWeight:700}}>
         {r.priceWithTax != null ? <>{formatNumber(r.priceWithTax)}<span className="unit">원</span></> : '-'}
       </td>
-
-      {/* 포장단위 + g당단가 (읽기 전용) */}
       <td className="num right" style={{color: r.baseQuantity ? undefined : 'var(--text-4)', fontSize:12}}>
         {r.baseQuantity
           ? <>{unitLabel}{unitPriceLabel && <><br/><span style={{fontSize:11, color:'var(--text-3)', fontWeight:400}}>{unitPriceLabel}</span></>}</>
           : '—'}
       </td>
-
-      {/* 분류 (읽기 전용) */}
       <td>
         {r.category
           ? <span className="chip" style={getCategoryStyle(r.category)}>{r.category}</span>
           : <span className="chip" style={{background:'var(--warn-soft)', color:'var(--warn)', fontSize:11}}>미분류</span>}
       </td>
-
-      {/* 비고 + 연동 표시 (읽기 전용) */}
       <td>
         <div style={{display:'flex', gap:6, alignItems:'center'}}>
-          <span style={{color:'var(--text-3)', fontSize:12, flex:1}}>
-            {r.note || <span style={{opacity:.3}}>—</span>}
-          </span>
+          <span style={{color:'var(--text-3)', fontSize:12, flex:1}}>{r.note || <span style={{opacity:.3}}>—</span>}</span>
           {r.jetteLinked && !r.excluded && (
-            <span style={{
-              fontSize:10, fontWeight:700, padding:'2px 6px', borderRadius:4,
-              background:'var(--positive-soft)', color:'var(--positive)', whiteSpace:'nowrap',
-            }}>제때 연동</span>
+            <span style={{fontSize:10, fontWeight:700, padding:'2px 6px', borderRadius:4,
+              background:'var(--positive-soft)', color:'var(--positive)', whiteSpace:'nowrap'}}>제때 연동</span>
           )}
         </div>
       </td>
-
-      {/* 삭제/복원 */}
       <td style={{textAlign:'center'}}>
         {r.excluded ? (
           <button className="btn sm" style={{fontSize:11}} onClick={onRestore}>복원</button>
         ) : deletePending ? (
           <span style={{display:'flex', gap:3}}>
-            <button className="btn sm"
-              style={{background:'var(--negative)', color:'#fff', border:'none', fontSize:11}}
+            <button className="btn sm" style={{background:'var(--negative)', color:'#fff', border:'none', fontSize:11}}
               onClick={onDeleteConfirm}>삭제</button>
             <button className="btn sm" style={{fontSize:11}} onClick={onDeleteCancel}>취소</button>
           </span>
         ) : (
-          <button className="btn sm" onClick={onDeleteStart}
-            style={{color:'var(--text-3)', padding:'3px 7px'}}>
+          <button className="btn sm" onClick={onDeleteStart} style={{color:'var(--text-3)', padding:'3px 7px'}}>
             <Icon.trash style={{width:13, height:13}}/>
           </button>
         )}
@@ -271,4 +299,3 @@ function IngredientRow({ r, deletePending, onDeleteStart, onDeleteCancel, onDele
     </tr>
   );
 }
-

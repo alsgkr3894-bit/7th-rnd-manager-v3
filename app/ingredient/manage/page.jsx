@@ -7,10 +7,10 @@ import { initDB } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import {
-  getIngredientMetaMap, mergeIngredientRows,
-  addIngredient, upsertIngredientMeta,
+  getAllIngredients, getIngredientMetaMap, mergeIngredientRows,
+  addIngredient, updateIngredient, upsertIngredientMeta,
   excludeIngredientByCode, restoreIngredientByCode,
-  getCategoryStyle,
+  deleteIngredient, getCategoryStyle,
 } from '@/lib/ingredient';
 import { IngredientForm } from './IngredientForm';
 
@@ -21,19 +21,91 @@ export default function Page() {
   const [search,       setSearch]       = useState('');
   const [catFilter,    setCatFilter]    = useState('all');
   const [formTarget,   setFormTarget]   = useState(null);
-  const [deletePending,setDeletePending]= useState(null); // productCode
+  const [deletePending,setDeletePending]= useState(null); // full row object
 
   const load = useCallback(async () => {
     await initDB();
     const files = await getPriceFiles();
     const latest = files[0] || null;
     setPriceDate(latest?.updateDate || null);
-    if (!latest) { setRows([]); return; }
-    const [priceRows, metaMap] = await Promise.all([
-      getPriceRowsByFileId(latest.id),
+
+    const [allMeta, metaMap] = await Promise.all([
+      getAllIngredients(),
       getIngredientMetaMap(),
     ]);
-    setRows(mergeIngredientRows(priceRows, metaMap));
+
+    let merged = [];
+    if (latest) {
+      const priceRows = await getPriceRowsByFileId(latest.id);
+      merged = mergeIngredientRows(priceRows, metaMap);
+
+      // manual items not in price_rows
+      const priceCodeSet = new Set(priceRows.map(r => r.productCode).filter(Boolean));
+      const manualRows = allMeta
+        .filter(m => m.isManual && (!m.productCode || !priceCodeSet.has(m.productCode)))
+        .map(m => {
+          const baseQty = m.baseQuantity ?? null;
+          const unitType = m.baseUnitType || 'g';
+          const unitPrice = baseQty && baseQty > 0 && m.priceOverride
+            ? Math.round(m.priceOverride / baseQty * 100) / 100
+            : null;
+          return {
+            id:            m.id,
+            productCode:   m.productCode || null,
+            productName:   m.ingredientName,
+            displayName:   m.ingredientName,
+            ingredientName:m.ingredientName,
+            temperature:   null,
+            salesUnit:     null,
+            taxType:       m.taxType || '과세',
+            price:         m.priceOverride,
+            priceWithTax:  m.priceOverride,
+            category:      m.category    || '',
+            baseQuantity:  baseQty,
+            baseUnitType:  unitType,
+            note:          m.note        || '',
+            unitPrice,
+            jetteLinked:   false,
+            excluded:      m.excluded === true,
+            hasRecord:     true,
+            isManual:      true,
+          };
+        });
+      setRows([...merged, ...manualRows]);
+    } else {
+      // no price file — show only manual items
+      const manualRows = allMeta
+        .filter(m => m.isManual)
+        .map(m => {
+          const baseQty = m.baseQuantity ?? null;
+          const unitType = m.baseUnitType || 'g';
+          const unitPrice = baseQty && baseQty > 0 && m.priceOverride
+            ? Math.round(m.priceOverride / baseQty * 100) / 100
+            : null;
+          return {
+            id:            m.id,
+            productCode:   m.productCode || null,
+            productName:   m.ingredientName,
+            displayName:   m.ingredientName,
+            ingredientName:m.ingredientName,
+            temperature:   null,
+            salesUnit:     null,
+            taxType:       m.taxType || '과세',
+            price:         m.priceOverride,
+            priceWithTax:  m.priceOverride,
+            category:      m.category    || '',
+            baseQuantity:  baseQty,
+            baseUnitType:  unitType,
+            note:          m.note        || '',
+            unitPrice,
+            jetteLinked:   false,
+            excluded:      m.excluded === true,
+            hasRecord:     true,
+            isManual:      true,
+          };
+        });
+      setRows(manualRows);
+    }
   }, []);
 
   useEffect(() => {
@@ -45,6 +117,9 @@ export default function Page() {
       if (formTarget === 'new') {
         await addIngredient(formData);
         showToast('식자재 추가 완료', 'ok');
+      } else if (formTarget.isManual && formTarget.id) {
+        await updateIngredient(formTarget.id, formData);
+        showToast('저장 완료', 'ok');
       } else {
         await upsertIngredientMeta({ productCode: formTarget.productCode, ...formData });
         showToast('저장 완료', 'ok');
@@ -57,14 +132,20 @@ export default function Page() {
     }
   }
 
-  async function handleExclude(productCode) {
+  async function handleExclude(row) {
     try {
-      await excludeIngredientByCode(productCode);
-      setRows(prev => prev.map(r =>
-        r.productCode === productCode ? { ...r, excluded: true, hasRecord: true } : r
-      ));
+      if (row.isManual && row.id) {
+        await deleteIngredient(row.id);
+        setRows(prev => prev.filter(r => !(r.isManual && r.id === row.id)));
+        showToast('삭제됐습니다', 'ok');
+      } else {
+        await excludeIngredientByCode(row.productCode);
+        setRows(prev => prev.map(r =>
+          r.productCode === row.productCode ? { ...r, excluded: true, hasRecord: true } : r
+        ));
+        showToast('숨겼습니다', 'ok');
+      }
       setDeletePending(null);
-      showToast('숨겼습니다', 'ok');
     } catch (err) { showToast('실패: ' + err.message, 'err'); }
   }
 
@@ -103,7 +184,9 @@ export default function Page() {
     ? '로딩 중…'
     : priceDate
       ? `제때 단가 기준 ${priceDate} · 전체 ${rows.length}개 · 관리 중 ${managedCount}개${uncategorized ? ` · 미분류 ${uncategorized}개` : ''}`
-      : '제때 가격 파일이 없습니다 — 제때상품관리에서 업로드해주세요';
+      : rows.length > 0
+        ? `제때 가격 파일 없음 · 수동 등록 ${rows.length}개`
+        : '제때 가격 파일이 없습니다 — 제때상품관리에서 업로드해주세요';
 
   return (
     <main className="main">
@@ -113,12 +196,12 @@ export default function Page() {
         sub={sub}
         actions={
           <button className="btn primary" onClick={() => setFormTarget('new')}>
-            <Icon.plus style={{width:14, height:14}}/> 수동 추가
+            <Icon.plus style={{width:14, height:14}}/> 식자재 추가
           </button>
         }
       />
 
-      {!loading && !priceDate && (
+      {!loading && !priceDate && rows.length === 0 && (
         <div className="card" style={{marginTop:24, minHeight:180, display:'grid', placeItems:'center'}}>
           <div style={{textAlign:'center', color:'var(--text-3)'}}>
             <Icon.box style={{width:32, height:32, marginBottom:12, opacity:.4}}/>
@@ -176,18 +259,24 @@ export default function Page() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map(r => (
-                    <ManageRow
-                      key={r.productCode}
-                      r={r}
-                      deletePending={deletePending === r.productCode}
-                      onEdit={() => setFormTarget(r)}
-                      onDeleteStart={() => setDeletePending(r.productCode)}
-                      onDeleteCancel={() => setDeletePending(null)}
-                      onDeleteConfirm={() => handleExclude(r.productCode)}
-                      onRestore={() => handleRestore(r.productCode)}
-                    />
-                  ))}
+                  {filtered.map(r => {
+                    const rowKey = r.isManual ? `manual-${r.id}` : r.productCode;
+                    const isPending = r.isManual
+                      ? deletePending?.isManual && deletePending?.id === r.id
+                      : deletePending?.productCode === r.productCode;
+                    return (
+                      <ManageRow
+                        key={rowKey}
+                        r={r}
+                        deletePending={isPending}
+                        onEdit={() => setFormTarget(r)}
+                        onDeleteStart={() => setDeletePending(r)}
+                        onDeleteCancel={() => setDeletePending(null)}
+                        onDeleteConfirm={() => handleExclude(r)}
+                        onRestore={() => handleRestore(r.productCode)}
+                      />
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -212,6 +301,7 @@ export default function Page() {
 // ── 행 컴포넌트 ───────────────────────────────────────────────
 
 function ManageRow({ r, deletePending, onEdit, onDeleteStart, onDeleteCancel, onDeleteConfirm, onRestore }) {
+  const name = r.ingredientName || r.displayName || r.productName;
   const unitLabel = r.baseQuantity && r.baseUnitType
     ? `${formatNumber(r.baseQuantity)}${r.baseUnitType}` : '-';
   const unitPriceLabel = r.unitPrice != null
@@ -220,11 +310,13 @@ function ManageRow({ r, deletePending, onEdit, onDeleteStart, onDeleteCancel, on
 
   return (
     <tr style={{opacity: r.excluded ? .5 : 1, background: r.excluded ? 'var(--surface-2)' : !r.hasRecord ? 'var(--surface-2)' : undefined}}>
-      <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{r.productCode || '-'}</td>
+      <td className="num" style={{color:'var(--text-3)', fontSize:12}}>
+        {r.isManual
+          ? <span style={{fontSize:10, padding:'1px 5px', borderRadius:3, background:'var(--surface-3)', color:'var(--text-3)'}}>수동</span>
+          : r.productCode || '-'}
+      </td>
       <td style={{fontWeight:600}}>
-        <span title={r.productName !== r.displayName ? `원본: ${r.productName}` : undefined}>
-          {r.ingredientName || r.displayName || r.productName}
-        </span>
+        <span title={r.productName !== name ? `원본: ${r.productName}` : undefined}>{name}</span>
       </td>
       <td style={{fontSize:12, color:'var(--text-2)'}}>{r.temperature || '-'}</td>
       <td style={{fontSize:12, color:'var(--text-2)'}}>{r.salesUnit || '-'}</td>
@@ -262,7 +354,7 @@ function ManageRow({ r, deletePending, onEdit, onDeleteStart, onDeleteCancel, on
           <span style={{display:'flex', gap:3}}>
             <button className="btn sm"
               style={{background:'var(--negative)', color:'#fff', border:'none', fontSize:11}}
-              onClick={onDeleteConfirm}>숨김</button>
+              onClick={onDeleteConfirm}>{r.isManual ? '삭제' : '숨김'}</button>
             <button className="btn sm" style={{fontSize:11}} onClick={onDeleteCancel}>취소</button>
           </span>
         ) : (
