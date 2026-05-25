@@ -91,7 +91,7 @@ export function ShipmentSummary({ aggRows, managedCount }) {
         <SummaryCard
           label="총 출고량"
           value={formatNumber(summary.totalQty)}
-          unit="건"
+          unit="개"
           foot={`${filterLabel} · ${filtered.length}개 제품`}
         />
         <SummaryCard
@@ -103,7 +103,7 @@ export function ShipmentSummary({ aggRows, managedCount }) {
         <SummaryCard
           label="최다 출고 제품"
           value={summary.max ? summary.max.productName : '—'}
-          foot={summary.max ? `${formatNumber(summary.max.totalQuantity)}건` : '데이터 없음'}
+          foot={summary.max ? `${formatNumber(summary.max.totalQuantity)}개` : '데이터 없음'}
           footColor={summary.max ? 'var(--accent-text)' : undefined}
           small
         />

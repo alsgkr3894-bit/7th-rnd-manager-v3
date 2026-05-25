@@ -118,7 +118,7 @@ function Row({ r }) {
       <td style={{color:'var(--text-2)', fontSize:13}}>{r.temperature || '-'}</td>
       <td style={{fontSize:12, color:'var(--text-3)'}}>{r.taxType || '-'}</td>
       <td className="num right" style={{fontWeight:700}}>
-        {formatNumber(r.totalQuantity)}<span className="unit">건</span>
+        {formatNumber(r.totalQuantity)}<span className="unit">개</span>
       </td>
       <td className="num right">
         {r.priceWithTax != null
