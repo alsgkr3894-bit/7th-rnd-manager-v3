@@ -6,6 +6,8 @@ import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { getAllIngredients, addIngredient, updateIngredient, deleteIngredient } from '@/lib/ingredient';
+import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
+import { simplifyIngredientName } from '@/lib/normalize';
 import { IngredientForm } from './IngredientForm';
 
 export default function Page() {
@@ -18,7 +20,22 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    setRows(await getAllIngredients());
+    const [meta, priceFiles] = await Promise.all([getAllIngredients(), getPriceFiles()]);
+    const latest = priceFiles[0] || null;
+
+    // 제때 연동 항목의 ingredientName이 비어 있으면 price_rows에서 보완
+    if (latest) {
+      const priceRows = await getPriceRowsByFileId(latest.id);
+      const byCode    = new Map(priceRows.map(p => [p.productCode, p]));
+      setRows(meta.map(r => {
+        if (!r.ingredientName && r.productCode && byCode.has(r.productCode)) {
+          return { ...r, ingredientName: simplifyIngredientName(byCode.get(r.productCode).productName) };
+        }
+        return r;
+      }));
+    } else {
+      setRows(meta);
+    }
   }, []);
 
   useEffect(() => {

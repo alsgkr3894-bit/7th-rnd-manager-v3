@@ -226,7 +226,11 @@ function IngredientRow({ r, isSaving, editState, onStartEdit, onSave }) {
   return (
     <tr style={{opacity: isSaving ? .5 : 1}}>
       <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{r.productCode || '-'}</td>
-      <td style={{fontWeight:600}}>{r.productName}</td>
+      <td style={{fontWeight:600}}>
+        <span title={r.productName !== r.displayName ? `원본: ${r.productName}` : undefined}>
+          {r.displayName || r.productName}
+        </span>
+      </td>
       <td style={{fontSize:12, color:'var(--text-2)'}}>{r.temperature || '-'}</td>
       <td style={{fontSize:12, color:'var(--text-2)'}}>{r.salesUnit || '-'}</td>
       <td style={{fontSize:12, color:'var(--text-3)'}}>{r.taxType || '-'}</td>
@@ -288,28 +292,36 @@ function IngredientRow({ r, isSaving, editState, onStartEdit, onSave }) {
         )}
       </td>
 
-      {/* 비고 */}
+      {/* 비고 + 연동 표시 */}
       <td>
-        {editingNote ? (
-          <input
-            ref={noteRef}
-            type="text"
-            defaultValue={r.note || ''}
-            style={{width:'100%', fontSize:13, padding:'2px 6px',
-              border:'1px solid var(--accent)', borderRadius:6, outline:'none'}}
-            onChange={e => onStartEdit('note', e.target.value)}
-            onBlur={commitAll}
-            onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') commitAll(); }}
-            autoFocus
-          />
-        ) : (
-          <span
-            style={{cursor:'pointer', color:'var(--text-3)', fontSize:12}}
-            onClick={() => onStartEdit('note', r.note || '')}
-          >
-            {r.note || <span style={{opacity:.4}}>추가</span>}
-          </span>
-        )}
+        <div style={{display:'flex', gap:6, alignItems:'center'}}>
+          {editingNote ? (
+            <input
+              ref={noteRef}
+              type="text"
+              defaultValue={r.note || ''}
+              style={{flex:1, fontSize:13, padding:'2px 6px',
+                border:'1px solid var(--accent)', borderRadius:6, outline:'none'}}
+              onChange={e => onStartEdit('note', e.target.value)}
+              onBlur={commitAll}
+              onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') commitAll(); }}
+              autoFocus
+            />
+          ) : (
+            <span
+              style={{cursor:'pointer', color:'var(--text-3)', fontSize:12, flex:1}}
+              onClick={() => onStartEdit('note', r.note || '')}
+            >
+              {r.note || <span style={{opacity:.4}}>추가</span>}
+            </span>
+          )}
+          {r.jetteLinked && (
+            <span style={{
+              fontSize:10, fontWeight:700, padding:'2px 6px', borderRadius:4,
+              background:'var(--positive-soft)', color:'var(--positive)', whiteSpace:'nowrap',
+            }}>제때 연동</span>
+          )}
+        </div>
       </td>
     </tr>
   );
