@@ -36,6 +36,16 @@
 
   --gap: 24px;
   --pad-card: 28px;
+
+  /* Category chip colors (8-color cycle) */
+  --cat-1-bg:#EEF2FF; --cat-1-text:#3730A3;
+  --cat-2-bg:#F0FDF4; --cat-2-text:#166534;
+  --cat-3-bg:#FFF7ED; --cat-3-text:#9A3412;
+  --cat-4-bg:#FAF5FF; --cat-4-text:#6B21A8;
+  --cat-5-bg:#FDF2F8; --cat-5-text:#9D174D;
+  --cat-6-bg:#F0FDFA; --cat-6-text:#115E59;
+  --cat-7-bg:#FFFBEB; --cat-7-text:#92400E;
+  --cat-8-bg:#FEF2F2; --cat-8-text:#991B1B;
 }
 
 [data-theme="dark"] {
@@ -61,6 +71,16 @@
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
   --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
   --shadow-lg: 0 12px 40px rgba(0,0,0,0.5);
+
+  /* Category chip colors — dark mode */
+  --cat-1-bg:#1E1B4B; --cat-1-text:#A5B4FC;
+  --cat-2-bg:#14532D; --cat-2-text:#86EFAC;
+  --cat-3-bg:#431407; --cat-3-text:#FDBA74;
+  --cat-4-bg:#3B0764; --cat-4-text:#D8B4FE;
+  --cat-5-bg:#500724; --cat-5-text:#F9A8D4;
+  --cat-6-bg:#042F2E; --cat-6-text:#5EEAD4;
+  --cat-7-bg:#451A03; --cat-7-text:#FDE68A;
+  --cat-8-bg:#450A0A; --cat-8-text:#FCA5A5;
 }
 
 [data-density="compact"] {

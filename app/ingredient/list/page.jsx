@@ -9,6 +9,7 @@ import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import {
   getIngredientMetaMap, mergeIngredientRows,
   excludeIngredientByCode, restoreIngredientByCode,
+  getCategoryStyle,
 } from '@/lib/ingredient';
 
 export default function Page() {
@@ -121,7 +122,9 @@ export default function Page() {
           <div style={{display:'flex', gap:6, flexWrap:'wrap', margin:'16px 0 8px', alignItems:'center'}}>
             <span style={{fontSize:12, color:'var(--text-3)', marginRight:4}}>분류</span>
             {categories.map(c => (
-              <button key={c} className={'chip' + (catFilter === c ? ' active' : '')}
+              <button key={c}
+                className={'chip' + (catFilter === c ? ' active' : '')}
+                style={catFilter !== c && c !== 'all' ? getCategoryStyle(c) : undefined}
                 onClick={() => setCatFilter(c)}>
                 {c === 'all' ? `전체 (${managedRows.length})` : `${c} (${managedRows.filter(r => r.category === c).length})`}
               </button>
@@ -228,7 +231,7 @@ function IngredientRow({ r, deletePending, onDeleteStart, onDeleteCancel, onDele
       {/* 분류 (읽기 전용) */}
       <td>
         {r.category
-          ? <span className="chip">{r.category}</span>
+          ? <span className="chip" style={getCategoryStyle(r.category)}>{r.category}</span>
           : <span className="chip" style={{background:'var(--warn-soft)', color:'var(--warn)', fontSize:11}}>미분류</span>}
       </td>
 
