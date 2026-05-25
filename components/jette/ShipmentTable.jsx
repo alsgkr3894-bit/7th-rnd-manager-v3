@@ -1,6 +1,5 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { Icon } from '@/components/icons';
 import { Chip } from '@/components/ui/Chip';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { SortableTh } from '@/components/ui/SortableTh';
