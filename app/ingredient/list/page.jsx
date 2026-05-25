@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -7,16 +7,9 @@ import { initDB } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import {
-  getIngredientMetaMap, upsertIngredientMeta,
-  mergeIngredientRows,
+  getIngredientMetaMap, mergeIngredientRows,
+  excludeIngredientByCode, restoreIngredientByCode,
 } from '@/lib/ingredient';
-
-const DEFAULT_CATEGORIES = [
-  '치즈류', '소스류', '도우/밀가루', '채소류', '육류/가공육',
-  '수산류', '박스/포장재', '음료', '기타',
-];
-
-const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병'];
 
 export default function Page() {
   const [rows,       setRows]       = useState([]);
@@ -24,9 +17,8 @@ export default function Page() {
   const [loading,    setLoading]    = useState(true);
   const [search,     setSearch]     = useState('');
   const [catFilter,  setCatFilter]  = useState('all');
-  // 편집 상태: productCode → {category, baseQuantity, baseUnitType, note}
-  const [editing,    setEditing]    = useState({});
-  const [saving,     setSaving]     = useState(new Set());
+  const [deletePending,setDeletePending]= useState(null);
+  const [showHidden,   setShowHidden]   = useState(false);
 
   const loadAll = useCallback(async () => {
     await initDB();
@@ -46,39 +38,21 @@ export default function Page() {
     loadAll().catch(console.error).finally(() => setLoading(false));
   }, [loadAll]);
 
-  // 분류·포장단위 인라인 저장
-  async function saveMeta(productCode, patch) {
-    setSaving(s => new Set(s).add(productCode));
+  async function handleExclude(productCode) {
     try {
-      await upsertIngredientMeta({ productCode, ...patch });
-      // 로컬 rows 즉시 반영 (재로드 없이)
-      setRows(prev => prev.map(r =>
-        r.productCode === productCode
-          ? {
-              ...r, ...patch,
-              unitPrice: (patch.baseQuantity || r.baseQuantity) && r.priceWithTax
-                ? Math.round(r.priceWithTax / (patch.baseQuantity ?? r.baseQuantity) * 100) / 100
-                : r.unitPrice,
-            }
-          : r
-      ));
-      setEditing(e => { const n = { ...e }; delete n[productCode]; return n; });
-    } catch (err) {
-      showToast('저장 실패: ' + err.message, 'err');
-    } finally {
-      setSaving(s => { const n = new Set(s); n.delete(productCode); return n; });
-    }
+      await excludeIngredientByCode(productCode);
+      setRows(prev => prev.map(r => r.productCode === productCode ? { ...r, excluded: true } : r));
+      setDeletePending(null);
+      showToast('목록에서 숨겼습니다', 'ok');
+    } catch (err) { showToast('실패: ' + err.message, 'err'); }
   }
 
-  function startEdit(productCode, field, value) {
-    setEditing(e => ({
-      ...e,
-      [productCode]: { ...(e[productCode] || {}), [field]: value },
-    }));
-  }
-
-  function getEdit(productCode, field, fallback) {
-    return editing[productCode]?.[field] ?? fallback;
+  async function handleRestore(productCode) {
+    try {
+      await restoreIngredientByCode(productCode);
+      setRows(prev => prev.map(r => r.productCode === productCode ? { ...r, excluded: false } : r));
+      showToast('복원됐습니다', 'ok');
+    } catch (err) { showToast('실패: ' + err.message, 'err'); }
   }
 
   // 필터 목록
@@ -87,8 +61,10 @@ export default function Page() {
     return ['all', ...Array.from(used).sort((a, b) => a.localeCompare(b, 'ko'))];
   }, [rows]);
 
+  const hiddenCount = useMemo(() => rows.filter(r => r.excluded).length, [rows]);
+
   const filtered = useMemo(() => {
-    let list = rows;
+    let list = showHidden ? rows : rows.filter(r => !r.excluded);
     if (catFilter !== 'all') list = list.filter(r => r.category === catFilter);
     const q = search.trim().toLowerCase();
     if (q) list = list.filter(r =>
@@ -96,14 +72,15 @@ export default function Page() {
       (r.productCode || '').toLowerCase().includes(q)
     );
     return list;
-  }, [rows, catFilter, search]);
+  }, [rows, catFilter, search, showHidden]);
 
-  const uncategorized = rows.filter(r => !r.category).length;
+  const uncategorized = rows.filter(r => !r.excluded && !r.category).length;
 
+  const visibleCount = rows.filter(r => !r.excluded).length;
   const sub = loading
     ? '로딩 중…'
     : priceDate
-      ? `제때 단가 기준 ${priceDate} · 총 ${rows.length}개${uncategorized ? ` · 미분류 ${uncategorized}개` : ''}`
+      ? `제때 단가 기준 ${priceDate} · ${visibleCount}개${hiddenCount ? ` · 숨김 ${hiddenCount}개` : ''}${uncategorized ? ` · 미분류 ${uncategorized}개` : ''}`
       : '제때 가격 파일이 없습니다 — 제때상품관리에서 업로드해주세요';
 
   return (
@@ -143,6 +120,13 @@ export default function Page() {
                 미분류 ({uncategorized})
               </button>
             )}
+            {hiddenCount > 0 && (
+              <button className={'chip' + (showHidden ? ' active' : '')}
+                style={{marginLeft:'auto', color: showHidden ? undefined : 'var(--text-3)'}}
+                onClick={() => setShowHidden(v => !v)}>
+                {showHidden ? `숨김 포함 중 (${hiddenCount})` : `숨김 항목 ${hiddenCount}개`}
+              </button>
+            )}
           </div>
           <FilterBar search={search} onSearch={setSearch}/>
         </>
@@ -169,6 +153,7 @@ export default function Page() {
                     <th style={{width:160, textAlign:'right'}}>포장단위 / g·개당단가</th>
                     <th style={{width:140}}>분류</th>
                     <th>비고</th>
+                    <th style={{width:64}}/>
                   </tr>
                 </thead>
                 <tbody>
@@ -176,10 +161,11 @@ export default function Page() {
                     <IngredientRow
                       key={r.productCode}
                       r={r}
-                      isSaving={saving.has(r.productCode)}
-                      editState={editing[r.productCode] || {}}
-                      onStartEdit={(field, val) => startEdit(r.productCode, field, val)}
-                      onSave={(patch) => saveMeta(r.productCode, patch)}
+                      deletePending={deletePending === r.productCode}
+                      onDeleteStart={() => setDeletePending(r.productCode)}
+                      onDeleteCancel={() => setDeletePending(null)}
+                      onDeleteConfirm={() => handleExclude(r.productCode)}
+                      onRestore={() => handleRestore(r.productCode)}
                     />
                   ))}
                 </tbody>
@@ -197,34 +183,15 @@ export default function Page() {
 
 // ── 행 컴포넌트 ───────────────────────────────────────────────
 
-function IngredientRow({ r, isSaving, editState, onStartEdit, onSave }) {
-  const catRef  = useRef(null);
-  const qtyRef  = useRef(null);
-  const noteRef = useRef(null);
-
-  // 분류 편집 중인지
-  const editingCat  = 'category'     in editState;
-  const editingQty  = 'baseQuantity' in editState;
-  const editingNote = 'note'         in editState;
-
-  function commitAll() {
-    const patch = {};
-    if (editingCat)  patch.category     = editState.category     ?? r.category;
-    if (editingQty)  patch.baseQuantity = Number(editState.baseQuantity) || r.baseQuantity;
-    if (editingNote) patch.note         = editState.note         ?? r.note;
-    if (Object.keys(patch).length) onSave(patch);
-  }
-
+function IngredientRow({ r, deletePending, onDeleteStart, onDeleteCancel, onDeleteConfirm, onRestore }) {
   const unitLabel = r.baseQuantity && r.baseUnitType
-    ? `${formatNumber(r.baseQuantity)}${r.baseUnitType}`
-    : '-';
-
+    ? `${formatNumber(r.baseQuantity)}${r.baseUnitType}` : '-';
   const unitPriceLabel = r.unitPrice != null
     ? `${r.unitPrice < 1 ? r.unitPrice.toFixed(2) : formatNumber(Math.round(r.unitPrice))}원/${r.baseUnitType || 'g'}`
     : null;
 
   return (
-    <tr style={{opacity: isSaving ? .5 : 1}}>
+    <tr style={{opacity: r.excluded ? .5 : 1, background: r.excluded ? 'var(--surface-2)' : undefined}}>
       <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{r.productCode || '-'}</td>
       <td style={{fontWeight:600}}>
         <span title={r.productName !== r.displayName ? `원본: ${r.productName}` : undefined}>
@@ -238,84 +205,27 @@ function IngredientRow({ r, isSaving, editState, onStartEdit, onSave }) {
         {r.priceWithTax != null ? <>{formatNumber(r.priceWithTax)}<span className="unit">원</span></> : '-'}
       </td>
 
-      {/* 포장단위 + g당단가 */}
-      <td className="num right">
-        {editingQty ? (
-          <span style={{display:'flex', gap:4, justifyContent:'flex-end', alignItems:'center'}}>
-            <input
-              ref={qtyRef}
-              type="number"
-              defaultValue={r.baseQuantity || ''}
-              style={{width:70, textAlign:'right', fontSize:13, padding:'2px 6px',
-                border:'1px solid var(--accent)', borderRadius:6, outline:'none'}}
-              onChange={e => onStartEdit('baseQuantity', e.target.value)}
-              onBlur={commitAll}
-              onKeyDown={e => { if (e.key === 'Enter') { e.target.blur(); } if (e.key === 'Escape') commitAll(); }}
-              autoFocus
-            />
-            <UnitSelect
-              value={editState.baseUnitType ?? r.baseUnitType ?? 'g'}
-              onChange={v => onStartEdit('baseUnitType', v)}
-            />
-          </span>
-        ) : (
-          <span
-            title="클릭하여 포장단위 편집"
-            style={{cursor:'pointer', color: r.baseQuantity ? undefined : 'var(--warn)'}}
-            onClick={() => { onStartEdit('baseQuantity', r.baseQuantity || ''); onStartEdit('baseUnitType', r.baseUnitType || 'g'); }}
-          >
-            {r.baseQuantity
-              ? <>{unitLabel}{unitPriceLabel && <><br/><span style={{fontSize:11, color:'var(--text-3)', fontWeight:400}}>{unitPriceLabel}</span></>}</>
-              : <span style={{fontSize:12}}>설정 필요</span>}
-          </span>
-        )}
+      {/* 포장단위 + g당단가 (읽기 전용) */}
+      <td className="num right" style={{color: r.baseQuantity ? undefined : 'var(--text-4)', fontSize:12}}>
+        {r.baseQuantity
+          ? <>{unitLabel}{unitPriceLabel && <><br/><span style={{fontSize:11, color:'var(--text-3)', fontWeight:400}}>{unitPriceLabel}</span></>}</>
+          : '—'}
       </td>
 
-      {/* 분류 */}
+      {/* 분류 (읽기 전용) */}
       <td>
-        {editingCat ? (
-          <CategorySelect
-            value={editState.category ?? r.category}
-            onChange={v => onStartEdit('category', v)}
-            onBlur={commitAll}
-          />
-        ) : (
-          <span
-            title="클릭하여 분류 편집"
-            style={{cursor:'pointer', display:'inline-block'}}
-            onClick={() => onStartEdit('category', r.category || '')}
-          >
-            {r.category
-              ? <span className="chip">{r.category}</span>
-              : <span className="chip" style={{background:'var(--warn-soft)', color:'var(--warn)', fontSize:11}}>미분류</span>}
-          </span>
-        )}
+        {r.category
+          ? <span className="chip">{r.category}</span>
+          : <span className="chip" style={{background:'var(--warn-soft)', color:'var(--warn)', fontSize:11}}>미분류</span>}
       </td>
 
-      {/* 비고 + 연동 표시 */}
+      {/* 비고 + 연동 표시 (읽기 전용) */}
       <td>
         <div style={{display:'flex', gap:6, alignItems:'center'}}>
-          {editingNote ? (
-            <input
-              ref={noteRef}
-              type="text"
-              defaultValue={r.note || ''}
-              style={{flex:1, fontSize:13, padding:'2px 6px',
-                border:'1px solid var(--accent)', borderRadius:6, outline:'none'}}
-              onChange={e => onStartEdit('note', e.target.value)}
-              onBlur={commitAll}
-              onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') commitAll(); }}
-              autoFocus
-            />
-          ) : (
-            <span
-              style={{cursor:'pointer', color:'var(--text-3)', fontSize:12, flex:1}}
-              onClick={() => onStartEdit('note', r.note || '')}
-            >
-              {r.note || <span style={{opacity:.4}}>추가</span>}
-            </span>
-          )}
-          {r.jetteLinked && (
+          <span style={{color:'var(--text-3)', fontSize:12, flex:1}}>
+            {r.note || <span style={{opacity:.3}}>—</span>}
+          </span>
+          {r.jetteLinked && !r.excluded && (
             <span style={{
               fontSize:10, fontWeight:700, padding:'2px 6px', borderRadius:4,
               background:'var(--positive-soft)', color:'var(--positive)', whiteSpace:'nowrap',
@@ -323,55 +233,26 @@ function IngredientRow({ r, isSaving, editState, onStartEdit, onSave }) {
           )}
         </div>
       </td>
+
+      {/* 삭제/복원 */}
+      <td style={{textAlign:'center'}}>
+        {r.excluded ? (
+          <button className="btn sm" style={{fontSize:11}} onClick={onRestore}>복원</button>
+        ) : deletePending ? (
+          <span style={{display:'flex', gap:3}}>
+            <button className="btn sm"
+              style={{background:'var(--negative)', color:'#fff', border:'none', fontSize:11}}
+              onClick={onDeleteConfirm}>삭제</button>
+            <button className="btn sm" style={{fontSize:11}} onClick={onDeleteCancel}>취소</button>
+          </span>
+        ) : (
+          <button className="btn sm" onClick={onDeleteStart}
+            style={{color:'var(--text-3)', padding:'3px 7px'}}>
+            <Icon.trash style={{width:13, height:13}}/>
+          </button>
+        )}
+      </td>
     </tr>
   );
 }
 
-function CategorySelect({ value, onChange, onBlur }) {
-  return (
-    <div style={{position:'relative', display:'inline-block'}}>
-      <select
-        value={value}
-        autoFocus
-        onChange={e => onChange(e.target.value)}
-        onBlur={onBlur}
-        style={{
-          fontSize:12, padding:'3px 24px 3px 8px', borderRadius:6,
-          border:'1px solid var(--accent)', outline:'none', cursor:'pointer',
-          background:'var(--surface)', color:'var(--text-1)', appearance:'none',
-          minWidth:100,
-        }}
-      >
-        <option value="">미분류</option>
-        {DEFAULT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-      </select>
-      <Icon.chevDown style={{
-        position:'absolute', right:6, top:'50%', transform:'translateY(-50%)',
-        width:12, height:12, pointerEvents:'none', color:'var(--text-3)',
-      }}/>
-    </div>
-  );
-}
-
-function UnitSelect({ value, onChange }) {
-  return (
-    <div style={{position:'relative', display:'inline-block'}}>
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        style={{
-          fontSize:12, padding:'2px 20px 2px 6px', borderRadius:6,
-          border:'1px solid var(--border)', outline:'none',
-          background:'var(--surface)', color:'var(--text-1)', appearance:'none',
-          width:56,
-        }}
-      >
-        {UNIT_TYPES.map(u => <option key={u} value={u}>{u}</option>)}
-      </select>
-      <Icon.chevDown style={{
-        position:'absolute', right:4, top:'50%', transform:'translateY(-50%)',
-        width:10, height:10, pointerEvents:'none', color:'var(--text-3)',
-      }}/>
-    </div>
-  );
-}
