@@ -5,11 +5,6 @@ import { formatNumber } from '@/lib/format';
 
 /**
  * ShipmentSummary — 출고량 요약 4카드 + 카테고리 multi-select 필터
- *
- * - 카테고리 chip 3개 (전체 / 전용상품 / 범용상품)
- * - "전체"는 두 카테고리 동시 선택/해제 (모두 선택 시 active)
- * - 카테고리는 multi-select 토글
- * - "관리품목만" 보조 토글 (선택된 카테고리 중 isManaged=true만)
  */
 const TYPE_OPTIONS = [
   { value: 'exclusive',  label: '전용상품' },
@@ -24,13 +19,18 @@ export function ShipmentSummary({ aggRows, managedCount }) {
 
   function toggleType(t) {
     setSelectedTypes(prev => {
+      if (prev.size === ALL_TYPES.length) {
+        // 전체 상태에서 클릭 → 해당 타입만 단독 선택
+        return new Set([t]);
+      }
       const next = new Set(prev);
       if (next.has(t)) next.delete(t); else next.add(t);
-      return next;
+      // 모두 선택되거나 전부 해제되면 전체로 복귀
+      return next.size === 0 || next.size === ALL_TYPES.length ? new Set(ALL_TYPES) : next;
     });
   }
   function clickAll() {
-    setSelectedTypes(isAll ? new Set() : new Set(ALL_TYPES));
+    setSelectedTypes(new Set(ALL_TYPES));
   }
 
   const counts = useMemo(() => ({
@@ -48,7 +48,7 @@ export function ShipmentSummary({ aggRows, managedCount }) {
   const summary = useMemo(() => {
     const totalQty = filtered.reduce((s, r) => s + (r.totalQuantity || 0), 0);
     const totalAmt = filtered.reduce((s, r) => s + (r.totalAmount || 0), 0);
-    const max      = filtered.length > 0
+    const max = filtered.length > 0
       ? filtered.reduce((m, r) => r.totalQuantity > m.totalQuantity ? r : m, filtered[0])
       : null;
     return { totalQty, totalAmt, max };
@@ -63,11 +63,8 @@ export function ShipmentSummary({ aggRows, managedCount }) {
 
   return (
     <>
-      {/* 카테고리 multi-select chip + 관리품목 토글 */}
-      <div style={{
-        display:'flex', gap:6, flexWrap:'wrap', marginTop:16,
-        alignItems:'center',
-      }}>
+      {/* 카테고리 multi-select chip */}
+      <div style={{display:'flex', gap:6, flexWrap:'wrap', marginTop:16, alignItems:'center'}}>
         <span style={{fontSize:12, color:'var(--text-3)', marginRight:4}}>요약 필터</span>
         <Chip label="전체" count={aggRows.length} active={isAll} onClick={clickAll}/>
         {TYPE_OPTIONS.map(o => (
@@ -75,53 +72,66 @@ export function ShipmentSummary({ aggRows, managedCount }) {
             key={o.value}
             label={o.label}
             count={counts[o.value]}
-            active={selectedTypes.has(o.value) && !isAll}
-            dim={isAll}
+            active={!isAll && selectedTypes.has(o.value)}
             onClick={() => toggleType(o.value)}
           />
         ))}
         <span style={{width:1, height:18, background:'var(--border)', margin:'0 4px'}}/>
         <Chip label="관리품목만" count={counts.managed} active={managedOnly} onClick={() => setManagedOnly(v => !v)}/>
-        <span style={{
-          marginLeft:'auto', fontSize:11, color:'var(--text-3)',
-        }}>{filtered.length}개 제품 합산</span>
+        <span style={{marginLeft:'auto', fontSize:11, color:'var(--text-3)'}}>{filtered.length}개 제품 합산</span>
       </div>
 
-      <div className="hero-row" style={{marginTop:12}}>
-        <Card label="총 출고량" value={`${formatNumber(summary.totalQty)}`} unit="건"
-          foot={`${filterLabel} · ${filtered.length}개 제품`}/>
-        <Card label="총 출고 금액" value={`${formatNumber(summary.totalAmt)}`} unit="원"
-          foot="선택 카테고리 출고 금액 합계"/>
-        <Card
+      {/* 4카드 요약 — 2×2 그리드 */}
+      <div style={{
+        display:'grid',
+        gridTemplateColumns:'repeat(2, 1fr)',
+        gap:'var(--gap, 12px)',
+        marginTop:12,
+      }}>
+        <SummaryCard
+          label="총 출고량"
+          value={formatNumber(summary.totalQty)}
+          unit="건"
+          foot={`${filterLabel} · ${filtered.length}개 제품`}
+        />
+        <SummaryCard
+          label="총 출고 금액"
+          value={formatNumber(summary.totalAmt)}
+          unit="원"
+          foot="선택 카테고리 출고 금액 합계"
+        />
+        <SummaryCard
           label="최다 출고 제품"
           value={summary.max ? summary.max.productName : '—'}
-          small
           foot={summary.max ? `${formatNumber(summary.max.totalQuantity)}건` : '데이터 없음'}
-          footColor="var(--accent-text)"
+          footColor={summary.max ? 'var(--accent-text)' : undefined}
+          small
         />
-        <Card label="대상 제품" value={`${filtered.length}`} unit={`/ ${managedCount}`}
-          foot="선택 카테고리 출고 제품 수"/>
+        <SummaryCard
+          label="대상 제품 수"
+          value={String(filtered.length)}
+          unit={`/ ${managedCount}`}
+          foot="선택 카테고리 출고 제품 수"
+        />
       </div>
     </>
   );
 }
 
-function Card({ label, value, unit, foot, footColor, small }) {
+function SummaryCard({ label, value, unit, foot, footColor, small }) {
   return (
-    <div className="card kpi-card">
-      <div>
-        <div className="label">{label}</div>
-        <div className="value num" style={small ? {
-          fontSize:16, fontWeight:700,
-          whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
-        } : undefined}>
-          {value}{unit && <span className="unit">{unit}</span>}
-        </div>
-        <div className="trend">
-          <span style={{color: footColor || 'var(--text-3)', fontWeight: footColor ? 600 : undefined}}>{foot}</span>
-        </div>
+    <div className="card" style={{padding:'16px 20px'}}>
+      <div style={{fontSize:12, color:'var(--text-3)', fontWeight:600, marginBottom:6}}>{label}</div>
+      <div style={{
+        fontSize: small ? 16 : 24,
+        fontWeight:700, color:'var(--text-1)',
+        whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
+        lineHeight:1.2, marginBottom:4,
+      }}>
+        {value}
+        {unit && <span style={{fontSize:13, fontWeight:600, opacity:0.5, marginLeft:3}}>{unit}</span>}
       </div>
+      <div style={{fontSize:11, color: footColor || 'var(--text-3)'}}>{foot}</div>
     </div>
   );
 }
-
