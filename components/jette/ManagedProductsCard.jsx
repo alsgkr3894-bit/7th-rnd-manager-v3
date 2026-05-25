@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
-import { Toggle } from '@/components/ui/Toggle';
 import { Chip } from '@/components/ui/Chip';
 import { SearchBox } from '@/components/ui/SearchBox';
 import {
@@ -11,18 +10,19 @@ import {
   migrateExclusiveFromPriceList,
 } from '@/lib/shipment';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
+import { ManagedProductsForm } from './ManagedProductsForm';
+import { ManagedProductsRow } from './ManagedProductsRow';
 
 /**
  * ManagedProductsCard — 제때 출고량 대상 제품 관리
- *   - productType 셀렉트 (전용상품 / 범용상품) — 2가지
- *   - 별도 "관리품목" 체크박스 (주로 범용상품 안에서 사용)
- *   - 3-chip 필터 (전체 / 전용 / 범용) + 관리품목만 토글
- *   - 가격비교 productCode 자동 마이그레이션 (전용상품으로 일괄 추가)
+ *
+ * 구성:
+ *   - 추가 폼 (ManagedProductsForm)
+ *   - 분류 chip 필터 (전체 / 전용 / 범용) + 관리품목만 토글
+ *   - 테이블 (ManagedProductsRow)
+ *   - 가격비교 productCode 자동 마이그레이션 ('exclusive' 일괄 추가)
  */
-const TYPE_OPTIONS = [
-  { value: 'exclusive',  label: '전용상품' },
-  { value: 'generic',    label: '범용상품' },
-];
+const EMPTY_FORM = { productCode: '', productName: '', productType: 'generic', isManaged: false };
 
 export function ManagedProductsCard() {
   const [list, setList] = useState([]);
@@ -30,7 +30,7 @@ export function ManagedProductsCard() {
   const [filter, setFilter] = useState('all'); // all | exclusive | generic | disabled
   const [managedOnly, setManagedOnly] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [form, setForm] = useState({ productCode: '', productName: '', productType: 'generic', isManaged: false });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [busy, setBusy] = useState(false);
   const [migrating, setMigrating] = useState(false);
 
@@ -46,7 +46,7 @@ export function ManagedProductsCard() {
     try {
       await addManagedProduct(form);
       showToast('대상 제품이 추가됐어요', 'ok');
-      setForm({ productCode: '', productName: '', productType: 'generic', isManaged: false });
+      setForm(EMPTY_FORM);
       setAdding(false);
       refresh();
     } catch (err) {
@@ -61,24 +61,18 @@ export function ManagedProductsCard() {
   }
 
   async function handleToggleEnable(p) {
-    try {
-      await updateManagedProduct({ id: p.id, enable: p.enable === false });
-      refresh();
-    } catch { showToast('토글 실패', 'err'); }
+    try { await updateManagedProduct({ id: p.id, enable: p.enable === false }); refresh(); }
+    catch { showToast('토글 실패', 'err'); }
   }
 
   async function handleChangeType(p, productType) {
-    try {
-      await updateManagedProduct({ id: p.id, productType });
-      refresh();
-    } catch { showToast('변경 실패', 'err'); }
+    try { await updateManagedProduct({ id: p.id, productType }); refresh(); }
+    catch { showToast('변경 실패', 'err'); }
   }
 
   async function handleToggleManaged(p) {
-    try {
-      await updateManagedProduct({ id: p.id, isManaged: !p.isManaged });
-      refresh();
-    } catch { showToast('변경 실패', 'err'); }
+    try { await updateManagedProduct({ id: p.id, isManaged: !p.isManaged }); refresh(); }
+    catch { showToast('변경 실패', 'err'); }
   }
 
   /** 가격비교 최신 파일의 productCode 중 ref에 없는 것을 'exclusive'로 일괄 추가 */
@@ -87,15 +81,11 @@ export function ManagedProductsCard() {
     try {
       const files = await getPriceFiles();
       if (files.length === 0) { showToast('가격비교 데이터가 없습니다', 'err'); return; }
-      const latest = files[0];
-      const rows = await getPriceRowsByFileId(latest.id);
+      const rows = await getPriceRowsByFileId(files[0].id);
       if (rows.length === 0) { showToast('가격비교 행이 없습니다', 'err'); return; }
       const priceProducts = rows
         .filter(r => r.productCode && r.productName)
-        .map(r => ({
-          productCode: r.productCode,
-          productName: r.productName,
-        }));
+        .map(r => ({ productCode: r.productCode, productName: r.productName }));
       const { added, skipped } = await migrateExclusiveFromPriceList(priceProducts);
       showToast(`전용상품 ${added}개 추가 (기존 ${skipped}개 유지)`, added > 0 ? 'ok' : 'info');
       refresh();
@@ -146,33 +136,22 @@ export function ManagedProductsCard() {
         </div>
       </div>
 
-      {/* 추가 폼 */}
       {adding && (
-        <div style={{display:'grid', gridTemplateColumns:'150px 1fr 130px 110px auto auto', gap:8, marginBottom:12, alignItems:'center'}}>
-          <input value={form.productCode} onChange={e => setForm({...form, productCode: e.target.value})} placeholder="제품코드 (필수)" style={inputStyle}/>
-          <input value={form.productName} onChange={e => setForm({...form, productName: e.target.value})} placeholder="제품명 (필수)" style={inputStyle}/>
-          <select value={form.productType} onChange={e => setForm({...form, productType: e.target.value})} style={inputStyle}>
-            {TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-          <label style={{display:'flex', alignItems:'center', gap:6, fontSize:13, color:'var(--text-2)'}}>
-            <input type="checkbox" checked={form.isManaged} onChange={e => setForm({...form, isManaged: e.target.checked})}/>
-            관리품목
-          </label>
-          <button className="btn sm" onClick={() => setAdding(false)} disabled={busy}>취소</button>
-          <button className="btn sm primary" onClick={handleAdd}
-            disabled={busy || !form.productCode.trim() || !form.productName.trim()}>
-            {busy ? '추가 중...' : '추가'}
-          </button>
-        </div>
+        <ManagedProductsForm
+          form={form}
+          setForm={setForm}
+          busy={busy}
+          onSubmit={handleAdd}
+          onCancel={() => setAdding(false)}
+        />
       )}
 
-      {/* 3-chip 필터 + 관리품목 토글 */}
       <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:12, alignItems:'center'}}>
-        <Chip label="전체"     count={counts.all}        active={filter === 'all'}       onClick={() => setFilter('all')}/>
-        <Chip label="전용상품" count={counts.exclusive}  active={filter === 'exclusive'} onClick={() => setFilter('exclusive')}/>
-        <Chip label="범용상품" count={counts.generic}    active={filter === 'generic'}   onClick={() => setFilter('generic')}/>
+        <Chip label="전체"       count={counts.all}        active={filter === 'all'}       onClick={() => setFilter('all')}/>
+        <Chip label="전용상품"   count={counts.exclusive}  active={filter === 'exclusive'} onClick={() => setFilter('exclusive')}/>
+        <Chip label="범용상품"   count={counts.generic}    active={filter === 'generic'}   onClick={() => setFilter('generic')}/>
         <span style={{width:1, height:18, background:'var(--border)', margin:'0 4px'}}/>
-        <Chip label="관리품목만" count={counts.managed} active={managedOnly} onClick={() => setManagedOnly(v => !v)}/>
+        <Chip label="관리품목만" count={counts.managed}    active={managedOnly}            onClick={() => setManagedOnly(v => !v)}/>
         {counts.disabled > 0 && (
           <Chip label="비활성" count={counts.disabled} active={filter === 'disabled'} onClick={() => setFilter('disabled')}/>
         )}
@@ -199,33 +178,14 @@ export function ManagedProductsCard() {
             </thead>
             <tbody>
               {filtered.map(p => (
-                <tr key={p.id} style={{opacity: p.enable === false ? 0.5 : 1}}>
-                  <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{p.productCode || '-'}</td>
-                  <td className="cell-name"><div className="menu-name">{p.productName}</div></td>
-                  <td style={{textAlign:'center'}}>
-                    <Toggle value={p.enable !== false} onChange={() => handleToggleEnable(p)} />
-                  </td>
-                  <td>
-                    <select
-                      value={p.productType || 'generic'}
-                      onChange={e => handleChangeType(p, e.target.value)}
-                      style={{...inputStyle, width:'100%'}}
-                    >
-                      {TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                  </td>
-                  <td style={{textAlign:'center'}}>
-                    <input
-                      type="checkbox"
-                      checked={!!p.isManaged}
-                      onChange={() => handleToggleManaged(p)}
-                      style={{cursor:'pointer', width:16, height:16}}
-                    />
-                  </td>
-                  <td style={{textAlign:'right'}}>
-                    <button className="btn sm" style={{color:'var(--negative)'}} onClick={() => handleDelete(p.id)}>삭제</button>
-                  </td>
-                </tr>
+                <ManagedProductsRow
+                  key={p.id}
+                  p={p}
+                  onToggleEnable={handleToggleEnable}
+                  onChangeType={handleChangeType}
+                  onToggleManaged={handleToggleManaged}
+                  onDelete={handleDelete}
+                />
               ))}
             </tbody>
           </table>
@@ -234,9 +194,3 @@ export function ManagedProductsCard() {
     </div>
   );
 }
-
-const inputStyle = {
-  padding:'6px 10px', borderRadius:6,
-  border:'1px solid var(--border)', background:'var(--surface-2)',
-  color:'var(--text-1)', fontSize:13,
-};
