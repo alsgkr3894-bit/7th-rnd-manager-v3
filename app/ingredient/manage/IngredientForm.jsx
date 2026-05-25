@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 
@@ -58,7 +59,7 @@ export function IngredientForm({ initial, onSave, onClose }) {
 
   const title = isJette ? '제때 식자재 설정' : initial ? '식자재 수정' : '식자재 추가';
 
-  return (
+  return createPortal(
     <div style={{
       position:'fixed', inset:0, background:'rgba(0,0,0,.4)',
       display:'grid', placeItems:'center', zIndex:200,
@@ -184,7 +185,8 @@ export function IngredientForm({ initial, onSave, onClose }) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
