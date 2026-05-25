@@ -1,5 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
+import { Chip } from '@/components/ui/Chip';
 import { formatNumber } from '@/lib/format';
 
 /**
@@ -124,22 +125,3 @@ function Card({ label, value, unit, foot, footColor, small }) {
   );
 }
 
-function Chip({ label, count, active, dim, onClick }) {
-  const bg     = active ? 'var(--accent)' : 'var(--surface-2)';
-  const color  = active ? '#fff' : (dim ? 'var(--text-4)' : 'var(--text-2)');
-  const opacity = dim ? 0.7 : 1;
-  return (
-    <button onClick={onClick} className="chip" style={{
-      cursor:'pointer', border:'none', background: bg, color,
-      fontWeight: 600, opacity,
-      display:'inline-flex', alignItems:'center', gap:6,
-    }}>
-      {label}
-      <span style={{
-        background: active ? 'rgba(255,255,255,0.2)' : 'var(--surface)',
-        color: active ? '#fff' : 'var(--text-3)',
-        padding:'1px 6px', borderRadius:10, fontSize:11, fontWeight:700,
-      }}>{count}</span>
-    </button>
-  );
-}

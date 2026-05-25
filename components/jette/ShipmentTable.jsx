@@ -1,6 +1,9 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { Icon } from '@/components/icons';
+import { Chip } from '@/components/ui/Chip';
+import { SearchBox } from '@/components/ui/SearchBox';
+import { SortableTh } from '@/components/ui/SortableTh';
 import { formatNumber } from '@/lib/format';
 
 /**
@@ -85,16 +88,16 @@ export function ShipmentTable({ aggRows }) {
           <table className="data-table">
             <thead>
               <tr>
-                <Th sortKey="productCode"   active={sortKey} dir={sortDir} onClick={toggleSort} width={100}>제품코드</Th>
-                <Th sortKey="productName"   active={sortKey} dir={sortDir} onClick={toggleSort}>제품명</Th>
-                <Th sortKey="unit"          active={sortKey} dir={sortDir} onClick={toggleSort} width={90}>단위</Th>
-                <Th sortKey="temperature"   active={sortKey} dir={sortDir} onClick={toggleSort} width={90}>온도</Th>
-                <Th sortKey="taxType"       active={sortKey} dir={sortDir} onClick={toggleSort} width={80}>과세</Th>
-                <Th sortKey="totalQuantity"  active={sortKey} dir={sortDir} onClick={toggleSort} width={120} right>총 출고량</Th>
-                <Th sortKey="priceWithTax"   active={sortKey} dir={sortDir} onClick={toggleSort} width={120} right>부가세포함가</Th>
-                <Th sortKey="totalAmount"    active={sortKey} dir={sortDir} onClick={toggleSort} width={140} right>총 출고 금액</Th>
-                <Th sortKey="productType" active={sortKey} dir={sortDir} onClick={toggleSort} width={100}>분류</Th>
-                <Th sortKey="isManaged"   active={sortKey} dir={sortDir} onClick={toggleSort} width={80}>관리</Th>
+                <SortableTh sortKey="productCode"   active={sortKey} dir={sortDir} onClick={toggleSort} width={100}>제품코드</SortableTh>
+                <SortableTh sortKey="productName"   active={sortKey} dir={sortDir} onClick={toggleSort}>제품명</SortableTh>
+                <SortableTh sortKey="unit"          active={sortKey} dir={sortDir} onClick={toggleSort} width={90}>단위</SortableTh>
+                <SortableTh sortKey="temperature"   active={sortKey} dir={sortDir} onClick={toggleSort} width={90}>온도</SortableTh>
+                <SortableTh sortKey="taxType"       active={sortKey} dir={sortDir} onClick={toggleSort} width={80}>과세</SortableTh>
+                <SortableTh sortKey="totalQuantity"  active={sortKey} dir={sortDir} onClick={toggleSort} width={120} right>총 출고량</SortableTh>
+                <SortableTh sortKey="priceWithTax"   active={sortKey} dir={sortDir} onClick={toggleSort} width={120} right>부가세포함가</SortableTh>
+                <SortableTh sortKey="totalAmount"    active={sortKey} dir={sortDir} onClick={toggleSort} width={140} right>총 출고 금액</SortableTh>
+                <SortableTh sortKey="productType" active={sortKey} dir={sortDir} onClick={toggleSort} width={100}>분류</SortableTh>
+                <SortableTh sortKey="isManaged"   active={sortKey} dir={sortDir} onClick={toggleSort} width={80}>관리</SortableTh>
               </tr>
             </thead>
             <tbody>
@@ -152,55 +155,3 @@ function ProductTypeChip({ type }) {
   );
 }
 
-function Th({ sortKey, active, dir, onClick, children, width, right }) {
-  const isActive = active === sortKey;
-  return (
-    <th onClick={() => onClick(sortKey)} className="sortable"
-      style={{ width, textAlign: right ? 'right' : undefined, cursor:'pointer', userSelect:'none' }}>
-      {children}{' '}
-      <span style={{color: isActive ? 'var(--accent)' : 'var(--text-4)', fontSize: 10}}>
-        {isActive ? (dir === 'asc' ? '▲' : '▼') : '▾'}
-      </span>
-    </th>
-  );
-}
-
-function Chip({ label, count, active, onClick }) {
-  return (
-    <button onClick={onClick} className="chip" style={{
-      cursor:'pointer', border:'none',
-      background: active ? 'var(--accent)' : 'var(--surface-2)',
-      color: active ? '#fff' : 'var(--text-2)',
-      fontWeight: 600,
-      display:'inline-flex', alignItems:'center', gap:6,
-    }}>
-      {label}
-      <span style={{
-        background: active ? 'rgba(255,255,255,0.2)' : 'var(--surface)',
-        color: active ? '#fff' : 'var(--text-3)',
-        padding:'1px 6px', borderRadius:10, fontSize:11, fontWeight:700,
-      }}>{count}</span>
-    </button>
-  );
-}
-
-function SearchBox({ value, onChange }) {
-  return (
-    <div style={{position:'relative', marginBottom:12}}>
-      <Icon.search style={{
-        width:14, height:14, position:'absolute', top:'50%', left:12,
-        transform:'translateY(-50%)', color:'var(--text-4)',
-      }}/>
-      <input
-        placeholder="제품명·제품코드 검색"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        style={{
-          width:'100%', padding:'8px 12px 8px 32px', borderRadius:8,
-          border:'1px solid var(--border)', background:'var(--surface-2)',
-          color:'var(--text-1)', fontSize:13,
-        }}
-      />
-    </div>
-  );
-}

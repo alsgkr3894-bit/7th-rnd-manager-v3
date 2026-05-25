@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { Toggle } from '@/components/ui/Toggle';
+import { Chip } from '@/components/ui/Chip';
+import { SearchBox } from '@/components/ui/SearchBox';
 import {
   getAllManagedProducts,
   addManagedProduct, deleteManagedProduct, updateManagedProduct,
@@ -229,46 +231,6 @@ export function ManagedProductsCard() {
           </table>
         </div>
       )}
-    </div>
-  );
-}
-
-function Chip({ label, count, active, onClick }) {
-  return (
-    <button onClick={onClick} className="chip" style={{
-      cursor:'pointer', border:'none',
-      background: active ? 'var(--accent)' : 'var(--surface-2)',
-      color: active ? '#fff' : 'var(--text-2)',
-      fontWeight: 600,
-      display:'inline-flex', alignItems:'center', gap:6,
-    }}>
-      {label}
-      <span style={{
-        background: active ? 'rgba(255,255,255,0.2)' : 'var(--surface)',
-        color: active ? '#fff' : 'var(--text-3)',
-        padding:'1px 6px', borderRadius:10, fontSize:11, fontWeight:700,
-      }}>{count}</span>
-    </button>
-  );
-}
-
-function SearchBox({ value, onChange }) {
-  return (
-    <div style={{position:'relative', marginBottom:12}}>
-      <Icon.search style={{
-        width:14, height:14, position:'absolute', top:'50%', left:12,
-        transform:'translateY(-50%)', color:'var(--text-4)',
-      }}/>
-      <input
-        placeholder="제품명·제품코드 검색"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        style={{
-          width:'100%', padding:'8px 12px 8px 32px', borderRadius:8,
-          border:'1px solid var(--border)', background:'var(--surface-2)',
-          color:'var(--text-1)', fontSize:13,
-        }}
-      />
     </div>
   );
 }
