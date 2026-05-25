@@ -212,8 +212,8 @@ export default function Page() {
       )}
 
       {rows.length > 0 && (
-        <>
-          <div style={{display:'flex', gap:6, flexWrap:'wrap', margin:'16px 0 8px', alignItems:'center'}}>
+        <div style={{display:'flex', flexDirection:'column', gap:6}}>
+          <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center'}}>
             <span style={{fontSize:12, color:'var(--text-3)', marginRight:4}}>분류</span>
             {categories.map(c => (
               <button key={c}
@@ -232,11 +232,11 @@ export default function Page() {
             )}
           </div>
           <FilterBar search={search} onSearch={setSearch}/>
-        </>
+        </div>
       )}
 
       {rows.length > 0 && (
-        <div className="card table-card" style={{marginTop:12}}>
+        <div className="card table-card">
           {filtered.length === 0 ? (
             <div style={{padding:'40px 0', textAlign:'center', color:'var(--text-3)', fontSize:13}}>
               조건에 맞는 항목이 없습니다

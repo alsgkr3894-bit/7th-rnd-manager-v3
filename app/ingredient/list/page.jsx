@@ -123,32 +123,32 @@ export default function Page() {
 
       {/* 카테고리별 요약 카드 */}
       {managedRows.length > 0 && (
-        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(88px, 1fr))', gap:8, marginTop:8}}>
-          <div className="card" style={{padding:'10px 14px', cursor:'pointer',
+        <div style={{display:'flex', flexWrap:'wrap', gap:8}}>
+          <div className="card" style={{padding:'10px 16px', cursor:'pointer', minWidth:80,
             outline: catFilter === 'all' ? '2px solid var(--accent)' : 'none', outlineOffset:2}}
             onClick={() => setCatFilter('all')}>
             <div style={{fontSize:11, color:'var(--text-3)'}}>전체</div>
-            <div style={{fontSize:22, fontWeight:800, color:'var(--text-1)', lineHeight:1.2, marginTop:2}}>{visibleCount}</div>
+            <div style={{fontSize:24, fontWeight:800, color:'var(--text-1)', lineHeight:1.2, marginTop:2}}>{visibleCount}</div>
           </div>
           {categories.filter(c => c !== 'all').map(c => {
             const cnt = managedRows.filter(r => r.category === c && !r.excluded).length;
             if (!cnt) return null;
             const cs = getCategoryStyle(c);
             return (
-              <div key={c} className="card" style={{padding:'10px 14px', cursor:'pointer',
+              <div key={c} className="card" style={{padding:'10px 16px', cursor:'pointer', minWidth:80,
                 outline: catFilter === c ? `2px solid ${cs.color}` : 'none', outlineOffset:2}}
                 onClick={() => setCatFilter(catFilter === c ? 'all' : c)}>
                 <div style={{fontSize:11, color: cs.color, fontWeight:600}}>{c}</div>
-                <div style={{fontSize:22, fontWeight:800, color: cs.color, lineHeight:1.2, marginTop:2}}>{cnt}</div>
+                <div style={{fontSize:24, fontWeight:800, color: cs.color, lineHeight:1.2, marginTop:2}}>{cnt}</div>
               </div>
             );
           })}
           {uncategorized > 0 && (
-            <div className="card" style={{padding:'10px 14px', cursor:'pointer',
+            <div className="card" style={{padding:'10px 16px', cursor:'pointer', minWidth:80,
               outline: catFilter === '__none__' ? '2px solid var(--warn)' : 'none', outlineOffset:2}}
               onClick={() => setCatFilter(catFilter === '__none__' ? 'all' : '__none__')}>
               <div style={{fontSize:11, color:'var(--warn)', fontWeight:600}}>미분류</div>
-              <div style={{fontSize:22, fontWeight:800, color:'var(--warn)', lineHeight:1.2, marginTop:2}}>{uncategorized}</div>
+              <div style={{fontSize:24, fontWeight:800, color:'var(--warn)', lineHeight:1.2, marginTop:2}}>{uncategorized}</div>
             </div>
           )}
         </div>
@@ -156,8 +156,8 @@ export default function Page() {
 
       {/* 필터 + 정렬 */}
       {managedRows.length > 0 && (
-        <>
-          <div style={{display:'flex', gap:6, flexWrap:'wrap', margin:'16px 0 4px', alignItems:'center'}}>
+        <div style={{display:'flex', flexDirection:'column', gap:6}}>
+          <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center'}}>
             <span style={{fontSize:12, color:'var(--text-3)', marginRight:4}}>분류</span>
             {categories.map(c => (
               <button key={c}
@@ -182,7 +182,7 @@ export default function Page() {
               </button>
             )}
           </div>
-          <div style={{display:'flex', gap:4, alignItems:'center', marginBottom:4}}>
+          <div style={{display:'flex', gap:4, alignItems:'center'}}>
             <span style={{fontSize:12, color:'var(--text-3)', marginRight:4}}>정렬</span>
             {SORT_OPTIONS.map(s => (
               <button key={s.id}
@@ -193,12 +193,12 @@ export default function Page() {
             ))}
           </div>
           <FilterBar search={search} onSearch={setSearch}/>
-        </>
+        </div>
       )}
 
       {/* 테이블 */}
       {managedRows.length > 0 && (
-        <div className="card table-card" style={{marginTop:8}}>
+        <div className="card table-card">
           {filtered.length === 0 ? (
             <div style={{padding:'40px 0', textAlign:'center', color:'var(--text-3)', fontSize:13}}>
               조건에 맞는 항목이 없습니다
