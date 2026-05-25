@@ -1,15 +1,13 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB, getAll, hasStore } from '@/lib/db';
 import { buildPeriodCompare, buildCategoryDetails, buildGroupRanking, deriveCompareB } from '@/lib/sales';
 import { PeriodBar } from '@/components/sales/PeriodBar';
-import { CompareSummary } from '@/components/sales/CompareSummary';
-import { TopMovers } from '@/components/sales/TopMovers';
-import { CompareTable } from '@/components/sales/CompareTable';
 import { SingleMonthView } from '@/components/sales/SingleMonthView';
+import { CompareView } from '@/components/sales/CompareView';
+import { RankCompareEmpty } from '@/components/sales/RankCompareEmpty';
 
 const MOVER_CATEGORIES = ['피자', '사이드', '1인피자'];
 
@@ -130,7 +128,7 @@ export default function Page() {
       />
 
       {ready && available.length === 0 ? (
-        <EmptyHero />
+        <RankCompareEmpty />
       ) : (
         <>
           {periodA && periodB && (
@@ -154,56 +152,16 @@ export default function Page() {
               onCategoryChange={setSingleCategory}
             />
           ) : (
-            <>
-              {/* 카테고리 필터 */}
-              <div style={{display:'flex', gap:6, marginTop:16, flexWrap:'wrap'}}>
-                {categories.map(c => (
-                  <button
-                    key={c}
-                    onClick={() => setCategory(c === '전체' ? null : c)}
-                    className="chip"
-                    style={{
-                      cursor:'pointer', border:'none',
-                      background: (c === '전체' ? !category : category === c)
-                        ? 'var(--accent)' : 'var(--surface-2)',
-                      color: (c === '전체' ? !category : category === c)
-                        ? '#fff' : 'var(--text-2)',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-
-              {compare && <CompareSummary compare={compare} />}
-
-              {/* 상승/하락 — 피자/사이드/1인피자 */}
-              <TopMovers topRise={movers.topRise} topFall={movers.topFall} />
-
-              {compare && <CompareTable rows={compare.rows} />}
-            </>
+            <CompareView
+              categories={categories}
+              category={category}
+              onCategoryChange={setCategory}
+              compare={compare}
+              movers={movers}
+            />
           )}
         </>
       )}
     </main>
-  );
-}
-
-function EmptyHero() {
-  return (
-    <div className="card" style={{
-      marginTop:24, padding:'48px 24px', textAlign:'center',
-      display:'flex', flexDirection:'column', alignItems:'center', gap:12,
-    }}>
-      <Icon.chart style={{width:48, height:48, color:'var(--text-4)'}}/>
-      <div style={{fontSize:15, fontWeight:700}}>아직 업로드된 판매량이 없습니다</div>
-      <div style={{fontSize:13, color:'var(--text-3)'}}>
-        판매량을 업로드하면 두 기간을 비교할 수 있어요.
-      </div>
-      <a className="btn primary sm" href="/menu-sales/upload" style={{marginTop:8}}>
-        <Icon.upload style={{width:14, height:14}}/> 판매량 업로드
-      </a>
-    </div>
   );
 }
