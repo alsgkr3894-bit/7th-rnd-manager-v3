@@ -3965,3 +3965,21 @@ button { font-family: inherit; cursor: pointer; }
 .empty-state {
   animation: slide-up 300ms cubic-bezier(0.2,0.8,0.2,1) both;
 }
+
+/* ── 폼 인풋 공통 ── */
+.form-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .15s;
+  box-sizing: border-box;
+}
+.form-input:focus { border-color: var(--accent); }
+.form-input::placeholder { color: var(--text-4); }
+.form-input:disabled { opacity: .5; cursor: not-allowed; }
