@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Icon } from '@/components/icons';
+import { formatNumber } from '@/lib/format';
 
 export const DEFAULT_CATEGORIES = [
   '치즈류', '소스류', '도우/밀가루', '채소류', '육류/가공육',
@@ -17,11 +18,12 @@ const EMPTY = {
 
 /**
  * IngredientForm — 식자재 추가/수정 모달
- * @prop {object|null} initial  수정 시 기존 레코드, null이면 추가
+ * @prop {object|null} initial  수정 시 기존 레코드(mergedRow), null이면 수동 추가
  * @prop {Function}    onSave   (formData) => Promise<void>
  * @prop {Function}    onClose
  */
 export function IngredientForm({ initial, onSave, onClose }) {
+  const isJette = !!initial?.productCode;
   const [form, setForm]     = useState(initial ? toForm(initial) : EMPTY);
   const [customCat, setCustomCat] = useState(!DEFAULT_CATEGORIES.includes(initial?.category || '') && !!initial?.category);
   const [saving, setSaving] = useState(false);
@@ -31,9 +33,9 @@ export function IngredientForm({ initial, onSave, onClose }) {
 
   function validate() {
     const e = {};
-    if (!form.ingredientName.trim()) e.ingredientName = '재료명을 입력하세요';
+    if (!isJette && !form.ingredientName.trim()) e.ingredientName = '재료명을 입력하세요';
     if (form.baseQuantity && isNaN(Number(form.baseQuantity))) e.baseQuantity = '숫자만 입력하세요';
-    if (form.priceOverride && isNaN(Number(form.priceOverride))) e.priceOverride = '숫자만 입력하세요';
+    if (!isJette && form.priceOverride && isNaN(Number(form.priceOverride))) e.priceOverride = '숫자만 입력하세요';
     return e;
   }
 
@@ -43,15 +45,18 @@ export function IngredientForm({ initial, onSave, onClose }) {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setSaving(true);
     try {
-      await onSave({
+      const data = {
         ...form,
         baseQuantity:  form.baseQuantity  ? Number(form.baseQuantity)  : null,
-        priceOverride: form.priceOverride ? Number(form.priceOverride) : null,
-      });
+        priceOverride: !isJette && form.priceOverride ? Number(form.priceOverride) : null,
+      };
+      await onSave(data);
     } finally {
       setSaving(false);
     }
   }
+
+  const title = isJette ? '제때 식자재 설정' : initial ? '식자재 수정' : '식자재 추가';
 
   return (
     <div style={{
@@ -63,19 +68,36 @@ export function IngredientForm({ initial, onSave, onClose }) {
         padding:'24px 28px', position:'relative',
       }}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20}}>
-          <div style={{fontWeight:700, fontSize:16}}>{initial ? '식자재 수정' : '식자재 추가'}</div>
+          <div style={{fontWeight:700, fontSize:16}}>{title}</div>
           <button className="btn" style={{padding:'4px 8px'}} onClick={onClose}>
             <Icon.close style={{width:16, height:16}}/>
           </button>
         </div>
 
+        {/* 제때 제품 정보 (읽기 전용) */}
+        {isJette && (
+          <div style={{
+            background:'var(--surface-2)', borderRadius:8, padding:'10px 14px',
+            marginBottom:16, fontSize:13, color:'var(--text-2)',
+          }}>
+            <div style={{fontWeight:600, marginBottom:2}}>
+              {initial.productName}
+            </div>
+            <div style={{fontSize:12, color:'var(--text-3)'}}>
+              코드 {initial.productCode}
+              {initial.priceWithTax != null && ` · ${formatNumber(initial.priceWithTax)}원 (${initial.taxType})`}
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap:16}}>
 
-          {/* 재료명 */}
-          <Field label="재료명" required error={errors.ingredientName}>
+          {/* 재료명 — 제때 항목은 선택 입력, 수동은 필수 */}
+          <Field label="재료명" required={!isJette} error={errors.ingredientName}
+            hint={isJette ? '비워두면 제품명 자동 사용' : undefined}>
             <input className="form-input" value={form.ingredientName}
               onChange={e => set('ingredientName', e.target.value)}
-              placeholder="예) 모짜렐라치즈"/>
+              placeholder={isJette ? initial.displayName : '예) 모짜렐라치즈'}/>
           </Field>
 
           {/* 분류 */}
@@ -99,12 +121,14 @@ export function IngredientForm({ initial, onSave, onClose }) {
             </div>
           </Field>
 
-          {/* 제때 제품코드 */}
-          <Field label="제때 제품코드" hint="제때 가격 파일과 자동 연동됩니다">
-            <input className="form-input" value={form.productCode}
-              onChange={e => set('productCode', e.target.value)}
-              placeholder="예) PRD-001 (없으면 비워두세요)"/>
-          </Field>
+          {/* 수동 추가일 때만: 제때 제품코드 */}
+          {!isJette && (
+            <Field label="제때 제품코드" hint="제때 가격 파일과 자동 연동됩니다">
+              <input className="form-input" value={form.productCode}
+                onChange={e => set('productCode', e.target.value)}
+                placeholder="예) PRD-001 (없으면 비워두세요)"/>
+            </Field>
+          )}
 
           {/* 포장단위 */}
           <Field label="포장단위" hint="g당 단가 자동 계산에 사용" error={errors.baseQuantity}>
@@ -119,28 +143,31 @@ export function IngredientForm({ initial, onSave, onClose }) {
             </div>
           </Field>
 
-          {/* 과세구분 */}
-          <Field label="과세구분">
-            <div style={{display:'flex', gap:8}}>
-              {['과세', '면세'].map(t => (
-                <label key={t} style={{display:'flex', alignItems:'center', gap:6, cursor:'pointer', fontSize:14}}>
-                  <input type="radio" value={t} checked={form.taxType === t}
-                    onChange={() => set('taxType', t)} style={{accentColor:'var(--accent)'}}/>
-                  {t}
-                </label>
-              ))}
-            </div>
-          </Field>
+          {/* 수동 추가일 때만: 과세구분 + 수동 단가 */}
+          {!isJette && (
+            <>
+              <Field label="과세구분">
+                <div style={{display:'flex', gap:8}}>
+                  {['과세', '면세'].map(t => (
+                    <label key={t} style={{display:'flex', alignItems:'center', gap:6, cursor:'pointer', fontSize:14}}>
+                      <input type="radio" value={t} checked={form.taxType === t}
+                        onChange={() => set('taxType', t)} style={{accentColor:'var(--accent)'}}/>
+                      {t}
+                    </label>
+                  ))}
+                </div>
+              </Field>
 
-          {/* 수동 단가 */}
-          <Field label="수동 단가 (부가세포함)" hint="제때 연동 없을 때 사용" error={errors.priceOverride}>
-            <div style={{display:'flex', gap:8, alignItems:'center'}}>
-              <input className="form-input" type="number" value={form.priceOverride}
-                onChange={e => set('priceOverride', e.target.value)}
-                placeholder="예) 7680" style={{flex:1}}/>
-              <span style={{fontSize:13, color:'var(--text-3)', whiteSpace:'nowrap'}}>원</span>
-            </div>
-          </Field>
+              <Field label="수동 단가 (부가세포함)" hint="제때 연동 없을 때 사용" error={errors.priceOverride}>
+                <div style={{display:'flex', gap:8, alignItems:'center'}}>
+                  <input className="form-input" type="number" value={form.priceOverride}
+                    onChange={e => set('priceOverride', e.target.value)}
+                    placeholder="예) 7680" style={{flex:1}}/>
+                  <span style={{fontSize:13, color:'var(--text-3)', whiteSpace:'nowrap'}}>원</span>
+                </div>
+              </Field>
+            </>
+          )}
 
           {/* 비고 */}
           <Field label="비고">
@@ -152,7 +179,7 @@ export function IngredientForm({ initial, onSave, onClose }) {
           <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:4}}>
             <button type="button" className="btn" onClick={onClose}>취소</button>
             <button type="submit" className="btn primary" disabled={saving}>
-              {saving ? '저장 중…' : initial ? '수정 저장' : '추가'}
+              {saving ? '저장 중…' : isJette ? '저장' : initial ? '수정 저장' : '추가'}
             </button>
           </div>
         </form>

@@ -5,52 +5,48 @@ import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
-import { getAllIngredients, addIngredient, updateIngredient, deleteIngredient } from '@/lib/ingredient';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
-import { simplifyIngredientName } from '@/lib/normalize';
+import {
+  getIngredientMetaMap, mergeIngredientRows,
+  addIngredient, upsertIngredientMeta,
+  excludeIngredientByCode, restoreIngredientByCode,
+} from '@/lib/ingredient';
 import { IngredientForm } from './IngredientForm';
 
 export default function Page() {
-  const [rows,       setRows]       = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [search,     setSearch]     = useState('');
-  const [catFilter,  setCatFilter]  = useState('all');
-  const [formTarget, setFormTarget] = useState(null); // null=닫힘 | 'new' | {record}
-  const [deleteTarget, setDeleteTarget] = useState(null); // id
+  const [rows,         setRows]         = useState([]);
+  const [priceDate,    setPriceDate]    = useState(null);
+  const [loading,      setLoading]      = useState(true);
+  const [search,       setSearch]       = useState('');
+  const [catFilter,    setCatFilter]    = useState('all');
+  const [formTarget,   setFormTarget]   = useState(null);
+  const [deletePending,setDeletePending]= useState(null); // productCode
 
   const load = useCallback(async () => {
     await initDB();
-    const [meta, priceFiles] = await Promise.all([getAllIngredients(), getPriceFiles()]);
-    const latest = priceFiles[0] || null;
-
-    // 제때 연동 항목의 ingredientName이 비어 있으면 price_rows에서 보완
-    if (latest) {
-      const priceRows = await getPriceRowsByFileId(latest.id);
-      const byCode    = new Map(priceRows.map(p => [p.productCode, p]));
-      setRows(meta.map(r => {
-        if (!r.ingredientName && r.productCode && byCode.has(r.productCode)) {
-          return { ...r, ingredientName: simplifyIngredientName(byCode.get(r.productCode).productName) };
-        }
-        return r;
-      }));
-    } else {
-      setRows(meta);
-    }
+    const files = await getPriceFiles();
+    const latest = files[0] || null;
+    setPriceDate(latest?.updateDate || null);
+    if (!latest) { setRows([]); return; }
+    const [priceRows, metaMap] = await Promise.all([
+      getPriceRowsByFileId(latest.id),
+      getIngredientMetaMap(),
+    ]);
+    setRows(mergeIngredientRows(priceRows, metaMap));
   }, []);
 
   useEffect(() => {
     load().catch(console.error).finally(() => setLoading(false));
   }, [load]);
 
-  // ── 저장 ──────────────────────────────────────────────────
   async function handleSave(formData) {
     try {
       if (formTarget === 'new') {
         await addIngredient(formData);
         showToast('식자재 추가 완료', 'ok');
       } else {
-        await updateIngredient(formTarget.id, formData);
-        showToast('수정 완료', 'ok');
+        await upsertIngredientMeta({ productCode: formTarget.productCode, ...formData });
+        showToast('저장 완료', 'ok');
       }
       setFormTarget(null);
       await load();
@@ -60,67 +56,89 @@ export default function Page() {
     }
   }
 
-  // ── 삭제 ──────────────────────────────────────────────────
-  async function handleDelete(id) {
+  async function handleExclude(productCode) {
     try {
-      await deleteIngredient(id);
-      setDeleteTarget(null);
-      showToast('삭제 완료', 'ok');
-      await load();
-    } catch (err) {
-      showToast('삭제 실패: ' + err.message, 'err');
-    }
+      await excludeIngredientByCode(productCode);
+      setRows(prev => prev.map(r =>
+        r.productCode === productCode ? { ...r, excluded: true, hasRecord: true } : r
+      ));
+      setDeletePending(null);
+      showToast('숨겼습니다', 'ok');
+    } catch (err) { showToast('실패: ' + err.message, 'err'); }
   }
 
-  // ── 필터 ──────────────────────────────────────────────────
+  async function handleRestore(productCode) {
+    try {
+      await restoreIngredientByCode(productCode);
+      setRows(prev => prev.map(r =>
+        r.productCode === productCode ? { ...r, excluded: false } : r
+      ));
+      showToast('복원됐습니다', 'ok');
+    } catch (err) { showToast('실패: ' + err.message, 'err'); }
+  }
+
   const categories = useMemo(() => {
-    const used = new Set(rows.map(r => r.category).filter(Boolean));
+    const used = new Set(rows.filter(r => r.category).map(r => r.category));
     return ['all', ...Array.from(used).sort((a, b) => a.localeCompare(b, 'ko'))];
   }, [rows]);
 
   const filtered = useMemo(() => {
-    let list = catFilter === 'all'      ? rows
-             : catFilter === '__none__' ? rows.filter(r => !r.category)
-             : rows.filter(r => r.category === catFilter);
+    let list = rows;
+    if (catFilter === '__none__') list = list.filter(r => !r.category);
+    else if (catFilter !== 'all') list = list.filter(r => r.category === catFilter);
     const q = search.trim().toLowerCase();
     if (q) list = list.filter(r =>
-      (r.ingredientName || '').toLowerCase().includes(q) ||
-      (r.productCode    || '').toLowerCase().includes(q) ||
-      (r.category       || '').toLowerCase().includes(q)
+      (r.ingredientName || r.displayName || r.productName || '').toLowerCase().includes(q) ||
+      (r.productCode || '').toLowerCase().includes(q) ||
+      (r.category    || '').toLowerCase().includes(q)
     );
     return list;
   }, [rows, catFilter, search]);
 
-  const uncategorized = rows.filter(r => !r.category).length;
+  const managedCount  = rows.filter(r => r.hasRecord).length;
+  const uncategorized = rows.filter(r => r.hasRecord && !r.excluded && !r.category).length;
+
+  const sub = loading
+    ? '로딩 중…'
+    : priceDate
+      ? `제때 단가 기준 ${priceDate} · 전체 ${rows.length}개 · 관리 중 ${managedCount}개${uncategorized ? ` · 미분류 ${uncategorized}개` : ''}`
+      : '제때 가격 파일이 없습니다 — 제때상품관리에서 업로드해주세요';
 
   return (
     <main className="main">
       <PageHeader
         breadcrumb={['식자재', '식자재 관리']}
         title="식자재 관리"
-        sub={loading ? '로딩 중…' : `총 ${rows.length}개${uncategorized ? ` · 미분류 ${uncategorized}개` : ''}`}
+        sub={sub}
         actions={
           <button className="btn primary" onClick={() => setFormTarget('new')}>
-            <Icon.plus style={{width:14, height:14}}/> 식자재 추가
+            <Icon.plus style={{width:14, height:14}}/> 수동 추가
           </button>
         }
       />
 
-      {/* 카테고리 필터 */}
+      {!loading && !priceDate && (
+        <div className="card" style={{marginTop:24, minHeight:180, display:'grid', placeItems:'center'}}>
+          <div style={{textAlign:'center', color:'var(--text-3)'}}>
+            <Icon.box style={{width:32, height:32, marginBottom:12, opacity:.4}}/>
+            <div style={{fontWeight:600, marginBottom:4}}>제때 가격 데이터가 없습니다</div>
+            <div style={{fontSize:13}}>제때상품관리 → 제때 가격 비교 메뉴에서 파일을 업로드하면 자동으로 목록이 표시됩니다.</div>
+          </div>
+        </div>
+      )}
+
       {rows.length > 0 && (
         <>
           <div style={{display:'flex', gap:6, flexWrap:'wrap', margin:'16px 0 8px', alignItems:'center'}}>
+            <span style={{fontSize:12, color:'var(--text-3)', marginRight:4}}>분류</span>
             {categories.map(c => (
               <button key={c} className={'chip' + (catFilter === c ? ' active' : '')}
                 onClick={() => setCatFilter(c)}>
-                {c === 'all'
-                  ? `전체 (${rows.length})`
-                  : `${c} (${rows.filter(r => r.category === c).length})`}
+                {c === 'all' ? `전체 (${rows.length})` : `${c} (${rows.filter(r => r.category === c).length})`}
               </button>
             ))}
             {uncategorized > 0 && (
-              <button
-                className={'chip' + (catFilter === '__none__' ? ' active' : '')}
+              <button className={'chip' + (catFilter === '__none__' ? ' active' : '')}
                 style={{color:'var(--warn)'}}
                 onClick={() => setCatFilter(catFilter === '__none__' ? 'all' : '__none__')}>
                 미분류 ({uncategorized})
@@ -131,61 +149,52 @@ export default function Page() {
         </>
       )}
 
-      {/* 빈 상태 */}
-      {!loading && rows.length === 0 && (
-        <div className="card" style={{marginTop:24, minHeight:200, display:'grid', placeItems:'center'}}>
-          <div style={{textAlign:'center', color:'var(--text-3)'}}>
-            <Icon.tag style={{width:32, height:32, marginBottom:12, opacity:.4}}/>
-            <div style={{fontWeight:600, marginBottom:4}}>등록된 식자재가 없습니다</div>
-            <div style={{fontSize:13, marginBottom:16}}>식자재 추가 버튼으로 직접 등록하거나<br/>식자재 리스트에서 분류를 설정하면 자동으로 추가됩니다.</div>
-            <button className="btn primary" onClick={() => setFormTarget('new')}>
-              <Icon.plus style={{width:14, height:14}}/> 식자재 추가
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 테이블 */}
-      {filtered.length > 0 && (
+      {rows.length > 0 && (
         <div className="card table-card" style={{marginTop:12}}>
-          <div style={{overflowX:'auto'}}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{width:120}}>분류</th>
-                  <th>재료명</th>
-                  <th style={{width:110}}>제때 제품코드</th>
-                  <th style={{width:130, textAlign:'right'}}>포장단위</th>
-                  <th style={{width:150, textAlign:'right'}}>단가 (부가세포함)</th>
-                  <th style={{width:130, textAlign:'right'}}>g·개당 단가</th>
-                  <th style={{width:70}}>과세</th>
-                  <th style={{width:80, textAlign:'center'}}>연동</th>
-                  <th>비고</th>
-                  <th style={{width:90}}/>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(r => (
-                  <ManageRow
-                    key={r.id}
-                    r={r}
-                    deletePending={deleteTarget === r.id}
-                    onEdit={() => setFormTarget(r)}
-                    onDeleteStart={() => setDeleteTarget(r.id)}
-                    onDeleteCancel={() => setDeleteTarget(null)}
-                    onDeleteConfirm={() => handleDelete(r.id)}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {filtered.length === 0 ? (
+            <div style={{padding:'40px 0', textAlign:'center', color:'var(--text-3)', fontSize:13}}>
+              조건에 맞는 항목이 없습니다
+            </div>
+          ) : (
+            <div style={{overflowX:'auto'}}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th style={{width:100}}>제품코드</th>
+                    <th>제품명</th>
+                    <th style={{width:80}}>온도</th>
+                    <th style={{width:80}}>판매단위</th>
+                    <th style={{width:70}}>과세</th>
+                    <th style={{width:130, textAlign:'right'}}>부가세포함단가</th>
+                    <th style={{width:160, textAlign:'right'}}>포장단위 / g·개당단가</th>
+                    <th style={{width:140}}>분류</th>
+                    <th>비고</th>
+                    <th style={{width:80}}/>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(r => (
+                    <ManageRow
+                      key={r.productCode}
+                      r={r}
+                      deletePending={deletePending === r.productCode}
+                      onEdit={() => setFormTarget(r)}
+                      onDeleteStart={() => setDeletePending(r.productCode)}
+                      onDeleteCancel={() => setDeletePending(null)}
+                      onDeleteConfirm={() => handleExclude(r.productCode)}
+                      onRestore={() => handleRestore(r.productCode)}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           <div style={{padding:'8px 16px', fontSize:11, color:'var(--text-3)', borderTop:'1px solid var(--divider)'}}>
-            {filtered.length}개 표시 / 전체 {rows.length}개
+            {filtered.length}개 표시 / 전체 {rows.length}개 · 관리 중 {managedCount}개
           </div>
         </div>
       )}
 
-      {/* 추가/수정 모달 */}
       {formTarget !== null && (
         <IngredientForm
           initial={formTarget === 'new' ? null : formTarget}
@@ -197,55 +206,70 @@ export default function Page() {
   );
 }
 
-// ── 행 ───────────────────────────────────────────────────────
+// ── 행 컴포넌트 ───────────────────────────────────────────────
 
-function ManageRow({ r, deletePending, onEdit, onDeleteStart, onDeleteCancel, onDeleteConfirm }) {
+function ManageRow({ r, deletePending, onEdit, onDeleteStart, onDeleteCancel, onDeleteConfirm, onRestore }) {
   const unitLabel = r.baseQuantity && r.baseUnitType
     ? `${formatNumber(r.baseQuantity)}${r.baseUnitType}` : '-';
-
-  const effectivePrice = r.priceOverride ?? null; // 수동 단가
-  const unitPrice = r.baseQuantity && r.baseQuantity > 0 && effectivePrice
-    ? Math.round(effectivePrice / r.baseQuantity * 100) / 100
+  const unitPriceLabel = r.unitPrice != null
+    ? `${r.unitPrice < 1 ? r.unitPrice.toFixed(2) : formatNumber(Math.round(r.unitPrice))}원/${r.baseUnitType || 'g'}`
     : null;
 
   return (
-    <tr>
+    <tr style={{opacity: r.excluded ? .5 : 1, background: r.excluded ? 'var(--surface-2)' : !r.hasRecord ? 'var(--surface-2)' : undefined}}>
+      <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{r.productCode || '-'}</td>
+      <td style={{fontWeight:600}}>
+        <span title={r.productName !== r.displayName ? `원본: ${r.productName}` : undefined}>
+          {r.ingredientName || r.displayName || r.productName}
+        </span>
+      </td>
+      <td style={{fontSize:12, color:'var(--text-2)'}}>{r.temperature || '-'}</td>
+      <td style={{fontSize:12, color:'var(--text-2)'}}>{r.salesUnit || '-'}</td>
+      <td style={{fontSize:12, color:'var(--text-3)'}}>{r.taxType || '-'}</td>
+      <td className="num right" style={{fontWeight:700}}>
+        {r.priceWithTax != null ? <>{formatNumber(r.priceWithTax)}<span className="unit">원</span></> : '-'}
+      </td>
+      <td className="num right" style={{color: r.baseQuantity ? undefined : 'var(--text-4)', fontSize:12}}>
+        {r.baseQuantity
+          ? <>{unitLabel}{unitPriceLabel && <><br/><span style={{fontSize:11, color:'var(--text-3)', fontWeight:400}}>{unitPriceLabel}</span></>}</>
+          : '—'}
+      </td>
       <td>
         {r.category
           ? <span className="chip">{r.category}</span>
           : <span className="chip" style={{background:'var(--warn-soft)', color:'var(--warn)', fontSize:11}}>미분류</span>}
       </td>
-      <td style={{fontWeight:600}}>{r.ingredientName}</td>
-      <td style={{fontSize:12, color:'var(--text-3)'}}>{r.productCode || <span style={{color:'var(--text-4)'}}>—</span>}</td>
-      <td className="num right" style={{color:'var(--text-2)'}}>{unitLabel}</td>
-      <td className="num right">
-        {effectivePrice != null
-          ? <>{formatNumber(effectivePrice)}<span className="unit">원</span></>
-          : <span style={{fontSize:12, color:'var(--text-4)'}}>—</span>}
-      </td>
-      <td className="num right" style={{fontSize:12}}>
-        {unitPrice != null
-          ? <>{unitPrice < 1 ? unitPrice.toFixed(2) : formatNumber(Math.round(unitPrice))}<span className="unit">원/{r.baseUnitType||'g'}</span></>
-          : <span style={{color:'var(--text-4)'}}>—</span>}
-      </td>
-      <td style={{fontSize:12, color:'var(--text-3)'}}>{r.taxType || '-'}</td>
-      <td style={{textAlign:'center'}}>
-        {r.productCode
-          ? <span title="제때 연동" style={{color:'var(--positive)', fontSize:13}}>●</span>
-          : <span title="수동 등록" style={{color:'var(--text-4)', fontSize:13}}>○</span>}
-      </td>
-      <td style={{fontSize:12, color:'var(--text-3)'}}>{r.note || '-'}</td>
       <td>
-        {deletePending ? (
-          <span style={{display:'flex', gap:4, alignItems:'center'}}>
-            <button className="btn sm" style={{background:'var(--negative)', color:'#fff', border:'none'}}
-              onClick={onDeleteConfirm}>삭제</button>
-            <button className="btn sm" onClick={onDeleteCancel}>취소</button>
+        <div style={{display:'flex', gap:6, alignItems:'center'}}>
+          <span style={{color:'var(--text-3)', fontSize:12, flex:1}}>
+            {r.note || <span style={{opacity:.3}}>—</span>}
+          </span>
+          {r.jetteLinked && !r.excluded && r.hasRecord && (
+            <span style={{
+              fontSize:10, fontWeight:700, padding:'2px 6px', borderRadius:4,
+              background:'var(--positive-soft)', color:'var(--positive)', whiteSpace:'nowrap',
+            }}>제때 연동</span>
+          )}
+        </div>
+      </td>
+      <td style={{textAlign:'center'}}>
+        {r.excluded ? (
+          <button className="btn sm" style={{fontSize:11}} onClick={onRestore}>복원</button>
+        ) : deletePending ? (
+          <span style={{display:'flex', gap:3}}>
+            <button className="btn sm"
+              style={{background:'var(--negative)', color:'#fff', border:'none', fontSize:11}}
+              onClick={onDeleteConfirm}>숨김</button>
+            <button className="btn sm" style={{fontSize:11}} onClick={onDeleteCancel}>취소</button>
           </span>
         ) : (
           <span style={{display:'flex', gap:4}}>
-            <button className="btn sm" onClick={onEdit}><Icon.edit style={{width:13,height:13}}/></button>
-            <button className="btn sm" onClick={onDeleteStart}><Icon.trash style={{width:13,height:13}}/></button>
+            <button className="btn sm" onClick={onEdit}>
+              <Icon.edit style={{width:13, height:13}}/>
+            </button>
+            <button className="btn sm" onClick={onDeleteStart} style={{color:'var(--text-3)'}}>
+              <Icon.trash style={{width:13, height:13}}/>
+            </button>
           </span>
         )}
       </td>

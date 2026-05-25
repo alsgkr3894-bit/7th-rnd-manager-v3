@@ -55,28 +55,30 @@ export default function Page() {
     } catch (err) { showToast('실패: ' + err.message, 'err'); }
   }
 
-  // 필터 목록
-  const categories = useMemo(() => {
-    const used = new Set(rows.map(r => r.category).filter(Boolean));
-    return ['all', ...Array.from(used).sort((a, b) => a.localeCompare(b, 'ko'))];
-  }, [rows]);
+  const managedRows = useMemo(() => rows.filter(r => r.hasRecord), [rows]);
 
-  const hiddenCount = useMemo(() => rows.filter(r => r.excluded).length, [rows]);
+  const categories = useMemo(() => {
+    const used = new Set(managedRows.map(r => r.category).filter(Boolean));
+    return ['all', ...Array.from(used).sort((a, b) => a.localeCompare(b, 'ko'))];
+  }, [managedRows]);
+
+  const hiddenCount = useMemo(() => managedRows.filter(r => r.excluded).length, [managedRows]);
 
   const filtered = useMemo(() => {
-    let list = showHidden ? rows : rows.filter(r => !r.excluded);
-    if (catFilter !== 'all') list = list.filter(r => r.category === catFilter);
+    let list = showHidden ? managedRows : managedRows.filter(r => !r.excluded);
+    if (catFilter === '__none__') list = list.filter(r => !r.category);
+    else if (catFilter !== 'all') list = list.filter(r => r.category === catFilter);
     const q = search.trim().toLowerCase();
     if (q) list = list.filter(r =>
       (r.productName || '').toLowerCase().includes(q) ||
       (r.productCode || '').toLowerCase().includes(q)
     );
     return list;
-  }, [rows, catFilter, search, showHidden]);
+  }, [managedRows, catFilter, search, showHidden]);
 
-  const uncategorized = rows.filter(r => !r.excluded && !r.category).length;
+  const uncategorized = managedRows.filter(r => !r.excluded && !r.category).length;
+  const visibleCount  = managedRows.filter(r => !r.excluded).length;
 
-  const visibleCount = rows.filter(r => !r.excluded).length;
   const sub = loading
     ? '로딩 중…'
     : priceDate
@@ -102,15 +104,26 @@ export default function Page() {
         </div>
       )}
 
+      {/* 관리된 식자재 없음 */}
+      {!loading && priceDate && managedRows.length === 0 && (
+        <div className="card" style={{marginTop:24, minHeight:160, display:'grid', placeItems:'center'}}>
+          <div style={{textAlign:'center', color:'var(--text-3)'}}>
+            <Icon.tag style={{width:32, height:32, marginBottom:12, opacity:.4}}/>
+            <div style={{fontWeight:600, marginBottom:4}}>아직 관리된 식자재가 없습니다</div>
+            <div style={{fontSize:13}}>식자재 관리 메뉴에서 분류·포장단위를 설정하면 여기에 표시됩니다.</div>
+          </div>
+        </div>
+      )}
+
       {/* 필터 */}
-      {rows.length > 0 && (
+      {managedRows.length > 0 && (
         <>
           <div style={{display:'flex', gap:6, flexWrap:'wrap', margin:'16px 0 8px', alignItems:'center'}}>
             <span style={{fontSize:12, color:'var(--text-3)', marginRight:4}}>분류</span>
             {categories.map(c => (
               <button key={c} className={'chip' + (catFilter === c ? ' active' : '')}
                 onClick={() => setCatFilter(c)}>
-                {c === 'all' ? `전체 (${rows.length})` : `${c} (${rows.filter(r => r.category === c).length})`}
+                {c === 'all' ? `전체 (${managedRows.length})` : `${c} (${managedRows.filter(r => r.category === c).length})`}
               </button>
             ))}
             {uncategorized > 0 && (
@@ -133,7 +146,7 @@ export default function Page() {
       )}
 
       {/* 테이블 */}
-      {rows.length > 0 && (
+      {managedRows.length > 0 && (
         <div className="card table-card" style={{marginTop:12}}>
           {filtered.length === 0 ? (
             <div style={{padding:'40px 0', textAlign:'center', color:'var(--text-3)', fontSize:13}}>
@@ -173,7 +186,7 @@ export default function Page() {
             </div>
           )}
           <div style={{padding:'8px 16px', fontSize:11, color:'var(--text-3)', borderTop:'1px solid var(--divider)'}}>
-            {filtered.length}개 표시 / 전체 {rows.length}개
+            {filtered.length}개 표시 / 관리 중 {managedRows.length}개
           </div>
         </div>
       )}
