@@ -1,36 +1,107 @@
 'use client';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { formatNumber } from '@/lib/format';
 
 /**
- * ShipmentSummary — 출고량 요약 4카드
+ * ShipmentSummary — 출고량 요약 4카드 + 카테고리 multi-select 필터
+ *
+ * - 카테고리 chip 3개 (전체 / 전용상품 / 범용상품)
+ * - "전체"는 두 카테고리 동시 선택/해제 (모두 선택 시 active)
+ * - 카테고리는 multi-select 토글
+ * - "관리품목만" 보조 토글 (선택된 카테고리 중 isManaged=true만)
  */
+const TYPE_OPTIONS = [
+  { value: 'exclusive',  label: '전용상품' },
+  { value: 'generic',    label: '범용상품' },
+];
+const ALL_TYPES = TYPE_OPTIONS.map(o => o.value);
+
 export function ShipmentSummary({ aggRows, managedCount }) {
+  const [selectedTypes, setSelectedTypes] = useState(new Set(ALL_TYPES));
+  const [managedOnly, setManagedOnly] = useState(false);
+  const isAll = selectedTypes.size === ALL_TYPES.length;
+
+  function toggleType(t) {
+    setSelectedTypes(prev => {
+      const next = new Set(prev);
+      if (next.has(t)) next.delete(t); else next.add(t);
+      return next;
+    });
+  }
+  function clickAll() {
+    setSelectedTypes(isAll ? new Set() : new Set(ALL_TYPES));
+  }
+
+  const counts = useMemo(() => ({
+    exclusive: aggRows.filter(r => r.productType === 'exclusive').length,
+    generic:   aggRows.filter(r => r.productType === 'generic').length,
+    managed:   aggRows.filter(r => r.isManaged).length,
+  }), [aggRows]);
+
+  const filtered = useMemo(() => {
+    let list = aggRows.filter(r => selectedTypes.has(r.productType));
+    if (managedOnly) list = list.filter(r => r.isManaged);
+    return list;
+  }, [aggRows, selectedTypes, managedOnly]);
+
   const summary = useMemo(() => {
-    const totalQty = aggRows.reduce((s, r) => s + (r.totalQuantity || 0), 0);
-    const totalAmt = aggRows.reduce((s, r) => s + (r.totalAmount || 0), 0);
-    const max      = aggRows.length > 0
-      ? aggRows.reduce((m, r) => r.totalQuantity > m.totalQuantity ? r : m, aggRows[0])
+    const totalQty = filtered.reduce((s, r) => s + (r.totalQuantity || 0), 0);
+    const totalAmt = filtered.reduce((s, r) => s + (r.totalAmount || 0), 0);
+    const max      = filtered.length > 0
+      ? filtered.reduce((m, r) => r.totalQuantity > m.totalQuantity ? r : m, filtered[0])
       : null;
     return { totalQty, totalAmt, max };
-  }, [aggRows]);
+  }, [filtered]);
+
+  const baseLabel = isAll
+    ? '전체 카테고리'
+    : selectedTypes.size === 0
+      ? '카테고리 미선택'
+      : TYPE_OPTIONS.filter(o => selectedTypes.has(o.value)).map(o => o.label).join(' + ');
+  const filterLabel = managedOnly ? `${baseLabel} · 관리품목` : baseLabel;
 
   return (
-    <div className="hero-row" style={{marginTop:16}}>
-      <Card label="총 출고량" value={`${formatNumber(summary.totalQty)}`} unit="건"
-        foot={`대상 ${aggRows.length}개 제품 합계`}/>
-      <Card label="총 출고 금액" value={`${formatNumber(summary.totalAmt)}`} unit="원"
-        foot="대상 제품 매입액 합계"/>
-      <Card
-        label="최다 출고 제품"
-        value={summary.max ? summary.max.productName : '—'}
-        small
-        foot={summary.max ? `${formatNumber(summary.max.totalQuantity)}건` : '데이터 없음'}
-        footColor="var(--accent-text)"
-      />
-      <Card label="대상 제품" value={`${aggRows.length}`} unit={`/ ${managedCount}`}
-        foot="관리 대상 중 출고된 제품"/>
-    </div>
+    <>
+      {/* 카테고리 multi-select chip + 관리품목 토글 */}
+      <div style={{
+        display:'flex', gap:6, flexWrap:'wrap', marginTop:16,
+        alignItems:'center',
+      }}>
+        <span style={{fontSize:12, color:'var(--text-3)', marginRight:4}}>요약 필터</span>
+        <Chip label="전체" count={aggRows.length} active={isAll} onClick={clickAll}/>
+        {TYPE_OPTIONS.map(o => (
+          <Chip
+            key={o.value}
+            label={o.label}
+            count={counts[o.value]}
+            active={selectedTypes.has(o.value) && !isAll}
+            dim={isAll}
+            onClick={() => toggleType(o.value)}
+          />
+        ))}
+        <span style={{width:1, height:18, background:'var(--border)', margin:'0 4px'}}/>
+        <Chip label="관리품목만" count={counts.managed} active={managedOnly} onClick={() => setManagedOnly(v => !v)}/>
+        <span style={{
+          marginLeft:'auto', fontSize:11, color:'var(--text-3)',
+        }}>{filtered.length}개 제품 합산</span>
+      </div>
+
+      <div className="hero-row" style={{marginTop:12}}>
+        <Card label="총 출고량" value={`${formatNumber(summary.totalQty)}`} unit="건"
+          foot={`${filterLabel} · ${filtered.length}개 제품`}/>
+        <Card label="총 출고 금액" value={`${formatNumber(summary.totalAmt)}`} unit="원"
+          foot="선택 카테고리 출고 금액 합계"/>
+        <Card
+          label="최다 출고 제품"
+          value={summary.max ? summary.max.productName : '—'}
+          small
+          foot={summary.max ? `${formatNumber(summary.max.totalQuantity)}건` : '데이터 없음'}
+          footColor="var(--accent-text)"
+        />
+        <Card label="대상 제품" value={`${filtered.length}`} unit={`/ ${managedCount}`}
+          foot="선택 카테고리 출고 제품 수"/>
+      </div>
+    </>
   );
 }
 
@@ -50,5 +121,25 @@ function Card({ label, value, unit, foot, footColor, small }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function Chip({ label, count, active, dim, onClick }) {
+  const bg     = active ? 'var(--accent)' : 'var(--surface-2)';
+  const color  = active ? '#fff' : (dim ? 'var(--text-4)' : 'var(--text-2)');
+  const opacity = dim ? 0.7 : 1;
+  return (
+    <button onClick={onClick} className="chip" style={{
+      cursor:'pointer', border:'none', background: bg, color,
+      fontWeight: 600, opacity,
+      display:'inline-flex', alignItems:'center', gap:6,
+    }}>
+      {label}
+      <span style={{
+        background: active ? 'rgba(255,255,255,0.2)' : 'var(--surface)',
+        color: active ? '#fff' : 'var(--text-3)',
+        padding:'1px 6px', borderRadius:10, fontSize:11, fontWeight:700,
+      }}>{count}</span>
+    </button>
   );
 }

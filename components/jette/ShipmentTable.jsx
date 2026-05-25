@@ -10,14 +10,15 @@ import { formatNumber } from '@/lib/format';
  */
 export function ShipmentTable({ aggRows }) {
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all'); // all | managed | other
+  const [typeFilter, setTypeFilter] = useState('all'); // all | exclusive | generic
+  const [managedOnly, setManagedOnly] = useState(false);
   const [sortKey, setSortKey] = useState('totalAmount');
   const [sortDir, setSortDir] = useState('desc');
 
   const filtered = useMemo(() => {
     let list = aggRows;
-    if (typeFilter === 'managed') list = list.filter(r => r.isSevenManaged);
-    if (typeFilter === 'other')   list = list.filter(r => !r.isSevenManaged);
+    if (typeFilter !== 'all') list = list.filter(r => r.productType === typeFilter);
+    if (managedOnly)          list = list.filter(r => r.isManaged);
     const q = search.trim().toLowerCase();
     if (q) list = list.filter(r =>
       (r.productName || '').toLowerCase().includes(q)
@@ -25,14 +26,30 @@ export function ShipmentTable({ aggRows }) {
     );
     const dir = sortDir === 'asc' ? 1 : -1;
     return [...list].sort((a, b) => {
-      const va = a[sortKey], vb = b[sortKey];
+      let va = a[sortKey], vb = b[sortKey];
+      if (sortKey === 'productType') {
+        const order = { exclusive: 0, generic: 1 };
+        va = order[va] ?? 9;
+        vb = order[vb] ?? 9;
+      }
+      if (sortKey === 'isManaged') {
+        va = va ? 1 : 0;
+        vb = vb ? 1 : 0;
+      }
       if (va == null && vb == null) return 0;
       if (va == null) return 1;
       if (vb == null) return -1;
       if (typeof va === 'string') return va.localeCompare(vb, 'ko') * dir;
       return va > vb ? dir : va < vb ? -dir : 0;
     });
-  }, [aggRows, search, typeFilter, sortKey, sortDir]);
+  }, [aggRows, search, typeFilter, managedOnly, sortKey, sortDir]);
+
+  const counts = useMemo(() => ({
+    all:         aggRows.length,
+    exclusive:   aggRows.filter(r => r.productType === 'exclusive').length,
+    generic:     aggRows.filter(r => r.productType === 'generic').length,
+    managed:     aggRows.filter(r => r.isManaged).length,
+  }), [aggRows]);
 
   function toggleSort(key) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -48,11 +65,13 @@ export function ShipmentTable({ aggRows }) {
         </div>
       </div>
 
-      {/* 관리품목 / 범용상품 토글 */}
-      <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:12}}>
-        <Chip label="전체"      count={aggRows.length}                                    active={typeFilter === 'all'}     onClick={() => setTypeFilter('all')}/>
-        <Chip label="관리품목"  count={aggRows.filter(r => r.isSevenManaged).length}      active={typeFilter === 'managed'} onClick={() => setTypeFilter('managed')}/>
-        <Chip label="범용상품"  count={aggRows.filter(r => !r.isSevenManaged).length}     active={typeFilter === 'other'}   onClick={() => setTypeFilter('other')}/>
+      {/* 분류 필터 + 관리품목 토글 */}
+      <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:12, alignItems:'center'}}>
+        <Chip label="전체"     count={counts.all}        active={typeFilter === 'all'}       onClick={() => setTypeFilter('all')}/>
+        <Chip label="전용상품" count={counts.exclusive}  active={typeFilter === 'exclusive'} onClick={() => setTypeFilter('exclusive')}/>
+        <Chip label="범용상품" count={counts.generic}    active={typeFilter === 'generic'}   onClick={() => setTypeFilter('generic')}/>
+        <span style={{width:1, height:18, background:'var(--border)', margin:'0 4px'}}/>
+        <Chip label="관리품목만" count={counts.managed} active={managedOnly} onClick={() => setManagedOnly(v => !v)}/>
       </div>
 
       <SearchBox value={search} onChange={setSearch}/>
@@ -71,10 +90,11 @@ export function ShipmentTable({ aggRows }) {
                 <Th sortKey="unit"          active={sortKey} dir={sortDir} onClick={toggleSort} width={90}>단위</Th>
                 <Th sortKey="temperature"   active={sortKey} dir={sortDir} onClick={toggleSort} width={90}>온도</Th>
                 <Th sortKey="taxType"       active={sortKey} dir={sortDir} onClick={toggleSort} width={80}>과세</Th>
-                <Th sortKey="totalQuantity" active={sortKey} dir={sortDir} onClick={toggleSort} width={120} right>총 출고량</Th>
-                <th style={{width:120, textAlign:'right'}}>부가세포함가</th>
-                <Th sortKey="totalAmount"   active={sortKey} dir={sortDir} onClick={toggleSort} width={140} right>총 매입액</Th>
-                <th style={{width:90}}>분류</th>
+                <Th sortKey="totalQuantity"  active={sortKey} dir={sortDir} onClick={toggleSort} width={120} right>총 출고량</Th>
+                <Th sortKey="priceWithTax"   active={sortKey} dir={sortDir} onClick={toggleSort} width={120} right>부가세포함가</Th>
+                <Th sortKey="totalAmount"    active={sortKey} dir={sortDir} onClick={toggleSort} width={140} right>총 출고 금액</Th>
+                <Th sortKey="productType" active={sortKey} dir={sortDir} onClick={toggleSort} width={100}>분류</Th>
+                <Th sortKey="isManaged"   active={sortKey} dir={sortDir} onClick={toggleSort} width={80}>관리</Th>
               </tr>
             </thead>
             <tbody>
@@ -99,22 +119,36 @@ function Row({ r }) {
         {formatNumber(r.totalQuantity)}<span className="unit">건</span>
       </td>
       <td className="num right">
-        {r.priceWithTax === '상이'
-          ? <span className="chip" style={{background:'var(--warn-soft)', color:'var(--warn)'}}>상이</span>
-          : r.priceWithTax != null
-            ? `${formatNumber(r.priceWithTax)}원`
-            : '—'}
+        {r.priceWithTax != null
+          ? `${formatNumber(r.priceWithTax)}원`
+          : <span className="chip" style={{background:'var(--warn-soft)', color:'var(--warn)', fontSize:11}}>단가 미연동</span>}
       </td>
       <td className="num right" style={{fontWeight:700}}>
         {formatNumber(r.totalAmount)}<span className="unit">원</span>
       </td>
       <td>
-        <span className="chip" style={{
-          background: r.isSevenManaged ? 'var(--accent-soft)' : 'var(--surface-2)',
-          color:      r.isSevenManaged ? 'var(--accent-text)' : 'var(--text-3)',
-        }}>{r.isSevenManaged ? '관리품목' : '범용상품'}</span>
+        <ProductTypeChip type={r.productType}/>
+      </td>
+      <td style={{textAlign:'center'}}>
+        {r.isManaged
+          ? <span title="관리품목" style={{color:'var(--warn)', fontSize:14}}>★</span>
+          : <span style={{color:'var(--text-4)', fontSize:12}}>—</span>}
       </td>
     </tr>
+  );
+}
+
+const PRODUCT_TYPE_META = {
+  exclusive: { label: '전용상품', bg: 'var(--accent-soft)', color: 'var(--accent-text)' },
+  generic:   { label: '범용상품', bg: 'var(--surface-2)',   color: 'var(--text-3)' },
+};
+
+function ProductTypeChip({ type }) {
+  const meta = PRODUCT_TYPE_META[type] || PRODUCT_TYPE_META.generic;
+  return (
+    <span className="chip" style={{background: meta.bg, color: meta.color}}>
+      {meta.label}
+    </span>
   );
 }
 

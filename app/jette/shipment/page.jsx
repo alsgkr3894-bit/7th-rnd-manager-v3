@@ -32,9 +32,9 @@ export default function Page() {
   return (
     <main className="main">
       <PageHeader
-        breadcrumb={['제때상품관리', '제때 범용상품 출고량']}
-        title="제때 범용상품 출고량"
-        sub={`지정한 ${managedProducts.length}개 대상 제품의 출고량을 집계합니다. 대상 외 제품은 자동 제외.`}
+        breadcrumb={['제때상품관리', '제때 제품 출고량']}
+        title="제때 제품 출고량"
+        sub={`등록된 ${managedProducts.length}개 대상 제품의 출고량을 집계합니다. 대상 외 제품은 자동 제외.`}
         actions={
           <div style={{display:'flex', gap:8, alignItems:'flex-end'}}>
             <PeriodInput period={period} onChange={setPeriod}/>
@@ -135,7 +135,7 @@ function EmptyHero() {
       <Icon.box style={{width:48, height:48, color:'var(--text-4)'}}/>
       <div style={{fontSize:15, fontWeight:700}}>아직 업로드된 출고량 파일이 없습니다</div>
       <div style={{fontSize:13, color:'var(--text-3)'}}>
-        엑셀(.xlsx) 또는 CSV 파일을 업로드하면 70개 대상 제품의 출고량이 집계됩니다.
+        엑셀(.xlsx) 또는 CSV 파일을 업로드하면 대상 제품의 출고량이 집계됩니다.
       </div>
     </div>
   );
