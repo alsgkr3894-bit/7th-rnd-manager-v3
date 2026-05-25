@@ -1,25 +1,156 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useMemo, useState } from 'react';
 import { Icon } from '@/components/icons';
-import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
-import { showToast } from '@/components/Toast';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { useJettePrice } from '@/lib/price/use-price-upload';
+import { PriceLatestView } from '@/components/jette/PriceLatestView';
+import { PriceSummaryCards } from '@/components/jette/PriceSummaryCards';
+import { PriceCompareControls } from '@/components/jette/PriceCompareControls';
+import { PriceCompareTable } from '@/components/jette/PriceCompareTable';
+import { PriceFileHistory } from '@/components/jette/PriceFileHistory';
+
+const TABS = [
+  { key: 'latest',  label: '최신 단가 현황' },
+  { key: 'compare', label: '가격 비교' },
+  { key: 'history', label: '업로드 이력' },
+];
 
 export default function Page() {
-  const title = "상품 가격 비교";
-  const bc = ["제때상품관리","상품 가격 비교"];
+  const {
+    ready, busy, files,
+    baseFileId, setBaseFileId,
+    latestFileId, setLatestFileId,
+    diffRows,
+    handleFile, handleDelete,
+  } = useJettePrice();
+
+  const [tab, setTab] = useState('latest');
+  const [uploadDate, setUploadDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
+  const fileInputRef = useRef(null);
+
+  const summary = useMemo(() => ({
+    up:    diffRows.filter(r => r.changeStatus === '인상').length,
+    down:  diffRows.filter(r => r.changeStatus === '인하').length,
+    total: diffRows.length,
+  }), [diffRows]);
 
   return (
     <main className="main">
-      <PageHeader breadcrumb={bc} title={title} sub="데이터를 조회하고 관리하세요"
-        actions={<><button className="btn" onClick={()=>showToast('양식 다운로드 완료','ok')}><Icon.download style={{width:14,height:14}}/>양식 다운로드</button><button className="btn primary" onClick={()=>showToast('파일을 선택해주세요 (데모)','info')}><Icon.upload style={{width:14,height:14}}/>파일 업로드</button></>}
+      <PageHeader
+        breadcrumb={['제때상품관리', '제때 상품 가격 비교']}
+        title="제때 상품 가격 비교"
+        sub="최신 단가와 이전 단가를 비교합니다. 원가계산 모듈은 이 데이터를 단일 기준으로 사용합니다."
+        actions={
+          <div style={{display:'flex', gap:8, alignItems:'center'}}>
+            <label style={{display:'flex', flexDirection:'column', fontSize:11, color:'var(--text-3)'}}>
+              <span style={{marginBottom:2}}>적용 날짜</span>
+              <input
+                type="date"
+                value={uploadDate}
+                onChange={e => setUploadDate(e.target.value)}
+                style={{
+                  padding:'6px 10px', borderRadius:8,
+                  border:'1px solid var(--border)', background:'var(--surface-2)',
+                  color:'var(--text-1)', fontSize:13,
+                }}
+              />
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              style={{display:'none'}}
+              onChange={e => {
+                const f = e.target.files?.[0];
+                if (f) handleFile(f, uploadDate);
+                e.target.value = '';
+              }}
+            />
+            <button
+              className="btn primary"
+              disabled={!ready || busy || !uploadDate}
+              onClick={() => fileInputRef.current?.click()}
+              style={{alignSelf:'flex-end'}}
+            >
+              <Icon.upload style={{width:14,height:14}}/>
+              {busy ? '업로드 중...' : '가격 파일 업로드'}
+            </button>
+          </div>
+        }
       />
-      <div className="card" style={{marginTop:24,minHeight:300,display:'grid',placeItems:'center'}}>
-        <div style={{textAlign:'center',color:'var(--text-4)'}}>
-          <div className="empty-icon-wrap"><Icon.doc style={{width:32,height:32}}/></div>
-          <div style={{fontWeight:600,marginBottom:4}}>{title} 데이터가 여기에 표시돼요</div>
-          <div style={{fontSize:13}}>파일을 업로드하거나 제때 연동을 확인하세요.</div>
-        </div>
-      </div>
+
+      {files.length === 0 && ready ? (
+        <EmptyHero />
+      ) : (
+        <>
+          {/* 탭 */}
+          <div style={{
+            display:'flex', gap:4, marginTop:16,
+            borderBottom:'1px solid var(--border)',
+          }}>
+            {TABS.map(t => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                style={{
+                  padding:'10px 18px', fontWeight:600, fontSize:14,
+                  border:'none', background:'transparent', cursor:'pointer',
+                  color: tab === t.key ? 'var(--accent)' : 'var(--text-3)',
+                  borderBottom: tab === t.key ? '2px solid var(--accent)' : '2px solid transparent',
+                  marginBottom: -1,
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {tab === 'latest' && (
+            <PriceLatestView
+              files={files}
+              latestFileId={latestFileId}
+              onLatestChange={setLatestFileId}
+            />
+          )}
+
+          {tab === 'compare' && (
+            <>
+              <PriceCompareControls
+                files={files}
+                baseFileId={baseFileId}
+                latestFileId={latestFileId}
+                onBaseChange={setBaseFileId}
+                onLatestChange={setLatestFileId}
+                summary={summary}
+              />
+              <PriceSummaryCards diffRows={diffRows} />
+              <PriceCompareTable diffRows={diffRows} />
+            </>
+          )}
+
+          {tab === 'history' && (
+            <PriceFileHistory files={files} onDelete={handleDelete} />
+          )}
+        </>
+      )}
     </main>
+  );
+}
+
+function EmptyHero() {
+  return (
+    <div className="card" style={{
+      marginTop:24, padding:'48px 24px', textAlign:'center',
+      display:'flex', flexDirection:'column', alignItems:'center', gap:12,
+    }}>
+      <Icon.box style={{width:48, height:48, color:'var(--text-4)'}}/>
+      <div style={{fontSize:15, fontWeight:700}}>아직 업로드된 가격 파일이 없습니다</div>
+      <div style={{fontSize:13, color:'var(--text-3)'}}>
+        엑셀(.xlsx) 또는 CSV 파일을 업로드하면 단가 현황과 변동을 확인할 수 있어요.
+      </div>
+    </div>
   );
 }

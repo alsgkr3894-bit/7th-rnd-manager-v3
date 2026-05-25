@@ -5,6 +5,7 @@ import { Icon } from './icons';
 import { NAV_HOME, NAV_SECTIONS } from '@/lib/menu';
 import { initDB } from '@/lib/db';
 import { getIssues } from '@/lib/sales';
+import { getPriceFiles } from '@/lib/price';
 
 /**
  * 사이드바 컴포넌트
@@ -16,14 +17,19 @@ export default function Sidebar({ onClose }) {
   const sidebarRef = useRef(null);
   const [pillStyle, setPillStyle] = useState({ top: 0, opacity: 0 });
   const [unmatchedCount, setUnmatchedCount] = useState(0);
+  const [latestPrice, setLatestPrice] = useState(null);
 
-  // 미매칭 카운트 — pathname 변경 시 재조회 (페이지 이동 직후 자동 갱신)
+  // 미매칭 + 최신 제때 단가 — pathname 변경 시 재조회
   useEffect(() => {
     (async () => {
       try {
         await initDB();
-        const issues = await getIssues({ status: 'open' });
+        const [issues, files] = await Promise.all([
+          getIssues({ status: 'open' }),
+          getPriceFiles(),
+        ]);
         setUnmatchedCount(issues.length);
+        setLatestPrice(files[0] || null);
       } catch { /* ignore */ }
     })();
   }, [pathname]);
@@ -160,10 +166,22 @@ export default function Sidebar({ onClose }) {
         </div>
       ))}
 
-      <div className="sidebar-footer">
+      <button
+        className="sidebar-footer"
+        onClick={() => navigate('/jette/price-compare')}
+        style={{
+          background:'transparent', border:'none', textAlign:'left',
+          cursor:'pointer', font:'inherit', color:'inherit', width:'100%',
+        }}
+        title="제때 가격 비교로 이동"
+      >
         <div><b>최신 제때 단가</b></div>
-        <div style={{ marginTop: 4 }}>2026.05.21 반영 · 정상</div>
-      </div>
+        <div style={{ marginTop: 4 }}>
+          {latestPrice
+            ? `${latestPrice.updateDate} 반영 · 총 ${latestPrice.totalRows ?? 0}개`
+            : '업로드된 단가 없음'}
+        </div>
+      </button>
     </aside>
   );
 }
