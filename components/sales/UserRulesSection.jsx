@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { Toggle } from '@/components/ui/Toggle';
-import { getUserRules, addUserRule, deleteUserRule, updateUserRule } from '@/lib/sales';
-
-const CATEGORY_OPTIONS = ['피자', '1인피자', '사이드', '사이드(소스)', '엣지&도우', '세트메뉴', '하프앤하프', '추가토핑', '음료', '품목제외'];
+import {
+  getUserRules, addUserRule, deleteUserRule, updateUserRule,
+  CATEGORY_INPUT_OPTIONS as CATEGORY_OPTIONS,
+} from '@/lib/sales';
 
 /**
  * UserRulesSection — 사용자 추가 분류 규칙 CRUD + enable 토글 + 수정

@@ -1,8 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { suggestRulesByMenuName } from '@/lib/sales';
-
-const CATEGORY_OPTIONS = ['피자', '1인피자', '사이드', '사이드(소스)', '엣지&도우', '세트메뉴', '하프앤하프', '추가토핑', '음료'];
+import { suggestRulesByMenuName, CATEGORY_ORDER as CATEGORY_OPTIONS } from '@/lib/sales';
 
 /**
  * UnmatchedResolveForm — 미매칭 issue 해결 인라인 폼

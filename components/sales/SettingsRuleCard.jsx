@@ -1,10 +1,10 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { Icon } from '@/components/icons';
-import { SALES_RULES } from '@/lib/sales';
+import { SALES_RULES, CATEGORY_INPUT_OPTIONS } from '@/lib/sales';
 import { UserRulesSection } from './UserRulesSection';
 
-const CATEGORY_ORDER = ['전체', '피자', '1인피자', '사이드', '사이드(소스)', '엣지&도우', '세트메뉴', '하프앤하프', '추가토핑', '음료', '품목제외'];
+const FILTER_CATEGORIES = ['전체', ...CATEGORY_INPUT_OPTIONS];
 
 /**
  * SettingsRuleCard — 카테고리 분류 규칙 (정책 표시)
@@ -18,8 +18,8 @@ export function SettingsRuleCard() {
 
   const categories = useMemo(() => {
     const found = new Set(SALES_RULES.map(r => r.category).filter(Boolean));
-    const ordered = CATEGORY_ORDER.filter(c => c === '전체' || found.has(c));
-    const extras = Array.from(found).filter(c => !CATEGORY_ORDER.includes(c));
+    const ordered = FILTER_CATEGORIES.filter(c => c === '전체' || found.has(c));
+    const extras = Array.from(found).filter(c => !FILTER_CATEGORIES.includes(c));
     return [...ordered, ...extras];
   }, []);
 

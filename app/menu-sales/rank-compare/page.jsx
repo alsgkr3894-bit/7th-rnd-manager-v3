@@ -6,6 +6,7 @@ import { initDB, getAll, hasStore } from '@/lib/db';
 import {
   buildPeriodCompare, buildCategoryDetails, buildGroupRanking, deriveCompareB,
   exportSingleMonthXlsx, exportCompareXlsx,
+  CATEGORY_ORDER,
 } from '@/lib/sales';
 import { Icon } from '@/components/icons';
 import { PeriodBar } from '@/components/sales/PeriodBar';
@@ -14,9 +15,6 @@ import { CompareView } from '@/components/sales/CompareView';
 import { RankCompareEmpty } from '@/components/sales/RankCompareEmpty';
 
 const MOVER_CATEGORIES = ['피자', '사이드', '1인피자'];
-
-/** 카테고리 chip 표시 순서 (전체 → 피자 → 1인피자 → 사이드 → 사이드(소스) → 엣지&도우 → 세트메뉴 → 하프앤하프 → 추가토핑 → 음료 → 나머지) */
-const CATEGORY_ORDER = ['피자', '1인피자', '사이드', '사이드(소스)', '엣지&도우', '세트메뉴', '하프앤하프', '추가토핑', '음료'];
 
 export default function Page() {
   const [ready, setReady] = useState(false);
