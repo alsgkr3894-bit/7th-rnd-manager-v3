@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { getIssues } from '@/lib/sales';
+import { getIssues, resolveUnmatchedIssue, bulkExcludeIssues } from '@/lib/sales';
 import { UnmatchedSummary } from '@/components/sales/UnmatchedSummary';
 import { UnmatchedTable } from '@/components/sales/UnmatchedTable';
 import {
@@ -22,8 +22,7 @@ export default function Page() {
     (async () => {
       try {
         await initDB();
-        const all = await getIssues();
-        setIssues(all);
+        await refresh();
         setReady(true);
       } catch (err) {
         console.error('[unmatched] 로드 실패:', err);
@@ -31,6 +30,37 @@ export default function Page() {
       }
     })();
   }, []);
+
+  async function refresh() {
+    const all = await getIssues();
+    setIssues(all);
+  }
+
+  async function handleResolve(issueId, actionType, actionData) {
+    try {
+      await resolveUnmatchedIssue(issueId, actionType, actionData);
+      showToast('미매칭이 해결됐어요', 'ok');
+      await refresh();
+    } catch (err) {
+      console.error('[unmatched] 해결 실패:', err);
+      showToast(err?.message || '해결 처리 실패', 'err');
+    }
+  }
+
+  async function handleBulkExclude(ids) {
+    try {
+      const { resolved, failed } = await bulkExcludeIssues(ids);
+      if (failed.length === 0) {
+        showToast(`${resolved.length}건 일괄 제외 처리됐어요`, 'ok');
+      } else {
+        showToast(`${resolved.length}건 성공 · ${failed.length}건 실패`, 'warn');
+      }
+      await refresh();
+    } catch (err) {
+      console.error('[unmatched] 일괄 제외 실패:', err);
+      showToast('일괄 처리 실패', 'err');
+    }
+  }
 
   const months = useMemo(() => {
     const set = new Map();
@@ -90,7 +120,7 @@ export default function Page() {
           ? <UnmatchedAllResolved />
           : filtered.length === 0
             ? <UnmatchedNoMatch />
-            : <UnmatchedTable issues={filtered} />}
+            : <UnmatchedTable issues={filtered} onResolve={handleResolve} onBulkExclude={handleBulkExclude} />}
     </main>
   );
 }

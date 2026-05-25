@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Icon } from './icons';
 import { NAV_HOME, NAV_SECTIONS } from '@/lib/menu';
+import { initDB } from '@/lib/db';
+import { getIssues } from '@/lib/sales';
 
 /**
  * 사이드바 컴포넌트
@@ -13,6 +15,26 @@ export default function Sidebar({ onClose }) {
   const router = useRouter();
   const sidebarRef = useRef(null);
   const [pillStyle, setPillStyle] = useState({ top: 0, opacity: 0 });
+  const [unmatchedCount, setUnmatchedCount] = useState(0);
+
+  // 미매칭 카운트 — pathname 변경 시 재조회 (페이지 이동 직후 자동 갱신)
+  useEffect(() => {
+    (async () => {
+      try {
+        await initDB();
+        const issues = await getIssues({ status: 'open' });
+        setUnmatchedCount(issues.length);
+      } catch { /* ignore */ }
+    })();
+  }, [pathname]);
+
+  // 동적 badge — 그룹/항목 id별 매핑
+  const dynamicBadge = (id) => {
+    if (id === 'menu-sales' || id === 'menu-sales-unmatched') {
+      return unmatchedCount > 0 ? unmatchedCount : null;
+    }
+    return null;
+  };
 
   const isActive = (item) => {
     if (!item.href) return false;
@@ -70,16 +92,18 @@ export default function Sidebar({ onClose }) {
       }
     };
 
+    const itemBadge = item.badge ?? dynamicBadge(item.id);
+
     return (
       <div key={item.id}>
         <button className={'nav-item ' + (active ? 'active' : '')} onClick={handle}>
           <IconComp className="ico" />
           <span>{item.label}</span>
-          {item.badge && <span className="badge">{item.badge}</span>}
+          {itemBadge && <span className="badge">{itemBadge}</span>}
           {hasKids && (
             <Icon.chevDown className="caret" style={{
               width: 14, height: 14,
-              marginLeft: item.badge ? 6 : 'auto',
+              marginLeft: itemBadge ? 6 : 'auto',
               transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
               transition: 'transform 160ms ease',
               color: 'var(--text-4)',
@@ -89,15 +113,18 @@ export default function Sidebar({ onClose }) {
         {hasKids && (
           <div className={'nav-children ' + (isOpen ? 'open' : '')}>
             <div className="nav-children-inner">
-              {item.children.map(c => (
-                <button key={c.id}
-                  className={'nav-child ' + (isActive(c) ? 'active' : '')}
-                  onClick={() => navigate(c.href)}>
-                  <span className="dot"></span>
-                  <span>{c.label}</span>
-                  {c.badge && <span className="badge">{c.badge}</span>}
-                </button>
-              ))}
+              {item.children.map(c => {
+                const childBadge = c.badge ?? dynamicBadge(c.id);
+                return (
+                  <button key={c.id}
+                    className={'nav-child ' + (isActive(c) ? 'active' : '')}
+                    onClick={() => navigate(c.href)}>
+                    <span className="dot"></span>
+                    <span>{c.label}</span>
+                    {childBadge && <span className="badge">{childBadge}</span>}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

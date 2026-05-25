@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { SALES_RULES } from '@/lib/sales';
+import { UserRulesSection } from './UserRulesSection';
 
 const CATEGORY_ORDER = ['전체', '피자', '1인피자', '사이드', '사이드(소스)', '엣지&도우', '세트메뉴', '하프앤하프', '추가토핑', '음료', '품목제외'];
 
@@ -39,9 +40,11 @@ export function SettingsRuleCard() {
 
   return (
     <div className="card" style={{marginTop:16}}>
+      <UserRulesSection />
+      <div style={{height:1, background:'var(--border)', margin:'16px 0'}}/>
       <div className="card-header">
         <div>
-          <div className="card-title">카테고리 분류 규칙</div>
+          <div className="card-title">기본 분류 규칙</div>
           <div className="card-sub">메뉴명 정규화 → 카테고리·중분류·상세 매핑 · 총 {SALES_RULES.length}개</div>
         </div>
       </div>

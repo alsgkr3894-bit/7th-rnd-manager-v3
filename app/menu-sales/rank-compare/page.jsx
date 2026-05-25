@@ -3,7 +3,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB, getAll, hasStore } from '@/lib/db';
-import { buildPeriodCompare, buildCategoryDetails, buildGroupRanking, deriveCompareB } from '@/lib/sales';
+import {
+  buildPeriodCompare, buildCategoryDetails, buildGroupRanking, deriveCompareB,
+  exportSingleMonthXlsx, exportCompareXlsx,
+} from '@/lib/sales';
+import { Icon } from '@/components/icons';
 import { PeriodBar } from '@/components/sales/PeriodBar';
 import { SingleMonthView } from '@/components/sales/SingleMonthView';
 import { CompareView } from '@/components/sales/CompareView';
@@ -119,12 +123,42 @@ export default function Page() {
     else setPeriodB(period);
   }
 
+  async function handleExport() {
+    try {
+      if (mode === 'single') {
+        if (!periodA || !singleDetail || singleMenus.length === 0) {
+          showToast('내보낼 데이터가 없습니다', 'err');
+          return;
+        }
+        await exportSingleMonthXlsx(periodA, singleDetail, singleMenus);
+      } else {
+        if (!compare || compare.totalA + compare.totalB === 0) {
+          showToast('내보낼 데이터가 없습니다', 'err');
+          return;
+        }
+        await exportCompareXlsx(periodA, periodB, compare);
+      }
+      showToast('엑셀 파일이 저장됐어요', 'ok');
+    } catch (err) {
+      console.error('[rank-compare] export 실패:', err);
+      showToast('엑셀 내보내기 실패', 'err');
+    }
+  }
+
   return (
     <main className="main">
       <PageHeader
         breadcrumb={['메뉴 판매량', '순위 및 비교']}
         title="판매량 비교"
         sub="두 기간의 판매량을 메뉴별로 비교하고, 신규·단종 메뉴를 확인할 수 있어요."
+        actions={
+          available.length > 0 && (
+            <button className="btn" onClick={handleExport}>
+              <Icon.download style={{width:14, height:14}}/>
+              엑셀 내보내기
+            </button>
+          )
+        }
       />
 
       {ready && available.length === 0 ? (

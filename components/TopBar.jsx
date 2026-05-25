@@ -3,13 +3,27 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from './icons';
 import { getProfile, getInitial } from '@/lib/profile';
+import { initDB } from '@/lib/db';
+import { getIssues } from '@/lib/sales';
 
 export default function TopBar({ onOpenPalette, onToggleSidebar }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [profile, setProfile] = useState(null);
+  const [unmatchedCount, setUnmatchedCount] = useState(0);
   const notifRef = useRef(null);
+  const router = useRouter();
 
   useEffect(() => { setProfile(getProfile()); }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        await initDB();
+        const issues = await getIssues({ status: 'open' });
+        setUnmatchedCount(issues.length);
+      } catch { /* ignore */ }
+    })();
+  }, []);
 
   useEffect(() => {
     if (!notifOpen) return;
@@ -18,12 +32,18 @@ export default function TopBar({ onOpenPalette, onToggleSidebar }) {
     return () => window.removeEventListener('mousedown', h);
   }, [notifOpen]);
 
-  const notifs = [
-    { kind: 'alert', title: '모짜렌라치즈 단가 +3.8%', time: '방금 전', desc: '7,400원 → 7,680원 · 영향 메뉴 23개' },
-    { kind: 'info',  title: '4월 메뉴판매량 업로드 완료', time: '1시간 전', desc: '12,840건 처리 · 미매칭 4건 확인 필요' },
-    { kind: 'note',  title: '황성한우셰림프 테스트 노트 추가', time: '3시간 전', desc: '와사비마요 조합 · 재테스트 예정' },
-    { kind: 'ok',    title: '4월 판매량 보고서 생성 완료', time: '어제', desc: '전월 대비 +6.8%' },
-  ];
+  // 실제 알림 (미매칭 발생 시 표시)
+  const notifs = unmatchedCount > 0
+    ? [
+        {
+          kind: 'alert',
+          title: `미매칭 ${unmatchedCount}건 처리 필요`,
+          time: '지금',
+          desc: '메뉴 판매량 → 미매칭 관리에서 별칭/규칙/제외로 처리할 수 있어요',
+          href: '/menu-sales/unmatched',
+        },
+      ]
+    : [];
   const meta = {
     alert: { bg: 'var(--negative-soft)', color: 'var(--negative)',    ico: <Icon.alert  style={{width:16,height:16}}/> },
     info:  { bg: 'var(--accent-soft)',   color: 'var(--accent-text)', ico: <Icon.upload style={{width:16,height:16}}/> },
@@ -58,7 +78,7 @@ export default function TopBar({ onOpenPalette, onToggleSidebar }) {
       <div className="notif-wrap" ref={notifRef}>
         <button className="icon-btn" title="알림" onClick={() => setNotifOpen(v => !v)}>
           <Icon.bell style={{width:18, height:18}} />
-          <span className="dot"></span>
+          {unmatchedCount > 0 && <span className="dot"></span>}
         </button>
         {notifOpen && (
           <div className="notif-pop">
@@ -67,10 +87,16 @@ export default function TopBar({ onOpenPalette, onToggleSidebar }) {
               <button className="link">모두 읽음</button>
             </div>
             <div className="notif-list">
-              {notifs.map((n, i) => {
+              {notifs.length === 0 ? (
+                <div style={{padding:'24px 16px', textAlign:'center', color:'var(--text-3)', fontSize:13}}>
+                  새 알림이 없습니다
+                </div>
+              ) : notifs.map((n, i) => {
                 const m = meta[n.kind];
                 return (
-                  <button className="notif-item" key={i}>
+                  <button className="notif-item" key={i}
+                    onClick={() => { if (n.href) { router.push(n.href); setNotifOpen(false); } }}
+                  >
                     <div className="notif-ico" style={{background: m.bg, color: m.color}}>{m.ico}</div>
                     <div className="notif-body">
                       <div className="notif-row1">
@@ -82,9 +108,6 @@ export default function TopBar({ onOpenPalette, onToggleSidebar }) {
                   </button>
                 );
               })}
-            </div>
-            <div className="notif-foot">
-              <button className="btn ghost" style={{width:'100%'}}>전체 알림 보기</button>
             </div>
           </div>
         )}

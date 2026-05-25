@@ -23,9 +23,9 @@ export default function Page() {
   return (
     <main className="main">
       <PageHeader
-        breadcrumb={['메뉴 판매량', '설정']}
-        title="메뉴판매량 설정"
-        sub="분류 규칙·별칭·품목 제외 정책을 확인할 수 있어요. 추가/수정은 추후 지원 예정"
+        breadcrumb={['메뉴 판매량', '분류 규칙']}
+        title="분류 규칙 / 정책"
+        sub="기본 정책 + 사용자 정의 별칭·규칙·제외를 관리합니다. 미매칭 관리에서 추가한 규칙도 여기에 나타납니다."
       />
 
       {/* 요약 KPI */}

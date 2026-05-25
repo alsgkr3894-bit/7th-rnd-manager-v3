@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { SALES_ALIASES } from '@/lib/sales';
+import { UserAliasesSection } from './UserAliasesSection';
 
 /**
  * SettingsAliasCard — 메뉴별 별칭 관리 (정책 표시)
@@ -24,6 +25,8 @@ export function SettingsAliasCard() {
 
   return (
     <div className="card" style={{marginTop:16}}>
+      <UserAliasesSection />
+      <div style={{height:1, background:'var(--border)', margin:'16px 0'}}/>
       <div className="card-header">
         <div>
           <div className="card-title">메뉴별 별칭 관리</div>

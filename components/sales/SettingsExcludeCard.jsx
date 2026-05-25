@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { SALES_RULES } from '@/lib/sales';
+import { UserExcludedSection } from './UserExcludedSection';
 
 /**
  * SettingsExcludeCard — 품목 제외 목록 (정책 표시)
@@ -28,9 +29,11 @@ export function SettingsExcludeCard() {
 
   return (
     <div className="card" style={{marginTop:16}}>
+      <UserExcludedSection />
+      <div style={{height:1, background:'var(--border)', margin:'16px 0'}}/>
       <div className="card-header">
         <div>
-          <div className="card-title">품목 제외 목록</div>
+          <div className="card-title">기본 제외 목록 (정책)</div>
           <div className="card-sub">집계·순위·매출 계산에서 자동 제외 · 총 {excluded.length}개</div>
         </div>
       </div>
