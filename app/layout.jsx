@@ -1,6 +1,13 @@
 import './globals.css';
-import { Pretendard } from 'next/font/local';
+import localFont from 'next/font/local';
 import AppShell from '@/components/AppShell';
+
+const pretendard = localFont({
+  src: '../public/fonts/PretendardVariable.woff2',
+  display: 'swap',
+  variable: '--font-pretendard',
+  weight: '100 900',
+});
 
 export const metadata = {
   title: '7번가 R&D 플랫폼',
@@ -9,11 +16,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ko">
-      <head>
-        <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-      </head>
+    <html lang="ko" className={pretendard.variable}>
       <body>
         <AppShell>{children}</AppShell>
       </body>

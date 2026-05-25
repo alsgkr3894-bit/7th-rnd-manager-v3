@@ -6,7 +6,7 @@
   --surface-2: #F7F8FA;
   --text-1: #191F28;
   --text-2: #4E5968;
-  --text-3: #6B7684;
+  --text-3: #5C6472;  /* #F7F8FA 배경 기준 5.1:1 — WCAG AA ✓ */
   --text-4: #767676;
   --border: #EBEEF1;
   --border-strong: #D1D6DB;
@@ -73,7 +73,7 @@
 html, body, #root { height: 100%; }
 body {
   margin: 0;
-  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: var(--font-pretendard), 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   background: var(--bg);
   color: var(--text-1);
   font-size: 14px;
@@ -134,7 +134,7 @@ button { font-family: inherit; cursor: pointer; }
 .sidebar .brand .brand-text {
   display: flex; flex-direction: column;
   line-height: 1.1;
-  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-family: var(--font-pretendard), 'Pretendard Variable', Pretendard, sans-serif;
 }
 .sidebar .brand .brand-line1 {
   font-size: 15px;
