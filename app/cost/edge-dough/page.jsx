@@ -1,55 +1,176 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Icon } from '@/components/icons';
-import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
-import { MENUS_BY_PERIOD } from '@/lib/data';
+import { initDB } from '@/lib/db';
+import { formatNumber } from '@/lib/format';
+import {
+  getAllEdges, upsertEdge, deleteEdge, seedEdges, resetAllEdges,
+  edgeTotalCost,
+} from '@/lib/cost/edge-dough';
+import { EdgeCard } from '@/components/cost/edge-dough/EdgeCard';
+import { EdgeEditModal } from '@/components/cost/edge-dough/EdgeEditModal';
 
 export default function Page() {
-  const title = "엣지 & 도우";
-  const bc = ["원가계산","엣지 & 도우"];
+  const [edges,   setEdges]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [target,  setTarget]  = useState(null);
+  const [deletePending, setDeletePending] = useState(null);
+  const [seeding, setSeeding] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
-  const [sortKey,setSortKey]=useState('rate');
-  const [sortDir,setSortDir]=useState('desc');
-  const menus=MENUS_BY_PERIOD['2026.05'].filter(m=>m.cat==='피자'||m.cat==='1인피자');
-  const sorted=useMemo(()=>[...menus].sort((a,b)=>sortDir==='asc'?a[sortKey]-b[sortKey]:b[sortKey]-a[sortKey]),[menus,sortKey,sortDir]);
-  const toggleSort=(k)=>{ if(sortKey===k)setSortDir(d=>d==='asc'?'desc':'asc'); else{setSortKey(k);setSortDir('desc');} };
-  const SortIco=({k})=><span className={'sort-ico-wrap '+(sortKey===k?sortDir:'')} style={{marginLeft:4}}>
-    {sortKey===k&&sortDir==='asc'?<span className="asc-tri"/>:<><span className="neutral-tri-up"/><span className="neutral-tri-down"/></>}
-  </span>;
+  const load = useCallback(async () => {
+    await initDB();
+    setEdges(await getAllEdges());
+  }, []);
+
+  useEffect(() => {
+    load().catch(console.error).finally(() => setLoading(false));
+  }, [load]);
+
+  async function handleSave(data) {
+    try {
+      await upsertEdge(data);
+      showToast('저장 완료', 'ok');
+      setTarget(null);
+      await load();
+    } catch (err) {
+      showToast('저장 실패: ' + err.message, 'err');
+      throw err;
+    }
+  }
+
+  async function handleDelete(id) {
+    try {
+      await deleteEdge(id);
+      setEdges(prev => prev.filter(e => e.id !== id));
+      setDeletePending(null);
+      showToast('삭제 완료', 'ok');
+    } catch (err) {
+      showToast('삭제 실패: ' + err.message, 'err');
+    }
+  }
+
+  async function handleSeed() {
+    if (seeding) return;
+    setSeeding(true);
+    try {
+      const result = await seedEdges();
+      showToast(`마스터 시드 완료 — 신규 ${result.inserted}개`, 'ok');
+      await load();
+    } catch (err) {
+      showToast('시드 실패: ' + err.message, 'err');
+    } finally { setSeeding(false); }
+  }
+
+  async function handleReset() {
+    if (resetting) return;
+    setResetting(true);
+    try {
+      const result = await resetAllEdges();
+      showToast(`초기화 완료 — ${result.deleted}개 삭제`, 'ok');
+      setResetConfirm(false);
+      await load();
+    } catch (err) {
+      showToast('초기화 실패: ' + err.message, 'err');
+    } finally { setResetting(false); }
+  }
+
+  const totalSum = edges.reduce((acc, e) => acc + edgeTotalCost(e), 0);
+  const filled = edges.filter(e => e.components?.length > 0).length;
+
+  const sub = loading
+    ? '로딩 중…'
+    : edges.length === 0
+      ? '등록된 엣지·도우가 없습니다 — 마스터 시드로 5종 일괄 등록 또는 직접 추가'
+      : `${filled}/${edges.length}개 구성 완료 · 합계 ${formatNumber(totalSum)}원 (피자 세부 원가에서 참조)`;
+
   return (
     <main className="main">
-      <PageHeader breadcrumb={bc} title={title}
-        sub="최신 제때 단가 2026.05.21 반영 · 35% 초과 = 위험"
-        actions={<><button className="btn" onClick={()=>showToast('양식 다운로드 완료','ok')}><Icon.download style={{width:14,height:14}}/>양식 다운로드</button><button className="btn" onClick={()=>showToast('CSV 파일이 저장됐어요','ok')}><Icon.download style={{width:14,height:14}}/>CSV 내보내기</button></>}
+      <PageHeader
+        breadcrumb={['원가계산', '엣지 & 도우']}
+        title="엣지 & 도우 원가표"
+        sub={sub}
+        actions={
+          <>
+            {resetConfirm ? (
+              <span style={{display:'flex', gap:6, alignItems:'center'}}>
+                <span style={{fontSize:12, color:'var(--negative)', fontWeight:600}}>
+                  전체({edges.length}개) 삭제할까요?
+                </span>
+                <button className="btn" style={{background:'var(--negative)', color:'#fff', border:'none'}}
+                  onClick={handleReset} disabled={resetting}>
+                  {resetting ? '삭제 중…' : '삭제'}
+                </button>
+                <button className="btn" onClick={() => setResetConfirm(false)}>취소</button>
+              </span>
+            ) : (
+              <button className="btn" onClick={() => setResetConfirm(true)}
+                style={{color:'var(--text-3)'}} disabled={edges.length === 0}>
+                <Icon.trash style={{width:14, height:14}}/> 초기화
+              </button>
+            )}
+            <button className="btn" onClick={handleSeed} disabled={seeding}>
+              <Icon.download style={{width:14, height:14}}/>
+              {seeding ? '시드 중…' : '마스터 시드 (5)'}
+            </button>
+            <button className="btn primary" onClick={() => setTarget('new')}>
+              <Icon.plus style={{width:14, height:14}}/> 추가
+            </button>
+          </>
+        }
       />
-      <div className="card table-card" style={{marginTop:24}}>
-        <div style={{overflowX:'auto'}}>
-        <table className="data-table stagger-rows">
-          <thead><tr>
-            <th>메뉴명</th><th style={{width:120}}>카테고리</th>
-            <th style={{width:160,textAlign:'right'}} onClick={()=>toggleSort('costRate')} className="sort-th">원가율<SortIco k="costRate"/></th>
-          </tr></thead>
-          <tbody>
-            {sorted.map(m=>{
-              const risk=m.costRate>=35;
-              return (
-                <tr key={m.name} style={{background:risk?'var(--negative-soft)':undefined}}>
-                  <td style={{fontWeight:600}}>{m.name}{risk&&<span style={{marginLeft:8,fontSize:11,color:'var(--negative)',fontWeight:700}}>⚠ 위험</span>}</td>
-                  <td><span className="chip">{m.cat}</span></td>
-                  <td className="num right">
-                    <span style={{color:risk?'var(--negative)':m.costRate>=30?'var(--warn)':'inherit',fontWeight:risk?700:400}}>{m.costRate}%</span>
-                    <div className="cost-gauge-wrap" style={{marginTop:4}}>
-                      <div className="cost-gauge-track"><div className="cost-gauge-fill" style={{width:Math.min(m.costRate/50*100,100)+'%',background:risk?'var(--negative)':m.costRate>=30?'var(--warn)':'var(--positive)'}}/></div>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+
+      {!loading && edges.length === 0 && (
+        <div className="card" style={{minHeight:200, display:'grid', placeItems:'center'}}>
+          <div style={{textAlign:'center', color:'var(--text-3)'}}>
+            <Icon.calc style={{width:32, height:32, marginBottom:12, opacity:.4}}/>
+            <div style={{fontWeight:600, marginBottom:4}}>아직 등록된 엣지·도우가 없습니다</div>
+            <div style={{fontSize:13}}>
+              상단의 <b>마스터 시드</b>로 5종 (치즈크러스트 L/R · 골드스윗 L/R · 씬도우 L) 일괄 등록 가능
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {edges.length > 0 && (
+        <div style={{display:'flex', flexDirection:'column', gap:8}}>
+          {edges.map(e => (
+            <EdgeCard
+              key={e.id}
+              edge={e}
+              onEdit={() => setTarget(e)}
+              onDelete={deletePending === e.id
+                ? null
+                : () => setDeletePending(e.id)}
+            />
+          ))}
+        </div>
+      )}
+
+      {deletePending && (
+        <div style={{
+          position:'fixed', bottom:24, left:'50%', transform:'translateX(-50%)',
+          background:'var(--surface-1)', border:'1px solid var(--border)', borderRadius:12,
+          padding:'12px 18px', boxShadow:'0 4px 16px rgba(0,0,0,.15)',
+          display:'flex', gap:10, alignItems:'center', zIndex:50,
+        }}>
+          <span style={{fontSize:13, fontWeight:600}}>이 엣지를 삭제할까요?</span>
+          <button className="btn" style={{background:'var(--negative)', color:'#fff', border:'none'}}
+            onClick={() => handleDelete(deletePending)}>삭제</button>
+          <button className="btn" onClick={() => setDeletePending(null)}>취소</button>
+        </div>
+      )}
+
+      {target !== null && (
+        <EdgeEditModal
+          initial={target === 'new' ? null : target}
+          onSave={handleSave}
+          onClose={() => setTarget(null)}
+        />
+      )}
     </main>
   );
 }

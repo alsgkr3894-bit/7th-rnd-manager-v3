@@ -1,15 +1,27 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState, useMemo, useCallback } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { NoteCardSkeleton } from '@/components/ui/Skeleton';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import {
   CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS, STATUS_BORDER,
-  getAllNotes, deleteNote, updateNote,
+  getAllNotes, addNote, deleteNote, updateNote,
 } from '@/lib/note';
 import { getNoteDetailStats } from '@/lib/stats/note-stats';
+
+function hl(text, q) {
+  if (!q || !text) return text;
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = String(text).split(new RegExp(`(${escaped})`, 'gi'));
+  return parts.map((p, i) =>
+    i % 2 === 1
+      ? <mark key={i} className="search-hl">{p}</mark>
+      : p
+  );
+}
 
 const SORT_OPTIONS = [
   { key: 'createdAt', label: '최신순' },
@@ -25,15 +37,29 @@ function setLS(key, val) {
 }
 
 export default function Page() {
-  const router = useRouter();
+  return (
+    <Suspense fallback={<main className="main"><div style={{padding:48, textAlign:'center', color:'var(--text-3)'}}>로딩 중…</div></main>}>
+      <NoteContent/>
+    </Suspense>
+  );
+}
+
+function NoteContent() {
+  const router       = useRouter();
+  const pathname     = usePathname();
+  const searchParams = useSearchParams();
+
   const [notes,        setNotes]        = useState([]);
   const [loading,      setLoading]      = useState(true);
-  const [search,       setSearch]       = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [search,       setSearch]       = useState(() => searchParams.get('q') || '');
+  const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || 'all');
   const [sortBy,       setSortBy]       = useState(() => tryLS('v3:note-sort', 'createdAt'));
   const [viewMode,     setViewMode]     = useState(() => tryLS('v3:note-view', 'card'));
   const [detailNote,   setDetailNote]   = useState(null);
   const [stats,        setStats]        = useState(null);
+  const [batchMode,    setBatchMode]    = useState(false);
+  const [selected,     setSelected]     = useState(new Set());
+  const [popIds,       setPopIds]       = useState(new Set());
 
   const load = useCallback(async () => {
     await initDB();
@@ -41,6 +67,16 @@ export default function Page() {
     setNotes(data);
     setStats(s);
   }, []);
+
+  // URL ↔ filter sync
+  useEffect(() => {
+    const p = new URLSearchParams();
+    if (search)            p.set('q', search);
+    if (statusFilter !== 'all') p.set('status', statusFilter);
+    const qs = p.toString();
+    const next = qs ? `${pathname}?${qs}` : pathname;
+    window.history.replaceState(null, '', next);
+  }, [search, statusFilter, pathname]);
 
   useEffect(() => {
     load().catch(console.error).finally(() => setLoading(false));
@@ -69,14 +105,35 @@ export default function Page() {
   }, [notes, statusFilter, search, sortBy]);
 
   async function handleDelete(note, e) {
+    e?.stopPropagation();
+    // 낙관적 UI 제거
+    setNotes(prev => prev.filter(n => n.id !== note.id));
+    if (detailNote?.id === note.id) setDetailNote(null);
+    let cancelled = false;
+    showToast(`"${note.title}" 삭제됨`, 'ok', 4000, {
+      label: '실행취소',
+      onClick: () => { cancelled = true; load(); },
+    });
+    await new Promise(r => setTimeout(r, 3800));
+    if (!cancelled) {
+      try { await deleteNote(note.id); }
+      catch { load(); showToast('삭제 실패', 'error'); }
+    }
+  }
+
+  async function handleCopy(note, e) {
     e.stopPropagation();
-    if (!confirm(`"${note.title}" 노트를 삭제하시겠습니까?`)) return;
     try {
-      await deleteNote(note.id);
-      showToast('노트가 삭제됐어요', 'ok');
-      if (detailNote?.id === note.id) setDetailNote(null);
-      await load();
-    } catch { showToast('삭제 중 오류가 발생했어요', 'error'); }
+      await initDB();
+      await addNote({
+        ...note,
+        title: `${note.title} (복사)`,
+        createdAt: undefined,
+        parentId: null,
+      });
+      showToast('노트를 복사했어요', 'ok');
+      load();
+    } catch { showToast('복사 실패', 'error'); }
   }
 
   async function handleStatusChange(noteId, newStatus, e) {
@@ -84,9 +141,31 @@ export default function Page() {
     try {
       await updateNote(noteId, { status: newStatus });
       showToast(`상태 → ${newStatus}`, 'ok');
+      setPopIds(s => new Set([...s, noteId]));
+      setTimeout(() => setPopIds(s => { const n = new Set(s); n.delete(noteId); return n; }), 400);
       await load();
       if (detailNote?.id === noteId) setDetailNote(n => n ? { ...n, status: newStatus } : null);
     } catch { showToast('상태 변경 실패', 'error'); }
+  }
+
+  async function handleBatchDelete() {
+    if (selected.size === 0) return;
+    if (!confirm(`선택한 ${selected.size}개 노트를 삭제할까요?`)) return;
+    try {
+      await Promise.all([...selected].map(id => deleteNote(id)));
+      showToast(`${selected.size}개 삭제됨`, 'ok');
+      setSelected(new Set());
+      setBatchMode(false);
+      load();
+    } catch { showToast('삭제 실패', 'error'); }
+  }
+
+  function toggleSelect(id) {
+    setSelected(s => {
+      const n = new Set(s);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
   }
 
   function handleNewVersion(note, e) {
@@ -124,16 +203,29 @@ export default function Page() {
         sub={`전체 ${notes.length}개`}
         actions={
           <div style={{display:'flex',gap:8}}>
-            {counts['보고예정'] > 0 && (
-              <button className="btn" onClick={handleBulkCopy}
-                style={{color:'#6B3FCB', borderColor:'#6B3FCB40'}}>
-                <Icon.doc style={{width:13,height:13}}/> 보고예정 일괄복사
-              </button>
+            {batchMode ? (
+              <>
+                <button className="btn" style={{color:'var(--negative)'}}
+                  onClick={handleBatchDelete} disabled={selected.size === 0}>
+                  선택 삭제 {selected.size > 0 && `(${selected.size})`}
+                </button>
+                <button className="btn" onClick={() => { setBatchMode(false); setSelected(new Set()); }}>취소</button>
+              </>
+            ) : (
+              <>
+                {counts['보고예정'] > 0 && (
+                  <button className="btn" onClick={handleBulkCopy}
+                    style={{color:'#6B3FCB', borderColor:'#6B3FCB40'}}>
+                    <Icon.doc style={{width:13,height:13}}/> 보고예정 일괄복사
+                  </button>
+                )}
+                <button className="btn" onClick={() => setBatchMode(true)} title="다중 선택">선택</button>
+                <button className="btn" onClick={() => router.push('/note/board')}>칸반 보드</button>
+                <button className="btn primary" onClick={() => router.push('/note/write')}>
+                  <Icon.plus style={{width:14,height:14}}/> 노트 작성
+                </button>
+              </>
             )}
-            <button className="btn" onClick={() => router.push('/note/board')}>칸반 보드</button>
-            <button className="btn primary" onClick={() => router.push('/note/write')}>
-              <Icon.plus style={{width:14,height:14}}/> 노트 작성
-            </button>
           </div>
         }
       />
@@ -225,11 +317,20 @@ export default function Page() {
         </div>
       </div>
 
+      {/* 스켈레톤 로딩 */}
+      {loading && (
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(320px, 1fr))', gap:16, marginTop:24 }}>
+          {Array.from({ length: 6 }).map((_, i) => <NoteCardSkeleton key={i}/>)}
+        </div>
+      )}
+
       {/* 빈 상태 */}
       {!loading && notes.length === 0 && (
-        <div className="card" style={{minHeight:200,display:'grid',placeItems:'center',marginTop:16}}>
+        <div className="card empty-state" style={{minHeight:200,display:'grid',placeItems:'center',marginTop:16}}>
           <div style={{textAlign:'center',color:'var(--text-3)'}}>
-            <Icon.note style={{width:36,height:36,marginBottom:12,opacity:.35}}/>
+            <div className="empty-float" style={{display:'inline-block',marginBottom:12}}>
+              <Icon.note style={{width:40,height:40,opacity:.3}}/>
+            </div>
             <div style={{fontWeight:600,marginBottom:4}}>아직 노트가 없어요</div>
             <div style={{fontSize:13}}>메뉴 테스트 결과나 아이디어를 기록해보세요.</div>
             <button className="btn primary" style={{marginTop:16}} onClick={() => router.push('/note/write')}>
@@ -239,23 +340,46 @@ export default function Page() {
         </div>
       )}
       {!loading && notes.length > 0 && filtered.length === 0 && (
-        <div className="card" style={{minHeight:120,display:'grid',placeItems:'center',marginTop:16}}>
-          <div style={{textAlign:'center',color:'var(--text-3)',fontSize:14}}>조건에 맞는 노트가 없어요.</div>
+        <div className="card empty-state" style={{minHeight:120,display:'grid',placeItems:'center',marginTop:16}}>
+          <div style={{textAlign:'center',color:'var(--text-3)'}}>
+            <div className="empty-float" style={{display:'inline-block',marginBottom:8,fontSize:28}}>🔍</div>
+            <div style={{fontSize:14}}>
+              {search ? `"${search}" 검색 결과가 없어요` : '조건에 맞는 노트가 없어요'}
+            </div>
+          </div>
         </div>
       )}
 
       {/* 카드 그리드 */}
       {filtered.length > 0 && viewMode === 'card' && (
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))',gap:16,marginTop:16}}>
-          {filtered.map(note => (
-            <NoteCard key={note.id} note={note}
-              onEdit={e => { e.stopPropagation(); router.push(`/note/${note.id}`); }}
-              onDelete={e => handleDelete(note, e)}
-              onStatusChange={(s, e) => handleStatusChange(note.id, s, e)}
-              onNewVersion={e => handleNewVersion(note, e)}
-              onClick={() => setDetailNote(note)}
-              formatDate={formatDate} parseTags={parseTags}
-            />
+          {filtered.map((note, i) => (
+            <div key={note.id} className="stagger note-card-wrap" style={{animationDelay:`${Math.min(i,8)*40}ms`}}>
+              {/* hover preview */}
+              {note.testContent && note.testContent.length > 80 && (
+                <div className="note-hover-preview">{note.testContent}</div>
+              )}
+              {/* 배치 모드 체크박스 */}
+              {batchMode && (
+                <div className={'batch-checkbox-wrap' + (selected.has(note.id) ? ' checked' : '')}
+                  onClick={e => { e.stopPropagation(); toggleSelect(note.id); }}>
+                  {selected.has(note.id) && <span style={{fontSize:12,fontWeight:800}}>✓</span>}
+                </div>
+              )}
+              <NoteCard note={note}
+                onEdit={e => { e.stopPropagation(); router.push(`/note/${note.id}`); }}
+                onDelete={e => handleDelete(note, e)}
+                onCopy={e => handleCopy(note, e)}
+                onStatusChange={(s, e) => handleStatusChange(note.id, s, e)}
+                onNewVersion={e => handleNewVersion(note, e)}
+                onClick={() => batchMode ? toggleSelect(note.id) : setDetailNote(note)}
+                formatDate={formatDate} parseTags={parseTags}
+                searchQ={search}
+                statusPop={popIds.has(note.id)}
+                batchMode={batchMode}
+                selected={selected.has(note.id)}
+              />
+            </div>
           ))}
         </div>
       )}
@@ -331,39 +455,51 @@ export default function Page() {
   );
 }
 
-function NoteCard({ note, onEdit, onDelete, onStatusChange, onNewVersion, onClick, formatDate, parseTags }) {
+function NoteCard({ note, onEdit, onDelete, onCopy, onStatusChange, onNewVersion, onClick, formatDate, parseTags, searchQ, statusPop, batchMode, selected }) {
   const tags = parseTags(note.tags);
   const sc   = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
   const sb   = STATUS_BORDER[note.status] || 'var(--border)';
+  const q    = (searchQ || '').trim().toLowerCase();
   return (
-    <div className="card card-lift" style={{cursor:'pointer',borderLeft:`4px solid ${sb}`,paddingLeft:20}} onClick={onClick}>
+    <div className="card card-lift"
+      style={{cursor:'pointer', borderLeft:`4px solid ${sb}`, paddingLeft:20,
+        outline: selected ? `2px solid var(--accent)` : 'none', outlineOffset:0,
+      }}
+      onClick={onClick}>
       <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-        <select value={note.status} onChange={e => onStatusChange(e.target.value, e)} onClick={e => e.stopPropagation()}
-          style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:20,background:sc.bg,color:sc.color,
-            border:`1px solid ${sc.color}40`,cursor:'pointer',fontFamily:'inherit',outline:'none'}}>
+        <select value={note.status}
+          onChange={e => onStatusChange(e.target.value, e)}
+          onClick={e => e.stopPropagation()}
+          className={statusPop ? 'status-pop-anim' : ''}
+          style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:20,
+            background:sc.bg, color:sc.color,
+            border:`1px solid ${sc.color}40`, cursor:'pointer', fontFamily:'inherit', outline:'none'}}>
           {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
         <span style={{fontSize:11,color:'var(--text-3)'}}>{note.category} · {note.noteType}</span>
         {note.parentId && <span style={{fontSize:10,color:'var(--text-4)',background:'var(--surface-2)',padding:'1px 6px',borderRadius:8}}>버전</span>}
         <span style={{marginLeft:'auto',fontSize:11,color:'var(--text-4)'}}>{formatDate(note.testDate)}</span>
       </div>
-      <div style={{fontWeight:700,fontSize:15,marginBottom:3,color:'var(--text-1)'}}>{note.title}</div>
-      <div style={{fontSize:12,color:'var(--text-3)',marginBottom:8}}>{note.menuName}</div>
+      <div style={{fontWeight:700,fontSize:15,marginBottom:3,color:'var(--text-1)'}}>{q ? hl(note.title, q) : note.title}</div>
+      <div style={{fontSize:12,color:'var(--text-3)',marginBottom:8}}>{q ? hl(note.menuName, q) : note.menuName}</div>
       {note.testContent && (
         <div style={{fontSize:13,color:'var(--text-2)',lineHeight:1.6,marginBottom:10,
           display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>
-          {note.testContent}
+          {q ? hl(note.testContent, q) : note.testContent}
         </div>
       )}
       <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
         {tags.slice(0,3).map(t => (
-          <span key={t} style={{fontSize:11,padding:'2px 7px',borderRadius:12,background:'var(--surface-2)',color:'var(--text-3)'}}>#{t}</span>
+          <span key={t} style={{fontSize:11,padding:'2px 7px',borderRadius:12,background:'var(--surface-2)',color:'var(--text-3)'}}>#{q ? hl(t, q) : t}</span>
         ))}
-        <div style={{marginLeft:'auto',display:'flex',gap:5}}>
-          <button className="btn sm" onClick={onNewVersion} style={{fontSize:10,padding:'3px 7px',color:'var(--text-3)'}}>+ 버전</button>
-          <button className="btn sm" onClick={onEdit}><Icon.edit style={{width:12,height:12}}/></button>
-          <button className="btn sm" onClick={onDelete} style={{color:'var(--negative)'}}><Icon.trash style={{width:12,height:12}}/></button>
-        </div>
+        {!batchMode && (
+          <div style={{marginLeft:'auto',display:'flex',gap:5}}>
+            <button className="btn sm" onClick={onNewVersion} style={{fontSize:10,padding:'3px 7px',color:'var(--text-3)'}}>+ 버전</button>
+            <button className="btn sm" onClick={onCopy} style={{fontSize:10,padding:'3px 7px',color:'var(--text-3)'}}>복사</button>
+            <button className="btn sm" onClick={onEdit}><Icon.edit style={{width:12,height:12}}/></button>
+            <button className="btn sm" onClick={onDelete} style={{color:'var(--negative)'}}><Icon.trash style={{width:12,height:12}}/></button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -381,9 +517,9 @@ function DetailModal({ note, onClose, onEdit, parseTags, formatDate }) {
     ['보고용 요약', note.reportSummary],
   ].filter(([,v]) => v);
   return (
-    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.45)',zIndex:200,display:'grid',placeItems:'center'}}
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.45)',zIndex:200,display:'grid',placeItems:'center',animation:'fade 150ms ease'}}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="card" style={{width:'min(600px,95vw)',maxHeight:'88vh',overflowY:'auto',padding:'24px 28px',borderLeft:`4px solid ${sb}`}}>
+      <div className="card modal-anim" style={{width:'min(600px,95vw)',maxHeight:'88vh',overflowY:'auto',padding:'24px 28px',borderLeft:`4px solid ${sb}`}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16}}>
           <div>
             <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}>
