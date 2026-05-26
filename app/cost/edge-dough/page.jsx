@@ -24,6 +24,7 @@ export default function Page() {
         actions={<><button className="btn" onClick={()=>showToast('양식 다운로드 완료','ok')}><Icon.download style={{width:14,height:14}}/>양식 다운로드</button><button className="btn" onClick={()=>showToast('CSV 파일이 저장됐어요','ok')}><Icon.download style={{width:14,height:14}}/>CSV 내보내기</button></>}
       />
       <div className="card table-card" style={{marginTop:24}}>
+        <div style={{overflowX:'auto'}}>
         <table className="data-table stagger-rows">
           <thead><tr>
             <th>메뉴명</th><th style={{width:120}}>카테고리</th>
@@ -47,6 +48,7 @@ export default function Page() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
     </main>
   );
