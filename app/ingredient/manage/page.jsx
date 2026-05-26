@@ -13,6 +13,7 @@ import {
   deleteIngredient, getCategoryStyle,
   sortMainCategories, sortHashTags,
   seedMasterIngredients, INGREDIENT_MASTER_SEED,
+  resetAllIngredients,
 } from '@/lib/ingredient';
 import { IngredientForm } from './IngredientForm';
 
@@ -30,6 +31,8 @@ export default function Page() {
   const [formTarget,   setFormTarget]   = useState(null);
   const [deletePending,setDeletePending]= useState(null);
   const [seeding,      setSeeding]      = useState(false);
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const [resetting,    setResetting]    = useState(false);
 
   const load = useCallback(async () => {
     await initDB();
@@ -73,6 +76,21 @@ export default function Page() {
       showToast('시드 실패: ' + err.message, 'err');
     } finally {
       setSeeding(false);
+    }
+  }
+
+  async function handleReset() {
+    if (resetting) return;
+    setResetting(true);
+    try {
+      const result = await resetAllIngredients();
+      showToast(`초기화 완료 — ${result.deleted}개 삭제`, 'ok');
+      setResetConfirm(false);
+      await load();
+    } catch (err) {
+      showToast('초기화 실패: ' + err.message, 'err');
+    } finally {
+      setResetting(false);
     }
   }
 
@@ -188,6 +206,23 @@ export default function Page() {
         sub={sub}
         actions={
           <>
+            {resetConfirm ? (
+              <span style={{display:'flex', gap:6, alignItems:'center'}}>
+                <span style={{fontSize:12, color:'var(--negative)', fontWeight:600}}>
+                  모든 식자재 데이터({rows.length}개)를 삭제할까요?
+                </span>
+                <button className="btn" style={{background:'var(--negative)', color:'#fff', border:'none'}}
+                  onClick={handleReset} disabled={resetting}>
+                  {resetting ? '삭제 중…' : '삭제'}
+                </button>
+                <button className="btn" onClick={() => setResetConfirm(false)}>취소</button>
+              </span>
+            ) : (
+              <button className="btn" onClick={() => setResetConfirm(true)}
+                style={{color:'var(--text-3)'}} disabled={rows.length === 0}>
+                <Icon.trash style={{width:14, height:14}}/> 데이터 초기화
+              </button>
+            )}
             <button className="btn" onClick={handleSeed} disabled={seeding}>
               <Icon.download style={{width:14, height:14}}/>
               {seeding ? '시드 중…' : `마스터 시드 (${INGREDIENT_MASTER_SEED.length})`}
