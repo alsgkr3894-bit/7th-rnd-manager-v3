@@ -1,53 +1,153 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
-import { MENUS_BY_PERIOD } from '@/lib/data';
+import { initDB } from '@/lib/db';
+import {
+  MENU_PRICE_CATEGORIES,
+  getAllMenuPrices, addMenuPrice, updateMenuPrice, deleteMenuPrice,
+} from '@/lib/cost/menu-price';
+import { MenuPriceTable } from '@/components/cost/menu-price/MenuPriceTable';
+import { MenuPriceForm } from '@/components/cost/menu-price/MenuPriceForm';
+import { MenuPriceUploadCard } from '@/components/cost/menu-price/MenuPriceUploadCard';
 
 export default function Page() {
-  const title = "메뉴 판매가";
-  const bc = ["원가계산","메뉴 판매가"];
+  const [rows, setRows]             = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [search, setSearch]         = useState('');
+  const [catFilter, setCatFilter]   = useState('all');
+  const [formTarget, setFormTarget] = useState(null);
+  const [deletePending, setDeletePending] = useState(null);
 
-  const [sortKey,setSortKey]=useState('rate');
-  const [sortDir,setSortDir]=useState('desc');
-  const menus=MENUS_BY_PERIOD['2026.05'].filter(m=>m.cat==='피자'||m.cat==='1인피자');
-  const sorted=useMemo(()=>[...menus].sort((a,b)=>sortDir==='asc'?a[sortKey]-b[sortKey]:b[sortKey]-a[sortKey]),[menus,sortKey,sortDir]);
-  const toggleSort=(k)=>{ if(sortKey===k)setSortDir(d=>d==='asc'?'desc':'asc'); else{setSortKey(k);setSortDir('desc');} };
-  const SortIco=({k})=><span className={'sort-ico-wrap '+(sortKey===k?sortDir:'')} style={{marginLeft:4}}>
-    {sortKey===k&&sortDir==='asc'?<span className="asc-tri"/>:<><span className="neutral-tri-up"/><span className="neutral-tri-down"/></>}
-  </span>;
+  const load = useCallback(async () => {
+    await initDB();
+    setRows(await getAllMenuPrices());
+  }, []);
+
+  useEffect(() => {
+    load().catch(console.error).finally(() => setLoading(false));
+  }, [load]);
+
+  async function handleSave(data) {
+    try {
+      if (formTarget === 'new') {
+        await addMenuPrice(data);
+        showToast('추가 완료', 'ok');
+      } else {
+        await updateMenuPrice(formTarget.id, data);
+        showToast('수정 완료', 'ok');
+      }
+      setFormTarget(null);
+      await load();
+    } catch (err) {
+      showToast('저장 실패: ' + err.message, 'err');
+      throw err;
+    }
+  }
+
+  async function handleDelete(id) {
+    try {
+      await deleteMenuPrice(id);
+      setRows(prev => prev.filter(r => r.id !== id));
+      setDeletePending(null);
+      showToast('삭제 완료', 'ok');
+    } catch (err) {
+      showToast('삭제 실패: ' + err.message, 'err');
+    }
+  }
+
+  const counts = useMemo(() => {
+    const map = { all: rows.length };
+    for (const c of MENU_PRICE_CATEGORIES) {
+      map[c] = rows.filter(r => r.category === c).length;
+    }
+    return map;
+  }, [rows]);
+
+  const filtered = useMemo(() => {
+    let list = rows;
+    if (catFilter !== 'all') list = list.filter(r => r.category === catFilter);
+    const q = search.trim().toLowerCase();
+    if (q) list = list.filter(r =>
+      (r.menuName || '').toLowerCase().includes(q) ||
+      (r.category || '').toLowerCase().includes(q) ||
+      (r.note || '').toLowerCase().includes(q)
+    );
+    return list;
+  }, [rows, catFilter, search]);
+
+  const sub = loading
+    ? '로딩 중…'
+    : rows.length === 0
+      ? '메뉴 판매가가 등록되지 않았습니다 — 양식 업로드 또는 직접 추가'
+      : `총 ${rows.length}개 등록 · 종합 원가표에서 원가율 자동 계산에 사용`;
+
   return (
     <main className="main">
-      <PageHeader breadcrumb={bc} title={title}
-        sub="최신 제때 단가 2026.05.21 반영 · 35% 초과 = 위험"
-        actions={<><button className="btn" onClick={()=>showToast('양식 다운로드 완료','ok')}><Icon.download style={{width:14,height:14}}/>양식 다운로드</button><button className="btn" onClick={()=>showToast('CSV 파일이 저장됐어요','ok')}><Icon.download style={{width:14,height:14}}/>CSV 내보내기</button></>}
+      <PageHeader
+        breadcrumb={['원가계산', '메뉴 판매가']}
+        title="메뉴 판매가"
+        sub={sub}
+        actions={
+          <button className="btn primary" onClick={() => setFormTarget('new')}>
+            <Icon.plus style={{width:14, height:14}}/> 직접 추가
+          </button>
+        }
       />
-      <div className="card table-card" style={{marginTop:24}}>
-        <table className="data-table stagger-rows">
-          <thead><tr>
-            <th>메뉴명</th><th style={{width:120}}>카테고리</th>
-            <th style={{width:160,textAlign:'right'}} onClick={()=>toggleSort('costRate')} className="sort-th">원가율<SortIco k="costRate"/></th>
-          </tr></thead>
-          <tbody>
-            {sorted.map(m=>{
-              const risk=m.costRate>=35;
-              return (
-                <tr key={m.name} style={{background:risk?'var(--negative-soft)':undefined}}>
-                  <td style={{fontWeight:600}}>{m.name}{risk&&<span style={{marginLeft:8,fontSize:11,color:'var(--negative)',fontWeight:700}}>⚠ 위험</span>}</td>
-                  <td><span className="chip">{m.cat}</span></td>
-                  <td className="num right">
-                    <span style={{color:risk?'var(--negative)':m.costRate>=30?'var(--warn)':'inherit',fontWeight:risk?700:400}}>{m.costRate}%</span>
-                    <div className="cost-gauge-wrap" style={{marginTop:4}}>
-                      <div className="cost-gauge-track"><div className="cost-gauge-fill" style={{width:Math.min(m.costRate/50*100,100)+'%',background:risk?'var(--negative)':m.costRate>=30?'var(--warn)':'var(--positive)'}}/></div>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+
+      <MenuPriceUploadCard onReplaced={load}/>
+
+      {rows.length > 0 && (
+        <div style={{display:'flex', flexDirection:'column', gap:6}}>
+          <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center'}}>
+            <span style={{fontSize:12, color:'var(--text-3)', marginRight:4, fontWeight:600}}>분류</span>
+            <button className={'chip' + (catFilter === 'all' ? ' active' : '')}
+              onClick={() => setCatFilter('all')}>
+              전체 {counts.all}
+            </button>
+            {MENU_PRICE_CATEGORIES.map(c => (
+              counts[c] > 0 && (
+                <button key={c}
+                  className={'chip' + (catFilter === c ? ' active' : '')}
+                  onClick={() => setCatFilter(c)}>
+                  {c} {counts[c]}
+                </button>
+              )
+            ))}
+          </div>
+          <FilterBar search={search} onSearch={setSearch}/>
+        </div>
+      )}
+
+      {rows.length > 0 && (
+        <MenuPriceTable
+          rows={filtered}
+          deletePending={deletePending}
+          onEdit={setFormTarget}
+          onDeleteStart={setDeletePending}
+          onDeleteCancel={() => setDeletePending(null)}
+          onDeleteConfirm={handleDelete}
+        />
+      )}
+
+      {!loading && rows.length === 0 && (
+        <div className="card" style={{minHeight:160, display:'grid', placeItems:'center'}}>
+          <div style={{textAlign:'center', color:'var(--text-3)'}}>
+            <Icon.doc style={{width:32, height:32, marginBottom:12, opacity:.4}}/>
+            <div style={{fontWeight:600, marginBottom:4}}>등록된 메뉴 판매가가 없습니다</div>
+            <div style={{fontSize:13}}>위에서 양식을 다운로드 받아 작성 후 업로드하거나, 직접 추가해주세요.</div>
+          </div>
+        </div>
+      )}
+
+      {formTarget !== null && (
+        <MenuPriceForm
+          initial={formTarget === 'new' ? null : formTarget}
+          onSave={handleSave}
+          onClose={() => setFormTarget(null)}
+        />
+      )}
     </main>
   );
 }
