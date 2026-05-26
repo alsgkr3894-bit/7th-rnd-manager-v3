@@ -14,6 +14,7 @@ import {
   sortMainCategories, sortHashTags,
   seedMasterIngredients, INGREDIENT_MASTER_SEED,
   resetAllIngredients,
+  buildMetaOnlyRow, computeIngredientIssues,
 } from '@/lib/ingredient';
 import { IngredientForm } from './IngredientForm';
 
@@ -22,6 +23,7 @@ const UNCATEGORIZED_FILTER = '__none__';
 
 export default function Page() {
   const [rows,         setRows]         = useState([]);
+  const [prevPriceMap, setPrevPriceMap] = useState(null);
   const [priceDate,    setPriceDate]    = useState(null);
   const [loading,      setLoading]      = useState(true);
   const [search,       setSearch]       = useState('');
@@ -38,6 +40,7 @@ export default function Page() {
     await initDB();
     const files = await getPriceFiles();
     const latest = files[0] || null;
+    const prev   = files[1] ?? null;
     setPriceDate(latest?.updateDate || null);
 
     const [allMeta, metaMap] = await Promise.all([
@@ -46,18 +49,26 @@ export default function Page() {
     ]);
 
     if (!latest) {
+      setPrevPriceMap(null);
       setRows(allMeta.filter(m => m.isManual || m.isSeeded).map(buildMetaOnlyRow));
       return;
     }
 
     const priceRows = await getPriceRowsByFileId(latest.id);
-    // 마스터(시드/수동)에 등록된 항목만 표시. 매칭되는 price_row가 있으면 가격 데이터 병합.
     const merged    = mergeIngredientRows(priceRows, metaMap).filter(r => r.hasRecord);
     const priceCodeSet = new Set(priceRows.map(r => r.productCode).filter(Boolean));
 
     const orphanMetaRows = allMeta
       .filter(m => (m.isManual || m.isSeeded) && (!m.productCode || !priceCodeSet.has(m.productCode)))
       .map(buildMetaOnlyRow);
+
+    // 이전 가격파일 — 단가 변동 이슈 감지용
+    if (prev) {
+      const prevRows = await getPriceRowsByFileId(prev.id);
+      setPrevPriceMap(new Map(prevRows.map(r => [r.productCode, r.priceWithTax])));
+    } else {
+      setPrevPriceMap(null);
+    }
 
     setRows([...merged, ...orphanMetaRows]);
   }, []);
@@ -162,7 +173,10 @@ export default function Page() {
   const uncategorized     = rows.filter(r => !r.discontinued && !r.excluded && !r.category).length;
 
   // ── 이슈 행 추출 ──
-  const issueRows = useMemo(() => computeIssueRows(rows), [rows]);
+  const issueRows = useMemo(
+    () => computeIngredientIssues(rows, prevPriceMap),
+    [rows, prevPriceMap]
+  );
 
   // ── 필터링 ──
   const filtered = useMemo(() => {
@@ -405,32 +419,21 @@ function TabButton({ active, onClick, badge, children }) {
   );
 }
 
-// ── 이슈 행 추출 ──
-
-function computeIssueRows(rows) {
-  const list = [];
-  for (const r of rows) {
-    if (r.discontinued || r.excluded) continue;
-    const issues = [];
-    if (!r.category) issues.push('uncategorized');
-    if (!r.baseQuantity) issues.push('no-unit');
-    if (r.hasRecord && !r.jetteLinked) issues.push('no-price-link');
-    if (issues.length) list.push({ ...r, issues });
-  }
-  return list;
-}
-
 // ── 이슈 뷰 ──
 
 function IssuesView({ issueRows, onEdit }) {
   const [filter, setFilter] = useState('all');
   const counts = {
+    'price-up':     issueRows.filter(r => r.issues.includes('price-up')).length,
+    'price-down':   issueRows.filter(r => r.issues.includes('price-down')).length,
     uncategorized:  issueRows.filter(r => r.issues.includes('uncategorized')).length,
     'no-unit':      issueRows.filter(r => r.issues.includes('no-unit')).length,
     'no-price-link':issueRows.filter(r => r.issues.includes('no-price-link')).length,
   };
   const TYPES = [
     { id:'all',            label:'전체',           count: issueRows.length },
+    { id:'price-up',       label:'단가 인상',      count: counts['price-up'] },
+    { id:'price-down',     label:'단가 인하',      count: counts['price-down'] },
     { id:'uncategorized',  label:'미분류',         count: counts.uncategorized },
     { id:'no-unit',        label:'포장수량 없음',  count: counts['no-unit'] },
     { id:'no-price-link',  label:'단가 미연동',    count: counts['no-price-link'] },
@@ -474,9 +477,11 @@ function IssuesView({ issueRows, onEdit }) {
 function IssueCard({ r, onEdit }) {
   const name = r.ingredientName || r.displayName || r.productName;
   const ISSUE_META = {
-    uncategorized:  { label: '미분류',        Icon: Icon.tag,   color: 'var(--warn)' },
-    'no-unit':      { label: '포장수량 없음', Icon: Icon.alert, color: 'var(--warn)' },
-    'no-price-link':{ label: '단가 미연동',   Icon: Icon.alert, color: 'var(--warn)' },
+    'price-up':     { label: '단가 인상',     Icon: Icon.arrowUp,   color: 'var(--negative)', bg: 'var(--negative-soft)' },
+    'price-down':   { label: '단가 인하',     Icon: Icon.arrowDown, color: 'var(--positive)', bg: 'var(--positive-soft)' },
+    uncategorized:  { label: '미분류',        Icon: Icon.tag,       color: 'var(--warn)',     bg: 'var(--warn-soft)' },
+    'no-unit':      { label: '포장수량 없음', Icon: Icon.alert,     color: 'var(--warn)',     bg: 'var(--warn-soft)' },
+    'no-price-link':{ label: '단가 미연동',   Icon: Icon.alert,     color: 'var(--warn)',     bg: 'var(--warn-soft)' },
   };
   return (
     <div className="card" style={{display:'flex', alignItems:'center', gap:14, padding:'12px 18px'}}>
@@ -485,15 +490,21 @@ function IssueCard({ r, onEdit }) {
           <span style={{fontWeight:700, fontSize:14}}>{name}</span>
           {r.productCode && <span style={{fontSize:11, color:'var(--text-3)'}}>{r.productCode}</span>}
         </div>
+        {r.priceDiff && (
+          <div style={{fontSize:12, color:'var(--text-2)', marginTop:3}}>
+            {fmtPriceDiff(r.priceDiff)}
+          </div>
+        )}
         <div style={{display:'flex', gap:8, flexWrap:'wrap', marginTop:6}}>
           {r.issues.map(iss => {
             const m = ISSUE_META[iss];
+            if (!m) return null;
             const Ico = m.Icon;
             return (
               <span key={iss} style={{
                 display:'inline-flex', alignItems:'center', gap:4,
                 padding:'2px 8px', fontSize:11, fontWeight:600, borderRadius:6,
-                background:'var(--warn-soft)', color: m.color,
+                background: m.bg, color: m.color,
               }}>
                 <Ico style={{width:11, height:11}}/>
                 {m.label}
@@ -509,46 +520,9 @@ function IssueCard({ r, onEdit }) {
   );
 }
 
-// ── 메타만 있는 행 빌더 ──
-
-function buildMetaOnlyRow(m) {
-  const baseQty  = m.baseQuantity ?? null;
-  const unitType = m.baseUnitType || 'g';
-  const unitPrice = baseQty && baseQty > 0 && m.priceOverride
-    ? Math.round(m.priceOverride / baseQty * 100) / 100
-    : null;
-  const category = m.category || (Array.isArray(m.categories) && m.categories[0]) || '';
-  const tags = (Array.isArray(m.tags) && m.tags.length)
-    ? m.tags
-    : (Array.isArray(m.categories) ? m.categories.slice(1) : []);
-  return {
-    id:            m.id,
-    productCode:   m.productCode || null,
-    productName:   m.ingredientName,
-    displayName:   m.ingredientName,
-    ingredientName:m.ingredientName,
-    temperature:   null,
-    salesUnit:     null,
-    taxType:       m.taxType || '과세',
-    price:         m.priceOverride,
-    priceWithTax:  m.priceOverride,
-    productStatus: null,
-    scope:         '전용',
-    category,
-    tags,
-    manufacturer:  m.manufacturer || '',
-    discontinued:  m.discontinued === true,
-    baseQuantity:  baseQty,
-    baseUnitType:  unitType,
-    note:          m.note || '',
-    unitPrice,
-    jetteLinked:   false,
-    excluded:      m.excluded === true,
-    hasRecord:     true,
-    isManual:      m.isManual === true,
-    isSeeded:      m.isSeeded === true,
-    updatedAt:     m.updatedAt || null,
-  };
+function fmtPriceDiff({ oldPrice, newPrice, diff, pct }) {
+  const sign = diff > 0 ? '+' : '';
+  return `${formatNumber(oldPrice)}원 → ${formatNumber(newPrice)}원 (${sign}${pct.toFixed(1)}% / ${sign}${formatNumber(diff)}원)`;
 }
 
 // ── 행 컴포넌트 ──

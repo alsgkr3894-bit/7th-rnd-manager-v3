@@ -8,6 +8,7 @@ import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import {
   getAllIngredients, getIngredientMetaMap, mergeIngredientRows,
   getCategoryStyle, sortMainCategories, sortHashTags,
+  buildMetaOnlyRow,
 } from '@/lib/ingredient';
 
 const DISCONTINUED_FILTER  = '__discontinued__';
@@ -306,48 +307,6 @@ export default function Page() {
       )}
     </main>
   );
-}
-
-// ── 메타만 있는 행(시드/수동) 빌더 ────────────────────────────
-
-function buildMetaOnlyRow(m) {
-  const baseQty  = m.baseQuantity ?? null;
-  const unitType = m.baseUnitType || 'g';
-  const unitPrice = baseQty && baseQty > 0 && m.priceOverride
-    ? Math.round(m.priceOverride / baseQty * 100) / 100
-    : null;
-  const category = m.category || (Array.isArray(m.categories) && m.categories[0]) || '';
-  const tags = (Array.isArray(m.tags) && m.tags.length)
-    ? m.tags
-    : (Array.isArray(m.categories) ? m.categories.slice(1) : []);
-  return {
-    id:            m.id,
-    productCode:   m.productCode || null,
-    productName:   m.ingredientName,
-    displayName:   m.ingredientName,
-    ingredientName:m.ingredientName,
-    temperature:   null,
-    salesUnit:     null,
-    taxType:       m.taxType  || '과세',
-    price:         m.priceOverride,
-    priceWithTax:  m.priceOverride,
-    productStatus: null,
-    scope:         '전용', // 시드/수동 = 전용 (마스터 등록)
-    category,
-    tags,
-    manufacturer:  m.manufacturer || '',
-    discontinued:  m.discontinued === true,
-    baseQuantity:  baseQty,
-    baseUnitType:  unitType,
-    note:          m.note     || '',
-    unitPrice,
-    jetteLinked:   false,
-    excluded:      m.excluded === true,
-    hasRecord:     true,
-    isManual:      m.isManual === true,
-    isSeeded:      m.isSeeded === true,
-    updatedAt:     m.updatedAt || null,
-  };
 }
 
 // ── 행 컴포넌트 ──────────────────────────────────────────────
