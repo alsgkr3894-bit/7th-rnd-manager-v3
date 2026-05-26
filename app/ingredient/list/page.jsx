@@ -7,19 +7,27 @@ import { formatNumber } from '@/lib/format';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import {
   getAllIngredients, getIngredientMetaMap, mergeIngredientRows,
-  getCategoryStyle, sortCategoryTags,
+  getCategoryStyle, sortMainCategories, sortHashTags,
 } from '@/lib/ingredient';
 
-const DISCONTINUED_FILTER = '__discontinued__';
+const DISCONTINUED_FILTER  = '__discontinued__';
 const UNCATEGORIZED_FILTER = '__none__';
 
+const SCOPE_TABS = [
+  { id: 'all',       label: '전체' },
+  { id: '전용',      label: '전용' },
+  { id: '범용',      label: '범용' },
+  { id: '범용관리',  label: '범용관리' },
+];
+
 export default function Page() {
-  const [rows,       setRows]       = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [search,     setSearch]     = useState('');
-  const [typeFilter, setTypeFilter] = useState('all'); // all | managed | bulk
-  const [catFilter,  setCatFilter]  = useState('all');
-  const [sort,       setSort]       = useState('default');
+  const [rows,        setRows]        = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [search,      setSearch]      = useState('');
+  const [scopeFilter, setScopeFilter] = useState('all');
+  const [catFilter,   setCatFilter]   = useState('all');
+  const [tagFilter,   setTagFilter]   = useState('all');
+  const [sort,        setSort]        = useState('default');
 
   const load = useCallback(async () => {
     await initDB();
@@ -51,26 +59,33 @@ export default function Page() {
   }, [load]);
 
   // ── 통계 ────────────────────────────────────────────────────
-  const active        = rows.filter(r => !r.discontinued);
+  const active        = rows.filter(r => !r.discontinued && !r.excluded);
   const totalCount    = active.length;
-  const managedCount  = active.filter(r => r.hasRecord).length;
-  const bulkCount     = active.filter(r => !r.hasRecord).length;
-  const linkedCount   = active.filter(r => r.jetteLinked && !r.excluded).length;
-  const unlinkedCount = active.filter(r => r.hasRecord && !r.jetteLinked && !r.excluded).length;
+  const exclusiveCnt  = active.filter(r => r.scope === '전용').length;
+  const generalCnt    = active.filter(r => r.scope === '범용').length;
+  const generalMgtCnt = active.filter(r => r.scope === '범용관리').length;
+  const linkedCount   = active.filter(r => r.jetteLinked).length;
   const discontinuedCount = rows.filter(r => r.discontinued).length;
   const linkPct       = totalCount > 0 ? Math.round(linkedCount / totalCount * 100) : 0;
 
-  // ── 카테고리 태그 집합 (단종 제외, 메인 카테고리 우선) ──
-  const tagSet = useMemo(() => {
+  // ── 분류(메인) 집합 ─────────────────────────────────────────
+  const mainCats = useMemo(() => {
+    const set = new Set();
+    rows.forEach(r => { if (!r.discontinued && !r.excluded && r.category) set.add(r.category); });
+    return sortMainCategories(Array.from(set));
+  }, [rows]);
+
+  // ── 해시태그 집합 ──────────────────────────────────────────
+  const hashTags = useMemo(() => {
     const set = new Set();
     rows.forEach(r => {
       if (r.discontinued || r.excluded) return;
-      (r.categories || []).forEach(t => t && set.add(t));
+      (r.tags || []).forEach(t => t && set.add(t));
     });
-    return sortCategoryTags(Array.from(set));
+    return sortHashTags(Array.from(set));
   }, [rows]);
 
-  const uncategorizedCount = rows.filter(r => !r.discontinued && !r.excluded && (!r.categories || !r.categories.length)).length;
+  const uncategorizedCount = rows.filter(r => !r.discontinued && !r.excluded && !r.category).length;
 
   // ── 필터링 + 정렬 ────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -79,16 +94,17 @@ export default function Page() {
       list = rows.filter(r => r.discontinued);
     } else {
       list = rows.filter(r => !r.discontinued && !r.excluded);
-      if (typeFilter === 'managed') list = list.filter(r => r.hasRecord);
-      else if (typeFilter === 'bulk') list = list.filter(r => !r.hasRecord);
-      if (catFilter === UNCATEGORIZED_FILTER) list = list.filter(r => !r.categories || !r.categories.length);
-      else if (catFilter !== 'all') list = list.filter(r => (r.categories || []).includes(catFilter));
+      if (scopeFilter !== 'all')  list = list.filter(r => r.scope === scopeFilter);
+      if (catFilter === UNCATEGORIZED_FILTER) list = list.filter(r => !r.category);
+      else if (catFilter !== 'all') list = list.filter(r => r.category === catFilter);
+      if (tagFilter !== 'all')    list = list.filter(r => (r.tags || []).includes(tagFilter));
     }
     const q = search.trim().toLowerCase();
     if (q) list = list.filter(r =>
       (r.ingredientName || r.displayName || r.productName || '').toLowerCase().includes(q) ||
       (r.productCode || '').toLowerCase().includes(q) ||
-      (r.categories || []).some(c => c.toLowerCase().includes(q)) ||
+      (r.category    || '').toLowerCase().includes(q) ||
+      (r.tags || []).some(t => t.toLowerCase().includes(q)) ||
       (r.manufacturer || '').toLowerCase().includes(q)
     );
     if (sort === 'name')
@@ -96,21 +112,18 @@ export default function Page() {
         (a.ingredientName || a.displayName || '').localeCompare(b.ingredientName || b.displayName || '', 'ko'));
     if (sort === 'category')
       return [...list].sort((a, b) => {
-        const ca = sortCategoryTags(a.categories || [])[0] || 'ㅎ';
-        const cb = sortCategoryTags(b.categories || [])[0] || 'ㅎ';
+        const ca = a.category || 'ㅎ', cb = b.category || 'ㅎ';
         if (ca !== cb) return ca.localeCompare(cb, 'ko');
-        return (a.ingredientName || a.displayName || '').localeCompare(b.ingredientName || b.displayName || '', 'ko');
+        return (a.ingredientName || '').localeCompare(b.ingredientName || '', 'ko');
       });
     if (sort === 'price-desc') return [...list].sort((a, b) => (b.unitPrice || 0) - (a.unitPrice || 0));
     if (sort === 'price-asc')  return [...list].sort((a, b) => (a.unitPrice || 0) - (b.unitPrice || 0));
     return list;
-  }, [rows, typeFilter, catFilter, search, sort]);
+  }, [rows, scopeFilter, catFilter, tagFilter, search, sort]);
 
-  const typeTabCount = (id) => {
-    const base = rows.filter(r => !r.discontinued && !r.excluded);
-    if (id === 'managed') return base.filter(r => r.hasRecord).length;
-    if (id === 'bulk')    return base.filter(r => !r.hasRecord).length;
-    return base.length;
+  const scopeTabCount = (id) => {
+    if (id === 'all') return totalCount;
+    return active.filter(r => r.scope === id).length;
   };
 
   return (
@@ -127,7 +140,7 @@ export default function Page() {
           <div className="stat-label">전체 식자재</div>
           <div className="stat-value">{totalCount}<span className="unit">개</span></div>
           <div style={{fontSize:12, color:'var(--text-3)', marginTop:6}}>
-            관리품목 {managedCount} · 범용상품 {bulkCount}
+            전용 {exclusiveCnt} · 범용 {generalCnt} · 범용관리 {generalMgtCnt}
           </div>
         </div>
         <div className="stat-card">
@@ -136,11 +149,11 @@ export default function Page() {
           <div style={{fontSize:12, color:'var(--text-3)', marginTop:6}}>{linkPct}% 단가 매핑 완료</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">미연동</div>
-          <div className="stat-value" style={{color: unlinkedCount > 0 ? 'var(--warn)' : undefined}}>
-            {unlinkedCount}<span className="unit">개</span>
+          <div className="stat-label">미분류</div>
+          <div className="stat-value" style={{color: uncategorizedCount > 0 ? 'var(--warn)' : undefined}}>
+            {uncategorizedCount}<span className="unit">개</span>
           </div>
-          <div style={{fontSize:12, color:'var(--text-3)', marginTop:6}}>단가표 매칭 필요</div>
+          <div style={{fontSize:12, color:'var(--text-3)', marginTop:6}}>분류 설정 필요</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">단종</div>
@@ -162,37 +175,32 @@ export default function Page() {
       {rows.length > 0 && (
         <div style={{display:'flex', flexDirection:'column', gap:8}}>
 
-          {/* 타입 탭 + 검색 */}
+          {/* 스코프 탭 + 검색 */}
           <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, flexWrap:'wrap'}}>
             <div style={{display:'flex', gap:2}}>
-              {[
-                { id:'all',     label:'전체' },
-                { id:'managed', label:'관리품목' },
-                { id:'bulk',    label:'범용상품' },
-              ].map(t => (
+              {SCOPE_TABS.map(t => (
                 <button key={t.id}
-                  className={'chip' + (typeFilter === t.id ? ' active' : '')}
-                  onClick={() => setTypeFilter(t.id)}>
-                  {t.label} {typeTabCount(t.id)}
+                  className={'chip' + (scopeFilter === t.id ? ' active' : '')}
+                  onClick={() => setScopeFilter(t.id)}>
+                  {t.label} {scopeTabCount(t.id)}
                 </button>
               ))}
             </div>
             <div className="filter-search" style={{width:240}}>
               <Icon.search style={{width:15, height:15, color:'var(--text-3)', flexShrink:0}}/>
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="재료명·코드·제조사 검색"/>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="재료명·코드·태그 검색"/>
             </div>
           </div>
 
-          {/* 카테고리 칩 */}
+          {/* 분류 (메인) */}
           <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center'}}>
-            <button className={'chip' + (catFilter === 'all' ? ' active' : '')}
-              onClick={() => setCatFilter('all')}>
-              전체 {rows.filter(r => !r.discontinued && !r.excluded).length}
+            <span style={{fontSize:12, color:'var(--text-3)', marginRight:4, fontWeight:600}}>분류</span>
+            <button className={'chip' + (catFilter === 'all' ? ' active' : '')} onClick={() => setCatFilter('all')}>
+              전체
             </button>
-            {tagSet.map(c => {
-              const base = rows.filter(r => !r.discontinued && !r.excluded
-                && (typeFilter === 'all' || (typeFilter === 'managed' ? r.hasRecord : !r.hasRecord)));
-              const cnt = base.filter(r => (r.categories || []).includes(c)).length;
+            {mainCats.map(c => {
+              const cnt = active.filter(r => r.category === c
+                && (scopeFilter === 'all' || r.scope === scopeFilter)).length;
               return (
                 <button key={c}
                   className={'chip' + (catFilter === c ? ' active' : '')}
@@ -211,27 +219,51 @@ export default function Page() {
             )}
             {discontinuedCount > 0 && (
               <button className={'chip' + (catFilter === DISCONTINUED_FILTER ? ' active' : '')}
-                style={catFilter !== DISCONTINUED_FILTER ? {color:'var(--text-3)'} : undefined}
+                style={catFilter !== DISCONTINUED_FILTER ? {color:'var(--text-3)', marginLeft:'auto'} : {marginLeft:'auto'}}
                 onClick={() => setCatFilter(catFilter === DISCONTINUED_FILTER ? 'all' : DISCONTINUED_FILTER)}>
                 단종 {discontinuedCount}
               </button>
             )}
-            <div style={{marginLeft:'auto', display:'flex', gap:4}}>
-              {[
-                {id:'default',    label:'기본'},
-                {id:'name',       label:'이름순'},
-                {id:'category',   label:'분류순'},
-                {id:'price-desc', label:'단가↑'},
-                {id:'price-asc',  label:'단가↓'},
-              ].map(s => (
-                <button key={s.id}
-                  className={'chip' + (sort === s.id ? ' active' : '')}
-                  onClick={() => setSort(s.id)}>
-                  {s.label}
-                </button>
-              ))}
-            </div>
           </div>
+
+          {/* 해시태그 */}
+          {hashTags.length > 0 && (
+            <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center'}}>
+              <span style={{fontSize:12, color:'var(--text-3)', marginRight:4, fontWeight:600}}>#태그</span>
+              <button className={'chip' + (tagFilter === 'all' ? ' active' : '')} onClick={() => setTagFilter('all')}>
+                전체
+              </button>
+              {hashTags.map(t => {
+                const cnt = active.filter(r => (r.tags || []).includes(t)
+                  && (scopeFilter === 'all' || r.scope === scopeFilter)
+                  && (catFilter === 'all' || r.category === catFilter)).length;
+                if (!cnt) return null;
+                return (
+                  <button key={t}
+                    className={'chip' + (tagFilter === t ? ' active' : '')}
+                    style={tagFilter !== t ? {fontSize:11, opacity:.85} : undefined}
+                    onClick={() => setTagFilter(tagFilter === t ? 'all' : t)}>
+                    #{t} {cnt}
+                  </button>
+                );
+              })}
+              <div style={{marginLeft:'auto', display:'flex', gap:4}}>
+                {[
+                  {id:'default',    label:'기본'},
+                  {id:'name',       label:'이름순'},
+                  {id:'category',   label:'분류순'},
+                  {id:'price-desc', label:'단가↑'},
+                  {id:'price-asc',  label:'단가↓'},
+                ].map(s => (
+                  <button key={s.id}
+                    className={'chip' + (sort === s.id ? ' active' : '')}
+                    onClick={() => setSort(s.id)}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -249,12 +281,13 @@ export default function Page() {
                   <tr>
                     <th style={{width:80}}>제품코드</th>
                     <th>재료명</th>
-                    <th style={{width:170}}>분류</th>
+                    <th style={{width:96}}>분류</th>
+                    <th style={{width:160}}>#태그</th>
                     <th style={{width:80}}>전용/범용</th>
-                    <th style={{width:60}}>단위</th>
+                    <th style={{width:56}}>단위</th>
                     <th style={{width:110, textAlign:'right'}}>G·개당 단가</th>
-                    <th style={{width:96}}>제조사</th>
-                    <th style={{width:88}}>상태</th>
+                    <th style={{width:88}}>제조사</th>
+                    <th style={{width:80}}>상태</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -282,9 +315,10 @@ function buildMetaOnlyRow(m) {
   const unitPrice = baseQty && baseQty > 0 && m.priceOverride
     ? Math.round(m.priceOverride / baseQty * 100) / 100
     : null;
-  const categories = Array.isArray(m.categories) && m.categories.length
-    ? m.categories
-    : (m.category ? [m.category] : []);
+  const category = m.category || (Array.isArray(m.categories) && m.categories[0]) || '';
+  const tags = (Array.isArray(m.tags) && m.tags.length)
+    ? m.tags
+    : (Array.isArray(m.categories) ? m.categories.slice(1) : []);
   return {
     id:            m.id,
     productCode:   m.productCode || null,
@@ -296,8 +330,10 @@ function buildMetaOnlyRow(m) {
     taxType:       m.taxType  || '과세',
     price:         m.priceOverride,
     priceWithTax:  m.priceOverride,
-    categories,
-    category:      categories[0] || '',
+    productStatus: null,
+    scope:         '전용', // 시드/수동 = 전용 (마스터 등록)
+    category,
+    tags,
     manufacturer:  m.manufacturer || '',
     discontinued:  m.discontinued === true,
     baseQuantity:  baseQty,
@@ -322,7 +358,13 @@ function IngredientRow({ r }) {
   const unitPriceLabel = uPrice != null
     ? `${uPrice < 1 ? uPrice.toFixed(2) : uPrice % 1 === 0 ? formatNumber(uPrice) : uPrice.toFixed(1)}원/${unit}`
     : null;
-  const tags = sortCategoryTags(r.categories || []);
+  const tags = sortHashTags(r.tags || []);
+  const scopeColor = r.scope === '전용' ? 'var(--accent)'
+    : r.scope === '범용관리' ? 'var(--positive)'
+    : 'var(--text-2)';
+  const scopeBg = r.scope === '전용' ? 'var(--accent-soft)'
+    : r.scope === '범용관리' ? 'var(--positive-soft)'
+    : 'var(--surface-3)';
 
   return (
     <tr style={{opacity: r.discontinued ? .55 : 1}}>
@@ -339,20 +381,27 @@ function IngredientRow({ r }) {
         )}
       </td>
       <td>
+        {r.category
+          ? <span className="chip" style={{...getCategoryStyle(r.category), padding:'2px 8px', fontSize:11}}>{r.category}</span>
+          : <span style={{color:'var(--text-4)', fontSize:11}}>—</span>}
+      </td>
+      <td>
         {tags.length > 0
           ? <div style={{display:'flex', gap:3, flexWrap:'wrap'}}>
               {tags.map(t => (
-                <span key={t} className="chip" style={{...getCategoryStyle(t), padding:'1px 6px', fontSize:10}}>{t}</span>
+                <span key={t} style={{
+                  padding:'1px 5px', fontSize:10, fontWeight:500, borderRadius:3,
+                  background:'var(--surface-2)', color:'var(--text-2)',
+                }}>#{t}</span>
               ))}
             </div>
-          : <span style={{color:'var(--text-4)', fontSize:12}}>—</span>}
+          : <span style={{color:'var(--text-4)', fontSize:11}}>—</span>}
       </td>
       <td>
-        <span className="chip" style={{
-          padding:'2px 8px', fontSize:11,
-          background: r.hasRecord ? 'var(--accent-soft)' : 'var(--surface-3)',
-          color: r.hasRecord ? 'var(--accent-text)' : 'var(--text-2)',
-        }}>{r.hasRecord ? '전용' : '범용'}</span>
+        <span style={{
+          padding:'2px 8px', fontSize:11, fontWeight:600, borderRadius:6,
+          background: scopeBg, color: scopeColor,
+        }}>{r.scope || '-'}</span>
       </td>
       <td style={{fontSize:12, color:'var(--text-2)'}}>{unit}</td>
       <td style={{textAlign:'right', fontSize:12, fontWeight: unitPriceLabel ? 600 : undefined,
