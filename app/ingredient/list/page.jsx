@@ -9,6 +9,9 @@ import {
   getAllIngredients, getIngredientMetaMap, mergeIngredientRows, getCategoryStyle,
 } from '@/lib/ingredient';
 
+const DISCONTINUED_FILTER = '__discontinued__';
+const UNCATEGORIZED_FILTER = '__none__';
+
 export default function Page() {
   const [rows,       setRows]       = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -28,18 +31,18 @@ export default function Page() {
     ]);
 
     if (!latest) {
-      setRows(allMeta.filter(m => m.isManual).map(buildManualRow));
+      setRows(allMeta.filter(m => m.isManual || m.isSeeded).map(buildMetaOnlyRow));
       return;
     }
 
     const priceRows  = await getPriceRowsByFileId(latest.id);
     const merged     = mergeIngredientRows(priceRows, metaMap);
     const priceCodeSet = new Set(priceRows.map(r => r.productCode).filter(Boolean));
-    const manualRows = allMeta
-      .filter(m => m.isManual && (!m.productCode || !priceCodeSet.has(m.productCode)))
-      .map(buildManualRow);
+    const orphanRows = allMeta
+      .filter(m => (m.isManual || m.isSeeded) && (!m.productCode || !priceCodeSet.has(m.productCode)))
+      .map(buildMetaOnlyRow);
 
-    setRows([...merged, ...manualRows]);
+    setRows([...merged, ...orphanRows]);
   }, []);
 
   useEffect(() => {
@@ -47,33 +50,45 @@ export default function Page() {
   }, [load]);
 
   // ── 통계 ────────────────────────────────────────────────────
-  const totalCount    = rows.length;
-  const managedCount  = rows.filter(r => r.hasRecord).length;
-  const bulkCount     = rows.filter(r => !r.hasRecord).length;
-  const linkedCount   = rows.filter(r => r.jetteLinked && !r.excluded).length;
-  const unlinkedCount = rows.filter(r => r.hasRecord && !r.jetteLinked && !r.excluded).length;
-  const unusedCount   = rows.filter(r => r.excluded).length;
+  const active        = rows.filter(r => !r.discontinued);
+  const totalCount    = active.length;
+  const managedCount  = active.filter(r => r.hasRecord).length;
+  const bulkCount     = active.filter(r => !r.hasRecord).length;
+  const linkedCount   = active.filter(r => r.jetteLinked && !r.excluded).length;
+  const unlinkedCount = active.filter(r => r.hasRecord && !r.jetteLinked && !r.excluded).length;
+  const discontinuedCount = rows.filter(r => r.discontinued).length;
   const linkPct       = totalCount > 0 ? Math.round(linkedCount / totalCount * 100) : 0;
 
-  // ── 카테고리 목록 ────────────────────────────────────────────
-  const categories = useMemo(() => {
-    const used = new Set(rows.filter(r => !r.excluded).map(r => r.category).filter(Boolean));
-    return ['all', ...Array.from(used).sort((a, b) => a.localeCompare(b, 'ko'))];
+  // ── 카테고리 태그 집합 (단종 제외) ──────────────────────────
+  const tagSet = useMemo(() => {
+    const set = new Set();
+    rows.forEach(r => {
+      if (r.discontinued || r.excluded) return;
+      (r.categories || []).forEach(t => t && set.add(t));
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'ko'));
   }, [rows]);
 
-  const uncategorizedCount = rows.filter(r => !r.excluded && !r.category).length;
+  const uncategorizedCount = rows.filter(r => !r.discontinued && !r.excluded && (!r.categories || !r.categories.length)).length;
 
   // ── 필터링 + 정렬 ────────────────────────────────────────────
   const filtered = useMemo(() => {
-    let list = rows.filter(r => !r.excluded);
-    if (typeFilter === 'managed') list = list.filter(r => r.hasRecord);
-    else if (typeFilter === 'bulk') list = list.filter(r => !r.hasRecord);
-    if (catFilter === '__none__') list = list.filter(r => !r.category);
-    else if (catFilter !== 'all') list = list.filter(r => r.category === catFilter);
+    let list;
+    if (catFilter === DISCONTINUED_FILTER) {
+      list = rows.filter(r => r.discontinued);
+    } else {
+      list = rows.filter(r => !r.discontinued && !r.excluded);
+      if (typeFilter === 'managed') list = list.filter(r => r.hasRecord);
+      else if (typeFilter === 'bulk') list = list.filter(r => !r.hasRecord);
+      if (catFilter === UNCATEGORIZED_FILTER) list = list.filter(r => !r.categories || !r.categories.length);
+      else if (catFilter !== 'all') list = list.filter(r => (r.categories || []).includes(catFilter));
+    }
     const q = search.trim().toLowerCase();
     if (q) list = list.filter(r =>
       (r.ingredientName || r.displayName || r.productName || '').toLowerCase().includes(q) ||
-      (r.productCode || '').toLowerCase().includes(q)
+      (r.productCode || '').toLowerCase().includes(q) ||
+      (r.categories || []).some(c => c.toLowerCase().includes(q)) ||
+      (r.manufacturer || '').toLowerCase().includes(q)
     );
     if (sort === 'name')
       return [...list].sort((a, b) =>
@@ -84,7 +99,7 @@ export default function Page() {
   }, [rows, typeFilter, catFilter, search, sort]);
 
   const typeTabCount = (id) => {
-    const base = rows.filter(r => !r.excluded);
+    const base = rows.filter(r => !r.discontinued && !r.excluded);
     if (id === 'managed') return base.filter(r => r.hasRecord).length;
     if (id === 'bulk')    return base.filter(r => !r.hasRecord).length;
     return base.length;
@@ -98,7 +113,7 @@ export default function Page() {
         sub="전체 식자재 마스터 카탈로그 — 단가·분류·매핑 상태를 한 곳에서 확인해요."
       />
 
-      {/* ── 통계 카드 4종 ── */}
+      {/* 통계 카드 */}
       <div className="stat-row">
         <div className="stat-card">
           <div className="stat-label">전체 식자재</div>
@@ -120,24 +135,22 @@ export default function Page() {
           <div style={{fontSize:12, color:'var(--text-3)', marginTop:6}}>단가표 매칭 필요</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">불용 재료</div>
-          <div className="stat-value">{unusedCount}<span className="unit">개</span></div>
-          <div style={{fontSize:12, color:'var(--text-3)', marginTop:6}}>숨김 처리된 항목</div>
+          <div className="stat-label">단종</div>
+          <div className="stat-value" style={{color:'var(--text-3)'}}>{discontinuedCount}<span className="unit">개</span></div>
+          <div style={{fontSize:12, color:'var(--text-3)', marginTop:6}}>단종 카테고리 보관</div>
         </div>
       </div>
 
-      {/* ── 빈 상태 ── */}
       {!loading && rows.length === 0 && (
         <div className="card" style={{minHeight:180, display:'grid', placeItems:'center'}}>
           <div style={{textAlign:'center', color:'var(--text-3)'}}>
             <Icon.box style={{width:32, height:32, marginBottom:12, opacity:.4}}/>
-            <div style={{fontWeight:600, marginBottom:4}}>제때 가격 데이터가 없습니다</div>
-            <div style={{fontSize:13}}>제때상품관리 → 제때 가격 비교 메뉴에서 파일을 업로드해주세요.</div>
+            <div style={{fontWeight:600, marginBottom:4}}>아직 식자재 데이터가 없습니다</div>
+            <div style={{fontSize:13}}>식자재 관리 → 마스터 시드 적용 또는 제때 가격 파일 업로드가 필요합니다.</div>
           </div>
         </div>
       )}
 
-      {/* ── 필터 영역 ── */}
       {rows.length > 0 && (
         <div style={{display:'flex', flexDirection:'column', gap:8}}>
 
@@ -158,29 +171,41 @@ export default function Page() {
             </div>
             <div className="filter-search" style={{width:240}}>
               <Icon.search style={{width:15, height:15, color:'var(--text-3)', flexShrink:0}}/>
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="재료명·코드 검색"/>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="재료명·코드·제조사 검색"/>
             </div>
           </div>
 
           {/* 카테고리 칩 */}
           <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center'}}>
-            {categories.map(c => {
-              const base = rows.filter(r => !r.excluded && (typeFilter === 'all' || (typeFilter === 'managed' ? r.hasRecord : !r.hasRecord)));
-              const cnt = c === 'all' ? base.length : base.filter(r => r.category === c).length;
+            <button className={'chip' + (catFilter === 'all' ? ' active' : '')}
+              onClick={() => setCatFilter('all')}>
+              전체 {rows.filter(r => !r.discontinued && !r.excluded).length}
+            </button>
+            {tagSet.map(c => {
+              const base = rows.filter(r => !r.discontinued && !r.excluded
+                && (typeFilter === 'all' || (typeFilter === 'managed' ? r.hasRecord : !r.hasRecord)));
+              const cnt = base.filter(r => (r.categories || []).includes(c)).length;
               return (
                 <button key={c}
                   className={'chip' + (catFilter === c ? ' active' : '')}
-                  style={catFilter !== c && c !== 'all' ? getCategoryStyle(c) : undefined}
+                  style={catFilter !== c ? getCategoryStyle(c) : undefined}
                   onClick={() => setCatFilter(c)}>
-                  {c === 'all' ? '전체' : c} {cnt}
+                  {c} {cnt}
                 </button>
               );
             })}
             {uncategorizedCount > 0 && (
-              <button className={'chip' + (catFilter === '__none__' ? ' active' : '')}
-                style={{color: catFilter !== '__none__' ? 'var(--warn)' : undefined}}
-                onClick={() => setCatFilter(catFilter === '__none__' ? 'all' : '__none__')}>
+              <button className={'chip' + (catFilter === UNCATEGORIZED_FILTER ? ' active' : '')}
+                style={catFilter !== UNCATEGORIZED_FILTER ? {color:'var(--warn)'} : undefined}
+                onClick={() => setCatFilter(catFilter === UNCATEGORIZED_FILTER ? 'all' : UNCATEGORIZED_FILTER)}>
                 미분류 {uncategorizedCount}
+              </button>
+            )}
+            {discontinuedCount > 0 && (
+              <button className={'chip' + (catFilter === DISCONTINUED_FILTER ? ' active' : '')}
+                style={catFilter !== DISCONTINUED_FILTER ? {color:'var(--text-3)'} : undefined}
+                onClick={() => setCatFilter(catFilter === DISCONTINUED_FILTER ? 'all' : DISCONTINUED_FILTER)}>
+                단종 {discontinuedCount}
               </button>
             )}
             <div style={{marginLeft:'auto', display:'flex', gap:4}}>
@@ -201,7 +226,7 @@ export default function Page() {
         </div>
       )}
 
-      {/* ── 테이블 ── */}
+      {/* 테이블 */}
       {rows.length > 0 && (
         <div className="card table-card">
           {filtered.length === 0 ? (
@@ -215,17 +240,17 @@ export default function Page() {
                   <tr>
                     <th style={{width:80}}>제품코드</th>
                     <th>재료명</th>
-                    <th style={{width:88}}>카테고리</th>
-                    <th style={{width:88}}>분류</th>
-                    <th style={{width:56}}>단위</th>
-                    <th style={{width:120, textAlign:'right'}}>G·개당 단가</th>
-                    <th style={{width:96}}>마지막 변경</th>
-                    <th style={{width:76}}>상태</th>
+                    <th style={{width:170}}>분류</th>
+                    <th style={{width:80}}>전용/범용</th>
+                    <th style={{width:60}}>단위</th>
+                    <th style={{width:110, textAlign:'right'}}>G·개당 단가</th>
+                    <th style={{width:96}}>제조사</th>
+                    <th style={{width:88}}>상태</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map(r => (
-                    <IngredientRow key={r.isManual ? `m-${r.id}` : r.productCode} r={r}/>
+                    <IngredientRow key={r.isManual || r.isSeeded ? `m-${r.id}` : r.productCode} r={r}/>
                   ))}
                 </tbody>
               </table>
@@ -240,14 +265,17 @@ export default function Page() {
   );
 }
 
-// ── 수동 행 빌더 ──────────────────────────────────────────────
+// ── 메타만 있는 행(시드/수동) 빌더 ────────────────────────────
 
-function buildManualRow(m) {
+function buildMetaOnlyRow(m) {
   const baseQty  = m.baseQuantity ?? null;
   const unitType = m.baseUnitType || 'g';
   const unitPrice = baseQty && baseQty > 0 && m.priceOverride
     ? Math.round(m.priceOverride / baseQty * 100) / 100
     : null;
+  const categories = Array.isArray(m.categories) && m.categories.length
+    ? m.categories
+    : (m.category ? [m.category] : []);
   return {
     id:            m.id,
     productCode:   m.productCode || null,
@@ -259,7 +287,10 @@ function buildManualRow(m) {
     taxType:       m.taxType  || '과세',
     price:         m.priceOverride,
     priceWithTax:  m.priceOverride,
-    category:      m.category || '',
+    categories,
+    category:      categories[0] || '',
+    manufacturer:  m.manufacturer || '',
+    discontinued:  m.discontinued === true,
     baseQuantity:  baseQty,
     baseUnitType:  unitType,
     note:          m.note     || '',
@@ -267,7 +298,8 @@ function buildManualRow(m) {
     jetteLinked:   false,
     excluded:      m.excluded === true,
     hasRecord:     true,
-    isManual:      true,
+    isManual:      m.isManual === true,
+    isSeeded:      m.isSeeded === true,
     updatedAt:     m.updatedAt || null,
   };
 }
@@ -281,34 +313,44 @@ function IngredientRow({ r }) {
   const unitPriceLabel = uPrice != null
     ? `${uPrice < 1 ? uPrice.toFixed(2) : uPrice % 1 === 0 ? formatNumber(uPrice) : uPrice.toFixed(1)}원/${unit}`
     : null;
-  const updatedAt = r.updatedAt ? r.updatedAt.slice(0, 10).replace(/-/g, '.') : '-';
+  const tags = r.categories || [];
 
   return (
-    <tr>
-      <td style={{color:'var(--text-3)', fontSize:12}}>
-        {r.isManual
+    <tr style={{opacity: r.discontinued ? .55 : 1}}>
+      <td style={{color:'var(--text-3)', fontSize:11}}>
+        {r.isManual && !r.productCode
           ? <span style={{fontSize:10, padding:'1px 5px', borderRadius:3, background:'var(--surface-3)', color:'var(--text-3)'}}>수동</span>
           : r.productCode || '-'}
       </td>
-      <td style={{fontWeight:600}}>
+      <td style={{fontWeight:600, fontSize:13}}>
         <span title={r.productName !== name ? `원본: ${r.productName}` : undefined}>{name}</span>
+        {r.discontinued && (
+          <span style={{marginLeft:6, fontSize:10, fontWeight:700, padding:'1px 5px', borderRadius:3,
+            background:'var(--surface-3)', color:'var(--text-3)'}}>단종</span>
+        )}
       </td>
       <td>
-        {r.category
-          ? <span className="chip" style={{...getCategoryStyle(r.category), padding:'2px 8px', fontSize:11}}>{r.category}</span>
+        {tags.length > 0
+          ? <div style={{display:'flex', gap:3, flexWrap:'wrap'}}>
+              {tags.map(t => (
+                <span key={t} className="chip" style={{...getCategoryStyle(t), padding:'1px 6px', fontSize:10}}>{t}</span>
+              ))}
+            </div>
           : <span style={{color:'var(--text-4)', fontSize:12}}>—</span>}
       </td>
       <td>
-        {r.hasRecord
-          ? <span className="chip" style={{background:'var(--accent-soft)', color:'var(--accent-text)', padding:'2px 8px', fontSize:11}}>관리품목</span>
-          : <span className="chip" style={{background:'var(--surface-3)', color:'var(--text-2)', padding:'2px 8px', fontSize:11}}>범용상품</span>}
+        <span className="chip" style={{
+          padding:'2px 8px', fontSize:11,
+          background: r.hasRecord ? 'var(--accent-soft)' : 'var(--surface-3)',
+          color: r.hasRecord ? 'var(--accent-text)' : 'var(--text-2)',
+        }}>{r.hasRecord ? '전용' : '범용'}</span>
       </td>
       <td style={{fontSize:12, color:'var(--text-2)'}}>{unit}</td>
       <td style={{textAlign:'right', fontSize:12, fontWeight: unitPriceLabel ? 600 : undefined,
         color: unitPriceLabel ? undefined : 'var(--text-4)'}}>
         {unitPriceLabel || '—'}
       </td>
-      <td style={{fontSize:12, color:'var(--text-3)'}}>{updatedAt}</td>
+      <td style={{fontSize:12, color:'var(--text-2)'}}>{r.manufacturer || '-'}</td>
       <td>
         <span style={{display:'flex', alignItems:'center', gap:5, fontSize:12, fontWeight:600,
           color: r.jetteLinked ? 'var(--positive)' : 'var(--warn)'}}>

@@ -1,42 +1,57 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 
-export const DEFAULT_CATEGORIES = [
-  '치즈류', '소스류', '도우/밀가루', '채소류', '육류/가공육',
-  '수산류', '박스/포장재', '음료', '향신료', '기타',
-];
-
 const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병'];
 
 const EMPTY = {
-  ingredientName: '', productCode: '', category: '',
+  ingredientName: '', productCode: '',
+  categories: [], manufacturer: '', discontinued: false,
   baseQuantity: '', baseUnitType: 'g', taxType: '과세',
   priceOverride: '', note: '',
 };
 
 /**
  * IngredientForm — 식자재 추가/수정 모달
- * @prop {object|null} initial  수정 시 기존 레코드(mergedRow), null이면 수동 추가
+ *
+ * 제때 연동 항목(initial.productCode가 가격파일에 있는 항목)은 source 값(온도/판매단위/과세/부가세포함단가)을
+ * read-only로 표시. 그 외 필드(재료명·분류·제조사·단종·포장수량·비고)는 수정 가능.
+ *
+ * @prop {object|null} initial  수정 시 기존 mergedRow, null이면 신규 추가
  * @prop {Function}    onSave   (formData) => Promise<void>
  * @prop {Function}    onClose
  */
 export function IngredientForm({ initial, onSave, onClose }) {
-  const isJette = !!initial?.productCode;
-  const [form, setForm]     = useState(initial ? toForm(initial) : EMPTY);
-  const [customCat, setCustomCat] = useState(!DEFAULT_CATEGORIES.includes(initial?.category || '') && !!initial?.category);
+  // 제때 연동 = price_rows에 매칭된 항목 (jetteLinked=true)
+  const isJetteLinked = !!initial?.jetteLinked;
+  const [form, setForm] = useState(initial ? toForm(initial) : EMPTY);
+  const [tagInput, setTagInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
 
   function set(key, val) { setForm(f => ({ ...f, [key]: val })); }
 
+  function addTag(t) {
+    const tag = (t || '').trim();
+    if (!tag) return;
+    setForm(f => {
+      const cur = f.categories || [];
+      if (cur.includes(tag)) return f;
+      return { ...f, categories: [...cur, tag] };
+    });
+    setTagInput('');
+  }
+  function removeTag(t) {
+    setForm(f => ({ ...f, categories: (f.categories || []).filter(x => x !== t) }));
+  }
+
   function validate() {
     const e = {};
-    if (!isJette && !form.ingredientName.trim()) e.ingredientName = '재료명을 입력하세요';
+    if (!isJetteLinked && !form.ingredientName.trim()) e.ingredientName = '재료명을 입력하세요';
     if (form.baseQuantity && isNaN(Number(form.baseQuantity))) e.baseQuantity = '숫자만 입력하세요';
-    if (!isJette && form.priceOverride && isNaN(Number(form.priceOverride))) e.priceOverride = '숫자만 입력하세요';
+    if (!isJetteLinked && form.priceOverride && isNaN(Number(form.priceOverride))) e.priceOverride = '숫자만 입력하세요';
     return e;
   }
 
@@ -49,7 +64,7 @@ export function IngredientForm({ initial, onSave, onClose }) {
       const data = {
         ...form,
         baseQuantity:  form.baseQuantity  ? Number(form.baseQuantity)  : null,
-        priceOverride: !isJette && form.priceOverride ? Number(form.priceOverride) : null,
+        priceOverride: !isJetteLinked && form.priceOverride ? Number(form.priceOverride) : null,
       };
       await onSave(data);
     } finally {
@@ -57,7 +72,9 @@ export function IngredientForm({ initial, onSave, onClose }) {
     }
   }
 
-  const title = isJette ? '제때 식자재 설정' : initial ? '식자재 수정' : '식자재 추가';
+  const isNew = !initial;
+  const title = isNew ? '식자재 추가' : isJetteLinked ? '제때 식자재 설정' : '식자재 수정';
+  const scopeLabel = initial?.hasRecord ? '전용' : '범용';
 
   return createPortal(
     <div style={{
@@ -65,7 +82,7 @@ export function IngredientForm({ initial, onSave, onClose }) {
       display:'grid', placeItems:'center', zIndex:200,
     }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="card" style={{
-        width:'min(520px, 95vw)', maxHeight:'90vh', overflowY:'auto',
+        width:'min(540px, 95vw)', maxHeight:'92vh', overflowY:'auto',
         padding:'24px 28px', position:'relative',
       }}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20}}>
@@ -75,64 +92,116 @@ export function IngredientForm({ initial, onSave, onClose }) {
           </button>
         </div>
 
-        {/* 제때 제품 정보 (읽기 전용) */}
-        {isJette && (
+        {/* 제때 연동 — source 정보 (read-only) */}
+        {isJetteLinked && (
           <div style={{
-            background:'var(--surface-2)', borderRadius:8, padding:'10px 14px',
-            marginBottom:16, fontSize:13, color:'var(--text-2)',
+            background:'var(--surface-2)', borderRadius:10, padding:'12px 14px',
+            marginBottom:16, fontSize:13,
+            border:'1px solid var(--border)',
           }}>
-            <div style={{fontWeight:600, marginBottom:2}}>
-              {initial.productName}
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+              <div style={{fontWeight:700}}>{initial.productName}</div>
+              <span className="chip" style={{padding:'2px 8px', fontSize:11,
+                background:'var(--accent-soft)', color:'var(--accent-text)'}}>{scopeLabel}</span>
             </div>
-            <div style={{fontSize:12, color:'var(--text-3)'}}>
-              코드 {initial.productCode}
-              {initial.priceWithTax != null && ` · ${formatNumber(initial.priceWithTax)}원 (${initial.taxType})`}
+            <div style={{display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:'6px 16px', fontSize:12, color:'var(--text-2)'}}>
+              <SourceField label="제품코드" value={initial.productCode}/>
+              <SourceField label="온도"     value={initial.temperature}/>
+              <SourceField label="판매단위" value={initial.salesUnit}/>
+              <SourceField label="과세구분" value={initial.taxType}/>
+              <SourceField label="부가세포함단가"
+                value={initial.priceWithTax != null ? `${formatNumber(initial.priceWithTax)}원` : null}/>
+            </div>
+            <div style={{fontSize:11, color:'var(--text-3)', marginTop:8, fontStyle:'italic'}}>
+              ※ 위 값들은 제때 가격파일에서 자동 가져옵니다 (수정 불가)
             </div>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap:16}}>
+        <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap:14}}>
 
-          {/* 재료명 — 제때 항목은 선택 입력, 수동은 필수 */}
-          <Field label="재료명" required={!isJette} error={errors.ingredientName}
-            hint={isJette ? '비워두면 제품명 자동 사용' : undefined}>
+          {/* 재료명 */}
+          <Field label="재료명" required={!isJetteLinked} error={errors.ingredientName}
+            hint={isJetteLinked ? '비워두면 제때 제품명 자동 사용' : undefined}>
             <input className="form-input" value={form.ingredientName}
               onChange={e => set('ingredientName', e.target.value)}
-              placeholder={isJette ? initial.displayName : '예) 모짜렐라치즈'}/>
+              placeholder={isJetteLinked ? initial.displayName : '예) 모짜렐라치즈'}/>
           </Field>
 
-          {/* 분류 */}
-          <Field label="분류">
-            <div style={{display:'flex', gap:6, alignItems:'center'}}>
-              {customCat ? (
-                <input className="form-input" value={form.category}
-                  onChange={e => set('category', e.target.value)}
-                  placeholder="직접 입력" style={{flex:1}}/>
-              ) : (
-                <select className="form-input" value={form.category}
-                  onChange={e => set('category', e.target.value)} style={{flex:1}}>
-                  <option value="">미분류</option>
-                  {DEFAULT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              )}
-              <button type="button" className="btn" style={{whiteSpace:'nowrap', flexShrink:0}}
-                onClick={() => { setCustomCat(v => !v); set('category', ''); }}>
-                {customCat ? '목록에서 선택' : '직접 입력'}
-              </button>
+          {/* 분류 태그 (멀티) */}
+          <Field label="분류" hint="여러 개 입력 가능 (Enter 또는 쉼표로 추가)">
+            <div style={{
+              display:'flex', flexWrap:'wrap', gap:4, alignItems:'center',
+              padding:'6px 8px',
+              background:'var(--surface)', border:'1px solid var(--border)', borderRadius:8,
+              minHeight:36,
+            }}>
+              {(form.categories || []).map(t => (
+                <span key={t} className="chip" style={{
+                  padding:'3px 6px 3px 10px', fontSize:12, display:'inline-flex', alignItems:'center', gap:4,
+                }}>
+                  {t}
+                  <button type="button" onClick={() => removeTag(t)} style={{
+                    border:0, background:'transparent', cursor:'pointer', padding:0,
+                    display:'inline-flex', color:'inherit', opacity:.7,
+                  }}>
+                    <Icon.close style={{width:11, height:11}}/>
+                  </button>
+                </span>
+              ))}
+              <input
+                value={tagInput}
+                onChange={e => setTagInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    addTag(tagInput);
+                  } else if (e.key === 'Backspace' && !tagInput && (form.categories || []).length) {
+                    removeTag(form.categories[form.categories.length - 1]);
+                  }
+                }}
+                onBlur={() => addTag(tagInput)}
+                placeholder={(form.categories || []).length ? '' : '예) 토핑재료, 육가공류'}
+                style={{
+                  flex:1, minWidth:120, border:0, outline:0, background:'transparent',
+                  fontFamily:'inherit', fontSize:13, color:'var(--text-1)', padding:'2px 4px',
+                }}
+              />
             </div>
           </Field>
 
-          {/* 수동 추가일 때만: 제때 제품코드 */}
-          {!isJette && (
-            <Field label="제때 제품코드" hint="제때 가격 파일과 자동 연동됩니다">
+          {/* 제조사 */}
+          <Field label="제조사">
+            <input className="form-input" value={form.manufacturer}
+              onChange={e => set('manufacturer', e.target.value)}
+              placeholder="예) CJ제일제당, 매일유업"/>
+          </Field>
+
+          {/* 단종 토글 */}
+          <Field label="단종 처리" hint="단종 카테고리에만 표시되며, 일반 목록에서 제외됩니다">
+            <label style={{display:'inline-flex', alignItems:'center', gap:8, cursor:'pointer', fontSize:13}}>
+              <input type="checkbox" checked={!!form.discontinued}
+                onChange={e => set('discontinued', e.target.checked)}
+                style={{accentColor:'var(--accent)', width:16, height:16}}/>
+              단종된 제품으로 표시
+            </label>
+          </Field>
+
+          {/* 신규/수동 항목: 제품코드 */}
+          {!isJetteLinked && (
+            <Field label="제때 제품코드" hint="입력하면 제때 가격파일과 자동 연동">
               <input className="form-input" value={form.productCode}
                 onChange={e => set('productCode', e.target.value)}
-                placeholder="예) PRD-001 (없으면 비워두세요)"/>
+                placeholder="예) CC310001 (없으면 비워두세요)"/>
             </Field>
           )}
 
-          {/* 포장단위 */}
-          <Field label="포장단위" hint="g당 단가 자동 계산에 사용" error={errors.baseQuantity}>
+          {/* 포장수량 (g·개당 단가 계산용) */}
+          <Field label="포장수량"
+            hint={isJetteLinked
+              ? '향후 원가표 연동 시 자동 입력 (현재는 수동)'
+              : 'g·개당 단가 자동 계산에 사용'}
+            error={errors.baseQuantity}>
             <div style={{display:'flex', gap:8}}>
               <input className="form-input" type="number" value={form.baseQuantity}
                 onChange={e => set('baseQuantity', e.target.value)}
@@ -144,11 +213,11 @@ export function IngredientForm({ initial, onSave, onClose }) {
             </div>
           </Field>
 
-          {/* 수동 추가일 때만: 과세구분 + 수동 단가 */}
-          {!isJette && (
+          {/* 신규/수동: 과세구분 + 수동 단가 */}
+          {!isJetteLinked && (
             <>
               <Field label="과세구분">
-                <div style={{display:'flex', gap:8}}>
+                <div style={{display:'flex', gap:12}}>
                   {['과세', '면세'].map(t => (
                     <label key={t} style={{display:'flex', alignItems:'center', gap:6, cursor:'pointer', fontSize:14}}>
                       <input type="radio" value={t} checked={form.taxType === t}
@@ -180,13 +249,26 @@ export function IngredientForm({ initial, onSave, onClose }) {
           <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:4}}>
             <button type="button" className="btn" onClick={onClose}>취소</button>
             <button type="submit" className="btn primary" disabled={saving}>
-              {saving ? '저장 중…' : isJette ? '저장' : initial ? '수정 저장' : '추가'}
+              {saving ? '저장 중…' : isNew ? '추가' : '저장'}
             </button>
           </div>
         </form>
       </div>
     </div>,
     document.body
+  );
+}
+
+// ── 서브 컴포넌트 ─────────────────────────────────────────────
+
+function SourceField({ label, value }) {
+  return (
+    <div style={{display:'flex', alignItems:'baseline', gap:8}}>
+      <span style={{fontSize:11, color:'var(--text-3)', minWidth:64, fontWeight:500}}>{label}</span>
+      <span style={{fontSize:12, color: value ? 'var(--text-1)' : 'var(--text-4)', fontWeight: value ? 600 : 400}}>
+        {value || '—'}
+      </span>
+    </div>
   );
 }
 
@@ -204,10 +286,15 @@ function Field({ label, required, hint, error, children }) {
 }
 
 function toForm(r) {
+  const categories = Array.isArray(r.categories) && r.categories.length
+    ? r.categories
+    : (r.category ? [r.category] : []);
   return {
     ingredientName: r.ingredientName || '',
     productCode:    r.productCode    || '',
-    category:       r.category       || '',
+    categories,
+    manufacturer:   r.manufacturer   || '',
+    discontinued:   r.discontinued === true,
     baseQuantity:   r.baseQuantity   != null ? String(r.baseQuantity) : '',
     baseUnitType:   r.baseUnitType   || 'g',
     taxType:        r.taxType        || '과세',
