@@ -45,7 +45,8 @@ export default function Page() {
     }
 
     const priceRows  = await getPriceRowsByFileId(latest.id);
-    const merged     = mergeIngredientRows(priceRows, metaMap);
+    // 마스터(시드/수동)에 등록된 항목만 표시
+    const merged     = mergeIngredientRows(priceRows, metaMap).filter(r => r.hasRecord);
     const priceCodeSet = new Set(priceRows.map(r => r.productCode).filter(Boolean));
     const orphanRows = allMeta
       .filter(m => (m.isManual || m.isSeeded) && (!m.productCode || !priceCodeSet.has(m.productCode)))
