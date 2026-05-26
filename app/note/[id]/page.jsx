@@ -1,0 +1,178 @@
+'use client';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { showToast } from '@/components/Toast';
+import { initDB } from '@/lib/db';
+import { getNoteById, updateNote, getNotesInChain, STATUS_COLORS } from '@/lib/note';
+import { NoteFormBody, INIT } from '../_NoteFormBody';
+
+function saveDraft(id, form) {
+  try { localStorage.setItem(`v3:note-draft-${id}`, JSON.stringify(form)); } catch {}
+}
+function loadDraft(id) {
+  try { const s = localStorage.getItem(`v3:note-draft-${id}`); return s ? JSON.parse(s) : null; } catch { return null; }
+}
+function clearDraft(id) {
+  try { localStorage.removeItem(`v3:note-draft-${id}`); } catch {}
+}
+
+function ChainTimeline({ chain, currentId, onNavigate }) {
+  if (!chain || chain.length < 2) return null;
+  return (
+    <div className="card" style={{marginTop:24}}>
+      <div className="card-title" style={{marginBottom:12}}>버전 체인</div>
+      <div style={{display:'flex', alignItems:'center', overflowX:'auto', paddingBottom:4}}>
+        {chain.map((n, i) => {
+          const isCurrent = n.id === currentId;
+          const sc = STATUS_COLORS[n.status] || {};
+          return (
+            <div key={n.id} style={{display:'flex', alignItems:'center', flexShrink:0}}>
+              {i > 0 && (
+                <div style={{width:28, height:2, background:'var(--border)', flexShrink:0}}/>
+              )}
+              <button
+                onClick={() => !isCurrent && onNavigate(n.id)}
+                disabled={isCurrent}
+                style={{
+                  flexShrink:0, minWidth:130, padding:'8px 12px',
+                  borderRadius:10,
+                  border: isCurrent ? `2px solid ${sc.color || 'var(--accent)'}` : '1px solid var(--border)',
+                  background: isCurrent ? (sc.bg || 'var(--accent-soft)') : 'var(--surface)',
+                  cursor: isCurrent ? 'default' : 'pointer',
+                  textAlign:'left', opacity: isCurrent ? 1 : 0.85,
+                }}
+              >
+                <div style={{fontSize:10, color: sc.color || 'var(--text-3)', fontWeight:700, marginBottom:3, display:'flex', alignItems:'center', gap:4}}>
+                  {n.status}
+                  {isCurrent && (
+                    <span style={{background:'var(--accent)', color:'#fff', borderRadius:4, padding:'0 4px', fontSize:9}}>
+                      현재
+                    </span>
+                  )}
+                </div>
+                <div style={{fontSize:12, fontWeight:600, color:'var(--text-1)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:150}}>
+                  {n.title}
+                </div>
+                <div style={{fontSize:10, color:'var(--text-3)', marginTop:3}}>
+                  {n.testDate || (n.createdAt ? n.createdAt.slice(0, 10) : '')}
+                </div>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function Page() {
+  const router  = useRouter();
+  const { id }  = useParams();
+  const noteId  = id ? Number(id) : null;
+
+  const [form,           setForm]          = useState(INIT);
+  const [saving,         setSaving]        = useState(false);
+  const [loading,        setLoading]       = useState(true);
+  const [chain,          setChain]         = useState([]);
+  const [showDraftBanner, setShowDraftBanner] = useState(false);
+
+  const skipRef        = useRef(true);
+  const originalRef    = useRef(null);
+  const timerRef       = useRef(null);
+
+  useEffect(() => {
+    if (!noteId) { router.replace('/note'); return; }
+    initDB()
+      .then(() => Promise.all([getNoteById(noteId), getNotesInChain(noteId)]))
+      .then(([note, ch]) => {
+        if (!note) { showToast('노트를 찾을 수 없어요', 'warn'); router.replace('/note'); return; }
+        const merged = { ...INIT, ...note };
+        setForm(merged);
+        originalRef.current = merged;
+        setChain(ch);
+        const draft = loadDraft(noteId);
+        if (draft && (draft.title !== note.title || draft.testContent !== note.testContent || draft.managerEval !== note.managerEval)) {
+          setShowDraftBanner(true);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [noteId]);
+
+  useEffect(() => {
+    if (skipRef.current) { skipRef.current = false; return; }
+    if (!originalRef.current) return;
+    if (JSON.stringify(form) === JSON.stringify(originalRef.current)) return;
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => saveDraft(noteId, form), 800);
+    return () => clearTimeout(timerRef.current);
+  }, [form, noteId]);
+
+  async function handleSave() {
+    if (!form.title.trim() || !form.menuName.trim() || !form.testContent.trim()) {
+      showToast('제목, 메뉴명, 테스트 내용은 필수입니다', 'warn');
+      return;
+    }
+    setSaving(true);
+    try {
+      await updateNote(noteId, form);
+      clearDraft(noteId);
+      showToast('노트가 수정됐어요', 'ok');
+      router.push('/note');
+    } catch {
+      showToast('저장 중 오류가 발생했어요', 'error');
+      setSaving(false);
+    }
+  }
+
+  function handleCancel() {
+    clearDraft(noteId);
+    router.push('/note');
+  }
+
+  function restoreDraft() {
+    const draft = loadDraft(noteId);
+    if (draft) { setForm(draft); showToast('임시저장된 내용을 불러왔어요', 'ok'); }
+    setShowDraftBanner(false);
+  }
+
+  if (loading) return (
+    <main className="main">
+      <div style={{padding:40, textAlign:'center', color:'var(--text-3)'}}>불러오는 중…</div>
+    </main>
+  );
+
+  return (
+    <main className="main">
+      <PageHeader
+        breadcrumb={['메뉴개발노트', '노트 수정']}
+        title="노트 수정"
+        sub={form.title || ''}
+        actions={
+          <>
+            <button className="btn" onClick={handleCancel}>취소</button>
+            <button className="btn primary" onClick={handleSave} disabled={saving}>
+              {saving ? '저장 중…' : '저장하기'}
+            </button>
+          </>
+        }
+      />
+      {showDraftBanner && (
+        <div style={{
+          background:'var(--warn-soft)', color:'var(--warn)',
+          borderRadius:10, padding:'10px 16px', fontSize:13, marginTop:8,
+          display:'flex', justifyContent:'space-between', alignItems:'center',
+        }}>
+          <span>저장되지 않은 임시저장이 있어요.</span>
+          <div style={{display:'flex', gap:8}}>
+            <button className="btn sm" onClick={restoreDraft}>불러오기</button>
+            <button className="btn sm" onClick={() => { clearDraft(noteId); setShowDraftBanner(false); }}>무시</button>
+          </div>
+        </div>
+      )}
+      <NoteFormBody form={form} setForm={setForm} />
+      <ChainTimeline chain={chain} currentId={noteId} onNavigate={id => router.push(`/note/${id}`)} />
+    </main>
+  );
+}
