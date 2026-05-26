@@ -45,6 +45,7 @@ export function MenuPriceForm({ initial, onSave, onClose }) {
   const isNew = !initial;
   const title = isNew ? '메뉴 판매가 추가' : '메뉴 판매가 수정';
   const sizes = defaultSizesFor(form.category);
+  const existingCode = initial?.menuCode;
 
   return createPortal(
     <div style={{
@@ -63,6 +64,24 @@ export function MenuPriceForm({ initial, onSave, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap:14}}>
+          {existingCode && (
+            <Field label="메뉴코드" hint="기존 코드 유지 (자동 발급됨)">
+              <div style={{
+                padding:'8px 12px', fontFamily:"'JetBrains Mono', ui-monospace, monospace",
+                fontSize:13, color:'var(--text-2)',
+                background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:8,
+              }}>{existingCode}</div>
+            </Field>
+          )}
+          {!existingCode && (
+            <Field label="메뉴코드" hint="저장 시 자동 발급 (PZ/IP/SD/ST 형식)">
+              <div style={{
+                padding:'8px 12px', fontSize:12, color:'var(--text-4)', fontStyle:'italic',
+                background:'var(--surface-2)', border:'1px dashed var(--border)', borderRadius:8,
+              }}>저장 시 자동 발급됩니다</div>
+            </Field>
+          )}
+
           <Field label="분류" required>
             <select className="form-input" value={form.category}
               onChange={e => set('category', e.target.value)}>

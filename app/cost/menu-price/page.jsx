@@ -70,6 +70,7 @@ export default function Page() {
     if (catFilter !== 'all') list = list.filter(r => r.category === catFilter);
     const q = search.trim().toLowerCase();
     if (q) list = list.filter(r =>
+      (r.menuCode || '').toLowerCase().includes(q) ||
       (r.menuName || '').toLowerCase().includes(q) ||
       (r.category || '').toLowerCase().includes(q) ||
       (r.note || '').toLowerCase().includes(q)

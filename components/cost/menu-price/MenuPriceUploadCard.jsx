@@ -118,9 +118,15 @@ export function MenuPriceUploadCard({ onReplaced }) {
 
           {preview.success.length > 0 && (
             <div style={{marginTop:10, fontSize:12, color:'var(--text-2)', maxHeight:140, overflowY:'auto'}}>
+              <div style={{fontSize:11, color:'var(--text-3)', marginBottom:4, fontStyle:'italic'}}>
+                메뉴코드 비어있는 행은 저장 시 자동 발급됩니다 (분류별 시퀀스)
+              </div>
               {preview.success.slice(0, 8).map((r, i) => (
                 <div key={i} style={{display:'flex', gap:8, padding:'3px 0', borderBottom:'1px dashed var(--divider)'}}>
-                  <span style={{color:'var(--text-3)', minWidth:60}}>{r.category || '—'}</span>
+                  <span style={{color:'var(--text-3)', minWidth:88, fontFamily:"'JetBrains Mono', ui-monospace, monospace", fontSize:11}}>
+                    {r.menuCode || '(자동)'}
+                  </span>
+                  <span style={{color:'var(--text-3)', minWidth:56}}>{r.category || '—'}</span>
                   <span style={{flex:1, fontWeight:600}}>{r.menuName}</span>
                   <span style={{color:'var(--text-3)', minWidth:30}}>{r.size}</span>
                   <span style={{minWidth:80, textAlign:'right'}}>{formatNumber(r.price)}원</span>

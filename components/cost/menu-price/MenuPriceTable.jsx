@@ -16,9 +16,10 @@ export function MenuPriceTable({ rows, deletePending, onEdit, onDeleteStart, onD
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{width:100}}>분류</th>
+              <th style={{width:110}}>메뉴코드</th>
+              <th style={{width:88}}>분류</th>
               <th>메뉴명</th>
-              <th style={{width:80}}>규격</th>
+              <th style={{width:72}}>규격</th>
               <th style={{width:120, textAlign:'right'}}>판매가</th>
               <th>비고</th>
               <th style={{width:84}}/>

@@ -5,6 +5,9 @@ import { formatNumber } from '@/lib/format';
 export function MenuPriceRow({ r, deletePending, onEdit, onDeleteStart, onDeleteCancel, onDeleteConfirm }) {
   return (
     <tr>
+      <td style={{fontFamily:"'JetBrains Mono', ui-monospace, monospace", fontSize:11, color:'var(--text-3)'}}>
+        {r.menuCode || <span style={{color:'var(--text-4)'}}>—</span>}
+      </td>
       <td>
         {r.category
           ? <span className="chip" style={{padding:'2px 8px', fontSize:11}}>{r.category}</span>
