@@ -10,7 +10,7 @@ import {
   getAllIngredients, getIngredientMetaMap, mergeIngredientRows,
   addIngredient, updateIngredient, upsertIngredientMeta,
   excludeIngredientByCode, restoreIngredientByCode,
-  deleteIngredient, getCategoryStyle,
+  deleteIngredient, getCategoryStyle, sortCategoryTags,
   seedMasterIngredients, INGREDIENT_MASTER_SEED,
 } from '@/lib/ingredient';
 import { IngredientForm } from './IngredientForm';
@@ -121,14 +121,14 @@ export default function Page() {
     } catch (err) { showToast('실패: ' + err.message, 'err'); }
   }
 
-  // ── 카테고리 태그 집합 ──
+  // ── 카테고리 태그 집합 (메인 카테고리 우선) ──
   const tagSet = useMemo(() => {
     const set = new Set();
     rows.forEach(r => {
       if (r.discontinued) return;
       (r.categories || []).forEach(t => t && set.add(t));
     });
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'ko'));
+    return sortCategoryTags(Array.from(set));
   }, [rows]);
 
   const discontinuedCount = rows.filter(r => r.discontinued).length;
@@ -346,7 +346,7 @@ function ManageRow({ r, deletePending, onEdit, onDeleteStart, onDeleteCancel, on
     ? `${r.unitPrice < 1 ? r.unitPrice.toFixed(2) : formatNumber(Math.round(r.unitPrice))}원/${r.baseUnitType || 'g'}`
     : null;
   const scopeLabel = r.hasRecord ? '전용' : '범용';
-  const tags = r.categories || [];
+  const tags = sortCategoryTags(r.categories || []);
 
   return (
     <tr style={{opacity: r.excluded ? .5 : 1, background: r.excluded ? 'var(--surface-2)' : undefined}}>

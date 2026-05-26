@@ -6,7 +6,8 @@ import { initDB } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import {
-  getAllIngredients, getIngredientMetaMap, mergeIngredientRows, getCategoryStyle,
+  getAllIngredients, getIngredientMetaMap, mergeIngredientRows,
+  getCategoryStyle, sortCategoryTags,
 } from '@/lib/ingredient';
 
 const DISCONTINUED_FILTER = '__discontinued__';
@@ -59,14 +60,14 @@ export default function Page() {
   const discontinuedCount = rows.filter(r => r.discontinued).length;
   const linkPct       = totalCount > 0 ? Math.round(linkedCount / totalCount * 100) : 0;
 
-  // ── 카테고리 태그 집합 (단종 제외) ──────────────────────────
+  // ── 카테고리 태그 집합 (단종 제외, 메인 카테고리 우선) ──
   const tagSet = useMemo(() => {
     const set = new Set();
     rows.forEach(r => {
       if (r.discontinued || r.excluded) return;
       (r.categories || []).forEach(t => t && set.add(t));
     });
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'ko'));
+    return sortCategoryTags(Array.from(set));
   }, [rows]);
 
   const uncategorizedCount = rows.filter(r => !r.discontinued && !r.excluded && (!r.categories || !r.categories.length)).length;
@@ -93,6 +94,13 @@ export default function Page() {
     if (sort === 'name')
       return [...list].sort((a, b) =>
         (a.ingredientName || a.displayName || '').localeCompare(b.ingredientName || b.displayName || '', 'ko'));
+    if (sort === 'category')
+      return [...list].sort((a, b) => {
+        const ca = sortCategoryTags(a.categories || [])[0] || 'ㅎ';
+        const cb = sortCategoryTags(b.categories || [])[0] || 'ㅎ';
+        if (ca !== cb) return ca.localeCompare(cb, 'ko');
+        return (a.ingredientName || a.displayName || '').localeCompare(b.ingredientName || b.displayName || '', 'ko');
+      });
     if (sort === 'price-desc') return [...list].sort((a, b) => (b.unitPrice || 0) - (a.unitPrice || 0));
     if (sort === 'price-asc')  return [...list].sort((a, b) => (a.unitPrice || 0) - (b.unitPrice || 0));
     return list;
@@ -212,6 +220,7 @@ export default function Page() {
               {[
                 {id:'default',    label:'기본'},
                 {id:'name',       label:'이름순'},
+                {id:'category',   label:'분류순'},
                 {id:'price-desc', label:'단가↑'},
                 {id:'price-asc',  label:'단가↓'},
               ].map(s => (
@@ -313,7 +322,7 @@ function IngredientRow({ r }) {
   const unitPriceLabel = uPrice != null
     ? `${uPrice < 1 ? uPrice.toFixed(2) : uPrice % 1 === 0 ? formatNumber(uPrice) : uPrice.toFixed(1)}원/${unit}`
     : null;
-  const tags = r.categories || [];
+  const tags = sortCategoryTags(r.categories || []);
 
   return (
     <tr style={{opacity: r.discontinued ? .55 : 1}}>
