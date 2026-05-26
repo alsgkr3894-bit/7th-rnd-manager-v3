@@ -49,6 +49,7 @@ export function UploadPreview({ period, classifiedRows, groupedIssues, onCancel,
             <div className="card-sub">미매칭 → 제외 → 정상 순으로 표시 · 반영 후 미매칭 관리에서 처리할 수 있어요</div>
           </div>
         </div>
+        <div style={{overflowX:'auto'}}>
         <table className="data-table">
           <thead>
             <tr>
