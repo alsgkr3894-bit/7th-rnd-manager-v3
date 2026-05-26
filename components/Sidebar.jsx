@@ -45,12 +45,12 @@ export default function Sidebar({ onClose }) {
   const isActive = (item) => {
     if (!item.href) return false;
     if (item.href === '/') return pathname === '/';
-    return pathname.startsWith(item.href);
+    return pathname === item.href;
   };
 
   const isGroupActive = (group) => {
-    if (group.href) return isActive(group);
-    return group.children?.some(c => isActive(c));
+    if (group.href) return pathname === group.href || pathname.startsWith(group.href + '/');
+    return group.children?.some(c => c.href && (pathname === c.href || pathname.startsWith(c.href + '/')));
   };
 
   // 초기 펼침 상태 — 현재 활성 그룹만 열린 상태로
