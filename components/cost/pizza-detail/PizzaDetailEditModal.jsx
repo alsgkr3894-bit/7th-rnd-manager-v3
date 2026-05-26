@@ -3,26 +3,22 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
-import { EDGE_TYPES, edgeTotalCost, edgeCodeOf } from '@/lib/cost/edge-dough';
+import { pizzaBaseCost } from '@/lib/cost/pizza-detail';
 import { getAllIngredients, buildMetaOnlyRow } from '@/lib/ingredient';
 import { ComponentRow } from '@/components/cost/shared/ComponentRow';
 
 const EMPTY_COMPONENT = { productCode: null, ingredientName: '', quantity: '', unit: 'g', unitPrice: '' };
 
-export function EdgeEditModal({ initial, onSave, onClose }) {
-  const isNew = !initial?.id;
-  const [edgeType, setEdgeType] = useState(initial?.edgeType || EDGE_TYPES[0]);
-  const [size, setSize]         = useState(initial?.size || 'L');
+export function PizzaDetailEditModal({ menu, initial, onSave, onClose }) {
   const [components, setComponents] = useState(initial?.components || []);
-  const [note, setNote]         = useState(initial?.note || '');
+  const [note, setNote]             = useState(initial?.note || '');
   const [ingredients, setIngredients] = useState([]);
-  const [saving, setSaving]     = useState(false);
+  const [saving, setSaving]         = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
         const all = await getAllIngredients();
-        // 단가 계산 가능한 항목만 자동완성에 노출
         setIngredients(all.filter(m => m.isSeeded || m.isManual).map(buildMetaOnlyRow));
       } catch (err) {
         console.warn('식자재 자동완성 로드 실패', err);
@@ -45,19 +41,19 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
     setSaving(true);
     try {
       await onSave({
-        id:        initial?.id,
-        edgeCode:  edgeCodeOf(edgeType, size),
-        edgeType,
-        size,
+        id: initial?.id,
+        menuCode: menu.menuCode,
+        menuName: menu.menuName,
+        size:     menu.size,
         components,
         note,
       });
     } finally { setSaving(false); }
   }
 
-  const total = edgeTotalCost({ components });
-  const title = isNew ? '엣지·도우 추가' : `${edgeType} ${size} 편집`;
-  const listId = 'edge-dough-ing-options';
+  const baseCost = pizzaBaseCost({ components });
+  const costRate = (menu.price && baseCost > 0) ? (baseCost / menu.price * 100) : null;
+  const listId = 'pizza-detail-ing-options';
 
   return createPortal(
     <div style={{
@@ -69,35 +65,26 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
         padding:'22px 26px',
       }}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16}}>
-          <div style={{fontWeight:700, fontSize:16}}>{title}</div>
+          <div>
+            <div style={{fontWeight:700, fontSize:16}}>{menu.menuName} {menu.size}</div>
+            <div style={{fontSize:11, color:'var(--text-3)', marginTop:2, fontFamily:"'JetBrains Mono', ui-monospace, monospace"}}>
+              {menu.menuCode}
+              {menu.price != null && <span style={{marginLeft:8}}>· 판매가 {formatNumber(menu.price)}원</span>}
+            </div>
+          </div>
           <button className="btn" style={{padding:'4px 8px'}} onClick={onClose}>
             <Icon.close style={{width:16, height:16}}/>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap:14}}>
+        <div style={{
+          padding:'8px 12px', marginBottom:16, fontSize:12, color:'var(--text-2)',
+          background:'var(--accent-soft)', borderRadius:8, border:'1px solid var(--border)',
+        }}>
+          베이스 구성품(소스·치즈·토핑 등)만 입력하세요. 엣지·도우는 별도 원가표에서 종합 원가표에 자동 합산됩니다.
+        </div>
 
-          {/* 엣지 유형 + 사이즈 (신규일 때만 편집 가능) */}
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
-            <Field label="엣지 유형">
-              <select className="form-input" value={edgeType}
-                onChange={e => setEdgeType(e.target.value)} disabled={!isNew}>
-                {EDGE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </Field>
-            <Field label="규격">
-              <div style={{display:'flex', gap:12, alignItems:'center', padding:'8px 0'}}>
-                {(edgeType === '씬도우' ? ['L'] : ['L', 'R']).map(sz => (
-                  <label key={sz} style={{display:'flex', alignItems:'center', gap:6, cursor: isNew ? 'pointer' : 'default', fontSize:14}}>
-                    <input type="radio" value={sz} checked={size === sz}
-                      onChange={() => setSize(sz)} disabled={!isNew}
-                      style={{accentColor:'var(--accent)'}}/>
-                    {sz}
-                  </label>
-                ))}
-              </div>
-            </Field>
-          </div>
+        <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap:14}}>
 
           {/* 구성품 헤더 */}
           <div style={{
@@ -144,14 +131,21 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
               placeholder="선택 입력"/>
           </Field>
 
-          {/* 총 원가 */}
+          {/* 베이스 원가 + 원가율 */}
           <div style={{
             padding:'12px 14px', background:'var(--surface-2)', borderRadius:10,
             display:'flex', justifyContent:'space-between', alignItems:'center',
           }}>
-            <span style={{fontSize:13, fontWeight:600}}>총 원가</span>
+            <div>
+              <div style={{fontSize:13, fontWeight:600}}>베이스 원가 (엣지 제외)</div>
+              {costRate != null && (
+                <div style={{fontSize:11, color: costRate >= 35 ? 'var(--negative)' : 'var(--text-3)', marginTop:2}}>
+                  베이스율 {costRate.toFixed(1)}% (엣지 추가 시 더 높아짐)
+                </div>
+              )}
+            </div>
             <span style={{fontSize:20, fontWeight:800, color:'var(--accent)'}}>
-              {formatNumber(total)}<span style={{fontSize:13, marginLeft:2}}>원</span>
+              {formatNumber(baseCost)}<span style={{fontSize:13, marginLeft:2}}>원</span>
             </span>
           </div>
 

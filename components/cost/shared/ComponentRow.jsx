@@ -1,18 +1,26 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
-import { componentSubtotal } from '@/lib/cost/edge-dough';
 
 const UNIT_OPTIONS = ['g', 'kg', 'ml', 'L', '개', '입', '장', '봉'];
 
 /**
- * 구성품 1개 편집 행.
- * @prop c            현재 값
+ * 구성품 1개 편집 행 — 원가표 모듈 공통.
+ * (엣지·도우 / 피자 세부 / 1인피자 / 사이드 / 세트박스 등에서 재사용)
+ *
+ * @prop c            현재 값 { productCode, ingredientName, quantity, unit, unitPrice }
  * @prop onChange     (patch) => void
  * @prop onRemove     () => void
  * @prop ingredients  자동완성용 [{ productCode, ingredientName, unitPrice, baseUnitType }]
- * @prop listId       datalist id (고유)
+ * @prop listId       datalist id (페이지별 고유)
  */
+
+function componentSubtotal(c) {
+  if (!c) return 0;
+  const qty = Number(c.quantity) || 0;
+  const price = Number(c.unitPrice) || 0;
+  return qty * price;
+}
 export function ComponentRow({ c, onChange, onRemove, ingredients, listId }) {
   const subtotal = componentSubtotal(c);
 
