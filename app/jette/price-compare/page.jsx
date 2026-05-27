@@ -21,7 +21,8 @@ export default function Page() {
     baseFileId, setBaseFileId,
     latestFileId, setLatestFileId,
     diffRows,
-    handleFile, handleDelete,
+    productTypeLookup,
+    handleFile, handleDelete, handleTypeChange,
   } = useJettePrice();
 
   const [tab, setTab] = useState('latest');
@@ -113,6 +114,8 @@ export default function Page() {
               files={files}
               latestFileId={latestFileId}
               onLatestChange={setLatestFileId}
+              productTypeLookup={productTypeLookup}
+              onTypeChange={handleTypeChange}
             />
           )}
 
@@ -127,7 +130,11 @@ export default function Page() {
                 summary={summary}
               />
               <PriceSummaryCards diffRows={diffRows} />
-              <PriceCompareTable diffRows={diffRows} />
+              <PriceCompareTable
+                diffRows={diffRows}
+                productTypeLookup={productTypeLookup}
+                onTypeChange={handleTypeChange}
+              />
             </>
           )}
 

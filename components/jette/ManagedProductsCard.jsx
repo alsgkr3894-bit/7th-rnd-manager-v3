@@ -96,11 +96,12 @@ export function ManagedProductsCard() {
   }
 
   const counts = useMemo(() => ({
-    all:        list.length,
-    exclusive:  list.filter(p => p.productType === 'exclusive').length,
-    generic:    list.filter(p => p.productType === 'generic' || !p.productType).length,
-    managed:    list.filter(p => p.isManaged).length,
-    disabled:   list.filter(p => p.enable === false).length,
+    all:              list.length,
+    exclusive:        list.filter(p => p.productType === 'exclusive').length,
+    generic:          list.filter(p => p.productType === 'generic' || !p.productType).length,
+    'generic-managed': list.filter(p => p.productType === 'generic-managed').length,
+    managed:          list.filter(p => p.isManaged).length,
+    disabled:         list.filter(p => p.enable === false).length,
   }), [list]);
 
   const filtered = useMemo(() => {
@@ -122,7 +123,7 @@ export function ManagedProductsCard() {
         <div>
           <div className="card-title">대상 제품 목록</div>
           <div className="card-sub">
-            총 {list.length}개 (전용 {counts.exclusive} · 범용 {counts.generic} · 관리품목 {counts.managed})
+            총 {list.length}개 (전용 {counts.exclusive} · 범용 {counts.generic} · 범용관리 {counts['generic-managed']} · 관리품목 {counts.managed})
           </div>
         </div>
         <div style={{display:'flex', gap:6}}>
@@ -147,9 +148,10 @@ export function ManagedProductsCard() {
       )}
 
       <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:12, alignItems:'center'}}>
-        <Chip label="전체"       count={counts.all}        active={filter === 'all'}       onClick={() => setFilter('all')}/>
-        <Chip label="전용상품"   count={counts.exclusive}  active={filter === 'exclusive'} onClick={() => setFilter('exclusive')}/>
-        <Chip label="범용상품"   count={counts.generic}    active={filter === 'generic'}   onClick={() => setFilter('generic')}/>
+        <Chip label="전체"     count={counts.all}                   active={filter === 'all'}              onClick={() => setFilter('all')}/>
+        <Chip label="전용상품" count={counts.exclusive}             active={filter === 'exclusive'}         onClick={() => setFilter('exclusive')}/>
+        <Chip label="범용상품" count={counts.generic}               active={filter === 'generic'}           onClick={() => setFilter('generic')}/>
+        <Chip label="범용관리" count={counts['generic-managed']}    active={filter === 'generic-managed'}   onClick={() => setFilter('generic-managed')}/>
         <span style={{width:1, height:18, background:'var(--border)', margin:'0 4px'}}/>
         <Chip label="관리품목만" count={counts.managed}    active={managedOnly}            onClick={() => setManagedOnly(v => !v)}/>
         {counts.disabled > 0 && (

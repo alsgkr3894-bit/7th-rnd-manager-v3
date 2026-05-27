@@ -3,9 +3,16 @@
  */
 
 export const TYPE_OPTIONS = [
-  { value: 'exclusive',  label: '전용상품' },
-  { value: 'generic',    label: '범용상품' },
+  { value: 'exclusive',       label: '전용상품' },
+  { value: 'generic',         label: '범용상품' },
+  { value: 'generic-managed', label: '범용관리' },
 ];
+
+export const TYPE_LABEL = {
+  exclusive:         '전용',
+  generic:           '범용',
+  'generic-managed': '범용관리',
+};
 
 export const inputStyle = {
   padding:'6px 10px', borderRadius:6,

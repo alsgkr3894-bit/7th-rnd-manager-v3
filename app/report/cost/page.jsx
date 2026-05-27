@@ -1,78 +1,101 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ReportBuilderShell, { OptGroup, Seg, Check } from '@/components/report/ReportBuilderShell';
+import { downloadCsv } from '@/lib/download';
 import { fmtKRW } from '@/lib/format';
 import { Icon } from '@/components/icons';
+import { initDB } from '@/lib/db/init';
+import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
+import { useDraftRestore } from '@/lib/report/useDraftRestore';
 
-const COST_BY_CATEGORY = {
-  pizza: {
-    label: "피자", color: "#3182F6",
-    note: "L 규격 기준 · 엣지 4종 평균 반영",
-    menus: [
-      { name: "슈퍼콤비네이션 L", cost: 8200,  sale: 32900, rate: 24.9 },
-      { name: "포테이토피자 L",   cost: 11420, sale: 29900, rate: 38.2 },
-      { name: "불고기피자 L",     cost: 8720,  sale: 30900, rate: 28.2 },
-      { name: "고르곤졸라 L",     cost: 12480, sale: 33900, rate: 36.8 },
-      { name: "새우파티 L",       cost: 12400, sale: 34900, rate: 35.5 },
-    ],
-  },
-  personal: {
-    label: "1인피자", color: "#10B981",
-    note: "단일 규격 · 점심 회전율 메뉴",
-    menus: [
-      { name: "콤비 1인",      cost: 4260, sale: 14900, rate: 28.6 },
-      { name: "포테이토 1인",  cost: 4500, sale: 14900, rate: 30.2 },
-      { name: "불고기 1인",    cost: 4090, sale: 14900, rate: 27.4 },
-      { name: "치즈 1인",      cost: 3640, sale: 13900, rate: 26.2 },
-    ],
-  },
-  side: {
-    label: "사이드", color: "#F59E0B",
-    note: "소스 · 추가 토핑 제외",
-    menus: [
-      { name: "오븐스파게티",  cost: 2430, sale: 7900, rate: 30.8 },
-      { name: "치즈스틱",      cost: 1660, sale: 6900, rate: 24.1 },
-      { name: "치킨윙",        cost: 3680, sale: 9900, rate: 37.2 },
-      { name: "감자튀김",      cost: 1080, sale: 4900, rate: 22.0 },
-    ],
-  },
-  set: {
-    label: "세트박스", color: "#EC4899",
-    note: "구성품 원가 합산 — 박스·콜라 포함",
-    menus: [
-      { name: "패밀리박스 L",   cost: 12570, sale: 42900, rate: 29.3 },
-      { name: "더블박스 L",     cost: 12260, sale: 38900, rate: 31.5 },
-      { name: "커플박스 R",     cost: 8910,  sale: 26900, rate: 33.1 },
-    ],
-  },
-  edge: {
-    label: "엣지 & 도우", color: "#8B5CF6",
-    note: "기본 도우 대비 추가 원가",
-    menus: [
-      { name: "치즈크러스트 L",     cost: 3470, sale: 8500, rate: 40.8 },
-      { name: "골드스윗크러스트 L", cost: 3700, sale: 8500, rate: 43.5 },
-      { name: "씬도우 L",           cost: 1820, sale: 8000, rate: 22.8 },
-    ],
-  },
+const matchEdge = (cat) => cat === '엣지' || cat === '엣지&도우' || cat === '엣지 & 도우';
+
+const CAT_META = {
+  '피자':     { id: 'pizza',    color: '#3182F6', note: 'L 규격 기준' },
+  '1인피자':  { id: 'personal', color: '#10B981', note: '단일 규격 · 점심 회전율 메뉴' },
+  '사이드':   { id: 'side',     color: '#F59E0B', note: '소스 · 추가 토핑 제외' },
+  '세트박스': { id: 'set',      color: '#EC4899', note: '구성품 원가 합산' },
+  '엣지':     { id: 'edge',     color: '#8B5CF6', note: '기본 도우 대비 추가 원가' },
 };
+const CAT_KEYS = ['피자', '1인피자', '사이드', '세트박스', '엣지'];
+
+const DRAFT_KEY = 'report_draft_cost';
 
 export default function Page() {
   const [periodMode, setPeriodMode] = useState("month");
   const [year, setYear] = useState(2026);
-  const [month, setMonth] = useState(4);
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [riskThreshold, setRiskThreshold] = useState(35);
   const [cats, setCats] = useState({ pizza: true, personal: true, side: true, set: true, edge: true });
   const [opts, setOpts] = useState({ summary: true, catTable: true, perCategory: true, riskList: true, salePrice: true });
   const updCat = (k, v) => setCats(s => ({ ...s, [k]: v }));
   const updOpt = (k, v) => setOpts(s => ({ ...s, [k]: v }));
+  const [docFormat, setDocFormat] = useState({ pdf: true, excel: false });
+  const updFmt = (k, v) => setDocFormat(f => ({ ...f, [k]: v }));
+
+  const [dataError, setDataError] = useState(null);
+
+  // DB 데이터
+  const [costByCategory, setCostByCategory] = useState({
+    pizza:    { label: '피자',      color: '#3182F6', note: 'L 규격 기준',                    menus: [] },
+    personal: { label: '1인피자',  color: '#10B981', note: '단일 규격 · 점심 회전율 메뉴',   menus: [] },
+    side:     { label: '사이드',   color: '#F59E0B', note: '소스 · 추가 토핑 제외',           menus: [] },
+    set:      { label: '세트박스', color: '#EC4899', note: '구성품 원가 합산',               menus: [] },
+    edge:     { label: '엣지 & 도우', color: '#8B5CF6', note: '기본 도우 대비 추가 원가',  menus: [] },
+  });
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  useDraftRestore(DRAFT_KEY, draft => {
+    if (draft.periodMode) setPeriodMode(draft.periodMode);
+    if (draft.year) setYear(draft.year);
+    if (draft.month) setMonth(draft.month);
+    if (draft.riskThreshold) setRiskThreshold(draft.riskThreshold);
+    if (draft.cats) setCats(c => ({ ...c, ...draft.cats }));
+    if (draft.opts) setOpts(o => ({ ...o, ...draft.opts }));
+  });
+
+  useEffect(() => {
+    setIsLoading(true);
+    initDB().then(async () => {
+      try {
+        const prices = await getAllMenuPrices();
+        if (prices.length === 0) { setIsLoading(false); return; }
+
+        const updated = { ...costByCategory };
+        for (const catLabel of CAT_KEYS) {
+          const meta = CAT_META[catLabel];
+          if (!meta) continue;
+          const catPrices = prices.filter(p => catLabel === '엣지' ? matchEdge(p.category) : p.category === catLabel);
+          updated[meta.id] = {
+            ...updated[meta.id],
+            menus: catPrices.map(p => ({
+              name: p.size && p.size !== '단일' ? `${p.menuName} ${p.size}` : p.menuName,
+              cost: 0,
+              sale: p.price || 0,
+              rate: 0,
+            })),
+          };
+        }
+        setCostByCategory(updated);
+        setDataError(null);
+      } catch (err) {
+        console.error('[cost report]', err);
+        setDataError('메뉴 가격 데이터를 불러오는 중 오류가 발생했어요.');
+      } finally {
+        setIsLoading(false);
+      }
+    }).catch(() => { setIsLoading(false); setDataError('데이터베이스에 연결할 수 없어요. 데이터를 먼저 업로드해 주세요.'); });
+  }, []);
 
   const periodLabel = periodMode === "year" ? `${year}년` : `${year}년 ${month}월`;
-  const activeCats = Object.entries(COST_BY_CATEGORY).filter(([k]) => cats[k]);
+  const activeCats = Object.entries(costByCategory).filter(([k]) => cats[k]);
   const catStats = activeCats.map(([k, c]) => {
-    const rates = c.menus.map(m => m.rate);
-    const avg = rates.reduce((s,v)=>s+v,0) / rates.length;
+    const withRate = c.menus.filter(m => m.rate > 0);
+    const rates = withRate.map(m => m.rate);
+    const avg = rates.length ? rates.reduce((s,v)=>s+v,0) / rates.length : 0;
     const risk = c.menus.filter(m => m.rate >= riskThreshold).length;
-    return { id: k, ...c, avg, min: Math.min(...rates), max: Math.max(...rates), risk, count: c.menus.length };
+    return { id: k, ...c, avg, min: rates.length ? Math.min(...rates) : 0, max: rates.length ? Math.max(...rates) : 0, risk, count: c.menus.length };
   });
   const allMenus = activeCats.flatMap(([_, c]) => c.menus);
   const totalCount = allMenus.length;
@@ -82,6 +105,20 @@ export default function Page() {
   const riskMenus = activeCats.flatMap(([_, c]) =>
     c.menus.filter(m => m.rate >= riskThreshold).map(m => ({ ...m, catLabel: c.label, catColor: c.color }))
   ).sort((a, b) => b.rate - a.rate);
+  const reportMeta = { period: periodLabel, name: `${periodLabel} 원가계산 종합 보고서`, pages: 9, options: { periodMode, year, month, riskThreshold, cats, opts } };
+
+  const handleExcelExport = () => {
+    const pad = n => String(n).padStart(2, '0');
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;
+    const periodPart = periodLabel.replace(/(\d+)년 (\d+)월/, (_, y, m) => `${y}년${m.padStart(2,'0')}월`);
+    const fileName = `7번가피자_${periodPart} 원가계산보고서_${dateStr}.csv`;
+    const rows = [
+      ['카테고리', '메뉴명', '원가(원)', '원가율(%)'],
+      ...activeCats.flatMap(([_, c]) => c.menus.map(m => [c.label, m.name, m.cost, m.rate])),
+    ];
+    downloadCsv(rows, fileName);
+  };
 
   return (
     <ReportBuilderShell
@@ -90,6 +127,11 @@ export default function Page() {
       sub="5개 카테고리(피자·1인피자·사이드·세트박스·엣지&도우)의 종합 원가를 한 장에 모아요."
       kind="cost"
       exportNote="제때 단가는 보고서 생성 시점으로 고정돼요. 이후 단가 변동은 다음 보고서에 반영됩니다."
+      reportMeta={reportMeta}
+      dataError={dataError}
+      isLoading={isLoading}
+      docFormat={docFormat}
+      onExcelExport={handleExcelExport}
       options={<>
         <OptGroup label="집계 기준 기간">
           <Seg value={periodMode} onChange={setPeriodMode}
@@ -131,8 +173,8 @@ export default function Page() {
         </OptGroup>
 
         <OptGroup label="문서 형식">
-          <Check label="PDF (보고용 — 상무님)"  value={true} onChange={()=>{}}/>
-          <Check label="Excel (원본 데이터)"     value={true} onChange={()=>{}}/>
+          <Check label="PDF"                value={docFormat.pdf}   onChange={v => updFmt('pdf', v)}/>
+          <Check label="Excel (원본 데이터)" value={docFormat.excel} onChange={v => updFmt('excel', v)}/>
         </OptGroup>
       </>}
 
@@ -145,7 +187,7 @@ export default function Page() {
             <span>·</span>
             <span>위험 기준 {riskThreshold}%↑</span>
             <span>·</span>
-            <span className="mono">단가 기준 2026.05.21 · 민혁 책임</span>
+            <span className="mono">단가 기준 {new Date().toLocaleDateString('ko-KR').slice(0,-1)} · 민혁 책임</span>
           </div>
         </div>
 
@@ -153,22 +195,22 @@ export default function Page() {
           <div className="paper-stat-row" style={{gridTemplateColumns:"repeat(4, 1fr)"}}>
             <div className="paper-stat">
               <div className="paper-stat-label">대상 메뉴</div>
-              <div className="paper-stat-val num">{totalCount}<span className="unit">개</span></div>
+              <div className="paper-stat-val num">{totalCount > 0 ? totalCount : '—'}<span className="unit">{totalCount > 0 ? '개' : ''}</span></div>
               <div className="paper-stat-foot">{activeCats.length}개 카테고리</div>
             </div>
             <div className="paper-stat">
               <div className="paper-stat-label">평균 원가율</div>
-              <div className="paper-stat-val num">{allAvg.toFixed(1)}<span className="unit">%</span></div>
+              <div className="paper-stat-val num">{allAvg > 0 ? allAvg.toFixed(1) : '—'}<span className="unit">{allAvg > 0 ? '%' : ''}</span></div>
               <div className="paper-stat-foot">전 카테고리 가중평균</div>
             </div>
             <div className="paper-stat">
               <div className="paper-stat-label">위험 메뉴</div>
-              <div className="paper-stat-val num" style={{color:"var(--warn)"}}>{allRisk}<span className="unit">개</span></div>
+              <div className="paper-stat-val num" style={{color:"var(--warn)"}}>{allRisk}</div>
               <div className="paper-stat-foot">{riskThreshold}% 초과</div>
             </div>
             <div className="paper-stat">
               <div className="paper-stat-label">최고 원가율</div>
-              <div className="paper-stat-val num" style={{color:"var(--negative)"}}>{allMaxRate.toFixed(1)}<span className="unit">%</span></div>
+              <div className="paper-stat-val num" style={{color:"var(--negative)"}}>{allMaxRate > 0 ? allMaxRate.toFixed(1) : '—'}<span className="unit">{allMaxRate > 0 ? '%' : ''}</span></div>
               <div className="paper-stat-foot">단일 메뉴 기준</div>
             </div>
           </div>
@@ -177,63 +219,71 @@ export default function Page() {
         {opts.catTable && (
           <div className="paper-section">
             <div className="paper-section-title">카테고리별 종합 비교</div>
-            <div className="cost-bars">
-              {catStats.map(c => {
-                const w = (c.avg / 50) * 100;
-                return (
-                  <div key={c.id} className="cost-bar-row">
-                    <div className="cost-bar-label">
-                      <span className="dot" style={{background: c.color}}></span>
-                      <span>{c.label}</span>
-                    </div>
-                    <div className="cost-bar-track">
-                      <div className="cost-bar-fill" style={{width:`${Math.min(w,100)}%`, background: c.color}}></div>
-                      <div className="cost-bar-threshold" style={{left:`${(riskThreshold/50)*100}%`}} title={`위험 기준 ${riskThreshold}%`}></div>
-                    </div>
-                    <div className="cost-bar-val num">
-                      <b>{c.avg.toFixed(1)}<span className="unit">%</span></b>
-                      <span className="muted" style={{fontSize:11, marginLeft:4}}>({c.min.toFixed(1)}~{c.max.toFixed(1)})</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <table className="paper-table" style={{marginTop:14}}>
-              <thead>
-                <tr>
-                  <th>카테고리</th>
-                  <th style={{width:70, textAlign:"right"}}>메뉴 수</th>
-                  <th style={{width:90, textAlign:"right"}}>평균 원가율</th>
-                  <th style={{width:120, textAlign:"right"}}>최저 ~ 최고</th>
-                  <th style={{width:80, textAlign:"right"}}>위험</th>
-                  <th>비고</th>
-                </tr>
-              </thead>
-              <tbody>
-                {catStats.map(c => (
-                  <tr key={c.id}>
-                    <td><span style={{display:"inline-flex",alignItems:"center",gap:6}}><span className="dot" style={{width:8,height:8,borderRadius:"50%",background:c.color}}></span><b>{c.label}</b></span></td>
-                    <td className="num right">{c.count}</td>
-                    <td className="num right" style={{fontWeight:800}}>{c.avg.toFixed(1)}%</td>
-                    <td className="num right">{c.min.toFixed(1)}% ~ {c.max.toFixed(1)}%</td>
-                    <td className="num right">{c.risk > 0 ? <span style={{color:"var(--warn)",fontWeight:800}}>{c.risk}개 ⚠</span> : <span className="muted">0개</span>}</td>
-                    <td className="muted" style={{fontSize:11}}>{c.note}</td>
-                  </tr>
-                ))}
-                <tr style={{background:"var(--surface-2)"}}>
-                  <td style={{fontWeight:800}}>합계</td>
-                  <td className="num right" style={{fontWeight:800}}>{totalCount}</td>
-                  <td className="num right" style={{fontWeight:800}}>{allAvg.toFixed(1)}%</td>
-                  <td className="num right muted">—</td>
-                  <td className="num right" style={{fontWeight:800,color:"var(--warn)"}}>{allRisk}개</td>
-                  <td className="muted" style={{fontSize:11}}>전 카테고리 기준</td>
-                </tr>
-              </tbody>
-            </table>
+            {catStats.some(c => c.count > 0) ? (
+              <>
+                <div className="cost-bars">
+                  {catStats.filter(c => c.count > 0).map(c => {
+                    const w = (c.avg / 50) * 100;
+                    return (
+                      <div key={c.id} className="cost-bar-row">
+                        <div className="cost-bar-label">
+                          <span className="dot" style={{background: c.color}}></span>
+                          <span>{c.label}</span>
+                        </div>
+                        <div className="cost-bar-track">
+                          <div className="cost-bar-fill" style={{width:`${Math.min(w,100)}%`, background: c.color}}></div>
+                          <div className="cost-bar-threshold" style={{left:`${(riskThreshold/50)*100}%`}} title={`위험 기준 ${riskThreshold}%`}></div>
+                        </div>
+                        <div className="cost-bar-val num">
+                          {c.avg > 0
+                            ? <><b>{c.avg.toFixed(1)}<span className="unit">%</span></b><span className="muted" style={{fontSize:11, marginLeft:4}}>({c.min.toFixed(1)}~{c.max.toFixed(1)})</span></>
+                            : <span className="muted">원가 미등록</span>
+                          }
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <table className="paper-table" style={{marginTop:14}}>
+                  <thead>
+                    <tr>
+                      <th>카테고리</th>
+                      <th style={{width:70, textAlign:"right"}}>메뉴 수</th>
+                      <th style={{width:90, textAlign:"right"}}>평균 원가율</th>
+                      <th style={{width:120, textAlign:"right"}}>최저 ~ 최고</th>
+                      <th style={{width:80, textAlign:"right"}}>위험</th>
+                      <th>비고</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {catStats.map(c => (
+                      <tr key={c.id}>
+                        <td><span style={{display:"inline-flex",alignItems:"center",gap:6}}><span className="dot" style={{width:8,height:8,borderRadius:"50%",background:c.color}}></span><b>{c.label}</b></span></td>
+                        <td className="num right">{c.count}</td>
+                        <td className="num right" style={{fontWeight:800}}>{c.avg > 0 ? `${c.avg.toFixed(1)}%` : '—'}</td>
+                        <td className="num right">{c.avg > 0 ? `${c.min.toFixed(1)}% ~ ${c.max.toFixed(1)}%` : '—'}</td>
+                        <td className="num right">{c.risk > 0 ? <span style={{color:"var(--warn)",fontWeight:800}}>{c.risk}개 ⚠</span> : <span className="muted">0개</span>}</td>
+                        <td className="muted" style={{fontSize:11}}>{c.note}</td>
+                      </tr>
+                    ))}
+                    <tr style={{background:"var(--surface-2)"}}>
+                      <td style={{fontWeight:800}}>합계</td>
+                      <td className="num right" style={{fontWeight:800}}>{totalCount}</td>
+                      <td className="num right" style={{fontWeight:800}}>{allAvg > 0 ? `${allAvg.toFixed(1)}%` : '—'}</td>
+                      <td className="num right muted">—</td>
+                      <td className="num right" style={{fontWeight:800,color:"var(--warn)"}}>{allRisk}개</td>
+                      <td className="muted" style={{fontSize:11}}>전 카테고리 기준</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </>
+            ) : (
+              <div style={{height:60,display:'grid',placeItems:'center',color:'var(--text-4)',fontSize:13}}>원가계산 → 판매가 등록 후 표시돼요</div>
+            )}
           </div>
         )}
 
-        {opts.perCategory && catStats.map(c => (
+        {opts.perCategory && catStats.filter(c => c.count > 0).map(c => (
           <div className="paper-section" key={c.id}>
             <div className="paper-section-title" style={{borderBottomColor:c.color,display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
               <span style={{display:"inline-flex",alignItems:"center",gap:8}}>
@@ -241,7 +291,7 @@ export default function Page() {
                 {c.label} 종합 원가 (상위 5개)
               </span>
               <span className="muted" style={{fontSize:11,fontWeight:600}}>
-                평균 <b className="num" style={{color:"var(--text-1)"}}>{c.avg.toFixed(1)}%</b> · 위험 {c.risk}개
+                {c.avg > 0 ? <>평균 <b className="num" style={{color:"var(--text-1)"}}>{c.avg.toFixed(1)}%</b> · 위험 {c.risk}개</> : '원가 미등록'}
               </span>
             </div>
             <table className="paper-table">
@@ -249,10 +299,8 @@ export default function Page() {
                 <tr>
                   <th style={{width:36}}>#</th>
                   <th>메뉴명</th>
-                  <th style={{width:100,textAlign:"right"}}>원가</th>
                   {opts.salePrice && <th style={{width:100,textAlign:"right"}}>판매가</th>}
                   <th style={{width:90,textAlign:"right"}}>원가율</th>
-                  <th style={{width:36}}></th>
                 </tr>
               </thead>
               <tbody>
@@ -262,12 +310,10 @@ export default function Page() {
                     <tr key={m.name}>
                       <td className="num">{i+1}</td>
                       <td>{m.name}</td>
-                      <td className="num right">{fmtKRW(m.cost)}원</td>
-                      {opts.salePrice && <td className="num right muted">{fmtKRW(m.sale)}원</td>}
+                      {opts.salePrice && <td className="num right muted">{m.sale > 0 ? `${fmtKRW(m.sale)}원` : '—'}</td>}
                       <td className="num right" style={{fontWeight:risk?800:600,color:risk?"var(--warn)":"var(--text-1)"}}>
-                        {m.rate.toFixed(1)}%
+                        {m.rate > 0 ? `${m.rate.toFixed(1)}%` : '—'}
                       </td>
-                      <td>{risk && <span style={{color:"var(--warn)"}}>⚠</span>}</td>
                     </tr>
                   );
                 })}
@@ -290,7 +336,6 @@ export default function Page() {
                   <th style={{width:36}}>#</th>
                   <th>메뉴명</th>
                   <th style={{width:90}}>카테고리</th>
-                  <th style={{width:100,textAlign:"right"}}>원가</th>
                   <th style={{width:100,textAlign:"right"}}>판매가</th>
                   <th style={{width:90,textAlign:"right"}}>원가율</th>
                 </tr>
@@ -301,16 +346,12 @@ export default function Page() {
                     <td className="num">{i+1}</td>
                     <td style={{fontWeight:700}}>{m.name}</td>
                     <td><span style={{display:"inline-flex",alignItems:"center",gap:6}}><span className="dot" style={{width:6,height:6,borderRadius:"50%",background:m.catColor}}></span>{m.catLabel}</span></td>
-                    <td className="num right">{fmtKRW(m.cost)}원</td>
-                    <td className="num right muted">{fmtKRW(m.sale)}원</td>
+                    <td className="num right muted">{m.sale > 0 ? `${fmtKRW(m.sale)}원` : '—'}</td>
                     <td className="num right" style={{fontWeight:800,color:"var(--warn)"}}>{m.rate.toFixed(1)}% ⚠</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div className="paper-pagebreak" style={{color:"var(--warn)"}}>
-              총 {riskMenus.length}개 메뉴 — 단가 협상 · 판매가 조정 · 토핑 감량 검토 권장
-            </div>
           </div>
         )}
 

@@ -1,26 +1,46 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Chip } from '@/components/ui/Chip';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { SortableTh } from '@/components/ui/SortableTh';
 import { formatNumber } from '@/lib/format';
 
-/**
- * PriceCompareTable — 가격 비교 결과 테이블 (검색 + 상태 필터 + 정렬)
- *
- * @param {Array} diffRows — comparePriceLists 결과
- */
-export function PriceCompareTable({ diffRows }) {
+const typeInputStyle = {
+  padding:'3px 6px', borderRadius:6, fontSize:12,
+  border:'1px solid var(--border)', background:'var(--surface-2)',
+  color:'var(--text-1)', cursor:'pointer',
+};
+
+export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onTypeChange }) {
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('all'); // all | up | down | same | new | deleted
+  const [filter, setFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [sortKey, setSortKey] = useState('changeRate');
   const [sortDir, setSortDir] = useState('desc');
+
+  useEffect(() => {
+    setTypeFilter('all');
+    setFilter('all');
+    setSearch('');
+  }, [diffRows]);
+
+  const typeCounts = useMemo(() => {
+    const get = (type) => diffRows.filter(r => productTypeLookup.get(r.productCode)?.productType === type).length;
+    return {
+      exclusive:         get('exclusive'),
+      generic:           get('generic'),
+      'generic-managed': get('generic-managed'),
+    };
+  }, [diffRows, productTypeLookup]);
 
   const filtered = useMemo(() => {
     let list = diffRows;
     if (filter !== 'all') {
       const map = { up: '인상', down: '인하', same: '변동없음', new: '신규', deleted: '삭제' };
       list = list.filter(r => r.changeStatus === map[filter]);
+    }
+    if (typeFilter !== 'all') {
+      list = list.filter(r => productTypeLookup.get(r.productCode)?.productType === typeFilter);
     }
     const q = search.trim().toLowerCase();
     if (q) list = list.filter(r =>
@@ -36,7 +56,7 @@ export function PriceCompareTable({ diffRows }) {
       if (typeof va === 'string') return va.localeCompare(vb, 'ko') * dir;
       return va > vb ? dir : va < vb ? -dir : 0;
     });
-  }, [diffRows, search, filter, sortKey, sortDir]);
+  }, [diffRows, search, filter, typeFilter, sortKey, sortDir, productTypeLookup]);
 
   function toggleSort(key) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -61,7 +81,15 @@ export function PriceCompareTable({ diffRows }) {
         </div>
       </div>
 
-      {/* 필터 */}
+      {/* 분류 필터 */}
+      <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:8}}>
+        <Chip label="전체"   count={diffRows.length}            active={typeFilter === 'all'}              onClick={() => setTypeFilter('all')}/>
+        <Chip label="전용"   count={typeCounts.exclusive}      active={typeFilter === 'exclusive'}        onClick={() => setTypeFilter('exclusive')}/>
+        <Chip label="범용"   count={typeCounts.generic}        active={typeFilter === 'generic'}          onClick={() => setTypeFilter('generic')}/>
+        <Chip label="범용관리" count={typeCounts['generic-managed']} active={typeFilter === 'generic-managed'} onClick={() => setTypeFilter('generic-managed')}/>
+      </div>
+
+      {/* 변동 상태 필터 */}
       <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:12}}>
         <Chip label="전체"      count={counts.all}     active={filter === 'all'}     onClick={() => setFilter('all')}/>
         <Chip label="인상"      count={counts.up}      active={filter === 'up'}      onClick={() => setFilter('up')}      color="var(--negative)"/>
@@ -84,6 +112,7 @@ export function PriceCompareTable({ diffRows }) {
               <tr>
                 <SortableTh sortKey="productCode" active={sortKey} dir={sortDir} onClick={toggleSort} width={100}>제품코드</SortableTh>
                 <SortableTh sortKey="productName" active={sortKey} dir={sortDir} onClick={toggleSort}>제품명</SortableTh>
+                <th style={{width:100}}>분류</th>
                 <SortableTh sortKey="basePrice"   active={sortKey} dir={sortDir} onClick={toggleSort} width={130} right>이전 단가</SortableTh>
                 <SortableTh sortKey="latestPrice" active={sortKey} dir={sortDir} onClick={toggleSort} width={130} right>현재 단가</SortableTh>
                 <SortableTh sortKey="changeAmount" active={sortKey} dir={sortDir} onClick={toggleSort} width={120} right>변동액</SortableTh>
@@ -92,7 +121,14 @@ export function PriceCompareTable({ diffRows }) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r, i) => <Row key={`${r.productCode || r.productName}-${i}`} r={r}/>)}
+              {filtered.map((r, i) => (
+                <Row
+                  key={`${r.productCode || r.productName}-${i}`}
+                  r={r}
+                  productTypeLookup={productTypeLookup}
+                  onTypeChange={onTypeChange}
+                />
+              ))}
             </tbody>
           </table>
         </div>
@@ -101,14 +137,29 @@ export function PriceCompareTable({ diffRows }) {
   );
 }
 
-function Row({ r }) {
+function Row({ r, productTypeLookup, onTypeChange }) {
   const color =
     r.changeStatus === '인상' ? 'var(--negative)' :
     r.changeStatus === '인하' ? 'var(--positive)' : undefined;
+  const currentType = r.productCode ? productTypeLookup.get(r.productCode)?.productType || '' : '';
   return (
     <tr>
       <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{r.productCode || '-'}</td>
       <td className="cell-name"><div className="menu-name">{r.productName}</div></td>
+      <td>
+        <select
+          value={currentType}
+          onChange={e => {
+            if (e.target.value && onTypeChange) onTypeChange(r.productCode, r.productName, e.target.value);
+          }}
+          style={typeInputStyle}
+        >
+          <option value="">미분류</option>
+          <option value="exclusive">전용</option>
+          <option value="generic">범용</option>
+          <option value="generic-managed">범용관리</option>
+        </select>
+      </td>
       <td className="num right">{r.basePrice != null ? `${formatNumber(r.basePrice)}원` : '—'}</td>
       <td className="num right" style={{fontWeight:700}}>
         {r.latestPrice != null ? `${formatNumber(r.latestPrice)}원` : '—'}
@@ -137,4 +188,3 @@ function StatusChip({ status }) {
   const { bg, color } = map[status] || map['변동없음'];
   return <span className="chip" style={{background: bg, color}}>{status}</span>;
 }
-

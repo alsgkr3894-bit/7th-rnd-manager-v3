@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useRef, useMemo, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { useJetteShipment } from '@/lib/shipment/use-shipment';
@@ -21,6 +21,20 @@ export default function Page() {
 
   const [period, setPeriod] = useState({ year: CURRENT_YEAR, month: CURRENT_MONTH });
   const fileInputRef = useRef(null);
+
+  // 데이터가 있는 년월만 유니크하게 추출
+  const uniqueYMs = useMemo(() => {
+    const seen = new Set();
+    const result = [];
+    for (const f of files) {
+      const key = `${f.year}-${f.month}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push({ year: f.year, month: f.month });
+      }
+    }
+    return result;
+  }, [files]);
 
   // 같은 월의 모든 파일 (배너 표시용 + 행수 합산)
   const monthFiles = selectedYM
@@ -60,6 +74,31 @@ export default function Page() {
           </div>
         }
       />
+
+      {/* 년월 조회 필터 — 데이터 있는 월만 버튼으로 표시 */}
+      {uniqueYMs.length > 0 && (
+        <div style={{
+          display:'flex', gap:6, flexWrap:'wrap',
+          alignItems:'center', marginTop:16,
+          padding:'10px 16px', borderRadius:10,
+          background:'var(--surface-2)', border:'1px solid var(--border)',
+        }}>
+          <span style={{fontSize:12, color:'var(--text-3)', marginRight:4}}>조회 월</span>
+          {uniqueYMs.map(ym => {
+            const isActive = selectedYM?.year === ym.year && selectedYM?.month === ym.month;
+            return (
+              <button
+                key={`${ym.year}-${ym.month}`}
+                className={`btn sm${isActive ? ' primary' : ''}`}
+                onClick={() => { setSelectedYM(ym); setPeriod({ year: ym.year, month: ym.month }); }}
+                style={{fontVariantNumeric:'tabular-nums', minWidth:70}}
+              >
+                {ym.year}.{String(ym.month).padStart(2,'0')}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {files.length === 0 && ready ? (
         <EmptyHero />
