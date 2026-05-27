@@ -10,24 +10,30 @@ import {
   getPizzaRecipeMap, upsertPizzaRecipe, deletePizzaRecipe,
   pizzaBaseCost,
 } from '@/lib/cost/pizza-detail';
+import { getAllEdges } from '@/lib/cost/edge-dough';
+import { buildPizzaSummary } from '@/lib/cost/pizza-summary';
 import { PizzaDetailCard } from '@/components/cost/pizza-detail/PizzaDetailCard';
 import { PizzaDetailEditModal } from '@/components/cost/pizza-detail/PizzaDetailEditModal';
+import { PizzaSummaryTable } from '@/components/cost/pizza-summary/PizzaSummaryTable';
 
 export default function Page() {
   const [tab, setTab] = useState('detail'); // 'summary' | 'detail'
   const [menus, setMenus]       = useState([]);
   const [recipeMap, setRecipeMap] = useState(new Map());
+  const [edges, setEdges]       = useState([]);
   const [loading, setLoading]   = useState(true);
   const [target, setTarget]     = useState(null); // { menu, recipe | null }
 
   const load = useCallback(async () => {
     await initDB();
-    const [allMenus, recMap] = await Promise.all([
+    const [allMenus, recMap, allEdges] = await Promise.all([
       getAllMenuPrices(),
       getPizzaRecipeMap(),
+      getAllEdges(),
     ]);
     setMenus(allMenus.filter(m => m.category === '피자'));
     setRecipeMap(recMap);
+    setEdges(allEdges);
   }, []);
 
   useEffect(() => {
@@ -60,6 +66,12 @@ export default function Page() {
     return { withRecipe, totalBase };
   }, [menus, recipeMap]);
 
+  // 종합 매트릭스
+  const summary = useMemo(
+    () => buildPizzaSummary({ menus, recipeMap, edges }),
+    [menus, recipeMap, edges]
+  );
+
   const sub = loading
     ? '로딩 중…'
     : menus.length === 0
@@ -84,18 +96,9 @@ export default function Page() {
         </TabButton>
       </div>
 
-      {/* 종합 탭 — 다음 단계 placeholder */}
+      {/* 종합 탭 — 메뉴 × 4엣지 매트릭스 */}
       {tab === 'summary' && (
-        <div className="card" style={{minHeight:280, display:'grid', placeItems:'center'}}>
-          <div style={{textAlign:'center', color:'var(--text-3)'}}>
-            <Icon.calc style={{width:32, height:32, marginBottom:12, opacity:.4}}/>
-            <div style={{fontWeight:600, marginBottom:4}}>피자 종합 원가표 (준비 중)</div>
-            <div style={{fontSize:13, maxWidth:420, lineHeight:1.6}}>
-              세부 원가표(베이스) + 엣지·도우 원가를 엣지별 4종(석쇠/치즈크러스트/골드스윗/씬도우)으로
-              자동 합산하고 판매가 대비 원가율을 표시합니다.
-            </div>
-          </div>
-        </div>
+        <PizzaSummaryTable rows={summary}/>
       )}
 
       {/* 세부 탭 */}
