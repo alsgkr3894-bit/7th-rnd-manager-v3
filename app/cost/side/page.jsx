@@ -119,7 +119,7 @@ export default function Page() {
                 <Icon.doc style={{width:32, height:32, marginBottom:12, opacity:.4}}/>
                 <div style={{fontWeight:600, marginBottom:4}}>사이드 메뉴가 없습니다</div>
                 <div style={{fontSize:13}}>
-                  메뉴 판매가에서 사이드 분류로 등록해주세요 (예: <code>SD-001</code>).
+                  메뉴 마스터에서 기본 코드를 등록하고 판매가로 내보내기를 실행하세요 (예: <code>S-CHK-001</code>, <code>S-SPG-001</code>).
                 </div>
               </div>
             </div>

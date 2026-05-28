@@ -145,10 +145,16 @@ export default function Page() {
     })];
   }, [rows]);
 
-  const filtered = useMemo(() =>
-    catFilter === '전체' ? rows : rows.filter(r => (r.menuCategory || '기타') === catFilter),
-    [rows, catFilter]
-  );
+  const filtered = useMemo(() => {
+    if (catFilter === '전체') return rows;
+    return rows.filter(r => {
+      const cat = r.menuCategory || '기타';
+      // 정확 일치 또는 '피자' 선택 시 '피자/...' 전부 포함
+      if (cat === catFilter) return true;
+      if (catFilter === '피자' && cat.startsWith('피자/')) return true;
+      return false;
+    });
+  }, [rows, catFilter]);
 
   const sizeLabels = useMemo(() => {
     const set = new Set();

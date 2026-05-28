@@ -125,8 +125,8 @@ export default function Page() {
                 <Icon.doc style={{width:32, height:32, marginBottom:12, opacity:.4}}/>
                 <div style={{fontWeight:600, marginBottom:4}}>피자 메뉴가 없습니다</div>
                 <div style={{fontSize:13}}>
-                  먼저 <b>메뉴 판매가</b>에서 피자 분류로 메뉴를 등록해주세요.<br/>
-                  메뉴코드 형식: <code>PZ-001-L</code>, <code>PZ-001-R</code>
+                  먼저 <b>메뉴 마스터</b>에서 기본 코드를 등록하고 <b>판매가로 내보내기</b>를 실행하세요.<br/>
+                  메뉴코드 형식: <code>P-OR-005-L</code>, <code>P-OR-005-R</code>
                 </div>
               </div>
             </div>
