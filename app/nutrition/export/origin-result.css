@@ -1,0 +1,250 @@
+/* ============================================================
+   origin-result.css — 원산지 결과표 전용 스타일
+   접두어: .origin-result-  (전역 CSS 오염 없음)
+   인쇄 대응: @media print 포함
+============================================================ */
+
+/* ── 컨테이너 ─────────────────────────────────────────────── */
+.origin-result-wrap {
+  background: #fff;
+  color: #111;
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+  padding: 24px;
+}
+
+/* ── 탭 ───────────────────────────────────────────────────── */
+.origin-result-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #333;
+  margin-bottom: 24px;
+}
+.origin-result-tab {
+  padding: 10px 20px;
+  border: 1px solid #ccc;
+  border-bottom: none;
+  background: #f5f5f5;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  font-family: inherit;
+}
+.origin-result-tab.active {
+  background: #fff;
+  color: #111;
+  border-color: #333;
+  border-bottom: 2px solid #fff;
+  margin-bottom: -2px;
+}
+.origin-result-tab:hover:not(.active) { background: #eee; }
+
+/* ── 액션 버튼 ────────────────────────────────────────────── */
+.origin-result-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+.origin-result-btn {
+  padding: 8px 16px;
+  border: 1px solid #555;
+  background: #fff;
+  color: #333;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 4px;
+}
+.origin-result-btn:hover { background: #f0f0f0; }
+.origin-result-btn.primary {
+  background: #1a56c0;
+  color: #fff;
+  border-color: #1a56c0;
+}
+.origin-result-btn.primary:hover { background: #1244a0; }
+
+/* ── 공통 표 제목 ─────────────────────────────────────────── */
+.origin-result-title {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 800;
+  padding: 10px 0;
+  border: 1px solid #333;
+  border-bottom: none;
+  background: #f9f9f9;
+  letter-spacing: -0.02em;
+}
+.origin-result-title.large {
+  font-size: 28px;
+  padding: 16px 0;
+}
+
+/* ── 원산지정보 — 헤더 영역 ─────────────────────────────── */
+.origin-info-header {
+  border: 1px solid #333;
+  border-bottom: none;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  background: #fff;
+  white-space: pre-wrap;
+}
+.origin-info-date {
+  text-align: right;
+  font-size: 12px;
+  padding: 4px 12px;
+  border: 1px solid #333;
+  border-bottom: none;
+  border-top: none;
+  background: #fff;
+}
+.origin-info-common {
+  border: 1px solid #333;
+  border-bottom: none;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.7;
+  background: #fff;
+  white-space: pre-wrap;
+}
+
+/* ── 표 공통 ──────────────────────────────────────────────── */
+.origin-result-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.origin-result-table th,
+.origin-result-table td {
+  border: 1px solid #333;
+  padding: 6px 8px;
+  vertical-align: middle;
+  word-break: keep-all;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+.origin-result-table th {
+  background: #f0f0f0;
+  font-weight: 700;
+  text-align: center;
+  font-size: 13px;
+}
+.origin-result-table td {
+  font-size: 13px;
+  text-align: left;
+}
+
+/* ── 원산지정보 표 ────────────────────────────────────────── */
+.origin-info-table col.col-cat  { width: 12%; }
+.origin-info-table col.col-menu { width: 20%; }
+.origin-info-table col.col-ing  { width: 68%; }
+
+.origin-info-table td.cat-cell {
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+  vertical-align: middle;
+}
+.origin-info-table td.cat-ps { color: #c0392b; }
+.origin-info-table td.cat-pr { color: #1a7a1a; }
+.origin-info-table td.cat-or { color: #1a4ec0; }
+.origin-info-table td.cat-hh { color: #7b3fa0; }
+.origin-info-table td.cat-one { color: #b05c00; }
+.origin-info-table td.cat-side { color: #2a7a6a; }
+
+/* ── 원산지정보 하단 텍스트 ───────────────────────────────── */
+.origin-info-footer {
+  border: 1px solid #333;
+  border-top: none;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 2;
+  background: #fff;
+  white-space: pre-wrap;
+}
+
+/* ── 원산지표지판 표 ──────────────────────────────────────── */
+.origin-sign-table col.col-item   { width: 30%; }
+.origin-sign-table col.col-origin { width: 35%; }
+.origin-sign-table col.col-menu   { width: 35%; }
+
+.origin-sign-table th {
+  font-size: 16px;
+  padding: 12px 10px;
+}
+.origin-sign-table td {
+  font-size: 15px;
+  padding: 10px;
+  vertical-align: middle;
+}
+
+/* ── 냉장고부착용 표 ──────────────────────────────────────── */
+.origin-fridge-table col.col-food   { width: 30%; }
+.origin-fridge-table col.col-item   { width: 30%; }
+.origin-fridge-table col.col-origin { width: 40%; }
+
+.origin-fridge-table th {
+  font-size: 16px;
+  padding: 12px 10px;
+}
+.origin-fridge-table td {
+  font-size: 15px;
+  padding: 10px;
+  vertical-align: middle;
+}
+
+/* ── 하단 안내문 ──────────────────────────────────────────── */
+.origin-result-notice {
+  border: 1px solid #333;
+  border-top: none;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  background: #fff;
+}
+.origin-result-notice.large {
+  font-size: 15px;
+  padding: 12px;
+}
+
+/* ── 로딩 / 빈 상태 ───────────────────────────────────────── */
+.origin-result-empty {
+  padding: 60px 20px;
+  text-align: center;
+  color: #888;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+/* ── 인쇄 ─────────────────────────────────────────────────── */
+@media print {
+  .origin-result-tabs,
+  .origin-result-actions { display: none !important; }
+
+  .origin-result-wrap {
+    padding: 0;
+    background: #fff;
+  }
+
+  .origin-result-table th,
+  .origin-result-table td {
+    font-size: 11pt;
+    padding: 4px 6px;
+  }
+  .origin-sign-table th,
+  .origin-sign-table td,
+  .origin-fridge-table th,
+  .origin-fridge-table td {
+    font-size: 13pt;
+    padding: 6px 8px;
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 15mm 10mm;
+  }
+}
