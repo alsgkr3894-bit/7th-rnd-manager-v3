@@ -9,6 +9,7 @@ import { getAllIngredients } from '@/lib/ingredient';
 import { getAllOrigins, upsertOrigin, deleteOrigin } from '@/lib/nutrition/origin/store';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import MenuCodePicker from '@/components/ui/MenuCodePicker';
+import { exportOriginToExcel } from '@/lib/nutrition/origin/export';
 
 const QUICK_ITEMS = ['쇠고기', '돼지고기', '닭고기', '오리고기', '쌀', '배추', '콩', '고등어', '오징어', '낙지', '명태', '참치'];
 
@@ -359,9 +360,14 @@ export default function Page() {
         title="원산지 정보"
         sub="식재료 마스터에서 가져와 원산지를 등록하고, 출력용 표기명을 별도 설정하세요"
         actions={
-          <button className="btn primary" onClick={() => setModal('add')}>
-            <Icon.plus style={{ width: 14, height: 14 }} />식재료 연결
-          </button>
+          <>
+            <button className="btn" onClick={() => exportOriginToExcel(rows)} disabled={rows.length === 0}>
+              <Icon.download style={{ width: 14, height: 14 }} />엑셀로 출력
+            </button>
+            <button className="btn primary" onClick={() => setModal('add')}>
+              <Icon.plus style={{ width: 14, height: 14 }} />식재료 연결
+            </button>
+          </>
         }
       />
 

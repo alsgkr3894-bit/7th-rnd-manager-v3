@@ -11,8 +11,7 @@ export default function Page() {
         title="영양성분 / 원산지 / 알레르기 표 출력"
         sub="공시용 또는 매장 표시용 표를 한 번에 생성·다운로드"
         actions={<>
-          <button className="btn" onClick={()=>showToast('미리보기 (데모)','info')}><Icon.doc style={{width:14,height:14}}/>미리보기</button>
-          <button className="btn primary" onClick={()=>showToast('PDF 다운로드 (데모)','ok')}><Icon.download style={{width:14,height:14}}/>PDF 다운로드</button>
+          <button className="btn primary" onClick={()=>showToast('엑셀 출력은 원산지 정보 페이지에서 가능합니다','info')}><Icon.download style={{width:14,height:14}}/>엑셀로 출력</button>
         </>}
       />
       <div className="card" style={{marginTop:24,minHeight:300,display:'grid',placeItems:'center'}}>
