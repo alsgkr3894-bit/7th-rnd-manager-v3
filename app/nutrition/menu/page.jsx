@@ -6,9 +6,9 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import {
-  getAllMenuRefs, upsertMenuRef, deleteMenuRef,
+  getAllMenuRefs, upsertMenuRef, deleteMenuRef, deleteRawValuesByMenuCode,
   getAllRawValues, upsertRawValue, getRawValueMap,
-  getAllEdges, upsertEdge, getEdgeMap, seedEdges, EDGE_CODES, EDGE_NAMES,
+  getAllEdges, upsertEdge, EDGE_CODES, EDGE_NAMES,
   getAllToppings, upsertTopping, deleteTopping,
   getAllCompositions, upsertComposition, deleteComposition,
   CRUST_TYPES, NUTRITION_FIELDS, calcAllResults,
@@ -87,7 +87,10 @@ function TabBase({ menus, rawMap, onRefresh }) {
   };
 
   const handleDeleteMenu = async (menu) => {
-    await deleteMenuRef(menu.id);
+    await Promise.all([
+      deleteMenuRef(menu.id),
+      deleteRawValuesByMenuCode(menu.menuCode),
+    ]);
     if (selMenu?.id === menu.id) setSelMenu(null);
     showToast(`'${menu.menuName}' 삭제`, 'ok');
     onRefresh();
@@ -186,10 +189,11 @@ function TabBase({ menus, rawMap, onRefresh }) {
 
       {/* 메뉴 추가 모달 */}
       {addMenu && createPortal(
-        <div className="modal" onClick={e => e.target === e.currentTarget && setAddMenu(false)}>
-          <div className="modal-box" style={{ maxWidth: 400 }}>
-            <div className="modal-head">
-              <h3>메뉴 추가</h3>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', display: 'grid', placeItems: 'center', zIndex: 300 }}
+          onClick={e => e.target === e.currentTarget && setAddMenu(false)}>
+          <div className="card" style={{ width: 'min(400px,95vw)', padding: '24px 28px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>메뉴 추가</div>
               <button className="btn ghost" style={{ padding: '4px 8px' }} onClick={() => setAddMenu(false)}><Icon.close style={{ width: 16, height: 16 }} /></button>
             </div>
             <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -210,7 +214,7 @@ function TabBase({ menus, rawMap, onRefresh }) {
                 </div>
               </div>
             </div>
-            <div className="modal actions" style={{ marginTop: 20 }}>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
               <button className="btn" onClick={() => setAddMenu(false)}>취소</button>
               <button className="btn primary" onClick={handleAddMenu}>추가</button>
             </div>
@@ -367,7 +371,7 @@ function TabDerived({ menus, toppings, compositions, onRefresh }) {
 
   const openToppingEdit = (t) => {
     setToppingForm({ toppingCode: t.toppingCode, toppingName: t.toppingName });
-    setToppingValues({ kcal: t.kcal, carbs: t.carbs, sugar: t.sugar, fat: t.fat, satFat: t.satFat, transFat: t.transFat, cholesterol: t.cholesterol, protein: t.protein, sodium: t.sodium });
+    setToppingValues(NUTRITION_FIELDS.reduce((acc, { key }) => ({ ...acc, [key]: t[key] ?? '' }), {}));
     setToppingModal(t);
   };
 
@@ -439,10 +443,11 @@ function TabDerived({ menus, toppings, compositions, onRefresh }) {
 
       {/* 파생 메뉴 추가/편집 모달 */}
       {modal && createPortal(
-        <div className="modal" onClick={e => e.target === e.currentTarget && setModal(null)}>
-          <div className="modal-box" style={{ maxWidth: 480 }}>
-            <div className="modal-head">
-              <h3>{modal === 'add' ? '파생 메뉴 추가' : '파생 메뉴 편집'}</h3>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', display: 'grid', placeItems: 'center', zIndex: 300 }}
+          onClick={e => e.target === e.currentTarget && setModal(null)}>
+          <div className="card" style={{ width: 'min(480px,95vw)', padding: '24px 28px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>{modal === 'add' ? '파생 메뉴 추가' : '파생 메뉴 편집'}</div>
               <button className="btn ghost" style={{ padding: '4px 8px' }} onClick={() => setModal(null)}><Icon.close style={{ width: 16, height: 16 }} /></button>
             </div>
             <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -483,7 +488,7 @@ function TabDerived({ menus, toppings, compositions, onRefresh }) {
                 }
               </div>
             </div>
-            <div className="modal actions" style={{ marginTop: 20 }}>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
               <button className="btn" onClick={() => setModal(null)}>취소</button>
               <button className="btn primary" onClick={handleSaveComp} disabled={saving}>{saving ? '저장 중…' : '저장'}</button>
             </div>
@@ -494,10 +499,11 @@ function TabDerived({ menus, toppings, compositions, onRefresh }) {
 
       {/* 소스/토핑 모달 */}
       {toppingModal && createPortal(
-        <div className="modal" onClick={e => e.target === e.currentTarget && setToppingModal(null)}>
-          <div className="modal-box" style={{ maxWidth: 480 }}>
-            <div className="modal-head">
-              <h3>{toppingModal === 'add' ? '소스·토핑 추가' : `${toppingModal.toppingName} 편집`}</h3>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', display: 'grid', placeItems: 'center', zIndex: 300 }}
+          onClick={e => e.target === e.currentTarget && setToppingModal(null)}>
+          <div className="card" style={{ width: 'min(480px,95vw)', padding: '24px 28px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>{toppingModal === 'add' ? '소스·토핑 추가' : `${toppingModal.toppingName} 편집`}</div>
               <button className="btn ghost" style={{ padding: '4px 8px' }} onClick={() => setToppingModal(null)}><Icon.close style={{ width: 16, height: 16 }} /></button>
             </div>
             <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -516,7 +522,7 @@ function TabDerived({ menus, toppings, compositions, onRefresh }) {
                 <NutritionGrid values={toppingValues} onChange={(k, v) => setToppingValues(f => ({ ...f, [k]: v }))} />
               </div>
             </div>
-            <div className="modal actions" style={{ marginTop: 20 }}>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
               <button className="btn" onClick={() => setToppingModal(null)}>취소</button>
               <button className="btn primary" onClick={handleSaveTopping} disabled={saving}>{saving ? '저장 중…' : '저장'}</button>
             </div>
@@ -632,7 +638,6 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    await seedEdges();
     const [m, rawValues, e, t, c] = await Promise.all([
       getAllMenuRefs(),
       getRawValueMap(),
