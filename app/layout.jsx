@@ -1,6 +1,7 @@
 import './globals.css';
 import localFont from 'next/font/local';
 import AppShell from '@/components/AppShell';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const pretendard = localFont({
   src: '../public/fonts/PretendardVariable.woff2',
@@ -17,8 +18,16 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ko" className={pretendard.variable}>
+      <head>
+        {/* FOUC 방지 — 렌더 전 다크모드 즉시 적용 */}
+        <script dangerouslySetInnerHTML={{__html:`
+          try{var t=localStorage.getItem('v3:theme');if(t==='dark')document.documentElement.dataset.theme='dark';}catch(e){}
+        `}}/>
+      </head>
       <body>
-        <AppShell>{children}</AppShell>
+        <ErrorBoundary>
+          <AppShell>{children}</AppShell>
+        </ErrorBoundary>
       </body>
     </html>
   );

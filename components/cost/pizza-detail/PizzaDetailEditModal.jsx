@@ -14,6 +14,7 @@ export function PizzaDetailEditModal({ menu, initial, onSave, onClose }) {
   const [note, setNote]             = useState(initial?.note || '');
   const [ingredients, setIngredients] = useState([]);
   const [saving, setSaving]         = useState(false);
+  const [saveError, setSaveError]   = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -39,6 +40,7 @@ export function PizzaDetailEditModal({ menu, initial, onSave, onClose }) {
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
+    setSaveError(null);
     try {
       await onSave({
         id: initial?.id,
@@ -48,7 +50,11 @@ export function PizzaDetailEditModal({ menu, initial, onSave, onClose }) {
         components,
         note,
       });
-    } finally { setSaving(false); }
+    } catch (err) {
+      setSaveError(err.message || '저장 실패');
+    } finally {
+      setSaving(false);
+    }
   }
 
   const baseCost = pizzaBaseCost({ components });
@@ -148,6 +154,12 @@ export function PizzaDetailEditModal({ menu, initial, onSave, onClose }) {
               {formatNumber(baseCost)}<span style={{fontSize:13, marginLeft:2}}>원</span>
             </span>
           </div>
+
+          {saveError && (
+            <div style={{fontSize:12, color:'var(--negative)', padding:'6px 10px', background:'var(--surface-2)', borderRadius:6}}>
+              저장 실패: {saveError}
+            </div>
+          )}
 
           <div style={{display:'flex', gap:8, justifyContent:'flex-end'}}>
             <button type="button" className="btn" onClick={onClose}>취소</button>

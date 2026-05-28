@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB, getAll, clearStore, ALL_STORES, DB_NAME, DB_VERSION, hasStore, deleteDatabase } from '@/lib/db';

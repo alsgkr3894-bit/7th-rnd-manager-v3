@@ -1,6 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Icon } from '@/components/icons';
+import { KIND_COLOR, KIND_LABEL, KIND_EMOJI } from '@/lib/report/constants';
 
 /* ============================================================
    공유 링크 모달
@@ -12,141 +13,112 @@ export function ShareLinkModal({ report, onClose }) {
   const [useWatermark, setUseWatermark] = useState(true);
   const [allowDownload, setAllowDownload] = useState(true);
   const [linkCreated, setLinkCreated] = useState(false);
-  const [linkUrl, setLinkUrl] = useState('https://share.wonpay.kr/r/abc123xyz');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [copied, setCopied] = useState(false);
 
-  const expiryLabels = {
-    '7d': '7일',
-    '30d': '30일',
-    '90d': '90일',
-    'never': '무기한',
-  };
-
+  const expiryLabels = { '7d':'7일', '30d':'30일', '90d':'90일', 'never':'무기한' };
   const activeLinks = [];
 
-  const handleCreateLink = () => {
+  const handleCreateLink = async () => {
+    const url = `https://share.wonpay.kr/r/${Math.random().toString(36).substr(2, 9)}`;
+    setLinkUrl(url);
     setLinkCreated(true);
-    setLinkUrl(`https://share.wonpay.kr/r/${Math.random().toString(36).substr(2, 9)}`);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(linkUrl);
+  const handleCopyLink = async () => {
+    await navigator.clipboard.writeText(linkUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="modal-scrim" onClick={onClose}>
-      <div className="modal-share" onClick={e => e.stopPropagation()}>
+    <div className="modal-scrim" onClick={linkCreated ? undefined : onClose}>
+      <div className="modal-share" onClick={e => e.stopPropagation()}
+        role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
         <div className="modal-head">
-          <h3>공유 링크 생성</h3>
-          <button className="modal-close" onClick={onClose}>
-            <Icon.x style={{width:20, height:20}}/>
-          </button>
+          <h3 id="share-modal-title">공유 링크 생성</h3>
+          <button className="modal-close" onClick={onClose}><Icon.x style={{width:20,height:20}}/></button>
         </div>
-
         <div className="modal-body">
           <div className="share-head">
             <div className="share-title">{report.name}</div>
-            <div className="share-sub">{report.id}</div>
+            <div className="share-sub">{report.id ? `RPT-${String(report.id).padStart(4,'0')}` : report.period}</div>
           </div>
 
-          {!linkCreated ? (
-            <>
-              <div className="share-section">
-                <div className="share-label">만료 기간</div>
-                <div className="share-expiry-grid">
-                  {Object.entries(expiryLabels).map(([k, label]) => (
-                    <button
-                      key={k}
-                      className={"share-expiry-btn " + (expiry === k ? "active" : "")}
-                      onClick={() => setExpiry(k)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="share-section">
-                <label className="share-toggle-row">
-                  <input type="checkbox" checked={usePassword} onChange={e => setUsePassword(e.target.checked)} />
-                  <span className="toggle-box"></span>
-                  <span className="toggle-label">비밀번호 보호</span>
-                </label>
-                {usePassword && (
-                  <input
-                    type="password"
-                    className="input"
-                    placeholder="비밀번호 입력"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    style={{marginTop: 8}}
-                  />
-                )}
-              </div>
-
-              <div className="share-section">
-                <label className="share-toggle-row">
-                  <input type="checkbox" checked={useWatermark} onChange={e => setUseWatermark(e.target.checked)} />
-                  <span className="toggle-box"></span>
-                  <span className="toggle-label">워터마크 표시</span>
-                </label>
-                <div className="share-sub" style={{marginTop: 4}}>보고서에 "공유 복사본" 표시</div>
-              </div>
-
-              <div className="share-section">
-                <label className="share-toggle-row">
-                  <input type="checkbox" checked={allowDownload} onChange={e => setAllowDownload(e.target.checked)} />
-                  <span className="toggle-box"></span>
-                  <span className="toggle-label">다운로드 허용</span>
-                </label>
-              </div>
-
-              <div style={{display: 'flex', gap: 8, marginTop: 24}}>
-                <button className="btn" onClick={onClose}>취소</button>
-                <button className="btn primary" onClick={handleCreateLink}>링크 생성</button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="share-section" style={{background: 'var(--surface-2)', padding: 12, borderRadius: 8}}>
-                <div className="share-sub" style={{fontSize: 11, marginBottom: 8}}>공유 링크 복사</div>
-                <div className="share-url-box">
-                  <code style={{flex: 1, fontSize: 12}}>{linkUrl}</code>
-                  <button className="btn sm" onClick={handleCopyLink}>
-                    <Icon.copy style={{width: 12, height: 12}}/>
+          {!linkCreated ? (<>
+            <div className="share-section">
+              <div className="share-label">만료 기간</div>
+              <div className="share-expiry-grid">
+                {Object.entries(expiryLabels).map(([k, label]) => (
+                  <button key={k} className={"share-expiry-btn " + (expiry === k ? "active" : "")} onClick={() => setExpiry(k)}>
+                    {label}
                   </button>
-                </div>
+                ))}
               </div>
-
-              <div className="share-summary">
-                <div className="summary-item">
-                  <div className="summary-label">만료</div>
-                  <div className="summary-val">{expiryLabels[expiry]}</div>
-                </div>
-                <div className="summary-item">
-                  <div className="summary-label">보호</div>
-                  <div className="summary-val">{usePassword ? '암호' : '공개'}</div>
-                </div>
-                <div className="summary-item">
-                  <div className="summary-label">다운로드</div>
-                  <div className="summary-val">{allowDownload ? '허용' : '제한'}</div>
-                </div>
-              </div>
-
-              <div style={{display: 'flex', gap: 8, marginTop: 24}}>
-                <button className="btn" onClick={() => setLinkCreated(false)}>다시 생성</button>
-                <button className="btn primary" onClick={onClose}>완료</button>
-              </div>
-            </>
-          )}
-        </div>
-
-        {!linkCreated && (
-          <div className="modal-foot">
-            <div style={{fontSize: 12, color: 'var(--text-3)'}}>
-              활성 링크 {activeLinks.length}개 · 최근 링크는 {activeLinks[0].expiry}에 만료
             </div>
+            <div className="share-section">
+              <label className="share-toggle-row">
+                <input type="checkbox" checked={usePassword} onChange={e => setUsePassword(e.target.checked)}/>
+                <span className="toggle-box"></span>
+                <span className="toggle-label">비밀번호 보호</span>
+              </label>
+              {usePassword && (
+                <input type="password" className="input" placeholder="비밀번호 입력"
+                  value={password} onChange={e => setPassword(e.target.value)} style={{marginTop:8}}/>
+              )}
+            </div>
+            <div className="share-section">
+              <label className="share-toggle-row">
+                <input type="checkbox" checked={useWatermark} onChange={e => setUseWatermark(e.target.checked)}/>
+                <span className="toggle-box"></span>
+                <span className="toggle-label">워터마크 표시</span>
+              </label>
+              <div className="share-sub" style={{marginTop:4}}>보고서에 "공유 복사본" 표시</div>
+            </div>
+            <div className="share-section">
+              <label className="share-toggle-row">
+                <input type="checkbox" checked={allowDownload} onChange={e => setAllowDownload(e.target.checked)}/>
+                <span className="toggle-box"></span>
+                <span className="toggle-label">다운로드 허용</span>
+              </label>
+            </div>
+            <div style={{display:'flex', gap:8, marginTop:24}}>
+              <button className="btn" onClick={onClose}>취소</button>
+              <button className="btn primary" onClick={handleCreateLink}>링크 생성</button>
+            </div>
+          </>) : (<>
+            <div className="share-section" style={{background:'var(--surface-2)', padding:12, borderRadius:8}}>
+              <div className="share-sub" style={{fontSize:11, marginBottom:8}}>공유 링크 복사</div>
+              <div className="share-url-box">
+                <code style={{flex:1, fontSize:12}}>{linkUrl}</code>
+                <button className="btn sm" onClick={handleCopyLink} style={{minWidth:56}}>
+                  {copied ? '복사됨 ✓' : <><Icon.copy style={{width:12,height:12}}/></>}
+                </button>
+              </div>
+            </div>
+            <div className="share-summary">
+              <div className="summary-item"><div className="summary-label">만료</div><div className="summary-val">{expiryLabels[expiry]}</div></div>
+              <div className="summary-item"><div className="summary-label">보호</div><div className="summary-val">{usePassword ? '암호' : '공개'}</div></div>
+              <div className="summary-item"><div className="summary-label">다운로드</div><div className="summary-val">{allowDownload ? '허용' : '제한'}</div></div>
+            </div>
+            <div style={{display:'flex', gap:8, marginTop:24}}>
+              <button className="btn" onClick={() => setLinkCreated(false)}>다시 생성</button>
+              <button className="btn primary" onClick={onClose}>완료</button>
+            </div>
+          </>)}
+        </div>
+        <div className="modal-foot">
+          <div style={{fontSize:12, color:'var(--text-3)'}}>
+            {activeLinks.length > 0
+              ? `활성 링크 ${activeLinks.length}개 · 최근 링크는 ${activeLinks[0].expiry}에 만료`
+              : '활성 공유 링크 없음'}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -158,48 +130,45 @@ export function ShareLinkModal({ report, onClose }) {
 export function ScheduleManagerModal({ onClose }) {
   const [schedules] = useState([]);
 
-  const kindColors = {
-    sales: '#3182F6',
-    price: '#E1101F',
-    shipment: '#1D766F',
-    compare: '#7C3AED',
-    cost: '#F59E0B',
-  };
-
   return (
     <div className="modal-scrim" onClick={onClose}>
-      <div className="modal-schedule" onClick={e => e.stopPropagation()}>
+      <div className="modal-schedule" onClick={e => e.stopPropagation()}
+        role="dialog" aria-modal="true" aria-labelledby="schedule-modal-title">
         <div className="modal-head">
-          <h3>예약 설정</h3>
-          <button className="modal-close" onClick={onClose}>
-            <Icon.x style={{width:20, height:20}}/>
-          </button>
+          <h3 id="schedule-modal-title">예약 설정</h3>
+          <button className="modal-close" onClick={onClose}><Icon.x style={{width:20,height:20}}/></button>
         </div>
-
         <div className="modal-body">
-          <div className="schedule-list">
-            {schedules.map(s => (
-              <div key={s.id} className="schedule-row">
-                <div style={{flex: 1}}>
-                  <div className="schedule-name">
-                    <span className="chip" style={{background: kindColors[s.kind] + '22', color: kindColors[s.kind]}}>
-                      {s.kind === 'sales' ? '판매량' : s.kind === 'price' ? '가격' : s.kind === 'cost' ? '원가' : '비교'}
-                    </span>
-                    <span style={{marginLeft: 8}}>{s.name}</span>
+          {schedules.length === 0 ? (
+            <div className="empty-state" style={{padding:32}}>
+              <Icon.gear style={{width:32,height:32,color:'var(--text-4)'}}/>
+              <div className="empty-title">예약된 보고서가 없어요</div>
+              <div className="empty-sub">새 예약을 추가하면 자동으로 생성돼요.</div>
+            </div>
+          ) : (
+            <div className="schedule-list">
+              {schedules.map(s => (
+                <div key={s.id} className="schedule-row">
+                  <div style={{flex:1}}>
+                    <div className="schedule-name">
+                      <span className="chip" style={{background:KIND_COLOR[s.kind]+'22', color:KIND_COLOR[s.kind]}}>
+                        {KIND_LABEL[s.kind] || s.kind}
+                      </span>
+                      <span style={{marginLeft:8}}>{s.name}</span>
+                    </div>
+                    <div className="schedule-row-meta">{s.freq}</div>
+                    <div className="schedule-row-recipients">다음 발송: {s.next}</div>
                   </div>
-                  <div className="schedule-row-meta">{s.freq}</div>
-                  <div className="schedule-row-recipients">다음 발송: {s.next}</div>
+                  <div style={{display:'flex', gap:6}}>
+                    <button className="btn sm">편집</button>
+                    <button className="btn sm">삭제</button>
+                  </div>
                 </div>
-                <div style={{display: 'flex', gap: 6}}>
-                  <button className="btn sm">편집</button>
-                  <button className="btn sm">삭제</button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <button className="schedule-add" style={{marginTop: 16}}>
-            <Icon.plus style={{width: 14, height: 14}}/>새 예약 추가
+              ))}
+            </div>
+          )}
+          <button className="schedule-add" style={{marginTop:16}}>
+            <Icon.plus style={{width:14,height:14}}/>새 예약 추가
           </button>
         </div>
       </div>
@@ -208,121 +177,229 @@ export function ScheduleManagerModal({ onClose }) {
 }
 
 /* ============================================================
-   보고서 미리보기 모달
+   보고서 미리보기 — kind별 실제 내용
 ============================================================ */
-function PreviewPageCover({ report }) {
+
+function ReportCover({ report }) {
+  const color = KIND_COLOR[report.kind] || '#888';
+  const label = KIND_LABEL[report.kind] || '';
+  const createdAt = report.createdAt
+    ? new Date(report.createdAt).toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})
+    : '—';
   return (
-    <div className="paper-head" style={{textAlign: 'center', paddingBottom: 32, borderBottom: '1px solid var(--border)'}}>
-      <div style={{fontSize: 14, color: 'var(--text-2)', marginBottom: 20}}>7번가피자 본사</div>
-      <h1 style={{fontSize: 28, fontWeight: 700, marginBottom: 12}}>{report.name}</h1>
-      <div style={{fontSize: 13, color: 'var(--text-2)'}}>{report.period}</div>
-      <div style={{fontSize: 12, color: 'var(--text-3)', marginTop: 20}}>생성일: {report.created}</div>
+    <div style={{textAlign:'center', padding:'40px 0 32px', borderBottom:'1px solid var(--border)'}}>
+      <div style={{display:'inline-flex', alignItems:'center', justifyContent:'center',
+        width:56, height:56, borderRadius:16, background:color+'1A', marginBottom:20}}>
+        <span style={{fontSize:22}}>{KIND_EMOJI[report.kind] || '📄'}</span>
+      </div>
+      <div style={{fontSize:12, color:'var(--text-3)', marginBottom:8, letterSpacing:1, textTransform:'uppercase'}}>
+        7번가피자 본사 · R&amp;D팀
+      </div>
+      <h1 style={{fontSize:24, fontWeight:800, marginBottom:10, lineHeight:1.3}}>{report.name}</h1>
+      <div style={{display:'inline-flex', alignItems:'center', gap:8, padding:'4px 12px', borderRadius:20,
+        background:color+'1A', color:color, fontSize:12, fontWeight:700, marginBottom:20}}>
+        {label} 보고서
+      </div>
+      <div style={{fontSize:13, color:'var(--text-2)', marginBottom:6}}>{report.period}</div>
+      <div style={{fontSize:12, color:'var(--text-3)'}}>생성일: {createdAt}</div>
+      {report.author && <div style={{fontSize:12, color:'var(--text-3)', marginTop:4}}>작성자: {report.author}</div>}
     </div>
   );
 }
 
-function PreviewPageStub({ page, total }) {
+function OptionRow({ label, value }) {
   return (
-    <div className="paper-stub">
-      <div style={{fontSize: 32, fontWeight: 300, color: 'var(--text-4)'}}>— {page} —</div>
-      <div style={{fontSize: 13, color: 'var(--text-3)', marginTop: 16}}>
-        {page === 1 ? '표지' : `본문 {page - 1}`}
+    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between',
+      padding:'8px 0', borderBottom:'1px solid var(--divider)'}}>
+      <span style={{fontSize:12, color:'var(--text-3)'}}>{label}</span>
+      <span style={{fontSize:12, fontWeight:600}}>{value}</span>
+    </div>
+  );
+}
+
+function ReportOptionsPage({ report }) {
+  const opts = report.options || {};
+  const color = KIND_COLOR[report.kind] || '#888';
+
+  const kindOpts = () => {
+    if (report.kind === 'sales') return (<>
+      <OptionRow label="집계 기간" value={opts.periodMode === 'year' ? '년 단위' : '월 단위'}/>
+      <OptionRow label="대상 범위" value={opts.scope === 'all' ? '전체 메뉴' : opts.scope === 'pizza' ? '피자만' : '사이드만'}/>
+      <OptionRow label="순위 깊이" value={opts.topN === 50 ? '전체' : `TOP ${opts.topN}`}/>
+      {opts.opts && (<>
+        <OptionRow label="카테고리 비중" value={opts.opts.catShare ? '포함' : '제외'}/>
+        <OptionRow label="메뉴 순위표" value={opts.opts.rankTable ? '포함' : '제외'}/>
+        <OptionRow label="전월 대비" value={opts.opts.prevComp ? '포함' : '제외'}/>
+      </>)}
+    </>);
+    if (report.kind === 'price') return (<>
+      <OptionRow label="변동률 임계값" value={`±${opts.threshold ?? 3}%`}/>
+      <OptionRow label="기간 모드" value={opts.periodMode === 'week' ? '이번 주' : opts.periodMode === 'month' ? '이번 달' : '사용자 지정'}/>
+      {opts.opts && (<>
+        <OptionRow label="스파크라인" value={opts.opts.history7 ? '포함' : '제외'}/>
+        <OptionRow label="원가 영향" value={opts.opts.costImpact ? '포함' : '제외'}/>
+      </>)}
+    </>);
+    if (report.kind === 'shipment') return (<>
+      <OptionRow label="집계 단위" value={opts.periodMode === 'week' ? '주 단위' : opts.periodMode === 'quart' ? '분기 단위' : '월 단위'}/>
+      <OptionRow label="대상 분류" value={opts.type === 'managed' ? '관리품목' : opts.type === 'common' ? '범용상품' : '전체'}/>
+      {opts.opts && (<>
+        <OptionRow label="추이 차트" value={opts.opts.chart ? '포함' : '제외'}/>
+        <OptionRow label="TOP 10 목록" value={opts.opts.topList ? '포함' : '제외'}/>
+      </>)}
+    </>);
+    if (report.kind === 'compare') return (<>
+      <OptionRow label="비교 모드" value={opts.mode === 'mom' ? '전월 대비' : opts.mode === 'yoy' ? '전년 동월' : '사용자 지정'}/>
+      <OptionRow label="기간 A" value={opts.yearA && opts.monthA ? `${opts.yearA}년 ${opts.monthA}월` : '—'}/>
+      <OptionRow label="대상 범위" value={opts.scope === 'all' ? '전체' : opts.scope === 'pizza' ? '피자' : '사이드'}/>
+      {opts.opts && (<>
+        <OptionRow label="순위 이동표" value={opts.opts.rankShift ? '포함' : '제외'}/>
+        <OptionRow label="Winners/Losers" value={opts.opts.winners ? '포함' : '제외'}/>
+      </>)}
+    </>);
+    if (report.kind === 'cost') return (<>
+      <OptionRow label="집계 기간" value={opts.periodMode === 'year' ? '년 단위' : '월 단위'}/>
+      <OptionRow label="위험 기준" value={`${opts.riskThreshold ?? 35}%↑`}/>
+      {opts.cats && (
+        <OptionRow label="포함 카테고리"
+          value={Object.entries(opts.cats).filter(([,v])=>v).map(([k])=>
+            k==='pizza'?'피자':k==='personal'?'1인피자':k==='side'?'사이드':k==='set'?'세트박스':'엣지&도우'
+          ).join(', ') || '—'}/>
+      )}
+      {opts.opts && (<>
+        <OptionRow label="카테고리 비교표" value={opts.opts.catTable ? '포함' : '제외'}/>
+        <OptionRow label="위험 메뉴 부록" value={opts.opts.riskList ? '포함' : '제외'}/>
+      </>)}
+    </>);
+    return <div style={{color:'var(--text-4)',fontSize:13,padding:'16px 0'}}>저장된 옵션 없음</div>;
+  };
+
+  return (
+    <div style={{padding:'16px 0'}}>
+      <div style={{fontSize:11, fontWeight:700, color:color, textTransform:'uppercase',
+        letterSpacing:1, marginBottom:12}}>보고서 설정</div>
+      {kindOpts()}
+    </div>
+  );
+}
+
+function ReportSummaryPage({ report }) {
+  const color = KIND_COLOR[report.kind] || '#888';
+  return (
+    <div style={{padding:'16px 0'}}>
+      <div style={{fontSize:11, fontWeight:700, color:color, textTransform:'uppercase',
+        letterSpacing:1, marginBottom:12}}>요약 정보</div>
+      <OptionRow label="보고서 ID" value={report.id ? `RPT-${String(report.id).padStart(4,'0')}` : '—'}/>
+      <OptionRow label="총 페이지" value={`${report.pages || 1}쪽`}/>
+      <OptionRow label="조회수" value={`${report.views || 0}회`}/>
+      <OptionRow label="공유 링크" value={report.links > 0 ? `${report.links}개 활성` : '없음'}/>
+      <div style={{marginTop:20, padding:12, borderRadius:8, background:'var(--surface-2)',
+        fontSize:12, color:'var(--text-3)', lineHeight:1.6}}>
+        ℹ️ 보고서는 생성 시점의 데이터로 고정돼요. 이후 데이터 변경은 반영되지 않아요.
       </div>
     </div>
   );
 }
 
+const PAGE_COMPONENTS = [
+  { title: '표지',    render: (r) => <ReportCover report={r} /> },
+  { title: '보고서 설정', render: (r) => <ReportOptionsPage report={r} /> },
+  { title: '요약 정보', render: (r) => <ReportSummaryPage report={r} /> },
+];
+
 export function ReportPreviewModal({ report, onClose, onShare }) {
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = report.pages || 8;
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'ArrowLeft' && currentPage > 1) setCurrentPage(currentPage - 1);
-    if (e.key === 'ArrowRight' && currentPage < totalPages) setCurrentPage(currentPage + 1);
-    if (e.key === 'Escape') onClose();
-  };
+  const totalPages = PAGE_COMPONENTS.length;
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; });
 
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowLeft') setCurrentPage(p => p > 1 ? p - 1 : p);
+      if (e.key === 'ArrowRight') setCurrentPage(p => p < totalPages ? p + 1 : p);
+      if (e.key === 'Escape') onCloseRef.current?.();
+    };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [currentPage, totalPages]);
+  }, [totalPages]);
+
+  const pageTitle = PAGE_COMPONENTS[currentPage - 1]?.title || '';
+  const PageContent = PAGE_COMPONENTS[currentPage - 1]?.render;
+  const color = KIND_COLOR[report.kind] || '#888';
+  const createdAt = report.createdAt
+    ? new Date(report.createdAt).toLocaleString('ko-KR',{year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+    : '—';
 
   return (
-    <div className="modal-scrim" onClick={onClose} onKeyDown={handleKeyDown} tabIndex={0}>
-      <div className="preview-shell" onClick={e => e.stopPropagation()}>
+    <div className="modal-scrim" onClick={onClose}>
+      <div className="preview-shell" onClick={e => e.stopPropagation()}
+        role="dialog" aria-modal="true" aria-labelledby="preview-modal-title">
         {/* 좌측 메타 */}
         <div className="preview-meta">
-          <button className="modal-close" onClick={onClose} style={{marginBottom: 24}}>
-            <Icon.x style={{width: 20, height: 20}}/>
+          <button className="modal-close" onClick={onClose} style={{marginBottom:24}}>
+            <Icon.x style={{width:20,height:20}}/>
           </button>
 
-          <div style={{marginBottom: 28}}>
-            <div style={{fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6}}>
-              {report.id}
+          <div style={{marginBottom:20}}>
+            <div style={{display:'inline-flex',alignItems:'center',gap:6,padding:'3px 8px',
+              borderRadius:12, background:color+'1A', color, fontSize:11, fontWeight:700, marginBottom:8}}>
+              {KIND_LABEL[report.kind]} 보고서
             </div>
-            <div style={{fontSize: 15, fontWeight: 700, marginBottom: 4}}>{report.name}</div>
-            <div style={{fontSize: 12, color: 'var(--text-2)'}}>{report.period}</div>
+            <div id="preview-modal-title" style={{fontSize:15, fontWeight:700, marginBottom:4, lineHeight:1.4}}>{report.name}</div>
+            <div style={{fontSize:12, color:'var(--text-2)'}}>{report.period}</div>
           </div>
 
-          <div style={{fontSize: 12, color: 'var(--text-3)', marginBottom: 28}}>
-            <div>작성자: {report.author}</div>
-            <div>생성일: {report.created}</div>
+          <div style={{fontSize:12, color:'var(--text-3)', marginBottom:20}}>
+            <div>작성자: {report.author || '—'}</div>
+            <div>생성일: {createdAt}</div>
           </div>
 
-          <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
-            <button
-              className="btn sm primary"
-              onClick={() => { onShare?.(report); onClose(); }}
-            >
-              <Icon.upload style={{width: 12, height: 12}}/>공유
-            </button>
-            <button className="btn sm">
-              <Icon.download style={{width: 12, height: 12}}/>PDF
-            </button>
-            <button className="btn sm">
-              <Icon.download style={{width: 12, height: 12}}/>Excel
-            </button>
+          {/* 페이지 목차 */}
+          <div style={{marginBottom:20}}>
+            {PAGE_COMPONENTS.map((p, i) => (
+              <button key={i} onClick={() => setCurrentPage(i + 1)}
+                style={{display:'flex', alignItems:'center', gap:8, width:'100%',
+                  padding:'7px 10px', borderRadius:8, border:'none', cursor:'pointer', textAlign:'left',
+                  background: currentPage === i+1 ? color+'1A' : 'transparent',
+                  color: currentPage === i+1 ? color : 'var(--text-2)',
+                  fontWeight: currentPage === i+1 ? 700 : 400, fontSize:13, marginBottom:2}}>
+                <span style={{fontSize:11, opacity:.6, minWidth:16}}>{i+1}</span>
+                {p.title}
+              </button>
+            ))}
           </div>
 
-          <div style={{borderTop: '1px solid var(--border)', marginTop: 20, paddingTop: 20, fontSize: 12, color: 'var(--text-3)'}}>
-            <div>전체 {totalPages}쪽</div>
-            <div style={{marginTop: 12}}>← → : 페이지 이동</div>
+          <div style={{display:'flex', flexDirection:'column', gap:6}}>
+            <button className="btn sm primary" onClick={() => { onShare?.(report); onClose(); }}>
+              <Icon.upload style={{width:12,height:12}}/>공유
+            </button>
+            <button className="btn sm"><Icon.download style={{width:12,height:12}}/>PDF</button>
+          </div>
+
+          <div style={{borderTop:'1px solid var(--border)', marginTop:16, paddingTop:16,
+            fontSize:11, color:'var(--text-4)'}}>
+            <div>← → : 페이지 이동</div>
             <div>Esc : 닫기</div>
           </div>
         </div>
 
-        {/* 우측 페이퍼 */}
+        {/* 우측 — 실제 내용 */}
         <div className="preview-body">
           <div className="report-paper preview-paper">
-            {currentPage === 1 ? (
-              <PreviewPageCover report={report} />
-            ) : (
-              <PreviewPageStub page={currentPage} total={totalPages} />
-            )}
-            <div className="paper-foot" style={{marginTop: 32}}>
-              <span>{currentPage} / {totalPages}</span>
-              <span className="mono">7번가 R&D 플랫폼 · WONPAY 비즈니스</span>
+            {PageContent && PageContent(report)}
+            <div className="paper-foot" style={{marginTop:24}}>
+              <span>{currentPage} / {totalPages} — {pageTitle}</span>
+              <span className="mono">7번가 R&amp;D 플랫폼 · WONPAY 비즈니스</span>
             </div>
           </div>
 
-          {/* 페이저 */}
           <div className="preview-pager">
-            <button
-              className="pager-btn"
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-            >
-              <Icon.chevLeft style={{width: 16, height: 16}}/>
+            <button className="pager-btn" onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1}>
+              <Icon.chevLeft style={{width:16,height:16}}/>
             </button>
-            <div className="pager-info">
-              {currentPage} / {totalPages}
-            </div>
-            <button
-              className="pager-btn"
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-            >
-              <Icon.chevRight style={{width: 16, height: 16}}/>
+            <div className="pager-info">{currentPage} / {totalPages}</div>
+            <button className="pager-btn" onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage === totalPages}>
+              <Icon.chevRight style={{width:16,height:16}}/>
             </button>
           </div>
         </div>

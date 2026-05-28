@@ -9,8 +9,10 @@ import { STATUSES, STATUS_COLORS, STATUS_BORDER, getAllNotes, updateNote } from 
 
 export default function Page() {
   const router   = useRouter();
-  const [notes,   setNotes]   = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [notes,           setNotes]           = useState([]);
+  const [loading,         setLoading]         = useState(true);
+  const [dragId,          setDragId]          = useState(null);
+  const [dragOverStatus,  setDragOverStatus]  = useState(null);
 
   const load = useCallback(async () => {
     await initDB();
@@ -32,6 +34,35 @@ export default function Page() {
     } catch {
       showToast('상태 변경 실패', 'error');
     }
+  }
+
+  async function changeStatus(note, newStatus) {
+    if (note.status === newStatus) return;
+    try {
+      await updateNote(note.id, { status: newStatus });
+      showToast(`→ ${newStatus}`, 'ok');
+      await load();
+    } catch {
+      showToast('상태 변경 실패', 'error');
+    }
+  }
+
+  async function handleDrop(e, status) {
+    e.preventDefault();
+    setDragOverStatus(null);
+    const noteId = e.dataTransfer.getData('noteId');
+    if (!noteId) return;
+    const note = notes.find(n => String(n.id) === String(noteId));
+    if (!note) return;
+    if (note.status === status) return;
+    try {
+      await updateNote(Number(noteId), { status });
+      showToast(`→ ${status}`, 'ok');
+      await load();
+    } catch {
+      showToast('상태 변경 실패', 'error');
+    }
+    setDragId(null);
   }
 
   const groupedNotes = STATUSES.map(st => ({
@@ -69,13 +100,22 @@ export default function Page() {
         {groupedNotes.map(({ status, notes: colNotes }, colIdx) => {
           const sc = STATUS_COLORS[status] || STATUS_COLORS['아이디어'];
           const sb = STATUS_BORDER[status]  || 'var(--border)';
+          const isOver = dragOverStatus === status;
           return (
-            <div key={status} style={{minWidth:180}}>
+            <div
+              key={status}
+              style={{minWidth:180}}
+              className={isOver ? 'kanban-col-over' : undefined}
+              onDragOver={e => { e.preventDefault(); setDragOverStatus(status); }}
+              onDragLeave={() => setDragOverStatus(null)}
+              onDrop={e => handleDrop(e, status)}
+            >
               {/* 컬럼 헤더 */}
               <div style={{
                 display:'flex', alignItems:'center', gap:8, marginBottom:10,
                 padding:'8px 12px', borderRadius:10,
-                background:sc.bg,
+                background: isOver ? (sc.bg + 'cc') : sc.bg,
+                transition: 'background 0.15s',
               }}>
                 <div style={{
                   width:8, height:8, borderRadius:'50%', background:sb, flexShrink:0,
@@ -106,8 +146,18 @@ export default function Page() {
                     colIdx={colIdx}
                     maxIdx={STATUSES.length - 1}
                     onMove={dir => moveStatus(note, dir)}
+                    onStatusChange={s => changeStatus(note, s)}
                     onEdit={() => router.push(`/note/${note.id}`)}
                     formatDate={formatDate}
+                    isDragging={dragId === note.id}
+                    onDragStart={e => {
+                      e.dataTransfer.setData('noteId', note.id);
+                      setDragId(note.id);
+                    }}
+                    onDragEnd={() => {
+                      setDragId(null);
+                      setDragOverStatus(null);
+                    }}
                   />
                 ))}
               </div>
@@ -129,15 +179,24 @@ export default function Page() {
   );
 }
 
-function KanbanCard({ note, colIdx, maxIdx, onMove, onEdit, formatDate }) {
+function KanbanCard({ note, colIdx, maxIdx, onMove, onStatusChange, onEdit, formatDate, isDragging, onDragStart, onDragEnd }) {
   const sc = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
   const sb = STATUS_BORDER[note.status] || 'var(--border)';
   return (
-    <div style={{
-      background:'var(--surface)', borderRadius:10,
-      border:'1px solid var(--border)', borderLeft:`3px solid ${sb}`,
-      padding:'10px 12px',
-    }}>
+    <div
+      className={`kanban-card${isDragging ? ' kanban-card-dragging' : ''}`}
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      style={{
+        background:'var(--surface)', borderRadius:10,
+        border:'1px solid var(--border)', borderLeft:`3px solid ${sb}`,
+        padding:'10px 12px',
+        opacity: isDragging ? 0.4 : 1,
+        cursor: 'grab',
+        transition: 'opacity 0.15s',
+      }}
+    >
       <div style={{fontWeight:700, fontSize:13, color:'var(--text-1)', marginBottom:3,
         display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden',
       }}>
@@ -148,24 +207,38 @@ function KanbanCard({ note, colIdx, maxIdx, onMove, onEdit, formatDate }) {
         {note.testDate ? <span> · {formatDate(note.testDate)}</span> : ''}
       </div>
       <div style={{display:'flex', gap:4, alignItems:'center'}}>
+        {/* 데스크탑: ← → 버튼 */}
         <button
-          className="btn sm"
+          className="btn sm kanban-arrow-btn"
           style={{padding:'2px 6px', fontSize:11, opacity: colIdx === 0 ? .3 : 1}}
           disabled={colIdx === 0}
           onClick={e => { e.stopPropagation(); onMove(-1); }}
           title="이전 상태로"
-        >
-          ←
-        </button>
+        >←</button>
         <button
-          className="btn sm"
+          className="btn sm kanban-arrow-btn"
           style={{padding:'2px 6px', fontSize:11, opacity: colIdx === maxIdx ? .3 : 1}}
           disabled={colIdx === maxIdx}
           onClick={e => { e.stopPropagation(); onMove(1); }}
           title="다음 상태로"
+        >→</button>
+
+        {/* 모바일: 상태 직접 선택 */}
+        <select
+          className="kanban-status-select"
+          value={note.status}
+          onChange={e => { e.stopPropagation(); onStatusChange(e.target.value); }}
+          onClick={e => e.stopPropagation()}
+          style={{
+            fontSize:11, fontWeight:700, padding:'2px 6px', borderRadius:10,
+            background:sc.bg, color:sc.color,
+            border:`1px solid ${sc.color}40`, cursor:'pointer',
+            fontFamily:'inherit', outline:'none', maxWidth:90,
+          }}
         >
-          →
-        </button>
+          {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+
         <button
           className="btn sm"
           style={{marginLeft:'auto', padding:'2px 6px'}}

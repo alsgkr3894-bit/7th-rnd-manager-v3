@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { SampleCardSkeleton } from '@/components/ui/Skeleton';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { getAllSamples, addSample, deleteSample, SAMPLE_CATEGORIES, RATING_LABELS, RATING_COLOR } from '@/lib/sample';
+import { getAllSamples, addSample, deleteSample, SAMPLE_CATEGORIES, RATING_COLOR } from '@/lib/sample';
 
 /* ── 별점 표시 ── */
 function Stars({ value, size = 14 }) {
@@ -83,7 +83,13 @@ function usePinchZoom() {
     };
   }, []);
 
-  return { imgRef, scale };
+  function resetScale() {
+    scaleRef.current = 1;
+    setScale(1);
+    if (imgRef.current) imgRef.current.style.transform = 'scale(1)';
+  }
+
+  return { imgRef, scale, resetScale };
 }
 
 /* ── 비교 모달 ── */
@@ -110,7 +116,7 @@ function CompareModal({ samples, onClose }) {
       style={{
         position:'fixed', inset:0, zIndex:400,
         background:'rgba(0,0,0,0.65)', display:'flex', alignItems:'center', justifyContent:'center',
-        padding:16,
+        padding:16, animation:'fade 150ms ease',
       }}
       onClick={onClose}
     >
@@ -205,7 +211,12 @@ function CompareModal({ samples, onClose }) {
 function DetailModal({ sample, onClose, onEdit, onDelete }) {
   const [photoIdx, setPhotoIdx] = useState(0);
   const photos = sample.photos || [];
-  const { imgRef, scale } = usePinchZoom();
+  const { imgRef, scale, resetScale } = usePinchZoom();
+
+  useEffect(() => {
+    resetScale();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photoIdx]);
 
   useEffect(() => {
     const h = e => { if (e.key === 'Escape') onClose(); };
@@ -402,7 +413,7 @@ function SampleContent() {
   const [loading,     setLoading]     = useState(true);
   const [search,      setSearch]      = useState('');
   const [catFilter,   setCatFilter]   = useState(() => searchParams.get('cat') || 'all');
-  const [ratingMin,   setRatingMin]   = useState(() => Number(searchParams.get('r') || 0));
+  const [ratingMin,   setRatingMin]   = useState(() => { const v = parseInt(searchParams.get('r') || '0', 10); return Number.isNaN(v) ? 0 : v; });
   const [sortBy,      setSortBy]      = useState(() => tryLS('v3:sample-sort', 'createdAt'));
   const [detailRec,   setDetailRec]   = useState(null);
 
@@ -530,30 +541,34 @@ function SampleContent() {
     return [...compareSet].map(id => samples.find(s => s.id === id)).filter(Boolean);
   }, [compareSet, samples]);
 
-  // 캘린더 헬퍼
-  function calDays(month) {
+  // 비교 선택 순서 맵 — 카드 렌더마다 배열 재생성 방지
+  const compareIdxMap = useMemo(() => {
+    const m = new Map();
+    [...compareSet].forEach((id, i) => m.set(id, i));
+    return m;
+  }, [compareSet]);
+
+  // 캘린더 헬퍼 — calMonth가 바뀔 때만 재계산
+  const calDays = useMemo(() => {
+    const month = calMonth;
     const year = month.getFullYear();
     const mon  = month.getMonth();
     const first = new Date(year, mon, 1);
     const last  = new Date(year, mon + 1, 0);
-    const startDow = first.getDay(); // 0=Sun
+    const startDow = first.getDay();
     const days = [];
-    // 이전 달 채우기
     for (let i = 0; i < startDow; i++) {
-      const d = new Date(year, mon, -startDow + i + 1);
-      days.push({ date: d, cur: false });
+      days.push({ date: new Date(year, mon, -startDow + i + 1), cur: false });
     }
-    // 현재 달
     for (let d = 1; d <= last.getDate(); d++) {
       days.push({ date: new Date(year, mon, d), cur: true });
     }
-    // 다음 달 채우기 (6행 유지)
     const rem = 42 - days.length;
     for (let d = 1; d <= rem; d++) {
       days.push({ date: new Date(year, mon + 1, d), cur: false });
     }
     return days;
-  }
+  }, [calMonth]);
 
   const samplesByDate = useMemo(() => {
     const m = {};
@@ -615,7 +630,7 @@ function SampleContent() {
     </div>
   );
 
-  const days = calDays(calMonth);
+  const days = calDays;
 
   return (
     <main className="main">
@@ -781,7 +796,7 @@ function SampleContent() {
             const thumb = rec.photos?.[0]?.data;
             const tags = rec.tags ? rec.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
             const isBatchSelected = selected.has(rec.id);
-            const compareIdx = [...compareSet].indexOf(rec.id);
+            const compareIdx = compareIdxMap.has(rec.id) ? compareIdxMap.get(rec.id) : -1;
             const isCompareSelected = compareIdx !== -1;
 
             return (
@@ -919,7 +934,7 @@ function SampleContent() {
       {/* 비교 모드 하단 바 */}
       {compareMode && compareSet.size >= 2 && (
         <div style={{
-          position:'fixed', bottom:24, left:'50%', transform:'translateX(-50%)',
+          position:'fixed', bottom:80, left:'50%', transform:'translateX(-50%)',
           background:'var(--accent)', color:'#fff', borderRadius:40,
           padding:'12px 28px', fontWeight:800, fontSize:15,
           boxShadow:'0 8px 32px rgba(0,0,0,0.22)', cursor:'pointer', zIndex:200,

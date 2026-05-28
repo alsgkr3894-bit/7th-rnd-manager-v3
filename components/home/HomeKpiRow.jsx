@@ -28,13 +28,18 @@ export function HomeKpiRow({ salesKpi, costKpi, noteKpi, salesCount, noteCount, 
           <div className="trend">
             {salesKpi?.deltaPct == null ? (
               <span style={{color:'var(--text-4)'}}>—</span>
+            ) : salesKpi.deltaPct === 0 ? (
+              <>
+                <span style={{color:'var(--text-3)'}}>→ 동일</span>
+                <span style={{color:'var(--text-4)'}}>전월 대비</span>
+              </>
             ) : (
               <>
-                <span className={salesKpi.deltaPct >= 0 ? 'up' : 'down'}>
-                  {salesKpi.deltaPct >= 0
+                <span className={salesKpi.deltaPct > 0 ? 'up' : 'down'}>
+                  {salesKpi.deltaPct > 0
                     ? <Icon.arrowUp   style={{width:12,height:12,display:'inline',verticalAlign:'-2px'}}/>
                     : <Icon.arrowDown style={{width:12,height:12,display:'inline',verticalAlign:'-2px'}}/>}
-                  {' '}{salesKpi.deltaPct >= 0 ? '+' : ''}{salesKpi.deltaPct.toFixed(1)}%
+                  {' '}{salesKpi.deltaPct > 0 ? '+' : ''}{salesKpi.deltaPct.toFixed(1)}%
                 </span>
                 <span style={{color:'var(--text-4)'}}>전월 대비</span>
               </>

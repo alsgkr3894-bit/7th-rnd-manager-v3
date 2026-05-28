@@ -28,6 +28,12 @@ export default function Page() {
       .finally(() => setLoading(false));
   }, [sampleId]);
 
+  useEffect(() => {
+    const h = e => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave(); } };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [form]);
+
   async function handleSave() {
     if (!form.title.trim() || !form.menuName.trim()) {
       showToast('제목과 메뉴명은 필수입니다', 'warn');
@@ -58,8 +64,9 @@ export default function Page() {
         sub={form.title || ''}
         actions={
           <>
-            <button className="btn" onClick={() => router.push('/note/sample')}>취소</button>
-            <button className="btn primary" onClick={handleSave} disabled={saving}>
+            <button className="btn no-print" onClick={() => window.print()} title="인쇄">🖨</button>
+            <button className="btn no-print" onClick={() => router.push('/note/sample')}>취소</button>
+            <button className="btn primary no-print" onClick={handleSave} disabled={saving}>
               {saving ? '저장 중…' : '저장하기'}
             </button>
           </>

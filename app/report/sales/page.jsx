@@ -8,6 +8,7 @@ import { getAll } from '@/lib/db';
 import { buildPeriodCompare } from '@/lib/sales/compare';
 import { buildGroupRanking } from '@/lib/sales/ranking';
 import { useDraftRestore } from '@/lib/report/useDraftRestore';
+import { getProfile } from '@/lib/profile';
 
 const DRAFT_KEY = 'report_draft_sales';
 
@@ -336,7 +337,7 @@ export default function Page() {
             <span>·</span>
             <span>{viewMode === 'compare' ? `비교: ${cmpYear}년 ${cmpMonth}월` : '해당 월 순위'}</span>
             <span>·</span>
-            <span className="mono">생성일 {todayLabel} · 민학 주임</span>
+            <span className="mono">생성일 {todayLabel} · {getProfile().name}</span>
           </div>
         </div>
 

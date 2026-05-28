@@ -4,8 +4,16 @@ import { useRouter, useParams } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { getNoteById, updateNote, getNotesInChain, STATUS_COLORS } from '@/lib/note';
+import { getNoteById, updateNote, getNotesInChain, STATUS_COLORS, duplicateNote } from '@/lib/note';
+import { getAllSamples } from '@/lib/sample';
 import { NoteFormBody, INIT } from '../_NoteFormBody';
+import { NoteDetailSkeleton } from '@/components/ui/Skeleton';
+
+const COST_LINKS = [
+  { label: '식자재 원가표', href: '/cost/ingredient-price' },
+  { label: '메뉴 원가표',   href: '/cost/menu-price' },
+  { label: '피자 세부 원가표', href: '/cost/pizza-detail' },
+];
 
 function saveDraft(id, form) {
   try { localStorage.setItem(`v3:note-draft-${id}`, JSON.stringify(form)); } catch {}
@@ -75,7 +83,10 @@ export default function Page() {
   const [saving,         setSaving]        = useState(false);
   const [loading,        setLoading]       = useState(true);
   const [chain,          setChain]         = useState([]);
+  const [relatedSamples, setRelatedSamples] = useState([]);
   const [showDraftBanner, setShowDraftBanner] = useState(false);
+  const [costMenuOpen,   setCostMenuOpen]  = useState(false);
+  const [duplicating,    setDuplicating]   = useState(false);
 
   const skipRef        = useRef(true);
   const originalRef    = useRef(null);
@@ -84,13 +95,17 @@ export default function Page() {
   useEffect(() => {
     if (!noteId) { router.replace('/note'); return; }
     initDB()
-      .then(() => Promise.all([getNoteById(noteId), getNotesInChain(noteId)]))
-      .then(([note, ch]) => {
+      .then(() => Promise.all([getNoteById(noteId), getNotesInChain(noteId), getAllSamples()]))
+      .then(([note, ch, allSamples]) => {
         if (!note) { showToast('노트를 찾을 수 없어요', 'warn'); router.replace('/note'); return; }
         const merged = { ...INIT, ...note };
         setForm(merged);
         originalRef.current = merged;
         setChain(ch);
+        if (note.menuName) {
+          const mn = note.menuName.trim().toLowerCase();
+          setRelatedSamples(allSamples.filter(s => s.menuName?.trim().toLowerCase() === mn));
+        }
         const draft = loadDraft(noteId);
         if (draft && (draft.title !== note.title || draft.testContent !== note.testContent || draft.managerEval !== note.managerEval)) {
           setShowDraftBanner(true);
@@ -108,6 +123,12 @@ export default function Page() {
     timerRef.current = setTimeout(() => saveDraft(noteId, form), 800);
     return () => clearTimeout(timerRef.current);
   }, [form, noteId]);
+
+  useEffect(() => {
+    const h = e => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave(); } };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [form]);
 
   async function handleSave() {
     if (!form.title.trim() || !form.menuName.trim() || !form.testContent.trim()) {
@@ -131,17 +152,41 @@ export default function Page() {
     router.push('/note');
   }
 
+  function handleCreateSample() {
+    try {
+      sessionStorage.setItem('v3:sample-from-note', JSON.stringify({
+        menuName: form.menuName,
+        category: form.category,
+        tags:     form.tags,
+        noteId,
+      }));
+    } catch {}
+    router.push('/note/sample/write');
+  }
+
+  function handlePrint() { window.print(); }
+
+  async function handleDuplicate() {
+    setDuplicating(true);
+    try {
+      const newId = await duplicateNote(noteId);
+      showToast('노트가 복사됐어요', 'ok');
+      if (newId) router.push(`/note/${newId}`);
+      else router.push('/note');
+    } catch {
+      showToast('복사 중 오류가 발생했어요', 'error');
+    } finally {
+      setDuplicating(false);
+    }
+  }
+
   function restoreDraft() {
     const draft = loadDraft(noteId);
     if (draft) { setForm(draft); showToast('임시저장된 내용을 불러왔어요', 'ok'); }
     setShowDraftBanner(false);
   }
 
-  if (loading) return (
-    <main className="main">
-      <div style={{padding:40, textAlign:'center', color:'var(--text-3)'}}>불러오는 중…</div>
-    </main>
-  );
+  if (loading) return <NoteDetailSkeleton />;
 
   return (
     <main className="main">
@@ -151,8 +196,35 @@ export default function Page() {
         sub={form.title || ''}
         actions={
           <>
-            <button className="btn" onClick={handleCancel}>취소</button>
-            <button className="btn primary" onClick={handleSave} disabled={saving}>
+            <button className="btn no-print" onClick={handlePrint} title="인쇄">🖨</button>
+            <button className="btn no-print" onClick={handleDuplicate} disabled={duplicating} title="이 노트 복사">
+              {duplicating ? '복사 중…' : '복사'}
+            </button>
+            <div style={{ position: 'relative' }} className="no-print">
+              <button className="btn" onClick={() => setCostMenuOpen(v => !v)}>↗ 원가</button>
+              {costMenuOpen && (
+                <>
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={() => setCostMenuOpen(false)} />
+                  <div style={{
+                    position: 'absolute', top: '100%', right: 0, marginTop: 4, zIndex: 100,
+                    background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10,
+                    boxShadow: '0 4px 16px rgba(0,0,0,.14)', minWidth: 160, overflow: 'hidden',
+                  }}>
+                    {COST_LINKS.map(item => (
+                      <button key={item.href} className="btn" style={{
+                        display: 'block', width: '100%', textAlign: 'left',
+                        padding: '10px 16px', borderRadius: 0, fontSize: 13,
+                      }} onClick={() => { router.push(item.href); setCostMenuOpen(false); }}>
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            <button className="btn no-print" onClick={handleCreateSample}>📷 샘플 작성</button>
+            <button className="btn no-print" onClick={handleCancel}>취소</button>
+            <button className="btn primary no-print" onClick={handleSave} disabled={saving}>
               {saving ? '저장 중…' : '저장하기'}
             </button>
           </>
@@ -173,6 +245,41 @@ export default function Page() {
       )}
       <NoteFormBody form={form} setForm={setForm} />
       <ChainTimeline chain={chain} currentId={noteId} onNavigate={id => router.push(`/note/${id}`)} />
+      {relatedSamples.length > 0 && (
+        <div className="card" style={{marginTop:24}}>
+          <div className="card-title" style={{marginBottom:12}}>
+            관련 샘플기록
+            <span style={{fontWeight:400, fontSize:12, color:'var(--text-3)', marginLeft:8}}>메뉴명 "{form.menuName}" 일치</span>
+          </div>
+          <div style={{display:'flex', flexDirection:'column', gap:8}}>
+            {relatedSamples.map(s => (
+              <button
+                key={s.id}
+                onClick={() => router.push(`/note/sample/${s.id}`)}
+                style={{
+                  display:'flex', alignItems:'center', gap:12,
+                  background:'var(--surface-2)', border:'1px solid var(--border)',
+                  borderRadius:10, padding:'10px 14px', cursor:'pointer', textAlign:'left',
+                }}
+              >
+                {s.photos?.[0] ? (
+                  <img src={s.photos[0].data} alt=""
+                    style={{width:48, height:36, objectFit:'cover', borderRadius:6, flexShrink:0}}/>
+                ) : (
+                  <div style={{width:48, height:36, borderRadius:6, background:'var(--border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0}}>📷</div>
+                )}
+                <div style={{flex:1, minWidth:0}}>
+                  <div style={{fontSize:13, fontWeight:600, color:'var(--text-1)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{s.title}</div>
+                  <div style={{fontSize:11, color:'var(--text-3)', marginTop:2}}>
+                    {s.testDate && <span>{s.testDate}</span>}
+                    {s.rating > 0 && <span style={{marginLeft:8, color:'#F5A623'}}>{'★'.repeat(s.rating)}</span>}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

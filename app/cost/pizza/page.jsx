@@ -7,7 +7,7 @@ import { initDB } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { getAllMenuPrices } from '@/lib/cost/menu-price';
 import {
-  getPizzaRecipeMap, upsertPizzaRecipe, deletePizzaRecipe,
+  getPizzaRecipeMap, upsertPizzaRecipe,
   pizzaBaseCost,
 } from '@/lib/cost/pizza-detail';
 import { getAllEdges } from '@/lib/cost/edge-dough';
@@ -15,6 +15,7 @@ import { buildPizzaSummary } from '@/lib/cost/pizza-summary';
 import { PizzaDetailCard } from '@/components/cost/pizza-detail/PizzaDetailCard';
 import { PizzaDetailEditModal } from '@/components/cost/pizza-detail/PizzaDetailEditModal';
 import { PizzaSummaryTable } from '@/components/cost/pizza-summary/PizzaSummaryTable';
+import { TabButton } from '@/components/cost/shared/TabButton';
 
 export default function Page() {
   const [tab, setTab] = useState('detail'); // 'summary' | 'detail'
@@ -22,6 +23,7 @@ export default function Page() {
   const [recipeMap, setRecipeMap] = useState(new Map());
   const [edges, setEdges]       = useState([]);
   const [loading, setLoading]   = useState(true);
+  const [dbError, setDbError]   = useState(null);
   const [target, setTarget]     = useState(null); // { menu, recipe | null }
 
   const load = useCallback(async () => {
@@ -37,15 +39,19 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    load().catch(console.error).finally(() => setLoading(false));
+    load().catch(err => { console.error(err); setDbError(err.message || '데이터 로드 실패'); }).finally(() => setLoading(false));
   }, [load]);
 
   async function handleSave(data) {
     try {
-      await upsertPizzaRecipe(data);
-      showToast('저장 완료', 'ok');
+      const result = await upsertPizzaRecipe(data);
+      const msg = result.mode === 'insert' ? '레시피 등록 완료' :
+                  !data.id ? '기존 레시피 덮어씌움' : '레시피 수정 완료';
+      showToast(msg, 'ok');
       setTarget(null);
-      await load();
+      // 메뉴·엣지는 변하지 않으므로 recipeMap만 재조회
+      const newMap = await getPizzaRecipeMap();
+      setRecipeMap(newMap);
     } catch (err) {
       showToast('저장 실패: ' + err.message, 'err');
       throw err;
@@ -77,6 +83,15 @@ export default function Page() {
     : menus.length === 0
       ? '메뉴 판매가에 등록된 피자 메뉴가 없습니다 — 먼저 메뉴 판매가에서 등록해주세요'
       : `피자 메뉴 ${menus.length}개 · 레시피 ${stats.withRecipe}건 작성됨`;
+
+  if (dbError) return (
+    <main className="main">
+      <PageHeader breadcrumb={['원가계산', '피자']} title="피자 원가" sub="로드 실패"/>
+      <div className="card" style={{padding:32, textAlign:'center', color:'var(--negative)'}}>
+        데이터베이스 오류: {dbError}
+      </div>
+    </main>
+  );
 
   return (
     <main className="main">
@@ -152,20 +167,5 @@ export default function Page() {
         />
       )}
     </main>
-  );
-}
-
-function TabButton({ active, onClick, children }) {
-  return (
-    <button onClick={onClick} style={{
-      padding:'10px 18px', border:0,
-      background:'transparent', cursor:'pointer',
-      fontSize:13, fontWeight: active ? 700 : 500,
-      color: active ? 'var(--accent)' : 'var(--text-3)',
-      borderBottom: active ? '2px solid var(--accent)' : '2px solid transparent',
-      marginBottom:-1,
-    }}>
-      {children}
-    </button>
   );
 }

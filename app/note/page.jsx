@@ -1,10 +1,11 @@
 'use client';
-import { Suspense, useEffect, useState, useMemo, useCallback } from 'react';
+import { Suspense, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { NoteCardSkeleton } from '@/components/ui/Skeleton';
 import { showToast } from '@/components/Toast';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { initDB } from '@/lib/db';
 import {
   CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS, STATUS_BORDER,
@@ -12,15 +13,20 @@ import {
 } from '@/lib/note';
 import { getNoteDetailStats } from '@/lib/stats/note-stats';
 
-function hl(text, q) {
-  if (!q || !text) return text;
-  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const parts = String(text).split(new RegExp(`(${escaped})`, 'gi'));
+function hl(text, re) {
+  if (!re || !text) return text;
+  const parts = String(text).split(re);
   return parts.map((p, i) =>
     i % 2 === 1
       ? <mark key={i} className="search-hl">{p}</mark>
       : p
   );
+}
+
+function buildHlRe(q) {
+  if (!q) return null;
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(${escaped})`, 'gi');
 }
 
 const SORT_OPTIONS = [
@@ -60,6 +66,15 @@ function NoteContent() {
   const [batchMode,    setBatchMode]    = useState(false);
   const [selected,     setSelected]     = useState(new Set());
   const [popIds,       setPopIds]       = useState(new Set());
+  const [deletingIds,  setDeletingIds]  = useState(new Set());
+  const [confirmBatch, setConfirmBatch] = useState(false);
+  const [confirmDeletePreset, setConfirmDeletePreset] = useState(null);
+  const [presets,      setPresets]      = useState(() => {
+    try { return JSON.parse(localStorage.getItem('v3:note-presets') || '[]'); } catch { return []; }
+  });
+  const [savingPreset,   setSavingPreset]   = useState(false);
+  const [presetName,     setPresetName]     = useState('');
+  const presetInputRef = useRef(null);
 
   const load = useCallback(async () => {
     await initDB();
@@ -88,6 +103,8 @@ function NoteContent() {
     return m;
   }, [notes]);
 
+  const hlRe = useMemo(() => buildHlRe(search.trim()), [search]);
+
   const filtered = useMemo(() => {
     let list = statusFilter === 'all' ? notes : notes.filter(n => n.status === statusFilter);
     const q = search.trim().toLowerCase();
@@ -106,8 +123,11 @@ function NoteContent() {
 
   async function handleDelete(note, e) {
     e?.stopPropagation();
-    // 낙관적 UI 제거
+    // 퇴장 애니메이션
+    setDeletingIds(s => new Set([...s, note.id]));
+    await new Promise(r => setTimeout(r, 250));
     setNotes(prev => prev.filter(n => n.id !== note.id));
+    setDeletingIds(s => { const n = new Set(s); n.delete(note.id); return n; });
     if (detailNote?.id === note.id) setDetailNote(null);
     let cancelled = false;
     showToast(`"${note.title}" 삭제됨`, 'ok', 4000, {
@@ -141,23 +161,35 @@ function NoteContent() {
     try {
       await updateNote(noteId, { status: newStatus });
       showToast(`상태 → ${newStatus}`, 'ok');
+      setNotes(prev => prev.map(n => n.id === noteId ? { ...n, status: newStatus } : n));
       setPopIds(s => new Set([...s, noteId]));
       setTimeout(() => setPopIds(s => { const n = new Set(s); n.delete(noteId); return n; }), 400);
-      await load();
       if (detailNote?.id === noteId) setDetailNote(n => n ? { ...n, status: newStatus } : null);
     } catch { showToast('상태 변경 실패', 'error'); }
   }
 
-  async function handleBatchDelete() {
+  function handleBatchDelete() {
     if (selected.size === 0) return;
-    if (!confirm(`선택한 ${selected.size}개 노트를 삭제할까요?`)) return;
-    try {
-      await Promise.all([...selected].map(id => deleteNote(id)));
-      showToast(`${selected.size}개 삭제됨`, 'ok');
-      setSelected(new Set());
-      setBatchMode(false);
-      load();
-    } catch { showToast('삭제 실패', 'error'); }
+    setConfirmBatch(true);
+  }
+
+  async function confirmBatchDelete() {
+    setConfirmBatch(false);
+    const ids = [...selected];
+    const snapshot = notes.filter(n => ids.includes(n.id));
+    setNotes(prev => prev.filter(n => !ids.includes(n.id)));
+    setSelected(new Set());
+    setBatchMode(false);
+    let cancelled = false;
+    showToast(`${ids.length}개 삭제됨`, 'ok', 4000, {
+      label: '취소',
+      onClick: () => { cancelled = true; setNotes(prev => [...snapshot, ...prev].sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt))); },
+    });
+    setTimeout(async () => {
+      if (cancelled) return;
+      try { await Promise.all(ids.map(id => deleteNote(id))); }
+      catch { showToast('일부 삭제 실패', 'error'); load(); }
+    }, 4000);
   }
 
   function toggleSelect(id) {
@@ -195,8 +227,54 @@ function NoteContent() {
   function changeSort(key) { setSortBy(key); setLS('v3:note-sort', key); }
   function changeView(mode) { setViewMode(mode); setLS('v3:note-view', mode); }
 
+  function savePreset() {
+    const name = presetName.trim();
+    if (!name) return;
+    const next = [...presets, { name, status: statusFilter, search, sort: sortBy }];
+    setPresets(next);
+    try { localStorage.setItem('v3:note-presets', JSON.stringify(next)); } catch {}
+    setPresetName('');
+    setSavingPreset(false);
+    showToast(`"${name}" 프리셋 저장됨`, 'ok');
+  }
+
+  function applyPreset(p) {
+    setStatusFilter(p.status);
+    setSearch(p.search || '');
+    setSortBy(p.sort);
+    setLS('v3:note-sort', p.sort);
+  }
+
+  function deletePreset(idx) {
+    const next = presets.filter((_, i) => i !== idx);
+    setPresets(next);
+    try { localStorage.setItem('v3:note-presets', JSON.stringify(next)); } catch {}
+  }
+
+  const hasActiveFilter = statusFilter !== 'all' || search.trim() || sortBy !== 'createdAt';
+
   return (
     <main className="main">
+      <ConfirmDialog
+        open={confirmBatch}
+        title={`노트 ${selected.size}개를 삭제할까요?`}
+        message="삭제한 후 잠시 동안 실행취소가 가능합니다."
+        confirmLabel="삭제"
+        cancelLabel="취소"
+        danger
+        onConfirm={confirmBatchDelete}
+        onCancel={() => setConfirmBatch(false)}
+      />
+      <ConfirmDialog
+        open={confirmDeletePreset !== null}
+        title="프리셋을 삭제할까요?"
+        message={`"${presets[confirmDeletePreset]?.name}" 프리셋이 삭제됩니다.`}
+        confirmLabel="삭제"
+        cancelLabel="취소"
+        danger
+        onConfirm={() => { deletePreset(confirmDeletePreset); setConfirmDeletePreset(null); }}
+        onCancel={() => setConfirmDeletePreset(null)}
+      />
       <PageHeader
         breadcrumb={['메뉴개발노트', '노트 목록']}
         title="메뉴개발노트"
@@ -275,7 +353,7 @@ function NoteContent() {
       )}
 
       {/* 상태 칩 필터 */}
-      <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12,alignItems:'center'}}>
+      <div className="motion-stagger" style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12,alignItems:'center'}}>
         <button className={'chip' + (statusFilter === 'all' ? ' active' : '')} onClick={() => setStatusFilter('all')}>
           전체 <span style={{fontSize:11,opacity:.7}}>{counts.all}</span>
         </button>
@@ -317,6 +395,54 @@ function NoteContent() {
         </div>
       </div>
 
+      {/* 필터 프리셋 */}
+      {(presets.length > 0 || hasActiveFilter) && (
+        <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center', marginTop:8}}>
+          {presets.map((p, i) => (
+            <div key={i} style={{display:'flex', alignItems:'center', gap:0}}>
+              <button
+                className="chip"
+                style={{borderRadius:'12px 0 0 12px', paddingRight:8}}
+                onClick={() => applyPreset(p)}
+                title={`상태: ${p.status} / 정렬: ${p.sort}`}
+              >
+                ★ {p.name}
+              </button>
+              <button
+                className="chip"
+                style={{borderRadius:'0 12px 12px 0', padding:'4px 8px', borderLeft:'none', color:'var(--text-4)'}}
+                onClick={() => setConfirmDeletePreset(i)}
+                title="프리셋 삭제"
+              >×</button>
+            </div>
+          ))}
+          {hasActiveFilter && (
+            savingPreset ? (
+              <div style={{display:'flex', gap:4, alignItems:'center'}}>
+                <input
+                  ref={presetInputRef}
+                  value={presetName}
+                  onChange={e => setPresetName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') savePreset(); if (e.key === 'Escape') setSavingPreset(false); }}
+                  placeholder="프리셋 이름"
+                  autoFocus
+                  style={{
+                    fontSize:12, padding:'4px 10px', borderRadius:10, border:'1px solid var(--accent)',
+                    background:'var(--surface)', color:'var(--text-1)', outline:'none', width:120, fontFamily:'inherit',
+                  }}
+                />
+                <button className="chip active" style={{fontSize:11}} onClick={savePreset}>저장</button>
+                <button className="chip" style={{fontSize:11}} onClick={() => setSavingPreset(false)}>취소</button>
+              </div>
+            ) : (
+              <button className="chip" style={{fontSize:11, color:'var(--text-3)'}} onClick={() => setSavingPreset(true)}>
+                + 현재 필터 저장
+              </button>
+            )
+          )}
+        </div>
+      )}
+
       {/* 스켈레톤 로딩 */}
       {loading && (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(320px, 1fr))', gap:16, marginTop:24 }}>
@@ -354,7 +480,9 @@ function NoteContent() {
       {filtered.length > 0 && viewMode === 'card' && (
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))',gap:16,marginTop:16}}>
           {filtered.map((note, i) => (
-            <div key={note.id} className="stagger note-card-wrap" style={{animationDelay:`${Math.min(i,8)*40}ms`}}>
+            <div key={note.id}
+              className={'stagger note-card-wrap' + (deletingIds.has(note.id) ? ' note-card-exit' : '')}
+              style={{animationDelay:`${Math.min(i,8)*40}ms`}}>
               {/* hover preview */}
               {note.testContent && note.testContent.length > 80 && (
                 <div className="note-hover-preview">{note.testContent}</div>
@@ -374,7 +502,7 @@ function NoteContent() {
                 onNewVersion={e => handleNewVersion(note, e)}
                 onClick={() => batchMode ? toggleSelect(note.id) : setDetailNote(note)}
                 formatDate={formatDate} parseTags={parseTags}
-                searchQ={search}
+                hlRe={hlRe}
                 statusPop={popIds.has(note.id)}
                 batchMode={batchMode}
                 selected={selected.has(note.id)}
@@ -389,7 +517,7 @@ function NoteContent() {
         <div className="card table-card" style={{marginTop:16}}>
           <div style={{overflowX:'auto'}}>
           <table className="data-table">
-            <thead>
+            <thead style={{position:'sticky', top:0, zIndex:2, background:'var(--surface)'}}>
               <tr>
                 <th>제목</th>
                 <th style={{width:100}}>메뉴명</th>
@@ -455,11 +583,10 @@ function NoteContent() {
   );
 }
 
-function NoteCard({ note, onEdit, onDelete, onCopy, onStatusChange, onNewVersion, onClick, formatDate, parseTags, searchQ, statusPop, batchMode, selected }) {
+function NoteCard({ note, onEdit, onDelete, onCopy, onStatusChange, onNewVersion, onClick, formatDate, parseTags, hlRe, statusPop, batchMode, selected }) {
   const tags = parseTags(note.tags);
   const sc   = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
   const sb   = STATUS_BORDER[note.status] || 'var(--border)';
-  const q    = (searchQ || '').trim().toLowerCase();
   return (
     <div className="card card-lift"
       style={{cursor:'pointer', borderLeft:`4px solid ${sb}`, paddingLeft:20,
@@ -480,17 +607,17 @@ function NoteCard({ note, onEdit, onDelete, onCopy, onStatusChange, onNewVersion
         {note.parentId && <span style={{fontSize:10,color:'var(--text-4)',background:'var(--surface-2)',padding:'1px 6px',borderRadius:8}}>버전</span>}
         <span style={{marginLeft:'auto',fontSize:11,color:'var(--text-4)'}}>{formatDate(note.testDate)}</span>
       </div>
-      <div style={{fontWeight:700,fontSize:15,marginBottom:3,color:'var(--text-1)'}}>{q ? hl(note.title, q) : note.title}</div>
-      <div style={{fontSize:12,color:'var(--text-3)',marginBottom:8}}>{q ? hl(note.menuName, q) : note.menuName}</div>
+      <div style={{fontWeight:700,fontSize:15,marginBottom:3,color:'var(--text-1)'}}>{hl(note.title, hlRe)}</div>
+      <div style={{fontSize:12,color:'var(--text-3)',marginBottom:8}}>{hl(note.menuName, hlRe)}</div>
       {note.testContent && (
         <div style={{fontSize:13,color:'var(--text-2)',lineHeight:1.6,marginBottom:10,
           display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>
-          {q ? hl(note.testContent, q) : note.testContent}
+          {hl(note.testContent, hlRe)}
         </div>
       )}
       <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
         {tags.slice(0,3).map(t => (
-          <span key={t} style={{fontSize:11,padding:'2px 7px',borderRadius:12,background:'var(--surface-2)',color:'var(--text-3)'}}>#{q ? hl(t, q) : t}</span>
+          <span key={t} style={{fontSize:11,padding:'2px 7px',borderRadius:12,background:'var(--surface-2)',color:'var(--text-3)'}}>#{hl(t, hlRe)}</span>
         ))}
         {!batchMode && (
           <div style={{marginLeft:'auto',display:'flex',gap:5}}>

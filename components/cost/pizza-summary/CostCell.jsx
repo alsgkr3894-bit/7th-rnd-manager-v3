@@ -32,7 +32,7 @@ export function CostCell({ value }) {
       </div>
       {rate != null && (
         <div style={{fontSize:10, fontWeight:600, color, marginTop:1}}>
-          {rate.toFixed(1)}%
+          {rate.toFixed(1)}%<span style={{fontWeight:400, opacity:.65, marginLeft:2}}>원가율</span>
         </div>
       )}
     </td>

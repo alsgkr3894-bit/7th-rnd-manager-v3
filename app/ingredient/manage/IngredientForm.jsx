@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
@@ -24,6 +24,7 @@ export function IngredientForm({ initial, onSave, onClose }) {
   );
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
+  const datalistId = useId();
 
   function set(key, val) { setForm(f => ({ ...f, [key]: val })); }
 
@@ -167,7 +168,7 @@ export function IngredientForm({ initial, onSave, onClose }) {
               ))}
               <input
                 value={tagInput}
-                list="ingredient-tag-suggestions"
+                list={datalistId}
                 onChange={e => setTagInput(e.target.value)}
                 onKeyDown={e => {
                   if (e.key === 'Enter' || e.key === ',') {
@@ -184,7 +185,7 @@ export function IngredientForm({ initial, onSave, onClose }) {
                   fontFamily:'inherit', fontSize:13, color:'var(--text-1)', padding:'2px 4px',
                 }}
               />
-              <datalist id="ingredient-tag-suggestions">
+              <datalist id={datalistId}>
                 {SEED_HASH_TAGS.map(t => <option key={t} value={t}/>)}
               </datalist>
             </div>

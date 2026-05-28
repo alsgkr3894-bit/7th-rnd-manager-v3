@@ -6,6 +6,7 @@ import { initDB } from '@/lib/db/init';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price/store';
 import { comparePriceLists } from '@/lib/price/compare';
 import { useDraftRestore } from '@/lib/report/useDraftRestore';
+import { getProfile } from '@/lib/profile';
 
 const DRAFT_KEY = 'report_draft_price';
 
@@ -178,7 +179,7 @@ export default function Page() {
             <span>·</span>
             <span>임계값 ±{threshold}%</span>
             <span>·</span>
-            <span className="mono">생성일 {todayLabel} · 민학 주임</span>
+            <span className="mono">생성일 {todayLabel} · {getProfile().name}</span>
           </div>
         </div>
 

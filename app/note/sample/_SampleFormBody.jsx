@@ -1,8 +1,10 @@
 'use client';
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
-import { SAMPLE_CATEGORIES, RATING_LABELS, RATING_COLOR } from '@/lib/sample';
+import { SAMPLE_CATEGORIES, RATING_LABELS, RATING_COLOR, getAllSamples } from '@/lib/sample';
+import { initDB } from '@/lib/db';
+import { TagInput } from '@/components/ui/TagInput';
 
 export const SAMPLE_INIT = {
   title: '', menuName: '', category: SAMPLE_CATEGORIES[0],
@@ -38,7 +40,16 @@ async function resizePhoto(file) {
 
 export function SampleFormBody({ form, setForm }) {
   const fileInputRef = useRef(null);
+  const [allTags, setAllTags] = useState([]);
   function upd(k, v) { setForm(f => ({ ...f, [k]: v })); }
+
+  useEffect(() => {
+    initDB().then(() => getAllSamples()).then(samples => {
+      const set = new Set();
+      samples.forEach(s => (s.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => set.add(t)));
+      setAllTags([...set]);
+    }).catch(() => {});
+  }, []);
 
   async function handleFiles(files) {
     const current = form.photos || [];
@@ -66,7 +77,7 @@ export function SampleFormBody({ form, setForm }) {
   const photos = form.photos || [];
 
   return (
-    <div style={{ display:'grid', gridTemplateColumns:'1fr 340px', gap:24, marginTop:24, alignItems:'start' }}>
+    <div className="form-layout" style={{ display:'grid', gridTemplateColumns:'1fr 340px', gap:24, marginTop:24, alignItems:'start' }}>
 
       {/* ── 좌측 폼 ── */}
       <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
@@ -150,16 +161,14 @@ export function SampleFormBody({ form, setForm }) {
             </Field>
           </div>
 
-          <Field label="태그" hint="콤마로 구분">
-            <input className="form-input" value={form.tags}
-              onChange={e => upd('tags', e.target.value)}
-              placeholder="예) 재테스트, 소스조정, 치즈강화"/>
+          <Field label="태그" hint="입력 후 Enter 또는 콤마">
+            <TagInput value={form.tags} onChange={v => upd('tags', v)} suggestions={allTags}/>
           </Field>
         </div>
       </div>
 
       {/* ── 우측: 사진 ── */}
-      <div style={{ position:'sticky', top:80 }}>
+      <div className="form-sticky-right" style={{ position:'sticky', top:80 }}>
         <div className="card">
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
             <div className="card-title">사진</div>
@@ -199,27 +208,41 @@ export function SampleFormBody({ form, setForm }) {
           {photos.length > 0 && (
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
               {photos.map((p, i) => (
-                <div key={i} style={{ position:'relative', aspectRatio:'4/3', borderRadius:8, overflow:'hidden', background:'var(--surface-2)' }}>
-                  <img src={p.data} alt={p.name}
-                    style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                  <button
-                    onClick={() => removePhoto(i)}
-                    style={{
-                      position:'absolute', top:4, right:4,
-                      background:'rgba(0,0,0,0.55)', border:'none', borderRadius:'50%',
-                      width:22, height:22, cursor:'pointer', display:'flex',
-                      alignItems:'center', justifyContent:'center', padding:0,
+                <div key={i} style={{ borderRadius:8, overflow:'visible', background:'transparent' }}>
+                  <div style={{ position:'relative', aspectRatio:'4/3', borderRadius:8, overflow:'hidden', background:'var(--surface-2)' }}>
+                    <img src={p.data} alt={p.name}
+                      style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                    <button
+                      onClick={() => removePhoto(i)}
+                      style={{
+                        position:'absolute', top:4, right:4,
+                        background:'rgba(0,0,0,0.55)', border:'none', borderRadius:'50%',
+                        width:22, height:22, cursor:'pointer', display:'flex',
+                        alignItems:'center', justifyContent:'center', padding:0,
+                      }}
+                    >
+                      <Icon.close style={{ width:11, height:11, color:'#fff' }}/>
+                    </button>
+                    {i === 0 && (
+                      <span style={{
+                        position:'absolute', bottom:4, left:4,
+                        background:'rgba(0,0,0,0.5)', color:'#fff',
+                        fontSize:9, padding:'1px 5px', borderRadius:4, fontWeight:700,
+                      }}>대표</span>
+                    )}
+                  </div>
+                  {/* 사진 캡션 */}
+                  <input
+                    className="form-input"
+                    style={{ marginTop:4, fontSize:11, padding:'4px 8px' }}
+                    value={p.caption || ''}
+                    onChange={e => {
+                      const updated = [...photos];
+                      updated[i] = { ...updated[i], caption: e.target.value };
+                      upd('photos', updated);
                     }}
-                  >
-                    <Icon.close style={{ width:11, height:11, color:'#fff' }}/>
-                  </button>
-                  {i === 0 && (
-                    <span style={{
-                      position:'absolute', bottom:4, left:4,
-                      background:'rgba(0,0,0,0.5)', color:'#fff',
-                      fontSize:9, padding:'1px 5px', borderRadius:4, fontWeight:700,
-                    }}>대표</span>
-                  )}
+                    placeholder="캡션 (선택)"
+                  />
                 </div>
               ))}
               {photos.length < MAX_PHOTOS && (
@@ -245,12 +268,19 @@ export function SampleFormBody({ form, setForm }) {
 }
 
 function StarPicker({ value, onChange }) {
+  function handleClick(e, n) {
+    const btn = e.currentTarget;
+    btn.classList.remove('star-pop');
+    void btn.offsetWidth;
+    btn.classList.add('star-pop');
+    onChange(value === n ? 0 : n);
+  }
   return (
     <div style={{ display:'flex', gap:4, alignItems:'center' }}>
       {[1, 2, 3, 4, 5].map(n => (
         <button
           key={n}
-          onClick={() => onChange(value === n ? 0 : n)}
+          onClick={e => handleClick(e, n)}
           style={{
             background:'none', border:'none', cursor:'pointer', padding:'2px',
             fontSize:22, lineHeight:1, color: n <= value ? '#F5A623' : 'var(--border)',

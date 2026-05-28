@@ -3,27 +3,26 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from './icons';
 import { getProfile, getInitial } from '@/lib/profile';
-import { initDB } from '@/lib/db';
-import { getIssues } from '@/lib/sales';
+import { getSetting, setSetting } from '@/lib/settings';
+import { COMPANIES } from '@/lib/companies';
 
-export default function TopBar({ onOpenPalette, onToggleSidebar }) {
+export default function TopBar({ onOpenPalette, onToggleSidebar, activeCompany, onCompanyChange, unmatchedCount = 0 }) {
   const [notifOpen, setNotifOpen] = useState(false);
+  const [companyOpen, setCompanyOpen] = useState(false);
   const [profile, setProfile] = useState(null);
-  const [unmatchedCount, setUnmatchedCount] = useState(0);
+  const [dark, setDark] = useState(false);
   const notifRef = useRef(null);
+  const companyRef = useRef(null);
   const router = useRouter();
 
+  useEffect(() => { setDark(getSetting('theme') === 'dark'); }, []);
   useEffect(() => { setProfile(getProfile()); }, []);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        await initDB();
-        const issues = await getIssues({ status: 'open' });
-        setUnmatchedCount(issues.length);
-      } catch { /* ignore */ }
-    })();
-  }, []);
+  const toggleDark = () => {
+    const next = !dark;
+    setDark(next);
+    setSetting('theme', next ? 'dark' : 'light');
+  };
 
   useEffect(() => {
     if (!notifOpen) return;
@@ -31,6 +30,13 @@ export default function TopBar({ onOpenPalette, onToggleSidebar }) {
     window.addEventListener('mousedown', h);
     return () => window.removeEventListener('mousedown', h);
   }, [notifOpen]);
+
+  useEffect(() => {
+    if (!companyOpen) return;
+    const h = (e) => { if (companyRef.current && !companyRef.current.contains(e.target)) setCompanyOpen(false); };
+    window.addEventListener('mousedown', h);
+    return () => window.removeEventListener('mousedown', h);
+  }, [companyOpen]);
 
   // 실제 알림 (미매칭 발생 시 표시)
   const notifs = unmatchedCount > 0
@@ -47,7 +53,7 @@ export default function TopBar({ onOpenPalette, onToggleSidebar }) {
   const meta = {
     alert: { bg: 'var(--negative-soft)', color: 'var(--negative)',    ico: <Icon.alert  style={{width:16,height:16}}/> },
     info:  { bg: 'var(--accent-soft)',   color: 'var(--accent-text)', ico: <Icon.upload style={{width:16,height:16}}/> },
-    note:  { bg: '#F0EBFF',              color: '#6B3FCB',            ico: <Icon.beaker style={{width:16,height:16}}/> },
+    note:  { bg: 'var(--note-ico-bg)',    color: 'var(--note-ico-color)', ico: <Icon.beaker style={{width:16,height:16}}/> },
     ok:    { bg: 'var(--positive-soft)', color: 'var(--positive)',    ico: <Icon.check  style={{width:16,height:16}}/> },
   };
 
@@ -59,10 +65,41 @@ export default function TopBar({ onOpenPalette, onToggleSidebar }) {
         </svg>
       </button>
 
-      <div className="company-pick">
-        <img className="company-logo" src="/logo-7thstreet.png" alt="" />
-        <div>7번가피자 본사</div>
-        <Icon.chevDown className="arrow" style={{width:14, height:14}} />
+      <div className="company-wrap" ref={companyRef}>
+        <button className="company-pick" onClick={() => setCompanyOpen(v => !v)}>
+          {activeCompany.logo
+            ? <img className="company-logo" src={activeCompany.logo} alt=""
+                style={{objectFit:'contain', background:'white', padding:2, borderRadius:4}} />
+            : <span className="company-avatar" style={{background: activeCompany.color}}>
+                {activeCompany.name[0]}
+              </span>}
+          <div>{activeCompany.name}</div>
+          <Icon.chevDown className="arrow" style={{width:14, height:14, transition:'transform 160ms', transform: companyOpen ? 'rotate(180deg)' : 'rotate(0deg)'}} />
+        </button>
+
+        {companyOpen && (
+          <div className="company-drop">
+            <div className="company-drop-label">브랜드 선택</div>
+            {COMPANIES.map(c => (
+              <button
+                key={c.id}
+                className={'company-drop-item' + (activeCompany.id === c.id ? ' active' : '')}
+                onClick={() => { onCompanyChange(c); setCompanyOpen(false); }}
+              >
+                <span className="cdrop-logo">
+                  {c.logo
+                    ? <img src={c.logo} alt="" style={{width:36, height:28, objectFit:'contain', borderRadius:4, background:'white', padding:2}} />
+                    : <span className="cdrop-avatar" style={{background: c.color}}>{c.name[0]}</span>}
+                </span>
+                <span className="cdrop-info">
+                  <span className="cdrop-name">{c.name}</span>
+                  <span className="cdrop-sub">{c.sub}</span>
+                </span>
+                {activeCompany.id === c.id && <Icon.check style={{width:14, height:14, color:'var(--accent)', flexShrink:0}} />}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <button className="search" onClick={onOpenPalette} title="메뉴 · 재료 · 노트 통합 검색">
@@ -71,8 +108,14 @@ export default function TopBar({ onOpenPalette, onToggleSidebar }) {
         <kbd>⌘K</kbd>
       </button>
 
-      <button className="icon-btn" title="새 노트">
+      <button className="icon-btn" title="새 노트" onClick={() => router.push('/note/write')}>
         <Icon.plus style={{width:18, height:18}} />
+      </button>
+
+      <button className="icon-btn" onClick={toggleDark} title={dark ? '라이트 모드' : '다크 모드'}>
+        {dark
+          ? <Icon.sun  style={{width:18, height:18}} />
+          : <Icon.moon style={{width:18, height:18}} />}
       </button>
 
       <div className="notif-wrap" ref={notifRef}>
@@ -84,7 +127,7 @@ export default function TopBar({ onOpenPalette, onToggleSidebar }) {
           <div className="notif-pop">
             <div className="notif-head">
               <div className="notif-title">알림</div>
-              <button className="link">모두 읽음</button>
+              <button className="link" onClick={() => setNotifOpen(false)}>모두 읽음</button>
             </div>
             <div className="notif-list">
               {notifs.length === 0 ? (

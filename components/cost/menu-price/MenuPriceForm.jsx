@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { MENU_PRICE_CATEGORIES, defaultSizesFor } from '@/lib/cost/menu-price';
 
-const EMPTY = { category: '피자', menuName: '', size: 'L', price: '', note: '' };
+const EMPTY = { menuCode: '', category: '피자', menuName: '', size: 'L', price: '', note: '' };
 
 export function MenuPriceForm({ initial, onSave, onClose }) {
   const [form, setForm] = useState(initial ? toForm(initial) : EMPTY);
@@ -45,7 +45,6 @@ export function MenuPriceForm({ initial, onSave, onClose }) {
   const isNew = !initial;
   const title = isNew ? '메뉴 판매가 추가' : '메뉴 판매가 수정';
   const sizes = defaultSizesFor(form.category);
-  const existingCode = initial?.menuCode;
 
   return createPortal(
     <div style={{
@@ -64,23 +63,15 @@ export function MenuPriceForm({ initial, onSave, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap:14}}>
-          {existingCode && (
-            <Field label="메뉴코드" hint="기존 코드 유지 (자동 발급됨)">
-              <div style={{
-                padding:'8px 12px', fontFamily:"'JetBrains Mono', ui-monospace, monospace",
-                fontSize:13, color:'var(--text-2)',
-                background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:8,
-              }}>{existingCode}</div>
-            </Field>
-          )}
-          {!existingCode && (
-            <Field label="메뉴코드" hint="저장 시 자동 발급 (PZ/IP/SD/ST 형식)">
-              <div style={{
-                padding:'8px 12px', fontSize:12, color:'var(--text-4)', fontStyle:'italic',
-                background:'var(--surface-2)', border:'1px dashed var(--border)', borderRadius:8,
-              }}>저장 시 자동 발급됩니다</div>
-            </Field>
-          )}
+          <Field label="메뉴코드" hint={isNew ? '비워두면 저장 시 자동 발급 (PZ/IP/SD/ST/TS 형식)' : '코드를 직접 수정할 수 있어요'}>
+            <input
+              className="form-input"
+              value={form.menuCode}
+              onChange={e => set('menuCode', e.target.value.toUpperCase())}
+              placeholder="예) PZ-001-L  (비우면 자동 발급)"
+              style={{fontFamily:"'JetBrains Mono', ui-monospace, monospace", letterSpacing:'0.04em'}}
+            />
+          </Field>
 
           <Field label="분류" required>
             <select className="form-input" value={form.category}
@@ -135,11 +126,14 @@ export function MenuPriceForm({ initial, onSave, onClose }) {
   );
 }
 
-function Field({ label, required, error, children }) {
+function Field({ label, required, hint, error, children }) {
   return (
     <div>
-      <div style={{fontSize:13, fontWeight:600, color:'var(--text-2)', marginBottom:6}}>
-        {label}{required && <span style={{color:'var(--negative)', marginLeft:2}}>*</span>}
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:6}}>
+        <span style={{fontSize:13, fontWeight:600, color:'var(--text-2)'}}>
+          {label}{required && <span style={{color:'var(--negative)', marginLeft:2}}>*</span>}
+        </span>
+        {hint && <span style={{fontSize:11, color:'var(--text-4)'}}>{hint}</span>}
       </div>
       {children}
       {error && <div style={{fontSize:12, color:'var(--negative)', marginTop:4}}>{error}</div>}
@@ -149,6 +143,7 @@ function Field({ label, required, error, children }) {
 
 function toForm(r) {
   return {
+    menuCode: r.menuCode || '',
     category: r.category || '피자',
     menuName: r.menuName || '',
     size:     r.size     || (r.category === '피자' ? 'L' : '단일'),

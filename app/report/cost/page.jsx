@@ -7,6 +7,7 @@ import { Icon } from '@/components/icons';
 import { initDB } from '@/lib/db/init';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
 import { useDraftRestore } from '@/lib/report/useDraftRestore';
+import { getProfile } from '@/lib/profile';
 
 const matchEdge = (cat) => cat === '엣지' || cat === '엣지&도우' || cat === '엣지 & 도우';
 
@@ -187,7 +188,7 @@ export default function Page() {
             <span>·</span>
             <span>위험 기준 {riskThreshold}%↑</span>
             <span>·</span>
-            <span className="mono">단가 기준 {new Date().toLocaleDateString('ko-KR').slice(0,-1)} · 민혁 책임</span>
+            <span className="mono">단가 기준 {new Date().toLocaleDateString('ko-KR').slice(0,-1)} · {getProfile().name}</span>
           </div>
         </div>
 

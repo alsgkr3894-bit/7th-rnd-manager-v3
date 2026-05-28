@@ -64,6 +64,7 @@ export function PizzaSummaryTable({ rows }) {
         <span><span style={{color:'var(--negative)'}}>●</span> 원가율 35%↑ 위험</span>
         <span><span style={{color:'var(--warn)'}}>●</span> 30~35% 주의</span>
         <span style={{color:'var(--text-4)'}}>※ 베이스(피자 세부) + 엣지·도우 자동 합산</span>
+        <span style={{color:'var(--text-4)'}}>씬도우는 L규격만 제공</span>
       </div>
     </div>
   );

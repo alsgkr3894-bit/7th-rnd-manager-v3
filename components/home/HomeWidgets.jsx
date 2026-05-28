@@ -2,6 +2,58 @@
 import { Icon } from '@/components/icons';
 import { STATUS_COLORS, STATUS_BORDER } from '@/lib/note';
 
+export function SampleStatsWidget({ samples, router }) {
+  if (!samples || samples.length === 0) return null;
+  const rated = samples.filter(s => s.rating > 0);
+  const avg = rated.length > 0 ? rated.reduce((a, s) => a + s.rating, 0) / rated.length : 0;
+  const withPhoto = samples.filter(s => (s.photos?.length || 0) > 0).length;
+  const recent = [...samples].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 3);
+  return (
+    <div className="card">
+      <div className="card-header">
+        <div>
+          <div className="card-title">샘플기록</div>
+          <div className="card-sub">
+            총 {samples.length}개 · 사진 {withPhoto}개 · 평균 {avg.toFixed(1)}점
+          </div>
+        </div>
+        <button className="link accent" onClick={() => router.push('/note/sample')}>전체 →</button>
+      </div>
+      <div style={{display:'flex', flexDirection:'column', gap:6}}>
+        {recent.map(s => (
+          <div key={s.id}
+            onClick={() => router.push(`/note/sample/${s.id}`)}
+            style={{
+              display:'flex', alignItems:'center', gap:10,
+              padding:'8px 12px', borderRadius:8,
+              background:'var(--surface-2)', cursor:'pointer',
+            }}
+          >
+            {s.photos?.[0] ? (
+              <img src={s.photos[0].data} alt=""
+                style={{width:40, height:32, objectFit:'cover', borderRadius:6, flexShrink:0}}/>
+            ) : (
+              <div style={{width:40, height:32, borderRadius:6, background:'var(--border)',
+                display:'grid', placeItems:'center', fontSize:14, flexShrink:0}}>📷</div>
+            )}
+            <div style={{flex:1, minWidth:0}}>
+              <div style={{fontSize:13, fontWeight:600, color:'var(--text-1)',
+                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+              }}>{s.title}</div>
+              <div style={{fontSize:11, color:'var(--text-3)'}}>{s.menuName}</div>
+            </div>
+            {s.rating > 0 && (
+              <span style={{fontSize:11, color:'#F5A623', flexShrink:0, letterSpacing:1}}>
+                {'★'.repeat(s.rating)}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export const rowButtonStyle = {
   border: 'none',
   background: 'transparent',

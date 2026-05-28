@@ -1,7 +1,6 @@
 'use client';
-import { useState } from 'react';
 import { Icon } from '@/components/icons';
-import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 
 export default function Page() {

@@ -2,10 +2,16 @@
 import { useState, useEffect } from 'react';
 
 let _setToasts = null;
+let _toastSeq = 0;
 
 export function ToastContainer() {
   const [toasts, setToasts] = useState([]);
   useEffect(() => { _setToasts = setToasts; return () => { _setToasts = null; }; }, []);
+
+  function dismiss(id) {
+    _setToasts(t => t.map(x => x.id === id ? { ...x, exiting: true } : x));
+    setTimeout(() => _setToasts(t => t.filter(x => x.id !== id)), 220);
+  }
 
   const icons = {
     ok:    <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><polyline points="2,8 6,12 14,4"/></svg>,
@@ -19,16 +25,30 @@ export function ToastContainer() {
         <div key={t.id} className={'toast ' + t.type + (t.exiting ? ' exit' : '')}>
           <div className="toast-icon">{icons[t.type] || icons.ok}</div>
           {t.msg}
+          {t.action && (
+            <button
+              className="toast-action"
+              onClick={() => { dismiss(t.id); t.action.onClick(); }}
+            >
+              {t.action.label}
+            </button>
+          )}
+          <button className="toast-dismiss" onClick={() => dismiss(t.id)} title="닫기">
+            <svg viewBox="0 0 16 16" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round">
+              <path d="M3 3l10 10M13 3L3 13"/>
+            </svg>
+          </button>
         </div>
       ))}
     </div>
   );
 }
 
-export function showToast(msg, type = 'ok', duration = 2800) {
+export function showToast(msg, type = 'ok', duration = 2800, action = null) {
   if (!_setToasts) return;
-  const id = Date.now() + Math.random();
-  _setToasts(t => [...t, { id, msg, type }]);
+  const id = ++_toastSeq;
+  const resolvedType = type === 'err' ? 'error' : type;
+  _setToasts(t => [...t, { id, msg, type: resolvedType, action }]);
   setTimeout(() => {
     _setToasts(t => t.map(x => x.id === id ? { ...x, exiting: true } : x));
     setTimeout(() => _setToasts(t => t.filter(x => x.id !== id)), 220);

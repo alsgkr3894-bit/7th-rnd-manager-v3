@@ -15,6 +15,7 @@ import { MenuPriceUploadCard } from '@/components/cost/menu-price/MenuPriceUploa
 export default function Page() {
   const [rows, setRows]             = useState([]);
   const [loading, setLoading]       = useState(true);
+  const [dbError, setDbError]       = useState(null);
   const [search, setSearch]         = useState('');
   const [catFilter, setCatFilter]   = useState('all');
   const [formTarget, setFormTarget] = useState(null);
@@ -26,7 +27,7 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    load().catch(console.error).finally(() => setLoading(false));
+    load().catch(err => { console.error(err); setDbError(err.message || '데이터 로드 실패'); }).finally(() => setLoading(false));
   }, [load]);
 
   async function handleSave(data) {
@@ -39,7 +40,7 @@ export default function Page() {
         showToast('수정 완료', 'ok');
       }
       setFormTarget(null);
-      await load();
+      setRows(await getAllMenuPrices());
     } catch (err) {
       showToast('저장 실패: ' + err.message, 'err');
       throw err;
@@ -83,6 +84,13 @@ export default function Page() {
     : rows.length === 0
       ? '메뉴 판매가가 등록되지 않았습니다 — 양식 업로드 또는 직접 추가'
       : `총 ${rows.length}개 등록 · 종합 원가표에서 원가율 자동 계산에 사용`;
+
+  if (dbError) return (
+    <main className="main">
+      <PageHeader breadcrumb={['원가계산', '메뉴 판매가']} title="메뉴 판매가" sub="로드 실패"/>
+      <div className="card" style={{padding:32, textAlign:'center', color:'var(--negative)'}}>데이터베이스 오류: {dbError}</div>
+    </main>
+  );
 
   return (
     <main className="main">

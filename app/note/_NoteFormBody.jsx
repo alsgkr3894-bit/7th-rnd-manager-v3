@@ -4,7 +4,8 @@ import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getAllIngredients } from '@/lib/ingredient';
-import { CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS } from '@/lib/note';
+import { CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS, getAllNotes } from '@/lib/note';
+import { TagInput } from '@/components/ui/TagInput';
 
 export const INIT = {
   title: '', menuName: '', category: CATEGORIES[0], noteType: NOTE_TYPES[0],
@@ -16,6 +17,16 @@ export const INIT = {
 
 export function NoteFormBody({ form, setForm }) {
   function upd(k, v) { setForm(f => ({ ...f, [k]: v })); }
+  const [allTags, setAllTags] = useState([]);
+  const [touched, setTouched] = useState({});
+  function touch(k) { setTouched(t => ({ ...t, [k]: true })); }
+  useEffect(() => {
+    initDB().then(() => getAllNotes()).then(notes => {
+      const set = new Set();
+      notes.forEach(n => (n.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => set.add(t)));
+      setAllTags([...set]);
+    }).catch(() => {});
+  }, []);
 
   const reportText = useMemo(() => `[메뉴개발노트 보고용]
 메뉴명: ${form.menuName || '—'}
@@ -111,7 +122,7 @@ ${form.reportSummary || '—'}`, [form]);
   const costRate = sellNum > 0 ? (totalCost / sellNum * 100).toFixed(1) : null;
 
   return (
-    <div style={{display:'grid', gridTemplateColumns:'1fr 360px', gap:24, marginTop:24, alignItems:'start'}}>
+    <div className="form-layout" style={{display:'grid', gridTemplateColumns:'1fr 360px', gap:24, marginTop:24, alignItems:'start'}}>
       {/* ── 좌측: 폼 카드들 ── */}
       <div style={{display:'flex', flexDirection:'column', gap:16}}>
 
@@ -119,16 +130,18 @@ ${form.reportSummary || '—'}`, [form]);
         <div className="card">
           <div className="card-title" style={{marginBottom:16}}>필수 항목</div>
 
-          <Field label="제목" required>
+          <Field label="제목" required error={touched.title && !form.title.trim()}>
             <input className="form-input" value={form.title}
               onChange={e => upd('title', e.target.value)}
+              onBlur={() => touch('title')}
               placeholder="예) 횡성한우 와사비마요 조합 테스트"/>
           </Field>
 
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
-            <Field label="메뉴명" required>
+            <Field label="메뉴명" required error={touched.menuName && !form.menuName.trim()}>
               <input className="form-input" value={form.menuName}
                 onChange={e => upd('menuName', e.target.value)}
+                onBlur={() => touch('menuName')}
                 placeholder="예) 횡성한우쉬림프"/>
             </Field>
             <Field label="테스트 날짜">
@@ -166,10 +179,11 @@ ${form.reportSummary || '—'}`, [form]);
             </div>
           </Field>
 
-          <Field label="핵심 테스트 내용" required>
+          <Field label="핵심 테스트 내용" required error={touched.testContent && !form.testContent.trim()}>
             <textarea className="form-input" style={{minHeight:100, resize:'vertical'}}
               value={form.testContent}
               onChange={e => upd('testContent', e.target.value)}
+              onBlur={() => touch('testContent')}
               placeholder="테스트 조건, 온도·시간·재료 비율, 핵심 변경사항 등을 기록하세요."/>
           </Field>
         </div>
@@ -228,10 +242,8 @@ ${form.reportSummary || '—'}`, [form]);
               placeholder="보고 시 사용할 요약 문구를 입력하세요."/>
           </Field>
 
-          <Field label="태그" hint="콤마로 구분: 재테스트, 매운맛강화, 원가검토">
-            <input className="form-input" value={form.tags}
-              onChange={e => upd('tags', e.target.value)}
-              placeholder="예) 치즈강화, 230도, 재테스트"/>
+          <Field label="태그" hint="입력 후 Enter 또는 콤마">
+            <TagInput value={form.tags} onChange={v => upd('tags', v)} suggestions={allTags}/>
           </Field>
         </div>
 
@@ -252,6 +264,16 @@ ${form.reportSummary || '—'}`, [form]);
               onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
               placeholder="재료명 검색 후 클릭해서 추가…"
             />
+            {showDropdown && ingSearch.trim() && filteredIngs.length === 0 && (
+              <div style={{
+                position:'absolute', top:'calc(100% + 4px)', left:0, right:0, zIndex:20,
+                background:'var(--surface)', border:'1px solid var(--border)',
+                borderRadius:8, boxShadow:'0 4px 16px rgba(0,0,0,0.12)',
+                padding:'12px 14px', fontSize:12, color:'var(--text-3)',
+              }}>
+                "{ingSearch}" 결과 없음 — 식자재 관리에서 먼저 등록하세요
+              </div>
+            )}
             {showDropdown && filteredIngs.length > 0 && (
               <div style={{
                 position:'absolute', top:'calc(100% + 4px)', left:0, right:0, zIndex:20,
@@ -385,7 +407,7 @@ ${form.reportSummary || '—'}`, [form]);
       </div>
 
       {/* ── 우측: 요약 카드 ── */}
-      <div style={{position:'sticky', top:80}}>
+      <div className="form-sticky-right" style={{position:'sticky', top:80}}>
         <div className="card">
           <div className="card-title" style={{marginBottom:8}}>보고용 요약</div>
           <div style={{fontSize:12, color:'var(--text-3)', marginBottom:12}}>
@@ -426,15 +448,18 @@ function SegGroup({ options, value, onChange }) {
   );
 }
 
-function Field({ label, required, hint, children }) {
+function Field({ label, required, hint, error, children }) {
   return (
     <div style={{marginBottom:14}}>
-      <div style={{fontSize:12, fontWeight:700, color:'var(--text-3)', marginBottom:6}}>
+      <div style={{fontSize:12, fontWeight:700, color: error ? 'var(--negative)' : 'var(--text-3)', marginBottom:6}}>
         {label}
         {required && <span style={{color:'var(--negative)', marginLeft:2}}>*</span>}
         {hint && <span style={{fontSize:11, fontWeight:400, color:'var(--text-4)', marginLeft:6}}>{hint}</span>}
+        {error && <span style={{fontSize:11, fontWeight:400, marginLeft:6}}>필수 항목입니다</span>}
       </div>
-      {children}
+      <div style={error ? {outline:'1.5px solid var(--negative)', borderRadius:8} : undefined}>
+        {children}
+      </div>
     </div>
   );
 }

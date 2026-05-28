@@ -15,6 +15,7 @@ import { EdgeEditModal } from '@/components/cost/edge-dough/EdgeEditModal';
 export default function Page() {
   const [edges,   setEdges]   = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dbError, setDbError] = useState(null);
   const [target,  setTarget]  = useState(null);
   const [deletePending, setDeletePending] = useState(null);
   const [seeding, setSeeding] = useState(false);
@@ -27,7 +28,7 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    load().catch(console.error).finally(() => setLoading(false));
+    load().catch(err => { console.error(err); setDbError(err.message || '데이터 로드 실패'); }).finally(() => setLoading(false));
   }, [load]);
 
   async function handleSave(data) {
@@ -35,7 +36,7 @@ export default function Page() {
       await upsertEdge(data);
       showToast('저장 완료', 'ok');
       setTarget(null);
-      await load();
+      setEdges(await getAllEdges());
     } catch (err) {
       showToast('저장 실패: ' + err.message, 'err');
       throw err;
@@ -59,7 +60,7 @@ export default function Page() {
     try {
       const result = await seedEdges();
       showToast(`마스터 시드 완료 — 신규 ${result.inserted}개`, 'ok');
-      await load();
+      setEdges(await getAllEdges());
     } catch (err) {
       showToast('시드 실패: ' + err.message, 'err');
     } finally { setSeeding(false); }
@@ -72,7 +73,7 @@ export default function Page() {
       const result = await resetAllEdges();
       showToast(`초기화 완료 — ${result.deleted}개 삭제`, 'ok');
       setResetConfirm(false);
-      await load();
+      setEdges([]);
     } catch (err) {
       showToast('초기화 실패: ' + err.message, 'err');
     } finally { setResetting(false); }
@@ -86,6 +87,13 @@ export default function Page() {
     : edges.length === 0
       ? '등록된 엣지·도우가 없습니다 — 마스터 시드로 5종 일괄 등록 또는 직접 추가'
       : `${filled}/${edges.length}개 구성 완료 · 합계 ${formatNumber(totalSum)}원 (피자 세부 원가에서 참조)`;
+
+  if (dbError) return (
+    <main className="main">
+      <PageHeader breadcrumb={['원가계산', '엣지 & 도우']} title="엣지 & 도우 원가표" sub="로드 실패"/>
+      <div className="card" style={{padding:32, textAlign:'center', color:'var(--negative)'}}>데이터베이스 오류: {dbError}</div>
+    </main>
+  );
 
   return (
     <main className="main">

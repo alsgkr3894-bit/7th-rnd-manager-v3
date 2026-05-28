@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -14,6 +14,28 @@ export default function Page() {
     testDate: new Date().toISOString().slice(0, 10),
   }));
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('v3:sample-from-note');
+      if (raw) {
+        sessionStorage.removeItem('v3:sample-from-note');
+        const d = JSON.parse(raw);
+        setForm(f => ({
+          ...f,
+          menuName: d.menuName || f.menuName,
+          category: d.category || f.category,
+          tags:     d.tags     || f.tags,
+        }));
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    const h = e => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave(); } };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [form]);
 
   async function handleSave() {
     if (!form.title.trim() || !form.menuName.trim()) {

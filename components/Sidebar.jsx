@@ -4,37 +4,31 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Icon } from './icons';
 import { NAV_HOME, NAV_SECTIONS } from '@/lib/menu';
 import { initDB } from '@/lib/db';
-import { getIssues } from '@/lib/sales';
 import { getPriceFiles } from '@/lib/price';
 
 /**
  * 사이드바 컴포넌트
  * 메뉴 데이터는 @/lib/menu.js에 분리 (이 컴포넌트는 렌더링만 담당)
  */
-export default function Sidebar({ onClose }) {
+export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0 }) {
   const pathname = usePathname();
   const router = useRouter();
   const sidebarRef = useRef(null);
   const [pillStyle, setPillStyle] = useState({ top: 0, opacity: 0 });
-  const [unmatchedCount, setUnmatchedCount] = useState(0);
   const [latestPrice, setLatestPrice] = useState(null);
 
-  // 미매칭 + 최신 제때 단가 — pathname 변경 시 재조회
+  // 최신 제때 단가 조회 — 마운트 1회만
   useEffect(() => {
     (async () => {
       try {
         await initDB();
-        const [issues, files] = await Promise.all([
-          getIssues({ status: 'open' }),
-          getPriceFiles(),
-        ]);
-        setUnmatchedCount(issues.length);
+        const files = await getPriceFiles();
         setLatestPrice(files[0] || null);
       } catch { /* ignore */ }
     })();
-  }, [pathname]);
+  }, []);
 
-  // 동적 badge — 그룹/항목 id별 매핑
+  // 동적 badge
   const dynamicBadge = (id) => {
     if (id === 'menu-sales' || id === 'menu-sales-unmatched') {
       return unmatchedCount > 0 ? unmatchedCount : null;
@@ -53,16 +47,23 @@ export default function Sidebar({ onClose }) {
     return group.children?.some(c => c.href && (pathname === c.href || pathname.startsWith(c.href + '/')));
   };
 
-  // 초기 펼침 상태 — 현재 활성 그룹만 열린 상태로
-  const [openIds, setOpenIds] = useState(() => {
+  const [openIds, setOpenIds] = useState({});
+
+  // 마운트 후 localStorage 복원 (SSR 불일치 방지)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('v3:sidebar-open');
+      if (saved) { setOpenIds(JSON.parse(saved)); return; }
+    } catch {}
     const opened = {};
     NAV_SECTIONS.forEach(section => {
       section.groups.forEach(g => {
         if (isGroupActive(g)) opened[g.id] = true;
       });
     });
-    return opened;
-  });
+    setOpenIds(opened);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 활성 항목 위치로 pill 이동
   useEffect(() => {
@@ -75,7 +76,11 @@ export default function Sidebar({ onClose }) {
     setPillStyle({ top: eRect.top - sRect.top + sidebar.scrollTop, opacity: 1 });
   }, [pathname]);
 
-  const toggle = (id) => setOpenIds(o => ({ ...o, [id]: !o[id] }));
+  const toggle = (id) => setOpenIds(o => {
+    const next = { ...o, [id]: !o[id] };
+    try { localStorage.setItem('v3:sidebar-open', JSON.stringify(next)); } catch {}
+    return next;
+  });
 
   const navigate = (href) => {
     router.push(href);
@@ -144,9 +149,15 @@ export default function Sidebar({ onClose }) {
     <aside className="sidebar" ref={sidebarRef}>
       <div className="sidebar-pill" style={{ top: pillStyle.top, opacity: pillStyle.opacity }} />
       <a className="brand" href="/" onClick={e => { e.preventDefault(); navigate('/'); }}>
-        <img className="logo-img" src="/logo-7thstreet.png" alt="7th Street Pizza" />
+        {activeCompany?.logo
+          ? <img className="logo-img" src={activeCompany.logo} alt={activeCompany.name}
+              style={{objectFit:'contain', background:'white', padding:2}} />
+          : <span className="logo-img" style={{background: activeCompany?.color || '#E1101F',
+              display:'grid', placeItems:'center', color:'white', fontWeight:800, fontSize:14}}>
+              {activeCompany?.name?.[0] || '7'}
+            </span>}
         <div className="brand-text">
-          <div className="brand-line1">7번가 R&amp;D</div>
+          <div className="brand-line1">{activeCompany?.name || '7번가 R&D'}</div>
           <div className="brand-line2">플랫폼</div>
         </div>
       </a>

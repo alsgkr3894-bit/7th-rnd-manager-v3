@@ -25,8 +25,10 @@ export default function Page() {
   const [saving,         setSaving]        = useState(false);
   const [fromTitle,      setFromTitle]     = useState('');
   const [showDraftBanner, setShowDraftBanner] = useState(false);
-  const skipRef  = useRef(true);
-  const timerRef = useRef(null);
+  const [draftStatus,    setDraftStatus]   = useState('idle'); // idle | saving | saved
+  const skipRef    = useRef(true);
+  const timerRef   = useRef(null);
+  const draftTimer = useRef(null);
 
   useEffect(() => {
     let fromId = null;
@@ -58,8 +60,22 @@ export default function Page() {
   useEffect(() => {
     if (skipRef.current) { skipRef.current = false; return; }
     clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => saveDraft(form), 800);
-    return () => clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setDraftStatus('saving');
+      saveDraft(form);
+      clearTimeout(draftTimer.current);
+      draftTimer.current = setTimeout(() => {
+        setDraftStatus('saved');
+        draftTimer.current = setTimeout(() => setDraftStatus('idle'), 2000);
+      }, 400);
+    }, 800);
+    return () => { clearTimeout(timerRef.current); clearTimeout(draftTimer.current); };
+  }, [form]);
+
+  useEffect(() => {
+    const h = e => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave(); } };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
   }, [form]);
 
   async function handleSave() {
@@ -98,12 +114,18 @@ export default function Page() {
         title="노트 작성"
         sub={fromTitle ? `"${fromTitle}" 기반 새 버전` : '테스트 조건과 평가를 기록하세요'}
         actions={
-          <>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            {draftStatus === 'saving' && (
+              <span style={{fontSize:12,color:'var(--text-3)'}}>임시저장 중…</span>
+            )}
+            {draftStatus === 'saved' && (
+              <span style={{fontSize:12,color:'var(--positive)',animation:'fade 200ms ease'}}>✓ 임시저장됨</span>
+            )}
             <button className="btn" onClick={handleCancel}>취소</button>
             <button className="btn primary" onClick={handleSave} disabled={saving}>
               {saving ? '저장 중…' : '저장하기'}
             </button>
-          </>
+          </div>
         }
       />
       {fromTitle && (

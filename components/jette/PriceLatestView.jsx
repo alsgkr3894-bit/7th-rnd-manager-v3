@@ -6,7 +6,6 @@ import { SortableTh } from '@/components/ui/SortableTh';
 import { formatNumber } from '@/lib/format';
 import { getPriceRowsByFileId } from '@/lib/price';
 import { PriceLatestKpi } from './PriceLatestKpi';
-import { TYPE_LABEL } from './managed-products-constants';
 
 const typeInputStyle = {
   padding:'3px 6px', borderRadius:6, fontSize:12,

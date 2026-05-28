@@ -35,4 +35,9 @@ export const Icon = {
   edit:     (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>,
   trash:    (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>,
   close:    (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M18 6 6 18M6 6l12 12"/></svg>,
+  x:        (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M18 6 6 18M6 6l12 12"/></svg>,
+  copy:     (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
+  chevLeft: (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="m15 18-6-6 6-6"/></svg>,
+  moon:     (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
+  sun:      (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>,
 };
