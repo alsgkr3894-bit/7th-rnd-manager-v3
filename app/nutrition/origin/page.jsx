@@ -361,7 +361,7 @@ export default function Page() {
         sub="식재료 마스터에서 가져와 원산지를 등록하고, 출력용 표기명을 별도 설정하세요"
         actions={
           <>
-            <button className="btn" onClick={() => exportOriginToExcel(rows)} disabled={rows.length === 0}>
+            <button className="btn" onClick={() => exportOriginToExcel(rows).catch(e => showToast('출력 실패: ' + e.message, 'err'))} disabled={rows.length === 0}>
               <Icon.download style={{ width: 14, height: 14 }} />엑셀로 출력
             </button>
             <button className="btn primary" onClick={() => setModal('add')}>
