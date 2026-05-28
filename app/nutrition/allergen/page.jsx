@@ -7,9 +7,8 @@ import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getAllIngredients } from '@/lib/ingredient';
 import {
-  getAllAllergenMasters, seedAllergenMasters,
+  getAllAllergenMasters,
   getAllAllergenLinks, saveIngredientAllergens, deleteAllergenLink,
-  ALLERGEN_SEED,
 } from '@/lib/nutrition/allergen/store';
 
 /* ── 식재료 선택 + 알레르기 편집 모달 ── */
@@ -177,7 +176,6 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    await seedAllergenMasters();
     const [lks, ings, als] = await Promise.all([
       getAllAllergenLinks(),
       getAllIngredients(),
