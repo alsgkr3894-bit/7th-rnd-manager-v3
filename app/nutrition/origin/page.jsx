@@ -10,6 +10,7 @@ import { getAllOrigins, upsertOrigin, deleteOrigin } from '@/lib/nutrition/origi
 import { getAllMenuMaster } from '@/lib/menu-master';
 import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import { exportOriginToExcel } from '@/lib/nutrition/origin/export';
+import { importOriginFromTemplate, importOriginFromFile } from '@/lib/nutrition/origin/import';
 
 const QUICK_ITEMS = ['쇠고기', '돼지고기', '닭고기', '오리고기', '쌀', '배추', '콩', '고등어', '오징어', '낙지', '명태', '참치'];
 
@@ -317,6 +318,8 @@ export default function Page() {
   const [loading, setLoading]         = useState(true);
   const [search, setSearch]           = useState('');
   const [modal, setModal]             = useState(null);
+  const [importing, setImporting]     = useState(false);
+  const fileInputRef                  = useRef(null);
 
   const load = useCallback(async () => {
     await initDB();
@@ -347,6 +350,29 @@ export default function Page() {
     });
   }, [rows, search]);
 
+  const handleImportTemplate = async () => {
+    setImporting(true);
+    try {
+      const { imported, skipped, total } = await importOriginFromTemplate();
+      showToast(`${imported}개 임포트 완료 (전체 ${total}개, 건너뜀 ${skipped}개)`, 'ok');
+      load();
+    } catch (e) { showToast('임포트 실패: ' + e.message, 'err'); }
+    finally { setImporting(false); }
+  };
+
+  const handleImportFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setImporting(true);
+    try {
+      const { imported, skipped, total } = await importOriginFromFile(file);
+      showToast(`${imported}개 임포트 완료 (전체 ${total}개, 건너뜀 ${skipped}개)`, 'ok');
+      load();
+    } catch (e) { showToast('임포트 실패: ' + e.message, 'err'); }
+    finally { setImporting(false); }
+  };
+
   const handleDelete = async (row) => {
     await deleteOrigin(row.id);
     showToast(`'${row.ingredientName}' 원산지 삭제`, 'ok');
@@ -361,6 +387,15 @@ export default function Page() {
         sub="식재료 마스터에서 가져와 원산지를 등록하고, 출력용 표기명을 별도 설정하세요"
         actions={
           <>
+            {/* 숨겨진 파일 인풋 */}
+            <input ref={fileInputRef} type="file" accept=".xlsx" style={{ display: 'none' }} onChange={handleImportFile} />
+            <button className="btn" onClick={handleImportTemplate} disabled={importing}>
+              <Icon.download style={{ width: 14, height: 14 }} />
+              {importing ? '임포트 중…' : 'B타입 템플릿 가져오기'}
+            </button>
+            <button className="btn" onClick={() => fileInputRef.current?.click()} disabled={importing}>
+              <Icon.upload style={{ width: 14, height: 14 }} />파일로 가져오기
+            </button>
             <button className="btn" onClick={() => exportOriginToExcel(rows).catch(e => showToast('출력 실패: ' + e.message, 'err'))} disabled={rows.length === 0}>
               <Icon.download style={{ width: 14, height: 14 }} />엑셀로 출력
             </button>
