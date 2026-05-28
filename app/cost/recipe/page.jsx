@@ -12,6 +12,8 @@ import {
   buildUnitPriceMap, calcRecipeCost, calcCostBySizes, calcMarginRate,
   MENU_CATEGORIES,
 } from '@/lib/recipe';
+import { getAllMenuMaster } from '@/lib/menu-master/store';
+import MenuCodePicker from '@/components/ui/MenuCodePicker';
 
 const MARGIN_COLOR = (pct) => {
   if (pct == null) return 'var(--text-3)';
@@ -21,6 +23,7 @@ const MARGIN_COLOR = (pct) => {
 };
 
 const emptyDraft = () => ({
+  menuCode:     '',
   menuName:     '',
   menuCategory: '피자',
   sizes:        [{ label: 'L', sellingPrice: '' }, { label: 'R', sellingPrice: '' }],
@@ -50,6 +53,7 @@ function recToDraft(rec) {
 export default function Page() {
   const [recipes,      setRecipes]      = useState([]);
   const [allMeta,      setAllMeta]      = useState([]);
+  const [menuMasters,  setMenuMasters]  = useState([]);
   const [unitPriceMap, setUnitPriceMap] = useState(new Map());
   const [selectedId,   setSelectedId]  = useState(null);
   const [isNew,        setIsNew]        = useState(false);
@@ -61,10 +65,11 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    const [files, meta, recs] = await Promise.all([
+    const [files, meta, recs, masters] = await Promise.all([
       getPriceFiles(),
       getAllIngredients(),
       getAllRecipes(),
+      getAllMenuMaster(),
     ]);
     const latest = files[0] || null;
     let priceRowMap = new Map();
@@ -73,6 +78,7 @@ export default function Page() {
       rows.forEach(r => { if (r.productCode) priceRowMap.set(r.productCode, r); });
     }
     setAllMeta(meta);
+    setMenuMasters(masters);
     setUnitPriceMap(buildUnitPriceMap(meta, priceRowMap));
     setRecipes(recs);
   }, []);
@@ -145,7 +151,8 @@ export default function Page() {
     if (!q) return recipes;
     return recipes.filter(r =>
       (r.menuName || '').toLowerCase().includes(q) ||
-      (r.menuCategory || '').toLowerCase().includes(q)
+      (r.menuCategory || '').toLowerCase().includes(q) ||
+      (r.menuCode || '').toLowerCase().includes(q)
     );
   }, [recipes, search]);
 
@@ -220,8 +227,13 @@ export default function Page() {
                           background: active ? 'var(--accent-soft, rgba(56,189,248,.12))' : 'transparent',
                           borderLeft: active ? '3px solid var(--accent, #38bdf8)' : '3px solid transparent',
                           transition: 'background .12s' }}>
-                        <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-1)' }}>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-1)', display: 'flex', alignItems: 'center', gap: 6 }}>
                           {r.menuName}
+                          {r.menuCode && (
+                            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent-text)', background: 'var(--accent-soft)', padding: '1px 5px', borderRadius: 4, fontFamily: 'monospace' }}>
+                              {r.menuCode}
+                            </span>
+                          )}
                         </div>
                         <div style={{ marginTop: 3, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                           {(r.sizes || []).map(s => {
@@ -253,6 +265,7 @@ export default function Page() {
             draft={draft}
             setDraft={setDraft}
             allMeta={allMeta}
+            menuMasters={menuMasters}
             unitPriceMap={unitPriceMap}
             isNew={isNew}
             saving={saving}
@@ -274,7 +287,7 @@ export default function Page() {
 }
 
 // ── 레시피 편집기 ─────────────────────────────────────────────
-function RecipeEditor({ draft, setDraft, allMeta, unitPriceMap, isNew, saving, onSave, onDelete, onCancel }) {
+function RecipeEditor({ draft, setDraft, allMeta, menuMasters, unitPriceMap, isNew, saving, onSave, onDelete, onCancel }) {
 
   // 사이즈 목록 (label만 추출, 빈 것 제외)
   const sizeLabels = useMemo(
@@ -376,6 +389,18 @@ function RecipeEditor({ draft, setDraft, allMeta, unitPriceMap, isNew, saving, o
             onChange={e => setField('menuCategory', e.target.value)}>
             {MENU_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
+        </div>
+        <div style={{ gridColumn: '1 / -1' }}>
+          <FieldLabel>메뉴코드 (메뉴 마스터)</FieldLabel>
+          <MenuCodePicker
+            menuMasters={menuMasters}
+            value={draft.menuCode || ''}
+            onChange={(val, meta) => {
+              setField('menuCode', val);
+              if (meta?.category) setField('menuCategory', meta.category);
+            }}
+            dedup={true}
+          />
         </div>
       </div>
 

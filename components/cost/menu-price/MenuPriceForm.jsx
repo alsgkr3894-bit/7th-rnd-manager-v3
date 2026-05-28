@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
-import { MENU_PRICE_CATEGORIES, defaultSizesFor } from '@/lib/cost/menu-price';
+import { MENU_PRICE_CATEGORIES, defaultSizesFor, getDefaultPrice } from '@/lib/cost/menu-price';
+import { parseCategoryFromCode } from '@/lib/cost/menu-price/code';
 
 const EMPTY = { menuCode: '', category: '피자', menuName: '', size: 'L', price: '', note: '' };
 
@@ -14,11 +15,37 @@ export function MenuPriceForm({ initial, onSave, onClose }) {
   function set(key, val) {
     setForm(f => {
       const next = { ...f, [key]: val };
+
       // 분류 바뀌면 규격 자동 조정
       if (key === 'category') {
         const sizes = defaultSizesFor(val);
         if (!sizes.includes(next.size)) next.size = sizes[0];
       }
+
+      // 메뉴코드 입력 시 분류·규격·판매가 자동 채우기
+      if (key === 'menuCode' && val) {
+        const code = val.toUpperCase();
+        const parts = code.split('-');
+        const { category } = parseCategoryFromCode(code);
+
+        // 분류 자동 세팅
+        if (category && MENU_PRICE_CATEGORIES.includes(category)) {
+          next.category = category;
+          const sizes = defaultSizesFor(category);
+          if (!sizes.includes(next.size)) next.size = sizes[0];
+        }
+
+        // 사이즈 자동 세팅 (코드 마지막 부분에서 L/R/ONE 추출)
+        const lastPart = parts[parts.length - 1];
+        if (['L', 'R', 'ONE'].includes(lastPart)) next.size = lastPart;
+
+        // 기본 판매가 자동 채우기 (비어있을 때만)
+        if (!f.price) {
+          const defaultPrice = getDefaultPrice(code);
+          if (defaultPrice) next.price = String(defaultPrice);
+        }
+      }
+
       return next;
     });
   }
@@ -98,7 +125,8 @@ export function MenuPriceForm({ initial, onSave, onClose }) {
             </div>
           </Field>
 
-          <Field label="판매가 (부가세 포함)" required error={errors.price}>
+          <Field label="판매가 (부가세 포함)" required error={errors.price}
+            hint={form.menuCode ? (() => { const p = getDefaultPrice(form.menuCode.toUpperCase()); return p ? `기본가 ${p.toLocaleString()}원` : null; })() : null}>
             <div style={{display:'flex', gap:8, alignItems:'center'}}>
               <input className="form-input" type="number" value={form.price}
                 onChange={e => set('price', e.target.value)}

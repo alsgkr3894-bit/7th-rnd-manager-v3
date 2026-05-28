@@ -10,13 +10,16 @@ import {
   getAllAllergenMasters,
   getAllAllergenLinks, saveIngredientAllergens, deleteAllergenLink,
 } from '@/lib/nutrition/allergen/store';
+import { getAllMenuMaster } from '@/lib/menu-master';
+import MenuCodePicker from '@/components/ui/MenuCodePicker';
 
 /* ── 식재료 선택 + 알레르기 편집 모달 ── */
-function AllergenModal({ link, ingredients, linkedIds, allergens, onSave, onClose }) {
+function AllergenModal({ link, ingredients, linkedIds, allergens, menuMasters, onSave, onClose }) {
   const isEdit = !!link;
 
   const [selId, setSelId]             = useState(link?.ingredientId ?? null);
   const [displayName, setDisplayName] = useState(link?.displayName ?? '');
+  const [menuCode, setMenuCode]       = useState(link?.menuCode ?? '');
   const [checked, setChecked]         = useState(new Set(link?.allergenCodes ?? []));
   const [search, setSearch]           = useState('');
   const [saving, setSaving]           = useState(false);
@@ -54,6 +57,7 @@ function AllergenModal({ link, ingredients, linkedIds, allergens, onSave, onClos
         ingredientName: selIng?.ingredientName || link?.ingredientName || '',
         displayName: displayName.trim() || selIng?.ingredientName || '',
         allergenCodes: [...checked],
+        menuCode: menuCode,
       });
       showToast(isEdit ? '수정 완료' : '등록 완료', 'ok');
       onSave();
@@ -152,6 +156,14 @@ function AllergenModal({ link, ingredients, linkedIds, allergens, onSave, onClos
           </div>
         </div>
 
+        {/* 관련 메뉴 */}
+        <div style={{ marginTop: 16 }}>
+          <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>
+            관련 메뉴 <span style={{ color: 'var(--text-4)' }}>(선택)</span>
+          </label>
+          <MenuCodePicker menuMasters={menuMasters} value={menuCode} onChange={setMenuCode} />
+        </div>
+
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
           <button className="btn" onClick={() => setChecked(new Set())}>전체 해제</button>
           <button className="btn ghost" onClick={onClose}>취소</button>
@@ -170,20 +182,23 @@ export default function Page() {
   const [links, setLinks]         = useState([]);
   const [ingredients, setIngredients] = useState([]);
   const [allergens, setAllergens] = useState([]);
+  const [menuMasters, setMenuMasters] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState('');
   const [modal, setModal]         = useState(null); // null | 'add' | link
 
   const load = useCallback(async () => {
     await initDB();
-    const [lks, ings, als] = await Promise.all([
+    const [lks, ings, als, masters] = await Promise.all([
       getAllAllergenLinks(),
       getAllIngredients(),
       getAllAllergenMasters(),
+      getAllMenuMaster(),
     ]);
     setLinks(lks);
     setIngredients(ings.filter(i => !i.discontinued && !i.excluded));
     setAllergens(als);
+    setMenuMasters(masters);
     setLoading(false);
   }, []);
 
@@ -261,6 +276,7 @@ export default function Page() {
                   <th style={{ width: 100 }}>제때 코드</th>
                   <th style={{ minWidth: 130 }}>재료명 (마스터)</th>
                   <th style={{ minWidth: 110 }}>출력 표기명</th>
+                  <th style={{ minWidth: 110 }}>메뉴코드</th>
                   {allergens.map(al => (
                     <th key={al.allergenCode} style={{ width: 46, fontSize: 11, textAlign: 'center', padding: '8px 2px', wordBreak: 'keep-all', lineHeight: 1.3 }}>
                       {al.allergenName}
@@ -280,6 +296,12 @@ export default function Page() {
                         {sameAsIng
                           ? <span style={{ color: 'var(--text-3)' }}>{link.ingredientName}</span>
                           : <span style={{ color: 'var(--accent-text)' }}>{link.displayName}</span>
+                        }
+                      </td>
+                      <td>
+                        {link.menuCode
+                          ? <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--accent-text)', background: 'var(--accent-soft)', padding: '1px 6px', borderRadius: 4 }}>{link.menuCode}</span>
+                          : <span style={{ color: 'var(--text-4)' }}>—</span>
                         }
                       </td>
                       {allergens.map(al => {
@@ -318,6 +340,7 @@ export default function Page() {
           ingredients={ingredients}
           linkedIds={linkedIds}
           allergens={allergens}
+          menuMasters={menuMasters}
           onSave={() => { setModal(null); load(); }}
           onClose={() => setModal(null)}
         />

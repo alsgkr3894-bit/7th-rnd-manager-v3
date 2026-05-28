@@ -59,10 +59,17 @@ export default function Page() {
 
     // detail store rows (new system: pizza/personal/side/set)
     const DETAIL_STORE_MAP = {
-      '피자':    pizzaMap,
-      '1인피자': personalMap,
-      '사이드':  sideMap,
-      '세트박스': setMap,
+      '피자':              pizzaMap,
+      '피자/프리미엄 스페셜': pizzaMap,
+      '피자/프리미엄':     pizzaMap,
+      '피자/오리지널':     pizzaMap,
+      '피자/하프앤하프':   pizzaMap,
+      '1인피자':           personalMap,
+      '세트박스':          setMap,
+      '사이드':            sideMap,
+      '소스':              sideMap,
+      '음료':              sideMap,
+      '엣지':              sideMap,
     };
 
     const calcComponentCost = (components) =>
@@ -333,8 +340,8 @@ export default function Page() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>메뉴명</th>
-                  <th style={{ width:80 }}>카테고리</th>
+                  <th style={{ minWidth: 160, whiteSpace: 'nowrap' }}>메뉴명</th>
+                  <th style={{ width: 90, whiteSpace: 'nowrap' }}>카테고리</th>
                   {sizeLabels.map(l => (
                     <th key={l+'_c'} style={{ width:100, textAlign:'right' }}>{l} 원가</th>
                   ))}
@@ -342,8 +349,8 @@ export default function Page() {
                     <th key={l+'_p'} style={{ width:100, textAlign:'right' }}>{l} 판매가</th>
                   ))}
                   {hasAdjustment && sizeLabels.map(l => (
-                    <th key={l+'_n'} style={{ width:110, textAlign:'right', color:'var(--accent)' }}>
-                      {l} 수령액
+                    <th key={l+'_n'} style={{ width:120, textAlign:'right', color:'var(--accent)' }}>
+                      {l} 할인적용금액
                     </th>
                   ))}
                   {sizeLabels.map(l => (
@@ -392,8 +399,8 @@ export default function Page() {
 const MarginRow = memo(function MarginRow({ r, sizeLabels, activePlatform, discount, hasAdjustment }) {
   return (
     <tr>
-      <td style={{ fontWeight:500 }}>{r.menuName}</td>
-      <td><span className="chip">{r.menuCategory || '기타'}</span></td>
+      <td style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{r.menuName}</td>
+      <td style={{ whiteSpace: 'nowrap' }}><span className="chip">{r.menuCategory || '기타'}</span></td>
 
       {/* 원가 */}
       {sizeLabels.map(l => {
@@ -415,7 +422,7 @@ const MarginRow = memo(function MarginRow({ r, sizeLabels, activePlatform, disco
         );
       })}
 
-      {/* 수령액 (플랫폼/할인 조정 시만) */}
+      {/* 할인적용금액 (플랫폼/할인 조정 시만) */}
       {hasAdjustment && sizeLabels.map(l => {
         const s = r.sizes?.find(s => s.label === l);
         if (!s?.sellingPrice) return <td key={l+'_n'} style={{ textAlign:'right', color:'var(--text-3)' }}>—</td>;

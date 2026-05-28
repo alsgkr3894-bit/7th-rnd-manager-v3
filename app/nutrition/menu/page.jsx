@@ -5,6 +5,8 @@ import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
+import { getAllMenuMaster } from '@/lib/menu-master';
+import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import {
   getAllMenuRefs, upsertMenuRef, deleteMenuRef, deleteRawValuesByMenuCode,
   getAllRawValues, upsertRawValue, getRawValueMap,
@@ -15,7 +17,10 @@ import {
 } from '@/lib/nutrition/values/store';
 
 const TABS = ['베이스 영양성분', '엣지 설정', '파생 메뉴', '계산 결과'];
-const MENU_CATS = ['피자', '1인피자', '사이드', '세트', '기타'];
+const MENU_CATS = [
+  '피자', '피자/프리미엄 스페셜', '피자/프리미엄', '피자/오리지널', '피자/하프앤하프',
+  '1인피자', '세트박스', '사이드', '소스', '음료', '엣지', '기타',
+];
 
 /* ───── 공통 영양성분 입력 그리드 ───── */
 function NutritionGrid({ values, onChange, disabled }) {
@@ -40,7 +45,7 @@ function NutritionGrid({ values, onChange, disabled }) {
 }
 
 /* ───── 탭1: 베이스 영양성분 ───── */
-function TabBase({ menus, rawMap, onRefresh }) {
+function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
   const [selMenu, setSelMenu] = useState(null);
   const [selCrust, setSelCrust] = useState(CRUST_TYPES[0]);
   const [form, setForm] = useState({});
@@ -118,7 +123,10 @@ function TabBase({ menus, rawMap, onRefresh }) {
                 }}>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: selMenu?.id === m.id ? 700 : 400, color: selMenu?.id === m.id ? 'var(--accent-text)' : 'var(--text-1)' }}>{m.menuName}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-4)' }}>{m.category}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
+                    {m.category}
+                    {m.menuCode && <span style={{ marginLeft: 4, fontFamily: 'monospace', color: 'var(--accent-text)', opacity: 0.7 }}>{m.menuCode}</span>}
+                  </div>
                 </div>
                 {/* 입력 현황 체크 */}
                 <div style={{ display: 'flex', gap: 2 }}>
@@ -198,20 +206,27 @@ function TabBase({ menus, rawMap, onRefresh }) {
             </div>
             <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
+                <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>메뉴코드 <span style={{ color: 'var(--text-4)' }}>(선택 시 메뉴명 자동 입력)</span></label>
+                <MenuCodePicker
+                  menuMasters={menuMasters}
+                  value={newMenuForm.menuCode}
+                  onChange={(code, meta) => setNewMenuForm(f => ({
+                    ...f,
+                    menuCode: code,
+                    menuName: code ? (menuMasters.find(m => m.menuCode === code)?.menuName ?? f.menuName) : f.menuName,
+                    category: meta?.category || f.category,
+                  }))}
+                />
+              </div>
+              <div>
                 <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>메뉴명 *</label>
                 <input className="input" value={newMenuForm.menuName} onChange={e => setNewMenuForm(f => ({ ...f, menuName: e.target.value }))} placeholder="예: 컨츄리치킨" />
               </div>
-              <div className="form-row two" style={{ marginTop: 0 }}>
-                <div>
-                  <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>카테고리</label>
-                  <select className="input" value={newMenuForm.category} onChange={e => setNewMenuForm(f => ({ ...f, category: e.target.value }))}>
-                    {MENU_CATS.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>메뉴코드 (선택)</label>
-                  <input className="input" value={newMenuForm.menuCode} onChange={e => setNewMenuForm(f => ({ ...f, menuCode: e.target.value }))} placeholder="자동 생성" />
-                </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>카테고리</label>
+                <select className="input" value={newMenuForm.category} onChange={e => setNewMenuForm(f => ({ ...f, category: e.target.value }))}>
+                  {MENU_CATS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
@@ -432,7 +447,7 @@ function TabDerived({ menus, toppings, compositions, onRefresh }) {
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button className="btn sm ghost" onClick={() => openEdit(comp)}><Icon.pencil style={{ width: 13, height: 13 }} /></button>
+                  <button className="btn sm ghost" onClick={() => openEdit(comp)}><Icon.edit style={{ width: 13, height: 13 }} /></button>
                   <button className="btn sm ghost" style={{ color: 'var(--danger)' }} onClick={() => handleDeleteComp(comp)}><Icon.trash style={{ width: 13, height: 13 }} /></button>
                 </div>
               </div>
@@ -629,6 +644,7 @@ function TabResults({ menus, rawMap, edgeMap, compositions, toppings }) {
 export default function Page() {
   const [tab, setTab] = useState(0);
   const [menus, setMenus] = useState([]);
+  const [menuMasters, setMenuMasters] = useState([]);
   const [rawMap, setRawMap] = useState({});
   const [edges, setEdges] = useState([]);
   const [edgeMap, setEdgeMap] = useState({});
@@ -638,16 +654,18 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    const [m, rawValues, e, t, c] = await Promise.all([
+    const [m, rawValues, e, t, c, masters] = await Promise.all([
       getAllMenuRefs(),
       getRawValueMap(),
       getAllEdges(),
       getAllToppings(),
       getAllCompositions(),
+      getAllMenuMaster(),
     ]);
     const em = {};
     e.forEach(edge => { em[edge.edgeCode] = edge; });
     setMenus(m);
+    setMenuMasters(masters);
     setRawMap(rawValues);
     setEdges(e);
     setEdgeMap(em);
@@ -693,7 +711,7 @@ export default function Page() {
       </div>
 
       {tab === 0 && (
-        <TabBase menus={menus} rawMap={rawMap} onRefresh={load} />
+        <TabBase menus={menus} rawMap={rawMap} onRefresh={load} menuMasters={menuMasters} />
       )}
       {tab === 1 && (
         <TabEdge edges={edges} edgeMap={edgeMap} onRefresh={load} />

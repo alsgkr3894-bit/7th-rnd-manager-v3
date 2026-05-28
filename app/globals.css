@@ -107,7 +107,7 @@ body {
   font-family: var(--font-pretendard), 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   background: var(--bg);
   color: var(--text-1);
-  font-size: 14px;
+  font-size: 15px;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   letter-spacing: -0.01em;
@@ -818,11 +818,12 @@ button { font-family: inherit; cursor: pointer; }
 }
 .modal .input {
   width: 100%; padding: 14px 16px;
-  border-radius: 12px; border: 1px solid var(--border);
+  border-radius: 12px; border: 1.5px solid transparent;
   background: var(--surface-2);
   font-family: inherit; font-size: 16px; font-weight: 700;
   color: var(--text-1); outline: 0;
   font-feature-settings: "tnum" 1;
+  transition: border-color 150ms ease, background 150ms ease;
 }
 .modal .input:focus { border-color: var(--accent); background: var(--surface); }
 .modal .input.huge {
@@ -1239,10 +1240,15 @@ button { font-family: inherit; cursor: pointer; }
 .filter-search {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border: 1px solid transparent;
   border-radius: 10px;
   width: 280px;
+  transition: border-color 150ms ease;
+}
+.filter-search:focus-within {
+  border-color: var(--accent);
+  background: var(--surface);
 }
 .filter-search input {
   flex: 1; border: 0; outline: 0; background: transparent;
@@ -1501,6 +1507,26 @@ button { font-family: inherit; cursor: pointer; }
 .field-label { font-size: 12px; font-weight: 700; color: var(--text-2); }
 .field-label .req { color: var(--negative); margin-left: 3px; }
 .field-hint { font-size: 11px; color: var(--text-4); font-weight: 500; }
+
+/* ── 전역 .input 기본 스타일 ── */
+.input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 150ms ease, background 150ms ease;
+  box-sizing: border-box;
+}
+.input:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+.input::placeholder { color: var(--text-4); }
 
 .input.textarea {
   font-size: 14px; font-weight: 500; padding: 12px 14px;
@@ -4149,17 +4175,17 @@ button { font-family: inherit; cursor: pointer; }
 .form-input {
   width: 100%;
   padding: 9px 12px;
-  border: 1px solid var(--border-strong);
+  border: 1.5px solid transparent;
   border-radius: var(--radius-sm);
-  background: var(--surface);
+  background: var(--surface-2);
   color: var(--text-1);
   font-family: inherit;
   font-size: 14px;
   outline: none;
-  transition: border-color .15s;
+  transition: border-color .15s, background .15s;
   box-sizing: border-box;
 }
-.form-input:focus { border-color: var(--accent); }
+.form-input:focus { border-color: var(--accent); background: var(--surface); }
 .form-input::placeholder { color: var(--text-4); }
 .form-input:disabled { opacity: .5; cursor: not-allowed; }
 

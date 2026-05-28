@@ -320,7 +320,7 @@ export default function Page() {
                   <tbody>
                     {filtered.map((r, i) => (
                       <MasterRow
-                        key={r.productCode || `row-${i}`}
+                        key={r.meta?.id ?? r.productCode ?? `row-${i}`}
                         r={r}
                         onRegClick={() => setRegTarget(r)}
                       />
