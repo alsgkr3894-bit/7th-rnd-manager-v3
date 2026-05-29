@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -14,11 +15,15 @@ import {
 } from '@/lib/recipe';
 import { getAllMenuMaster } from '@/lib/menu-master/store';
 import MenuCodePicker from '@/components/ui/MenuCodePicker';
+import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
+import { parseMenuCode } from '@/lib/cost/menu-price/code';
+import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 
 const MARGIN_COLOR = (pct) => {
-  if (pct == null) return 'var(--text-3)';
-  if (pct >= 70)   return 'var(--positive, #10b981)';
-  if (pct >= 60)   return '#f59e0b';
+  if (pct == null || pct === 0) return 'var(--text-3)'; // 0 = 원가 미입력, 회색
+  if (pct <  0)    return 'var(--negative, #ef4444)';
+  if (pct <= 30)   return 'var(--positive, #10b981)';
+  if (pct <= 40)   return '#f59e0b';
   return 'var(--negative, #ef4444)';
 };
 
@@ -28,6 +33,7 @@ const emptyDraft = () => ({
   menuCategory: '피자',
   sizes:        [{ label: 'L', sellingPrice: '' }, { label: 'R', sellingPrice: '' }],
   ingredients:  [],
+  groupIds:     null, // null = 카테고리 기본값 사용
   note:         '',
 });
 
@@ -51,25 +57,36 @@ function recToDraft(rec) {
 
 // ── 메인 페이지 ───────────────────────────────────────────────
 export default function Page() {
-  const [recipes,      setRecipes]      = useState([]);
-  const [allMeta,      setAllMeta]      = useState([]);
-  const [menuMasters,  setMenuMasters]  = useState([]);
-  const [unitPriceMap, setUnitPriceMap] = useState(new Map());
-  const [selectedId,   setSelectedId]  = useState(null);
+  const [recipes,        setRecipes]        = useState([]);
+  const [allMeta,        setAllMeta]        = useState([]);
+  const [menuMasters,    setMenuMasters]    = useState([]);
+  const [unitPriceMap,   setUnitPriceMap]   = useState(new Map());
+  const [menuPricesMap,  setMenuPricesMap]  = useState(new Map());
+  const [allGroups,      setAllGroups]      = useState([]);
+  const [selectedId,     setSelectedId]    = useState(null);
   const [isNew,        setIsNew]        = useState(false);
   const [draft,        setDraft]        = useState(null);
   const [saving,       setSaving]       = useState(false);
   const [loading,      setLoading]      = useState(true);
   const [dbError,      setDbError]      = useState(null);
   const [search,       setSearch]       = useState('');
+  const [customOrder,  setCustomOrder]  = useState(() => {
+    if (typeof window === 'undefined') return {};
+    try { return JSON.parse(localStorage.getItem('v3:recipe-sort') || '{}'); }
+    catch { return {}; }
+  });
+  const [dragSrc,   setDragSrc]    = useState(null);  // { cat, fromIdx }
+  const [dropTarget, setDropTarget] = useState(null); // { cat, beforeIdx }
 
   const load = useCallback(async () => {
     await initDB();
-    const [files, meta, recs, masters] = await Promise.all([
+    const [files, meta, recs, masters, menuPrices, groups] = await Promise.all([
       getPriceFiles(),
       getAllIngredients(),
       getAllRecipes(),
       getAllMenuMaster(),
+      getAllMenuPrices(),
+      getAllRecipeGroups(),
     ]);
     const latest = files[0] || null;
     let priceRowMap = new Map();
@@ -77,10 +94,22 @@ export default function Page() {
       const rows = await getPriceRowsByFileId(latest.id);
       rows.forEach(r => { if (r.productCode) priceRowMap.set(r.productCode, r); });
     }
+    // 판매가 맵: baseCode → { L: price, R: price, ... }
+    const pmap = new Map();
+    for (const p of menuPrices) {
+      const parsed = parseMenuCode(p.menuCode);
+      const base = parsed
+        ? `${parsed.prefix}-${String(parsed.base).padStart(3, '0')}`
+        : p.menuCode;
+      if (!pmap.has(base)) pmap.set(base, {});
+      pmap.get(base)[p.size] = p.price;
+    }
     setAllMeta(meta);
     setMenuMasters(masters);
+    setMenuPricesMap(pmap);
     setUnitPriceMap(buildUnitPriceMap(meta, priceRowMap));
     setRecipes(recs);
+    setAllGroups(groups);
   }, []);
 
   useEffect(() => {
@@ -164,12 +193,33 @@ export default function Page() {
       map.get(cat).push(r);
     }
     const order = [...MENU_CATEGORIES, '기타'];
-    return [...map.entries()].sort(([a], [b]) => {
+    const sorted = [...map.entries()].sort(([a], [b]) => {
       const ia = order.indexOf(a), ib = order.indexOf(b);
       if (ia !== ib) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
       return a.localeCompare(b, 'ko');
     });
-  }, [filteredRecipes]);
+    // 커스텀 순서 적용
+    return sorted.map(([cat, items]) => {
+      const ids = customOrder[cat];
+      if (!ids?.length) return [cat, items];
+      const byId = new Map(items.map(r => [r.id, r]));
+      const ordered = ids.map(id => byId.get(id)).filter(Boolean);
+      const inOrder = new Set(ids);
+      const rest = items.filter(r => !inOrder.has(r.id)); // 새로 추가된 항목
+      return [cat, [...ordered, ...rest]];
+    });
+  }, [filteredRecipes, customOrder]);
+
+  function saveOrder(cat, items) {
+    const newOrder = { ...customOrder, [cat]: items.map(r => r.id) };
+    setCustomOrder(newOrder);
+    try { localStorage.setItem('v3:recipe-sort', JSON.stringify(newOrder)); } catch {}
+  }
+  function resetCatOrder(cat) {
+    const { [cat]: _removed, ...rest } = customOrder;
+    setCustomOrder(rest);
+    try { localStorage.setItem('v3:recipe-sort', JSON.stringify(rest)); } catch {}
+  }
 
   const showEditor = isNew || selectedId != null;
 
@@ -185,7 +235,7 @@ export default function Page() {
       <PageHeader
         breadcrumb={['원가계산', '원가 계산']}
         title="메뉴 원가 계산"
-        sub="사이즈별 식자재 사용량을 입력하면 원가와 마진율이 자동 계산됩니다."
+        sub="사이즈별 식자재 사용량을 입력하면 원가와 원가율이 자동 계산됩니다."
       />
 
       <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 16, marginTop: 8, alignItems: 'start' }}>
@@ -209,51 +259,156 @@ export default function Page() {
               등록된 메뉴가 없습니다
             </div>
           ) : (
-            <div style={{ maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' }}>
-              {grouped.map(([cat, items]) => (
-                <div key={cat}>
-                  <div style={{ padding: '6px 14px 3px', fontSize: 11, fontWeight: 700,
-                    color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em',
-                    background: 'var(--surface-2)' }}>
-                    {cat}
-                  </div>
-                  {items.map(r => {
-                    const costMap = calcCostBySizes(r, unitPriceMap);
-                    const active  = r.id === selectedId;
-                    return (
-                      <button key={r.id} onClick={() => handleSelect(r.id)}
-                        style={{ display: 'block', width: '100%', textAlign: 'left',
-                          padding: '9px 14px', border: 0, cursor: 'pointer',
-                          background: active ? 'var(--accent-soft, rgba(56,189,248,.12))' : 'transparent',
-                          borderLeft: active ? '3px solid var(--accent, #38bdf8)' : '3px solid transparent',
-                          transition: 'background .12s' }}>
-                        <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-1)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {r.menuName}
-                          {r.menuCode && (
-                            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent-text)', background: 'var(--accent-soft)', padding: '1px 5px', borderRadius: 4, fontFamily: 'monospace' }}>
-                              {r.menuCode}
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ marginTop: 3, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                          {(r.sizes || []).map(s => {
-                            const cost = costMap[s.label] || 0;
-                            const mr   = calcMarginRate(cost, s.sellingPrice);
-                            return (
-                              <span key={s.label} style={{ fontSize: 10, fontWeight: 600,
-                                color: MARGIN_COLOR(mr), background: 'var(--surface-2)',
-                                padding: '1px 5px', borderRadius: 3 }}>
-                                {s.label} {cost > 0 ? formatNumber(Math.round(cost)) + '원' : '—'}
-                                {mr != null ? ` (${mr.toFixed(0)}%)` : ''}
-                              </span>
+            <div
+              style={{ maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' }}
+              onDragLeave={e => {
+                if (!e.currentTarget.contains(e.relatedTarget)) setDropTarget(null);
+              }}
+            >
+              {grouped.map(([cat, items]) => {
+                const hasCustOrder = !!customOrder[cat]?.length;
+                return (
+                  <div key={cat}>
+                    {/* 카테고리 헤더 */}
+                    <div style={{ padding: '6px 14px 3px', fontSize: 11, fontWeight: 700,
+                      color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em',
+                      background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span>{cat}</span>
+                      {hasCustOrder && !search && (
+                        <button
+                          onClick={() => resetCatOrder(cat)}
+                          title="이 카테고리 순서 초기화"
+                          style={{ fontSize: 9, color: 'var(--text-4)', border: 0,
+                            background: 'transparent', cursor: 'pointer', padding: '0 2px',
+                            fontWeight: 500, letterSpacing: 0 }}>
+                          순서초기화
+                        </button>
+                      )}
+                    </div>
+
+                    {/* 아이템 목록 */}
+                    {items.map((r, idx) => {
+                      const recipeCostMap = calcCostBySizes(r, unitPriceMap);
+                      const activeGids = r.groupIds == null
+                        ? new Set(allGroups.filter(g => (g.defaultCategories || []).some(c =>
+                            (r.menuCategory || '') === c || (r.menuCategory || '').startsWith(c + '/')
+                          )).map(g => g.id))
+                        : new Set(r.groupIds);
+                      const costMap = {};
+                      for (const s of (r.sizes || [])) {
+                        let total = recipeCostMap[s.label] || 0;
+                        for (const g of allGroups) {
+                          if (!activeGids.has(g.id)) continue;
+                          for (const ing of (g.ingredients || [])) {
+                            const info = unitPriceMap.get(ing.productCode);
+                            if (!info?.unitPrice) continue;
+                            const qty = parseFloat(ing.quantities?.[s.label]) || 0;
+                            if (qty) total += info.unitPrice * qty;
+                          }
+                        }
+                        costMap[s.label] = total;
+                      }
+                      const active    = r.id === selectedId;
+                      const isDragging = dragSrc?.cat === cat && dragSrc?.fromIdx === idx;
+                      const showTop    = !search && dropTarget?.cat === cat && dropTarget?.beforeIdx === idx;
+                      const showBot    = !search && idx === items.length - 1
+                        && dropTarget?.cat === cat && dropTarget?.beforeIdx === items.length;
+
+                      return (
+                        <div key={r.id}
+                          draggable={!search}
+                          onDragStart={e => {
+                            e.dataTransfer.effectAllowed = 'move';
+                            setDragSrc({ cat, fromIdx: idx });
+                            setDropTarget(null);
+                          }}
+                          onDragOver={e => {
+                            e.preventDefault();
+                            if (!dragSrc || dragSrc.cat !== cat) return;
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const before = e.clientY < rect.top + rect.height / 2 ? idx : idx + 1;
+                            setDropTarget(prev =>
+                              prev?.cat === cat && prev?.beforeIdx === before
+                                ? prev : { cat, beforeIdx: before }
                             );
-                          })}
+                          }}
+                          onDrop={e => {
+                            e.preventDefault();
+                            const src = dragSrc;
+                            setDragSrc(null); setDropTarget(null);
+                            if (!src || src.cat !== cat) return;
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            let insertAt = e.clientY < rect.top + rect.height / 2 ? idx : idx + 1;
+                            if (src.fromIdx < insertAt) insertAt--;
+                            if (src.fromIdx === insertAt) return;
+                            const arr = [...items];
+                            const [moved] = arr.splice(src.fromIdx, 1);
+                            arr.splice(insertAt, 0, moved);
+                            saveOrder(cat, arr);
+                          }}
+                          onDragEnd={() => { setDragSrc(null); setDropTarget(null); }}
+                          style={{
+                            display: 'flex', alignItems: 'stretch',
+                            borderTop:    showTop ? '2px solid var(--accent)' : '2px solid transparent',
+                            borderBottom: showBot ? '2px solid var(--accent)' : '2px solid transparent',
+                            opacity: isDragging ? 0.35 : 1,
+                          }}
+                        >
+                          {/* 드래그 핸들 */}
+                          {!search && (
+                            <div style={{
+                              display: 'flex', alignItems: 'center',
+                              paddingLeft: 8, paddingRight: 2,
+                              cursor: 'grab', color: 'var(--text-4)',
+                              flexShrink: 0, userSelect: 'none', fontSize: 13,
+                            }}>
+                              <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
+                                <circle cx="3" cy="3"  r="1.4"/>
+                                <circle cx="7" cy="3"  r="1.4"/>
+                                <circle cx="3" cy="8"  r="1.4"/>
+                                <circle cx="7" cy="8"  r="1.4"/>
+                                <circle cx="3" cy="13" r="1.4"/>
+                                <circle cx="7" cy="13" r="1.4"/>
+                              </svg>
+                            </div>
+                          )}
+                          {/* 선택 버튼 */}
+                          <button onClick={() => handleSelect(r.id)}
+                            style={{ flex: 1, display: 'block', textAlign: 'left',
+                              padding: search ? '9px 14px' : '9px 14px 9px 4px',
+                              border: 0, cursor: 'pointer',
+                              background: active ? 'var(--accent-soft, rgba(56,189,248,.12))' : 'transparent',
+                              borderLeft: active ? '3px solid var(--accent, #38bdf8)' : '3px solid transparent',
+                              transition: 'background .12s' }}>
+                            <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-1)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                              {r.menuName}
+                              {r.menuCode && (
+                                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent-text)', background: 'var(--accent-soft)', padding: '1px 5px', borderRadius: 4, fontFamily: 'monospace' }}>
+                                  {r.menuCode}
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ marginTop: 3, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                              {(r.sizes || []).map(s => {
+                                const cost = costMap[s.label] || 0;
+                                const mr   = calcMarginRate(cost, s.sellingPrice);
+                                return (
+                                  <span key={s.label} style={{ fontSize: 10, fontWeight: 600,
+                                    color: MARGIN_COLOR(mr), background: 'var(--surface-2)',
+                                    padding: '1px 5px', borderRadius: 3 }}>
+                                    {s.label} {cost > 0 ? formatNumber(Math.round(cost)) + '원' : '—'}
+                                    {mr != null ? ` (${mr.toFixed(0)}%)` : ''}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </button>
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -266,7 +421,9 @@ export default function Page() {
             setDraft={setDraft}
             allMeta={allMeta}
             menuMasters={menuMasters}
+            menuPricesMap={menuPricesMap}
             unitPriceMap={unitPriceMap}
+            allGroups={allGroups}
             isNew={isNew}
             saving={saving}
             onSave={handleSave}
@@ -287,13 +444,59 @@ export default function Page() {
 }
 
 // ── 레시피 편집기 ─────────────────────────────────────────────
-function RecipeEditor({ draft, setDraft, allMeta, menuMasters, unitPriceMap, isNew, saving, onSave, onDelete, onCancel }) {
+function RecipeEditor({ draft, setDraft, allMeta, menuMasters, menuPricesMap, unitPriceMap, allGroups, isNew, saving, onSave, onDelete, onCancel }) {
 
   // 사이즈 목록 (label만 추출, 빈 것 제외)
   const sizeLabels = useMemo(
     () => draft.sizes.map(s => s.label).filter(Boolean),
     [draft.sizes]
   );
+
+  // 이 레시피 카테고리에 기본 적용되는 그룹 ID 세트
+  const defaultGroupIds = useMemo(() => {
+    const cat = draft.menuCategory || '';
+    return new Set(
+      allGroups.filter(g => (g.defaultCategories || []).some(c => cat === c || cat.startsWith(c + '/'))).map(g => g.id)
+    );
+  }, [allGroups, draft.menuCategory]);
+
+  // 실제 포함할 그룹 ID 세트 (null이면 기본값 사용)
+  const activeGroupIds = useMemo(() => {
+    if (draft.groupIds === null) return defaultGroupIds;
+    return new Set(draft.groupIds);
+  }, [draft.groupIds, defaultGroupIds]);
+
+  function toggleGroup(groupId) {
+    setDraft(d => {
+      // d.menuCategory 기준으로 기본값 재계산 — 클로저 stale 방지
+      const cat = d.menuCategory || '';
+      const freshDefaults = new Set(
+        allGroups.filter(g => (g.defaultCategories || []).some(c => cat === c || cat.startsWith(c + '/'))).map(g => g.id)
+      );
+      const current = d.groupIds === null ? freshDefaults : new Set(d.groupIds);
+      const next = new Set(current);
+      if (next.has(groupId)) next.delete(groupId); else next.add(groupId);
+      return { ...d, groupIds: [...next] };
+    });
+  }
+
+  // 포함된 묶음의 사이즈별 추가 원가
+  const groupCostBySizes = useMemo(() => {
+    const result = {};
+    for (const sl of sizeLabels) result[sl] = 0;
+    for (const group of allGroups) {
+      if (!activeGroupIds.has(group.id)) continue;
+      for (const ing of (group.ingredients || [])) {
+        const info = unitPriceMap.get(ing.productCode);
+        if (!info?.unitPrice) continue;
+        for (const sl of sizeLabels) {
+          const qty = parseFloat(ing.quantities?.[sl]) || 0;
+          if (qty) result[sl] = (result[sl] || 0) + info.unitPrice * qty;
+        }
+      }
+    }
+    return result;
+  }, [allGroups, activeGroupIds, sizeLabels, unitPriceMap]);
 
   function setField(key, val) {
     setDraft(d => ({ ...d, [key]: val }));
@@ -343,7 +546,7 @@ function RecipeEditor({ draft, setDraft, allMeta, menuMasters, unitPriceMap, isN
     setDraft(d => ({ ...d, ingredients: d.ingredients.filter((_, i) => i !== idx) }));
   }
 
-  // 사이즈별 총 원가
+  // 레시피 식자재만 사이즈별 원가
   const costBySizes = useMemo(() => {
     const result = {};
     for (const sl of sizeLabels) {
@@ -356,6 +559,15 @@ function RecipeEditor({ draft, setDraft, allMeta, menuMasters, unitPriceMap, isN
     }
     return result;
   }, [draft.ingredients, sizeLabels, unitPriceMap]);
+
+  // 레시피 + 묶음 합산 원가
+  const totalCostBySizes = useMemo(() => {
+    const result = {};
+    for (const sl of sizeLabels) {
+      result[sl] = (costBySizes[sl] || 0) + (groupCostBySizes[sl] || 0);
+    }
+    return result;
+  }, [costBySizes, groupCostBySizes, sizeLabels]);
 
   return (
     <div className="card" style={{ padding: '20px 24px' }}>
@@ -396,8 +608,44 @@ function RecipeEditor({ draft, setDraft, allMeta, menuMasters, unitPriceMap, isN
             menuMasters={menuMasters}
             value={draft.menuCode || ''}
             onChange={(val, meta) => {
-              setField('menuCode', val);
-              if (meta?.category) setField('menuCategory', meta.category);
+              setDraft(d => {
+                const next = { ...d, menuCode: val };
+                if (meta?.category) next.menuCategory = meta.category;
+                // 메뉴명 자동 입력
+                if (val) {
+                  const found = menuMasters.find(m =>
+                    m.menuCode === val || m.menuCode.startsWith(val + '-')
+                  );
+                  if (found?.menuName) next.menuName = found.menuName;
+                }
+                // 판매가 자동 입력 — pmap 키는 size 없는 베이스 코드 (예: 'P-OR-005')
+                const parsedVal = val ? parseMenuCode(val) : null;
+                const baseKey = parsedVal
+                  ? `${parsedVal.prefix}-${String(parsedVal.base).padStart(3, '0')}`
+                  : val;
+                if (baseKey && menuPricesMap.has(baseKey)) {
+                  const priceBySize = menuPricesMap.get(baseKey);
+                  const singleOnly = Object.keys(priceBySize).length === 1 && '단일' in priceBySize;
+                  if (singleOnly) {
+                    // '단일' 전용 메뉴 → 사이즈를 단일 1개로 교체
+                    next.sizes = [{ label: '단일', sellingPrice: String(priceBySize['단일']) }];
+                  } else {
+                    const updatedSizes = d.sizes.map(s => ({
+                      ...s,
+                      sellingPrice: priceBySize[s.label] != null
+                        ? String(priceBySize[s.label])
+                        : s.sellingPrice,
+                    }));
+                    const existingLabels = new Set(d.sizes.map(s => s.label).filter(Boolean));
+                    const newSizes = Object.entries(priceBySize)
+                      .filter(([size]) => size !== '단일' && !existingLabels.has(size))
+                      .sort(([a], [b]) => a.localeCompare(b))
+                      .map(([size, price]) => ({ label: size, sellingPrice: String(price) }));
+                    next.sizes = [...updatedSizes, ...newSizes];
+                  }
+                }
+                return next;
+              });
             }}
             dedup={true}
           />
@@ -408,7 +656,7 @@ function RecipeEditor({ draft, setDraft, allMeta, menuMasters, unitPriceMap, isN
       <SectionLabel>사이즈 & 판매가</SectionLabel>
       <div style={{ marginBottom: 20 }}>
         {draft.sizes.map((s, i) => {
-          const cost = s.label ? (costBySizes[s.label] || 0) : 0;
+          const cost = s.label ? (totalCostBySizes[s.label] || 0) : 0;
           const mr   = calcMarginRate(cost, s.sellingPrice ? Number(s.sellingPrice) : null);
           return (
             <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
@@ -520,11 +768,45 @@ function RecipeEditor({ draft, setDraft, allMeta, menuMasters, unitPriceMap, isN
             {/* 사이즈별 합계 행 */}
             {sizeLabels.length > 0 && (
               <tfoot>
+                {activeGroupIds.size > 0 && (
+                  <tr style={{ borderTop: '1px solid var(--divider)', background: 'var(--surface-2)' }}>
+                    <td style={{ padding: '4px 8px', fontSize: 11, color: 'var(--text-3)' }}>레시피 소계</td>
+                    <td/>
+                    {sizeLabels.map(sl => {
+                      const sub = costBySizes[sl] || 0;
+                      return [
+                        <td key={sl + '_qt'}/>,
+                        <td key={sl + '_st'} style={{ padding: '4px 6px', textAlign: 'right', fontSize: 11, color: 'var(--text-3)' }}>
+                          {sub > 0 ? `${formatNumber(Math.round(sub))}원` : '—'}
+                        </td>,
+                      ];
+                    })}
+                    <td/><td/>
+                  </tr>
+                )}
+                {activeGroupIds.size > 0 && (
+                  <tr style={{ background: 'var(--surface-2)' }}>
+                    <td style={{ padding: '4px 8px', fontSize: 11, color: 'var(--text-3)' }}>
+                      공통묶음 소계 <span style={{ color: 'var(--text-4)' }}>({activeGroupIds.size}개)</span>
+                    </td>
+                    <td/>
+                    {sizeLabels.map(sl => {
+                      const sub = groupCostBySizes[sl] || 0;
+                      return [
+                        <td key={sl + '_qt'}/>,
+                        <td key={sl + '_st'} style={{ padding: '4px 6px', textAlign: 'right', fontSize: 11, color: 'var(--text-3)' }}>
+                          {sub > 0 ? `${formatNumber(Math.round(sub))}원` : '—'}
+                        </td>,
+                      ];
+                    })}
+                    <td/><td/>
+                  </tr>
+                )}
                 <tr style={{ borderTop: '2px solid var(--divider)', background: 'var(--surface-2)' }}>
                   <td style={{ padding: '6px 8px', fontWeight: 700, fontSize: 12 }}>합계</td>
                   <td/>
                   {sizeLabels.map(sl => {
-                    const total = costBySizes[sl] || 0;
+                    const total = totalCostBySizes[sl] || 0;
                     return [
                       <td key={sl + '_qt'}/>,
                       <td key={sl + '_st'} style={{ padding: '6px 6px', textAlign: 'right',
@@ -539,6 +821,75 @@ function RecipeEditor({ draft, setDraft, allMeta, menuMasters, unitPriceMap, isN
               </tfoot>
             )}
           </table>
+        </div>
+      )}
+
+      {/* 공통묶음 */}
+      {allGroups.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid var(--divider)' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)',
+              textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              공통묶음
+            </div>
+            {draft.groupIds !== null && (
+              <button className="btn sm ghost" style={{ fontSize: 11 }}
+                onClick={() => setDraft(d => ({ ...d, groupIds: null }))}>
+                기본값으로 초기화
+              </button>
+            )}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {allGroups.map(g => {
+              const on = activeGroupIds.has(g.id);
+              const isDefault = defaultGroupIds.has(g.id);
+              return (
+                <label key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '6px 10px', borderRadius: 8, cursor: 'pointer',
+                  background: on ? 'var(--accent-soft)' : 'var(--surface-2)',
+                  border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}` }}>
+                  <input type="checkbox" checked={on} onChange={() => toggleGroup(g.id)}
+                    style={{ width: 14, height: 14, cursor: 'pointer' }}/>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontWeight: 600, fontSize: 13, color: on ? 'var(--accent-text)' : 'var(--text-1)' }}>
+                      {g.name}
+                    </span>
+                    {isDefault && (
+                      <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--text-4)',
+                        background: 'var(--surface)', padding: '1px 5px', borderRadius: 3 }}>
+                        기본
+                      </span>
+                    )}
+                    {g.description && (
+                      <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--text-3)' }}>{g.description}</span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    {sizeLabels.map(sl => {
+                      if (!on) return null;
+                      const singleGroupCost = (() => {
+                        let c = 0;
+                        for (const ing of (g.ingredients || [])) {
+                          const info = unitPriceMap.get(ing.productCode);
+                          if (!info?.unitPrice) continue;
+                          const qty = parseFloat(ing.quantities?.[sl]) || 0;
+                          if (qty) c += info.unitPrice * qty;
+                        }
+                        return c;
+                      })();
+                      return singleGroupCost > 0 ? (
+                        <span key={sl} style={{ fontSize: 11, color: 'var(--accent-text)',
+                          background: 'var(--accent-soft)', padding: '1px 6px', borderRadius: 4 }}>
+                          {sl} {formatNumber(Math.round(singleGroupCost))}원
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                </label>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -563,9 +914,12 @@ function RecipeEditor({ draft, setDraft, allMeta, menuMasters, unitPriceMap, isN
 
 // ── 식자재 검색 추가 ──────────────────────────────────────────
 function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded }) {
-  const [q,    setQ]    = useState('');
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [q,         setQ]         = useState('');
+  const [open,      setOpen]      = useState(false);
+  const [activeIdx, setActiveIdx] = useState(-1);
+  const [rect,      setRect]      = useState(null);
+  const ref     = useRef(null);
+  const listRef = useRef(null);
   const addedSet = useMemo(() => new Set(alreadyAdded), [alreadyAdded]);
 
   const results = useMemo(() => {
@@ -579,28 +933,116 @@ function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded }) {
     ).slice(0, 15);
   }, [q, allMeta, addedSet]);
 
+  useEffect(() => { setActiveIdx(-1); }, [results]);
+
+  // 드롭다운 위치 계산 (portal 렌더링용)
+  const updateRect = useCallback(() => {
+    if (ref.current) {
+      const r = ref.current.getBoundingClientRect();
+      setRect({ top: r.bottom + 2, left: r.left, width: r.width });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) updateRect();
+  }, [open, q, updateRect]);
+
+  // 스크롤/리사이즈 시 위치 재계산
+  useEffect(() => {
+    if (!open) return;
+    window.addEventListener('scroll', updateRect, true);
+    window.addEventListener('resize', updateRect);
+    return () => {
+      window.removeEventListener('scroll', updateRect, true);
+      window.removeEventListener('resize', updateRect);
+    };
+  }, [open, updateRect]);
+
   useEffect(() => {
     function onClickOutside(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target) &&
+          !(listRef.current && listRef.current.contains(e.target))) {
+        setOpen(false);
+      }
     }
     document.addEventListener('mousedown', onClickOutside);
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (activeIdx < 0 || !listRef.current) return;
+    const item = listRef.current.children[activeIdx];
+    if (item) item.scrollIntoView({ block: 'nearest' });
+  }, [activeIdx]);
+
   function select(m) {
     onSelect(m);
     setQ('');
     setOpen(false);
+    setActiveIdx(-1);
   }
 
+  function handleKeyDown(e) {
+    if (!open || results.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIdx(i => Math.min(i + 1, results.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIdx(i => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (activeIdx >= 0) select(results[activeIdx]);
+    } else if (e.key === 'Escape') {
+      setOpen(false);
+      setActiveIdx(-1);
+    }
+  }
+
+  const dropdown = open && results.length > 0 && rect && createPortal(
+    <div ref={listRef} style={{
+      position: 'fixed', top: rect.top, left: rect.left, width: rect.width,
+      zIndex: 9999,
+      background: 'var(--surface-1)', border: '1px solid var(--border)',
+      borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,.2)',
+      maxHeight: 260, overflowY: 'auto',
+    }}>
+      {results.map((m, idx) => {
+        const info     = unitPriceMap.get(m.productCode);
+        const isActive = idx === activeIdx;
+        return (
+          <button key={m.productCode} onClick={() => select(m)}
+            onMouseEnter={() => setActiveIdx(idx)}
+            style={{ display: 'block', width: '100%', textAlign: 'left',
+              padding: '8px 14px', border: 0,
+              background: isActive ? 'var(--accent-soft)' : 'transparent',
+              cursor: 'pointer', borderBottom: '1px solid var(--divider)' }}>
+            <div style={{ fontWeight: 500, fontSize: 13, color: isActive ? 'var(--accent-text)' : undefined }}>
+              {m.ingredientName}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 1, display: 'flex', gap: 8 }}>
+              <span style={{ fontFamily: 'monospace' }}>{m.productCode}</span>
+              {info?.unitPrice != null
+                ? <span>{info.unitPrice < 1 ? info.unitPrice.toFixed(2) : formatNumber(info.unitPrice)}원/{info.baseUnitType}</span>
+                : <span style={{ color: '#f59e0b' }}>단가미등록</span>}
+              {m.baseQuantity && <span>{formatNumber(m.baseQuantity)}{m.baseUnitType}</span>}
+            </div>
+          </button>
+        );
+      })}
+    </div>,
+    document.body
+  );
+
   return (
-    <div ref={ref} style={{ position: 'relative', marginTop: 4 }}>
+    <div ref={ref} style={{ marginTop: 4 }}>
       <div className="filter-search" style={{ gap: 6 }}>
         <Icon.search style={{ width: 14, height: 14, color: 'var(--text-3)', flexShrink: 0 }}/>
         <input value={q}
           onChange={e => { setQ(e.target.value); setOpen(!!e.target.value.trim()); }}
           onFocus={() => { if (q.trim()) setOpen(true); }}
-          placeholder="식자재 검색하여 추가…"/>
+          onKeyDown={handleKeyDown}
+          placeholder="식자재 검색하여 추가… (↑↓ 방향키, Enter 선택)"/>
         {q && (
           <button onClick={() => { setQ(''); setOpen(false); }}
             style={{ border: 0, background: 'transparent', cursor: 'pointer',
@@ -609,31 +1051,7 @@ function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded }) {
           </button>
         )}
       </div>
-      {open && results.length > 0 && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
-          background: 'var(--surface-1)', border: '1px solid var(--border)',
-          borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,.15)',
-          maxHeight: 260, overflowY: 'auto', marginTop: 2 }}>
-          {results.map(m => {
-            const info = unitPriceMap.get(m.productCode);
-            return (
-              <button key={m.productCode} onClick={() => select(m)}
-                style={{ display: 'block', width: '100%', textAlign: 'left',
-                  padding: '8px 14px', border: 0, background: 'transparent',
-                  cursor: 'pointer', borderBottom: '1px solid var(--divider)' }}>
-                <div style={{ fontWeight: 500, fontSize: 13 }}>{m.ingredientName}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 1, display: 'flex', gap: 8 }}>
-                  <span style={{ fontFamily: 'monospace' }}>{m.productCode}</span>
-                  {info?.unitPrice != null
-                    ? <span>{info.unitPrice < 1 ? info.unitPrice.toFixed(2) : formatNumber(info.unitPrice)}원/{info.baseUnitType}</span>
-                    : <span style={{ color: '#f59e0b' }}>단가미등록</span>}
-                  {m.baseQuantity && <span>{formatNumber(m.baseQuantity)}{m.baseUnitType}</span>}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {dropdown}
     </div>
   );
 }

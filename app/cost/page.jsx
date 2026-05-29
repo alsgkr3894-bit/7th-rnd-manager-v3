@@ -8,9 +8,10 @@ const GROUPS = [
     label: '기초 데이터',
     items: [
       { href: '/cost/ingredient-price', icon: 'tag',      title: '식자재 가격',  sub: '재료별 단가·공급업체 관리' },
-      { href: '/cost/recipe',           icon: 'doc',      title: '레시피',       sub: '메뉴별 사용 재료·배합 비율' },
+      { href: '/cost/recipe',  icon: 'doc', title: '레시피',   sub: '메뉴별 사용 재료·배합 비율' },
+      { href: '/cost/manage',  icon: 'box', title: '공통 관리', sub: '공통묶음 · 엣지 원가 관리' },
       { href: '/cost/menu-price',       icon: 'download', title: '메뉴 가격표',  sub: '판매가·목표 원가율 설정' },
-      { href: '/cost/margin',           icon: 'chart',    title: '마진 분석',    sub: '마진율·순이익 현황' },
+      { href: '/cost/margin',           icon: 'chart',    title: '원가마진표',     sub: '원가율·마진율·플랫폼 시뮬레이션' },
     ],
   },
   {
@@ -57,7 +58,7 @@ export default function Page() {
       <PageHeader
         breadcrumb={['원가계산']}
         title="원가계산"
-        sub="식자재 가격·레시피·마진을 관리하고 카테고리별 원가표를 확인하세요."
+        sub="식자재 가격·레시피·원가율을 관리하고 카테고리별 원가표를 확인하세요."
       />
 
       <div style={{display:'flex',flexDirection:'column',gap:24}}>

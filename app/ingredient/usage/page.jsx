@@ -1,24 +1,281 @@
 'use client';
-import { Icon } from '@/components/icons';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { showToast } from '@/components/Toast';
+import { initDB } from '@/lib/db';
+import { getAllIngredients } from '@/lib/ingredient';
+import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
+import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
+import { getAllSideRecipes } from '@/lib/cost/side-detail';
+import { getAllRecipes } from '@/lib/recipe';
+
+const CAT_COLORS = {
+  '피자':   { bg: '#EFF6FF', color: '#1D4ED8' },
+  '1인피자':{ bg: '#FFF7ED', color: '#C2410C' },
+  '사이드': { bg: '#F0FDF4', color: '#15803D' },
+};
+const USAGE_CATS = ['전체', '피자', '사이드', '1인피자'];
 
 export default function Page() {
-  const title = "식자재 사용 현황";
-  const bc = ["식자재","식자재 사용 현황"];
+  const [loading,   setLoading]   = useState(true);
+  const [allMeta,   setAllMeta]   = useState([]);
+  const [usageMap,  setUsageMap]  = useState({ byCode: new Map(), byName: new Map() });
+  const [usageCat,  setUsageCat]  = useState('전체');
+  const [usageSort, setUsageSort] = useState('count_desc');
+  const [expanded,  setExpanded]  = useState(new Set());
+
+  const load = useCallback(async () => {
+    await initDB();
+    const [meta, pizzaRecs, personalRecs, sideRecs, oldRecs] = await Promise.all([
+      getAllIngredients(),
+      getAllPizzaRecipes(),
+      getAllPersonalRecipes(),
+      getAllSideRecipes(),
+      getAllRecipes(),
+    ]);
+    setAllMeta(meta);
+
+    const uByCode = new Map();
+    const uByName = new Map();
+    const INCLUDE_TOP = new Set(['피자', '1인피자', '사이드']);
+
+    function norm(s) { return (s || '').trim().toLowerCase().replace(/\s+/g, ''); }
+    function cleanMenu(name) { return (name || '').replace(/\s+[LR]$/i, '').trim(); }
+
+    // 재료명 → productCode 역방향 인덱스
+    const nameToCode = new Map();
+    for (const m of meta) {
+      if (!m.productCode) continue;
+      const n = norm(m.ingredientName);
+      if (n && !nameToCode.has(n)) nameToCode.set(n, m.productCode);
+    }
+
+    function addUsage(productCode, ingredientName, menuName, topCat) {
+      if (!menuName) return;
+      const menu = cleanMenu(menuName);
+      const n    = norm(ingredientName);
+      const code = productCode || nameToCode.get(n) || null;
+
+      if (code) {
+        if (!uByCode.has(code)) uByCode.set(code, new Map());
+        uByCode.get(code).set(menu, topCat);
+      }
+      if (n) {
+        if (!uByName.has(n)) uByName.set(n, new Map());
+        uByName.get(n).set(menu, topCat);
+      }
+    }
+
+    // detail store — store 자체가 카테고리 보장
+    for (const r of pizzaRecs)
+      for (const c of (r.components || [])) addUsage(c.productCode, c.ingredientName, r.menuName, '피자');
+    for (const r of personalRecs)
+      for (const c of (r.components || [])) addUsage(c.productCode, c.ingredientName, r.menuName, '1인피자');
+    for (const r of sideRecs)
+      for (const c of (r.components || [])) addUsage(c.productCode, c.ingredientName, r.menuName, '사이드');
+
+    // 구 레시피 시스템
+    for (const r of oldRecs) {
+      const top = (r.menuCategory || '').split('/')[0];
+      if (!INCLUDE_TOP.has(top)) continue;
+      for (const ing of (r.ingredients || [])) addUsage(ing.productCode, ing.ingredientName, r.menuName, top);
+    }
+
+    setUsageMap({ byCode: uByCode, byName: uByName });
+  }, []);
+
+  useEffect(() => {
+    load().catch(console.error).finally(() => setLoading(false));
+  }, [load]);
+
+  // 카테고리 필터 무관하게 실제 사용 식자재 수 (미사용 계산용)
+  const totalUsedCount = useMemo(() => {
+    const { byCode, byName } = usageMap;
+    function normStr(s) { return (s || '').trim().toLowerCase().replace(/\s+/g, ''); }
+    return allMeta.filter(m => {
+      const fromCode = (m.productCode ? byCode.get(m.productCode) : null) || new Map();
+      const fromName = byName.get(normStr(m.ingredientName)) || new Map();
+      return fromCode.size > 0 || fromName.size > 0;
+    }).length;
+  }, [allMeta, usageMap]);
+
+  const usageRows = useMemo(() => {
+    const { byCode, byName } = usageMap;
+    function normStr(s) { return (s || '').trim().toLowerCase().replace(/\s+/g, ''); }
+
+    return allMeta.map(m => {
+      const code     = m.productCode || '';
+      const dispName = m.ingredientName || '';
+
+      const fromCode   = (code ? byCode.get(code) : null) || new Map();
+      const fromMaster = byName.get(normStr(dispName)) || new Map();
+      const menuMap    = new Map([...fromMaster, ...fromCode]);
+
+      if (!menuMap.size) return null;
+
+      const menus = [...menuMap.entries()]
+        .filter(([, cat]) => usageCat === '전체' || cat === usageCat)
+        .map(([menuName, cat]) => ({ menuName, cat }))
+        .sort((a, b) => a.menuName.localeCompare(b.menuName, 'ko'));
+
+      if (!menus.length) return null;
+      return { code, name: dispName, count: menus.length, menus };
+    }).filter(Boolean);
+  }, [allMeta, usageMap, usageCat]);
+
+  const sorted = useMemo(() => {
+    const arr = [...usageRows];
+    if (usageSort === 'count_desc') arr.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ko'));
+    else if (usageSort === 'count_asc') arr.sort((a, b) => a.count - b.count || a.name.localeCompare(b.name, 'ko'));
+    else arr.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+    return arr;
+  }, [usageRows, usageSort]);
+
+  const totalMenus = useMemo(
+    () => new Set(usageRows.flatMap(r => r.menus.map(m => m.menuName))).size,
+    [usageRows]
+  );
+
+  function toggle(code) {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code); else next.add(code);
+      return next;
+    });
+  }
 
   return (
     <main className="main">
-      <PageHeader breadcrumb={bc} title={title} sub="데이터를 조회하고 관리하세요"
-        actions={<><button className="btn" onClick={()=>showToast('양식 다운로드 완료','ok')}><Icon.download style={{width:14,height:14}}/>양식 다운로드</button><button className="btn primary" onClick={()=>showToast('파일을 선택해주세요 (데모)','info')}><Icon.upload style={{width:14,height:14}}/>파일 업로드</button></>}
+      <PageHeader
+        breadcrumb={['식자재', '제품별 사용현황']}
+        title="제품별 사용현황"
+        sub="각 식자재가 어느 메뉴 레시피에서 사용되는지 확인할 수 있어요."
       />
-      <div className="card" style={{marginTop:24,minHeight:300,display:'grid',placeItems:'center'}}>
-        <div style={{textAlign:'center',color:'var(--text-4)'}}>
-          <div className="empty-icon-wrap"><Icon.doc style={{width:32,height:32}}/></div>
-          <div style={{fontWeight:600,marginBottom:4}}>{title} 데이터가 여기에 표시돼요</div>
-          <div style={{fontSize:13}}>파일을 업로드하거나 제때 연동을 확인하세요.</div>
+
+      {loading ? (
+        <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+          로딩 중…
         </div>
-      </div>
+      ) : allMeta.length === 0 ? (
+        <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>
+          식자재 마스터 데이터가 없습니다. 식자재 관리 페이지에서 먼저 등록해주세요.
+        </div>
+      ) : (
+        <>
+          {/* 통계 */}
+          <div style={{ display: 'flex', gap: 12, marginBottom: 10, fontSize: 12, color: 'var(--text-3)', alignItems: 'center' }}>
+            <span>사용 식자재 <b style={{ color: 'var(--text-1)' }}>{sorted.length}</b>개</span>
+            <span>·</span>
+            <span>해당 메뉴 <b style={{ color: 'var(--text-1)' }}>{totalMenus}</b>개</span>
+            <span>·</span>
+            <span>미사용 <b style={{ color: 'var(--text-3)' }}>{allMeta.length - totalUsedCount}</b>개</span>
+          </div>
+
+          {/* 카테고리 필터 + 정렬 */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {USAGE_CATS.map(c => (
+                <button key={c} className={'chip' + (usageCat === c ? ' active' : '')}
+                  onClick={() => setUsageCat(c)}>{c}</button>
+              ))}
+            </div>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
+              <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>정렬</span>
+              <select
+                value={usageSort}
+                onChange={e => setUsageSort(e.target.value)}
+                style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6,
+                  border: '1px solid var(--border)', background: 'var(--surface)',
+                  color: 'var(--text-1)', cursor: 'pointer' }}>
+                <option value="count_desc">많이 쓰는 순</option>
+                <option value="count_asc">적게 쓰는 순</option>
+                <option value="name_asc">이름 순</option>
+              </select>
+            </div>
+          </div>
+
+          {/* 테이블 */}
+          <div className="card table-card">
+            {sorted.length === 0 ? (
+              <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+                등록된 레시피가 없거나 해당 카테고리에 사용된 재료가 없어요.
+              </div>
+            ) : (
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: 36 }}>순위</th>
+                    <th>식자재명</th>
+                    <th style={{ width: 90, textAlign: 'center' }}>사용 메뉴수</th>
+                    <th>메뉴 목록</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sorted.map((r, idx) => {
+                    const open = expanded.has(r.code || r.name);
+                    const SHOW = 4;
+                    const visible = open ? r.menus : r.menus.slice(0, SHOW);
+                    const more    = r.menus.length - SHOW;
+                    const key     = r.code || r.name;
+                    return (
+                      <tr key={key}>
+                        <td style={{ textAlign: 'center', color: 'var(--text-4)', fontSize: 12 }}>{idx + 1}</td>
+                        <td>
+                          <div style={{ fontWeight: 600, fontSize: 13 }}>{r.name}</div>
+                          {r.code && (
+                            <div style={{ fontSize: 11, color: 'var(--text-4)', fontFamily: 'monospace' }}>{r.code}</div>
+                          )}
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <span style={{
+                            display: 'inline-block', minWidth: 32, padding: '2px 8px',
+                            borderRadius: 99, fontWeight: 700, fontSize: 13,
+                            background: r.count >= 8 ? '#DBEAFE' : r.count >= 4 ? '#D1FAE5' : 'var(--surface-2)',
+                            color:      r.count >= 8 ? '#1D4ED8' : r.count >= 4 ? '#065F46' : 'var(--text-2)',
+                          }}>
+                            {r.count}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                            {visible.map(m => {
+                              const cs = CAT_COLORS[m.cat] || { bg: 'var(--surface-2)', color: 'var(--text-3)' };
+                              return (
+                                <span key={m.menuName} style={{
+                                  fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 99,
+                                  background: cs.bg, color: cs.color, whiteSpace: 'nowrap',
+                                }}>
+                                  {m.menuName}
+                                </span>
+                              );
+                            })}
+                            {!open && more > 0 && (
+                              <button onClick={() => toggle(key)}
+                                style={{ fontSize: 11, color: 'var(--accent)', border: 0, background: 'none',
+                                  cursor: 'pointer', padding: '2px 4px', fontWeight: 600 }}>
+                                +{more}개 더보기
+                              </button>
+                            )}
+                            {open && r.menus.length > SHOW && (
+                              <button onClick={() => toggle(key)}
+                                style={{ fontSize: 11, color: 'var(--text-3)', border: 0, background: 'none',
+                                  cursor: 'pointer', padding: '2px 4px' }}>
+                                접기
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+            <div style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text-3)', borderTop: '1px solid var(--divider)' }}>
+              {sorted.length}개 식자재 · {usageCat !== '전체' ? `${usageCat} 필터 중` : '전체 카테고리'}
+            </div>
+          </div>
+        </>
+      )}
     </main>
   );
 }

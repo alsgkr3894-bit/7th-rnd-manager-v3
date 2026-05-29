@@ -134,7 +134,7 @@ function NoteContent() {
       label: '실행취소',
       onClick: () => { cancelled = true; load(); },
     });
-    await new Promise(r => setTimeout(r, 3800));
+    await new Promise(r => setTimeout(r, 4100)); // 토스트(4000ms) 이후에 실제 삭제 → 실행취소 경쟁 조건 방지
     if (!cancelled) {
       try { await deleteNote(note.id); }
       catch { load(); showToast('삭제 실패', 'error'); }

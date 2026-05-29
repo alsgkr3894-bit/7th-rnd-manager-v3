@@ -186,7 +186,7 @@ export default function Page() {
     if (catFilter === DISCONTINUED_FILTER) {
       list = rows.filter(r => r.discontinued);
     } else {
-      list = rows.filter(r => !r.discontinued);
+      list = rows.filter(r => !r.discontinued && !r.excluded);
       if (catFilter === UNCATEGORIZED_FILTER) {
         list = list.filter(r => !r.category);
       } else if (catFilter !== 'all') {

@@ -12,10 +12,10 @@
   --border-strong: #D1D6DB;
   --divider: #F1F3F5;
 
-  --accent: #3182F6;
-  --accent-press: #1B64DA;
-  --accent-soft: #E8F2FE;
-  --accent-text: #1B64DA;
+  --accent: #E1101F;
+  --accent-press: #C0101C;
+  --accent-soft: #FEE8EA;
+  --accent-text: #B80D18;
 
   --positive: #1A8917;
   --positive-soft: #E6F4E6;
@@ -66,8 +66,8 @@
   --border-strong: #3A4049;
   --divider: #23282F;
 
-  --accent-soft: #15263F;
-  --accent-text: #6FA8FA;
+  --accent-soft: #2D1114;
+  --accent-text: #FF8080;
 
   --positive-soft: #14291A;
   --negative-soft: #2D1717;
@@ -285,11 +285,11 @@ button { font-family: inherit; cursor: pointer; }
 .topbar {
   display: flex; align-items: center; gap: 16px;
   padding: 16px 32px;
-  background: var(--bg);
+  background: var(--surface);
   position: sticky; top: 0; z-index: 5;
-  border-bottom: 1px solid transparent;
+  border-bottom: 1px solid var(--border);
 }
-.topbar.scrolled { border-bottom-color: var(--border); background: color-mix(in oklab, var(--bg) 90%, transparent); backdrop-filter: blur(8px); }
+.topbar.scrolled { background: color-mix(in oklab, var(--surface) 88%, transparent); backdrop-filter: blur(8px); }
 
 .company-wrap { position: relative; flex-shrink: 0; }
 
@@ -307,7 +307,7 @@ button { font-family: inherit; cursor: pointer; }
 .company-pick:hover { background: var(--surface-2); }
 .company-pick .avatar {
   width: 28px; height: 28px; border-radius: 50%;
-  background: linear-gradient(135deg, #3182F6, #1B64DA);
+  background: linear-gradient(135deg, #E1101F, #C0101C);
   color: white; display: grid; place-items: center;
   font-weight: 800; font-size: 12px;
 }
@@ -577,7 +577,7 @@ button { font-family: inherit; cursor: pointer; }
 .btn:hover { background: var(--bg-2); }
 .btn:active { transform: scale(0.98); }
 .btn.primary { background: var(--accent-press); color: white; }
-.btn.primary:hover { background: #1556BC; }
+.btn.primary:hover { background: #A80E18; }
 .btn.ghost { background: transparent; color: var(--text-2); }
 .btn.ghost:hover { background: var(--surface-2); color: var(--text-1); }
 .btn.dark-onlight { background: rgba(255,255,255,0.12); color: white; }
@@ -1690,36 +1690,89 @@ button { font-family: inherit; cursor: pointer; }
 .period-bar {
   display: flex; align-items: center; justify-content: space-between;
   gap: 20px;
-  padding: 16px 20px;
+  padding: 14px 18px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 16px;
   flex-wrap: wrap;
 }
 .period-tabs {
   display: inline-flex; padding: 4px;
   background: var(--surface-2);
-  border-radius: 10px;
+  border-radius: 12px;
+  gap: 2px;
 }
 .period-tabs button {
-  padding: 7px 14px;
+  padding: 7px 16px;
   border: 0; background: transparent;
   font-family: inherit; font-size: 13px; font-weight: 600;
   color: var(--text-3);
-  border-radius: 8px;
+  border-radius: 9px;
   white-space: nowrap;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  cursor: pointer;
 }
+.period-tabs button:hover:not(.active) { color: var(--text-1); background: var(--surface-2); }
 .period-tabs button.active {
   background: var(--surface);
   color: var(--text-1);
   box-shadow: var(--shadow-sm);
 }
 .period-disp {
-  display: flex; align-items: center; gap: 16px;
+  display: flex; align-items: center; gap: 12px;
 }
+.period-vs {
+  font-size: 11px; font-weight: 800; color: var(--text-4);
+  letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 4px 6px;
+  background: var(--surface-2); border-radius: 6px;
+}
+.period-slot { display: flex; flex-direction: column; gap: 4px; }
+.period-slot-head { display: flex; align-items: center; gap: 5px; }
+.period-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 5px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0;
+  flex-shrink: 0;
+}
+.period-slot-label { font-size: 10px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.04em; }
+.period-slot-val {
+  font-size: 15px; font-weight: 800; letter-spacing: -0.02em; color: var(--text-1);
+  display: flex; align-items: center; gap: 6px;
+}
+.period-slot-hint {
+  font-size: 11px; font-weight: 500; color: var(--text-4);
+  background: var(--surface-2); padding: 2px 7px; border-radius: 6px;
+}
+
+/* 기존 호환 */
 .period-side { display: flex; flex-direction: column; }
 .period-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .period-val { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+
+/* ============================================================
+   Filter chip row (카테고리 필터)
+============================================================ */
+.filter-chip-row {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-top: 16px;
+}
+.filter-chip {
+  display: inline-flex; align-items: center;
+  padding: 6px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 99px;
+  background: var(--surface);
+  font-size: 13px; font-weight: 600; color: var(--text-2);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+.filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+.filter-chip.active {
+  background: var(--accent); border-color: var(--accent);
+  color: #fff;
+}
 
 /* ============================================================
    Mini list (KPI card 안의 작은 리스트)
@@ -2746,6 +2799,8 @@ button { font-family: inherit; cursor: pointer; }
   .step-bar { overflow-x: auto; }
   .step-label { display: none; }
   .period-bar { flex-direction: column; align-items: stretch; }
+  .period-disp { flex-wrap: wrap; }
+  .filter-chip-row { gap: 5px; }
   .setting-row { flex-direction: column; align-items: stretch; gap: 12px; }
   .setting-control { align-self: flex-end; }
 }

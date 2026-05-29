@@ -14,18 +14,32 @@ import {
 } from '@/lib/cost/margin/platforms';
 import { componentSubtotal } from '@/lib/cost/shared/calc';
 import { getPizzaRecipeMap } from '@/lib/cost/pizza-detail';
+import { getAllEdges } from '@/lib/cost/edge-dough/store';
+import { edgeTotalCost } from '@/lib/cost/edge-dough/calc';
 import { getPersonalRecipeMap } from '@/lib/cost/personal-detail';
 import { getSideRecipeMap } from '@/lib/cost/side-detail';
 import { getSetRecipeMap } from '@/lib/cost/set-detail';
+import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { PlatformSettingsModal } from '@/components/cost/margin/PlatformSettingsModal';
+import { SortableTh } from '@/components/ui/SortableTh';
 
-const MC = (pct) => {
+// 원가율: 낮을수록 좋음
+const MC_COST = (pct) => {
+  if (pct == null) return 'var(--text-3)';
+  if (pct <  0)   return 'var(--negative, #ef4444)';
+  if (pct <= 30)  return 'var(--positive, #10b981)';
+  if (pct <= 40)  return '#f59e0b';
+  return 'var(--negative, #ef4444)';
+};
+// 마진율: 높을수록 좋음
+const MC_MARGIN = (pct) => {
   if (pct == null) return 'var(--text-3)';
   if (pct <  0)   return 'var(--negative, #ef4444)';
   if (pct >= 70)  return 'var(--positive, #10b981)';
   if (pct >= 60)  return '#f59e0b';
   return 'var(--negative, #ef4444)';
 };
+const MC = (pct, mode) => mode === 'margin' ? MC_MARGIN(pct) : MC_COST(pct);
 
 export default function Page() {
   const [rows,         setRows]         = useState([]);
@@ -38,13 +52,18 @@ export default function Page() {
   const [discOpen,     setDiscOpen]     = useState(false);
   const [discType,     setDiscType]     = useState('pct');   // 'pct' | 'fixed'
   const [discVal,      setDiscVal]      = useState('');
+  const [viewMode,     setViewMode]     = useState('cost');  // 'cost' | 'margin'
+  const [sortKey,      setSortKey]      = useState('');
+  const [sortDir,      setSortDir]      = useState('asc');
 
   const load = useCallback(async () => {
     await initDB();
-    const [files, meta, recipes, allMenuPrices, pizzaMap, personalMap, sideMap, setMap] = await Promise.all([
+    const [files, meta, recipes, allMenuPrices, pizzaMap, personalMap, sideMap, setMap, edges, allGroups] = await Promise.all([
       getPriceFiles(), getAllIngredients(), getAllRecipes(),
       getAllMenuPrices(),
       getPizzaRecipeMap(), getPersonalRecipeMap(), getSideRecipeMap(), getSetRecipeMap(),
+      getAllEdges(),
+      getAllRecipeGroups(),
     ]);
 
     // lib/recipe rows (old system)
@@ -55,7 +74,38 @@ export default function Page() {
       priceRows.forEach(r => { if (r.productCode) priceRowMap.set(r.productCode, r); });
     }
     const upm = buildUnitPriceMap(meta, priceRowMap);
-    const recipeRows = recipes.map(r => ({ ...r, costMap: calcCostBySizes(r, upm) }));
+
+    // 레시피 rows — 공통묶음 원가까지 합산
+    const recipeRows = recipes.map(r => {
+      const baseCostMap = calcCostBySizes(r, upm);
+
+      // 이 레시피에 적용할 그룹 ID 세트 결정
+      const activeGids = r.groupIds == null
+        ? new Set(allGroups.filter(g =>
+            (g.defaultCategories || []).some(c =>
+              (r.menuCategory || '') === c ||
+              (r.menuCategory || '').startsWith(c + '/')
+            )
+          ).map(g => g.id))
+        : new Set(r.groupIds);
+
+      const costMap = {};
+      for (const s of (r.sizes || [])) {
+        if (!s.label) continue;
+        let total = baseCostMap[s.label] || 0;
+        for (const g of allGroups) {
+          if (!activeGids.has(g.id)) continue;
+          for (const ing of (g.ingredients || [])) {
+            const info = upm.get(ing.productCode);
+            if (!info?.unitPrice) continue;
+            const qty = parseFloat(ing.quantities?.[s.label]) || 0;
+            if (qty) total += info.unitPrice * qty;
+          }
+        }
+        costMap[s.label] = total;
+      }
+      return { ...r, costMap };
+    });
 
     // detail store rows (new system: pizza/personal/side/set)
     const DETAIL_STORE_MAP = {
@@ -109,13 +159,91 @@ export default function Page() {
       });
     }
 
-    // Merge: detail store rows take precedence; recipe rows fill in the rest
-    const detailKeys = new Set(detailRows.map(r => `${r.menuName}||${r.menuCategory}`));
-    const filteredRecipeRows = recipeRows.filter(
-      r => !detailKeys.has(`${r.menuName}||${r.menuCategory || '기타'}`)
-    );
+    // 엣지 원가 맵: edgeType → { size → cost }
+    const EXPAND_EDGES = ['치즈크러스트', '골드스윗크러스트'];
+    const PIZZA_EDGE_CATS = new Set([
+      '피자', '피자/프리미엄 스페셜', '피자/프리미엄', '피자/오리지널', '피자/하프앤하프',
+    ]);
+    const edgeCostByType = {};
+    for (const e of edges) {
+      if (!EXPAND_EDGES.includes(e.edgeType)) continue;
+      if (!edgeCostByType[e.edgeType]) edgeCostByType[e.edgeType] = {};
+      edgeCostByType[e.edgeType][e.size] = edgeTotalCost(e);
+    }
 
-    setRows([...detailRows, ...filteredRecipeRows]);
+    // 엣지 판매가 맵: edgeType → price (메뉴 판매가에서 '엣지' 카테고리 조회)
+    const edgePriceByType = {};
+    for (const p of allMenuPrices) {
+      if (p.category !== '엣지' || !p.price) continue;
+      const name = (p.menuName || '').replace(/\s/g, '');
+      for (const edgeType of EXPAND_EDGES) {
+        if (name === edgeType.replace(/\s/g, '')) {
+          edgePriceByType[edgeType] = p.price;
+          break;
+        }
+      }
+    }
+
+    // recipe rows: menuName||category → row (원가 보완용, 중복 시 원가 있는 것 우선)
+    const recipeByKey = new Map();
+    for (const r of recipeRows) {
+      const key = `${r.menuName}||${r.menuCategory || ''}`;
+      const existing = recipeByKey.get(key);
+      const hasCost = Object.values(r.costMap).some(v => v > 0);
+      if (!existing || hasCost) recipeByKey.set(key, r);
+    }
+
+    // detail row에 원가 없으면 recipe row 원가로 보완
+    const enrichedDetailRows = detailRows.map(d => {
+      const hasCost = Object.values(d.costMap).some(v => v > 0);
+      if (hasCost) return d;
+      const rr = recipeByKey.get(`${d.menuName}||${d.menuCategory}`);
+      if (!rr) return d;
+      return { ...d, costMap: rr.costMap };
+    });
+
+    // Merge: detail store rows take precedence; recipe rows fill in the rest
+    const detailKeys = new Set(enrichedDetailRows.map(r => `${r.menuName}||${r.menuCategory}`));
+    const filteredRecipeRows = recipeRows.filter(r => {
+      const cat = r.menuCategory || '';
+      if (!cat) return true;
+      return !detailKeys.has(`${r.menuName}||${cat}`);
+    });
+
+    // 엣지 파생 행 생성 — detail-store 피자 + 레시피 피자 모두 처리
+    const derivedRows = [];
+    const pizzaSources = [
+      ...enrichedDetailRows.filter(r => PIZZA_EDGE_CATS.has(r.menuCategory || '')),
+      ...filteredRecipeRows.filter(r => PIZZA_EDGE_CATS.has(r.menuCategory || '')),
+    ];
+    for (const r of pizzaSources) {
+      for (const edgeType of EXPAND_EDGES) {
+        const edgeCosts = edgeCostByType[edgeType];
+        if (!edgeCosts) continue;
+        const newCostMap = {};
+        for (const s of (r.sizes || [])) {
+          if (!s.label) continue;
+          newCostMap[s.label] = (r.costMap?.[s.label] || 0) + (edgeCosts[s.label] || 0);
+        }
+        const derivedName = `${r.menuName} ${edgeType}`;
+        if (detailKeys.has(`${derivedName}||${r.menuCategory}`)) continue;
+        const edgePrice = edgePriceByType[edgeType] ?? null;
+        derivedRows.push({
+          id:           `derived||${r.id}||${edgeType}`,
+          menuName:     derivedName,
+          menuCategory: r.menuCategory,
+          sizes:        (r.sizes || []).map(s => ({
+            ...s,
+            sellingPrice: s.sellingPrice != null && edgePrice != null
+              ? s.sellingPrice + edgePrice
+              : null, // 엣지 판매가 미등록 시 null → 원가율 '—'
+          })),
+          costMap:      newCostMap,
+        });
+      }
+    }
+
+    setRows([...enrichedDetailRows, ...filteredRecipeRows, ...derivedRows]);
     setPlatforms(loadPlatforms());
   }, []);
 
@@ -168,8 +296,9 @@ export default function Page() {
   }, [filtered]);
 
   const stats = useMemo(() => {
-    if (!rows.length) return null;
-    const all = rows.flatMap(r =>
+    // filtered 기준으로 계산 (catFilter 적용 후 테이블과 일치)
+    if (!filtered.length) return null;
+    const all = filtered.flatMap(r =>
       (r.sizes || []).map(s => {
         const cost = r.costMap?.[s.label] || 0;
         const eff  = applyDiscount(s.sellingPrice, discount);
@@ -179,8 +308,54 @@ export default function Page() {
     );
     if (!all.length) return null;
     const avg = all.reduce((a, b) => a + b, 0) / all.length;
-    return { avg, above70: all.filter(m => m >= 70).length, below60: all.filter(m => m < 60).length };
-  }, [rows, activePlatform, discount]);
+    return { avg, above70: all.filter(m => m <= 30).length, below60: all.filter(m => m > 40).length };
+  }, [filtered, activePlatform, discount]);
+
+  function handleSort(key) {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }
+
+  const sortedFiltered = useMemo(() => {
+    if (!sortKey) return filtered;
+
+    function getVal(r) {
+      if (sortKey === 'name') return (r.menuName || '').toLowerCase();
+      if (sortKey === 'cat')  return (r.menuCategory || '기타').toLowerCase();
+      const ul  = sortKey.indexOf('_');
+      const type = sortKey.slice(0, ul);
+      const size = sortKey.slice(ul + 1);
+      if (type === 'cost') return r.costMap?.[size] ?? Infinity;
+      const sv = r.sizes?.find(s => s.label === size);
+      if (type === 'price') return sv?.sellingPrice ?? Infinity;
+      const eff = applyDiscount(sv?.sellingPrice, discount);
+      const net = calcNetRevenue(eff, activePlatform.fees, size);
+      if (type === 'net') return net ?? Infinity;
+      if (type === 'rate') {
+        const cr = calcPlatformMargin(r.costMap?.[size] ?? 0, net);
+        if (cr == null) return Infinity;
+        return viewMode === 'margin' ? 100 - cr : cr;
+      }
+      return 0;
+    }
+
+    return [...filtered].sort((a, b) => {
+      const va = getVal(a);
+      const vb = getVal(b);
+      if (va === Infinity && vb === Infinity) return 0;
+      if (va === Infinity) return 1;
+      if (vb === Infinity) return -1;
+      if (typeof va === 'string') {
+        const c = va.localeCompare(vb, 'ko');
+        return sortDir === 'asc' ? c : -c;
+      }
+      return sortDir === 'asc' ? va - vb : vb - va;
+    });
+  }, [filtered, sortKey, sortDir, discount, activePlatform, viewMode]);
 
   function handleSavePlatforms(newPlats) {
     savePlatforms(newPlats);
@@ -191,7 +366,7 @@ export default function Page() {
 
   if (dbError) return (
     <main className="main">
-      <PageHeader breadcrumb={['원가계산', '마진표']} title="메뉴 마진표" sub="로드 실패"/>
+      <PageHeader breadcrumb={['원가계산', '원가마진표']} title="메뉴 원가마진표" sub="로드 실패"/>
       <div className="card" style={{padding:32, textAlign:'center', color:'var(--negative)'}}>데이터베이스 오류: {dbError}</div>
     </main>
   );
@@ -199,32 +374,53 @@ export default function Page() {
   return (
     <main className="main">
       <PageHeader
-        breadcrumb={['원가계산', '마진표']}
-        title="메뉴 마진표"
-        sub="레시피 원가 기준 메뉴별 마진율 · 플랫폼·할인 시뮬레이션 지원"
+        breadcrumb={['원가계산', '원가마진표']}
+        title="메뉴 원가마진표"
+        sub="레시피 원가 기준 메뉴별 원가율 · 플랫폼·할인 시뮬레이션 지원"
       />
 
       {/* Stats */}
       {stats && (
         <div className="stat-row" style={{ marginTop:8 }}>
           <div className="stat-card">
-            <div className="stat-label">평균 마진율{hasAdjustment ? ' ⟳' : ''}</div>
-            <div className="stat-value" style={{ color:MC(stats.avg) }}>
-              {stats.avg.toFixed(1)}<span className="unit">%</span>
+            <div className="stat-label">
+              평균 {viewMode === 'margin' ? '마진율' : '원가율'}{hasAdjustment ? ' ⟳' : ''}
+            </div>
+            <div className="stat-value" style={{ color: MC(viewMode === 'margin' ? 100 - stats.avg : stats.avg, viewMode) }}>
+              {viewMode === 'margin' ? (100 - stats.avg).toFixed(1) : stats.avg.toFixed(1)}<span className="unit">%</span>
             </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-label">70% 이상</div>
-            <div className="stat-value" style={{ color:'var(--positive, #10b981)' }}>
-              {stats.above70}<span className="unit">개</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">60% 미만</div>
-            <div className="stat-value" style={{ color:stats.below60 > 0 ? 'var(--negative, #ef4444)' : undefined }}>
-              {stats.below60}<span className="unit">개</span>
-            </div>
-          </div>
+          {viewMode === 'cost' ? (
+            <>
+              <div className="stat-card">
+                <div className="stat-label">원가율 30% 이하</div>
+                <div className="stat-value" style={{ color:'var(--positive, #10b981)' }}>
+                  {stats.above70}<span className="unit">개</span>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">원가율 40% 초과</div>
+                <div className="stat-value" style={{ color:stats.below60 > 0 ? 'var(--negative, #ef4444)' : undefined }}>
+                  {stats.below60}<span className="unit">개</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="stat-card">
+                <div className="stat-label">마진율 70% 이상</div>
+                <div className="stat-value" style={{ color:'var(--positive, #10b981)' }}>
+                  {stats.above70}<span className="unit">개</span>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">마진율 60% 미만</div>
+                <div className="stat-value" style={{ color:stats.below60 > 0 ? 'var(--negative, #ef4444)' : undefined }}>
+                  {stats.below60}<span className="unit">개</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -324,8 +520,22 @@ export default function Page() {
         </div>
       )}
 
+      {/* 원가율 / 마진율 탭 */}
+      <div style={{ display:'flex', gap:0, margin:'12px 0 0', border:'1px solid var(--border)', borderRadius:8, overflow:'hidden', alignSelf:'flex-start', width:'fit-content' }}>
+        {[{ key:'cost', label:'원가율' }, { key:'margin', label:'마진율' }].map(({ key, label }) => (
+          <button key={key} onClick={() => setViewMode(key)}
+            style={{
+              padding:'7px 22px', fontSize:13, fontWeight:700, border:'none', cursor:'pointer',
+              background: viewMode === key ? 'var(--accent)' : 'var(--surface-2)',
+              color: viewMode === key ? '#fff' : 'var(--text-2)',
+            }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* Category filter */}
-      <div style={{ display:'flex', gap:6, flexWrap:'wrap', margin:'10px 0 8px' }}>
+      <div style={{ display:'flex', gap:6, flexWrap:'wrap', margin:'8px 0 8px' }}>
         {cats.map(c => (
           <button key={c} className={'chip' + (catFilter === c ? ' active' : '')}
             onClick={() => setCatFilter(c)}>{c}</button>
@@ -346,26 +556,28 @@ export default function Page() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th style={{ minWidth: 160, whiteSpace: 'nowrap' }}>메뉴명</th>
-                  <th style={{ width: 90, whiteSpace: 'nowrap' }}>카테고리</th>
+                  <SortableTh sortKey="name" active={sortKey} dir={sortDir} onClick={handleSort} width={160}>메뉴명</SortableTh>
+                  <SortableTh sortKey="cat"  active={sortKey} dir={sortDir} onClick={handleSort} width={90}>카테고리</SortableTh>
                   {sizeLabels.map(l => (
-                    <th key={l+'_c'} style={{ width:100, textAlign:'right' }}>{l} 원가</th>
+                    <SortableTh key={l+'_c'} sortKey={`cost_${l}`} active={sortKey} dir={sortDir} onClick={handleSort} width={100} right>{l} 원가</SortableTh>
                   ))}
                   {sizeLabels.map(l => (
-                    <th key={l+'_p'} style={{ width:100, textAlign:'right' }}>{l} 판매가</th>
+                    <SortableTh key={l+'_p'} sortKey={`price_${l}`} active={sortKey} dir={sortDir} onClick={handleSort} width={100} right>{l} 판매가</SortableTh>
                   ))}
                   {hasAdjustment && sizeLabels.map(l => (
-                    <th key={l+'_n'} style={{ width:120, textAlign:'right', color:'var(--accent)' }}>
-                      {l} 할인적용금액
-                    </th>
+                    <SortableTh key={l+'_n'} sortKey={`net_${l}`} active={sortKey} dir={sortDir} onClick={handleSort} width={120} right>
+                      <span style={{ color:'var(--accent)' }}>{l} 할인적용금액</span>
+                    </SortableTh>
                   ))}
                   {sizeLabels.map(l => (
-                    <th key={l+'_m'} style={{ width:96, textAlign:'right' }}>{l} 마진율</th>
+                    <SortableTh key={l+'_m'} sortKey={`rate_${l}`} active={sortKey} dir={sortDir} onClick={handleSort} width={96} right>
+                      {l} {viewMode === 'margin' ? '마진율' : '원가율'}
+                    </SortableTh>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(r => (
+                {sortedFiltered.map(r => (
                   <MarginRow
                     key={r.id}
                     r={r}
@@ -373,6 +585,7 @@ export default function Page() {
                     activePlatform={activePlatform}
                     discount={discount}
                     hasAdjustment={hasAdjustment}
+                    viewMode={viewMode}
                   />
                 ))}
               </tbody>
@@ -402,7 +615,7 @@ export default function Page() {
   );
 }
 
-const MarginRow = memo(function MarginRow({ r, sizeLabels, activePlatform, discount, hasAdjustment }) {
+const MarginRow = memo(function MarginRow({ r, sizeLabels, activePlatform, discount, hasAdjustment, viewMode }) {
   return (
     <tr>
       <td style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{r.menuName}</td>
@@ -446,25 +659,30 @@ const MarginRow = memo(function MarginRow({ r, sizeLabels, activePlatform, disco
         );
       })}
 
-      {/* 마진율 */}
+      {/* 원가율 / 마진율 */}
       {sizeLabels.map(l => {
-        const cost   = r.costMap?.[l] || 0;
-        const s      = r.sizes?.find(s => s.label === l);
-        const eff    = applyDiscount(s?.sellingPrice, discount);
-        const net    = calcNetRevenue(eff, activePlatform.fees, l);
-        const mr     = calcPlatformMargin(cost, net);
-        // 기준 마진율 (조정 전, 비교용)
-        const baseMr = hasAdjustment
+        const cost    = r.costMap?.[l] || 0;
+        const s       = r.sizes?.find(s => s.label === l);
+        const eff     = applyDiscount(s?.sellingPrice, discount);
+        const net     = calcNetRevenue(eff, activePlatform.fees, l);
+        const costRate = calcPlatformMargin(cost, net); // 원가율
+        const display  = costRate != null
+          ? (viewMode === 'margin' ? 100 - costRate : costRate)
+          : null;
+        const baseCostRate = hasAdjustment
           ? calcPlatformMargin(cost, s?.sellingPrice || 0)
+          : null;
+        const baseDisplay = baseCostRate != null
+          ? (viewMode === 'margin' ? 100 - baseCostRate : baseCostRate)
           : null;
         return (
           <td key={l+'_m'} style={{ textAlign:'right' }}>
-            {mr != null ? (
-              <span style={{ fontWeight:700, color:MC(mr) }}>{mr.toFixed(1)}%</span>
+            {display != null ? (
+              <span style={{ fontWeight:700, color: MC(display, viewMode) }}>{display.toFixed(1)}%</span>
             ) : '—'}
-            {baseMr != null && baseMr !== mr && (
+            {baseDisplay != null && baseDisplay !== display && (
               <span style={{ fontSize:10, color:'var(--text-4)', marginLeft:5 }}>
-                ({baseMr.toFixed(1)}%)
+                ({baseDisplay.toFixed(1)}%)
               </span>
             )}
           </td>

@@ -14,6 +14,10 @@ import {
   SEED_MAIN_CATEGORIES,
 } from '@/lib/ingredient';
 import { MASTER_IMPORT_SEED } from '@/lib/ingredient/master-import-seed';
+import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
+import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
+import { getAllSideRecipes } from '@/lib/cost/side-detail';
+import { getAllRecipes } from '@/lib/recipe';
 
 const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병', 'EA', 'BOX'];
 
@@ -28,6 +32,10 @@ export default function Page() {
   const [regTarget,  setRegTarget]  = useState(null);  // 마스터 등록 모달 대상 행
   const [importing,  setImporting]  = useState(false);
   const [resetting,  setResetting]  = useState(false);
+  const [viewTab,    setViewTab]    = useState('price'); // 'price' | 'usage'
+  const [usageMap,   setUsageMap]   = useState({ byCode: new Map(), byName: new Map() });
+  const [usageCat,   setUsageCat]   = useState('전체');
+  const [usageSort,  setUsageSort]  = useState('count_desc'); // count_desc|count_asc|name_asc
 
   const load = useCallback(async () => {
     await initDB();
@@ -40,8 +48,8 @@ export default function Page() {
       getIngredientMetaMap(),
     ]);
 
-    // 마스터가 비어있으면 빈 목록
-    if (!allMeta.length) { setRows([]); return; }
+    // 마스터가 비어있으면 빈 목록 (usageMap 빌드는 계속 진행)
+    if (!allMeta.length) { setRows([]); }
 
     let prevPriceMap = new Map();
     let priceRows = [];
@@ -127,6 +135,80 @@ export default function Page() {
       });
 
     setRows([...linkedRows, ...manualRows]);
+
+    // ── 제품별 사용현황 빌드 (오류 시 토스트만 — 단가 탭은 유지) ──────
+    try {
+    const [pizzaRecs, personalRecs, sideRecs, oldRecs] = await Promise.all([
+      getAllPizzaRecipes(),
+      getAllPersonalRecipes(),
+      getAllSideRecipes(),
+      getAllRecipes(),
+    ]);
+
+    // ── 사용현황 맵 빌드 ─────────────────────────────────────────
+    const uByCode = new Map(); // productCode → Map<menuName, topCat>
+    const uByName = new Map(); // normIngredientName → Map<menuName, topCat>
+    const INCLUDE_TOP = new Set(['피자', '1인피자', '사이드']);
+
+    // 재료명 정규화: 공백 제거 + 소문자
+    function normName(s) { return (s || '').trim().toLowerCase().replace(/\s+/g, ''); }
+
+    // cost_ingredients 의 재료명 → productCode 역방향 인덱스
+    // (컴포넌트에 productCode 없이 재료명만 있을 때 코드 복원용)
+    const nameToCode = new Map();
+    for (const m of allMeta) {
+      if (!m.productCode) continue;
+      const n = normName(m.ingredientName);
+      if (n && !nameToCode.has(n)) nameToCode.set(n, m.productCode);
+    }
+
+    // 메뉴명 끝 L / R 사이즈 표기 제거 (예: "페페로니 피자 L" → "페페로니 피자")
+    function cleanMenu(name) { return (name || '').replace(/\s+[LR]$/i, '').trim(); }
+
+    function addUsage(productCode, ingredientName, menuName, topCat) {
+      if (!menuName) return;
+      const menu = cleanMenu(menuName);
+      const norm = normName(ingredientName);
+
+      // productCode 없으면 재료명으로 역방향 조회 시도
+      const code = productCode || nameToCode.get(norm) || null;
+
+      // 코드 기준 저장
+      if (code) {
+        if (!uByCode.has(code)) uByCode.set(code, new Map());
+        uByCode.get(code).set(menu, topCat);
+      }
+
+      // 이름 기준 저장 — 코드 유무와 관계없이 항상 저장
+      // (코드 미스매치 시 이름 경로가 폴백 역할)
+      if (norm) {
+        if (!uByName.has(norm)) uByName.set(norm, new Map());
+        uByName.get(norm).set(menu, topCat);
+      }
+    }
+
+    // detail store 는 store 자체가 카테고리를 보장 — parseCategoryFromCode 불필요
+    for (const r of pizzaRecs) {
+      for (const c of (r.components || [])) addUsage(c.productCode, c.ingredientName, r.menuName, '피자');
+    }
+    for (const r of personalRecs) {
+      for (const c of (r.components || [])) addUsage(c.productCode, c.ingredientName, r.menuName, '1인피자');
+    }
+    for (const r of sideRecs) {
+      for (const c of (r.components || [])) addUsage(c.productCode, c.ingredientName, r.menuName, '사이드');
+    }
+    // 구 레시피 시스템 — menuCategory 필드 직접 사용
+    for (const r of oldRecs) {
+      const top = (r.menuCategory || '').split('/')[0];
+      if (!INCLUDE_TOP.has(top)) continue;
+      for (const ing of (r.ingredients || [])) addUsage(ing.productCode, ing.ingredientName, r.menuName, top);
+    }
+
+    setUsageMap({ byCode: uByCode, byName: uByName });
+    } catch (usageErr) {
+      console.warn('[ingredient-price] 사용현황 빌드 실패:', usageErr);
+      showToast('사용현황 데이터를 불러오지 못했습니다', 'err');
+    }
   }, []);
 
   useEffect(() => {
@@ -275,6 +357,35 @@ export default function Page() {
       )}
 
       {rows.length > 0 && (
+        <>
+          {/* 탭 전환 */}
+          <div style={{ display:'flex', gap:0, border:'1px solid var(--border)', borderRadius:8, overflow:'hidden', width:'fit-content', marginBottom:12 }}>
+            {[{ key:'price', label:'단가 목록' }, { key:'usage', label:'제품별 사용현황' }].map(({ key, label }) => (
+              <button key={key} onClick={() => setViewTab(key)}
+                style={{
+                  padding:'7px 20px', fontSize:13, fontWeight:700, border:'none', cursor:'pointer',
+                  background: viewTab === key ? 'var(--accent)' : 'var(--surface-2)',
+                  color: viewTab === key ? '#fff' : 'var(--text-2)',
+                }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {rows.length > 0 && viewTab === 'usage' && (
+        <UsageView
+          rows={rows}
+          usageMap={usageMap}
+          usageCat={usageCat}
+          setUsageCat={setUsageCat}
+          usageSort={usageSort}
+          setUsageSort={setUsageSort}
+        />
+      )}
+
+      {rows.length > 0 && viewTab === 'price' && (
         <>
           {/* 필터 바 */}
           <div style={{display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginBottom:4}}>
@@ -584,5 +695,181 @@ function FormField({ label, hint, children }) {
       </div>
       {children}
     </div>
+  );
+}
+
+// ── 제품별 사용현황 뷰 ────────────────────────────────────────
+const CAT_COLORS = {
+  '피자':   { bg:'#EFF6FF', color:'#1D4ED8' },
+  '1인피자':{ bg:'#FFF7ED', color:'#C2410C' },
+  '사이드': { bg:'#F0FDF4', color:'#15803D' },
+};
+const USAGE_CATS = ['전체', '피자', '사이드', '1인피자'];
+
+function UsageView({ rows, usageMap, usageCat, setUsageCat, usageSort, setUsageSort }) {
+  const [expanded, setExpanded] = useState(new Set());
+
+  // 카테고리 필터 변경 시 펼침 상태 초기화
+  useEffect(() => { setExpanded(new Set()); }, [usageCat]);
+
+  const usageRows = useMemo(() => {
+    const { byCode = new Map(), byName = new Map() } = usageMap;
+    const normStr = (s) => (s || '').trim().toLowerCase().replace(/\s+/g, '');
+
+    return rows.map((r, idx) => {
+      // meta.productCode 우선 (cost_ingredients의 원본 코드 = 레시피와 일치)
+      const code     = r.meta?.productCode || r.productCode || '';
+      const dispName = r.masterName || r.productName || '';
+
+      // 코드 + 이름 모두 조회 후 병합 (코드 조회가 최우선)
+      const fromCode   = (code ? byCode.get(code) : null) || new Map();
+      const fromMaster = byName.get(normStr(r.masterName   || '')) || new Map();
+      const fromProd   = byName.get(normStr(r.productName  || '')) || new Map();
+      const menuMap = new Map([...fromProd, ...fromMaster, ...fromCode]);
+
+      if (!menuMap.size) return { code, name: dispName, count: 0, menus: [] };
+
+      const menus = [...menuMap.entries()]
+        .filter(([, cat]) => usageCat === '전체' || cat === usageCat)
+        .map(([menuName, cat]) => ({ menuName, cat }))
+        .sort((a, b) => a.menuName.localeCompare(b.menuName, 'ko'));
+
+      // productCode 없는 행들은 idx 기반 uid — 동명 행 충돌 방지
+      const uid = code || `_idx_${idx}`;
+      return { uid, code, name: dispName, count: menus.length, menus };
+    }).filter(r => r.count > 0);
+  }, [rows, usageMap, usageCat]);
+
+  const sorted = useMemo(() => {
+    const arr = [...usageRows];
+    if (usageSort === 'count_desc') arr.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ko'));
+    else if (usageSort === 'count_asc') arr.sort((a, b) => a.count - b.count || a.name.localeCompare(b.name, 'ko'));
+    else arr.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+    return arr;
+  }, [usageRows, usageSort]);
+
+  const totalUsed = useMemo(
+    () => new Set(usageRows.flatMap(r => r.menus.map(m => m.menuName))).size,
+    [usageRows]
+  );
+
+  function toggle(code) {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code); else next.add(code);
+      return next;
+    });
+  }
+
+  return (
+    <>
+      {/* 통계 */}
+      <div style={{ display:'flex', gap:12, marginBottom:10, fontSize:12, color:'var(--text-3)', alignItems:'center' }}>
+        <span>사용 식자재 <b style={{color:'var(--text-1)'}}>{sorted.length}</b>개</span>
+        <span>·</span>
+        <span>해당 메뉴 <b style={{color:'var(--text-1)'}}>{totalUsed}</b>개</span>
+      </div>
+
+      {/* 카테고리 필터 + 정렬 */}
+      <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginBottom:8 }}>
+        <div style={{ display:'flex', gap:4 }}>
+          {USAGE_CATS.map(c => (
+            <button key={c} className={'chip' + (usageCat === c ? ' active' : '')}
+              onClick={() => setUsageCat(c)}>{c}</button>
+          ))}
+        </div>
+        <div style={{ marginLeft:'auto', display:'flex', gap:6, alignItems:'center' }}>
+          <span style={{ fontSize:11, color:'var(--text-3)', fontWeight:600 }}>정렬</span>
+          <select
+            value={usageSort}
+            onChange={e => setUsageSort(e.target.value)}
+            style={{ fontSize:12, padding:'4px 8px', borderRadius:6,
+              border:'1px solid var(--border)', background:'var(--surface)',
+              color:'var(--text-1)', cursor:'pointer' }}>
+            <option value="count_desc">많이 쓰는 순</option>
+            <option value="count_asc">적게 쓰는 순</option>
+            <option value="name_asc">이름 순</option>
+          </select>
+        </div>
+      </div>
+
+      {/* 테이블 */}
+      <div className="card table-card">
+        {sorted.length === 0 ? (
+          <div style={{ padding:'40px 0', textAlign:'center', color:'var(--text-3)', fontSize:13 }}>
+            등록된 레시피가 없거나 해당 카테고리에 사용된 재료가 없습니다
+          </div>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th style={{ width:36 }}>순위</th>
+                <th>식자재명</th>
+                <th style={{ width:80 }}>제품코드</th>
+                <th style={{ width:90, textAlign:'center' }}>사용 메뉴수</th>
+                <th>메뉴 목록</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((r, idx) => {
+                const open = expanded.has(r.uid);
+                const SHOW = 4;
+                const visible = open ? r.menus : r.menus.slice(0, SHOW);
+                const more    = r.menus.length - SHOW;
+                return (
+                  <tr key={r.uid}>
+                    <td style={{ textAlign:'center', color:'var(--text-4)', fontSize:12 }}>{idx + 1}</td>
+                    <td style={{ fontWeight:600, fontSize:13 }}>{r.name}</td>
+                    <td style={{ fontSize:11, color:'var(--text-3)', fontFamily:'monospace' }}>{r.code || '—'}</td>
+                    <td style={{ textAlign:'center' }}>
+                      <span style={{
+                        display:'inline-block', minWidth:32, padding:'2px 8px',
+                        borderRadius:99, fontWeight:700, fontSize:13,
+                        background: r.count >= 8 ? '#DBEAFE' : r.count >= 4 ? '#D1FAE5' : 'var(--surface-2)',
+                        color:      r.count >= 8 ? '#1D4ED8' : r.count >= 4 ? '#065F46' : 'var(--text-2)',
+                      }}>
+                        {r.count}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display:'flex', flexWrap:'wrap', gap:4, alignItems:'center' }}>
+                        {visible.map(m => {
+                          const cs = CAT_COLORS[m.cat] || { bg:'var(--surface-2)', color:'var(--text-3)' };
+                          return (
+                            <span key={m.menuName} style={{
+                              fontSize:11, fontWeight:600, padding:'2px 8px', borderRadius:99,
+                              background: cs.bg, color: cs.color, whiteSpace:'nowrap',
+                            }}>
+                              {m.menuName}
+                            </span>
+                          );
+                        })}
+                        {!open && more > 0 && (
+                          <button onClick={() => toggle(r.uid)}
+                            style={{ fontSize:11, color:'var(--accent)', border:0, background:'none',
+                              cursor:'pointer', padding:'2px 4px', fontWeight:600 }}>
+                            +{more}개 더보기
+                          </button>
+                        )}
+                        {open && r.menus.length > SHOW && (
+                          <button onClick={() => toggle(r.uid)}
+                            style={{ fontSize:11, color:'var(--text-3)', border:0, background:'none',
+                              cursor:'pointer', padding:'2px 4px' }}>
+                            접기
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+        <div style={{ padding:'8px 16px', fontSize:11, color:'var(--text-3)', borderTop:'1px solid var(--divider)' }}>
+          {sorted.length}개 식자재 표시 · {usageCat !== '전체' ? `${usageCat} 필터 중` : '전체 카테고리'}
+        </div>
+      </div>
+    </>
   );
 }

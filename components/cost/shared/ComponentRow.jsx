@@ -18,7 +18,7 @@ export function ComponentRow({ c, onChange, onRemove, ingredients, listId }) {
         ingredientName: match.ingredientName || match.productName,
         productCode:    match.productCode || null,
         unit:           c.unit || match.baseUnitType || 'g',
-        unitPrice:      match.unitPrice ?? null,
+        unitPrice:      match.unitPrice ?? c.unitPrice ?? null,
       });
     }
   }

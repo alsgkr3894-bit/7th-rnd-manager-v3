@@ -1,11 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { SALES_ALIASES, SALES_RULES } from '@/lib/sales';
+import { SALES_ALIASES, SALES_RULES, getUserExcluded, getUserRules } from '@/lib/sales';
 import { SettingsAliasCard } from '@/components/sales/SettingsAliasCard';
 import { SettingsExcludeCard } from '@/components/sales/SettingsExcludeCard';
 import { SettingsRuleCard } from '@/components/sales/SettingsRuleCard';
 import { formatNumber } from '@/lib/format';
+import { initDB } from '@/lib/db';
 
 const TABS = [
   { key: 'rule',    label: '카테고리 분류 규칙' },
@@ -15,10 +16,18 @@ const TABS = [
 
 export default function Page() {
   const [tab, setTab] = useState('rule');
+  const [excludeCount, setExcludeCount] = useState(0);
 
-  const ruleCount    = SALES_RULES.length;
-  const aliasCount   = SALES_ALIASES.length;
-  const excludeCount = SALES_RULES.filter(r => r.category === '품목제외').length;
+  const ruleCount  = SALES_RULES.length;
+  const aliasCount = SALES_ALIASES.length;
+
+  // 품목 제외 수: ref_excluded + sales_rules 중 category='품목제외' 합산
+  useEffect(() => {
+    initDB().then(async () => {
+      const [excl, rules] = await Promise.all([getUserExcluded(), getUserRules()]);
+      setExcludeCount(excl.length + rules.filter(r => r.category === '품목제외').length);
+    }).catch(() => {});
+  }, []);
 
   return (
     <main className="main">

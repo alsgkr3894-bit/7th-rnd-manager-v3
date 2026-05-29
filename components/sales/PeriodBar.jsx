@@ -1,60 +1,78 @@
 'use client';
-import { Icon } from '@/components/icons';
 
-/**
- * PeriodBar — 기간 선택 탭 + 기준(A)/비교(B) 표시
- *
- * @param {'yoy'|'mom'|'custom'|'single'} mode
- * @param {(mode) => void} onModeChange
- * @param {{year, month}} periodA
- * @param {{year, month}} periodB
- * @param {Array<{year, month}>} availablePeriods — sales_files 기준 (custom/single 모드용)
- * @param {(side, period) => void} onCustomChange — (side: 'a'|'b')
- */
+const MODE_TABS = [
+  { id: 'single', label: '월별 순위' },
+  { id: 'mom',    label: '전월 대비' },
+  { id: 'yoy',    label: '전년 동월' },
+  { id: 'custom', label: '직접 지정' },
+];
+
 export function PeriodBar({ mode, onModeChange, periodA, periodB, availablePeriods = [], onCustomChange }) {
   const isCustom = mode === 'custom';
   const isSingle = mode === 'single';
 
   return (
     <div className="period-bar">
+      {/* 모드 탭 */}
       <div className="period-tabs">
-        <button className={mode === 'single' ? 'active' : ''} onClick={() => onModeChange('single')}>순위</button>
-        <button className={mode === 'mom' ? 'active' : ''} onClick={() => onModeChange('mom')}>전월</button>
-        <button className={mode === 'yoy' ? 'active' : ''} onClick={() => onModeChange('yoy')}>전년 동월</button>
-        <button className={mode === 'custom' ? 'active' : ''} onClick={() => onModeChange('custom')}>사용자 지정</button>
+        {MODE_TABS.map(t => (
+          <button
+            key={t.id}
+            className={mode === t.id ? 'active' : ''}
+            onClick={() => onModeChange(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
+
+      {/* 기간 표시 */}
       <div className="period-disp">
-        <div className="period-side">
-          <div className="period-label" style={{color: 'var(--accent-text)'}}>
-            {isSingle ? '● 선택 년월' : '● 기준 (A)'}
-          </div>
-          {(isCustom || isSingle) ? (
-            <>
-              <PeriodSelect value={periodA} options={availablePeriods} onChange={(p) => onCustomChange?.('a', p)} />
-              {isSingle && periodA && (
-                <div className="period-val" style={{fontSize:12, color:'var(--text-3)', marginTop:4}}>
-                  {periodA.year}년 {periodA.month}월
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="period-val">{formatPeriod(periodA)}</div>
-          )}
-        </div>
+        <PeriodSlot
+          badge="A"
+          badgeColor="var(--accent)"
+          label={isSingle ? '선택 월' : '기준'}
+          period={periodA}
+          editable={isCustom || isSingle}
+          options={availablePeriods}
+          onChange={p => onCustomChange?.('a', p)}
+        />
+
         {!isSingle && (
           <>
-            <Icon.chevRight style={{width: 18, height: 18, color: 'var(--text-4)'}}/>
-            <div className="period-side">
-              <div className="period-label" style={{color: 'var(--text-3)'}}>● 비교 (B)</div>
-              {isCustom ? (
-                <PeriodSelect value={periodB} options={availablePeriods} onChange={(p) => onCustomChange?.('b', p)} />
-              ) : (
-                <div className="period-val">{formatPeriod(periodB)}{mode === 'yoy' ? ' (전년 동월)' : ' (전월)'}</div>
-              )}
-            </div>
+            <div className="period-vs">vs</div>
+            <PeriodSlot
+              badge="B"
+              badgeColor="var(--text-3)"
+              label="비교"
+              period={periodB}
+              editable={isCustom}
+              options={availablePeriods}
+              onChange={p => onCustomChange?.('b', p)}
+              hint={!isCustom ? (mode === 'yoy' ? '전년 동월' : '전월') : null}
+            />
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function PeriodSlot({ badge, badgeColor, label, period, editable, options, onChange, hint }) {
+  return (
+    <div className="period-slot">
+      <div className="period-slot-head">
+        <span className="period-badge" style={{ background: badgeColor + '22', color: badgeColor }}>{badge}</span>
+        <span className="period-slot-label">{label}</span>
+      </div>
+      {editable ? (
+        <PeriodSelect value={period} options={options} onChange={onChange} />
+      ) : (
+        <div className="period-slot-val">
+          {formatPeriod(period)}
+          {hint && <span className="period-slot-hint">{hint}</span>}
+        </div>
+      )}
     </div>
   );
 }
@@ -65,14 +83,9 @@ function PeriodSelect({ value, options, onChange }) {
     <select
       className="period-select"
       value={key}
-      onChange={(e) => {
+      onChange={e => {
         const [y, m] = e.target.value.split('-').map(Number);
         onChange({ year: y, month: m });
-      }}
-      style={{
-        background: 'var(--surface-2)', border: '1px solid var(--border)',
-        borderRadius: 8, padding: '6px 10px', fontSize: 14, fontWeight: 600,
-        color: 'var(--text-1)',
       }}
     >
       {!options.find(o => o.year === value?.year && o.month === value?.month) && (

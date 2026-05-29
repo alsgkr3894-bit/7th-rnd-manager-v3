@@ -65,16 +65,19 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0 }) 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 활성 항목 위치로 pill 이동
+  // 활성 항목 위치로 pill 이동 — pathname 또는 아코디언 상태 변경 시 재계산
   useEffect(() => {
     const sidebar = sidebarRef.current;
     if (!sidebar) return;
     const activeEl = sidebar.querySelector('.nav-item.active, .nav-child.active');
-    if (!activeEl) return;
+    if (!activeEl) {
+      setPillStyle(s => ({ ...s, opacity: 0 }));
+      return;
+    }
     const sRect = sidebar.getBoundingClientRect();
     const eRect = activeEl.getBoundingClientRect();
     setPillStyle({ top: eRect.top - sRect.top + sidebar.scrollTop, opacity: 1 });
-  }, [pathname]);
+  }, [pathname, openIds]);
 
   const toggle = (id) => setOpenIds(o => {
     const next = { ...o, [id]: !o[id] };

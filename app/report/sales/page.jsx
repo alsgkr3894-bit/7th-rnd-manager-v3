@@ -7,6 +7,7 @@ import { initDB } from '@/lib/db/init';
 import { getAll } from '@/lib/db';
 import { buildPeriodCompare } from '@/lib/sales/compare';
 import { buildGroupRanking } from '@/lib/sales/ranking';
+import { getUserExcluded, getUserRules } from '@/lib/sales';
 import { useDraftRestore } from '@/lib/report/useDraftRestore';
 import { getProfile } from '@/lib/profile';
 
@@ -30,6 +31,7 @@ export default function Page() {
     catBar:     true,
     prevComp:   true,
     variant:    false,
+    excluded:   true,
   });
   const upd = (k, v) => setOpts(o => ({ ...o, [k]: v }));
   const [docFormat, setDocFormat] = useState({ pdf: true, excel: false });
@@ -37,6 +39,7 @@ export default function Page() {
 
   // raw data
   const [salesRows, setSalesRows] = useState([]);
+  const [excludedList, setExcludedList] = useState([]);
   const [availYears, setAvailYears] = useState([]);
   const [availMonthsByYear, setAvailMonthsByYear] = useState({});
 
@@ -60,7 +63,17 @@ export default function Page() {
   useEffect(() => {
     initDB().then(async () => {
       try {
-        const rows = await getAll('sales_rows');
+        const [rows, excluded, rules] = await Promise.all([
+          getAll('sales_rows'),
+          getUserExcluded(),
+          getUserRules(),
+        ]);
+        // ref_excluded + sales_rules 중 category='품목제외' 합산 후 중복 제거
+        const excludedNames = new Set(excluded.map(e => e.menuName));
+        rules
+          .filter(r => r.category === '품목제외' && r.enable !== false)
+          .forEach(r => excludedNames.add(r.rawMenuName));
+        setExcludedList([...excludedNames].sort((a, b) => a.localeCompare(b, 'ko')));
         const byYear = {};
         for (const r of rows) {
           const y = Number(r.year), m = Number(r.month);
@@ -319,6 +332,7 @@ export default function Page() {
           <Check label="카테고리별 비중 그래프"            value={opts.catBar}    onChange={v=>upd('catBar',v)}/>
           <Check label="규격별 세부 (L/R/기타)"           value={opts.variant}   onChange={v=>upd('variant',v)} hint="순위표 아래 확장"/>
           <Check label="전월 대비 증감 컬럼"              value={opts.prevComp}  onChange={v=>upd('prevComp',v)}/>
+          <Check label="품목 제외 리스트 (마지막 페이지)"  value={opts.excluded}  onChange={v=>upd('excluded',v)}/>
         </OptGroup>
 
         <OptGroup label="문서 형식">
@@ -643,6 +657,31 @@ export default function Page() {
             </>
           );
         })()}
+
+        {/* ── 품목 제외 리스트 (마지막 페이지) ── */}
+        {opts.excluded && (
+          <div className="paper-section" style={{ pageBreakBefore: 'always', marginTop: 24 }}>
+            <div className="paper-section-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#94A3B8', display: 'inline-block', flexShrink: 0 }}/>
+              품목 제외 리스트
+              <span className="num muted" style={{ fontSize: 11, marginLeft: 'auto' }}>{excludedList.length}개</span>
+            </div>
+            {excludedList.length === 0 ? (
+              <div style={{ fontSize: 12, color: 'var(--text-4)', padding: '8px 0' }}>
+                제외된 품목이 없습니다.
+              </div>
+            ) : (
+              <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: '4px 12px' }}>
+                {excludedList.map((name, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text-2)', minWidth: 140 }}>
+                    <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#94A3B8', flexShrink: 0 }}/>
+                    {name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="paper-foot">
           <span className="muted" style={{fontSize:11}}>7번가 R&amp;D 플랫폼 · WONPAY 비즈니스</span>

@@ -3,6 +3,14 @@ import { formatNumber } from '@/lib/format';
 import { MonthRankTable } from './MonthRankTable';
 import { CategoryDetailGrid } from './CategoryDetailGrid';
 
+// 원가율 색상: 낮을수록 좋음
+function costRateColor(pct) {
+  if (pct == null || pct === 0) return 'var(--text-4)';
+  if (pct <= 30) return 'var(--positive, #10b981)';
+  if (pct <= 40) return '#f59e0b';
+  return 'var(--negative, #ef4444)';
+}
+
 /**
  * SingleMonthView — 월 상세 보기 (PeriodBar 'single' 모드)
  *
@@ -18,7 +26,10 @@ export function SingleMonthView({
   categories,
   category,
   onCategoryChange,
+  avgCostRate,   // 피자 평균 원가율 (%)
 }) {
+  const hasRate = avgCostRate != null && avgCostRate > 0;
+
   return (
     <>
       <div className="hero-row" style={{marginTop:16}}>
@@ -35,10 +46,24 @@ export function SingleMonthView({
         </div>
         <div className="card kpi-card">
           <div>
-            <div className="label">평균 원가율<span className="pill">피자 카테고리</span></div>
-            <div className="value num" style={{color: 'var(--text-4)'}}>—<span className="unit">%</span></div>
+            <div className="label">
+              평균 원가율
+              <span className="pill">피자 카테고리</span>
+            </div>
+            <div className="value num" style={{color: costRateColor(avgCostRate)}}>
+              {hasRate ? avgCostRate.toFixed(1) : '—'}
+              <span className="unit">%</span>
+            </div>
             <div className="trend">
-              <span style={{color: 'var(--text-4)'}}>원가 모듈 구축 예정</span>
+              {hasRate ? (
+                <span style={{color: costRateColor(avgCostRate)}}>
+                  {avgCostRate <= 30 ? '양호' : avgCostRate <= 40 ? '보통' : '주의'}
+                </span>
+              ) : (
+                <span style={{color:'var(--text-4)'}}>
+                  원가 레시피를 먼저 등록하세요
+                </span>
+              )}
             </div>
           </div>
         </div>

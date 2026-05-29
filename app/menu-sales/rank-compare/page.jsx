@@ -1,11 +1,11 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB, getAll, hasStore } from '@/lib/db';
 import {
   buildPeriodCompare, buildCategoryDetails, buildGroupRanking, deriveCompareB,
-  exportSingleMonthXlsx, exportCompareXlsx,
   CATEGORY_ORDER,
 } from '@/lib/sales';
 import { Icon } from '@/components/icons';
@@ -13,10 +13,13 @@ import { PeriodBar } from '@/components/sales/PeriodBar';
 import { SingleMonthView } from '@/components/sales/SingleMonthView';
 import { CompareView } from '@/components/sales/CompareView';
 import { RankCompareEmpty } from '@/components/sales/RankCompareEmpty';
+import { getPizzaRecipeMap, pizzaBaseCost } from '@/lib/cost/pizza-detail';
+import { getAllMenuPrices } from '@/lib/cost/menu-price';
 
 const MOVER_CATEGORIES = ['피자', '사이드', '1인피자'];
 
 export default function Page() {
+  const router = useRouter();
   const [ready, setReady] = useState(false);
   const [rows, setRows] = useState([]);
   const [available, setAvailable] = useState([]);
@@ -25,6 +28,7 @@ export default function Page() {
   const [periodB, setPeriodB] = useState(null);
   const [category, setCategory] = useState(null); // null = 전체
   const [singleCategory, setSingleCategory] = useState(null); // 월 상세 보기 카테고리 필터
+  const [avgCostRate, setAvgCostRate] = useState(null); // 피자 평균 원가율
 
   useEffect(() => {
     (async () => {
@@ -63,6 +67,34 @@ export default function Page() {
     if (!periodA || mode === 'custom' || mode === 'single') return;
     setPeriodB(deriveCompareB(periodA, mode));
   }, [mode, periodA]);
+
+  // 피자 평균 원가율 계산 — cost_pizza_detail 레시피 + cost_selling_prices 판매가
+  useEffect(() => {
+    (async () => {
+      try {
+        const [pizzaMap, menuPrices] = await Promise.all([
+          getPizzaRecipeMap(),
+          getAllMenuPrices(),
+        ]);
+        const pizzaPrices = menuPrices.filter(p =>
+          (p.category === '피자' || p.category?.startsWith('피자/')) &&
+          p.price > 0 && p.menuCode
+        );
+        const rates = [];
+        for (const p of pizzaPrices) {
+          const recipe = pizzaMap.get(p.menuCode);
+          if (!recipe) continue;
+          const cost = pizzaBaseCost(recipe);
+          if (cost > 0) rates.push((cost / p.price) * 100);
+        }
+        if (rates.length > 0) {
+          setAvgCostRate(rates.reduce((a, b) => a + b, 0) / rates.length);
+        }
+      } catch (err) {
+        console.error('[rank-compare] 원가율 로드 실패:', err);
+      }
+    })();
+  }, []);
 
   // single 모드: 선택 월 = periodA. 카테고리별 상세 + 중분류 순위
   const singleDetail = useMemo(() => {
@@ -121,28 +153,6 @@ export default function Page() {
     else setPeriodB(period);
   }
 
-  async function handleExport() {
-    try {
-      if (mode === 'single') {
-        if (!periodA || !singleDetail || singleMenus.length === 0) {
-          showToast('내보낼 데이터가 없습니다', 'err');
-          return;
-        }
-        await exportSingleMonthXlsx(periodA, singleDetail, singleMenus);
-      } else {
-        if (!compare || compare.totalA + compare.totalB === 0) {
-          showToast('내보낼 데이터가 없습니다', 'err');
-          return;
-        }
-        await exportCompareXlsx(periodA, periodB, compare);
-      }
-      showToast('엑셀 파일이 저장됐어요', 'ok');
-    } catch (err) {
-      console.error('[rank-compare] export 실패:', err);
-      showToast('엑셀 내보내기 실패', 'err');
-    }
-  }
-
   return (
     <main className="main">
       <PageHeader
@@ -151,9 +161,9 @@ export default function Page() {
         sub="두 기간의 판매량을 메뉴별로 비교하고, 신규·단종 메뉴를 확인할 수 있어요."
         actions={
           available.length > 0 && (
-            <button className="btn" onClick={handleExport}>
-              <Icon.download style={{width:14, height:14}}/>
-              엑셀 내보내기
+            <button className="btn primary" onClick={() => router.push('/report/menu-sales-compare')}>
+              <Icon.doc style={{width:14, height:14}}/>
+              보고서 생성
             </button>
           )
         }
@@ -182,6 +192,7 @@ export default function Page() {
               categories={singleCategories}
               category={singleCategory}
               onCategoryChange={setSingleCategory}
+              avgCostRate={avgCostRate}
             />
           ) : (
             <CompareView

@@ -6,9 +6,9 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getAllIngredients } from '@/lib/ingredient';
-import { getAllOrigins, upsertOrigin, deleteOrigin } from '@/lib/nutrition/origin/store';
+import { getAllOrigins, upsertOrigin, deleteOrigin, clearAllOrigins } from '@/lib/nutrition/origin/store';
 import { getAllMenuMaster } from '@/lib/menu-master';
-import MenuCodePicker from '@/components/ui/MenuCodePicker';
+import MenuCodePicker, { getBaseCode } from '@/components/ui/MenuCodePicker';
 import { exportOriginToExcel } from '@/lib/nutrition/origin/export';
 import { importOriginFromTemplate, importOriginFromFile } from '@/lib/nutrition/origin/import';
 
@@ -90,13 +90,17 @@ function ItemRow({ item, idx, total, onChange, onRemove }) {
 function OriginModal({ origin, ingredients, linkedIds, menuMasters, onSave, onClose }) {
   const isEdit = !!origin;
 
-  const [selId, setSelId]       = useState(origin?.ingredientId ?? null);
-  const [menuCode, setMenuCode] = useState(origin?.menuCode ?? '');
-  const [items, setItems]       = useState(() => toItems(origin));
-  const [note, setNote]         = useState(origin?.note ?? '');
-  const [search, setSearch]     = useState('');
-  const [saving, setSaving]     = useState(false);
-  const menuNameRef = useRef(null);
+  const [selId, setSelId]     = useState(origin?.ingredientId ?? null);
+  const [menuLinks, setMenuLinks] = useState(() => {
+    if (origin?.menuCodes?.length) return origin.menuCodes;
+    if (origin?.menuCode) return [{ menuCode: origin.menuCode, menuName: origin.menuName || '' }];
+    return [];
+  });
+  const [pickerKey, setPickerKey] = useState(0);
+  const [items, setItems]     = useState(() => toItems(origin));
+  const [note, setNote]       = useState(origin?.note ?? '');
+  const [search, setSearch]   = useState('');
+  const [saving, setSaving]   = useState(false);
 
   const selIng = ingredients.find(i => i.id === selId);
 
@@ -115,10 +119,16 @@ function OriginModal({ origin, ingredients, linkedIds, menuMasters, onSave, onCl
     return [...unlinked, ...linked].slice(0, 80);
   }, [ingredients, linkedIds, search, isEdit]);
 
-  const handleSelect = (ing) => {
-    setSelId(ing.id);
-    setTimeout(() => menuNameRef.current?.focus(), 0);
+  const handleSelect = (ing) => { setSelId(ing.id); };
+
+  const handleAddMenu = (code) => {
+    if (!code) return;
+    const found = menuMasters.find(m => getBaseCode(m) === code || m.menuCode === code);
+    setMenuLinks(prev => prev.some(l => l.menuCode === code) ? prev : [...prev, { menuCode: code, menuName: found?.menuName || '' }]);
+    setPickerKey(k => k + 1);
   };
+
+  const removeMenuLink = (idx) => setMenuLinks(prev => prev.filter((_, i) => i !== idx));
 
   const updateItem = (idx, field, value) => {
     setItems(prev => prev.map((it, i) => i === idx ? { ...it, [field]: value } : it));
@@ -139,19 +149,19 @@ function OriginModal({ origin, ingredients, linkedIds, menuMasters, onSave, onCl
         ingredientId: selId,
         productCode: selIng?.productCode || null,
         ingredientName: selIng?.ingredientName || (isEdit ? origin.ingredientName : ''),
-        menuCode: menuCode,
-        menuName: menuCode ? (menuMasters.find(m => m.menuCode === menuCode)?.menuName ?? '') : '',
+        menuCodes: menuLinks,
+        menuCode: menuLinks[0]?.menuCode || null,
+        menuName: menuLinks[0]?.menuName || '',
         items: validItems,
-        // 검색 편의용 flat 필드 (첫 번째 항목 기준)
         displayName: validItems[0].displayName,
         originCountry: validItems[0].originCountry,
         originRegion: validItems[0].originRegion,
         note: note.trim(),
       });
       showToast(isEdit ? '수정 완료' : '등록 완료', 'ok');
-      onSave();
+      await onSave();
     } catch { showToast('저장 실패', 'error'); }
-    setSaving(false);
+    finally { setSaving(false); }
   };
 
   return createPortal(
@@ -230,16 +240,35 @@ function OriginModal({ origin, ingredients, linkedIds, menuMasters, onSave, onCl
           </div>
         )}
 
-        {/* 음식명 */}
+        {/* 메뉴명 (다중 선택) */}
         <div style={{ marginBottom: 16 }}>
-          <label ref={menuNameRef} style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>
-            음식명 <span style={{ color: 'var(--text-4)' }}>(원산지가 표시될 메뉴명)</span>
+          <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 6 }}>
+            메뉴명 <span style={{ color: 'var(--text-4)' }}>(원산지가 표시될 메뉴, 여러 개 선택 가능)</span>
           </label>
+          {menuLinks.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 6 }}>
+              {menuLinks.map(({ menuCode, menuName }, idx) => (
+                <span key={menuCode} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  background: 'var(--accent-soft)', border: '1px solid var(--accent)',
+                  borderRadius: 6, padding: '3px 8px', fontSize: 12,
+                }}>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent-text)', fontSize: 11 }}>{menuCode}</span>
+                  {menuName && <span style={{ color: 'var(--text-2)' }}>{menuName}</span>}
+                  <button type="button" onClick={() => removeMenuLink(idx)}
+                    style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: '0 2px', lineHeight: 1, fontSize: 13 }}>
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
           <MenuCodePicker
+            key={pickerKey}
             menuMasters={menuMasters}
-            value={menuCode}
-            onChange={setMenuCode}
-            placeholder={origin?.menuName || '메뉴를 선택하세요'}
+            value=""
+            onChange={handleAddMenu}
+            placeholder={menuLinks.length === 0 ? '메뉴를 선택하세요' : '+ 메뉴 추가…'}
           />
         </div>
 
@@ -327,10 +356,9 @@ export default function Page() {
     setRows(origins);
     setIngredients(ings.filter(i => !i.discontinued && !i.excluded));
     setMenuMasters(masters);
-    setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load().catch(console.error).finally(() => setLoading(false)); }, [load]);
 
   const linkedIds = useMemo(() => new Set(rows.map(r => r.ingredientId)), [rows]);
 
@@ -339,7 +367,9 @@ export default function Page() {
     const q = search.toLowerCase();
     return rows.filter(r => {
       const itemsText = (r.items || []).map(it => `${it.displayName} ${it.originCountry}`).join(' ');
+      const menuCodesText = (r.menuCodes || []).map(m => `${m.menuCode} ${m.menuName}`).join(' ');
       return (
+        menuCodesText.toLowerCase().includes(q) ||
         (r.menuName || '').toLowerCase().includes(q) ||
         (r.ingredientName || '').toLowerCase().includes(q) ||
         (r.displayName || '').toLowerCase().includes(q) ||
@@ -355,7 +385,7 @@ export default function Page() {
     try {
       const { imported, skipped, total } = await importOriginFromTemplate();
       showToast(`${imported}개 임포트 완료 (전체 ${total}개, 건너뜀 ${skipped}개)`, 'ok');
-      load();
+      await load();
     } catch (e) { showToast('임포트 실패: ' + e.message, 'err'); }
     finally { setImporting(false); }
   };
@@ -368,15 +398,28 @@ export default function Page() {
     try {
       const { imported, skipped, total } = await importOriginFromFile(file);
       showToast(`${imported}개 임포트 완료 (전체 ${total}개, 건너뜀 ${skipped}개)`, 'ok');
-      load();
+      await load();
     } catch (e) { showToast('임포트 실패: ' + e.message, 'err'); }
     finally { setImporting(false); }
   };
 
   const handleDelete = async (row) => {
-    await deleteOrigin(row.id);
+    try {
+      await deleteOrigin(row.id);
+    } catch (e) { showToast('삭제 실패: ' + e.message, 'err'); return; }
     showToast(`'${row.ingredientName}' 원산지 삭제`, 'ok');
-    load();
+    await load();
+  };
+
+  const handleClearAll = async () => {
+    if (!confirm(`원산지 정보 전체(${rows.length}개)를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+    try {
+      await clearAllOrigins();
+      showToast('원산지 정보 전체 삭제 완료', 'ok');
+      await load();
+    } catch (e) {
+      showToast('삭제 실패: ' + e.message, 'err');
+    }
   };
 
   return (
@@ -398,6 +441,10 @@ export default function Page() {
             </button>
             <button className="btn" onClick={() => exportOriginToExcel(rows).catch(e => showToast('출력 실패: ' + e.message, 'err'))} disabled={rows.length === 0}>
               <Icon.download style={{ width: 14, height: 14 }} />엑셀로 출력
+            </button>
+            <button className="btn" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+              onClick={handleClearAll} disabled={rows.length === 0}>
+              <Icon.trash style={{ width: 14, height: 14 }} />전체 초기화
             </button>
             <button className="btn primary" onClick={() => setModal('add')}>
               <Icon.plus style={{ width: 14, height: 14 }} />식재료 연결
@@ -449,7 +496,7 @@ export default function Page() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>음식명</th>
+                  <th>메뉴명</th>
                   <th>표시품목 · 원산지</th>
                   <th style={{ width: 100 }}>제때 코드</th>
                   <th>재료명 (마스터)</th>
@@ -461,13 +508,17 @@ export default function Page() {
                 {filtered.map(row => (
                   <tr key={row.id} onClick={() => setModal(row)} style={{ cursor: 'pointer' }}>
                     <td style={{ fontWeight: 600 }}>
-                      {row.menuCode ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--accent-text)', background: 'var(--accent-soft)', padding: '1px 6px', borderRadius: 4 }}>{row.menuCode}</span>
-                          {row.menuName && <span>{row.menuName}</span>}
-                        </span>
+                      {(row.menuCodes?.length ? row.menuCodes : row.menuCode ? [{ menuCode: row.menuCode, menuName: row.menuName }] : []).length > 0 ? (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          {(row.menuCodes?.length ? row.menuCodes : [{ menuCode: row.menuCode, menuName: row.menuName }]).map(({ menuCode, menuName }) => (
+                            <span key={menuCode} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
+                              <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--accent-text)', background: 'var(--accent-soft)', padding: '1px 6px', borderRadius: 4 }}>{menuCode}</span>
+                              {menuName && <span style={{ fontSize: 13 }}>{menuName}</span>}
+                            </span>
+                          ))}
+                        </div>
                       ) : (
-                        row.menuName || <span style={{ color: 'var(--text-4)' }}>—</span>
+                        <span style={{ color: 'var(--text-4)' }}>—</span>
                       )}
                     </td>
                     <td><OriginBadges row={row} /></td>
@@ -498,7 +549,7 @@ export default function Page() {
           ingredients={ingredients}
           linkedIds={linkedIds}
           menuMasters={menuMasters}
-          onSave={() => { setModal(null); load(); }}
+          onSave={async () => { setModal(null); await load(); }}
           onClose={() => setModal(null)}
         />
       )}

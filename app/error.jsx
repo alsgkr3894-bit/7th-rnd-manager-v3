@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './error.module.css';
 
-export default function ErrorPage({ reset }) {
+export default function ErrorPage({ error, reset }) {
   const [countdown, setCountdown] = useState(null);
   const timerRef = useRef(null);
 
@@ -75,11 +75,18 @@ export default function ErrorPage({ reset }) {
 
         <div className={styles.numLine} />
 
-        <h1 className={styles.heading}>서버 오류가 발생했어요</h1>
+        <h1 className={styles.heading}>오류가 발생했어요</h1>
         <p className={styles.desc}>
-          일시적인 서버 문제가 발생했어요. 잠시 후 자동으로 해결될 수 있어요.<br />
+          예기치 않은 오류가 발생했어요. 아래 버튼으로 다시 시도해 주세요.<br />
           문제가 지속되면 시스템 관리자에게 문의해 주세요.
         </p>
+        {error?.message && (
+          <p style={{ fontSize: 11, color: 'var(--text-4, #888)', fontFamily: 'monospace',
+            background: 'rgba(0,0,0,.18)', borderRadius: 6, padding: '6px 12px', marginTop: 8,
+            maxWidth: 480, wordBreak: 'break-all' }}>
+            {error.message}
+          </p>
+        )}
 
         <div className={styles.actions}>
           <button

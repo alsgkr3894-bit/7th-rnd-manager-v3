@@ -35,23 +35,38 @@ export class ErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) {
+      const msg = this.state.error?.message;
       return (
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center',
-          justifyContent: 'center', minHeight: 200, padding: 32,
-          color: 'var(--text-3)', textAlign: 'center', gap: 12,
+          justifyContent: 'center', minHeight: 320, padding: 40,
+          textAlign: 'center', gap: 12,
         }}>
-          <div style={{ fontSize: 28 }}>⚠️</div>
-          <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-1)' }}>오류가 발생했습니다</div>
-          <div style={{ fontSize: 12, color: 'var(--text-3)', maxWidth: 340 }}>
-            {this.state.error?.message || '알 수 없는 오류'}
+          <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: -2,
+            background: 'linear-gradient(135deg,var(--accent,#38bdf8),#818cf8)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            오류
           </div>
-          <button
-            className="btn"
-            onClick={() => this.setState({ hasError: false, error: null })}
-          >
-            다시 시도
-          </button>
+          <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-1)' }}>
+            오류가 발생했어요
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--text-3)', maxWidth: 380, lineHeight: 1.6 }}>
+            예기치 않은 오류가 발생했어요.<br/>다시 시도하거나 페이지를 새로 고침해 주세요.
+          </div>
+          {msg && (
+            <div style={{ fontSize: 11, color: 'var(--text-4)', fontFamily: 'monospace',
+              background: 'var(--surface-2)', borderRadius: 6, padding: '5px 12px',
+              maxWidth: 400, wordBreak: 'break-all' }}>
+              {msg}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <button className="btn primary"
+              onClick={() => this.setState({ hasError: false, error: null })}>
+              다시 시도
+            </button>
+            <a href="/" className="btn">홈으로</a>
+          </div>
         </div>
       );
     }
