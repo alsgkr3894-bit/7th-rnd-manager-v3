@@ -19,6 +19,7 @@ import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { RecipeEditor } from '@/components/cost/recipe/RecipeEditor';
 import { costRateColor } from '@/lib/cost/rate-color';
 import { KEYS } from '@/lib/note/keys';
+import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 
 const emptyDraft = () => ({
   menuCode:     '',
@@ -119,6 +120,8 @@ export default function Page() {
   useEffect(() => {
     load().catch(err => { console.error(err); setDbError(err.message || '데이터 로드 실패'); }).finally(() => setLoading(false));
   }, [load]);
+
+  useVisibilityRefresh(load);
 
   // load 후 선택된 레시피 draft 동기화
   useEffect(() => {
@@ -284,8 +287,10 @@ export default function Page() {
           {loading ? (
             <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>로딩 중…</div>
           ) : recipes.length === 0 ? (
-            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
-              등록된 메뉴가 없습니다
+            <div className="empty-state" style={{ margin: 16 }}>
+              <div className="empty-icon-wrap"><Icon.doc style={{ width: 32, height: 32 }}/></div>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>레시피가 없어요</div>
+              <div style={{ fontSize: 13, color: 'var(--text-3)' }}>새 레시피를 추가해보세요</div>
             </div>
           ) : (
             <div

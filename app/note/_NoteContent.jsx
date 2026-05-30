@@ -33,8 +33,8 @@ export function NoteContent() {
 
   const [notes,        setNotes]        = useState([]);
   const [loading,      setLoading]      = useState(true);
-  const [search,       setSearch]       = useState(() => searchParams.get('q') || '');
-  const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || 'all');
+  const [search,       setSearch]       = useState(() => searchParams.get('q') || (tryLS(KEYS.NOTE_SEARCH, '')));
+  const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || (tryLS(KEYS.NOTE_STATUS, 'all')));
   const [sortBy,       setSortBy]       = useState(() => tryLS(KEYS.NOTE_SORT, 'createdAt'));
   const [viewMode,     setViewMode]     = useState(() => tryLS(KEYS.NOTE_VIEW, 'card'));
   const PAGE_SIZE = 20;
@@ -84,6 +84,9 @@ export function NoteContent() {
     const qs = p.toString();
     window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
   }, [search, statusFilter, pathname]);
+
+  useEffect(() => { setLS(KEYS.NOTE_SEARCH, search); }, [search]);
+  useEffect(() => { setLS(KEYS.NOTE_STATUS, statusFilter); }, [statusFilter]);
 
   useEffect(() => {
     load().catch(console.error).finally(() => setLoading(false));
@@ -492,27 +495,26 @@ export function NoteContent() {
 
       {/* 빈 상태 */}
       {!loading && notes.length === 0 && (
-        <div className="card empty-state" style={{minHeight:200,display:'grid',placeItems:'center',marginTop:16}}>
-          <div style={{textAlign:'center',color:'var(--text-3)'}}>
-            <div className="empty-float" style={{display:'inline-block',marginBottom:12}}>
-              <Icon.note style={{width:40,height:40,opacity:.3}}/>
-            </div>
-            <div style={{fontWeight:600,marginBottom:4}}>아직 노트가 없어요</div>
-            <div style={{fontSize:13}}>메뉴 테스트 결과나 아이디어를 기록해보세요.</div>
-            <button className="btn primary" style={{marginTop:16}} onClick={() => router.push('/note/write')}>
-              <Icon.plus style={{width:13,height:13}}/> 첫 노트 작성
-            </button>
+        <div className="empty-state" style={{marginTop:16}}>
+          <div className="empty-icon-wrap empty-float">
+            <Icon.note style={{width:32,height:32}}/>
           </div>
+          <div className="empty-title">아직 노트가 없어요</div>
+          <div className="empty-sub">메뉴 테스트 결과나 아이디어를 기록해보세요.</div>
+          <button className="btn primary" style={{marginTop:8}} onClick={() => router.push('/note/write')}>
+            <Icon.plus style={{width:13,height:13}}/> 첫 노트 작성
+          </button>
         </div>
       )}
       {!loading && notes.length > 0 && filtered.length === 0 && (
-        <div className="card empty-state" style={{minHeight:120,display:'grid',placeItems:'center',marginTop:16}}>
-          <div style={{textAlign:'center',color:'var(--text-3)'}}>
-            <div className="empty-float" style={{display:'inline-block',marginBottom:8,fontSize:28}}>🔍</div>
-            <div style={{fontSize:14}}>
-              {search ? `"${search}" 검색 결과가 없어요` : '조건에 맞는 노트가 없어요'}
-            </div>
+        <div className="empty-state" style={{marginTop:16}}>
+          <div className="empty-icon-wrap">
+            <Icon.search style={{width:32,height:32}}/>
           </div>
+          <div className="empty-title">
+            {search ? `"${search}" 검색 결과가 없어요` : '조건에 맞는 노트가 없어요'}
+          </div>
+          <div className="empty-sub">필터를 바꾸거나 다른 검색어를 입력해보세요.</div>
         </div>
       )}
 

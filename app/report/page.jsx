@@ -1,15 +1,20 @@
 'use client';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { loadXlsx } from '@/lib/excel';
 import { Icon } from '@/components/icons';
 import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
-import { ShareLinkModal, ScheduleManagerModal, ReportPreviewModal } from '@/components/report/ReportModals';
+
+const ShareLinkModal = dynamic(() => import('@/components/report/ReportModals').then(m => ({ default: m.ShareLinkModal })), { ssr: false });
+const ScheduleManagerModal = dynamic(() => import('@/components/report/ReportModals').then(m => ({ default: m.ScheduleManagerModal })), { ssr: false });
+const ReportPreviewModal = dynamic(() => import('@/components/report/ReportModals').then(m => ({ default: m.ReportPreviewModal })), { ssr: false });
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { getReports, deleteReport, toggleReportFav, saveReport } from '@/lib/report';
 import { KIND_META, KIND_CHIP, KIND_EMOJI } from '@/lib/report/constants';
 import { useCountUp } from '@/lib/useCountUp';
+import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 
 const REPORT_KINDS = KIND_META;
 
@@ -74,6 +79,8 @@ export default function Page() {
     }
   }, []);
   useEffect(() => { reload(true); }, [reload]);
+
+  useVisibilityRefresh(reload);
 
   /* URL 상태 복원 (page, sort, dir) + 새 보고서 하이라이트 */
   useEffect(() => {
@@ -425,9 +432,20 @@ export default function Page() {
               {list.length === 0 && (
                 <tr><td colSpan={9}>
                   <div className="empty-state" style={{padding:48}}>
-                    <Icon.doc style={{width:36,height:36,color:'var(--text-4)'}}/>
-                    <div className="empty-title">조건에 맞는 보고서가 없어요</div>
-                    <div className="empty-sub">필터를 바꾸거나 새 보고서를 생성해보세요.</div>
+                    <div className="empty-icon-wrap"><Icon.doc style={{width:32,height:32}}/></div>
+                    <div className="empty-title">
+                      {reports.length === 0 ? '보고서가 없어요' : '조건에 맞는 보고서가 없어요'}
+                    </div>
+                    <div className="empty-sub">
+                      {reports.length === 0
+                        ? '위의 카드에서 원하는 보고서 종류를 선택해 첫 보고서를 생성해보세요.'
+                        : '필터를 바꾸거나 새 보고서를 생성해보세요.'}
+                    </div>
+                    {reports.length === 0 && (
+                      <button className="btn primary" style={{marginTop:8}} onClick={() => setNewReportOpen(true)}>
+                        <Icon.plus style={{width:13,height:13}}/> 새 보고서 생성
+                      </button>
+                    )}
                   </div>
                 </td></tr>
               )}

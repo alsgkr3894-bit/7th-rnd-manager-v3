@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SearchBox } from '@/components/ui/SearchBox';
@@ -13,9 +14,10 @@ import {
   getAllEdges, upsertEdge, deleteEdge, seedEdges, resetAllEdges,
 } from '@/lib/cost/edge-dough';
 import { EdgeCard } from '@/components/cost/edge-dough/EdgeCard';
-import { EdgeEditModal } from '@/components/cost/edge-dough/EdgeEditModal';
-import { GroupEditor } from '@/components/cost/recipe-groups/GroupEditor';
 import { emptyGroup, groupToDraft } from '@/lib/cost/group-utils';
+
+const EdgeEditModal = dynamic(() => import('@/components/cost/edge-dough/EdgeEditModal').then(m => ({ default: m.EdgeEditModal })), { ssr: false });
+const GroupEditor   = dynamic(() => import('@/components/cost/recipe-groups/GroupEditor').then(m => ({ default: m.GroupEditor })), { ssr: false });
 
 // ── 탭 버튼 ───────────────────────────────────────────────────
 function TabBar({ tab, setTab }) {

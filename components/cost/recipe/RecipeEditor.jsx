@@ -137,7 +137,7 @@ export function RecipeEditor({ draft, setDraft, allMeta, menuMasters, menuPrices
   }, [costBySizes, groupCostBySizes, sizeLabels]);
 
   return (
-    <div className="card" style={{ padding: '20px 24px' }}>
+    <div className="card" aria-busy={saving} style={{ padding: '20px 24px' }}>
       {/* 상단 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div style={{ fontWeight: 700, fontSize: 15 }}>

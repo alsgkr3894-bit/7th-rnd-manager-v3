@@ -22,15 +22,18 @@ import { getSetRecipeMap } from '@/lib/cost/set-detail';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { PlatformSettingsModal } from '@/components/cost/margin/PlatformSettingsModal';
 import { SortableTh } from '@/components/ui/SortableTh';
+import { SearchBox } from '@/components/ui/SearchBox';
 import { MarginRow, MC } from '@/components/cost/margin/MarginRow';
 import { exportMarginExcel } from '@/lib/cost/margin/export';
 import { COST_RATE_THRESHOLD as COST_RATE } from '@/lib/cost/margin/constants';
+import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
+import { KEYS } from '@/lib/note/keys';
 
 export default function Page() {
   const [rows,         setRows]         = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [dbError,      setDbError]      = useState(null);
-  const [catFilter,    setCatFilter]    = useState('전체');
+  const [catFilter,    setCatFilter]    = useState(() => { try { return localStorage.getItem(KEYS.MARGIN_CAT_FILTER) || '전체'; } catch { return '전체'; } });
   const [platforms,    setPlatforms]    = useState([]);
   const [activePlatId, setActivePlatId] = useState('default');
   const [showSettings, setShowSettings] = useState(false);
@@ -40,6 +43,7 @@ export default function Page() {
   const [viewMode,     setViewMode]     = useState('cost');  // 'cost' | 'margin'
   const [sortKey,      setSortKey]      = useState('');
   const [sortDir,      setSortDir]      = useState('asc');
+  const [search,       setSearch]       = useState('');
 
   const load = useCallback(async () => {
     await initDB();
@@ -236,6 +240,10 @@ export default function Page() {
     load().catch(err => { console.error(err); setDbError(err.message || '데이터 로드 실패'); }).finally(() => setLoading(false));
   }, [load]);
 
+  useVisibilityRefresh(load);
+
+  useEffect(() => { try { localStorage.setItem(KEYS.MARGIN_CAT_FILTER, catFilter); } catch {} }, [catFilter]);
+
   const activePlatform = useMemo(
     () => platforms.find(p => p.id === activePlatId) ?? platforms[0] ?? { id:'default', name:'기본', fees:[] },
     [platforms, activePlatId]
@@ -259,15 +267,24 @@ export default function Page() {
   }, [rows]);
 
   const filtered = useMemo(() => {
-    if (catFilter === '전체') return rows;
-    return rows.filter(r => {
-      const cat = r.menuCategory || '기타';
-      // 정확 일치 또는 '피자' 선택 시 '피자/...' 전부 포함
-      if (cat === catFilter) return true;
-      if (catFilter === '피자' && cat.startsWith('피자/')) return true;
-      return false;
-    });
-  }, [rows, catFilter]);
+    let result = rows;
+    if (catFilter !== '전체') {
+      result = result.filter(r => {
+        const cat = r.menuCategory || '기타';
+        if (cat === catFilter) return true;
+        if (catFilter === '피자' && cat.startsWith('피자/')) return true;
+        return false;
+      });
+    }
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter(r =>
+        (r.menuName     || '').toLowerCase().includes(q) ||
+        (r.menuCategory || '').toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [rows, catFilter, search]);
 
   const sizeLabels = useMemo(() => {
     const set = new Set();
@@ -536,13 +553,19 @@ export default function Page() {
         ))}
       </div>
 
+      {/* Search */}
+      <div style={{ maxWidth: 320, marginBottom: 4 }}>
+        <SearchBox value={search} onChange={setSearch} placeholder="메뉴명 검색..." />
+      </div>
+
       {/* Table */}
       {loading ? (
         <div className="card" style={{ padding:40, textAlign:'center', color:'var(--text-3)', fontSize:13 }}>로딩 중…</div>
       ) : rows.length === 0 ? (
-        <div className="card" style={{ padding:40, textAlign:'center', color:'var(--text-3)' }}>
-          <Icon.box style={{ width:28, height:28, opacity:.4, marginBottom:8 }}/>
-          <div style={{ fontSize:13 }}>원가 레시피 탭에서 메뉴를 먼저 등록해주세요</div>
+        <div className="empty-state">
+          <div className="empty-icon-wrap"><Icon.doc style={{ width: 32, height: 32 }}/></div>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>등록된 메뉴가 없어요</div>
+          <div style={{ fontSize: 13, color: 'var(--text-3)' }}>원가 계산 탭에서 레시피를 먼저 등록해주세요</div>
         </div>
       ) : (
         <div className="card table-card">
@@ -587,7 +610,7 @@ export default function Page() {
             </table>
           </div>
           <div style={{ padding:'8px 16px', fontSize:11, color:'var(--text-3)', borderTop:'1px solid var(--divider)' }}>
-            {filtered.length}개 메뉴
+            {filtered.length}개 메뉴{rows.length !== filtered.length && ` (전체 ${rows.length}개)`}
             {hasAdjustment && (
               <span style={{ marginLeft:8, color:'var(--accent)' }}>
                 · {activePlatform.id !== 'default' ? activePlatform.name : ''}

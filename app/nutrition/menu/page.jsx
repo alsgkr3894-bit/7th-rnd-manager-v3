@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { SearchBox } from '@/components/ui/SearchBox';
@@ -9,10 +10,11 @@ import {
   getAllMenuRefs, getRawValueMap,
   getAllEdges, getAllToppings, getAllCompositions,
 } from '@/lib/nutrition/values/store';
-import { TabBase }    from '@/components/nutrition/menu/TabBase';
-import { TabEdge }    from '@/components/nutrition/menu/TabEdge';
-import { TabDerived } from '@/components/nutrition/menu/TabDerived';
-import { TabResults } from '@/components/nutrition/menu/TabResults';
+
+const TabBase    = dynamic(() => import('@/components/nutrition/menu/TabBase').then(m => ({ default: m.TabBase })), { ssr: false });
+const TabEdge    = dynamic(() => import('@/components/nutrition/menu/TabEdge').then(m => ({ default: m.TabEdge })), { ssr: false });
+const TabDerived = dynamic(() => import('@/components/nutrition/menu/TabDerived').then(m => ({ default: m.TabDerived })), { ssr: false });
+const TabResults = dynamic(() => import('@/components/nutrition/menu/TabResults').then(m => ({ default: m.TabResults })), { ssr: false });
 
 const TABS = ['베이스 영양성분', '엣지 설정', '파생 메뉴', '계산 결과'];
 

@@ -29,7 +29,7 @@ export function DayPanel({ dateKey, today, notes, schedules, workLogs, viewMode,
               : <span style={{ color:'var(--text-4)' }}>{`테스트 ${notes.length}건 · 일정 ${schedules.length}건`}</span>}
           </div>
         </div>
-        <button className="btn sm ghost" style={{ padding:'4px 7px' }} onClick={onClose}>
+        <button className="btn sm ghost xs" onClick={onClose}>
           <Icon.close style={{ width:13, height:13 }}/>
         </button>
       </div>
@@ -41,7 +41,7 @@ export function DayPanel({ dateKey, today, notes, schedules, workLogs, viewMode,
             <span style={{ fontSize:11, fontWeight:800, color:'var(--text-3)', textTransform:'uppercase', letterSpacing:'0.04em' }}>
               일정 {schedules.length > 0 ? `· ${schedules.length}` : ''}
             </span>
-            <button className="btn sm ghost" style={{ fontSize:11, padding:'3px 8px' }} onClick={onAddSchedule}>
+            <button className="btn sm ghost xs" onClick={onAddSchedule}>
               + 추가
             </button>
           </div>
@@ -124,7 +124,7 @@ export function DayPanel({ dateKey, today, notes, schedules, workLogs, viewMode,
             <span style={{ fontSize:11, fontWeight:800, color:'var(--text-3)', textTransform:'uppercase', letterSpacing:'0.04em' }}>
               테스트 노트 {notes.length > 0 ? `· ${notes.length}` : ''}
             </span>
-            <button className="btn sm ghost" style={{ fontSize:11, padding:'3px 8px' }} onClick={onAddNote}>
+            <button className="btn sm ghost xs" onClick={onAddNote}>
               + 추가
             </button>
           </div>

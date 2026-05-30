@@ -9,6 +9,7 @@ import { NoteFormBody, INIT } from '@/app/note/_NoteFormBody';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
+import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 
 export default function Page() {
   const router  = useRouter();
@@ -17,9 +18,17 @@ export default function Page() {
   const [fromTitle,      setFromTitle]     = useState('');
   const [showDraftBanner, setShowDraftBanner] = useState(false);
   const [draftStatus,    setDraftStatus]   = useState('idle'); // idle | saving | saved
+  const [isDirty,        setIsDirty]       = useState(false);
   const skipRef    = useRef(true);
   const timerRef   = useRef(null);
   const draftTimer = useRef(null);
+
+  useBeforeUnload(isDirty);
+
+  function handleFormChange(updater) {
+    setForm(updater);
+    setIsDirty(true);
+  }
 
   useEffect(() => {
     let fromId = null;
@@ -75,6 +84,7 @@ export default function Page() {
       await initDB();
       await addNote(form);
       clearDraft(KEYS.NOTE_DRAFT_WRITE);
+      setIsDirty(false);
       showToast('노트가 저장됐어요', 'ok');
       router.push('/note');
     } catch {
@@ -85,6 +95,7 @@ export default function Page() {
 
   function handleCancel() {
     clearDraft(KEYS.NOTE_DRAFT_WRITE);
+    setIsDirty(false);
     router.push('/note');
   }
 
@@ -95,7 +106,7 @@ export default function Page() {
   }
 
   return (
-    <main className="main">
+    <main className="main" aria-busy={saving}>
       <PageHeader
         breadcrumb={['메뉴개발노트', '노트 작성']}
         title="노트 작성"
@@ -138,7 +149,7 @@ export default function Page() {
           </div>
         </div>
       )}
-      <NoteFormBody form={form} setForm={setForm} />
+      <NoteFormBody form={form} setForm={handleFormChange} />
     </main>
   );
 }

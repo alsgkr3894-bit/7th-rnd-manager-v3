@@ -82,7 +82,7 @@ export function MasterRow({ r, onRegClick }) {
           )}
         </td>
         <td>
-          <button className="btn" style={{padding:'3px 8px', fontSize:11}}
+          <button className="btn xs"
             onClick={onRegClick} title="포장단위·분류 수정">
             수정
           </button>

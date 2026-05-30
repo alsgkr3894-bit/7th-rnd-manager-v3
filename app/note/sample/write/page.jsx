@@ -7,15 +7,19 @@ import { initDB } from '@/lib/db';
 import { addSample } from '@/lib/sample';
 import { SampleFormBody, SAMPLE_INIT } from '../_SampleFormBody';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
+import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { KEYS } from '@/lib/note/keys';
 
 export default function Page() {
   const router = useRouter();
-  const [form,   setForm]   = useState(() => ({
+  const [form,    setForm]    = useState(() => ({
     ...SAMPLE_INIT,
     testDate: new Date().toISOString().slice(0, 10),
   }));
-  const [saving, setSaving] = useState(false);
+  const [saving,  setSaving]  = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+
+  useBeforeUnload(isDirty);
 
   useEffect(() => {
     try {
@@ -33,6 +37,11 @@ export default function Page() {
     } catch {}
   }, []);
 
+  function handleFormChange(updater) {
+    setForm(updater);
+    setIsDirty(true);
+  }
+
   useKeyboardSave(handleSave);
 
   async function handleSave() {
@@ -44,6 +53,7 @@ export default function Page() {
     try {
       await initDB();
       await addSample(form);
+      setIsDirty(false);
       showToast('샘플이 저장됐어요', 'ok');
       router.push('/note/sample');
     } catch {
@@ -67,7 +77,7 @@ export default function Page() {
           </>
         }
       />
-      <SampleFormBody form={form} setForm={setForm} />
+      <SampleFormBody form={form} setForm={handleFormChange} />
     </main>
   );
 }

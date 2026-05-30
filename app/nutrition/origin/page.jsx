@@ -11,6 +11,7 @@ import { exportOriginToExcel } from '@/lib/nutrition/origin/export';
 import { importOriginFromTemplate, importOriginFromFile } from '@/lib/nutrition/origin/import';
 import { OriginModal } from '@/components/nutrition/origin/OriginModal';
 import { SmallStatCard } from '@/components/ui/SmallStatCard';
+import { SearchBox } from '@/components/ui/SearchBox';
 
 function getMenuCodesArray(row) {
   if (row.menuCodes?.length) return row.menuCodes;
@@ -161,13 +162,8 @@ export default function Page() {
         />
       </div>
 
-      <div style={{ marginTop: 16 }}>
-        <div style={{ position: 'relative', maxWidth: 320 }}>
-          <Icon.search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: 'var(--text-3)' }} />
-          <input className="input" style={{ paddingLeft: 32 }} value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="재료명·표기명·원산지·코드 검색" />
-        </div>
+      <div style={{ marginTop: 16, maxWidth: 320 }}>
+        <SearchBox value={search} onChange={setSearch} placeholder="재료명·표기명·원산지·코드 검색" />
       </div>
 
       <div className="card table-card" style={{ marginTop: 12 }}>

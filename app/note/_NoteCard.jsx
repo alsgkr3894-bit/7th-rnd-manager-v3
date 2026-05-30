@@ -61,8 +61,8 @@ export function NoteCard({ note, onEdit, onDelete, onCopy, onStatusChange, onNew
         ))}
         {!batchMode && (
           <div style={{marginLeft:'auto',display:'flex',gap:5}}>
-            <button className="btn sm" onClick={onNewVersion} style={{fontSize:10,padding:'3px 7px',color:'var(--text-3)'}}>+ 버전</button>
-            <button className="btn sm" onClick={onCopy} style={{fontSize:10,padding:'3px 7px',color:'var(--text-3)'}}>복사</button>
+            <button className="btn sm xs" onClick={onNewVersion} style={{color:'var(--text-3)'}}>+ 버전</button>
+            <button className="btn sm xs" onClick={onCopy} style={{color:'var(--text-3)'}}>복사</button>
             <button className="btn sm" onClick={onEdit}><Icon.edit style={{width:12,height:12}}/></button>
             <button className="btn sm" onClick={onDelete} style={{color:'var(--negative)'}}><Icon.trash style={{width:12,height:12}}/></button>
           </div>

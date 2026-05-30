@@ -11,6 +11,7 @@ import {
 } from '@/lib/nutrition/allergen/store';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { AllergenModal } from '@/components/nutrition/allergen/AllergenModal';
+import { SearchBox } from '@/components/ui/SearchBox';
 
 /* ── 메인 페이지 ── */
 export default function Page() {
@@ -83,12 +84,11 @@ export default function Page() {
       </div>
 
       {/* 검색 */}
-      <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-        <div style={{ position: 'relative', maxWidth: 320 }}>
-          <Icon.search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: 'var(--text-3)' }} />
-          <input className="input" style={{ paddingLeft: 32 }} value={search} onChange={e => setSearch(e.target.value)} placeholder="재료명·표기명·코드 검색" />
+      <div style={{ display: 'flex', gap: 8, marginTop: 16, alignItems: 'flex-end' }}>
+        <div style={{ maxWidth: 320, flex: '0 0 320px' }}>
+          <SearchBox value={search} onChange={setSearch} placeholder="재료명·표기명·코드 검색" />
         </div>
-        <div style={{ fontSize: 13, color: 'var(--text-3)', alignSelf: 'center', marginLeft: 4 }}>
+        <div style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 12 }}>
           {links.length}개 연결 / {ingredients.length - linkedIds.size}개 미연결
         </div>
       </div>

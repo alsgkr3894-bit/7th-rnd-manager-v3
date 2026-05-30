@@ -1,5 +1,5 @@
 'use client';
-import { Suspense, useState, useEffect, useMemo, useCallback } from 'react';
+import { Suspense, useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -9,6 +9,8 @@ import { initDB } from '@/lib/db';
 import { getAllSamples, addSample, updateSample, deleteSample, SAMPLE_CATEGORIES, RATING_COLOR } from '@/lib/sample';
 import { tryLS, setLS } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
+import { useDBLoad } from '@/hooks/useDBLoad';
+import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useSampleBatchMode } from '@/hooks/useSampleBatchMode';
 import { useSampleCompareMode } from '@/hooks/useSampleCompareMode';
@@ -37,7 +39,6 @@ function SampleContent() {
   const pathname = usePathname();
 
   const [samples,     setSamples]     = useState([]);
-  const [loading,     setLoading]     = useState(true);
   const [search,      setSearch]      = useState('');
   const {
     history: searchHistory,
@@ -54,16 +55,19 @@ function SampleContent() {
   const [viewMode,    setViewMode]    = useState(() => tryLS(KEYS.SAMPLE_VIEW, 'grid'));
   const [calMonth,    setCalMonth]    = useState(() => new Date());
 
-  const load = useCallback(async () => {
-    await initDB();
-    setSamples(await getAllSamples());
-  }, []);
+  const { data: loadedSamples, loading, reload } = useDBLoad(() => getAllSamples());
+
+  useEffect(() => {
+    if (loadedSamples) setSamples(loadedSamples);
+  }, [loadedSamples]);
+
+  useVisibilityRefresh(reload);
 
   const {
     batchMode, setBatchMode, selected, toggleSelect, exitBatchMode, handleBatchDelete,
   } = useSampleBatchMode(
     (ids) => setSamples(prev => prev.filter(s => !ids.includes(s.id))),
-    load,
+    reload,
   );
 
   const {
@@ -73,10 +77,6 @@ function SampleContent() {
     compareItems, compareIdxMap,
     exitCompareMode,
   } = useSampleCompareMode(samples);
-
-  useEffect(() => {
-    load().catch(console.error).finally(() => setLoading(false));
-  }, [load]);
 
   // URL sync for filters
   useEffect(() => {
@@ -124,12 +124,12 @@ function SampleContent() {
     let cancelled = false;
     showToast(`"${rec.title}" 삭제됨`, 'ok', 4000, {
       label: '실행취소',
-      onClick: () => { cancelled = true; load(); },
+      onClick: () => { cancelled = true; reload(); },
     });
     await new Promise(r => setTimeout(r, 3800));
     if (!cancelled) {
       try { await deleteSample(rec.id); }
-      catch { load(); showToast('삭제 실패', 'error'); }
+      catch { reload(); showToast('삭제 실패', 'error'); }
     }
   }
 
@@ -139,7 +139,7 @@ function SampleContent() {
       await initDB();
       await addSample({ ...rec, title: `${rec.title} (복사)` });
       showToast('샘플을 복사했어요', 'ok');
-      load();
+      reload();
     } catch { showToast('복사 실패', 'error'); }
   }
 

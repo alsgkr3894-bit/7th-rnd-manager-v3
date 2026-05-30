@@ -296,7 +296,7 @@ export default function HomePage() {
           <div className="card modal-anim" style={{width:'min(360px,92vw)',padding:'24px 28px'}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
               <div style={{fontWeight:800,fontSize:15,color:'var(--text-1)'}}>홈 위젯 설정</div>
-              <button className="btn" style={{padding:'4px 8px'}} onClick={() => setWidgetConfigOpen(false)}>
+              <button className="btn xs" onClick={() => setWidgetConfigOpen(false)}>
                 <Icon.close style={{width:15,height:15}}/>
               </button>
             </div>
