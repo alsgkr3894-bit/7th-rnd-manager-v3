@@ -3,6 +3,8 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { initDB } from '@/lib/db';
 import {
   getAllMenuMaster, upsertMenuMaster,
@@ -164,6 +166,7 @@ export default function Page() {
   }, []);
 
   useEffect(() => { load().catch(console.error).finally(() => setLoading(false)); }, [load]);
+  useVisibilityRefresh(load);
 
   async function handleResetAndSeed() {
     if (!window.confirm('메뉴 마스터 전체를 삭제합니다. 계속할까요?')) return;
@@ -204,6 +207,22 @@ export default function Page() {
       showToast(`${imported}개 가져오기 완료`, 'ok');
     } catch (err) { showToast('실패: ' + err.message, 'err'); }
     finally { setImporting(false); }
+  }
+
+  function handleExportCsv() {
+    const headers = ['메뉴코드', '메뉴명', '판매가', '상태', '카테고리'];
+    const rows = filtered.map(r => [
+      r.menuCode || '', r.menuName || '',
+      r.price != null ? String(r.price) : '',
+      r.status || '', r.category || '',
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+    const blob = new Blob(['﻿'+csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = '메뉴마스터.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`CSV ${filtered.length}개 내보내기 완료`, 'ok');
   }
 
   async function handleSaveRow(data) {
@@ -250,6 +269,9 @@ export default function Page() {
         sub={loading ? '로딩 중…' : `총 ${rows.length}개 · 원가·영양·원산지·알레르기 전 모듈의 기준 데이터`}
         actions={
           <>
+            <button className="btn" onClick={handleExportCsv} disabled={rows.length === 0} style={{ color: 'var(--text-2)' }}>
+              <Icon.download style={{ width: 14, height: 14 }} /> CSV 내보내기
+            </button>
             <button className="btn" onClick={handleImport} disabled={importing} style={{ color: 'var(--text-3)' }}>
               <Icon.download style={{ width: 14, height: 14 }} />
               {importing ? '가져오는 중…' : '판매가에서 가져오기'}
@@ -294,19 +316,60 @@ export default function Page() {
         </div>
       </div>
 
-      {!loading && rows.length === 0 && (
-        <div className="card" style={{ minHeight: 200, display: 'grid', placeItems: 'center' }}>
-          <div style={{ textAlign: 'center', color: 'var(--text-3)' }}>
-            <Icon.box style={{ width: 36, height: 36, marginBottom: 14, opacity: .4 }} />
-            <div style={{ fontWeight: 600, marginBottom: 6 }}>메뉴 마스터 데이터가 없습니다</div>
-            <div style={{ fontSize: 13, marginBottom: 16 }}>기본 코드 등록 버튼으로 전체 코드 체계를 불러오세요</div>
-            <button className="btn primary" onClick={handleSeed} disabled={seeding}>기본 코드 등록</button>
+      {loading && (
+        <div className="card table-card">
+          <div style={{ overflowX: 'auto' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th style={{ width: 145 }}>메뉴코드</th>
+                  <th>메뉴명</th>
+                  <th style={{ width: 200 }}>분류 태그</th>
+                  <th style={{ width: 60 }}>사이즈</th>
+                  <th style={{ width: 100 }}>판매가</th>
+                  <th style={{ width: 80 }}>상태</th>
+                  <th style={{ width: 60 }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i}>
+                    <td><Skeleton width={100} height={13} /></td>
+                    <td><Skeleton width="80%" height={13} /></td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <Skeleton width={44} height={20} radius={999} />
+                        <Skeleton width={72} height={20} radius={999} />
+                      </div>
+                    </td>
+                    <td><Skeleton width={32} height={13} /></td>
+                    <td><Skeleton width={60} height={13} style={{ marginLeft: 'auto' }} /></td>
+                    <td><Skeleton width={44} height={20} radius={6} /></td>
+                    <td><Skeleton width={28} height={28} radius={6} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
+      {!loading && rows.length === 0 && (
+        <div className="empty-state" style={{ padding: '60px 20px' }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--surface-2)', display: 'grid', placeItems: 'center', color: 'var(--text-4)', border: '1px solid var(--border)' }}>
+            <Icon.box style={{ width: 28, height: 28 }} />
+          </div>
+          <div className="empty-title">메뉴 마스터 데이터가 없습니다</div>
+          <div className="empty-sub">기본 코드 등록 버튼으로 전체 코드 체계를 불러오세요.</div>
+          <button className="btn primary" onClick={handleSeed} disabled={seeding} style={{ marginTop: 4 }}>
+            <Icon.plus style={{ width: 14, height: 14 }} />
+            {seeding ? '등록 중…' : '기본 코드 등록'}
+          </button>
+        </div>
+      )}
+
       {rows.length > 0 && (
-        <>
+        <div className="content-enter">
           {/* 필터 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -359,7 +422,7 @@ export default function Page() {
               <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>조건에 맞는 항목이 없습니다</div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table className="data-table">
+                <table className="data-table stagger-rows">
                   <thead>
                     <tr>
                       <th style={{ width: 145 }}>메뉴코드</th>
@@ -407,7 +470,7 @@ export default function Page() {
               {filtered.length}개 표시 / 전체 {rows.length}개
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {editRow && (

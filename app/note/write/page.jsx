@@ -102,12 +102,14 @@ export default function Page() {
         sub={fromTitle ? `"${fromTitle}" 기반 새 버전` : '테스트 조건과 평가를 기록하세요'}
         actions={
           <div style={{display:'flex',gap:8,alignItems:'center'}}>
-            {draftStatus === 'saving' && (
-              <span style={{fontSize:12,color:'var(--text-3)'}}>임시저장 중…</span>
-            )}
-            {draftStatus === 'saved' && (
-              <span style={{fontSize:12,color:'var(--positive)',animation:'fade 200ms ease'}}>✓ 임시저장됨</span>
-            )}
+            <span aria-live="polite" aria-atomic="true">
+              {draftStatus === 'saving' && (
+                <span style={{fontSize:12,color:'var(--text-3)'}}>임시저장 중…</span>
+              )}
+              {draftStatus === 'saved' && (
+                <span style={{fontSize:12,color:'var(--positive)',animation:'fade 200ms ease'}}>✓ 임시저장됨</span>
+              )}
+            </span>
             <button className="btn" onClick={handleCancel}>취소</button>
             <button className="btn primary" onClick={handleSave} disabled={saving}>
               {saving ? '저장 중…' : '저장하기'}

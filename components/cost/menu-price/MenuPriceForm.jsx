@@ -62,7 +62,9 @@ export function MenuPriceForm({ initial, onSave, onClose }) {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setSaving(true);
     try {
-      await onSave({ ...form, price: Number(form.price) });
+      const savePromise = onSave({ ...form, price: Number(form.price) });
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('저장 시간 초과')), 10000));
+      await Promise.race([savePromise, timeoutPromise]);
     } finally {
       setSaving(false);
     }
@@ -82,11 +84,10 @@ export function MenuPriceForm({ initial, onSave, onClose }) {
         <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap:14}}>
           <Field label="메뉴코드" hint={isNew ? '비워두면 저장 시 자동 발급 (PZ/IP/SD/ST/TS 형식)' : '코드를 직접 수정할 수 있어요'}>
             <input
-              className="form-input"
+              className="form-input mono"
               value={form.menuCode}
               onChange={e => set('menuCode', e.target.value.toUpperCase())}
               placeholder="예) PZ-001-L  (비우면 자동 발급)"
-              style={{fontFamily:"'JetBrains Mono', ui-monospace, monospace", letterSpacing:'0.04em'}}
             />
           </Field>
 

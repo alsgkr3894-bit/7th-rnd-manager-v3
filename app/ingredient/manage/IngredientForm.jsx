@@ -1,6 +1,7 @@
 'use client';
-import { useState, useId } from 'react';
+import { useState, useId, useRef } from 'react';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
+import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
@@ -32,6 +33,9 @@ export function IngredientForm({ initial, onSave, onClose }) {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const datalistId = useId();
+  const initialFormRef = useRef(JSON.stringify(initial ? toForm(initial) : EMPTY));
+  const isDirty = JSON.stringify(form) !== initialFormRef.current;
+  useBeforeUnload(isDirty);
 
   function set(key, val) { setForm(f => ({ ...f, [key]: val })); }
 
@@ -123,11 +127,13 @@ export function IngredientForm({ initial, onSave, onClose }) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap:14}}>
+        <form onSubmit={handleSubmit} aria-busy={saving} style={{display:'flex', flexDirection:'column', gap:14}}>
 
           <Field label="재료명" required={!isJetteLinked} error={errors.ingredientName}
+            errorId="ingredientName-error"
             hint={isJetteLinked ? '비워두면 제때 제품명 자동 사용' : undefined}>
             <input className="form-input" value={form.ingredientName}
+              aria-describedby={errors.ingredientName ? 'ingredientName-error' : undefined}
               onChange={e => set('ingredientName', e.target.value)}
               placeholder={isJetteLinked ? initial.displayName : '예) 모짜렐라치즈'}/>
           </Field>
@@ -228,9 +234,11 @@ export function IngredientForm({ initial, onSave, onClose }) {
             hint={isJetteLinked
               ? '향후 원가표 연동 시 자동 입력 (현재는 수동)'
               : 'g·개당 단가 자동 계산에 사용'}
-            error={errors.baseQuantity}>
+            error={errors.baseQuantity}
+            errorId="baseQuantity-error">
             <div style={{display:'flex', gap:8}}>
               <input className="form-input" type="number" min="0" value={form.baseQuantity}
+                aria-describedby={errors.baseQuantity ? 'baseQuantity-error' : undefined}
                 onChange={e => set('baseQuantity', e.target.value)}
                 placeholder="예) 1000" style={{flex:1}}/>
               <select className="form-input" value={form.baseUnitType}
@@ -254,9 +262,11 @@ export function IngredientForm({ initial, onSave, onClose }) {
                 </div>
               </Field>
 
-              <Field label="수동 단가 (부가세포함)" hint="제때 연동 없을 때 사용" error={errors.priceOverride}>
+              <Field label="수동 단가 (부가세포함)" hint="제때 연동 없을 때 사용" error={errors.priceOverride}
+                errorId="priceOverride-error">
                 <div style={{display:'flex', gap:8, alignItems:'center'}}>
                   <input className="form-input" type="number" min="0" value={form.priceOverride}
+                    aria-describedby={errors.priceOverride ? 'priceOverride-error' : undefined}
                     onChange={e => set('priceOverride', e.target.value)}
                     placeholder="예) 7680" style={{flex:1}}/>
                   <span style={{fontSize:13, color:'var(--text-3)', whiteSpace:'nowrap'}}>원</span>
@@ -295,7 +305,7 @@ function SourceField({ label, value }) {
   );
 }
 
-function Field({ label, required, hint, error, children }) {
+function Field({ label, required, hint, error, errorId, children }) {
   return (
     <div>
       <div style={{fontSize:13, fontWeight:600, color:'var(--text-2)', marginBottom:6}}>
@@ -303,7 +313,7 @@ function Field({ label, required, hint, error, children }) {
         {hint && <span style={{fontSize:11, fontWeight:400, color:'var(--text-3)', marginLeft:6}}>{hint}</span>}
       </div>
       {children}
-      {error && <div style={{fontSize:12, color:'var(--negative)', marginTop:4}}>{error}</div>}
+      {error && <div id={errorId} role="alert" style={{fontSize:12, color:'var(--negative)', marginTop:4}}>{error}</div>}
     </div>
   );
 }

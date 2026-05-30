@@ -1,0 +1,10 @@
+{
+  "name": "7번가 R&D 플랫폼",
+  "short_name": "R&D Manager",
+  "description": "7번가피자 R&D팀 원가계산·식자재·메뉴개발 통합 플랫폼",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#E1101F",
+  "icons": [{ "src": "/icon.png", "sizes": "558x443", "type": "image/png" }]
+}

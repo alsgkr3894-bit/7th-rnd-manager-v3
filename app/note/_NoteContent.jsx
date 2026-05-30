@@ -280,7 +280,7 @@ export function NoteContent() {
   const hasActiveFilter = statusFilter !== 'all' || search.trim() || sortBy !== 'createdAt';
 
   return (
-    <main className="main">
+    <main className="main page-enter">
       <ConfirmDialog
         open={confirmBatch}
         title={`노트 ${selected.size}개를 삭제할까요?`}

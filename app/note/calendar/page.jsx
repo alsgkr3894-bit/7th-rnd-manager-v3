@@ -81,6 +81,23 @@ export default function Page() {
 
   useEffect(() => { load().catch(() => setLoading(false)); }, [load]);
 
+  /* 달 이동 — 애니메이션 중 연속 클릭 방지 */
+  const shiftMonth = useCallback((delta) => {
+    if (isAnimating.current) return;
+    isAnimating.current = true;
+    setTimeout(() => { isAnimating.current = false; }, 250);
+
+    setMonthDir(delta);
+    calKey.current += 1;
+    setViewMonth(prev => {
+      let m = prev + delta;
+      if (m < 1)  { setViewYear(y => y - 1); return 12; }
+      if (m > 12) { setViewYear(y => y + 1); return 1; }
+      return m;
+    });
+    setSelectedDay(null);
+  }, []);
+
   /* 키보드: ← → 월 이동 / Escape 패널 닫기 */
   useEffect(() => {
     function onKey(e) {
@@ -91,23 +108,7 @@ export default function Page() {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDay]);
-
-  /* 달 이동 — 애니메이션 중 연속 클릭 방지 */
-  function shiftMonth(delta) {
-    if (isAnimating.current) return;
-    isAnimating.current = true;
-    setTimeout(() => { isAnimating.current = false; }, 250);
-
-    setMonthDir(delta);
-    calKey.current += 1;
-    let m = viewMonth + delta, y = viewYear;
-    if (m < 1)  { m = 12; y--; }
-    if (m > 12) { m = 1;  y++; }
-    setViewMonth(m); setViewYear(y);
-    setSelectedDay(null);
-  }
+  }, [selectedDay, shiftMonth]);
 
   /* 패널 닫기 — fade-out 후 상태 해제 */
   function closePanel() {

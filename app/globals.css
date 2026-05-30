@@ -265,6 +265,16 @@ button { font-family: inherit; cursor: pointer; }
   transition: grid-template-rows 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .nav-children.open { grid-template-rows: 1fr; }
+.nav-children.open .nav-child { animation: slide-up 220ms cubic-bezier(0.2,0.8,0.2,1) both; }
+.nav-children.open .nav-child:nth-child(1) { animation-delay: 20ms; }
+.nav-children.open .nav-child:nth-child(2) { animation-delay: 50ms; }
+.nav-children.open .nav-child:nth-child(3) { animation-delay: 80ms; }
+.nav-children.open .nav-child:nth-child(4) { animation-delay: 110ms; }
+.nav-children.open .nav-child:nth-child(n+5) { animation-delay: 140ms; }
+.nav-children-inner .nav-child:nth-child(1) { animation-delay: 10ms; }
+.nav-children-inner .nav-child:nth-child(2) { animation-delay: 35ms; }
+.nav-children-inner .nav-child:nth-child(3) { animation-delay: 60ms; }
+.nav-children-inner .nav-child:nth-child(n+4) { animation-delay: 85ms; }
 .nav-children-inner {
   overflow: hidden;
   padding-left: 22px;
@@ -340,7 +350,7 @@ button { font-family: inherit; cursor: pointer; }
   position: sticky; top: 0; z-index: 5;
   border-bottom: 1px solid var(--border);
 }
-.topbar.scrolled { background: color-mix(in oklab, var(--surface) 88%, transparent); backdrop-filter: blur(8px); }
+.topbar.scrolled { box-shadow: var(--shadow-md); backdrop-filter: blur(8px); background: color-mix(in srgb, var(--surface) 90%, transparent); }
 
 .company-wrap { position: relative; flex-shrink: 0; }
 
@@ -399,7 +409,11 @@ button { font-family: inherit; cursor: pointer; }
   border-radius: var(--radius-sm);
   text-align: left; cursor: pointer;
   color: var(--text-1);
+  animation: slide-up 180ms cubic-bezier(0.2,0.8,0.2,1) both;
 }
+.company-drop-item:nth-child(1) { animation-delay: 10ms; }
+.company-drop-item:nth-child(2) { animation-delay: 30ms; }
+.company-drop-item:nth-child(3) { animation-delay: 50ms; }
 .company-drop-item:hover { background: var(--surface-2); }
 .company-drop-item.active { background: var(--accent-soft); }
 .cdrop-logo { flex-shrink: 0; display: grid; place-items: center; width: 32px; }
@@ -628,6 +642,7 @@ button { font-family: inherit; cursor: pointer; }
   white-space: nowrap;
 }
 .btn:hover { background: var(--bg-2); }
+.btn:not(.primary):not([disabled]):hover { transform: translateY(-1px); }
 .btn:active { transform: scale(0.98); }
 .btn.primary { background: var(--accent-press); color: white; }
 .btn.primary:hover { background: #A80E18; }
@@ -641,7 +656,7 @@ button { font-family: inherit; cursor: pointer; }
 .btn.xs { padding: 3px 8px; font-size: 12px; height: auto; min-height: unset; line-height: 1.4; }
 .btn.lg { padding: 16px 22px; font-size: 15px; border-radius: 14px; }
 .btn.block { width: 100%; }
-.btn:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+.btn:disabled, .btn[disabled] { opacity: 0.45; cursor: not-allowed; pointer-events: none; transition: opacity 150ms, transform 150ms; }
 
 .kpi-card { display: flex; flex-direction: column; justify-content: space-between; min-height: 200px; color: var(--text-1); }
 .kpi-card .value { color: var(--text-1); }
@@ -1404,7 +1419,9 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ===== Data table ===== */
 .table-card { padding: 0; overflow: hidden; }
-.table-wrap { overflow-x: auto; }
+.table-wrap { overflow-x: auto; position: relative; }
+.table-wrap::after { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 24px; background: linear-gradient(to left, var(--bg), transparent); pointer-events: none; opacity: 0; transition: opacity 200ms; }
+.table-wrap.can-scroll-right::after { opacity: 1; }
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -1458,7 +1475,7 @@ button { font-family: inherit; cursor: pointer; }
 .rank-pill.top { background: var(--accent-soft); color: var(--accent-text); }
 
 .cell-name { min-width: 0; }
-.menu-name { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+.menu-name { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 100%; }
 .ing-product { font-size: 11px; margin-top: 2px; font-weight: 500; }
 
 .cat-pill {
@@ -1576,9 +1593,13 @@ button { font-family: inherit; cursor: pointer; }
   grid-column: 1 / -1;
   padding: 60px 20px;
   text-align: center;
-  background: var(--surface);
-  border: 1px dashed var(--border-strong);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 .empty-title { font-size: 15px; font-weight: 700; margin-top: 12px; }
 .empty-sub { font-size: 13px; color: var(--text-3); margin-top: 4px; }
@@ -3982,7 +4003,8 @@ button { font-family: inherit; cursor: pointer; }
   transition: transform 80ms ease, background 120ms ease, box-shadow 120ms ease;
 }
 .btn.primary:hover {
-  box-shadow: 0 4px 12px color-mix(in oklab, var(--accent) 35%, transparent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 .btn:active { transform: scale(0.97); }
 
@@ -4351,6 +4373,7 @@ button { font-family: inherit; cursor: pointer; }
 .form-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .form-input::placeholder { color: var(--text-4); }
 .form-input:disabled { opacity: .5; cursor: not-allowed; }
+.form-input.mono { font-family: 'JetBrains Mono', 'Consolas', monospace; letter-spacing: 0.02em; }
 
 /* ============================================================
    Report Modals — missing classes
@@ -4613,7 +4636,7 @@ tr.deleting td { animation: row-fade-out .35s ease forwards; pointer-events: non
 .star-pop { animation: star-pop 320ms cubic-bezier(0.2,0.8,0.2,1); }
 
 /* ── 칸반 드래그 상태 ── */
-.kanban-card         { cursor: grab; user-select: none; }
+.kanban-card         { cursor: grab; user-select: none; transition: opacity 140ms ease, transform 140ms ease, box-shadow 140ms ease; }
 .kanban-card:active  { cursor: grabbing; }
 .kanban-card-dragging { opacity: 0.35; transform: scale(0.97); }
 .kanban-col-over {
@@ -4770,7 +4793,9 @@ mark.search-hl {
 /* ── 저장 중 버튼 dots ── */
 .btn-saving {
   display: inline-flex; align-items: center; gap: 1px;
+  pointer-events: none;
 }
+.btn-saving::after { content: '…'; animation: dot-blink 1s infinite; }
 .btn-saving span {
   display: inline-block; width: 3px; height: 3px;
   border-radius: 50%; background: currentColor; margin-left: 3px;
@@ -5143,6 +5168,7 @@ html {
 @keyframes calFade     { from { opacity:0 } to { opacity:1 } }
 @keyframes calPanelIn  { from { opacity:0; transform:translateX(20px) } to { opacity:1; transform:none } }
 @keyframes calPanelOut { from { opacity:1; transform:none } to { opacity:0; transform:translateX(20px) } }
+@keyframes count-up-land { 0% { transform: scale(1.05); color: var(--accent); } 100% { transform: scale(1); } }
 .cal-slide-left  { animation: calLeft  0.22s cubic-bezier(0.2,0.8,0.2,1) }
 .cal-slide-right { animation: calRight 0.22s cubic-bezier(0.2,0.8,0.2,1) }
 .cal-fade        { animation: calFade  0.18s ease }

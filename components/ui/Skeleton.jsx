@@ -80,3 +80,101 @@ export function SampleCardSkeleton() {
     </div>
   );
 }
+
+// cols: number of columns to render per row
+export function SkeletonTableRows({ rows = 5, cols = 5 }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, i) => (
+        <tr key={i}>
+          {Array.from({ length: cols }).map((_, j) => (
+            <td key={j} style={{ padding:'10px 12px' }}>
+              <Skeleton height={13} width={j === 0 ? '60%' : j === cols - 1 ? 40 : '85%'} radius={4}/>
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
+  );
+}
+
+export function IngredientPriceSkeleton() {
+  // Matches: 제품코드 | 제품명 | 부가세포함가 | 포장단위 | 개당단가 | 단가변동 | (icon) | (btn)
+  const colWidths = ['60%', '80%', '55%', '65%', '55%', '50%', 24, 32];
+  return (
+    <div className="card table-card">
+      <div style={{ overflowX:'auto' }}>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th style={{ width:90 }}><Skeleton width="70%" height={11}/></th>
+              <th><Skeleton width="50%" height={11}/></th>
+              <th style={{ width:120 }}><Skeleton width="70%" height={11}/></th>
+              <th style={{ width:100 }}><Skeleton width="60%" height={11}/></th>
+              <th style={{ width:120 }}><Skeleton width="70%" height={11}/></th>
+              <th style={{ width:110 }}><Skeleton width="60%" height={11}/></th>
+              <th style={{ width:30 }}/>
+              <th style={{ width:60 }}/>
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <tr key={i}>
+                {colWidths.map((w, j) => (
+                  <td key={j} style={{ padding:'10px 12px' }}>
+                    {typeof w === 'number'
+                      ? <Skeleton width={w} height={13} radius={4}/>
+                      : <Skeleton width={w} height={13} radius={4}/>}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ padding:'8px 16px', borderTop:'1px solid var(--divider)' }}>
+        <Skeleton width={120} height={11}/>
+      </div>
+    </div>
+  );
+}
+
+export function IngredientListSkeleton() {
+  // Matches: 제품코드 | 재료명 | 분류 | #태그 | 전용/범용 | 단위 | G·개당단가 | 제조사 | 상태
+  const colWidths = ['55%', '75%', '65%', '80%', '60%', '40%', '60%', '60%', '50%'];
+  return (
+    <div className="card table-card">
+      <div style={{ overflowX:'auto' }}>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th style={{ width:80 }}><Skeleton width="70%" height={11}/></th>
+              <th><Skeleton width="50%" height={11}/></th>
+              <th style={{ width:96 }}><Skeleton width="60%" height={11}/></th>
+              <th style={{ width:160 }}><Skeleton width="50%" height={11}/></th>
+              <th style={{ width:80 }}><Skeleton width="65%" height={11}/></th>
+              <th style={{ width:56 }}><Skeleton width="60%" height={11}/></th>
+              <th style={{ width:110 }}><Skeleton width="70%" height={11}/></th>
+              <th style={{ width:88 }}><Skeleton width="60%" height={11}/></th>
+              <th style={{ width:80 }}><Skeleton width="50%" height={11}/></th>
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <tr key={i}>
+                {colWidths.map((w, j) => (
+                  <td key={j} style={{ padding:'10px 12px' }}>
+                    <Skeleton width={w} height={13} radius={4}/>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ padding:'8px 16px', borderTop:'1px solid var(--divider)' }}>
+        <Skeleton width={120} height={11}/>
+      </div>
+    </div>
+  );
+}

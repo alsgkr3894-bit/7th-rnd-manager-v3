@@ -1,7 +1,8 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { SearchBox } from '@/components/ui/SearchBox';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
@@ -48,6 +49,10 @@ export default function Page() {
   const [isNew,      setIsNew]      = useState(false);
   const [draft,      setDraft]      = useState(null);
   const [saving,     setSaving]     = useState(false);
+
+  // Search state
+  const [groupSearch, setGroupSearch] = useState('');
+  const [edgeSearch,  setEdgeSearch]  = useState('');
 
   // Edges state
   const [edges,        setEdges]        = useState([]);
@@ -153,6 +158,18 @@ export default function Page() {
   const showGroupEditor = isNew || selectedId != null;
   const edgeFilled = edges.filter(e => e.components?.length > 0).length;
 
+  const filteredGroups = useMemo(() => {
+    const q = groupSearch.trim().toLowerCase();
+    if (!q) return groups;
+    return groups.filter(g => g.name?.toLowerCase().includes(q));
+  }, [groups, groupSearch]);
+
+  const filteredEdges = useMemo(() => {
+    const q = edgeSearch.trim().toLowerCase();
+    if (!q) return edges;
+    return edges.filter(e => e.name?.toLowerCase().includes(q) || e.code?.toLowerCase().includes(q));
+  }, [edges, edgeSearch]);
+
   if (dbError) return (
     <main className="main">
       <PageHeader breadcrumb={['원가계산', '공통 관리']} title="공통 관리" sub="로드 실패"/>
@@ -177,17 +194,20 @@ export default function Page() {
         <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 16, alignItems: 'start' }}>
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '12px 14px 8px', borderBottom: '1px solid var(--divider)' }}>
-              <button className="btn primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleNewGroup}>
+              <button className="btn primary" style={{ width: '100%', justifyContent: 'center', marginBottom: 8 }} onClick={handleNewGroup}>
                 <Icon.plus style={{ width: 13, height: 13 }}/> 새 묶음 추가
               </button>
+              <SearchBox value={groupSearch} onChange={setGroupSearch} placeholder="묶음 이름 검색" />
             </div>
             {loading ? (
               <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>로딩 중…</div>
-            ) : groups.length === 0 ? (
-              <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>등록된 묶음이 없습니다</div>
+            ) : filteredGroups.length === 0 ? (
+              <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+                {groupSearch ? '검색 결과가 없습니다' : '등록된 묶음이 없습니다'}
+              </div>
             ) : (
-              <div style={{ maxHeight: 'calc(100vh - 280px)', overflowY: 'auto' }}>
-                {groups.map(g => {
+              <div style={{ maxHeight: 'calc(100vh - 320px)', overflowY: 'auto' }}>
+                {filteredGroups.map(g => {
                   const active = g.id === selectedId;
                   return (
                     <button key={g.id} onClick={() => handleSelectGroup(g.id)}
@@ -231,7 +251,8 @@ export default function Page() {
       {tab === 'edges' && (
         <div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: 13, color: 'var(--text-3)' }}>
+            <SearchBox value={edgeSearch} onChange={setEdgeSearch} placeholder="엣지·도우 이름 검색" />
+            <span style={{ fontSize: 13, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
               {edgeFilled}/{edges.length}개 구성 완료
             </span>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
@@ -274,9 +295,13 @@ export default function Page() {
                 </div>
               </div>
             </div>
+          ) : filteredEdges.length === 0 ? (
+            <div className="card" style={{ minHeight: 100, display: 'grid', placeItems: 'center' }}>
+              <div style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>검색 결과가 없습니다</div>
+            </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {edges.map(e => (
+              {filteredEdges.map(e => (
                 <EdgeCard key={e.id} edge={e}
                   onEdit={() => setEdgeTarget(e)}
                   onDelete={deletePending === e.id ? null : () => setDeletePending(e.id)}

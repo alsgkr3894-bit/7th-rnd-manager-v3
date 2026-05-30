@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
+import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { initDB } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
@@ -21,6 +22,7 @@ import { RegisterModal } from '@/components/cost/ingredient-price/RegisterModal'
 import { UsageView } from '@/components/cost/ingredient-price/UsageView';
 import { calcUnitPrice } from '@/lib/cost/calc-unit-price';
 import { buildIngredientUsageMap } from '@/lib/cost/ingredient-price-helpers';
+import { IngredientPriceSkeleton } from '@/components/ui/Skeleton';
 
 export default function Page() {
   const [rows,       setRows]       = useState([]);
@@ -153,6 +155,7 @@ export default function Page() {
   useEffect(() => {
     load().catch(err => { console.error(err); setDbError(err.message || '데이터 로드 실패'); }).finally(() => setLoading(false));
   }, [load]);
+  useVisibilityRefresh(load);
 
   const handleReset = useCallback(async () => {
     setResetting(true);
@@ -281,6 +284,8 @@ export default function Page() {
         </div>
       </div>
 
+      {loading && <IngredientPriceSkeleton />}
+
       {!loading && rows.length === 0 && (
         <div className="card" style={{minHeight:200, display:'grid', placeItems:'center'}}>
           <div style={{textAlign:'center', color:'var(--text-3)'}}>
@@ -295,7 +300,7 @@ export default function Page() {
         </div>
       )}
 
-      {rows.length > 0 && (
+      {!loading && rows.length > 0 && (
         <>
           {/* 탭 전환 */}
           <div style={{ display:'flex', gap:0, border:'1px solid var(--border)', borderRadius:8, overflow:'hidden', width:'fit-content', marginBottom:12 }}>
@@ -313,7 +318,7 @@ export default function Page() {
         </>
       )}
 
-      {rows.length > 0 && viewTab === 'usage' && (
+      {!loading && rows.length > 0 && viewTab === 'usage' && (
         <UsageView
           rows={rows}
           usageMap={usageMap}
@@ -324,7 +329,7 @@ export default function Page() {
         />
       )}
 
-      {rows.length > 0 && viewTab === 'price' && (
+      {!loading && rows.length > 0 && viewTab === 'price' && (
         <>
           {/* 필터 바 */}
           <div style={{display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginBottom:4}}>
@@ -347,7 +352,7 @@ export default function Page() {
           </div>
 
           {/* 테이블 */}
-          <div className="card table-card">
+          <div className="card table-card content-enter">
             {filtered.length === 0 ? (
               <div style={{padding:'40px 0', textAlign:'center', color:'var(--text-3)', fontSize:13}}>
                 조건에 맞는 항목이 없습니다

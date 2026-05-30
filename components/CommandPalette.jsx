@@ -71,6 +71,7 @@ export default function CommandPalette({ open, onClose }) {
     { kind: 'ingredient', label: '식자재' },
     { kind: 'menu',       label: '메뉴' },
     { kind: 'action',     label: '빠른 작업' },
+    { kind: 'nav',        label: '자주 쓰는 이동' },
   ];
 
   const ICO_STYLE = {
@@ -79,6 +80,7 @@ export default function CommandPalette({ open, onClose }) {
     ingredient: { bg: 'var(--positive-soft)',   color: 'var(--positive)' },
     menu:       { bg: 'var(--accent-soft)',     color: 'var(--accent-text)' },
     action:     { bg: 'var(--note-ico-bg)',     color: 'var(--note-ico-color)' },
+    nav:        { bg: 'var(--accent-soft)',     color: 'var(--accent-text)' },
   };
 
   let flatIdx = 0;
@@ -143,6 +145,7 @@ export default function CommandPalette({ open, onClose }) {
                          : kind === 'note'       ? (STATUS_ICON[r.status] || '📝')
                          : kind === 'ingredient' ? <Icon.tag style={{width:14,height:14}}/>
                          : kind === 'menu'       ? <Icon.chevRight style={{width:14,height:14}}/>
+                         : kind === 'nav'        ? (() => { const I = Icon[r.icon] || Icon.chevRight; return <I style={{width:14,height:14}}/>; })()
                          : <Icon.plus style={{width:14,height:14}}/>}
                       </div>
                       <div style={{flex:1, minWidth:0}}>

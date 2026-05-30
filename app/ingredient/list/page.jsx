@@ -12,6 +12,7 @@ import {
 } from '@/lib/ingredient';
 import { downloadCsv } from '@/lib/download';
 import { SCOPE, SCOPE_STYLES } from '@/lib/ingredient/constants';
+import { IngredientListSkeleton } from '@/components/ui/Skeleton';
 
 const DISCONTINUED_FILTER  = '__discontinued__';
 const UNCATEGORIZED_FILTER = '__none__';
@@ -184,18 +185,23 @@ export default function Page() {
         </div>
       </div>
 
+      {loading && <IngredientListSkeleton />}
+
       {!loading && rows.length === 0 && (
-        <div className="card" style={{minHeight:180, display:'grid', placeItems:'center'}}>
-          <div style={{textAlign:'center', color:'var(--text-3)'}}>
-            <Icon.box style={{width:32, height:32, marginBottom:12, opacity:.4}}/>
-            <div style={{fontWeight:600, marginBottom:4}}>아직 식자재 데이터가 없습니다</div>
-            <div style={{fontSize:13}}>식자재 관리 → 마스터 시드 적용 또는 제때 가격 파일 업로드가 필요합니다.</div>
+        <div className="empty-state" style={{padding:'60px 20px'}}>
+          <div style={{width:56, height:56, borderRadius:16, background:'var(--surface-2)', display:'grid', placeItems:'center', color:'var(--text-4)', border:'1px solid var(--border)'}}>
+            <Icon.box style={{width:28, height:28}}/>
           </div>
+          <div className="empty-title">아직 식자재 데이터가 없습니다</div>
+          <div className="empty-sub">식자재 관리에서 마스터 시드를 적용하거나 제때 가격 파일을 업로드해야 합니다.</div>
+          <a href="/ingredient/manage" className="btn primary" style={{marginTop:4}}>
+            <Icon.plus style={{width:14, height:14}}/> 식자재 관리로 이동
+          </a>
         </div>
       )}
 
-      {rows.length > 0 && (
-        <div style={{display:'flex', flexDirection:'column', gap:8}}>
+      {!loading && rows.length > 0 && (
+        <div className="content-enter" style={{display:'flex', flexDirection:'column', gap:8}}>
 
           {/* 스코프 탭 + 검색 */}
           <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, flexWrap:'wrap'}}>
@@ -290,15 +296,15 @@ export default function Page() {
       )}
 
       {/* 테이블 */}
-      {rows.length > 0 && (
-        <div className="card table-card">
+      {!loading && rows.length > 0 && (
+        <div className="card table-card content-enter">
           {filtered.length === 0 ? (
             <div style={{padding:'40px 0', textAlign:'center', color:'var(--text-3)', fontSize:13}}>
               조건에 맞는 항목이 없습니다
             </div>
           ) : (
             <div style={{overflowX:'auto'}}>
-              <table className="data-table">
+              <table className="data-table stagger-rows">
                 <thead>
                   <tr>
                     <th style={{width:80}}>제품코드</th>

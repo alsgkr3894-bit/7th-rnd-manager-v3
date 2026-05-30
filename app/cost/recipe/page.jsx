@@ -48,6 +48,17 @@ function prepareRecipeForEdit(rec) {
   };
 }
 
+function handleExportCsv(filtered) {
+  const headers = ['메뉴코드', '메뉴명', '카테고리', '규격'];
+  const rows = filtered.map(r => [r.menuCode||'', r.menuName||'', r.menuCategory||'', r.size||'']);
+  const csv = [headers, ...rows].map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob = new Blob(['﻿'+csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = '레시피목록.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 // ── 메인 페이지 ───────────────────────────────────────────────
 export default function Page() {
   const [recipes,        setRecipes]        = useState([]);
@@ -152,6 +163,26 @@ export default function Page() {
     }
   }
 
+  async function handleDuplicate(recipeId, e) {
+    e?.stopPropagation();
+    const rec = recipes.find(r => r.id === recipeId);
+    if (!rec) return;
+    try {
+      const { id: _id, updatedAt: _updatedAt, ...rest } = rec;
+      const newId = await saveRecipe({
+        ...rest,
+        menuName: `복사본 - ${rec.menuName}`,
+        menuCode: '',
+      });
+      showToast(`"${rec.menuName}" 복제 완료`);
+      await load();
+      setIsNew(false);
+      setSelectedId(newId);
+    } catch (err) {
+      showToast('복제 실패: ' + err.message);
+    }
+  }
+
   async function handleDelete() {
     if (!selectedId) return;
     const name = recipes.find(r => r.id === selectedId)?.menuName || '';
@@ -229,6 +260,11 @@ export default function Page() {
         breadcrumb={['원가계산', '원가 계산']}
         title="메뉴 원가 계산"
         sub="사이즈별 식자재 사용량을 입력하면 원가와 원가율이 자동 계산됩니다."
+        actions={
+          <button className="btn" onClick={() => { handleExportCsv(filteredRecipes); showToast(`CSV ${filteredRecipes.length}개 내보내기 완료`, 'ok'); }} disabled={filteredRecipes.length === 0}>
+            <Icon.download style={{ width: 14, height: 14 }}/> CSV 내보내기
+          </button>
+        }
       />
 
       <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 16, marginTop: 8, alignItems: 'start' }}>
@@ -395,6 +431,22 @@ export default function Page() {
                                 );
                               })}
                             </div>
+                          </button>
+                          {/* 복제 버튼 */}
+                          <button
+                            title="레시피 복제"
+                            onClick={e => handleDuplicate(r.id, e)}
+                            style={{
+                              flexShrink: 0, alignSelf: 'center',
+                              marginRight: 6, padding: '3px 7px',
+                              fontSize: 10, fontWeight: 600,
+                              border: '1px solid var(--border)',
+                              borderRadius: 5, cursor: 'pointer',
+                              background: 'var(--surface-2)',
+                              color: 'var(--text-3)',
+                              lineHeight: 1.4,
+                            }}>
+                            복제
                           </button>
                         </div>
                       );

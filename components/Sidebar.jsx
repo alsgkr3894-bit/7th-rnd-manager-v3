@@ -134,8 +134,7 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+  }, [isGroupActive]);
 
   const navigate = (href) => {
     router.push(href);

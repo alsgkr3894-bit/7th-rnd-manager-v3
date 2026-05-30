@@ -64,8 +64,8 @@ export const ManageRow = memo(function ManageRow({ r, deletePending, onEdit, onD
           </span>
         ) : (
           <span style={{display:'flex', gap:4}}>
-            <button className="btn sm" onClick={onEdit}><Icon.edit style={{width:13, height:13}}/></button>
-            <button className="btn sm" onClick={onDeleteStart} style={{color:'var(--text-3)'}}>
+            <button className="btn sm" aria-label="수정" onClick={onEdit}><Icon.edit style={{width:13, height:13}}/></button>
+            <button className="btn sm" aria-label="삭제" onClick={onDeleteStart} style={{color:'var(--text-3)'}}>
               <Icon.trash style={{width:13, height:13}}/>
             </button>
           </span>

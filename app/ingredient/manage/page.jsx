@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { Icon } from '@/components/icons';
 import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -82,6 +83,7 @@ export default function Page() {
   useEffect(() => {
     load().catch(console.error).finally(() => setLoading(false));
   }, [load]);
+  useVisibilityRefresh(load);
 
   useEffect(() => {
     try { localStorage.setItem('v3:ingredient-cat-filter', catFilter); } catch {}
@@ -228,7 +230,7 @@ export default function Page() {
         : '제때 가격 파일이 없습니다 — 마스터 시드 적용 또는 가격파일 업로드 필요';
 
   return (
-    <main className="main">
+    <main className="main page-enter">
       <PageHeader
         breadcrumb={['식자재', '식자재 관리']}
         title="식자재 관리"
@@ -347,7 +349,7 @@ export default function Page() {
               </div>
             ) : (
               <div style={{overflowX:'auto'}}>
-                <table className="data-table">
+                <table className="data-table stagger-rows">
                   <thead>
                     <tr>
                       <th style={{width:88}}>제품코드</th>

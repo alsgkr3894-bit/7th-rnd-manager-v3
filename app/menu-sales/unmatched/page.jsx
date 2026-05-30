@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Icon } from '@/components/icons';
 import { useUnmatchedIssues } from '@/lib/sales/use-unmatched-issues';
 import { UnmatchedSummary } from '@/components/sales/UnmatchedSummary';
 import { UnmatchedTable } from '@/components/sales/UnmatchedTable';
@@ -15,6 +16,7 @@ export default function Page() {
   const { ready, issues, resolve, bulkExclude } = useUnmatchedIssues();
   const [statusFilter, setStatusFilter] = useState('open'); // open | resolved | all
   const [monthFilter, setMonthFilter] = useState('all');     // 'all' | 'YYYY-M'
+  const [search, setSearch] = useState('');
 
   const months = useMemo(() => {
     const seen = new Map();
@@ -28,15 +30,21 @@ export default function Page() {
   }, [issues]);
 
   const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return issues.filter(i => {
       if (statusFilter !== 'all' && i.status !== statusFilter) return false;
       if (monthFilter !== 'all') {
         const [y, m] = monthFilter.split('-').map(Number);
         if (i.year !== y || i.month !== m) return false;
       }
+      if (q) {
+        const raw  = (i.representativeRawMenuName || '').toLowerCase();
+        const norm = (i.normalizedMenuName || '').toLowerCase();
+        if (!raw.includes(q) && !norm.includes(q)) return false;
+      }
       return true;
     });
-  }, [issues, statusFilter, monthFilter]);
+  }, [issues, statusFilter, monthFilter, search]);
 
   const openCount     = issues.filter(i => i.status === 'open').length;
   const resolvedCount = issues.filter(i => i.status === 'resolved').length;
@@ -54,6 +62,17 @@ export default function Page() {
         resolvedCount={resolvedCount}
         months={months}
       />
+
+      {issues.length > 0 && (
+        <div className="filter-search" style={{ marginTop: 12, marginBottom: 4 }}>
+          <Icon.search style={{ width: 14, height: 14, color: 'var(--text-3)', flexShrink: 0 }}/>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="메뉴명 검색 (원본 / 정규화)"
+          />
+        </div>
+      )}
 
       {issues.length > 0 && (
         <UnmatchedFilterBar

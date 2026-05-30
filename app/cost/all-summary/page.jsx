@@ -178,7 +178,7 @@ export default function Page() {
 
   // ── 렌더 ─────────────────────────────────────────────────
   if (dbError) return (
-    <main className="main">
+    <main className="main page-enter">
       <PageHeader
         breadcrumb={['원가계산', '종합전메뉴원가']}
         title="종합전메뉴원가"
@@ -191,7 +191,7 @@ export default function Page() {
   );
 
   return (
-    <main className="main">
+    <main className="main page-enter">
       <PageHeader
         breadcrumb={['원가계산', '종합전메뉴원가']}
         title="종합전메뉴원가"
@@ -283,7 +283,7 @@ export default function Page() {
       {!loading && hasAnyData && (
         <div className="card table-card">
           <div style={{ overflowX: 'auto' }}>
-            <table className="data-table">
+            <table className="data-table stagger-rows">
               <thead>
                 <tr>
                   <th style={{ minWidth: 160 }}>메뉴명</th>

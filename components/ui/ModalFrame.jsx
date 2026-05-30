@@ -1,4 +1,5 @@
 'use client';
+import { useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 
@@ -7,6 +8,7 @@ import { Icon } from '@/components/icons';
  * - createPortal로 document.body에 렌더링
  * - 스크림(어두운 배경) + 카드 + 헤더(제목+닫기버튼)를 제공
  * - title, subtitle은 문자열 또는 ReactNode 모두 가능
+ * - 포커스 트랩: 모달 내부 요소 간 Tab/Shift+Tab 순환, 닫힐 때 이전 포커스 복원
  */
 export function ModalFrame({
   title,
@@ -18,6 +20,54 @@ export function ModalFrame({
   maxHeight = '92vh',
   children,
 }) {
+  const containerRef = useRef(null);
+  const previousFocusRef = useRef(null);
+
+  useEffect(() => {
+    // 모달이 열릴 때 이전 포커스 저장
+    previousFocusRef.current = document.activeElement;
+
+    const el = containerRef.current;
+    if (!el) return;
+
+    const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+    const getFocusable = () => Array.from(el.querySelectorAll(FOCUSABLE)).filter(
+      (node) => !node.disabled && node.offsetParent !== null
+    );
+
+    // 첫 번째 포커스 가능한 요소로 포커스 이동
+    const focusable = getFocusable();
+    focusable[0]?.focus();
+
+    const handle = (e) => {
+      if (e.key !== 'Tab') return;
+      const nodes = getFocusable();
+      if (!nodes.length) return;
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+
+    el.addEventListener('keydown', handle);
+
+    return () => {
+      el.removeEventListener('keydown', handle);
+      // 모달이 닫힐 때 이전 포커스 복원
+      previousFocusRef.current?.focus?.();
+    };
+  }, []);
+
   return createPortal(
     <div style={{
       position: 'fixed', inset: 0,
@@ -25,7 +75,7 @@ export function ModalFrame({
       display: 'grid', placeItems: 'center',
       zIndex,
     }}>
-      <div className="card modal-anim" style={{ width, maxHeight, overflowY: 'auto', padding }}>
+      <div ref={containerRef} className="card modal-anim" style={{ width, maxHeight, overflowY: 'auto', padding }}>
         <div style={{
           display: 'flex', justifyContent: 'space-between',
           alignItems: 'center', marginBottom: 16,

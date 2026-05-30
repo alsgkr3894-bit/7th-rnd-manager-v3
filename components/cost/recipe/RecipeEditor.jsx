@@ -1,6 +1,7 @@
 'use client';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
+import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { calcMarginRate, MENU_CATEGORIES } from '@/lib/recipe';
@@ -28,6 +29,13 @@ export function RecipeEditor({ draft, setDraft, allMeta, menuMasters, menuPrices
     if (draft.groupIds === null) return defaultGroupIds;
     return new Set(draft.groupIds);
   }, [draft.groupIds, defaultGroupIds]);
+
+  const initialDraftRef = useRef(null);
+  if (initialDraftRef.current === null) {
+    initialDraftRef.current = JSON.stringify(draft);
+  }
+  const isDirty = JSON.stringify(draft) !== initialDraftRef.current;
+  useBeforeUnload(isDirty);
 
   useKeyboardSave(onSave);
 
