@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { loadXlsx } from '@/lib/excel';
@@ -15,6 +15,7 @@ import { getReports, deleteReport, toggleReportFav, saveReport } from '@/lib/rep
 import { KIND_META, KIND_CHIP, KIND_EMOJI } from '@/lib/report/constants';
 import { useCountUp } from '@/lib/useCountUp';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
+import { useDBLoad } from '@/hooks/useDBLoad';
 
 const REPORT_KINDS = KIND_META;
 
@@ -50,13 +51,11 @@ export default function Page() {
   const [kindFilter, setKindFilter] = useState('all');
   const [search, setSearch]         = useState('');
   const [favOnly, setFavOnly]       = useState(false);
-  const [reports, setReports]       = useState([]);
   const [shareTarget, setShareTarget]   = useState(null);
   const [previewTarget, setPreviewTarget] = useState(null);
   const [scheduleOpen, setScheduleOpen]   = useState(false);
   const [deletingId, setDeletingId]   = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [loading, setLoading]         = useState(true);
   const [newReportOpen, setNewReportOpen] = useState(false);
   const [editingId, setEditingId]     = useState(null);
   const [editName, setEditName]       = useState('');
@@ -67,18 +66,8 @@ export default function Page() {
   const editInputRef = useRef(null);
 
   /* 로드 */
-  const reload = useCallback(async (showLoading = false) => {
-    if (showLoading) setLoading(true);
-    try {
-      const rows = await getReports();
-      setReports(rows);
-    } catch (err) {
-      console.error('[report] load error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => { reload(true); }, [reload]);
+  const { data: reportsData, loading, reload } = useDBLoad(() => getReports());
+  const reports = reportsData ?? [];
 
   useVisibilityRefresh(reload);
 

@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -62,6 +63,17 @@ function handleExportCsv(filtered) {
 
 // ── 메인 페이지 ───────────────────────────────────────────────
 export default function Page() {
+  return (
+    <Suspense fallback={<main className="main"><div style={{ padding: 48, textAlign: 'center', color: 'var(--text-3)' }}>로딩 중…</div></main>}>
+      <RecipeContent />
+    </Suspense>
+  );
+}
+
+function RecipeContent() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [recipes,        setRecipes]        = useState([]);
   const [allMeta,        setAllMeta]        = useState([]);
   const [menuMasters,    setMenuMasters]    = useState([]);
@@ -74,7 +86,7 @@ export default function Page() {
   const [saving,       setSaving]       = useState(false);
   const [loading,      setLoading]      = useState(true);
   const [dbError,      setDbError]      = useState(null);
-  const [search,       setSearch]       = useState('');
+  const [search,       setSearch]       = useState(() => searchParams?.get('q') || '');
   const [customOrder,  setCustomOrder]  = useState(() => {
     if (typeof window === 'undefined') return {};
     try { return JSON.parse(localStorage.getItem(KEYS.RECIPE_SORT) || '{}'); }
@@ -122,6 +134,14 @@ export default function Page() {
   }, [load]);
 
   useVisibilityRefresh(load);
+
+  // URL sync for search filter
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (search) params.set('q', search);
+    const qs = params.toString();
+    window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
+  }, [search, pathname]);
 
   // load 후 선택된 레시피 draft 동기화
   useEffect(() => {
@@ -291,6 +311,12 @@ export default function Page() {
               <div className="empty-icon-wrap"><Icon.doc style={{ width: 32, height: 32 }}/></div>
               <div style={{ fontWeight: 700, fontSize: 15 }}>레시피가 없어요</div>
               <div style={{ fontSize: 13, color: 'var(--text-3)' }}>새 레시피를 추가해보세요</div>
+            </div>
+          ) : filteredRecipes.length === 0 ? (
+            <div className="empty-state" style={{ margin: 16 }}>
+              <div className="empty-icon-wrap"><Icon.search style={{ width: 28, height: 28 }}/></div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>검색 결과가 없어요</div>
+              <div style={{ fontSize: 12, color: 'var(--text-3)' }}>다른 키워드로 검색해보세요</div>
             </div>
           ) : (
             <div

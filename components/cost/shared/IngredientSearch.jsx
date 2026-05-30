@@ -134,6 +134,7 @@ export function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded
           placeholder="식자재 검색하여 추가… (↑↓ 방향키, Enter 선택)"/>
         {q && (
           <button onClick={() => { setQ(''); setOpen(false); }}
+            aria-label="검색어 지우기"
             style={{ border: 0, background: 'transparent', cursor: 'pointer',
               color: 'var(--text-4)', padding: 0, lineHeight: 1 }}>
             <Icon.close style={{ width: 12, height: 12 }}/>

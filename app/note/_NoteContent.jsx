@@ -605,7 +605,7 @@ export function NoteContent() {
       {filtered.length > 0 && viewMode === 'table' && (
         <div className="card table-card" style={{marginTop:16}}>
           <div style={{overflowX:'auto'}}>
-          <table className="data-table" tabIndex={0}
+          <table className="data-table stagger-rows" tabIndex={0}
             onKeyDown={e => {
               if (e.key === 'ArrowDown') {
                 e.preventDefault();

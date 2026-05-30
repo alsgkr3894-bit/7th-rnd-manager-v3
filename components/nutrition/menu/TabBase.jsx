@@ -76,7 +76,11 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
           <button className="btn sm ghost" onClick={() => setAddMenu(true)}><Icon.plus style={{ width: 13, height: 13 }} /></button>
         </div>
         {menus.length === 0 ? (
-          <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-4)', fontSize: 13 }}>메뉴를 추가하세요</div>
+          <div className="empty-state" style={{ padding: '24px 12px' }}>
+            <div className="empty-icon-wrap"><Icon.doc style={{ width: 28, height: 28 }}/></div>
+            <div style={{ fontWeight: 700, fontSize: 13 }}>메뉴가 없어요</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)' }}>+ 버튼으로 메뉴를 추가하세요</div>
+          </div>
         ) : (
           <div>
             {menus.map(m => (

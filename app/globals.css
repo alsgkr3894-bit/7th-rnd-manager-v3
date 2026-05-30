@@ -1420,7 +1420,7 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ===== Data table ===== */
 .table-card { padding: 0; overflow: hidden; }
-.table-wrap { overflow-x: auto; position: relative; }
+.table-wrap { overflow-x: auto; position: relative; -webkit-overflow-scrolling: touch; }
 .table-wrap::after { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 24px; background: linear-gradient(to left, var(--bg), transparent); pointer-events: none; opacity: 0; transition: opacity 200ms; }
 .table-wrap.can-scroll-right::after { opacity: 1; }
 .data-table {
@@ -3925,6 +3925,7 @@ button { font-family: inherit; cursor: pointer; }
 @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
 .field-error-shake { animation: shake 300ms cubic-bezier(0.36, 0, 0.66, -0.56) both; }
 .content-enter { animation: fade-in 200ms ease both; }
+.skeleton-to-content { animation: fade-in 200ms ease both; }
 @keyframes tab-content-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 .tab-content-enter { animation: tab-content-in 200ms ease both; }
 @keyframes num-pop {
@@ -4531,6 +4532,8 @@ input:checked + .toggle-box::after { transform: translateX(16px); }
   .stat-row {
     grid-template-columns: 1fr !important;
   }
+  .tabs { font-size: 13px; }
+  .tab { padding: 8px 12px; }
 }
 
 /* ============================================================

@@ -1,10 +1,10 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
-import { initDB } from '@/lib/db';
 import { getAllIngredients } from '@/lib/ingredient';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import {
   getAllAllergenMasters,
   getAllAllergenLinks, deleteAllergenLink,
@@ -19,26 +19,27 @@ export default function Page() {
   const [ingredients, setIngredients] = useState([]);
   const [allergens, setAllergens] = useState([]);
   const [menuMasters, setMenuMasters] = useState([]);
-  const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState('');
   const [modal, setModal]         = useState(null); // null | 'add' | link
 
-  const load = useCallback(async () => {
-    await initDB();
+  const { data: loadedData, loading, reload: load } = useDBLoad(async () => {
     const [lks, ings, als, masters] = await Promise.all([
       getAllAllergenLinks(),
       getAllIngredients(),
       getAllAllergenMasters(),
       getAllMenuMaster(),
     ]);
+    return { lks, ings, als, masters };
+  });
+
+  useEffect(() => {
+    if (!loadedData) return;
+    const { lks, ings, als, masters } = loadedData;
     setLinks(lks);
     setIngredients(ings.filter(i => !i.discontinued && !i.excluded));
     setAllergens(als);
     setMenuMasters(masters);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
+  }, [loadedData]);
 
   const linkedIds = useMemo(() => new Set(links.map(l => l.ingredientId)), [links]);
 

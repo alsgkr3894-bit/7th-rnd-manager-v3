@@ -242,7 +242,8 @@ export function RecipeEditor({ draft, setDraft, allMeta, menuMasters, menuPrices
                 </span>
               )}
               {draft.sizes.length > 1 && (
-                <button className="btn" style={{ padding: '3px 6px', flexShrink: 0 }} onClick={() => removeSize(i)}>
+                <button className="btn" style={{ padding: '3px 6px', flexShrink: 0 }} onClick={() => removeSize(i)}
+                  aria-label={`${s.label || i + 1}번 사이즈 삭제`}>
                   <Icon.close style={{ width: 12, height: 12 }}/>
                 </button>
               )}
@@ -320,6 +321,7 @@ export function RecipeEditor({ draft, setDraft, allMeta, menuMasters, menuPrices
                     </td>
                     <td style={{ padding: '6px 2px', textAlign: 'center' }}>
                       <button onClick={() => removeIngredient(i)}
+                        aria-label={`${line.ingredientName} 식자재 삭제`}
                         style={{ border: 0, background: 'transparent', cursor: 'pointer',
                           color: 'var(--text-4)', padding: '2px' }}>
                         <Icon.close style={{ width: 11, height: 11 }}/>

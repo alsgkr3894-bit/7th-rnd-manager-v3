@@ -87,7 +87,11 @@ export function TabDerived({ menus, toppings, compositions, onRefresh }) {
           <button className="btn sm" onClick={openToppingAdd}><Icon.plus style={{ width: 13, height: 13 }} />추가</button>
         </div>
         {toppings.length === 0 ? (
-          <div style={{ padding: '16px 0', textAlign: 'center', color: 'var(--text-4)', fontSize: 13 }}>등록된 소스/토핑이 없어요</div>
+          <div className="empty-state" style={{ padding: '20px 12px' }}>
+            <div className="empty-icon-wrap"><Icon.box style={{ width: 24, height: 24 }}/></div>
+            <div style={{ fontWeight: 700, fontSize: 13 }}>등록된 소스/토핑이 없어요</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)' }}>추가 버튼으로 소스·토핑을 등록하세요</div>
+          </div>
         ) : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {toppings.map(t => (
@@ -112,11 +116,10 @@ export function TabDerived({ menus, toppings, compositions, onRefresh }) {
       </div>
 
       {compositions.length === 0 ? (
-        <div className="card" style={{ display: 'grid', placeItems: 'center', minHeight: 120 }}>
-          <div style={{ textAlign: 'center', color: 'var(--text-4)', fontSize: 13 }}>
-            베이스 메뉴 + 소스/토핑 조합으로 파생 메뉴를 만드세요<br />
-            <span style={{ fontSize: 12 }}>예: 컨츄리치킨 + 마요네즈 = 컨츄리마요치킨</span>
-          </div>
+        <div className="empty-state">
+          <div className="empty-icon-wrap"><Icon.plus style={{ width: 28, height: 28 }}/></div>
+          <div className="empty-title">파생 메뉴가 없어요</div>
+          <div className="empty-sub">베이스 메뉴 + 소스/토핑 조합으로 파생 메뉴를 만드세요<br/><span style={{ fontSize: 11 }}>예: 컨츄리치킨 + 마요네즈 = 컨츄리마요치킨</span></div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
