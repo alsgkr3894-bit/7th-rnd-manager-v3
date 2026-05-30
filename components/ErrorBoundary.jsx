@@ -37,7 +37,7 @@ export class ErrorBoundary extends Component {
     if (this.state.hasError) {
       const msg = this.state.error?.message;
       return (
-        <div style={{
+        <main style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           justifyContent: 'center', minHeight: 320, padding: 40,
           textAlign: 'center', gap: 12,
@@ -67,7 +67,7 @@ export class ErrorBoundary extends Component {
             </button>
             <a href="/" className="btn">홈으로</a>
           </div>
-        </div>
+        </main>
       );
     }
     return this.props.children;

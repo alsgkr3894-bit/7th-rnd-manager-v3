@@ -8,22 +8,15 @@ import { getNoteById, updateNote, getNotesInChain, STATUS_COLORS, duplicateNote 
 import { getAllSamples } from '@/lib/sample';
 import { NoteFormBody, INIT } from '../_NoteFormBody';
 import { NoteDetailSkeleton } from '@/components/ui/Skeleton';
+import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
+import { KEYS } from '@/lib/note/keys';
+import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 
 const COST_LINKS = [
   { label: '식자재 원가표', href: '/cost/ingredient-price' },
   { label: '메뉴 원가표',   href: '/cost/menu-price' },
   { label: '피자 세부 원가표', href: '/cost/pizza-detail' },
 ];
-
-function saveDraft(id, form) {
-  try { localStorage.setItem(`v3:note-draft-${id}`, JSON.stringify(form)); } catch {}
-}
-function loadDraft(id) {
-  try { const s = localStorage.getItem(`v3:note-draft-${id}`); return s ? JSON.parse(s) : null; } catch { return null; }
-}
-function clearDraft(id) {
-  try { localStorage.removeItem(`v3:note-draft-${id}`); } catch {}
-}
 
 function ChainTimeline({ chain, currentId, onNavigate }) {
   if (!chain || chain.length < 2) return null;
@@ -106,7 +99,7 @@ export default function Page() {
           const mn = note.menuName.trim().toLowerCase();
           setRelatedSamples(allSamples.filter(s => s.menuName?.trim().toLowerCase() === mn));
         }
-        const draft = loadDraft(noteId);
+        const draft = loadDraft(KEYS.NOTE_DRAFT(noteId));
         if (draft && (draft.title !== note.title || draft.testContent !== note.testContent || draft.managerEval !== note.managerEval)) {
           setShowDraftBanner(true);
         }
@@ -120,15 +113,11 @@ export default function Page() {
     if (!originalRef.current) return;
     if (JSON.stringify(form) === JSON.stringify(originalRef.current)) return;
     clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => saveDraft(noteId, form), 800);
+    timerRef.current = setTimeout(() => saveDraft(KEYS.NOTE_DRAFT(noteId), form), 800);
     return () => clearTimeout(timerRef.current);
   }, [form, noteId]);
 
-  useEffect(() => {
-    const h = e => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave(); } };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, [form]);
+  useKeyboardSave(handleSave);
 
   async function handleSave() {
     if (!form.title.trim() || !form.menuName.trim() || !form.testContent.trim()) {
@@ -138,7 +127,7 @@ export default function Page() {
     setSaving(true);
     try {
       await updateNote(noteId, form);
-      clearDraft(noteId);
+      clearDraft(KEYS.NOTE_DRAFT(noteId));
       showToast('노트가 수정됐어요', 'ok');
       router.push('/note');
     } catch {
@@ -148,13 +137,13 @@ export default function Page() {
   }
 
   function handleCancel() {
-    clearDraft(noteId);
+    clearDraft(KEYS.NOTE_DRAFT(noteId));
     router.push('/note');
   }
 
   function handleCreateSample() {
     try {
-      sessionStorage.setItem('v3:sample-from-note', JSON.stringify({
+      sessionStorage.setItem(KEYS.SAMPLE_FROM_NOTE, JSON.stringify({
         menuName: form.menuName,
         category: form.category,
         tags:     form.tags,
@@ -181,7 +170,7 @@ export default function Page() {
   }
 
   function restoreDraft() {
-    const draft = loadDraft(noteId);
+    const draft = loadDraft(KEYS.NOTE_DRAFT(noteId));
     if (draft) { setForm(draft); showToast('임시저장된 내용을 불러왔어요', 'ok'); }
     setShowDraftBanner(false);
   }
@@ -239,7 +228,7 @@ export default function Page() {
           <span>저장되지 않은 임시저장이 있어요.</span>
           <div style={{display:'flex', gap:8}}>
             <button className="btn sm" onClick={restoreDraft}>불러오기</button>
-            <button className="btn sm" onClick={() => { clearDraft(noteId); setShowDraftBanner(false); }}>무시</button>
+            <button className="btn sm" onClick={() => { clearDraft(KEYS.NOTE_DRAFT(noteId)); setShowDraftBanner(false); }}>무시</button>
           </div>
         </div>
       )}
@@ -263,7 +252,7 @@ export default function Page() {
                 }}
               >
                 {s.photos?.[0] ? (
-                  <img src={s.photos[0].data} alt=""
+                  <img src={s.photos[0].data} alt={`${s.menuName || s.title} 샘플 사진`}
                     style={{width:48, height:36, objectFit:'cover', borderRadius:6, flexShrink:0}}/>
                 ) : (
                   <div style={{width:48, height:36, borderRadius:6, background:'var(--border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0}}>📷</div>

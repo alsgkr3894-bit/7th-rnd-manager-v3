@@ -3,10 +3,24 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from './icons';
 import { usePaletteItems, STATUS_ICON } from '@/lib/usePaletteItems';
+import { getJSONLS, setJSONLS } from '@/lib/note/storage';
+import { KEYS } from '@/lib/note/keys';
+
+function getRecent() {
+  return getJSONLS(KEYS.PALETTE_RECENT) ?? [];
+}
+function saveRecent(item) {
+  const list = [
+    { href: item.href, label: item.label, kind: item.kind },
+    ...getRecent().filter(r => r.href !== item.href),
+  ].slice(0, 5);
+  setJSONLS(KEYS.PALETTE_RECENT, list);
+}
 
 export default function CommandPalette({ open, onClose }) {
   const [q,         setQ]         = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
+  const [recent,    setRecent]    = useState([]);
   const inputRef = useRef(null);
   const router   = useRouter();
   const allItems = usePaletteItems(open);
@@ -15,6 +29,7 @@ export default function CommandPalette({ open, onClose }) {
     if (!open) return;
     setQ('');
     setActiveIdx(0);
+    setRecent(getRecent());
     setTimeout(() => inputRef.current?.focus(), 30);
   }, [open]);
 
@@ -30,11 +45,16 @@ export default function CommandPalette({ open, onClose }) {
   if (!open) return null;
 
   const norm = s => s.toLowerCase().replace(/\s+/g, '');
-  const filtered = q.trim()
+  const isSearching = q.trim().length > 0;
+  const filtered = isSearching
     ? allItems.filter(x => norm(x.label).includes(norm(q)) || (x.sub && norm(x.sub).includes(norm(q))))
     : allItems.slice(0, 9);
 
-  const pick = (item) => { onClose(); router.push(item.href); };
+  const pick = (item) => {
+    saveRecent(item);
+    onClose();
+    router.push(item.href);
+  };
 
   function handleKey(e) {
     if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, filtered.length - 1)); }
@@ -62,18 +82,43 @@ export default function CommandPalette({ open, onClose }) {
   let flatIdx = 0;
 
   return (
-    <div className="palette-scrim" onClick={onClose}>
-      <div className="palette" onClick={e => e.stopPropagation()}>
+    <div className="palette-scrim" role="presentation" onClick={onClose}>
+      <div className="palette" role="dialog" aria-label="통합 검색" aria-modal="true" onClick={e => e.stopPropagation()}>
         <div className="palette-input">
           <Icon.search style={{width:18, height:18, color:'var(--text-3)'}} />
           <input ref={inputRef} value={q}
             onChange={e => { setQ(e.target.value); setActiveIdx(0); }}
             onKeyDown={handleKey}
-            placeholder="메뉴, 재료, 보고서, 노트, 샘플 검색" />
+            placeholder="메뉴, 재료, 보고서, 노트, 샘플 검색"
+            aria-label="검색어 입력"
+            aria-controls="palette-results" />
           <kbd>ESC</kbd>
         </div>
 
-        <div className="palette-results">
+        <div className="palette-results" id="palette-results" role="menu" aria-label="검색 결과">
+          {/* 최근 방문 — 검색어 없을 때만 */}
+          {!isSearching && recent.length > 0 && (
+            <div>
+              <div className="palette-group">최근 방문</div>
+              {recent.map((r, ri) => {
+                const fi = flatIdx++;
+                const { bg, color } = ICO_STYLE[r.kind] || ICO_STYLE.menu;
+                return (
+                  <button key={'recent-' + r.href}
+                    role="menuitem"
+                    className={'palette-row' + (fi === activeIdx ? ' palette-row-active' : '')}
+                    onMouseEnter={() => setActiveIdx(fi)}
+                    onClick={() => pick(r)}>
+                    <div className="palette-row-ico" style={{background: bg, color, fontSize:13}}>
+                      <Icon.chevRight style={{width:14,height:14}}/>
+                    </div>
+                    <span className="palette-row-label">{r.label}</span>
+                    <span className="palette-recent-time">{r.href}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {filtered.length === 0 ? (
             <div className="palette-empty">검색 결과 없음</div>
           ) : GROUPS.map(({ kind, label }) => {
@@ -87,6 +132,7 @@ export default function CommandPalette({ open, onClose }) {
                   const fi = flatIdx++;
                   return (
                     <button key={r.href + r.label}
+                      role="menuitem"
                       className={'palette-row' + (fi === activeIdx ? ' palette-row-active' : '')}
                       onMouseEnter={() => setActiveIdx(fi)}
                       onClick={() => pick(r)}>

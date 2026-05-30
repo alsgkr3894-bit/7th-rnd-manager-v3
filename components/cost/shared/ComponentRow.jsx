@@ -2,8 +2,7 @@
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { componentSubtotal } from '@/lib/cost/shared/calc';
-
-const UNIT_OPTIONS = ['g', 'kg', 'ml', 'L', '개', '입', '장', '봉'];
+import { UNIT_OPTIONS } from '@/lib/cost/shared/unit-options';
 export function ComponentRow({ c, onChange, onRemove, ingredients, listId }) {
   const subtotal = componentSubtotal(c);
 

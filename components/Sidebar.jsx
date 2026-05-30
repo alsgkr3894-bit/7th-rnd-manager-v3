@@ -5,16 +5,18 @@ import { Icon } from './icons';
 import { NAV_HOME, NAV_SECTIONS } from '@/lib/menu';
 import { initDB } from '@/lib/db';
 import { getPriceFiles } from '@/lib/price';
+import { getJSONLS, setJSONLS } from '@/lib/note/storage';
+import { KEYS } from '@/lib/note/keys';
 
 /**
  * 사이드바 컴포넌트
  * 메뉴 데이터는 @/lib/menu.js에 분리 (이 컴포넌트는 렌더링만 담당)
  */
-export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0 }) {
+export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, reportingCount = 0 }) {
   const pathname = usePathname();
   const router = useRouter();
   const sidebarRef = useRef(null);
-  const [pillStyle, setPillStyle] = useState({ top: 0, opacity: 0 });
+  const [pillStyle, setPillStyle] = useState({ top: 0, height: 40, opacity: 0 });
   const [latestPrice, setLatestPrice] = useState(null);
 
   // 최신 제때 단가 조회 — 마운트 1회만
@@ -32,6 +34,9 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0 }) 
   const dynamicBadge = (id) => {
     if (id === 'menu-sales' || id === 'menu-sales-unmatched') {
       return unmatchedCount > 0 ? unmatchedCount : null;
+    }
+    if (id === 'note' || id === 'note-list') {
+      return reportingCount > 0 ? reportingCount : null;
     }
     return null;
   };
@@ -51,10 +56,8 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0 }) 
 
   // 마운트 후 localStorage 복원 (SSR 불일치 방지)
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('v3:sidebar-open');
-      if (saved) { setOpenIds(JSON.parse(saved)); return; }
-    } catch {}
+    const saved = getJSONLS(KEYS.SIDEBAR_OPEN);
+    if (saved) { setOpenIds(saved); return; }
     const opened = {};
     NAV_SECTIONS.forEach(section => {
       section.groups.forEach(g => {
@@ -65,25 +68,74 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0 }) 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 활성 항목 위치로 pill 이동 — pathname 또는 아코디언 상태 변경 시 재계산
+  // pathname 변경 시 active 그룹 자동 열기 (클라이언트 라우팅 대응)
+  useEffect(() => {
+    setOpenIds(o => {
+      const updates = {};
+      NAV_SECTIONS.forEach(section => {
+        section.groups.forEach(g => {
+          if (isGroupActive(g) && !o[g.id]) updates[g.id] = true;
+        });
+      });
+      if (!Object.keys(updates).length) return o;
+      return { ...o, ...updates };
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  // 활성 항목 위치로 pill 이동 — DOM 트랜지션 완료 후 1프레임 뒤 계산
   useEffect(() => {
     const sidebar = sidebarRef.current;
     if (!sidebar) return;
-    const activeEl = sidebar.querySelector('.nav-item.active, .nav-child.active');
-    if (!activeEl) {
-      setPillStyle(s => ({ ...s, opacity: 0 }));
-      return;
-    }
-    const sRect = sidebar.getBoundingClientRect();
-    const eRect = activeEl.getBoundingClientRect();
-    setPillStyle({ top: eRect.top - sRect.top + sidebar.scrollTop, opacity: 1 });
+    const rafId = requestAnimationFrame(() => {
+      // 열린 아코디언 안의 active child만 사용 (닫힌 상태면 부모 nav-item으로 fallback)
+      const activeEl =
+        sidebar.querySelector('.nav-children.open .nav-child.active') ||
+        sidebar.querySelector('.nav-item.active');
+      if (!activeEl) {
+        setPillStyle(s => ({ ...s, opacity: 0 }));
+        return;
+      }
+      const sRect = sidebar.getBoundingClientRect();
+      const eRect = activeEl.getBoundingClientRect();
+      setPillStyle({ top: eRect.top - sRect.top + sidebar.scrollTop, height: eRect.height, opacity: 1 });
+      activeEl.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [pathname, openIds]);
 
-  const toggle = (id) => setOpenIds(o => {
-    const next = { ...o, [id]: !o[id] };
-    try { localStorage.setItem('v3:sidebar-open', JSON.stringify(next)); } catch {}
-    return next;
-  });
+  // openIds 변경 시 localStorage 동기화 (toggle/pathname 변경 모두 포함)
+  useEffect(() => {
+    if (Object.keys(openIds).length > 0) setJSONLS(KEYS.SIDEBAR_OPEN, openIds);
+  }, [openIds]);
+
+  const toggle = (id, forceOpen = false) =>
+    setOpenIds(o => ({ ...o, [id]: forceOpen ? true : !o[id] }));
+
+  // Escape 키로 열린 아코디언 닫기 (active 그룹 제외)
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key !== 'Escape') return;
+      setOpenIds(o => {
+        const next = { ...o };
+        let changed = false;
+        NAV_SECTIONS.forEach(section => {
+          section.groups.forEach(g => {
+            if (next[g.id] && !isGroupActive(g)) {
+              next[g.id] = false;
+              changed = true;
+            }
+          });
+        });
+        if (!changed) return o;
+        setJSONLS(KEYS.SIDEBAR_OPEN, next);
+        return next;
+      });
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   const navigate = (href) => {
     router.push(href);
@@ -99,8 +151,13 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0 }) 
 
     const handle = () => {
       if (hasKids) {
-        toggle(item.id);
-        if (!isOpen && !active) navigate(item.children[0].href);
+        if (active) {
+          // active 그룹은 닫지 않고 열기만 (토글 X)
+          toggle(item.id, true);
+        } else {
+          toggle(item.id);
+          if (!isOpen) navigate(item.children[0].href);
+        }
       } else if (item.href) {
         navigate(item.href);
       }
@@ -149,8 +206,8 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0 }) 
   const HomeIcon = Icon[NAV_HOME.iconKey];
 
   return (
-    <aside className="sidebar" ref={sidebarRef}>
-      <div className="sidebar-pill" style={{ top: pillStyle.top, opacity: pillStyle.opacity }} />
+    <aside className="sidebar" ref={sidebarRef} suppressHydrationWarning>
+      <div className="sidebar-pill" style={{ top: pillStyle.top, height: pillStyle.height, opacity: pillStyle.opacity }} />
       <a className="brand" href="/" onClick={e => { e.preventDefault(); navigate('/'); }}>
         {activeCompany?.logo
           ? <img className="logo-img" src={activeCompany.logo} alt={activeCompany.name}
@@ -166,6 +223,7 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0 }) 
       </a>
 
       {/* 홈은 섹션 외 단일 항목 */}
+      <nav aria-label="기본 내비게이션">
       <button className={'nav-item ' + (isActive(NAV_HOME) ? 'active' : '')}
               onClick={() => navigate(NAV_HOME.href)}>
         <HomeIcon className="ico" />
@@ -179,6 +237,7 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0 }) 
           {section.groups.map(renderGroup)}
         </div>
       ))}
+      </nav>
 
       <button
         className="sidebar-footer"

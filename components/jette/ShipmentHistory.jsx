@@ -1,22 +1,8 @@
 'use client';
-import { useState } from 'react';
 import { formatNumber, formatRelative } from '@/lib/format';
+import { ConfirmDeleteButton } from './_ConfirmDeleteButton';
 
-/**
- * ShipmentHistory — 출고량 파일 이력 + 개별 삭제 + 월 단위 선택
- *
- * 같은 (year, month) 파일은 행 별로 표시하되, 행 클릭 시 그 월의 모든 파일 합산.
- */
 export function ShipmentHistory({ files, selectedYM, onSelectYM, onDelete }) {
-  const [confirmId, setConfirmId] = useState(null);
-  const [busyId, setBusyId] = useState(null);
-
-  async function handleDelete(f) {
-    setBusyId(f.id);
-    try { await onDelete(f.id); }
-    finally { setBusyId(null); setConfirmId(null); }
-  }
-
   if (!files || files.length === 0) {
     return (
       <div className="card" style={{marginTop:16}}>
@@ -57,13 +43,14 @@ export function ShipmentHistory({ files, selectedYM, onSelectYM, onDelete }) {
               const isSelected = selectedYM
                 && selectedYM.year === f.year && selectedYM.month === f.month;
               return (
-                <tr key={f.id}
+                <tr
+                  key={f.id}
                   style={{
                     background: isSelected ? 'var(--accent-soft)' : undefined,
                     cursor: 'pointer',
                   }}
                   onClick={(e) => {
-                    if (e.target.tagName === 'BUTTON') return;
+                    if (e.target.closest('button')) return;
                     onSelectYM?.({ year: f.year, month: f.month });
                   }}
                 >
@@ -87,23 +74,7 @@ export function ShipmentHistory({ files, selectedYM, onSelectYM, onDelete }) {
                       : '-'}
                   </td>
                   <td style={{textAlign:'right'}}>
-                    {confirmId === f.id ? (
-                      <span style={{display:'inline-flex', gap:6}}>
-                        <button className="btn sm" disabled={busyId === f.id} onClick={() => setConfirmId(null)}>취소</button>
-                        <button
-                          className="btn sm"
-                          disabled={busyId === f.id}
-                          onClick={() => handleDelete(f)}
-                          style={{background:'var(--negative)', color:'#fff', borderColor:'var(--negative)'}}
-                        >
-                          {busyId === f.id ? '삭제 중...' : '삭제 확인'}
-                        </button>
-                      </span>
-                    ) : (
-                      <button className="btn sm" style={{color:'var(--negative)'}} onClick={() => setConfirmId(f.id)}>
-                        삭제
-                      </button>
-                    )}
+                    <ConfirmDeleteButton onDelete={() => onDelete(f.id)} />
                   </td>
                 </tr>
               );

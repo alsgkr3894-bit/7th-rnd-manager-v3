@@ -6,18 +6,9 @@ import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { addNote, getNoteById } from '@/lib/note';
 import { NoteFormBody, INIT } from '../_NoteFormBody';
-
-const DRAFT_KEY = 'v3:note-draft-write';
-
-function saveDraft(form) {
-  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(form)); } catch {}
-}
-function loadDraft() {
-  try { const s = localStorage.getItem(DRAFT_KEY); return s ? JSON.parse(s) : null; } catch { return null; }
-}
-function clearDraft() {
-  try { localStorage.removeItem(DRAFT_KEY); } catch {}
-}
+import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
+import { KEYS } from '@/lib/note/keys';
+import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 
 export default function Page() {
   const router  = useRouter();
@@ -32,7 +23,7 @@ export default function Page() {
 
   useEffect(() => {
     let fromId = null;
-    try { fromId = sessionStorage.getItem('v3:note-from'); sessionStorage.removeItem('v3:note-from'); } catch {}
+    try { fromId = sessionStorage.getItem(KEYS.NOTE_FROM); sessionStorage.removeItem(KEYS.NOTE_FROM); } catch {}
     if (fromId) {
       initDB()
         .then(() => getNoteById(Number(fromId)))
@@ -50,7 +41,7 @@ export default function Page() {
         })
         .catch(console.error);
     } else {
-      const draft = loadDraft();
+      const draft = loadDraft(KEYS.NOTE_DRAFT_WRITE);
       if (draft && (draft.title || draft.menuName || draft.testContent)) {
         setShowDraftBanner(true);
       }
@@ -62,7 +53,7 @@ export default function Page() {
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setDraftStatus('saving');
-      saveDraft(form);
+      saveDraft(KEYS.NOTE_DRAFT_WRITE, form);
       clearTimeout(draftTimer.current);
       draftTimer.current = setTimeout(() => {
         setDraftStatus('saved');
@@ -72,11 +63,7 @@ export default function Page() {
     return () => { clearTimeout(timerRef.current); clearTimeout(draftTimer.current); };
   }, [form]);
 
-  useEffect(() => {
-    const h = e => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave(); } };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, [form]);
+  useKeyboardSave(handleSave);
 
   async function handleSave() {
     if (!form.title.trim() || !form.menuName.trim() || !form.testContent.trim()) {
@@ -87,7 +74,7 @@ export default function Page() {
     try {
       await initDB();
       await addNote(form);
-      clearDraft();
+      clearDraft(KEYS.NOTE_DRAFT_WRITE);
       showToast('노트가 저장됐어요', 'ok');
       router.push('/note');
     } catch {
@@ -97,12 +84,12 @@ export default function Page() {
   }
 
   function handleCancel() {
-    clearDraft();
+    clearDraft(KEYS.NOTE_DRAFT_WRITE);
     router.push('/note');
   }
 
   function restoreDraft() {
-    const draft = loadDraft();
+    const draft = loadDraft(KEYS.NOTE_DRAFT_WRITE);
     if (draft) { setForm(draft); showToast('임시저장된 내용을 불러왔어요', 'ok'); }
     setShowDraftBanner(false);
   }
@@ -145,7 +132,7 @@ export default function Page() {
           <span>이전에 작성하던 임시저장이 있어요.</span>
           <div style={{display:'flex', gap:8}}>
             <button className="btn sm" onClick={restoreDraft}>불러오기</button>
-            <button className="btn sm" onClick={() => { clearDraft(); setShowDraftBanner(false); }}>무시</button>
+            <button className="btn sm" onClick={() => { clearDraft(KEYS.NOTE_DRAFT_WRITE); setShowDraftBanner(false); }}>무시</button>
           </div>
         </div>
       )}

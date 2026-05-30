@@ -6,6 +6,8 @@ import { initDB } from '@/lib/db';
 import { getAllIngredients } from '@/lib/ingredient';
 import { CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS, getAllNotes } from '@/lib/note';
 import { TagInput } from '@/components/ui/TagInput';
+import { SegGroup, Field } from '@/components/note/FormFields';
+import { generateNoteReportText } from '@/lib/note/report';
 
 export const INIT = {
   title: '', menuName: '', category: CATEGORIES[0], noteType: NOTE_TYPES[0],
@@ -16,10 +18,10 @@ export const INIT = {
 };
 
 export function NoteFormBody({ form, setForm }) {
-  function upd(k, v) { setForm(f => ({ ...f, [k]: v })); }
+  function updateField(k, v) { setForm(f => ({ ...f, [k]: v })); }
   const [allTags, setAllTags] = useState([]);
   const [touched, setTouched] = useState({});
-  function touch(k) { setTouched(t => ({ ...t, [k]: true })); }
+  function markTouched(k) { setTouched(t => ({ ...t, [k]: true })); }
   useEffect(() => {
     initDB().then(() => getAllNotes()).then(notes => {
       const set = new Set();
@@ -28,17 +30,7 @@ export function NoteFormBody({ form, setForm }) {
     }).catch(() => {});
   }, []);
 
-  const reportText = useMemo(() => `[메뉴개발노트 보고용]
-메뉴명: ${form.menuName || '—'}
-개발 구분: ${form.category}  유형: ${form.noteType}  상태: ${form.status}
-테스트 날짜: ${form.testDate || '—'}
-테스트 내용:
-${form.testContent || '—'}
-맛 평가: ${form.tasteEval || '—'}
-상무님 평가: ${form.managerEval || '—'}
-다음 액션: ${form.nextAction || '—'}
-보고용 요약:
-${form.reportSummary || '—'}`, [form]);
+  const reportText = useMemo(() => generateNoteReportText(form), [form]);
 
   async function copyReport() {
     try {
@@ -50,7 +42,7 @@ ${form.reportSummary || '—'}`, [form]);
   }
 
   // ── 임시 원가 계산 상태 ──
-  const costData = useMemo(() => {
+  const parsedCostCalc = useMemo(() => {
     try {
       if (!form.tempCostCalc) return { rows: [], sellingPrice: '' };
       const p = typeof form.tempCostCalc === 'string'
@@ -60,7 +52,7 @@ ${form.reportSummary || '—'}`, [form]);
   }, [form.tempCostCalc]);
 
   function updCost(rows, sellingPrice) {
-    upd('tempCostCalc', JSON.stringify({ rows, sellingPrice }));
+    updateField('tempCostCalc', JSON.stringify({ rows, sellingPrice }));
   }
 
   const [ingredients,   setIngredients]   = useState([]);
@@ -99,26 +91,26 @@ ${form.reportSummary || '—'}`, [form]);
       quantity: '',
       unitPrice,
     };
-    updCost([...costData.rows, newRow], costData.sellingPrice);
+    updCost([...parsedCostCalc.rows, newRow], parsedCostCalc.sellingPrice);
     setIngSearch('');
     setShowDropdown(false);
   }
 
   function removeIngRow(rowId) {
-    updCost(costData.rows.filter(r => r.id !== rowId), costData.sellingPrice);
+    updCost(parsedCostCalc.rows.filter(r => r.id !== rowId), parsedCostCalc.sellingPrice);
   }
 
   function updateIngRow(rowId, field, value) {
     updCost(
-      costData.rows.map(r => r.id === rowId ? { ...r, [field]: value } : r),
-      costData.sellingPrice,
+      parsedCostCalc.rows.map(r => r.id === rowId ? { ...r, [field]: value } : r),
+      parsedCostCalc.sellingPrice,
     );
   }
 
-  const totalCost = costData.rows.reduce((sum, r) => {
+  const totalCost = parsedCostCalc.rows.reduce((sum, r) => {
     return sum + ((Number(r.quantity) || 0) * (Number(r.unitPrice) || 0));
   }, 0);
-  const sellNum  = Number(costData.sellingPrice) || 0;
+  const sellNum  = Number(parsedCostCalc.sellingPrice) || 0;
   const costRate = sellNum > 0 ? (totalCost / sellNum * 100).toFixed(1) : null;
 
   return (
@@ -132,30 +124,30 @@ ${form.reportSummary || '—'}`, [form]);
 
           <Field label="제목" required error={touched.title && !form.title.trim()}>
             <input className="form-input" value={form.title}
-              onChange={e => upd('title', e.target.value)}
-              onBlur={() => touch('title')}
+              onChange={e => updateField('title', e.target.value)}
+              onBlur={() => markTouched('title')}
               placeholder="예) 횡성한우 와사비마요 조합 테스트"/>
           </Field>
 
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
             <Field label="메뉴명" required error={touched.menuName && !form.menuName.trim()}>
               <input className="form-input" value={form.menuName}
-                onChange={e => upd('menuName', e.target.value)}
-                onBlur={() => touch('menuName')}
+                onChange={e => updateField('menuName', e.target.value)}
+                onBlur={() => markTouched('menuName')}
                 placeholder="예) 횡성한우쉬림프"/>
             </Field>
             <Field label="테스트 날짜">
               <input className="form-input" type="date" value={form.testDate}
-                onChange={e => upd('testDate', e.target.value)}/>
+                onChange={e => updateField('testDate', e.target.value)}/>
             </Field>
           </div>
 
           <Field label="개발 구분">
-            <SegGroup options={CATEGORIES} value={form.category} onChange={v => upd('category', v)}/>
+            <SegGroup options={CATEGORIES} value={form.category} onChange={v => updateField('category', v)}/>
           </Field>
 
           <Field label="유형">
-            <SegGroup options={NOTE_TYPES} value={form.noteType} onChange={v => upd('noteType', v)}/>
+            <SegGroup options={NOTE_TYPES} value={form.noteType} onChange={v => updateField('noteType', v)}/>
           </Field>
 
           <Field label="상태">
@@ -172,7 +164,7 @@ ${form.reportSummary || '—'}`, [form]);
                       color: active ? sc.color : 'var(--text-3)',
                       fontFamily:'inherit', fontSize:12, fontWeight:active ? 700 : 400, cursor:'pointer',
                     }}
-                    onClick={() => upd('status', st)}
+                    onClick={() => updateField('status', st)}
                   >{st}</button>
                 );
               })}
@@ -182,9 +174,14 @@ ${form.reportSummary || '—'}`, [form]);
           <Field label="핵심 테스트 내용" required error={touched.testContent && !form.testContent.trim()}>
             <textarea className="form-input" style={{minHeight:100, resize:'vertical'}}
               value={form.testContent}
-              onChange={e => upd('testContent', e.target.value)}
-              onBlur={() => touch('testContent')}
+              onChange={e => updateField('testContent', e.target.value)}
+              onBlur={() => markTouched('testContent')}
               placeholder="테스트 조건, 온도·시간·재료 비율, 핵심 변경사항 등을 기록하세요."/>
+            {form.testContent && (
+              <div className={`char-count${form.testContent.length > 500 ? ' warn' : ''}`}>
+                {form.testContent.length}자 · {form.testContent.trim().split(/\s+/).filter(Boolean).length}단어
+              </div>
+            )}
           </Field>
         </div>
 
@@ -195,7 +192,7 @@ ${form.reportSummary || '—'}`, [form]);
           <Field label="사용 재료">
             <textarea className="form-input" style={{minHeight:72, resize:'vertical'}}
               value={form.materials}
-              onChange={e => upd('materials', e.target.value)}
+              onChange={e => updateField('materials', e.target.value)}
               placeholder="재료명, 사용량 등"/>
           </Field>
 
@@ -203,20 +200,20 @@ ${form.reportSummary || '—'}`, [form]);
             <Field label="맛 평가">
               <textarea className="form-input" style={{minHeight:80, resize:'vertical'}}
                 value={form.tasteEval}
-                onChange={e => upd('tasteEval', e.target.value)}
+                onChange={e => updateField('tasteEval', e.target.value)}
                 placeholder="맛, 식감, 외관 등"/>
             </Field>
             <Field label="상무님 평가">
               <textarea className="form-input" style={{minHeight:80, resize:'vertical'}}
                 value={form.managerEval}
-                onChange={e => upd('managerEval', e.target.value)}
+                onChange={e => updateField('managerEval', e.target.value)}
                 placeholder="평가 내용"/>
             </Field>
           </div>
 
           <Field label="원가 검토 메모">
             <input className="form-input" value={form.costNote}
-              onChange={e => upd('costNote', e.target.value)}
+              onChange={e => updateField('costNote', e.target.value)}
               placeholder="예) 베이컨 40g 변경 시 원가율 +1.2%p"/>
           </Field>
 
@@ -224,13 +221,13 @@ ${form.reportSummary || '—'}`, [form]);
             <Field label="개선점">
               <textarea className="form-input" style={{minHeight:72, resize:'vertical'}}
                 value={form.improvements}
-                onChange={e => upd('improvements', e.target.value)}
+                onChange={e => updateField('improvements', e.target.value)}
                 placeholder="보완할 부분"/>
             </Field>
             <Field label="다음 액션">
               <textarea className="form-input" style={{minHeight:72, resize:'vertical'}}
                 value={form.nextAction}
-                onChange={e => upd('nextAction', e.target.value)}
+                onChange={e => updateField('nextAction', e.target.value)}
                 placeholder="재테스트 방향, 일정 등"/>
             </Field>
           </div>
@@ -238,12 +235,12 @@ ${form.reportSummary || '—'}`, [form]);
           <Field label="보고용 요약" hint="직접 입력 또는 우측 자동 생성 복사">
             <textarea className="form-input" style={{minHeight:72, resize:'vertical'}}
               value={form.reportSummary}
-              onChange={e => upd('reportSummary', e.target.value)}
+              onChange={e => updateField('reportSummary', e.target.value)}
               placeholder="보고 시 사용할 요약 문구를 입력하세요."/>
           </Field>
 
           <Field label="태그" hint="입력 후 Enter 또는 콤마">
-            <TagInput value={form.tags} onChange={v => upd('tags', v)} suggestions={allTags}/>
+            <TagInput value={form.tags} onChange={v => updateField('tags', v)} suggestions={allTags}/>
           </Field>
         </div>
 
@@ -314,7 +311,7 @@ ${form.reportSummary || '—'}`, [form]);
           </div>
 
           {/* 재료 테이블 */}
-          {costData.rows.length > 0 ? (
+          {parsedCostCalc.rows.length > 0 ? (
             <div style={{overflowX:'auto', marginBottom:12}}>
               <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
                 <thead>
@@ -325,7 +322,7 @@ ${form.reportSummary || '—'}`, [form]);
                   </tr>
                 </thead>
                 <tbody>
-                  {costData.rows.map(r => {
+                  {parsedCostCalc.rows.map(r => {
                     const subtotal = (Number(r.quantity) || 0) * (Number(r.unitPrice) || 0);
                     return (
                       <tr key={r.id} style={{borderBottom:'1px solid var(--surface-2)'}}>
@@ -389,8 +386,8 @@ ${form.reportSummary || '—'}`, [form]);
                 className="form-input"
                 style={{width:100, padding:'3px 8px', fontSize:12}}
                 type="number" min="0"
-                value={costData.sellingPrice}
-                onChange={e => updCost(costData.rows, e.target.value)}
+                value={parsedCostCalc.sellingPrice}
+                onChange={e => updCost(parsedCostCalc.rows, e.target.value)}
                 placeholder="판매가"
               />
               <span style={{fontSize:11, color:'var(--text-3)'}}>원</span>
@@ -429,37 +426,3 @@ ${form.reportSummary || '—'}`, [form]);
   );
 }
 
-function SegGroup({ options, value, onChange }) {
-  return (
-    <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
-      {options.map(o => (
-        <button key={o}
-          style={{
-            padding:'5px 12px', borderRadius:8, border:'1px solid',
-            borderColor: value === o ? 'var(--accent)' : 'var(--border)',
-            background:  value === o ? 'var(--accent)' : 'var(--surface-2)',
-            color:       value === o ? '#fff' : 'var(--text-2)',
-            fontFamily:'inherit', fontSize:13, fontWeight: value === o ? 700 : 400, cursor:'pointer',
-          }}
-          onClick={() => onChange(o)}
-        >{o}</button>
-      ))}
-    </div>
-  );
-}
-
-function Field({ label, required, hint, error, children }) {
-  return (
-    <div style={{marginBottom:14}}>
-      <div style={{fontSize:12, fontWeight:700, color: error ? 'var(--negative)' : 'var(--text-3)', marginBottom:6}}>
-        {label}
-        {required && <span style={{color:'var(--negative)', marginLeft:2}}>*</span>}
-        {hint && <span style={{fontSize:11, fontWeight:400, color:'var(--text-4)', marginLeft:6}}>{hint}</span>}
-        {error && <span style={{fontSize:11, fontWeight:400, marginLeft:6}}>필수 항목입니다</span>}
-      </div>
-      <div style={error ? {outline:'1.5px solid var(--negative)', borderRadius:8} : undefined}>
-        {children}
-      </div>
-    </div>
-  );
-}

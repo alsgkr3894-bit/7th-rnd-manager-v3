@@ -77,15 +77,15 @@ export default function Page() {
   /* URL 상태 복원 (page, sort, dir) + 새 보고서 하이라이트 */
   useEffect(() => {
     const url = new URL(window.location.href);
-    const pRaw = parseInt(url.searchParams.get('p') || '1', 10);
-    const p    = Number.isNaN(pRaw) ? 1 : pRaw;
-    const sort = url.searchParams.get('sort');
-    const dir  = url.searchParams.get('dir');
-    const newIdRaw = url.searchParams.get('new');
-    const newId = newIdRaw ? parseInt(newIdRaw, 10) : null;
-    if (p > 1) setPage(p);
-    if (sort) setSortKey(sort);
-    if (dir === 'asc' || dir === 'desc') setSortDir(dir);
+    const pageParam   = parseInt(url.searchParams.get('p') || '1', 10);
+    const initialPage = Number.isNaN(pageParam) ? 1 : pageParam;
+    const sortParam   = url.searchParams.get('sort');
+    const dirParam    = url.searchParams.get('dir');
+    const newIdParam  = url.searchParams.get('new');
+    const newId       = newIdParam ? parseInt(newIdParam, 10) : null;
+    if (initialPage > 1) setPage(initialPage);
+    if (sortParam) setSortKey(sortParam);
+    if (dirParam === 'asc' || dirParam === 'desc') setSortDir(dirParam);
     if (newId && !Number.isNaN(newId)) {
       setNewIds(new Set([newId]));
       setTimeout(() => setNewIds(new Set()), 5000);
@@ -167,10 +167,15 @@ export default function Page() {
       return true;
     })
     .sort((a, b) => {
-      let va = a[sortKey], vb = b[sortKey];
-      if (sortKey === 'name' || sortKey === 'kind') { va = va||''; vb = vb||''; return sortDir==='asc' ? va.localeCompare(vb,'ko') : vb.localeCompare(va,'ko'); }
-      if (!va && !vb) return 0; if (!va) return 1; if (!vb) return -1;
-      return sortDir === 'asc' ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+      let valA = a[sortKey], valB = b[sortKey];
+      if (sortKey === 'name' || sortKey === 'kind') {
+        valA = valA || ''; valB = valB || '';
+        return sortDir === 'asc' ? valA.localeCompare(valB, 'ko') : valB.localeCompare(valA, 'ko');
+      }
+      if (!valA && !valB) return 0;
+      if (!valA) return 1;
+      if (!valB) return -1;
+      return sortDir === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
     }), [reports, kindFilter, favOnly, search, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
@@ -406,7 +411,7 @@ export default function Page() {
                         <button className="btn sm" onClick={() => setShareTarget(r)}>
                           <Icon.upload style={{width:12,height:12}}/>공유
                         </button>
-                        <button className="btn sm" onClick={() => showToast('PDF 내보내기는 준비 중이에요', 'info')}><Icon.download style={{width:12,height:12}}/>PDF</button>
+                        <button className="btn sm" onClick={() => window.print()}><Icon.download style={{width:12,height:12}}/>PDF</button>
                         <button className="btn sm" style={{color:'var(--negative)'}}
                           disabled={isDeleting} onClick={() => handleDelete(r.id)}>
                           <Icon.x style={{width:12,height:12}}/>삭제
@@ -474,7 +479,7 @@ const NEW_REPORT_KINDS = Object.values(KIND_META);
 
 function NewReportModal({ onClose, router }) {
   return (
-    <div className="palette-scrim" onClick={onClose}>
+    <div className="palette-scrim">
       <div className="modal-box" style={{maxWidth:480, padding:0, overflow:'hidden'}} onClick={e => e.stopPropagation()}>
         <div style={{padding:'20px 24px 16px', borderBottom:'1px solid var(--border)'}}>
           <div style={{fontWeight:800, fontSize:16}}>새 보고서 생성</div>

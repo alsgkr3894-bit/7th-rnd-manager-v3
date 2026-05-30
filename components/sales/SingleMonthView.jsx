@@ -1,15 +1,8 @@
 'use client';
 import { formatNumber } from '@/lib/format';
+import { costRateColor } from '@/lib/cost/rate-color';
 import { MonthRankTable } from './MonthRankTable';
 import { CategoryDetailGrid } from './CategoryDetailGrid';
-
-// 원가율 색상: 낮을수록 좋음
-function costRateColor(pct) {
-  if (pct == null || pct === 0) return 'var(--text-4)';
-  if (pct <= 30) return 'var(--positive, #10b981)';
-  if (pct <= 40) return '#f59e0b';
-  return 'var(--negative, #ef4444)';
-}
 
 /**
  * SingleMonthView — 월 상세 보기 (PeriodBar 'single' 모드)

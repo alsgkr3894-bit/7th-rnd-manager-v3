@@ -182,7 +182,7 @@ export function ManagedProductsCard() {
               {filtered.map(p => (
                 <ManagedProductsRow
                   key={p.id}
-                  p={p}
+                  product={p}
                   onToggleEnable={handleToggleEnable}
                   onChangeType={handleChangeType}
                   onToggleManaged={handleToggleManaged}

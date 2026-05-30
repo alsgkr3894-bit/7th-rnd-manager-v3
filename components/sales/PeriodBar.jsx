@@ -1,4 +1,5 @@
 'use client';
+import { formatPeriodKor } from '@/lib/format';
 
 const MODE_TABS = [
   { id: 'single', label: '월별 순위' },
@@ -69,7 +70,7 @@ function PeriodSlot({ badge, badgeColor, label, period, editable, options, onCha
         <PeriodSelect value={period} options={options} onChange={onChange} />
       ) : (
         <div className="period-slot-val">
-          {formatPeriod(period)}
+          {formatPeriodKor(period)}
           {hint && <span className="period-slot-hint">{hint}</span>}
         </div>
       )}
@@ -89,18 +90,14 @@ function PeriodSelect({ value, options, onChange }) {
       }}
     >
       {!options.find(o => o.year === value?.year && o.month === value?.month) && (
-        <option value={key}>{formatPeriod(value)}</option>
+        <option value={key}>{formatPeriodKor(value)}</option>
       )}
       {options.map(o => (
         <option key={`${o.year}-${o.month}`} value={`${o.year}-${o.month}`}>
-          {formatPeriod(o)}
+          {formatPeriodKor(o)}
         </option>
       ))}
     </select>
   );
 }
 
-function formatPeriod(p) {
-  if (!p || !p.year || !p.month) return '-';
-  return `${p.year}년 ${p.month}월`;
-}

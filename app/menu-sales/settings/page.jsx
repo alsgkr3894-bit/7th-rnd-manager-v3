@@ -17,16 +17,22 @@ const TABS = [
 export default function Page() {
   const [tab, setTab] = useState('rule');
   const [excludeCount, setExcludeCount] = useState(0);
+  const [excludeLoadFailed, setExcludeLoadFailed] = useState(false);
 
   const ruleCount  = SALES_RULES.length;
   const aliasCount = SALES_ALIASES.length;
 
   // 품목 제외 수: ref_excluded + sales_rules 중 category='품목제외' 합산
   useEffect(() => {
-    initDB().then(async () => {
-      const [excl, rules] = await Promise.all([getUserExcluded(), getUserRules()]);
-      setExcludeCount(excl.length + rules.filter(r => r.category === '품목제외').length);
-    }).catch(() => {});
+    initDB()
+      .then(async () => {
+        const [excl, rules] = await Promise.all([getUserExcluded(), getUserRules()]);
+        setExcludeCount(excl.length + rules.filter(r => r.category === '품목제외').length);
+      })
+      .catch(err => {
+        console.error('[settings] 제외 수 조회 실패:', err);
+        setExcludeLoadFailed(true);
+      });
   }, []);
 
   return (
@@ -51,7 +57,7 @@ export default function Page() {
         />
         <SummaryCard
           label="품목 제외"
-          value={excludeCount}
+          value={excludeLoadFailed ? '-' : excludeCount}
           sub="집계·순위에서 자동 제외"
         />
       </div>
@@ -90,7 +96,7 @@ function SummaryCard({ label, value, sub }) {
     <div className="card kpi-card">
       <div>
         <div className="label">{label}</div>
-        <div className="value num">{formatNumber(value)}<span className="unit">개</span></div>
+        <div className="value num">{typeof value === 'string' ? value : formatNumber(value)}<span className="unit">개</span></div>
         <div className="trend"><span style={{color:'var(--text-3)'}}>{sub}</span></div>
       </div>
     </div>

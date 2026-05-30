@@ -1,27 +1,8 @@
 'use client';
-import { useState } from 'react';
 import { formatNumber, formatRelative } from '@/lib/format';
+import { ConfirmDeleteButton } from './_ConfirmDeleteButton';
 
-/**
- * PriceFileHistory — 업로드된 가격 파일 이력 + 삭제
- *
- * @param {Array} files
- * @param {(fileId) => Promise<void>} onDelete
- */
 export function PriceFileHistory({ files, onDelete }) {
-  const [confirmId, setConfirmId] = useState(null);
-  const [busyId, setBusyId] = useState(null);
-
-  async function handleDelete(f) {
-    setBusyId(f.id);
-    try {
-      await onDelete(f.id);
-    } finally {
-      setBusyId(null);
-      setConfirmId(null);
-    }
-  }
-
   if (!files || files.length === 0) {
     return (
       <div className="card" style={{marginTop:16}}>
@@ -72,23 +53,7 @@ export function PriceFileHistory({ files, onDelete }) {
                   {formatNumber(f.totalRows ?? 0)}<span className="unit">개</span>
                 </td>
                 <td style={{textAlign:'right'}}>
-                  {confirmId === f.id ? (
-                    <span style={{display:'inline-flex', gap:6}}>
-                      <button className="btn sm" disabled={busyId === f.id} onClick={() => setConfirmId(null)}>취소</button>
-                      <button
-                        className="btn sm"
-                        disabled={busyId === f.id}
-                        onClick={() => handleDelete(f)}
-                        style={{background:'var(--negative)', color:'#fff', borderColor:'var(--negative)'}}
-                      >
-                        {busyId === f.id ? '삭제 중...' : '삭제 확인'}
-                      </button>
-                    </span>
-                  ) : (
-                    <button className="btn sm" style={{color:'var(--negative)'}} onClick={() => setConfirmId(f.id)}>
-                      삭제
-                    </button>
-                  )}
+                  <ConfirmDeleteButton onDelete={() => onDelete(f.id)} />
                 </td>
               </tr>
             ))}

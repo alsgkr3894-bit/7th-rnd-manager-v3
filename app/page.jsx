@@ -6,6 +6,7 @@ import { useCountUp } from '@/lib/useCountUp';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getProfile } from '@/lib/profile';
+
 import {
   getSalesKpi,
   getNoteKpi,
@@ -14,13 +15,101 @@ import {
   getCategoryShare,
   getTopMenus,
   getRecentActivities,
+  getCostAlertData,
 } from '@/lib/stats';
 import { HomeKpiRow } from '@/components/home/HomeKpiRow';
 import { HomeChartRow } from '@/components/home/HomeChartRow';
 import { HomeActivities } from '@/components/home/HomeActivities';
-import { RankCard, ReportingNotesWidget, SampleStatsWidget } from '@/components/home/HomeWidgets';
+import { RankCard, ReportingNotesWidget, SampleStatsWidget, CostAlertWidget, QuickReportWidget } from '@/components/home/HomeWidgets';
 import { getAllNotes, addNote } from '@/lib/note';
 import { getAllSamples } from '@/lib/sample';
+import { KEYS } from '@/lib/note/keys';
+
+function NoteHeatmapWidget({ notes }) {
+  const DAYS = 112; // 16주
+  const WEEKS = 16;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // 날짜별 count 집계
+  const countMap = {};
+  notes.forEach(note => {
+    const d = note.createdAt ? new Date(note.createdAt) : null;
+    if (!d) return;
+    d.setHours(0, 0, 0, 0);
+    const diff = Math.floor((today - d) / 86400000);
+    if (diff >= 0 && diff < DAYS) {
+      const key = diff;
+      countMap[key] = (countMap[key] || 0) + 1;
+    }
+  });
+
+  const total = Object.values(countMap).reduce((s, v) => s + v, 0);
+
+  // 16주 x 7일 그리드: col 0 = 가장 오래된 주, col 15 = 이번 주
+  // row 0 = 일요일, row 6 = 토요일
+  const todayDow = today.getDay(); // 0=일 ~ 6=토
+  // 오늘이 속한 주의 일요일까지 며칠 전인지
+  const daysFromSundayOfThisWeek = todayDow;
+  // 전체 시작일: 16주 전 일요일
+  const startOffset = DAYS - 1 - (WEEKS - 1) * 7 - daysFromSundayOfThisWeek;
+  // startOffset은 today 기준 며칠 전의 일요일
+
+  function getCount(weekIdx, dowIdx) {
+    // weekIdx 0 = 가장 오래된 주, 15 = 이번 주
+    // dowIdx 0 = 일요일
+    const daysAgo = (WEEKS - 1 - weekIdx) * 7 + (todayDow - dowIdx);
+    if (daysAgo < 0 || daysAgo >= DAYS) return -1; // 범위 밖 (미래)
+    return countMap[daysAgo] || 0;
+  }
+
+  function lvClass(count) {
+    if (count < 0) return 'lv-none';
+    if (count === 0) return 'lv0';
+    if (count === 1) return 'lv1';
+    if (count === 2) return 'lv2';
+    if (count === 3) return 'lv3';
+    return 'lv4';
+  }
+
+  return (
+    <div className="card" style={{ padding: '16px 20px' }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 10 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-1)' }}>노트 작성 현황</div>
+        <div style={{ fontSize: 12, color: 'var(--text-3)' }}>16주간 {total}개</div>
+      </div>
+      <div className="heatmap-wrap">
+        <div style={{display:'flex',flexDirection:'column',gap:3,marginRight:4,justifyContent:'space-around',height:89}}>
+          {['일','','화','','목','','토'].map((d,i) => (
+            <div key={i} style={{fontSize:9,color:'var(--text-4)',lineHeight:1,textAlign:'right',width:10}}>{d}</div>
+          ))}
+        </div>
+        <div style={{
+          flex:1,
+          display: 'grid',
+          gridTemplateColumns: `repeat(${WEEKS}, 1fr)`,
+          gridTemplateRows: 'repeat(7, 11px)',
+          gridAutoFlow: 'column',
+          gap: 3,
+        }}>
+          {Array.from({ length: WEEKS }, (_, wi) =>
+            Array.from({ length: 7 }, (_, di) => {
+              const c = getCount(wi, di);
+              return (
+                <div key={`${wi}-${di}`}
+                  className={`heatmap-cell ${lvClass(c)}`}
+                  title={c >= 0 ? `${c}개` : ''}
+                  style={{ gridColumn: wi + 1, gridRow: di + 1, background: c < 0 ? 'transparent' : undefined }}
+                />
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function HomePage() {
   const router = useRouter();
@@ -35,7 +124,9 @@ export default function HomePage() {
   const [bottom, setBottom]         = useState([]);
   const [activities, setActivities] = useState([]);
   const [reportingNotes, setReportingNotes] = useState([]);
+  const [allNotes,       setAllNotes]       = useState([]);
   const [recentSamples,  setRecentSamples]  = useState([]);
+  const [costAlertData,  setCostAlertData]  = useState(null);
 
   const [anchor, setAnchor] = useState(null); // {year, month} | null = auto-latest
   const [detectedPeriod, setDetectedPeriod] = useState(null);
@@ -51,18 +142,21 @@ export default function HomePage() {
   const quickResetTimer = useRef(null);
 
   const [widgetConfig, setWidgetConfig] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('v3:home-widgets') || '{}'); } catch { return {}; }
+    try { return JSON.parse(localStorage.getItem(KEYS.HOME_WIDGETS) || '{}'); } catch { return {}; }
   });
   const [widgetConfigOpen, setWidgetConfigOpen] = useState(false);
 
   const WIDGET_DEFS = [
-    { key: 'kpi',        label: 'KPI 지표' },
-    { key: 'quicknote', label: '빠른 메모' },
-    { key: 'charts',    label: '차트 (트렌드 · 카테고리)' },
-    { key: 'ranks',     label: '판매 순위 (베스트/워스트)' },
-    { key: 'notes',     label: '보고예정 노트' },
-    { key: 'samples',   label: '샘플 기록' },
-    { key: 'activities',label: '최근 활동' },
+    { key: 'kpi',         label: 'KPI 지표' },
+    { key: 'quicknote',   label: '빠른 메모' },
+    { key: 'charts',      label: '차트 (트렌드 · 카테고리)' },
+    { key: 'ranks',       label: '판매 순위 (베스트/워스트)' },
+    { key: 'costalert',   label: '원가율 경보' },
+    { key: 'quickreport', label: '보고서 빠른 생성' },
+    { key: 'notes',       label: '보고예정 노트' },
+    { key: 'samples',     label: '샘플 기록' },
+    { key: 'heatmap',     label: '노트 히트맵' },
+    { key: 'activities',  label: '최근 활동' },
   ];
 
   function isVisible(key) { return widgetConfig[key] !== false; }
@@ -70,7 +164,7 @@ export default function HomePage() {
   function toggleWidget(key) {
     const next = { ...widgetConfig, [key]: !isVisible(key) };
     setWidgetConfig(next);
-    try { localStorage.setItem('v3:home-widgets', JSON.stringify(next)); } catch {}
+    try { localStorage.setItem(KEYS.HOME_WIDGETS, JSON.stringify(next)); } catch {}
   }
 
   // chartTab ref — useEffect 클로저 stale 방지
@@ -101,9 +195,13 @@ export default function HomePage() {
         if (tp) setTop(tp);
         if (bt) setBottom(bt);
         if (ac) setActivities(ac);
-        const [allNotes, allSamples] = await Promise.all([getAllNotes(), getAllSamples()]);
-        setReportingNotes(allNotes.filter(n => n.status === '보고예정'));
+        const [allNotesData, allSamples, costAlert] = await Promise.all([
+          getAllNotes(), getAllSamples(), getCostAlertData().catch(() => null),
+        ]);
+        setAllNotes(allNotesData);
+        setReportingNotes(allNotesData.filter(n => n.status === '보고예정'));
         setRecentSamples(allSamples);
+        if (costAlert) setCostAlertData(costAlert);
       } catch (err) {
         console.error('[Home] 데이터 로드 실패:', err);
       }
@@ -154,7 +252,7 @@ export default function HomePage() {
   function openDraftInNoteWrite() {
     const text = quickNote.trim();
     if (!text) return;
-    try { sessionStorage.setItem('v3:note-draft', text); } catch {}
+    try { sessionStorage.setItem(KEYS.HOME_NOTE_DRAFT, text); } catch {}
     router.push('/note/write');
   }
 
@@ -191,7 +289,7 @@ export default function HomePage() {
       {/* 위젯 설정 패널 */}
       {widgetConfigOpen && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.4)',zIndex:500,display:'grid',placeItems:'center',animation:'fade 150ms ease'}}
-          onClick={e => { if (e.target === e.currentTarget) setWidgetConfigOpen(false); }}>
+>
           <div className="card modal-anim" style={{width:'min(360px,92vw)',padding:'24px 28px'}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
               <div style={{fontWeight:800,fontSize:15,color:'var(--text-1)'}}>홈 위젯 설정</div>
@@ -265,7 +363,7 @@ export default function HomePage() {
 
       {isVisible('kpi') && (
         <HomeKpiRow salesKpi={salesKpi} costKpi={costKpi} noteKpi={noteKpi}
-          salesCount={salesCount} noteCount={noteCount} router={router}/>
+          salesCount={salesCount} noteCount={noteCount}/>
       )}
 
       {/* 빠른 메모 */}
@@ -307,12 +405,31 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* 원가율 경보 + 보고서 빠른 생성 */}
+      {(isVisible('costalert') || isVisible('quickreport')) && (() => {
+        const showAlert  = isVisible('costalert') && (costAlertData?.items?.length ?? 0) > 0;
+        const showReport = isVisible('quickreport');
+        if (!showAlert && !showReport) return null;
+        return (
+          <div className="mid-row motion-stagger">
+            {showAlert  && <CostAlertWidget data={costAlertData} router={router}/>}
+            {showReport && (
+              <div style={!showAlert ? { gridColumn: '1 / -1' } : {}}>
+                <QuickReportWidget router={router}/>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {(isVisible('notes') || isVisible('samples')) && (
         <div className="mid-row motion-stagger">
           {isVisible('notes') && <ReportingNotesWidget notes={reportingNotes} router={router}/>}
           {isVisible('samples') && <SampleStatsWidget samples={recentSamples} router={router}/>}
         </div>
       )}
+
+      {isVisible('heatmap') && <NoteHeatmapWidget notes={allNotes} />}
 
       {isVisible('activities') && <HomeActivities activities={activities} router={router}/>}
     </main>

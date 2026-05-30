@@ -1,19 +1,16 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { Toggle } from '@/components/ui/Toggle';
 import { getUserAliases, addUserAlias, deleteUserAlias, updateUserAlias } from '@/lib/sales';
+import { inputStyle, SectionHeader, SectionEmpty } from './shared/SectionUtils';
 
-/**
- * UserAliasesSection — 사용자 추가 별칭 CRUD + enable 토글
- */
 export function UserAliasesSection() {
-  const [list, setList] = useState([]);
-  const [adding, setAdding] = useState(false);
+  const [list,      setList]      = useState([]);
+  const [adding,    setAdding]    = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ rawName: '', mappedName: '' });
-  const [busy, setBusy] = useState(false);
+  const [form,      setForm]      = useState({ rawName: '', mappedName: '' });
+  const [busy,      setBusy]      = useState(false);
 
   useEffect(() => { refresh(); }, []);
 
@@ -54,23 +51,20 @@ export function UserAliasesSection() {
   }
 
   async function handleDelete(id) {
-    try {
-      await deleteUserAlias(id);
-      showToast('삭제됐어요', 'ok');
-      refresh();
-    } catch { showToast('삭제 실패', 'err'); }
+    try { await deleteUserAlias(id); showToast('삭제됐어요', 'ok'); refresh(); }
+    catch { showToast('삭제 실패', 'err'); }
   }
 
   async function handleToggle(a) {
     try {
-      await updateUserAlias({ id: a.id, enable: a.enable === false ? true : false });
+      await updateUserAlias({ id: a.id, enable: a.enable !== false ? false : true });
       refresh();
     } catch { showToast('토글 실패', 'err'); }
   }
 
   return (
     <div style={{marginBottom:16}}>
-      <Header
+      <SectionHeader
         title="사용자 추가 별칭"
         count={list.length}
         adding={adding}
@@ -78,16 +72,11 @@ export function UserAliasesSection() {
       />
 
       {adding && (
-        <RowForm
-          form={form} setForm={setForm}
-          onCancel={() => setAdding(false)}
-          onSubmit={handleAdd}
-          busy={busy}
-        />
+        <RowForm form={form} setForm={setForm} onCancel={() => setAdding(false)} onSubmit={handleAdd} busy={busy}/>
       )}
 
       {list.length === 0 && !adding ? (
-        <Empty>사용자 추가 별칭이 아직 없습니다</Empty>
+        <SectionEmpty>사용자 추가 별칭이 아직 없습니다</SectionEmpty>
       ) : list.length > 0 && (
         <table className="data-table">
           <thead><tr>
@@ -99,13 +88,7 @@ export function UserAliasesSection() {
             {list.map(a => editingId === a.id ? (
               <tr key={a.id}>
                 <td colSpan={4} style={{padding:8}}>
-                  <RowForm
-                    form={form} setForm={setForm}
-                    onCancel={() => setEditingId(null)}
-                    onSubmit={() => handleUpdate(a.id)}
-                    busy={busy}
-                    submitLabel="저장"
-                  />
+                  <RowForm form={form} setForm={setForm} onCancel={() => setEditingId(null)} onSubmit={() => handleUpdate(a.id)} busy={busy} submitLabel="저장"/>
                 </td>
               </tr>
             ) : (
@@ -129,24 +112,11 @@ export function UserAliasesSection() {
   );
 }
 
-function Header({ title, count, adding, onAdd }) {
-  return (
-    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8}}>
-      <div style={{fontSize:13, fontWeight:700}}>
-        {title} <span style={{color:'var(--text-3)', fontWeight:500, marginLeft:6}}>{count}개</span>
-      </div>
-      <button className="btn sm" onClick={onAdd}>
-        {adding ? '닫기' : <><Icon.plus style={{width:12, height:12}}/> 추가</>}
-      </button>
-    </div>
-  );
-}
-
 function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추가' }) {
   return (
     <div style={{display:'grid', gridTemplateColumns:'1fr 1fr auto auto', gap:8}}>
-      <input value={form.rawName} onChange={e => setForm({ ...form, rawName: e.target.value })} placeholder="입력 (정규화 후)" style={inputStyle}/>
-      <input value={form.mappedName} onChange={e => setForm({ ...form, mappedName: e.target.value })} placeholder="표준 메뉴명" style={inputStyle}/>
+      <input value={form.rawName}    onChange={e => setForm({ ...form, rawName:    e.target.value })} placeholder="입력 (정규화 후)" style={inputStyle}/>
+      <input value={form.mappedName} onChange={e => setForm({ ...form, mappedName: e.target.value })} placeholder="표준 메뉴명"    style={inputStyle}/>
       <button className="btn sm" onClick={onCancel} disabled={busy}>취소</button>
       <button className="btn sm primary" onClick={onSubmit} disabled={busy || !form.rawName.trim() || !form.mappedName.trim()}>
         {busy ? '...' : submitLabel}
@@ -154,13 +124,3 @@ function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추�
     </div>
   );
 }
-
-function Empty({ children }) {
-  return <div style={{padding:'16px 0', textAlign:'center', color:'var(--text-3)', fontSize:12}}>{children}</div>;
-}
-
-const inputStyle = {
-  padding:'6px 10px', borderRadius:6,
-  border:'1px solid var(--border)', background:'var(--surface-2)',
-  color:'var(--text-1)', fontSize:13,
-};

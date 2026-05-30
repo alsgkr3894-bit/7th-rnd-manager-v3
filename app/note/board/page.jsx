@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { STATUSES, STATUS_COLORS, STATUS_BORDER, getAllNotes, updateNote } from '@/lib/note';
+import { formatShortDate } from '@/lib/note/utils';
 
 export default function Page() {
   const router   = useRouter();
@@ -13,6 +14,7 @@ export default function Page() {
   const [loading,         setLoading]         = useState(true);
   const [dragId,          setDragId]          = useState(null);
   const [dragOverStatus,  setDragOverStatus]  = useState(null);
+  const [bouncingIds,     setBouncingIds]     = useState(new Set());
 
   const load = useCallback(async () => {
     await initDB();
@@ -23,28 +25,29 @@ export default function Page() {
     load().catch(console.error).finally(() => setLoading(false));
   }, [load]);
 
-  async function moveStatus(note, direction) {
-    const idx    = STATUSES.indexOf(note.status);
-    const newIdx = idx + direction;
-    if (newIdx < 0 || newIdx >= STATUSES.length) return;
-    try {
-      await updateNote(note.id, { status: STATUSES[newIdx] });
-      showToast(`"${note.title}" → ${STATUSES[newIdx]}`, 'ok');
-      await load();
-    } catch {
-      showToast('상태 변경 실패', 'error');
-    }
-  }
-
-  async function changeStatus(note, newStatus) {
-    if (note.status === newStatus) return;
+  async function applyStatusChange(note, newStatus, { bounce = true } = {}) {
     try {
       await updateNote(note.id, { status: newStatus });
       showToast(`→ ${newStatus}`, 'ok');
       await load();
+      if (bounce) {
+        setBouncingIds(s => new Set([...s, note.id]));
+        setTimeout(() => setBouncingIds(s => { const n = new Set(s); n.delete(note.id); return n; }), 400);
+      }
     } catch {
-      showToast('상태 변경 실패', 'error');
+      showToast('상태 변경 실패', 'err');
     }
+  }
+
+  function moveStatus(note, direction) {
+    const newIdx = STATUSES.indexOf(note.status) + direction;
+    if (newIdx < 0 || newIdx >= STATUSES.length) return;
+    return applyStatusChange(note, STATUSES[newIdx]);
+  }
+
+  function changeStatus(note, newStatus) {
+    if (note.status === newStatus) return;
+    return applyStatusChange(note, newStatus);
   }
 
   async function handleDrop(e, status) {
@@ -53,15 +56,8 @@ export default function Page() {
     const noteId = e.dataTransfer.getData('noteId');
     if (!noteId) return;
     const note = notes.find(n => String(n.id) === String(noteId));
-    if (!note) return;
-    if (note.status === status) return;
-    try {
-      await updateNote(Number(noteId), { status });
-      showToast(`→ ${status}`, 'ok');
-      await load();
-    } catch {
-      showToast('상태 변경 실패', 'error');
-    }
+    if (!note || note.status === status) return;
+    await applyStatusChange({ id: Number(noteId), status: note.status }, status, { bounce: false });
     setDragId(null);
   }
 
@@ -70,7 +66,6 @@ export default function Page() {
     notes: notes.filter(n => n.status === st),
   }));
 
-  const formatDate = d => d ? d.slice(5).replace('-', '.') : '';
 
   return (
     <main className="main">
@@ -148,8 +143,9 @@ export default function Page() {
                     onMove={dir => moveStatus(note, dir)}
                     onStatusChange={s => changeStatus(note, s)}
                     onEdit={() => router.push(`/note/${note.id}`)}
-                    formatDate={formatDate}
+
                     isDragging={dragId === note.id}
+                    bouncing={bouncingIds.has(note.id)}
                     onDragStart={e => {
                       e.dataTransfer.setData('noteId', note.id);
                       setDragId(note.id);
@@ -179,12 +175,12 @@ export default function Page() {
   );
 }
 
-function KanbanCard({ note, colIdx, maxIdx, onMove, onStatusChange, onEdit, formatDate, isDragging, onDragStart, onDragEnd }) {
+function KanbanCard({ note, colIdx, maxIdx, onMove, onStatusChange, onEdit, isDragging, bouncing, onDragStart, onDragEnd }) {
   const sc = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
   const sb = STATUS_BORDER[note.status] || 'var(--border)';
   return (
     <div
-      className={`kanban-card${isDragging ? ' kanban-card-dragging' : ''}`}
+      className={`kanban-card${isDragging ? ' kanban-card-dragging' : ''}${bouncing ? ' kanban-card-bounce' : ''}`}
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
@@ -204,7 +200,7 @@ function KanbanCard({ note, colIdx, maxIdx, onMove, onStatusChange, onEdit, form
       </div>
       <div style={{fontSize:11, color:'var(--text-3)', marginBottom:8}}>
         {note.menuName}
-        {note.testDate ? <span> · {formatDate(note.testDate)}</span> : ''}
+        {note.testDate ? <span> · {formatShortDate(note.testDate)}</span> : ''}
       </div>
       <div style={{display:'flex', gap:4, alignItems:'center'}}>
         {/* 데스크탑: ← → 버튼 */}

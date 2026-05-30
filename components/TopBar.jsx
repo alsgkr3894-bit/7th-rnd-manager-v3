@@ -6,7 +6,7 @@ import { getProfile, getInitial } from '@/lib/profile';
 import { getSetting, setSetting } from '@/lib/settings';
 import { COMPANIES } from '@/lib/companies';
 
-export default function TopBar({ onOpenPalette, onToggleSidebar, activeCompany, onCompanyChange, unmatchedCount = 0 }) {
+export default function TopBar({ onOpenPalette, onToggleSidebar, activeCompany, onCompanyChange, unmatchedCount = 0, reportingCount = 0 }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(false);
   const [profile, setProfile] = useState(null);
@@ -39,17 +39,30 @@ export default function TopBar({ onOpenPalette, onToggleSidebar, activeCompany, 
   }, [companyOpen]);
 
   // 실제 알림 (미매칭 발생 시 표시)
-  const notifs = unmatchedCount > 0
-    ? [
-        {
-          kind: 'alert',
-          title: `미매칭 ${unmatchedCount}건 처리 필요`,
-          time: '지금',
-          desc: '메뉴 판매량 → 미매칭 관리에서 별칭/규칙/제외로 처리할 수 있어요',
-          href: '/menu-sales/unmatched',
-        },
-      ]
-    : [];
+  const notifs = [
+    ...(unmatchedCount > 0
+      ? [
+          {
+            kind: 'alert',
+            title: `미매칭 ${unmatchedCount}건 처리 필요`,
+            time: '지금',
+            desc: '메뉴 판매량 → 미매칭 관리에서 별칭/규칙/제외로 처리할 수 있어요',
+            href: '/menu-sales/unmatched',
+          },
+        ]
+      : []),
+    ...(reportingCount > 0
+      ? [
+          {
+            kind: 'note',
+            title: `보고예정 노트 ${reportingCount}건`,
+            time: '미보고',
+            desc: '메뉴개발노트 → 보고예정 탭에서 확인하세요',
+            href: '/note?status=보고예정',
+          },
+        ]
+      : []),
+  ];
   const meta = {
     alert: { bg: 'var(--negative-soft)', color: 'var(--negative)',    ico: <Icon.alert  style={{width:16,height:16}}/> },
     info:  { bg: 'var(--accent-soft)',   color: 'var(--accent-text)', ico: <Icon.upload style={{width:16,height:16}}/> },
@@ -58,31 +71,33 @@ export default function TopBar({ onOpenPalette, onToggleSidebar, activeCompany, 
   };
 
   return (
-    <div className="topbar">
-      <button className="icon-btn mobile-only" onClick={onToggleSidebar} title="메뉴">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+    <header className="topbar">
+      <button className="icon-btn mobile-only" onClick={onToggleSidebar} aria-label="메뉴 열기">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
           <path d="M4 7h16M4 12h16M4 17h16"/>
         </svg>
       </button>
 
       <div className="company-wrap" ref={companyRef}>
-        <button className="company-pick" onClick={() => setCompanyOpen(v => !v)}>
+        <button className="company-pick" onClick={() => setCompanyOpen(v => !v)} aria-haspopup="menu" aria-expanded={companyOpen} aria-label={`브랜드 선택 (현재: ${activeCompany.name})`}>
           {activeCompany.logo
             ? <img className="company-logo" src={activeCompany.logo} alt=""
                 style={{objectFit:'contain', background:'white', padding:2, borderRadius:4}} />
-            : <span className="company-avatar" style={{background: activeCompany.color}}>
+            : <span className="company-avatar" style={{background: activeCompany.color}} aria-hidden="true">
                 {activeCompany.name[0]}
               </span>}
-          <div>{activeCompany.name}</div>
-          <Icon.chevDown className="arrow" style={{width:14, height:14, transition:'transform 160ms', transform: companyOpen ? 'rotate(180deg)' : 'rotate(0deg)'}} />
+          <div aria-hidden="true">{activeCompany.name}</div>
+          <Icon.chevDown aria-hidden="true" className="arrow" style={{width:14, height:14, transition:'transform 160ms', transform: companyOpen ? 'rotate(180deg)' : 'rotate(0deg)'}} />
         </button>
 
         {companyOpen && (
-          <div className="company-drop">
+          <div className="company-drop" role="menu" aria-label="브랜드 목록">
             <div className="company-drop-label">브랜드 선택</div>
             {COMPANIES.map(c => (
               <button
                 key={c.id}
+                role="menuitem"
+                aria-checked={activeCompany.id === c.id}
                 className={'company-drop-item' + (activeCompany.id === c.id ? ' active' : '')}
                 onClick={() => { onCompanyChange(c); setCompanyOpen(false); }}
               >
@@ -102,31 +117,31 @@ export default function TopBar({ onOpenPalette, onToggleSidebar, activeCompany, 
         )}
       </div>
 
-      <button className="search" onClick={onOpenPalette} title="메뉴 · 재료 · 노트 통합 검색">
-        <Icon.search style={{width:16, height:16}} />
-        <span className="search-placeholder">메뉴, 재료, 보고서 검색</span>
-        <kbd>⌘K</kbd>
+      <button className="search" onClick={onOpenPalette} aria-label="통합 검색 열기 (⌘K)">
+        <Icon.search aria-hidden="true" style={{width:16, height:16}} />
+        <span className="search-placeholder" aria-hidden="true">메뉴, 재료, 보고서 검색</span>
+        <kbd aria-hidden="true">⌘K</kbd>
       </button>
 
-      <button className="icon-btn" title="새 노트" onClick={() => router.push('/note/write')}>
-        <Icon.plus style={{width:18, height:18}} />
+      <button className="icon-btn" aria-label="새 노트 작성" onClick={() => router.push('/note/write')}>
+        <Icon.plus aria-hidden="true" style={{width:18, height:18}} />
       </button>
 
-      <button className="icon-btn" onClick={toggleDark} title={dark ? '라이트 모드' : '다크 모드'}>
+      <button className="icon-btn" onClick={toggleDark} aria-label={dark ? '라이트 모드로 전환' : '다크 모드로 전환'}>
         {dark
-          ? <Icon.sun  style={{width:18, height:18}} />
-          : <Icon.moon style={{width:18, height:18}} />}
+          ? <Icon.sun  aria-hidden="true" style={{width:18, height:18}} />
+          : <Icon.moon aria-hidden="true" style={{width:18, height:18}} />}
       </button>
 
       <div className="notif-wrap" ref={notifRef}>
-        <button className="icon-btn" title="알림" onClick={() => setNotifOpen(v => !v)}>
-          <Icon.bell style={{width:18, height:18}} />
-          {unmatchedCount > 0 && <span className="dot"></span>}
+        <button className="icon-btn" aria-label={`알림${notifs.length > 0 ? ` (${notifs.length}건)` : ''}`} aria-haspopup="menu" aria-expanded={notifOpen} onClick={() => setNotifOpen(v => !v)} style={{position:'relative'}}>
+          <Icon.bell aria-hidden="true" style={{width:18, height:18}} />
+          {notifs.length > 0 && <span className="notif-dot" aria-hidden="true"></span>}
         </button>
         {notifOpen && (
-          <div className="notif-pop">
+          <div className="notif-pop" role="region" aria-label="알림 목록" aria-live="polite">
             <div className="notif-head">
-              <div className="notif-title">알림</div>
+              <div className="notif-title">알림 {notifs.length > 0 && <span className="notif-count">{notifs.length}</span>}</div>
               <button className="link" onClick={() => setNotifOpen(false)}>모두 읽음</button>
             </div>
             <div className="notif-list">
@@ -163,6 +178,6 @@ export default function TopBar({ onOpenPalette, onToggleSidebar, activeCompany, 
           <div className="role">{profile?.team || profile?.role || ''}</div>
         </div>
       </div>
-    </div>
+    </header>
   );
 }

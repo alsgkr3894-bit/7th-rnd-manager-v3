@@ -1,399 +1,26 @@
 'use client';
-import { Suspense, useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Suspense, useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SampleCardSkeleton } from '@/components/ui/Skeleton';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { getAllSamples, addSample, deleteSample, SAMPLE_CATEGORIES, RATING_COLOR } from '@/lib/sample';
-
-/* ── 별점 표시 ── */
-function Stars({ value, size = 14 }) {
-  return (
-    <span style={{ color:'#F5A623', fontSize:size, letterSpacing:1 }}>
-      {'★'.repeat(value)}
-      <span style={{ color:'var(--border)' }}>{'★'.repeat(5 - value)}</span>
-    </span>
-  );
-}
-
-/* ── 핀치줌 훅 ── */
-function usePinchZoom() {
-  const imgRef = useRef(null);
-  const scaleRef = useRef(1);
-  const lastDistRef = useRef(null);
-  const lastTapRef = useRef(0);
-  const [scale, setScale] = useState(1);
-
-  useEffect(() => {
-    const el = imgRef.current;
-    if (!el) return;
-
-    function getDistance(touches) {
-      const dx = touches[0].clientX - touches[1].clientX;
-      const dy = touches[0].clientY - touches[1].clientY;
-      return Math.sqrt(dx * dx + dy * dy);
-    }
-
-    function onTouchStart(e) {
-      if (e.touches.length === 2) {
-        lastDistRef.current = getDistance(e.touches);
-        e.preventDefault();
-      } else if (e.touches.length === 1) {
-        const now = Date.now();
-        if (now - lastTapRef.current < 300) {
-          // double-tap: reset
-          scaleRef.current = 1;
-          setScale(1);
-          el.style.transform = 'scale(1)';
-          e.preventDefault();
-        }
-        lastTapRef.current = now;
-      }
-    }
-
-    function onTouchMove(e) {
-      if (e.touches.length === 2 && lastDistRef.current !== null) {
-        e.preventDefault();
-        const dist = getDistance(e.touches);
-        const delta = dist / lastDistRef.current;
-        lastDistRef.current = dist;
-        const next = Math.min(4, Math.max(1, scaleRef.current * delta));
-        scaleRef.current = next;
-        setScale(next);
-        el.style.transform = `scale(${next})`;
-      }
-    }
-
-    function onTouchEnd(e) {
-      if (e.touches.length < 2) {
-        lastDistRef.current = null;
-      }
-    }
-
-    el.addEventListener('touchstart', onTouchStart, { passive: false });
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    el.addEventListener('touchend', onTouchEnd, { passive: false });
-
-    return () => {
-      el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
-    };
-  }, []);
-
-  function resetScale() {
-    scaleRef.current = 1;
-    setScale(1);
-    if (imgRef.current) imgRef.current.style.transform = 'scale(1)';
-  }
-
-  return { imgRef, scale, resetScale };
-}
-
-/* ── 비교 모달 ── */
-function CompareModal({ samples, onClose }) {
-  useEffect(() => {
-    const h = e => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, [onClose]);
-
-  const maxRating = Math.max(...samples.map(s => s.rating || 0));
-
-  const fields = [
-    { label: '카테고리', key: 'category' },
-    { label: '메뉴명',   key: 'menuName'  },
-    { label: '별점',     key: 'rating',   render: (v) => v > 0 ? <Stars value={v}/> : '-' },
-    { label: '테스트 내용', key: 'description' },
-    { label: '평가 / 결과', key: 'result'      },
-    { label: '개선사항',    key: 'improvements'},
-  ];
-
-  return (
-    <div
-      style={{
-        position:'fixed', inset:0, zIndex:400,
-        background:'rgba(0,0,0,0.65)', display:'flex', alignItems:'center', justifyContent:'center',
-        padding:16, animation:'fade 150ms ease',
-      }}
-      onClick={onClose}
-    >
-      <div
-        className="modal-anim"
-        style={{
-          background:'var(--surface)', borderRadius:20, overflow:'hidden',
-          width:'100%', maxWidth:960, maxHeight:'92vh', display:'flex', flexDirection:'column',
-          boxShadow:'0 24px 64px rgba(0,0,0,0.28)',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* 헤더 */}
-        <div style={{
-          display:'flex', justifyContent:'space-between', alignItems:'center',
-          padding:'16px 20px', borderBottom:'1px solid var(--border)', flexShrink:0,
-        }}>
-          <div style={{ fontSize:17, fontWeight:800, color:'var(--text-1)' }}>
-            샘플 비교 ({samples.length}개)
-          </div>
-          <button
-            style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-3)', padding:4 }}
-            onClick={onClose}
-          >
-            <Icon.close style={{ width:18, height:18 }}/>
-          </button>
-        </div>
-
-        {/* 본문 */}
-        <div style={{ overflowY:'auto', flex:1, padding:'16px 20px' }}>
-          {/* 썸네일 + 제목 헤더 행 */}
-          <div style={{ display:'grid', gridTemplateColumns:`repeat(${samples.length}, 1fr)`, gap:12, marginBottom:16 }}>
-            {samples.map((s, idx) => (
-              <div key={s.id} className="compare-col" style={{ textAlign:'center' }}>
-                {s.photos?.[0]?.data ? (
-                  <img src={s.photos[0].data} alt=""
-                    style={{ width:'100%', maxHeight:140, objectFit:'cover', borderRadius:10, marginBottom:8 }}/>
-                ) : (
-                  <div style={{
-                    width:'100%', height:100, background:'var(--surface-2)',
-                    borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center',
-                    fontSize:28, marginBottom:8,
-                  }}>📷</div>
-                )}
-                <div style={{ fontWeight:800, fontSize:14, color:'var(--text-1)' }}>
-                  <span style={{
-                    display:'inline-block', width:22, height:22, borderRadius:'50%',
-                    background:'var(--accent)', color:'#fff', fontSize:12, fontWeight:800,
-                    lineHeight:'22px', textAlign:'center', marginRight:6,
-                  }}>{idx + 1}</span>
-                  {s.title}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* 필드 비교 */}
-          {fields.map(({ label, key, render }) => (
-            <div key={key} style={{
-              display:'grid', gridTemplateColumns:`160px repeat(${samples.length}, 1fr)`,
-              gap:8, marginBottom:8, alignItems:'start',
-            }}>
-              <div className="compare-field-label" style={{
-                fontSize:11, fontWeight:700, color:'var(--text-3)',
-                paddingTop:4, paddingRight:8,
-              }}>{label}</div>
-              {samples.map(s => {
-                const val = s[key];
-                const isHighlight = key === 'rating' && (val || 0) === maxRating && maxRating > 0;
-                return (
-                  <div key={s.id}
-                    className={'compare-field-val' + (isHighlight ? ' highlight' : '')}
-                    style={{
-                      fontSize:13, color:'var(--text-1)', lineHeight:1.6,
-                      background:'var(--surface-2)', borderRadius:8, padding:'6px 10px',
-                      border: isHighlight ? '1.5px solid var(--accent)' : '1px solid var(--border)',
-                    }}
-                  >
-                    {render ? render(val || 0) : (val || <span style={{ color:'var(--text-3)' }}>-</span>)}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── 상세 모달 ── */
-function DetailModal({ sample, onClose, onEdit, onDelete }) {
-  const [photoIdx, setPhotoIdx] = useState(0);
-  const photos = sample.photos || [];
-  const { imgRef, scale, resetScale } = usePinchZoom();
-
-  useEffect(() => {
-    resetScale();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoIdx]);
-
-  useEffect(() => {
-    const h = e => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, [onClose]);
-
-  const tags = sample.tags ? sample.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
-
-  return (
-    <div
-      style={{
-        position:'fixed', inset:0, zIndex:300,
-        background:'rgba(0,0,0,0.62)', display:'flex', alignItems:'center', justifyContent:'center',
-        padding:16, animation:'fade 150ms ease',
-      }}
-      onClick={onClose}
-    >
-      <div
-        className="modal-anim"
-        style={{
-          background:'var(--surface)', borderRadius:20, overflow:'hidden',
-          width:'100%', maxWidth:880, maxHeight:'92vh', display:'flex', flexDirection:'column',
-          boxShadow:'0 24px 64px rgba(0,0,0,0.28)',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* 헤더 */}
-        <div style={{
-          display:'flex', justifyContent:'space-between', alignItems:'flex-start',
-          padding:'16px 20px 12px', borderBottom:'1px solid var(--border)',
-          flexShrink:0,
-        }}>
-          <div>
-            <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:4 }}>
-              <span style={{
-                background:'var(--accent-soft)', color:'var(--accent-text)',
-                fontSize:11, padding:'2px 8px', borderRadius:6, fontWeight:700,
-              }}>{sample.category}</span>
-              {sample.batchNo && (
-                <span style={{
-                  background:'var(--surface-2)', color:'var(--text-3)',
-                  fontSize:11, padding:'2px 8px', borderRadius:6,
-                }}>{sample.batchNo}</span>
-              )}
-              {sample.rating > 0 && <Stars value={sample.rating}/>}
-            </div>
-            <div style={{ fontSize:18, fontWeight:800, color:'var(--text-1)' }}>{sample.title}</div>
-            <div style={{ fontSize:13, color:'var(--text-3)', marginTop:2 }}>
-              {sample.menuName}
-              {sample.testDate && <span style={{ marginLeft:10 }}>{sample.testDate}</span>}
-              {sample.tester  && <span style={{ marginLeft:10 }}>담당: {sample.tester}</span>}
-            </div>
-          </div>
-          <div style={{ display:'flex', gap:8, flexShrink:0, marginLeft:16 }}>
-            <button className="btn sm" onClick={onEdit}>수정</button>
-            <button className="btn sm" style={{ color:'var(--negative)' }} onClick={onDelete}>삭제</button>
-            <button
-              style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-3)', padding:4 }}
-              onClick={onClose}
-            >
-              <Icon.close style={{ width:18, height:18 }}/>
-            </button>
-          </div>
-        </div>
-
-        {/* 본문 — 스크롤 */}
-        <div style={{ overflowY:'auto', flex:1, display:'grid', gridTemplateColumns: photos.length ? '1fr 1fr' : '1fr' }}>
-
-          {/* 사진 뷰어 */}
-          {photos.length > 0 && (
-            <div style={{ background:'#000', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:320, position:'relative', overflow:'hidden' }}>
-              <img
-                ref={imgRef}
-                src={photos[photoIdx]?.data}
-                alt=""
-                style={{
-                  maxWidth:'100%', maxHeight:480, objectFit:'contain',
-                  touchAction: scale > 1 ? 'none' : 'auto',
-                  transformOrigin:'center center',
-                  transition: 'transform 0.05s',
-                }}
-              />
-              {photos.length > 1 && (
-                <>
-                  <button
-                    onClick={() => setPhotoIdx(i => Math.max(0, i - 1))}
-                    disabled={photoIdx === 0}
-                    style={{
-                      position:'absolute', left:8, top:'50%', transform:'translateY(-50%)',
-                      background:'rgba(255,255,255,0.15)', border:'none', borderRadius:8,
-                      color:'#fff', width:32, height:32, cursor:'pointer', fontSize:18,
-                      opacity: photoIdx === 0 ? 0.3 : 1,
-                    }}
-                  >‹</button>
-                  <button
-                    onClick={() => setPhotoIdx(i => Math.min(photos.length - 1, i + 1))}
-                    disabled={photoIdx === photos.length - 1}
-                    style={{
-                      position:'absolute', right:8, top:'50%', transform:'translateY(-50%)',
-                      background:'rgba(255,255,255,0.15)', border:'none', borderRadius:8,
-                      color:'#fff', width:32, height:32, cursor:'pointer', fontSize:18,
-                      opacity: photoIdx === photos.length - 1 ? 0.3 : 1,
-                    }}
-                  >›</button>
-                  {/* 썸네일 스트립 */}
-                  <div style={{ display:'flex', gap:6, padding:'10px 12px', overflowX:'auto', width:'100%', boxSizing:'border-box' }}>
-                    {photos.map((p, i) => (
-                      <button key={i} onClick={() => setPhotoIdx(i)}
-                        style={{
-                          width:52, height:40, flexShrink:0, borderRadius:6, overflow:'hidden',
-                          border: i === photoIdx ? '2px solid #fff' : '2px solid transparent',
-                          padding:0, cursor:'pointer', background:'#222',
-                        }}>
-                        <img src={p.data} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* 텍스트 내용 */}
-          <div style={{ padding:20, display:'flex', flexDirection:'column', gap:14 }}>
-            {sample.description && (
-              <Section title="테스트 내용 / 조건">{sample.description}</Section>
-            )}
-            {sample.result && (
-              <Section title="평가 / 결과">{sample.result}</Section>
-            )}
-            {sample.improvements && (
-              <Section title="개선사항">{sample.improvements}</Section>
-            )}
-            {sample.nextAction && (
-              <Section title="다음 액션">{sample.nextAction}</Section>
-            )}
-            {tags.length > 0 && (
-              <div>
-                <div style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', marginBottom:6 }}>태그</div>
-                <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-                  {tags.map(t => (
-                    <span key={t} style={{
-                      background:'var(--surface-2)', color:'var(--text-2)',
-                      fontSize:11, padding:'2px 8px', borderRadius:10, border:'1px solid var(--border)',
-                    }}>{t}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {!sample.description && !sample.result && !sample.improvements && !sample.nextAction && tags.length === 0 && (
-              <div style={{ color:'var(--text-3)', fontSize:13 }}>상세 내용이 없습니다.</div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Section({ title, children }) {
-  return (
-    <div>
-      <div style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', marginBottom:4 }}>{title}</div>
-      <div style={{ fontSize:13, color:'var(--text-1)', lineHeight:1.7, whiteSpace:'pre-wrap' }}>{children}</div>
-    </div>
-  );
-}
+import { getAllSamples, addSample, updateSample, deleteSample, SAMPLE_CATEGORIES, RATING_COLOR } from '@/lib/sample';
+import { tryLS, setLS } from '@/lib/note/storage';
+import { KEYS } from '@/lib/note/keys';
+import { useSearchHistory } from '@/hooks/useSearchHistory';
+import { useSampleBatchMode } from '@/hooks/useSampleBatchMode';
+import { useSampleCompareMode } from '@/hooks/useSampleCompareMode';
+import { Stars } from './_Stars';
+import { CompareModal } from './_CompareModal';
+import { SampleDetailModal } from './_SampleDetailModal';
 
 const SORT_OPTIONS = [
   { key: 'createdAt', label: '최신순' },
   { key: 'testDate',  label: '날짜순' },
   { key: 'rating',    label: '별점순' },
 ];
-
-function tryLS(key, fb) { try { return localStorage.getItem(key) ?? fb; } catch { return fb; } }
-function setLS(key, v)  { try { localStorage.setItem(key, v); } catch {} }
 
 /* ── 메인 페이지 ── */
 export default function Page() {
@@ -412,28 +39,40 @@ function SampleContent() {
   const [samples,     setSamples]     = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [search,      setSearch]      = useState('');
+  const {
+    history: searchHistory,
+    isOpen:  showSearchHist,
+    setIsOpen: setShowSearchHist,
+    scheduleAdd: scheduleSearchHistory,
+  } = useSearchHistory(KEYS.SAMPLE_SEARCH_HISTORY);
   const [catFilter,   setCatFilter]   = useState(() => searchParams.get('cat') || 'all');
   const [ratingMin,   setRatingMin]   = useState(() => { const v = parseInt(searchParams.get('r') || '0', 10); return Number.isNaN(v) ? 0 : v; });
-  const [sortBy,      setSortBy]      = useState(() => tryLS('v3:sample-sort', 'createdAt'));
+  const [sortBy,      setSortBy]      = useState(() => tryLS(KEYS.SAMPLE_SORT, 'createdAt'));
   const [detailRec,   setDetailRec]   = useState(null);
 
-  // 배치 삭제 모드
-  const [batchMode,   setBatchMode]   = useState(false);
-  const [selected,    setSelected]    = useState(new Set());
-
-  // 비교 모드
-  const [compareMode,  setCompareMode]  = useState(false);
-  const [compareSet,   setCompareSet]   = useState(new Set());
-  const [showCompare,  setShowCompare]  = useState(false);
-
   // 뷰 모드
-  const [viewMode,    setViewMode]    = useState(() => tryLS('v3:sample-view', 'grid'));
+  const [viewMode,    setViewMode]    = useState(() => tryLS(KEYS.SAMPLE_VIEW, 'grid'));
   const [calMonth,    setCalMonth]    = useState(() => new Date());
 
   const load = useCallback(async () => {
     await initDB();
     setSamples(await getAllSamples());
   }, []);
+
+  const {
+    batchMode, setBatchMode, selected, toggleSelect, exitBatchMode, handleBatchDelete,
+  } = useSampleBatchMode(
+    (ids) => setSamples(prev => prev.filter(s => !ids.includes(s.id))),
+    load,
+  );
+
+  const {
+    compareMode, setCompareMode,
+    compareSet, toggleCompare,
+    showCompare, setShowCompare,
+    compareItems, compareIdxMap,
+    exitCompareMode,
+  } = useSampleCompareMode(samples);
 
   useEffect(() => {
     load().catch(console.error).finally(() => setLoading(false));
@@ -447,6 +86,11 @@ function SampleContent() {
     const qs = params.toString();
     window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
   }, [catFilter, ratingMin, pathname]);
+
+  function handleSearchChange(val) {
+    setSearch(val);
+    scheduleSearchHistory(val);
+  }
 
   const filtered = useMemo(() => {
     let list = samples;
@@ -499,54 +143,16 @@ function SampleContent() {
     } catch { showToast('복사 실패', 'error'); }
   }
 
-  // 배치 삭제
-  function toggleSelect(id) {
-    setSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }
-
-  async function handleBatchDelete() {
-    if (selected.size === 0) return;
-    if (!confirm(`선택한 ${selected.size}개 샘플을 삭제할까요?`)) return;
-    const ids = [...selected];
-    setSamples(prev => prev.filter(s => !ids.includes(s.id)));
-    setBatchMode(false);
-    setSelected(new Set());
+  async function handleRatingChange(sampleId, newRating, e) {
+    e?.stopPropagation();
     try {
-      await Promise.all(ids.map(id => deleteSample(id)));
-      showToast(`${ids.length}개 샘플 삭제됨`, 'ok');
-    } catch {
-      showToast('일부 삭제 실패', 'error');
-      load();
-    }
+      await initDB();
+      await updateSample(sampleId, { rating: newRating });
+      setSamples(prev => prev.map(s => s.id === sampleId ? { ...s, rating: newRating } : s));
+      showToast('별점 수정됨', 'ok', 1500);
+    } catch { showToast('별점 변경 실패', 'error'); }
   }
 
-  // 비교 모드
-  function toggleCompare(id) {
-    setCompareSet(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else if (next.size < 3) {
-        next.add(id);
-      }
-      return next;
-    });
-  }
-
-  const compareItems = useMemo(() => {
-    return [...compareSet].map(id => samples.find(s => s.id === id)).filter(Boolean);
-  }, [compareSet, samples]);
-
-  // 비교 선택 순서 맵 — 카드 렌더마다 배열 재생성 방지
-  const compareIdxMap = useMemo(() => {
-    const m = new Map();
-    [...compareSet].forEach((id, i) => m.set(id, i));
-    return m;
-  }, [compareSet]);
 
   // 캘린더 헬퍼 — calMonth가 바뀔 때만 재계산
   const calDays = useMemo(() => {
@@ -604,22 +210,22 @@ function SampleContent() {
             onClick={handleBatchDelete}>
             선택 삭제 ({selected.size})
           </button>
-          <button className="btn sm" onClick={() => { setBatchMode(false); setSelected(new Set()); }}>
+          <button className="btn sm" onClick={exitBatchMode}>
             취소
           </button>
         </>
       ) : compareMode ? (
         <>
-          <button className="btn sm" onClick={() => { setCompareMode(false); setCompareSet(new Set()); }}>
+          <button className="btn sm" onClick={exitCompareMode}>
             비교 취소
           </button>
         </>
       ) : (
         <>
-          <button className="btn sm" onClick={() => { setBatchMode(true); setSelected(new Set()); }}>
+          <button className="btn sm" onClick={() => setBatchMode(true)}>
             선택
           </button>
-          <button className="btn sm" onClick={() => { setCompareMode(true); setCompareSet(new Set()); }}>
+          <button className="btn sm" onClick={() => setCompareMode(true)}>
             비교
           </button>
           <button className="btn primary" onClick={() => router.push('/note/sample/write')}>
@@ -676,7 +282,7 @@ function SampleContent() {
               key={key}
               className={'chip' + (sortBy === key ? ' active' : '')}
               style={{ fontSize:11 }}
-              onClick={() => { setSortBy(key); setLS('v3:sample-sort', key); }}
+              onClick={() => { setSortBy(key); setLS(KEYS.SAMPLE_SORT, key); }}
             >{label}</button>
           ))}
         </div>
@@ -688,7 +294,7 @@ function SampleContent() {
               key={v}
               className={'chip' + (viewMode === v ? ' active' : '')}
               style={{ fontSize:11 }}
-              onClick={() => { setViewMode(v); setLS('v3:sample-view', v); }}
+              onClick={() => { setViewMode(v); setLS(KEYS.SAMPLE_VIEW, v); }}
             >{label}</button>
           ))}
         </div>
@@ -702,9 +308,21 @@ function SampleContent() {
             className="form-input filter-search"
             style={{ paddingLeft:32 }}
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => handleSearchChange(e.target.value)}
+            onFocus={() => setShowSearchHist(true)}
+            onBlur={() => { setTimeout(() => setShowSearchHist(false), 150); }}
             placeholder="제목, 메뉴명, 내용, 태그 검색"
           />
+          {showSearchHist && searchHistory.length > 0 && (
+            <div style={{position:'absolute',top:'100%',left:0,right:0,background:'var(--surface)',border:'1px solid var(--border)',borderRadius:'0 0 10px 10px',zIndex:50,overflow:'hidden',boxShadow:'var(--shadow-md)'}}>
+              {searchHistory.map((h, i) => (
+                <button key={i} style={{display:'block',width:'100%',textAlign:'left',padding:'8px 14px',fontSize:13,color:'var(--text-2)',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}
+                  onMouseDown={e => { e.preventDefault(); handleSearchChange(h); setShowSearchHist(false); }}>
+                  🕐 {h}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -846,7 +464,7 @@ function SampleContent() {
                     position:'relative', overflow:'hidden',
                   }}>
                     {thumb ? (
-                      <img src={thumb} alt=""
+                      <img src={thumb} alt={`${rec.menuName || rec.title} 샘플 사진`}
                         style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
                     ) : (
                       <div style={{ fontSize:40, opacity:0.3 }}>📷</div>
@@ -876,9 +494,13 @@ function SampleContent() {
                         fontSize:14, fontWeight:700, color:'var(--text-1)',
                         overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1,
                       }}>{rec.title}</div>
-                      {rec.rating > 0 && (
-                        <Stars value={rec.rating} size={12}/>
-                      )}
+                      <div className="inline-stars" onClick={e => e.stopPropagation()}>
+                        {[1,2,3,4,5].map(n => (
+                          <button key={n}
+                            className={'inline-star' + (n <= (rec.rating||0) ? ' lit' : '')}
+                            onClick={e => handleRatingChange(rec.id, (rec.rating||0) === n ? 0 : n, e)}>★</button>
+                        ))}
+                      </div>
                     </div>
 
                     <div style={{ fontSize:12, color:'var(--text-3)', marginBottom:8, display:'flex', gap:6, alignItems:'center' }}>
@@ -948,7 +570,7 @@ function SampleContent() {
 
       {/* 상세 모달 */}
       {detailRec && (
-        <DetailModal
+        <SampleDetailModal
           sample={detailRec}
           onClose={() => setDetailRec(null)}
           onEdit={() => { setDetailRec(null); router.push(`/note/sample/${detailRec.id}`); }}

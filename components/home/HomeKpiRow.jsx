@@ -1,4 +1,6 @@
 'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { fmtKRW } from '@/lib/format';
 import { Sparkline } from '@/components/charts/Sparkline';
@@ -11,7 +13,23 @@ const kpiButtonStyle = {
   width: '100%',
 };
 
-export function HomeKpiRow({ salesKpi, costKpi, noteKpi, salesCount, noteCount, router }) {
+export function HomeKpiRow({ salesKpi, costKpi, noteKpi, salesCount, noteCount }) {
+  const router = useRouter();
+  const [salesPopped, setSalesPopped] = useState(false);
+  const [notePopped, setNotePopped] = useState(false);
+
+  useEffect(() => {
+    if (salesCount > 0 && !salesPopped) {
+      setSalesPopped(true);
+    }
+  }, [salesCount]);
+
+  useEffect(() => {
+    if (noteCount > 0 && !notePopped) {
+      setNotePopped(true);
+    }
+  }, [noteCount]);
+
   return (
     <div className="hero-row motion-stagger">
       <button className="card kpi-card kpi-clickable"
@@ -24,7 +42,7 @@ export function HomeKpiRow({ salesKpi, costKpi, noteKpi, salesCount, noteCount, 
               ? `${salesKpi.year}년 ${salesKpi.month}월 판매량`
               : '최근 판매량'}
           </div>
-          <div className="value num">{fmtKRW(salesCount)}<span className="unit">개</span></div>
+          <div className={salesPopped ? 'value num count-landed' : 'value num'}>{fmtKRW(salesCount)}<span className="unit">개</span></div>
           <div className="trend">
             {salesKpi?.deltaPct == null ? (
               <span style={{color:'var(--text-4)'}}>—</span>
@@ -68,7 +86,7 @@ export function HomeKpiRow({ salesKpi, costKpi, noteKpi, salesCount, noteCount, 
       >
         <div>
           <div className="label">진행 중 R&amp;D 노트</div>
-          <div className="value num">{noteCount}<span className="unit">건</span></div>
+          <div className={notePopped ? 'value num count-landed' : 'value num'}>{noteCount}<span className="unit">건</span></div>
           <div className="trend">
             {noteKpi?.reporting > 0 ? (
               <>

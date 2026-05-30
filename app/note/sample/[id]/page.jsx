@@ -6,6 +6,7 @@ import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getSampleById, updateSample } from '@/lib/sample';
 import { SampleFormBody, SAMPLE_INIT } from '../_SampleFormBody';
+import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 
 export default function Page() {
   const router  = useRouter();
@@ -28,11 +29,7 @@ export default function Page() {
       .finally(() => setLoading(false));
   }, [sampleId]);
 
-  useEffect(() => {
-    const h = e => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave(); } };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, [form]);
+  useKeyboardSave(handleSave);
 
   async function handleSave() {
     if (!form.title.trim() || !form.menuName.trim()) {

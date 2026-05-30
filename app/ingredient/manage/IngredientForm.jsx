@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { SEED_MAIN_CATEGORIES, SEED_HASH_TAGS } from '@/lib/ingredient';
+import { SCOPE } from '@/lib/ingredient/constants';
 
 const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병'];
 
@@ -69,20 +70,20 @@ export function IngredientForm({ initial, onSave, onClose }) {
 
   const isNew = !initial;
   const title = isNew ? '식자재 추가' : isJetteLinked ? '제때 식자재 설정' : '식자재 수정';
-  const scopeLabel = initial?.scope || (initial?.hasRecord ? '전용' : '범용');
+  const scopeLabel = initial?.scope || (initial?.hasRecord ? SCOPE.EXCLUSIVE : SCOPE.GENERIC);
 
   return createPortal(
     <div style={{
       position:'fixed', inset:0, background:'rgba(0,0,0,.4)',
       display:'grid', placeItems:'center', zIndex:200,
-    }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+    }}>
       <div className="card" style={{
         width:'min(560px, 95vw)', maxHeight:'92vh', overflowY:'auto',
         padding:'24px 28px', position:'relative',
       }}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20}}>
           <div style={{fontWeight:700, fontSize:16}}>{title}</div>
-          <button className="btn" style={{padding:'4px 8px'}} onClick={onClose}>
+          <button type="button" className="btn" style={{padding:'4px 8px'}} onClick={onClose}>
             <Icon.close style={{width:16, height:16}}/>
           </button>
         </div>

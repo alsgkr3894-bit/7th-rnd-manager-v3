@@ -5,19 +5,18 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import {
   initDB,
-  getAll,
   exportSelected,
   storesForScopes,
   MODULE_GROUPS,
   MODULE_KEYS,
-  ALL_STORES,
-  hasStore,
+  collectStoreStats,
 } from '@/lib/db';
 import { downloadJson, makeFileName } from '@/lib/download';
 import { formatNumber, formatRelative } from '@/lib/format';
 import { getHistory, addEntry, getLastBackupAt } from '@/lib/backup-history';
-import { Toggle } from '@/components/ui/Toggle';
 import { SettingTile } from '@/components/ui/SettingTile';
+import { useModuleScopes } from '@/hooks/useModuleScopes';
+import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
 
 /**
  * 데이터 백업 페이지
@@ -30,15 +29,7 @@ export default function Page() {
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [stats, setStats] = useState(null);
-
-  // 백업 범위 (5개 모듈 모두 기본 선택)
-  const [scopes, setScopes] = useState(() => {
-    const init = {};
-    MODULE_KEYS.forEach(k => { init[k] = true; });
-    return init;
-  });
-
-  // 이력
+  const { scopes, toggleScope, setAllScopes } = useModuleScopes();
   const [lastBackupAt, setLastBackupAt] = useState(null);
   const [history, setHistory] = useState([]);
 
@@ -47,46 +38,15 @@ export default function Page() {
       try {
         await initDB();
         setReady(true);
-        await refreshStats();
+        setStats(await collectStoreStats());
       } catch (err) {
         console.error('[Backup] DB 초기화 실패:', err);
         showToast('DB 초기화에 실패했습니다.', 'err');
       }
     })();
-    refreshHistory();
-  }, []);
-
-  async function refreshStats() {
-    const result = {};
-    for (const name of ALL_STORES) {
-      if (!hasStore(name)) {
-        result[name] = 0;
-        continue;
-      }
-      try {
-        const rows = await getAll(name);
-        result[name] = rows.length;
-      } catch {
-        result[name] = 0;
-      }
-    }
-    setStats(result);
-  }
-
-  function refreshHistory() {
     setHistory(getHistory());
     setLastBackupAt(getLastBackupAt());
-  }
-
-  function toggleScope(key) {
-    setScopes(s => ({ ...s, [key]: !s[key] }));
-  }
-
-  function setAllScopes(value) {
-    const next = {};
-    MODULE_KEYS.forEach(k => { next[k] = value; });
-    setScopes(next);
-  }
+  }, []);
 
   // 선택된 모듈 키
   const selectedKeys = MODULE_KEYS.filter(k => scopes[k]);
@@ -110,7 +70,8 @@ export default function Page() {
         totalRows: selectedRows,
         fileName,
       });
-      refreshHistory();
+      setHistory(getHistory());
+      setLastBackupAt(getLastBackupAt());
       showToast(`백업 완료 — ${fileName}`, 'ok');
     } catch (err) {
       console.error('[Backup] 실패:', err);
@@ -162,7 +123,7 @@ export default function Page() {
       <div className="card" style={{marginTop:16}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
           <div>
-            <h3 style={{fontSize:15,fontWeight:700}}>백업 범위</h3>
+            <h2 style={{fontSize:15,fontWeight:700}}>백업 범위</h2>
             <p style={{fontSize:13,color:'var(--text-3)',marginTop:4}}>
               포함할 모듈을 선택하세요. 공통 설정·업로드 로그는 항상 포함됩니다.
             </p>
@@ -173,36 +134,20 @@ export default function Page() {
           </div>
         </div>
 
-        <div style={{display:'flex',flexDirection:'column'}}>
-          {MODULE_KEYS.map((key, i) => {
-            const g = MODULE_GROUPS[key];
+        <ModuleScopeList
+          scopes={scopes}
+          onToggle={toggleScope}
+          disabled={!ready}
+          getCountLabel={(key, g) => {
             const count = stats ? g.stores.reduce((s, n) => s + (stats[n] || 0), 0) : 0;
-            const last = i === MODULE_KEYS.length - 1;
-            return (
-              <div key={key} style={{
-                display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,
-                padding:'14px 0',
-                borderBottom: last ? 'none' : '1px solid var(--border)',
-              }}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontWeight:700,fontSize:14,display:'flex',alignItems:'center',gap:8}}>
-                    {g.label}
-                    <span className="num" style={{fontSize:12,fontWeight:500,color:'var(--text-3)'}}>
-                      ({formatNumber(count)}건)
-                    </span>
-                  </div>
-                  <div style={{fontSize:12,color:'var(--text-3)',marginTop:2}}>{g.desc}</div>
-                </div>
-                <Toggle value={scopes[key]} onChange={() => toggleScope(key)} />
-              </div>
-            );
-          })}
-        </div>
+            return `${formatNumber(count)}건`;
+          }}
+        />
       </div>
 
       {/* 최근 백업 이력 */}
       <div className="card" style={{marginTop:16}}>
-        <h3 style={{fontSize:15,fontWeight:700,marginBottom:4}}>최근 백업 이력</h3>
+        <h2 style={{fontSize:15,fontWeight:700,marginBottom:4}}>최근 백업 이력</h2>
         <p style={{fontSize:12,color:'var(--text-3)',marginBottom:16}}>
           이 브라우저에서 실행한 백업 기록입니다. 실제 백업 파일은 다운로드한 위치에 저장되어 있습니다.
         </p>

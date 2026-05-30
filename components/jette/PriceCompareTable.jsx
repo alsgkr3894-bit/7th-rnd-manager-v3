@@ -4,11 +4,16 @@ import { Chip } from '@/components/ui/Chip';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { SortableTh } from '@/components/ui/SortableTh';
 import { formatNumber } from '@/lib/format';
+import { CHANGE_STATUS, CHANGE_STATUS_STYLE } from './managed-products-constants';
+import { TypeSelect } from './_TypeSelect';
+import { sortByKey, getProductTypeCounts } from '@/lib/jette/utils';
 
-const typeInputStyle = {
-  padding:'3px 6px', borderRadius:6, fontSize:12,
-  border:'1px solid var(--border)', background:'var(--surface-2)',
-  color:'var(--text-1)', cursor:'pointer',
+const FILTER_TO_STATUS = {
+  up:      CHANGE_STATUS.UP,
+  down:    CHANGE_STATUS.DOWN,
+  same:    CHANGE_STATUS.SAME,
+  new:     CHANGE_STATUS.NEW,
+  deleted: CHANGE_STATUS.DELETED,
 };
 
 export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onTypeChange }) {
@@ -24,21 +29,23 @@ export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onT
     setSearch('');
   }, [diffRows]);
 
-  const typeCounts = useMemo(() => {
-    const get = (type) => diffRows.filter(r => productTypeLookup.get(r.productCode)?.productType === type).length;
-    return {
-      exclusive:         get('exclusive'),
-      generic:           get('generic'),
-      'generic-managed': get('generic-managed'),
-    };
-  }, [diffRows, productTypeLookup]);
+  const typeCounts = useMemo(
+    () => getProductTypeCounts(diffRows, productTypeLookup),
+    [diffRows, productTypeLookup],
+  );
+
+  const counts = useMemo(() => ({
+    all:     diffRows.length,
+    up:      diffRows.filter(r => r.changeStatus === CHANGE_STATUS.UP).length,
+    down:    diffRows.filter(r => r.changeStatus === CHANGE_STATUS.DOWN).length,
+    same:    diffRows.filter(r => r.changeStatus === CHANGE_STATUS.SAME).length,
+    new:     diffRows.filter(r => r.changeStatus === CHANGE_STATUS.NEW).length,
+    deleted: diffRows.filter(r => r.changeStatus === CHANGE_STATUS.DELETED).length,
+  }), [diffRows]);
 
   const filtered = useMemo(() => {
     let list = diffRows;
-    if (filter !== 'all') {
-      const map = { up: '인상', down: '인하', same: '변동없음', new: '신규', deleted: '삭제' };
-      list = list.filter(r => r.changeStatus === map[filter]);
-    }
+    if (filter !== 'all') list = list.filter(r => r.changeStatus === FILTER_TO_STATUS[filter]);
     if (typeFilter !== 'all') {
       list = list.filter(r => productTypeLookup.get(r.productCode)?.productType === typeFilter);
     }
@@ -47,30 +54,13 @@ export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onT
       (r.productName || '').toLowerCase().includes(q)
       || (r.productCode || '').toLowerCase().includes(q)
     );
-    const dir = sortDir === 'asc' ? 1 : -1;
-    return [...list].sort((a, b) => {
-      const va = a[sortKey], vb = b[sortKey];
-      if (va == null && vb == null) return 0;
-      if (va == null) return 1;
-      if (vb == null) return -1;
-      if (typeof va === 'string') return va.localeCompare(vb, 'ko') * dir;
-      return va > vb ? dir : va < vb ? -dir : 0;
-    });
+    return sortByKey(list, sortKey, sortDir);
   }, [diffRows, search, filter, typeFilter, sortKey, sortDir, productTypeLookup]);
 
   function toggleSort(key) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
     else { setSortKey(key); setSortDir('desc'); }
   }
-
-  const counts = useMemo(() => ({
-    all:     diffRows.length,
-    up:      diffRows.filter(r => r.changeStatus === '인상').length,
-    down:    diffRows.filter(r => r.changeStatus === '인하').length,
-    same:    diffRows.filter(r => r.changeStatus === '변동없음').length,
-    new:     diffRows.filter(r => r.changeStatus === '신규').length,
-    deleted: diffRows.filter(r => r.changeStatus === '삭제').length,
-  }), [diffRows]);
 
   return (
     <div className="card" style={{marginTop:16}}>
@@ -121,10 +111,10 @@ export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onT
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r, i) => (
+              {filtered.map((row, i) => (
                 <Row
-                  key={`${r.productCode || r.productName}-${i}`}
-                  r={r}
+                  key={`${row.productCode || row.productName}-${i}`}
+                  row={row}
                   productTypeLookup={productTypeLookup}
                   onTypeChange={onTypeChange}
                 />
@@ -137,54 +127,41 @@ export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onT
   );
 }
 
-function Row({ r, productTypeLookup, onTypeChange }) {
+function Row({ row, productTypeLookup, onTypeChange }) {
   const color =
-    r.changeStatus === '인상' ? 'var(--negative)' :
-    r.changeStatus === '인하' ? 'var(--positive)' : undefined;
-  const currentType = r.productCode ? productTypeLookup.get(r.productCode)?.productType || '' : '';
+    row.changeStatus === CHANGE_STATUS.UP   ? 'var(--negative)' :
+    row.changeStatus === CHANGE_STATUS.DOWN ? 'var(--positive)' : undefined;
+
   return (
     <tr>
-      <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{r.productCode || '-'}</td>
-      <td className="cell-name"><div className="menu-name">{r.productName}</div></td>
+      <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{row.productCode || '-'}</td>
+      <td className="cell-name"><div className="menu-name">{row.productName}</div></td>
       <td>
-        <select
-          value={currentType}
-          onChange={e => {
-            if (e.target.value && onTypeChange) onTypeChange(r.productCode, r.productName, e.target.value);
-          }}
-          style={typeInputStyle}
-        >
-          <option value="">미분류</option>
-          <option value="exclusive">전용</option>
-          <option value="generic">범용</option>
-          <option value="generic-managed">범용관리</option>
-        </select>
+        <TypeSelect
+          productCode={row.productCode}
+          productName={row.productName}
+          productTypeLookup={productTypeLookup}
+          onTypeChange={onTypeChange}
+        />
       </td>
-      <td className="num right">{r.basePrice != null ? `${formatNumber(r.basePrice)}원` : '—'}</td>
+      <td className="num right">{row.basePrice != null ? `${formatNumber(row.basePrice)}원` : '—'}</td>
       <td className="num right" style={{fontWeight:700}}>
-        {r.latestPrice != null ? `${formatNumber(r.latestPrice)}원` : '—'}
+        {row.latestPrice != null ? `${formatNumber(row.latestPrice)}원` : '—'}
       </td>
       <td className="num right" style={{color, fontWeight:600}}>
-        {r.changeAmount == null ? '—'
-          : `${r.changeAmount >= 0 ? '+' : ''}${formatNumber(r.changeAmount)}원`}
+        {row.changeAmount == null ? '—'
+          : `${row.changeAmount >= 0 ? '+' : ''}${formatNumber(row.changeAmount)}원`}
       </td>
       <td className="num right" style={{color, fontWeight:700}}>
-        {r.changeRate == null ? '—'
-          : `${r.changeRate >= 0 ? '▲' : '▼'} ${Math.abs(r.changeRate * 100).toFixed(1)}%`}
+        {row.changeRate == null ? '—'
+          : `${row.changeRate >= 0 ? '▲' : '▼'} ${Math.abs(row.changeRate * 100).toFixed(1)}%`}
       </td>
-      <td><StatusChip status={r.changeStatus}/></td>
+      <td><StatusChip status={row.changeStatus}/></td>
     </tr>
   );
 }
 
 function StatusChip({ status }) {
-  const map = {
-    '인상':     { bg: 'var(--negative-soft)', color: 'var(--negative)' },
-    '인하':     { bg: 'var(--positive-soft)', color: 'var(--positive)' },
-    '신규':     { bg: 'var(--accent-soft)',   color: 'var(--accent-text)' },
-    '삭제':     { bg: 'var(--surface-2)',     color: 'var(--text-3)' },
-    '변동없음': { bg: 'var(--surface-2)',     color: 'var(--text-2)' },
-  };
-  const { bg, color } = map[status] || map['변동없음'];
+  const { bg, color } = CHANGE_STATUS_STYLE[status] || CHANGE_STATUS_STYLE._default;
   return <span className="chip" style={{background: bg, color}}>{status}</span>;
 }

@@ -213,7 +213,7 @@ export default function Page() {
 
       {/* 세션 정보 — 마지막 로그인 / 접속 IP */}
       <div className="card" style={{marginTop:16}}>
-        <h3 style={{fontSize:15,fontWeight:700,marginBottom:4}}>세션 정보</h3>
+        <h2 style={{fontSize:15,fontWeight:700,marginBottom:4}}>세션 정보</h2>
         <p style={{fontSize:13,color:'var(--text-3)',marginBottom:16}}>
           현재 브라우저 세션 기준 마지막 로그인 시각과 접속 IP입니다.
           IP는 외부 공개 API(<span style={{fontFamily:'monospace'}}>api.ipify.org</span>)로 조회합니다.
@@ -243,7 +243,7 @@ export default function Page() {
 
       {/* 역할별 권한 매트릭스 (정보 표시) */}
       <div className="card" style={{marginTop:16}}>
-        <h3 style={{fontSize:15,fontWeight:700,marginBottom:4}}>역할별 권한 (정보)</h3>
+        <h2 style={{fontSize:15,fontWeight:700,marginBottom:4}}>역할별 권한 (정보)</h2>
         <p style={{fontSize:13,color:'var(--text-3)',marginBottom:16}}>
           향후 멀티 사용자 환경 도입 시 기준이 되는 역할·권한 표입니다. 현재는 표시용입니다.
         </p>

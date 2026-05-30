@@ -1,6 +1,7 @@
 'use client';
 import { useMemo } from 'react';
 import { formatNumber } from '@/lib/format';
+import { CHANGE_STATUS } from './managed-products-constants';
 
 /**
  * PriceSummaryCards — 가격 변동 요약 4카드 (인상/인하/변동없음/관리대상)
@@ -9,9 +10,9 @@ import { formatNumber } from '@/lib/format';
  */
 export function PriceSummaryCards({ diffRows }) {
   const summary = useMemo(() => {
-    const up    = diffRows.filter(r => r.changeStatus === '인상').length;
-    const down  = diffRows.filter(r => r.changeStatus === '인하').length;
-    const same  = diffRows.filter(r => r.changeStatus === '변동없음').length;
+    const up    = diffRows.filter(r => r.changeStatus === CHANGE_STATUS.UP).length;
+    const down  = diffRows.filter(r => r.changeStatus === CHANGE_STATUS.DOWN).length;
+    const same  = diffRows.filter(r => r.changeStatus === CHANGE_STATUS.SAME).length;
     const total = diffRows.length;
     return { up, down, same, total };
   }, [diffRows]);

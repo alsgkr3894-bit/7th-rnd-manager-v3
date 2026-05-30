@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
-import { initDB, getAll, clearStore, ALL_STORES, DB_NAME, DB_VERSION, hasStore, deleteDatabase } from '@/lib/db';
+import { initDB, clearStore, ALL_STORES, DB_NAME, DB_VERSION, hasStore, deleteDatabase, collectStoreStats } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { getSetting, setSetting } from '@/lib/settings';
 import { Toggle } from '@/components/ui/Toggle';
@@ -29,33 +29,17 @@ export default function Page() {
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [confirmingRecreate, setConfirmingRecreate] = useState(false);
 
-  // 환경 설정
-  const [theme, setTheme] = useState('light');
-  const [density, setDensity] = useState('normal');
-  // 원가 정책
-  const [autoRecalc, setAutoRecalc] = useState('on');
-  const [strictPosting, setStrictPosting] = useState('on');
-  const [roundMode, setRoundMode] = useState('round');
-  // 알림
-  const [unmatchedAlert, setUnmatchedAlert] = useState('on');
-  const [costRateAlert, setCostRateAlert] = useState('on');
+  const SETTING_KEYS = ['theme', 'density', 'autoRecalc', 'strictPosting', 'roundMode', 'unmatchedAlert', 'costRateAlert'];
+  const [settings, setSettings] = useState(() =>
+    Object.fromEntries(SETTING_KEYS.map(k => [k, getSetting(k)]))
+  );
 
   useEffect(() => {
-    // 설정 로드
-    setTheme(getSetting('theme'));
-    setDensity(getSetting('density'));
-    setAutoRecalc(getSetting('autoRecalc'));
-    setStrictPosting(getSetting('strictPosting'));
-    setRoundMode(getSetting('roundMode'));
-    setUnmatchedAlert(getSetting('unmatchedAlert'));
-    setCostRateAlert(getSetting('costRateAlert'));
-
-    // DB 초기화
     (async () => {
       try {
         await initDB();
         setReady(true);
-        await refreshStats();
+        setStats(await collectStoreStats());
       } catch (err) {
         console.error('[Settings/System] DB 초기화 실패:', err);
         showToast('DB 초기화에 실패했습니다.', 'err');
@@ -64,25 +48,12 @@ export default function Page() {
   }, []);
 
   async function refreshStats() {
-    const result = {};
-    for (const name of ALL_STORES) {
-      if (!hasStore(name)) {
-        result[name] = 0;
-        continue;
-      }
-      try {
-        const rows = await getAll(name);
-        result[name] = rows.length;
-      } catch {
-        result[name] = 0;
-      }
-    }
-    setStats(result);
+    setStats(await collectStoreStats());
   }
 
-  function updateSetting(key, value, setter, message) {
+  function updateSetting(key, value, message) {
     setSetting(key, value);
-    setter(value);
+    setSettings(s => ({ ...s, [key]: value }));
     showToast(message, 'ok');
   }
 
@@ -135,16 +106,16 @@ export default function Page() {
         <SettingsRow
           name="다크 모드"
           desc="어두운 배경으로 전환합니다"
-          control={<Toggle value={theme === 'dark'} onChange={(on) => updateSetting('theme', on ? 'dark' : 'light', setTheme, '다크 모드 ' + (on ? '설정' : '해제'))} />}
+          control={<Toggle value={settings.theme === 'dark'} onChange={(on) => updateSetting('theme', on ? 'dark' : 'light', '다크 모드 ' + (on ? '설정' : '해제'))} />}
         />
         <SettingsRow
           name="화면 밀도"
           desc="표·카드 간격을 조절합니다"
           control={
             <Segmented
-              value={density}
+              value={settings.density}
               options={[{value:'normal',label:'기본'},{value:'compact',label:'촘촘'}]}
-              onChange={(v) => updateSetting('density', v, setDensity, v === 'compact' ? '촘촘 밀도 적용' : '기본 밀도 적용')}
+              onChange={(v) => updateSetting('density', v, v === 'compact' ? '촘촘 밀도 적용' : '기본 밀도 적용')}
             />
           }
           last
@@ -156,12 +127,12 @@ export default function Page() {
         <SettingsRow
           name="미매칭 메뉴 알림"
           desc="판매량 업로드 후 매칭되지 않은 메뉴가 있으면 홈에 알림을 표시합니다."
-          control={<Toggle value={unmatchedAlert === 'on'} onChange={(on) => updateSetting('unmatchedAlert', on ? 'on' : 'off', setUnmatchedAlert, '미매칭 알림 ' + (on ? 'ON' : 'OFF'))} />}
+          control={<Toggle value={settings.unmatchedAlert === 'on'} onChange={(on) => updateSetting('unmatchedAlert', on ? 'on' : 'off', '미매칭 알림 ' + (on ? 'ON' : 'OFF'))} />}
         />
         <SettingsRow
           name="원가율 35% 초과 알림"
           desc="재계산 후 원가율 35% 초과 메뉴가 새로 생기면 빨간 알림을 표시합니다."
-          control={<Toggle value={costRateAlert === 'on'} onChange={(on) => updateSetting('costRateAlert', on ? 'on' : 'off', setCostRateAlert, '원가율 알림 ' + (on ? 'ON' : 'OFF'))} />}
+          control={<Toggle value={settings.costRateAlert === 'on'} onChange={(on) => updateSetting('costRateAlert', on ? 'on' : 'off', '원가율 알림 ' + (on ? 'ON' : 'OFF'))} />}
           last
         />
       </SettingsGroup>
@@ -171,25 +142,25 @@ export default function Page() {
         <SettingsRow
           name="단가 변경 시 원가표 자동 재계산"
           desc="제때 단가가 변경되면 모든 원가표를 자동으로 다시 계산합니다."
-          control={<Toggle value={autoRecalc === 'on'} onChange={(on) => updateSetting('autoRecalc', on ? 'on' : 'off', setAutoRecalc, '자동 재계산 ' + (on ? 'ON' : 'OFF'))} />}
+          control={<Toggle value={settings.autoRecalc === 'on'} onChange={(on) => updateSetting('autoRecalc', on ? 'on' : 'off', '자동 재계산 ' + (on ? 'ON' : 'OFF'))} />}
         />
         <SettingsRow
           name="미연동 재료 차단"
           desc="제때 단가에 등록되지 않은 재료가 포함된 메뉴는 원가표 발행을 차단합니다."
-          control={<Toggle value={strictPosting === 'on'} onChange={(on) => updateSetting('strictPosting', on ? 'on' : 'off', setStrictPosting, '미연동 차단 ' + (on ? 'ON' : 'OFF'))} />}
+          control={<Toggle value={settings.strictPosting === 'on'} onChange={(on) => updateSetting('strictPosting', on ? 'on' : 'off', '미연동 차단 ' + (on ? 'ON' : 'OFF'))} />}
         />
         <SettingsRow
           name="원가 반올림 방식"
           desc="g·개당 단가에서 원 단위 환산 시 적용"
           control={
             <Segmented
-              value={roundMode}
+              value={settings.roundMode}
               options={[
                 {value:'round',label:'반올림'},
                 {value:'ceil', label:'올림'},
                 {value:'floor',label:'내림'},
               ]}
-              onChange={(v) => updateSetting('roundMode', v, setRoundMode, ({round:'반올림',ceil:'올림',floor:'내림'}[v]) + ' 적용')}
+              onChange={(v) => updateSetting('roundMode', v, ({round:'반올림',ceil:'올림',floor:'내림'}[v]) + ' 적용')}
             />
           }
           last
@@ -218,7 +189,7 @@ export default function Page() {
 
       {/* 5. 앱 정보 */}
       <div className="card" style={{marginTop:16}}>
-        <h3 style={{fontSize:15,fontWeight:700,marginBottom:16}}>앱 정보</h3>
+        <h2 style={{fontSize:15,fontWeight:700,marginBottom:16}}>앱 정보</h2>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:24}}>
           <InfoCell label="앱 버전" value={APP_VERSION} />
           <InfoCell label="DB 이름" value={DB_NAME} mono />
@@ -229,7 +200,7 @@ export default function Page() {
 
       {/* 6. 저장소 상태 */}
       <div className="card" style={{marginTop:16}}>
-        <h3 style={{fontSize:15,fontWeight:700,marginBottom:16}}>저장소 상태</h3>
+        <h2 style={{fontSize:15,fontWeight:700,marginBottom:16}}>저장소 상태</h2>
         {!ready ? (
           <div style={{color:'var(--text-3)'}}>DB 초기화 중…</div>
         ) : (
@@ -262,7 +233,7 @@ export default function Page() {
 
       {/* 7. 위험 영역 */}
       <div className="card" style={{marginTop:16,borderColor:'var(--negative-soft)'}}>
-        <h3 style={{fontSize:15,fontWeight:700,marginBottom:16,color:'var(--negative)'}}>위험 영역</h3>
+        <h2 style={{fontSize:15,fontWeight:700,marginBottom:16,color:'var(--negative)'}}>위험 영역</h2>
 
         {/* 모든 데이터 초기화 */}
         <div style={{paddingBottom:16,borderBottom:'1px solid var(--border)'}}>
@@ -271,31 +242,17 @@ export default function Page() {
             모든 store의 데이터를 삭제합니다. schema는 유지되며 빈 store로 남습니다.
             <br/>백업이 필요한 경우 먼저 <b>데이터 백업</b> 메뉴에서 다운로드하세요.
           </p>
-          {!confirmingReset ? (
-            <button
-              className="btn"
-              onClick={() => setConfirmingReset(true)}
-              disabled={!ready || busy || totalRows === 0}
-              style={{color:'var(--negative)',borderColor:'var(--negative)'}}
-            >
-              모든 데이터 초기화
-            </button>
-          ) : (
-            <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
-              <span style={{color:'var(--negative)',fontWeight:600,fontSize:13}}>
-                정말 모든 데이터를 삭제할까요? ({formatNumber(totalRows)}건)
-              </span>
-              <button className="btn" disabled={busy} onClick={() => setConfirmingReset(false)}>취소</button>
-              <button
-                className="btn primary"
-                disabled={busy}
-                onClick={handleReset}
-                style={{background:'var(--negative)'}}
-              >
-                {busy ? '삭제 중…' : '정말 삭제'}
-              </button>
-            </div>
-          )}
+          <DangerConfirm
+            label="모든 데이터 초기화"
+            confirmMsg={`정말 모든 데이터를 삭제할까요? (${formatNumber(totalRows)}건)`}
+            confirmLabel={busy ? '삭제 중…' : '정말 삭제'}
+            isOpen={confirmingReset}
+            onOpen={() => setConfirmingReset(true)}
+            onClose={() => setConfirmingReset(false)}
+            onConfirm={handleReset}
+            disabled={!ready || busy || totalRows === 0}
+            busy={busy}
+          />
         </div>
 
         {/* DB 완전 재생성 */}
@@ -306,31 +263,17 @@ export default function Page() {
             <br/>schema 업그레이드가 누락된 경우(<code>NotFoundError</code>) 해결 가능.
             <br/>실행 후 페이지가 자동 새로고침되며 모든 데이터는 사라집니다.
           </p>
-          {!confirmingRecreate ? (
-            <button
-              className="btn"
-              onClick={() => setConfirmingRecreate(true)}
-              disabled={!ready || busy}
-              style={{color:'var(--negative)',borderColor:'var(--negative)'}}
-            >
-              DB 완전 재생성
-            </button>
-          ) : (
-            <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
-              <span style={{color:'var(--negative)',fontWeight:600,fontSize:13}}>
-                DB를 삭제하고 새로 만들까요? (모든 데이터 사라짐)
-              </span>
-              <button className="btn" disabled={busy} onClick={() => setConfirmingRecreate(false)}>취소</button>
-              <button
-                className="btn primary"
-                disabled={busy}
-                onClick={handleRecreate}
-                style={{background:'var(--negative)'}}
-              >
-                {busy ? '재생성 중…' : '정말 재생성'}
-              </button>
-            </div>
-          )}
+          <DangerConfirm
+            label="DB 완전 재생성"
+            confirmMsg="DB를 삭제하고 새로 만들까요? (모든 데이터 사라짐)"
+            confirmLabel={busy ? '재생성 중…' : '정말 재생성'}
+            isOpen={confirmingRecreate}
+            onOpen={() => setConfirmingRecreate(true)}
+            onClose={() => setConfirmingRecreate(false)}
+            onConfirm={handleRecreate}
+            disabled={!ready || busy}
+            busy={busy}
+          />
         </div>
       </div>
     </main>
@@ -344,7 +287,7 @@ export default function Page() {
 function SettingsGroup({ title, children, style }) {
   return (
     <div className="card" style={{marginTop: style?.marginTop ?? 16}}>
-      <h3 style={{fontSize:15,fontWeight:700,marginBottom:4}}>{title}</h3>
+      <h2 style={{fontSize:15,fontWeight:700,marginBottom:4}}>{title}</h2>
       <div>{children}</div>
     </div>
   );
@@ -399,6 +342,27 @@ function StaticValue({ children }) {
       background:'var(--surface-2)',border:'1px solid var(--border)',
     }}>
       {children}
+    </div>
+  );
+}
+
+function DangerConfirm({ label, confirmMsg, confirmLabel, isOpen, onOpen, onClose, onConfirm, disabled, busy }) {
+  if (!isOpen) {
+    return (
+      <button className="btn" onClick={onOpen} disabled={disabled}
+        style={{color:'var(--negative)', borderColor:'var(--negative)'}}>
+        {label}
+      </button>
+    );
+  }
+  return (
+    <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
+      <span style={{color:'var(--negative)', fontWeight:600, fontSize:13}}>{confirmMsg}</span>
+      <button className="btn" disabled={busy} onClick={onClose}>취소</button>
+      <button className="btn primary" disabled={busy} onClick={onConfirm}
+        style={{background:'var(--negative)'}}>
+        {confirmLabel}
+      </button>
     </div>
   );
 }

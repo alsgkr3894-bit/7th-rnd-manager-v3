@@ -1,0 +1,105 @@
+'use client';
+import { useState, useMemo } from 'react';
+import { Icon } from '@/components/icons';
+import { NUTRITION_FIELDS, calcAllResults } from '@/lib/nutrition/values/store';
+
+export function TabResults({ menus, rawMap, edgeMap, compositions, toppings }) {
+  const [filterMenu,    setFilterMenu]    = useState('전체');
+  const [filterDerived, setFilterDerived] = useState('전체');
+
+  const toppingMap = useMemo(() => {
+    const m = {};
+    toppings.forEach(t => { m[t.toppingCode] = t; });
+    return m;
+  }, [toppings]);
+
+  const results = useMemo(
+    () => calcAllResults({ menus, rawMap, edgeMap, compositions, toppingMap }),
+    [menus, rawMap, edgeMap, compositions, toppingMap]
+  );
+
+  const menuNames = useMemo(
+    () => ['전체', ...menus.map(m => m.menuName), ...compositions.map(c => c.menuName)],
+    [menus, compositions]
+  );
+
+  const filtered = useMemo(() => {
+    let r = results;
+    if (filterMenu    !== '전체') r = r.filter(x => x.menuName === filterMenu);
+    if (filterDerived === '기본')  r = r.filter(x => !x.isDerived);
+    if (filterDerived === '파생')  r = r.filter(x => x.isDerived);
+    return r;
+  }, [results, filterMenu, filterDerived]);
+
+  const hasData = filtered.some(r => r.kcal);
+
+  return (
+    <div style={{ marginTop: 20 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+        <select className="input" style={{ width: 160 }} value={filterMenu} onChange={e => setFilterMenu(e.target.value)}>
+          {menuNames.map(n => <option key={n} value={n}>{n}</option>)}
+        </select>
+        {['전체', '기본', '파생'].map(v => (
+          <button key={v} className={'chip ' + (filterDerived === v ? 'active' : '')} onClick={() => setFilterDerived(v)}>{v}</button>
+        ))}
+      </div>
+
+      {!hasData ? (
+        <div className="card" style={{ display: 'grid', placeItems: 'center', minHeight: 180 }}>
+          <div style={{ textAlign: 'center', color: 'var(--text-4)' }}>
+            <Icon.beaker style={{ width: 28, height: 28 }} />
+            <div style={{ marginTop: 8, fontSize: 13 }}>베이스 영양성분과 엣지 설정을 완료하면 계산 결과가 표시돼요</div>
+          </div>
+        </div>
+      ) : (
+        <div className="card table-card">
+          <div className="table-wrap">
+            <table className="data-table" style={{ minWidth: 1000 }}>
+              <thead>
+                <tr>
+                  <th style={{ minWidth: 140 }}>메뉴명</th>
+                  <th style={{ width: 110 }}>크러스트 타입</th>
+                  {NUTRITION_FIELDS.map(f => (
+                    <th key={f.key} style={{ textAlign: 'right', width: 80 }}>
+                      {f.label}<br />
+                      <span style={{ fontWeight: 400, color: 'var(--text-4)', fontSize: 10 }}>({f.unit})</span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((r, i) => {
+                  const isEmpty = !r.kcal && !r.protein;
+                  return (
+                    <tr key={i} style={{ opacity: isEmpty ? 0.35 : 1 }}>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{r.menuName}</div>
+                        {r.isDerived && <div style={{ fontSize: 11, color: 'var(--text-4)' }}>↳ {r.baseMenuName}</div>}
+                      </td>
+                      <td>
+                        <span style={{
+                          fontSize: 12, padding: '2px 8px', borderRadius: 20,
+                          background: r.crustType.includes('치즈') ? '#fff4e0' : r.crustType.includes('골드') ? '#fff9e0' : 'var(--surface-2)',
+                          color: r.crustType.includes('치즈') ? '#b06800' : r.crustType.includes('골드') ? '#8a7000' : 'var(--text-2)',
+                        }}>
+                          {r.crustType}
+                        </span>
+                      </td>
+                      {NUTRITION_FIELDS.map(f => (
+                        <td key={f.key} className="right">{isEmpty ? '—' : (r[f.key] ?? '—')}</td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-4)' }}>
+        총 {filtered.length}행 (전체 {results.length}행)
+      </div>
+    </div>
+  );
+}

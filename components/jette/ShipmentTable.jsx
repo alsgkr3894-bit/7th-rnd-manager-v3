@@ -4,6 +4,13 @@ import { Chip } from '@/components/ui/Chip';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { SortableTh } from '@/components/ui/SortableTh';
 import { formatNumber } from '@/lib/format';
+import { sortByKey } from '@/lib/jette/utils';
+
+const PRODUCT_TYPE_ORDER = { exclusive: 0, generic: 1 };
+const SHIPMENT_KEY_TRANSFORM = {
+  productType: (v) => PRODUCT_TYPE_ORDER[v] ?? 9,
+  isManaged:   (v) => (v ? 1 : 0),
+};
 
 /**
  * ShipmentTable — 단일 파일 집계 테이블
@@ -26,24 +33,7 @@ export function ShipmentTable({ aggRows }) {
       (r.productName || '').toLowerCase().includes(q)
       || (r.productCode || '').toLowerCase().includes(q)
     );
-    const dir = sortDir === 'asc' ? 1 : -1;
-    return [...list].sort((a, b) => {
-      let va = a[sortKey], vb = b[sortKey];
-      if (sortKey === 'productType') {
-        const order = { exclusive: 0, generic: 1 };
-        va = order[va] ?? 9;
-        vb = order[vb] ?? 9;
-      }
-      if (sortKey === 'isManaged') {
-        va = va ? 1 : 0;
-        vb = vb ? 1 : 0;
-      }
-      if (va == null && vb == null) return 0;
-      if (va == null) return 1;
-      if (vb == null) return -1;
-      if (typeof va === 'string') return va.localeCompare(vb, 'ko') * dir;
-      return va > vb ? dir : va < vb ? -dir : 0;
-    });
+    return sortByKey(list, sortKey, sortDir, SHIPMENT_KEY_TRANSFORM[sortKey] ?? null);
   }, [aggRows, search, typeFilter, managedOnly, sortKey, sortDir]);
 
   const counts = useMemo(() => ({
@@ -100,7 +90,7 @@ export function ShipmentTable({ aggRows }) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r, i) => <Row key={`${r.productCode || r.productName}-${i}`} r={r}/>)}
+              {filtered.map((row, i) => <Row key={`${row.productCode || row.productName}-${i}`} row={row}/>)}
             </tbody>
           </table>
         </div>
@@ -109,30 +99,30 @@ export function ShipmentTable({ aggRows }) {
   );
 }
 
-function Row({ r }) {
+function Row({ row }) {
   return (
     <tr>
-      <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{r.productCode || '-'}</td>
-      <td className="cell-name"><div className="menu-name">{r.productName}</div></td>
-      <td style={{color:'var(--text-2)', fontSize:13}}>{r.unit || '-'}</td>
-      <td style={{color:'var(--text-2)', fontSize:13}}>{r.temperature || '-'}</td>
-      <td style={{fontSize:12, color:'var(--text-3)'}}>{r.taxType || '-'}</td>
+      <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{row.productCode || '-'}</td>
+      <td className="cell-name"><div className="menu-name">{row.productName}</div></td>
+      <td style={{color:'var(--text-2)', fontSize:13}}>{row.unit || '-'}</td>
+      <td style={{color:'var(--text-2)', fontSize:13}}>{row.temperature || '-'}</td>
+      <td style={{fontSize:12, color:'var(--text-3)'}}>{row.taxType || '-'}</td>
       <td className="num right" style={{fontWeight:700}}>
-        {formatNumber(r.totalQuantity)}<span className="unit">개</span>
+        {formatNumber(row.totalQuantity)}<span className="unit">개</span>
       </td>
       <td className="num right">
-        {r.priceWithTax != null
-          ? `${formatNumber(r.priceWithTax)}원`
+        {row.priceWithTax != null
+          ? `${formatNumber(row.priceWithTax)}원`
           : <span className="chip" style={{background:'var(--warn-soft)', color:'var(--warn)', fontSize:11}}>단가 미연동</span>}
       </td>
       <td className="num right" style={{fontWeight:700}}>
-        {formatNumber(r.totalAmount)}<span className="unit">원</span>
+        {formatNumber(row.totalAmount)}<span className="unit">원</span>
       </td>
       <td>
-        <ProductTypeChip type={r.productType}/>
+        <ProductTypeChip type={row.productType}/>
       </td>
       <td style={{textAlign:'center'}}>
-        {r.isManaged
+        {row.isManaged
           ? <span title="관리품목" style={{color:'var(--warn)', fontSize:14}}>★</span>
           : <span style={{color:'var(--text-4)', fontSize:12}}>—</span>}
       </td>
@@ -141,8 +131,9 @@ function Row({ r }) {
 }
 
 const PRODUCT_TYPE_META = {
-  exclusive: { label: '전용상품', bg: 'var(--accent-soft)', color: 'var(--accent-text)' },
-  generic:   { label: '범용상품', bg: 'var(--surface-2)',   color: 'var(--text-3)' },
+  exclusive:         { label: '전용상품', bg: 'var(--accent-soft)', color: 'var(--accent-text)' },
+  generic:           { label: '범용상품', bg: 'var(--surface-2)',   color: 'var(--text-3)' },
+  'generic-managed': { label: '범용관리', bg: 'var(--warn-soft)',   color: 'var(--warn)' },
 };
 
 function ProductTypeChip({ type }) {

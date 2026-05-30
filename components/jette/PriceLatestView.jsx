@@ -6,12 +6,8 @@ import { SortableTh } from '@/components/ui/SortableTh';
 import { formatNumber } from '@/lib/format';
 import { getPriceRowsByFileId } from '@/lib/price';
 import { PriceLatestKpi } from './PriceLatestKpi';
-
-const typeInputStyle = {
-  padding:'3px 6px', borderRadius:6, fontSize:12,
-  border:'1px solid var(--border)', background:'var(--surface-2)',
-  color:'var(--text-1)', cursor:'pointer',
-};
+import { TypeSelect } from './_TypeSelect';
+import { sortByKey, getProductTypeCounts } from '@/lib/jette/utils';
 
 export function PriceLatestView({ files, latestFileId, onLatestChange, productTypeLookup = new Map(), onTypeChange }) {
   const [rows, setRows] = useState([]);
@@ -42,36 +38,31 @@ export function PriceLatestView({ files, latestFileId, onLatestChange, productTy
     })();
   }, [latestFileId]);
 
-  const typeCounts = useMemo(() => {
-    const get = (type) => rows.filter(r => productTypeLookup.get(r.productCode)?.productType === type).length;
-    return {
-      exclusive:         get('exclusive'),
-      generic:           get('generic'),
-      'generic-managed': get('generic-managed'),
-    };
-  }, [rows, productTypeLookup]);
+  const typeCounts = useMemo(
+    () => getProductTypeCounts(rows, productTypeLookup),
+    [rows, productTypeLookup],
+  );
+
+  const typeFilteredRows = useMemo(() => {
+    if (typeFilter === 'all') return rows;
+    return rows.filter(r => productTypeLookup.get(r.productCode)?.productType === typeFilter);
+  }, [rows, typeFilter, productTypeLookup]);
+
+  const taxCounts = useMemo(() => ({
+    taxable: typeFilteredRows.filter(r => r.taxType === '과세').length,
+    exempt:  typeFilteredRows.filter(r => r.taxType === '면세').length,
+  }), [typeFilteredRows]);
 
   const filtered = useMemo(() => {
-    let list = rows;
+    let list = typeFilteredRows;
     if (taxFilter !== 'all') list = list.filter(r => r.taxType === taxFilter);
-    if (typeFilter !== 'all') {
-      list = list.filter(r => productTypeLookup.get(r.productCode)?.productType === typeFilter);
-    }
     const q = search.trim().toLowerCase();
     if (q) list = list.filter(r =>
       (r.productName || '').toLowerCase().includes(q)
       || (r.productCode || '').toLowerCase().includes(q)
     );
-    const dir = sortDir === 'asc' ? 1 : -1;
-    return [...list].sort((a, b) => {
-      const va = a[sortKey], vb = b[sortKey];
-      if (va == null && vb == null) return 0;
-      if (va == null) return 1;
-      if (vb == null) return -1;
-      if (typeof va === 'string') return va.localeCompare(vb, 'ko') * dir;
-      return va > vb ? dir : va < vb ? -dir : 0;
-    });
-  }, [rows, search, taxFilter, typeFilter, sortKey, sortDir, productTypeLookup]);
+    return sortByKey(list, sortKey, sortDir);
+  }, [typeFilteredRows, search, taxFilter, sortKey, sortDir]);
 
   function toggleSort(key) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -113,17 +104,11 @@ export function PriceLatestView({ files, latestFileId, onLatestChange, productTy
         </div>
 
         {/* 과세 필터 — typeFilter 적용 후 카운트 */}
-        {(() => {
-          const typeRows = typeFilter === 'all' ? rows
-            : rows.filter(r => productTypeLookup.get(r.productCode)?.productType === typeFilter);
-          return (
-            <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:12}}>
-              <Chip label="전체" count={typeRows.length}                                            active={taxFilter === 'all'}  onClick={() => setTaxFilter('all')}/>
-              <Chip label="과세" count={typeRows.filter(r => r.taxType === '과세').length}          active={taxFilter === '과세'} onClick={() => setTaxFilter('과세')}/>
-              <Chip label="면세" count={typeRows.filter(r => r.taxType === '면세').length}          active={taxFilter === '면세'} onClick={() => setTaxFilter('면세')}/>
-            </div>
-          );
-        })()}
+        <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:12}}>
+          <Chip label="전체" count={typeFilteredRows.length} active={taxFilter === 'all'}  onClick={() => setTaxFilter('all')}/>
+          <Chip label="과세" count={taxCounts.taxable}       active={taxFilter === '과세'} onClick={() => setTaxFilter('과세')}/>
+          <Chip label="면세" count={taxCounts.exempt}        active={taxFilter === '면세'} onClick={() => setTaxFilter('면세')}/>
+        </div>
 
         <SearchBox value={search} onChange={setSearch}/>
 
@@ -147,29 +132,29 @@ export function PriceLatestView({ files, latestFileId, onLatestChange, productTy
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r, i) => (
-                  <tr key={`${r.productCode || r.productName}-${i}`}>
-                    <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{r.productCode || '-'}</td>
-                    <td className="cell-name"><div className="menu-name">{r.productName}</div></td>
+                {filtered.map((row, i) => (
+                  <tr key={`${row.productCode || row.productName}-${i}`}>
+                    <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{row.productCode || '-'}</td>
+                    <td className="cell-name"><div className="menu-name">{row.productName}</div></td>
                     <td>
                       <TypeSelect
-                        productCode={r.productCode}
-                        productName={r.productName}
+                        productCode={row.productCode}
+                        productName={row.productName}
                         productTypeLookup={productTypeLookup}
                         onTypeChange={onTypeChange}
                       />
                     </td>
                     <td>
                       <span className="chip" style={{
-                        background: r.taxType === '과세' ? 'var(--accent-soft)' : 'var(--surface-2)',
-                        color:      r.taxType === '과세' ? 'var(--accent-text)' : 'var(--text-2)',
-                      }}>{r.taxType || '-'}</span>
+                        background: row.taxType === '과세' ? 'var(--accent-soft)' : 'var(--surface-2)',
+                        color:      row.taxType === '과세' ? 'var(--accent-text)' : 'var(--text-2)',
+                      }}>{row.taxType || '-'}</span>
                     </td>
-                    <td style={{color:'var(--text-2)', fontSize:13}}>{r.salesUnit || '-'}</td>
-                    <td style={{color:'var(--text-2)', fontSize:13}}>{r.temperature || '-'}</td>
-                    <td className="num right">{formatNumber(r.price)}<span className="unit">원</span></td>
+                    <td style={{color:'var(--text-2)', fontSize:13}}>{row.salesUnit || '-'}</td>
+                    <td style={{color:'var(--text-2)', fontSize:13}}>{row.temperature || '-'}</td>
+                    <td className="num right">{formatNumber(row.price)}<span className="unit">원</span></td>
                     <td className="num right" style={{fontWeight:700}}>
-                      {formatNumber(r.priceWithTax)}<span className="unit">원</span>
+                      {formatNumber(row.priceWithTax)}<span className="unit">원</span>
                     </td>
                   </tr>
                 ))}
@@ -182,20 +167,3 @@ export function PriceLatestView({ files, latestFileId, onLatestChange, productTy
   );
 }
 
-function TypeSelect({ productCode, productName, productTypeLookup, onTypeChange }) {
-  const current = productCode ? productTypeLookup.get(productCode)?.productType || '' : '';
-  return (
-    <select
-      value={current}
-      onChange={e => {
-        if (e.target.value && onTypeChange) onTypeChange(productCode, productName, e.target.value);
-      }}
-      style={typeInputStyle}
-    >
-      <option value="">미분류</option>
-      <option value="exclusive">전용</option>
-      <option value="generic">범용</option>
-      <option value="generic-managed">범용관리</option>
-    </select>
-  );
-}

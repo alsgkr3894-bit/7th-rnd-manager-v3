@@ -1,7 +1,49 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useReducer, useMemo } from 'react';
 import { formatNumber } from '@/lib/format';
 import { UnmatchedResolveForm } from './UnmatchedResolveForm';
+
+const initialState = {
+  openId:      null,
+  busyId:      null,
+  selected:    new Set(),
+  confirmBulk: false,
+  bulkBusy:    false,
+};
+
+function reducer(state, action) {
+  switch (action.type) {
+    case 'TOGGLE_ROW':
+      return { ...state, openId: state.openId === action.id ? null : action.id };
+    case 'RESOLVE_START':
+      return { ...state, busyId: action.id };
+    case 'RESOLVE_DONE':
+      return { ...state, busyId: null, openId: null };
+    case 'RESOLVE_CLEAR_BUSY':
+      return { ...state, busyId: null };
+    case 'TOGGLE_SEL': {
+      const next = new Set(state.selected);
+      if (next.has(action.id)) next.delete(action.id); else next.add(action.id);
+      return { ...state, selected: next };
+    }
+    case 'SEL_ALL':
+      return { ...state, selected: action.ids };
+    case 'SEL_CLEAR':
+      return { ...state, selected: new Set() };
+    case 'BULK_CONFIRM':
+      return { ...state, confirmBulk: true };
+    case 'BULK_CANCEL':
+      return { ...state, confirmBulk: false };
+    case 'BULK_START':
+      return { ...state, bulkBusy: true };
+    case 'BULK_DONE':
+      return { ...state, bulkBusy: false, selected: new Set(), confirmBulk: false };
+    case 'BULK_ERROR':
+      return { ...state, bulkBusy: false };
+    default:
+      return state;
+  }
+}
 
 /**
  * UnmatchedTable — 미매칭 issue 목록 (개별 해결 + 일괄 제외)
@@ -11,46 +53,46 @@ import { UnmatchedResolveForm } from './UnmatchedResolveForm';
  * @param {(issueIds: number[]) => Promise<void>} onBulkExclude
  */
 export function UnmatchedTable({ issues, onResolve, onBulkExclude }) {
-  const [openId, setOpenId] = useState(null);
-  const [busyId, setBusyId] = useState(null);
-  const [selected, setSelected] = useState(new Set());
-  const [confirmBulk, setConfirmBulk] = useState(false);
-  const [bulkBusy, setBulkBusy] = useState(false);
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const { openId, busyId, selected, confirmBulk, bulkBusy } = state;
 
-  const openIssues = useMemo(() => issues.filter(i => i.status === 'open'), [issues]);
-  const openIds = useMemo(() => new Set(openIssues.map(i => i.id)), [openIssues]);
+  const openIssues  = useMemo(() => issues.filter(i => i.status === 'open'), [issues]);
+  const openIds     = useMemo(() => new Set(openIssues.map(i => i.id)), [openIssues]);
   const selectedOpen = useMemo(
     () => Array.from(selected).filter(id => openIds.has(id)),
     [selected, openIds],
   );
 
-  function toggleSel(id) {
-    setSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }
+  function toggleSel(id)  { dispatch({ type: 'TOGGLE_SEL', id }); }
   function toggleAll() {
-    if (selectedOpen.length === openIssues.length) setSelected(new Set());
-    else setSelected(new Set(openIssues.map(i => i.id)));
+    dispatch(
+      selectedOpen.length === openIssues.length
+        ? { type: 'SEL_CLEAR' }
+        : { type: 'SEL_ALL', ids: new Set(openIssues.map(i => i.id)) }
+    );
   }
 
   async function handleResolveSingle(issue, actionType, actionData) {
     if (!onResolve) return;
-    setBusyId(issue.id);
-    try { await onResolve(issue.id, actionType, actionData); setOpenId(null); }
-    finally { setBusyId(null); }
+    dispatch({ type: 'RESOLVE_START', id: issue.id });
+    let succeeded = false;
+    try {
+      await onResolve(issue.id, actionType, actionData);
+      succeeded = true;
+    } finally {
+      dispatch({ type: succeeded ? 'RESOLVE_DONE' : 'RESOLVE_CLEAR_BUSY' });
+    }
   }
 
   async function handleBulk() {
     if (!onBulkExclude || selectedOpen.length === 0) return;
-    setBulkBusy(true);
+    dispatch({ type: 'BULK_START' });
     try {
       await onBulkExclude(selectedOpen);
-      setSelected(new Set());
-      setConfirmBulk(false);
-    } finally { setBulkBusy(false); }
+      dispatch({ type: 'BULK_DONE' });
+    } catch {
+      dispatch({ type: 'BULK_ERROR' }); // confirmBulk 유지 → 사용자가 재시도 가능
+    }
   }
 
   return (
@@ -66,7 +108,7 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude }) {
           {confirmBulk ? (
             <span style={{display:'inline-flex', gap:6, alignItems:'center'}}>
               <span style={{fontSize:12, color:'var(--negative)'}}>선택한 항목을 모두 제외 처리할까요?</span>
-              <button className="btn sm" onClick={() => setConfirmBulk(false)} disabled={bulkBusy}>취소</button>
+              <button className="btn sm" onClick={() => dispatch({ type: 'BULK_CANCEL' })} disabled={bulkBusy}>취소</button>
               <button className="btn sm" onClick={handleBulk} disabled={bulkBusy}
                 style={{background:'var(--negative)', color:'#fff', borderColor:'var(--negative)'}}>
                 {bulkBusy ? '처리 중...' : '일괄 제외 확인'}
@@ -74,8 +116,8 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude }) {
             </span>
           ) : (
             <span style={{display:'inline-flex', gap:6}}>
-              <button className="btn sm" onClick={() => setSelected(new Set())}>선택 해제</button>
-              <button className="btn sm" onClick={() => setConfirmBulk(true)}
+              <button className="btn sm" onClick={() => dispatch({ type: 'SEL_CLEAR' })}>선택 해제</button>
+              <button className="btn sm" onClick={() => dispatch({ type: 'BULK_CONFIRM' })}
                 style={{color:'var(--negative)'}}>
                 선택 일괄 제외
               </button>
@@ -113,7 +155,7 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude }) {
                 busy={busyId === it.id}
                 checked={selected.has(it.id)}
                 onCheck={() => toggleSel(it.id)}
-                onToggle={() => setOpenId(openId === it.id ? null : it.id)}
+                onToggle={() => dispatch({ type: 'TOGGLE_ROW', id: it.id })}
                 onSubmit={(at, ad) => handleResolveSingle(it, at, ad)}
               />
             ))}

@@ -11,18 +11,18 @@ import { TYPE_OPTIONS, inputStyle } from './managed-products-constants';
  * @param {Function} onToggleManaged   - (p) => void
  * @param {Function} onDelete          - (id) => void
  */
-export function ManagedProductsRow({ p, onToggleEnable, onChangeType, onToggleManaged, onDelete }) {
+export function ManagedProductsRow({ product, onToggleEnable, onChangeType, onToggleManaged, onDelete }) {
   return (
-    <tr style={{opacity: p.enable === false ? 0.5 : 1}}>
-      <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{p.productCode || '-'}</td>
-      <td className="cell-name"><div className="menu-name">{p.productName}</div></td>
+    <tr style={{opacity: product.enable === false ? 0.5 : 1}}>
+      <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{product.productCode || '-'}</td>
+      <td className="cell-name"><div className="menu-name">{product.productName}</div></td>
       <td style={{textAlign:'center'}}>
-        <Toggle value={p.enable !== false} onChange={() => onToggleEnable(p)}/>
+        <Toggle value={product.enable !== false} onChange={() => onToggleEnable(product)}/>
       </td>
       <td>
         <select
-          value={p.productType || 'generic'}
-          onChange={e => onChangeType(p, e.target.value)}
+          value={product.productType || 'generic'}
+          onChange={e => onChangeType(product, e.target.value)}
           style={{...inputStyle, width:'100%'}}
         >
           {TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -31,13 +31,13 @@ export function ManagedProductsRow({ p, onToggleEnable, onChangeType, onToggleMa
       <td style={{textAlign:'center'}}>
         <input
           type="checkbox"
-          checked={!!p.isManaged}
-          onChange={() => onToggleManaged(p)}
+          checked={!!product.isManaged}
+          onChange={() => onToggleManaged(product)}
           style={{cursor:'pointer', width:16, height:16}}
         />
       </td>
       <td style={{textAlign:'right'}}>
-        <button className="btn sm" style={{color:'var(--negative)'}} onClick={() => onDelete(p.id)}>삭제</button>
+        <button className="btn sm" style={{color:'var(--negative)'}} onClick={() => onDelete(product.id)}>삭제</button>
       </td>
     </tr>
   );

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback, memo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Icon } from '@/components/icons';
 import { initDB } from '@/lib/db';
@@ -15,31 +15,16 @@ import {
 import { componentSubtotal } from '@/lib/cost/shared/calc';
 import { getPizzaRecipeMap } from '@/lib/cost/pizza-detail';
 import { getAllEdges } from '@/lib/cost/edge-dough/store';
-import { edgeTotalCost } from '@/lib/cost/edge-dough/calc';
+import { edgeTotalCost, EXPAND_EDGE_TYPES } from '@/lib/cost/edge-dough';
 import { getPersonalRecipeMap } from '@/lib/cost/personal-detail';
 import { getSideRecipeMap } from '@/lib/cost/side-detail';
 import { getSetRecipeMap } from '@/lib/cost/set-detail';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { PlatformSettingsModal } from '@/components/cost/margin/PlatformSettingsModal';
 import { SortableTh } from '@/components/ui/SortableTh';
-
-// 원가율: 낮을수록 좋음
-const MC_COST = (pct) => {
-  if (pct == null) return 'var(--text-3)';
-  if (pct <  0)   return 'var(--negative, #ef4444)';
-  if (pct <= 30)  return 'var(--positive, #10b981)';
-  if (pct <= 40)  return '#f59e0b';
-  return 'var(--negative, #ef4444)';
-};
-// 마진율: 높을수록 좋음
-const MC_MARGIN = (pct) => {
-  if (pct == null) return 'var(--text-3)';
-  if (pct <  0)   return 'var(--negative, #ef4444)';
-  if (pct >= 70)  return 'var(--positive, #10b981)';
-  if (pct >= 60)  return '#f59e0b';
-  return 'var(--negative, #ef4444)';
-};
-const MC = (pct, mode) => mode === 'margin' ? MC_MARGIN(pct) : MC_COST(pct);
+import { MarginRow, MC } from '@/components/cost/margin/MarginRow';
+import { exportMarginExcel } from '@/lib/cost/margin/export';
+import { COST_RATE_THRESHOLD as COST_RATE } from '@/lib/cost/margin/constants';
 
 export default function Page() {
   const [rows,         setRows]         = useState([]);
@@ -160,7 +145,7 @@ export default function Page() {
     }
 
     // 엣지 원가 맵: edgeType → { size → cost }
-    const EXPAND_EDGES = ['치즈크러스트', '골드스윗크러스트'];
+    const EXPAND_EDGES = EXPAND_EDGE_TYPES;
     const PIZZA_EDGE_CATS = new Set([
       '피자', '피자/프리미엄 스페셜', '피자/프리미엄', '피자/오리지널', '피자/하프앤하프',
     ]);
@@ -308,7 +293,11 @@ export default function Page() {
     );
     if (!all.length) return null;
     const avg = all.reduce((a, b) => a + b, 0) / all.length;
-    return { avg, above70: all.filter(m => m <= 30).length, below60: all.filter(m => m > 40).length };
+    return {
+      avg,
+      lowCostCount:  all.filter(m => m <= COST_RATE.GOOD).length,    // 원가율 ≤ GOOD
+      highCostCount: all.filter(m => m >  COST_RATE.WARNING).length,  // 원가율 > WARNING
+    };
   }, [filtered, activePlatform, discount]);
 
   function handleSort(key) {
@@ -377,6 +366,11 @@ export default function Page() {
         breadcrumb={['원가계산', '원가마진표']}
         title="메뉴 원가마진표"
         sub="레시피 원가 기준 메뉴별 원가율 · 플랫폼·할인 시뮬레이션 지원"
+        actions={
+          <button className="btn" onClick={() => exportMarginExcel(filtered, sizeLabels, viewMode)}>
+            <Icon.download style={{ width: 13, height: 13 }}/> CSV 내보내기
+          </button>
+        }
       />
 
       {/* Stats */}
@@ -395,13 +389,13 @@ export default function Page() {
               <div className="stat-card">
                 <div className="stat-label">원가율 30% 이하</div>
                 <div className="stat-value" style={{ color:'var(--positive, #10b981)' }}>
-                  {stats.above70}<span className="unit">개</span>
+                  {stats.lowCostCount}<span className="unit">개</span>
                 </div>
               </div>
               <div className="stat-card">
                 <div className="stat-label">원가율 40% 초과</div>
-                <div className="stat-value" style={{ color:stats.below60 > 0 ? 'var(--negative, #ef4444)' : undefined }}>
-                  {stats.below60}<span className="unit">개</span>
+                <div className="stat-value" style={{ color:stats.highCostCount > 0 ? 'var(--negative, #ef4444)' : undefined }}>
+                  {stats.highCostCount}<span className="unit">개</span>
                 </div>
               </div>
             </>
@@ -410,13 +404,13 @@ export default function Page() {
               <div className="stat-card">
                 <div className="stat-label">마진율 70% 이상</div>
                 <div className="stat-value" style={{ color:'var(--positive, #10b981)' }}>
-                  {stats.above70}<span className="unit">개</span>
+                  {stats.lowCostCount}<span className="unit">개</span>
                 </div>
               </div>
               <div className="stat-card">
                 <div className="stat-label">마진율 60% 미만</div>
-                <div className="stat-value" style={{ color:stats.below60 > 0 ? 'var(--negative, #ef4444)' : undefined }}>
-                  {stats.below60}<span className="unit">개</span>
+                <div className="stat-value" style={{ color:stats.highCostCount > 0 ? 'var(--negative, #ef4444)' : undefined }}>
+                  {stats.highCostCount}<span className="unit">개</span>
                 </div>
               </div>
             </>
@@ -514,7 +508,7 @@ export default function Page() {
               <b style={{ color:'var(--text-2)' }}>{f.label}</b>
               {f.type === 'pct'
                 ? `${f.value}%`
-                : feeAmountLabel(f)}
+                : `${formatNumber(f.value)}원`}
             </span>
           ))}
         </div>
@@ -574,6 +568,7 @@ export default function Page() {
                       {l} {viewMode === 'margin' ? '마진율' : '원가율'}
                     </SortableTh>
                   ))}
+                  <th style={{ width: 60 }}/>
                 </tr>
               </thead>
               <tbody>
@@ -613,96 +608,4 @@ export default function Page() {
       )}
     </main>
   );
-}
-
-const MarginRow = memo(function MarginRow({ r, sizeLabels, activePlatform, discount, hasAdjustment, viewMode }) {
-  return (
-    <tr>
-      <td style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{r.menuName}</td>
-      <td style={{ whiteSpace: 'nowrap' }}><span className="chip">{r.menuCategory || '기타'}</span></td>
-
-      {/* 원가 */}
-      {sizeLabels.map(l => {
-        const cost = r.costMap?.[l] || 0;
-        return (
-          <td key={l+'_c'} style={{ textAlign:'right', color:'var(--text-2)' }}>
-            {cost > 0 ? `${formatNumber(Math.round(cost))}원` : '—'}
-          </td>
-        );
-      })}
-
-      {/* 판매가 */}
-      {sizeLabels.map(l => {
-        const s = r.sizes?.find(s => s.label === l);
-        return (
-          <td key={l+'_p'} style={{ textAlign:'right', color:'var(--text-2)' }}>
-            {s?.sellingPrice != null ? `${formatNumber(s.sellingPrice)}원` : '—'}
-          </td>
-        );
-      })}
-
-      {/* 할인적용금액 (플랫폼/할인 조정 시만) */}
-      {hasAdjustment && sizeLabels.map(l => {
-        const s = r.sizes?.find(s => s.label === l);
-        if (!s?.sellingPrice) return <td key={l+'_n'} style={{ textAlign:'right', color:'var(--text-3)' }}>—</td>;
-        const eff = applyDiscount(s.sellingPrice, discount);
-        const net = calcNetRevenue(eff, activePlatform.fees, l);
-        return (
-          <td key={l+'_n'} style={{ textAlign:'right', fontSize:12, color:'var(--text-2)' }}>
-            {formatNumber(Math.round(net))}원
-            {eff !== s.sellingPrice && (
-              <div style={{ fontSize:10, color:'var(--text-4)' }}>
-                {formatNumber(eff)}원 기준
-              </div>
-            )}
-          </td>
-        );
-      })}
-
-      {/* 원가율 / 마진율 */}
-      {sizeLabels.map(l => {
-        const cost    = r.costMap?.[l] || 0;
-        const s       = r.sizes?.find(s => s.label === l);
-        const eff     = applyDiscount(s?.sellingPrice, discount);
-        const net     = calcNetRevenue(eff, activePlatform.fees, l);
-        const costRate = calcPlatformMargin(cost, net); // 원가율
-        const display  = costRate != null
-          ? (viewMode === 'margin' ? 100 - costRate : costRate)
-          : null;
-        const baseCostRate = hasAdjustment
-          ? calcPlatformMargin(cost, s?.sellingPrice || 0)
-          : null;
-        const baseDisplay = baseCostRate != null
-          ? (viewMode === 'margin' ? 100 - baseCostRate : baseCostRate)
-          : null;
-        return (
-          <td key={l+'_m'} style={{ textAlign:'right' }}>
-            {display != null ? (
-              <span style={{ fontWeight:700, color: MC(display, viewMode) }}>{display.toFixed(1)}%</span>
-            ) : '—'}
-            {baseDisplay != null && baseDisplay !== display && (
-              <span style={{ fontSize:10, color:'var(--text-4)', marginLeft:5 }}>
-                ({baseDisplay.toFixed(1)}%)
-              </span>
-            )}
-          </td>
-        );
-      })}
-    </tr>
-  );
-});
-
-/** 고정비 fee의 표시 문자열 — 사이즈 오버라이드 있으면 전부 표시 */
-function feeAmountLabel(f) {
-  const base = f.value ?? 0;
-  const ov   = f.sizeOverrides || {};
-  const hasL = ov.L != null && ov.L !== '';
-  const hasR = ov.R != null && ov.R !== '';
-
-  if (!hasL && !hasR) return `${formatNumber(base)}원`;
-
-  const parts = [`공통 ${formatNumber(base)}원`];
-  if (hasL) parts.push(`L ${formatNumber(ov.L)}원`);
-  if (hasR) parts.push(`R ${formatNumber(ov.R)}원`);
-  return parts.join(' · ');
 }

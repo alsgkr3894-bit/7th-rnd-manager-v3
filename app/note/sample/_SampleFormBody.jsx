@@ -5,6 +5,7 @@ import { showToast } from '@/components/Toast';
 import { SAMPLE_CATEGORIES, RATING_LABELS, RATING_COLOR, getAllSamples } from '@/lib/sample';
 import { initDB } from '@/lib/db';
 import { TagInput } from '@/components/ui/TagInput';
+import { SegGroup, Field } from '@/components/note/FormFields';
 
 export const SAMPLE_INIT = {
   title: '', menuName: '', category: SAMPLE_CATEGORIES[0],
@@ -268,6 +269,7 @@ export function SampleFormBody({ form, setForm }) {
 }
 
 function StarPicker({ value, onChange }) {
+  const [hovered, setHovered] = useState(0);
   function handleClick(e, n) {
     const btn = e.currentTarget;
     btn.classList.remove('star-pop');
@@ -275,19 +277,17 @@ function StarPicker({ value, onChange }) {
     btn.classList.add('star-pop');
     onChange(value === n ? 0 : n);
   }
+  const lit = hovered > 0 ? hovered : value;
   return (
     <div style={{ display:'flex', gap:4, alignItems:'center' }}>
-      {[1, 2, 3, 4, 5].map(n => (
+      {[1,2,3,4,5].map(n => (
         <button
           key={n}
+          className={'star-rate-btn' + (n <= lit ? ' lit' : '')}
+          style={{ fontSize:22 }}
           onClick={e => handleClick(e, n)}
-          style={{
-            background:'none', border:'none', cursor:'pointer', padding:'2px',
-            fontSize:22, lineHeight:1, color: n <= value ? '#F5A623' : 'var(--border)',
-            transition:'color 100ms, transform 80ms',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.2)'; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+          onMouseEnter={() => setHovered(n)}
+          onMouseLeave={() => setHovered(0)}
         >★</button>
       ))}
       {value > 0 && (
@@ -299,34 +299,3 @@ function StarPicker({ value, onChange }) {
   );
 }
 
-function SegGroup({ options, value, onChange }) {
-  return (
-    <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-      {options.map(o => (
-        <button key={o}
-          style={{
-            padding:'5px 12px', borderRadius:8, border:'1px solid',
-            borderColor: value === o ? 'var(--accent)' : 'var(--border)',
-            background:  value === o ? 'var(--accent)' : 'var(--surface-2)',
-            color:       value === o ? '#fff' : 'var(--text-2)',
-            fontFamily:'inherit', fontSize:13, fontWeight: value === o ? 700 : 400, cursor:'pointer',
-          }}
-          onClick={() => onChange(o)}
-        >{o}</button>
-      ))}
-    </div>
-  );
-}
-
-function Field({ label, required, hint, children }) {
-  return (
-    <div style={{ marginBottom:14 }}>
-      <div style={{ fontSize:12, fontWeight:700, color:'var(--text-3)', marginBottom:6 }}>
-        {label}
-        {required && <span style={{ color:'var(--negative)', marginLeft:2 }}>*</span>}
-        {hint && <span style={{ fontSize:11, fontWeight:400, color:'var(--text-4)', marginLeft:6 }}>{hint}</span>}
-      </div>
-      {children}
-    </div>
-  );
-}

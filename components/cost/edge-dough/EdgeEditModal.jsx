@@ -8,8 +8,9 @@ import { getAllIngredients } from '@/lib/ingredient';
 import { buildUnitPriceMap } from '@/lib/recipe';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { initDB } from '@/lib/db';
-
-const UNIT_OPTIONS = ['g', 'kg', 'ml', 'L', '개', '입', '장', '봉'];
+import { UNIT_OPTIONS } from '@/lib/cost/shared/unit-options';
+import { ModalFrame } from '@/components/ui/ModalFrame';
+import { FieldLabel } from '@/components/cost/shared/FormLabels';
 const EMPTY_COMP = () => ({ productCode: null, ingredientName: '', quantity: '', unit: 'g', unitPrice: '' });
 
 export function EdgeEditModal({ initial, onSave, onClose }) {
@@ -63,25 +64,19 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
 
   const total = edgeTotalCost({ components: comps });
 
-  return createPortal(
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', display:'grid', placeItems:'center', zIndex:300 }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="card" style={{ width:'min(780px,96vw)', maxHeight:'92vh', overflowY:'auto', padding:'22px 26px' }}>
-
-        {/* 헤더 */}
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-          <div style={{ fontWeight:700, fontSize:16 }}>{isNew ? '엣지·도우 추가' : `${edgeType} ${size} 편집`}</div>
-          <button className="btn" style={{ padding:'4px 8px' }} onClick={onClose}>
-            <Icon.close style={{ width:16, height:16 }}/>
-          </button>
-        </div>
-
+  return (
+    <ModalFrame
+      title={isNew ? '엣지·도우 추가' : `${edgeType} ${size} 편집`}
+      onClose={onClose}
+      width="min(780px,96vw)"
+      zIndex={300}
+    >
         <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:16 }}>
 
           {/* 유형 + 사이즈 */}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
             <div>
-              <FL>엣지 유형</FL>
+              <FieldLabel>엣지 유형</FieldLabel>
               <select className="form-input" value={edgeType}
                 onChange={e => {
                   const t = e.target.value;
@@ -92,7 +87,7 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
               </select>
             </div>
             <div>
-              <FL>규격</FL>
+              <FieldLabel>규격</FieldLabel>
               <div style={{ display:'flex', gap:16, alignItems:'center', padding:'9px 0' }}>
                 {(edgeType === '씬도우' ? ['L'] : ['L','R']).map(sz => (
                   <label key={sz} style={{ display:'flex', alignItems:'center', gap:6, cursor: isNew ? 'pointer' : 'default', fontSize:14 }}>
@@ -108,7 +103,7 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
 
           {/* 구성품 목록 */}
           <div>
-            <FL>구성품</FL>
+            <FieldLabel>구성품</FieldLabel>
 
             {/* 컬럼 헤더 */}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 90px 72px 110px 90px 28px',
@@ -141,7 +136,7 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
 
           {/* 비고 */}
           <div>
-            <FL>비고</FL>
+            <FieldLabel>비고</FieldLabel>
             <input className="form-input" value={note} onChange={e => setNote(e.target.value)} placeholder="선택 입력"/>
           </div>
 
@@ -161,9 +156,7 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
             </button>
           </div>
         </form>
-      </div>
-    </div>,
-    document.body
+    </ModalFrame>
   );
 }
 
@@ -341,6 +334,3 @@ function CompRow({ c, allMeta, upm, onChange, onRemove }) {
   );
 }
 
-function FL({ children }) {
-  return <div style={{ fontSize:12, fontWeight:600, color:'var(--text-2)', marginBottom:6 }}>{children}</div>;
-}

@@ -7,16 +7,14 @@ import {
   getUserRules, addUserRule, deleteUserRule, updateUserRule,
   CATEGORY_INPUT_OPTIONS as CATEGORY_OPTIONS,
 } from '@/lib/sales';
+import { inputStyle, SectionHeader, SectionEmpty } from './shared/SectionUtils';
 
-/**
- * UserRulesSection — 사용자 추가 분류 규칙 CRUD + enable 토글 + 수정
- */
 export function UserRulesSection() {
-  const [list, setList] = useState([]);
-  const [adding, setAdding] = useState(false);
+  const [list,      setList]      = useState([]);
+  const [adding,    setAdding]    = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ rawMenuName: '', category: '피자', groupName: '', detailName: '' });
-  const [busy, setBusy] = useState(false);
+  const [form,      setForm]      = useState({ rawMenuName: '', category: '피자', groupName: '', detailName: '' });
+  const [busy,      setBusy]      = useState(false);
 
   useEffect(() => { refresh(); }, []);
 
@@ -58,9 +56,9 @@ export function UserRulesSection() {
     setEditingId(r.id);
     setForm({
       rawMenuName: r.rawMenuName || r.pattern || '',
-      category: r.category || '피자',
-      groupName: r.groupName || '',
-      detailName: r.detailName || '',
+      category:    r.category    || '피자',
+      groupName:   r.groupName   || '',
+      detailName:  r.detailName  || '',
     });
   }
 
@@ -71,30 +69,26 @@ export function UserRulesSection() {
 
   async function handleToggle(r) {
     try {
-      await updateUserRule({ id: r.id, enable: r.enable === false ? true : false });
+      await updateUserRule({ id: r.id, enable: r.enable !== false ? false : true });
       refresh();
     } catch { showToast('토글 실패', 'err'); }
   }
 
   return (
     <div style={{marginBottom:16}}>
-      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8}}>
-        <div style={{fontSize:13, fontWeight:700}}>
-          사용자 추가 규칙 <span style={{color:'var(--text-3)', fontWeight:500, marginLeft:6}}>{list.length}개</span>
-        </div>
-        <button className="btn sm" onClick={() => { setAdding(v => !v); setEditingId(null); resetForm(); }}>
-          {adding ? '닫기' : <><Icon.plus style={{width:12, height:12}}/> 추가</>}
-        </button>
-      </div>
+      <SectionHeader
+        title="사용자 추가 규칙"
+        count={list.length}
+        adding={adding}
+        onAdd={() => { setAdding(v => !v); setEditingId(null); resetForm(); }}
+      />
 
       {adding && (
         <RowForm form={form} setForm={setForm} onCancel={() => setAdding(false)} onSubmit={handleAdd} busy={busy}/>
       )}
 
       {list.length === 0 && !adding ? (
-        <div style={{padding:'16px 0', textAlign:'center', color:'var(--text-3)', fontSize:12}}>
-          사용자 추가 규칙이 아직 없습니다
-        </div>
+        <SectionEmpty>사용자 추가 규칙이 아직 없습니다</SectionEmpty>
       ) : list.length > 0 && (
         <div style={{overflowX:'auto'}}>
           <table className="data-table">
@@ -143,11 +137,11 @@ function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추�
   return (
     <div style={{display:'grid', gridTemplateColumns:'1.5fr 140px 1fr 1fr auto auto', gap:8}}>
       <input value={form.rawMenuName} onChange={e => setForm({ ...form, rawMenuName: e.target.value })} placeholder="패턴 (정규화 후)" style={inputStyle}/>
-      <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} style={inputStyle}>
+      <select value={form.category}   onChange={e => setForm({ ...form, category:    e.target.value })} style={inputStyle}>
         {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
       </select>
-      <input value={form.groupName} onChange={e => setForm({ ...form, groupName: e.target.value })} placeholder="중분류" style={inputStyle}/>
-      <input value={form.detailName} onChange={e => setForm({ ...form, detailName: e.target.value })} placeholder="상세 (선택)" style={inputStyle}/>
+      <input value={form.groupName}   onChange={e => setForm({ ...form, groupName:   e.target.value })} placeholder="중분류"          style={inputStyle}/>
+      <input value={form.detailName}  onChange={e => setForm({ ...form, detailName:  e.target.value })} placeholder="상세 (선택)"     style={inputStyle}/>
       <button className="btn sm" onClick={onCancel} disabled={busy}>취소</button>
       <button className="btn sm primary" onClick={onSubmit}
         disabled={busy || !form.rawMenuName.trim() || !form.category || !form.groupName.trim()}>
@@ -156,9 +150,3 @@ function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추�
     </div>
   );
 }
-
-const inputStyle = {
-  padding:'6px 10px', borderRadius:6,
-  border:'1px solid var(--border)', background:'var(--surface-2)',
-  color:'var(--text-1)', fontSize:13,
-};

@@ -1,9 +1,7 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { showToast } from '@/components/Toast';
-import { initDB } from '@/lib/db';
-import { getIssues, resolveUnmatchedIssue, bulkExcludeIssues } from '@/lib/sales';
+import { useUnmatchedIssues } from '@/lib/sales/use-unmatched-issues';
 import { UnmatchedSummary } from '@/components/sales/UnmatchedSummary';
 import { UnmatchedTable } from '@/components/sales/UnmatchedTable';
 import {
@@ -11,64 +9,20 @@ import {
   UnmatchedNoMatch,
   UnmatchedSkeleton,
 } from '@/components/sales/UnmatchedEmpty';
+import { UnmatchedFilterBar } from '@/components/sales/UnmatchedFilterBar';
 
 export default function Page() {
-  const [ready, setReady] = useState(false);
-  const [issues, setIssues] = useState([]);
+  const { ready, issues, resolve, bulkExclude } = useUnmatchedIssues();
   const [statusFilter, setStatusFilter] = useState('open'); // open | resolved | all
   const [monthFilter, setMonthFilter] = useState('all');     // 'all' | 'YYYY-M'
 
-  useEffect(() => {
-    (async () => {
-      try {
-        await initDB();
-        await refresh();
-        setReady(true);
-      } catch (err) {
-        console.error('[unmatched] 로드 실패:', err);
-        showToast('데이터 로드 실패', 'err');
-      }
-    })();
-  }, []);
-
-  async function refresh() {
-    const all = await getIssues();
-    setIssues(all);
-  }
-
-  async function handleResolve(issueId, actionType, actionData) {
-    try {
-      await resolveUnmatchedIssue(issueId, actionType, actionData);
-      showToast('미매칭이 해결됐어요', 'ok');
-      await refresh();
-    } catch (err) {
-      console.error('[unmatched] 해결 실패:', err);
-      showToast(err?.message || '해결 처리 실패', 'err');
-    }
-  }
-
-  async function handleBulkExclude(ids) {
-    try {
-      const { resolved, failed } = await bulkExcludeIssues(ids);
-      if (failed.length === 0) {
-        showToast(`${resolved.length}건 일괄 제외 처리됐어요`, 'ok');
-      } else {
-        showToast(`${resolved.length}건 성공 · ${failed.length}건 실패`, 'warn');
-      }
-      await refresh();
-    } catch (err) {
-      console.error('[unmatched] 일괄 제외 실패:', err);
-      showToast('일괄 처리 실패', 'err');
-    }
-  }
-
   const months = useMemo(() => {
-    const set = new Map();
+    const seen = new Map();
     for (const i of issues) {
       const k = `${i.year}-${i.month}`;
-      if (!set.has(k)) set.set(k, { year: i.year, month: i.month, key: k });
+      if (!seen.has(k)) seen.set(k, { year: i.year, month: i.month, key: k });
     }
-    return Array.from(set.values()).sort((a, b) =>
+    return Array.from(seen.values()).sort((a, b) =>
       a.year !== b.year ? b.year - a.year : b.month - a.month
     );
   }, [issues]);
@@ -84,7 +38,7 @@ export default function Page() {
     });
   }, [issues, statusFilter, monthFilter]);
 
-  const openCount = issues.filter(i => i.status === 'open').length;
+  const openCount     = issues.filter(i => i.status === 'open').length;
   const resolvedCount = issues.filter(i => i.status === 'resolved').length;
 
   return (
@@ -102,7 +56,7 @@ export default function Page() {
       />
 
       {issues.length > 0 && (
-        <FilterBar
+        <UnmatchedFilterBar
           statusFilter={statusFilter}
           onStatusChange={setStatusFilter}
           monthFilter={monthFilter}
@@ -120,61 +74,7 @@ export default function Page() {
           ? <UnmatchedAllResolved />
           : filtered.length === 0
             ? <UnmatchedNoMatch />
-            : <UnmatchedTable issues={filtered} onResolve={handleResolve} onBulkExclude={handleBulkExclude} />}
+            : <UnmatchedTable issues={filtered} onResolve={resolve} onBulkExclude={bulkExclude} />}
     </main>
-  );
-}
-
-function FilterBar({
-  statusFilter, onStatusChange,
-  monthFilter, onMonthChange,
-  openCount, resolvedCount, totalCount, months,
-}) {
-  return (
-    <div style={{display:'flex', gap:8, marginTop:16, flexWrap:'wrap', alignItems:'center'}}>
-      <FilterChip label="미해결"  count={openCount}     active={statusFilter === 'open'}     onClick={() => onStatusChange('open')}/>
-      <FilterChip label="해결됨"  count={resolvedCount} active={statusFilter === 'resolved'} onClick={() => onStatusChange('resolved')}/>
-      <FilterChip label="전체"    count={totalCount}    active={statusFilter === 'all'}      onClick={() => onStatusChange('all')}/>
-
-      <div style={{flex:1}}/>
-
-      <select
-        value={monthFilter}
-        onChange={e => onMonthChange(e.target.value)}
-        style={{
-          background: 'var(--surface-2)', border: '1px solid var(--border)',
-          borderRadius: 8, padding: '6px 10px', fontSize: 13, fontWeight: 600,
-          color: 'var(--text-1)',
-        }}
-      >
-        <option value="all">전체 월</option>
-        {months.map(m => (
-          <option key={m.key} value={m.key}>{m.year}년 {m.month}월</option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-function FilterChip({ label, count, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="chip"
-      style={{
-        cursor:'pointer', border:'none',
-        background: active ? 'var(--accent)' : 'var(--surface-2)',
-        color: active ? '#fff' : 'var(--text-2)',
-        fontWeight: 600,
-        display:'inline-flex', alignItems:'center', gap:6,
-      }}
-    >
-      {label}
-      <span style={{
-        background: active ? 'rgba(255,255,255,0.2)' : 'var(--surface)',
-        color: active ? '#fff' : 'var(--text-3)',
-        padding:'1px 6px', borderRadius:10, fontSize:11, fontWeight:700,
-      }}>{count}</span>
-    </button>
   );
 }

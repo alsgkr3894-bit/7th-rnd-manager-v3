@@ -6,18 +6,17 @@ import { showToast } from '@/components/Toast';
 import {
   initDB,
   importAll,
-  hasStore,
-  ALL_STORES,
-  exportAll,
-  getAll,
   MODULE_GROUPS,
   MODULE_KEYS,
   storesForScopes,
+  collectStoreStats,
+  exportAll,
 } from '@/lib/db';
 import { downloadJson, makeFileName, readFileAsText } from '@/lib/download';
 import { addEntry } from '@/lib/backup-history';
 import { formatNumber } from '@/lib/format';
-import { Toggle } from '@/components/ui/Toggle';
+import { useModuleScopes } from '@/hooks/useModuleScopes';
+import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
 
 /**
  * 데이터 복원 페이지
@@ -36,11 +35,7 @@ export default function Page() {
   const [confirming, setConfirming] = useState(false);
   const [autoBackup, setAutoBackup] = useState(true);  // 복원 전 자동 백업
   const [currentStats, setCurrentStats] = useState(null); // 현재 DB store별 행수
-  const [scopes, setScopes] = useState(() => {
-    const init = {};
-    MODULE_KEYS.forEach(k => { init[k] = true; });
-    return init;
-  });
+  const { scopes, toggleScope, setAllScopes } = useModuleScopes();
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -48,27 +43,13 @@ export default function Page() {
       try {
         await initDB();
         setReady(true);
-        await refreshCurrentStats();
+        setCurrentStats(await collectStoreStats());
       } catch (err) {
         console.error('[Restore] DB 초기화 실패:', err);
         showToast('DB 초기화에 실패했습니다.', 'err');
       }
     })();
   }, []);
-
-  async function refreshCurrentStats() {
-    const result = {};
-    for (const name of ALL_STORES) {
-      if (!hasStore(name)) { result[name] = 0; continue; }
-      try {
-        const rows = await getAll(name);
-        result[name] = rows.length;
-      } catch {
-        result[name] = 0;
-      }
-    }
-    setCurrentStats(result);
-  }
 
   async function handleFile(e) {
     const file = e.target.files?.[0];
@@ -86,15 +67,6 @@ export default function Page() {
       console.error('[Restore] 파일 파싱 실패:', err);
       showToast('백업 파일을 읽을 수 없습니다: ' + err.message, 'err');
     }
-  }
-
-  function toggleScope(key) {
-    setScopes(s => ({ ...s, [key]: !s[key] }));
-  }
-  function setAllScopes(value) {
-    const next = {};
-    MODULE_KEYS.forEach(k => { next[k] = value; });
-    setScopes(next);
   }
 
   const selectedKeys = MODULE_KEYS.filter(k => scopes[k]);
@@ -170,7 +142,7 @@ export default function Page() {
       setParsed(null);
       setConfirming(false);
       if (fileRef.current) fileRef.current.value = '';
-      await refreshCurrentStats();
+      setCurrentStats(await collectStoreStats());
     } catch (err) {
       console.error('[Restore] 복원 실패:', err);
       const isSchemaIssue = String(err.message || '').includes('object stores was not found');
@@ -206,7 +178,7 @@ export default function Page() {
 
       {/* 1. 파일 선택 */}
       <div className="card" style={{marginTop:16}}>
-        <h3 style={{fontSize:15,fontWeight:700,marginBottom:12}}>1. 백업 파일 선택</h3>
+        <h2 style={{fontSize:15,fontWeight:700,marginBottom:12}}>1. 백업 파일 선택</h2>
         <input
           ref={fileRef}
           type="file"
@@ -224,7 +196,7 @@ export default function Page() {
         <>
           {/* 2. 미리보기 */}
           <div className="card" style={{marginTop:16}}>
-            <h3 style={{fontSize:15,fontWeight:700,marginBottom:16}}>2. 백업 파일 미리보기</h3>
+            <h2 style={{fontSize:15,fontWeight:700,marginBottom:16}}>2. 백업 파일 미리보기</h2>
             <div style={{display:'flex',gap:32,marginBottom:16,padding:'8px 0',borderBottom:'1px solid var(--border)',flexWrap:'wrap'}}>
               <div>
                 <div style={{fontSize:12,color:'var(--text-3)'}}>파일</div>
@@ -265,7 +237,7 @@ export default function Page() {
           <div className="card" style={{marginTop:16}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
               <div>
-                <h3 style={{fontSize:15,fontWeight:700}}>3. 복원 범위</h3>
+                <h2 style={{fontSize:15,fontWeight:700}}>3. 복원 범위</h2>
                 <p style={{fontSize:13,color:'var(--text-3)',marginTop:4}}>
                   선택한 모듈만 백업 시점으로 되돌립니다. 나머지는 현재 상태 유지.
                 </p>
@@ -275,40 +247,22 @@ export default function Page() {
                 <button className="btn sm" onClick={() => setAllScopes(false)}>해제</button>
               </div>
             </div>
-            <div>
-              {MODULE_KEYS.map((key, i) => {
-                const g = MODULE_GROUPS[key];
-                const backupCount = g.stores.reduce(
-                  (sum, n) => sum + (Array.isArray(parsed.stores?.[n]) ? parsed.stores[n].length : 0),
-                  0
+            <ModuleScopeList
+              scopes={scopes}
+              onToggle={toggleScope}
+              getCountLabel={(key, g) => {
+                const count = g.stores.reduce(
+                  (sum, n) => sum + (Array.isArray(parsed.stores?.[n]) ? parsed.stores[n].length : 0), 0
                 );
-                const last = i === MODULE_KEYS.length - 1;
-                return (
-                  <div key={key} style={{
-                    display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,
-                    padding:'12px 0',
-                    borderBottom: last ? 'none' : '1px solid var(--border)',
-                  }}>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontWeight:600,fontSize:13,display:'flex',alignItems:'center',gap:8}}>
-                        {g.label}
-                        <span className="num" style={{fontSize:12,fontWeight:500,color:'var(--text-3)'}}>
-                          (백업 {formatNumber(backupCount)}건)
-                        </span>
-                      </div>
-                      <div style={{fontSize:12,color:'var(--text-3)',marginTop:2}}>{g.desc}</div>
-                    </div>
-                    <Toggle value={scopes[key]} onChange={() => toggleScope(key)} />
-                  </div>
-                );
-              })}
-            </div>
+                return `백업 ${formatNumber(count)}건`;
+              }}
+            />
           </div>
 
           {/* 4. 예상 변경 사항 */}
           {impact && impact.rows.length > 0 && (
             <div className="card" style={{marginTop:16}}>
-              <h3 style={{fontSize:15,fontWeight:700,marginBottom:4}}>4. 예상 변경 사항</h3>
+              <h2 style={{fontSize:15,fontWeight:700,marginBottom:4}}>4. 예상 변경 사항</h2>
               <p style={{fontSize:13,color:'var(--text-3)',marginBottom:12}}>
                 선택한 모듈의 현재 상태와 백업 시점 비교
               </p>
@@ -366,7 +320,7 @@ export default function Page() {
 
           {/* 5. 실행 */}
           <div className="card" style={{marginTop:16,background:'var(--negative-soft)'}}>
-            <h3 style={{fontSize:15,fontWeight:700,marginBottom:12}}>5. 복원 실행</h3>
+            <h2 style={{fontSize:15,fontWeight:700,marginBottom:12}}>5. 복원 실행</h2>
 
             {/* 자동 백업 옵션 */}
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 0',borderBottom:'1px solid var(--border)',marginBottom:12}}>

@@ -1,9 +1,8 @@
 'use client';
 import { useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Icon } from '@/components/icons';
 import { MENU_PRICE_CATEGORIES, defaultSizesFor, getDefaultPrice } from '@/lib/cost/menu-price';
 import { parseCategoryFromCode } from '@/lib/cost/menu-price/code';
+import { ModalFrame } from '@/components/ui/ModalFrame';
 
 const EMPTY = { menuCode: '', category: '피자', menuName: '', size: 'L', price: '', note: '' };
 
@@ -73,22 +72,13 @@ export function MenuPriceForm({ initial, onSave, onClose }) {
   const title = isNew ? '메뉴 판매가 추가' : '메뉴 판매가 수정';
   const sizes = defaultSizesFor(form.category);
 
-  return createPortal(
-    <div style={{
-      position:'fixed', inset:0, background:'rgba(0,0,0,.4)',
-      display:'grid', placeItems:'center', zIndex:200,
-    }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="card" style={{
-        width:'min(480px, 95vw)', maxHeight:'92vh', overflowY:'auto',
-        padding:'24px 28px',
-      }}>
-        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20}}>
-          <div style={{fontWeight:700, fontSize:16}}>{title}</div>
-          <button className="btn" style={{padding:'4px 8px'}} onClick={onClose}>
-            <Icon.close style={{width:16, height:16}}/>
-          </button>
-        </div>
-
+  return (
+    <ModalFrame
+      title={title}
+      onClose={onClose}
+      width="min(480px, 95vw)"
+      padding="24px 28px"
+    >
         <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap:14}}>
           <Field label="메뉴코드" hint={isNew ? '비워두면 저장 시 자동 발급 (PZ/IP/SD/ST/TS 형식)' : '코드를 직접 수정할 수 있어요'}>
             <input
@@ -148,9 +138,7 @@ export function MenuPriceForm({ initial, onSave, onClose }) {
             </button>
           </div>
         </form>
-      </div>
-    </div>,
-    document.body
+    </ModalFrame>
   );
 }
 

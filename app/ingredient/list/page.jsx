@@ -3,22 +3,37 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { initDB } from '@/lib/db';
-import { formatNumber } from '@/lib/format';
+import { formatNumber, formatUnitPrice } from '@/lib/format';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import {
   getAllIngredients, getIngredientMetaMap, mergeIngredientRows,
   getCategoryStyle, sortMainCategories, sortHashTags,
   buildMetaOnlyRow,
 } from '@/lib/ingredient';
+import { downloadCsv } from '@/lib/download';
+import { SCOPE, SCOPE_STYLES } from '@/lib/ingredient/constants';
 
 const DISCONTINUED_FILTER  = '__discontinued__';
 const UNCATEGORIZED_FILTER = '__none__';
 
+function exportIngredientCsv(rows) {
+  const headers = ['식자재명', '카테고리', '분류', '단위', '단가', '제때연동'];
+  const data = rows.map(r => [
+    r.name || r.productName || '',
+    r.category || '',
+    r.scope || '',
+    r.unit || '',
+    r.unitPrice != null ? r.unitPrice : '',
+    r.jetteLinked ? '연동' : '미연동',
+  ]);
+  downloadCsv([headers, ...data], '식자재리스트.csv');
+}
+
 const SCOPE_TABS = [
-  { id: 'all',       label: '전체' },
-  { id: '전용',      label: '전용' },
-  { id: '범용',      label: '범용' },
-  { id: '범용관리',  label: '범용관리' },
+  { id: 'all',              label: '전체' },
+  { id: SCOPE.EXCLUSIVE,       label: SCOPE.EXCLUSIVE },
+  { id: SCOPE.GENERIC,         label: SCOPE.GENERIC },
+  { id: SCOPE.GENERIC_MANAGED, label: SCOPE.GENERIC_MANAGED },
 ];
 
 export default function Page() {
@@ -63,9 +78,9 @@ export default function Page() {
   // ── 통계 ────────────────────────────────────────────────────
   const active        = rows.filter(r => !r.discontinued && !r.excluded);
   const totalCount    = active.length;
-  const exclusiveCnt  = active.filter(r => r.scope === '전용').length;
-  const generalCnt    = active.filter(r => r.scope === '범용').length;
-  const generalMgtCnt = active.filter(r => r.scope === '범용관리').length;
+  const exclusiveCnt  = active.filter(r => r.scope === SCOPE.EXCLUSIVE).length;
+  const generalCnt    = active.filter(r => r.scope === SCOPE.GENERIC).length;
+  const generalMgtCnt = active.filter(r => r.scope === SCOPE.GENERIC_MANAGED).length;
   const linkedCount   = active.filter(r => r.jetteLinked).length;
   const discontinuedCount = rows.filter(r => r.discontinued).length;
   const linkPct       = totalCount > 0 ? Math.round(linkedCount / totalCount * 100) : 0;
@@ -134,6 +149,11 @@ export default function Page() {
         breadcrumb={['식자재', '식자재 리스트']}
         title="식자재 리스트"
         sub="전체 식자재 마스터 카탈로그 — 단가·분류·매핑 상태를 한 곳에서 확인해요."
+        actions={
+          <button className="btn" onClick={() => exportIngredientCsv(rows)}>
+            <Icon.download style={{width:14,height:14}}/> CSV 내보내기
+          </button>
+        }
       />
 
       {/* 통계 카드 */}
@@ -315,16 +335,10 @@ function IngredientRow({ r }) {
   const name  = r.ingredientName || r.displayName || r.productName;
   const unit  = r.baseUnitType  || r.salesUnit || 'g';
   const uPrice = r.unitPrice;
-  const unitPriceLabel = uPrice != null
-    ? `${uPrice < 1 ? uPrice.toFixed(2) : uPrice % 1 === 0 ? formatNumber(uPrice) : uPrice.toFixed(1)}원/${unit}`
-    : null;
+  const unitPriceLabel = formatUnitPrice(uPrice, unit);
   const tags = sortHashTags(r.tags || []);
-  const scopeColor = r.scope === '전용' ? 'var(--accent)'
-    : r.scope === '범용관리' ? 'var(--positive)'
-    : 'var(--text-2)';
-  const scopeBg = r.scope === '전용' ? 'var(--accent-soft)'
-    : r.scope === '범용관리' ? 'var(--positive-soft)'
-    : 'var(--surface-3)';
+  const { color: scopeColor = 'var(--text-2)', bg: scopeBg = 'var(--surface-3)' } =
+    SCOPE_STYLES[r.scope] || {};
 
   return (
     <tr style={{opacity: r.discontinued ? .55 : 1}}>

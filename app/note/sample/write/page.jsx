@@ -6,6 +6,8 @@ import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { addSample } from '@/lib/sample';
 import { SampleFormBody, SAMPLE_INIT } from '../_SampleFormBody';
+import { useKeyboardSave } from '@/hooks/useKeyboardSave';
+import { KEYS } from '@/lib/note/keys';
 
 export default function Page() {
   const router = useRouter();
@@ -17,9 +19,9 @@ export default function Page() {
 
   useEffect(() => {
     try {
-      const raw = sessionStorage.getItem('v3:sample-from-note');
+      const raw = sessionStorage.getItem(KEYS.SAMPLE_FROM_NOTE);
       if (raw) {
-        sessionStorage.removeItem('v3:sample-from-note');
+        sessionStorage.removeItem(KEYS.SAMPLE_FROM_NOTE);
         const d = JSON.parse(raw);
         setForm(f => ({
           ...f,
@@ -31,11 +33,7 @@ export default function Page() {
     } catch {}
   }, []);
 
-  useEffect(() => {
-    const h = e => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave(); } };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, [form]);
+  useKeyboardSave(handleSave);
 
   async function handleSave() {
     if (!form.title.trim() || !form.menuName.trim()) {

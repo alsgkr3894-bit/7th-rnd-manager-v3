@@ -1,18 +1,15 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { getUserExcluded, addUserExcluded, deleteUserExcluded, updateUserExcluded } from '@/lib/sales';
+import { inputStyle, SectionHeader, SectionEmpty } from './shared/SectionUtils';
 
-/**
- * UserExcludedSection — 사용자 추가 제외 메뉴 CRUD (enable 토글 미지원: schema에 없음)
- */
 export function UserExcludedSection() {
-  const [list, setList] = useState([]);
-  const [adding, setAdding] = useState(false);
+  const [list,      setList]      = useState([]);
+  const [adding,    setAdding]    = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ menuName: '' });
-  const [busy, setBusy] = useState(false);
+  const [form,      setForm]      = useState({ menuName: '' });
+  const [busy,      setBusy]      = useState(false);
 
   useEffect(() => { refresh(); }, []);
 
@@ -58,23 +55,19 @@ export function UserExcludedSection() {
 
   return (
     <div style={{marginBottom:16}}>
-      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8}}>
-        <div style={{fontSize:13, fontWeight:700}}>
-          사용자 추가 제외 <span style={{color:'var(--text-3)', fontWeight:500, marginLeft:6}}>{list.length}개</span>
-        </div>
-        <button className="btn sm" onClick={() => { setAdding(v => !v); setEditingId(null); setForm({ menuName: '' }); }}>
-          {adding ? '닫기' : <><Icon.plus style={{width:12, height:12}}/> 추가</>}
-        </button>
-      </div>
+      <SectionHeader
+        title="사용자 추가 제외"
+        count={list.length}
+        adding={adding}
+        onAdd={() => { setAdding(v => !v); setEditingId(null); setForm({ menuName: '' }); }}
+      />
 
       {adding && (
         <RowForm form={form} setForm={setForm} onCancel={() => setAdding(false)} onSubmit={handleAdd} busy={busy}/>
       )}
 
       {list.length === 0 && !adding ? (
-        <div style={{padding:'16px 0', textAlign:'center', color:'var(--text-3)', fontSize:12}}>
-          사용자 추가 제외 메뉴가 아직 없습니다
-        </div>
+        <SectionEmpty>사용자 추가 제외 메뉴가 아직 없습니다</SectionEmpty>
       ) : list.length > 0 && (
         <table className="data-table">
           <thead><tr><th>메뉴명</th><th style={{width:130}}></th></tr></thead>
@@ -113,9 +106,3 @@ function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추�
     </div>
   );
 }
-
-const inputStyle = {
-  padding:'6px 10px', borderRadius:6,
-  border:'1px solid var(--border)', background:'var(--surface-2)',
-  color:'var(--text-1)', fontSize:13,
-};
