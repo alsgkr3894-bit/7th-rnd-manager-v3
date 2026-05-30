@@ -26,8 +26,11 @@ import { getAllSamples } from '@/lib/sample';
 import { KEYS } from '@/lib/note/keys';
 
 function NoteHeatmapWidget({ notes }) {
-  const DAYS = 112; // 16주
-  const WEEKS = 16;
+  const HEATMAP_WEEKS = 16;
+  const HEATMAP_DAYS  = HEATMAP_WEEKS * 7; // 112
+
+  const DAYS  = HEATMAP_DAYS;
+  const WEEKS = HEATMAP_WEEKS;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -241,8 +244,8 @@ export default function HomePage() {
     if (!base) return;
     let { year, month } = base;
     month += delta;
-    if (month < 1)  { month = 12; year--; }
-    if (month > 12) { month = 1;  year++; }
+    while (month < 1)  { month += 12; year--; }
+    while (month > 12) { month -= 12; year++; }
     // 미래 월은 이동 불가
     const now = new Date();
     if (year > now.getFullYear() || (year === now.getFullYear() && month > now.getMonth() + 1)) return;

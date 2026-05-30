@@ -56,7 +56,12 @@ export function SampleFormBody({ form, setForm }) {
     const current = form.photos || [];
     const slots = MAX_PHOTOS - current.length;
     if (slots <= 0) { showToast(`사진은 최대 ${MAX_PHOTOS}장까지만 등록할 수 있어요`, 'warn'); return; }
-    const toAdd = Array.from(files).slice(0, slots);
+    const candidates = Array.from(files).slice(0, slots);
+    const toAdd = [];
+    for (const file of candidates) {
+      if (file.size > 5 * 1024 * 1024) { showToast('파일 크기 초과: ' + file.name + ' (최대 5MB)', 'warn'); continue; }
+      toAdd.push(file);
+    }
     try {
       const resized = await Promise.all(toAdd.map(resizePhoto));
       upd('photos', [...current, ...resized]);

@@ -5,6 +5,7 @@ import { Icon } from './icons';
 import { usePaletteItems, STATUS_ICON } from '@/lib/usePaletteItems';
 import { getJSONLS, setJSONLS } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
+import { useDebounce } from '@/hooks/useDebounce';
 
 function getRecent() {
   return getJSONLS(KEYS.PALETTE_RECENT) ?? [];
@@ -24,6 +25,7 @@ export default function CommandPalette({ open, onClose }) {
   const inputRef = useRef(null);
   const router   = useRouter();
   const allItems = usePaletteItems(open);
+  const debouncedQ = useDebounce(q, 150);
 
   useEffect(() => {
     if (!open) return;
@@ -45,9 +47,9 @@ export default function CommandPalette({ open, onClose }) {
   if (!open) return null;
 
   const norm = s => s.toLowerCase().replace(/\s+/g, '');
-  const isSearching = q.trim().length > 0;
+  const isSearching = debouncedQ.trim().length > 0;
   const filtered = isSearching
-    ? allItems.filter(x => norm(x.label).includes(norm(q)) || (x.sub && norm(x.sub).includes(norm(q))))
+    ? allItems.filter(x => norm(x.label).includes(norm(debouncedQ)) || (x.sub && norm(x.sub).includes(norm(debouncedQ))))
     : allItems.slice(0, 9);
 
   const pick = (item) => {

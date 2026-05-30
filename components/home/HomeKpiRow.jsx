@@ -1,8 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
-import { fmtKRW } from '@/lib/format';
+import { fmtKRW, formatPercent } from '@/lib/format';
 import { Sparkline } from '@/components/charts/Sparkline';
 
 const kpiButtonStyle = {
@@ -13,7 +13,7 @@ const kpiButtonStyle = {
   width: '100%',
 };
 
-export function HomeKpiRow({ salesKpi, costKpi, noteKpi, salesCount, noteCount }) {
+export const HomeKpiRow = memo(function HomeKpiRow({ salesKpi, costKpi, noteKpi, salesCount, noteCount }) {
   const router = useRouter();
   const [salesPopped, setSalesPopped] = useState(false);
   const [notePopped, setNotePopped] = useState(false);
@@ -57,7 +57,7 @@ export function HomeKpiRow({ salesKpi, costKpi, noteKpi, salesCount, noteCount }
                   {salesKpi.deltaPct > 0
                     ? <Icon.arrowUp   style={{width:12,height:12,display:'inline',verticalAlign:'-2px'}}/>
                     : <Icon.arrowDown style={{width:12,height:12,display:'inline',verticalAlign:'-2px'}}/>}
-                  {' '}{salesKpi.deltaPct > 0 ? '+' : ''}{salesKpi.deltaPct.toFixed(1)}%
+                  {' '}{salesKpi.deltaPct > 0 ? '+' : ''}{formatPercent(salesKpi.deltaPct)}
                 </span>
                 <span style={{color:'var(--text-4)'}}>전월 대비</span>
               </>
@@ -102,4 +102,4 @@ export function HomeKpiRow({ salesKpi, costKpi, noteKpi, salesCount, noteCount }
       </button>
     </div>
   );
-}
+});

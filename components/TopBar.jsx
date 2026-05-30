@@ -18,6 +18,18 @@ export default function TopBar({ onOpenPalette, onToggleSidebar, activeCompany, 
   useEffect(() => { setDark(getSetting('theme') === 'dark'); }, []);
   useEffect(() => { setProfile(getProfile()); }, []);
 
+  useEffect(() => {
+    const el = document.querySelector('.topbar');
+    if (!el) return;
+    const onScroll = () => {
+      if (window.scrollY > 40) el.classList.add('scrolled');
+      else el.classList.remove('scrolled');
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const toggleDark = () => {
     const next = !dark;
     setDark(next);

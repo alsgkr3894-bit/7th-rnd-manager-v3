@@ -5,9 +5,9 @@ import { EmptyState, rowButtonStyle } from './HomeWidgets';
 
 const ACT_META = {
   'upload-sales': { ico: <Icon.upload style={{width:18,height:18}}/>, color: 'var(--accent-text)', bg: 'var(--accent-soft)' },
-  'upload-jette': { ico: <Icon.upload style={{width:18,height:18}}/>, color: '#6B3FCB',            bg: '#F0EBFF' },
+  'upload-jette': { ico: <Icon.upload style={{width:18,height:18}}/>, color: 'var(--accent)',      bg: 'var(--accent-soft)' },
   'upload':       { ico: <Icon.upload style={{width:18,height:18}}/>, color: 'var(--text-2)',      bg: 'var(--surface-2)' },
-  'note':         { ico: <Icon.beaker style={{width:18,height:18}}/>, color: '#6B3FCB',            bg: '#F0EBFF' },
+  'note':         { ico: <Icon.beaker style={{width:18,height:18}}/>, color: 'var(--accent)',      bg: 'var(--accent-soft)' },
 };
 
 function activityHref(type) {

@@ -118,7 +118,7 @@ export function MenuPriceForm({ initial, onSave, onClose }) {
           <Field label="판매가 (부가세 포함)" required error={errors.price}
             hint={form.menuCode ? (() => { const p = getDefaultPrice(form.menuCode.toUpperCase()); return p ? `기본가 ${p.toLocaleString()}원` : null; })() : null}>
             <div style={{display:'flex', gap:8, alignItems:'center'}}>
-              <input className="form-input" type="number" value={form.price}
+              <input className="form-input" type="number" min="0" value={form.price}
                 onChange={e => set('price', e.target.value)}
                 placeholder="예) 32000" style={{flex:1}}/>
               <span style={{fontSize:13, color:'var(--text-3)'}}>원</span>

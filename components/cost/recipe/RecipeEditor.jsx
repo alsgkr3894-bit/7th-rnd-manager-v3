@@ -1,5 +1,6 @@
 'use client';
 import { useMemo } from 'react';
+import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { calcMarginRate, MENU_CATEGORIES } from '@/lib/recipe';
@@ -27,6 +28,8 @@ export function RecipeEditor({ draft, setDraft, allMeta, menuMasters, menuPrices
     if (draft.groupIds === null) return defaultGroupIds;
     return new Set(draft.groupIds);
   }, [draft.groupIds, defaultGroupIds]);
+
+  useKeyboardSave(onSave);
 
   function toggleGroup(groupId) {
     setDraft(d => {
@@ -216,7 +219,7 @@ export function RecipeEditor({ draft, setDraft, allMeta, menuMasters, menuPrices
               <input className="form-input" value={s.label}
                 onChange={e => setSize(i, 'label', e.target.value)}
                 placeholder="L" style={{ width: 60 }}/>
-              <input className="form-input" type="number" value={s.sellingPrice}
+              <input className="form-input" type="number" min="0" value={s.sellingPrice}
                 onChange={e => setSize(i, 'sellingPrice', e.target.value)}
                 placeholder="판매가" style={{ flex: 1 }}/>
               <span style={{ fontSize: 12, color: 'var(--text-3)', flexShrink: 0 }}>원</span>
@@ -292,7 +295,7 @@ export function RecipeEditor({ draft, setDraft, allMeta, menuMasters, menuPrices
                         : null;
                       return [
                         <td key={sl + '_q'} style={{ padding: '4px 4px', width: 70 }}>
-                          <input className="form-input" type="number" value={qty}
+                          <input className="form-input" type="number" min="0" value={qty}
                             onChange={e => setIngredientQty(i, sl, e.target.value)}
                             placeholder="0"
                             style={{ width: '100%', padding: '3px 5px', textAlign: 'right' }}/>

@@ -23,15 +23,10 @@ function TabBar({ tab, setTab }) {
     { key: 'edges',  label: '엣지 관리' },
   ];
   return (
-    <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid var(--divider)', marginBottom: 16 }}>
+    <div className="tabs">
       {tabs.map(t => (
         <button key={t.key} onClick={() => setTab(t.key)}
-          style={{
-            padding: '10px 24px', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer',
-            background: 'transparent', color: tab === t.key ? 'var(--accent-text)' : 'var(--text-3)',
-            borderBottom: tab === t.key ? '2px solid var(--accent)' : '2px solid transparent',
-            marginBottom: -2,
-          }}>
+          className={`tab ${tab === t.key ? 'active' : ''}`}>
           {t.label}
         </button>
       ))}

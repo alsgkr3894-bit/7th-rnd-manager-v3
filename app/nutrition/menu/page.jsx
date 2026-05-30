@@ -63,16 +63,10 @@ export default function Page() {
         sub="베이스 영양성분 입력 → 엣지 설정 → 파생 메뉴 → 계산 결과 확인"
       />
 
-      <div style={{ display: 'flex', gap: 0, marginTop: 20, borderBottom: '1px solid var(--border)' }}>
+      <div className="tabs" style={{ marginTop: 20 }}>
         {TABS.map((t, i) => (
           <button key={i} onClick={() => setTab(i)}
-            style={{
-              padding: '10px 20px', fontSize: 14, fontWeight: tab === i ? 700 : 400,
-              color: tab === i ? 'var(--accent-text)' : 'var(--text-3)',
-              background: 'none', border: 'none', cursor: 'pointer',
-              borderBottom: tab === i ? '2px solid var(--accent)' : '2px solid transparent',
-              marginBottom: -1,
-            }}>
+            className={`tab ${tab === i ? 'active' : ''}`}>
             {t}
           </button>
         ))}

@@ -135,7 +135,7 @@ function Row({ row, productTypeLookup, onTypeChange }) {
   return (
     <tr>
       <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{row.productCode || '-'}</td>
-      <td className="cell-name"><div className="menu-name">{row.productName}</div></td>
+      <td className="cell-name"><div className="menu-name" title={row.productName}>{row.productName}</div></td>
       <td>
         <TypeSelect
           productCode={row.productCode}

@@ -1,8 +1,9 @@
+import { memo } from 'react';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { getCategoryStyle, sortHashTags } from '@/lib/ingredient';
 
-export function ManageRow({ r, deletePending, onEdit, onDeleteStart, onDeleteCancel, onDeleteConfirm, onRestore }) {
+export const ManageRow = memo(function ManageRow({ r, deletePending, onEdit, onDeleteStart, onDeleteCancel, onDeleteConfirm, onRestore }) {
   const name = r.ingredientName || r.displayName || r.productName;
   const unitLabel = r.baseQuantity && r.baseUnitType
     ? `${formatNumber(r.baseQuantity)}${r.baseUnitType}`
@@ -72,4 +73,4 @@ export function ManageRow({ r, deletePending, onEdit, onDeleteStart, onDeleteCan
       </td>
     </tr>
   );
-}
+});

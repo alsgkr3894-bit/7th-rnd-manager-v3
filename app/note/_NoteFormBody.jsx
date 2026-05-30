@@ -9,8 +9,12 @@ import { TagInput } from '@/components/ui/TagInput';
 import { SegGroup, Field } from '@/components/note/FormFields';
 import { generateNoteReportText } from '@/lib/note/report';
 
+const LS_NOTE_CATEGORY = 'v3:note_lastCategory';
+
 export const INIT = {
-  title: '', menuName: '', category: CATEGORIES[0], noteType: NOTE_TYPES[0],
+  title: '', menuName: '',
+  category: (typeof window !== 'undefined' && localStorage.getItem(LS_NOTE_CATEGORY)) || CATEGORIES[0],
+  noteType: NOTE_TYPES[0],
   status: STATUSES[0], testContent: '', testDate: '',
   materials: '', tasteEval: '', managerEval: '', costNote: '',
   improvements: '', nextAction: '', reportSummary: '', tags: '',
@@ -143,7 +147,10 @@ export function NoteFormBody({ form, setForm }) {
           </div>
 
           <Field label="개발 구분">
-            <SegGroup options={CATEGORIES} value={form.category} onChange={v => updateField('category', v)}/>
+            <SegGroup options={CATEGORIES} value={form.category} onChange={v => {
+              updateField('category', v);
+              try { localStorage.setItem(LS_NOTE_CATEGORY, v); } catch {}
+            }}/>
           </Field>
 
           <Field label="유형">

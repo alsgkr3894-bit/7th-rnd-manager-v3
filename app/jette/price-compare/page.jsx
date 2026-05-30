@@ -88,21 +88,12 @@ export default function Page() {
       ) : (
         <>
           {/* 탭 */}
-          <div style={{
-            display:'flex', gap:4, marginTop:16,
-            borderBottom:'1px solid var(--border)',
-          }}>
+          <div className="tabs">
             {TABS.map(t => (
               <button
                 key={t.key}
                 onClick={() => setTab(t.key)}
-                style={{
-                  padding:'10px 18px', fontWeight:600, fontSize:14,
-                  border:'none', background:'transparent', cursor:'pointer',
-                  color: tab === t.key ? 'var(--accent)' : 'var(--text-3)',
-                  borderBottom: tab === t.key ? '2px solid var(--accent)' : '2px solid transparent',
-                  marginBottom: -1,
-                }}
+                className={`tab ${tab === t.key ? 'active' : ''}`}
               >
                 {t.label}
               </button>

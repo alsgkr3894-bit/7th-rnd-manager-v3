@@ -79,7 +79,7 @@ function MovementCard({ label, count, color, desc, items, prefix, useFieldB }) {
             display:'flex', justifyContent:'space-between', alignItems:'center',
             fontSize: 12, color: 'var(--text-2)',
           }}>
-            <span style={{
+            <span title={m.name} style={{
               overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'60%',
             }}>{m.name}</span>
             <span className="num" style={{color, fontWeight:700}}>

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Icon } from '@/components/icons';
 import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -29,7 +30,10 @@ export default function Page() {
   const [priceDate,    setPriceDate]    = useState(null);
   const [loading,      setLoading]      = useState(true);
   const [search,       setSearch]       = useState('');
-  const [catFilter,    setCatFilter]    = useState('all');
+  const debouncedSearch = useDebounce(search, 200);
+  const [catFilter,    setCatFilter]    = useState(() => {
+    try { return localStorage.getItem('v3:ingredient-cat-filter') || 'all'; } catch { return 'all'; }
+  });
   const [tagFilter,    setTagFilter]    = useState('all');
   const [view,         setView]         = useState('manage'); // 'manage' | 'issues'
   const [formTarget,   setFormTarget]   = useState(null);
@@ -79,6 +83,10 @@ export default function Page() {
     load().catch(console.error).finally(() => setLoading(false));
   }, [load]);
 
+  useEffect(() => {
+    try { localStorage.setItem('v3:ingredient-cat-filter', catFilter); } catch {}
+  }, [catFilter]);
+
   async function handleSeed() {
     if (seeding) return;
     setSeeding(true);
@@ -108,7 +116,7 @@ export default function Page() {
     }
   }
 
-  async function handleSave(formData) {
+  const handleSave = useCallback(async (formData) => {
     try {
       if (formTarget === 'new') {
         await addIngredient(formData);
@@ -126,9 +134,9 @@ export default function Page() {
       showToast('저장 실패: ' + err.message, 'err');
       throw err;
     }
-  }
+  }, [formTarget, load]);
 
-  async function handleExclude(row) {
+  const handleExclude = useCallback(async (row) => {
     try {
       if (row.isManual && row.id && !row.productCode) {
         await deleteIngredient(row.id);
@@ -143,9 +151,9 @@ export default function Page() {
       }
       setDeletePending(null);
     } catch (err) { showToast('실패: ' + err.message, 'err'); }
-  }
+  }, []);
 
-  async function handleRestore(productCode) {
+  const handleRestore = useCallback(async (productCode) => {
     try {
       await restoreIngredientByCode(productCode);
       setRows(prev => prev.map(r =>
@@ -153,7 +161,11 @@ export default function Page() {
       ));
       showToast('복원됐습니다', 'ok');
     } catch (err) { showToast('실패: ' + err.message, 'err'); }
-  }
+  }, []);
+
+  const handleSetCatFilter = useCallback((val) => setCatFilter(val), []);
+  const handleSetTagFilter = useCallback((val) => setTagFilter(val), []);
+  const handleDeleteCancel = useCallback(() => setDeletePending(null), []);
 
   // ── 분류·태그 집합 ──
   const mainCats = useMemo(() => {
@@ -194,7 +206,7 @@ export default function Page() {
       }
       if (tagFilter !== 'all') list = list.filter(r => (r.tags || []).includes(tagFilter));
     }
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     if (q) list = list.filter(r =>
       (r.ingredientName || r.displayName || r.productName || '').toLowerCase().includes(q) ||
       (r.productCode || '').toLowerCase().includes(q) ||
@@ -203,7 +215,7 @@ export default function Page() {
       (r.manufacturer || '').toLowerCase().includes(q)
     );
     return list;
-  }, [rows, catFilter, tagFilter, search]);
+  }, [rows, catFilter, tagFilter, debouncedSearch]);
 
   const managedCount = rows.filter(r => r.hasRecord).length;
 
@@ -281,28 +293,28 @@ export default function Page() {
             <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center'}}>
               <span style={{fontSize:12, color:'var(--text-3)', marginRight:4, fontWeight:600}}>분류</span>
               <button className={'chip' + (catFilter === 'all' ? ' active' : '')}
-                onClick={() => setCatFilter('all')}>
+                onClick={() => handleSetCatFilter('all')}>
                 전체 {rows.filter(r => !r.discontinued).length}
               </button>
               {mainCats.map(c => (
                 <button key={c}
                   className={'chip' + (catFilter === c ? ' active' : '')}
                   style={catFilter !== c ? getCategoryStyle(c) : undefined}
-                  onClick={() => setCatFilter(c)}>
+                  onClick={() => handleSetCatFilter(c)}>
                   {c} {rows.filter(r => !r.discontinued && r.category === c).length}
                 </button>
               ))}
               {uncategorized > 0 && (
                 <button className={'chip' + (catFilter === UNCATEGORIZED_FILTER ? ' active' : '')}
                   style={catFilter !== UNCATEGORIZED_FILTER ? {color:'var(--warn)'} : undefined}
-                  onClick={() => setCatFilter(catFilter === UNCATEGORIZED_FILTER ? 'all' : UNCATEGORIZED_FILTER)}>
+                  onClick={() => handleSetCatFilter(catFilter === UNCATEGORIZED_FILTER ? 'all' : UNCATEGORIZED_FILTER)}>
                   미분류 {uncategorized}
                 </button>
               )}
               {discontinuedCount > 0 && (
                 <button className={'chip' + (catFilter === DISCONTINUED_FILTER ? ' active' : '')}
                   style={catFilter !== DISCONTINUED_FILTER ? {color:'var(--text-3)', marginLeft:'auto'} : {marginLeft:'auto'}}
-                  onClick={() => setCatFilter(catFilter === DISCONTINUED_FILTER ? 'all' : DISCONTINUED_FILTER)}>
+                  onClick={() => handleSetCatFilter(catFilter === DISCONTINUED_FILTER ? 'all' : DISCONTINUED_FILTER)}>
                   단종 {discontinuedCount}
                 </button>
               )}
@@ -311,14 +323,14 @@ export default function Page() {
               <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center'}}>
                 <span style={{fontSize:12, color:'var(--text-3)', marginRight:4, fontWeight:600}}>#태그</span>
                 <button className={'chip' + (tagFilter === 'all' ? ' active' : '')}
-                  onClick={() => setTagFilter('all')}>전체</button>
+                  onClick={() => handleSetTagFilter('all')}>전체</button>
                 {hashTags.map(t => {
                   const cnt = rows.filter(r => !r.discontinued && (r.tags || []).includes(t)).length;
                   if (!cnt) return null;
                   return (
                     <button key={t}
                       className={'chip' + (tagFilter === t ? ' active' : '')}
-                      onClick={() => setTagFilter(tagFilter === t ? 'all' : t)}>
+                      onClick={() => handleSetTagFilter(tagFilter === t ? 'all' : t)}>
                       #{t} {cnt}
                     </button>
                   );
@@ -363,7 +375,7 @@ export default function Page() {
                           deletePending={isPending}
                           onEdit={() => setFormTarget(r)}
                           onDeleteStart={() => setDeletePending(r)}
-                          onDeleteCancel={() => setDeletePending(null)}
+                          onDeleteCancel={handleDeleteCancel}
                           onDeleteConfirm={() => handleExclude(r)}
                           onRestore={() => handleRestore(r.productCode)}
                         />

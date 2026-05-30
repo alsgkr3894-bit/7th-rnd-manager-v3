@@ -54,7 +54,7 @@ export function SampleStatsWidget({ samples, router }) {
                 display:'grid', placeItems:'center', fontSize:14, flexShrink:0}}>📷</div>
             )}
             <div style={{flex:1, minWidth:0}}>
-              <div style={{fontSize:13, fontWeight:600, color:'var(--text-1)',
+              <div title={s.title} style={{fontSize:13, fontWeight:600, color:'var(--text-1)',
                 overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
               }}>{s.title}</div>
               <div style={{fontSize:11, color:'var(--text-3)'}}>{s.menuName}</div>
@@ -170,7 +170,7 @@ export function ReportingNotesWidget({ notes, router }) {
             }}
           >
             <div style={{flex:1, minWidth:0}}>
-              <div style={{fontSize:13, fontWeight:600, color:'var(--text-1)',
+              <div title={n.title} style={{fontSize:13, fontWeight:600, color:'var(--text-1)',
                 overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
               }}>{n.title}</div>
               <div style={{fontSize:11, color:'var(--text-3)'}}>{n.menuName}</div>
@@ -239,7 +239,7 @@ export function CostAlertWidget({ data, router }) {
                   borderLeft: `3px solid ${c.text}`,
                 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)',
+                  <div title={item.menuName} style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {item.menuName}
                   </div>

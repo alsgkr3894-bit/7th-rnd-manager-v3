@@ -1,4 +1,5 @@
 'use client';
+import { memo } from 'react';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 
@@ -11,7 +12,7 @@ import { formatNumber } from '@/lib/format';
  * @param {boolean} expanded
  * @param {() => void} onToggle
  */
-export function RankRow({ rank, row, total, expanded, onToggle }) {
+export const RankRow = memo(function RankRow({ rank, row, total, expanded, onToggle }) {
   const share = total > 0 ? row.quantity / total : 0;
   return (
     <div style={{
@@ -61,7 +62,7 @@ export function RankRow({ rank, row, total, expanded, onToggle }) {
       {expanded && <SizeDetail row={row} />}
     </div>
   );
-}
+});
 
 function SizeDetail({ row }) {
   return (

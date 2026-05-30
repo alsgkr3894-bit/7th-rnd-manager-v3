@@ -11,6 +11,8 @@ import {
   storesForScopes,
   collectStoreStats,
   exportAll,
+  ALL_STORES,
+  hasStore,
 } from '@/lib/db';
 import { downloadJson, makeFileName, readFileAsText } from '@/lib/download';
 import { addEntry } from '@/lib/backup-history';
@@ -136,6 +138,7 @@ export default function Page() {
         console.warn('[Restore] 일부 실패:', errors);
       } else {
         showToast(`복원이 완료되었습니다. (${imported}개 store)`, 'ok');
+        setTimeout(() => window.location.reload(), 1500);
       }
 
       // 상태 초기화

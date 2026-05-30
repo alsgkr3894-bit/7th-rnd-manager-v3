@@ -25,7 +25,7 @@ export function ModalFrame({
       display: 'grid', placeItems: 'center',
       zIndex,
     }}>
-      <div className="card" style={{ width, maxHeight, overflowY: 'auto', padding }}>
+      <div className="card modal-anim" style={{ width, maxHeight, overflowY: 'auto', padding }}>
         <div style={{
           display: 'flex', justifyContent: 'space-between',
           alignItems: 'center', marginBottom: 16,

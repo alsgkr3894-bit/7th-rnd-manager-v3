@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import * as XLSX from 'xlsx';
+import { loadXlsx } from '@/lib/excel';
 import { Icon } from '@/components/icons';
 import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -19,7 +19,8 @@ const thisMonth = new Date().toISOString().slice(0, 7);
 /* ============================================================
    Excel 내보내기
 ============================================================ */
-function exportToExcel(rows) {
+async function exportToExcel(rows) {
+  const XLSX = await loadXlsx();
   const data = rows.map(r => ({
     'ID':      r.id ? `RPT-${String(r.id).padStart(4,'0')}` : '—',
     '유형':    KIND_CHIP[r.kind]?.label || r.kind,

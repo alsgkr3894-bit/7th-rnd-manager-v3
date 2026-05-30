@@ -1,6 +1,6 @@
 'use client';
 import { Fragment, useState, useEffect } from 'react';
-import * as XLSX from 'xlsx';
+import { loadXlsx } from '@/lib/excel';
 import ReportBuilderShell, { OptGroup, Seg, Check } from '@/components/report/ReportBuilderShell';
 import { fmtKRW } from '@/lib/format';
 import { initDB } from '@/lib/db/init';
@@ -184,7 +184,8 @@ export default function Page() {
   };
 
   // Excel export — multi-sheet
-  const handleExcelExport = () => {
+  const handleExcelExport = async () => {
+    const XLSX = await loadXlsx();
     const pad = n => String(n).padStart(2, '0');
     const now = new Date();
     const dateStr = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;

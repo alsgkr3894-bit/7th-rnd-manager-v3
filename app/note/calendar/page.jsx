@@ -12,7 +12,7 @@ import {
   getAllSchedules, addSchedule, updateSchedule, deleteSchedule,
   SCHEDULE_TYPES, SCHEDULE_COLORS,
 } from '@/lib/note/schedules';
-import { getAllWorkLogs, WORK_LOG_TYPES, pruneOldWorkLogs } from '@/lib/work-log';
+import { getAllWorkLogs, WORK_LOG_TYPES, pruneOldWorkLogs, WORK_LOG_RETENTION_DAYS } from '@/lib/work-log';
 import { ScheduleModal } from './_ScheduleModal';
 import { DayPanel } from './_DayPanel';
 import { CalendarSkeleton } from './_CalendarSkeleton';
@@ -71,7 +71,7 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    await pruneOldWorkLogs(60);
+    await pruneOldWorkLogs(WORK_LOG_RETENTION_DAYS);
     const [ns, ss, wl] = await Promise.all([getAllNotes(), getAllSchedules(), getAllWorkLogs()]);
     setNotes(ns);
     setSchedules(ss);

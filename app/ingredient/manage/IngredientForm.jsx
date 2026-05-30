@@ -1,5 +1,6 @@
 'use client';
 import { useState, useId } from 'react';
+import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
@@ -7,12 +8,17 @@ import { SEED_MAIN_CATEGORIES, SEED_HASH_TAGS } from '@/lib/ingredient';
 import { SCOPE } from '@/lib/ingredient/constants';
 
 const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병'];
+const LS_UNIT_TYPE = 'v3:ingredient_lastUnitType';
+
+function getLastUnitType() {
+  try { return localStorage.getItem(LS_UNIT_TYPE) || 'g'; } catch { return 'g'; }
+}
 
 const EMPTY = {
   ingredientName: '', productCode: '',
   category: '', tags: [],
   manufacturer: '', discontinued: false,
-  baseQuantity: '', baseUnitType: 'g', taxType: '과세',
+  baseQuantity: '', baseUnitType: getLastUnitType(), taxType: '과세',
   priceOverride: '', note: '',
 };
 
@@ -51,6 +57,8 @@ export function IngredientForm({ initial, onSave, onClose }) {
     return e;
   }
 
+  useKeyboardSave(() => handleSubmit({ preventDefault() {} }));
+
   async function handleSubmit(e) {
     e.preventDefault();
     const errs = validate();
@@ -63,6 +71,7 @@ export function IngredientForm({ initial, onSave, onClose }) {
         priceOverride: !isJetteLinked && form.priceOverride ? Number(form.priceOverride) : null,
       };
       await onSave(data);
+      try { localStorage.setItem(LS_UNIT_TYPE, data.baseUnitType || 'g'); } catch {}
     } finally {
       setSaving(false);
     }
@@ -221,7 +230,7 @@ export function IngredientForm({ initial, onSave, onClose }) {
               : 'g·개당 단가 자동 계산에 사용'}
             error={errors.baseQuantity}>
             <div style={{display:'flex', gap:8}}>
-              <input className="form-input" type="number" value={form.baseQuantity}
+              <input className="form-input" type="number" min="0" value={form.baseQuantity}
                 onChange={e => set('baseQuantity', e.target.value)}
                 placeholder="예) 1000" style={{flex:1}}/>
               <select className="form-input" value={form.baseUnitType}
@@ -247,7 +256,7 @@ export function IngredientForm({ initial, onSave, onClose }) {
 
               <Field label="수동 단가 (부가세포함)" hint="제때 연동 없을 때 사용" error={errors.priceOverride}>
                 <div style={{display:'flex', gap:8, alignItems:'center'}}>
-                  <input className="form-input" type="number" value={form.priceOverride}
+                  <input className="form-input" type="number" min="0" value={form.priceOverride}
                     onChange={e => set('priceOverride', e.target.value)}
                     placeholder="예) 7680" style={{flex:1}}/>
                   <span style={{fontSize:13, color:'var(--text-3)', whiteSpace:'nowrap'}}>원</span>

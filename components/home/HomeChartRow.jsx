@@ -1,6 +1,6 @@
 'use client';
 import { Icon } from '@/components/icons';
-import { fmtKRW } from '@/lib/format';
+import { fmtKRW, formatPercent } from '@/lib/format';
 import { useCountUp } from '@/lib/useCountUp';
 import { AreaChart } from '@/components/charts/AreaChart';
 import { Donut } from '@/components/charts/Donut';
@@ -37,11 +37,11 @@ export function HomeChartRow({
           <>
             <div className="chart-legend">
               {trend.mode === 'year' ? (
-                <span><span className="dot" style={{background:'#3182F6'}}></span>연간 판매량</span>
+                <span><span className="dot" style={{background:'var(--accent)'}}></span>연간 판매량</span>
               ) : (
                 <>
-                  <span><span className="dot" style={{background:'#3182F6'}}></span>이번 연도</span>
-                  <span><span className="dot" style={{background:'#B0B8C1'}}></span>지난 연도 동월</span>
+                  <span><span className="dot" style={{background:'var(--accent)'}}></span>이번 연도</span>
+                  <span><span className="dot" style={{background:'var(--text-4)'}}></span>지난 연도 동월</span>
                 </>
               )}
             </div>
@@ -50,7 +50,7 @@ export function HomeChartRow({
               series={trend.mode === 'year'
                 ? [{ name:'연간 판매량', data:trend.thisYear }]
                 : [{ name:'이번 연도', data:trend.thisYear }, { name:'지난 연도', data:trend.lastYear }]}
-              colors={trend.mode === 'year' ? ['#3182F6'] : ['#3182F6','#B0B8C1']}
+              colors={trend.mode === 'year' ? ['var(--accent)'] : ['var(--accent)','var(--text-4)']}
               formatY={(v) => fmtKRW(v) + '개'}
             />
           </>
@@ -105,7 +105,7 @@ function DonutSection({ donut, hoveredCat, setHoveredCat }) {
           }}>
             <div className="swatch" style={{background:c.color}}></div>
             <div className="name">{c.name}</div>
-            <div className="v num">{((c.value / donut.total) * 100).toFixed(1)}%</div>
+            <div className="v num">{formatPercent((c.value / donut.total) * 100)}</div>
           </div>
         ))}
       </div>

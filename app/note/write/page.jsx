@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { addNote, getNoteById } from '@/lib/note';
-import { NoteFormBody, INIT } from '../_NoteFormBody';
+import { NoteFormBody, INIT } from '@/app/note/_NoteFormBody';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';

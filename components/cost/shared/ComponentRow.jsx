@@ -1,9 +1,10 @@
 'use client';
+import { memo } from 'react';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { componentSubtotal } from '@/lib/cost/shared/calc';
 import { UNIT_OPTIONS } from '@/lib/cost/shared/unit-options';
-export function ComponentRow({ c, onChange, onRemove, ingredients, listId }) {
+export const ComponentRow = memo(function ComponentRow({ c, onChange, onRemove, ingredients, listId }) {
   const subtotal = componentSubtotal(c);
 
   function handleNameChange(value) {
@@ -60,4 +61,4 @@ export function ComponentRow({ c, onChange, onRemove, ingredients, listId }) {
       </button>
     </div>
   );
-}
+});
