@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { Stars } from './_Stars';
 import { usePinchZoom } from '@/hooks/usePinchZoom';
@@ -14,6 +15,7 @@ function Section({ title, children }) {
 }
 
 export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
+  const router = useRouter();
   const [photoIdx, setPhotoIdx] = useState(0);
   const photos = sample.photos || [];
   const { imgRef, scale, resetScale } = usePinchZoom();
@@ -74,6 +76,21 @@ export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
             </div>
           </div>
           <div style={{ display:'flex', gap:8, flexShrink:0, marginLeft:16 }}>
+            <button
+              className="btn sm"
+              title="이 샘플 기록을 기반으로 레시피 초안 만들기"
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (sample.menuName) params.set('name', sample.menuName);
+                if (sample.category) params.set('cat', sample.category);
+                params.set('from', 'sample');
+                router.push('/cost/recipe?' + params.toString());
+                onClose();
+              }}
+              style={{ fontSize:11, display:'flex', alignItems:'center', gap:4 }}
+            >
+              <Icon.plus style={{ width:11, height:11 }}/> 레시피 초안
+            </button>
             <button className="btn sm" onClick={onEdit}>수정</button>
             <button className="btn sm" style={{ color:'var(--negative)' }} onClick={onDelete}>삭제</button>
             <button

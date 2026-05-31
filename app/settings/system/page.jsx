@@ -28,6 +28,7 @@ export default function Page() {
   const [busy, setBusy] = useState(false);
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [confirmingRecreate, setConfirmingRecreate] = useState(false);
+  const [storageEst, setStorageEst] = useState(null); // { usage, quota } in bytes
 
   const SETTING_KEYS = ['theme', 'density', 'autoRecalc', 'strictPosting', 'roundMode', 'unmatchedAlert', 'costRateAlert'];
   const [settings, setSettings] = useState(() =>
@@ -45,10 +46,16 @@ export default function Page() {
         showToast('DB 초기화에 실패했습니다.', 'err');
       }
     })();
+    if (navigator.storage?.estimate) {
+      navigator.storage.estimate().then(est => setStorageEst(est)).catch(() => {});
+    }
   }, []);
 
   async function refreshStats() {
     setStats(await collectStoreStats());
+    if (navigator.storage?.estimate) {
+      navigator.storage.estimate().then(est => setStorageEst(est)).catch(() => {});
+    }
   }
 
   function updateSetting(key, value, message) {
@@ -205,7 +212,12 @@ export default function Page() {
           <div style={{color:'var(--text-3)'}}>DB 초기화 중…</div>
         ) : (
           <>
-            <div style={{display:'flex',gap:32,marginBottom:20,padding:'12px 0',borderBottom:'1px solid var(--border)'}}>
+            {/* 브라우저 용량 감지 */}
+            {storageEst && (
+              <StorageUsageBar usage={storageEst.usage} quota={storageEst.quota} />
+            )}
+
+            <div style={{display:'flex',gap:32,marginBottom:20,padding:'12px 0',borderBottom:'1px solid var(--border)',marginTop: storageEst ? 16 : 0}}>
               <InfoCell label="전체 저장 행" value={`${formatNumber(totalRows)}건`} big />
               <InfoCell label="정의된 store 수" value={`${ALL_STORES.length}개`} big />
               <InfoCell label="데이터 있는 store" value={`${stats ? Object.values(stats).filter(n => n > 0).length : 0}개`} big />
@@ -379,6 +391,41 @@ function InfoCell({ label, value, big = false, mono = false }) {
            }}>
         {value}
       </div>
+    </div>
+  );
+}
+
+function StorageUsageBar({ usage, quota }) {
+  const usageMB  = (usage  / 1024 / 1024).toFixed(1);
+  const quotaMB  = (quota  / 1024 / 1024).toFixed(0);
+  const pct      = quota > 0 ? Math.min(100, (usage / quota) * 100) : 0;
+  const isWarn   = pct >= 70;
+  const isDanger = pct >= 90;
+  const barColor = isDanger ? 'var(--negative)' : isWarn ? 'var(--warn)' : 'var(--accent)';
+
+  return (
+    <div style={{marginBottom:16,padding:'12px 16px',border:'1px solid var(--border)',borderRadius:10,background:'var(--surface-2)'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+        <span style={{fontSize:13,fontWeight:600,color:'var(--text-2)'}}>브라우저 저장 공간</span>
+        <span className="num" style={{fontSize:13,color: isWarn ? barColor : 'var(--text-3)'}}>
+          {usageMB} MB / {quotaMB} MB ({pct.toFixed(1)}%)
+        </span>
+      </div>
+      <div style={{height:6,borderRadius:3,background:'var(--border)',overflow:'hidden'}}>
+        <div style={{
+          height:'100%', borderRadius:3,
+          width:`${pct}%`,
+          background: barColor,
+          transition:'width 400ms ease',
+        }}/>
+      </div>
+      {isWarn && (
+        <div style={{marginTop:8,fontSize:12,color: barColor,fontWeight:600}}>
+          {isDanger
+            ? '⚠ 저장 공간이 거의 꽉 찼습니다. 데이터를 백업하고 일부를 삭제하세요.'
+            : '⚠ 저장 공간이 70%를 넘었습니다. 정기적인 백업을 권장합니다.'}
+        </div>
+      )}
     </div>
   );
 }

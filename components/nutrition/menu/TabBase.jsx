@@ -6,9 +6,14 @@ import { showToast } from '@/components/Toast';
 import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import {
   upsertMenuRef, deleteMenuRef, deleteRawValuesByMenuCode,
-  upsertRawValue, CRUST_TYPES,
+  upsertRawValue, CRUST_TYPES, NUTRITION_FIELDS,
 } from '@/lib/nutrition/values/store';
 import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
+import {
+  calcNutritionFromComponents,
+  buildIngredientNutritionMap,
+  findRecipeForMenu,
+} from '@/lib/nutrition/auto-calc';
 
 const MENU_CATS = [
   '피자', '피자/프리미엄 스페셜', '피자/프리미엄', '피자/오리지널', '피자/하프앤하프',
@@ -22,6 +27,8 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
   const [saving,      setSaving]      = useState(false);
   const [addMenu,     setAddMenu]     = useState(false);
   const [newMenuForm, setNewMenuForm] = useState({ menuCode: '', menuName: '', category: '피자', displayOrder: '' });
+  const [autoCalcBusy,   setAutoCalcBusy]   = useState(false);
+  const [autoCalcPreview, setAutoCalcPreview] = useState(null); // { values: Object } | null
 
   const key      = selMenu ? `${selMenu.menuCode}__${selCrust}` : null;
   const existing = key ? rawMap[key] : null;
@@ -32,6 +39,59 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
   }, [existing, selMenu, selCrust]);
 
   const setField = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleAutoCalc = async () => {
+    if (!selMenu) return;
+    setAutoCalcBusy(true);
+    try {
+      const recipe = await findRecipeForMenu(selMenu.menuCode, selMenu.menuName);
+      if (!recipe || !recipe.ingredients?.length) {
+        showToast('레시피 데이터가 없어요', 'warn');
+        return;
+      }
+
+      const ingredientMap = await buildIngredientNutritionMap();
+      if (ingredientMap.size === 0) {
+        showToast('재료별 영양DB가 준비 중이에요. 직접 입력해주세요', 'warn');
+        return;
+      }
+
+      const calculated = calcNutritionFromComponents(recipe.ingredients, ingredientMap);
+      if (!calculated) {
+        showToast('매핑된 재료가 없어요. 재료 영양DB를 확인해주세요', 'warn');
+        return;
+      }
+
+      setAutoCalcPreview({ values: calculated });
+    } catch {
+      showToast('자동 계산 중 오류가 발생했어요', 'error');
+    } finally {
+      setAutoCalcBusy(false);
+    }
+  };
+
+  const handleApplyAutoCalc = async () => {
+    if (!autoCalcPreview || !selMenu) return;
+    setSaving(true);
+    try {
+      const existing = rawMap[`${selMenu.menuCode}__${selCrust}`];
+      await upsertRawValue({
+        ...(existing?.id ? { id: existing.id } : {}),
+        menuCode: selMenu.menuCode,
+        menuName: selMenu.menuName,
+        crustType: selCrust,
+        ...form,
+        ...autoCalcPreview.values,
+      });
+      setForm(f => ({ ...f, ...autoCalcPreview.values }));
+      setAutoCalcPreview(null);
+      showToast('자동 계산값이 적용됐어요', 'ok');
+      onRefresh();
+    } catch {
+      showToast('저장 실패', 'error');
+    }
+    setSaving(false);
+  };
 
   const handleSave = async () => {
     if (!selMenu) return;
@@ -152,7 +212,17 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
 
             <NutritionGrid values={form} onChange={setField} />
 
-            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+              <button
+                className="btn sm ghost"
+                onClick={handleAutoCalc}
+                disabled={autoCalcBusy || saving}
+                title="cost_recipes 레시피 구성에서 영양성분을 자동 계산합니다"
+                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent-text)' }}
+              >
+                <Icon.beaker style={{ width: 13, height: 13 }} />
+                {autoCalcBusy ? '계산 중…' : '레시피 기반 자동계산'}
+              </button>
               <button className="btn primary" onClick={handleSave} disabled={saving}>
                 {saving ? '저장 중…' : `${selMenu.menuName} ${selCrust} 저장`}
               </button>
@@ -160,6 +230,43 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
           </div>
         )}
       </div>
+
+      {/* 자동 계산 미리보기 모달 */}
+      {autoCalcPreview && (
+        <ModalFrame
+          title="레시피 기반 자동 계산 결과"
+          onClose={() => setAutoCalcPreview(null)}
+          width="min(480px,95vw)"
+          zIndex={310}
+          padding="24px 28px"
+        >
+          <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5 }}>
+            <strong style={{ color: 'var(--text-1)' }}>{selMenu?.menuName}</strong> 레시피 재료 기반으로 계산된 영양성분이에요.<br />
+            <span style={{ fontSize: 12 }}>적용하면 <strong>{selCrust}</strong> 크러스트에 아래 값이 입력됩니다.</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px 12px', marginBottom: 16 }}>
+            {NUTRITION_FIELDS.filter(f => f.key !== 'weight').map(f => (
+              <div key={f.key} style={{ background: 'var(--surface-2)', borderRadius: 8, padding: '8px 10px' }}>
+                <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 2 }}>
+                  {f.label} <span style={{ color: 'var(--text-4)' }}>({f.unit})</span>
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent-text)' }}>
+                  {autoCalcPreview.values[f.key] ?? '–'}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text-4)', marginBottom: 16 }}>
+            * 재료 영양값은 100g 기준으로 계산됩니다. 기존 입력값은 유지되고 영양성분 수치만 덮어씁니다.
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button className="btn" onClick={() => setAutoCalcPreview(null)}>취소</button>
+            <button className="btn primary" onClick={handleApplyAutoCalc} disabled={saving}>
+              {saving ? '적용 중…' : '이 값으로 적용'}
+            </button>
+          </div>
+        </ModalFrame>
+      )}
 
       {addMenu && (
         <ModalFrame title="메뉴 추가" onClose={() => setAddMenu(false)} width="min(400px,95vw)" zIndex={300} padding="24px 28px">

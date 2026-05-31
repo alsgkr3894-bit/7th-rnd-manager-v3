@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { Icon } from '@/components/icons';
@@ -10,8 +10,12 @@ import { parseMenuCode } from '@/lib/cost/menu-price/code';
 import { IngredientSearch } from '@/components/cost/shared/IngredientSearch';
 import { SectionLabel, FieldLabel, thStyle } from '@/components/cost/shared/FormLabels';
 import { costRateColor } from '@/lib/cost/rate-color';
+import { BulkIngredientModal } from '@/components/cost/recipe/BulkIngredientModal';
+import { showToast } from '@/components/Toast';
 
 export function RecipeEditor({ draft, setDraft, allMeta, menuMasters, menuPricesMap, unitPriceMap, allGroups, isNew, saving, onSave, onDelete, onCancel }) {
+
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const sizeLabels = useMemo(
     () => draft.sizes.map(s => s.label).filter(Boolean),
@@ -458,12 +462,51 @@ export function RecipeEditor({ draft, setDraft, allMeta, menuMasters, menuPrices
         </div>
       )}
 
-      <IngredientSearch
-        allMeta={allMeta}
-        unitPriceMap={unitPriceMap}
-        onSelect={addIngredient}
-        alreadyAdded={draft.ingredients.map(i => i.productCode)}
-        style={{ marginTop: 4 }}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+        <div style={{ flex: 1 }}>
+          <IngredientSearch
+            allMeta={allMeta}
+            unitPriceMap={unitPriceMap}
+            onSelect={addIngredient}
+            alreadyAdded={draft.ingredients.map(i => i.productCode)}
+            style={{ marginTop: 0 }}
+          />
+        </div>
+        <button className="btn" style={{ flexShrink: 0, whiteSpace: 'nowrap' }} onClick={() => setBulkOpen(true)}>
+          <Icon.plus style={{ width: 12, height: 12 }}/> 일괄 추가
+        </button>
+      </div>
+
+      <BulkIngredientModal
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        ingredients={allMeta}
+        onAdd={(items) => {
+          const alreadyAdded = new Set(draft.ingredients.map(i => i.productCode));
+          const newIngredients = items
+            .filter(ing => !alreadyAdded.has(ing.productCode))
+            .map(ing => {
+              const info = unitPriceMap.get(ing.productCode);
+              const quantities = {};
+              sizeLabels.forEach(sl => { quantities[sl] = ''; });
+              return {
+                productCode:    ing.productCode || '',
+                ingredientName: ing.ingredientName || '',
+                quantities,
+                unitType:       info?.baseUnitType || ing.baseUnitType || 'g',
+                note:           '',
+              };
+            });
+          if (newIngredients.length === 0) {
+            showToast('선택한 재료가 이미 모두 추가되어 있습니다', 'warn');
+            return;
+          }
+          setDraft(prev => ({
+            ...prev,
+            ingredients: [...prev.ingredients, ...newIngredients],
+          }));
+          showToast(newIngredients.length + '개 재료 추가됨', 'ok');
+        }}
       />
 
       {/* 비고 */}

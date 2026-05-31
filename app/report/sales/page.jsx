@@ -1,7 +1,9 @@
 'use client';
 import { Fragment, useState, useEffect, useMemo } from 'react';
 import { loadXlsx } from '@/lib/excel';
-import ReportBuilderShell, { OptGroup, Seg, Check } from '@/components/report/ReportBuilderShell';
+import ReportBuilderShell from '@/components/report/ReportBuilderShell';
+import SalesReportControls from '@/components/report/SalesReportControls';
+import SalesKpiCards from '@/components/report/SalesKpiCards';
 import { fmtKRW } from '@/lib/format';
 import { initDB } from '@/lib/db/init';
 import { getAll } from '@/lib/db';
@@ -273,77 +275,17 @@ export default function Page() {
       isLoading={isLoading}
       docFormat={docFormat}
       onExcelExport={handleExcelExport}
-      options={<>
-        <OptGroup label="보기 모드">
-          <Seg value={viewMode} onChange={setViewMode}
-            options={[{value:'rank',label:'해당 월 순위'},{value:'compare',label:'다른 월 비교'}]}/>
-        </OptGroup>
-
-        <OptGroup label="집계 기간">
-          <Seg value={periodMode} onChange={setPeriodMode}
-            options={[{value:'month',label:'월 단위'},{value:'year',label:'년 단위'}]}/>
-          <div className="opt-period-row">
-            <select className="period-select num" value={year} onChange={e => {
-              const y = parseInt(e.target.value);
-              setYear(y);
-              const ms = availMonthsByYear[y] || [];
-              if (ms.length > 0 && !ms.includes(month)) setMonth(ms.at(-1));
-            }}>
-              {(availYears.length > 0 ? availYears : [year]).map(y =>
-                <option key={y} value={y}>{y}년</option>)}
-            </select>
-            {periodMode === 'month' && (
-              <select className="period-select num" value={month} onChange={e => setMonth(parseInt(e.target.value))}>
-                {(availMonthsByYear[year]?.length > 0 ? availMonthsByYear[year] : [month]).map(m =>
-                  <option key={m} value={m}>{m}월</option>)}
-              </select>
-            )}
-          </div>
-          {viewMode === 'compare' && (
-            <div style={{marginTop:8}}>
-              <div className="opt-label" style={{fontSize:11,marginBottom:4}}>비교 월</div>
-              <div className="opt-period-row">
-                <select className="period-select num" value={cmpYear ?? year} onChange={e => {
-                  const y = parseInt(e.target.value);
-                  setCmpYear(y);
-                  const ms = availMonthsByYear[y] || [];
-                  if (ms.length > 0 && !ms.includes(cmpMonth)) setCmpMonth(ms.at(-1));
-                }}>
-                  {(availYears.length > 0 ? availYears : [year]).map(y =>
-                    <option key={y} value={y}>{y}년</option>)}
-                </select>
-                <select className="period-select num" value={cmpMonth ?? month} onChange={e => setCmpMonth(parseInt(e.target.value))}>
-                  {(availMonthsByYear[cmpYear ?? year]?.length > 0
-                    ? availMonthsByYear[cmpYear ?? year]
-                    : [cmpMonth ?? month]
-                  ).map(m => <option key={m} value={m}>{m}월</option>)}
-                </select>
-              </div>
-            </div>
-          )}
-        </OptGroup>
-
-        <OptGroup label="대상 범위">
-          <Seg value={scope} onChange={setScope}
-            options={[{value:'all',label:'전체'},{value:'pizza',label:'피자'},{value:'side',label:'사이드'}]}/>
-        </OptGroup>
-
-        <OptGroup label="포함 섹션">
-          <Check label="요약 (총 판매량·전월 대비)"      value={opts.summary}    onChange={v=>upd('summary',v)}/>
-          <Check label="카테고리별 판매 비중"             value={opts.catShare}   onChange={v=>upd('catShare',v)}/>
-          <Check label="피자 전월 대비 상승/하락 TOP 5"   value={opts.pizzaMover} onChange={v=>upd('pizzaMover',v)}/>
-          <Check label="메뉴 순위표 (전체)"               value={opts.rankTable}  onChange={v=>upd('rankTable',v)}/>
-          <Check label="카테고리별 비중 그래프"            value={opts.catBar}    onChange={v=>upd('catBar',v)}/>
-          <Check label="규격별 세부 (L/R/기타)"           value={opts.variant}   onChange={v=>upd('variant',v)} hint="순위표 아래 확장"/>
-          <Check label="전월 대비 증감 컬럼"              value={opts.prevComp}  onChange={v=>upd('prevComp',v)}/>
-          <Check label="품목 제외 리스트 (마지막 페이지)"  value={opts.excluded}  onChange={v=>upd('excluded',v)}/>
-        </OptGroup>
-
-        <OptGroup label="문서 형식">
-          <Check label="PDF"                value={docFormat.pdf}   onChange={v=>updFmt('pdf',v)}/>
-          <Check label="Excel (시트별 정리)" value={docFormat.excel} onChange={v=>updFmt('excel',v)}/>
-        </OptGroup>
-      </>}
+      options={<SalesReportControls
+        year={year} month={month} scope={scope}
+        viewMode={viewMode} periodMode={periodMode}
+        availYears={availYears} availMonthsByYear={availMonthsByYear}
+        onYear={setYear} onMonth={setMonth} onScope={setScope}
+        onViewMode={setViewMode} onPeriodMode={setPeriodMode}
+        cmpYear={cmpYear} cmpMonth={cmpMonth}
+        onCmpYear={setCmpYear} onCmpMonth={setCmpMonth}
+        opts={opts} upd={upd}
+        docFormat={docFormat} updFmt={updFmt}
+      />}
 
       preview={<>
         {/* ── 헤더 ── */}
@@ -361,26 +303,7 @@ export default function Page() {
 
         {/* ── 요약 통계 ── */}
         {opts.summary && (
-          <div className="paper-stat-row">
-            <div className="paper-stat">
-              <div className="paper-stat-label">총 판매량</div>
-              <div className="paper-stat-val num">{kpi ? fmtKRW(kpi.current) : '—'}<span className="unit">건</span></div>
-            </div>
-            <div className="paper-stat">
-              <div className="paper-stat-label">전월 대비</div>
-              <div className="paper-stat-val num" style={{color: kpi?.deltaPct >= 0 ? 'var(--positive)' : 'var(--negative)'}}>
-                {kpi?.deltaPct != null ? `${kpi.deltaPct >= 0 ? '+' : ''}${kpi.deltaPct.toFixed(1)}%` : '—'}
-              </div>
-            </div>
-            <div className="paper-stat">
-              <div className="paper-stat-label">카테고리 수</div>
-              <div className="paper-stat-val num">{catShares.length || '—'}</div>
-            </div>
-            <div className="paper-stat">
-              <div className="paper-stat-label">총 메뉴 수</div>
-              <div className="paper-stat-val num">{groupRanking.length || '—'}</div>
-            </div>
-          </div>
+          <SalesKpiCards kpi={kpi} catShares={catShares} groupRanking={groupRanking}/>
         )}
 
         {/* ── 카테고리 비중 ── */}

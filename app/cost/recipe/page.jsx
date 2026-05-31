@@ -135,6 +135,18 @@ function RecipeContent() {
 
   useVisibilityRefresh(load);
 
+  // 샘플에서 레시피 전환: ?from=sample&name=...&cat=... 처리
+  useEffect(() => {
+    if (searchParams?.get('from') === 'sample') {
+      const name = searchParams.get('name') || '';
+      const cat  = searchParams.get('cat')  || '피자';
+      const validCat = MENU_CATEGORIES.includes(cat) ? cat : '피자';
+      setIsNew(true);
+      setSelectedId(null);
+      setDraft({ ...emptyDraft(), menuName: name, menuCategory: validCat });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // URL sync for search filter
   useEffect(() => {
     const params = new URLSearchParams();

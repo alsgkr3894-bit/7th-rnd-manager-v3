@@ -7,6 +7,7 @@ import { getProfile, setProfile, getInitial } from '@/lib/profile';
 import { getLastLogin, getCachedIP, fetchClientIP } from '@/lib/session';
 import { formatRelative } from '@/lib/format';
 import { SettingTile } from '@/components/ui/SettingTile';
+import { useSettingsAuth } from '@/hooks/useSettingsAuth';
 
 /**
  * 계정 관리 페이지
@@ -48,6 +49,11 @@ export default function Page() {
   const [profile, setProfileState] = useState(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', team: '', role: '' });
+
+  // PIN 관리
+  const { hasPin, setPin: savePin } = useSettingsAuth();
+  const [pinInput, setPinInput] = useState('');
+  const [pinConfirm, setPinConfirm] = useState('');
 
   // 세션 정보
   const [lastLogin, setLastLogin] = useState(null);
@@ -95,6 +101,23 @@ export default function Page() {
     setProfileState(next);
     setEditing(false);
     showToast('프로필이 저장되었습니다.', 'ok');
+  }
+
+  function handleSetPin(e) {
+    e.preventDefault();
+    if (pinInput.length < 4) { showToast('PIN은 4자리 이상이어야 합니다.', 'err'); return; }
+    if (pinInput !== pinConfirm) { showToast('PIN이 일치하지 않습니다.', 'err'); return; }
+    savePin(pinInput);
+    setPinInput('');
+    setPinConfirm('');
+    showToast('PIN이 설정되었습니다.', 'ok');
+  }
+
+  function handleClearPin() {
+    savePin('');
+    setPinInput('');
+    setPinConfirm('');
+    showToast('PIN이 해제되었습니다.', 'ok');
   }
 
   if (!profile) {
@@ -239,6 +262,56 @@ export default function Page() {
             mono
           />
         </div>
+      </div>
+
+      {/* 설정 PIN 관리 */}
+      <div className="card" style={{marginTop:16}}>
+        <h2 style={{fontSize:15,fontWeight:700,marginBottom:4}}>설정 PIN 관리</h2>
+        <p style={{fontSize:13,color:'var(--text-3)',marginBottom:16}}>
+          설정 페이지에 접근할 때 PIN을 요구합니다. PIN은 이 브라우저에만 저장됩니다.
+        </p>
+
+        {/* 현재 상태 */}
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
+          <span style={{fontSize:13,color:'var(--text-2)'}}>현재 PIN:</span>
+          {hasPin ? (
+            <span className="chip" style={{background:'var(--positive-soft)',color:'var(--positive)',fontWeight:700}}>설정됨</span>
+          ) : (
+            <span className="chip" style={{background:'var(--surface-2)',color:'var(--text-3)'}}>없음</span>
+          )}
+          {hasPin && (
+            <button className="btn sm" style={{color:'var(--negative)',borderColor:'var(--negative-soft)'}} onClick={handleClearPin}>
+              PIN 해제
+            </button>
+          )}
+        </div>
+
+        {/* PIN 설정 폼 */}
+        <form onSubmit={handleSetPin}>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12,maxWidth:480}}>
+            <FormField label={hasPin ? '새 PIN' : 'PIN 설정'} required>
+              <input
+                className="input"
+                type="password" inputMode="numeric" pattern="[0-9]*"
+                value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))}
+                placeholder="4~8자리 숫자" maxLength={8}
+              />
+            </FormField>
+            <FormField label="PIN 확인" required>
+              <input
+                className="input"
+                type="password" inputMode="numeric" pattern="[0-9]*"
+                value={pinConfirm} onChange={e => setPinConfirm(e.target.value.replace(/\D/g, ''))}
+                placeholder="다시 입력" maxLength={8}
+              />
+            </FormField>
+          </div>
+          <div style={{marginTop:12}}>
+            <button className="btn primary sm" type="submit" disabled={!pinInput || !pinConfirm}>
+              {hasPin ? 'PIN 변경' : 'PIN 설정'}
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* 역할별 권한 매트릭스 (정보 표시) */}
