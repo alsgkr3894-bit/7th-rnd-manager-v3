@@ -318,7 +318,7 @@ export function NoteContent() {
               <>
                 {counts[NOTE_STATUS.REPORTING] > 0 && (
                   <button className="btn" onClick={handleBulkCopy}
-                    style={{color:'#6B3FCB', borderColor:'#6B3FCB40'}}>
+                    style={{color:'var(--color-reporting)', borderColor:'var(--color-reporting-dim, #6B3FCB40)'}}>
                     <Icon.doc style={{width:13,height:13}}/> 보고예정 일괄복사
                   </button>
                 )}
@@ -348,7 +348,7 @@ export function NoteContent() {
           </div>
           <div className="stat-card">
             <div className="stat-label">보고예정</div>
-            <div className="stat-value" style={{color:'#6B3FCB'}}>{counts[NOTE_STATUS.REPORTING] || 0}<span className="unit">개</span></div>
+            <div className="stat-value" style={{color:'var(--color-reporting)'}}>{counts[NOTE_STATUS.REPORTING] || 0}<span className="unit">개</span></div>
           </div>
           <div className="stat-card">
             <div className="stat-label">출시 전환율</div>

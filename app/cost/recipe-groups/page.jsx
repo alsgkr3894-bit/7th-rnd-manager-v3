@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { initDB } from '@/lib/db';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { getAllIngredients } from '@/lib/ingredient';
@@ -23,6 +24,7 @@ export default function Page() {
   const [loading,      setLoading]      = useState(true);
   const [dbError,      setDbError]      = useState(null);
   const [groupSearch,  setGroupSearch]  = useState('');
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   const load = useCallback(async () => {
     await initDB();
@@ -76,12 +78,10 @@ export default function Page() {
     }
   }
 
-  async function handleDelete() {
-    if (!selectedId) return;
-    const name = groups.find(r => r.id === selectedId)?.name || '';
-    if (!window.confirm(`"${name}" 묶음을 삭제할까요?`)) return;
+  async function handleDelete(id) {
+    if (!id) return;
     try {
-      await deleteRecipeGroup(selectedId);
+      await deleteRecipeGroup(id);
       showToast('삭제 완료');
       setSelectedId(null);
       setIsNew(false);
@@ -182,7 +182,7 @@ export default function Page() {
             isNew={isNew}
             saving={saving}
             onSave={handleSave}
-            onDelete={!isNew ? handleDelete : null}
+            onDelete={!isNew ? () => setPendingDeleteId(selectedId) : null}
             onCancel={() => { setIsNew(false); setSelectedId(null); setDraft(null); }}
           />
         ) : (
@@ -194,6 +194,16 @@ export default function Page() {
           </div>
         )}
       </div>
+
+      {pendingDeleteId && (
+        <ConfirmDialog
+          open
+          message="묶음을 삭제할까요?"
+          danger
+          onConfirm={() => { handleDelete(pendingDeleteId); setPendingDeleteId(null); }}
+          onCancel={() => setPendingDeleteId(null)}
+        />
+      )}
     </main>
   );
 }

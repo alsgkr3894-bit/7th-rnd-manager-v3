@@ -21,6 +21,7 @@ import { RecipeEditor } from '@/components/cost/recipe/RecipeEditor';
 import { costRateColor } from '@/lib/cost/rate-color';
 import { KEYS } from '@/lib/note/keys';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 const emptyDraft = () => ({
   menuCode:     '',
@@ -100,6 +101,7 @@ function RecipeContent() {
   });
   const [dragSrc,   setDragSrc]    = useState(null);  // { cat, fromIdx }
   const [dropTarget, setDropTarget] = useState(null); // { cat, beforeIdx }
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   const load = useCallback(async () => {
     await initDB();
@@ -212,12 +214,10 @@ function RecipeContent() {
     }
   }
 
-  async function handleDelete() {
-    if (!selectedId) return;
-    const name = recipes.find(r => r.id === selectedId)?.menuName || '';
-    if (!window.confirm(`"${name}" 레시피를 삭제할까요?`)) return;
+  async function handleDelete(id) {
+    if (!id) return;
     try {
-      await deleteRecipe(selectedId);
+      await deleteRecipe(id);
       showToast('삭제 완료');
       setSelectedId(null);
       setIsNew(false);
@@ -509,7 +509,7 @@ function RecipeContent() {
             isNew={isNew}
             saving={saving}
             onSave={handleSave}
-            onDelete={!isNew ? handleDelete : null}
+            onDelete={!isNew ? () => setPendingDeleteId(selectedId) : null}
             onCancel={() => { setIsNew(false); setSelectedId(null); setDraft(null); }}
           />
         ) : (
@@ -521,6 +521,16 @@ function RecipeContent() {
           </div>
         )}
       </div>
+
+      {pendingDeleteId && (
+        <ConfirmDialog
+          open
+          message="레시피를 삭제할까요?"
+          danger
+          onConfirm={() => { handleDelete(pendingDeleteId); setPendingDeleteId(null); }}
+          onCancel={() => setPendingDeleteId(null)}
+        />
+      )}
     </main>
   );
 }

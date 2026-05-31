@@ -11,7 +11,7 @@ const ShareLinkModal = dynamic(() => import('@/components/report/ReportModals').
 const ScheduleManagerModal = dynamic(() => import('@/components/report/ReportModals').then(m => ({ default: m.ScheduleManagerModal })), { ssr: false });
 const ReportPreviewModal = dynamic(() => import('@/components/report/ReportModals').then(m => ({ default: m.ReportPreviewModal })), { ssr: false });
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { getReports, deleteReport, toggleReportFav, saveReport } from '@/lib/report';
+import { getReports, deleteReport, toggleReportFav, saveReport, pruneOldReports } from '@/lib/report';
 import { KIND_META, KIND_CHIP, KIND_EMOJI } from '@/lib/report/constants';
 import { useCountUp } from '@/lib/useCountUp';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
@@ -73,6 +73,7 @@ export default function Page() {
 
   /* URL 상태 복원 (page, sort, dir) + 새 보고서 하이라이트 */
   useEffect(() => {
+    pruneOldReports(90).catch(() => {});
     const url = new URL(window.location.href);
     const pageParam   = parseInt(url.searchParams.get('p') || '1', 10);
     const initialPage = Number.isNaN(pageParam) ? 1 : pageParam;

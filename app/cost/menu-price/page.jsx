@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { initDB } from '@/lib/db';
 import {
   MENU_PRICE_CATEGORIES,
@@ -27,6 +28,9 @@ export default function Page() {
   const [bulking,    setBulking]   = useState(false);
   const [resetting,  setResetting] = useState(false);
   const [bulkModal,  setBulkModal] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmBulkPizza, setConfirmBulkPizza] = useState(false);
 
   const load = useCallback(async () => {
     await initDB();
@@ -38,7 +42,6 @@ export default function Page() {
   }, [load]);
 
   async function handleReset() {
-    if (!window.confirm('메뉴 판매가 전체를 삭제합니다. 계속할까요?')) return;
     setResetting(true);
     try {
       await resetAllMenuPrices();
@@ -49,7 +52,6 @@ export default function Page() {
   }
 
   async function handleBulkPizza() {
-    if (!window.confirm('메뉴 마스터의 피자 항목 전체에 기본 판매가를 일괄 등록합니다.\n이미 등록된 코드는 건너뜁니다. 계속할까요?')) return;
     setBulking(true);
     try {
       await initDB();
@@ -150,13 +152,13 @@ export default function Page() {
         title="메뉴 판매가"
         sub={sub}
         actions={<>
-          <button className="btn" onClick={handleReset} disabled={resetting} style={{ color: 'var(--negative)' }}>
+          <button className="btn" onClick={() => setConfirmReset(true)} disabled={resetting} style={{ color: 'var(--negative)' }}>
             <Icon.trash style={{width:14, height:14}}/> {resetting ? '처리 중…' : '초기화'}
           </button>
           <button className="btn" onClick={() => setBulkModal(true)}>
             <Icon.calc style={{width:14, height:14}}/> 코드별 일괄 가격 설정
           </button>
-          <button className="btn" onClick={handleBulkPizza} disabled={bulking}>
+          <button className="btn" onClick={() => setConfirmBulkPizza(true)} disabled={bulking}>
             <Icon.pizza style={{width:14, height:14}}/> {bulking ? '등록 중…' : '피자 기본가 일괄 등록'}
           </button>
           <button className="btn primary" onClick={() => setFormTarget('new')}>
@@ -222,6 +224,25 @@ export default function Page() {
         <BulkPriceModal
           onClose={() => setBulkModal(false)}
           onDone={load}
+        />
+      )}
+
+      {confirmReset && (
+        <ConfirmDialog
+          open
+          message="메뉴 판매가 전체를 삭제합니다. 계속할까요?"
+          danger
+          onConfirm={() => { setConfirmReset(false); handleReset(); }}
+          onCancel={() => setConfirmReset(false)}
+        />
+      )}
+
+      {confirmBulkPizza && (
+        <ConfirmDialog
+          open
+          message={`메뉴 마스터의 피자 항목 전체에 기본 판매가를 일괄 등록합니다.\n이미 등록된 코드는 건너뜁니다. 계속할까요?`}
+          onConfirm={() => { setConfirmBulkPizza(false); handleBulkPizza(); }}
+          onCancel={() => setConfirmBulkPizza(false)}
         />
       )}
     </main>

@@ -465,6 +465,7 @@ function SampleContent() {
                   }}>
                     {thumb ? (
                       <img src={thumb} alt={`${rec.menuName || rec.title} 샘플 사진`}
+                        loading="lazy"
                         style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
                     ) : (
                       <div style={{ fontSize:40, opacity:0.3 }}>📷</div>

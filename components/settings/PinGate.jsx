@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Icon } from '@/components/icons';
 
-export function PinGate({ onVerify }) {
+export function PinGate({ onVerify, onCancel }) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
 
@@ -28,6 +28,7 @@ export function PinGate({ onVerify }) {
           />
           {error && <div style={{ color: 'var(--negative)', fontSize: 13, marginBottom: 12 }}>PIN이 올바르지 않습니다</div>}
           <button className="btn primary" style={{ width: '100%' }} disabled={!pin}>확인</button>
+          {onCancel && <button type="button" className="btn" onClick={onCancel} style={{marginTop:8,width:'100%'}}>취소</button>}
         </form>
       </div>
     </main>

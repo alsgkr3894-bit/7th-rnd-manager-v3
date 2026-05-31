@@ -19,6 +19,7 @@ import { addEntry } from '@/lib/backup-history';
 import { formatNumber } from '@/lib/format';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
+import { Toggle } from '@/components/ui/Toggle';
 
 /**
  * 데이터 복원 페이지
@@ -56,6 +57,7 @@ export default function Page() {
   async function handleFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 50 * 1024 * 1024) { showToast('파일이 너무 큽니다 (최대 50MB)', 'err'); return; }
     setParsed(null);
     setConfirming(false);
     try {
@@ -64,6 +66,7 @@ export default function Page() {
       if (!data || typeof data.stores !== 'object') {
         throw new Error('잘못된 백업 파일 형식 (stores 객체 누락)');
       }
+      if (data.version && data.version !== 'v3') { showToast('버전 불일치: ' + data.version, 'warn'); }
       setParsed({ ...data, _fileName: file.name });
     } catch (err) {
       console.error('[Restore] 파일 파싱 실패:', err);

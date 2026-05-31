@@ -76,7 +76,7 @@ export function SampleFormBody({ form, setForm }) {
 
   function handleDrop(e) {
     e.preventDefault();
-    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') && f.type !== 'image/svg+xml');
     if (files.length) handleFiles(files);
   }
 

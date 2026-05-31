@@ -5,6 +5,7 @@ import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { showToast } from '@/components/Toast';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { initDB } from '@/lib/db';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { getAllIngredients } from '@/lib/ingredient';
@@ -60,6 +61,7 @@ export default function Page() {
   const [edges,        setEdges]        = useState([]);
   const [edgeTarget,   setEdgeTarget]   = useState(null);
   const [deletePending,setDeletePending]= useState(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [seeding,      setSeeding]      = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting,    setResetting]    = useState(false);
@@ -107,12 +109,10 @@ export default function Page() {
     } catch (e) { showToast('저장 실패: ' + e.message); }
     finally { setSaving(false); }
   }
-  async function handleDeleteGroup() {
-    if (!selectedId) return;
-    const name = groups.find(r => r.id === selectedId)?.name || '';
-    if (!window.confirm(`"${name}" 묶음을 삭제할까요?`)) return;
+  async function handleDeleteGroup(id) {
+    if (!id) return;
     try {
-      await deleteRecipeGroup(selectedId);
+      await deleteRecipeGroup(id);
     } catch (e) { showToast('삭제 실패: ' + e.message); return; }
     showToast('삭제 완료');
     setSelectedId(null); setIsNew(false); setDraft(null);
@@ -235,7 +235,7 @@ export default function Page() {
               allMeta={allMeta} unitPriceMap={unitPriceMap}
               isNew={isNew} saving={saving}
               onSave={handleSaveGroup}
-              onDelete={!isNew ? handleDeleteGroup : null}
+              onDelete={!isNew ? () => setPendingDeleteId(selectedId) : null}
               onCancel={() => { setIsNew(false); setSelectedId(null); setDraft(null); }}
             />
           ) : (
@@ -334,6 +334,15 @@ export default function Page() {
             />
           )}
         </div>
+      )}
+      {pendingDeleteId && (
+        <ConfirmDialog
+          open
+          message="묶음을 삭제할까요?"
+          danger
+          onConfirm={() => { handleDeleteGroup(pendingDeleteId); setPendingDeleteId(null); }}
+          onCancel={() => setPendingDeleteId(null)}
+        />
       )}
     </main>
   );

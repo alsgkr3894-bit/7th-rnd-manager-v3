@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { initDB } from '@/lib/db';
@@ -159,6 +160,8 @@ export default function Page() {
   const [subFilter,  setSubFilter] = useState('all');
   const [search,     setSearch]    = useState('');
   const [editRow,    setEditRow]   = useState(null);
+  const [confirmReset,  setConfirmReset]  = useState(false);
+  const [confirmImport, setConfirmImport] = useState(false);
 
   const load = useCallback(async () => {
     await initDB();
@@ -169,7 +172,6 @@ export default function Page() {
   useVisibilityRefresh(load);
 
   async function handleResetAndSeed() {
-    if (!window.confirm('메뉴 마스터 전체를 삭제합니다. 계속할까요?')) return;
     setResetting(true);
     try {
       await resetAllMenuMaster();
@@ -199,7 +201,6 @@ export default function Page() {
   }
 
   async function handleImport() {
-    if (!window.confirm('기존 메뉴 판매가 데이터를 마스터로 가져옵니다 (일회성). 계속할까요?')) return;
     setImporting(true);
     try {
       const { imported } = await importPricesToMaster();
@@ -272,7 +273,7 @@ export default function Page() {
             <button className="btn" onClick={handleExportCsv} disabled={rows.length === 0} style={{ color: 'var(--text-2)' }}>
               <Icon.download style={{ width: 14, height: 14 }} /> CSV 내보내기
             </button>
-            <button className="btn" onClick={handleImport} disabled={importing} style={{ color: 'var(--text-3)' }}>
+            <button className="btn" onClick={() => setConfirmImport(true)} disabled={importing} style={{ color: 'var(--text-3)' }}>
               <Icon.download style={{ width: 14, height: 14 }} />
               {importing ? '가져오는 중…' : '판매가에서 가져오기'}
             </button>
@@ -284,7 +285,7 @@ export default function Page() {
               <Icon.plus style={{ width: 14, height: 14 }} />
               {seeding ? '등록 중…' : '기본 코드 등록'}
             </button>
-            <button className="btn" onClick={handleResetAndSeed} disabled={resetting} style={{ color: 'var(--negative)' }}>
+            <button className="btn" onClick={() => setConfirmReset(true)} disabled={resetting} style={{ color: 'var(--negative)' }}>
               <Icon.trash style={{ width: 14, height: 14 }} />
               {resetting ? '처리 중…' : '초기화'}
             </button>
@@ -475,6 +476,25 @@ export default function Page() {
 
       {editRow && (
         <EditModal row={editRow} onSave={handleSaveRow} onClose={() => setEditRow(null)} />
+      )}
+
+      {confirmReset && (
+        <ConfirmDialog
+          open
+          message="메뉴 마스터 전체를 삭제합니다. 계속할까요?"
+          danger
+          onConfirm={() => { setConfirmReset(false); handleResetAndSeed(); }}
+          onCancel={() => setConfirmReset(false)}
+        />
+      )}
+
+      {confirmImport && (
+        <ConfirmDialog
+          open
+          message="기존 메뉴 판매가 데이터를 마스터로 가져옵니다 (일회성). 계속할까요?"
+          onConfirm={() => { setConfirmImport(false); handleImport(); }}
+          onCancel={() => setConfirmImport(false)}
+        />
       )}
     </main>
   );

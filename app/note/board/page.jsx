@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
@@ -29,6 +29,8 @@ export default function Page() {
   useVisibilityRefresh(load);
 
   async function applyStatusChange(note, newStatus, { bounce = true } = {}) {
+    // Optimistic update — instant visual feedback
+    setNotes(prev => prev.map(n => n.id === note.id ? { ...n, status: newStatus } : n));
     try {
       await updateNote(note.id, { status: newStatus });
       showToast(`→ ${newStatus}`, 'ok');
@@ -39,6 +41,7 @@ export default function Page() {
       }
     } catch {
       showToast('상태 변경 실패', 'err');
+      await load(); // Revert optimistic update on failure
     }
   }
 
@@ -64,10 +67,10 @@ export default function Page() {
     setDragId(null);
   }
 
-  const groupedNotes = STATUSES.map(st => ({
-    status: st,
-    notes: notes.filter(n => n.status === st),
-  }));
+  const groupedNotes = useMemo(
+    () => STATUSES.map(st => ({ status: st, notes: notes.filter(n => n.status === st) })),
+    [notes]
+  );
 
 
   return (

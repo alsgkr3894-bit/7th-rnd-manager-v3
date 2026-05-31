@@ -1,9 +1,12 @@
 /* ===== Theme tokens ===== */
 :root {
+  color-scheme: light dark;
   --bg: #F2F4F6;
   --bg-2: #E9ECEF;
   --surface: #FFFFFF;
   --surface-2: #F7F8FA;
+  --surface-3: #F1F3F5;
+  --surface-4: #E9ECEF;
   --text-1: #191F28;
   --text-2: #4E5968;
   --text-3: #5C6472;  /* #F7F8FA 배경 기준 5.1:1 — WCAG AA ✓ */
@@ -41,6 +44,7 @@
   --sample-ico-color: #E65100;
   --note-ico-bg: #F0EBFF;
   --note-ico-color: #6B3FCB;
+  --color-reporting: #6B3FCB;
 
   /* Category chip colors (8-color cycle) */
   --cat-1-bg:#EEF2FF; --cat-1-text:#3730A3;
@@ -69,8 +73,10 @@
   --accent-soft: #2D1114;
   --accent-text: #FF8080;
 
-  --positive-soft: #14291A;
-  --negative-soft: #2D1717;
+  --positive: #2ba84a;
+  --negative: #e5534b;
+  --positive-soft: rgba(43,168,74,0.12);
+  --negative-soft: rgba(229,83,75,0.12);
   --warn-soft: #2A1F0F;
 
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
@@ -527,9 +533,10 @@ button { font-family: inherit; cursor: pointer; }
 
 /* stat-card hover 리프트 */
 .stat-card {
-  transition: transform 180ms ease, box-shadow 180ms ease, background-color 220ms ease, border-color 220ms ease;
+  transition: transform 160ms ease, box-shadow 200ms ease, background-color 220ms ease, border-color 220ms ease;
 }
 .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.stat-card:active { transform: translateY(0); }
 
 /* 스켈레톤 shimmer */
 @keyframes shimmer {
@@ -788,6 +795,7 @@ button { font-family: inherit; cursor: pointer; }
   white-space: nowrap;
 }
 .chip.active { background: var(--accent-soft); color: var(--accent-text); border-color: color-mix(in oklab, var(--accent) 25%, transparent); }
+.chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .chip:hover { color: var(--text-1); }
 
 /* Rank list — simple TOP 5 with no metadata */
@@ -1898,6 +1906,7 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--accent); border-color: var(--accent);
   color: #fff;
 }
+.filter-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ============================================================
    Mini list (KPI card 안의 작은 리스트)
@@ -4044,10 +4053,6 @@ button { font-family: inherit; cursor: pointer; }
 .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
 
 /* ----- 스켈레톤 로딩 ----- */
-@keyframes shimmer {
-  from { background-position: -500px 0; }
-  to   { background-position:  500px 0; }
-}
 .skeleton {
   background: linear-gradient(90deg,
     var(--surface-2) 0%,
@@ -4372,10 +4377,16 @@ button { font-family: inherit; cursor: pointer; }
   box-sizing: border-box;
 }
 .form-input:focus { border-color: var(--accent); background: var(--surface); }
-.form-input:focus-visible { border-color: var(--accent); outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 1px; }
+.form-input:focus-visible { border-color: var(--accent); outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 1px; box-shadow: 0 0 0 3px var(--accent-soft); }
 .form-input::placeholder { color: var(--text-4); }
 .form-input:disabled { opacity: .5; cursor: not-allowed; }
 .form-input.mono { font-family: 'JetBrains Mono', 'Consolas', monospace; letter-spacing: 0.02em; }
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset !important;
+  -webkit-text-fill-color: var(--text-1) !important;
+}
 
 /* ============================================================
    Report Modals — missing classes
@@ -4530,7 +4541,7 @@ input:checked + .toggle-box::after { transform: translateX(16px); }
     grid-template-columns: 1fr !important;
   }
   .stat-row {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr 1fr !important;
   }
   .tabs { font-size: 13px; }
   .tab { padding: 8px 12px; }

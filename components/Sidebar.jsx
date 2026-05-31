@@ -209,7 +209,7 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
       <div className="sidebar-pill" style={{ top: pillStyle.top, height: pillStyle.height, opacity: pillStyle.opacity }} />
       <a className="brand" href="/" onClick={e => { e.preventDefault(); navigate('/'); }}>
         {activeCompany?.logo
-          ? <img className="logo-img" src={activeCompany.logo} alt={activeCompany.name}
+          ? <img className="logo-img" src={activeCompany.logo} alt={activeCompany?.name || '로고'}
               style={{objectFit:'contain', background:'white', padding:2}} />
           : <span className="logo-img" style={{background: activeCompany?.color || '#E1101F',
               display:'grid', placeItems:'center', color:'white', fontWeight:800, fontSize:14}}>

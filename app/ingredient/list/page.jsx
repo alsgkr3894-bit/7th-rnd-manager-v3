@@ -77,14 +77,20 @@ export default function Page() {
   }, [load]);
 
   // ── 통계 ────────────────────────────────────────────────────
-  const active        = rows.filter(r => !r.discontinued && !r.excluded);
-  const totalCount    = active.length;
-  const exclusiveCnt  = active.filter(r => r.scope === SCOPE.EXCLUSIVE).length;
-  const generalCnt    = active.filter(r => r.scope === SCOPE.GENERIC).length;
-  const generalMgtCnt = active.filter(r => r.scope === SCOPE.GENERIC_MANAGED).length;
-  const linkedCount   = active.filter(r => r.jetteLinked).length;
-  const discontinuedCount = rows.filter(r => r.discontinued).length;
-  const linkPct       = totalCount > 0 ? Math.round(linkedCount / totalCount * 100) : 0;
+  const {
+    active, totalCount, exclusiveCnt, generalCnt, generalMgtCnt,
+    linkedCount, discontinuedCount, linkPct,
+  } = useMemo(() => {
+    const active        = rows.filter(r => !r.discontinued && !r.excluded);
+    const totalCount    = active.length;
+    const exclusiveCnt  = active.filter(r => r.scope === SCOPE.EXCLUSIVE).length;
+    const generalCnt    = active.filter(r => r.scope === SCOPE.GENERIC).length;
+    const generalMgtCnt = active.filter(r => r.scope === SCOPE.GENERIC_MANAGED).length;
+    const linkedCount   = active.filter(r => r.jetteLinked).length;
+    const discontinuedCount = rows.filter(r => r.discontinued).length;
+    const linkPct       = totalCount > 0 ? Math.round(linkedCount / totalCount * 100) : 0;
+    return { active, totalCount, exclusiveCnt, generalCnt, generalMgtCnt, linkedCount, discontinuedCount, linkPct };
+  }, [rows]);
 
   // ── 분류(메인) 집합 ─────────────────────────────────────────
   const mainCats = useMemo(() => {

@@ -8,6 +8,7 @@ import { ToastContainer } from './Toast';
 import { Icon } from './icons';
 import { applyAllSettings, getSetting, setSetting } from '@/lib/settings';
 import { ensureSession } from '@/lib/session';
+import { pruneOldWorkLogs } from '@/lib/work-log';
 import { COMPANIES } from '@/lib/companies';
 import { MOBILE_TAB_DEFS } from '@/lib/menu';
 import ProgressBar from './ProgressBar';
@@ -138,6 +139,16 @@ export default function AppShell({ children }) {
 
   // 새 브라우저 세션이면 마지막 로그인 시각 갱신
   useEffect(() => { ensureSession(); }, []);
+
+  // 오래된 작업 로그 정리 (세션당 1회)
+  useEffect(() => {
+    const PRUNE_KEY = 'v3:last-wl-prune';
+    const hasPruned = (() => { try { return !!sessionStorage.getItem(PRUNE_KEY); } catch { return true; } })();
+    if (!hasPruned) {
+      pruneOldWorkLogs().catch(() => {});
+      try { sessionStorage.setItem(PRUNE_KEY, '1'); } catch {}
+    }
+  }, []);
 
   // 모바일 nav 닫기 on route change
   useEffect(() => { setMobileNav(false); }, [pathname]);

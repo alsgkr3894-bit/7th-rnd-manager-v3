@@ -17,6 +17,7 @@ import {
   resetAllIngredients,
   buildMetaOnlyRow, computeIngredientIssues,
 } from '@/lib/ingredient';
+import { KEYS } from '@/lib/note/keys';
 import { IngredientForm } from './IngredientForm';
 import { ManageRow } from '@/components/ingredient/ManageRow';
 import { IssuesView } from '@/components/ingredient/IssuesView';
@@ -33,7 +34,7 @@ export default function Page() {
   const [search,       setSearch]       = useState('');
   const debouncedSearch = useDebounce(search, 200);
   const [catFilter,    setCatFilter]    = useState(() => {
-    try { return localStorage.getItem('v3:ingredient-cat-filter') || 'all'; } catch { return 'all'; }
+    try { return localStorage.getItem(KEYS.INGREDIENT_CAT_FILTER) || 'all'; } catch { return 'all'; }
   });
   const [tagFilter,    setTagFilter]    = useState('all');
   const [view,         setView]         = useState('manage'); // 'manage' | 'issues'
@@ -86,7 +87,7 @@ export default function Page() {
   useVisibilityRefresh(load);
 
   useEffect(() => {
-    try { localStorage.setItem('v3:ingredient-cat-filter', catFilter); } catch {}
+    try { localStorage.setItem(KEYS.INGREDIENT_CAT_FILTER, catFilter); } catch {}
   }, [catFilter]);
 
   async function handleSeed() {

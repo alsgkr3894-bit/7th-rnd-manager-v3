@@ -110,6 +110,7 @@ export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
                 ref={imgRef}
                 src={photos[photoIdx]?.data}
                 alt={`${sample.menuName || sample.title} 테스트 사진 ${photoIdx + 1}번 / 총 ${photos.length}장`}
+                loading="lazy"
                 style={{
                   maxWidth:'100%', maxHeight:480, objectFit:'contain',
                   touchAction: scale > 1 ? 'none' : 'auto',
@@ -152,7 +153,7 @@ export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
                           border: i === photoIdx ? '2px solid #fff' : '2px solid transparent',
                           padding:0, cursor:'pointer', background:'#222',
                         }}>
-                        <img src={p.data} alt="" />
+                        <img src={p.data} alt="" loading="lazy" />
                       </button>
                     ))}
                   </div>

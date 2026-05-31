@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { useCountUp } from '@/lib/useCountUp';
@@ -34,21 +34,22 @@ function NoteHeatmapWidget({ notes }) {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const todayTs = today.getTime(); // stable primitive for useMemo dep
 
   // 날짜별 count 집계
-  const countMap = {};
-  notes.forEach(note => {
-    const d = note.createdAt ? new Date(note.createdAt) : null;
-    if (!d) return;
-    d.setHours(0, 0, 0, 0);
-    const diff = Math.floor((today - d) / 86400000);
-    if (diff >= 0 && diff < DAYS) {
-      const key = diff;
-      countMap[key] = (countMap[key] || 0) + 1;
-    }
-  });
-
-  const total = Object.values(countMap).reduce((s, v) => s + v, 0);
+  const { countMap, total } = useMemo(() => {
+    const map = {};
+    notes.forEach(note => {
+      const d = note.createdAt ? new Date(note.createdAt) : null;
+      if (!d) return;
+      d.setHours(0, 0, 0, 0);
+      const diff = Math.floor((todayTs - d.getTime()) / 86400000);
+      if (diff >= 0 && diff < DAYS) {
+        map[diff] = (map[diff] || 0) + 1;
+      }
+    });
+    return { countMap: map, total: Object.values(map).reduce((s, v) => s + v, 0) };
+  }, [notes, todayTs, DAYS]);
 
   // 16주 x 7일 그리드: col 0 = 가장 오래된 주, col 15 = 이번 주
   // row 0 = 일요일, row 6 = 토요일
@@ -280,7 +281,10 @@ export default function HomePage() {
   }
 
   const userName = profile?.name || '...';
-  const isTrendEmpty = trend && trend.thisYear.every(v => v === 0) && trend.lastYear.every(v => v === 0);
+  const isTrendEmpty = useMemo(
+    () => trend && trend.thisYear.every(v => v === 0) && trend.lastYear.every(v => v === 0),
+    [trend]
+  );
   const rankSub = salesKpi?.year && salesKpi?.month
     ? `${salesKpi.year}년 ${salesKpi.month}월 · 피자 카테고리`
     : '데이터 없음';
