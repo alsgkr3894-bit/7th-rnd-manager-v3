@@ -2,12 +2,18 @@
 import { MC } from '@/components/cost/margin/MarginRow';
 
 /**
- * MarginSummaryCards
+ * 마진 페이지 상단 요약 카드 (평균 원가율/마진율, 임계값 기준 항목 수).
  *
- * Props:
- *   stats     – { avg, lowCostCount, highCostCount } | null
- *   viewMode  – 'cost' | 'margin'
- *   hasAdjustment – bool (shows ⟳ indicator when platform/discount active)
+ * @param {Object} props
+ * @param {{
+ *   avg: number,
+ *   lowCostCount: number,    // 원가율 ≤ 30% (= 마진율 ≥ 70%). cost뷰: "원가율 30% 이하", margin뷰: "마진율 70% 이상"
+ *   highCostCount: number,   // 원가율 > 40% (= 마진율 < 60%). cost뷰: "원가율 40% 초과", margin뷰: "마진율 60% 미만"
+ *   goodMarginCount?: number, // margin뷰 전용 대안 필드 (있으면 lowCostCount 대신 사용)
+ *   badMarginCount?: number,  // margin뷰 전용 대안 필드 (있으면 highCostCount 대신 사용)
+ * }|null} props.stats - 집계 통계. stats.avg 는 항상 원가율(%) 기준; 마진율 표시 시 100 - avg 로 변환.
+ * @param {'cost'|'margin'} props.viewMode - 원가율 / 마진율 보기 모드
+ * @param {boolean} props.hasAdjustment - 플랫폼·할인 적용 중일 때 ⟳ 표시
  */
 export function MarginSummaryCards({ stats, viewMode, hasAdjustment }) {
   if (!stats) return null;
@@ -42,13 +48,13 @@ export function MarginSummaryCards({ stats, viewMode, hasAdjustment }) {
           <div className="stat-card">
             <div className="stat-label">마진율 70% 이상</div>
             <div className="stat-value" style={{ color:'var(--positive, #10b981)' }}>
-              {stats.lowCostCount}<span className="unit">개</span>
+              {stats.goodMarginCount ?? stats.lowCostCount}<span className="unit">개</span>
             </div>
           </div>
           <div className="stat-card">
             <div className="stat-label">마진율 60% 미만</div>
-            <div className="stat-value" style={{ color:stats.highCostCount > 0 ? 'var(--negative, #ef4444)' : undefined }}>
-              {stats.highCostCount}<span className="unit">개</span>
+            <div className="stat-value" style={{ color:(stats.badMarginCount ?? stats.highCostCount) > 0 ? 'var(--negative, #ef4444)' : undefined }}>
+              {stats.badMarginCount ?? stats.highCostCount}<span className="unit">개</span>
             </div>
           </div>
         </>

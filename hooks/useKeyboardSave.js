@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 
+/** @param {Function} onSave - Ctrl+S / Cmd+S 시 호출 */
 export function useKeyboardSave(onSave) {
   useEffect(() => {
     const handler = e => {

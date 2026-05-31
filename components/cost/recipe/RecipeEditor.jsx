@@ -22,6 +22,11 @@ export function RecipeEditor({ draft, setDraft, allMeta, menuMasters, menuPrices
     [draft.sizes]
   );
 
+  const discontinuedSet = useMemo(
+    () => new Set(allMeta.filter(m => m.discontinued).map(m => m.productCode)),
+    [allMeta]
+  );
+
   const defaultGroupIds = useMemo(() => {
     const cat = draft.menuCategory || '';
     return new Set(
@@ -289,7 +294,12 @@ export function RecipeEditor({ draft, setDraft, allMeta, menuMasters, menuPrices
                 return (
                   <tr key={i} style={{ borderBottom: '1px solid var(--divider)' }}>
                     <td style={{ padding: '6px 8px' }}>
-                      <div style={{ fontWeight: 500 }}>{line.ingredientName}</div>
+                      <div style={{ fontWeight: 500 }}>
+                        {line.ingredientName}
+                        {discontinuedSet.has(line.productCode) && (
+                          <span title="단종 식자재" style={{ color: 'var(--negative)', fontSize: 11, marginLeft: 4 }}>⚠ 단종</span>
+                        )}
+                      </div>
                       {!hasPrice && (
                         <div style={{ fontSize: 10, color: '#f59e0b', marginTop: 1 }}>
                           ⚠ 단가 미등록

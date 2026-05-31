@@ -74,7 +74,7 @@ export default function Page() {
 
 
   return (
-    <main className="main">
+    <main className="main page-enter">
       <PageHeader
         breadcrumb={['메뉴개발노트', '칸반 보드']}
         title="칸반 보드"

@@ -160,7 +160,7 @@ export default function Page() {
   }
 
   return (
-    <main className="main">
+    <main className="main page-enter">
       <PageHeader
         breadcrumb={["설정 / 백업", "데이터 복원"]}
         title="데이터 복원"

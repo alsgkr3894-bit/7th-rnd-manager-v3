@@ -40,8 +40,8 @@ export function BulkIngredientModal({ open, onClose, ingredients, onAdd }) {
         <SearchBox value={search} onChange={setSearch} placeholder="재료명·제품코드 검색" />
       </div>
       <div style={{ maxHeight: 360, overflowY: 'auto', padding: '8px 0' }}>
-        {filtered.map(ing => (
-          <label key={ing.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 24px', cursor: 'pointer', background: selected.has(ing.id) ? 'var(--accent-soft)' : 'transparent' }}>
+        {filtered.map((ing, i) => (
+          <label key={ing.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 24px', cursor: 'pointer', background: selected.has(ing.id) ? 'var(--accent-soft)' : 'transparent', animation: 'row-in 200ms ease both', animationDelay: `${i * 30}ms` }}>
             <input type="checkbox" checked={selected.has(ing.id)} onChange={() => toggle(ing.id)} style={{ width: 16, height: 16, accentColor: 'var(--accent)' }} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ing.ingredientName}</div>

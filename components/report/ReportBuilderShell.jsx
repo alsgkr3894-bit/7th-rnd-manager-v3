@@ -4,6 +4,7 @@ import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { KIND_CHIP } from '@/lib/report/constants';
+import { pad } from '@/lib/format';
 
 export { KIND_CHIP };
 
@@ -64,7 +65,6 @@ export function Check({ label, value, onChange, hint }) {
 
 function makeReportTitle(reportMeta) {
   const now = new Date();
-  const pad = n => String(n).padStart(2, '0');
   const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
   const rawPeriod = reportMeta?.period || '';
   const periodPart = rawPeriod.replace(/(\d+)년 (\d+)월/, (_, y, m) => `${y}년${m.padStart(2, '0')}월`);

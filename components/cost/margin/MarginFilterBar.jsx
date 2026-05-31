@@ -4,28 +4,27 @@ import { SearchBox } from '@/components/ui/SearchBox';
 import { formatNumber } from '@/lib/format';
 
 /**
- * MarginFilterBar
- *
- * Props:
- *   platforms       – array of platform objects
- *   activePlatId    – currently selected platform id
- *   onPlatId        – (id) => void
- *   onShowSettings  – () => void  (open PlatformSettingsModal)
- *   discOpen        – bool
- *   onDiscOpen      – (bool) => void
- *   discType        – 'pct' | 'fixed'
- *   onDiscType      – (type) => void
- *   discVal         – string
- *   onDiscVal       – (val) => void
- *   discount        – computed discount object | null
- *   activePlatform  – the resolved platform object
- *   viewMode        – 'cost' | 'margin'
- *   onViewMode      – (mode) => void
- *   cats            – string[]
- *   catFilter       – string
- *   onCatFilter     – (cat) => void
- *   search          – string
- *   onSearch        – (val) => void
+ * 마진 페이지 상단 필터 바 (플랫폼 선택, 할인 시뮬레이터, 카테고리·검색).
+ * @param {Object} props
+ * @param {Array<{id:string, name:string, fees?:Array<{id:string,label:string,type:'pct'|'fixed',value:number}>}>} props.platforms - 플랫폼 목록
+ * @param {string} props.activePlatId - 선택된 플랫폼 id
+ * @param {(id:string) => void} props.onPlatId - 플랫폼 변경 핸들러
+ * @param {() => void} props.onShowSettings - 플랫폼 설정 모달 열기
+ * @param {boolean} props.discOpen - 할인 시뮬레이터 열림 여부
+ * @param {(updater: boolean|Function) => void} props.onDiscOpen - 할인 패널 토글
+ * @param {'pct'|'fixed'} props.discType - 할인 유형
+ * @param {(type:'pct'|'fixed') => void} props.onDiscType - 할인 유형 변경
+ * @param {string} props.discVal - 할인 값 입력 문자열
+ * @param {(val:string) => void} props.onDiscVal - 할인 값 변경
+ * @param {{type:'pct'|'fixed', value:number}|null} props.discount - 계산된 할인 객체
+ * @param {{id:string, name:string, fees?:Array}} props.activePlatform - 선택된 플랫폼 객체
+ * @param {'cost'|'margin'} props.viewMode - 원가율 / 마진율 보기 모드
+ * @param {(mode:'cost'|'margin') => void} props.onViewMode - 보기 모드 변경
+ * @param {string[]} props.cats - 카테고리 목록
+ * @param {string} props.catFilter - 선택된 카테고리
+ * @param {(cat:string) => void} props.onCatFilter - 카테고리 변경
+ * @param {string} props.search - 검색어
+ * @param {(val:string) => void} props.onSearch - 검색어 변경
  */
 export function MarginFilterBar({
   platforms,
@@ -110,6 +109,8 @@ export function MarginFilterBar({
               onChange={e => onDiscVal(e.target.value)}
               placeholder={discType === 'pct' ? '예) 20' : '예) 5000'}
               style={{ width:90, textAlign:'right' }}
+              min="0"
+              max={discType === 'pct' ? '100' : undefined}
             />
             <span style={{ fontSize:12, color:'var(--text-3)' }}>{discType === 'pct' ? '%' : '원'}</span>
           </div>

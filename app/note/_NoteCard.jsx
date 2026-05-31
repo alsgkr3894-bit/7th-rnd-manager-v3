@@ -35,7 +35,7 @@ export function NoteCard({ note, onEdit, onDelete, onCopy, onStatusChange, onNew
           {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
         <span style={{fontSize:11,color:'var(--text-3)'}}>{note.category} · {note.noteType}</span>
-        {note.parentId && <span style={{fontSize:10,color:'var(--text-4)',background:'var(--surface-2)',padding:'1px 6px',borderRadius:8}}>버전</span>}
+        {note.parentId && <span style={{fontSize:10,color:'var(--accent)',marginLeft:4}}>🔗 체인</span>}
         <span style={{marginLeft:'auto',fontSize:11,color:'var(--text-4)'}}>{formatFullDate(note.testDate)}</span>
         <button
           className={'pin-btn' + (pinned ? ' pinned' : '')}

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import ReportBuilderShell, { OptGroup, Seg, Check } from '@/components/report/ReportBuilderShell';
 import { downloadCsv } from '@/lib/download';
-import { fmtKRW } from '@/lib/format';
+import { fmtKRW, pad } from '@/lib/format';
 import { Icon } from '@/components/icons';
 import { initDB } from '@/lib/db/init';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
@@ -109,7 +109,6 @@ export default function Page() {
   const reportMeta = { period: periodLabel, name: `${periodLabel} 원가계산 종합 보고서`, pages: 9, options: { periodMode, year, month, riskThreshold, cats, opts } };
 
   const handleExcelExport = () => {
-    const pad = n => String(n).padStart(2, '0');
     const now = new Date();
     const dateStr = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;
     const periodPart = periodLabel.replace(/(\d+)년 (\d+)월/, (_, y, m) => `${y}년${m.padStart(2,'0')}월`);

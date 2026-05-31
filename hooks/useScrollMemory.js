@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+/** @param {string} key - sessionStorage 키 (스크롤 위치 저장) */
 export function useScrollMemory(key) {
   const restored = useRef(false);
   useEffect(() => {

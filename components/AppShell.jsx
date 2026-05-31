@@ -29,9 +29,13 @@ const SHORTCUTS = [
   { key: 'G C', desc: '원가 계산으로 이동' },
   { key: 'G R', desc: '보고서로 이동' },
   { key: 'G S', desc: '샘플 기록으로 이동' },
+  { key: 'G I', desc: '식자재로 이동' },
+  { key: 'G U', desc: '영양성분으로 이동' },
+  { key: 'G B', desc: '보고서로 이동' },
+  { key: 'G J', desc: '제때로 이동' },
 ];
 
-const G_NAV = { h: '/', n: '/note', c: '/cost', r: '/report', s: '/note/sample' };
+const G_NAV = { h: '/', n: '/note', c: '/cost', r: '/report', s: '/note/sample', i: '/ingredient', u: '/nutrition', b: '/report', j: '/jette' };
 
 function ShortcutsHelp({ onClose }) {
   return (

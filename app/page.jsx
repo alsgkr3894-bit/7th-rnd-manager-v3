@@ -146,7 +146,7 @@ export default function HomePage() {
   const quickResetTimer = useRef(null);
 
   const [widgetConfig, setWidgetConfig] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(KEYS.HOME_WIDGETS) || '{}'); } catch { return {}; }
+    try { return JSON.parse(localStorage.getItem(KEYS.HOME_WIDGETS) || '{}'); } catch (err) { console.warn('[Home] storage access failed:', err); return {}; }
   });
   const [widgetConfigOpen, setWidgetConfigOpen] = useState(false);
 
@@ -168,7 +168,7 @@ export default function HomePage() {
   function toggleWidget(key) {
     const next = { ...widgetConfig, [key]: !isVisible(key) };
     setWidgetConfig(next);
-    try { localStorage.setItem(KEYS.HOME_WIDGETS, JSON.stringify(next)); } catch {}
+    try { localStorage.setItem(KEYS.HOME_WIDGETS, JSON.stringify(next)); } catch (err) { console.warn('[Home] storage access failed:', err); }
   }
 
   // chartTab ref — useEffect 클로저 stale 방지
@@ -256,7 +256,7 @@ export default function HomePage() {
   function openDraftInNoteWrite() {
     const text = quickNote.trim();
     if (!text) return;
-    try { sessionStorage.setItem(KEYS.HOME_NOTE_DRAFT, text); } catch {}
+    try { sessionStorage.setItem(KEYS.HOME_NOTE_DRAFT, text); } catch (err) { console.warn('[Home] storage access failed:', err); }
     router.push('/note/write');
   }
 

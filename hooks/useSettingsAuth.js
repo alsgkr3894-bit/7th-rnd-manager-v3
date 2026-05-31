@@ -3,6 +3,16 @@ import { useState, useCallback } from 'react';
 const LS_KEY = 'v3:settings-pin';
 const SESSION_KEY = 'v3:settings-auth-session';
 
+/**
+ * 설정 페이지 PIN 인증 상태를 관리하는 훅.
+ * @returns {{
+ *   authenticated: boolean,
+ *   hasPin: boolean,
+ *   verify: (input: string) => boolean,
+ *   setPin: (newPin: string) => void,
+ *   lock: () => void
+ * }}
+ */
 export function useSettingsAuth() {
   const [authenticated, setAuthenticated] = useState(() => {
     try { return sessionStorage.getItem(SESSION_KEY) === '1'; } catch { return true; }

@@ -26,7 +26,7 @@ import { MarginSummaryCards } from '@/components/cost/margin/MarginSummaryCards'
 import { SortableTh } from '@/components/ui/SortableTh';
 import { MarginRow } from '@/components/cost/margin/MarginRow';
 import { exportMarginExcel } from '@/lib/cost/margin/export';
-import { COST_RATE_THRESHOLD as COST_RATE } from '@/lib/cost/margin/constants';
+import { COST_RATE_THRESHOLD as COST_RATE, MARGIN_RATE_THRESHOLD as MARGIN_RATE } from '@/lib/cost/margin/constants';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { KEYS } from '@/lib/note/keys';
 
@@ -251,8 +251,9 @@ export default function Page() {
   );
 
   const discount = useMemo(() => {
-    const v = parseFloat(discVal);
+    let v = parseFloat(discVal);
     if (!discOpen || !discVal || isNaN(v) || v <= 0) return null;
+    if (discType === 'pct') v = Math.max(0, Math.min(100, v));
     return { type: discType, value: v };
   }, [discOpen, discType, discVal]);
 
@@ -311,10 +312,15 @@ export default function Page() {
     );
     if (!all.length) return null;
     const avg = all.reduce((a, b) => a + b, 0) / all.length;
+    // cost view: lowCostCount = 원가율 ≤ 30%, highCostCount = 원가율 > 40%
+    // margin view: lowCostCount reused as goodCount = 마진율 ≥ 70%, highCostCount = 마진율 < 60%
+    const marginAll = all.map(m => 100 - m);
     return {
       avg,
-      lowCostCount:  all.filter(m => m <= COST_RATE.GOOD).length,    // 원가율 ≤ GOOD
-      highCostCount: all.filter(m => m >  COST_RATE.WARNING).length,  // 원가율 > WARNING
+      lowCostCount:  all.filter(m => m <= COST_RATE.GOOD).length,          // cost: 원가율 ≤ 30%
+      highCostCount: all.filter(m => m >  COST_RATE.WARNING).length,        // cost: 원가율 > 40%
+      goodMarginCount: marginAll.filter(m => m >= MARGIN_RATE.GOOD).length,    // margin: 마진율 ≥ 70%
+      badMarginCount:  marginAll.filter(m => m <  MARGIN_RATE.WARNING).length, // margin: 마진율 < 60%
     };
   }, [filtered, activePlatform, discount]);
 
@@ -333,7 +339,8 @@ export default function Page() {
     function getVal(r) {
       if (sortKey === 'name') return (r.menuName || '').toLowerCase();
       if (sortKey === 'cat')  return (r.menuCategory || '기타').toLowerCase();
-      const ul  = sortKey.indexOf('_');
+      const ul  = sortKey.lastIndexOf('_');
+      if (ul === -1) return 0;
       const type = sortKey.slice(0, ul);
       const size = sortKey.slice(ul + 1);
       if (type === 'cost') return r.costMap?.[size] ?? Infinity;
@@ -372,14 +379,14 @@ export default function Page() {
   }
 
   if (dbError) return (
-    <main className="main">
+    <main className="main page-enter">
       <PageHeader breadcrumb={['원가계산', '원가마진표']} title="메뉴 원가마진표" sub="로드 실패"/>
       <div className="card" style={{padding:32, textAlign:'center', color:'var(--negative)'}}>데이터베이스 오류: {dbError}</div>
     </main>
   );
 
   return (
-    <main className="main">
+    <main className="main page-enter">
       <PageHeader
         breadcrumb={['원가계산', '원가마진표']}
         title="메뉴 원가마진표"
@@ -427,7 +434,7 @@ export default function Page() {
       ) : (
         <div className="card table-card">
           <div style={{ overflowX:'auto' }}>
-            <table className="data-table">
+            <table className="data-table stagger-rows">
               <thead>
                 <tr>
                   <SortableTh sortKey="name" active={sortKey} dir={sortDir} onClick={handleSort} width={160}>메뉴명</SortableTh>

@@ -5,7 +5,7 @@ import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
 import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import {
-  upsertMenuRef, deleteMenuRef, deleteRawValuesByMenuCode,
+  upsertMenuRef, deleteMenuRef,
   upsertRawValue, CRUST_TYPES, NUTRITION_FIELDS,
 } from '@/lib/nutrition/values/store';
 import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
@@ -121,7 +121,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
   };
 
   const handleDeleteMenu = async (menu) => {
-    await Promise.all([deleteMenuRef(menu.id), deleteRawValuesByMenuCode(menu.menuCode)]);
+    await deleteMenuRef(menu.id, menu.menuCode);
     if (selMenu?.id === menu.id) setSelMenu(null);
     showToast(`'${menu.menuName}' 삭제`, 'ok');
     onRefresh();

@@ -4,7 +4,7 @@ import { loadXlsx } from '@/lib/excel';
 import ReportBuilderShell from '@/components/report/ReportBuilderShell';
 import SalesReportControls from '@/components/report/SalesReportControls';
 import SalesKpiCards from '@/components/report/SalesKpiCards';
-import { fmtKRW } from '@/lib/format';
+import { fmtKRW, pad } from '@/lib/format';
 import { initDB } from '@/lib/db/init';
 import { getAll } from '@/lib/db';
 import { buildPeriodCompare } from '@/lib/sales/compare';
@@ -16,6 +16,44 @@ import { getProfile } from '@/lib/profile';
 const DRAFT_KEY = 'report_draft_sales';
 
 const CAT_COLORS = ['#3182F6','#10B981','#F59E0B','#EC4899','#8B5CF6','#E1101F','#6B7280'];
+
+/** 피자 전월 대비 상승/하락 행. maxAbs는 바 너비 계산에 사용. */
+function MoverRow({ m, up, maxAbs }) {
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:7,padding:'4px 0',borderBottom:'1px solid var(--border)'}}>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:2}}>{m.name}</div>
+        <div style={{height:5,background:'var(--surface-2)',borderRadius:2,overflow:'hidden'}}>
+          <div style={{width:`${(Math.abs(m.delta)/maxAbs)*100}%`,height:'100%',background: up ? 'var(--positive)' : 'var(--negative)',borderRadius:2}}/>
+        </div>
+      </div>
+      <div style={{flexShrink:0,textAlign:'right',minWidth:52}}>
+        <div style={{fontSize:11,fontWeight:700,color: up ? 'var(--positive)' : 'var(--negative)',fontVariantNumeric:'tabular-nums'}}>
+          {up ? '+' : ''}{fmtKRW(m.delta)}
+        </div>
+        <div style={{fontSize:10,color:'var(--text-4)',fontVariantNumeric:'tabular-nums'}}>{fmtKRW(m.quantity)}건</div>
+      </div>
+    </div>
+  );
+}
+
+/** 피자 베스트/워스트 순위 행. bestMax는 바 너비 계산에 사용. */
+function RankRow({ m, accent, valueColor, bestMax }) {
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:7,padding:'4px 0',borderBottom:'1px solid var(--border)'}}>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:2}}>{m.name}</div>
+        <div style={{height:5,background:'var(--surface-2)',borderRadius:2,overflow:'hidden'}}>
+          <div style={{width:`${(m.quantity/bestMax)*100}%`,height:'100%',background:accent,borderRadius:2}}/>
+        </div>
+      </div>
+      <div style={{flexShrink:0,textAlign:'right',minWidth:52}}>
+        <div style={{fontSize:11,fontWeight:700,color:valueColor,fontVariantNumeric:'tabular-nums'}}>{fmtKRW(m.quantity)}건</div>
+        <div style={{fontSize:10,color:'var(--text-4)',fontVariantNumeric:'tabular-nums'}}>전체 {m.rank}위</div>
+      </div>
+    </div>
+  );
+}
 
 export default function Page() {
   const [periodMode, setPeriodMode] = useState('month');
@@ -109,11 +147,16 @@ export default function Page() {
     });
   }, []);
 
+  // Normalise raw rows once — shared by stats memo and compare effect
+  const normRows = useMemo(
+    () => salesRows.map(r => ({ ...r, year: Number(r.year), month: Number(r.month) })),
+    [salesRows],
+  );
+
   // Computed: stats derived from salesRows + filters (useMemo avoids re-running on unrelated state changes)
   const { catShares, groupRanking, kpi } = useMemo(() => {
-    if (salesRows.length === 0) return { catShares: [], groupRanking: [], kpi: null };
+    if (normRows.length === 0) return { catShares: [], groupRanking: [], kpi: null };
 
-    const norm = r => ({ ...r, year: Number(r.year), month: Number(r.month) });
     const period = { year, month };
     const prevPeriod = { year: month === 1 ? year - 1 : year, month: month === 1 ? 12 : month - 1 };
 
@@ -121,9 +164,9 @@ export default function Page() {
 
     // Category shares
     const catMap = new Map();
-    for (const r of salesRows) {
+    for (const r of normRows) {
       if (r.status !== 'classified') continue;
-      if (Number(r.year) !== year || Number(r.month) !== month) continue;
+      if (r.year !== year || r.month !== month) continue;
       if (!scopeFilter(r)) continue;
       const cat = r.category || '미분류';
       catMap.set(cat, (catMap.get(cat) || 0) + (Number(r.quantity) || 0));
@@ -133,7 +176,6 @@ export default function Page() {
     })).filter(c => c.value > 0).sort((a, b) => b.value - a.value);
 
     // Group ranking for current period (uses buildGroupRanking for sizes)
-    const normRows = salesRows.map(norm);
     const scopedRows = scope === 'all' ? normRows : normRows.filter(r => r.category === scope);
     const ranking = buildGroupRanking(scopedRows, period);
 
@@ -158,27 +200,29 @@ export default function Page() {
       groupRanking: withDelta,
       kpi: { current: total, previous: prevTotal, deltaPct },
     };
-  }, [salesRows, year, month, scope]);
+  }, [normRows, year, month, scope]);
 
   // Clear loading once salesRows arrives (success path)
   useEffect(() => {
     if (salesRows.length > 0) { setDataError(null); setIsLoading(false); }
-  }, [salesRows]);
+  }, [salesRows]); // salesRows intentional — normRows would create a circular dep
 
-  // Effect 3: compare mode
+  // Effect 3: compare mode — deferred via setTimeout(0) to avoid blocking the event loop
   useEffect(() => {
-    if (viewMode !== 'compare' || salesRows.length === 0 || !cmpYear || !cmpMonth) {
+    if (viewMode !== 'compare' || normRows.length === 0 || !cmpYear || !cmpMonth) {
       setCompareData(null); return;
     }
-    const normalized = salesRows.map(r => ({ ...r, year: Number(r.year), month: Number(r.month) }));
-    const result = buildPeriodCompare(
-      normalized,
-      { year, month },
-      { year: cmpYear, month: cmpMonth },
-      { groupBy: 'group', category: scope === 'all' ? null : scope, topN: 5 },
-    );
-    setCompareData(result);
-  }, [salesRows, viewMode, year, month, cmpYear, cmpMonth, scope]);
+    const id = setTimeout(() => {
+      const result = buildPeriodCompare(
+        normRows,
+        { year, month },
+        { year: cmpYear, month: cmpMonth },
+        { groupBy: 'group', category: scope === 'all' ? null : scope, topN: 5 },
+      );
+      setCompareData(result);
+    }, 0);
+    return () => clearTimeout(id);
+  }, [normRows, viewMode, year, month, cmpYear, cmpMonth, scope]);
 
   const periodLabel = periodMode === 'year' ? `${year}년` : `${year}년 ${month}월`;
   const totalShare = catShares.reduce((s, c) => s + c.value, 0);
@@ -191,7 +235,6 @@ export default function Page() {
   // Excel export — multi-sheet
   const handleExcelExport = async () => {
     const XLSX = await loadXlsx();
-    const pad = n => String(n).padStart(2, '0');
     const now = new Date();
     const dateStr = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;
     const periodPart = periodLabel.replace(/(\d+)년 (\d+)월/, (_, y, m) => `${y}년${m.padStart(2,'0')}월`);
@@ -343,41 +386,10 @@ export default function Page() {
           const fallers = [...pizzaItems].sort((a, b) => a.delta - b.delta).slice(0, 5);
           const maxAbs  = Math.max(...pizzaItems.map(m => Math.abs(m.delta)), 1);
 
-          const MoverRow = ({ m, up }) => (
-            <div style={{display:'flex',alignItems:'center',gap:7,padding:'4px 0',borderBottom:'1px solid var(--border)'}}>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:2}}>{m.name}</div>
-                <div style={{height:5,background:'var(--surface-2)',borderRadius:2,overflow:'hidden'}}>
-                  <div style={{width:`${(Math.abs(m.delta)/maxAbs)*100}%`,height:'100%',background: up ? 'var(--positive)' : 'var(--negative)',borderRadius:2}}/>
-                </div>
-              </div>
-              <div style={{flexShrink:0,textAlign:'right',minWidth:52}}>
-                <div style={{fontSize:11,fontWeight:700,color: up ? 'var(--positive)' : 'var(--negative)',fontVariantNumeric:'tabular-nums'}}>
-                  {up ? '+' : ''}{fmtKRW(m.delta)}
-                </div>
-                <div style={{fontSize:10,color:'var(--text-4)',fontVariantNumeric:'tabular-nums'}}>{fmtKRW(m.quantity)}건</div>
-              </div>
-            </div>
-          );
-
           const n       = Math.min(5, Math.floor(all.length / 2));
           const best    = all.slice(0, n);
           const worst   = all.slice(-n).reverse();
           const bestMax = best[0]?.quantity || 1;
-          const RankRow = ({ m, accent, valueColor }) => (
-            <div style={{display:'flex',alignItems:'center',gap:7,padding:'4px 0',borderBottom:'1px solid var(--border)'}}>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginBottom:2}}>{m.name}</div>
-                <div style={{height:5,background:'var(--surface-2)',borderRadius:2,overflow:'hidden'}}>
-                  <div style={{width:`${(m.quantity/bestMax)*100}%`,height:'100%',background:accent,borderRadius:2}}/>
-                </div>
-              </div>
-              <div style={{flexShrink:0,textAlign:'right',minWidth:52}}>
-                <div style={{fontSize:11,fontWeight:700,color:valueColor,fontVariantNumeric:'tabular-nums'}}>{fmtKRW(m.quantity)}건</div>
-                <div style={{fontSize:10,color:'var(--text-4)',fontVariantNumeric:'tabular-nums'}}>전체 {m.rank}위</div>
-              </div>
-            </div>
-          );
 
           return (
             <div className="paper-section">
@@ -390,12 +402,12 @@ export default function Page() {
                 <div style={{display:'flex',gap:16,marginTop:10}}>
                   <div style={{flex:1}}>
                     <div style={{fontSize:11,fontWeight:700,color:'var(--positive)',marginBottom:6}}>▲ 상승 TOP 5</div>
-                    {risers.map(m => <MoverRow key={m.name} m={m} up/>)}
+                    {risers.map(m => <MoverRow key={m.name} m={m} up maxAbs={maxAbs}/>)}
                   </div>
                   <div style={{width:1,background:'var(--border)',flexShrink:0}}/>
                   <div style={{flex:1}}>
                     <div style={{fontSize:11,fontWeight:700,color:'var(--negative)',marginBottom:6}}>▼ 하락 TOP 5</div>
-                    {fallers.map(m => <MoverRow key={m.name} m={m} up={false}/>)}
+                    {fallers.map(m => <MoverRow key={m.name} m={m} up={false} maxAbs={maxAbs}/>)}
                   </div>
                 </div>
               ) : (
@@ -409,12 +421,12 @@ export default function Page() {
                 <div style={{display:'flex',gap:16}}>
                   <div style={{flex:1}}>
                     <div style={{fontSize:11,fontWeight:700,color:pizzaColor,marginBottom:6}}>▲ 베스트 5</div>
-                    {best.map(m => <RankRow key={m.name} m={m} accent={pizzaColor} valueColor={pizzaColor}/>)}
+                    {best.map(m => <RankRow key={m.name} m={m} accent={pizzaColor} valueColor={pizzaColor} bestMax={bestMax}/>)}
                   </div>
                   <div style={{width:1,background:'var(--border)',flexShrink:0}}/>
                   <div style={{flex:1}}>
                     <div style={{fontSize:11,fontWeight:700,color:'var(--text-3)',marginBottom:6}}>▼ 워스트 5</div>
-                    {worst.map(m => <RankRow key={m.name} m={m} accent='#94A3B8' valueColor='var(--text-3)'/>)}
+                    {worst.map(m => <RankRow key={m.name} m={m} accent='#94A3B8' valueColor='var(--text-3)' bestMax={bestMax}/>)}
                   </div>
                 </div>
               </div>

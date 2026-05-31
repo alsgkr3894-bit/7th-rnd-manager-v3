@@ -31,7 +31,7 @@ export function NoteFormBody({ form, setForm }) {
       const set = new Set();
       notes.forEach(n => (n.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => set.add(t)));
       setAllTags([...set]);
-    }).catch(() => {});
+    }).catch(err => console.warn('[NoteFormBody]', err));
   }, []);
 
   const reportText = useMemo(() => generateNoteReportText(form), [form]);
@@ -68,7 +68,7 @@ export function NoteFormBody({ form, setForm }) {
     initDB()
       .then(() => getAllIngredients())
       .then(list => setIngredients(list.filter(i => !i.excluded && !i.discontinued)))
-      .catch(() => {});
+      .catch(err => console.warn('[NoteFormBody]', err));
   }, []);
 
   const filteredIngs = useMemo(() => {

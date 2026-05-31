@@ -8,6 +8,7 @@ import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getAllSamples, addSample, updateSample, deleteSample, SAMPLE_CATEGORIES, RATING_COLOR } from '@/lib/sample';
 import { tryLS, setLS } from '@/lib/note/storage';
+import { formatDate } from '@/lib/format';
 import { KEYS } from '@/lib/note/keys';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
@@ -187,11 +188,7 @@ function SampleContent() {
     return m;
   }, [samples]);
 
-  function toYMD(date) {
-    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
-  }
-
-  const today = toYMD(new Date());
+  const today = formatDate(new Date());
 
   /* ── Actions for PageHeader ── */
   const headerActions = (
@@ -239,7 +236,7 @@ function SampleContent() {
   const days = calDays;
 
   return (
-    <main className="main">
+    <main className="main page-enter">
       <PageHeader
         breadcrumb={['샘플기록']}
         title="샘플기록"
@@ -335,7 +332,7 @@ function SampleContent() {
 
       {/* ── 캘린더 뷰 ── */}
       {!loading && viewMode === 'calendar' && (
-        <div>
+        <div className="tab-content-enter">
           {/* 월 네비게이션 */}
           <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
             <button className="btn sm" onClick={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}>‹</button>
@@ -358,7 +355,7 @@ function SampleContent() {
           {/* 날짜 그리드 */}
           <div className="cal-grid">
             {days.map(({ date, cur }, idx) => {
-              const ymd = toYMD(date);
+              const ymd = formatDate(date);
               const daySamples = samplesByDate[ymd] || [];
               const isToday = ymd === today;
               return (
@@ -405,7 +402,7 @@ function SampleContent() {
 
       {/* 갤러리 그리드 */}
       {!loading && viewMode === 'grid' && filtered.length > 0 && (
-        <div style={{
+        <div className="tab-content-enter" style={{
           display:'grid',
           gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))',
           gap:16,

@@ -101,7 +101,7 @@ export default function Page() {
   const totalRows = stats ? Object.values(stats).reduce((s, n) => s + n, 0) : 0;
 
   return (
-    <main className="main">
+    <main className="main page-enter">
       <PageHeader
         breadcrumb={["설정 / 백업", "시스템 설정"]}
         title="시스템 설정"

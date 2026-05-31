@@ -1,17 +1,32 @@
 'use client';
+import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 
 export function PageHeader({ title, sub, breadcrumb, actions }) {
+  const router = useRouter();
   return (
     <div className="page-head">
       {breadcrumb && (
         <div className="breadcrumb">
-          {breadcrumb.map((b, i) => (
-            <span key={i} style={{display:'inline-flex',alignItems:'center',gap:4}}>
-              {i > 0 && <Icon.chevRight style={{width:12,height:12,color:'var(--text-4)'}}/>}
-              <span className={i === breadcrumb.length-1 ? 'bc-current' : 'bc-link'}>{b}</span>
-            </span>
-          ))}
+          {breadcrumb.map((b, i) => {
+            const isLast = i === breadcrumb.length - 1;
+            const label  = typeof b === 'string' ? b : b.label;
+            const href   = typeof b === 'object' && b.href ? b.href : null;
+            return (
+              <span key={i} style={{display:'inline-flex',alignItems:'center',gap:4}}>
+                {i > 0 && <Icon.chevRight style={{width:12,height:12,color:'var(--text-4)'}}/>}
+                {!isLast && href ? (
+                  <button
+                    className="bc-link"
+                    style={{background:'none',border:'none',padding:0,cursor:'pointer',font:'inherit'}}
+                    onClick={() => router.push(href)}
+                  >{label}</button>
+                ) : (
+                  <span className={isLast ? 'bc-current' : 'bc-link'} {...(isLast ? { 'aria-current': 'page' } : {})}>{label}</span>
+                )}
+              </span>
+            );
+          })}
         </div>
       )}
       <div className="page-head-row">

@@ -122,7 +122,7 @@ export default function Page() {
 
   if (!profile) {
     return (
-      <main className="main">
+      <main className="main page-enter">
         <PageHeader breadcrumb={["설정 / 백업", "계정 관리"]} title="계정 관리" />
         <div className="card" style={{marginTop:24,padding:'20px 24px',color:'var(--text-3)'}}>
           프로필이 없습니다. 아래에서 설정하거나, 먼저 로그인 정보를 등록하세요.
@@ -147,7 +147,7 @@ export default function Page() {
   }
 
   return (
-    <main className="main">
+    <main className="main page-enter">
       <PageHeader
         breadcrumb={["설정 / 백업", "계정 관리"]}
         title="계정 관리"

@@ -52,6 +52,7 @@ export function NoteContent() {
   const [deletingIds,  setDeletingIds]  = useState(new Set());
   const [confirmBatch, setConfirmBatch] = useState(false);
   const [confirmDeletePreset, setConfirmDeletePreset] = useState(null);
+  const [singleDeleteNote, setSingleDeleteNote] = useState(null);
   const [presets,      setPresets]      = useState(() => {
     try { return JSON.parse(localStorage.getItem(KEYS.NOTE_PRESETS) || '[]'); } catch { return []; }
   });
@@ -156,8 +157,13 @@ export function NoteContent() {
     scheduleSearchHistory(val);
   }
 
-  async function handleDelete(note, e) {
+  function handleDelete(note, e) {
     e?.stopPropagation();
+    setSingleDeleteNote(note);
+  }
+
+  async function execDelete(note) {
+    setSingleDeleteNote(null);
     setDeletingIds(s => new Set([...s, note.id]));
     await new Promise(r => setTimeout(r, 250));
     setNotes(prev => prev.filter(n => n.id !== note.id));
@@ -168,7 +174,7 @@ export function NoteContent() {
       label: '실행취소',
       onClick: () => { cancelled = true; load(); },
     });
-    await new Promise(r => setTimeout(r, 4100));
+    await new Promise(r => setTimeout(r, 4200));
     if (!cancelled) {
       try { await deleteNote(note.id); }
       catch (err) { console.error('[NoteContent] deleteNote', err); load(); showToast('삭제 실패', 'error'); }
@@ -300,6 +306,14 @@ export function NoteContent() {
         confirmLabel="삭제" cancelLabel="취소" danger
         onConfirm={() => { deletePreset(confirmDeletePreset); setConfirmDeletePreset(null); }}
         onCancel={() => setConfirmDeletePreset(null)}
+      />
+      <ConfirmDialog
+        open={singleDeleteNote !== null}
+        title="노트를 삭제할까요?"
+        message="삭제한 후 잠시 동안 실행취소가 가능합니다."
+        confirmLabel="삭제" cancelLabel="취소" danger
+        onConfirm={() => execDelete(singleDeleteNote)}
+        onCancel={() => setSingleDeleteNote(null)}
       />
       <PageHeader
         breadcrumb={['메뉴개발노트', '노트 목록']}
@@ -608,7 +622,7 @@ export function NoteContent() {
                     style={{cursor:'pointer', background: isFocused ? 'var(--accent-soft, rgba(99,102,241,.08))' : undefined}}
                     onClick={() => { setFocusedRow(note.id); setDetailNote(note); }}>
                     <td style={{fontWeight:600}}>
-                      {note.parentId && <span style={{fontSize:10,color:'var(--text-4)',marginRight:4}}>버전</span>}
+                      {note.parentId && <span style={{fontSize:10,color:'var(--accent)',marginLeft:4}}>🔗 체인</span>}
                       {note.title}
                     </td>
                     <td style={{color:'var(--text-2)'}}>{note.menuName}</td>
