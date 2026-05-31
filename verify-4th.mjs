@@ -74,8 +74,11 @@ for (const [path, expect] of [
 // 6. RecipeEditor dynamic import
 {
   const { execSync } = await import('child_process');
-  const src = execSync('grep -n "dynamic\|next/dynamic" /Users/lmh/Documents/Codex/7th-rnd-manager-v3/app/cost/recipe/page.jsx | head -5').toString();
-  log(src.includes('dynamic') ? '✅' : '❌', 'RecipeEditor:dynamic import', src.trim().split('\n')[0]);
+  // Use -F (fixed string) with two passes to avoid BSD grep \| issue
+  const src1 = execSync('grep -n "next/dynamic" /Users/lmh/Documents/Codex/7th-rnd-manager-v3/app/cost/recipe/page.jsx | head -3').toString();
+  const src2 = execSync('grep -n "dynamic(" /Users/lmh/Documents/Codex/7th-rnd-manager-v3/app/cost/recipe/page.jsx | head -3').toString();
+  const src = src1 + src2;
+  log(src.includes('dynamic') ? '✅' : '❌', 'RecipeEditor:dynamic import', (src1.trim() || src2.trim()).split('\n')[0]);
 }
 
 // 7. SampleCard component extraction

@@ -29,7 +29,7 @@ const NoteTableRow = React.memo(function NoteTableRow({ note, focusedRow, handle
   const sc = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
   const isFocused = focusedRow === note.id;
   return (
-    <tr key={note.id}
+    <tr
       style={{ cursor: 'pointer', background: isFocused ? 'var(--accent-soft, rgba(99,102,241,.08))' : undefined }}
       onClick={() => { setFocusedRow(note.id); setDetailNote(note); }}>
       <td style={{ fontWeight: 600 }}>

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
@@ -205,7 +205,7 @@ export default function Page() {
   );
 }
 
-function KanbanCard({ note, colIdx, maxIdx, onMove, onStatusChange, onEdit, isDragging, bouncing, onDragStart, onDragEnd }) {
+const KanbanCard = React.memo(function KanbanCard({ note, colIdx, maxIdx, onMove, onStatusChange, onEdit, isDragging, bouncing, onDragStart, onDragEnd }) {
   const sc = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
   const sb = STATUS_BORDER[note.status] || 'var(--border)';
 
@@ -295,4 +295,4 @@ function KanbanCard({ note, colIdx, maxIdx, onMove, onStatusChange, onEdit, isDr
       </div>
     </div>
   );
-}
+});

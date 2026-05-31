@@ -9,6 +9,7 @@ import { Icon } from '@/components/icons';
  * - 스크림(어두운 배경) + 카드 + 헤더(제목+닫기버튼)를 제공
  * - title, subtitle은 문자열 또는 ReactNode 모두 가능
  * - 포커스 트랩: 모달 내부 요소 간 Tab/Shift+Tab 순환, 닫힐 때 이전 포커스 복원
+ * - Esc 키로 닫기, 180ms 닫기 애니메이션
  */
 export function ModalFrame({
   title,
@@ -22,29 +23,44 @@ export function ModalFrame({
 }) {
   const containerRef = useRef(null);
   const previousFocusRef = useRef(null);
+  const closeTimerRef = useRef(null);
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = useCallback(() => {
+    if (closeTimerRef.current) return; // 이미 닫히는 중
     setIsClosing(true);
-    setTimeout(() => onClose(), 180);
+    closeTimerRef.current = setTimeout(() => onClose(), 180);
   }, [onClose]);
 
+  // 타이머 cleanup (컴포넌트 언마운트 시)
+  useEffect(() => () => { clearTimeout(closeTimerRef.current); }, []);
+
+  // Esc 키 닫기
   useEffect(() => {
-    // 모달이 열릴 때 이전 포커스 저장
+    const handler = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        handleClose();
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [handleClose]);
+
+  // 포커스 트랩
+  useEffect(() => {
     previousFocusRef.current = document.activeElement;
 
     const el = containerRef.current;
     if (!el) return;
 
     const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const getFocusable = () =>
+      Array.from(el.querySelectorAll(FOCUSABLE)).filter(
+        (node) => !node.disabled && node.offsetParent !== null
+      );
 
-    const getFocusable = () => Array.from(el.querySelectorAll(FOCUSABLE)).filter(
-      (node) => !node.disabled && node.offsetParent !== null
-    );
-
-    // 첫 번째 포커스 가능한 요소로 포커스 이동
-    const focusable = getFocusable();
-    focusable[0]?.focus();
+    getFocusable()[0]?.focus();
 
     const handle = (e) => {
       if (e.key !== 'Tab') return;
@@ -69,7 +85,6 @@ export function ModalFrame({
 
     return () => {
       el.removeEventListener('keydown', handle);
-      // 모달이 닫힐 때 이전 포커스 복원
       previousFocusRef.current?.focus?.();
     };
   }, []);
@@ -81,13 +96,17 @@ export function ModalFrame({
       display: 'grid', placeItems: 'center',
       zIndex,
     }}>
-      <div ref={containerRef} className={`card modal-anim${isClosing ? ' modal-exit' : ''}`} style={{ width, maxHeight, overflowY: 'auto', padding }}>
+      <div
+        ref={containerRef}
+        className={`card modal-anim${isClosing ? ' modal-exit' : ''}`}
+        style={{ width, maxHeight, overflowY: 'auto', padding }}
+      >
         <div style={{
           display: 'flex', justifyContent: 'space-between',
           alignItems: 'center', marginBottom: 16,
         }}>
           <div>
-            {title && <div style={{ fontWeight: 700, fontSize: 16 }}>{title}</div>}
+            {title    && <div style={{ fontWeight: 700, fontSize: 16 }}>{title}</div>}
             {subtitle && <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{subtitle}</div>}
           </div>
           <button type="button" className="btn" style={{ padding: '4px 8px' }} onClick={handleClose}>
