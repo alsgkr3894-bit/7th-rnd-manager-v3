@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 
@@ -22,6 +22,12 @@ export function ModalFrame({
 }) {
   const containerRef = useRef(null);
   const previousFocusRef = useRef(null);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = useCallback(() => {
+    setIsClosing(true);
+    setTimeout(() => onClose(), 180);
+  }, [onClose]);
 
   useEffect(() => {
     // 모달이 열릴 때 이전 포커스 저장
@@ -75,7 +81,7 @@ export function ModalFrame({
       display: 'grid', placeItems: 'center',
       zIndex,
     }}>
-      <div ref={containerRef} className="card modal-anim" style={{ width, maxHeight, overflowY: 'auto', padding }}>
+      <div ref={containerRef} className={`card modal-anim${isClosing ? ' modal-exit' : ''}`} style={{ width, maxHeight, overflowY: 'auto', padding }}>
         <div style={{
           display: 'flex', justifyContent: 'space-between',
           alignItems: 'center', marginBottom: 16,
@@ -84,7 +90,7 @@ export function ModalFrame({
             {title && <div style={{ fontWeight: 700, fontSize: 16 }}>{title}</div>}
             {subtitle && <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{subtitle}</div>}
           </div>
-          <button type="button" className="btn" style={{ padding: '4px 8px' }} onClick={onClose}>
+          <button type="button" className="btn" style={{ padding: '4px 8px' }} onClick={handleClose}>
             <Icon.close style={{ width: 16, height: 16 }}/>
           </button>
         </div>

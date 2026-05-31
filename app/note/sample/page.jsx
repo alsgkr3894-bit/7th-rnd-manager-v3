@@ -18,6 +18,7 @@ import { useSampleCompareMode } from '@/hooks/useSampleCompareMode';
 import { Stars } from './_Stars';
 import { CompareModal } from './_CompareModal';
 import { SampleDetailModal } from './_SampleDetailModal';
+import { SampleCard } from '@/components/note/SampleCard';
 
 const SORT_OPTIONS = [
   { key: 'createdAt', label: '최신순' },
@@ -408,144 +409,28 @@ function SampleContent() {
           gap:16,
         }}>
           {filtered.map((rec, i) => {
-            const thumb = rec.photos?.[0]?.data;
-            const tags = rec.tags ? rec.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
             const isBatchSelected = selected.has(rec.id);
             const compareIdx = compareIdxMap.has(rec.id) ? compareIdxMap.get(rec.id) : -1;
-            const isCompareSelected = compareIdx !== -1;
 
             return (
-              <div key={rec.id} className="stagger" style={{ animationDelay:`${Math.min(i, 8) * 40}ms`, position:'relative' }}>
-                {/* 배치 체크박스 오버레이 */}
-                {batchMode && (
-                  <div className={'batch-checkbox-wrap' + (isBatchSelected ? ' checked' : '')} style={{
-                    position:'absolute', top:8, right:8, zIndex:10,
-                    width:20, height:20, borderRadius:4,
-                    background:'#fff', border:'2px solid var(--border)',
-                    display:'flex', alignItems:'center', justifyContent:'center',
-                    pointerEvents:'none',
-                  }}>
-                    {isBatchSelected && (
-                      <span style={{ color:'#22c55e', fontSize:14, lineHeight:1 }}>✓</span>
-                    )}
-                  </div>
-                )}
-                {/* 비교 뱃지 */}
-                {compareMode && isCompareSelected && (
-                  <div style={{
-                    position:'absolute', top:8, right:8, zIndex:10,
-                    width:22, height:22, borderRadius:'50%',
-                    background:'var(--accent)', color:'#fff',
-                    display:'flex', alignItems:'center', justifyContent:'center',
-                    fontSize:12, fontWeight:800, pointerEvents:'none',
-                  }}>
-                    {compareIdx + 1}
-                  </div>
-                )}
-                <div
-                  className="card card-lift"
-                  style={{
-                    padding:0, cursor:'pointer', overflow:'hidden', height:'100%',
-                    outline: batchMode && isBatchSelected ? '2px solid #22c55e' : compareMode && isCompareSelected ? '2px solid var(--accent)' : 'none',
-                  }}
-                  onClick={() => {
-                    if (batchMode) { toggleSelect(rec.id); return; }
-                    if (compareMode) { toggleCompare(rec.id); return; }
-                    setDetailRec(rec);
-                  }}
-                >
-                  {/* 썸네일 */}
-                  <div style={{
-                    height:180, background:'var(--surface-2)',
-                    display:'flex', alignItems:'center', justifyContent:'center',
-                    position:'relative', overflow:'hidden',
-                  }}>
-                    {thumb ? (
-                      <img src={thumb} alt={`${rec.menuName || rec.title} 샘플 사진`}
-                        loading="lazy"
-                        style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                    ) : (
-                      <div style={{ fontSize:40, opacity:0.3 }}>📷</div>
-                    )}
-                    {/* 사진 수 배지 */}
-                    {(rec.photos?.length || 0) > 1 && (
-                      <span style={{
-                        position:'absolute', top:8, right:8,
-                        background:'rgba(0,0,0,0.55)', color:'#fff',
-                        fontSize:10, padding:'2px 7px', borderRadius:10, fontWeight:700,
-                      }}>
-                        📷 {rec.photos.length}
-                      </span>
-                    )}
-                    {/* 카테고리 배지 */}
-                    <span style={{
-                      position:'absolute', bottom:8, left:8,
-                      background:'rgba(0,0,0,0.5)', color:'#fff',
-                      fontSize:10, padding:'2px 8px', borderRadius:6, fontWeight:700,
-                    }}>{rec.category}</span>
-                  </div>
-
-                  {/* 카드 내용 */}
-                  <div style={{ padding:'12px 14px 14px' }}>
-                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:4 }}>
-                      <div style={{
-                        fontSize:14, fontWeight:700, color:'var(--text-1)',
-                        overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1,
-                      }}>{rec.title}</div>
-                      <div className="inline-stars" onClick={e => e.stopPropagation()}>
-                        {[1,2,3,4,5].map(n => (
-                          <button key={n}
-                            className={'inline-star' + (n <= (rec.rating||0) ? ' lit' : '')}
-                            onClick={e => handleRatingChange(rec.id, (rec.rating||0) === n ? 0 : n, e)}>★</button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div style={{ fontSize:12, color:'var(--text-3)', marginBottom:8, display:'flex', gap:6, alignItems:'center' }}>
-                      <span style={{ fontWeight:600, color:'var(--text-2)' }}>{rec.menuName}</span>
-                      {rec.testDate && <span>· {rec.testDate}</span>}
-                      {rec.batchNo  && <span>· {rec.batchNo}</span>}
-                    </div>
-
-                    {rec.description && (
-                      <div style={{
-                        fontSize:12, color:'var(--text-3)', lineHeight:1.6,
-                        display:'-webkit-box', WebkitLineClamp:2,
-                        WebkitBoxOrient:'vertical', overflow:'hidden', marginBottom:8,
-                      }}>{rec.description}</div>
-                    )}
-
-                    {tags.length > 0 && (
-                      <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginBottom:8 }}>
-                        {tags.slice(0, 4).map(t => (
-                          <span key={t} style={{
-                            background:'var(--surface-2)', color:'var(--text-3)',
-                            fontSize:10, padding:'1px 6px', borderRadius:8,
-                          }}>#{t}</span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* 액션 버튼 (배치/비교 모드 아닐 때만) */}
-                    {!batchMode && !compareMode && (
-                      <div style={{ display:'flex', gap:6, marginTop:4 }} onClick={e => e.stopPropagation()}>
-                        <button className="btn sm" style={{ flex:1 }}
-                          onClick={() => router.push(`/note/sample/${rec.id}`)}>
-                          수정
-                        </button>
-                        <button className="btn sm"
-                          onClick={e => handleCopy(rec, e)}>
-                          복사
-                        </button>
-                        <button className="btn sm" style={{ color:'var(--negative)' }}
-                          onClick={() => handleDelete(rec)}>
-                          삭제
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <SampleCard
+                key={rec.id}
+                sample={rec}
+                batchMode={batchMode}
+                isBatchSelected={isBatchSelected}
+                compareMode={compareMode}
+                compareIdx={compareIdx}
+                animDelay={Math.min(i, 8) * 40}
+                onCardClick={() => {
+                  if (batchMode) { toggleSelect(rec.id); return; }
+                  if (compareMode) { toggleCompare(rec.id); return; }
+                  setDetailRec(rec);
+                }}
+                onRatingChange={handleRatingChange}
+                onEdit={() => router.push(`/note/sample/${rec.id}`)}
+                onCopy={e => handleCopy(rec, e)}
+                onDelete={() => handleDelete(rec)}
+              />
             );
           })}
         </div>

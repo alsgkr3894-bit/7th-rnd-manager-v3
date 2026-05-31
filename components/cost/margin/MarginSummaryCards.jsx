@@ -24,7 +24,7 @@ export function MarginSummaryCards({ stats, viewMode, hasAdjustment }) {
         <div className="stat-label">
           평균 {viewMode === 'margin' ? '마진율' : '원가율'}{hasAdjustment ? ' ⟳' : ''}
         </div>
-        <div className="stat-value" style={{ color: MC(viewMode === 'margin' ? 100 - stats.avg : stats.avg, viewMode) }}>
+        <div key={stats.avg} className="stat-value count-landed" style={{ color: MC(viewMode === 'margin' ? 100 - stats.avg : stats.avg, viewMode) }}>
           {viewMode === 'margin' ? (100 - stats.avg).toFixed(1) : stats.avg.toFixed(1)}<span className="unit">%</span>
         </div>
       </div>
@@ -32,13 +32,13 @@ export function MarginSummaryCards({ stats, viewMode, hasAdjustment }) {
         <>
           <div className="stat-card">
             <div className="stat-label">원가율 30% 이하</div>
-            <div className="stat-value" style={{ color:'var(--positive, #10b981)' }}>
+            <div key={stats.lowCostCount} className="stat-value count-landed" style={{ color:'var(--positive, #10b981)' }}>
               {stats.lowCostCount}<span className="unit">개</span>
             </div>
           </div>
           <div className="stat-card">
             <div className="stat-label">원가율 40% 초과</div>
-            <div className="stat-value" style={{ color:stats.highCostCount > 0 ? 'var(--negative, #ef4444)' : undefined }}>
+            <div key={stats.highCostCount} className="stat-value count-landed" style={{ color:stats.highCostCount > 0 ? 'var(--negative, #ef4444)' : undefined }}>
               {stats.highCostCount}<span className="unit">개</span>
             </div>
           </div>
@@ -47,13 +47,13 @@ export function MarginSummaryCards({ stats, viewMode, hasAdjustment }) {
         <>
           <div className="stat-card">
             <div className="stat-label">마진율 70% 이상</div>
-            <div className="stat-value" style={{ color:'var(--positive, #10b981)' }}>
+            <div key={stats.goodMarginCount ?? stats.lowCostCount} className="stat-value count-landed" style={{ color:'var(--positive, #10b981)' }}>
               {stats.goodMarginCount ?? stats.lowCostCount}<span className="unit">개</span>
             </div>
           </div>
           <div className="stat-card">
             <div className="stat-label">마진율 60% 미만</div>
-            <div className="stat-value" style={{ color:(stats.badMarginCount ?? stats.highCostCount) > 0 ? 'var(--negative, #ef4444)' : undefined }}>
+            <div key={stats.badMarginCount ?? stats.highCostCount} className="stat-value count-landed" style={{ color:(stats.badMarginCount ?? stats.highCostCount) > 0 ? 'var(--negative, #ef4444)' : undefined }}>
               {stats.badMarginCount ?? stats.highCostCount}<span className="unit">개</span>
             </div>
           </div>

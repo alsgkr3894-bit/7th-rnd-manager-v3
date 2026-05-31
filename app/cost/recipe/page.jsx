@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -17,11 +17,16 @@ import { getAllMenuMaster } from '@/lib/menu-master/store';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
 import { parseMenuCode } from '@/lib/cost/menu-price/code';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
-import { RecipeEditor } from '@/components/cost/recipe/RecipeEditor';
 import { costRateColor } from '@/lib/cost/rate-color';
 import { KEYS } from '@/lib/note/keys';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import dynamic from 'next/dynamic';
+
+const RecipeEditor = dynamic(
+  () => import('@/components/cost/recipe/RecipeEditor').then(m => ({ default: m.RecipeEditor })),
+  { loading: () => <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-3)' }}>로딩 중…</div> }
+);
 
 const emptyDraft = () => ({
   menuCode:     '',
@@ -103,6 +108,9 @@ function RecipeContent() {
   const [dropTarget, setDropTarget] = useState(null); // { cat, beforeIdx }
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
+  // selectedId 변경 감지용 ref — draft 동기화 effect에서 불필요한 재실행 방지
+  const prevSelectedId = useRef(null);
+
   const load = useCallback(async () => {
     await initDB();
     const [files, meta, recs, masters, menuPrices, groups] = await Promise.all([
@@ -151,13 +159,16 @@ function RecipeContent() {
     window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
   }, [search, pathname]);
 
-  // load 후 선택된 레시피 draft 동기화
+  // load 후 선택된 레시피 draft 동기화 — selectedId가 실제로 바뀔 때만 실행
   useEffect(() => {
-    if (!isNew && selectedId != null) {
+    if (!isNew && selectedId != null && selectedId !== prevSelectedId.current) {
+      prevSelectedId.current = selectedId;
       const rec = recipes.find(r => r.id === selectedId);
       if (rec) setDraft(prepareRecipeForEdit(rec));
+    } else if (isNew) {
+      prevSelectedId.current = null;
     }
-  }, [recipes]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [recipes, isNew, selectedId]);
 
   function handleSelect(id) {
     setSelectedId(id);

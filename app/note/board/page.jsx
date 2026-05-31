@@ -15,6 +15,7 @@ export default function Page() {
   const [loading,         setLoading]         = useState(true);
   const [dragId,          setDragId]          = useState(null);
   const [dragOverStatus,  setDragOverStatus]  = useState(null);
+  const [dropTarget,      setDropTarget]      = useState(null); // { status, beforeIdx }
   const [bouncingIds,     setBouncingIds]     = useState(new Set());
 
   const load = useCallback(async () => {
@@ -59,6 +60,7 @@ export default function Page() {
   async function handleDrop(e, status) {
     e.preventDefault();
     setDragOverStatus(null);
+    setDropTarget(null);
     const noteId = e.dataTransfer.getData('noteId');
     if (!noteId) return;
     const note = notes.find(n => String(n.id) === String(noteId));
@@ -108,7 +110,12 @@ export default function Page() {
               style={{minWidth:180}}
               className={isOver ? 'kanban-col-over' : undefined}
               onDragOver={e => { e.preventDefault(); setDragOverStatus(status); }}
-              onDragLeave={() => setDragOverStatus(null)}
+              onDragLeave={e => {
+                if (!e.currentTarget.contains(e.relatedTarget)) {
+                  setDragOverStatus(null);
+                  setDropTarget(null);
+                }
+              }}
               onDrop={e => handleDrop(e, status)}
             >
               {/* 컬럼 헤더 */}
@@ -140,27 +147,44 @@ export default function Page() {
                     없음
                   </div>
                 )}
-                {colNotes.map(note => (
-                  <KanbanCard
+                {colNotes.map((note, cardIdx) => (
+                  <div
                     key={note.id}
-                    note={note}
-                    colIdx={colIdx}
-                    maxIdx={STATUSES.length - 1}
-                    onMove={dir => moveStatus(note, dir)}
-                    onStatusChange={s => changeStatus(note, s)}
-                    onEdit={() => router.push(`/note/${note.id}`)}
-
-                    isDragging={dragId === note.id}
-                    bouncing={bouncingIds.has(note.id)}
-                    onDragStart={e => {
-                      e.dataTransfer.setData('noteId', note.id);
-                      setDragId(note.id);
+                    onDragOver={e => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const midY = rect.top + rect.height / 2;
+                      const beforeIdx = e.clientY < midY ? cardIdx : cardIdx + 1;
+                      setDropTarget({ status, beforeIdx });
                     }}
-                    onDragEnd={() => {
-                      setDragId(null);
-                      setDragOverStatus(null);
-                    }}
-                  />
+                  >
+                    {dropTarget?.status === status && dropTarget?.beforeIdx === cardIdx && (
+                      <div className="kanban-drop-indicator" />
+                    )}
+                    <KanbanCard
+                      note={note}
+                      colIdx={colIdx}
+                      maxIdx={STATUSES.length - 1}
+                      onMove={dir => moveStatus(note, dir)}
+                      onStatusChange={s => changeStatus(note, s)}
+                      onEdit={() => router.push(`/note/${note.id}`)}
+                      isDragging={dragId === note.id}
+                      bouncing={bouncingIds.has(note.id)}
+                      onDragStart={e => {
+                        e.dataTransfer.setData('noteId', note.id);
+                        setDragId(note.id);
+                      }}
+                      onDragEnd={() => {
+                        setDragId(null);
+                        setDragOverStatus(null);
+                        setDropTarget(null);
+                      }}
+                    />
+                    {dropTarget?.status === status && dropTarget?.beforeIdx === cardIdx + 1 && cardIdx === colNotes.length - 1 && (
+                      <div className="kanban-drop-indicator" />
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
@@ -184,12 +208,30 @@ export default function Page() {
 function KanbanCard({ note, colIdx, maxIdx, onMove, onStatusChange, onEdit, isDragging, bouncing, onDragStart, onDragEnd }) {
   const sc = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
   const sb = STATUS_BORDER[note.status] || 'var(--border)';
+
+  function handleKeyDown(e) {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      onMove(-1);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      onMove(1);
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onEdit();
+    }
+  }
+
   return (
     <div
       className={`kanban-card${isDragging ? ' kanban-card-dragging' : ''}${bouncing ? ' kanban-card-bounce' : ''}`}
       draggable
+      tabIndex={0}
+      role="article"
+      aria-label={note.title}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
+      onKeyDown={handleKeyDown}
       style={{
         background:'var(--surface)', borderRadius:10,
         border:'1px solid var(--border)', borderLeft:`3px solid ${sb}`,
@@ -197,6 +239,7 @@ function KanbanCard({ note, colIdx, maxIdx, onMove, onStatusChange, onEdit, isDr
         opacity: isDragging ? 0.4 : 1,
         cursor: 'grab',
         transition: 'opacity 0.15s',
+        outline: 'none',
       }}
     >
       <div style={{fontWeight:700, fontSize:13, color:'var(--text-1)', marginBottom:3,

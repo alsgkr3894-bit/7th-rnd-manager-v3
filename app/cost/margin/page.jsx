@@ -302,25 +302,34 @@ export default function Page() {
   const stats = useMemo(() => {
     // filtered 기준으로 계산 (catFilter 적용 후 테이블과 일치)
     if (!filtered.length) return null;
-    const all = filtered.flatMap(r =>
-      (r.sizes || []).map(s => {
+    // Single reduce pass — avoids flatMap+map+filter allocations
+    let sum = 0, count = 0;
+    let lowCostCount = 0, highCostCount = 0, goodMarginCount = 0, badMarginCount = 0;
+    for (const r of filtered) {
+      for (const s of (r.sizes || [])) {
         const cost = r.costMap?.[s.label] || 0;
         const eff  = applyDiscount(s.sellingPrice, discount);
         const net  = calcNetRevenue(eff, activePlatform.fees, s.label);
-        return calcPlatformMargin(cost, net);
-      }).filter(m => m != null)
-    );
-    if (!all.length) return null;
-    const avg = all.reduce((a, b) => a + b, 0) / all.length;
-    // cost view: lowCostCount = 원가율 ≤ 30%, highCostCount = 원가율 > 40%
-    // margin view: lowCostCount reused as goodCount = 마진율 ≥ 70%, highCostCount = 마진율 < 60%
-    const marginAll = all.map(m => 100 - m);
+        const m    = calcPlatformMargin(cost, net);
+        if (m == null) continue;
+        sum += m;
+        count++;
+        // cost view: lowCostCount = 원가율 ≤ 30%, highCostCount = 원가율 > 40%
+        if (m <= COST_RATE.GOOD)    lowCostCount++;
+        if (m >  COST_RATE.WARNING) highCostCount++;
+        // margin view: goodMarginCount = 마진율 ≥ 70%, badMarginCount = 마진율 < 60%
+        const margin = 100 - m;
+        if (margin >= MARGIN_RATE.GOOD)    goodMarginCount++;
+        if (margin <  MARGIN_RATE.WARNING) badMarginCount++;
+      }
+    }
+    if (!count) return null;
     return {
-      avg,
-      lowCostCount:  all.filter(m => m <= COST_RATE.GOOD).length,          // cost: 원가율 ≤ 30%
-      highCostCount: all.filter(m => m >  COST_RATE.WARNING).length,        // cost: 원가율 > 40%
-      goodMarginCount: marginAll.filter(m => m >= MARGIN_RATE.GOOD).length,    // margin: 마진율 ≥ 70%
-      badMarginCount:  marginAll.filter(m => m <  MARGIN_RATE.WARNING).length, // margin: 마진율 < 60%
+      avg: sum / count,
+      lowCostCount,
+      highCostCount,
+      goodMarginCount,
+      badMarginCount,
     };
   }, [filtered, activePlatform, discount]);
 
@@ -424,7 +433,11 @@ export default function Page() {
 
       {/* Table */}
       {loading ? (
-        <div className="card" style={{ padding:40, textAlign:'center', color:'var(--text-3)', fontSize:13 }}>로딩 중…</div>
+        <div className="card" style={{ padding: 16 }}>
+          {[1,2,3,4,5].map(i => (
+            <div key={i} className="skeleton" style={{ height: 44, borderRadius: 8, marginBottom: 8 }} />
+          ))}
+        </div>
       ) : rows.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon-wrap"><Icon.doc style={{ width: 32, height: 32 }}/></div>

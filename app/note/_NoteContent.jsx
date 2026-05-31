@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -24,6 +24,47 @@ import { NoteCard } from './_NoteCard';
 import { NoteDetailModal } from './_NoteDetailModal';
 import { NoteBatchToolbar } from './_NoteBatchToolbar';
 import { NotePresetBar } from './_NotePresetBar';
+
+const NoteTableRow = React.memo(function NoteTableRow({ note, focusedRow, handleStatusChange, router, handleDelete, setFocusedRow, setDetailNote }) {
+  const sc = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
+  const isFocused = focusedRow === note.id;
+  return (
+    <tr key={note.id}
+      style={{ cursor: 'pointer', background: isFocused ? 'var(--accent-soft, rgba(99,102,241,.08))' : undefined }}
+      onClick={() => { setFocusedRow(note.id); setDetailNote(note); }}>
+      <td style={{ fontWeight: 600 }}>
+        {note.parentId && <span style={{ fontSize: 10, color: 'var(--accent)', marginLeft: 4 }}>🔗 체인</span>}
+        {note.title}
+      </td>
+      <td style={{ color: 'var(--text-2)' }}>{note.menuName}</td>
+      <td style={{ color: 'var(--text-3)', fontSize: 12 }}>{note.category}</td>
+      <td>
+        <select value={note.status}
+          onChange={e => handleStatusChange(note.id, e.target.value, e)}
+          onClick={e => e.stopPropagation()}
+          style={{
+            fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 12,
+            background: sc.bg, color: sc.color,
+            border: `1px solid ${sc.color}40`, cursor: 'pointer', fontFamily: 'inherit', outline: 'none',
+          }}>
+          {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </td>
+      <td style={{ fontSize: 12, color: 'var(--text-3)' }}>{formatFullDate(note.testDate)}</td>
+      <td onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button className="btn sm" onClick={() => router.push(`/note/${note.id}`)}>
+            <Icon.edit style={{ width: 12, height: 12 }} />
+          </button>
+          <button className="btn sm" style={{ color: 'var(--negative)' }}
+            onClick={e => handleDelete(note, e)}>
+            <Icon.trash style={{ width: 12, height: 12 }} />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+});
 
 const SORT_OPTIONS = [
   { key: 'createdAt', label: '최신순' },
@@ -145,8 +186,12 @@ export function NoteContent() {
   }
 
   function exportCsv() {
-    const cols = ['id','title','menuName','category','noteType','status','testDate','testContent','createdAt'];
-    const dataRows = filtered.map(n => cols.map(k => n[k] != null ? String(n[k]) : ''));
+    const cols = ['id','title','menuName','category','noteType','status','testDate','testContent','createdAt','임시원가합계','임시원가재료수'];
+    const dataRows = filtered.map(n => [
+      ...['id','title','menuName','category','noteType','status','testDate','testContent','createdAt'].map(k => n[k] != null ? String(n[k]) : ''),
+      n.tempCostCalc?.totalCost    != null ? String(n.tempCostCalc.totalCost)              : '',
+      n.tempCostCalc?.ingredients  != null ? String(n.tempCostCalc.ingredients.length)     : '',
+    ]);
     downloadCsv([cols, ...dataRows], `notes_${new Date().toISOString().slice(0,10)}.csv`);
     showToast(`CSV ${filtered.length}개 내보내기 완료`, 'ok');
   }
@@ -613,47 +658,18 @@ export function NoteContent() {
               </tr>
             </thead>
             <tbody>
-              {visible.map(note => {
-                const sc = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
-                const sb = STATUS_BORDER[note.status] || 'var(--border)';
-                const isFocused = focusedRow === note.id;
-                return (
-                  <tr key={note.id}
-                    style={{cursor:'pointer', background: isFocused ? 'var(--accent-soft, rgba(99,102,241,.08))' : undefined}}
-                    onClick={() => { setFocusedRow(note.id); setDetailNote(note); }}>
-                    <td style={{fontWeight:600}}>
-                      {note.parentId && <span style={{fontSize:10,color:'var(--accent)',marginLeft:4}}>🔗 체인</span>}
-                      {note.title}
-                    </td>
-                    <td style={{color:'var(--text-2)'}}>{note.menuName}</td>
-                    <td style={{color:'var(--text-3)',fontSize:12}}>{note.category}</td>
-                    <td>
-                      <select value={note.status}
-                        onChange={e => handleStatusChange(note.id, e.target.value, e)}
-                        onClick={e => e.stopPropagation()}
-                        style={{
-                          fontSize:11, fontWeight:700, padding:'2px 6px', borderRadius:12,
-                          background:sc.bg, color:sc.color,
-                          border:`1px solid ${sc.color}40`, cursor:'pointer', fontFamily:'inherit', outline:'none',
-                        }}>
-                        {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </td>
-                    <td style={{fontSize:12,color:'var(--text-3)'}}>{formatFullDate(note.testDate)}</td>
-                    <td onClick={e => e.stopPropagation()}>
-                      <div style={{display:'flex',gap:4}}>
-                        <button className="btn sm" onClick={() => router.push(`/note/${note.id}`)}>
-                          <Icon.edit style={{width:12,height:12}}/>
-                        </button>
-                        <button className="btn sm" style={{color:'var(--negative)'}}
-                          onClick={e => handleDelete(note, e)}>
-                          <Icon.trash style={{width:12,height:12}}/>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+              {visible.map(note => (
+                <NoteTableRow
+                  key={note.id}
+                  note={note}
+                  focusedRow={focusedRow}
+                  handleStatusChange={handleStatusChange}
+                  router={router}
+                  handleDelete={handleDelete}
+                  setFocusedRow={setFocusedRow}
+                  setDetailNote={setDetailNote}
+                />
+              ))}
             </tbody>
           </table>
           </div>
