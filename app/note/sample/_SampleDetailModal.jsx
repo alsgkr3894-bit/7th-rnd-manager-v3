@@ -1,9 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { Stars } from './_Stars';
 import { usePinchZoom } from '@/hooks/usePinchZoom';
+import { useModalOrigin } from '@/hooks/useModalOrigin';
 
 function Section({ title, children }) {
   return (
@@ -19,6 +20,8 @@ export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
   const [photoIdx, setPhotoIdx] = useState(0);
   const photos = sample.photos || [];
   const { imgRef, scale, resetScale } = usePinchZoom();
+  const cardRef = useRef(null);
+  useModalOrigin(cardRef);
 
   useEffect(() => {
     resetScale();
@@ -42,6 +45,7 @@ export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
       }}
     >
       <div
+        ref={cardRef}
         className="modal-anim"
         style={{
           background:'var(--surface)', borderRadius:20, overflow:'hidden',

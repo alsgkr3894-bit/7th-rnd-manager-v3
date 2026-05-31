@@ -1,9 +1,13 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Icon } from '@/components/icons';
 import { Stars } from './_Stars';
+import { useModalOrigin } from '@/hooks/useModalOrigin';
 
 export function CompareModal({ samples, onClose }) {
+  const cardRef = useRef(null);
+  useModalOrigin(cardRef);
+
   useEffect(() => {
     const h = e => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', h);
@@ -30,6 +34,7 @@ export function CompareModal({ samples, onClose }) {
       }}
     >
       <div
+        ref={cardRef}
         className="modal-anim"
         style={{
           background:'var(--surface)', borderRadius:20, overflow:'hidden',

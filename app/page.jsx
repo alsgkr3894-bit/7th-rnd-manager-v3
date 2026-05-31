@@ -4,6 +4,7 @@ const QUICK_NOTE_RESET_MS = 1500;
 const devError = (...a) => { if (process.env.NODE_ENV !== 'production') console.error(...a); };
 
 import { useEffect, useState, useRef, useMemo } from 'react';
+import { useModalOrigin } from '@/hooks/useModalOrigin';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { useCountUp } from '@/lib/useCountUp';
@@ -155,6 +156,8 @@ export default function HomePage() {
   const [quickNote, setQuickNote]   = useState('');
   const [quickSaved, setQuickSaved] = useState(false);
   const quickResetTimer = useRef(null);
+  const widgetConfigCardRef = useRef(null);
+  useModalOrigin(widgetConfigCardRef);
 
   const [widgetConfig, setWidgetConfig] = useState(() => {
     try { return JSON.parse(localStorage.getItem(KEYS.HOME_WIDGETS) || '{}'); } catch (err) { console.warn('[Home] storage access failed:', err); return {}; }
@@ -309,7 +312,7 @@ export default function HomePage() {
       {widgetConfigOpen && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.4)',zIndex:500,display:'grid',placeItems:'center',animation:'fade 150ms ease'}}
 >
-          <div className="card modal-anim" style={{width:'min(360px,92vw)',padding:'24px 28px'}}>
+          <div ref={widgetConfigCardRef} className="card modal-anim" style={{width:'min(360px,92vw)',padding:'24px 28px'}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
               <div style={{fontWeight:800,fontSize:15,color:'var(--text-1)'}}>홈 위젯 설정</div>
               <button className="btn xs" onClick={() => setWidgetConfigOpen(false)}>

@@ -2,6 +2,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
+import { useModalOrigin } from '@/hooks/useModalOrigin';
 
 /**
  * 앱 전반에서 공통으로 쓰는 모달 틀.
@@ -25,6 +26,9 @@ export function ModalFrame({
   const previousFocusRef = useRef(null);
   const closeTimerRef = useRef(null);
   const [isClosing, setIsClosing] = useState(false);
+
+  // 클릭한 위치에서 모달이 펼쳐지도록 transform-origin 설정
+  useModalOrigin(containerRef);
 
   const handleClose = useCallback(() => {
     if (closeTimerRef.current) return; // 이미 닫히는 중

@@ -11,6 +11,7 @@ import { KEYS } from '@/lib/note/keys';
 import { ensureSession } from '@/lib/session';
 import { pruneOldWorkLogs } from '@/lib/work-log';
 import { hydratePlatformsFromDB } from '@/lib/cost/margin/platforms';
+import { initClickOrigin } from '@/lib/ui/click-origin';
 import { COMPANIES } from '@/lib/companies';
 import { MOBILE_TAB_DEFS } from '@/lib/menu';
 import ProgressBar from './ProgressBar';
@@ -18,6 +19,7 @@ import OfflineIndicator from './OfflineIndicator';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useVisualEffects } from '@/hooks/useVisualEffects';
 import { usePageStats } from '@/hooks/usePageStats';
+import { useModalOrigin } from '@/hooks/useModalOrigin';
 
 const SHORTCUTS = [
   { key: 'N',   desc: '새 테스트 노트 작성' },
@@ -40,13 +42,16 @@ const SHORTCUTS = [
 const G_NAV = { h: '/', n: '/note', c: '/cost', r: '/report', s: '/note/sample', i: '/ingredient', u: '/nutrition', b: '/report', j: '/jette' };
 
 function ShortcutsHelp({ onClose }) {
+  const cardRef = useRef(null);
+  useModalOrigin(cardRef);
+
   return (
     <div
       role="presentation"
       style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:600, display:'grid', placeItems:'center', animation:'fade 150ms ease' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="card modal-anim" role="dialog" aria-label="키보드 단축키" aria-modal="true" style={{ width:'min(380px,92vw)', padding:'24px 28px' }}>
+      <div ref={cardRef} className="card modal-anim" role="dialog" aria-label="키보드 단축키" aria-modal="true" style={{ width:'min(380px,92vw)', padding:'24px 28px' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
           <div style={{ fontWeight:800, fontSize:16, color:'var(--text-1)' }}>키보드 단축키</div>
           <button className="btn" style={{ padding:'4px 8px' }} onClick={onClose}>
@@ -142,6 +147,9 @@ export default function AppShell({ children }) {
 
   // 사용자 설정 (다크모드/밀도/알림) 페이지 진입 시 적용
   useEffect(() => { applyAllSettings(); }, []);
+
+  // 모달이 클릭 지점에서 펼쳐지도록 포인터 위치 추적 시작
+  useEffect(() => { initClickOrigin(); }, []);
 
   // 새 브라우저 세션이면 마지막 로그인 시각 갱신
   useEffect(() => { ensureSession(); }, []);

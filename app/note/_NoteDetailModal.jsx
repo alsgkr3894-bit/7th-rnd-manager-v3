@@ -1,11 +1,14 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Icon } from '@/components/icons';
 import { STATUS_COLORS, STATUS_BORDER } from '@/lib/note';
 import { parseTagList, formatFullDate } from '@/lib/note/utils';
+import { useModalOrigin } from '@/hooks/useModalOrigin';
 
 export function NoteDetailModal({ note, onClose, onEdit }) {
   const [closing, setClosing] = useState(false);
+  const cardRef = useRef(null);
+  useModalOrigin(cardRef);
   const sc   = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
   const sb   = STATUS_BORDER[note.status] || 'var(--border)';
   const tags = parseTagList(note.tags);
@@ -27,7 +30,7 @@ export function NoteDetailModal({ note, onClose, onEdit }) {
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.45)',zIndex:200,display:'grid',placeItems:'center',animation:'fade 150ms ease'}}
       onClick={e => { if (e.target === e.currentTarget) handleClose(); }}
     >
-      <div className={'card ' + (closing ? 'modal-exit' : 'modal-anim')} style={{width:'min(600px,95vw)',maxHeight:'88vh',overflowY:'auto',padding:'24px 28px',borderLeft:`4px solid ${sb}`}}>
+      <div ref={cardRef} className={'card ' + (closing ? 'modal-exit' : 'modal-anim')} style={{width:'min(600px,95vw)',maxHeight:'88vh',overflowY:'auto',padding:'24px 28px',borderLeft:`4px solid ${sb}`}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16}}>
           <div>
             <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}>
