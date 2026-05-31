@@ -4270,8 +4270,11 @@ button { font-family: inherit; cursor: pointer; }
   top: 0; left: 14px; right: 14px;
   background: var(--accent-soft);
   border-radius: 10px;
-  /* translateY로 이동 → GPU 합성(레이아웃 유발 top 대신). will-change가 실제 transform과 일치 */
-  transition: transform 220ms cubic-bezier(0.2,0.8,0.2,1), height 220ms cubic-bezier(0.2,0.8,0.2,1), opacity 160ms ease;
+  /* translateY로 이동 → GPU 합성(레이아웃 유발 top 대신). will-change가 실제 transform과 일치.
+     transform은 spring 커브(약간 오버슈트)로 부드럽게 미끄러지게 함 */
+  transition: transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              height 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+              opacity 160ms ease;
   will-change: transform;
   pointer-events: none;
   z-index: 0;
@@ -5098,13 +5101,6 @@ kbd {
 /* ── 다크모드 crossfade ── */
 html {
   transition: background-color 200ms ease, color 150ms ease;
-}
-
-/* ── 사이드바 pill spring 커브 ── */
-.sidebar-pill {
-  transition: top 280ms cubic-bezier(0.34, 1.56, 0.64, 1),
-              opacity 160ms ease,
-              height 180ms cubic-bezier(0.2, 0.8, 0.2, 1) !important;
 }
 
 /* ── 카드 마우스 tilt ── */
