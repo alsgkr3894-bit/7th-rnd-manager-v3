@@ -113,6 +113,22 @@ function NoteHeatmapWidget({ notes }) {
     return 'lv4';
   }
 
+  // JSX 내부에서 useMemo 호출 불가 (Rules of Hooks) → 컴포넌트 본체에서 미리 계산
+  const heatmapCells = useMemo(() =>
+    Array.from({ length: WEEKS }, (_, wi) =>
+      Array.from({ length: 7 }, (_, di) => {
+        const c = getCount(wi, di);
+        return (
+          <div key={`${wi}-${di}`}
+            className={`heatmap-cell ${lvClass(c)}`}
+            title={c >= 0 ? `${c}개` : ''}
+            style={{ gridColumn: wi + 1, gridRow: di + 1, background: c < 0 ? 'transparent' : undefined }}
+          />
+        );
+      })
+    )
+  , [countMap, todayDow]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className="card" style={{ padding: '16px 20px' }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 10 }}>
@@ -133,19 +149,7 @@ function NoteHeatmapWidget({ notes }) {
           gridAutoFlow: 'column',
           gap: 3,
         }}>
-          {/* useMemo: grid cells only rebuild when countMap or todayDow changes */}
-          {useMemo(() => Array.from({ length: WEEKS }, (_, wi) =>
-            Array.from({ length: 7 }, (_, di) => {
-              const c = getCount(wi, di);
-              return (
-                <div key={`${wi}-${di}`}
-                  className={`heatmap-cell ${lvClass(c)}`}
-                  title={c >= 0 ? `${c}개` : ''}
-                  style={{ gridColumn: wi + 1, gridRow: di + 1, background: c < 0 ? 'transparent' : undefined }}
-                />
-              );
-            })
-          ), [countMap, todayDow])}
+          {heatmapCells}
         </div>
       </div>
     </div>
