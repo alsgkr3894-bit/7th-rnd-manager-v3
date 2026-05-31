@@ -4,6 +4,7 @@ import { formatNumber } from '@/lib/format';
 import { SEED_MAIN_CATEGORIES } from '@/lib/ingredient';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { getAllSuppliers } from '@/lib/cost/suppliers/store';
+import { recordPriceChange } from '@/lib/cost/price-history';
 
 const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병', 'EA', 'BOX'];
 
@@ -37,8 +38,11 @@ export function RegisterModal({ row, onSave, onClose }) {
   const [customCat,      setCustomCat]      = useState(
     !!existing?.category && !SEED_MAIN_CATEGORIES.includes(existing?.category)
   );
-  const [supplierId,   setSupplierId]   = useState(existing?.supplierId   ?? '');
-  const [supplierName, setSupplierName] = useState(existing?.supplierName ?? '');
+  const [supplierId,    setSupplierId]    = useState(existing?.supplierId   ?? '');
+  const [supplierName,  setSupplierName]  = useState(existing?.supplierName ?? '');
+  const [priceOverride, setPriceOverride] = useState(
+    existing?.priceOverride != null ? String(existing.priceOverride) : ''
+  );
   const [suppliers,    setSuppliers]    = useState([]);
   const [saving, setSaving] = useState(false);
 
@@ -64,6 +68,7 @@ export function RegisterModal({ row, onSave, onClose }) {
     e.preventDefault();
     setSaving(true);
     try {
+      const newPriceOverride = priceOverride ? Number(priceOverride) : null;
       await onSave({
         ingredientName: ingredientName.trim() || row.productName,
         category:       category.trim(),
@@ -72,7 +77,21 @@ export function RegisterModal({ row, onSave, onClose }) {
         taxType:        row.taxType || '과세',
         supplierId:     supplierId   || null,
         supplierName:   supplierName || null,
+        priceOverride:  newPriceOverride,
       });
+
+      // 기존 식자재 수정 시 단가 변경 이력 기록 (best-effort)
+      if (existing) {
+        const oldPrice = existing.priceOverride ?? null;
+        recordPriceChange({
+          ingredientId:   existing.id,
+          productCode:    existing.productCode ?? row.productCode,
+          ingredientName: ingredientName.trim() || row.productName,
+          oldPrice,
+          newPrice:       newPriceOverride,
+          source:         'register',
+        }).catch(() => {});
+      }
     } finally {
       setSaving(false);
     }
@@ -147,6 +166,13 @@ export function RegisterModal({ row, onSave, onClose }) {
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
+          </FormField>
+
+          <FormField label="단가 (직접 입력)" hint="비워두면 제때 연동가 사용">
+            <input className="form-input" type="number" min="0" step="1"
+              value={priceOverride}
+              onChange={e => setPriceOverride(e.target.value)}
+              placeholder="예) 5000"/>
           </FormField>
 
           <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:4}}>

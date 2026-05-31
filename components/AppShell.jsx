@@ -9,6 +9,7 @@ import { Icon } from './icons';
 import { applyAllSettings, getSetting, setSetting } from '@/lib/settings';
 import { ensureSession } from '@/lib/session';
 import { pruneOldWorkLogs } from '@/lib/work-log';
+import { hydratePlatformsFromDB } from '@/lib/cost/margin/platforms';
 import { COMPANIES } from '@/lib/companies';
 import { MOBILE_TAB_DEFS } from '@/lib/menu';
 import ProgressBar from './ProgressBar';
@@ -153,6 +154,9 @@ export default function AppShell({ children }) {
       try { sessionStorage.setItem(PRUNE_KEY, '1'); } catch {}
     }
   }, []);
+
+  // IndexedDB → localStorage 복원: 새 기기/브라우저에서 백업 복원 후 플랫폼 설정 hydrate
+  useEffect(() => { hydratePlatformsFromDB().catch(() => {}); }, []);
 
   // 모바일 nav 닫기 on route change
   useEffect(() => { setMobileNav(false); }, [pathname]);

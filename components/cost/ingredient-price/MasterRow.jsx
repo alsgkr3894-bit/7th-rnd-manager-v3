@@ -2,9 +2,11 @@
 import { useState } from 'react';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
+import { PriceHistoryModal } from '@/components/cost/ingredient-price/PriceHistoryModal';
 
 export function MasterRow({ r, onRegClick }) {
-  const [showNote, setShowNote] = useState(false);
+  const [showNote,    setShowNote]    = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const note = r.meta?.note || '';
 
   const vatLabel = r.priceWithTax != null ? `${formatNumber(r.priceWithTax)}원` : '—';
@@ -87,12 +89,28 @@ export function MasterRow({ r, onRegClick }) {
           )}
         </td>
         <td>
-          <button className="btn xs"
-            onClick={onRegClick} title="포장단위·분류 수정">
-            수정
-          </button>
+          <div style={{display:'flex', gap:4, alignItems:'center'}}>
+            {r.meta?.id != null && (
+              <button className="btn xs"
+                onClick={() => setShowHistory(true)}
+                title="단가 변경 이력">
+                이력
+              </button>
+            )}
+            <button className="btn xs"
+              onClick={onRegClick} title="포장단위·분류 수정">
+              수정
+            </button>
+          </div>
         </td>
       </tr>
+      {showHistory && r.meta?.id != null && (
+        <PriceHistoryModal
+          ingredientId={r.meta.id}
+          ingredientName={r.masterName || r.productName || r.productCode}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
       {showNote && note && (
         <tr>
           <td colSpan={8} style={{
