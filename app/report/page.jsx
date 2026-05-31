@@ -67,7 +67,7 @@ export default function Page() {
 
   /* 로드 */
   const { data: reportsData, loading, reload } = useDBLoad(() => getReports());
-  const reports = reportsData ?? [];
+  const reports = useMemo(() => reportsData ?? [], [reportsData]);
 
   useVisibilityRefresh(reload);
 

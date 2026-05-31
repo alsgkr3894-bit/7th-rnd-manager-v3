@@ -108,7 +108,7 @@ export default function TopBar({ onOpenPalette, onToggleSidebar, activeCompany, 
             {COMPANIES.map(c => (
               <button
                 key={c.id}
-                role="menuitem"
+                role="menuitemcheckbox"
                 aria-checked={activeCompany.id === c.id}
                 className={'company-drop-item' + (activeCompany.id === c.id ? ' active' : '')}
                 onClick={() => { onCompanyChange(c); setCompanyOpen(false); }}

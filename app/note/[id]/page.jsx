@@ -106,7 +106,7 @@ export default function Page() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [noteId]);
+  }, [noteId, router]);
 
   useEffect(() => {
     if (skipRef.current) { skipRef.current = false; return; }

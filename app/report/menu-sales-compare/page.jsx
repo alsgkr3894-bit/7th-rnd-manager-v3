@@ -85,6 +85,7 @@ export default function Page() {
         setIsLoading(false);
       }
     }).catch(() => { setIsLoading(false); setDataError('데이터베이스에 연결할 수 없어요. 판매 데이터를 먼저 업로드해 주세요.'); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, scope, yearA, monthA, yearB, monthB]);
 
   const compareRows = compareResult?.rows?.filter(r => !r.aIsZero && !r.bIsZero)

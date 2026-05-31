@@ -109,6 +109,7 @@ export default function Page() {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- closePanel is intentionally read latest; including it (unmemoized) would re-subscribe the listener every render
   }, [selectedDay, shiftMonth]);
 
   /* 패널 닫기 — fade-out 후 상태 해제 */

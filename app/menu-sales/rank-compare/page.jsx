@@ -33,7 +33,7 @@ export default function Page() {
     const latest = available[0];
     setPeriodA(latest);
     setPeriodB(deriveCompareB(latest, 'mom'));
-  }, [available]);
+  }, [available, periodA]);
 
   // 모드 변경 시 B 자동 계산 (custom/single 제외)
   useEffect(() => {

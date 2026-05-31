@@ -27,7 +27,7 @@ export default function Page() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [sampleId]);
+  }, [sampleId, router]);
 
   useKeyboardSave(handleSave);
 

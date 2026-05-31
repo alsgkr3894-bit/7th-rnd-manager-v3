@@ -22,13 +22,13 @@ export const HomeKpiRow = memo(function HomeKpiRow({ salesKpi, costKpi, noteKpi,
     if (salesCount > 0 && !salesPopped) {
       setSalesPopped(true);
     }
-  }, [salesCount]);
+  }, [salesCount, salesPopped]);
 
   useEffect(() => {
     if (noteCount > 0 && !notePopped) {
       setNotePopped(true);
     }
-  }, [noteCount]);
+  }, [noteCount, notePopped]);
 
   return (
     <div className="hero-row motion-stagger">

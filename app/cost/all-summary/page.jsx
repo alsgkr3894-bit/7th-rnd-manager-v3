@@ -137,7 +137,7 @@ export default function Page() {
   }, []);
 
   const { data: rawData, loading, error: dbErrorObj } = useDBLoad(fetchFn);
-  const rows    = rawData ?? [];
+  const rows    = useMemo(() => rawData ?? [], [rawData]);
   const dbError = dbErrorObj?.message ?? null;
 
   // ── 통계 ──────────────────────────────────────────────────
