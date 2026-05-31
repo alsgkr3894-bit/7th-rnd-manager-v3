@@ -41,8 +41,8 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
   function patch(i, p) {
     setComps(prev => prev.map((c, idx) => idx === i ? { ...c, ...p } : c));
   }
-  function remove(i) { setComps(prev => prev.filter((_, idx) => idx !== i)); }
-  function add()     { setComps(prev => [...prev, EMPTY_COMP()]); }
+  function handleRemoveItem(i) { setComps(prev => prev.filter((_, idx) => idx !== i)); }
+  function handleAddItem()     { setComps(prev => [...prev, EMPTY_COMP()]); }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -120,7 +120,7 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
             <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
               {comps.map((c, i) => (
                 <CompRow key={i} c={c} allMeta={allMeta} upm={upm}
-                  onChange={p => patch(i, p)} onRemove={() => remove(i)}/>
+                  onChange={p => patch(i, p)} onRemove={() => handleRemoveItem(i)}/>
               ))}
               {comps.length === 0 && (
                 <div style={{ padding:'20px 0', textAlign:'center', color:'var(--text-3)', fontSize:13 }}>
@@ -129,7 +129,7 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
               )}
             </div>
 
-            <button type="button" className="btn sm" onClick={add} style={{ marginTop:8 }}>
+            <button type="button" className="btn sm" onClick={handleAddItem} style={{ marginTop:8 }}>
               <Icon.plus style={{ width:13, height:13 }}/> 구성품 추가
             </button>
           </div>

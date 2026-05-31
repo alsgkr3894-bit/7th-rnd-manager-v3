@@ -6,7 +6,7 @@ import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getNoteById, updateNote, getNotesInChain, STATUS_COLORS, duplicateNote } from '@/lib/note';
 import { getAllSamples } from '@/lib/sample';
-import { NoteFormBody, INIT } from '../_NoteFormBody';
+import { NoteFormBody, INIT } from '@/app/note/_NoteFormBody';
 import { NoteDetailSkeleton } from '@/components/ui/Skeleton';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';

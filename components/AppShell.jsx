@@ -92,7 +92,7 @@ export default function AppShell({ children }) {
       },
     };
 
-    const h = (e) => {
+    const handleKeyDown = (e) => {
       // ⌘K / Ctrl+K → 커맨드 팔레트
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
@@ -129,8 +129,8 @@ export default function AppShell({ children }) {
       if (e.key === 'Escape') { setShortcutsOpen(false); setPaletteOpen(false); }
     };
 
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [router]);
 
   // 사용자 설정 (다크모드/밀도/알림) 페이지 진입 시 적용

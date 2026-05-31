@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -22,6 +22,7 @@ export default function Page() {
   const [saving,       setSaving]       = useState(false);
   const [loading,      setLoading]      = useState(true);
   const [dbError,      setDbError]      = useState(null);
+  const [groupSearch,  setGroupSearch]  = useState('');
 
   const load = useCallback(async () => {
     await initDB();
@@ -91,6 +92,12 @@ export default function Page() {
     }
   }
 
+  const filteredGroups = useMemo(() => {
+    const q = groupSearch.trim().toLowerCase();
+    if (!q) return groups;
+    return groups.filter(g => (g.name || '').toLowerCase().includes(q));
+  }, [groups, groupSearch]);
+
   const showEditor = isNew || selectedId != null;
 
   if (dbError) return (
@@ -114,10 +121,18 @@ export default function Page() {
 
         {/* ── 왼쪽: 목록 ── */}
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '12px 14px 8px', borderBottom: '1px solid var(--divider)' }}>
+          <div style={{ padding: '12px 14px 8px', borderBottom: '1px solid var(--divider)', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <button className="btn primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleNew}>
               <Icon.plus style={{ width: 13, height: 13 }}/> 새 묶음 추가
             </button>
+            <div className="filter-search" style={{ width: '100%' }}>
+              <Icon.search style={{ width: 13, height: 13, color: 'var(--text-3)', flexShrink: 0 }}/>
+              <input
+                value={groupSearch}
+                onChange={e => setGroupSearch(e.target.value)}
+                placeholder="묶음 이름 검색"
+              />
+            </div>
           </div>
 
           {loading ? (
@@ -126,9 +141,13 @@ export default function Page() {
             <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
               등록된 묶음이 없습니다
             </div>
+          ) : filteredGroups.length === 0 ? (
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+              "{groupSearch}" 검색 결과 없음
+            </div>
           ) : (
-            <div style={{ maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' }}>
-              {groups.map(g => {
+            <div style={{ maxHeight: 'calc(100vh - 260px)', overflowY: 'auto' }}>
+              {filteredGroups.map(g => {
                 const active = g.id === selectedId;
                 return (
                   <button key={g.id} onClick={() => handleSelect(g.id)}

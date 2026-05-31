@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -62,6 +63,7 @@ export default function Page() {
   }, []);
 
   useEffect(() => { load().catch(console.error).finally(() => setLoading(false)); }, [load]);
+  useVisibilityRefresh(load);
 
   const linkedIds = useMemo(() => new Set(rows.map(r => r.ingredientId)), [rows]);
 

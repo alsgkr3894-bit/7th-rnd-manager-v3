@@ -93,8 +93,11 @@ export default function Page() {
             disabled={!ready || busy || selectedKeys.length === 0}
             onClick={handleBackup}
           >
-            <Icon.download style={{width:14,height:14}}/>
-            {busy ? '백업 중…' : '백업 파일 다운로드'}
+            {busy
+              ? <div className="report-loading-spinner" style={{width:14,height:14,borderWidth:2}}/>
+              : <Icon.download style={{width:14,height:14}}/>
+            }
+            {busy ? '준비 중…' : '백업 파일 다운로드'}
           </button>
         }
       />

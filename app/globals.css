@@ -4203,7 +4203,7 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--surface);
   border-top: 1px solid var(--border);
   z-index: 60;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
 }
 .bottom-tab-bar .tabs-inner {
   display: flex;

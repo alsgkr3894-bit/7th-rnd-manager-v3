@@ -1,5 +1,5 @@
 'use client';
-import { Fragment, useState, useEffect } from 'react';
+import { Fragment, useState, useEffect, useMemo } from 'react';
 import { loadXlsx } from '@/lib/excel';
 import ReportBuilderShell, { OptGroup, Seg, Check } from '@/components/report/ReportBuilderShell';
 import { fmtKRW } from '@/lib/format';
@@ -43,10 +43,7 @@ export default function Page() {
   const [availYears, setAvailYears] = useState([]);
   const [availMonthsByYear, setAvailMonthsByYear] = useState({});
 
-  // computed
-  const [kpi, setKpi] = useState(null);
-  const [catShares, setCatShares] = useState([]);
-  const [groupRanking, setGroupRanking] = useState([]);   // [{ name, category, quantity, sizes, prevQty, delta }]
+  // computed (compare mode still uses state since it's async)
   const [compareData, setCompareData] = useState(null);
   const [dataError, setDataError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,9 +107,9 @@ export default function Page() {
     });
   }, []);
 
-  // Effect 2: compute stats whenever filters change
-  useEffect(() => {
-    if (salesRows.length === 0) return;
+  // Computed: stats derived from salesRows + filters (useMemo avoids re-running on unrelated state changes)
+  const { catShares, groupRanking, kpi } = useMemo(() => {
+    if (salesRows.length === 0) return { catShares: [], groupRanking: [], kpi: null };
 
     const norm = r => ({ ...r, year: Number(r.year), month: Number(r.month) });
     const period = { year, month };
@@ -132,7 +129,6 @@ export default function Page() {
     const cs = Array.from(catMap, ([name, value], i) => ({
       name, value, color: CAT_COLORS[i % CAT_COLORS.length],
     })).filter(c => c.value > 0).sort((a, b) => b.value - a.value);
-    setCatShares(cs);
 
     // Group ranking for current period (uses buildGroupRanking for sizes)
     const normRows = salesRows.map(norm);
@@ -149,16 +145,23 @@ export default function Page() {
       const deltaPct = prevQty === 0 ? null : (delta / prevQty) * 100;
       return { ...m, rank: i + 1, prevQty, delta, deltaPct };
     });
-    setGroupRanking(withDelta);
 
     // KPI
     const total = ranking.reduce((s, m) => s + m.quantity, 0);
     const prevTotal = prevRanking.reduce((s, m) => s + m.quantity, 0);
     const deltaPct = prevTotal === 0 ? null : ((total - prevTotal) / prevTotal) * 100;
-    setKpi({ current: total, previous: prevTotal, deltaPct });
-    setDataError(null);
-    setIsLoading(false);
+
+    return {
+      catShares: cs,
+      groupRanking: withDelta,
+      kpi: { current: total, previous: prevTotal, deltaPct },
+    };
   }, [salesRows, year, month, scope]);
+
+  // Clear loading once salesRows arrives (success path)
+  useEffect(() => {
+    if (salesRows.length > 0) { setDataError(null); setIsLoading(false); }
+  }, [salesRows]);
 
   // Effect 3: compare mode
   useEffect(() => {

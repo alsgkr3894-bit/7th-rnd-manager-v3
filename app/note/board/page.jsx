@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
+import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -24,6 +25,8 @@ export default function Page() {
   useEffect(() => {
     load().catch(console.error).finally(() => setLoading(false));
   }, [load]);
+
+  useVisibilityRefresh(load);
 
   async function applyStatusChange(note, newStatus, { bounce = true } = {}) {
     try {

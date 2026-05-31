@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
+import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -31,6 +32,8 @@ export default function Page() {
     ]);
     return { lks, ings, als, masters };
   });
+
+  useVisibilityRefresh(load);
 
   useEffect(() => {
     if (!loadedData) return;

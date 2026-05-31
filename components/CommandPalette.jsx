@@ -36,12 +36,12 @@ export default function CommandPalette({ open, onClose }) {
   }, [open]);
 
   useEffect(() => {
-    const h = (e) => {
+    const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') e.preventDefault();
       if (e.key === 'Escape' && open) onClose();
     };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open, onClose]);
 
   if (!open) return null;

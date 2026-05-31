@@ -38,16 +38,16 @@ export default function TopBar({ onOpenPalette, onToggleSidebar, activeCompany, 
 
   useEffect(() => {
     if (!notifOpen) return;
-    const h = (e) => { if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false); };
-    window.addEventListener('mousedown', h);
-    return () => window.removeEventListener('mousedown', h);
+    const handleOutsideClick = (e) => { if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false); };
+    window.addEventListener('mousedown', handleOutsideClick);
+    return () => window.removeEventListener('mousedown', handleOutsideClick);
   }, [notifOpen]);
 
   useEffect(() => {
     if (!companyOpen) return;
-    const h = (e) => { if (companyRef.current && !companyRef.current.contains(e.target)) setCompanyOpen(false); };
-    window.addEventListener('mousedown', h);
-    return () => window.removeEventListener('mousedown', h);
+    const handleCompanyOutsideClick = (e) => { if (companyRef.current && !companyRef.current.contains(e.target)) setCompanyOpen(false); };
+    window.addEventListener('mousedown', handleCompanyOutsideClick);
+    return () => window.removeEventListener('mousedown', handleCompanyOutsideClick);
   }, [companyOpen]);
 
   // 실제 알림 (미매칭 발생 시 표시)

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import dynamic from 'next/dynamic';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -57,6 +58,7 @@ export default function Page() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useVisibilityRefresh(load);
 
   return (
     <main className="main">

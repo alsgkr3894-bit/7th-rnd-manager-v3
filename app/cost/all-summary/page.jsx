@@ -1,8 +1,8 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { initDB } from '@/lib/db';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import { formatNumber } from '@/lib/format';
 import { getAllMenuPrices } from '@/lib/cost/menu-price';
 import { getAllRecipes, buildUnitPriceMap, calcCostBySizes } from '@/lib/recipe';
@@ -104,47 +104,41 @@ function exportCSV(rows) {
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────
 export default function Page() {
-  const [rows,      setRows]      = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [dbError,   setDbError]   = useState(null);
   const [catFilter, setCatFilter] = useState('전체');
 
-  useEffect(() => {
-    async function load() {
-      await initDB();
-      const [allMenuPrices, allRecipes, allIngredients] = await Promise.all([
-        getAllMenuPrices(),
-        getAllRecipes(),
-        getAllIngredients(),
-      ]);
+  const fetchFn = useCallback(async () => {
+    const [allMenuPrices, allRecipes, allIngredients] = await Promise.all([
+      getAllMenuPrices(),
+      getAllRecipes(),
+      getAllIngredients(),
+    ]);
 
-      // unitPriceMap — priceRowMap 없이 priceOverride만 사용
-      const upm = buildUnitPriceMap(allIngredients, new Map());
+    // unitPriceMap — priceRowMap 없이 priceOverride만 사용
+    const upm = buildUnitPriceMap(allIngredients, new Map());
 
-      // menuPriceMap: menuName → { sizeLabel → price }
-      const menuPriceMap = new Map();
-      for (const mp of allMenuPrices) {
-        if (!mp.menuName || !mp.size) continue;
-        if (!menuPriceMap.has(mp.menuName)) menuPriceMap.set(mp.menuName, {});
-        if (mp.price != null) menuPriceMap.get(mp.menuName)[mp.size] = mp.price;
-      }
-
-      const built = buildRows(allRecipes, upm, menuPriceMap);
-
-      // 정렬: 카테고리 순 → 메뉴명 가나다
-      built.sort((a, b) => {
-        const cr = catRank(a.category) - catRank(b.category);
-        if (cr !== 0) return cr;
-        return (a.menuName || '').localeCompare(b.menuName || '', 'ko');
-      });
-
-      setRows(built);
+    // menuPriceMap: menuName → { sizeLabel → price }
+    const menuPriceMap = new Map();
+    for (const mp of allMenuPrices) {
+      if (!mp.menuName || !mp.size) continue;
+      if (!menuPriceMap.has(mp.menuName)) menuPriceMap.set(mp.menuName, {});
+      if (mp.price != null) menuPriceMap.get(mp.menuName)[mp.size] = mp.price;
     }
 
-    load()
-      .catch(err => { console.error(err); setDbError(err.message || '데이터 로드 실패'); })
-      .finally(() => setLoading(false));
+    const built = buildRows(allRecipes, upm, menuPriceMap);
+
+    // 정렬: 카테고리 순 → 메뉴명 가나다
+    built.sort((a, b) => {
+      const cr = catRank(a.category) - catRank(b.category);
+      if (cr !== 0) return cr;
+      return (a.menuName || '').localeCompare(b.menuName || '', 'ko');
+    });
+
+    return built;
   }, []);
+
+  const { data: rawData, loading, error: dbErrorObj } = useDBLoad(fetchFn);
+  const rows    = rawData ?? [];
+  const dbError = dbErrorObj?.message ?? null;
 
   // ── 통계 ──────────────────────────────────────────────────
   const stats = useMemo(() => {

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -11,14 +11,19 @@ import {
   CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS, STATUS_BORDER,
   getAllNotes, addNote, deleteNote, updateNote,
 } from '@/lib/note';
+import { NOTE_STATUS } from '@/lib/note/constants';
 import { getNoteDetailStats } from '@/lib/stats/note-stats';
 import { tryLS, setLS } from '@/lib/note/storage';
 import { downloadCsv } from '@/lib/download';
 import { KEYS } from '@/lib/note/keys';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
+import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
+import { useScrollMemory } from '@/hooks/useScrollMemory';
 import { buildHighlightRegex, parseTagList, formatFullDate } from '@/lib/note/utils';
 import { NoteCard } from './_NoteCard';
 import { NoteDetailModal } from './_NoteDetailModal';
+import { NoteBatchToolbar } from './_NoteBatchToolbar';
+import { NotePresetBar } from './_NotePresetBar';
 
 const SORT_OPTIONS = [
   { key: 'createdAt', label: '최신순' },
@@ -50,13 +55,11 @@ export function NoteContent() {
   const [presets,      setPresets]      = useState(() => {
     try { return JSON.parse(localStorage.getItem(KEYS.NOTE_PRESETS) || '[]'); } catch { return []; }
   });
-  const [savingPreset,   setSavingPreset]   = useState(false);
-  const [presetName,     setPresetName]     = useState('');
-  const presetInputRef = useRef(null);
-
   const [pinnedIds, setPinnedIds] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem(KEYS.NOTE_PINS) || '[]')); } catch { return new Set(); }
   });
+
+  useScrollMemory(pathname);
 
   const {
     history: searchHistory,
@@ -91,6 +94,8 @@ export function NoteContent() {
   useEffect(() => {
     load().catch(console.error).finally(() => setLoading(false));
   }, [load]);
+
+  useVisibilityRefresh(load);
 
   useEffect(() => {
     if (!ctxMenu) return;
@@ -166,7 +171,7 @@ export function NoteContent() {
     await new Promise(r => setTimeout(r, 4100));
     if (!cancelled) {
       try { await deleteNote(note.id); }
-      catch { load(); showToast('삭제 실패', 'error'); }
+      catch (err) { console.error('[NoteContent] deleteNote', err); load(); showToast('삭제 실패', 'error'); }
     }
   }
 
@@ -177,7 +182,7 @@ export function NoteContent() {
       await addNote({ ...note, title: `${note.title} (복사)`, createdAt: undefined, parentId: null });
       showToast('노트를 복사했어요', 'ok');
       load();
-    } catch { showToast('복사 실패', 'error'); }
+    } catch (err) { console.error('[NoteContent] handleCopy', err); showToast('복사 실패', 'error'); }
   }
 
   async function handleStatusChange(noteId, newStatus, e) {
@@ -189,7 +194,7 @@ export function NoteContent() {
       setPopIds(s => new Set([...s, noteId]));
       setTimeout(() => setPopIds(s => { const n = new Set(s); n.delete(noteId); return n; }), 400);
       if (detailNote?.id === noteId) setDetailNote(n => n ? { ...n, status: newStatus } : null);
-    } catch { showToast('상태 변경 실패', 'error'); }
+    } catch (err) { console.error('[NoteContent] handleStatusChange', err); showToast('상태 변경 실패', 'error'); }
   }
 
   function handleBatchDelete() {
@@ -206,7 +211,7 @@ export function NoteContent() {
       showToast(`${ids.length}개 → ${newStatus}`, 'ok');
       setSelected(new Set());
       setBatchMode(false);
-    } catch { showToast('상태 변경 실패', 'error'); }
+    } catch (err) { console.error('[NoteContent] handleBatchStatusChange', err); showToast('상태 변경 실패', 'error'); }
   }
 
   async function confirmBatchDelete() {
@@ -224,7 +229,7 @@ export function NoteContent() {
     setTimeout(async () => {
       if (cancelled) return;
       try { await Promise.all(ids.map(id => deleteNote(id))); }
-      catch { showToast('일부 삭제 실패', 'error'); load(); }
+      catch (err) { console.error('[NoteContent] confirmBatchDelete', err); showToast('일부 삭제 실패', 'error'); load(); }
     }, 4000);
   }
 
@@ -239,7 +244,7 @@ export function NoteContent() {
   }
 
   async function handleBulkCopy() {
-    const targets = notes.filter(n => n.status === '보고예정');
+    const targets = notes.filter(n => n.status === NOTE_STATUS.REPORTING);
     if (!targets.length) { showToast('보고예정 노트가 없어요', 'warn'); return; }
     const text = targets.map(n => `[${n.menuName}] ${n.title}
 테스트 내용: ${n.testContent || '—'}
@@ -256,14 +261,10 @@ export function NoteContent() {
   function changeSort(key) { setSortBy(key); setLS(KEYS.NOTE_SORT, key); setVisibleCount(PAGE_SIZE); }
   function changeView(mode) { setViewMode(mode); setLS(KEYS.NOTE_VIEW, mode); }
 
-  function savePreset() {
-    const name = presetName.trim();
-    if (!name) return;
+  function savePreset(name) {
     const next = [...presets, { name, status: statusFilter, search, sort: sortBy }];
     setPresets(next);
     try { localStorage.setItem(KEYS.NOTE_PRESETS, JSON.stringify(next)); } catch {}
-    setPresetName('');
-    setSavingPreset(false);
     showToast(`"${name}" 프리셋 저장됨`, 'ok');
   }
 
@@ -307,22 +308,15 @@ export function NoteContent() {
         actions={
           <div style={{display:'flex',gap:8}}>
             {batchMode ? (
-              <>
-                <select className="batch-status-select" defaultValue=""
-                  onChange={e => { if (e.target.value) handleBatchStatusChange(e.target.value); }}
-                  disabled={selected.size === 0}>
-                  <option value="" disabled>상태 변경</option>
-                  {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-                <button className="btn" style={{color:'var(--negative)'}}
-                  onClick={handleBatchDelete} disabled={selected.size === 0}>
-                  선택 삭제 {selected.size > 0 && `(${selected.size})`}
-                </button>
-                <button className="btn" onClick={() => { setBatchMode(false); setSelected(new Set()); }}>취소</button>
-              </>
+              <NoteBatchToolbar
+                selected={selected}
+                onStatusChange={handleBatchStatusChange}
+                onDelete={handleBatchDelete}
+                onExit={() => { setBatchMode(false); setSelected(new Set()); }}
+              />
             ) : (
               <>
-                {counts['보고예정'] > 0 && (
+                {counts[NOTE_STATUS.REPORTING] > 0 && (
                   <button className="btn" onClick={handleBulkCopy}
                     style={{color:'#6B3FCB', borderColor:'#6B3FCB40'}}>
                     <Icon.doc style={{width:13,height:13}}/> 보고예정 일괄복사
@@ -354,7 +348,7 @@ export function NoteContent() {
           </div>
           <div className="stat-card">
             <div className="stat-label">보고예정</div>
-            <div className="stat-value" style={{color:'#6B3FCB'}}>{counts['보고예정'] || 0}<span className="unit">개</span></div>
+            <div className="stat-value" style={{color:'#6B3FCB'}}>{counts[NOTE_STATUS.REPORTING] || 0}<span className="unit">개</span></div>
           </div>
           <div className="stat-card">
             <div className="stat-label">출시 전환율</div>
@@ -446,45 +440,13 @@ export function NoteContent() {
       </div>
 
       {/* 필터 프리셋 */}
-      {(presets.length > 0 || hasActiveFilter) && (
-        <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center', marginTop:8}}>
-          {presets.map((p, i) => (
-            <div key={i} style={{display:'flex', alignItems:'center', gap:0}}>
-              <button className="chip" style={{borderRadius:'12px 0 0 12px', paddingRight:8}}
-                onClick={() => applyPreset(p)} title={`상태: ${p.status} / 정렬: ${p.sort}`}>
-                ★ {p.name}
-              </button>
-              <button className="chip"
-                style={{borderRadius:'0 12px 12px 0', padding:'4px 8px', borderLeft:'none', color:'var(--text-4)'}}
-                onClick={() => setConfirmDeletePreset(i)} title="프리셋 삭제">×</button>
-            </div>
-          ))}
-          {hasActiveFilter && (
-            savingPreset ? (
-              <div style={{display:'flex', gap:4, alignItems:'center'}}>
-                <input
-                  ref={presetInputRef}
-                  value={presetName}
-                  onChange={e => setPresetName(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') savePreset(); if (e.key === 'Escape') setSavingPreset(false); }}
-                  placeholder="프리셋 이름"
-                  autoFocus
-                  style={{
-                    fontSize:12, padding:'4px 10px', borderRadius:10, border:'1px solid var(--accent)',
-                    background:'var(--surface)', color:'var(--text-1)', outline:'none', width:120, fontFamily:'inherit',
-                  }}
-                />
-                <button className="chip active" style={{fontSize:11}} onClick={savePreset}>저장</button>
-                <button className="chip" style={{fontSize:11}} onClick={() => setSavingPreset(false)}>취소</button>
-              </div>
-            ) : (
-              <button className="chip" style={{fontSize:11, color:'var(--text-3)'}} onClick={() => setSavingPreset(true)}>
-                + 현재 필터 저장
-              </button>
-            )
-          )}
-        </div>
-      )}
+      <NotePresetBar
+        presets={presets}
+        hasActiveFilter={hasActiveFilter}
+        onApply={applyPreset}
+        onSave={savePreset}
+        onDelete={idx => setConfirmDeletePreset(idx)}
+      />
 
       {/* 스켈레톤 로딩 */}
       {loading && (

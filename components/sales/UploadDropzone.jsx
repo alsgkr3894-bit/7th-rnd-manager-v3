@@ -8,11 +8,12 @@ const ACCEPTED_EXTS = ['.xlsx', '.xls', '.csv'];
 /**
  * UploadDropzone — 파일 드롭존 (드래그 + 클릭)
  *
- * @param {(file: File) => void} onFile
- * @param {boolean} disabled — 검증/저장 중일 때 비활성
- * @param {string}  busyText  — disabled일 때 표시할 텍스트
+ * @param {(file: File, errorMsg?: string) => void} onFile
+ * @param {boolean} disabled  - 검증/저장 중일 때 비활성
+ * @param {string}  busyText  - disabled일 때 표시할 텍스트
+ * @param {boolean} [showSpinner=true] - busy 상태에서 스피너 표시 여부
  */
-export function UploadDropzone({ onFile, disabled = false, busyText = '처리 중...' }) {
+export function UploadDropzone({ onFile, disabled = false, busyText = '처리 중...', showSpinner = true }) {
   const [drag, setDrag] = useState(false);
   const inputRef = useRef(null);
 
@@ -52,7 +53,12 @@ export function UploadDropzone({ onFile, disabled = false, busyText = '처리 �
         style={{ display: 'none' }}
         onChange={e => pickFile(e.target.files?.[0])}
       />
-      <div className="dropzone-ico"><Icon.upload style={{width:32, height:32}}/></div>
+      <div className="dropzone-ico">
+        {disabled && showSpinner
+          ? <div className="report-loading-spinner" style={{width:32,height:32}}/>
+          : <Icon.upload style={{width:32, height:32}}/>
+        }
+      </div>
       <div className="dropzone-title">
         {disabled ? busyText : '엑셀(.xlsx) 또는 CSV 파일을 끌어다 놓으세요'}
       </div>
