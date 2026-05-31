@@ -123,7 +123,7 @@ export default function CommandPalette({ open, onClose }) {
               })}
             </div>
           )}
-          {filtered.length === 0 ? (
+          {isSearching && filtered.length === 0 ? (
             <div className="palette-empty">검색 결과 없음</div>
           ) : GROUPS.map(({ kind, label }) => {
             const rows = filtered.filter(x => x.kind === kind);

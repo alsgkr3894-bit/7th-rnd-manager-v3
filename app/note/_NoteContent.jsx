@@ -147,8 +147,11 @@ export function NoteContent() {
   }, [ctxMenu]);
 
   const counts = useMemo(() => {
-    const m = { all: notes.length };
-    for (const s of STATUSES) m[s] = notes.filter(n => n.status === s).length;
+    const m = notes.reduce((acc, n) => {
+      acc[n.status] = (acc[n.status] || 0) + 1;
+      return acc;
+    }, { all: notes.length });
+    for (const s of STATUSES) if (!(s in m)) m[s] = 0;
     return m;
   }, [notes]);
 
@@ -279,8 +282,12 @@ export function NoteContent() {
     });
     setTimeout(async () => {
       if (cancelled) return;
-      try { await Promise.all(ids.map(id => deleteNote(id))); }
-      catch (err) { console.error('[NoteContent] confirmBatchDelete', err); showToast('일부 삭제 실패', 'error'); load(); }
+      try {
+        const CHUNK = 10;
+        for (let i = 0; i < ids.length; i += CHUNK) {
+          await Promise.all(ids.slice(i, i + CHUNK).map(id => deleteNote(id)));
+        }
+      } catch (err) { console.error('[NoteContent] confirmBatchDelete', err); showToast('일부 삭제 실패', 'error'); load(); }
     }, 4000);
   }
 

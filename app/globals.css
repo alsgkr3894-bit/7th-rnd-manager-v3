@@ -1656,6 +1656,7 @@ button { font-family: inherit; cursor: pointer; }
   transition: border-color 150ms ease, background 150ms ease;
   box-sizing: border-box;
 }
+.input:hover:not(:focus):not(:disabled) { background: color-mix(in oklab, var(--text-1) 5%, var(--surface-2)); }
 .input:focus {
   border-color: var(--accent);
   background: var(--surface);
@@ -1796,6 +1797,7 @@ button { font-family: inherit; cursor: pointer; }
   border-color: var(--accent);
   background: color-mix(in oklab, var(--accent) 4%, var(--surface));
 }
+.dropzone.drag { cursor: copy; }
 .dropzone-ico {
   width: 64px; height: 64px;
   border-radius: 20px;
@@ -2728,6 +2730,7 @@ button { font-family: inherit; cursor: pointer; }
   color: var(--text-1);
   cursor: pointer;
   letter-spacing: -0.01em;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 .period-select:hover { border-color: var(--border-strong); }
 .period-select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -3961,9 +3964,9 @@ button { font-family: inherit; cursor: pointer; }
 .motion-stagger > *:nth-child(5) { animation-delay: 330ms; }
 .motion-stagger > *:nth-child(6) { animation-delay: 400ms; }
 .motion-stagger > *:nth-child(7) { animation-delay: 470ms; }
-.motion-stagger > *:nth-child(8)  { animation-delay: 280ms; }
-.motion-stagger > *:nth-child(9)  { animation-delay: 320ms; }
-.motion-stagger > *:nth-child(10) { animation-delay: 360ms; }
+.motion-stagger > *:nth-child(8)  { animation-delay: 540ms; }
+.motion-stagger > *:nth-child(9)  { animation-delay: 610ms; }
+.motion-stagger > *:nth-child(10) { animation-delay: 680ms; }
 .motion-stagger > *:nth-child(n+11){ animation-delay: 400ms; }
 
 /* --- Balance card glow --- */
@@ -4380,6 +4383,7 @@ button { font-family: inherit; cursor: pointer; }
   transition: border-color .15s, background .15s;
   box-sizing: border-box;
 }
+.form-input:hover:not(:focus):not(:disabled) { background: color-mix(in oklab, var(--text-1) 5%, var(--surface-2)); }
 .form-input:focus { border-color: var(--accent); background: var(--surface); }
 .form-input:focus-visible { border-color: var(--accent); outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 1px; box-shadow: 0 0 0 3px var(--accent-soft); }
 .form-input::placeholder { color: var(--text-4); }
@@ -5136,6 +5140,7 @@ html {
   background: var(--surface); color: var(--accent);
   cursor: pointer; font-family: inherit; outline: none;
   font-weight: 700;
+  transition: border-color 150ms ease, background 150ms ease;
 }
 
 /* ── 태그 클릭 필터 chip ── */

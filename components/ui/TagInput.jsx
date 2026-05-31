@@ -80,7 +80,9 @@ export function TagInput({ value = '', onChange, suggestions = [], placeholder =
           onChange={e => { setInput(e.target.value); setOpen(true); }}
           onKeyDown={handleKey}
           onFocus={() => setOpen(true)}
-          onBlur={() => setTimeout(() => setOpen(false), 160)}
+          /* 드롭다운 옵션·태그삭제 버튼이 모두 onMouseDown+preventDefault라
+             클릭 시 blur가 발생하지 않음 → 고정 타임아웃 없이 즉시 닫아도 안전 */
+          onBlur={() => setOpen(false)}
           placeholder={tags.length === 0 ? placeholder : ''}
           style={{
             border:'none', outline:'none', background:'transparent',

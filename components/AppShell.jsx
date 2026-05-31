@@ -7,6 +7,7 @@ import CommandPalette from './CommandPalette';
 import { ToastContainer } from './Toast';
 import { Icon } from './icons';
 import { applyAllSettings, getSetting, setSetting } from '@/lib/settings';
+import { KEYS } from '@/lib/note/keys';
 import { ensureSession } from '@/lib/session';
 import { pruneOldWorkLogs } from '@/lib/work-log';
 import { hydratePlatformsFromDB } from '@/lib/cost/margin/platforms';
@@ -147,7 +148,7 @@ export default function AppShell({ children }) {
 
   // 오래된 작업 로그 정리 (세션당 1회)
   useEffect(() => {
-    const PRUNE_KEY = 'v3:last-wl-prune';
+    const PRUNE_KEY = KEYS.LAST_WL_PRUNE;
     const hasPruned = (() => { try { return !!sessionStorage.getItem(PRUNE_KEY); } catch { return true; } })();
     if (!hasPruned) {
       pruneOldWorkLogs().catch(() => {});

@@ -63,8 +63,19 @@ export default function Page() {
     try {
       const text = await readFileAsText(file);
       const data = JSON.parse(text);
-      if (!data || typeof data.stores !== 'object') {
+      // 1차: 최상위 구조 확인
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        throw new Error('잘못된 백업 파일 형식 (최상위 객체 누락)');
+      }
+      if (!data.stores || typeof data.stores !== 'object' || Array.isArray(data.stores)) {
         throw new Error('잘못된 백업 파일 형식 (stores 객체 누락)');
+      }
+      // 2차: stores 값이 모두 배열인지 확인 (importAll이 이를 전제함)
+      const nonArrayStores = Object.entries(data.stores)
+        .filter(([, v]) => !Array.isArray(v))
+        .map(([k]) => k);
+      if (nonArrayStores.length > 0) {
+        throw new Error(`잘못된 백업 파일 형식 (stores 값이 배열이 아님: ${nonArrayStores.slice(0, 3).join(', ')})`);
       }
       if (data.version && data.version !== 'v3') { showToast('버전 불일치: ' + data.version, 'warn'); }
       setParsed({ ...data, _fileName: file.name });

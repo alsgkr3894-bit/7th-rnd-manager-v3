@@ -23,7 +23,7 @@ import { BulkPriceModal } from '@/components/cost/ingredient-price/BulkPriceModa
 import { SyncBaseQtyModal } from '@/components/cost/ingredient-price/SyncBaseQtyModal';
 import { UsageView } from '@/components/cost/ingredient-price/UsageView';
 import { calcUnitPrice } from '@/lib/cost/calc-unit-price';
-import { buildIngredientUsageMap } from '@/lib/cost/ingredient-price-helpers';
+import { buildIngredientUsageMap, sumCompositePrice } from '@/lib/cost/ingredient-price-helpers';
 import { IngredientPriceSkeleton } from '@/components/ui/Skeleton';
 
 export default function Page() {
@@ -64,10 +64,13 @@ export default function Page() {
 
     if (latest) {
       setFileInfo({ name: latest.fileName || latest.name || '', date: latest.updateDate || latest.date || '' });
-      priceRows = await getPriceRowsByFileId(latest.id);
+      const [latestRows, prevRows] = await Promise.all([
+        getPriceRowsByFileId(latest.id),
+        prev ? getPriceRowsByFileId(prev.id) : Promise.resolve([]),
+      ]);
+      priceRows = latestRows;
       priceCodeSet = new Set(priceRows.map(r => r.productCode).filter(Boolean));
       if (prev) {
-        const prevRows = await getPriceRowsByFileId(prev.id);
         prevRows.forEach(r => { if (r.productCode) prevPriceMap.set(r.productCode, r.priceWithTax); });
       }
     }
@@ -109,14 +112,7 @@ export default function Page() {
         const unitType = m.baseUnitType || 'g';
 
         // 합산 단가: compositeOf 코드들의 제때 단가를 합산
-        let compositePrice = null;
-        if (Array.isArray(m.compositeOf) && m.compositeOf.length > 0) {
-          const sum = m.compositeOf.reduce((acc, code) => {
-            const pr = priceRowMap.get(code);
-            return acc + (pr?.priceWithTax ?? 0);
-          }, 0);
-          if (sum > 0) compositePrice = sum;
-        }
+        const compositePrice = sumCompositePrice(m.compositeOf, priceRowMap);
 
         const effectivePrice = compositePrice ?? m.priceOverride ?? null;
         const unitPrice = calcUnitPrice(effectivePrice, baseQty);

@@ -20,11 +20,25 @@ export function SearchBox({ value, onChange, placeholder = '제품명·제품코
         value={value}
         onChange={e => onChange(e.target.value)}
         style={{
-          width:'100%', padding:'8px 12px 8px 32px', borderRadius:8,
+          width:'100%', padding:`8px ${value ? 32 : 12}px 8px 32px`, borderRadius:8,
           border:'1px solid var(--border)', background:'var(--surface-2)',
           color:'var(--text-1)', fontSize:13,
         }}
       />
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange('')}
+          aria-label="검색어 지우기"
+          style={{
+            position:'absolute', top:'50%', right:10, transform:'translateY(-50%)',
+            border:0, background:'transparent', cursor:'pointer',
+            color:'var(--text-4)', padding:0, lineHeight:1, display:'flex',
+          }}
+        >
+          <Icon.close style={{ width:12, height:12 }}/>
+        </button>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Icon } from './icons';
 import { NAV_HOME, NAV_SECTIONS } from '@/lib/menu';
@@ -47,10 +47,11 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
     return pathname === item.href;
   };
 
-  const isGroupActive = (group) => {
+  // pathname에만 의존 — useCallback으로 안정화해 Escape 리스너 effect의 매 렌더 재등록 방지
+  const isGroupActive = useCallback((group) => {
     if (group.href) return pathname === group.href || pathname.startsWith(group.href + '/');
     return group.children?.some(c => c.href && (pathname === c.href || pathname.startsWith(c.href + '/')));
-  };
+  }, [pathname]);
 
   const [openIds, setOpenIds] = useState({});
 
