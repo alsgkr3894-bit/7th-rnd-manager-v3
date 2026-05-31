@@ -151,8 +151,10 @@ export function MenuPriceForm({ initial, onSave, onClose }) {
 }
 
 function Field({ label, required, hint, error, children }) {
+  // role="group" + aria-label 로 라벨과 컨트롤을 연결.
+  // (children 에 라디오 등 자체 <label>이 포함될 수 있어 <label> 래핑은 중첩 label 위험 → group 사용)
   return (
-    <div>
+    <div role="group" aria-label={required ? `${label} (필수)` : label}>
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:6}}>
         <span style={{fontSize:13, fontWeight:600, color:'var(--text-2)'}}>
           {label}{required && <span style={{color:'var(--negative)', marginLeft:2}}>*</span>}

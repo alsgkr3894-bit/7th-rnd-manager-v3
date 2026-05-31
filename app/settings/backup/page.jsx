@@ -64,8 +64,8 @@ export default function Page() {
       const data = await exportSelected(selectedStores, { scopes: selectedKeys });
       const fileName = makeFileName('rnd-manager-backup', 'json');
       downloadJson(data, fileName);
-      // 이력 기록
-      addEntry({
+      // 이력 기록 (실패해도 백업 파일은 이미 다운로드됨 — 경고만)
+      const recorded = addEntry({
         scopes: selectedKeys,
         totalRows: selectedRows,
         fileName,
@@ -73,6 +73,9 @@ export default function Page() {
       setHistory(getHistory());
       setLastBackupAt(getLastBackupAt());
       showToast(`백업 완료 — ${fileName}`, 'ok');
+      if (!recorded) {
+        showToast('백업 이력 저장에 실패했어요 (저장 공간 부족). 백업 파일은 정상 다운로드되었습니다.', 'warn');
+      }
     } catch (err) {
       console.error('[Backup] 실패:', err);
       showToast('백업 중 오류가 발생했습니다.', 'err');

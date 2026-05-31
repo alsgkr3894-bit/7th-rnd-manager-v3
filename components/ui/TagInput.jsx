@@ -95,7 +95,7 @@ export function TagInput({ value = '', onChange, suggestions = [], placeholder =
         <div style={{
           position:'absolute', top:'calc(100% + 4px)', left:0, right:0, zIndex:200,
           background:'var(--surface)', border:'1px solid var(--border)',
-          borderRadius:8, boxShadow:'0 6px 20px rgba(0,0,0,0.12)', overflow:'hidden',
+          borderRadius:8, boxShadow:'var(--shadow-lg)', overflow:'hidden',
         }}>
           {matches.map((s, i) => (
             <button key={s} type="button"

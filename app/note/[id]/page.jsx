@@ -197,7 +197,7 @@ export default function Page() {
                   <div style={{
                     position: 'absolute', top: '100%', right: 0, marginTop: 4, zIndex: 100,
                     background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10,
-                    boxShadow: '0 4px 16px rgba(0,0,0,.14)', minWidth: 160, overflow: 'hidden',
+                    boxShadow: 'var(--shadow-md)', minWidth: 160, overflow: 'hidden',
                   }}>
                     {COST_LINKS.map(item => (
                       <button key={item.href} className="btn" style={{
@@ -261,7 +261,7 @@ export default function Page() {
                   <div style={{fontSize:13, fontWeight:600, color:'var(--text-1)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{s.title}</div>
                   <div style={{fontSize:11, color:'var(--text-3)', marginTop:2}}>
                     {s.testDate && <span>{s.testDate}</span>}
-                    {s.rating > 0 && <span style={{marginLeft:8, color:'#F5A623'}}>{'★'.repeat(s.rating)}</span>}
+                    {s.rating > 0 && <span style={{marginLeft:8, color:'var(--star)'}}>{'★'.repeat(s.rating)}</span>}
                   </div>
                 </div>
               </button>

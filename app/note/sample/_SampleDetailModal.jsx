@@ -50,7 +50,7 @@ export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
         style={{
           background:'var(--surface)', borderRadius:20, overflow:'hidden',
           width:'100%', maxWidth:880, maxHeight:'92vh', display:'flex', flexDirection:'column',
-          boxShadow:'0 24px 64px rgba(0,0,0,0.28)',
+          boxShadow:'var(--shadow-lg)',
         }}
       >
         <div style={{

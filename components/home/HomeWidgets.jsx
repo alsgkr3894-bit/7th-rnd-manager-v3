@@ -1,16 +1,28 @@
 'use client';
+import { useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { STATUS_COLORS, STATUS_BORDER } from '@/lib/note';
 import { formatNumber } from '@/lib/format';
 import { getCostRateStyles } from '@/lib/cost/rate-color';
+import { EmptyState } from '@/components/ui/EmptyState';
+
+// 정식 위치는 @/components/ui/EmptyState — 기존 import 경로 호환을 위해 재export
+export { EmptyState };
 
 export function SampleStatsWidget({ samples, router }) {
+  // 파생 통계는 samples 변경 시에만 재계산 (정렬·다중 필터 매 렌더 반복 방지)
+  const stats = useMemo(() => {
+    const list = samples || [];
+    const rated = list.filter(s => s.rating > 0);
+    const avg = rated.length > 0 ? rated.reduce((a, s) => a + s.rating, 0) / rated.length : 0;
+    const withPhoto = list.filter(s => (s.photos?.length || 0) > 0).length;
+    const recent = [...list].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 3);
+    const ratingDist = [1, 2, 3, 4, 5].map(r => ({ r, count: list.filter(s => s.rating === r).length }));
+    return { avg, withPhoto, recent, ratingDist };
+  }, [samples]);
+
   if (!samples || samples.length === 0) return null;
-  const rated = samples.filter(s => s.rating > 0);
-  const avg = rated.length > 0 ? rated.reduce((a, s) => a + s.rating, 0) / rated.length : 0;
-  const withPhoto = samples.filter(s => (s.photos?.length || 0) > 0).length;
-  const recent = [...samples].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 3);
-  const ratingDist = [1,2,3,4,5].map(r => ({ r, count: samples.filter(s => s.rating === r).length }));
+  const { avg, withPhoto, recent, ratingDist } = stats;
   return (
     <div className="card">
       <div className="card-header">
@@ -38,12 +50,11 @@ export function SampleStatsWidget({ samples, router }) {
       </div>
       <div style={{display:'flex', flexDirection:'column', gap:6}}>
         {recent.map(s => (
-          <div key={s.id}
+          <div key={s.id} className="widget-row"
             onClick={() => router.push(`/note/sample/${s.id}`)}
             style={{
               display:'flex', alignItems:'center', gap:10,
-              padding:'8px 12px', borderRadius:8,
-              background:'var(--surface-2)', cursor:'pointer',
+              padding:'8px 12px', borderRadius:8, cursor:'pointer',
             }}
           >
             {s.photos?.[0] ? (
@@ -60,7 +71,7 @@ export function SampleStatsWidget({ samples, router }) {
               <div style={{fontSize:11, color:'var(--text-3)'}}>{s.menuName}</div>
             </div>
             {s.rating > 0 && (
-              <span style={{fontSize:11, color:'#F5A623', flexShrink:0, letterSpacing:1}}>
+              <span style={{fontSize:11, color:'var(--star)', flexShrink:0, letterSpacing:1}}>
                 {'★'.repeat(s.rating)}
               </span>
             )}
@@ -79,25 +90,6 @@ export const rowButtonStyle = {
   width: '100%',
   cursor: 'pointer',
 };
-
-export function EmptyState({ icon, title, desc, action, onAction, compact }) {
-  return (
-    <div style={{
-      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-      padding: compact ? '32px 16px' : '48px 24px',
-      color:'var(--text-3)', textAlign:'center', gap: 8,
-    }}>
-      <div style={{color:'var(--text-4)'}}>{icon}</div>
-      <div style={{fontSize:14, fontWeight:600, color:'var(--text-2)'}}>{title}</div>
-      {desc && <div style={{fontSize:12}}>{desc}</div>}
-      {action && (
-        <button className="btn primary sm" onClick={onAction} style={{marginTop:8}}>
-          {action}
-        </button>
-      )}
-    </div>
-  );
-}
 
 export function SkeletonChart() {
   return (
@@ -160,12 +152,11 @@ export function ReportingNotesWidget({ notes, router }) {
       </div>
       <div style={{display:'flex', flexDirection:'column', gap:6}}>
         {notes.slice(0, 5).map(n => (
-          <div key={n.id}
+          <div key={n.id} className="widget-row"
             onClick={() => router.push(`/note/${n.id}`)}
             style={{
               display:'flex', alignItems:'center', gap:10,
-              padding:'8px 12px', borderRadius:8,
-              background:'var(--surface-2)', cursor:'pointer',
+              padding:'8px 12px', borderRadius:8, cursor:'pointer',
               borderLeft:`3px solid ${sb}`,
             }}
           >
@@ -229,12 +220,11 @@ export function CostAlertWidget({ data, router }) {
           {alerts.map((item, i) => {
             const c = getCostRateStyles(item.costRate);
             return (
-              <button key={i}
+              <button key={i} className="widget-row"
                 onClick={() => router.push('/cost/margin')}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '8px 10px', borderRadius: 8,
-                  background: 'var(--surface-2)', border: 'none',
+                  padding: '8px 10px', borderRadius: 8, border: 'none',
                   cursor: 'pointer', textAlign: 'left', font: 'inherit', width: '100%',
                   borderLeft: `3px solid ${c.text}`,
                 }}>

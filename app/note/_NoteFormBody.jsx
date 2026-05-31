@@ -272,7 +272,7 @@ export function NoteFormBody({ form, setForm }) {
               <div style={{
                 position:'absolute', top:'calc(100% + 4px)', left:0, right:0, zIndex:20,
                 background:'var(--surface)', border:'1px solid var(--border)',
-                borderRadius:8, boxShadow:'0 4px 16px rgba(0,0,0,0.12)',
+                borderRadius:8, boxShadow:'var(--shadow-md)',
                 padding:'12px 14px', fontSize:12, color:'var(--text-3)',
               }}>
                 "{ingSearch}" 결과 없음 — 식자재 관리에서 먼저 등록하세요
@@ -282,7 +282,7 @@ export function NoteFormBody({ form, setForm }) {
               <div style={{
                 position:'absolute', top:'calc(100% + 4px)', left:0, right:0, zIndex:20,
                 background:'var(--surface)', border:'1px solid var(--border)',
-                borderRadius:8, boxShadow:'0 4px 16px rgba(0,0,0,0.12)', maxHeight:200, overflowY:'auto',
+                borderRadius:8, boxShadow:'var(--shadow-md)', maxHeight:200, overflowY:'auto',
               }}>
                 {filteredIngs.map(ing => {
                   const name = ing.ingredientName || ing.productName || '';

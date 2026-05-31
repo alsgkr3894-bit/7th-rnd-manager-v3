@@ -16,6 +16,8 @@ export function SearchBox({ value, onChange, placeholder = '제품명·제품코
         transform:'translateY(-50%)', color:'var(--text-4)',
       }}/>
       <input
+        type="search"
+        aria-label={placeholder}
         placeholder={placeholder}
         value={value}
         onChange={e => onChange(e.target.value)}

@@ -1,4 +1,5 @@
 'use client';
+import dynamic from 'next/dynamic';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Icon } from '@/components/icons';
@@ -20,10 +21,9 @@ import { getPersonalRecipeMap } from '@/lib/cost/personal-detail';
 import { getSideRecipeMap } from '@/lib/cost/side-detail';
 import { getSetRecipeMap } from '@/lib/cost/set-detail';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
-import { PlatformSettingsModal } from '@/components/cost/margin/PlatformSettingsModal';
+import { createDefaultGroupResolver } from '@/lib/cost/recipe-groups/apply';
 import { MarginFilterBar } from '@/components/cost/margin/MarginFilterBar';
 import { MarginSummaryCards } from '@/components/cost/margin/MarginSummaryCards';
-import { MarginTrendModal } from '@/components/cost/margin/MarginTrendModal';
 import { saveSnapshot } from '@/lib/cost/margin/snapshots';
 import { showToast } from '@/components/Toast';
 import { SortableTh } from '@/components/ui/SortableTh';
@@ -32,6 +32,15 @@ import { exportMarginExcel } from '@/lib/cost/margin/export';
 import { COST_RATE_THRESHOLD as COST_RATE, MARGIN_RATE_THRESHOLD as MARGIN_RATE } from '@/lib/cost/margin/constants';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { KEYS } from '@/lib/note/keys';
+
+const PlatformSettingsModal = dynamic(
+  () => import('@/components/cost/margin/PlatformSettingsModal').then(m => m.PlatformSettingsModal),
+  { ssr: false, loading: () => null }
+);
+const MarginTrendModal = dynamic(
+  () => import('@/components/cost/margin/MarginTrendModal').then(m => m.MarginTrendModal),
+  { ssr: false, loading: () => null }
+);
 
 export default function Page() {
   const [rows,         setRows]         = useState([]);
@@ -69,26 +78,27 @@ export default function Page() {
     }
     const upm = buildUnitPriceMap(meta, priceRowMap);
 
+    // 카테고리별 기본 적용 그룹은 한 번만 계산해 재사용 (레시피마다 전체 그룹 순회 방지)
+    const resolveDefaultGroupIds = createDefaultGroupResolver(allGroups);
+    const groupById = new Map(allGroups.map(g => [g.id, g]));
+
     // 레시피 rows — 공통묶음 원가까지 합산
     const recipeRows = recipes.map(r => {
       const baseCostMap = calcCostBySizes(r, upm);
 
       // 이 레시피에 적용할 그룹 ID 세트 결정
       const activeGids = r.groupIds == null
-        ? new Set(allGroups.filter(g =>
-            (g.defaultCategories || []).some(c =>
-              (r.menuCategory || '') === c ||
-              (r.menuCategory || '').startsWith(c + '/')
-            )
-          ).map(g => g.id))
+        ? resolveDefaultGroupIds(r.menuCategory)
         : new Set(r.groupIds);
 
       const costMap = {};
       for (const s of (r.sizes || [])) {
         if (!s.label) continue;
         let total = baseCostMap[s.label] || 0;
-        for (const g of allGroups) {
-          if (!activeGids.has(g.id)) continue;
+        // 적용 그룹만 순회 (전체 그룹 스캔 대신 활성 그룹 id 기준)
+        for (const gid of activeGids) {
+          const g = groupById.get(gid);
+          if (!g) continue;
           for (const ing of (g.ingredients || [])) {
             const info = upm.get(ing.productCode);
             if (!info?.unitPrice) continue;

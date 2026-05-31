@@ -18,8 +18,9 @@ export function SegGroup({ options, value, onChange }) {
 }
 
 export function Field({ label, required, hint, error, children }) {
+  // <label>로 감싸 라벨 텍스트와 내부 입력을 암묵적으로 연결 (스크린리더 접근성)
   return (
-    <div style={{ marginBottom:14 }}>
+    <label style={{ display:'block', marginBottom:14 }}>
       <div style={{ fontSize:12, fontWeight:700, color: error ? 'var(--negative)' : 'var(--text-3)', marginBottom:6 }}>
         {label}
         {required && <span style={{ color:'var(--negative)', marginLeft:2 }}>*</span>}
@@ -29,6 +30,6 @@ export function Field({ label, required, hint, error, children }) {
       {error ? (
         <div style={{ outline:'1.5px solid var(--negative)', borderRadius:8 }}>{children}</div>
       ) : children}
-    </div>
+    </label>
   );
 }

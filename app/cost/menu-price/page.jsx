@@ -15,13 +15,17 @@ import { MenuPriceTable } from '@/components/cost/menu-price/MenuPriceTable';
 import { MenuPriceForm } from '@/components/cost/menu-price/MenuPriceForm';
 import { MenuPriceUploadCard } from '@/components/cost/menu-price/MenuPriceUploadCard';
 import { BulkPriceModal } from '@/components/cost/menu-price/BulkPriceModal';
+import { KEYS } from '@/lib/note/keys';
 
 export default function Page() {
   const [rows, setRows]             = useState([]);
   const [loading, setLoading]       = useState(true);
   const [dbError, setDbError]       = useState(null);
   const [search, setSearch]         = useState('');
-  const [catFilter,  setCatFilter]  = useState('all');
+  // 카테고리 필터는 새로고침 후에도 유지 (margin·재료 페이지와 동일 패턴)
+  const [catFilter,  setCatFilter]  = useState(() => {
+    try { return localStorage.getItem(KEYS.MENU_PRICE_CAT_FILTER) || 'all'; } catch { return 'all'; }
+  });
   const [subFilter,  setSubFilter]  = useState('all');
   const [formTarget, setFormTarget] = useState(null);
   const [deletePending, setDeletePending] = useState(null);
@@ -40,6 +44,8 @@ export default function Page() {
   useEffect(() => {
     load().catch(err => { console.error(err); setDbError(err.message || '데이터 로드 실패'); }).finally(() => setLoading(false));
   }, [load]);
+
+  useEffect(() => { try { localStorage.setItem(KEYS.MENU_PRICE_CAT_FILTER, catFilter); } catch {} }, [catFilter]);
 
   async function handleReset() {
     setResetting(true);

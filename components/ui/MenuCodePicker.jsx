@@ -142,7 +142,7 @@ export default function MenuCodePicker({
         <div ref={listRef} style={{
           position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
           background: 'var(--surface)', border: '1px solid var(--border)',
-          borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,.15)',
+          borderRadius: 8, boxShadow: 'var(--shadow-md)',
           maxHeight: 260, overflowY: 'auto', marginTop: 2,
         }}>
           {results.map((m, idx) => {

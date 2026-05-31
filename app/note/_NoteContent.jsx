@@ -157,15 +157,19 @@ export function NoteContent() {
 
   const hlRe = useMemo(() => buildHighlightRegex(search.trim()), [search]);
 
+  // 검색 대상 필드를 소문자로 미리 합쳐 인덱싱 — 키 입력마다 전체 toLowerCase 반복 방지
+  const searchIndex = useMemo(() => {
+    const m = new Map();
+    for (const n of notes) {
+      m.set(n.id, `${n.title || ''}\n${n.menuName || ''}\n${n.testContent || ''}\n${n.tags || ''}`.toLowerCase());
+    }
+    return m;
+  }, [notes]);
+
   const filtered = useMemo(() => {
     let list = statusFilter === 'all' ? notes : notes.filter(n => n.status === statusFilter);
     const q = search.trim().toLowerCase();
-    if (q) list = list.filter(n =>
-      (n.title       || '').toLowerCase().includes(q) ||
-      (n.menuName    || '').toLowerCase().includes(q) ||
-      (n.testContent || '').toLowerCase().includes(q) ||
-      (n.tags        || '').toLowerCase().includes(q)
-    );
+    if (q) list = list.filter(n => (searchIndex.get(n.id) || '').includes(q));
     return [...list].sort((a, b) => {
       const ap = pinnedIds.has(a.id) ? 0 : 1;
       const bp = pinnedIds.has(b.id) ? 0 : 1;
@@ -174,7 +178,7 @@ export function NoteContent() {
       if (sortBy === 'testDate') return (b.testDate || '').localeCompare(a.testDate || '');
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
-  }, [notes, statusFilter, search, sortBy, pinnedIds]);
+  }, [notes, statusFilter, search, sortBy, pinnedIds, searchIndex]);
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
@@ -486,7 +490,7 @@ export function NoteContent() {
           <div style={{
             position:'absolute', top:'calc(100% + 4px)', left:0, right:0,
             background:'var(--surface)', border:'1px solid var(--border)',
-            borderRadius:10, boxShadow:'0 4px 16px rgba(0,0,0,.12)', zIndex:50, overflow:'hidden',
+            borderRadius:10, boxShadow:'var(--shadow-md)', zIndex:50, overflow:'hidden',
           }}>
             {searchHistory.map((h, i) => (
               <button key={i}
@@ -553,7 +557,7 @@ export function NoteContent() {
           <div className="ctx-menu" style={{
             position:'fixed', left:ctxMenu.x, top:ctxMenu.y, zIndex:300,
             background:'var(--surface)', border:'1px solid var(--border)',
-            borderRadius:10, boxShadow:'0 6px 24px rgba(0,0,0,.18)', minWidth:160,
+            borderRadius:10, boxShadow:'var(--shadow-lg)', minWidth:160,
             overflow:'hidden', animation:'fade 120ms ease',
           }}>
             {[

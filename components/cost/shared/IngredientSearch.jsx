@@ -93,7 +93,7 @@ export function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded
       position: 'fixed', top: rect.top, left: rect.left, width: rect.width,
       zIndex: 9999,
       background: 'var(--surface-1)', border: '1px solid var(--border)',
-      borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,.2)',
+      borderRadius: 8, boxShadow: 'var(--shadow-md)',
       maxHeight: 260, overflowY: 'auto',
     }}>
       {results.map((m, idx) => {
@@ -128,6 +128,8 @@ export function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded
       <div className="filter-search" style={{ gap: 6 }}>
         <Icon.search style={{ width: 14, height: 14, color: 'var(--text-3)', flexShrink: 0 }}/>
         <input value={q}
+          type="search"
+          aria-label="식자재 검색"
           onChange={e => { setQ(e.target.value); setOpen(!!e.target.value.trim()); }}
           onFocus={() => { if (q.trim()) setOpen(true); }}
           onKeyDown={handleKeyDown}

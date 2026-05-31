@@ -13,6 +13,7 @@ import {
 import { downloadCsv } from '@/lib/download';
 import { SCOPE, SCOPE_STYLES } from '@/lib/ingredient/constants';
 import { IngredientListSkeleton } from '@/components/ui/Skeleton';
+import { KEYS } from '@/lib/note/keys';
 
 const DISCONTINUED_FILTER  = '__discontinued__';
 const UNCATEGORIZED_FILTER = '__none__';
@@ -42,7 +43,9 @@ export default function Page() {
   const [loading,     setLoading]     = useState(true);
   const [search,      setSearch]      = useState('');
   const [scopeFilter, setScopeFilter] = useState('all');
-  const [catFilter,   setCatFilter]   = useState('all');
+  const [catFilter,   setCatFilter]   = useState(() => {
+    try { return localStorage.getItem(KEYS.INGREDIENT_LIST_CAT_FILTER) || 'all'; } catch { return 'all'; }
+  });
   const [tagFilter,   setTagFilter]   = useState('all');
   const [sort,        setSort]        = useState('default');
 
@@ -75,6 +78,9 @@ export default function Page() {
   useEffect(() => {
     load().catch(console.error).finally(() => setLoading(false));
   }, [load]);
+
+  // 카테고리 필터는 새로고침 후에도 유지
+  useEffect(() => { try { localStorage.setItem(KEYS.INGREDIENT_LIST_CAT_FILTER, catFilter); } catch {} }, [catFilter]);
 
   // ── 통계 ────────────────────────────────────────────────────
   const {

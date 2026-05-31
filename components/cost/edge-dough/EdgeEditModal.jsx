@@ -239,7 +239,7 @@ function CompRow({ c, allMeta, upm, onChange, onRemove }) {
     <div ref={listRef} style={{
       position:'fixed', top: rect.top, left: rect.left, width: Math.max(rect.width, 260),
       zIndex: 9999, background: 'var(--surface-1)', border: '1px solid var(--border)',
-      borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,.2)', maxHeight: 220, overflowY: 'auto',
+      borderRadius: 8, boxShadow: 'var(--shadow-md)', maxHeight: 220, overflowY: 'auto',
     }}>
       {results.map((m, idx) => {
         const info = upm.get(m.productCode);

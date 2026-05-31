@@ -4,6 +4,7 @@ import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { Chip } from '@/components/ui/Chip';
 import { SearchBox } from '@/components/ui/SearchBox';
+import { EmptyState } from '@/components/ui/EmptyState';
 import {
   getAllManagedProducts,
   addManagedProduct, deleteManagedProduct, updateManagedProduct,
@@ -162,9 +163,12 @@ export function ManagedProductsCard() {
       <SearchBox value={search} onChange={setSearch}/>
 
       {filtered.length === 0 ? (
-        <div style={{padding:'32px 0', textAlign:'center', color:'var(--text-3)', fontSize:13}}>
-          조건에 맞는 제품이 없습니다
-        </div>
+        <EmptyState
+          compact
+          icon={<Icon.box style={{ width: 28, height: 28 }}/>}
+          title={search ? '조건에 맞는 제품이 없습니다' : '관리 대상 제품이 없습니다'}
+          desc={search ? '검색어를 바꿔보세요' : '상단에서 제품을 추가해 관리하세요'}
+        />
       ) : (
         <div style={{maxHeight:480, overflowY:'auto', borderTop:'1px solid var(--border)'}}>
           <table className="data-table">

@@ -16,6 +16,7 @@ import { COMPANIES } from '@/lib/companies';
 import { MOBILE_TAB_DEFS } from '@/lib/menu';
 import ProgressBar from './ProgressBar';
 import OfflineIndicator from './OfflineIndicator';
+import DbVersionNotice from './DbVersionNotice';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useVisualEffects } from '@/hooks/useVisualEffects';
 import { usePageStats } from '@/hooks/usePageStats';
@@ -205,6 +206,7 @@ export default function AppShell({ children }) {
 
       <ProgressBar />
       <OfflineIndicator />
+      <DbVersionNotice />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       {shortcutsOpen && <ShortcutsHelp onClose={() => setShortcutsOpen(false)} />}
 
