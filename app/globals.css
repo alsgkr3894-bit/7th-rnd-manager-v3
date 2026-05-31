@@ -271,16 +271,8 @@ button { font-family: inherit; cursor: pointer; }
   transition: grid-template-rows 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .nav-children.open { grid-template-rows: 1fr; }
-.nav-children.open .nav-child { animation: slide-up 220ms cubic-bezier(0.2,0.8,0.2,1) both; }
-.nav-children.open .nav-child:nth-child(1) { animation-delay: 20ms; }
-.nav-children.open .nav-child:nth-child(2) { animation-delay: 50ms; }
-.nav-children.open .nav-child:nth-child(3) { animation-delay: 80ms; }
-.nav-children.open .nav-child:nth-child(4) { animation-delay: 110ms; }
-.nav-children.open .nav-child:nth-child(n+5) { animation-delay: 140ms; }
-.nav-children-inner .nav-child:nth-child(1) { animation-delay: 10ms; }
-.nav-children-inner .nav-child:nth-child(2) { animation-delay: 35ms; }
-.nav-children-inner .nav-child:nth-child(3) { animation-delay: 60ms; }
-.nav-children-inner .nav-child:nth-child(n+4) { animation-delay: 85ms; }
+/* 펼침 시 자식은 은은한 페이드만 (개별 stagger 제거 → repaint storm 방지, grid-rows 펼침과 충돌 없음) */
+.nav-children.open .nav-child { animation: fade-in 160ms ease both; }
 .nav-children-inner {
   overflow: hidden;
   padding-left: 22px;
@@ -4275,10 +4267,11 @@ button { font-family: inherit; cursor: pointer; }
 /* ----- 사이드바 슬라이딩 인디케이터 ----- */
 .sidebar-pill {
   position: absolute;
-  left: 14px; right: 14px;
+  top: 0; left: 14px; right: 14px;
   background: var(--accent-soft);
   border-radius: 10px;
-  transition: top 220ms cubic-bezier(0.2,0.8,0.2,1), height 220ms cubic-bezier(0.2,0.8,0.2,1), opacity 160ms ease;
+  /* translateY로 이동 → GPU 합성(레이아웃 유발 top 대신). will-change가 실제 transform과 일치 */
+  transition: transform 220ms cubic-bezier(0.2,0.8,0.2,1), height 220ms cubic-bezier(0.2,0.8,0.2,1), opacity 160ms ease;
   will-change: transform;
   pointer-events: none;
   z-index: 0;

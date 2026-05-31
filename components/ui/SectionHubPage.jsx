@@ -10,16 +10,19 @@ import { PageHeader } from '@/components/ui/PageHeader';
  * @param {string}    props.title      - 페이지 제목
  * @param {string}    props.sub        - 페이지 부제목
  * @param {Group[]}   props.groups     - 그룹 목록
+ * @param {ReactNode} [props.children] - 대시보드 슬롯 (PageHeader 아래, 링크 카드 위에 렌더)
  *
  * Group: { label: string, items: Item[] }
  * Item:  { href, icon, title, sub, iconBg, iconColor }
  */
-export function SectionHubPage({ breadcrumb, title, sub, groups }) {
+export function SectionHubPage({ breadcrumb, title, sub, groups, children }) {
   const router = useRouter();
 
   return (
     <main className="main">
       <PageHeader breadcrumb={breadcrumb} title={title} sub={sub} />
+
+      {children && <div style={{ marginBottom: 24 }}>{children}</div>}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         {groups.map(g => (

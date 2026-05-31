@@ -1,5 +1,10 @@
 'use client';
+import { useEffect, useState } from 'react';
 import { SectionHubPage } from '@/components/ui/SectionHubPage';
+import { SectionDashboard } from '@/components/ui/SectionDashboard';
+import { initDB } from '@/lib/db';
+import { getJetteDashboard } from '@/lib/jette/dashboard';
+import { formatNumber } from '@/lib/format';
 
 const GROUPS = [
   {
@@ -23,12 +28,53 @@ const GROUPS = [
 ];
 
 export default function Page() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        await initDB();
+        setData(await getJetteDashboard());
+      } catch (err) {
+        console.warn('[jette hub] dashboard load failed:', err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const price = data?.price;
+  const shipment = data?.shipment;
+  const cards = [];
+  if (price) {
+    cards.push(
+      { label: '최신 단가 반영', value: price.latestDate || '없음', unit: '' },
+      { label: '단가 인상', value: price.upCount, valueColor: price.upCount > 0 ? 'var(--negative)' : undefined },
+      { label: '단가 인하', value: price.downCount, valueColor: price.downCount > 0 ? 'var(--positive)' : undefined },
+    );
+  }
+  if (shipment) {
+    cards.push(
+      { label: '최신 출고월', value: `${shipment.year}.${String(shipment.month).padStart(2, '0')}`, unit: '' },
+      { label: '관리 품목', value: shipment.managedCount },
+      { label: '출고 총액', value: formatNumber(shipment.totalAmount), unit: '원' },
+    );
+  }
+
   return (
     <SectionHubPage
       breadcrumb={['제트']}
       title="제트"
       sub="가격 비교, 배송 현황, 설정을 한 곳에서 관리하세요."
       groups={GROUPS}
-    />
+    >
+      <SectionDashboard
+        loading={loading}
+        cards={cards}
+        isEmpty={!loading && cards.length === 0}
+        emptyHint="아직 업로드된 제때 가격·출고 데이터가 없어요. ‘가격 비교’ 또는 ‘배송 현황’에서 파일을 업로드하세요."
+      />
+    </SectionHubPage>
   );
 }

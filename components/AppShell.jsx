@@ -183,7 +183,8 @@ export default function AppShell({ children }) {
           reportingCount={reportingCount}
         />
         <ErrorBoundary key={pathname}>
-          <div id="main-content" style={{ animation: 'slide-up 280ms cubic-bezier(0.2,0.8,0.2,1) both' }}>
+          {/* 페이지 전환: 세로 슬라이드 대신 은은한 페이드만 (본문이 튀어 보이는 현상 제거) */}
+          <div id="main-content" style={{ animation: 'fade-in 180ms ease both' }}>
             {children}
           </div>
         </ErrorBoundary>

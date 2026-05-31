@@ -1,5 +1,9 @@
 'use client';
+import { useEffect, useState } from 'react';
 import { SectionHubPage } from '@/components/ui/SectionHubPage';
+import { SectionDashboard } from '@/components/ui/SectionDashboard';
+import { initDB } from '@/lib/db';
+import { getNutritionDashboard } from '@/lib/nutrition/dashboard';
 
 const GROUPS = [
   {
@@ -24,12 +28,43 @@ const GROUPS = [
 ];
 
 export default function Page() {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        await initDB();
+        setStats(await getNutritionDashboard());
+      } catch (err) {
+        console.warn('[nutrition hub] dashboard load failed:', err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const cards = stats ? [
+    { label: '등록 메뉴', value: stats.menuCount },
+    { label: '영양성분 입력', value: stats.nutritionDone, unit: `개 · ${stats.nutritionRate}%`, valueColor: 'var(--accent-text)' },
+    { label: '알레르기 커버리지', value: stats.allergenRate, unit: '%', valueColor: stats.allergenRate >= 80 ? 'var(--positive)' : 'var(--warn)' },
+    { label: '원산지 미등록', value: stats.originMissing, valueColor: stats.originMissing > 0 ? 'var(--warn)' : 'var(--positive)' },
+    { label: '파생 메뉴', value: stats.compositionCount },
+  ] : [];
+
   return (
     <SectionHubPage
       breadcrumb={['영양성분·원산지']}
       title="영양성분·원산지"
       sub="메뉴별 영양성분, 알레르기, 원산지 정보를 관리하고 출력하세요."
       groups={GROUPS}
-    />
+    >
+      <SectionDashboard
+        loading={loading}
+        cards={cards}
+        isEmpty={!loading && (!stats || stats.menuCount === 0)}
+        emptyHint="아직 등록된 메뉴 영양성분이 없어요. ‘메뉴 영양성분’에서 데이터를 입력하세요."
+      />
+    </SectionHubPage>
   );
 }

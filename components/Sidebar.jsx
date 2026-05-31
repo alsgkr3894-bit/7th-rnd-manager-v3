@@ -99,7 +99,9 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
       const sRect = sidebar.getBoundingClientRect();
       const eRect = activeEl.getBoundingClientRect();
       setPillStyle({ top: eRect.top - sRect.top + sidebar.scrollTop, height: eRect.height, opacity: 1 });
-      activeEl.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+      // active 항목이 보이는 영역 밖일 때만 스크롤 (이미 보이는 항목 클릭 시 점프 방지)
+      const outOfView = eRect.top < sRect.top || eRect.bottom > sRect.bottom;
+      if (outOfView) activeEl.scrollIntoView({ block: 'nearest', behavior: 'instant' });
     });
     return () => cancelAnimationFrame(rafId);
   }, [pathname, openIds]);
@@ -154,8 +156,9 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
           // active 그룹은 닫지 않고 열기만 (토글 X)
           toggle(item.id, true);
         } else {
-          toggle(item.id);
-          if (!isOpen) navigate(item.children[0].href);
+          // 첫 탭으로 이동만 — pathname 변경 시 자동-펼침 effect가 그룹을 연다.
+          // 수동 toggle을 생략해 openIds·pathname 이중 상태 변경(pill effect 중복 발화)을 방지.
+          navigate(item.children[0].href);
         }
       } else if (item.href) {
         navigate(item.href);
@@ -206,7 +209,7 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
 
   return (
     <aside className="sidebar" ref={sidebarRef} suppressHydrationWarning>
-      <div className="sidebar-pill" style={{ top: pillStyle.top, height: pillStyle.height, opacity: pillStyle.opacity }} />
+      <div className="sidebar-pill" style={{ transform: `translateY(${pillStyle.top}px)`, height: pillStyle.height, opacity: pillStyle.opacity }} />
       <a className="brand" href="/" onClick={e => { e.preventDefault(); navigate('/'); }}>
         {activeCompany?.logo
           ? <img className="logo-img" src={activeCompany.logo} alt={activeCompany?.name || '로고'}
