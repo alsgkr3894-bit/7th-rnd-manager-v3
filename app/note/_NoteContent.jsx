@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { NoteCardSkeleton } from '@/components/ui/Skeleton';
@@ -19,6 +19,7 @@ import { KEYS } from '@/lib/note/keys';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useScrollMemory } from '@/hooks/useScrollMemory';
+import { useNoteFilter } from '@/hooks/useNoteFilter';
 import { buildHighlightRegex, parseTagList, formatFullDate } from '@/lib/note/utils';
 import { NoteCard } from './_NoteCard';
 import { NoteDetailModal } from './_NoteDetailModal';
@@ -75,13 +76,9 @@ const SORT_OPTIONS = [
 export function NoteContent() {
   const router       = useRouter();
   const pathname     = usePathname();
-  const searchParams = useSearchParams();
 
   const [notes,        setNotes]        = useState([]);
   const [loading,      setLoading]      = useState(true);
-  const [search,       setSearch]       = useState(() => searchParams.get('q') || (tryLS(KEYS.NOTE_SEARCH, '')));
-  const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || (tryLS(KEYS.NOTE_STATUS, 'all')));
-  const [sortBy,       setSortBy]       = useState(() => tryLS(KEYS.NOTE_SORT, 'createdAt'));
   const [viewMode,     setViewMode]     = useState(() => tryLS(KEYS.NOTE_VIEW, 'card'));
   const PAGE_SIZE = 20;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -103,6 +100,12 @@ export function NoteContent() {
 
   useScrollMemory(pathname);
 
+  // 검색/상태필터/정렬 상태 + 파생 데이터(counts·filtered)는 useNoteFilter로 위임
+  const {
+    search, setSearch, statusFilter, setStatusFilter, sortBy, setSortBy,
+    counts, filtered,
+  } = useNoteFilter(notes, pinnedIds, { pathname });
+
   const {
     history: searchHistory,
     isOpen:  showSearchHist,
@@ -123,17 +126,6 @@ export function NoteContent() {
   }, []);
 
   useEffect(() => {
-    const p = new URLSearchParams();
-    if (search)                  p.set('q', search);
-    if (statusFilter !== 'all')  p.set('status', statusFilter);
-    const qs = p.toString();
-    window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
-  }, [search, statusFilter, pathname]);
-
-  useEffect(() => { setLS(KEYS.NOTE_SEARCH, search); }, [search]);
-  useEffect(() => { setLS(KEYS.NOTE_STATUS, statusFilter); }, [statusFilter]);
-
-  useEffect(() => {
     load().catch(console.error).finally(() => setLoading(false));
   }, [load]);
 
@@ -146,39 +138,7 @@ export function NoteContent() {
     return () => window.removeEventListener('keydown', handler);
   }, [ctxMenu]);
 
-  const counts = useMemo(() => {
-    const m = notes.reduce((acc, n) => {
-      acc[n.status] = (acc[n.status] || 0) + 1;
-      return acc;
-    }, { all: notes.length });
-    for (const s of STATUSES) if (!(s in m)) m[s] = 0;
-    return m;
-  }, [notes]);
-
   const hlRe = useMemo(() => buildHighlightRegex(search.trim()), [search]);
-
-  // 검색 대상 필드를 소문자로 미리 합쳐 인덱싱 — 키 입력마다 전체 toLowerCase 반복 방지
-  const searchIndex = useMemo(() => {
-    const m = new Map();
-    for (const n of notes) {
-      m.set(n.id, `${n.title || ''}\n${n.menuName || ''}\n${n.testContent || ''}\n${n.tags || ''}`.toLowerCase());
-    }
-    return m;
-  }, [notes]);
-
-  const filtered = useMemo(() => {
-    let list = statusFilter === 'all' ? notes : notes.filter(n => n.status === statusFilter);
-    const q = search.trim().toLowerCase();
-    if (q) list = list.filter(n => (searchIndex.get(n.id) || '').includes(q));
-    return [...list].sort((a, b) => {
-      const ap = pinnedIds.has(a.id) ? 0 : 1;
-      const bp = pinnedIds.has(b.id) ? 0 : 1;
-      if (ap !== bp) return ap - bp;
-      if (sortBy === 'menuName') return (a.menuName || '').localeCompare(b.menuName || '', 'ko');
-      if (sortBy === 'testDate') return (b.testDate || '').localeCompare(a.testDate || '');
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    });
-  }, [notes, statusFilter, search, sortBy, pinnedIds, searchIndex]);
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
@@ -320,7 +280,7 @@ export function NoteContent() {
     } catch { showToast('복사 실패', 'warn'); }
   }
 
-  function changeSort(key) { setSortBy(key); setLS(KEYS.NOTE_SORT, key); setVisibleCount(PAGE_SIZE); }
+  function changeSort(key) { setSortBy(key); setVisibleCount(PAGE_SIZE); }  // sortBy 영속은 useNoteFilter가 담당
   function changeView(mode) { setViewMode(mode); setLS(KEYS.NOTE_VIEW, mode); }
 
   function savePreset(name) {
@@ -333,8 +293,7 @@ export function NoteContent() {
   function applyPreset(p) {
     setStatusFilter(p.status);
     setSearch(p.search || '');
-    setSortBy(p.sort);
-    setLS(KEYS.NOTE_SORT, p.sort);
+    setSortBy(p.sort);  // 영속은 useNoteFilter가 담당
   }
 
   function deletePreset(idx) {

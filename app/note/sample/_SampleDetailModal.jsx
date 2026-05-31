@@ -1,10 +1,10 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { Stars } from './_Stars';
 import { usePinchZoom } from '@/hooks/usePinchZoom';
-import { useModalOrigin } from '@/hooks/useModalOrigin';
+import { useModalShell } from '@/hooks/useModalShell';
 
 function Section({ title, children }) {
   return (
@@ -20,19 +20,12 @@ export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
   const [photoIdx, setPhotoIdx] = useState(0);
   const photos = sample.photos || [];
   const { imgRef, scale, resetScale } = usePinchZoom();
-  const cardRef = useRef(null);
-  useModalOrigin(cardRef);
+  const { containerRef, isClosing, close } = useModalShell(onClose);
 
   useEffect(() => {
     resetScale();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photoIdx]);
-
-  useEffect(() => {
-    const h = e => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, [onClose]);
 
   const tags = sample.tags ? sample.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
 
@@ -45,8 +38,8 @@ export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
       }}
     >
       <div
-        ref={cardRef}
-        className="modal-anim"
+        ref={containerRef}
+        className={'modal-anim' + (isClosing ? ' modal-exit' : '')}
         style={{
           background:'var(--surface)', borderRadius:20, overflow:'hidden',
           width:'100%', maxWidth:880, maxHeight:'92vh', display:'flex', flexDirection:'column',
@@ -100,7 +93,7 @@ export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
             <button
               aria-label="닫기"
               style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-3)', padding:4 }}
-              onClick={onClose}
+              onClick={close}
             >
               <Icon.close aria-hidden="true" style={{ width:18, height:18 }}/>
             </button>

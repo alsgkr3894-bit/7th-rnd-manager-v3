@@ -1,18 +1,10 @@
 'use client';
-import { useEffect, useRef } from 'react';
 import { Icon } from '@/components/icons';
 import { Stars } from './_Stars';
-import { useModalOrigin } from '@/hooks/useModalOrigin';
+import { useModalShell } from '@/hooks/useModalShell';
 
 export function CompareModal({ samples, onClose }) {
-  const cardRef = useRef(null);
-  useModalOrigin(cardRef);
-
-  useEffect(() => {
-    const h = e => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, [onClose]);
+  const { containerRef, isClosing, close } = useModalShell(onClose);
 
   const maxRating = Math.max(...samples.map(s => s.rating || 0));
 
@@ -34,8 +26,8 @@ export function CompareModal({ samples, onClose }) {
       }}
     >
       <div
-        ref={cardRef}
-        className="modal-anim"
+        ref={containerRef}
+        className={'modal-anim' + (isClosing ? ' modal-exit' : '')}
         style={{
           background:'var(--surface)', borderRadius:20, overflow:'hidden',
           width:'100%', maxWidth:960, maxHeight:'92vh', display:'flex', flexDirection:'column',
@@ -51,7 +43,8 @@ export function CompareModal({ samples, onClose }) {
           </div>
           <button
             style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-3)', padding:4 }}
-            onClick={onClose}
+            onClick={close}
+            aria-label="비교 닫기"
           >
             <Icon.close style={{ width:18, height:18 }}/>
           </button>

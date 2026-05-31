@@ -4,7 +4,6 @@ const QUICK_NOTE_RESET_MS = 1500;
 const devError = (...a) => { if (process.env.NODE_ENV !== 'production') console.error(...a); };
 
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { useModalOrigin } from '@/hooks/useModalOrigin';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { useCountUp } from '@/lib/useCountUp';
@@ -27,105 +26,13 @@ import { HomeChartRow } from '@/components/home/HomeChartRow';
 import { HomeActivities } from '@/components/home/HomeActivities';
 import { RankCard, ReportingNotesWidget, SampleStatsWidget, CostAlertWidget, QuickReportWidget } from '@/components/home/HomeWidgets';
 import RecentVisitsWidget from '@/components/home/RecentVisitsWidget';
+import { NoteHeatmapWidget } from '@/components/home/NoteHeatmapWidget';
+import { WidgetConfigModal } from '@/components/home/WidgetConfigModal';
+import { useWidgetConfig } from '@/hooks/useWidgetConfig';
 import { getAllNotes, addNote } from '@/lib/note';
 import { getAllSamples } from '@/lib/sample';
 import { KEYS } from '@/lib/note/keys';
 
-
-function NoteHeatmapWidget({ notes }) {
-  const HEATMAP_WEEKS = 16;
-  const HEATMAP_DAYS  = HEATMAP_WEEKS * 7; // 112
-
-  const DAYS  = HEATMAP_DAYS;
-  const WEEKS = HEATMAP_WEEKS;
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayTs = today.getTime(); // stable primitive for useMemo dep
-
-  // 날짜별 count 집계
-  const { countMap, total } = useMemo(() => {
-    const map = {};
-    notes.forEach(note => {
-      const d = note.createdAt ? new Date(note.createdAt) : null;
-      if (!d) return;
-      d.setHours(0, 0, 0, 0);
-      const diff = Math.floor((todayTs - d.getTime()) / 86400000);
-      if (diff >= 0 && diff < DAYS) {
-        map[diff] = (map[diff] || 0) + 1;
-      }
-    });
-    return { countMap: map, total: Object.values(map).reduce((s, v) => s + v, 0) };
-  }, [notes, todayTs, DAYS]);
-
-  // 16주 x 7일 그리드: col 0 = 가장 오래된 주, col 15 = 이번 주
-  // row 0 = 일요일, row 6 = 토요일
-  const todayDow = today.getDay(); // 0=일 ~ 6=토
-  // 오늘이 속한 주의 일요일까지 며칠 전인지
-  const daysFromSundayOfThisWeek = todayDow;
-  // 전체 시작일: 16주 전 일요일
-  const startOffset = DAYS - 1 - (WEEKS - 1) * 7 - daysFromSundayOfThisWeek;
-  // startOffset은 today 기준 며칠 전의 일요일
-
-  function getCount(weekIdx, dowIdx) {
-    // weekIdx 0 = 가장 오래된 주, 15 = 이번 주
-    // dowIdx 0 = 일요일
-    const daysAgo = (WEEKS - 1 - weekIdx) * 7 + (todayDow - dowIdx);
-    if (daysAgo < 0 || daysAgo >= DAYS) return -1; // 범위 밖 (미래)
-    return countMap[daysAgo] || 0;
-  }
-
-  function lvClass(count) {
-    if (count < 0) return 'lv-none';
-    if (count === 0) return 'lv0';
-    if (count === 1) return 'lv1';
-    if (count === 2) return 'lv2';
-    if (count === 3) return 'lv3';
-    return 'lv4';
-  }
-
-  // JSX 내부에서 useMemo 호출 불가 (Rules of Hooks) → 컴포넌트 본체에서 미리 계산
-  const heatmapCells = useMemo(() =>
-    Array.from({ length: WEEKS }, (_, wi) =>
-      Array.from({ length: 7 }, (_, di) => {
-        const c = getCount(wi, di);
-        return (
-          <div key={`${wi}-${di}`}
-            className={`heatmap-cell ${lvClass(c)}`}
-            title={c >= 0 ? `${c}개` : ''}
-            style={{ gridColumn: wi + 1, gridRow: di + 1, background: c < 0 ? 'transparent' : undefined }}
-          />
-        );
-      })
-    )
-  , [countMap, todayDow]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  return (
-    <div className="card" style={{ padding: '16px 20px' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 10 }}>
-        <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-1)' }}>노트 작성 현황</div>
-        <div style={{ fontSize: 12, color: 'var(--text-3)' }}>16주간 {total}개</div>
-      </div>
-      <div className="heatmap-wrap">
-        <div style={{display:'flex',flexDirection:'column',gap:3,marginRight:4,justifyContent:'space-around',height:89}}>
-          {['일','','화','','목','','토'].map((d,i) => (
-            <div key={i} style={{fontSize:9,color:'var(--text-4)',lineHeight:1,textAlign:'right',width:10}}>{d}</div>
-          ))}
-        </div>
-        <div style={{
-          flex:1,
-          display: 'grid',
-          gridTemplateColumns: `repeat(${WEEKS}, 1fr)`,
-          gridTemplateRows: 'repeat(7, 11px)',
-          gridAutoFlow: 'column',
-          gap: 3,
-        }}>
-          {heatmapCells}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function HomePage() {
   const router = useRouter();
@@ -156,35 +63,9 @@ export default function HomePage() {
   const [quickNote, setQuickNote]   = useState('');
   const [quickSaved, setQuickSaved] = useState(false);
   const quickResetTimer = useRef(null);
-  const widgetConfigCardRef = useRef(null);
-  useModalOrigin(widgetConfigCardRef);
 
-  const [widgetConfig, setWidgetConfig] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(KEYS.HOME_WIDGETS) || '{}'); } catch (err) { console.warn('[Home] storage access failed:', err); return {}; }
-  });
+  const { isVisible, toggle: toggleWidget } = useWidgetConfig();
   const [widgetConfigOpen, setWidgetConfigOpen] = useState(false);
-
-  const WIDGET_DEFS = [
-    { key: 'recent',      label: '최근 방문' },
-    { key: 'kpi',         label: 'KPI 지표' },
-    { key: 'quicknote',   label: '빠른 메모' },
-    { key: 'charts',      label: '차트 (트렌드 · 카테고리)' },
-    { key: 'ranks',       label: '판매 순위 (베스트/워스트)' },
-    { key: 'costalert',   label: '원가율 경보' },
-    { key: 'quickreport', label: '보고서 빠른 생성' },
-    { key: 'notes',       label: '보고예정 노트' },
-    { key: 'samples',     label: '샘플 기록' },
-    { key: 'heatmap',     label: '노트 히트맵' },
-    { key: 'activities',  label: '최근 활동' },
-  ];
-
-  function isVisible(key) { return widgetConfig[key] !== false; }
-
-  function toggleWidget(key) {
-    const next = { ...widgetConfig, [key]: !isVisible(key) };
-    setWidgetConfig(next);
-    try { localStorage.setItem(KEYS.HOME_WIDGETS, JSON.stringify(next)); } catch (err) { console.warn('[Home] storage access failed:', err); }
-  }
 
   // chartTab ref — useEffect 클로저 stale 방지
   useEffect(() => { chartTabRef.current = chartTab; }, [chartTab]);
@@ -310,41 +191,11 @@ export default function HomePage() {
     <main className="main page-enter">
       {/* 위젯 설정 패널 */}
       {widgetConfigOpen && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.4)',zIndex:500,display:'grid',placeItems:'center',animation:'fade 150ms ease'}}
->
-          <div ref={widgetConfigCardRef} className="card modal-anim" style={{width:'min(360px,92vw)',padding:'24px 28px'}}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-              <div style={{fontWeight:800,fontSize:15,color:'var(--text-1)'}}>홈 위젯 설정</div>
-              <button className="btn xs" onClick={() => setWidgetConfigOpen(false)}>
-                <Icon.close style={{width:15,height:15}}/>
-              </button>
-            </div>
-            <div style={{display:'flex',flexDirection:'column',gap:10}}>
-              {WIDGET_DEFS.map(w => (
-                <label key={w.key} style={{display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer',padding:'6px 0'}}>
-                  <span style={{fontSize:14,color:'var(--text-2)'}}>{w.label}</span>
-                  <div className="widget-toggle" style={{position:'relative'}}>
-                    <input type="checkbox" checked={isVisible(w.key)} onChange={() => toggleWidget(w.key)}
-                      style={{position:'absolute',opacity:0,width:0,height:0}}/>
-                    <div style={{
-                      width:38,height:22,borderRadius:11,
-                      background: isVisible(w.key) ? 'var(--accent)' : 'var(--border-strong)',
-                      transition:'background .15s',position:'relative',
-                    }}>
-                      <div style={{
-                        position:'absolute',top:3,
-                        left: isVisible(w.key) ? 18 : 3,
-                        width:16,height:16,borderRadius:8,
-                        background:'#fff',transition:'left .15s',
-                        boxShadow:'0 1px 4px rgba(0,0,0,0.2)',
-                      }}/>
-                    </div>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
+        <WidgetConfigModal
+          isVisible={isVisible}
+          toggle={toggleWidget}
+          onClose={() => setWidgetConfigOpen(false)}
+        />
       )}
 
       {/* 인사말 */}
