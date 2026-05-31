@@ -1,4 +1,5 @@
 'use client';
+import dynamic from 'next/dynamic';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Icon } from '@/components/icons';
@@ -20,10 +21,8 @@ import { getPersonalRecipeMap } from '@/lib/cost/personal-detail';
 import { getSideRecipeMap } from '@/lib/cost/side-detail';
 import { getSetRecipeMap } from '@/lib/cost/set-detail';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
-import { PlatformSettingsModal } from '@/components/cost/margin/PlatformSettingsModal';
 import { MarginFilterBar } from '@/components/cost/margin/MarginFilterBar';
 import { MarginSummaryCards } from '@/components/cost/margin/MarginSummaryCards';
-import { MarginTrendModal } from '@/components/cost/margin/MarginTrendModal';
 import { saveSnapshot } from '@/lib/cost/margin/snapshots';
 import { showToast } from '@/components/Toast';
 import { SortableTh } from '@/components/ui/SortableTh';
@@ -32,6 +31,15 @@ import { exportMarginExcel } from '@/lib/cost/margin/export';
 import { COST_RATE_THRESHOLD as COST_RATE, MARGIN_RATE_THRESHOLD as MARGIN_RATE } from '@/lib/cost/margin/constants';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { KEYS } from '@/lib/note/keys';
+
+const PlatformSettingsModal = dynamic(
+  () => import('@/components/cost/margin/PlatformSettingsModal').then(m => m.PlatformSettingsModal),
+  { ssr: false, loading: () => null }
+);
+const MarginTrendModal = dynamic(
+  () => import('@/components/cost/margin/MarginTrendModal').then(m => m.MarginTrendModal),
+  { ssr: false, loading: () => null }
+);
 
 export default function Page() {
   const [rows,         setRows]         = useState([]);

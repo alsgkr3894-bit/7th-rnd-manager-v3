@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import {
@@ -9,9 +10,19 @@ import {
 } from '@/lib/sales';
 import { Icon } from '@/components/icons';
 import { PeriodBar } from '@/components/sales/PeriodBar';
-import { SingleMonthView } from '@/components/sales/SingleMonthView';
-import { CompareView } from '@/components/sales/CompareView';
 import { RankCompareEmpty } from '@/components/sales/RankCompareEmpty';
+
+const _loadingFallback = <div className="skeleton" style={{ height: 240, borderRadius: 12 }} />;
+
+const SingleMonthView = dynamic(
+  () => import('@/components/sales/SingleMonthView').then(m => m.SingleMonthView),
+  { ssr: false, loading: () => _loadingFallback },
+);
+
+const CompareView = dynamic(
+  () => import('@/components/sales/CompareView').then(m => m.CompareView),
+  { ssr: false, loading: () => _loadingFallback },
+);
 import { useRankCompareData } from '@/lib/sales/use-rank-compare-data';
 import { useAvgCostRate } from '@/lib/sales/use-avg-cost-rate';
 import { formatShareText } from '@/lib/sales/share-formatter';

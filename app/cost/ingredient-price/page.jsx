@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -18,13 +19,26 @@ import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
 import { getAllSideRecipes } from '@/lib/cost/side-detail';
 import { getAllRecipes } from '@/lib/recipe';
 import { MasterRow } from '@/components/cost/ingredient-price/MasterRow';
-import { RegisterModal } from '@/components/cost/ingredient-price/RegisterModal';
-import { BulkPriceModal } from '@/components/cost/ingredient-price/BulkPriceModal';
-import { SyncBaseQtyModal } from '@/components/cost/ingredient-price/SyncBaseQtyModal';
-import { UsageView } from '@/components/cost/ingredient-price/UsageView';
 import { calcUnitPrice } from '@/lib/cost/calc-unit-price';
 import { buildIngredientUsageMap, sumCompositePrice } from '@/lib/cost/ingredient-price-helpers';
 import { IngredientPriceSkeleton } from '@/components/ui/Skeleton';
+
+const RegisterModal = dynamic(
+  () => import('@/components/cost/ingredient-price/RegisterModal').then(m => m.RegisterModal),
+  { ssr: false, loading: () => null }
+);
+const BulkPriceModal = dynamic(
+  () => import('@/components/cost/ingredient-price/BulkPriceModal').then(m => m.BulkPriceModal),
+  { ssr: false, loading: () => null }
+);
+const SyncBaseQtyModal = dynamic(
+  () => import('@/components/cost/ingredient-price/SyncBaseQtyModal').then(m => m.SyncBaseQtyModal),
+  { ssr: false, loading: () => null }
+);
+const UsageView = dynamic(
+  () => import('@/components/cost/ingredient-price/UsageView').then(m => m.UsageView),
+  { ssr: false, loading: () => <div className="skeleton" style={{ height: 200 }} /> }
+);
 
 export default function Page() {
   const [rows,       setRows]       = useState([]);
