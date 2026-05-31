@@ -53,7 +53,10 @@ export function MenuPriceForm({ initial, onSave, onClose }) {
   function validate() {
     const e = {};
     if (!form.menuName.trim()) e.menuName = '메뉴명을 입력하세요';
-    if (form.price === '' || isNaN(Number(form.price))) e.price = '판매가는 숫자로 입력';
+    const price = Number(form.price);
+    if (form.price === '' || isNaN(price)) e.price = '판매가는 숫자로 입력';
+    else if (price < 0)            e.price = '판매가는 0 이상이어야 합니다';
+    else if (price > 10_000_000)   e.price = '판매가가 너무 큽니다 (1천만원 이하)';
     return e;
   }
 

@@ -59,6 +59,11 @@ export function NoteFormBody({ form, setForm }) {
     updateField('tempCostCalc', JSON.stringify({ rows, sellingPrice }));
   }
 
+  // 원가계산 숫자 입력에서 음수 차단 (라이브 미리보기·저장값 보호)
+  function nonNeg(value) {
+    return Number(value) < 0 ? '' : value;
+  }
+
   const [ingredients,   setIngredients]   = useState([]);
   const [ingSearch,     setIngSearch]     = useState('');
   const [showDropdown,  setShowDropdown]  = useState(false);
@@ -340,7 +345,7 @@ export function NoteFormBody({ form, setForm }) {
                               className="form-input"
                               style={{width:64, padding:'3px 6px', fontSize:12}}
                               type="number" min="0" value={r.quantity}
-                              onChange={e => updateIngRow(r.id, 'quantity', e.target.value)}
+                              onChange={e => updateIngRow(r.id, 'quantity', nonNeg(e.target.value))}
                               placeholder="0"
                             />
                             <span style={{fontSize:11, color:'var(--text-3)'}}>{r.unit}</span>
@@ -351,7 +356,7 @@ export function NoteFormBody({ form, setForm }) {
                             className="form-input"
                             style={{width:80, padding:'3px 6px', fontSize:12}}
                             type="number" min="0" value={r.unitPrice}
-                            onChange={e => updateIngRow(r.id, 'unitPrice', e.target.value)}
+                            onChange={e => updateIngRow(r.id, 'unitPrice', nonNeg(e.target.value))}
                             placeholder="0"
                           />
                         </td>
@@ -394,7 +399,7 @@ export function NoteFormBody({ form, setForm }) {
                 style={{width:100, padding:'3px 8px', fontSize:12}}
                 type="number" min="0"
                 value={parsedCostCalc.sellingPrice}
-                onChange={e => updCost(parsedCostCalc.rows, e.target.value)}
+                onChange={e => updCost(parsedCostCalc.rows, nonNeg(e.target.value))}
                 placeholder="판매가"
               />
               <span style={{fontSize:11, color:'var(--text-3)'}}>원</span>
