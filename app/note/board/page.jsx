@@ -29,7 +29,7 @@ export default function Page() {
 
   useVisibilityRefresh(load);
 
-  async function applyStatusChange(note, newStatus, { bounce = true } = {}) {
+  const applyStatusChange = useCallback(async (note, newStatus, { bounce = true } = {}) => {
     // Optimistic update — instant visual feedback
     setNotes(prev => prev.map(n => n.id === note.id ? { ...n, status: newStatus } : n));
     try {
@@ -42,20 +42,20 @@ export default function Page() {
       }
     } catch {
       showToast('상태 변경 실패', 'err');
-      await load(); // Revert optimistic update on failure
+      await load(); // 낙관적 업데이트 실패 시 롤백
     }
-  }
+  }, [load]);
 
-  function moveStatus(note, direction) {
+  const moveStatus = useCallback((note, direction) => {
     const newIdx = STATUSES.indexOf(note.status) + direction;
     if (newIdx < 0 || newIdx >= STATUSES.length) return;
     return applyStatusChange(note, STATUSES[newIdx]);
-  }
+  }, [applyStatusChange]);
 
-  function changeStatus(note, newStatus) {
+  const changeStatus = useCallback((note, newStatus) => {
     if (note.status === newStatus) return;
     return applyStatusChange(note, newStatus);
-  }
+  }, [applyStatusChange]);
 
   async function handleDrop(e, status) {
     e.preventDefault();
@@ -166,9 +166,9 @@ export default function Page() {
                       note={note}
                       colIdx={colIdx}
                       maxIdx={STATUSES.length - 1}
-                      onMove={dir => moveStatus(note, dir)}
-                      onStatusChange={s => changeStatus(note, s)}
-                      onEdit={() => router.push(`/note/${note.id}`)}
+                      onMove={moveStatus}
+                      onStatusChange={changeStatus}
+                      onEdit={router.push}
                       isDragging={dragId === note.id}
                       bouncing={bouncingIds.has(note.id)}
                       onDragStart={e => {
@@ -212,13 +212,13 @@ const KanbanCard = React.memo(function KanbanCard({ note, colIdx, maxIdx, onMove
   function handleKeyDown(e) {
     if (e.key === 'ArrowLeft') {
       e.preventDefault();
-      onMove(-1);
+      onMove(note, -1);
     } else if (e.key === 'ArrowRight') {
       e.preventDefault();
-      onMove(1);
+      onMove(note, 1);
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onEdit();
+      onEdit(`/note/${note.id}`);
     }
   }
 
@@ -257,14 +257,14 @@ const KanbanCard = React.memo(function KanbanCard({ note, colIdx, maxIdx, onMove
           className="btn sm kanban-arrow-btn"
           style={{padding:'2px 6px', fontSize:11, opacity: colIdx === 0 ? .3 : 1}}
           disabled={colIdx === 0}
-          onClick={e => { e.stopPropagation(); onMove(-1); }}
+          onClick={e => { e.stopPropagation(); onMove(note, -1); }}
           title="이전 상태로"
         >←</button>
         <button
           className="btn sm kanban-arrow-btn"
           style={{padding:'2px 6px', fontSize:11, opacity: colIdx === maxIdx ? .3 : 1}}
           disabled={colIdx === maxIdx}
-          onClick={e => { e.stopPropagation(); onMove(1); }}
+          onClick={e => { e.stopPropagation(); onMove(note, 1); }}
           title="다음 상태로"
         >→</button>
 
@@ -272,7 +272,7 @@ const KanbanCard = React.memo(function KanbanCard({ note, colIdx, maxIdx, onMove
         <select
           className="kanban-status-select"
           value={note.status}
-          onChange={e => { e.stopPropagation(); onStatusChange(e.target.value); }}
+          onChange={e => { e.stopPropagation(); onStatusChange(note, e.target.value); }}
           onClick={e => e.stopPropagation()}
           style={{
             fontSize:11, fontWeight:700, padding:'2px 6px', borderRadius:10,
@@ -287,7 +287,7 @@ const KanbanCard = React.memo(function KanbanCard({ note, colIdx, maxIdx, onMove
         <button
           className="btn sm"
           style={{marginLeft:'auto', padding:'2px 6px'}}
-          onClick={e => { e.stopPropagation(); onEdit(); }}
+          onClick={e => { e.stopPropagation(); onEdit(`/note/${note.id}`); }}
           title="수정"
         >
           <Icon.edit style={{width:11,height:11}}/>
