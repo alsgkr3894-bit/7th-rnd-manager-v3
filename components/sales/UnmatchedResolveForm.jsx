@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { suggestRulesByMenuName, CATEGORY_ORDER as CATEGORY_OPTIONS } from '@/lib/sales';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 /**
  * UnmatchedResolveForm — 미매칭 issue 해결 인라인 폼
@@ -16,6 +17,7 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
   const [ruleCategory, setRuleCategory] = useState('피자');
   const [ruleGroup, setRuleGroup] = useState('');
   const [ruleDetail, setRuleDetail] = useState('');
+  const [confirmExclude, setConfirmExclude] = useState(false);
 
   // 자동 추천 (정규화된 메뉴명 기반)
   const suggestions = useMemo(
@@ -45,7 +47,7 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
         detailName: ruleDetail.trim() || ruleGroup.trim(),
       });
     } else {
-      onSubmit('exclude', {});
+      setConfirmExclude(true);
     }
   }
 
@@ -54,6 +56,14 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
       padding:'14px 18px', background:'var(--surface-2)',
       borderTop:'1px solid var(--border)',
     }}>
+      <ConfirmDialog
+        open={confirmExclude}
+        title="제외 처리하시겠어요?"
+        message={`"${issue.normalizedMenuName}" 메뉴가 통계에서 제외됩니다. 이 작업은 되돌리기 어렵습니다.`}
+        confirmLabel="제외 처리" cancelLabel="취소" danger
+        onConfirm={() => { setConfirmExclude(false); onSubmit('exclude', {}); }}
+        onCancel={() => setConfirmExclude(false)}
+      />
       <div style={{display:'flex', gap:6, marginBottom:10}}>
         <ActionTab label="별칭 등록"   active={actionType === 'alias'}   onClick={() => setActionType('alias')}/>
         <ActionTab label="규칙 등록"   active={actionType === 'rule'}    onClick={() => setActionType('rule')}/>

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { MENU_PRICE_CATEGORIES, defaultSizesFor, getDefaultPrice } from '@/lib/cost/menu-price';
 import { parseCategoryFromCode } from '@/lib/cost/menu-price/code';
 import { ModalFrame } from '@/components/ui/ModalFrame';
+import { showToast } from '@/components/Toast';
 
 const EMPTY = { menuCode: '', category: '피자', menuName: '', size: 'L', price: '', note: '' };
 
@@ -65,6 +66,12 @@ export function MenuPriceForm({ initial, onSave, onClose }) {
       const savePromise = onSave({ ...form, price: Number(form.price) });
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('저장 시간 초과')), 10000));
       await Promise.race([savePromise, timeoutPromise]);
+    } catch (err) {
+      if (err?.message === '저장 시간 초과') {
+        showToast('저장 시간 초과 — 다시 시도해주세요', 'error', 4000);
+      } else {
+        throw err;
+      }
     } finally {
       setSaving(false);
     }

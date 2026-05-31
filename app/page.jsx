@@ -1,4 +1,8 @@
 'use client';
+
+const QUICK_NOTE_RESET_MS = 1500;
+const devError = (...a) => { if (process.env.NODE_ENV !== 'production') console.error(...a); };
+
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
@@ -215,7 +219,7 @@ export default function HomePage() {
         setRecentSamples(allSamples);
         if (costAlert) setCostAlertData(costAlert);
       } catch (err) {
-        console.error('[Home] 데이터 로드 실패:', err);
+        devError('[Home] 데이터 로드 실패:', err);
       }
     })();
   }, []);
@@ -224,7 +228,7 @@ export default function HomePage() {
     if (!trend) return;
     getSalesTrend(chartTab, anchor)
       .then(t => { setTrend(t); setChartKey(k => k + 1); })
-      .catch(err => console.error('[Home] 트렌드 로드 실패:', err));
+      .catch(err => devError('[Home] 트렌드 로드 실패:', err));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chartTab]);
 
@@ -245,7 +249,7 @@ export default function HomePage() {
       if (val(dn)) setDonut(val(dn));
       if (val(tp)) setTop(val(tp));
       if (val(bt)) setBottom(val(bt));
-    }).catch(console.error);
+    }).catch(devError);
   }, [anchor]);
 
   function shiftAnchor(delta) {
@@ -281,9 +285,9 @@ export default function HomePage() {
       getNoteKpi().then(setNoteKpi);
       getRecentActivities(8).then(setActivities);
       if (quickResetTimer.current) clearTimeout(quickResetTimer.current);
-      quickResetTimer.current = setTimeout(() => { setQuickNote(''); setQuickSaved(false); }, 1500);
+      quickResetTimer.current = setTimeout(() => { setQuickNote(''); setQuickSaved(false); }, QUICK_NOTE_RESET_MS);
     } catch (err) {
-      console.error('[Home] 빠른 메모 저장 실패:', err);
+      devError('[Home] 빠른 메모 저장 실패:', err);
       showToast('저장에 실패했습니다', 'err');
     }
   }
