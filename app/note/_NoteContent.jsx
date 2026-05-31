@@ -202,10 +202,10 @@ export function NoteContent() {
     scheduleSearchHistory(val);
   }
 
-  function handleDelete(note, e) {
+  const handleDelete = useCallback(function handleDelete(note, e) {
     e?.stopPropagation();
     setSingleDeleteNote(note);
-  }
+  }, []);
 
   async function execDelete(note) {
     setSingleDeleteNote(null);
@@ -236,7 +236,7 @@ export function NoteContent() {
     } catch (err) { console.error('[NoteContent] handleCopy', err); showToast('복사 실패', 'error'); }
   }
 
-  async function handleStatusChange(noteId, newStatus, e) {
+  const handleStatusChange = useCallback(async function handleStatusChange(noteId, newStatus, e) {
     e.stopPropagation();
     try {
       await updateNote(noteId, { status: newStatus });
@@ -244,9 +244,9 @@ export function NoteContent() {
       setNotes(prev => prev.map(n => n.id === noteId ? { ...n, status: newStatus } : n));
       setPopIds(s => new Set([...s, noteId]));
       setTimeout(() => setPopIds(s => { const n = new Set(s); n.delete(noteId); return n; }), 400);
-      if (detailNote?.id === noteId) setDetailNote(n => n ? { ...n, status: newStatus } : null);
+      setDetailNote(n => n?.id === noteId ? { ...n, status: newStatus } : n);
     } catch (err) { console.error('[NoteContent] handleStatusChange', err); showToast('상태 변경 실패', 'error'); }
-  }
+  }, []);
 
   function handleBatchDelete() {
     if (selected.size === 0) return;

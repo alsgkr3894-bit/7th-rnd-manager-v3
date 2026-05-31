@@ -403,7 +403,7 @@ function SampleContent() {
 
       {/* 갤러리 그리드 */}
       {!loading && viewMode === 'grid' && filtered.length > 0 && (
-        <div className="tab-content-enter" style={{
+        <div key={`${catFilter}|${ratingMin}|${sortBy}`} className="tab-content-enter" style={{
           display:'grid',
           gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))',
           gap:16,

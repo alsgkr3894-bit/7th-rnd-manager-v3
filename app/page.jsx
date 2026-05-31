@@ -21,45 +21,11 @@ import { HomeKpiRow } from '@/components/home/HomeKpiRow';
 import { HomeChartRow } from '@/components/home/HomeChartRow';
 import { HomeActivities } from '@/components/home/HomeActivities';
 import { RankCard, ReportingNotesWidget, SampleStatsWidget, CostAlertWidget, QuickReportWidget } from '@/components/home/HomeWidgets';
+import RecentVisitsWidget from '@/components/home/RecentVisitsWidget';
 import { getAllNotes, addNote } from '@/lib/note';
 import { getAllSamples } from '@/lib/sample';
 import { KEYS } from '@/lib/note/keys';
 
-function RecentPagesWidget() {
-  const [recent, setRecent] = useState([]);
-  useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem('v3:palette-recent') || '[]');
-      setRecent(stored.slice(0, 5));
-    } catch (err) {
-      console.warn('[Home] recent pages read failed:', err);
-    }
-  }, []);
-  if (!recent.length) return null;
-  return (
-    <div className="card" style={{ padding: '14px 18px', marginBottom: 4, animation: 'slide-up 300ms 60ms cubic-bezier(0.2,0.8,0.2,1) both' }}>
-      <div style={{ fontWeight: 700, fontSize: 12, color: 'var(--text-3)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 10 }}>최근 방문</div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {recent.map(p => (
-          <a
-            key={p.href}
-            href={p.href}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              fontSize: 12, color: 'var(--accent)',
-              background: 'var(--accent-soft)', borderRadius: 20,
-              padding: '4px 10px', textDecoration: 'none', fontWeight: 600,
-              border: '1px solid var(--accent)22',
-            }}
-          >
-            <Icon.chevRight style={{ width: 10, height: 10, opacity: 0.6 }} />
-            {p.label}
-          </a>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function NoteHeatmapWidget({ notes }) {
   const HEATMAP_WEEKS = 16;
@@ -192,6 +158,7 @@ export default function HomePage() {
   const [widgetConfigOpen, setWidgetConfigOpen] = useState(false);
 
   const WIDGET_DEFS = [
+    { key: 'recent',      label: '최근 방문' },
     { key: 'kpi',         label: 'KPI 지표' },
     { key: 'quicknote',   label: '빠른 메모' },
     { key: 'charts',      label: '차트 (트렌드 · 카테고리)' },
@@ -409,7 +376,7 @@ export default function HomePage() {
         </div>
       )}
 
-      <RecentPagesWidget />
+      {isVisible('recent') && <RecentVisitsWidget />}
 
       {isVisible('kpi') && (
         <HomeKpiRow salesKpi={salesKpi} costKpi={costKpi} noteKpi={noteKpi}

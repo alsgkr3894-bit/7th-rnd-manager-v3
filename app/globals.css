@@ -1676,7 +1676,7 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--accent-soft);
   border: 1px solid color-mix(in oklab, var(--accent) 25%, transparent);
   transition: left 0.22s cubic-bezier(.4,0,.2,1), width 0.22s cubic-bezier(.4,0,.2,1);
-  will-change: transform;
+  will-change: left, width;
   pointer-events: none;
   z-index: 0;
 }
@@ -2807,7 +2807,7 @@ button { font-family: inherit; cursor: pointer; }
   height: 6px; background: var(--surface-2); border-radius: 3px;
   margin-top: 10px; overflow: hidden;
 }
-.stat-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 240ms ease; will-change: transform; }
+.stat-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 240ms ease; will-change: width; }
 .stat-foot { font-size: 11px; color: var(--text-3); font-weight: 600; margin-top: 6px; }
 
 /* Share cell in main table */
@@ -2822,7 +2822,7 @@ button { font-family: inherit; cursor: pointer; }
   border-radius: 3px;
   overflow: hidden;
 }
-.share-mini-fill { height: 100%; border-radius: 3px; transition: width 240ms ease; will-change: transform; }
+.share-mini-fill { height: 100%; border-radius: 3px; transition: width 240ms ease; will-change: width; }
 .share-cell .unit { font-size: 10px; opacity: 0.6; }
 
 /* Variant hint + expanded rows */
