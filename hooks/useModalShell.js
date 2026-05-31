@@ -30,7 +30,7 @@ export function useModalShell(onClose, { closeMs = CLOSE_MS, autoFocus = true } 
   const close = useCallback(() => {
     if (closeTimerRef.current) return; // 이미 닫히는 중
     setIsClosing(true);
-    closeTimerRef.current = setTimeout(() => onClose(), closeMs);
+    closeTimerRef.current = setTimeout(() => onClose?.(), closeMs);
   }, [onClose, closeMs]);
 
   // 타이머 cleanup
