@@ -1,8 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatNumber } from '@/lib/format';
 import { SEED_MAIN_CATEGORIES } from '@/lib/ingredient';
 import { ModalFrame } from '@/components/ui/ModalFrame';
+import { getAllSuppliers } from '@/lib/cost/suppliers/store';
 
 const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병', 'EA', 'BOX'];
 
@@ -36,7 +37,28 @@ export function RegisterModal({ row, onSave, onClose }) {
   const [customCat,      setCustomCat]      = useState(
     !!existing?.category && !SEED_MAIN_CATEGORIES.includes(existing?.category)
   );
+  const [supplierId,   setSupplierId]   = useState(existing?.supplierId   ?? '');
+  const [supplierName, setSupplierName] = useState(existing?.supplierName ?? '');
+  const [suppliers,    setSuppliers]    = useState([]);
   const [saving, setSaving] = useState(false);
+
+  // 공급업체 목록 로드
+  useEffect(() => {
+    getAllSuppliers().then(setSuppliers).catch(() => {});
+  }, []);
+
+  function handleSupplierChange(e) {
+    const val = e.target.value;
+    if (!val) {
+      setSupplierId('');
+      setSupplierName('');
+    } else {
+      const id = Number(val);
+      const found = suppliers.find(s => s.id === id);
+      setSupplierId(id);
+      setSupplierName(found ? found.name : '');
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -48,6 +70,8 @@ export function RegisterModal({ row, onSave, onClose }) {
         baseQuantity:   baseQuantity ? Number(baseQuantity) : null,
         baseUnitType:   baseUnitType,
         taxType:        row.taxType || '과세',
+        supplierId:     supplierId   || null,
+        supplierName:   supplierName || null,
       });
     } finally {
       setSaving(false);
@@ -114,6 +138,15 @@ export function RegisterModal({ row, onSave, onClose }) {
                 {UNIT_TYPES.map(u => <option key={u} value={u}>{u}</option>)}
               </select>
             </div>
+          </FormField>
+
+          <FormField label="공급업체" hint="선택 안 하면 빈칸으로 저장">
+            <select className="form-input" value={supplierId} onChange={handleSupplierChange}>
+              <option value="">선택 안 함</option>
+              {suppliers.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
           </FormField>
 
           <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:4}}>

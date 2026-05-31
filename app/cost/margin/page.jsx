@@ -23,6 +23,9 @@ import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { PlatformSettingsModal } from '@/components/cost/margin/PlatformSettingsModal';
 import { MarginFilterBar } from '@/components/cost/margin/MarginFilterBar';
 import { MarginSummaryCards } from '@/components/cost/margin/MarginSummaryCards';
+import { MarginTrendModal } from '@/components/cost/margin/MarginTrendModal';
+import { saveSnapshot } from '@/lib/cost/margin/snapshots';
+import { showToast } from '@/components/Toast';
 import { SortableTh } from '@/components/ui/SortableTh';
 import { MarginRow } from '@/components/cost/margin/MarginRow';
 import { exportMarginExcel } from '@/lib/cost/margin/export';
@@ -38,6 +41,7 @@ export default function Page() {
   const [platforms,    setPlatforms]    = useState([]);
   const [activePlatId, setActivePlatId] = useState('default');
   const [showSettings, setShowSettings] = useState(false);
+  const [showTrend,    setShowTrend]    = useState(false);
   const [discOpen,     setDiscOpen]     = useState(false);
   const [discType,     setDiscType]     = useState('pct');   // 'pct' | 'fixed'
   const [discVal,      setDiscVal]      = useState('');
@@ -380,6 +384,21 @@ export default function Page() {
     });
   }, [filtered, sortKey, sortDir, discount, activePlatform, viewMode]);
 
+  async function handleSaveSnapshot() {
+    if (!stats) { showToast('집계할 메뉴 데이터가 없어요', 'error'); return; }
+    const avgCostRate = stats.avg;
+    const avgMargin   = 100 - avgCostRate;
+    const menuCount   = filtered.length;
+    const label       = catFilter !== '전체' ? catFilter : '전체 메뉴';
+    try {
+      await saveSnapshot({ avgCostRate, avgMargin, menuCount, label });
+      showToast('추이 스냅샷 저장 완료', 'ok');
+    } catch (e) {
+      console.error(e);
+      showToast('스냅샷 저장 실패: ' + e.message, 'error');
+    }
+  }
+
   function handleSavePlatforms(newPlats) {
     savePlatforms(newPlats);
     setPlatforms(newPlats);
@@ -401,9 +420,17 @@ export default function Page() {
         title="메뉴 원가마진표"
         sub="레시피 원가 기준 메뉴별 원가율 · 플랫폼·할인 시뮬레이션 지원"
         actions={
-          <button className="btn" onClick={() => exportMarginExcel(filtered, sizeLabels, viewMode)}>
-            <Icon.download style={{ width: 13, height: 13 }}/> CSV 내보내기
-          </button>
+          <>
+            <button className="btn" onClick={handleSaveSnapshot} disabled={!stats}>
+              <Icon.plus style={{ width: 13, height: 13 }}/> 추이 저장
+            </button>
+            <button className="btn" onClick={() => setShowTrend(true)}>
+              <Icon.chart style={{ width: 13, height: 13 }}/> 추이 보기
+            </button>
+            <button className="btn" onClick={() => exportMarginExcel(filtered, sizeLabels, viewMode)}>
+              <Icon.download style={{ width: 13, height: 13 }}/> CSV 내보내기
+            </button>
+          </>
         }
       />
 
@@ -505,6 +532,10 @@ export default function Page() {
           onSave={handleSavePlatforms}
           onClose={() => setShowSettings(false)}
         />
+      )}
+
+      {showTrend && (
+        <MarginTrendModal onClose={() => setShowTrend(false)} />
       )}
     </main>
   );

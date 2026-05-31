@@ -4,13 +4,22 @@ import { showToast } from '@/components/Toast';
 import { SCHEDULE_TYPES, SCHEDULE_COLORS } from '@/lib/note/schedules';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 
+const REPEAT_OPTIONS = [
+  { value: 'none',    label: '없음' },
+  { value: 'daily',   label: '매일' },
+  { value: 'weekly',  label: '매주' },
+  { value: 'monthly', label: '매월' },
+];
+
 export function ScheduleModal({ initial, defaultDate, onSave, onClose, onDelete }) {
   const isEdit = !!initial?.id;
-  const [title, setTitle] = useState(initial?.title || '');
-  const [date,  setDate]  = useState(initial?.date  || defaultDate || '');
-  const [time,  setTime]  = useState(initial?.time  || '');
-  const [type,  setType]  = useState(initial?.type  || SCHEDULE_TYPES[0]);
-  const [desc,  setDesc]  = useState(initial?.description || '');
+  const [title,       setTitle]       = useState(initial?.title || '');
+  const [date,        setDate]        = useState(initial?.date  || defaultDate || '');
+  const [time,        setTime]        = useState(initial?.time  || '');
+  const [type,        setType]        = useState(initial?.type  || SCHEDULE_TYPES[0]);
+  const [desc,        setDesc]        = useState(initial?.description || '');
+  const [repeatType,  setRepeatType]  = useState(initial?.repeatType  || 'none');
+  const [repeatUntil, setRepeatUntil] = useState(initial?.repeatUntil || '');
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e) {
@@ -19,7 +28,11 @@ export function ScheduleModal({ initial, defaultDate, onSave, onClose, onDelete 
     if (!date) { showToast('날짜를 입력해주세요', 'err'); return; }
     setSaving(true);
     try {
-      await onSave({ title, date, time, type, description: desc });
+      await onSave({
+        title, date, time, type, description: desc,
+        repeatType,
+        repeatUntil: repeatType !== 'none' && repeatUntil ? repeatUntil : null,
+      });
     } finally { setSaving(false); }
   }
 
@@ -76,6 +89,24 @@ export function ScheduleModal({ initial, defaultDate, onSave, onClose, onDelete 
           <label style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', display:'block', marginBottom:5 }}>메모 (선택)</label>
           <textarea className="form-input" rows={2} value={desc} onChange={e => setDesc(e.target.value)}
             placeholder="관련 내용, 준비사항 등" style={{ resize:'vertical' }}/>
+        </div>
+
+        <div style={{ display:'grid', gridTemplateColumns: repeatType !== 'none' ? '1fr 1fr' : '1fr', gap:10 }}>
+          <div>
+            <label style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', display:'block', marginBottom:5 }}>반복</label>
+            <select className="form-input" value={repeatType} onChange={e => { setRepeatType(e.target.value); if (e.target.value === 'none') setRepeatUntil(''); }}>
+              {REPEAT_OPTIONS.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+          {repeatType !== 'none' && (
+            <div>
+              <label style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', display:'block', marginBottom:5 }}>반복 종료 (선택)</label>
+              <input className="form-input" type="date" value={repeatUntil} onChange={e => setRepeatUntil(e.target.value)}
+                min={date || undefined} placeholder="무기한"/>
+            </div>
+          )}
         </div>
 
         <div style={{ display:'flex', gap:8, justifyContent:'space-between', marginTop:4 }}>

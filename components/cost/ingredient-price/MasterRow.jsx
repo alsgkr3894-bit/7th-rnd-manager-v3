@@ -54,6 +54,11 @@ export function MasterRow({ r, onRegClick }) {
           {r.isLinked && r.productName && r.productName !== r.masterName && (
             <div style={{fontSize:11, color:'var(--text-3)', marginTop:1}}>제때: {r.productName}</div>
           )}
+          {r.supplierName && (
+            <div style={{fontSize:10, color:'var(--text-4)', marginTop:2}}>
+              공급: {r.supplierName}
+            </div>
+          )}
         </td>
         <td style={{textAlign:'right', fontSize:13, fontWeight:600}}>
           {vatLabel}

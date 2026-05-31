@@ -16,6 +16,7 @@ import { getAllWorkLogs, WORK_LOG_TYPES, pruneOldWorkLogs, WORK_LOG_RETENTION_DA
 import { ScheduleModal } from './_ScheduleModal';
 import { DayPanel } from './_DayPanel';
 import { CalendarSkeleton } from './_CalendarSkeleton';
+import { expandOccurrences } from './_recurrence';
 
 /* ── 유틸 ─────────────────────────────────────────────────── */
 const pad   = n => String(n).padStart(2, '0');
@@ -140,18 +141,35 @@ export default function Page() {
     return map;
   }, [workLogs]);
 
+  // 반복 일정 확장: 이달 그리드 범위에서 각 일정의 발생일을 계산해 날짜 맵으로 구성
   const schedulesByDate = useMemo(() => {
+    const dim_  = daysInMonth(viewYear, viewMonth);
+    const fd_   = firstDow(viewYear, viewMonth);
+    const totalCells_ = Math.ceil((fd_ + dim_) / 7) * 7;
+    // 그리드의 첫 날 / 마지막 날 (이전달·다음달 포함)
+    const gridStartDt = new Date(viewYear, viewMonth - 1, 1 - fd_);
+    const gridEndDt   = new Date(viewYear, viewMonth - 1, totalCells_ - fd_);
+    const gridStart = toKey(gridStartDt.getFullYear(), gridStartDt.getMonth() + 1, gridStartDt.getDate());
+    const gridEnd   = toKey(gridEndDt.getFullYear(),   gridEndDt.getMonth()   + 1, gridEndDt.getDate());
+
     const map = new Map();
     for (const s of schedules) {
-      const k = s.date?.slice(0, 10);
-      if (!k) continue;
-      if (!map.has(k)) map.set(k, []);
-      map.get(k).push(s);
+      if (!s.date) continue;
+      const occurrences = expandOccurrences(s, gridStart, gridEnd);
+      for (const dateStr of occurrences) {
+        if (!map.has(dateStr)) map.set(dateStr, []);
+        // 각 발생 항목에 원본 일정 id 와 반복 여부를 표시
+        map.get(dateStr).push({
+          ...s,
+          _occurrenceDate: dateStr,
+          _isRecurring: s.repeatType && s.repeatType !== 'none',
+        });
+      }
     }
     return map;
-  }, [schedules]);
+  }, [schedules, viewYear, viewMonth]);
 
-  /* 이달 통계 */
+  /* 이달 통계 — eventTotal은 기반(base) 일정 수로 계산 (발생 횟수 아님) */
   const monthStats = useMemo(() => {
     const prefix = `${viewYear}-${pad(viewMonth)}`;
     let noteDone = 0, noteScheduled = 0, eventTotal = 0;
@@ -159,8 +177,14 @@ export default function Page() {
       if (!k.startsWith(prefix)) continue;
       isPast(k, today) ? (noteDone += ns.length) : (noteScheduled += ns.length);
     }
+    // base 일정 중 이달에 date 가 있거나, 반복이 이달까지 걸치는 것을 count
+    // 가장 단순하고 일관된 방법: schedules 원본에서 이달에 발생(date prefix)하는 것만 count
+    const seen = new Set();
     for (const [k, ss] of schedulesByDate) {
-      if (k.startsWith(prefix)) eventTotal += ss.length;
+      if (!k.startsWith(prefix)) continue;
+      for (const s of ss) {
+        if (!seen.has(s.id)) { seen.add(s.id); eventTotal++; }
+      }
     }
     return { noteDone, noteScheduled, eventTotal };
   }, [notesByDate, schedulesByDate, viewMonth, viewYear, today]);
@@ -386,9 +410,9 @@ export default function Page() {
                       if (item._kind === 'schedule') {
                         const c = SCHEDULE_COLORS[item.type] || SCHEDULE_COLORS['기타'];
                         return (
-                          <button key={`s${item.id}`}
+                          <button key={`s${item.id}_${item._occurrenceDate || item.date}`}
                             onClick={e => { e.stopPropagation(); setModal({ mode:'edit', schedule:item }); }}
-                            title={`[${item.type}] ${item.title}${item.time ? ' '+item.time : ''}`}
+                            title={`[${item.type}] ${item.title}${item.time ? ' '+item.time : ''}${item._isRecurring ? ' (반복)' : ''}`}
                             style={{
                               fontSize:10, fontWeight:600, padding:'2px 5px', borderRadius:4,
                               background:c.bg, color:c.text,
@@ -397,6 +421,7 @@ export default function Page() {
                               overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
                               cursor:'pointer', textAlign:'left', width:'100%',
                             }}>
+                            {item._isRecurring && <span style={{ opacity:0.7, marginRight:2 }}>↻</span>}
                             {item.time ? `${item.time} ` : ''}{item.title}
                           </button>
                         );

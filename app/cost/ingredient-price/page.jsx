@@ -19,6 +19,7 @@ import { getAllSideRecipes } from '@/lib/cost/side-detail';
 import { getAllRecipes } from '@/lib/recipe';
 import { MasterRow } from '@/components/cost/ingredient-price/MasterRow';
 import { RegisterModal } from '@/components/cost/ingredient-price/RegisterModal';
+import { BulkPriceModal } from '@/components/cost/ingredient-price/BulkPriceModal';
 import { UsageView } from '@/components/cost/ingredient-price/UsageView';
 import { calcUnitPrice } from '@/lib/cost/calc-unit-price';
 import { buildIngredientUsageMap } from '@/lib/cost/ingredient-price-helpers';
@@ -33,6 +34,7 @@ export default function Page() {
   const [taxFilter,  setTaxFilter]  = useState('all');
   const [deltaFilter,setDeltaFilter]= useState('all'); // all | up | down | new | same
   const [regTarget,  setRegTarget]  = useState(null);  // 마스터 등록 모달 대상 행
+  const [bulkOpen,   setBulkOpen]   = useState(false); // 일괄 가격 업로드 모달
   const [importing,  setImporting]  = useState(false);
   const [resetting,  setResetting]  = useState(false);
   const [viewTab,    setViewTab]    = useState('price'); // 'price' | 'usage'
@@ -234,6 +236,10 @@ export default function Page() {
               style={{color:'var(--negative)'}}>
               {resetting ? '초기화 중…' : '마스터 초기화'}
             </button>
+            <button className="btn" onClick={() => setBulkOpen(true)} disabled={importing || resetting}>
+              <Icon.upload style={{width:14, height:14}}/>
+              일괄 가격 업로드
+            </button>
             <button className="btn primary" onClick={handleBulkImport} disabled={importing || resetting}>
               <Icon.download style={{width:14, height:14}}/>
               {importing ? '가져오는 중…' : '마스터 시드 가져오기 (118개)'}
@@ -402,6 +408,19 @@ export default function Page() {
             await load();
           }}
           onClose={() => setRegTarget(null)}
+        />
+      )}
+
+      {/* 일괄 가격 업로드 모달 */}
+      {bulkOpen && (
+        <BulkPriceModal
+          existingIngredients={rows.map(r => r.meta).filter(Boolean)}
+          onDone={async (count) => {
+            showToast(`${count}개 단가 업데이트 완료`);
+            setBulkOpen(false);
+            await load();
+          }}
+          onClose={() => setBulkOpen(false)}
         />
       )}
     </main>
