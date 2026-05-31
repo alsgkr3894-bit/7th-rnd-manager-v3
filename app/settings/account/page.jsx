@@ -124,7 +124,24 @@ export default function Page() {
     return (
       <main className="main">
         <PageHeader breadcrumb={["설정 / 백업", "계정 관리"]} title="계정 관리" />
-        <div style={{padding:24,color:'var(--text-3)'}}>로딩 중…</div>
+        <div className="card" style={{marginTop:24,padding:'20px 24px',color:'var(--text-3)'}}>
+          프로필이 없습니다. 아래에서 설정하거나, 먼저 로그인 정보를 등록하세요.
+          <div style={{marginTop:12}}>
+            <button className="btn primary sm" onClick={() => {
+              const next = setProfile({ name:'관리자', email:'', team:'', role:'관리자' });
+              setProfileState(next);
+            }}>기본 프로필 생성</button>
+          </div>
+        </div>
+        <PinSection
+          hasPin={hasPin}
+          pinInput={pinInput}
+          setPinInput={setPinInput}
+          pinConfirm={pinConfirm}
+          setPinConfirm={setPinConfirm}
+          onSetPin={handleSetPin}
+          onClearPin={handleClearPin}
+        />
       </main>
     );
   }
@@ -265,54 +282,15 @@ export default function Page() {
       </div>
 
       {/* 설정 PIN 관리 */}
-      <div className="card" style={{marginTop:16}}>
-        <h2 style={{fontSize:15,fontWeight:700,marginBottom:4}}>설정 PIN 관리</h2>
-        <p style={{fontSize:13,color:'var(--text-3)',marginBottom:16}}>
-          설정 페이지에 접근할 때 PIN을 요구합니다. PIN은 이 브라우저에만 저장됩니다.
-        </p>
-
-        {/* 현재 상태 */}
-        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
-          <span style={{fontSize:13,color:'var(--text-2)'}}>현재 PIN:</span>
-          {hasPin ? (
-            <span className="chip" style={{background:'var(--positive-soft)',color:'var(--positive)',fontWeight:700}}>설정됨</span>
-          ) : (
-            <span className="chip" style={{background:'var(--surface-2)',color:'var(--text-3)'}}>없음</span>
-          )}
-          {hasPin && (
-            <button className="btn sm" style={{color:'var(--negative)',borderColor:'var(--negative-soft)'}} onClick={handleClearPin}>
-              PIN 해제
-            </button>
-          )}
-        </div>
-
-        {/* PIN 설정 폼 */}
-        <form onSubmit={handleSetPin}>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12,maxWidth:480}}>
-            <FormField label={hasPin ? '새 PIN' : 'PIN 설정'} required>
-              <input
-                className="input"
-                type="password" inputMode="numeric" pattern="[0-9]*"
-                value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))}
-                placeholder="4~8자리 숫자" maxLength={8}
-              />
-            </FormField>
-            <FormField label="PIN 확인" required>
-              <input
-                className="input"
-                type="password" inputMode="numeric" pattern="[0-9]*"
-                value={pinConfirm} onChange={e => setPinConfirm(e.target.value.replace(/\D/g, ''))}
-                placeholder="다시 입력" maxLength={8}
-              />
-            </FormField>
-          </div>
-          <div style={{marginTop:12}}>
-            <button className="btn primary sm" type="submit" disabled={!pinInput || !pinConfirm}>
-              {hasPin ? 'PIN 변경' : 'PIN 설정'}
-            </button>
-          </div>
-        </form>
-      </div>
+      <PinSection
+        hasPin={hasPin}
+        pinInput={pinInput}
+        setPinInput={setPinInput}
+        pinConfirm={pinConfirm}
+        setPinConfirm={setPinConfirm}
+        onSetPin={handleSetPin}
+        onClearPin={handleClearPin}
+      />
 
       {/* 역할별 권한 매트릭스 (정보 표시) */}
       <div className="card" style={{marginTop:16}}>
@@ -377,6 +355,55 @@ function FormField({ label, required, children }) {
         {required && <span style={{color:'var(--negative)',marginLeft:3}}>*</span>}
       </label>
       {children}
+    </div>
+  );
+}
+
+function PinSection({ hasPin, pinInput, setPinInput, pinConfirm, setPinConfirm, onSetPin, onClearPin }) {
+  return (
+    <div className="card" style={{marginTop:16}}>
+      <h2 style={{fontSize:15,fontWeight:700,marginBottom:4}}>설정 PIN 관리</h2>
+      <p style={{fontSize:13,color:'var(--text-3)',marginBottom:16}}>
+        설정 페이지에 접근할 때 PIN을 요구합니다. PIN은 이 브라우저에만 저장됩니다.
+      </p>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
+        <span style={{fontSize:13,color:'var(--text-2)'}}>현재 PIN:</span>
+        {hasPin ? (
+          <span className="chip" style={{background:'var(--positive-soft)',color:'var(--positive)',fontWeight:700}}>설정됨</span>
+        ) : (
+          <span className="chip" style={{background:'var(--surface-2)',color:'var(--text-3)'}}>없음</span>
+        )}
+        {hasPin && (
+          <button className="btn sm" style={{color:'var(--negative)',borderColor:'var(--negative-soft)'}} onClick={onClearPin}>
+            PIN 해제
+          </button>
+        )}
+      </div>
+      <form onSubmit={onSetPin}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12,maxWidth:480}}>
+          <FormField label={hasPin ? '새 PIN' : 'PIN 설정'} required>
+            <input
+              className="input"
+              type="password" inputMode="numeric" pattern="[0-9]*"
+              value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))}
+              placeholder="4~8자리 숫자" maxLength={8}
+            />
+          </FormField>
+          <FormField label="PIN 확인" required>
+            <input
+              className="input"
+              type="password" inputMode="numeric" pattern="[0-9]*"
+              value={pinConfirm} onChange={e => setPinConfirm(e.target.value.replace(/\D/g, ''))}
+              placeholder="다시 입력" maxLength={8}
+            />
+          </FormField>
+        </div>
+        <div style={{marginTop:12}}>
+          <button className="btn primary sm" type="submit" disabled={!pinInput || !pinConfirm}>
+            {hasPin ? 'PIN 변경' : 'PIN 설정'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

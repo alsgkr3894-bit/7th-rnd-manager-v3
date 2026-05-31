@@ -81,8 +81,14 @@ function RecipeContent() {
   const [menuPricesMap,  setMenuPricesMap]  = useState(new Map());
   const [allGroups,      setAllGroups]      = useState([]);
   const [selectedId,     setSelectedId]    = useState(null);
-  const [isNew,        setIsNew]        = useState(false);
-  const [draft,        setDraft]        = useState(null);
+  // from=sample 파라미터: URL sync effect보다 먼저 읽어야 하므로 useState initializer 사용
+  const [isNew,        setIsNew]        = useState(() => searchParams?.get('from') === 'sample');
+  const [draft,        setDraft]        = useState(() => {
+    if (searchParams?.get('from') !== 'sample') return null;
+    const name = searchParams.get('name') || '';
+    const cat  = searchParams.get('cat')  || '피자';
+    return { ...emptyDraft(), menuName: name, menuCategory: MENU_CATEGORIES.includes(cat) ? cat : '피자' };
+  });
   const [saving,       setSaving]       = useState(false);
   const [loading,      setLoading]      = useState(true);
   const [dbError,      setDbError]      = useState(null);
@@ -134,18 +140,6 @@ function RecipeContent() {
   }, [load]);
 
   useVisibilityRefresh(load);
-
-  // 샘플에서 레시피 전환: ?from=sample&name=...&cat=... 처리
-  useEffect(() => {
-    if (searchParams?.get('from') === 'sample') {
-      const name = searchParams.get('name') || '';
-      const cat  = searchParams.get('cat')  || '피자';
-      const validCat = MENU_CATEGORIES.includes(cat) ? cat : '피자';
-      setIsNew(true);
-      setSelectedId(null);
-      setDraft({ ...emptyDraft(), menuName: name, menuCategory: validCat });
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // URL sync for search filter
   useEffect(() => {

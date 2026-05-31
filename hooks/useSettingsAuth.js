@@ -7,24 +7,28 @@ export function useSettingsAuth() {
   const [authenticated, setAuthenticated] = useState(() => {
     try { return sessionStorage.getItem(SESSION_KEY) === '1'; } catch { return true; }
   });
+  // pin을 React state로 관리 → setPin 호출 시 리렌더 보장
+  const [storedPin, setStoredPin] = useState(() => {
+    try { return localStorage.getItem(LS_KEY) || ''; } catch { return ''; }
+  });
 
-  const pin = (() => { try { return localStorage.getItem(LS_KEY) || ''; } catch { return ''; } })();
-  const hasPin = pin.length > 0;
+  const hasPin = storedPin.length > 0;
 
   const verify = useCallback((input) => {
-    if (input === pin) {
+    if (input === storedPin) {
       try { sessionStorage.setItem(SESSION_KEY, '1'); } catch {}
       setAuthenticated(true);
       return true;
     }
     return false;
-  }, [pin]);
+  }, [storedPin]);
 
   const setPin = useCallback((newPin) => {
     try {
       if (newPin) localStorage.setItem(LS_KEY, newPin);
       else localStorage.removeItem(LS_KEY);
     } catch {}
+    setStoredPin(newPin || '');
   }, []);
 
   const lock = useCallback(() => {
