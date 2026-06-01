@@ -56,16 +56,10 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
   const [openIds, setOpenIds] = useState({});
 
   // 마운트 후 localStorage 복원 (SSR 불일치 방지)
+  // 저장값 없으면(처음 접속) 모두 접힌 상태 유지 — 사용자가 직접 연 탭만 저장됨
   useEffect(() => {
     const saved = getJSONLS(KEYS.SIDEBAR_OPEN);
-    if (saved) { setOpenIds(saved); return; }
-    const opened = {};
-    NAV_SECTIONS.forEach(section => {
-      section.groups.forEach(g => {
-        if (isGroupActive(g)) opened[g.id] = true;
-      });
-    });
-    setOpenIds(opened);
+    setOpenIds(saved || {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
