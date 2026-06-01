@@ -106,6 +106,38 @@
   --pad-card: 20px;
 }
 
+/* ===== 글씨 크기 (글씨 위주) — 주요 텍스트 클래스의 font-size만 키움 ===== */
+/* large */
+html[data-font-scale="large"] body { font-size: 16px; }
+html[data-font-scale="large"] .data-table thead th { font-size: 12px; }
+html[data-font-scale="large"] .data-table td { font-size: 14px; }
+html[data-font-scale="large"] .card-title { font-size: 17px; }
+html[data-font-scale="large"] .card-sub,
+html[data-font-scale="large"] .page-sub,
+html[data-font-scale="large"] .stat-label { font-size: 13px; }
+html[data-font-scale="large"] .page-title { font-size: 28px; }
+html[data-font-scale="large"] .stat-value { font-size: 24px; }
+html[data-font-scale="large"] .btn,
+html[data-font-scale="large"] .chip, html[data-font-scale="large"] .filter-chip,
+html[data-font-scale="large"] .nav-item,
+html[data-font-scale="large"] .nav-child,
+html[data-font-scale="large"] .form-input { font-size: 15px; }
+/* xlarge */
+html[data-font-scale="xlarge"] body { font-size: 17px; }
+html[data-font-scale="xlarge"] .data-table thead th { font-size: 13px; }
+html[data-font-scale="xlarge"] .data-table td { font-size: 15px; }
+html[data-font-scale="xlarge"] .card-title { font-size: 18px; }
+html[data-font-scale="xlarge"] .card-sub,
+html[data-font-scale="xlarge"] .page-sub,
+html[data-font-scale="xlarge"] .stat-label { font-size: 14px; }
+html[data-font-scale="xlarge"] .page-title { font-size: 30px; }
+html[data-font-scale="xlarge"] .stat-value { font-size: 26px; }
+html[data-font-scale="xlarge"] .btn,
+html[data-font-scale="xlarge"] .chip, html[data-font-scale="xlarge"] .filter-chip,
+html[data-font-scale="xlarge"] .nav-item,
+html[data-font-scale="xlarge"] .nav-child,
+html[data-font-scale="xlarge"] .form-input { font-size: 16px; }
+
 /* ===== Reset / base ===== */
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }

@@ -152,15 +152,9 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
     const IconComp = Icon[item.iconKey] || Icon.doc;
 
     const handle = () => {
+      // 자식 있는 상위 그룹은 펼치기/접기만 (자동 페이지 이동 X — 이동은 하위 항목 클릭으로)
       if (hasKids) {
-        if (active) {
-          // active 그룹은 닫지 않고 열기만 (토글 X)
-          toggle(item.id, true);
-        } else {
-          // 첫 탭으로 이동만 — pathname 변경 시 자동-펼침 effect가 그룹을 연다.
-          // 수동 toggle을 생략해 openIds·pathname 이중 상태 변경(pill effect 중복 발화)을 방지.
-          navigate(item.children[0].href);
-        }
+        toggle(item.id);
       } else if (item.href) {
         navigate(item.href);
       }

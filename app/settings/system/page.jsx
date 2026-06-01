@@ -30,7 +30,7 @@ export default function Page() {
   const [confirmingRecreate, setConfirmingRecreate] = useState(false);
   const [storageEst, setStorageEst] = useState(null); // { usage, quota } in bytes
 
-  const SETTING_KEYS = ['theme', 'density', 'autoRecalc', 'strictPosting', 'roundMode', 'unmatchedAlert', 'costRateAlert'];
+  const SETTING_KEYS = ['theme', 'density', 'fontScale', 'autoRecalc', 'strictPosting', 'roundMode', 'unmatchedAlert', 'costRateAlert'];
   const [settings, setSettings] = useState(() =>
     Object.fromEntries(SETTING_KEYS.map(k => [k, getSetting(k)]))
   );
@@ -123,6 +123,17 @@ export default function Page() {
               value={settings.density}
               options={[{value:'normal',label:'기본'},{value:'compact',label:'촘촘'}]}
               onChange={(v) => updateSetting('density', v, v === 'compact' ? '촘촘 밀도 적용' : '기본 밀도 적용')}
+            />
+          }
+        />
+        <SettingsRow
+          name="글씨 크기"
+          desc="표·제목·버튼 등 글자 크기를 키웁니다 (레이아웃은 유지)"
+          control={
+            <Segmented
+              value={settings.fontScale}
+              options={[{value:'normal',label:'보통'},{value:'large',label:'크게'},{value:'xlarge',label:'더 크게'}]}
+              onChange={(v) => updateSetting('fontScale', v, ({normal:'보통',large:'크게',xlarge:'더 크게'}[v]) + ' 글씨 적용')}
             />
           }
           last
