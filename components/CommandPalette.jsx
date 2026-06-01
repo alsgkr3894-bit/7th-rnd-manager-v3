@@ -52,19 +52,6 @@ export default function CommandPalette({ open, onClose }) {
     ? allItems.filter(x => norm(x.label).includes(norm(debouncedQ)) || (x.sub && norm(x.sub).includes(norm(debouncedQ))))
     : allItems.slice(0, 9);
 
-  const pick = (item) => {
-    saveRecent(item);
-    onClose();
-    router.push(item.href);
-  };
-
-  function handleKey(e) {
-    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, filtered.length - 1)); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)); }
-    else if (e.key === 'Escape') onClose();
-    else if (e.key === 'Enter' && filtered[activeIdx]) pick(filtered[activeIdx]);
-  }
-
   const GROUPS = [
     { kind: 'sample',     label: '샘플기록' },
     { kind: 'note',       label: '메뉴개발 노트' },
@@ -82,6 +69,25 @@ export default function CommandPalette({ open, onClose }) {
     action:     { bg: 'var(--note-ico-bg)',     color: 'var(--note-ico-color)' },
     nav:        { bg: 'var(--accent-soft)',     color: 'var(--accent-text)' },
   };
+
+  // 키보드 네비게이션 대상 — 실제 렌더 순서와 동일하게 평탄화한다.
+  // 그룹 결과는 GROUPS 순서로 재정렬되므로 filtered 배열 순서와 다르다 →
+  // activeIdx/Enter가 강조 항목과 어긋나지 않도록 같은 순서로 맞춘다.
+  const groupedFiltered = GROUPS.flatMap(({ kind }) => filtered.filter(x => x.kind === kind));
+  const navItems = isSearching ? groupedFiltered : [...recent, ...groupedFiltered];
+
+  const pick = (item) => {
+    saveRecent(item);
+    onClose();
+    router.push(item.href);
+  };
+
+  function handleKey(e) {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, navItems.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)); }
+    else if (e.key === 'Escape') onClose();
+    else if (e.key === 'Enter' && navItems[activeIdx]) pick(navItems[activeIdx]);
+  }
 
   let flatIdx = 0;
 

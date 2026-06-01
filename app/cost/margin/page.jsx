@@ -437,7 +437,7 @@ export default function Page() {
             <button className="btn" onClick={() => setShowTrend(true)}>
               <Icon.chart style={{ width: 13, height: 13 }}/> 추이 보기
             </button>
-            <button className="btn" onClick={() => exportMarginExcel(filtered, sizeLabels, viewMode)}>
+            <button className="btn" onClick={() => exportMarginExcel(filtered, sizeLabels, viewMode, activePlatform, discount)}>
               <Icon.download style={{ width: 13, height: 13 }}/> CSV 내보내기
             </button>
           </>

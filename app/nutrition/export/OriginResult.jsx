@@ -56,14 +56,23 @@ function getDate() {
 
 /* ── 데이터 변환 ─────────────────────────────────────────── */
 function buildSheet1(origins) {
-  // menuName 기준 그룹핑
+  // 엑셀 출력(fillSheet1)과 동일한 그룹핑 — menuCodes 펼침 + (음식명||ingredientId) 키 + parts 중복 제거.
+  // (preview와 excel의 행 병합/분해가 어긋나지 않도록 같은 로직을 사용한다)
   const menuMap = new Map();
   for (const row of origins) {
-    const key = row.menuName || row.ingredientName || '';
-    if (!menuMap.has(key)) {
-      menuMap.set(key, { subCat: getSubCat(row), menuName: key, parts: [] });
+    const links = row.menuCodes?.length
+      ? row.menuCodes
+      : [{ menuCode: row.menuCode || '', menuName: row.menuName || row.ingredientName || '' }];
+    for (const { menuCode, menuName } of links) {
+      const displayName = menuName || row.ingredientName || menuCode || '';
+      const key = `${displayName}||${row.ingredientId ?? row.ingredientName ?? ''}`;
+      if (!menuMap.has(key)) {
+        menuMap.set(key, { subCat: getSubCat({ ...row, menuCode }), menuName: displayName, parts: [] });
+      }
+      const entry = menuMap.get(key);
+      const ingText = toIngText(row);
+      if (!entry.parts.includes(ingText)) entry.parts.push(ingText);
     }
-    menuMap.get(key).parts.push(toIngText(row));
   }
 
   const rows = [...menuMap.values()].sort((a, b) => {

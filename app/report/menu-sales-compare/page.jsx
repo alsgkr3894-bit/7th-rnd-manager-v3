@@ -63,6 +63,8 @@ export default function Page() {
         const catMap = new Map();
         for (const r of rows) {
           if (r.status !== 'classified') continue;
+          // 표·요약(compareResult)과 동일하게 scope로 필터해 차트가 어긋나지 않도록 한다.
+          if (scope !== 'all' && r.category !== scope) continue;
           const cat = r.category || '기타';
           if (!catMap.has(cat)) catMap.set(cat, { a: 0, b: 0 });
           const isA = r.year === periodA.year && r.month === periodA.month;

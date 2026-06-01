@@ -45,6 +45,7 @@ export default function Page() {
   useKeyboardSave(handleSave);
 
   async function handleSave() {
+    if (saving) return; // Ctrl+S 연타 시 중복 저장 방지
     if (!form.title.trim() || !form.menuName.trim()) {
       showToast('제목과 메뉴명은 필수입니다', 'warn');
       return;

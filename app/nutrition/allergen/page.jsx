@@ -93,7 +93,7 @@ export default function Page() {
           <SearchBox value={search} onChange={setSearch} placeholder="재료명·표기명·코드 검색" />
         </div>
         <div style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 12 }}>
-          {links.length}개 연결 / {ingredients.length - linkedIds.size}개 미연결
+          {links.length}개 연결 / {ingredients.filter(i => !linkedIds.has(i.id)).length}개 미연결
         </div>
       </div>
 

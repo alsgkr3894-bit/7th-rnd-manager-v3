@@ -184,6 +184,7 @@ function RecipeContent() {
   }
 
   async function handleSave() {
+    if (saving) return; // 연타/단축키 중복 저장 방지
     if (!draft?.menuName?.trim()) { showToast('메뉴명을 입력해주세요'); return; }
     setSaving(true);
     try {

@@ -85,7 +85,20 @@ export function RecipeEditor({ draft, setDraft, allMeta, menuMasters, menuPrices
   function setSize(idx, key, val) {
     setDraft(d => {
       const sizes = [...d.sizes];
+      const oldLabel = sizes[idx].label;
       sizes[idx] = { ...sizes[idx], [key]: val };
+      // 사이즈 라벨이 바뀌면 각 식자재 사용량(quantities)의 키도 oldLabel→val 로 이전한다.
+      // (quantities는 라벨 문자열을 키로 쓰므로, 라벨만 바꾸면 입력한 사용량이 유실되고 원가가 0이 된다)
+      if (key === 'label' && oldLabel && oldLabel !== val) {
+        const ingredients = d.ingredients.map(line => {
+          if (!line.quantities || !(oldLabel in line.quantities)) return line;
+          const q = { ...line.quantities };
+          q[val] = q[oldLabel];
+          delete q[oldLabel];
+          return { ...line, quantities: q };
+        });
+        return { ...d, sizes, ingredients };
+      }
       return { ...d, sizes };
     });
   }
