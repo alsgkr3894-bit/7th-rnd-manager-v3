@@ -13,7 +13,7 @@ import {
   bulkImportIngredients, resetAllIngredients,
   sortMainCategories, deriveScope,
 } from '@/lib/ingredient';
-import { SCOPE } from '@/lib/ingredient/constants';
+import { SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
 import { MASTER_IMPORT_SEED } from '@/lib/ingredient/master-import-seed';
 import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
 import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
@@ -148,7 +148,7 @@ export default function Page() {
           productName:    m.ingredientName || '',
           meta:           m,
           isLinked:       false,
-          scope:          SCOPE.EXCLUSIVE,
+          scope:          m.scope || SCOPE_UNASSIGNED,
           isComposite:    Array.isArray(m.compositeOf) && m.compositeOf.length > 0,
           masterName:     m.ingredientName || '',
           category:       m.category || '',

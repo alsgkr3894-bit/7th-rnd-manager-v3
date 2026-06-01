@@ -8,6 +8,7 @@ const ISSUE_META = {
   uncategorized:   { label:'미분류',        Ico: Icon.tag,       color:'var(--warn)',     bg:'var(--warn-soft)' },
   'no-unit':       { label:'포장수량 없음', Ico: Icon.alert,     color:'var(--warn)',     bg:'var(--warn-soft)' },
   'no-price-link': { label:'단가 미연동',   Ico: Icon.alert,     color:'var(--warn)',     bg:'var(--warn-soft)' },
+  'no-scope':      { label:'전용/범용 미지정', Ico: Icon.alert,  color:'var(--warn)',     bg:'var(--warn-soft)' },
 };
 
 function fmtPriceDiff({ oldPrice, newPrice, diff, pct }) {

@@ -103,7 +103,7 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
 
           {/* 구성품 목록 */}
           <div>
-            <FieldLabel>구성품</FieldLabel>
+            <FieldLabel>구성품 <span style={{ fontSize:11, fontWeight:400, color:'var(--text-4)' }}>(수량에 −(마이너스) 입력 시 차감 — 예: 기존 도우 빼기)</span></FieldLabel>
 
             {/* 컬럼 헤더 */}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 90px 72px 110px 90px 28px',
@@ -318,10 +318,10 @@ function CompRow({ c, allMeta, upm, onChange, onRemove }) {
         onChange={e => onChange({ unitPrice: e.target.value })}
         placeholder="단가" style={{ textAlign:'right' }}/>
 
-      {/* 소계 */}
+      {/* 소계 (음수 = 차감) */}
       <div style={{ textAlign:'right', fontSize:13, fontWeight:600,
-        color: subtotal > 0 ? 'var(--text-1)' : 'var(--text-4)' }}>
-        {subtotal > 0 ? `${formatNumber(Math.round(subtotal))}원` : '—'}
+        color: subtotal < 0 ? 'var(--negative)' : subtotal > 0 ? 'var(--text-1)' : 'var(--text-4)' }}>
+        {Number.isFinite(subtotal) && subtotal !== 0 ? `${formatNumber(Math.round(subtotal))}원` : '—'}
       </div>
 
       {/* 삭제 */}

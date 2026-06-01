@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { getCategoryStyle, sortHashTags } from '@/lib/ingredient';
+import { SCOPE_STYLES } from '@/lib/ingredient/constants';
 
 export const ManageRow = memo(function ManageRow({ r, deletePending, onEdit, onDeleteStart, onDeleteCancel, onDeleteConfirm, onRestore }) {
   const name = r.ingredientName || r.displayName || r.productName;
@@ -33,8 +34,8 @@ export const ManageRow = memo(function ManageRow({ r, deletePending, onEdit, onD
       <td style={{fontSize:12, color:'var(--text-2)'}}>{unitLabel}</td>
       <td>
         <span style={{padding:'2px 7px', fontSize:11, fontWeight:600, borderRadius:6,
-          background: r.scope === '전용' ? 'var(--accent-soft)' : r.scope === '범용관리' ? 'var(--positive-soft)' : 'var(--surface-3)',
-          color: r.scope === '전용' ? 'var(--accent)' : r.scope === '범용관리' ? 'var(--positive)' : 'var(--text-2)'}}>
+          background: (SCOPE_STYLES[r.scope] || {}).bg || 'var(--surface-3)',
+          color: (SCOPE_STYLES[r.scope] || {}).color || 'var(--text-2)'}}>
           {r.scope || '-'}
         </span>
       </td>

@@ -48,8 +48,8 @@ export const ComponentRow = memo(function ComponentRow({ c, onChange, onRemove, 
         onChange={e => onChange({ unitPrice: e.target.value })}
         placeholder="단가" style={{textAlign:'right'}}/>
 
-      <div style={{textAlign:'right', fontWeight:600, color: subtotal > 0 ? 'var(--text-1)' : 'var(--text-4)'}}>
-        {subtotal > 0 ? `${formatNumber(Math.round(subtotal))}원` : '—'}
+      <div style={{textAlign:'right', fontWeight:600, color: subtotal < 0 ? 'var(--negative)' : subtotal > 0 ? 'var(--text-1)' : 'var(--text-4)'}}>
+        {Number.isFinite(subtotal) && subtotal !== 0 ? `${formatNumber(Math.round(subtotal))}원` : '—'}
       </div>
 
       <button type="button" onClick={onRemove}

@@ -275,6 +275,8 @@ export default function Page() {
     });
 
     // 엣지 파생 행 생성 — detail-store 피자 + 레시피 피자 모두 처리
+    // 파생행 메뉴코드: 베이스코드 + 접미사 (치즈크러스트=C, 골드스윗크러스트=G)
+    const EDGE_SUFFIX = { '치즈크러스트': 'C', '골드스윗크러스트': 'G' };
     const derivedRows = [];
     const pizzaSources = [
       ...enrichedDetailRows.filter(r => PIZZA_EDGE_CATS.has(r.menuCategory || '')),
@@ -292,8 +294,10 @@ export default function Page() {
         const derivedName = `${r.menuName} ${edgeType}`;
         if (detailKeySet.has(`${derivedName}||${r.menuCategory}`)) continue;
         const edgePrice = edgePriceByType[edgeType] ?? null;
+        const sfx = EDGE_SUFFIX[edgeType];
         derivedRows.push({
           id:           `derived||${r.id}||${edgeType}`,
+          menuCode:     r.menuCode && sfx ? `${r.menuCode}-${sfx}` : '',
           menuName:     derivedName,
           menuCategory: r.menuCategory,
           sizes:        (r.sizes || []).map(s => ({

@@ -4236,6 +4236,20 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 /* ----- 모바일 하단 탭바 ----- */
+/* 전역 "상단으로" 버튼 */
+.scroll-top-btn {
+  position: fixed; right: 24px; bottom: 24px; z-index: 55;
+  width: 42px; height: 42px; border-radius: 50%;
+  background: var(--surface); color: var(--text-2);
+  border: 1px solid var(--border); box-shadow: var(--shadow-md);
+  display: grid; place-items: center; cursor: pointer;
+  animation: fade-in 160ms ease both;
+  transition: transform 140ms ease, background 140ms ease, color 140ms ease;
+}
+.scroll-top-btn:hover { background: var(--surface-2); color: var(--text-1); transform: translateY(-2px); }
+.scroll-top-btn:active { transform: translateY(0); }
+@media (max-width: 768px) { .scroll-top-btn { bottom: 84px; right: 16px; } }
+
 .bottom-tab-bar {
   display: none;
   position: fixed;

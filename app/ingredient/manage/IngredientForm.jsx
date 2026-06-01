@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { SEED_MAIN_CATEGORIES, SEED_HASH_TAGS, sortMainCategories } from '@/lib/ingredient';
-import { SCOPE } from '@/lib/ingredient/constants';
+import { SCOPE, SCOPE_ORDER, SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
 
 const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병'];
 const LS_UNIT_TYPE = 'v3:ingredient_lastUnitType';
@@ -20,7 +20,7 @@ const EMPTY = {
   category: '', tags: [],
   manufacturer: '', discontinued: false,
   baseQuantity: '', baseUnitType: getLastUnitType(), taxType: '과세',
-  priceOverride: '', note: '',
+  priceOverride: '', scope: '', note: '',
 };
 
 export function IngredientForm({ initial, onSave, onClose, extraCategories = [] }) {
@@ -264,6 +264,14 @@ export function IngredientForm({ initial, onSave, onClose, extraCategories = [] 
                 </div>
               </Field>
 
+              <Field label="전용/범용" hint="제때 연동 없는 항목은 직접 지정 (미지정 시 이슈에 표시)">
+                <select className="form-input" value={form.scope}
+                  onChange={e => set('scope', e.target.value)}>
+                  <option value="">{SCOPE_UNASSIGNED}</option>
+                  {SCOPE_ORDER.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </Field>
+
               <Field label="수동 단가 (부가세포함)" hint="제때 연동 없을 때 사용" error={errors.priceOverride}
                 errorId="priceOverride-error">
                 <div style={{display:'flex', gap:8, alignItems:'center'}}>
@@ -336,6 +344,7 @@ function toForm(r) {
     baseUnitType:   r.baseUnitType   || 'g',
     taxType:        r.taxType        || '과세',
     priceOverride:  r.priceOverride  != null ? String(r.priceOverride) : '',
+    scope:          r.scope && r.scope !== SCOPE_UNASSIGNED ? r.scope : '',
     note:           r.note           || '',
   };
 }

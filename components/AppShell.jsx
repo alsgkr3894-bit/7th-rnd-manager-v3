@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import CommandPalette from './CommandPalette';
 import { ToastContainer } from './Toast';
+import { ScrollToTop } from './ui/ScrollToTop';
 import { Icon } from './icons';
 import { applyAllSettings, getSetting, setSetting } from '@/lib/settings';
 import { KEYS } from '@/lib/note/keys';
@@ -230,6 +231,7 @@ export default function AppShell({ children }) {
       </div>
 
       <ToastContainer />
+      <ScrollToTop />
     </div>
   );
 }
