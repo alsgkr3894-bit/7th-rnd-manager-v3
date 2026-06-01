@@ -1,8 +1,11 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { initDB } from '@/lib/db';
-import { getAllIngredients } from '@/lib/ingredient';
+import { getAllIngredients, deriveScope } from '@/lib/ingredient';
+import { SCOPE, SCOPE_STYLES } from '@/lib/ingredient/constants';
+import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
+import { printUsageReport } from '@/lib/cost/usage-print';
 import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
 import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
 import { getAllSideRecipes } from '@/lib/cost/side-detail';
@@ -14,6 +17,8 @@ const CAT_COLORS = {
   '사이드': { bg: '#F0FDF4', color: '#15803D' },
 };
 const USAGE_CATS = ['전체', '피자', '사이드', '1인피자'];
+const TIER_LABEL = ['많이 쓰는 재료 (8개 이상)', '보통 (4–7개)', '적게 쓰는 재료 (1–3개)'];
+const tierOf = (count) => (count >= 8 ? 0 : count >= 4 ? 1 : 2);
 
 export default function Page() {
   const [loading,   setLoading]   = useState(true);
@@ -22,17 +27,29 @@ export default function Page() {
   const [usageCat,  setUsageCat]  = useState('전체');
   const [usageSort, setUsageSort] = useState('count_desc');
   const [expanded,  setExpanded]  = useState(new Set());
+  const [priceStatus, setPriceStatus] = useState(new Map()); // productCode → 제때 productStatus (전용/범용 파생용)
 
   const load = useCallback(async () => {
     await initDB();
-    const [meta, pizzaRecs, personalRecs, sideRecs, oldRecs] = await Promise.all([
+    const [meta, pizzaRecs, personalRecs, sideRecs, oldRecs, files] = await Promise.all([
       getAllIngredients(),
       getAllPizzaRecipes(),
       getAllPersonalRecipes(),
       getAllSideRecipes(),
       getAllRecipes(),
+      getPriceFiles(),
     ]);
     setAllMeta(meta);
+
+    // 최신 제때 가격파일에서 productStatus 수집 (전용/범용 판정)
+    const statusMap = new Map();
+    if (files[0]) {
+      try {
+        const prows = await getPriceRowsByFileId(files[0].id);
+        for (const p of prows) if (p.productCode) statusMap.set(p.productCode, p.productStatus);
+      } catch {}
+    }
+    setPriceStatus(statusMap);
 
     const uByCode = new Map();
     const uByName = new Map();
@@ -118,9 +135,12 @@ export default function Page() {
         .sort((a, b) => a.menuName.localeCompare(b.menuName, 'ko'));
 
       if (!menus.length) return null;
-      return { code, name: dispName, count: menus.length, menus };
+      const scope = (m.isManual || m.isSeeded)
+        ? SCOPE.EXCLUSIVE
+        : deriveScope({ productStatus: priceStatus.get(code) }, true);
+      return { code, name: dispName, scope, count: menus.length, menus };
     }).filter(Boolean);
-  }, [allMeta, usageMap, usageCat]);
+  }, [allMeta, usageMap, usageCat, priceStatus]);
 
   const sorted = useMemo(() => {
     const arr = [...usageRows];
@@ -179,7 +199,16 @@ export default function Page() {
               ))}
             </div>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
-              <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>정렬</span>
+              <button className="btn sm" onClick={() => setExpanded(new Set(sorted.map(r => r.code || r.name)))}>
+                모두 펼치기
+              </button>
+              <button className="btn sm" onClick={() => setExpanded(new Set())}>
+                모두 접기
+              </button>
+              <button className="btn sm" onClick={() => printUsageReport(sorted, usageCat)}>
+                PDF 출력
+              </button>
+              <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600, marginLeft: 4 }}>정렬</span>
               <select
                 value={usageSort}
                 onChange={e => setUsageSort(e.target.value)}
@@ -216,11 +245,34 @@ export default function Page() {
                     const visible = open ? r.menus : r.menus.slice(0, SHOW);
                     const more    = r.menus.length - SHOW;
                     const key     = r.code || r.name;
+                    const byCount = usageSort === 'count_desc' || usageSort === 'count_asc';
+                    const tier    = tierOf(r.count);
+                    const showTier = byCount && (idx === 0 || tierOf(sorted[idx - 1].count) !== tier);
+                    const sc = r.scope ? SCOPE_STYLES[r.scope] : null;
                     return (
-                      <tr key={key}>
+                      <Fragment key={`${key}-${idx}`}>
+                      {showTier && (
+                        <tr>
+                          <td colSpan={4} style={{
+                            padding: '7px 12px', background: 'var(--surface-2)',
+                            fontSize: 11, fontWeight: 700, color: 'var(--text-3)',
+                            borderTop: '1px solid var(--divider)',
+                          }}>{TIER_LABEL[tier]}</td>
+                        </tr>
+                      )}
+                      <tr>
                         <td style={{ textAlign: 'center', color: 'var(--text-4)', fontSize: 12 }}>{idx + 1}</td>
                         <td>
-                          <div style={{ fontWeight: 600, fontSize: 13 }}>{r.name}</div>
+                          <div style={{ fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {r.name}
+                            {r.scope && (
+                              <span style={{
+                                fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 8,
+                                color: sc?.color || 'var(--text-3)', background: sc?.bg || 'var(--surface-2)',
+                                whiteSpace: 'nowrap',
+                              }}>{r.scope}</span>
+                            )}
+                          </div>
                           {r.code && (
                             <div style={{ fontSize: 11, color: 'var(--text-4)', fontFamily: 'monospace' }}>{r.code}</div>
                           )}
@@ -265,6 +317,7 @@ export default function Page() {
                           </div>
                         </td>
                       </tr>
+                      </Fragment>
                     );
                   })}
                 </tbody>
