@@ -9,6 +9,7 @@ import {
   getAllManagedProducts,
   addManagedProduct, deleteManagedProduct, updateManagedProduct,
   migrateExclusiveFromPriceList,
+  onManagedProductsChange,
 } from '@/lib/shipment';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { ManagedProductsForm } from './ManagedProductsForm';
@@ -36,6 +37,9 @@ export function ManagedProductsCard() {
   const [migrating, setMigrating] = useState(false);
 
   useEffect(() => { refresh(); }, []);
+
+  // 가격비교 등 다른 화면에서 분류를 바꿔도 이 목록이 같은 마스터를 반영하도록 동기화
+  useEffect(() => onManagedProductsChange(() => { refresh(); }), []);
 
   async function refresh() {
     try { setList(await getAllManagedProducts()); } catch (err) { console.warn(err); }

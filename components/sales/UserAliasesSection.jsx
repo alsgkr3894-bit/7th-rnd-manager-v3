@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { Toggle } from '@/components/ui/Toggle';
 import { getUserAliases, addUserAlias, deleteUserAlias, updateUserAlias } from '@/lib/sales';
-import { inputStyle, SectionHeader, SectionEmpty } from './shared/SectionUtils';
+import { inputStyle, SectionHeader, SectionEmpty, reapplyToUploadedData } from './shared/SectionUtils';
 
 export function UserAliasesSection() {
   const [list,      setList]      = useState([]);
@@ -27,6 +27,7 @@ export function UserAliasesSection() {
       setForm({ rawName: '', mappedName: '' });
       setAdding(false);
       refresh();
+      await reapplyToUploadedData();
     } catch (err) {
       showToast(err?.message || '추가 실패', 'err');
     } finally { setBusy(false); }
@@ -40,6 +41,7 @@ export function UserAliasesSection() {
       showToast('수정됐어요', 'ok');
       setEditingId(null);
       refresh();
+      await reapplyToUploadedData();
     } catch (err) {
       showToast(err?.message || '수정 실패', 'err');
     } finally { setBusy(false); }
@@ -51,14 +53,17 @@ export function UserAliasesSection() {
   }
 
   async function handleDelete(id) {
-    try { await deleteUserAlias(id); showToast('삭제됐어요', 'ok'); refresh(); }
-    catch { showToast('삭제 실패', 'err'); }
+    try {
+      await deleteUserAlias(id); showToast('삭제됐어요', 'ok'); refresh();
+      await reapplyToUploadedData();
+    } catch { showToast('삭제 실패', 'err'); }
   }
 
   async function handleToggle(a) {
     try {
       await updateUserAlias({ id: a.id, enable: a.enable !== false ? false : true });
       refresh();
+      await reapplyToUploadedData();
     } catch { showToast('토글 실패', 'err'); }
   }
 

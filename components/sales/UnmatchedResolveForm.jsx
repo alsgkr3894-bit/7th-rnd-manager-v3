@@ -1,6 +1,6 @@
 'use client';
-import { useMemo, useState } from 'react';
-import { suggestRulesByMenuName, CATEGORY_ORDER as CATEGORY_OPTIONS } from '@/lib/sales';
+import { useEffect, useId, useMemo, useState } from 'react';
+import { suggestRulesByMenuName, getClassificationNameOptions, CATEGORY_ORDER as CATEGORY_OPTIONS } from '@/lib/sales';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 /**
@@ -18,12 +18,26 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
   const [ruleGroup, setRuleGroup] = useState('');
   const [ruleDetail, setRuleDetail] = useState('');
   const [confirmExclude, setConfirmExclude] = useState(false);
+  const [nameOpts, setNameOpts] = useState({ groupNames: [], detailNames: [] });
+
+  const uid = useId();
+  const groupListId  = `unm-group-${uid}`;
+  const detailListId = `unm-detail-${uid}`;
 
   // 자동 추천 (정규화된 메뉴명 기반)
   const suggestions = useMemo(
     () => suggestRulesByMenuName(issue.normalizedMenuName || '', 5),
     [issue.normalizedMenuName],
   );
+
+  // 중분류·상세 자동완성 후보 (기존 규칙의 groupName/detailName)
+  useEffect(() => {
+    let alive = true;
+    getClassificationNameOptions()
+      .then(opts => { if (alive) setNameOpts(opts); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   function applySuggestion(rule) {
     if (actionType === 'alias') {
@@ -122,13 +136,17 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
             onChange={e => setRuleGroup(e.target.value)}
             placeholder="중분류명 (groupName)"
             style={inputStyle}
+            list={groupListId}
           />
           <input
             value={ruleDetail}
             onChange={e => setRuleDetail(e.target.value)}
             placeholder="상세 (비우면 중분류와 동일)"
             style={inputStyle}
+            list={detailListId}
           />
+          <datalist id={groupListId}>{nameOpts.groupNames.map(g => <option key={g} value={g}/>)}</datalist>
+          <datalist id={detailListId}>{nameOpts.detailNames.map(d => <option key={d} value={d}/>)}</datalist>
         </div>
       )}
 

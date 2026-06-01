@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { getUserExcluded, addUserExcluded, deleteUserExcluded, updateUserExcluded } from '@/lib/sales';
-import { inputStyle, SectionHeader, SectionEmpty } from './shared/SectionUtils';
+import { inputStyle, SectionHeader, SectionEmpty, reapplyToUploadedData } from './shared/SectionUtils';
 
 export function UserExcludedSection() {
   const [list,      setList]      = useState([]);
@@ -25,6 +25,7 @@ export function UserExcludedSection() {
       showToast('제외 메뉴가 추가됐어요', 'ok');
       setForm({ menuName: '' }); setAdding(false);
       refresh();
+      await reapplyToUploadedData();
     } catch (err) {
       showToast(err?.message || '추가 실패', 'err');
     } finally { setBusy(false); }
@@ -38,6 +39,7 @@ export function UserExcludedSection() {
       showToast('수정됐어요', 'ok');
       setEditingId(null);
       refresh();
+      await reapplyToUploadedData();
     } catch (err) {
       showToast(err?.message || '수정 실패', 'err');
     } finally { setBusy(false); }
@@ -49,8 +51,10 @@ export function UserExcludedSection() {
   }
 
   async function handleDelete(id) {
-    try { await deleteUserExcluded(id); showToast('삭제됐어요', 'ok'); refresh(); }
-    catch { showToast('삭제 실패', 'err'); }
+    try {
+      await deleteUserExcluded(id); showToast('삭제됐어요', 'ok'); refresh();
+      await reapplyToUploadedData();
+    } catch { showToast('삭제 실패', 'err'); }
   }
 
   return (

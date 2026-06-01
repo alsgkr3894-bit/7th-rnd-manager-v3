@@ -1,6 +1,23 @@
 import { Icon } from '@/components/icons';
+import { showToast } from '@/components/Toast';
+import { reclassifyAllFiles } from '@/lib/sales';
 
 /** 세 설정 섹션(Aliases·Rules·Excluded)이 공유하는 스타일·컴포넌트 */
+
+/**
+ * 규칙·별칭·제외 변경 후 이미 업로드된 데이터를 다시 분류해 보고서·통계에 즉시 반영.
+ * (변경만 저장하면 기존 sales_rows는 옛 분류 결과를 유지하므로 호출 필요)
+ * 실패해도 변경 자체는 유지되므로 토스트로만 안내한다.
+ */
+export async function reapplyToUploadedData() {
+  try {
+    const { files } = await reclassifyAllFiles();
+    if (files > 0) showToast(`기존 업로드 ${files}개 파일에 반영했어요`, 'ok');
+  } catch (err) {
+    console.error('[settings] 재분류 실패:', err);
+    showToast('기존 데이터 반영 중 오류가 발생했어요', 'err');
+  }
+}
 
 export const inputStyle = {
   padding: '6px 10px', borderRadius: 6,

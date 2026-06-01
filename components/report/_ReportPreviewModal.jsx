@@ -203,7 +203,7 @@ export function ReportPreviewModal({ report, onClose, onShare }) {
             {PageContent && PageContent(report)}
             <div className="paper-foot" style={{marginTop:24}}>
               <span>{currentPage} / {totalPages} — {pageTitle}</span>
-              <span className="mono">7번가 R&amp;D 플랫폼 · WONPAY 비즈니스</span>
+              <span className="mono">7번가 R&amp;D 플랫폼</span>
             </div>
           </div>
           <div className="preview-pager">

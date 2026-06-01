@@ -358,7 +358,7 @@ export default function Page() {
 
         <div className="paper-foot">
           <span>1 / 9</span>
-          <span className="mono">7번가 R&amp;D 플랫폼 · WONPAY 비즈니스</span>
+          <span className="mono">7번가 R&amp;D 플랫폼</span>
         </div>
       </>}
     />

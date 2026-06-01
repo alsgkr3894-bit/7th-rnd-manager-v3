@@ -1,13 +1,14 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { Toggle } from '@/components/ui/Toggle';
 import {
   getUserRules, addUserRule, deleteUserRule, updateUserRule,
+  getClassificationNameOptions,
   CATEGORY_INPUT_OPTIONS as CATEGORY_OPTIONS,
 } from '@/lib/sales';
-import { inputStyle, SectionHeader, SectionEmpty } from './shared/SectionUtils';
+import { inputStyle, SectionHeader, SectionEmpty, reapplyToUploadedData } from './shared/SectionUtils';
 
 export function UserRulesSection() {
   const [list,      setList]      = useState([]);
@@ -15,11 +16,16 @@ export function UserRulesSection() {
   const [editingId, setEditingId] = useState(null);
   const [form,      setForm]      = useState({ rawMenuName: '', category: '피자', groupName: '', detailName: '' });
   const [busy,      setBusy]      = useState(false);
+  const [nameOpts,  setNameOpts]  = useState({ groupNames: [], detailNames: [] });
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { refresh(); loadNameOpts(); }, []);
 
   async function refresh() {
     try { setList(await getUserRules()); } catch (err) { console.warn(err); }
+  }
+
+  async function loadNameOpts() {
+    try { setNameOpts(await getClassificationNameOptions()); } catch (err) { console.warn(err); }
   }
 
   function resetForm() {
@@ -33,7 +39,8 @@ export function UserRulesSection() {
       await addUserRule(form);
       showToast('규칙이 추가됐어요', 'ok');
       resetForm(); setAdding(false);
-      refresh();
+      refresh(); loadNameOpts();
+      await reapplyToUploadedData();
     } catch (err) {
       showToast(err?.message || '추가 실패', 'err');
     } finally { setBusy(false); }
@@ -46,7 +53,8 @@ export function UserRulesSection() {
       await updateUserRule({ id, ...form });
       showToast('수정됐어요', 'ok');
       setEditingId(null);
-      refresh();
+      refresh(); loadNameOpts();
+      await reapplyToUploadedData();
     } catch (err) {
       showToast(err?.message || '수정 실패', 'err');
     } finally { setBusy(false); }
@@ -63,14 +71,18 @@ export function UserRulesSection() {
   }
 
   async function handleDelete(id) {
-    try { await deleteUserRule(id); showToast('삭제됐어요', 'ok'); refresh(); }
-    catch { showToast('삭제 실패', 'err'); }
+    try {
+      await deleteUserRule(id); showToast('삭제됐어요', 'ok');
+      refresh(); loadNameOpts();
+      await reapplyToUploadedData();
+    } catch { showToast('삭제 실패', 'err'); }
   }
 
   async function handleToggle(r) {
     try {
       await updateUserRule({ id: r.id, enable: r.enable !== false ? false : true });
       refresh();
+      await reapplyToUploadedData();
     } catch { showToast('토글 실패', 'err'); }
   }
 
@@ -84,7 +96,7 @@ export function UserRulesSection() {
       />
 
       {adding && (
-        <RowForm form={form} setForm={setForm} onCancel={() => setAdding(false)} onSubmit={handleAdd} busy={busy}/>
+        <RowForm form={form} setForm={setForm} onCancel={() => setAdding(false)} onSubmit={handleAdd} busy={busy} nameOpts={nameOpts}/>
       )}
 
       {list.length === 0 && !adding ? (
@@ -106,7 +118,7 @@ export function UserRulesSection() {
               {list.map(r => editingId === r.id ? (
                 <tr key={r.id}>
                   <td colSpan={6} style={{padding:8}}>
-                    <RowForm form={form} setForm={setForm} onCancel={() => setEditingId(null)} onSubmit={() => handleUpdate(r.id)} busy={busy} submitLabel="저장"/>
+                    <RowForm form={form} setForm={setForm} onCancel={() => setEditingId(null)} onSubmit={() => handleUpdate(r.id)} busy={busy} submitLabel="저장" nameOpts={nameOpts}/>
                   </td>
                 </tr>
               ) : (
@@ -133,15 +145,20 @@ export function UserRulesSection() {
   );
 }
 
-function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추가' }) {
+function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추가', nameOpts = { groupNames: [], detailNames: [] } }) {
+  const uid = useId();
+  const groupListId  = `rule-group-${uid}`;
+  const detailListId = `rule-detail-${uid}`;
   return (
     <div style={{display:'grid', gridTemplateColumns:'1.5fr 140px 1fr 1fr auto auto', gap:8}}>
       <input value={form.rawMenuName} onChange={e => setForm({ ...form, rawMenuName: e.target.value })} placeholder="패턴 (정규화 후)" style={inputStyle}/>
       <select value={form.category}   onChange={e => setForm({ ...form, category:    e.target.value })} style={inputStyle}>
         {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
       </select>
-      <input value={form.groupName}   onChange={e => setForm({ ...form, groupName:   e.target.value })} placeholder="중분류"          style={inputStyle}/>
-      <input value={form.detailName}  onChange={e => setForm({ ...form, detailName:  e.target.value })} placeholder="상세 (선택)"     style={inputStyle}/>
+      <input value={form.groupName}   onChange={e => setForm({ ...form, groupName:   e.target.value })} placeholder="중분류"          style={inputStyle} list={groupListId}/>
+      <input value={form.detailName}  onChange={e => setForm({ ...form, detailName:  e.target.value })} placeholder="상세 (선택)"     style={inputStyle} list={detailListId}/>
+      <datalist id={groupListId}>{nameOpts.groupNames.map(g => <option key={g} value={g}/>)}</datalist>
+      <datalist id={detailListId}>{nameOpts.detailNames.map(d => <option key={d} value={d}/>)}</datalist>
       <button className="btn sm" onClick={onCancel} disabled={busy}>취소</button>
       <button className="btn sm primary" onClick={onSubmit}
         disabled={busy || !form.rawMenuName.trim() || !form.category || !form.groupName.trim()}>
