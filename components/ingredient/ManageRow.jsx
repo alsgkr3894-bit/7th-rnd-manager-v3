@@ -13,9 +13,14 @@ export const ManageRow = memo(function ManageRow({ r, deletePending, onEdit, onD
   return (
     <tr style={{opacity: r.excluded ? .5 : 1, background: r.excluded ? 'var(--surface-2)' : undefined}}>
       <td className="num" style={{color:'var(--text-3)', fontSize:11}}>
-        {r.isManual && !r.productCode
-          ? <span style={{fontSize:10, padding:'1px 5px', borderRadius:3, background:'var(--surface-3)', color:'var(--text-3)'}}>수동</span>
-          : r.productCode || '-'}
+        <div style={{display:'flex', flexDirection:'column', gap:3, alignItems:'flex-start'}}>
+          <span>{r.productCode || (r.isManual ? '자체' : '-')}</span>
+          <span style={{fontSize:9, fontWeight:700, padding:'1px 5px', borderRadius:3,
+            background: r.jetteLinked ? 'var(--positive-soft)' : 'var(--surface-3)',
+            color: r.jetteLinked ? 'var(--positive)' : 'var(--text-3)'}}>
+            {r.jetteLinked ? '연동' : '수동'}
+          </span>
+        </div>
       </td>
       <td style={{fontWeight:600, fontSize:13}}>
         <span title={r.productName !== name ? `원본: ${r.productName}` : undefined}>{name}</span>
