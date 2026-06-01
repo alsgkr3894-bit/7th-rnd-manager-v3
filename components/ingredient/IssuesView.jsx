@@ -91,8 +91,8 @@ export function IssuesView({ issueRows, onEdit }) {
         ))}
       </div>
       <div style={{display:'flex', flexDirection:'column', gap:6}}>
-        {filtered.map(r => (
-          <IssueCard key={r.productCode ?? `m-${r.id}`} r={r} onEdit={() => onEdit(r)}/>
+        {filtered.map((r, i) => (
+          <IssueCard key={`${r.productCode ?? r.id ?? 'm'}-${i}`} r={r} onEdit={() => onEdit(r)}/>
         ))}
       </div>
     </>

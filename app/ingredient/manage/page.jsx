@@ -368,8 +368,9 @@ export default function Page() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map(r => {
-                      const rowKey = r.productCode ?? `m-${r.id}`;
+                    {filtered.map((r, i) => {
+                      // 인덱스 suffix — 제때 파일에 같은 productCode가 중복돼도 key 충돌 방지
+                      const rowKey = `${r.productCode ?? r.id ?? 'm'}-${i}`;
                       const isPending = r.isManual
                         ? deletePending?.isManual && deletePending?.id === r.id
                         : deletePending?.productCode === r.productCode;
