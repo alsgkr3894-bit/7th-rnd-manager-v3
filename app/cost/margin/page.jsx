@@ -1,6 +1,7 @@
 'use client';
 import dynamic from 'next/dynamic';
-import { useEffect, useState, useMemo, useCallback, useRef, Fragment } from 'react';
+import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Icon } from '@/components/icons';
 import { initDB } from '@/lib/db';
@@ -32,6 +33,7 @@ import { MarginRow } from '@/components/cost/margin/MarginRow';
 import { exportMarginExcel } from '@/lib/cost/margin/export';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { KEYS } from '@/lib/note/keys';
+import { catCompatible, buildRecipesByName, mergeRecipeIntoDetail } from '@/lib/cost/margin/matching';
 
 const PlatformSettingsModal = dynamic(
   () => import('@/components/cost/margin/PlatformSettingsModal').then(m => m.PlatformSettingsModal),
@@ -46,7 +48,7 @@ export default function Page() {
   const [rows,         setRows]         = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [dbError,      setDbError]      = useState(null);
-  const [catFilter,    setCatFilter]    = useState('전체'); // 저장값은 마운트 후 복원(하이드레이션 불일치 방지)
+  const [catFilter,    setCatFilter]    = useLocalStorage(KEYS.MARGIN_CAT_FILTER, '전체');
   const [platforms,    setPlatforms]    = useState([]);
   const [activePlatId, setActivePlatId] = useState('default');
   const [showSettings, setShowSettings] = useState(false);
@@ -59,8 +61,8 @@ export default function Page() {
   const [sortDir,      setSortDir]      = useState('asc');
   const [search,       setSearch]       = useState('');
   // 원가율 경고/비상 임계값 (사용자 조절, 마운트 후 localStorage 복원)
-  const [warnPct,      setWarnPct]      = useState(30);
-  const [critPct,      setCritPct]      = useState(40);
+  const [warnPct,      setWarnPct]      = useLocalStorage(KEYS.MARGIN_COST_WARN, 30);
+  const [critPct,      setCritPct]      = useLocalStorage(KEYS.MARGIN_COST_CRIT, 40);
   const [showHidden,   setShowHidden]   = useState(false);   // 숨김 행 임시 표시
 
   const load = useCallback(async () => {
@@ -200,63 +202,9 @@ export default function Page() {
       }
     }
 
-    // 카테고리 호환: 정확 일치 또는 부모/자식(슬래시 경계)
-    // 넓은 '피자'(레시피) ↔ 세부 '피자/프리미엄 스페셜'(디테일/가격표) 매칭.
-    // 원가레시피는 카테고리를 넓게 적고 메뉴마스터는 코드기반 세부 카테고리라
-    // 정확 일치만 보면 같은 메뉴가 카테고리별로 2줄 중복됨.
-    const catCompatible = (a, b) =>
-      a === b || (!!a && !!b && (a.startsWith(b + '/') || b.startsWith(a + '/')));
-
-    // recipe rows: menuName → rows[] (원가 보완·중복 제거용)
-    const recipesByName = new Map();
-    for (const r of recipeRows) {
-      const arr = recipesByName.get(r.menuName);
-      if (arr) arr.push(r); else recipesByName.set(r.menuName, [r]);
-    }
-    // 디테일 행에 매칭되는 레시피(호환 카테고리 중 원가 있는 것 우선)
-    const findRecipeForDetail = (name, cat) => {
-      const arr = recipesByName.get(name);
-      if (!arr) return null;
-      let fallback = null;
-      for (const r of arr) {
-        if (!catCompatible(r.menuCategory || '', cat || '')) continue;
-        if (Object.values(r.costMap).some(v => v > 0)) return r;
-        if (!fallback) fallback = r;
-      }
-      return fallback;
-    };
-
-    // detail-store 행에 원가레시피 정보 보완:
-    //   - 디테일 스토어 값이 항상 우선
-    //   - 레시피는 "빈 판매가 · 디테일에 없는 사이즈 · 빈 원가"만 채움(fallback)
-    // (메뉴 가격표에 판매가가 없어도 원가레시피의 판매가가 표시되도록)
-    const mergeRecipeIntoDetail = (d) => {
-      const rr = findRecipeForDetail(d.menuName, d.menuCategory);
-      if (!rr) return d;
-
-      // 사이즈 합집합 (디테일 우선, 레시피에만 있는 사이즈는 뒤에 추가)
-      const sizeByLabel = new Map();
-      for (const s of (d.sizes || [])) {
-        if (s.label) sizeByLabel.set(s.label, { ...s, sellingPrice: toNum(s.sellingPrice) });
-      }
-      for (const s of (rr.sizes || [])) {
-        if (!s.label) continue;
-        const price = toNum(s.sellingPrice);
-        const existing = sizeByLabel.get(s.label);
-        if (!existing) sizeByLabel.set(s.label, { label: s.label, sellingPrice: price });
-        else if (existing.sellingPrice == null && price != null) existing.sellingPrice = price;
-      }
-
-      // 원가 합집합 (디테일 원가 우선, 빈 사이즈만 레시피 원가로 보완)
-      const costMap = { ...d.costMap };
-      for (const label of sizeByLabel.keys()) {
-        if (!(costMap[label] > 0) && rr.costMap?.[label] > 0) costMap[label] = rr.costMap[label];
-      }
-
-      return { ...d, sizes: [...sizeByLabel.values()], costMap };
-    };
-
-    const enrichedDetailRows = detailRows.map(mergeRecipeIntoDetail);
+    // 레시피 매칭 — 순수함수는 lib/cost/margin/matching.js에 분리
+    const recipesByName = buildRecipesByName(recipeRows);
+    const enrichedDetailRows = detailRows.map(d => mergeRecipeIntoDetail(d, recipesByName, toNum));
 
     // Merge: detail store rows take precedence.
     // detailKeySet: 정확 키 — 파생 엣지행이 이미 디테일 메뉴로 존재하는지 확인용
@@ -327,20 +275,6 @@ export default function Page() {
 
   useVisibilityRefresh(load);
 
-  // 저장된 카테고리 필터 복원 — 마운트 후(클라이언트)에만. useState 초기값에서 읽으면
-  // 서버('전체')와 클라이언트(저장값)가 달라 하이드레이션 불일치 경고가 난다.
-  const firstCatSave = useRef(true);
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(KEYS.MARGIN_CAT_FILTER);
-      if (saved && saved !== '전체') setCatFilter(saved);
-    } catch {}
-  }, []);
-  useEffect(() => {
-    if (firstCatSave.current) { firstCatSave.current = false; return; }
-    try { localStorage.setItem(KEYS.MARGIN_CAT_FILTER, catFilter); } catch {}
-  }, [catFilter]);
-
   // 저장된 필터가 현재 행에 없는 카테고리면 '전체'로 되돌림 — 빈 표로 보이는 것 방지
   useEffect(() => {
     if (catFilter === '전체' || !rows.length) return;
@@ -349,25 +283,7 @@ export default function Page() {
       return cat === catFilter || (catFilter === '피자' && cat.startsWith('피자/'));
     });
     if (!has) setCatFilter('전체');
-  }, [catFilter, rows]);
-
-  // 원가율 경고/비상 임계값 복원·저장
-  const firstThSave = useRef(true);
-  useEffect(() => {
-    try {
-      const w = parseFloat(localStorage.getItem(KEYS.MARGIN_COST_WARN));
-      const c = parseFloat(localStorage.getItem(KEYS.MARGIN_COST_CRIT));
-      if (Number.isFinite(w)) setWarnPct(w);
-      if (Number.isFinite(c)) setCritPct(c);
-    } catch {}
-  }, []);
-  useEffect(() => {
-    if (firstThSave.current) { firstThSave.current = false; return; }
-    try {
-      localStorage.setItem(KEYS.MARGIN_COST_WARN, String(warnPct));
-      localStorage.setItem(KEYS.MARGIN_COST_CRIT, String(critPct));
-    } catch {}
-  }, [warnPct, critPct]);
+  }, [catFilter, rows, setCatFilter]);
 
   const activePlatform = useMemo(
     () => platforms.find(p => p.id === activePlatId) ?? platforms[0] ?? { id:'default', name:'기본', fees:[] },
