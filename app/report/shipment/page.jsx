@@ -22,6 +22,7 @@ export default function Page() {
     catSummary:    true,
     amountSummary: true,
     fullList:      true,
+    notShippedList: true,   // 금월 미출고 품목 리스트
   });
   const upd = (k, v) => setOpts(o => ({ ...o, [k]: v }));
   const [docFormat, setDocFormat] = useState({ pdf: true, excel: false });
@@ -173,6 +174,24 @@ export default function Page() {
       ? [['범용상품 출고금액', genericAmt]]
       : [['총 출고금액', totalAmt], ['전용상품 출고금액', exclusiveAmt], ['범용상품 출고금액', genericAmt], ['관리품목 출고금액', managedAmt]];
 
+  // 금월 미출고 품목 — 등록(마스터)됐으나 이번 달 출고 데이터에 없는 제품 (표시범위 반영)
+  const shippedCodes = new Set();
+  const shippedNorms = new Set();
+  for (const r of aggRows) {
+    if (r.productCode) shippedCodes.add(r.productCode);
+    if (r.normalizedProductName) shippedNorms.add(r.normalizedProductName);
+  }
+  const isShipped = p =>
+    (p.productCode && shippedCodes.has(p.productCode)) ||
+    (p.normalizedProductName && shippedNorms.has(p.normalizedProductName));
+  const typeLabel = p => p.productType === 'exclusive' ? '전용' : (p.isManaged ? '관리품목' : '범용');
+  const notShipped = regProducts
+    .filter(p => (scope === 'exclusive' ? p.productType === 'exclusive'
+              : scope === 'generic' ? p.productType !== 'exclusive'
+              : true))
+    .filter(p => !isShipped(p))
+    .sort((a, b) => (a.normalizedProductName || a.productName || '').localeCompare(b.normalizedProductName || b.productName || '', 'ko'));
+
   // 차트 series를 범위에 맞게 필터 (색상도 매칭)
   const SERIES_COLOR = { '전용상품': '#1D766F', '범용상품': '#7C3AED' };
   const chartSeries = series.filter(s =>
@@ -275,6 +294,7 @@ export default function Page() {
           <Check label="분류별 합계"           value={opts.catSummary}   onChange={v=>upd('catSummary',v)}/>
           <Check label="출고금액 요약(총·전용·범용)" value={opts.amountSummary} onChange={v=>upd('amountSummary',v)}/>
           <Check label="전체 제품 목록"        value={opts.fullList}     onChange={v=>upd('fullList',v)}/>
+          <Check label="금월 미출고 품목 목록"  value={opts.notShippedList} onChange={v=>upd('notShippedList',v)}/>
         </OptGroup>
 
         <OptGroup label="문서 형식">
@@ -366,6 +386,38 @@ export default function Page() {
               <span className="num muted" style={{fontSize:11,marginLeft:'auto'}}>합계 {qtyTxt(genericQty)}</span>
             </div>
             <ItemTable items={genericAll} maxQty={genericAll[0]?.totalQuantity || 1}/>
+          </div>
+        )}
+
+        {/* ── 금월 미출고 품목 (등록됐으나 이번 달 출고 없음) ── */}
+        {opts.notShippedList && notShipped.length > 0 && (
+          <div className="paper-section paper-cat-section">
+            <div className="paper-section-title" style={{display:'flex',alignItems:'center',gap:8}}>
+              <span style={{width:10,height:10,borderRadius:'50%',background:'#9CA3AF',display:'inline-block',flexShrink:0}}/>
+              {shipMonth}월 미출고 품목
+              <span className="muted" style={{fontWeight:400,fontSize:11}}>(등록됐으나 이번 달 출고 없음)</span>
+              <span className="num muted" style={{fontSize:11,marginLeft:'auto'}}>{notShipped.length}개</span>
+            </div>
+            <table className="paper-table">
+              <thead>
+                <tr>
+                  <th style={{width:36}}>#</th>
+                  <th>제품명</th>
+                  <th style={{width:90}}>분류</th>
+                  <th style={{width:110}}>제품코드</th>
+                </tr>
+              </thead>
+              <tbody>
+                {notShipped.map((p, i) => (
+                  <tr key={p.productCode || p.productName || i}>
+                    <td className="num">{i + 1}</td>
+                    <td>{p.normalizedProductName || p.productName}</td>
+                    <td><span className="muted" style={{fontSize:11}}>{typeLabel(p)}</span></td>
+                    <td className="num muted" style={{fontSize:11}}>{p.productCode || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
