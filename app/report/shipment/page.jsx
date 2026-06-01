@@ -28,6 +28,7 @@ export default function Page() {
   const updFmt = (k, v) => setDocFormat(f => ({ ...f, [k]: v }));
 
   const [aggRows,      setAggRows]      = useState([]);
+  const [regProducts,  setRegProducts]  = useState([]); // 등록된 대상 제품(마스터) — 총 상품수 산출용
   const [series,       setSeries]       = useState([]);
   const [seriesLabels, setSeriesLabels] = useState([]);
   const [fileLabel,    setFileLabel]    = useState('—');
@@ -75,6 +76,7 @@ export default function Page() {
         setFileLabel(`${targetMonth.year}년 ${targetMonth.month}월`);
 
         const managedProducts = await getManagedProducts();
+        setRegProducts(managedProducts);
 
         // 선택 월의 모든 파일 행 합산
         const targetRows = (await Promise.all(
@@ -132,6 +134,12 @@ export default function Page() {
   const genericQty   = sumQty(genericAll);   // 범용 전체
   const managedQty   = sumQty(managed);
 
+  // 등록된(마스터) 범용상품·관리품목 개수 — 출고 여부와 무관한 등록 기준
+  const regGeneric        = regProducts.filter(p => p.productType !== 'exclusive');
+  const regGenericCount   = regGeneric.length;                       // 예: 82 (등록된 범용상품)
+  const regManagedCount   = regGeneric.filter(p => p.isManaged).length; // 예: 37 (그중 관리품목)
+  const shippedGenericCount = genericAll.length;                     // 예: 63 (이번 달 실제 출고된 품목)
+
   // 출고금액 합계 (총 / 전용 / 범용)
   const totalAmt     = sumAmt(aggRows);
   const exclusiveAmt = sumAmt(exclusive);
@@ -151,7 +159,12 @@ export default function Page() {
   const qtyStats = scope === 'exclusive'
     ? [['전용상품 출고량', exclusiveQty], ['전용상품 수', exclusive.length, true]]
     : scope === 'generic'
-      ? [['범용상품 출고량', genericQty], ['범용상품 총 상품수', genericAll.length, true], ['관리품목수', managed.length, true]]
+      ? [
+          [`범용상품 ${shipMonth}월 출고량`, genericQty],
+          ['범용상품 총 상품수', regGenericCount, true],
+          [`${shipMonth}월 출고 제품수`, shippedGenericCount, true],
+          ['관리품목수', regManagedCount, true],
+        ]
       : [['총 출고량', totalQty], ['전용상품', exclusiveQty], ['범용상품', genericQty], ['관리품목', managedQty]];
 
   const amtStats = scope === 'exclusive'
