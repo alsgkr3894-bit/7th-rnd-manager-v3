@@ -44,12 +44,16 @@ export default function Page() {
   });
 
   useEffect(() => {
+    // StrictMode 이중 마운트·빠른 월 변경 시 무거운 로드가 겹쳐 DB 조회가 느려지지 않도록
+    // 가드. 폐기된 실행은 setState·후속 작업을 건너뛴다.
+    let ignore = false;
     setIsLoading(true);
     initDB().then(async () => {
       try {
         await seedManagedProductsIfEmpty();
 
         const files = await getShipmentFiles();
+        if (ignore) return;
         if (files.length === 0) { setIsLoading(false); return; }
 
         // 파일을 월 단위로 그룹핑 (같은 월의 파일은 합산 대상)
@@ -77,12 +81,14 @@ export default function Page() {
         setFileLabel(`${targetMonth.year}년 ${targetMonth.month}월`);
 
         const managedProducts = await getManagedProducts();
+        if (ignore) return;
         setRegProducts(managedProducts);
 
         // 선택 월의 모든 파일 행 합산
         const targetRows = (await Promise.all(
           targetMonth.files.map(f => getShipmentRowsByFileId(f.id))
         )).flat();
+        if (ignore) return;
         setAggRows(aggregateShipmentRows(targetRows, managedProducts));
 
         // 추이 차트: 최대 7개월, 각 월 전체 파일 합산
@@ -94,6 +100,7 @@ export default function Page() {
             return chunks.flat();
           })
         );
+        if (ignore) return;
         const exclusiveData = [];
         const genericData   = [];
         for (const rows of monthlyRows) {
@@ -110,15 +117,18 @@ export default function Page() {
         }
         setDataError(null);
       } catch (err) {
+        if (ignore) return;
         console.error('[shipment report]', err);
         setDataError('출고량 데이터를 불러오는 중 오류가 발생했어요.');
       } finally {
-        setIsLoading(false);
+        if (!ignore) setIsLoading(false);
       }
     }).catch(() => {
+      if (ignore) return;
       setIsLoading(false);
       setDataError('데이터베이스에 연결할 수 없어요. 출고 파일을 먼저 업로드해 주세요.');
     });
+    return () => { ignore = true; };
   }, [shipYear, shipMonth]);
 
   const byQtyDesc = (a, b) => b.totalQuantity - a.totalQuantity;
