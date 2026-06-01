@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import ReportBuilderShell, { OptGroup, Check } from '@/components/report/ReportBuilderShell';
-import { fmtKRW, fmtShort } from '@/lib/format';
+import { fmtKRW, fmtShort, formatNumber } from '@/lib/format';
 import { AreaChart } from '@/components/charts/AreaChart';
 import { initDB } from '@/lib/db/init';
 import { getShipmentFiles, getShipmentRowsByFileId } from '@/lib/shipment/store-files';
@@ -17,6 +17,7 @@ export default function Page() {
   const [shipYear,  setShipYear]  = useState(new Date().getFullYear());
   const [shipMonth, setShipMonth] = useState(new Date().getMonth() + 1);
   const [opts, setOpts] = useState({
+    scope:         'all',   // all | exclusive | generic — 표시 범위
     chart:         true,
     catSummary:    true,
     amountSummary: true,
@@ -144,6 +145,34 @@ export default function Page() {
   const genericAmt   = sumAmt(genericAll);
   const managedAmt   = sumAmt(managed);
 
+  // 표시 범위 (전체 / 전용만 / 범용만)
+  const scope = opts.scope || 'all';
+  const showExclusive = scope !== 'generic';
+  const showGeneric   = scope !== 'exclusive';
+
+  // 출고량/금액은 축약 없이 정확한 전체 숫자로 표시
+  const qtyTxt = v => (v ? formatNumber(v) : '—');
+  const amtTxt = v => (v ? `${formatNumber(v)}원` : '—');
+
+  // 범위에 따른 요약 통계 카드 구성
+  const qtyStats = scope === 'exclusive'
+    ? [['전용상품 출고량', exclusiveQty], ['전용상품 수', exclusive.length, true]]
+    : scope === 'generic'
+      ? [['범용상품 출고량', genericQty], ['관리품목 출고량', managedQty], ['범용상품 수', genericAll.length, true]]
+      : [['총 출고량', totalQty], ['전용상품', exclusiveQty], ['범용상품', genericQty], ['관리품목', managedQty]];
+
+  const amtStats = scope === 'exclusive'
+    ? [['전용상품 출고금액', exclusiveAmt]]
+    : scope === 'generic'
+      ? [['범용상품 출고금액', genericAmt], ['관리품목 출고금액', managedAmt]]
+      : [['총 출고금액', totalAmt], ['전용상품 출고금액', exclusiveAmt], ['범용상품 출고금액', genericAmt], ['관리품목 출고금액', managedAmt]];
+
+  // 차트 series를 범위에 맞게 필터 (색상도 매칭)
+  const SERIES_COLOR = { '전용상품': '#1D766F', '범용상품': '#7C3AED' };
+  const chartSeries = series.filter(s =>
+    (s.name === '전용상품' && showExclusive) || (s.name === '범용상품' && showGeneric));
+  const chartColors = chartSeries.map(s => SERIES_COLOR[s.name]);
+
   const todayLabel = new Date().toLocaleDateString('ko-KR').replace(/\. /g, '.').replace(/\.$/, '');
   const reportMeta = {
     kind: 'shipment', period: fileLabel,
@@ -173,7 +202,7 @@ export default function Page() {
                   <div style={{width:`${pct}%`,height:'100%',background:'var(--accent)',borderRadius:2,opacity:0.6}}/>
                 </div>
               </td>
-              <td className="num right">{fmtShort(p.totalQuantity)}</td>
+              <td className="num right">{formatNumber(p.totalQuantity)}</td>
               <td className="num right muted">{fmtKRW(p.totalAmount)}원</td>
             </tr>
           );
@@ -215,6 +244,18 @@ export default function Page() {
           )}
         </OptGroup>
 
+        <OptGroup label="표시 범위">
+          <select
+            className="period-select"
+            value={opts.scope}
+            onChange={e => upd('scope', e.target.value)}
+          >
+            <option value="all">전체</option>
+            <option value="exclusive">전용</option>
+            <option value="generic">범용(관리)</option>
+          </select>
+        </OptGroup>
+
         <OptGroup label="포함 섹션">
           <Check label="월별 출고량 추이 차트" value={opts.chart}        onChange={v=>upd('chart',v)}/>
           <Check label="분류별 합계"           value={opts.catSummary}   onChange={v=>upd('catSummary',v)}/>
@@ -235,51 +276,35 @@ export default function Page() {
           <div className="paper-eyebrow">7번가피자 본사 · 제때상품관리</div>
           <h2 className="paper-title">{fileLabel} 제때 출고량 보고서</h2>
           <div className="paper-meta">
-            <span>전용상품 {exclusive.length}개 · 범용상품 {genericAll.length}개{managed.length > 0 ? ` (관리품목 ${managed.length}개)` : ''}</span>
+            <span>
+              {showExclusive && `전용상품 ${exclusive.length}개`}
+              {showExclusive && showGeneric && ' · '}
+              {showGeneric && `범용상품 ${genericAll.length}개${managed.length > 0 ? ` (관리품목 ${managed.length}개)` : ''}`}
+            </span>
             <span>·</span>
             <span className="mono">생성일 {todayLabel} · {getProfile().name}</span>
           </div>
         </div>
 
-        {/* ── 요약 통계 (출고량) ── */}
+        {/* ── 요약 통계 (출고량) — 표시 범위에 맞춰 정확한 숫자로 ── */}
         <div className="paper-stat-row">
-          <div className="paper-stat">
-            <div className="paper-stat-label">총 출고량</div>
-            <div className="paper-stat-val num">{totalQty > 0 ? fmtShort(totalQty) : '—'}</div>
-          </div>
-          <div className="paper-stat">
-            <div className="paper-stat-label">전용상품</div>
-            <div className="paper-stat-val num">{exclusiveQty > 0 ? fmtShort(exclusiveQty) : '—'}</div>
-          </div>
-          <div className="paper-stat">
-            <div className="paper-stat-label">범용상품</div>
-            <div className="paper-stat-val num">{genericQty > 0 ? fmtShort(genericQty) : '—'}</div>
-          </div>
-          <div className="paper-stat">
-            <div className="paper-stat-label">관리품목</div>
-            <div className="paper-stat-val num">{managedQty > 0 ? fmtShort(managedQty) : '—'}</div>
-          </div>
+          {qtyStats.map(([label, val, isCount]) => (
+            <div className="paper-stat" key={label}>
+              <div className="paper-stat-label">{label}</div>
+              <div className="paper-stat-val num">{isCount ? `${formatNumber(val)}개` : qtyTxt(val)}</div>
+            </div>
+          ))}
         </div>
 
-        {/* ── 출고금액 요약 (총 / 전용 / 범용) ── */}
+        {/* ── 출고금액 요약 ── */}
         {opts.amountSummary && (
           <div className="paper-stat-row">
-            <div className="paper-stat">
-              <div className="paper-stat-label">총 출고금액</div>
-              <div className="paper-stat-val num">{totalAmt !== 0 ? `${fmtKRW(totalAmt)}원` : '—'}</div>
-            </div>
-            <div className="paper-stat">
-              <div className="paper-stat-label">전용상품 출고금액</div>
-              <div className="paper-stat-val num">{exclusiveAmt !== 0 ? `${fmtKRW(exclusiveAmt)}원` : '—'}</div>
-            </div>
-            <div className="paper-stat">
-              <div className="paper-stat-label">범용상품 출고금액</div>
-              <div className="paper-stat-val num">{genericAmt !== 0 ? `${fmtKRW(genericAmt)}원` : '—'}</div>
-            </div>
-            <div className="paper-stat">
-              <div className="paper-stat-label">관리품목 출고금액</div>
-              <div className="paper-stat-val num">{managedAmt !== 0 ? `${fmtKRW(managedAmt)}원` : '—'}</div>
-            </div>
+            {amtStats.map(([label, val]) => (
+              <div className="paper-stat" key={label}>
+                <div className="paper-stat-label">{label}</div>
+                <div className="paper-stat-val num">{amtTxt(val)}</div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -288,50 +313,50 @@ export default function Page() {
           <div className="paper-section">
             <div className="paper-section-title">월별 출고량 추이 (최근 {seriesLabels.length || 7}개월)</div>
             <div style={{padding:'8px 0'}}>
-              {series.length > 0 ? (
-                <AreaChart series={series} labels={seriesLabels} colors={['#1D766F','#7C3AED']} height={180} formatY={fmtShort}/>
+              {chartSeries.length > 0 ? (
+                <AreaChart series={chartSeries} labels={seriesLabels} colors={chartColors} height={180} formatY={fmtShort}/>
               ) : (
                 <div style={{height:180,display:'grid',placeItems:'center',color:'var(--text-4)',fontSize:13}}>데이터 없음</div>
               )}
             </div>
             <div className="paper-legend">
-              <div className="paper-legend-item"><span className="dot" style={{background:'#1D766F'}}/><span>전용상품</span><span className="num muted">{fmtShort(exclusiveQty)}</span></div>
-              <div className="paper-legend-item"><span className="dot" style={{background:'#7C3AED'}}/><span>범용상품</span><span className="num muted">{fmtShort(genericQty)}</span></div>
+              {showExclusive && <div className="paper-legend-item"><span className="dot" style={{background:'#1D766F'}}/><span>전용상품</span><span className="num muted">{qtyTxt(exclusiveQty)}</span></div>}
+              {showGeneric   && <div className="paper-legend-item"><span className="dot" style={{background:'#7C3AED'}}/><span>범용상품</span><span className="num muted">{qtyTxt(genericQty)}</span></div>}
             </div>
           </div>
         )}
 
         {/* ── 전용상품 목록 ── */}
-        {opts.fullList && exclusive.length > 0 && (
+        {showExclusive && opts.fullList && exclusive.length > 0 && (
           <div className="paper-section paper-cat-section">
             <div className="paper-section-title" style={{display:'flex',alignItems:'center',gap:8}}>
               <span style={{width:10,height:10,borderRadius:'50%',background:'#1D766F',display:'inline-block',flexShrink:0}}/>
               전용상품 출고 현황
-              <span className="num muted" style={{fontSize:11,marginLeft:'auto'}}>합계 {fmtShort(exclusiveQty)}</span>
+              <span className="num muted" style={{fontSize:11,marginLeft:'auto'}}>합계 {qtyTxt(exclusiveQty)}</span>
             </div>
             <ItemTable items={exclusive} maxQty={exclusive[0]?.totalQuantity || 1}/>
           </div>
         )}
 
         {/* ── 관리품목 목록 (범용 중 관리품목 체크) — 별도 표시 ── */}
-        {showManagedSeparately && (
+        {showGeneric && showManagedSeparately && (
           <div className="paper-section paper-cat-section">
             <div className="paper-section-title" style={{display:'flex',alignItems:'center',gap:8}}>
               <span style={{width:10,height:10,borderRadius:'50%',background:'#D97706',display:'inline-block',flexShrink:0}}/>
               관리품목 출고 현황 <span className="muted" style={{fontWeight:400,fontSize:11}}>(범용상품 중 관리 대상)</span>
-              <span className="num muted" style={{fontSize:11,marginLeft:'auto'}}>합계 {fmtShort(managedQty)} · {fmtKRW(managedAmt)}원</span>
+              <span className="num muted" style={{fontSize:11,marginLeft:'auto'}}>합계 {qtyTxt(managedQty)} · {fmtKRW(managedAmt)}원</span>
             </div>
             <ItemTable items={managed} maxQty={managed[0]?.totalQuantity || 1}/>
           </div>
         )}
 
         {/* ── 범용상품 목록 ── */}
-        {opts.fullList && genericListItems.length > 0 && (
+        {showGeneric && opts.fullList && genericListItems.length > 0 && (
           <div className="paper-section paper-cat-section">
             <div className="paper-section-title" style={{display:'flex',alignItems:'center',gap:8}}>
               <span style={{width:10,height:10,borderRadius:'50%',background:'#7C3AED',display:'inline-block',flexShrink:0}}/>
               범용상품 출고 현황 {showManagedSeparately && <span className="muted" style={{fontWeight:400,fontSize:11}}>(관리품목 제외)</span>}
-              <span className="num muted" style={{fontSize:11,marginLeft:'auto'}}>합계 {fmtShort(genericListQty)}</span>
+              <span className="num muted" style={{fontSize:11,marginLeft:'auto'}}>합계 {qtyTxt(genericListQty)}</span>
             </div>
             <ItemTable items={genericListItems} maxQty={genericListItems[0]?.totalQuantity || 1}/>
           </div>
