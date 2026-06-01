@@ -151,13 +151,13 @@ export default function Page() {
   const qtyStats = scope === 'exclusive'
     ? [['전용상품 출고량', exclusiveQty], ['전용상품 수', exclusive.length, true]]
     : scope === 'generic'
-      ? [['범용상품 출고량', genericQty], ['관리품목 출고량', managedQty], ['범용상품 수', genericAll.length, true]]
+      ? [['범용상품 출고량', genericQty], ['범용상품 총 상품수', genericAll.length, true], ['관리품목수', managed.length, true]]
       : [['총 출고량', totalQty], ['전용상품', exclusiveQty], ['범용상품', genericQty], ['관리품목', managedQty]];
 
   const amtStats = scope === 'exclusive'
     ? [['전용상품 출고금액', exclusiveAmt]]
     : scope === 'generic'
-      ? [['범용상품 출고금액', genericAmt], ['관리품목 출고금액', managedAmt]]
+      ? [['범용상품 출고금액', genericAmt]]
       : [['총 출고금액', totalAmt], ['전용상품 출고금액', exclusiveAmt], ['범용상품 출고금액', genericAmt], ['관리품목 출고금액', managedAmt]];
 
   // 차트 series를 범위에 맞게 필터 (색상도 매칭)
