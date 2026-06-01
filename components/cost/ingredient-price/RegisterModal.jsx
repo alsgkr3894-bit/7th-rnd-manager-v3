@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { formatNumber } from '@/lib/format';
-import { SEED_MAIN_CATEGORIES } from '@/lib/ingredient';
+import { SEED_MAIN_CATEGORIES, sortMainCategories } from '@/lib/ingredient';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { getAllSuppliers } from '@/lib/cost/suppliers/store';
 import { recordPriceChange } from '@/lib/cost/price-history';
@@ -29,14 +29,15 @@ function FormField({ label, hint, children }) {
   );
 }
 
-export function RegisterModal({ row, onSave, onClose }) {
+export function RegisterModal({ row, onSave, onClose, extraCategories = [] }) {
   const existing = row.meta;
+  const catOptions = sortMainCategories([...new Set([...SEED_MAIN_CATEGORIES, ...extraCategories].filter(Boolean))]);
   const [ingredientName, setIngredientName] = useState(existing?.ingredientName || row.productName || '');
   const [category,       setCategory]       = useState(existing?.category || '');
   const [baseQuantity,   setBaseQuantity]   = useState(existing?.baseQuantity != null ? String(existing.baseQuantity) : '');
   const [baseUnitType,   setBaseUnitType]   = useState(existing?.baseUnitType || 'g');
   const [customCat,      setCustomCat]      = useState(
-    !!existing?.category && !SEED_MAIN_CATEGORIES.includes(existing?.category)
+    !!existing?.category && !catOptions.includes(existing?.category)
   );
   const [supplierId,    setSupplierId]    = useState(existing?.supplierId   ?? '');
   const [supplierName,  setSupplierName]  = useState(existing?.supplierName ?? '');
@@ -137,7 +138,7 @@ export function RegisterModal({ row, onSave, onClose }) {
                 <select className="form-input" value={category}
                   onChange={e => setCategory(e.target.value)} style={{flex:1}}>
                   <option value="">미분류</option>
-                  {SEED_MAIN_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  {catOptions.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               )}
               <button type="button" className="btn" style={{whiteSpace:'nowrap', flexShrink:0}}

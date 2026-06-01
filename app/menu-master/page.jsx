@@ -9,11 +9,13 @@ import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { initDB } from '@/lib/db';
 import {
   getAllMenuMaster, upsertMenuMaster,
-  resetAllMenuMaster, pushMasterToPrices, importPricesToMaster,
+  resetAllMenuMaster, pushMasterToPrices,
 } from '@/lib/menu-master';
 import { parseCategoryFromCode } from '@/lib/cost/menu-price/code';
-import { getDefaultPrice } from '@/lib/cost/menu-price';
+import { getDefaultPrice, resetAllMenuPrices } from '@/lib/cost/menu-price';
 import { seedMenuMaster } from '@/lib/menu-master/seed';
+import { MenuPriceUploadCard } from '@/components/cost/menu-price/MenuPriceUploadCard';
+import { BulkPriceModal } from '@/components/cost/menu-price/BulkPriceModal';
 
 const CATEGORIES = ['피자', '1인피자', '세트박스', '사이드', '소스', '음료', '엣지'];
 const PIZZA_SUBS = ['프리미엄 스페셜', '프리미엄', '오리지널', '하프앤하프'];
@@ -74,37 +76,69 @@ function CategoryTags({ menuCode }) {
   );
 }
 
-/* ── 행 인라인 편집 모달 ── */
-function EditModal({ row, onSave, onClose }) {
+/* ── 메뉴 추가/수정 모달 (마스터가 메뉴코드·분류·규격·판매가의 기준) ── */
+function EditModal({ row, isNew, onSave, onClose }) {
   const [form, setForm] = useState({
-    menuName: row.menuName || '',
-    price:    row.price != null ? String(row.price) : '',
-    status:   row.status || 'active',
-    note:     row.note || '',
+    menuCode: row?.menuCode || '',
+    menuName: row?.menuName || '',
+    category: row?.category || (CATEGORIES[0]),
+    size:     row?.size || '',
+    price:    row?.price != null ? String(row.price) : '',
+    status:   row?.status || 'active',
+    note:     row?.note || '',
   });
-  const defaultPrice = getDefaultPrice(row.menuCode);
+  function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
+  const defaultPrice = getDefaultPrice(form.menuCode);
+  const canSave = form.menuCode.trim() && form.menuName.trim();
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', display: 'grid', placeItems: 'center', zIndex: 300 }}>
-      <div className="card" style={{ width: 'min(420px,95vw)', padding: '24px 28px' }}>
+      <div className="card" style={{ width: 'min(440px,95vw)', padding: '24px 28px', maxHeight: '92vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div style={{ fontWeight: 700, fontSize: 15 }}>메뉴 수정</div>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>{isNew ? '메뉴 추가' : '메뉴 수정'}</div>
           <button className="btn ghost" style={{ padding: '4px 8px' }} onClick={onClose}>
             <Icon.close style={{ width: 16, height: 16 }} />
           </button>
         </div>
 
-        {/* 코드 표시 */}
-        <div style={{ padding: '8px 12px', background: 'var(--surface-2)', borderRadius: 8, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent-text)' }}>{row.menuCode}</span>
-          <CategoryTags menuCode={row.menuCode} />
-        </div>
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* 메뉴코드 — 신규는 입력, 기존은 읽기전용 */}
+          <div>
+            <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>메뉴코드</label>
+            {isNew ? (
+              <>
+                <input className="input" value={form.menuCode}
+                  onChange={e => set('menuCode', e.target.value.toUpperCase())}
+                  placeholder="예) P-OR-005-L" style={{ fontFamily: 'monospace' }} />
+                <div style={{ marginTop: 6 }}><CategoryTags menuCode={form.menuCode} /></div>
+              </>
+            ) : (
+              <div style={{ padding: '8px 12px', background: 'var(--surface-2)', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent-text)' }}>{row.menuCode}</span>
+                <CategoryTags menuCode={row.menuCode} />
+              </div>
+            )}
+          </div>
+
           <div>
             <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>메뉴명</label>
-            <input className="input" value={form.menuName} onChange={e => setForm(f => ({ ...f, menuName: e.target.value }))} />
+            <input className="input" value={form.menuName} onChange={e => set('menuName', e.target.value)} placeholder="예) 슈퍼콤비네이션" />
           </div>
+
+          {/* 분류 + 규격 */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>카테고리</label>
+              <select className="input" value={form.category} onChange={e => set('category', e.target.value)}>
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>규격(사이즈)</label>
+              <input className="input" value={form.size} onChange={e => set('size', e.target.value)} placeholder="L / R / 단일" />
+            </div>
+          </div>
+
           <div>
             <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>
               판매가 (부가세 포함)
@@ -112,33 +146,43 @@ function EditModal({ row, onSave, onClose }) {
             </label>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <input className="input" type="number" value={form.price}
-                onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                onChange={e => set('price', e.target.value)}
                 placeholder={defaultPrice ? String(defaultPrice) : '직접 입력'} style={{ flex: 1 }} />
               <span style={{ fontSize: 13, color: 'var(--text-3)' }}>원</span>
               {defaultPrice && !form.price && (
-                <button className="btn sm" onClick={() => setForm(f => ({ ...f, price: String(defaultPrice) }))}>
-                  기본가 적용
-                </button>
+                <button className="btn sm" onClick={() => set('price', String(defaultPrice))}>기본가 적용</button>
               )}
             </div>
           </div>
+
           <div>
             <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>상태</label>
-            <select className="input" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+            <select className="input" value={form.status} onChange={e => set('status', e.target.value)}>
               <option value="active">활성</option>
               <option value="discontinued">단종</option>
               <option value="test">테스트</option>
             </select>
           </div>
+
           <div>
             <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>비고</label>
-            <input className="input" value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="선택 입력" />
+            <input className="input" value={form.note} onChange={e => set('note', e.target.value)} placeholder="선택 입력" />
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
           <button className="btn" onClick={onClose}>취소</button>
-          <button className="btn primary" onClick={() => onSave({ ...row, ...form, price: form.price !== '' ? Number(form.price) : null })}>
+          <button className="btn primary" disabled={!canSave}
+            onClick={() => onSave({
+              ...(row || {}),
+              menuCode: form.menuCode.trim(),
+              menuName: form.menuName.trim(),
+              category: form.category,
+              size:     form.size.trim() || null,
+              price:    form.price !== '' ? Number(form.price) : null,
+              status:   form.status,
+              note:     form.note,
+            })}>
             저장
           </button>
         </div>
@@ -153,15 +197,16 @@ export default function Page() {
   const [loading,    setLoading]   = useState(true);
   const [seeding,    setSeeding]   = useState(false);
   const [resetting,  setResetting] = useState(false);
-  const [pushing,    setPushing]   = useState(false);
-  const [importing,  setImporting] = useState(false);
+  const [bulking,    setBulking]   = useState(false);
   const [catFilter,  setCatFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('active');
   const [subFilter,  setSubFilter] = useState('all');
   const [search,     setSearch]    = useState('');
   const [editRow,    setEditRow]   = useState(null);
+  const [addOpen,    setAddOpen]   = useState(false);
+  const [bulkModal,  setBulkModal] = useState(false);
   const [confirmReset,  setConfirmReset]  = useState(false);
-  const [confirmImport, setConfirmImport] = useState(false);
+  const [confirmBulkPizza, setConfirmBulkPizza] = useState(false);
 
   const load = useCallback(async () => {
     await initDB();
@@ -171,10 +216,16 @@ export default function Page() {
   useEffect(() => { load().catch(console.error).finally(() => setLoading(false)); }, [load]);
   useVisibilityRefresh(load);
 
+  // 마스터 변경 후 소비처 미러(cost_selling_prices) 자동 동기화
+  async function syncMirror() {
+    try { await pushMasterToPrices(); } catch (err) { console.warn('판매가 미러 동기화 실패:', err); }
+  }
+
   async function handleResetAndSeed() {
     setResetting(true);
     try {
       await resetAllMenuMaster();
+      await resetAllMenuPrices();   // 미러도 함께 비움
       setRows([]);
       showToast('초기화 완료', 'ok');
     } catch (err) { showToast('실패: ' + err.message, 'err'); }
@@ -185,29 +236,32 @@ export default function Page() {
     setSeeding(true);
     try {
       const { inserted } = await seedMenuMaster();
+      await syncMirror();
       setRows(await getAllMenuMaster());
       showToast(`${inserted}개 등록 완료`, 'ok');
     } catch (err) { showToast('등록 실패: ' + err.message, 'err'); }
     finally { setSeeding(false); }
   }
 
-  async function handlePush() {
-    setPushing(true);
+  // 피자 기본가를 마스터의 피자 항목에 일괄 적용 (가격 없는 항목만)
+  async function handleBulkPizza() {
+    setBulking(true);
     try {
-      const { pushed, removed } = await pushMasterToPrices();
-      showToast(`판매가 반영 완료 · ${pushed}개 업데이트${removed ? ` · ${removed}개 단종 제거` : ''}`, 'ok');
-    } catch (err) { showToast('실패: ' + err.message, 'err'); }
-    finally { setPushing(false); }
-  }
-
-  async function handleImport() {
-    setImporting(true);
-    try {
-      const { imported } = await importPricesToMaster();
+      const masters = await getAllMenuMaster();
+      let applied = 0;
+      for (const m of masters) {
+        if (m.status === 'discontinued' || !m.menuCode) continue;
+        const dp = getDefaultPrice(m.menuCode);
+        if (dp && (m.price == null || m.price === '')) {
+          await upsertMenuMaster({ ...m, price: dp });
+          applied++;
+        }
+      }
+      await syncMirror();
       setRows(await getAllMenuMaster());
-      showToast(`${imported}개 가져오기 완료`, 'ok');
-    } catch (err) { showToast('실패: ' + err.message, 'err'); }
-    finally { setImporting(false); }
+      showToast(`${applied}개 피자 기본가 적용`, 'ok');
+    } catch (err) { showToast('일괄 적용 실패: ' + err.message, 'err'); }
+    finally { setBulking(false); }
   }
 
   function handleExportCsv() {
@@ -229,8 +283,10 @@ export default function Page() {
   async function handleSaveRow(data) {
     try {
       await upsertMenuMaster(data);
+      await syncMirror();
       setRows(await getAllMenuMaster());
       setEditRow(null);
+      setAddOpen(false);
       showToast('저장 완료', 'ok');
     } catch (err) { showToast('저장 실패: ' + err.message, 'err'); }
   }
@@ -273,21 +329,22 @@ export default function Page() {
             <button className="btn" onClick={handleExportCsv} disabled={rows.length === 0} style={{ color: 'var(--text-2)' }}>
               <Icon.download style={{ width: 14, height: 14 }} /> CSV 내보내기
             </button>
-            <button className="btn" onClick={() => setConfirmImport(true)} disabled={importing} style={{ color: 'var(--text-3)' }}>
-              <Icon.download style={{ width: 14, height: 14 }} />
-              {importing ? '가져오는 중…' : '판매가에서 가져오기'}
+            <button className="btn" onClick={() => setBulkModal(true)} disabled={rows.length === 0}>
+              <Icon.calc style={{ width: 14, height: 14 }} /> 코드별 일괄 가격
             </button>
-            <button className="btn" onClick={handlePush} disabled={pushing}>
-              <Icon.upload style={{ width: 14, height: 14 }} />
-              {pushing ? '반영 중…' : '판매가로 내보내기'}
+            <button className="btn" onClick={() => setConfirmBulkPizza(true)} disabled={bulking || rows.length === 0}>
+              <Icon.pizza style={{ width: 14, height: 14 }} /> {bulking ? '적용 중…' : '피자 기본가 일괄'}
             </button>
             <button className="btn" onClick={handleSeed} disabled={seeding}>
-              <Icon.plus style={{ width: 14, height: 14 }} />
+              <Icon.download style={{ width: 14, height: 14 }} />
               {seeding ? '등록 중…' : '기본 코드 등록'}
             </button>
             <button className="btn" onClick={() => setConfirmReset(true)} disabled={resetting} style={{ color: 'var(--negative)' }}>
               <Icon.trash style={{ width: 14, height: 14 }} />
               {resetting ? '처리 중…' : '초기화'}
+            </button>
+            <button className="btn primary" onClick={() => setAddOpen(true)}>
+              <Icon.plus style={{ width: 14, height: 14 }} /> 메뉴 추가
             </button>
           </>
         }
@@ -316,6 +373,9 @@ export default function Page() {
           <div className="stat-value" style={{ color: 'var(--accent)' }}>{test.length}<span className="unit">개</span></div>
         </div>
       </div>
+
+      {/* 일괄 업로드 — 업로드 시 마스터로 자동 반영 */}
+      <MenuPriceUploadCard onReplaced={load} />
 
       {loading && (
         <div className="card table-card">
@@ -475,7 +535,15 @@ export default function Page() {
       )}
 
       {editRow && (
-        <EditModal row={editRow} onSave={handleSaveRow} onClose={() => setEditRow(null)} />
+        <EditModal row={editRow} isNew={false} onSave={handleSaveRow} onClose={() => setEditRow(null)} />
+      )}
+
+      {addOpen && (
+        <EditModal row={null} isNew onSave={handleSaveRow} onClose={() => setAddOpen(false)} />
+      )}
+
+      {bulkModal && (
+        <BulkPriceModal onClose={() => setBulkModal(false)} onDone={load} />
       )}
 
       {confirmReset && (
@@ -488,12 +556,12 @@ export default function Page() {
         />
       )}
 
-      {confirmImport && (
+      {confirmBulkPizza && (
         <ConfirmDialog
           open
-          message="기존 메뉴 판매가 데이터를 마스터로 가져옵니다 (일회성). 계속할까요?"
-          onConfirm={() => { setConfirmImport(false); handleImport(); }}
-          onCancel={() => setConfirmImport(false)}
+          message={`피자 항목 중 판매가가 비어 있는 메뉴에 기본가를 일괄 적용합니다. 계속할까요?`}
+          onConfirm={() => { setConfirmBulkPizza(false); handleBulkPizza(); }}
+          onCancel={() => setConfirmBulkPizza(false)}
         />
       )}
     </main>

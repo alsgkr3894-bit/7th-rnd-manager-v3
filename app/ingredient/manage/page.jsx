@@ -5,6 +5,7 @@ import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { Icon } from '@/components/icons';
 import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { initDB } from '@/lib/db';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import {
@@ -15,6 +16,7 @@ import {
   sortMainCategories, sortHashTags,
   seedMasterIngredients, INGREDIENT_MASTER_SEED,
   resetAllIngredients,
+  removeCategoryFromAll, removeTagFromAll,
   buildMetaOnlyRow, computeIngredientIssues,
 } from '@/lib/ingredient';
 import { KEYS } from '@/lib/note/keys';
@@ -43,6 +45,7 @@ export default function Page() {
   const [seeding,      setSeeding]      = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting,    setResetting]    = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(null); // { type:'cat'|'tag', value }
 
   const load = useCallback(async () => {
     await initDB();
@@ -117,6 +120,21 @@ export default function Page() {
     } finally {
       setResetting(false);
     }
+  }
+
+  async function handleRemoveCategory(cat) {
+    try {
+      const { updated } = await removeCategoryFromAll(cat);
+      showToast(`'${cat}' 분류 삭제 — ${updated}개 항목 갱신`, 'ok');
+      await load();
+    } catch (e) { showToast('삭제 실패: ' + e.message, 'err'); }
+  }
+  async function handleRemoveTag(tag) {
+    try {
+      const { updated } = await removeTagFromAll(tag);
+      showToast(`'#${tag}' 태그 삭제 — ${updated}개 항목 갱신`, 'ok');
+      await load();
+    } catch (e) { showToast('삭제 실패: ' + e.message, 'err'); }
   }
 
   const handleSave = useCallback(async (formData) => {
@@ -278,6 +296,9 @@ export default function Page() {
             badge={issueRows.length > 0 ? issueRows.length : null}>
             이슈
           </TabButton>
+          <TabButton active={view === 'settings'} onClick={() => setView('settings')}>
+            분류·태그
+          </TabButton>
         </div>
       )}
 
@@ -403,11 +424,78 @@ export default function Page() {
         <IssuesView issueRows={issueRows} onEdit={setFormTarget}/>
       )}
 
+      {/* ── 분류·태그 관리 뷰 ── */}
+      {rows.length > 0 && view === 'settings' && (
+        <div className="card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>분류 ({mainCats.length})</div>
+            {mainCats.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'var(--text-3)' }}>등록된 분류가 없습니다</div>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {mainCats.map(c => {
+                  const cnt = rows.filter(r => !r.discontinued && r.category === c).length;
+                  return (
+                    <span key={c} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 6px 4px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, fontWeight: 600, ...getCategoryStyle(c) }}>
+                      {c} <span style={{ fontSize: 11, opacity: .7 }}>{cnt}</span>
+                      <button onClick={() => setConfirmRemove({ type: 'cat', value: c })} title="분류 삭제"
+                        style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'inherit', opacity: .6, display: 'inline-flex', padding: 0 }}>
+                        <Icon.close style={{ width: 12, height: 12 }} />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>#태그 ({hashTags.length})</div>
+            {hashTags.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'var(--text-3)' }}>등록된 태그가 없습니다</div>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {hashTags.map(t => {
+                  const cnt = rows.filter(r => !r.discontinued && (r.tags || []).includes(t)).length;
+                  return (
+                    <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 6px 4px 10px', borderRadius: 8, background: 'var(--surface-2)', color: 'var(--text-2)', fontSize: 13, fontWeight: 500 }}>
+                      #{t} <span style={{ fontSize: 11, opacity: .7 }}>{cnt}</span>
+                      <button onClick={() => setConfirmRemove({ type: 'tag', value: t })} title="태그 삭제"
+                        style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'inherit', opacity: .6, display: 'inline-flex', padding: 0 }}>
+                        <Icon.close style={{ width: 12, height: 12 }} />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text-4)' }}>※ 삭제 시 해당 분류/태그가 모든 식자재에서 제거됩니다(식자재 자체는 유지).</div>
+        </div>
+      )}
+
+      {confirmRemove && (
+        <ConfirmDialog
+          open
+          danger
+          message={confirmRemove.type === 'cat'
+            ? `'${confirmRemove.value}' 분류를 모든 식자재에서 제거할까요?`
+            : `'#${confirmRemove.value}' 태그를 모든 식자재에서 제거할까요?`}
+          confirmLabel="삭제"
+          onConfirm={() => {
+            const { type, value } = confirmRemove;
+            setConfirmRemove(null);
+            if (type === 'cat') handleRemoveCategory(value); else handleRemoveTag(value);
+          }}
+          onCancel={() => setConfirmRemove(null)}
+        />
+      )}
+
       {formTarget !== null && (
         <IngredientForm
           initial={formTarget === 'new' ? null : formTarget}
           onSave={handleSave}
           onClose={() => setFormTarget(null)}
+          extraCategories={mainCats}
         />
       )}
     </main>

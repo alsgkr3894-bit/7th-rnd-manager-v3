@@ -300,6 +300,7 @@ function RecipeContent() {
       <PageHeader
         breadcrumb={['원가계산', '원가 계산']}
         title="메뉴 원가 계산"
+        masterSource
         sub="사이즈별 식자재 사용량을 입력하면 원가와 원가율이 자동 계산됩니다."
         actions={
           <button className="btn" onClick={() => { handleExportCsv(filteredRecipes); showToast(`CSV ${filteredRecipes.length}개 내보내기 완료`, 'ok'); }} disabled={filteredRecipes.length === 0}>

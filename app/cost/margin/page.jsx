@@ -9,6 +9,7 @@ import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllRecipes, buildUnitPriceMap, calcCostBySizes } from '@/lib/recipe';
 import { MENU_PRICE_CATEGORIES, getAllMenuPrices } from '@/lib/cost/menu-price';
+import { getMenuMasterMap, upsertMenuMaster } from '@/lib/menu-master';
 import {
   loadPlatforms, savePlatforms,
   applyDiscount, calcNetRevenue, calcPlatformMargin,
@@ -29,7 +30,6 @@ import { showToast } from '@/components/Toast';
 import { SortableTh } from '@/components/ui/SortableTh';
 import { MarginRow } from '@/components/cost/margin/MarginRow';
 import { exportMarginExcel } from '@/lib/cost/margin/export';
-import { COST_RATE_THRESHOLD as COST_RATE, MARGIN_RATE_THRESHOLD as MARGIN_RATE } from '@/lib/cost/margin/constants';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { KEYS } from '@/lib/note/keys';
 
@@ -55,18 +55,23 @@ export default function Page() {
   const [discType,     setDiscType]     = useState('pct');   // 'pct' | 'fixed'
   const [discVal,      setDiscVal]      = useState('');
   const [viewMode,     setViewMode]     = useState('cost');  // 'cost' | 'margin'
-  const [sortKey,      setSortKey]      = useState('');
+  const [sortKey,      setSortKey]      = useState('code');  // 기본: 메뉴코드 정렬
   const [sortDir,      setSortDir]      = useState('asc');
   const [search,       setSearch]       = useState('');
+  // 원가율 경고/비상 임계값 (사용자 조절, 마운트 후 localStorage 복원)
+  const [warnPct,      setWarnPct]      = useState(30);
+  const [critPct,      setCritPct]      = useState(40);
+  const [showHidden,   setShowHidden]   = useState(false);   // 숨김 행 임시 표시
 
   const load = useCallback(async () => {
     await initDB();
-    const [files, meta, recipes, allMenuPrices, pizzaMap, personalMap, sideMap, setMap, edges, allGroups] = await Promise.all([
+    const [files, meta, recipes, allMenuPrices, pizzaMap, personalMap, sideMap, setMap, edges, allGroups, masterByCode] = await Promise.all([
       getPriceFiles(), getAllIngredients(), getAllRecipes(),
       getAllMenuPrices(),
       getPizzaRecipeMap(), getPersonalRecipeMap(), getSideRecipeMap(), getSetRecipeMap(),
       getAllEdges(),
       getAllRecipeGroups(),
+      getMenuMasterMap(),
     ]);
 
     // lib/recipe rows (old system)
@@ -158,8 +163,10 @@ export default function Page() {
           if (cost > 0) costMap[size] = cost;
         }
       }
+      const repCode = entries.find(e => e.menuCode)?.menuCode || '';
       detailRows.push({
         id:           `detail||${menuName}||${category}`,
+        menuCode:     repCode,
         menuName,
         menuCategory: category,
         sizes,
@@ -300,7 +307,13 @@ export default function Page() {
       }
     }
 
-    setRows([...enrichedDetailRows, ...filteredRecipeRows, ...derivedRows]);
+    // 메뉴 마스터의 hidden 플래그 부여 (menuCode 기준) — 숨김 행은 표·통계에서 제외
+    const allRows = [...enrichedDetailRows, ...filteredRecipeRows, ...derivedRows];
+    for (const r of allRows) {
+      const m = r.menuCode ? masterByCode.get(r.menuCode) : null;
+      r.hidden = m?.hidden === true;
+    }
+    setRows(allRows);
     setPlatforms(loadPlatforms());
   }, []);
 
@@ -334,6 +347,24 @@ export default function Page() {
     if (!has) setCatFilter('전체');
   }, [catFilter, rows]);
 
+  // 원가율 경고/비상 임계값 복원·저장
+  const firstThSave = useRef(true);
+  useEffect(() => {
+    try {
+      const w = parseFloat(localStorage.getItem(KEYS.MARGIN_COST_WARN));
+      const c = parseFloat(localStorage.getItem(KEYS.MARGIN_COST_CRIT));
+      if (Number.isFinite(w)) setWarnPct(w);
+      if (Number.isFinite(c)) setCritPct(c);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    if (firstThSave.current) { firstThSave.current = false; return; }
+    try {
+      localStorage.setItem(KEYS.MARGIN_COST_WARN, String(warnPct));
+      localStorage.setItem(KEYS.MARGIN_COST_CRIT, String(critPct));
+    } catch {}
+  }, [warnPct, critPct]);
+
   const activePlatform = useMemo(
     () => platforms.find(p => p.id === activePlatId) ?? platforms[0] ?? { id:'default', name:'기본', fees:[] },
     [platforms, activePlatId]
@@ -358,7 +389,7 @@ export default function Page() {
   }, [rows]);
 
   const filtered = useMemo(() => {
-    let result = rows;
+    let result = showHidden ? rows : rows.filter(r => !r.hidden);
     if (catFilter !== '전체') {
       result = result.filter(r => {
         const cat = r.menuCategory || '기타';
@@ -375,7 +406,7 @@ export default function Page() {
       );
     }
     return result;
-  }, [rows, catFilter, search]);
+  }, [rows, catFilter, search, showHidden]);
 
   const sizeLabels = useMemo(() => {
     const set = new Set();
@@ -403,13 +434,13 @@ export default function Page() {
         if (m == null) continue;
         sum += m;
         count++;
-        // cost view: lowCostCount = 원가율 ≤ 30%, highCostCount = 원가율 > 40%
-        if (m <= COST_RATE.GOOD)    lowCostCount++;
-        if (m >  COST_RATE.WARNING) highCostCount++;
-        // margin view: goodMarginCount = 마진율 ≥ 70%, badMarginCount = 마진율 < 60%
+        // cost view: 좋음 = 원가율 < 경고%, 비상 = 원가율 ≥ 비상%
+        if (m <  warnPct) lowCostCount++;
+        if (m >= critPct) highCostCount++;
+        // margin view: 좋음 = 마진율 ≥ (100-경고), 위험 = 마진율 < (100-비상)
         const margin = 100 - m;
-        if (margin >= MARGIN_RATE.GOOD)    goodMarginCount++;
-        if (margin <  MARGIN_RATE.WARNING) badMarginCount++;
+        if (margin >= 100 - warnPct) goodMarginCount++;
+        if (margin <  100 - critPct) badMarginCount++;
       }
     }
     if (!count) return null;
@@ -420,7 +451,7 @@ export default function Page() {
       goodMarginCount,
       badMarginCount,
     };
-  }, [filtered, activePlatform, discount]);
+  }, [filtered, activePlatform, discount, warnPct, critPct]);
 
   function handleSort(key) {
     if (sortKey === key) {
@@ -435,6 +466,7 @@ export default function Page() {
     if (!sortKey) return filtered;
 
     function getVal(r) {
+      if (sortKey === 'code') return (r.menuCode || '~~~').toLowerCase(); // 코드 없는 행은 뒤로
       if (sortKey === 'name') return (r.menuName || '').toLowerCase();
       if (sortKey === 'cat')  return (r.menuCategory || '기타').toLowerCase();
       const ul  = sortKey.lastIndexOf('_');
@@ -491,6 +523,20 @@ export default function Page() {
     setShowSettings(false);
   }
 
+  // 행 숨김 토글 — 메뉴 마스터의 hidden 플래그로 저장(표·통계에서 제외)
+  const handleToggleHide = useCallback(async (r) => {
+    if (!r.menuCode) return;
+    try {
+      const map = await getMenuMasterMap();
+      const existing = map.get(r.menuCode);
+      if (!existing) { showToast('마스터에 없는 메뉴라 숨길 수 없어요', 'error'); return; }
+      await upsertMenuMaster({ ...existing, hidden: !r.hidden });
+      await load();
+    } catch (e) { showToast('숨김 처리 실패: ' + e.message, 'error'); }
+  }, [load]);
+
+  const hiddenCount = useMemo(() => rows.filter(r => r.hidden).length, [rows]);
+
   if (dbError) return (
     <main className="main page-enter">
       <PageHeader breadcrumb={['원가계산', '원가마진표']} title="메뉴 원가마진표" sub="로드 실패"/>
@@ -503,6 +549,7 @@ export default function Page() {
       <PageHeader
         breadcrumb={['원가계산', '원가마진표']}
         title="메뉴 원가마진표"
+        masterSource
         sub="레시피 원가 기준 메뉴별 원가율 · 플랫폼·할인 시뮬레이션 지원"
         actions={
           <>
@@ -542,6 +589,28 @@ export default function Page() {
         search={search}
         onSearch={setSearch}
       />
+
+      {/* 원가율 경고/비상 임계값 + 숨김 보기 */}
+      <div style={{ display:'flex', gap:14, alignItems:'center', flexWrap:'wrap', margin:'2px 0 10px', fontSize:12, color:'var(--text-3)' }}>
+        <span style={{ fontWeight:700 }}>원가율 경고선</span>
+        <label style={{ display:'flex', alignItems:'center', gap:4 }}>
+          경고 ≥
+          <input type="number" min={0} max={100} value={warnPct}
+            onChange={e => setWarnPct(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+            style={{ width:56, padding:'3px 6px', borderRadius:6, border:'1px solid var(--border)', background:'var(--surface)', color:'var(--text-1)' }}/>%
+        </label>
+        <label style={{ display:'flex', alignItems:'center', gap:4 }}>
+          비상 ≥
+          <input type="number" min={0} max={100} value={critPct}
+            onChange={e => setCritPct(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+            style={{ width:56, padding:'3px 6px', borderRadius:6, border:'1px solid var(--border)', background:'var(--surface)', color:'var(--text-1)' }}/>%
+        </label>
+        {hiddenCount > 0 && (
+          <button className="btn sm" style={{ marginLeft:'auto' }} onClick={() => setShowHidden(v => !v)}>
+            {showHidden ? '숨김 행 감추기' : `숨김 ${hiddenCount}개 보기`}
+          </button>
+        )}
+      </div>
 
       {/* Table */}
       {loading ? (
@@ -601,6 +670,9 @@ export default function Page() {
                     discount={discount}
                     hasAdjustment={hasAdjustment}
                     viewMode={viewMode}
+                    warnPct={warnPct}
+                    critPct={critPct}
+                    onToggleHide={handleToggleHide}
                   />
                 ))}
               </tbody>

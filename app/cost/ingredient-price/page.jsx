@@ -436,6 +436,7 @@ export default function Page() {
       {regTarget && (
         <RegisterModal
           row={regTarget}
+          extraCategories={[...new Set(rows.map(r => r.category).filter(Boolean))]}
           onSave={async (data) => {
             await upsertIngredientMeta({ productCode: regTarget.productCode, ...data });
             showToast('마스터 등록 완료');

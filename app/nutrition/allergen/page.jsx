@@ -67,6 +67,7 @@ export default function Page() {
       <PageHeader
         breadcrumb={['영양성분', '알레르기 정보']}
         title="알레르기 정보"
+        masterSource
         sub="식재료 마스터에서 가져와 알레르기 항목을 체크하고, 출력용 표기명을 별도 설정하세요"
         actions={
           <button className="btn primary" onClick={() => setModal('add')}>

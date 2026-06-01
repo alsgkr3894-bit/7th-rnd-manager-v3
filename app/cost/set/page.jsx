@@ -95,6 +95,7 @@ export default function Page() {
       <PageHeader
         breadcrumb={['원가계산', '세트박스']}
         title="세트박스 원가"
+        masterSource
         sub={sub}
       />
 

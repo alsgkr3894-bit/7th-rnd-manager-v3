@@ -189,6 +189,7 @@ export default function Page() {
       <PageHeader
         breadcrumb={['원가계산', '종합전메뉴원가']}
         title="종합전메뉴원가"
+        masterSource
         sub="모든 메뉴(피자/1인피자/사이드/세트박스)의 원가를 한 화면에서 비교"
         actions={
           hasAnyData && (

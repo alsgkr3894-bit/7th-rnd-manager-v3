@@ -5,7 +5,7 @@ import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
-import { SEED_MAIN_CATEGORIES, SEED_HASH_TAGS } from '@/lib/ingredient';
+import { SEED_MAIN_CATEGORIES, SEED_HASH_TAGS, sortMainCategories } from '@/lib/ingredient';
 import { SCOPE } from '@/lib/ingredient/constants';
 
 const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병'];
@@ -23,12 +23,14 @@ const EMPTY = {
   priceOverride: '', note: '',
 };
 
-export function IngredientForm({ initial, onSave, onClose }) {
+export function IngredientForm({ initial, onSave, onClose, extraCategories = [] }) {
   const isJetteLinked = !!initial?.jetteLinked;
+  // 시드 분류 + 실제 사용 중인 분류(직접입력 포함) 합본 → 직접입력 분류도 다음부터 드롭다운에 노출
+  const catOptions = sortMainCategories([...new Set([...SEED_MAIN_CATEGORIES, ...extraCategories].filter(Boolean))]);
   const [form, setForm] = useState(initial ? toForm(initial) : EMPTY);
   const [tagInput, setTagInput] = useState('');
   const [customCat, setCustomCat] = useState(
-    !!initial?.category && !SEED_MAIN_CATEGORIES.includes(initial.category)
+    !!initial?.category && !catOptions.includes(initial.category)
   );
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
@@ -149,7 +151,7 @@ export function IngredientForm({ initial, onSave, onClose }) {
                 <select className="form-input" value={form.category}
                   onChange={e => set('category', e.target.value)} style={{flex:1}}>
                   <option value="">미분류</option>
-                  {SEED_MAIN_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  {catOptions.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               )}
               <button type="button" className="btn" style={{whiteSpace:'nowrap', flexShrink:0}}

@@ -96,6 +96,7 @@ export default function Page() {
       <PageHeader
         breadcrumb={['원가계산', '1인피자']}
         title="1인피자 원가"
+        masterSource
         sub={sub}
       />
 

@@ -129,6 +129,7 @@ export default function Page() {
       <PageHeader
         breadcrumb={['영양성분', '원산지 정보']}
         title="원산지 정보"
+        masterSource
         sub="식재료 마스터에서 가져와 원산지를 등록하고, 출력용 표기명을 별도 설정하세요"
         actions={
           <>

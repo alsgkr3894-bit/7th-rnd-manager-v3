@@ -14,7 +14,7 @@ import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 
 const COST_LINKS = [
   { label: '식자재 원가표', href: '/cost/ingredient-price' },
-  { label: '메뉴 원가표',   href: '/cost/menu-price' },
+  { label: '메뉴 마스터',   href: '/menu-master' },
   { label: '피자 세부 원가표', href: '/cost/pizza-detail' },
 ];
 

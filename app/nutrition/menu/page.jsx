@@ -65,6 +65,7 @@ export default function Page() {
       <PageHeader
         breadcrumb={['영양성분', '영양성분 정보 및 계산']}
         title="영양성분 정보 및 계산"
+        masterSource
         sub="베이스 영양성분 입력 → 엣지 설정 → 파생 메뉴 → 계산 결과 확인"
       />
 
