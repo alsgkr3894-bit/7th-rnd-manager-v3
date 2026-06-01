@@ -193,21 +193,38 @@ export default function Page() {
       }
     }
 
-    // recipe rows: menuName||category → row (원가 보완용, 중복 시 원가 있는 것 우선)
-    const recipeByKey = new Map();
+    // 카테고리 호환: 정확 일치 또는 부모/자식(슬래시 경계)
+    // 넓은 '피자'(레시피) ↔ 세부 '피자/프리미엄 스페셜'(디테일/가격표) 매칭.
+    // 원가레시피는 카테고리를 넓게 적고 메뉴마스터는 코드기반 세부 카테고리라
+    // 정확 일치만 보면 같은 메뉴가 카테고리별로 2줄 중복됨.
+    const catCompatible = (a, b) =>
+      a === b || (!!a && !!b && (a.startsWith(b + '/') || b.startsWith(a + '/')));
+
+    // recipe rows: menuName → rows[] (원가 보완·중복 제거용)
+    const recipesByName = new Map();
     for (const r of recipeRows) {
-      const key = `${r.menuName}||${r.menuCategory || ''}`;
-      const existing = recipeByKey.get(key);
-      const hasCost = Object.values(r.costMap).some(v => v > 0);
-      if (!existing || hasCost) recipeByKey.set(key, r);
+      const arr = recipesByName.get(r.menuName);
+      if (arr) arr.push(r); else recipesByName.set(r.menuName, [r]);
     }
+    // 디테일 행에 매칭되는 레시피(호환 카테고리 중 원가 있는 것 우선)
+    const findRecipeForDetail = (name, cat) => {
+      const arr = recipesByName.get(name);
+      if (!arr) return null;
+      let fallback = null;
+      for (const r of arr) {
+        if (!catCompatible(r.menuCategory || '', cat || '')) continue;
+        if (Object.values(r.costMap).some(v => v > 0)) return r;
+        if (!fallback) fallback = r;
+      }
+      return fallback;
+    };
 
     // detail-store 행에 원가레시피 정보 보완:
     //   - 디테일 스토어 값이 항상 우선
     //   - 레시피는 "빈 판매가 · 디테일에 없는 사이즈 · 빈 원가"만 채움(fallback)
     // (메뉴 가격표에 판매가가 없어도 원가레시피의 판매가가 표시되도록)
     const mergeRecipeIntoDetail = (d) => {
-      const rr = recipeByKey.get(`${d.menuName}||${d.menuCategory}`);
+      const rr = findRecipeForDetail(d.menuName, d.menuCategory);
       if (!rr) return d;
 
       // 사이즈 합집합 (디테일 우선, 레시피에만 있는 사이즈는 뒤에 추가)
@@ -234,12 +251,20 @@ export default function Page() {
 
     const enrichedDetailRows = detailRows.map(mergeRecipeIntoDetail);
 
-    // Merge: detail store rows take precedence; recipe rows fill in the rest
-    const detailKeys = new Set(enrichedDetailRows.map(r => `${r.menuName}||${r.menuCategory}`));
+    // Merge: detail store rows take precedence.
+    // detailKeySet: 정확 키 — 파생 엣지행이 이미 디테일 메뉴로 존재하는지 확인용
+    const detailKeySet = new Set(enrichedDetailRows.map(r => `${r.menuName}||${r.menuCategory}`));
+    // detailCatsByName: 메뉴명 → 디테일 카테고리들 — 호환 카테고리 레시피행 dedup용
+    const detailCatsByName = new Map();
+    for (const r of enrichedDetailRows) {
+      const arr = detailCatsByName.get(r.menuName);
+      if (arr) arr.push(r.menuCategory || ''); else detailCatsByName.set(r.menuName, [r.menuCategory || '']);
+    }
+    // 같은 메뉴명에 호환 카테고리 디테일행이 있으면 그 레시피행은 제거(중복 방지)
     const filteredRecipeRows = recipeRows.filter(r => {
-      const cat = r.menuCategory || '';
-      if (!cat) return true;
-      return !detailKeys.has(`${r.menuName}||${cat}`);
+      const cats = detailCatsByName.get(r.menuName);
+      if (!cats) return true;
+      return !cats.some(dc => catCompatible(r.menuCategory || '', dc));
     });
 
     // 엣지 파생 행 생성 — detail-store 피자 + 레시피 피자 모두 처리
@@ -258,7 +283,7 @@ export default function Page() {
           newCostMap[s.label] = (r.costMap?.[s.label] || 0) + (edgeCosts[s.label] || 0);
         }
         const derivedName = `${r.menuName} ${edgeType}`;
-        if (detailKeys.has(`${derivedName}||${r.menuCategory}`)) continue;
+        if (detailKeySet.has(`${derivedName}||${r.menuCategory}`)) continue;
         const edgePrice = edgePriceByType[edgeType] ?? null;
         derivedRows.push({
           id:           `derived||${r.id}||${edgeType}`,

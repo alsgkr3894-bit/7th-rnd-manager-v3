@@ -124,7 +124,9 @@ export default function Page() {
       if (formTarget === 'new') {
         await addIngredient(formData);
         showToast('식자재 추가 완료', 'ok');
-      } else if (formTarget.isManual && formTarget.id && !formTarget.productCode) {
+      } else if (formTarget.isManual && formTarget.id) {
+        // 수동 항목은 productCode(자체코드) 유무와 무관하게 전체 필드 저장(buildRecord)
+        // — 단가·분류 등이 누락 없이 반영되도록 updateIngredient 경로 사용
         await updateIngredient(formTarget.id, formData);
         showToast('저장 완료', 'ok');
       } else {
@@ -367,7 +369,7 @@ export default function Page() {
                   </thead>
                   <tbody>
                     {filtered.map(r => {
-                      const rowKey = r.isManual ? `m-${r.id}` : r.productCode;
+                      const rowKey = r.productCode ?? `m-${r.id}`;
                       const isPending = r.isManual
                         ? deletePending?.isManual && deletePending?.id === r.id
                         : deletePending?.productCode === r.productCode;

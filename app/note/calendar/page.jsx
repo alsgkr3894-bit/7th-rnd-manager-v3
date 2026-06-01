@@ -7,6 +7,7 @@ import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { initDB } from '@/lib/db';
 import { getAllNotes } from '@/lib/note';
+import { getAllSamples, sampleNamesText } from '@/lib/sample';
 import { STATUSES, STATUS_COLORS, STATUS_BORDER } from '@/lib/note/constants';
 import {
   getAllSchedules, addSchedule, updateSchedule, deleteSchedule,
@@ -56,6 +57,7 @@ export default function Page() {
   const [notes,       setNotes]       = useState([]);
   const [schedules,   setSchedules]   = useState([]);
   const [workLogs,    setWorkLogs]    = useState([]);
+  const [samples,     setSamples]     = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [viewYear,    setViewYear]    = useState(() => new Date().getFullYear());
   const [viewMonth,   setViewMonth]   = useState(() => new Date().getMonth()+1);
@@ -73,10 +75,11 @@ export default function Page() {
   const load = useCallback(async () => {
     await initDB();
     await pruneOldWorkLogs(WORK_LOG_RETENTION_DAYS);
-    const [ns, ss, wl] = await Promise.all([getAllNotes(), getAllSchedules(), getAllWorkLogs()]);
+    const [ns, ss, wl, sm] = await Promise.all([getAllNotes(), getAllSchedules(), getAllWorkLogs(), getAllSamples()]);
     setNotes(ns);
     setSchedules(ss);
     setWorkLogs(wl);
+    setSamples(sm);
     setLoading(false);
   }, []);
 
@@ -141,6 +144,18 @@ export default function Page() {
     }
     return map;
   }, [workLogs]);
+
+  // 샘플 수령일(testDate) 기준 날짜 맵
+  const samplesByDate = useMemo(() => {
+    const map = new Map();
+    for (const s of samples) {
+      const k = s.testDate?.slice(0, 10);
+      if (!k) continue;
+      if (!map.has(k)) map.set(k, []);
+      map.get(k).push(s);
+    }
+    return map;
+  }, [samples]);
 
   // 반복 일정 확장: 이달 그리드 범위에서 각 일정의 발생일을 계산해 날짜 맵으로 구성
   const schedulesByDate = useMemo(() => {
@@ -212,6 +227,7 @@ export default function Page() {
   const selectedNotes    = useMemo(() => selectedDay ? (notesByDate.get(selectedDay)     || []) : [], [selectedDay, notesByDate]);
   const selectedSchedules = useMemo(() => selectedDay ? (schedulesByDate.get(selectedDay) || []) : [], [selectedDay, schedulesByDate]);
   const selectedWorkLogs = useMemo(() => selectedDay ? (workLogsByDate.get(selectedDay)  || []) : [], [selectedDay, workLogsByDate]);
+  const selectedSamples  = useMemo(() => selectedDay ? (samplesByDate.get(selectedDay)   || []) : [], [selectedDay, samplesByDate]);
 
   /* 일정 저장 */
   async function handleSaveSchedule(data) {
@@ -316,7 +332,7 @@ export default function Page() {
 
         {/* 뷰 모드 */}
         <div style={{ display:'flex', border:'1px solid var(--border)', borderRadius:8, overflow:'hidden' }}>
-          {[['all','전체'],['notes','노트'],['schedules','일정']].map(([k, l]) => (
+          {[['all','전체'],['notes','노트'],['schedules','일정'],['samples','샘플']].map(([k, l]) => (
             <button key={k} onClick={() => setViewMode(k)}
               style={{
                 padding:'5px 13px', fontSize:11, fontWeight:700, border:'none', cursor:'pointer',
@@ -353,17 +369,23 @@ export default function Page() {
               );
               const { dayNum, key, notes: cNotes, schedules: cSched, dow } = cell;
               const cLogs    = workLogsByDate.get(key) || [];
-              const visNotes = viewMode==='schedules' ? [] : cNotes;
-              const visSched = viewMode==='notes'     ? [] : cSched;
+              const cSamples = samplesByDate.get(key) || [];
+              const showNotes   = viewMode === 'all' || viewMode === 'notes';
+              const showSched   = viewMode === 'all' || viewMode === 'schedules';
+              const showSamples = viewMode === 'all' || viewMode === 'samples';
+              const visNotes   = showNotes   ? cNotes   : [];
+              const visSched   = showSched   ? cSched   : [];
+              const visSamples = showSamples ? cSamples : [];
               const isSelected = selectedDay === key;
               const hasToday   = isToday(key, today);
               const past       = isPast(key, today);
-              const total = visNotes.length + visSched.length;
+              const total = visNotes.length + visSched.length + visSamples.length;
               const MAX = 3;
-              // _kind 명시로 일정/노트 구분을 안전하게
+              // _kind 명시로 일정/노트/샘플 구분을 안전하게
               const shown = [
                 ...visSched.map(s => ({ ...s, _kind: 'schedule' })),
                 ...visNotes.map(n => ({ ...n, _kind: 'note' })),
+                ...visSamples.map(s => ({ ...s, _kind: 'sample' })),
               ].slice(0, MAX);
               const overflow = total - MAX;
 
@@ -426,6 +448,22 @@ export default function Page() {
                             {item.time ? `${item.time} ` : ''}{item.title}
                           </button>
                         );
+                      } else if (item._kind === 'sample') {
+                        const label = sampleNamesText(item) || item.title;
+                        return (
+                          <button key={`sm${item.id}`}
+                            onClick={e => { e.stopPropagation(); router.push(`/note/sample/${item.id}`); }}
+                            title={`[샘플] ${label}`}
+                            style={{
+                              fontSize:10, fontWeight:600, padding:'2px 5px', borderRadius:4,
+                              background:'var(--positive-soft)', color:'var(--positive)',
+                              border:'1px solid transparent', borderLeftWidth:2, borderLeftColor:'var(--positive)',
+                              overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                              cursor:'pointer', textAlign:'left', width:'100%',
+                            }}>
+                            {label}
+                          </button>
+                        );
                       } else {
                         const sc = STATUS_COLORS[item.status] || STATUS_COLORS['아이디어'];
                         const sb = STATUS_BORDER[item.status] || 'var(--border)';
@@ -485,6 +523,7 @@ export default function Page() {
               notes={selectedNotes}
               schedules={selectedSchedules}
               workLogs={selectedWorkLogs}
+              samples={selectedSamples}
               viewMode={viewMode}
               router={router}
               onClose={closePanel}
@@ -517,6 +556,11 @@ export default function Page() {
             </span>
           );
         })}
+        <span style={{ fontSize:11, color:'var(--text-3)', fontWeight:600, marginLeft:8 }}>── 샘플</span>
+        <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:11, color:'var(--text-2)' }}>
+          <span style={{ width:7, height:7, borderRadius:2, background:'var(--positive-soft)', border:'1.5px solid var(--positive)', flexShrink:0 }}/>
+          샘플 수령
+        </span>
       </div>
 
       {/* 일정 모달 */}

@@ -11,8 +11,9 @@ import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import {
   getAllIngredients, getIngredientMetaMap, upsertIngredientMeta,
   bulkImportIngredients, resetAllIngredients,
-  sortMainCategories,
+  sortMainCategories, deriveScope,
 } from '@/lib/ingredient';
+import { SCOPE } from '@/lib/ingredient/constants';
 import { MASTER_IMPORT_SEED } from '@/lib/ingredient/master-import-seed';
 import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
 import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
@@ -117,6 +118,7 @@ export default function Page() {
           ...pr,
           meta: m,
           isLinked:     true,
+          scope:        deriveScope(pr, true),
           masterName:   m.ingredientName || pr?.productName || '',
           category:     m.category || '',
           baseQuantity: baseQty,
@@ -146,6 +148,7 @@ export default function Page() {
           productName:    m.ingredientName || '',
           meta:           m,
           isLinked:       false,
+          scope:          SCOPE.EXCLUSIVE,
           isComposite:    Array.isArray(m.compositeOf) && m.compositeOf.length > 0,
           masterName:     m.ingredientName || '',
           category:       m.category || '',

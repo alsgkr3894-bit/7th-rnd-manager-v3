@@ -1,8 +1,9 @@
 'use client';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { Toggle } from '@/components/ui/Toggle';
+import { ComboBox } from '@/components/ui/ComboBox';
 import {
   getUserRules, addUserRule, deleteUserRule, updateUserRule,
   getClassificationNameOptions,
@@ -145,20 +146,17 @@ export function UserRulesSection() {
   );
 }
 
-function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추가', nameOpts = { groupNames: [], detailNames: [] } }) {
-  const uid = useId();
-  const groupListId  = `rule-group-${uid}`;
-  const detailListId = `rule-detail-${uid}`;
+function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추가', nameOpts = { groupNames: [], detailNames: [], byCategory: {} } }) {
+  // 선택한 대분류(category)에 속한 중분류·상세만 자동완성 후보로
+  const catOpts = nameOpts.byCategory?.[form.category] || { groupNames: [], detailNames: [] };
   return (
     <div style={{display:'grid', gridTemplateColumns:'1.5fr 140px 1fr 1fr auto auto', gap:8}}>
       <input value={form.rawMenuName} onChange={e => setForm({ ...form, rawMenuName: e.target.value })} placeholder="패턴 (정규화 후)" style={inputStyle}/>
       <select value={form.category}   onChange={e => setForm({ ...form, category:    e.target.value })} style={inputStyle}>
         {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
       </select>
-      <input value={form.groupName}   onChange={e => setForm({ ...form, groupName:   e.target.value })} placeholder="중분류"          style={inputStyle} list={groupListId}/>
-      <input value={form.detailName}  onChange={e => setForm({ ...form, detailName:  e.target.value })} placeholder="상세 (선택)"     style={inputStyle} list={detailListId}/>
-      <datalist id={groupListId}>{nameOpts.groupNames.map(g => <option key={g} value={g}/>)}</datalist>
-      <datalist id={detailListId}>{nameOpts.detailNames.map(d => <option key={d} value={d}/>)}</datalist>
+      <ComboBox value={form.groupName}  onChange={v => setForm({ ...form, groupName: v })}  options={catOpts.groupNames}  placeholder="중분류"      inputStyle={inputStyle}/>
+      <ComboBox value={form.detailName} onChange={v => setForm({ ...form, detailName: v })} options={catOpts.detailNames} placeholder="상세 (선택)" inputStyle={inputStyle}/>
       <button className="btn sm" onClick={onCancel} disabled={busy}>취소</button>
       <button className="btn sm primary" onClick={onSubmit}
         disabled={busy || !form.rawMenuName.trim() || !form.category || !form.groupName.trim()}>

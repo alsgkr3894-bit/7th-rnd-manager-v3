@@ -29,9 +29,9 @@ export default function Page() {
         const d = JSON.parse(raw);
         setForm(f => ({
           ...f,
-          menuName: d.menuName || f.menuName,
-          category: d.category || f.category,
-          tags:     d.tags     || f.tags,
+          sampleNames: d.menuName ? [d.menuName] : f.sampleNames,
+          category:    d.category || f.category,
+          tags:        d.tags     || f.tags,
         }));
       }
     } catch {}
@@ -46,8 +46,9 @@ export default function Page() {
 
   async function handleSave() {
     if (saving) return; // Ctrl+S 연타 시 중복 저장 방지
-    if (!form.title.trim() || !form.menuName.trim()) {
-      showToast('제목과 메뉴명은 필수입니다', 'warn');
+    const names = (form.sampleNames || []).map(s => (s || '').trim()).filter(Boolean);
+    if (!form.title.trim() || !names.length) {
+      showToast('제목과 샘플명은 필수입니다', 'warn');
       return;
     }
     setSaving(true);

@@ -332,7 +332,7 @@ export default function Page() {
                 </thead>
                 <tbody>
                   {filtered.map(r => (
-                    <IngredientRow key={r.isManual || r.isSeeded ? `m-${r.id}` : r.productCode} r={r}/>
+                    <IngredientRow key={r.productCode ?? `m-${r.id}`} r={r}/>
                   ))}
                 </tbody>
               </table>

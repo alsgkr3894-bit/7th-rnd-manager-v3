@@ -5,13 +5,14 @@ import { showToast } from '@/components/Toast';
 import { SAMPLE_CATEGORIES, RATING_LABELS, RATING_COLOR, getAllSamples } from '@/lib/sample';
 import { initDB } from '@/lib/db';
 import { TagInput } from '@/components/ui/TagInput';
+import { ComboBox } from '@/components/ui/ComboBox';
 import { SegGroup, Field } from '@/components/note/FormFields';
 
 export const SAMPLE_INIT = {
-  title: '', menuName: '', category: SAMPLE_CATEGORIES[0],
-  testDate: '', tester: '', batchNo: '',
-  description: '', result: '', rating: 0,
-  improvements: '', nextAction: '', tags: '',
+  title: '', sampleNames: [''], category: '',
+  testDate: '', company: '', tester: '',
+  rating: 0, price: '', priceTaxType: 'incl',
+  description: '', result: '', improvements: '', nextAction: '', tags: '',
   photos: [],
 };
 
@@ -42,13 +43,37 @@ async function resizePhoto(file) {
 export function SampleFormBody({ form, setForm }) {
   const fileInputRef = useRef(null);
   const [allTags, setAllTags] = useState([]);
+  const [catOptions, setCatOptions] = useState(SAMPLE_CATEGORIES);
+  const [companyOptions, setCompanyOptions] = useState([]);
   function upd(k, v) { setForm(f => ({ ...f, [k]: v })); }
+
+  // 샘플명(복수) 핸들러
+  function setSampleName(i, v) {
+    setForm(f => { const a = [...(f.sampleNames || [''])]; a[i] = v; return { ...f, sampleNames: a }; });
+  }
+  function addSampleName() {
+    setForm(f => ({ ...f, sampleNames: [...(f.sampleNames || ['']), ''] }));
+  }
+  function removeSampleName(i) {
+    setForm(f => {
+      const a = (f.sampleNames || ['']).filter((_, idx) => idx !== i);
+      return { ...f, sampleNames: a.length ? a : [''] };
+    });
+  }
 
   useEffect(() => {
     initDB().then(() => getAllSamples()).then(samples => {
-      const set = new Set();
-      samples.forEach(s => (s.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => set.add(t)));
-      setAllTags([...set]);
+      const tags = new Set();
+      const cats = new Set(SAMPLE_CATEGORIES);
+      const comps = new Set();
+      samples.forEach(s => {
+        (s.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => tags.add(t));
+        if (s.category) cats.add(s.category);
+        if (s.company)  comps.add(s.company);
+      });
+      setAllTags([...tags]);
+      setCatOptions([...cats]);
+      setCompanyOptions([...comps]);
     }).catch(() => {});
   }, []);
 
@@ -98,38 +123,68 @@ export function SampleFormBody({ form, setForm }) {
               placeholder="예) 불고기 피자 3차 샘플 — 소스 비율 조정"/>
           </Field>
 
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-            <Field label="메뉴명" required>
-              <input className="form-input" value={form.menuName}
-                onChange={e => upd('menuName', e.target.value)}
-                placeholder="예) 불고기피자"/>
-            </Field>
-            <Field label="테스트 날짜">
-              <input className="form-input" type="date" value={form.testDate}
-                onChange={e => upd('testDate', e.target.value)}/>
-            </Field>
-          </div>
-
-          <Field label="카테고리">
-            <SegGroup options={SAMPLE_CATEGORIES} value={form.category} onChange={v => upd('category', v)}/>
+          {/* 샘플명 (복수) */}
+          <Field label="샘플명" required hint="여러 개 추가 가능">
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              {(form.sampleNames || ['']).map((name, i) => (
+                <div key={i} style={{ display:'flex', gap:6, alignItems:'center' }}>
+                  <input className="form-input" value={name}
+                    onChange={e => setSampleName(i, e.target.value)}
+                    placeholder="예) 불고기피자"/>
+                  {(form.sampleNames || ['']).length > 1 && (
+                    <button type="button" className="btn" style={{ padding:'6px 8px', flexShrink:0 }}
+                      onClick={() => removeSampleName(i)} aria-label={`샘플명 ${i + 1} 삭제`}>
+                      <Icon.close style={{ width:12, height:12 }}/>
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button type="button" className="btn sm" style={{ alignSelf:'flex-start' }} onClick={addSampleName}>
+                <Icon.plus style={{ width:12, height:12 }}/> 샘플명 추가
+              </button>
+            </div>
           </Field>
 
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <Field label="샘플수령날짜">
+              <input className="form-input" type="date" value={form.testDate}
+                onChange={e => upd('testDate', e.target.value)}/>
+            </Field>
+            <Field label="카테고리" hint="입력·선택 모두 가능">
+              <ComboBox value={form.category} onChange={v => upd('category', v)}
+                options={catOptions} placeholder="예) 피자" inputClassName="form-input"/>
+            </Field>
+          </div>
+
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <Field label="업체명">
+              <ComboBox value={form.company} onChange={v => upd('company', v)}
+                options={companyOptions} placeholder="예) 대림수산" inputClassName="form-input"/>
+            </Field>
             <Field label="담당자">
               <input className="form-input" value={form.tester}
                 onChange={e => upd('tester', e.target.value)}
                 placeholder="예) 김민지"/>
             </Field>
-            <Field label="배치 / 회차">
-              <input className="form-input" value={form.batchNo}
-                onChange={e => upd('batchNo', e.target.value)}
-                placeholder="예) 3차, B-03"/>
-            </Field>
           </div>
 
-          <Field label="평점">
-            <StarPicker value={form.rating} onChange={v => upd('rating', v)}/>
-          </Field>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <Field label="평점">
+              <StarPicker value={form.rating} onChange={v => upd('rating', v)}/>
+            </Field>
+            <Field label="단가">
+              <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                  <input className="form-input" type="number" min="0" value={form.price}
+                    onChange={e => upd('price', e.target.value)} placeholder="예) 12000"/>
+                  <span style={{ fontSize:13, color:'var(--text-3)', flexShrink:0 }}>원</span>
+                </div>
+                <SegGroup options={['부가세포함', '별도']}
+                  value={form.priceTaxType === 'excl' ? '별도' : '부가세포함'}
+                  onChange={v => upd('priceTaxType', v === '별도' ? 'excl' : 'incl')}/>
+              </div>
+            </Field>
+          </div>
         </div>
 
         {/* 상세 기록 */}

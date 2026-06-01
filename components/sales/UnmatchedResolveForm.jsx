@@ -1,7 +1,8 @@
 'use client';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { suggestRulesByMenuName, getClassificationNameOptions, CATEGORY_ORDER as CATEGORY_OPTIONS } from '@/lib/sales';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { ComboBox } from '@/components/ui/ComboBox';
 
 /**
  * UnmatchedResolveForm — 미매칭 issue 해결 인라인 폼
@@ -18,11 +19,10 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
   const [ruleGroup, setRuleGroup] = useState('');
   const [ruleDetail, setRuleDetail] = useState('');
   const [confirmExclude, setConfirmExclude] = useState(false);
-  const [nameOpts, setNameOpts] = useState({ groupNames: [], detailNames: [] });
+  const [nameOpts, setNameOpts] = useState({ groupNames: [], detailNames: [], byCategory: {} });
 
-  const uid = useId();
-  const groupListId  = `unm-group-${uid}`;
-  const detailListId = `unm-detail-${uid}`;
+  // 선택한 대분류(ruleCategory)에 속한 중분류·상세만 자동완성 후보로
+  const catOpts = nameOpts.byCategory?.[ruleCategory] || { groupNames: [], detailNames: [] };
 
   // 자동 추천 (정규화된 메뉴명 기반)
   const suggestions = useMemo(
@@ -131,22 +131,20 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
           <select value={ruleCategory} onChange={e => setRuleCategory(e.target.value)} style={inputStyle}>
             {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <input
+          <ComboBox
             value={ruleGroup}
-            onChange={e => setRuleGroup(e.target.value)}
+            onChange={setRuleGroup}
+            options={catOpts.groupNames}
             placeholder="중분류명 (groupName)"
-            style={inputStyle}
-            list={groupListId}
+            inputStyle={inputStyle}
           />
-          <input
+          <ComboBox
             value={ruleDetail}
-            onChange={e => setRuleDetail(e.target.value)}
+            onChange={setRuleDetail}
+            options={catOpts.detailNames}
             placeholder="상세 (비우면 중분류와 동일)"
-            style={inputStyle}
-            list={detailListId}
+            inputStyle={inputStyle}
           />
-          <datalist id={groupListId}>{nameOpts.groupNames.map(g => <option key={g} value={g}/>)}</datalist>
-          <datalist id={detailListId}>{nameOpts.detailNames.map(d => <option key={d} value={d}/>)}</datalist>
         </div>
       )}
 

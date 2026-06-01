@@ -1,6 +1,7 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { Stars } from './_Stars';
+import { sampleNamesText } from '@/lib/sample';
 import { useModalShell } from '@/hooks/useModalShell';
 
 export function CompareModal({ samples, onClose }) {
@@ -9,8 +10,10 @@ export function CompareModal({ samples, onClose }) {
   const maxRating = Math.max(...samples.map(s => s.rating || 0));
 
   const fields = [
+    { label: '샘플명',   get: (s) => sampleNamesText(s) },
     { label: '카테고리', key: 'category' },
-    { label: '메뉴명',   key: 'menuName'  },
+    { label: '업체명',   key: 'company'  },
+    { label: '단가',     get: (s) => s.price ? `${Number(s.price).toLocaleString('ko-KR')}원${s.priceTaxType === 'excl' ? '(별도)' : ''}` : '' },
     { label: '별점',     key: 'rating',   render: (v) => v > 0 ? <Stars value={v}/> : '-' },
     { label: '테스트 내용', key: 'description' },
     { label: '평가 / 결과', key: 'result'      },
@@ -76,8 +79,8 @@ export function CompareModal({ samples, onClose }) {
             ))}
           </div>
 
-          {fields.map(({ label, key, render }) => (
-            <div key={key} style={{
+          {fields.map(({ label, key, render, get }) => (
+            <div key={label} style={{
               display:'grid', gridTemplateColumns:`160px repeat(${samples.length}, 1fr)`,
               gap:8, marginBottom:8, alignItems:'start',
             }}>
@@ -86,7 +89,7 @@ export function CompareModal({ samples, onClose }) {
                 paddingTop:4, paddingRight:8,
               }}>{label}</div>
               {samples.map(s => {
-                const val = s[key];
+                const val = get ? get(s) : s[key];
                 const isHighlight = key === 'rating' && (val || 0) === maxRating && maxRating > 0;
                 return (
                   <div key={s.id}

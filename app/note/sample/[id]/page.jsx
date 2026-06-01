@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { getSampleById, updateSample } from '@/lib/sample';
+import { getSampleById, updateSample, sampleNamesOf } from '@/lib/sample';
 import { SampleFormBody, SAMPLE_INIT } from '../_SampleFormBody';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 
@@ -23,7 +23,8 @@ export default function Page() {
       .then(() => getSampleById(sampleId))
       .then(rec => {
         if (!rec) { showToast('샘플을 찾을 수 없어요', 'warn'); router.replace('/note/sample'); return; }
-        setForm({ ...SAMPLE_INIT, ...rec });
+        const names = sampleNamesOf(rec);
+        setForm({ ...SAMPLE_INIT, ...rec, sampleNames: names.length ? names : [''] });
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -32,8 +33,9 @@ export default function Page() {
   useKeyboardSave(handleSave);
 
   async function handleSave() {
-    if (!form.title.trim() || !form.menuName.trim()) {
-      showToast('제목과 메뉴명은 필수입니다', 'warn');
+    const names = (form.sampleNames || []).map(s => (s || '').trim()).filter(Boolean);
+    if (!form.title.trim() || !names.length) {
+      showToast('제목과 샘플명은 필수입니다', 'warn');
       return;
     }
     setSaving(true);

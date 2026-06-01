@@ -3,11 +3,12 @@ import { Icon } from '@/components/icons';
 import { STATUS_COLORS, STATUS_BORDER } from '@/lib/note/constants';
 import { SCHEDULE_COLORS } from '@/lib/note/schedules';
 import { WORK_LOG_TYPES } from '@/lib/work-log';
+import { RATING_COLOR, sampleNamesText } from '@/lib/sample';
 
 function isPast(key, today)  { return key < today; }
 function isToday(key, today) { return key === today; }
 
-export function DayPanel({ dateKey, today, notes, schedules, workLogs, viewMode, router, onClose, onAddSchedule, onEditSchedule, onAddNote }) {
+export function DayPanel({ dateKey, today, notes, schedules, workLogs, samples = [], viewMode, router, onClose, onAddSchedule, onEditSchedule, onAddNote }) {
   const [y, m, d] = dateKey.split('-').map(Number);
   const future = !isPast(dateKey, today) && !isToday(dateKey, today);
   const dow = new Date(y, m-1, d).getDay();
@@ -166,6 +167,31 @@ export function DayPanel({ dateKey, today, notes, schedules, workLogs, viewMode,
               + 테스트 노트 작성하기
             </button>
           )}
+        </div>
+      )}
+
+      {/* 샘플 수령 목록 */}
+      {(viewMode === 'all' || viewMode === 'samples') && samples.length > 0 && (
+        <div style={{ marginTop:12 }}>
+          <div style={{ fontSize:11, fontWeight:800, color:'var(--text-3)', textTransform:'uppercase',
+            letterSpacing:'0.04em', marginBottom:6 }}>샘플 수령 · {samples.length}</div>
+          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+            {samples.map(s => (
+              <button key={s.id} onClick={() => router.push(`/note/sample/${s.id}`)}
+                style={{
+                  display:'flex', flexDirection:'column', gap:4, padding:'10px 12px',
+                  borderRadius:10, border:'none', cursor:'pointer', font:'inherit',
+                  background:'var(--surface-2)', textAlign:'left', width:'100%',
+                  borderLeft:`3px solid ${RATING_COLOR?.[s.rating] || 'var(--positive)'}`,
+                }}>
+                <div style={{ fontSize:13, fontWeight:600, color:'var(--text-1)', lineHeight:1.35 }}>
+                  {s.title || sampleNamesText(s) || '(제목 없음)'}
+                </div>
+                {sampleNamesText(s) && <div style={{ fontSize:11, color:'var(--text-3)' }}>{sampleNamesText(s)}</div>}
+                {s.company && <div style={{ fontSize:11, color:'var(--text-4)' }}>{s.company}</div>}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </>

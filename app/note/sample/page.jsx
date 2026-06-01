@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { SampleCardSkeleton } from '@/components/ui/Skeleton';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { getAllSamples, addSample, updateSample, deleteSample, SAMPLE_CATEGORIES, RATING_COLOR } from '@/lib/sample';
+import { getAllSamples, addSample, updateSample, deleteSample, SAMPLE_CATEGORIES, RATING_COLOR, sampleNamesText } from '@/lib/sample';
 import { tryLS, setLS } from '@/lib/note/storage';
 import { formatDate } from '@/lib/format';
 import { KEYS } from '@/lib/note/keys';
@@ -19,6 +19,7 @@ import { Stars } from './_Stars';
 import { CompareModal } from './_CompareModal';
 import { SampleDetailModal } from './_SampleDetailModal';
 import { SampleCard } from '@/components/note/SampleCard';
+import { SampleListRow } from '@/components/note/SampleListRow';
 
 const SORT_OPTIONS = [
   { key: 'createdAt', label: '최신순' },
@@ -102,7 +103,8 @@ function SampleContent() {
       const q = search.toLowerCase();
       list = list.filter(s =>
         (s.title      || '').toLowerCase().includes(q) ||
-        (s.menuName   || '').toLowerCase().includes(q) ||
+        (sampleNamesText(s)).toLowerCase().includes(q) ||
+        (s.company    || '').toLowerCase().includes(q) ||
         (s.description|| '').toLowerCase().includes(q) ||
         (s.tags       || '').toLowerCase().includes(q)
       );
@@ -287,7 +289,7 @@ function SampleContent() {
         <div style={{ width:1, height:20, background:'var(--border)' }}/>
         {/* 뷰 토글 */}
         <div style={{ display:'flex', gap:4 }}>
-          {[{ v:'grid', label:'갤러리' }, { v:'calendar', label:'캘린더' }].map(({ v, label }) => (
+          {[{ v:'grid', label:'갤러리' }, { v:'list', label:'리스트' }, { v:'calendar', label:'캘린더' }].map(({ v, label }) => (
             <button
               key={v}
               className={'chip' + (viewMode === v ? ' active' : '')}
@@ -367,12 +369,23 @@ function SampleContent() {
                   onClick={() => { if (daySamples.length > 0) setDetailRec(daySamples[0]); }}
                 >
                   <span style={{ fontSize:12, fontWeight: isToday ? 800 : 400 }}>{date.getDate()}</span>
-                  <div style={{ display:'flex', flexWrap:'wrap', gap:2, marginTop:4 }}>
-                    {daySamples.slice(0, 4).map(s => (
-                      <span key={s.id} className="cal-dot" style={{ background: RATING_COLOR?.[s.rating] || 'var(--accent)' }}/>
+                  <div style={{ display:'flex', flexDirection:'column', gap:2, marginTop:4 }}>
+                    {daySamples.slice(0, 3).map(s => (
+                      <button key={s.id}
+                        onClick={e => { e.stopPropagation(); setDetailRec(s); }}
+                        title={sampleNamesText(s) || s.title}
+                        style={{
+                          fontSize:10, fontWeight:600, padding:'1px 5px', borderRadius:4,
+                          background:'var(--surface-2)', color:'var(--text-2)',
+                          border:'none', borderLeft:`3px solid ${RATING_COLOR?.[s.rating] || 'var(--accent)'}`,
+                          overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                          textAlign:'left', width:'100%', cursor:'pointer',
+                        }}>
+                        {sampleNamesText(s) || s.title}
+                      </button>
                     ))}
-                    {daySamples.length > 4 && (
-                      <span style={{ fontSize:9, color:'var(--text-3)' }}>+{daySamples.length - 4}</span>
+                    {daySamples.length > 3 && (
+                      <span style={{ fontSize:9, color:'var(--text-3)' }}>+{daySamples.length - 3}</span>
                     )}
                   </div>
                 </div>
@@ -382,8 +395,8 @@ function SampleContent() {
         </div>
       )}
 
-      {/* 빈 상태 (갤러리 뷰일 때만) */}
-      {!loading && viewMode === 'grid' && filtered.length === 0 && (
+      {/* 빈 상태 (갤러리·리스트 뷰) */}
+      {!loading && (viewMode === 'grid' || viewMode === 'list') && filtered.length === 0 && (
         <div style={{ textAlign:'center', padding:'60px 20px', color:'var(--text-3)' }}>
           <div style={{ fontSize:40, marginBottom:12 }}>📷</div>
           <div style={{ fontSize:15, fontWeight:600, marginBottom:8 }}>
@@ -433,6 +446,46 @@ function SampleContent() {
               />
             );
           })}
+        </div>
+      )}
+
+      {/* 리스트 뷰 */}
+      {!loading && viewMode === 'list' && filtered.length > 0 && (
+        <div key={`list|${catFilter}|${ratingMin}|${sortBy}`} className="card table-card tab-content-enter">
+          <div style={{ overflowX:'auto' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th style={{ width:48 }}></th>
+                  <th>제목</th>
+                  <th>샘플명</th>
+                  <th style={{ width:90 }}>카테고리</th>
+                  <th style={{ width:110 }}>수령일</th>
+                  <th style={{ width:120 }}>업체</th>
+                  <th style={{ width:84 }}>담당자</th>
+                  <th style={{ width:84 }}>평점</th>
+                  <th style={{ width:110, textAlign:'right' }}>단가</th>
+                  <th style={{ width:150 }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(rec => (
+                  <SampleListRow
+                    key={rec.id}
+                    sample={rec}
+                    onClick={() => {
+                      if (batchMode) { toggleSelect(rec.id); return; }
+                      if (compareMode) { toggleCompare(rec.id); return; }
+                      setDetailRec(rec);
+                    }}
+                    onEdit={() => router.push(`/note/sample/${rec.id}`)}
+                    onCopy={e => handleCopy(rec, e)}
+                    onDelete={() => handleDelete(rec)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

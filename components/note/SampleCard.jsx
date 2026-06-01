@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import { Icon } from '@/components/icons';
+import { sampleNamesText } from '@/lib/sample';
 
 /**
  * SampleCard — 샘플 갤러리 그리드의 개별 카드 컴포넌트.
@@ -32,6 +33,7 @@ export const SampleCard = React.memo(function SampleCard({
 }) {
   const rec = sample;
   const thumb = rec.photos?.[0]?.data;
+  const names = sampleNamesText(rec);
   const tags = rec.tags ? rec.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
   const isCompareSelected = compareIdx !== -1;
 
@@ -92,7 +94,7 @@ export const SampleCard = React.memo(function SampleCard({
           {thumb ? (
             <img
               src={thumb}
-              alt={`${rec.menuName || rec.title} 샘플 사진`}
+              alt={`${names || rec.title} 샘플 사진`}
               loading="lazy"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
@@ -138,10 +140,11 @@ export const SampleCard = React.memo(function SampleCard({
             </div>
           </div>
 
-          <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
-            <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{rec.menuName}</span>
+          <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            {names && <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{names}</span>}
             {rec.testDate && <span>· {rec.testDate}</span>}
-            {rec.batchNo  && <span>· {rec.batchNo}</span>}
+            {rec.company  && <span>· {rec.company}</span>}
+            {rec.price    && <span>· {rec.price}원{rec.priceTaxType === 'excl' ? '(별도)' : ''}</span>}
           </div>
 
           {rec.description && (
