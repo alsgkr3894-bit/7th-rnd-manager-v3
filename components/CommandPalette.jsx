@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from './icons';
-import { usePaletteItems, STATUS_ICON } from '@/lib/usePaletteItems';
+import { usePaletteItems, STATUS_ICON } from '@/hooks/usePaletteItems';
 import { getJSONLS, setJSONLS } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
 import { useDebounce } from '@/hooks/useDebounce';

@@ -6,7 +6,7 @@ const devError = (...a) => { if (process.env.NODE_ENV !== 'production') console.
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
-import { useCountUp } from '@/lib/useCountUp';
+import { useCountUp } from '@/hooks/useCountUp';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getProfile } from '@/lib/profile';

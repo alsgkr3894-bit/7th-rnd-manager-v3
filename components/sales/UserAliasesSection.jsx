@@ -1,68 +1,31 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { Toggle } from '@/components/ui/Toggle';
 import { getUserAliases, addUserAlias, deleteUserAlias, updateUserAlias } from '@/lib/sales';
 import { inputStyle, SectionHeader, SectionEmpty, reapplyToUploadedData } from './shared/SectionUtils';
+import { useSettingsSection } from '@/hooks/useSettingsSection';
+
+const INITIAL_FORM = { rawName: '', mappedName: '' };
 
 export function UserAliasesSection() {
-  const [list,      setList]      = useState([]);
-  const [adding,    setAdding]    = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [form,      setForm]      = useState({ rawName: '', mappedName: '' });
-  const [busy,      setBusy]      = useState(false);
-
-  useEffect(() => { refresh(); }, []);
-
-  async function refresh() {
-    try { setList(await getUserAliases()); } catch (err) { console.warn(err); }
-  }
-
-  async function handleAdd() {
-    if (!form.rawName.trim() || !form.mappedName.trim()) return;
-    setBusy(true);
-    try {
-      await addUserAlias({ rawName: form.rawName, mappedName: form.mappedName });
-      showToast('별칭이 추가됐어요', 'ok');
-      setForm({ rawName: '', mappedName: '' });
-      setAdding(false);
-      refresh();
-      await reapplyToUploadedData();
-    } catch (err) {
-      showToast(err?.message || '추가 실패', 'err');
-    } finally { setBusy(false); }
-  }
-
-  async function handleUpdate(id) {
-    if (!form.rawName.trim() || !form.mappedName.trim()) return;
-    setBusy(true);
-    try {
-      await updateUserAlias({ id, rawName: form.rawName, mappedName: form.mappedName });
-      showToast('수정됐어요', 'ok');
-      setEditingId(null);
-      refresh();
-      await reapplyToUploadedData();
-    } catch (err) {
-      showToast(err?.message || '수정 실패', 'err');
-    } finally { setBusy(false); }
-  }
-
-  function startEdit(a) {
-    setEditingId(a.id);
-    setForm({ rawName: a.rawName, mappedName: a.mappedName });
-  }
-
-  async function handleDelete(id) {
-    try {
-      await deleteUserAlias(id); showToast('삭제됐어요', 'ok'); refresh();
-      await reapplyToUploadedData();
-    } catch { showToast('삭제 실패', 'err'); }
-  }
+  const {
+    list, adding, setAdding, editingId, setEditingId, form, setForm, busy,
+    handleAdd, handleUpdate, handleDelete, startEdit, resetAdding,
+  } = useSettingsSection({
+    initialForm:     INITIAL_FORM,
+    getAll:          getUserAliases,
+    add:             (f) => addUserAlias({ rawName: f.rawName, mappedName: f.mappedName }),
+    update:          (id, f) => updateUserAlias({ id, rawName: f.rawName, mappedName: f.mappedName }),
+    remove:          deleteUserAlias,
+    getFormFromItem: (a) => ({ rawName: a.rawName, mappedName: a.mappedName }),
+    validateAdd:     (f) => !!(f.rawName.trim() && f.mappedName.trim()),
+    validateUpdate:  (f) => !!(f.rawName.trim() && f.mappedName.trim()),
+    messages:        { add: '별칭이 추가됐어요' },
+  });
 
   async function handleToggle(a) {
     try {
       await updateUserAlias({ id: a.id, enable: a.enable !== false ? false : true });
-      refresh();
       await reapplyToUploadedData();
     } catch { showToast('토글 실패', 'err'); }
   }
@@ -73,7 +36,7 @@ export function UserAliasesSection() {
         title="사용자 추가 별칭"
         count={list.length}
         adding={adding}
-        onAdd={() => { setAdding(v => !v); setEditingId(null); setForm({ rawName: '', mappedName: '' }); }}
+        onAdd={resetAdding}
       />
 
       {adding && (

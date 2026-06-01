@@ -6,7 +6,7 @@ import { fmtKRW, pad } from '@/lib/format';
 import { Icon } from '@/components/icons';
 import { initDB } from '@/lib/db/init';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
-import { useDraftRestore } from '@/lib/report/useDraftRestore';
+import { useDraftRestore } from '@/hooks/useDraftRestore';
 import { getProfile } from '@/lib/profile';
 
 const matchEdge = (cat) => cat === '엣지' || cat === '엣지&도우' || cat === '엣지 & 도우';

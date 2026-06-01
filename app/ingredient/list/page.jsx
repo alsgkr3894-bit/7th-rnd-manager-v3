@@ -11,12 +11,9 @@ import {
   buildMetaOnlyRow,
 } from '@/lib/ingredient';
 import { downloadCsv } from '@/lib/download';
-import { SCOPE, SCOPE_STYLES } from '@/lib/ingredient/constants';
+import { SCOPE, SCOPE_STYLES, DISCONTINUED_FILTER, UNCATEGORIZED_FILTER } from '@/lib/ingredient/constants';
 import { IngredientListSkeleton } from '@/components/ui/Skeleton';
 import { KEYS } from '@/lib/note/keys';
-
-const DISCONTINUED_FILTER  = '__discontinued__';
-const UNCATEGORIZED_FILTER = '__none__';
 
 function exportIngredientCsv(rows) {
   const headers = ['식자재명', '카테고리', '분류', '단위', '단가', '제때연동'];

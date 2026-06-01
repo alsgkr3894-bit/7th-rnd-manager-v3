@@ -13,6 +13,26 @@ import { getAllSideRecipes } from '@/lib/cost/side-detail';
 import { getAllRecipes } from '@/lib/recipe';
 import { KEYS } from '@/lib/note/keys';
 
+function normStr(s) { return (s || '').trim().toLowerCase().replace(/\s+/g, ''); }
+function cleanMenu(name) { return (name || '').replace(/\s+[LR]$/i, '').trim(); }
+
+function makeAddUsage(nameToCode, uByCode, uByName) {
+  return function addUsage(productCode, ingredientName, menuName, topCat) {
+    if (!menuName) return;
+    const menu = cleanMenu(menuName);
+    const n    = normStr(ingredientName);
+    const code = productCode || nameToCode.get(n) || null;
+    if (code) {
+      if (!uByCode.has(code)) uByCode.set(code, new Map());
+      uByCode.get(code).set(menu, topCat);
+    }
+    if (n) {
+      if (!uByName.has(n)) uByName.set(n, new Map());
+      uByName.get(n).set(menu, topCat);
+    }
+  };
+}
+
 const CAT_COLORS = {
   '피자':   { bg: '#EFF6FF', color: '#1D4ED8' },
   '1인피자':{ bg: '#FFF7ED', color: '#C2410C' },
@@ -75,30 +95,14 @@ export default function Page() {
     const uByName = new Map();
     const INCLUDE_TOP = new Set(['피자', '1인피자', '사이드']);
 
-    function norm(s) { return (s || '').trim().toLowerCase().replace(/\s+/g, ''); }
-    function cleanMenu(name) { return (name || '').replace(/\s+[LR]$/i, '').trim(); }
-
     const nameToCode = new Map();
     for (const m of meta) {
       if (!m.productCode) continue;
-      const n = norm(m.ingredientName);
+      const n = normStr(m.ingredientName);
       if (n && !nameToCode.has(n)) nameToCode.set(n, m.productCode);
     }
 
-    function addUsage(productCode, ingredientName, menuName, topCat) {
-      if (!menuName) return;
-      const menu = cleanMenu(menuName);
-      const n    = norm(ingredientName);
-      const code = productCode || nameToCode.get(n) || null;
-      if (code) {
-        if (!uByCode.has(code)) uByCode.set(code, new Map());
-        uByCode.get(code).set(menu, topCat);
-      }
-      if (n) {
-        if (!uByName.has(n)) uByName.set(n, new Map());
-        uByName.get(n).set(menu, topCat);
-      }
-    }
+    const addUsage = makeAddUsage(nameToCode, uByCode, uByName);
 
     for (const r of pizzaRecs)
       for (const c of (r.components || [])) addUsage(c.productCode, c.ingredientName, r.menuName, '피자');
@@ -121,7 +125,6 @@ export default function Page() {
 
   const totalUsedCount = useMemo(() => {
     const { byCode, byName } = usageMap;
-    const normStr = (s) => (s || '').trim().toLowerCase().replace(/\s+/g, '');
     return allMeta.filter(m => {
       const fromCode = (m.productCode ? byCode.get(m.productCode) : null) || new Map();
       const fromName = byName.get(normStr(m.ingredientName)) || new Map();
@@ -131,8 +134,6 @@ export default function Page() {
 
   const usageRows = useMemo(() => {
     const { byCode, byName } = usageMap;
-    const normStr = (s) => (s || '').trim().toLowerCase().replace(/\s+/g, '');
-
     return allMeta.map(m => {
       const code     = m.productCode || '';
       const dispName = m.ingredientName || '';

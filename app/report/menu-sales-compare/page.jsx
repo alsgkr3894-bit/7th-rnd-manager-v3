@@ -6,7 +6,7 @@ import { AreaChart } from '@/components/charts/AreaChart';
 import { initDB } from '@/lib/db/init';
 import { buildPeriodCompare, deriveCompareB } from '@/lib/sales/compare';
 import { safeAll } from '@/lib/stats/_helpers';
-import { useDraftRestore } from '@/lib/report/useDraftRestore';
+import { useDraftRestore } from '@/hooks/useDraftRestore';
 import { getProfile } from '@/lib/profile';
 
 const DRAFT_KEY = 'report_draft_compare';

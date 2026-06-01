@@ -10,7 +10,7 @@ import { getAll } from '@/lib/db';
 import { buildPeriodCompare } from '@/lib/sales/compare';
 import { buildGroupRanking } from '@/lib/sales/ranking';
 import { getUserExcluded, getUserRules } from '@/lib/sales';
-import { useDraftRestore } from '@/lib/report/useDraftRestore';
+import { useDraftRestore } from '@/hooks/useDraftRestore';
 import { getProfile } from '@/lib/profile';
 
 const DRAFT_KEY = 'report_draft_sales';

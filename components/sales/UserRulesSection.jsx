@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { Toggle } from '@/components/ui/Toggle';
 import { ComboBox } from '@/components/ui/ComboBox';
@@ -10,73 +9,37 @@ import {
   CATEGORY_INPUT_OPTIONS as CATEGORY_OPTIONS,
 } from '@/lib/sales';
 import { inputStyle, SectionHeader, SectionEmpty, reapplyToUploadedData } from './shared/SectionUtils';
+import { useSettingsSection } from '@/hooks/useSettingsSection';
+
+const INITIAL_FORM = { rawMenuName: '', category: '피자', groupName: '', detailName: '' };
 
 export function UserRulesSection() {
-  const [list,      setList]      = useState([]);
-  const [adding,    setAdding]    = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [form,      setForm]      = useState({ rawMenuName: '', category: '피자', groupName: '', detailName: '' });
-  const [busy,      setBusy]      = useState(false);
-  const [nameOpts,  setNameOpts]  = useState({ groupNames: [], detailNames: [] });
+  const [nameOpts, setNameOpts] = useState({ groupNames: [], detailNames: [] });
 
-  useEffect(() => { refresh(); loadNameOpts(); }, []);
-
-  async function refresh() {
-    try { setList(await getUserRules()); } catch (err) { console.warn(err); }
-  }
-
-  async function loadNameOpts() {
-    try { setNameOpts(await getClassificationNameOptions()); } catch (err) { console.warn(err); }
-  }
-
-  function resetForm() {
-    setForm({ rawMenuName: '', category: '피자', groupName: '', detailName: '' });
-  }
-
-  async function handleAdd() {
-    if (!form.rawMenuName.trim() || !form.category || !form.groupName.trim()) return;
-    setBusy(true);
-    try {
-      await addUserRule(form);
-      showToast('규칙이 추가됐어요', 'ok');
-      resetForm(); setAdding(false);
-      refresh(); loadNameOpts();
-      await reapplyToUploadedData();
-    } catch (err) {
-      showToast(err?.message || '추가 실패', 'err');
-    } finally { setBusy(false); }
-  }
-
-  async function handleUpdate(id) {
-    if (!form.rawMenuName.trim() || !form.category || !form.groupName.trim()) return;
-    setBusy(true);
-    try {
-      await updateUserRule({ id, ...form });
-      showToast('수정됐어요', 'ok');
-      setEditingId(null);
-      refresh(); loadNameOpts();
-      await reapplyToUploadedData();
-    } catch (err) {
-      showToast(err?.message || '수정 실패', 'err');
-    } finally { setBusy(false); }
-  }
-
-  function startEdit(r) {
-    setEditingId(r.id);
-    setForm({
+  const {
+    list, adding, setAdding, editingId, setEditingId, form, setForm, busy,
+    handleAdd, handleUpdate, handleDelete, startEdit, resetAdding, refresh,
+  } = useSettingsSection({
+    initialForm:     INITIAL_FORM,
+    getAll:          getUserRules,
+    add:             (f) => addUserRule(f),
+    update:          (id, f) => updateUserRule({ id, ...f }),
+    remove:          deleteUserRule,
+    getFormFromItem: (r) => ({
       rawMenuName: r.rawMenuName || r.pattern || '',
       category:    r.category    || '피자',
       groupName:   r.groupName   || '',
       detailName:  r.detailName  || '',
-    });
-  }
+    }),
+    validateAdd:    (f) => !!(f.rawMenuName.trim() && f.category && f.groupName.trim()),
+    validateUpdate: (f) => !!(f.rawMenuName.trim() && f.category && f.groupName.trim()),
+    messages:       { add: '규칙이 추가됐어요' },
+  });
 
-  async function handleDelete(id) {
-    try {
-      await deleteUserRule(id); showToast('삭제됐어요', 'ok');
-      refresh(); loadNameOpts();
-      await reapplyToUploadedData();
-    } catch { showToast('삭제 실패', 'err'); }
+  useEffect(() => { loadNameOpts(); }, []);
+
+  async function loadNameOpts() {
+    try { setNameOpts(await getClassificationNameOptions()); } catch (err) { console.warn(err); }
   }
 
   async function handleToggle(r) {
@@ -93,7 +56,7 @@ export function UserRulesSection() {
         title="사용자 추가 규칙"
         count={list.length}
         adding={adding}
-        onAdd={() => { setAdding(v => !v); setEditingId(null); resetForm(); }}
+        onAdd={resetAdding}
       />
 
       {adding && (

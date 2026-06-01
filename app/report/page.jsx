@@ -13,11 +13,19 @@ const ReportPreviewModal = dynamic(() => import('@/components/report/ReportModal
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { getReports, deleteReport, toggleReportFav, saveReport, pruneOldReports } from '@/lib/report';
 import { KIND_META, KIND_CHIP, KIND_EMOJI } from '@/lib/report/constants';
-import { useCountUp } from '@/lib/useCountUp';
+import { useCountUp } from '@/hooks/useCountUp';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useDBLoad } from '@/hooks/useDBLoad';
 
 const REPORT_KINDS = KIND_META;
+
+function SortIco({ k, sortKey, sortDir }) {
+  return (
+    <span style={{marginLeft:4, opacity: sortKey===k ? 1 : 0.3, fontSize:10}}>
+      {sortKey === k ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
+    </span>
+  );
+}
 
 const ITEMS_PER_PAGE = 10;
 const thisMonth = new Date().toISOString().slice(0, 7);
@@ -73,7 +81,7 @@ export default function Page() {
 
   /* URL 상태 복원 (page, sort, dir) + 새 보고서 하이라이트 */
   useEffect(() => {
-    pruneOldReports(90).catch(() => {});
+    pruneOldReports(90).catch(e => console.warn('[report] pruneOldReports 실패', e));
     const url = new URL(window.location.href);
     const pageParam   = parseInt(url.searchParams.get('p') || '1', 10);
     const initialPage = Number.isNaN(pageParam) ? 1 : pageParam;
@@ -150,12 +158,6 @@ export default function Page() {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
     else { setSortKey(key); setSortDir('desc'); }
   };
-  const SortIco = ({ k }) => (
-    <span style={{marginLeft:4, opacity: sortKey===k ? 1 : 0.3, fontSize:10}}>
-      {sortKey === k ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
-    </span>
-  );
-
   /* 필터 + 정렬 */
   const filtered = useMemo(() => reports
     .filter(r => {
@@ -321,18 +323,18 @@ export default function Page() {
               <tr>
                 <th style={{width:36}}></th>
                 <th style={{width:110, cursor:'pointer'}} onClick={() => toggleSort('id')}>
-                  보고서 ID<SortIco k="id"/>
+                  보고서 ID<SortIco k="id" sortKey={sortKey} sortDir={sortDir}/>
                 </th>
                 <th style={{cursor:'pointer'}} onClick={() => toggleSort('name')}>
-                  제목<SortIco k="name"/>
+                  제목<SortIco k="name" sortKey={sortKey} sortDir={sortDir}/>
                 </th>
                 <th style={{width:80, cursor:'pointer'}} onClick={() => toggleSort('kind')}>
-                  유형<SortIco k="kind"/>
+                  유형<SortIco k="kind" sortKey={sortKey} sortDir={sortDir}/>
                 </th>
                 <th style={{width:150}}>대상 기간</th>
                 <th style={{width:100}}>작성자</th>
                 <th style={{width:140, cursor:'pointer'}} onClick={() => toggleSort('createdAt')}>
-                  생성일시<SortIco k="createdAt"/>
+                  생성일시<SortIco k="createdAt" sortKey={sortKey} sortDir={sortDir}/>
                 </th>
                 <th style={{width:100}}>활동</th>
                 <th style={{width:250}}></th>

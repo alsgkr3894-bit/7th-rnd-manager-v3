@@ -1,7 +1,7 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { fmtKRW, formatPercent } from '@/lib/format';
-import { useCountUp } from '@/lib/useCountUp';
+import { useCountUp } from '@/hooks/useCountUp';
 import { AreaChart } from '@/components/charts/AreaChart';
 import { Donut } from '@/components/charts/Donut';
 import { EmptyState, SkeletonChart } from './HomeWidgets';

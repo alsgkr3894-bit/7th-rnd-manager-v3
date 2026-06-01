@@ -5,7 +5,7 @@ import { fmtKRW } from '@/lib/format';
 import { initDB } from '@/lib/db/init';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price/store';
 import { comparePriceLists } from '@/lib/price/compare';
-import { useDraftRestore } from '@/lib/report/useDraftRestore';
+import { useDraftRestore } from '@/hooks/useDraftRestore';
 import { getProfile } from '@/lib/profile';
 
 const DRAFT_KEY = 'report_draft_price';

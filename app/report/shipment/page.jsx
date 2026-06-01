@@ -7,10 +7,51 @@ import { initDB } from '@/lib/db/init';
 import { getShipmentFiles, getShipmentRowsByFileId } from '@/lib/shipment/store-files';
 import { aggregateShipmentRows } from '@/lib/shipment/aggregate';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment/store-managed';
-import { useDraftRestore } from '@/lib/report/useDraftRestore';
+import { useDraftRestore } from '@/hooks/useDraftRestore';
 import { getProfile } from '@/lib/profile';
 
 const DRAFT_KEY = 'report_draft_shipment';
+
+function ItemTable({ items, maxQty }) {
+  return (
+    <table className="paper-table">
+      <thead>
+        <tr>
+          <th style={{width:36}}>#</th>
+          <th>제품명</th>
+          <th style={{width:90,textAlign:'right'}}>출고량</th>
+          <th style={{width:100,textAlign:'right'}}>출고금액</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((p, i) => {
+          const pct = maxQty > 0 ? (p.totalQuantity / maxQty) * 100 : 0;
+          return (
+            <tr key={p.productCode || p.productName} style={p.isManaged ? {background:'var(--warn-soft)'} : undefined}>
+              <td className="num">{i + 1}</td>
+              <td style={p.isManaged ? {borderLeft:'3px solid #D97706'} : undefined}>
+                <div style={{marginBottom:2, display:'flex', alignItems:'center', gap:6, flexWrap:'wrap'}}>
+                  <span>{p.normalizedProductName || p.productName}</span>
+                  {p.isManaged && (
+                    <span style={{
+                      background:'#D97706', color:'#fff', fontSize:10, fontWeight:700,
+                      padding:'1px 6px', borderRadius:4, flexShrink:0,
+                    }}>관리품목</span>
+                  )}
+                </div>
+                <div style={{height:4,background:'var(--surface-2)',borderRadius:2,overflow:'hidden'}}>
+                  <div style={{width:`${pct}%`,height:'100%',background:p.isManaged ? '#D97706' : 'var(--accent)',borderRadius:2,opacity:0.6}}/>
+                </div>
+              </td>
+              <td className="num right">{formatNumber(p.totalQuantity)}</td>
+              <td className="num right muted">{fmtKRW(p.totalAmount)}원</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
 
 export default function Page() {
   const periodMode = 'month';
@@ -214,45 +255,6 @@ export default function Page() {
     name: `${fileLabel} 제때 출고량 보고서`,
     options: { periodMode, shipYear, shipMonth, opts },
   };
-
-  const ItemTable = ({ items, maxQty }) => (
-    <table className="paper-table">
-      <thead>
-        <tr>
-          <th style={{width:36}}>#</th>
-          <th>제품명</th>
-          <th style={{width:90,textAlign:'right'}}>출고량</th>
-          <th style={{width:100,textAlign:'right'}}>출고금액</th>
-        </tr>
-      </thead>
-      <tbody>
-        {items.map((p, i) => {
-          const pct = maxQty > 0 ? (p.totalQuantity / maxQty) * 100 : 0;
-          return (
-            <tr key={p.productCode || p.productName} style={p.isManaged ? {background:'var(--warn-soft)'} : undefined}>
-              <td className="num">{i + 1}</td>
-              <td style={p.isManaged ? {borderLeft:'3px solid #D97706'} : undefined}>
-                <div style={{marginBottom:2, display:'flex', alignItems:'center', gap:6, flexWrap:'wrap'}}>
-                  <span>{p.normalizedProductName || p.productName}</span>
-                  {p.isManaged && (
-                    <span style={{
-                      background:'#D97706', color:'#fff', fontSize:10, fontWeight:700,
-                      padding:'1px 6px', borderRadius:4, flexShrink:0,
-                    }}>관리품목</span>
-                  )}
-                </div>
-                <div style={{height:4,background:'var(--surface-2)',borderRadius:2,overflow:'hidden'}}>
-                  <div style={{width:`${pct}%`,height:'100%',background:p.isManaged ? '#D97706' : 'var(--accent)',borderRadius:2,opacity:0.6}}/>
-                </div>
-              </td>
-              <td className="num right">{formatNumber(p.totalQuantity)}</td>
-              <td className="num right muted">{fmtKRW(p.totalAmount)}원</td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
 
   return (
     <ReportBuilderShell

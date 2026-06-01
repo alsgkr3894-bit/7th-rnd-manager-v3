@@ -183,10 +183,7 @@ function SampleContent() {
   const samplesByDate = useMemo(() => {
     const m = {};
     for (const s of samples) {
-      if (s.testDate) {
-        if (!m[s.testDate]) m[s.testDate] = [];
-        m[s.testDate].push(s);
-      }
+      if (s.testDate) (m[s.testDate] ??= []).push(s);
     }
     return m;
   }, [samples]);

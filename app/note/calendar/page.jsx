@@ -23,6 +23,18 @@ import { expandOccurrences } from './_recurrence';
 const pad   = n => String(n).padStart(2, '0');
 const toKey = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
 
+/** items 배열을 날짜 키(YYYY-MM-DD) → item[] Map으로 그룹핑 */
+function groupByDate(items, keyFn) {
+  const map = new Map();
+  for (const item of items) {
+    const k = keyFn(item);
+    if (!k) continue;
+    if (!map.has(k)) map.set(k, []);
+    map.get(k).push(item);
+  }
+  return map;
+}
+
 // todayKey 캐싱 — 같은 날이면 재계산 없이 반환 (렌더당 70+ 호출 방지)
 let _todayCache = '', _todayCacheNum = 0;
 function todayKey() {
@@ -83,7 +95,7 @@ export default function Page() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { load().catch(() => setLoading(false)); }, [load]);
+  useEffect(() => { load().catch(e => { console.error('[calendar] 로드 실패', e); setLoading(false); }); }, [load]);
 
   /* 달 이동 — 애니메이션 중 연속 클릭 방지 */
   const shiftMonth = useCallback((delta) => {
@@ -123,39 +135,9 @@ export default function Page() {
   }
 
   /* 날짜 맵 */
-  const notesByDate = useMemo(() => {
-    const map = new Map();
-    for (const n of notes) {
-      const k = n.testDate?.slice(0, 10);
-      if (!k) continue;
-      if (!map.has(k)) map.set(k, []);
-      map.get(k).push(n);
-    }
-    return map;
-  }, [notes]);
-
-  const workLogsByDate = useMemo(() => {
-    const map = new Map();
-    for (const w of workLogs) {
-      const k = w.date?.slice(0, 10);
-      if (!k) continue;
-      if (!map.has(k)) map.set(k, []);
-      map.get(k).push(w);
-    }
-    return map;
-  }, [workLogs]);
-
-  // 샘플 수령일(testDate) 기준 날짜 맵
-  const samplesByDate = useMemo(() => {
-    const map = new Map();
-    for (const s of samples) {
-      const k = s.testDate?.slice(0, 10);
-      if (!k) continue;
-      if (!map.has(k)) map.set(k, []);
-      map.get(k).push(s);
-    }
-    return map;
-  }, [samples]);
+  const notesByDate    = useMemo(() => groupByDate(notes,    n => n.testDate?.slice(0, 10)),   [notes]);
+  const workLogsByDate = useMemo(() => groupByDate(workLogs, w => w.date?.slice(0, 10)),       [workLogs]);
+  const samplesByDate  = useMemo(() => groupByDate(samples,  s => s.testDate?.slice(0, 10)),   [samples]);
 
   // 반복 일정 확장: 이달 그리드 범위에서 각 일정의 발생일을 계산해 날짜 맵으로 구성
   const schedulesByDate = useMemo(() => {

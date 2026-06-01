@@ -1,61 +1,25 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { showToast } from '@/components/Toast';
 import { getUserExcluded, addUserExcluded, deleteUserExcluded, updateUserExcluded } from '@/lib/sales';
-import { inputStyle, SectionHeader, SectionEmpty, reapplyToUploadedData } from './shared/SectionUtils';
+import { inputStyle, SectionHeader, SectionEmpty } from './shared/SectionUtils';
+import { useSettingsSection } from '@/hooks/useSettingsSection';
+
+const INITIAL_FORM = { menuName: '' };
 
 export function UserExcludedSection() {
-  const [list,      setList]      = useState([]);
-  const [adding,    setAdding]    = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [form,      setForm]      = useState({ menuName: '' });
-  const [busy,      setBusy]      = useState(false);
-
-  useEffect(() => { refresh(); }, []);
-
-  async function refresh() {
-    try { setList(await getUserExcluded()); } catch (err) { console.warn(err); }
-  }
-
-  async function handleAdd() {
-    if (!form.menuName.trim()) return;
-    setBusy(true);
-    try {
-      await addUserExcluded(form);
-      showToast('제외 메뉴가 추가됐어요', 'ok');
-      setForm({ menuName: '' }); setAdding(false);
-      refresh();
-      await reapplyToUploadedData();
-    } catch (err) {
-      showToast(err?.message || '추가 실패', 'err');
-    } finally { setBusy(false); }
-  }
-
-  async function handleUpdate(id) {
-    if (!form.menuName.trim()) return;
-    setBusy(true);
-    try {
-      await updateUserExcluded({ id, menuName: form.menuName });
-      showToast('수정됐어요', 'ok');
-      setEditingId(null);
-      refresh();
-      await reapplyToUploadedData();
-    } catch (err) {
-      showToast(err?.message || '수정 실패', 'err');
-    } finally { setBusy(false); }
-  }
-
-  function startEdit(e) {
-    setEditingId(e.id);
-    setForm({ menuName: e.menuName });
-  }
-
-  async function handleDelete(id) {
-    try {
-      await deleteUserExcluded(id); showToast('삭제됐어요', 'ok'); refresh();
-      await reapplyToUploadedData();
-    } catch { showToast('삭제 실패', 'err'); }
-  }
+  const {
+    list, adding, setAdding, editingId, setEditingId, form, setForm, busy,
+    handleAdd, handleUpdate, handleDelete, startEdit, resetAdding,
+  } = useSettingsSection({
+    initialForm:     INITIAL_FORM,
+    getAll:          getUserExcluded,
+    add:             (f) => addUserExcluded(f),
+    update:          (id, f) => updateUserExcluded({ id, menuName: f.menuName }),
+    remove:          deleteUserExcluded,
+    getFormFromItem: (e) => ({ menuName: e.menuName }),
+    validateAdd:     (f) => !!f.menuName.trim(),
+    validateUpdate:  (f) => !!f.menuName.trim(),
+    messages:        { add: '제외 메뉴가 추가됐어요' },
+  });
 
   return (
     <div style={{marginBottom:16}}>
@@ -63,7 +27,7 @@ export function UserExcludedSection() {
         title="사용자 추가 제외"
         count={list.length}
         adding={adding}
-        onAdd={() => { setAdding(v => !v); setEditingId(null); setForm({ menuName: '' }); }}
+        onAdd={resetAdding}
       />
 
       {adding && (

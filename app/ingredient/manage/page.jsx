@@ -20,13 +20,11 @@ import {
   buildMetaOnlyRow, computeIngredientIssues,
 } from '@/lib/ingredient';
 import { KEYS } from '@/lib/note/keys';
+import { DISCONTINUED_FILTER, UNCATEGORIZED_FILTER } from '@/lib/ingredient/constants';
 import { IngredientForm } from './IngredientForm';
 import { ManageRow } from '@/components/ingredient/ManageRow';
 import { IssuesView } from '@/components/ingredient/IssuesView';
 import { TabButton } from '@/components/cost/shared/TabButton';
-
-const DISCONTINUED_FILTER  = '__discontinued__';
-const UNCATEGORIZED_FILTER = '__none__';
 
 export default function Page() {
   const [rows,         setRows]         = useState([]);
