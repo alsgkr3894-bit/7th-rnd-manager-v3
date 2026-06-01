@@ -21,7 +21,6 @@ export default function Page() {
     chart:         true,
     catSummary:    true,
     amountSummary: true,
-    managedList:   true,
     fullList:      true,
   });
   const upd = (k, v) => setOpts(o => ({ ...o, [k]: v }));
@@ -123,21 +122,15 @@ export default function Page() {
   const sumQty = list => list.reduce((s, r) => s + r.totalQuantity, 0);
   const sumAmt = list => list.reduce((s, r) => s + r.totalAmount, 0);
 
-  // 전용 / 범용(전체) / 범용 중 관리품목 / 범용 중 일반 으로 분리
+  // 전용 / 범용(전체) 으로 분리. 관리품목은 범용 안에서 표시로만 구분(별도 시트 X)
   const exclusive  = [...aggRows].filter(r => r.productType === 'exclusive').sort(byQtyDesc);
   const genericAll = [...aggRows].filter(r => r.productType !== 'exclusive').sort(byQtyDesc);
-  const managed    = genericAll.filter(r => r.isManaged);              // 관리품목 체크
-  const generic    = genericAll.filter(r => !r.isManaged);            // 일반 범용
+  const managed    = genericAll.filter(r => r.isManaged);              // 관리품목 체크 (요약·표시용)
 
   const totalQty     = sumQty(aggRows);
   const exclusiveQty = sumQty(exclusive);
-  const genericQty   = sumQty(genericAll);   // 차트·범례용 범용 전체
+  const genericQty   = sumQty(genericAll);   // 범용 전체
   const managedQty   = sumQty(managed);
-
-  // 관리품목을 별도 섹션으로 분리할지 — off면 범용 목록에 그대로 포함(데이터 누락 방지)
-  const showManagedSeparately = opts.managedList && managed.length > 0;
-  const genericListItems = showManagedSeparately ? generic : genericAll;
-  const genericListQty   = sumQty(genericListItems);
 
   // 출고금액 합계 (총 / 전용 / 범용)
   const totalAmt     = sumAmt(aggRows);
@@ -194,12 +187,20 @@ export default function Page() {
         {items.map((p, i) => {
           const pct = maxQty > 0 ? (p.totalQuantity / maxQty) * 100 : 0;
           return (
-            <tr key={p.productCode || p.productName}>
+            <tr key={p.productCode || p.productName} style={p.isManaged ? {background:'var(--warn-soft)'} : undefined}>
               <td className="num">{i + 1}</td>
-              <td>
-                <div style={{marginBottom:2}}>{p.normalizedProductName || p.productName}</div>
+              <td style={p.isManaged ? {borderLeft:'3px solid #D97706'} : undefined}>
+                <div style={{marginBottom:2, display:'flex', alignItems:'center', gap:6, flexWrap:'wrap'}}>
+                  <span>{p.normalizedProductName || p.productName}</span>
+                  {p.isManaged && (
+                    <span style={{
+                      background:'#D97706', color:'#fff', fontSize:10, fontWeight:700,
+                      padding:'1px 6px', borderRadius:4, flexShrink:0,
+                    }}>관리품목</span>
+                  )}
+                </div>
                 <div style={{height:4,background:'var(--surface-2)',borderRadius:2,overflow:'hidden'}}>
-                  <div style={{width:`${pct}%`,height:'100%',background:'var(--accent)',borderRadius:2,opacity:0.6}}/>
+                  <div style={{width:`${pct}%`,height:'100%',background:p.isManaged ? '#D97706' : 'var(--accent)',borderRadius:2,opacity:0.6}}/>
                 </div>
               </td>
               <td className="num right">{formatNumber(p.totalQuantity)}</td>
@@ -260,7 +261,6 @@ export default function Page() {
           <Check label="월별 출고량 추이 차트" value={opts.chart}        onChange={v=>upd('chart',v)}/>
           <Check label="분류별 합계"           value={opts.catSummary}   onChange={v=>upd('catSummary',v)}/>
           <Check label="출고금액 요약(총·전용·범용)" value={opts.amountSummary} onChange={v=>upd('amountSummary',v)}/>
-          <Check label="관리품목 별도 목록"     value={opts.managedList}  onChange={v=>upd('managedList',v)}/>
           <Check label="전체 제품 목록"        value={opts.fullList}     onChange={v=>upd('fullList',v)}/>
         </OptGroup>
 
@@ -338,27 +338,21 @@ export default function Page() {
           </div>
         )}
 
-        {/* ── 관리품목 목록 (범용 중 관리품목 체크) — 별도 표시 ── */}
-        {showGeneric && showManagedSeparately && (
-          <div className="paper-section paper-cat-section">
-            <div className="paper-section-title" style={{display:'flex',alignItems:'center',gap:8}}>
-              <span style={{width:10,height:10,borderRadius:'50%',background:'#D97706',display:'inline-block',flexShrink:0}}/>
-              관리품목 출고 현황 <span className="muted" style={{fontWeight:400,fontSize:11}}>(범용상품 중 관리 대상)</span>
-              <span className="num muted" style={{fontSize:11,marginLeft:'auto'}}>합계 {qtyTxt(managedQty)} · {fmtKRW(managedAmt)}원</span>
-            </div>
-            <ItemTable items={managed} maxQty={managed[0]?.totalQuantity || 1}/>
-          </div>
-        )}
-
-        {/* ── 범용상품 목록 ── */}
-        {showGeneric && opts.fullList && genericListItems.length > 0 && (
+        {/* ── 범용상품 목록 (관리품목은 한 시트 안에서 색·배지로 구분) ── */}
+        {showGeneric && opts.fullList && genericAll.length > 0 && (
           <div className="paper-section paper-cat-section">
             <div className="paper-section-title" style={{display:'flex',alignItems:'center',gap:8}}>
               <span style={{width:10,height:10,borderRadius:'50%',background:'#7C3AED',display:'inline-block',flexShrink:0}}/>
-              범용상품 출고 현황 {showManagedSeparately && <span className="muted" style={{fontWeight:400,fontSize:11}}>(관리품목 제외)</span>}
-              <span className="num muted" style={{fontSize:11,marginLeft:'auto'}}>합계 {qtyTxt(genericListQty)}</span>
+              범용상품 출고 현황
+              {managed.length > 0 && (
+                <span className="muted" style={{fontWeight:400,fontSize:11,display:'inline-flex',alignItems:'center',gap:4}}>
+                  (<span style={{display:'inline-block',width:8,height:8,borderRadius:2,background:'#D97706'}}/>
+                  관리품목 {managed.length}개 · {qtyTxt(managedQty)})
+                </span>
+              )}
+              <span className="num muted" style={{fontSize:11,marginLeft:'auto'}}>합계 {qtyTxt(genericQty)}</span>
             </div>
-            <ItemTable items={genericListItems} maxQty={genericListItems[0]?.totalQuantity || 1}/>
+            <ItemTable items={genericAll} maxQty={genericAll[0]?.totalQuantity || 1}/>
           </div>
         )}
 
