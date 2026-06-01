@@ -1,5 +1,5 @@
 'use client';
-import { memo } from 'react';
+import { memo, Fragment } from 'react';
 import { formatNumber } from '@/lib/format';
 import { applyDiscount, calcNetRevenue, calcPlatformMargin } from '@/lib/cost/margin/platforms';
 import { COST_RATE_THRESHOLD, MARGIN_RATE_THRESHOLD } from '@/lib/cost/margin/constants';
@@ -22,73 +22,63 @@ const MC_MARGIN = (pct) => {
 
 export const MC = (pct, mode) => mode === 'margin' ? MC_MARGIN(pct) : MC_COST(pct);
 
+const GRP_BORDER = { borderLeft: '2px solid var(--divider)' };
+
 export const MarginRow = memo(function MarginRow({ r, sizeLabels, activePlatform, discount, hasAdjustment, viewMode }) {
   return (
     <tr>
-      <td style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{r.menuName}</td>
+      <td className="sticky-col" style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{r.menuName}</td>
       <td style={{ whiteSpace: 'nowrap' }}><span className="chip">{r.menuCategory || '기타'}</span></td>
 
       {sizeLabels.map(l => {
         const cost = r.costMap?.[l] || 0;
-        return (
-          <td key={l+'_c'} style={{ textAlign:'right', color:'var(--text-2)' }}>
-            {cost > 0 ? `${formatNumber(Math.round(cost))}원` : '—'}
-          </td>
-        );
-      })}
+        const s    = r.sizes?.find(s => s.label === l);
 
-      {sizeLabels.map(l => {
-        const s = r.sizes?.find(s => s.label === l);
-        return (
-          <td key={l+'_p'} style={{ textAlign:'right', color:'var(--text-2)' }}>
-            {s?.sellingPrice != null ? `${formatNumber(s.sellingPrice)}원` : '—'}
-          </td>
-        );
-      })}
+        // 할인적용금액
+        let netCell = null;
+        if (hasAdjustment) {
+          if (!s?.sellingPrice) {
+            netCell = <td key={l+'_n'} style={{ textAlign:'right', color:'var(--text-3)' }}>—</td>;
+          } else {
+            const eff = applyDiscount(s.sellingPrice, discount);
+            const net = calcNetRevenue(eff, activePlatform.fees, l);
+            netCell = (
+              <td key={l+'_n'} style={{ textAlign:'right', fontSize:12, color:'var(--text-2)' }}>
+                {formatNumber(Math.round(net))}원
+                {eff !== s.sellingPrice && (
+                  <div style={{ fontSize:10, color:'var(--text-4)' }}>{formatNumber(eff)}원 기준</div>
+                )}
+              </td>
+            );
+          }
+        }
 
-      {hasAdjustment && sizeLabels.map(l => {
-        const s = r.sizes?.find(s => s.label === l);
-        if (!s?.sellingPrice) return <td key={l+'_n'} style={{ textAlign:'right', color:'var(--text-3)' }}>—</td>;
-        const eff = applyDiscount(s.sellingPrice, discount);
-        const net = calcNetRevenue(eff, activePlatform.fees, l);
-        return (
-          <td key={l+'_n'} style={{ textAlign:'right', fontSize:12, color:'var(--text-2)' }}>
-            {formatNumber(Math.round(net))}원
-            {eff !== s.sellingPrice && (
-              <div style={{ fontSize:10, color:'var(--text-4)' }}>
-                {formatNumber(eff)}원 기준
-              </div>
-            )}
-          </td>
-        );
-      })}
-
-      {sizeLabels.map(l => {
-        const cost    = r.costMap?.[l] || 0;
-        const s       = r.sizes?.find(s => s.label === l);
-        const eff     = applyDiscount(s?.sellingPrice, discount);
-        const net     = calcNetRevenue(eff, activePlatform.fees, l);
+        // 원가율/마진율
+        const eff      = applyDiscount(s?.sellingPrice, discount);
+        const net      = calcNetRevenue(eff, activePlatform.fees, l);
         const costRate = calcPlatformMargin(cost, net);
-        const display  = costRate != null
-          ? (viewMode === 'margin' ? 100 - costRate : costRate)
-          : null;
-        const baseCostRate = hasAdjustment
-          ? calcPlatformMargin(cost, s?.sellingPrice || 0)
-          : null;
-        const baseDisplay = baseCostRate != null
-          ? (viewMode === 'margin' ? 100 - baseCostRate : baseCostRate)
-          : null;
+        const display  = costRate != null ? (viewMode === 'margin' ? 100 - costRate : costRate) : null;
+        const baseCostRate = hasAdjustment ? calcPlatformMargin(cost, s?.sellingPrice || 0) : null;
+        const baseDisplay  = baseCostRate != null ? (viewMode === 'margin' ? 100 - baseCostRate : baseCostRate) : null;
+
         return (
-          <td key={l+'_m'} style={{ textAlign:'right' }}>
-            {display != null ? (
-              <span style={{ fontWeight:700, color: MC(display, viewMode) }}>{display.toFixed(1)}%</span>
-            ) : '—'}
-            {baseDisplay != null && baseDisplay !== display && (
-              <span style={{ fontSize:10, color:'var(--text-4)', marginLeft:5 }}>
-                ({baseDisplay.toFixed(1)}%)
-              </span>
-            )}
-          </td>
+          <Fragment key={l}>
+            <td style={{ ...GRP_BORDER, textAlign:'right', color:'var(--text-2)' }}>
+              {cost > 0 ? `${formatNumber(Math.round(cost))}원` : '—'}
+            </td>
+            <td style={{ textAlign:'right', color:'var(--text-2)' }}>
+              {s?.sellingPrice != null ? `${formatNumber(s.sellingPrice)}원` : '—'}
+            </td>
+            {netCell}
+            <td style={{ textAlign:'right' }}>
+              {display != null ? (
+                <span style={{ fontWeight:700, color: MC(display, viewMode) }}>{display.toFixed(1)}%</span>
+              ) : '—'}
+              {baseDisplay != null && baseDisplay !== display && (
+                <span style={{ fontSize:10, color:'var(--text-4)', marginLeft:5 }}>({baseDisplay.toFixed(1)}%)</span>
+              )}
+            </td>
+          </Fragment>
         );
       })}
 

@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Icon } from '@/components/icons';
-import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ModalFrame } from '@/components/ui/ModalFrame';
@@ -109,13 +108,13 @@ function SupplierModal({ initial, onSave, onClose }) {
   );
 }
 
-// ── 메인 페이지 ───────────────────────────────────────────────
-export default function Page() {
-  const [suppliers,      setSuppliers]      = useState([]);
-  const [loading,        setLoading]        = useState(true);
-  const [dbError,        setDbError]        = useState(null);
-  const [search,         setSearch]         = useState('');
-  const [modalTarget,    setModalTarget]    = useState(null); // null | 'new' | supplierRecord
+// ── 공급업체 뷰 (식자재 단가 마스터 탭) ────────────────────────
+export function SuppliersView() {
+  const [suppliers,       setSuppliers]       = useState([]);
+  const [loading,         setLoading]         = useState(true);
+  const [dbError,         setDbError]         = useState(null);
+  const [search,          setSearch]          = useState('');
+  const [modalTarget,     setModalTarget]     = useState(null); // null | 'new' | supplierRecord
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   const load = useCallback(async () => {
@@ -168,21 +167,16 @@ export default function Page() {
   }, [suppliers, search]);
 
   if (dbError) return (
-    <main className="main">
-      <PageHeader breadcrumb={['원가계산', '공급업체']} title="식자재 공급업체" sub="로드 실패" />
-      <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--negative)' }}>
-        데이터베이스 오류: {dbError}
-      </div>
-    </main>
+    <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--negative)' }}>
+      데이터베이스 오류: {dbError}
+    </div>
   );
 
   return (
-    <main className="main">
-      <PageHeader
-        breadcrumb={['원가계산', '공급업체']}
-        title="식자재 공급업체"
-        sub="식자재를 공급하는 업체를 등록하고 관리합니다. 재료 단가표에서 공급업체를 선택하면 자동으로 연결됩니다."
-      />
+    <>
+      <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>
+        식자재를 공급하는 업체를 등록하고 관리합니다.
+      </div>
 
       {/* ── 툴바 ── */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -273,6 +267,6 @@ export default function Page() {
           onCancel={() => setPendingDeleteId(null)}
         />
       )}
-    </main>
+    </>
   );
 }

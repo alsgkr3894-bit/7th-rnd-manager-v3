@@ -1479,6 +1479,30 @@ button { font-family: inherit; cursor: pointer; }
 .data-table tbody tr:hover .row-actions { opacity: 1; }
 .unit { font-size: 11px; font-weight: 500; margin-left: 2px; opacity: 0.65; }
 
+/* ── 원가마진표: 메뉴명 열·헤더 고정 + 사이즈 그룹 ──────────────
+   세로 스크롤 시 헤더(2행)를, 가로 스크롤 시 메뉴명 열을 고정한다.
+   --mt-grp-h: 1행(사이즈 그룹) 높이 = 2행(메트릭)의 sticky top 오프셋. */
+.margin-table { --mt-grp-h: 30px; }
+.margin-table thead th {
+  position: sticky; z-index: 2;
+  background: var(--surface-2);
+  box-sizing: border-box;
+}
+.margin-table thead tr.mt-group th {
+  top: 0; height: var(--mt-grp-h);
+  padding-top: 0; padding-bottom: 0;
+}
+.margin-table thead tr.mt-metric th { top: var(--mt-grp-h); }
+.margin-table th.sticky-col,
+.margin-table td.sticky-col {
+  position: sticky; left: 0; z-index: 1;
+  background: var(--surface);
+}
+.margin-table thead th.sticky-col { z-index: 3; background: var(--surface-2); }
+/* 고정 열이 가로 스크롤 시 떨리지 않도록 hover translate 무력화 */
+.margin-table tbody tr:hover { transform: none; }
+.margin-table tbody tr:hover td.sticky-col { background: var(--surface-2); }
+
 .rank-pill {
   display: inline-grid; place-items: center;
   width: 26px; height: 26px;

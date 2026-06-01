@@ -39,6 +39,16 @@ const UsageView = dynamic(
   () => import('@/components/cost/ingredient-price/UsageView').then(m => m.UsageView),
   { ssr: false, loading: () => <div className="skeleton" style={{ height: 200 }} /> }
 );
+const SuppliersView = dynamic(
+  () => import('@/components/cost/ingredient-price/SuppliersView').then(m => m.SuppliersView),
+  { ssr: false, loading: () => <div className="skeleton" style={{ height: 200 }} /> }
+);
+
+const VIEW_TABS = [
+  { key: 'price',     label: '단가 목록' },
+  { key: 'usage',     label: '제품별 사용현황' },
+  { key: 'suppliers', label: '공급업체' },
+];
 
 export default function Page() {
   const [rows,       setRows]       = useState([]);
@@ -264,83 +274,89 @@ export default function Page() {
         }
       />
 
-      {/* 파일 기준 */}
-      {fileInfo && (
-        <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:4, fontSize:12, color:'var(--text-3)'}}>
-          <Icon.doc style={{width:13, height:13}}/>
-          <span>기준 파일: <b style={{color:'var(--text-2)'}}>{fileInfo.name}</b>
-            {fileInfo.date && <span style={{marginLeft:6}}>({fileInfo.date})</span>}
-          </span>
+      {/* 탭 전환 — 로드 완료 후 항상 노출 (공급업체는 식자재 유무와 무관) */}
+      {!loading && (
+        <div style={{ display:'flex', gap:0, border:'1px solid var(--border)', borderRadius:8, overflow:'hidden', width:'fit-content', marginBottom:12 }}>
+          {VIEW_TABS.map(({ key, label }) => (
+            <button key={key} onClick={() => setViewTab(key)}
+              style={{
+                padding:'7px 20px', fontSize:13, fontWeight:700, border:'none', cursor:'pointer',
+                background: viewTab === key ? 'var(--accent)' : 'var(--surface-2)',
+                color: viewTab === key ? '#fff' : 'var(--text-2)',
+              }}>
+              {label}
+            </button>
+          ))}
         </div>
       )}
-
-      {/* 통계 카드 */}
-      <div className="stat-row">
-        <div className="stat-card">
-          <div className="stat-label">전체 제품</div>
-          <div className="stat-value">{stats.total}<span className="unit">개</span></div>
-        </div>
-        <div className="stat-card" style={{cursor:'pointer'}}
-          onClick={() => setDeltaFilter(v => v === 'up' ? 'all' : 'up')}>
-          <div className="stat-label">단가 인상</div>
-          <div className="stat-value" style={{color: stats.upCount > 0 ? 'var(--negative, #ef4444)' : undefined}}>
-            {stats.upCount}<span className="unit">개</span>
-          </div>
-          <div style={{fontSize:11, color:'var(--text-3)', marginTop:6}}>클릭하여 필터</div>
-        </div>
-        <div className="stat-card" style={{cursor:'pointer'}}
-          onClick={() => setDeltaFilter(v => v === 'down' ? 'all' : 'down')}>
-          <div className="stat-label">단가 인하</div>
-          <div className="stat-value" style={{color: stats.downCount > 0 ? 'var(--positive)' : undefined}}>
-            {stats.downCount}<span className="unit">개</span>
-          </div>
-          <div style={{fontSize:11, color:'var(--text-3)', marginTop:6}}>클릭하여 필터</div>
-        </div>
-        <div className="stat-card" style={{cursor:'pointer'}}
-          onClick={() => setDeltaFilter(v => v === 'new' ? 'all' : 'new')}>
-          <div className="stat-label">신규 항목</div>
-          <div className="stat-value" style={{color: stats.newCount > 0 ? 'var(--accent)' : undefined}}>
-            {stats.newCount}<span className="unit">개</span>
-          </div>
-          <div style={{fontSize:11, color:'var(--text-3)', marginTop:6}}>클릭하여 필터</div>
-        </div>
-      </div>
 
       {loading && <IngredientPriceSkeleton />}
 
-      {!loading && rows.length === 0 && (
-        <div className="card" style={{minHeight:200, display:'grid', placeItems:'center'}}>
-          <div style={{textAlign:'center', color:'var(--text-3)'}}>
-            <Icon.box style={{width:32, height:32, marginBottom:12, opacity:.4}}/>
-            <div style={{fontWeight:600, marginBottom:6}}>마스터에 등록된 식자재가 없습니다</div>
-            <div style={{fontSize:13, marginBottom:12}}>우측 상단 버튼으로 마스터 시드를 가져오면 제때 단가와 자동 연동됩니다.</div>
-            <button className="btn primary" onClick={handleBulkImport} disabled={importing}>
-              <Icon.download style={{width:14, height:14}}/>
-              {importing ? '가져오는 중…' : '마스터 시드 가져오기 (118개)'}
-            </button>
-          </div>
-        </div>
-      )}
+      {/* ── 공급업체 탭 ── */}
+      {!loading && viewTab === 'suppliers' && <SuppliersView />}
 
-      {!loading && rows.length > 0 && (
+      {/* ── 단가/사용현황 탭 (식자재 마스터 컨텍스트) ── */}
+      {!loading && viewTab !== 'suppliers' && (
         <>
-          {/* 탭 전환 */}
-          <div style={{ display:'flex', gap:0, border:'1px solid var(--border)', borderRadius:8, overflow:'hidden', width:'fit-content', marginBottom:12 }}>
-            {[{ key:'price', label:'단가 목록' }, { key:'usage', label:'제품별 사용현황' }].map(({ key, label }) => (
-              <button key={key} onClick={() => setViewTab(key)}
-                style={{
-                  padding:'7px 20px', fontSize:13, fontWeight:700, border:'none', cursor:'pointer',
-                  background: viewTab === key ? 'var(--accent)' : 'var(--surface-2)',
-                  color: viewTab === key ? '#fff' : 'var(--text-2)',
-                }}>
-                {label}
-              </button>
-            ))}
+          {/* 파일 기준 */}
+          {fileInfo && (
+            <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:4, fontSize:12, color:'var(--text-3)'}}>
+              <Icon.doc style={{width:13, height:13}}/>
+              <span>기준 파일: <b style={{color:'var(--text-2)'}}>{fileInfo.name}</b>
+                {fileInfo.date && <span style={{marginLeft:6}}>({fileInfo.date})</span>}
+              </span>
+            </div>
+          )}
+
+          {/* 통계 카드 */}
+          <div className="stat-row">
+            <div className="stat-card">
+              <div className="stat-label">전체 제품</div>
+              <div className="stat-value">{stats.total}<span className="unit">개</span></div>
+            </div>
+            <div className="stat-card" style={{cursor:'pointer'}}
+              onClick={() => setDeltaFilter(v => v === 'up' ? 'all' : 'up')}>
+              <div className="stat-label">단가 인상</div>
+              <div className="stat-value" style={{color: stats.upCount > 0 ? 'var(--negative, #ef4444)' : undefined}}>
+                {stats.upCount}<span className="unit">개</span>
+              </div>
+              <div style={{fontSize:11, color:'var(--text-3)', marginTop:6}}>클릭하여 필터</div>
+            </div>
+            <div className="stat-card" style={{cursor:'pointer'}}
+              onClick={() => setDeltaFilter(v => v === 'down' ? 'all' : 'down')}>
+              <div className="stat-label">단가 인하</div>
+              <div className="stat-value" style={{color: stats.downCount > 0 ? 'var(--positive)' : undefined}}>
+                {stats.downCount}<span className="unit">개</span>
+              </div>
+              <div style={{fontSize:11, color:'var(--text-3)', marginTop:6}}>클릭하여 필터</div>
+            </div>
+            <div className="stat-card" style={{cursor:'pointer'}}
+              onClick={() => setDeltaFilter(v => v === 'new' ? 'all' : 'new')}>
+              <div className="stat-label">신규 항목</div>
+              <div className="stat-value" style={{color: stats.newCount > 0 ? 'var(--accent)' : undefined}}>
+                {stats.newCount}<span className="unit">개</span>
+              </div>
+              <div style={{fontSize:11, color:'var(--text-3)', marginTop:6}}>클릭하여 필터</div>
+            </div>
           </div>
+
+          {rows.length === 0 && (
+            <div className="card" style={{minHeight:200, display:'grid', placeItems:'center'}}>
+              <div style={{textAlign:'center', color:'var(--text-3)'}}>
+                <Icon.box style={{width:32, height:32, marginBottom:12, opacity:.4}}/>
+                <div style={{fontWeight:600, marginBottom:6}}>마스터에 등록된 식자재가 없습니다</div>
+                <div style={{fontSize:13, marginBottom:12}}>우측 상단 버튼으로 마스터 시드를 가져오면 제때 단가와 자동 연동됩니다.</div>
+                <button className="btn primary" onClick={handleBulkImport} disabled={importing}>
+                  <Icon.download style={{width:14, height:14}}/>
+                  {importing ? '가져오는 중…' : '마스터 시드 가져오기 (118개)'}
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
-      {!loading && rows.length > 0 && viewTab === 'usage' && (
+      {!loading && viewTab === 'usage' && rows.length > 0 && (
         <UsageView
           rows={rows}
           usageMap={usageMap}
@@ -351,7 +367,7 @@ export default function Page() {
         />
       )}
 
-      {!loading && rows.length > 0 && viewTab === 'price' && (
+      {!loading && viewTab === 'price' && rows.length > 0 && (
         <>
           {/* 필터 바 */}
           <div style={{display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginBottom:4}}>

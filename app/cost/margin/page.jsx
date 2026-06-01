@@ -1,6 +1,6 @@
 'use client';
 import dynamic from 'next/dynamic';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Icon } from '@/components/icons';
 import { initDB } from '@/lib/db';
@@ -82,6 +82,10 @@ export default function Page() {
     const resolveDefaultGroupIds = createDefaultGroupResolver(allGroups);
     const groupById = new Map(allGroups.map(g => [g.id, g]));
 
+    // 판매가 정규화: 레시피의 판매가는 문자열('18000'/'')이라 숫자/null로 통일
+    // (할인·수수료 계산과 엣지 파생 행의 판매가 합산이 문자열 연결되지 않도록)
+    const toNum = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; };
+
     // 레시피 rows — 공통묶음 원가까지 합산
     const recipeRows = recipes.map(r => {
       const baseCostMap = calcCostBySizes(r, upm);
@@ -108,7 +112,8 @@ export default function Page() {
         }
         costMap[s.label] = total;
       }
-      return { ...r, costMap };
+      const sizes = (r.sizes || []).map(s => ({ ...s, sellingPrice: toNum(s.sellingPrice) }));
+      return { ...r, sizes, costMap };
     });
 
     // detail store rows (new system: pizza/personal/side/set)
@@ -197,14 +202,37 @@ export default function Page() {
       if (!existing || hasCost) recipeByKey.set(key, r);
     }
 
-    // detail row에 원가 없으면 recipe row 원가로 보완
-    const enrichedDetailRows = detailRows.map(d => {
-      const hasCost = Object.values(d.costMap).some(v => v > 0);
-      if (hasCost) return d;
+    // detail-store 행에 원가레시피 정보 보완:
+    //   - 디테일 스토어 값이 항상 우선
+    //   - 레시피는 "빈 판매가 · 디테일에 없는 사이즈 · 빈 원가"만 채움(fallback)
+    // (메뉴 가격표에 판매가가 없어도 원가레시피의 판매가가 표시되도록)
+    const mergeRecipeIntoDetail = (d) => {
       const rr = recipeByKey.get(`${d.menuName}||${d.menuCategory}`);
       if (!rr) return d;
-      return { ...d, costMap: rr.costMap };
-    });
+
+      // 사이즈 합집합 (디테일 우선, 레시피에만 있는 사이즈는 뒤에 추가)
+      const sizeByLabel = new Map();
+      for (const s of (d.sizes || [])) {
+        if (s.label) sizeByLabel.set(s.label, { ...s, sellingPrice: toNum(s.sellingPrice) });
+      }
+      for (const s of (rr.sizes || [])) {
+        if (!s.label) continue;
+        const price = toNum(s.sellingPrice);
+        const existing = sizeByLabel.get(s.label);
+        if (!existing) sizeByLabel.set(s.label, { label: s.label, sellingPrice: price });
+        else if (existing.sellingPrice == null && price != null) existing.sellingPrice = price;
+      }
+
+      // 원가 합집합 (디테일 원가 우선, 빈 사이즈만 레시피 원가로 보완)
+      const costMap = { ...d.costMap };
+      for (const label of sizeByLabel.keys()) {
+        if (!(costMap[label] > 0) && rr.costMap?.[label] > 0) costMap[label] = rr.costMap[label];
+      }
+
+      return { ...d, sizes: [...sizeByLabel.values()], costMap };
+    };
+
+    const enrichedDetailRows = detailRows.map(mergeRecipeIntoDetail);
 
     // Merge: detail store rows take precedence; recipe rows fill in the rest
     const detailKeys = new Set(enrichedDetailRows.map(r => `${r.menuName}||${r.menuCategory}`));
@@ -484,28 +512,36 @@ export default function Page() {
       ) : (
         <div className="card table-card">
           <div style={{ overflowX:'auto' }}>
-            <table className="data-table stagger-rows">
+            <table className="data-table stagger-rows margin-table">
               <thead>
-                <tr>
-                  <SortableTh sortKey="name" active={sortKey} dir={sortDir} onClick={handleSort} width={160}>메뉴명</SortableTh>
-                  <SortableTh sortKey="cat"  active={sortKey} dir={sortDir} onClick={handleSort} width={90}>카테고리</SortableTh>
+                {/* 1행: 사이즈 그룹 헤더 — 사이즈마다 원가·판매가·(할인)·율을 한 묶음으로 */}
+                <tr className="mt-group">
+                  <SortableTh sortKey="name" active={sortKey} dir={sortDir} onClick={handleSort} width={160} rowSpan={2} className="sticky-col">메뉴명</SortableTh>
+                  <SortableTh sortKey="cat"  active={sortKey} dir={sortDir} onClick={handleSort} width={90} rowSpan={2}>카테고리</SortableTh>
                   {sizeLabels.map(l => (
-                    <SortableTh key={l+'_c'} sortKey={`cost_${l}`} active={sortKey} dir={sortDir} onClick={handleSort} width={100} right>{l} 원가</SortableTh>
+                    <th key={l+'_grp'} colSpan={hasAdjustment ? 4 : 3}
+                      style={{ textAlign:'center', borderLeft:'2px solid var(--divider)' }}>
+                      <span className="chip" style={{ fontSize:11 }}>{l}</span>
+                    </th>
                   ))}
+                  <th rowSpan={2} style={{ width: 60 }}/>
+                </tr>
+                {/* 2행: 메트릭 헤더 (정렬) */}
+                <tr className="mt-metric">
                   {sizeLabels.map(l => (
-                    <SortableTh key={l+'_p'} sortKey={`price_${l}`} active={sortKey} dir={sortDir} onClick={handleSort} width={100} right>{l} 판매가</SortableTh>
+                    <Fragment key={l+'_mh'}>
+                      <SortableTh sortKey={`cost_${l}`} active={sortKey} dir={sortDir} onClick={handleSort} width={92} right style={{ borderLeft:'2px solid var(--divider)' }}>원가</SortableTh>
+                      <SortableTh sortKey={`price_${l}`} active={sortKey} dir={sortDir} onClick={handleSort} width={96} right>판매가</SortableTh>
+                      {hasAdjustment && (
+                        <SortableTh sortKey={`net_${l}`} active={sortKey} dir={sortDir} onClick={handleSort} width={110} right>
+                          <span style={{ color:'var(--accent)' }}>할인적용</span>
+                        </SortableTh>
+                      )}
+                      <SortableTh sortKey={`rate_${l}`} active={sortKey} dir={sortDir} onClick={handleSort} width={92} right>
+                        {viewMode === 'margin' ? '마진율' : '원가율'}
+                      </SortableTh>
+                    </Fragment>
                   ))}
-                  {hasAdjustment && sizeLabels.map(l => (
-                    <SortableTh key={l+'_n'} sortKey={`net_${l}`} active={sortKey} dir={sortDir} onClick={handleSort} width={120} right>
-                      <span style={{ color:'var(--accent)' }}>{l} 할인적용금액</span>
-                    </SortableTh>
-                  ))}
-                  {sizeLabels.map(l => (
-                    <SortableTh key={l+'_m'} sortKey={`rate_${l}`} active={sortKey} dir={sortDir} onClick={handleSort} width={96} right>
-                      {l} {viewMode === 'margin' ? '마진율' : '원가율'}
-                    </SortableTh>
-                  ))}
-                  <th style={{ width: 60 }}/>
                 </tr>
               </thead>
               <tbody>
