@@ -1,6 +1,6 @@
 'use client';
 import dynamic from 'next/dynamic';
-import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef, Fragment } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Icon } from '@/components/icons';
 import { initDB } from '@/lib/db';
@@ -46,7 +46,7 @@ export default function Page() {
   const [rows,         setRows]         = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [dbError,      setDbError]      = useState(null);
-  const [catFilter,    setCatFilter]    = useState(() => { try { return localStorage.getItem(KEYS.MARGIN_CAT_FILTER) || '전체'; } catch { return '전체'; } });
+  const [catFilter,    setCatFilter]    = useState('전체'); // 저장값은 마운트 후 복원(하이드레이션 불일치 방지)
   const [platforms,    setPlatforms]    = useState([]);
   const [activePlatId, setActivePlatId] = useState('default');
   const [showSettings, setShowSettings] = useState(false);
@@ -310,7 +310,29 @@ export default function Page() {
 
   useVisibilityRefresh(load);
 
-  useEffect(() => { try { localStorage.setItem(KEYS.MARGIN_CAT_FILTER, catFilter); } catch {} }, [catFilter]);
+  // 저장된 카테고리 필터 복원 — 마운트 후(클라이언트)에만. useState 초기값에서 읽으면
+  // 서버('전체')와 클라이언트(저장값)가 달라 하이드레이션 불일치 경고가 난다.
+  const firstCatSave = useRef(true);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(KEYS.MARGIN_CAT_FILTER);
+      if (saved && saved !== '전체') setCatFilter(saved);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    if (firstCatSave.current) { firstCatSave.current = false; return; }
+    try { localStorage.setItem(KEYS.MARGIN_CAT_FILTER, catFilter); } catch {}
+  }, [catFilter]);
+
+  // 저장된 필터가 현재 행에 없는 카테고리면 '전체'로 되돌림 — 빈 표로 보이는 것 방지
+  useEffect(() => {
+    if (catFilter === '전체' || !rows.length) return;
+    const has = rows.some(r => {
+      const cat = r.menuCategory || '기타';
+      return cat === catFilter || (catFilter === '피자' && cat.startsWith('피자/'));
+    });
+    if (!has) setCatFilter('전체');
+  }, [catFilter, rows]);
 
   const activePlatform = useMemo(
     () => platforms.find(p => p.id === activePlatId) ?? platforms[0] ?? { id:'default', name:'기본', fees:[] },

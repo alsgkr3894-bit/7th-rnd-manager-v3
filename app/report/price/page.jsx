@@ -262,11 +262,11 @@ export default function Page() {
                 </tr>
               </thead>
               <tbody>
-                {byCategory[cat].map(c => {
+                {byCategory[cat].map((c, ci) => {
                   const pct = (c.changeRate || 0) * 100;
                   const isSpecial = c.changeStatus === '신규' || c.changeStatus === '삭제';
                   return (
-                    <tr key={c.productCode || c.productName}>
+                    <tr key={`${c.productCode || c.productName}-${ci}`}>
                       <td className="muted mono" style={{fontSize:11}}>{c.productCode || '—'}</td>
                       <td style={{fontWeight:600}}>{c.productName}</td>
                       <td className="num right muted">{c.basePrice != null ? fmtKRW(c.basePrice) : '—'}</td>
