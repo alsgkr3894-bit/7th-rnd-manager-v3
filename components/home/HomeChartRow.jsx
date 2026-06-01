@@ -76,7 +76,21 @@ export function HomeChartRow({
             desc="판매량을 업로드하면 카테고리 비중이 표시됩니다"
           />
         ) : donut ? (
-          <DonutSection donut={donut} hoveredCat={hoveredCat} setHoveredCat={setHoveredCat}/>
+          <>
+            <DonutSection donut={donut} hoveredCat={hoveredCat} setHoveredCat={setHoveredCat}/>
+            {donut.items.length > 0 && (
+              <div className="ring-foot">
+                <div className="rf">
+                  <div className="l">최다 카테고리</div>
+                  <div className="v">{donut.items[0].name} {formatPercent((donut.items[0].value / donut.total) * 100)}</div>
+                </div>
+                <div className="rf">
+                  <div className="l">카테고리</div>
+                  <div className="v">{donut.items.length}개</div>
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <SkeletonChart />
         )}

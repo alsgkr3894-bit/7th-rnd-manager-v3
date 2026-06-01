@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useId, useRef } from 'react';
 
-export function Sparkline({ data, color = 'var(--accent)', fill = true, height = 56 }) {
+export function Sparkline({ data, color = 'var(--accent)', fill = true, height = 56, width = 320 }) {
   const lineRef = useRef(null);
-  const w = 320, h = height, pad = 4;
+  const w = width, h = height, pad = 4;
   // SSR/CSR hydration mismatch 회피: Math.random() 대신 React 18 useId() 사용
   const reactId = useId();
   const gid = `sp-${reactId.replace(/:/g, '')}`;

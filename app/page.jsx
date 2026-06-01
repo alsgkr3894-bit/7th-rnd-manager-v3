@@ -17,22 +17,49 @@ import {
   getCostRateKpi,
   getSalesTrend,
   getCategoryShare,
-  getTopMenus,
+  getTopMenusWithTrend,
   getRecentActivities,
   getCostAlertData,
+  getMonthlyBriefing,
+  getTodayTodos,
+  getPipelineStats,
+  getWeekSchedule,
+  getRecentPriceChanges,
 } from '@/lib/stats';
+import { getIssues } from '@/lib/sales';
 import { HomeKpiRow } from '@/components/home/HomeKpiRow';
 import { HomeChartRow } from '@/components/home/HomeChartRow';
 import { HomeActivities } from '@/components/home/HomeActivities';
 import { RankCard, ReportingNotesWidget, SampleStatsWidget, CostAlertWidget, QuickReportWidget } from '@/components/home/HomeWidgets';
 import RecentVisitsWidget from '@/components/home/RecentVisitsWidget';
 import { NoteHeatmapWidget } from '@/components/home/NoteHeatmapWidget';
+import { BriefingWidget } from '@/components/home/BriefingWidget';
+import { TodoWidget } from '@/components/home/TodoWidget';
+import { UnmatchedWidget } from '@/components/home/UnmatchedWidget';
+import { PipelineWidget } from '@/components/home/PipelineWidget';
+import { ScheduleWidget } from '@/components/home/ScheduleWidget';
+import { PriceChangeWidget } from '@/components/home/PriceChangeWidget';
 import { WidgetConfigModal } from '@/components/home/WidgetConfigModal';
 import { useWidgetConfig } from '@/hooks/useWidgetConfig';
 import { getAllNotes, addNote } from '@/lib/note';
 import { getAllSamples } from '@/lib/sample';
 import { KEYS } from '@/lib/note/keys';
 
+/** 시간대별 인사말 */
+function greetingByHour() {
+  const h = new Date().getHours();
+  if (h < 6)  return '늦은 시간까지 고생이 많아요';
+  if (h < 12) return '좋은 아침이에요';
+  if (h < 18) return '좋은 오후예요';
+  return '좋은 저녁이에요';
+}
+
+/** 좌/우 위젯을 row-2b 그리드로 묶음. 한쪽만 있으면 전체 폭 차지. */
+function pairRow(a, b) {
+  if (!a && !b) return null;
+  if (a && b) return <div className="row-2b motion-stagger">{a}{b}</div>;
+  return <div className="row-2b motion-stagger"><div style={{ gridColumn: '1 / -1' }}>{a || b}</div></div>;
+}
 
 export default function HomePage() {
   const router = useRouter();
@@ -50,6 +77,14 @@ export default function HomePage() {
   const [allNotes,       setAllNotes]       = useState([]);
   const [recentSamples,  setRecentSamples]  = useState([]);
   const [costAlertData,  setCostAlertData]  = useState(null);
+
+  // 신규 위젯 데이터
+  const [briefing,    setBriefing]    = useState(null);
+  const [todos,       setTodos]       = useState([]);
+  const [pipeline,    setPipeline]    = useState(null);
+  const [weekSchedule, setWeekSchedule] = useState(null);
+  const [priceChanges, setPriceChanges] = useState([]);
+  const [issues,      setIssues]      = useState([]);
 
   const [anchor, setAnchor] = useState(null); // {year, month} | null = auto-latest
   const [detectedPeriod, setDetectedPeriod] = useState(null);
@@ -82,11 +117,11 @@ export default function HomePage() {
         const settled = await Promise.allSettled([
           getSalesKpi(), getCostRateKpi(), getNoteKpi(),
           getSalesTrend('month'), getCategoryShare(),
-          getTopMenus(5, '피자', true, 'desc'),
-          getTopMenus(5, '피자', true, 'asc'),
-          getRecentActivities(8),
+          getTopMenusWithTrend(5, '피자', true, 'desc'),
+          getTopMenusWithTrend(5, '피자', true, 'asc'),
+          getRecentActivities(8), getMonthlyBriefing(),
         ]);
-        const [s, c, n, td, dn, tp, bt, ac] = settled.map(r => r.status === 'fulfilled' ? r.value : null);
+        const [s, c, n, td, dn, tp, bt, ac, br] = settled.map(r => r.status === 'fulfilled' ? r.value : null);
         if (s)  { setSalesKpi(s); setDetectedPeriod({ year: s.year, month: s.month }); }
         if (c)  setCostKpi(c);
         if (n)  setNoteKpi(n);
@@ -95,13 +130,22 @@ export default function HomePage() {
         if (tp) setTop(tp);
         if (bt) setBottom(bt);
         if (ac) setActivities(ac);
-        const [allNotesData, allSamples, costAlert] = await Promise.all([
-          getAllNotes(), getAllSamples(), getCostAlertData().catch(() => null),
+        if (br) setBriefing(br);
+
+        const settled2 = await Promise.allSettled([
+          getAllNotes(), getAllSamples(), getCostAlertData(),
+          getTodayTodos(), getPipelineStats(), getWeekSchedule(),
+          getRecentPriceChanges(6), getIssues(),
         ]);
-        setAllNotes(allNotesData);
-        setReportingNotes(allNotesData.filter(n => n.status === '보고예정'));
-        setRecentSamples(allSamples);
-        if (costAlert) setCostAlertData(costAlert);
+        const [an, sm, ca, tdo, pl, ws, pc, iss] = settled2.map(r => r.status === 'fulfilled' ? r.value : null);
+        if (an) { setAllNotes(an); setReportingNotes(an.filter(x => x.status === '보고예정')); }
+        if (sm) setRecentSamples(sm);
+        if (ca) setCostAlertData(ca);
+        if (tdo) setTodos(tdo);
+        if (pl) setPipeline(pl);
+        if (ws) setWeekSchedule(ws);
+        if (pc) setPriceChanges(pc);
+        if (iss) setIssues(iss);
       } catch (err) {
         devError('[Home] 데이터 로드 실패:', err);
       }
@@ -116,7 +160,7 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chartTab]);
 
-  // anchor(기준 월) 변경 시 판매 통계 재조회
+  // anchor(기준 월) 변경 시 판매·브리핑 통계 재조회
   useEffect(() => {
     if (!dbReadyRef.current || !anchor) return;
     const a = anchor;
@@ -124,15 +168,17 @@ export default function HomePage() {
       getSalesKpi(a),
       getSalesTrend(chartTabRef.current, a),
       getCategoryShare(a),
-      getTopMenus(5, '피자', true, 'desc', a),
-      getTopMenus(5, '피자', true, 'asc', a),
-    ]).then(([s, td, dn, tp, bt]) => {
+      getTopMenusWithTrend(5, '피자', true, 'desc', a),
+      getTopMenusWithTrend(5, '피자', true, 'asc', a),
+      getMonthlyBriefing(a),
+    ]).then(([s, td, dn, tp, bt, br]) => {
       const val = r => r.status === 'fulfilled' ? r.value : null;
       if (val(s))  setSalesKpi(val(s));
       if (val(td)) { setTrend(val(td)); setChartKey(k => k + 1); }
       if (val(dn)) setDonut(val(dn));
       if (val(tp)) setTop(val(tp));
       if (val(bt)) setBottom(val(bt));
+      if (val(br)) setBriefing(val(br));
     }).catch(devError);
   }, [anchor]);
 
@@ -187,6 +233,20 @@ export default function HomePage() {
 
   const todayStr = new Date().toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
 
+  // 인사말 서브라인
+  const alertCount = costAlertData ? costAlertData.items.filter(i => i.costRate > 40).length : 0;
+  const greetSub = (todos.length > 0 || alertCount > 0)
+    ? <>오늘 챙겨야 할 일 <b>{todos.length}건</b>{alertCount > 0 && <>, 원가율 경보 <b>{alertCount}건</b></>}이 있어요.</>
+    : '오늘도 좋은 하루 보내세요.';
+
+  // 표시 여부 (데이터 없으면 null 반환하는 위젯은 미리 거른다)
+  const openIssueCount = issues.filter(i => i.status === 'open').length;
+  const showUnmatched = isVisible('unmatched') && openIssueCount > 0;
+  const showPipeline  = isVisible('pipeline')  && pipeline?.columns?.some(c => c.count > 0);
+  const showCostAlert = isVisible('costalert') && (costAlertData?.items?.length ?? 0) > 0;
+  const showNotes     = isVisible('notes')     && reportingNotes.length > 0;
+  const showSamples   = isVisible('samples')   && recentSamples.length > 0;
+
   return (
     <main className="main page-enter">
       {/* 위젯 설정 패널 */}
@@ -202,8 +262,8 @@ export default function HomePage() {
       <div className="greet" style={{animation:'slide-up 340ms 0ms cubic-bezier(0.2,0.8,0.2,1) both'}}>
         <div>
           <div className="greet-meta">{todayStr}</div>
-          <h1>안녕하세요, <span className="accent">{userName}</span>님</h1>
-          <div className="sub">오늘도 좋은 하루 보내세요.</div>
+          <h1>{greetingByHour()}, <span className="accent">{userName}</span>님</h1>
+          <div className="sub">{greetSub}</div>
         </div>
         <div className="right">
           <button className="btn" title="위젯 설정" onClick={() => setWidgetConfigOpen(true)}>
@@ -236,9 +296,50 @@ export default function HomePage() {
 
       {isVisible('recent') && <RecentVisitsWidget />}
 
+      {isVisible('briefing') && briefing && <BriefingWidget data={briefing} />}
+
       {isVisible('kpi') && (
         <HomeKpiRow salesKpi={salesKpi} costKpi={costKpi} noteKpi={noteKpi}
           salesCount={salesCount} noteCount={noteCount}/>
+      )}
+
+      {/* 오늘 할 일 · 미매칭 처리 */}
+      {pairRow(
+        isVisible('todo')  ? <TodoWidget key="todo" todos={todos} router={router} /> : null,
+        showUnmatched      ? <UnmatchedWidget key="unmatched" issues={issues} router={router} /> : null,
+      )}
+
+      {/* 신메뉴 파이프라인 · 이번 주 개발 일정 */}
+      {pairRow(
+        showPipeline           ? <PipelineWidget key="pipeline" data={pipeline} router={router} /> : null,
+        isVisible('schedule')  ? <ScheduleWidget key="schedule" data={weekSchedule} router={router} /> : null,
+      )}
+
+      {/* 베스트 5 · 워스트 5 */}
+      {isVisible('ranks') && (
+        <div className="row-2b motion-stagger">
+          <RankCard title="메뉴 판매 베스트 5" sub={rankSub}
+            items={top} emptyTitle="순위 데이터 없음" accent="up" router={router}/>
+          <RankCard title="메뉴 판매 워스트 5" sub={rankSub}
+            items={bottom} emptyTitle="워스트 데이터 없음" accent="down" router={router}/>
+        </div>
+      )}
+
+      {/* 판매량 추이 · 카테고리 도넛 */}
+      {isVisible('charts') && (
+        <HomeChartRow
+          trend={trend} donut={donut}
+          hoveredCat={hoveredCat} setHoveredCat={setHoveredCat}
+          chartTab={chartTab} setChartTab={setChartTab}
+          chartKey={chartKey} salesKpi={salesKpi}
+          router={router} isTrendEmpty={isTrendEmpty}
+        />
+      )}
+
+      {/* 식자재 단가 변동 · 원가율 경보 */}
+      {pairRow(
+        isVisible('pricechange') ? <PriceChangeWidget key="price" items={priceChanges} router={router} /> : null,
+        showCostAlert            ? <CostAlertWidget key="costalert" data={costAlertData} router={router} /> : null,
       )}
 
       {/* 빠른 메모 */}
@@ -260,51 +361,17 @@ export default function HomePage() {
         </div>
       )}
 
-      {isVisible('charts') && (
-        <HomeChartRow
-          trend={trend} donut={donut}
-          hoveredCat={hoveredCat} setHoveredCat={setHoveredCat}
-          chartTab={chartTab} setChartTab={setChartTab}
-          chartKey={chartKey} salesKpi={salesKpi}
-          router={router} isTrendEmpty={isTrendEmpty}
-        />
+      {/* 보고예정 노트 · 샘플 기록 */}
+      {pairRow(
+        showNotes   ? <ReportingNotesWidget key="notes" notes={reportingNotes} router={router} /> : null,
+        showSamples ? <SampleStatsWidget key="samples" samples={recentSamples} router={router} /> : null,
       )}
 
-      {/* 베스트 5 + 워스트 5 */}
-      {isVisible('ranks') && (
-        <div className="mid-row motion-stagger">
-          <RankCard title="메뉴 판매 베스트 5" sub={rankSub}
-            items={top} emptyTitle="순위 데이터 없음" accent="up" router={router}/>
-          <RankCard title="메뉴 판매 워스트 5" sub={rankSub}
-            items={bottom} emptyTitle="워스트 데이터 없음" accent="down" router={router}/>
-        </div>
+      {/* 노트 작성 현황 · 보고서 빠른 생성 */}
+      {pairRow(
+        isVisible('heatmap')     ? <NoteHeatmapWidget key="heatmap" notes={allNotes} /> : null,
+        isVisible('quickreport') ? <QuickReportWidget key="quickreport" router={router} /> : null,
       )}
-
-      {/* 원가율 경보 + 보고서 빠른 생성 */}
-      {(isVisible('costalert') || isVisible('quickreport')) && (() => {
-        const showAlert  = isVisible('costalert') && (costAlertData?.items?.length ?? 0) > 0;
-        const showReport = isVisible('quickreport');
-        if (!showAlert && !showReport) return null;
-        return (
-          <div className="mid-row motion-stagger">
-            {showAlert  && <CostAlertWidget data={costAlertData} router={router}/>}
-            {showReport && (
-              <div style={!showAlert ? { gridColumn: '1 / -1' } : {}}>
-                <QuickReportWidget router={router}/>
-              </div>
-            )}
-          </div>
-        );
-      })()}
-
-      {(isVisible('notes') || isVisible('samples')) && (
-        <div className="mid-row motion-stagger">
-          {isVisible('notes') && <ReportingNotesWidget notes={reportingNotes} router={router}/>}
-          {isVisible('samples') && <SampleStatsWidget samples={recentSamples} router={router}/>}
-        </div>
-      )}
-
-      {isVisible('heatmap') && <NoteHeatmapWidget notes={allNotes} />}
 
       {isVisible('activities') && <HomeActivities activities={activities} router={router}/>}
     </main>

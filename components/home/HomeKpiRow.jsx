@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { fmtKRW, formatPercent } from '@/lib/format';
 import { Sparkline } from '@/components/charts/Sparkline';
+import { MomBars } from './MomBars';
 
 const kpiButtonStyle = {
   border: 'none',
@@ -17,6 +18,12 @@ export const HomeKpiRow = memo(function HomeKpiRow({ salesKpi, costKpi, noteKpi,
   const router = useRouter();
   const [salesPopped, setSalesPopped] = useState(false);
   const [notePopped, setNotePopped] = useState(false);
+
+  // 월 비교 미니 막대 (최근 6개월) — 판매 sparkline + 파생 월 라벨
+  const momSeries = (salesKpi?.sparkline ?? []).slice(-6);
+  const momLabels = salesKpi?.month
+    ? Array.from({ length: 6 }, (_, i) => { let m = salesKpi.month - (5 - i); while (m < 1) m += 12; return `${m}월`; })
+    : [];
 
   useEffect(() => {
     if (salesCount > 0 && !salesPopped) {
@@ -64,7 +71,9 @@ export const HomeKpiRow = memo(function HomeKpiRow({ salesKpi, costKpi, noteKpi,
             )}
           </div>
         </div>
-        <Sparkline data={salesKpi?.sparkline ?? []} color="#3182F6" />
+        {momSeries.length > 0
+          ? <MomBars series={momSeries} labels={momLabels} />
+          : <Sparkline data={salesKpi?.sparkline ?? []} color="#3182F6" />}
       </button>
 
       <div className="card kpi-card">

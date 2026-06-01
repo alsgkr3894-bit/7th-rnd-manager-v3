@@ -5041,17 +5041,19 @@ kbd {
 
 /* ── 노트 히트맵 위젯 ── */
 .heatmap-grid {
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(16, 1fr);
-  grid-template-rows: repeat(7, 1fr);
+  grid-template-rows: repeat(7, 12px);
   grid-auto-flow: column;
   gap: 3px;
 }
 .heatmap-cell {
-  aspect-ratio: 1; border-radius: 2px;
-  background: var(--border);
+  border-radius: 3px;
+  background: var(--surface-3);
   cursor: default;
 }
+.heatmap-cell.lv0 { background: var(--surface-3); }
 .heatmap-cell.lv1 { background: color-mix(in oklab, var(--accent) 22%, var(--surface-2)); }
 .heatmap-cell.lv2 { background: color-mix(in oklab, var(--accent) 45%, var(--surface-2)); }
 .heatmap-cell.lv3 { background: color-mix(in oklab, var(--accent) 70%, var(--surface-2)); }
@@ -5171,7 +5173,14 @@ html {
 /* ============================================================
    3차 개선
 ============================================================ */
-.heatmap-wrap { display:flex; align-items:flex-start; gap:4px; }
+.heatmap-wrap { display:flex; align-items:flex-start; gap:6px; }
+.heatmap-dows { display:flex; flex-direction:column; gap:3px; justify-content:space-around; height:102px; }
+.heatmap-dows div { font-size:9px; color:var(--text-4); line-height:1; width:12px; text-align:right; }
+.heatmap-legend { display:flex; align-items:center; gap:4px; font-size:11px; color:var(--text-4); font-weight:600; white-space:nowrap; }
+.heatmap-legend .hl-cell { width:11px; height:11px; border-radius:3px; }
+.heatmap-stats { display:flex; gap:20px; margin-top:18px; padding-top:16px; border-top:1px solid var(--divider); }
+.heatmap-stats .hs-l { font-size:11px; color:var(--text-3); font-weight:600; }
+.heatmap-stats .hs-v { font-size:15px; font-weight:800; letter-spacing:-0.02em; margin-top:3px; }
 .load-more-btn {
   display:flex; align-items:center; justify-content:center;
   gap:6px; padding:10px 24px; border-radius:var(--radius-md);
@@ -5220,3 +5229,193 @@ div:hover .cal-add-btn:hover { opacity: 1 !important; background: var(--surface-
   /* 사이드바 슬라이드 제거 */
   .sidebar { transition: none !important; }
 }
+
+/* ============================================================
+   홈 대시보드 리디자인 — 신규/확장 위젯
+   (브리핑·KPI 월비교·할일·미매칭·파이프라인·일정·단가변동·원가요약)
+   기존 토큰만 사용. .mid-row(차트)는 비대칭, 신규 페어는 .row-2b(1:1).
+   ============================================================ */
+
+/* 대칭 2열 그리드 — 같은 행 카드 높이 동일 */
+.row-2b {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+  align-items: stretch;
+}
+@media (max-width: 1080px) {
+  .row-2b { grid-template-columns: 1fr; }
+}
+
+/* ── 이번 달 브리핑 히어로 ── */
+.briefing {
+  position: relative; overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  background:
+    radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--accent) 12%, var(--surface)) 0%, var(--surface) 46%);
+  padding: 24px 26px;
+  display: grid; grid-template-columns: 1fr auto; gap: 22px; align-items: center;
+}
+[data-theme="dark"] .briefing {
+  background: radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--accent) 22%, var(--surface)) 0%, var(--surface) 50%);
+}
+.briefing::before {
+  content: ""; position: absolute; right: -40px; top: -60px;
+  width: 220px; height: 220px; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%);
+  pointer-events: none;
+}
+.brief-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11.5px; font-weight: 800; color: var(--accent-text);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  padding: 4px 10px; border-radius: 99px;
+}
+.brief-tag .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: brief-pulse 2s infinite; }
+@keyframes brief-pulse { 0%,100%{ opacity: 1; } 50%{ opacity: 0.35; } }
+.brief-head { font-size: 21px; font-weight: 800; letter-spacing: -0.03em; margin: 12px 0 0; line-height: 1.4; max-width: 640px; }
+.brief-stats { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.brief-stat {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 13px; padding: 11px 15px; min-width: 116px; box-shadow: var(--shadow-sm);
+}
+.brief-stat .l { font-size: 11.5px; color: var(--text-3); font-weight: 600; }
+.brief-stat .v { font-size: 21px; font-weight: 800; letter-spacing: -0.02em; margin-top: 3px; }
+.brief-stat .v .unit { font-size: 13px; font-weight: 700; opacity: 0.5; margin-left: 1px; }
+.brief-stat .d { font-size: 11px; font-weight: 700; margin-top: 1px; }
+.brief-aside { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+.brief-spark { width: 220px; height: 76px; }
+.brief-spark .spark { width: 100%; height: 100%; }
+.brief-spark-cap { font-size: 11px; color: var(--text-3); font-weight: 600; }
+
+/* ── KPI 월 비교 미니 막대 ── */
+.mom { display: flex; align-items: flex-end; gap: 10px; margin-top: 16px; height: 56px; }
+.mom-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 5px; flex: 1; height: 100%; }
+.mom-bar { width: 100%; max-width: 34px; border-radius: 6px 6px 3px 3px; background: var(--surface-3); min-height: 4px; }
+.mom-bar.cur { background: var(--accent); }
+.mom-bar.prev { background: var(--border-strong); }
+.mom-label { font-size: 10.5px; color: var(--text-4); font-weight: 600; }
+
+/* ── 세그먼트 토글 (할 일 필터 등) ── */
+.seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--surface-2); border-radius: 9px; }
+.seg button {
+  padding: 5px 11px; border: 0; background: transparent; cursor: pointer;
+  font-size: 12px; font-weight: 700; color: var(--text-3); border-radius: 7px;
+  transition: background 120ms, color 120ms;
+}
+.seg button.active { background: var(--surface); color: var(--text-1); box-shadow: var(--shadow-sm); }
+
+/* ── 태그 칩 ── */
+.tagchip { font-size: 10.5px; font-weight: 800; padding: 3px 9px; border-radius: 99px; flex-shrink: 0; white-space: nowrap; }
+.tagchip.report { background: color-mix(in srgb, var(--color-reporting) 14%, transparent); color: var(--color-reporting); }
+.tagchip.due { background: var(--warn-soft); color: var(--warn); }
+[data-theme="dark"] .tagchip.report { color: #C084FC; }
+
+/* ── 오늘 할 일 ── */
+.todo-list { display: flex; flex-direction: column; gap: 7px; }
+.todo {
+  display: flex; align-items: center; gap: 12px; padding: 11px 13px;
+  border-radius: 12px; background: var(--surface-2); border: 1px solid transparent;
+  cursor: pointer; text-align: left; font: inherit; width: 100%;
+  transition: background 120ms, border-color 120ms, transform 140ms, opacity 220ms;
+}
+.todo:hover { border-color: var(--border-strong); transform: translateX(2px); }
+.todo.leaving { opacity: 0; transform: translateX(40px); pointer-events: none; }
+.todo .check {
+  width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--border-strong);
+  flex-shrink: 0; display: grid; place-items: center; color: #fff; transition: all 120ms;
+}
+.todo .check svg { width: 13px; height: 13px; opacity: 0; }
+.todo .check:hover { border-color: var(--positive); }
+.todo .tmain { flex: 1; min-width: 0; }
+.todo .ttitle { display: block; font-size: 13.5px; font-weight: 700; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.todo .tsub { display: block; font-size: 11.5px; color: var(--text-3); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.todo-empty { text-align: center; color: var(--text-3); font-size: 13.5px; font-weight: 700; padding: 26px 10px; background: var(--surface-2); border-radius: 12px; }
+
+/* ── 미매칭 처리 ── */
+.unmatch-top { display: flex; align-items: center; gap: 14px; padding: 2px 0 14px; }
+.unmatch-num { font-size: 34px; font-weight: 800; color: var(--negative); letter-spacing: -0.03em; line-height: 1; flex-shrink: 0; }
+.unmatch-num span { font-size: 15px; font-weight: 700; margin-left: 2px; }
+.unmatch-desc { font-size: 12px; color: var(--text-3); line-height: 1.5; }
+.unmatch-row { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-radius: 10px; background: var(--surface-2); font-size: 12.5px; text-align: left; transition: background 120ms; }
+.unmatch-row + .unmatch-row { margin-top: 6px; }
+.unmatch-row:hover { background: var(--surface-3); }
+.unmatch-row .um-raw { font-weight: 700; color: var(--text-1); white-space: nowrap; }
+.unmatch-row .um-arrow { color: var(--text-4); flex-shrink: 0; }
+.unmatch-row .um-sug { color: var(--text-3); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.unmatch-row .um-sug b { color: var(--accent-text); font-weight: 700; }
+.unmatch-row .um-tag { font-size: 10px; font-weight: 800; color: var(--text-4); background: var(--surface-3); padding: 2px 7px; border-radius: 99px; flex-shrink: 0; white-space: nowrap; }
+
+/* 카드 하단 진행바 / 푸터 (남는 공간 채움) */
+.mini-foot { margin-top: auto; padding-top: 16px; }
+.mini-foot .mf-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 12px; color: var(--text-3); font-weight: 600; margin-bottom: 7px; }
+.mini-foot .mf-top b { flex-shrink: 0; font-size: 15px; font-weight: 800; letter-spacing: -0.02em; }
+.mini-bar { height: 8px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+.mini-bar > div { height: 100%; border-radius: 99px; }
+.mini-foot .mf-sub { font-size: 11px; color: var(--text-4); margin-top: 8px; }
+
+/* ── 신메뉴 파이프라인 ── */
+.pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; flex: 1; }
+.pipe-col { background: var(--surface-2); border-radius: 12px; padding: 10px 9px; display: flex; flex-direction: column; gap: 6px; border-top: 3px solid var(--border-strong); }
+.pipe-col.s1 { border-top-color: #8B95A1; }
+.pipe-col.s2 { border-top-color: var(--accent); }
+.pipe-col.s3 { border-top-color: var(--color-reporting); }
+.pipe-col.s4 { border-top-color: var(--positive); }
+.pipe-head { display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--text-2); white-space: nowrap; }
+.pipe-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.pipe-n { margin-left: auto; font-size: 13px; font-weight: 800; color: var(--text-1); }
+.pipe-items { flex: 1; display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+.pipe-item { font-size: 11px; font-weight: 600; color: var(--text-2); background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 5px 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pipe-more { font-size: 10.5px; color: var(--text-4); font-weight: 600; padding-left: 2px; }
+
+/* ── 이번 주 개발 일정 ── */
+.week-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 14px; }
+.wk-day { text-align: center; padding: 8px 0 6px; border-radius: 10px; background: var(--surface-2); }
+.wk-day.today { background: var(--accent-soft); }
+.wk-dow { font-size: 10px; color: var(--text-4); font-weight: 700; }
+.wk-num { font-size: 14px; font-weight: 800; color: var(--text-1); margin-top: 2px; }
+.wk-day.today .wk-num { color: var(--accent-text); }
+.wk-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); margin: 4px auto 0; }
+.wk-dot.empty { background: transparent; }
+.sched-list { display: flex; flex-direction: column; gap: 6px; }
+.sched-row { display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 11px; background: var(--surface-2); cursor: pointer; text-align: left; font: inherit; width: 100%; border: 0; transition: background 120ms, transform 140ms; }
+.sched-row:hover { background: var(--surface-3); transform: translateX(2px); }
+.sched-date { width: 40px; flex-shrink: 0; text-align: center; }
+.sched-date .sd-d { font-size: 16px; font-weight: 800; line-height: 1; color: var(--text-1); }
+.sched-date .sd-w { font-size: 10px; color: var(--text-3); font-weight: 600; margin-top: 2px; }
+.sched-main { flex: 1; min-width: 0; }
+.sched-title { display: block; font-size: 13px; font-weight: 700; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sched-sub { display: block; font-size: 11px; color: var(--text-3); margin-top: 1px; }
+
+/* ── 식자재 단가 변동 ── */
+.price-row { display: flex; align-items: center; gap: 11px; padding: 10px 4px; border-bottom: 1px solid var(--divider); }
+.price-row:last-child { border-bottom: 0; }
+.price-row .pr-meta { flex: 1; min-width: 0; }
+.price-row .pr-name { display: block; font-size: 13px; font-weight: 700; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.price-row .pr-sub { display: block; font-size: 11px; color: var(--text-3); margin-top: 1px; font-variant-numeric: tabular-nums; }
+.price-chip { font-size: 12.5px; font-weight: 800; padding: 3px 9px; border-radius: 99px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.price-chip.up { background: var(--negative-soft); color: var(--negative); }
+.price-chip.down { background: var(--positive-soft); color: var(--positive); }
+
+/* ── 원가율 경보 3분류 요약 ── */
+.alert-summary { display: flex; gap: 8px; margin-bottom: 14px; }
+.alert-pill { flex: 1; text-align: center; padding: 10px; border-radius: 12px; background: var(--surface-2); }
+.alert-pill .n { font-size: 20px; font-weight: 800; }
+.alert-pill .t { font-size: 11px; color: var(--text-3); font-weight: 600; margin-top: 2px; }
+.alert-pill.bad .n { color: var(--negative); }
+.alert-pill.warn .n { color: var(--warn); }
+.alert-pill.good .n { color: var(--positive); }
+
+/* ── 베스트/워스트 행 미니 추이 + 값 ── */
+.rank-row .rank-num.down { color: var(--negative); }
+.rank-mini { width: 56px; height: 22px; flex-shrink: 0; }
+.rank-mini .spark { width: 100%; height: 100%; }
+.rank-val { font-size: 13px; font-weight: 800; color: var(--text-2); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+/* ── 도넛 인사이트 푸터 ── */
+.ring-foot { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--divider); display: flex; gap: 24px; flex-wrap: wrap; }
+.ring-foot .rf .l { font-size: 11px; color: var(--text-3); font-weight: 600; white-space: nowrap; }
+.ring-foot .rf .v { font-size: 15px; font-weight: 800; letter-spacing: -0.02em; margin-top: 3px; white-space: nowrap; }
