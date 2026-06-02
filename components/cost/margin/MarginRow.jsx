@@ -48,8 +48,8 @@ export const MarginRow = memo(function MarginRow({ r, sizeLabels, activePlatform
             const eff = applyDiscount(s.sellingPrice, discount);
             const net = calcNetRevenue(eff, activePlatform.fees, l);
             netCell = (
-              <td key={l+'_n'} style={{ textAlign:'right', fontSize:12, color:'var(--text-2)' }}>
-                {formatNumber(Math.round(net))}원
+              <td key={l+'_n'} className="mt-num" style={{ textAlign:'right', fontSize:12, color:'var(--text-2)' }}>
+                {formatNumber(Math.round(net))}<span className="mt-won">원</span>
                 {eff !== s.sellingPrice && (
                   <div style={{ fontSize:10, color:'var(--text-4)' }}>{formatNumber(eff)}원 기준</div>
                 )}
@@ -66,18 +66,21 @@ export const MarginRow = memo(function MarginRow({ r, sizeLabels, activePlatform
         const baseCostRate = hasAdjustment ? calcPlatformMargin(cost, s?.sellingPrice || 0) : null;
         const baseDisplay  = baseCostRate != null ? (viewMode === 'margin' ? 100 - baseCostRate : baseCostRate) : null;
 
+        const rateColor = display != null ? MC(display, viewMode, warnPct, critPct) : null;
         return (
           <Fragment key={l}>
-            <td style={{ ...GRP_BORDER, textAlign:'right', color:'var(--text-2)' }}>
-              {cost > 0 ? `${formatNumber(Math.round(cost))}원` : '—'}
+            <td className="mt-num" style={{ ...GRP_BORDER, textAlign:'right', color:'var(--text-2)' }}>
+              {cost > 0 ? <>{formatNumber(Math.round(cost))}<span className="mt-won">원</span></> : '—'}
             </td>
-            <td style={{ textAlign:'right', color:'var(--text-2)' }}>
-              {s?.sellingPrice != null ? `${formatNumber(s.sellingPrice)}원` : '—'}
+            <td className="mt-num" style={{ textAlign:'right', color:'var(--text-2)' }}>
+              {s?.sellingPrice != null ? <>{formatNumber(s.sellingPrice)}<span className="mt-won">원</span></> : '—'}
             </td>
             {netCell}
             <td style={{ textAlign:'right' }}>
               {display != null ? (
-                <span style={{ fontWeight:700, color: MC(display, viewMode, warnPct, critPct) }}>{display.toFixed(1)}%</span>
+                <span className="mt-rate" style={{ color: rateColor, background: `color-mix(in srgb, ${rateColor} 14%, transparent)` }}>
+                  {display.toFixed(1)}%
+                </span>
               ) : '—'}
               {baseDisplay != null && baseDisplay !== display && (
                 <span style={{ fontSize:10, color:'var(--text-4)', marginLeft:5 }}>({baseDisplay.toFixed(1)}%)</span>

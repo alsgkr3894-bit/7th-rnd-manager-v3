@@ -14,6 +14,7 @@ import {
   MENU_CATEGORIES,
 } from '@/lib/recipe';
 import { getAllMenuMaster } from '@/lib/menu-master/store';
+import { normalizePersonalPizzaCodes } from '@/lib/menu-master/normalize';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
 import { parseMenuCode } from '@/lib/cost/menu-price/code';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
@@ -21,6 +22,8 @@ import { costRateColor } from '@/lib/cost/rate-color';
 import { KEYS } from '@/lib/note/keys';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { TabButton } from '@/components/cost/shared/TabButton';
+import { CommonManageView } from '@/components/cost/manage/CommonManageView';
 import dynamic from 'next/dynamic';
 
 const RecipeEditor = dynamic(
@@ -99,6 +102,10 @@ function RecipeContent() {
   const [loading,      setLoading]      = useState(true);
   const [dbError,      setDbError]      = useState(null);
   const [search,       setSearch]       = useState(() => searchParams?.get('q') || '');
+  const [tab,          setTab]          = useState(() => {
+    const t = searchParams?.get('tab');
+    return (t === 'groups' || t === 'edges') ? t : 'recipe';
+  });
   const [customOrder,  setCustomOrder]  = useState(() => {
     if (typeof window === 'undefined') return {};
     try { return JSON.parse(localStorage.getItem(KEYS.RECIPE_SORT) || '{}'); }
@@ -113,6 +120,7 @@ function RecipeContent() {
 
   const load = useCallback(async () => {
     await initDB();
+    await normalizePersonalPizzaCodes().catch(e => console.warn('[recipe] 코드 정규화 실패', e));
     const [files, meta, recs, masters, menuPrices, groups] = await Promise.all([
       getPriceFiles(),
       getAllIngredients(),
@@ -151,13 +159,14 @@ function RecipeContent() {
 
   useVisibilityRefresh(load);
 
-  // URL sync for search filter
+  // URL sync for search filter + active tab
   useEffect(() => {
     const params = new URLSearchParams();
+    if (tab !== 'recipe') params.set('tab', tab);
     if (search) params.set('q', search);
     const qs = params.toString();
     window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
-  }, [search, pathname]);
+  }, [search, tab, pathname]);
 
   // load 후 선택된 레시피 draft 동기화 — selectedId가 실제로 바뀔 때만 실행
   useEffect(() => {
@@ -302,13 +311,27 @@ function RecipeContent() {
         title="메뉴 원가 계산"
         masterSource
         sub="사이즈별 식자재 사용량을 입력하면 원가와 원가율이 자동 계산됩니다."
-        actions={
+        actions={tab === 'recipe' ? (
           <button className="btn" onClick={() => { handleExportCsv(filteredRecipes); showToast(`CSV ${filteredRecipes.length}개 내보내기 완료`, 'ok'); }} disabled={filteredRecipes.length === 0}>
             <Icon.download style={{ width: 14, height: 14 }}/> CSV 내보내기
           </button>
-        }
+        ) : undefined}
       />
 
+      {/* 상단 탭 — 원가 레시피 / 묶음 관리 / 엣지 관리 (공통관리 통합) */}
+      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)', marginTop: 8 }}>
+        <TabButton active={tab === 'recipe'} onClick={() => setTab('recipe')}>원가 레시피</TabButton>
+        <TabButton active={tab === 'groups'} onClick={() => setTab('groups')}>묶음 관리</TabButton>
+        <TabButton active={tab === 'edges'}  onClick={() => setTab('edges')}>엣지 관리</TabButton>
+      </div>
+
+      {tab !== 'recipe' && (
+        <div style={{ marginTop: 16 }}>
+          <CommonManageView tab={tab} />
+        </div>
+      )}
+
+      {tab === 'recipe' && (
       <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 16, marginTop: 8, alignItems: 'start' }}>
 
         {/* ── 왼쪽: 메뉴 목록 ── */}
@@ -534,6 +557,7 @@ function RecipeContent() {
           </div>
         )}
       </div>
+      )}
 
       {pendingDeleteId && (
         <ConfirmDialog

@@ -18,7 +18,7 @@ import {
 import { componentSubtotal } from '@/lib/cost/shared/calc';
 import { getPizzaRecipeMap } from '@/lib/cost/pizza-detail';
 import { getAllEdges } from '@/lib/cost/edge-dough/store';
-import { edgeTotalCost, EXPAND_EDGE_TYPES } from '@/lib/cost/edge-dough';
+import { edgeTotalCost, defaultExpandInMargin, defaultMarginSuffix } from '@/lib/cost/edge-dough';
 import { getPersonalRecipeMap } from '@/lib/cost/personal-detail';
 import { getSideRecipeMap } from '@/lib/cost/side-detail';
 import { getSetRecipeMap } from '@/lib/cost/set-detail';
@@ -177,14 +177,27 @@ export default function Page() {
       });
     }
 
-    // 엣지 원가 맵: edgeType → { size → cost }
-    const EXPAND_EDGES = EXPAND_EDGE_TYPES;
+    // 마진표 확장 엣지 — 엣지별 expandInMargin 플래그 기반(데이터 주도).
+    // 레거시 데이터(플래그 미존재)는 EXPAND_EDGE_TYPES fallback.
+    const isExpandEdge = (e) =>
+      e.expandInMargin != null ? !!e.expandInMargin : defaultExpandInMargin(e.edgeType);
+    const EXPAND_EDGES = [...new Set(edges.filter(isExpandEdge).map(e => e.edgeType))];
+
+    // 엣지 유형별 마진표 접미사 (엣지 레코드의 marginSuffix 우선)
+    const edgeSuffixByType = {};
+    for (const e of edges) {
+      if (!isExpandEdge(e)) continue;
+      if (!edgeSuffixByType[e.edgeType]) {
+        edgeSuffixByType[e.edgeType] = (e.marginSuffix || '').trim() || defaultMarginSuffix(e.edgeType);
+      }
+    }
+
     const PIZZA_EDGE_CATS = new Set([
       '피자', '피자/프리미엄 스페셜', '피자/프리미엄', '피자/오리지널', '피자/하프앤하프',
     ]);
     const edgeCostByType = {};
     for (const e of edges) {
-      if (!EXPAND_EDGES.includes(e.edgeType)) continue;
+      if (!isExpandEdge(e)) continue;
       if (!edgeCostByType[e.edgeType]) edgeCostByType[e.edgeType] = {};
       edgeCostByType[e.edgeType][e.size] = edgeTotalCost(e);
     }
@@ -223,8 +236,8 @@ export default function Page() {
     });
 
     // 엣지 파생 행 생성 — detail-store 피자 + 레시피 피자 모두 처리
-    // 파생행 메뉴코드: 베이스코드 + 접미사 (치즈크러스트=C, 골드스윗크러스트=G)
-    const EDGE_SUFFIX = { '치즈크러스트': 'C', '골드스윗크러스트': 'G' };
+    // 파생행 메뉴코드: 베이스코드 + 접미사 (엣지별 marginSuffix)
+    const EDGE_SUFFIX = edgeSuffixByType;
     const derivedRows = [];
     const pizzaSources = [
       ...enrichedDetailRows.filter(r => PIZZA_EDGE_CATS.has(r.menuCategory || '')),

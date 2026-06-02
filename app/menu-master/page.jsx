@@ -14,6 +14,7 @@ import {
 import { parseCategoryFromCode } from '@/lib/cost/menu-price/code';
 import { getDefaultPrice, resetAllMenuPrices } from '@/lib/cost/menu-price';
 import { seedMenuMaster } from '@/lib/menu-master/seed';
+import { normalizePersonalPizzaCodes } from '@/lib/menu-master/normalize';
 import { MenuPriceUploadCard } from '@/components/cost/menu-price/MenuPriceUploadCard';
 import { BulkPriceModal } from '@/components/cost/menu-price/BulkPriceModal';
 
@@ -210,6 +211,8 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
+    // 기존 데이터의 1인피자 P-ONE-###-ONE 코드 정규화 (idempotent — 변경 없으면 no-op)
+    await normalizePersonalPizzaCodes().catch(e => console.warn('[menu-master] 코드 정규화 실패', e));
     setRows(await getAllMenuMaster());
   }, []);
 

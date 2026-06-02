@@ -16,7 +16,6 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
   const pathname = usePathname();
   const router = useRouter();
   const sidebarRef = useRef(null);
-  const [pillStyle, setPillStyle] = useState({ top: 0, height: 40, opacity: 0 });
   const [latestPrice, setLatestPrice] = useState(null);
 
   // 최신 제때 단가 조회 — 마운트 1회만
@@ -78,23 +77,18 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  // 활성 항목 위치로 pill 이동 — DOM 트랜지션 완료 후 1프레임 뒤 계산
+  // 활성 항목이 보이는 영역 밖이면 스크롤로 노출 (active 표시는 CSS .active 배경·좌측바가 담당)
   useEffect(() => {
     const sidebar = sidebarRef.current;
     if (!sidebar) return;
     const rafId = requestAnimationFrame(() => {
-      // 열린 아코디언 안의 active child만 사용 (닫힌 상태면 부모 nav-item으로 fallback)
       const activeEl =
         sidebar.querySelector('.nav-children.open .nav-child.active') ||
         sidebar.querySelector('.nav-item.active');
-      if (!activeEl) {
-        setPillStyle(s => ({ ...s, opacity: 0 }));
-        return;
-      }
+      if (!activeEl) return;
       const sRect = sidebar.getBoundingClientRect();
       const eRect = activeEl.getBoundingClientRect();
-      setPillStyle({ top: eRect.top - sRect.top + sidebar.scrollTop, height: eRect.height, opacity: 1 });
-      // active 항목이 보이는 영역 밖일 때만 스크롤 (이미 보이는 항목 클릭 시 점프 방지)
+      // 이미 보이는 항목 클릭 시 점프 방지 — 영역 밖일 때만 스크롤
       const outOfView = eRect.top < sRect.top || eRect.bottom > sRect.bottom;
       if (outOfView) activeEl.scrollIntoView({ block: 'nearest', behavior: 'instant' });
     });
@@ -198,7 +192,6 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
 
   return (
     <aside className="sidebar" ref={sidebarRef} suppressHydrationWarning>
-      <div className="sidebar-pill" style={{ transform: `translateY(${pillStyle.top}px)`, height: pillStyle.height, opacity: pillStyle.opacity }} />
       <a className="brand" href="/" onClick={e => { e.preventDefault(); navigate('/'); }}>
         {activeCompany?.logo
           ? <img className="logo-img" src={activeCompany.logo} alt={activeCompany?.name || '로고'}

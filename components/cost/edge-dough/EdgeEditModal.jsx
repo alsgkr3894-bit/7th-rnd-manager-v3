@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
-import { EDGE_TYPES, edgeTotalCost, edgeCodeOf } from '@/lib/cost/edge-dough';
+import { EDGE_TYPES, edgeTotalCost, edgeCodeOf, defaultExpandInMargin, defaultMarginSuffix } from '@/lib/cost/edge-dough';
 import { getAllIngredients } from '@/lib/ingredient';
 import { buildUnitPriceMap } from '@/lib/recipe';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
@@ -19,6 +19,10 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
   const [size,     setSize]       = useState(initial?.size || 'L');
   const [comps,    setComps]      = useState(() => (initial?.components || []).map(c => ({ ...EMPTY_COMP(), ...c })));
   const [note,     setNote]       = useState(initial?.note || '');
+  const [expandInMargin, setExpandInMargin] = useState(
+    initial?.expandInMargin != null ? !!initial.expandInMargin : defaultExpandInMargin(initial?.edgeType || EDGE_TYPES[0])
+  );
+  const [marginSuffix, setMarginSuffix] = useState(initial?.marginSuffix || '');
   const [allMeta,  setAllMeta]    = useState([]);
   const [upm,      setUpm]        = useState(new Map());
   const [saving,   setSaving]     = useState(false);
@@ -58,6 +62,8 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
           unitPrice: c.unitPrice !== '' ? Number(c.unitPrice) : null,
         })),
         note,
+        expandInMargin,
+        marginSuffix: marginSuffix.trim() || defaultMarginSuffix(edgeType),
       });
     } finally { setSaving(false); }
   }
@@ -138,6 +144,26 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
           <div>
             <FieldLabel>비고</FieldLabel>
             <input className="form-input" value={note} onChange={e => setNote(e.target.value)} placeholder="선택 입력"/>
+          </div>
+
+          {/* 원가마진표 노출 설정 */}
+          <div style={{ padding:'12px 14px', background:'var(--surface-2)', borderRadius:10,
+            display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
+            <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', fontSize:13, fontWeight:600 }}>
+              <input type="checkbox" checked={expandInMargin}
+                onChange={e => setExpandInMargin(e.target.checked)}
+                style={{ accentColor:'var(--accent)', width:16, height:16 }}/>
+              원가마진표에 별도 행으로 표시
+            </label>
+            {expandInMargin && (
+              <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'var(--text-3)' }}>
+                코드 접미사
+                <input className="form-input" value={marginSuffix}
+                  onChange={e => setMarginSuffix(e.target.value)}
+                  placeholder={defaultMarginSuffix(edgeType)}
+                  style={{ width:64, textAlign:'center', textTransform:'uppercase' }}/>
+              </label>
+            )}
           </div>
 
           {/* 총 원가 */}
