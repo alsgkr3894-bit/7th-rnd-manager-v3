@@ -1,9 +1,54 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { initDB } from '@/lib/db';
-import { getAllOrigins } from '@/lib/nutrition/origin/store';
+import { getAllIngredients } from '@/lib/ingredient';
+import { getAllMenuMaster } from '@/lib/menu-master';
+import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
+import { getAllEdges } from '@/lib/cost/edge-dough';
+import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
+import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
+import { getAllSideRecipes } from '@/lib/cost/side-detail';
+import { getAllSetRecipes } from '@/lib/cost/set-detail';
+import { getAllRecipes } from '@/lib/recipe';
+import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 import { exportOriginToExcel } from '@/lib/nutrition/origin/export';
 import './origin-result.css';
+
+/**
+ * 식자재 원산지 + 레시피 매핑 → 기존 origins 형식으로 변환
+ * buildSheet1/2/3이 그대로 동작하도록 호환 어댑터.
+ */
+function buildOriginsFromIngredients(ingredients, ingredientToMenus) {
+  const result = [];
+  for (const ing of ingredients) {
+    if (!ing.origin?.country || ing.discontinued || ing.excluded) continue;
+    const codeKey  = ing.productCode ? `code:${ing.productCode}` : null;
+    const nameKey  = `name:${(ing.ingredientName || '').trim().toLowerCase().replace(/\s+/g, '')}`;
+    const byCode   = codeKey ? (ingredientToMenus.get(codeKey) || new Map()) : new Map();
+    const byName   = ingredientToMenus.get(nameKey) || new Map();
+    const merged   = new Map([...byName, ...byCode]);
+
+    const menuCodes = [...merged.entries()].map(([menuCode, meta]) => ({ menuCode, menuName: meta.menuName }));
+    result.push({
+      id:             ing.id,
+      ingredientId:   ing.id,
+      ingredientName: ing.ingredientName,
+      productCode:    ing.productCode || null,
+      displayName:    ing.origin.displayName || ing.ingredientName,
+      originCountry:  ing.origin.country,
+      originRegion:   ing.origin.region || '',
+      menuCodes,
+      menuCode:       menuCodes[0]?.menuCode || '',
+      menuName:       menuCodes[0]?.menuName || '',
+      items: [{
+        displayName:   ing.origin.displayName || ing.ingredientName,
+        originCountry: ing.origin.country,
+        originRegion:  ing.origin.region || '',
+      }],
+    });
+  }
+  return result;
+}
 
 /* ── 고정 텍스트 ─────────────────────────────────────────── */
 const LEGAL_ITEMS =
@@ -254,11 +299,30 @@ export default function OriginResult() {
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    initDB()
-      .then(() => getAllOrigins())
-      .then(setOrigins)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    (async () => {
+      await initDB();
+      const [ings, masters, groups, edges, pizzaRecs, personalRecs, sideRecs, setRecs, oldRecs] = await Promise.all([
+        getAllIngredients(),
+        getAllMenuMaster(),
+        getAllRecipeGroups(),
+        getAllEdges(),
+        getAllPizzaRecipes(),
+        getAllPersonalRecipes(),
+        getAllSideRecipes(),
+        getAllSetRecipes(),
+        getAllRecipes(),
+      ]);
+      const detailRecipes = [
+        ...pizzaRecs.map(r => ({ ...r, category: '피자' })),
+        ...personalRecs.map(r => ({ ...r, category: '1인피자' })),
+        ...sideRecs.map(r => ({ ...r, category: '사이드' })),
+        ...setRecs.map(r => ({ ...r, category: '세트박스' })),
+      ];
+      const { ingredientToMenus } = buildIngredientMenuMap({
+        menuMasters: masters, detailRecipes, oldRecipes: oldRecs, groups, edges,
+      });
+      setOrigins(buildOriginsFromIngredients(ings, ingredientToMenus));
+    })().catch(console.error).finally(() => setLoading(false));
   }, []);
 
   const sheet1 = useMemo(() => buildSheet1(origins), [origins]);

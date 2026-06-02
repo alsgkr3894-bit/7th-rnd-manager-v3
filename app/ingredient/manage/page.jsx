@@ -21,6 +21,7 @@ import {
 } from '@/lib/ingredient';
 import { KEYS } from '@/lib/note/keys';
 import { DISCONTINUED_FILTER, UNCATEGORIZED_FILTER } from '@/lib/ingredient/constants';
+import { migrateNutritionToIngredients } from '@/lib/nutrition/migrate-to-ingredient';
 import { IngredientForm } from './IngredientForm';
 import { ManageRow } from '@/components/ingredient/ManageRow';
 import { IssuesView } from '@/components/ingredient/IssuesView';
@@ -47,6 +48,8 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
+    // 기존 수동 원산지/알레르기 데이터를 식자재로 일회성 이전 (idempotent)
+    await migrateNutritionToIngredients().catch(e => console.warn('[ingredient/manage] 마이그레이션 실패', e));
     const files = await getPriceFiles();
     const latest = files[0] || null;
     const prev   = files[1] ?? null;

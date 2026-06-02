@@ -7,6 +7,7 @@ import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { SEED_MAIN_CATEGORIES, SEED_HASH_TAGS, sortMainCategories } from '@/lib/ingredient';
 import { SCOPE, SCOPE_ORDER, SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
+import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 
 const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병'];
 const LS_UNIT_TYPE = 'v3:ingredient_lastUnitType';
@@ -21,6 +22,9 @@ const EMPTY = {
   manufacturer: '', discontinued: false,
   baseQuantity: '', baseUnitType: getLastUnitType(), taxType: '과세',
   priceOverride: '', scope: '', note: '',
+  // 원산지·알레르기
+  origin: null,     // { displayName, country, region } | null
+  allergens: [],    // ['AL01','AL06',…]
 };
 
 export function IngredientForm({ initial, onSave, onClose, extraCategories = [] }) {
@@ -291,6 +295,70 @@ export function IngredientForm({ initial, onSave, onClose, extraCategories = [] 
               placeholder="예) 냉장 보관 / 수입산"/>
           </Field>
 
+          {/* ── 원산지 ── */}
+          <div style={{borderTop:'1px solid var(--divider)', paddingTop:16}}>
+            <div style={{fontSize:13, fontWeight:700, color:'var(--text-2)', marginBottom:10}}>원산지 정보</div>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 120px', gap:8}}>
+              <Field label="표시품목명">
+                <input className="form-input" value={form.origin?.displayName || ''}
+                  onChange={e => set('origin', { ...(form.origin || {}), displayName: e.target.value, country: form.origin?.country || '', region: form.origin?.region || '' })}
+                  placeholder="예) 밀가루, 치즈"/>
+              </Field>
+              <Field label="원산지 국가">
+                <input className="form-input" value={form.origin?.country || ''}
+                  onChange={e => set('origin', { ...(form.origin || {}), displayName: form.origin?.displayName || '', country: e.target.value, region: form.origin?.region || '' })}
+                  placeholder="예) 국내산, 미국"/>
+              </Field>
+              <Field label="세부 지역">
+                <input className="form-input" value={form.origin?.region || ''}
+                  onChange={e => set('origin', { ...(form.origin || {}), displayName: form.origin?.displayName || '', country: form.origin?.country || '', region: e.target.value })}
+                  placeholder="선택"/>
+              </Field>
+            </div>
+          </div>
+
+          {/* ── 알레르기 유발물질 ── */}
+          <div style={{borderTop:'1px solid var(--divider)', paddingTop:16}}>
+            <div style={{fontSize:13, fontWeight:700, color:'var(--text-2)', marginBottom:8}}>
+              알레르기 유발물질
+              {form.allergens?.length > 0 && (
+                <span style={{marginLeft:8, fontSize:11, fontWeight:600, color:'var(--accent)',
+                  background:'var(--accent-soft)', padding:'1px 7px', borderRadius:999}}>
+                  {form.allergens.length}개 선택
+                </span>
+              )}
+            </div>
+            <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
+              {ALLERGEN_SEED.map(a => {
+                const active = (form.allergens || []).includes(a.allergenCode);
+                return (
+                  <button key={a.allergenCode} type="button"
+                    onClick={() => set('allergens',
+                      active
+                        ? (form.allergens || []).filter(c => c !== a.allergenCode)
+                        : [...(form.allergens || []), a.allergenCode]
+                    )}
+                    style={{
+                      padding:'4px 10px', borderRadius:999, fontSize:12, fontWeight:600,
+                      border: active ? 'none' : '1px solid var(--border)',
+                      background: active ? 'var(--accent)' : 'transparent',
+                      color: active ? '#fff' : 'var(--text-3)',
+                      cursor:'pointer', transition:'all 120ms ease',
+                    }}>
+                    {a.allergenName}
+                  </button>
+                );
+              })}
+            </div>
+            {form.allergens?.length > 0 && (
+              <button type="button" style={{marginTop:8, fontSize:11, color:'var(--text-4)',
+                background:'transparent', border:0, cursor:'pointer'}}
+                onClick={() => set('allergens', [])}>
+                선택 초기화
+              </button>
+            )}
+          </div>
+
           <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:4}}>
             <button type="button" className="btn" onClick={onClose}>취소</button>
             <button type="submit" className="btn primary" disabled={saving}>
@@ -346,5 +414,7 @@ function toForm(r) {
     priceOverride:  r.priceOverride  != null ? String(r.priceOverride) : '',
     scope:          r.scope && r.scope !== SCOPE_UNASSIGNED ? r.scope : '',
     note:           r.note           || '',
+    origin:   r.origin   ?? null,
+    allergens: Array.isArray(r.allergens) ? r.allergens : [],
   };
 }
