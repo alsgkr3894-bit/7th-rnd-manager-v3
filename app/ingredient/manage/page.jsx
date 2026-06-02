@@ -208,6 +208,21 @@ export default function Page() {
   }, [rows]);
 
   const discontinuedCount = rows.filter(r => r.discontinued).length;
+
+  // 원산지 자동완성 후보 — 기존 입력된 표시품목명·국가 수집
+  const originSuggestions = useMemo(() => {
+    const names = new Set(), countries = new Set();
+    for (const r of rows) {
+      const origin = r.origin;
+      if (!origin) continue;
+      const items = Array.isArray(origin) ? origin : [origin]; // 구버전 객체 방어
+      for (const it of items) {
+        if (it.displayName) names.add(it.displayName);
+        if (it.country)     countries.add(it.country);
+      }
+    }
+    return { names: [...names], countries: [...countries] };
+  }, [rows]);
   const uncategorized     = rows.filter(r => !r.discontinued && !r.excluded && !r.category).length;
 
   // ── 이슈 행 추출 ──
@@ -497,6 +512,7 @@ export default function Page() {
           onSave={handleSave}
           onClose={() => setFormTarget(null)}
           extraCategories={mainCats}
+          originSuggestions={originSuggestions}
         />
       )}
     </main>

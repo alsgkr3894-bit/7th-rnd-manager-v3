@@ -80,13 +80,14 @@ function CategoryTags({ menuCode }) {
 /* ── 메뉴 추가/수정 모달 (마스터가 메뉴코드·분류·규격·판매가의 기준) ── */
 function EditModal({ row, isNew, onSave, onClose }) {
   const [form, setForm] = useState({
-    menuCode: row?.menuCode || '',
-    menuName: row?.menuName || '',
-    category: row?.category || (CATEGORIES[0]),
-    size:     row?.size || '',
-    price:    row?.price != null ? String(row.price) : '',
-    status:   row?.status || 'active',
-    note:     row?.note || '',
+    menuCode:          row?.menuCode || '',
+    menuName:          row?.menuName || '',
+    category:          row?.category || (CATEGORIES[0]),
+    size:              row?.size || '',
+    price:             row?.price != null ? String(row.price) : '',
+    status:            row?.status || 'active',
+    note:              row?.note || '',
+    excludeFromOrigin: row?.excludeFromOrigin === true,
   });
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
   const defaultPrice = getDefaultPrice(form.menuCode);
@@ -169,6 +170,16 @@ function EditModal({ row, isNew, onSave, onClose }) {
             <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>비고</label>
             <input className="input" value={form.note} onChange={e => set('note', e.target.value)} placeholder="선택 입력" />
           </div>
+
+          <div style={{ borderTop: '1px solid var(--divider)', paddingTop: 12 }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+              <input type="checkbox" checked={form.excludeFromOrigin}
+                onChange={e => set('excludeFromOrigin', e.target.checked)}
+                style={{ accentColor: 'var(--warn)', width: 15, height: 15 }} />
+              <span style={{ fontWeight: 600 }}>원산지·알레르기 출력에서 제외</span>
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>(패밀리박스·하프앤하프 등 공통 구성품이 겹치는 메뉴)</span>
+            </label>
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
@@ -176,13 +187,14 @@ function EditModal({ row, isNew, onSave, onClose }) {
           <button className="btn primary" disabled={!canSave}
             onClick={() => onSave({
               ...(row || {}),
-              menuCode: form.menuCode.trim(),
-              menuName: form.menuName.trim(),
-              category: form.category,
-              size:     form.size.trim() || null,
-              price:    form.price !== '' ? Number(form.price) : null,
-              status:   form.status,
-              note:     form.note,
+              menuCode:          form.menuCode.trim(),
+              menuName:          form.menuName.trim(),
+              category:          form.category,
+              size:              form.size.trim() || null,
+              price:             form.price !== '' ? Number(form.price) : null,
+              status:            form.status,
+              note:              form.note,
+              excludeFromOrigin: form.excludeFromOrigin,
             })}>
             저장
           </button>
@@ -504,7 +516,12 @@ export default function Page() {
                         <td style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: 'var(--accent-text)', letterSpacing: '.5px' }}>
                           {row.menuCode}
                         </td>
-                        <td style={{ fontWeight: 600 }}>{row.menuName}</td>
+                        <td style={{ fontWeight: 600 }}>
+                          {row.menuName}
+                          {row.excludeFromOrigin && (
+                            <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: 'var(--warn-soft)', color: 'var(--warn)' }}>원산지제외</span>
+                          )}
+                        </td>
                         <td><CategoryTags menuCode={row.menuCode} /></td>
                         <td style={{ fontSize: 12, color: 'var(--text-2)' }}>
                           {row.size || <span style={{ color: 'var(--text-4)' }}>단일</span>}

@@ -62,7 +62,7 @@ export default function Page() {
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setDraftStatus('saving');
-      saveDraft(KEYS.NOTE_DRAFT_WRITE, form);
+      saveDraft(KEYS.NOTE_DRAFT_WRITE, { ...form, photos: [] });
       clearTimeout(draftTimer.current);
       draftTimer.current = setTimeout(() => {
         setDraftStatus('saved');
@@ -87,7 +87,7 @@ export default function Page() {
       clearDraft(KEYS.NOTE_DRAFT_WRITE);
       setIsDirty(false);
       showToast('노트가 저장됐어요', 'ok');
-      router.push('/note');
+      router.replace('/note');
     } catch {
       showToast('저장 중 오류가 발생했어요', 'error');
       setSaving(false);

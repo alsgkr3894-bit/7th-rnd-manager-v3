@@ -12,69 +12,80 @@ export const ManageRow = memo(function ManageRow({ r, deletePending, onEdit, onD
   const tags = sortHashTags(r.tags || []);
 
   return (
-    <tr style={{opacity: r.excluded ? .5 : 1, background: r.excluded ? 'var(--surface-2)' : undefined}}>
-      <td className="num" style={{color:'var(--text-3)', fontSize:11}}>
-        <div style={{display:'flex', flexDirection:'column', gap:3, alignItems:'flex-start'}}>
+    <tr
+      style={{ opacity: r.excluded ? .5 : 1, background: r.excluded ? 'var(--surface-2)' : undefined, cursor: 'pointer' }}
+      onClick={onEdit}
+    >
+      <td className="num" style={{ color: 'var(--text-3)', fontSize: 11 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
           <span>{r.productCode || (r.isManual ? '자체' : '-')}</span>
-          <span style={{fontSize:9, fontWeight:700, padding:'1px 5px', borderRadius:3,
+          <span style={{
+            fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3,
             background: r.jetteLinked ? 'var(--positive-soft)' : 'var(--surface-3)',
-            color: r.jetteLinked ? 'var(--positive)' : 'var(--text-3)'}}>
+            color: r.jetteLinked ? 'var(--positive)' : 'var(--text-3)',
+          }}>
             {r.jetteLinked ? '연동' : '수동'}
           </span>
         </div>
       </td>
-      <td style={{fontWeight:600, fontSize:13}}>
+      <td style={{ fontWeight: 600, fontSize: 13 }}>
         <span title={r.productName !== name ? `원본: ${r.productName}` : undefined}>{name}</span>
         {r.discontinued && (
-          <span style={{marginLeft:6, fontSize:10, fontWeight:700, padding:'1px 5px', borderRadius:3,
-            background:'var(--surface-3)', color:'var(--text-3)'}}>단종</span>
+          <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: 'var(--surface-3)', color: 'var(--text-3)' }}>단종</span>
+        )}
+        {r.origin?.length > 0 && (
+          <span style={{ marginLeft: 4, fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: 'var(--positive-soft)', color: 'var(--positive)' }}>원산지</span>
+        )}
+        {r.allergens?.length > 0 && (
+          <span style={{ marginLeft: 4, fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: 'var(--warn-soft)', color: 'var(--warn)' }}>알레르기 {r.allergens.length}</span>
         )}
       </td>
-      <td style={{fontSize:12, color:'var(--text-2)'}}>{r.temperature || '-'}</td>
-      <td style={{fontSize:12, color:'var(--text-2)'}}>{unitLabel}</td>
+      <td style={{ fontSize: 12, color: 'var(--text-2)' }}>{r.temperature || '-'}</td>
+      <td style={{ fontSize: 12, color: 'var(--text-2)' }}>{unitLabel}</td>
       <td>
-        <span style={{padding:'2px 7px', fontSize:11, fontWeight:600, borderRadius:6,
+        <span style={{
+          padding: '2px 7px', fontSize: 11, fontWeight: 600, borderRadius: 6,
           background: (SCOPE_STYLES[r.scope] || {}).bg || 'var(--surface-3)',
-          color: (SCOPE_STYLES[r.scope] || {}).color || 'var(--text-2)'}}>
+          color: (SCOPE_STYLES[r.scope] || {}).color || 'var(--text-2)',
+        }}>
           {r.scope || '-'}
         </span>
       </td>
-      <td className="num right" style={{fontWeight:600, fontSize:12}}>
+      <td className="num right" style={{ fontWeight: 600, fontSize: 12 }}>
         {r.priceWithTax != null ? <>{formatNumber(r.priceWithTax)}<span className="unit">원</span></> : '-'}
       </td>
       <td>
         {r.category
-          ? <span className="chip" style={{...getCategoryStyle(r.category), padding:'2px 8px', fontSize:11}}>{r.category}</span>
-          : <span className="chip" style={{background:'var(--warn-soft)', color:'var(--warn)', fontSize:10, padding:'1px 6px'}}>미분류</span>}
+          ? <span className="chip" style={{ ...getCategoryStyle(r.category), padding: '2px 8px', fontSize: 11 }}>{r.category}</span>
+          : <span className="chip" style={{ background: 'var(--warn-soft)', color: 'var(--warn)', fontSize: 10, padding: '1px 6px' }}>미분류</span>}
       </td>
       <td>
         {tags.length > 0
-          ? <div style={{display:'flex', gap:3, flexWrap:'wrap'}}>
+          ? <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
               {tags.map(t => (
-                <span key={t} style={{padding:'1px 5px', fontSize:10, fontWeight:500, borderRadius:3,
-                  background:'var(--surface-2)', color:'var(--text-2)'}}>#{t}</span>
+                <span key={t} style={{ padding: '1px 5px', fontSize: 10, fontWeight: 500, borderRadius: 3, background: 'var(--surface-2)', color: 'var(--text-2)' }}>#{t}</span>
               ))}
             </div>
-          : <span style={{color:'var(--text-4)', fontSize:11}}>—</span>}
+          : <span style={{ color: 'var(--text-4)', fontSize: 11 }}>—</span>}
       </td>
-      <td style={{fontSize:12, color:'var(--text-2)'}}>{r.manufacturer || '-'}</td>
-      <td style={{textAlign:'center'}}>
+      <td style={{ fontSize: 12, color: 'var(--text-2)' }}>{r.manufacturer || '-'}</td>
+      {/* 액션 셀 — 클릭이 행 편집과 충돌하지 않도록 stopPropagation */}
+      <td style={{ textAlign: 'center' }} onClick={e => e.stopPropagation()}>
         {r.excluded ? (
-          <button className="btn sm" style={{fontSize:11}} onClick={onRestore}>복원</button>
+          <button className="btn sm" style={{ fontSize: 11 }} onClick={onRestore}>복원</button>
         ) : deletePending ? (
-          <span style={{display:'flex', gap:3}}>
+          <span style={{ display: 'flex', gap: 3 }}>
             <button className="btn sm"
-              style={{background:'var(--negative)', color:'#fff', border:'none', fontSize:11}}
-              onClick={onDeleteConfirm}>{r.isManual && !r.productCode ? '삭제' : '숨김'}</button>
-            <button className="btn sm" style={{fontSize:11}} onClick={onDeleteCancel}>취소</button>
+              style={{ background: 'var(--negative)', color: '#fff', border: 'none', fontSize: 11 }}
+              onClick={onDeleteConfirm}>
+              {r.isManual && !r.productCode ? '삭제' : '숨김'}
+            </button>
+            <button className="btn sm" style={{ fontSize: 11 }} onClick={onDeleteCancel}>취소</button>
           </span>
         ) : (
-          <span style={{display:'flex', gap:4}}>
-            <button className="btn sm" aria-label="수정" onClick={onEdit}><Icon.edit style={{width:13, height:13}}/></button>
-            <button className="btn sm" aria-label="삭제" onClick={onDeleteStart} style={{color:'var(--text-3)'}}>
-              <Icon.trash style={{width:13, height:13}}/>
-            </button>
-          </span>
+          <button className="btn sm" aria-label="삭제" onClick={onDeleteStart} style={{ color: 'var(--text-3)' }}>
+            <Icon.trash style={{ width: 13, height: 13 }} />
+          </button>
         )}
       </td>
     </tr>

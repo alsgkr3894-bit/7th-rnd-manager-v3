@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getNoteById, updateNote, getNotesInChain, STATUS_COLORS, duplicateNote } from '@/lib/note';
-import { getAllSamples } from '@/lib/sample';
+import { getAllSamples, sampleNamesOf } from '@/lib/sample';
 import { NoteFormBody, INIT } from '@/app/note/_NoteFormBody';
 import { NoteDetailSkeleton } from '@/components/ui/Skeleton';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
@@ -97,7 +97,9 @@ export default function Page() {
         setChain(ch);
         if (note.menuName) {
           const mn = note.menuName.trim().toLowerCase();
-          setRelatedSamples(allSamples.filter(s => s.menuName?.trim().toLowerCase() === mn));
+          // 샘플 레코드는 sampleNames 배열을 menuName으로 join(', ')해 저장하므로,
+          // 단일 menuName 비교 대신 샘플명 배열 단위로 매칭한다 (멀티 샘플명 누락 방지)
+          setRelatedSamples(allSamples.filter(s => sampleNamesOf(s).some(n => n.trim().toLowerCase() === mn)));
         }
         const draft = loadDraft(KEYS.NOTE_DRAFT(noteId));
         if (draft && (draft.title !== note.title || draft.testContent !== note.testContent || draft.managerEval !== note.managerEval)) {
@@ -111,9 +113,11 @@ export default function Page() {
   useEffect(() => {
     if (skipRef.current) { skipRef.current = false; return; }
     if (!originalRef.current) return;
-    if (JSON.stringify(form) === JSON.stringify(originalRef.current)) return;
+    // 사진(base64 data URL)은 비교에서 제외 — 매 입력마다 수백 KB 직렬화 방지 (draft 저장도 photos:[] 제외)
+    const strip = o => ({ ...o, photos: undefined });
+    if (JSON.stringify(strip(form)) === JSON.stringify(strip(originalRef.current))) return;
     clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => saveDraft(KEYS.NOTE_DRAFT(noteId), form), 800);
+    timerRef.current = setTimeout(() => saveDraft(KEYS.NOTE_DRAFT(noteId), { ...form, photos: [] }), 800);
     return () => clearTimeout(timerRef.current);
   }, [form, noteId]);
 

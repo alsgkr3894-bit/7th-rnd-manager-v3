@@ -57,7 +57,7 @@ export default function Page() {
       await addSample(form);
       setIsDirty(false);
       showToast('샘플이 저장됐어요', 'ok');
-      router.push('/note/sample');
+      router.replace('/note/sample');
     } catch {
       showToast('저장 중 오류가 발생했어요', 'error');
       setSaving(false);

@@ -61,8 +61,22 @@ export default function Page() {
 
   // 원산지 있는 식자재만
   const originIngredients = useMemo(() =>
-    ingredients.filter(i => i.origin?.country && !i.discontinued && !i.excluded),
+    ingredients.filter(i => i.origin?.length && !i.discontinued && !i.excluded && !i.originHidden),
     [ingredients]
+  );
+
+  // 원산지 출력에서 제외된 메뉴 — menuCode + menuName 양쪽으로 매칭
+  // (레시피 코드와 메뉴마스터 코드가 다르거나 L/R 사이즈별 레코드인 경우 대비)
+  const { excludedMenuCodes, excludedMenuNames } = useMemo(() => {
+    const ex = menuMasters.filter(m => m.excludeFromOrigin);
+    return {
+      excludedMenuCodes: new Set(ex.map(m => m.menuCode).filter(Boolean)),
+      excludedMenuNames: new Set(ex.map(m => (m.menuName || '').trim()).filter(Boolean)),
+    };
+  }, [menuMasters]);
+  const isExcludedMenu = useCallback(
+    (menuCode, menuName) => excludedMenuCodes.has(menuCode) || excludedMenuNames.has((menuName || '').trim()),
+    [excludedMenuCodes, excludedMenuNames]
   );
 
   // ── 식자재 기준 뷰 ─────────────────────────────────────────
@@ -71,16 +85,19 @@ export default function Page() {
     return originIngredients.filter(ing => {
       if (!q) return true;
       const menus = getMenusForIngredient(mapData.ingredientToMenus, ing.productCode, ing.ingredientName);
-      const menuText = [...menus.values()].map(m => `${m.menuName}`).join(' ');
+      const menuText = [...menus.entries()]
+        .filter(([mc, m]) => !isExcludedMenu(mc, m.menuName))
+        .map(([, m]) => m.menuName).join(' ');
+      const originText = (ing.origin || [])
+        .map(it => `${it.displayName || ''} ${it.country || ''}`).join(' ');
       return (
         (ing.ingredientName || '').toLowerCase().includes(q) ||
-        (ing.origin?.displayName || '').toLowerCase().includes(q) ||
-        (ing.origin?.country || '').toLowerCase().includes(q) ||
+        originText.toLowerCase().includes(q) ||
         (ing.productCode || '').toLowerCase().includes(q) ||
         menuText.toLowerCase().includes(q)
       );
     });
-  }, [originIngredients, search, mapData]);
+  }, [originIngredients, search, mapData, isExcludedMenu]);
 
   // ── 메뉴 기준 뷰 ───────────────────────────────────────────
   const menuRows = useMemo(() => {
@@ -94,12 +111,16 @@ export default function Page() {
     const menuMap = new Map(); // menuCode → { menuName, category, origins: [{displayName, country, region}] }
     for (const [key, menus] of mapData.ingredientToMenus) {
       const ing = ingByKey.get(key);
-      if (!ing?.origin?.country) continue;
+      if (!ing?.origin?.length) continue;
       for (const [menuCode, meta] of menus) {
-        if (!menuMap.has(menuCode)) menuMap.set(menuCode, { ...meta, origins: [] });
+        if (isExcludedMenu(menuCode, meta.menuName)) continue;
+        if (!menuMap.has(menuCode)) menuMap.set(menuCode, { ...meta, menuCode, origins: [] });
         const existing = menuMap.get(menuCode).origins;
-        const dup = existing.find(o => o.country === ing.origin.country && o.displayName === (ing.origin.displayName || ing.ingredientName));
-        if (!dup) existing.push({ displayName: ing.origin.displayName || ing.ingredientName, country: ing.origin.country, region: ing.origin.region || '' });
+        for (const it of (ing.origin || [])) {
+          const label = it.displayName || ing.ingredientName;
+          const dup = existing.find(o => o.country === it.country && o.displayName === label);
+          if (!dup) existing.push({ displayName: label, country: it.country });
+        }
       }
     }
 
@@ -110,10 +131,11 @@ export default function Page() {
       (r.menuName || '').toLowerCase().includes(q) ||
       r.origins.some(o => o.displayName.toLowerCase().includes(q) || o.country.toLowerCase().includes(q))
     );
-  }, [originIngredients, mapData, search]);
+  }, [originIngredients, mapData, search, isExcludedMenu]);
 
   const totalWithOrigin = originIngredients.length;
   const totalIngredients = ingredients.filter(i => !i.discontinued && !i.excluded).length;
+
   const withoutOrigin = totalIngredients - totalWithOrigin;
 
   return (
@@ -198,15 +220,22 @@ export default function Page() {
               </thead>
               <tbody>
                 {ingredientRows.map(ing => {
-                  const menus = getMenusForIngredient(mapData.ingredientToMenus, ing.productCode, ing.ingredientName);
+                  const allMenus = getMenusForIngredient(mapData.ingredientToMenus, ing.productCode, ing.ingredientName);
+                  const menus = new Map([...allMenus].filter(([mc, m]) => !isExcludedMenu(mc, m.menuName)));
                   const menuList = [...menus.values()];
                   return (
                     <tr key={ing.id || ing.productCode || ing.ingredientName}>
                       <td style={{ fontWeight: 600 }}>{ing.ingredientName}</td>
-                      <td style={{ color: 'var(--text-2)' }}>{ing.origin.displayName || ing.ingredientName}</td>
+                      <td style={{ color: 'var(--text-2)' }}>
+                        {(ing.origin || []).map(it => it.displayName || ing.ingredientName).join(' · ')}
+                      </td>
                       <td>
-                        <span style={{ fontWeight: 600, color: 'var(--text-1)' }}>{ing.origin.country}</span>
-                        {ing.origin.region && <span style={{ color: 'var(--text-3)', marginLeft: 4, fontSize: 12 }}>{ing.origin.region}</span>}
+                        {(ing.origin || []).map((it, i) => (
+                          <span key={i}>
+                            {i > 0 && <span style={{ color: 'var(--text-4)', margin: '0 4px' }}>/</span>}
+                            <span style={{ fontWeight: 600, color: 'var(--text-1)' }}>{it.country}</span>
+                          </span>
+                        ))}
                       </td>
                       <td className="mono muted">{ing.productCode || '—'}</td>
                       <td style={{ textAlign: 'center' }}>
@@ -243,7 +272,7 @@ export default function Page() {
               </thead>
               <tbody>
                 {menuRows.map(row => (
-                  <tr key={row.menuName + row.category}>
+                  <tr key={row.menuCode}>
                     <td style={{ fontWeight: 600 }}>{row.menuName}</td>
                     <td><span className="chip">{row.category}</span></td>
                     <td>

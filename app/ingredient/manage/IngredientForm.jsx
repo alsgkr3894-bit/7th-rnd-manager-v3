@@ -16,18 +16,74 @@ function getLastUnitType() {
   try { return localStorage.getItem(LS_UNIT_TYPE) || 'g'; } catch { return 'g'; }
 }
 
+/** 원산지 표시품목명·국가 자동완성 드롭다운 */
+function OriginSuggest({ value, onChange, suggestions = [], placeholder = '' }) {
+  const [open, setOpen] = useState(false);
+  const [hi,   setHi]   = useState(-1);
+
+  const filtered = value
+    ? suggestions.filter(s => s.toLowerCase().includes(value.toLowerCase()) && s.toLowerCase() !== value.toLowerCase()).slice(0, 10)
+    : [];
+
+  function handleKeyDown(e) {
+    if (!open || !filtered.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setHi(h => Math.min(h + 1, filtered.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setHi(h => Math.max(h - 1, 0)); }
+    else if (e.key === 'Enter' && hi >= 0) { e.preventDefault(); onChange(filtered[hi]); setOpen(false); setHi(-1); }
+    else if (e.key === 'Escape') { setOpen(false); setHi(-1); }
+  }
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <input
+        className="form-input"
+        value={value}
+        placeholder={placeholder}
+        onChange={e => { onChange(e.target.value); setOpen(true); setHi(-1); }}
+        onFocus={() => { if (value) setOpen(true); }}
+        onBlur={() => setTimeout(() => { setOpen(false); setHi(-1); }, 150)}
+        onKeyDown={handleKeyDown}
+      />
+      {open && filtered.length > 0 && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 200,
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8,
+          boxShadow: '0 4px 16px rgba(0,0,0,.12)', maxHeight: 180, overflowY: 'auto',
+        }}>
+          {filtered.map((s, i) => (
+            <div key={s}
+              style={{
+                padding: '8px 12px', cursor: 'pointer', fontSize: 13,
+                background: i === hi ? 'var(--accent-soft)' : 'transparent',
+                color: i === hi ? 'var(--accent-text)' : 'var(--text-1)',
+                fontWeight: i === hi ? 600 : 400,
+              }}
+              onMouseDown={e => { e.preventDefault(); onChange(s); setOpen(false); setHi(-1); }}>
+              {s}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const TEMP_OPTIONS = ['냉장', '냉동', '상온', '공산품'];
+
 const EMPTY = {
   ingredientName: '', productCode: '',
   category: '', tags: [],
   manufacturer: '', discontinued: false,
+  temperature: '',
   baseQuantity: '', baseUnitType: getLastUnitType(), taxType: '과세',
   priceOverride: '', scope: '', note: '',
   // 원산지·알레르기
-  origin: null,     // { displayName, country, region } | null
-  allergens: [],    // ['AL01','AL06',…]
+  origin:       [],    // [{displayName, country}] — 복수 가능
+  originHidden: false, // 원산지 미표시대상 여부
+  allergens:    [],    // ['AL01','AL06',…]
 };
 
-export function IngredientForm({ initial, onSave, onClose, extraCategories = [] }) {
+export function IngredientForm({ initial, onSave, onClose, extraCategories = [], originSuggestions = { names: [], countries: [] } }) {
   const isJetteLinked = !!initial?.jetteLinked;
   // 시드 분류 + 실제 사용 중인 분류(직접입력 포함) 합본 → 직접입력 분류도 다음부터 드롭다운에 노출
   const catOptions = sortMainCategories([...new Set([...SEED_MAIN_CATEGORIES, ...extraCategories].filter(Boolean))]);
@@ -75,19 +131,18 @@ export function IngredientForm({ initial, onSave, onClose, extraCategories = [] 
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setSaving(true);
     try {
-      // origin: country가 없으면 null로 정리 (빈 객체가 DB에 저장되지 않도록)
-      const rawOrigin = form.origin;
-      const origin = rawOrigin?.country?.trim() ? {
-        displayName: rawOrigin.displayName?.trim() || '',
-        country:     rawOrigin.country.trim(),
-        region:      rawOrigin.region?.trim() || '',
-      } : null;
+      // origin: 표시품목명·원산지 둘 다 있어야 저장 (빈값 항목이 DB에 누적되지 않도록)
+      const origin = (form.origin || [])
+        .filter(it => it.country?.trim() && it.displayName?.trim())
+        .map(it => ({ displayName: it.displayName.trim(), country: it.country.trim() }));
+      const originValue = origin.length ? origin : null;
       const data = {
         ...form,
         baseQuantity:  form.baseQuantity  ? Number(form.baseQuantity)  : null,
         priceOverride: !isJetteLinked && form.priceOverride ? Number(form.priceOverride) : null,
-        origin,
-        allergens: form.allergens || [],
+        origin:       originValue,
+        originHidden: form.originHidden === true,
+        allergens:    form.allergens || [],
       };
       await onSave(data);
       try { localStorage.setItem(LS_UNIT_TYPE, data.baseUnitType || 'g'); } catch {}
@@ -265,6 +320,23 @@ export function IngredientForm({ initial, onSave, onClose, extraCategories = [] 
 
           {!isJetteLinked && (
             <>
+              <Field label="보관 온도">
+                <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
+                  <label style={{display:'flex', alignItems:'center', gap:6, cursor:'pointer', fontSize:14}}>
+                    <input type="radio" value="" checked={form.temperature === ''}
+                      onChange={() => set('temperature', '')} style={{accentColor:'var(--accent)'}}/>
+                    <span style={{color:'var(--text-3)'}}>미지정</span>
+                  </label>
+                  {TEMP_OPTIONS.map(t => (
+                    <label key={t} style={{display:'flex', alignItems:'center', gap:6, cursor:'pointer', fontSize:14}}>
+                      <input type="radio" value={t} checked={form.temperature === t}
+                        onChange={() => set('temperature', t)} style={{accentColor:'var(--accent)'}}/>
+                      {t}
+                    </label>
+                  ))}
+                </div>
+              </Field>
+
               <Field label="과세구분">
                 <div style={{display:'flex', gap:12}}>
                   {['과세', '면세'].map(t => (
@@ -306,24 +378,69 @@ export function IngredientForm({ initial, onSave, onClose, extraCategories = [] 
 
           {/* ── 원산지 ── */}
           <div style={{borderTop:'1px solid var(--divider)', paddingTop:16}}>
-            <div style={{fontSize:13, fontWeight:700, color:'var(--text-2)', marginBottom:10}}>원산지 정보</div>
-            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 120px', gap:8}}>
-              <Field label="표시품목명">
-                <input className="form-input" value={form.origin?.displayName || ''}
-                  onChange={e => set('origin', { displayName: '', country: '', region: '', ...(form.origin || {}), displayName: e.target.value })}
-                  placeholder="예) 밀가루, 치즈"/>
-              </Field>
-              <Field label="원산지 국가">
-                <input className="form-input" value={form.origin?.country || ''}
-                  onChange={e => set('origin', { displayName: '', country: '', region: '', ...(form.origin || {}), country: e.target.value })}
-                  placeholder="예) 국내산, 미국"/>
-              </Field>
-              <Field label="세부 지역">
-                <input className="form-input" value={form.origin?.region || ''}
-                  onChange={e => set('origin', { displayName: '', country: '', region: '', ...(form.origin || {}), region: e.target.value })}
-                  placeholder="선택"/>
-              </Field>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10}}>
+              <div style={{fontSize:13, fontWeight:700, color:'var(--text-2)', display:'flex', alignItems:'center', gap:10}}>
+                원산지 정보
+                <label style={{display:'inline-flex', alignItems:'center', gap:5, cursor:'pointer', fontSize:12, fontWeight:500, color: form.originHidden ? 'var(--warn)' : 'var(--text-3)'}}>
+                  <input type="checkbox" checked={form.originHidden}
+                    onChange={e => set('originHidden', e.target.checked)}
+                    style={{accentColor:'var(--warn)', width:13, height:13}}/>
+                  미표시대상
+                </label>
+                {form.origin?.length > 0 && (
+                  <span style={{marginLeft:8, fontSize:11, fontWeight:600, color:'var(--accent)',
+                    background:'var(--accent-soft)', padding:'1px 7px', borderRadius:999}}>
+                    {form.origin.length}개
+                  </span>
+                )}
+              </div>
+              <button type="button" className="btn sm"
+                onClick={() => set('origin', [...(form.origin || []), { displayName: '', country: '' }])}>
+                <Icon.plus style={{width:12, height:12}}/> 추가
+              </button>
             </div>
+            {(form.origin || []).length > 0 && (
+              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 28px', gap:4, marginBottom:4, padding:'0 2px'}}>
+                <div style={{fontSize:11, fontWeight:600, color:'var(--text-3)'}}>표시품목명</div>
+                <div style={{fontSize:11, fontWeight:600, color:'var(--text-3)'}}>원산지 국가</div>
+                <div/>
+              </div>
+            )}
+            {(form.origin || []).map((item, idx) => (
+              <div key={idx} style={{display:'grid', gridTemplateColumns:'1fr 1fr 28px', gap:4, marginBottom:6}}>
+                <OriginSuggest
+                  value={item.displayName}
+                  suggestions={originSuggestions.names}
+                  placeholder="예) 돼지고기, 밀가루"
+                  onChange={v => {
+                    const arr = [...form.origin];
+                    arr[idx] = { ...arr[idx], displayName: v };
+                    set('origin', arr);
+                  }}
+                />
+                <OriginSuggest
+                  value={item.country}
+                  suggestions={originSuggestions.countries}
+                  placeholder="예) 국내산, 미국산"
+                  onChange={v => {
+                    const arr = [...form.origin];
+                    arr[idx] = { ...arr[idx], country: v };
+                    set('origin', arr);
+                  }}
+                />
+                <button type="button"
+                  onClick={() => set('origin', form.origin.filter((_, i) => i !== idx))}
+                  style={{border:0, background:'transparent', cursor:'pointer', color:'var(--text-3)',
+                    display:'flex', alignItems:'center', justifyContent:'center', borderRadius:6, padding:0}}>
+                  <Icon.close style={{width:13, height:13}}/>
+                </button>
+              </div>
+            ))}
+            {(form.origin || []).length === 0 && (
+              <div style={{fontSize:12, color:'var(--text-4)', padding:'4px 0 8px'}}>
+                미등록 — 추가 버튼으로 입력하세요
+              </div>
+            )}
           </div>
 
           {/* ── 알레르기 유발물질 ── */}
@@ -405,6 +522,14 @@ function Field({ label, required, hint, error, errorId, children }) {
   );
 }
 
+/** origin 값(배열 또는 구버전 객체)을 폼용 [{displayName, country}] 배열로 변환 */
+function toOriginItems(v) {
+  if (!v) return [];
+  if (Array.isArray(v)) return v.map(it => ({ displayName: it.displayName || '', country: it.country || '' }));
+  if (v.country) return [{ displayName: v.displayName || '', country: v.country || '' }]; // 구버전 호환
+  return [];
+}
+
 function toForm(r) {
   const category = r.category || (Array.isArray(r.categories) && r.categories[0]) || '';
   const tags = (Array.isArray(r.tags) && r.tags.length)
@@ -423,7 +548,9 @@ function toForm(r) {
     priceOverride:  r.priceOverride  != null ? String(r.priceOverride) : '',
     scope:          r.scope && r.scope !== SCOPE_UNASSIGNED ? r.scope : '',
     note:           r.note           || '',
-    origin:   r.origin   ?? null,
-    allergens: Array.isArray(r.allergens) ? r.allergens : [],
+    temperature:    r.temperature    || '',
+    origin:       toOriginItems(r.origin),
+    originHidden: r.originHidden === true,
+    allergens:    Array.isArray(r.allergens) ? r.allergens : [],
   };
 }

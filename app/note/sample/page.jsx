@@ -123,17 +123,14 @@ function SampleContent() {
   }, [samples]);
 
   async function handleDelete(rec) {
-    setSamples(prev => prev.filter(s => s.id !== rec.id));
-    setDetailRec(null);
-    let cancelled = false;
-    showToast(`"${rec.title}" 삭제됨`, 'ok', 4000, {
-      label: '실행취소',
-      onClick: () => { cancelled = true; reload(); },
-    });
-    await new Promise(r => setTimeout(r, 3800));
-    if (!cancelled) {
-      try { await deleteSample(rec.id); }
-      catch { reload(); showToast('삭제 실패', 'error'); }
+    try {
+      await deleteSample(rec.id);
+      setSamples(prev => prev.filter(s => s.id !== rec.id));
+      setDetailRec(null);
+      const label = rec.title?.trim() ? `"${rec.title}" 삭제됨` : '샘플 삭제됨';
+      showToast(label, 'ok');
+    } catch {
+      showToast('삭제 실패', 'error');
     }
   }
 

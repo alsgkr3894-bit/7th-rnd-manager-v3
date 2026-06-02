@@ -176,20 +176,15 @@ export function NoteContent() {
 
   async function execDelete(note) {
     setSingleDeleteNote(null);
-    setDeletingIds(s => new Set([...s, note.id]));
-    await new Promise(r => setTimeout(r, 250));
-    setNotes(prev => prev.filter(n => n.id !== note.id));
-    setDeletingIds(s => { const n = new Set(s); n.delete(note.id); return n; });
-    if (detailNote?.id === note.id) setDetailNote(null);
-    let cancelled = false;
-    showToast(`"${note.title}" 삭제됨`, 'ok', 4000, {
-      label: '실행취소',
-      onClick: () => { cancelled = true; load(); },
-    });
-    await new Promise(r => setTimeout(r, 4200));
-    if (!cancelled) {
-      try { await deleteNote(note.id); }
-      catch (err) { console.error('[NoteContent] deleteNote', err); load(); showToast('삭제 실패', 'error'); }
+    try {
+      await deleteNote(note.id);
+      setNotes(prev => prev.filter(n => n.id !== note.id));
+      if (detailNote?.id === note.id) setDetailNote(null);
+      const label = note.title?.trim() ? `"${note.title}" 삭제됨` : '노트 삭제됨';
+      showToast(label, 'ok');
+    } catch (err) {
+      console.error('[NoteContent] deleteNote', err);
+      showToast('삭제 실패', 'error');
     }
   }
 
@@ -235,24 +230,20 @@ export function NoteContent() {
   async function confirmBatchDelete() {
     setConfirmBatch(false);
     const ids = [...selected];
-    const snapshot = notes.filter(n => ids.includes(n.id));
-    setNotes(prev => prev.filter(n => !ids.includes(n.id)));
     setSelected(new Set());
     setBatchMode(false);
-    let cancelled = false;
-    showToast(`${ids.length}개 삭제됨`, 'ok', 4000, {
-      label: '취소',
-      onClick: () => { cancelled = true; setNotes(prev => [...snapshot, ...prev].sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt))); },
-    });
-    setTimeout(async () => {
-      if (cancelled) return;
-      try {
-        const CHUNK = 10;
-        for (let i = 0; i < ids.length; i += CHUNK) {
-          await Promise.all(ids.slice(i, i + CHUNK).map(id => deleteNote(id)));
-        }
-      } catch (err) { console.error('[NoteContent] confirmBatchDelete', err); showToast('일부 삭제 실패', 'error'); load(); }
-    }, 4000);
+    try {
+      const CHUNK = 10;
+      for (let i = 0; i < ids.length; i += CHUNK) {
+        await Promise.all(ids.slice(i, i + CHUNK).map(id => deleteNote(id)));
+      }
+      setNotes(prev => prev.filter(n => !ids.includes(n.id)));
+      showToast(`${ids.length}개 삭제됨`, 'ok');
+    } catch (err) {
+      console.error('[NoteContent] confirmBatchDelete', err);
+      showToast('일부 삭제 실패', 'error');
+      load();
+    }
   }
 
   function toggleSelect(id) {

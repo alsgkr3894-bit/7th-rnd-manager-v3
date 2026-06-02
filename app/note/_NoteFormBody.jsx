@@ -8,6 +8,7 @@ import { CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS, getAllNotes } from '@/
 import { TagInput } from '@/components/ui/TagInput';
 import { SegGroup, Field } from '@/components/note/FormFields';
 import { generateNoteReportText } from '@/lib/note/report';
+import { resizePhoto } from '@/lib/image/resize';
 
 const LS_NOTE_CATEGORY = 'v3:note_lastCategory';
 
@@ -19,7 +20,10 @@ export const INIT = {
   materials: '', tasteEval: '', managerEval: '', costNote: '',
   improvements: '', nextAction: '', reportSummary: '', tags: '',
   tempCostCalc: null,
+  photos: [],
 };
+
+const MAX_NOTE_PHOTOS = 8;
 
 export function NoteFormBody({ form, setForm }) {
   function updateField(k, v) { setForm(f => ({ ...f, [k]: v })); }
@@ -139,11 +143,11 @@ export function NoteFormBody({ form, setForm }) {
           </Field>
 
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
-            <Field label="메뉴명" required error={touched.menuName && !form.menuName.trim()}>
+            <Field label={form.noteType === '샘플' ? '샘플명 / 메뉴명' : '메뉴명'} required error={touched.menuName && !form.menuName.trim()}>
               <input className="form-input" value={form.menuName}
                 onChange={e => updateField('menuName', e.target.value)}
                 onBlur={() => markTouched('menuName')}
-                placeholder="예) 횡성한우쉬림프"/>
+                placeholder={form.noteType === '샘플' ? '예) 와규 패티 / 빅맥형 신메뉴' : '예) 횡성한우쉬림프'}/>
             </Field>
             <Field label="테스트 날짜">
               <input className="form-input" type="date" value={form.testDate}
@@ -255,6 +259,9 @@ export function NoteFormBody({ form, setForm }) {
             <TagInput value={form.tags} onChange={v => updateField('tags', v)} suggestions={allTags}/>
           </Field>
         </div>
+
+        {/* 사진 첨부 */}
+        <NotePhotoSection photos={form.photos || []} onChange={v => updateField('photos', v)}/>
 
         {/* 임시 원가 계산 */}
         <div className="card">
@@ -434,6 +441,96 @@ export function NoteFormBody({ form, setForm }) {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** 노트 사진 첨부 카드 (샘플기록과 동일한 base64 JPEG 방식) */
+function NotePhotoSection({ photos, onChange }) {
+  const fileRef = useRef(null);
+
+  async function addFiles(files) {
+    const remaining = MAX_NOTE_PHOTOS - photos.length;
+    if (remaining <= 0) { showToast(`사진은 최대 ${MAX_NOTE_PHOTOS}장까지 추가할 수 있습니다`, 'warn'); return; }
+    const targets = Array.from(files).slice(0, remaining);
+    const settled = await Promise.allSettled(targets.map(f => resizePhoto(f)));
+    const resized = [];
+    const failed = [];
+    settled.forEach((res, i) => {
+      if (res.status === 'fulfilled') resized.push({ ...res.value, caption: '' });
+      else failed.push(targets[i].name);
+    });
+    if (resized.length) onChange([...photos, ...resized]);
+    if (failed.length) showToast(`사진 처리 실패: ${failed.join(', ')}`, 'warn');
+  }
+
+  function removePhoto(idx) { onChange(photos.filter((_, i) => i !== idx)); }
+  function setCaption(idx, v) { onChange(photos.map((p, i) => i === idx ? { ...p, caption: v } : p)); }
+
+  return (
+    <div className="card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div className="card-title" style={{ margin: 0 }}>
+          사진 첨부
+          {photos.length > 0 && (
+            <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 500, color: 'var(--text-3)' }}>
+              {photos.length}/{MAX_NOTE_PHOTOS}
+            </span>
+          )}
+        </div>
+        {photos.length < MAX_NOTE_PHOTOS && (
+          <button type="button" className="btn sm" onClick={() => fileRef.current?.click()}>
+            <Icon.plus style={{ width: 12, height: 12 }}/> 사진 추가
+          </button>
+        )}
+      </div>
+      <input ref={fileRef} type="file" accept="image/*" multiple hidden
+        onChange={e => { addFiles(e.target.files); e.target.value = ''; }}/>
+
+      {photos.length < MAX_NOTE_PHOTOS && (
+        <div
+          style={{
+            border: '2px dashed var(--border)', borderRadius: 10, padding: '20px 16px',
+            textAlign: 'center', fontSize: 13, color: 'var(--text-3)',
+            cursor: 'pointer', marginBottom: photos.length > 0 ? 12 : 0,
+          }}
+          onClick={() => fileRef.current?.click()}
+          onDrop={e => { e.preventDefault(); addFiles(e.dataTransfer.files); }}
+          onDragOver={e => e.preventDefault()}>
+          드래그하거나 클릭해 사진 추가 · 최대 {MAX_NOTE_PHOTOS}장 · 5MB 이하
+        </div>
+      )}
+
+      {photos.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {photos.map((p, i) => (
+            <div key={i} style={{ position: 'relative' }}>
+              {i === 0 && (
+                <span style={{
+                  position: 'absolute', top: 6, left: 6, fontSize: 10, fontWeight: 700,
+                  padding: '1px 6px', borderRadius: 999,
+                  background: 'var(--accent)', color: '#fff', zIndex: 1,
+                }}>대표</span>
+              )}
+              <button type="button" onClick={() => removePhoto(i)}
+                style={{
+                  position: 'absolute', top: 6, right: 6, width: 22, height: 22,
+                  borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,.5)',
+                  color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', zIndex: 1,
+                }}>
+                <Icon.close style={{ width: 11, height: 11 }}/>
+              </button>
+              <img src={p.data} alt={p.name}
+                style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 8, display: 'block' }}/>
+              <input className="form-input" value={p.caption}
+                onChange={e => setCaption(i, e.target.value)}
+                placeholder="캡션 (선택)"
+                style={{ marginTop: 4, fontSize: 12 }}/>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

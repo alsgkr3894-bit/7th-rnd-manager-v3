@@ -57,7 +57,7 @@ export default function Page() {
   async function handleFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 50 * 1024 * 1024) { showToast('파일이 너무 큽니다 (최대 50MB)', 'err'); return; }
+    if (file.size > 500 * 1024 * 1024) { showToast('파일이 너무 큽니다 (최대 500MB)', 'err'); return; }
     setParsed(null);
     setConfirming(false);
     try {

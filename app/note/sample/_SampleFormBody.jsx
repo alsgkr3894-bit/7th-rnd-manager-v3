@@ -7,6 +7,9 @@ import { initDB } from '@/lib/db';
 import { TagInput } from '@/components/ui/TagInput';
 import { ComboBox } from '@/components/ui/ComboBox';
 import { SegGroup, Field } from '@/components/note/FormFields';
+import { resizePhoto } from '@/lib/image/resize';
+import { getAllIngredients } from '@/lib/ingredient';
+import { getAllMenuMaster } from '@/lib/menu-master';
 
 export const SAMPLE_INIT = {
   title: '', sampleNames: [''], category: '',
@@ -14,37 +17,18 @@ export const SAMPLE_INIT = {
   rating: 0, price: '', priceTaxType: 'incl',
   description: '', result: '', improvements: '', nextAction: '', tags: '',
   photos: [],
+  linkedProducts: [],  // [{kind:'ingredient'|'menu', code, name}]
 };
 
 const MAX_PHOTOS = 8;
 
-async function resizePhoto(file) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      const MAX = 1400;
-      let w = img.width, h = img.height;
-      if (w > MAX || h > MAX) {
-        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-        else { w = Math.round(w * MAX / h); h = MAX; }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      URL.revokeObjectURL(url);
-      resolve({ data: canvas.toDataURL('image/jpeg', 0.78), name: file.name });
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지 로드 실패')); };
-    img.src = url;
-  });
-}
-
 export function SampleFormBody({ form, setForm }) {
   const fileInputRef = useRef(null);
-  const [allTags, setAllTags] = useState([]);
-  const [catOptions, setCatOptions] = useState(SAMPLE_CATEGORIES);
+  const [allTags,        setAllTags]        = useState([]);
+  const [catOptions,     setCatOptions]     = useState(SAMPLE_CATEGORIES);
   const [companyOptions, setCompanyOptions] = useState([]);
+  const [productOptions, setProductOptions] = useState([]); // [{kind, code, name, label}]
+  const [productSearch,  setProductSearch]  = useState('');
   function upd(k, v) { setForm(f => ({ ...f, [k]: v })); }
 
   // 샘플명(복수) 핸들러
@@ -62,7 +46,11 @@ export function SampleFormBody({ form, setForm }) {
   }
 
   useEffect(() => {
-    initDB().then(() => getAllSamples()).then(samples => {
+    initDB().then(() => Promise.all([
+      getAllSamples(),
+      getAllIngredients(),
+      getAllMenuMaster(),
+    ])).then(([samples, ings, menus]) => {
       const tags = new Set();
       const cats = new Set(SAMPLE_CATEGORIES);
       const comps = new Set();
@@ -74,6 +62,16 @@ export function SampleFormBody({ form, setForm }) {
       setAllTags([...tags]);
       setCatOptions([...cats]);
       setCompanyOptions([...comps]);
+
+      const opts = [
+        ...ings
+          .filter(i => !i.discontinued && !i.excluded)
+          .map(i => ({ kind: 'ingredient', code: i.productCode || String(i.id), name: i.ingredientName || i.displayName })),
+        ...menus
+          .filter(m => m.status !== 'discontinued')
+          .map(m => ({ kind: 'menu', code: m.menuCode, name: m.menuName })),
+      ];
+      setProductOptions(opts);
     }).catch(() => {});
   }, []);
 
@@ -87,12 +85,15 @@ export function SampleFormBody({ form, setForm }) {
       if (file.size > 5 * 1024 * 1024) { showToast('파일 크기 초과: ' + file.name + ' (최대 5MB)', 'warn'); continue; }
       toAdd.push(file);
     }
-    try {
-      const resized = await Promise.all(toAdd.map(resizePhoto));
-      upd('photos', [...current, ...resized]);
-    } catch {
-      showToast('사진 처리 중 오류가 발생했어요', 'error');
-    }
+    const settled = await Promise.allSettled(toAdd.map(resizePhoto));
+    const resized = [];
+    const failed = [];
+    settled.forEach((res, i) => {
+      if (res.status === 'fulfilled') resized.push(res.value);
+      else failed.push(toAdd[i].name);
+    });
+    if (resized.length) upd('photos', [...current, ...resized]);
+    if (failed.length) showToast(`사진 처리 실패: ${failed.join(', ')}`, 'warn');
   }
 
   function removePhoto(i) {
@@ -228,8 +229,22 @@ export function SampleFormBody({ form, setForm }) {
         </div>
       </div>
 
-      {/* ── 우측: 사진 ── */}
+      {/* ── 우측: 연결 제품 + 사진 ── */}
       <div className="form-sticky-right" style={{ position:'sticky', top:80 }}>
+        {/* 연결 제품 카드 */}
+        <LinkedProductsCard
+          linked={form.linkedProducts || []}
+          options={productOptions}
+          search={productSearch}
+          onSearchChange={setProductSearch}
+          onAdd={item => {
+            const already = (form.linkedProducts || []).some(p => p.kind === item.kind && p.code === item.code);
+            if (!already) upd('linkedProducts', [...(form.linkedProducts || []), item]);
+            setProductSearch('');
+          }}
+          onRemove={idx => upd('linkedProducts', (form.linkedProducts || []).filter((_, i) => i !== idx))}
+        />
+
         <div className="card">
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
             <div className="card-title">사진</div>
@@ -354,6 +369,74 @@ function StarPicker({ value, onChange }) {
         <span style={{ marginLeft:6, fontSize:12, color: RATING_COLOR[value] || 'var(--text-2)', fontWeight:600 }}>
           {RATING_LABELS[value]}
         </span>
+      )}
+    </div>
+  );
+}
+
+/** 샘플기록 — 식자재·메뉴 제품 연결 카드 */
+function LinkedProductsCard({ linked, options, search, onSearchChange, onAdd, onRemove }) {
+  const filtered = search.trim()
+    ? options.filter(o => o.name.toLowerCase().includes(search.toLowerCase()) ||
+        (o.code || '').toLowerCase().includes(search.toLowerCase()))
+      .slice(0, 12)
+    : [];
+
+  return (
+    <div className="card" style={{ marginBottom: 12 }}>
+      <div className="card-title" style={{ marginBottom: 10 }}>연결 제품</div>
+
+      {/* 검색 */}
+      <div style={{ position: 'relative' }}>
+        <input className="form-input" value={search} placeholder="식자재명 또는 메뉴명 검색"
+          onChange={e => onSearchChange(e.target.value)}
+          onBlur={() => setTimeout(() => onSearchChange(''), 160)}/>
+        {filtered.length > 0 && (
+          <div style={{
+            position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 200,
+            background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8,
+            boxShadow: '0 4px 16px rgba(0,0,0,.12)', maxHeight: 200, overflowY: 'auto',
+          }}>
+            {filtered.map(o => (
+              <div key={`${o.kind}-${o.code}`}
+                style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', gap: 8, alignItems: 'center' }}
+                onMouseDown={e => { e.preventDefault(); onAdd(o); }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 3,
+                  background: o.kind === 'ingredient' ? 'var(--positive-soft)' : 'var(--accent-soft)',
+                  color: o.kind === 'ingredient' ? 'var(--positive)' : 'var(--accent-text)',
+                }}>
+                  {o.kind === 'ingredient' ? '식자재' : '메뉴'}
+                </span>
+                {o.name}
+                {o.code && <span style={{ fontSize: 11, color: 'var(--text-4)', marginLeft: 'auto' }}>{o.code}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 연결된 제품 칩 */}
+      {linked.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+          {linked.map((p, i) => (
+            <span key={i} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              padding: '3px 8px', borderRadius: 999, fontSize: 12, fontWeight: 600,
+              background: p.kind === 'ingredient' ? 'var(--positive-soft)' : 'var(--accent-soft)',
+              color: p.kind === 'ingredient' ? 'var(--positive)' : 'var(--accent-text)',
+            }}>
+              {p.name}
+              <button type="button" onClick={() => onRemove(i)}
+                style={{ border: 0, background: 'transparent', cursor: 'pointer', padding: 0, display: 'flex', color: 'inherit', opacity: .6 }}>
+                <Icon.close style={{ width: 11, height: 11 }}/>
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      {linked.length === 0 && (
+        <div style={{ fontSize: 12, color: 'var(--text-4)', marginTop: 8 }}>연결된 제품 없음</div>
       )}
     </div>
   );
