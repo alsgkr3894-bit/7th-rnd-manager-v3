@@ -154,7 +154,7 @@ export function CommonManageView({ tab = 'groups' }) {
   const filteredEdges = useMemo(() => {
     const q = edgeSearch.trim().toLowerCase();
     if (!q) return edges;
-    return edges.filter(e => e.name?.toLowerCase().includes(q) || e.code?.toLowerCase().includes(q));
+    return edges.filter(e => e.edgeType?.toLowerCase().includes(q) || e.edgeCode?.toLowerCase().includes(q) || (e.size || '').toLowerCase().includes(q));
   }, [edges, edgeSearch]);
 
   if (dbError) return (

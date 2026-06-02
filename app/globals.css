@@ -1537,7 +1537,6 @@ button { font-family: inherit; cursor: pointer; }
 .margin-table thead th.sticky-col { z-index: 3; background: var(--surface-2); }
 /* 고정 열이 가로 스크롤 시 떨리지 않도록 hover translate 무력화 */
 .margin-table tbody tr:hover { transform: none; }
-.margin-table tbody tr:hover td.sticky-col { background: var(--surface-2); }
 
 /* 줄무늬 — 행 추적 용이 (sticky 열은 본문보다 약간 진하게 유지) */
 .margin-table tbody tr:nth-child(even) td { background: var(--surface-2); }

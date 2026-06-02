@@ -10,7 +10,7 @@ const INITIAL_FORM = { rawName: '', mappedName: '' };
 export function UserAliasesSection() {
   const {
     list, adding, setAdding, editingId, setEditingId, form, setForm, busy,
-    handleAdd, handleUpdate, handleDelete, startEdit, resetAdding,
+    handleAdd, handleUpdate, handleDelete, startEdit, resetAdding, refresh,
   } = useSettingsSection({
     initialForm:     INITIAL_FORM,
     getAll:          getUserAliases,
@@ -26,6 +26,7 @@ export function UserAliasesSection() {
   async function handleToggle(a) {
     try {
       await updateUserAlias({ id: a.id, enable: a.enable !== false ? false : true });
+      refresh();
       await reapplyToUploadedData();
     } catch { showToast('토글 실패', 'err'); }
   }

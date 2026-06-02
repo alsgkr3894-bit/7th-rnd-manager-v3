@@ -75,10 +75,19 @@ export function IngredientForm({ initial, onSave, onClose, extraCategories = [] 
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setSaving(true);
     try {
+      // origin: country가 없으면 null로 정리 (빈 객체가 DB에 저장되지 않도록)
+      const rawOrigin = form.origin;
+      const origin = rawOrigin?.country?.trim() ? {
+        displayName: rawOrigin.displayName?.trim() || '',
+        country:     rawOrigin.country.trim(),
+        region:      rawOrigin.region?.trim() || '',
+      } : null;
       const data = {
         ...form,
         baseQuantity:  form.baseQuantity  ? Number(form.baseQuantity)  : null,
         priceOverride: !isJetteLinked && form.priceOverride ? Number(form.priceOverride) : null,
+        origin,
+        allergens: form.allergens || [],
       };
       await onSave(data);
       try { localStorage.setItem(LS_UNIT_TYPE, data.baseUnitType || 'g'); } catch {}
@@ -301,17 +310,17 @@ export function IngredientForm({ initial, onSave, onClose, extraCategories = [] 
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 120px', gap:8}}>
               <Field label="표시품목명">
                 <input className="form-input" value={form.origin?.displayName || ''}
-                  onChange={e => set('origin', { ...(form.origin || {}), displayName: e.target.value, country: form.origin?.country || '', region: form.origin?.region || '' })}
+                  onChange={e => set('origin', { displayName: '', country: '', region: '', ...(form.origin || {}), displayName: e.target.value })}
                   placeholder="예) 밀가루, 치즈"/>
               </Field>
               <Field label="원산지 국가">
                 <input className="form-input" value={form.origin?.country || ''}
-                  onChange={e => set('origin', { ...(form.origin || {}), displayName: form.origin?.displayName || '', country: e.target.value, region: form.origin?.region || '' })}
+                  onChange={e => set('origin', { displayName: '', country: '', region: '', ...(form.origin || {}), country: e.target.value })}
                   placeholder="예) 국내산, 미국"/>
               </Field>
               <Field label="세부 지역">
                 <input className="form-input" value={form.origin?.region || ''}
-                  onChange={e => set('origin', { ...(form.origin || {}), displayName: form.origin?.displayName || '', country: form.origin?.country || '', region: e.target.value })}
+                  onChange={e => set('origin', { displayName: '', country: '', region: '', ...(form.origin || {}), region: e.target.value })}
                   placeholder="선택"/>
               </Field>
             </div>
