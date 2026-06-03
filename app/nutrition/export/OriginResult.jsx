@@ -14,6 +14,8 @@ import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 import { exportOriginToExcel } from '@/lib/nutrition/origin/export';
 import { showToast } from '@/components/Toast';
 import { MENU_ORDER_KEY, loadOrder, applyOrder } from '@/lib/nutrition/order';
+import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
+import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
 import './origin-result.css';
 
 /**
@@ -260,12 +262,7 @@ export default function OriginResult() {
           getAllSetRecipes(),
           getAllRecipes(),
         ]);
-      const detailRecipes = [
-        ...pizzaRecs.map(r => ({ ...r, category: '피자' })),
-        ...personalRecs.map(r => ({ ...r, category: '1인피자' })),
-        ...sideRecs.map(r => ({ ...r, category: '사이드' })),
-        ...setRecs.map(r => ({ ...r, category: '세트박스' })),
-      ];
+      const detailRecipes = tagDetailRecipes(pizzaRecs, personalRecs, sideRecs, setRecs);
       const { ingredientToMenus } = buildIngredientMenuMap({
         menuMasters: masters,
         detailRecipes,
@@ -273,11 +270,7 @@ export default function OriginResult() {
         groups,
         edges,
       });
-      const exMasters = masters.filter(m => m.excludeFromOrigin);
-      const excludedMenuCodes = new Set(exMasters.map(m => m.menuCode).filter(Boolean));
-      const excludedMenuNames = new Set(
-        exMasters.map(m => (m.menuName || '').trim()).filter(Boolean)
-      );
+      const { excludedMenuCodes, excludedMenuNames } = extractExcludedMenuSets(masters);
       setOrigins(
         buildOriginsFromIngredients(ings, ingredientToMenus, excludedMenuCodes, excludedMenuNames)
       );

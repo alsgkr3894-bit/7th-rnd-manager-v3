@@ -26,6 +26,8 @@ import {
   saveOrder,
   applyOrder,
 } from '@/lib/nutrition/order';
+import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
+import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
 
 /**
  * 알레르기 정보 페이지 — 자동 집계 뷰
@@ -99,12 +101,7 @@ export default function Page() {
     setIngredients(ings);
     setMenuMasters(masters);
     setEdges(edges);
-    const detailRecipes = [
-      ...pizzaRecs.map(r => ({ ...r, category: '피자' })),
-      ...personalRecs.map(r => ({ ...r, category: '1인피자' })),
-      ...sideRecs.map(r => ({ ...r, category: '사이드' })),
-      ...setRecs.map(r => ({ ...r, category: '세트박스' })),
-    ];
+    const detailRecipes = tagDetailRecipes(pizzaRecs, personalRecs, sideRecs, setRecs);
     setMapData(
       buildIngredientMenuMap({
         menuMasters: masters,
@@ -140,13 +137,10 @@ export default function Page() {
   );
 
   // 원산지·알레르기 출력에서 제외된 메뉴 — menuCode + menuName 양쪽 매칭
-  const { excludedMenuCodes, excludedMenuNames } = useMemo(() => {
-    const ex = menuMasters.filter(m => m.excludeFromOrigin);
-    return {
-      excludedMenuCodes: new Set(ex.map(m => m.menuCode).filter(Boolean)),
-      excludedMenuNames: new Set(ex.map(m => (m.menuName || '').trim()).filter(Boolean)),
-    };
-  }, [menuMasters]);
+  const { excludedMenuCodes, excludedMenuNames } = useMemo(
+    () => extractExcludedMenuSets(menuMasters),
+    [menuMasters]
+  );
   const isExcludedMenu = useCallback(
     (menuCode, menuName) =>
       excludedMenuCodes.has(menuCode) || excludedMenuNames.has((menuName || '').trim()),

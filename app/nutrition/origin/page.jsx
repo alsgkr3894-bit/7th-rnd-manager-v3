@@ -19,6 +19,8 @@ import { SmallStatCard } from '@/components/ui/SmallStatCard';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { ReorderModal } from '@/components/ui/ReorderModal';
 import { MENU_ORDER_KEY, loadOrder, saveOrder, applyOrder } from '@/lib/nutrition/order';
+import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
+import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
 
 /**
  * 원산지 정보 페이지 — 자동 집계 뷰
@@ -59,12 +61,7 @@ export default function Page() {
       ]);
     setIngredients(ings);
     setMenuMasters(masters);
-    const detailRecipes = [
-      ...pizzaRecs.map(r => ({ ...r, category: '피자' })),
-      ...personalRecs.map(r => ({ ...r, category: '1인피자' })),
-      ...sideRecs.map(r => ({ ...r, category: '사이드' })),
-      ...setRecs.map(r => ({ ...r, category: '세트박스' })),
-    ];
+    const detailRecipes = tagDetailRecipes(pizzaRecs, personalRecs, sideRecs, setRecs);
     setMapData(
       buildIngredientMenuMap({
         menuMasters: masters,
@@ -94,13 +91,10 @@ export default function Page() {
 
   // 원산지 출력에서 제외된 메뉴 — menuCode + menuName 양쪽으로 매칭
   // (레시피 코드와 메뉴마스터 코드가 다르거나 L/R 사이즈별 레코드인 경우 대비)
-  const { excludedMenuCodes, excludedMenuNames } = useMemo(() => {
-    const ex = menuMasters.filter(m => m.excludeFromOrigin);
-    return {
-      excludedMenuCodes: new Set(ex.map(m => m.menuCode).filter(Boolean)),
-      excludedMenuNames: new Set(ex.map(m => (m.menuName || '').trim()).filter(Boolean)),
-    };
-  }, [menuMasters]);
+  const { excludedMenuCodes, excludedMenuNames } = useMemo(
+    () => extractExcludedMenuSets(menuMasters),
+    [menuMasters]
+  );
   const isExcludedMenu = useCallback(
     (menuCode, menuName) =>
       excludedMenuCodes.has(menuCode) || excludedMenuNames.has((menuName || '').trim()),
