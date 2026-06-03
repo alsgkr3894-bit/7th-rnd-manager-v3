@@ -159,7 +159,7 @@ export function NoteFormBody({ form, setForm }) {
       className="form-layout"
       style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 360px',
+        gridTemplateColumns: 'minmax(0, 1fr) min(360px, 100%)',
         gap: 24,
         marginTop: 24,
         alignItems: 'start',

@@ -125,6 +125,9 @@ export function WidgetConfigModal({ isVisible, toggleRow, onClose, widgetOrder, 
             </div>
           </SortableContext>
         </DndContext>
+        <div style={{ marginTop: 14, fontSize: 11, color: 'var(--text-4)', borderTop: '1px solid var(--divider)', paddingTop: 10 }}>
+          위젯 순서·즐겨찾기·접기 설정은 이 브라우저에만 저장됩니다 (백업 미포함).
+        </div>
       </div>
     </div>
   );

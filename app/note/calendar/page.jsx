@@ -705,16 +705,21 @@ export default function Page() {
                       }
                     })}
                     {overflow > 0 && (
-                      <div
+                      <button
+                        onClick={e => { e.stopPropagation(); setSelectedDay(key); }}
                         style={{
                           fontSize: 10,
-                          color: 'var(--text-4)',
+                          color: 'var(--accent-text)',
                           fontWeight: 600,
                           paddingLeft: 4,
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          textDecoration: 'underline',
                         }}
                       >
-                        +{overflow}개
-                      </div>
+                        +{overflow}개 더보기
+                      </button>
                     )}
                   </div>
 

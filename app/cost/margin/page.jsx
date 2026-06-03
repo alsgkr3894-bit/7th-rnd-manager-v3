@@ -507,6 +507,7 @@ export default function Page() {
     setPlatforms(newPlats);
     if (!newPlats.find(p => p.id === activePlatId)) setActivePlatId('default');
     setShowSettings(false);
+    showToast('플랫폼 설정 저장됨', 'ok');
   }
 
   // 행 숨김 토글 — 메뉴 마스터의 hidden 플래그로 저장(표·통계에서 제외)
@@ -530,6 +531,18 @@ export default function Page() {
   );
 
   const hiddenCount = useMemo(() => rows.filter(r => r.hidden).length, [rows]);
+
+  if (loading)
+    return (
+      <main className="main page-enter">
+        <PageHeader breadcrumb={['원가계산', '원가마진표']} title="메뉴 원가마진표" sub="로딩 중…" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 20 }}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} style={{ height: 44, borderRadius: 8, background: 'var(--surface-2)', animation: 'pulse 1.5s ease-in-out infinite', animationDelay: `${i * 60}ms` }} />
+          ))}
+        </div>
+      </main>
+    );
 
   if (dbError)
     return (
@@ -775,7 +788,13 @@ export default function Page() {
                 </tr>
               </thead>
               <tbody>
-                {sortedFiltered.map(r => (
+                {sortedFiltered.length === 0 ? (
+                  <tr>
+                    <td colSpan={99} style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+                      조건에 맞는 메뉴가 없습니다
+                    </td>
+                  </tr>
+                ) : sortedFiltered.map(r => (
                   <MarginRow
                     key={r.id}
                     r={r}

@@ -3,6 +3,8 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Pagination } from '@/components/ui/Pagination';
+import { usePagination } from '@/hooks/usePagination';
 import { showToast } from '@/components/Toast';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { initDB } from '@/lib/db';
@@ -269,6 +271,8 @@ export default function Page() {
       );
     return list;
   }, [rows, taxFilter, deltaFilter, search]);
+
+  const { page: ipPage, goTo: ipGoTo, totalPages: ipTotalPages, paged: ipPaged, total: ipTotal } = usePagination(filtered, 60);
 
   if (dbError)
     return (
@@ -562,7 +566,7 @@ export default function Page() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((r, i) => (
+                    {ipPaged.map((r, i) => (
                       <MasterRow
                         key={r.meta?.id ?? r.productCode ?? `row-${i}`}
                         r={r}
@@ -581,7 +585,12 @@ export default function Page() {
                 borderTop: '1px solid var(--divider)',
               }}
             >
-              {filtered.length}개 표시 / 전체 {rows.length}개
+              <Pagination page={ipPage} totalPages={ipTotalPages} onPage={ipGoTo} total={ipTotal} pageSize={60} />
+              {ipTotalPages <= 1 && (
+                <div style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text-3)' }}>
+                  {filtered.length}개 표시 / 전체 {rows.length}개
+                </div>
+              )}
             </div>
           </div>
         </>

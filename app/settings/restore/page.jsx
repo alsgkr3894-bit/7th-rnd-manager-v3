@@ -77,7 +77,9 @@ export default function Page() {
       if (nonArrayStores.length > 0) {
         throw new Error(`잘못된 백업 파일 형식 (stores 값이 배열이 아님: ${nonArrayStores.slice(0, 3).join(', ')})`);
       }
-      if (data.version && data.version !== 'v3') { showToast('버전 불일치: ' + data.version, 'warn'); }
+      if (data.version && data.version !== 'v3') {
+        showToast(`백업 파일 버전(${data.version})이 현재(v3)와 다릅니다. 일부 데이터가 올바르게 복원되지 않을 수 있습니다.`, 'warn', 6000);
+      }
       setParsed({ ...data, _fileName: file.name });
     } catch (err) {
       console.error('[Restore] 파일 파싱 실패:', err);

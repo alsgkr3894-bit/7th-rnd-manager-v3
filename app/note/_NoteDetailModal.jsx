@@ -36,7 +36,7 @@ export function NoteDetailModal({ note, onClose, onEdit }) {
               {note.menuName}{note.testDate ? ` · ${formatFullDate(note.testDate)}` : ''}
             </div>
           </div>
-          <button className="btn xs" style={{flexShrink:0}} onClick={handleClose}>
+          <button className="btn xs" style={{flexShrink:0}} onClick={handleClose} aria-label="노트 상세 닫기">
             <Icon.close style={{width:16,height:16}}/>
           </button>
         </div>

@@ -12,6 +12,7 @@ import { initDB } from '@/lib/db';
 import {
   getAllMenuMaster,
   upsertMenuMaster,
+  deleteMenuMaster,
   resetAllMenuMaster,
   pushMasterToPrices,
 } from '@/lib/menu-master';
@@ -354,6 +355,7 @@ export default function Page() {
   const [bulkModal, setBulkModal] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmBulkPizza, setConfirmBulkPizza] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null); // 개별 삭제 대상 row
 
   const load = useCallback(async () => {
     await initDB();
@@ -371,12 +373,26 @@ export default function Page() {
   }, [load]);
   useVisibilityRefresh(load);
 
-  // 마스터 변경 후 소비처 미러(cost_selling_prices) 자동 동기화
+  // 마스터 변경 후 소비처 미러(cost_selling_prices) 동기화.
+  // 단방향(마스터→판매가)만 여기서 수행. 반대 방향(판매가 업로드→마스터)은
+  // lib/cost/menu-price/store.js의 syncMenuMasterFromPrices 에서 처리.
   async function syncMirror() {
     try {
       await pushMasterToPrices();
     } catch (err) {
       console.warn('판매가 미러 동기화 실패:', err);
+    }
+  }
+
+  async function handleDeleteRow(row) {
+    try {
+      await deleteMenuMaster(row.id);
+      setRows(prev => prev.filter(r => r.id !== row.id));
+      showToast(`"${row.menuName}" 삭제됨`, 'ok');
+      setDeleteTarget(null);
+      await syncMirror();
+    } catch (err) {
+      showToast('삭제 실패: ' + err.message, 'error');
     }
   }
 
@@ -865,9 +881,17 @@ export default function Page() {
                             {STATUS_LABEL[row.status] || row.status}
                           </span>
                         </td>
-                        <td style={{ textAlign: 'right' }}>
+                        <td style={{ textAlign: 'right', display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                           <button className="btn sm ghost" onClick={() => setEditRow(row)}>
                             <Icon.edit style={{ width: 13, height: 13 }} />
+                          </button>
+                          <button
+                            className="btn sm ghost"
+                            onClick={() => setDeleteTarget(row)}
+                            style={{ color: 'var(--negative)' }}
+                            title="삭제"
+                          >
+                            <Icon.trash style={{ width: 13, height: 13 }} />
                           </button>
                         </td>
                       </tr>
@@ -902,6 +926,16 @@ export default function Page() {
       )}
 
       {bulkModal && <BulkPriceModal onClose={() => setBulkModal(false)} onDone={load} />}
+
+      {deleteTarget && (
+        <ConfirmDialog
+          open
+          message={`"${deleteTarget.menuName}" 메뉴를 삭제합니다.\n원가·영양·판매량에서 이 메뉴 참조가 고아 레코드로 남을 수 있습니다.`}
+          danger
+          onConfirm={() => handleDeleteRow(deleteTarget)}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
 
       {confirmReset && (
         <ConfirmDialog

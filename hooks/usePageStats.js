@@ -13,6 +13,14 @@ import { useState, useEffect } from 'react';
 export function usePageStats(pathname) {
   const [unmatchedCount, setUnmatchedCount] = useState(0);
   const [reportingCount, setReportingCount] = useState(0);
+  const [tick, setTick] = useState(0);
+
+  // 탭이 다시 보일 때(다른 탭에서 업로드·노트 변경 후 돌아올 때) 카운트 갱신
+  useEffect(() => {
+    const onVisible = () => { if (!document.hidden) setTick(t => t + 1); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -36,7 +44,7 @@ export function usePageStats(pathname) {
       }
     })();
     return () => { alive = false; };
-  }, [pathname]);
+  }, [pathname, tick]);
 
   return { unmatchedCount, reportingCount };
 }

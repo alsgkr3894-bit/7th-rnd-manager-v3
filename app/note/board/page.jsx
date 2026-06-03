@@ -60,17 +60,56 @@ export default function Page() {
   async function handleDrop(e, status) {
     e.preventDefault();
     setDragOverStatus(null);
-    setDropTarget(null);
     const noteId = e.dataTransfer.getData('noteId');
-    if (!noteId) return;
+    if (!noteId) { setDropTarget(null); return; }
     const note = notes.find(n => String(n.id) === String(noteId));
-    if (!note || note.status === status) return;
-    await applyStatusChange({ id: Number(noteId), status: note.status }, status, { bounce: false });
+    if (!note) { setDropTarget(null); return; }
+
+    const colNotes = groupedNotes.find(g => g.status === status)?.notes ?? [];
+    const beforeIdx = dropTarget?.status === status
+      ? (dropTarget.beforeIdx ?? colNotes.length)
+      : colNotes.length;
+    setDropTarget(null);
+
+    if (note.status === status) {
+      // 같은 컬럼 내 순서 변경 — boardOrder를 DB에 저장
+      const without = colNotes.filter(n => n.id !== note.id);
+      const origIdx = colNotes.findIndex(n => n.id === note.id);
+      const insertAt = origIdx < beforeIdx ? beforeIdx - 1 : beforeIdx;
+      without.splice(Math.max(0, Math.min(insertAt, without.length)), 0, note);
+      await Promise.all(without.map((n, i) => updateNote(n.id, { boardOrder: i * 10 })));
+      await load();
+    } else {
+      // 다른 컬럼으로 이동 — 상태 변경 + 새 위치에 삽입
+      const newCol = [...colNotes];
+      newCol.splice(Math.min(beforeIdx, newCol.length), 0, note);
+      await Promise.all([
+        updateNote(note.id, { status, boardOrder: Math.min(beforeIdx, newCol.length - 1) * 10 }),
+        ...newCol.filter(n => n.id !== note.id).map((n, i) => {
+          const order = (i >= Math.min(beforeIdx, newCol.length - 1) ? i + 1 : i) * 10;
+          return updateNote(n.id, { boardOrder: order });
+        }),
+      ]);
+      showToast(`→ ${status}`, 'ok');
+      await load();
+      setBouncingIds(s => new Set([...s, note.id]));
+      setTimeout(() => setBouncingIds(s => { const n = new Set(s); n.delete(note.id); return n; }), 400);
+    }
     setDragId(null);
   }
 
+  // boardOrder 오름차순 정렬 — 없으면(구 데이터) createdAt 역순 유지
   const groupedNotes = useMemo(
-    () => STATUSES.map(st => ({ status: st, notes: notes.filter(n => n.status === st) })),
+    () => STATUSES.map(st => ({
+      status: st,
+      notes: notes
+        .filter(n => n.status === st)
+        .sort((a, b) =>
+          a.boardOrder != null && b.boardOrder != null
+            ? a.boardOrder - b.boardOrder
+            : (a.boardOrder != null ? -1 : b.boardOrder != null ? 1 : 0)
+        ),
+    })),
     [notes]
   );
 

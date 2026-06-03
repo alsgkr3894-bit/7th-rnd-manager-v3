@@ -126,7 +126,10 @@ export default function HomePage() {
           getTopMenusWithTrend(5, '피자', true, 'asc'),
           getRecentActivities(8), getMonthlyBriefing(),
         ]);
-        const [s, c, n, td, dn, tp, bt, ac, br] = settled.map(r => r.status === 'fulfilled' ? r.value : null);
+        const [s, c, n, td, dn, tp, bt, ac, br] = settled.map((r, i) => {
+          if (r.status === 'rejected') devError(`[Home] 위젯 로드 실패(${i}):`, r.reason);
+          return r.status === 'fulfilled' ? r.value : null;
+        });
         if (s)  { setSalesKpi(s); setDetectedPeriod({ year: s.year, month: s.month }); }
         if (c)  setCostKpi(c);
         if (n)  setNoteKpi(n);
@@ -233,9 +236,11 @@ export default function HomePage() {
     () => trend && trend.thisYear.every(v => v === 0) && trend.lastYear.every(v => v === 0),
     [trend]
   );
-  const rankSub = salesKpi?.year && salesKpi?.month
-    ? `${salesKpi.year}년 ${salesKpi.month}월 · 피자 카테고리`
-    : '데이터 없음';
+  const rankSub = salesKpi == null
+    ? '판매 데이터 없음'
+    : salesKpi.year && salesKpi.month
+      ? `${salesKpi.year}년 ${salesKpi.month}월 · 피자 카테고리`
+      : '집계 중';
 
   const todayStr = new Date().toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
 

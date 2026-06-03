@@ -2,6 +2,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Pagination } from '@/components/ui/Pagination';
+import { usePagination } from '@/hooks/usePagination';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { formatNumber } from '@/lib/format';
 import { getAllMenuPrices } from '@/lib/cost/menu-price';
@@ -175,6 +177,8 @@ export default function Page() {
   const hasAnyData = rows.length > 0;
   const hasRecipeData = rows.some(r => r.hasCost);
 
+  const { page: asPage, goTo: asGoTo, totalPages: asTotalPages, paged: asPaged, total: asTotal } = usePagination(filtered, 60);
+
   // ── 렌더 ─────────────────────────────────────────────────
   if (dbError)
     return (
@@ -328,7 +332,7 @@ export default function Page() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(r => (
+                {asPaged.map(r => (
                   <tr key={r.id}>
                     <td style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{r.menuName}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>
@@ -358,16 +362,13 @@ export default function Page() {
               </tbody>
             </table>
           </div>
-          <div
-            style={{
-              padding: '8px 16px',
-              fontSize: 11,
-              color: 'var(--text-3)',
-              borderTop: '1px solid var(--divider)',
-            }}
-          >
-            {filtered.length}개 메뉴 표시
-            {catFilter !== '전체' && ` · ${catFilter} 필터 적용 중`}
+          <div style={{ borderTop: '1px solid var(--divider)' }}>
+            <Pagination page={asPage} totalPages={asTotalPages} onPage={asGoTo} total={asTotal} pageSize={60} />
+            {asTotalPages <= 1 && (
+              <div style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text-3)' }}>
+                {filtered.length}개 메뉴 표시{catFilter !== '전체' && ` · ${catFilter} 필터 적용 중`}
+              </div>
+            )}
           </div>
         </div>
       )}
