@@ -276,7 +276,7 @@ export default function Page() {
     } catch (err) {
       showToast('실패: ' + err.message, 'err');
     }
-  }, []);
+  }, [load]);
 
   const handleRestore = useCallback(async productCode => {
     try {

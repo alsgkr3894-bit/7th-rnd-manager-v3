@@ -1375,7 +1375,7 @@ button { font-family: inherit; cursor: pointer; }
   white-space: nowrap;
 }
 .page-sub { color: var(--text-3); font-size: 13px; margin-top: 6px; }
-.page-actions { display: flex; gap: 8px; }
+.page-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* ===== Stat row ===== */
 .stat-row {
