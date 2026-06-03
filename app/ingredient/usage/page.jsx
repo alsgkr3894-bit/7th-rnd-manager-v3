@@ -5,7 +5,7 @@ import { SortableTh } from '@/components/ui/SortableTh';
 import { initDB } from '@/lib/db';
 import { getAllIngredients, buildProductTypeMap, scopeLabelFor } from '@/lib/ingredient';
 import { SCOPE_STYLES, SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
-import { getManagedProducts } from '@/lib/shipment';
+import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { printUsageReport } from '@/lib/cost/usage-print';
 import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
@@ -97,7 +97,7 @@ export default function Page() {
       getAllPersonalRecipes(),
       getAllSideRecipes(),
       getAllRecipes(),
-      getManagedProducts(),
+      seedManagedProductsIfEmpty().then(() => getManagedProducts()),
     ]);
     setAllMeta(meta);
 

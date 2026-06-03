@@ -8,7 +8,12 @@ import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { initDB } from '@/lib/db';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
-import { getManagedProducts, addManagedProduct, updateManagedProduct } from '@/lib/shipment';
+import {
+  getManagedProducts,
+  addManagedProduct,
+  updateManagedProduct,
+  seedManagedProductsIfEmpty,
+} from '@/lib/shipment';
 import { TYPE_LABEL } from '@/components/jette/managed-products-constants';
 import {
   getAllIngredients,
@@ -98,7 +103,7 @@ export default function Page() {
     const [allMeta, metaMap, managed] = await Promise.all([
       getAllIngredients(),
       getIngredientMetaMap(),
-      getManagedProducts(),
+      seedManagedProductsIfEmpty().then(() => getManagedProducts()),
     ]);
     // 전용/범용 단일 출처 = 제때 관리품목(productType)
     const typeMap = new Map(

@@ -19,7 +19,7 @@ import {
   scopeLabelFor,
 } from '@/lib/ingredient';
 import { SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
-import { getManagedProducts } from '@/lib/shipment';
+import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
 import { MASTER_IMPORT_SEED } from '@/lib/ingredient/master-import-seed';
 import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
 import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
@@ -84,7 +84,7 @@ export default function Page() {
     const [allMeta, metaMap, managed] = await Promise.all([
       getAllIngredients(),
       getIngredientMetaMap(),
-      getManagedProducts(),
+      seedManagedProductsIfEmpty().then(() => getManagedProducts()),
     ]);
     const typeMap = buildProductTypeMap(managed);
 

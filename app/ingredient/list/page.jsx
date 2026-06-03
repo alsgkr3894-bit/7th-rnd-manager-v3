@@ -15,7 +15,7 @@ import {
   buildMetaOnlyRow,
   buildProductTypeMap,
 } from '@/lib/ingredient';
-import { getManagedProducts } from '@/lib/shipment';
+import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
 import { downloadCsv } from '@/lib/download';
 import {
   SCOPE,
@@ -69,7 +69,7 @@ export default function Page() {
     const [allMeta, metaMap, managed] = await Promise.all([
       getAllIngredients(),
       getIngredientMetaMap(),
-      getManagedProducts(),
+      seedManagedProductsIfEmpty().then(() => getManagedProducts()),
     ]);
     const typeMap = buildProductTypeMap(managed);
 
