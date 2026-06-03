@@ -9,11 +9,17 @@ import { initDB } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import {
-  getAllIngredients, getIngredientMetaMap, upsertIngredientMeta,
-  bulkImportIngredients, resetAllIngredients,
-  sortMainCategories, deriveScope,
+  getAllIngredients,
+  getIngredientMetaMap,
+  upsertIngredientMeta,
+  bulkImportIngredients,
+  resetAllIngredients,
+  sortMainCategories,
+  buildProductTypeMap,
+  scopeLabelFor,
 } from '@/lib/ingredient';
 import { SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
+import { getManagedProducts } from '@/lib/shipment';
 import { MASTER_IMPORT_SEED } from '@/lib/ingredient/master-import-seed';
 import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
 import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
@@ -46,49 +52,56 @@ const SuppliersView = dynamic(
 );
 
 const VIEW_TABS = [
-  { key: 'price',     label: '단가 목록' },
-  { key: 'usage',     label: '제품별 사용현황' },
+  { key: 'price', label: '단가 목록' },
+  { key: 'usage', label: '제품별 사용현황' },
   { key: 'suppliers', label: '공급업체' },
 ];
 
 export default function Page() {
-  const [rows,       setRows]       = useState([]);
-  const [fileInfo,   setFileInfo]   = useState(null);
-  const [loading,    setLoading]    = useState(true);
-  const [dbError,    setDbError]    = useState(null);
-  const [search,     setSearch]     = useState('');
-  const [taxFilter,  setTaxFilter]  = useState('all');
-  const [deltaFilter,setDeltaFilter]= useState('all'); // all | up | down | new | same
-  const [regTarget,  setRegTarget]  = useState(null);  // 마스터 등록 모달 대상 행
-  const [bulkOpen,   setBulkOpen]   = useState(false); // 일괄 가격 업로드 모달
-  const [syncQtyOpen,setSyncQtyOpen]= useState(false); // 제때 수량 동기화 모달
-  const [importing,  setImporting]  = useState(false);
-  const [resetting,  setResetting]  = useState(false);
-  const [viewTab,    setViewTab]    = useState('price'); // 'price' | 'usage'
-  const [usageMap,   setUsageMap]   = useState({ byCode: new Map(), byName: new Map() });
-  const [usageCat,   setUsageCat]   = useState('전체');
-  const [usageSort,  setUsageSort]  = useState('count_desc'); // count_desc|count_asc|name_asc
+  const [rows, setRows] = useState([]);
+  const [fileInfo, setFileInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [dbError, setDbError] = useState(null);
+  const [search, setSearch] = useState('');
+  const [taxFilter, setTaxFilter] = useState('all');
+  const [deltaFilter, setDeltaFilter] = useState('all'); // all | up | down | new | same
+  const [regTarget, setRegTarget] = useState(null); // 마스터 등록 모달 대상 행
+  const [bulkOpen, setBulkOpen] = useState(false); // 일괄 가격 업로드 모달
+  const [syncQtyOpen, setSyncQtyOpen] = useState(false); // 제때 수량 동기화 모달
+  const [importing, setImporting] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [viewTab, setViewTab] = useState('price'); // 'price' | 'usage'
+  const [usageMap, setUsageMap] = useState({ byCode: new Map(), byName: new Map() });
+  const [usageCat, setUsageCat] = useState('전체');
+  const [usageSort, setUsageSort] = useState('count_desc'); // count_desc|count_asc|name_asc
 
   const load = useCallback(async () => {
     await initDB();
-    const files  = await getPriceFiles();
+    const files = await getPriceFiles();
     const latest = files[0] || null;
-    const prev   = files[1] || null;
+    const prev = files[1] || null;
 
-    const [allMeta, metaMap] = await Promise.all([
+    const [allMeta, metaMap, managed] = await Promise.all([
       getAllIngredients(),
       getIngredientMetaMap(),
+      getManagedProducts(),
     ]);
+    const typeMap = buildProductTypeMap(managed);
 
     // 마스터가 비어있으면 빈 목록 (usageMap 빌드는 계속 진행)
-    if (!allMeta.length) { setRows([]); }
+    if (!allMeta.length) {
+      setRows([]);
+    }
 
     let prevPriceMap = new Map();
     let priceRows = [];
     let priceCodeSet = new Set();
 
     if (latest) {
-      setFileInfo({ name: latest.fileName || latest.name || '', date: latest.updateDate || latest.date || '' });
+      setFileInfo({
+        name: latest.fileName || latest.name || '',
+        date: latest.updateDate || latest.date || '',
+      });
       const [latestRows, prevRows] = await Promise.all([
         getPriceRowsByFileId(latest.id),
         prev ? getPriceRowsByFileId(prev.id) : Promise.resolve([]),
@@ -96,7 +109,9 @@ export default function Page() {
       priceRows = latestRows;
       priceCodeSet = new Set(priceRows.map(r => r.productCode).filter(Boolean));
       if (prev) {
-        prevRows.forEach(r => { if (r.productCode) prevPriceMap.set(r.productCode, r.priceWithTax); });
+        prevRows.forEach(r => {
+          if (r.productCode) prevPriceMap.set(r.productCode, r.priceWithTax);
+        });
       }
     }
 
@@ -105,25 +120,27 @@ export default function Page() {
 
     // 1) 제때 연동 항목 (마스터에 등록된 것 중 제때 파일에 있는 것)
     const linkedRows = allMeta
-      .filter(m => !m.discontinued && !m.excluded && m.productCode && priceCodeSet.has(m.productCode))
+      .filter(
+        m => !m.discontinued && !m.excluded && m.productCode && priceCodeSet.has(m.productCode)
+      )
       .map(m => {
-        const pr       = priceRowMap.get(m.productCode);
-        const baseQty  = m.baseQuantity ?? null;
+        const pr = priceRowMap.get(m.productCode);
+        const baseQty = m.baseQuantity ?? null;
         const unitType = m.baseUnitType || pr?.salesUnit || 'g';
         const unitPrice = calcUnitPrice(pr?.priceWithTax, baseQty);
-        const prevPrice  = prevPriceMap.get(m.productCode);
-        const priceDelta = prevPrice != null ? (pr.priceWithTax - prevPrice) : null;
-        const isNew      = prevPrice == null && prev != null;
+        const prevPrice = prevPriceMap.get(m.productCode);
+        const priceDelta = prevPrice != null ? pr.priceWithTax - prevPrice : null;
+        const isNew = prevPrice == null && prev != null;
         return {
           ...pr,
           meta: m,
-          isLinked:     true,
-          scope:        deriveScope(pr, true),
-          masterName:   m.ingredientName || pr?.productName || '',
-          category:     m.category || '',
+          isLinked: true,
+          scope: scopeLabelFor(typeMap, m.productCode),
+          masterName: m.ingredientName || pr?.productName || '',
+          category: m.category || '',
           baseQuantity: baseQty,
           baseUnitType: unitType,
-          taxType:      pr?.taxType || m.taxType || '과세',
+          taxType: pr?.taxType || m.taxType || '과세',
           unitPrice,
           priceDelta,
           isNew,
@@ -132,9 +149,11 @@ export default function Page() {
 
     // 2) 수동 항목 (마스터에 있지만 제때 파일에 없는 것 — 자체코드·합산코드 포함)
     const manualRows = allMeta
-      .filter(m => !m.discontinued && !m.excluded && (!m.productCode || !priceCodeSet.has(m.productCode)))
+      .filter(
+        m => !m.discontinued && !m.excluded && (!m.productCode || !priceCodeSet.has(m.productCode))
+      )
       .map(m => {
-        const baseQty  = m.baseQuantity ?? null;
+        const baseQty = m.baseQuantity ?? null;
         const unitType = m.baseUnitType || 'g';
 
         // 합산 단가: compositeOf 코드들의 제때 단가를 합산
@@ -144,21 +163,21 @@ export default function Page() {
         const unitPrice = calcUnitPrice(effectivePrice, baseQty);
 
         return {
-          productCode:    m.productCode || '',
-          productName:    m.ingredientName || '',
-          meta:           m,
-          isLinked:       false,
-          scope:          m.scope || SCOPE_UNASSIGNED,
-          isComposite:    Array.isArray(m.compositeOf) && m.compositeOf.length > 0,
-          masterName:     m.ingredientName || '',
-          category:       m.category || '',
-          taxType:        m.taxType || '과세',
-          priceWithTax:   effectivePrice,
-          baseQuantity:   baseQty,
-          baseUnitType:   unitType,
+          productCode: m.productCode || '',
+          productName: m.ingredientName || '',
+          meta: m,
+          isLinked: false,
+          scope: m.scope || SCOPE_UNASSIGNED,
+          isComposite: Array.isArray(m.compositeOf) && m.compositeOf.length > 0,
+          masterName: m.ingredientName || '',
+          category: m.category || '',
+          taxType: m.taxType || '과세',
+          priceWithTax: effectivePrice,
+          baseQuantity: baseQty,
+          baseUnitType: unitType,
           unitPrice,
-          priceDelta:     null,
-          isNew:          false,
+          priceDelta: null,
+          isNew: false,
         };
       });
 
@@ -180,7 +199,12 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    load().catch(err => { console.error(err); setDbError(err.message || '데이터 로드 실패'); }).finally(() => setLoading(false));
+    load()
+      .catch(err => {
+        console.error(err);
+        setDbError(err.message || '데이터 로드 실패');
+      })
+      .finally(() => setLoading(false));
   }, [load]);
   useVisibilityRefresh(load);
 
@@ -212,42 +236,56 @@ export default function Page() {
 
   // ── 통계 ─────────────────────────────────────────────────────
   const stats = useMemo(() => {
-    const upCount   = rows.filter(r => r.priceDelta > 0).length;
+    const upCount = rows.filter(r => r.priceDelta > 0).length;
     const downCount = rows.filter(r => r.priceDelta < 0).length;
-    const newCount  = rows.filter(r => r.isNew).length;
+    const newCount = rows.filter(r => r.isNew).length;
     return { total: rows.length, upCount, downCount, newCount };
   }, [rows]);
 
   // ── 분류 목록 ─────────────────────────────────────────────────
   const mainCats = useMemo(() => {
     const set = new Set();
-    rows.forEach(r => { if (r.category) set.add(r.category); });
+    rows.forEach(r => {
+      if (r.category) set.add(r.category);
+    });
     return sortMainCategories(Array.from(set));
   }, [rows]);
 
   // ── 필터 ─────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     let list = rows;
-    if (taxFilter  !== 'all') list = list.filter(r => r.taxType === taxFilter);
-    if (deltaFilter === 'up')   list = list.filter(r => r.priceDelta > 0);
+    if (taxFilter !== 'all') list = list.filter(r => r.taxType === taxFilter);
+    if (deltaFilter === 'up') list = list.filter(r => r.priceDelta > 0);
     if (deltaFilter === 'down') list = list.filter(r => r.priceDelta < 0);
-    if (deltaFilter === 'new')  list = list.filter(r => r.isNew);
+    if (deltaFilter === 'new') list = list.filter(r => r.isNew);
     if (deltaFilter === 'same') list = list.filter(r => r.priceDelta === 0);
     const q = search.trim().toLowerCase();
-    if (q) list = list.filter(r =>
-      (r.productName || '').toLowerCase().includes(q) ||
-      (r.productCode || '').toLowerCase().includes(q) ||
-      (r.masterName  || '').toLowerCase().includes(q)
-    );
+    if (q)
+      list = list.filter(
+        r =>
+          (r.productName || '').toLowerCase().includes(q) ||
+          (r.productCode || '').toLowerCase().includes(q) ||
+          (r.masterName || '').toLowerCase().includes(q)
+      );
     return list;
   }, [rows, taxFilter, deltaFilter, search]);
 
-  if (dbError) return (
-    <main className="main">
-      <PageHeader breadcrumb={['원가계산', '식자재 단가 마스터']} title="식자재 단가 마스터" sub="로드 실패"/>
-      <div className="card" style={{padding:32, textAlign:'center', color:'var(--negative)'}}>데이터베이스 오류: {dbError}</div>
-    </main>
-  );
+  if (dbError)
+    return (
+      <main className="main">
+        <PageHeader
+          breadcrumb={['원가계산', '식자재 단가 마스터']}
+          title="식자재 단가 마스터"
+          sub="로드 실패"
+        />
+        <div
+          className="card"
+          style={{ padding: 32, textAlign: 'center', color: 'var(--negative)' }}
+        >
+          데이터베이스 오류: {dbError}
+        </div>
+      </main>
+    );
 
   return (
     <main className="main">
@@ -256,21 +294,37 @@ export default function Page() {
         title="식자재 단가 마스터"
         sub="제때 최신 단가 기준 — 마스터에 등록된 항목은 포장단위·개당 단가가 자동 계산돼요."
         actions={
-          <div style={{display:'flex', gap:8}}>
-            <button className="btn" onClick={handleReset} disabled={resetting || importing}
-              style={{color:'var(--negative)'}}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              className="btn"
+              onClick={handleReset}
+              disabled={resetting || importing}
+              style={{ color: 'var(--negative)' }}
+            >
               {resetting ? '초기화 중…' : '마스터 초기화'}
             </button>
-            <button className="btn" onClick={() => setBulkOpen(true)} disabled={importing || resetting}>
-              <Icon.upload style={{width:14, height:14}}/>
+            <button
+              className="btn"
+              onClick={() => setBulkOpen(true)}
+              disabled={importing || resetting}
+            >
+              <Icon.upload style={{ width: 14, height: 14 }} />
               일괄 가격 업로드
             </button>
-            <button className="btn" onClick={() => setSyncQtyOpen(true)} disabled={importing || resetting}>
-              <Icon.arrowDown style={{width:14, height:14}}/>
+            <button
+              className="btn"
+              onClick={() => setSyncQtyOpen(true)}
+              disabled={importing || resetting}
+            >
+              <Icon.arrowDown style={{ width: 14, height: 14 }} />
               제때 수량 동기화
             </button>
-            <button className="btn primary" onClick={handleBulkImport} disabled={importing || resetting}>
-              <Icon.download style={{width:14, height:14}}/>
+            <button
+              className="btn primary"
+              onClick={handleBulkImport}
+              disabled={importing || resetting}
+            >
+              <Icon.download style={{ width: 14, height: 14 }} />
               {importing ? '가져오는 중…' : '마스터 시드 가져오기 (118개)'}
             </button>
           </div>
@@ -279,14 +333,31 @@ export default function Page() {
 
       {/* 탭 전환 — 로드 완료 후 항상 노출 (공급업체는 식자재 유무와 무관) */}
       {!loading && (
-        <div style={{ display:'flex', gap:0, border:'1px solid var(--border)', borderRadius:8, overflow:'hidden', width:'fit-content', marginBottom:12 }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 0,
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            overflow: 'hidden',
+            width: 'fit-content',
+            marginBottom: 12,
+          }}
+        >
           {VIEW_TABS.map(({ key, label }) => (
-            <button key={key} onClick={() => setViewTab(key)}
+            <button
+              key={key}
+              onClick={() => setViewTab(key)}
               style={{
-                padding:'7px 20px', fontSize:13, fontWeight:700, border:'none', cursor:'pointer',
+                padding: '7px 20px',
+                fontSize: 13,
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
                 background: viewTab === key ? 'var(--accent)' : 'var(--surface-2)',
                 color: viewTab === key ? '#fff' : 'var(--text-2)',
-              }}>
+              }}
+            >
               {label}
             </button>
           ))}
@@ -303,10 +374,20 @@ export default function Page() {
         <>
           {/* 파일 기준 */}
           {fileInfo && (
-            <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:4, fontSize:12, color:'var(--text-3)'}}>
-              <Icon.doc style={{width:13, height:13}}/>
-              <span>기준 파일: <b style={{color:'var(--text-2)'}}>{fileInfo.name}</b>
-                {fileInfo.date && <span style={{marginLeft:6}}>({fileInfo.date})</span>}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: 4,
+                fontSize: 12,
+                color: 'var(--text-3)',
+              }}
+            >
+              <Icon.doc style={{ width: 13, height: 13 }} />
+              <span>
+                기준 파일: <b style={{ color: 'var(--text-2)' }}>{fileInfo.name}</b>
+                {fileInfo.date && <span style={{ marginLeft: 6 }}>({fileInfo.date})</span>}
               </span>
             </div>
           )}
@@ -315,42 +396,76 @@ export default function Page() {
           <div className="stat-row">
             <div className="stat-card">
               <div className="stat-label">전체 제품</div>
-              <div className="stat-value">{stats.total}<span className="unit">개</span></div>
+              <div className="stat-value">
+                {stats.total}
+                <span className="unit">개</span>
+              </div>
             </div>
-            <div className="stat-card" style={{cursor:'pointer'}}
-              onClick={() => setDeltaFilter(v => v === 'up' ? 'all' : 'up')}>
+            <div
+              className="stat-card"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setDeltaFilter(v => (v === 'up' ? 'all' : 'up'))}
+            >
               <div className="stat-label">단가 인상</div>
-              <div className="stat-value" style={{color: stats.upCount > 0 ? 'var(--negative, #ef4444)' : undefined}}>
-                {stats.upCount}<span className="unit">개</span>
+              <div
+                className="stat-value"
+                style={{ color: stats.upCount > 0 ? 'var(--negative, #ef4444)' : undefined }}
+              >
+                {stats.upCount}
+                <span className="unit">개</span>
               </div>
-              <div style={{fontSize:11, color:'var(--text-3)', marginTop:6}}>클릭하여 필터</div>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>
+                클릭하여 필터
+              </div>
             </div>
-            <div className="stat-card" style={{cursor:'pointer'}}
-              onClick={() => setDeltaFilter(v => v === 'down' ? 'all' : 'down')}>
+            <div
+              className="stat-card"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setDeltaFilter(v => (v === 'down' ? 'all' : 'down'))}
+            >
               <div className="stat-label">단가 인하</div>
-              <div className="stat-value" style={{color: stats.downCount > 0 ? 'var(--positive)' : undefined}}>
-                {stats.downCount}<span className="unit">개</span>
+              <div
+                className="stat-value"
+                style={{ color: stats.downCount > 0 ? 'var(--positive)' : undefined }}
+              >
+                {stats.downCount}
+                <span className="unit">개</span>
               </div>
-              <div style={{fontSize:11, color:'var(--text-3)', marginTop:6}}>클릭하여 필터</div>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>
+                클릭하여 필터
+              </div>
             </div>
-            <div className="stat-card" style={{cursor:'pointer'}}
-              onClick={() => setDeltaFilter(v => v === 'new' ? 'all' : 'new')}>
+            <div
+              className="stat-card"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setDeltaFilter(v => (v === 'new' ? 'all' : 'new'))}
+            >
               <div className="stat-label">신규 항목</div>
-              <div className="stat-value" style={{color: stats.newCount > 0 ? 'var(--accent)' : undefined}}>
-                {stats.newCount}<span className="unit">개</span>
+              <div
+                className="stat-value"
+                style={{ color: stats.newCount > 0 ? 'var(--accent)' : undefined }}
+              >
+                {stats.newCount}
+                <span className="unit">개</span>
               </div>
-              <div style={{fontSize:11, color:'var(--text-3)', marginTop:6}}>클릭하여 필터</div>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>
+                클릭하여 필터
+              </div>
             </div>
           </div>
 
           {rows.length === 0 && (
-            <div className="card" style={{minHeight:200, display:'grid', placeItems:'center'}}>
-              <div style={{textAlign:'center', color:'var(--text-3)'}}>
-                <Icon.box style={{width:32, height:32, marginBottom:12, opacity:.4}}/>
-                <div style={{fontWeight:600, marginBottom:6}}>마스터에 등록된 식자재가 없습니다</div>
-                <div style={{fontSize:13, marginBottom:12}}>우측 상단 버튼으로 마스터 시드를 가져오면 제때 단가와 자동 연동됩니다.</div>
+            <div className="card" style={{ minHeight: 200, display: 'grid', placeItems: 'center' }}>
+              <div style={{ textAlign: 'center', color: 'var(--text-3)' }}>
+                <Icon.box style={{ width: 32, height: 32, marginBottom: 12, opacity: 0.4 }} />
+                <div style={{ fontWeight: 600, marginBottom: 6 }}>
+                  마스터에 등록된 식자재가 없습니다
+                </div>
+                <div style={{ fontSize: 13, marginBottom: 12 }}>
+                  우측 상단 버튼으로 마스터 시드를 가져오면 제때 단가와 자동 연동됩니다.
+                </div>
                 <button className="btn primary" onClick={handleBulkImport} disabled={importing}>
-                  <Icon.download style={{width:14, height:14}}/>
+                  <Icon.download style={{ width: 14, height: 14 }} />
                   {importing ? '가져오는 중…' : '마스터 시드 가져오기 (118개)'}
                 </button>
               </div>
@@ -373,44 +488,77 @@ export default function Page() {
       {!loading && viewTab === 'price' && rows.length > 0 && (
         <>
           {/* 필터 바 */}
-          <div style={{display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginBottom:4}}>
-            <div style={{display:'flex', gap:4, alignItems:'center'}}>
-              <span style={{fontSize:11, color:'var(--text-3)', fontWeight:600}}>과세</span>
-              {['all','과세','면세'].map(t => (
-                <button key={t} className={'chip' + (taxFilter === t ? ' active' : '')}
-                  onClick={() => setTaxFilter(t)}>{t === 'all' ? '전체' : t}</button>
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              marginBottom: 4,
+            }}
+          >
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>과세</span>
+              {['all', '과세', '면세'].map(t => (
+                <button
+                  key={t}
+                  className={'chip' + (taxFilter === t ? ' active' : '')}
+                  onClick={() => setTaxFilter(t)}
+                >
+                  {t === 'all' ? '전체' : t}
+                </button>
               ))}
             </div>
           </div>
 
           {/* 검색 */}
-          <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:8, flexWrap:'wrap'}}>
-            <div className="filter-search" style={{width:260}}>
-              <Icon.search style={{width:15, height:15, color:'var(--text-3)', flexShrink:0}}/>
-              <input value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="제품코드·제품명·마스터명 검색"/>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 8,
+              flexWrap: 'wrap',
+            }}
+          >
+            <div className="filter-search" style={{ width: 260 }}>
+              <Icon.search
+                style={{ width: 15, height: 15, color: 'var(--text-3)', flexShrink: 0 }}
+              />
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="제품코드·제품명·마스터명 검색"
+              />
             </div>
           </div>
 
           {/* 테이블 */}
           <div className="card table-card content-enter">
             {filtered.length === 0 ? (
-              <div style={{padding:'40px 0', textAlign:'center', color:'var(--text-3)', fontSize:13}}>
+              <div
+                style={{
+                  padding: '40px 0',
+                  textAlign: 'center',
+                  color: 'var(--text-3)',
+                  fontSize: 13,
+                }}
+              >
                 조건에 맞는 항목이 없습니다
               </div>
             ) : (
-              <div style={{overflowX:'auto'}}>
+              <div style={{ overflowX: 'auto' }}>
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th style={{width:90}}>제품코드</th>
+                      <th style={{ width: 90 }}>제품코드</th>
                       <th>제품명</th>
-                      <th style={{width:120, textAlign:'right'}}>부가세포함가</th>
-                      <th style={{width:100}}>포장단위</th>
-                      <th style={{width:120, textAlign:'right'}}>개당 단가</th>
-                      <th style={{width:110, textAlign:'right'}}>단가변동</th>
-                      <th style={{width:30}}></th>
-                      <th style={{width:60}}></th>
+                      <th style={{ width: 120, textAlign: 'right' }}>부가세포함가</th>
+                      <th style={{ width: 100 }}>포장단위</th>
+                      <th style={{ width: 120, textAlign: 'right' }}>개당 단가</th>
+                      <th style={{ width: 110, textAlign: 'right' }}>단가변동</th>
+                      <th style={{ width: 30 }}></th>
+                      <th style={{ width: 60 }}></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -425,7 +573,14 @@ export default function Page() {
                 </table>
               </div>
             )}
-            <div style={{padding:'8px 16px', fontSize:11, color:'var(--text-3)', borderTop:'1px solid var(--divider)'}}>
+            <div
+              style={{
+                padding: '8px 16px',
+                fontSize: 11,
+                color: 'var(--text-3)',
+                borderTop: '1px solid var(--divider)',
+              }}
+            >
               {filtered.length}개 표시 / 전체 {rows.length}개
             </div>
           </div>
@@ -437,7 +592,7 @@ export default function Page() {
         <RegisterModal
           row={regTarget}
           extraCategories={[...new Set(rows.map(r => r.category).filter(Boolean))]}
-          onSave={async (data) => {
+          onSave={async data => {
             await upsertIngredientMeta({ productCode: regTarget.productCode, ...data });
             showToast('마스터 등록 완료');
             setRegTarget(null);
@@ -451,7 +606,7 @@ export default function Page() {
       {bulkOpen && (
         <BulkPriceModal
           existingIngredients={rows.map(r => r.meta).filter(Boolean)}
-          onDone={async (count) => {
+          onDone={async count => {
             showToast(`${count}개 단가 업데이트 완료`);
             setBulkOpen(false);
             await load();
@@ -463,7 +618,7 @@ export default function Page() {
       {/* 제때 수량 동기화 모달 */}
       {syncQtyOpen && (
         <SyncBaseQtyModal
-          onDone={async (count) => {
+          onDone={async count => {
             showToast(`${count}개 기준수량 동기화 완료`);
             setSyncQtyOpen(false);
             await load();

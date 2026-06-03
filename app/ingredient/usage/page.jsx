@@ -3,9 +3,9 @@ import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SortableTh } from '@/components/ui/SortableTh';
 import { initDB } from '@/lib/db';
-import { getAllIngredients, deriveScope } from '@/lib/ingredient';
+import { getAllIngredients, buildProductTypeMap, scopeLabelFor } from '@/lib/ingredient';
 import { SCOPE_STYLES, SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
-import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
+import { getManagedProducts } from '@/lib/shipment';
 import { printUsageReport } from '@/lib/cost/usage-print';
 import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
 import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
@@ -64,7 +64,7 @@ export default function Page() {
   const [sortKey, setSortKey] = useState('count'); // 'count' | 'name'
   const [sortDir, setSortDir] = useState('desc');
   const [expanded, setExpanded] = useState(new Set());
-  const [priceStatus, setPriceStatus] = useState(new Map()); // productCode → 제때 productStatus
+  const [typeMap, setTypeMap] = useState(new Map()); // productCode → 제때 관리품목 productType (전용/범용)
   const [hidden, setHidden] = useState(() => new Set());
   const [showHidden, setShowHidden] = useState(false);
   const [onlyOne, setOnlyOne] = useState(false);
@@ -90,25 +90,18 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    const [meta, pizzaRecs, personalRecs, sideRecs, oldRecs, files] = await Promise.all([
+    const [meta, pizzaRecs, personalRecs, sideRecs, oldRecs, managed] = await Promise.all([
       getAllIngredients(),
       getAllPizzaRecipes(),
       getAllPersonalRecipes(),
       getAllSideRecipes(),
       getAllRecipes(),
-      getPriceFiles(),
+      getManagedProducts(),
     ]);
     setAllMeta(meta);
 
-    // 최신 제때 가격파일에서 productStatus 수집 (전용/범용 파생)
-    const statusMap = new Map();
-    if (files[0]) {
-      try {
-        const prows = await getPriceRowsByFileId(files[0].id);
-        for (const p of prows) if (p.productCode) statusMap.set(p.productCode, p.productStatus);
-      } catch {}
-    }
-    setPriceStatus(statusMap);
+    // 전용/범용 단일 출처 = 제때 관리품목(productType)
+    setTypeMap(buildProductTypeMap(managed));
 
     const uByCode = new Map();
     const uByName = new Map();
@@ -175,14 +168,12 @@ export default function Page() {
           .sort((a, b) => a.menuName.localeCompare(b.menuName, 'ko'));
         if (!menus.length) return null;
 
-        // 코드 있으면 제때 productStatus 기준, 없으면 지정값 또는 미지정
-        const scope = code
-          ? deriveScope({ productStatus: priceStatus.get(code) }, true)
-          : m.scope || SCOPE_UNASSIGNED;
+        // 코드 있으면 제때 관리품목(productType) 기준, 없으면 지정값 또는 미지정
+        const scope = code ? scopeLabelFor(typeMap, code) : m.scope || SCOPE_UNASSIGNED;
         return { code, name: dispName, scope, count: menus.length, menus };
       })
       .filter(Boolean);
-  }, [allMeta, usageMap, usageCat, priceStatus]);
+  }, [allMeta, usageMap, usageCat, typeMap]);
 
   const sorted = useMemo(() => {
     const arr = [...usageRows];
