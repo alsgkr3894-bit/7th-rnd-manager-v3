@@ -8,10 +8,17 @@ import { getAllMenuPrices } from '@/lib/cost/menu-price';
 import { getAllRecipes, buildUnitPriceMap, calcCostBySizes } from '@/lib/recipe';
 import { getAllIngredients } from '@/lib/ingredient';
 import { costRateColor, calcCostRate } from '@/lib/cost/rate-color';
+import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { downloadCsv } from '@/lib/download';
 
 // ── 카테고리 정규화 ───────────────────────────────────────────
-const CAT_ORDER = ['피자', '1인피자', '사이드', '세트박스', '기타'];
+const CAT_ORDER = [
+  MENU_CATEGORY.PIZZA,
+  MENU_CATEGORY.PERSONAL,
+  MENU_CATEGORY.SIDE,
+  MENU_CATEGORY.SET,
+  MENU_CATEGORY.ETC,
+];
 
 function normalizeCategory(cat) {
   if (!cat) return '기타';
@@ -53,14 +60,14 @@ function buildRows(recipes, unitPriceMap, menuPriceMap) {
     const cat = normalizeCategory(recipe.menuCategory);
 
     rows.push({
-      id:           recipe.id,
-      menuName:     recipe.menuName,
-      rawCategory:  recipe.menuCategory || '기타',
-      category:     cat,
-      cost:         cost > 0 ? Math.round(cost) : null,
+      id: recipe.id,
+      menuName: recipe.menuName,
+      rawCategory: recipe.menuCategory || '기타',
+      category: cat,
+      cost: cost > 0 ? Math.round(cost) : null,
       sellingPrice,
       costRate,
-      hasCost:      cost > 0,
+      hasCost: cost > 0,
     });
   }
 
@@ -73,14 +80,14 @@ function buildRows(recipes, unitPriceMap, menuPriceMap) {
     if (!sizeEntries.length) continue;
     const [firstSizeLabel, firstPrice] = sizeEntries[0];
     rows.push({
-      id:           `mp-${menuName}`,
+      id: `mp-${menuName}`,
       menuName,
-      rawCategory:  '',
-      category:     '기타',
-      cost:         null,
+      rawCategory: '',
+      category: '기타',
+      cost: null,
       sellingPrice: firstPrice,
-      costRate:     null,
-      hasCost:      false,
+      costRate: null,
+      hasCost: false,
     });
   }
 
@@ -135,17 +142,17 @@ export default function Page() {
   }, []);
 
   const { data: rawData, loading, error: dbErrorObj } = useDBLoad(fetchFn);
-  const rows    = useMemo(() => rawData ?? [], [rawData]);
+  const rows = useMemo(() => rawData ?? [], [rawData]);
   const dbError = dbErrorObj?.message ?? null;
 
   // ── 통계 ──────────────────────────────────────────────────
   const stats = useMemo(() => {
     const withCost = rows.filter(r => r.hasCost);
-    const rates    = withCost.filter(r => r.costRate != null).map(r => r.costRate);
-    const avgRate  = rates.length ? rates.reduce((a, b) => a + b, 0) / rates.length : null;
+    const rates = withCost.filter(r => r.costRate != null).map(r => r.costRate);
+    const avgRate = rates.length ? rates.reduce((a, b) => a + b, 0) / rates.length : null;
     const alertCnt = rates.filter(r => r > 40).length;
     return {
-      total:    rows.length,
+      total: rows.length,
       withCost: withCost.length,
       avgRate,
       alertCnt,
@@ -155,7 +162,7 @@ export default function Page() {
   // ── 카테고리 필터 ─────────────────────────────────────────
   const cats = useMemo(() => {
     const present = [...new Set(rows.map(r => r.category))];
-    const sorted  = CAT_ORDER.filter(c => present.includes(c));
+    const sorted = CAT_ORDER.filter(c => present.includes(c));
     if (present.some(c => !CAT_ORDER.includes(c))) sorted.push('기타');
     return ['전체', ...sorted];
   }, [rows]);
@@ -169,18 +176,22 @@ export default function Page() {
   const hasRecipeData = rows.some(r => r.hasCost);
 
   // ── 렌더 ─────────────────────────────────────────────────
-  if (dbError) return (
-    <main className="main page-enter">
-      <PageHeader
-        breadcrumb={['원가계산', '종합전메뉴원가']}
-        title="종합전메뉴원가"
-        sub="로드 실패"
-      />
-      <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--negative)' }}>
-        데이터베이스 오류: {dbError}
-      </div>
-    </main>
-  );
+  if (dbError)
+    return (
+      <main className="main page-enter">
+        <PageHeader
+          breadcrumb={['원가계산', '종합전메뉴원가']}
+          title="종합전메뉴원가"
+          sub="로드 실패"
+        />
+        <div
+          className="card"
+          style={{ padding: 32, textAlign: 'center', color: 'var(--negative)' }}
+        >
+          데이터베이스 오류: {dbError}
+        </div>
+      </main>
+    );
 
   return (
     <main className="main page-enter">
@@ -192,7 +203,7 @@ export default function Page() {
         actions={
           hasAnyData && (
             <button className="btn" onClick={() => exportCSV(filtered)}>
-              <Icon.download style={{ width: 13, height: 13 }}/> CSV 내보내기
+              <Icon.download style={{ width: 13, height: 13 }} /> CSV 내보내기
             </button>
           )
         }
@@ -204,25 +215,35 @@ export default function Page() {
           <div className="stat-card">
             <div className="stat-label">등록 메뉴 수</div>
             <div className="stat-value">
-              {stats.total}<span className="unit">개</span>
+              {stats.total}
+              <span className="unit">개</span>
             </div>
           </div>
           <div className="stat-card">
             <div className="stat-label">레시피 등록</div>
             <div className="stat-value">
-              {stats.withCost}<span className="unit">건</span>
+              {stats.withCost}
+              <span className="unit">건</span>
             </div>
           </div>
           <div className="stat-card">
             <div className="stat-label">평균 원가율</div>
-            <div className="stat-value" style={{ color: stats.avgRate != null ? costRateColor(stats.avgRate) : undefined }}>
-              {stats.avgRate != null ? stats.avgRate.toFixed(1) : '—'}<span className="unit">%</span>
+            <div
+              className="stat-value"
+              style={{ color: stats.avgRate != null ? costRateColor(stats.avgRate) : undefined }}
+            >
+              {stats.avgRate != null ? stats.avgRate.toFixed(1) : '—'}
+              <span className="unit">%</span>
             </div>
           </div>
           <div className="stat-card">
             <div className="stat-label">원가율 경보 (40% 초과)</div>
-            <div className="stat-value" style={{ color: stats.alertCnt > 0 ? 'var(--negative, #ef4444)' : undefined }}>
-              {stats.alertCnt}<span className="unit">개</span>
+            <div
+              className="stat-value"
+              style={{ color: stats.alertCnt > 0 ? 'var(--negative, #ef4444)' : undefined }}
+            >
+              {stats.alertCnt}
+              <span className="unit">개</span>
             </div>
           </div>
         </div>
@@ -245,20 +266,28 @@ export default function Page() {
 
       {/* 로딩 */}
       {loading && (
-        <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+        <div
+          className="card"
+          style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}
+        >
           로딩 중…
         </div>
       )}
 
       {/* 데이터 없음 */}
       {!loading && !hasAnyData && (
-        <div className="card" style={{ marginTop: 24, minHeight: 260, display: 'grid', placeItems: 'center' }}>
+        <div
+          className="card"
+          style={{ marginTop: 24, minHeight: 260, display: 'grid', placeItems: 'center' }}
+        >
           <div style={{ textAlign: 'center', color: 'var(--text-4)' }}>
-            <div className="empty-icon-wrap"><Icon.calc style={{ width: 32, height: 32 }}/></div>
+            <div className="empty-icon-wrap">
+              <Icon.calc style={{ width: 32, height: 32 }} />
+            </div>
             <div style={{ fontWeight: 600, marginBottom: 4 }}>등록된 메뉴가 없습니다</div>
             <div style={{ fontSize: 13 }}>
-              먼저 <b>메뉴 판매가</b>에서 메뉴를 등록하고<br/>
-              각 카테고리 원가 탭에서 레시피를 작성해주세요.
+              먼저 <b>메뉴 판매가</b>에서 메뉴를 등록하고
+              <br />각 카테고리 원가 탭에서 레시피를 작성해주세요.
             </div>
           </div>
         </div>
@@ -266,9 +295,21 @@ export default function Page() {
 
       {/* 레시피 데이터 없음 안내 (메뉴는 있지만 원가 없음) */}
       {!loading && hasAnyData && !hasRecipeData && (
-        <div className="card" style={{ padding: '12px 16px', marginBottom: 8, color: 'var(--text-3)', fontSize: 13, display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Icon.doc style={{ width: 16, height: 16, opacity: .5, flexShrink: 0 }}/>
-          레시피가 등록된 메뉴가 없습니다. 각 카테고리 원가 탭(피자/1인피자/사이드/세트)에서 레시피를 먼저 작성해주세요.
+        <div
+          className="card"
+          style={{
+            padding: '12px 16px',
+            marginBottom: 8,
+            color: 'var(--text-3)',
+            fontSize: 13,
+            display: 'flex',
+            gap: 8,
+            alignItems: 'center',
+          }}
+        >
+          <Icon.doc style={{ width: 16, height: 16, opacity: 0.5, flexShrink: 0 }} />
+          레시피가 등록된 메뉴가 없습니다. 각 카테고리 원가 탭(피자/1인피자/사이드/세트)에서
+          레시피를 먼저 작성해주세요.
         </div>
       )}
 
@@ -283,7 +324,7 @@ export default function Page() {
                   <th style={{ minWidth: 90 }}>카테고리</th>
                   <th style={{ minWidth: 100, textAlign: 'right' }}>원가 (첫 사이즈)</th>
                   <th style={{ minWidth: 100, textAlign: 'right' }}>판매가</th>
-                  <th style={{ minWidth: 90,  textAlign: 'right' }}>원가율</th>
+                  <th style={{ minWidth: 90, textAlign: 'right' }}>원가율</th>
                 </tr>
               </thead>
               <tbody>
@@ -294,7 +335,9 @@ export default function Page() {
                       <span className="chip">{r.rawCategory || r.category}</span>
                     </td>
                     <td style={{ textAlign: 'right', color: 'var(--text-2)' }}>
-                      {r.cost != null ? `${formatNumber(r.cost)}원` : (
+                      {r.cost != null ? (
+                        `${formatNumber(r.cost)}원`
+                      ) : (
                         <span style={{ color: 'var(--text-4)', fontSize: 12 }}>레시피 미등록</span>
                       )}
                     </td>
@@ -315,7 +358,14 @@ export default function Page() {
               </tbody>
             </table>
           </div>
-          <div style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text-3)', borderTop: '1px solid var(--divider)' }}>
+          <div
+            style={{
+              padding: '8px 16px',
+              fontSize: 11,
+              color: 'var(--text-3)',
+              borderTop: '1px solid var(--divider)',
+            }}
+          >
             {filtered.length}개 메뉴 표시
             {catFilter !== '전체' && ` · ${catFilter} 필터 적용 중`}
           </div>

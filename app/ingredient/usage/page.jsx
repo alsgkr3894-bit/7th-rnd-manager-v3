@@ -6,6 +6,7 @@ import { initDB } from '@/lib/db';
 import { getAllIngredients, buildProductTypeMap, scopeLabelFor } from '@/lib/ingredient';
 import { SCOPE_STYLES, SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
 import { getManagedProducts } from '@/lib/shipment';
+import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { printUsageReport } from '@/lib/cost/usage-print';
 import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
 import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
@@ -42,7 +43,7 @@ const CAT_COLORS = {
   '1인피자': { bg: '#FFF7ED', color: '#C2410C' },
   사이드: { bg: '#F0FDF4', color: '#15803D' },
 };
-const USAGE_CATS = ['전체', '피자', '사이드', '1인피자'];
+const USAGE_CATS = ['전체', MENU_CATEGORY.PIZZA, MENU_CATEGORY.SIDE, MENU_CATEGORY.PERSONAL];
 const USAGE_THRESHOLD = { HIGH: 8, MID: 4 };
 const TIER_LABEL = ['많이 쓰는 재료 (8개 이상)', '보통 (4–7개)', '적게 쓰는 재료 (1–3개)'];
 const tierOf = count => (count >= USAGE_THRESHOLD.HIGH ? 0 : count >= USAGE_THRESHOLD.MID ? 1 : 2);

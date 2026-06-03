@@ -22,8 +22,17 @@ import { BulkPriceModal } from '@/components/cost/menu-price/BulkPriceModal';
 import { OVERLAY_COLOR } from '@/lib/ui/styles';
 import { SUB_TAG_STYLE, CAT_TAG_STYLE } from '@/lib/ui/colors';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
+import { MENU_CATEGORY } from '@/lib/menu-categories';
 
-const CATEGORIES = ['피자', '1인피자', '세트박스', '사이드', '소스', '음료', '엣지'];
+const CATEGORIES = [
+  MENU_CATEGORY.PIZZA,
+  MENU_CATEGORY.PERSONAL,
+  MENU_CATEGORY.SET,
+  MENU_CATEGORY.SIDE,
+  MENU_CATEGORY.SAUCE,
+  MENU_CATEGORY.DRINK,
+  MENU_CATEGORY.EDGE,
+];
 const PIZZA_SUBS = ['프리미엄 스페셜', '프리미엄', '오리지널', '하프앤하프'];
 
 const STATUS_LABEL = { active: '활성', discontinued: '단종', test: '테스트' };
