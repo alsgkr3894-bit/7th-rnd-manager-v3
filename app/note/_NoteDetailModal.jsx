@@ -3,6 +3,7 @@ import { Icon } from '@/components/icons';
 import { STATUS_COLORS, STATUS_BORDER } from '@/lib/note';
 import { parseTagList, formatFullDate } from '@/lib/note/utils';
 import { useModalShell } from '@/hooks/useModalShell';
+import { OVERLAY_COLOR } from '@/lib/ui/styles';
 
 export function NoteDetailModal({ note, onClose, onEdit }) {
   const { containerRef, isClosing, close: handleClose } = useModalShell(onClose, { closeMs: 175 });
@@ -19,7 +20,7 @@ export function NoteDetailModal({ note, onClose, onEdit }) {
   ].filter(([,v]) => v);
 
   return (
-    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.45)',zIndex:200,display:'grid',placeItems:'center',animation:'fade 150ms ease'}}
+    <div style={{position:'fixed',inset:0,background:OVERLAY_COLOR,zIndex:200,display:'grid',placeItems:'center',animation:'fade 150ms ease'}}
       onClick={e => { if (e.target === e.currentTarget) handleClose(); }}
     >
       <div ref={containerRef} className={'card ' + (isClosing ? 'modal-exit' : 'modal-anim')} style={{width:'min(600px,95vw)',maxHeight:'88vh',overflowY:'auto',padding:'24px 28px',borderLeft:`4px solid ${sb}`}}>

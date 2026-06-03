@@ -2,6 +2,7 @@
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { useModalShell } from '@/hooks/useModalShell';
+import { OVERLAY_COLOR } from '@/lib/ui/styles';
 
 /**
  * 앱 전반에서 공통으로 쓰는 모달 틀.
@@ -25,7 +26,7 @@ export function ModalFrame({
   return createPortal(
     <div style={{
       position: 'fixed', inset: 0,
-      background: 'rgba(0,0,0,.45)',
+      background: OVERLAY_COLOR,
       display: 'grid', placeItems: 'center',
       zIndex,
     }}>

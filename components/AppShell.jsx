@@ -13,6 +13,7 @@ import { ensureSession } from '@/lib/session';
 import { pruneOldWorkLogs } from '@/lib/work-log';
 import { hydratePlatformsFromDB } from '@/lib/cost/margin/platforms';
 import { initClickOrigin } from '@/lib/ui/click-origin';
+import { OVERLAY_COLOR } from '@/lib/ui/styles';
 import { COMPANIES } from '@/lib/companies';
 import { MOBILE_TAB_DEFS } from '@/lib/menu';
 import ProgressBar from './ProgressBar';
@@ -50,7 +51,7 @@ function ShortcutsHelp({ onClose }) {
   return (
     <div
       role="presentation"
-      style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:600, display:'grid', placeItems:'center', animation:'fade 150ms ease' }}
+      style={{ position:'fixed', inset:0, background:OVERLAY_COLOR, zIndex:600, display:'grid', placeItems:'center', animation:'fade 150ms ease' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div ref={cardRef} className="card modal-anim" role="dialog" aria-label="키보드 단축키" aria-modal="true" style={{ width:'min(380px,92vw)', padding:'24px 28px' }}>

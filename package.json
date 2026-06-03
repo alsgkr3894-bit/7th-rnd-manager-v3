@@ -10,6 +10,8 @@
     "start": "next start",
     "demo": "rm -rf .next && next build && next start -H 0.0.0.0 -p 3000",
     "lint": "next lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=__tests__ --no-coverage 2>/dev/null || npx jest --testPathPattern=__tests__ --no-coverage"
   },
   "dependencies": {
@@ -22,6 +24,7 @@
     "@playwright/test": "^1.60.0",
     "eslint": "^8",
     "eslint-config-next": "14.2.3",
-    "jest": "^29.7.0"
+    "jest": "^29.7.0",
+    "prettier": "^3.8.3"
   }
 }

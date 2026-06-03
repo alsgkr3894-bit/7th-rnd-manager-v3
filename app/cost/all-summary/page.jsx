@@ -7,7 +7,7 @@ import { formatNumber } from '@/lib/format';
 import { getAllMenuPrices } from '@/lib/cost/menu-price';
 import { getAllRecipes, buildUnitPriceMap, calcCostBySizes } from '@/lib/recipe';
 import { getAllIngredients } from '@/lib/ingredient';
-import { costRateColor } from '@/lib/cost/rate-color';
+import { costRateColor, calcCostRate } from '@/lib/cost/rate-color';
 import { downloadCsv } from '@/lib/download';
 
 // ── 카테고리 정규화 ───────────────────────────────────────────
@@ -48,9 +48,7 @@ function buildRows(recipes, unitPriceMap, menuPriceMap) {
       sellingPrice = priceEntry?.[firstSize.label] ?? null;
     }
 
-    const costRate = (cost > 0 && sellingPrice && sellingPrice > 0)
-      ? (cost / sellingPrice) * 100
-      : null;
+    const costRate = cost > 0 ? calcCostRate(cost, sellingPrice) : null;
 
     const cat = normalizeCategory(recipe.menuCategory);
 
