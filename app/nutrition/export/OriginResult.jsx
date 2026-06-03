@@ -299,7 +299,13 @@ export default function OriginResult() {
     }
   }
 
-  if (loading) return <div className="origin-result-empty">불러오는 중…</div>;
+  if (loading) return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} style={{ height: 44, borderRadius: 8, background: 'var(--surface-2)', opacity: 1 - i * 0.12 }} />
+      ))}
+    </div>
+  );
 
   return (
     <div className="origin-result-wrap">

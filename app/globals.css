@@ -1367,7 +1367,7 @@ button { font-family: inherit; cursor: pointer; }
 
 .page-head-row {
   display: flex; justify-content: space-between; align-items: flex-end;
-  gap: 16px; flex-wrap: wrap;
+  gap: 16px; flex-wrap: wrap; min-width: 0;
 }
 .page-title {
   font-size: 26px; font-weight: 800; letter-spacing: -0.03em;
@@ -1375,7 +1375,15 @@ button { font-family: inherit; cursor: pointer; }
   white-space: nowrap;
 }
 .page-sub { color: var(--text-3); font-size: 13px; margin-top: 6px; }
-.page-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.page-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;           /* grid/flex 컨텍스트에서 shrink 허용 */
+  flex-shrink: 1;
+}
+.page-actions > * { flex-shrink: 0; }
 
 /* ===== Stat row ===== */
 .stat-row {

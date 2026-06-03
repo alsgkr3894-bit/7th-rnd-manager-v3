@@ -322,7 +322,11 @@ export default function Page() {
       />
 
       {loading ? (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-4)' }}>불러오는 중…</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="card" style={{ padding: 20, height: 100, background: 'var(--surface-2)', borderColor: 'transparent', opacity: 1 - i * 0.15 }} />
+          ))}
+        </div>
       ) : dayNotes.length === 0 ? (
         <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
           <div style={{ fontSize: 14, color: 'var(--text-3)', marginBottom: 12 }}>

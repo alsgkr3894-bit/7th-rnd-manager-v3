@@ -113,7 +113,7 @@ function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추�
   // 선택한 대분류(category)에 속한 중분류·상세만 자동완성 후보로
   const catOpts = nameOpts.byCategory?.[form.category] || { groupNames: [], detailNames: [] };
   return (
-    <div style={{display:'grid', gridTemplateColumns:'1.5fr 140px 1fr 1fr auto auto', gap:8}}>
+    <div style={{display:'grid', gridTemplateColumns:'minmax(0,1.5fr) minmax(80px,140px) minmax(0,1fr) minmax(0,1fr) auto auto', gap:8}}>
       <input value={form.rawMenuName} onChange={e => setForm({ ...form, rawMenuName: e.target.value })} placeholder="패턴 (정규화 후)" style={inputStyle}/>
       <select value={form.category}   onChange={e => setForm({ ...form, category:    e.target.value })} style={inputStyle}>
         {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}

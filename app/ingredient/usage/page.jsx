@@ -242,11 +242,10 @@ export default function Page() {
       />
 
       {loading ? (
-        <div
-          className="card"
-          style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}
-        >
-          로딩 중…
+        <div className="card" style={{ padding: 20 }}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} style={{ height: 40, marginBottom: 8, borderRadius: 8, background: 'var(--surface-2)', opacity: 1 - i * 0.08 }} />
+          ))}
         </div>
       ) : allMeta.length === 0 ? (
         <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>

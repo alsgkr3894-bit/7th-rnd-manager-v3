@@ -176,7 +176,11 @@ export function CommonManageView({ tab = 'groups' }) {
               <SearchBox value={groupSearch} onChange={setGroupSearch} placeholder="묶음 이름 검색" />
             </div>
             {loading ? (
-              <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>로딩 중…</div>
+              <div style={{ padding: 8 }}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} style={{ height: 52, marginBottom: 6, borderRadius: 6, background: 'var(--surface-2)', opacity: 1 - i * 0.12 }} />
+                ))}
+              </div>
             ) : filteredGroups.length === 0 ? (
               <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
                 {groupSearch ? '검색 결과가 없습니다' : '등록된 묶음이 없습니다'}
@@ -260,7 +264,11 @@ export function CommonManageView({ tab = 'groups' }) {
           </div>
 
           {loading ? (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>로딩 중…</div>
+            <div style={{ padding: 12 }}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} style={{ height: 44, marginBottom: 8, borderRadius: 8, background: 'var(--surface-2)', opacity: 1 - i * 0.15 }} />
+              ))}
+            </div>
           ) : edges.length === 0 ? (
             <div className="card" style={{ minHeight: 200, display: 'grid', placeItems: 'center' }}>
               <div style={{ textAlign: 'center', color: 'var(--text-3)' }}>

@@ -83,7 +83,7 @@ export function UserAliasesSection() {
 
 function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추가' }) {
   return (
-    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr auto auto', gap:8}}>
+    <div style={{display:'grid', gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr) auto auto', gap:8}}>
       <input value={form.rawName}    onChange={e => setForm({ ...form, rawName:    e.target.value })} placeholder="입력 (정규화 후)" style={inputStyle}/>
       <input value={form.mappedName} onChange={e => setForm({ ...form, mappedName: e.target.value })} placeholder="표준 메뉴명"    style={inputStyle}/>
       <button className="btn sm" onClick={onCancel} disabled={busy}>취소</button>

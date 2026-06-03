@@ -268,13 +268,12 @@ export default function Page() {
         </div>
       )}
 
-      {/* 로딩 */}
+      {/* 로딩 스켈레톤 */}
       {loading && (
-        <div
-          className="card"
-          style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}
-        >
-          로딩 중…
+        <div className="card" style={{ padding: 16 }}>
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} style={{ height: 40, marginBottom: 8, borderRadius: 8, background: 'var(--surface-2)', opacity: 1 - i * 0.1 }} />
+          ))}
         </div>
       )}
 
