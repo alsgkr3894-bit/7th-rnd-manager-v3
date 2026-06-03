@@ -40,7 +40,8 @@ import { PipelineWidget } from '@/components/home/PipelineWidget';
 import { ScheduleWidget } from '@/components/home/ScheduleWidget';
 import { PriceChangeWidget } from '@/components/home/PriceChangeWidget';
 import { WidgetConfigModal } from '@/components/home/WidgetConfigModal';
-import { useWidgetConfig } from '@/hooks/useWidgetConfig';
+import { WidgetShell } from '@/components/home/WidgetShell';
+import { useWidgetConfig, HOME_WIDGET_ROWS } from '@/hooks/useWidgetConfig';
 import { getAllNotes, addNote } from '@/lib/note';
 import { getAllSamples } from '@/lib/sample';
 import { KEYS } from '@/lib/note/keys';
@@ -55,10 +56,10 @@ function greetingByHour() {
 }
 
 /** 좌/우 위젯을 row-2b 그리드로 묶음. 한쪽만 있으면 전체 폭 차지. */
-function pairRow(a, b) {
+function pairRow(a, b, rowKey) {
   if (!a && !b) return null;
-  if (a && b) return <div className="row-2b motion-stagger">{a}{b}</div>;
-  return <div className="row-2b motion-stagger"><div style={{ gridColumn: '1 / -1' }}>{a || b}</div></div>;
+  if (a && b) return <div key={rowKey} className="row-2b motion-stagger">{a}{b}</div>;
+  return <div key={rowKey} className="row-2b motion-stagger"><div style={{ gridColumn: '1 / -1' }}>{a || b}</div></div>;
 }
 
 export default function HomePage() {
@@ -99,7 +100,11 @@ export default function HomePage() {
   const [quickSaved, setQuickSaved] = useState(false);
   const quickResetTimer = useRef(null);
 
-  const { isVisible, toggle: toggleWidget } = useWidgetConfig();
+  const {
+    isVisible, toggleRow: toggleRowWidget, isCollapsed, toggleCollapse,
+    widgetOrder, reorderWidgets,
+    favorites, isFavorite, toggleFavorite, favOnly, setFavOnly, effectiveOrder,
+  } = useWidgetConfig();
   const [widgetConfigOpen, setWidgetConfigOpen] = useState(false);
 
   // chartTab ref — useEffect 클로저 stale 방지
@@ -148,6 +153,7 @@ export default function HomePage() {
         if (iss) setIssues(iss);
       } catch (err) {
         devError('[Home] 데이터 로드 실패:', err);
+        showToast('데이터를 불러오는 중 문제가 발생했어요. 새로고침해 주세요.', 'error', 5000);
       }
     })();
   }, []);
@@ -247,14 +253,25 @@ export default function HomePage() {
   const showNotes     = isVisible('notes')     && reportingNotes.length > 0;
   const showSamples   = isVisible('samples')   && recentSamples.length > 0;
 
+  // 렌더 순서: 즐겨찾기 우선(effectiveOrder). 포커스 모드면 즐겨찾기 행만.
+  // 즐겨찾기가 0개면 favOnly 무시(빈 대시보드 방지).
+  const favSet = new Set(favorites);
+  const rowsToRender = (favOnly && favorites.length > 0)
+    ? effectiveOrder.filter(id => favSet.has(id))
+    : effectiveOrder;
+
   return (
     <main className="main page-enter">
       {/* 위젯 설정 패널 */}
       {widgetConfigOpen && (
         <WidgetConfigModal
           isVisible={isVisible}
-          toggle={toggleWidget}
+          toggleRow={toggleRowWidget}
           onClose={() => setWidgetConfigOpen(false)}
+          widgetOrder={widgetOrder}
+          onReorder={reorderWidgets}
+          isFavorite={isFavorite}
+          onToggleFavorite={toggleFavorite}
         />
       )}
 
@@ -266,6 +283,20 @@ export default function HomePage() {
           <div className="sub">{greetSub}</div>
         </div>
         <div className="right">
+          {favorites.length > 0 && (
+            <button
+              className="btn"
+              title={favOnly ? '전체 위젯 보기' : '즐겨찾기 위젯만 보기'}
+              aria-pressed={favOnly}
+              onClick={() => setFavOnly(!favOnly)}
+              style={favOnly ? { background: 'var(--accent)', color: '#fff', borderColor: 'var(--accent)' } : undefined}
+            >
+              {favOnly
+                ? <Icon.starFill style={{width:15,height:15}}/>
+                : <Icon.star style={{width:15,height:15}}/>}
+              즐겨찾기만
+            </button>
+          )}
           <button className="btn" title="위젯 설정" onClick={() => setWidgetConfigOpen(true)}>
             <Icon.gear style={{width:15,height:15}}/>
           </button>
@@ -294,86 +325,117 @@ export default function HomePage() {
         </div>
       )}
 
-      {isVisible('recent') && <RecentVisitsWidget />}
+      {rowsToRender.map(rowId => {
+        switch (rowId) {
+          case 'recent':
+            return isVisible('recent') ? (
+              <WidgetShell key="recent" widgetKey="recent" label="최근 방문" isCollapsed={isCollapsed('recent')} onToggle={toggleCollapse}>
+                <RecentVisitsWidget />
+              </WidgetShell>
+            ) : null;
 
-      {isVisible('briefing') && briefing && <BriefingWidget data={briefing} />}
+          case 'briefing':
+            return isVisible('briefing') && briefing ? (
+              <WidgetShell key="briefing" widgetKey="briefing" label="이번 달 브리핑" isCollapsed={isCollapsed('briefing')} onToggle={toggleCollapse}>
+                <BriefingWidget data={briefing} />
+              </WidgetShell>
+            ) : null;
 
-      {isVisible('kpi') && (
-        <HomeKpiRow salesKpi={salesKpi} costKpi={costKpi} noteKpi={noteKpi}
-          salesCount={salesCount} noteCount={noteCount}/>
-      )}
+          case 'kpi':
+            return isVisible('kpi') ? (
+              <WidgetShell key="kpi" widgetKey="kpi" label="KPI 지표" isCollapsed={isCollapsed('kpi')} onToggle={toggleCollapse}>
+                <HomeKpiRow salesKpi={salesKpi} costKpi={costKpi} noteKpi={noteKpi}
+                  salesCount={salesCount} noteCount={noteCount}/>
+              </WidgetShell>
+            ) : null;
 
-      {/* 오늘 할 일 · 미매칭 처리 */}
-      {pairRow(
-        isVisible('todo')  ? <TodoWidget key="todo" todos={todos} router={router} /> : null,
-        showUnmatched      ? <UnmatchedWidget key="unmatched" issues={issues} router={router} /> : null,
-      )}
+          case 'todo-pair':
+            return pairRow(
+              isVisible('todo')  ? <TodoWidget key="todo" todos={todos} router={router} /> : null,
+              showUnmatched      ? <UnmatchedWidget key="unmatched" issues={issues} router={router} /> : null,
+              rowId,
+            );
 
-      {/* 신메뉴 파이프라인 · 이번 주 개발 일정 */}
-      {pairRow(
-        showPipeline           ? <PipelineWidget key="pipeline" data={pipeline} router={router} /> : null,
-        isVisible('schedule')  ? <ScheduleWidget key="schedule" data={weekSchedule} router={router} /> : null,
-      )}
+          case 'pipeline-pair':
+            return pairRow(
+              showPipeline           ? <PipelineWidget key="pipeline" data={pipeline} router={router} /> : null,
+              isVisible('schedule')  ? <ScheduleWidget key="schedule" data={weekSchedule} router={router} /> : null,
+              rowId,
+            );
 
-      {/* 베스트 5 · 워스트 5 */}
-      {isVisible('ranks') && (
-        <div className="row-2b motion-stagger">
-          <RankCard title="메뉴 판매 베스트 5" sub={rankSub}
-            items={top} emptyTitle="순위 데이터 없음" accent="up" router={router}/>
-          <RankCard title="메뉴 판매 워스트 5" sub={rankSub}
-            items={bottom} emptyTitle="워스트 데이터 없음" accent="down" router={router}/>
-        </div>
-      )}
+          case 'ranks':
+            return isVisible('ranks') ? (
+              <div key="ranks" className="row-2b motion-stagger">
+                <RankCard title="메뉴 판매 베스트 5" sub={rankSub}
+                  items={top} emptyTitle="순위 데이터 없음" accent="up" router={router}/>
+                <RankCard title="메뉴 판매 워스트 5" sub={rankSub}
+                  items={bottom} emptyTitle="워스트 데이터 없음" accent="down" router={router}/>
+              </div>
+            ) : null;
 
-      {/* 판매량 추이 · 카테고리 도넛 */}
-      {isVisible('charts') && (
-        <HomeChartRow
-          trend={trend} donut={donut}
-          hoveredCat={hoveredCat} setHoveredCat={setHoveredCat}
-          chartTab={chartTab} setChartTab={setChartTab}
-          chartKey={chartKey} salesKpi={salesKpi}
-          router={router} isTrendEmpty={isTrendEmpty}
-        />
-      )}
+          case 'charts':
+            return isVisible('charts') ? (
+              <WidgetShell key="charts" widgetKey="charts" label="차트 (트렌드 · 카테고리)" isCollapsed={isCollapsed('charts')} onToggle={toggleCollapse}>
+                <HomeChartRow
+                  trend={trend} donut={donut}
+                  hoveredCat={hoveredCat} setHoveredCat={setHoveredCat}
+                  chartTab={chartTab} setChartTab={setChartTab}
+                  chartKey={chartKey} salesKpi={salesKpi}
+                  router={router} isTrendEmpty={isTrendEmpty}
+                />
+              </WidgetShell>
+            ) : null;
 
-      {/* 식자재 단가 변동 · 원가율 경보 */}
-      {pairRow(
-        isVisible('pricechange') ? <PriceChangeWidget key="price" items={priceChanges} router={router} /> : null,
-        showCostAlert            ? <CostAlertWidget key="costalert" data={costAlertData} router={router} /> : null,
-      )}
+          case 'price-pair':
+            return pairRow(
+              isVisible('pricechange') ? <PriceChangeWidget key="price" items={priceChanges} router={router} /> : null,
+              showCostAlert            ? <CostAlertWidget key="costalert" data={costAlertData} router={router} /> : null,
+              rowId,
+            );
 
-      {/* 빠른 메모 */}
-      {isVisible('quicknote') && (
-        <div className="card quick-note">
-          <div className="quick-note-ico"><Icon.beaker style={{width:18,height:18}}/></div>
-          <input className="quick-note-input"
-            placeholder="끝난 테스트 한 줄 메모를 입력하세요"
-            value={quickNote}
-            onChange={e => { setQuickNote(e.target.value); setQuickSaved(false); }}
-            onKeyDown={e => { if (e.key === 'Enter') saveQuickNote(); }}
-          />
-          <div className="quick-note-hint">
-            {quickSaved
-              ? <span style={{color:'var(--positive)'}}><Icon.check style={{width:14,height:14,verticalAlign:'-2px'}}/> 저장됨</span>
-              : <span><kbd>Enter</kbd>로 저장</span>}
-          </div>
-          <button className="btn primary sm" disabled={!quickNote.trim()} onClick={openDraftInNoteWrite}>자세히</button>
-        </div>
-      )}
+          case 'quicknote':
+            return isVisible('quicknote') ? (
+              <div key="quicknote" className="card quick-note">
+                <div className="quick-note-ico"><Icon.beaker style={{width:18,height:18}}/></div>
+                <input className="quick-note-input"
+                  placeholder="끝난 테스트 한 줄 메모를 입력하세요"
+                  value={quickNote}
+                  onChange={e => { setQuickNote(e.target.value); setQuickSaved(false); }}
+                  onKeyDown={e => { if (e.key === 'Enter') saveQuickNote(); }}
+                />
+                <div className="quick-note-hint">
+                  {quickSaved
+                    ? <span style={{color:'var(--positive)'}}><Icon.check style={{width:14,height:14,verticalAlign:'-2px'}}/> 저장됨</span>
+                    : <span><kbd>Enter</kbd>로 저장</span>}
+                </div>
+                <button className="btn primary sm" disabled={!quickNote.trim()} onClick={openDraftInNoteWrite}>자세히</button>
+              </div>
+            ) : null;
 
-      {/* 보고예정 노트 · 샘플 기록 */}
-      {pairRow(
-        showNotes   ? <ReportingNotesWidget key="notes" notes={reportingNotes} router={router} /> : null,
-        showSamples ? <SampleStatsWidget key="samples" samples={recentSamples} router={router} /> : null,
-      )}
+          case 'notes-pair':
+            return pairRow(
+              showNotes   ? <ReportingNotesWidget key="notes" notes={reportingNotes} router={router} /> : null,
+              showSamples ? <SampleStatsWidget key="samples" samples={recentSamples} router={router} /> : null,
+              rowId,
+            );
 
-      {/* 노트 작성 현황 · 보고서 빠른 생성 */}
-      {pairRow(
-        isVisible('heatmap')     ? <NoteHeatmapWidget key="heatmap" notes={allNotes} /> : null,
-        isVisible('quickreport') ? <QuickReportWidget key="quickreport" router={router} /> : null,
-      )}
+          case 'heat-pair':
+            return pairRow(
+              isVisible('heatmap')     ? <NoteHeatmapWidget key="heatmap" notes={allNotes} /> : null,
+              isVisible('quickreport') ? <QuickReportWidget key="quickreport" router={router} /> : null,
+              rowId,
+            );
 
-      {isVisible('activities') && <HomeActivities activities={activities} router={router}/>}
+          case 'activities':
+            return isVisible('activities') ? (
+              <WidgetShell key="activities" widgetKey="activities" label="최근 활동" isCollapsed={isCollapsed('activities')} onToggle={toggleCollapse}>
+                <HomeActivities activities={activities} router={router}/>
+              </WidgetShell>
+            ) : null;
+
+          default: return null;
+        }
+      })}
     </main>
   );
 }

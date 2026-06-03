@@ -4,18 +4,34 @@ import { formatNumber } from '@/lib/format';
 import { getCategoryStyle, sortHashTags } from '@/lib/ingredient';
 import { SCOPE_STYLES } from '@/lib/ingredient/constants';
 
-export const ManageRow = memo(function ManageRow({ r, deletePending, onEdit, onDeleteStart, onDeleteCancel, onDeleteConfirm, onRestore }) {
+export const ManageRow = memo(function ManageRow({ r, deletePending, onEdit, onDeleteStart, onDeleteCancel, onDeleteConfirm, onRestore, batchMode, isSelected, onToggleSelect }) {
   const name = r.ingredientName || r.displayName || r.productName;
   const unitLabel = r.baseQuantity && r.baseUnitType
     ? `${formatNumber(r.baseQuantity)}${r.baseUnitType}`
     : (r.salesUnit || '-');
   const tags = sortHashTags(r.tags || []);
+  // 일괄 삭제 대상은 단건 삭제와 동일 — productCode 없는 수동 항목만 (제때 연동 항목은 '숨김' 처리라 제외)
+  const deletable = r.isManual && r.id != null && !r.productCode;
 
   return (
     <tr
-      style={{ opacity: r.excluded ? .5 : 1, background: r.excluded ? 'var(--surface-2)' : undefined, cursor: 'pointer' }}
-      onClick={onEdit}
+      style={{ opacity: r.excluded ? .5 : 1, background: isSelected ? 'var(--accent-soft)' : r.excluded ? 'var(--surface-2)' : undefined, cursor: batchMode && !deletable ? 'default' : 'pointer' }}
+      onClick={batchMode ? (deletable ? () => onToggleSelect?.(r.id) : undefined) : onEdit}
     >
+      {batchMode && (
+        <td style={{ width: 36, textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+          {deletable ? (
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => onToggleSelect?.(r.id)}
+              style={{ cursor: 'pointer', width: 15, height: 15 }}
+            />
+          ) : (
+            <span style={{ color: 'var(--text-4)', fontSize: 11 }} title="제때 연동 항목은 일괄 삭제 대상이 아니에요">–</span>
+          )}
+        </td>
+      )}
       <td className="num" style={{ color: 'var(--text-3)', fontSize: 11 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
           <span>{r.productCode || (r.isManual ? '자체' : '-')}</span>

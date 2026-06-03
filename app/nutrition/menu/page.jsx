@@ -12,12 +12,13 @@ import {
   getAllEdges, getAllToppings, getAllCompositions,
 } from '@/lib/nutrition/values/store';
 
-const TabBase    = dynamic(() => import('@/components/nutrition/menu/TabBase').then(m => ({ default: m.TabBase })), { ssr: false });
-const TabEdge    = dynamic(() => import('@/components/nutrition/menu/TabEdge').then(m => ({ default: m.TabEdge })), { ssr: false });
-const TabDerived = dynamic(() => import('@/components/nutrition/menu/TabDerived').then(m => ({ default: m.TabDerived })), { ssr: false });
-const TabResults = dynamic(() => import('@/components/nutrition/menu/TabResults').then(m => ({ default: m.TabResults })), { ssr: false });
+const TabBase             = dynamic(() => import('@/components/nutrition/menu/TabBase').then(m => ({ default: m.TabBase })), { ssr: false });
+const TabEdge             = dynamic(() => import('@/components/nutrition/menu/TabEdge').then(m => ({ default: m.TabEdge })), { ssr: false });
+const TabDerived          = dynamic(() => import('@/components/nutrition/menu/TabDerived').then(m => ({ default: m.TabDerived })), { ssr: false });
+const TabResults          = dynamic(() => import('@/components/nutrition/menu/TabResults').then(m => ({ default: m.TabResults })), { ssr: false });
+const TabIngredientValues = dynamic(() => import('@/components/nutrition/menu/TabIngredientValues').then(m => ({ default: m.TabIngredientValues })), { ssr: false });
 
-const TABS = ['베이스 영양성분', '엣지 설정', '파생 메뉴', '계산 결과'];
+const TABS = ['베이스 영양성분', '엣지 설정', '파생 메뉴', '식자재 영양값', '계산 결과'];
 
 export default function Page() {
   const [tab,          setTab]          = useState(0);
@@ -127,17 +128,18 @@ export default function Page() {
                 </button>
               ))}
             </div>
-            {(tab === 0 || tab === 2 || tab === 3) && (
+            {(tab === 0 || tab === 2 || tab === 4) && (
               <div style={{ flex: '0 0 220px' }}>
                 <SearchBox value={menuSearch} onChange={setMenuSearch} placeholder="메뉴명·코드 검색" />
               </div>
             )}
           </div>
 
-          {tab === 0 && <TabBase    menus={filteredMenus} rawMap={rawMap} onRefresh={load} menuMasters={menuMasters} />}
-          {tab === 1 && <TabEdge    edges={edges} edgeMap={edgeMap} onRefresh={load} />}
-          {tab === 2 && <TabDerived menus={filteredMenus} toppings={toppings} compositions={compositions} onRefresh={load} />}
-          {tab === 3 && <TabResults menus={filteredMenus} rawMap={rawMap} edgeMap={edgeMap} compositions={compositions} toppings={toppings} />}
+          {tab === 0 && <TabBase             menus={filteredMenus} rawMap={rawMap} onRefresh={load} menuMasters={menuMasters} />}
+          {tab === 1 && <TabEdge             edges={edges} edgeMap={edgeMap} onRefresh={load} />}
+          {tab === 2 && <TabDerived          menus={filteredMenus} toppings={toppings} compositions={compositions} onRefresh={load} />}
+          {tab === 3 && <TabIngredientValues onRefresh={load} />}
+          {tab === 4 && <TabResults          menus={filteredMenus} rawMap={rawMap} edgeMap={edgeMap} compositions={compositions} toppings={toppings} />}
         </div>
       )}
     </main>

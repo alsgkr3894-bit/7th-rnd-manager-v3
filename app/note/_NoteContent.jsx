@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { NoteCardSkeleton } from '@/components/ui/Skeleton';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { initDB } from '@/lib/db';
+import { initDB, restoreRecord } from '@/lib/db';
 import {
   CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS, STATUS_BORDER,
   getAllNotes, addNote, deleteNote, updateNote,
@@ -177,11 +177,22 @@ export function NoteContent() {
   async function execDelete(note) {
     setSingleDeleteNote(null);
     try {
-      await deleteNote(note.id);
+      // deleteNote가 삭제된 부모+자식 원본 레코드 배열을 반환 → 전부 복원해야 자식 유실 방지
+      const removed = await deleteNote(note.id);
       setNotes(prev => prev.filter(n => n.id !== note.id));
       if (detailNote?.id === note.id) setDetailNote(null);
-      const label = note.title?.trim() ? `"${note.title}" 삭제됨` : '노트 삭제됨';
-      showToast(label, 'ok');
+      const childCount = (removed?.length ?? 1) - 1;
+      const base = note.title?.trim() ? `"${note.title}" 삭제됨` : '노트 삭제됨';
+      const label = childCount > 0 ? `${base} (하위 ${childCount}개 포함)` : base;
+      showToast(label, 'ok', 5000, {
+        label: '실행취소',
+        onClick: async () => {
+          for (const rec of removed || []) {
+            await restoreRecord('menu_dev_notes', rec).catch(() => {});
+          }
+          load();
+        },
+      });
     } catch (err) {
       console.error('[NoteContent] deleteNote', err);
       showToast('삭제 실패', 'error');

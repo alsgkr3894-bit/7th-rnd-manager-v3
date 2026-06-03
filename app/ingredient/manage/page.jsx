@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { Icon } from '@/components/icons';
+import { restoreRecord } from '@/lib/db';
 import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -42,6 +43,8 @@ import { migrateNutritionToIngredients } from '@/lib/nutrition/migrate-to-ingred
 import { IngredientForm } from './IngredientForm';
 import { ManageRow } from '@/components/ingredient/ManageRow';
 import { IssuesView } from '@/components/ingredient/IssuesView';
+import { IngredientBatchToolbar } from '@/components/ingredient/BatchToolbar';
+import { bulkDeleteIngredients } from '@/lib/ingredient';
 import { TabButton } from '@/components/cost/shared/TabButton';
 
 // scope 라벨('전용'/'범용'/'범용관리') → productType 코드
@@ -88,6 +91,9 @@ export default function Page() {
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(null); // { type:'cat'|'tag', value }
+  const [brokenRefs, setBrokenRefs] = useState([]);
+  const [batchMode, setBatchMode] = useState(false);
+  const [selected, setSelected] = useState(new Set());
 
   const load = useCallback(async () => {
     await initDB();
@@ -112,7 +118,13 @@ export default function Page() {
 
     if (!latest) {
       setPrevPriceMap(null);
-      setRows(allMeta.filter(m => m.isManual || m.isSeeded).map(buildMetaOnlyRow));
+      const metaRows = allMeta.filter(m => m.isManual || m.isSeeded).map(buildMetaOnlyRow);
+      setRows(metaRows);
+      const codeSetMeta = new Set(allMeta.filter(m => m.productCode).map(m => m.productCode));
+      setBrokenRefs(allMeta.filter(m =>
+        Array.isArray(m.compositeOf) && m.compositeOf.length > 0 &&
+        m.compositeOf.some(c => c && !codeSetMeta.has(c))
+      ));
       return;
     }
 
@@ -134,7 +146,16 @@ export default function Page() {
       setPrevPriceMap(null);
     }
 
-    setRows([...merged, ...orphanMetaRows]);
+    const allRows = [...merged, ...orphanMetaRows];
+    setRows(allRows);
+
+    // compositeOf 참조 무결성 검사
+    const codeSet = new Set(allMeta.filter(m => m.productCode).map(m => m.productCode));
+    const broken = allMeta.filter(m =>
+      Array.isArray(m.compositeOf) && m.compositeOf.length > 0 &&
+      m.compositeOf.some(c => c && !codeSet.has(c))
+    );
+    setBrokenRefs(broken);
   }, []);
 
   useEffect(() => {
@@ -228,9 +249,20 @@ export default function Page() {
   const handleExclude = useCallback(async row => {
     try {
       if (row.isManual && row.id && !row.productCode) {
-        await deleteIngredient(row.id);
+        // deleteIngredient가 삭제된 원본 cost_ingredients 레코드를 반환 → 그걸로 복원
+        const backup = await deleteIngredient(row.id);
         setRows(prev => prev.filter(r => !(r.isManual && r.id === row.id)));
-        showToast('삭제됐습니다', 'ok');
+        showToast(
+          `"${row.ingredientName || row.displayName || '식자재'}" 삭제됨`,
+          'ok', 5000,
+          {
+            label: '실행취소',
+            onClick: async () => {
+              if (backup) await restoreRecord('cost_ingredients', backup).catch(() => {});
+              await load();
+            },
+          }
+        );
       } else {
         await excludeIngredientByCode(row.productCode);
         setRows(prev =>
@@ -261,6 +293,36 @@ export default function Page() {
   const handleSetCatFilter = useCallback(val => setCatFilter(val), []);
   const handleSetTagFilter = useCallback(val => setTagFilter(val), []);
   const handleDeleteCancel = useCallback(() => setDeletePending(null), []);
+
+  const toggleSelect = useCallback(id => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleBatchDelete = useCallback(async () => {
+    if (selected.size === 0) return;
+    const ids = Array.from(selected);
+    try {
+      const removed = await bulkDeleteIngredients(ids);
+      setRows(prev => prev.filter(r => !ids.includes(r.id)));
+      setSelected(new Set());
+      setBatchMode(false);
+      showToast(`${removed.length}개 삭제됨`, 'ok', 5000, {
+        label: '실행취소',
+        onClick: async () => {
+          for (const rec of removed) {
+            await restoreRecord('cost_ingredients', rec).catch(() => {});
+          }
+          await load();
+        },
+      });
+    } catch (err) {
+      showToast('삭제 실패: ' + err.message, 'error');
+    }
+  }, [selected, load]);
 
   // ── 분류·태그 집합 ──
   const mainCats = useMemo(() => {
@@ -350,40 +412,57 @@ export default function Page() {
         sub={sub}
         actions={
           <>
-            {resetConfirm ? (
-              <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <span style={{ fontSize: 12, color: 'var(--negative)', fontWeight: 600 }}>
-                  모든 식자재 데이터({rows.length}개)를 삭제할까요?
-                </span>
+            {batchMode ? (
+              <IngredientBatchToolbar
+                selected={selected}
+                onDelete={handleBatchDelete}
+                onExit={() => { setBatchMode(false); setSelected(new Set()); }}
+              />
+            ) : (
+              <>
+                {resetConfirm ? (
+                  <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <span style={{ fontSize: 12, color: 'var(--negative)', fontWeight: 600 }}>
+                      모든 식자재 데이터({rows.length}개)를 삭제할까요?
+                    </span>
+                    <button
+                      className="btn"
+                      style={{ background: 'var(--negative)', color: '#fff', border: 'none' }}
+                      onClick={handleReset}
+                      disabled={resetting}
+                    >
+                      {resetting ? '삭제 중…' : '삭제'}
+                    </button>
+                    <button className="btn" onClick={() => setResetConfirm(false)}>
+                      취소
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    className="btn"
+                    onClick={() => setResetConfirm(true)}
+                    style={{ color: 'var(--text-3)' }}
+                    disabled={rows.length === 0}
+                  >
+                    <Icon.trash style={{ width: 14, height: 14 }} /> 데이터 초기화
+                  </button>
+                )}
                 <button
                   className="btn"
-                  style={{ background: 'var(--negative)', color: '#fff', border: 'none' }}
-                  onClick={handleReset}
-                  disabled={resetting}
+                  onClick={() => { setBatchMode(true); setSelected(new Set()); }}
+                  disabled={rows.length === 0}
                 >
-                  {resetting ? '삭제 중…' : '삭제'}
+                  선택
                 </button>
-                <button className="btn" onClick={() => setResetConfirm(false)}>
-                  취소
+                <button className="btn" onClick={handleSeed} disabled={seeding}>
+                  <Icon.download style={{ width: 14, height: 14 }} />
+                  {seeding ? '시드 중…' : `마스터 시드 (${INGREDIENT_MASTER_SEED.length})`}
                 </button>
-              </span>
-            ) : (
-              <button
-                className="btn"
-                onClick={() => setResetConfirm(true)}
-                style={{ color: 'var(--text-3)' }}
-                disabled={rows.length === 0}
-              >
-                <Icon.trash style={{ width: 14, height: 14 }} /> 데이터 초기화
-              </button>
+                <button className="btn primary" onClick={() => setFormTarget('new')}>
+                  <Icon.plus style={{ width: 14, height: 14 }} /> 식자재 추가
+                </button>
+              </>
             )}
-            <button className="btn" onClick={handleSeed} disabled={seeding}>
-              <Icon.download style={{ width: 14, height: 14 }} />
-              {seeding ? '시드 중…' : `마스터 시드 (${INGREDIENT_MASTER_SEED.length})`}
-            </button>
-            <button className="btn primary" onClick={() => setFormTarget('new')}>
-              <Icon.plus style={{ width: 14, height: 14 }} /> 식자재 추가
-            </button>
           </>
         }
       />
@@ -423,6 +502,20 @@ export default function Page() {
               상단의 <b>마스터 시드</b> 버튼으로 80개 마스터 품목을 일괄 등록하거나, 제때 가격
               파일을 업로드해주세요.
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* compositeOf 깨진 참조 경고 */}
+      {brokenRefs.length > 0 && (
+        <div className="info-banner" style={{ marginBottom: 8, background: 'var(--warn-soft)', borderColor: 'var(--warn-soft)' }}>
+          <div className="info-banner-ico" style={{ background: 'var(--warn)', color: '#fff' }}>
+            <Icon.alert style={{ width: 16, height: 16 }} />
+          </div>
+          <div style={{ fontSize: 13 }}>
+            <b>복합 식자재 참조 오류 {brokenRefs.length}건</b> —{' '}
+            {brokenRefs.slice(0, 3).map(r => r.ingredientName).join(', ')}
+            {brokenRefs.length > 3 && ` 외 ${brokenRefs.length - 3}개`}가 존재하지 않는 코드를 compositeOf로 참조합니다.
           </div>
         </div>
       )}
@@ -534,6 +627,7 @@ export default function Page() {
                 <table className="data-table stagger-rows">
                   <thead>
                     <tr>
+                      {batchMode && <th style={{ width: 36 }} />}
                       <th style={{ width: 88 }}>제품코드</th>
                       <th>제품명</th>
                       <th style={{ width: 60 }}>온도</th>
@@ -563,6 +657,9 @@ export default function Page() {
                           onDeleteCancel={handleDeleteCancel}
                           onDeleteConfirm={() => handleExclude(r)}
                           onRestore={() => handleRestore(r.productCode)}
+                          batchMode={batchMode}
+                          isSelected={selected.has(r.id)}
+                          onToggleSelect={toggleSelect}
                         />
                       );
                     })}

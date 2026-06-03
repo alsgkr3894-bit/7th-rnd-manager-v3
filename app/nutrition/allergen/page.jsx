@@ -28,6 +28,11 @@ import {
 } from '@/lib/nutrition/order';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
+import {
+  ALLERGEN_CRUST_VARIANTS as CRUST_VARIANTS,
+  isDoughCategory,
+  isPizzaCategory,
+} from '@/lib/nutrition/crust-config';
 
 /**
  * 알레르기 정보 페이지 — 자동 집계 뷰
@@ -39,13 +44,6 @@ import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
  *   - 식자재별: 각 식자재의 알레르기 항목 + 매칭된 메뉴 수
  *   - 메뉴별 매트릭스: 메뉴 × 22종 알레르기 체크 (출력용)
  */
-// 메뉴별 매트릭스 크러스트/엣지 변형 (기본=석쇠, edgeType은 getAllEdges의 값과 일치)
-const CRUST_VARIANTS = [
-  { key: '석쇠', label: '석쇠', edgeType: null },
-  { key: '치즈크러스트', label: '치즈크러스트', edgeType: '치즈크러스트' },
-  { key: '골드스윗', label: '골드스윗', edgeType: '골드스윗크러스트' },
-  { key: '씬바사삭', label: '씬바사삭(씬도우)', edgeType: '씬도우' },
-];
 const normStr = s => (s || '').trim().toLowerCase().replace(/\s+/g, '');
 
 export default function Page() {
@@ -194,7 +192,7 @@ export default function Page() {
     for (const [key, menus] of baseMapData.ingredientToMenus) {
       const ing = ingByKey.get(key);
       if (!ing?.allergens?.length) continue;
-      const isDough = (ing.category || '').startsWith('도우'); // '도우/밀가루'
+      const isDough = isDoughCategory(ing.category);
       for (const [menuCode, meta] of menus) {
         if (isExcludedMenu(menuCode, meta.menuName)) continue;
         if (!menuBase.has(menuCode))
@@ -213,7 +211,7 @@ export default function Page() {
     //  · 씬바사삭 = base에서 도우 제외 + 씬도우 (도우만 교체)
     const rows = [];
     for (const [menuCode, { meta, codes, nonDoughCodes }] of menuBase) {
-      const isPizza = (meta.category || '').startsWith('피자');
+      const isPizza = isPizzaCategory(meta.category);
       if (!isPizza) {
         rows.push({ rowKey: menuCode, menuCode, ...meta, crust: '', allergenCodes: codes });
         continue;

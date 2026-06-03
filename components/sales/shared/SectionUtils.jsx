@@ -10,12 +10,16 @@ import { reclassifyAllFiles } from '@/lib/sales';
  * 실패해도 변경 자체는 유지되므로 토스트로만 안내한다.
  */
 export async function reapplyToUploadedData() {
+  // 시작 안내(짧게) — Toast는 id 기반 갱신/해제 API가 없어 진행률 표시 대신 시작/완료만 안내.
+  // 실제 블로킹 방지는 reclassifyAllFiles가 파일 간 이벤트 루프를 양보(setTimeout 0)해 처리.
+  showToast('기존 데이터 재분류 중…', 'info', 1800);
   try {
     const { files } = await reclassifyAllFiles();
     if (files > 0) showToast(`기존 업로드 ${files}개 파일에 반영했어요`, 'ok');
+    else showToast('반영할 업로드 파일이 없어요', 'info', 2000);
   } catch (err) {
     console.error('[settings] 재분류 실패:', err);
-    showToast('기존 데이터 반영 중 오류가 발생했어요', 'err');
+    showToast('기존 데이터 반영 중 오류가 발생했어요', 'error');
   }
 }
 

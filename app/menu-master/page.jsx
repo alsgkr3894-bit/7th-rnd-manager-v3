@@ -2,6 +2,8 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Pagination } from '@/components/ui/Pagination';
+import { usePagination } from '@/hooks/usePagination';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -500,6 +502,8 @@ export default function Page() {
     return list;
   }, [rows, catFilter, subFilter, statusFilter, search]);
 
+  const { page, goTo, totalPages, paged, total } = usePagination(filtered, 60);
+
   return (
     <main className="main">
       <PageHeader
@@ -799,7 +803,7 @@ export default function Page() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map(row => (
+                    {paged.map(row => (
                       <tr key={row.id} style={{ opacity: row.status === 'discontinued' ? 0.5 : 1 }}>
                         <td
                           style={{
@@ -872,15 +876,13 @@ export default function Page() {
                 </table>
               </div>
             )}
-            <div
-              style={{
-                padding: '8px 16px',
-                fontSize: 11,
-                color: 'var(--text-3)',
-                borderTop: '1px solid var(--divider)',
-              }}
-            >
-              {filtered.length}개 표시 / 전체 {rows.length}개
+            <div style={{ borderTop: '1px solid var(--divider)' }}>
+              <Pagination page={page} totalPages={totalPages} onPage={goTo} total={total} pageSize={60} />
+              {totalPages <= 1 && (
+                <div style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text-3)' }}>
+                  {filtered.length}개 표시 / 전체 {rows.length}개
+                </div>
+              )}
             </div>
           </div>
         </div>

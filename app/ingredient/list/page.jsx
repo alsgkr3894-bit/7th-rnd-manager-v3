@@ -2,6 +2,9 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Pagination } from '@/components/ui/Pagination';
+import { SortButton } from '@/components/ui/SortButton';
+import { usePagination } from '@/hooks/usePagination';
 import { initDB } from '@/lib/db';
 import { formatNumber, formatUnitPrice } from '@/lib/format';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
@@ -203,6 +206,8 @@ export default function Page() {
     if (id === 'all') return totalCount;
     return active.filter(r => r.scope === id).length;
   };
+
+  const { page, goTo, totalPages, paged, total } = usePagination(filtered, 60);
 
   return (
     <main className="main">
@@ -412,22 +417,18 @@ export default function Page() {
                   </button>
                 );
               })}
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
-                {[
-                  { id: 'default', label: '기본' },
-                  { id: 'name', label: '이름순' },
-                  { id: 'category', label: '분류순' },
-                  { id: 'price-desc', label: '단가↑' },
-                  { id: 'price-asc', label: '단가↓' },
-                ].map(s => (
-                  <button
-                    key={s.id}
-                    className={'chip' + (sort === s.id ? ' active' : '')}
-                    onClick={() => setSort(s.id)}
-                  >
-                    {s.label}
-                  </button>
-                ))}
+              <div style={{ marginLeft: 'auto' }}>
+                <SortButton
+                  value={sort}
+                  onChange={setSort}
+                  options={[
+                    { id: 'default',    label: '기본' },
+                    { id: 'name',       label: '이름순' },
+                    { id: 'category',   label: '분류순' },
+                    { id: 'price-desc', label: '단가↑' },
+                    { id: 'price-asc',  label: '단가↓' },
+                  ]}
+                />
               </div>
             </div>
           )}
@@ -465,22 +466,20 @@ export default function Page() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((r, i) => (
+                  {paged.map((r, i) => (
                     <IngredientRow key={`${r.productCode ?? r.id ?? 'm'}-${i}`} r={r} />
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-          <div
-            style={{
-              padding: '8px 16px',
-              fontSize: 11,
-              color: 'var(--text-3)',
-              borderTop: '1px solid var(--divider)',
-            }}
-          >
-            {filtered.length}개 표시 / 전체 {rows.length}개
+          <div style={{ borderTop: '1px solid var(--divider)' }}>
+            <Pagination page={page} totalPages={totalPages} onPage={goTo} total={total} pageSize={60} />
+            {totalPages <= 1 && (
+              <div style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text-3)' }}>
+                {filtered.length}개 표시 / 전체 {rows.length}개
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -4640,7 +4640,8 @@ input:checked + .toggle-box::after { transform: translateX(16px); }
    Report — print / PDF
 ============================================================ */
 @media print {
-  body > *:not(.report-print-root) { display: none !important; }
+  /* 보고서 인쇄: report-print-root가 있을 때만 다른 콘텐츠 숨김 */
+  body:has(.report-print-root) > *:not(.report-print-root) { display: none !important; }
   .report-print-root { display: block !important; }
 
   .report-paper {
@@ -4656,6 +4657,68 @@ input:checked + .toggle-box::after { transform: translateX(16px); }
   }
 
   .no-print { display: none !important; }
+}
+
+/* ============================================================
+   일반 페이지 인쇄 스타일
+============================================================ */
+@media print {
+  /* 크롬 요소 숨김 */
+  .sidebar, .topbar, .bottom-tab-bar, .toast-container,
+  .scroll-top-btn, .widget-collapse-btn,
+  .WidgetShell-collapse-btn { display: none !important; }
+
+  /* 메인 콘텐츠 여백·폭 */
+  .main {
+    padding: 12pt !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* 카드 — 그림자 제거, 얇은 테두리, 페이지 분할 방지 */
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* 데이터 테이블 */
+  .data-table {
+    font-size: 9pt !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  .data-table thead {
+    display: table-header-group; /* 페이지마다 헤더 반복 */
+  }
+  .data-table th {
+    background: #f0f0f0 !important;
+    color: #000 !important;
+    font-size: 8pt !important;
+    padding: 4pt 6pt !important;
+    border: 1px solid #ccc !important;
+  }
+  .data-table td {
+    padding: 3pt 6pt !important;
+    border: 1px solid #eee !important;
+    color: #000 !important;
+  }
+
+  /* 제목 */
+  .page-header-title, h1 {
+    font-size: 14pt !important;
+    margin-bottom: 8pt !important;
+  }
+
+  /* 버튼·필터 칩·검색바 숨김 */
+  .btn, .chip, .filter-search,
+  .tabs, .tab, .search-wrap { display: none !important; }
+
+  /* 통계 행 단순화 */
+  .stat-row { break-inside: avoid; }
+
+  body { background: #fff !important; color: #000 !important; }
 }
 
 /* ============================================================

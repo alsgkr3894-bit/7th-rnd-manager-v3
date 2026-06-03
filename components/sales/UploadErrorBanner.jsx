@@ -1,32 +1,77 @@
 'use client';
+import { useState } from 'react';
 import { Icon } from '@/components/icons';
+import { downloadCsv } from '@/lib/download';
 
 /**
  * UploadErrorBanner — 검증 실패 / 중복 월 / 파일 오류 표시
  *
+ * - 5건 이하면 전부 표시
+ * - 6건 이상이면 상위 5건 + "전체 N건 보기" 토글
+ * - CSV 다운로드로 전체 오류 목록 내보내기 가능
+ *
  * @param {{ reason: string, invalidRows?: Array }} error
  */
 export function UploadErrorBanner({ error }) {
+  const [expanded, setExpanded] = useState(false);
+
   if (!error) return null;
   const { reason, invalidRows } = error;
+  const rows = invalidRows || [];
+  const hasMany = rows.length > 5;
+  const visible = expanded || !hasMany ? rows : rows.slice(0, 5);
+
+  function handleDownload() {
+    const headers = ['행 번호', '오류 사유', '메뉴명', '값'];
+    const data = rows.map(r => [
+      r.originalIndex ?? '',
+      r.reason ?? '',
+      r.rawMenuName ?? '',
+      r.quantity ?? '',
+    ]);
+    downloadCsv([headers, ...data], '업로드오류목록.csv');
+  }
 
   return (
-    <div className="info-banner" style={{
-      marginTop:16, background:'var(--negative-soft)', borderColor:'var(--negative-soft)',
-    }}>
-      <div className="info-banner-ico" style={{background:'var(--negative)', color:'#fff'}}>
-        <Icon.alert style={{width:16,height:16}}/>
+    <div
+      className="info-banner"
+      style={{ marginTop: 16, background: 'var(--negative-soft)', borderColor: 'var(--negative-soft)' }}
+    >
+      <div className="info-banner-ico" style={{ background: 'var(--negative)', color: '#fff' }}>
+        <Icon.alert style={{ width: 16, height: 16 }} />
       </div>
-      <div>
+      <div style={{ flex: 1 }}>
         <b>업로드 차단</b> — {reason}
-        {invalidRows && invalidRows.length > 0 && (
-          <div style={{marginTop:8, fontSize:12, color:'var(--text-2)'}}>
-            오류 {invalidRows.length}건 — 상위 5건:{' '}
-            {invalidRows.slice(0, 5).map((r, i) => (
-              <span key={i} style={{display:'inline-block', marginRight:8}}>
-                {r.originalIndex}행 ({r.reason})
-              </span>
-            ))}
+
+        {rows.length > 0 && (
+          <div style={{ marginTop: 8 }}>
+            <div style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 4 }}>
+              총 <b>{rows.length}</b>건 오류{hasMany && !expanded ? ' (상위 5건 표시)' : ''}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {visible.map((r, i) => (
+                <div key={i} style={{ fontSize: 12, display: 'flex', gap: 8, color: 'var(--text-2)' }}>
+                  <span style={{ color: 'var(--negative)', fontWeight: 700, minWidth: 48 }}>
+                    {r.originalIndex != null ? `${r.originalIndex}행` : `#${i + 1}`}
+                  </span>
+                  <span style={{ color: 'var(--text-3)' }}>{r.reason}</span>
+                  {r.rawMenuName && (
+                    <span style={{ color: 'var(--text-2)' }}>— {r.rawMenuName}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              {hasMany && (
+                <button className="btn sm ghost" onClick={() => setExpanded(e => !e)} style={{ fontSize: 11 }}>
+                  {expanded ? '접기' : `전체 ${rows.length}건 보기`}
+                </button>
+              )}
+              <button className="btn sm ghost" onClick={handleDownload} style={{ fontSize: 11 }}>
+                <Icon.download style={{ width: 11, height: 11 }} /> CSV 다운로드
+              </button>
+            </div>
           </div>
         )}
       </div>
