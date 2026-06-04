@@ -15,8 +15,14 @@ import {
 } from '@/lib/sales';
 import { inputStyle, SectionHeader, SectionEmpty, reapplyToUploadedData } from './shared/SectionUtils';
 import { useSettingsSection } from '@/hooks/useSettingsSection';
+import { getActiveBrandId } from '@/lib/active-brand';
 
-const INITIAL_FORM = { rawMenuName: '', category: '피자', groupName: '', detailName: '' };
+// 7번가(main)는 피자 카테고리 프리셋, 다른 브랜드는 자유 입력(피자 카테고리 노출 안 함).
+// 규칙 추가/편집 폼은 클라이언트 토글(adding) 뒤에서만 렌더되므로 SSR 불일치 없음.
+const IS_MAIN = getActiveBrandId() === 'main';
+const DEFAULT_CATEGORY = IS_MAIN ? '피자' : '';
+
+const INITIAL_FORM = { rawMenuName: '', category: DEFAULT_CATEGORY, groupName: '', detailName: '' };
 
 export function UserRulesSection() {
   const [nameOpts, setNameOpts] = useState({ groupNames: [], detailNames: [] });
@@ -36,7 +42,7 @@ export function UserRulesSection() {
     remove:          deleteUserRule,
     getFormFromItem: (r) => ({
       rawMenuName: r.rawMenuName || r.pattern || '',
-      category:    r.category    || '피자',
+      category:    r.category    || DEFAULT_CATEGORY,
       groupName:   r.groupName   || '',
       detailName:  r.detailName  || '',
     }),
@@ -187,9 +193,13 @@ function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추�
   return (
     <div style={{display:'grid', gridTemplateColumns:'minmax(0,1.5fr) minmax(80px,140px) minmax(0,1fr) minmax(0,1fr) auto auto', gap:8}}>
       <input value={form.rawMenuName} onChange={e => setForm({ ...form, rawMenuName: e.target.value })} placeholder="패턴 (정규화 후)" style={inputStyle}/>
-      <select value={form.category}   onChange={e => setForm({ ...form, category:    e.target.value })} style={inputStyle}>
-        {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
-      </select>
+      {IS_MAIN ? (
+        <select value={form.category}   onChange={e => setForm({ ...form, category:    e.target.value })} style={inputStyle}>
+          {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      ) : (
+        <input value={form.category}    onChange={e => setForm({ ...form, category:    e.target.value })} placeholder="카테고리" style={inputStyle}/>
+      )}
       <ComboBox value={form.groupName}  onChange={v => setForm({ ...form, groupName: v })}  options={catOpts.groupNames}  placeholder="중분류"      inputStyle={inputStyle}/>
       <ComboBox value={form.detailName} onChange={v => setForm({ ...form, detailName: v })} options={catOpts.detailNames} placeholder="상세 (선택)" inputStyle={inputStyle}/>
       <button className="btn sm" onClick={onCancel} disabled={busy}>취소</button>

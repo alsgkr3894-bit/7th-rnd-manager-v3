@@ -23,6 +23,7 @@ import {
   sortButtonOptions,
   useCostManageTable,
 } from '@/components/cost/manage/table-utils';
+import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 
 const EdgeEditModal = dynamic(() => import('@/components/cost/edge-dough/EdgeEditModal').then(m => ({ default: m.EdgeEditModal })), { ssr: false });
 const GroupEditor   = dynamic(() => import('@/components/cost/recipe-groups/GroupEditor').then(m => ({ default: m.GroupEditor })), { ssr: false });
@@ -34,6 +35,7 @@ const GroupEditor   = dynamic(() => import('@/components/cost/recipe-groups/Grou
  * @param {{ tab: 'groups' | 'edges' }} props
  */
 export function CommonManageView({ tab = 'groups' }) {
+  const isMain = useIsMainBrand(); // 마스터 시드는 7번가 전용
   const [allMeta,      setAllMeta]      = useState([]);
   const [unitPriceMap, setUnitPriceMap] = useState(new Map());
   const [loading,      setLoading]      = useState(true);
@@ -282,10 +284,12 @@ export function CommonManageView({ tab = 'groups' }) {
                   <Icon.trash style={{ width: 14, height: 14 }}/> 초기화
                 </button>
               )}
-              <button className="btn" onClick={handleSeedEdges} disabled={seeding}>
-                <Icon.download style={{ width: 14, height: 14 }}/>
-                {seeding ? '시드 중…' : '마스터 시드 (5종)'}
-              </button>
+              {isMain && (
+                <button className="btn" onClick={handleSeedEdges} disabled={seeding}>
+                  <Icon.download style={{ width: 14, height: 14 }}/>
+                  {seeding ? '시드 중…' : '마스터 시드 (5종)'}
+                </button>
+              )}
               <button className="btn primary" onClick={() => setEdgeTarget('new')}>
                 <Icon.plus style={{ width: 14, height: 14 }}/> 추가
               </button>
@@ -304,7 +308,9 @@ export function CommonManageView({ tab = 'groups' }) {
                 <Icon.calc style={{ width: 32, height: 32, marginBottom: 12, opacity: .4 }}/>
                 <div style={{ fontWeight: 600, marginBottom: 4 }}>등록된 엣지·도우가 없습니다</div>
                 <div style={{ fontSize: 13 }}>
-                  <b>마스터 시드</b>로 5종 (치즈크러스트 L/R · 골드스윗크러스트 L/R · 씬도우 L) 일괄 등록
+                  {isMain
+                    ? <><b>마스터 시드</b>로 5종 (치즈크러스트 L/R · 골드스윗크러스트 L/R · 씬도우 L) 일괄 등록</>
+                    : <><b>추가</b> 버튼으로 엣지·도우를 직접 등록하세요</>}
                 </div>
               </div>
             </div>

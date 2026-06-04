@@ -9,7 +9,7 @@ import { formatNumber } from '@/lib/format';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllRecipes, buildUnitPriceMap, calcCostBySizes } from '@/lib/recipe';
-import { MENU_PRICE_CATEGORIES, getAllMenuPrices } from '@/lib/cost/menu-price';
+import { getMenuPriceCategories, getAllMenuPrices } from '@/lib/cost/menu-price';
 import { PIZZA_CATEGORY_VARIANTS } from '@/lib/menu-categories';
 import { getMenuMasterMap, upsertMenuMaster } from '@/lib/menu-master';
 import {
@@ -350,7 +350,7 @@ export default function Page() {
 
   const cats = useMemo(() => {
     const set = new Set(rows.map(r => r.menuCategory || '기타'));
-    const order = [...MENU_PRICE_CATEGORIES, '기타'];
+    const order = [...getMenuPriceCategories(), '기타'];
     return [
       '전체',
       ...[...set].sort((a, b) => {

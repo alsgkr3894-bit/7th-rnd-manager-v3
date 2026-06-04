@@ -40,6 +40,7 @@ import {
 import { KEYS } from '@/lib/note/keys';
 import { DISCONTINUED_FILTER, UNCATEGORIZED_FILTER } from '@/lib/ingredient/constants';
 import { migrateNutritionToIngredients } from '@/lib/nutrition/migrate-to-ingredient';
+import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 import { IngredientForm } from './IngredientForm';
 import { ManageRow } from '@/components/ingredient/ManageRow';
 import { IssuesView } from '@/components/ingredient/IssuesView';
@@ -99,6 +100,7 @@ async function syncManagedScope(target, scopeLabel) {
 }
 
 export default function Page() {
+  const isMain = useIsMainBrand(); // 마스터 시드는 7번가 전용
   const [rows, setRows] = useState([]);
   const [prevPriceMap, setPrevPriceMap] = useState(null);
   const [priceDate, setPriceDate] = useState(null);
@@ -493,10 +495,12 @@ export default function Page() {
                 >
                   선택
                 </button>
-                <button className="btn" onClick={handleSeed} disabled={seeding}>
-                  <Icon.download style={{ width: 14, height: 14 }} />
-                  {seeding ? '시드 중…' : `마스터 시드 (${INGREDIENT_MASTER_SEED.length})`}
-                </button>
+                {isMain && (
+                  <button className="btn" onClick={handleSeed} disabled={seeding}>
+                    <Icon.download style={{ width: 14, height: 14 }} />
+                    {seeding ? '시드 중…' : `마스터 시드 (${INGREDIENT_MASTER_SEED.length})`}
+                  </button>
+                )}
                 <button className="btn primary" onClick={() => setFormTarget('new')}>
                   <Icon.plus style={{ width: 14, height: 14 }} /> 식자재 추가
                 </button>
@@ -538,8 +542,9 @@ export default function Page() {
             <Icon.box style={{ width: 32, height: 32, marginBottom: 12, opacity: 0.4 }} />
             <div style={{ fontWeight: 600, marginBottom: 4 }}>아직 데이터가 없습니다</div>
             <div style={{ fontSize: 13 }}>
-              상단의 <b>마스터 시드</b> 버튼으로 80개 마스터 품목을 일괄 등록하거나, 제때 가격
-              파일을 업로드해주세요.
+              {isMain
+                ? <>상단의 <b>마스터 시드</b> 버튼으로 80개 마스터 품목을 일괄 등록하거나, 제때 가격 파일을 업로드해주세요.</>
+                : <><b>식자재 추가</b> 버튼으로 직접 등록하거나, 제때 가격 파일을 업로드해주세요.</>}
             </div>
           </div>
         </div>

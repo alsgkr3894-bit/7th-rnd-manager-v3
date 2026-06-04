@@ -26,8 +26,12 @@ import { OVERLAY_COLOR } from '@/lib/ui/styles';
 import { SUB_TAG_STYLE, CAT_TAG_STYLE } from '@/lib/ui/colors';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
+import { getActiveBrandId } from '@/lib/active-brand';
+import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 
-const CATEGORIES = [
+// 7번가(main) 전용 피자 카테고리 프리셋. 다른 브랜드는 빈 프리셋 → 자유 입력,
+// 칩·통계는 실제 데이터에 존재하는 카테고리에서 동적으로 도출한다.
+const PIZZA_CATEGORIES = [
   MENU_CATEGORY.PIZZA,
   MENU_CATEGORY.PERSONAL,
   MENU_CATEGORY.SET,
@@ -36,6 +40,7 @@ const CATEGORIES = [
   MENU_CATEGORY.DRINK,
   MENU_CATEGORY.EDGE,
 ];
+const CATEGORIES = getActiveBrandId() === 'main' ? PIZZA_CATEGORIES : [];
 const PIZZA_SUBS = ['프리미엄 스페셜', '프리미엄', '오리지널', '하프앤하프'];
 
 const STATUS_LABEL = { active: '활성', discontinued: '단종', test: '테스트' };
@@ -90,7 +95,7 @@ function EditModal({ row, isNew, onSave, onClose }) {
   const [form, setForm] = useState({
     menuCode: row?.menuCode || '',
     menuName: row?.menuName || '',
-    category: row?.category || CATEGORIES[0],
+    category: row?.category || CATEGORIES[0] || '',
     size: row?.size || '',
     price: row?.price != null ? String(row.price) : '',
     status: row?.status || 'active',
@@ -199,17 +204,26 @@ function EditModal({ row, isNew, onSave, onClose }) {
               >
                 카테고리
               </label>
-              <select
-                className="input"
-                value={form.category}
-                onChange={e => set('category', e.target.value)}
-              >
-                {CATEGORIES.map(c => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+              {CATEGORIES.length > 0 ? (
+                <select
+                  className="input"
+                  value={form.category}
+                  onChange={e => set('category', e.target.value)}
+                >
+                  {CATEGORIES.map(c => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  className="input"
+                  value={form.category}
+                  onChange={e => set('category', e.target.value)}
+                  placeholder="예) 탕수육 / 짜장 / 세트"
+                />
+              )}
             </div>
             <div>
               <label
@@ -341,6 +355,7 @@ function EditModal({ row, isNew, onSave, onClose }) {
 
 /* ── 메인 페이지 ── */
 export default function Page() {
+  const isMain = useIsMainBrand(); // 기본 코드 등록·피자 일괄가는 7번가 전용
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
@@ -356,6 +371,10 @@ export default function Page() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmBulkPizza, setConfirmBulkPizza] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null); // 개별 삭제 대상 row
+  // 브랜드 카테고리 프리셋 — SSR/첫 렌더는 서버와 동일하게 기본값(피자)로 두고,
+  // 마운트 후 활성 브랜드에 맞춰 교정한다(하이드레이션 불일치 방지).
+  const [brandCats, setBrandCats] = useState(PIZZA_CATEGORIES);
+  useEffect(() => { setBrandCats(CATEGORIES); }, []);
 
   const load = useCallback(async () => {
     await initDB();
@@ -494,13 +513,20 @@ export default function Page() {
     [rows, statusFilter]
   );
 
+  // 표시용 카테고리 목록 — 7번가는 피자 프리셋, 타 브랜드는 데이터에 존재하는 분류
+  const displayCategories = useMemo(() => {
+    if (brandCats.length > 0) return brandCats;
+    return [...new Set(rows.map(r => r.category).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, 'ko'));
+  }, [rows, brandCats]);
+
   const catCounts = useMemo(() => {
     const m = { all: statusFiltered.length };
-    CATEGORIES.forEach(c => {
+    displayCategories.forEach(c => {
       m[c] = statusFiltered.filter(r => (r.category || '').startsWith(c)).length;
     });
     return m;
-  }, [statusFiltered]);
+  }, [statusFiltered, displayCategories]);
 
   const filtered = useMemo(() => {
     let list = statusFilter === 'all' ? rows : rows.filter(r => r.status === statusFilter);
@@ -543,18 +569,22 @@ export default function Page() {
             <button className="btn" onClick={() => setBulkModal(true)} disabled={rows.length === 0}>
               <Icon.calc style={{ width: 14, height: 14 }} /> 코드별 일괄 가격
             </button>
-            <button
-              className="btn"
-              onClick={() => setConfirmBulkPizza(true)}
-              disabled={bulking || rows.length === 0}
-            >
-              <Icon.pizza style={{ width: 14, height: 14 }} />{' '}
-              {bulking ? '적용 중…' : '피자 기본가 일괄'}
-            </button>
-            <button className="btn" onClick={handleSeed} disabled={seeding}>
-              <Icon.download style={{ width: 14, height: 14 }} />
-              {seeding ? '등록 중…' : '기본 코드 등록'}
-            </button>
+            {isMain && (
+              <button
+                className="btn"
+                onClick={() => setConfirmBulkPizza(true)}
+                disabled={bulking || rows.length === 0}
+              >
+                <Icon.pizza style={{ width: 14, height: 14 }} />{' '}
+                {bulking ? '적용 중…' : '피자 기본가 일괄'}
+              </button>
+            )}
+            {isMain && (
+              <button className="btn" onClick={handleSeed} disabled={seeding}>
+                <Icon.download style={{ width: 14, height: 14 }} />
+                {seeding ? '등록 중…' : '기본 코드 등록'}
+              </button>
+            )}
             <button
               className="btn"
               onClick={() => setConfirmReset(true)}
@@ -580,7 +610,7 @@ export default function Page() {
             <span className="unit">개</span>
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>
-            {CATEGORIES.map(
+            {displayCategories.map(
               c => `${c} ${rows.filter(r => (r.category || '').startsWith(c)).length}`
             ).join(' · ')}
           </div>
@@ -681,16 +711,22 @@ export default function Page() {
             <Icon.box style={{ width: 28, height: 28 }} />
           </div>
           <div className="empty-title">메뉴 마스터 데이터가 없습니다</div>
-          <div className="empty-sub">기본 코드 등록 버튼으로 전체 코드 체계를 불러오세요.</div>
-          <button
-            className="btn primary"
-            onClick={handleSeed}
-            disabled={seeding}
-            style={{ marginTop: 4 }}
-          >
-            <Icon.plus style={{ width: 14, height: 14 }} />
-            {seeding ? '등록 중…' : '기본 코드 등록'}
-          </button>
+          <div className="empty-sub">
+            {isMain
+              ? '기본 코드 등록 버튼으로 전체 코드 체계를 불러오세요.'
+              : '메뉴 추가 버튼으로 메뉴를 직접 등록하세요.'}
+          </div>
+          {isMain && (
+            <button
+              className="btn primary"
+              onClick={handleSeed}
+              disabled={seeding}
+              style={{ marginTop: 4 }}
+            >
+              <Icon.plus style={{ width: 14, height: 14 }} />
+              {seeding ? '등록 중…' : '기본 코드 등록'}
+            </button>
+          )}
         </div>
       )}
 
@@ -748,7 +784,7 @@ export default function Page() {
               >
                 전체 {catCounts.all}
               </button>
-              {CATEGORIES.map(
+              {displayCategories.map(
                 c =>
                   catCounts[c] > 0 && (
                     <button

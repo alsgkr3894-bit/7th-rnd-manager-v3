@@ -1,7 +1,8 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { SALES_RULES } from '@/lib/sales';
+import { getActiveBrandId } from '@/lib/active-brand';
 import { UserExcludedSection } from './UserExcludedSection';
 
 /**
@@ -12,10 +13,13 @@ import { UserExcludedSection } from './UserExcludedSection';
  */
 export function SettingsExcludeCard() {
   const [query, setQuery] = useState('');
+  // 기본 제외 목록은 7번가(main) 전용. 다른 브랜드는 빈 목록(DB 사용자 제외만).
+  const [rules, setRules] = useState(SALES_RULES);
+  useEffect(() => { setRules(getActiveBrandId() === 'main' ? SALES_RULES : []); }, []);
 
   const excluded = useMemo(() => {
-    return SALES_RULES.filter(r => r.category === '품목제외');
-  }, []);
+    return rules.filter(r => r.category === '품목제외');
+  }, [rules]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

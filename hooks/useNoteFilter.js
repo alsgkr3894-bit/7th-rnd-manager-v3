@@ -25,13 +25,21 @@ export function useNoteFilter(notes, pinnedIds, { pathname } = {}) {
   const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || tryLS(KEYS.NOTE_STATUS, 'all'));
   const [sortBy, setSortBy] = useState(() => tryLS(KEYS.NOTE_SORT, 'createdAt'));
   // 브랜드 필터: 기본값은 현재 활성 브랜드(다른 브랜드 노트와 섞이지 않게). 'all'이면 전체.
-  const [brandFilter, setBrandFilter] = useState(() => tryLS(KEYS.NOTE_BRAND_FILTER, getActiveBrandId()));
+  // 초기값은 SSR/첫 렌더에서 서버와 동일하게 'all'로 두고(활성 브랜드는 localStorage라
+  // 서버에서 알 수 없음 → 칩 active 클래스 불일치 방지), 마운트 후 실제 값으로 교정한다.
+  const [brandFilter, setBrandFilter] = useState('all');
+  const [brandReady, setBrandReady] = useState(false);
+  useEffect(() => {
+    setBrandFilter(tryLS(KEYS.NOTE_BRAND_FILTER, getActiveBrandId()));
+    setBrandReady(true);
+  }, []);
 
   // 영속화 (기존 동작과 동일한 키)
   useEffect(() => { setLS(KEYS.NOTE_SEARCH, search); }, [search]);
   useEffect(() => { setLS(KEYS.NOTE_STATUS, statusFilter); }, [statusFilter]);
   useEffect(() => { setLS(KEYS.NOTE_SORT, sortBy); }, [sortBy]);
-  useEffect(() => { setLS(KEYS.NOTE_BRAND_FILTER, brandFilter); }, [brandFilter]);
+  // 첫 마운트 교정 전에는 영속화하지 않는다(임시 'all'로 덮어쓰기 방지).
+  useEffect(() => { if (brandReady) setLS(KEYS.NOTE_BRAND_FILTER, brandFilter); }, [brandFilter, brandReady]);
 
   // URL 동기화 (검색/상태만)
   useEffect(() => {

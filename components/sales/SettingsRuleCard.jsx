@@ -1,7 +1,8 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { SALES_RULES, CATEGORY_INPUT_OPTIONS } from '@/lib/sales';
+import { getActiveBrandId } from '@/lib/active-brand';
 import { UserRulesSection } from './UserRulesSection';
 
 const FILTER_CATEGORIES = ['전체', ...CATEGORY_INPUT_OPTIONS];
@@ -15,16 +16,20 @@ const FILTER_CATEGORIES = ['전체', ...CATEGORY_INPUT_OPTIONS];
 export function SettingsRuleCard() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('전체');
+  // 기본 분류 규칙은 7번가(main) 전용. 다른 브랜드는 빈 목록(DB 사용자 규칙만 사용).
+  // SSR/첫 렌더는 서버와 동일하게 SALES_RULES로 두고 마운트 후 교정(하이드레이션 일치).
+  const [rules, setRules] = useState(SALES_RULES);
+  useEffect(() => { setRules(getActiveBrandId() === 'main' ? SALES_RULES : []); }, []);
 
   const categories = useMemo(() => {
-    const found = new Set(SALES_RULES.map(r => r.category).filter(Boolean));
+    const found = new Set(rules.map(r => r.category).filter(Boolean));
     const ordered = FILTER_CATEGORIES.filter(c => c === '전체' || found.has(c));
     const extras = Array.from(found).filter(c => !FILTER_CATEGORIES.includes(c));
     return [...ordered, ...extras];
-  }, []);
+  }, [rules]);
 
   const filtered = useMemo(() => {
-    let list = SALES_RULES;
+    let list = rules;
     if (filter !== '전체') list = list.filter(r => r.category === filter);
     const q = query.trim().toLowerCase();
     if (q) {
@@ -36,7 +41,7 @@ export function SettingsRuleCard() {
       });
     }
     return list;
-  }, [filter, query]);
+  }, [filter, query, rules]);
 
   return (
     <div className="card" style={{marginTop:16}}>
@@ -45,14 +50,14 @@ export function SettingsRuleCard() {
       <div className="card-header">
         <div>
           <div className="card-title">기본 분류 규칙</div>
-          <div className="card-sub">메뉴명 정규화 → 카테고리·중분류·상세 매핑 · 총 {SALES_RULES.length}개</div>
+          <div className="card-sub">메뉴명 정규화 → 카테고리·중분류·상세 매핑 · 총 {rules.length}개</div>
         </div>
       </div>
 
       {/* 카테고리 chip */}
       <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:12}}>
         {categories.map(c => {
-          const cnt = c === '전체' ? SALES_RULES.length : SALES_RULES.filter(r => r.category === c).length;
+          const cnt = c === '전체' ? rules.length : rules.filter(r => r.category === c).length;
           return (
             <button key={c} onClick={() => setFilter(c)} className="chip"
               style={{
