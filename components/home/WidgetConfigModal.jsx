@@ -82,7 +82,7 @@ function SortableRow({ row, isVisible, onToggleRow, isFavorite, onToggleFavorite
 /**
  * 홈 위젯 표시/숨김 + 드래그 순서 설정 모달.
  */
-export function WidgetConfigModal({ isVisible, toggleRow, onClose, widgetOrder, onReorder, isFavorite, onToggleFavorite }) {
+export function WidgetConfigModal({ isVisible, toggleRow, onClose, widgetOrder, onReorder, isFavorite, onToggleFavorite, onReset }) {
   const { containerRef, isClosing, close } = useModalShell(onClose);
   const [localOrder, setLocalOrder] = useState(widgetOrder ?? HOME_WIDGET_ROWS.map(r => r.id));
 
@@ -125,8 +125,19 @@ export function WidgetConfigModal({ isVisible, toggleRow, onClose, widgetOrder, 
             </div>
           </SortableContext>
         </DndContext>
-        <div style={{ marginTop: 14, fontSize: 11, color: 'var(--text-4)', borderTop: '1px solid var(--divider)', paddingTop: 10 }}>
-          위젯 순서·즐겨찾기·접기 설정은 이 브라우저에만 저장됩니다 (백업 미포함).
+        <div style={{ marginTop: 14, borderTop: '1px solid var(--divider)', paddingTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-4)' }}>순서·즐겨찾기·접기 설정은 이 브라우저에만 저장</span>
+          {onReset && (
+            <button
+              type="button"
+              className="btn sm"
+              style={{ fontSize: 11, color: 'var(--text-3)', flexShrink: 0 }}
+              onClick={() => { onReset(); close(); }}
+              title="모든 위젯 설정을 기본값으로 되돌립니다"
+            >
+              기본값 복원
+            </button>
+          )}
         </div>
       </div>
     </div>

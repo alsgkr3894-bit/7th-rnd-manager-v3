@@ -24,7 +24,36 @@ export const HOME_WIDGET_DEFS = HOME_WIDGET_ROWS.flatMap(row =>
   row.keys.map(key => ({ key, label: row.label }))
 );
 
-const DEFAULT_ORDER = HOME_WIDGET_ROWS.map(r => r.id);
+const DEFAULT_ORDER   = HOME_WIDGET_ROWS.map(r => r.id);
+const ALL_ROW_IDS     = new Set(DEFAULT_ORDER);
+const ALL_WIDGET_KEYS = new Set(HOME_WIDGET_ROWS.flatMap(r => r.keys));
+
+/** config 객체에서 알 수 없는 key나 boolean이 아닌 값을 제거 */
+function sanitizeConfig(raw) {
+  if (!raw || typeof raw !== 'object') return {};
+  const out = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (ALL_WIDGET_KEYS.has(k) && typeof v === 'boolean') out[k] = v;
+  }
+  return out;
+}
+
+/** 저장된 rowId 배열을 DEFAULT_ORDER와 reconcile — 불명 제거, 누락 추가 */
+function reconcileOrder(saved) {
+  const kept = [...new Set((saved || []).filter(id => ALL_ROW_IDS.has(id)))];
+  const missing = DEFAULT_ORDER.filter(id => !kept.includes(id));
+  return [...kept, ...missing];
+}
+
+/** 저장된 favorites 배열 reconcile */
+function reconcileFavorites(saved) {
+  return [...new Set((saved || []).filter(id => ALL_ROW_IDS.has(id)))];
+}
+
+/** 현재 config 기준 보이는 행 수 (빈 대시보드 방지용) */
+function visibleRowCount(cfg) {
+  return HOME_WIDGET_ROWS.filter(row => row.keys.every(k => cfg[k] !== false)).length;
+}
 
 /**
  * 홈 위젯 표시/숨김 + 접기/펼치기 + 드래그 순서를 localStorage에 영속 관리.
@@ -37,33 +66,33 @@ export function useWidgetConfig() {
   const [favOnly,    setFavOnlyState] = useState(false); // 즐겨찾기만 보기(포커스 모드)
 
   useEffect(() => {
-    const savedVis = getJSONLS(KEYS.HOME_WIDGETS);
-    if (savedVis && typeof savedVis === 'object') setConfig(savedVis);
+    // ── config (visibility) — 마이그레이션 안전장치 적용 ──
+    const rawVis = getJSONLS(KEYS.HOME_WIDGETS);
+    const cleanVis = sanitizeConfig(rawVis);
+    if (Object.keys(cleanVis).length !== Object.keys(rawVis || {}).length) {
+      // stale key가 있었으면 정리된 값으로 재저장
+      setJSONLS(KEYS.HOME_WIDGETS, cleanVis);
+    }
+    setConfig(cleanVis);
 
+    // ── collapsed ──
     const savedCol = getJSONLS(KEYS.HOME_WIDGET_COLLAPSED);
     if (savedCol && typeof savedCol === 'object') setCollapsed(savedCol);
 
-    // 저장된 순서를 현재 row 집합과 reconcile:
-    //   - 알 수 없는(이름변경·삭제된) id는 버리고
-    //   - 새로 추가된 id는 끝에 덧붙인다
-    // length만 비교하면 같은 길이의 stale 저장값이 위젯을 영구히 사라지게 할 수 있다.
+    // ── order — stale id 제거 + 누락 id 추가 ──
     const savedOrder = getJSONLS(KEYS.HOME_WIDGET_ORDER);
     if (Array.isArray(savedOrder)) {
-      const known = new Set(DEFAULT_ORDER);
-      const kept = [...new Set(savedOrder.filter(id => known.has(id)))];
-      const missing = DEFAULT_ORDER.filter(id => !kept.includes(id));
-      const reconciled = [...kept, ...missing];
+      const reconciled = reconcileOrder(savedOrder);
       setWidgetOrder(reconciled);
       if (reconciled.join(',') !== savedOrder.join(',')) {
-        setJSONLS(KEYS.HOME_WIDGET_ORDER, reconciled); // 정리된 순서 재저장
+        setJSONLS(KEYS.HOME_WIDGET_ORDER, reconciled);
       }
     }
 
-    // 즐겨찾기 — stale id는 버린다(순서 reconcile과 동일 패턴)
+    // ── favorites ──
     const savedFav = getJSONLS(KEYS.HOME_WIDGET_FAVORITES);
     if (Array.isArray(savedFav)) {
-      const known = new Set(DEFAULT_ORDER);
-      const keptFav = [...new Set(savedFav.filter(id => known.has(id)))];
+      const keptFav = reconcileFavorites(savedFav);
       setFavorites(keptFav);
       if (keptFav.join(',') !== savedFav.join(',')) {
         setJSONLS(KEYS.HOME_WIDGET_FAVORITES, keptFav);
@@ -85,10 +114,12 @@ export function useWidgetConfig() {
     });
   };
 
-  /** 한 행(쌍 위젯 포함)의 모든 key를 한 번에 토글 — 모두 보이면 숨기고, 아니면 모두 표시 */
+  /** 한 행(쌍 위젯 포함)의 모든 key를 한 번에 토글 — 모두 보이면 숨기고, 아니면 모두 표시.
+   *  숨기는 방향일 때, 해당 행이 마지막 visible 행이면 토글을 차단(빈 대시보드 방지). */
   const toggleRow = (keys) => {
     setConfig(prev => {
       const allVisible = keys.every(k => prev[k] !== false);
+      if (allVisible && visibleRowCount(prev) <= 1) return prev; // 마지막 행 — 차단
       const next = { ...prev };
       keys.forEach(k => { next[k] = allVisible ? false : true; });
       setJSONLS(KEYS.HOME_WIDGETS, next);
@@ -133,11 +164,26 @@ export function useWidgetConfig() {
     ...widgetOrder.filter(id => !favSet.has(id)),
   ];
 
+  /** 모든 위젯 설정을 기본값으로 복원 (localStorage 5개 키 모두 초기화) */
+  const resetConfig = () => {
+    setConfig({});
+    setCollapsed({});
+    setWidgetOrder(DEFAULT_ORDER);
+    setFavorites([]);
+    setFavOnlyState(false);
+    setJSONLS(KEYS.HOME_WIDGETS,          {});
+    setJSONLS(KEYS.HOME_WIDGET_COLLAPSED, {});
+    setJSONLS(KEYS.HOME_WIDGET_ORDER,     DEFAULT_ORDER);
+    setJSONLS(KEYS.HOME_WIDGET_FAVORITES, []);
+    setJSONLS(KEYS.HOME_WIDGET_FAV_ONLY,  false);
+  };
+
   return {
     config, isVisible, toggle, toggleRow,
     isCollapsed, toggleCollapse,
     widgetOrder, reorderWidgets,
     favorites, isFavorite, toggleFavorite,
     favOnly, setFavOnly, effectiveOrder,
+    resetConfig,
   };
 }

@@ -106,6 +106,7 @@ export default function HomePage() {
     isVisible, toggleRow: toggleRowWidget, isCollapsed, toggleCollapse,
     widgetOrder, reorderWidgets,
     favorites, isFavorite, toggleFavorite, favOnly, setFavOnly, effectiveOrder,
+    resetConfig,
   } = useWidgetConfig();
   const [widgetConfigOpen, setWidgetConfigOpen] = useState(false);
 
@@ -289,6 +290,7 @@ export default function HomePage() {
           onReorder={reorderWidgets}
           isFavorite={isFavorite}
           onToggleFavorite={toggleFavorite}
+          onReset={resetConfig}
         />
       )}
 
