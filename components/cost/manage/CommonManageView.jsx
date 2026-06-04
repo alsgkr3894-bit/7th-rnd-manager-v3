@@ -3,6 +3,8 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Icon } from '@/components/icons';
 import { SearchBox } from '@/components/ui/SearchBox';
+import { Pagination } from '@/components/ui/Pagination';
+import { SortButton } from '@/components/ui/SortButton';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { initDB } from '@/lib/db';
@@ -14,7 +16,13 @@ import {
   getAllEdges, upsertEdge, deleteEdge, seedEdges, resetAllEdges,
 } from '@/lib/cost/edge-dough';
 import { EdgeCard } from '@/components/cost/edge-dough/EdgeCard';
+import { edgeTotalCost } from '@/lib/cost/edge-dough';
 import { emptyGroup, groupToDraft } from '@/lib/cost/group-utils';
+import {
+  SelectionToolbar,
+  sortButtonOptions,
+  useCostManageTable,
+} from '@/components/cost/manage/table-utils';
 
 const EdgeEditModal = dynamic(() => import('@/components/cost/edge-dough/EdgeEditModal').then(m => ({ default: m.EdgeEditModal })), { ssr: false });
 const GroupEditor   = dynamic(() => import('@/components/cost/recipe-groups/GroupEditor').then(m => ({ default: m.GroupEditor })), { ssr: false });
@@ -121,6 +129,14 @@ export function CommonManageView({ tab = 'groups' }) {
       showToast('삭제 완료', 'ok');
     } catch (err) { showToast('삭제 실패: ' + err.message, 'err'); }
   }
+  async function handleBatchDeleteEdges(ids) {
+    try {
+      await Promise.all(ids.map(id => deleteEdge(id)));
+      setEdges(prev => prev.filter(e => !ids.includes(e.id)));
+      edgeTable.clearSelection();
+      showToast(`${ids.length}개 삭제 완료`, 'ok');
+    } catch (err) { showToast('삭제 실패: ' + err.message, 'err'); }
+  }
   async function handleSeedEdges() {
     if (seeding) return;
     setSeeding(true);
@@ -156,6 +172,19 @@ export function CommonManageView({ tab = 'groups' }) {
     if (!q) return edges;
     return edges.filter(e => e.edgeType?.toLowerCase().includes(q) || e.edgeCode?.toLowerCase().includes(q) || (e.size || '').toLowerCase().includes(q));
   }, [edges, edgeSearch]);
+
+  const edgeSortOptions = useMemo(() => [
+    { id: 'name', label: '이름', key: e => e.edgeType },
+    { id: 'code', label: '코드', key: e => e.edgeCode },
+    { id: 'size', label: '규격', key: e => e.size },
+    { id: 'cost', label: '원가', key: e => edgeTotalCost(e) },
+  ], []);
+
+  const edgeTable = useCostManageTable(filteredEdges, {
+    sortOptions: edgeSortOptions,
+    initialSort: { id: 'name', dir: 'asc' },
+    getRowId: row => row.id,
+  });
 
   if (dbError) return (
     <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--negative)' }}>
@@ -285,12 +314,51 @@ export function CommonManageView({ tab = 'groups' }) {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {filteredEdges.map(e => (
-                <EdgeCard key={e.id} edge={e}
-                  onEdit={() => setEdgeTarget(e)}
-                  onDelete={deletePending === e.id ? null : () => setDeletePending(e.id)}
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <SortButton
+                  value={edgeTable.sort?.id}
+                  options={sortButtonOptions(edgeSortOptions, edgeTable.sort)}
+                  onChange={edgeTable.changeSort}
                 />
+                <SelectionToolbar
+                  selectedCount={edgeTable.selected.size}
+                  confirming={edgeTable.confirmingDelete}
+                  noun="엣지·도우"
+                  onAskDelete={() => edgeTable.setConfirmingDelete(true)}
+                  onConfirmDelete={() => handleBatchDeleteEdges(Array.from(edgeTable.selected))}
+                  onCancel={edgeTable.clearSelection}
+                />
+              </div>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, width: 'fit-content', fontSize: 12, color: 'var(--text-3)' }}>
+                <input
+                  type="checkbox"
+                  checked={edgeTable.allPageSelected}
+                  onChange={edgeTable.togglePage}
+                  style={{ width: 15, height: 15, accentColor: 'var(--accent)' }}
+                />
+                현재 페이지 선택
+              </label>
+              {edgeTable.paged.map(e => (
+                <div key={e.id} style={{ display: 'grid', gridTemplateColumns: '24px 1fr', gap: 8, alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={edgeTable.selected.has(e.id)}
+                    onChange={() => edgeTable.toggle(e.id)}
+                    style={{ width: 16, height: 16, accentColor: 'var(--accent)' }}
+                  />
+                  <EdgeCard edge={e}
+                    onEdit={() => setEdgeTarget(e)}
+                    onDelete={deletePending === e.id ? null : () => setDeletePending(e.id)}
+                  />
+                </div>
               ))}
+              <Pagination
+                page={edgeTable.page}
+                totalPages={edgeTable.totalPages}
+                onPage={edgeTable.goTo}
+                total={edgeTable.total}
+                pageSize={edgeTable.pageSize}
+              />
             </div>
           )}
 

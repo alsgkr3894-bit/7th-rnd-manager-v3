@@ -2,8 +2,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Chip } from '@/components/ui/Chip';
 import { SearchBox } from '@/components/ui/SearchBox';
+import { Pagination } from '@/components/ui/Pagination';
 import { SortableTh } from '@/components/ui/SortableTh';
+import { usePagination } from '@/hooks/usePagination';
 import { formatNumber } from '@/lib/format';
+import { downloadCsv } from '@/lib/download';
 import { CHANGE_STATUS, CHANGE_STATUS_STYLE } from './managed-products-constants';
 import { TypeSelect } from './_TypeSelect';
 import { sortByKey, getProductTypeCounts } from '@/lib/jette/utils';
@@ -56,6 +59,22 @@ export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onT
     );
     return sortByKey(list, sortKey, sortDir);
   }, [diffRows, search, filter, typeFilter, sortKey, sortDir, productTypeLookup]);
+  const { page, goTo, totalPages, paged, total } = usePagination(filtered, 80);
+
+  function exportCsv() {
+    const headers = ['제품코드', '제품명', '분류', '이전 단가', '현재 단가', '변동액', '변동률', '상태'];
+    const body = filtered.map(r => [
+      r.productCode || '',
+      r.productName || '',
+      productTypeLookup.get(r.productCode)?.productType || '',
+      r.basePrice ?? '',
+      r.latestPrice ?? '',
+      r.changeAmount ?? '',
+      r.changeRate == null ? '' : (r.changeRate * 100).toFixed(1),
+      r.changeStatus || '',
+    ]);
+    downloadCsv([headers, ...body], '제때_가격비교.csv');
+  }
 
   function toggleSort(key) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -69,6 +88,9 @@ export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onT
           <div className="card-title">가격 비교</div>
           <div className="card-sub">제품코드 우선 매칭 · 변동률 기준 정렬</div>
         </div>
+        <button className="btn sm" onClick={exportCsv} disabled={filtered.length === 0}>
+          CSV 내보내기
+        </button>
       </div>
 
       {/* 분류 필터 */}
@@ -111,7 +133,7 @@ export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onT
               </tr>
             </thead>
             <tbody>
-              {filtered.map((row, i) => (
+              {paged.map((row, i) => (
                 <Row
                   key={`${row.productCode || row.productName}-${i}`}
                   row={row}
@@ -121,6 +143,7 @@ export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onT
               ))}
             </tbody>
           </table>
+          <Pagination page={page} totalPages={totalPages} onPage={goTo} total={total} pageSize={80} />
         </div>
       )}
     </div>

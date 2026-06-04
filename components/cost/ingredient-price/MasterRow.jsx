@@ -3,13 +3,12 @@ import { useState } from 'react';
 import { Icon } from '@/components/icons';
 import { formatNumber, formatUnitPrice } from '@/lib/format';
 import { PriceHistoryModal } from '@/components/cost/ingredient-price/PriceHistoryModal';
+import { InlineEditCell } from '@/components/cost/manage/table-utils';
 
-export function MasterRow({ r, onRegClick }) {
+export function MasterRow({ r, onRegClick, selected, onToggleSelect, onInlineSave }) {
   const [showNote, setShowNote] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const note = r.meta?.note || '';
-
-  const vatLabel = r.priceWithTax != null ? `${formatNumber(r.priceWithTax)}원` : '—';
 
   const packLabel = r.baseQuantity
     ? `${formatNumber(r.baseQuantity)} ${r.baseUnitType || 'g'}`
@@ -51,44 +50,73 @@ export function MasterRow({ r, onRegClick }) {
   return (
     <>
       <tr>
+        {onToggleSelect && (
+          <td>
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={onToggleSelect}
+              disabled={r.meta?.id == null}
+              style={{ width: 15, height: 15, accentColor: 'var(--accent)' }}
+            />
+          </td>
+        )}
         <td style={{ color: 'var(--text-3)', fontSize: 11, fontFamily: 'monospace' }}>
           {r.productCode || '—'}
         </td>
-        <td>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontWeight: 600, fontSize: 13 }}>
-              {r.masterName || r.productName || '—'}
-            </span>
-            {r.isLinked ? (
-              <span
-                style={{
-                  fontSize: 10,
-                  padding: '1px 5px',
-                  borderRadius: 3,
-                  fontWeight: 700,
-                  background: 'rgba(56,189,248,.15)',
-                  color: 'var(--accent, #38bdf8)',
-                  flexShrink: 0,
-                }}
-              >
-                제때
+        <InlineEditCell
+          value={r.masterName || r.productName || ''}
+          required
+          onSave={value => onInlineSave(r, { ingredientName: value })}
+          formatter={value => (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontWeight: 600, fontSize: 13 }}>
+                {value || '—'}
               </span>
-            ) : (
-              <span
-                style={{
-                  fontSize: 10,
-                  padding: '1px 5px',
-                  borderRadius: 3,
-                  fontWeight: 700,
-                  background: 'var(--surface-3)',
-                  color: 'var(--text-3)',
-                  flexShrink: 0,
-                }}
-              >
-                수동
+              {r.isLinked ? (
+                <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 3, fontWeight: 700, background: 'rgba(56,189,248,.15)', color: 'var(--accent, #38bdf8)', flexShrink: 0 }}>
+                  제때
+                </span>
+              ) : (
+                <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 3, fontWeight: 700, background: 'var(--surface-3)', color: 'var(--text-3)', flexShrink: 0 }}>
+                  수동
+                </span>
+              )}
+            </div>
+          )}
+        />
+        <InlineEditCell
+          value={r.category || ''}
+          onSave={value => onInlineSave(r, { category: value })}
+        />
+        {r.isLinked ? (
+          <td style={{ textAlign: 'right', fontSize: 13, fontWeight: 600 }}>
+            {r.priceWithTax != null ? `${formatNumber(r.priceWithTax)}원` : '—'}
+            {r.taxType === '면세' && r.priceWithTax != null && (
+              <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--text-3)', fontWeight: 400 }}>
+                면세
               </span>
             )}
-          </div>
+          </td>
+        ) : (
+          <InlineEditCell
+            value={r.priceWithTax ?? ''}
+            type="number"
+            align="right"
+            onSave={value => onInlineSave(r, { priceOverride: value })}
+            formatter={value => (
+              <>
+                {value != null && value !== '' ? `${formatNumber(value)}원` : '—'}
+                {r.taxType === '면세' && value != null && value !== '' && (
+                  <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--text-3)', fontWeight: 400 }}>
+                    면세
+                  </span>
+                )}
+              </>
+            )}
+          />
+        )}
+        <td>
           {r.isLinked && r.productName && r.productName !== r.masterName && (
             <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 1 }}>
               제때: {r.productName}
@@ -98,14 +126,6 @@ export function MasterRow({ r, onRegClick }) {
             <div style={{ fontSize: 10, color: 'var(--text-4)', marginTop: 2 }}>
               공급: {r.supplierName}
             </div>
-          )}
-        </td>
-        <td style={{ textAlign: 'right', fontSize: 13, fontWeight: 600 }}>
-          {vatLabel}
-          {r.taxType === '면세' && r.priceWithTax != null && (
-            <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--text-3)', fontWeight: 400 }}>
-              면세
-            </span>
           )}
         </td>
         <td style={{ fontSize: 12, color: r.baseQuantity ? 'var(--text-2)' : 'var(--text-4)' }}>
@@ -167,7 +187,7 @@ export function MasterRow({ r, onRegClick }) {
       {showNote && note && (
         <tr>
           <td
-            colSpan={8}
+            colSpan={10}
             style={{
               background: 'var(--surface-2)',
               fontSize: 12,

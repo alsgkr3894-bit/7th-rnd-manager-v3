@@ -12,6 +12,7 @@ import { deleteSample } from '@/lib/sample';
 export function useSampleBatchMode(onDeletedOptimistic, onRefresh) {
   const [batchMode, setBatchMode] = useState(false);
   const [selected,  setSelected]  = useState(new Set());
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   function toggleSelect(id) {
     setSelected(prev => {
@@ -24,11 +25,19 @@ export function useSampleBatchMode(onDeletedOptimistic, onRefresh) {
   function exitBatchMode() {
     setBatchMode(false);
     setSelected(new Set());
+    setConfirmOpen(false);
   }
 
-  async function handleBatchDelete() {
+  function handleBatchDelete() {
     if (selected.size === 0) return;
-    if (!confirm(`선택한 ${selected.size}개 샘플을 삭제할까요?`)) return;
+    setConfirmOpen(true);
+  }
+
+  async function confirmBatchDelete() {
+    if (selected.size === 0) {
+      setConfirmOpen(false);
+      return;
+    }
     const ids = [...selected];
     onDeletedOptimistic(ids);
     exitBatchMode();
@@ -41,5 +50,15 @@ export function useSampleBatchMode(onDeletedOptimistic, onRefresh) {
     }
   }
 
-  return { batchMode, setBatchMode, selected, toggleSelect, exitBatchMode, handleBatchDelete };
+  return {
+    batchMode,
+    setBatchMode,
+    selected,
+    toggleSelect,
+    exitBatchMode,
+    handleBatchDelete,
+    confirmOpen,
+    setConfirmOpen,
+    confirmBatchDelete,
+  };
 }

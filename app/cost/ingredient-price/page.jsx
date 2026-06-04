@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
-import { usePagination } from '@/hooks/usePagination';
+import { SortButton } from '@/components/ui/SortButton';
 import { showToast } from '@/components/Toast';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { initDB } from '@/lib/db';
@@ -14,6 +14,7 @@ import {
   getAllIngredients,
   getIngredientMetaMap,
   upsertIngredientMeta,
+  bulkDeleteIngredients,
   bulkImportIngredients,
   resetAllIngredients,
   sortMainCategories,
@@ -31,6 +32,12 @@ import { MasterRow } from '@/components/cost/ingredient-price/MasterRow';
 import { calcUnitPrice } from '@/lib/cost/calc-unit-price';
 import { buildIngredientUsageMap, sumCompositePrice } from '@/lib/cost/ingredient-price-helpers';
 import { IngredientPriceSkeleton } from '@/components/ui/Skeleton';
+import {
+  SelectionToolbar,
+  sortButtonOptions,
+  SortableHeader,
+  useCostManageTable,
+} from '@/components/cost/manage/table-utils';
 
 const RegisterModal = dynamic(
   () => import('@/components/cost/ingredient-price/RegisterModal').then(m => m.RegisterModal),
@@ -272,7 +279,45 @@ export default function Page() {
     return list;
   }, [rows, taxFilter, deltaFilter, search]);
 
-  const { page: ipPage, goTo: ipGoTo, totalPages: ipTotalPages, paged: ipPaged, total: ipTotal } = usePagination(filtered, 60);
+  const priceSortOptions = useMemo(() => [
+    { id: 'name', label: '제품명', key: r => r.masterName || r.productName },
+    { id: 'code', label: '제품코드', key: r => r.productCode },
+    { id: 'category', label: '분류', key: r => r.category },
+    { id: 'price', label: '단가', key: r => r.priceWithTax ?? -1 },
+    { id: 'unit', label: '개당 단가', key: r => r.unitPrice ?? -1 },
+    { id: 'delta', label: '변동', key: r => r.priceDelta ?? 0 },
+  ], []);
+
+  const priceTable = useCostManageTable(filtered, {
+    sortOptions: priceSortOptions,
+    initialSort: { id: 'name', dir: 'asc' },
+    getRowId: row => row.meta?.id,
+  });
+
+  async function handleInlineSave(row, patch) {
+    try {
+      if (!row.meta) throw new Error('마스터 항목을 찾을 수 없습니다');
+      await upsertIngredientMeta({ ...row.meta, productCode: row.productCode || row.meta.productCode, ...patch });
+      showToast('저장 완료', 'ok');
+      await load();
+    } catch (err) {
+      showToast('저장 실패: ' + err.message, 'err');
+      throw err;
+    }
+  }
+
+  async function handleSelectedDelete() {
+    const ids = Array.from(priceTable.selected);
+    if (ids.length === 0) return;
+    try {
+      await bulkDeleteIngredients(ids);
+      showToast(`${ids.length}개 삭제 완료`, 'ok');
+      priceTable.clearSelection();
+      await load();
+    } catch (err) {
+      showToast('삭제 실패: ' + err.message, 'err');
+    }
+  }
 
   if (dbError)
     return (
@@ -535,6 +580,19 @@ export default function Page() {
                 placeholder="제품코드·제품명·마스터명 검색"
               />
             </div>
+            <SortButton
+              value={priceTable.sort?.id}
+              options={sortButtonOptions(priceSortOptions, priceTable.sort)}
+              onChange={priceTable.changeSort}
+            />
+            <SelectionToolbar
+              selectedCount={priceTable.selected.size}
+              confirming={priceTable.confirmingDelete}
+              noun="식자재"
+              onAskDelete={() => priceTable.setConfirmingDelete(true)}
+              onConfirmDelete={handleSelectedDelete}
+              onCancel={priceTable.clearSelection}
+            />
           </div>
 
           {/* 테이블 */}
@@ -555,22 +613,35 @@ export default function Page() {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th style={{ width: 90 }}>제품코드</th>
-                      <th>제품명</th>
-                      <th style={{ width: 120, textAlign: 'right' }}>부가세포함가</th>
+                      <th style={{ width: 34 }}>
+                        <input
+                          type="checkbox"
+                          checked={priceTable.allPageSelected}
+                          onChange={priceTable.togglePage}
+                          style={{ width: 15, height: 15, accentColor: 'var(--accent)' }}
+                        />
+                      </th>
+                      <SortableHeader label="제품코드" id="code" sort={priceTable.sort} onSort={priceTable.changeSort} style={{ width: 90 }} />
+                      <SortableHeader label="제품명" id="name" sort={priceTable.sort} onSort={priceTable.changeSort} />
+                      <SortableHeader label="분류" id="category" sort={priceTable.sort} onSort={priceTable.changeSort} style={{ width: 96 }} />
+                      <SortableHeader label="부가세포함가" id="price" sort={priceTable.sort} onSort={priceTable.changeSort} style={{ width: 120, textAlign: 'right' }} />
+                      <th style={{ width: 92 }}>출처</th>
                       <th style={{ width: 100 }}>포장단위</th>
-                      <th style={{ width: 120, textAlign: 'right' }}>개당 단가</th>
-                      <th style={{ width: 110, textAlign: 'right' }}>단가변동</th>
+                      <SortableHeader label="개당 단가" id="unit" sort={priceTable.sort} onSort={priceTable.changeSort} style={{ width: 120, textAlign: 'right' }} />
+                      <SortableHeader label="단가변동" id="delta" sort={priceTable.sort} onSort={priceTable.changeSort} style={{ width: 110, textAlign: 'right' }} />
                       <th style={{ width: 30 }}></th>
                       <th style={{ width: 60 }}></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {ipPaged.map((r, i) => (
+                    {priceTable.paged.map((r, i) => (
                       <MasterRow
                         key={r.meta?.id ?? r.productCode ?? `row-${i}`}
                         r={r}
                         onRegClick={() => setRegTarget(r)}
+                        selected={r.meta?.id != null && priceTable.selected.has(r.meta.id)}
+                        onToggleSelect={() => r.meta?.id != null && priceTable.toggle(r.meta.id)}
+                        onInlineSave={handleInlineSave}
                       />
                     ))}
                   </tbody>
@@ -585,8 +656,8 @@ export default function Page() {
                 borderTop: '1px solid var(--divider)',
               }}
             >
-              <Pagination page={ipPage} totalPages={ipTotalPages} onPage={ipGoTo} total={ipTotal} pageSize={60} />
-              {ipTotalPages <= 1 && (
+              <Pagination page={priceTable.page} totalPages={priceTable.totalPages} onPage={priceTable.goTo} total={priceTable.total} pageSize={priceTable.pageSize} />
+              {priceTable.totalPages <= 1 && (
                 <div style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text-3)' }}>
                   {filtered.length}개 표시 / 전체 {rows.length}개
                 </div>

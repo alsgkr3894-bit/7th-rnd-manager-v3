@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useId, useState, useRef } from 'react';
 
 /**
  * ComboBox — 자유 입력 + 입력 기반 자동완성 드롭다운.
@@ -19,6 +19,8 @@ export function ComboBox({ value, onChange, options = [], placeholder, style, in
   const [open, setOpen]     = useState(false);
   const [active, setActive] = useState(-1);
   const blurTimer = useRef(null);
+  const inputId = useId();
+  const listboxId = `${inputId}-listbox`;
 
   const q = (value || '').trim().toLowerCase();
   const filtered = (q ? options.filter(o => o.toLowerCase().includes(q)) : options).slice(0, maxItems);
@@ -43,6 +45,11 @@ export function ComboBox({ value, onChange, options = [], placeholder, style, in
         value={value || ''}
         placeholder={placeholder}
         autoComplete="off"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={open && filtered.length > 0}
+        aria-controls={listboxId}
+        aria-activedescendant={active >= 0 && filtered[active] ? `${listboxId}-option-${active}` : undefined}
         onChange={e => { onChange(e.target.value); setOpen(true); setActive(-1); }}
         onFocus={() => setOpen(true)}
         onBlur={() => { blurTimer.current = setTimeout(() => setOpen(false), 120); }}
@@ -52,6 +59,8 @@ export function ComboBox({ value, onChange, options = [], placeholder, style, in
       />
       {open && filtered.length > 0 && (
         <div
+          id={listboxId}
+          role="listbox"
           onMouseDown={e => { clearTimeout(blurTimer.current); e.preventDefault(); }}
           style={{
             position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 40, marginTop: 2,
@@ -62,7 +71,10 @@ export function ComboBox({ value, onChange, options = [], placeholder, style, in
           {filtered.map((opt, i) => (
             <button
               key={opt}
+              id={`${listboxId}-option-${i}`}
               type="button"
+              role="option"
+              aria-selected={i === active}
               onClick={() => pick(opt)}
               onMouseEnter={() => setActive(i)}
               style={{

@@ -2,10 +2,12 @@
 import { useState, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { NUTRITION_FIELDS, calcAllResults } from '@/lib/nutrition/values/store';
+import { downloadCsv } from '@/lib/download';
 
 export function TabResults({ menus, rawMap, edgeMap, compositions, toppings }) {
   const [filterMenu,    setFilterMenu]    = useState('전체');
   const [filterDerived, setFilterDerived] = useState('전체');
+  const [missingOnly,   setMissingOnly]   = useState(false);
 
   const toppingMap = useMemo(() => {
     const m = {};
@@ -28,10 +30,24 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, toppings }) {
     if (filterMenu    !== '전체') r = r.filter(x => x.menuName === filterMenu);
     if (filterDerived === '기본')  r = r.filter(x => !x.isDerived);
     if (filterDerived === '파생')  r = r.filter(x => x.isDerived);
+    if (missingOnly) r = r.filter(isMissingResult);
     return r;
-  }, [results, filterMenu, filterDerived]);
+  }, [results, filterMenu, filterDerived, missingOnly]);
 
   const hasData = filtered.some(r => r.kcal);
+  const hasRows = filtered.length > 0;
+
+  function exportCsv() {
+    const headers = ['메뉴명', '베이스 메뉴', '크러스트 타입', '구분', ...NUTRITION_FIELDS.map(f => `${f.label}(${f.unit})`)];
+    const rows = filtered.map(r => [
+      r.menuName || '',
+      r.baseMenuName || '',
+      r.crustType || '',
+      r.isDerived ? '파생' : '기본',
+      ...NUTRITION_FIELDS.map(f => isMissingResult(r) ? '' : (r[f.key] ?? '')),
+    ]);
+    downloadCsv([headers, ...rows], missingOnly ? '영양성분_누락메뉴.csv' : '영양성분_계산결과.csv');
+  }
 
   return (
     <div style={{ marginTop: 20 }}>
@@ -42,13 +58,21 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, toppings }) {
         {['전체', '기본', '파생'].map(v => (
           <button key={v} className={'chip ' + (filterDerived === v ? 'active' : '')} onClick={() => setFilterDerived(v)}>{v}</button>
         ))}
+        <button className={'chip ' + (missingOnly ? 'active' : '')} onClick={() => setMissingOnly(v => !v)}>
+          입력 누락만
+        </button>
+        <button className="btn sm" onClick={exportCsv} disabled={filtered.length === 0}>
+          CSV 내보내기
+        </button>
       </div>
 
-      {!hasData ? (
+      {!hasRows || (!hasData && !missingOnly) ? (
         <div className="card" style={{ display: 'grid', placeItems: 'center', minHeight: 180 }}>
           <div style={{ textAlign: 'center', color: 'var(--text-4)' }}>
             <Icon.beaker style={{ width: 28, height: 28 }} />
-            <div style={{ marginTop: 8, fontSize: 13 }}>베이스 영양성분과 엣지 설정을 완료하면 계산 결과가 표시돼요</div>
+            <div style={{ marginTop: 8, fontSize: 13 }}>
+              {missingOnly ? '조건에 맞는 누락 메뉴가 없어요' : '베이스 영양성분과 엣지 설정을 완료하면 계산 결과가 표시돼요'}
+            </div>
           </div>
         </div>
       ) : (
@@ -69,7 +93,7 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, toppings }) {
               </thead>
               <tbody>
                 {filtered.map((r, i) => {
-                  const isEmpty = !r.kcal && !r.protein;
+                  const isEmpty = isMissingResult(r);
                   return (
                     <tr key={i} style={{ opacity: isEmpty ? 0.35 : 1 }}>
                       <td>
@@ -102,4 +126,8 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, toppings }) {
       </div>
     </div>
   );
+}
+
+function isMissingResult(row) {
+  return !row.kcal && !row.protein;
 }

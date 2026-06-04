@@ -3,6 +3,7 @@ import { Suspense, useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { SampleCardSkeleton } from '@/components/ui/Skeleton';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
@@ -86,7 +87,10 @@ function SampleContent() {
 
   useVisibilityRefresh(reload);
 
-  const { batchMode, setBatchMode, selected, toggleSelect, exitBatchMode, handleBatchDelete } =
+  const {
+    batchMode, setBatchMode, selected, toggleSelect, exitBatchMode, handleBatchDelete,
+    confirmOpen, setConfirmOpen, confirmBatchDelete,
+  } =
     useSampleBatchMode(ids => setSamples(prev => prev.filter(s => !ids.includes(s.id))), reload);
 
   const {
@@ -755,6 +759,16 @@ function SampleContent() {
       {showCompare && compareItems.length >= 2 && (
         <CompareModal samples={compareItems} onClose={() => setShowCompare(false)} />
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title={`샘플 ${selected.size}개를 삭제할까요?`}
+        message="삭제한 샘플은 목록에서 제거됩니다."
+        confirmLabel="삭제"
+        danger
+        onConfirm={confirmBatchDelete}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </main>
   );
 }

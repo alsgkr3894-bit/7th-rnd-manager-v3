@@ -1,7 +1,8 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { SearchBox } from '@/components/ui/SearchBox';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
@@ -21,6 +22,7 @@ export default function Page() {
   const [seeding, setSeeding] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [search, setSearch] = useState('');
 
   const load = useCallback(async () => {
     await initDB();
@@ -81,6 +83,19 @@ export default function Page() {
 
   const totalSum = edges.reduce((acc, e) => acc + edgeTotalCost(e), 0);
   const filled = edges.filter(e => e.components?.length > 0).length;
+  const filteredEdges = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return edges;
+    return edges.filter(e =>
+      (e.edgeType || '').toLowerCase().includes(q) ||
+      (e.edgeCode || '').toLowerCase().includes(q) ||
+      (e.size || '').toLowerCase().includes(q) ||
+      (e.components || []).some(c =>
+        (c.ingredientName || '').toLowerCase().includes(q) ||
+        (c.productCode || '').toLowerCase().includes(q)
+      )
+    );
+  }, [edges, search]);
 
   const sub = loading
     ? '로딩 중…'
@@ -144,18 +159,35 @@ export default function Page() {
       )}
 
       {edges.length > 0 && (
-        <div style={{display:'flex', flexDirection:'column', gap:8}}>
-          {edges.map(e => (
-            <EdgeCard
-              key={e.id}
-              edge={e}
-              onEdit={() => setTarget(e)}
-              onDelete={deletePending === e.id
-                ? null
-                : () => setDeletePending(e.id)}
+        <>
+          <div style={{ marginBottom: 12, maxWidth: 360 }}>
+            <SearchBox
+              value={search}
+              onChange={setSearch}
+              placeholder="엣지·도우·구성품 검색"
             />
-          ))}
-        </div>
+          </div>
+          {filteredEdges.length === 0 ? (
+            <div className="card" style={{ minHeight: 120, display: 'grid', placeItems: 'center' }}>
+              <div style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+                검색 결과가 없습니다
+              </div>
+            </div>
+          ) : (
+            <div style={{display:'flex', flexDirection:'column', gap:8}}>
+              {filteredEdges.map(e => (
+                <EdgeCard
+                  key={e.id}
+                  edge={e}
+                  onEdit={() => setTarget(e)}
+                  onDelete={deletePending === e.id
+                    ? null
+                    : () => setDeletePending(e.id)}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {deletePending && (

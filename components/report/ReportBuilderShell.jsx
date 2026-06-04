@@ -127,13 +127,24 @@ export default function ReportBuilderShell({
   reportMeta = {}, dataError, isLoading = false,
   docFormat = { pdf: true, excel: false }, onExcelExport,
 }) {
-  const handleGenerate = () => {
+  const [generating, setGenerating] = useState(false);
+
+  const handleGenerate = async () => {
     if (!docFormat.pdf && !docFormat.excel) {
       showToast('문서 형식을 하나 이상 선택해 주세요', 'error');
       return;
     }
-    if (docFormat.pdf) triggerPrint(reportMeta);
-    if (docFormat.excel && onExcelExport) onExcelExport();
+    setGenerating(true);
+    try {
+      if (docFormat.pdf) triggerPrint(reportMeta);
+      if (docFormat.excel && onExcelExport) await Promise.resolve(onExcelExport());
+      showToast('보고서 생성 요청 완료', 'ok', 1800);
+    } catch (err) {
+      const message = err?.message || '알 수 없는 오류';
+      showToast(`보고서 생성 실패: ${message}`, 'error');
+    } finally {
+      setTimeout(() => setGenerating(false), 700);
+    }
   };
 
   return (
@@ -143,8 +154,9 @@ export default function ReportBuilderShell({
         title={title}
         sub={sub}
         actions={<>
-          <button className="btn primary" onClick={handleGenerate}>
-            <Icon.download style={{width:14, height:14}}/>보고서 생성
+          <button className="btn primary" onClick={handleGenerate} disabled={generating || isLoading}>
+            <Icon.download style={{width:14, height:14}}/>
+            {generating ? '생성 중…' : '보고서 생성'}
           </button>
         </>}
       />
@@ -190,6 +202,12 @@ export default function ReportBuilderShell({
             <div className="report-export-note">
               <Icon.alert style={{width:14, height:14, color:"var(--accent)"}}/>
               <span>{exportNote}</span>
+            </div>
+          )}
+          {generating && (
+            <div className="report-export-note" aria-live="polite">
+              <div className="report-loading-spinner" style={{width:14, height:14}}/>
+              <span>보고서 파일을 준비하고 있습니다.</span>
             </div>
           )}
         </div>

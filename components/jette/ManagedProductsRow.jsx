@@ -1,5 +1,6 @@
 'use client';
 import { Toggle } from '@/components/ui/Toggle';
+import { InlineConfirmButtons } from '@/components/ui/InlineConfirmButtons';
 import { TYPE_OPTIONS, inputStyle } from './managed-products-constants';
 
 /**
@@ -9,9 +10,21 @@ import { TYPE_OPTIONS, inputStyle } from './managed-products-constants';
  * @param {Function} onToggleEnable    - (p) => void
  * @param {Function} onChangeType      - (p, type) => void
  * @param {Function} onToggleManaged   - (p) => void
- * @param {Function} onDelete          - (id) => void
+ * @param {boolean}  pendingDelete
+ * @param {Function} onAskDelete
+ * @param {Function} onCancelDelete
+ * @param {Function} onConfirmDelete
  */
-export function ManagedProductsRow({ product, onToggleEnable, onChangeType, onToggleManaged, onDelete }) {
+export function ManagedProductsRow({
+  product,
+  onToggleEnable,
+  onChangeType,
+  onToggleManaged,
+  pendingDelete,
+  onAskDelete,
+  onCancelDelete,
+  onConfirmDelete,
+}) {
   return (
     <tr style={{opacity: product.enable === false ? 0.5 : 1}}>
       <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{product.productCode || '-'}</td>
@@ -37,7 +50,15 @@ export function ManagedProductsRow({ product, onToggleEnable, onChangeType, onTo
         />
       </td>
       <td style={{textAlign:'right'}}>
-        <button className="btn sm" style={{color:'var(--negative)'}} onClick={() => onDelete(product.id)}>삭제</button>
+        {pendingDelete ? (
+          <InlineConfirmButtons
+            message="제품을 삭제할까요?"
+            onCancel={onCancelDelete}
+            onConfirm={onConfirmDelete}
+          />
+        ) : (
+          <button className="btn sm" style={{color:'var(--negative)'}} onClick={onAskDelete}>삭제</button>
+        )}
       </td>
     </tr>
   );
