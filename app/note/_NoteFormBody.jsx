@@ -4,7 +4,8 @@ import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getAllIngredients } from '@/lib/ingredient';
-import { CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS, getAllNotes } from '@/lib/note';
+import { CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS, NOTE_BRANDS, getAllNotes } from '@/lib/note';
+import { getActiveBrandId } from '@/lib/active-brand';
 import { TagInput } from '@/components/ui/TagInput';
 import { SegGroup, Field } from '@/components/note/FormFields';
 import { generateNoteReportText } from '@/lib/note/report';
@@ -15,6 +16,7 @@ import { KEYS } from '@/lib/note/keys';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 
 export const INIT = {
+  brand: (typeof window !== 'undefined' && getActiveBrandId()) || 'main',
   title: '',
   menuName: '',
   category:
@@ -208,6 +210,17 @@ export function NoteFormBody({ form, setForm }) {
               />
             </Field>
           </div>
+
+          <Field label="브랜드" hint="이 노트가 속한 브랜드">
+            <SegGroup
+              options={NOTE_BRANDS.map(b => b.name)}
+              value={(NOTE_BRANDS.find(b => b.id === form.brand) || NOTE_BRANDS[0]).name}
+              onChange={name => {
+                const found = NOTE_BRANDS.find(b => b.name === name);
+                updateField('brand', found ? found.id : 'main');
+              }}
+            />
+          </Field>
 
           <Field label="개발 구분">
             <SegGroup

@@ -37,6 +37,7 @@ const ROUTES = [
   ['원산지',        '/nutrition/origin'],
   ['알레르기',       '/nutrition/allergen'],
   ['노트 목록',      '/note'],
+  ['노트 작성',      '/note/write'],
   ['칸반 보드',      '/note/board'],
   ['일정 달력',      '/note/calendar'],
   ['샘플 기록',      '/note/sample'],

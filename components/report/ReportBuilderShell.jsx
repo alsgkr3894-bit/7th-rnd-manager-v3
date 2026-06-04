@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { KIND_CHIP } from '@/lib/report/constants';
 import { pad } from '@/lib/format';
+import { getActiveBrand } from '@/lib/active-brand';
 
 export { KIND_CHIP };
 
@@ -70,7 +71,7 @@ function makeReportTitle(reportMeta) {
   const periodPart = rawPeriod.replace(/(\d+)년 (\d+)월/, (_, y, m) => `${y}년${m.padStart(2, '0')}월`);
   const rawName = reportMeta?.name || '보고서';
   const namePart = rawName.replace(rawPeriod, '').trim().replace(/\s+/g, '');
-  return `7번가피자_${periodPart} ${namePart}_${dateStr}`;
+  return `${getActiveBrand().name}_${periodPart} ${namePart}_${dateStr}`;
 }
 
 function triggerPrint(reportMeta) {

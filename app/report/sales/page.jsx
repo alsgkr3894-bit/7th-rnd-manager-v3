@@ -13,6 +13,7 @@ import { getUserExcluded, getUserRules } from '@/lib/sales';
 import { useDraftRestore } from '@/hooks/useDraftRestore';
 import { getProfile } from '@/lib/profile';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
+import { getActiveBrand } from '@/lib/active-brand';
 
 const DRAFT_KEY = 'report_draft_sales';
 
@@ -332,7 +333,7 @@ export default function Page() {
       /(\d+)년 (\d+)월/,
       (_, y, m) => `${y}년${m.padStart(2, '0')}월`
     );
-    const fileName = `7번가피자_${periodPart} 판매량보고서_${dateStr}.xlsx`;
+    const fileName = `${getActiveBrand().name}_${periodPart} 판매량보고서_${dateStr}.xlsx`;
 
     const wb = XLSX.utils.book_new();
 

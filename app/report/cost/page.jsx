@@ -15,6 +15,7 @@ import { getSideRecipeMap } from '@/lib/cost/side-detail';
 import { getSetRecipeMap } from '@/lib/cost/set-detail';
 import { getAllEdges, edgeTotalCost } from '@/lib/cost/edge-dough';
 import { getPriceFiles } from '@/lib/price';
+import { getActiveBrand } from '@/lib/active-brand';
 import { useDraftRestore } from '@/hooks/useDraftRestore';
 import { getProfile } from '@/lib/profile';
 
@@ -122,7 +123,7 @@ async function exportCostXlsx(periodLabel, activeCats) {
   sheet2['!cols'] = [{ wch: 14 }, { wch: 32 }, { wch: 14 }, { wch: 14 }, { wch: 12 }];
   XLSX.utils.book_append_sheet(wb, sheet2, '메뉴 상세');
 
-  XLSX.writeFile(wb, `7번가피자_${periodPart}_원가계산보고서_${dateStr}.xlsx`);
+  XLSX.writeFile(wb, `${getActiveBrand().name}_${periodPart}_원가계산보고서_${dateStr}.xlsx`);
 }
 
 // ── 메인 컴포넌트 ──────────────────────────────────────────────

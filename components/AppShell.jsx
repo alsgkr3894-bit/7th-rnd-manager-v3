@@ -15,6 +15,7 @@ import { hydratePlatformsFromDB } from '@/lib/cost/margin/platforms';
 import { initClickOrigin } from '@/lib/ui/click-origin';
 import { OVERLAY_COLOR } from '@/lib/ui/styles';
 import { COMPANIES } from '@/lib/companies';
+import { getActiveBrandId, setActiveBrandId } from '@/lib/active-brand';
 import { MOBILE_TAB_DEFS } from '@/lib/menu';
 import ProgressBar from './ProgressBar';
 import OfflineIndicator from './OfflineIndicator';
@@ -84,7 +85,19 @@ export default function AppShell({ children }) {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const gPressedRef = useRef(false);
   const gTimerRef = useRef(null);
+  // 활성 브랜드 복원 (localStorage). 전환 시 저장 후 새로고침으로 모든 모듈이 해당 브랜드 DB로 재초기화.
   const [activeCompany, setActiveCompany] = useState(COMPANIES[0]);
+  useEffect(() => {
+    const id = getActiveBrandId();
+    const found = COMPANIES.find(c => c.id === id);
+    if (found && found.id !== activeCompany.id) setActiveCompany(found);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const handleCompanyChange = (c) => {
+    if (!c || c.id === getActiveBrandId()) return;
+    setActiveBrandId(c.id);
+    window.location.reload();
+  };
   const pathname = usePathname();
   const router = useRouter();
   const { unmatchedCount, reportingCount } = usePageStats(pathname);
@@ -194,7 +207,7 @@ export default function AppShell({ children }) {
           onOpenPalette={() => setPaletteOpen(true)}
           onToggleSidebar={() => setMobileNav(v => !v)}
           activeCompany={activeCompany}
-          onCompanyChange={setActiveCompany}
+          onCompanyChange={handleCompanyChange}
           unmatchedCount={unmatchedCount}
           reportingCount={reportingCount}
         />

@@ -6,12 +6,13 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { NoteCardSkeleton } from '@/components/ui/Skeleton';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { initDB, restoreRecord } from '@/lib/db';
+import { initDB } from '@/lib/db';
+import { sharedRestoreRecord as restoreRecord } from '@/lib/db/shared';
 import {
   CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS, STATUS_BORDER,
   getAllNotes, addNote, deleteNote, updateNote,
 } from '@/lib/note';
-import { NOTE_STATUS } from '@/lib/note/constants';
+import { NOTE_STATUS, NOTE_BRANDS } from '@/lib/note/constants';
 import { getNoteDetailStats } from '@/lib/stats/note-stats';
 import { tryLS, setLS } from '@/lib/note/storage';
 import { downloadCsv } from '@/lib/download';
@@ -103,6 +104,7 @@ export function NoteContent() {
   // 검색/상태필터/정렬 상태 + 파생 데이터(counts·filtered)는 useNoteFilter로 위임
   const {
     search, setSearch, statusFilter, setStatusFilter, sortBy, setSortBy,
+    brandFilter, setBrandFilter,
     counts, filtered,
   } = useNoteFilter(notes, pinnedIds, { pathname });
 
@@ -402,6 +404,24 @@ export function NoteContent() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* 브랜드 칩 필터 (브랜드 2개 이상일 때만) */}
+      {NOTE_BRANDS.length > 1 && (
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12,alignItems:'center'}}>
+          <span style={{fontSize:12,color:'var(--text-3)',fontWeight:600,marginRight:2}}>브랜드</span>
+          <button className={'chip' + (brandFilter === 'all' ? ' active' : '')}
+            onClick={() => { setBrandFilter('all'); setVisibleCount(PAGE_SIZE); }}>
+            전체
+          </button>
+          {NOTE_BRANDS.map(b => (
+            <button key={b.id}
+              className={'chip' + (brandFilter === b.id ? ' active' : '')}
+              onClick={() => { setBrandFilter(b.id); setVisibleCount(PAGE_SIZE); }}>
+              {b.name}
+            </button>
+          ))}
         </div>
       )}
 
