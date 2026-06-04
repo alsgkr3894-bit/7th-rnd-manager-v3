@@ -54,6 +54,7 @@ export default function Page() {
   const { hasPin, setPin: savePin } = useSettingsAuth();
   const [pinInput, setPinInput] = useState('');
   const [pinConfirm, setPinConfirm] = useState('');
+  const [pinError, setPinError] = useState('');
 
   // 세션 정보
   const [lastLogin, setLastLogin] = useState(null);
@@ -105,19 +106,26 @@ export default function Page() {
 
   function handleSetPin(e) {
     e.preventDefault();
-    if (pinInput.length < 4) { showToast('PIN은 4자리 이상이어야 합니다.', 'err'); return; }
-    if (pinInput !== pinConfirm) { showToast('PIN이 일치하지 않습니다.', 'err'); return; }
+    if (pinInput.length < 4) { setPinError('PIN은 4자리 이상이어야 합니다.'); return; }
+    if (pinInput !== pinConfirm) { setPinError('PIN이 일치하지 않습니다.'); return; }
+    setPinError('');
+    const wasSet = hasPin;
     savePin(pinInput);
     setPinInput('');
     setPinConfirm('');
     showToast('PIN이 설정되었습니다.', 'ok');
+    import('@/lib/work-log')
+      .then(m => m.logWork('SECURITY', wasSet ? '설정 PIN 변경' : '설정 PIN 설정'))
+      .catch(() => {});
   }
 
   function handleClearPin() {
     savePin('');
     setPinInput('');
     setPinConfirm('');
+    setPinError('');
     showToast('PIN이 해제되었습니다.', 'ok');
+    import('@/lib/work-log').then(m => m.logWork('SECURITY', '설정 PIN 해제')).catch(() => {});
   }
 
   if (!profile) {
@@ -285,9 +293,10 @@ export default function Page() {
       <PinSection
         hasPin={hasPin}
         pinInput={pinInput}
-        setPinInput={setPinInput}
+        setPinInput={(v) => { setPinError(''); setPinInput(v); }}
         pinConfirm={pinConfirm}
-        setPinConfirm={setPinConfirm}
+        setPinConfirm={(v) => { setPinError(''); setPinConfirm(v); }}
+        pinError={pinError}
         onSetPin={handleSetPin}
         onClearPin={handleClearPin}
       />
@@ -359,13 +368,20 @@ function FormField({ label, required, children }) {
   );
 }
 
-function PinSection({ hasPin, pinInput, setPinInput, pinConfirm, setPinConfirm, onSetPin, onClearPin }) {
+function PinSection({ hasPin, pinInput, setPinInput, pinConfirm, setPinConfirm, pinError, onSetPin, onClearPin }) {
   return (
     <div className="card" style={{marginTop:16}}>
       <h2 style={{fontSize:15,fontWeight:700,marginBottom:4}}>설정 PIN 관리</h2>
-      <p style={{fontSize:13,color:'var(--text-3)',marginBottom:16}}>
+      <p style={{fontSize:13,color:'var(--text-3)',marginBottom:8}}>
         설정 페이지에 접근할 때 PIN을 요구합니다. PIN은 이 브라우저에만 저장됩니다.
       </p>
+      <div style={{
+        fontSize:12, color:'var(--text-3)', marginBottom:16,
+        padding:'8px 12px', background:'var(--surface-2)', borderRadius:8, lineHeight:1.6,
+      }}>
+        ⚠ 이 PIN은 <b>보안용이 아니라 로컬 실수 방지용</b>입니다. 브라우저 localStorage에 평문으로 저장되며,
+        같은 기기에 접근할 수 있으면 우회할 수 있습니다. 민감 정보 보호 수단으로 의존하지 마세요.
+      </div>
       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
         <span style={{fontSize:13,color:'var(--text-2)'}}>현재 PIN:</span>
         {hasPin ? (
@@ -398,6 +414,11 @@ function PinSection({ hasPin, pinInput, setPinInput, pinConfirm, setPinConfirm, 
             />
           </FormField>
         </div>
+        {pinError && (
+          <div style={{ marginTop: 10, fontSize: 12, color: 'var(--negative)', fontWeight: 600 }}>
+            {pinError}
+          </div>
+        )}
         <div style={{marginTop:12}}>
           <button className="btn primary sm" type="submit" disabled={!pinInput || !pinConfirm}>
             {hasPin ? 'PIN 변경' : 'PIN 설정'}

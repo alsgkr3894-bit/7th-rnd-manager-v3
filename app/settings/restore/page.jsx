@@ -184,8 +184,17 @@ export default function Page() {
         console.warn('[Restore] 일부 실패:', errors);
       }
 
+      // 작업 로그 — 복원 이벤트
+      import('@/lib/work-log')
+        .then(m => m.logWork('RESTORE', `복원 ${imported}개 store (${selectedKeys.length}개 모듈)${skipBackupCheck ? ' · 자동백업 없이' : ''}`))
+        .catch(() => {});
+
       // 완료 상태로 전환 — alert·자동 reload 없이 인라인 카드
-      setRestoreDone({ imported, skipped: skipped ?? 0, errors: errors ?? [], modules: selectedKeys });
+      setRestoreDone({
+        imported, skipped: skipped ?? 0, errors: errors ?? [],
+        modules: selectedKeys,
+        backupSkipped: skipBackupCheck,   // 자동백업 없이 진행했는지 결과 카드에 표시
+      });
       setParsed(null);
       setConfirming(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -252,6 +261,11 @@ export default function Page() {
                   <span key={k} style={chipStyle(true)}>{MODULE_GROUPS[k]?.label || k}</span>
                 ))}
               </div>
+              {restoreDone.backupSkipped && (
+                <div style={{ fontSize: 12, color: 'var(--warn)', fontWeight: 600, marginTop: 8 }}>
+                  ⚠ 자동 백업 없이 복원했습니다 (복원 직전 상태는 백업되지 않음).
+                </div>
+              )}
               <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 10 }}>
                 변경된 데이터를 화면에 반영하려면 새로고침이 필요합니다.
               </div>
