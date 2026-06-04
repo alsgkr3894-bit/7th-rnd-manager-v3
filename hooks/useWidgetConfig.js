@@ -89,10 +89,16 @@ export function useWidgetConfig() {
       }
     }
 
-    // ── favorites ──
+    // ── favorites — stale row id 제거 (config 정리와 연동) ──
     const savedFav = getJSONLS(KEYS.HOME_WIDGET_FAVORITES);
     if (Array.isArray(savedFav)) {
-      const keptFav = reconcileFavorites(savedFav);
+      // config에서 전체 hidden된 row는 favorites에서도 제거 (보이지 않는 row 고정 방지)
+      const keptFav = reconcileFavorites(savedFav).filter(rowId => {
+        const row = HOME_WIDGET_ROWS.find(r => r.id === rowId);
+        if (!row) return false;
+        // 모든 key가 false로 명시된 경우만 제거, 기본값(없음=true)은 유지
+        return row.keys.some(k => cleanVis[k] !== false);
+      });
       setFavorites(keptFav);
       if (keptFav.join(',') !== savedFav.join(',')) {
         setJSONLS(KEYS.HOME_WIDGET_FAVORITES, keptFav);

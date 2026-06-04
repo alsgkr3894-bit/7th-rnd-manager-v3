@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef, useCallback } from 'react';
+import { showToast } from '@/components/Toast';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
@@ -91,9 +92,13 @@ export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
     setCommitting(true);
     setError(null);
     try {
-      const count = await commitBulkPrice(preview.matched);
+      const result = await commitBulkPrice(preview.matched);
+      const { applied, skipped } = typeof result === 'object' ? result : { applied: result, skipped: 0 };
       setPhase('done');
-      onDone?.(count);
+      if (skipped > 0) {
+        showToast(`${applied}개 적용 완료 · ${skipped}개 건너뜀 (동시 삭제)`, 'warn');
+      }
+      onDone?.(applied);
     } catch (e) {
       setError(e.message || '저장 중 오류가 발생했습니다.');
     } finally {

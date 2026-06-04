@@ -41,6 +41,7 @@ export default function Page() {
   const [currentStats,    setCurrentStats]    = useState(null);     // 현재 DB store 행수
   const [restoreProgress, setRestoreProgress] = useState(null);    // { label, current, total }
   const [restoreDone,     setRestoreDone]     = useState(null);    // 완료 결과: { imported, skipped, modules }
+  const [backupFailed,    setBackupFailed]    = useState(false);   // 자동백업 실패 후 재확인 대기
   const { scopes, toggleScope, setAllScopes } = useModuleScopes();
   const fileRef = useRef(null);
 
@@ -130,13 +131,13 @@ export default function Page() {
     ? Math.floor((Date.now() - new Date(parsed.exportedAt).getTime()) / 86400000)
     : null;
 
-  async function handleRestore() {
+  async function handleRestore(skipBackupCheck = false) {
     if (!parsed || busy) return;
     setBusy(true);
     setRestoreProgress({ label: '복원 준비 중', current: 0, total: Math.max(selectedStores.length, 1) });
     try {
       // 1) 복원 직전 자동 백업
-      if (autoBackup) {
+      if (autoBackup && !skipBackupCheck) {
         try {
           setRestoreProgress({ label: '자동 백업 생성 중', current: 0, total: Math.max(selectedStores.length, 1) });
           const backup   = await exportAll();
@@ -150,7 +151,11 @@ export default function Page() {
           showToast(`자동 백업 완료 — ${fileName}`, 'ok');
         } catch (bkErr) {
           console.error('[Restore] 자동 백업 실패:', bkErr);
-          showToast('자동 백업에 실패했습니다. 계속 진행합니다.', 'warn');
+          // 자동백업 실패 → 복원 중단하고 재확인 요구
+          setBusy(false);
+          setRestoreProgress(null);
+          setBackupFailed(true);
+          return;
         }
       }
 
@@ -589,6 +594,33 @@ export default function Page() {
               </div>
             )}
 
+            {/* 자동백업 실패 재확인 박스 */}
+            {backupFailed && (
+              <div style={{
+                padding: '12px 14px', marginBottom: 12, borderRadius: 8,
+                background: 'var(--warn-soft)', border: '1px solid color-mix(in oklab, var(--warn) 30%, transparent)',
+              }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--warn)', marginBottom: 6 }}>
+                  ⚠ 자동 백업에 실패했습니다
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--text-1)', marginBottom: 10 }}>
+                  복원 실패 시 되돌릴 수 없습니다. 백업 없이 복원을 계속 진행할까요?
+                </div>
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                  <button className="btn" onClick={() => { setBackupFailed(false); setConfirming(false); }}>
+                    취소
+                  </button>
+                  <button
+                    className="btn"
+                    onClick={() => { setBackupFailed(false); handleRestore(true); }}
+                    style={{ background: 'var(--negative)', color: '#fff', border: 'none', fontWeight: 700 }}
+                  >
+                    백업 없이 복원
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* 버튼 영역 */}
             {!confirming ? (
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -609,7 +641,7 @@ export default function Page() {
                 <button
                   className="btn"
                   disabled={busy}
-                  onClick={handleRestore}
+                  onClick={() => handleRestore(false)}
                   style={{
                     background: 'var(--negative)',
                     color: '#fff',

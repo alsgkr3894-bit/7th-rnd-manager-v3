@@ -175,7 +175,11 @@ export default function Page() {
 
   function restoreDraft() {
     const draft = loadDraft(KEYS.NOTE_DRAFT(noteId));
-    if (draft) { setForm(draft); showToast('임시저장된 내용을 불러왔어요', 'ok'); }
+    if (draft) {
+      // 사진은 draft에 저장되지 않으므로(용량) 현재 편집 중인 사진 유지
+      setForm(prev => ({ ...draft, photos: draft.photos?.length ? draft.photos : prev.photos }));
+      showToast('임시저장된 내용을 불러왔어요', 'ok');
+    }
     setShowDraftBanner(false);
   }
 

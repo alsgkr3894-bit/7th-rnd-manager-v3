@@ -78,6 +78,16 @@ export function CostDetailView({
     return true;
   }), [detailRows, rateFilter, onlyNoCost]);
 
+  // 필터 결과 기준 합계 (푸터에 표시 — 필터 없으면 stats와 동일)
+  const filteredStats = useMemo(() => {
+    let withRecipe = 0, totalCost = 0;
+    for (const r of filteredRows) {
+      const cost = r.summary?.cost || 0;
+      if (r.recipe && cost > 0) { withRecipe++; totalCost += cost; }
+    }
+    return { withRecipe, totalCost };
+  }, [filteredRows]);
+
   const sortOptions = useMemo(() => [
     { id: 'name', label: '메뉴명', key: r => r.menu.menuName },
     { id: 'code', label: '메뉴코드', key: r => r.menu.menuCode },
@@ -248,8 +258,15 @@ export function CostDetailView({
               background:'var(--surface-2)', borderRadius:10,
               display:'flex', justifyContent:'space-between',
             }}>
-              <span>레시피 작성 {stats.withRecipe}/{menus.length}건</span>
-              <span>{footerLabel} {formatNumber(stats.totalCost)}원</span>
+              <span>
+                레시피 작성 {filteredStats.withRecipe}/{filteredRows.length}건
+                {filteredRows.length < menus.length && (
+                  <span style={{color:'var(--text-4)', marginLeft:4}}>
+                    (필터 적용 중)
+                  </span>
+                )}
+              </span>
+              <span>{footerLabel} {formatNumber(filteredStats.totalCost)}원</span>
             </div>
           )}
         </>
