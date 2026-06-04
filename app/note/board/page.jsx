@@ -4,8 +4,10 @@ import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { SearchBox } from '@/components/ui/SearchBox';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
+import { downloadCsv } from '@/lib/download';
 import { STATUSES, STATUS_COLORS, STATUS_BORDER, getAllNotes, updateNote } from '@/lib/note';
 import { formatShortDate } from '@/lib/note/utils';
 
@@ -17,6 +19,8 @@ export default function Page() {
   const [dragOverStatus,  setDragOverStatus]  = useState(null);
   const [dropTarget,      setDropTarget]      = useState(null); // { status, beforeIdx }
   const [bouncingIds,     setBouncingIds]     = useState(new Set());
+  const [search,          setSearch]          = useState('');
+  const searchActive = search.trim().length > 0;
 
   const load = useCallback(async () => {
     await initDB();
@@ -60,6 +64,11 @@ export default function Page() {
   async function handleDrop(e, status) {
     e.preventDefault();
     setDragOverStatus(null);
+    if (searchActive) {
+      setDragId(null);
+      setDropTarget(null);
+      return;
+    }
     const noteId = e.dataTransfer.getData('noteId');
     if (!noteId) { setDropTarget(null); return; }
     const note = notes.find(n => String(n.id) === String(noteId));
@@ -98,11 +107,38 @@ export default function Page() {
     setDragId(null);
   }
 
+  // ── CSV 내보내기 ──────────────────────────────────────────
+  function exportBoardCsv() {
+    const target = searchActive ? filteredNotes : notes;
+    const headers = ['상태', '제목', '메뉴명', '테스트일', '결과 요약', '태그'];
+    const rows = target.map(n => [
+      n.status || '',
+      n.title || '',
+      n.menuName || '',
+      n.testDate || '',
+      n.resultSummary || '',
+      n.tags || '',
+    ]);
+    downloadCsv([headers, ...rows], `칸반보드${searchActive ? '_필터' : ''}.csv`);
+  }
+
+  const filteredNotes = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return notes;
+    return notes.filter(n =>
+      (n.title || '').toLowerCase().includes(q) ||
+      (n.menuName || '').toLowerCase().includes(q) ||
+      (n.testContent || '').toLowerCase().includes(q) ||
+      (n.resultSummary || '').toLowerCase().includes(q) ||
+      (n.tags || '').toLowerCase().includes(q)
+    );
+  }, [notes, search]);
+
   // boardOrder 오름차순 정렬 — 없으면(구 데이터) createdAt 역순 유지
   const groupedNotes = useMemo(
     () => STATUSES.map(st => ({
       status: st,
-      notes: notes
+      notes: filteredNotes
         .filter(n => n.status === st)
         .sort((a, b) =>
           a.boardOrder != null && b.boardOrder != null
@@ -110,7 +146,7 @@ export default function Page() {
             : (a.boardOrder != null ? -1 : b.boardOrder != null ? 1 : 0)
         ),
     })),
-    [notes]
+    [filteredNotes]
   );
 
 
@@ -119,18 +155,38 @@ export default function Page() {
       <PageHeader
         breadcrumb={['메뉴개발노트', '칸반 보드']}
         title="칸반 보드"
-        sub={`전체 ${notes.length}개`}
+        sub={search ? `검색 ${filteredNotes.length}개 / 전체 ${notes.length}개` : `전체 ${notes.length}개`}
         actions={
           <div style={{display:'flex',gap:8}}>
-            <button className="btn" onClick={() => router.push('/note')}>목록 뷰</button>
-            <button className="btn primary" onClick={() => router.push('/note/write')}>
+            <button className="btn no-print" onClick={() => router.push('/note')}>목록 뷰</button>
+            <button
+              className="btn no-print"
+              onClick={exportBoardCsv}
+              disabled={notes.length === 0}
+              title="현재 보드 CSV 내보내기"
+            >
+              <Icon.download style={{width:14,height:14}}/> CSV
+            </button>
+            <button className="btn no-print" onClick={() => window.print()} title="인쇄">
+              인쇄
+            </button>
+            <button className="btn primary no-print" onClick={() => router.push('/note/write')}>
               <Icon.plus style={{width:14,height:14}}/> 노트 작성
             </button>
           </div>
         }
       />
 
+      <div style={{ marginTop: 16, maxWidth: 420 }} className="no-print">
+        <SearchBox
+          value={search}
+          onChange={setSearch}
+          placeholder="제목·메뉴명·내용·태그 검색"
+        />
+      </div>
+
       {/* 칸반 컬럼 컨테이너 */}
+      {filteredNotes.length > 0 && (
       <div style={{
         display:'grid',
         gridTemplateColumns:`repeat(${STATUSES.length}, minmax(200px, 1fr))`,
@@ -148,7 +204,11 @@ export default function Page() {
               key={status}
               style={{minWidth:180}}
               className={isOver ? 'kanban-col-over' : undefined}
-              onDragOver={e => { e.preventDefault(); setDragOverStatus(status); }}
+              onDragOver={e => {
+                if (searchActive) return;
+                e.preventDefault();
+                setDragOverStatus(status);
+              }}
               onDragLeave={e => {
                 if (!e.currentTarget.contains(e.relatedTarget)) {
                   setDragOverStatus(null);
@@ -190,6 +250,7 @@ export default function Page() {
                   <div
                     key={note.id}
                     onDragOver={e => {
+                      if (searchActive) return;
                       e.preventDefault();
                       e.stopPropagation();
                       const rect = e.currentTarget.getBoundingClientRect();
@@ -210,7 +271,9 @@ export default function Page() {
                       onEdit={router.push}
                       isDragging={dragId === note.id}
                       bouncing={bouncingIds.has(note.id)}
+                      draggable={!searchActive}
                       onDragStart={e => {
+                        if (searchActive) return;
                         e.dataTransfer.setData('noteId', note.id);
                         setDragId(note.id);
                       }}
@@ -230,6 +293,7 @@ export default function Page() {
           );
         })}
       </div>
+      )}
 
       {!loading && notes.length === 0 && (
         <div className="card" style={{textAlign:'center',padding:'40px 24px',color:'var(--text-3)',marginTop:8}}>
@@ -240,11 +304,36 @@ export default function Page() {
           </button>
         </div>
       )}
+      {!loading && notes.length > 0 && filteredNotes.length === 0 && (
+        <div className="card" style={{textAlign:'center',padding:'32px 24px',color:'var(--text-3)',marginTop:8}}>
+          <Icon.search style={{width:28,height:28,marginBottom:10,opacity:.35}}/>
+          <div style={{fontWeight:600,marginBottom:4}}>검색 결과가 없어요</div>
+          <div style={{fontSize:12}}>다른 키워드로 검색해보세요.</div>
+        </div>
+      )}
     </main>
   );
 }
 
-const KanbanCard = React.memo(function KanbanCard({ note, colIdx, maxIdx, onMove, onStatusChange, onEdit, isDragging, bouncing, onDragStart, onDragEnd }) {
+function buildNoteCopyText(note) {
+  const lines = [`[${note.status}] ${note.title || '제목 없음'}`];
+  if (note.menuName) lines.push(`메뉴: ${note.menuName}`);
+  if (note.testDate) lines.push(`테스트일: ${note.testDate}`);
+  if (note.resultSummary) lines.push(`결과: ${note.resultSummary}`);
+  if (note.nextAction)    lines.push(`다음 액션: ${note.nextAction}`);
+  return lines.join('\n');
+}
+
+async function copyNoteText(note) {
+  try {
+    await navigator.clipboard.writeText(buildNoteCopyText(note));
+    showToast('보고용 텍스트를 복사했어요', 'ok');
+  } catch {
+    showToast('복사에 실패했어요', 'error');
+  }
+}
+
+const KanbanCard = React.memo(function KanbanCard({ note, colIdx, maxIdx, onMove, onStatusChange, onEdit, isDragging, bouncing, draggable = true, onDragStart, onDragEnd }) {
   const sc = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
   const sb = STATUS_BORDER[note.status] || 'var(--border)';
 
@@ -264,7 +353,7 @@ const KanbanCard = React.memo(function KanbanCard({ note, colIdx, maxIdx, onMove
   return (
     <div
       className={`kanban-card${isDragging ? ' kanban-card-dragging' : ''}${bouncing ? ' kanban-card-bounce' : ''}`}
-      draggable
+      draggable={draggable}
       tabIndex={0}
       role="article"
       aria-label={note.title}
@@ -276,7 +365,7 @@ const KanbanCard = React.memo(function KanbanCard({ note, colIdx, maxIdx, onMove
         border:'1px solid var(--border)', borderLeft:`3px solid ${sb}`,
         padding:'10px 12px',
         opacity: isDragging ? 0.4 : 1,
-        cursor: 'grab',
+        cursor: draggable ? 'grab' : 'pointer',
         transition: 'opacity 0.15s',
         outline: 'none',
       }}
@@ -326,6 +415,14 @@ const KanbanCard = React.memo(function KanbanCard({ note, colIdx, maxIdx, onMove
         <button
           className="btn sm"
           style={{marginLeft:'auto', padding:'2px 6px'}}
+          onClick={e => { e.stopPropagation(); copyNoteText(note); }}
+          title="보고용 복사"
+        >
+          <Icon.copy style={{width:11,height:11}}/>
+        </button>
+        <button
+          className="btn sm"
+          style={{padding:'2px 6px'}}
           onClick={e => { e.stopPropagation(); onEdit(`/note/${note.id}`); }}
           title="수정"
         >

@@ -6,6 +6,7 @@ import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { initDB } from '@/lib/db';
+import { downloadCsv } from '@/lib/download';
 import { getAllNotes } from '@/lib/note';
 import { getAllSamples, sampleNamesText } from '@/lib/sample';
 import { STATUSES, STATUS_COLORS, STATUS_BORDER } from '@/lib/note/constants';
@@ -287,6 +288,85 @@ export default function Page() {
     [selectedDay, samplesByDate]
   );
 
+  const monthEventRows = useMemo(() => {
+    const prefix = `${viewYear}-${pad(viewMonth)}`;
+    const rows = [];
+    const includeSchedules = viewMode === 'all' || viewMode === 'schedules';
+    const includeNotes = viewMode === 'all' || viewMode === 'notes';
+    const includeSamples = viewMode === 'all' || viewMode === 'samples';
+
+    if (includeSchedules) {
+      for (const [date, items] of schedulesByDate) {
+        if (!date.startsWith(prefix)) continue;
+        for (const item of items) {
+          rows.push([
+            date,
+            item.time || '',
+            '일정',
+            item.title || '',
+            item.type || '',
+            item.memo || item.description || (item._isRecurring ? '반복 일정' : ''),
+          ]);
+        }
+      }
+    }
+
+    if (includeNotes) {
+      for (const [date, items] of notesByDate) {
+        if (!date.startsWith(prefix)) continue;
+        for (const item of items) {
+          rows.push([
+            date,
+            '',
+            '노트',
+            item.menuName || item.title || '',
+            item.status || '',
+            item.result || item.summary || '',
+          ]);
+        }
+      }
+    }
+
+    if (includeSamples) {
+      for (const [date, items] of samplesByDate) {
+        if (!date.startsWith(prefix)) continue;
+        for (const item of items) {
+          rows.push([
+            date,
+            '',
+            '샘플',
+            sampleNamesText(item) || item.title || '',
+            item.company || item.category || '',
+            item.result || item.description || '',
+          ]);
+        }
+      }
+    }
+
+    if (viewMode === 'all') {
+      for (const [date, items] of workLogsByDate) {
+        if (!date.startsWith(prefix)) continue;
+        for (const item of items) {
+          const meta = WORK_LOG_TYPES[item.type] || WORK_LOG_TYPES.OTHER;
+          rows.push([
+            date,
+            item.time || (item.at ? new Date(item.at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : ''),
+            '작업일지',
+            meta.label || item.type || '',
+            item.type || '',
+            item.summary || item.title || item.detail || '',
+          ]);
+        }
+      }
+    }
+
+    return rows.sort((a, b) =>
+      String(a[0]).localeCompare(String(b[0])) ||
+      String(a[1]).localeCompare(String(b[1])) ||
+      String(a[2]).localeCompare(String(b[2]), 'ko')
+    );
+  }, [notesByDate, samplesByDate, schedulesByDate, viewMode, viewMonth, viewYear, workLogsByDate]);
+
   /* 일정 저장 */
   async function handleSaveSchedule(data) {
     try {
@@ -300,7 +380,7 @@ export default function Page() {
       await load();
       if (data.date) setSelectedDay(data.date);
     } catch (e) {
-      showToast('저장 실패: ' + e.message, 'err');
+      showToast('저장 실패: ' + e.message, 'error');
     }
     setModal(null);
   }
@@ -317,9 +397,33 @@ export default function Page() {
       showToast('삭제됐습니다', 'ok');
       await load();
     } catch (e) {
-      showToast('삭제 실패: ' + e.message, 'err');
+      showToast('삭제 실패: ' + e.message, 'error');
     }
     setModal(null);
+  }
+
+  function exportMonthCsv() {
+    const headers = ['날짜', '시간', '구분', '제목', '상태/분류', '내용'];
+    downloadCsv([headers, ...monthEventRows], `일정달력_${viewYear}-${pad(viewMonth)}.csv`);
+  }
+
+  async function copyMonthSummary() {
+    const lines = [`${viewYear}년 ${viewMonth}월 일정 요약 (${monthEventRows.length}건)`];
+    const byDate = new Map();
+    for (const row of monthEventRows) {
+      const d = row[0];
+      if (!byDate.has(d)) byDate.set(d, []);
+      byDate.get(d).push(`  [${row[2]}] ${row[3]}${row[4] ? ` (${row[4]})` : ''}`);
+    }
+    for (const [date, items] of [...byDate.entries()].sort()) {
+      lines.push(date, ...items);
+    }
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'));
+      showToast('월간 일정 요약을 복사했어요', 'ok');
+    } catch {
+      showToast('복사에 실패했어요', 'error');
+    }
   }
 
   if (loading)
@@ -340,13 +444,27 @@ export default function Page() {
         sub="테스트 일지와 일정을 달력에서 함께 관리합니다"
         actions={
           <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn no-print" onClick={exportMonthCsv} disabled={monthEventRows.length === 0}>
+              <Icon.download style={{ width: 14, height: 14 }} /> CSV
+            </button>
             <button
-              className="btn"
+              className="btn no-print"
+              onClick={copyMonthSummary}
+              disabled={monthEventRows.length === 0}
+              title="월간 일정 요약 복사"
+            >
+              <Icon.copy style={{ width: 14, height: 14 }} /> 보고용 복사
+            </button>
+            <button className="btn no-print" onClick={() => window.print()}>
+              인쇄
+            </button>
+            <button
+              className="btn no-print"
               onClick={() => setModal({ mode: 'add', date: selectedDay || today })}
             >
               <Icon.plus style={{ width: 14, height: 14 }} /> 일정 추가
             </button>
-            <button className="btn primary" onClick={() => router.push('/note/write')}>
+            <button className="btn primary no-print" onClick={() => router.push('/note/write')}>
               <Icon.plus style={{ width: 14, height: 14 }} /> 새 노트
             </button>
           </div>

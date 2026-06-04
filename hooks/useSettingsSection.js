@@ -39,6 +39,7 @@ export function useSettingsSection({
   const [editingId, setEditingId] = useState(null);
   const [form,      setForm]      = useState(initialForm);
   const [busy,      setBusy]      = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   useEffect(() => { refresh(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -54,6 +55,7 @@ export function useSettingsSection({
       showToast(messages.add || '추가됐어요', 'ok');
       setForm(initialForm);
       setAdding(false);
+      setPendingDeleteId(null);
       refresh();
       await reapplyToUploadedData();
     } catch (err) {
@@ -68,6 +70,7 @@ export function useSettingsSection({
       await update(id, form);
       showToast(messages.update || '수정됐어요', 'ok');
       setEditingId(null);
+      setPendingDeleteId(null);
       refresh();
       await reapplyToUploadedData();
     } catch (err) {
@@ -75,29 +78,60 @@ export function useSettingsSection({
     } finally { setBusy(false); }
   }
 
-  async function handleDelete(id) {
+  function requestDelete(id) {
+    setPendingDeleteId(id);
+    setEditingId(null);
+    setAdding(false);
+  }
+
+  function cancelDelete() {
+    setPendingDeleteId(null);
+  }
+
+  async function confirmDelete(id = pendingDeleteId) {
+    if (id == null) return;
+    setBusy(true);
     try {
       await remove(id);
       showToast(messages.delete || '삭제됐어요', 'ok');
+      setPendingDeleteId(null);
       refresh();
       await reapplyToUploadedData();
-    } catch { showToast('삭제 실패', 'err'); }
+    } catch {
+      showToast(messages.deleteError || '삭제 실패', 'err');
+    } finally {
+      setBusy(false);
+    }
   }
 
   function startEdit(item) {
     setEditingId(item.id);
+    setPendingDeleteId(null);
+    setAdding(false);
     setForm(getFormFromItem(item));
   }
 
   function resetAdding() {
     setAdding(v => !v);
     setEditingId(null);
+    setPendingDeleteId(null);
+    setForm(initialForm);
+  }
+
+  /** 탭 전환·검색어 변경 등 외부에서 편집 상태를 강제 해제할 때 사용 */
+  function cancelEdit() {
+    setEditingId(null);
+    setPendingDeleteId(null);
+    setAdding(false);
     setForm(initialForm);
   }
 
   return {
     list, adding, setAdding, editingId, setEditingId,
-    form, setForm, busy,
-    refresh, handleAdd, handleUpdate, handleDelete, startEdit, resetAdding,
+    form, setForm, busy, pendingDeleteId,
+    refresh, handleAdd, handleUpdate,
+    requestDelete, cancelDelete, confirmDelete,
+    handleDelete: requestDelete,
+    startEdit, resetAdding, cancelEdit,
   };
 }
