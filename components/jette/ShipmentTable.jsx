@@ -3,10 +3,12 @@ import { useMemo, useState } from 'react';
 import { Chip } from '@/components/ui/Chip';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { SortableTh } from '@/components/ui/SortableTh';
+import { Pagination } from '@/components/ui/Pagination';
+import { usePagination } from '@/hooks/usePagination';
 import { formatNumber } from '@/lib/format';
 import { sortByKey } from '@/lib/jette/utils';
 
-const PRODUCT_TYPE_ORDER = { exclusive: 0, generic: 1 };
+const PRODUCT_TYPE_ORDER = { exclusive: 0, generic: 1, 'generic-managed': 2 };
 const SHIPMENT_KEY_TRANSFORM = {
   productType: (v) => PRODUCT_TYPE_ORDER[v] ?? 9,
   isManaged:   (v) => (v ? 1 : 0),
@@ -35,11 +37,13 @@ export function ShipmentTable({ aggRows }) {
     );
     return sortByKey(list, sortKey, sortDir, SHIPMENT_KEY_TRANSFORM[sortKey] ?? null);
   }, [aggRows, search, typeFilter, managedOnly, sortKey, sortDir]);
+  const { page, goTo, totalPages, paged, total } = usePagination(filtered, 80);
 
   const counts = useMemo(() => ({
     all:         aggRows.length,
     exclusive:   aggRows.filter(r => r.productType === 'exclusive').length,
     generic:     aggRows.filter(r => r.productType === 'generic').length,
+    'generic-managed': aggRows.filter(r => r.productType === 'generic-managed').length,
     managed:     aggRows.filter(r => r.isManaged).length,
   }), [aggRows]);
 
@@ -62,6 +66,7 @@ export function ShipmentTable({ aggRows }) {
         <Chip label="전체"     count={counts.all}        active={typeFilter === 'all'}       onClick={() => setTypeFilter('all')}/>
         <Chip label="전용상품" count={counts.exclusive}  active={typeFilter === 'exclusive'} onClick={() => setTypeFilter('exclusive')}/>
         <Chip label="범용상품" count={counts.generic}    active={typeFilter === 'generic'}   onClick={() => setTypeFilter('generic')}/>
+        <Chip label="범용관리" count={counts['generic-managed']} active={typeFilter === 'generic-managed'} onClick={() => setTypeFilter('generic-managed')}/>
         <span style={{width:1, height:18, background:'var(--border)', margin:'0 4px'}}/>
         <Chip label="관리품목만" count={counts.managed} active={managedOnly} onClick={() => setManagedOnly(v => !v)}/>
       </div>
@@ -90,9 +95,10 @@ export function ShipmentTable({ aggRows }) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((row, i) => <Row key={`${row.productCode || row.productName}-${i}`} row={row}/>)}
+              {paged.map((row, i) => <Row key={`${row.productCode || row.productName}-${page}-${i}`} row={row}/>)}
             </tbody>
           </table>
+          <Pagination page={page} totalPages={totalPages} onPage={goTo} total={total} pageSize={80} />
         </div>
       )}
     </div>
@@ -132,8 +138,8 @@ function Row({ row }) {
 
 const PRODUCT_TYPE_META = {
   exclusive:         { label: '전용상품', bg: 'var(--accent-soft)', color: 'var(--accent-text)' },
-  generic:           { label: '범용상품', bg: 'var(--surface-2)',   color: 'var(--text-3)' },
-  'generic-managed': { label: '범용관리', bg: 'var(--warn-soft)',   color: 'var(--warn)' },
+  generic:           { label: '범용상품', bg: 'var(--scope-generic-soft)', color: 'var(--scope-generic)' },
+  'generic-managed': { label: '범용관리', bg: 'var(--scope-generic)', color: 'var(--scope-generic-ink)' },
 };
 
 function ProductTypeChip({ type }) {
@@ -144,4 +150,3 @@ function ProductTypeChip({ type }) {
     </span>
   );
 }
-

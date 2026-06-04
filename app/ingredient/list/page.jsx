@@ -28,17 +28,26 @@ import {
 } from '@/lib/ingredient/constants';
 import { IngredientListSkeleton } from '@/components/ui/Skeleton';
 import { KEYS } from '@/lib/note/keys';
+import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
+
+const ALLERGEN_MAP = Object.fromEntries(ALLERGEN_SEED.map(a => [a.allergenCode, a.allergenName]));
 
 function exportIngredientCsv(rows) {
-  const headers = ['식자재명', '카테고리', '분류', '단위', '단가', '제때연동'];
-  const data = rows.map(r => [
-    r.name || r.productName || '',
-    r.category || '',
-    r.scope || '',
-    r.unit || '',
-    r.unitPrice != null ? r.unitPrice : '',
-    r.jetteLinked ? '연동' : '미연동',
-  ]);
+  const headers = ['식자재명', '카테고리', '분류', '단위', '단가', '제때연동', '원산지', '알레르기'];
+  const data = rows.map(r => {
+    const originText = (r.origin || []).map(o => o.displayName || o.country).filter(Boolean).join(', ');
+    const allergenText = (r.allergens || []).map(c => ALLERGEN_MAP[c] || c).join(', ');
+    return [
+      r.name || r.productName || '',
+      r.category || '',
+      r.scope || '',
+      r.unit || '',
+      r.unitPrice != null ? r.unitPrice : '',
+      r.jetteLinked ? '연동' : '미연동',
+      originText,
+      allergenText,
+    ];
+  });
   downloadCsv([headers, ...data], '식자재리스트.csv');
 }
 
@@ -519,21 +528,6 @@ function IngredientRow({ r }) {
       </td>
       <td style={{ fontWeight: 600, fontSize: 13 }}>
         <span title={r.productName !== name ? `원본: ${r.productName}` : undefined}>{name}</span>
-        {r.discontinued && (
-          <span
-            style={{
-              marginLeft: 6,
-              fontSize: 10,
-              fontWeight: 700,
-              padding: '1px 5px',
-              borderRadius: 3,
-              background: 'var(--surface-3)',
-              color: 'var(--text-3)',
-            }}
-          >
-            단종
-          </span>
-        )}
       </td>
       <td>
         {r.category ? (

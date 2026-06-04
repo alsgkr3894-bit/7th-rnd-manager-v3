@@ -2,7 +2,9 @@
 import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SortableTh } from '@/components/ui/SortableTh';
+import { SearchBox } from '@/components/ui/SearchBox';
 import { initDB } from '@/lib/db';
+import { downloadCsv } from '@/lib/download';
 import { getAllIngredients, buildProductTypeMap, scopeLabelFor } from '@/lib/ingredient';
 import { SCOPE_STYLES, SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
@@ -62,6 +64,7 @@ export default function Page() {
   const [allMeta, setAllMeta] = useState([]);
   const [usageMap, setUsageMap] = useState({ byCode: new Map(), byName: new Map() });
   const [usageCat, setUsageCat] = useState('전체');
+  const [menuSearch, setMenuSearch] = useState('');
   const [sortKey, setSortKey] = useState('count'); // 'count' | 'name'
   const [sortDir, setSortDir] = useState('desc');
   const [expanded, setExpanded] = useState(new Set());
@@ -69,12 +72,18 @@ export default function Page() {
   const [hidden, setHidden] = useState(() => new Set());
   const [showHidden, setShowHidden] = useState(false);
   const [onlyOne, setOnlyOne] = useState(false);
+  const [showUnused, setShowUnused] = useState(false);
+  const [excludedMenus, setExcludedMenus] = useState(() => new Set()); // 목록에서 제외할 메뉴명
 
   // 숨김 목록 복원 (마운트 1회)
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEYS.INGREDIENT_USAGE_HIDDEN);
       if (raw) setHidden(new Set(JSON.parse(raw)));
+    } catch {}
+    try {
+      const rawM = localStorage.getItem(KEYS.INGREDIENT_USAGE_EXCL_MENUS);
+      if (rawM) setExcludedMenus(new Set(JSON.parse(rawM)));
     } catch {}
   }, []);
   function toggleHidden(k) {
@@ -86,6 +95,32 @@ export default function Page() {
         localStorage.setItem(KEYS.INGREDIENT_USAGE_HIDDEN, JSON.stringify([...next]));
       } catch {}
       return next;
+    });
+  }
+  function persistExcluded(next) {
+    try {
+      localStorage.setItem(KEYS.INGREDIENT_USAGE_EXCL_MENUS, JSON.stringify([...next]));
+    } catch {}
+  }
+  function excludeMenu(menuName) {
+    setExcludedMenus(prev => {
+      const next = new Set(prev).add(menuName);
+      persistExcluded(next);
+      return next;
+    });
+  }
+  function restoreMenu(menuName) {
+    setExcludedMenus(prev => {
+      const next = new Set(prev);
+      next.delete(menuName);
+      persistExcluded(next);
+      return next;
+    });
+  }
+  function restoreAllMenus() {
+    setExcludedMenus(() => {
+      persistExcluded(new Set());
+      return new Set();
     });
   }
 
@@ -153,7 +188,9 @@ export default function Page() {
 
   const usageRows = useMemo(() => {
     const { byCode, byName } = usageMap;
+    const q = menuSearch.trim().toLowerCase();
     return allMeta
+      .filter(m => !m.discontinued)
       .map(m => {
         const code = m.productCode || '';
         const dispName = m.ingredientName || '';
@@ -164,7 +201,10 @@ export default function Page() {
         if (!menuMap.size) return null;
 
         const menus = [...menuMap.entries()]
-          .filter(([, cat]) => usageCat === '전체' || cat === usageCat)
+          .filter(([menuName, cat]) =>
+            !excludedMenus.has(menuName) &&
+            (usageCat === '전체' || cat === usageCat) &&
+            (!q || menuName.toLowerCase().includes(q)))
           .map(([menuName, cat]) => ({ menuName, cat }))
           .sort((a, b) => a.menuName.localeCompare(b.menuName, 'ko'));
         if (!menus.length) return null;
@@ -174,10 +214,27 @@ export default function Page() {
         return { code, name: dispName, scope, count: menus.length, menus };
       })
       .filter(Boolean);
-  }, [allMeta, usageMap, usageCat, typeMap]);
+  }, [allMeta, usageMap, usageCat, menuSearch, typeMap, excludedMenus]);
+
+  const unusedRows = useMemo(() => {
+    const { byCode, byName } = usageMap;
+    const q = menuSearch.trim().toLowerCase();
+    return allMeta
+      .map(m => {
+        const code = m.productCode || '';
+        const name = m.ingredientName || '';
+        const fromCode = (code ? byCode.get(code) : null) || new Map();
+        const fromName = byName.get(normStr(name)) || new Map();
+        if (fromCode.size > 0 || fromName.size > 0) return null;
+        if (q && !name.toLowerCase().includes(q) && !code.toLowerCase().includes(q)) return null;
+        const scope = code ? scopeLabelFor(typeMap, code) : m.scope || SCOPE_UNASSIGNED;
+        return { code, name, scope, count: 0, menus: [] };
+      })
+      .filter(Boolean);
+  }, [allMeta, menuSearch, typeMap, usageMap]);
 
   const sorted = useMemo(() => {
-    const arr = [...usageRows];
+    const arr = [...(showUnused ? unusedRows : usageRows)];
     if (sortKey === 'count') {
       arr.sort(
         (a, b) =>
@@ -191,7 +248,7 @@ export default function Page() {
       });
     }
     return arr;
-  }, [usageRows, sortKey, sortDir]);
+  }, [showUnused, unusedRows, usageRows, sortKey, sortDir]);
 
   const nonHidden = useMemo(
     () => usageRows.filter(r => !hidden.has(keyOf(r))),
@@ -202,12 +259,12 @@ export default function Page() {
 
   const displayRows = useMemo(() => {
     let arr = sorted;
-    if (onlyOne) arr = arr.filter(r => r.count === 1);
-    arr = showHidden
+    if (onlyOne && !showUnused) arr = arr.filter(r => r.count === 1);
+    arr = showUnused ? arr : showHidden
       ? arr.filter(r => hidden.has(keyOf(r)))
       : arr.filter(r => !hidden.has(keyOf(r)));
     return arr;
-  }, [sorted, onlyOne, showHidden, hidden]);
+  }, [sorted, onlyOne, showHidden, showUnused, hidden]);
 
   const totalMenus = useMemo(
     () => new Set(nonHidden.flatMap(r => r.menus.map(m => m.menuName))).size,
@@ -231,7 +288,19 @@ export default function Page() {
     }
   }
 
-  const byCount = sortKey === 'count';
+  function exportCsv() {
+    const headers = ['식자재명', '제품코드', '구분', '사용 메뉴수', '사용 메뉴'];
+    const rows = displayRows.map(r => [
+      r.name || '',
+      r.code || '',
+      r.scope || '',
+      r.count,
+      (r.menus || []).map(m => `${m.menuName}(${m.cat})`).join(', '),
+    ]);
+    downloadCsv([headers, ...rows], showUnused ? '미사용식자재.csv' : '식자재사용현황.csv');
+  }
+
+  const byCount = sortKey === 'count' && !showUnused;
 
   return (
     <main className="main">
@@ -265,7 +334,7 @@ export default function Page() {
             <div
               className="stat-card"
               style={{ cursor: 'pointer', outline: onlyOne ? '2px solid var(--warn)' : undefined }}
-              onClick={() => setOnlyOne(v => !v)}
+              onClick={() => { setOnlyOne(v => !v); setShowUnused(false); }}
             >
               <div className="stat-label">1개 메뉴만 사용 ⚠</div>
               <div
@@ -279,11 +348,22 @@ export default function Page() {
                 {onlyOne ? '필터 해제' : '클릭하여 보기'}
               </div>
             </div>
-            <div className="stat-card">
+            <div
+              className="stat-card"
+              style={{ cursor: 'pointer', outline: showUnused ? '2px solid var(--accent)' : undefined }}
+              onClick={() => {
+                setShowUnused(v => !v);
+                setOnlyOne(false);
+                setShowHidden(false);
+              }}
+            >
               <div className="stat-label">미사용</div>
               <div className="stat-value" style={{ color: 'var(--text-3)' }}>
                 {allMeta.length - totalUsedCount}
                 <span className="unit">개</span>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>
+                {showUnused ? '필터 해제' : '클릭하여 보기'}
               </div>
             </div>
             <div
@@ -310,6 +390,15 @@ export default function Page() {
             </div>
           </div>
 
+          {/* 메뉴명 검색 */}
+          <div style={{ margin: '10px 0 0' }}>
+            <SearchBox
+              value={menuSearch}
+              onChange={setMenuSearch}
+              placeholder={showUnused ? '식자재명·제품코드 검색' : '메뉴명으로 사용 식자재 찾기 (예: 페퍼로니)'}
+            />
+          </div>
+
           {/* 카테고리 필터 + 액션 */}
           <div
             style={{
@@ -317,7 +406,7 @@ export default function Page() {
               gap: 8,
               flexWrap: 'wrap',
               alignItems: 'center',
-              margin: '10px 0 8px',
+              margin: '0 0 8px',
             }}
           >
             <div style={{ display: 'flex', gap: 4 }}>
@@ -344,6 +433,9 @@ export default function Page() {
               <button className="btn sm" onClick={() => printUsageReport(displayRows, usageCat)}>
                 PDF 출력
               </button>
+              <button className="btn sm" onClick={exportCsv} disabled={displayRows.length === 0}>
+                CSV 내보내기
+              </button>
             </div>
           </div>
 
@@ -353,10 +445,76 @@ export default function Page() {
             {showHidden && (
               <span style={{ marginLeft: 8, color: 'var(--accent)' }}>· 숨김 항목만 표시 중</span>
             )}
+            {showUnused && (
+              <span style={{ marginLeft: 8, color: 'var(--accent)' }}>· 미사용 식자재만 표시 중</span>
+            )}
             {onlyOne && (
               <span style={{ marginLeft: 8, color: 'var(--warn)' }}>· 1개 사용만 표시 중</span>
             )}
           </div>
+
+          {/* 제외된 메뉴 복원 바 */}
+          {!showUnused && excludedMenus.size > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 10px',
+                marginBottom: 8,
+                borderRadius: 8,
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)' }}>
+                목록 제외 메뉴 {excludedMenus.size}개
+              </span>
+              {[...excludedMenus].map(name => (
+                <span
+                  key={name}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    padding: '2px 6px 2px 8px',
+                    borderRadius: 99,
+                    background: 'var(--surface)',
+                    color: 'var(--text-2)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  {name}
+                  <button
+                    onClick={() => restoreMenu(name)}
+                    title="다시 목록에 표시"
+                    style={{
+                      border: 0,
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      color: 'var(--accent)',
+                      padding: 0,
+                      lineHeight: 1,
+                      fontSize: 13,
+                      display: 'inline-flex',
+                    }}
+                  >
+                    ↺
+                  </button>
+                </span>
+              ))}
+              <button
+                className="btn sm"
+                style={{ marginLeft: 'auto' }}
+                onClick={restoreAllMenus}
+              >
+                전체 복원
+              </button>
+            </div>
+          )}
 
           {/* 테이블 */}
           <div className="card table-card">
@@ -371,7 +529,9 @@ export default function Page() {
               >
                 {showHidden
                   ? '숨긴 재료가 없습니다.'
-                  : '등록된 레시피가 없거나 해당 조건에 맞는 재료가 없어요.'}
+                  : showUnused
+                    ? '조건에 맞는 미사용 식자재가 없습니다.'
+                    : '등록된 레시피가 없거나 해당 조건에 맞는 재료가 없어요.'}
               </div>
             ) : (
               <table className="data-table">
@@ -503,14 +663,34 @@ export default function Page() {
                                     style={{
                                       fontSize: 11,
                                       fontWeight: 600,
-                                      padding: '2px 8px',
+                                      padding: '2px 6px 2px 8px',
                                       borderRadius: 99,
                                       background: cs.bg,
                                       color: cs.color,
                                       whiteSpace: 'nowrap',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 4,
                                     }}
                                   >
                                     {m.menuName}
+                                    <button
+                                      onClick={() => excludeMenu(m.menuName)}
+                                      title="이 메뉴를 사용현황 목록에서 제외"
+                                      style={{
+                                        border: 0,
+                                        background: 'transparent',
+                                        cursor: 'pointer',
+                                        color: 'inherit',
+                                        opacity: 0.55,
+                                        padding: 0,
+                                        lineHeight: 1,
+                                        fontSize: 12,
+                                        display: 'inline-flex',
+                                      }}
+                                    >
+                                      ×
+                                    </button>
                                   </span>
                                 );
                               })}
@@ -577,7 +757,7 @@ export default function Page() {
               }}
             >
               {displayRows.length}개 표시 ·{' '}
-              {usageCat !== '전체' ? `${usageCat} 필터 중` : '전체 카테고리'}
+              {showUnused ? '미사용 필터 중' : usageCat !== '전체' ? `${usageCat} 필터 중` : '전체 카테고리'}
               {hiddenCount > 0 ? ` · 숨김 ${hiddenCount}개` : ''}
             </div>
           </div>

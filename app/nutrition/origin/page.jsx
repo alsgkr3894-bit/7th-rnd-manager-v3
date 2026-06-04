@@ -5,6 +5,7 @@ import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { initDB } from '@/lib/db';
+import { downloadCsv } from '@/lib/download';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
@@ -40,6 +41,7 @@ export default function Page() {
   const [viewMode, setViewMode] = useState('ingredient'); // 'ingredient' | 'menu'
   const [menuOrder, setMenuOrder] = useState([]);
   const [reorderOpen, setReorderOpen] = useState(false);
+  const [showHidden, setShowHidden] = useState(false);
 
   useEffect(() => {
     setMenuOrder(loadOrder(MENU_ORDER_KEY));
@@ -80,12 +82,25 @@ export default function Page() {
   }, [load]);
   useVisibilityRefresh(load);
 
-  // 원산지 있는 식자재만
+  // 원산지 있는 식자재만 (미표시대상은 토글에 따라 포함/제외)
   const originIngredients = useMemo(
     () =>
       ingredients.filter(
-        i => i.origin?.length && !i.discontinued && !i.excluded && !i.originHidden
+        i =>
+          i.origin?.length &&
+          !i.discontinued &&
+          !i.excluded &&
+          (showHidden || !i.originHidden)
       ),
+    [ingredients, showHidden]
+  );
+
+  // 미표시대상(originHidden) 식자재 개수 — 토글 안내용
+  const hiddenCount = useMemo(
+    () =>
+      ingredients.filter(
+        i => i.origin?.length && !i.discontinued && !i.excluded && i.originHidden
+      ).length,
     [ingredients]
   );
 
@@ -182,6 +197,42 @@ export default function Page() {
 
   const withoutOrigin = totalIngredients - totalWithOrigin;
 
+  function exportCsv() {
+    if (viewMode === 'ingredient') {
+      const headers = ['식자재명', '표시품목명', '원산지', '제때 코드', '매칭 메뉴 수', '매칭 메뉴'];
+      const rows = ingredientRows.map(ing => {
+        const allMenus = getMenusForIngredient(
+          mapData.ingredientToMenus,
+          ing.productCode,
+          ing.ingredientName
+        );
+        const menus = [...allMenus]
+          .filter(([mc, m]) => !isExcludedMenu(mc, m.menuName))
+          .map(([, m]) => m.menuName);
+        return [
+          ing.ingredientName || '',
+          (ing.origin || []).map(it => it.displayName || ing.ingredientName).join(' / '),
+          (ing.origin || []).map(it => it.country).join(' / '),
+          ing.productCode || '',
+          menus.length,
+          menus.join(', '),
+        ];
+      });
+      downloadCsv([headers, ...rows], '원산지_식자재별.csv');
+      return;
+    }
+    const headers = ['메뉴명', '카테고리', '표시품목', '원산지'];
+    const rows = menuRows.flatMap(row =>
+      row.origins.map(o => [
+        row.menuName || '',
+        row.category || '',
+        o.displayName || '',
+        o.country || '',
+      ])
+    );
+    downloadCsv([headers, ...rows], '원산지_메뉴별.csv');
+  }
+
   return (
     <main className="main">
       <PageHeader
@@ -263,15 +314,43 @@ export default function Page() {
             메뉴별
           </button>
         </div>
-        {viewMode === 'menu' && (
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
           <button
             className="btn sm"
-            style={{ marginLeft: 'auto' }}
-            onClick={() => setReorderOpen(true)}
+            onClick={exportCsv}
+            disabled={viewMode === 'ingredient' ? ingredientRows.length === 0 : menuRows.length === 0}
           >
-            메뉴 순서 변경
+            CSV 내보내기
           </button>
-        )}
+          {hiddenCount > 0 && (
+            <button
+              className={'btn sm' + (showHidden ? ' active' : '')}
+              onClick={() => setShowHidden(v => !v)}
+              title="미표시대상으로 지정된 식자재 포함 여부"
+            >
+              {showHidden ? `미표시대상 ${hiddenCount}개 포함 중` : `미표시대상 ${hiddenCount}개 숨김`}
+            </button>
+          )}
+          {viewMode === 'menu' && (
+            <>
+              <button className="btn sm" onClick={() => setReorderOpen(true)}>
+                메뉴 순서 변경
+              </button>
+              {menuOrder.length > 0 && (
+                <button
+                  className="btn sm"
+                  onClick={() => {
+                    saveOrder(MENU_ORDER_KEY, []);
+                    setMenuOrder([]);
+                  }}
+                  title="저장된 메뉴 순서를 지우고 기본(ㄱㄴㄷ) 순서로 복원"
+                >
+                  순서 초기화
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       <div className="card table-card" style={{ marginTop: 12 }}>

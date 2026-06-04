@@ -677,7 +677,7 @@ const NEW_REPORT_KINDS = Object.values(KIND_META);
 
 function NewReportModal({ onClose, router }) {
   return (
-    <div className="palette-scrim">
+    <div className="palette-scrim" onClick={onClose}>
       <div
         className="modal-box"
         style={{ maxWidth: 480, padding: 0, overflow: 'hidden' }}

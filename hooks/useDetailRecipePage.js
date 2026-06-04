@@ -89,5 +89,5 @@ export function useDetailRecipePage({ category, fetchRecipeMap, upsertRecipe, ca
     return { menuCode: m.menuCode, menuName: m.menuName, price: m.price, cost, rate };
   }), [menus, recipeMap, calcCost]);
 
-  return { tab, setTab, menus, recipeMap, loading, dbError, target, setTarget, handleSave, stats, summaryRows, extraData };
+  return { tab, setTab, menus, recipeMap, loading, dbError, target, setTarget, handleSave, stats, summaryRows, extraData, reload: load };
 }

@@ -142,25 +142,41 @@ const EMPTY = {
 
 export function IngredientForm({
   initial,
+  copyFrom = null,            // 복사해서 추가 — 원본 데이터로 신규 폼 프리필(제품코드는 비움)
   onSave,
   onClose,
   extraCategories = [],
   originSuggestions = { names: [], countries: [] },
+  existingProductCodes = [],  // 중복 검사용 — 부모가 현재 등록된 코드 목록 전달
 }) {
   const isJetteLinked = !!initial?.jetteLinked;
   // 시드 분류 + 실제 사용 중인 분류(직접입력 포함) 합본 → 직접입력 분류도 다음부터 드롭다운에 노출
   const catOptions = sortMainCategories([
     ...new Set([...SEED_MAIN_CATEGORIES, ...extraCategories].filter(Boolean)),
   ]);
-  const [form, setForm] = useState(initial ? toForm(initial) : EMPTY);
+  // 초기 폼 값: 편집(initial) > 복사(copyFrom, 제품코드 비우고 이름에 '복사' 접미) > 빈값
+  const buildInitialForm = () => {
+    if (initial) return toForm(initial);
+    if (copyFrom) {
+      const base = toForm(copyFrom);
+      return {
+        ...base,
+        productCode: '',
+        ingredientName: `${base.ingredientName || copyFrom.displayName || ''} 복사`.trim(),
+      };
+    }
+    return EMPTY;
+  };
+  const [form, setForm] = useState(buildInitialForm);
   const [tagInput, setTagInput] = useState('');
-  const [customCat, setCustomCat] = useState(
-    !!initial?.category && !catOptions.includes(initial.category)
-  );
+  const [customCat, setCustomCat] = useState(() => {
+    const cat = initial?.category || copyFrom?.category;
+    return !!cat && !catOptions.includes(cat);
+  });
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const datalistId = useId();
-  const initialFormRef = useRef(JSON.stringify(initial ? toForm(initial) : EMPTY));
+  const initialFormRef = useRef(JSON.stringify(buildInitialForm()));
   const isDirty = JSON.stringify(form) !== initialFormRef.current;
   useBeforeUnload(isDirty);
 
@@ -188,6 +204,12 @@ export function IngredientForm({
     if (form.baseQuantity && isNaN(Number(form.baseQuantity))) e.baseQuantity = '숫자만 입력하세요';
     if (!isJetteLinked && form.priceOverride && isNaN(Number(form.priceOverride)))
       e.priceOverride = '숫자만 입력하세요';
+    // 제품코드 중복 검사 — 신규 등록 또는 코드 변경 시
+    const newCode = (form.productCode || '').trim();
+    const origCode = (initial?.productCode || '').trim();
+    if (newCode && newCode !== origCode && existingProductCodes.includes(newCode)) {
+      e.productCode = `이미 등록된 제품코드입니다: ${newCode}`;
+    }
     return e;
   }
 
@@ -230,7 +252,9 @@ export function IngredientForm({
   }
 
   const isNew = !initial;
-  const title = isNew ? '식자재 추가' : isJetteLinked ? '제때 식자재 설정' : '식자재 수정';
+  const title = copyFrom
+    ? '식자재 복사 추가'
+    : isNew ? '식자재 추가' : isJetteLinked ? '제때 식자재 설정' : '식자재 수정';
   const scopeLabel = initial?.scope || (initial?.hasRecord ? SCOPE.EXCLUSIVE : SCOPE.GENERIC);
 
   return createPortal(
@@ -262,7 +286,14 @@ export function IngredientForm({
             marginBottom: 20,
           }}
         >
-          <div style={{ fontWeight: 700, fontSize: 16 }}>{title}</div>
+          <div style={{ fontWeight: 700, fontSize: 16 }}>
+            {title}
+            {copyFrom && (
+              <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 500, color: 'var(--text-3)' }}>
+                (원본: {copyFrom.ingredientName || copyFrom.displayName || copyFrom.productName})
+              </span>
+            )}
+          </div>
           <button type="button" className="btn" style={{ padding: '4px 8px' }} onClick={onClose}>
             <Icon.close style={{ width: 16, height: 16 }} />
           </button>
@@ -502,7 +533,7 @@ export function IngredientForm({
           </Field>
 
           {!isJetteLinked && (
-            <Field label="제때 제품코드" hint="입력하면 제때 가격파일과 자동 연동">
+            <Field label="제때 제품코드" hint="입력하면 제때 가격파일과 자동 연동" error={errors.productCode} errorId="productCode-error">
               <input
                 className="form-input"
                 value={form.productCode}

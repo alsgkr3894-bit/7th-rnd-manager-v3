@@ -3,10 +3,11 @@
 const QUICK_NOTE_RESET_MS = 1500;
 const devError = (...a) => { if (process.env.NODE_ENV !== 'production') console.error(...a); };
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { useCountUp } from '@/hooks/useCountUp';
+import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getProfile } from '@/lib/profile';
@@ -98,6 +99,7 @@ export default function HomePage() {
 
   const [quickNote, setQuickNote]   = useState('');
   const [quickSaved, setQuickSaved] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const quickResetTimer = useRef(null);
 
   const {
@@ -113,53 +115,59 @@ export default function HomePage() {
   const salesCount = useCountUp(salesKpi?.current ?? 0, { duration: 1400, delay: 250 });
   const noteCount  = useCountUp(noteKpi?.total ?? 0,    { duration: 900,  delay: 460 });
 
-  useEffect(() => {
-    (async () => {
-      try {
-        await initDB();
-        dbReadyRef.current = true;
-        setProfile(getProfile());
-        const settled = await Promise.allSettled([
-          getSalesKpi(), getCostRateKpi(), getNoteKpi(),
-          getSalesTrend('month'), getCategoryShare(),
+  const loadData = useCallback(async () => {
+    try {
+      await initDB();
+      dbReadyRef.current = true;
+      setProfile(getProfile());
+
+      // 기간 비종속 위젯 — 다른 탭에서 자주 바뀌는 데이터(노트·샘플·가격·이슈 등)
+      const live = await Promise.allSettled([
+        getAllNotes(), getAllSamples(), getCostAlertData(),
+        getTodayTodos(), getPipelineStats(), getWeekSchedule(),
+        getRecentPriceChanges(6), getIssues(),
+        getRecentActivities(8), getCostRateKpi(), getNoteKpi(),
+      ]);
+      const [an, sm, ca, tdo, pl, ws, pc, iss, ac, c, n] =
+        live.map(r => (r.status === 'fulfilled' ? r.value : null));
+      if (an) { setAllNotes(an); setReportingNotes(an.filter(x => x.status === '보고예정')); }
+      if (sm) setRecentSamples(sm);
+      if (ca) setCostAlertData(ca);
+      if (tdo) setTodos(tdo);
+      if (pl) setPipeline(pl);
+      if (ws) setWeekSchedule(ws);
+      if (pc) setPriceChanges(pc);
+      if (iss) setIssues(iss);
+      if (ac) setActivities(ac);
+      if (c) setCostKpi(c);
+      if (n) setNoteKpi(n);
+
+      // 판매·차트·브리핑 — anchor(과거 월 탐색) 미설정일 때만 현재 기준 갱신.
+      // anchor가 설정돼 있으면 anchor 전용 useEffect가 담당하므로 건드리지 않음.
+      if (!anchor) {
+        const sales = await Promise.allSettled([
+          getSalesKpi(), getSalesTrend(chartTabRef.current), getCategoryShare(),
           getTopMenusWithTrend(5, '피자', true, 'desc'),
           getTopMenusWithTrend(5, '피자', true, 'asc'),
-          getRecentActivities(8), getMonthlyBriefing(),
+          getMonthlyBriefing(),
         ]);
-        const [s, c, n, td, dn, tp, bt, ac, br] = settled.map((r, i) => {
-          if (r.status === 'rejected') devError(`[Home] 위젯 로드 실패(${i}):`, r.reason);
-          return r.status === 'fulfilled' ? r.value : null;
-        });
+        const [s, td, dn, tp, bt, br] = sales.map(r => (r.status === 'fulfilled' ? r.value : null));
         if (s)  { setSalesKpi(s); setDetectedPeriod({ year: s.year, month: s.month }); }
-        if (c)  setCostKpi(c);
-        if (n)  setNoteKpi(n);
         if (td) { setTrend(td); setChartKey(k => k + 1); }
         if (dn) setDonut(dn);
         if (tp) setTop(tp);
         if (bt) setBottom(bt);
-        if (ac) setActivities(ac);
         if (br) setBriefing(br);
-
-        const settled2 = await Promise.allSettled([
-          getAllNotes(), getAllSamples(), getCostAlertData(),
-          getTodayTodos(), getPipelineStats(), getWeekSchedule(),
-          getRecentPriceChanges(6), getIssues(),
-        ]);
-        const [an, sm, ca, tdo, pl, ws, pc, iss] = settled2.map(r => r.status === 'fulfilled' ? r.value : null);
-        if (an) { setAllNotes(an); setReportingNotes(an.filter(x => x.status === '보고예정')); }
-        if (sm) setRecentSamples(sm);
-        if (ca) setCostAlertData(ca);
-        if (tdo) setTodos(tdo);
-        if (pl) setPipeline(pl);
-        if (ws) setWeekSchedule(ws);
-        if (pc) setPriceChanges(pc);
-        if (iss) setIssues(iss);
-      } catch (err) {
-        devError('[Home] 데이터 로드 실패:', err);
-        showToast('데이터를 불러오는 중 문제가 발생했어요. 새로고침해 주세요.', 'error', 5000);
       }
-    })();
-  }, []);
+    } catch (err) {
+      devError('[Home] 데이터 로드 실패:', err);
+      showToast('데이터를 불러오는 중 문제가 발생했어요. 새로고침해 주세요.', 'error', 5000);
+    }
+  }, [anchor]);
+
+  useEffect(() => { loadData(); }, [loadData]);
+  // 다른 탭에서 데이터 수정 후 홈으로 돌아오면 자동 갱신
+  useVisibilityRefresh(loadData);
 
   useEffect(() => {
     if (!trend) return;
@@ -214,6 +222,10 @@ export default function HomePage() {
   async function saveQuickNote() {
     const text = quickNote.trim();
     if (!text) return;
+    if (text.length > 200) {
+      showToast('빠른 메모는 200자 이내로 작성해주세요', 'warn');
+      return;
+    }
     try {
       await addNote({
         title: text.slice(0, 30), testContent: text,
@@ -302,6 +314,23 @@ export default function HomePage() {
               즐겨찾기만
             </button>
           )}
+          <button
+            className="btn"
+            title="대시보드 새로고침"
+            disabled={refreshing}
+            onClick={async () => {
+              setRefreshing(true);
+              try {
+                await loadData();
+                showToast('대시보드를 새로고침했어요', 'ok');
+              } finally {
+                setRefreshing(false);
+              }
+            }}
+          >
+            <span style={{ fontSize:15, lineHeight:1, display:'inline-block', transform:'rotate(45deg)' }}>↻</span>
+            {refreshing ? ' 갱신 중…' : ''}
+          </button>
           <button className="btn" title="위젯 설정" onClick={() => setWidgetConfigOpen(true)}>
             <Icon.gear style={{width:15,height:15}}/>
           </button>
@@ -405,6 +434,7 @@ export default function HomePage() {
                 <input className="quick-note-input"
                   placeholder="끝난 테스트 한 줄 메모를 입력하세요"
                   value={quickNote}
+                  maxLength={200}
                   onChange={e => { setQuickNote(e.target.value); setQuickSaved(false); }}
                   onKeyDown={e => { if (e.key === 'Enter') saveQuickNote(); }}
                 />

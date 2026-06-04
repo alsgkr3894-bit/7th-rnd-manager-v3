@@ -16,8 +16,8 @@ export const TYPE_LABEL = {
 
 export const PRODUCT_TYPE_STYLE = {
   exclusive:         { label: '전용상품', bg: 'var(--accent-soft)', color: 'var(--accent-text)' },
-  generic:           { label: '범용상품', bg: 'var(--surface-2)',   color: 'var(--text-3)' },
-  'generic-managed': { label: '범용관리', bg: 'var(--warn-soft)',   color: 'var(--warn)' },
+  generic:           { label: '범용상품', bg: 'var(--scope-generic-soft)', color: 'var(--scope-generic)' },
+  'generic-managed': { label: '범용관리', bg: 'var(--scope-generic)', color: 'var(--scope-generic-ink)' },
 };
 
 export const CHANGE_STATUS = {

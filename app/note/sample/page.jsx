@@ -28,6 +28,7 @@ import { CompareModal } from './_CompareModal';
 import { SampleDetailModal } from './_SampleDetailModal';
 import { SampleCard } from '@/components/note/SampleCard';
 import { SampleListRow } from '@/components/note/SampleListRow';
+import { downloadCsv } from '@/lib/download';
 
 const SORT_OPTIONS = [
   { key: 'createdAt', label: '최신순' },
@@ -104,7 +105,7 @@ function SampleContent() {
   useEffect(() => {
     const params = new URLSearchParams();
     if (catFilter !== 'all') params.set('cat', catFilter);
-    if (ratingMin > 0) params.set('r', String(ratingMin));
+    if (ratingMin !== 0) params.set('r', String(ratingMin));
     const qs = params.toString();
     window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
   }, [catFilter, ratingMin, pathname]);
@@ -117,7 +118,8 @@ function SampleContent() {
   const filtered = useMemo(() => {
     let list = samples;
     if (catFilter !== 'all') list = list.filter(s => s.category === catFilter);
-    if (ratingMin > 0) list = list.filter(s => (s.rating || 0) >= ratingMin);
+    if (ratingMin === -1) list = list.filter(s => !s.rating);
+    else if (ratingMin > 0) list = list.filter(s => (s.rating || 0) >= ratingMin);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -140,6 +142,17 @@ function SampleContent() {
     const m = { all: samples.length };
     for (const s of samples) m[s.category] = (m[s.category] || 0) + 1;
     return m;
+  }, [samples]);
+
+  // 별점 분포 (1~5별 + 별점 없음) — 필터칩 옆 요약 배지용
+  const ratingDist = useMemo(() => {
+    const d = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, none: 0 };
+    for (const s of samples) {
+      const r = s.rating || 0;
+      if (r >= 1 && r <= 5) d[r] += 1;
+      else d.none += 1;
+    }
+    return d;
   }, [samples]);
 
   async function handleDelete(rec) {
@@ -214,21 +227,38 @@ function SampleContent() {
   const headerActions = (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
       {!batchMode && !compareMode && (
-        <button
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: 17,
-            padding: '4px 6px',
-            borderRadius: 8,
-            color: 'var(--text-2)',
-          }}
-          onClick={() => window.print()}
-          title="인쇄"
-        >
-          🖨
-        </button>
+        <>
+          <button
+            className="btn"
+            onClick={() => {
+              const headers = ['제목', '카테고리', '메뉴명', '업체', '테스트일', '별점', '설명', '태그'];
+              const rows = filtered.map(s => [
+                s.title || '',
+                s.category || '',
+                sampleNamesText(s),
+                s.company || '',
+                s.testDate || '',
+                s.rating != null ? s.rating : '',
+                s.description || '',
+                s.tags || '',
+              ]);
+              downloadCsv([headers, ...rows], '샘플기록.csv');
+            }}
+            disabled={filtered.length === 0}
+          >
+            <Icon.download style={{ width: 14, height: 14 }} /> CSV 내보내기
+          </button>
+          <button
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 17, padding: '4px 6px', borderRadius: 8, color: 'var(--text-2)',
+            }}
+            onClick={() => window.print()}
+            title="인쇄"
+          >
+            🖨
+          </button>
+        </>
       )}
       {batchMode ? (
         <>
@@ -306,12 +336,13 @@ function SampleContent() {
           marginBottom: 12,
         }}
       >
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {[
             { min: 0, label: '전체' },
             { min: 3, label: '★3이상' },
             { min: 4, label: '★4이상' },
             { min: 5, label: '★5' },
+            { min: -1, label: '★없음' },
           ].map(({ min, label }) => (
             <button
               key={min}
@@ -322,6 +353,11 @@ function SampleContent() {
               {label}
             </button>
           ))}
+          {samples.length > 0 && (
+            <span style={{ fontSize: 11, color: 'var(--text-4)', marginLeft: 2, whiteSpace: 'nowrap' }}>
+              5★ {ratingDist[5]} · 4★ {ratingDist[4]} · 3★ {ratingDist[3]} · 2★ {ratingDist[2]} · 1★ {ratingDist[1]} · 없음 {ratingDist.none}
+            </span>
+          )}
         </div>
         <div style={{ width: 1, height: 20, background: 'var(--border)' }} />
         <div style={{ display: 'flex', gap: 6 }}>
@@ -561,11 +597,13 @@ function SampleContent() {
           <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>
             {search
               ? `"${search}" 검색 결과가 없어요`
-              : ratingMin > 0
-                ? `별점 ${ratingMin}점 이상 샘플이 없어요`
-                : catFilter !== 'all'
-                  ? `${catFilter} 카테고리 샘플이 없어요`
-                  : '샘플 기록이 없어요'}
+              : ratingMin === -1
+                ? '별점 없는 샘플이 없어요'
+                : ratingMin > 0
+                  ? `별점 ${ratingMin}점 이상 샘플이 없어요`
+                  : catFilter !== 'all'
+                    ? `${catFilter} 카테고리 샘플이 없어요`
+                    : '샘플 기록이 없어요'}
           </div>
           {!search && catFilter === 'all' && ratingMin === 0 && (
             <button

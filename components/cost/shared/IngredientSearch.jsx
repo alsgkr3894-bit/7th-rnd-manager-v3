@@ -18,6 +18,7 @@ export function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded
     if (!term) return [];
     return allMeta.filter(m =>
       m.productCode &&
+      !m.discontinued && !m.excluded &&
       !addedSet.has(m.productCode) &&
       ((m.ingredientName || '').toLowerCase().includes(term) ||
        (m.productCode    || '').toLowerCase().includes(term))

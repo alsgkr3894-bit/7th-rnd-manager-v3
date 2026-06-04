@@ -51,6 +51,35 @@ import { TabButton } from '@/components/cost/shared/TabButton';
 const scopeToType = label =>
   Object.keys(TYPE_LABEL).find(code => TYPE_LABEL[code] === label) || null;
 
+const DUPLICATE_CHECKS = [
+  { key: 'productCode', label: '제품코드', get: r => r.productCode },
+  { key: 'jetteCode', label: '제때코드', get: r => r.jetteCode || r.jetteProductCode },
+  { key: 'displayName', label: '표시명', get: r => r.ingredientName || r.displayName || r.productName },
+];
+
+function duplicateKey(value) {
+  return String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+}
+
+function rowLabel(row) {
+  return row.ingredientName || row.displayName || row.productName || row.productCode || '이름 없음';
+}
+
+function findDuplicateGroups(rows, check) {
+  const buckets = new Map();
+  for (const row of rows) {
+    if (row.discontinued || row.excluded) continue;
+    const raw = check.get(row);
+    const key = duplicateKey(raw);
+    if (!key) continue;
+    if (!buckets.has(key)) buckets.set(key, { value: String(raw).trim(), rows: [] });
+    buckets.get(key).rows.push(row);
+  }
+  return [...buckets.values()]
+    .filter(group => group.rows.length > 1)
+    .sort((a, b) => b.rows.length - a.rows.length || a.value.localeCompare(b.value, 'ko'));
+}
+
 // 제때 연동 항목의 전용/범용을 제때 관리품목(ref_shipment_products.productType)에 반영
 async function syncManagedScope(target, scopeLabel) {
   const productType = scopeToType(scopeLabel);
@@ -222,7 +251,7 @@ export default function Page() {
   const handleSave = useCallback(
     async formData => {
       try {
-        if (formTarget === 'new') {
+        if (formTarget === 'new' || formTarget?.__copyFrom) {
           await addIngredient(formData);
           showToast('식자재 추가 완료', 'ok');
         } else if (formTarget.isManual && formTarget.id) {
@@ -366,6 +395,16 @@ export default function Page() {
     () => computeIngredientIssues(rows, prevPriceMap),
     [rows, prevPriceMap]
   );
+
+  const duplicateDiagnostics = useMemo(
+    () =>
+      DUPLICATE_CHECKS.map(check => ({
+        ...check,
+        groups: findDuplicateGroups(rows, check),
+      })).filter(check => check.groups.length > 0),
+    [rows]
+  );
+  const duplicateGroupCount = duplicateDiagnostics.reduce((sum, check) => sum + check.groups.length, 0);
 
   // ── 필터링 ──
   const filtered = useMemo(() => {
@@ -520,6 +559,28 @@ export default function Page() {
         </div>
       )}
 
+      {duplicateGroupCount > 0 && (
+        <div className="info-banner" style={{ marginBottom: 8, background: 'var(--warn-soft)', borderColor: 'var(--warn-soft)' }}>
+          <div className="info-banner-ico" style={{ background: 'var(--warn)', color: '#fff' }}>
+            <Icon.alert style={{ width: 16, height: 16 }} />
+          </div>
+          <div style={{ fontSize: 13, display: 'grid', gap: 6 }}>
+            <div>
+              <b>중복 가능성 {duplicateGroupCount}그룹</b> — 제품코드·제때코드·표시명 기준으로 확인이 필요합니다.
+            </div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+              {duplicateDiagnostics.flatMap(check =>
+                check.groups.slice(0, 3).map(group => (
+                  <span key={`${check.key}:${group.value}`} className="chip" title={group.rows.map(rowLabel).join(', ')}>
+                    {check.label} {group.value} · {group.rows.length}개
+                  </span>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── 관리 뷰 ── */}
       {rows.length > 0 && view === 'manage' && (
         <>
@@ -653,6 +714,7 @@ export default function Page() {
                           r={r}
                           deletePending={isPending}
                           onEdit={() => setFormTarget(r)}
+                          onCopy={() => setFormTarget({ __copyFrom: r })}
                           onDeleteStart={() => setDeletePending(r)}
                           onDeleteCancel={handleDeleteCancel}
                           onDeleteConfirm={() => handleExclude(r)}
@@ -816,11 +878,13 @@ export default function Page() {
 
       {formTarget !== null && (
         <IngredientForm
-          initial={formTarget === 'new' ? null : formTarget}
+          initial={formTarget === 'new' || formTarget?.__copyFrom ? null : formTarget}
+          copyFrom={formTarget?.__copyFrom || null}
           onSave={handleSave}
           onClose={() => setFormTarget(null)}
           extraCategories={mainCats}
           originSuggestions={originSuggestions}
+          existingProductCodes={rows.filter(r => r.productCode).map(r => r.productCode)}
         />
       )}
     </main>

@@ -24,6 +24,12 @@ export function EdgeCard({ edge, onEdit, onDelete }) {
               background:'var(--warn-soft)', color:'var(--warn)',
             }}>비어있음</span>
           )}
+          {compCount > 0 && issues.length > 0 && (
+            <span style={{
+              fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:6,
+              background:'var(--warn-soft)', color:'var(--warn)',
+            }}>구성 미완료</span>
+          )}
         </div>
         <div style={{fontSize:12, color:'var(--text-3)', marginTop:4}}>
           구성품 {compCount}개

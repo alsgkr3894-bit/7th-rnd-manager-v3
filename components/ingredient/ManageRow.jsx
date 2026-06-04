@@ -4,7 +4,7 @@ import { formatNumber } from '@/lib/format';
 import { getCategoryStyle, sortHashTags } from '@/lib/ingredient';
 import { SCOPE_STYLES } from '@/lib/ingredient/constants';
 
-export const ManageRow = memo(function ManageRow({ r, deletePending, onEdit, onDeleteStart, onDeleteCancel, onDeleteConfirm, onRestore, batchMode, isSelected, onToggleSelect }) {
+export const ManageRow = memo(function ManageRow({ r, deletePending, onEdit, onCopy, onDeleteStart, onDeleteCancel, onDeleteConfirm, onRestore, batchMode, isSelected, onToggleSelect }) {
   const name = r.ingredientName || r.displayName || r.productName;
   const unitLabel = r.baseQuantity && r.baseUnitType
     ? `${formatNumber(r.baseQuantity)}${r.baseUnitType}`
@@ -99,9 +99,16 @@ export const ManageRow = memo(function ManageRow({ r, deletePending, onEdit, onD
             <button className="btn sm" style={{ fontSize: 11 }} onClick={onDeleteCancel}>취소</button>
           </span>
         ) : (
-          <button className="btn sm" aria-label="삭제" onClick={onDeleteStart} style={{ color: 'var(--text-3)' }}>
-            <Icon.trash style={{ width: 13, height: 13 }} />
-          </button>
+          <span style={{ display: 'inline-flex', gap: 3 }}>
+            {onCopy && (
+              <button className="btn sm" aria-label="복사해서 추가" title="이 항목을 복사해 새 식자재 추가" onClick={onCopy} style={{ color: 'var(--text-3)' }}>
+                <Icon.copy style={{ width: 13, height: 13 }} />
+              </button>
+            )}
+            <button className="btn sm" aria-label="삭제" onClick={onDeleteStart} style={{ color: 'var(--text-3)' }}>
+              <Icon.trash style={{ width: 13, height: 13 }} />
+            </button>
+          </span>
         )}
       </td>
     </tr>

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useMemo, useCallback } from 'react';
+import Link from 'next/link';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
@@ -9,6 +10,11 @@ import { formatNumber } from '@/lib/format';
 import { getAllMenuPrices } from '@/lib/cost/menu-price';
 import { getAllRecipes, buildUnitPriceMap, calcCostBySizes } from '@/lib/recipe';
 import { getAllIngredients } from '@/lib/ingredient';
+import { componentSubtotal } from '@/lib/cost/shared/calc';
+import { getPizzaRecipeMap } from '@/lib/cost/pizza-detail';
+import { getPersonalRecipeMap } from '@/lib/cost/personal-detail';
+import { getSideRecipeMap } from '@/lib/cost/side-detail';
+import { getSetRecipeMap } from '@/lib/cost/set-detail';
 import { costRateColor, calcCostRate } from '@/lib/cost/rate-color';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { downloadCsv } from '@/lib/download';
@@ -36,36 +42,96 @@ function catRank(cat) {
   return i === -1 ? 99 : i;
 }
 
+// 정규화 카테고리 → 해당 원가 입력 페이지 경로
+const CATEGORY_TO_PATH = {
+  피자: 'pizza',
+  '1인피자': 'personal',
+  사이드: 'side',
+  세트박스: 'set',
+  기타: 'recipe',
+};
+function costPathFor(cat) {
+  return CATEGORY_TO_PATH[cat] || 'recipe';
+}
+
+// 메뉴판매가 카테고리 → detail 레시피 스토어 맵 (margin 페이지와 동일 규칙)
+function detailStoreFor(rawCat, maps) {
+  const c = rawCat || '';
+  if (c === '1인피자') return maps.personal;
+  if (c === '세트박스') return maps.set;
+  if (c === '사이드' || c === '소스' || c === '음료' || c === '엣지') return maps.side;
+  if (c === '피자' || c.startsWith('피자/')) return maps.pizza;
+  return null;
+}
+
+// detail 레시피 원가 = 구성품 합계 (피자 베이스 원가 기준, 엣지 제외)
+function detailComponentCost(components) {
+  return Array.isArray(components)
+    ? Math.round(components.reduce((acc, c) => acc + componentSubtotal(c), 0))
+    : 0;
+}
+
 // ── 행 데이터 빌드 ────────────────────────────────────────────
-function buildRows(recipes, unitPriceMap, menuPriceMap) {
+// 메뉴 판매가를 1차 기준으로, 원가는 (1) detail 레시피(menuCode 매칭) → (2) 레거시 레시피(메뉴명 매칭) 순.
+// detail 페이지(피자/1인피자/사이드/세트)에 입력한 레시피도 종합표에 반영된다.
+function buildRows(recipes, unitPriceMap, menuPrices, detailMaps) {
   const rows = [];
 
-  for (const recipe of recipes) {
-    const costMap = calcCostBySizes(recipe, unitPriceMap);
+  // 레거시 레시피 — 메뉴명으로 빠르게 조회
+  const recipeByName = new Map();
+  for (const r of recipes) {
+    if (r.menuName && !recipeByName.has(r.menuName)) recipeByName.set(r.menuName, r);
+  }
 
-    // 첫 번째 사이즈 기준으로 원가·판매가·원가율 계산
-    const firstSize = recipe.sizes?.[0];
-    if (!firstSize) continue;
+  // 메뉴 판매가를 메뉴명 단위로 묶음 (사이즈별 entry 보존)
+  const byMenu = new Map(); // menuName → { category, entries:[{menuCode,size,price}] }
+  for (const mp of menuPrices) {
+    if (!mp.menuName) continue;
+    if (!byMenu.has(mp.menuName)) byMenu.set(mp.menuName, { category: mp.category || '', entries: [] });
+    const g = byMenu.get(mp.menuName);
+    if (!g.category && mp.category) g.category = mp.category;
+    g.entries.push({ menuCode: mp.menuCode, size: mp.size, price: mp.price });
+  }
 
-    const cost = costMap[firstSize.label] || 0;
+  const usedRecipeNames = new Set();
 
-    // 판매가: recipe.sizes에 sellingPrice 있으면 사용, 없으면 menuPriceMap에서 조회
-    let sellingPrice = firstSize.sellingPrice || null;
-    if (!sellingPrice) {
-      // menuPriceMap: menuName → { size → price }
-      const priceEntry = menuPriceMap.get(recipe.menuName);
-      sellingPrice = priceEntry?.[firstSize.label] ?? null;
+  // 1) 메뉴 판매가 기준 행 — 첫 사이즈(대표) 기준 원가
+  for (const [menuName, { category, entries }] of byMenu) {
+    const firstEntry = entries[0];
+    const norm = normalizeCategory(category);
+    const detailMap = detailStoreFor(category, detailMaps);
+
+    let cost = 0;
+    let sellingPrice = firstEntry?.price ?? null;
+
+    // (1) detail 레시피 — 첫 사이즈 menuCode 우선, 없으면 다른 사이즈 매칭
+    if (detailMap) {
+      const rec =
+        detailMap.get(firstEntry?.menuCode) ||
+        entries.map(e => detailMap.get(e.menuCode)).find(Boolean);
+      if (rec) cost = detailComponentCost(rec.components);
+    }
+
+    // (2) detail 매칭 실패 시 레거시 레시피(메뉴명)로 원가 계산
+    if (!cost) {
+      const lr = recipeByName.get(menuName);
+      if (lr) {
+        usedRecipeNames.add(menuName);
+        const cm = calcCostBySizes(lr, unitPriceMap);
+        const fs = lr.sizes?.[0];
+        if (fs) {
+          cost = cm[fs.label] || 0;
+          if (sellingPrice == null) sellingPrice = fs.sellingPrice || null;
+        }
+      }
     }
 
     const costRate = cost > 0 ? calcCostRate(cost, sellingPrice) : null;
-
-    const cat = normalizeCategory(recipe.menuCategory);
-
     rows.push({
-      id: recipe.id,
-      menuName: recipe.menuName,
-      rawCategory: recipe.menuCategory || '기타',
-      category: cat,
+      id: `mp-${menuName}`,
+      menuName,
+      rawCategory: category || '',
+      category: norm,
       cost: cost > 0 ? Math.round(cost) : null,
       sellingPrice,
       costRate,
@@ -73,23 +139,23 @@ function buildRows(recipes, unitPriceMap, menuPriceMap) {
     });
   }
 
-  // menuPriceMap에는 있지만 레시피가 없는 메뉴도 포함
-  const recipeNames = new Set(recipes.map(r => r.menuName));
-  for (const [menuName, sizeMap] of menuPriceMap) {
-    if (recipeNames.has(menuName)) continue;
-    // 카테고리를 menuPrices 원본에서 알 수 없으므로 categoryHint 활용 불가 — 기타
-    const sizeEntries = Object.entries(sizeMap);
-    if (!sizeEntries.length) continue;
-    const [firstSizeLabel, firstPrice] = sizeEntries[0];
+  // 2) 메뉴 판매가에 없는 레거시 레시피도 포함
+  for (const recipe of recipes) {
+    if (byMenu.has(recipe.menuName) || usedRecipeNames.has(recipe.menuName)) continue;
+    const firstSize = recipe.sizes?.[0];
+    if (!firstSize) continue;
+    const costMap = calcCostBySizes(recipe, unitPriceMap);
+    const cost = costMap[firstSize.label] || 0;
+    const sellingPrice = firstSize.sellingPrice || null;
     rows.push({
-      id: `mp-${menuName}`,
-      menuName,
-      rawCategory: '',
-      category: '기타',
-      cost: null,
-      sellingPrice: firstPrice,
-      costRate: null,
-      hasCost: false,
+      id: recipe.id,
+      menuName: recipe.menuName,
+      rawCategory: recipe.menuCategory || '기타',
+      category: normalizeCategory(recipe.menuCategory),
+      cost: cost > 0 ? Math.round(cost) : null,
+      sellingPrice,
+      costRate: cost > 0 ? calcCostRate(cost, sellingPrice) : null,
+      hasCost: cost > 0,
     });
   }
 
@@ -114,24 +180,22 @@ export default function Page() {
   const [catFilter, setCatFilter] = useState('전체');
 
   const fetchFn = useCallback(async () => {
-    const [allMenuPrices, allRecipes, allIngredients] = await Promise.all([
-      getAllMenuPrices(),
-      getAllRecipes(),
-      getAllIngredients(),
-    ]);
+    const [allMenuPrices, allRecipes, allIngredients, pizzaMap, personalMap, sideMap, setMap] =
+      await Promise.all([
+        getAllMenuPrices(),
+        getAllRecipes(),
+        getAllIngredients(),
+        getPizzaRecipeMap(),
+        getPersonalRecipeMap(),
+        getSideRecipeMap(),
+        getSetRecipeMap(),
+      ]);
 
-    // unitPriceMap — priceRowMap 없이 priceOverride만 사용
+    // unitPriceMap — priceRowMap 없이 priceOverride만 사용 (레거시 레시피용)
     const upm = buildUnitPriceMap(allIngredients, new Map());
 
-    // menuPriceMap: menuName → { sizeLabel → price }
-    const menuPriceMap = new Map();
-    for (const mp of allMenuPrices) {
-      if (!mp.menuName || !mp.size) continue;
-      if (!menuPriceMap.has(mp.menuName)) menuPriceMap.set(mp.menuName, {});
-      if (mp.price != null) menuPriceMap.get(mp.menuName)[mp.size] = mp.price;
-    }
-
-    const built = buildRows(allRecipes, upm, menuPriceMap);
+    const detailMaps = { pizza: pizzaMap, personal: personalMap, side: sideMap, set: setMap };
+    const built = buildRows(allRecipes, upm, allMenuPrices, detailMaps);
 
     // 정렬: 카테고리 순 → 메뉴명 가나다
     built.sort((a, b) => {
@@ -341,7 +405,13 @@ export default function Page() {
                       {r.cost != null ? (
                         `${formatNumber(r.cost)}원`
                       ) : (
-                        <span style={{ color: 'var(--text-4)', fontSize: 12 }}>레시피 미등록</span>
+                        <Link
+                          href={`/cost/${costPathFor(r.category)}`}
+                          style={{ color: 'var(--accent)', fontSize: 12, textDecoration: 'underline' }}
+                          title="해당 원가 페이지에서 레시피 작성"
+                        >
+                          레시피 미등록
+                        </Link>
                       )}
                     </td>
                     <td style={{ textAlign: 'right', color: 'var(--text-2)' }}>

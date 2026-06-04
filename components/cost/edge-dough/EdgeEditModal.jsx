@@ -199,8 +199,9 @@ function CompRow({ c, allMeta, upm, onChange, onRemove }) {
     const q = searchQ.trim().toLowerCase();
     if (!q) return [];
     return allMeta.filter(m =>
-      (m.ingredientName || '').toLowerCase().includes(q) ||
-      (m.productCode    || '').toLowerCase().includes(q)
+      !m.discontinued && !m.excluded &&
+      ((m.ingredientName || '').toLowerCase().includes(q) ||
+       (m.productCode    || '').toLowerCase().includes(q))
     ).slice(0, 15);
   }, [searchQ, allMeta]);
 

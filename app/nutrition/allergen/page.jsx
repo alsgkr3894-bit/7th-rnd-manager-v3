@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { downloadCsv } from '@/lib/download';
 import { initDB } from '@/lib/db';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllMenuMaster } from '@/lib/menu-master';
@@ -274,6 +275,23 @@ export default function Page() {
         title="알레르기 정보"
         masterSource
         sub="식자재 관리에서 식자재별 알레르기 항목을 체크하면 자동으로 메뉴에 매칭됩니다"
+        actions={
+          <button
+            className="btn"
+            onClick={() => {
+              const headers = ['메뉴명', '크러스트', ...orderedAllergens.map(a => a.allergenName)];
+              const rows = menuMatrix.map(r => [
+                r.menuName,
+                r.crust || '',
+                ...orderedAllergens.map(a => r.allergenCodes.has(a.allergenCode) ? '●' : ''),
+              ]);
+              downloadCsv([headers, ...rows], '알레르기매트릭스.csv');
+            }}
+            disabled={menuMatrix.length === 0}
+          >
+            <Icon.download style={{ width: 14, height: 14 }} /> CSV 내보내기
+          </button>
+        }
       />
 
       <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
@@ -364,6 +382,20 @@ export default function Page() {
             <button className="btn sm" onClick={() => setReorderTarget('allergen')}>
               알레르기 순서
             </button>
+            {(menuOrder.length > 0 || allergenOrder.length > 0) && (
+              <button
+                className="btn sm"
+                onClick={() => {
+                  saveOrder(MENU_ORDER_KEY, []);
+                  saveOrder(ALLERGEN_ORDER_KEY, []);
+                  setMenuOrder([]);
+                  setAllergenOrder([]);
+                }}
+                title="저장된 메뉴·알레르기 순서를 지우고 기본 순서로 복원"
+              >
+                순서 초기화
+              </button>
+            )}
           </div>
         )}
       </div>
