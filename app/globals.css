@@ -1436,6 +1436,8 @@ button { font-family: inherit; cursor: pointer; }
   border: 1px solid transparent;
   border-radius: 10px;
   width: 280px;
+  max-width: 100%;            /* 좁은 폭에서 부모 넘침 방지 */
+  min-width: 0;
   transition: border-color 150ms ease;
 }
 .filter-search:focus-within {
@@ -3050,6 +3052,13 @@ button { font-family: inherit; cursor: pointer; }
   .filter-chip-row { gap: 5px; }
   .setting-row { flex-direction: column; align-items: stretch; gap: 12px; }
   .setting-control { align-self: flex-end; }
+
+  /* 헤더: 제목/액션을 세로로 쌓고 액션은 전체 폭 사용 (가로 스크롤 방지) */
+  .page-head-row { flex-direction: column; align-items: stretch; gap: 12px; }
+  .page-actions { width: 100%; }
+  /* 액션 버튼이 좁은 폭에서 줄바꿈되며 한 줄에 꽉 차게 늘어남 */
+  .page-actions > .btn { flex: 1 1 auto; min-width: 0; max-width: 100%; justify-content: center; }
+  .filter-search { width: 100%; }
 }
 
 /* Density tweaks for compact */
