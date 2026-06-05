@@ -177,7 +177,12 @@ export default function Page() {
       setRestoreProgress({ label: 'store 복원 시작', current: 0, total: restoreTotal });
       const result = await importAll(partialData, {
         onProgress: ({ store, index, total }) => {
-          setRestoreProgress({ label: `${store} 복원 중`, current: index, total });
+          const rowCount = Array.isArray(partialData.stores?.[store])
+            ? partialData.stores[store].length : 0;
+          const label = rowCount > 500
+            ? `${store} 복원 중 (${formatNumber(rowCount)}건, 청크 분할)`
+            : `${store} 복원 중`;
+          setRestoreProgress({ label, current: index, total });
         },
       });
       const { imported, skipped, errors } = result || {};
