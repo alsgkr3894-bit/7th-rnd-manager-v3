@@ -15,13 +15,13 @@ import { calcCostRate } from '@/lib/cost/rate-color';
 import { KEYS } from '@/lib/note/keys';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 
+// SSR 안전 초기값 — brand와 category는 SSR에서 항상 기본값으로 두고
+// 마운트 후 실제 브랜드/저장값으로 교정한다(hydration 불일치 방지).
 export const INIT = {
-  brand: (typeof window !== 'undefined' && getActiveBrandId()) || 'main',
+  brand: 'main',
   title: '',
   menuName: '',
-  category:
-    (typeof window !== 'undefined' && localStorage.getItem(KEYS.NOTE_LAST_CATEGORY)) ||
-    CATEGORIES[0],
+  category: CATEGORIES[0],
   noteType: NOTE_TYPES[0],
   status: STATUSES[0],
   testContent: '',

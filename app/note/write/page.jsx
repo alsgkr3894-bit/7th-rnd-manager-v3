@@ -10,6 +10,7 @@ import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
+import { getActiveBrandId } from '@/lib/active-brand';
 
 export default function Page() {
   const router  = useRouter();
@@ -29,6 +30,16 @@ export default function Page() {
     setForm(updater);
     setIsDirty(true);
   }
+
+  // 마운트 후 brand·category를 실제 브랜드/저장값으로 교정 (SSR 초기값 'main' 덮기)
+  useEffect(() => {
+    setForm(f => ({
+      ...f,
+      brand: getActiveBrandId() || 'main',
+      category: (() => { try { return localStorage.getItem(KEYS.NOTE_LAST_CATEGORY) || f.category; } catch { return f.category; } })(),
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let fromId = null;

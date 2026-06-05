@@ -48,16 +48,25 @@ async function checkRoute(page, brand, route, directEntry = false) {
   const errs = [], consoleErrs = [];
 
   if (directEntry) {
-    // 직접 진입: 새 컨텍스트에서 localStorage 설정 후 바로 해당 라우트 방문 (홈 미경유)
-    const p2 = await browser.newPage();
+    // 진짜 직접 진입: addInitScript로 홈 방문 없이 localStorage를 미리 세팅 후 바로 라우트 이동.
+    // 이전 방식( / → 브랜드 설정 → route)은 홈 방문 중 main DB가 열려 공유 DB 버그가 가려짐.
+    const ctx = await browser.newContext();
+    await ctx.addInitScript(({ key, val }) => {
+      localStorage.setItem(key, val);
+    }, { key: 'v3:active-brand', val: brand });
+    const p2 = await ctx.newPage();
     p2.on('pageerror', e => errs.push(e.message.split('\n')[0]));
-    await p2.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
-    await p2.evaluate(b => localStorage.setItem('v3:active-brand', b), brand);
+    p2.on('console', m => {
+      if (m.type() === 'error') {
+        const t = m.text();
+        if (filterErr(t)) consoleErrs.push(t.split('\n')[0]);
+      }
+    });
     await p2.goto(`${BASE}${route}`, { waitUntil: 'networkidle' });
-    await p2.waitForTimeout(1200);
+    await p2.waitForTimeout(1500);
     const hasContent = await p2.evaluate(() => !!(document.querySelector('h1') || document.querySelector('main')));
     const hyd = errs.filter(e => /hydrat/i.test(e));
-    await p2.close();
+    await ctx.close();
     return { brand: `${brand}(직접)`, route, errs: errs.filter(e => !/hydrat/i.test(e)), hyd, consoleErrs, hasContent };
   }
 
