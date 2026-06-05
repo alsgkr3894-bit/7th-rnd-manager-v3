@@ -220,6 +220,7 @@ export default function Page() {
     const { byCode, byName } = usageMap;
     const q = menuSearch.trim().toLowerCase();
     return allMeta
+      .filter(m => !m.discontinued) // 단종 항목 제외
       .map(m => {
         const code = m.productCode || '';
         const name = m.ingredientName || '';

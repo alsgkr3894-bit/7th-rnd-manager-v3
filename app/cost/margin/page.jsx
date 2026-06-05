@@ -294,7 +294,7 @@ export default function Page() {
           sizes: (r.sizes || []).map(s => ({
             ...s,
             // 엣지 추가금 0원·미등록 → 추가금 없이 기존(베이스) 판매가 사용 (씬도우 등)
-            sellingPrice: s.sellingPrice != null ? s.sellingPrice + (edgePrice || 0) : null,
+            sellingPrice: s.sellingPrice != null ? s.sellingPrice + (edgePrice ?? 0) : null,
           })),
           costMap: newCostMap,
         });

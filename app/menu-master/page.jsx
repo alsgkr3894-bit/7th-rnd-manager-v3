@@ -422,7 +422,7 @@ export default function Page() {
     try {
       await resetAllMenuMaster();
       await resetAllMenuPrices(); // 미러도 함께 비움
-      setRows([]);
+      await load();
       showToast('초기화 완료', 'ok');
     } catch (err) {
       showToast('실패: ' + err.message, 'err');

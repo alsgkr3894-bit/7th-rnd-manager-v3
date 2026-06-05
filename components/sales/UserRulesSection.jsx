@@ -109,7 +109,7 @@ export function UserRulesSection() {
       />
 
       {adding && (
-        <RowForm form={form} setForm={setForm} onCancel={() => setAdding(false)} onSubmit={handleAdd} busy={busy} nameOpts={nameOpts}/>
+        <RowForm form={form} setForm={setForm} onCancel={() => setAdding(false)} onSubmit={handleAdd} busy={busy} nameOpts={nameOpts} isMain={isMain}/>
       )}
 
       {list.length === 0 && !adding ? (
@@ -139,7 +139,7 @@ export function UserRulesSection() {
               {paged.map(r => editingId === r.id ? (
                 <tr key={r.id}>
                   <td colSpan={6} style={{padding:8}}>
-                    <RowForm form={form} setForm={setForm} onCancel={() => setEditingId(null)} onSubmit={() => handleUpdate(r.id)} busy={busy} submitLabel="저장" nameOpts={nameOpts}/>
+                    <RowForm form={form} setForm={setForm} onCancel={() => setEditingId(null)} onSubmit={() => handleUpdate(r.id)} busy={busy} submitLabel="저장" nameOpts={nameOpts} isMain={isMain}/>
                   </td>
                 </tr>
               ) : (
@@ -184,7 +184,7 @@ function valueForSort(row, key) {
   return row[key] || '';
 }
 
-function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추가', nameOpts = { groupNames: [], detailNames: [], byCategory: {} } }) {
+function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추가', nameOpts = { groupNames: [], detailNames: [], byCategory: {} }, isMain = true }) {
   // 선택한 대분류(category)에 속한 중분류·상세만 자동완성 후보로
   const catOpts = nameOpts.byCategory?.[form.category] || { groupNames: [], detailNames: [] };
   return (

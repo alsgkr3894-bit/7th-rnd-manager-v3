@@ -18,6 +18,7 @@ import { getHistory, addEntry, getLastBackupAt, togglePin } from '@/lib/backup-h
 import { SettingTile } from '@/components/ui/SettingTile';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
+import { getActiveBrand } from '@/lib/active-brand';
 
 /**
  * 데이터 백업 페이지
@@ -27,6 +28,7 @@ import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
  *   - 마지막 백업 시각, 모듈 선택, 이력은 localStorage 기반
  */
 export default function Page() {
+  const [activeBrand, setActiveBrand] = useState(null); // SSR 불일치 방지 — 마운트 후 교정
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [stats, setStats] = useState(null);
@@ -37,6 +39,8 @@ export default function Page() {
   const [historyFilter, setHistoryFilter] = useState('all'); // all | pinned | week
   const [backupProgress, setBackupProgress] = useState(null);
   const [diagnostics, setDiagnostics] = useState(null);
+
+  useEffect(() => { setActiveBrand(getActiveBrand()); }, []);
 
   useEffect(() => {
     (async () => {
@@ -171,8 +175,28 @@ export default function Page() {
         }
       />
 
+      {/* 현재 브랜드 안내 — 노트(공유DB)는 항상 7번가피자에서 백업해야 포함됨 */}
+      <div style={{ minHeight: 44, marginTop: 12 }}>
+        {activeBrand && activeBrand.id !== 'main' && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 14px', borderRadius: 8,
+            background: 'var(--warn-soft)',
+            border: '1px solid color-mix(in oklab, var(--warn) 30%, transparent)',
+          }}>
+            <Icon.alert style={{ width: 16, height: 16, flexShrink: 0, color: 'var(--warn)' }} />
+            <span style={{ fontSize: 13 }}>
+              <b>현재 브랜드: {activeBrand.name}</b>
+              <span style={{ color: 'var(--warn)', fontWeight: 700 }}>
+                {' '}— 개발노트·샘플기록은 7번가피자 DB에 저장됩니다. 노트를 백업하려면 7번가피자로 전환 후 백업하세요.
+              </span>
+            </span>
+          </div>
+        )}
+      </div>
+
       {/* 요약 카드 */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:16,marginTop:24}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:16,marginTop:8}}>
         <SettingTile
           label="마지막 백업"
           value={lastBackupAt ? formatRelative(lastBackupAt) : '없음'}

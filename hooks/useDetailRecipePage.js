@@ -83,8 +83,8 @@ export function useDetailRecipePage({ category, fetchRecipeMap, upsertRecipe, ca
   }, [menus, recipeMap, calcCost]);
 
   const summaryRows = useMemo(() => menus.map(m => {
-    const recipe = recipeMap.get(m.menuCode);
-    const cost = calcCost(recipe);
+    const recipe = recipeMap.get(m.menuCode) ?? null;
+    const cost = recipe ? calcCost(recipe) : 0;
     const rate = (m.price && cost > 0) ? (cost / m.price * 100) : null;
     return { menuCode: m.menuCode, menuName: m.menuName, price: m.price, cost, rate };
   }), [menus, recipeMap, calcCost]);

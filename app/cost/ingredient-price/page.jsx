@@ -78,6 +78,7 @@ export default function Page() {
   const [bulkOpen, setBulkOpen] = useState(false); // 일괄 가격 업로드 모달
   const [syncQtyOpen, setSyncQtyOpen] = useState(false); // 제때 수량 동기화 모달
   const [importing, setImporting] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [viewTab, setViewTab] = useState('price'); // 'price' | 'usage'
   const [usageMap, setUsageMap] = useState({ byCode: new Map(), byName: new Map() });
@@ -344,14 +345,20 @@ export default function Page() {
         sub="제때 최신 단가 기준 — 마스터에 등록된 항목은 포장단위·개당 단가가 자동 계산돼요."
         actions={
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              className="btn"
-              onClick={handleReset}
-              disabled={resetting || importing}
-              style={{ color: 'var(--negative)' }}
-            >
-              {resetting ? '초기화 중…' : '마스터 초기화'}
-            </button>
+            {resetConfirm ? (
+              <>
+                <button className="btn" onClick={() => setResetConfirm(false)} disabled={resetting}>취소</button>
+                <button className="btn" onClick={() => { setResetConfirm(false); handleReset(); }} disabled={resetting}
+                  style={{ color: 'var(--negative)', fontWeight: 700 }}>
+                  {resetting ? '초기화 중…' : '정말 초기화'}
+                </button>
+              </>
+            ) : (
+              <button className="btn" onClick={() => setResetConfirm(true)} disabled={resetting || importing}
+                style={{ color: 'var(--negative)' }}>
+                마스터 초기화
+              </button>
+            )}
             <button
               className="btn"
               onClick={() => setBulkOpen(true)}
