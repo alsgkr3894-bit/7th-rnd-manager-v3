@@ -51,6 +51,7 @@ async function checkRoute(page, brand, route, directEntry = false) {
     // 진짜 직접 진입: addInitScript로 홈 방문 없이 localStorage를 미리 세팅 후 바로 라우트 이동.
     // 이전 방식( / → 브랜드 설정 → route)은 홈 방문 중 main DB가 열려 공유 DB 버그가 가려짐.
     const ctx = await browser.newContext();
+    await ctx.addCookies([AUTH_COOKIE]);
     await ctx.addInitScript(({ key, val }) => {
       localStorage.setItem(key, val);
     }, { key: 'v3:active-brand', val: brand });
@@ -89,26 +90,34 @@ async function checkRoute(page, brand, route, directEntry = false) {
   return { brand, route, errs: jsErrs, hyd, consoleErrs, hasContent };
 }
 
+const AUTH_COOKIE = { name: 'v3:auth', value: '1', domain: 'localhost', path: '/', sameSite: 'Strict' };
+
 // main 브랜드
 {
-  const page = await browser.newPage();
+  const ctx = await browser.newContext();
+  await ctx.addCookies([AUTH_COOKIE]);
+  const page = await ctx.newPage();
   await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => localStorage.setItem('v3:active-brand', 'main'));
   for (const route of MAIN_ROUTES) {
     results.push(await checkRoute(page, 'main', route));
   }
   await page.close();
+  await ctx.close();
 }
 
 // china4 브랜드 (홈 경유)
 {
-  const page = await browser.newPage();
+  const ctx = await browser.newContext();
+  await ctx.addCookies([AUTH_COOKIE]);
+  const page = await ctx.newPage();
   await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => localStorage.setItem('v3:active-brand', 'china4'));
   for (const route of CHINA4_ROUTES) {
     results.push(await checkRoute(page, 'china4', route));
   }
   await page.close();
+  await ctx.close();
 }
 
 // china4 — 노트 관련 직접 진입 (공유 DB 초기화 검증)

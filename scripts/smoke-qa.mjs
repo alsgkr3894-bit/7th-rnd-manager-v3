@@ -52,7 +52,14 @@ const ERROR_MARKERS = ['Application error', 'Unhandled Runtime', 'client-side ex
 
 async function main() {
   const browser = await chromium.launch();
-  const ctx = await browser.newContext({ viewport: VIEWPORT });
+  const ctx = await browser.newContext({
+    viewport: VIEWPORT,
+    // 로그인 쿠키 미리 세팅 — 인증 미들웨어 통과
+    storageState: {
+      cookies: [{ name: 'v3:auth', value: '1', domain: 'localhost', path: '/', sameSite: 'Strict' }],
+      origins: [],
+    },
+  });
   const results = [];
 
   for (const [name, path] of ROUTES) {
