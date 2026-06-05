@@ -79,6 +79,27 @@ function ShortcutsHelp({ onClose }) {
   );
 }
 
+/**
+ * 활성 브랜드 색을 앱 테마(accent)에 적용.
+ * 7번가(main)는 globals.css의 손튜닝 레드 테마를 그대로 사용(덮어쓰지 않음).
+ * 그 외 브랜드는 브랜드색을 기준으로 press/soft/text를 color-mix로 파생.
+ */
+function applyBrandAccent(company) {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  const vars = ['--accent', '--accent-press', '--accent-soft', '--accent-text'];
+  if (!company || company.id === 'main') {
+    vars.forEach(v => root.style.removeProperty(v)); // 기본 테마 복귀
+    return;
+  }
+  const c = company.color;
+  root.style.setProperty('--accent', c);
+  root.style.setProperty('--accent-press', `color-mix(in oklab, ${c} 82%, black)`);
+  // soft는 투명도 기반 틴트 → 라이트/다크 배경 모두에 자연스럽게 적용
+  root.style.setProperty('--accent-soft', `color-mix(in oklab, ${c} 14%, transparent)`);
+  root.style.setProperty('--accent-text', c);
+}
+
 export default function AppShell({ children }) {
   const [mobileNav, setMobileNav] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -91,6 +112,7 @@ export default function AppShell({ children }) {
     const id = getActiveBrandId();
     const found = COMPANIES.find(c => c.id === id);
     if (found && found.id !== activeCompany.id) setActiveCompany(found);
+    applyBrandAccent(found || COMPANIES[0]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const handleCompanyChange = (c) => {

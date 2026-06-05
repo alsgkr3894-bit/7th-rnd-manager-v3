@@ -7,6 +7,7 @@ import { SettingsExcludeCard } from '@/components/sales/SettingsExcludeCard';
 import { SettingsRuleCard } from '@/components/sales/SettingsRuleCard';
 import { formatNumber } from '@/lib/format';
 import { initDB } from '@/lib/db';
+import { getActiveBrandId } from '@/lib/active-brand';
 
 const TABS = [
   { key: 'rule',    label: '카테고리 분류 규칙' },
@@ -19,8 +20,15 @@ export default function Page() {
   const [excludeCount, setExcludeCount] = useState(0);
   const [excludeLoadFailed, setExcludeLoadFailed] = useState(false);
 
-  const ruleCount  = SALES_RULES.length;
-  const aliasCount = SALES_ALIASES.length;
+  // 기본 규칙·별칭 수는 7번가(main) 전용. 다른 브랜드는 0(DB 사용자 정의만).
+  // SSR/첫 렌더는 서버와 동일하게 두고 마운트 후 교정(하이드레이션 일치).
+  const [ruleCount, setRuleCount]   = useState(SALES_RULES.length);
+  const [aliasCount, setAliasCount] = useState(SALES_ALIASES.length);
+  useEffect(() => {
+    const main = getActiveBrandId() === 'main';
+    setRuleCount(main ? SALES_RULES.length : 0);
+    setAliasCount(main ? SALES_ALIASES.length : 0);
+  }, []);
 
   // 품목 제외 수: ref_excluded + sales_rules 중 category='품목제외' 합산
   useEffect(() => {

@@ -46,6 +46,11 @@ import { useWidgetConfig, HOME_WIDGET_ROWS } from '@/hooks/useWidgetConfig';
 import { getAllNotes, addNote } from '@/lib/note';
 import { getAllSamples } from '@/lib/sample';
 import { KEYS } from '@/lib/note/keys';
+import { getActiveBrandId } from '@/lib/active-brand';
+import { useIsMainBrand } from '@/hooks/useIsMainBrand';
+
+// 홈 베스트/워스트·평균원가율 집계 카테고리 — 7번가만 '피자'로 한정, 그 외 브랜드는 전체
+const homeRankCategory = () => (getActiveBrandId() === 'main' ? '피자' : null);
 
 /** 시간대별 인사말 */
 function greetingByHour() {
@@ -65,6 +70,7 @@ function pairRow(a, b, rowKey) {
 
 export default function HomePage() {
   const router = useRouter();
+  const isMain = useIsMainBrand(); // 7번가만 피자 카테고리 라벨 노출
 
   const [profile, setProfile]       = useState(null);
   const [salesKpi, setSalesKpi]     = useState(null);
@@ -148,8 +154,8 @@ export default function HomePage() {
       if (!anchor) {
         const sales = await Promise.allSettled([
           getSalesKpi(), getSalesTrend(chartTabRef.current), getCategoryShare(),
-          getTopMenusWithTrend(5, '피자', true, 'desc'),
-          getTopMenusWithTrend(5, '피자', true, 'asc'),
+          getTopMenusWithTrend(5, homeRankCategory(), true, 'desc'),
+          getTopMenusWithTrend(5, homeRankCategory(), true, 'asc'),
           getMonthlyBriefing(),
         ]);
         const [s, td, dn, tp, bt, br] = sales.map(r => (r.status === 'fulfilled' ? r.value : null));
@@ -186,8 +192,8 @@ export default function HomePage() {
       getSalesKpi(a),
       getSalesTrend(chartTabRef.current, a),
       getCategoryShare(a),
-      getTopMenusWithTrend(5, '피자', true, 'desc', a),
-      getTopMenusWithTrend(5, '피자', true, 'asc', a),
+      getTopMenusWithTrend(5, homeRankCategory(), true, 'desc', a),
+      getTopMenusWithTrend(5, homeRankCategory(), true, 'asc', a),
       getMonthlyBriefing(a),
     ]).then(([s, td, dn, tp, bt, br]) => {
       const val = r => r.status === 'fulfilled' ? r.value : null;
@@ -252,7 +258,7 @@ export default function HomePage() {
   const rankSub = salesKpi == null
     ? '판매 데이터 없음'
     : salesKpi.year && salesKpi.month
-      ? `${salesKpi.year}년 ${salesKpi.month}월 · 피자 카테고리`
+      ? `${salesKpi.year}년 ${salesKpi.month}월${isMain ? ' · 피자 카테고리' : ''}`
       : '집계 중';
 
   const todayStr = new Date().toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'short' });

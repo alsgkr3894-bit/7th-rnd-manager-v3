@@ -5,6 +5,7 @@ import { Icon } from '@/components/icons';
 import { fmtKRW, formatPercent } from '@/lib/format';
 import { Sparkline } from '@/components/charts/Sparkline';
 import { MomBars } from './MomBars';
+import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 
 const kpiButtonStyle = {
   border: 'none',
@@ -16,6 +17,7 @@ const kpiButtonStyle = {
 
 export const HomeKpiRow = memo(function HomeKpiRow({ salesKpi, costKpi, noteKpi, salesCount, noteCount }) {
   const router = useRouter();
+  const isMain = useIsMainBrand(); // 평균 원가율 '피자 카테고리' 배지는 7번가만
   const [salesPopped, setSalesPopped] = useState(false);
   const [notePopped, setNotePopped] = useState(false);
 
@@ -78,7 +80,7 @@ export const HomeKpiRow = memo(function HomeKpiRow({ salesKpi, costKpi, noteKpi,
 
       <div className="card kpi-card">
         <div>
-          <div className="label">평균 원가율<span className="pill">피자 카테고리</span></div>
+          <div className="label">평균 원가율{isMain && <span className="pill">피자 카테고리</span>}</div>
           <div className="value num" style={{color: costKpi?.rate == null ? 'var(--text-4)' : undefined}}>
             {costKpi?.rate == null ? '—' : costKpi.rate.toFixed(1)}<span className="unit">%</span>
           </div>
