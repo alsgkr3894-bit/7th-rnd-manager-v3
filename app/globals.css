@@ -1369,6 +1369,13 @@ button { font-family: inherit; cursor: pointer; }
   /* 별칭 행 — 모바일 압축 */
   .alias-row { grid-template-columns: 1fr auto auto; grid-template-rows: auto auto; }
   .alias-row > :nth-child(2) { display: none; }
+
+  /* 브리핑 히어로 — 모바일: 단일 컬럼, 글자 축소, 차트 가로 배치 */
+  .briefing { grid-template-columns: 1fr; padding: 16px 16px; gap: 14px; }
+  .brief-head { font-size: 15px; }
+  .brief-stat .v { font-size: 17px; }
+  .brief-aside { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
+  .brief-spark { width: 140px; height: 52px; }
 }
 
 /* ============================================================
