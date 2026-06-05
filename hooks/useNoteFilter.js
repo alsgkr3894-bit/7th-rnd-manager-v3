@@ -51,7 +51,12 @@ export function useNoteFilter(notes, pinnedIds, { pathname } = {}) {
     window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
   }, [search, statusFilter, pathname]);
 
-  const counts = useMemo(() => countNotesByStatus(notes), [notes]);
+  // 상태 칩 카운트는 브랜드 필터 적용 후 기준 — 칩 숫자와 실제 목록 불일치 방지
+  const brandFiltered = useMemo(() => {
+    if (!brandReady || brandFilter === 'all') return notes;
+    return notes.filter(n => (n.brand || 'main') === brandFilter);
+  }, [notes, brandFilter, brandReady]);
+  const counts = useMemo(() => countNotesByStatus(brandFiltered), [brandFiltered]);
   const searchIndex = useMemo(() => buildNoteSearchIndex(notes), [notes]);
   const filtered = useMemo(
     () => filterSortNotes(notes, { statusFilter, brandFilter, search, sortBy, pinnedIds, searchIndex }),

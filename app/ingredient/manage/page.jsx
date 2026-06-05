@@ -265,6 +265,7 @@ export default function Page() {
           await updateIngredient(formTarget.id, formData);
           showToast('저장 완료', 'ok');
         } else {
+          if (!formTarget.productCode) throw new Error('제때 연동 항목에 productCode가 없습니다. 데이터를 확인해 주세요.');
           await upsertIngredientMeta({ productCode: formTarget.productCode, ...formData });
           // 제때 연동 항목의 전용/범용 단일 출처 = 제때 관리품목(productType)
           await syncManagedScope(formTarget, formData.scope);

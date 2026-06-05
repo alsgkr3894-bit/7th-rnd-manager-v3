@@ -62,7 +62,7 @@ export function useDetailRecipePage({ category, fetchRecipeMap, upsertRecipe, ca
                                            : '레시피 수정 완료';
       showToast(msg, 'ok');
       setTarget(null);
-      setRecipeMap(await fetchRecipeMap());
+      await load(); // menus·recipeMap 동시 갱신 (신규 메뉴가 추가됐을 수 있음)
     } catch (err) {
       showToast('저장 실패: ' + err.message, 'err');
       throw err;

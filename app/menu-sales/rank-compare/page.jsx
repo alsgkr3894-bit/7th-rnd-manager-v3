@@ -131,7 +131,9 @@ export default function Page() {
         }
       />
 
-      {ready && available.length === 0 ? (
+      {!ready ? (
+        <div className="skeleton" style={{ height: 240, borderRadius: 12, marginTop: 16 }} />
+      ) : available.length === 0 ? (
         <RankCompareEmpty />
       ) : (
         <>

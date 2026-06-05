@@ -378,7 +378,8 @@ function RecipeContent() {
 
       {tab !== 'recipe' && (
         <div style={{ marginTop: 16 }}>
-          <CommonManageView tab={tab} />
+          {/* key={tab}으로 탭 전환 시 상태 초기화 — draft/edit 상태 잔류 방지 */}
+          <CommonManageView key={tab} tab={tab} />
         </div>
       )}
 
