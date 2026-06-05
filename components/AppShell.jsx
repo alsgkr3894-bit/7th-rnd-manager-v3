@@ -93,11 +93,18 @@ function applyBrandAccent(company) {
     return;
   }
   const c = company.color;
+  const isDark = root.getAttribute('data-theme') === 'dark';
   root.style.setProperty('--accent', c);
   root.style.setProperty('--accent-press', `color-mix(in oklab, ${c} 82%, black)`);
-  // soft는 투명도 기반 틴트 → 라이트/다크 배경 모두에 자연스럽게 적용
-  root.style.setProperty('--accent-soft', `color-mix(in oklab, ${c} 14%, transparent)`);
-  root.style.setProperty('--accent-text', c);
+  if (isDark) {
+    // 다크모드: 브랜드색 + 어두운 배경 혼합 → 눈에 띄되 너무 밝지 않게
+    root.style.setProperty('--accent-soft', `color-mix(in oklab, ${c} 22%, #111111)`);
+    root.style.setProperty('--accent-text', `color-mix(in oklab, ${c} 55%, white)`);
+  } else {
+    // 라이트모드: 브랜드색 + 흰 배경 혼합 → 연한 틴트
+    root.style.setProperty('--accent-soft', `color-mix(in oklab, ${c} 12%, white)`);
+    root.style.setProperty('--accent-text', `color-mix(in oklab, ${c} 78%, black)`);
+  }
 }
 
 export default function AppShell({ children }) {
@@ -112,7 +119,13 @@ export default function AppShell({ children }) {
     const id = getActiveBrandId();
     const found = COMPANIES.find(c => c.id === id);
     if (found && found.id !== activeCompany.id) setActiveCompany(found);
-    applyBrandAccent(found || COMPANIES[0]);
+    const company = found || COMPANIES[0];
+    applyBrandAccent(company);
+
+    // 다크/라이트 전환 시 accent-soft/text 재계산
+    const obs = new MutationObserver(() => applyBrandAccent(company));
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => obs.disconnect();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const handleCompanyChange = (c) => {

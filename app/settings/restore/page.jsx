@@ -20,6 +20,7 @@ import { formatNumber } from '@/lib/format';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
 import { Toggle } from '@/components/ui/Toggle';
+import { getActiveBrand } from '@/lib/active-brand';
 
 /**
  * 데이터 복원 페이지
@@ -33,6 +34,8 @@ import { Toggle } from '@/components/ui/Toggle';
  *   6. 완료 상태 카드 (alert 없이 인라인)
  */
 export default function Page() {
+  // SSR/클라이언트 불일치 방지 — 마운트 후 활성 브랜드 읽기
+  const [activeBrand, setActiveBrand] = useState(null);
   const [ready,           setReady]           = useState(false);
   const [parsed,          setParsed]          = useState(null);     // 백업 파일 파싱 결과
   const [busy,            setBusy]            = useState(false);
@@ -44,6 +47,10 @@ export default function Page() {
   const [backupFailed,    setBackupFailed]    = useState(false);   // 자동백업 실패 후 재확인 대기
   const { scopes, toggleScope, setAllScopes } = useModuleScopes();
   const fileRef = useRef(null);
+
+  useEffect(() => {
+    setActiveBrand(getActiveBrand());
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -231,6 +238,30 @@ export default function Page() {
         title="데이터 복원"
         sub="백업 시점으로 데이터를 되돌립니다. 복원은 되돌릴 수 없으니 신중히 진행하세요."
       />
+
+      {/* ── 현재 브랜드 안내 — 복원 대상 DB를 명확히 표시 ─── */}
+      {activeBrand && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 14px', borderRadius: 8, marginTop: 12,
+          background: activeBrand.id === 'main' ? 'var(--positive-soft)' : 'var(--warn-soft)',
+          border: `1px solid ${activeBrand.id === 'main'
+            ? 'color-mix(in oklab, var(--positive) 30%, transparent)'
+            : 'color-mix(in oklab, var(--warn) 30%, transparent)'}`,
+        }}>
+          <Icon.alert style={{ width: 16, height: 16, flexShrink: 0,
+            color: activeBrand.id === 'main' ? 'var(--positive)' : 'var(--warn)' }} />
+          <span style={{ fontSize: 13 }}>
+            <b>복원 대상: {activeBrand.name}</b>
+            {activeBrand.id !== 'main'
+              ? <span style={{ color: 'var(--warn)', fontWeight: 700 }}>
+                  {' '}— 7번가피자 데이터를 복원하려면 상단에서 브랜드를 7번가피자로 전환하세요.
+                </span>
+              : <span style={{ color: 'var(--text-2)' }}> — 7번가피자 DB에 복원됩니다.</span>
+            }
+          </span>
+        </div>
+      )}
 
       {/* ── 완료 상태 카드 ─────────────────────────────────── */}
       {restoreDone && (
