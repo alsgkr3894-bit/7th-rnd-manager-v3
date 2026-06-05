@@ -1,10 +1,19 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getProfile } from '@/lib/profile';
 import { isAuthSetup, verifyPassword, savePassword, setAuthCookie } from '@/lib/auth';
 
+// useSearchParams()는 Suspense 경계 안에서만 사용 가능 (Next.js 14 빌드 요구사항)
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const isSetup      = searchParams.get('setup') === '1';
