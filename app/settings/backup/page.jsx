@@ -1,7 +1,8 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { SearchBox } from '@/components/ui/SearchBox';
 import { showToast } from '@/components/Toast';
 import {
   initDB,
@@ -11,12 +12,13 @@ import {
   MODULE_KEYS,
   collectStoreStats,
 } from '@/lib/db';
-import { downloadJson, makeFileName } from '@/lib/download';
+import { downloadCsv, downloadJson, makeFileName } from '@/lib/download';
 import { formatNumber, formatRelative } from '@/lib/format';
-import { getHistory, addEntry, getLastBackupAt } from '@/lib/backup-history';
+import { getHistory, addEntry, getLastBackupAt, togglePin } from '@/lib/backup-history';
 import { SettingTile } from '@/components/ui/SettingTile';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
+import { getActiveBrand } from '@/lib/active-brand';
 
 /**
  * 데이터 백업 페이지
@@ -26,12 +28,19 @@ import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
  *   - 마지막 백업 시각, 모듈 선택, 이력은 localStorage 기반
  */
 export default function Page() {
+  const [activeBrand, setActiveBrand] = useState(null); // SSR 불일치 방지 — 마운트 후 교정
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [stats, setStats] = useState(null);
   const { scopes, toggleScope, setAllScopes } = useModuleScopes();
   const [lastBackupAt, setLastBackupAt] = useState(null);
   const [history, setHistory] = useState([]);
+  const [historyQuery, setHistoryQuery] = useState('');
+  const [historyFilter, setHistoryFilter] = useState('all'); // all | pinned | week
+  const [backupProgress, setBackupProgress] = useState(null);
+  const [diagnostics, setDiagnostics] = useState(null);
+
+  useEffect(() => { setActiveBrand(getActiveBrand()); }, []);
 
   useEffect(() => {
     (async () => {
@@ -57,12 +66,72 @@ export default function Page() {
     ? selectedStores.reduce((sum, name) => sum + (stats[name] || 0), 0)
     : 0;
 
+  const sortedHistory = useMemo(
+    () => [...history].sort((a, b) => {
+      if (!a.pinned !== !b.pinned) return a.pinned ? -1 : 1;
+      return (b.at || '').localeCompare(a.at || '');
+    }),
+    [history]
+  );
+
+  const filteredHistory = useMemo(() => {
+    const q = historyQuery.trim().toLowerCase();
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return sortedHistory.filter(h => {
+      if (historyFilter === 'pinned' && !h.pinned) return false;
+      if (historyFilter === 'week' && new Date(h.at).getTime() < weekAgo) return false;
+      if (!q) return true;
+      const scopeText = (h.scopes || []).map(k => MODULE_GROUPS[k]?.label || k).join(' ');
+      return String(h.id || '').toLowerCase().includes(q)
+        || String(h.fileName || '').toLowerCase().includes(q)
+        || scopeText.toLowerCase().includes(q);
+    });
+  }, [historyFilter, historyQuery, sortedHistory]);
+
+  function exportHistoryCsv() {
+    const headers = ['백업 ID', '일시', '범위', '행 수', '파일명', '고정'];
+    const rows = filteredHistory.map(h => [
+      h.id || '',
+      h.at ? new Date(h.at).toLocaleString('ko-KR') : '',
+      (h.scopes || []).map(k => MODULE_GROUPS[k]?.label || k).join(', ') || '전체',
+      h.totalRows ?? '',
+      h.fileName || '',
+      h.pinned ? 'Y' : '',
+    ]);
+    downloadCsv([headers, ...rows], '백업이력.csv');
+  }
+
+  async function collectDiagnostics() {
+    const storage = navigator.storage?.estimate ? await navigator.storage.estimate().catch(() => null) : null;
+    const nav = performance.getEntriesByType?.('navigation')?.[0];
+    setDiagnostics({
+      at: new Date().toLocaleString('ko-KR'),
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+      storageUsage: storage?.usage ?? null,
+      storageQuota: storage?.quota ?? null,
+      navigationType: nav?.type || 'unknown',
+      loadMs: nav ? Math.round(nav.loadEventEnd || nav.duration || 0) : null,
+    });
+    showToast('진단 정보를 수집했어요', 'ok');
+  }
+
   async function handleBackup() {
     if (busy || selectedKeys.length === 0) return;
     setBusy(true);
+    setBackupProgress({ label: '백업 준비 중', current: 0, total: Math.max(selectedStores.length, 1) });
     try {
-      const data = await exportSelected(selectedStores, { scopes: selectedKeys });
+      const data = await exportSelected(
+        selectedStores,
+        { scopes: selectedKeys },
+        {
+          onProgress: ({ store, index, total }) => {
+            setBackupProgress({ label: `${store} 내보내는 중`, current: index, total });
+          },
+        }
+      );
       const fileName = makeFileName('rnd-manager-backup', 'json');
+      setBackupProgress({ label: '파일 다운로드 준비 중', current: Math.max(selectedStores.length, 1), total: Math.max(selectedStores.length, 1) });
       downloadJson(data, fileName);
       // 이력 기록 (실패해도 백업 파일은 이미 다운로드됨 — 경고만)
       const recorded = addEntry({
@@ -81,6 +150,7 @@ export default function Page() {
       showToast('백업 중 오류가 발생했습니다.', 'err');
     } finally {
       setBusy(false);
+      setTimeout(() => setBackupProgress(null), 900);
     }
   }
 
@@ -105,8 +175,28 @@ export default function Page() {
         }
       />
 
+      {/* 현재 브랜드 안내 — 노트(공유DB)는 항상 7번가피자에서 백업해야 포함됨 */}
+      <div style={{ minHeight: 44, marginTop: 12 }}>
+        {activeBrand && activeBrand.id !== 'main' && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 14px', borderRadius: 8,
+            background: 'var(--warn-soft)',
+            border: '1px solid color-mix(in oklab, var(--warn) 30%, transparent)',
+          }}>
+            <Icon.alert style={{ width: 16, height: 16, flexShrink: 0, color: 'var(--warn)' }} />
+            <span style={{ fontSize: 13 }}>
+              <b>현재 브랜드: {activeBrand.name}</b>
+              <span style={{ color: 'var(--warn)', fontWeight: 700 }}>
+                {' '}— 개발노트·샘플기록은 7번가피자 DB에 저장됩니다. 노트를 백업하려면 7번가피자로 전환 후 백업하세요.
+              </span>
+            </span>
+          </div>
+        )}
+      </div>
+
       {/* 요약 카드 */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:16,marginTop:24}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:16,marginTop:8}}>
         <SettingTile
           label="마지막 백업"
           value={lastBackupAt ? formatRelative(lastBackupAt) : '없음'}
@@ -124,6 +214,27 @@ export default function Page() {
           num
         />
       </div>
+
+      {backupProgress && (
+        <div className="card" style={{ marginTop: 16, padding: '14px 18px' }} aria-live="polite">
+          <div style={{ display:'flex', justifyContent:'space-between', gap:12, fontSize:13, marginBottom:8 }}>
+            <span style={{ fontWeight:700 }}>{backupProgress.label}</span>
+            <span className="num" style={{ color:'var(--text-3)' }}>
+              {backupProgress.current} / {backupProgress.total}
+            </span>
+          </div>
+          <div style={{ height:8, borderRadius:99, background:'var(--surface-2)', overflow:'hidden' }}>
+            <div
+              style={{
+                width: `${Math.min(100, Math.round((backupProgress.current / Math.max(backupProgress.total, 1)) * 100))}%`,
+                height:'100%',
+                background:'var(--accent)',
+                transition:'width .15s ease',
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* 백업 범위 선택 */}
       <div className="card" style={{marginTop:16}}>
@@ -163,10 +274,36 @@ export default function Page() {
             아직 백업 이력이 없습니다.
           </div>
         ) : (
+          <>
+          <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:12,flexWrap:'wrap'}}>
+            <div style={{flex:'1 1 260px'}}>
+              <SearchBox value={historyQuery} onChange={setHistoryQuery} placeholder="백업 ID·범위·파일명 검색" />
+            </div>
+            <div style={{display:'flex',gap:4}}>
+              {[
+                { key:'all', label:'전체' },
+                { key:'pinned', label:'고정' },
+                { key:'week', label:'최근 7일' },
+              ].map(f => (
+                <button key={f.key} className={'chip' + (historyFilter === f.key ? ' active' : '')} onClick={() => setHistoryFilter(f.key)}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            <button className="btn sm" onClick={exportHistoryCsv} disabled={filteredHistory.length === 0}>
+              CSV
+            </button>
+          </div>
+          {filteredHistory.length === 0 ? (
+            <div style={{padding:'24px 0',textAlign:'center',color:'var(--text-3)',fontSize:13}}>
+              조건에 맞는 백업 이력이 없습니다.
+            </div>
+          ) : (
           <div className="table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
+                  <th style={{width:44}} />
                   <th style={{width:120}}>백업 ID</th>
                   <th style={{width:170}}>일시</th>
                   <th>범위</th>
@@ -175,8 +312,19 @@ export default function Page() {
                 </tr>
               </thead>
               <tbody>
-                {history.map(h => (
-                  <tr key={h.id}>
+                {filteredHistory.map(h => (
+                  <tr key={h.id} style={h.pinned ? { background: 'var(--accent-soft)' } : undefined}>
+                    <td style={{textAlign:'center'}}>
+                      <button
+                        className="btn sm"
+                        title={h.pinned ? '고정 해제' : '고정(20건 초과 시에도 보존)'}
+                        aria-pressed={h.pinned}
+                        onClick={() => { togglePin(h.id); setHistory(getHistory()); }}
+                        style={{ padding:'2px 6px', color: h.pinned ? 'var(--accent)' : 'var(--text-4)' }}
+                      >
+                        {h.pinned ? '📌' : '📍'}
+                      </button>
+                    </td>
                     <td className="num" style={{color:'var(--text-3)',fontSize:12}}>{h.id}</td>
                     <td className="num" style={{fontSize:12}}>{new Date(h.at).toLocaleString('ko-KR')}</td>
                     <td style={{fontSize:12}}>
@@ -189,10 +337,28 @@ export default function Page() {
               </tbody>
             </table>
           </div>
+          )}
+          </>
+        )}
+      </div>
+
+      <div className="card" style={{marginTop:16}}>
+        <h2 style={{fontSize:15,fontWeight:700,marginBottom:4}}>개발 서버 진단</h2>
+        <p style={{fontSize:12,color:'var(--text-3)',marginBottom:12}}>
+          로컬 점검 중 서버 연결이 끊길 때 브라우저 환경 정보를 빠르게 남깁니다.
+        </p>
+        <button className="btn sm" onClick={collectDiagnostics}>진단 정보 수집</button>
+        {diagnostics && (
+          <div style={{marginTop:12,display:'grid',gap:6,fontSize:12,color:'var(--text-2)'}}>
+            <div><b>수집 시각</b> {diagnostics.at}</div>
+            <div><b>URL</b> <span className="mono">{diagnostics.url}</span></div>
+            <div><b>로드 유형</b> {diagnostics.navigationType}{diagnostics.loadMs != null ? ` · ${diagnostics.loadMs}ms` : ''}</div>
+            <div><b>저장소</b> {diagnostics.storageUsage != null ? `${formatNumber(Math.round(diagnostics.storageUsage / 1024))}KB / ${formatNumber(Math.round((diagnostics.storageQuota || 0) / 1024))}KB` : '확인 불가'}</div>
+            <div style={{wordBreak:'break-word'}}><b>User Agent</b> {diagnostics.userAgent}</div>
+          </div>
         )}
       </div>
 
     </main>
   );
 }
-

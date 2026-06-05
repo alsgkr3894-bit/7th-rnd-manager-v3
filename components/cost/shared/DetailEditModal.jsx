@@ -50,7 +50,10 @@ export function DetailEditModal({
     (async () => {
       try {
         const all = await getAllIngredients();
-        setIngredients(all.filter(m => m.isSeeded || m.isManual).map(buildMetaOnlyRow));
+        setIngredients(
+          all.filter(m => !m.discontinued && !m.excluded && (m.isSeeded || m.isManual))
+             .map(buildMetaOnlyRow)
+        );
       } catch (err) { console.warn(err); }
     })();
   }, []);

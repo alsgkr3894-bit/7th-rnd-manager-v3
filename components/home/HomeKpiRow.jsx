@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { fmtKRW, formatPercent } from '@/lib/format';
 import { Sparkline } from '@/components/charts/Sparkline';
+import { MomBars } from './MomBars';
+import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 
 const kpiButtonStyle = {
   border: 'none',
@@ -15,8 +17,15 @@ const kpiButtonStyle = {
 
 export const HomeKpiRow = memo(function HomeKpiRow({ salesKpi, costKpi, noteKpi, salesCount, noteCount }) {
   const router = useRouter();
+  const isMain = useIsMainBrand(); // 평균 원가율 '피자 카테고리' 배지는 7번가만
   const [salesPopped, setSalesPopped] = useState(false);
   const [notePopped, setNotePopped] = useState(false);
+
+  // 월 비교 미니 막대 (최근 6개월) — 판매 sparkline + 파생 월 라벨
+  const momSeries = (salesKpi?.sparkline ?? []).slice(-6);
+  const momLabels = salesKpi?.month
+    ? Array.from({ length: 6 }, (_, i) => { let m = salesKpi.month - (5 - i); while (m < 1) m += 12; return `${m}월`; })
+    : [];
 
   useEffect(() => {
     if (salesCount > 0 && !salesPopped) {
@@ -64,12 +73,14 @@ export const HomeKpiRow = memo(function HomeKpiRow({ salesKpi, costKpi, noteKpi,
             )}
           </div>
         </div>
-        <Sparkline data={salesKpi?.sparkline ?? []} color="#3182F6" />
+        {momSeries.length > 0
+          ? <MomBars series={momSeries} labels={momLabels} />
+          : <Sparkline data={salesKpi?.sparkline ?? []} color="#3182F6" />}
       </button>
 
       <div className="card kpi-card">
         <div>
-          <div className="label">평균 원가율<span className="pill">피자 카테고리</span></div>
+          <div className="label">평균 원가율{isMain && <span className="pill">피자 카테고리</span>}</div>
           <div className="value num" style={{color: costKpi?.rate == null ? 'var(--text-4)' : undefined}}>
             {costKpi?.rate == null ? '—' : costKpi.rate.toFixed(1)}<span className="unit">%</span>
           </div>

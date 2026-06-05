@@ -8,6 +8,7 @@ const pretendard = localFont({
   display: 'swap',
   variable: '--font-pretendard',
   weight: '100 900',
+  preload: false, // subset preload 경고 방지 — variable 폰트는 전체 범위 사용
 });
 
 export const metadata = {

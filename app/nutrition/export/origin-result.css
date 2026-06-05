@@ -196,6 +196,20 @@
   vertical-align: middle;
 }
 
+/* ── 배달플랫폼용 표 ──────────────────────────────────────── */
+.origin-delivery-table col.col-menu { width: 28%; }
+.origin-delivery-table col.col-ing  { width: 72%; }
+
+.origin-delivery-table th {
+  font-size: 14px;
+  padding: 10px;
+}
+.origin-delivery-table td {
+  font-size: 13px;
+  padding: 8px 10px;
+  vertical-align: top;
+}
+
 /* ── 하단 안내문 ──────────────────────────────────────────── */
 .origin-result-notice {
   border: 1px solid #333;
@@ -241,6 +255,11 @@
   .origin-fridge-table td {
     font-size: 13pt;
     padding: 6px 8px;
+  }
+  .origin-delivery-table th,
+  .origin-delivery-table td {
+    font-size: 11pt;
+    padding: 5px 7px;
   }
 
   @page {

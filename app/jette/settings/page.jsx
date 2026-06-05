@@ -6,6 +6,7 @@ import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { seedManagedProductsIfEmpty } from '@/lib/shipment';
 import { ManagedProductsCard } from '@/components/jette/ManagedProductsCard';
+import { Toggle } from '@/components/ui/Toggle';
 
 const LS_KEY = 'v3:jette-settings';
 
@@ -145,30 +146,7 @@ export default function Page() {
               제때 가격 파일 업로드 시 원가 계산 결과를 자동으로 갱신합니다
             </div>
           </div>
-          <label style={{
-            position:'relative', display:'inline-block',
-            width:40, height:22, flexShrink:0,
-          }}>
-            <input
-              type="checkbox"
-              checked={settings.autoRecalcOnUpdate}
-              onChange={e => update('autoRecalcOnUpdate', e.target.checked)}
-              style={{opacity:0, width:0, height:0, position:'absolute'}}
-            />
-            <span style={{
-              position:'absolute', inset:0, borderRadius:11,
-              background: settings.autoRecalcOnUpdate ? 'var(--accent)' : 'var(--border)',
-              transition:'background .2s', cursor:'pointer',
-            }}>
-              <span style={{
-                position:'absolute',
-                top:3, left: settings.autoRecalcOnUpdate ? 21 : 3,
-                width:16, height:16, borderRadius:'50%',
-                background:'#fff', transition:'left .2s',
-                boxShadow:'0 1px 3px rgba(0,0,0,.2)',
-              }}/>
-            </span>
-          </label>
+          <Toggle value={settings.autoRecalcOnUpdate} onChange={v => update('autoRecalcOnUpdate', v)} />
         </div>
 
         {/* 신규 제품 자동 등록 / 수동 승인 */}

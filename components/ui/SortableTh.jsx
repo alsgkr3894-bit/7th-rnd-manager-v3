@@ -9,15 +9,19 @@
  * @param {Function} onClick   - onClick(sortKey)
  * @param {number}   [width]
  * @param {boolean}  [right]   - 오른쪽 정렬
+ * @param {object}   [style]   - 추가 인라인 스타일 (병합)
+ * @param {string}   [className] - 추가 클래스
  * @param {ReactNode} children - 헤더 라벨
  */
-export function SortableTh({ sortKey, active, dir, onClick, children, width, right }) {
+export function SortableTh({ sortKey, active, dir, onClick, children, width, right, style, className, rowSpan, colSpan }) {
   const isActive = active === sortKey;
   return (
     <th
       onClick={() => onClick(sortKey)}
-      className="sortable"
-      style={{ width, textAlign: right ? 'right' : undefined, cursor:'pointer', userSelect:'none' }}
+      rowSpan={rowSpan}
+      colSpan={colSpan}
+      className={className ? `sortable ${className}` : 'sortable'}
+      style={{ width, textAlign: right ? 'right' : undefined, cursor:'pointer', userSelect:'none', ...style }}
     >
       {children}{' '}
       <span style={{color: isActive ? 'var(--accent)' : 'var(--text-4)', fontSize: 10}}>

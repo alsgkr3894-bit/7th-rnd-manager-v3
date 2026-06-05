@@ -20,6 +20,23 @@ npm run build
 npm run start
 ```
 
+> ⚠️ **개발 중 주의**
+> - `next dev` 서버가 떠 있는 상태에서 `npm run build`를 돌리면 `.next` 청크가 꼬여
+>   기존 dev 서버가 500(`Cannot find module './xxxx.js'`)을 낼 수 있습니다.
+>   **dev 서버 실행 중에는 build를 돌리지 마세요.**
+> - 청크가 꼬였거나 QA 직전 깨끗한 상태가 필요하면 `npm run dev:clean`을 쓰세요
+>   (`.next` 삭제 후 dev 재시작 표준 경로).
+
+## 스모크 QA
+
+```bash
+# dev 서버(localhost:3000)가 떠 있는 상태에서 실행
+npm run qa:smoke
+```
+
+대표 라우트를 순회하며 각 페이지의 제목(h1)·`main`·콘솔 에러·가로 스크롤(`scrollWidth > innerWidth`)·
+에러 문구를 검사해 표로 출력합니다. 데이터 변경(업로드·저장·복원·초기화)은 실행하지 않습니다.
+
 ---
 
 ## 프로젝트 구조

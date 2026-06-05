@@ -10,7 +10,7 @@ const GROUPS = [
       { href: '/cost/ingredient-price', icon: 'tag',      title: '식자재 가격',  sub: '재료별 단가·공급업체 관리' },
       { href: '/cost/recipe',  icon: 'doc', title: '레시피',   sub: '메뉴별 사용 재료·배합 비율' },
       { href: '/cost/manage',  icon: 'box', title: '공통 관리', sub: '공통묶음 · 엣지 원가 관리' },
-      { href: '/cost/menu-price',       icon: 'download', title: '메뉴 가격표',  sub: '판매가·목표 원가율 설정' },
+      { href: '/menu-master',           icon: 'download', title: '메뉴 마스터',  sub: '메뉴코드·분류·판매가 기준 관리' },
       { href: '/cost/margin',           icon: 'chart',    title: '원가마진표',     sub: '원가율·마진율·플랫폼 시뮬레이션' },
     ],
   },

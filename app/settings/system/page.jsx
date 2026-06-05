@@ -2,7 +2,18 @@
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
-import { initDB, clearStore, ALL_STORES, DB_NAME, DB_VERSION, hasStore, deleteDatabase, collectStoreStats } from '@/lib/db';
+import {
+  initDB,
+  clearStore,
+  ALL_STORES,
+  DB_NAME,
+  DB_VERSION,
+  hasStore,
+  deleteDatabase,
+  collectStoreStats,
+} from '@/lib/db';
+import { dbNameFor } from '@/lib/db/constants';
+import { getActiveBrandId } from '@/lib/active-brand';
 import { formatNumber } from '@/lib/format';
 import { getSetting, setSetting } from '@/lib/settings';
 import { Toggle } from '@/components/ui/Toggle';
@@ -30,7 +41,16 @@ export default function Page() {
   const [confirmingRecreate, setConfirmingRecreate] = useState(false);
   const [storageEst, setStorageEst] = useState(null); // { usage, quota } in bytes
 
-  const SETTING_KEYS = ['theme', 'density', 'autoRecalc', 'strictPosting', 'roundMode', 'unmatchedAlert', 'costRateAlert'];
+  const SETTING_KEYS = [
+    'theme',
+    'density',
+    'fontScale',
+    'autoRecalc',
+    'strictPosting',
+    'roundMode',
+    'unmatchedAlert',
+    'costRateAlert',
+  ];
   const [settings, setSettings] = useState(() =>
     Object.fromEntries(SETTING_KEYS.map(k => [k, getSetting(k)]))
   );
@@ -47,14 +67,20 @@ export default function Page() {
       }
     })();
     if (navigator.storage?.estimate) {
-      navigator.storage.estimate().then(est => setStorageEst(est)).catch(() => {});
+      navigator.storage
+        .estimate()
+        .then(est => setStorageEst(est))
+        .catch(() => {});
     }
   }, []);
 
   async function refreshStats() {
     setStats(await collectStoreStats());
     if (navigator.storage?.estimate) {
-      navigator.storage.estimate().then(est => setStorageEst(est)).catch(() => {});
+      navigator.storage
+        .estimate()
+        .then(est => setStorageEst(est))
+        .catch(() => {});
     }
   }
 
@@ -68,7 +94,7 @@ export default function Page() {
     if (busy) return;
     setBusy(true);
     try {
-      await deleteDatabase(DB_NAME);
+      await deleteDatabase(dbNameFor(getActiveBrandId()));
       showToast('DB 삭제 완료. 새로고침합니다…', 'ok');
       // 1초 후 자동 새로고침 — 새 페이지 로드 시 최신 schema로 DB 자동 생성
       setTimeout(() => window.location.reload(), 1000);
@@ -85,7 +111,11 @@ export default function Page() {
     try {
       for (const name of ALL_STORES) {
         if (!hasStore(name)) continue;
-        try { await clearStore(name); } catch (err) { console.warn(`[Reset] ${name} skip:`, err); }
+        try {
+          await clearStore(name);
+        } catch (err) {
+          console.warn(`[Reset] ${name} skip:`, err);
+        }
       }
       await refreshStats();
       setConfirmingReset(false);
@@ -103,17 +133,24 @@ export default function Page() {
   return (
     <main className="main page-enter">
       <PageHeader
-        breadcrumb={["설정 / 백업", "시스템 설정"]}
+        breadcrumb={['설정 / 백업', '시스템 설정']}
         title="시스템 설정"
         sub="환경, 원가 정책, 알림 등을 관리하세요. 변경은 즉시 적용됩니다."
       />
 
       {/* 1. 환경 설정 */}
-      <SettingsGroup title="환경 설정" style={{marginTop:24}}>
+      <SettingsGroup title="환경 설정" style={{ marginTop: 24 }}>
         <SettingsRow
           name="다크 모드"
           desc="어두운 배경으로 전환합니다"
-          control={<Toggle value={settings.theme === 'dark'} onChange={(on) => updateSetting('theme', on ? 'dark' : 'light', '다크 모드 ' + (on ? '설정' : '해제'))} />}
+          control={
+            <Toggle
+              value={settings.theme === 'dark'}
+              onChange={on =>
+                updateSetting('theme', on ? 'dark' : 'light', '다크 모드 ' + (on ? '설정' : '해제'))
+              }
+            />
+          }
         />
         <SettingsRow
           name="화면 밀도"
@@ -121,8 +158,34 @@ export default function Page() {
           control={
             <Segmented
               value={settings.density}
-              options={[{value:'normal',label:'기본'},{value:'compact',label:'촘촘'}]}
-              onChange={(v) => updateSetting('density', v, v === 'compact' ? '촘촘 밀도 적용' : '기본 밀도 적용')}
+              options={[
+                { value: 'normal', label: '기본' },
+                { value: 'compact', label: '촘촘' },
+              ]}
+              onChange={v =>
+                updateSetting('density', v, v === 'compact' ? '촘촘 밀도 적용' : '기본 밀도 적용')
+              }
+            />
+          }
+        />
+        <SettingsRow
+          name="글씨 크기"
+          desc="표·제목·버튼 등 글자 크기를 키웁니다 (레이아웃은 유지)"
+          control={
+            <Segmented
+              value={settings.fontScale}
+              options={[
+                { value: 'normal', label: '보통' },
+                { value: 'large', label: '크게' },
+                { value: 'xlarge', label: '더 크게' },
+              ]}
+              onChange={v =>
+                updateSetting(
+                  'fontScale',
+                  v,
+                  { normal: '보통', large: '크게', xlarge: '더 크게' }[v] + ' 글씨 적용'
+                )
+              }
             />
           }
           last
@@ -134,12 +197,34 @@ export default function Page() {
         <SettingsRow
           name="미매칭 메뉴 알림"
           desc="판매량 업로드 후 매칭되지 않은 메뉴가 있으면 홈에 알림을 표시합니다."
-          control={<Toggle value={settings.unmatchedAlert === 'on'} onChange={(on) => updateSetting('unmatchedAlert', on ? 'on' : 'off', '미매칭 알림 ' + (on ? 'ON' : 'OFF'))} />}
+          control={
+            <Toggle
+              value={settings.unmatchedAlert === 'on'}
+              onChange={on =>
+                updateSetting(
+                  'unmatchedAlert',
+                  on ? 'on' : 'off',
+                  '미매칭 알림 ' + (on ? 'ON' : 'OFF')
+                )
+              }
+            />
+          }
         />
         <SettingsRow
           name="원가율 35% 초과 알림"
           desc="재계산 후 원가율 35% 초과 메뉴가 새로 생기면 빨간 알림을 표시합니다."
-          control={<Toggle value={settings.costRateAlert === 'on'} onChange={(on) => updateSetting('costRateAlert', on ? 'on' : 'off', '원가율 알림 ' + (on ? 'ON' : 'OFF'))} />}
+          control={
+            <Toggle
+              value={settings.costRateAlert === 'on'}
+              onChange={on =>
+                updateSetting(
+                  'costRateAlert',
+                  on ? 'on' : 'off',
+                  '원가율 알림 ' + (on ? 'ON' : 'OFF')
+                )
+              }
+            />
+          }
           last
         />
       </SettingsGroup>
@@ -149,12 +234,30 @@ export default function Page() {
         <SettingsRow
           name="단가 변경 시 원가표 자동 재계산"
           desc="제때 단가가 변경되면 모든 원가표를 자동으로 다시 계산합니다."
-          control={<Toggle value={settings.autoRecalc === 'on'} onChange={(on) => updateSetting('autoRecalc', on ? 'on' : 'off', '자동 재계산 ' + (on ? 'ON' : 'OFF'))} />}
+          control={
+            <Toggle
+              value={settings.autoRecalc === 'on'}
+              onChange={on =>
+                updateSetting('autoRecalc', on ? 'on' : 'off', '자동 재계산 ' + (on ? 'ON' : 'OFF'))
+              }
+            />
+          }
         />
         <SettingsRow
           name="미연동 재료 차단"
           desc="제때 단가에 등록되지 않은 재료가 포함된 메뉴는 원가표 발행을 차단합니다."
-          control={<Toggle value={settings.strictPosting === 'on'} onChange={(on) => updateSetting('strictPosting', on ? 'on' : 'off', '미연동 차단 ' + (on ? 'ON' : 'OFF'))} />}
+          control={
+            <Toggle
+              value={settings.strictPosting === 'on'}
+              onChange={on =>
+                updateSetting(
+                  'strictPosting',
+                  on ? 'on' : 'off',
+                  '미연동 차단 ' + (on ? 'ON' : 'OFF')
+                )
+              }
+            />
+          }
         />
         <SettingsRow
           name="원가 반올림 방식"
@@ -163,11 +266,17 @@ export default function Page() {
             <Segmented
               value={settings.roundMode}
               options={[
-                {value:'round',label:'반올림'},
-                {value:'ceil', label:'올림'},
-                {value:'floor',label:'내림'},
+                { value: 'round', label: '반올림' },
+                { value: 'ceil', label: '올림' },
+                { value: 'floor', label: '내림' },
               ]}
-              onChange={(v) => updateSetting('roundMode', v, ({round:'반올림',ceil:'올림',floor:'내림'}[v]) + ' 적용')}
+              onChange={v =>
+                updateSetting(
+                  'roundMode',
+                  v,
+                  { round: '반올림', ceil: '올림', floor: '내림' }[v] + ' 적용'
+                )
+              }
             />
           }
           last
@@ -195,64 +304,117 @@ export default function Page() {
       </SettingsGroup>
 
       {/* 5. 앱 정보 */}
-      <div className="card" style={{marginTop:16}}>
-        <h2 style={{fontSize:15,fontWeight:700,marginBottom:16}}>앱 정보</h2>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:24}}>
+      <div className="card" style={{ marginTop: 16 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>앱 정보</h2>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))',
+            gap: 24,
+          }}
+        >
           <InfoCell label="앱 버전" value={APP_VERSION} />
-          <InfoCell label="DB 이름" value={DB_NAME} mono />
+          <InfoCell label="DB 이름" value={dbNameFor(getActiveBrandId())} mono />
           <InfoCell label="DB 버전" value={String(DB_VERSION)} />
           <InfoCell label="환경" value="개발 (localhost)" />
         </div>
       </div>
 
       {/* 6. 저장소 상태 */}
-      <div className="card" style={{marginTop:16}}>
-        <h2 style={{fontSize:15,fontWeight:700,marginBottom:16}}>저장소 상태</h2>
+      <div className="card" style={{ marginTop: 16 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>저장소 상태</h2>
         {!ready ? (
-          <div style={{color:'var(--text-3)'}}>DB 초기화 중…</div>
+          <div style={{ color: 'var(--text-3)' }}>DB 초기화 중…</div>
         ) : (
           <>
             {/* 브라우저 용량 감지 */}
-            {storageEst && (
-              <StorageUsageBar usage={storageEst.usage} quota={storageEst.quota} />
-            )}
+            {storageEst && <StorageUsageBar usage={storageEst.usage} quota={storageEst.quota} />}
 
-            <div style={{display:'flex',gap:32,marginBottom:20,padding:'12px 0',borderBottom:'1px solid var(--border)',marginTop: storageEst ? 16 : 0}}>
+            <div
+              style={{
+                display: 'flex',
+                gap: 32,
+                marginBottom: 20,
+                padding: '12px 0',
+                borderBottom: '1px solid var(--border)',
+                marginTop: storageEst ? 16 : 0,
+              }}
+            >
               <InfoCell label="전체 저장 행" value={`${formatNumber(totalRows)}건`} big />
               <InfoCell label="정의된 store 수" value={`${ALL_STORES.length}개`} big />
-              <InfoCell label="데이터 있는 store" value={`${stats ? Object.values(stats).filter(n => n > 0).length : 0}개`} big />
+              <InfoCell
+                label="데이터 있는 store"
+                value={`${stats ? Object.values(stats).filter(n => n > 0).length : 0}개`}
+                big
+              />
             </div>
 
             {stats && Object.values(stats).some(n => n > 0) ? (
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:12}}>
-                {Object.entries(stats).filter(([, n]) => n > 0).map(([name, count]) => (
-                  <div key={name} style={{padding:12,border:'1px solid var(--border)',borderRadius:8,background:'var(--surface-2)'}}>
-                    <div style={{fontSize:12,color:'var(--text-3)',fontFamily:'monospace',marginBottom:4}}>{name}</div>
-                    <div className="num" style={{fontSize:16,fontWeight:600}}>{formatNumber(count)}건</div>
-                  </div>
-                ))}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))',
+                  gap: 12,
+                }}
+              >
+                {Object.entries(stats)
+                  .filter(([, n]) => n > 0)
+                  .map(([name, count]) => (
+                    <div
+                      key={name}
+                      style={{
+                        padding: 12,
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        background: 'var(--surface-2)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: 'var(--text-3)',
+                          fontFamily: 'monospace',
+                          marginBottom: 4,
+                        }}
+                      >
+                        {name}
+                      </div>
+                      <div className="num" style={{ fontSize: 16, fontWeight: 600 }}>
+                        {formatNumber(count)}건
+                      </div>
+                    </div>
+                  ))}
               </div>
             ) : (
-              <div style={{color:'var(--text-3)',padding:'8px 0'}}>저장된 데이터가 없습니다.</div>
+              <div style={{ color: 'var(--text-3)', padding: '8px 0' }}>
+                저장된 데이터가 없습니다.
+              </div>
             )}
 
-            <div style={{marginTop:16,display:'flex',justifyContent:'flex-end'}}>
-              <button className="btn" onClick={refreshStats} disabled={busy}>새로고침</button>
+            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn" onClick={refreshStats} disabled={busy}>
+                새로고침
+              </button>
             </div>
           </>
         )}
       </div>
 
       {/* 7. 위험 영역 */}
-      <div className="card" style={{marginTop:16,borderColor:'var(--negative-soft)'}}>
-        <h2 style={{fontSize:15,fontWeight:700,marginBottom:16,color:'var(--negative)'}}>위험 영역</h2>
+      <div className="card" style={{ marginTop: 16, borderColor: 'var(--negative-soft)' }}>
+        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, color: 'var(--negative)' }}>
+          위험 영역
+        </h2>
 
         {/* 모든 데이터 초기화 */}
-        <div style={{paddingBottom:16,borderBottom:'1px solid var(--border)'}}>
-          <div style={{fontWeight:700,fontSize:14,marginBottom:4}}>모든 데이터 초기화</div>
-          <p style={{fontSize:13,color:'var(--text-2)',marginBottom:12}}>
+        <div style={{ paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
+          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>모든 데이터 초기화</div>
+          <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 12 }}>
             모든 store의 데이터를 삭제합니다. schema는 유지되며 빈 store로 남습니다.
-            <br/>백업이 필요한 경우 먼저 <b>데이터 백업</b> 메뉴에서 다운로드하세요.
+            <br />
+            백업이 필요한 경우 먼저 <b>데이터 백업</b> 메뉴에서 다운로드하세요.
+            <br />
+            초기화 후 기본 메뉴 코드를 다시 등록하려면 <b>메뉴 마스터 → 기본 코드 등록</b>을 실행하세요.
           </p>
           <DangerConfirm
             label="모든 데이터 초기화"
@@ -268,12 +430,14 @@ export default function Page() {
         </div>
 
         {/* DB 완전 재생성 */}
-        <div style={{paddingTop:16}}>
-          <div style={{fontWeight:700,fontSize:14,marginBottom:4}}>DB 완전 재생성</div>
-          <p style={{fontSize:13,color:'var(--text-2)',marginBottom:12}}>
+        <div style={{ paddingTop: 16 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>DB 완전 재생성</div>
+          <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 12 }}>
             DB 자체를 삭제하고 최신 schema로 새로 생성합니다.
-            <br/>schema 업그레이드가 누락된 경우(<code>NotFoundError</code>) 해결 가능.
-            <br/>실행 후 페이지가 자동 새로고침되며 모든 데이터는 사라집니다.
+            <br />
+            schema 업그레이드가 누락된 경우(<code>NotFoundError</code>) 해결 가능.
+            <br />
+            실행 후 페이지가 자동 새로고침되며 모든 데이터는 사라집니다.
           </p>
           <DangerConfirm
             label="DB 완전 재생성"
@@ -298,8 +462,8 @@ export default function Page() {
 
 function SettingsGroup({ title, children, style }) {
   return (
-    <div className="card" style={{marginTop: style?.marginTop ?? 16}}>
-      <h2 style={{fontSize:15,fontWeight:700,marginBottom:4}}>{title}</h2>
+    <div className="card" style={{ marginTop: style?.marginTop ?? 16 }}>
+      <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{title}</h2>
       <div>{children}</div>
     </div>
   );
@@ -307,23 +471,28 @@ function SettingsGroup({ title, children, style }) {
 
 function SettingsRow({ name, desc, control, last }) {
   return (
-    <div style={{
-      display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,
-      padding:'14px 0',
-      borderBottom: last ? 'none' : '1px solid var(--border)',
-    }}>
-      <div style={{flex:1,minWidth:0}}>
-        <div style={{fontWeight:700,fontSize:14}}>{name}</div>
-        <div style={{fontSize:12,color:'var(--text-3)',marginTop:2}}>{desc}</div>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 16,
+        padding: '14px 0',
+        borderBottom: last ? 'none' : '1px solid var(--border)',
+      }}
+    >
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 700, fontSize: 14 }}>{name}</div>
+        <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{desc}</div>
       </div>
-      <div style={{flex:'0 0 auto'}}>{control}</div>
+      <div style={{ flex: '0 0 auto' }}>{control}</div>
     </div>
   );
 }
 
 function Segmented({ value, options, onChange }) {
   return (
-    <div style={{display:'flex',gap:6}}>
+    <div style={{ display: 'flex', gap: 6 }}>
       {options.map(opt => {
         const active = value === opt.value;
         return (
@@ -331,9 +500,12 @@ function Segmented({ value, options, onChange }) {
             key={opt.value}
             onClick={() => onChange(opt.value)}
             style={{
-              padding:'6px 14px',fontSize:13,fontWeight:600,cursor:'pointer',
-              border:'1px solid ' + (active ? 'var(--accent)' : 'var(--border)'),
-              borderRadius:8,
+              padding: '6px 14px',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: '1px solid ' + (active ? 'var(--accent)' : 'var(--border)'),
+              borderRadius: 8,
               background: active ? 'var(--accent-soft)' : 'var(--surface)',
               color: active ? 'var(--accent-text)' : 'var(--text-2)',
             }}
@@ -348,31 +520,57 @@ function Segmented({ value, options, onChange }) {
 
 function StaticValue({ children }) {
   return (
-    <div style={{
-      fontSize:13,fontWeight:600,color:'var(--text-2)',
-      padding:'6px 12px',borderRadius:8,
-      background:'var(--surface-2)',border:'1px solid var(--border)',
-    }}>
+    <div
+      style={{
+        fontSize: 13,
+        fontWeight: 600,
+        color: 'var(--text-2)',
+        padding: '6px 12px',
+        borderRadius: 8,
+        background: 'var(--surface-2)',
+        border: '1px solid var(--border)',
+      }}
+    >
       {children}
     </div>
   );
 }
 
-function DangerConfirm({ label, confirmMsg, confirmLabel, isOpen, onOpen, onClose, onConfirm, disabled, busy }) {
+function DangerConfirm({
+  label,
+  confirmMsg,
+  confirmLabel,
+  isOpen,
+  onOpen,
+  onClose,
+  onConfirm,
+  disabled,
+  busy,
+}) {
   if (!isOpen) {
     return (
-      <button className="btn" onClick={onOpen} disabled={disabled}
-        style={{color:'var(--negative)', borderColor:'var(--negative)'}}>
+      <button
+        className="btn"
+        onClick={onOpen}
+        disabled={disabled}
+        style={{ color: 'var(--negative)', borderColor: 'var(--negative)' }}
+      >
         {label}
       </button>
     );
   }
   return (
-    <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
-      <span style={{color:'var(--negative)', fontWeight:600, fontSize:13}}>{confirmMsg}</span>
-      <button className="btn" disabled={busy} onClick={onClose}>취소</button>
-      <button className="btn primary" disabled={busy} onClick={onConfirm}
-        style={{background:'var(--negative)'}}>
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+      <span style={{ color: 'var(--negative)', fontWeight: 600, fontSize: 13 }}>{confirmMsg}</span>
+      <button className="btn" disabled={busy} onClick={onClose}>
+        취소
+      </button>
+      <button
+        className="btn primary"
+        disabled={busy}
+        onClick={onConfirm}
+        style={{ background: 'var(--negative)' }}
+      >
         {confirmLabel}
       </button>
     </div>
@@ -382,45 +580,70 @@ function DangerConfirm({ label, confirmMsg, confirmLabel, isOpen, onOpen, onClos
 function InfoCell({ label, value, big = false, mono = false }) {
   return (
     <div>
-      <div style={{fontSize:12,color:'var(--text-3)',marginBottom:4}}>{label}</div>
-      <div className={mono ? 'num' : ''}
-           style={{
-             fontSize: big ? 22 : 14,
-             fontWeight: big ? 700 : 600,
-             fontFamily: mono ? 'monospace' : undefined,
-           }}>
+      <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4 }}>{label}</div>
+      <div
+        className={mono ? 'num' : ''}
+        style={{
+          fontSize: big ? 22 : 14,
+          fontWeight: big ? 700 : 600,
+          fontFamily: mono ? 'monospace' : undefined,
+        }}
+      >
         {value}
       </div>
     </div>
   );
 }
 
+const STORAGE_WARN_PCT = 70; // 저장공간 사용률 주의 임계값(%)
+const STORAGE_DANGER_PCT = 90; // 저장공간 사용률 위험 임계값(%)
+
 function StorageUsageBar({ usage, quota }) {
-  const usageMB  = (usage  / 1024 / 1024).toFixed(1);
-  const quotaMB  = (quota  / 1024 / 1024).toFixed(0);
-  const pct      = quota > 0 ? Math.min(100, (usage / quota) * 100) : 0;
-  const isWarn   = pct >= 70;
-  const isDanger = pct >= 90;
+  const usageMB = (usage / 1024 / 1024).toFixed(1);
+  const quotaMB = (quota / 1024 / 1024).toFixed(0);
+  const pct = quota > 0 ? Math.min(100, (usage / quota) * 100) : 0;
+  const isWarn = pct >= STORAGE_WARN_PCT;
+  const isDanger = pct >= STORAGE_DANGER_PCT;
   const barColor = isDanger ? 'var(--negative)' : isWarn ? 'var(--warn)' : 'var(--accent)';
 
   return (
-    <div style={{marginBottom:16,padding:'12px 16px',border:'1px solid var(--border)',borderRadius:10,background:'var(--surface-2)'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-        <span style={{fontSize:13,fontWeight:600,color:'var(--text-2)'}}>브라우저 저장 공간</span>
-        <span className="num" style={{fontSize:13,color: isWarn ? barColor : 'var(--text-3)'}}>
+    <div
+      style={{
+        marginBottom: 16,
+        padding: '12px 16px',
+        border: '1px solid var(--border)',
+        borderRadius: 10,
+        background: 'var(--surface-2)',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 8,
+        }}
+      >
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)' }}>
+          브라우저 저장 공간
+        </span>
+        <span className="num" style={{ fontSize: 13, color: isWarn ? barColor : 'var(--text-3)' }}>
           {usageMB} MB / {quotaMB} MB ({pct.toFixed(1)}%)
         </span>
       </div>
-      <div style={{height:6,borderRadius:3,background:'var(--border)',overflow:'hidden'}}>
-        <div style={{
-          height:'100%', borderRadius:3,
-          width:`${pct}%`,
-          background: barColor,
-          transition:'width 400ms ease',
-        }}/>
+      <div style={{ height: 6, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
+        <div
+          style={{
+            height: '100%',
+            borderRadius: 3,
+            width: `${pct}%`,
+            background: barColor,
+            transition: 'width 400ms ease',
+          }}
+        />
       </div>
       {isWarn && (
-        <div style={{marginTop:8,fontSize:12,color: barColor,fontWeight:600}}>
+        <div style={{ marginTop: 8, fontSize: 12, color: barColor, fontWeight: 600 }}>
           {isDanger
             ? '⚠ 저장 공간이 거의 꽉 찼습니다. 데이터를 백업하고 일부를 삭제하세요.'
             : '⚠ 저장 공간이 70%를 넘었습니다. 정기적인 백업을 권장합니다.'}

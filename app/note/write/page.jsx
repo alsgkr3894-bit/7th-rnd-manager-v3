@@ -10,6 +10,7 @@ import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
+import { getActiveBrandId } from '@/lib/active-brand';
 
 export default function Page() {
   const router  = useRouter();
@@ -30,6 +31,16 @@ export default function Page() {
     setIsDirty(true);
   }
 
+  // 마운트 후 brand·category를 실제 브랜드/저장값으로 교정 (SSR 초기값 'main' 덮기)
+  useEffect(() => {
+    setForm(f => ({
+      ...f,
+      brand: getActiveBrandId() || 'main',
+      category: (() => { try { return localStorage.getItem(KEYS.NOTE_LAST_CATEGORY) || f.category; } catch { return f.category; } })(),
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     let fromId = null;
     try { fromId = sessionStorage.getItem(KEYS.NOTE_FROM); sessionStorage.removeItem(KEYS.NOTE_FROM); } catch {}
@@ -46,6 +57,7 @@ export default function Page() {
             noteType: note.noteType || f.noteType,
             tags:     note.tags     || '',
             parentId: note.id,
+            brand:    note.brand    || f.brand, // 부모 brand 계승
           }));
         })
         .catch(console.error);
@@ -62,7 +74,7 @@ export default function Page() {
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setDraftStatus('saving');
-      saveDraft(KEYS.NOTE_DRAFT_WRITE, form);
+      saveDraft(KEYS.NOTE_DRAFT_WRITE, { ...form, photos: [] });
       clearTimeout(draftTimer.current);
       draftTimer.current = setTimeout(() => {
         setDraftStatus('saved');
@@ -75,6 +87,7 @@ export default function Page() {
   useKeyboardSave(handleSave);
 
   async function handleSave() {
+    if (saving) return; // Ctrl+S 연타 시 중복 저장(레코드 중복 생성) 방지
     if (!form.title.trim() || !form.menuName.trim() || !form.testContent.trim()) {
       showToast('제목, 메뉴명, 테스트 내용은 필수입니다', 'warn');
       return;
@@ -86,7 +99,7 @@ export default function Page() {
       clearDraft(KEYS.NOTE_DRAFT_WRITE);
       setIsDirty(false);
       showToast('노트가 저장됐어요', 'ok');
-      router.push('/note');
+      router.replace('/note');
     } catch {
       showToast('저장 중 오류가 발생했어요', 'error');
       setSaving(false);

@@ -1,8 +1,9 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
+import { MasterSourceBadge } from '@/components/ui/MasterSourceBadge';
 
-export function PageHeader({ title, sub, breadcrumb, actions }) {
+export function PageHeader({ title, sub, breadcrumb, actions, masterSource }) {
   const router = useRouter();
   return (
     <div className="page-head">
@@ -31,7 +32,10 @@ export function PageHeader({ title, sub, breadcrumb, actions }) {
       )}
       <div className="page-head-row">
         <div>
-          <h1 className="page-title">{title}</h1>
+          <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+            <h1 className="page-title">{title}</h1>
+            {masterSource && <MasterSourceBadge />}
+          </div>
           {sub && <div className="page-sub">{sub}</div>}
         </div>
         {actions && <div className="page-actions">{actions}</div>}

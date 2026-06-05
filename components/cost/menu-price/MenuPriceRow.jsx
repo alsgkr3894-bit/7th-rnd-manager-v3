@@ -1,23 +1,47 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
+import { InlineEditCell } from '@/components/cost/manage/table-utils';
 
-export function MenuPriceRow({ r, deletePending, onEdit, onDeleteStart, onDeleteCancel, onDeleteConfirm }) {
+export function MenuPriceRow({
+  r, deletePending, onEdit, onDeleteStart, onDeleteCancel, onDeleteConfirm,
+  selected = false, onToggleSelect, onInlineSave,
+}) {
   return (
     <tr>
-      <td style={{fontFamily:"'JetBrains Mono', ui-monospace, monospace", fontSize:11, color:'var(--text-3)'}}>
-        {r.menuCode || <span style={{color:'var(--text-4)'}}>—</span>}
-      </td>
-      <td>
-        {r.category
-          ? <span className="chip" style={{padding:'2px 8px', fontSize:11}}>{r.category}</span>
+      {onToggleSelect && (
+        <td>
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            style={{ width: 15, height: 15, accentColor: 'var(--accent)' }}
+          />
+        </td>
+      )}
+      <InlineEditCell value={r.menuCode || ''} required onSave={value => onInlineSave?.(r, { menuCode: value })} />
+      <InlineEditCell
+        value={r.category || ''}
+        onSave={value => onInlineSave?.(r, { category: value })}
+        formatter={value => value
+          ? <span className="chip" style={{padding:'2px 8px', fontSize:11}}>{value}</span>
           : <span style={{color:'var(--text-4)', fontSize:11}}>—</span>}
-      </td>
-      <td style={{fontWeight:600, fontSize:13}}>{r.menuName}</td>
+      />
+      <InlineEditCell
+        value={r.menuName || ''}
+        required
+        onSave={value => onInlineSave?.(r, { menuName: value })}
+        formatter={value => <span style={{fontWeight:600, fontSize:13}}>{value}</span>}
+      />
       <td style={{fontSize:12, color:'var(--text-2)'}}>{r.size || '단일'}</td>
-      <td className="num right" style={{fontWeight:700, fontSize:13}}>
-        {r.price != null ? <>{formatNumber(r.price)}<span className="unit">원</span></> : '-'}
-      </td>
+      <InlineEditCell
+        value={r.price ?? ''}
+        type="number"
+        align="right"
+        required
+        onSave={value => onInlineSave?.(r, { price: value })}
+        formatter={value => value != null && value !== '' ? <>{formatNumber(value)}<span className="unit">원</span></> : '-'}
+      />
       <td style={{fontSize:12, color:'var(--text-3)'}}>{r.note || <span style={{opacity:.3}}>—</span>}</td>
       <td style={{textAlign:'center'}}>
         {deletePending ? (

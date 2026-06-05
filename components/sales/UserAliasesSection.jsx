@@ -1,64 +1,56 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { Toggle } from '@/components/ui/Toggle';
+import { InlineConfirmButtons } from '@/components/ui/InlineConfirmButtons';
+import { SearchBox } from '@/components/ui/SearchBox';
+import { Pagination } from '@/components/ui/Pagination';
+import { usePagination } from '@/hooks/usePagination';
 import { getUserAliases, addUserAlias, deleteUserAlias, updateUserAlias } from '@/lib/sales';
-import { inputStyle, SectionHeader, SectionEmpty } from './shared/SectionUtils';
+import { inputStyle, SectionHeader, SectionEmpty, reapplyToUploadedData } from './shared/SectionUtils';
+import { useSettingsSection } from '@/hooks/useSettingsSection';
+
+const INITIAL_FORM = { rawName: '', mappedName: '' };
+const PAGE_SIZE = 20;
 
 export function UserAliasesSection() {
-  const [list,      setList]      = useState([]);
-  const [adding,    setAdding]    = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [form,      setForm]      = useState({ rawName: '', mappedName: '' });
-  const [busy,      setBusy]      = useState(false);
+  const [query, setQuery] = useState('');
 
-  useEffect(() => { refresh(); }, []);
+  const {
+    list, adding, setAdding, editingId, setEditingId, form, setForm, busy,
+    handleAdd, handleUpdate, requestDelete, cancelDelete, confirmDelete,
+    pendingDeleteId, startEdit, resetAdding, refresh, cancelEdit,
+  } = useSettingsSection({
+    initialForm:     INITIAL_FORM,
+    getAll:          getUserAliases,
+    add:             (f) => addUserAlias({ rawName: f.rawName, mappedName: f.mappedName }),
+    update:          (id, f) => updateUserAlias({ id, rawName: f.rawName, mappedName: f.mappedName }),
+    remove:          deleteUserAlias,
+    getFormFromItem: (a) => ({ rawName: a.rawName, mappedName: a.mappedName }),
+    validateAdd:     (f) => !!(f.rawName.trim() && f.mappedName.trim()),
+    validateUpdate:  (f) => !!(f.rawName.trim() && f.mappedName.trim()),
+    messages:        { add: '별칭이 추가됐어요' },
+  });
 
-  async function refresh() {
-    try { setList(await getUserAliases()); } catch (err) { console.warn(err); }
-  }
+  // 검색어 변경 시 편집 중 상태 해제 (사라진 행에서 편집 중 방지)
+  useEffect(() => { if (query) cancelEdit(); }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function handleAdd() {
-    if (!form.rawName.trim() || !form.mappedName.trim()) return;
-    setBusy(true);
-    try {
-      await addUserAlias({ rawName: form.rawName, mappedName: form.mappedName });
-      showToast('별칭이 추가됐어요', 'ok');
-      setForm({ rawName: '', mappedName: '' });
-      setAdding(false);
-      refresh();
-    } catch (err) {
-      showToast(err?.message || '추가 실패', 'err');
-    } finally { setBusy(false); }
-  }
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter(a =>
+      (a.rawName || '').toLowerCase().includes(q) ||
+      (a.mappedName || '').toLowerCase().includes(q)
+    );
+  }, [list, query]);
 
-  async function handleUpdate(id) {
-    if (!form.rawName.trim() || !form.mappedName.trim()) return;
-    setBusy(true);
-    try {
-      await updateUserAlias({ id, rawName: form.rawName, mappedName: form.mappedName });
-      showToast('수정됐어요', 'ok');
-      setEditingId(null);
-      refresh();
-    } catch (err) {
-      showToast(err?.message || '수정 실패', 'err');
-    } finally { setBusy(false); }
-  }
-
-  function startEdit(a) {
-    setEditingId(a.id);
-    setForm({ rawName: a.rawName, mappedName: a.mappedName });
-  }
-
-  async function handleDelete(id) {
-    try { await deleteUserAlias(id); showToast('삭제됐어요', 'ok'); refresh(); }
-    catch { showToast('삭제 실패', 'err'); }
-  }
+  const { page, goTo, totalPages, paged, total } = usePagination(filtered, PAGE_SIZE);
 
   async function handleToggle(a) {
     try {
       await updateUserAlias({ id: a.id, enable: a.enable !== false ? false : true });
       refresh();
+      await reapplyToUploadedData();
     } catch { showToast('토글 실패', 'err'); }
   }
 
@@ -68,7 +60,7 @@ export function UserAliasesSection() {
         title="사용자 추가 별칭"
         count={list.length}
         adding={adding}
-        onAdd={() => { setAdding(v => !v); setEditingId(null); setForm({ rawName: '', mappedName: '' }); }}
+        onAdd={resetAdding}
       />
 
       {adding && (
@@ -78,14 +70,28 @@ export function UserAliasesSection() {
       {list.length === 0 && !adding ? (
         <SectionEmpty>사용자 추가 별칭이 아직 없습니다</SectionEmpty>
       ) : list.length > 0 && (
-        <table className="data-table">
+        <>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ flex: '1 1 260px' }}>
+              <SearchBox value={query} onChange={setQuery} placeholder="입력·출력 검색" />
+            </div>
+            {query && (
+              <span style={{ fontSize: 12, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
+                {total} / {list.length}개
+              </span>
+            )}
+          </div>
+          {filtered.length === 0 ? (
+            <SectionEmpty>검색 결과가 없습니다</SectionEmpty>
+          ) : (
+          <table className="data-table">
           <thead><tr>
             <th>입력</th><th>출력 (표준)</th>
             <th style={{width:80, textAlign:'center'}}>활성</th>
             <th style={{width:140}}></th>
           </tr></thead>
           <tbody>
-            {list.map(a => editingId === a.id ? (
+            {paged.map(a => editingId === a.id ? (
               <tr key={a.id}>
                 <td colSpan={4} style={{padding:8}}>
                   <RowForm form={form} setForm={setForm} onCancel={() => setEditingId(null)} onSubmit={() => handleUpdate(a.id)} busy={busy} submitLabel="저장"/>
@@ -99,14 +105,28 @@ export function UserAliasesSection() {
                   <Toggle value={a.enable !== false} onChange={() => handleToggle(a)} />
                 </td>
                 <td style={{textAlign:'right'}}>
-                  <button className="btn sm" onClick={() => startEdit(a)}>수정</button>
-                  {' '}
-                  <button className="btn sm" style={{color:'var(--negative)'}} onClick={() => handleDelete(a.id)}>삭제</button>
+                  {pendingDeleteId === a.id ? (
+                    <InlineConfirmButtons
+                      message="별칭을 삭제할까요?"
+                      busy={busy}
+                      onCancel={cancelDelete}
+                      onConfirm={() => confirmDelete(a.id)}
+                    />
+                  ) : (
+                    <>
+                      <button className="btn sm" onClick={() => startEdit(a)}>수정</button>
+                      {' '}
+                      <button className="btn sm" style={{color:'var(--negative)'}} onClick={() => requestDelete(a.id)}>삭제</button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+          )}
+          <Pagination page={page} totalPages={totalPages} onPage={goTo} total={total} pageSize={PAGE_SIZE} />
+        </>
       )}
     </div>
   );
@@ -114,7 +134,7 @@ export function UserAliasesSection() {
 
 function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추가' }) {
   return (
-    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr auto auto', gap:8}}>
+    <div style={{display:'grid', gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr) auto auto', gap:8}}>
       <input value={form.rawName}    onChange={e => setForm({ ...form, rawName:    e.target.value })} placeholder="입력 (정규화 후)" style={inputStyle}/>
       <input value={form.mappedName} onChange={e => setForm({ ...form, mappedName: e.target.value })} placeholder="표준 메뉴명"    style={inputStyle}/>
       <button className="btn sm" onClick={onCancel} disabled={busy}>취소</button>

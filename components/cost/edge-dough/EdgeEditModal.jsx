@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
-import { EDGE_TYPES, edgeTotalCost, edgeCodeOf } from '@/lib/cost/edge-dough';
+import { EDGE_TYPES, edgeTotalCost, edgeCodeOf, defaultExpandInMargin, defaultMarginSuffix } from '@/lib/cost/edge-dough';
 import { getAllIngredients } from '@/lib/ingredient';
 import { buildUnitPriceMap } from '@/lib/recipe';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
@@ -19,6 +19,10 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
   const [size,     setSize]       = useState(initial?.size || 'L');
   const [comps,    setComps]      = useState(() => (initial?.components || []).map(c => ({ ...EMPTY_COMP(), ...c })));
   const [note,     setNote]       = useState(initial?.note || '');
+  const [expandInMargin, setExpandInMargin] = useState(
+    initial?.expandInMargin != null ? !!initial.expandInMargin : defaultExpandInMargin(initial?.edgeType || EDGE_TYPES[0])
+  );
+  const [marginSuffix, setMarginSuffix] = useState(initial?.marginSuffix || '');
   const [allMeta,  setAllMeta]    = useState([]);
   const [upm,      setUpm]        = useState(new Map());
   const [saving,   setSaving]     = useState(false);
@@ -58,6 +62,8 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
           unitPrice: c.unitPrice !== '' ? Number(c.unitPrice) : null,
         })),
         note,
+        expandInMargin,
+        marginSuffix: marginSuffix.trim() || defaultMarginSuffix(edgeType),
       });
     } finally { setSaving(false); }
   }
@@ -103,7 +109,7 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
 
           {/* 구성품 목록 */}
           <div>
-            <FieldLabel>구성품</FieldLabel>
+            <FieldLabel>구성품 <span style={{ fontSize:11, fontWeight:400, color:'var(--text-4)' }}>(수량에 −(마이너스) 입력 시 차감 — 예: 기존 도우 빼기)</span></FieldLabel>
 
             {/* 컬럼 헤더 */}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 90px 72px 110px 90px 28px',
@@ -140,6 +146,26 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
             <input className="form-input" value={note} onChange={e => setNote(e.target.value)} placeholder="선택 입력"/>
           </div>
 
+          {/* 원가마진표 노출 설정 */}
+          <div style={{ padding:'12px 14px', background:'var(--surface-2)', borderRadius:10,
+            display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
+            <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', fontSize:13, fontWeight:600 }}>
+              <input type="checkbox" checked={expandInMargin}
+                onChange={e => setExpandInMargin(e.target.checked)}
+                style={{ accentColor:'var(--accent)', width:16, height:16 }}/>
+              원가마진표에 별도 행으로 표시
+            </label>
+            {expandInMargin && (
+              <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'var(--text-3)' }}>
+                코드 접미사
+                <input className="form-input" value={marginSuffix}
+                  onChange={e => setMarginSuffix(e.target.value)}
+                  placeholder={defaultMarginSuffix(edgeType)}
+                  style={{ width:64, textAlign:'center', textTransform:'uppercase' }}/>
+              </label>
+            )}
+          </div>
+
           {/* 총 원가 */}
           <div style={{ padding:'12px 16px', background:'var(--surface-2)', borderRadius:10,
             display:'flex', justifyContent:'space-between', alignItems:'center' }}>
@@ -173,8 +199,9 @@ function CompRow({ c, allMeta, upm, onChange, onRemove }) {
     const q = searchQ.trim().toLowerCase();
     if (!q) return [];
     return allMeta.filter(m =>
-      (m.ingredientName || '').toLowerCase().includes(q) ||
-      (m.productCode    || '').toLowerCase().includes(q)
+      !m.discontinued && !m.excluded &&
+      ((m.ingredientName || '').toLowerCase().includes(q) ||
+       (m.productCode    || '').toLowerCase().includes(q))
     ).slice(0, 15);
   }, [searchQ, allMeta]);
 
@@ -318,10 +345,10 @@ function CompRow({ c, allMeta, upm, onChange, onRemove }) {
         onChange={e => onChange({ unitPrice: e.target.value })}
         placeholder="단가" style={{ textAlign:'right' }}/>
 
-      {/* 소계 */}
+      {/* 소계 (음수 = 차감) */}
       <div style={{ textAlign:'right', fontSize:13, fontWeight:600,
-        color: subtotal > 0 ? 'var(--text-1)' : 'var(--text-4)' }}>
-        {subtotal > 0 ? `${formatNumber(Math.round(subtotal))}원` : '—'}
+        color: subtotal < 0 ? 'var(--negative)' : subtotal > 0 ? 'var(--text-1)' : 'var(--text-4)' }}>
+        {Number.isFinite(subtotal) && subtotal !== 0 ? `${formatNumber(Math.round(subtotal))}원` : '—'}
       </div>
 
       {/* 삭제 */}

@@ -1,7 +1,8 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { SearchBox } from '@/components/ui/SearchBox';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
@@ -11,8 +12,10 @@ import {
 } from '@/lib/cost/edge-dough';
 import { EdgeCard } from '@/components/cost/edge-dough/EdgeCard';
 import { EdgeEditModal } from '@/components/cost/edge-dough/EdgeEditModal';
+import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 
 export default function Page() {
+  const isMain = useIsMainBrand(); // 마스터 시드는 7번가 전용
   const [edges,   setEdges]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState(null);
@@ -21,6 +24,7 @@ export default function Page() {
   const [seeding, setSeeding] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [search, setSearch] = useState('');
 
   const load = useCallback(async () => {
     await initDB();
@@ -81,6 +85,19 @@ export default function Page() {
 
   const totalSum = edges.reduce((acc, e) => acc + edgeTotalCost(e), 0);
   const filled = edges.filter(e => e.components?.length > 0).length;
+  const filteredEdges = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return edges;
+    return edges.filter(e =>
+      (e.edgeType || '').toLowerCase().includes(q) ||
+      (e.edgeCode || '').toLowerCase().includes(q) ||
+      (e.size || '').toLowerCase().includes(q) ||
+      (e.components || []).some(c =>
+        (c.ingredientName || '').toLowerCase().includes(q) ||
+        (c.productCode || '').toLowerCase().includes(q)
+      )
+    );
+  }, [edges, search]);
 
   const sub = loading
     ? '로딩 중…'
@@ -120,10 +137,12 @@ export default function Page() {
                 <Icon.trash style={{width:14, height:14}}/> 초기화
               </button>
             )}
-            <button className="btn" onClick={handleSeed} disabled={seeding}>
-              <Icon.download style={{width:14, height:14}}/>
-              {seeding ? '시드 중…' : '마스터 시드 (5)'}
-            </button>
+            {isMain && (
+              <button className="btn" onClick={handleSeed} disabled={seeding}>
+                <Icon.download style={{width:14, height:14}}/>
+                {seeding ? '시드 중…' : '마스터 시드 (5)'}
+              </button>
+            )}
             <button className="btn primary" onClick={() => setTarget('new')}>
               <Icon.plus style={{width:14, height:14}}/> 추가
             </button>
@@ -137,25 +156,44 @@ export default function Page() {
             <Icon.calc style={{width:32, height:32, marginBottom:12, opacity:.4}}/>
             <div style={{fontWeight:600, marginBottom:4}}>아직 등록된 엣지·도우가 없습니다</div>
             <div style={{fontSize:13}}>
-              상단의 <b>마스터 시드</b>로 5종 (치즈크러스트 L/R · 골드스윗 L/R · 씬도우 L) 일괄 등록 가능
+              {isMain
+                ? <>상단의 <b>마스터 시드</b>로 5종 (치즈크러스트 L/R · 골드스윗 L/R · 씬도우 L) 일괄 등록 가능</>
+                : <><b>추가</b> 버튼으로 엣지·도우를 직접 등록하세요</>}
             </div>
           </div>
         </div>
       )}
 
       {edges.length > 0 && (
-        <div style={{display:'flex', flexDirection:'column', gap:8}}>
-          {edges.map(e => (
-            <EdgeCard
-              key={e.id}
-              edge={e}
-              onEdit={() => setTarget(e)}
-              onDelete={deletePending === e.id
-                ? null
-                : () => setDeletePending(e.id)}
+        <>
+          <div style={{ marginBottom: 12, maxWidth: 360 }}>
+            <SearchBox
+              value={search}
+              onChange={setSearch}
+              placeholder="엣지·도우·구성품 검색"
             />
-          ))}
-        </div>
+          </div>
+          {filteredEdges.length === 0 ? (
+            <div className="card" style={{ minHeight: 120, display: 'grid', placeItems: 'center' }}>
+              <div style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+                검색 결과가 없습니다
+              </div>
+            </div>
+          ) : (
+            <div style={{display:'flex', flexDirection:'column', gap:8}}>
+              {filteredEdges.map(e => (
+                <EdgeCard
+                  key={e.id}
+                  edge={e}
+                  onEdit={() => setTarget(e)}
+                  onDelete={deletePending === e.id
+                    ? null
+                    : () => setDeletePending(e.id)}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {deletePending && (

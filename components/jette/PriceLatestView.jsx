@@ -2,8 +2,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Chip } from '@/components/ui/Chip';
 import { SearchBox } from '@/components/ui/SearchBox';
+import { Pagination } from '@/components/ui/Pagination';
 import { SortableTh } from '@/components/ui/SortableTh';
+import { usePagination } from '@/hooks/usePagination';
 import { formatNumber } from '@/lib/format';
+import { downloadCsv } from '@/lib/download';
 import { getPriceRowsByFileId } from '@/lib/price';
 import { PriceLatestKpi } from './PriceLatestKpi';
 import { TypeSelect } from './_TypeSelect';
@@ -63,6 +66,22 @@ export function PriceLatestView({ files, latestFileId, onLatestChange, productTy
     );
     return sortByKey(list, sortKey, sortDir);
   }, [typeFilteredRows, search, taxFilter, sortKey, sortDir]);
+  const { page, goTo, totalPages, paged, total } = usePagination(filtered, 80);
+
+  function exportCsv() {
+    const headers = ['제품코드', '제품명', '분류', '과세구분', '판매단위', '온도', '단가', '부가세포함가'];
+    const body = filtered.map(r => [
+      r.productCode || '',
+      r.productName || '',
+      productTypeLookup.get(r.productCode)?.productType || '',
+      r.taxType || '',
+      r.salesUnit || '',
+      r.temperature || '',
+      r.price ?? '',
+      r.priceWithTax ?? '',
+    ]);
+    downloadCsv([headers, ...body], '제때_최신단가.csv');
+  }
 
   function toggleSort(key) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -93,6 +112,9 @@ export function PriceLatestView({ files, latestFileId, onLatestChange, productTy
             <div className="card-title">단가 목록</div>
             <div className="card-sub">{formatNumber(filtered.length)} / {formatNumber(rows.length)}개 표시</div>
           </div>
+          <button className="btn sm" onClick={exportCsv} disabled={filtered.length === 0}>
+            CSV 내보내기
+          </button>
         </div>
 
         {/* 분류 필터 */}
@@ -132,7 +154,7 @@ export function PriceLatestView({ files, latestFileId, onLatestChange, productTy
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((row, i) => (
+                {paged.map((row, i) => (
                   <tr key={`${row.productCode || row.productName}-${i}`}>
                     <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{row.productCode || '-'}</td>
                     <td className="cell-name"><div className="menu-name">{row.productName}</div></td>
@@ -160,10 +182,10 @@ export function PriceLatestView({ files, latestFileId, onLatestChange, productTy
                 ))}
               </tbody>
             </table>
+            <Pagination page={page} totalPages={totalPages} onPage={goTo} total={total} pageSize={80} />
           </div>
         )}
       </div>
     </>
   );
 }
-

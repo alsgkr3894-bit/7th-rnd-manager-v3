@@ -13,12 +13,17 @@ const SELECTORS = {
 /**
  * 버튼 ripple 효과와 카드 tilt 효과를 document.body에 위임하여 적용.
  * AppShell에서 마운트 1회 호출.
+ *
+ * 이벤트 위임만 사용하고 DOM 노드에 표식(data-fx-bound 등)을 남기지 않습니다.
+ * 노드 속성을 변경하면 아직 hydration 되지 않은 Suspense 영역에서
+ * "Extra attributes from the server" 경고를 유발하기 때문입니다.
  */
 export function useVisualEffects() {
   // Ripple: .btn 클릭 시 물결 효과
   useEffect(() => {
     function addRipple(e) {
-      const btn = e.currentTarget;
+      const btn = e.target.closest(SELECTORS.BTN);
+      if (!btn) return;
       const circle = document.createElement('span');
       circle.className = 'ripple-effect';
       const rect = btn.getBoundingClientRect();
@@ -30,45 +35,34 @@ export function useVisualEffects() {
       setTimeout(() => circle.remove(), RIPPLE_CLEANUP_MS);
     }
 
-    function attachRipples() {
-      document.querySelectorAll(SELECTORS.BTN).forEach(btn => {
-        if (btn.dataset.fxBound) return;
-        btn.addEventListener('click', addRipple);
-        btn.dataset.fxBound = '1';
-      });
-    }
-
-    attachRipples();
-    const observer = new MutationObserver(attachRipples);
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
+    document.body.addEventListener('click', addRipple);
+    return () => document.body.removeEventListener('click', addRipple);
   }, []);
 
   // Tilt: .card-lift 마우스 이동 시 원근감 기울기
   useEffect(() => {
+    let active = null;
+
+    function reset() {
+      if (active) { active.style.transform = ''; active = null; }
+    }
+
     function onMove(e) {
-      const card = e.currentTarget;
+      const card = e.target.closest(SELECTORS.CARD_LIFT);
+      if (card !== active) reset();
+      if (!card) return;
+      active = card;
       const rect = card.getBoundingClientRect();
       const cx = (e.clientX - rect.left) / rect.width  - 0.5;
       const cy = (e.clientY - rect.top)  / rect.height - 0.5;
       card.style.transform = `perspective(${TILT_PERSPECTIVE_PX}px) rotateY(${cx * TILT_ROTATE_Y_DEG}deg) rotateX(${-cy * TILT_ROTATE_X_DEG}deg) translateY(-3px)`;
     }
-    function onLeave(e) {
-      e.currentTarget.style.transform = '';
-    }
 
-    function attachTilt() {
-      document.querySelectorAll(SELECTORS.CARD_LIFT).forEach(card => {
-        if (card.dataset.fxBound) return;
-        card.addEventListener('mousemove', onMove);
-        card.addEventListener('mouseleave', onLeave);
-        card.dataset.fxBound = '1';
-      });
-    }
-
-    attachTilt();
-    const observer = new MutationObserver(attachTilt);
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
+    document.body.addEventListener('mousemove', onMove);
+    document.body.addEventListener('mouseleave', reset);
+    return () => {
+      document.body.removeEventListener('mousemove', onMove);
+      document.body.removeEventListener('mouseleave', reset);
+    };
   }, []);
 }

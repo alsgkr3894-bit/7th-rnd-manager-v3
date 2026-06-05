@@ -5,50 +5,73 @@ import { showToast } from '@/components/Toast';
 import { SAMPLE_CATEGORIES, RATING_LABELS, RATING_COLOR, getAllSamples } from '@/lib/sample';
 import { initDB } from '@/lib/db';
 import { TagInput } from '@/components/ui/TagInput';
+import { ComboBox } from '@/components/ui/ComboBox';
 import { SegGroup, Field } from '@/components/note/FormFields';
+import { resizePhoto } from '@/lib/image/resize';
+import { getAllIngredients } from '@/lib/ingredient';
+import { getAllMenuMaster } from '@/lib/menu-master';
 
 export const SAMPLE_INIT = {
-  title: '', menuName: '', category: SAMPLE_CATEGORIES[0],
-  testDate: '', tester: '', batchNo: '',
-  description: '', result: '', rating: 0,
-  improvements: '', nextAction: '', tags: '',
+  title: '', sampleNames: [''], category: '',
+  testDate: '', company: '', tester: '',
+  rating: 0, price: '', priceTaxType: 'incl',
+  description: '', result: '', improvements: '', nextAction: '', tags: '',
   photos: [],
+  linkedProducts: [],  // [{kind:'ingredient'|'menu', code, name}]
 };
 
 const MAX_PHOTOS = 8;
 
-async function resizePhoto(file) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      const MAX = 1400;
-      let w = img.width, h = img.height;
-      if (w > MAX || h > MAX) {
-        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-        else { w = Math.round(w * MAX / h); h = MAX; }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      URL.revokeObjectURL(url);
-      resolve({ data: canvas.toDataURL('image/jpeg', 0.78), name: file.name });
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지 로드 실패')); };
-    img.src = url;
-  });
-}
-
 export function SampleFormBody({ form, setForm }) {
   const fileInputRef = useRef(null);
-  const [allTags, setAllTags] = useState([]);
+  const [allTags,        setAllTags]        = useState([]);
+  const [catOptions,     setCatOptions]     = useState(SAMPLE_CATEGORIES);
+  const [companyOptions, setCompanyOptions] = useState([]);
+  const [productOptions, setProductOptions] = useState([]); // [{kind, code, name, label}]
+  const [productSearch,  setProductSearch]  = useState('');
   function upd(k, v) { setForm(f => ({ ...f, [k]: v })); }
 
+  // 샘플명(복수) 핸들러
+  function setSampleName(i, v) {
+    setForm(f => { const a = [...(f.sampleNames || [''])]; a[i] = v; return { ...f, sampleNames: a }; });
+  }
+  function addSampleName() {
+    setForm(f => ({ ...f, sampleNames: [...(f.sampleNames || ['']), ''] }));
+  }
+  function removeSampleName(i) {
+    setForm(f => {
+      const a = (f.sampleNames || ['']).filter((_, idx) => idx !== i);
+      return { ...f, sampleNames: a.length ? a : [''] };
+    });
+  }
+
   useEffect(() => {
-    initDB().then(() => getAllSamples()).then(samples => {
-      const set = new Set();
-      samples.forEach(s => (s.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => set.add(t)));
-      setAllTags([...set]);
+    initDB().then(() => Promise.all([
+      getAllSamples(),
+      getAllIngredients(),
+      getAllMenuMaster(),
+    ])).then(([samples, ings, menus]) => {
+      const tags = new Set();
+      const cats = new Set(SAMPLE_CATEGORIES);
+      const comps = new Set();
+      samples.forEach(s => {
+        (s.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => tags.add(t));
+        if (s.category) cats.add(s.category);
+        if (s.company)  comps.add(s.company);
+      });
+      setAllTags([...tags]);
+      setCatOptions([...cats]);
+      setCompanyOptions([...comps]);
+
+      const opts = [
+        ...ings
+          .filter(i => !i.discontinued && !i.excluded)
+          .map(i => ({ kind: 'ingredient', code: i.productCode || String(i.id), name: i.ingredientName || i.displayName })),
+        ...menus
+          .filter(m => m.status !== 'discontinued')
+          .map(m => ({ kind: 'menu', code: m.menuCode, name: m.menuName })),
+      ];
+      setProductOptions(opts);
     }).catch(() => {});
   }, []);
 
@@ -62,12 +85,15 @@ export function SampleFormBody({ form, setForm }) {
       if (file.size > 5 * 1024 * 1024) { showToast('파일 크기 초과: ' + file.name + ' (최대 5MB)', 'warn'); continue; }
       toAdd.push(file);
     }
-    try {
-      const resized = await Promise.all(toAdd.map(resizePhoto));
-      upd('photos', [...current, ...resized]);
-    } catch {
-      showToast('사진 처리 중 오류가 발생했어요', 'error');
-    }
+    const settled = await Promise.allSettled(toAdd.map(resizePhoto));
+    const resized = [];
+    const failed = [];
+    settled.forEach((res, i) => {
+      if (res.status === 'fulfilled') resized.push(res.value);
+      else failed.push(toAdd[i].name);
+    });
+    if (resized.length) upd('photos', [...current, ...resized]);
+    if (failed.length) showToast(`사진 처리 실패: ${failed.join(', ')}`, 'warn');
   }
 
   function removePhoto(i) {
@@ -98,38 +124,68 @@ export function SampleFormBody({ form, setForm }) {
               placeholder="예) 불고기 피자 3차 샘플 — 소스 비율 조정"/>
           </Field>
 
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-            <Field label="메뉴명" required>
-              <input className="form-input" value={form.menuName}
-                onChange={e => upd('menuName', e.target.value)}
-                placeholder="예) 불고기피자"/>
-            </Field>
-            <Field label="테스트 날짜">
-              <input className="form-input" type="date" value={form.testDate}
-                onChange={e => upd('testDate', e.target.value)}/>
-            </Field>
-          </div>
-
-          <Field label="카테고리">
-            <SegGroup options={SAMPLE_CATEGORIES} value={form.category} onChange={v => upd('category', v)}/>
+          {/* 샘플명 (복수) */}
+          <Field label="샘플명" required hint="여러 개 추가 가능">
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              {(form.sampleNames || ['']).map((name, i) => (
+                <div key={i} style={{ display:'flex', gap:6, alignItems:'center' }}>
+                  <input className="form-input" value={name}
+                    onChange={e => setSampleName(i, e.target.value)}
+                    placeholder="예) 불고기피자"/>
+                  {(form.sampleNames || ['']).length > 1 && (
+                    <button type="button" className="btn" style={{ padding:'6px 8px', flexShrink:0 }}
+                      onClick={() => removeSampleName(i)} aria-label={`샘플명 ${i + 1} 삭제`}>
+                      <Icon.close style={{ width:12, height:12 }}/>
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button type="button" className="btn sm" style={{ alignSelf:'flex-start' }} onClick={addSampleName}>
+                <Icon.plus style={{ width:12, height:12 }}/> 샘플명 추가
+              </button>
+            </div>
           </Field>
 
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <Field label="샘플수령날짜">
+              <input className="form-input" type="date" value={form.testDate}
+                onChange={e => upd('testDate', e.target.value)}/>
+            </Field>
+            <Field label="카테고리" hint="입력·선택 모두 가능">
+              <ComboBox value={form.category} onChange={v => upd('category', v)}
+                options={catOptions} placeholder="예) 피자" inputClassName="form-input"/>
+            </Field>
+          </div>
+
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <Field label="업체명">
+              <ComboBox value={form.company} onChange={v => upd('company', v)}
+                options={companyOptions} placeholder="예) 대림수산" inputClassName="form-input"/>
+            </Field>
             <Field label="담당자">
               <input className="form-input" value={form.tester}
                 onChange={e => upd('tester', e.target.value)}
                 placeholder="예) 김민지"/>
             </Field>
-            <Field label="배치 / 회차">
-              <input className="form-input" value={form.batchNo}
-                onChange={e => upd('batchNo', e.target.value)}
-                placeholder="예) 3차, B-03"/>
-            </Field>
           </div>
 
-          <Field label="평점">
-            <StarPicker value={form.rating} onChange={v => upd('rating', v)}/>
-          </Field>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <Field label="평점">
+              <StarPicker value={form.rating} onChange={v => upd('rating', v)}/>
+            </Field>
+            <Field label="단가">
+              <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                  <input className="form-input" type="number" min="0" value={form.price}
+                    onChange={e => upd('price', e.target.value)} placeholder="예) 12000"/>
+                  <span style={{ fontSize:13, color:'var(--text-3)', flexShrink:0 }}>원</span>
+                </div>
+                <SegGroup options={['부가세포함', '별도']}
+                  value={form.priceTaxType === 'excl' ? '별도' : '부가세포함'}
+                  onChange={v => upd('priceTaxType', v === '별도' ? 'excl' : 'incl')}/>
+              </div>
+            </Field>
+          </div>
         </div>
 
         {/* 상세 기록 */}
@@ -173,8 +229,22 @@ export function SampleFormBody({ form, setForm }) {
         </div>
       </div>
 
-      {/* ── 우측: 사진 ── */}
+      {/* ── 우측: 연결 제품 + 사진 ── */}
       <div className="form-sticky-right" style={{ position:'sticky', top:80 }}>
+        {/* 연결 제품 카드 */}
+        <LinkedProductsCard
+          linked={form.linkedProducts || []}
+          options={productOptions}
+          search={productSearch}
+          onSearchChange={setProductSearch}
+          onAdd={item => {
+            const already = (form.linkedProducts || []).some(p => p.kind === item.kind && p.code === item.code);
+            if (!already) upd('linkedProducts', [...(form.linkedProducts || []), item]);
+            setProductSearch('');
+          }}
+          onRemove={idx => upd('linkedProducts', (form.linkedProducts || []).filter((_, i) => i !== idx))}
+        />
+
         <div className="card">
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
             <div className="card-title">사진</div>
@@ -299,6 +369,74 @@ function StarPicker({ value, onChange }) {
         <span style={{ marginLeft:6, fontSize:12, color: RATING_COLOR[value] || 'var(--text-2)', fontWeight:600 }}>
           {RATING_LABELS[value]}
         </span>
+      )}
+    </div>
+  );
+}
+
+/** 샘플기록 — 식자재·메뉴 제품 연결 카드 */
+function LinkedProductsCard({ linked, options, search, onSearchChange, onAdd, onRemove }) {
+  const filtered = search.trim()
+    ? options.filter(o => o.name.toLowerCase().includes(search.toLowerCase()) ||
+        (o.code || '').toLowerCase().includes(search.toLowerCase()))
+      .slice(0, 12)
+    : [];
+
+  return (
+    <div className="card" style={{ marginBottom: 12 }}>
+      <div className="card-title" style={{ marginBottom: 10 }}>연결 제품</div>
+
+      {/* 검색 */}
+      <div style={{ position: 'relative' }}>
+        <input className="form-input" value={search} placeholder="식자재명 또는 메뉴명 검색"
+          onChange={e => onSearchChange(e.target.value)}
+          onBlur={() => setTimeout(() => onSearchChange(''), 160)}/>
+        {filtered.length > 0 && (
+          <div style={{
+            position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 200,
+            background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8,
+            boxShadow: '0 4px 16px rgba(0,0,0,.12)', maxHeight: 200, overflowY: 'auto',
+          }}>
+            {filtered.map(o => (
+              <div key={`${o.kind}-${o.code}`}
+                style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', gap: 8, alignItems: 'center' }}
+                onMouseDown={e => { e.preventDefault(); onAdd(o); }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 3,
+                  background: o.kind === 'ingredient' ? 'var(--positive-soft)' : 'var(--accent-soft)',
+                  color: o.kind === 'ingredient' ? 'var(--positive)' : 'var(--accent-text)',
+                }}>
+                  {o.kind === 'ingredient' ? '식자재' : '메뉴'}
+                </span>
+                {o.name}
+                {o.code && <span style={{ fontSize: 11, color: 'var(--text-4)', marginLeft: 'auto' }}>{o.code}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 연결된 제품 칩 */}
+      {linked.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+          {linked.map((p, i) => (
+            <span key={i} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              padding: '3px 8px', borderRadius: 999, fontSize: 12, fontWeight: 600,
+              background: p.kind === 'ingredient' ? 'var(--positive-soft)' : 'var(--accent-soft)',
+              color: p.kind === 'ingredient' ? 'var(--positive)' : 'var(--accent-text)',
+            }}>
+              {p.name}
+              <button type="button" onClick={() => onRemove(i)}
+                style={{ border: 0, background: 'transparent', cursor: 'pointer', padding: 0, display: 'flex', color: 'inherit', opacity: .6 }}>
+                <Icon.close style={{ width: 11, height: 11 }}/>
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      {linked.length === 0 && (
+        <div style={{ fontSize: 12, color: 'var(--text-4)', marginTop: 8 }}>연결된 제품 없음</div>
       )}
     </div>
   );

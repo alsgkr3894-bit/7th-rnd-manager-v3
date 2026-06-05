@@ -2,6 +2,8 @@
 import { useReducer, useMemo } from 'react';
 import { formatNumber } from '@/lib/format';
 import { UnmatchedResolveForm } from './UnmatchedResolveForm';
+import { Pagination } from '@/components/ui/Pagination';
+import { usePagination } from '@/hooks/usePagination';
 
 const initialState = {
   openId:      null,
@@ -58,6 +60,7 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude }) {
 
   const openIssues  = useMemo(() => issues.filter(i => i.status === 'open'), [issues]);
   const openIds     = useMemo(() => new Set(openIssues.map(i => i.id)), [openIssues]);
+  const { page: umPage, goTo: umGoTo, totalPages: umTotalPages, paged: umPaged, total: umTotal } = usePagination(issues, 50);
   const selectedOpen = useMemo(
     () => Array.from(selected).filter(id => openIds.has(id)),
     [selected, openIds],
@@ -147,7 +150,7 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude }) {
             </tr>
           </thead>
           <tbody>
-            {issues.map(it => (
+            {umPaged.map(it => (
               <Row
                 key={it.id}
                 issue={it}
@@ -161,6 +164,9 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude }) {
             ))}
           </tbody>
         </table>
+      </div>
+      <div style={{ borderTop: '1px solid var(--divider)' }}>
+        <Pagination page={umPage} totalPages={umTotalPages} onPage={umGoTo} total={umTotal} pageSize={50} />
       </div>
     </div>
   );

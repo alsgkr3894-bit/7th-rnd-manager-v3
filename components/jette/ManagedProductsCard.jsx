@@ -5,14 +5,20 @@ import { showToast } from '@/components/Toast';
 import { Chip } from '@/components/ui/Chip';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Pagination } from '@/components/ui/Pagination';
+import { SortableTh } from '@/components/ui/SortableTh';
+import { usePagination } from '@/hooks/usePagination';
+import { downloadCsv } from '@/lib/download';
 import {
   getAllManagedProducts,
   addManagedProduct, deleteManagedProduct, updateManagedProduct,
   migrateExclusiveFromPriceList,
+  onManagedProductsChange,
 } from '@/lib/shipment';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { ManagedProductsForm } from './ManagedProductsForm';
 import { ManagedProductsRow } from './ManagedProductsRow';
+import { sortByKey } from '@/lib/jette/utils';
 
 /**
  * ManagedProductsCard — 제때 출고량 대상 제품 관리
@@ -24,6 +30,12 @@ import { ManagedProductsRow } from './ManagedProductsRow';
  *   - 가격비교 productCode 자동 마이그레이션 ('exclusive' 일괄 추가)
  */
 const EMPTY_FORM = { productCode: '', productName: '', productType: 'generic', isManaged: false };
+const PRODUCT_TYPE_ORDER = { exclusive: 0, generic: 1, 'generic-managed': 2 };
+const SORT_TRANSFORM = {
+  productType: (v) => PRODUCT_TYPE_ORDER[v] ?? 9,
+  enable:      (v) => (v === false ? 0 : 1),
+  isManaged:   (v) => (v ? 1 : 0),
+};
 
 export function ManagedProductsCard() {
   const [list, setList] = useState([]);
@@ -34,8 +46,14 @@ export function ManagedProductsCard() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [busy, setBusy] = useState(false);
   const [migrating, setMigrating] = useState(false);
+  const [sortKey, setSortKey] = useState('productName');
+  const [sortDir, setSortDir] = useState('asc');
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   useEffect(() => { refresh(); }, []);
+
+  // 가격비교 등 다른 화면에서 분류를 바꿔도 이 목록이 같은 마스터를 반영하도록 동기화
+  useEffect(() => onManagedProductsChange(() => { refresh(); }), []);
 
   async function refresh() {
     try { setList(await getAllManagedProducts()); } catch (err) { console.warn(err); }
@@ -57,8 +75,14 @@ export function ManagedProductsCard() {
   }
 
   async function handleDelete(id) {
-    try { await deleteManagedProduct(id); showToast('삭제됐어요', 'ok'); refresh(); }
-    catch { showToast('삭제 실패', 'err'); }
+    try {
+      await deleteManagedProduct(id);
+      showToast('삭제됐어요', 'ok');
+      setPendingDeleteId(null);
+      refresh();
+    } catch {
+      showToast('삭제 실패', 'err');
+    }
   }
 
   async function handleToggleEnable(p) {
@@ -115,8 +139,30 @@ export function ManagedProductsCard() {
       (p.productName || '').toLowerCase().includes(q)
       || (p.productCode || '').toLowerCase().includes(q)
     );
-    return r;
-  }, [list, search, filter, managedOnly]);
+    return sortByKey(r, sortKey, sortDir, SORT_TRANSFORM[sortKey] ?? null);
+  }, [list, search, filter, managedOnly, sortKey, sortDir]);
+
+  const { page, goTo, totalPages, paged, total } = usePagination(filtered, 50);
+
+  function toggleSort(key) {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else {
+      setSortKey(key);
+      setSortDir(key === 'productName' || key === 'productCode' ? 'asc' : 'desc');
+    }
+  }
+
+  function exportCsv() {
+    const headers = ['제품코드', '제품명', '활성', '분류', '관리품목'];
+    const rows = filtered.map(p => [
+      p.productCode || '',
+      p.productName || '',
+      p.enable === false ? '비활성' : '활성',
+      p.productType || 'generic',
+      p.isManaged ? 'Y' : '',
+    ]);
+    downloadCsv([headers, ...rows], '제때_대상제품목록.csv');
+  }
 
   return (
     <div className="card" style={{marginTop:16}}>
@@ -128,6 +174,9 @@ export function ManagedProductsCard() {
           </div>
         </div>
         <div style={{display:'flex', gap:6}}>
+          <button className="btn sm" onClick={exportCsv} disabled={filtered.length === 0}>
+            CSV 내보내기
+          </button>
           <button className="btn sm" onClick={handleMigrate} disabled={migrating}>
             <Icon.download style={{width:12, height:12}}/>
             {migrating ? '가져오는 중...' : '가격비교에서 전용상품 가져오기'}
@@ -174,27 +223,31 @@ export function ManagedProductsCard() {
           <table className="data-table">
             <thead style={{position:'sticky', top:0, background:'var(--surface)', zIndex:1}}>
               <tr>
-                <th style={{width:120}}>제품코드</th>
-                <th>제품명</th>
-                <th style={{width:70, textAlign:'center'}}>활성</th>
-                <th style={{width:130}}>분류</th>
-                <th style={{width:80, textAlign:'center'}}>관리품목</th>
-                <th style={{width:70}}></th>
+                <SortableTh sortKey="productCode" active={sortKey} dir={sortDir} onClick={toggleSort} width={120}>제품코드</SortableTh>
+                <SortableTh sortKey="productName" active={sortKey} dir={sortDir} onClick={toggleSort}>제품명</SortableTh>
+                <SortableTh sortKey="enable" active={sortKey} dir={sortDir} onClick={toggleSort} width={70} style={{textAlign:'center'}}>활성</SortableTh>
+                <SortableTh sortKey="productType" active={sortKey} dir={sortDir} onClick={toggleSort} width={130}>분류</SortableTh>
+                <SortableTh sortKey="isManaged" active={sortKey} dir={sortDir} onClick={toggleSort} width={80} style={{textAlign:'center'}}>관리품목</SortableTh>
+                <th style={{width:150}}></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map(p => (
+              {paged.map(p => (
                 <ManagedProductsRow
                   key={p.id}
                   product={p}
                   onToggleEnable={handleToggleEnable}
                   onChangeType={handleChangeType}
                   onToggleManaged={handleToggleManaged}
-                  onDelete={handleDelete}
+                  pendingDelete={pendingDeleteId === p.id}
+                  onAskDelete={() => setPendingDeleteId(p.id)}
+                  onCancelDelete={() => setPendingDeleteId(null)}
+                  onConfirmDelete={() => handleDelete(p.id)}
                 />
               ))}
             </tbody>
           </table>
+          <Pagination page={page} totalPages={totalPages} onPage={goTo} total={total} pageSize={50} />
         </div>
       )}
     </div>

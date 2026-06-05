@@ -11,9 +11,10 @@ export function BulkIngredientModal({ open, onClose, ingredients, onAdd }) {
   useEffect(() => { if (open) { setSearch(''); setSelected(new Set()); } }, [open]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return ingredients.slice(0, 50);
+    const active = ingredients.filter(i => !i.discontinued && !i.excluded);
+    if (!search.trim()) return active.slice(0, 50);
     const q = search.toLowerCase();
-    return ingredients.filter(i =>
+    return active.filter(i =>
       i.ingredientName?.toLowerCase().includes(q) ||
       i.productCode?.toLowerCase().includes(q) ||
       i.manufacturer?.toLowerCase().includes(q)

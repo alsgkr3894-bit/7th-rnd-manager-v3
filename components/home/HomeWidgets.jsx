@@ -5,6 +5,7 @@ import { STATUS_COLORS, STATUS_BORDER } from '@/lib/note';
 import { formatNumber } from '@/lib/format';
 import { getCostRateStyles } from '@/lib/cost/rate-color';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Sparkline } from '@/components/charts/Sparkline';
 
 // 정식 위치는 @/components/ui/EmptyState — 기존 import 경로 호환을 위해 재export
 export { EmptyState };
@@ -124,10 +125,15 @@ export function RankCard({ title, sub, items, emptyTitle, accent, router }) {
               onClick={() => router.push(`/menu-sales/rank-compare?menu=${encodeURIComponent(r.name)}`)}
               style={rowButtonStyle}
             >
-              <div className="rank-num num"
-                style={accent === 'down' ? { background: 'var(--negative-soft)', color: 'var(--negative)' } : undefined}
-              >{r.rank}</div>
+              <div className={`rank-num num ${accent}`}>{r.rank}</div>
               <div className="rank-name">{r.name}</div>
+              {Array.isArray(r.spark) && r.spark.some(v => v > 0) && (
+                <div className="rank-mini">
+                  <Sparkline data={r.spark} fill={false} width={56} height={22}
+                    color={accent === 'down' ? 'var(--negative)' : 'var(--positive)'} />
+                </div>
+              )}
+              {r.quantity != null && <div className="rank-val">{formatNumber(r.quantity)}</div>}
               <Icon.chevRight className="chev" style={{width:16,height:16}}/>
             </button>
           ))}
@@ -205,6 +211,12 @@ export function CostAlertWidget({ data, router }) {
           </div>
         </div>
         <button className="link accent" onClick={() => router.push('/cost/margin')}>전체 →</button>
+      </div>
+
+      <div className="alert-summary">
+        <div className="alert-pill bad"><div className="n">{alerts.length}</div><div className="t">경보 · 40%↑</div></div>
+        <div className="alert-pill warn"><div className="n">{caution}</div><div className="t">주의 · 30–40%</div></div>
+        <div className="alert-pill good"><div className="n">{good}</div><div className="t">양호 · 30%↓</div></div>
       </div>
 
       {alerts.length === 0 ? (

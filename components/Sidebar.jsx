@@ -16,7 +16,6 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
   const pathname = usePathname();
   const router = useRouter();
   const sidebarRef = useRef(null);
-  const [pillStyle, setPillStyle] = useState({ top: 0, height: 40, opacity: 0 });
   const [latestPrice, setLatestPrice] = useState(null);
 
   // 최신 제때 단가 조회 — 마운트 1회만
@@ -56,16 +55,10 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
   const [openIds, setOpenIds] = useState({});
 
   // 마운트 후 localStorage 복원 (SSR 불일치 방지)
+  // 저장값 없으면(처음 접속) 모두 접힌 상태 유지 — 사용자가 직접 연 탭만 저장됨
   useEffect(() => {
     const saved = getJSONLS(KEYS.SIDEBAR_OPEN);
-    if (saved) { setOpenIds(saved); return; }
-    const opened = {};
-    NAV_SECTIONS.forEach(section => {
-      section.groups.forEach(g => {
-        if (isGroupActive(g)) opened[g.id] = true;
-      });
-    });
-    setOpenIds(opened);
+    setOpenIds(saved || {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -84,23 +77,18 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  // 활성 항목 위치로 pill 이동 — DOM 트랜지션 완료 후 1프레임 뒤 계산
+  // 활성 항목이 보이는 영역 밖이면 스크롤로 노출 (active 표시는 CSS .active 배경·좌측바가 담당)
   useEffect(() => {
     const sidebar = sidebarRef.current;
     if (!sidebar) return;
     const rafId = requestAnimationFrame(() => {
-      // 열린 아코디언 안의 active child만 사용 (닫힌 상태면 부모 nav-item으로 fallback)
       const activeEl =
         sidebar.querySelector('.nav-children.open .nav-child.active') ||
         sidebar.querySelector('.nav-item.active');
-      if (!activeEl) {
-        setPillStyle(s => ({ ...s, opacity: 0 }));
-        return;
-      }
+      if (!activeEl) return;
       const sRect = sidebar.getBoundingClientRect();
       const eRect = activeEl.getBoundingClientRect();
-      setPillStyle({ top: eRect.top - sRect.top + sidebar.scrollTop, height: eRect.height, opacity: 1 });
-      // active 항목이 보이는 영역 밖일 때만 스크롤 (이미 보이는 항목 클릭 시 점프 방지)
+      // 이미 보이는 항목 클릭 시 점프 방지 — 영역 밖일 때만 스크롤
       const outOfView = eRect.top < sRect.top || eRect.bottom > sRect.bottom;
       if (outOfView) activeEl.scrollIntoView({ block: 'nearest', behavior: 'instant' });
     });
@@ -152,15 +140,9 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
     const IconComp = Icon[item.iconKey] || Icon.doc;
 
     const handle = () => {
+      // 자식 있는 상위 그룹은 펼치기/접기만 (자동 페이지 이동 X — 이동은 하위 항목 클릭으로)
       if (hasKids) {
-        if (active) {
-          // active 그룹은 닫지 않고 열기만 (토글 X)
-          toggle(item.id, true);
-        } else {
-          // 첫 탭으로 이동만 — pathname 변경 시 자동-펼침 effect가 그룹을 연다.
-          // 수동 toggle을 생략해 openIds·pathname 이중 상태 변경(pill effect 중복 발화)을 방지.
-          navigate(item.children[0].href);
-        }
+        toggle(item.id);
       } else if (item.href) {
         navigate(item.href);
       }
@@ -210,7 +192,6 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
 
   return (
     <aside className="sidebar" ref={sidebarRef} suppressHydrationWarning>
-      <div className="sidebar-pill" style={{ transform: `translateY(${pillStyle.top}px)`, height: pillStyle.height, opacity: pillStyle.opacity }} />
       <a className="brand" href="/" onClick={e => { e.preventDefault(); navigate('/'); }}>
         {activeCompany?.logo
           ? <img className="logo-img" src={activeCompany.logo} alt={activeCompany?.name || '로고'}

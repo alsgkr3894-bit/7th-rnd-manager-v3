@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import CommandPalette from './CommandPalette';
 import { ToastContainer } from './Toast';
+import { ScrollToTop } from './ui/ScrollToTop';
 import { Icon } from './icons';
 import { applyAllSettings, getSetting, setSetting } from '@/lib/settings';
 import { KEYS } from '@/lib/note/keys';
@@ -12,7 +13,9 @@ import { ensureSession } from '@/lib/session';
 import { pruneOldWorkLogs } from '@/lib/work-log';
 import { hydratePlatformsFromDB } from '@/lib/cost/margin/platforms';
 import { initClickOrigin } from '@/lib/ui/click-origin';
+import { OVERLAY_COLOR } from '@/lib/ui/styles';
 import { COMPANIES } from '@/lib/companies';
+import { getActiveBrandId, setActiveBrandId } from '@/lib/active-brand';
 import { MOBILE_TAB_DEFS } from '@/lib/menu';
 import ProgressBar from './ProgressBar';
 import OfflineIndicator from './OfflineIndicator';
@@ -49,7 +52,7 @@ function ShortcutsHelp({ onClose }) {
   return (
     <div
       role="presentation"
-      style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:600, display:'grid', placeItems:'center', animation:'fade 150ms ease' }}
+      style={{ position:'fixed', inset:0, background:OVERLAY_COLOR, zIndex:600, display:'grid', placeItems:'center', animation:'fade 150ms ease' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div ref={cardRef} className="card modal-anim" role="dialog" aria-label="키보드 단축키" aria-modal="true" style={{ width:'min(380px,92vw)', padding:'24px 28px' }}>
@@ -76,13 +79,60 @@ function ShortcutsHelp({ onClose }) {
   );
 }
 
+/**
+ * 활성 브랜드 색을 앱 테마(accent)에 적용.
+ * 7번가(main)는 globals.css의 손튜닝 레드 테마를 그대로 사용(덮어쓰지 않음).
+ * 그 외 브랜드는 브랜드색을 기준으로 press/soft/text를 color-mix로 파생.
+ */
+function applyBrandAccent(company) {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  const vars = ['--accent', '--accent-press', '--accent-soft', '--accent-text'];
+  if (!company || company.id === 'main') {
+    vars.forEach(v => root.style.removeProperty(v)); // 기본 테마 복귀
+    return;
+  }
+  const c = company.color;
+  const isDark = root.getAttribute('data-theme') === 'dark';
+  root.style.setProperty('--accent', c);
+  root.style.setProperty('--accent-press', `color-mix(in oklab, ${c} 82%, black)`);
+  if (isDark) {
+    // 다크모드: 브랜드색 + 어두운 배경 혼합 → 눈에 띄되 너무 밝지 않게
+    root.style.setProperty('--accent-soft', `color-mix(in oklab, ${c} 22%, #111111)`);
+    root.style.setProperty('--accent-text', `color-mix(in oklab, ${c} 55%, white)`);
+  } else {
+    // 라이트모드: 브랜드색 + 흰 배경 혼합 → 연한 틴트
+    root.style.setProperty('--accent-soft', `color-mix(in oklab, ${c} 12%, white)`);
+    root.style.setProperty('--accent-text', `color-mix(in oklab, ${c} 78%, black)`);
+  }
+}
+
 export default function AppShell({ children }) {
   const [mobileNav, setMobileNav] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const gPressedRef = useRef(false);
   const gTimerRef = useRef(null);
+  // 활성 브랜드 복원 (localStorage). 전환 시 저장 후 새로고침으로 모든 모듈이 해당 브랜드 DB로 재초기화.
   const [activeCompany, setActiveCompany] = useState(COMPANIES[0]);
+  useEffect(() => {
+    const id = getActiveBrandId();
+    const found = COMPANIES.find(c => c.id === id);
+    if (found && found.id !== activeCompany.id) setActiveCompany(found);
+    const company = found || COMPANIES[0];
+    applyBrandAccent(company);
+
+    // 다크/라이트 전환 시 accent-soft/text 재계산
+    const obs = new MutationObserver(() => applyBrandAccent(company));
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => obs.disconnect();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const handleCompanyChange = (c) => {
+    if (!c || c.id === getActiveBrandId()) return;
+    setActiveBrandId(c.id);
+    window.location.reload();
+  };
   const pathname = usePathname();
   const router = useRouter();
   const { unmatchedCount, reportingCount } = usePageStats(pathname);
@@ -192,7 +242,7 @@ export default function AppShell({ children }) {
           onOpenPalette={() => setPaletteOpen(true)}
           onToggleSidebar={() => setMobileNav(v => !v)}
           activeCompany={activeCompany}
-          onCompanyChange={setActiveCompany}
+          onCompanyChange={handleCompanyChange}
           unmatchedCount={unmatchedCount}
           reportingCount={reportingCount}
         />
@@ -230,6 +280,7 @@ export default function AppShell({ children }) {
       </div>
 
       <ToastContainer />
+      <ScrollToTop />
     </div>
   );
 }

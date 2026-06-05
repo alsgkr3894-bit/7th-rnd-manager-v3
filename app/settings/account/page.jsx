@@ -4,6 +4,7 @@ import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { getProfile, setProfile, getInitial } from '@/lib/profile';
+import { verifyPassword, savePassword } from '@/lib/auth';
 import { getLastLogin, getCachedIP, fetchClientIP } from '@/lib/session';
 import { formatRelative } from '@/lib/format';
 import { SettingTile } from '@/components/ui/SettingTile';
@@ -54,6 +55,7 @@ export default function Page() {
   const { hasPin, setPin: savePin } = useSettingsAuth();
   const [pinInput, setPinInput] = useState('');
   const [pinConfirm, setPinConfirm] = useState('');
+  const [pinError, setPinError] = useState('');
 
   // 세션 정보
   const [lastLogin, setLastLogin] = useState(null);
@@ -105,19 +107,26 @@ export default function Page() {
 
   function handleSetPin(e) {
     e.preventDefault();
-    if (pinInput.length < 4) { showToast('PIN은 4자리 이상이어야 합니다.', 'err'); return; }
-    if (pinInput !== pinConfirm) { showToast('PIN이 일치하지 않습니다.', 'err'); return; }
+    if (pinInput.length < 4) { setPinError('PIN은 4자리 이상이어야 합니다.'); return; }
+    if (pinInput !== pinConfirm) { setPinError('PIN이 일치하지 않습니다.'); return; }
+    setPinError('');
+    const wasSet = hasPin;
     savePin(pinInput);
     setPinInput('');
     setPinConfirm('');
     showToast('PIN이 설정되었습니다.', 'ok');
+    import('@/lib/work-log')
+      .then(m => m.logWork('SECURITY', wasSet ? '설정 PIN 변경' : '설정 PIN 설정'))
+      .catch(() => {});
   }
 
   function handleClearPin() {
     savePin('');
     setPinInput('');
     setPinConfirm('');
+    setPinError('');
     showToast('PIN이 해제되었습니다.', 'ok');
+    import('@/lib/work-log').then(m => m.logWork('SECURITY', '설정 PIN 해제')).catch(() => {});
   }
 
   if (!profile) {
@@ -154,21 +163,8 @@ export default function Page() {
         sub="내 프로필 정보와 역할별 권한 기준을 확인하세요"
       />
 
-      {/* 단일 사용자 환경 안내 */}
-      <div className="card" style={{
-        marginTop:24,padding:'14px 18px',
-        background:'var(--accent-soft)',
-        borderColor:'var(--accent-soft)',
-        display:'flex',gap:12,alignItems:'flex-start',
-      }}>
-        <Icon.alert style={{width:16,height:16,color:'var(--accent)',marginTop:2,flex:'0 0 16px'}}/>
-        <div style={{fontSize:13,color:'var(--text-2)',lineHeight:1.6}}>
-          <b style={{color:'var(--accent-text)'}}>현재 v3는 단일 사용자 / 로컬 환경입니다.</b>
-          <br/>
-          로그인·인증·멀티 사용자·접근 권한은 아직 구현되어 있지 않습니다.
-          프로필 정보는 화면 표시용이며 이 브라우저에만 저장됩니다.
-        </div>
-      </div>
+      {/* 비밀번호 변경 */}
+      <PasswordChangeCard />
 
       {/* 내 프로필 */}
       <div className="card" style={{marginTop:16,padding:24,display:'flex',gap:24,alignItems:'flex-start'}}>
@@ -285,9 +281,10 @@ export default function Page() {
       <PinSection
         hasPin={hasPin}
         pinInput={pinInput}
-        setPinInput={setPinInput}
+        setPinInput={(v) => { setPinError(''); setPinInput(v); }}
         pinConfirm={pinConfirm}
-        setPinConfirm={setPinConfirm}
+        setPinConfirm={(v) => { setPinError(''); setPinConfirm(v); }}
+        pinError={pinError}
         onSetPin={handleSetPin}
         onClearPin={handleClearPin}
       />
@@ -359,13 +356,20 @@ function FormField({ label, required, children }) {
   );
 }
 
-function PinSection({ hasPin, pinInput, setPinInput, pinConfirm, setPinConfirm, onSetPin, onClearPin }) {
+function PinSection({ hasPin, pinInput, setPinInput, pinConfirm, setPinConfirm, pinError, onSetPin, onClearPin }) {
   return (
     <div className="card" style={{marginTop:16}}>
       <h2 style={{fontSize:15,fontWeight:700,marginBottom:4}}>설정 PIN 관리</h2>
-      <p style={{fontSize:13,color:'var(--text-3)',marginBottom:16}}>
+      <p style={{fontSize:13,color:'var(--text-3)',marginBottom:8}}>
         설정 페이지에 접근할 때 PIN을 요구합니다. PIN은 이 브라우저에만 저장됩니다.
       </p>
+      <div style={{
+        fontSize:12, color:'var(--text-3)', marginBottom:16,
+        padding:'8px 12px', background:'var(--surface-2)', borderRadius:8, lineHeight:1.6,
+      }}>
+        ⚠ 이 PIN은 <b>보안용이 아니라 로컬 실수 방지용</b>입니다. 브라우저 localStorage에 평문으로 저장되며,
+        같은 기기에 접근할 수 있으면 우회할 수 있습니다. 민감 정보 보호 수단으로 의존하지 마세요.
+      </div>
       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
         <span style={{fontSize:13,color:'var(--text-2)'}}>현재 PIN:</span>
         {hasPin ? (
@@ -398,11 +402,79 @@ function PinSection({ hasPin, pinInput, setPinInput, pinConfirm, setPinConfirm, 
             />
           </FormField>
         </div>
+        {pinError && (
+          <div style={{ marginTop: 10, fontSize: 12, color: 'var(--negative)', fontWeight: 600 }}>
+            {pinError}
+          </div>
+        )}
         <div style={{marginTop:12}}>
           <button className="btn primary sm" type="submit" disabled={!pinInput || !pinConfirm}>
             {hasPin ? 'PIN 변경' : 'PIN 설정'}
           </button>
         </div>
+      </form>
+    </div>
+  );
+}
+
+function PasswordChangeCard() {
+  const [cur, setCur]     = useState('');
+  const [next, setNext]   = useState('');
+  const [conf, setConf]   = useState('');
+  const [err, setErr]     = useState('');
+  const [ok, setOk]       = useState(false);
+  const [busy, setBusy]   = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setErr(''); setOk(false);
+    if (!cur) { setErr('현재 비밀번호를 입력하세요.'); return; }
+    if (next.length < 4) { setErr('새 비밀번호는 4자 이상이어야 합니다.'); return; }
+    if (next !== conf) { setErr('새 비밀번호가 일치하지 않습니다.'); return; }
+    setBusy(true);
+    try {
+      const valid = await verifyPassword(cur);
+      if (!valid) { setErr('현재 비밀번호가 올바르지 않습니다.'); return; }
+      await savePassword(next);
+      setCur(''); setNext(''); setConf('');
+      setOk(true);
+      showToast('비밀번호가 변경됐습니다.', 'ok');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="card" style={{ marginTop: 24 }}>
+      <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>비밀번호 변경</h2>
+      <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 16 }}>
+        변경 후 다음 로그인부터 새 비밀번호를 사용합니다.
+      </p>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 320 }}>
+        {[
+          { label: '현재 비밀번호', val: cur, set: setCur, auto: 'current-password' },
+          { label: '새 비밀번호',   val: next, set: setNext, auto: 'new-password' },
+          { label: '새 비밀번호 확인', val: conf, set: setConf, auto: 'new-password' },
+        ].map(({ label, val, set, auto }) => (
+          <div key={label}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: 4 }}>
+              {label}
+            </label>
+            <input
+              type="password"
+              value={val}
+              onChange={e => { set(e.target.value); setErr(''); setOk(false); }}
+              autoComplete={auto}
+              className="form-input"
+              style={{ width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
+        ))}
+        {err && <div style={{ fontSize: 13, color: 'var(--negative)', fontWeight: 600 }}>{err}</div>}
+        {ok  && <div style={{ fontSize: 13, color: 'var(--positive)', fontWeight: 600 }}>비밀번호가 변경됐습니다.</div>}
+        <button type="submit" className="btn primary sm" disabled={busy} style={{ alignSelf: 'flex-start', marginTop: 4 }}>
+          {busy ? '처리 중…' : '비밀번호 변경'}
+        </button>
       </form>
     </div>
   );

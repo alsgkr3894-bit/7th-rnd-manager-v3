@@ -18,7 +18,7 @@ export function Donut({ items, size = 140, thickness = 14, onSegmentHover }) {
     <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size}>
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--surface-2)" strokeWidth={thickness} />
       {items.map((it, i) => {
-        const frac = it.value / total;
+        const frac = total > 0 ? it.value / total : 0;
         const dash = c * frac;
         const offset = -c * acc;
         acc += frac;

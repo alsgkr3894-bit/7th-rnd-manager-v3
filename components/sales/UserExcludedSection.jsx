@@ -1,57 +1,44 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { showToast } from '@/components/Toast';
+import { useEffect, useMemo, useState } from 'react';
+import { InlineConfirmButtons } from '@/components/ui/InlineConfirmButtons';
+import { SearchBox } from '@/components/ui/SearchBox';
+import { Pagination } from '@/components/ui/Pagination';
+import { usePagination } from '@/hooks/usePagination';
 import { getUserExcluded, addUserExcluded, deleteUserExcluded, updateUserExcluded } from '@/lib/sales';
 import { inputStyle, SectionHeader, SectionEmpty } from './shared/SectionUtils';
+import { useSettingsSection } from '@/hooks/useSettingsSection';
+
+const INITIAL_FORM = { menuName: '' };
+const PAGE_SIZE = 20;
 
 export function UserExcludedSection() {
-  const [list,      setList]      = useState([]);
-  const [adding,    setAdding]    = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [form,      setForm]      = useState({ menuName: '' });
-  const [busy,      setBusy]      = useState(false);
+  const [query, setQuery] = useState('');
 
-  useEffect(() => { refresh(); }, []);
+  const {
+    list, adding, setAdding, editingId, setEditingId, form, setForm, busy,
+    handleAdd, handleUpdate, requestDelete, cancelDelete, confirmDelete,
+    pendingDeleteId, startEdit, resetAdding, cancelEdit,
+  } = useSettingsSection({
+    initialForm:     INITIAL_FORM,
+    getAll:          getUserExcluded,
+    add:             (f) => addUserExcluded(f),
+    update:          (id, f) => updateUserExcluded({ id, menuName: f.menuName }),
+    remove:          deleteUserExcluded,
+    getFormFromItem: (e) => ({ menuName: e.menuName }),
+    validateAdd:     (f) => !!f.menuName.trim(),
+    validateUpdate:  (f) => !!f.menuName.trim(),
+    messages:        { add: '제외 메뉴가 추가됐어요' },
+  });
 
-  async function refresh() {
-    try { setList(await getUserExcluded()); } catch (err) { console.warn(err); }
-  }
+  useEffect(() => { if (query) cancelEdit(); }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function handleAdd() {
-    if (!form.menuName.trim()) return;
-    setBusy(true);
-    try {
-      await addUserExcluded(form);
-      showToast('제외 메뉴가 추가됐어요', 'ok');
-      setForm({ menuName: '' }); setAdding(false);
-      refresh();
-    } catch (err) {
-      showToast(err?.message || '추가 실패', 'err');
-    } finally { setBusy(false); }
-  }
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter(e => (e.menuName || '').toLowerCase().includes(q));
+  }, [list, query]);
 
-  async function handleUpdate(id) {
-    if (!form.menuName.trim()) return;
-    setBusy(true);
-    try {
-      await updateUserExcluded({ id, menuName: form.menuName });
-      showToast('수정됐어요', 'ok');
-      setEditingId(null);
-      refresh();
-    } catch (err) {
-      showToast(err?.message || '수정 실패', 'err');
-    } finally { setBusy(false); }
-  }
-
-  function startEdit(e) {
-    setEditingId(e.id);
-    setForm({ menuName: e.menuName });
-  }
-
-  async function handleDelete(id) {
-    try { await deleteUserExcluded(id); showToast('삭제됐어요', 'ok'); refresh(); }
-    catch { showToast('삭제 실패', 'err'); }
-  }
+  const { page, goTo, totalPages, paged, total } = usePagination(filtered, PAGE_SIZE);
 
   return (
     <div style={{marginBottom:16}}>
@@ -59,7 +46,7 @@ export function UserExcludedSection() {
         title="사용자 추가 제외"
         count={list.length}
         adding={adding}
-        onAdd={() => { setAdding(v => !v); setEditingId(null); setForm({ menuName: '' }); }}
+        onAdd={resetAdding}
       />
 
       {adding && (
@@ -69,10 +56,24 @@ export function UserExcludedSection() {
       {list.length === 0 && !adding ? (
         <SectionEmpty>사용자 추가 제외 메뉴가 아직 없습니다</SectionEmpty>
       ) : list.length > 0 && (
+        <>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ flex: '1 1 260px' }}>
+              <SearchBox value={query} onChange={setQuery} placeholder="메뉴명 검색" />
+            </div>
+            {query && (
+              <span style={{ fontSize: 12, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
+                {total} / {list.length}개
+              </span>
+            )}
+          </div>
+          {filtered.length === 0 ? (
+            <SectionEmpty>검색 결과가 없습니다</SectionEmpty>
+          ) : (
         <table className="data-table">
           <thead><tr><th>메뉴명</th><th style={{width:130}}></th></tr></thead>
           <tbody>
-            {list.map(e => editingId === e.id ? (
+            {paged.map(e => editingId === e.id ? (
               <tr key={e.id}>
                 <td colSpan={2} style={{padding:8}}>
                   <RowForm form={form} setForm={setForm} onCancel={() => setEditingId(null)} onSubmit={() => handleUpdate(e.id)} busy={busy} submitLabel="저장"/>
@@ -82,14 +83,28 @@ export function UserExcludedSection() {
               <tr key={e.id}>
                 <td className="cell-name"><div className="menu-name">{e.menuName}</div></td>
                 <td style={{textAlign:'right'}}>
-                  <button className="btn sm" onClick={() => startEdit(e)}>수정</button>
-                  {' '}
-                  <button className="btn sm" style={{color:'var(--negative)'}} onClick={() => handleDelete(e.id)}>삭제</button>
+                  {pendingDeleteId === e.id ? (
+                    <InlineConfirmButtons
+                      message="제외 메뉴를 삭제할까요?"
+                      busy={busy}
+                      onCancel={cancelDelete}
+                      onConfirm={() => confirmDelete(e.id)}
+                    />
+                  ) : (
+                    <>
+                      <button className="btn sm" onClick={() => startEdit(e)}>수정</button>
+                      {' '}
+                      <button className="btn sm" style={{color:'var(--negative)'}} onClick={() => requestDelete(e.id)}>삭제</button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+          )}
+          <Pagination page={page} totalPages={totalPages} onPage={goTo} total={total} pageSize={PAGE_SIZE} />
+        </>
       )}
     </div>
   );

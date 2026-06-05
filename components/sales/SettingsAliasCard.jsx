@@ -1,7 +1,9 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@/components/icons';
+import { SearchBox } from '@/components/ui/SearchBox';
 import { SALES_ALIASES } from '@/lib/sales';
+import { getActiveBrandId } from '@/lib/active-brand';
 import { UserAliasesSection } from './UserAliasesSection';
 
 /**
@@ -12,16 +14,19 @@ import { UserAliasesSection } from './UserAliasesSection';
  */
 export function SettingsAliasCard() {
   const [query, setQuery] = useState('');
+  // 기본 별칭은 7번가(main) 전용. 다른 브랜드는 빈 목록(DB 사용자 별칭만).
+  const [aliases, setAliases] = useState(SALES_ALIASES);
+  useEffect(() => { setAliases(getActiveBrandId() === 'main' ? SALES_ALIASES : []); }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return SALES_ALIASES;
-    return SALES_ALIASES.filter(a =>
+    if (!q) return aliases;
+    return aliases.filter(a =>
       a.inputName.toLowerCase().includes(q) ||
       a.outputName.toLowerCase().includes(q) ||
       a.description?.toLowerCase().includes(q)
     );
-  }, [query]);
+  }, [query, aliases]);
 
   return (
     <div className="card" style={{marginTop:16}}>
@@ -30,7 +35,7 @@ export function SettingsAliasCard() {
       <div className="card-header">
         <div>
           <div className="card-title">메뉴별 별칭 관리</div>
-          <div className="card-sub">엑셀에서 자주 쓰는 줄임말·동의어 → 표준 메뉴명 매핑 · 총 {SALES_ALIASES.length}개</div>
+          <div className="card-sub">엑셀에서 자주 쓰는 줄임말·동의어 → 표준 메뉴명 매핑 · 총 {aliases.length}개</div>
         </div>
       </div>
 
@@ -67,27 +72,6 @@ export function SettingsAliasCard() {
           </table>
         </div>
       )}
-    </div>
-  );
-}
-
-function SearchBox({ value, onChange, placeholder }) {
-  return (
-    <div style={{position:'relative', marginBottom:12}}>
-      <Icon.search style={{
-        width:14, height:14, position:'absolute', top:'50%', left:12,
-        transform:'translateY(-50%)', color:'var(--text-4)',
-      }}/>
-      <input
-        placeholder={placeholder}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        style={{
-          width:'100%', padding:'8px 12px 8px 32px', borderRadius:8,
-          border:'1px solid var(--border)', background:'var(--surface-2)',
-          color:'var(--text-1)', fontSize:13,
-        }}
-      />
     </div>
   );
 }

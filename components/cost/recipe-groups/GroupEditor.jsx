@@ -6,7 +6,7 @@ import { MENU_CATEGORIES } from '@/lib/recipe';
 import { IngredientSearch } from '@/components/cost/shared/IngredientSearch';
 import { SectionLabel, FieldLabel, thStyle } from '@/components/cost/shared/FormLabels';
 
-const ALL_CATS = [...MENU_CATEGORIES, '기타'];
+const ALL_CATS = [...new Set([...MENU_CATEGORIES, '기타'])];
 
 export function GroupEditor({ draft, setDraft, allMeta, unitPriceMap, isNew, saving, onSave, onDelete, onCancel }) {
   const sizeLabels = useMemo(() => draft.sizes.filter(Boolean), [draft.sizes]);
@@ -151,7 +151,7 @@ export function GroupEditor({ draft, setDraft, allMeta, unitPriceMap, isNew, sav
       </div>
 
       {/* 식자재 테이블 */}
-      <SectionLabel>식자재</SectionLabel>
+      <SectionLabel>식자재 <span style={{ fontSize:11, fontWeight:400, color:'var(--text-4)' }}>(사용량에 −(마이너스) 입력 시 차감)</span></SectionLabel>
       {draft.ingredients.length > 0 && (
         <div style={{ marginBottom: 8, overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -187,8 +187,9 @@ export function GroupEditor({ draft, setDraft, allMeta, unitPriceMap, isNew, sav
                     </td>
                     {sizeLabels.map(sl => {
                       const qty = line.quantities?.[sl] ?? '';
-                      const sub = hasPrice && parseFloat(qty) > 0
-                        ? Math.round(info.unitPrice * parseFloat(qty) * 10) / 10
+                      const qn  = parseFloat(qty);
+                      const sub = hasPrice && Number.isFinite(qn) && qn !== 0
+                        ? Math.round(info.unitPrice * qn * 10) / 10
                         : null;
                       return [
                         <td key={sl + '_q'} style={{ padding: '4px 4px', width: 70 }}>
@@ -198,7 +199,7 @@ export function GroupEditor({ draft, setDraft, allMeta, unitPriceMap, isNew, sav
                             style={{ width: '100%', padding: '3px 5px', textAlign: 'right' }}/>
                         </td>,
                         <td key={sl + '_s'} style={{ padding: '4px 6px', textAlign: 'right',
-                          fontSize: 12, color: sub != null ? 'var(--text-1)' : 'var(--text-4)',
+                          fontSize: 12, color: sub == null ? 'var(--text-4)' : sub < 0 ? 'var(--negative)' : 'var(--text-1)',
                           fontWeight: sub != null ? 600 : undefined, width: 60 }}>
                           {sub != null ? `${formatNumber(sub)}원` : '—'}
                         </td>,
@@ -226,8 +227,8 @@ export function GroupEditor({ draft, setDraft, allMeta, unitPriceMap, isNew, sav
                     return [
                       <td key={sl + '_qt'}/>,
                       <td key={sl + '_st'} style={{ padding: '6px 6px', textAlign: 'right',
-                        fontWeight: 700, fontSize: 13, color: 'var(--accent)' }}>
-                        {total > 0 ? `${formatNumber(Math.round(total))}원` : '—'}
+                        fontWeight: 700, fontSize: 13, color: total < 0 ? 'var(--negative)' : 'var(--accent)' }}>
+                        {total !== 0 ? `${formatNumber(Math.round(total))}원` : '—'}
                       </td>,
                     ];
                   })}

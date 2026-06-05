@@ -1,5 +1,10 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, Fragment } from 'react';
+import { SCOPE_STYLES } from '@/lib/ingredient/constants';
+import { printUsageReport } from '@/lib/cost/usage-print';
+
+const TIER_LABEL = ['많이 쓰는 재료 (8개 이상)', '보통 (4–7개)', '적게 쓰는 재료 (1–3개)'];
+const tierOf = (count) => (count >= 8 ? 0 : count >= 4 ? 1 : 2);
 
 const CAT_COLORS = {
   '피자':   { bg:'#EFF6FF', color:'#1D4ED8' },
@@ -34,7 +39,7 @@ export function UsageView({ rows, usageMap, usageCat, setUsageCat, usageSort, se
         .sort((a, b) => a.menuName.localeCompare(b.menuName, 'ko'));
 
       const uid = code || `_idx_${idx}`;
-      return { uid, code, name: dispName, count: menus.length, menus };
+      return { uid, code, name: dispName, scope: r.scope || null, count: menus.length, menus };
     }).filter(r => r.count > 0);
   }, [rows, usageMap, usageCat]);
 
@@ -75,7 +80,16 @@ export function UsageView({ rows, usageMap, usageCat, setUsageCat, usageSort, se
           ))}
         </div>
         <div style={{ marginLeft:'auto', display:'flex', gap:6, alignItems:'center' }}>
-          <span style={{ fontSize:11, color:'var(--text-3)', fontWeight:600 }}>정렬</span>
+          <button className="btn sm" onClick={() => setExpanded(new Set(sorted.map(r => r.uid)))}>
+            모두 펼치기
+          </button>
+          <button className="btn sm" onClick={() => setExpanded(new Set())}>
+            모두 접기
+          </button>
+          <button className="btn sm" onClick={() => printUsageReport(sorted, usageCat)}>
+            PDF 출력
+          </button>
+          <span style={{ fontSize:11, color:'var(--text-3)', fontWeight:600, marginLeft:4 }}>정렬</span>
           <select
             value={usageSort}
             onChange={e => setUsageSort(e.target.value)}
@@ -111,10 +125,34 @@ export function UsageView({ rows, usageMap, usageCat, setUsageCat, usageSort, se
                 const SHOW = 4;
                 const visible = open ? r.menus : r.menus.slice(0, SHOW);
                 const more    = r.menus.length - SHOW;
+                const byCount = usageSort === 'count_desc' || usageSort === 'count_asc';
+                const tier    = tierOf(r.count);
+                const showTier = byCount && (idx === 0 || tierOf(sorted[idx - 1].count) !== tier);
+                const sc = r.scope ? SCOPE_STYLES[r.scope] : null;
                 return (
-                  <tr key={r.uid}>
+                  <Fragment key={r.uid}>
+                  {showTier && (
+                    <tr>
+                      <td colSpan={5} style={{
+                        padding:'7px 12px', background:'var(--surface-2)',
+                        fontSize:11, fontWeight:700, color:'var(--text-3)',
+                        borderTop:'1px solid var(--divider)',
+                      }}>{TIER_LABEL[tier]}</td>
+                    </tr>
+                  )}
+                  <tr>
                     <td style={{ textAlign:'center', color:'var(--text-4)', fontSize:12 }}>{idx + 1}</td>
-                    <td style={{ fontWeight:600, fontSize:13 }}>{r.name}</td>
+                    <td style={{ fontWeight:600, fontSize:13 }}>
+                      {r.name}
+                      {r.scope && (
+                        <span style={{
+                          marginLeft:6, fontSize:10, fontWeight:700, padding:'1px 6px', borderRadius:8,
+                          color: sc?.color || 'var(--text-3)',
+                          background: sc?.bg || 'var(--surface-2)',
+                          whiteSpace:'nowrap',
+                        }}>{r.scope}</span>
+                      )}
+                    </td>
                     <td style={{ fontSize:11, color:'var(--text-3)', fontFamily:'monospace' }}>{r.code || '—'}</td>
                     <td style={{ textAlign:'center' }}>
                       <span style={{
@@ -156,6 +194,7 @@ export function UsageView({ rows, usageMap, usageCat, setUsageCat, usageSort, se
                       </div>
                     </td>
                   </tr>
+                  </Fragment>
                 );
               })}
             </tbody>

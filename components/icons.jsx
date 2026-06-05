@@ -40,4 +40,6 @@ export const Icon = {
   chevLeft: (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="m15 18-6-6 6-6"/></svg>,
   moon:     (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
   sun:      (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>,
+  star:     (p) => <svg viewBox="0 0 24 24" {...stroke} {...p}><path d="M12 3.5l2.6 5.27 5.82.85-4.21 4.1.99 5.78L12 16.77l-5.2 2.73.99-5.78-4.21-4.1 5.82-.85L12 3.5Z"/></svg>,
+  starFill: (p) => <svg viewBox="0 0 24 24" {...stroke} fill="currentColor" {...p}><path d="M12 3.5l2.6 5.27 5.82.85-4.21 4.1.99 5.78L12 16.77l-5.2 2.73.99-5.78-4.21-4.1 5.82-.85L12 3.5Z"/></svg>,
 };

@@ -14,6 +14,7 @@ import {
   MENU_CATEGORIES,
 } from '@/lib/recipe';
 import { getAllMenuMaster } from '@/lib/menu-master/store';
+import { normalizePersonalPizzaCodes } from '@/lib/menu-master/normalize';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
 import { parseMenuCode } from '@/lib/cost/menu-price/code';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
@@ -21,6 +22,10 @@ import { costRateColor } from '@/lib/cost/rate-color';
 import { KEYS } from '@/lib/note/keys';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Pagination } from '@/components/ui/Pagination';
+import { usePagination } from '@/hooks/usePagination';
+import { TabButton } from '@/components/cost/shared/TabButton';
+import { CommonManageView } from '@/components/cost/manage/CommonManageView';
 import dynamic from 'next/dynamic';
 
 const RecipeEditor = dynamic(
@@ -54,6 +59,31 @@ function prepareRecipeForEdit(rec) {
       quantities: { ...(i.quantities || {}) },
     })),
   };
+}
+
+function getRecipeSearchText(recipe, groups) {
+  const ownIngredients = (recipe.ingredients || [])
+    .map(i => `${i.ingredientName || ''} ${i.productCode || ''}`)
+    .join(' ');
+  const activeGroups = groups.filter(g => {
+    if (Array.isArray(recipe.groupIds)) return recipe.groupIds.includes(g.id);
+    return (g.defaultCategories || []).some(c =>
+      (recipe.menuCategory || '') === c || (recipe.menuCategory || '').startsWith(c + '/')
+    );
+  });
+  const groupText = activeGroups.map(g => [
+    g.name || '',
+    g.description || '',
+    ...(g.ingredients || []).map(i => `${i.ingredientName || ''} ${i.productCode || ''}`),
+  ].join(' ')).join(' ');
+  return [
+    recipe.menuName,
+    recipe.menuCode,
+    recipe.menuCategory,
+    recipe.note,
+    ownIngredients,
+    groupText,
+  ].join(' ').toLowerCase();
 }
 
 function handleExportCsv(filtered) {
@@ -99,6 +129,10 @@ function RecipeContent() {
   const [loading,      setLoading]      = useState(true);
   const [dbError,      setDbError]      = useState(null);
   const [search,       setSearch]       = useState(() => searchParams?.get('q') || '');
+  const [tab,          setTab]          = useState(() => {
+    const t = searchParams?.get('tab');
+    return (t === 'groups' || t === 'edges') ? t : 'recipe';
+  });
   const [customOrder,  setCustomOrder]  = useState(() => {
     if (typeof window === 'undefined') return {};
     try { return JSON.parse(localStorage.getItem(KEYS.RECIPE_SORT) || '{}'); }
@@ -113,6 +147,7 @@ function RecipeContent() {
 
   const load = useCallback(async () => {
     await initDB();
+    await normalizePersonalPizzaCodes().catch(e => console.warn('[recipe] 코드 정규화 실패', e));
     const [files, meta, recs, masters, menuPrices, groups] = await Promise.all([
       getPriceFiles(),
       getAllIngredients(),
@@ -151,13 +186,14 @@ function RecipeContent() {
 
   useVisibilityRefresh(load);
 
-  // URL sync for search filter
+  // URL sync for search filter + active tab
   useEffect(() => {
     const params = new URLSearchParams();
+    if (tab !== 'recipe') params.set('tab', tab);
     if (search) params.set('q', search);
     const qs = params.toString();
     window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
-  }, [search, pathname]);
+  }, [search, tab, pathname]);
 
   // load 후 선택된 레시피 draft 동기화 — selectedId가 실제로 바뀔 때만 실행
   useEffect(() => {
@@ -184,6 +220,7 @@ function RecipeContent() {
   }
 
   async function handleSave() {
+    if (saving) return; // 연타/단축키 중복 저장 방지
     if (!draft?.menuName?.trim()) { showToast('메뉴명을 입력해주세요'); return; }
     setSaving(true);
     try {
@@ -242,14 +279,10 @@ function RecipeContent() {
   const filteredRecipes = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return recipes;
-    return recipes.filter(r =>
-      (r.menuName || '').toLowerCase().includes(q) ||
-      (r.menuCategory || '').toLowerCase().includes(q) ||
-      (r.menuCode || '').toLowerCase().includes(q)
-    );
-  }, [recipes, search]);
+    return recipes.filter(r => getRecipeSearchText(r, allGroups).includes(q));
+  }, [recipes, search, allGroups]);
 
-  const grouped = useMemo(() => {
+  const orderedRecipes = useMemo(() => {
     const map = new Map();
     for (const r of filteredRecipes) {
       const cat = r.menuCategory || '기타';
@@ -273,6 +306,34 @@ function RecipeContent() {
       return [cat, [...ordered, ...rest]];
     });
   }, [filteredRecipes, customOrder]);
+
+  const flattenedRecipes = useMemo(
+    () => orderedRecipes.flatMap(([, items]) => items),
+    [orderedRecipes]
+  );
+
+  const {
+    page: recipePage,
+    goTo: recipeGoTo,
+    totalPages: recipeTotalPages,
+    paged: pagedRecipes,
+    total: recipeTotal,
+  } = usePagination(flattenedRecipes, 40);
+
+  const grouped = useMemo(() => {
+    const map = new Map();
+    for (const r of pagedRecipes) {
+      const cat = r.menuCategory || '기타';
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat).push(r);
+    }
+    const order = [...MENU_CATEGORIES, '기타'];
+    return [...map.entries()].sort(([a], [b]) => {
+      const ia = order.indexOf(a), ib = order.indexOf(b);
+      if (ia !== ib) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+      return a.localeCompare(b, 'ko');
+    });
+  }, [pagedRecipes]);
 
   function saveOrder(cat, items) {
     const newOrder = { ...customOrder, [cat]: items.map(r => r.id) };
@@ -299,14 +360,30 @@ function RecipeContent() {
       <PageHeader
         breadcrumb={['원가계산', '원가 계산']}
         title="메뉴 원가 계산"
+        masterSource
         sub="사이즈별 식자재 사용량을 입력하면 원가와 원가율이 자동 계산됩니다."
-        actions={
+        actions={tab === 'recipe' ? (
           <button className="btn" onClick={() => { handleExportCsv(filteredRecipes); showToast(`CSV ${filteredRecipes.length}개 내보내기 완료`, 'ok'); }} disabled={filteredRecipes.length === 0}>
             <Icon.download style={{ width: 14, height: 14 }}/> CSV 내보내기
           </button>
-        }
+        ) : undefined}
       />
 
+      {/* 상단 탭 — 원가 레시피 / 묶음 관리 / 엣지 관리 (공통관리 통합) */}
+      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)', marginTop: 8 }}>
+        <TabButton active={tab === 'recipe'} onClick={() => setTab('recipe')}>원가 레시피</TabButton>
+        <TabButton active={tab === 'groups'} onClick={() => setTab('groups')}>묶음 관리</TabButton>
+        <TabButton active={tab === 'edges'}  onClick={() => setTab('edges')}>엣지 관리</TabButton>
+      </div>
+
+      {tab !== 'recipe' && (
+        <div style={{ marginTop: 16 }}>
+          {/* key={tab}으로 탭 전환 시 상태 초기화 — draft/edit 상태 잔류 방지 */}
+          <CommonManageView key={tab} tab={tab} />
+        </div>
+      )}
+
+      {tab === 'recipe' && (
       <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 16, marginTop: 8, alignItems: 'start' }}>
 
         {/* ── 왼쪽: 메뉴 목록 ── */}
@@ -317,7 +394,7 @@ function RecipeContent() {
             </button>
             <div className="filter-search" style={{ marginTop: 8 }}>
               <Icon.search style={{ width: 14, height: 14, color: 'var(--text-3)', flexShrink: 0 }}/>
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="메뉴명 검색"/>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="메뉴명·코드·식자재·묶음 검색"/>
             </div>
           </div>
 
@@ -351,7 +428,7 @@ function RecipeContent() {
                       color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em',
                       background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <span>{cat}</span>
-                      {hasCustOrder && !search && (
+                      {hasCustOrder && !search && recipeTotalPages <= 1 && (
                         <button
                           onClick={() => resetCatOrder(cat)}
                           title="이 카테고리 순서 초기화"
@@ -393,7 +470,7 @@ function RecipeContent() {
 
                       return (
                         <div key={r.id}
-                          draggable={!search}
+                          draggable={!search && recipeTotalPages <= 1}
                           onDragStart={e => {
                             e.dataTransfer.effectAllowed = 'move';
                             setDragSrc({ cat, fromIdx: idx });
@@ -432,7 +509,7 @@ function RecipeContent() {
                           }}
                         >
                           {/* 드래그 핸들 */}
-                          {!search && (
+                          {!search && recipeTotalPages <= 1 && (
                             <div style={{
                               display: 'flex', alignItems: 'center',
                               paddingLeft: 8, paddingRight: 2,
@@ -502,6 +579,13 @@ function RecipeContent() {
                   </div>
                 );
               })}
+              <Pagination
+                page={recipePage}
+                totalPages={recipeTotalPages}
+                onPage={recipeGoTo}
+                total={recipeTotal}
+                pageSize={40}
+              />
             </div>
           )}
         </div>
@@ -532,6 +616,7 @@ function RecipeContent() {
           </div>
         )}
       </div>
+      )}
 
       {pendingDeleteId && (
         <ConfirmDialog

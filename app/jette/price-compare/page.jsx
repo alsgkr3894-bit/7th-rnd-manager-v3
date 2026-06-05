@@ -77,7 +77,7 @@ export default function Page() {
               style={{alignSelf:'flex-end'}}
             >
               <Icon.upload style={{width:14,height:14}}/>
-              {busy ? '업로드 중...' : '가격 파일 업로드'}
+              {busy ? <><span style={{display:'inline-block',marginRight:4,animation:'spin 1s linear infinite'}}>⟳</span>업로드 중…</> : '가격 파일 업로드'}
             </button>
           </div>
         }

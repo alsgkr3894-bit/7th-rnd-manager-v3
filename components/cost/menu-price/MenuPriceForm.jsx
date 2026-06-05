@@ -1,11 +1,13 @@
 'use client';
 import { useState } from 'react';
-import { MENU_PRICE_CATEGORIES, defaultSizesFor, getDefaultPrice } from '@/lib/cost/menu-price';
+import { MENU_PRICE_CATEGORIES, getMenuPriceCategories, defaultSizesFor, getDefaultPrice } from '@/lib/cost/menu-price';
 import { parseCategoryFromCode } from '@/lib/cost/menu-price/code';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
 
-const EMPTY = { menuCode: '', category: '피자', menuName: '', size: 'L', price: '', note: '' };
+// 활성 브랜드 카테고리 프리셋(7번가만 채워짐) — 빈 프리셋이면 자유 입력으로 전환
+const PRESET_CATEGORIES = getMenuPriceCategories();
+const EMPTY = { menuCode: '', category: PRESET_CATEGORIES[0] || '', menuName: '', size: 'L', price: '', note: '' };
 
 export function MenuPriceForm({ initial, onSave, onClose }) {
   const [form, setForm] = useState(initial ? toForm(initial) : EMPTY);
@@ -102,10 +104,16 @@ export function MenuPriceForm({ initial, onSave, onClose }) {
           </Field>
 
           <Field label="분류" required>
-            <select className="form-input" value={form.category}
-              onChange={e => set('category', e.target.value)}>
-              {MENU_PRICE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+            {PRESET_CATEGORIES.length > 0 ? (
+              <select className="form-input" value={form.category}
+                onChange={e => set('category', e.target.value)}>
+                {PRESET_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            ) : (
+              <input className="form-input" value={form.category}
+                onChange={e => set('category', e.target.value)}
+                placeholder="예) 탕수육 / 짜장 / 세트"/>
+            )}
           </Field>
 
           <Field label="메뉴명" required error={errors.menuName}>

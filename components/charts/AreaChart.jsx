@@ -24,13 +24,24 @@ function smoothPath(pts) {
   return d;
 }
 
-/** "보기 좋은" Y 눈금 계산 */
+/** 값 x 이상이 되는 "보기 좋은" 스텝(1·2·5·10 × 10ⁿ) */
+function niceStep(x) {
+  if (x <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(x)));
+  const f = x / mag;
+  const m = f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10;
+  return m * mag;
+}
+
+/**
+ * "보기 좋은" Y 눈금 계산.
+ * 최상단 눈금(step*count)이 dataMax 이상이 되도록 보장한다 —
+ * 그렇지 않으면 데이터가 차트 상단에 평평하게 붙어버린다.
+ */
 function calcTicks(dataMax, count = 4) {
   if (dataMax <= 0) return Array.from({ length: count + 1 }, (_, i) => i * 250);
-  const rough = dataMax / count;
-  const mag = Math.pow(10, Math.floor(Math.log10(rough)));
-  const f = rough / mag;
-  const step = f < 1.5 ? mag : f < 3.5 ? 2 * mag : f < 7.5 ? 5 * mag : 10 * mag;
+  let step = niceStep(dataMax / count);
+  while (step * count < dataMax) step = niceStep(step * 1.5);
   return Array.from({ length: count + 1 }, (_, i) => step * i);
 }
 
@@ -52,7 +63,9 @@ export function AreaChart({
   const Y_W   = 46;   // Y축 라벨 영역 너비 (px)
   const X_H   = 24;   // X축 라벨 영역 높이 (px)
   const CHART_H = height;
-  const n     = labels?.length || 0;
+  // 포인트 개수는 labels 우선, 없으면 series 데이터 길이로 도출.
+  // (labels=[] 인데 series에 데이터가 있으면 선이 안 그려지는 문제 방지)
+  const n     = (labels?.length) || Math.max(0, ...(series || []).map(s => s.data?.length || 0));
 
   const allVals = series.flatMap(s => s.data).filter(v => Number.isFinite(v));
   const dataMax = Math.max(...allVals, 1);

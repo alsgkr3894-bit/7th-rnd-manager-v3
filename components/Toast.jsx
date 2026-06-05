@@ -48,7 +48,11 @@ export function showToast(msg, type = 'ok', duration = 2800, action = null) {
   if (!_setToasts) return;
   const id = ++_toastSeq;
   const resolvedType = type === 'err' ? 'error' : type;
-  _setToasts(t => [...t, { id, msg, type: resolvedType, action }]);
+  // 최대 3개까지만 쌓임 — 초과 시 가장 오래된 것부터 제거
+  _setToasts(t => {
+    const next = [...t, { id, msg, type: resolvedType, action }];
+    return next.length > 3 ? next.slice(next.length - 3) : next;
+  });
   setTimeout(() => {
     _setToasts(t => t.map(x => x.id === id ? { ...x, exiting: true } : x));
     setTimeout(() => _setToasts(t => t.filter(x => x.id !== id)), 220);

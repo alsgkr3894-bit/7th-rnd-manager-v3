@@ -1,5 +1,6 @@
 'use client';
 import { useModalShell } from '@/hooks/useModalShell';
+import { OVERLAY_COLOR } from '@/lib/ui/styles';
 
 export function ConfirmDialog({ open, ...props }) {
   if (!open) return null;
@@ -11,7 +12,7 @@ function ConfirmDialogBody({ title, message, confirmLabel = '확인', cancelLabe
   const { containerRef, isClosing, close } = useModalShell(onCancel, { autoFocus: false });
   return (
     <div
-      style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:600, display:'grid', placeItems:'center', animation:'fade 150ms ease' }}
+      style={{ position:'fixed', inset:0, background:OVERLAY_COLOR, zIndex:600, display:'grid', placeItems:'center', animation:'fade 150ms ease' }}
       onClick={e => { if (e.target === e.currentTarget) close(); }}
     >
       <div ref={containerRef} className={'card modal-anim' + (isClosing ? ' modal-exit' : '')} style={{ width:'min(420px,92vw)', padding:'28px 28px 24px' }}>

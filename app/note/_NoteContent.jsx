@@ -7,11 +7,12 @@ import { NoteCardSkeleton } from '@/components/ui/Skeleton';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { initDB } from '@/lib/db';
+import { sharedRestoreRecord as restoreRecord } from '@/lib/db/shared';
 import {
   CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS, STATUS_BORDER,
   getAllNotes, addNote, deleteNote, updateNote,
 } from '@/lib/note';
-import { NOTE_STATUS } from '@/lib/note/constants';
+import { NOTE_STATUS, NOTE_BRANDS } from '@/lib/note/constants';
 import { getNoteDetailStats } from '@/lib/stats/note-stats';
 import { tryLS, setLS } from '@/lib/note/storage';
 import { downloadCsv } from '@/lib/download';
@@ -103,6 +104,7 @@ export function NoteContent() {
   // 검색/상태필터/정렬 상태 + 파생 데이터(counts·filtered)는 useNoteFilter로 위임
   const {
     search, setSearch, statusFilter, setStatusFilter, sortBy, setSortBy,
+    brandFilter, setBrandFilter,
     counts, filtered,
   } = useNoteFilter(notes, pinnedIds, { pathname });
 
@@ -176,20 +178,26 @@ export function NoteContent() {
 
   async function execDelete(note) {
     setSingleDeleteNote(null);
-    setDeletingIds(s => new Set([...s, note.id]));
-    await new Promise(r => setTimeout(r, 250));
-    setNotes(prev => prev.filter(n => n.id !== note.id));
-    setDeletingIds(s => { const n = new Set(s); n.delete(note.id); return n; });
-    if (detailNote?.id === note.id) setDetailNote(null);
-    let cancelled = false;
-    showToast(`"${note.title}" 삭제됨`, 'ok', 4000, {
-      label: '실행취소',
-      onClick: () => { cancelled = true; load(); },
-    });
-    await new Promise(r => setTimeout(r, 4200));
-    if (!cancelled) {
-      try { await deleteNote(note.id); }
-      catch (err) { console.error('[NoteContent] deleteNote', err); load(); showToast('삭제 실패', 'error'); }
+    try {
+      // deleteNote가 삭제된 부모+자식 원본 레코드 배열을 반환 → 전부 복원해야 자식 유실 방지
+      const removed = await deleteNote(note.id);
+      setNotes(prev => prev.filter(n => n.id !== note.id));
+      if (detailNote?.id === note.id) setDetailNote(null);
+      const childCount = (removed?.length ?? 1) - 1;
+      const base = note.title?.trim() ? `"${note.title}" 삭제됨` : '노트 삭제됨';
+      const label = childCount > 0 ? `${base} (하위 ${childCount}개 포함)` : base;
+      showToast(label, 'ok', 5000, {
+        label: '실행취소',
+        onClick: async () => {
+          for (const rec of removed || []) {
+            await restoreRecord('menu_dev_notes', rec).catch(() => {});
+          }
+          load();
+        },
+      });
+    } catch (err) {
+      console.error('[NoteContent] deleteNote', err);
+      showToast('삭제 실패', 'error');
     }
   }
 
@@ -235,24 +243,20 @@ export function NoteContent() {
   async function confirmBatchDelete() {
     setConfirmBatch(false);
     const ids = [...selected];
-    const snapshot = notes.filter(n => ids.includes(n.id));
-    setNotes(prev => prev.filter(n => !ids.includes(n.id)));
     setSelected(new Set());
     setBatchMode(false);
-    let cancelled = false;
-    showToast(`${ids.length}개 삭제됨`, 'ok', 4000, {
-      label: '취소',
-      onClick: () => { cancelled = true; setNotes(prev => [...snapshot, ...prev].sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt))); },
-    });
-    setTimeout(async () => {
-      if (cancelled) return;
-      try {
-        const CHUNK = 10;
-        for (let i = 0; i < ids.length; i += CHUNK) {
-          await Promise.all(ids.slice(i, i + CHUNK).map(id => deleteNote(id)));
-        }
-      } catch (err) { console.error('[NoteContent] confirmBatchDelete', err); showToast('일부 삭제 실패', 'error'); load(); }
-    }, 4000);
+    try {
+      const CHUNK = 10;
+      for (let i = 0; i < ids.length; i += CHUNK) {
+        await Promise.all(ids.slice(i, i + CHUNK).map(id => deleteNote(id)));
+      }
+      setNotes(prev => prev.filter(n => !ids.includes(n.id)));
+      showToast(`${ids.length}개 삭제됨`, 'ok');
+    } catch (err) {
+      console.error('[NoteContent] confirmBatchDelete', err);
+      showToast('일부 삭제 실패', 'error');
+      load();
+    }
   }
 
   function toggleSelect(id) {
@@ -400,6 +404,24 @@ export function NoteContent() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* 브랜드 칩 필터 (브랜드 2개 이상일 때만) */}
+      {NOTE_BRANDS.length > 1 && (
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12,alignItems:'center'}}>
+          <span style={{fontSize:12,color:'var(--text-3)',fontWeight:600,marginRight:2}}>브랜드</span>
+          <button className={'chip' + (brandFilter === 'all' ? ' active' : '')}
+            onClick={() => { setBrandFilter('all'); setVisibleCount(PAGE_SIZE); }}>
+            전체
+          </button>
+          {NOTE_BRANDS.map(b => (
+            <button key={b.id}
+              className={'chip' + (brandFilter === b.id ? ' active' : '')}
+              onClick={() => { setBrandFilter(b.id); setVisibleCount(PAGE_SIZE); }}>
+              {b.name}
+            </button>
+          ))}
         </div>
       )}
 
