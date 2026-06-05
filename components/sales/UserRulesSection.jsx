@@ -15,16 +15,13 @@ import {
 } from '@/lib/sales';
 import { inputStyle, SectionHeader, SectionEmpty, reapplyToUploadedData } from './shared/SectionUtils';
 import { useSettingsSection } from '@/hooks/useSettingsSection';
-import { getActiveBrandId } from '@/lib/active-brand';
+import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 
-// 7번가(main)는 피자 카테고리 프리셋, 다른 브랜드는 자유 입력(피자 카테고리 노출 안 함).
-// 규칙 추가/편집 폼은 클라이언트 토글(adding) 뒤에서만 렌더되므로 SSR 불일치 없음.
-const IS_MAIN = getActiveBrandId() === 'main';
-const DEFAULT_CATEGORY = IS_MAIN ? '피자' : '';
-
-const INITIAL_FORM = { rawMenuName: '', category: DEFAULT_CATEGORY, groupName: '', detailName: '' };
+const INITIAL_FORM = { rawMenuName: '', category: '', groupName: '', detailName: '' };
 
 export function UserRulesSection() {
+  // 마운트 후 교정 — SSR 불일치 없음, 폼 카테고리 기본값도 안전
+  const isMain = useIsMainBrand();
   const [nameOpts, setNameOpts] = useState({ groupNames: [], detailNames: [] });
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState('createdAt');
@@ -42,7 +39,7 @@ export function UserRulesSection() {
     remove:          deleteUserRule,
     getFormFromItem: (r) => ({
       rawMenuName: r.rawMenuName || r.pattern || '',
-      category:    r.category    || DEFAULT_CATEGORY,
+      category:    r.category    || '',
       groupName:   r.groupName   || '',
       detailName:  r.detailName  || '',
     }),
@@ -193,7 +190,7 @@ function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추�
   return (
     <div style={{display:'grid', gridTemplateColumns:'minmax(0,1.5fr) minmax(80px,140px) minmax(0,1fr) minmax(0,1fr) auto auto', gap:8}}>
       <input value={form.rawMenuName} onChange={e => setForm({ ...form, rawMenuName: e.target.value })} placeholder="패턴 (정규화 후)" style={inputStyle}/>
-      {IS_MAIN ? (
+      {isMain ? (
         <select value={form.category}   onChange={e => setForm({ ...form, category:    e.target.value })} style={inputStyle}>
           {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
         </select>

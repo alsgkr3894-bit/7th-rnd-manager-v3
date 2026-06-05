@@ -267,7 +267,7 @@ export default function Page() {
     if (deltaFilter === 'up') list = list.filter(r => r.priceDelta > 0);
     if (deltaFilter === 'down') list = list.filter(r => r.priceDelta < 0);
     if (deltaFilter === 'new') list = list.filter(r => r.isNew);
-    if (deltaFilter === 'same') list = list.filter(r => r.priceDelta === 0);
+    if (deltaFilter === 'same') list = list.filter(r => r.priceDelta === 0 || r.priceDelta == null);
     const q = search.trim().toLowerCase();
     if (q)
       list = list.filter(

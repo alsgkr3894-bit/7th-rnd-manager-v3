@@ -244,11 +244,12 @@ export default function Page() {
         sub="백업 시점으로 데이터를 되돌립니다. 복원은 되돌릴 수 없으니 신중히 진행하세요."
       />
 
-      {/* ── 현재 브랜드 안내 — 복원 대상 DB를 명확히 표시 ─── */}
+      {/* ── 현재 브랜드 안내 — 복원 대상 DB를 명확히 표시. activeBrand가 null인 첫 렌더는 최소 높이로 공간 확보 ─── */}
+      <div style={{ minHeight: 44, marginTop: 12 }}>
       {activeBrand && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
-          padding: '10px 14px', borderRadius: 8, marginTop: 12,
+          padding: '10px 14px', borderRadius: 8,
           background: activeBrand.id === 'main' ? 'var(--positive-soft)' : 'var(--warn-soft)',
           border: `1px solid ${activeBrand.id === 'main'
             ? 'color-mix(in oklab, var(--positive) 30%, transparent)'
@@ -267,6 +268,7 @@ export default function Page() {
           </span>
         </div>
       )}
+      </div>
 
       {/* ── 완료 상태 카드 ─────────────────────────────────── */}
       {restoreDone && (

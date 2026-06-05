@@ -20,14 +20,15 @@ export default function Page() {
   const [excludeCount, setExcludeCount] = useState(0);
   const [excludeLoadFailed, setExcludeLoadFailed] = useState(false);
 
-  // 기본 규칙·별칭 수는 7번가(main) 전용. 다른 브랜드는 0(DB 사용자 정의만).
-  // SSR/첫 렌더는 서버와 동일하게 두고 마운트 후 교정(하이드레이션 일치).
-  const [ruleCount, setRuleCount]   = useState(SALES_RULES.length);
-  const [aliasCount, setAliasCount] = useState(SALES_ALIASES.length);
+  // 기본 규칙·별칭 수는 7번가(main) 전용. 다른 브랜드는 0.
+  // 초기값 0: SSR/클라이언트 모두 동일 → hydration 불일치 없음. 마운트 후 main이면 실제 수로 교정.
+  const [ruleCount, setRuleCount]   = useState(0);
+  const [aliasCount, setAliasCount] = useState(0);
   useEffect(() => {
-    const main = getActiveBrandId() === 'main';
-    setRuleCount(main ? SALES_RULES.length : 0);
-    setAliasCount(main ? SALES_ALIASES.length : 0);
+    if (getActiveBrandId() === 'main') {
+      setRuleCount(SALES_RULES.length);
+      setAliasCount(SALES_ALIASES.length);
+    }
   }, []);
 
   // 품목 제외 수: ref_excluded + sales_rules 중 category='품목제외' 합산

@@ -40,7 +40,8 @@ const PIZZA_CATEGORIES = [
   MENU_CATEGORY.DRINK,
   MENU_CATEGORY.EDGE,
 ];
-const CATEGORIES = getActiveBrandId() === 'main' ? PIZZA_CATEGORIES : [];
+// CATEGORIES는 모듈 레벨에서 평가하면 SSR/hydration에서 항상 main(피자)으로 고정된다.
+// 브랜드별 분기는 컴포넌트 내부 useEffect(brandCats)와 EditModal prop으로 처리한다.
 const PIZZA_SUBS = ['프리미엄 스페셜', '프리미엄', '오리지널', '하프앤하프'];
 
 const STATUS_LABEL = { active: '활성', discontinued: '단종', test: '테스트' };
@@ -91,11 +92,11 @@ function CategoryTags({ menuCode }) {
 }
 
 /* ── 메뉴 추가/수정 모달 (마스터가 메뉴코드·분류·규격·판매가의 기준) ── */
-function EditModal({ row, isNew, onSave, onClose }) {
+function EditModal({ row, isNew, onSave, onClose, presetCategories = [] }) {
   const [form, setForm] = useState({
     menuCode: row?.menuCode || '',
     menuName: row?.menuName || '',
-    category: row?.category || CATEGORIES[0] || '',
+    category: row?.category || presetCategories[0] || '',
     size: row?.size || '',
     price: row?.price != null ? String(row.price) : '',
     status: row?.status || 'active',
@@ -204,13 +205,13 @@ function EditModal({ row, isNew, onSave, onClose }) {
               >
                 카테고리
               </label>
-              {CATEGORIES.length > 0 ? (
+              {presetCategories.length > 0 ? (
                 <select
                   className="input"
                   value={form.category}
                   onChange={e => set('category', e.target.value)}
                 >
-                  {CATEGORIES.map(c => (
+                  {presetCategories.map(c => (
                     <option key={c} value={c}>
                       {c}
                     </option>
@@ -374,7 +375,8 @@ export default function Page() {
   // 브랜드 카테고리 프리셋 — SSR/첫 렌더는 서버와 동일하게 기본값(피자)로 두고,
   // 마운트 후 활성 브랜드에 맞춰 교정한다(하이드레이션 불일치 방지).
   const [brandCats, setBrandCats] = useState(PIZZA_CATEGORIES);
-  useEffect(() => { setBrandCats(CATEGORIES); }, []);
+  // 마운트 후 실제 활성 브랜드 판별 — localStorage를 읽어 비-main이면 빈 프리셋으로 교정
+  useEffect(() => { setBrandCats(getActiveBrandId() === 'main' ? PIZZA_CATEGORIES : []); }, []);
 
   const load = useCallback(async () => {
     await initDB();
@@ -954,11 +956,12 @@ export default function Page() {
           isNew={false}
           onSave={handleSaveRow}
           onClose={() => setEditRow(null)}
+          presetCategories={brandCats}
         />
       )}
 
       {addOpen && (
-        <EditModal row={null} isNew onSave={handleSaveRow} onClose={() => setAddOpen(false)} />
+        <EditModal row={null} isNew onSave={handleSaveRow} onClose={() => setAddOpen(false)} presetCategories={brandCats} />
       )}
 
       {bulkModal && <BulkPriceModal onClose={() => setBulkModal(false)} onDone={load} />}
