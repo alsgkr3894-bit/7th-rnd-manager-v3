@@ -185,6 +185,14 @@ function valueForSort(row, key) {
 }
 
 function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추가', nameOpts = { groupNames: [], detailNames: [], byCategory: {} }, isMain = true }) {
+  // main 브랜드에서 category가 비어있으면(초기 상태) 첫 옵션으로 자동 초기화
+  // — select는 첫 항목을 시각적으로 보여주지만 form.category=''라 추가 버튼이 비활성화되는 UX 불일치 해소
+  useEffect(() => {
+    if (isMain && !form.category && CATEGORY_OPTIONS.length > 0) {
+      setForm(f => ({ ...f, category: CATEGORY_OPTIONS[0] }));
+    }
+  }, [isMain]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // 선택한 대분류(category)에 속한 중분류·상세만 자동완성 후보로
   const catOpts = nameOpts.byCategory?.[form.category] || { groupNames: [], detailNames: [] };
   return (
