@@ -337,11 +337,12 @@ export default function Page() {
             type="file"
             accept=".json,application/json"
             onChange={handleFile}
-            disabled={!ready || busy}
+            disabled={busy}
             style={{ fontSize: 13 }}
           />
           <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 8 }}>
             이전에 다운로드한 v3 백업 JSON 파일을 선택하세요.
+            {!ready && <span style={{ color: 'var(--accent)', marginLeft: 6 }}>DB 초기화 중…</span>}
           </p>
         </div>
       )}
