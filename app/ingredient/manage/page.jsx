@@ -202,6 +202,9 @@ export default function Page() {
     } catch {}
   }, [catFilter]);
 
+  // 검색어 변경 시에도 선택 초기화
+  useEffect(() => { setSelected(new Set()); }, [debouncedSearch]);
+
   async function handleSeed() {
     if (seeding) return;
     setSeeding(true);
@@ -321,8 +324,9 @@ export default function Page() {
     }
   }, []);
 
-  const handleSetCatFilter = useCallback(val => setCatFilter(val), []);
-  const handleSetTagFilter = useCallback(val => setTagFilter(val), []);
+  // 필터 변경 시 선택 Set 초기화 — 필터로 숨겨진 항목이 선택된 채로 일괄삭제되는 것 방지
+  const handleSetCatFilter = useCallback(val => { setCatFilter(val); setSelected(new Set()); }, []);
+  const handleSetTagFilter = useCallback(val => { setTagFilter(val); setSelected(new Set()); }, []);
   const handleDeleteCancel = useCallback(() => setDeletePending(null), []);
 
   const toggleSelect = useCallback(id => {

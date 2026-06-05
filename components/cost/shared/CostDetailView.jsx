@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { TabButton } from '@/components/cost/shared/TabButton';
 import { formatNumber } from '@/lib/format';
 import { downloadCsv } from '@/lib/download';
+import { showToast } from '@/components/Toast';
 import { Pagination } from '@/components/ui/Pagination';
 import { SortButton } from '@/components/ui/SortButton';
 import {
@@ -117,8 +118,12 @@ export function CostDetailView({
   async function handleSelectedDelete() {
     const ids = Array.from(table.selected);
     if (ids.length === 0 || !onDeleteRecipes) return;
-    await onDeleteRecipes(ids);
-    table.clearSelection();
+    try {
+      await onDeleteRecipes(ids);
+      table.clearSelection();
+    } catch (err) {
+      showToast('삭제 실패: ' + (err?.message || ''), 'err');
+    }
   }
 
   if (dbError) return (

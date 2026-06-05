@@ -88,7 +88,10 @@ export function useCostManageTable(rows, {
     page: currentPage, goTo, totalPages, paged, total, pageSize,
     selected, setSelected, toggle, togglePage, clearSelection,
     confirmingDelete, setConfirmingDelete,
-    allPageSelected: paged.length > 0 && paged.every(row => selected.has(getRowId(row))),
+    // getRowId(row)가 undefined인 행(레시피 없음)은 선택 대상 제외 후 판별
+    allPageSelected: paged.length > 0 && paged
+      .filter(row => getRowId(row) != null)
+      .every(row => selected.has(getRowId(row))),
   };
 }
 

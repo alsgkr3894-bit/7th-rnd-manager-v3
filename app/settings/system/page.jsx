@@ -12,6 +12,8 @@ import {
   deleteDatabase,
   collectStoreStats,
 } from '@/lib/db';
+import { dbNameFor } from '@/lib/db/constants';
+import { getActiveBrandId } from '@/lib/active-brand';
 import { formatNumber } from '@/lib/format';
 import { getSetting, setSetting } from '@/lib/settings';
 import { Toggle } from '@/components/ui/Toggle';
@@ -92,7 +94,7 @@ export default function Page() {
     if (busy) return;
     setBusy(true);
     try {
-      await deleteDatabase(DB_NAME);
+      await deleteDatabase(dbNameFor(getActiveBrandId()));
       showToast('DB 삭제 완료. 새로고침합니다…', 'ok');
       // 1초 후 자동 새로고침 — 새 페이지 로드 시 최신 schema로 DB 자동 생성
       setTimeout(() => window.location.reload(), 1000);

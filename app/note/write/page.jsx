@@ -46,6 +46,7 @@ export default function Page() {
             noteType: note.noteType || f.noteType,
             tags:     note.tags     || '',
             parentId: note.id,
+            brand:    note.brand    || f.brand, // 부모 brand 계승
           }));
         })
         .catch(console.error);

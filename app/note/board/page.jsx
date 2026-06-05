@@ -116,7 +116,7 @@ export default function Page() {
       n.title || '',
       n.menuName || '',
       n.testDate || '',
-      n.resultSummary || '',
+      n.reportSummary || '',
       n.tags || '',
     ]);
     downloadCsv([headers, ...rows], `칸반보드${searchActive ? '_필터' : ''}.csv`);
@@ -129,7 +129,7 @@ export default function Page() {
       (n.title || '').toLowerCase().includes(q) ||
       (n.menuName || '').toLowerCase().includes(q) ||
       (n.testContent || '').toLowerCase().includes(q) ||
-      (n.resultSummary || '').toLowerCase().includes(q) ||
+      (n.reportSummary || '').toLowerCase().includes(q) ||
       (n.tags || '').toLowerCase().includes(q)
     );
   }, [notes, search]);
@@ -319,7 +319,7 @@ function buildNoteCopyText(note) {
   const lines = [`[${note.status}] ${note.title || '제목 없음'}`];
   if (note.menuName) lines.push(`메뉴: ${note.menuName}`);
   if (note.testDate) lines.push(`테스트일: ${note.testDate}`);
-  if (note.resultSummary) lines.push(`결과: ${note.resultSummary}`);
+  if (note.reportSummary) lines.push(`결과: ${note.reportSummary}`);
   if (note.nextAction)    lines.push(`다음 액션: ${note.nextAction}`);
   return lines.join('\n');
 }

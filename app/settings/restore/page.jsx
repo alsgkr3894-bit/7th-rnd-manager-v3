@@ -693,7 +693,7 @@ export default function Page() {
                 </button>
                 <button
                   className="btn"
-                  disabled={busy}
+                  disabled={busy || !ready}
                   onClick={() => handleRestore(false)}
                   style={{
                     background: 'var(--negative)',
