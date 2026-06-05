@@ -200,11 +200,10 @@ export default function TopBar({ onOpenPalette, onToggleSidebar, activeCompany, 
 
       <div className="profile" ref={profileRef} style={{ position: 'relative' }}>
         <button
-          className="profile"
           onClick={() => setProfileOpen(v => !v)}
           aria-haspopup="menu"
           aria-expanded={profileOpen}
-          style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, padding: '4px 6px', borderRadius: 8 }}
+          style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', borderRadius: 8, font: 'inherit' }}
         >
           <div className="avatar">{profile ? getInitial(profile.name) : '?'}</div>
           <div className="who">

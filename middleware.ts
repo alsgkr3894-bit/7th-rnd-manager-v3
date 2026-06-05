@@ -6,8 +6,18 @@ const COOKIE_NAME  = 'v3:auth';
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // 공개 경로 통과
-  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
+  // /login: 이미 인증된 사용자는 홈으로 리디렉트
+  if (pathname.startsWith('/login')) {
+    if (req.cookies.has(COOKIE_NAME)) {
+      const url = req.nextUrl.clone();
+      url.pathname = '/';
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
+
+  // 나머지 공개 경로 통과
+  if (PUBLIC_PATHS.slice(1).some(p => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 

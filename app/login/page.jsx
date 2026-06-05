@@ -47,6 +47,8 @@ export default function LoginPage() {
         setAuthCookie(remember);
         router.replace('/');
       }
+    } catch (err) {
+      setError(err?.message || '오류가 발생했습니다. 다시 시도해 주세요.');
     } finally {
       setLoading(false);
     }
@@ -207,9 +209,18 @@ export default function LoginPage() {
         </form>
 
         {mode === 'setup' && (
-          <p style={{ marginTop: 16, fontSize: 12, color: 'var(--text-4)', textAlign: 'center', lineHeight: 1.5 }}>
-            비밀번호는 이 기기의 브라우저 저장소에만 저장됩니다.
-          </p>
+          <div style={{ marginTop: 16, textAlign: 'center' }}>
+            <p style={{ fontSize: 12, color: 'var(--text-4)', lineHeight: 1.5, marginBottom: 8 }}>
+              비밀번호는 이 기기의 브라우저 저장소에만 저장됩니다.
+            </p>
+            {/* 비밀번호가 이미 설정된 상태에서 ?setup=1로 잘못 진입한 경우 복귀 링크 */}
+            {isAuthSetup() && (
+              <button type="button" onClick={() => { setMode('login'); setPassword(''); setConfirm(''); setError(''); }}
+                style={{ fontSize: 12, color: 'var(--accent-text)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                기존 비밀번호로 로그인
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>
