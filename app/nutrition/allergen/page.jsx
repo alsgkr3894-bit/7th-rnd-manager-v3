@@ -21,7 +21,7 @@ import { SmallStatCard } from '@/components/ui/SmallStatCard';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { ReorderModal } from '@/components/ui/ReorderModal';
 import {
-  MENU_ORDER_KEY,
+  MENU_ORDER_KEY, ALLERGEN_MENU_ORDER_KEY,
   ALLERGEN_ORDER_KEY,
   loadOrder,
   saveOrder,
@@ -67,7 +67,7 @@ export default function Page() {
   const [reorderTarget, setReorderTarget] = useState(null); // 'menu' | 'allergen' | null
 
   useEffect(() => {
-    setMenuOrder(loadOrder(MENU_ORDER_KEY));
+    setMenuOrder(loadOrder(ALLERGEN_MENU_ORDER_KEY));
     setAllergenOrder(loadOrder(ALLERGEN_ORDER_KEY));
   }, []);
 
@@ -386,7 +386,7 @@ export default function Page() {
               <button
                 className="btn sm"
                 onClick={() => {
-                  saveOrder(MENU_ORDER_KEY, []);
+                  saveOrder(ALLERGEN_MENU_ORDER_KEY, []);
                   saveOrder(ALLERGEN_ORDER_KEY, []);
                   setMenuOrder([]);
                   setAllergenOrder([]);
@@ -595,7 +595,7 @@ export default function Page() {
           title="메뉴 순서 (석쇠·엣지 변형 함께 이동)"
           items={menuListForOrder}
           onApply={keys => {
-            saveOrder(MENU_ORDER_KEY, keys);
+            saveOrder(ALLERGEN_MENU_ORDER_KEY, keys);
             setMenuOrder(keys);
           }}
           onClose={() => setReorderTarget(null)}

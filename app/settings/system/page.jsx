@@ -314,7 +314,7 @@ export default function Page() {
           }}
         >
           <InfoCell label="앱 버전" value={APP_VERSION} />
-          <InfoCell label="DB 이름" value={DB_NAME} mono />
+          <InfoCell label="DB 이름" value={dbNameFor(getActiveBrandId())} mono />
           <InfoCell label="DB 버전" value={String(DB_VERSION)} />
           <InfoCell label="환경" value="개발 (localhost)" />
         </div>

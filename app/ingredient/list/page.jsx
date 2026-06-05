@@ -306,7 +306,7 @@ export default function Page() {
 
       {!loading && rows.length > 0 && (
         <div className="content-enter" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {/* 스코프 탭 + 검색 */}
+          {/* 스코프 탭 + 검색 — 단종 탭에서는 scope/tag 필터가 적용되지 않으므로 숨김 */}
           <div
             style={{
               display: 'flex',
@@ -317,7 +317,7 @@ export default function Page() {
             }}
           >
             <div style={{ display: 'flex', gap: 2 }}>
-              {SCOPE_TABS.map(t => (
+              {catFilter !== DISCONTINUED_FILTER && SCOPE_TABS.map(t => (
                 <button
                   key={t.id}
                   className={'chip' + (scopeFilter === t.id ? ' active' : '')}
@@ -393,8 +393,8 @@ export default function Page() {
             )}
           </div>
 
-          {/* 해시태그 */}
-          {hashTags.length > 0 && (
+          {/* 해시태그 — 단종 탭에서는 태그 필터가 적용되지 않으므로 숨김 */}
+          {hashTags.length > 0 && catFilter !== DISCONTINUED_FILTER && (
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
               <span
                 style={{ fontSize: 12, color: 'var(--text-3)', marginRight: 4, fontWeight: 600 }}

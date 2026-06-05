@@ -152,6 +152,14 @@ export function CostDetailView({
 
       {tab === 'detail' && (
         <>
+          {loading && (
+            <div style={{display:'flex', flexDirection:'column', gap:8, marginTop:8}}>
+              {[1,2,3].map(i => (
+                <div key={i} style={{height:52, borderRadius:8, background:'var(--surface-2)', opacity:1-(i-1)*0.2}}/>
+              ))}
+            </div>
+          )}
+
           {!loading && menus.length === 0 && (
             <div className="card" style={{minHeight:200, display:'grid', placeItems:'center'}}>
               <div style={{textAlign:'center', color:'var(--text-3)'}}>

@@ -207,7 +207,8 @@ export function IngredientForm({
     // 제품코드 중복 검사 — 신규 등록 또는 코드 변경 시
     const newCode = (form.productCode || '').trim();
     const origCode = (initial?.productCode || '').trim();
-    if (newCode && newCode !== origCode && existingProductCodes.includes(newCode)) {
+    if (newCode && newCode.toUpperCase() !== origCode.toUpperCase() &&
+        existingProductCodes.some(c => c.toUpperCase() === newCode.toUpperCase())) {
       e.productCode = `이미 등록된 제품코드입니다: ${newCode}`;
     }
     return e;

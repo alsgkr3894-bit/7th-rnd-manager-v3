@@ -33,7 +33,11 @@ export function useCostManageTable(rows, {
   initialSort = null,
   getRowId = row => row.id,
 } = {}) {
-  const [sort, setSort] = useState(initialSort || (sortOptions[0] ? { id: sortOptions[0].id, dir: 'asc' } : null));
+  // initialSort.id가 sortOptions에 없으면 첫 번째 옵션으로 fallback (silent fail 방지)
+  const resolvedInitial = initialSort && sortOptions.some(o => o.id === initialSort.id)
+    ? initialSort
+    : (sortOptions[0] ? { id: sortOptions[0].id, dir: 'asc' } : null);
+  const [sort, setSort] = useState(resolvedInitial);
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(() => new Set());
   const [confirmingDelete, setConfirmingDelete] = useState(false);
