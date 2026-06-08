@@ -4,9 +4,11 @@ import { Icon } from '@/components/icons';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
 import MenuCodePicker from '@/components/ui/MenuCodePicker';
+import { ImportBaseModal } from '@/components/nutrition/menu/ImportBaseModal';
 import {
   upsertMenuRef, deleteMenuRef,
   upsertRawValue, CRUST_TYPES, NUTRITION_FIELDS,
+  clearAllBaseData,
 } from '@/lib/nutrition/values/store';
 import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
 import {
@@ -14,6 +16,57 @@ import {
   buildIngredientNutritionMap,
   findRecipeForMenu,
 } from '@/lib/nutrition/auto-calc';
+import { groupMenusOrdered } from '@/lib/nutrition/menu-group';
+
+const GROUP_HEADER_STYLE = {
+  padding: '5px 14px 4px',
+  fontSize: 10,
+  fontWeight: 800,
+  color: 'var(--text-4)',
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+  background: 'var(--surface-2)',
+  borderBottom: '1px solid var(--divider)',
+  userSelect: 'none',
+};
+
+function MenuGroupList({ menus, rawMap, menuMasters, selMenu, onSelect }) {
+  const masterByCode = Object.fromEntries((menuMasters || []).map(m => [m.menuCode, m]));
+  const groups = groupMenusOrdered(menus, masterByCode);
+  const multiGroup = groups.length > 1;
+
+  return (
+    <>
+      {groups.map(({ group, items }) => (
+        <div key={group}>
+          {multiGroup && <div style={GROUP_HEADER_STYLE}>{group}</div>}
+          {items.map(m => (
+            <div key={m.id} onClick={() => onSelect(m)}
+              style={{
+                padding: '9px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                background: selMenu?.id === m.id ? 'var(--accent-soft)' : 'transparent',
+                borderLeft: selMenu?.id === m.id ? '3px solid var(--accent)' : '3px solid transparent',
+              }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: selMenu?.id === m.id ? 700 : 400, color: selMenu?.id === m.id ? 'var(--accent-text)' : 'var(--text-1)' }}>{m.menuName}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
+                  {m.category}
+                  {m.menuCode && <span style={{ marginLeft: 4, fontFamily: 'monospace', color: 'var(--accent-text)', opacity: 0.7 }}>{m.menuCode}</span>}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 2 }}>
+                {CRUST_TYPES.map(ct => {
+                  const done = !!rawMap[`${m.menuCode}__${ct}`]?.kcal;
+                  return <span key={ct} style={{ width: 6, height: 6, borderRadius: '50%', background: done ? 'var(--accent)' : 'var(--border)' }} />;
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </>
+  );
+}
 
 const MENU_CATS = [
   '피자', '피자/프리미엄 스페셜', '피자/프리미엄', '피자/오리지널', '피자/하프앤하프',
@@ -29,6 +82,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
   const [newMenuForm, setNewMenuForm] = useState({ menuCode: '', menuName: '', category: '피자', displayOrder: '' });
   const [autoCalcBusy,   setAutoCalcBusy]   = useState(false);
   const [autoCalcPreview, setAutoCalcPreview] = useState(null); // { values: Object } | null
+  const [importOpen,     setImportOpen]     = useState(false);
 
   const key      = selMenu ? `${selMenu.menuCode}__${selCrust}` : null;
   const existing = key ? rawMap[key] : null;
@@ -130,10 +184,23 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
   return (
     <div style={{ display: 'flex', gap: 20, marginTop: 20, alignItems: 'flex-start' }}>
       {/* 메뉴 목록 */}
-      <div className="card" style={{ width: 220, flexShrink: 0, padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '12px 14px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
+      <div className="card" style={{ width: 220, flexShrink: 0, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 220px)' }}>
+        <div style={{ padding: '12px 14px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
           <span style={{ fontSize: 13, fontWeight: 700 }}>메뉴 목록</span>
-          <button className="btn sm ghost" onClick={() => setAddMenu(true)}><Icon.plus style={{ width: 13, height: 13 }} /></button>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button className="btn sm ghost" title="엑셀 가져오기" onClick={() => setImportOpen(true)}
+              style={{ fontSize: 11, padding: '3px 7px' }}>엑셀</button>
+            <button className="btn sm ghost" onClick={() => setAddMenu(true)}><Icon.plus style={{ width: 13, height: 13 }} /></button>
+            <button className="btn sm ghost" title="전체 삭제"
+              style={{ fontSize: 11, padding: '3px 7px', color: 'var(--danger)' }}
+              onClick={async () => {
+                if (!confirm('베이스 영양성분 전체(메뉴 목록 + 값)를 삭제합니다. 계속할까요?')) return;
+                await clearAllBaseData();
+                setSelMenu(null);
+                showToast('전체 삭제 완료', 'ok');
+                onRefresh();
+              }}>전체삭제</button>
+          </div>
         </div>
         {menus.length === 0 ? (
           <div className="empty-state" style={{ padding: '24px 12px' }}>
@@ -142,29 +209,8 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
             <div style={{ fontSize: 12, color: 'var(--text-3)' }}>+ 버튼으로 메뉴를 추가하세요</div>
           </div>
         ) : (
-          <div>
-            {menus.map(m => (
-              <div key={m.id} onClick={() => setSelMenu(m)}
-                style={{
-                  padding: '9px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  background: selMenu?.id === m.id ? 'var(--accent-soft)' : 'transparent',
-                  borderLeft: selMenu?.id === m.id ? '3px solid var(--accent)' : '3px solid transparent',
-                }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: selMenu?.id === m.id ? 700 : 400, color: selMenu?.id === m.id ? 'var(--accent-text)' : 'var(--text-1)' }}>{m.menuName}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
-                    {m.category}
-                    {m.menuCode && <span style={{ marginLeft: 4, fontFamily: 'monospace', color: 'var(--accent-text)', opacity: 0.7 }}>{m.menuCode}</span>}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 2 }}>
-                  {CRUST_TYPES.map(ct => {
-                    const done = !!rawMap[`${m.menuCode}__${ct}`]?.kcal;
-                    return <span key={ct} style={{ width: 6, height: 6, borderRadius: '50%', background: done ? 'var(--accent)' : 'var(--border)' }} />;
-                  })}
-                </div>
-              </div>
-            ))}
+          <div style={{ overflowY: 'auto', flex: 1 }}>
+            <MenuGroupList menus={menus} rawMap={rawMap} menuMasters={menuMasters} selMenu={selMenu} onSelect={setSelMenu} />
           </div>
         )}
       </div>
@@ -266,6 +312,16 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
             </button>
           </div>
         </ModalFrame>
+      )}
+
+      {importOpen && (
+        <ImportBaseModal
+          menuMasters={menuMasters}
+          menus={menus}
+          rawMap={rawMap}
+          onClose={() => setImportOpen(false)}
+          onRefresh={onRefresh}
+        />
       )}
 
       {addMenu && (

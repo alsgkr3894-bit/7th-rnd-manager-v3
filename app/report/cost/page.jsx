@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import ReportBuilderShell, { OptGroup, Seg, Check } from '@/components/report/ReportBuilderShell';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
-import { fmtKRW, pad } from '@/lib/format';
+import { formatNumber, pad } from '@/lib/format';
 import { Icon } from '@/components/icons';
 import { initDB } from '@/lib/db/init';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
@@ -128,6 +128,8 @@ async function exportCostXlsx(periodLabel, activeCats) {
 
 // ── 메인 컴포넌트 ──────────────────────────────────────────────
 const NOW = new Date();
+const _TM = { year: NOW.getFullYear(), month: NOW.getMonth() + 1 };
+const _LM = { year: NOW.getMonth() === 0 ? NOW.getFullYear() - 1 : NOW.getFullYear(), month: NOW.getMonth() === 0 ? 12 : NOW.getMonth() };
 
 export default function Page() {
   const [periodMode, setPeriodMode] = useState('month');
@@ -339,6 +341,12 @@ export default function Page() {
                 </select>
               )}
             </div>
+            {periodMode === 'month' && (
+              <div style={{display:'flex', gap:4, marginTop:4}}>
+                <button className="btn sm" onClick={() => { setYear(_LM.year); setMonth(_LM.month); }}>지난달</button>
+                <button className="btn sm" onClick={() => { setYear(_TM.year); setMonth(_TM.month); }}>이번달</button>
+              </div>
+            )}
           </OptGroup>
 
           <OptGroup label="포함 카테고리" hint="체크된 카테고리만 종합 원가표에 포함돼요">
@@ -564,10 +572,10 @@ export default function Page() {
                           <td className="num">{i + 1}</td>
                           <td>{m.name}</td>
                           <td className="num right muted">
-                            {m.sale > 0 ? `${fmtKRW(m.sale)}원` : '—'}
+                            {m.sale > 0 ? `${formatNumber(m.sale)}원` : '—'}
                           </td>
                           <td className="num right muted">
-                            {m.cost > 0 ? `${fmtKRW(m.cost)}원` : '—'}
+                            {m.cost > 0 ? `${formatNumber(m.cost)}원` : '—'}
                           </td>
                           <td
                             className="num right"
@@ -614,7 +622,7 @@ export default function Page() {
                         </span>
                       </td>
                       <td className="num right muted">
-                        {m.sale > 0 ? `${fmtKRW(m.sale)}원` : '—'}
+                        {m.sale > 0 ? `${formatNumber(m.sale)}원` : '—'}
                       </td>
                       <td className="num right" style={{ fontWeight: 800, color: 'var(--warn)' }}>
                         {m.rate.toFixed(1)}% ⚠

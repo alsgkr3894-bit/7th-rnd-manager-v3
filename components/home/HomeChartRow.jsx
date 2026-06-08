@@ -1,6 +1,6 @@
 'use client';
 import { Icon } from '@/components/icons';
-import { fmtKRW, formatPercent } from '@/lib/format';
+import { formatNumber, formatPercent } from '@/lib/format';
 import { useCountUp } from '@/hooks/useCountUp';
 import { AreaChart } from '@/components/charts/AreaChart';
 import { Donut } from '@/components/charts/Donut';
@@ -51,7 +51,7 @@ export function HomeChartRow({
                 ? [{ name:'연간 판매량', data:trend.thisYear }]
                 : [{ name:'이번 연도', data:trend.thisYear }, { name:'지난 연도', data:trend.lastYear }]}
               colors={trend.mode === 'year' ? ['var(--accent)'] : ['var(--accent)','var(--text-4)']}
-              formatY={(v) => fmtKRW(v) + '개'}
+              formatY={(v) => formatNumber(v) + '개'}
             />
           </>
         ) : (
@@ -106,7 +106,7 @@ function DonutSection({ donut, hoveredCat, setHoveredCat }) {
       <div className="ring">
         <Donut items={donut.items} onSegmentHover={setHoveredCat} />
         <div className="center">
-          <div className="v num">{fmtKRW(center)}</div>
+          <div className="v num">{formatNumber(center)}</div>
           <div className="l">개</div>
         </div>
       </div>

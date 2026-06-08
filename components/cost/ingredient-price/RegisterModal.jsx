@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { formatNumber } from '@/lib/format';
 import { SEED_MAIN_CATEGORIES, sortMainCategories } from '@/lib/ingredient';
 import { ModalFrame } from '@/components/ui/ModalFrame';
@@ -46,6 +47,8 @@ export function RegisterModal({ row, onSave, onClose, extraCategories = [] }) {
   );
   const [suppliers,    setSuppliers]    = useState([]);
   const [saving, setSaving] = useState(false);
+
+  useKeyboardSave(() => { if (!saving) handleSubmit({ preventDefault() {} }); });
 
   // 공급업체 목록 로드
   useEffect(() => {

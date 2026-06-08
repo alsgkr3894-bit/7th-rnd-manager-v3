@@ -34,6 +34,8 @@ import {
   isDoughCategory,
   isPizzaCategory,
 } from '@/lib/nutrition/crust-config';
+import { loadMenuNames, saveMenuNames, applyMenuName } from '@/lib/nutrition/menu-name-override';
+import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
 
 /**
  * 알레르기 정보 페이지 — 자동 집계 뷰
@@ -65,6 +67,8 @@ export default function Page() {
   const [menuOrder, setMenuOrder] = useState([]);
   const [allergenOrder, setAllergenOrder] = useState([]);
   const [reorderTarget, setReorderTarget] = useState(null); // 'menu' | 'allergen' | null
+  const [menuNameEditOpen, setMenuNameEditOpen] = useState(false);
+  const [menuNameOverrides, setMenuNameOverrides] = useState(() => loadMenuNames());
 
   useEffect(() => {
     setMenuOrder(loadOrder(ALLERGEN_MENU_ORDER_KEY));
@@ -232,13 +236,19 @@ export default function Page() {
 
     // 사용자 메뉴 순서 적용 — menuCode 단위로 정렬하므로 같은 메뉴의 변형(석쇠+엣지) 행이
     // 함께 묶여 이동하고, 변형 간 순서는 CRUST_VARIANTS 삽입순(안정 정렬)으로 유지됨.
-    return applyOrder(
+    const sorted = applyOrder(
       rows,
       menuOrder,
       r => r.menuCode,
       r => r.menuName
     );
-  }, [allergenIngredients, baseMapData, edges, isExcludedMenu, menuOrder]);
+    // 출력용 메뉴명 오버라이드 적용 (표시 전용, 원래 이름 보존)
+    return sorted.map(r => ({
+      ...r,
+      originalMenuName: r.menuName,
+      menuName: applyMenuName(r.menuCode, r.menuName, menuNameOverrides),
+    }));
+  }, [allergenIngredients, baseMapData, edges, isExcludedMenu, menuOrder, menuNameOverrides]);
 
   const menuMatrix = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -260,7 +270,7 @@ export default function Page() {
     for (const r of menuMatrixAll) {
       if (seen.has(r.menuCode)) continue;
       seen.add(r.menuCode);
-      out.push({ key: r.menuCode, label: r.menuName });
+      out.push({ key: r.menuCode, label: r.originalMenuName ?? r.menuName });
     }
     return out;
   }, [menuMatrixAll]);
@@ -376,6 +386,9 @@ export default function Page() {
         </div>
         {viewMode === 'menu' && (
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+            <button className="btn sm" onClick={() => setMenuNameEditOpen(true)}>
+              메뉴명 편집
+            </button>
             <button className="btn sm" onClick={() => setReorderTarget('menu')}>
               메뉴 순서
             </button>
@@ -610,6 +623,17 @@ export default function Page() {
             setAllergenOrder(keys);
           }}
           onClose={() => setReorderTarget(null)}
+        />
+      )}
+      {menuNameEditOpen && (
+        <MenuNameEditModal
+          menus={menuListForOrder.map(m => ({ menuCode: m.key, menuName: m.label }))}
+          overrides={menuNameOverrides}
+          onApply={next => {
+            saveMenuNames(next);
+            setMenuNameOverrides(next);
+          }}
+          onClose={() => setMenuNameEditOpen(false)}
         />
       )}
     </main>

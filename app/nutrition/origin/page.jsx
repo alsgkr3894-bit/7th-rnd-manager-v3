@@ -22,6 +22,8 @@ import { ReorderModal } from '@/components/ui/ReorderModal';
 import { MENU_ORDER_KEY, loadOrder, saveOrder, applyOrder } from '@/lib/nutrition/order';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
+import { loadMenuNames, saveMenuNames, applyMenuName } from '@/lib/nutrition/menu-name-override';
+import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
 
 /**
  * 원산지 정보 페이지 — 자동 집계 뷰
@@ -42,6 +44,8 @@ export default function Page() {
   const [menuOrder, setMenuOrder] = useState([]);
   const [reorderOpen, setReorderOpen] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
+  const [menuNameEditOpen, setMenuNameEditOpen] = useState(false);
+  const [menuNameOverrides, setMenuNameOverrides] = useState(() => loadMenuNames());
 
   useEffect(() => {
     setMenuOrder(loadOrder(MENU_ORDER_KEY));
@@ -172,13 +176,19 @@ export default function Page() {
     }
 
     // 사용자가 정한 메뉴 순서 적용 (없는 메뉴는 뒤에 ㄱㄴㄷ)
-    return applyOrder(
+    const sorted = applyOrder(
       [...menuMap.values()],
       menuOrder,
       m => m.menuCode,
       m => m.menuName
     );
-  }, [originIngredients, mapData, isExcludedMenu, menuOrder]);
+    // 출력용 메뉴명 오버라이드 적용 (표시 전용, 원래 이름 보존)
+    return sorted.map(m => ({
+      ...m,
+      originalMenuName: m.menuName,
+      menuName: applyMenuName(m.menuCode, m.menuName, menuNameOverrides),
+    }));
+  }, [originIngredients, mapData, isExcludedMenu, menuOrder, menuNameOverrides]);
 
   const menuRows = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -336,6 +346,9 @@ export default function Page() {
           )}
           {viewMode === 'menu' && (
             <>
+              <button className="btn sm" onClick={() => setMenuNameEditOpen(true)}>
+                메뉴명 편집
+              </button>
               <button className="btn sm" onClick={() => setReorderOpen(true)}>
                 메뉴 순서 변경
               </button>
@@ -510,6 +523,17 @@ export default function Page() {
             setMenuOrder(keys);
           }}
           onClose={() => setReorderOpen(false)}
+        />
+      )}
+      {menuNameEditOpen && (
+        <MenuNameEditModal
+          menus={menuRowsAll.map(m => ({ menuCode: m.menuCode, menuName: m.originalMenuName ?? m.menuName }))}
+          overrides={menuNameOverrides}
+          onApply={next => {
+            saveMenuNames(next);
+            setMenuNameOverrides(next);
+          }}
+          onClose={() => setMenuNameEditOpen(false)}
         />
       )}
     </main>

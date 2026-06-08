@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -18,6 +18,7 @@ import { getSetRecipeMap } from '@/lib/cost/set-detail';
 import { costRateColor, calcCostRate } from '@/lib/cost/rate-color';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { downloadCsv } from '@/lib/download';
+import { onPriceUpload } from '@/lib/price/price-events';
 
 // ── 카테고리 정규화 ───────────────────────────────────────────
 const CAT_ORDER = [
@@ -207,7 +208,8 @@ export default function Page() {
     return built;
   }, []);
 
-  const { data: rawData, loading, error: dbErrorObj } = useDBLoad(fetchFn);
+  const { data: rawData, loading, error: dbErrorObj, reload } = useDBLoad(fetchFn);
+  useEffect(() => onPriceUpload(reload), [reload]);
   const rows = useMemo(() => rawData ?? [], [rawData]);
   const dbError = dbErrorObj?.message ?? null;
 

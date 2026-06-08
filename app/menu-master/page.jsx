@@ -28,6 +28,7 @@ import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
+import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 
 // 7번가(main) 전용 피자 카테고리 프리셋. 다른 브랜드는 빈 프리셋 → 자유 입력,
 // 칩·통계는 실제 데이터에 존재하는 카테고리에서 동적으로 도출한다.
@@ -106,6 +107,22 @@ function EditModal({ row, isNew, onSave, onClose, presetCategories = [] }) {
   const set = makeFieldUpdater(setForm);
   const defaultPrice = getDefaultPrice(form.menuCode);
   const canSave = form.menuCode.trim() && form.menuName.trim();
+
+  function submit() {
+    if (!canSave) return;
+    onSave({
+      ...(row || {}),
+      menuCode: form.menuCode.trim(),
+      menuName: form.menuName.trim(),
+      category: form.category,
+      size: form.size.trim() || null,
+      price: form.price !== '' ? Number(form.price) : null,
+      status: form.status,
+      note: form.note,
+      excludeFromOrigin: form.excludeFromOrigin,
+    });
+  }
+  useKeyboardSave(submit);
 
   return (
     <div
@@ -329,23 +346,7 @@ function EditModal({ row, isNew, onSave, onClose, presetCategories = [] }) {
           <button className="btn" onClick={onClose}>
             취소
           </button>
-          <button
-            className="btn primary"
-            disabled={!canSave}
-            onClick={() =>
-              onSave({
-                ...(row || {}),
-                menuCode: form.menuCode.trim(),
-                menuName: form.menuName.trim(),
-                category: form.category,
-                size: form.size.trim() || null,
-                price: form.price !== '' ? Number(form.price) : null,
-                status: form.status,
-                note: form.note,
-                excludeFromOrigin: form.excludeFromOrigin,
-              })
-            }
-          >
+          <button className="btn primary" disabled={!canSave} onClick={submit}>
             저장
           </button>
         </div>

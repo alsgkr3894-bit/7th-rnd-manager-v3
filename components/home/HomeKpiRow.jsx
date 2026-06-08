@@ -2,7 +2,7 @@
 import { memo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
-import { fmtKRW, formatPercent } from '@/lib/format';
+import { formatNumber, formatPercent } from '@/lib/format';
 import { Sparkline } from '@/components/charts/Sparkline';
 import { MomBars } from './MomBars';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
@@ -51,7 +51,7 @@ export const HomeKpiRow = memo(function HomeKpiRow({ salesKpi, costKpi, noteKpi,
               ? `${salesKpi.year}년 ${salesKpi.month}월 판매량`
               : '최근 판매량'}
           </div>
-          <div className={salesPopped ? 'value num count-landed' : 'value num'}>{fmtKRW(salesCount)}<span className="unit">개</span></div>
+          <div className={salesPopped ? 'value num count-landed' : 'value num'}>{formatNumber(salesCount)}<span className="unit">개</span></div>
           <div className="trend">
             {salesKpi?.deltaPct == null ? (
               <span style={{color:'var(--text-4)'}}>—</span>

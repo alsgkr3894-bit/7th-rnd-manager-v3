@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
@@ -28,6 +29,8 @@ export function BulkPriceModal({ onClose, onDone }) {
     return init;
   });
   const [saving, setSaving] = useState(false);
+
+  useKeyboardSave(() => { if (!saving) handleApply(); });
 
   const setPrice = (sub, size, val) =>
     setPrices(p => ({ ...p, [sub]: { ...p[sub], [size]: val } }));

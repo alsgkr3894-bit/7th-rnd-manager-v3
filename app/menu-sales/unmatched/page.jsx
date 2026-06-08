@@ -13,7 +13,7 @@ import {
 import { UnmatchedFilterBar } from '@/components/sales/UnmatchedFilterBar';
 
 export default function Page() {
-  const { ready, issues, resolve, bulkExclude } = useUnmatchedIssues();
+  const { ready, issues, resolve, bulkExclude, bulkRule } = useUnmatchedIssues();
   const [statusFilter, setStatusFilter] = useState('open'); // open | resolved | all
   const [monthFilter, setMonthFilter] = useState('all');     // 'all' | 'YYYY-M'
   const [search, setSearch] = useState('');
@@ -93,7 +93,7 @@ export default function Page() {
           ? <UnmatchedAllResolved />
           : filtered.length === 0
             ? <UnmatchedNoMatch />
-            : <UnmatchedTable issues={filtered} onResolve={resolve} onBulkExclude={bulkExclude} />}
+            : <UnmatchedTable issues={filtered} onResolve={resolve} onBulkExclude={bulkExclude} onBulkRule={bulkRule} />}
     </main>
   );
 }

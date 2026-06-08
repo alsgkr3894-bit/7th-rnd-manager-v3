@@ -21,6 +21,7 @@ import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { costRateColor } from '@/lib/cost/rate-color';
 import { KEYS } from '@/lib/note/keys';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
+import { onPriceUpload } from '@/lib/price/price-events';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Pagination } from '@/components/ui/Pagination';
 import { usePagination } from '@/hooks/usePagination';
@@ -185,6 +186,7 @@ function RecipeContent() {
   }, [load]);
 
   useVisibilityRefresh(load);
+  useEffect(() => onPriceUpload(load), [load]);
 
   // URL sync for search filter + active tab
   useEffect(() => {

@@ -1,5 +1,5 @@
 'use client';
-import { fmtKRW } from '@/lib/format';
+import { formatNumber } from '@/lib/format';
 import { Sparkline } from '@/components/charts/Sparkline';
 
 /**
@@ -30,7 +30,7 @@ export function BriefingWidget({ data }) {
             <div key={i} className="brief-stat">
               <div className="l">{c.label}</div>
               <div className="v" style={c.tone === 'down' ? { color: 'var(--negative)' } : undefined}>
-                {fmtKRW(c.value)}<span className="unit">{c.unit}</span>
+                {formatNumber(c.value)}<span className="unit">{c.unit}</span>
               </div>
               <div className="d" style={{ color: toneColor[c.tone] || 'var(--text-3)' }}>{c.deltaText}</div>
             </div>

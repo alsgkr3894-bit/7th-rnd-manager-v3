@@ -3,11 +3,23 @@ import { useState, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { NUTRITION_FIELDS, calcAllResults } from '@/lib/nutrition/values/store';
 import { downloadCsv } from '@/lib/download';
+import { resolveNutritionGroup, NUTRITION_GROUP_ORDER } from '@/lib/nutrition/menu-group';
 
-export function TabResults({ menus, rawMap, edgeMap, compositions, toppings }) {
+const GROUP_HEADER_STYLE = {
+  fontWeight: 800, fontSize: 11, color: 'var(--text-4)',
+  background: 'var(--surface-2)', letterSpacing: '0.05em',
+  textTransform: 'uppercase',
+};
+
+export function TabResults({ menus, rawMap, edgeMap, compositions, toppings, menuMasters }) {
   const [filterMenu,    setFilterMenu]    = useState('전체');
   const [filterDerived, setFilterDerived] = useState('전체');
   const [missingOnly,   setMissingOnly]   = useState(false);
+
+  const masterByCode = useMemo(
+    () => Object.fromEntries((menuMasters || []).map(m => [m.menuCode, m])),
+    [menuMasters]
+  );
 
   const toppingMap = useMemo(() => {
     const m = {};
@@ -16,8 +28,8 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, toppings }) {
   }, [toppings]);
 
   const results = useMemo(
-    () => calcAllResults({ menus, rawMap, edgeMap, compositions, toppingMap }),
-    [menus, rawMap, edgeMap, compositions, toppingMap]
+    () => calcAllResults({ menus, rawMap, edgeMap, compositions, toppingMap, masterByCode }),
+    [menus, rawMap, edgeMap, compositions, toppingMap, masterByCode]
   );
 
   const menuNames = useMemo(
@@ -34,6 +46,16 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, toppings }) {
     return r;
   }, [results, filterMenu, filterDerived, missingOnly]);
 
+  // 그룹 헤더 삽입용 — menuCode 단위로 그룹을 추적
+  const allMenusForGroup = useMemo(() => [...menus, ...compositions], [menus, compositions]);
+  const menuGroupMap = useMemo(() => {
+    const map = {};
+    allMenusForGroup.forEach(m => {
+      map[m.menuCode] = resolveNutritionGroup(m, masterByCode);
+    });
+    return map;
+  }, [allMenusForGroup, masterByCode]);
+
   const hasData = filtered.some(r => r.kcal);
   const hasRows = filtered.length > 0;
 
@@ -48,6 +70,22 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, toppings }) {
     ]);
     downloadCsv([headers, ...rows], missingOnly ? '영양성분_누락메뉴.csv' : '영양성분_계산결과.csv');
   }
+
+  // filtered 행들에 그룹 헤더 삽입
+  const tableRows = useMemo(() => {
+    if (filterMenu !== '전체') return filtered.map(r => ({ type: 'data', row: r }));
+    const result = [];
+    let lastGroup = null;
+    filtered.forEach(r => {
+      const g = menuGroupMap[r.menuCode] || '기타';
+      if (g !== lastGroup) {
+        result.push({ type: 'group', label: g });
+        lastGroup = g;
+      }
+      result.push({ type: 'data', row: r });
+    });
+    return result;
+  }, [filtered, filterMenu, menuGroupMap]);
 
   return (
     <div style={{ marginTop: 20 }}>
@@ -92,7 +130,17 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, toppings }) {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r, i) => {
+                {tableRows.map((item, i) => {
+                  if (item.type === 'group') {
+                    return (
+                      <tr key={`g-${i}`}>
+                        <td colSpan={2 + NUTRITION_FIELDS.length} style={GROUP_HEADER_STYLE}>
+                          <span style={{ padding: '2px 14px', display: 'block' }}>{item.label}</span>
+                        </td>
+                      </tr>
+                    );
+                  }
+                  const r = item.row;
                   const isEmpty = isMissingResult(r);
                   return (
                     <tr key={i} style={{ opacity: isEmpty ? 0.35 : 1 }}>

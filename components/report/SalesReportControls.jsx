@@ -14,6 +14,10 @@ import { OptGroup, Seg, Check } from '@/components/report/ReportBuilderShell';
  * opts, upd                                         — section checkboxes state + updater
  * docFormat, updFmt                                 — document format state + updater
  */
+const _now = new Date();
+const _tm = { year: _now.getFullYear(), month: _now.getMonth() + 1 };
+const _lm = { year: _now.getMonth() === 0 ? _now.getFullYear() - 1 : _now.getFullYear(), month: _now.getMonth() === 0 ? 12 : _now.getMonth() };
+
 export default function SalesReportControls({
   year, month, scope, viewMode, periodMode,
   availYears, availMonthsByYear,
@@ -49,6 +53,20 @@ export default function SalesReportControls({
             </select>
           )}
         </div>
+        {periodMode === 'month' && (
+          <div style={{display:'flex', gap:4, marginTop:4}}>
+            <button className="btn sm"
+              disabled={!(availMonthsByYear[_lm.year] || []).includes(_lm.month)}
+              onClick={() => { onYear(_lm.year); onMonth(_lm.month); }}>
+              지난달
+            </button>
+            <button className="btn sm"
+              disabled={!(availMonthsByYear[_tm.year] || []).includes(_tm.month)}
+              onClick={() => { onYear(_tm.year); onMonth(_tm.month); }}>
+              이번달
+            </button>
+          </div>
+        )}
         {viewMode === 'compare' && (
           <div style={{marginTop:8}}>
             <div className="opt-label" style={{fontSize:11,marginBottom:4}}>비교 월</div>

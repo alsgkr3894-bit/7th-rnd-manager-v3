@@ -1,5 +1,5 @@
 'use client';
-import { fmtKRW } from '@/lib/format';
+import { formatNumber } from '@/lib/format';
 
 /**
  * SalesKpiCards
@@ -17,7 +17,7 @@ export default function SalesKpiCards({ kpi, catShares, groupRanking }) {
       <div className="paper-stat">
         <div className="paper-stat-label">총 판매량</div>
         <div className="paper-stat-val num">
-          {kpi ? fmtKRW(kpi.current) : '—'}<span className="unit">건</span>
+          {kpi ? formatNumber(kpi.current) : '—'}<span className="unit">건</span>
         </div>
       </div>
       <div className="paper-stat">

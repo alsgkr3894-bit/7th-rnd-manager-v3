@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import ReportBuilderShell, { OptGroup, Seg, Check } from '@/components/report/ReportBuilderShell';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
-import { fmtKRW } from '@/lib/format';
+import { formatNumber } from '@/lib/format';
 import { initDB } from '@/lib/db/init';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price/store';
 import { comparePriceLists } from '@/lib/price/compare';
@@ -361,11 +361,11 @@ export default function Page() {
                           </td>
                           <td style={{ fontWeight: 600 }}>{c.productName}</td>
                           <td className="num right muted">
-                            {c.basePrice != null ? fmtKRW(c.basePrice) : '—'}
+                            {c.basePrice != null ? formatNumber(c.basePrice) : '—'}
                           </td>
                           <td className="num right" style={{ fontWeight: 700 }}>
                             {c.latestPrice != null
-                              ? fmtKRW(c.latestPrice)
+                              ? formatNumber(c.latestPrice)
                               : c.changeStatus === '신규'
                                 ? '신규'
                                 : '—'}
@@ -373,7 +373,7 @@ export default function Page() {
                           <td className="num right" style={{ color: STATUS_COLOR[c.changeStatus] }}>
                             {isSpecial
                               ? '—'
-                              : `${c.latestPrice - c.basePrice > 0 ? '+' : ''}${fmtKRW(c.latestPrice - c.basePrice)}`}
+                              : `${c.latestPrice - c.basePrice > 0 ? '+' : ''}${formatNumber(c.latestPrice - c.basePrice)}`}
                           </td>
                           <td
                             className="num right"

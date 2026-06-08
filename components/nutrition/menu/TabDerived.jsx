@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
@@ -9,14 +9,41 @@ import {
   NUTRITION_FIELDS,
 } from '@/lib/nutrition/values/store';
 import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
+import { resolveNutritionGroup, NUTRITION_GROUP_ORDER } from '@/lib/nutrition/menu-group';
 
-export function TabDerived({ menus, toppings, compositions, onRefresh }) {
+const GROUP_HEADER_STYLE = {
+  padding: '6px 16px 4px',
+  fontSize: 10, fontWeight: 800,
+  color: 'var(--text-4)', textTransform: 'uppercase',
+  letterSpacing: '0.05em', marginTop: 8,
+};
+
+export function TabDerived({ menus, toppings, compositions, onRefresh, menuMasters }) {
   const [modal,        setModal]        = useState(null);
   const [toppingModal, setToppingModal] = useState(null);
   const [form,         setForm]         = useState({ menuCode: '', menuName: '', baseMenuCode: '', toppingCodes: [] });
   const [toppingForm,  setToppingForm]  = useState({ toppingCode: '', toppingName: '' });
   const [toppingValues,setToppingValues]= useState({});
   const [saving,       setSaving]       = useState(false);
+
+  const masterByCode = useMemo(
+    () => Object.fromEntries((menuMasters || []).map(m => [m.menuCode, m])),
+    [menuMasters]
+  );
+
+  // 파생 메뉴를 베이스 메뉴 카테고리 기준으로 그룹화
+  const groupedCompositions = useMemo(() => {
+    const buckets = {};
+    NUTRITION_GROUP_ORDER.forEach(g => { buckets[g] = []; });
+    compositions.forEach(comp => {
+      const baseMenu = menus.find(m => m.menuCode === comp.baseMenuCode) || { menuCode: comp.baseMenuCode, category: '' };
+      const g = resolveNutritionGroup(baseMenu, masterByCode);
+      buckets[g].push(comp);
+    });
+    return NUTRITION_GROUP_ORDER
+      .filter(g => buckets[g].length > 0)
+      .map(g => ({ group: g, items: buckets[g] }));
+  }, [compositions, menus, masterByCode]);
 
   const toggleTopping = (code) => {
     setForm(f => ({
@@ -122,25 +149,34 @@ export function TabDerived({ menus, toppings, compositions, onRefresh }) {
           <div className="empty-sub">베이스 메뉴 + 소스/토핑 조합으로 파생 메뉴를 만드세요<br/><span style={{ fontSize: 11 }}>예: 컨츄리치킨 + 마요네즈 = 컨츄리마요치킨</span></div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {compositions.map(comp => {
-            const base = menus.find(m => m.menuCode === comp.baseMenuCode);
-            const tops = (comp.toppingCodes || []).map(c => toppings.find(t => t.toppingCode === c)?.toppingName).filter(Boolean);
-            return (
-              <div key={comp.id} className="card" style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <span style={{ fontWeight: 700, fontSize: 14 }}>{comp.menuName}</span>
-                  <span style={{ fontSize: 12, color: 'var(--text-4)', marginLeft: 10 }}>
-                    {base?.menuName || comp.baseMenuCode} + {tops.join(', ') || '(소스 미선택)'}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button className="btn sm ghost" onClick={() => openEdit(comp)}><Icon.edit style={{ width: 13, height: 13 }} /></button>
-                  <button className="btn sm ghost" style={{ color: 'var(--danger)' }} onClick={() => handleDeleteComp(comp)}><Icon.trash style={{ width: 13, height: 13 }} /></button>
-                </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {groupedCompositions.map(({ group, items }) => (
+            <div key={group}>
+              {groupedCompositions.length > 1 && (
+                <div style={GROUP_HEADER_STYLE}>{group}</div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {items.map(comp => {
+                  const base = menus.find(m => m.menuCode === comp.baseMenuCode);
+                  const tops = (comp.toppingCodes || []).map(c => toppings.find(t => t.toppingCode === c)?.toppingName).filter(Boolean);
+                  return (
+                    <div key={comp.id} className="card" style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <span style={{ fontWeight: 700, fontSize: 14 }}>{comp.menuName}</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-4)', marginLeft: 10 }}>
+                          {base?.menuName || comp.baseMenuCode} + {tops.join(', ') || '(소스 미선택)'}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button className="btn sm ghost" onClick={() => openEdit(comp)}><Icon.edit style={{ width: 13, height: 13 }} /></button>
+                        <button className="btn sm ghost" style={{ color: 'var(--danger)' }} onClick={() => handleDeleteComp(comp)}><Icon.trash style={{ width: 13, height: 13 }} /></button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
 

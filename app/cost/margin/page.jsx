@@ -36,6 +36,7 @@ import { SortableTh } from '@/components/ui/SortableTh';
 import { MarginRow } from '@/components/cost/margin/MarginRow';
 import { exportMarginExcel } from '@/lib/cost/margin/export';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
+import { onPriceUpload } from '@/lib/price/price-events';
 import { KEYS } from '@/lib/note/keys';
 import {
   catCompatible,
@@ -321,6 +322,7 @@ export default function Page() {
   }, [load]);
 
   useVisibilityRefresh(load);
+  useEffect(() => onPriceUpload(load), [load]);
 
   // 저장된 필터가 현재 행에 없는 카테고리면 '전체'로 되돌림 — 빈 표로 보이는 것 방지
   useEffect(() => {

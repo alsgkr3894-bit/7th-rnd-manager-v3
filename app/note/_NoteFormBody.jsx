@@ -7,6 +7,7 @@ import { getAllIngredients } from '@/lib/ingredient';
 import { CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS, NOTE_BRANDS, getAllNotes } from '@/lib/note';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { TagInput } from '@/components/ui/TagInput';
+import { ComboBox } from '@/components/ui/ComboBox';
 import { SegGroup, Field } from '@/components/note/FormFields';
 import { generateNoteReportText } from '@/lib/note/report';
 import { resizePhoto } from '@/lib/image/resize';
@@ -31,6 +32,7 @@ export const INIT = {
   managerEval: '',
   costNote: '',
   improvements: '',
+  issues: '',
   nextAction: '',
   reportSummary: '',
   tags: '',
@@ -43,6 +45,7 @@ const MAX_NOTE_PHOTOS = 8;
 export function NoteFormBody({ form, setForm }) {
   const updateField = makeFieldUpdater(setForm);
   const [allTags, setAllTags] = useState([]);
+  const [menuNames, setMenuNames] = useState([]);
   const [touched, setTouched] = useState({});
   function markTouched(k) {
     setTouched(t => ({ ...t, [k]: true }));
@@ -51,15 +54,14 @@ export function NoteFormBody({ form, setForm }) {
     initDB()
       .then(() => getAllNotes())
       .then(notes => {
-        const set = new Set();
-        notes.forEach(n =>
-          (n.tags || '')
-            .split(',')
-            .map(t => t.trim())
-            .filter(Boolean)
-            .forEach(t => set.add(t))
-        );
-        setAllTags([...set]);
+        const tagSet = new Set();
+        const nameSet = new Set();
+        notes.forEach(n => {
+          (n.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => tagSet.add(t));
+          if (n.menuName?.trim()) nameSet.add(n.menuName.trim());
+        });
+        setAllTags([...tagSet]);
+        setMenuNames([...nameSet]);
       })
       .catch(err => console.warn('[NoteFormBody]', err));
   }, []);
@@ -191,14 +193,14 @@ export function NoteFormBody({ form, setForm }) {
               required
               error={touched.menuName && !form.menuName.trim()}
             >
-              <input
-                className="form-input"
+              <ComboBox
                 value={form.menuName}
-                onChange={e => updateField('menuName', e.target.value)}
-                onBlur={() => markTouched('menuName')}
+                onChange={v => { updateField('menuName', v); markTouched('menuName'); }}
+                options={menuNames}
                 placeholder={
                   form.noteType === '샘플' ? '예) 와규 패티 / 빅맥형 신메뉴' : '예) 횡성한우쉬림프'
                 }
+                inputClassName="form-input"
               />
             </Field>
             <Field label="테스트 날짜">
@@ -341,6 +343,15 @@ export function NoteFormBody({ form, setForm }) {
             />
           </Field>
 
+          <Field label="이슈" hint="발생한 문제·이상 현상 기록">
+            <textarea
+              className="form-input"
+              style={{ minHeight: 72, resize: 'vertical' }}
+              value={form.issues}
+              onChange={e => updateField('issues', e.target.value)}
+              placeholder="예) 반죽 수분 과다로 성형 불가, 굽는 시간 초과 시 탄화 발생 등"
+            />
+          </Field>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Field label="개선점">
               <textarea

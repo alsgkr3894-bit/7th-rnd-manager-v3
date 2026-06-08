@@ -9,7 +9,7 @@ import { initDB } from '@/lib/db';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import {
   getAllMenuRefs, getRawValueMap,
-  getAllEdges, getAllToppings, getAllCompositions,
+  getAllEdges, getAllToppings, getAllCompositions, getAllSetCompositions,
 } from '@/lib/nutrition/values/store';
 
 const TabBase             = dynamic(() => import('@/components/nutrition/menu/TabBase').then(m => ({ default: m.TabBase })), { ssr: false });
@@ -17,8 +17,9 @@ const TabEdge             = dynamic(() => import('@/components/nutrition/menu/Ta
 const TabDerived          = dynamic(() => import('@/components/nutrition/menu/TabDerived').then(m => ({ default: m.TabDerived })), { ssr: false });
 const TabResults          = dynamic(() => import('@/components/nutrition/menu/TabResults').then(m => ({ default: m.TabResults })), { ssr: false });
 const TabIngredientValues = dynamic(() => import('@/components/nutrition/menu/TabIngredientValues').then(m => ({ default: m.TabIngredientValues })), { ssr: false });
+const TabSetCalc          = dynamic(() => import('@/components/nutrition/menu/TabSetCalc').then(m => ({ default: m.TabSetCalc })), { ssr: false });
 
-const TABS = ['베이스 영양성분', '엣지 설정', '파생 메뉴', '식자재 영양값', '계산 결과'];
+const TABS = ['베이스 영양성분', '엣지 설정', '파생 메뉴', '식자재 영양값', '계산 결과', '세트 계산'];
 
 export default function Page() {
   const [tab,          setTab]          = useState(0);
@@ -29,6 +30,7 @@ export default function Page() {
   const [edgeMap,      setEdgeMap]      = useState({});
   const [toppings,     setToppings]     = useState([]);
   const [compositions, setCompositions] = useState([]);
+  const [setComps,     setSetComps]     = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [menuSearch,   setMenuSearch]   = useState('');
 
@@ -42,19 +44,20 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    const [menuRefs, rawValues, edgeList, toppingList, compositionList, masters] = await Promise.all([
+    const [menuRefs, rawValues, edgeList, toppingList, compositionList, masters, setCompList] = await Promise.all([
       getAllMenuRefs(), getRawValueMap(),
       getAllEdges(), getAllToppings(), getAllCompositions(),
-      getAllMenuMaster(),
+      getAllMenuMaster(), getAllSetCompositions(),
     ]);
     const edgeMap = Object.fromEntries(edgeList.map(edge => [edge.edgeCode, edge]));
-    setMenus(menuRefs);
+    setMenus([...menuRefs].sort((a, b) => (a.menuCode || '').localeCompare(b.menuCode || '', 'ko')));
     setMenuMasters(masters);
     setRawMap(rawValues);
     setEdges(edgeList);
     setEdgeMap(edgeMap);
     setToppings(toppingList);
     setCompositions(compositionList);
+    setSetComps(setCompList);
     setLoading(false);
   }, []);
 
@@ -128,7 +131,7 @@ export default function Page() {
                 </button>
               ))}
             </div>
-            {(tab === 0 || tab === 2 || tab === 4) && (
+            {(tab === 0 || tab === 2 || tab === 4) && !loading && (
               <div style={{ flex: '0 0 220px' }}>
                 <SearchBox value={menuSearch} onChange={setMenuSearch} placeholder="메뉴명·코드 검색" />
               </div>
@@ -137,9 +140,10 @@ export default function Page() {
 
           {tab === 0 && <TabBase             menus={filteredMenus} rawMap={rawMap} onRefresh={load} menuMasters={menuMasters} />}
           {tab === 1 && <TabEdge             edges={edges} edgeMap={edgeMap} onRefresh={load} />}
-          {tab === 2 && <TabDerived          menus={filteredMenus} toppings={toppings} compositions={compositions} onRefresh={load} />}
+          {tab === 2 && <TabDerived          menus={filteredMenus} toppings={toppings} compositions={compositions} onRefresh={load} menuMasters={menuMasters} />}
           {tab === 3 && <TabIngredientValues onRefresh={load} />}
-          {tab === 4 && <TabResults          menus={filteredMenus} rawMap={rawMap} edgeMap={edgeMap} compositions={compositions} toppings={toppings} />}
+          {tab === 4 && <TabResults          menus={filteredMenus} rawMap={rawMap} edgeMap={edgeMap} compositions={compositions} toppings={toppings} menuMasters={menuMasters} />}
+          {tab === 5 && <TabSetCalc          menus={menus} rawMap={rawMap} edgeMap={edgeMap} setComps={setComps} menuMasters={menuMasters} onRefresh={load} />}
         </div>
       )}
     </main>

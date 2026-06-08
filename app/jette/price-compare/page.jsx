@@ -1,7 +1,9 @@
 'use client';
-import { useRef, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { UploadDropzone } from '@/components/ui/UploadDropzone';
+import { showToast } from '@/components/Toast';
 import { useJettePrice } from '@/lib/price/use-price-upload';
 import { PriceLatestView } from '@/components/jette/PriceLatestView';
 import { PriceSummaryCards } from '@/components/jette/PriceSummaryCards';
@@ -30,8 +32,6 @@ export default function Page() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
-  const fileInputRef = useRef(null);
-
   const summary = useMemo(() => ({
     up:    diffRows.filter(r => r.changeStatus === '인상').length,
     down:  diffRows.filter(r => r.changeStatus === '인하').length,
@@ -59,28 +59,19 @@ export default function Page() {
                 }}
               />
             </label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              style={{display:'none'}}
-              onChange={e => {
-                const f = e.target.files?.[0];
-                if (f) handleFile(f, uploadDate);
-                e.target.value = '';
-              }}
-            />
-            <button
-              className="btn primary"
-              disabled={!ready || busy || !uploadDate}
-              onClick={() => fileInputRef.current?.click()}
-              style={{alignSelf:'flex-end'}}
-            >
-              <Icon.upload style={{width:14,height:14}}/>
-              {busy ? <><span style={{display:'inline-block',marginRight:4,animation:'spin 1s linear infinite'}}>⟳</span>업로드 중…</> : '가격 파일 업로드'}
-            </button>
           </div>
         }
+      />
+
+      <UploadDropzone
+        disabled={!ready || busy || !uploadDate}
+        busyText="업로드 중..."
+        title="단가 엑셀(.xlsx) 또는 CSV 파일을 끌어다 놓으세요"
+        maxSizeMB={30}
+        onFile={(f, err) => {
+          if (err) { showToast(err, 'err'); return; }
+          handleFile(f, uploadDate);
+        }}
       />
 
       {files.length === 0 && ready ? (

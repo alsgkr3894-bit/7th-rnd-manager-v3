@@ -4,7 +4,7 @@ import { loadXlsx } from '@/lib/excel';
 import ReportBuilderShell from '@/components/report/ReportBuilderShell';
 import SalesReportControls from '@/components/report/SalesReportControls';
 import SalesKpiCards from '@/components/report/SalesKpiCards';
-import { fmtKRW, pad } from '@/lib/format';
+import { formatNumber, pad } from '@/lib/format';
 import { initDB } from '@/lib/db/init';
 import { getAll } from '@/lib/db';
 import { buildPeriodCompare } from '@/lib/sales/compare';
@@ -66,10 +66,10 @@ function MoverRow({ m, up, maxAbs }) {
           }}
         >
           {up ? '+' : ''}
-          {fmtKRW(m.delta)}
+          {formatNumber(m.delta)}
         </div>
         <div style={{ fontSize: 10, color: 'var(--text-4)', fontVariantNumeric: 'tabular-nums' }}>
-          {fmtKRW(m.quantity)}건
+          {formatNumber(m.quantity)}건
         </div>
       </div>
     </div>
@@ -122,7 +122,7 @@ function RankRow({ m, accent, valueColor, bestMax }) {
             fontVariantNumeric: 'tabular-nums',
           }}
         >
-          {fmtKRW(m.quantity)}건
+          {formatNumber(m.quantity)}건
         </div>
         <div style={{ fontSize: 10, color: 'var(--text-4)', fontVariantNumeric: 'tabular-nums' }}>
           전체 {m.rank}위
@@ -491,7 +491,7 @@ export default function Page() {
                   <div className="paper-legend-item" key={c.name}>
                     <span className="dot" style={{ background: c.color }} />
                     <span>{c.name}</span>
-                    <span className="num muted">{fmtKRW(c.value)}건</span>
+                    <span className="num muted">{formatNumber(c.value)}건</span>
                     <span
                       className="num"
                       style={{ fontWeight: 700, minWidth: 40, textAlign: 'right' }}
@@ -688,7 +688,7 @@ export default function Page() {
                       />
                       {cat} 순위 — {periodLabel}
                       <span className="num muted" style={{ fontSize: 11, marginLeft: 'auto' }}>
-                        합계 {fmtKRW(catTotal)}건
+                        합계 {formatNumber(catTotal)}건
                       </span>
                     </div>
 
@@ -777,7 +777,7 @@ export default function Page() {
                                   fontVariantNumeric: 'tabular-nums',
                                 }}
                               >
-                                {fmtKRW(m.quantity)}건
+                                {formatNumber(m.quantity)}건
                               </div>
                             </div>
                           );
@@ -801,10 +801,10 @@ export default function Page() {
                             <tr>
                               <td className="num">{i + 1}</td>
                               <td style={{ fontWeight: 600 }}>{m.name}</td>
-                              <td className="num right">{fmtKRW(m.quantity)}</td>
+                              <td className="num right">{formatNumber(m.quantity)}</td>
                               {opts.prevComp && (
                                 <td className="num right muted">
-                                  {m.prevQty > 0 ? fmtKRW(m.prevQty) : '—'}
+                                  {m.prevQty > 0 ? formatNumber(m.prevQty) : '—'}
                                 </td>
                               )}
                               {opts.prevComp && (
@@ -820,7 +820,7 @@ export default function Page() {
                                   }}
                                 >
                                   {m.delta !== 0
-                                    ? `${m.delta > 0 ? '+' : ''}${fmtKRW(m.delta)}`
+                                    ? `${m.delta > 0 ? '+' : ''}${formatNumber(m.delta)}`
                                     : '—'}
                                 </td>
                               )}
@@ -836,7 +836,7 @@ export default function Page() {
                                     └ {s.size}
                                   </td>
                                   <td className="num right muted" style={{ fontSize: 11 }}>
-                                    {fmtKRW(s.quantity)}
+                                    {formatNumber(s.quantity)}
                                   </td>
                                   {opts.prevComp && <td />}
                                   {opts.prevComp && <td />}
@@ -924,8 +924,8 @@ export default function Page() {
                               <tr key={m.name}>
                                 <td className="num">{i + 1}</td>
                                 <td style={{ fontWeight: 600 }}>{m.name}</td>
-                                <td className="num right">{fmtKRW(m.a)}</td>
-                                <td className="num right muted">{m.b > 0 ? fmtKRW(m.b) : '—'}</td>
+                                <td className="num right">{formatNumber(m.a)}</td>
+                                <td className="num right muted">{m.b > 0 ? formatNumber(m.b) : '—'}</td>
                                 <td
                                   className="num right"
                                   style={{
@@ -937,7 +937,7 @@ export default function Page() {
                                           : 'inherit',
                                   }}
                                 >
-                                  {m.diff !== 0 ? `${m.diff > 0 ? '+' : ''}${fmtKRW(m.diff)}` : '—'}
+                                  {m.diff !== 0 ? `${m.diff > 0 ? '+' : ''}${formatNumber(m.diff)}` : '—'}
                                 </td>
                                 <td className="num right muted" style={{ fontSize: 11 }}>
                                   {m.pct != null
@@ -960,11 +960,11 @@ export default function Page() {
                       color: 'var(--text-3)',
                     }}
                   >
-                    합계 {fmtKRW(compareData.totalA)}건 →
+                    합계 {formatNumber(compareData.totalA)}건 →
                     {compareData.totalPct != null
                       ? ` ${compareData.totalPct >= 0 ? '+' : ''}${compareData.totalPct.toFixed(1)}%`
                       : ' —'}
-                    (전월 {fmtKRW(compareData.totalB)}건)
+                    (전월 {formatNumber(compareData.totalB)}건)
                   </div>
                 </>
               );

@@ -48,6 +48,8 @@ import { getAllSamples } from '@/lib/sample';
 import { KEYS } from '@/lib/note/keys';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
+import { getUploadFreshness } from '@/lib/stats/upload-status';
+import { getBackupReminder } from '@/lib/backup-history';
 
 // 홈 베스트/워스트·평균원가율 집계 카테고리 — 7번가만 '피자'로 한정, 그 외 브랜드는 전체
 const homeRankCategory = () => (getActiveBrandId() === 'main' ? '피자' : null);
@@ -92,7 +94,9 @@ export default function HomePage() {
   const [pipeline,    setPipeline]    = useState(null);
   const [weekSchedule, setWeekSchedule] = useState(null);
   const [priceChanges, setPriceChanges] = useState([]);
-  const [issues,      setIssues]      = useState([]);
+  const [issues,          setIssues]          = useState([]);
+  const [uploadFreshness, setUploadFreshness] = useState(null);
+  const [backupReminder,  setBackupReminder]  = useState(null);
 
   const [anchor, setAnchor] = useState(null); // {year, month} | null = auto-latest
   const [detectedPeriod, setDetectedPeriod] = useState(null);
@@ -134,8 +138,9 @@ export default function HomePage() {
         getTodayTodos(), getPipelineStats(), getWeekSchedule(),
         getRecentPriceChanges(6), getIssues(),
         getRecentActivities(8), getCostRateKpi(), getNoteKpi(),
+        getUploadFreshness(),
       ]);
-      const [an, sm, ca, tdo, pl, ws, pc, iss, ac, c, n] =
+      const [an, sm, ca, tdo, pl, ws, pc, iss, ac, c, n, uf] =
         live.map(r => (r.status === 'fulfilled' ? r.value : null));
       if (an) { setAllNotes(an); setReportingNotes(an.filter(x => x.status === '보고예정')); }
       if (sm) setRecentSamples(sm);
@@ -148,6 +153,8 @@ export default function HomePage() {
       if (ac) setActivities(ac);
       if (c) setCostKpi(c);
       if (n) setNoteKpi(n);
+      if (uf) setUploadFreshness(uf);
+      setBackupReminder(getBackupReminder());
 
       // 판매·차트·브리핑 — anchor(과거 월 탐색) 미설정일 때만 현재 기준 갱신.
       // anchor가 설정돼 있으면 anchor 전용 useEffect가 담당하므로 건드리지 않음.
@@ -188,6 +195,7 @@ export default function HomePage() {
   useEffect(() => {
     if (!dbReadyRef.current || !anchor) return;
     const a = anchor;
+    let isMounted = true;
     Promise.allSettled([
       getSalesKpi(a),
       getSalesTrend(chartTabRef.current, a),
@@ -196,6 +204,7 @@ export default function HomePage() {
       getTopMenusWithTrend(5, homeRankCategory(), true, 'asc', a),
       getMonthlyBriefing(a),
     ]).then(([s, td, dn, tp, bt, br]) => {
+      if (!isMounted) return;
       const val = r => r.status === 'fulfilled' ? r.value : null;
       if (val(s))  setSalesKpi(val(s));
       if (val(td)) { setTrend(val(td)); setChartKey(k => k + 1); }
@@ -204,6 +213,7 @@ export default function HomePage() {
       if (val(bt)) setBottom(val(bt));
       if (val(br)) setBriefing(val(br));
     }).catch(devError);
+    return () => { isMounted = false; };
   }, [anchor]);
 
   function shiftAnchor(delta) {
@@ -264,10 +274,28 @@ export default function HomePage() {
   const todayStr = new Date().toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
 
   // 인사말 서브라인
-  const alertCount = costAlertData ? costAlertData.items.filter(i => i.costRate > 40).length : 0;
-  const greetSub = (todos.length > 0 || alertCount > 0)
-    ? <>오늘 챙겨야 할 일 <b>{todos.length}건</b>{alertCount > 0 && <>, 원가율 경보 <b>{alertCount}건</b></>}이 있어요.</>
-    : '오늘도 좋은 하루 보내세요.';
+  const alertCount = costAlertData?.items?.filter(i => i.costRate > 40).length ?? 0;
+  const staleModules = [
+    uploadFreshness?.sales?.stale     && '판매량',
+    isMain && uploadFreshness?.shipment?.stale && '출고량',
+    isMain && uploadFreshness?.price?.stale    && '단가',
+  ].filter(Boolean);
+  const greetSub = (() => {
+    const hasTodos  = todos.length > 0;
+    const hasAlert  = alertCount > 0;
+    const hasStale  = staleModules.length > 0;
+    const hasBackup = backupReminder?.stale;
+    if (!hasTodos && !hasAlert && !hasStale && !hasBackup) return '오늘도 좋은 하루 보내세요.';
+    return (
+      <>
+        {hasTodos && <>오늘 할 일 <b>{todos.length}건</b></>}
+        {hasAlert && <>{hasTodos ? ', ' : ''}원가율 경보 <b>{alertCount}건</b></>}
+        {hasStale && <>{(hasTodos || hasAlert) ? ' · ' : ''}<b>{staleModules.join('·')}</b> 지난달 미업로드</>}
+        {hasBackup && <>{(hasTodos || hasAlert || hasStale) ? ' · ' : ''}{backupReminder.never ? '백업 이력 없음' : `${backupReminder.daysSince}일 전 마지막 백업`}</>}
+        {(hasTodos || hasAlert) ? '이 있어요.' : '.'}
+      </>
+    );
+  })();
 
   // 표시 여부 (데이터 없으면 null 반환하는 위젯은 미리 거른다)
   const openIssueCount = issues.filter(i => i.status === 'open').length;

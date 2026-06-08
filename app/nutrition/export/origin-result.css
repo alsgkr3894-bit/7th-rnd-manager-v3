@@ -17,7 +17,16 @@
   display: flex;
   gap: 0;
   border-bottom: 2px solid #333;
+  margin-bottom: 0;
+}
+.origin-result-tabs-top {
+  margin-bottom: 0;
+}
+.origin-result-subtabs {
+  border-top: none;
+  border-bottom: 2px solid #555;
   margin-bottom: 24px;
+  background: #f9f9f9;
 }
 .origin-result-tab {
   padding: 10px 20px;
@@ -38,6 +47,28 @@
   margin-bottom: -2px;
 }
 .origin-result-tab:hover:not(.active) { background: #eee; }
+/* 상위 탭 — 굵고 크게 */
+.origin-result-tabs-top .origin-result-tab {
+  font-size: 16px;
+  padding: 12px 28px;
+  border-color: #333;
+}
+.origin-result-tabs-top .origin-result-tab.active {
+  border-color: #333;
+  background: #fff;
+  color: #111;
+}
+/* 서브탭 — 한 단계 작게 */
+.origin-result-subtab {
+  font-size: 13px;
+  padding: 8px 18px;
+  background: #f9f9f9;
+}
+.origin-result-subtab.active {
+  background: #fff;
+  border-color: #555;
+  border-bottom: 2px solid #fff;
+}
 
 /* ── 액션 버튼 ────────────────────────────────────────────── */
 .origin-result-actions {
@@ -223,6 +254,29 @@
 .origin-result-notice.large {
   font-size: 15px;
   padding: 12px;
+}
+
+/* ── 원산지 정보(표기문) 텍스트 블록 ─────────────────────── */
+.origin-statement-box {
+  border: 1px solid #333;
+  border-bottom: none;
+  padding: 16px 22px;
+  background: #fff;
+  font-size: 15px;
+  line-height: 2;
+}
+.origin-statement-line {
+  margin: 0 0 6px;
+  word-break: keep-all;
+}
+.origin-statement-line:last-child { margin-bottom: 0; }
+.origin-statement-names { font-weight: 800; color: #111; }
+.origin-statement-paren { font-weight: 500; color: #333; margin-left: 1px; }
+
+/* ── 냉장고부착용 복수 원산지 줄바꿈 ─────────────────────── */
+.origin-multiline {
+  white-space: pre-line;
+  vertical-align: top;
 }
 
 /* ── 로딩 / 빈 상태 ───────────────────────────────────────── */

@@ -15,6 +15,7 @@ export function NoteDetailModal({ note, onClose, onEdit }) {
     ['테스트 날짜', note.testDate ? formatFullDate(note.testDate) : null],
     ['사용 재료',   note.materials],  ['맛 평가',     note.tasteEval],
     ['상무님 평가', note.managerEval], ['원가 검토',   note.costNote],
+    ['이슈',         note.issues],
     ['개선점',      note.improvements],['다음 액션',  note.nextAction],
     ['보고용 요약', note.reportSummary],
   ].filter(([,v]) => v);

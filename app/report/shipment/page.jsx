@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import ReportBuilderShell, { OptGroup, Check } from '@/components/report/ReportBuilderShell';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
-import { fmtKRW, fmtShort, formatNumber } from '@/lib/format';
+import { fmtShort, formatNumber } from '@/lib/format';
 import { AreaChart } from '@/components/charts/AreaChart';
 import { initDB } from '@/lib/db/init';
 import { getShipmentFiles, getShipmentRowsByFileId } from '@/lib/shipment/store-files';
@@ -80,7 +80,7 @@ function ItemTable({ items, maxQty }) {
                 </div>
               </td>
               <td className="num right">{formatNumber(p.totalQuantity)}</td>
-              <td className="num right muted">{fmtKRW(p.totalAmount)}원</td>
+              <td className="num right muted">{formatNumber(p.totalAmount)}원</td>
             </tr>
           );
         })}
@@ -347,21 +347,38 @@ export default function Page() {
         <>
           <OptGroup label="집계 기간">
             {availPeriods.length > 0 ? (
-              <select
-                className="period-select num"
-                value={`${shipYear}-${shipMonth}`}
-                onChange={e => {
-                  const [y, m] = e.target.value.split('-');
-                  setShipYear(parseInt(y, 10));
-                  setShipMonth(parseInt(m, 10));
-                }}
-              >
-                {availPeriods.map(p => (
-                  <option key={`${p.year}-${p.month}`} value={`${p.year}-${p.month}`}>
-                    {p.year}년 {p.month}월
-                  </option>
-                ))}
-              </select>
+              <>
+                <select
+                  className="period-select num"
+                  value={`${shipYear}-${shipMonth}`}
+                  onChange={e => {
+                    const [y, m] = e.target.value.split('-');
+                    setShipYear(parseInt(y, 10));
+                    setShipMonth(parseInt(m, 10));
+                  }}
+                >
+                  {availPeriods.map(p => (
+                    <option key={`${p.year}-${p.month}`} value={`${p.year}-${p.month}`}>
+                      {p.year}년 {p.month}월
+                    </option>
+                  ))}
+                </select>
+                <div style={{display:'flex', gap:4, marginTop:4}}>
+                  {(() => {
+                    const lm = new Date(); lm.setDate(1); lm.setMonth(lm.getMonth() - 1);
+                    const lmY = lm.getFullYear(), lmM = lm.getMonth() + 1;
+                    const tmY = new Date().getFullYear(), tmM = new Date().getMonth() + 1;
+                    const hasLm = availPeriods.some(p => p.year === lmY && p.month === lmM);
+                    const hasTm = availPeriods.some(p => p.year === tmY && p.month === tmM);
+                    return (<>
+                      <button className="btn sm" disabled={!hasLm}
+                        onClick={() => { setShipYear(lmY); setShipMonth(lmM); }}>지난달</button>
+                      <button className="btn sm" disabled={!hasTm}
+                        onClick={() => { setShipYear(tmY); setShipMonth(tmM); }}>이번달</button>
+                    </>);
+                  })()}
+                </div>
+              </>
             ) : (
               <div style={{ fontSize: 12, color: 'var(--text-3)' }}>업로드된 데이터가 없어요</div>
             )}

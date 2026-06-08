@@ -1,7 +1,9 @@
 'use client';
-import { useRef, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { UploadDropzone } from '@/components/ui/UploadDropzone';
+import { showToast } from '@/components/Toast';
 import { useJetteShipment } from '@/lib/shipment/use-shipment';
 import { ShipmentSummary } from '@/components/jette/ShipmentSummary';
 import { ShipmentTable } from '@/components/jette/ShipmentTable';
@@ -20,7 +22,6 @@ export default function Page() {
   } = useJetteShipment();
 
   const [period, setPeriod] = useState({ year: CURRENT_YEAR, month: CURRENT_MONTH });
-  const fileInputRef = useRef(null);
 
   // 데이터가 있는 년월만 유니크하게 추출
   const uniqueYMs = useMemo(() => {
@@ -50,29 +51,18 @@ export default function Page() {
         title="제때 제품 출고량"
         sub={`등록된 ${managedProducts.length}개 대상 제품의 출고량을 집계합니다. 대상 외 제품은 자동 제외.`}
         actions={
-          <div style={{display:'flex', gap:8, alignItems:'flex-end'}}>
-            <PeriodInput period={period} onChange={setPeriod}/>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              style={{display:'none'}}
-              onChange={e => {
-                const f = e.target.files?.[0];
-                if (f) handleFile(f, period);
-                e.target.value = '';
-              }}
-            />
-            <button
-              className="btn primary"
-              disabled={!ready || busy}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Icon.upload style={{width:14, height:14}}/>
-              {busy ? '업로드 중...' : '출고량 업로드'}
-            </button>
-          </div>
+          <PeriodInput period={period} onChange={setPeriod}/>
         }
+      />
+
+      <UploadDropzone
+        disabled={!ready || busy}
+        busyText="업로드 중..."
+        title="출고량 엑셀(.xlsx) 또는 CSV 파일을 끌어다 놓으세요"
+        onFile={(f, err) => {
+          if (err) { showToast(err, 'err'); return; }
+          handleFile(f, period);
+        }}
       />
 
       {/* 년월 조회 필터 — 데이터 있는 월만 버튼으로 표시 */}

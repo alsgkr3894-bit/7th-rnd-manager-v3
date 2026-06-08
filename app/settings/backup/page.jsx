@@ -14,7 +14,7 @@ import {
 } from '@/lib/db';
 import { downloadCsv, downloadJson, makeFileName } from '@/lib/download';
 import { formatNumber, formatRelative } from '@/lib/format';
-import { getHistory, addEntry, getLastBackupAt, togglePin } from '@/lib/backup-history';
+import { getHistory, addEntry, getLastBackupAt, togglePin, getBackupReminder } from '@/lib/backup-history';
 import { SettingTile } from '@/components/ui/SettingTile';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
@@ -39,6 +39,7 @@ export default function Page() {
   const [historyFilter, setHistoryFilter] = useState('all'); // all | pinned | week
   const [backupProgress, setBackupProgress] = useState(null);
   const [diagnostics, setDiagnostics] = useState(null);
+  const [backupReminder, setBackupReminder] = useState(null);
 
   useEffect(() => { setActiveBrand(getActiveBrand()); }, []);
 
@@ -55,6 +56,7 @@ export default function Page() {
     })();
     setHistory(getHistory());
     setLastBackupAt(getLastBackupAt());
+    setBackupReminder(getBackupReminder());
   }, []);
 
   // 선택된 모듈 키
@@ -194,6 +196,24 @@ export default function Page() {
           </div>
         )}
       </div>
+
+      {/* 백업 리마인더 */}
+      {backupReminder?.stale && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '10px 14px', borderRadius: 8, marginTop: 12,
+          background: 'var(--warn-soft)',
+          border: '1px solid color-mix(in oklab, var(--warn) 30%, transparent)',
+        }}>
+          <Icon.alert style={{ width: 16, height: 16, flexShrink: 0, color: 'var(--warn)' }} />
+          <span style={{ fontSize: 13 }}>
+            {backupReminder.never
+              ? <><b>아직 백업하지 않았어요.</b> 데이터를 정기적으로 백업해 두세요.</>
+              : <><b>마지막 백업 후 {backupReminder.daysSince}일이 지났어요.</b> 최신 데이터를 백업해 두세요.</>
+            }
+          </span>
+        </div>
+      )}
 
       {/* 요약 카드 */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:16,marginTop:8}}>

@@ -1,10 +1,11 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useRef, useState, useLayoutEffect } from 'react';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { Icon } from '@/components/icons';
 
 /**
  * 순서 변경 모달 — 드래그로 항목을 이동하고 위/아래 버튼도 지원.
+ * 항목 이동 시 FLIP 애니메이션으로 부드럽게 이동.
  * "적용"을 누르면 정렬된 key 배열을 onApply로 넘긴다.
  */
 export function ReorderModal({ title, items, onApply, onClose }) {
@@ -13,12 +14,67 @@ export function ReorderModal({ title, items, onApply, onClose }) {
   const [overIdx, setOverIdx] = useState(null);
   const dragNode = useRef(null);
 
-  /* ── 드래그 핸들러 ─────────────────────────────────── */
+  // FLIP: 이전 위치를 기억하는 Map (key → y좌표)
+  const prevRects = useRef(new Map());
+  const rowRefs = useRef([]);
+  const animating = useRef(new Set());
+
+  function captureRects() {
+    prevRects.current.clear();
+    rowRefs.current.forEach((el, i) => {
+      if (el) prevRects.current.set(list[i]?.key, el.getBoundingClientRect().top);
+    });
+  }
+
+  function playFlip() {
+    rowRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const key = list[i]?.key;
+      const prev = prevRects.current.get(key);
+      if (prev == null) return;
+      const next = el.getBoundingClientRect().top;
+      const dy = prev - next;
+      if (dy === 0) return;
+      // 이미 애니메이션 중인 항목은 즉시 초기화 후 재실행
+      if (animating.current.has(key)) {
+        el.style.transition = 'none';
+        el.style.transform = '';
+      }
+      animating.current.add(key);
+      el.style.transition = 'none';
+      el.style.transform = `translateY(${dy}px)`;
+      requestAnimationFrame(() => {
+        el.style.transition = 'transform 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        el.style.transform = 'translateY(0)';
+        el.addEventListener('transitionend', () => {
+          animating.current.delete(key);
+          el.style.transition = '';
+          el.style.transform = '';
+        }, { once: true });
+      });
+    });
+  }
+
+  // list 변경 시 FLIP 후처리
+  const pendingFlip = useRef(false);
+  useLayoutEffect(() => {
+    if (pendingFlip.current) {
+      playFlip();
+      pendingFlip.current = false;
+    }
+  });
+
+  function reorder(fn) {
+    captureRects();
+    pendingFlip.current = true;
+    setList(prev => fn([...prev]));
+  }
+
+  /* ── 드래그 핸들러 ─────────────────────────────── */
   function onDragStart(e, idx) {
     setDraggingIdx(idx);
     dragNode.current = idx;
     e.dataTransfer.effectAllowed = 'move';
-    // 반투명 드래그 이미지 (기본 유지)
   }
 
   function onDragEnter(e, idx) {
@@ -35,13 +91,13 @@ export function ReorderModal({ title, items, onApply, onClose }) {
   function onDrop(e, idx) {
     e.preventDefault();
     if (draggingIdx === null || draggingIdx === idx) { reset(); return; }
-    setList(prev => {
-      const next = [...prev];
-      const [item] = next.splice(draggingIdx, 1);
+    const from = draggingIdx;
+    reset();
+    reorder(next => {
+      const [item] = next.splice(from, 1);
       next.splice(idx, 0, item);
       return next;
     });
-    reset();
   }
 
   function onDragEnd() { reset(); }
@@ -52,12 +108,11 @@ export function ReorderModal({ title, items, onApply, onClose }) {
     dragNode.current = null;
   }
 
-  /* ── 버튼 이동 ─────────────────────────────────────── */
+  /* ── 버튼 이동 ─────────────────────────────────── */
   function move(idx, dir) {
     const j = idx + dir;
     if (j < 0 || j >= list.length) return;
-    setList(prev => {
-      const next = [...prev];
+    reorder(next => {
       [next[idx], next[j]] = [next[j], next[idx]];
       return next;
     });
@@ -79,6 +134,7 @@ export function ReorderModal({ title, items, onApply, onClose }) {
           return (
             <div
               key={it.key}
+              ref={el => { rowRefs.current[idx] = el; }}
               draggable
               onDragStart={e => onDragStart(e, idx)}
               onDragEnter={e => onDragEnter(e, idx)}
@@ -94,9 +150,9 @@ export function ReorderModal({ title, items, onApply, onClose }) {
                 cursor: 'grab',
                 transition: 'background 120ms, border-color 120ms, opacity 120ms',
                 userSelect: 'none',
+                willChange: 'transform',
               }}
             >
-              {/* 드래그 핸들 아이콘 (⠿ dots) */}
               <span style={{ color:'var(--text-4)', flexShrink:0, display:'flex', alignItems:'center', cursor:'grab' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <circle cx="9" cy="7" r="1.5"/><circle cx="15" cy="7" r="1.5"/>
