@@ -16,7 +16,7 @@ import {
   buildIngredientNutritionMap,
   findRecipeForMenu,
 } from '@/lib/nutrition/auto-calc';
-import { groupMenusOrdered } from '@/lib/nutrition/menu-group';
+import { groupMenusOrdered, resolveNutritionGroup } from '@/lib/nutrition/menu-group';
 
 const GROUP_HEADER_STYLE = {
   padding: '5px 14px 4px',
@@ -110,13 +110,15 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
         return;
       }
 
-      const calculated = calcNutritionFromComponents(recipe.ingredients, ingredientMap);
+      // 크러스트 끝 글자(L/R)로 레시피 사이즈 선택
+      const size = selCrust.endsWith('R') ? 'R' : 'L';
+      const calculated = calcNutritionFromComponents(recipe.ingredients, ingredientMap, size);
       if (!calculated) {
         showToast('매핑된 재료가 없어요. 재료 영양DB를 확인해주세요', 'warn');
         return;
       }
 
-      setAutoCalcPreview({ values: calculated });
+      setAutoCalcPreview(calculated); // { values, totalGrams, matched, total }
     } catch {
       showToast('자동 계산 중 오류가 발생했어요', 'error');
     } finally {
@@ -129,17 +131,19 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
     setSaving(true);
     try {
       const existing = rawMap[`${selMenu.menuCode}__${selCrust}`];
+      // 100g 기준 영양값 + 레시피 총중량을 중량(weight)에 자동 채움
+      const applied = { ...autoCalcPreview.values, weight: autoCalcPreview.totalGrams };
       await upsertRawValue({
         ...(existing?.id ? { id: existing.id } : {}),
         menuCode: selMenu.menuCode,
         menuName: selMenu.menuName,
         crustType: selCrust,
         ...form,
-        ...autoCalcPreview.values,
+        ...applied,
       });
-      setForm(f => ({ ...f, ...autoCalcPreview.values }));
+      setForm(f => ({ ...f, ...applied }));
       setAutoCalcPreview(null);
-      showToast('자동 계산값이 적용됐어요', 'ok');
+      showToast('자동 계산값이 적용됐어요 (100g 기준)', 'ok');
       onRefresh();
     } catch {
       showToast('저장 실패', 'error');
@@ -256,6 +260,12 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
               })}
             </div>
 
+            <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8, padding: '6px 10px', background: 'var(--surface-2)', borderRadius: 6, lineHeight: 1.5 }}>
+              ※ 영양성분 수치는 <strong>100g 기준</strong>으로 입력하세요.
+              {selMenu && resolveNutritionGroup(selMenu, Object.fromEntries((menuMasters || []).map(m => [m.menuCode, m]))) === '피자'
+                && <> · <strong>중량</strong>은 이 크러스트의 <strong>한판 총중량(g)</strong>을 입력하면 하프앤하프·세트·조각 계산에 사용됩니다.</>}
+            </div>
+
             <NutritionGrid values={form} onChange={setField} />
 
             <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
@@ -287,9 +297,19 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
           padding="24px 28px"
         >
           <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5 }}>
-            <strong style={{ color: 'var(--text-1)' }}>{selMenu?.menuName}</strong> 레시피 재료 기반으로 계산된 영양성분이에요.<br />
-            <span style={{ fontSize: 12 }}>적용하면 <strong>{selCrust}</strong> 크러스트에 아래 값이 입력됩니다.</span>
+            <strong style={{ color: 'var(--text-1)' }}>{selMenu?.menuName}</strong> 레시피 재료 기반 <strong>100g 기준</strong> 영양성분이에요.<br />
+            <span style={{ fontSize: 12 }}>적용하면 <strong>{selCrust}</strong> 크러스트에 아래 값 + 중량 <strong>{autoCalcPreview.totalGrams}g</strong>이 입력됩니다.</span>
           </div>
+          {autoCalcPreview.matched < autoCalcPreview.total && (
+            <div style={{ marginBottom: 12, fontSize: 12, padding: '8px 10px', borderRadius: 8, background: 'var(--warn-soft, #fff4e5)', color: 'var(--warn-text, #92600a)' }}>
+              ⚠ 재료 {autoCalcPreview.matched}/{autoCalcPreview.total}개만 영양DB에 매칭됐어요. 나머지는 계산에서 제외되어 값이 작을 수 있어요.
+            </div>
+          )}
+          {autoCalcPreview.matched === autoCalcPreview.total && (
+            <div style={{ marginBottom: 12, fontSize: 12, color: 'var(--text-4)' }}>
+              재료 {autoCalcPreview.matched}/{autoCalcPreview.total}개 전부 매칭됨
+            </div>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px 12px', marginBottom: 16 }}>
             {NUTRITION_FIELDS.filter(f => f.key !== 'weight').map(f => (
               <div key={f.key} style={{ background: 'var(--surface-2)', borderRadius: 8, padding: '8px 10px' }}>
@@ -303,7 +323,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
             ))}
           </div>
           <div style={{ fontSize: 11, color: 'var(--text-4)', marginBottom: 16 }}>
-            * 재료 영양값은 100g 기준으로 계산됩니다. 기존 입력값은 유지되고 영양성분 수치만 덮어씁니다.
+            * 재료 100g 기준값 × 사용량을 합산 후 총중량으로 나눠 100g 기준으로 정규화한 값입니다. 중량 칸도 함께 채워집니다.
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button className="btn" onClick={() => setAutoCalcPreview(null)}>취소</button>

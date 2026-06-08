@@ -234,7 +234,7 @@ function SlotEditor({ slot, allMenus, masterByCode, onChange, onRemove }) {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
 
-  const selected = slot.menuCodes || [];
+  const selected = useMemo(() => slot.menuCodes || [], [slot.menuCodes]);
 
   const matches = useMemo(() => {
     const lq = q.trim().toLowerCase();

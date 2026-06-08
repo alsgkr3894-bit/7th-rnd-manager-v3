@@ -80,6 +80,7 @@ function ImportRow({ row, idx, menuMasters, onToggle, onUpdate }) {
         )}
       </td>
       <td style={{ ...TD, fontFamily: 'monospace', fontSize: 11 }}>{row.crustType || '–'}</td>
+      <td style={TD}><FmtNum v={row.values.weight}  unit="g" /></td>
       <td style={TD}><FmtNum v={row.values.kcal}    unit="kcal" /></td>
       <td style={TD}><FmtNum v={row.values.sugar}   unit="g" /></td>
       <td style={TD}><FmtNum v={row.values.protein} unit="g" /></td>

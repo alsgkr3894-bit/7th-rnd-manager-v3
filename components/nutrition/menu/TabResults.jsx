@@ -102,6 +102,9 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, toppings, men
         <button className="btn sm" onClick={exportCsv} disabled={filtered.length === 0}>
           CSV 내보내기
         </button>
+        <span style={{ marginLeft: 'auto', alignSelf: 'center', fontSize: 11, fontWeight: 700, color: 'var(--accent-text)', background: 'var(--accent-soft)', padding: '3px 10px', borderRadius: 12 }}>
+          100g 기준
+        </span>
       </div>
 
       {!hasRows || (!hasData && !missingOnly) ? (

@@ -1,7 +1,8 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { initDB } from '@/lib/db';
 import { getAllMenuRefs, getRawValueMap, getAllEdges, getAllSetCompositions } from '@/lib/nutrition/values/store';
+import { getAllEdges as getCostEdges } from '@/lib/cost/edge-dough';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
@@ -13,8 +14,14 @@ import { getAllRecipes } from '@/lib/recipe';
 import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
 import { buildMenuAllergenMap } from '@/lib/nutrition/allergen/aggregate';
+import { loadOrder, applyOrder, MENU_ORDER_KEY } from '@/lib/nutrition/order';
+import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
+import { loadMenuNames, applyMenuName } from '@/lib/nutrition/menu-name-override';
+import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
+import { loadSliceCounts, saveSliceCounts } from '@/lib/nutrition/slice-config';
+import { SliceConfigModal } from '@/components/nutrition/SliceConfigModal';
 import {
-  buildPizzaSheet, buildToppingSheet, buildSideSheet,
+  buildPizzaSheet, buildPizzaSliceSheet, buildToppingSheet, buildSideSheet,
   buildSetHalfSheet, buildBeverageSheet, LABEL_COLS,
 } from '@/lib/nutrition/label/build';
 import { exportNutritionLabelToExcel } from '@/lib/nutrition/label/export';
@@ -33,54 +40,96 @@ const SUB_TABS = [
 const COL_STYLE = { textAlign: 'right', minWidth: 70, fontSize: 12, padding: '6px 8px' };
 const HEADER_STYLE = { ...COL_STYLE, background: '#f0f0f0', fontWeight: 700, fontSize: 11 };
 
+// 음료 컬럼 — 1회중량(g) 대신 용량(ml)
+const BEVERAGE_COLS = LABEL_COLS.map(c => (c.key === 'weight' ? { ...c, label: '용량', unit: 'ml' } : c));
+
 export default function NutritionLabelResult() {
   const [tab, setTab] = useState('pizza');
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
 
   const [pizzaSheet,   setPizzaSheet]   = useState([]);
+  const [pizzaSliceSheet, setPizzaSliceSheet] = useState([]);
   const [toppingSheet, setToppingSheet] = useState([]);
   const [sideSheet,    setSideSheet]    = useState([]);
   const [setHalfSheet, setSetHalfSheet] = useState([]);
   const [beverageSheet,setBeverageSheet]= useState([]);
 
+  const [pizzaView, setPizzaView] = useState('150g'); // '150g' | 'slice'
+  const [sliceCounts, setSliceCounts] = useState({});
+  const [sliceModalOpen, setSliceModalOpen] = useState(false);
+  const [labelContext, setLabelContext] = useState(null);
+  const ctxRef = useRef(null); // { menus, rawMap, edgeMap, masterByCode, menuAllergenMap }
+
+  // 조각 시트 재계산 (sliceCounts 변경 시 DB 재조회 없이)
+  const rebuildSliceSheet = (counts) => {
+    const c = ctxRef.current;
+    if (!c) return;
+    setPizzaSliceSheet(buildPizzaSliceSheet({ ...c, sliceCounts: counts }));
+  };
+
+  // 피자 그룹 메뉴 (조각수 설정 모달용)
+  const pizzaMenusForModal = useMemo(() => {
+    if (!labelContext) return [];
+    return labelContext.menus.filter(m => resolveNutritionGroup(m, labelContext.masterByCode) === '피자');
+  }, [labelContext]);
+
+  useEffect(() => {
+    setSliceCounts(loadSliceCounts());
+  }, []);
+
   useEffect(() => {
     (async () => {
       await initDB();
       const [menuRefs, rawMap, edgeList, setComps, masters,
-             ings, groups, pizzaRecs, personalRecs, sideRecs, setRecs, oldRecs] = await Promise.all([
+             ings, groups, costEdges, pizzaRecs, personalRecs, sideRecs, setRecs, oldRecs] = await Promise.all([
         getAllMenuRefs(), getRawValueMap(), getAllEdges(), getAllSetCompositions(), getAllMenuMaster(),
-        getAllIngredients(), getAllRecipeGroups(),
+        getAllIngredients(), getAllRecipeGroups(), getCostEdges(),
         getAllPizzaRecipes(), getAllPersonalRecipes(), getAllSideRecipes(), getAllSetRecipes(), getAllRecipes(),
       ]);
 
       const masterByCode = Object.fromEntries(masters.map(m => [m.menuCode, m]));
       const edgeMap = Object.fromEntries(edgeList.map(e => [e.edgeCode, e]));
 
-      // 알레르기 집계
+      // 알레르기 집계 — 원산지/알레르기 페이지와 동일하게 엣지(도우·크러스트) 포함
       const detailRecipes = tagDetailRecipes(pizzaRecs, personalRecs, sideRecs, setRecs);
       const { ingredientToMenus } = buildIngredientMenuMap({
         menuMasters: masters,
         detailRecipes,
         oldRecipes: oldRecs,
         groups,
-        edges: [],
+        edges: costEdges,
       });
       const menuAllergenMap = buildMenuAllergenMap({ ingredients: ings, ingredientToMenus });
 
-      const ctx = { menus: menuRefs, rawMap, edgeMap, masterByCode, menuAllergenMap, setComps };
+      // 출력 메뉴 전처리: 제외 필터 → 메뉴명 오버라이드 → 정렬 (원산지/알레르기 출력과 동일 규칙)
+      const { excludedMenuCodes, excludedMenuNames } = extractExcludedMenuSets(masters);
+      const nameOverrides = loadMenuNames();
+      const orderedMenus = applyOrder(
+        menuRefs
+          .filter(m => !excludedMenuCodes.has(m.menuCode) && !excludedMenuNames.has((m.menuName || '').trim()))
+          .map(m => ({ ...m, menuName: applyMenuName(m.menuCode, m.menuName, nameOverrides) })),
+        loadOrder(MENU_ORDER_KEY),
+        m => m.menuCode,
+        m => m.menuName,
+      );
+
+      const ctx = { menus: orderedMenus, rawMap, edgeMap, masterByCode, menuAllergenMap, setComps };
+      ctxRef.current = ctx;
+      setLabelContext(ctx);
       setPizzaSheet(buildPizzaSheet(ctx));
       setToppingSheet(buildToppingSheet(ctx));
       setSideSheet(buildSideSheet(ctx));
       setSetHalfSheet(buildSetHalfSheet(ctx));
       setBeverageSheet(buildBeverageSheet(ctx));
+      setPizzaSliceSheet(buildPizzaSliceSheet({ ...ctx, sliceCounts: loadSliceCounts() }));
     })().catch(console.error).finally(() => setLoading(false));
   }, []);
 
   async function handleExcel() {
     setExporting(true);
     try {
-      await exportNutritionLabelToExcel({ pizzaSheet, toppingSheet, sideSheet, setHalfSheet, beverageSheet });
+      await exportNutritionLabelToExcel({ pizzaSheet, pizzaSliceSheet, toppingSheet, sideSheet, setHalfSheet, beverageSheet });
       showToast('엑셀 다운로드 완료', 'ok');
     } catch (e) {
       showToast('엑셀 출력 실패: ' + e.message, 'err');
@@ -90,7 +139,13 @@ export default function NutritionLabelResult() {
   }
 
   function handlePdf() {
-    printNutritionLabelAll({ pizzaSheet, toppingSheet, sideSheet, setHalfSheet, beverageSheet });
+    printNutritionLabelAll({ pizzaSheet, pizzaSliceSheet, toppingSheet, sideSheet, setHalfSheet, beverageSheet });
+  }
+
+  function applySliceCounts(next) {
+    setSliceCounts(next);
+    saveSliceCounts(next);
+    rebuildSliceSheet(next);
   }
 
   if (loading) return (
@@ -122,14 +177,44 @@ export default function NutritionLabelResult() {
         </button>
       </div>
 
+      {/* 피자 뷰 토글 + 조각수 설정 */}
+      {tab === 'pizza' && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
+          {['150g', 'slice'].map(v => (
+            <button key={v}
+              className={'chip ' + (pizzaView === v ? 'active' : '')}
+              onClick={() => setPizzaView(v)}>
+              {v === '150g' ? '150g 기준' : '조각 기준'}
+            </button>
+          ))}
+          {pizzaView === 'slice' && (
+            <button className="btn sm" style={{ marginLeft: 'auto' }} onClick={() => setSliceModalOpen(true)}>
+              ⚙ 조각수 설정
+            </button>
+          )}
+        </div>
+      )}
+
       {/* 탭 내용 */}
       <div id="origin-print-area">
-        {tab === 'pizza'   && <PizzaTable rows={pizzaSheet} />}
+        {tab === 'pizza'   && (pizzaView === 'slice'
+          ? <PizzaSliceTable rows={pizzaSliceSheet} />
+          : <PizzaTable rows={pizzaSheet} />)}
         {tab === 'topping' && <SimpleTable title="추가토핑" rows={toppingSheet} />}
         {tab === 'side'    && <SimpleTable title="사이드·파스타" rows={sideSheet} />}
         {tab === 'set'     && <SetHalfTable rows={setHalfSheet} />}
-        {tab === 'drink'   && <SimpleTable title="음료" rows={beverageSheet} />}
+        {tab === 'drink'   && <SimpleTable title="음료" rows={beverageSheet} cols={BEVERAGE_COLS} />}
       </div>
+
+      {sliceModalOpen && (
+        <SliceConfigModal
+          pizzaMenus={pizzaMenusForModal}
+          masterByCode={ctxRef.current?.masterByCode || {}}
+          counts={sliceCounts}
+          onApply={applySliceCounts}
+          onClose={() => setSliceModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -186,7 +271,71 @@ function PizzaTable({ rows }) {
   );
 }
 
-function SimpleTable({ title, rows }) {
+function PizzaSliceTable({ rows }) {
+  if (!rows.length) return <Empty msg="피자 영양성분 데이터가 없어요. 베이스 영양성분(중량 포함)을 먼저 입력해주세요." />;
+  const nutCols = LABEL_COLS.filter(c => c.key !== 'weight');
+
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <div className="origin-result-title large">영양성분표 (피자) — 조각 기준</div>
+      <div style={{ fontSize: 11, color: '#888', margin: '0 0 6px' }}>
+        ※ 한판 총중량 ÷ 조각수로 1조각 산출. 1조각이 100kcal 이하면 100kcal를 넘는 최소 조각수를 1회 제공량으로 표기. 중량 미입력 시 '—'.
+      </div>
+      <table className="origin-result-table" style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed' }}>
+        <colgroup>
+          <col style={{ width: 150 }} />
+          <col style={{ width: 84 }} />
+          <col style={{ width: 36 }} />
+          <col style={{ width: 52 }} />
+          <col style={{ width: 64 }} />
+          <col style={{ width: 64 }} />
+          {nutCols.map(c => <col key={c.key} style={{ width: 70 }} />)}
+          <col style={{ width: 200 }} />
+        </colgroup>
+        <thead>
+          <tr>
+            <th style={HEADER_STYLE}>메뉴명</th>
+            <th style={HEADER_STYLE}>크러스트</th>
+            <th style={HEADER_STYLE}>L/R</th>
+            <th style={HEADER_STYLE}>조각수</th>
+            <th style={HEADER_STYLE}>1회제공</th>
+            <th style={HEADER_STYLE}>중량<br /><span style={{ fontWeight: 400, fontSize: 9 }}>(g)</span></th>
+            {nutCols.map(c => (
+              <th key={c.key} style={HEADER_STYLE}>{c.label}<br /><span style={{ fontWeight: 400, fontSize: 9 }}>({c.unit})</span></th>
+            ))}
+            <th style={HEADER_STYLE}>함유알레르기</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ menuName, rows: crustRows }) =>
+            crustRows.map((r, i) => (
+              <tr key={`${menuName}-${r.crustLabel}-${r.side}`}>
+                {i === 0 && (
+                  <td rowSpan={crustRows.length} style={{ fontWeight: 700, verticalAlign: 'middle', padding: '6px 8px', fontSize: 13, borderRight: '1px solid #ccc' }}>
+                    {menuName}
+                  </td>
+                )}
+                <td style={{ padding: '5px 8px', fontSize: 12 }}>{r.crustLabel}</td>
+                <td style={{ padding: '5px 6px', fontSize: 11, textAlign: 'center', color: '#666' }}>{r.side}</td>
+                <td style={{ ...COL_STYLE, textAlign: 'center' }}>{r.slice}</td>
+                <td style={{ ...COL_STYLE, textAlign: 'center', fontWeight: 600 }}>{r.servingLabel}</td>
+                <td style={COL_STYLE}>{(r.weight === '' || r.weight == null || r.weight === '—') ? <span style={{ color: '#aaa' }}>—</span> : r.weight}</td>
+                {nutCols.map(c => (
+                  <td key={c.key} style={COL_STYLE}>
+                    {(r[c.key] === '' || r[c.key] == null || r[c.key] === '—') ? <span style={{ color: '#aaa' }}>—</span> : r[c.key]}
+                  </td>
+                ))}
+                <td style={{ padding: '5px 8px', fontSize: 11 }}>{r.allergen || '—'}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SimpleTable({ title, rows, cols = LABEL_COLS }) {
   if (!rows.length) return <Empty msg={`${title} 영양성분 데이터가 없어요.`} />;
   return (
     <div style={{ overflowX: 'auto' }}>
@@ -195,7 +344,7 @@ function SimpleTable({ title, rows }) {
         <thead>
           <tr>
             <th style={{ ...HEADER_STYLE, textAlign: 'left', width: 200 }}>메뉴명</th>
-            {LABEL_COLS.map(c => (
+            {cols.map(c => (
               <th key={c.key} style={HEADER_STYLE}>{c.label}<br /><span style={{ fontWeight: 400, fontSize: 9 }}>({c.unit})</span></th>
             ))}
             <th style={{ ...HEADER_STYLE, textAlign: 'left' }}>함유알레르기</th>
@@ -205,7 +354,7 @@ function SimpleTable({ title, rows }) {
           {rows.map((r, i) => (
             <tr key={i}>
               <td style={{ padding: '6px 8px', fontWeight: 600, fontSize: 13 }}>{r.menuName}</td>
-              {LABEL_COLS.map(c => (
+              {cols.map(c => (
                 <td key={c.key} style={COL_STYLE}>
                   {(r[c.key] === '' || r[c.key] == null || r[c.key] === '—') ? <span style={{ color: '#aaa' }}>—</span> : r[c.key]}
                 </td>
