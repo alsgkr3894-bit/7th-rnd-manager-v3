@@ -388,6 +388,7 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--surface);
   position: sticky; top: 0; z-index: 5;
   border-bottom: 1px solid var(--border);
+  min-width: 0;
 }
 .topbar.scrolled { box-shadow: var(--shadow-md); backdrop-filter: blur(8px); background: color-mix(in srgb, var(--surface) 92%, transparent); }
 
@@ -472,6 +473,12 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 12px;
   color: var(--text-3);
+  min-width: 0;
+}
+.search-placeholder {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .search input {
   flex: 1; border: 0; outline: 0; background: transparent;
@@ -504,18 +511,26 @@ button { font-family: inherit; cursor: pointer; }
   padding: 4px 12px 4px 4px;
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 999px;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-width: 0;
   white-space: nowrap;
 }
+.profile > button { min-width: 0; }
 .profile .avatar {
   width: 32px; height: 32px; border-radius: 50%;
   background: linear-gradient(135deg, #FFB85C, #F97316);
   color: white; display: grid; place-items: center;
   font-weight: 800; font-size: 13px;
+  flex-shrink: 0;
 }
-.profile .who { display: flex; flex-direction: column; line-height: 1.2; white-space: nowrap; }
+.profile .who { display: flex; flex-direction: column; line-height: 1.2; white-space: nowrap; min-width: 0; }
 .profile .who .name { font-weight: 700; font-size: 13px; }
 .profile .who .role { font-size: 11px; color: var(--text-3); }
+.profile .who .name,
+.profile .who .role {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* ===== Main ===== */
 .main {
@@ -1311,6 +1326,26 @@ button { font-family: inherit; cursor: pointer; }
   .status-row { grid-template-columns: 1fr 1fr; }
   .status-row > :last-child { grid-column: span 2; }
   .quick.quick-5 { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+  .topbar {
+    gap: 8px;
+    padding: 12px 16px;
+  }
+  .topbar .company-pick {
+    padding: 6px 8px 6px 6px;
+  }
+  .topbar .company-pick > div:not(.company-logo):not(.company-avatar),
+  .topbar .company-pick .arrow,
+  .topbar .search kbd,
+  .topbar .profile .who {
+    display: none;
+  }
+  .topbar .search {
+    max-width: none;
+    padding: 9px 12px;
+  }
 }
 
 @media (max-width: 768px) {

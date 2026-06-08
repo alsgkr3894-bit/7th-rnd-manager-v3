@@ -1,7 +1,9 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { Icon } from '@/components/icons';
+import { showToast } from '@/components/Toast';
 import { KIND_COLOR, KIND_LABEL, KIND_EMOJI } from '@/lib/report/constants';
+import { printReportElements } from '@/lib/report/print';
 
 function ReportCover({ report }) {
   const color = KIND_COLOR[report.kind] || '#888';
@@ -130,11 +132,37 @@ const PAGE_COMPONENTS = [
   { title: '요약 정보',  render: (r) => <ReportSummaryPage report={r} /> },
 ];
 
-export function ReportPreviewModal({ report, onClose, onShare }) {
+function ReportPaper({ report, pageIndex }) {
+  const page = PAGE_COMPONENTS[pageIndex];
+  if (!page) return null;
+  return (
+    <div className="report-paper preview-paper">
+      {page.render(report)}
+      <div className="paper-foot" style={{marginTop:24}}>
+        <span>{pageIndex + 1} / {PAGE_COMPONENTS.length} — {page.title}</span>
+        <span className="mono">7번가 R&amp;D 플랫폼</span>
+      </div>
+    </div>
+  );
+}
+
+export function ReportPreviewModal({ report, onClose, onShare, printOnOpen = false }) {
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = PAGE_COMPONENTS.length;
   const onCloseRef = useRef(onClose);
+  const printSourceRef = useRef(null);
+  const didAutoPrintRef = useRef(false);
   useEffect(() => { onCloseRef.current = onClose; });
+
+  const handlePrint = useCallback(() => {
+    try {
+      const papers = printSourceRef.current?.querySelectorAll('.report-paper') || [];
+      printReportElements(papers, report);
+      showToast('PDF 출력 창을 열었어요', 'ok', 1600);
+    } catch (err) {
+      showToast(err?.message || 'PDF 출력 실패', 'error');
+    }
+  }, [report]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -146,8 +174,14 @@ export function ReportPreviewModal({ report, onClose, onShare }) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [totalPages]);
 
+  useEffect(() => {
+    if (!printOnOpen || didAutoPrintRef.current) return;
+    didAutoPrintRef.current = true;
+    const id = setTimeout(handlePrint, 0);
+    return () => clearTimeout(id);
+  }, [handlePrint, printOnOpen]);
+
   const pageTitle   = PAGE_COMPONENTS[currentPage - 1]?.title || '';
-  const PageContent = PAGE_COMPONENTS[currentPage - 1]?.render;
   const color       = KIND_COLOR[report.kind] || '#888';
   const createdAt   = report.createdAt
     ? new Date(report.createdAt).toLocaleString('ko-KR',{year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
@@ -190,7 +224,9 @@ export function ReportPreviewModal({ report, onClose, onShare }) {
             <button className="btn sm primary" onClick={() => { onShare?.(report); onClose(); }}>
               <Icon.upload style={{width:12,height:12}}/>공유
             </button>
-            <button className="btn sm"><Icon.download style={{width:12,height:12}}/>PDF</button>
+            <button className="btn sm" onClick={handlePrint}>
+              <Icon.download style={{width:12,height:12}}/>PDF
+            </button>
           </div>
           <div style={{borderTop:'1px solid var(--border)', marginTop:16, paddingTop:16,
             fontSize:11, color:'var(--text-4)'}}>
@@ -199,13 +235,7 @@ export function ReportPreviewModal({ report, onClose, onShare }) {
           </div>
         </div>
         <div className="preview-body">
-          <div className="report-paper preview-paper">
-            {PageContent && PageContent(report)}
-            <div className="paper-foot" style={{marginTop:24}}>
-              <span>{currentPage} / {totalPages} — {pageTitle}</span>
-              <span className="mono">7번가 R&amp;D 플랫폼</span>
-            </div>
-          </div>
+          <ReportPaper report={report} pageIndex={currentPage - 1} />
           <div className="preview-pager">
             <button className="pager-btn" onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1}>
               <Icon.chevLeft style={{width:16,height:16}}/>
@@ -215,6 +245,11 @@ export function ReportPreviewModal({ report, onClose, onShare }) {
               <Icon.chevRight style={{width:16,height:16}}/>
             </button>
           </div>
+        </div>
+        <div ref={printSourceRef} aria-hidden="true" style={{display:'none'}}>
+          {PAGE_COMPONENTS.map((_, index) => (
+            <ReportPaper key={index} report={report} pageIndex={index} />
+          ))}
         </div>
       </div>
     </div>

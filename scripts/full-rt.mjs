@@ -13,15 +13,19 @@ const { chromium } = pw;
 const BASE = 'http://localhost:3000';
 
 const MAIN_ROUTES = [
-  '/', '/menu-master', '/menu-sales/rank', '/menu-sales/rank-compare', '/menu-sales/settings',
-  '/cost/pizza', '/cost/side', '/cost/set', '/cost/personal', '/cost/edge-dough',
-  '/cost/all-summary', '/cost/margin', '/cost/recipe', '/cost/ingredient-price',
+  '/',
+  '/menu-master',
+  '/menu-sales', '/menu-sales/upload', '/menu-sales/rank', '/menu-sales/rank-compare',
+  '/menu-sales/compare', '/menu-sales/unmatched', '/menu-sales/settings',
+  '/jette', '/jette/price-compare', '/jette/shipment', '/jette/settings',
   '/ingredient/manage', '/ingredient/list', '/ingredient/usage',
-  '/note', '/note/write', '/note/board', '/note/calendar', '/note/sample',
-  '/nutrition/allergen', '/nutrition/origin',
-  '/jette/price-compare', '/jette/settings',
-  '/report', '/report/cost', '/report/sales',
-  '/settings/backup', '/settings/restore',
+  '/cost',
+  '/cost/pizza', '/cost/side', '/cost/set', '/cost/personal', '/cost/edge-dough',
+  '/cost/all-summary', '/cost/margin', '/cost/recipe', '/cost/ingredient-price', '/cost/manage',
+  '/nutrition', '/nutrition/menu', '/nutrition/allergen', '/nutrition/origin', '/nutrition/export',
+  '/note', '/note/write', '/note/board', '/note/calendar', '/note/journal', '/note/sample',
+  '/report', '/report/cost', '/report/sales', '/report/price', '/report/shipment', '/report/menu-sales-compare',
+  '/settings/system', '/settings/account', '/settings/backup', '/settings/restore',
 ];
 
 const CHINA4_ROUTES = [

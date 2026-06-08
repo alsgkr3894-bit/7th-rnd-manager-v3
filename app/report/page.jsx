@@ -76,6 +76,7 @@ export default function Page() {
   const [favOnly, setFavOnly] = useState(false);
   const [shareTarget, setShareTarget] = useState(null);
   const [previewTarget, setPreviewTarget] = useState(null);
+  const [previewPrintOnOpen, setPreviewPrintOnOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -539,14 +540,14 @@ export default function Page() {
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end' }}>
-                          <button className="btn sm" onClick={() => setPreviewTarget(r)}>
+                          <button className="btn sm" onClick={() => { setPreviewPrintOnOpen(false); setPreviewTarget(r); }}>
                             미리보기
                           </button>
                           <button className="btn sm" onClick={() => setShareTarget(r)}>
                             <Icon.upload style={{ width: 12, height: 12 }} />
                             공유
                           </button>
-                          <button className="btn sm" onClick={() => window.print()}>
+                          <button className="btn sm" onClick={() => { setPreviewPrintOnOpen(true); setPreviewTarget(r); }}>
                             <Icon.download style={{ width: 12, height: 12 }} />
                             PDF
                           </button>
@@ -660,9 +661,14 @@ export default function Page() {
       {previewTarget && (
         <ReportPreviewModal
           report={previewTarget}
-          onClose={() => setPreviewTarget(null)}
+          printOnOpen={previewPrintOnOpen}
+          onClose={() => {
+            setPreviewTarget(null);
+            setPreviewPrintOnOpen(false);
+          }}
           onShare={r => {
             setPreviewTarget(null);
+            setPreviewPrintOnOpen(false);
             setShareTarget(r);
           }}
         />

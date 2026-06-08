@@ -8,6 +8,8 @@ export const HOME_WIDGET_ROWS = [
   { id: 'recent',        keys: ['recent'],                   label: '최근 방문' },
   { id: 'briefing',      keys: ['briefing'],                 label: '이번 달 브리핑' },
   { id: 'kpi',           keys: ['kpi'],                      label: 'KPI 지표' },
+  { id: 'freshness',     keys: ['freshness'],                label: '데이터 신선도' },
+  { id: 'health',        keys: ['health'],                   label: '모듈별 헬스체크' },
   { id: 'todo-pair',     keys: ['todo', 'unmatched'],        label: '오늘 할 일 · 미매칭' },
   { id: 'pipeline-pair', keys: ['pipeline', 'schedule'],     label: '파이프라인 · 주간 일정' },
   { id: 'ranks',         keys: ['ranks'],                    label: '판매 순위' },

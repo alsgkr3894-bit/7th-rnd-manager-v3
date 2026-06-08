@@ -16,6 +16,13 @@
  * IndexedDB가 비어 있어도(빈 데이터) 통과해야 정상 — 빈 상태 UI 검증 목적.
  */
 import pw from '../node_modules/playwright/index.js';
+import {
+  cell,
+  isNextStaticAsset404,
+  isSmokePass,
+  resourcePathOf,
+  splitConsoleErrors,
+} from './smoke-qa-utils.mjs';
 
 const { chromium } = pw;
 const BASE = process.env.QA_BASE || 'http://localhost:3000';
@@ -65,9 +72,16 @@ async function main() {
   for (const [name, path] of ROUTES) {
     const page = await ctx.newPage();
     const consoleErrors = [];
+    const nextStatic404Urls = [];
     page.on('console', m => { if (m.type() === 'error') consoleErrors.push(m.text()); });
     page.on('pageerror', e => consoleErrors.push('PAGEERROR: ' + e.message));
-    page.on('response', r => { if (r.status() >= 500) consoleErrors.push(`HTTP${r.status()} ${r.url().split('/').slice(3).join('/').slice(0, 30)}`); });
+    page.on('response', r => {
+      if (isNextStaticAsset404(r.url(), r.status())) {
+        nextStatic404Urls.push(r.url());
+        return;
+      }
+      if (r.status() >= 500) consoleErrors.push(`HTTP${r.status()} ${resourcePathOf(r.url()).slice(0, 40)}`);
+    });
 
     const row = { name, path, h1: false, main: false, overflow: false, loading: false, errText: false, errs: 0 };
     try {
@@ -95,8 +109,14 @@ async function main() {
       row.innerW = probe.innerW;
       row.loading = probe.loading;
       row.errText = probe.errText;
-      row.errs = consoleErrors.length;
-      row.errSamples = consoleErrors.slice(0, 2);
+      const splitErrors = splitConsoleErrors(consoleErrors, {
+        ignorableNextStatic404Count: nextStatic404Urls.length,
+      });
+
+      row.errs = splitErrors.relevant.length;
+      row.errSamples = splitErrors.relevant.slice(0, 2);
+      row.ignoredErrs = splitErrors.ignored.length;
+      row.ignoredSamples = nextStatic404Urls.slice(0, 2).map(resourcePathOf);
     } catch (e) {
       row.fatal = e.message;
     }
@@ -106,13 +126,11 @@ async function main() {
   await browser.close();
 
   // ── 출력: 표 ──
-  const pass = r => !r.fatal && r.h1 && r.main && !r.overflow && !r.loading && !r.errText && r.errs === 0;
-  const cell = (v) => (v ? 'Y' : '·');
   console.log('\n  스모크 QA 결과 (viewport ' + VIEWPORT.width + 'px)\n');
   console.log('  결과  라우트              h1 main 가로 로딩 에러 콘솔  경로');
   console.log('  ' + '─'.repeat(78));
   for (const r of results) {
-    const ok = pass(r);
+    const ok = isSmokePass(r);
     const mark = r.fatal ? '💥FAIL' : ok ? '✅PASS' : '❌FAIL';
     const nm = r.name.padEnd(14, ' ');
     console.log(
@@ -121,9 +139,10 @@ async function main() {
     if (r.fatal)            console.log(`         └ 치명: ${r.fatal}`);
     if (r.overflow)         console.log(`         └ 가로스크롤: scrollWidth ${r.scrollW} > innerWidth ${r.innerW}`);
     if (r.errs > 0)         console.log(`         └ 콘솔: ${JSON.stringify(r.errSamples)}`);
+    if (r.ignoredErrs > 0)  console.log(`         └ 무시: Next dev 정적 리소스 404 ${r.ignoredErrs}건 ${JSON.stringify(r.ignoredSamples)}`);
   }
   console.log('  ' + '─'.repeat(78));
-  const passed = results.filter(pass).length;
+  const passed = results.filter(isSmokePass).length;
   console.log(`\n  ${passed}/${results.length} 통과\n`);
   process.exit(passed === results.length ? 0 : 1);
 }

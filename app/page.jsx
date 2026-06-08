@@ -40,6 +40,8 @@ import { UnmatchedWidget } from '@/components/home/UnmatchedWidget';
 import { PipelineWidget } from '@/components/home/PipelineWidget';
 import { ScheduleWidget } from '@/components/home/ScheduleWidget';
 import { PriceChangeWidget } from '@/components/home/PriceChangeWidget';
+import { DataFreshnessWidget } from '@/components/home/DataFreshnessWidget';
+import { ModuleHealthWidget } from '@/components/home/ModuleHealthWidget';
 import { WidgetConfigModal } from '@/components/home/WidgetConfigModal';
 import { WidgetShell } from '@/components/home/WidgetShell';
 import { useWidgetConfig, HOME_WIDGET_ROWS } from '@/hooks/useWidgetConfig';
@@ -416,6 +418,34 @@ export default function HomePage() {
               <WidgetShell key="kpi" widgetKey="kpi" label="KPI 지표" isCollapsed={isCollapsed('kpi')} onToggle={toggleCollapse}>
                 <HomeKpiRow salesKpi={salesKpi} costKpi={costKpi} noteKpi={noteKpi}
                   salesCount={salesCount} noteCount={noteCount}/>
+              </WidgetShell>
+            ) : null;
+
+          case 'freshness':
+            return isVisible('freshness') ? (
+              <WidgetShell key="freshness" widgetKey="freshness" label="데이터 신선도" isCollapsed={isCollapsed('freshness')} onToggle={toggleCollapse}>
+                <DataFreshnessWidget
+                  freshness={uploadFreshness}
+                  backupReminder={backupReminder}
+                  isMain={isMain}
+                  router={router}
+                />
+              </WidgetShell>
+            ) : null;
+
+          case 'health':
+            return isVisible('health') ? (
+              <WidgetShell key="health" widgetKey="health" label="모듈별 헬스체크" isCollapsed={isCollapsed('health')} onToggle={toggleCollapse}>
+                <ModuleHealthWidget
+                  freshness={uploadFreshness}
+                  backupReminder={backupReminder}
+                  issues={issues}
+                  costAlertData={costAlertData}
+                  todos={todos}
+                  pipeline={pipeline}
+                  isMain={isMain}
+                  router={router}
+                />
               </WidgetShell>
             ) : null;
 

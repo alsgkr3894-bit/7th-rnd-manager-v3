@@ -16,6 +16,7 @@ import {
 } from '@/lib/db';
 import { downloadJson, makeFileName, readFileAsText } from '@/lib/download';
 import { addEntry } from '@/lib/backup-history';
+import { validateBackupPayload } from '@/lib/backup/validation';
 import { formatNumber } from '@/lib/format';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
@@ -78,21 +79,17 @@ export default function Page() {
     try {
       const text = await readFileAsText(file);
       const data = JSON.parse(text);
-      if (!data || typeof data !== 'object' || Array.isArray(data))
-        throw new Error('잘못된 백업 파일 형식 (최상위 객체 누락)');
-      if (!data.stores || typeof data.stores !== 'object' || Array.isArray(data.stores))
-        throw new Error('잘못된 백업 파일 형식 (stores 객체 누락)');
-      const nonArrayStores = Object.entries(data.stores)
-        .filter(([, v]) => !Array.isArray(v)).map(([k]) => k);
-      if (nonArrayStores.length > 0)
-        throw new Error(`잘못된 백업 파일 형식 (stores 값이 배열이 아님: ${nonArrayStores.slice(0, 3).join(', ')})`);
-      if (data.version && data.version !== 'v3') {
+      const { backup, summary } = validateBackupPayload(data);
+      if (summary.versionMismatch) {
         showToast(
-          `백업 파일 버전(${data.version})이 현재(v3)와 다릅니다. 일부 데이터가 올바르게 복원되지 않을 수 있습니다.`,
+          `백업 파일 버전(${summary.version})이 현재(v3)와 다릅니다. 일부 데이터가 올바르게 복원되지 않을 수 있습니다.`,
           'warn', 6000
         );
       }
-      setParsed({ ...data, _fileName: file.name });
+      if (summary.unknownStores.length > 0) {
+        showToast(`알 수 없는 store ${summary.unknownStores.length}개는 복원에서 건너뜁니다.`, 'warn', 6000);
+      }
+      setParsed({ ...backup, _fileName: file.name, _summary: summary });
     } catch (err) {
       console.error('[Restore] 파일 파싱 실패:', err);
       showToast('백업 파일을 읽을 수 없습니다: ' + err.message, 'err');
@@ -132,6 +129,9 @@ export default function Page() {
   const missingStores = parsed && ready
     ? Object.keys(parsed.stores).filter(n => ALL_STORES.includes(n) && !hasStore(n))
     : [];
+  const unknownStores = parsed?._summary?.unknownStores || [];
+  const backupTotalRows = parsed?._summary?.totalRows
+    ?? (parsed ? Object.values(parsed.stores).reduce((s, r) => s + (Array.isArray(r) ? r.length : 0), 0) : 0);
 
   // 백업 파일 age (일)
   const backupAgeDays = parsed?.exportedAt
@@ -384,7 +384,7 @@ export default function Page() {
               <div>
                 <div style={{ fontSize: 12, color: 'var(--text-3)' }}>총 행</div>
                 <div className="num" style={{ fontWeight: 700, fontSize: 18 }}>
-                  {formatNumber(Object.values(parsed.stores).reduce((s, r) => s + (Array.isArray(r) ? r.length : 0), 0))}건
+                  {formatNumber(backupTotalRows)}건
                 </div>
               </div>
             </div>
@@ -398,6 +398,14 @@ export default function Page() {
                 </span>
                 <br/>
                 전체 복원을 원하면 먼저 <b>시스템 설정 → 위험 영역 → "DB 완전 재생성"</b>을 실행하세요.
+              </div>
+            )}
+            {unknownStores.length > 0 && (
+              <div style={{ marginTop: 10, padding: 12, background: 'var(--surface-2)', borderRadius: 8, fontSize: 13, color: 'var(--text-1)', lineHeight: 1.6 }}>
+                <b>알 수 없는 store는 복원에서 건너뜁니다.</b>{' '}
+                <span className="num" style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                  {unknownStores.slice(0, 5).join(', ')}{unknownStores.length > 5 ? ` 외 ${unknownStores.length - 5}개` : ''}
+                </span>
               </div>
             )}
           </div>

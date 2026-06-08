@@ -4,8 +4,7 @@ import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { KIND_CHIP } from '@/lib/report/constants';
-import { pad } from '@/lib/format';
-import { getActiveBrand } from '@/lib/active-brand';
+import { printReportElement } from '@/lib/report/print';
 
 export { KIND_CHIP };
 
@@ -64,63 +63,9 @@ export function Check({ label, value, onChange, hint }) {
   );
 }
 
-function makeReportTitle(reportMeta) {
-  const now = new Date();
-  const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
-  const rawPeriod = reportMeta?.period || '';
-  const periodPart = rawPeriod.replace(/(\d+)년 (\d+)월/, (_, y, m) => `${y}년${m.padStart(2, '0')}월`);
-  const rawName = reportMeta?.name || '보고서';
-  const namePart = rawName.replace(rawPeriod, '').trim().replace(/\s+/g, '');
-  return `${getActiveBrand().name}_${periodPart} ${namePart}_${dateStr}`;
-}
-
 function triggerPrint(reportMeta) {
   const preview = document.querySelector('.report-paper');
-  if (!preview) return;
-
-  const title = makeReportTitle(reportMeta);
-  const prevTitle = document.title;
-  document.title = title;
-
-  const printRoot = document.createElement('div');
-  printRoot.id = '__report-print-root';
-  printRoot.appendChild(preview.cloneNode(true));
-  document.body.appendChild(printRoot);
-
-  const style = document.createElement('style');
-  style.textContent = `
-    @media print {
-      @page { margin: 16mm; size: A4 portrait; }
-      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-      body > *:not(#__report-print-root) { display: none !important; }
-      #__report-print-root {
-        display: block !important;
-        background: #fff !important;
-      }
-      #__report-print-root .report-paper {
-        box-shadow: none !important;
-        min-height: unset !important;
-        border-radius: 0 !important;
-        border: none !important;
-      }
-      #__report-print-root .report-paper::before { display: none !important; }
-      .paper-cat-section + .paper-cat-section { break-before: page; }
-    }
-  `;
-  document.head.appendChild(style);
-
-  let done = false;
-  const cleanup = () => {
-    if (done) return;
-    done = true;
-    document.title = prevTitle;
-    printRoot.remove();
-    style.remove();
-  };
-
-  window.addEventListener('afterprint', cleanup, { once: true });
-  window.print();
-  setTimeout(cleanup, 5000);
+  printReportElement(preview, reportMeta);
 }
 
 export default function ReportBuilderShell({
