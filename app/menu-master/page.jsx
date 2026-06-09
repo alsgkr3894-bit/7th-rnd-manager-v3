@@ -396,7 +396,9 @@ export default function Page() {
   const [brandCats, setBrandCats] = useState(PIZZA_CATEGORIES);
   const mountedRef = useRef(true);
   // 마운트 후 실제 활성 브랜드 판별 — localStorage를 읽어 비-main이면 빈 프리셋으로 교정
-  useEffect(() => { setBrandCats(getActiveBrandId() === 'main' ? PIZZA_CATEGORIES : []); }, []);
+  useEffect(() => {
+    setBrandCats(getActiveBrandId() === 'main' ? PIZZA_CATEGORIES : []);
+  }, []);
 
   const load = useCallback(async () => {
     await initDB();
@@ -548,8 +550,9 @@ export default function Page() {
   // 표시용 카테고리 목록 — 7번가는 피자 프리셋, 타 브랜드는 데이터에 존재하는 분류
   const displayCategories = useMemo(() => {
     if (brandCats.length > 0) return brandCats;
-    return [...new Set(rows.map(r => r.category).filter(Boolean))]
-      .sort((a, b) => a.localeCompare(b, 'ko'));
+    return [...new Set(rows.map(r => r.category).filter(Boolean))].sort((a, b) =>
+      a.localeCompare(b, 'ko')
+    );
   }, [rows, brandCats]);
 
   const catCounts = useMemo(() => {
@@ -642,9 +645,9 @@ export default function Page() {
             <span className="unit">개</span>
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>
-            {displayCategories.map(
-              c => `${c} ${rows.filter(r => (r.category || '').startsWith(c)).length}`
-            ).join(' · ')}
+            {displayCategories
+              .map(c => `${c} ${rows.filter(r => (r.category || '').startsWith(c)).length}`)
+              .join(' · ')}
           </div>
         </div>
         <div className="stat-card">
@@ -949,7 +952,14 @@ export default function Page() {
                             {STATUS_LABEL[row.status] || row.status}
                           </span>
                         </td>
-                        <td style={{ textAlign: 'right', display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                        <td
+                          style={{
+                            textAlign: 'right',
+                            display: 'flex',
+                            gap: 4,
+                            justifyContent: 'flex-end',
+                          }}
+                        >
                           <button className="btn sm ghost" onClick={() => setEditRow(row)}>
                             <Icon.edit style={{ width: 13, height: 13 }} />
                           </button>
@@ -969,7 +979,13 @@ export default function Page() {
               </div>
             )}
             <div style={{ borderTop: '1px solid var(--divider)' }}>
-              <Pagination page={page} totalPages={totalPages} onPage={goTo} total={total} pageSize={60} />
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPage={goTo}
+                total={total}
+                pageSize={60}
+              />
               {totalPages <= 1 && (
                 <div style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text-3)' }}>
                   {filtered.length}개 표시 / 전체 {rows.length}개
@@ -991,7 +1007,13 @@ export default function Page() {
       )}
 
       {addOpen && (
-        <EditModal row={null} isNew onSave={handleSaveRow} onClose={() => setAddOpen(false)} presetCategories={brandCats} />
+        <EditModal
+          row={null}
+          isNew
+          onSave={handleSaveRow}
+          onClose={() => setAddOpen(false)}
+          presetCategories={brandCats}
+        />
       )}
 
       {bulkModal && <BulkPriceModal onClose={() => setBulkModal(false)} onDone={load} />}

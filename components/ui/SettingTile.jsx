@@ -15,14 +15,7 @@ import { asDisplayText } from '@/lib/ui/prop-guards';
  * @param {boolean} [mono=false]  monospace 폰트 (IP/코드 표시용)
  * @param {'card'|'tile'} [variant='card']
  */
-export function SettingTile({
-  label,
-  value,
-  sub,
-  num = false,
-  mono = false,
-  variant = 'card',
-}) {
+export function SettingTile({ label, value, sub, num = false, mono = false, variant = 'card' }) {
   const isTile = variant === 'tile';
   const safeLabel = asDisplayText(label);
   const safeValue = asDisplayText(value, '—');
@@ -47,7 +40,9 @@ export function SettingTile({
   return (
     <div className={isTile ? '' : 'card'} style={wrapStyle}>
       <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 6 }}>{safeLabel}</div>
-      <div className={num ? 'num' : ''} style={valueStyle}>{safeValue}</div>
+      <div className={num ? 'num' : ''} style={valueStyle}>
+        {safeValue}
+      </div>
       {safeSub && (
         <div
           style={{

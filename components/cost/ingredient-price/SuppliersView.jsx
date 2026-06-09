@@ -22,7 +22,12 @@ function SupplierModal({ initial, onSave, onClose }) {
   const isEdit = !!initial;
   const [form, setForm] = useState(
     initial
-      ? { name: initial.name || '', contact: initial.contact || '', phone: initial.phone || '', memo: initial.memo || '' }
+      ? {
+          name: initial.name || '',
+          contact: initial.contact || '',
+          phone: initial.phone || '',
+          memo: initial.memo || '',
+        }
       : emptyForm()
   );
   const [saving, setSaving] = useState(false);
@@ -33,7 +38,10 @@ function SupplierModal({ initial, onSave, onClose }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.name.trim()) { showToast('업체명을 입력해주세요'); return; }
+    if (!form.name.trim()) {
+      showToast('업체명을 입력해주세요');
+      return;
+    }
     setSaving(true);
     try {
       await onSave(form);
@@ -51,7 +59,6 @@ function SupplierModal({ initial, onSave, onClose }) {
       padding="24px 28px"
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-
         <div>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>
             업체명 <span style={{ color: 'var(--negative)', fontSize: 11 }}>*필수</span>
@@ -66,7 +73,9 @@ function SupplierModal({ initial, onSave, onClose }) {
         </div>
 
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>담당자</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>
+            담당자
+          </div>
           <input
             className="form-input"
             value={form.contact}
@@ -76,7 +85,9 @@ function SupplierModal({ initial, onSave, onClose }) {
         </div>
 
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>연락처</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>
+            연락처
+          </div>
           <input
             className="form-input"
             value={form.phone}
@@ -86,7 +97,9 @@ function SupplierModal({ initial, onSave, onClose }) {
         </div>
 
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>메모</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>
+            메모
+          </div>
           <textarea
             className="form-input"
             value={form.memo}
@@ -98,7 +111,9 @@ function SupplierModal({ initial, onSave, onClose }) {
         </div>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
-          <button type="button" className="btn" onClick={onClose}>취소</button>
+          <button type="button" className="btn" onClick={onClose}>
+            취소
+          </button>
           <button type="submit" className="btn primary" disabled={saving}>
             {saving ? '저장 중…' : isEdit ? '수정' : '등록'}
           </button>
@@ -110,11 +125,11 @@ function SupplierModal({ initial, onSave, onClose }) {
 
 // ── 공급업체 뷰 (식자재 단가 마스터 탭) ────────────────────────
 export function SuppliersView() {
-  const [suppliers,       setSuppliers]       = useState([]);
-  const [loading,         setLoading]         = useState(true);
-  const [dbError,         setDbError]         = useState(null);
-  const [search,          setSearch]          = useState('');
-  const [modalTarget,     setModalTarget]     = useState(null); // null | 'new' | supplierRecord
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dbError, setDbError] = useState(null);
+  const [search, setSearch] = useState('');
+  const [modalTarget, setModalTarget] = useState(null); // null | 'new' | supplierRecord
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const mountedRef = useRef(true);
 
@@ -171,18 +186,20 @@ export function SuppliersView() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return suppliers;
-    return suppliers.filter(s =>
-      (s.name    || '').toLowerCase().includes(q) ||
-      (s.contact || '').toLowerCase().includes(q) ||
-      (s.phone   || '').toLowerCase().includes(q)
+    return suppliers.filter(
+      s =>
+        (s.name || '').toLowerCase().includes(q) ||
+        (s.contact || '').toLowerCase().includes(q) ||
+        (s.phone || '').toLowerCase().includes(q)
     );
   }, [suppliers, search]);
 
-  if (dbError) return (
-    <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--negative)' }}>
-      데이터베이스 오류: {dbError}
-    </div>
-  );
+  if (dbError)
+    return (
+      <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--negative)' }}>
+        데이터베이스 오류: {dbError}
+      </div>
+    );
 
   return (
     <>
@@ -191,7 +208,15 @@ export function SuppliersView() {
       </div>
 
       {/* ── 툴바 ── */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 10,
+          marginBottom: 16,
+          alignItems: 'center',
+          flexWrap: 'wrap',
+        }}
+      >
         <div className="filter-search" style={{ flex: '1 1 200px', maxWidth: 320 }}>
           <Icon.search style={{ width: 13, height: 13, color: 'var(--text-3)', flexShrink: 0 }} />
           <input
@@ -200,7 +225,11 @@ export function SuppliersView() {
             placeholder="업체명·담당자·연락처 검색"
           />
         </div>
-        <button className="btn primary" style={{ marginLeft: 'auto' }} onClick={() => setModalTarget('new')}>
+        <button
+          className="btn primary"
+          style={{ marginLeft: 'auto' }}
+          onClick={() => setModalTarget('new')}
+        >
           <Icon.plus style={{ width: 13, height: 13 }} /> 공급업체 추가
         </button>
       </div>
@@ -211,46 +240,141 @@ export function SuppliersView() {
           로딩 중…
         </div>
       ) : suppliers.length === 0 ? (
-        <div className="card empty-state" style={{ minHeight: 200, display: 'grid', placeItems: 'center' }}>
+        <div
+          className="card empty-state"
+          style={{ minHeight: 200, display: 'grid', placeItems: 'center' }}
+        >
           <div style={{ textAlign: 'center', color: 'var(--text-3)' }}>
             <Icon.box style={{ width: 32, height: 32, opacity: 0.35, marginBottom: 10 }} />
             <div style={{ fontWeight: 600, marginBottom: 4 }}>등록된 공급업체가 없습니다</div>
-            <div style={{ fontSize: 13 }}>위 <b>공급업체 추가</b> 버튼으로 첫 업체를 등록해보세요.</div>
+            <div style={{ fontSize: 13 }}>
+              위 <b>공급업체 추가</b> 버튼으로 첫 업체를 등록해보세요.
+            </div>
           </div>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+        <div
+          className="card"
+          style={{ padding: 32, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}
+        >
           "{search}" 검색 결과가 없습니다
         </div>
       ) : (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--divider)', background: 'var(--surface-2)' }}>
-                <th style={{ padding: '9px 14px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: 'var(--text-3)' }}>업체명</th>
-                <th style={{ padding: '9px 14px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: 'var(--text-3)' }}>담당자</th>
-                <th style={{ padding: '9px 14px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: 'var(--text-3)' }}>연락처</th>
-                <th style={{ padding: '9px 14px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: 'var(--text-3)' }}>메모</th>
-                <th style={{ padding: '9px 14px', textAlign: 'right', fontSize: 12, fontWeight: 600, color: 'var(--text-3)', width: 100 }}></th>
+              <tr
+                style={{ borderBottom: '1px solid var(--divider)', background: 'var(--surface-2)' }}
+              >
+                <th
+                  style={{
+                    padding: '9px 14px',
+                    textAlign: 'left',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: 'var(--text-3)',
+                  }}
+                >
+                  업체명
+                </th>
+                <th
+                  style={{
+                    padding: '9px 14px',
+                    textAlign: 'left',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: 'var(--text-3)',
+                  }}
+                >
+                  담당자
+                </th>
+                <th
+                  style={{
+                    padding: '9px 14px',
+                    textAlign: 'left',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: 'var(--text-3)',
+                  }}
+                >
+                  연락처
+                </th>
+                <th
+                  style={{
+                    padding: '9px 14px',
+                    textAlign: 'left',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: 'var(--text-3)',
+                  }}
+                >
+                  메모
+                </th>
+                <th
+                  style={{
+                    padding: '9px 14px',
+                    textAlign: 'right',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: 'var(--text-3)',
+                    width: 100,
+                  }}
+                ></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((s, i) => (
-                <tr key={s.id} style={{ borderBottom: i < filtered.length - 1 ? '1px solid var(--divider)' : undefined }}>
+                <tr
+                  key={s.id}
+                  style={{
+                    borderBottom: i < filtered.length - 1 ? '1px solid var(--divider)' : undefined,
+                  }}
+                >
                   <td style={{ padding: '10px 14px', fontWeight: 600, fontSize: 13 }}>{s.name}</td>
-                  <td style={{ padding: '10px 14px', fontSize: 12, color: s.contact ? 'var(--text-2)' : 'var(--text-4)' }}>
+                  <td
+                    style={{
+                      padding: '10px 14px',
+                      fontSize: 12,
+                      color: s.contact ? 'var(--text-2)' : 'var(--text-4)',
+                    }}
+                  >
                     {s.contact || '—'}
                   </td>
-                  <td style={{ padding: '10px 14px', fontSize: 12, color: s.phone ? 'var(--text-2)' : 'var(--text-4)', fontFamily: s.phone ? 'monospace' : undefined }}>
+                  <td
+                    style={{
+                      padding: '10px 14px',
+                      fontSize: 12,
+                      color: s.phone ? 'var(--text-2)' : 'var(--text-4)',
+                      fontFamily: s.phone ? 'monospace' : undefined,
+                    }}
+                  >
                     {s.phone || '—'}
                   </td>
-                  <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-3)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <td
+                    style={{
+                      padding: '10px 14px',
+                      fontSize: 12,
+                      color: 'var(--text-3)',
+                      maxWidth: 200,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     {s.memo || ''}
                   </td>
                   <td style={{ padding: '10px 14px', textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                      <button className="btn xs" onClick={() => setModalTarget(s)}>수정</button>
-                      <button className="btn xs" style={{ color: 'var(--negative)' }} onClick={() => setPendingDeleteId(s.id)}>삭제</button>
+                      <button className="btn xs" onClick={() => setModalTarget(s)}>
+                        수정
+                      </button>
+                      <button
+                        className="btn xs"
+                        style={{ color: 'var(--negative)' }}
+                        onClick={() => setPendingDeleteId(s.id)}
+                      >
+                        삭제
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -275,7 +399,10 @@ export function SuppliersView() {
           open
           message="이 공급업체를 삭제할까요?"
           danger
-          onConfirm={() => { handleDelete(pendingDeleteId); setPendingDeleteId(null); }}
+          onConfirm={() => {
+            handleDelete(pendingDeleteId);
+            setPendingDeleteId(null);
+          }}
           onCancel={() => setPendingDeleteId(null)}
         />
       )}

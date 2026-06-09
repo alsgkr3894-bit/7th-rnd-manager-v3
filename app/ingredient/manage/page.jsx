@@ -55,11 +55,18 @@ const scopeToType = label =>
 const DUPLICATE_CHECKS = [
   { key: 'productCode', label: '제품코드', get: r => r.productCode },
   { key: 'jetteCode', label: '제때코드', get: r => r.jetteCode || r.jetteProductCode },
-  { key: 'displayName', label: '표시명', get: r => r.ingredientName || r.displayName || r.productName },
+  {
+    key: 'displayName',
+    label: '표시명',
+    get: r => r.ingredientName || r.displayName || r.productName,
+  },
 ];
 
 function duplicateKey(value) {
-  return String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '');
 }
 
 function rowLabel(row) {
@@ -152,10 +159,14 @@ export default function Page() {
       const metaRows = allMeta.filter(m => m.isManual || m.isSeeded).map(buildMetaOnlyRow);
       setRows(metaRows);
       const codeSetMeta = new Set(allMeta.filter(m => m.productCode).map(m => m.productCode));
-      setBrokenRefs(allMeta.filter(m =>
-        Array.isArray(m.compositeOf) && m.compositeOf.length > 0 &&
-        m.compositeOf.some(c => c && !codeSetMeta.has(c))
-      ));
+      setBrokenRefs(
+        allMeta.filter(
+          m =>
+            Array.isArray(m.compositeOf) &&
+            m.compositeOf.length > 0 &&
+            m.compositeOf.some(c => c && !codeSetMeta.has(c))
+        )
+      );
       return;
     }
 
@@ -182,9 +193,11 @@ export default function Page() {
 
     // compositeOf 참조 무결성 검사
     const codeSet = new Set(allMeta.filter(m => m.productCode).map(m => m.productCode));
-    const broken = allMeta.filter(m =>
-      Array.isArray(m.compositeOf) && m.compositeOf.length > 0 &&
-      m.compositeOf.some(c => c && !codeSet.has(c))
+    const broken = allMeta.filter(
+      m =>
+        Array.isArray(m.compositeOf) &&
+        m.compositeOf.length > 0 &&
+        m.compositeOf.some(c => c && !codeSet.has(c))
     );
     setBrokenRefs(broken);
   }, []);
@@ -203,7 +216,9 @@ export default function Page() {
   }, [catFilter]);
 
   // 검색어 변경 시에도 선택 초기화
-  useEffect(() => { setSelected(new Set()); }, [debouncedSearch]);
+  useEffect(() => {
+    setSelected(new Set());
+  }, [debouncedSearch]);
 
   async function handleSeed() {
     if (seeding) return;
@@ -265,7 +280,8 @@ export default function Page() {
           await updateIngredient(formTarget.id, formData);
           showToast('저장 완료', 'ok');
         } else {
-          if (!formTarget.productCode) throw new Error('제때 연동 항목에 productCode가 없습니다. 데이터를 확인해 주세요.');
+          if (!formTarget.productCode)
+            throw new Error('제때 연동 항목에 productCode가 없습니다. 데이터를 확인해 주세요.');
           await upsertIngredientMeta({ productCode: formTarget.productCode, ...formData });
           // 제때 연동 항목의 전용/범용 단일 출처 = 제때 관리품목(productType)
           await syncManagedScope(formTarget, formData.scope);
@@ -281,37 +297,36 @@ export default function Page() {
     [formTarget, load]
   );
 
-  const handleExclude = useCallback(async row => {
-    try {
-      if (row.isManual && row.id && !row.productCode) {
-        // deleteIngredient가 삭제된 원본 cost_ingredients 레코드를 반환 → 그걸로 복원
-        const backup = await deleteIngredient(row.id);
-        setRows(prev => prev.filter(r => !(r.isManual && r.id === row.id)));
-        showToast(
-          `"${row.ingredientName || row.displayName || '식자재'}" 삭제됨`,
-          'ok', 5000,
-          {
+  const handleExclude = useCallback(
+    async row => {
+      try {
+        if (row.isManual && row.id && !row.productCode) {
+          // deleteIngredient가 삭제된 원본 cost_ingredients 레코드를 반환 → 그걸로 복원
+          const backup = await deleteIngredient(row.id);
+          setRows(prev => prev.filter(r => !(r.isManual && r.id === row.id)));
+          showToast(`"${row.ingredientName || row.displayName || '식자재'}" 삭제됨`, 'ok', 5000, {
             label: '실행취소',
             onClick: async () => {
               if (backup) await restoreRecord('cost_ingredients', backup).catch(() => {});
               await load();
             },
-          }
-        );
-      } else {
-        await excludeIngredientByCode(row.productCode);
-        setRows(prev =>
-          prev.map(r =>
-            r.productCode === row.productCode ? { ...r, excluded: true, hasRecord: true } : r
-          )
-        );
-        showToast('숨겼습니다', 'ok');
+          });
+        } else {
+          await excludeIngredientByCode(row.productCode);
+          setRows(prev =>
+            prev.map(r =>
+              r.productCode === row.productCode ? { ...r, excluded: true, hasRecord: true } : r
+            )
+          );
+          showToast('숨겼습니다', 'ok');
+        }
+        setDeletePending(null);
+      } catch (err) {
+        showToast('실패: ' + err.message, 'err');
       }
-      setDeletePending(null);
-    } catch (err) {
-      showToast('실패: ' + err.message, 'err');
-    }
-  }, [load]);
+    },
+    [load]
+  );
 
   const handleRestore = useCallback(async productCode => {
     try {
@@ -326,14 +341,21 @@ export default function Page() {
   }, []);
 
   // 필터 변경 시 선택 Set 초기화 — 필터로 숨겨진 항목이 선택된 채로 일괄삭제되는 것 방지
-  const handleSetCatFilter = useCallback(val => { setCatFilter(val); setSelected(new Set()); }, []);
-  const handleSetTagFilter = useCallback(val => { setTagFilter(val); setSelected(new Set()); }, []);
+  const handleSetCatFilter = useCallback(val => {
+    setCatFilter(val);
+    setSelected(new Set());
+  }, []);
+  const handleSetTagFilter = useCallback(val => {
+    setTagFilter(val);
+    setSelected(new Set());
+  }, []);
   const handleDeleteCancel = useCallback(() => setDeletePending(null), []);
 
   const toggleSelect = useCallback(id => {
     setSelected(prev => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }, []);
@@ -411,7 +433,10 @@ export default function Page() {
       })).filter(check => check.groups.length > 0),
     [rows]
   );
-  const duplicateGroupCount = duplicateDiagnostics.reduce((sum, check) => sum + check.groups.length, 0);
+  const duplicateGroupCount = duplicateDiagnostics.reduce(
+    (sum, check) => sum + check.groups.length,
+    0
+  );
 
   // ── 필터링 ──
   const filtered = useMemo(() => {
@@ -462,7 +487,10 @@ export default function Page() {
               <IngredientBatchToolbar
                 selected={selected}
                 onDelete={handleBatchDelete}
-                onExit={() => { setBatchMode(false); setSelected(new Set()); }}
+                onExit={() => {
+                  setBatchMode(false);
+                  setSelected(new Set());
+                }}
               />
             ) : (
               <>
@@ -495,7 +523,10 @@ export default function Page() {
                 )}
                 <button
                   className="btn"
-                  onClick={() => { setBatchMode(true); setSelected(new Set()); }}
+                  onClick={() => {
+                    setBatchMode(true);
+                    setSelected(new Set());
+                  }}
                   disabled={rows.length === 0}
                 >
                   선택
@@ -547,9 +578,16 @@ export default function Page() {
             <Icon.box style={{ width: 32, height: 32, marginBottom: 12, opacity: 0.4 }} />
             <div style={{ fontWeight: 600, marginBottom: 4 }}>아직 데이터가 없습니다</div>
             <div style={{ fontSize: 13 }}>
-              {isMain
-                ? <>상단의 <b>마스터 시드</b> 버튼으로 80개 마스터 품목을 일괄 등록하거나, 제때 가격 파일을 업로드해주세요.</>
-                : <><b>식자재 추가</b> 버튼으로 직접 등록하거나, 제때 가격 파일을 업로드해주세요.</>}
+              {isMain ? (
+                <>
+                  상단의 <b>마스터 시드</b> 버튼으로 80개 마스터 품목을 일괄 등록하거나, 제때 가격
+                  파일을 업로드해주세요.
+                </>
+              ) : (
+                <>
+                  <b>식자재 추가</b> 버튼으로 직접 등록하거나, 제때 가격 파일을 업로드해주세요.
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -557,31 +595,54 @@ export default function Page() {
 
       {/* compositeOf 깨진 참조 경고 */}
       {brokenRefs.length > 0 && (
-        <div className="info-banner" style={{ marginBottom: 8, background: 'var(--warn-soft)', borderColor: 'var(--warn-soft)' }}>
+        <div
+          className="info-banner"
+          style={{
+            marginBottom: 8,
+            background: 'var(--warn-soft)',
+            borderColor: 'var(--warn-soft)',
+          }}
+        >
           <div className="info-banner-ico" style={{ background: 'var(--warn)', color: '#fff' }}>
             <Icon.alert style={{ width: 16, height: 16 }} />
           </div>
           <div style={{ fontSize: 13 }}>
             <b>복합 식자재 참조 오류 {brokenRefs.length}건</b> —{' '}
-            {brokenRefs.slice(0, 3).map(r => r.ingredientName).join(', ')}
-            {brokenRefs.length > 3 && ` 외 ${brokenRefs.length - 3}개`}가 존재하지 않는 코드를 compositeOf로 참조합니다.
+            {brokenRefs
+              .slice(0, 3)
+              .map(r => r.ingredientName)
+              .join(', ')}
+            {brokenRefs.length > 3 && ` 외 ${brokenRefs.length - 3}개`}가 존재하지 않는 코드를
+            compositeOf로 참조합니다.
           </div>
         </div>
       )}
 
       {duplicateGroupCount > 0 && (
-        <div className="info-banner" style={{ marginBottom: 8, background: 'var(--warn-soft)', borderColor: 'var(--warn-soft)' }}>
+        <div
+          className="info-banner"
+          style={{
+            marginBottom: 8,
+            background: 'var(--warn-soft)',
+            borderColor: 'var(--warn-soft)',
+          }}
+        >
           <div className="info-banner-ico" style={{ background: 'var(--warn)', color: '#fff' }}>
             <Icon.alert style={{ width: 16, height: 16 }} />
           </div>
           <div style={{ fontSize: 13, display: 'grid', gap: 6 }}>
             <div>
-              <b>중복 가능성 {duplicateGroupCount}그룹</b> — 제품코드·제때코드·표시명 기준으로 확인이 필요합니다.
+              <b>중복 가능성 {duplicateGroupCount}그룹</b> — 제품코드·제때코드·표시명 기준으로
+              확인이 필요합니다.
             </div>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {duplicateDiagnostics.flatMap(check =>
                 check.groups.slice(0, 3).map(group => (
-                  <span key={`${check.key}:${group.value}`} className="chip" title={group.rows.map(rowLabel).join(', ')}>
+                  <span
+                    key={`${check.key}:${group.value}`}
+                    className="chip"
+                    title={group.rows.map(rowLabel).join(', ')}
+                  >
                     {check.label} {group.value} · {group.rows.length}개
                   </span>
                 ))

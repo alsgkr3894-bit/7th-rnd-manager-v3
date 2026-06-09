@@ -18,7 +18,11 @@ import { MENU_ORDER_KEY, loadOrder, applyOrder } from '@/lib/nutrition/order';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
 import { loadMenuNames, applyMenuName } from '@/lib/nutrition/menu-name-override';
-import { loadIngredientNames, saveIngredientNames, applyIngredientName } from '@/lib/nutrition/ingredient-name-override';
+import {
+  loadIngredientNames,
+  saveIngredientNames,
+  applyIngredientName,
+} from '@/lib/nutrition/ingredient-name-override';
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import './origin-result.css';
@@ -56,16 +60,14 @@ function buildOriginsFromIngredients(
     const merged = new Map([...byName, ...byCode]);
 
     const menuCodes = [...merged.entries()]
-      .filter(
-        ([menuCode, meta]) => {
-          const safeMenuCode = asDisplayText(menuCode);
-          return (
-            !excludedCodes.has(menuCode) &&
-            !excludedCodes.has(safeMenuCode) &&
-            !excludedNames.has(asDisplayText(meta?.menuName).trim())
-          );
-        }
-      )
+      .filter(([menuCode, meta]) => {
+        const safeMenuCode = asDisplayText(menuCode);
+        return (
+          !excludedCodes.has(menuCode) &&
+          !excludedCodes.has(safeMenuCode) &&
+          !excludedNames.has(asDisplayText(meta?.menuName).trim())
+        );
+      })
       .map(([menuCode, meta]) => ({
         menuCode: asDisplayText(menuCode),
         menuName: applyMenuName(asDisplayText(menuCode), asDisplayText(meta?.menuName), overrides),
@@ -128,14 +130,19 @@ function buildSheet2(origins, ingOverrides = {}) {
           country: asDisplayText(it.country),
         };
         const k = `${item.displayName}||${item.country}`;
-        if (!seen.has(k)) { seen.add(k); items.push(item); }
+        if (!seen.has(k)) {
+          seen.add(k);
+          items.push(item);
+        }
       }
       return {
         ingredientName: applyIngredientName(asDisplayText(row.ingredientName), ingOverrides),
         items,
       };
     })
-    .sort((a, b) => asDisplayText(a.ingredientName).localeCompare(asDisplayText(b.ingredientName), 'ko'));
+    .sort((a, b) =>
+      asDisplayText(a.ingredientName).localeCompare(asDisplayText(b.ingredientName), 'ko')
+    );
 }
 
 /**
@@ -189,9 +196,14 @@ function buildSheet4(origins, ingOverrides = {}) {
       if (country && !arr.includes(country)) arr.push(country);
     }
     const breakdown = [...byDisplay.entries()]
-      .map(([dn, countries]) => `${dn} : ${countries.join(', ')}${countries.length > 1 ? ' 섞음' : ''}`)
+      .map(
+        ([dn, countries]) => `${dn} : ${countries.join(', ')}${countries.length > 1 ? ' 섞음' : ''}`
+      )
       .join(', ');
-    entries.push({ name: applyIngredientName(asDisplayText(row.ingredientName), ingOverrides), breakdown });
+    entries.push({
+      name: applyIngredientName(asDisplayText(row.ingredientName), ingOverrides),
+      breakdown,
+    });
   }
 
   // 동일 원산지 구성끼리 재료명 병합
@@ -205,7 +217,9 @@ function buildSheet4(origins, ingOverrides = {}) {
   // 재료명 ㄱㄴㄷ 순 — 그룹 내 재료명 정렬 후, 각 줄을 첫 재료명 기준으로 정렬
   return [...merged.entries()]
     .map(([breakdown, names]) => {
-      const sorted = [...names].sort((a, b) => asDisplayText(a).localeCompare(asDisplayText(b), 'ko'));
+      const sorted = [...names].sort((a, b) =>
+        asDisplayText(a).localeCompare(asDisplayText(b), 'ko')
+      );
       return { names: sorted.join(', '), breakdown, sortKey: sorted[0] || '' };
     })
     .sort((a, b) => a.sortKey.localeCompare(b.sortKey, 'ko'));
@@ -275,15 +289,15 @@ function Sheet2({ rows }) {
           {safeRows.map((r, i) => {
             const items = asObjectArray(r.items);
             return (
-            <tr key={`${asDisplayText(r.ingredientName)}-${i}`}>
-              <td>{asDisplayText(r.ingredientName)}</td>
-              <td className="origin-multiline">
-                {items.map(it => asDisplayText(it.displayName)).join('\n')}
-              </td>
-              <td className="origin-multiline">
-                {items.map(it => asDisplayText(it.country)).join('\n')}
-              </td>
-            </tr>
+              <tr key={`${asDisplayText(r.ingredientName)}-${i}`}>
+                <td>{asDisplayText(r.ingredientName)}</td>
+                <td className="origin-multiline">
+                  {items.map(it => asDisplayText(it.displayName)).join('\n')}
+                </td>
+                <td className="origin-multiline">
+                  {items.map(it => asDisplayText(it.country)).join('\n')}
+                </td>
+              </tr>
             );
           })}
         </tbody>
@@ -450,13 +464,22 @@ export default function OriginResult() {
     printOriginAll({ sheet1, sheet2, sheet3, sheet4 });
   }
 
-  if (loading) return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} style={{ height: 44, borderRadius: 8, background: 'var(--surface-2)', opacity: 1 - i * 0.12 }} />
-      ))}
-    </div>
-  );
+  if (loading)
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            style={{
+              height: 44,
+              borderRadius: 8,
+              background: 'var(--surface-2)',
+              opacity: 1 - i * 0.12,
+            }}
+          />
+        ))}
+      </div>
+    );
 
   return (
     <div className="origin-result-wrap">

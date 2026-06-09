@@ -8,10 +8,10 @@ import { buildMenuAllergenMap, allergenNames } from '@/lib/nutrition/allergen/ag
  */
 describe('buildMenuAllergenMap', () => {
   const ingredients = [
-    { productCode: 'DGH', ingredientName: '도우',   allergens: ['AL01'], category: '도우' }, // 도우(엣지) 유래
-    { productCode: 'CHZ', ingredientName: '치즈',   allergens: ['AL02'] },                    // 레시피 재료
+    { productCode: 'DGH', ingredientName: '도우', allergens: ['AL01'], category: '도우' }, // 도우(엣지) 유래
+    { productCode: 'CHZ', ingredientName: '치즈', allergens: ['AL02'] }, // 레시피 재료
     { productCode: 'OLD', ingredientName: '단종재료', allergens: ['AL04'], discontinued: true }, // 제외돼야 함
-    { productCode: 'EXC', ingredientName: '제외재료', allergens: ['AL05'], excluded: true },     // 제외돼야 함
+    { productCode: 'EXC', ingredientName: '제외재료', allergens: ['AL05'], excluded: true }, // 제외돼야 함
   ];
 
   // ingredientToMenus: Map<key, Map<menuCode, meta>> — 도우/치즈/단종 모두 PZ1에 연결

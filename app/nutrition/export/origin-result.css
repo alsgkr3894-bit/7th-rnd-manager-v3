@@ -8,7 +8,11 @@
 .origin-result-wrap {
   background: #fff;
   color: #111;
-  font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+  font-family:
+    'Pretendard Variable',
+    Pretendard,
+    -apple-system,
+    sans-serif;
   padding: 24px;
 }
 
@@ -46,7 +50,9 @@
   border-bottom: 2px solid #fff;
   margin-bottom: -2px;
 }
-.origin-result-tab:hover:not(.active) { background: #eee; }
+.origin-result-tab:hover:not(.active) {
+  background: #eee;
+}
 /* 상위 탭 — 굵고 크게 */
 .origin-result-tabs-top .origin-result-tab {
   font-size: 16px;
@@ -88,13 +94,17 @@
   font-family: inherit;
   border-radius: 4px;
 }
-.origin-result-btn:hover { background: #f0f0f0; }
+.origin-result-btn:hover {
+  background: #f0f0f0;
+}
 .origin-result-btn.primary {
   background: #1a56c0;
   color: #fff;
   border-color: #1a56c0;
 }
-.origin-result-btn.primary:hover { background: #1244a0; }
+.origin-result-btn.primary:hover {
+  background: #1244a0;
+}
 
 /* ── 공통 표 제목 ─────────────────────────────────────────── */
 .origin-result-title {
@@ -169,9 +179,15 @@
 }
 
 /* ── 원산지정보 표 ────────────────────────────────────────── */
-.origin-info-table col.col-cat  { width: 12%; }
-.origin-info-table col.col-menu { width: 20%; }
-.origin-info-table col.col-ing  { width: 68%; }
+.origin-info-table col.col-cat {
+  width: 12%;
+}
+.origin-info-table col.col-menu {
+  width: 20%;
+}
+.origin-info-table col.col-ing {
+  width: 68%;
+}
 
 .origin-info-table td.cat-cell {
   text-align: center;
@@ -179,12 +195,24 @@
   font-size: 13px;
   vertical-align: middle;
 }
-.origin-info-table td.cat-ps { color: #c0392b; }
-.origin-info-table td.cat-pr { color: #1a7a1a; }
-.origin-info-table td.cat-or { color: #1a4ec0; }
-.origin-info-table td.cat-hh { color: #7b3fa0; }
-.origin-info-table td.cat-one { color: #b05c00; }
-.origin-info-table td.cat-side { color: #2a7a6a; }
+.origin-info-table td.cat-ps {
+  color: #c0392b;
+}
+.origin-info-table td.cat-pr {
+  color: #1a7a1a;
+}
+.origin-info-table td.cat-or {
+  color: #1a4ec0;
+}
+.origin-info-table td.cat-hh {
+  color: #7b3fa0;
+}
+.origin-info-table td.cat-one {
+  color: #b05c00;
+}
+.origin-info-table td.cat-side {
+  color: #2a7a6a;
+}
 
 /* ── 원산지정보 하단 텍스트 ───────────────────────────────── */
 .origin-info-footer {
@@ -198,9 +226,15 @@
 }
 
 /* ── 원산지표지판 표 ──────────────────────────────────────── */
-.origin-sign-table col.col-item   { width: 30%; }
-.origin-sign-table col.col-origin { width: 35%; }
-.origin-sign-table col.col-menu   { width: 35%; }
+.origin-sign-table col.col-item {
+  width: 30%;
+}
+.origin-sign-table col.col-origin {
+  width: 35%;
+}
+.origin-sign-table col.col-menu {
+  width: 35%;
+}
 
 .origin-sign-table th {
   font-size: 16px;
@@ -213,9 +247,15 @@
 }
 
 /* ── 냉장고부착용 표 ──────────────────────────────────────── */
-.origin-fridge-table col.col-food   { width: 30%; }
-.origin-fridge-table col.col-item   { width: 30%; }
-.origin-fridge-table col.col-origin { width: 40%; }
+.origin-fridge-table col.col-food {
+  width: 30%;
+}
+.origin-fridge-table col.col-item {
+  width: 30%;
+}
+.origin-fridge-table col.col-origin {
+  width: 40%;
+}
 
 .origin-fridge-table th {
   font-size: 16px;
@@ -228,8 +268,12 @@
 }
 
 /* ── 배달플랫폼용 표 ──────────────────────────────────────── */
-.origin-delivery-table col.col-menu { width: 28%; }
-.origin-delivery-table col.col-ing  { width: 72%; }
+.origin-delivery-table col.col-menu {
+  width: 28%;
+}
+.origin-delivery-table col.col-ing {
+  width: 72%;
+}
 
 .origin-delivery-table th {
   font-size: 14px;
@@ -269,9 +313,18 @@
   margin: 0 0 6px;
   word-break: keep-all;
 }
-.origin-statement-line:last-child { margin-bottom: 0; }
-.origin-statement-names { font-weight: 800; color: #111; }
-.origin-statement-paren { font-weight: 500; color: #333; margin-left: 1px; }
+.origin-statement-line:last-child {
+  margin-bottom: 0;
+}
+.origin-statement-names {
+  font-weight: 800;
+  color: #111;
+}
+.origin-statement-paren {
+  font-weight: 500;
+  color: #333;
+  margin-left: 1px;
+}
 
 /* ── 냉장고부착용 복수 원산지 줄바꿈 ─────────────────────── */
 .origin-multiline {
@@ -291,7 +344,9 @@
 /* ── 인쇄 ─────────────────────────────────────────────────── */
 @media print {
   .origin-result-tabs,
-  .origin-result-actions { display: none !important; }
+  .origin-result-actions {
+    display: none !important;
+  }
 
   .origin-result-wrap {
     padding: 0;

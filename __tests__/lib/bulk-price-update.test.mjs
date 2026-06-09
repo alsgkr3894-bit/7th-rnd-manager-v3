@@ -19,12 +19,20 @@ describe('parseBulkPriceRows', () => {
   test('표준 한국어 헤더 인식', () => {
     const rows = [
       { 상품코드: 'A001', 재료명: '모짜렐라', 단가: 5000 },
-      { 상품코드: 'A002', 재료명: '피망',     단가: 1200 },
+      { 상품코드: 'A002', 재료명: '피망', 단가: 1200 },
     ];
     const result = parseBulkPriceRows(rows);
     expect(result).toHaveLength(2);
-    expect(result[0]).toMatchObject({ productCode: 'A001', ingredientName: '모짜렐라', newPrice: 5000 });
-    expect(result[1]).toMatchObject({ productCode: 'A002', ingredientName: '피망',     newPrice: 1200 });
+    expect(result[0]).toMatchObject({
+      productCode: 'A001',
+      ingredientName: '모짜렐라',
+      newPrice: 5000,
+    });
+    expect(result[1]).toMatchObject({
+      productCode: 'A002',
+      ingredientName: '피망',
+      newPrice: 1200,
+    });
   });
 
   test('대안 헤더 인식: 제품코드, 품목명, 가격', () => {
@@ -48,7 +56,7 @@ describe('parseBulkPriceRows', () => {
 
   test('상품코드 없는 행 스킵', () => {
     const rows = [
-      { 상품코드: '',    단가: 1000 },
+      { 상품코드: '', 단가: 1000 },
       { 상품코드: 'E001', 단가: 2000 },
     ];
     expect(parseBulkPriceRows(rows)).toHaveLength(1);
@@ -95,8 +103,8 @@ describe('parseBulkPriceRows', () => {
 describe('matchAndApply', () => {
   const existingIngredients = [
     { id: 1, productCode: 'A001', ingredientName: '모짜렐라', priceOverride: 4500 },
-    { id: 2, productCode: 'A002', ingredientName: '피망',     priceOverride: null },
-    { id: 3, productCode: 'B010', ingredientName: '소금',     priceOverride: 750 },
+    { id: 2, productCode: 'A002', ingredientName: '피망', priceOverride: null },
+    { id: 3, productCode: 'B010', ingredientName: '소금', priceOverride: 750 },
   ];
 
   test('정확한 매칭', () => {
@@ -131,7 +139,9 @@ describe('matchAndApply', () => {
   });
 
   test('대소문자 무시 매칭', () => {
-    const existing = [{ id: 10, productCode: 'abc123', ingredientName: '테스트', priceOverride: 1000 }];
+    const existing = [
+      { id: 10, productCode: 'abc123', ingredientName: '테스트', priceOverride: 1000 },
+    ];
     const parsed = [{ productCode: 'ABC123', newPrice: 2000 }];
     const { matched } = matchAndApply(parsed, existing);
     expect(matched).toHaveLength(1);
@@ -139,7 +149,9 @@ describe('matchAndApply', () => {
   });
 
   test('앞뒤 공백 무시 매칭', () => {
-    const existing = [{ id: 20, productCode: ' X001 ', ingredientName: '채소', priceOverride: 300 }];
+    const existing = [
+      { id: 20, productCode: ' X001 ', ingredientName: '채소', priceOverride: 300 },
+    ];
     const parsed = [{ productCode: 'X001', newPrice: 400 }];
     const { matched } = matchAndApply(parsed, existing);
     expect(matched).toHaveLength(1);
@@ -154,7 +166,7 @@ describe('matchAndApply', () => {
   test('productCode 없는 기존 식자재는 인덱싱 제외', () => {
     const existing = [
       { id: 99, productCode: '', ingredientName: '수동재료', priceOverride: 500 },
-      { id: 1,  productCode: 'A001', ingredientName: '모짜렐라', priceOverride: 4500 },
+      { id: 1, productCode: 'A001', ingredientName: '모짜렐라', priceOverride: 4500 },
     ];
     const parsed = [{ productCode: 'A001', newPrice: 5000 }];
     const { matched } = matchAndApply(parsed, existing);
@@ -167,12 +179,18 @@ describe('matchAndApply', () => {
       { id: 1, productCode: 'A001', ingredientName: '모짜렐라', priceOverride: null },
     ];
     // existing의 ingredientName이 있을 때
-    let { matched } = matchAndApply([{ productCode: 'A001', ingredientName: '치즈', newPrice: 100 }], existing);
+    let { matched } = matchAndApply(
+      [{ productCode: 'A001', ingredientName: '치즈', newPrice: 100 }],
+      existing
+    );
     expect(matched[0].name).toBe('모짜렐라');
 
     // ingredientName이 빈 문자열일 때 → parsedRow 우선
     const existing2 = [{ id: 2, productCode: 'B001', ingredientName: '', priceOverride: null }];
-    ({ matched } = matchAndApply([{ productCode: 'B001', ingredientName: '피망', newPrice: 200 }], existing2));
+    ({ matched } = matchAndApply(
+      [{ productCode: 'B001', ingredientName: '피망', newPrice: 200 }],
+      existing2
+    ));
     expect(matched[0].name).toBe('피망');
 
     // 둘 다 없을 때 → productCode

@@ -31,15 +31,15 @@ export function useSettingsSection({
   update,
   remove,
   getFormFromItem,
-  validateAdd   = () => true,
+  validateAdd = () => true,
   validateUpdate = () => true,
   messages = {},
 }) {
-  const [list,      setList]      = useState([]);
-  const [adding,    setAdding]    = useState(false);
+  const [list, setList] = useState([]);
+  const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [form,      setForm]      = useState(initialForm);
-  const [busy,      setBusy]      = useState(false);
+  const [form, setForm] = useState(initialForm);
+  const [busy, setBusy] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const mountedRef = useRef(false);
 
@@ -74,7 +74,9 @@ export function useSettingsSection({
       await reapplyToUploadedData();
     } catch (err) {
       showToast(err?.message || '추가 실패', 'err');
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleUpdate(id) {
@@ -89,7 +91,9 @@ export function useSettingsSection({
       await reapplyToUploadedData();
     } catch (err) {
       showToast(err?.message || '수정 실패', 'err');
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   }
 
   function requestDelete(id) {
@@ -144,11 +148,24 @@ export function useSettingsSection({
   }
 
   return {
-    list, adding, setAdding, editingId, setEditingId,
-    form, setForm, busy, pendingDeleteId,
-    refresh, handleAdd, handleUpdate,
-    requestDelete, cancelDelete, confirmDelete,
+    list,
+    adding,
+    setAdding,
+    editingId,
+    setEditingId,
+    form,
+    setForm,
+    busy,
+    pendingDeleteId,
+    refresh,
+    handleAdd,
+    handleUpdate,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
     handleDelete: requestDelete,
-    startEdit, resetAdding, cancelEdit,
+    startEdit,
+    resetAdding,
+    cancelEdit,
   };
 }

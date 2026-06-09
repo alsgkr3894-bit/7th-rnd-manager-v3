@@ -105,7 +105,11 @@ describe('jette dashboard guards', () => {
       totalAmount: 1700,
       typeCounts: { exclusive: 1, generic: 1, 'generic-managed': 1 },
     });
-    expect(aggregateShipmentRows).toHaveBeenCalledWith([{ productCode: 'A' }], [{ productCode: 'A' }], null);
+    expect(aggregateShipmentRows).toHaveBeenCalledWith(
+      [{ productCode: 'A' }],
+      [{ productCode: 'A' }],
+      null
+    );
   });
 
   test('최신 출고 파일의 기간이 잘못되면 출고 요약은 null이다', async () => {

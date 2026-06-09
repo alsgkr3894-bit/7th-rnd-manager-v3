@@ -33,22 +33,37 @@ export function UnmatchedWidget({ issues = [], router }) {
       </div>
 
       <div className="unmatch-top">
-        <div className="unmatch-num">{open.length}<span>건</span></div>
-        <div className="unmatch-desc">판매 데이터의 메뉴명이 마스터와 매칭되지 않아 통계에서 누락될 수 있어요.</div>
+        <div className="unmatch-num">
+          {open.length}
+          <span>건</span>
+        </div>
+        <div className="unmatch-desc">
+          판매 데이터의 메뉴명이 마스터와 매칭되지 않아 통계에서 누락될 수 있어요.
+        </div>
       </div>
 
       <div>
         {open.slice(0, 4).map((i, index) => {
           const quantity = Number(i.totalQuantity);
-          const rawName = asDisplayText(i.representativeRawMenuName || i.normalizedMenuName, '(미상)');
+          const rawName = asDisplayText(
+            i.representativeRawMenuName || i.normalizedMenuName,
+            '(미상)'
+          );
           const suggestedName = asDisplayText(i.normalizedMenuName, '확인 필요');
           return (
-          <button key={i.id ?? index} className="unmatch-row" onClick={go} style={{ width: '100%', border: 0, cursor: 'pointer' }}>
-            <span className="um-raw">{rawName}</span>
-            <Icon.chevRight className="um-arrow" style={{ width: 13, height: 13 }} />
-            <span className="um-sug">추정 <b>{suggestedName}</b></span>
-            {quantity > 0 && <span className="um-tag">{formatNumber(quantity)}개</span>}
-          </button>
+            <button
+              key={i.id ?? index}
+              className="unmatch-row"
+              onClick={go}
+              style={{ width: '100%', border: 0, cursor: 'pointer' }}
+            >
+              <span className="um-raw">{rawName}</span>
+              <Icon.chevRight className="um-arrow" style={{ width: 13, height: 13 }} />
+              <span className="um-sug">
+                추정 <b>{suggestedName}</b>
+              </span>
+              {quantity > 0 && <span className="um-tag">{formatNumber(quantity)}개</span>}
+            </button>
           );
         })}
       </div>
@@ -58,11 +73,17 @@ export function UnmatchedWidget({ issues = [], router }) {
           <span>이슈 처리 현황</span>
           <b style={{ color: 'var(--positive)' }}>{rate}%</b>
         </div>
-        <div className="mini-bar"><div style={{ width: `${rate}%`, background: 'var(--positive)' }} /></div>
-        <div className="mf-sub">전체 {safeIssues.length}건 중 {resolvedCount}건 처리 · {open.length}건 매칭 필요</div>
+        <div className="mini-bar">
+          <div style={{ width: `${rate}%`, background: 'var(--positive)' }} />
+        </div>
+        <div className="mf-sub">
+          전체 {safeIssues.length}건 중 {resolvedCount}건 처리 · {open.length}건 매칭 필요
+        </div>
       </div>
 
-      <button className="btn primary" style={{ width: '100%', marginTop: 14 }} onClick={go}>지금 매칭하기</button>
+      <button className="btn primary" style={{ width: '100%', marginTop: 14 }} onClick={go}>
+        지금 매칭하기
+      </button>
     </div>
   );
 }

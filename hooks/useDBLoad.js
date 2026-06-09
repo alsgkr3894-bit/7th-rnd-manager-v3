@@ -13,10 +13,10 @@ import { initDB } from '@/lib/db';
  * - reload  : call to re-run initDB + fetchFn manually
  */
 export function useDBLoad(fetchFn) {
-  const [data, setData]       = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
-  const [tick, setTick]       = useState(0);
+  const [error, setError] = useState(null);
+  const [tick, setTick] = useState(0);
 
   const reload = useCallback(() => setTick(n => n + 1), []);
 
@@ -38,8 +38,10 @@ export function useDBLoad(fetchFn) {
     }
 
     run();
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick]);
 
   return { data, loading, error, reload };

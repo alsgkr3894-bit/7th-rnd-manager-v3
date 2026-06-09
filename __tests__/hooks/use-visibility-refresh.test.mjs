@@ -1,8 +1,5 @@
 import { describe, expect, jest, test } from '@jest/globals';
-import {
-  invokeVisibilityRefresh,
-  isVisibleState,
-} from '../../hooks/useVisibilityRefresh.js';
+import { invokeVisibilityRefresh, isVisibleState } from '../../hooks/useVisibilityRefresh.js';
 
 describe('useVisibilityRefresh helpers', () => {
   test('visible 상태에서만 새로고침 대상으로 판단한다', () => {
@@ -20,7 +17,11 @@ describe('useVisibilityRefresh helpers', () => {
     const onError = jest.fn();
     const error = new Error('reload failed');
 
-    expect(invokeVisibilityRefresh(() => { throw error; }, onError)).toBe(false);
+    expect(
+      invokeVisibilityRefresh(() => {
+        throw error;
+      }, onError)
+    ).toBe(false);
     expect(onError).toHaveBeenCalledWith(error);
   });
 

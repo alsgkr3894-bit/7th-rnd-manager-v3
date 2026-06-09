@@ -135,10 +135,13 @@ export default function Page() {
     });
   }, [load]);
 
-  useEffect(() => () => {
-    if (animationTimerRef.current) clearTimeout(animationTimerRef.current);
-    if (panelTimerRef.current) clearTimeout(panelTimerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (animationTimerRef.current) clearTimeout(animationTimerRef.current);
+      if (panelTimerRef.current) clearTimeout(panelTimerRef.current);
+    },
+    []
+  );
 
   /* 달 이동 — 애니메이션 중 연속 클릭 방지 */
   const shiftMonth = useCallback(delta => {
@@ -360,7 +363,13 @@ export default function Page() {
           const meta = WORK_LOG_TYPES[item.type] || WORK_LOG_TYPES.OTHER;
           rows.push([
             date,
-            item.time || (item.at ? new Date(item.at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : ''),
+            item.time ||
+              (item.at
+                ? new Date(item.at).toLocaleTimeString('ko-KR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : ''),
             '작업일지',
             meta.label || item.type || '',
             item.type || '',
@@ -370,10 +379,11 @@ export default function Page() {
       }
     }
 
-    return rows.sort((a, b) =>
-      String(a[0]).localeCompare(String(b[0])) ||
-      String(a[1]).localeCompare(String(b[1])) ||
-      String(a[2]).localeCompare(String(b[2]), 'ko')
+    return rows.sort(
+      (a, b) =>
+        String(a[0]).localeCompare(String(b[0])) ||
+        String(a[1]).localeCompare(String(b[1])) ||
+        String(a[2]).localeCompare(String(b[2]), 'ko')
     );
   }, [notesByDate, samplesByDate, schedulesByDate, viewMode, viewMonth, viewYear, workLogsByDate]);
 
@@ -454,7 +464,11 @@ export default function Page() {
         sub="테스트 일지와 일정을 달력에서 함께 관리합니다"
         actions={
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn no-print" onClick={exportMonthCsv} disabled={monthEventRows.length === 0}>
+            <button
+              className="btn no-print"
+              onClick={exportMonthCsv}
+              disabled={monthEventRows.length === 0}
+            >
               <Icon.download style={{ width: 14, height: 14 }} /> CSV
             </button>
             <button
@@ -834,7 +848,10 @@ export default function Page() {
                     })}
                     {overflow > 0 && (
                       <button
-                        onClick={e => { e.stopPropagation(); setSelectedDay(key); }}
+                        onClick={e => {
+                          e.stopPropagation();
+                          setSelectedDay(key);
+                        }}
                         style={{
                           fontSize: 10,
                           color: 'var(--accent-text)',

@@ -27,39 +27,53 @@ function esc(s) {
 }
 
 /** 텍스트 → HTML (escape 후 줄바꿈을 <br>로 변환) */
-function txt(s) { return esc(s).replace(/\n/g, '<br>'); }
+function txt(s) {
+  return esc(s).replace(/\n/g, '<br>');
+}
 
 function buildPrintHtml(dateLabel, dayNotes) {
-  const noteCards = dayNotes.map((note, idx) => {
-    const statusStyle = STATUS_COLORS[note.status]
-      ? `background:${STATUS_COLORS[note.status].bg};color:${STATUS_COLORS[note.status].color};`
-      : 'background:#f3f3f3;color:#555;';
+  const noteCards = dayNotes
+    .map((note, idx) => {
+      const statusStyle = STATUS_COLORS[note.status]
+        ? `background:${STATUS_COLORS[note.status].bg};color:${STATUS_COLORS[note.status].color};`
+        : 'background:#f3f3f3;color:#555;';
 
-    const twoCol = (pairs) => {
-      const filled = pairs.filter(([, v]) => v);
-      if (!filled.length) return '';
-      return `<div class="two-col">${filled.map(([l, v]) =>
-        `<div class="field"><div class="field-label">${esc(l)}</div><div class="field-body">${txt(v)}</div></div>`
-      ).join('')}</div>`;
-    };
+      const twoCol = pairs => {
+        const filled = pairs.filter(([, v]) => v);
+        if (!filled.length) return '';
+        return `<div class="two-col">${filled
+          .map(
+            ([l, v]) =>
+              `<div class="field"><div class="field-label">${esc(l)}</div><div class="field-body">${txt(v)}</div></div>`
+          )
+          .join('')}</div>`;
+      };
 
-    const photos = (note.photos || []).length > 0
-      ? `<div class="photos">${(note.photos || []).map(p =>
-          `<div class="photo-wrap"><img src="${p.data}" alt="${esc(p.caption || p.name || '')}">${p.caption ? `<div class="photo-caption">${esc(p.caption)}</div>` : ''}</div>`
-        ).join('')}</div>`
-      : '';
+      const photos =
+        (note.photos || []).length > 0
+          ? `<div class="photos">${(note.photos || [])
+              .map(
+                p =>
+                  `<div class="photo-wrap"><img src="${p.data}" alt="${esc(p.caption || p.name || '')}">${p.caption ? `<div class="photo-caption">${esc(p.caption)}</div>` : ''}</div>`
+              )
+              .join('')}</div>`
+          : '';
 
-    const tags = (note.tags || '').split(',').map(t => t.trim()).filter(Boolean)
-      .map(t => `<span class="tag">#${esc(t)}</span>`).join('');
+      const tags = (note.tags || '')
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean)
+        .map(t => `<span class="tag">#${esc(t)}</span>`)
+        .join('');
 
-    return `
+      return `
       <div class="note-card">
         <div class="note-header">
           <div class="note-num">No.${idx + 1}</div>
           <div class="note-title">${esc(note.title) || '(제목 없음)'}</div>
           <div class="note-chips">
             ${note.noteType ? `<span class="chip chip-type">${esc(note.noteType)}</span>` : ''}
-            ${note.status  ? `<span class="chip" style="${statusStyle}">${esc(note.status)}</span>` : ''}
+            ${note.status ? `<span class="chip" style="${statusStyle}">${esc(note.status)}</span>` : ''}
           </div>
         </div>
         <div class="note-meta">
@@ -78,7 +92,8 @@ function buildPrintHtml(dateLabel, dayNotes) {
         ${photos}
         ${tags ? `<div class="tags">${tags}</div>` : ''}
       </div>`;
-  }).join('');
+    })
+    .join('');
 
   return `<!DOCTYPE html>
 <html lang="ko">
@@ -249,7 +264,10 @@ function buildPrintHtml(dateLabel, dayNotes) {
 function openPrintWindow(dateLabel, dayNotes) {
   const html = buildPrintHtml(dateLabel, dayNotes);
   const win = window.open('', '_blank', 'width=800,height=900');
-  if (!win) { showToast('팝업이 차단됐습니다. 팝업 허용 후 다시 시도해 주세요.', 'warn'); return; }
+  if (!win) {
+    showToast('팝업이 차단됐습니다. 팝업 허용 후 다시 시도해 주세요.', 'warn');
+    return;
+  }
   win.document.open();
   win.document.write(html);
   win.document.close();
@@ -258,27 +276,35 @@ function openPrintWindow(dateLabel, dayNotes) {
 // ── 메인 페이지 ─────────────────────────────────────────────
 export default function Page() {
   const router = useRouter();
-  const [notes,   setNotes]   = useState([]);
+  const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [date,    setDate]    = useState(() => new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   const load = useCallback(async () => {
     await initDB();
     setNotes(await getAllNotes());
   }, []);
 
-  useEffect(() => { load().catch(console.error).finally(() => setLoading(false)); }, [load]);
+  useEffect(() => {
+    load()
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [load]);
 
-  const dayNotes = useMemo(() =>
-    notes
-      .filter(n => (n.testDate || n.createdAt || '').slice(0, 10) === date)
-      .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')),
+  const dayNotes = useMemo(
+    () =>
+      notes
+        .filter(n => (n.testDate || n.createdAt || '').slice(0, 10) === date)
+        .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')),
     [notes, date]
   );
 
   const datesWithNotes = useMemo(() => {
     const s = new Set();
-    notes.forEach(n => { const d = (n.testDate || n.createdAt || '').slice(0, 10); if (d) s.add(d); });
+    notes.forEach(n => {
+      const d = (n.testDate || n.createdAt || '').slice(0, 10);
+      if (d) s.add(d);
+    });
     return [...s].sort().reverse();
   }, [notes]);
 
@@ -304,17 +330,23 @@ export default function Page() {
         actions={
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <button className="btn" onClick={goPrev} disabled={!hasPrev} title="이전 일자">
-              <Icon.arrowUp style={{ width: 14, height: 14, transform: 'rotate(-90deg)' }}/>
+              <Icon.arrowUp style={{ width: 14, height: 14, transform: 'rotate(-90deg)' }} />
             </button>
-            <input type="date" className="form-input" value={date}
-              onChange={e => { if (e.target.value) setDate(e.target.value); }}
-              style={{ width: 148 }}/>
+            <input
+              type="date"
+              className="form-input"
+              value={date}
+              onChange={e => {
+                if (e.target.value) setDate(e.target.value);
+              }}
+              style={{ width: 148 }}
+            />
             <button className="btn" onClick={goNext} disabled={!hasNext} title="다음 일자">
-              <Icon.arrowDown style={{ width: 14, height: 14, transform: 'rotate(-90deg)' }}/>
+              <Icon.arrowDown style={{ width: 14, height: 14, transform: 'rotate(-90deg)' }} />
             </button>
             {dayNotes.length > 0 && (
               <button className="btn primary" onClick={() => openPrintWindow(dateLabel, dayNotes)}>
-                <Icon.download style={{ width: 14, height: 14 }}/> PDF 출력
+                <Icon.download style={{ width: 14, height: 14 }} /> PDF 출력
               </button>
             )}
           </div>
@@ -324,7 +356,17 @@ export default function Page() {
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="card" style={{ padding: 20, height: 100, background: 'var(--surface-2)', borderColor: 'transparent', opacity: 1 - i * 0.15 }} />
+            <div
+              key={i}
+              className="card"
+              style={{
+                padding: 20,
+                height: 100,
+                background: 'var(--surface-2)',
+                borderColor: 'transparent',
+                opacity: 1 - i * 0.15,
+              }}
+            />
           ))}
         </div>
       ) : dayNotes.length === 0 ? (
@@ -333,14 +375,18 @@ export default function Page() {
             {date}에 작성된 테스트 노트가 없습니다.
           </div>
           <button className="btn primary" onClick={() => router.push('/note/write')}>
-            <Icon.plus style={{ width: 14, height: 14 }}/> 노트 작성
+            <Icon.plus style={{ width: 14, height: 14 }} /> 노트 작성
           </button>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 }}>
           {dayNotes.map((note, idx) => (
-            <WebJournalCard key={note.id} note={note} index={idx + 1}
-              onEdit={() => router.push(`/note/${note.id}`)}/>
+            <WebJournalCard
+              key={note.id}
+              note={note}
+              index={idx + 1}
+              onEdit={() => router.push(`/note/${note.id}`)}
+            />
           ))}
         </div>
       )}
@@ -355,39 +401,85 @@ function WebJournalCard({ note, index, onEdit }) {
   return (
     <div className="card" style={{ overflow: 'hidden', padding: 0 }}>
       {/* 헤더 */}
-      <div style={{
-        background: 'var(--surface-2)', borderBottom: '1px solid var(--divider)',
-        padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10,
-      }}>
-        <span style={{
-          fontSize: 12, fontWeight: 800, color: 'var(--text-3)',
-          minWidth: 30,
-        }}>No.{index}</span>
-        <span style={{ fontWeight: 700, fontSize: 15, flex: 1 }}>{note.title || '(제목 없음)'}</span>
+      <div
+        style={{
+          background: 'var(--surface-2)',
+          borderBottom: '1px solid var(--divider)',
+          padding: '10px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 800,
+            color: 'var(--text-3)',
+            minWidth: 30,
+          }}
+        >
+          No.{index}
+        </span>
+        <span style={{ fontWeight: 700, fontSize: 15, flex: 1 }}>
+          {note.title || '(제목 없음)'}
+        </span>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {note.noteType && (
-            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
-              background: 'var(--accent-soft)', color: 'var(--accent-text)' }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: 999,
+                background: 'var(--accent-soft)',
+                color: 'var(--accent-text)',
+              }}
+            >
               {note.noteType}
             </span>
           )}
           {note.status && (
-            <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, ...statusStyle }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                padding: '2px 8px',
+                borderRadius: 6,
+                ...statusStyle,
+              }}
+            >
               {note.status}
             </span>
           )}
           <button className="btn sm" onClick={onEdit} title="수정">
-            <Icon.edit style={{ width: 13, height: 13 }}/>
+            <Icon.edit style={{ width: 13, height: 13 }} />
           </button>
         </div>
       </div>
 
       {/* 메타 */}
       {(note.menuName || note.category) && (
-        <div style={{ padding: '6px 16px', fontSize: 13, color: 'var(--text-2)',
-          display: 'flex', gap: 16, borderBottom: '1px solid var(--divider)' }}>
-          {note.menuName && <span><b>메뉴:</b> {note.menuName}</span>}
-          {note.category && <span><b>구분:</b> {note.category}</span>}
+        <div
+          style={{
+            padding: '6px 16px',
+            fontSize: 13,
+            color: 'var(--text-2)',
+            display: 'flex',
+            gap: 16,
+            borderBottom: '1px solid var(--divider)',
+          }}
+        >
+          {note.menuName && (
+            <span>
+              <b>메뉴:</b> {note.menuName}
+            </span>
+          )}
+          {note.category && (
+            <span>
+              <b>구분:</b> {note.category}
+            </span>
+          )}
         </div>
       )}
 
@@ -395,42 +487,83 @@ function WebJournalCard({ note, index, onEdit }) {
         {/* 핵심 내용 */}
         {note.testContent && (
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)',
-              textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 6 }}>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--text-3)',
+                textTransform: 'uppercase',
+                letterSpacing: '.04em',
+                marginBottom: 6,
+              }}
+            >
               핵심 테스트 내용
             </div>
-            <div style={{
-              background: 'var(--surface-2)', borderRadius: 8, padding: '10px 14px',
-              fontSize: 13, lineHeight: 1.75, whiteSpace: 'pre-wrap',
-            }}>{note.testContent}</div>
+            <div
+              style={{
+                background: 'var(--surface-2)',
+                borderRadius: 8,
+                padding: '10px 14px',
+                fontSize: 13,
+                lineHeight: 1.75,
+                whiteSpace: 'pre-wrap',
+              }}
+            >
+              {note.testContent}
+            </div>
           </div>
         )}
 
         {/* 2열 필드 */}
-        <TwoColFields pairs={[
-          ['사용 재료', note.materials],
-          ['맛 평가', note.tasteEval],
-          ['상무님 평가', note.managerEval],
-          ['원가 검토', note.costNote],
-          ['개선점', note.improvements],
-          ['다음 액션', note.nextAction],
-        ]}/>
+        <TwoColFields
+          pairs={[
+            ['사용 재료', note.materials],
+            ['맛 평가', note.tasteEval],
+            ['상무님 평가', note.managerEval],
+            ['원가 검토', note.costNote],
+            ['개선점', note.improvements],
+            ['다음 액션', note.nextAction],
+          ]}
+        />
 
         {/* 사진 */}
         {note.photos?.length > 0 && (
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)',
-              textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--text-3)',
+                textTransform: 'uppercase',
+                letterSpacing: '.04em',
+                marginBottom: 8,
+              }}
+            >
               사진 ({note.photos.length}장)
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
               {note.photos.map((p, i) => (
                 <div key={i}>
-                  <img src={p.data} alt={p.caption || p.name}
-                    style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover',
-                      borderRadius: 6, display: 'block' }}/>
+                  <img
+                    src={p.data}
+                    alt={p.caption || p.name}
+                    style={{
+                      width: '100%',
+                      aspectRatio: '4/3',
+                      objectFit: 'cover',
+                      borderRadius: 6,
+                      display: 'block',
+                    }}
+                  />
                   {p.caption && (
-                    <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 3, textAlign: 'center' }}>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: 'var(--text-3)',
+                        marginTop: 3,
+                        textAlign: 'center',
+                      }}
+                    >
                       {p.caption}
                     </div>
                   )}
@@ -443,10 +576,24 @@ function WebJournalCard({ note, index, onEdit }) {
         {/* 태그 */}
         {note.tags && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {note.tags.split(',').map(t => t.trim()).filter(Boolean).map(t => (
-              <span key={t} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999,
-                background: 'var(--surface-2)', color: 'var(--text-3)' }}>#{t}</span>
-            ))}
+            {note.tags
+              .split(',')
+              .map(t => t.trim())
+              .filter(Boolean)
+              .map(t => (
+                <span
+                  key={t}
+                  style={{
+                    fontSize: 11,
+                    padding: '2px 8px',
+                    borderRadius: 999,
+                    background: 'var(--surface-2)',
+                    color: 'var(--text-3)',
+                  }}
+                >
+                  #{t}
+                </span>
+              ))}
           </div>
         )}
       </div>
@@ -461,11 +608,26 @@ function TwoColFields({ pairs }) {
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
       {filled.map(([label, value]) => (
         <div key={label}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)',
-            textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: 'var(--text-3)',
+              textTransform: 'uppercase',
+              letterSpacing: '.04em',
+              marginBottom: 4,
+            }}
+          >
             {label}
           </div>
-          <div style={{ fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap', color: 'var(--text-1)' }}>
+          <div
+            style={{
+              fontSize: 13,
+              lineHeight: 1.7,
+              whiteSpace: 'pre-wrap',
+              color: 'var(--text-1)',
+            }}
+          >
             {value}
           </div>
         </div>

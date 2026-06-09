@@ -217,10 +217,12 @@ export default function Page() {
         if (!menuMap.size) return null;
 
         const menus = [...menuMap.entries()]
-          .filter(([menuName, cat]) =>
-            !excludedMenus.has(menuName) &&
-            (usageCat === '전체' || cat === usageCat) &&
-            (!q || menuName.toLowerCase().includes(q)))
+          .filter(
+            ([menuName, cat]) =>
+              !excludedMenus.has(menuName) &&
+              (usageCat === '전체' || cat === usageCat) &&
+              (!q || menuName.toLowerCase().includes(q))
+          )
           .map(([menuName, cat]) => ({ menuName, cat }))
           .sort((a, b) => a.menuName.localeCompare(b.menuName, 'ko'));
         if (!menus.length) return null;
@@ -277,9 +279,11 @@ export default function Page() {
   const displayRows = useMemo(() => {
     let arr = sorted;
     if (onlyOne && !showUnused) arr = arr.filter(r => r.count === 1);
-    arr = showUnused ? arr : showHidden
-      ? arr.filter(r => hidden.has(keyOf(r)))
-      : arr.filter(r => !hidden.has(keyOf(r)));
+    arr = showUnused
+      ? arr
+      : showHidden
+        ? arr.filter(r => hidden.has(keyOf(r)))
+        : arr.filter(r => !hidden.has(keyOf(r)));
     return arr;
   }, [sorted, onlyOne, showHidden, showUnused, hidden]);
 
@@ -330,7 +334,16 @@ export default function Page() {
       {loading ? (
         <div className="card" style={{ padding: 20 }}>
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} style={{ height: 40, marginBottom: 8, borderRadius: 8, background: 'var(--surface-2)', opacity: 1 - i * 0.08 }} />
+            <div
+              key={i}
+              style={{
+                height: 40,
+                marginBottom: 8,
+                borderRadius: 8,
+                background: 'var(--surface-2)',
+                opacity: 1 - i * 0.08,
+              }}
+            />
           ))}
         </div>
       ) : allMeta.length === 0 ? (
@@ -351,7 +364,10 @@ export default function Page() {
             <div
               className="stat-card"
               style={{ cursor: 'pointer', outline: onlyOne ? '2px solid var(--warn)' : undefined }}
-              onClick={() => { setOnlyOne(v => !v); setShowUnused(false); }}
+              onClick={() => {
+                setOnlyOne(v => !v);
+                setShowUnused(false);
+              }}
             >
               <div className="stat-label">1개 메뉴만 사용 ⚠</div>
               <div
@@ -367,7 +383,10 @@ export default function Page() {
             </div>
             <div
               className="stat-card"
-              style={{ cursor: 'pointer', outline: showUnused ? '2px solid var(--accent)' : undefined }}
+              style={{
+                cursor: 'pointer',
+                outline: showUnused ? '2px solid var(--accent)' : undefined,
+              }}
               onClick={() => {
                 setShowUnused(v => !v);
                 setOnlyOne(false);
@@ -412,7 +431,9 @@ export default function Page() {
             <SearchBox
               value={menuSearch}
               onChange={setMenuSearch}
-              placeholder={showUnused ? '식자재명·제품코드 검색' : '메뉴명으로 사용 식자재 찾기 (예: 페퍼로니)'}
+              placeholder={
+                showUnused ? '식자재명·제품코드 검색' : '메뉴명으로 사용 식자재 찾기 (예: 페퍼로니)'
+              }
             />
           </div>
 
@@ -463,7 +484,9 @@ export default function Page() {
               <span style={{ marginLeft: 8, color: 'var(--accent)' }}>· 숨김 항목만 표시 중</span>
             )}
             {showUnused && (
-              <span style={{ marginLeft: 8, color: 'var(--accent)' }}>· 미사용 식자재만 표시 중</span>
+              <span style={{ marginLeft: 8, color: 'var(--accent)' }}>
+                · 미사용 식자재만 표시 중
+              </span>
             )}
             {onlyOne && (
               <span style={{ marginLeft: 8, color: 'var(--warn)' }}>· 1개 사용만 표시 중</span>
@@ -523,11 +546,7 @@ export default function Page() {
                   </button>
                 </span>
               ))}
-              <button
-                className="btn sm"
-                style={{ marginLeft: 'auto' }}
-                onClick={restoreAllMenus}
-              >
+              <button className="btn sm" style={{ marginLeft: 'auto' }} onClick={restoreAllMenus}>
                 전체 복원
               </button>
             </div>
@@ -774,7 +793,11 @@ export default function Page() {
               }}
             >
               {displayRows.length}개 표시 ·{' '}
-              {showUnused ? '미사용 필터 중' : usageCat !== '전체' ? `${usageCat} 필터 중` : '전체 카테고리'}
+              {showUnused
+                ? '미사용 필터 중'
+                : usageCat !== '전체'
+                  ? `${usageCat} 필터 중`
+                  : '전체 카테고리'}
               {hiddenCount > 0 ? ` · 숨김 ${hiddenCount}개` : ''}
             </div>
           </div>

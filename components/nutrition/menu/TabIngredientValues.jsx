@@ -29,7 +29,7 @@ function IngredientValueForm({ ingredient, existing, onSave, onCancel }) {
   const ingredientName = asDisplayText(safeIngredient.ingredientName, '이름 없음');
   const save = typeof onSave === 'function' ? onSave : noop;
   const cancel = typeof onCancel === 'function' ? onCancel : noop;
-  const [form, setForm] = useState(() => existing ? { ...existing } : {});
+  const [form, setForm] = useState(() => (existing ? { ...existing } : {}));
   const [saving, setSaving] = useState(false);
 
   const setField = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -69,7 +69,10 @@ function IngredientValueForm({ ingredient, existing, onSave, onCancel }) {
   };
 
   return (
-    <div className="card" style={{ padding: 20, marginTop: 2, border: '1.5px solid var(--accent)', borderRadius: 12 }}>
+    <div
+      className="card"
+      style={{ padding: 20, marginTop: 2, border: '1.5px solid var(--accent)', borderRadius: 12 }}
+    >
       <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{ingredientName}</div>
       <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 16 }}>
         재료 100g 기준 영양성분 — 레시피의 사용량(g)과 곱해 메뉴 영양값을 자동 계산합니다
@@ -77,11 +80,16 @@ function IngredientValueForm({ ingredient, existing, onSave, onCancel }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px 12px' }}>
         {VALUE_FIELDS.map(f => (
           <div key={f.key}>
-            <label style={{ fontSize: 11, color: 'var(--text-3)', display: 'block', marginBottom: 2 }}>
+            <label
+              style={{ fontSize: 11, color: 'var(--text-3)', display: 'block', marginBottom: 2 }}
+            >
               {f.label} <span style={{ color: 'var(--text-4)' }}>({f.unit})</span>
             </label>
             <input
-              className="input" type="number" min="0" step="0.1"
+              className="input"
+              type="number"
+              min="0"
+              step="0.1"
               value={form[f.key] ?? ''}
               onChange={e => setField(f.key, e.target.value)}
               style={{ fontSize: 13 }}
@@ -91,11 +99,18 @@ function IngredientValueForm({ ingredient, existing, onSave, onCancel }) {
       </div>
       <div style={{ marginTop: 16, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
         {existing && (
-          <button className="btn danger-ghost" onClick={handleDelete} disabled={saving} style={{ marginRight: 'auto' }}>
+          <button
+            className="btn danger-ghost"
+            onClick={handleDelete}
+            disabled={saving}
+            style={{ marginRight: 'auto' }}
+          >
             삭제
           </button>
         )}
-        <button className="btn ghost" onClick={cancel} disabled={saving}>취소</button>
+        <button className="btn ghost" onClick={cancel} disabled={saving}>
+          취소
+        </button>
         <button className="btn primary" onClick={handleSave} disabled={saving}>
           {saving ? '저장 중…' : '저장'}
         </button>
@@ -106,16 +121,18 @@ function IngredientValueForm({ ingredient, existing, onSave, onCancel }) {
 
 export function TabIngredientValues({ onRefresh }) {
   const [ingredients, setIngredients] = useState([]);
-  const [valuesMap,   setValuesMap]   = useState({});
-  const [loading,     setLoading]     = useState(true);
-  const [search,      setSearch]      = useState('');
-  const [editCode,    setEditCode]    = useState(null);
+  const [valuesMap, setValuesMap] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [editCode, setEditCode] = useState(null);
   const mountedRef = useRef(true);
 
   const load = async () => {
     await initDB();
     const [ings, vals] = await Promise.all([getAllIngredients(), getAllIngredientValues()]);
-    const withCode = asObjectArray(ings).filter(i => asDisplayText(i.productCode) && !i.discontinued && !i.excluded);
+    const withCode = asObjectArray(ings).filter(
+      i => asDisplayText(i.productCode) && !i.discontinued && !i.excluded
+    );
     const map = {};
     asObjectArray(vals).forEach(v => {
       const productCode = asDisplayText(v.productCode);
@@ -143,9 +160,10 @@ export function TabIngredientValues({ onRefresh }) {
   const filtered = useMemo(() => {
     const q = asDisplayText(search).trim().toLowerCase();
     if (!q) return ingredients;
-    return ingredients.filter(i =>
-      asDisplayText(i.ingredientName).toLowerCase().includes(q) ||
-      asDisplayText(i.productCode).toLowerCase().includes(q)
+    return ingredients.filter(
+      i =>
+        asDisplayText(i.ingredientName).toLowerCase().includes(q) ||
+        asDisplayText(i.productCode).toLowerCase().includes(q)
     );
   }, [ingredients, search]);
 
@@ -169,9 +187,20 @@ export function TabIngredientValues({ onRefresh }) {
 
   return (
     <div style={{ marginTop: 20 }}>
-      <div className="card" style={{ padding: '12px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+      <div
+        className="card"
+        style={{
+          padding: '12px 20px',
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}
+      >
         <div style={{ fontSize: 13, color: 'var(--text-3)', flex: 1 }}>
-          재료 100g당 영양값을 입력하면 레시피 구성 기반으로 메뉴 영양성분이 <strong>자동 계산</strong>됩니다.
+          재료 100g당 영양값을 입력하면 레시피 구성 기반으로 메뉴 영양성분이{' '}
+          <strong>자동 계산</strong>됩니다.
         </div>
         <div style={{ fontSize: 13, fontWeight: 700 }}>
           <span style={{ color: 'var(--positive)' }}>{entered}</span>
@@ -184,7 +213,11 @@ export function TabIngredientValues({ onRefresh }) {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={Icon.beaker} title="재료 없음" sub="식자재 관리에서 제때 코드가 있는 재료를 추가하세요." />
+        <EmptyState
+          icon={Icon.beaker}
+          title="재료 없음"
+          sub="식자재 관리에서 제때 코드가 있는 재료를 추가하세요."
+        />
       ) : (
         <div className="card table-card">
           <div style={{ overflowX: 'auto' }}>
@@ -212,25 +245,45 @@ export function TabIngredientValues({ onRefresh }) {
                   return (
                     <Fragment key={productCode}>
                       <tr
-                        style={{ cursor: 'pointer', background: isEditing ? 'var(--accent-soft)' : undefined }}
+                        style={{
+                          cursor: 'pointer',
+                          background: isEditing ? 'var(--accent-soft)' : undefined,
+                        }}
                         onClick={() => setEditCode(isEditing ? null : productCode)}
                       >
                         <td style={{ fontWeight: 600 }}>{ingredientName}</td>
                         <td style={{ color: 'var(--text-3)', fontSize: 12 }}>{productCode}</td>
                         <td style={{ color: 'var(--text-3)', fontSize: 12 }}>{category}</td>
-                        <td style={{ textAlign: 'right' }}>{v?.kcal ?? <span style={{ color: 'var(--text-4)' }}>—</span>}</td>
-                        <td style={{ textAlign: 'right' }}>{v?.carbs ?? <span style={{ color: 'var(--text-4)' }}>—</span>}</td>
-                        <td style={{ textAlign: 'right' }}>{v?.protein ?? <span style={{ color: 'var(--text-4)' }}>—</span>}</td>
-                        <td style={{ textAlign: 'right' }}>{v?.fat ?? <span style={{ color: 'var(--text-4)' }}>—</span>}</td>
+                        <td style={{ textAlign: 'right' }}>
+                          {v?.kcal ?? <span style={{ color: 'var(--text-4)' }}>—</span>}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          {v?.carbs ?? <span style={{ color: 'var(--text-4)' }}>—</span>}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          {v?.protein ?? <span style={{ color: 'var(--text-4)' }}>—</span>}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          {v?.fat ?? <span style={{ color: 'var(--text-4)' }}>—</span>}
+                        </td>
                         <td>
-                          {v
-                            ? <span style={{ fontSize: 11, color: 'var(--positive)', fontWeight: 600 }}>입력</span>
-                            : <span style={{ fontSize: 11, color: 'var(--text-4)' }}>미입력</span>}
+                          {v ? (
+                            <span
+                              style={{ fontSize: 11, color: 'var(--positive)', fontWeight: 600 }}
+                            >
+                              입력
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 11, color: 'var(--text-4)' }}>미입력</span>
+                          )}
                         </td>
                         <td>
                           <button
                             className="icon-btn"
-                            onClick={e => { e.stopPropagation(); setEditCode(isEditing ? null : productCode); }}
+                            onClick={e => {
+                              e.stopPropagation();
+                              setEditCode(isEditing ? null : productCode);
+                            }}
                             title={isEditing ? '접기' : '편집'}
                           >
                             {isEditing ? <Icon.chevDown /> : <Icon.edit />}

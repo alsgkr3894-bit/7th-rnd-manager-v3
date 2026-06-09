@@ -1,9 +1,14 @@
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 export function UnmatchedFilterBar({
-  statusFilter, onStatusChange,
-  monthFilter, onMonthChange,
-  openCount, resolvedCount, totalCount, months,
+  statusFilter,
+  onStatusChange,
+  monthFilter,
+  onMonthChange,
+  openCount,
+  resolvedCount,
+  totalCount,
+  months,
 }) {
   const safeMonths = asObjectArray(months);
   const handleStatusChange = typeof onStatusChange === 'function' ? onStatusChange : () => {};
@@ -11,19 +16,38 @@ export function UnmatchedFilterBar({
   const safeMonthFilter = asDisplayText(monthFilter, 'all');
 
   return (
-    <div style={{display:'flex', gap:8, marginTop:16, flexWrap:'wrap', alignItems:'center'}}>
-      <FilterChip label="미해결"  count={openCount}     active={statusFilter === 'open'}     onClick={() => handleStatusChange('open')}/>
-      <FilterChip label="해결됨"  count={resolvedCount} active={statusFilter === 'resolved'} onClick={() => handleStatusChange('resolved')}/>
-      <FilterChip label="전체"    count={totalCount}    active={statusFilter === 'all'}      onClick={() => handleStatusChange('all')}/>
+    <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+      <FilterChip
+        label="미해결"
+        count={openCount}
+        active={statusFilter === 'open'}
+        onClick={() => handleStatusChange('open')}
+      />
+      <FilterChip
+        label="해결됨"
+        count={resolvedCount}
+        active={statusFilter === 'resolved'}
+        onClick={() => handleStatusChange('resolved')}
+      />
+      <FilterChip
+        label="전체"
+        count={totalCount}
+        active={statusFilter === 'all'}
+        onClick={() => handleStatusChange('all')}
+      />
 
-      <div style={{flex:1}}/>
+      <div style={{ flex: 1 }} />
 
       <select
         value={safeMonthFilter}
         onChange={e => handleMonthChange(e.target.value)}
         style={{
-          background: 'var(--surface-2)', border: '1px solid var(--border)',
-          borderRadius: 8, padding: '6px 10px', fontSize: 13, fontWeight: 600,
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
+          borderRadius: 8,
+          padding: '6px 10px',
+          fontSize: 13,
+          fontWeight: 600,
           color: 'var(--text-1)',
         }}
       >
@@ -51,19 +75,29 @@ function FilterChip({ label, count, active, onClick }) {
       onClick={handleClick}
       className="chip"
       style={{
-        cursor:'pointer', border:'none',
+        cursor: 'pointer',
+        border: 'none',
         background: active ? 'var(--accent)' : 'var(--surface-2)',
         color: active ? '#fff' : 'var(--text-2)',
         fontWeight: 600,
-        display:'inline-flex', alignItems:'center', gap:6,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
       }}
     >
       {safeLabel}
-      <span style={{
-        background: active ? 'rgba(255,255,255,0.2)' : 'var(--surface)',
-        color: active ? '#fff' : 'var(--text-3)',
-        padding:'1px 6px', borderRadius:10, fontSize:11, fontWeight:700,
-      }}>{safeCount}</span>
+      <span
+        style={{
+          background: active ? 'rgba(255,255,255,0.2)' : 'var(--surface)',
+          color: active ? '#fff' : 'var(--text-3)',
+          padding: '1px 6px',
+          borderRadius: 10,
+          fontSize: 11,
+          fontWeight: 700,
+        }}
+      >
+        {safeCount}
+      </span>
     </button>
   );
 }

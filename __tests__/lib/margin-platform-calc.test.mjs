@@ -53,10 +53,12 @@ describe('calcNetRevenue', () => {
 
   test('pct + fixed 복합 수수료', () => {
     // 10% of 10000 = 1000, fixed 500 → 8500
-    expect(calcNetRevenue(10000, [
-      { type: 'pct', value: 10 },
-      { type: 'fixed', value: 500 },
-    ])).toBe(8500);
+    expect(
+      calcNetRevenue(10000, [
+        { type: 'pct', value: 10 },
+        { type: 'fixed', value: 500 },
+      ])
+    ).toBe(8500);
   });
 
   test('sizeLabel sizeOverrides 적용', () => {

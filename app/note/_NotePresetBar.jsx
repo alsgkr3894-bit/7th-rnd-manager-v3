@@ -12,7 +12,7 @@ import { useState, useRef } from 'react';
  */
 export function NotePresetBar({ presets, hasActiveFilter, onApply, onSave, onDelete }) {
   const [savingPreset, setSavingPreset] = useState(false);
-  const [presetName,   setPresetName]   = useState('');
+  const [presetName, setPresetName] = useState('');
   const presetInputRef = useRef(null);
 
   function handleSave() {
@@ -39,7 +39,12 @@ export function NotePresetBar({ presets, hasActiveFilter, onApply, onSave, onDel
           </button>
           <button
             className="chip"
-            style={{ borderRadius: '0 12px 12px 0', padding: '4px 8px', borderLeft: 'none', color: 'var(--text-4)' }}
+            style={{
+              borderRadius: '0 12px 12px 0',
+              padding: '4px 8px',
+              borderLeft: 'none',
+              color: 'var(--text-4)',
+            }}
             onClick={() => onDelete(i)}
             title="프리셋 삭제"
           >
@@ -48,8 +53,8 @@ export function NotePresetBar({ presets, hasActiveFilter, onApply, onSave, onDel
         </div>
       ))}
 
-      {hasActiveFilter && (
-        savingPreset ? (
+      {hasActiveFilter &&
+        (savingPreset ? (
           <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
             <input
               ref={presetInputRef}
@@ -62,13 +67,27 @@ export function NotePresetBar({ presets, hasActiveFilter, onApply, onSave, onDel
               placeholder="프리셋 이름"
               autoFocus
               style={{
-                fontSize: 12, padding: '4px 10px', borderRadius: 10,
-                border: '1px solid var(--accent)', background: 'var(--surface)',
-                color: 'var(--text-1)', outline: 'none', width: 120, fontFamily: 'inherit',
+                fontSize: 12,
+                padding: '4px 10px',
+                borderRadius: 10,
+                border: '1px solid var(--accent)',
+                background: 'var(--surface)',
+                color: 'var(--text-1)',
+                outline: 'none',
+                width: 120,
+                fontFamily: 'inherit',
               }}
             />
-            <button className="chip active" style={{ fontSize: 11 }} onClick={handleSave}>저장</button>
-            <button className="chip" style={{ fontSize: 11 }} onClick={() => setSavingPreset(false)}>취소</button>
+            <button className="chip active" style={{ fontSize: 11 }} onClick={handleSave}>
+              저장
+            </button>
+            <button
+              className="chip"
+              style={{ fontSize: 11 }}
+              onClick={() => setSavingPreset(false)}
+            >
+              취소
+            </button>
           </div>
         ) : (
           <button
@@ -78,8 +97,7 @@ export function NotePresetBar({ presets, hasActiveFilter, onApply, onSave, onDel
           >
             + 현재 필터 저장
           </button>
-        )
-      )}
+        ))}
     </div>
   );
 }

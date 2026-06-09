@@ -4,13 +4,20 @@ import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 const MODE_TABS = [
   { id: 'single', label: '월별 순위' },
-  { id: 'mom',    label: '전월 대비' },
-  { id: 'yoy',    label: '전년 동월' },
+  { id: 'mom', label: '전월 대비' },
+  { id: 'yoy', label: '전년 동월' },
   { id: 'custom', label: '직접 지정' },
 ];
 const MODE_IDS = new Set(MODE_TABS.map(tab => tab.id));
 
-export function PeriodBar({ mode, onModeChange, periodA, periodB, availablePeriods = [], onCustomChange }) {
+export function PeriodBar({
+  mode,
+  onModeChange,
+  periodA,
+  periodB,
+  availablePeriods = [],
+  onCustomChange,
+}) {
   const requestedMode = asDisplayText(mode, 'single');
   const safeMode = MODE_IDS.has(requestedMode) ? requestedMode : 'single';
   const isCustom = safeMode === 'custom';
@@ -75,7 +82,12 @@ function PeriodSlot({ badge, badgeColor, label, period, editable, options, onCha
   return (
     <div className="period-slot">
       <div className="period-slot-head">
-        <span className="period-badge" style={{ background: safeBadgeColor + '22', color: safeBadgeColor }}>{safeBadge}</span>
+        <span
+          className="period-badge"
+          style={{ background: safeBadgeColor + '22', color: safeBadgeColor }}
+        >
+          {safeBadge}
+        </span>
         <span className="period-slot-label">{safeLabel}</span>
       </div>
       {editable ? (
@@ -108,8 +120,10 @@ function PeriodSelect({ value, options, onChange }) {
     >
       {!key ? (
         <option value="">-</option>
-      ) : !safeOptions.find(o => periodKey(o) === key) && (
-        <option value={key}>{formatPeriodKor(value)}</option>
+      ) : (
+        !safeOptions.find(o => periodKey(o) === key) && (
+          <option value={key}>{formatPeriodKor(value)}</option>
+        )
       )}
       {safeOptions.map(o => (
         <option key={periodKey(o)} value={periodKey(o)}>
@@ -125,14 +139,14 @@ function isValidPeriod(period) {
   const month = period?.month;
 
   return Boolean(
-    period
-      && typeof period === 'object'
-      && year != null
-      && month != null
-      && asDisplayText(year).trim() !== ''
-      && asDisplayText(month).trim() !== ''
-      && Number.isFinite(Number(year))
-      && Number.isFinite(Number(month)),
+    period &&
+    typeof period === 'object' &&
+    year != null &&
+    month != null &&
+    asDisplayText(year).trim() !== '' &&
+    asDisplayText(month).trim() !== '' &&
+    Number.isFinite(Number(year)) &&
+    Number.isFinite(Number(month))
   );
 }
 

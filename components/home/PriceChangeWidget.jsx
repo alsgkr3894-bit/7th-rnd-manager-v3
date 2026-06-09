@@ -41,7 +41,9 @@ export function PriceChangeWidget({ items = [], router }) {
             return (
               <div key={i} className="price-row">
                 <div className="pr-meta">
-                  <span className="pr-name" title={name}>{name}</span>
+                  <span className="pr-name" title={name}>
+                    {name}
+                  </span>
                   <span className="pr-sub">{sub}</span>
                 </div>
                 <span className={`price-chip ${dir}`}>

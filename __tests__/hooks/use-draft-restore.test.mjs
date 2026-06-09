@@ -4,10 +4,8 @@ jest.unstable_mockModule('@/components/Toast', () => ({
   showToast: () => {},
 }));
 
-const {
-  normalizeDraftRestoreValue,
-  parseDraftRestoreValue,
-} = await import('../../hooks/useDraftRestore.js');
+const { normalizeDraftRestoreValue, parseDraftRestoreValue } =
+  await import('../../hooks/useDraftRestore.js');
 
 describe('normalizeDraftRestoreValue', () => {
   test('복원 가능한 객체는 그대로 반환한다', () => {

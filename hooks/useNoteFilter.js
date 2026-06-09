@@ -51,18 +51,30 @@ export function normalizeNoteBrandFilter(value, fallback = 'all') {
 export function useNoteFilter(notes, pinnedIds, { pathname } = {}) {
   const searchParams = useSearchParams();
 
-  const [search, setRawSearch] = useState(() => normalizeNoteFilterText(searchParams.get('q') || tryLS(KEYS.NOTE_SEARCH, '')));
-  const [statusFilter, setRawStatusFilter] = useState(() => normalizeNoteStatusFilter(searchParams.get('status') || tryLS(KEYS.NOTE_STATUS, 'all')));
-  const [sortBy, setRawSortBy] = useState(() => normalizeNoteSortKey(tryLS(KEYS.NOTE_SORT, 'createdAt')));
+  const [search, setRawSearch] = useState(() =>
+    normalizeNoteFilterText(searchParams.get('q') || tryLS(KEYS.NOTE_SEARCH, ''))
+  );
+  const [statusFilter, setRawStatusFilter] = useState(() =>
+    normalizeNoteStatusFilter(searchParams.get('status') || tryLS(KEYS.NOTE_STATUS, 'all'))
+  );
+  const [sortBy, setRawSortBy] = useState(() =>
+    normalizeNoteSortKey(tryLS(KEYS.NOTE_SORT, 'createdAt'))
+  );
   // 브랜드 필터: 기본값은 현재 활성 브랜드(다른 브랜드 노트와 섞이지 않게). 'all'이면 전체.
   // 초기값은 SSR/첫 렌더에서 서버와 동일하게 'all'로 두고(활성 브랜드는 localStorage라
   // 서버에서 알 수 없음 → 칩 active 클래스 불일치 방지), 마운트 후 실제 값으로 교정한다.
   const [brandFilter, setRawBrandFilter] = useState('all');
   const [brandReady, setBrandReady] = useState(false);
   const setSearch = useCallback(value => setRawSearch(normalizeNoteFilterText(value)), []);
-  const setStatusFilter = useCallback(value => setRawStatusFilter(normalizeNoteStatusFilter(value)), []);
+  const setStatusFilter = useCallback(
+    value => setRawStatusFilter(normalizeNoteStatusFilter(value)),
+    []
+  );
   const setSortBy = useCallback(value => setRawSortBy(normalizeNoteSortKey(value)), []);
-  const setBrandFilter = useCallback(value => setRawBrandFilter(normalizeNoteBrandFilter(value)), []);
+  const setBrandFilter = useCallback(
+    value => setRawBrandFilter(normalizeNoteBrandFilter(value)),
+    []
+  );
   const safeSearch = normalizeNoteFilterText(search);
   const safeStatusFilter = normalizeNoteStatusFilter(statusFilter);
   const safeSortBy = normalizeNoteSortKey(sortBy);
@@ -70,22 +82,32 @@ export function useNoteFilter(notes, pinnedIds, { pathname } = {}) {
 
   useEffect(() => {
     const activeBrand = normalizeNoteBrandFilter(getActiveBrandId(), 'main');
-    setRawBrandFilter(normalizeNoteBrandFilter(tryLS(KEYS.NOTE_BRAND_FILTER, activeBrand), activeBrand));
+    setRawBrandFilter(
+      normalizeNoteBrandFilter(tryLS(KEYS.NOTE_BRAND_FILTER, activeBrand), activeBrand)
+    );
     setBrandReady(true);
   }, []);
 
   // 영속화 (기존 동작과 동일한 키)
-  useEffect(() => { setLS(KEYS.NOTE_SEARCH, safeSearch); }, [safeSearch]);
-  useEffect(() => { setLS(KEYS.NOTE_STATUS, safeStatusFilter); }, [safeStatusFilter]);
-  useEffect(() => { setLS(KEYS.NOTE_SORT, safeSortBy); }, [safeSortBy]);
+  useEffect(() => {
+    setLS(KEYS.NOTE_SEARCH, safeSearch);
+  }, [safeSearch]);
+  useEffect(() => {
+    setLS(KEYS.NOTE_STATUS, safeStatusFilter);
+  }, [safeStatusFilter]);
+  useEffect(() => {
+    setLS(KEYS.NOTE_SORT, safeSortBy);
+  }, [safeSortBy]);
   // 첫 마운트 교정 전에는 영속화하지 않는다(임시 'all'로 덮어쓰기 방지).
-  useEffect(() => { if (brandReady) setLS(KEYS.NOTE_BRAND_FILTER, safeBrandFilter); }, [safeBrandFilter, brandReady]);
+  useEffect(() => {
+    if (brandReady) setLS(KEYS.NOTE_BRAND_FILTER, safeBrandFilter);
+  }, [safeBrandFilter, brandReady]);
 
   // URL 동기화 (검색/상태만)
   useEffect(() => {
     if (!pathname) return;
     const p = new URLSearchParams();
-    if (safeSearch)                 p.set('q', safeSearch);
+    if (safeSearch) p.set('q', safeSearch);
     if (safeStatusFilter !== 'all') p.set('status', safeStatusFilter);
     const qs = p.toString();
     window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
@@ -99,22 +121,29 @@ export function useNoteFilter(notes, pinnedIds, { pathname } = {}) {
   const counts = useMemo(() => countNotesByStatus(brandFiltered), [brandFiltered]);
   const searchIndex = useMemo(() => buildNoteSearchIndex(notes), [notes]);
   const filtered = useMemo(
-    () => filterSortNotes(notes, {
-      statusFilter: safeStatusFilter,
-      brandFilter: safeBrandFilter,
-      search: safeSearch,
-      sortBy: safeSortBy,
-      pinnedIds,
-      searchIndex,
-    }),
-    [notes, safeStatusFilter, safeBrandFilter, safeSearch, safeSortBy, pinnedIds, searchIndex],
+    () =>
+      filterSortNotes(notes, {
+        statusFilter: safeStatusFilter,
+        brandFilter: safeBrandFilter,
+        search: safeSearch,
+        sortBy: safeSortBy,
+        pinnedIds,
+        searchIndex,
+      }),
+    [notes, safeStatusFilter, safeBrandFilter, safeSearch, safeSortBy, pinnedIds, searchIndex]
   );
 
   return {
-    search: safeSearch, setSearch,
-    statusFilter: safeStatusFilter, setStatusFilter,
-    sortBy: safeSortBy, setSortBy,
-    brandFilter: safeBrandFilter, setBrandFilter,
-    counts, searchIndex, filtered,
+    search: safeSearch,
+    setSearch,
+    statusFilter: safeStatusFilter,
+    setStatusFilter,
+    sortBy: safeSortBy,
+    setSortBy,
+    brandFilter: safeBrandFilter,
+    setBrandFilter,
+    counts,
+    searchIndex,
+    filtered,
   };
 }

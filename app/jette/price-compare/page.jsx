@@ -12,19 +12,25 @@ import { PriceCompareTable } from '@/components/jette/PriceCompareTable';
 import { PriceFileHistory } from '@/components/jette/PriceFileHistory';
 
 const TABS = [
-  { key: 'latest',  label: '최신 단가 현황' },
+  { key: 'latest', label: '최신 단가 현황' },
   { key: 'compare', label: '가격 비교' },
   { key: 'history', label: '업로드 이력' },
 ];
 
 export default function Page() {
   const {
-    ready, busy, files,
-    baseFileId, setBaseFileId,
-    latestFileId, setLatestFileId,
+    ready,
+    busy,
+    files,
+    baseFileId,
+    setBaseFileId,
+    latestFileId,
+    setLatestFileId,
     diffRows,
     productTypeLookup,
-    handleFile, handleDelete, handleTypeChange,
+    handleFile,
+    handleDelete,
+    handleTypeChange,
   } = useJettePrice();
 
   const [tab, setTab] = useState('latest');
@@ -32,11 +38,14 @@ export default function Page() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
-  const summary = useMemo(() => ({
-    up:    diffRows.filter(r => r.changeStatus === '인상').length,
-    down:  diffRows.filter(r => r.changeStatus === '인하').length,
-    total: diffRows.length,
-  }), [diffRows]);
+  const summary = useMemo(
+    () => ({
+      up: diffRows.filter(r => r.changeStatus === '인상').length,
+      down: diffRows.filter(r => r.changeStatus === '인하').length,
+      total: diffRows.length,
+    }),
+    [diffRows]
+  );
 
   return (
     <main className="main">
@@ -45,17 +54,27 @@ export default function Page() {
         title="제때 상품 가격 비교"
         sub="최신 단가와 이전 단가를 비교합니다. 원가계산 모듈은 이 데이터를 단일 기준으로 사용합니다."
         actions={
-          <div style={{display:'flex', gap:8, alignItems:'center'}}>
-            <label style={{display:'flex', flexDirection:'column', fontSize:11, color:'var(--text-3)'}}>
-              <span style={{marginBottom:2}}>적용 날짜</span>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <label
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                fontSize: 11,
+                color: 'var(--text-3)',
+              }}
+            >
+              <span style={{ marginBottom: 2 }}>적용 날짜</span>
               <input
                 type="date"
                 value={uploadDate}
                 onChange={e => setUploadDate(e.target.value)}
                 style={{
-                  padding:'6px 10px', borderRadius:8,
-                  border:'1px solid var(--border)', background:'var(--surface-2)',
-                  color:'var(--text-1)', fontSize:13,
+                  padding: '6px 10px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'var(--surface-2)',
+                  color: 'var(--text-1)',
+                  fontSize: 13,
                 }}
               />
             </label>
@@ -69,7 +88,10 @@ export default function Page() {
         title="단가 엑셀(.xlsx) 또는 CSV 파일을 끌어다 놓으세요"
         maxSizeMB={30}
         onFile={(f, err) => {
-          if (err) { showToast(err, 'err'); return; }
+          if (err) {
+            showToast(err, 'err');
+            return;
+          }
           handleFile(f, uploadDate);
         }}
       />
@@ -120,9 +142,7 @@ export default function Page() {
             </>
           )}
 
-          {tab === 'history' && (
-            <PriceFileHistory files={files} onDelete={handleDelete} />
-          )}
+          {tab === 'history' && <PriceFileHistory files={files} onDelete={handleDelete} />}
         </>
       )}
     </main>
@@ -131,13 +151,21 @@ export default function Page() {
 
 function EmptyHero() {
   return (
-    <div className="card" style={{
-      marginTop:24, padding:'48px 24px', textAlign:'center',
-      display:'flex', flexDirection:'column', alignItems:'center', gap:12,
-    }}>
-      <Icon.box style={{width:48, height:48, color:'var(--text-4)'}}/>
-      <div style={{fontSize:15, fontWeight:700}}>아직 업로드된 가격 파일이 없습니다</div>
-      <div style={{fontSize:13, color:'var(--text-3)'}}>
+    <div
+      className="card"
+      style={{
+        marginTop: 24,
+        padding: '48px 24px',
+        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 12,
+      }}
+    >
+      <Icon.box style={{ width: 48, height: 48, color: 'var(--text-4)' }} />
+      <div style={{ fontSize: 15, fontWeight: 700 }}>아직 업로드된 가격 파일이 없습니다</div>
+      <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
         엑셀(.xlsx) 또는 CSV 파일을 업로드하면 단가 현황과 변동을 확인할 수 있어요.
       </div>
     </div>

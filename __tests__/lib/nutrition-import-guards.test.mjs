@@ -22,7 +22,12 @@ describe('nutrition import guards', () => {
     const rows = buildImportRows({
       rawRows: [{ rawName: '슈퍼콤비네이션 (석쇠 L)', kcal: 250 }],
       menuMasters: [
-        { menuCode: 'P-OR-001-L', menuName: '슈퍼콤비네이션', category: '피자/오리지널', size: 'L' },
+        {
+          menuCode: 'P-OR-001-L',
+          menuName: '슈퍼콤비네이션',
+          category: '피자/오리지널',
+          size: 'L',
+        },
       ],
       existingKeys: {},
     });

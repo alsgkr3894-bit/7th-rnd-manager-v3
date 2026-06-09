@@ -85,7 +85,9 @@ export default function Page() {
 
   const periodA = { year: safeYearA, month: safeMonthA };
   const periodB =
-    safeMode === 'custom' ? { year: safeYearB, month: safeMonthB } : deriveCompareB(periodA, safeMode);
+    safeMode === 'custom'
+      ? { year: safeYearB, month: safeMonthB }
+      : deriveCompareB(periodA, safeMode);
 
   useEffect(() => {
     let ignore = false;
@@ -133,7 +135,7 @@ export default function Page() {
               ? [
                   { name: `A (${safeMonthA}월)`, data: cats.map(([, v]) => v.a) },
                   { name: `B (${periodB.month}월)`, data: cats.map(([, v]) => v.b) },
-              ]
+                ]
               : []
           );
           setDataError(null);
@@ -319,7 +321,11 @@ export default function Page() {
             <div className="paper-meta">
               <span>
                 비교 모드:{' '}
-                {safeMode === 'mom' ? '전월 대비' : safeMode === 'yoy' ? '전년 동월' : '사용자 지정'}
+                {safeMode === 'mom'
+                  ? '전월 대비'
+                  : safeMode === 'yoy'
+                    ? '전년 동월'
+                    : '사용자 지정'}
               </span>
               <span>·</span>
               <span>
@@ -352,15 +358,10 @@ export default function Page() {
                 <div
                   className="paper-stat-val num"
                   style={{
-                    color:
-                      (totalPct ?? 0) >= 0
-                        ? 'var(--positive)'
-                        : 'var(--negative)',
+                    color: (totalPct ?? 0) >= 0 ? 'var(--positive)' : 'var(--negative)',
                   }}
                 >
-                  {totalPct != null
-                    ? `${totalPct >= 0 ? '+' : ''}${totalPct.toFixed(1)}%`
-                    : '—'}
+                  {totalPct != null ? `${totalPct >= 0 ? '+' : ''}${totalPct.toFixed(1)}%` : '—'}
                 </div>
               </div>
             </div>
@@ -412,22 +413,22 @@ export default function Page() {
                     {compareRows.map(r => {
                       const pct = safePercent(r.pct) ?? 0;
                       return (
-                      <tr key={asDisplayText(r.name, '—')}>
-                        <td>{asDisplayText(r.name, '—')}</td>
-                        <td className="num right muted">{fmtShort(safeQuantity(r.a))}</td>
-                        <td className="num right" style={{ fontWeight: 700 }}>
-                          {fmtShort(safeQuantity(r.b))}
-                        </td>
-                        <td
-                          className="num right"
-                          style={{
-                            color: pct >= 0 ? 'var(--positive)' : 'var(--negative)',
-                            fontWeight: 700,
-                          }}
-                        >
-                          {pct >= 0 ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}%
-                        </td>
-                      </tr>
+                        <tr key={asDisplayText(r.name, '—')}>
+                          <td>{asDisplayText(r.name, '—')}</td>
+                          <td className="num right muted">{fmtShort(safeQuantity(r.a))}</td>
+                          <td className="num right" style={{ fontWeight: 700 }}>
+                            {fmtShort(safeQuantity(r.b))}
+                          </td>
+                          <td
+                            className="num right"
+                            style={{
+                              color: pct >= 0 ? 'var(--positive)' : 'var(--negative)',
+                              fontWeight: 700,
+                            }}
+                          >
+                            {pct >= 0 ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}%
+                          </td>
+                        </tr>
                       );
                     })}
                   </tbody>

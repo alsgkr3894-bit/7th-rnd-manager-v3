@@ -29,12 +29,14 @@ describe('closestElement', () => {
 
 describe('getTiltTransform', () => {
   test('유효한 카드 크기면 tilt transform을 만든다', () => {
-    expect(getTiltTransform(75, 25, {
-      left: 0,
-      top: 0,
-      width: 100,
-      height: 100,
-    })).toContain('perspective(600px)');
+    expect(
+      getTiltTransform(75, 25, {
+        left: 0,
+        top: 0,
+        width: 100,
+        height: 100,
+      })
+    ).toContain('perspective(600px)');
   });
 
   test('카드 크기나 좌표가 비정상이면 transform을 만들지 않는다', () => {

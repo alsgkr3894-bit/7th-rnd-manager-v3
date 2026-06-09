@@ -13,7 +13,7 @@ export function UnmatchedSummary({ openCount, resolvedCount, months }) {
   const latestMonthLabel = `${asDisplayText(latestMonth.year, '-')}년 ${asDisplayText(latestMonth.month, '-')}월 ~`;
 
   return (
-    <div className="hero-row" style={{marginTop:16}}>
+    <div className="hero-row" style={{ marginTop: 16 }}>
       <SummaryCard
         label="미해결 미매칭"
         value={safeOpenCount}
@@ -30,9 +30,7 @@ export function UnmatchedSummary({ openCount, resolvedCount, months }) {
         label="업로드된 월 수"
         value={safeMonths.length}
         color="var(--accent)"
-        sub={safeMonths.length === 0
-          ? '아직 업로드 없음'
-          : latestMonthLabel}
+        sub={safeMonths.length === 0 ? '아직 업로드 없음' : latestMonthLabel}
       />
     </div>
   );
@@ -48,10 +46,13 @@ function SummaryCard({ label, value, color, sub }) {
     <div className="card kpi-card">
       <div>
         <div className="label">{safeLabel}</div>
-        <div className="value num" style={{color: safeColor}}>
-          {formatNumber(safeValue)}<span className="unit">건</span>
+        <div className="value num" style={{ color: safeColor }}>
+          {formatNumber(safeValue)}
+          <span className="unit">건</span>
         </div>
-        <div className="trend"><span style={{color:'var(--text-3)'}}>{safeSub}</span></div>
+        <div className="trend">
+          <span style={{ color: 'var(--text-3)' }}>{safeSub}</span>
+        </div>
       </div>
     </div>
   );

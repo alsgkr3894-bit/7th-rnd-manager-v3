@@ -13,15 +13,18 @@ import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { getActiveBrandId } from '@/lib/active-brand';
 
 export default function Page() {
-  const router  = useRouter();
-  const [form,           setForm]          = useState(() => ({ ...INIT, testDate: new Date().toISOString().slice(0, 10) }));
-  const [saving,         setSaving]        = useState(false);
-  const [fromTitle,      setFromTitle]     = useState('');
+  const router = useRouter();
+  const [form, setForm] = useState(() => ({
+    ...INIT,
+    testDate: new Date().toISOString().slice(0, 10),
+  }));
+  const [saving, setSaving] = useState(false);
+  const [fromTitle, setFromTitle] = useState('');
   const [showDraftBanner, setShowDraftBanner] = useState(false);
-  const [draftStatus,    setDraftStatus]   = useState('idle'); // idle | saving | saved
-  const [isDirty,        setIsDirty]       = useState(false);
-  const skipRef    = useRef(true);
-  const timerRef   = useRef(null);
+  const [draftStatus, setDraftStatus] = useState('idle'); // idle | saving | saved
+  const [isDirty, setIsDirty] = useState(false);
+  const skipRef = useRef(true);
+  const timerRef = useRef(null);
   const draftTimer = useRef(null);
 
   useBeforeUnload(isDirty);
@@ -36,15 +39,24 @@ export default function Page() {
     setForm(f => ({
       ...f,
       brand: getActiveBrandId() || 'main',
-      category: (() => { try { return localStorage.getItem(KEYS.NOTE_LAST_CATEGORY) || f.category; } catch { return f.category; } })(),
+      category: (() => {
+        try {
+          return localStorage.getItem(KEYS.NOTE_LAST_CATEGORY) || f.category;
+        } catch {
+          return f.category;
+        }
+      })(),
     }));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     let alive = true;
     let fromId = null;
-    try { fromId = sessionStorage.getItem(KEYS.NOTE_FROM); sessionStorage.removeItem(KEYS.NOTE_FROM); } catch {}
+    try {
+      fromId = sessionStorage.getItem(KEYS.NOTE_FROM);
+      sessionStorage.removeItem(KEYS.NOTE_FROM);
+    } catch {}
     const sourceNoteId = Number(fromId);
     if (Number.isSafeInteger(sourceNoteId) && sourceNoteId > 0) {
       initDB()
@@ -57,9 +69,9 @@ export default function Page() {
             menuName: note.menuName || '',
             category: note.category || f.category,
             noteType: note.noteType || f.noteType,
-            tags:     note.tags     || '',
+            tags: note.tags || '',
             parentId: note.id,
-            brand:    note.brand    || f.brand, // 부모 brand 계승
+            brand: note.brand || f.brand, // 부모 brand 계승
           }));
         })
         .catch(console.error);
@@ -69,11 +81,16 @@ export default function Page() {
         setShowDraftBanner(true);
       }
     }
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (skipRef.current) { skipRef.current = false; return; }
+    if (skipRef.current) {
+      skipRef.current = false;
+      return;
+    }
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setDraftStatus('saving');
@@ -84,7 +101,10 @@ export default function Page() {
         draftTimer.current = setTimeout(() => setDraftStatus('idle'), 2000);
       }, 400);
     }, 800);
-    return () => { clearTimeout(timerRef.current); clearTimeout(draftTimer.current); };
+    return () => {
+      clearTimeout(timerRef.current);
+      clearTimeout(draftTimer.current);
+    };
   }, [form]);
 
   useKeyboardSave(handleSave);
@@ -117,7 +137,10 @@ export default function Page() {
 
   function restoreDraft() {
     const draft = loadDraft(KEYS.NOTE_DRAFT_WRITE);
-    if (draft) { setForm(draft); showToast('임시저장된 내용을 불러왔어요', 'ok'); }
+    if (draft) {
+      setForm(draft);
+      showToast('임시저장된 내용을 불러왔어요', 'ok');
+    }
     setShowDraftBanner(false);
   }
 
@@ -128,16 +151,22 @@ export default function Page() {
         title="노트 작성"
         sub={fromTitle ? `"${fromTitle}" 기반 새 버전` : '테스트 조건과 평가를 기록하세요'}
         actions={
-          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <span aria-live="polite" aria-atomic="true">
               {draftStatus === 'saving' && (
-                <span style={{fontSize:12,color:'var(--text-3)'}}>임시저장 중…</span>
+                <span style={{ fontSize: 12, color: 'var(--text-3)' }}>임시저장 중…</span>
               )}
               {draftStatus === 'saved' && (
-                <span style={{fontSize:12,color:'var(--positive)',animation:'fade 200ms ease'}}>✓ 임시저장됨</span>
+                <span
+                  style={{ fontSize: 12, color: 'var(--positive)', animation: 'fade 200ms ease' }}
+                >
+                  ✓ 임시저장됨
+                </span>
               )}
             </span>
-            <button className="btn" onClick={handleCancel}>취소</button>
+            <button className="btn" onClick={handleCancel}>
+              취소
+            </button>
             <button className="btn primary" onClick={handleSave} disabled={saving}>
               {saving ? '저장 중…' : '저장하기'}
             </button>
@@ -145,23 +174,47 @@ export default function Page() {
         }
       />
       {fromTitle && (
-        <div style={{
-          background:'var(--accent-soft)', color:'var(--accent-text)',
-          borderRadius:10, padding:'10px 16px', fontSize:13, marginTop:8,
-        }}>
+        <div
+          style={{
+            background: 'var(--accent-soft)',
+            color: 'var(--accent-text)',
+            borderRadius: 10,
+            padding: '10px 16px',
+            fontSize: 13,
+            marginTop: 8,
+          }}
+        >
           이전 노트 "<b>{fromTitle}</b>"을 기반으로 새 버전을 작성하고 있습니다.
         </div>
       )}
       {showDraftBanner && !fromTitle && (
-        <div style={{
-          background:'var(--warn-soft)', color:'var(--warn)',
-          borderRadius:10, padding:'10px 16px', fontSize:13, marginTop:8,
-          display:'flex', justifyContent:'space-between', alignItems:'center',
-        }}>
+        <div
+          style={{
+            background: 'var(--warn-soft)',
+            color: 'var(--warn)',
+            borderRadius: 10,
+            padding: '10px 16px',
+            fontSize: 13,
+            marginTop: 8,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
           <span>이전에 작성하던 임시저장이 있어요.</span>
-          <div style={{display:'flex', gap:8}}>
-            <button className="btn sm" onClick={restoreDraft}>불러오기</button>
-            <button className="btn sm" onClick={() => { clearDraft(KEYS.NOTE_DRAFT_WRITE); setShowDraftBanner(false); }}>무시</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn sm" onClick={restoreDraft}>
+              불러오기
+            </button>
+            <button
+              className="btn sm"
+              onClick={() => {
+                clearDraft(KEYS.NOTE_DRAFT_WRITE);
+                setShowDraftBanner(false);
+              }}
+            >
+              무시
+            </button>
           </div>
         </div>
       )}

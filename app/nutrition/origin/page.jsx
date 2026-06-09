@@ -155,11 +155,7 @@ export default function Page() {
       if (!q) return true;
       const productCode = asDisplayText(ing.productCode);
       const ingredientName = asDisplayText(ing.ingredientName);
-      const menus = getMenusForIngredient(
-        ingredientToMenus,
-        productCode,
-        ingredientName
-      );
+      const menus = getMenusForIngredient(ingredientToMenus, productCode, ingredientName);
       const menuText = [...menus.entries()]
         .filter(([mc, m]) => !isExcludedMenu(mc, m?.menuName))
         .map(([, m]) => asDisplayText(m?.menuName))
@@ -222,7 +218,11 @@ export default function Page() {
     return sorted.map(m => ({
       ...m,
       originalMenuName: asDisplayText(m.menuName),
-      menuName: applyMenuName(asDisplayText(m.menuCode), asDisplayText(m.menuName), menuNameOverrides),
+      menuName: applyMenuName(
+        asDisplayText(m.menuCode),
+        asDisplayText(m.menuName),
+        menuNameOverrides
+      ),
     }));
   }, [originIngredients, mapData, isExcludedMenu, menuOrder, menuNameOverrides]);
 
@@ -244,14 +244,23 @@ export default function Page() {
   const totalWithOrigin = asObjectArray(ingredients).filter(
     i => asObjectArray(i.origin).length && !i.discontinued && !i.excluded
   ).length;
-  const totalIngredients = asObjectArray(ingredients).filter(i => !i.discontinued && !i.excluded).length;
+  const totalIngredients = asObjectArray(ingredients).filter(
+    i => !i.discontinued && !i.excluded
+  ).length;
 
   const withoutOrigin = totalIngredients - totalWithOrigin;
 
   function exportCsv() {
     const ingredientToMenus = asMenuMap(mapData?.ingredientToMenus);
     if (viewMode === 'ingredient') {
-      const headers = ['식자재명', '표시품목명', '원산지', '제때 코드', '매칭 메뉴 수', '매칭 메뉴'];
+      const headers = [
+        '식자재명',
+        '표시품목명',
+        '원산지',
+        '제때 코드',
+        '매칭 메뉴 수',
+        '매칭 메뉴',
+      ];
       const rows = ingredientRows.map(ing => {
         const ingredientName = asDisplayText(ing.ingredientName);
         const origins = asObjectArray(ing.origin);
@@ -372,7 +381,9 @@ export default function Page() {
           <button
             className="btn sm"
             onClick={exportCsv}
-            disabled={viewMode === 'ingredient' ? ingredientRows.length === 0 : menuRows.length === 0}
+            disabled={
+              viewMode === 'ingredient' ? ingredientRows.length === 0 : menuRows.length === 0
+            }
           >
             CSV 내보내기
           </button>
@@ -382,7 +393,9 @@ export default function Page() {
               onClick={() => setShowHidden(v => !v)}
               title="미표시대상으로 지정된 식자재 포함 여부"
             >
-              {showHidden ? `미표시대상 ${hiddenCount}개 포함 중` : `미표시대상 ${hiddenCount}개 숨김`}
+              {showHidden
+                ? `미표시대상 ${hiddenCount}개 포함 중`
+                : `미표시대상 ${hiddenCount}개 숨김`}
             </button>
           )}
           {viewMode === 'menu' && (
@@ -522,39 +535,39 @@ export default function Page() {
                 const menuCode = asDisplayText(row.menuCode);
                 const menuName = asDisplayText(row.menuName);
                 return (
-                <tr key={menuCode || menuName}>
-                  <td style={{ fontWeight: 600 }}>{menuName}</td>
-                  <td>
-                    <span className="chip">{asDisplayText(row.category)}</span>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      {origins.map((o, i) => (
-                        <span
-                          key={i}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 3,
-                            background: 'var(--surface-2)',
-                            borderRadius: 6,
-                            padding: '2px 8px',
-                            fontSize: 12,
-                            fontWeight: 600,
-                          }}
-                        >
-                          <span style={{ color: 'var(--text-2)' }}>
-                            {asDisplayText(o.displayName)}
+                  <tr key={menuCode || menuName}>
+                    <td style={{ fontWeight: 600 }}>{menuName}</td>
+                    <td>
+                      <span className="chip">{asDisplayText(row.category)}</span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                        {origins.map((o, i) => (
+                          <span
+                            key={i}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 3,
+                              background: 'var(--surface-2)',
+                              borderRadius: 6,
+                              padding: '2px 8px',
+                              fontSize: 12,
+                              fontWeight: 600,
+                            }}
+                          >
+                            <span style={{ color: 'var(--text-2)' }}>
+                              {asDisplayText(o.displayName)}
+                            </span>
+                            <span style={{ color: 'var(--text-4)' }}>:</span>
+                            <span style={{ color: 'var(--text-1)' }}>
+                              {asDisplayText(o.country)}
+                            </span>
                           </span>
-                          <span style={{ color: 'var(--text-4)' }}>:</span>
-                          <span style={{ color: 'var(--text-1)' }}>
-                            {asDisplayText(o.country)}
-                          </span>
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
                 );
               })}
             </tbody>

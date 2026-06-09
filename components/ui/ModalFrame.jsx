@@ -16,9 +16,9 @@ export function ModalFrame({
   title,
   subtitle,
   onClose,
-  width     = 'min(860px, 96vw)',
-  zIndex    = 200,
-  padding   = '22px 26px',
+  width = 'min(860px, 96vw)',
+  zIndex = 200,
+  padding = '22px 26px',
   maxHeight = '92vh',
   children,
 }) {
@@ -26,12 +26,16 @@ export function ModalFrame({
   const modalStyle = normalizeModalFrameStyle({ width, zIndex, padding, maxHeight });
 
   return createPortal(
-    <div style={{
-      position: 'fixed', inset: 0,
-      background: OVERLAY_COLOR,
-      display: 'grid', placeItems: 'center',
-      zIndex: modalStyle.zIndex,
-    }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: OVERLAY_COLOR,
+        display: 'grid',
+        placeItems: 'center',
+        zIndex: modalStyle.zIndex,
+      }}
+    >
       <div
         ref={containerRef}
         className={`card modal-anim${isClosing ? ' modal-exit' : ''}`}
@@ -42,16 +46,27 @@ export function ModalFrame({
           padding: modalStyle.padding,
         }}
       >
-        <div style={{
-          display: 'flex', justifyContent: 'space-between',
-          alignItems: 'center', marginBottom: 16,
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 16,
+          }}
+        >
           <div>
-            {title    && <div style={{ fontWeight: 700, fontSize: 16 }}>{title}</div>}
-            {subtitle && <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{subtitle}</div>}
+            {title && <div style={{ fontWeight: 700, fontSize: 16 }}>{title}</div>}
+            {subtitle && (
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{subtitle}</div>
+            )}
           </div>
-          <button type="button" className="btn" style={{ padding: '4px 8px' }} onClick={handleClose}>
-            <Icon.close style={{ width: 16, height: 16 }}/>
+          <button
+            type="button"
+            className="btn"
+            style={{ padding: '4px 8px' }}
+            onClick={handleClose}
+          >
+            <Icon.close style={{ width: 16, height: 16 }} />
           </button>
         </div>
         {children}

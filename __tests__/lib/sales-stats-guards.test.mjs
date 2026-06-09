@@ -10,12 +10,8 @@ const dbMock = {
 
 jest.unstable_mockModule('../../lib/db/index.js', () => dbMock);
 
-const {
-  getCategoryShare,
-  getSalesKpi,
-  getTopMenus,
-  getTopMenusWithTrend,
-} = await import('../../lib/stats/sales-stats.js');
+const { getCategoryShare, getSalesKpi, getTopMenus, getTopMenusWithTrend } =
+  await import('../../lib/stats/sales-stats.js');
 
 beforeEach(() => {
   jest.clearAllMocks();

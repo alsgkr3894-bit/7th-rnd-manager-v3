@@ -19,7 +19,9 @@ describe('jette utils guards', () => {
   test('sortByKey는 유효한 transform만 적용한다', () => {
     const rows = [{ price: '10' }, { price: '2' }, { price: null }];
 
-    expect(sortByKey(rows, 'price', 'asc', value => Number(value) || null).map(row => row.price)).toEqual(['2', '10', null]);
+    expect(
+      sortByKey(rows, 'price', 'asc', value => Number(value) || null).map(row => row.price)
+    ).toEqual(['2', '10', null]);
     expect(sortByKey(rows, 'price', 'asc', 'bad').map(row => row.price)).toEqual(['10', '2', null]);
   });
 
@@ -36,13 +38,18 @@ describe('jette utils guards', () => {
       ['C', { productType: 'generic-managed' }],
     ]);
 
-    expect(getProductTypeCounts([
-      null,
-      { productCode: 'A' },
-      { productCode: 'B' },
-      { productCode: 'C' },
-      { productCode: 123 },
-    ], lookup)).toEqual({
+    expect(
+      getProductTypeCounts(
+        [
+          null,
+          { productCode: 'A' },
+          { productCode: 'B' },
+          { productCode: 'C' },
+          { productCode: 123 },
+        ],
+        lookup
+      )
+    ).toEqual({
       exclusive: 1,
       generic: 1,
       'generic-managed': 1,

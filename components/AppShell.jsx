@@ -26,11 +26,11 @@ import { usePageStats } from '@/hooks/usePageStats';
 import { useModalOrigin } from '@/hooks/useModalOrigin';
 
 const SHORTCUTS = [
-  { key: 'N',   desc: '새 테스트 노트 작성' },
+  { key: 'N', desc: '새 테스트 노트 작성' },
   { key: '⌘K', desc: '커맨드 팔레트 열기' },
-  { key: '/',   desc: '페이지 내 검색창 포커스' },
-  { key: 'D',   desc: '다크모드 토글' },
-  { key: '?',   desc: '단축키 도움말 토글' },
+  { key: '/', desc: '페이지 내 검색창 포커스' },
+  { key: 'D', desc: '다크모드 토글' },
+  { key: '?', desc: '단축키 도움말 토글' },
   { key: 'Esc', desc: '모달/팔레트 닫기' },
   { key: 'G H', desc: '홈으로 이동' },
   { key: 'G N', desc: '노트 목록으로 이동' },
@@ -43,7 +43,17 @@ const SHORTCUTS = [
   { key: 'G J', desc: '제때로 이동' },
 ];
 
-const G_NAV = { h: '/', n: '/note', c: '/cost', r: '/report', s: '/note/sample', i: '/ingredient', u: '/nutrition', b: '/report', j: '/jette' };
+const G_NAV = {
+  h: '/',
+  n: '/note',
+  c: '/cost',
+  r: '/report',
+  s: '/note/sample',
+  i: '/ingredient',
+  u: '/nutrition',
+  b: '/report',
+  j: '/jette',
+};
 
 function ShortcutsHelp({ onClose }) {
   const cardRef = useRef(null);
@@ -52,25 +62,62 @@ function ShortcutsHelp({ onClose }) {
   return (
     <div
       role="presentation"
-      style={{ position:'fixed', inset:0, background:OVERLAY_COLOR, zIndex:600, display:'grid', placeItems:'center', animation:'fade 150ms ease' }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: OVERLAY_COLOR,
+        zIndex: 600,
+        display: 'grid',
+        placeItems: 'center',
+        animation: 'fade 150ms ease',
+      }}
+      onClick={e => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div ref={cardRef} className="card modal-anim" role="dialog" aria-label="키보드 단축키" aria-modal="true" style={{ width:'min(380px,92vw)', padding:'24px 28px' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-          <div style={{ fontWeight:800, fontSize:16, color:'var(--text-1)' }}>키보드 단축키</div>
-          <button className="btn" style={{ padding:'4px 8px' }} onClick={onClose}>
-            <Icon.close style={{ width:15, height:15 }}/>
+      <div
+        ref={cardRef}
+        className="card modal-anim"
+        role="dialog"
+        aria-label="키보드 단축키"
+        aria-modal="true"
+        style={{ width: 'min(380px,92vw)', padding: '24px 28px' }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 16,
+          }}
+        >
+          <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--text-1)' }}>키보드 단축키</div>
+          <button className="btn" style={{ padding: '4px 8px' }} onClick={onClose}>
+            <Icon.close style={{ width: 15, height: 15 }} />
           </button>
         </div>
-        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {SHORTCUTS.map(s => (
-            <div key={s.key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-              <span style={{ fontSize:13, color:'var(--text-2)' }}>{s.desc}</span>
-              <kbd style={{
-                fontSize:12, fontWeight:700, padding:'3px 10px', borderRadius:7,
-                background:'var(--surface-2)', border:'1px solid var(--border-strong)',
-                color:'var(--text-1)', fontFamily:'inherit', flexShrink:0,
-              }}>{s.key}</kbd>
+            <div
+              key={s.key}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+            >
+              <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{s.desc}</span>
+              <kbd
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  padding: '3px 10px',
+                  borderRadius: 7,
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border-strong)',
+                  color: 'var(--text-1)',
+                  fontFamily: 'inherit',
+                  flexShrink: 0,
+                }}
+              >
+                {s.key}
+              </kbd>
             </div>
           ))}
         </div>
@@ -126,9 +173,9 @@ export default function AppShell({ children }) {
     const obs = new MutationObserver(() => applyBrandAccent(company));
     obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     return () => obs.disconnect();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const handleCompanyChange = (c) => {
+  const handleCompanyChange = c => {
     if (!c || c.id === getActiveBrandId()) return;
     setActiveBrandId(c.id);
     window.location.reload();
@@ -139,23 +186,28 @@ export default function AppShell({ children }) {
 
   // 키보드 단축키
   useEffect(() => {
-    const unmodified = (e) => !e.metaKey && !e.ctrlKey && !e.altKey;
+    const unmodified = e => !e.metaKey && !e.ctrlKey && !e.altKey;
 
     // 수정자 없는 단일 키 → 동작 맵
     const PLAIN_KEY_ACTIONS = {
-      'n': (e) => { e.preventDefault(); router.push('/note/write'); },
-      '/': (e) => {
+      n: e => {
         e.preventDefault();
-        document.querySelector('.filter-search input, [data-search-input], input[placeholder*="검색"]')?.focus();
+        router.push('/note/write');
       },
-      'd': (e) => {
+      '/': e => {
+        e.preventDefault();
+        document
+          .querySelector('.filter-search input, [data-search-input], input[placeholder*="검색"]')
+          ?.focus();
+      },
+      d: e => {
         e.preventDefault();
         setSetting('theme', getSetting('theme') === 'dark' ? 'light' : 'dark');
         applyAllSettings();
       },
     };
 
-    const handleKeyDown = (e) => {
+    const handleKeyDown = e => {
       // ⌘K / Ctrl+K → 커맨드 팔레트
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
@@ -171,14 +223,19 @@ export default function AppShell({ children }) {
         const dest = G_NAV[e.key.toLowerCase()];
         gPressedRef.current = false;
         clearTimeout(gTimerRef.current);
-        if (dest) { e.preventDefault(); router.push(dest); }
+        if (dest) {
+          e.preventDefault();
+          router.push(dest);
+        }
         return;
       }
       if (e.key === 'g' && unmodified(e)) {
         e.preventDefault();
         gPressedRef.current = true;
         clearTimeout(gTimerRef.current);
-        gTimerRef.current = setTimeout(() => { gPressedRef.current = false; }, 800);
+        gTimerRef.current = setTimeout(() => {
+          gPressedRef.current = false;
+        }, 800);
         return;
       }
 
@@ -188,8 +245,11 @@ export default function AppShell({ children }) {
         return;
       }
 
-      if (e.key === '?')      setShortcutsOpen(v => !v);
-      if (e.key === 'Escape') { setShortcutsOpen(false); setPaletteOpen(false); }
+      if (e.key === '?') setShortcutsOpen(v => !v);
+      if (e.key === 'Escape') {
+        setShortcutsOpen(false);
+        setPaletteOpen(false);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -200,34 +260,52 @@ export default function AppShell({ children }) {
   }, [router]);
 
   // 사용자 설정 (다크모드/밀도/알림) 페이지 진입 시 적용
-  useEffect(() => { applyAllSettings(); }, []);
+  useEffect(() => {
+    applyAllSettings();
+  }, []);
 
   // 모달이 클릭 지점에서 펼쳐지도록 포인터 위치 추적 시작
-  useEffect(() => { initClickOrigin(); }, []);
+  useEffect(() => {
+    initClickOrigin();
+  }, []);
 
   // 새 브라우저 세션이면 마지막 로그인 시각 갱신
-  useEffect(() => { ensureSession(); }, []);
+  useEffect(() => {
+    ensureSession();
+  }, []);
 
   // 오래된 작업 로그 정리 (세션당 1회)
   useEffect(() => {
     const PRUNE_KEY = KEYS.LAST_WL_PRUNE;
-    const hasPruned = (() => { try { return !!sessionStorage.getItem(PRUNE_KEY); } catch { return true; } })();
+    const hasPruned = (() => {
+      try {
+        return !!sessionStorage.getItem(PRUNE_KEY);
+      } catch {
+        return true;
+      }
+    })();
     if (!hasPruned) {
       pruneOldWorkLogs().catch(() => {});
-      try { sessionStorage.setItem(PRUNE_KEY, '1'); } catch {}
+      try {
+        sessionStorage.setItem(PRUNE_KEY, '1');
+      } catch {}
     }
   }, []);
 
   // IndexedDB → localStorage 복원: 새 기기/브라우저에서 백업 복원 후 플랫폼 설정 hydrate
-  useEffect(() => { hydratePlatformsFromDB().catch(() => {}); }, []);
+  useEffect(() => {
+    hydratePlatformsFromDB().catch(() => {});
+  }, []);
 
   // 모바일 nav 닫기 on route change
-  useEffect(() => { setMobileNav(false); }, [pathname]);
+  useEffect(() => {
+    setMobileNav(false);
+  }, [pathname]);
 
   // 버튼 ripple + 카드 tilt 시각 효과
   useVisualEffects();
 
-  const isTabActive = (href) => {
+  const isTabActive = href => {
     if (href === '/') return pathname === '/';
     return pathname.startsWith(href.split('/').slice(0, 2).join('/'));
   };
@@ -235,9 +313,16 @@ export default function AppShell({ children }) {
   return (
     <div className={'app ' + (mobileNav ? 'nav-open' : '')} suppressHydrationWarning>
       {/* 키보드 사용자 Skip Link — 포커스 받을 때만 화면에 나타남 */}
-      <a href="#main-content" className="skip-link">콘텐츠로 건너뛰기</a>
+      <a href="#main-content" className="skip-link">
+        콘텐츠로 건너뛰기
+      </a>
 
-      <Sidebar onClose={() => setMobileNav(false)} activeCompany={activeCompany} unmatchedCount={unmatchedCount} reportingCount={reportingCount} />
+      <Sidebar
+        onClose={() => setMobileNav(false)}
+        activeCompany={activeCompany}
+        unmatchedCount={unmatchedCount}
+        reportingCount={reportingCount}
+      />
       {mobileNav && <div className="nav-scrim" onClick={() => setMobileNav(false)}></div>}
 
       <div>
@@ -270,9 +355,11 @@ export default function AppShell({ children }) {
             const badge = tab.badgeKey === 'unmatched' ? unmatchedCount : 0;
             const TabIcon = Icon[tab.iconKey];
             return (
-              <button key={tab.href}
+              <button
+                key={tab.href}
                 className={'bottom-tab ' + (isTabActive(tab.href) ? 'active' : '')}
-                onClick={() => router.push(tab.href)}>
+                onClick={() => router.push(tab.href)}
+              >
                 {badge > 0 && <span className="tab-badge">{badge}</span>}
                 <TabIcon className="tab-ico" />
                 <span>{tab.label}</span>

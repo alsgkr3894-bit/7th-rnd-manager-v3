@@ -1,11 +1,40 @@
 import {
-  buildNoteSearchIndex, countNotesByStatus, filterSortNotes,
+  buildNoteSearchIndex,
+  countNotesByStatus,
+  filterSortNotes,
 } from '../../lib/note/filter.js';
 
 const NOTES = [
-  { id: 1, title: '와사비마요',   menuName: '한우쉬림프', testContent: '온도 180도', tags: '신메뉴,여름', status: '아이디어',  testDate: '2026-05-01', createdAt: '2026-05-01T00:00:00Z' },
-  { id: 2, title: '트러플 피자',  menuName: '트러플',     testContent: '치즈 비율',  tags: '프리미엄',     status: '진행중',    testDate: '2026-05-10', createdAt: '2026-05-10T00:00:00Z' },
-  { id: 3, title: '감자 사이드',  menuName: '감자튀김',   testContent: '바삭함',     tags: '사이드',       status: '완료',      testDate: '2026-04-20', createdAt: '2026-04-20T00:00:00Z' },
+  {
+    id: 1,
+    title: '와사비마요',
+    menuName: '한우쉬림프',
+    testContent: '온도 180도',
+    tags: '신메뉴,여름',
+    status: '아이디어',
+    testDate: '2026-05-01',
+    createdAt: '2026-05-01T00:00:00Z',
+  },
+  {
+    id: 2,
+    title: '트러플 피자',
+    menuName: '트러플',
+    testContent: '치즈 비율',
+    tags: '프리미엄',
+    status: '진행중',
+    testDate: '2026-05-10',
+    createdAt: '2026-05-10T00:00:00Z',
+  },
+  {
+    id: 3,
+    title: '감자 사이드',
+    menuName: '감자튀김',
+    testContent: '바삭함',
+    tags: '사이드',
+    status: '완료',
+    testDate: '2026-04-20',
+    createdAt: '2026-04-20T00:00:00Z',
+  },
 ];
 
 describe('buildNoteSearchIndex', () => {
@@ -92,7 +121,9 @@ describe('filterSortNotes', () => {
 
   test('전달된 searchIndex를 재사용', () => {
     const idx = buildNoteSearchIndex(NOTES);
-    expect(filterSortNotes(NOTES, { search: '트러플', searchIndex: idx }).map(n => n.id)).toEqual([2]);
+    expect(filterSortNotes(NOTES, { search: '트러플', searchIndex: idx }).map(n => n.id)).toEqual([
+      2,
+    ]);
   });
 
   test('원본 배열을 변형하지 않음 (새 배열 반환)', () => {
@@ -106,11 +137,29 @@ describe('filterSortNotes', () => {
 
     const notes = [
       null,
-      { id: 1, status: '보고예정', brand: {}, menuName: {}, testDate: {}, createdAt: {}, title: {} },
-      { id: 2, status: '보고예정', brand: 'main', menuName: 123, testDate: 456, createdAt: '2026-06-01', title: '정상' },
+      {
+        id: 1,
+        status: '보고예정',
+        brand: {},
+        menuName: {},
+        testDate: {},
+        createdAt: {},
+        title: {},
+      },
+      {
+        id: 2,
+        status: '보고예정',
+        brand: 'main',
+        menuName: 123,
+        testDate: 456,
+        createdAt: '2026-06-01',
+        title: '정상',
+      },
     ];
 
-    expect(filterSortNotes(notes, { search: {}, statusFilter: '보고예정' }).map(n => n.id)).toEqual([2, 1]);
+    expect(filterSortNotes(notes, { search: {}, statusFilter: '보고예정' }).map(n => n.id)).toEqual(
+      [2, 1]
+    );
     expect(filterSortNotes(notes, { sortBy: 'menuName' }).map(n => n.id)).toEqual([1, 2]);
     expect(filterSortNotes(notes, { sortBy: 'testDate' }).map(n => n.id)).toEqual([2, 1]);
     expect(filterSortNotes(notes, { brandFilter: 'main' }).map(n => n.id)).toEqual([2, 1]);

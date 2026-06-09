@@ -29,7 +29,13 @@ beforeEach(() => {
   jest.clearAllMocks();
   hasStore.mockReturnValue(true);
   getAll.mockResolvedValue([]);
-  getSalesKpi.mockResolvedValue({ year: 2026, month: 5, current: 0, deltaPct: null, sparkline: [] });
+  getSalesKpi.mockResolvedValue({
+    year: 2026,
+    month: 5,
+    current: 0,
+    deltaPct: null,
+    sparkline: [],
+  });
   getNoteKpi.mockResolvedValue({ total: 0, reporting: 0 });
   getCostAlertData.mockResolvedValue(null);
 });

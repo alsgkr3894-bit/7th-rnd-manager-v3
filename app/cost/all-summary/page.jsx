@@ -88,7 +88,8 @@ function buildRows(recipes, unitPriceMap, menuPrices, detailMaps) {
   const byMenu = new Map(); // menuName → { category, entries:[{menuCode,size,price}] }
   for (const mp of menuPrices) {
     if (!mp.menuName) continue;
-    if (!byMenu.has(mp.menuName)) byMenu.set(mp.menuName, { category: mp.category || '', entries: [] });
+    if (!byMenu.has(mp.menuName))
+      byMenu.set(mp.menuName, { category: mp.category || '', entries: [] });
     const g = byMenu.get(mp.menuName);
     if (!g.category && mp.category) g.category = mp.category;
     g.entries.push({ menuCode: mp.menuCode, size: mp.size, price: mp.price });
@@ -243,7 +244,13 @@ export default function Page() {
   const hasAnyData = rows.length > 0;
   const hasRecipeData = rows.some(r => r.hasCost);
 
-  const { page: asPage, goTo: asGoTo, totalPages: asTotalPages, paged: asPaged, total: asTotal } = usePagination(filtered, 60);
+  const {
+    page: asPage,
+    goTo: asGoTo,
+    totalPages: asTotalPages,
+    paged: asPaged,
+    total: asTotal,
+  } = usePagination(filtered, 60);
 
   // ── 렌더 ─────────────────────────────────────────────────
   if (dbError)
@@ -338,7 +345,16 @@ export default function Page() {
       {loading && (
         <div className="card" style={{ padding: 16 }}>
           {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} style={{ height: 40, marginBottom: 8, borderRadius: 8, background: 'var(--surface-2)', opacity: 1 - i * 0.1 }} />
+            <div
+              key={i}
+              style={{
+                height: 40,
+                marginBottom: 8,
+                borderRadius: 8,
+                background: 'var(--surface-2)',
+                opacity: 1 - i * 0.1,
+              }}
+            />
           ))}
         </div>
       )}
@@ -409,7 +425,11 @@ export default function Page() {
                       ) : (
                         <Link
                           href={`/cost/${costPathFor(r.category)}`}
-                          style={{ color: 'var(--accent)', fontSize: 12, textDecoration: 'underline' }}
+                          style={{
+                            color: 'var(--accent)',
+                            fontSize: 12,
+                            textDecoration: 'underline',
+                          }}
                           title="해당 원가 페이지에서 레시피 작성"
                         >
                           레시피 미등록
@@ -434,10 +454,17 @@ export default function Page() {
             </table>
           </div>
           <div style={{ borderTop: '1px solid var(--divider)' }}>
-            <Pagination page={asPage} totalPages={asTotalPages} onPage={asGoTo} total={asTotal} pageSize={60} />
+            <Pagination
+              page={asPage}
+              totalPages={asTotalPages}
+              onPage={asGoTo}
+              total={asTotal}
+              pageSize={60}
+            />
             {asTotalPages <= 1 && (
               <div style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text-3)' }}>
-                {filtered.length}개 메뉴 표시{catFilter !== '전체' && ` · ${catFilter} 필터 적용 중`}
+                {filtered.length}개 메뉴 표시
+                {catFilter !== '전체' && ` · ${catFilter} 필터 적용 중`}
               </div>
             )}
           </div>

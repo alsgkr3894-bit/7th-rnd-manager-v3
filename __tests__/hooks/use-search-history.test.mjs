@@ -20,6 +20,12 @@ describe('normalizeSearchHistory', () => {
   });
 
   test('검색 기록은 최대 5개까지만 유지한다', () => {
-    expect(normalizeSearchHistory(['a', 'b', 'c', 'd', 'e', 'f'])).toEqual(['a', 'b', 'c', 'd', 'e']);
+    expect(normalizeSearchHistory(['a', 'b', 'c', 'd', 'e', 'f'])).toEqual([
+      'a',
+      'b',
+      'c',
+      'd',
+      'e',
+    ]);
   });
 });

@@ -36,7 +36,7 @@ export function expandOccurrences(schedule, rangeStart, rangeEnd) {
   if (!baseStr) return [];
 
   // 유효 범위의 끝: rangeEnd vs repeatUntil 중 더 이른 날짜
-  const effectiveEnd = (repeatUntil && repeatUntil < rangeEnd) ? repeatUntil : rangeEnd;
+  const effectiveEnd = repeatUntil && repeatUntil < rangeEnd ? repeatUntil : rangeEnd;
 
   const results = [];
 
@@ -50,7 +50,7 @@ export function expandOccurrences(schedule, rangeStart, rangeEnd) {
 
   // 반복 — baseStr 이전은 절대 포함하지 않음
   const cursor = parse(baseStr);
-  const endDt  = parse(effectiveEnd);
+  const endDt = parse(effectiveEnd);
   const startDt = parse(rangeStart);
   // baseStr 이 rangeEnd 보다 뒤면 발생 없음
   if (cursor > endDt) return [];
@@ -68,7 +68,6 @@ export function expandOccurrences(schedule, rangeStart, rangeEnd) {
       cursor.setDate(cursor.getDate() + 1);
       iter++;
     }
-
   } else if (repeatType === 'weekly') {
     if (cursor < startDt) {
       const diffDays = Math.ceil((startDt - cursor) / 86400000);
@@ -80,11 +79,10 @@ export function expandOccurrences(schedule, rangeStart, rangeEnd) {
       cursor.setDate(cursor.getDate() + 7);
       iter++;
     }
-
   } else if (repeatType === 'monthly') {
     const dayOfMonth = cursor.getDate(); // 원본 일(day) 저장
     // 시작 연/월
-    let year  = cursor.getFullYear();
+    let year = cursor.getFullYear();
     let month = cursor.getMonth(); // 0-indexed
 
     while (iter < MAX_ITER) {
@@ -92,7 +90,7 @@ export function expandOccurrences(schedule, rangeStart, rangeEnd) {
       const maxDay = new Date(year, month + 1, 0).getDate();
       if (dayOfMonth <= maxDay) {
         const candidate = new Date(year, month, dayOfMonth);
-        const candStr   = fmt(candidate);
+        const candStr = fmt(candidate);
         if (candStr > effectiveEnd) break; // 범위 초과 → 종료
         if (candStr >= rangeStart && candidate >= parse(baseStr)) {
           results.push(candStr);
@@ -100,7 +98,10 @@ export function expandOccurrences(schedule, rangeStart, rangeEnd) {
       }
       // 다음 달로 이동
       month++;
-      if (month > 11) { month = 0; year++; }
+      if (month > 11) {
+        month = 0;
+        year++;
+      }
       // 조기 종료: 이미 effectiveEnd 를 지난 연/월
       if (year > parse(effectiveEnd).getFullYear() + 1) break;
       iter++;

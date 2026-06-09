@@ -1,5 +1,8 @@
 import {
-  workLogCutoffDate, filterOldWorkLogs, WORK_LOG_TYPES, WORK_LOG_RETENTION_DAYS,
+  workLogCutoffDate,
+  filterOldWorkLogs,
+  WORK_LOG_TYPES,
+  WORK_LOG_RETENTION_DAYS,
 } from '../../lib/work-log.js';
 
 /**

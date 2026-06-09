@@ -7,8 +7,8 @@ const getAll = jest.fn();
 jest.unstable_mockModule('@/lib/note/schedules', () => ({
   getAllSchedules: (...args) => getAllSchedules(...args),
   SCHEDULE_COLORS: {
-    '미팅': { bg: '#f0f', text: '#111', border: '#222' },
-    '기타': { bg: 'var(--surface-2)', text: 'var(--text-2)', border: 'var(--border)' },
+    미팅: { bg: '#f0f', text: '#111', border: '#222' },
+    기타: { bg: 'var(--surface-2)', text: 'var(--text-2)', border: 'var(--border)' },
   },
 }));
 
@@ -44,7 +44,14 @@ describe('schedule and todo stats guards', () => {
       null,
       'bad',
       { id: {}, date: todayStr, title: {}, time: 123, type: '미팅', description: {} },
-      { id: 7, date: todayStr, title: '정상 일정', time: '10:30', type: '없는 타입', description: '설명' },
+      {
+        id: 7,
+        date: todayStr,
+        title: '정상 일정',
+        time: '10:30',
+        type: '없는 타입',
+        description: '설명',
+      },
       { id: 9, date: 'bad-date', title: '무시' },
     ]);
 

@@ -18,17 +18,17 @@ const state = {
 
 function resetState() {
   state.store.length = 0;
-  state.hasStore     = true;
-  state.putCount     = 0;
-  state.deleteCount  = 0;
+  state.hasStore = true;
+  state.putCount = 0;
+  state.deleteCount = 0;
 }
 
 // ─── Mock @/lib/db before dynamic import ─────────────────────────────────────
 
 jest.unstable_mockModule('@/lib/db', () => ({
   hasStore: () => state.hasStore,
-  getAll:   async () => [...state.store],
-  put:      async (_storeName, record) => {
+  getAll: async () => [...state.store],
+  put: async (_storeName, record) => {
     state.putCount++;
     const id = state.putCount;
     state.store.push({ ...record, id });
@@ -42,9 +42,8 @@ jest.unstable_mockModule('@/lib/db', () => ({
 }));
 
 // Dynamic import AFTER mock registration
-const { getAllSnapshots, saveSnapshot, deleteSnapshot } = await import(
-  '../../lib/cost/margin/snapshots.js'
-);
+const { getAllSnapshots, saveSnapshot, deleteSnapshot } =
+  await import('../../lib/cost/margin/snapshots.js');
 
 // ─── saveSnapshot ─────────────────────────────────────────────────────────────
 
@@ -53,12 +52,12 @@ describe('saveSnapshot', () => {
 
   test('필드가 올바르게 저장된다', async () => {
     const result = await saveSnapshot({
-      capturedAt:  '2026-05-31T10:00:00.000Z',
-      label:       '5월 스냅샷',
+      capturedAt: '2026-05-31T10:00:00.000Z',
+      label: '5월 스냅샷',
       avgCostRate: 32.5,
-      avgMargin:   67.5,
-      menuCount:   42,
-      source:      '전체',
+      avgMargin: 67.5,
+      menuCount: 42,
+      source: '전체',
     });
     expect(result).not.toBeNull();
     expect(result.capturedAt).toBe('2026-05-31T10:00:00.000Z');
@@ -73,7 +72,7 @@ describe('saveSnapshot', () => {
   test('capturedAt 미전달 시 현재 시각 ISO 문자열이 채워진다', async () => {
     const before = Date.now();
     const result = await saveSnapshot({ avgCostRate: 35, avgMargin: 65, menuCount: 10 });
-    const after  = Date.now();
+    const after = Date.now();
     expect(result).not.toBeNull();
     const t = new Date(result.capturedAt).getTime();
     expect(t).toBeGreaterThanOrEqual(before);
@@ -81,7 +80,12 @@ describe('saveSnapshot', () => {
   });
 
   test('label 공백 트리밍', async () => {
-    const result = await saveSnapshot({ label: '  피자  ', avgCostRate: 30, avgMargin: 70, menuCount: 5 });
+    const result = await saveSnapshot({
+      label: '  피자  ',
+      avgCostRate: 30,
+      avgMargin: 70,
+      menuCount: 5,
+    });
     expect(result.label).toBe('피자');
   });
 
@@ -127,7 +131,13 @@ describe('deleteSnapshot', () => {
   beforeEach(resetState);
 
   test('정상 삭제 후 getAll 에서 제거', async () => {
-    await saveSnapshot({ capturedAt: '2026-05-01T00:00:00.000Z', label: '삭제대상', avgCostRate: 30, avgMargin: 70, menuCount: 1 });
+    await saveSnapshot({
+      capturedAt: '2026-05-01T00:00:00.000Z',
+      label: '삭제대상',
+      avgCostRate: 30,
+      avgMargin: 70,
+      menuCount: 1,
+    });
     const before = await getAllSnapshots();
     expect(before).toHaveLength(1);
 

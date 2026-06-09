@@ -47,12 +47,15 @@ export function useLocalStorage(key, initialValue, normalize = identity) {
         }
       }
     } catch {}
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 값 변경 시 저장 (첫 마운트 스킵)
   useEffect(() => {
-    if (isFirstSave.current) { isFirstSave.current = false; return; }
+    if (isFirstSave.current) {
+      isFirstSave.current = false;
+      return;
+    }
     try {
       localStorage.setItem(
         key,

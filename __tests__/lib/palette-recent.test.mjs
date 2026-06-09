@@ -12,22 +12,28 @@ beforeEach(() => {
   storageData = {};
   globalThis.localStorage = {
     getItem: key => (key in storageData ? storageData[key] : null),
-    setItem: (key, value) => { storageData[key] = String(value); },
-    removeItem: key => { delete storageData[key]; },
+    setItem: (key, value) => {
+      storageData[key] = String(value);
+    },
+    removeItem: key => {
+      delete storageData[key];
+    },
   };
 });
 
 describe('palette recent items', () => {
   test('깨진 최근 방문 항목은 제외하고 정상 항목만 유지한다', () => {
-    expect(normalizeRecentItems([
-      { href: '/report', label: '보고서', kind: 'nav' },
-      null,
-      { href: '', label: '빈 링크' },
-      { href: '/cost', label: '원가' },
-      { href: '/note', label: '노트', kind: 10 },
-      { href: '/settings', label: '설정', kind: '  ' },
-      { href: '/report', label: '중복 보고서', kind: ' menu ' },
-    ])).toEqual([
+    expect(
+      normalizeRecentItems([
+        { href: '/report', label: '보고서', kind: 'nav' },
+        null,
+        { href: '', label: '빈 링크' },
+        { href: '/cost', label: '원가' },
+        { href: '/note', label: '노트', kind: 10 },
+        { href: '/settings', label: '설정', kind: '  ' },
+        { href: '/report', label: '중복 보고서', kind: ' menu ' },
+      ])
+    ).toEqual([
       { href: '/report', label: '보고서', kind: 'nav' },
       { href: '/cost', label: '원가', kind: 'nav' },
       { href: '/note', label: '노트', kind: 'nav' },

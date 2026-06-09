@@ -1,7 +1,4 @@
-import {
-  buildModuleHealth,
-  countModuleHealth,
-} from '../../lib/stats/module-health.js';
+import { buildModuleHealth, countModuleHealth } from '../../lib/stats/module-health.js';
 
 const freshStatus = { year: 2026, month: 5, stale: false, never: false };
 const staleStatus = { year: 2026, month: 4, stale: true, never: false };

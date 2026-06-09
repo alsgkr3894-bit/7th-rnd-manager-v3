@@ -43,57 +43,86 @@ export function MonthRankTable({ menus, categories, category, onCategoryChange, 
   function toggleExpand(name) {
     setExpanded(prev => {
       const next = new Set(prev);
-      if (next.has(name)) next.delete(name); else next.add(name);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
       return next;
     });
   }
 
   return (
-    <div className="card" style={{marginTop:16}}>
+    <div className="card" style={{ marginTop: 16 }}>
       <div className="card-header">
         <div>
           <div className="card-title">메뉴 판매 순위</div>
           <div className="card-sub">
             중분류 기준 · 행 클릭 시 규격별 상세 펼침 ·{' '}
-            {selectedCategory
-              ? <b style={{color:'var(--accent-text)'}}>{selectedCategory} 내 비중</b>
-              : <b style={{color:'var(--accent-text)'}}>전체 중 비중</b>}
+            {selectedCategory ? (
+              <b style={{ color: 'var(--accent-text)' }}>{selectedCategory} 내 비중</b>
+            ) : (
+              <b style={{ color: 'var(--accent-text)' }}>전체 중 비중</b>
+            )}
           </div>
         </div>
       </div>
 
-      <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:12}}>
-        <CategoryChip name="전체" count={safeMenus.length} active={!selectedCategory} onClick={() => handleCategoryChange(null)} />
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+        <CategoryChip
+          name="전체"
+          count={safeMenus.length}
+          active={!selectedCategory}
+          onClick={() => handleCategoryChange(null)}
+        />
         {safeCategories.map(c => {
           const cnt = safeMenus.filter(m => asDisplayText(m.category) === c).length;
           if (cnt === 0) return null;
-          return <CategoryChip key={c} name={c} count={cnt} active={selectedCategory === c} onClick={() => handleCategoryChange(c)} />;
+          return (
+            <CategoryChip
+              key={c}
+              name={c}
+              count={cnt}
+              active={selectedCategory === c}
+              onClick={() => handleCategoryChange(c)}
+            />
+          );
         })}
       </div>
 
-      <div style={{position:'relative', marginBottom:12}}>
-        <Icon.search style={{
-          width:14, height:14, position:'absolute', top:'50%', left:12,
-          transform:'translateY(-50%)', color:'var(--text-4)',
-        }}/>
+      <div style={{ position: 'relative', marginBottom: 12 }}>
+        <Icon.search
+          style={{
+            width: 14,
+            height: 14,
+            position: 'absolute',
+            top: '50%',
+            left: 12,
+            transform: 'translateY(-50%)',
+            color: 'var(--text-4)',
+          }}
+        />
         <input
           placeholder="메뉴명 검색"
           value={query}
           onChange={e => setQuery(e.target.value)}
           style={{
-            width:'100%', padding:'8px 12px 8px 32px', borderRadius:8,
-            border:'1px solid var(--border)', background:'var(--surface-2)',
-            color:'var(--text-1)', fontSize:13,
+            width: '100%',
+            padding: '8px 12px 8px 32px',
+            borderRadius: 8,
+            border: '1px solid var(--border)',
+            background: 'var(--surface-2)',
+            color: 'var(--text-1)',
+            fontSize: 13,
           }}
         />
       </div>
 
       {filtered.length === 0 ? (
-        <div style={{padding:'32px 0', textAlign:'center', color:'var(--text-3)', fontSize:13}}>
+        <div
+          style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}
+        >
           조건에 맞는 메뉴가 없습니다
         </div>
       ) : (
-        <div style={{display:'flex', flexDirection:'column', gap:6}}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {filtered.map((m, i) => (
             <RankRow
               key={`${asDisplayText(m.name, 'menu')}__${asDisplayText(m.category, 'category')}__${i}`}
@@ -120,19 +149,29 @@ function CategoryChip({ name, count, active, onClick }) {
       className="chip"
       onClick={handleClick}
       style={{
-        cursor:'pointer', border:'none',
+        cursor: 'pointer',
+        border: 'none',
         background: active ? 'var(--accent)' : 'var(--surface-2)',
         color: active ? '#fff' : 'var(--text-2)',
         fontWeight: 600,
-        display:'inline-flex', alignItems:'center', gap:6,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
       }}
     >
       {safeName}
-      <span style={{
-        background: active ? 'rgba(255,255,255,0.2)' : 'var(--surface)',
-        color: active ? '#fff' : 'var(--text-3)',
-        padding:'1px 6px', borderRadius:10, fontSize:11, fontWeight:700,
-      }}>{safeCount}</span>
+      <span
+        style={{
+          background: active ? 'rgba(255,255,255,0.2)' : 'var(--surface)',
+          color: active ? '#fff' : 'var(--text-3)',
+          padding: '1px 6px',
+          borderRadius: 10,
+          fontSize: 11,
+          fontWeight: 700,
+        }}
+      >
+        {safeCount}
+      </span>
     </button>
   );
 }

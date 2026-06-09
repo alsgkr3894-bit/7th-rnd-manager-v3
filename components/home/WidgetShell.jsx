@@ -58,8 +58,12 @@ export function WidgetShell({ widgetKey, label, isCollapsed, onToggle, children 
           lineHeight: 1,
           zIndex: 1,
         }}
-        onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-2)'; }}
-        onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-4)'; }}
+        onMouseEnter={e => {
+          e.currentTarget.style.color = 'var(--text-2)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.color = 'var(--text-4)';
+        }}
       >
         <Icon.chevDown style={{ width: 13, height: 13 }} />
       </button>

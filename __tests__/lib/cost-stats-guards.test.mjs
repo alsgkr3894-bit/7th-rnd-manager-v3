@@ -23,11 +23,11 @@ jest.unstable_mockModule('@/lib/recipe', () => ({
     const map = new Map();
     for (const meta of allMeta) {
       if (!meta?.productCode) continue;
-      const priceWithTax = priceRowMap.get(meta.productCode)?.priceWithTax ?? meta.priceOverride ?? null;
+      const priceWithTax =
+        priceRowMap.get(meta.productCode)?.priceWithTax ?? meta.priceOverride ?? null;
       map.set(meta.productCode, {
-        unitPrice: meta.baseQuantity > 0 && priceWithTax != null
-          ? priceWithTax / meta.baseQuantity
-          : null,
+        unitPrice:
+          meta.baseQuantity > 0 && priceWithTax != null ? priceWithTax / meta.baseQuantity : null,
       });
     }
     return map;
@@ -101,11 +101,7 @@ describe('cost stats guards', () => {
       return [];
     });
     getPriceFiles.mockResolvedValue([{ id: 3 }, null]);
-    getPriceRowsByFileId.mockResolvedValue([
-      null,
-      'bad',
-      { productCode: 'A', priceWithTax: 2000 },
-    ]);
+    getPriceRowsByFileId.mockResolvedValue([null, 'bad', { productCode: 'A', priceWithTax: 2000 }]);
 
     const result = await getCostAlertData();
 
@@ -127,14 +123,18 @@ describe('cost stats guards', () => {
   test('가격 파일 목록이 깨져도 priceOverride 기반 요약은 유지한다', async () => {
     getAll.mockImplementation(async storeName => {
       if (storeName === 'cost_ingredients') {
-        return [{ productCode: 'A', ingredientName: '치즈', baseQuantity: 100, priceOverride: 1000 }];
+        return [
+          { productCode: 'A', ingredientName: '치즈', baseQuantity: 100, priceOverride: 1000 },
+        ];
       }
       if (storeName === 'cost_recipes') {
-        return [{
-          menuName: 123,
-          ingredients: [{ productCode: 'A', quantities: { 단일: 25 } }],
-          sizes: [{ label: '단일', sellingPrice: 1000 }],
-        }];
+        return [
+          {
+            menuName: 123,
+            ingredients: [{ productCode: 'A', quantities: { 단일: 25 } }],
+            sizes: [{ label: '단일', sellingPrice: 1000 }],
+          },
+        ];
       }
       return [];
     });

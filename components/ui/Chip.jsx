@@ -33,9 +33,7 @@ export function Chip({ label, count, active, dim, color, onClick }) {
       style={getChipButtonStyle({ active: isActive, dim: isDim, color })}
     >
       {text}
-      {safeCount != null && (
-        <span style={getChipBadgeStyle(isActive)}>{safeCount}</span>
-      )}
+      {safeCount != null && <span style={getChipBadgeStyle(isActive)}>{safeCount}</span>}
     </button>
   );
 }

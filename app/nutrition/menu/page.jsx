@@ -8,19 +8,51 @@ import { SearchBox } from '@/components/ui/SearchBox';
 import { initDB } from '@/lib/db';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import {
-  getAllMenuRefs, getRawValueMap,
-  getAllEdges, getAllToppings, getAllCompositions, getAllSetCompositions,
+  getAllMenuRefs,
+  getRawValueMap,
+  getAllEdges,
+  getAllToppings,
+  getAllCompositions,
+  getAllSetCompositions,
 } from '@/lib/nutrition/values/store';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
-const TabBase             = dynamic(() => import('@/components/nutrition/menu/TabBase').then(m => ({ default: m.TabBase })), { ssr: false });
-const TabEdge             = dynamic(() => import('@/components/nutrition/menu/TabEdge').then(m => ({ default: m.TabEdge })), { ssr: false });
-const TabDerived          = dynamic(() => import('@/components/nutrition/menu/TabDerived').then(m => ({ default: m.TabDerived })), { ssr: false });
-const TabResults          = dynamic(() => import('@/components/nutrition/menu/TabResults').then(m => ({ default: m.TabResults })), { ssr: false });
-const TabIngredientValues = dynamic(() => import('@/components/nutrition/menu/TabIngredientValues').then(m => ({ default: m.TabIngredientValues })), { ssr: false });
-const TabSetCalc          = dynamic(() => import('@/components/nutrition/menu/TabSetCalc').then(m => ({ default: m.TabSetCalc })), { ssr: false });
+const TabBase = dynamic(
+  () => import('@/components/nutrition/menu/TabBase').then(m => ({ default: m.TabBase })),
+  { ssr: false }
+);
+const TabEdge = dynamic(
+  () => import('@/components/nutrition/menu/TabEdge').then(m => ({ default: m.TabEdge })),
+  { ssr: false }
+);
+const TabDerived = dynamic(
+  () => import('@/components/nutrition/menu/TabDerived').then(m => ({ default: m.TabDerived })),
+  { ssr: false }
+);
+const TabResults = dynamic(
+  () => import('@/components/nutrition/menu/TabResults').then(m => ({ default: m.TabResults })),
+  { ssr: false }
+);
+const TabIngredientValues = dynamic(
+  () =>
+    import('@/components/nutrition/menu/TabIngredientValues').then(m => ({
+      default: m.TabIngredientValues,
+    })),
+  { ssr: false }
+);
+const TabSetCalc = dynamic(
+  () => import('@/components/nutrition/menu/TabSetCalc').then(m => ({ default: m.TabSetCalc })),
+  { ssr: false }
+);
 
-const TABS = ['베이스 영양성분', '엣지 설정', '파생 메뉴', '식자재 영양값', '계산 결과', '세트 계산'];
+const TABS = [
+  '베이스 영양성분',
+  '엣지 설정',
+  '파생 메뉴',
+  '식자재 영양값',
+  '계산 결과',
+  '세트 계산',
+];
 const EMPTY_MAP = {};
 
 function asRecord(value) {
@@ -28,35 +60,42 @@ function asRecord(value) {
 }
 
 export default function Page() {
-  const [tab,          setTab]          = useState(0);
-  const [menus,        setMenus]        = useState([]);
-  const [menuMasters,  setMenuMasters]  = useState([]);
-  const [rawMap,       setRawMap]       = useState({});
-  const [edges,        setEdges]        = useState([]);
-  const [edgeMap,      setEdgeMap]      = useState({});
-  const [toppings,     setToppings]     = useState([]);
+  const [tab, setTab] = useState(0);
+  const [menus, setMenus] = useState([]);
+  const [menuMasters, setMenuMasters] = useState([]);
+  const [rawMap, setRawMap] = useState({});
+  const [edges, setEdges] = useState([]);
+  const [edgeMap, setEdgeMap] = useState({});
+  const [toppings, setToppings] = useState([]);
   const [compositions, setCompositions] = useState([]);
-  const [setComps,     setSetComps]     = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [menuSearch,   setMenuSearch]   = useState('');
+  const [setComps, setSetComps] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [menuSearch, setMenuSearch] = useState('');
   const mountedRef = useRef(true);
 
   const filteredMenus = useMemo(() => {
     const safeMenus = asObjectArray(menus);
     const q = asDisplayText(menuSearch).trim().toLowerCase();
     if (!q) return safeMenus;
-    return safeMenus.filter(m =>
-      asDisplayText(m.menuName).toLowerCase().includes(q) || asDisplayText(m.menuCode).toLowerCase().includes(q)
+    return safeMenus.filter(
+      m =>
+        asDisplayText(m.menuName).toLowerCase().includes(q) ||
+        asDisplayText(m.menuCode).toLowerCase().includes(q)
     );
   }, [menus, menuSearch]);
 
   const load = useCallback(async () => {
     await initDB();
-    const [menuRefs, rawValues, edgeList, toppingList, compositionList, masters, setCompList] = await Promise.all([
-      getAllMenuRefs(), getRawValueMap(),
-      getAllEdges(), getAllToppings(), getAllCompositions(),
-      getAllMenuMaster(), getAllSetCompositions(),
-    ]);
+    const [menuRefs, rawValues, edgeList, toppingList, compositionList, masters, setCompList] =
+      await Promise.all([
+        getAllMenuRefs(),
+        getRawValueMap(),
+        getAllEdges(),
+        getAllToppings(),
+        getAllCompositions(),
+        getAllMenuMaster(),
+        getAllSetCompositions(),
+      ]);
     if (!mountedRef.current) return;
     const safeEdgeList = asObjectArray(edgeList);
     const nextEdgeMap = Object.fromEntries(
@@ -64,7 +103,11 @@ export default function Page() {
         .map(edge => [asDisplayText(edge.edgeCode), edge])
         .filter(([edgeCode]) => edgeCode)
     );
-    setMenus(asObjectArray(menuRefs).sort((a, b) => asDisplayText(a.menuCode).localeCompare(asDisplayText(b.menuCode), 'ko')));
+    setMenus(
+      asObjectArray(menuRefs).sort((a, b) =>
+        asDisplayText(a.menuCode).localeCompare(asDisplayText(b.menuCode), 'ko')
+      )
+    );
     setMenuMasters(asObjectArray(masters));
     setRawMap(asRecord(rawValues));
     setEdges(safeEdgeList);
@@ -101,7 +144,15 @@ export default function Page() {
       {loading ? (
         <>
           {/* Tab bar skeleton */}
-          <div style={{ display: 'flex', gap: 4, marginTop: 20, borderBottom: '1px solid var(--border)', paddingBottom: 1 }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 4,
+              marginTop: 20,
+              borderBottom: '1px solid var(--border)',
+              paddingBottom: 1,
+            }}
+          >
             {TABS.map((_, i) => (
               <Skeleton key={i} width={110} height={34} radius={8} style={{ marginBottom: -1 }} />
             ))}
@@ -130,14 +181,30 @@ export default function Page() {
                 <tbody>
                   {Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i}>
-                      <td><Skeleton width={100} height={13} /></td>
-                      <td><Skeleton width="75%" height={13} /></td>
-                      <td><Skeleton width={48} height={13} /></td>
-                      <td><Skeleton width={48} height={13} /></td>
-                      <td><Skeleton width={48} height={13} /></td>
-                      <td><Skeleton width={48} height={13} /></td>
-                      <td><Skeleton width={48} height={13} /></td>
-                      <td><Skeleton width={48} height={13} /></td>
+                      <td>
+                        <Skeleton width={100} height={13} />
+                      </td>
+                      <td>
+                        <Skeleton width="75%" height={13} />
+                      </td>
+                      <td>
+                        <Skeleton width={48} height={13} />
+                      </td>
+                      <td>
+                        <Skeleton width={48} height={13} />
+                      </td>
+                      <td>
+                        <Skeleton width={48} height={13} />
+                      </td>
+                      <td>
+                        <Skeleton width={48} height={13} />
+                      </td>
+                      <td>
+                        <Skeleton width={48} height={13} />
+                      </td>
+                      <td>
+                        <Skeleton width={48} height={13} />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -147,28 +214,76 @@ export default function Page() {
         </>
       ) : (
         <div className="content-enter">
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 20, flexWrap: 'wrap' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 12,
+              alignItems: 'center',
+              marginTop: 20,
+              flexWrap: 'wrap',
+            }}
+          >
             <div className="tabs" style={{ flex: '1 1 auto' }}>
               {TABS.map((t, i) => (
-                <button key={i} onClick={() => setTab(i)}
-                  className={`tab ${tab === i ? 'active' : ''}`}>
+                <button
+                  key={i}
+                  onClick={() => setTab(i)}
+                  className={`tab ${tab === i ? 'active' : ''}`}
+                >
                   {t}
                 </button>
               ))}
             </div>
             {(tab === 0 || tab === 2 || tab === 4) && !loading && (
               <div style={{ flex: '0 0 220px' }}>
-                <SearchBox value={menuSearch} onChange={setMenuSearch} placeholder="메뉴명·코드 검색" />
+                <SearchBox
+                  value={menuSearch}
+                  onChange={setMenuSearch}
+                  placeholder="메뉴명·코드 검색"
+                />
               </div>
             )}
           </div>
 
-          {tab === 0 && <TabBase             menus={filteredMenus} rawMap={rawMap} onRefresh={load} menuMasters={menuMasters} />}
-          {tab === 1 && <TabEdge             edges={edges} edgeMap={edgeMap} onRefresh={load} />}
-          {tab === 2 && <TabDerived          menus={filteredMenus} toppings={toppings} compositions={compositions} onRefresh={load} menuMasters={menuMasters} />}
+          {tab === 0 && (
+            <TabBase
+              menus={filteredMenus}
+              rawMap={rawMap}
+              onRefresh={load}
+              menuMasters={menuMasters}
+            />
+          )}
+          {tab === 1 && <TabEdge edges={edges} edgeMap={edgeMap} onRefresh={load} />}
+          {tab === 2 && (
+            <TabDerived
+              menus={filteredMenus}
+              toppings={toppings}
+              compositions={compositions}
+              onRefresh={load}
+              menuMasters={menuMasters}
+            />
+          )}
           {tab === 3 && <TabIngredientValues onRefresh={load} />}
-          {tab === 4 && <TabResults          menus={filteredMenus} rawMap={rawMap} edgeMap={edgeMap} compositions={compositions} toppings={toppings} menuMasters={menuMasters} />}
-          {tab === 5 && <TabSetCalc          menus={menus} rawMap={rawMap} edgeMap={edgeMap} setComps={setComps} menuMasters={menuMasters} onRefresh={load} />}
+          {tab === 4 && (
+            <TabResults
+              menus={filteredMenus}
+              rawMap={rawMap}
+              edgeMap={edgeMap}
+              compositions={compositions}
+              toppings={toppings}
+              menuMasters={menuMasters}
+            />
+          )}
+          {tab === 5 && (
+            <TabSetCalc
+              menus={menus}
+              rawMap={rawMap}
+              edgeMap={edgeMap}
+              setComps={setComps}
+              menuMasters={menuMasters}
+              onRefresh={load}
+            />
+          )}
         </div>
       )}
     </main>

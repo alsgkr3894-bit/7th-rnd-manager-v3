@@ -11,8 +11,8 @@ import { getAllSnapshots, deleteSnapshot } from '@/lib/cost/margin/snapshots';
  */
 export function MarginTrendModal({ onClose }) {
   const [snapshots, setSnapshots] = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [deleting,  setDeleting]  = useState(null); // id being deleted
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(null); // id being deleted
   const mountedRef = useRef(true);
 
   const load = useCallback(async () => {
@@ -73,7 +73,11 @@ export function MarginTrendModal({ onClose }) {
       {loading ? (
         <div style={{ padding: '24px 0' }}>
           {[1, 2, 3].map(i => (
-            <div key={i} className="skeleton" style={{ height: 56, borderRadius: 8, marginBottom: 8 }} />
+            <div
+              key={i}
+              className="skeleton"
+              style={{ height: 56, borderRadius: 8, marginBottom: 8 }}
+            />
           ))}
         </div>
       ) : snapshots.length === 0 ? (
@@ -89,10 +93,10 @@ export function MarginTrendModal({ onClose }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {snapshots.map(s => {
-            const costRate  = s.avgCostRate != null ? Number(s.avgCostRate) : null;
-            const margin    = s.avgMargin   != null ? Number(s.avgMargin)   : null;
-            const bw        = barWidth(costRate);
-            const color     = barColor(costRate);
+            const costRate = s.avgCostRate != null ? Number(s.avgCostRate) : null;
+            const margin = s.avgMargin != null ? Number(s.avgMargin) : null;
+            const bw = barWidth(costRate);
+            const color = barColor(costRate);
 
             return (
               <div
@@ -102,7 +106,17 @@ export function MarginTrendModal({ onClose }) {
               >
                 {/* Top row: label + date + delete */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontWeight: 600, fontSize: 13, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 13,
+                      flex: 1,
+                      minWidth: 0,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     {s.label || '(라벨 없음)'}
                   </span>
                   <span style={{ fontSize: 11, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
@@ -130,7 +144,12 @@ export function MarginTrendModal({ onClose }) {
                   </span>
                   <span>
                     <span style={{ color: 'var(--text-3)' }}>평균 마진율 </span>
-                    <strong style={{ color: margin != null && margin >= 60 ? 'var(--positive)' : 'var(--negative)' }}>
+                    <strong
+                      style={{
+                        color:
+                          margin != null && margin >= 60 ? 'var(--positive)' : 'var(--negative)',
+                      }}
+                    >
                       {formatPercent(margin)}
                     </strong>
                   </span>
@@ -141,7 +160,14 @@ export function MarginTrendModal({ onClose }) {
                 </div>
 
                 {/* Inline bar — avgCostRate sparkline */}
-                <div style={{ height: 6, borderRadius: 3, background: 'var(--surface-2)', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    height: 6,
+                    borderRadius: 3,
+                    background: 'var(--surface-2)',
+                    overflow: 'hidden',
+                  }}
+                >
                   <div
                     style={{
                       height: '100%',
@@ -160,7 +186,16 @@ export function MarginTrendModal({ onClose }) {
 
       {/* Legend */}
       {!loading && snapshots.length > 0 && (
-        <div style={{ marginTop: 12, fontSize: 11, color: 'var(--text-3)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <div
+          style={{
+            marginTop: 12,
+            fontSize: 11,
+            color: 'var(--text-3)',
+            display: 'flex',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
           <span>막대: 평균 원가율</span>
           <span style={{ color: 'var(--positive)' }}>● ≤30% 양호</span>
           <span style={{ color: 'var(--accent)' }}>● ≤40% 주의</span>

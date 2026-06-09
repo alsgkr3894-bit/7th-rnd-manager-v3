@@ -11,7 +11,9 @@ import { usePagination } from '@/hooks/usePagination';
 import { downloadCsv } from '@/lib/download';
 import {
   getAllManagedProducts,
-  addManagedProduct, deleteManagedProduct, updateManagedProduct,
+  addManagedProduct,
+  deleteManagedProduct,
+  updateManagedProduct,
   migrateExclusiveFromPriceList,
   onManagedProductsChange,
 } from '@/lib/shipment';
@@ -32,9 +34,9 @@ import { sortByKey } from '@/lib/jette/utils';
 const EMPTY_FORM = { productCode: '', productName: '', productType: 'generic', isManaged: false };
 const PRODUCT_TYPE_ORDER = { exclusive: 0, generic: 1, 'generic-managed': 2 };
 const SORT_TRANSFORM = {
-  productType: (v) => PRODUCT_TYPE_ORDER[v] ?? 9,
-  enable:      (v) => (v === false ? 0 : 1),
-  isManaged:   (v) => (v ? 1 : 0),
+  productType: v => PRODUCT_TYPE_ORDER[v] ?? 9,
+  enable: v => (v === false ? 0 : 1),
+  isManaged: v => (v ? 1 : 0),
 };
 
 export function ManagedProductsCard() {
@@ -84,7 +86,9 @@ export function ManagedProductsCard() {
     } catch (err) {
       if (err.message === 'CODE_DUPLICATE') showToast('이미 등록된 제품코드입니다', 'err');
       else showToast(err.message || '추가 실패', 'err');
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleDelete(id) {
@@ -99,18 +103,30 @@ export function ManagedProductsCard() {
   }
 
   async function handleToggleEnable(p) {
-    try { await updateManagedProduct({ id: p.id, enable: p.enable === false }); refresh(); }
-    catch { showToast('토글 실패', 'err'); }
+    try {
+      await updateManagedProduct({ id: p.id, enable: p.enable === false });
+      refresh();
+    } catch {
+      showToast('토글 실패', 'err');
+    }
   }
 
   async function handleChangeType(p, productType) {
-    try { await updateManagedProduct({ id: p.id, productType }); refresh(); }
-    catch { showToast('변경 실패', 'err'); }
+    try {
+      await updateManagedProduct({ id: p.id, productType });
+      refresh();
+    } catch {
+      showToast('변경 실패', 'err');
+    }
   }
 
   async function handleToggleManaged(p) {
-    try { await updateManagedProduct({ id: p.id, isManaged: !p.isManaged }); refresh(); }
-    catch { showToast('변경 실패', 'err'); }
+    try {
+      await updateManagedProduct({ id: p.id, isManaged: !p.isManaged });
+      refresh();
+    } catch {
+      showToast('변경 실패', 'err');
+    }
   }
 
   /** 가격비교 최신 파일의 productCode 중 ref에 없는 것을 'exclusive'로 일괄 추가 */
@@ -118,9 +134,15 @@ export function ManagedProductsCard() {
     setMigrating(true);
     try {
       const files = await getPriceFiles();
-      if (files.length === 0) { showToast('가격비교 데이터가 없습니다', 'err'); return; }
+      if (files.length === 0) {
+        showToast('가격비교 데이터가 없습니다', 'err');
+        return;
+      }
       const rows = await getPriceRowsByFileId(files[0].id);
-      if (rows.length === 0) { showToast('가격비교 행이 없습니다', 'err'); return; }
+      if (rows.length === 0) {
+        showToast('가격비교 행이 없습니다', 'err');
+        return;
+      }
       const priceProducts = rows
         .filter(r => r.productCode && r.productName)
         .map(r => ({ productCode: r.productCode, productName: r.productName }));
@@ -130,17 +152,22 @@ export function ManagedProductsCard() {
     } catch (err) {
       console.error(err);
       showToast(err.message || '마이그레이션 실패', 'err');
-    } finally { setMigrating(false); }
+    } finally {
+      setMigrating(false);
+    }
   }
 
-  const counts = useMemo(() => ({
-    all:              list.length,
-    exclusive:        list.filter(p => p.productType === 'exclusive').length,
-    generic:          list.filter(p => p.productType === 'generic' || !p.productType).length,
-    'generic-managed': list.filter(p => p.productType === 'generic-managed').length,
-    managed:          list.filter(p => p.isManaged).length,
-    disabled:         list.filter(p => p.enable === false).length,
-  }), [list]);
+  const counts = useMemo(
+    () => ({
+      all: list.length,
+      exclusive: list.filter(p => p.productType === 'exclusive').length,
+      generic: list.filter(p => p.productType === 'generic' || !p.productType).length,
+      'generic-managed': list.filter(p => p.productType === 'generic-managed').length,
+      managed: list.filter(p => p.isManaged).length,
+      disabled: list.filter(p => p.enable === false).length,
+    }),
+    [list]
+  );
 
   const filtered = useMemo(() => {
     let r = list;
@@ -148,17 +175,19 @@ export function ManagedProductsCard() {
     else if (filter !== 'all') r = r.filter(p => (p.productType || 'generic') === filter);
     if (managedOnly) r = r.filter(p => p.isManaged);
     const q = search.trim().toLowerCase();
-    if (q) r = r.filter(p =>
-      (p.productName || '').toLowerCase().includes(q)
-      || (p.productCode || '').toLowerCase().includes(q)
-    );
+    if (q)
+      r = r.filter(
+        p =>
+          (p.productName || '').toLowerCase().includes(q) ||
+          (p.productCode || '').toLowerCase().includes(q)
+      );
     return sortByKey(r, sortKey, sortDir, SORT_TRANSFORM[sortKey] ?? null);
   }, [list, search, filter, managedOnly, sortKey, sortDir]);
 
   const { page, goTo, totalPages, paged, total } = usePagination(filtered, 50);
 
   function toggleSort(key) {
-    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    if (sortKey === key) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
     else {
       setSortKey(key);
       setSortDir(key === 'productName' || key === 'productCode' ? 'asc' : 'desc');
@@ -178,24 +207,31 @@ export function ManagedProductsCard() {
   }
 
   return (
-    <div className="card" style={{marginTop:16}}>
+    <div className="card" style={{ marginTop: 16 }}>
       <div className="card-header">
         <div>
           <div className="card-title">대상 제품 목록</div>
           <div className="card-sub">
-            총 {list.length}개 (전용 {counts.exclusive} · 범용 {counts.generic} · 범용관리 {counts['generic-managed']} · 관리품목 {counts.managed})
+            총 {list.length}개 (전용 {counts.exclusive} · 범용 {counts.generic} · 범용관리{' '}
+            {counts['generic-managed']} · 관리품목 {counts.managed})
           </div>
         </div>
-        <div style={{display:'flex', gap:6}}>
+        <div style={{ display: 'flex', gap: 6 }}>
           <button className="btn sm" onClick={exportCsv} disabled={filtered.length === 0}>
             CSV 내보내기
           </button>
           <button className="btn sm" onClick={handleMigrate} disabled={migrating}>
-            <Icon.download style={{width:12, height:12}}/>
+            <Icon.download style={{ width: 12, height: 12 }} />
             {migrating ? '가져오는 중...' : '가격비교에서 전용상품 가져오기'}
           </button>
           <button className="btn sm" onClick={() => setAdding(v => !v)}>
-            {adding ? '닫기' : <><Icon.plus style={{width:12, height:12}}/> 추가</>}
+            {adding ? (
+              '닫기'
+            ) : (
+              <>
+                <Icon.plus style={{ width: 12, height: 12 }} /> 추가
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -210,38 +246,117 @@ export function ManagedProductsCard() {
         />
       )}
 
-      <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:12, alignItems:'center'}}>
-        <Chip label="전체"     count={counts.all}                   active={filter === 'all'}              onClick={() => setFilter('all')}/>
-        <Chip label="전용상품" count={counts.exclusive}             active={filter === 'exclusive'}         onClick={() => setFilter('exclusive')}/>
-        <Chip label="범용상품" count={counts.generic}               active={filter === 'generic'}           onClick={() => setFilter('generic')}/>
-        <Chip label="범용관리" count={counts['generic-managed']}    active={filter === 'generic-managed'}   onClick={() => setFilter('generic-managed')}/>
-        <span style={{width:1, height:18, background:'var(--border)', margin:'0 4px'}}/>
-        <Chip label="관리품목만" count={counts.managed}    active={managedOnly}            onClick={() => setManagedOnly(v => !v)}/>
+      <div
+        style={{
+          display: 'flex',
+          gap: 6,
+          flexWrap: 'wrap',
+          marginBottom: 12,
+          alignItems: 'center',
+        }}
+      >
+        <Chip
+          label="전체"
+          count={counts.all}
+          active={filter === 'all'}
+          onClick={() => setFilter('all')}
+        />
+        <Chip
+          label="전용상품"
+          count={counts.exclusive}
+          active={filter === 'exclusive'}
+          onClick={() => setFilter('exclusive')}
+        />
+        <Chip
+          label="범용상품"
+          count={counts.generic}
+          active={filter === 'generic'}
+          onClick={() => setFilter('generic')}
+        />
+        <Chip
+          label="범용관리"
+          count={counts['generic-managed']}
+          active={filter === 'generic-managed'}
+          onClick={() => setFilter('generic-managed')}
+        />
+        <span style={{ width: 1, height: 18, background: 'var(--border)', margin: '0 4px' }} />
+        <Chip
+          label="관리품목만"
+          count={counts.managed}
+          active={managedOnly}
+          onClick={() => setManagedOnly(v => !v)}
+        />
         {counts.disabled > 0 && (
-          <Chip label="비활성" count={counts.disabled} active={filter === 'disabled'} onClick={() => setFilter('disabled')}/>
+          <Chip
+            label="비활성"
+            count={counts.disabled}
+            active={filter === 'disabled'}
+            onClick={() => setFilter('disabled')}
+          />
         )}
       </div>
 
-      <SearchBox value={search} onChange={setSearch}/>
+      <SearchBox value={search} onChange={setSearch} />
 
       {filtered.length === 0 ? (
         <EmptyState
           compact
-          icon={<Icon.box style={{ width: 28, height: 28 }}/>}
+          icon={<Icon.box style={{ width: 28, height: 28 }} />}
           title={search ? '조건에 맞는 제품이 없습니다' : '관리 대상 제품이 없습니다'}
           desc={search ? '검색어를 바꿔보세요' : '상단에서 제품을 추가해 관리하세요'}
         />
       ) : (
-        <div style={{maxHeight:480, overflowY:'auto', borderTop:'1px solid var(--border)'}}>
+        <div style={{ maxHeight: 480, overflowY: 'auto', borderTop: '1px solid var(--border)' }}>
           <table className="data-table">
-            <thead style={{position:'sticky', top:0, background:'var(--surface)', zIndex:1}}>
+            <thead style={{ position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 1 }}>
               <tr>
-                <SortableTh sortKey="productCode" active={sortKey} dir={sortDir} onClick={toggleSort} width={120}>제품코드</SortableTh>
-                <SortableTh sortKey="productName" active={sortKey} dir={sortDir} onClick={toggleSort}>제품명</SortableTh>
-                <SortableTh sortKey="enable" active={sortKey} dir={sortDir} onClick={toggleSort} width={70} style={{textAlign:'center'}}>활성</SortableTh>
-                <SortableTh sortKey="productType" active={sortKey} dir={sortDir} onClick={toggleSort} width={130}>분류</SortableTh>
-                <SortableTh sortKey="isManaged" active={sortKey} dir={sortDir} onClick={toggleSort} width={80} style={{textAlign:'center'}}>관리품목</SortableTh>
-                <th style={{width:150}}></th>
+                <SortableTh
+                  sortKey="productCode"
+                  active={sortKey}
+                  dir={sortDir}
+                  onClick={toggleSort}
+                  width={120}
+                >
+                  제품코드
+                </SortableTh>
+                <SortableTh
+                  sortKey="productName"
+                  active={sortKey}
+                  dir={sortDir}
+                  onClick={toggleSort}
+                >
+                  제품명
+                </SortableTh>
+                <SortableTh
+                  sortKey="enable"
+                  active={sortKey}
+                  dir={sortDir}
+                  onClick={toggleSort}
+                  width={70}
+                  style={{ textAlign: 'center' }}
+                >
+                  활성
+                </SortableTh>
+                <SortableTh
+                  sortKey="productType"
+                  active={sortKey}
+                  dir={sortDir}
+                  onClick={toggleSort}
+                  width={130}
+                >
+                  분류
+                </SortableTh>
+                <SortableTh
+                  sortKey="isManaged"
+                  active={sortKey}
+                  dir={sortDir}
+                  onClick={toggleSort}
+                  width={80}
+                  style={{ textAlign: 'center' }}
+                >
+                  관리품목
+                </SortableTh>
+                <th style={{ width: 150 }}></th>
               </tr>
             </thead>
             <tbody>
@@ -260,7 +375,13 @@ export function ManagedProductsCard() {
               ))}
             </tbody>
           </table>
-          <Pagination page={page} totalPages={totalPages} onPage={goTo} total={total} pageSize={50} />
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPage={goTo}
+            total={total}
+            pageSize={50}
+          />
         </div>
       )}
     </div>

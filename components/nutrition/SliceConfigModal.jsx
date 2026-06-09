@@ -36,7 +36,10 @@ export function SliceConfigModal({ pizzaMenus, masterByCode, counts, onApply, on
     const m = {};
     for (const menu of safePizzaMenus) {
       const ov = asRecord(safeCounts[menu.menuCode]);
-      m[menu.menuCode] = { L: ov.L != null ? String(ov.L) : '', R: ov.R != null ? String(ov.R) : '' };
+      m[menu.menuCode] = {
+        L: ov.L != null ? String(ov.L) : '',
+        R: ov.R != null ? String(ov.R) : '',
+      };
     }
     return m;
   });
@@ -48,7 +51,8 @@ export function SliceConfigModal({ pizzaMenus, masterByCode, counts, onApply, on
     const next = { ...safeCounts };
     for (const menu of safePizzaMenus) {
       const v = vals[menu.menuCode] || {};
-      const L = Number(v.L), R = Number(v.R);
+      const L = Number(v.L),
+        R = Number(v.R);
       const entry = {};
       if (v.L !== '' && L > 0) entry.L = L;
       if (v.R !== '' && R > 0) entry.R = R;
@@ -68,8 +72,15 @@ export function SliceConfigModal({ pizzaMenus, masterByCode, counts, onApply, on
   }
 
   const inputStyle = {
-    fontSize: 13, padding: '5px 8px', border: '1px solid var(--border)', borderRadius: 6,
-    background: 'var(--surface)', color: 'var(--text-1)', width: '100%', boxSizing: 'border-box', textAlign: 'center',
+    fontSize: 13,
+    padding: '5px 8px',
+    border: '1px solid var(--border)',
+    borderRadius: 6,
+    background: 'var(--surface)',
+    color: 'var(--text-1)',
+    width: '100%',
+    boxSizing: 'border-box',
+    textAlign: 'center',
   };
 
   return (
@@ -79,34 +90,97 @@ export function SliceConfigModal({ pizzaMenus, masterByCode, counts, onApply, on
       onClose={close}
       width="min(560px, 95vw)"
     >
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 70px', gap: 6, alignItems: 'center', marginBottom: 6, padding: '0 10px', fontSize: 11, fontWeight: 700, color: 'var(--text-4)' }}>
-        <span>메뉴</span><span style={{ textAlign: 'center' }}>L 조각</span><span style={{ textAlign: 'center' }}>R 조각</span>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 70px 70px',
+          gap: 6,
+          alignItems: 'center',
+          marginBottom: 6,
+          padding: '0 10px',
+          fontSize: 11,
+          fontWeight: 700,
+          color: 'var(--text-4)',
+        }}
+      >
+        <span>메뉴</span>
+        <span style={{ textAlign: 'center' }}>L 조각</span>
+        <span style={{ textAlign: 'center' }}>R 조각</span>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: '60vh', overflowY: 'auto' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+          maxHeight: '60vh',
+          overflowY: 'auto',
+        }}
+      >
         {safePizzaMenus.map(menu => {
           const def = defaultSlices(menu, safeMasterByCode);
           return (
-            <div key={menu.menuCode}
-              style={{ display: 'grid', gridTemplateColumns: '1fr 70px 70px', gap: 6, alignItems: 'center', padding: '6px 10px', borderRadius: 8, background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-              <span style={{ fontSize: 13, color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div
+              key={menu.menuCode}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 70px 70px',
+                gap: 6,
+                alignItems: 'center',
+                padding: '6px 10px',
+                borderRadius: 8,
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 13,
+                  color: 'var(--text-2)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {menu.menuName}
               </span>
-              <input type="text" inputMode="numeric" value={vals[menu.menuCode]?.L ?? ''} placeholder={String(def.L)}
-                onChange={e => setVal(menu.menuCode, 'L', e.target.value)} style={inputStyle} />
-              <input type="text" inputMode="numeric" value={vals[menu.menuCode]?.R ?? ''} placeholder={String(def.R)}
-                onChange={e => setVal(menu.menuCode, 'R', e.target.value)} style={inputStyle} />
+              <input
+                type="text"
+                inputMode="numeric"
+                value={vals[menu.menuCode]?.L ?? ''}
+                placeholder={String(def.L)}
+                onChange={e => setVal(menu.menuCode, 'L', e.target.value)}
+                style={inputStyle}
+              />
+              <input
+                type="text"
+                inputMode="numeric"
+                value={vals[menu.menuCode]?.R ?? ''}
+                placeholder={String(def.R)}
+                onChange={e => setVal(menu.menuCode, 'R', e.target.value)}
+                style={inputStyle}
+              />
             </div>
           );
         })}
         {safePizzaMenus.length === 0 && (
-          <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-4)', fontSize: 13 }}>피자 메뉴가 없어요</div>
+          <div
+            style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-4)', fontSize: 13 }}
+          >
+            피자 메뉴가 없어요
+          </div>
         )}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 16 }}>
-        <button type="button" className="btn sm" onClick={resetAll}>전체 초기화</button>
+        <button type="button" className="btn sm" onClick={resetAll}>
+          전체 초기화
+        </button>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button type="button" className="btn" onClick={close}>취소</button>
-          <button type="button" className="btn primary" onClick={apply}>적용</button>
+          <button type="button" className="btn" onClick={close}>
+            취소
+          </button>
+          <button type="button" className="btn primary" onClick={apply}>
+            적용
+          </button>
         </div>
       </div>
     </ModalFrame>

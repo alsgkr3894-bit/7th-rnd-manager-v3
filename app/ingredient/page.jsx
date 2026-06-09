@@ -9,14 +9,35 @@ const GROUPS = [
   {
     label: '식자재 관리',
     items: [
-      { href: '/ingredient/list',   icon: 'tag',   title: '식자재 목록', sub: '등록된 식자재 전체 목록을 조회합니다', iconBg: 'var(--positive-soft)', iconColor: 'var(--positive)' },
-      { href: '/ingredient/manage', icon: 'edit',  title: '식자재 관리', sub: '식자재 추가·수정·삭제를 수행합니다',   iconBg: 'var(--accent-soft)',   iconColor: 'var(--accent-text)' },
+      {
+        href: '/ingredient/list',
+        icon: 'tag',
+        title: '식자재 목록',
+        sub: '등록된 식자재 전체 목록을 조회합니다',
+        iconBg: 'var(--positive-soft)',
+        iconColor: 'var(--positive)',
+      },
+      {
+        href: '/ingredient/manage',
+        icon: 'edit',
+        title: '식자재 관리',
+        sub: '식자재 추가·수정·삭제를 수행합니다',
+        iconBg: 'var(--accent-soft)',
+        iconColor: 'var(--accent-text)',
+      },
     ],
   },
   {
     label: '분석',
     items: [
-      { href: '/ingredient/usage',  icon: 'chart', title: '사용량 분석', sub: '레시피별 식자재 사용 현황을 확인합니다', iconBg: '#F0EBFF', iconColor: '#6B3FCB' },
+      {
+        href: '/ingredient/usage',
+        icon: 'chart',
+        title: '사용량 분석',
+        sub: '레시피별 식자재 사용 현황을 확인합니다',
+        iconBg: '#F0EBFF',
+        iconColor: '#6B3FCB',
+      },
     ],
   },
 ];
@@ -38,13 +59,28 @@ export default function Page() {
     })();
   }, []);
 
-  const cards = stats ? [
-    { label: '전체 식자재', value: stats.totalCount },
-    { label: '단가 연동', value: stats.linkedCount, unit: `개 · ${stats.linkPct}%`, valueColor: 'var(--positive)' },
-    { label: '미분류', value: stats.uncategorizedCount, valueColor: stats.uncategorizedCount > 0 ? 'var(--warn)' : undefined },
-    { label: '포장수량 미설정', value: stats.noBaseQtyCount, valueColor: stats.noBaseQtyCount > 0 ? 'var(--warn)' : undefined },
-    { label: '최신 단가 반영', value: stats.latestPriceDate || '없음', unit: '' },
-  ] : [];
+  const cards = stats
+    ? [
+        { label: '전체 식자재', value: stats.totalCount },
+        {
+          label: '단가 연동',
+          value: stats.linkedCount,
+          unit: `개 · ${stats.linkPct}%`,
+          valueColor: 'var(--positive)',
+        },
+        {
+          label: '미분류',
+          value: stats.uncategorizedCount,
+          valueColor: stats.uncategorizedCount > 0 ? 'var(--warn)' : undefined,
+        },
+        {
+          label: '포장수량 미설정',
+          value: stats.noBaseQtyCount,
+          valueColor: stats.noBaseQtyCount > 0 ? 'var(--warn)' : undefined,
+        },
+        { label: '최신 단가 반영', value: stats.latestPriceDate || '없음', unit: '' },
+      ]
+    : [];
 
   return (
     <SectionHubPage

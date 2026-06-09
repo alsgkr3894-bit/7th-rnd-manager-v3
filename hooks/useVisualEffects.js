@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 
-const RIPPLE_CLEANUP_MS   = 500;  // must match .ripple-effect CSS animation duration
+const RIPPLE_CLEANUP_MS = 500; // must match .ripple-effect CSS animation duration
 const TILT_PERSPECTIVE_PX = 600;
-const TILT_ROTATE_Y_DEG   = 6;
-const TILT_ROTATE_X_DEG   = 4;
+const TILT_ROTATE_Y_DEG = 6;
+const TILT_ROTATE_X_DEG = 4;
 
 const SELECTORS = {
-  BTN:       '.btn',
+  BTN: '.btn',
   CARD_LIFT: '.card-lift',
 };
 
@@ -48,10 +48,10 @@ export function useVisualEffects() {
       const circle = document.createElement('span');
       circle.className = 'ripple-effect';
       const rect = btn.getBoundingClientRect();
-      const cx = e.clientX || (rect.left + rect.width / 2);
-      const cy = e.clientY || (rect.top  + rect.height / 2);
-      circle.style.left = (cx - rect.left) + 'px';
-      circle.style.top  = (cy - rect.top)  + 'px';
+      const cx = e.clientX || rect.left + rect.width / 2;
+      const cy = e.clientY || rect.top + rect.height / 2;
+      circle.style.left = cx - rect.left + 'px';
+      circle.style.top = cy - rect.top + 'px';
       btn.appendChild(circle);
       const timer = setTimeout(() => {
         circle.remove();
@@ -73,7 +73,10 @@ export function useVisualEffects() {
     let active = null;
 
     function reset() {
-      if (active) { active.style.transform = ''; active = null; }
+      if (active) {
+        active.style.transform = '';
+        active = null;
+      }
     }
 
     function onMove(e) {

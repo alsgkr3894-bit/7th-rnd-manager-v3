@@ -11,6 +11,8 @@ import { getActiveBrandId } from '@/lib/active-brand';
  */
 export function useIsMainBrand() {
   const [isMain, setIsMain] = useState(true);
-  useEffect(() => { setIsMain(getActiveBrandId() === 'main'); }, []);
+  useEffect(() => {
+    setIsMain(getActiveBrandId() === 'main');
+  }, []);
   return isMain;
 }

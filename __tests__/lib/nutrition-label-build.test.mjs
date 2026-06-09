@@ -31,7 +31,14 @@ describe('buildPizzaSliceSheet', () => {
       rawMap: {
         'P-001__석쇠L': { weight: 800, kcal: 200, sugar: 10, protein: 20, satFat: 4, sodium: 300 },
         'P-001__석쇠R': { weight: 640, kcal: 180, sugar: 8, protein: 18, satFat: 3, sodium: 280 },
-        'P-001__씬바사삭L': { weight: 720, kcal: 160, sugar: 6, protein: 16, satFat: 2, sodium: 240 },
+        'P-001__씬바사삭L': {
+          weight: 720,
+          kcal: 160,
+          sugar: 6,
+          protein: 16,
+          satFat: 2,
+          sodium: 240,
+        },
       },
       edgeMap: {},
       masterByCode: {},

@@ -11,14 +11,16 @@ export function ShipmentHistory({ files, selectedYM, onSelectYM, onDelete }) {
 
   if (safeFiles.length === 0) {
     return (
-      <div className="card" style={{marginTop:16}}>
+      <div className="card" style={{ marginTop: 16 }}>
         <div className="card-header">
           <div>
             <div className="card-title">업로드 이력</div>
             <div className="card-sub">출고량 파일은 월별로 누적됩니다</div>
           </div>
         </div>
-        <div style={{padding:'24px 0', textAlign:'center', color:'var(--text-3)', fontSize:13}}>
+        <div
+          style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}
+        >
           업로드된 파일이 없습니다
         </div>
       </div>
@@ -26,22 +28,24 @@ export function ShipmentHistory({ files, selectedYM, onSelectYM, onDelete }) {
   }
 
   return (
-    <div className="card" style={{marginTop:16}}>
+    <div className="card" style={{ marginTop: 16 }}>
       <div className="card-header">
         <div>
           <div className="card-title">업로드 이력</div>
-          <div className="card-sub">총 {safeFiles.length}건 · 행을 클릭하면 해당 월 집계가 표시됩니다</div>
+          <div className="card-sub">
+            총 {safeFiles.length}건 · 행을 클릭하면 해당 월 집계가 표시됩니다
+          </div>
         </div>
       </div>
-      <div style={{overflowX:'auto'}}>
+      <div style={{ overflowX: 'auto' }}>
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{width:110}}>적용 년월</th>
+              <th style={{ width: 110 }}>적용 년월</th>
               <th>파일명 / 업로드 시각</th>
-              <th style={{width:120, textAlign:'right'}}>대상 행 수</th>
-              <th style={{width:130, textAlign:'right'}}>원본 행 수</th>
-              <th style={{width:140}}></th>
+              <th style={{ width: 120, textAlign: 'right' }}>대상 행 수</th>
+              <th style={{ width: 130, textAlign: 'right' }}>원본 행 수</th>
+              <th style={{ width: 140 }}></th>
             </tr>
           </thead>
           <tbody>
@@ -54,12 +58,15 @@ export function ShipmentHistory({ files, selectedYM, onSelectYM, onDelete }) {
               const fileName = asDisplayText(f.fileName, '(이름 없음)');
               const uploadedAt = asDisplayText(f.uploadedAt);
               const totalRows = Number.isFinite(Number(f.totalRows)) ? Number(f.totalRows) : 0;
-              const sourceTotalRows = Number.isFinite(Number(f.sourceTotalRows)) ? Number(f.sourceTotalRows) : null;
+              const sourceTotalRows = Number.isFinite(Number(f.sourceTotalRows))
+                ? Number(f.sourceTotalRows)
+                : null;
               const canSelect = handleSelectYM && year != null && month != null;
               const canDelete = handleDelete && fileId != null;
-              const isSelected = safeSelectedYM
-                && Number(safeSelectedYM.year) === year
-                && Number(safeSelectedYM.month) === month;
+              const isSelected =
+                safeSelectedYM &&
+                Number(safeSelectedYM.year) === year &&
+                Number(safeSelectedYM.month) === month;
 
               return (
                 <tr
@@ -68,7 +75,7 @@ export function ShipmentHistory({ files, selectedYM, onSelectYM, onDelete }) {
                     background: isSelected ? 'var(--accent-soft)' : undefined,
                     cursor: canSelect ? 'pointer' : 'default',
                   }}
-                  onClick={(e) => {
+                  onClick={e => {
                     if (!canSelect || e.target.closest('button')) return;
                     handleSelectYM({ year, month });
                   }}
@@ -80,19 +87,25 @@ export function ShipmentHistory({ files, selectedYM, onSelectYM, onDelete }) {
                   </td>
                   <td className="cell-name">
                     <div className="menu-name">{fileName}</div>
-                    <div style={{fontSize:12, color:'var(--text-2)', marginTop:4, fontWeight:500}}>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: 'var(--text-2)',
+                        marginTop: 4,
+                        fontWeight: 500,
+                      }}
+                    >
                       업로드 {uploadedAt ? formatRelative(uploadedAt) : '-'}
                     </div>
                   </td>
-                  <td className="num right" style={{fontWeight:700}}>
-                    {formatNumber(totalRows)}<span className="unit">건</span>
+                  <td className="num right" style={{ fontWeight: 700 }}>
+                    {formatNumber(totalRows)}
+                    <span className="unit">건</span>
                   </td>
-                  <td className="num right" style={{color:'var(--text-3)', fontSize:12}}>
-                    {sourceTotalRows != null
-                      ? `(${formatNumber(sourceTotalRows)}건)`
-                      : '-'}
+                  <td className="num right" style={{ color: 'var(--text-3)', fontSize: 12 }}>
+                    {sourceTotalRows != null ? `(${formatNumber(sourceTotalRows)}건)` : '-'}
                   </td>
-                  <td style={{textAlign:'right'}}>
+                  <td style={{ textAlign: 'right' }}>
                     {canDelete && <ConfirmDeleteButton onDelete={() => handleDelete(fileId)} />}
                   </td>
                 </tr>

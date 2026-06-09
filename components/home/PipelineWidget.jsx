@@ -20,14 +20,13 @@ export function PipelineWidget({ data, router }) {
     dotColor: asDisplayText(col.dotColor, 'var(--border)'),
     items: asStringArray(col.items),
   }));
-  const quarterGoal = data.quarterGoal && typeof data.quarterGoal === 'object' ? data.quarterGoal : {};
+  const quarterGoal =
+    data.quarterGoal && typeof data.quarterGoal === 'object' ? data.quarterGoal : {};
   const done = Number(quarterGoal.done);
   const target = Number(quarterGoal.target);
   const safeDone = Number.isFinite(done) ? Math.max(0, done) : 0;
   const safeTarget = Number.isFinite(target) ? Math.max(0, target) : 0;
-  const pct = safeTarget > 0
-    ? Math.min(100, Math.round((safeDone / safeTarget) * 100))
-    : 0;
+  const pct = safeTarget > 0 ? Math.min(100, Math.round((safeDone / safeTarget) * 100)) : 0;
   const remain = Math.max(0, safeTarget - safeDone);
 
   return (
@@ -52,7 +51,9 @@ export function PipelineWidget({ data, router }) {
             </div>
             <div className="pipe-items">
               {col.items.map((name, i) => (
-                <div key={i} className="pipe-item" title={name}>{name}</div>
+                <div key={i} className="pipe-item" title={name}>
+                  {name}
+                </div>
               ))}
               {col.more > 0 && <div className="pipe-more">외 {col.more}건</div>}
             </div>
@@ -63,12 +64,21 @@ export function PipelineWidget({ data, router }) {
       <div className="mini-foot">
         <div className="mf-top">
           <span>이번 분기 신메뉴 출시 목표</span>
-          <b>{safeDone} / {safeTarget}건</b>
+          <b>
+            {safeDone} / {safeTarget}건
+          </b>
         </div>
         <div className="mini-bar">
-          <div style={{ width: `${pct}%`, background: 'linear-gradient(90deg, var(--accent), #FF7A4D)' }} />
+          <div
+            style={{
+              width: `${pct}%`,
+              background: 'linear-gradient(90deg, var(--accent), #FF7A4D)',
+            }}
+          />
         </div>
-        <div className="mf-sub">완료 {safeDone}건 · 목표까지 {remain}건 남음</div>
+        <div className="mf-sub">
+          완료 {safeDone}건 · 목표까지 {remain}건 남음
+        </div>
       </div>
     </div>
   );

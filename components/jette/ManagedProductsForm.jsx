@@ -25,10 +25,10 @@ export function ManagedProductsForm({
   const rawForm = { ...EMPTY_FORM, ...(form && typeof form === 'object' ? form : {}) };
   const rawProductType = asDisplayText(rawForm.productType, EMPTY_FORM.productType);
   const safeForm = {
-    productCode:  asDisplayText(rawForm.productCode),
-    productName:  asDisplayText(rawForm.productName),
-    productType:  TYPE_VALUES.has(rawProductType) ? rawProductType : EMPTY_FORM.productType,
-    isManaged:    Boolean(rawForm.isManaged),
+    productCode: asDisplayText(rawForm.productCode),
+    productName: asDisplayText(rawForm.productName),
+    productType: TYPE_VALUES.has(rawProductType) ? rawProductType : EMPTY_FORM.productType,
+    isManaged: Boolean(rawForm.isManaged),
   };
   const updateForm = typeof setForm === 'function' ? setForm : noop;
   const handleSubmit = typeof onSubmit === 'function' ? onSubmit : noop;
@@ -36,44 +36,58 @@ export function ManagedProductsForm({
   const canSubmit = !!safeForm.productCode.trim() && !!safeForm.productName.trim();
 
   return (
-    <div style={{
-      display:'grid',
-      gridTemplateColumns:'150px 1fr 130px 110px auto auto',
-      gap:8, marginBottom:12, alignItems:'center',
-    }}>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '150px 1fr 130px 110px auto auto',
+        gap: 8,
+        marginBottom: 12,
+        alignItems: 'center',
+      }}
+    >
       <input
         value={safeForm.productCode}
-        onChange={e => updateForm({...safeForm, productCode: e.target.value})}
+        onChange={e => updateForm({ ...safeForm, productCode: e.target.value })}
         placeholder="제품코드 (필수)"
         style={inputStyle}
       />
       <input
         value={safeForm.productName}
-        onChange={e => updateForm({...safeForm, productName: e.target.value})}
+        onChange={e => updateForm({ ...safeForm, productName: e.target.value })}
         placeholder="제품명 (필수)"
         style={inputStyle}
       />
       <select
         value={safeForm.productType}
-        onChange={e => updateForm({...safeForm, productType: e.target.value})}
+        onChange={e => updateForm({ ...safeForm, productType: e.target.value })}
         style={inputStyle}
       >
-        {TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        {TYPE_OPTIONS.map(o => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
       </select>
-      <label style={{display:'flex', alignItems:'center', gap:6, fontSize:13, color:'var(--text-2)'}}>
+      <label
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          fontSize: 13,
+          color: 'var(--text-2)',
+        }}
+      >
         <input
           type="checkbox"
           checked={safeForm.isManaged}
-          onChange={e => updateForm({...safeForm, isManaged: e.target.checked})}
+          onChange={e => updateForm({ ...safeForm, isManaged: e.target.checked })}
         />
         관리품목
       </label>
-      <button className="btn sm" onClick={handleCancel} disabled={busy}>취소</button>
-      <button
-        className="btn sm primary"
-        onClick={handleSubmit}
-        disabled={busy || !canSubmit}
-      >
+      <button className="btn sm" onClick={handleCancel} disabled={busy}>
+        취소
+      </button>
+      <button className="btn sm primary" onClick={handleSubmit} disabled={busy || !canSubmit}>
         {busy ? '추가 중...' : '추가'}
       </button>
     </div>

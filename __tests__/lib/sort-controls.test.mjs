@@ -26,7 +26,9 @@ describe('sort control helpers', () => {
   });
 
   test('정렬 옵션은 잘못된 배열 항목을 제외하고 key와 label을 만든다', () => {
-    expect(normalizeSortOptions([{ id: 'name', label: '이름순' }, null, { id: '', label: '' }])).toEqual([
+    expect(
+      normalizeSortOptions([{ id: 'name', label: '이름순' }, null, { id: '', label: '' }])
+    ).toEqual([
       { id: 'name', key: 'name', label: '이름순' },
       { id: '', key: 'option-1', label: '' },
     ]);
@@ -38,8 +40,14 @@ describe('sort control helpers', () => {
   });
 
   test('정렬 표시 아이콘은 활성 키와 방향에 맞춰 반환한다', () => {
-    expect(getSortIndicator('name', 'category', SORT_DIRECTION_ASC)).toEqual({ active: false, symbol: '▾' });
-    expect(getSortIndicator('name', 'name', SORT_DIRECTION_ASC)).toEqual({ active: true, symbol: '▲' });
+    expect(getSortIndicator('name', 'category', SORT_DIRECTION_ASC)).toEqual({
+      active: false,
+      symbol: '▾',
+    });
+    expect(getSortIndicator('name', 'name', SORT_DIRECTION_ASC)).toEqual({
+      active: true,
+      symbol: '▲',
+    });
     expect(getSortIndicator('name', 'name', 'bad')).toEqual({ active: true, symbol: '▼' });
   });
 

@@ -7,8 +7,11 @@ export function normalizeCountUpNumber(value, fallback = 0) {
 }
 
 export function normalizeCountUpOptions(options = {}) {
-  const { duration = 1200, delay = 0, decimals = 0 } =
-    options && typeof options === 'object' ? options : {};
+  const {
+    duration = 1200,
+    delay = 0,
+    decimals = 0,
+  } = options && typeof options === 'object' ? options : {};
 
   return {
     duration: Math.max(1, normalizeCountUpNumber(duration, 1200)),
@@ -23,7 +26,8 @@ export function useCountUp(target, options = {}) {
   const opts = normalizeCountUpOptions(options);
 
   useEffect(() => {
-    let startTime = null, rafId;
+    let startTime = null,
+      rafId;
     const run = () => {
       rafId = requestAnimationFrame(function tick(now) {
         if (!startTime) startTime = now;
@@ -36,7 +40,10 @@ export function useCountUp(target, options = {}) {
       });
     };
     const timer = opts.delay > 0 ? setTimeout(run, opts.delay) : (run(), null);
-    return () => { if (timer) clearTimeout(timer); cancelAnimationFrame(rafId); };
+    return () => {
+      if (timer) clearTimeout(timer);
+      cancelAnimationFrame(rafId);
+    };
   }, [safeTarget, opts.duration, opts.delay, opts.decimals]);
   return val;
 }

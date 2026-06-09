@@ -10,7 +10,7 @@ import { toSampleSelectionIds, toggleSampleSelection } from '@/lib/sample/select
  */
 export function useSampleCompareMode(samples) {
   const [compareMode, setCompareMode] = useState(false);
-  const [compareSet,  setCompareSet]  = useState(new Set());
+  const [compareSet, setCompareSet] = useState(new Set());
   const [showCompare, setShowCompare] = useState(false);
 
   function toggleCompare(id) {
@@ -23,13 +23,12 @@ export function useSampleCompareMode(samples) {
     setShowCompare(false);
   }
 
-  const compareItems = useMemo(
-    () => {
-      const sampleList = Array.isArray(samples) ? samples : [];
-      return toSampleSelectionIds(compareSet).map(id => sampleList.find(s => s.id === id)).filter(Boolean);
-    },
-    [compareSet, samples],
-  );
+  const compareItems = useMemo(() => {
+    const sampleList = Array.isArray(samples) ? samples : [];
+    return toSampleSelectionIds(compareSet)
+      .map(id => sampleList.find(s => s.id === id))
+      .filter(Boolean);
+  }, [compareSet, samples]);
 
   // 카드 렌더마다 배열 재생성을 막기 위해 순서 Map으로 제공
   const compareIdxMap = useMemo(() => {
@@ -39,10 +38,14 @@ export function useSampleCompareMode(samples) {
   }, [compareSet]);
 
   return {
-    compareMode, setCompareMode,
-    compareSet, toggleCompare,
-    showCompare, setShowCompare,
-    compareItems, compareIdxMap,
+    compareMode,
+    setCompareMode,
+    compareSet,
+    toggleCompare,
+    showCompare,
+    setShowCompare,
+    compareItems,
+    compareIdxMap,
     exitCompareMode,
   };
 }

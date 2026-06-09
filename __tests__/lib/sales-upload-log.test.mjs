@@ -34,9 +34,9 @@ function indexMatches(record, indexName, value) {
 const dbMock = {
   hasStore: jest.fn(storeName => Object.prototype.hasOwnProperty.call(dbState, storeName)),
   getAll: jest.fn(async storeName => [...dbState[storeName]]),
-  getByIndex: jest.fn(async (storeName, indexName, value) => (
-    dbState[storeName] || []
-  ).filter(record => indexMatches(record, indexName, value))),
+  getByIndex: jest.fn(async (storeName, indexName, value) =>
+    (dbState[storeName] || []).filter(record => indexMatches(record, indexName, value))
+  ),
   runTransaction: jest.fn(async (_stores, _mode, work) => {
     const tx = {
       abort: jest.fn(),
@@ -45,7 +45,9 @@ const dbMock = {
           add(record) {
             const id = addToStore(storeName, record);
             const req = { result: id, onsuccess: null, onerror: null };
-            Promise.resolve().then(() => { if (req.onsuccess) req.onsuccess(); });
+            Promise.resolve().then(() => {
+              if (req.onsuccess) req.onsuccess();
+            });
             return req;
           },
           delete(id) {
@@ -61,20 +63,19 @@ const dbMock = {
 
 jest.unstable_mockModule('../../lib/db/index.js', () => dbMock);
 
-const {
-  SALES_UPLOAD_MODULE,
-  deleteSalesFile,
-  saveSalesUpload,
-} = await import('../../lib/sales/store-files.js');
+const { SALES_UPLOAD_MODULE, deleteSalesFile, saveSalesUpload } =
+  await import('../../lib/sales/store-files.js');
 
 beforeEach(() => {
   resetDbState();
   jest.clearAllMocks();
-  dbMock.hasStore.mockImplementation(storeName => Object.prototype.hasOwnProperty.call(dbState, storeName));
+  dbMock.hasStore.mockImplementation(storeName =>
+    Object.prototype.hasOwnProperty.call(dbState, storeName)
+  );
   dbMock.getAll.mockImplementation(async storeName => [...dbState[storeName]]);
-  dbMock.getByIndex.mockImplementation(async (storeName, indexName, value) => (
-    dbState[storeName] || []
-  ).filter(record => indexMatches(record, indexName, value)));
+  dbMock.getByIndex.mockImplementation(async (storeName, indexName, value) =>
+    (dbState[storeName] || []).filter(record => indexMatches(record, indexName, value))
+  );
 });
 
 describe('메뉴판매량 upload_log 정합성', () => {
@@ -84,8 +85,16 @@ describe('메뉴판매량 upload_log 정합성', () => {
 
   test('saveSalesUpload는 caller가 잘못 넘긴 module을 메뉴판매량 모듈명으로 보정한다', async () => {
     await saveSalesUpload({
-      meta: { year: 2026, month: 6, fileName: 'sales.xlsx', uploadedAt: '2026-06-08T00:00:00.000Z', totalRows: 1 },
-      classifiedRows: [{ rawMenuName: '콤비', normalizedMenuName: '콤비', mappedMenuName: '콤비', quantity: 3 }],
+      meta: {
+        year: 2026,
+        month: 6,
+        fileName: 'sales.xlsx',
+        uploadedAt: '2026-06-08T00:00:00.000Z',
+        totalRows: 1,
+      },
+      classifiedRows: [
+        { rawMenuName: '콤비', normalizedMenuName: '콤비', mappedMenuName: '콤비', quantity: 3 },
+      ],
       groupedIssues: [],
       log: { module: 'sales', fileName: 'sales.xlsx', uploadedAt: '2026-06-08T00:00:00.000Z' },
     });
@@ -101,7 +110,10 @@ describe('메뉴판매량 upload_log 정합성', () => {
 
   test('deleteSalesFile은 같은 linkedFileId라도 다른 모듈 로그는 삭제하지 않는다', async () => {
     dbState.sales_files = [{ id: 1 }, { id: 2 }];
-    dbState.sales_rows = [{ id: 10, fileId: 1 }, { id: 11, fileId: 2 }];
+    dbState.sales_rows = [
+      { id: 10, fileId: 1 },
+      { id: 11, fileId: 2 },
+    ];
     dbState.menu_sales_issues = [{ id: 20, fileId: 1 }];
     dbState.upload_log = [
       { id: 30, linkedFileId: 1, module: SALES_UPLOAD_MODULE },

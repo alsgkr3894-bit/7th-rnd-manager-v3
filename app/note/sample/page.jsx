@@ -80,12 +80,16 @@ function SampleContent() {
     const v = parseInt(searchParams.get('r') || '0', 10);
     return pickAllowed(v, SAMPLE_RATING_KEYS, 0);
   });
-  const [sortBy, setSortBy] = useState(() => pickAllowed(tryLS(KEYS.SAMPLE_SORT, 'createdAt'), SAMPLE_SORT_KEYS, 'createdAt'));
+  const [sortBy, setSortBy] = useState(() =>
+    pickAllowed(tryLS(KEYS.SAMPLE_SORT, 'createdAt'), SAMPLE_SORT_KEYS, 'createdAt')
+  );
   const [detailRec, setDetailRec] = useState(null);
   const searchBlurTimerRef = useRef(null);
 
   // 뷰 모드
-  const [viewMode, setViewMode] = useState(() => pickAllowed(tryLS(KEYS.SAMPLE_VIEW, 'grid'), SAMPLE_VIEW_KEYS, 'grid'));
+  const [viewMode, setViewMode] = useState(() =>
+    pickAllowed(tryLS(KEYS.SAMPLE_VIEW, 'grid'), SAMPLE_VIEW_KEYS, 'grid')
+  );
   const [calMonth, setCalMonth] = useState(() => new Date());
 
   const { data: loadedSamples, loading, reload } = useDBLoad(() => getAllSamples());
@@ -96,15 +100,24 @@ function SampleContent() {
 
   useVisibilityRefresh(reload);
 
-  useEffect(() => () => {
-    if (searchBlurTimerRef.current) clearTimeout(searchBlurTimerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (searchBlurTimerRef.current) clearTimeout(searchBlurTimerRef.current);
+    },
+    []
+  );
 
   const {
-    batchMode, setBatchMode, selected, toggleSelect, exitBatchMode, handleBatchDelete,
-    confirmOpen, setConfirmOpen, confirmBatchDelete,
-  } =
-    useSampleBatchMode(ids => setSamples(prev => prev.filter(s => !ids.includes(s.id))), reload);
+    batchMode,
+    setBatchMode,
+    selected,
+    toggleSelect,
+    exitBatchMode,
+    handleBatchDelete,
+    confirmOpen,
+    setConfirmOpen,
+    confirmBatchDelete,
+  } = useSampleBatchMode(ids => setSamples(prev => prev.filter(s => !ids.includes(s.id))), reload);
 
   const {
     compareMode,
@@ -256,7 +269,16 @@ function SampleContent() {
           <button
             className="btn"
             onClick={() => {
-              const headers = ['제목', '카테고리', '메뉴명', '업체', '테스트일', '별점', '설명', '태그'];
+              const headers = [
+                '제목',
+                '카테고리',
+                '메뉴명',
+                '업체',
+                '테스트일',
+                '별점',
+                '설명',
+                '태그',
+              ];
               const rows = filtered.map(s => [
                 s.title || '',
                 s.category || '',
@@ -275,8 +297,13 @@ function SampleContent() {
           </button>
           <button
             style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 17, padding: '4px 6px', borderRadius: 8, color: 'var(--text-2)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 17,
+              padding: '4px 6px',
+              borderRadius: 8,
+              color: 'var(--text-2)',
             }}
             onClick={() => window.print()}
             title="인쇄"
@@ -379,8 +406,11 @@ function SampleContent() {
             </button>
           ))}
           {samples.length > 0 && (
-            <span style={{ fontSize: 11, color: 'var(--text-4)', marginLeft: 2, whiteSpace: 'nowrap' }}>
-              5★ {ratingDist[5]} · 4★ {ratingDist[4]} · 3★ {ratingDist[3]} · 2★ {ratingDist[2]} · 1★ {ratingDist[1]} · 없음 {ratingDist.none}
+            <span
+              style={{ fontSize: 11, color: 'var(--text-4)', marginLeft: 2, whiteSpace: 'nowrap' }}
+            >
+              5★ {ratingDist[5]} · 4★ {ratingDist[4]} · 3★ {ratingDist[3]} · 2★ {ratingDist[2]} · 1★{' '}
+              {ratingDist[1]} · 없음 {ratingDist.none}
             </span>
           )}
         </div>

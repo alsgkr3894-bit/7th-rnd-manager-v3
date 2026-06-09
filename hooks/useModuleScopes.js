@@ -19,9 +19,7 @@ export function buildModuleScopeMap(value = true) {
  * @returns {{ scopes, toggleScope, setAllScopes }}
  */
 export function useModuleScopes(initialValue = true) {
-  const [scopes, setScopes] = useState(() =>
-    buildModuleScopeMap(initialValue)
-  );
+  const [scopes, setScopes] = useState(() => buildModuleScopeMap(initialValue));
 
   function toggleScope(key) {
     if (!isKnownModuleScope(key)) return;

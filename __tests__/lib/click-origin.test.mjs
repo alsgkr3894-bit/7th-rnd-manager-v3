@@ -3,7 +3,11 @@ import { normalizeClickMaxAge, normalizeClickPoint } from '../../lib/ui/click-or
 
 describe('normalizeClickPoint', () => {
   test('포인터 좌표와 타임스탬프를 숫자로 정규화한다', () => {
-    expect(normalizeClickPoint({ clientX: '10', clientY: 20 }, 1000)).toEqual({ x: 10, y: 20, t: 1000 });
+    expect(normalizeClickPoint({ clientX: '10', clientY: 20 }, 1000)).toEqual({
+      x: 10,
+      y: 20,
+      t: 1000,
+    });
   });
 
   test('비정상 포인터 좌표는 null로 처리한다', () => {

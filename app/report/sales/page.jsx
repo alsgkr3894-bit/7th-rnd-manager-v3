@@ -413,9 +413,7 @@ export default function Page() {
       ? compareData
       : null;
   const periodLabel =
-    safePeriodMode === 'year'
-      ? `${safeYearValue}년`
-      : `${safeYearValue}년 ${safeMonthValue}월`;
+    safePeriodMode === 'year' ? `${safeYearValue}년` : `${safeYearValue}년 ${safeMonthValue}월`;
   const totalShare = safeCatShares.reduce((s, c) => s + safeQuantity(c.value), 0);
   const reportMeta = {
     kind: 'sales',
@@ -569,7 +567,8 @@ export default function Page() {
             <h2 className="paper-title">{periodLabel} 판매량 보고서</h2>
             <div className="paper-meta">
               <span>
-                대상: {safeScope === 'all' ? '전체 메뉴' : safeScope === 'pizza' ? '피자' : '사이드'}
+                대상:{' '}
+                {safeScope === 'all' ? '전체 메뉴' : safeScope === 'pizza' ? '피자' : '사이드'}
               </span>
               <span>·</span>
               <span>
@@ -615,9 +614,7 @@ export default function Page() {
                       className="num"
                       style={{ fontWeight: 700, minWidth: 40, textAlign: 'right' }}
                     >
-                      {totalShare > 0
-                        ? ((safeQuantity(c.value) / totalShare) * 100).toFixed(1)
-                        : 0}
+                      {totalShare > 0 ? ((safeQuantity(c.value) / totalShare) * 100).toFixed(1) : 0}
                       %
                     </span>
                   </div>
@@ -635,8 +632,7 @@ export default function Page() {
               );
               if (all.length === 0) return null;
               const pizzaColor =
-                safeCatShares.find(c => asDisplayText(c.name).includes('피자'))?.color ||
-                '#E1101F';
+                safeCatShares.find(c => asDisplayText(c.name).includes('피자'))?.color || '#E1101F';
 
               // 전월 데이터가 있는 항목만 전월 대비에 사용
               const pizzaItems = all.filter(m => m.prevQty > 0);
@@ -917,8 +913,12 @@ export default function Page() {
                           <th style={{ width: 36 }}>#</th>
                           <th>메뉴명 (중분류)</th>
                           <th style={{ width: 90, textAlign: 'right' }}>판매량</th>
-                          {safeOpts.prevComp && <th style={{ width: 80, textAlign: 'right' }}>전월</th>}
-                          {safeOpts.prevComp && <th style={{ width: 80, textAlign: 'right' }}>증감</th>}
+                          {safeOpts.prevComp && (
+                            <th style={{ width: 80, textAlign: 'right' }}>전월</th>
+                          )}
+                          {safeOpts.prevComp && (
+                            <th style={{ width: 80, textAlign: 'right' }}>증감</th>
+                          )}
                         </tr>
                       </thead>
                       <tbody>
@@ -927,10 +927,14 @@ export default function Page() {
                             <tr>
                               <td className="num">{i + 1}</td>
                               <td style={{ fontWeight: 600 }}>{asDisplayText(m.name, '—')}</td>
-                              <td className="num right">{formatNumber(safeQuantity(m.quantity))}</td>
+                              <td className="num right">
+                                {formatNumber(safeQuantity(m.quantity))}
+                              </td>
                               {safeOpts.prevComp && (
                                 <td className="num right muted">
-                                  {safeQuantity(m.prevQty) > 0 ? formatNumber(safeQuantity(m.prevQty)) : '—'}
+                                  {safeQuantity(m.prevQty) > 0
+                                    ? formatNumber(safeQuantity(m.prevQty))
+                                    : '—'}
                                 </td>
                               )}
                               {safeOpts.prevComp && (

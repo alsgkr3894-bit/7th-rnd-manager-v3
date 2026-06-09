@@ -30,61 +30,97 @@ export function SectionHubPage({ breadcrumb, title, sub, groups, children }) {
         {safeGroups.map((g, groupIndex) => {
           const groupLabel = asDisplayText(g.label);
           return (
-          <div key={`${groupLabel || 'group'}-${groupIndex}`}>
-            <div style={{
-              fontSize: 11, fontWeight: 700, color: 'var(--text-4)',
-              letterSpacing: '0.06em', textTransform: 'uppercase',
-              paddingLeft: 2, marginBottom: 10,
-            }}>
-              {groupLabel}
-            </div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-              gap: 12,
-            }}>
-              {asObjectArray(g.items).map((item, itemIndex) => {
-                const iconKey = asDisplayText(item.icon);
-                const IcoEl = Icon[iconKey] || Icon.doc;
-                const href = typeof item.href === 'string' ? item.href : '';
-                const itemTitle = asDisplayText(item.title);
-                const itemSub = asDisplayText(item.sub);
-                return (
-                  <button
-                    key={href || `${itemTitle || 'item'}-${itemIndex}`}
-                    className="card card-lift"
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 14,
-                      padding: '16px 18px', textAlign: 'left', cursor: href ? 'pointer' : 'default',
-                      border: '1px solid var(--border)', background: 'var(--surface)',
-                      opacity: href ? 1 : 0.6,
-                    }}
-                    disabled={!href}
-                    onClick={() => href && router.push(href)}
-                  >
-                    <span style={{
-                      width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-                      background: asDisplayText(item.iconBg) || undefined,
-                      color: asDisplayText(item.iconColor) || undefined,
-                      display: 'grid', placeItems: 'center',
-                    }}>
-                      <IcoEl style={{ width: 18, height: 18 }} />
-                    </span>
-                    <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: 'block', fontWeight: 700, fontSize: 14, color: 'var(--text-1)' }}>
-                        {itemTitle}
+            <div key={`${groupLabel || 'group'}-${groupIndex}`}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: 'var(--text-4)',
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  paddingLeft: 2,
+                  marginBottom: 10,
+                }}
+              >
+                {groupLabel}
+              </div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                  gap: 12,
+                }}
+              >
+                {asObjectArray(g.items).map((item, itemIndex) => {
+                  const iconKey = asDisplayText(item.icon);
+                  const IcoEl = Icon[iconKey] || Icon.doc;
+                  const href = typeof item.href === 'string' ? item.href : '';
+                  const itemTitle = asDisplayText(item.title);
+                  const itemSub = asDisplayText(item.sub);
+                  return (
+                    <button
+                      key={href || `${itemTitle || 'item'}-${itemIndex}`}
+                      className="card card-lift"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 14,
+                        padding: '16px 18px',
+                        textAlign: 'left',
+                        cursor: href ? 'pointer' : 'default',
+                        border: '1px solid var(--border)',
+                        background: 'var(--surface)',
+                        opacity: href ? 1 : 0.6,
+                      }}
+                      disabled={!href}
+                      onClick={() => href && router.push(href)}
+                    >
+                      <span
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 12,
+                          flexShrink: 0,
+                          background: asDisplayText(item.iconBg) || undefined,
+                          color: asDisplayText(item.iconColor) || undefined,
+                          display: 'grid',
+                          placeItems: 'center',
+                        }}
+                      >
+                        <IcoEl style={{ width: 18, height: 18 }} />
                       </span>
-                      <span style={{ display: 'block', fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
-                        {itemSub}
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span
+                          style={{
+                            display: 'block',
+                            fontWeight: 700,
+                            fontSize: 14,
+                            color: 'var(--text-1)',
+                          }}
+                        >
+                          {itemTitle}
+                        </span>
+                        <span
+                          style={{
+                            display: 'block',
+                            fontSize: 12,
+                            color: 'var(--text-3)',
+                            marginTop: 2,
+                          }}
+                        >
+                          {itemSub}
+                        </span>
                       </span>
-                    </span>
-                    <Icon.chevRight style={{ width: 14, height: 14, color: 'var(--text-4)', flexShrink: 0 }} />
-                  </button>
-                );
-              })}
+                      <Icon.chevRight
+                        style={{ width: 14, height: 14, color: 'var(--text-4)', flexShrink: 0 }}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        );})}
+          );
+        })}
       </div>
     </main>
   );

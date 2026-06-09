@@ -6,23 +6,30 @@ import {
 } from '@/lib/ui/skeleton';
 
 export function Skeleton({ width = '100%', height = 16, radius = 6, style }) {
-  return <div style={getSkeletonStyle({ width, height, radius, style })}/>;
+  return <div style={getSkeletonStyle({ width, height, radius, style })} />;
 }
 
 export function NoteCardSkeleton() {
   return (
-    <div className="card" style={{ borderLeft:'4px solid var(--border)', padding:'16px 18px' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
-        <Skeleton width="55%" height={14}/>
-        <Skeleton width={48} height={20} radius={8}/>
+    <div className="card" style={{ borderLeft: '4px solid var(--border)', padding: '16px 18px' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: 10,
+        }}
+      >
+        <Skeleton width="55%" height={14} />
+        <Skeleton width={48} height={20} radius={8} />
       </div>
-      <Skeleton width="40%" height={12} style={{ marginBottom:10 }}/>
-      <Skeleton width="100%" height={12} style={{ marginBottom:6 }}/>
-      <Skeleton width="80%" height={12} style={{ marginBottom:14 }}/>
-      <div style={{ display:'flex', gap:6 }}>
-        <Skeleton width={44} height={22} radius={8}/>
-        <Skeleton width={44} height={22} radius={8}/>
-        <Skeleton width={44} height={22} radius={8}/>
+      <Skeleton width="40%" height={12} style={{ marginBottom: 10 }} />
+      <Skeleton width="100%" height={12} style={{ marginBottom: 6 }} />
+      <Skeleton width="80%" height={12} style={{ marginBottom: 14 }} />
+      <div style={{ display: 'flex', gap: 6 }}>
+        <Skeleton width={44} height={22} radius={8} />
+        <Skeleton width={44} height={22} radius={8} />
+        <Skeleton width={44} height={22} radius={8} />
       </div>
     </div>
   );
@@ -58,20 +65,20 @@ export function NoteDetailSkeleton() {
 
 export function SampleCardSkeleton() {
   return (
-    <div className="card" style={{ padding:0, overflow:'hidden' }}>
-      <Skeleton height={180} radius={0}/>
-      <div style={{ padding:'12px 14px 14px' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
-          <Skeleton width="60%" height={14}/>
-          <Skeleton width={52} height={12}/>
+    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      <Skeleton height={180} radius={0} />
+      <div style={{ padding: '12px 14px 14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+          <Skeleton width="60%" height={14} />
+          <Skeleton width={52} height={12} />
         </div>
-        <Skeleton width="45%" height={12} style={{ marginBottom:8 }}/>
-        <Skeleton width="100%" height={11} style={{ marginBottom:4 }}/>
-        <Skeleton width="75%" height={11} style={{ marginBottom:12 }}/>
-        <div style={{ display:'flex', gap:6 }}>
-          <Skeleton width="100%" height={28} radius={8}/>
-          <Skeleton width={44} height={28} radius={8}/>
-          <Skeleton width={44} height={28} radius={8}/>
+        <Skeleton width="45%" height={12} style={{ marginBottom: 8 }} />
+        <Skeleton width="100%" height={11} style={{ marginBottom: 4 }} />
+        <Skeleton width="75%" height={11} style={{ marginBottom: 12 }} />
+        <div style={{ display: 'flex', gap: 6 }}>
+          <Skeleton width="100%" height={28} radius={8} />
+          <Skeleton width={44} height={28} radius={8} />
+          <Skeleton width={44} height={28} radius={8} />
         </div>
       </div>
     </div>
@@ -88,8 +95,8 @@ export function SkeletonTableRows({ rows = 5, cols = 5 }) {
       {Array.from({ length: safeRows }).map((_, i) => (
         <tr key={i}>
           {Array.from({ length: safeCols }).map((_, j) => (
-            <td key={j} style={{ padding:'10px 12px' }}>
-              <Skeleton height={13} width={getSkeletonTableCellWidth(j, safeCols)} radius={4}/>
+            <td key={j} style={{ padding: '10px 12px' }}>
+              <Skeleton height={13} width={getSkeletonTableCellWidth(j, safeCols)} radius={4} />
             </td>
           ))}
         </tr>
@@ -103,28 +110,42 @@ export function IngredientPriceSkeleton() {
   const colWidths = ['60%', '80%', '55%', '65%', '55%', '50%', 24, 32];
   return (
     <div className="card table-card">
-      <div style={{ overflowX:'auto' }}>
+      <div style={{ overflowX: 'auto' }}>
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{ width:90 }}><Skeleton width="70%" height={11}/></th>
-              <th><Skeleton width="50%" height={11}/></th>
-              <th style={{ width:120 }}><Skeleton width="70%" height={11}/></th>
-              <th style={{ width:100 }}><Skeleton width="60%" height={11}/></th>
-              <th style={{ width:120 }}><Skeleton width="70%" height={11}/></th>
-              <th style={{ width:110 }}><Skeleton width="60%" height={11}/></th>
-              <th style={{ width:30 }}/>
-              <th style={{ width:60 }}/>
+              <th style={{ width: 90 }}>
+                <Skeleton width="70%" height={11} />
+              </th>
+              <th>
+                <Skeleton width="50%" height={11} />
+              </th>
+              <th style={{ width: 120 }}>
+                <Skeleton width="70%" height={11} />
+              </th>
+              <th style={{ width: 100 }}>
+                <Skeleton width="60%" height={11} />
+              </th>
+              <th style={{ width: 120 }}>
+                <Skeleton width="70%" height={11} />
+              </th>
+              <th style={{ width: 110 }}>
+                <Skeleton width="60%" height={11} />
+              </th>
+              <th style={{ width: 30 }} />
+              <th style={{ width: 60 }} />
             </tr>
           </thead>
           <tbody>
             {Array.from({ length: 5 }).map((_, i) => (
               <tr key={i}>
                 {colWidths.map((w, j) => (
-                  <td key={j} style={{ padding:'10px 12px' }}>
-                    {typeof w === 'number'
-                      ? <Skeleton width={w} height={13} radius={4}/>
-                      : <Skeleton width={w} height={13} radius={4}/>}
+                  <td key={j} style={{ padding: '10px 12px' }}>
+                    {typeof w === 'number' ? (
+                      <Skeleton width={w} height={13} radius={4} />
+                    ) : (
+                      <Skeleton width={w} height={13} radius={4} />
+                    )}
                   </td>
                 ))}
               </tr>
@@ -132,8 +153,8 @@ export function IngredientPriceSkeleton() {
           </tbody>
         </table>
       </div>
-      <div style={{ padding:'8px 16px', borderTop:'1px solid var(--divider)' }}>
-        <Skeleton width={120} height={11}/>
+      <div style={{ padding: '8px 16px', borderTop: '1px solid var(--divider)' }}>
+        <Skeleton width={120} height={11} />
       </div>
     </div>
   );
@@ -144,27 +165,45 @@ export function IngredientListSkeleton() {
   const colWidths = ['55%', '75%', '65%', '80%', '60%', '40%', '60%', '60%', '50%'];
   return (
     <div className="card table-card">
-      <div style={{ overflowX:'auto' }}>
+      <div style={{ overflowX: 'auto' }}>
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{ width:80 }}><Skeleton width="70%" height={11}/></th>
-              <th><Skeleton width="50%" height={11}/></th>
-              <th style={{ width:96 }}><Skeleton width="60%" height={11}/></th>
-              <th style={{ width:160 }}><Skeleton width="50%" height={11}/></th>
-              <th style={{ width:80 }}><Skeleton width="65%" height={11}/></th>
-              <th style={{ width:56 }}><Skeleton width="60%" height={11}/></th>
-              <th style={{ width:110 }}><Skeleton width="70%" height={11}/></th>
-              <th style={{ width:88 }}><Skeleton width="60%" height={11}/></th>
-              <th style={{ width:80 }}><Skeleton width="50%" height={11}/></th>
+              <th style={{ width: 80 }}>
+                <Skeleton width="70%" height={11} />
+              </th>
+              <th>
+                <Skeleton width="50%" height={11} />
+              </th>
+              <th style={{ width: 96 }}>
+                <Skeleton width="60%" height={11} />
+              </th>
+              <th style={{ width: 160 }}>
+                <Skeleton width="50%" height={11} />
+              </th>
+              <th style={{ width: 80 }}>
+                <Skeleton width="65%" height={11} />
+              </th>
+              <th style={{ width: 56 }}>
+                <Skeleton width="60%" height={11} />
+              </th>
+              <th style={{ width: 110 }}>
+                <Skeleton width="70%" height={11} />
+              </th>
+              <th style={{ width: 88 }}>
+                <Skeleton width="60%" height={11} />
+              </th>
+              <th style={{ width: 80 }}>
+                <Skeleton width="50%" height={11} />
+              </th>
             </tr>
           </thead>
           <tbody>
             {Array.from({ length: 5 }).map((_, i) => (
               <tr key={i}>
                 {colWidths.map((w, j) => (
-                  <td key={j} style={{ padding:'10px 12px' }}>
-                    <Skeleton width={w} height={13} radius={4}/>
+                  <td key={j} style={{ padding: '10px 12px' }}>
+                    <Skeleton width={w} height={13} radius={4} />
                   </td>
                 ))}
               </tr>
@@ -172,8 +211,8 @@ export function IngredientListSkeleton() {
           </tbody>
         </table>
       </div>
-      <div style={{ padding:'8px 16px', borderTop:'1px solid var(--divider)' }}>
-        <Skeleton width={120} height={11}/>
+      <div style={{ padding: '8px 16px', borderTop: '1px solid var(--divider)' }}>
+        <Skeleton width={120} height={11} />
       </div>
     </div>
   );

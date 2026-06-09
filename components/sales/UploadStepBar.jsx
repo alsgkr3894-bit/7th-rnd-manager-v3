@@ -1,10 +1,10 @@
 'use client';
 
 const STEPS = [
-  { id: 'file',    label: '파일 선택' },
-  { id: 'parse',   label: '검증' },
+  { id: 'file', label: '파일 선택' },
+  { id: 'parse', label: '검증' },
   { id: 'preview', label: '미리보기' },
-  { id: 'apply',   label: '반영' },
+  { id: 'apply', label: '반영' },
 ];
 
 /**
@@ -45,11 +45,17 @@ function Step({ index, label, active, visited, last }) {
 
 function stageIndex(stage) {
   switch (stage) {
-    case 'idle':    return 0;
-    case 'parsing': return 1;
-    case 'preview': return 2;
-    case 'saving':  return 3;
-    case 'done':    return 3;
-    default:        return 0;
+    case 'idle':
+      return 0;
+    case 'parsing':
+      return 1;
+    case 'preview':
+      return 2;
+    case 'saving':
+      return 3;
+    case 'done':
+      return 3;
+    default:
+      return 0;
   }
 }

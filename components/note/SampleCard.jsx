@@ -40,10 +40,18 @@ export const SampleCard = React.memo(function SampleCard({
   onDelete,
 }) {
   const rec = sample;
-  const photos = Array.isArray(rec.photos) ? rec.photos.filter(p => p && typeof p === 'object') : [];
+  const photos = Array.isArray(rec.photos)
+    ? rec.photos.filter(p => p && typeof p === 'object')
+    : [];
   const thumb = photos[0]?.data;
   const names = sampleNamesText(rec);
-  const tags = typeof rec.tags === 'string' ? rec.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const tags =
+    typeof rec.tags === 'string'
+      ? rec.tags
+          .split(',')
+          .map(t => t.trim())
+          .filter(Boolean)
+      : [];
   const title = asText(rec.title);
   const category = asText(rec.category);
   const testDate = asText(rec.testDate);
@@ -58,19 +66,24 @@ export const SampleCard = React.memo(function SampleCard({
   const remove = typeof onDelete === 'function' ? onDelete : noop;
 
   return (
-    <div
-      className="stagger"
-      style={{ animationDelay: `${animDelay}ms`, position: 'relative' }}
-    >
+    <div className="stagger" style={{ animationDelay: `${animDelay}ms`, position: 'relative' }}>
       {/* 배치 체크박스 오버레이 */}
       {batchMode && (
         <div
           className={'batch-checkbox-wrap' + (isBatchSelected ? ' checked' : '')}
           style={{
-            position: 'absolute', top: 8, right: 8, zIndex: 10,
-            width: 20, height: 20, borderRadius: 4,
-            background: '#fff', border: '2px solid var(--border)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            zIndex: 10,
+            width: 20,
+            height: 20,
+            borderRadius: 4,
+            background: '#fff',
+            border: '2px solid var(--border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             pointerEvents: 'none',
           }}
         >
@@ -82,13 +95,25 @@ export const SampleCard = React.memo(function SampleCard({
 
       {/* 비교 뱃지 */}
       {compareMode && isCompareSelected && (
-        <div style={{
-          position: 'absolute', top: 8, right: 8, zIndex: 10,
-          width: 22, height: 22, borderRadius: '50%',
-          background: 'var(--accent)', color: '#fff',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 12, fontWeight: 800, pointerEvents: 'none',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            zIndex: 10,
+            width: 22,
+            height: 22,
+            borderRadius: '50%',
+            background: 'var(--accent)',
+            color: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 12,
+            fontWeight: 800,
+            pointerEvents: 'none',
+          }}
+        >
           {compareIdx + 1}
         </div>
       )}
@@ -96,21 +121,31 @@ export const SampleCard = React.memo(function SampleCard({
       <div
         className="card card-lift"
         style={{
-          padding: 0, cursor: 'pointer', overflow: 'hidden', height: '100%',
-          outline: batchMode && isBatchSelected
-            ? '2px solid #22c55e'
-            : compareMode && isCompareSelected
-              ? '2px solid var(--accent)'
-              : 'none',
+          padding: 0,
+          cursor: 'pointer',
+          overflow: 'hidden',
+          height: '100%',
+          outline:
+            batchMode && isBatchSelected
+              ? '2px solid #22c55e'
+              : compareMode && isCompareSelected
+                ? '2px solid var(--accent)'
+                : 'none',
         }}
         onClick={cardClick}
       >
         {/* 썸네일 */}
-        <div style={{
-          height: 180, background: 'var(--surface-2)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          position: 'relative', overflow: 'hidden',
-        }}>
+        <div
+          style={{
+            height: 180,
+            background: 'var(--surface-2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
           {thumb ? (
             <img
               src={thumb}
@@ -124,30 +159,64 @@ export const SampleCard = React.memo(function SampleCard({
 
           {/* 사진 수 배지 */}
           {photos.length > 1 && (
-            <span style={{
-              position: 'absolute', top: 8, right: 8,
-              background: 'rgba(0,0,0,0.55)', color: '#fff',
-              fontSize: 10, padding: '2px 7px', borderRadius: 10, fontWeight: 700,
-            }}>
+            <span
+              style={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                background: 'rgba(0,0,0,0.55)',
+                color: '#fff',
+                fontSize: 10,
+                padding: '2px 7px',
+                borderRadius: 10,
+                fontWeight: 700,
+              }}
+            >
               📷 {photos.length}
             </span>
           )}
 
           {/* 카테고리 배지 */}
-          <span style={{
-            position: 'absolute', bottom: 8, left: 8,
-            background: 'rgba(0,0,0,0.5)', color: '#fff',
-            fontSize: 10, padding: '2px 8px', borderRadius: 6, fontWeight: 700,
-          }}>{category}</span>
+          <span
+            style={{
+              position: 'absolute',
+              bottom: 8,
+              left: 8,
+              background: 'rgba(0,0,0,0.5)',
+              color: '#fff',
+              fontSize: 10,
+              padding: '2px 8px',
+              borderRadius: 6,
+              fontWeight: 700,
+            }}
+          >
+            {category}
+          </span>
         </div>
 
         {/* 카드 내용 */}
         <div style={{ padding: '12px 14px 14px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-            <div style={{
-              fontSize: 14, fontWeight: 700, color: 'var(--text-1)',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
-            }}>{title}</div>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              marginBottom: 4,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: 'var(--text-1)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                flex: 1,
+              }}
+            >
+              {title}
+            </div>
 
             <div className="inline-stars" onClick={e => e.stopPropagation()}>
               {[1, 2, 3, 4, 5].map(n => (
@@ -155,40 +224,76 @@ export const SampleCard = React.memo(function SampleCard({
                   key={n}
                   className={'inline-star' + (n <= (rec.rating || 0) ? ' lit' : '')}
                   onClick={e => ratingChange(rec.id, (rec.rating || 0) === n ? 0 : n, e)}
-                >★</button>
+                >
+                  ★
+                </button>
               ))}
             </div>
           </div>
 
-          <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div
+            style={{
+              fontSize: 12,
+              color: 'var(--text-3)',
+              marginBottom: 8,
+              display: 'flex',
+              gap: 6,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
             {names && <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{names}</span>}
             {testDate && <span>· {testDate}</span>}
-            {company  && <span>· {company}</span>}
-            {price    && <span>· {price}원{rec.priceTaxType === 'excl' ? '(별도)' : ''}</span>}
+            {company && <span>· {company}</span>}
+            {price && (
+              <span>
+                · {price}원{rec.priceTaxType === 'excl' ? '(별도)' : ''}
+              </span>
+            )}
           </div>
 
           {description && (
-            <div style={{
-              fontSize: 12, color: 'var(--text-3)', lineHeight: 1.6,
-              display: '-webkit-box', WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: 8,
-            }}>{description}</div>
+            <div
+              style={{
+                fontSize: 12,
+                color: 'var(--text-3)',
+                lineHeight: 1.6,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                marginBottom: 8,
+              }}
+            >
+              {description}
+            </div>
           )}
 
           {tags.length > 0 && (
             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
               {tags.slice(0, 4).map(t => (
-                <span key={t} style={{
-                  background: 'var(--surface-2)', color: 'var(--text-3)',
-                  fontSize: 10, padding: '1px 6px', borderRadius: 8,
-                }}>#{t}</span>
+                <span
+                  key={t}
+                  style={{
+                    background: 'var(--surface-2)',
+                    color: 'var(--text-3)',
+                    fontSize: 10,
+                    padding: '1px 6px',
+                    borderRadius: 8,
+                  }}
+                >
+                  #{t}
+                </span>
               ))}
             </div>
           )}
 
           {/* 액션 버튼 (배치/비교 모드 아닐 때만) */}
           {!batchMode && !compareMode && (
-            <div style={{ display: 'flex', gap: 6, marginTop: 4 }} onClick={e => e.stopPropagation()}>
+            <div
+              style={{ display: 'flex', gap: 6, marginTop: 4 }}
+              onClick={e => e.stopPropagation()}
+            >
               <button className="btn sm" style={{ flex: 1 }} onClick={edit}>
                 수정
               </button>

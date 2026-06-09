@@ -7,9 +7,10 @@ import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guard
 export function CompareView({ categories, category, onCategoryChange, compare, movers }) {
   const safeCategories = asStringArray(categories);
   const safeCategory = asDisplayText(category);
-  const safeCompare = compare && typeof compare === 'object' && !Array.isArray(compare)
-    ? { ...compare, rows: asObjectArray(compare.rows) }
-    : null;
+  const safeCompare =
+    compare && typeof compare === 'object' && !Array.isArray(compare)
+      ? { ...compare, rows: asObjectArray(compare.rows) }
+      : null;
   const safeMovers = movers && typeof movers === 'object' && !Array.isArray(movers) ? movers : {};
   const handleCategoryChange = typeof onCategoryChange === 'function' ? onCategoryChange : () => {};
 

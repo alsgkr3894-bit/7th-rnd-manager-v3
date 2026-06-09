@@ -10,11 +10,7 @@ import { aggregateShipmentRows } from '@/lib/shipment/aggregate';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment/store-managed';
 import { useDraftRestore } from '@/hooks/useDraftRestore';
 import { getProfile } from '@/lib/profile';
-import {
-  asDisplayText,
-  asFiniteNumber,
-  asObjectArray,
-} from '@/lib/ui/prop-guards';
+import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 
 const DRAFT_KEY = 'report_draft_shipment';
 
@@ -39,11 +35,7 @@ function safeAmount(value) {
 }
 
 function safeProductName(product) {
-  return (
-    asDisplayText(product.normalizedProductName) ||
-    asDisplayText(product.productName) ||
-    '—'
-  );
+  return asDisplayText(product.normalizedProductName) || asDisplayText(product.productName) || '—';
 }
 
 function ItemTable({ items, maxQty }) {
@@ -391,9 +383,7 @@ export default function Page() {
           : true
     )
     .filter(p => !isShipped(p))
-    .sort((a, b) =>
-      safeProductName(a).localeCompare(safeProductName(b), 'ko')
-    );
+    .sort((a, b) => safeProductName(a).localeCompare(safeProductName(b), 'ko'));
 
   // 차트 series를 범위에 맞게 필터 (색상도 매칭)
   const SERIES_COLOR = { 전용상품: '#1D766F', 범용상품: '#7C3AED' };

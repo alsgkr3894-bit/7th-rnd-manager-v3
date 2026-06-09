@@ -23,11 +23,11 @@ jest.unstable_mockModule('@/lib/recipe', () => ({
     const map = new Map();
     for (const meta of allMeta) {
       if (!meta?.productCode) continue;
-      const priceWithTax = priceRowMap.get(meta.productCode)?.priceWithTax ?? meta.priceOverride ?? null;
+      const priceWithTax =
+        priceRowMap.get(meta.productCode)?.priceWithTax ?? meta.priceOverride ?? null;
       map.set(meta.productCode, {
-        unitPrice: meta.baseQuantity > 0 && priceWithTax != null
-          ? priceWithTax / meta.baseQuantity
-          : null,
+        unitPrice:
+          meta.baseQuantity > 0 && priceWithTax != null ? priceWithTax / meta.baseQuantity : null,
       });
     }
     return map;
@@ -72,10 +72,7 @@ describe('note cost-rate KPI guards', () => {
   test('깨진 레시피와 가격 행을 무시하고 정상 평균 원가율을 유지한다', async () => {
     getAll.mockImplementation(async storeName => {
       if (storeName === 'cost_ingredients') {
-        return [
-          null,
-          { productCode: 'A', baseQuantity: 100, priceOverride: 1000 },
-        ];
+        return [null, { productCode: 'A', baseQuantity: 100, priceOverride: 1000 }];
       }
       if (storeName === 'cost_recipes') {
         return [
@@ -101,11 +98,7 @@ describe('note cost-rate KPI guards', () => {
       return [];
     });
     getPriceFiles.mockResolvedValue([{ id: 7 }, null]);
-    getPriceRowsByFileId.mockResolvedValue([
-      null,
-      'bad',
-      { productCode: 'A', priceWithTax: 2000 },
-    ]);
+    getPriceRowsByFileId.mockResolvedValue([null, 'bad', { productCode: 'A', priceWithTax: 2000 }]);
 
     await expect(getCostRateKpi()).resolves.toEqual({
       rate: 50,
@@ -120,11 +113,13 @@ describe('note cost-rate KPI guards', () => {
         return [{ productCode: 'A', baseQuantity: 100, priceOverride: 1000 }];
       }
       if (storeName === 'cost_recipes') {
-        return [{
-          menuName: '치즈피자',
-          ingredients: [{ productCode: 'A', quantities: { 단일: 25 } }],
-          sizes: [{ label: '단일' }],
-        }];
+        return [
+          {
+            menuName: '치즈피자',
+            ingredients: [{ productCode: 'A', quantities: { 단일: 25 } }],
+            sizes: [{ label: '단일' }],
+          },
+        ];
       }
       if (storeName === 'cost_selling_prices') {
         return [{ menuName: '치즈피자', size: '단일', price: '1000' }];

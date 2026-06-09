@@ -1,7 +1,4 @@
-import {
-  previousMonthOf,
-  isUploadPeriodStale,
-} from '../../lib/stats/upload-status.js';
+import { previousMonthOf, isUploadPeriodStale } from '../../lib/stats/upload-status.js';
 
 describe('upload-status 신선도 기준', () => {
   test('previousMonthOf는 1월에서 전년도 12월로 넘어간다', () => {

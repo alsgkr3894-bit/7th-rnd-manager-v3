@@ -43,6 +43,10 @@ describe('small stat card ui helpers', () => {
     expect(getSmallStatValueStyle({ color: 'bad' })).toMatchObject({
       color: undefined,
     });
-    expect(getSmallStatUnitStyle()).toEqual({ fontSize: 13, color: 'var(--text-3)', marginLeft: 4 });
+    expect(getSmallStatUnitStyle()).toEqual({
+      fontSize: 13,
+      color: 'var(--text-3)',
+      marginLeft: 4,
+    });
   });
 });

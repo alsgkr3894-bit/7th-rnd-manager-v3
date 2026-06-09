@@ -13,7 +13,12 @@ import { normalizeSidebarOpenIds } from '@/lib/ui/sidebar-state';
  * 사이드바 컴포넌트
  * 메뉴 데이터는 @/lib/menu.js에 분리 (이 컴포넌트는 렌더링만 담당)
  */
-export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, reportingCount = 0 }) {
+export default function Sidebar({
+  onClose,
+  activeCompany,
+  unmatchedCount = 0,
+  reportingCount = 0,
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const sidebarRef = useRef(null);
@@ -26,12 +31,14 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
         await initDB();
         const files = await getPriceFiles();
         setLatestPrice(files[0] || null);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     })();
   }, []);
 
   // 동적 badge
-  const dynamicBadge = (id) => {
+  const dynamicBadge = id => {
     if (id === 'menu-sales' || id === 'menu-sales-unmatched') {
       return unmatchedCount > 0 ? unmatchedCount : null;
     }
@@ -41,17 +48,22 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
     return null;
   };
 
-  const isActive = (item) => {
+  const isActive = item => {
     if (!item.href) return false;
     if (item.href === '/') return pathname === '/';
     return pathname === item.href;
   };
 
   // pathname에만 의존 — useCallback으로 안정화해 Escape 리스너 effect의 매 렌더 재등록 방지
-  const isGroupActive = useCallback((group) => {
-    if (group.href) return pathname === group.href || pathname.startsWith(group.href + '/');
-    return group.children?.some(c => c.href && (pathname === c.href || pathname.startsWith(c.href + '/')));
-  }, [pathname]);
+  const isGroupActive = useCallback(
+    group => {
+      if (group.href) return pathname === group.href || pathname.startsWith(group.href + '/');
+      return group.children?.some(
+        c => c.href && (pathname === c.href || pathname.startsWith(c.href + '/'))
+      );
+    },
+    [pathname]
+  );
 
   const [openIds, setOpenIds] = useState({});
 
@@ -60,7 +72,7 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
   useEffect(() => {
     const saved = getJSONLS(KEYS.SIDEBAR_OPEN);
     setOpenIds(normalizeSidebarOpenIds(saved));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // pathname 변경 시 active 그룹 자동 열기 (클라이언트 라우팅 대응)
@@ -75,7 +87,7 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
       if (!Object.keys(updates).length) return o;
       return { ...o, ...updates };
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   // 활성 항목이 보이는 영역 밖이면 스크롤로 노출 (active 표시는 CSS .active 배경·좌측바가 담당)
@@ -106,7 +118,7 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
 
   // Escape 키로 열린 아코디언 닫기 (active 그룹 제외)
   useEffect(() => {
-    const handler = (e) => {
+    const handler = e => {
       if (e.key !== 'Escape') return;
       setOpenIds(o => {
         const next = { ...o };
@@ -128,13 +140,13 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
     return () => window.removeEventListener('keydown', handler);
   }, [isGroupActive]);
 
-  const navigate = (href) => {
+  const navigate = href => {
     router.push(href);
     onClose?.();
   };
 
   /** 단일 그룹(또는 단일 링크) 렌더 */
-  const renderGroup = (item) => {
+  const renderGroup = item => {
     const hasKids = !!item.children?.length;
     const active = isGroupActive(item);
     const isOpen = openIds[item.id];
@@ -158,13 +170,17 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
           <span>{item.label}</span>
           {itemBadge && <span className="badge">{itemBadge}</span>}
           {hasKids && (
-            <Icon.chevDown className="caret" style={{
-              width: 14, height: 14,
-              marginLeft: itemBadge ? 6 : 'auto',
-              transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
-              transition: 'transform 160ms ease',
-              color: 'var(--text-4)',
-            }} />
+            <Icon.chevDown
+              className="caret"
+              style={{
+                width: 14,
+                height: 14,
+                marginLeft: itemBadge ? 6 : 'auto',
+                transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
+                transition: 'transform 160ms ease',
+                color: 'var(--text-4)',
+              }}
+            />
           )}
         </button>
         {hasKids && (
@@ -173,9 +189,11 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
               {item.children.map(c => {
                 const childBadge = c.badge ?? dynamicBadge(c.id);
                 return (
-                  <button key={c.id}
+                  <button
+                    key={c.id}
                     className={'nav-child ' + (isActive(c) ? 'active' : '')}
-                    onClick={() => navigate(c.href)}>
+                    onClick={() => navigate(c.href)}
+                  >
                     <span className="dot"></span>
                     <span>{c.label}</span>
                     {childBadge && <span className="badge">{childBadge}</span>}
@@ -193,14 +211,36 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
 
   return (
     <aside className="sidebar" ref={sidebarRef} suppressHydrationWarning>
-      <a className="brand" href="/" onClick={e => { e.preventDefault(); navigate('/'); }}>
-        {activeCompany?.logo
-          ? <img className="logo-img" src={activeCompany.logo} alt={activeCompany?.name || '로고'}
-              style={{objectFit:'contain', background:'white', padding:2}} />
-          : <span className="logo-img" style={{background: activeCompany?.color || '#E1101F',
-              display:'grid', placeItems:'center', color:'white', fontWeight:800, fontSize:14}}>
-              {activeCompany?.name?.[0] || '7'}
-            </span>}
+      <a
+        className="brand"
+        href="/"
+        onClick={e => {
+          e.preventDefault();
+          navigate('/');
+        }}
+      >
+        {activeCompany?.logo ? (
+          <img
+            className="logo-img"
+            src={activeCompany.logo}
+            alt={activeCompany?.name || '로고'}
+            style={{ objectFit: 'contain', background: 'white', padding: 2 }}
+          />
+        ) : (
+          <span
+            className="logo-img"
+            style={{
+              background: activeCompany?.color || '#E1101F',
+              display: 'grid',
+              placeItems: 'center',
+              color: 'white',
+              fontWeight: 800,
+              fontSize: 14,
+            }}
+          >
+            {activeCompany?.name?.[0] || '7'}
+          </span>
+        )}
         <div className="brand-text">
           <div className="brand-line1">{activeCompany?.name || '7번가 R&D'}</div>
           <div className="brand-line2">플랫폼</div>
@@ -209,31 +249,40 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
 
       {/* 홈은 섹션 외 단일 항목 */}
       <nav aria-label="기본 내비게이션">
-      <button className={'nav-item ' + (isActive(NAV_HOME) ? 'active' : '')}
-              onClick={() => navigate(NAV_HOME.href)}>
-        <HomeIcon className="ico" />
-        <span>{NAV_HOME.label}</span>
-      </button>
+        <button
+          className={'nav-item ' + (isActive(NAV_HOME) ? 'active' : '')}
+          onClick={() => navigate(NAV_HOME.href)}
+        >
+          <HomeIcon className="ico" />
+          <span>{NAV_HOME.label}</span>
+        </button>
 
-      {/* 섹션별 렌더 */}
-      {NAV_SECTIONS.map(section => (
-        <div key={section.sectionLabel}>
-          <div className="section-label">{section.sectionLabel}</div>
-          {section.groups.map(renderGroup)}
-        </div>
-      ))}
+        {/* 섹션별 렌더 */}
+        {NAV_SECTIONS.map(section => (
+          <div key={section.sectionLabel}>
+            <div className="section-label">{section.sectionLabel}</div>
+            {section.groups.map(renderGroup)}
+          </div>
+        ))}
       </nav>
 
       <button
         className="sidebar-footer"
         onClick={() => navigate('/jette/price-compare')}
         style={{
-          background:'transparent', border:'none', textAlign:'left',
-          cursor:'pointer', font:'inherit', color:'inherit', width:'100%',
+          background: 'transparent',
+          border: 'none',
+          textAlign: 'left',
+          cursor: 'pointer',
+          font: 'inherit',
+          color: 'inherit',
+          width: '100%',
         }}
         title="제때 가격 비교로 이동"
       >
-        <div><b>최신 제때 단가</b></div>
+        <div>
+          <b>최신 제때 단가</b>
+        </div>
         <div style={{ marginTop: 4 }}>
           {latestPrice
             ? `${latestPrice.updateDate} 반영 · 총 ${latestPrice.totalRows ?? 0}개`

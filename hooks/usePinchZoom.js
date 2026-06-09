@@ -15,7 +15,13 @@ export function normalizePinchScale(currentScale, distance, lastDistance) {
   const current = Number(currentScale);
   const dist = Number(distance);
   const prev = Number(lastDistance);
-  if (!Number.isFinite(current) || !Number.isFinite(dist) || !Number.isFinite(prev) || dist <= 0 || prev <= 0) {
+  if (
+    !Number.isFinite(current) ||
+    !Number.isFinite(dist) ||
+    !Number.isFinite(prev) ||
+    dist <= 0 ||
+    prev <= 0
+  ) {
     return 1;
   }
   return Math.min(4, Math.max(1, current * (dist / prev)));

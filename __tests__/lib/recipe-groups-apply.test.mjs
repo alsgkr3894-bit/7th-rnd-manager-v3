@@ -1,4 +1,7 @@
-import { groupAppliesToCategory, createDefaultGroupResolver } from '../../lib/cost/recipe-groups/apply.js';
+import {
+  groupAppliesToCategory,
+  createDefaultGroupResolver,
+} from '../../lib/cost/recipe-groups/apply.js';
 
 describe('groupAppliesToCategory', () => {
   test('정확히 일치하는 카테고리에 적용', () => {

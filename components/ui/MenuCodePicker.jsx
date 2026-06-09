@@ -26,18 +26,22 @@ export default function MenuCodePicker({
   placeholder = '코드·메뉴명·중분류로 검색…',
   style,
 }) {
-  const [q,         setQ]         = useState('');
-  const [open,      setOpen]      = useState(false);
+  const [q, setQ] = useState('');
+  const [open, setOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(-1);
-  const ref     = useRef(null);
+  const ref = useRef(null);
   const listRef = useRef(null);
 
   const displayList = useMemo(() => {
-    const active = asObjectArray(menuMasters).filter(m => m.status !== 'discontinued' && m.menuCode);
+    const active = asObjectArray(menuMasters).filter(
+      m => m.status !== 'discontinued' && m.menuCode
+    );
     if (!dedup) {
       return active.map(m => ({
-        code: String(m.menuCode ?? ''), menuName: asText(m.menuName),
-        subCategory: asText(m.subCategory), category: asText(m.category),
+        code: String(m.menuCode ?? ''),
+        menuName: asText(m.menuName),
+        subCategory: asText(m.subCategory),
+        category: asText(m.category),
         sizes: asText(m.size) ? [asText(m.size)] : [],
       }));
     }
@@ -66,15 +70,20 @@ export default function MenuCodePicker({
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return displayList.slice(0, 50);
-    return displayList.filter(m =>
-      (m.code || '').toLowerCase().includes(term) ||
-      (m.menuName || '').toLowerCase().includes(term) ||
-      (m.subCategory || '').toLowerCase().includes(term) ||
-      (m.category || '').toLowerCase().includes(term)
-    ).slice(0, 50);
+    return displayList
+      .filter(
+        m =>
+          (m.code || '').toLowerCase().includes(term) ||
+          (m.menuName || '').toLowerCase().includes(term) ||
+          (m.subCategory || '').toLowerCase().includes(term) ||
+          (m.category || '').toLowerCase().includes(term)
+      )
+      .slice(0, 50);
   }, [q, displayList]);
 
-  useEffect(() => { setActiveIdx(-1); }, [results]);
+  useEffect(() => {
+    setActiveIdx(-1);
+  }, [results]);
 
   useEffect(() => {
     if (activeIdx < 0 || !listRef.current) return;
@@ -82,12 +91,14 @@ export default function MenuCodePicker({
   }, [activeIdx]);
 
   useEffect(() => {
-    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const handler = e => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleSelect = (m) => {
+  const handleSelect = m => {
     if (!m?.code) return;
     const meta = parseCategoryFromCode(m.code);
     onChange?.(m.code, meta);
@@ -95,9 +106,13 @@ export default function MenuCodePicker({
     setOpen(false);
     setActiveIdx(-1);
   };
-  const handleClear = () => { onChange?.('', {}); setQ(''); setActiveIdx(-1); };
+  const handleClear = () => {
+    onChange?.('', {});
+    setQ('');
+    setActiveIdx(-1);
+  };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = e => {
     if (!open || results.length === 0) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -117,17 +132,40 @@ export default function MenuCodePicker({
   return (
     <div ref={ref} style={{ position: 'relative', ...style }}>
       {selected ? (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
-          background: 'var(--accent-soft)', border: '1.5px solid var(--accent)',
-          borderRadius: 8, fontSize: 13,
-        }}>
-          <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent-text)', flexShrink: 0 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '7px 10px',
+            background: 'var(--accent-soft)',
+            border: '1.5px solid var(--accent)',
+            borderRadius: 8,
+            fontSize: 13,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: 'monospace',
+              fontWeight: 700,
+              color: 'var(--accent-text)',
+              flexShrink: 0,
+            }}
+          >
             {selected.code}
           </span>
           <span style={{ color: 'var(--text-2)' }}>{selected.menuName}</span>
           {selected.subCategory && (
-            <span style={{ fontSize: 11, color: 'var(--text-4)', background: 'var(--surface-2)', padding: '1px 6px', borderRadius: 4, flexShrink: 0 }}>
+            <span
+              style={{
+                fontSize: 11,
+                color: 'var(--text-4)',
+                background: 'var(--surface-2)',
+                padding: '1px 6px',
+                borderRadius: 4,
+                flexShrink: 0,
+              }}
+            >
               {selected.subCategory}
             </span>
           )}
@@ -136,8 +174,18 @@ export default function MenuCodePicker({
               ({[...selected.sizes].sort().join(' · ')})
             </span>
           )}
-          <button onClick={handleClear}
-            style={{ marginLeft: 'auto', border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--text-3)', padding: 0, flexShrink: 0 }}>
+          <button
+            onClick={handleClear}
+            style={{
+              marginLeft: 'auto',
+              border: 0,
+              background: 'transparent',
+              cursor: 'pointer',
+              color: 'var(--text-3)',
+              padding: 0,
+              flexShrink: 0,
+            }}
+          >
             <Icon.close style={{ width: 13, height: 13 }} />
           </button>
         </div>
@@ -146,45 +194,98 @@ export default function MenuCodePicker({
           <Icon.search style={{ width: 14, height: 14, color: 'var(--text-3)', flexShrink: 0 }} />
           <input
             value={q}
-            onChange={e => { setQ(e.target.value); setOpen(true); setActiveIdx(-1); }}
+            onChange={e => {
+              setQ(e.target.value);
+              setOpen(true);
+              setActiveIdx(-1);
+            }}
             onFocus={() => setOpen(true)}
             onKeyDown={handleKeyDown}
-            placeholder={displayList.length === 0 ? '메뉴 마스터가 없습니다 (메뉴 마스터 먼저 등록)' : placeholder}
+            placeholder={
+              displayList.length === 0
+                ? '메뉴 마스터가 없습니다 (메뉴 마스터 먼저 등록)'
+                : placeholder
+            }
             disabled={displayList.length === 0}
-            style={{ background: 'transparent', border: 0, outline: 0, flex: 1, fontSize: 13, fontFamily: 'inherit', color: 'var(--text-1)' }}
+            style={{
+              background: 'transparent',
+              border: 0,
+              outline: 0,
+              flex: 1,
+              fontSize: 13,
+              fontFamily: 'inherit',
+              color: 'var(--text-1)',
+            }}
           />
         </div>
       )}
 
       {open && !selected && results.length > 0 && (
-        <div ref={listRef} style={{
-          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
-          background: 'var(--surface)', border: '1px solid var(--border)',
-          borderRadius: 8, boxShadow: 'var(--shadow-md)',
-          maxHeight: 260, overflowY: 'auto', marginTop: 2,
-        }}>
+        <div
+          ref={listRef}
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            zIndex: 200,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            boxShadow: 'var(--shadow-md)',
+            maxHeight: 260,
+            overflowY: 'auto',
+            marginTop: 2,
+          }}
+        >
           {results.map((m, idx) => {
             const isActive = idx === activeIdx;
             return (
-              <button key={m.code} onClick={() => handleSelect(m)}
+              <button
+                key={m.code}
+                onClick={() => handleSelect(m)}
                 onMouseEnter={() => setActiveIdx(idx)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  width: '100%', textAlign: 'left', padding: '8px 14px',
-                  border: 0, background: isActive ? 'var(--accent-soft)' : 'transparent',
-                  cursor: 'pointer', borderBottom: '1px solid var(--divider)',
-                }}>
-                <span style={{
-                  fontFamily: 'monospace', fontSize: 12, fontWeight: 700,
-                  color: 'var(--accent-text)', background: 'var(--accent-soft)',
-                  padding: '1px 6px', borderRadius: 4, flexShrink: 0,
-                }}>
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '8px 14px',
+                  border: 0,
+                  background: isActive ? 'var(--accent-soft)' : 'transparent',
+                  cursor: 'pointer',
+                  borderBottom: '1px solid var(--divider)',
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: 'var(--accent-text)',
+                    background: 'var(--accent-soft)',
+                    padding: '1px 6px',
+                    borderRadius: 4,
+                    flexShrink: 0,
+                  }}
+                >
                   {m.code}
                 </span>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: 13, color: isActive ? 'var(--accent-text)' : 'var(--text-1)', fontWeight: 500 }}>{m.menuName}</div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: isActive ? 'var(--accent-text)' : 'var(--text-1)',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {m.menuName}
+                  </div>
                   {m.subCategory && (
-                    <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 1 }}>{m.subCategory}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 1 }}>
+                      {m.subCategory}
+                    </div>
                   )}
                 </div>
                 {m.sizes.length > 0 && (

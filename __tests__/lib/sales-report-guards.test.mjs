@@ -35,7 +35,9 @@ describe('sales report helper guards', () => {
   });
 
   test('buildPeriodCompare는 비배열 입력과 잘못된 옵션을 안전하게 처리한다', () => {
-    expect(buildPeriodCompare(null, { year: 2026, month: 5 }, { year: 2026, month: 4 })).toMatchObject({
+    expect(
+      buildPeriodCompare(null, { year: 2026, month: 5 }, { year: 2026, month: 4 })
+    ).toMatchObject({
       totalA: 0,
       totalB: 0,
       rows: [],
@@ -133,7 +135,7 @@ describe('sales report helper guards', () => {
         { ...row, month: 6, quantity: 99 },
       ],
       { year: '2026', month: '5' },
-      { groupBy: 'group', topN: 'bad' },
+      { groupBy: 'group', topN: 'bad' }
     );
 
     expect(details.total).toBe(15);
@@ -147,7 +149,10 @@ describe('sales report helper guards', () => {
       { name: '정상후보', quantity: 2 },
     ]);
 
-    const share = buildCategoryShare([null, row, { ...row, quantity: 'bad' }], { year: 2026, month: 5 });
+    const share = buildCategoryShare([null, row, { ...row, quantity: 'bad' }], {
+      year: 2026,
+      month: 5,
+    });
     expect(share.total).toBe(10);
     expect(share.items[0]).toMatchObject({ name: 'pizza', value: 10 });
   });

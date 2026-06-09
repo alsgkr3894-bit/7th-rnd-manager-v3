@@ -9,8 +9,16 @@ import { asDisplayText } from '@/lib/ui/prop-guards';
 import { EmptyState, SkeletonChart } from './HomeWidgets';
 
 export function HomeChartRow({
-  trend, donut, hoveredCat, setHoveredCat,
-  chartTab, setChartTab, chartKey, salesKpi, router, isTrendEmpty,
+  trend,
+  donut,
+  hoveredCat,
+  setHoveredCat,
+  chartTab,
+  setChartTab,
+  chartKey,
+  salesKpi,
+  router,
+  isTrendEmpty,
 }) {
   const donutItems = normalizeDonutItems(donut?.items);
   const safeDonutItems = donutItems.map((item, index) => ({
@@ -42,13 +50,23 @@ export function HomeChartRow({
             </div>
           </div>
           <div className="chart-tabs">
-            <button className={chartTab==='month'?'active':''} onClick={()=>setChartTab?.('month')}>월별</button>
-            <button className={chartTab==='year'?'active':''} onClick={()=>setChartTab?.('year')}>년별</button>
+            <button
+              className={chartTab === 'month' ? 'active' : ''}
+              onClick={() => setChartTab?.('month')}
+            >
+              월별
+            </button>
+            <button
+              className={chartTab === 'year' ? 'active' : ''}
+              onClick={() => setChartTab?.('year')}
+            >
+              년별
+            </button>
           </div>
         </div>
         {isTrendEmpty ? (
           <EmptyState
-            icon={<Icon.chart style={{width:32,height:32}}/>}
+            icon={<Icon.chart style={{ width: 32, height: 32 }} />}
             title="판매량 데이터가 없습니다"
             desc="메뉴 판매량을 업로드하면 추이가 표시됩니다"
             action="판매량 업로드"
@@ -58,21 +76,36 @@ export function HomeChartRow({
           <>
             <div className="chart-legend">
               {trend.mode === 'year' ? (
-                <span><span className="dot" style={{background:'var(--accent)'}}></span>연간 판매량</span>
+                <span>
+                  <span className="dot" style={{ background: 'var(--accent)' }}></span>연간 판매량
+                </span>
               ) : (
                 <>
-                  <span><span className="dot" style={{background:'var(--accent)'}}></span>이번 연도</span>
-                  <span><span className="dot" style={{background:'var(--text-4)'}}></span>지난 연도 동월</span>
+                  <span>
+                    <span className="dot" style={{ background: 'var(--accent)' }}></span>이번 연도
+                  </span>
+                  <span>
+                    <span className="dot" style={{ background: 'var(--text-4)' }}></span>지난 연도
+                    동월
+                  </span>
                 </>
               )}
             </div>
-            <AreaChart key={chartKey}
+            <AreaChart
+              key={chartKey}
               labels={trend.labels}
-              series={trend.mode === 'year'
-                ? [{ name:'연간 판매량', data:trend.thisYear }]
-                : [{ name:'이번 연도', data:trend.thisYear }, { name:'지난 연도', data:trend.lastYear }]}
-              colors={trend.mode === 'year' ? ['var(--accent)'] : ['var(--accent)','var(--text-4)']}
-              formatY={(v) => formatNumber(v) + '개'}
+              series={
+                trend.mode === 'year'
+                  ? [{ name: '연간 판매량', data: trend.thisYear }]
+                  : [
+                      { name: '이번 연도', data: trend.thisYear },
+                      { name: '지난 연도', data: trend.lastYear },
+                    ]
+              }
+              colors={
+                trend.mode === 'year' ? ['var(--accent)'] : ['var(--accent)', 'var(--text-4)']
+              }
+              formatY={v => formatNumber(v) + '개'}
             />
           </>
         ) : (
@@ -88,22 +121,27 @@ export function HomeChartRow({
               {salesYear && salesMonth ? `${salesYear}년 ${salesMonth}월 기준` : '데이터 없음'}
             </div>
           </div>
-          <button className="link" onClick={()=>router?.push?.('/menu-sales/rank')}>자세히</button>
+          <button className="link" onClick={() => router?.push?.('/menu-sales/rank')}>
+            자세히
+          </button>
         </div>
         {safeDonut?.total === 0 ? (
           <EmptyState
-            icon={<Icon.pizza style={{width:32,height:32}}/>}
+            icon={<Icon.pizza style={{ width: 32, height: 32 }} />}
             title="데이터 없음"
             desc="판매량을 업로드하면 카테고리 비중이 표시됩니다"
           />
         ) : safeDonut ? (
           <>
-            <DonutSection donut={safeDonut} hoveredCat={hoveredCat} setHoveredCat={setHoveredCat}/>
+            <DonutSection donut={safeDonut} hoveredCat={hoveredCat} setHoveredCat={setHoveredCat} />
             {safeDonut.items.length > 0 && (
               <div className="ring-foot">
                 <div className="rf">
                   <div className="l">최다 카테고리</div>
-                  <div className="v">{safeDonut.items[0].name} {formatPercent((safeDonut.items[0].value / safeDonut.total) * 100)}</div>
+                  <div className="v">
+                    {safeDonut.items[0].name}{' '}
+                    {formatPercent((safeDonut.items[0].value / safeDonut.total) * 100)}
+                  </div>
                 </div>
                 <div className="rf">
                   <div className="l">카테고리</div>
@@ -134,13 +172,17 @@ function DonutSection({ donut, hoveredCat, setHoveredCat }) {
         </div>
       </div>
       <div className="ring-rows">
-        {donut.items.map((c,i) => (
-          <div key={`${c.name}-${i}`} className="ring-row" style={{
-            opacity: safeHoveredCat !== null && safeHoveredCat !== i ? 0.4 : 1,
-            transition: 'opacity 200ms ease',
-            fontWeight: safeHoveredCat === i ? 800 : undefined,
-          }}>
-            <div className="swatch" style={{background:c.color}}></div>
+        {donut.items.map((c, i) => (
+          <div
+            key={`${c.name}-${i}`}
+            className="ring-row"
+            style={{
+              opacity: safeHoveredCat !== null && safeHoveredCat !== i ? 0.4 : 1,
+              transition: 'opacity 200ms ease',
+              fontWeight: safeHoveredCat === i ? 800 : undefined,
+            }}
+          >
+            <div className="swatch" style={{ background: c.color }}></div>
             <div className="name">{c.name}</div>
             <div className="v num">{formatPercent((c.value / donut.total) * 100)}</div>
           </div>

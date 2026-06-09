@@ -16,13 +16,15 @@ describe('page header ui helpers', () => {
   });
 
   test('breadcrumb는 문자열과 label 객체만 보존하고 href는 문자열만 허용한다', () => {
-    expect(normalizeBreadcrumbs([
-      '홈',
-      { label: '설정', href: '/settings' },
-      { label: '복원', href: 7 },
-      { href: '/empty' },
-      null,
-    ])).toEqual([
+    expect(
+      normalizeBreadcrumbs([
+        '홈',
+        { label: '설정', href: '/settings' },
+        { label: '복원', href: 7 },
+        { href: '/empty' },
+        null,
+      ])
+    ).toEqual([
       { label: '홈', href: null },
       { label: '설정', href: '/settings' },
       { label: '복원', href: null },
@@ -32,12 +34,14 @@ describe('page header ui helpers', () => {
   test('filter chip은 빈 항목과 잘못된 onClick을 제거한다', () => {
     const handler = () => 'ok';
 
-    expect(normalizeFilterChips([
-      { label: '전체', count: 0, active: true, onClick: handler },
-      { label: '누락', count: '12', onClick: 'bad' },
-      { label: '', count: null },
-      null,
-    ])).toEqual([
+    expect(
+      normalizeFilterChips([
+        { label: '전체', count: 0, active: true, onClick: handler },
+        { label: '누락', count: '12', onClick: 'bad' },
+        { label: '', count: null },
+        null,
+      ])
+    ).toEqual([
       { label: '전체', count: '0', active: true, onClick: handler },
       { label: '누락', count: '12', active: false, onClick: undefined },
     ]);

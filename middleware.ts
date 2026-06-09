@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const PUBLIC_PATHS = ['/login', '/_next', '/favicon.ico', '/logo-', '/api/'];
-const COOKIE_NAME  = 'v3:auth';
+const COOKIE_NAME = 'v3:auth';
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

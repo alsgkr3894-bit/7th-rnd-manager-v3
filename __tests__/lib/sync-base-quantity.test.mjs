@@ -10,10 +10,10 @@ import { buildSyncPlan } from '../../lib/cost/sync-base-quantity.js';
 // ── 픽스처 ───────────────────────────────────────────────────
 
 const ingredients = [
-  { id: 1, productCode: 'A001', ingredientName: '모짜렐라', baseQuantity: 5,    baseUnitType: 'kg' },
-  { id: 2, productCode: 'A002', ingredientName: '피망',     baseQuantity: null, baseUnitType: 'g'  },
-  { id: 3, productCode: 'B010', ingredientName: '소금',     baseQuantity: 1000, baseUnitType: 'g'  },
-  { id: 4, productCode: 'C001', ingredientName: '버터',     baseQuantity: 2,    baseUnitType: 'kg' },
+  { id: 1, productCode: 'A001', ingredientName: '모짜렐라', baseQuantity: 5, baseUnitType: 'kg' },
+  { id: 2, productCode: 'A002', ingredientName: '피망', baseQuantity: null, baseUnitType: 'g' },
+  { id: 3, productCode: 'B010', ingredientName: '소금', baseQuantity: 1000, baseUnitType: 'g' },
+  { id: 4, productCode: 'C001', ingredientName: '버터', baseQuantity: 2, baseUnitType: 'kg' },
 ];
 
 // ── buildSyncPlan ─────────────────────────────────────────────
@@ -74,9 +74,7 @@ describe('buildSyncPlan', () => {
   });
 
   test('매칭되지 않는 코드는 unmatched로 집계된다', () => {
-    const priceRows = [
-      { productCode: 'ZZZZZ', quantity: 100 },
-    ];
+    const priceRows = [{ productCode: 'ZZZZZ', quantity: 100 }];
     const { changes, unmatched } = buildSyncPlan(priceRows, ingredients);
     expect(changes).toHaveLength(0);
     expect(unmatched).toBe(1);
@@ -85,9 +83,7 @@ describe('buildSyncPlan', () => {
   // ── 스킵 규칙 ─────────────────────────────────────────────
 
   test('quantity가 null이면 스킵 (unmatched가 아닌 조용한 스킵)', () => {
-    const priceRows = [
-      { productCode: 'A001', quantity: null },
-    ];
+    const priceRows = [{ productCode: 'A001', quantity: null }];
     const { changes, unchanged, unmatched } = buildSyncPlan(priceRows, ingredients);
     expect(changes).toHaveLength(0);
     expect(unchanged).toBe(0);
@@ -156,7 +152,15 @@ describe('buildSyncPlan', () => {
 
   test('unit: baseUnitType 우선 → salesUnit → 기본값 g', () => {
     // 1) baseUnitType 있는 경우
-    const ing1 = [{ id: 1, productCode: 'A001', ingredientName: '모짜렐라', baseQuantity: 5, baseUnitType: 'kg' }];
+    const ing1 = [
+      {
+        id: 1,
+        productCode: 'A001',
+        ingredientName: '모짜렐라',
+        baseQuantity: 5,
+        baseUnitType: 'kg',
+      },
+    ];
     const rows1 = [{ productCode: 'A001', quantity: 10, salesUnit: 'L' }];
     const { changes: c1 } = buildSyncPlan(rows1, ing1);
     expect(c1[0].unit).toBe('kg');
@@ -178,10 +182,10 @@ describe('buildSyncPlan', () => {
 
   test('변경/미변경/미매칭 복합', () => {
     const priceRows = [
-      { productCode: 'A001', quantity: 8    },  // 변경 (기존 5)
-      { productCode: 'B010', quantity: 1000 },  // 동일 (unchanged)
-      { productCode: 'ZZZZ', quantity: 200  },  // 미매칭
-      { productCode: 'A002', quantity: 300  },  // 변경 (기존 null)
+      { productCode: 'A001', quantity: 8 }, // 변경 (기존 5)
+      { productCode: 'B010', quantity: 1000 }, // 동일 (unchanged)
+      { productCode: 'ZZZZ', quantity: 200 }, // 미매칭
+      { productCode: 'A002', quantity: 300 }, // 변경 (기존 null)
     ];
     const { changes, unchanged, unmatched } = buildSyncPlan(priceRows, ingredients);
     expect(changes).toHaveLength(2);
@@ -219,7 +223,7 @@ describe('buildSyncPlan', () => {
   test('productCode 없는 ingredient는 매칭 인덱스에서 제외', () => {
     const ing = [
       { id: 99, productCode: '', ingredientName: '수동재료', baseQuantity: 1 },
-      { id: 1,  productCode: 'A001', ingredientName: '모짜렐라', baseQuantity: 5 },
+      { id: 1, productCode: 'A001', ingredientName: '모짜렐라', baseQuantity: 5 },
     ];
     const priceRows = [{ productCode: 'A001', quantity: 10 }];
     const { changes } = buildSyncPlan(priceRows, ing);

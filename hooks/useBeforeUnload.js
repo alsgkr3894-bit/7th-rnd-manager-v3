@@ -12,7 +12,11 @@ export function useBeforeUnload(isDirty, message = DEFAULT_MESSAGE) {
   useEffect(() => {
     if (!isDirty) return;
     const safeMessage = normalizeBeforeUnloadMessage(message);
-    const handle = (e) => { e.preventDefault(); e.returnValue = safeMessage; return safeMessage; };
+    const handle = e => {
+      e.preventDefault();
+      e.returnValue = safeMessage;
+      return safeMessage;
+    };
     window.addEventListener('beforeunload', handle);
     return () => window.removeEventListener('beforeunload', handle);
   }, [isDirty, message]);

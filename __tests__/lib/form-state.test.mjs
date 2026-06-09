@@ -1,5 +1,9 @@
 import { describe, expect, test } from '@jest/globals';
-import { makeFieldUpdater, normalizeFieldKey, normalizeObjectState } from '../../lib/ui/form-state.js';
+import {
+  makeFieldUpdater,
+  normalizeFieldKey,
+  normalizeObjectState,
+} from '../../lib/ui/form-state.js';
 
 describe('normalizeFieldKey', () => {
   test('문자열/숫자/symbol key는 보존한다', () => {
@@ -27,7 +31,9 @@ describe('normalizeObjectState', () => {
 describe('makeFieldUpdater', () => {
   test('객체 상태의 단일 필드를 갱신한다', () => {
     let state = { a: 1 };
-    const setState = updater => { state = updater(state); };
+    const setState = updater => {
+      state = updater(state);
+    };
     makeFieldUpdater(setState)('b', 2);
     expect(state).toEqual({ a: 1, b: 2 });
   });
@@ -35,7 +41,9 @@ describe('makeFieldUpdater', () => {
   test('비함수 setter와 비정상 key는 안전하게 무시한다', () => {
     expect(() => makeFieldUpdater(null)('a', 1)).not.toThrow();
     let called = false;
-    const setState = () => { called = true; };
+    const setState = () => {
+      called = true;
+    };
     makeFieldUpdater(setState)({ bad: true }, 1);
     expect(called).toBe(false);
   });

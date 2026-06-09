@@ -21,7 +21,19 @@ import {
  * @param {string}   [className] - 추가 클래스
  * @param {ReactNode} children - 헤더 라벨
  */
-export function SortableTh({ sortKey, active, dir, onClick, children, width, right, style, className, rowSpan, colSpan }) {
+export function SortableTh({
+  sortKey,
+  active,
+  dir,
+  onClick,
+  children,
+  width,
+  right,
+  style,
+  className,
+  rowSpan,
+  colSpan,
+}) {
   const safeSortKey = normalizeSortValue(sortKey);
   const indicator = getSortIndicator(safeSortKey, active, dir);
   const handleClick = normalizeSortChangeHandler(onClick);
@@ -37,10 +49,16 @@ export function SortableTh({ sortKey, active, dir, onClick, children, width, rig
       rowSpan={safeRowSpan}
       colSpan={safeColSpan}
       className={safeClassName ? `sortable ${safeClassName}` : 'sortable'}
-      style={{ width: safeWidth, textAlign: right ? 'right' : undefined, cursor:'pointer', userSelect:'none', ...safeStyle }}
+      style={{
+        width: safeWidth,
+        textAlign: right ? 'right' : undefined,
+        cursor: 'pointer',
+        userSelect: 'none',
+        ...safeStyle,
+      }}
     >
       {children}{' '}
-      <span style={{color: indicator.active ? 'var(--accent)' : 'var(--text-4)', fontSize: 10}}>
+      <span style={{ color: indicator.active ? 'var(--accent)' : 'var(--text-4)', fontSize: 10 }}>
         {indicator.symbol}
       </span>
     </th>

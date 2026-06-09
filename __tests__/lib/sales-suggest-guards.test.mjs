@@ -16,10 +16,8 @@ jest.unstable_mockModule('@/lib/active-brand', () => ({
   getActiveBrandId: (...args) => getActiveBrandId(...args),
 }));
 
-const {
-  getClassificationNameOptions,
-  suggestRulesByMenuName,
-} = await import('../../lib/sales/suggest.js');
+const { getClassificationNameOptions, suggestRulesByMenuName } =
+  await import('../../lib/sales/suggest.js');
 
 beforeEach(() => {
   salesRules.length = 0;
@@ -32,7 +30,7 @@ describe('sales suggest guards', () => {
     salesRules.push(
       null,
       { category: '피자', groupName: '고구마피자', detailName: '고구마피자 L' },
-      { category: '음료', groupName: 123, detailName: null },
+      { category: '음료', groupName: 123, detailName: null }
     );
     getUserRules.mockResolvedValue([
       { enable: false, category: '피자', groupName: '숨김', detailName: '숨김' },
@@ -63,7 +61,7 @@ describe('sales suggest guards', () => {
   test('추천 함수는 잘못된 입력과 limit을 안전하게 처리한다', () => {
     salesRules.push(
       { ruleId: 'a', pattern: '고구마피자', groupName: '고구마피자', detailName: '고구마피자 L' },
-      { ruleId: 'b', pattern: '불고기피자', groupName: '불고기피자', detailName: '불고기피자 R' },
+      { ruleId: 'b', pattern: '불고기피자', groupName: '불고기피자', detailName: '불고기피자 R' }
     );
 
     expect(suggestRulesByMenuName(null)).toEqual([]);
@@ -72,7 +70,12 @@ describe('sales suggest guards', () => {
   });
 
   test('메인 브랜드가 아니면 정적 규칙 추천을 사용하지 않는다', async () => {
-    salesRules.push({ ruleId: 'a', pattern: '고구마피자', groupName: '고구마피자', detailName: '고구마피자 L' });
+    salesRules.push({
+      ruleId: 'a',
+      pattern: '고구마피자',
+      groupName: '고구마피자',
+      detailName: '고구마피자 L',
+    });
     getActiveBrandId.mockReturnValue('other');
 
     expect(suggestRulesByMenuName('고구마피자 변경')).toEqual([]);

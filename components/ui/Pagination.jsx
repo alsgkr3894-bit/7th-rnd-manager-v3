@@ -21,27 +21,43 @@ export function Pagination({ page, totalPages, onPage, total, pageSize }) {
 
   const pages = buildPaginationPages(safePage, safeTotalPages);
 
-  const btnStyle = (active) => ({
-    minWidth: 32, height: 32, padding: '0 6px',
-    borderRadius: 7, border: '1px solid',
+  const btnStyle = active => ({
+    minWidth: 32,
+    height: 32,
+    padding: '0 6px',
+    borderRadius: 7,
+    border: '1px solid',
     cursor: active ? 'default' : 'pointer',
-    fontSize: 13, fontWeight: active ? 700 : 400,
+    fontSize: 13,
+    fontWeight: active ? 700 : 400,
     borderColor: active ? 'var(--accent)' : 'var(--border)',
     background: active ? 'var(--accent)' : 'var(--surface)',
     color: active ? '#fff' : 'var(--text-2)',
   });
 
-  const arrowStyle = (disabled) => ({
-    minWidth: 32, height: 32, padding: '0 6px',
-    borderRadius: 7, border: '1px solid var(--border)',
+  const arrowStyle = disabled => ({
+    minWidth: 32,
+    height: 32,
+    padding: '0 6px',
+    borderRadius: 7,
+    border: '1px solid var(--border)',
     cursor: disabled ? 'default' : 'pointer',
-    fontSize: 13, background: 'var(--surface)',
+    fontSize: 13,
+    background: 'var(--surface)',
     color: disabled ? 'var(--text-4)' : 'var(--text-2)',
     opacity: disabled ? 0.4 : 1,
   });
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '10px 16px', flexWrap: 'wrap' }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '10px 16px',
+        flexWrap: 'wrap',
+      }}
+    >
       <button
         style={arrowStyle(safePage === 1)}
         disabled={safePage === 1}
@@ -53,7 +69,12 @@ export function Pagination({ page, totalPages, onPage, total, pageSize }) {
 
       {pages.map((p, i) =>
         p === null ? (
-          <span key={`ellipsis-${i}`} style={{ color: 'var(--text-4)', fontSize: 13, padding: '0 2px' }}>…</span>
+          <span
+            key={`ellipsis-${i}`}
+            style={{ color: 'var(--text-4)', fontSize: 13, padding: '0 2px' }}
+          >
+            …
+          </span>
         ) : (
           <button
             key={p}

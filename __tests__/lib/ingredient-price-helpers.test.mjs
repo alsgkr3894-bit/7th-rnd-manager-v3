@@ -1,7 +1,8 @@
 import { sumCompositePrice } from '../../lib/cost/ingredient-price-helpers.js';
 
 describe('sumCompositePrice', () => {
-  const makeMap = (entries) => new Map(entries.map(([code, price]) => [code, { priceWithTax: price }]));
+  const makeMap = entries =>
+    new Map(entries.map(([code, price]) => [code, { priceWithTax: price }]));
 
   test('returns null for null/undefined compositeOf', () => {
     const lookup = makeMap([['A', 100]]);
@@ -15,7 +16,10 @@ describe('sumCompositePrice', () => {
   });
 
   test('sums prices for all matching codes', () => {
-    const lookup = makeMap([['A', 1000], ['B', 2000]]);
+    const lookup = makeMap([
+      ['A', 1000],
+      ['B', 2000],
+    ]);
     expect(sumCompositePrice(['A', 'B'], lookup)).toBe(3000);
   });
 
@@ -31,7 +35,10 @@ describe('sumCompositePrice', () => {
   });
 
   test('returns null when sum is exactly 0 (all prices are 0)', () => {
-    const lookup = makeMap([['A', 0], ['B', 0]]);
+    const lookup = makeMap([
+      ['A', 0],
+      ['B', 0],
+    ]);
     expect(sumCompositePrice(['A', 'B'], lookup)).toBeNull();
   });
 

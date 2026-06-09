@@ -189,9 +189,7 @@ export default function Page() {
     return allergenIngredients.filter(ing => {
       if (!q) return true;
       const ingredientAllergens = asStringArray(ing.allergens);
-      const allergenNames = ALLERGEN_SEED.filter(a =>
-        ingredientAllergens.includes(a.allergenCode)
-      )
+      const allergenNames = ALLERGEN_SEED.filter(a => ingredientAllergens.includes(a.allergenCode))
         .map(a => asDisplayText(a.allergenName))
         .join(' ');
       return (
@@ -286,25 +284,27 @@ export default function Page() {
     return sorted.map(r => ({
       ...r,
       originalMenuName: asDisplayText(r.menuName),
-      menuName: applyMenuName(asDisplayText(r.menuCode), asDisplayText(r.menuName), menuNameOverrides),
+      menuName: applyMenuName(
+        asDisplayText(r.menuCode),
+        asDisplayText(r.menuName),
+        menuNameOverrides
+      ),
     }));
   }, [allergenIngredients, baseMapData, edges, isExcludedMenu, menuOrder, menuNameOverrides]);
 
   const menuMatrix = useMemo(() => {
     const q = asDisplayText(search).toLowerCase().trim();
     if (!q) return menuMatrixAll;
-    return menuMatrixAll.filter(
-      r => {
-        const allergenCodes = r.allergenCodes instanceof Set ? r.allergenCodes : new Set();
-        return (
-          asDisplayText(r.menuName).toLowerCase().includes(q) ||
-          asDisplayText(r.crust).toLowerCase().includes(q) ||
-          ALLERGEN_SEED.filter(a => allergenCodes.has(a.allergenCode)).some(a =>
-            asDisplayText(a.allergenName).toLowerCase().includes(q)
-          )
-        );
-      }
-    );
+    return menuMatrixAll.filter(r => {
+      const allergenCodes = r.allergenCodes instanceof Set ? r.allergenCodes : new Set();
+      return (
+        asDisplayText(r.menuName).toLowerCase().includes(q) ||
+        asDisplayText(r.crust).toLowerCase().includes(q) ||
+        ALLERGEN_SEED.filter(a => allergenCodes.has(a.allergenCode)).some(a =>
+          asDisplayText(a.allergenName).toLowerCase().includes(q)
+        )
+      );
+    });
   }, [menuMatrixAll, search]);
 
   // 순서 변경 모달용 — 메뉴 1개씩(변형 제외, menuCode 중복 제거)
@@ -321,7 +321,9 @@ export default function Page() {
   }, [menuMatrixAll]);
 
   const totalWithAllergen = allergenIngredients.length;
-  const totalIngredients = asObjectArray(ingredients).filter(i => !i.discontinued && !i.excluded).length;
+  const totalIngredients = asObjectArray(ingredients).filter(
+    i => !i.discontinued && !i.excluded
+  ).length;
 
   return (
     <main className="main">
@@ -601,61 +603,62 @@ export default function Page() {
                     asDisplayText(row.menuCode) ||
                     asDisplayText(row.menuName);
                   const crust = asDisplayText(row.crust);
-                  const allergenCodes = row.allergenCodes instanceof Set ? row.allergenCodes : new Set();
+                  const allergenCodes =
+                    row.allergenCodes instanceof Set ? row.allergenCodes : new Set();
                   return (
-                  <tr key={rowKey}>
-                    <td
-                      style={{
-                        fontWeight: 600,
-                        position: 'sticky',
-                        left: 0,
-                        background: 'var(--surface)',
-                        zIndex: 1,
-                      }}
-                    >
-                      {asDisplayText(row.menuName)}
-                      {crust && (
-                        <span
-                          style={{
-                            marginLeft: 6,
-                            fontSize: 10,
-                            fontWeight: 700,
-                            padding: '1px 6px',
-                            borderRadius: 999,
-                            background: 'var(--surface-3)',
-                            color: 'var(--text-2)',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {crust}
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <span className="chip">{asDisplayText(row.category)}</span>
-                    </td>
-                    {orderedAllergens.map(al => {
-                      const allergenCode = asDisplayText(al.allergenCode);
-                      const has = allergenCodes.has(allergenCode);
-                      return (
-                        <td key={allergenCode} style={{ textAlign: 'center' }}>
-                          {has ? (
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                width: 16,
-                                height: 16,
-                                borderRadius: '50%',
-                                background: 'var(--accent)',
-                              }}
-                            />
-                          ) : (
-                            <span style={{ color: 'var(--text-4)', fontSize: 11 }}>—</span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
+                    <tr key={rowKey}>
+                      <td
+                        style={{
+                          fontWeight: 600,
+                          position: 'sticky',
+                          left: 0,
+                          background: 'var(--surface)',
+                          zIndex: 1,
+                        }}
+                      >
+                        {asDisplayText(row.menuName)}
+                        {crust && (
+                          <span
+                            style={{
+                              marginLeft: 6,
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: '1px 6px',
+                              borderRadius: 999,
+                              background: 'var(--surface-3)',
+                              color: 'var(--text-2)',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {crust}
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <span className="chip">{asDisplayText(row.category)}</span>
+                      </td>
+                      {orderedAllergens.map(al => {
+                        const allergenCode = asDisplayText(al.allergenCode);
+                        const has = allergenCodes.has(allergenCode);
+                        return (
+                          <td key={allergenCode} style={{ textAlign: 'center' }}>
+                            {has ? (
+                              <span
+                                style={{
+                                  display: 'inline-block',
+                                  width: 16,
+                                  height: 16,
+                                  borderRadius: '50%',
+                                  background: 'var(--accent)',
+                                }}
+                              />
+                            ) : (
+                              <span style={{ color: 'var(--text-4)', fontSize: 11 }}>—</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
                   );
                 })}
               </tbody>
@@ -685,7 +688,10 @@ export default function Page() {
         <ReorderModal
           title="알레르기 22종 순서"
           items={orderedAllergens
-            .map(a => ({ key: asDisplayText(a.allergenCode), label: asDisplayText(a.allergenName) }))
+            .map(a => ({
+              key: asDisplayText(a.allergenCode),
+              label: asDisplayText(a.allergenName),
+            }))
             .filter(item => item.key)}
           onApply={keys => {
             saveOrder(ALLERGEN_ORDER_KEY, keys);

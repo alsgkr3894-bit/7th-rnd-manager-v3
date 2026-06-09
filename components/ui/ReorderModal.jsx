@@ -5,7 +5,8 @@ import { Icon } from '@/components/icons';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 function normalizeItem(item, index) {
-  const key = typeof item.key === 'number' || typeof item.key === 'string' ? item.key : `item-${index}`;
+  const key =
+    typeof item.key === 'number' || typeof item.key === 'string' ? item.key : `item-${index}`;
   return {
     ...item,
     key,
@@ -32,10 +33,13 @@ export function ReorderModal({ title, items, onApply, onClose }) {
   const animating = useRef(new Set());
   const rafIds = useRef(new Set());
 
-  useEffect(() => () => {
-    rafIds.current.forEach(id => cancelAnimationFrame(id));
-    rafIds.current.clear();
-  }, []);
+  useEffect(
+    () => () => {
+      rafIds.current.forEach(id => cancelAnimationFrame(id));
+      rafIds.current.clear();
+    },
+    []
+  );
 
   function captureRects() {
     prevRects.current.clear();
@@ -65,11 +69,15 @@ export function ReorderModal({ title, items, onApply, onClose }) {
         rafIds.current.delete(rafId);
         el.style.transition = 'transform 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
         el.style.transform = 'translateY(0)';
-        el.addEventListener('transitionend', () => {
-          animating.current.delete(key);
-          el.style.transition = '';
-          el.style.transform = '';
-        }, { once: true });
+        el.addEventListener(
+          'transitionend',
+          () => {
+            animating.current.delete(key);
+            el.style.transition = '';
+            el.style.transform = '';
+          },
+          { once: true }
+        );
       });
       rafIds.current.add(rafId);
     });
@@ -110,7 +118,10 @@ export function ReorderModal({ title, items, onApply, onClose }) {
 
   function onDrop(e, idx) {
     e.preventDefault();
-    if (draggingIdx === null || draggingIdx === idx) { reset(); return; }
+    if (draggingIdx === null || draggingIdx === idx) {
+      reset();
+      return;
+    }
     const from = draggingIdx;
     reset();
     reorder(next => {
@@ -120,7 +131,9 @@ export function ReorderModal({ title, items, onApply, onClose }) {
     });
   }
 
-  function onDragEnd() { reset(); }
+  function onDragEnd() {
+    reset();
+  }
 
   function reset() {
     setDraggingIdx(null);
@@ -150,14 +163,24 @@ export function ReorderModal({ title, items, onApply, onClose }) {
       onClose={handleClose}
       width="min(480px,95vw)"
     >
-      <div style={{ display:'flex', flexDirection:'column', gap:4, maxHeight:'60vh', overflowY:'auto' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4,
+          maxHeight: '60vh',
+          overflowY: 'auto',
+        }}
+      >
         {list.map((it, idx) => {
           const isDragging = draggingIdx === idx;
-          const isOver    = overIdx === idx && draggingIdx !== idx;
+          const isOver = overIdx === idx && draggingIdx !== idx;
           return (
             <div
               key={it.key}
-              ref={el => { rowRefs.current[idx] = el; }}
+              ref={el => {
+                rowRefs.current[idx] = el;
+              }}
               draggable
               onDragStart={e => onDragStart(e, idx)}
               onDragEnter={e => onDragEnter(e, idx)}
@@ -165,8 +188,11 @@ export function ReorderModal({ title, items, onApply, onClose }) {
               onDrop={e => onDrop(e, idx)}
               onDragEnd={onDragEnd}
               style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                padding: '8px 10px', borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '8px 10px',
+                borderRadius: 8,
                 background: isOver ? 'var(--accent-soft)' : 'var(--surface-2)',
                 border: `1px solid ${isOver ? 'var(--accent)' : 'var(--border)'}`,
                 opacity: isDragging ? 0.4 : 1,
@@ -176,36 +202,69 @@ export function ReorderModal({ title, items, onApply, onClose }) {
                 willChange: 'transform',
               }}
             >
-              <span style={{ color:'var(--text-4)', flexShrink:0, display:'flex', alignItems:'center', cursor:'grab' }}>
+              <span
+                style={{
+                  color: 'var(--text-4)',
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'grab',
+                }}
+              >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="9" cy="7" r="1.5"/><circle cx="15" cy="7" r="1.5"/>
-                  <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
-                  <circle cx="9" cy="17" r="1.5"/><circle cx="15" cy="17" r="1.5"/>
+                  <circle cx="9" cy="7" r="1.5" />
+                  <circle cx="15" cy="7" r="1.5" />
+                  <circle cx="9" cy="12" r="1.5" />
+                  <circle cx="15" cy="12" r="1.5" />
+                  <circle cx="9" cy="17" r="1.5" />
+                  <circle cx="15" cy="17" r="1.5" />
                 </svg>
               </span>
-              <span style={{ width:22, textAlign:'center', fontSize:12, color:'var(--text-3)', fontWeight:700 }}>
+              <span
+                style={{
+                  width: 22,
+                  textAlign: 'center',
+                  fontSize: 12,
+                  color: 'var(--text-3)',
+                  fontWeight: 700,
+                }}
+              >
                 {idx + 1}
               </span>
-              <span style={{ flex:1, fontSize:13, fontWeight:600, color:'var(--text-1)' }}>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--text-1)' }}>
                 {it.label}
               </span>
-              <button type="button" className="btn xs" aria-label="위로"
-                disabled={idx === 0} onClick={() => move(idx, -1)}
-                style={{ padding:'2px 6px', opacity: idx === 0 ? 0.3 : 1 }}>
-                <Icon.arrowUp style={{ width:13, height:13 }} />
+              <button
+                type="button"
+                className="btn xs"
+                aria-label="위로"
+                disabled={idx === 0}
+                onClick={() => move(idx, -1)}
+                style={{ padding: '2px 6px', opacity: idx === 0 ? 0.3 : 1 }}
+              >
+                <Icon.arrowUp style={{ width: 13, height: 13 }} />
               </button>
-              <button type="button" className="btn xs" aria-label="아래로"
-                disabled={idx === list.length - 1} onClick={() => move(idx, 1)}
-                style={{ padding:'2px 6px', opacity: idx === list.length - 1 ? 0.3 : 1 }}>
-                <Icon.arrowDown style={{ width:13, height:13 }} />
+              <button
+                type="button"
+                className="btn xs"
+                aria-label="아래로"
+                disabled={idx === list.length - 1}
+                onClick={() => move(idx, 1)}
+                style={{ padding: '2px 6px', opacity: idx === list.length - 1 ? 0.3 : 1 }}
+              >
+                <Icon.arrowDown style={{ width: 13, height: 13 }} />
               </button>
             </div>
           );
         })}
       </div>
-      <div style={{ display:'flex', justifyContent:'flex-end', gap:8, marginTop:16 }}>
-        <button type="button" className="btn" onClick={handleClose}>취소</button>
-        <button type="button" className="btn primary" onClick={apply}>적용</button>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+        <button type="button" className="btn" onClick={handleClose}>
+          취소
+        </button>
+        <button type="button" className="btn primary" onClick={apply}>
+          적용
+        </button>
       </div>
     </ModalFrame>
   );

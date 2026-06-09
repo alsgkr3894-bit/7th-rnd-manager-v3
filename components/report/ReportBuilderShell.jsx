@@ -26,13 +26,13 @@ export function Seg({ value, onChange, options }) {
   const rowRef = useRef(null);
   const [ind, setInd] = useState(null);
   const safeOptions = asArray(options).map((option, index) => {
-    const rawValue = option && typeof option === 'object' && !Array.isArray(option)
-      ? option.value
-      : option;
+    const rawValue =
+      option && typeof option === 'object' && !Array.isArray(option) ? option.value : option;
     const valueText = asDisplayText(rawValue);
-    const label = option && typeof option === 'object' && !Array.isArray(option)
-      ? asDisplayText(option.label, valueText)
-      : valueText;
+    const label =
+      option && typeof option === 'object' && !Array.isArray(option)
+        ? asDisplayText(option.label, valueText)
+        : valueText;
     return { rawValue, valueText, label, key: valueText || `option-${index}` };
   });
   const safeValue = asDisplayText(value);
@@ -42,15 +42,16 @@ export function Seg({ value, onChange, options }) {
     const row = rowRef.current;
     if (!row) return;
     const active = row.querySelector('.seg-pill.active');
-    if (!active) { setInd(null); return; }
+    if (!active) {
+      setInd(null);
+      return;
+    }
     setInd({ left: active.offsetLeft, width: active.offsetWidth });
   }, [value]);
 
   return (
     <div className={'seg-row' + (ind ? ' has-indicator' : '')} ref={rowRef} role="group">
-      {ind && (
-        <span className="seg-indicator" style={{ left: ind.left, width: ind.width }} />
-      )}
+      {ind && <span className="seg-indicator" style={{ left: ind.left, width: ind.width }} />}
       {safeOptions.map(o => (
         <button
           key={o.key}
@@ -73,8 +74,14 @@ export function Check({ label, value, onChange, hint }) {
 
   return (
     <label className="opt-check">
-      <input type="checkbox" checked={Boolean(value)} onChange={e => handleChange(e.target.checked)} />
-      <span className="opt-check-box"><Icon.check style={{width:12, height:12}}/></span>
+      <input
+        type="checkbox"
+        checked={Boolean(value)}
+        onChange={e => handleChange(e.target.checked)}
+      />
+      <span className="opt-check-box">
+        <Icon.check style={{ width: 12, height: 12 }} />
+      </span>
       <div>
         <div className="opt-check-label">{safeLabel}</div>
         {safeHint && <div className="opt-check-hint">{safeHint}</div>}
@@ -89,9 +96,18 @@ function triggerPrint(reportMeta) {
 }
 
 export default function ReportBuilderShell({
-  breadcrumb, title, sub, kind, options, preview, exportNote,
-  reportMeta = {}, dataError, isLoading = false,
-  docFormat = { pdf: true, excel: false }, onExcelExport,
+  breadcrumb,
+  title,
+  sub,
+  kind,
+  options,
+  preview,
+  exportNote,
+  reportMeta = {},
+  dataError,
+  isLoading = false,
+  docFormat = { pdf: true, excel: false },
+  onExcelExport,
 }) {
   const [generating, setGenerating] = useState(false);
   const generatingTimer = useRef(null);
@@ -128,12 +144,18 @@ export default function ReportBuilderShell({
         breadcrumb={breadcrumb}
         title={title}
         sub={sub}
-        actions={<>
-          <button className="btn primary" onClick={handleGenerate} disabled={generating || isLoading}>
-            <Icon.download style={{width:14, height:14}}/>
-            {generating ? '생성 중…' : '보고서 생성'}
-          </button>
-        </>}
+        actions={
+          <>
+            <button
+              className="btn primary"
+              onClick={handleGenerate}
+              disabled={generating || isLoading}
+            >
+              <Icon.download style={{ width: 14, height: 14 }} />
+              {generating ? '생성 중…' : '보고서 생성'}
+            </button>
+          </>
+        }
       />
 
       <div className="report-builder">
@@ -149,8 +171,10 @@ export default function ReportBuilderShell({
               <div className="card-sub">실제 보고서 1쪽 시안 — 옵션 변경 시 자동 갱신</div>
             </div>
             <div className="report-paper-meta">
-              <span className="mono muted" style={{fontSize:12}}>RPT-DRAFT</span>
-              <span className="chip" style={{background: kindMeta.bg, color: kindMeta.color}}>
+              <span className="mono muted" style={{ fontSize: 12 }}>
+                RPT-DRAFT
+              </span>
+              <span className="chip" style={{ background: kindMeta.bg, color: kindMeta.color }}>
                 {kindMeta.label}
               </span>
             </div>
@@ -158,15 +182,15 @@ export default function ReportBuilderShell({
 
           {isLoading ? (
             <div className="report-loading">
-              <div className="report-loading-spinner"/>
-              <span style={{fontSize:13, color:'var(--text-3)'}}>데이터 불러오는 중…</span>
+              <div className="report-loading-spinner" />
+              <span style={{ fontSize: 13, color: 'var(--text-3)' }}>데이터 불러오는 중…</span>
             </div>
           ) : safeDataError ? (
             <div className="report-empty-banner">
-              <Icon.alert style={{width:18, height:18, flexShrink:0, color:'var(--warn)'}}/>
+              <Icon.alert style={{ width: 18, height: 18, flexShrink: 0, color: 'var(--warn)' }} />
               <div>
-                <div style={{fontWeight:600, marginBottom:3}}>데이터를 불러올 수 없어요</div>
-                <div style={{fontSize:12, color:'var(--text-3)'}}>{safeDataError}</div>
+                <div style={{ fontWeight: 600, marginBottom: 3 }}>데이터를 불러올 수 없어요</div>
+                <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{safeDataError}</div>
               </div>
             </div>
           ) : (
@@ -175,13 +199,13 @@ export default function ReportBuilderShell({
 
           {safeExportNote && (
             <div className="report-export-note">
-              <Icon.alert style={{width:14, height:14, color:"var(--accent)"}}/>
+              <Icon.alert style={{ width: 14, height: 14, color: 'var(--accent)' }} />
               <span>{safeExportNote}</span>
             </div>
           )}
           {generating && (
             <div className="report-export-note" aria-live="polite">
-              <div className="report-loading-spinner" style={{width:14, height:14}}/>
+              <div className="report-loading-spinner" style={{ width: 14, height: 14 }} />
               <span>보고서 파일을 준비하고 있습니다.</span>
             </div>
           )}

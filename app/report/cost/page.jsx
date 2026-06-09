@@ -27,11 +27,11 @@ const stripName = s => (s || '').replace(/\s/g, '');
 const CAT_KEYS = ['피자', '1인피자', '세트박스', '사이드', '엣지'];
 
 const CAT_META = {
-  피자:   { id: 'pizza',    color: '#3182F6', label: '피자' },
+  피자: { id: 'pizza', color: '#3182F6', label: '피자' },
   '1인피자': { id: 'personal', color: '#10B981', label: '1인피자' },
-  세트박스: { id: 'set',     color: '#EC4899', label: '세트박스' },
-  사이드:  { id: 'side',    color: '#F59E0B', label: '사이드' },
-  엣지:   { id: 'edge',    color: '#8B5CF6', label: '엣지 & 도우' },
+  세트박스: { id: 'set', color: '#EC4899', label: '세트박스' },
+  사이드: { id: 'side', color: '#F59E0B', label: '사이드' },
+  엣지: { id: 'edge', color: '#8B5CF6', label: '엣지 & 도우' },
 };
 
 const DRAFT_KEY = 'report_draft_cost';
@@ -81,7 +81,10 @@ async function exportCostXlsx(periodLabel, activeCats) {
   const XLSX = await loadXlsx();
   const now = new Date();
   const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
-  const periodPart = periodLabel.replace(/(\d+)년 (\d+)월/, (_, y, m) => `${y}년${m.padStart(2, '0')}월`);
+  const periodPart = periodLabel.replace(
+    /(\d+)년 (\d+)월/,
+    (_, y, m) => `${y}년${m.padStart(2, '0')}월`
+  );
   const wb = XLSX.utils.book_new();
 
   // 시트1: 카테고리 요약
@@ -129,15 +132,29 @@ async function exportCostXlsx(periodLabel, activeCats) {
 // ── 메인 컴포넌트 ──────────────────────────────────────────────
 const NOW = new Date();
 const _TM = { year: NOW.getFullYear(), month: NOW.getMonth() + 1 };
-const _LM = { year: NOW.getMonth() === 0 ? NOW.getFullYear() - 1 : NOW.getFullYear(), month: NOW.getMonth() === 0 ? 12 : NOW.getMonth() };
+const _LM = {
+  year: NOW.getMonth() === 0 ? NOW.getFullYear() - 1 : NOW.getFullYear(),
+  month: NOW.getMonth() === 0 ? 12 : NOW.getMonth(),
+};
 
 export default function Page() {
   const [periodMode, setPeriodMode] = useState('month');
   const [year, setYear] = useState(NOW.getFullYear());
   const [month, setMonth] = useState(NOW.getMonth() + 1);
   const [riskThreshold, setRiskThreshold] = useState(35);
-  const [cats, setCats] = useState({ pizza: true, personal: true, side: true, set: true, edge: true });
-  const [opts, setOpts] = useState({ summary: true, catTable: true, perCategory: true, riskList: true });
+  const [cats, setCats] = useState({
+    pizza: true,
+    personal: true,
+    side: true,
+    set: true,
+    edge: true,
+  });
+  const [opts, setOpts] = useState({
+    summary: true,
+    catTable: true,
+    perCategory: true,
+    riskList: true,
+  });
   const updCat = makeFieldUpdater(setCats);
   const updOpt = makeFieldUpdater(setOpts);
   const [docFormat, setDocFormat] = useState({ pdf: true, excel: false });
@@ -153,7 +170,7 @@ export default function Page() {
 
   useDraftRestore(DRAFT_KEY, draft => {
     if (draft.periodMode) setPeriodMode(draft.periodMode);
-    if (draft.year)  setYear(draft.year);
+    if (draft.year) setYear(draft.year);
     if (draft.month) setMonth(draft.month);
     if (draft.riskThreshold) setRiskThreshold(draft.riskThreshold);
     if (draft.cats) setCats(c => ({ ...c, ...draft.cats }));
@@ -168,9 +185,15 @@ export default function Page() {
       .then(async () => {
         try {
           const [
-            prices, recipes, ingredients,
-            pizzaMap, personalMap, sideMap, setMap,
-            edges, priceFiles,
+            prices,
+            recipes,
+            ingredients,
+            pizzaMap,
+            personalMap,
+            sideMap,
+            setMap,
+            edges,
+            priceFiles,
           ] = await Promise.all([
             getAllMenuPrices(),
             getAllRecipes(),
@@ -194,7 +217,10 @@ export default function Page() {
             }
           }
 
-          if (prices.length === 0) { setIsLoading(false); return; }
+          if (prices.length === 0) {
+            setIsLoading(false);
+            return;
+          }
 
           const recipeByName = new Map();
           for (const r of recipes) {
@@ -255,14 +281,13 @@ export default function Page() {
     return () => {
       ignore = true;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const periodLabel = periodMode === 'year' ? `${year}년` : `${year}년 ${month}월`;
 
   // CAT_KEYS 순서 유지하면서 활성 카테고리 추출
-  const activeCats = CAT_KEYS
-    .map(k => CAT_META[k])
+  const activeCats = CAT_KEYS.map(k => CAT_META[k])
     .filter(m => cats[m.id])
     .map(m => [m.id, costByCategory[m.id] || { label: m.label, color: m.color, menus: [] }]);
 
@@ -336,7 +361,9 @@ export default function Page() {
                 onChange={e => setYear(parseInt(e.target.value, 10))}
               >
                 {yearOptions.map(y => (
-                  <option key={y} value={y}>{y}년</option>
+                  <option key={y} value={y}>
+                    {y}년
+                  </option>
                 ))}
               </select>
               {periodMode === 'month' && (
@@ -346,15 +373,33 @@ export default function Page() {
                   onChange={e => setMonth(parseInt(e.target.value, 10))}
                 >
                   {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                    <option key={m} value={m}>{m}월</option>
+                    <option key={m} value={m}>
+                      {m}월
+                    </option>
                   ))}
                 </select>
               )}
             </div>
             {periodMode === 'month' && (
-              <div style={{display:'flex', gap:4, marginTop:4}}>
-                <button className="btn sm" onClick={() => { setYear(_LM.year); setMonth(_LM.month); }}>지난달</button>
-                <button className="btn sm" onClick={() => { setYear(_TM.year); setMonth(_TM.month); }}>이번달</button>
+              <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                <button
+                  className="btn sm"
+                  onClick={() => {
+                    setYear(_LM.year);
+                    setMonth(_LM.month);
+                  }}
+                >
+                  지난달
+                </button>
+                <button
+                  className="btn sm"
+                  onClick={() => {
+                    setYear(_TM.year);
+                    setMonth(_TM.month);
+                  }}
+                >
+                  이번달
+                </button>
               </div>
             )}
           </OptGroup>
@@ -378,21 +423,42 @@ export default function Page() {
                 onChange={e => setRiskThreshold(parseInt(e.target.value, 10))}
               />
               <div className="threshold-val num" style={{ minWidth: 64, color: 'var(--warn)' }}>
-                {riskThreshold}<span className="unit">%↑</span>
+                {riskThreshold}
+                <span className="unit">%↑</span>
               </div>
             </div>
           </OptGroup>
 
           <OptGroup label="포함 섹션">
-            <Check label="요약 (평균 원가율·위험 메뉴 수)" value={opts.summary} onChange={v => updOpt('summary', v)} />
-            <Check label="카테고리별 종합 비교표" value={opts.catTable} onChange={v => updOpt('catTable', v)} />
-            <Check label="카테고리별 메뉴 전체" value={opts.perCategory} onChange={v => updOpt('perCategory', v)} />
-            <Check label="위험 메뉴 부록 (원가율 높은 순)" value={opts.riskList} onChange={v => updOpt('riskList', v)} />
+            <Check
+              label="요약 (평균 원가율·위험 메뉴 수)"
+              value={opts.summary}
+              onChange={v => updOpt('summary', v)}
+            />
+            <Check
+              label="카테고리별 종합 비교표"
+              value={opts.catTable}
+              onChange={v => updOpt('catTable', v)}
+            />
+            <Check
+              label="카테고리별 메뉴 전체"
+              value={opts.perCategory}
+              onChange={v => updOpt('perCategory', v)}
+            />
+            <Check
+              label="위험 메뉴 부록 (원가율 높은 순)"
+              value={opts.riskList}
+              onChange={v => updOpt('riskList', v)}
+            />
           </OptGroup>
 
           <OptGroup label="문서 형식">
             <Check label="PDF" value={docFormat.pdf} onChange={v => updFmt('pdf', v)} />
-            <Check label="Excel (.xlsx)" value={docFormat.excel} onChange={v => updFmt('excel', v)} />
+            <Check
+              label="Excel (.xlsx)"
+              value={docFormat.excel}
+              onChange={v => updFmt('excel', v)}
+            />
           </OptGroup>
         </>
       }
@@ -403,12 +469,15 @@ export default function Page() {
             <div className="paper-eyebrow">7번가피자 본사 · 원가관리</div>
             <h2 className="paper-title">{periodLabel} 원가계산 종합 보고서</h2>
             <div className="paper-meta">
-              <span>대상: {activeCats.length}개 카테고리 · {totalCount}개 메뉴</span>
+              <span>
+                대상: {activeCats.length}개 카테고리 · {totalCount}개 메뉴
+              </span>
               <span>·</span>
               <span>위험 기준 {riskThreshold}%↑</span>
               <span>·</span>
               <span className="mono">
-                단가 기준 {new Date().toLocaleDateString('ko-KR').slice(0, -1)} · {getProfile().name}
+                단가 기준 {new Date().toLocaleDateString('ko-KR').slice(0, -1)} ·{' '}
+                {getProfile().name}
               </span>
             </div>
           </div>
@@ -434,7 +503,9 @@ export default function Page() {
               </div>
               <div className="paper-stat">
                 <div className="paper-stat-label">위험 메뉴</div>
-                <div className="paper-stat-val num" style={{ color: 'var(--warn)' }}>{allRisk}</div>
+                <div className="paper-stat-val num" style={{ color: 'var(--warn)' }}>
+                  {allRisk}
+                </div>
                 <div className="paper-stat-foot">{riskThreshold}% 초과</div>
               </div>
               <div className="paper-stat">
@@ -455,37 +526,45 @@ export default function Page() {
               {catStats.some(c => c.count > 0) ? (
                 <>
                   <div className="cost-bars">
-                    {catStats.filter(c => c.count > 0).map(c => (
-                      <div key={c.id} className="cost-bar-row">
-                        <div className="cost-bar-label">
-                          <span className="dot" style={{ background: c.color }} />
-                          <span>{c.label}</span>
+                    {catStats
+                      .filter(c => c.count > 0)
+                      .map(c => (
+                        <div key={c.id} className="cost-bar-row">
+                          <div className="cost-bar-label">
+                            <span className="dot" style={{ background: c.color }} />
+                            <span>{c.label}</span>
+                          </div>
+                          <div className="cost-bar-track">
+                            <div
+                              className="cost-bar-fill"
+                              style={{
+                                width: `${Math.min((c.avg / 50) * 100, 100)}%`,
+                                background: c.color,
+                              }}
+                            />
+                            <div
+                              className="cost-bar-threshold"
+                              style={{ left: `${(riskThreshold / 50) * 100}%` }}
+                              title={`위험 기준 ${riskThreshold}%`}
+                            />
+                          </div>
+                          <div className="cost-bar-val num">
+                            {c.avg > 0 ? (
+                              <>
+                                <b>
+                                  {c.avg.toFixed(1)}
+                                  <span className="unit">%</span>
+                                </b>
+                                <span className="muted" style={{ fontSize: 11, marginLeft: 4 }}>
+                                  ({c.min.toFixed(1)}~{c.max.toFixed(1)})
+                                </span>
+                              </>
+                            ) : (
+                              <span className="muted">원가 미등록</span>
+                            )}
+                          </div>
                         </div>
-                        <div className="cost-bar-track">
-                          <div
-                            className="cost-bar-fill"
-                            style={{ width: `${Math.min((c.avg / 50) * 100, 100)}%`, background: c.color }}
-                          />
-                          <div
-                            className="cost-bar-threshold"
-                            style={{ left: `${(riskThreshold / 50) * 100}%` }}
-                            title={`위험 기준 ${riskThreshold}%`}
-                          />
-                        </div>
-                        <div className="cost-bar-val num">
-                          {c.avg > 0 ? (
-                            <>
-                              <b>{c.avg.toFixed(1)}<span className="unit">%</span></b>
-                              <span className="muted" style={{ fontSize: 11, marginLeft: 4 }}>
-                                ({c.min.toFixed(1)}~{c.max.toFixed(1)})
-                              </span>
-                            </>
-                          ) : (
-                            <span className="muted">원가 미등록</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                   <table className="paper-table" style={{ marginTop: 14 }}>
                     <thead>
@@ -502,7 +581,15 @@ export default function Page() {
                         <tr key={c.id}>
                           <td>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                              <span className="dot" style={{ width: 8, height: 8, borderRadius: '50%', background: c.color }} />
+                              <span
+                                className="dot"
+                                style={{
+                                  width: 8,
+                                  height: 8,
+                                  borderRadius: '50%',
+                                  background: c.color,
+                                }}
+                              />
                               <b>{c.label}</b>
                             </span>
                           </td>
@@ -515,7 +602,9 @@ export default function Page() {
                           </td>
                           <td className="num right">
                             {c.risk > 0 ? (
-                              <span style={{ color: 'var(--warn)', fontWeight: 800 }}>{c.risk}개 ⚠</span>
+                              <span style={{ color: 'var(--warn)', fontWeight: 800 }}>
+                                {c.risk}개 ⚠
+                              </span>
                             ) : (
                               <span className="muted">0개</span>
                             )}
@@ -524,7 +613,9 @@ export default function Page() {
                       ))}
                       <tr style={{ background: 'var(--surface-2)' }}>
                         <td style={{ fontWeight: 800 }}>합계</td>
-                        <td className="num right" style={{ fontWeight: 800 }}>{totalCount}</td>
+                        <td className="num right" style={{ fontWeight: 800 }}>
+                          {totalCount}
+                        </td>
                         <td className="num right" style={{ fontWeight: 800 }}>
                           {allAvg > 0 ? `${allAvg.toFixed(1)}%` : '—'}
                         </td>
@@ -537,7 +628,15 @@ export default function Page() {
                   </table>
                 </>
               ) : (
-                <div style={{ height: 60, display: 'grid', placeItems: 'center', color: 'var(--text-4)', fontSize: 13 }}>
+                <div
+                  style={{
+                    height: 60,
+                    display: 'grid',
+                    placeItems: 'center',
+                    color: 'var(--text-4)',
+                    fontSize: 13,
+                  }}
+                >
                   원가계산 → 판매가 등록 후 표시돼요
                 </div>
               )}
@@ -546,60 +645,73 @@ export default function Page() {
 
           {/* ── 카테고리별 메뉴 전체 (판매가/원가/원가율) ── */}
           {opts.perCategory &&
-            catStats.filter(c => c.count > 0).map(c => (
-              <div className="paper-section paper-cat-section" key={c.id}>
-                <div
-                  className="paper-section-title"
-                  style={{ borderBottomColor: c.color, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}
-                >
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                    <span className="dot" style={{ width: 10, height: 10, borderRadius: 3, background: c.color }} />
-                    {c.label} 종합 원가 (전체 {c.count}개)
-                  </span>
-                  <span className="muted" style={{ fontSize: 11, fontWeight: 600 }}>
-                    평균{' '}
-                    <b className="num" style={{ color: c.avg > 0 ? 'var(--text-1)' : undefined }}>
-                      {c.avg > 0 ? `${c.avg.toFixed(1)}%` : '—'}
-                    </b>
-                    {' · '}위험 {c.risk}개
-                  </span>
+            catStats
+              .filter(c => c.count > 0)
+              .map(c => (
+                <div className="paper-section paper-cat-section" key={c.id}>
+                  <div
+                    className="paper-section-title"
+                    style={{
+                      borderBottomColor: c.color,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-end',
+                    }}
+                  >
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <span
+                        className="dot"
+                        style={{ width: 10, height: 10, borderRadius: 3, background: c.color }}
+                      />
+                      {c.label} 종합 원가 (전체 {c.count}개)
+                    </span>
+                    <span className="muted" style={{ fontSize: 11, fontWeight: 600 }}>
+                      평균{' '}
+                      <b className="num" style={{ color: c.avg > 0 ? 'var(--text-1)' : undefined }}>
+                        {c.avg > 0 ? `${c.avg.toFixed(1)}%` : '—'}
+                      </b>
+                      {' · '}위험 {c.risk}개
+                    </span>
+                  </div>
+                  <table className="paper-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: 36 }}>#</th>
+                        <th>메뉴명</th>
+                        <th style={{ width: 90, textAlign: 'right' }}>판매가</th>
+                        <th style={{ width: 90, textAlign: 'right' }}>원가</th>
+                        <th style={{ width: 80, textAlign: 'right' }}>원가율</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {c.menus.map((m, i) => {
+                        const risk = m.rate >= riskThreshold;
+                        return (
+                          <tr key={m.code || m.name}>
+                            <td className="num">{i + 1}</td>
+                            <td>{m.name}</td>
+                            <td className="num right muted">
+                              {m.sale > 0 ? `${formatNumber(m.sale)}원` : '—'}
+                            </td>
+                            <td className="num right muted">
+                              {m.cost > 0 ? `${formatNumber(m.cost)}원` : '—'}
+                            </td>
+                            <td
+                              className="num right"
+                              style={{
+                                fontWeight: risk ? 800 : 600,
+                                color: risk ? 'var(--warn)' : 'var(--text-1)',
+                              }}
+                            >
+                              {m.rate > 0 ? `${m.rate.toFixed(1)}%` : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-                <table className="paper-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 36 }}>#</th>
-                      <th>메뉴명</th>
-                      <th style={{ width: 90, textAlign: 'right' }}>판매가</th>
-                      <th style={{ width: 90, textAlign: 'right' }}>원가</th>
-                      <th style={{ width: 80, textAlign: 'right' }}>원가율</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {c.menus.map((m, i) => {
-                      const risk = m.rate >= riskThreshold;
-                      return (
-                        <tr key={m.code || m.name}>
-                          <td className="num">{i + 1}</td>
-                          <td>{m.name}</td>
-                          <td className="num right muted">
-                            {m.sale > 0 ? `${formatNumber(m.sale)}원` : '—'}
-                          </td>
-                          <td className="num right muted">
-                            {m.cost > 0 ? `${formatNumber(m.cost)}원` : '—'}
-                          </td>
-                          <td
-                            className="num right"
-                            style={{ fontWeight: risk ? 800 : 600, color: risk ? 'var(--warn)' : 'var(--text-1)' }}
-                          >
-                            {m.rate > 0 ? `${m.rate.toFixed(1)}%` : '—'}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ))}
+              ))}
 
           {/* ── 위험 메뉴 부록 ── */}
           {opts.riskList && riskMenus.length > 0 && (
@@ -627,7 +739,15 @@ export default function Page() {
                       <td style={{ fontWeight: 700 }}>{m.name}</td>
                       <td>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                          <span className="dot" style={{ width: 6, height: 6, borderRadius: '50%', background: m.catColor }} />
+                          <span
+                            className="dot"
+                            style={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: '50%',
+                              background: m.catColor,
+                            }}
+                          />
                           {m.catLabel}
                         </span>
                       </td>

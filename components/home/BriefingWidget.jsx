@@ -23,10 +23,15 @@ export function BriefingWidget({ data }) {
   return (
     <section className="briefing">
       <div>
-        <span className="brief-tag"><span className="pulse" />이번 달 브리핑 · {rangeLabel}</span>
+        <span className="brief-tag">
+          <span className="pulse" />
+          이번 달 브리핑 · {rangeLabel}
+        </span>
         <p className="brief-head">
           {sentence.map((part, i) => (
-            <span key={i} style={part.tone ? { color: toneColor[part.tone] } : undefined}>{asDisplayText(part.text)}</span>
+            <span key={i} style={part.tone ? { color: toneColor[part.tone] } : undefined}>
+              {asDisplayText(part.text)}
+            </span>
           ))}
         </p>
         <div className="brief-stats">
@@ -37,10 +42,16 @@ export function BriefingWidget({ data }) {
             return (
               <div key={i} className="brief-stat">
                 <div className="l">{label}</div>
-                <div className="v" style={c.tone === 'down' ? { color: 'var(--negative)' } : undefined}>
-                  {formatNumber(c.value)}<span className="unit">{unit}</span>
+                <div
+                  className="v"
+                  style={c.tone === 'down' ? { color: 'var(--negative)' } : undefined}
+                >
+                  {formatNumber(c.value)}
+                  <span className="unit">{unit}</span>
                 </div>
-                <div className="d" style={{ color: toneColor[c.tone] || 'var(--text-3)' }}>{deltaText}</div>
+                <div className="d" style={{ color: toneColor[c.tone] || 'var(--text-3)' }}>
+                  {deltaText}
+                </div>
               </div>
             );
           })}

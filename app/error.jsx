@@ -7,7 +7,9 @@ export default function ErrorPage({ error, reset }) {
   const timerRef = useRef(null);
 
   useEffect(() => {
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, []);
 
   const handleRetry = useCallback(() => {
@@ -77,13 +79,24 @@ export default function ErrorPage({ error, reset }) {
 
         <h1 className={styles.heading}>오류가 발생했어요</h1>
         <p className={styles.desc}>
-          예기치 않은 오류가 발생했어요. 아래 버튼으로 다시 시도해 주세요.<br />
+          예기치 않은 오류가 발생했어요. 아래 버튼으로 다시 시도해 주세요.
+          <br />
           문제가 지속되면 시스템 관리자에게 문의해 주세요.
         </p>
         {error?.message && (
-          <p style={{ fontSize: 11, color: 'var(--text-4, #888)', fontFamily: 'monospace',
-            background: 'rgba(0,0,0,.18)', borderRadius: 6, padding: '6px 12px', marginTop: 8,
-            maxWidth: 480, wordBreak: 'break-all' }}>
+          <p
+            style={{
+              fontSize: 11,
+              color: 'var(--text-4, #888)',
+              fontFamily: 'monospace',
+              background: 'rgba(0,0,0,.18)',
+              borderRadius: 6,
+              padding: '6px 12px',
+              marginTop: 8,
+              maxWidth: 480,
+              wordBreak: 'break-all',
+            }}
+          >
             {error.message}
           </p>
         )}
@@ -93,20 +106,37 @@ export default function ErrorPage({ error, reset }) {
             className={`${styles.btn} ${styles.btnErr}`}
             onClick={handleRetry}
             disabled={countdown !== null}
-            style={countdown !== null ? { opacity: .7, cursor: 'not-allowed' } : undefined}
+            style={countdown !== null ? { opacity: 0.7, cursor: 'not-allowed' } : undefined}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-              <path d="M3 3v5h5"/>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
             </svg>
             다시 시도
-            {countdown !== null && (
-              <span className={styles.countdown}>{countdown}s</span>
-            )}
+            {countdown !== null && <span className={styles.countdown}>{countdown}s</span>}
           </button>
           <a href="/" className={`${styles.btn} ${styles.btnGhost}`}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 11.5 12 4l9 7.5" />
+              <path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9" />
             </svg>
             홈으로 돌아가기
           </a>

@@ -16,10 +16,8 @@ jest.unstable_mockModule('../../lib/db/index.js', () => ({
   deleteFileWithLog: (...args) => deleteFileWithLog(...args),
 }));
 
-const {
-  getShipmentFiles,
-  getShipmentRowsByFileId,
-} = await import('../../lib/shipment/store-files.js');
+const { getShipmentFiles, getShipmentRowsByFileId } =
+  await import('../../lib/shipment/store-files.js');
 
 beforeEach(() => {
   jest.clearAllMocks();

@@ -28,13 +28,19 @@ import { showToast } from '@/components/Toast';
  *   extraData,        // extraFetch 결과 (피자: edges)
  * }}
  */
-export function useDetailRecipePage({ category, fetchRecipeMap, upsertRecipe, calcCost, extraFetch }) {
-  const [tab,       setTab]       = useState('detail');
-  const [menus,     setMenus]     = useState([]);
+export function useDetailRecipePage({
+  category,
+  fetchRecipeMap,
+  upsertRecipe,
+  calcCost,
+  extraFetch,
+}) {
+  const [tab, setTab] = useState('detail');
+  const [menus, setMenus] = useState([]);
   const [recipeMap, setRecipeMap] = useState(new Map());
-  const [loading,   setLoading]   = useState(true);
-  const [dbError,   setDbError]   = useState(null);
-  const [target,    setTarget]    = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [dbError, setDbError] = useState(null);
+  const [target, setTarget] = useState(null);
   const [extraData, setExtraData] = useState(null);
   const mountedRef = useRef(true);
 
@@ -47,7 +53,7 @@ export function useDetailRecipePage({ category, fetchRecipeMap, upsertRecipe, ca
     setMenus(allMenus.filter(m => m.category === category));
     setRecipeMap(recMap);
     if (extra !== undefined) setExtraData(extra);
-  // extraFetch는 모듈 레벨 함수라 안정적이나, eslint 경고 방지를 위해 포함
+    // extraFetch는 모듈 레벨 함수라 안정적이나, eslint 경고 방지를 위해 포함
   }, [category, fetchRecipeMap, extraFetch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -70,9 +76,12 @@ export function useDetailRecipePage({ category, fetchRecipeMap, upsertRecipe, ca
   async function handleSave(data) {
     try {
       const result = await upsertRecipe(data);
-      const msg = result.mode === 'insert' ? '레시피 등록 완료'
-                : !data.id                 ? '기존 레시피 덮어씌움'
-                                           : '레시피 수정 완료';
+      const msg =
+        result.mode === 'insert'
+          ? '레시피 등록 완료'
+          : !data.id
+            ? '기존 레시피 덮어씌움'
+            : '레시피 수정 완료';
       showToast(msg, 'ok');
       setTarget(null);
       await load(); // menus·recipeMap 동시 갱신 (신규 메뉴가 추가됐을 수 있음)
@@ -95,12 +104,30 @@ export function useDetailRecipePage({ category, fetchRecipeMap, upsertRecipe, ca
     return { withRecipe, totalCost };
   }, [menus, recipeMap, calcCost]);
 
-  const summaryRows = useMemo(() => menus.map(m => {
-    const recipe = recipeMap.get(m.menuCode) ?? null;
-    const cost = recipe ? calcCost(recipe) : 0;
-    const rate = (m.price && cost > 0) ? (cost / m.price * 100) : null;
-    return { menuCode: m.menuCode, menuName: m.menuName, price: m.price, cost, rate };
-  }), [menus, recipeMap, calcCost]);
+  const summaryRows = useMemo(
+    () =>
+      menus.map(m => {
+        const recipe = recipeMap.get(m.menuCode) ?? null;
+        const cost = recipe ? calcCost(recipe) : 0;
+        const rate = m.price && cost > 0 ? (cost / m.price) * 100 : null;
+        return { menuCode: m.menuCode, menuName: m.menuName, price: m.price, cost, rate };
+      }),
+    [menus, recipeMap, calcCost]
+  );
 
-  return { tab, setTab, menus, recipeMap, loading, dbError, target, setTarget, handleSave, stats, summaryRows, extraData, reload: load };
+  return {
+    tab,
+    setTab,
+    menus,
+    recipeMap,
+    loading,
+    dbError,
+    target,
+    setTarget,
+    handleSave,
+    stats,
+    summaryRows,
+    extraData,
+    reload: load,
+  };
 }

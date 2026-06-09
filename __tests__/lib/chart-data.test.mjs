@@ -26,11 +26,13 @@ describe('normalizeDonutItems', () => {
   });
 
   test('양수가 아닌 value는 0으로 보정하고 나머지 필드는 보존한다', () => {
-    expect(normalizeDonutItems([
-      { label: 'A', value: 10, color: '#111' },
-      { label: 'B', value: -5, color: '#222' },
-      { label: 'C', value: 'bad', color: '#333' },
-    ])).toEqual([
+    expect(
+      normalizeDonutItems([
+        { label: 'A', value: 10, color: '#111' },
+        { label: 'B', value: -5, color: '#222' },
+        { label: 'C', value: 'bad', color: '#333' },
+      ])
+    ).toEqual([
       { label: 'A', value: 10, color: '#111' },
       { label: 'B', value: 0, color: '#222' },
       { label: 'C', value: 0, color: '#333' },
@@ -44,11 +46,13 @@ describe('normalizeAreaSeries', () => {
   });
 
   test('시리즈 데이터와 이름을 안전한 형태로 정규화한다', () => {
-    expect(normalizeAreaSeries([
-      { name: '판매량', data: [1, '2', 'bad'] },
-      { name: 10, data: null },
-      null,
-    ])).toEqual([
+    expect(
+      normalizeAreaSeries([
+        { name: '판매량', data: [1, '2', 'bad'] },
+        { name: 10, data: null },
+        null,
+      ])
+    ).toEqual([
       { name: '판매량', data: [1, 2, 0] },
       { name: '', data: [] },
       { name: '', data: [] },

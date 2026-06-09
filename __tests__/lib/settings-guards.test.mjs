@@ -16,7 +16,9 @@ function installStorage(initial = {}) {
     configurable: true,
     value: {
       getItem: key => store[key] ?? null,
-      setItem: (key, value) => { store[key] = value; },
+      setItem: (key, value) => {
+        store[key] = value;
+      },
     },
   });
   return store;

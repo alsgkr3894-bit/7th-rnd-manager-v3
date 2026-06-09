@@ -10,8 +10,8 @@ import { initDB } from '@/lib/db';
 import { getActiveBrandId } from '@/lib/active-brand';
 
 const TABS = [
-  { key: 'rule',    label: '카테고리 분류 규칙' },
-  { key: 'alias',   label: '별칭 관리' },
+  { key: 'rule', label: '카테고리 분류 규칙' },
+  { key: 'alias', label: '별칭 관리' },
   { key: 'exclude', label: '품목 제외' },
 ];
 
@@ -22,7 +22,7 @@ export default function Page() {
 
   // 기본 규칙·별칭 수는 7번가(main) 전용. 다른 브랜드는 0.
   // 초기값 0: SSR/클라이언트 모두 동일 → hydration 불일치 없음. 마운트 후 main이면 실제 수로 교정.
-  const [ruleCount, setRuleCount]   = useState(0);
+  const [ruleCount, setRuleCount] = useState(0);
   const [aliasCount, setAliasCount] = useState(0);
   useEffect(() => {
     if (getActiveBrandId() === 'main') {
@@ -63,17 +63,9 @@ export default function Page() {
       />
 
       {/* 요약 KPI */}
-      <div className="hero-row" style={{marginTop:16}}>
-        <SummaryCard
-          label="분류 규칙"
-          value={ruleCount}
-          sub="기본 + MS9 + 추가 규칙 합계"
-        />
-        <SummaryCard
-          label="별칭 매핑"
-          value={aliasCount}
-          sub="동의어 → 표준 메뉴명"
-        />
+      <div className="hero-row" style={{ marginTop: 16 }}>
+        <SummaryCard label="분류 규칙" value={ruleCount} sub="기본 + MS9 + 추가 규칙 합계" />
+        <SummaryCard label="별칭 매핑" value={aliasCount} sub="동의어 → 표준 메뉴명" />
         <SummaryCard
           label="품목 제외"
           value={excludeLoadFailed ? '-' : excludeCount}
@@ -82,17 +74,25 @@ export default function Page() {
       </div>
 
       {/* 탭 */}
-      <div style={{
-        display:'flex', gap:4, marginTop:24,
-        borderBottom:'1px solid var(--border)',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 4,
+          marginTop: 24,
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
         {TABS.map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             style={{
-              padding:'10px 18px', fontWeight:600, fontSize:14,
-              border:'none', background:'transparent', cursor:'pointer',
+              padding: '10px 18px',
+              fontWeight: 600,
+              fontSize: 14,
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer',
               color: tab === t.key ? 'var(--accent)' : 'var(--text-3)',
               borderBottom: tab === t.key ? '2px solid var(--accent)' : '2px solid transparent',
               marginBottom: -1,
@@ -103,8 +103,8 @@ export default function Page() {
         ))}
       </div>
 
-      {tab === 'rule'    && <SettingsRuleCard />}
-      {tab === 'alias'   && <SettingsAliasCard />}
+      {tab === 'rule' && <SettingsRuleCard />}
+      {tab === 'alias' && <SettingsAliasCard />}
       {tab === 'exclude' && <SettingsExcludeCard />}
     </main>
   );
@@ -121,7 +121,9 @@ function SummaryCard({ label, value, sub }) {
           {hasUnit ? formatNumber(value) : value}
           {hasUnit && <span className="unit">개</span>}
         </div>
-        <div className="trend"><span style={{color:'var(--text-3)'}}>{sub}</span></div>
+        <div className="trend">
+          <span style={{ color: 'var(--text-3)' }}>{sub}</span>
+        </div>
       </div>
     </div>
   );

@@ -1,8 +1,5 @@
 import { afterEach, describe, expect, test } from '@jest/globals';
-import {
-  collectLocalStorage,
-  restoreLocalStorage,
-} from '../../lib/nutrition/backup-keys.js';
+import { collectLocalStorage, restoreLocalStorage } from '../../lib/nutrition/backup-keys.js';
 
 const originalLocalStorage = globalThis.localStorage;
 
@@ -41,10 +38,13 @@ describe('nutrition backup localStorage keys', () => {
       },
     });
 
-    expect(restoreLocalStorage(
-      { good: '1', bad: '2', unknown: '3', nonString: 4 },
-      ['good', 'bad', 'nonString'],
-    )).toBe(1);
+    expect(
+      restoreLocalStorage({ good: '1', bad: '2', unknown: '3', nonString: 4 }, [
+        'good',
+        'bad',
+        'nonString',
+      ])
+    ).toBe(1);
     expect(saved).toEqual({ good: '1' });
   });
 });

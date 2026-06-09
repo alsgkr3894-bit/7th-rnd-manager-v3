@@ -21,7 +21,9 @@ export function useScrollMemory(key) {
     const top = normalizeScrollTop(saved);
     if (top !== null) {
       const main = document.querySelector('#main-content');
-      if (main) { main.scrollTop = top; }
+      if (main) {
+        main.scrollTop = top;
+      }
     }
     restored.current = true;
   }, [key]);

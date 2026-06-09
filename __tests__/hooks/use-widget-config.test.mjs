@@ -11,12 +11,14 @@ const DEFAULT_ORDER = HOME_WIDGET_ROWS.map(row => row.id);
 
 describe('useWidgetConfig helpers', () => {
   test('visibility 설정에서 알 수 없는 key와 boolean이 아닌 값은 제거한다', () => {
-    expect(sanitizeWidgetConfig({
-      kpi: false,
-      recent: true,
-      ghost: false,
-      notes: 'false',
-    })).toEqual({
+    expect(
+      sanitizeWidgetConfig({
+        kpi: false,
+        recent: true,
+        ghost: false,
+        notes: 'false',
+      })
+    ).toEqual({
       kpi: false,
       recent: true,
     });
@@ -25,12 +27,14 @@ describe('useWidgetConfig helpers', () => {
   });
 
   test('collapsed 설정도 위젯 key와 boolean 값만 유지한다', () => {
-    expect(sanitizeWidgetCollapsed({
-      heatmap: true,
-      quickreport: false,
-      stale: true,
-      samples: 1,
-    })).toEqual({
+    expect(
+      sanitizeWidgetCollapsed({
+        heatmap: true,
+        quickreport: false,
+        stale: true,
+        samples: 1,
+      })
+    ).toEqual({
       heatmap: true,
       quickreport: false,
     });

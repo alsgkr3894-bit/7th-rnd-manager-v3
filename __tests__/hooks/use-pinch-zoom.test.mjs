@@ -3,12 +3,22 @@ import { getTouchDistance, normalizePinchScale } from '../../hooks/usePinchZoom.
 
 describe('getTouchDistance', () => {
   test('두 터치 사이의 거리를 계산한다', () => {
-    expect(getTouchDistance([{ clientX: 0, clientY: 0 }, { clientX: 3, clientY: 4 }])).toBe(5);
+    expect(
+      getTouchDistance([
+        { clientX: 0, clientY: 0 },
+        { clientX: 3, clientY: 4 },
+      ])
+    ).toBe(5);
   });
 
   test('터치가 부족하거나 거리가 0이면 null을 반환한다', () => {
     expect(getTouchDistance([{ clientX: 0, clientY: 0 }])).toBeNull();
-    expect(getTouchDistance([{ clientX: 1, clientY: 1 }, { clientX: 1, clientY: 1 }])).toBeNull();
+    expect(
+      getTouchDistance([
+        { clientX: 1, clientY: 1 },
+        { clientX: 1, clientY: 1 },
+      ])
+    ).toBeNull();
   });
 });
 

@@ -25,9 +25,12 @@ export async function reapplyToUploadedData() {
 }
 
 export const inputStyle = {
-  padding: '6px 10px', borderRadius: 6,
-  border: '1px solid var(--border)', background: 'var(--surface-2)',
-  color: 'var(--text-1)', fontSize: 13,
+  padding: '6px 10px',
+  borderRadius: 6,
+  border: '1px solid var(--border)',
+  background: 'var(--surface-2)',
+  color: 'var(--text-1)',
+  fontSize: 13,
 };
 
 export function SectionHeader({ title, count, adding, onAdd }) {
@@ -36,12 +39,33 @@ export function SectionHeader({ title, count, adding, onAdd }) {
   const handleAdd = typeof onAdd === 'function' ? onAdd : null;
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+      }}
+    >
       <div style={{ fontSize: 13, fontWeight: 700 }}>
-        {safeTitle} <span style={{ color: 'var(--text-3)', fontWeight: 500, marginLeft: 6 }}>{safeCount}개</span>
+        {safeTitle}{' '}
+        <span style={{ color: 'var(--text-3)', fontWeight: 500, marginLeft: 6 }}>
+          {safeCount}개
+        </span>
       </div>
-      <button type="button" className="btn sm" onClick={handleAdd || undefined} disabled={!handleAdd}>
-        {adding ? '닫기' : <><Icon.plus style={{ width: 12, height: 12 }}/> 추가</>}
+      <button
+        type="button"
+        className="btn sm"
+        onClick={handleAdd || undefined}
+        disabled={!handleAdd}
+      >
+        {adding ? (
+          '닫기'
+        ) : (
+          <>
+            <Icon.plus style={{ width: 12, height: 12 }} /> 추가
+          </>
+        )}
       </button>
     </div>
   );

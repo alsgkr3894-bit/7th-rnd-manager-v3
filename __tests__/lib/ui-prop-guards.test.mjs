@@ -44,8 +44,12 @@ describe('ui prop guards', () => {
   });
 
   test('asTimestamp는 날짜 후보를 안전한 timestamp로 변환한다', () => {
-    expect(asTimestamp('2026-06-01T00:00:00.000Z')).toBe(new Date('2026-06-01T00:00:00.000Z').getTime());
-    expect(asTimestamp(new Date('2026-03-01T00:00:00.000Z'))).toBe(new Date('2026-03-01T00:00:00.000Z').getTime());
+    expect(asTimestamp('2026-06-01T00:00:00.000Z')).toBe(
+      new Date('2026-06-01T00:00:00.000Z').getTime()
+    );
+    expect(asTimestamp(new Date('2026-03-01T00:00:00.000Z'))).toBe(
+      new Date('2026-03-01T00:00:00.000Z').getTime()
+    );
     expect(asTimestamp(200)).toBe(200);
     expect(asTimestamp({ value: '2026-06-01' }, 7)).toBe(7);
     expect(asTimestamp('bad-date', 9)).toBe(9);

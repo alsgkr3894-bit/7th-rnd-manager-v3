@@ -1,9 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
 import { MODULE_KEYS } from '../../lib/db/index.js';
-import {
-  buildModuleScopeMap,
-  isKnownModuleScope,
-} from '../../hooks/useModuleScopes.js';
+import { buildModuleScopeMap, isKnownModuleScope } from '../../hooks/useModuleScopes.js';
 
 describe('buildModuleScopeMap', () => {
   test('모든 알려진 모듈 키를 boolean 값으로 만든다', () => {

@@ -12,28 +12,42 @@ import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
  * @param {(id) => void} onBaseChange / onLatestChange
  * @param {{ up, down, total }} summary — 인상/인하 카운트
  */
-export function PriceCompareControls({ files, baseFileId, latestFileId, onBaseChange, onLatestChange, summary }) {
+export function PriceCompareControls({
+  files,
+  baseFileId,
+  latestFileId,
+  onBaseChange,
+  onLatestChange,
+  summary,
+}) {
   const safeFiles = asObjectArray(files);
   if (safeFiles.length === 0) return null;
   const safeSummary = summary && typeof summary === 'object' ? summary : null;
 
   const latest = safeFiles.find(f => f.id === latestFileId);
-  const base   = safeFiles.find(f => f.id === baseFileId);
+  const base = safeFiles.find(f => f.id === baseFileId);
   const latestDate = asDisplayText(latest?.updateDate, '-');
   const baseDate = asDisplayText(base?.updateDate, '-');
 
   return (
     <>
-      <div className="info-banner info-accent" style={{marginTop:16}}>
-        <div className="info-banner-ico" style={{background:'var(--accent-soft)', color:'var(--accent-text)'}}>
-          <Icon.alert style={{width:16,height:16}}/>
+      <div className="info-banner info-accent" style={{ marginTop: 16 }}>
+        <div
+          className="info-banner-ico"
+          style={{ background: 'var(--accent-soft)', color: 'var(--accent-text)' }}
+        >
+          <Icon.alert style={{ width: 16, height: 16 }} />
         </div>
         <div>
           {latest ? (
             <>
               <b>최신 제때 단가: {latestDate}</b>
               {base && safeSummary && (
-                <> · 이전 단가({baseDate}) 대비 인상 {formatNumber(safeSummary.up)}개 / 인하 {formatNumber(safeSummary.down)}개</>
+                <>
+                  {' '}
+                  · 이전 단가({baseDate}) 대비 인상 {formatNumber(safeSummary.up)}개 / 인하{' '}
+                  {formatNumber(safeSummary.down)}개
+                </>
               )}
               {!base && ' · 이전 비교 대상 없음 (모두 신규)'}
             </>
@@ -43,8 +57,11 @@ export function PriceCompareControls({ files, baseFileId, latestFileId, onBaseCh
         </div>
       </div>
 
-      <div className="period-bar" style={{marginTop:16}}>
-        <div className="period-tabs" style={{fontSize:12, color:'var(--text-3)', padding:'8px 12px'}}>
+      <div className="period-bar" style={{ marginTop: 16 }}>
+        <div
+          className="period-tabs"
+          style={{ fontSize: 12, color: 'var(--text-3)', padding: '8px 12px' }}
+        >
           비교 날짜 선택
         </div>
         <div className="period-disp">
@@ -56,7 +73,7 @@ export function PriceCompareControls({ files, baseFileId, latestFileId, onBaseCh
             onChange={onBaseChange}
             allowNull
           />
-          <Icon.chevRight style={{width: 18, height: 18, color: 'var(--text-4)'}}/>
+          <Icon.chevRight style={{ width: 18, height: 18, color: 'var(--text-4)' }} />
           <DateSide
             label="● 최신"
             color="var(--accent-text)"
@@ -75,7 +92,9 @@ function DateSide({ label, color, files, value, onChange, allowNull }) {
 
   return (
     <div className="period-side">
-      <div className="period-label" style={{color}}>{label}</div>
+      <div className="period-label" style={{ color }}>
+        {label}
+      </div>
       <select
         value={value ?? ''}
         onChange={e => {
@@ -83,15 +102,23 @@ function DateSide({ label, color, files, value, onChange, allowNull }) {
           handleChange(Number.isSafeInteger(id) && id > 0 ? id : null);
         }}
         style={{
-          background: 'var(--surface-2)', border: '1px solid var(--border)',
-          borderRadius: 8, padding: '6px 10px', fontSize: 14, fontWeight: 600,
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
+          borderRadius: 8,
+          padding: '6px 10px',
+          fontSize: 14,
+          fontWeight: 600,
           color: 'var(--text-1)',
         }}
       >
         {allowNull && <option value="">(없음)</option>}
         {files.map((f, index) => {
           const id = asDisplayText(f.id, `file-${index}`);
-          return <option key={id} value={id}>{asDisplayText(f.updateDate, '-')}</option>;
+          return (
+            <option key={id} value={id}>
+              {asDisplayText(f.updateDate, '-')}
+            </option>
+          );
         })}
       </select>
     </div>

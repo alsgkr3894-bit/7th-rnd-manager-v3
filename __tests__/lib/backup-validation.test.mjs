@@ -30,10 +30,13 @@ describe('backup validation', () => {
   });
 
   test('알 수 없는 store는 요약에 남겨 UI가 경고할 수 있게 한다', () => {
-    const summary = summarizeBackupStores({
-      settings: [],
-      legacy_store: [{ id: 1 }],
-    }, ['settings']);
+    const summary = summarizeBackupStores(
+      {
+        settings: [],
+        legacy_store: [{ id: 1 }],
+      },
+      ['settings']
+    );
 
     expect(summary.knownStores).toEqual(['settings']);
     expect(summary.unknownStores).toEqual(['legacy_store']);
@@ -56,22 +59,28 @@ describe('backup validation', () => {
   });
 
   test('store 값이 배열이 아니면 복원 전에 실패시킨다', () => {
-    expect(() => validateBackupPayload({
-      version: CURRENT_BACKUP_VERSION,
-      stores: { settings: {} },
-    })).toThrow('stores 값이 배열이 아님: settings');
+    expect(() =>
+      validateBackupPayload({
+        version: CURRENT_BACKUP_VERSION,
+        stores: { settings: {} },
+      })
+    ).toThrow('stores 값이 배열이 아님: settings');
   });
 
   test('store 배열 안의 레코드가 객체가 아니면 복원 전에 실패시킨다', () => {
     expect(invalidStoreRowsOf([{ id: 1 }, null, 'bad', ['array']])).toEqual([1, 2, 3]);
-    expect(invalidStoreRowsByStore({
-      settings: [{ id: 1 }, null],
-      sales_files: [{ id: 2 }],
-    })).toEqual([{ name: 'settings', invalidIndexes: [1] }]);
+    expect(
+      invalidStoreRowsByStore({
+        settings: [{ id: 1 }, null],
+        sales_files: [{ id: 2 }],
+      })
+    ).toEqual([{ name: 'settings', invalidIndexes: [1] }]);
 
-    expect(() => validateBackupPayload({
-      version: CURRENT_BACKUP_VERSION,
-      stores: { settings: [{ id: 1 }, null] },
-    })).toThrow('store 레코드가 객체가 아님: settings[1]');
+    expect(() =>
+      validateBackupPayload({
+        version: CURRENT_BACKUP_VERSION,
+        stores: { settings: [{ id: 1 }, null] },
+      })
+    ).toThrow('store 레코드가 객체가 아님: settings[1]');
   });
 });

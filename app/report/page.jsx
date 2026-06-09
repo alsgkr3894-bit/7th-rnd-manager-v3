@@ -402,7 +402,10 @@ export default function Page() {
           { id: 'compare', label: '비교' },
         ].map(c => ({
           label: c.label,
-          count: c.id === 'all' ? reports.length : reports.filter(r => safeReportKind(r.kind) === c.id).length,
+          count:
+            c.id === 'all'
+              ? reports.length
+              : reports.filter(r => safeReportKind(r.kind) === c.id).length,
           active: kindFilter === c.id,
           onClick: () => setKindFilter(c.id),
         }))}
@@ -587,14 +590,26 @@ export default function Page() {
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end' }}>
-                          <button className="btn sm" onClick={() => { setPreviewPrintOnOpen(false); setPreviewTarget(r); }}>
+                          <button
+                            className="btn sm"
+                            onClick={() => {
+                              setPreviewPrintOnOpen(false);
+                              setPreviewTarget(r);
+                            }}
+                          >
                             미리보기
                           </button>
                           <button className="btn sm" onClick={() => setShareTarget(r)}>
                             <Icon.upload style={{ width: 12, height: 12 }} />
                             공유
                           </button>
-                          <button className="btn sm" onClick={() => { setPreviewPrintOnOpen(true); setPreviewTarget(r); }}>
+                          <button
+                            className="btn sm"
+                            onClick={() => {
+                              setPreviewPrintOnOpen(true);
+                              setPreviewTarget(r);
+                            }}
+                          >
                             <Icon.download style={{ width: 12, height: 12 }} />
                             PDF
                           </button>

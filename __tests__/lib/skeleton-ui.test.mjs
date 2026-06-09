@@ -42,7 +42,9 @@ describe('skeleton ui helpers', () => {
       backgroundSize: '200% 100%',
       animation: 'shimmer 1.4s infinite',
     });
-    expect(getSkeletonStyle({ width: 120, height: 20, radius: 8, style: { marginTop: 4 } })).toMatchObject({
+    expect(
+      getSkeletonStyle({ width: 120, height: 20, radius: 8, style: { marginTop: 4 } })
+    ).toMatchObject({
       width: 120,
       height: 20,
       borderRadius: 8,

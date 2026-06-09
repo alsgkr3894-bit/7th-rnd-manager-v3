@@ -20,7 +20,7 @@ export function SingleMonthView({
   categories,
   category,
   onCategoryChange,
-  avgCostRate,   // 피자 평균 원가율 (%)
+  avgCostRate, // 피자 평균 원가율 (%)
 }) {
   const safePeriod = period && typeof period === 'object' ? period : null;
   const safeDetail = detail && typeof detail === 'object' && !Array.isArray(detail) ? detail : null;
@@ -34,14 +34,19 @@ export function SingleMonthView({
 
   return (
     <>
-      <div className="hero-row" style={{marginTop:16}}>
+      <div className="hero-row" style={{ marginTop: 16 }}>
         <div className="card kpi-card">
           <div>
             <div className="label">전체 판매량</div>
-            <div className="value num">{formatNumber(total)}<span className="unit">개</span></div>
+            <div className="value num">
+              {formatNumber(total)}
+              <span className="unit">개</span>
+            </div>
             <div className="trend">
-              <span style={{color:'var(--text-3)'}}>
-                {safePeriod ? `${asDisplayText(safePeriod.year, '-')}년 ${asDisplayText(safePeriod.month, '-')}월 기준` : ''}
+              <span style={{ color: 'var(--text-3)' }}>
+                {safePeriod
+                  ? `${asDisplayText(safePeriod.year, '-')}년 ${asDisplayText(safePeriod.month, '-')}월 기준`
+                  : ''}
               </span>
             </div>
           </div>
@@ -52,19 +57,17 @@ export function SingleMonthView({
               평균 원가율
               <span className="pill">피자 카테고리</span>
             </div>
-            <div className="value num" style={{color: costRateColor(rate)}}>
+            <div className="value num" style={{ color: costRateColor(rate) }}>
               {hasRate ? rate.toFixed(1) : '—'}
               <span className="unit">%</span>
             </div>
             <div className="trend">
               {hasRate ? (
-                <span style={{color: costRateColor(rate)}}>
+                <span style={{ color: costRateColor(rate) }}>
                   {rate <= 30 ? '양호' : rate <= 40 ? '보통' : '주의'}
                 </span>
               ) : (
-                <span style={{color:'var(--text-4)'}}>
-                  원가 레시피를 먼저 등록하세요
-                </span>
+                <span style={{ color: 'var(--text-4)' }}>원가 레시피를 먼저 등록하세요</span>
               )}
             </div>
           </div>
@@ -73,7 +76,7 @@ export function SingleMonthView({
 
       <CategoryDetailGrid
         detail={safeDetail}
-        onCategoryClick={(c) => handleCategoryChange(c === selectedCategory ? null : c)}
+        onCategoryClick={c => handleCategoryChange(c === selectedCategory ? null : c)}
       />
 
       <MonthRankTable

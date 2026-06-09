@@ -9,17 +9,26 @@ import { UploadErrorBanner } from '@/components/sales/UploadErrorBanner';
 
 export default function Page() {
   const {
-    ready, stage, error, preview, history,
-    handleFile, handleConfirm, handleCancel, handleDeleteFile,
+    ready,
+    stage,
+    error,
+    preview,
+    history,
+    handleFile,
+    handleConfirm,
+    handleCancel,
+    handleDeleteFile,
   } = useSalesUpload();
-  const safePreview = preview && typeof preview === 'object' && !Array.isArray(preview) ? preview : null;
+  const safePreview =
+    preview && typeof preview === 'object' && !Array.isArray(preview) ? preview : null;
   const isPreviewStage = stage === 'preview' || stage === 'saving';
   const isDropzoneDisabled = !ready || stage === 'parsing' || (isPreviewStage && !safePreview);
-  const busyText = stage === 'parsing'
-    ? '검증 중...'
-    : isPreviewStage && !safePreview
-      ? '미리보기 준비 중...'
-      : 'DB 초기화 중...';
+  const busyText =
+    stage === 'parsing'
+      ? '검증 중...'
+      : isPreviewStage && !safePreview
+        ? '미리보기 준비 중...'
+        : 'DB 초기화 중...';
 
   return (
     <main className="main">
@@ -34,11 +43,7 @@ export default function Page() {
       <UploadErrorBanner error={error} />
 
       {!isPreviewStage || !safePreview ? (
-        <UploadDropzone
-          onFile={handleFile}
-          disabled={isDropzoneDisabled}
-          busyText={busyText}
-        />
+        <UploadDropzone onFile={handleFile} disabled={isDropzoneDisabled} busyText={busyText} />
       ) : (
         <UploadPreview
           period={safePreview.period}

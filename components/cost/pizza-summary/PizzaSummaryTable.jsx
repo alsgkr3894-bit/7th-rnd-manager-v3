@@ -12,11 +12,11 @@ import { CostCell } from './CostCell';
 export function PizzaSummaryTable({ rows }) {
   if (!rows?.length) {
     return (
-      <div className="card" style={{minHeight:180, display:'grid', placeItems:'center'}}>
-        <div style={{textAlign:'center', color:'var(--text-3)'}}>
-          <Icon.calc style={{width:32, height:32, marginBottom:12, opacity:.4}}/>
-          <div style={{fontWeight:600, marginBottom:4}}>표시할 피자 메뉴가 없습니다</div>
-          <div style={{fontSize:13}}>메뉴 판매가에서 피자 메뉴를 먼저 등록해주세요.</div>
+      <div className="card" style={{ minHeight: 180, display: 'grid', placeItems: 'center' }}>
+        <div style={{ textAlign: 'center', color: 'var(--text-3)' }}>
+          <Icon.calc style={{ width: 32, height: 32, marginBottom: 12, opacity: 0.4 }} />
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>표시할 피자 메뉴가 없습니다</div>
+          <div style={{ fontSize: 13 }}>메뉴 판매가에서 피자 메뉴를 먼저 등록해주세요.</div>
         </div>
       </div>
     );
@@ -24,47 +24,74 @@ export function PizzaSummaryTable({ rows }) {
 
   return (
     <div className="card table-card">
-      <div style={{overflowX:'auto'}}>
+      <div style={{ overflowX: 'auto' }}>
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{width:88}}>메뉴코드</th>
+              <th style={{ width: 88 }}>메뉴코드</th>
               <th>메뉴명</th>
-              <th style={{width:50}}>규격</th>
-              <th style={{width:96, textAlign:'right'}}>판매가</th>
+              <th style={{ width: 50 }}>규격</th>
+              <th style={{ width: 96, textAlign: 'right' }}>판매가</th>
               {PIZZA_EDGE_VARIANTS.map(v => (
-                <th key={v.key} style={{width:110, textAlign:'right'}}>{v.label}</th>
+                <th key={v.key} style={{ width: 110, textAlign: 'right' }}>
+                  {v.label}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.map(r => (
               <tr key={r.menu.menuCode}>
-                <td style={{
-                  fontFamily:"'JetBrains Mono', ui-monospace, monospace",
-                  fontSize:11, color:'var(--text-3)',
-                }}>{r.menu.menuCode}</td>
-                <td style={{fontWeight:600, fontSize:13}}>{r.menu.menuName}</td>
-                <td style={{fontSize:12, color:'var(--text-2)'}}>{r.menu.size}</td>
-                <td style={{textAlign:'right', fontWeight:600, fontSize:12}}>
-                  {r.menu.price != null
-                    ? <>{formatNumber(r.menu.price)}<span style={{fontSize:11, color:'var(--text-3)', marginLeft:2}}>원</span></>
-                    : <span style={{color:'var(--text-4)'}}>—</span>}
+                <td
+                  style={{
+                    fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                    fontSize: 11,
+                    color: 'var(--text-3)',
+                  }}
+                >
+                  {r.menu.menuCode}
+                </td>
+                <td style={{ fontWeight: 600, fontSize: 13 }}>{r.menu.menuName}</td>
+                <td style={{ fontSize: 12, color: 'var(--text-2)' }}>{r.menu.size}</td>
+                <td style={{ textAlign: 'right', fontWeight: 600, fontSize: 12 }}>
+                  {r.menu.price != null ? (
+                    <>
+                      {formatNumber(r.menu.price)}
+                      <span style={{ fontSize: 11, color: 'var(--text-3)', marginLeft: 2 }}>
+                        원
+                      </span>
+                    </>
+                  ) : (
+                    <span style={{ color: 'var(--text-4)' }}>—</span>
+                  )}
                 </td>
                 {PIZZA_EDGE_VARIANTS.map(v => (
-                  <CostCell key={v.key} value={r.byVariant[v.key]}/>
+                  <CostCell key={v.key} value={r.byVariant[v.key]} />
                 ))}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <div style={{padding:'10px 16px', fontSize:11, color:'var(--text-3)', borderTop:'1px solid var(--divider)',
-        display:'flex', gap:16, flexWrap:'wrap'}}>
-        <span><span style={{color:'var(--negative)'}}>●</span> 원가율 35%↑ 위험</span>
-        <span><span style={{color:'var(--warn)'}}>●</span> 30~35% 주의</span>
-        <span style={{color:'var(--text-4)'}}>※ 베이스(피자 세부) + 엣지·도우 자동 합산</span>
-        <span style={{color:'var(--text-4)'}}>씬도우는 L규격만 제공</span>
+      <div
+        style={{
+          padding: '10px 16px',
+          fontSize: 11,
+          color: 'var(--text-3)',
+          borderTop: '1px solid var(--divider)',
+          display: 'flex',
+          gap: 16,
+          flexWrap: 'wrap',
+        }}
+      >
+        <span>
+          <span style={{ color: 'var(--negative)' }}>●</span> 원가율 35%↑ 위험
+        </span>
+        <span>
+          <span style={{ color: 'var(--warn)' }}>●</span> 30~35% 주의
+        </span>
+        <span style={{ color: 'var(--text-4)' }}>※ 베이스(피자 세부) + 엣지·도우 자동 합산</span>
+        <span style={{ color: 'var(--text-4)' }}>씬도우는 L규격만 제공</span>
       </div>
     </div>
   );

@@ -5,8 +5,12 @@ import dynamic from 'next/dynamic';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import {
-  buildPeriodCompare, buildCategoryDetails, buildGroupRanking, deriveCompareB,
-  MOVER_CATEGORIES, buildOrderedCategories,
+  buildPeriodCompare,
+  buildCategoryDetails,
+  buildGroupRanking,
+  deriveCompareB,
+  MOVER_CATEGORIES,
+  buildOrderedCategories,
 } from '@/lib/sales';
 import { Icon } from '@/components/icons';
 import { PeriodBar } from '@/components/sales/PeriodBar';
@@ -16,12 +20,12 @@ const _loadingFallback = <div className="skeleton" style={{ height: 240, borderR
 
 const SingleMonthView = dynamic(
   () => import('@/components/sales/SingleMonthView').then(m => m.SingleMonthView),
-  { ssr: false, loading: () => _loadingFallback },
+  { ssr: false, loading: () => _loadingFallback }
 );
 
 const CompareView = dynamic(
   () => import('@/components/sales/CompareView').then(m => m.CompareView),
-  { ssr: false, loading: () => _loadingFallback },
+  { ssr: false, loading: () => _loadingFallback }
 );
 import { useRankCompareData } from '@/lib/sales/use-rank-compare-data';
 import { useAvgCostRate } from '@/lib/sales/use-avg-cost-rate';
@@ -40,14 +44,7 @@ function normalizePeriod(value) {
 
   const year = asFiniteNumber(value.year, null);
   const month = asFiniteNumber(value.month, null);
-  if (
-    year == null ||
-    month == null ||
-    year < 1900 ||
-    year > 2999 ||
-    month < 1 ||
-    month > 12
-  ) {
+  if (year == null || month == null || year < 1900 || year > 2999 || month < 1 || month > 12) {
     return null;
   }
 
@@ -68,7 +65,7 @@ export default function Page() {
   const safeRows = useMemo(() => asObjectArray(rows), [rows]);
   const safeAvailable = useMemo(
     () => asObjectArray(available).map(normalizePeriod).filter(Boolean),
-    [available],
+    [available]
   );
   const safeMode = normalizeMode(mode);
   const safePeriodA = useMemo(() => normalizePeriod(periodA), [periodA]);
@@ -101,8 +98,11 @@ export default function Page() {
   }, [safeRows, safePeriodA, safeMode]);
 
   const singleCategories = useMemo(
-    () => buildOrderedCategories(new Set(singleMenus.map(m => asDisplayText(m.category)).filter(Boolean))),
-    [singleMenus],
+    () =>
+      buildOrderedCategories(
+        new Set(singleMenus.map(m => asDisplayText(m.category)).filter(Boolean))
+      ),
+    [singleMenus]
   );
 
   const categories = useMemo(() => {
@@ -168,11 +168,14 @@ export default function Page() {
           safeAvailable.length > 0 && (
             <>
               <button className="btn ghost" onClick={handleShare}>
-                <Icon.copy style={{width:14, height:14}}/>
+                <Icon.copy style={{ width: 14, height: 14 }} />
                 공유
               </button>
-              <button className="btn primary" onClick={() => router.push('/report/menu-sales-compare')}>
-                <Icon.doc style={{width:14, height:14}}/>
+              <button
+                className="btn primary"
+                onClick={() => router.push('/report/menu-sales-compare')}
+              >
+                <Icon.doc style={{ width: 14, height: 14 }} />
                 보고서 생성
               </button>
             </>

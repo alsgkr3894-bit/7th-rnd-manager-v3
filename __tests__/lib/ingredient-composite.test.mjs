@@ -12,8 +12,8 @@ import { jest, describe, test, expect, beforeEach } from '@jest/globals';
 // ── ESM mock setup (must precede dynamic import of store) ─────
 
 jest.unstable_mockModule('@/lib/db', () => ({
-  hasStore:       jest.fn(),
-  getAll:         jest.fn(),
+  hasStore: jest.fn(),
+  getAll: jest.fn(),
   runTransaction: jest.fn(),
 }));
 
@@ -28,7 +28,7 @@ const { hasStore: mockHasStore, getAll: mockGetAll } = await import('@/lib/db');
 // ── findMissingRefs (pure) ────────────────────────────────────
 
 describe('findMissingRefs', () => {
-  const codes = (list) => new Set(list.map(c => c.toLowerCase()));
+  const codes = list => new Set(list.map(c => c.toLowerCase()));
 
   test('empty compositeOf → returns []', () => {
     expect(findMissingRefs([], codes(['A', 'B']))).toEqual([]);
@@ -117,18 +117,17 @@ describe('validateCompositeRefs', () => {
 
   test('all refs present → { ok: true, missing: [] }', async () => {
     mockHasStore.mockReturnValue(true);
-    mockGetAll.mockResolvedValue([
-      { productCode: 'CODE-A' },
-      { productCode: 'CODE-B' },
-    ]);
+    mockGetAll.mockResolvedValue([{ productCode: 'CODE-A' }, { productCode: 'CODE-B' }]);
     expect(await validateCompositeRefs(['CODE-A', 'CODE-B'])).toEqual({ ok: true, missing: [] });
   });
 
   test('some refs missing → { ok: false, missing: [...] }', async () => {
     mockHasStore.mockReturnValue(true);
     mockGetAll.mockResolvedValue([{ productCode: 'CODE-A' }]);
-    expect(await validateCompositeRefs(['CODE-A', 'CODE-GHOST']))
-      .toEqual({ ok: false, missing: ['CODE-GHOST'] });
+    expect(await validateCompositeRefs(['CODE-A', 'CODE-GHOST'])).toEqual({
+      ok: false,
+      missing: ['CODE-GHOST'],
+    });
   });
 
   test('all refs missing → { ok: false, missing: all }', async () => {

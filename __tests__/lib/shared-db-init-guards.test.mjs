@@ -16,14 +16,42 @@ const nextIds = {
 
 function resetRecords() {
   records.menu_dev_notes = [
-    { id: 1, title: '루트 노트', menuName: '콤비', parentId: null, createdAt: '2026-06-08T00:00:00.000Z', updatedAt: '2026-06-08T00:00:00.000Z' },
-    { id: 2, title: '자식 노트', menuName: '콤비', parentId: 1, createdAt: '2026-06-08T01:00:00.000Z', updatedAt: '2026-06-08T01:00:00.000Z' },
+    {
+      id: 1,
+      title: '루트 노트',
+      menuName: '콤비',
+      parentId: null,
+      createdAt: '2026-06-08T00:00:00.000Z',
+      updatedAt: '2026-06-08T00:00:00.000Z',
+    },
+    {
+      id: 2,
+      title: '자식 노트',
+      menuName: '콤비',
+      parentId: 1,
+      createdAt: '2026-06-08T01:00:00.000Z',
+      updatedAt: '2026-06-08T01:00:00.000Z',
+    },
   ];
   records.sample_records = [
-    { id: 1, title: '샘플', menuName: '콤비', sampleNames: ['콤비'], createdAt: '2026-06-08T00:00:00.000Z', updatedAt: '2026-06-08T00:00:00.000Z' },
+    {
+      id: 1,
+      title: '샘플',
+      menuName: '콤비',
+      sampleNames: ['콤비'],
+      createdAt: '2026-06-08T00:00:00.000Z',
+      updatedAt: '2026-06-08T00:00:00.000Z',
+    },
   ];
   records.note_schedules = [
-    { id: 1, title: '일정', date: '2026-06-08', type: '기타', createdAt: '2026-06-08T00:00:00.000Z', updatedAt: '2026-06-08T00:00:00.000Z' },
+    {
+      id: 1,
+      title: '일정',
+      date: '2026-06-08',
+      type: '기타',
+      createdAt: '2026-06-08T00:00:00.000Z',
+      updatedAt: '2026-06-08T00:00:00.000Z',
+    },
   ];
   records.work_log = [
     { id: 1, date: '2026-03-01', at: '2026-03-01T00:00:00.000Z', type: 'OTHER', summary: 'old' },
@@ -41,7 +69,9 @@ function storeApi(storeName) {
       const id = nextIds[storeName]++;
       records[storeName].push({ ...record, id });
       const req = { result: id, onsuccess: null, onerror: null };
-      Promise.resolve().then(() => { if (req.onsuccess) req.onsuccess(); });
+      Promise.resolve().then(() => {
+        if (req.onsuccess) req.onsuccess();
+      });
       return req;
     },
     put(record) {
@@ -60,10 +90,12 @@ const sharedMock = {
   initSharedDB: jest.fn(async () => {}),
   sharedHasStore: jest.fn(storeName => Object.prototype.hasOwnProperty.call(records, storeName)),
   sharedGetAll: jest.fn(async storeName => [...records[storeName]]),
-  sharedGetById: jest.fn(async (storeName, id) => records[storeName].find(item => item.id === id) || null),
-  sharedGetByIndex: jest.fn(async (storeName, indexName, value) => (
-    records[storeName] || []
-  ).filter(item => item[indexName] === value)),
+  sharedGetById: jest.fn(
+    async (storeName, id) => records[storeName].find(item => item.id === id) || null
+  ),
+  sharedGetByIndex: jest.fn(async (storeName, indexName, value) =>
+    (records[storeName] || []).filter(item => item[indexName] === value)
+  ),
   sharedDeleteById: jest.fn(async (storeName, id) => {
     records[storeName] = records[storeName].filter(item => item.id !== id);
   }),

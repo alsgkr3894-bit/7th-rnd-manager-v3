@@ -16,7 +16,10 @@ describe('sample selection helpers', () => {
   });
 
   test('선택 ID 배열은 잘못된 값을 제거하고 기존 ID 값을 보존한다', () => {
-    expect(toSampleSelectionIds(new Set([1, '', 'sample-1', undefined, { id: 2 }]))).toEqual([1, 'sample-1']);
+    expect(toSampleSelectionIds(new Set([1, '', 'sample-1', undefined, { id: 2 }]))).toEqual([
+      1,
+      'sample-1',
+    ]);
     expect(toSampleSelectionIds('sample-1')).toEqual([]);
   });
 

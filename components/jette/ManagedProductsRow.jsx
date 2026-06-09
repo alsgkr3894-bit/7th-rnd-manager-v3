@@ -42,30 +42,41 @@ export function ManagedProductsRow({
   const handleConfirmDelete = typeof onConfirmDelete === 'function' ? onConfirmDelete : noop;
 
   return (
-    <tr style={{opacity: safeProduct.enable === false ? 0.5 : 1}}>
-      <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{productCode}</td>
-      <td className="cell-name"><div className="menu-name">{productName}</div></td>
-      <td style={{textAlign:'center'}}>
-        <Toggle value={safeProduct.enable !== false} onChange={() => handleToggleEnable(safeProduct)}/>
+    <tr style={{ opacity: safeProduct.enable === false ? 0.5 : 1 }}>
+      <td className="num" style={{ color: 'var(--text-3)', fontSize: 12 }}>
+        {productCode}
+      </td>
+      <td className="cell-name">
+        <div className="menu-name">{productName}</div>
+      </td>
+      <td style={{ textAlign: 'center' }}>
+        <Toggle
+          value={safeProduct.enable !== false}
+          onChange={() => handleToggleEnable(safeProduct)}
+        />
       </td>
       <td>
         <select
           value={productType}
           onChange={e => handleChangeType(safeProduct, e.target.value)}
-          style={{...inputStyle, width:'100%'}}
+          style={{ ...inputStyle, width: '100%' }}
         >
-          {TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          {TYPE_OPTIONS.map(o => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
         </select>
       </td>
-      <td style={{textAlign:'center'}}>
+      <td style={{ textAlign: 'center' }}>
         <input
           type="checkbox"
           checked={Boolean(safeProduct.isManaged)}
           onChange={() => handleToggleManaged(safeProduct)}
-          style={{cursor:'pointer', width:16, height:16}}
+          style={{ cursor: 'pointer', width: 16, height: 16 }}
         />
       </td>
-      <td style={{textAlign:'right'}}>
+      <td style={{ textAlign: 'right' }}>
         {pendingDelete ? (
           <InlineConfirmButtons
             message="제품을 삭제할까요?"
@@ -73,7 +84,9 @@ export function ManagedProductsRow({
             onConfirm={handleConfirmDelete}
           />
         ) : (
-          <button className="btn sm" style={{color:'var(--negative)'}} onClick={handleAskDelete}>삭제</button>
+          <button className="btn sm" style={{ color: 'var(--negative)' }} onClick={handleAskDelete}>
+            삭제
+          </button>
         )}
       </td>
     </tr>

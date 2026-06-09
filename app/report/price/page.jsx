@@ -410,9 +410,7 @@ export default function Page() {
                         const basePrice = safePrice(c.basePrice);
                         const latestPrice = safePrice(c.latestPrice);
                         const changeAmount =
-                          latestPrice != null && basePrice != null
-                            ? latestPrice - basePrice
-                            : null;
+                          latestPrice != null && basePrice != null ? latestPrice - basePrice : null;
                         return (
                           <tr key={`${productCode || productName}-${ci}`}>
                             <td className="muted mono" style={{ fontSize: 11 }}>

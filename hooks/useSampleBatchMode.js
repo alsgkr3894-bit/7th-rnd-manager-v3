@@ -12,7 +12,7 @@ import { toSampleSelectionIds, toggleSampleSelection } from '@/lib/sample/select
  */
 export function useSampleBatchMode(onDeletedOptimistic, onRefresh) {
   const [batchMode, setBatchMode] = useState(false);
-  const [selected,  setSelected]  = useState(new Set());
+  const [selected, setSelected] = useState(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   function toggleSelect(id) {

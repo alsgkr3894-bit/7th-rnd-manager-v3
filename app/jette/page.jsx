@@ -10,19 +10,40 @@ const GROUPS = [
   {
     label: '가격 분석',
     items: [
-      { href: '/jette/price-compare', icon: 'chart', title: '가격 비교', sub: '경쟁사·플랫폼 가격을 비교합니다', iconBg: '#F0EBFF', iconColor: '#6B3FCB' },
+      {
+        href: '/jette/price-compare',
+        icon: 'chart',
+        title: '가격 비교',
+        sub: '경쟁사·플랫폼 가격을 비교합니다',
+        iconBg: '#F0EBFF',
+        iconColor: '#6B3FCB',
+      },
     ],
   },
   {
     label: '물류',
     items: [
-      { href: '/jette/shipment', icon: 'box', title: '배송 현황', sub: '배송 건수 및 현황을 확인합니다', iconBg: 'var(--surface-2)', iconColor: 'var(--text-2)' },
+      {
+        href: '/jette/shipment',
+        icon: 'box',
+        title: '배송 현황',
+        sub: '배송 건수 및 현황을 확인합니다',
+        iconBg: 'var(--surface-2)',
+        iconColor: 'var(--text-2)',
+      },
     ],
   },
   {
     label: '설정',
     items: [
-      { href: '/jette/settings', icon: 'gear', title: '설정', sub: '제트 관련 설정을 관리합니다', iconBg: 'var(--accent-soft)', iconColor: 'var(--accent-text)' },
+      {
+        href: '/jette/settings',
+        icon: 'gear',
+        title: '설정',
+        sub: '제트 관련 설정을 관리합니다',
+        iconBg: 'var(--accent-soft)',
+        iconColor: 'var(--accent-text)',
+      },
     ],
   },
 ];
@@ -57,15 +78,27 @@ export default function Page() {
   if (price) {
     cards.push(
       { label: '최신 단가 반영', value: price.latestDate || '없음', unit: '' },
-      { label: '단가 인상', value: price.upCount, valueColor: price.upCount > 0 ? 'var(--negative)' : undefined },
-      { label: '단가 인하', value: price.downCount, valueColor: price.downCount > 0 ? 'var(--positive)' : undefined },
+      {
+        label: '단가 인상',
+        value: price.upCount,
+        valueColor: price.upCount > 0 ? 'var(--negative)' : undefined,
+      },
+      {
+        label: '단가 인하',
+        value: price.downCount,
+        valueColor: price.downCount > 0 ? 'var(--positive)' : undefined,
+      }
     );
   }
   if (shipment) {
     cards.push(
-      { label: '최신 출고월', value: `${shipment.year}.${String(shipment.month).padStart(2, '0')}`, unit: '' },
+      {
+        label: '최신 출고월',
+        value: `${shipment.year}.${String(shipment.month).padStart(2, '0')}`,
+        unit: '',
+      },
       { label: '관리 품목', value: shipment.managedCount },
-      { label: '출고 총액', value: formatNumber(shipment.totalAmount), unit: '원' },
+      { label: '출고 총액', value: formatNumber(shipment.totalAmount), unit: '원' }
     );
   }
 

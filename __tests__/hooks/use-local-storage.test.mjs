@@ -17,8 +17,10 @@ describe('normalizeLocalStorageValue', () => {
   });
 
   test('정규화 함수가 실패하면 fallback을 반환한다', () => {
-    expect(normalizeLocalStorageValue('bad', 'fallback', () => {
-      throw new Error('bad');
-    })).toBe('fallback');
+    expect(
+      normalizeLocalStorageValue('bad', 'fallback', () => {
+        throw new Error('bad');
+      })
+    ).toBe('fallback');
   });
 });

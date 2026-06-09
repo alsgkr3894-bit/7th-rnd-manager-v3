@@ -33,9 +33,7 @@ describe('calcNutritionFromComponents guards', () => {
   });
 
   test('요청 사이즈가 없으면 기존처럼 다른 양수 사용량으로 폴백한다', () => {
-    const nutritionMap = new Map([
-      ['code:A', { kcal: 100 }],
-    ]);
+    const nutritionMap = new Map([['code:A', { kcal: 100 }]]);
 
     const result = calcNutritionFromComponents(
       [{ productCode: 'A', quantities: { R: 50 } }],
@@ -54,6 +52,8 @@ describe('calcNutritionFromComponents guards', () => {
   test('배열이나 Map이 아닌 입력은 계산하지 않고 null로 처리한다', () => {
     expect(calcNutritionFromComponents(null, new Map())).toBeNull();
     expect(calcNutritionFromComponents([{ productCode: 'A', quantity: 10 }], {})).toBeNull();
-    expect(calcNutritionFromComponents(['bad', null], new Map([['code:A', { kcal: 1 }]]))).toBeNull();
+    expect(
+      calcNutritionFromComponents(['bad', null], new Map([['code:A', { kcal: 1 }]]))
+    ).toBeNull();
   });
 });

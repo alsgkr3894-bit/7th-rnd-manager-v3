@@ -47,13 +47,7 @@ describe('노트/샘플 store 읽기 가드', () => {
 
     const rows = await noteStore.getAllNotes();
 
-    expect(rows.map(row => row.id)).toEqual([
-      'new',
-      'date-object',
-      'old',
-      'timestamp',
-      'bad-date',
-    ]);
+    expect(rows.map(row => row.id)).toEqual(['new', 'date-object', 'old', 'timestamp', 'bad-date']);
   });
 
   test('노트 체인 조회는 깨진 행을 제외하고 자식 createdAt 오름차순을 유지한다', async () => {
@@ -82,12 +76,7 @@ describe('노트/샘플 store 읽기 가드', () => {
 
     const rows = await sampleStore.getAllSamples();
 
-    expect(rows.map(row => row.id)).toEqual([
-      'new',
-      'old',
-      'timestamp',
-      'bad-date',
-    ]);
+    expect(rows.map(row => row.id)).toEqual(['new', 'old', 'timestamp', 'bad-date']);
   });
 
   test('목록 조회 응답이 배열이 아니면 빈 목록으로 처리한다', async () => {
@@ -107,18 +96,24 @@ describe('노트/샘플 store 읽기 가드', () => {
   });
 
   test('샘플명 표시는 깨진 배열 항목과 구버전 menuName을 안전하게 정규화한다', () => {
-    expect(sampleStore.sampleNamesOf({
-      sampleNames: [' 콤비 ', null, 7, { name: 'bad' }, ''],
-      menuName: 'fallback',
-    })).toEqual(['콤비', '7']);
+    expect(
+      sampleStore.sampleNamesOf({
+        sampleNames: [' 콤비 ', null, 7, { name: 'bad' }, ''],
+        menuName: 'fallback',
+      })
+    ).toEqual(['콤비', '7']);
 
-    expect(sampleStore.sampleNamesOf({
-      sampleNames: [{ name: 'bad' }],
-      menuName: ' 구버전 메뉴 ',
-    })).toEqual(['구버전 메뉴']);
+    expect(
+      sampleStore.sampleNamesOf({
+        sampleNames: [{ name: 'bad' }],
+        menuName: ' 구버전 메뉴 ',
+      })
+    ).toEqual(['구버전 메뉴']);
 
-    expect(sampleStore.sampleNamesText({
-      sampleNames: [' A ', 3, undefined, 'B'],
-    })).toBe('A, 3, B');
+    expect(
+      sampleStore.sampleNamesText({
+        sampleNames: [' A ', 3, undefined, 'B'],
+      })
+    ).toBe('A, 3, B');
   });
 });

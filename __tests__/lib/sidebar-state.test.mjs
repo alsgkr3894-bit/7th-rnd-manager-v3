@@ -11,11 +11,13 @@ describe('normalizeSidebarOpenIds', () => {
   });
 
   test('알려진 그룹의 boolean 값만 보존한다', () => {
-    expect(normalizeSidebarOpenIds({
-      [knownGroupId]: true,
-      'unknown-group': true,
-      another: 'open',
-    })).toEqual({ [knownGroupId]: true });
+    expect(
+      normalizeSidebarOpenIds({
+        [knownGroupId]: true,
+        'unknown-group': true,
+        another: 'open',
+      })
+    ).toEqual({ [knownGroupId]: true });
   });
 
   test('닫힌 boolean 상태도 기존 저장 형식대로 보존한다', () => {

@@ -18,7 +18,9 @@ export function parseDraftRestoreValue(raw) {
 
 export function useDraftRestore(key, apply) {
   const applyRef = useRef(apply);
-  useEffect(() => { applyRef.current = apply; });
+  useEffect(() => {
+    applyRef.current = apply;
+  });
 
   useEffect(() => {
     try {

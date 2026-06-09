@@ -4,7 +4,14 @@ import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getAllIngredients } from '@/lib/ingredient';
-import { CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS, NOTE_BRANDS, getAllNotes } from '@/lib/note';
+import {
+  CATEGORIES,
+  NOTE_TYPES,
+  STATUSES,
+  STATUS_COLORS,
+  NOTE_BRANDS,
+  getAllNotes,
+} from '@/lib/note';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { TagInput } from '@/components/ui/TagInput';
 import { ComboBox } from '@/components/ui/ComboBox';
@@ -57,7 +64,11 @@ export function NoteFormBody({ form, setForm }) {
         const tagSet = new Set();
         const nameSet = new Set();
         notes.forEach(n => {
-          (n.tags || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => tagSet.add(t));
+          (n.tags || '')
+            .split(',')
+            .map(t => t.trim())
+            .filter(Boolean)
+            .forEach(t => tagSet.add(t));
           if (n.menuName?.trim()) nameSet.add(n.menuName.trim());
         });
         setAllTags([...tagSet]);
@@ -121,9 +132,12 @@ export function NoteFormBody({ form, setForm }) {
     };
   }, []);
 
-  useEffect(() => () => {
-    if (dropdownTimerRef.current) clearTimeout(dropdownTimerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (dropdownTimerRef.current) clearTimeout(dropdownTimerRef.current);
+    },
+    []
+  );
 
   function closeDropdownSoon() {
     if (dropdownTimerRef.current) clearTimeout(dropdownTimerRef.current);
@@ -218,7 +232,10 @@ export function NoteFormBody({ form, setForm }) {
             >
               <ComboBox
                 value={form.menuName}
-                onChange={v => { updateField('menuName', v); markTouched('menuName'); }}
+                onChange={v => {
+                  updateField('menuName', v);
+                  markTouched('menuName');
+                }}
                 options={menuNames}
                 placeholder={
                   form.noteType === '샘플' ? '예) 와규 패티 / 빅맥형 신메뉴' : '예) 횡성한우쉬림프'

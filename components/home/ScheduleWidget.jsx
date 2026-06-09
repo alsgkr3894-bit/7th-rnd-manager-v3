@@ -52,17 +52,25 @@ export function ScheduleWidget({ data, router }) {
             const sub = asDisplayText(ev.sub);
             const type = asDisplayText(ev.type);
             return (
-            <button key={ev.id ?? index} className="sched-row" onClick={goCalendar}>
-              <div className="sched-date">
-                <div className="sd-d">{asDisplayText(ev.num)}</div>
-                <div className="sd-w">{asDisplayText(ev.dow)}</div>
-              </div>
-              <div className="sched-main">
-                <span className="sched-title">{title}</span>
-                {sub && <span className="sched-sub">{sub}</span>}
-              </div>
-              <span className="tagchip" style={{ background: asDisplayText(color.bg) || undefined, color: asDisplayText(color.text) || undefined }}>{type}</span>
-            </button>
+              <button key={ev.id ?? index} className="sched-row" onClick={goCalendar}>
+                <div className="sched-date">
+                  <div className="sd-d">{asDisplayText(ev.num)}</div>
+                  <div className="sd-w">{asDisplayText(ev.dow)}</div>
+                </div>
+                <div className="sched-main">
+                  <span className="sched-title">{title}</span>
+                  {sub && <span className="sched-sub">{sub}</span>}
+                </div>
+                <span
+                  className="tagchip"
+                  style={{
+                    background: asDisplayText(color.bg) || undefined,
+                    color: asDisplayText(color.text) || undefined,
+                  }}
+                >
+                  {type}
+                </span>
+              </button>
             );
           })}
         </div>

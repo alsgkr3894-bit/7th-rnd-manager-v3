@@ -294,14 +294,17 @@ export default function Page() {
     return list;
   }, [rows, taxFilter, deltaFilter, search]);
 
-  const priceSortOptions = useMemo(() => [
-    { id: 'name', label: '제품명', key: r => r.masterName || r.productName },
-    { id: 'code', label: '제품코드', key: r => r.productCode },
-    { id: 'category', label: '분류', key: r => r.category },
-    { id: 'price', label: '단가', key: r => r.priceWithTax ?? -1 },
-    { id: 'unit', label: '개당 단가', key: r => r.unitPrice ?? -1 },
-    { id: 'delta', label: '변동', key: r => r.priceDelta ?? 0 },
-  ], []);
+  const priceSortOptions = useMemo(
+    () => [
+      { id: 'name', label: '제품명', key: r => r.masterName || r.productName },
+      { id: 'code', label: '제품코드', key: r => r.productCode },
+      { id: 'category', label: '분류', key: r => r.category },
+      { id: 'price', label: '단가', key: r => r.priceWithTax ?? -1 },
+      { id: 'unit', label: '개당 단가', key: r => r.unitPrice ?? -1 },
+      { id: 'delta', label: '변동', key: r => r.priceDelta ?? 0 },
+    ],
+    []
+  );
 
   const priceTable = useCostManageTable(filtered, {
     sortOptions: priceSortOptions,
@@ -312,7 +315,11 @@ export default function Page() {
   async function handleInlineSave(row, patch) {
     try {
       if (!row.meta) throw new Error('마스터 항목을 찾을 수 없습니다');
-      await upsertIngredientMeta({ ...row.meta, productCode: row.productCode || row.meta.productCode, ...patch });
+      await upsertIngredientMeta({
+        ...row.meta,
+        productCode: row.productCode || row.meta.productCode,
+        ...patch,
+      });
       showToast('저장 완료', 'ok');
       await load();
     } catch (err) {
@@ -358,18 +365,41 @@ export default function Page() {
         title="식자재 단가 마스터"
         sub="제때 최신 단가 기준 — 마스터에 등록된 항목은 포장단위·개당 단가가 자동 계산돼요."
         actions={
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', minWidth: 0, width: '100%', maxWidth: '100%', flex: '1 1 100%' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              flexWrap: 'wrap',
+              minWidth: 0,
+              width: '100%',
+              maxWidth: '100%',
+              flex: '1 1 100%',
+            }}
+          >
             {resetConfirm ? (
               <>
-                <button className="btn" onClick={() => setResetConfirm(false)} disabled={resetting}>취소</button>
-                <button className="btn" onClick={() => { setResetConfirm(false); handleReset(); }} disabled={resetting}
-                  style={{ color: 'var(--negative)', fontWeight: 700 }}>
+                <button className="btn" onClick={() => setResetConfirm(false)} disabled={resetting}>
+                  취소
+                </button>
+                <button
+                  className="btn"
+                  onClick={() => {
+                    setResetConfirm(false);
+                    handleReset();
+                  }}
+                  disabled={resetting}
+                  style={{ color: 'var(--negative)', fontWeight: 700 }}
+                >
                   {resetting ? '초기화 중…' : '정말 초기화'}
                 </button>
               </>
             ) : (
-              <button className="btn" onClick={() => setResetConfirm(true)} disabled={resetting || importing}
-                style={{ color: 'var(--negative)' }}>
+              <button
+                className="btn"
+                onClick={() => setResetConfirm(true)}
+                disabled={resetting || importing}
+                style={{ color: 'var(--negative)' }}
+              >
                 마스터 초기화
               </button>
             )}
@@ -642,14 +672,49 @@ export default function Page() {
                           style={{ width: 15, height: 15, accentColor: 'var(--accent)' }}
                         />
                       </th>
-                      <SortableHeader label="제품코드" id="code" sort={priceTable.sort} onSort={priceTable.changeSort} style={{ width: 90 }} />
-                      <SortableHeader label="제품명" id="name" sort={priceTable.sort} onSort={priceTable.changeSort} />
-                      <SortableHeader label="분류" id="category" sort={priceTable.sort} onSort={priceTable.changeSort} style={{ width: 96 }} />
-                      <SortableHeader label="부가세포함가" id="price" sort={priceTable.sort} onSort={priceTable.changeSort} style={{ width: 120, textAlign: 'right' }} />
+                      <SortableHeader
+                        label="제품코드"
+                        id="code"
+                        sort={priceTable.sort}
+                        onSort={priceTable.changeSort}
+                        style={{ width: 90 }}
+                      />
+                      <SortableHeader
+                        label="제품명"
+                        id="name"
+                        sort={priceTable.sort}
+                        onSort={priceTable.changeSort}
+                      />
+                      <SortableHeader
+                        label="분류"
+                        id="category"
+                        sort={priceTable.sort}
+                        onSort={priceTable.changeSort}
+                        style={{ width: 96 }}
+                      />
+                      <SortableHeader
+                        label="부가세포함가"
+                        id="price"
+                        sort={priceTable.sort}
+                        onSort={priceTable.changeSort}
+                        style={{ width: 120, textAlign: 'right' }}
+                      />
                       <th style={{ width: 92 }}>출처</th>
                       <th style={{ width: 100 }}>포장단위</th>
-                      <SortableHeader label="개당 단가" id="unit" sort={priceTable.sort} onSort={priceTable.changeSort} style={{ width: 120, textAlign: 'right' }} />
-                      <SortableHeader label="단가변동" id="delta" sort={priceTable.sort} onSort={priceTable.changeSort} style={{ width: 110, textAlign: 'right' }} />
+                      <SortableHeader
+                        label="개당 단가"
+                        id="unit"
+                        sort={priceTable.sort}
+                        onSort={priceTable.changeSort}
+                        style={{ width: 120, textAlign: 'right' }}
+                      />
+                      <SortableHeader
+                        label="단가변동"
+                        id="delta"
+                        sort={priceTable.sort}
+                        onSort={priceTable.changeSort}
+                        style={{ width: 110, textAlign: 'right' }}
+                      />
                       <th style={{ width: 30 }}></th>
                       <th style={{ width: 60 }}></th>
                     </tr>
@@ -677,7 +742,13 @@ export default function Page() {
                 borderTop: '1px solid var(--divider)',
               }}
             >
-              <Pagination page={priceTable.page} totalPages={priceTable.totalPages} onPage={priceTable.goTo} total={priceTable.total} pageSize={priceTable.pageSize} />
+              <Pagination
+                page={priceTable.page}
+                totalPages={priceTable.totalPages}
+                onPage={priceTable.goTo}
+                total={priceTable.total}
+                pageSize={priceTable.pageSize}
+              />
               {priceTable.totalPages <= 1 && (
                 <div style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text-3)' }}>
                   {filtered.length}개 표시 / 전체 {rows.length}개

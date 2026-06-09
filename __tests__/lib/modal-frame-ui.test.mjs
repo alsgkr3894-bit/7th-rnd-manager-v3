@@ -18,12 +18,14 @@ describe('modal frame ui helpers', () => {
   });
 
   test('잘못된 모달 스타일 입력은 항목별 기본값으로 복구한다', () => {
-    expect(normalizeModalFrameStyle({
-      width: ['bad'],
-      zIndex: 300,
-      padding: null,
-      maxHeight: '80vh',
-    })).toEqual({
+    expect(
+      normalizeModalFrameStyle({
+        width: ['bad'],
+        zIndex: 300,
+        padding: null,
+        maxHeight: '80vh',
+      })
+    ).toEqual({
       width: DEFAULT_MODAL_FRAME_STYLE.width,
       zIndex: 300,
       padding: DEFAULT_MODAL_FRAME_STYLE.padding,

@@ -117,7 +117,7 @@ describe('isDoughCategory', () => {
     expect(isDoughCategory('토핑재료')).toBe(false);
   });
 
-  test("빈 문자열 → false", () => {
+  test('빈 문자열 → false', () => {
     expect(isDoughCategory('')).toBe(false);
   });
 

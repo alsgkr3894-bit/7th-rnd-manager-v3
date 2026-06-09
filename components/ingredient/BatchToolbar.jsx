@@ -24,7 +24,9 @@ export function IngredientBatchToolbar({ selected, onDelete, onExit }) {
       >
         선택 삭제 {selectedCount > 0 && `(${selectedCount})`}
       </button>
-      <button className="btn" onClick={handleExit}>취소</button>
+      <button className="btn" onClick={handleExit}>
+        취소
+      </button>
     </>
   );
 }

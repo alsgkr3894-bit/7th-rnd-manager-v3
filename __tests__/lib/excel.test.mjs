@@ -81,12 +81,19 @@ describe('readSpreadsheetFile', () => {
 
 describe('detectHeaderRow', () => {
   test('첫 행이 헤더인 경우 → 0 반환', () => {
-    const rows = [['name', 'price', 'qty'], ['a', '1', '2']];
+    const rows = [
+      ['name', 'price', 'qty'],
+      ['a', '1', '2'],
+    ];
     expect(detectHeaderRow(rows)).toBe(0);
   });
 
   test('비어있는 첫 행이 있으면 건너뜀', () => {
-    const rows = [['', ''], ['name', 'price', 'qty'], ['a', '1', '2']];
+    const rows = [
+      ['', ''],
+      ['name', 'price', 'qty'],
+      ['a', '1', '2'],
+    ];
     expect(detectHeaderRow(rows)).toBe(1);
   });
 
@@ -100,7 +107,10 @@ describe('detectHeaderRow', () => {
   });
 
   test('비어있지 않은 셀이 3개 미만인 행은 건너뜀', () => {
-    const rows = [['a', 'b'], ['c', 'd', 'e', 'f']];
+    const rows = [
+      ['a', 'b'],
+      ['c', 'd', 'e', 'f'],
+    ];
     expect(detectHeaderRow(rows)).toBe(1);
   });
 });

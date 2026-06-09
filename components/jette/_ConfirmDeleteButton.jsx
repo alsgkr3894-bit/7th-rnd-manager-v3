@@ -18,19 +18,25 @@ export function ConfirmDeleteButton({ onDelete }) {
       return;
     }
     setBusy(true);
-    try { await onDelete(); }
-    finally { setBusy(false); setConfirming(false); }
+    try {
+      await onDelete();
+    } finally {
+      setBusy(false);
+      setConfirming(false);
+    }
   }
 
   if (confirming) {
     return (
-      <span style={{display:'inline-flex', gap:6}}>
-        <button className="btn sm" disabled={busy} onClick={() => setConfirming(false)}>취소</button>
+      <span style={{ display: 'inline-flex', gap: 6 }}>
+        <button className="btn sm" disabled={busy} onClick={() => setConfirming(false)}>
+          취소
+        </button>
         <button
           className="btn sm"
           disabled={busy || !canDelete}
           onClick={handleConfirm}
-          style={{background:'var(--negative)', color:'#fff', borderColor:'var(--negative)'}}
+          style={{ background: 'var(--negative)', color: '#fff', borderColor: 'var(--negative)' }}
         >
           {busy ? '삭제 중...' : '삭제 확인'}
         </button>
@@ -39,7 +45,11 @@ export function ConfirmDeleteButton({ onDelete }) {
   }
 
   return (
-    <button className="btn sm" style={{color:'var(--negative)'}} onClick={() => setConfirming(true)}>
+    <button
+      className="btn sm"
+      style={{ color: 'var(--negative)' }}
+      onClick={() => setConfirming(true)}
+    >
       삭제
     </button>
   );

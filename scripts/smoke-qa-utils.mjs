@@ -1,4 +1,5 @@
-const FAILED_RESOURCE_404 = /^Failed to load resource: the server responded with a status of 404 \(Not Found\)$/;
+const FAILED_RESOURCE_404 =
+  /^Failed to load resource: the server responded with a status of 404 \(Not Found\)$/;
 
 export function resourcePathOf(url) {
   try {
@@ -32,13 +33,15 @@ export function splitConsoleErrors(errors, { ignorableNextStatic404Count = 0 } =
 }
 
 export function isSmokePass(row) {
-  return !row.fatal
-    && row.h1
-    && row.main
-    && !row.overflow
-    && !row.loading
-    && !row.errText
-    && row.errs === 0;
+  return (
+    !row.fatal &&
+    row.h1 &&
+    row.main &&
+    !row.overflow &&
+    !row.loading &&
+    !row.errText &&
+    row.errs === 0
+  );
 }
 
 export const cell = value => (value ? 'Y' : '·');

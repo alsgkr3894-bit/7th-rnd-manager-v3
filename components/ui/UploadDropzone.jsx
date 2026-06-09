@@ -33,12 +33,12 @@ export function UploadDropzone({
   const inputRef = useRef(null);
   const safeAccept = Array.isArray(accept) ? asStringArray(accept) : DEFAULT_ACCEPT;
   const acceptedExts = safeAccept.map(ext => ext.trim().toLowerCase()).filter(Boolean);
-  const maxSize = Number.isFinite(Number(maxSizeMB)) && Number(maxSizeMB) > 0 ? Number(maxSizeMB) : 20;
+  const maxSize =
+    Number.isFinite(Number(maxSizeMB)) && Number(maxSizeMB) > 0 ? Number(maxSizeMB) : 20;
   const safeTitle = asDisplayText(title, '파일을 끌어다 놓으세요');
   const safeBusyText = asDisplayText(busyText, '처리 중...');
-  const safeSubText = subText == null
-    ? `또는 클릭해서 파일 선택 · 최대 ${maxSize}MB`
-    : asDisplayText(subText);
+  const safeSubText =
+    subText == null ? `또는 클릭해서 파일 선택 · 최대 ${maxSize}MB` : asDisplayText(subText);
   const safeRules = asObjectArray(rules);
   const handleFile = typeof onFile === 'function' ? onFile : () => {};
 
@@ -61,7 +61,11 @@ export function UploadDropzone({
   return (
     <div
       className={'card dropzone ' + (drag ? 'drag' : '') + (disabled ? ' disabled' : '')}
-      onDragOver={e => { if (disabled) return; e.preventDefault(); setDrag(true); }}
+      onDragOver={e => {
+        if (disabled) return;
+        e.preventDefault();
+        setDrag(true);
+      }}
       onDragLeave={() => setDrag(false)}
       onDrop={e => {
         if (disabled) return;
@@ -69,7 +73,10 @@ export function UploadDropzone({
         setDrag(false);
         pickFile(e.dataTransfer.files?.[0]);
       }}
-      onClick={() => { if (disabled) return; inputRef.current?.click(); }}
+      onClick={() => {
+        if (disabled) return;
+        inputRef.current?.click();
+      }}
       style={{ cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}
     >
       <input
@@ -83,17 +90,14 @@ export function UploadDropzone({
         }}
       />
       <div className="dropzone-ico">
-        {disabled && showSpinner
-          ? <div className="report-loading-spinner" style={{width:32,height:32}}/>
-          : <Icon.upload style={{width:32, height:32}}/>
-        }
+        {disabled && showSpinner ? (
+          <div className="report-loading-spinner" style={{ width: 32, height: 32 }} />
+        ) : (
+          <Icon.upload style={{ width: 32, height: 32 }} />
+        )}
       </div>
-      <div className="dropzone-title">
-        {disabled ? safeBusyText : safeTitle}
-      </div>
-      <div className="dropzone-sub">
-        {safeSubText}
-      </div>
+      <div className="dropzone-title">{disabled ? safeBusyText : safeTitle}</div>
+      <div className="dropzone-sub">{safeSubText}</div>
       {safeRules.length > 0 && (
         <div className="dropzone-rules">
           {safeRules.map((r, i) => {
@@ -101,11 +105,15 @@ export function UploadDropzone({
             const text = asDisplayText(r.text);
 
             return (
-            <div key={i} className="rule-item">
-              {type === 'ok'   && <Icon.check style={{width:14, height:14, color:'var(--positive)'}}/>}
-              {type === 'warn' && <Icon.alert style={{width:14, height:14, color:'var(--warn)'}}/>}
-              <span>{text}</span>
-            </div>
+              <div key={i} className="rule-item">
+                {type === 'ok' && (
+                  <Icon.check style={{ width: 14, height: 14, color: 'var(--positive)' }} />
+                )}
+                {type === 'warn' && (
+                  <Icon.alert style={{ width: 14, height: 14, color: 'var(--warn)' }} />
+                )}
+                <span>{text}</span>
+              </div>
             );
           })}
         </div>

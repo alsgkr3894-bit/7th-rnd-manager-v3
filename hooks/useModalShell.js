@@ -48,8 +48,11 @@ export function useModalShell(onClose, { closeMs = CLOSE_MS, autoFocus = true } 
 
   // Esc 닫기
   useEffect(() => {
-    const handler = (e) => {
-      if (e.key === 'Escape') { e.stopPropagation(); close(); }
+    const handler = e => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        close();
+      }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
@@ -63,21 +66,27 @@ export function useModalShell(onClose, { closeMs = CLOSE_MS, autoFocus = true } 
 
     const getFocusable = () =>
       Array.from(el.querySelectorAll(FOCUSABLE)).filter(
-        (node) => !node.disabled && node.offsetParent !== null,
+        node => !node.disabled && node.offsetParent !== null
       );
 
     if (autoFocus) getFocusable()[0]?.focus();
 
-    const handle = (e) => {
+    const handle = e => {
       if (e.key !== 'Tab') return;
       const nodes = getFocusable();
       if (!nodes.length) return;
       const first = nodes[0];
       const last = nodes[nodes.length - 1];
       if (e.shiftKey) {
-        if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        }
       } else {
-        if (document.activeElement === last) { e.preventDefault(); first?.focus(); }
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
       }
     };
 

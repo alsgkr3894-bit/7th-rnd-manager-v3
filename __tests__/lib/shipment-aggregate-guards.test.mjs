@@ -12,7 +12,13 @@ describe('shipment aggregate guards', () => {
       null,
       'bad',
       { productCode: 'A', productName: '치즈', quantity: '2', amount: '3000' },
-      { productCode: 'B', productName: '소스', quantity: 1, amount: 1000, matchStatus: 'unmatched' },
+      {
+        productCode: 'B',
+        productName: '소스',
+        quantity: 1,
+        amount: 1000,
+        matchStatus: 'unmatched',
+      },
     ]);
 
     expect(result).toHaveLength(1);

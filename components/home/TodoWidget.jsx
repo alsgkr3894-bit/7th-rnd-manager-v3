@@ -21,27 +21,35 @@ function normalizeDoneIds(value) {
  * @param {{ todos: Array, router }} props
  */
 export function TodoWidget({ todos = [], router }) {
-  const [doneIds, setDoneIds] = useState(() => new Set(normalizeDoneIds(getJSONLS(KEYS.HOME_TODO_DONE))));
+  const [doneIds, setDoneIds] = useState(
+    () => new Set(normalizeDoneIds(getJSONLS(KEYS.HOME_TODO_DONE)))
+  );
   const [leavingId, setLeavingId] = useState(null);
   const [filter, setFilter] = useState('all');
   const leaveTimerRef = useRef(null);
   const safeTodos = useMemo(() => asObjectArray(todos), [todos]);
 
-  const persist = useCallback((set) => {
+  const persist = useCallback(set => {
     setDoneIds(new Set(set));
     setJSONLS(KEYS.HOME_TODO_DONE, Array.from(set));
   }, []);
 
-  useEffect(() => () => {
-    if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+    },
+    []
+  );
 
   const pending = useMemo(() => safeTodos.filter(t => !doneIds.has(t.id)), [safeTodos, doneIds]);
-  const counts = useMemo(() => ({
-    all: pending.length,
-    report: pending.filter(t => t.f === 'report').length,
-    due: pending.filter(t => t.f === 'due').length,
-  }), [pending]);
+  const counts = useMemo(
+    () => ({
+      all: pending.length,
+      report: pending.filter(t => t.f === 'report').length,
+      due: pending.filter(t => t.f === 'due').length,
+    }),
+    [pending]
+  );
 
   const shown = filter === 'all' ? pending : pending.filter(t => t.f === filter);
 
@@ -49,12 +57,17 @@ export function TodoWidget({ todos = [], router }) {
     setLeavingId(todo.id);
     if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
     leaveTimerRef.current = setTimeout(() => {
-      const next = new Set(doneIds); next.add(todo.id);
+      const next = new Set(doneIds);
+      next.add(todo.id);
       persist(next);
       setLeavingId(null);
       showToast('완료 처리했어요', 'info', 4200, {
         label: '실행취소',
-        onClick: () => { const back = new Set(doneIds); back.delete(todo.id); persist(back); },
+        onClick: () => {
+          const back = new Set(doneIds);
+          back.delete(todo.id);
+          persist(back);
+        },
       });
       leaveTimerRef.current = null;
     }, LEAVE_MS);
@@ -86,11 +99,21 @@ export function TodoWidget({ todos = [], router }) {
             const sub = asDisplayText(t.sub);
             const tag = TAG_LABEL[t.tag] ? t.tag : '';
             return (
-              <button key={t.id ?? index} className={`todo${leavingId === t.id ? ' leaving' : ''}`}
-                onClick={() => href && router?.push?.(href)}>
-                <span className="check"
-                  role="checkbox" aria-checked="false" aria-label="완료 처리"
-                  onClick={(e) => { e.stopPropagation(); complete(t); }}>
+              <button
+                key={t.id ?? index}
+                className={`todo${leavingId === t.id ? ' leaving' : ''}`}
+                onClick={() => href && router?.push?.(href)}
+              >
+                <span
+                  className="check"
+                  role="checkbox"
+                  aria-checked="false"
+                  aria-label="완료 처리"
+                  onClick={e => {
+                    e.stopPropagation();
+                    complete(t);
+                  }}
+                >
                   <Icon.check />
                 </span>
                 <span className="tmain">

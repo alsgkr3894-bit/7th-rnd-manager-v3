@@ -14,7 +14,11 @@ const dbMock = {
   getAll: jest.fn(async () => [..._store]),
   put: jest.fn(async (_storeName, record) => {
     const idx = _store.findIndex(r => r.id === record.id);
-    if (idx >= 0) { _store[idx] = record; } else { _store.push(record); }
+    if (idx >= 0) {
+      _store[idx] = record;
+    } else {
+      _store.push(record);
+    }
     return record.id;
   }),
   deleteById: jest.fn(async (_storeName, id) => {
@@ -30,12 +34,18 @@ const dbMock = {
         _store.push(saved);
         const req = { result: id, onsuccess: null };
         // onsuccess 를 동기적으로 호출
-        Promise.resolve().then(() => { if (req.onsuccess) req.onsuccess(); });
+        Promise.resolve().then(() => {
+          if (req.onsuccess) req.onsuccess();
+        });
         return req;
       },
       put(record) {
         const idx = _store.findIndex(r => r.id === record.id);
-        if (idx >= 0) { _store[idx] = record; } else { _store.push(record); }
+        if (idx >= 0) {
+          _store[idx] = record;
+        } else {
+          _store.push(record);
+        }
         return { result: record.id };
       },
     };
@@ -90,7 +100,12 @@ describe('getAllSuppliers', () => {
 
 describe('addSupplier', () => {
   test('새 레코드 추가 후 id 반환', async () => {
-    const id = await addSupplier({ name: '대림수산', contact: '홍길동', phone: '010-1234-5678', memo: '테스트' });
+    const id = await addSupplier({
+      name: '대림수산',
+      contact: '홍길동',
+      phone: '010-1234-5678',
+      memo: '테스트',
+    });
     expect(typeof id).toBe('number');
     expect(_store).toHaveLength(1);
     expect(_store[0].name).toBe('대림수산');
@@ -123,19 +138,41 @@ describe('addSupplier', () => {
 
 describe('updateSupplier', () => {
   test('기존 레코드 수정', async () => {
-    _store = [{ id: 1, name: '구공급사', contact: null, phone: null, memo: null, createdAt: '2025-01-01T00:00:00.000Z', updatedAt: '2025-01-01T00:00:00.000Z' }];
+    _store = [
+      {
+        id: 1,
+        name: '구공급사',
+        contact: null,
+        phone: null,
+        memo: null,
+        createdAt: '2025-01-01T00:00:00.000Z',
+        updatedAt: '2025-01-01T00:00:00.000Z',
+      },
+    ];
     await updateSupplier(1, { name: '신공급사', contact: '김철수' });
     expect(_store[0].name).toBe('신공급사');
     expect(_store[0].contact).toBe('김철수');
   });
 
   test('존재하지 않는 id이면 에러 throw', async () => {
-    await expect(updateSupplier(999, { name: '없는업체' })).rejects.toThrow('공급업체를 찾을 수 없습니다');
+    await expect(updateSupplier(999, { name: '없는업체' })).rejects.toThrow(
+      '공급업체를 찾을 수 없습니다'
+    );
   });
 
   test('updatedAt이 갱신됨', async () => {
     const oldDate = '2020-01-01T00:00:00.000Z';
-    _store = [{ id: 1, name: '테스트', contact: null, phone: null, memo: null, createdAt: oldDate, updatedAt: oldDate }];
+    _store = [
+      {
+        id: 1,
+        name: '테스트',
+        contact: null,
+        phone: null,
+        memo: null,
+        createdAt: oldDate,
+        updatedAt: oldDate,
+      },
+    ];
     await updateSupplier(1, { name: '수정됨' });
     expect(_store[0].updatedAt).not.toBe(oldDate);
   });

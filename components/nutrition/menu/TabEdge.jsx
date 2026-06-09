@@ -15,8 +15,8 @@ export function TabEdge({ edges, edgeMap, onRefresh }) {
   const safeEdgeMap = asRecord(edgeMap);
   const refresh = typeof onRefresh === 'function' ? onRefresh : noop;
   const [selCode, setSelCode] = useState(EDGE_CODES[0]);
-  const [form,    setForm]    = useState({});
-  const [saving,  setSaving]  = useState(false);
+  const [form, setForm] = useState({});
+  const [saving, setSaving] = useState(false);
 
   const existing = safeEdgeMap[selCode];
 
@@ -38,7 +38,9 @@ export function TabEdge({ edges, edgeMap, onRefresh }) {
       });
       showToast('저장 완료', 'ok');
       refresh();
-    } catch { showToast('저장 실패', 'error'); }
+    } catch {
+      showToast('저장 실패', 'error');
+    }
     setSaving(false);
   };
 
@@ -46,7 +48,8 @@ export function TabEdge({ edges, edgeMap, onRefresh }) {
     <div style={{ marginTop: 20 }}>
       <div className="card" style={{ padding: '14px 20px', marginBottom: 16 }}>
         <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
-          엣지 영양성분은 <strong>석쇠 베이스값에 추가되는 delta 값</strong>입니다.<br />
+          엣지 영양성분은 <strong>석쇠 베이스값에 추가되는 delta 값</strong>입니다.
+          <br />
           치즈크러스트L = 석쇠L + 치즈크러스트L 추가값 / 골드스윗R = 석쇠R + 골드스윗R 추가값
         </div>
       </div>
@@ -55,17 +58,36 @@ export function TabEdge({ edges, edgeMap, onRefresh }) {
         {EDGE_CODES.map(code => {
           const done = !!safeEdgeMap[code]?.kcal;
           return (
-            <button key={code} onClick={() => setSelCode(code)}
+            <button
+              key={code}
+              onClick={() => setSelCode(code)}
               style={{
-                padding: '7px 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer', border: '1.5px solid',
+                padding: '7px 16px',
+                borderRadius: 8,
+                fontSize: 13,
+                cursor: 'pointer',
+                border: '1.5px solid',
                 borderColor: selCode === code ? 'var(--accent)' : 'var(--border)',
                 background: selCode === code ? 'var(--accent-soft)' : 'var(--surface)',
                 color: selCode === code ? 'var(--accent-text)' : 'var(--text-2)',
                 fontWeight: selCode === code ? 700 : 400,
-                display: 'flex', alignItems: 'center', gap: 5,
-              }}>
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+              }}
+            >
               {EDGE_NAMES[code]}
-              {done && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />}
+              {done && (
+                <span
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: 'var(--accent)',
+                    display: 'inline-block',
+                  }}
+                />
+              )}
             </button>
           );
         })}
@@ -73,7 +95,9 @@ export function TabEdge({ edges, edgeMap, onRefresh }) {
 
       <div className="card" style={{ padding: 20 }}>
         <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{EDGE_NAMES[selCode]}</div>
-        <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 16 }}>베이스 대비 추가 영양성분 값 (delta)</div>
+        <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 16 }}>
+          베이스 대비 추가 영양성분 값 (delta)
+        </div>
         <NutritionGrid values={form} onChange={setField} />
         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
           <button className="btn primary" onClick={handleSave} disabled={saving}>

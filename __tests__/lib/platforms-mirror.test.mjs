@@ -14,14 +14,17 @@ const KEYS = { COST_PLATFORMS: 'v3:cost-platforms' };
 
 // @/lib/db stubs (mutable per-test)
 let _hasStore = true;
-let _dbRecord  = null;
-const putCalls  = [];
+let _dbRecord = null;
+const putCalls = [];
 
 const dbStub = {
   hasStore: async () => _hasStore,
-  getById:  async (store, id) => (store === 'cost_platform_fees' && id === 'config' ? _dbRecord : null),
-  put:      async (store, record) => { putCalls.push({ store, record }); },
-  initDB:   async () => {},
+  getById: async (store, id) =>
+    store === 'cost_platform_fees' && id === 'config' ? _dbRecord : null,
+  put: async (store, record) => {
+    putCalls.push({ store, record });
+  },
+  initDB: async () => {},
 };
 
 // Inject mocks before importing the module under test
@@ -31,22 +34,30 @@ jest.unstable_mockModule('@/lib/db', () => dbStub);
 // localStorage stub
 const _ls = {};
 const localStorageStub = {
-  getItem:    (k) => (k in _ls ? _ls[k] : null),
-  setItem:    (k, v) => { _ls[k] = v; },
-  removeItem: (k) => { delete _ls[k]; },
+  getItem: k => (k in _ls ? _ls[k] : null),
+  setItem: (k, v) => {
+    _ls[k] = v;
+  },
+  removeItem: k => {
+    delete _ls[k];
+  },
 };
 
 // Node 환경에는 localStorage / indexedDB がないので globally stub する
 globalThis.localStorage = localStorageStub;
-globalThis.indexedDB    = {}; // 존재만 확인
+globalThis.indexedDB = {}; // 존재만 확인
 
 // ── dynamic import (mocks must be registered first) ─────────────────────────
 const { loadPlatforms, savePlatforms, hydratePlatformsFromDB, DEFAULT_PLATFORMS } =
   await import('../../lib/cost/margin/platforms.js');
 
 // ── helpers ──────────────────────────────────────────────────────────────────
-function resetLS()     { for (const k of Object.keys(_ls)) delete _ls[k]; }
-function resetPutLog() { putCalls.length = 0; }
+function resetLS() {
+  for (const k of Object.keys(_ls)) delete _ls[k];
+}
+function resetPutLog() {
+  putCalls.length = 0;
+}
 
 // ── loadPlatforms ─────────────────────────────────────────────────────────────
 describe('loadPlatforms()', () => {
@@ -94,7 +105,11 @@ describe('loadPlatforms()', () => {
 
 // ── savePlatforms ─────────────────────────────────────────────────────────────
 describe('savePlatforms()', () => {
-  beforeEach(() => { resetLS(); resetPutLog(); _hasStore = true; });
+  beforeEach(() => {
+    resetLS();
+    resetPutLog();
+    _hasStore = true;
+  });
 
   test('localStorage에 즉시 동기 기록', () => {
     const data = [{ id: 'x', name: 'X', fees: [] }];
@@ -125,7 +140,11 @@ describe('savePlatforms()', () => {
 
 // ── hydratePlatformsFromDB ────────────────────────────────────────────────────
 describe('hydratePlatformsFromDB()', () => {
-  beforeEach(() => { resetLS(); _hasStore = true; _dbRecord = null; });
+  beforeEach(() => {
+    resetLS();
+    _hasStore = true;
+    _dbRecord = null;
+  });
 
   test('localStorage 비어있고 DB 레코드 있으면 localStorage 복원', async () => {
     const data = [{ id: 'visit', name: '방문', fees: [] }];
@@ -135,7 +154,11 @@ describe('hydratePlatformsFromDB()', () => {
   });
 
   test('DB 레코드의 플랫폼 값이 깨져 있으면 localStorage에 쓰지 않음', async () => {
-    _dbRecord = { id: 'config', platforms: { id: 'broken' }, updatedAt: '2026-01-01T00:00:00.000Z' };
+    _dbRecord = {
+      id: 'config',
+      platforms: { id: 'broken' },
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
     await hydratePlatformsFromDB();
     expect(_ls[KEYS.COST_PLATFORMS]).toBeUndefined();
   });
@@ -165,7 +188,9 @@ describe('hydratePlatformsFromDB()', () => {
   test('오류 발생해도 예외를 throw하지 않음', async () => {
     // hasStore가 throw하도록 임시 override
     const orig = dbStub.hasStore;
-    dbStub.hasStore = async () => { throw new Error('DB error'); };
+    dbStub.hasStore = async () => {
+      throw new Error('DB error');
+    };
     await expect(hydratePlatformsFromDB()).resolves.toBeUndefined();
     dbStub.hasStore = orig;
   });

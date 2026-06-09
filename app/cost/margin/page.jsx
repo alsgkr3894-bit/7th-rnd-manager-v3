@@ -554,10 +554,23 @@ export default function Page() {
   if (loading)
     return (
       <main className="main page-enter">
-        <PageHeader breadcrumb={['원가계산', '원가마진표']} title="메뉴 원가마진표" sub="로딩 중…" />
+        <PageHeader
+          breadcrumb={['원가계산', '원가마진표']}
+          title="메뉴 원가마진표"
+          sub="로딩 중…"
+        />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 20 }}>
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} style={{ height: 44, borderRadius: 8, background: 'var(--surface-2)', animation: 'pulse 1.5s ease-in-out infinite', animationDelay: `${i * 60}ms` }} />
+            <div
+              key={i}
+              style={{
+                height: 44,
+                borderRadius: 8,
+                background: 'var(--surface-2)',
+                animation: 'pulse 1.5s ease-in-out infinite',
+                animationDelay: `${i * 60}ms`,
+              }}
+            />
           ))}
         </div>
       </main>
@@ -809,24 +822,34 @@ export default function Page() {
               <tbody>
                 {sortedFiltered.length === 0 ? (
                   <tr>
-                    <td colSpan={99} style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+                    <td
+                      colSpan={99}
+                      style={{
+                        padding: '32px 0',
+                        textAlign: 'center',
+                        color: 'var(--text-3)',
+                        fontSize: 13,
+                      }}
+                    >
                       조건에 맞는 메뉴가 없습니다
                     </td>
                   </tr>
-                ) : sortedFiltered.map(r => (
-                  <MarginRow
-                    key={r.id}
-                    r={r}
-                    sizeLabels={sizeLabels}
-                    activePlatform={activePlatform}
-                    discount={discount}
-                    hasAdjustment={hasAdjustment}
-                    viewMode={viewMode}
-                    warnPct={warnPct}
-                    critPct={critPct}
-                    onToggleHide={handleToggleHide}
-                  />
-                ))}
+                ) : (
+                  sortedFiltered.map(r => (
+                    <MarginRow
+                      key={r.id}
+                      r={r}
+                      sizeLabels={sizeLabels}
+                      activePlatform={activePlatform}
+                      discount={discount}
+                      hasAdjustment={hasAdjustment}
+                      viewMode={viewMode}
+                      warnPct={warnPct}
+                      critPct={critPct}
+                      onToggleHide={handleToggleHide}
+                    />
+                  ))
+                )}
               </tbody>
             </table>
           </div>

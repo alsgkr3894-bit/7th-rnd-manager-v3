@@ -10,11 +10,8 @@ jest.unstable_mockModule('../../lib/db/index.js', () => ({
   runTransaction: (...args) => runTransaction(...args),
 }));
 
-const {
-  getUserAliases,
-  getUserRules,
-  getUserExcluded,
-} = await import('../../lib/sales/store-user-rules.js');
+const { getUserAliases, getUserRules, getUserExcluded } =
+  await import('../../lib/sales/store-user-rules.js');
 
 beforeEach(() => {
   jest.clearAllMocks();

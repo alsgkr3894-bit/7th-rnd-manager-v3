@@ -51,7 +51,11 @@ describe('empty state ui helpers', () => {
 
   test('하위 요소 스타일은 기존 표시값을 유지한다', () => {
     expect(getEmptyStateIconStyle()).toEqual({ color: 'var(--text-4)' });
-    expect(getEmptyStateTitleStyle()).toEqual({ fontSize: 14, fontWeight: 600, color: 'var(--text-2)' });
+    expect(getEmptyStateTitleStyle()).toEqual({
+      fontSize: 14,
+      fontWeight: 600,
+      color: 'var(--text-2)',
+    });
     expect(getEmptyStateDescriptionStyle()).toEqual({ fontSize: 12 });
     expect(getEmptyStateActionStyle()).toEqual({ marginTop: 8 });
   });

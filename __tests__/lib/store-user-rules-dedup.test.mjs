@@ -1,5 +1,9 @@
 import {
-  normKey, sameId, sameAlias, sameRule, sameExcluded,
+  normKey,
+  sameId,
+  sameAlias,
+  sameRule,
+  sameExcluded,
 } from '../../lib/sales/store-user-rules.js';
 
 /**
@@ -38,21 +42,70 @@ describe('store-user-rules 중복 판정', () => {
   });
 
   describe('sameRule', () => {
-    const base = { id: 1, rawMenuName: '슈퍼콤비', category: '피자', groupName: '콤비', detailName: '슈퍼콤비' };
+    const base = {
+      id: 1,
+      rawMenuName: '슈퍼콤비',
+      category: '피자',
+      groupName: '콤비',
+      detailName: '슈퍼콤비',
+    };
     test('모든 키 일치 시 중복', () => {
-      expect(sameRule(base, { rawMenuName: '슈퍼콤비', category: '피자', groupName: '콤비', detailName: '슈퍼콤비' }, 99)).toBe(true);
+      expect(
+        sameRule(
+          base,
+          { rawMenuName: '슈퍼콤비', category: '피자', groupName: '콤비', detailName: '슈퍼콤비' },
+          99
+        )
+      ).toBe(true);
     });
     test('category가 다르면 중복 아님', () => {
-      expect(sameRule(base, { rawMenuName: '슈퍼콤비', category: '사이드', groupName: '콤비', detailName: '슈퍼콤비' }, 99)).toBe(false);
+      expect(
+        sameRule(
+          base,
+          {
+            rawMenuName: '슈퍼콤비',
+            category: '사이드',
+            groupName: '콤비',
+            detailName: '슈퍼콤비',
+          },
+          99
+        )
+      ).toBe(false);
     });
     test('detailName 미입력 시 groupName으로 폴백 비교', () => {
-      expect(sameRule(base, { rawMenuName: '슈퍼콤비', category: '피자', groupName: '콤비', detailName: '' }, 99)).toBe(false);
-      const g = { id: 2, rawMenuName: 'X', category: '피자', groupName: '콤비', detailName: '콤비' };
-      expect(sameRule(g, { rawMenuName: 'X', category: '피자', groupName: '콤비', detailName: '' }, 99)).toBe(true);
+      expect(
+        sameRule(
+          base,
+          { rawMenuName: '슈퍼콤비', category: '피자', groupName: '콤비', detailName: '' },
+          99
+        )
+      ).toBe(false);
+      const g = {
+        id: 2,
+        rawMenuName: 'X',
+        category: '피자',
+        groupName: '콤비',
+        detailName: '콤비',
+      };
+      expect(
+        sameRule(g, { rawMenuName: 'X', category: '피자', groupName: '콤비', detailName: '' }, 99)
+      ).toBe(true);
     });
     test('legacy pattern 필드도 rawMenuName으로 매칭', () => {
-      const legacy = { id: 3, pattern: '불고기', category: '피자', groupName: '클래식', detailName: '불고기' };
-      expect(sameRule(legacy, { rawMenuName: '불고기', category: '피자', groupName: '클래식', detailName: '불고기' }, 99)).toBe(true);
+      const legacy = {
+        id: 3,
+        pattern: '불고기',
+        category: '피자',
+        groupName: '클래식',
+        detailName: '불고기',
+      };
+      expect(
+        sameRule(
+          legacy,
+          { rawMenuName: '불고기', category: '피자', groupName: '클래식', detailName: '불고기' },
+          99
+        )
+      ).toBe(true);
     });
     test('깨진 행이나 입력은 예외 없이 중복 아님으로 처리', () => {
       expect(() => sameRule(null, null, 99)).not.toThrow();

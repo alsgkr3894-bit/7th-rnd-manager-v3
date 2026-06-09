@@ -33,9 +33,21 @@ import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 const ALLERGEN_MAP = Object.fromEntries(ALLERGEN_SEED.map(a => [a.allergenCode, a.allergenName]));
 
 function exportIngredientCsv(rows) {
-  const headers = ['식자재명', '카테고리', '분류', '단위', '단가', '제때연동', '원산지', '알레르기'];
+  const headers = [
+    '식자재명',
+    '카테고리',
+    '분류',
+    '단위',
+    '단가',
+    '제때연동',
+    '원산지',
+    '알레르기',
+  ];
   const data = rows.map(r => {
-    const originText = (r.origin || []).map(o => o.displayName || o.country).filter(Boolean).join(', ');
+    const originText = (r.origin || [])
+      .map(o => o.displayName || o.country)
+      .filter(Boolean)
+      .join(', ');
     const allergenText = (r.allergens || []).map(c => ALLERGEN_MAP[c] || c).join(', ');
     return [
       r.name || r.productName || '',
@@ -329,15 +341,16 @@ export default function Page() {
             }}
           >
             <div style={{ display: 'flex', gap: 2 }}>
-              {catFilter !== DISCONTINUED_FILTER && SCOPE_TABS.map(t => (
-                <button
-                  key={t.id}
-                  className={'chip' + (scopeFilter === t.id ? ' active' : '')}
-                  onClick={() => setScopeFilter(t.id)}
-                >
-                  {t.label} {scopeTabCount(t.id)}
-                </button>
-              ))}
+              {catFilter !== DISCONTINUED_FILTER &&
+                SCOPE_TABS.map(t => (
+                  <button
+                    key={t.id}
+                    className={'chip' + (scopeFilter === t.id ? ' active' : '')}
+                    onClick={() => setScopeFilter(t.id)}
+                  >
+                    {t.label} {scopeTabCount(t.id)}
+                  </button>
+                ))}
             </div>
             <div className="filter-search" style={{ width: 240 }}>
               <Icon.search
@@ -443,11 +456,11 @@ export default function Page() {
                   value={sort}
                   onChange={setSort}
                   options={[
-                    { id: 'default',    label: '기본' },
-                    { id: 'name',       label: '이름순' },
-                    { id: 'category',   label: '분류순' },
+                    { id: 'default', label: '기본' },
+                    { id: 'name', label: '이름순' },
+                    { id: 'category', label: '분류순' },
                     { id: 'price-desc', label: '단가↑' },
-                    { id: 'price-asc',  label: '단가↓' },
+                    { id: 'price-asc', label: '단가↓' },
                   ]}
                 />
               </div>
@@ -495,7 +508,13 @@ export default function Page() {
             </div>
           )}
           <div style={{ borderTop: '1px solid var(--divider)' }}>
-            <Pagination page={page} totalPages={totalPages} onPage={goTo} total={total} pageSize={60} />
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPage={goTo}
+              total={total}
+              pageSize={60}
+            />
             {totalPages <= 1 && (
               <div style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text-3)' }}>
                 {filtered.length}개 표시 / 전체 {rows.length}개

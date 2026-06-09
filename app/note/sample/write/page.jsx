@@ -12,11 +12,11 @@ import { KEYS } from '@/lib/note/keys';
 
 export default function Page() {
   const router = useRouter();
-  const [form,    setForm]    = useState(() => ({
+  const [form, setForm] = useState(() => ({
     ...SAMPLE_INIT,
     testDate: new Date().toISOString().slice(0, 10),
   }));
-  const [saving,  setSaving]  = useState(false);
+  const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
   useBeforeUnload(isDirty);
@@ -34,8 +34,8 @@ export default function Page() {
         setForm(f => ({
           ...f,
           sampleNames: menuName ? [menuName] : f.sampleNames,
-          category:    category || f.category,
-          tags:        tags || f.tags,
+          category: category || f.category,
+          tags: tags || f.tags,
         }));
       }
     } catch {}
@@ -76,7 +76,9 @@ export default function Page() {
         sub="테스트 샘플을 사진과 함께 기록하세요"
         actions={
           <>
-            <button className="btn" onClick={() => router.push('/note/sample')}>취소</button>
+            <button className="btn" onClick={() => router.push('/note/sample')}>
+              취소
+            </button>
             <button className="btn primary" onClick={handleSave} disabled={saving}>
               {saving ? '저장 중…' : '저장하기'}
             </button>

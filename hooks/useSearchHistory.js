@@ -6,20 +6,24 @@ const DEBOUNCE_MS = 1000;
 export function normalizeSearchHistory(value) {
   if (!Array.isArray(value)) return [];
   const seen = new Set();
-  const history = value
-    .map(item => (typeof item === 'string' ? item.trim() : ''))
-    .filter(Boolean);
+  const history = value.map(item => (typeof item === 'string' ? item.trim() : '')).filter(Boolean);
 
-  return history.filter(item => {
-    if (seen.has(item)) return false;
-    seen.add(item);
-    return true;
-  }).slice(0, MAX_HISTORY);
+  return history
+    .filter(item => {
+      if (seen.has(item)) return false;
+      seen.add(item);
+      return true;
+    })
+    .slice(0, MAX_HISTORY);
 }
 
 export function useSearchHistory(storageKey) {
   const [history, setHistory] = useState(() => {
-    try { return normalizeSearchHistory(JSON.parse(localStorage.getItem(storageKey) || '[]')); } catch { return []; }
+    try {
+      return normalizeSearchHistory(JSON.parse(localStorage.getItem(storageKey) || '[]'));
+    } catch {
+      return [];
+    }
   });
   const [isOpen, setIsOpen] = useState(false);
   const timer = useRef(null);
@@ -31,7 +35,9 @@ export function useSearchHistory(storageKey) {
     if (!q) return;
     setHistory(prev => {
       const next = [q, ...prev.filter(h => h !== q)].slice(0, MAX_HISTORY);
-      try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(next));
+      } catch {}
       return next;
     });
   }

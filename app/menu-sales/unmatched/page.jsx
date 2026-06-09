@@ -30,7 +30,7 @@ function safePeriod(issue) {
 export default function Page() {
   const { ready, issues, resolve, bulkExclude, bulkRule } = useUnmatchedIssues();
   const [statusFilter, setStatusFilter] = useState('open'); // open | resolved | all
-  const [monthFilter, setMonthFilter] = useState('all');     // 'all' | 'YYYY-M'
+  const [monthFilter, setMonthFilter] = useState('all'); // 'all' | 'YYYY-M'
   const [search, setSearch] = useState('');
   const safeIssues = useMemo(() => asObjectArray(issues), [issues]);
   const selectedStatus = safeStatusFilter(statusFilter);
@@ -59,7 +59,7 @@ export default function Page() {
         if (!period || period.year !== y || period.month !== m) return false;
       }
       if (q) {
-        const raw  = asDisplayText(i.representativeRawMenuName).toLowerCase();
+        const raw = asDisplayText(i.representativeRawMenuName).toLowerCase();
         const norm = asDisplayText(i.normalizedMenuName).toLowerCase();
         if (!raw.includes(q) && !norm.includes(q)) return false;
       }
@@ -67,7 +67,7 @@ export default function Page() {
     });
   }, [safeIssues, selectedStatus, selectedMonth, search]);
 
-  const openCount     = safeIssues.filter(i => asDisplayText(i.status) === 'open').length;
+  const openCount = safeIssues.filter(i => asDisplayText(i.status) === 'open').length;
   const resolvedCount = safeIssues.filter(i => asDisplayText(i.status) === 'resolved').length;
 
   return (
@@ -78,15 +78,11 @@ export default function Page() {
         sub="분류 규칙으로 매칭되지 않은 메뉴를 확인할 수 있어요"
       />
 
-      <UnmatchedSummary
-        openCount={openCount}
-        resolvedCount={resolvedCount}
-        months={months}
-      />
+      <UnmatchedSummary openCount={openCount} resolvedCount={resolvedCount} months={months} />
 
       {safeIssues.length > 0 && (
         <div className="filter-search" style={{ marginTop: 12, marginBottom: 4 }}>
-          <Icon.search style={{ width: 14, height: 14, color: 'var(--text-3)', flexShrink: 0 }}/>
+          <Icon.search style={{ width: 14, height: 14, color: 'var(--text-3)', flexShrink: 0 }} />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -108,13 +104,20 @@ export default function Page() {
         />
       )}
 
-      {!ready
-        ? <UnmatchedSkeleton />
-        : safeIssues.length === 0
-          ? <UnmatchedAllResolved />
-          : filtered.length === 0
-            ? <UnmatchedNoMatch />
-            : <UnmatchedTable issues={filtered} onResolve={resolve} onBulkExclude={bulkExclude} onBulkRule={bulkRule} />}
+      {!ready ? (
+        <UnmatchedSkeleton />
+      ) : safeIssues.length === 0 ? (
+        <UnmatchedAllResolved />
+      ) : filtered.length === 0 ? (
+        <UnmatchedNoMatch />
+      ) : (
+        <UnmatchedTable
+          issues={filtered}
+          onResolve={resolve}
+          onBulkExclude={bulkExclude}
+          onBulkRule={bulkRule}
+        />
+      )}
     </main>
   );
 }

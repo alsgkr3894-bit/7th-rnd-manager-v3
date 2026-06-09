@@ -22,7 +22,9 @@ export function usePageStats(pathname) {
 
   // 탭이 다시 보일 때(다른 탭에서 업로드·노트 변경 후 돌아올 때) 카운트 갱신
   useEffect(() => {
-    const onVisible = () => { if (!document.hidden) setTick(t => t + 1); };
+    const onVisible = () => {
+      if (!document.hidden) setTick(t => t + 1);
+    };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
@@ -37,10 +39,7 @@ export function usePageStats(pathname) {
           import('@/lib/sales'),
           import('@/lib/note'),
         ]);
-        const [issues, notes] = await Promise.all([
-          getIssues({ status: 'open' }),
-          getAllNotes(),
-        ]);
+        const [issues, notes] = await Promise.all([getIssues({ status: 'open' }), getAllNotes()]);
         if (!alive) return;
         const issueList = Array.isArray(issues) ? issues : [];
         setUnmatchedCount(issueList.length);
@@ -49,7 +48,9 @@ export function usePageStats(pathname) {
         if (alive) console.warn('[usePageStats] 배지 로드 실패', e);
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [pathname, tick]);
 
   return { unmatchedCount, reportingCount };

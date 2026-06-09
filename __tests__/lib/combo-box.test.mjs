@@ -32,11 +32,17 @@ describe('combo box helpers', () => {
   });
 
   test('옵션은 문자열만 보존하고 빈 값과 중복을 제거한다', () => {
-    expect(normalizeComboBoxOptions([' 피자 ', '피자', '', 10, '사이드', null])).toEqual(['피자', '사이드']);
+    expect(normalizeComboBoxOptions([' 피자 ', '피자', '', 10, '사이드', null])).toEqual([
+      '피자',
+      '사이드',
+    ]);
   });
 
   test('필터링은 검색어와 최대 개수를 안전하게 적용한다', () => {
-    expect(filterComboBoxOptions(['피자', '사이드', '피자롤'], '피자', 10)).toEqual(['피자', '피자롤']);
+    expect(filterComboBoxOptions(['피자', '사이드', '피자롤'], '피자', 10)).toEqual([
+      '피자',
+      '피자롤',
+    ]);
     expect(filterComboBoxOptions(['a', 'b', 'c'], '', 2)).toEqual(['a', 'b']);
     expect(normalizeComboBoxMaxItems('bad')).toBe(30);
   });

@@ -19,10 +19,7 @@ jest.unstable_mockModule('../../lib/price/price-events.js', () => ({
   emitPriceUpload: (...args) => emitPriceUpload(...args),
 }));
 
-const {
-  getPriceFiles,
-  getPriceRowsByFileId,
-} = await import('../../lib/price/store.js');
+const { getPriceFiles, getPriceRowsByFileId } = await import('../../lib/price/store.js');
 
 beforeEach(() => {
   jest.clearAllMocks();

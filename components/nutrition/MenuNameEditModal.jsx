@@ -61,7 +61,15 @@ export function MenuNameEditModal({ menus, overrides, onApply, onClose }) {
       onClose={close}
       width="min(560px, 95vw)"
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: '60vh', overflowY: 'auto' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+          maxHeight: '60vh',
+          overflowY: 'auto',
+        }}
+      >
         {safeMenus.map(({ menuCode, menuName }) => (
           <div
             key={menuCode}
@@ -76,7 +84,15 @@ export function MenuNameEditModal({ menus, overrides, onApply, onClose }) {
               border: '1px solid var(--border)',
             }}
           >
-            <span style={{ fontSize: 13, color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span
+              style={{
+                fontSize: 13,
+                color: 'var(--text-3)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
               {menuName}
             </span>
             <input
@@ -98,16 +114,24 @@ export function MenuNameEditModal({ menus, overrides, onApply, onClose }) {
           </div>
         ))}
         {safeMenus.length === 0 && (
-          <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-4)', fontSize: 13 }}>
+          <div
+            style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-4)', fontSize: 13 }}
+          >
             편집할 메뉴가 없어요
           </div>
         )}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 16 }}>
-        <button type="button" className="btn sm" onClick={resetAll}>전체 초기화</button>
+        <button type="button" className="btn sm" onClick={resetAll}>
+          전체 초기화
+        </button>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button type="button" className="btn" onClick={close}>취소</button>
-          <button type="button" className="btn primary" onClick={apply}>적용</button>
+          <button type="button" className="btn" onClick={close}>
+            취소
+          </button>
+          <button type="button" className="btn primary" onClick={apply}>
+            적용
+          </button>
         </div>
       </div>
     </ModalFrame>

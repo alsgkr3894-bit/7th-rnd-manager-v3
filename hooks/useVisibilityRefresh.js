@@ -29,7 +29,9 @@ export function invokeVisibilityRefresh(callback, onError = warnVisibilityRefres
  */
 export function useVisibilityRefresh(onVisible) {
   const ref = useRef(onVisible);
-  useEffect(() => { ref.current = onVisible; });
+  useEffect(() => {
+    ref.current = onVisible;
+  });
   useEffect(() => {
     const handler = () => {
       if (isVisibleState(document.visibilityState)) {

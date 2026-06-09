@@ -3,7 +3,9 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import XLSX from 'xlsx';
 
-const TEMPLATE_PATH = fileURLToPath(new URL('../../public/templates/원산지_템플릿.xlsx', import.meta.url));
+const TEMPLATE_PATH = fileURLToPath(
+  new URL('../../public/templates/원산지_템플릿.xlsx', import.meta.url)
+);
 
 describe('origin template fixture', () => {
   test('원산지 템플릿 파일과 주요 시트 구조가 유지된다', () => {

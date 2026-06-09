@@ -29,7 +29,10 @@ describe('tag input helpers', () => {
   });
 
   test('추천 태그는 선택된 태그와 빈 값, 중복을 제외한다', () => {
-    expect(normalizeTagSuggestions(['피자', '피자', '', '사이드', '도우'], ['피자'])).toEqual(['사이드', '도우']);
+    expect(normalizeTagSuggestions(['피자', '피자', '', '사이드', '도우'], ['피자'])).toEqual([
+      '사이드',
+      '도우',
+    ]);
   });
 
   test('추천 필터링은 입력값과 개수 제한을 안전하게 적용한다', () => {

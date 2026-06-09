@@ -7,8 +7,11 @@ import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import { ImportBaseModal } from '@/components/nutrition/menu/ImportBaseModal';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import {
-  upsertMenuRef, deleteMenuRef,
-  upsertRawValue, CRUST_TYPES, NUTRITION_FIELDS,
+  upsertMenuRef,
+  deleteMenuRef,
+  upsertRawValue,
+  CRUST_TYPES,
+  NUTRITION_FIELDS,
   clearAllBaseData,
 } from '@/lib/nutrition/values/store';
 import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
@@ -57,23 +60,59 @@ function MenuGroupList({ menus, rawMap, menuMasters, selMenu, onSelect }) {
             const category = asDisplayText(m.category, '기타');
             const selected = selMenu?.id === m.id || (menuCode && selMenu?.menuCode === menuCode);
             return (
-              <div key={m.id || menuCode || `${group}-${index}`} onClick={() => selectMenu(m)}
+              <div
+                key={m.id || menuCode || `${group}-${index}`}
+                onClick={() => selectMenu(m)}
                 style={{
-                  padding: '9px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '9px 14px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                   background: selected ? 'var(--accent-soft)' : 'transparent',
                   borderLeft: selected ? '3px solid var(--accent)' : '3px solid transparent',
-                }}>
+                }}
+              >
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: selected ? 700 : 400, color: selected ? 'var(--accent-text)' : 'var(--text-1)' }}>{menuName}</div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: selected ? 700 : 400,
+                      color: selected ? 'var(--accent-text)' : 'var(--text-1)',
+                    }}
+                  >
+                    {menuName}
+                  </div>
                   <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
                     {category}
-                    {menuCode && <span style={{ marginLeft: 4, fontFamily: 'monospace', color: 'var(--accent-text)', opacity: 0.7 }}>{menuCode}</span>}
+                    {menuCode && (
+                      <span
+                        style={{
+                          marginLeft: 4,
+                          fontFamily: 'monospace',
+                          color: 'var(--accent-text)',
+                          opacity: 0.7,
+                        }}
+                      >
+                        {menuCode}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 2 }}>
                   {CRUST_TYPES.map(ct => {
                     const done = !!safeRawMap[`${menuCode}__${ct}`]?.kcal;
-                    return <span key={ct} style={{ width: 6, height: 6, borderRadius: '50%', background: done ? 'var(--accent)' : 'var(--border)' }} />;
+                    return (
+                      <span
+                        key={ct}
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: '50%',
+                          background: done ? 'var(--accent)' : 'var(--border)',
+                        }}
+                      />
+                    );
                   })}
                 </div>
               </div>
@@ -86,8 +125,18 @@ function MenuGroupList({ menus, rawMap, menuMasters, selMenu, onSelect }) {
 }
 
 const MENU_CATS = [
-  '피자', '피자/프리미엄 스페셜', '피자/프리미엄', '피자/오리지널', '피자/하프앤하프',
-  '1인피자', '세트박스', '사이드', '소스', '음료', '엣지', '기타',
+  '피자',
+  '피자/프리미엄 스페셜',
+  '피자/프리미엄',
+  '피자/오리지널',
+  '피자/하프앤하프',
+  '1인피자',
+  '세트박스',
+  '사이드',
+  '소스',
+  '음료',
+  '엣지',
+  '기타',
 ];
 
 export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
@@ -99,17 +148,22 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
     () => Object.fromEntries(safeMenuMasters.map(m => [m.menuCode, m])),
     [safeMenuMasters]
   );
-  const [selMenu,     setSelMenu]     = useState(null);
-  const [selCrust,    setSelCrust]    = useState(CRUST_TYPES[0]);
-  const [form,        setForm]        = useState({});
-  const [saving,      setSaving]      = useState(false);
-  const [addMenu,     setAddMenu]     = useState(false);
-  const [newMenuForm, setNewMenuForm] = useState({ menuCode: '', menuName: '', category: '피자', displayOrder: '' });
-  const [autoCalcBusy,   setAutoCalcBusy]   = useState(false);
+  const [selMenu, setSelMenu] = useState(null);
+  const [selCrust, setSelCrust] = useState(CRUST_TYPES[0]);
+  const [form, setForm] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [addMenu, setAddMenu] = useState(false);
+  const [newMenuForm, setNewMenuForm] = useState({
+    menuCode: '',
+    menuName: '',
+    category: '피자',
+    displayOrder: '',
+  });
+  const [autoCalcBusy, setAutoCalcBusy] = useState(false);
   const [autoCalcPreview, setAutoCalcPreview] = useState(null); // { values: Object } | null
-  const [importOpen,     setImportOpen]     = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
-  const key      = selMenu ? `${selMenu.menuCode}__${selCrust}` : null;
+  const key = selMenu ? `${selMenu.menuCode}__${selCrust}` : null;
   const existing = key ? safeRawMap[key] : null;
   const selectedMenuName = asDisplayText(selMenu?.menuName, '선택한 메뉴');
 
@@ -190,21 +244,30 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
       });
       showToast('저장 완료', 'ok');
       refresh();
-    } catch { showToast('저장 실패', 'error'); }
+    } catch {
+      showToast('저장 실패', 'error');
+    }
     setSaving(false);
   };
 
   const handleAddMenu = async () => {
-    if (!newMenuForm.menuName.trim()) { showToast('메뉴명 입력 필요', 'error'); return; }
+    if (!newMenuForm.menuName.trim()) {
+      showToast('메뉴명 입력 필요', 'error');
+      return;
+    }
     const code = newMenuForm.menuCode.trim() || `MENU-${Date.now()}`;
-    await upsertMenuRef({ ...newMenuForm, menuCode: code, displayOrder: newMenuForm.displayOrder ? Number(newMenuForm.displayOrder) : undefined });
+    await upsertMenuRef({
+      ...newMenuForm,
+      menuCode: code,
+      displayOrder: newMenuForm.displayOrder ? Number(newMenuForm.displayOrder) : undefined,
+    });
     showToast('메뉴 추가 완료', 'ok');
     setAddMenu(false);
     setNewMenuForm({ menuCode: '', menuName: '', category: '피자', displayOrder: '' });
     refresh();
   };
 
-  const handleDeleteMenu = async (menu) => {
+  const handleDeleteMenu = async menu => {
     await deleteMenuRef(menu.id, menu.menuCode);
     if (selMenu?.id === menu.id) setSelMenu(null);
     showToast(`'${asDisplayText(menu.menuName, '메뉴')}' 삭제`, 'ok');
@@ -214,33 +277,75 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
   return (
     <div style={{ display: 'flex', gap: 20, marginTop: 20, alignItems: 'flex-start' }}>
       {/* 메뉴 목록 */}
-      <div className="card" style={{ width: 220, flexShrink: 0, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 220px)' }}>
-        <div style={{ padding: '12px 14px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+      <div
+        className="card"
+        style={{
+          width: 220,
+          flexShrink: 0,
+          padding: 0,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: 'calc(100vh - 220px)',
+        }}
+      >
+        <div
+          style={{
+            padding: '12px 14px 8px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderBottom: '1px solid var(--border)',
+            flexShrink: 0,
+          }}
+        >
           <span style={{ fontSize: 13, fontWeight: 700 }}>메뉴 목록</span>
           <div style={{ display: 'flex', gap: 4 }}>
-            <button className="btn sm ghost" title="엑셀 가져오기" onClick={() => setImportOpen(true)}
-              style={{ fontSize: 11, padding: '3px 7px' }}>엑셀</button>
-            <button className="btn sm ghost" onClick={() => setAddMenu(true)}><Icon.plus style={{ width: 13, height: 13 }} /></button>
-            <button className="btn sm ghost" title="전체 삭제"
+            <button
+              className="btn sm ghost"
+              title="엑셀 가져오기"
+              onClick={() => setImportOpen(true)}
+              style={{ fontSize: 11, padding: '3px 7px' }}
+            >
+              엑셀
+            </button>
+            <button className="btn sm ghost" onClick={() => setAddMenu(true)}>
+              <Icon.plus style={{ width: 13, height: 13 }} />
+            </button>
+            <button
+              className="btn sm ghost"
+              title="전체 삭제"
               style={{ fontSize: 11, padding: '3px 7px', color: 'var(--danger)' }}
               onClick={async () => {
-                if (!confirm('베이스 영양성분 전체(메뉴 목록 + 값)를 삭제합니다. 계속할까요?')) return;
+                if (!confirm('베이스 영양성분 전체(메뉴 목록 + 값)를 삭제합니다. 계속할까요?'))
+                  return;
                 await clearAllBaseData();
                 setSelMenu(null);
                 showToast('전체 삭제 완료', 'ok');
                 refresh();
-              }}>전체삭제</button>
+              }}
+            >
+              전체삭제
+            </button>
           </div>
         </div>
         {safeMenus.length === 0 ? (
           <div className="empty-state" style={{ padding: '24px 12px' }}>
-            <div className="empty-icon-wrap"><Icon.doc style={{ width: 28, height: 28 }}/></div>
+            <div className="empty-icon-wrap">
+              <Icon.doc style={{ width: 28, height: 28 }} />
+            </div>
             <div style={{ fontWeight: 700, fontSize: 13 }}>메뉴가 없어요</div>
             <div style={{ fontSize: 12, color: 'var(--text-3)' }}>+ 버튼으로 메뉴를 추가하세요</div>
           </div>
         ) : (
           <div style={{ overflowY: 'auto', flex: 1 }}>
-            <MenuGroupList menus={safeMenus} rawMap={safeRawMap} menuMasters={safeMenuMasters} selMenu={selMenu} onSelect={setSelMenu} />
+            <MenuGroupList
+              menus={safeMenus}
+              rawMap={safeRawMap}
+              menuMasters={safeMenuMasters}
+              selMenu={selMenu}
+              onSelect={setSelMenu}
+            />
           </div>
         )}
       </div>
@@ -251,18 +356,34 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
           <div className="card" style={{ display: 'grid', placeItems: 'center', minHeight: 200 }}>
             <div style={{ textAlign: 'center', color: 'var(--text-4)' }}>
               <Icon.beaker style={{ width: 28, height: 28 }} />
-              <div style={{ marginTop: 8, fontSize: 13 }}>메뉴를 선택하면 영양성분을 입력할 수 있어요</div>
+              <div style={{ marginTop: 8, fontSize: 13 }}>
+                메뉴를 선택하면 영양성분을 입력할 수 있어요
+              </div>
             </div>
           </div>
         ) : (
           <div className="card" style={{ padding: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: 16,
+              }}
+            >
               <div>
                 <div style={{ fontSize: 16, fontWeight: 700 }}>{selectedMenuName}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>영양성분 수치 입력 (업체 분석값)</div>
+                <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
+                  영양성분 수치 입력 (업체 분석값)
+                </div>
               </div>
-              <button className="btn sm ghost" style={{ color: 'var(--danger)' }} onClick={() => handleDeleteMenu(selMenu)}>
-                <Icon.trash style={{ width: 13, height: 13 }} />메뉴 삭제
+              <button
+                className="btn sm ghost"
+                style={{ color: 'var(--danger)' }}
+                onClick={() => handleDeleteMenu(selMenu)}
+              >
+                <Icon.trash style={{ width: 13, height: 13 }} />
+                메뉴 삭제
               </button>
             </div>
 
@@ -270,37 +391,85 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
               {CRUST_TYPES.map(ct => {
                 const done = !!safeRawMap[`${selMenu.menuCode}__${ct}`]?.kcal;
                 return (
-                  <button key={ct} onClick={() => setSelCrust(ct)}
+                  <button
+                    key={ct}
+                    onClick={() => setSelCrust(ct)}
                     style={{
-                      padding: '6px 14px', borderRadius: 8, fontSize: 13, cursor: 'pointer', border: '1.5px solid',
+                      padding: '6px 14px',
+                      borderRadius: 8,
+                      fontSize: 13,
+                      cursor: 'pointer',
+                      border: '1.5px solid',
                       borderColor: selCrust === ct ? 'var(--accent)' : 'var(--border)',
                       background: selCrust === ct ? 'var(--accent-soft)' : 'var(--surface)',
                       color: selCrust === ct ? 'var(--accent-text)' : 'var(--text-2)',
                       fontWeight: selCrust === ct ? 700 : 400,
-                      display: 'flex', alignItems: 'center', gap: 4,
-                    }}>
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
                     {ct}
-                    {done && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />}
+                    {done && (
+                      <span
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: '50%',
+                          background: 'var(--accent)',
+                          display: 'inline-block',
+                        }}
+                      />
+                    )}
                   </button>
                 );
               })}
             </div>
 
-            <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8, padding: '6px 10px', background: 'var(--surface-2)', borderRadius: 6, lineHeight: 1.5 }}>
+            <div
+              style={{
+                fontSize: 11,
+                color: 'var(--text-3)',
+                marginBottom: 8,
+                padding: '6px 10px',
+                background: 'var(--surface-2)',
+                borderRadius: 6,
+                lineHeight: 1.5,
+              }}
+            >
               ※ 영양성분 수치는 <strong>100g 기준</strong>으로 입력하세요.
-              {selMenu && resolveNutritionGroup(selMenu, masterByCode) === '피자'
-                && <> · <strong>중량</strong>은 이 크러스트의 <strong>한판 총중량(g)</strong>을 입력하면 하프앤하프·세트·조각 계산에 사용됩니다.</>}
+              {selMenu && resolveNutritionGroup(selMenu, masterByCode) === '피자' && (
+                <>
+                  {' '}
+                  · <strong>중량</strong>은 이 크러스트의 <strong>한판 총중량(g)</strong>을 입력하면
+                  하프앤하프·세트·조각 계산에 사용됩니다.
+                </>
+              )}
             </div>
 
             <NutritionGrid values={form} onChange={setField} />
 
-            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+            <div
+              style={{
+                marginTop: 16,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
               <button
                 className="btn sm ghost"
                 onClick={handleAutoCalc}
                 disabled={autoCalcBusy || saving}
                 title="cost_recipes 레시피 구성에서 영양성분을 자동 계산합니다"
-                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent-text)' }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 12,
+                  color: 'var(--accent-text)',
+                }}
               >
                 <Icon.beaker style={{ width: 13, height: 13 }} />
                 {autoCalcBusy ? '계산 중…' : '레시피 기반 자동계산'}
@@ -323,12 +492,27 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
           padding="24px 28px"
         >
           <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5 }}>
-            <strong style={{ color: 'var(--text-1)' }}>{selectedMenuName}</strong> 레시피 재료 기반 <strong>100g 기준</strong> 영양성분이에요.<br />
-            <span style={{ fontSize: 12 }}>적용하면 <strong>{selCrust}</strong> 크러스트에 아래 값 + 중량 <strong>{asDisplayText(autoCalcPreview.totalGrams, '0')}g</strong>이 입력됩니다.</span>
+            <strong style={{ color: 'var(--text-1)' }}>{selectedMenuName}</strong> 레시피 재료 기반{' '}
+            <strong>100g 기준</strong> 영양성분이에요.
+            <br />
+            <span style={{ fontSize: 12 }}>
+              적용하면 <strong>{selCrust}</strong> 크러스트에 아래 값 + 중량{' '}
+              <strong>{asDisplayText(autoCalcPreview.totalGrams, '0')}g</strong>이 입력됩니다.
+            </span>
           </div>
           {autoCalcPreview.matched < autoCalcPreview.total && (
-            <div style={{ marginBottom: 12, fontSize: 12, padding: '8px 10px', borderRadius: 8, background: 'var(--warn-soft, #fff4e5)', color: 'var(--warn-text, #92600a)' }}>
-              ⚠ 재료 {autoCalcPreview.matched}/{autoCalcPreview.total}개만 영양DB에 매칭됐어요. 나머지는 계산에서 제외되어 값이 작을 수 있어요.
+            <div
+              style={{
+                marginBottom: 12,
+                fontSize: 12,
+                padding: '8px 10px',
+                borderRadius: 8,
+                background: 'var(--warn-soft, #fff4e5)',
+                color: 'var(--warn-text, #92600a)',
+              }}
+            >
+              ⚠ 재료 {autoCalcPreview.matched}/{autoCalcPreview.total}개만 영양DB에 매칭됐어요.
+              나머지는 계산에서 제외되어 값이 작을 수 있어요.
             </div>
           )}
           {autoCalcPreview.matched === autoCalcPreview.total && (
@@ -336,9 +520,19 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
               재료 {autoCalcPreview.matched}/{autoCalcPreview.total}개 전부 매칭됨
             </div>
           )}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px 12px', marginBottom: 16 }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '8px 12px',
+              marginBottom: 16,
+            }}
+          >
             {NUTRITION_FIELDS.filter(f => f.key !== 'weight').map(f => (
-              <div key={f.key} style={{ background: 'var(--surface-2)', borderRadius: 8, padding: '8px 10px' }}>
+              <div
+                key={f.key}
+                style={{ background: 'var(--surface-2)', borderRadius: 8, padding: '8px 10px' }}
+              >
                 <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 2 }}>
                   {f.label} <span style={{ color: 'var(--text-4)' }}>({f.unit})</span>
                 </div>
@@ -349,10 +543,13 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
             ))}
           </div>
           <div style={{ fontSize: 11, color: 'var(--text-4)', marginBottom: 16 }}>
-            * 재료 100g 기준값 × 사용량을 합산 후 총중량으로 나눠 100g 기준으로 정규화한 값입니다. 중량 칸도 함께 채워집니다.
+            * 재료 100g 기준값 × 사용량을 합산 후 총중량으로 나눠 100g 기준으로 정규화한 값입니다.
+            중량 칸도 함께 채워집니다.
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button className="btn" onClick={() => setAutoCalcPreview(null)}>취소</button>
+            <button className="btn" onClick={() => setAutoCalcPreview(null)}>
+              취소
+            </button>
             <button className="btn primary" onClick={handleApplyAutoCalc} disabled={saving}>
               {saving ? '적용 중…' : '이 값으로 적용'}
             </button>
@@ -371,36 +568,75 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
       )}
 
       {addMenu && (
-        <ModalFrame title="메뉴 추가" onClose={() => setAddMenu(false)} width="min(400px,95vw)" zIndex={300} padding="24px 28px">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div>
-                <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>메뉴코드 <span style={{ color: 'var(--text-4)' }}>(선택 시 메뉴명 자동 입력)</span></label>
-                <MenuCodePicker
-                  menuMasters={safeMenuMasters}
-                  value={newMenuForm.menuCode}
-                  onChange={(code, meta) => setNewMenuForm(f => ({
+        <ModalFrame
+          title="메뉴 추가"
+          onClose={() => setAddMenu(false)}
+          width="min(400px,95vw)"
+          zIndex={300}
+          padding="24px 28px"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <label
+                style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}
+              >
+                메뉴코드 <span style={{ color: 'var(--text-4)' }}>(선택 시 메뉴명 자동 입력)</span>
+              </label>
+              <MenuCodePicker
+                menuMasters={safeMenuMasters}
+                value={newMenuForm.menuCode}
+                onChange={(code, meta) =>
+                  setNewMenuForm(f => ({
                     ...f,
                     menuCode: code,
-                    menuName: code ? (safeMenuMasters.find(m => m.menuCode === code)?.menuName ?? f.menuName) : f.menuName,
+                    menuName: code
+                      ? (safeMenuMasters.find(m => m.menuCode === code)?.menuName ?? f.menuName)
+                      : f.menuName,
                     category: meta?.category || f.category,
-                  }))}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>메뉴명 *</label>
-                <input className="input" value={newMenuForm.menuName} onChange={e => setNewMenuForm(f => ({ ...f, menuName: e.target.value }))} placeholder="예: 컨츄리치킨" />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>카테고리</label>
-                <select className="input" value={newMenuForm.category} onChange={e => setNewMenuForm(f => ({ ...f, category: e.target.value }))}>
-                  {MENU_CATS.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
+                  }))
+                }
+              />
             </div>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
-              <button className="btn" onClick={() => setAddMenu(false)}>취소</button>
-              <button className="btn primary" onClick={handleAddMenu}>추가</button>
+            <div>
+              <label
+                style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}
+              >
+                메뉴명 *
+              </label>
+              <input
+                className="input"
+                value={newMenuForm.menuName}
+                onChange={e => setNewMenuForm(f => ({ ...f, menuName: e.target.value }))}
+                placeholder="예: 컨츄리치킨"
+              />
             </div>
+            <div>
+              <label
+                style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}
+              >
+                카테고리
+              </label>
+              <select
+                className="input"
+                value={newMenuForm.category}
+                onChange={e => setNewMenuForm(f => ({ ...f, category: e.target.value }))}
+              >
+                {MENU_CATS.map(c => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
+            <button className="btn" onClick={() => setAddMenu(false)}>
+              취소
+            </button>
+            <button className="btn primary" onClick={handleAddMenu}>
+              추가
+            </button>
+          </div>
         </ModalFrame>
       )}
     </div>

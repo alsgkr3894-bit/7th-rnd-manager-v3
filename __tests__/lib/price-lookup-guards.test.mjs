@@ -40,10 +40,12 @@ describe('price lookup guards', () => {
 
     const result = await buildLatestPriceLookup();
 
-    expect(result).toEqual(new Map([
-      ['A', 1200],
-      ['123', 0],
-    ]));
+    expect(result).toEqual(
+      new Map([
+        ['A', 1200],
+        ['123', 0],
+      ])
+    );
   });
 
   test('조회 중 예외가 나면 빈 Map을 반환한다', async () => {

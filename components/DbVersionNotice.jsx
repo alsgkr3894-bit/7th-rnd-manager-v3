@@ -25,18 +25,29 @@ export default function DbVersionNotice() {
 
   if (!reason) return null;
 
-  const message = reason === 'changed'
-    ? '다른 탭에서 데이터베이스가 업데이트되었습니다. 새로고침해 주세요.'
-    : '다른 탭이 열려 있어 데이터베이스 업데이트가 보류되었습니다. 다른 탭을 닫거나 새로고침해 주세요.';
+  const message =
+    reason === 'changed'
+      ? '다른 탭에서 데이터베이스가 업데이트되었습니다. 새로고침해 주세요.'
+      : '다른 탭이 열려 있어 데이터베이스 업데이트가 보류되었습니다. 다른 탭을 닫거나 새로고침해 주세요.';
 
   return (
     <div
       role="alert"
       style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-        padding: '10px 16px', fontSize: 13, fontWeight: 700,
-        background: 'var(--warn)', color: '#fff',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+        padding: '10px 16px',
+        fontSize: 13,
+        fontWeight: 700,
+        background: 'var(--warn)',
+        color: '#fff',
         boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
         animation: 'slide-down 240ms cubic-bezier(0.2,0.8,0.2,1) both',
       }}

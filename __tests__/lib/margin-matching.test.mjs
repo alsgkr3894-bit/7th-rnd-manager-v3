@@ -5,7 +5,7 @@ import {
   mergeRecipeIntoDetail,
 } from '../../lib/cost/margin/matching.js';
 
-const toNum = (v) => {
+const toNum = v => {
   if (v == null || v === '') return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
@@ -56,9 +56,7 @@ describe('findRecipeForDetail', () => {
     expect(findRecipeForDetail(map, 'A', '피자').costMap.L).toBe(1000);
   });
   test('원가 없으면 첫 호환 행 fallback', () => {
-    const map = buildRecipesByName([
-      { menuName: 'A', menuCategory: '피자', costMap: { L: 0 } },
-    ]);
+    const map = buildRecipesByName([{ menuName: 'A', menuCategory: '피자', costMap: { L: 0 } }]);
     expect(findRecipeForDetail(map, 'A', '피자/스페셜')).toBeTruthy();
   });
   test('메뉴명 없음 → null', () => {
@@ -81,31 +79,49 @@ describe('mergeRecipeIntoDetail', () => {
   });
 
   test('빈 판매가만 레시피로 보완 (디테일 우선)', () => {
-    const map = buildRecipesByName([{
-      menuName: 'A', menuCategory: '피자',
-      sizes: [{ label: 'L', sellingPrice: 9000 }, { label: 'R', sellingPrice: 12000 }],
-      costMap: { L: 3000, R: 4000 },
-    }]);
+    const map = buildRecipesByName([
+      {
+        menuName: 'A',
+        menuCategory: '피자',
+        sizes: [
+          { label: 'L', sellingPrice: 9000 },
+          { label: 'R', sellingPrice: 12000 },
+        ],
+        costMap: { L: 3000, R: 4000 },
+      },
+    ]);
     const d = {
-      menuName: 'A', menuCategory: '피자',
-      sizes: [{ label: 'L', sellingPrice: 8000 }, { label: 'R', sellingPrice: '' }],
+      menuName: 'A',
+      menuCategory: '피자',
+      sizes: [
+        { label: 'L', sellingPrice: 8000 },
+        { label: 'R', sellingPrice: '' },
+      ],
       costMap: { L: 2500 },
     };
     const merged = mergeRecipeIntoDetail(d, map, toNum);
     const byLabel = Object.fromEntries(merged.sizes.map(s => [s.label, s.sellingPrice]));
-    expect(byLabel.L).toBe(8000);  // 디테일 우선
+    expect(byLabel.L).toBe(8000); // 디테일 우선
     expect(byLabel.R).toBe(12000); // 빈 값 → 레시피 보완
     expect(merged.costMap.L).toBe(2500); // 디테일 원가 우선
     expect(merged.costMap.R).toBe(4000); // 빈 원가 → 레시피 보완
   });
 
   test('레시피에만 있는 사이즈는 뒤에 추가', () => {
-    const map = buildRecipesByName([{
-      menuName: 'A', menuCategory: '피자',
-      sizes: [{ label: 'XL', sellingPrice: 15000 }],
-      costMap: { XL: 5000 },
-    }]);
-    const d = { menuName: 'A', menuCategory: '피자', sizes: [{ label: 'L', sellingPrice: 8000 }], costMap: { L: 2500 } };
+    const map = buildRecipesByName([
+      {
+        menuName: 'A',
+        menuCategory: '피자',
+        sizes: [{ label: 'XL', sellingPrice: 15000 }],
+        costMap: { XL: 5000 },
+      },
+    ]);
+    const d = {
+      menuName: 'A',
+      menuCategory: '피자',
+      sizes: [{ label: 'L', sellingPrice: 8000 }],
+      costMap: { L: 2500 },
+    };
     const merged = mergeRecipeIntoDetail(d, map, toNum);
     expect(merged.sizes.map(s => s.label)).toEqual(['L', 'XL']);
     expect(merged.costMap.XL).toBe(5000);

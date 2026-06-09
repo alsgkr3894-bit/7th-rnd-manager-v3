@@ -14,20 +14,33 @@ beforeEach(() => {
   storageData = {};
   globalThis.localStorage = {
     getItem: key => (key in storageData ? storageData[key] : null),
-    setItem: (key, value) => { storageData[key] = String(value); },
-    removeItem: key => { delete storageData[key]; },
+    setItem: (key, value) => {
+      storageData[key] = String(value);
+    },
+    removeItem: key => {
+      delete storageData[key];
+    },
   };
 });
 
 describe('backup history guards', () => {
   test('필수 id/at이 없는 이력 항목은 제외한다', () => {
-    expect(normalizeHistory([
-      null,
-      { id: ' BK-1 ', at: ' 2026-06-01T00:00:00.000Z ', scopes: ['all', '', { bad: true }], totalRows: '3', pinned: true, fileName: 7 },
-      { id: '', at: '2026-06-02T00:00:00.000Z' },
-      { id: 'BK-2' },
-      { id: 'BK-3', at: 'not-date' },
-    ])).toEqual([
+    expect(
+      normalizeHistory([
+        null,
+        {
+          id: ' BK-1 ',
+          at: ' 2026-06-01T00:00:00.000Z ',
+          scopes: ['all', '', { bad: true }],
+          totalRows: '3',
+          pinned: true,
+          fileName: 7,
+        },
+        { id: '', at: '2026-06-02T00:00:00.000Z' },
+        { id: 'BK-2' },
+        { id: 'BK-3', at: 'not-date' },
+      ])
+    ).toEqual([
       {
         id: 'BK-1',
         at: '2026-06-01T00:00:00.000Z',
@@ -63,15 +76,11 @@ describe('backup history guards', () => {
   });
 
   test('백업 리마인더는 깨진 날짜와 threshold를 안전하게 처리한다', () => {
-    storageData[HISTORY_KEY] = JSON.stringify([
-      { id: 'BK-bad', at: 'not-date' },
-    ]);
+    storageData[HISTORY_KEY] = JSON.stringify([{ id: 'BK-bad', at: 'not-date' }]);
 
     expect(getBackupReminder()).toEqual({ stale: true, daysSince: null, never: true });
 
-    storageData[HISTORY_KEY] = JSON.stringify([
-      { id: 'BK-ok', at: new Date().toISOString() },
-    ]);
+    storageData[HISTORY_KEY] = JSON.stringify([{ id: 'BK-ok', at: new Date().toISOString() }]);
 
     expect(getBackupReminder('bad')).toEqual({ stale: false, daysSince: 0, never: false });
   });

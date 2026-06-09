@@ -1,6 +1,10 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { suggestRulesByMenuName, getClassificationNameOptions, CATEGORY_ORDER as CATEGORY_OPTIONS } from '@/lib/sales';
+import {
+  suggestRulesByMenuName,
+  getClassificationNameOptions,
+  CATEGORY_ORDER as CATEGORY_OPTIONS,
+} from '@/lib/sales';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ComboBox } from '@/components/ui/ComboBox';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
@@ -31,17 +35,24 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
 
   // 자동 추천 (정규화된 메뉴명 기반)
   const suggestions = useMemo(
-    () => asObjectArray(suggestRulesByMenuName(normalizedMenuName === '-' ? '' : normalizedMenuName, 5)),
-    [normalizedMenuName],
+    () =>
+      asObjectArray(
+        suggestRulesByMenuName(normalizedMenuName === '-' ? '' : normalizedMenuName, 5)
+      ),
+    [normalizedMenuName]
   );
 
   // 중분류·상세 자동완성 후보 (기존 규칙의 groupName/detailName)
   useEffect(() => {
     let alive = true;
     getClassificationNameOptions()
-      .then(opts => { if (alive) setNameOpts(opts); })
+      .then(opts => {
+        if (alive) setNameOpts(opts);
+      })
       .catch(() => {});
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
 
   function applySuggestion(rule) {
@@ -72,30 +83,58 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
   }
 
   return (
-    <div style={{
-      padding:'14px 18px', background:'var(--surface-2)',
-      borderTop:'1px solid var(--border)',
-    }}>
+    <div
+      style={{
+        padding: '14px 18px',
+        background: 'var(--surface-2)',
+        borderTop: '1px solid var(--border)',
+      }}
+    >
       <ConfirmDialog
         open={confirmExclude}
         title="제외 처리하시겠어요?"
         message={`"${normalizedMenuName}" 메뉴가 통계에서 제외됩니다. 이 작업은 되돌리기 어렵습니다.`}
-        confirmLabel="제외 처리" cancelLabel="취소" danger
-        onConfirm={() => { setConfirmExclude(false); handleSubmitAction('exclude', {}); }}
+        confirmLabel="제외 처리"
+        cancelLabel="취소"
+        danger
+        onConfirm={() => {
+          setConfirmExclude(false);
+          handleSubmitAction('exclude', {});
+        }}
         onCancel={() => setConfirmExclude(false)}
       />
-      <div style={{display:'flex', gap:6, marginBottom:10}}>
-        <ActionTab label="별칭 등록"   active={actionType === 'alias'}   onClick={() => setActionType('alias')}/>
-        <ActionTab label="규칙 등록"   active={actionType === 'rule'}    onClick={() => setActionType('rule')}/>
-        <ActionTab label="제외 처리"   active={actionType === 'exclude'} onClick={() => setActionType('exclude')}/>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+        <ActionTab
+          label="별칭 등록"
+          active={actionType === 'alias'}
+          onClick={() => setActionType('alias')}
+        />
+        <ActionTab
+          label="규칙 등록"
+          active={actionType === 'rule'}
+          onClick={() => setActionType('rule')}
+        />
+        <ActionTab
+          label="제외 처리"
+          active={actionType === 'exclude'}
+          onClick={() => setActionType('exclude')}
+        />
       </div>
 
       {(actionType === 'alias' || actionType === 'rule') && suggestions.length > 0 && (
-        <div style={{marginBottom:10, padding:'8px 10px', background:'var(--surface)', borderRadius:6, border:'1px solid var(--border)'}}>
-          <div style={{fontSize:11, fontWeight:600, color:'var(--text-3)', marginBottom:6}}>
+        <div
+          style={{
+            marginBottom: 10,
+            padding: '8px 10px',
+            background: 'var(--surface)',
+            borderRadius: 6,
+            border: '1px solid var(--border)',
+          }}
+        >
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 6 }}>
             추천 — 비슷한 메뉴의 기존 룰 (클릭 시 자동 채움)
           </div>
-          <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {suggestions.map(({ rule }, index) => {
               const ruleId = asDisplayText(rule?.ruleId, `rule-${index}`);
               const pattern = asDisplayText(rule?.pattern);
@@ -104,24 +143,29 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
               const detailName = asDisplayText(rule?.detailName);
 
               return (
-              <button
-                key={ruleId}
-                onClick={() => applySuggestion(rule)}
-                className="chip"
-                style={{
-                  cursor:'pointer', border:'1px solid var(--border)',
-                  background:'var(--surface-2)', color:'var(--text-2)', fontSize:11,
-                  display:'inline-flex', alignItems:'center', gap:4,
-                }}
-                title={`pattern: ${pattern}`}
-              >
-                <b style={{color:'var(--accent-text)'}}>{category}</b>
-                <span style={{color:'var(--text-3)'}}>/</span>
-                <span>{groupName}</span>
-                {detailName && detailName !== groupName && (
-                  <span style={{color:'var(--text-4)', fontSize:10}}>· {detailName}</span>
-                )}
-              </button>
+                <button
+                  key={ruleId}
+                  onClick={() => applySuggestion(rule)}
+                  className="chip"
+                  style={{
+                    cursor: 'pointer',
+                    border: '1px solid var(--border)',
+                    background: 'var(--surface-2)',
+                    color: 'var(--text-2)',
+                    fontSize: 11,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                  title={`pattern: ${pattern}`}
+                >
+                  <b style={{ color: 'var(--accent-text)' }}>{category}</b>
+                  <span style={{ color: 'var(--text-3)' }}>/</span>
+                  <span>{groupName}</span>
+                  {detailName && detailName !== groupName && (
+                    <span style={{ color: 'var(--text-4)', fontSize: 10 }}>· {detailName}</span>
+                  )}
+                </button>
               );
             })}
           </div>
@@ -129,8 +173,8 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
       )}
 
       {actionType === 'alias' && (
-        <div style={{display:'flex', gap:8, alignItems:'center'}}>
-          <span style={{fontSize:13, color:'var(--text-3)'}}>표준 메뉴명:</span>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span style={{ fontSize: 13, color: 'var(--text-3)' }}>표준 메뉴명:</span>
           <input
             value={outputName}
             onChange={e => setOutputName(e.target.value)}
@@ -141,9 +185,17 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
       )}
 
       {actionType === 'rule' && (
-        <div style={{display:'grid', gridTemplateColumns:'160px 1fr 1fr', gap:8}}>
-          <select value={ruleCategory} onChange={e => setRuleCategory(e.target.value)} style={inputStyle}>
-            {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+        <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 1fr', gap: 8 }}>
+          <select
+            value={ruleCategory}
+            onChange={e => setRuleCategory(e.target.value)}
+            style={inputStyle}
+          >
+            {CATEGORY_OPTIONS.map(c => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
           </select>
           <ComboBox
             value={ruleGroup}
@@ -163,19 +215,23 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
       )}
 
       {actionType === 'exclude' && (
-        <div style={{fontSize:13, color:'var(--text-3)'}}>
+        <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
           이 메뉴를 통계에서 제외합니다 — <b>{normalizedMenuName}</b>
         </div>
       )}
 
-      <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:12}}>
-        <button className="btn sm" onClick={handleCancel} disabled={busy}>취소</button>
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
+        <button className="btn sm" onClick={handleCancel} disabled={busy}>
+          취소
+        </button>
         <button
           className="btn primary sm"
           onClick={handleSubmit}
-          disabled={busy
-            || (actionType === 'alias' && !outputName.trim())
-            || (actionType === 'rule' && (!ruleCategory || !ruleGroup.trim()))}
+          disabled={
+            busy ||
+            (actionType === 'alias' && !outputName.trim()) ||
+            (actionType === 'rule' && (!ruleCategory || !ruleGroup.trim()))
+          }
         >
           {busy ? '처리 중...' : '해결'}
         </button>
@@ -189,18 +245,26 @@ function ActionTab({ label, active, onClick }) {
     <button
       onClick={onClick}
       style={{
-        padding:'6px 12px', borderRadius:6, fontSize:12, fontWeight:600,
+        padding: '6px 12px',
+        borderRadius: 6,
+        fontSize: 12,
+        fontWeight: 600,
         background: active ? 'var(--accent)' : 'var(--surface)',
         color: active ? '#fff' : 'var(--text-2)',
         border: '1px solid ' + (active ? 'var(--accent)' : 'var(--border)'),
-        cursor:'pointer',
+        cursor: 'pointer',
       }}
-    >{label}</button>
+    >
+      {label}
+    </button>
   );
 }
 
 const inputStyle = {
-  padding:'6px 10px', borderRadius:6,
-  border:'1px solid var(--border)', background:'var(--surface)',
-  color:'var(--text-1)', fontSize:13,
+  padding: '6px 10px',
+  borderRadius: 6,
+  border: '1px solid var(--border)',
+  background: 'var(--surface)',
+  color: 'var(--text-1)',
+  fontSize: 13,
 };

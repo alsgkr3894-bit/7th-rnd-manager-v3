@@ -19,7 +19,7 @@ describe('parseMenuPriceRows', () => {
   test('정상 행은 기존 형식대로 성공 목록에 담는다', () => {
     const result = parseMenuPriceRows(
       ['메뉴명', '판매가', '분류', '규격'],
-      [{ 메뉴명: '슈퍼콤비네이션', 판매가: '26,900원', 분류: '피자/오리지널', 규격: 'L' }],
+      [{ 메뉴명: '슈퍼콤비네이션', 판매가: '26,900원', 분류: '피자/오리지널', 규격: 'L' }]
     );
 
     expect(result.ok).toBe(true);

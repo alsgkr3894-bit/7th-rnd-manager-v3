@@ -11,16 +11,26 @@ let sessionData;
 function makeStorage(data) {
   return {
     getItem: key => (key in data ? data[key] : null),
-    setItem: (key, value) => { data[key] = String(value); },
-    removeItem: key => { delete data[key]; },
+    setItem: (key, value) => {
+      data[key] = String(value);
+    },
+    removeItem: key => {
+      delete data[key];
+    },
   };
 }
 
 function throwingStorage() {
   return {
-    getItem: () => { throw new Error('storage unavailable'); },
-    setItem: () => { throw new Error('storage unavailable'); },
-    removeItem: () => { throw new Error('storage unavailable'); },
+    getItem: () => {
+      throw new Error('storage unavailable');
+    },
+    setItem: () => {
+      throw new Error('storage unavailable');
+    },
+    removeItem: () => {
+      throw new Error('storage unavailable');
+    },
   };
 }
 
@@ -52,7 +62,9 @@ describe('session storage guards', () => {
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     let result;
-    expect(() => { result = ensureSession(); }).not.toThrow();
+    expect(() => {
+      result = ensureSession();
+    }).not.toThrow();
     expect(result).toEqual({ isNewSession: true, lastLoginAt: null });
     expect(getLastLogin()).toBeNull();
     warnSpy.mockRestore();

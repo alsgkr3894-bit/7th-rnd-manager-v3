@@ -37,14 +37,17 @@ export function UploadErrorBanner({ error }) {
   return (
     <div
       className="info-banner"
-      style={{ marginTop: 16, background: 'var(--negative-soft)', borderColor: 'var(--negative-soft)' }}
+      style={{
+        marginTop: 16,
+        background: 'var(--negative-soft)',
+        borderColor: 'var(--negative-soft)',
+      }}
     >
       <div className="info-banner-ico" style={{ background: 'var(--negative)', color: '#fff' }}>
         <Icon.alert style={{ width: 16, height: 16 }} />
       </div>
       <div style={{ flex: 1 }}>
         <b>업로드 차단</b> — {safeReason}
-
         {rows.length > 0 && (
           <div style={{ marginTop: 8 }}>
             <div style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 4 }}>
@@ -57,22 +60,35 @@ export function UploadErrorBanner({ error }) {
                 const rawMenuName = asDisplayText(r.rawMenuName);
 
                 return (
-                  <div key={`${originalIndex || 'row'}-${i}`} style={{ fontSize: 12, display: 'flex', gap: 8, color: 'var(--text-2)' }}>
+                  <div
+                    key={`${originalIndex || 'row'}-${i}`}
+                    style={{ fontSize: 12, display: 'flex', gap: 8, color: 'var(--text-2)' }}
+                  >
                     <span style={{ color: 'var(--negative)', fontWeight: 700, minWidth: 48 }}>
                       {originalIndex ? `${originalIndex}행` : `#${i + 1}`}
                     </span>
                     <span style={{ color: 'var(--text-3)' }}>{rowReason}</span>
-                    {rawMenuName && (
-                      <span style={{ color: 'var(--text-2)' }}>— {rawMenuName}</span>
-                    )}
+                    {rawMenuName && <span style={{ color: 'var(--text-2)' }}>— {rawMenuName}</span>}
                   </div>
                 );
               })}
             </div>
 
-            <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div
+              style={{
+                marginTop: 8,
+                display: 'flex',
+                gap: 8,
+                alignItems: 'center',
+                flexWrap: 'wrap',
+              }}
+            >
               {hasMany && (
-                <button className="btn sm ghost" onClick={() => setExpanded(e => !e)} style={{ fontSize: 11 }}>
+                <button
+                  className="btn sm ghost"
+                  onClick={() => setExpanded(e => !e)}
+                  style={{ fontSize: 11 }}
+                >
                   {expanded ? '접기' : `전체 ${rows.length}건 보기`}
                 </button>
               )}

@@ -70,15 +70,33 @@ export function MasterRow({ r, onRegClick, selected, onToggleSelect, onInlineSav
           onSave={value => onInlineSave(r, { ingredientName: value })}
           formatter={value => (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontWeight: 600, fontSize: 13 }}>
-                {value || '—'}
-              </span>
+              <span style={{ fontWeight: 600, fontSize: 13 }}>{value || '—'}</span>
               {r.isLinked ? (
-                <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 3, fontWeight: 700, background: 'rgba(56,189,248,.15)', color: 'var(--accent, #38bdf8)', flexShrink: 0 }}>
+                <span
+                  style={{
+                    fontSize: 10,
+                    padding: '1px 5px',
+                    borderRadius: 3,
+                    fontWeight: 700,
+                    background: 'rgba(56,189,248,.15)',
+                    color: 'var(--accent, #38bdf8)',
+                    flexShrink: 0,
+                  }}
+                >
                   제때
                 </span>
               ) : (
-                <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 3, fontWeight: 700, background: 'var(--surface-3)', color: 'var(--text-3)', flexShrink: 0 }}>
+                <span
+                  style={{
+                    fontSize: 10,
+                    padding: '1px 5px',
+                    borderRadius: 3,
+                    fontWeight: 700,
+                    background: 'var(--surface-3)',
+                    color: 'var(--text-3)',
+                    flexShrink: 0,
+                  }}
+                >
                   수동
                 </span>
               )}
@@ -93,7 +111,9 @@ export function MasterRow({ r, onRegClick, selected, onToggleSelect, onInlineSav
           <td style={{ textAlign: 'right', fontSize: 13, fontWeight: 600 }}>
             {r.priceWithTax != null ? `${formatNumber(r.priceWithTax)}원` : '—'}
             {r.taxType === '면세' && r.priceWithTax != null && (
-              <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--text-3)', fontWeight: 400 }}>
+              <span
+                style={{ marginLeft: 4, fontSize: 10, color: 'var(--text-3)', fontWeight: 400 }}
+              >
                 면세
               </span>
             )}
@@ -108,7 +128,9 @@ export function MasterRow({ r, onRegClick, selected, onToggleSelect, onInlineSav
               <>
                 {value != null && value !== '' ? `${formatNumber(value)}원` : '—'}
                 {r.taxType === '면세' && value != null && value !== '' && (
-                  <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--text-3)', fontWeight: 400 }}>
+                  <span
+                    style={{ marginLeft: 4, fontSize: 10, color: 'var(--text-3)', fontWeight: 400 }}
+                  >
                     면세
                   </span>
                 )}

@@ -20,20 +20,25 @@ export function InlineConfirmButtons({
   const handleCancel = typeof onCancel === 'function' ? onCancel : undefined;
 
   return (
-    <span style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'flex-end',
-      gap: 6,
-      flexWrap: 'wrap',
-    }}>
-      <span style={{ fontSize: 11, color: 'var(--negative)', fontWeight: 700 }}>
-        {safeMessage}
-      </span>
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        gap: 6,
+        flexWrap: 'wrap',
+      }}
+    >
+      <span style={{ fontSize: 11, color: 'var(--negative)', fontWeight: 700 }}>{safeMessage}</span>
       <button className="btn sm" onClick={handleCancel} disabled={busy}>
         {safeCancelLabel}
       </button>
-      <button className="btn sm" onClick={handleConfirm} disabled={busy} style={{ color: 'var(--negative)' }}>
+      <button
+        className="btn sm"
+        onClick={handleConfirm}
+        disabled={busy}
+        style={{ color: 'var(--negative)' }}
+      >
         {busy ? '처리 중…' : safeConfirmLabel}
       </button>
     </span>
