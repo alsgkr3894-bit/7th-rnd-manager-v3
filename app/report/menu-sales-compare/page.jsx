@@ -9,8 +9,37 @@ import { buildPeriodCompare, deriveCompareB } from '@/lib/sales/compare';
 import { safeAll } from '@/lib/stats/_helpers';
 import { useDraftRestore } from '@/hooks/useDraftRestore';
 import { getProfile } from '@/lib/profile';
+import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 
 const DRAFT_KEY = 'report_draft_compare';
+
+function safeYear(value, fallback = new Date().getFullYear()) {
+  const n = asFiniteNumber(value, null);
+  if (n == null || n < 1900 || n > 2999) return fallback;
+  return Math.floor(n);
+}
+
+function safeMonth(value, fallback = new Date().getMonth() + 1) {
+  const n = asFiniteNumber(value, null);
+  if (n == null || n < 1 || n > 12) return fallback;
+  return Math.floor(n);
+}
+
+function safeQuantity(value) {
+  return asFiniteNumber(value, 0) ?? 0;
+}
+
+function normalizeMode(value) {
+  return ['mom', 'yoy', 'custom'].includes(value) ? value : 'mom';
+}
+
+function normalizeScope(value) {
+  return ['all', 'pizza', 'side'].includes(value) ? value : 'all';
+}
+
+function safePercent(value) {
+  return asFiniteNumber(value, null);
+}
 
 export default function Page() {
   const [mode, setMode] = useState('mom');
@@ -30,13 +59,15 @@ export default function Page() {
   const upd = makeFieldUpdater(setOpts);
 
   useDraftRestore(DRAFT_KEY, draft => {
-    if (draft.mode) setMode(draft.mode);
-    if (draft.scope) setScope(draft.scope);
-    if (draft.yearA) setYearA(draft.yearA);
-    if (draft.monthA) setMonthA(draft.monthA);
-    if (draft.yearB) setYearB(draft.yearB);
-    if (draft.monthB) setMonthB(draft.monthB);
-    if (draft.opts) setOpts(o => ({ ...o, ...draft.opts }));
+    if (draft.mode) setMode(normalizeMode(draft.mode));
+    if (draft.scope) setScope(normalizeScope(draft.scope));
+    if (draft.yearA) setYearA(safeYear(draft.yearA));
+    if (draft.monthA) setMonthA(safeMonth(draft.monthA));
+    if (draft.yearB) setYearB(safeYear(draft.yearB));
+    if (draft.monthB) setMonthB(safeMonth(draft.monthB));
+    if (draft.opts && typeof draft.opts === 'object' && !Array.isArray(draft.opts)) {
+      setOpts(o => ({ ...o, ...draft.opts }));
+    }
   });
 
   const [compareResult, setCompareResult] = useState(null);
@@ -44,25 +75,41 @@ export default function Page() {
   const [dataError, setDataError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const periodA = { year: yearA, month: monthA };
+  const safeMode = normalizeMode(mode);
+  const safeScope = normalizeScope(scope);
+  const safeYearA = safeYear(yearA);
+  const safeMonthA = safeMonth(monthA);
+  const safeYearB = safeYear(yearB);
+  const safeMonthB = safeMonth(monthB);
+  const safeOpts = opts && typeof opts === 'object' && !Array.isArray(opts) ? opts : {};
+
+  const periodA = { year: safeYearA, month: safeMonthA };
   const periodB =
-    mode === 'custom' ? { year: yearB, month: monthB } : deriveCompareB(periodA, mode);
+    safeMode === 'custom' ? { year: safeYearB, month: safeMonthB } : deriveCompareB(periodA, safeMode);
 
   useEffect(() => {
+    let ignore = false;
+
     setIsLoading(true);
     initDB()
       .then(async () => {
         try {
-          const rows = await safeAll('sales_rows');
+          const rows = asObjectArray(await safeAll('sales_rows'));
+          if (ignore) return;
+
           if (rows.length === 0) {
+            setCompareResult(null);
+            setSeries([]);
             setIsLoading(false);
             return;
           }
           const result = buildPeriodCompare(rows, periodA, periodB, {
             groupBy: 'group',
-            category: scope === 'all' ? null : scope,
+            category: safeScope === 'all' ? null : safeScope,
             topN: 6,
           });
+          if (ignore) return;
+
           setCompareResult(result);
 
           // 시리즈: 카테고리별 A/B 집계
@@ -70,49 +117,74 @@ export default function Page() {
           for (const r of rows) {
             if (r.status !== 'classified') continue;
             // 표·요약(compareResult)과 동일하게 scope로 필터해 차트가 어긋나지 않도록 한다.
-            if (scope !== 'all' && r.category !== scope) continue;
-            const cat = r.category || '기타';
+            if (safeScope !== 'all' && r.category !== safeScope) continue;
+            const cat = asDisplayText(r.category, '기타') || '기타';
             if (!catMap.has(cat)) catMap.set(cat, { a: 0, b: 0 });
-            const isA = r.year === periodA.year && r.month === periodA.month;
-            const isB = r.year === periodB.year && r.month === periodB.month;
-            if (isA) catMap.get(cat).a += Number(r.quantity) || 0;
-            if (isB) catMap.get(cat).b += Number(r.quantity) || 0;
+            const rowYear = safeYear(r.year, 0);
+            const rowMonth = safeMonth(r.month, 0);
+            const isA = rowYear === periodA.year && rowMonth === periodA.month;
+            const isB = rowYear === periodB.year && rowMonth === periodB.month;
+            if (isA) catMap.get(cat).a += safeQuantity(r.quantity);
+            if (isB) catMap.get(cat).b += safeQuantity(r.quantity);
           }
           const cats = Array.from(catMap.entries()).filter(([, v]) => v.a > 0 || v.b > 0);
-          if (cats.length > 0) {
-            setSeries([
-              { name: `A (${monthA}월)`, data: cats.map(([, v]) => v.a) },
-              { name: `B (${periodB.month}월)`, data: cats.map(([, v]) => v.b) },
-            ]);
-          }
+          setSeries(
+            cats.length > 0
+              ? [
+                  { name: `A (${safeMonthA}월)`, data: cats.map(([, v]) => v.a) },
+                  { name: `B (${periodB.month}월)`, data: cats.map(([, v]) => v.b) },
+              ]
+              : []
+          );
           setDataError(null);
         } catch (err) {
+          if (ignore) return;
+
           console.error('[compare report]', err);
           setDataError('판매 비교 데이터를 집계하는 중 오류가 발생했어요.');
         } finally {
-          setIsLoading(false);
+          if (!ignore) setIsLoading(false);
         }
       })
       .catch(() => {
+        if (ignore) return;
+
         setIsLoading(false);
         setDataError('데이터베이스에 연결할 수 없어요. 판매 데이터를 먼저 업로드해 주세요.');
       });
+    return () => {
+      ignore = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, scope, yearA, monthA, yearB, monthB]);
+  }, [safeMode, safeScope, safeYearA, safeMonthA, safeYearB, safeMonthB]);
 
   const compareRows =
-    compareResult?.rows
-      ?.filter(r => !r.aIsZero && !r.bIsZero)
-      .sort((a, b) => Math.abs(b.pct ?? 0) - Math.abs(a.pct ?? 0))
+    asObjectArray(compareResult?.rows)
+      .filter(r => !r.aIsZero && !r.bIsZero)
+      .sort((a, b) => Math.abs(safeQuantity(b.pct)) - Math.abs(safeQuantity(a.pct)))
       .slice(0, 6) || [];
 
-  const periodALabel = `${yearA}.${String(monthA).padStart(2, '0')}`;
+  const safeSeries = asObjectArray(series);
+  const safeCompareResult =
+    compareResult && typeof compareResult === 'object' && !Array.isArray(compareResult)
+      ? compareResult
+      : null;
+  const totalPct = safePercent(safeCompareResult?.totalPct);
+  const periodALabel = `${safeYearA}.${String(safeMonthA).padStart(2, '0')}`;
   const periodBLabel = `${periodB.year}.${String(periodB.month).padStart(2, '0')}`;
   const reportMeta = {
     period: `${periodALabel} vs ${periodBLabel}`,
     name: `판매량 비교 보고서 — ${periodALabel} vs ${periodBLabel}`,
     pages: 7,
-    options: { mode, scope, yearA, monthA, yearB, monthB, opts },
+    options: {
+      mode: safeMode,
+      scope: safeScope,
+      yearA: safeYearA,
+      monthA: safeMonthA,
+      yearB: safeYearB,
+      monthB: safeMonthB,
+      opts: safeOpts,
+    },
   };
 
   return (
@@ -129,8 +201,8 @@ export default function Page() {
         <>
           <OptGroup label="비교 모드">
             <Seg
-              value={mode}
-              onChange={setMode}
+              value={safeMode}
+              onChange={value => setMode(normalizeMode(value))}
               options={[
                 { value: 'mom', label: '전월 대비' },
                 { value: 'yoy', label: '전년 동월' },
@@ -143,8 +215,8 @@ export default function Page() {
             <div className="opt-period-row">
               <select
                 className="period-select num"
-                value={yearA}
-                onChange={e => setYearA(parseInt(e.target.value))}
+                value={safeYearA}
+                onChange={e => setYearA(safeYear(e.target.value, safeYearA))}
               >
                 {[2024, 2025, 2026].map(y => (
                   <option key={y} value={y}>
@@ -154,8 +226,8 @@ export default function Page() {
               </select>
               <select
                 className="period-select num"
-                value={monthA}
-                onChange={e => setMonthA(parseInt(e.target.value))}
+                value={safeMonthA}
+                onChange={e => setMonthA(safeMonth(e.target.value, safeMonthA))}
               >
                 {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
                   <option key={m} value={m}>
@@ -166,13 +238,13 @@ export default function Page() {
             </div>
           </OptGroup>
 
-          {mode === 'custom' && (
+          {safeMode === 'custom' && (
             <OptGroup label="기간 B (비교)">
               <div className="opt-period-row">
                 <select
                   className="period-select num"
-                  value={yearB}
-                  onChange={e => setYearB(parseInt(e.target.value))}
+                  value={safeYearB}
+                  onChange={e => setYearB(safeYear(e.target.value, safeYearB))}
                 >
                   {[2024, 2025, 2026].map(y => (
                     <option key={y} value={y}>
@@ -182,8 +254,8 @@ export default function Page() {
                 </select>
                 <select
                   className="period-select num"
-                  value={monthB}
-                  onChange={e => setMonthB(parseInt(e.target.value))}
+                  value={safeMonthB}
+                  onChange={e => setMonthB(safeMonth(e.target.value, safeMonthB))}
                 >
                   {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
                     <option key={m} value={m}>
@@ -197,8 +269,8 @@ export default function Page() {
 
           <OptGroup label="대상 범위">
             <Seg
-              value={scope}
-              onChange={setScope}
+              value={safeScope}
+              onChange={value => setScope(normalizeScope(value))}
               options={[
                 { value: 'all', label: '전체' },
                 { value: 'pizza', label: '피자' },
@@ -210,27 +282,27 @@ export default function Page() {
           <OptGroup label="포함 섹션">
             <Check
               label="요약 (총 판매량·증감)"
-              value={opts.summary}
+              value={!!safeOpts.summary}
               onChange={v => upd('summary', v)}
             />
             <Check
               label="카테고리별 비교"
-              value={opts.catCompare}
+              value={!!safeOpts.catCompare}
               onChange={v => upd('catCompare', v)}
             />
             <Check
               label="순위 이동표 (메뉴별 A→B)"
-              value={opts.rankShift}
+              value={!!safeOpts.rankShift}
               onChange={v => upd('rankShift', v)}
             />
             <Check
               label="비교 차트 (스택 막대)"
-              value={opts.chart}
+              value={!!safeOpts.chart}
               onChange={v => upd('chart', v)}
             />
             <Check
               label="Winners & Losers 부록"
-              value={opts.winners}
+              value={!!safeOpts.winners}
               onChange={v => upd('winners', v)}
               hint="±10% 이상 변동"
             />
@@ -247,10 +319,12 @@ export default function Page() {
             <div className="paper-meta">
               <span>
                 비교 모드:{' '}
-                {mode === 'mom' ? '전월 대비' : mode === 'yoy' ? '전년 동월' : '사용자 지정'}
+                {safeMode === 'mom' ? '전월 대비' : safeMode === 'yoy' ? '전년 동월' : '사용자 지정'}
               </span>
               <span>·</span>
-              <span>대상: {scope === 'all' ? '전체' : scope === 'pizza' ? '피자' : '사이드'}</span>
+              <span>
+                대상: {safeScope === 'all' ? '전체' : safeScope === 'pizza' ? '피자' : '사이드'}
+              </span>
               <span>·</span>
               <span className="mono">
                 생성일 {new Date().toLocaleDateString('ko-KR').slice(0, -1).replace(/\. /g, '.')} ·{' '}
@@ -259,18 +333,18 @@ export default function Page() {
             </div>
           </div>
 
-          {opts.summary && (
+          {safeOpts.summary && (
             <div className="paper-stat-row">
               <div className="paper-stat">
                 <div className="paper-stat-label">총 판매량 (A)</div>
                 <div className="paper-stat-val num">
-                  {compareResult ? fmtShort(compareResult.totalA) : '—'}
+                  {safeCompareResult ? fmtShort(safeQuantity(safeCompareResult.totalA)) : '—'}
                 </div>
               </div>
               <div className="paper-stat">
                 <div className="paper-stat-label">총 판매량 (B)</div>
                 <div className="paper-stat-val num">
-                  {compareResult ? fmtShort(compareResult.totalB) : '—'}
+                  {safeCompareResult ? fmtShort(safeQuantity(safeCompareResult.totalB)) : '—'}
                 </div>
               </div>
               <div className="paper-stat">
@@ -279,24 +353,26 @@ export default function Page() {
                   className="paper-stat-val num"
                   style={{
                     color:
-                      (compareResult?.totalPct ?? 0) >= 0 ? 'var(--positive)' : 'var(--negative)',
+                      (totalPct ?? 0) >= 0
+                        ? 'var(--positive)'
+                        : 'var(--negative)',
                   }}
                 >
-                  {compareResult?.totalPct != null
-                    ? `${compareResult.totalPct >= 0 ? '+' : ''}${compareResult.totalPct.toFixed(1)}%`
+                  {totalPct != null
+                    ? `${totalPct >= 0 ? '+' : ''}${totalPct.toFixed(1)}%`
                     : '—'}
                 </div>
               </div>
             </div>
           )}
 
-          {opts.chart && (
+          {safeOpts.chart && (
             <div className="paper-section">
               <div className="paper-section-title">카테고리별 판매량 비교</div>
               <div style={{ padding: '8px 0' }}>
-                {series.length > 0 ? (
+                {safeSeries.length > 0 ? (
                   <AreaChart
-                    series={series}
+                    series={safeSeries}
                     labels={[]}
                     colors={['#7C3AED', '#3182F6']}
                     height={180}
@@ -319,7 +395,7 @@ export default function Page() {
             </div>
           )}
 
-          {opts.rankShift && (
+          {safeOpts.rankShift && (
             <div className="paper-section">
               <div className="paper-section-title">순위 이동 (TOP 6 미리보기)</div>
               {compareRows.length > 0 ? (
@@ -327,30 +403,33 @@ export default function Page() {
                   <thead>
                     <tr>
                       <th>메뉴명</th>
-                      <th style={{ width: 100, textAlign: 'right' }}>A ({monthA}월)</th>
+                      <th style={{ width: 100, textAlign: 'right' }}>A ({safeMonthA}월)</th>
                       <th style={{ width: 100, textAlign: 'right' }}>B ({periodB.month}월)</th>
                       <th style={{ width: 80, textAlign: 'right' }}>증감</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {compareRows.map(r => (
-                      <tr key={r.name}>
-                        <td>{r.name}</td>
-                        <td className="num right muted">{fmtShort(r.a)}</td>
+                    {compareRows.map(r => {
+                      const pct = safePercent(r.pct) ?? 0;
+                      return (
+                      <tr key={asDisplayText(r.name, '—')}>
+                        <td>{asDisplayText(r.name, '—')}</td>
+                        <td className="num right muted">{fmtShort(safeQuantity(r.a))}</td>
                         <td className="num right" style={{ fontWeight: 700 }}>
-                          {fmtShort(r.b)}
+                          {fmtShort(safeQuantity(r.b))}
                         </td>
                         <td
                           className="num right"
                           style={{
-                            color: (r.pct ?? 0) >= 0 ? 'var(--positive)' : 'var(--negative)',
+                            color: pct >= 0 ? 'var(--positive)' : 'var(--negative)',
                             fontWeight: 700,
                           }}
                         >
-                          {(r.pct ?? 0) >= 0 ? '▲' : '▼'} {Math.abs(r.pct ?? 0).toFixed(1)}%
+                          {pct >= 0 ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}%
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               ) : (
@@ -369,7 +448,7 @@ export default function Page() {
             </div>
           )}
 
-          {opts.winners && compareResult && (
+          {safeOpts.winners && safeCompareResult && (
             <div className="paper-section">
               <div className="paper-section-title">Winners &amp; Losers (±10% 이상)</div>
               <div className="winners-grid">
@@ -377,17 +456,19 @@ export default function Page() {
                   <div className="winner-h" style={{ color: 'var(--positive)' }}>
                     ▲ Winners
                   </div>
-                  {(compareResult.topRise || [])
-                    .filter(r => (r.pct ?? 0) >= 10)
+                  {asObjectArray(safeCompareResult.topRise)
+                    .filter(r => (safePercent(r.pct) ?? 0) >= 10)
                     .map(r => (
-                      <div className="winner-row" key={r.name}>
-                        <span>{r.name}</span>
+                      <div className="winner-row" key={asDisplayText(r.name, '—')}>
+                        <span>{asDisplayText(r.name, '—')}</span>
                         <b className="num" style={{ color: 'var(--positive)' }}>
-                          +{(r.pct ?? 0).toFixed(1)}%
+                          +{(safePercent(r.pct) ?? 0).toFixed(1)}%
                         </b>
                       </div>
                     ))}
-                  {(compareResult.topRise || []).filter(r => (r.pct ?? 0) >= 10).length === 0 && (
+                  {asObjectArray(safeCompareResult.topRise).filter(
+                    r => (safePercent(r.pct) ?? 0) >= 10
+                  ).length === 0 && (
                     <div className="muted" style={{ fontSize: 12 }}>
                       해당 없음
                     </div>
@@ -397,17 +478,19 @@ export default function Page() {
                   <div className="winner-h" style={{ color: 'var(--negative)' }}>
                     ▼ Losers
                   </div>
-                  {(compareResult.topFall || [])
-                    .filter(r => (r.pct ?? 0) <= -10)
+                  {asObjectArray(safeCompareResult.topFall)
+                    .filter(r => (safePercent(r.pct) ?? 0) <= -10)
                     .map(r => (
-                      <div className="winner-row" key={r.name}>
-                        <span>{r.name}</span>
+                      <div className="winner-row" key={asDisplayText(r.name, '—')}>
+                        <span>{asDisplayText(r.name, '—')}</span>
                         <b className="num" style={{ color: 'var(--negative)' }}>
-                          {(r.pct ?? 0).toFixed(1)}%
+                          {(safePercent(r.pct) ?? 0).toFixed(1)}%
                         </b>
                       </div>
                     ))}
-                  {(compareResult.topFall || []).filter(r => (r.pct ?? 0) <= -10).length === 0 && (
+                  {asObjectArray(safeCompareResult.topFall).filter(
+                    r => (safePercent(r.pct) ?? 0) <= -10
+                  ).length === 0 && (
                     <div className="muted" style={{ fontSize: 12 }}>
                       해당 없음
                     </div>

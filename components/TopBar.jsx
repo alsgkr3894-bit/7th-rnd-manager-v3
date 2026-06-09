@@ -18,7 +18,15 @@ export default function TopBar({ onOpenPalette, onToggleSidebar, activeCompany, 
   const profileRef = useRef(null);
   const router = useRouter();
 
-  useEffect(() => { setDark(getSetting('theme') === 'dark'); }, []);
+  useEffect(() => {
+    const syncTheme = () => {
+      setDark(document.documentElement.dataset.theme === 'dark' || getSetting('theme') === 'dark');
+    };
+    syncTheme();
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, []);
   useEffect(() => { setProfile(getProfile()); }, []);
 
   useEffect(() => {

@@ -11,43 +11,64 @@ import {
   UnmatchedSkeleton,
 } from '@/components/sales/UnmatchedEmpty';
 import { UnmatchedFilterBar } from '@/components/sales/UnmatchedFilterBar';
+import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
+
+const STATUS_FILTERS = new Set(['open', 'resolved', 'all']);
+
+function safeStatusFilter(value) {
+  const requested = asDisplayText(value, 'open');
+  return STATUS_FILTERS.has(requested) ? requested : 'open';
+}
+
+function safePeriod(issue) {
+  const year = asFiniteNumber(issue?.year, null);
+  const month = asFiniteNumber(issue?.month, null);
+  if (year == null || month == null || month < 1 || month > 12) return null;
+  return { year: Math.floor(year), month: Math.floor(month) };
+}
 
 export default function Page() {
   const { ready, issues, resolve, bulkExclude, bulkRule } = useUnmatchedIssues();
   const [statusFilter, setStatusFilter] = useState('open'); // open | resolved | all
   const [monthFilter, setMonthFilter] = useState('all');     // 'all' | 'YYYY-M'
   const [search, setSearch] = useState('');
+  const safeIssues = useMemo(() => asObjectArray(issues), [issues]);
+  const selectedStatus = safeStatusFilter(statusFilter);
+  const selectedMonth = asDisplayText(monthFilter, 'all') || 'all';
 
   const months = useMemo(() => {
     const seen = new Map();
-    for (const i of issues) {
-      const k = `${i.year}-${i.month}`;
-      if (!seen.has(k)) seen.set(k, { year: i.year, month: i.month, key: k });
+    for (const issue of safeIssues) {
+      const period = safePeriod(issue);
+      if (!period) continue;
+      const k = `${period.year}-${period.month}`;
+      if (!seen.has(k)) seen.set(k, { ...period, key: k });
     }
     return Array.from(seen.values()).sort((a, b) =>
       a.year !== b.year ? b.year - a.year : b.month - a.month
     );
-  }, [issues]);
+  }, [safeIssues]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return issues.filter(i => {
-      if (statusFilter !== 'all' && i.status !== statusFilter) return false;
-      if (monthFilter !== 'all') {
-        const [y, m] = monthFilter.split('-').map(Number);
-        if (i.year !== y || i.month !== m) return false;
+    const q = asDisplayText(search).trim().toLowerCase();
+    return safeIssues.filter(i => {
+      if (selectedStatus !== 'all' && asDisplayText(i.status) !== selectedStatus) return false;
+      if (selectedMonth !== 'all') {
+        const [y, m] = selectedMonth.split('-').map(Number);
+        const period = safePeriod(i);
+        if (!period || period.year !== y || period.month !== m) return false;
       }
       if (q) {
-        const raw  = (i.representativeRawMenuName || '').toLowerCase();
-        const norm = (i.normalizedMenuName || '').toLowerCase();
+        const raw  = asDisplayText(i.representativeRawMenuName).toLowerCase();
+        const norm = asDisplayText(i.normalizedMenuName).toLowerCase();
         if (!raw.includes(q) && !norm.includes(q)) return false;
       }
       return true;
     });
-  }, [issues, statusFilter, monthFilter, search]);
+  }, [safeIssues, selectedStatus, selectedMonth, search]);
 
-  const openCount     = issues.filter(i => i.status === 'open').length;
-  const resolvedCount = issues.filter(i => i.status === 'resolved').length;
+  const openCount     = safeIssues.filter(i => asDisplayText(i.status) === 'open').length;
+  const resolvedCount = safeIssues.filter(i => asDisplayText(i.status) === 'resolved').length;
 
   return (
     <main className="main">
@@ -63,7 +84,7 @@ export default function Page() {
         months={months}
       />
 
-      {issues.length > 0 && (
+      {safeIssues.length > 0 && (
         <div className="filter-search" style={{ marginTop: 12, marginBottom: 4 }}>
           <Icon.search style={{ width: 14, height: 14, color: 'var(--text-3)', flexShrink: 0 }}/>
           <input
@@ -74,22 +95,22 @@ export default function Page() {
         </div>
       )}
 
-      {issues.length > 0 && (
+      {safeIssues.length > 0 && (
         <UnmatchedFilterBar
-          statusFilter={statusFilter}
+          statusFilter={selectedStatus}
           onStatusChange={setStatusFilter}
-          monthFilter={monthFilter}
+          monthFilter={selectedMonth}
           onMonthChange={setMonthFilter}
           openCount={openCount}
           resolvedCount={resolvedCount}
-          totalCount={issues.length}
+          totalCount={safeIssues.length}
           months={months}
         />
       )}
 
       {!ready
         ? <UnmatchedSkeleton />
-        : issues.length === 0
+        : safeIssues.length === 0
           ? <UnmatchedAllResolved />
           : filtered.length === 0
             ? <UnmatchedNoMatch />

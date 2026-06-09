@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -116,17 +116,29 @@ export function SuppliersView() {
   const [search,          setSearch]          = useState('');
   const [modalTarget,     setModalTarget]     = useState(null); // null | 'new' | supplierRecord
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const mountedRef = useRef(true);
 
   const load = useCallback(async () => {
     await initDB();
     const rows = await getAllSuppliers();
-    setSuppliers(rows);
+    if (mountedRef.current) setSuppliers(rows);
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     load()
-      .catch(err => { console.error(err); setDbError(err.message || '데이터 로드 실패'); })
-      .finally(() => setLoading(false));
+      .catch(err => {
+        if (!mountedRef.current) return;
+        console.error(err);
+        setDbError(err.message || '데이터 로드 실패');
+      })
+      .finally(() => {
+        if (mountedRef.current) setLoading(false);
+      });
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, [load]);
 
   async function handleSave(form) {

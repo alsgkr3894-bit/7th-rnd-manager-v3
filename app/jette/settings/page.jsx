@@ -19,7 +19,22 @@ const DEFAULT_SETTINGS = {
 function loadSettings() {
   try {
     const stored = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-    return { ...DEFAULT_SETTINGS, ...stored };
+    if (!stored || typeof stored !== 'object' || Array.isArray(stored)) {
+      return { ...DEFAULT_SETTINGS };
+    }
+    const priceAlertThreshold = Number(stored.priceAlertThreshold);
+    return {
+      ...DEFAULT_SETTINGS,
+      priceAlertThreshold: Number.isFinite(priceAlertThreshold)
+        ? priceAlertThreshold
+        : DEFAULT_SETTINGS.priceAlertThreshold,
+      autoRecalcOnUpdate: typeof stored.autoRecalcOnUpdate === 'boolean'
+        ? stored.autoRecalcOnUpdate
+        : DEFAULT_SETTINGS.autoRecalcOnUpdate,
+      autoRegisterNew: stored.autoRegisterNew === 'auto' || stored.autoRegisterNew === 'manual'
+        ? stored.autoRegisterNew
+        : DEFAULT_SETTINGS.autoRegisterNew,
+    };
   } catch {
     return { ...DEFAULT_SETTINGS };
   }

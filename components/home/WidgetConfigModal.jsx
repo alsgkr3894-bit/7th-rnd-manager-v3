@@ -10,6 +10,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Icon } from '@/components/icons';
 import { useModalShell } from '@/hooks/useModalShell';
 import { HOME_WIDGET_ROWS } from '@/hooks/useWidgetConfig';
+import { asStringArray } from '@/lib/ui/prop-guards';
 
 function SortableRow({ row, isVisible, onToggleRow, isFavorite, onToggleFavorite }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: row.id });
@@ -19,9 +20,10 @@ function SortableRow({ row, isVisible, onToggleRow, isFavorite, onToggleFavorite
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const allVisible = row.keys.every(k => isVisible(k));
-  const handleToggle = () => onToggleRow(row.keys);
-  const fav = isFavorite(row.id);
+  const rowKeys = asStringArray(row.keys);
+  const allVisible = rowKeys.every(k => isVisible?.(k));
+  const handleToggle = () => onToggleRow?.(rowKeys);
+  const fav = Boolean(isFavorite?.(row.id));
 
   return (
     <div
@@ -43,7 +45,7 @@ function SortableRow({ row, isVisible, onToggleRow, isFavorite, onToggleFavorite
       {/* 즐겨찾기 토글 */}
       <button
         type="button"
-        onClick={() => onToggleFavorite(row.id)}
+        onClick={() => onToggleFavorite?.(row.id)}
         aria-pressed={fav}
         title={fav ? '즐겨찾기 해제' : '즐겨찾기 (상단 고정)'}
         style={{
@@ -84,7 +86,10 @@ function SortableRow({ row, isVisible, onToggleRow, isFavorite, onToggleFavorite
  */
 export function WidgetConfigModal({ isVisible, toggleRow, onClose, widgetOrder, onReorder, isFavorite, onToggleFavorite, onReset }) {
   const { containerRef, isClosing, close } = useModalShell(onClose);
-  const [localOrder, setLocalOrder] = useState(widgetOrder ?? HOME_WIDGET_ROWS.map(r => r.id));
+  const [localOrder, setLocalOrder] = useState(() => {
+    const savedOrder = asStringArray(widgetOrder);
+    return savedOrder.length > 0 ? savedOrder : HOME_WIDGET_ROWS.map(r => r.id);
+  });
 
   const rowMap = Object.fromEntries(HOME_WIDGET_ROWS.map(r => [r.id, r]));
   const orderedRows = localOrder.map(id => rowMap[id]).filter(Boolean);
@@ -96,6 +101,7 @@ export function WidgetConfigModal({ isVisible, toggleRow, onClose, widgetOrder, 
     if (!over || active.id === over.id) return;
     const oldIdx = localOrder.indexOf(active.id);
     const newIdx = localOrder.indexOf(over.id);
+    if (oldIdx < 0 || newIdx < 0) return;
     const newOrder = arrayMove(localOrder, oldIdx, newIdx);
     setLocalOrder(newOrder);
     onReorder?.(newOrder);

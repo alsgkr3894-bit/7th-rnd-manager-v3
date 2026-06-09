@@ -1,5 +1,6 @@
 'use client';
 import { useMemo } from 'react';
+import { asObjectArray } from '@/lib/ui/prop-guards';
 
 const WEEKS = 16;
 const DAYS = WEEKS * 7; // 112
@@ -18,7 +19,7 @@ export function NoteHeatmapWidget({ notes }) {
 
   const { countMap, total, topDow, streak, weekAvg } = useMemo(() => {
     const map = {};
-    (notes || []).forEach(note => {
+    asObjectArray(notes).forEach(note => {
       const d = note.createdAt ? new Date(note.createdAt) : null;
       if (!d) return;
       d.setHours(0, 0, 0, 0);

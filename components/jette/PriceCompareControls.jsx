@@ -1,6 +1,7 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
  * PriceCompareControls — 기준/최신 날짜 선택 + 안내 배너
@@ -12,10 +13,14 @@ import { formatNumber } from '@/lib/format';
  * @param {{ up, down, total }} summary — 인상/인하 카운트
  */
 export function PriceCompareControls({ files, baseFileId, latestFileId, onBaseChange, onLatestChange, summary }) {
-  if (files.length === 0) return null;
+  const safeFiles = asObjectArray(files);
+  if (safeFiles.length === 0) return null;
+  const safeSummary = summary && typeof summary === 'object' ? summary : null;
 
-  const latest = files.find(f => f.id === latestFileId);
-  const base   = files.find(f => f.id === baseFileId);
+  const latest = safeFiles.find(f => f.id === latestFileId);
+  const base   = safeFiles.find(f => f.id === baseFileId);
+  const latestDate = asDisplayText(latest?.updateDate, '-');
+  const baseDate = asDisplayText(base?.updateDate, '-');
 
   return (
     <>
@@ -26,9 +31,9 @@ export function PriceCompareControls({ files, baseFileId, latestFileId, onBaseCh
         <div>
           {latest ? (
             <>
-              <b>최신 제때 단가: {latest.updateDate}</b>
-              {base && summary && (
-                <> · 이전 단가({base.updateDate}) 대비 인상 {formatNumber(summary.up)}개 / 인하 {formatNumber(summary.down)}개</>
+              <b>최신 제때 단가: {latestDate}</b>
+              {base && safeSummary && (
+                <> · 이전 단가({baseDate}) 대비 인상 {formatNumber(safeSummary.up)}개 / 인하 {formatNumber(safeSummary.down)}개</>
               )}
               {!base && ' · 이전 비교 대상 없음 (모두 신규)'}
             </>
@@ -46,7 +51,7 @@ export function PriceCompareControls({ files, baseFileId, latestFileId, onBaseCh
           <DateSide
             label="● 기준 (이전)"
             color="var(--text-3)"
-            files={files}
+            files={safeFiles}
             value={baseFileId}
             onChange={onBaseChange}
             allowNull
@@ -55,7 +60,7 @@ export function PriceCompareControls({ files, baseFileId, latestFileId, onBaseCh
           <DateSide
             label="● 최신"
             color="var(--accent-text)"
-            files={files}
+            files={safeFiles}
             value={latestFileId}
             onChange={onLatestChange}
           />
@@ -66,12 +71,17 @@ export function PriceCompareControls({ files, baseFileId, latestFileId, onBaseCh
 }
 
 function DateSide({ label, color, files, value, onChange, allowNull }) {
+  const handleChange = typeof onChange === 'function' ? onChange : () => {};
+
   return (
     <div className="period-side">
       <div className="period-label" style={{color}}>{label}</div>
       <select
         value={value ?? ''}
-        onChange={e => onChange(e.target.value ? Number(e.target.value) : null)}
+        onChange={e => {
+          const id = Number(e.target.value);
+          handleChange(Number.isSafeInteger(id) && id > 0 ? id : null);
+        }}
         style={{
           background: 'var(--surface-2)', border: '1px solid var(--border)',
           borderRadius: 8, padding: '6px 10px', fontSize: 14, fontWeight: 600,
@@ -79,9 +89,10 @@ function DateSide({ label, color, files, value, onChange, allowNull }) {
         }}
       >
         {allowNull && <option value="">(없음)</option>}
-        {files.map(f => (
-          <option key={f.id} value={f.id}>{f.updateDate}</option>
-        ))}
+        {files.map((f, index) => {
+          const id = asDisplayText(f.id, `file-${index}`);
+          return <option key={id} value={id}>{asDisplayText(f.updateDate, '-')}</option>;
+        })}
       </select>
     </div>
   );

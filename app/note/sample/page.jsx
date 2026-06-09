@@ -1,5 +1,5 @@
 'use client';
-import { Suspense, useState, useEffect, useMemo } from 'react';
+import { Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -37,6 +37,14 @@ const SORT_OPTIONS = [
   { key: 'rating', label: '별점순' },
 ];
 
+const SAMPLE_SORT_KEYS = new Set(SORT_OPTIONS.map(o => o.key));
+const SAMPLE_VIEW_KEYS = new Set(['grid', 'list', 'calendar']);
+const SAMPLE_RATING_KEYS = new Set([-1, 0, 3, 4, 5]);
+
+function pickAllowed(value, allowed, fallback) {
+  return allowed.has(value) ? value : fallback;
+}
+
 const CALENDAR_CELLS = 42; // 6주 × 7일 — 달력 그리드 고정 칸 수
 
 /* ── 메인 페이지 ── */
@@ -70,13 +78,14 @@ function SampleContent() {
   const [catFilter, setCatFilter] = useState(() => searchParams.get('cat') || 'all');
   const [ratingMin, setRatingMin] = useState(() => {
     const v = parseInt(searchParams.get('r') || '0', 10);
-    return Number.isNaN(v) ? 0 : v;
+    return pickAllowed(v, SAMPLE_RATING_KEYS, 0);
   });
-  const [sortBy, setSortBy] = useState(() => tryLS(KEYS.SAMPLE_SORT, 'createdAt'));
+  const [sortBy, setSortBy] = useState(() => pickAllowed(tryLS(KEYS.SAMPLE_SORT, 'createdAt'), SAMPLE_SORT_KEYS, 'createdAt'));
   const [detailRec, setDetailRec] = useState(null);
+  const searchBlurTimerRef = useRef(null);
 
   // 뷰 모드
-  const [viewMode, setViewMode] = useState(() => tryLS(KEYS.SAMPLE_VIEW, 'grid'));
+  const [viewMode, setViewMode] = useState(() => pickAllowed(tryLS(KEYS.SAMPLE_VIEW, 'grid'), SAMPLE_VIEW_KEYS, 'grid'));
   const [calMonth, setCalMonth] = useState(() => new Date());
 
   const { data: loadedSamples, loading, reload } = useDBLoad(() => getAllSamples());
@@ -86,6 +95,10 @@ function SampleContent() {
   }, [loadedSamples]);
 
   useVisibilityRefresh(reload);
+
+  useEffect(() => () => {
+    if (searchBlurTimerRef.current) clearTimeout(searchBlurTimerRef.current);
+  }, []);
 
   const {
     batchMode, setBatchMode, selected, toggleSelect, exitBatchMode, handleBatchDelete,
@@ -117,6 +130,14 @@ function SampleContent() {
   function handleSearchChange(val) {
     setSearch(val);
     scheduleSearchHistory(val);
+  }
+
+  function closeSearchHistorySoon() {
+    if (searchBlurTimerRef.current) clearTimeout(searchBlurTimerRef.current);
+    searchBlurTimerRef.current = setTimeout(() => {
+      setShowSearchHist(false);
+      searchBlurTimerRef.current = null;
+    }, 150);
   }
 
   const filtered = useMemo(() => {
@@ -422,9 +443,7 @@ function SampleContent() {
             value={search}
             onChange={e => handleSearchChange(e.target.value)}
             onFocus={() => setShowSearchHist(true)}
-            onBlur={() => {
-              setTimeout(() => setShowSearchHist(false), 150);
-            }}
+            onBlur={closeSearchHistorySoon}
             placeholder="제목, 메뉴명, 내용, 태그 검색"
           />
           {showSearchHist && searchHistory.length > 0 && (

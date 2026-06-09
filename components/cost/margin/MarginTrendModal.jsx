@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { Icon } from '@/components/icons';
 import { formatDate, formatRelative, formatPercent } from '@/lib/format';
@@ -13,20 +13,28 @@ export function MarginTrendModal({ onClose }) {
   const [snapshots, setSnapshots] = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [deleting,  setDeleting]  = useState(null); // id being deleted
+  const mountedRef = useRef(true);
 
   const load = useCallback(async () => {
+    if (!mountedRef.current) return;
     setLoading(true);
     try {
       const data = await getAllSnapshots();
-      setSnapshots(data);
+      if (mountedRef.current) setSnapshots(data);
     } catch (e) {
-      console.error('[MarginTrendModal] 로드 실패', e);
+      if (mountedRef.current) console.error('[MarginTrendModal] 로드 실패', e);
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    mountedRef.current = true;
+    load();
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [load]);
 
   async function handleDelete(id) {
     if (deleting != null) return;

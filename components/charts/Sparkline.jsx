@@ -1,15 +1,19 @@
 'use client';
 import { useEffect, useId, useRef } from 'react';
+import { normalizeChartColor, normalizeChartDimension, normalizeNumberSeries } from '@/lib/ui/chart-data';
 
 export function Sparkline({ data, color = 'var(--accent)', fill = true, height = 56, width = 320 }) {
   const lineRef = useRef(null);
-  const w = width, h = height, pad = 4;
+  const w = normalizeChartDimension(width, 320, { min: 16, max: 2000 });
+  const h = normalizeChartDimension(height, 56, { min: 12, max: 600 });
+  const safeColor = normalizeChartColor(color, 'var(--accent)');
+  const pad = 4;
   // SSR/CSR hydration mismatch 회피: Math.random() 대신 React 18 useId() 사용
   const reactId = useId();
   const gid = `sp-${reactId.replace(/:/g, '')}`;
 
   // 빈 데이터 / 단일 포인트 가드
-  const safeData = Array.isArray(data) ? data : [];
+  const safeData = normalizeNumberSeries(data);
   const allZero = safeData.length > 0 && safeData.every(v => !v);
   const hasData = safeData.length >= 2 && !allZero;
 
@@ -27,14 +31,20 @@ export function Sparkline({ data, color = 'var(--accent)', fill = true, height =
   useEffect(() => {
     const el = lineRef.current;
     if (!el || !hasData) return;
+    let raf1 = null;
+    let raf2 = null;
     const len = el.getTotalLength();
     el.style.strokeDasharray = len;
     el.style.strokeDashoffset = len;
     el.style.transition = 'none';
-    requestAnimationFrame(() => requestAnimationFrame(() => {
+    raf1 = requestAnimationFrame(() => { raf2 = requestAnimationFrame(() => {
       el.style.transition = 'stroke-dashoffset 900ms cubic-bezier(0.16, 1, 0.3, 1)';
       el.style.strokeDashoffset = '0';
-    }));
+    }); });
+    return () => {
+      if (raf1) cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+    };
   }, [data, hasData]);
 
   // 모든 값이 0이면 회색 점선 placeholder 표시
@@ -56,19 +66,19 @@ export function Sparkline({ data, color = 'var(--accent)', fill = true, height =
         <>
           <defs>
             <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity="0.22"/>
-              <stop offset="100%" stopColor={color} stopOpacity="0"/>
+              <stop offset="0%" stopColor={safeColor} stopOpacity="0.22"/>
+              <stop offset="100%" stopColor={safeColor} stopOpacity="0"/>
             </linearGradient>
           </defs>
           <path d={dArea} fill={`url(#${gid})`} style={{opacity:0, animation:'fade-in 600ms 400ms ease both'}} />
         </>
       )}
-      <path ref={lineRef} d={d} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path ref={lineRef} d={d} fill="none" stroke={safeColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       {hasData && (
         <>
-          <circle cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]} r="3" fill={color}
+          <circle cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]} r="3" fill={safeColor}
             style={{opacity:0, animation:'fade-in 200ms 920ms ease both'}} />
-          <circle className="spark-pulse-ring" cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]} r="3" fill={color} opacity="0" />
+          <circle className="spark-pulse-ring" cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]} r="3" fill={safeColor} opacity="0" />
         </>
       )}
     </svg>

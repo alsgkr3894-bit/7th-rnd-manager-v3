@@ -1,5 +1,6 @@
 'use client';
 import { SmallStatCard } from '@/components/ui/SmallStatCard';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
  * SectionDashboard — 섹션 상위 페이지(SectionHubPage) 상단의 미니 대시보드.
@@ -14,10 +15,13 @@ import { SmallStatCard } from '@/components/ui/SmallStatCard';
  * @param {ReactNode}[props.children]  - 카드 그리드 아래 추가 영역
  */
 export function SectionDashboard({ loading, cards = [], emptyHint, isEmpty, children }) {
+  const statCards = asObjectArray(cards);
+  const safeEmptyHint = asDisplayText(emptyHint);
+
   if (loading) {
     return (
       <div style={GRID}>
-        {Array.from({ length: Math.max(cards.length, 4) }).map((_, i) => (
+        {Array.from({ length: Math.max(statCards.length, 4) }).map((_, i) => (
           <div key={i} className="skeleton" style={{ height: 64, borderRadius: 12 }} />
         ))}
       </div>
@@ -25,9 +29,9 @@ export function SectionDashboard({ loading, cards = [], emptyHint, isEmpty, chil
   }
 
   if (isEmpty) {
-    return emptyHint ? (
+    return safeEmptyHint ? (
       <div className="card" style={{ padding: '16px 20px', color: 'var(--text-3)', fontSize: 13 }}>
-        {emptyHint}
+        {safeEmptyHint}
       </div>
     ) : null;
   }
@@ -35,8 +39,14 @@ export function SectionDashboard({ loading, cards = [], emptyHint, isEmpty, chil
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={GRID}>
-        {cards.map(c => (
-          <SmallStatCard key={c.label} label={c.label} value={c.value} unit={c.unit} valueColor={c.valueColor} />
+        {statCards.map((c, index) => (
+          <SmallStatCard
+            key={`${asDisplayText(c.label) || 'stat'}-${index}`}
+            label={c.label}
+            value={c.value}
+            unit={c.unit}
+            valueColor={asDisplayText(c.valueColor) || undefined}
+          />
         ))}
       </div>
       {children}

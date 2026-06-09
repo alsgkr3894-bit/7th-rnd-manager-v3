@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 
+const identity = v => v;
+
 /**
  * 하이드레이션-안전 localStorage state 훅.
  *
@@ -17,9 +19,18 @@ import { useState, useEffect, useRef } from 'react';
  * @template T
  * @param {string} key - localStorage 키
  * @param {T} initialValue - SSR / 초기 렌더 기본값
+ * @param {(v: unknown) => T} [normalize] - 저장소 복원값 정규화 함수
  * @returns {[T, (v: T) => void]}
  */
-export function useLocalStorage(key, initialValue) {
+export function normalizeLocalStorageValue(value, fallback, normalize = identity) {
+  try {
+    return normalize(value);
+  } catch {
+    return fallback;
+  }
+}
+
+export function useLocalStorage(key, initialValue, normalize = identity) {
   const [value, setValue] = useState(initialValue);
   // 첫 마운트 저장 스킵 — 복원 전에 initialValue가 저장되지 않도록
   const isFirstSave = useRef(true);
@@ -29,7 +40,11 @@ export function useLocalStorage(key, initialValue) {
     try {
       const raw = localStorage.getItem(key);
       if (raw !== null) {
-        try { setValue(JSON.parse(raw)); } catch { setValue(raw); }
+        try {
+          setValue(normalizeLocalStorageValue(JSON.parse(raw), initialValue, normalize));
+        } catch {
+          setValue(normalizeLocalStorageValue(raw, initialValue, normalize));
+        }
       }
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -38,8 +53,13 @@ export function useLocalStorage(key, initialValue) {
   // 값 변경 시 저장 (첫 마운트 스킵)
   useEffect(() => {
     if (isFirstSave.current) { isFirstSave.current = false; return; }
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
-  }, [key, value]);
+    try {
+      localStorage.setItem(
+        key,
+        JSON.stringify(normalizeLocalStorageValue(value, initialValue, normalize))
+      );
+    } catch {}
+  }, [key, value, initialValue, normalize]);
 
   return [value, setValue];
 }

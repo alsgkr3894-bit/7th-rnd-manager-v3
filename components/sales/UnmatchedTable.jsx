@@ -6,6 +6,7 @@ import { ComboBox } from '@/components/ui/ComboBox';
 import { UnmatchedResolveForm } from './UnmatchedResolveForm';
 import { Pagination } from '@/components/ui/Pagination';
 import { usePagination } from '@/hooks/usePagination';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 const initialState = {
   openId:       null,
@@ -64,6 +65,10 @@ function reducer(state, action) {
 export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { openId, busyId, selected, confirmBulk, bulkBusy, showBulkRule, bulkRuleBusy } = state;
+  const safeIssues = useMemo(() => asObjectArray(issues), [issues]);
+  const handleResolve = typeof onResolve === 'function' ? onResolve : null;
+  const handleBulkExclude = typeof onBulkExclude === 'function' ? onBulkExclude : null;
+  const handleBulkRule = typeof onBulkRule === 'function' ? onBulkRule : null;
 
   const [bulkRuleCat,    setBulkRuleCat]    = useState(CATEGORY_ORDER[0] || '');
   const [bulkRuleGroup,  setBulkRuleGroup]  = useState('');
@@ -71,12 +76,22 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule })
   const [nameOpts,       setNameOpts]       = useState({});
 
   useEffect(() => {
-    getClassificationNameOptions().then(setNameOpts).catch(() => {});
+    let ignore = false;
+
+    getClassificationNameOptions()
+      .then(opts => {
+        if (!ignore) setNameOpts(opts);
+      })
+      .catch(() => {});
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
-  const openIssues  = useMemo(() => issues.filter(i => i.status === 'open'), [issues]);
+  const openIssues  = useMemo(() => safeIssues.filter(i => i.status === 'open' && i.id != null), [safeIssues]);
   const openIds     = useMemo(() => new Set(openIssues.map(i => i.id)), [openIssues]);
-  const { page: umPage, goTo: umGoTo, totalPages: umTotalPages, paged: umPaged, total: umTotal } = usePagination(issues, 50);
+  const { page: umPage, goTo: umGoTo, totalPages: umTotalPages, paged: umPaged, total: umTotal } = usePagination(safeIssues, 50);
   const selectedOpen = useMemo(
     () => Array.from(selected).filter(id => openIds.has(id)),
     [selected, openIds],
@@ -94,11 +109,11 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule })
   }
 
   async function handleResolveSingle(issue, actionType, actionData) {
-    if (!onResolve) return;
+    if (!handleResolve || !issue || issue.id == null) return;
     dispatch({ type: 'RESOLVE_START', id: issue.id });
     let succeeded = false;
     try {
-      await onResolve(issue.id, actionType, actionData);
+      await handleResolve(issue.id, actionType, actionData);
       succeeded = true;
     } finally {
       dispatch({ type: succeeded ? 'RESOLVE_DONE' : 'RESOLVE_CLEAR_BUSY' });
@@ -106,10 +121,10 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule })
   }
 
   async function handleBulk() {
-    if (!onBulkExclude || selectedOpen.length === 0) return;
+    if (!handleBulkExclude || selectedOpen.length === 0) return;
     dispatch({ type: 'BULK_START' });
     try {
-      await onBulkExclude(selectedOpen);
+      await handleBulkExclude(selectedOpen);
       dispatch({ type: 'BULK_DONE' });
     } catch {
       dispatch({ type: 'BULK_ERROR' });
@@ -117,10 +132,10 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule })
   }
 
   async function handleBulkRuleApply() {
-    if (!onBulkRule || selectedOpen.length === 0) return;
+    if (!handleBulkRule || selectedOpen.length === 0) return;
     dispatch({ type: 'BULK_RULE_START' });
     try {
-      await onBulkRule(selectedOpen, { category: bulkRuleCat, groupName: bulkRuleGroup, detailName: bulkRuleDetail });
+      await handleBulkRule(selectedOpen, { category: bulkRuleCat, groupName: bulkRuleGroup, detailName: bulkRuleDetail });
       dispatch({ type: 'BULK_RULE_DONE' });
     } catch {
       dispatch({ type: 'BULK_RULE_ERROR' });
@@ -227,18 +242,23 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule })
             </tr>
           </thead>
           <tbody>
-            {umPaged.map(it => (
+            {umPaged.map((it, index) => {
+              const issueId = it.id;
+              const hasIssueId = issueId != null;
+              const issueKey = asDisplayText(issueId, `issue-${index}`);
+              return (
               <Row
-                key={it.id}
+                key={issueKey}
                 issue={it}
-                expanded={openId === it.id}
-                busy={busyId === it.id}
-                checked={selected.has(it.id)}
-                onCheck={() => toggleSel(it.id)}
-                onToggle={() => dispatch({ type: 'TOGGLE_ROW', id: it.id })}
+                expanded={hasIssueId && openId === issueId}
+                busy={hasIssueId && busyId === issueId}
+                checked={hasIssueId && selected.has(issueId)}
+                onCheck={() => toggleSel(issueId)}
+                onToggle={() => dispatch({ type: 'TOGGLE_ROW', id: issueId })}
                 onSubmit={(at, ad) => handleResolveSingle(it, at, ad)}
               />
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -250,30 +270,42 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule })
 }
 
 function Row({ issue, expanded, busy, checked, onCheck, onToggle, onSubmit }) {
-  const canResolve = issue.status === 'open';
+  const safeIssue = issue && typeof issue === 'object' ? issue : {};
+  const issueId = safeIssue.id;
+  const canResolve = safeIssue.status === 'open' && issueId != null;
+  const year = asDisplayText(safeIssue.year, '-');
+  const month = asDisplayText(safeIssue.month);
+  const monthLabel = month ? month.padStart(2, '0') : '--';
+  const rawMenuName = asDisplayText(safeIssue.representativeRawMenuName, '-');
+  const normalizedMenuName = asDisplayText(safeIssue.normalizedMenuName, '-');
+  const totalQuantity = Number.isFinite(Number(safeIssue.totalQuantity)) ? Number(safeIssue.totalQuantity) : 0;
+  const affectedRowCount = Number.isFinite(Number(safeIssue.affectedRowCount)) ? Number(safeIssue.affectedRowCount) : 0;
+  const handleCheck = typeof onCheck === 'function' ? onCheck : undefined;
+  const handleToggle = typeof onToggle === 'function' ? onToggle : undefined;
+
   return (
     <>
       <tr>
         <td>
           {canResolve && (
-            <input type="checkbox" checked={checked} onChange={onCheck} />
+            <input type="checkbox" checked={Boolean(checked)} onChange={handleCheck} />
           )}
         </td>
-        <td><span className="period-pill num">{issue.year}.{String(issue.month).padStart(2, '0')}</span></td>
-        <td className="cell-name"><div className="menu-name">{issue.representativeRawMenuName}</div></td>
+        <td><span className="period-pill num">{year}.{monthLabel}</span></td>
+        <td className="cell-name"><div className="menu-name">{rawMenuName}</div></td>
         <td className="cell-name">
-          <span style={{color:'var(--text-3)', fontSize:12}}>{issue.normalizedMenuName}</span>
+          <span style={{color:'var(--text-3)', fontSize:12}}>{normalizedMenuName}</span>
         </td>
-        <td className="num right">{formatNumber(issue.totalQuantity)}<span className="unit">개</span></td>
-        <td className="num right">{formatNumber(issue.affectedRowCount)}</td>
+        <td className="num right">{formatNumber(totalQuantity)}<span className="unit">개</span></td>
+        <td className="num right">{formatNumber(affectedRowCount)}</td>
         <td>
-          {issue.status === 'open'
+          {safeIssue.status === 'open'
             ? <span className="chip" style={{background:'var(--negative-soft)', color:'var(--negative)'}}>미해결</span>
             : <span className="chip" style={{background:'var(--positive-soft)', color:'var(--positive)'}}>해결됨</span>}
         </td>
         <td style={{textAlign:'right'}}>
           {canResolve && (
-            <button className="btn sm primary" onClick={onToggle} disabled={busy}>
+            <button className="btn sm primary" onClick={handleToggle} disabled={busy}>
               {expanded ? '닫기' : '해결'}
             </button>
           )}
@@ -282,7 +314,7 @@ function Row({ issue, expanded, busy, checked, onCheck, onToggle, onSubmit }) {
       {expanded && (
         <tr>
           <td colSpan={8} style={{padding:0}}>
-            <UnmatchedResolveForm issue={issue} onSubmit={onSubmit} onCancel={onToggle} busy={busy}/>
+            <UnmatchedResolveForm issue={safeIssue} onSubmit={onSubmit} onCancel={handleToggle} busy={busy}/>
           </td>
         </tr>
       )}

@@ -31,8 +31,10 @@ import { KIND_META, KIND_CHIP, KIND_EMOJI } from '@/lib/report/constants';
 import { useCountUp } from '@/hooks/useCountUp';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useDBLoad } from '@/hooks/useDBLoad';
+import { asDisplayText, asObjectArray, asFiniteNumber, clampInteger } from '@/lib/ui/prop-guards';
 
 const REPORT_KINDS = KIND_META;
+const REPORT_SORT_KEYS = new Set(['id', 'name', 'kind', 'createdAt']);
 
 function SortIco({ k, sortKey, sortDir }) {
   return (
@@ -45,19 +47,54 @@ function SortIco({ k, sortKey, sortDir }) {
 const ITEMS_PER_PAGE = 10;
 const thisMonth = new Date().toISOString().slice(0, 7);
 
+function formatReportId(id) {
+  const text = asDisplayText(id);
+  return text ? `RPT-${text.padStart(4, '0')}` : '—';
+}
+
+function formatReportDate(value) {
+  const raw = asDisplayText(value);
+  if (!raw) return '—';
+  const date = new Date(raw);
+  if (!Number.isFinite(date.getTime())) return '—';
+  return date.toLocaleString('ko-KR', {
+    year: '2-digit',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function safeReportKind(kind) {
+  return asDisplayText(kind);
+}
+
+function reportSearchText(report) {
+  return [
+    asDisplayText(report?.name),
+    asDisplayText(report?.period),
+    asDisplayText(report?.author),
+  ].join('');
+}
+
+function reportNumber(value) {
+  return asFiniteNumber(value, 0) ?? 0;
+}
+
 /* ============================================================
    Excel 내보내기
 ============================================================ */
 async function exportToExcel(rows) {
   const XLSX = await loadXlsx();
-  const data = rows.map(r => ({
-    ID: r.id ? `RPT-${String(r.id).padStart(4, '0')}` : '—',
-    유형: KIND_CHIP[r.kind]?.label || r.kind,
-    제목: r.name,
-    '대상 기간': r.period || '—',
-    작성자: r.author || '—',
-    생성일: r.createdAt ? new Date(r.createdAt).toLocaleString('ko-KR') : '—',
-    조회수: r.views || 0,
+  const data = asObjectArray(rows).map(r => ({
+    ID: formatReportId(r.id),
+    유형: KIND_CHIP[safeReportKind(r.kind)]?.label || safeReportKind(r.kind),
+    제목: asDisplayText(r.name),
+    '대상 기간': asDisplayText(r.period, '—') || '—',
+    작성자: asDisplayText(r.author, '—') || '—',
+    생성일: formatReportDate(r.createdAt),
+    조회수: reportNumber(r.views),
     즐겨찾기: r.fav ? '★' : '',
   }));
   const ws = XLSX.utils.json_to_sheet(data);
@@ -88,10 +125,12 @@ export default function Page() {
   const [sortDir, setSortDir] = useState('desc');
   const [newIds, setNewIds] = useState(new Set());
   const editInputRef = useRef(null);
+  const newIdsTimerRef = useRef(null);
+  const editFocusTimerRef = useRef(null);
 
   /* 로드 */
   const { data: reportsData, loading, reload } = useDBLoad(() => getReports());
-  const reports = useMemo(() => reportsData ?? [], [reportsData]);
+  const reports = useMemo(() => asObjectArray(reportsData), [reportsData]);
 
   useVisibilityRefresh(reload);
 
@@ -99,21 +138,28 @@ export default function Page() {
   useEffect(() => {
     pruneOldReports(90).catch(e => console.warn('[report] pruneOldReports 실패', e));
     const url = new URL(window.location.href);
-    const pageParam = parseInt(url.searchParams.get('p') || '1', 10);
-    const initialPage = Number.isNaN(pageParam) ? 1 : pageParam;
+    const initialPage = clampInteger(url.searchParams.get('p') || 1, { min: 1, fallback: 1 });
     const sortParam = url.searchParams.get('sort');
     const dirParam = url.searchParams.get('dir');
     const newIdParam = url.searchParams.get('new');
-    const newId = newIdParam ? parseInt(newIdParam, 10) : null;
+    const newId = newIdParam ? clampInteger(newIdParam, { min: 1, fallback: null }) : null;
     if (initialPage > 1) setPage(initialPage);
-    if (sortParam) setSortKey(sortParam);
+    if (REPORT_SORT_KEYS.has(sortParam)) setSortKey(sortParam);
     if (dirParam === 'asc' || dirParam === 'desc') setSortDir(dirParam);
     if (newId && !Number.isNaN(newId)) {
       setNewIds(new Set([newId]));
-      setTimeout(() => setNewIds(new Set()), 5000);
+      if (newIdsTimerRef.current) clearTimeout(newIdsTimerRef.current);
+      newIdsTimerRef.current = setTimeout(() => {
+        setNewIds(new Set());
+        newIdsTimerRef.current = null;
+      }, 5000);
     }
     url.searchParams.delete('new');
     window.history.replaceState({}, '', url.toString());
+    return () => {
+      if (newIdsTimerRef.current) clearTimeout(newIdsTimerRef.current);
+      if (editFocusTimerRef.current) clearTimeout(editFocusTimerRef.current);
+    };
   }, []);
 
   /* 정렬·페이지 변경 시 URL 갱신 */
@@ -160,14 +206,20 @@ export default function Page() {
 
   /* 이름 인라인 편집 */
   const startEdit = r => {
-    setEditingId(r.id);
-    setEditName(r.name);
-    setTimeout(() => editInputRef.current?.focus(), 50);
+    setEditingId(r?.id);
+    setEditName(asDisplayText(r?.name));
+    if (editFocusTimerRef.current) clearTimeout(editFocusTimerRef.current);
+    editFocusTimerRef.current = setTimeout(() => {
+      editInputRef.current?.focus();
+      editFocusTimerRef.current = null;
+    }, 50);
   };
   const commitEdit = async r => {
-    if (editName.trim() && editName !== r.name) {
+    const nextName = asDisplayText(editName).trim();
+    const prevName = asDisplayText(r?.name);
+    if (nextName && nextName !== prevName) {
       try {
-        await saveReport({ ...r, name: editName.trim() });
+        await saveReport({ ...r, name: nextName });
         reload();
       } catch {
         showToast('이름 변경 중 오류가 발생했어요.', 'error');
@@ -178,6 +230,7 @@ export default function Page() {
 
   /* 정렬 */
   const toggleSort = key => {
+    if (!REPORT_SORT_KEYS.has(key)) return;
     if (sortKey === key) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
     else {
       setSortKey(key);
@@ -189,23 +242,18 @@ export default function Page() {
     () =>
       reports
         .filter(r => {
-          if (kindFilter !== 'all' && r.kind !== kindFilter) return false;
+          if (kindFilter !== 'all' && safeReportKind(r.kind) !== kindFilter) return false;
           if (favOnly && !r.fav) return false;
-          if (
-            search.trim() &&
-            !((r.name || '') + (r.period || '') + (r.author || ''))
-              .toLowerCase()
-              .includes(search.trim().toLowerCase())
-          )
-            return false;
+          const q = asDisplayText(search).trim().toLowerCase();
+          if (q && !reportSearchText(r).toLowerCase().includes(q)) return false;
           return true;
         })
         .sort((a, b) => {
           let valA = a[sortKey],
             valB = b[sortKey];
           if (sortKey === 'name' || sortKey === 'kind') {
-            valA = valA || '';
-            valB = valB || '';
+            valA = asDisplayText(valA);
+            valB = asDisplayText(valB);
             return sortDir === 'asc'
               ? valA.localeCompare(valB, 'ko')
               : valB.localeCompare(valA, 'ko');
@@ -230,9 +278,9 @@ export default function Page() {
   /* 통계 */
   const stats = {
     total: reports.length,
-    thisMonth: reports.filter(r => r.createdAt?.startsWith(thisMonth)).length,
+    thisMonth: reports.filter(r => asDisplayText(r.createdAt).startsWith(thisMonth)).length,
     auto: 0,
-    sharedLinks: reports.reduce((s, r) => s + (r.links || 0), 0),
+    sharedLinks: reports.reduce((s, r) => s + reportNumber(r.links), 0),
   };
   const cTotal = useCountUp(stats.total, { duration: 900 });
   const cThisMonth = useCountUp(stats.thisMonth, { duration: 900, delay: 80 });
@@ -332,7 +380,7 @@ export default function Page() {
               </div>
               <div className="report-kind-foot">
                 <span className="report-kind-meta">
-                  최근 {reports.filter(r => r.kind === k.id).length}건
+                  최근 {reports.filter(r => safeReportKind(r.kind) === k.id).length}건
                 </span>
                 <Icon.chevRight style={{ width: 14, height: 14, color: 'var(--text-4)' }} />
               </div>
@@ -354,7 +402,7 @@ export default function Page() {
           { id: 'compare', label: '비교' },
         ].map(c => ({
           label: c.label,
-          count: c.id === 'all' ? reports.length : reports.filter(r => r.kind === c.id).length,
+          count: c.id === 'all' ? reports.length : reports.filter(r => safeReportKind(r.kind) === c.id).length,
           active: kindFilter === c.id,
           onClick: () => setKindFilter(c.id),
         }))}
@@ -430,23 +478,21 @@ export default function Page() {
               </thead>
               <tbody>
                 {list.map(r => {
-                  const chip = KIND_CHIP[r.kind] || KIND_CHIP.sales;
-                  const displayId = r.id ? `RPT-${String(r.id).padStart(4, '0')}` : '—';
-                  const createdLabel = r.createdAt
-                    ? new Date(r.createdAt).toLocaleString('ko-KR', {
-                        year: '2-digit',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                    : '—';
+                  const kind = safeReportKind(r.kind);
+                  const chip = KIND_CHIP[kind] || KIND_CHIP.sales;
+                  const originalName = asDisplayText(r.name);
+                  const reportName = originalName || '이름 없는 보고서';
+                  const reportId = asDisplayText(r.id);
+                  const displayId = formatReportId(r.id);
+                  const createdLabel = formatReportDate(r.createdAt);
+                  const views = reportNumber(r.views);
+                  const links = reportNumber(r.links);
                   const isDeleting = deletingId === r.id;
                   const isNew = newIds.has(r.id);
                   const isEditing = editingId === r.id;
                   return (
                     <tr
-                      key={r.id}
+                      key={reportId || `${reportName}-${asDisplayText(r.createdAt)}`}
                       className={isDeleting ? 'deleting' : ''}
                       style={
                         isNew
@@ -481,7 +527,8 @@ export default function Page() {
                                 commitEdit(r);
                               }
                               if (e.key === 'Escape') {
-                                if (editName.trim() && editName !== r.name) {
+                                const nextName = asDisplayText(editName).trim();
+                                if (nextName && nextName !== originalName) {
                                   showToast('변경사항이 취소됐어요', 'warn');
                                 }
                                 setEditingId(null);
@@ -495,7 +542,7 @@ export default function Page() {
                             onDoubleClick={() => startEdit(r)}
                             title="더블클릭으로 이름 편집"
                           >
-                            {r.name}
+                            {reportName}
                           </button>
                         )}
                       </td>
@@ -505,9 +552,9 @@ export default function Page() {
                         </span>
                       </td>
                       <td className="mono" style={{ fontSize: 12, color: 'var(--text-2)' }}>
-                        {r.period || '—'}
+                        {asDisplayText(r.period, '—') || '—'}
                       </td>
-                      <td>{r.author || '—'}</td>
+                      <td>{asDisplayText(r.author, '—') || '—'}</td>
                       <td className="muted mono" style={{ fontSize: 12 }}>
                         {createdLabel}
                       </td>
@@ -525,15 +572,15 @@ export default function Page() {
                               <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
                               <circle cx="12" cy="12" r="3" />
                             </svg>
-                            {r.views || 0}
+                            {views}
                           </span>
-                          {r.links > 0 && (
+                          {links > 0 && (
                             <span
                               title="활성 공유 링크"
                               className="activity-pill"
                               style={{ background: '#F0EBFF', color: '#6B3FCB' }}
                             >
-                              🔗{r.links}
+                              🔗{links}
                             </span>
                           )}
                         </div>

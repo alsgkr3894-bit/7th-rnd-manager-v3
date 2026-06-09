@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { Icon } from '@/components/icons';
@@ -21,7 +21,7 @@ import { SmallStatCard } from '@/components/ui/SmallStatCard';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { ReorderModal } from '@/components/ui/ReorderModal';
 import {
-  MENU_ORDER_KEY, ALLERGEN_MENU_ORDER_KEY,
+  ALLERGEN_MENU_ORDER_KEY,
   ALLERGEN_ORDER_KEY,
   loadOrder,
   saveOrder,
@@ -36,6 +36,10 @@ import {
 } from '@/lib/nutrition/crust-config';
 import { loadMenuNames, saveMenuNames, applyMenuName } from '@/lib/nutrition/menu-name-override';
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
+import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
+
+const EMPTY_MENU_MAP = new Map();
+const asMenuMap = value => (value instanceof Map ? value : EMPTY_MENU_MAP);
 
 /**
  * 알레르기 정보 페이지 — 자동 집계 뷰
@@ -47,7 +51,7 @@ import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
  *   - 식자재별: 각 식자재의 알레르기 항목 + 매칭된 메뉴 수
  *   - 메뉴별 매트릭스: 메뉴 × 22종 알레르기 체크 (출력용)
  */
-const normStr = s => (s || '').trim().toLowerCase().replace(/\s+/g, '');
+const normStr = s => asDisplayText(s).trim().toLowerCase().replace(/\s+/g, '');
 
 export default function Page() {
   const [ingredients, setIngredients] = useState([]);
@@ -69,6 +73,7 @@ export default function Page() {
   const [reorderTarget, setReorderTarget] = useState(null); // 'menu' | 'allergen' | null
   const [menuNameEditOpen, setMenuNameEditOpen] = useState(false);
   const [menuNameOverrides, setMenuNameOverrides] = useState(() => loadMenuNames());
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     setMenuOrder(loadOrder(ALLERGEN_MENU_ORDER_KEY));
@@ -77,11 +82,14 @@ export default function Page() {
 
   // 알레르기 22종 표시 순서 — 저장된 순서 우선, 없으면 기본 displayOrder
   const orderedAllergens = useMemo(() => {
-    if (!allergenOrder.length) return ALLERGEN_SEED;
-    const rank = new Map(allergenOrder.map((c, i) => [c, i]));
+    const safeOrder = asStringArray(allergenOrder);
+    if (!safeOrder.length) return ALLERGEN_SEED;
+    const rank = new Map(safeOrder.map((c, i) => [c, i]));
     return [...ALLERGEN_SEED].sort((a, b) => {
-      const ra = rank.has(a.allergenCode) ? rank.get(a.allergenCode) : Infinity;
-      const rb = rank.has(b.allergenCode) ? rank.get(b.allergenCode) : Infinity;
+      const aCode = asDisplayText(a.allergenCode);
+      const bCode = asDisplayText(b.allergenCode);
+      const ra = rank.has(aCode) ? rank.get(aCode) : Infinity;
+      const rb = rank.has(bCode) ? rank.get(bCode) : Infinity;
       if (ra !== rb) return ra - rb;
       return (a.displayOrder ?? 999) - (b.displayOrder ?? 999);
     });
@@ -101,41 +109,64 @@ export default function Page() {
         getAllSetRecipes(),
         getAllRecipes(),
       ]);
-    setIngredients(ings);
-    setMenuMasters(masters);
-    setEdges(edges);
-    const detailRecipes = tagDetailRecipes(pizzaRecs, personalRecs, sideRecs, setRecs);
+    if (!mountedRef.current) return;
+    const safeIngredients = asObjectArray(ings);
+    const safeMenuMasters = asObjectArray(masters);
+    const safeGroups = asObjectArray(groups);
+    const safeEdges = asObjectArray(edges);
+    const safeOldRecipes = asObjectArray(oldRecs);
+    const detailRecipes = tagDetailRecipes(
+      asObjectArray(pizzaRecs),
+      asObjectArray(personalRecs),
+      asObjectArray(sideRecs),
+      asObjectArray(setRecs)
+    );
+    setIngredients(safeIngredients);
+    setMenuMasters(safeMenuMasters);
+    setEdges(safeEdges);
     setMapData(
       buildIngredientMenuMap({
-        menuMasters: masters,
+        menuMasters: safeMenuMasters,
         detailRecipes,
-        oldRecipes: oldRecs,
-        groups,
-        edges,
+        oldRecipes: safeOldRecipes,
+        groups: safeGroups,
+        edges: safeEdges,
       })
     );
     // 엣지 제외 base 맵 — 크러스트 변형별 알레르겐 분리용 (석쇠 = 엣지 없는 기본)
     setBaseMapData(
       buildIngredientMenuMap({
-        menuMasters: masters,
+        menuMasters: safeMenuMasters,
         detailRecipes,
-        oldRecipes: oldRecs,
-        groups,
+        oldRecipes: safeOldRecipes,
+        groups: safeGroups,
         edges: [],
       })
     );
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     load()
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(err => {
+        if (mountedRef.current) console.error(err);
+      })
+      .finally(() => {
+        if (mountedRef.current) setLoading(false);
+      });
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, [load]);
   useVisibilityRefresh(load);
 
   // 알레르기 있는 식자재
   const allergenIngredients = useMemo(
-    () => ingredients.filter(i => i.allergens?.length && !i.discontinued && !i.excluded),
+    () =>
+      asObjectArray(ingredients).filter(
+        i => asStringArray(i.allergens).length && !i.discontinued && !i.excluded
+      ),
     [ingredients]
   );
 
@@ -146,23 +177,26 @@ export default function Page() {
   );
   const isExcludedMenu = useCallback(
     (menuCode, menuName) =>
-      excludedMenuCodes.has(menuCode) || excludedMenuNames.has((menuName || '').trim()),
+      excludedMenuCodes.has(menuCode) ||
+      excludedMenuCodes.has(asDisplayText(menuCode)) ||
+      excludedMenuNames.has(asDisplayText(menuName).trim()),
     [excludedMenuCodes, excludedMenuNames]
   );
 
   // ── 식자재 기준 뷰 ─────────────────────────────────────────
   const ingredientRows = useMemo(() => {
-    const q = search.toLowerCase().trim();
+    const q = asDisplayText(search).toLowerCase().trim();
     return allergenIngredients.filter(ing => {
       if (!q) return true;
+      const ingredientAllergens = asStringArray(ing.allergens);
       const allergenNames = ALLERGEN_SEED.filter(a =>
-        (ing.allergens || []).includes(a.allergenCode)
+        ingredientAllergens.includes(a.allergenCode)
       )
-        .map(a => a.allergenName)
+        .map(a => asDisplayText(a.allergenName))
         .join(' ');
       return (
-        (ing.ingredientName || '').toLowerCase().includes(q) ||
-        (ing.productCode || '').toLowerCase().includes(q) ||
+        asDisplayText(ing.ingredientName).toLowerCase().includes(q) ||
+        asDisplayText(ing.productCode).toLowerCase().includes(q) ||
         allergenNames.toLowerCase().includes(q)
       );
     });
@@ -170,40 +204,46 @@ export default function Page() {
 
   // ── 메뉴별 매트릭스 뷰 (피자는 크러스트/엣지 변형별 행) ──────
   const menuMatrixAll = useMemo(() => {
+    const baseIngredientToMenus = asMenuMap(baseMapData?.ingredientToMenus);
     // 알레르겐 보유 식자재 키맵
     const ingByKey = new Map();
     for (const ing of allergenIngredients) {
-      if (ing.productCode) ingByKey.set(`code:${ing.productCode}`, ing);
+      const productCode = asDisplayText(ing.productCode);
+      if (productCode) ingByKey.set(`code:${productCode}`, ing);
       const n = normStr(ing.ingredientName);
       if (n) ingByKey.set(`name:${n}`, ing);
     }
 
     // 엣지타입 → 알레르겐 집합 (해당 엣지 구성재료의 알레르겐)
     const edgeAllergens = new Map();
-    for (const edge of edges) {
-      if (!edge?.edgeType) continue;
-      if (!edgeAllergens.has(edge.edgeType)) edgeAllergens.set(edge.edgeType, new Set());
-      const set = edgeAllergens.get(edge.edgeType);
-      for (const c of edge.components || []) {
-        const key = c.productCode ? `code:${c.productCode}` : `name:${normStr(c.ingredientName)}`;
+    for (const edge of asObjectArray(edges)) {
+      const edgeType = asDisplayText(edge.edgeType);
+      if (!edgeType) continue;
+      if (!edgeAllergens.has(edgeType)) edgeAllergens.set(edgeType, new Set());
+      const set = edgeAllergens.get(edgeType);
+      for (const c of asObjectArray(edge.components)) {
+        const productCode = asDisplayText(c.productCode);
+        const key = productCode ? `code:${productCode}` : `name:${normStr(c.ingredientName)}`;
         const ing = ingByKey.get(key);
-        if (ing) for (const code of ing.allergens) set.add(code);
+        if (ing) for (const code of asStringArray(ing.allergens)) set.add(code);
       }
     }
 
     // base(엣지 제외) 메뉴별 알레르겐 — 석쇠 기준.
     // codes=전체(도우 포함), nonDoughCodes=도우 재료 제외 (씬바사삭은 석쇠 도우를 씬도우로 교체)
     const menuBase = new Map(); // menuCode → { meta, codes:Set, nonDoughCodes:Set }
-    for (const [key, menus] of baseMapData.ingredientToMenus) {
+    for (const [key, menus] of baseIngredientToMenus) {
+      if (!(menus instanceof Map)) continue;
       const ing = ingByKey.get(key);
-      if (!ing?.allergens?.length) continue;
-      const isDough = isDoughCategory(ing.category);
+      const allergenCodes = asStringArray(ing?.allergens);
+      if (!allergenCodes.length) continue;
+      const isDough = isDoughCategory(asDisplayText(ing.category));
       for (const [menuCode, meta] of menus) {
-        if (isExcludedMenu(menuCode, meta.menuName)) continue;
+        if (isExcludedMenu(menuCode, meta?.menuName)) continue;
         if (!menuBase.has(menuCode))
           menuBase.set(menuCode, { meta, codes: new Set(), nonDoughCodes: new Set() });
         const e = menuBase.get(menuCode);
-        for (const code of ing.allergens) {
+        for (const code of allergenCodes) {
           e.codes.add(code);
           if (!isDough) e.nonDoughCodes.add(code);
         }
@@ -216,7 +256,7 @@ export default function Page() {
     //  · 씬바사삭 = base에서 도우 제외 + 씬도우 (도우만 교체)
     const rows = [];
     for (const [menuCode, { meta, codes, nonDoughCodes }] of menuBase) {
-      const isPizza = isPizzaCategory(meta.category);
+      const isPizza = isPizzaCategory(asDisplayText(meta?.category));
       if (!isPizza) {
         rows.push({ rowKey: menuCode, menuCode, ...meta, crust: '', allergenCodes: codes });
         continue;
@@ -239,27 +279,31 @@ export default function Page() {
     const sorted = applyOrder(
       rows,
       menuOrder,
-      r => r.menuCode,
-      r => r.menuName
+      r => asDisplayText(r.menuCode),
+      r => asDisplayText(r.menuName)
     );
     // 출력용 메뉴명 오버라이드 적용 (표시 전용, 원래 이름 보존)
     return sorted.map(r => ({
       ...r,
-      originalMenuName: r.menuName,
-      menuName: applyMenuName(r.menuCode, r.menuName, menuNameOverrides),
+      originalMenuName: asDisplayText(r.menuName),
+      menuName: applyMenuName(asDisplayText(r.menuCode), asDisplayText(r.menuName), menuNameOverrides),
     }));
   }, [allergenIngredients, baseMapData, edges, isExcludedMenu, menuOrder, menuNameOverrides]);
 
   const menuMatrix = useMemo(() => {
-    const q = search.toLowerCase().trim();
+    const q = asDisplayText(search).toLowerCase().trim();
     if (!q) return menuMatrixAll;
     return menuMatrixAll.filter(
-      r =>
-        (r.menuName || '').toLowerCase().includes(q) ||
-        (r.crust || '').toLowerCase().includes(q) ||
-        ALLERGEN_SEED.filter(a => r.allergenCodes.has(a.allergenCode)).some(a =>
-          a.allergenName.toLowerCase().includes(q)
-        )
+      r => {
+        const allergenCodes = r.allergenCodes instanceof Set ? r.allergenCodes : new Set();
+        return (
+          asDisplayText(r.menuName).toLowerCase().includes(q) ||
+          asDisplayText(r.crust).toLowerCase().includes(q) ||
+          ALLERGEN_SEED.filter(a => allergenCodes.has(a.allergenCode)).some(a =>
+            asDisplayText(a.allergenName).toLowerCase().includes(q)
+          )
+        );
+      }
     );
   }, [menuMatrixAll, search]);
 
@@ -268,15 +312,16 @@ export default function Page() {
     const seen = new Set();
     const out = [];
     for (const r of menuMatrixAll) {
-      if (seen.has(r.menuCode)) continue;
-      seen.add(r.menuCode);
-      out.push({ key: r.menuCode, label: r.originalMenuName ?? r.menuName });
+      const menuCode = asDisplayText(r.menuCode);
+      if (!menuCode || seen.has(menuCode)) continue;
+      seen.add(menuCode);
+      out.push({ key: menuCode, label: asDisplayText(r.originalMenuName ?? r.menuName) });
     }
     return out;
   }, [menuMatrixAll]);
 
   const totalWithAllergen = allergenIngredients.length;
-  const totalIngredients = ingredients.filter(i => !i.discontinued && !i.excluded).length;
+  const totalIngredients = asObjectArray(ingredients).filter(i => !i.discontinued && !i.excluded).length;
 
   return (
     <main className="main">
@@ -289,12 +334,21 @@ export default function Page() {
           <button
             className="btn"
             onClick={() => {
-              const headers = ['메뉴명', '크러스트', ...orderedAllergens.map(a => a.allergenName)];
-              const rows = menuMatrix.map(r => [
-                r.menuName,
-                r.crust || '',
-                ...orderedAllergens.map(a => r.allergenCodes.has(a.allergenCode) ? '●' : ''),
-              ]);
+              const headers = [
+                '메뉴명',
+                '크러스트',
+                ...orderedAllergens.map(a => asDisplayText(a.allergenName)),
+              ];
+              const rows = menuMatrix.map(r => {
+                const allergenCodes = r.allergenCodes instanceof Set ? r.allergenCodes : new Set();
+                return [
+                  asDisplayText(r.menuName),
+                  asDisplayText(r.crust),
+                  ...orderedAllergens.map(a =>
+                    allergenCodes.has(asDisplayText(a.allergenCode)) ? '●' : ''
+                  ),
+                ];
+              });
               downloadCsv([headers, ...rows], '알레르기매트릭스.csv');
             }}
             disabled={menuMatrix.length === 0}
@@ -318,7 +372,7 @@ export default function Page() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {ALLERGEN_SEED.map(al => (
             <span
-              key={al.allergenCode}
+              key={asDisplayText(al.allergenCode)}
               style={{
                 fontSize: 12,
                 padding: '3px 10px',
@@ -327,7 +381,7 @@ export default function Page() {
                 color: 'var(--text-2)',
               }}
             >
-              {al.allergenName}
+              {asDisplayText(al.allergenName)}
             </span>
           ))}
         </div>
@@ -442,21 +496,25 @@ export default function Page() {
               </thead>
               <tbody>
                 {ingredientRows.map(ing => {
+                  const ingredientToMenus = asMenuMap(mapData?.ingredientToMenus);
+                  const productCode = asDisplayText(ing.productCode);
+                  const ingredientName = asDisplayText(ing.ingredientName);
+                  const ingredientAllergens = asStringArray(ing.allergens);
                   const allMenus = getMenusForIngredient(
-                    mapData.ingredientToMenus,
-                    ing.productCode,
-                    ing.ingredientName
+                    ingredientToMenus,
+                    productCode,
+                    ingredientName
                   );
                   const menus = new Map(
-                    [...allMenus].filter(([mc, m]) => !isExcludedMenu(mc, m.menuName))
+                    [...allMenus].filter(([mc, m]) => !isExcludedMenu(mc, m?.menuName))
                   );
                   const allergenNames = ALLERGEN_SEED.filter(a =>
-                    (ing.allergens || []).includes(a.allergenCode)
-                  ).map(a => a.allergenName);
+                    ingredientAllergens.includes(a.allergenCode)
+                  ).map(a => asDisplayText(a.allergenName));
                   return (
-                    <tr key={ing.id || ing.productCode || ing.ingredientName}>
-                      <td style={{ fontWeight: 600 }}>{ing.ingredientName}</td>
-                      <td className="mono muted">{ing.productCode || '—'}</td>
+                    <tr key={asDisplayText(ing.id) || productCode || ingredientName}>
+                      <td style={{ fontWeight: 600 }}>{ingredientName}</td>
+                      <td className="mono muted">{productCode || '—'}</td>
                       <td>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                           {allergenNames.map(name => (
@@ -537,8 +595,15 @@ export default function Page() {
                 </tr>
               </thead>
               <tbody>
-                {menuMatrix.map(row => (
-                  <tr key={row.rowKey}>
+                {menuMatrix.map(row => {
+                  const rowKey =
+                    asDisplayText(row.rowKey) ||
+                    asDisplayText(row.menuCode) ||
+                    asDisplayText(row.menuName);
+                  const crust = asDisplayText(row.crust);
+                  const allergenCodes = row.allergenCodes instanceof Set ? row.allergenCodes : new Set();
+                  return (
+                  <tr key={rowKey}>
                     <td
                       style={{
                         fontWeight: 600,
@@ -548,8 +613,8 @@ export default function Page() {
                         zIndex: 1,
                       }}
                     >
-                      {row.menuName}
-                      {row.crust && (
+                      {asDisplayText(row.menuName)}
+                      {crust && (
                         <span
                           style={{
                             marginLeft: 6,
@@ -562,17 +627,18 @@ export default function Page() {
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          {row.crust}
+                          {crust}
                         </span>
                       )}
                     </td>
                     <td>
-                      <span className="chip">{row.category}</span>
+                      <span className="chip">{asDisplayText(row.category)}</span>
                     </td>
                     {orderedAllergens.map(al => {
-                      const has = row.allergenCodes.has(al.allergenCode);
+                      const allergenCode = asDisplayText(al.allergenCode);
+                      const has = allergenCodes.has(allergenCode);
                       return (
-                        <td key={al.allergenCode} style={{ textAlign: 'center' }}>
+                        <td key={allergenCode} style={{ textAlign: 'center' }}>
                           {has ? (
                             <span
                               style={{
@@ -590,7 +656,8 @@ export default function Page() {
                       );
                     })}
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -617,7 +684,9 @@ export default function Page() {
       {reorderTarget === 'allergen' && (
         <ReorderModal
           title="알레르기 22종 순서"
-          items={orderedAllergens.map(a => ({ key: a.allergenCode, label: a.allergenName }))}
+          items={orderedAllergens
+            .map(a => ({ key: asDisplayText(a.allergenCode), label: asDisplayText(a.allergenName) }))
+            .filter(item => item.key)}
           onApply={keys => {
             saveOrder(ALLERGEN_ORDER_KEY, keys);
             setAllergenOrder(keys);
@@ -627,7 +696,9 @@ export default function Page() {
       )}
       {menuNameEditOpen && (
         <MenuNameEditModal
-          menus={menuListForOrder.map(m => ({ menuCode: m.key, menuName: m.label }))}
+          menus={menuListForOrder
+            .map(m => ({ menuCode: asDisplayText(m.key), menuName: asDisplayText(m.label) }))
+            .filter(menu => menu.menuCode)}
           overrides={menuNameOverrides}
           onApply={next => {
             saveMenuNames(next);

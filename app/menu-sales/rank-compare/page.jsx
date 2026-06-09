@@ -26,6 +26,33 @@ const CompareView = dynamic(
 import { useRankCompareData } from '@/lib/sales/use-rank-compare-data';
 import { useAvgCostRate } from '@/lib/sales/use-avg-cost-rate';
 import { formatShareText } from '@/lib/sales/share-formatter';
+import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
+
+const VALID_MODES = new Set(['single', 'mom', 'yoy', 'custom']);
+
+function normalizeMode(value) {
+  const requested = asDisplayText(value, 'single');
+  return VALID_MODES.has(requested) ? requested : 'single';
+}
+
+function normalizePeriod(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+
+  const year = asFiniteNumber(value.year, null);
+  const month = asFiniteNumber(value.month, null);
+  if (
+    year == null ||
+    month == null ||
+    year < 1900 ||
+    year > 2999 ||
+    month < 1 ||
+    month > 12
+  ) {
+    return null;
+  }
+
+  return { year: Math.floor(year), month: Math.floor(month) };
+}
 
 export default function Page() {
   const router = useRouter();
@@ -38,70 +65,92 @@ export default function Page() {
   const [category, setCategory] = useState(null);
   const [singleCategory, setSingleCategory] = useState(null);
 
+  const safeRows = useMemo(() => asObjectArray(rows), [rows]);
+  const safeAvailable = useMemo(
+    () => asObjectArray(available).map(normalizePeriod).filter(Boolean),
+    [available],
+  );
+  const safeMode = normalizeMode(mode);
+  const safePeriodA = useMemo(() => normalizePeriod(periodA), [periodA]);
+  const safePeriodB = useMemo(() => normalizePeriod(periodB), [periodB]);
+  const selectedCategory = asDisplayText(category);
+  const selectedSingleCategory = asDisplayText(singleCategory);
+
   // 데이터 로드 후 초기 기간 설정
   useEffect(() => {
-    if (!available.length || periodA) return;
-    const latest = available[0];
+    if (!safeAvailable.length || safePeriodA) return;
+    const latest = safeAvailable[0];
     setPeriodA(latest);
     setPeriodB(deriveCompareB(latest, 'mom'));
-  }, [available, periodA]);
+  }, [safeAvailable, safePeriodA]);
 
   // 모드 변경 시 B 자동 계산 (custom/single 제외)
   useEffect(() => {
-    if (!periodA || mode === 'custom' || mode === 'single') return;
-    setPeriodB(deriveCompareB(periodA, mode));
-  }, [mode, periodA]);
+    if (!safePeriodA || safeMode === 'custom' || safeMode === 'single') return;
+    setPeriodB(deriveCompareB(safePeriodA, safeMode));
+  }, [safeMode, safePeriodA]);
 
   const singleDetail = useMemo(() => {
-    if (mode !== 'single' || !periodA) return null;
-    return buildCategoryDetails(rows, periodA, { topN: 3, groupBy: 'group' });
-  }, [rows, periodA, mode]);
+    if (safeMode !== 'single' || !safePeriodA) return null;
+    return buildCategoryDetails(safeRows, safePeriodA, { topN: 3, groupBy: 'group' });
+  }, [safeRows, safePeriodA, safeMode]);
 
   const singleMenus = useMemo(() => {
-    if (mode !== 'single' || !periodA) return [];
-    return buildGroupRanking(rows, periodA);
-  }, [rows, periodA, mode]);
+    if (safeMode !== 'single' || !safePeriodA) return [];
+    return buildGroupRanking(safeRows, safePeriodA);
+  }, [safeRows, safePeriodA, safeMode]);
 
   const singleCategories = useMemo(
-    () => buildOrderedCategories(new Set(singleMenus.map(m => m.category))),
+    () => buildOrderedCategories(new Set(singleMenus.map(m => asDisplayText(m.category)).filter(Boolean))),
     [singleMenus],
   );
 
   const categories = useMemo(() => {
     const found = new Set();
-    for (const r of rows) {
-      if (r.status === 'classified' && r.category) found.add(r.category);
+    for (const r of safeRows) {
+      const safeCategory = asDisplayText(r.category);
+      if (r.status === 'classified' && safeCategory) found.add(safeCategory);
     }
     return buildOrderedCategories(found, ['전체']);
-  }, [rows]);
+  }, [safeRows]);
 
   const compare = useMemo(() => {
-    if (!periodA || !periodB) return null;
-    return buildPeriodCompare(rows, periodA, periodB, {
+    if (!safePeriodA || !safePeriodB) return null;
+    return buildPeriodCompare(safeRows, safePeriodA, safePeriodB, {
       groupBy: 'group',
-      category: category && category !== '전체' ? category : null,
+      category: selectedCategory && selectedCategory !== '전체' ? selectedCategory : null,
       topN: 3,
     });
-  }, [rows, periodA, periodB, category]);
+  }, [safeRows, safePeriodA, safePeriodB, selectedCategory]);
 
   const movers = useMemo(() => {
-    if (!periodA || !periodB) return { topRise: [], topFall: [] };
-    const { topRise, topFall } = buildPeriodCompare(rows, periodA, periodB, {
+    if (!safePeriodA || !safePeriodB) return { topRise: [], topFall: [] };
+    const { topRise, topFall } = buildPeriodCompare(safeRows, safePeriodA, safePeriodB, {
       groupBy: 'group',
       category: MOVER_CATEGORIES,
       topN: 3,
     });
-    return { topRise, topFall };
-  }, [rows, periodA, periodB]);
+    return { topRise: asObjectArray(topRise), topFall: asObjectArray(topFall) };
+  }, [safeRows, safePeriodA, safePeriodB]);
 
   function onCustomChange(side, period) {
-    if (side === 'a') setPeriodA(period);
-    else setPeriodB(period);
+    const safePeriod = normalizePeriod(period);
+    if (!safePeriod) return;
+    if (side === 'a') setPeriodA(safePeriod);
+    else setPeriodB(safePeriod);
   }
 
   async function handleShare() {
-    const text = formatShareText({ mode, periodA, periodB, singleMenus, singleCategory, compare });
     try {
+      const text = formatShareText({
+        mode: safeMode,
+        periodA: safePeriodA,
+        periodB: safePeriodB,
+        singleMenus,
+        singleCategory: selectedSingleCategory,
+        compare,
+      });
+      if (!navigator.clipboard?.writeText) throw new Error('CLIPBOARD_UNAVAILABLE');
       await navigator.clipboard.writeText(text);
       showToast('순위 복사 완료', 'ok');
     } catch {
@@ -116,7 +165,7 @@ export default function Page() {
         title="판매량 비교"
         sub="두 기간의 판매량을 메뉴별로 비교하고, 신규·단종 메뉴를 확인할 수 있어요."
         actions={
-          available.length > 0 && (
+          safeAvailable.length > 0 && (
             <>
               <button className="btn ghost" onClick={handleShare}>
                 <Icon.copy style={{width:14, height:14}}/>
@@ -133,35 +182,35 @@ export default function Page() {
 
       {!ready ? (
         <div className="skeleton" style={{ height: 240, borderRadius: 12, marginTop: 16 }} />
-      ) : available.length === 0 ? (
+      ) : safeAvailable.length === 0 ? (
         <RankCompareEmpty />
       ) : (
         <>
-          {periodA && periodB && (
+          {safePeriodA && safePeriodB && (
             <PeriodBar
-              mode={mode}
+              mode={safeMode}
               onModeChange={setMode}
-              periodA={periodA}
-              periodB={periodB}
-              availablePeriods={available}
+              periodA={safePeriodA}
+              periodB={safePeriodB}
+              availablePeriods={safeAvailable}
               onCustomChange={onCustomChange}
             />
           )}
 
-          {mode === 'single' ? (
+          {safeMode === 'single' ? (
             <SingleMonthView
-              period={periodA}
+              period={safePeriodA}
               detail={singleDetail}
               menus={singleMenus}
               categories={singleCategories}
-              category={singleCategory}
+              category={selectedSingleCategory}
               onCategoryChange={setSingleCategory}
               avgCostRate={avgCostRate}
             />
           ) : (
             <CompareView
               categories={categories}
-              category={category}
+              category={selectedCategory}
               onCategoryChange={setCategory}
               compare={compare}
               movers={movers}

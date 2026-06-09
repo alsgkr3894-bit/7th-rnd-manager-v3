@@ -1,5 +1,6 @@
 'use client';
 import { useState, useMemo } from 'react';
+import { toSampleSelectionIds, toggleSampleSelection } from '@/lib/sample/selection';
 
 /**
  * 샘플 비교 모드의 선택 Set과 파생 데이터를 관리한다.
@@ -13,15 +14,7 @@ export function useSampleCompareMode(samples) {
   const [showCompare, setShowCompare] = useState(false);
 
   function toggleCompare(id) {
-    setCompareSet(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else if (next.size < 3) {
-        next.add(id);
-      }
-      return next;
-    });
+    setCompareSet(prev => toggleSampleSelection(prev, id, { maxSize: 3 }));
   }
 
   function exitCompareMode() {
@@ -31,14 +24,17 @@ export function useSampleCompareMode(samples) {
   }
 
   const compareItems = useMemo(
-    () => [...compareSet].map(id => samples.find(s => s.id === id)).filter(Boolean),
+    () => {
+      const sampleList = Array.isArray(samples) ? samples : [];
+      return toSampleSelectionIds(compareSet).map(id => sampleList.find(s => s.id === id)).filter(Boolean);
+    },
     [compareSet, samples],
   );
 
   // 카드 렌더마다 배열 재생성을 막기 위해 순서 Map으로 제공
   const compareIdxMap = useMemo(() => {
     const m = new Map();
-    [...compareSet].forEach((id, i) => m.set(id, i));
+    toSampleSelectionIds(compareSet).forEach((id, i) => m.set(id, i));
     return m;
   }, [compareSet]);
 

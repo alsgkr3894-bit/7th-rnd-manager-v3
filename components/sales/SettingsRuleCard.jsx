@@ -4,6 +4,7 @@ import { SearchBox } from '@/components/ui/SearchBox';
 import { SALES_RULES, CATEGORY_INPUT_OPTIONS } from '@/lib/sales';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { UserRulesSection } from './UserRulesSection';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 const FILTER_CATEGORIES = ['전체', ...CATEGORY_INPUT_OPTIONS];
 
@@ -20,28 +21,29 @@ export function SettingsRuleCard() {
   // SSR/첫 렌더는 서버와 동일하게 SALES_RULES로 두고 마운트 후 교정(하이드레이션 일치).
   const [rules, setRules] = useState(SALES_RULES);
   useEffect(() => { setRules(getActiveBrandId() === 'main' ? SALES_RULES : []); }, []);
+  const safeRules = useMemo(() => asObjectArray(rules), [rules]);
 
   const categories = useMemo(() => {
-    const found = new Set(rules.map(r => r.category).filter(Boolean));
+    const found = new Set(safeRules.map(r => asDisplayText(r.category)).filter(Boolean));
     const ordered = FILTER_CATEGORIES.filter(c => c === '전체' || found.has(c));
     const extras = Array.from(found).filter(c => !FILTER_CATEGORIES.includes(c));
     return [...ordered, ...extras];
-  }, [rules]);
+  }, [safeRules]);
 
   const filtered = useMemo(() => {
-    let list = rules;
-    if (filter !== '전체') list = list.filter(r => r.category === filter);
+    let list = safeRules;
+    if (filter !== '전체') list = list.filter(r => asDisplayText(r.category) === filter);
     const q = query.trim().toLowerCase();
     if (q) {
       list = list.filter(r => {
-        const pat = String(r.pattern || '').toLowerCase();
-        const name = String(r.name || '').toLowerCase();
-        const group = String(r.groupName || '').toLowerCase();
+        const pat = asDisplayText(r.pattern).toLowerCase();
+        const name = asDisplayText(r.name).toLowerCase();
+        const group = asDisplayText(r.groupName).toLowerCase();
         return pat.includes(q) || name.includes(q) || group.includes(q);
       });
     }
     return list;
-  }, [filter, query, rules]);
+  }, [filter, query, safeRules]);
 
   return (
     <div className="card" style={{marginTop:16}}>
@@ -50,14 +52,14 @@ export function SettingsRuleCard() {
       <div className="card-header">
         <div>
           <div className="card-title">기본 분류 규칙</div>
-          <div className="card-sub">메뉴명 정규화 → 카테고리·중분류·상세 매핑 · 총 {rules.length}개</div>
+          <div className="card-sub">메뉴명 정규화 → 카테고리·중분류·상세 매핑 · 총 {safeRules.length}개</div>
         </div>
       </div>
 
       {/* 카테고리 chip */}
       <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:12}}>
         {categories.map(c => {
-          const cnt = c === '전체' ? rules.length : rules.filter(r => r.category === c).length;
+          const cnt = c === '전체' ? safeRules.length : safeRules.filter(r => asDisplayText(r.category) === c).length;
           return (
             <button key={c} onClick={() => setFilter(c)} className="chip"
               style={{
@@ -96,27 +98,37 @@ export function SettingsRuleCard() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(r => (
-                <tr key={r.ruleId}>
-                  <td className="cell-name"><div className="menu-name">{String(r.pattern)}</div></td>
+              {filtered.map((r, index) => {
+                const key = asDisplayText(r.ruleId, `rule-${index}`);
+                const pattern = asDisplayText(r.pattern, '-');
+                const category = asDisplayText(r.category, '-');
+                const groupName = asDisplayText(r.groupName, '-');
+                const detailName = asDisplayText(r.detailName, '-');
+                const matchType = asDisplayText(r.matchType);
+                const isExact = matchType === 'exact';
+
+                return (
+                <tr key={key}>
+                  <td className="cell-name"><div className="menu-name">{pattern}</div></td>
                   <td>
                     <span className="chip" style={{background:'var(--surface-2)', color:'var(--text-2)'}}>
-                      {r.category || '-'}
+                      {category}
                     </span>
                   </td>
-                  <td style={{color:'var(--text-2)', fontSize:13}}>{r.groupName || '-'}</td>
-                  <td style={{color:'var(--text-3)', fontSize:12}}>{r.detailName || '-'}</td>
+                  <td style={{color:'var(--text-2)', fontSize:13}}>{groupName}</td>
+                  <td style={{color:'var(--text-3)', fontSize:12}}>{detailName}</td>
                   <td>
                     <span className="chip" style={{
-                      background: r.matchType === 'exact' ? 'var(--surface-2)' : 'var(--accent-soft)',
-                      color: r.matchType === 'exact' ? 'var(--text-2)' : 'var(--accent-text)',
+                      background: isExact ? 'var(--surface-2)' : 'var(--accent-soft)',
+                      color: isExact ? 'var(--text-2)' : 'var(--accent-text)',
                       fontSize:11,
                     }}>
-                      {r.matchType === 'exact' ? '정확' : '정규식'}
+                      {isExact ? '정확' : '정규식'}
                     </span>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

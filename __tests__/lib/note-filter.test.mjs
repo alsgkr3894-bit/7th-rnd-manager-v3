@@ -19,6 +19,21 @@ describe('buildNoteSearchIndex', () => {
     expect(buildNoteSearchIndex(null).size).toBe(0);
     expect(buildNoteSearchIndex([{ id: 9 }]).get(9)).toBe('\n\n\n');
   });
+
+  test('손상된 검색 필드는 표시 가능한 값만 인덱싱한다', () => {
+    const idx = buildNoteSearchIndex([
+      null,
+      {
+        id: 10,
+        title: {},
+        menuName: 123,
+        testContent: ['토핑', {}, '소스'],
+        tags: null,
+      },
+    ]);
+
+    expect(idx.get(10)).toBe('\n123\n토핑,소스\n');
+  });
 });
 
 describe('countNotesByStatus', () => {
@@ -29,6 +44,13 @@ describe('countNotesByStatus', () => {
     expect(c['진행중']).toBe(1);
     expect(c['완료']).toBe(1);
     expect(c['보고예정']).toBe(0); // 미등장 → 0으로 채움
+  });
+
+  test('비배열 입력과 깨진 상태값을 안전하게 처리한다', () => {
+    expect(countNotesByStatus(null).all).toBe(0);
+    const c = countNotesByStatus([null, { status: {} }, { status: 123 }], ['123']);
+    expect(c).toMatchObject({ all: 2, 123: 1 });
+    expect(c['[object Object]']).toBeUndefined();
   });
 });
 
@@ -77,5 +99,20 @@ describe('filterSortNotes', () => {
     const copy = [...NOTES];
     filterSortNotes(NOTES, { sortBy: 'menuName' });
     expect(NOTES).toEqual(copy);
+  });
+
+  test('손상된 입력과 정렬 필드를 안전하게 처리한다', () => {
+    expect(filterSortNotes(null)).toEqual([]);
+
+    const notes = [
+      null,
+      { id: 1, status: '보고예정', brand: {}, menuName: {}, testDate: {}, createdAt: {}, title: {} },
+      { id: 2, status: '보고예정', brand: 'main', menuName: 123, testDate: 456, createdAt: '2026-06-01', title: '정상' },
+    ];
+
+    expect(filterSortNotes(notes, { search: {}, statusFilter: '보고예정' }).map(n => n.id)).toEqual([2, 1]);
+    expect(filterSortNotes(notes, { sortBy: 'menuName' }).map(n => n.id)).toEqual([1, 2]);
+    expect(filterSortNotes(notes, { sortBy: 'testDate' }).map(n => n.id)).toEqual([2, 1]);
+    expect(filterSortNotes(notes, { brandFilter: 'main' }).map(n => n.id)).toEqual([2, 1]);
   });
 });

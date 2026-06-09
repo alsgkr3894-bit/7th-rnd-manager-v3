@@ -1,5 +1,6 @@
 'use client';
 import { Icon } from '@/components/icons';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
  * TopMovers — 증가율 / 감소율 TOP 3 (양쪽 데이터 모두 있는 메뉴 중)
@@ -28,30 +29,41 @@ export function TopMovers({ topRise, topFall }) {
 }
 
 function MoverCard({ title, sub, icon, items, color, arrow }) {
+  const safeItems = asObjectArray(items);
+  const safeTitle = asDisplayText(title);
+  const safeSub = asDisplayText(sub);
+  const safeColor = asDisplayText(color, 'var(--text-1)');
+  const safeArrow = asDisplayText(arrow);
+
   return (
     <div className="card">
       <div className="card-header" style={{marginBottom:12}}>
         <div>
-          <div className="card-title">{title}</div>
-          <div className="card-sub">{sub}</div>
+          <div className="card-title">{safeTitle}</div>
+          <div className="card-sub">{safeSub}</div>
         </div>
         {icon}
       </div>
-      {items.length === 0 ? (
+      {safeItems.length === 0 ? (
         <div style={{padding:'24px 0', textAlign:'center', color:'var(--text-3)', fontSize:13}}>
           비교 가능한 메뉴가 없습니다
         </div>
       ) : (
         <div className="rank-list">
-          {items.map((r, i) => (
-            <div className="rank-row" key={r.name}>
-              <div className="rank-num num" style={{background: 'transparent', color}}>{i + 1}</div>
-              <div className="rank-name">{r.name}</div>
-              <div className="num" style={{fontWeight: 800, color, whiteSpace: 'nowrap'}}>
-                {arrow} {Math.abs(r.pct).toFixed(1)}%
+          {safeItems.map((r, i) => {
+            const name = asDisplayText(r.name, '-');
+            const pct = Number.isFinite(Number(r.pct)) ? Number(r.pct) : 0;
+
+            return (
+            <div className="rank-row" key={`${name}-${i}`}>
+              <div className="rank-num num" style={{background: 'transparent', color: safeColor}}>{i + 1}</div>
+              <div className="rank-name">{name}</div>
+              <div className="num" style={{fontWeight: 800, color: safeColor, whiteSpace: 'nowrap'}}>
+                {safeArrow} {Math.abs(pct).toFixed(1)}%
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

@@ -7,6 +7,7 @@ import { initDB } from '@/lib/db';
 import { getPriceFiles } from '@/lib/price';
 import { getJSONLS, setJSONLS } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
+import { normalizeSidebarOpenIds } from '@/lib/ui/sidebar-state';
 
 /**
  * 사이드바 컴포넌트
@@ -58,7 +59,7 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, re
   // 저장값 없으면(처음 접속) 모두 접힌 상태 유지 — 사용자가 직접 연 탭만 저장됨
   useEffect(() => {
     const saved = getJSONLS(KEYS.SIDEBAR_OPEN);
-    setOpenIds(saved || {});
+    setOpenIds(normalizeSidebarOpenIds(saved));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

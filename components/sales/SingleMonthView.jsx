@@ -3,6 +3,7 @@ import { formatNumber } from '@/lib/format';
 import { costRateColor } from '@/lib/cost/rate-color';
 import { MonthRankTable } from './MonthRankTable';
 import { CategoryDetailGrid } from './CategoryDetailGrid';
+import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
 
 /**
  * SingleMonthView — 월 상세 보기 (PeriodBar 'single' 모드)
@@ -21,7 +22,15 @@ export function SingleMonthView({
   onCategoryChange,
   avgCostRate,   // 피자 평균 원가율 (%)
 }) {
-  const hasRate = avgCostRate != null && avgCostRate > 0;
+  const safePeriod = period && typeof period === 'object' ? period : null;
+  const safeDetail = detail && typeof detail === 'object' && !Array.isArray(detail) ? detail : null;
+  const total = Number.isFinite(Number(safeDetail?.total)) ? Number(safeDetail.total) : 0;
+  const rate = Number.isFinite(Number(avgCostRate)) ? Number(avgCostRate) : null;
+  const hasRate = rate != null && rate > 0;
+  const selectedCategory = asDisplayText(category);
+  const handleCategoryChange = typeof onCategoryChange === 'function' ? onCategoryChange : () => {};
+  const safeMenus = asObjectArray(menus);
+  const safeCategories = asStringArray(categories);
 
   return (
     <>
@@ -29,10 +38,10 @@ export function SingleMonthView({
         <div className="card kpi-card">
           <div>
             <div className="label">전체 판매량</div>
-            <div className="value num">{formatNumber(detail?.total ?? 0)}<span className="unit">개</span></div>
+            <div className="value num">{formatNumber(total)}<span className="unit">개</span></div>
             <div className="trend">
               <span style={{color:'var(--text-3)'}}>
-                {period ? `${period.year}년 ${period.month}월 기준` : ''}
+                {safePeriod ? `${asDisplayText(safePeriod.year, '-')}년 ${asDisplayText(safePeriod.month, '-')}월 기준` : ''}
               </span>
             </div>
           </div>
@@ -43,14 +52,14 @@ export function SingleMonthView({
               평균 원가율
               <span className="pill">피자 카테고리</span>
             </div>
-            <div className="value num" style={{color: costRateColor(avgCostRate)}}>
-              {hasRate ? avgCostRate.toFixed(1) : '—'}
+            <div className="value num" style={{color: costRateColor(rate)}}>
+              {hasRate ? rate.toFixed(1) : '—'}
               <span className="unit">%</span>
             </div>
             <div className="trend">
               {hasRate ? (
-                <span style={{color: costRateColor(avgCostRate)}}>
-                  {avgCostRate <= 30 ? '양호' : avgCostRate <= 40 ? '보통' : '주의'}
+                <span style={{color: costRateColor(rate)}}>
+                  {rate <= 30 ? '양호' : rate <= 40 ? '보통' : '주의'}
                 </span>
               ) : (
                 <span style={{color:'var(--text-4)'}}>
@@ -63,16 +72,16 @@ export function SingleMonthView({
       </div>
 
       <CategoryDetailGrid
-        detail={detail}
-        onCategoryClick={(c) => onCategoryChange(c === category ? null : c)}
+        detail={safeDetail}
+        onCategoryClick={(c) => handleCategoryChange(c === selectedCategory ? null : c)}
       />
 
       <MonthRankTable
-        menus={menus}
-        categories={categories}
-        category={category}
-        onCategoryChange={onCategoryChange}
-        total={detail?.total ?? 0}
+        menus={safeMenus}
+        categories={safeCategories}
+        category={selectedCategory}
+        onCategoryChange={handleCategoryChange}
+        total={total}
       />
     </>
   );

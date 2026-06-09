@@ -7,6 +7,7 @@ export default function ProgressBar() {
   const [pct,    setPct]    = useState(0);
   const [active, setActive] = useState(false);
   const timer  = useRef(null);
+  const settleTimer = useRef(null);
   const cur    = useRef(0);
   const prev   = useRef(pathname);
 
@@ -16,6 +17,7 @@ export default function ProgressBar() {
       cur.current = 10;
       setPct(10);
       setActive(true);
+      clearTimeout(settleTimer.current);
       timer.current = setInterval(() => {
         cur.current = Math.min(cur.current + Math.random() * 14, 82);
         setPct(cur.current);
@@ -29,15 +31,20 @@ export default function ProgressBar() {
       start();
     }
     document.addEventListener('click', onLinkClick);
-    return () => { document.removeEventListener('click', onLinkClick); clearInterval(timer.current); };
+    return () => {
+      document.removeEventListener('click', onLinkClick);
+      clearInterval(timer.current);
+      clearTimeout(settleTimer.current);
+    };
   }, []);
 
   useEffect(() => {
     if (pathname !== prev.current) {
       prev.current = pathname;
       clearInterval(timer.current);
+      clearTimeout(settleTimer.current);
       setPct(100);
-      setTimeout(() => { setActive(false); setPct(0); }, 360);
+      settleTimer.current = setTimeout(() => { setActive(false); setPct(0); }, 360);
     }
   }, [pathname]);
 

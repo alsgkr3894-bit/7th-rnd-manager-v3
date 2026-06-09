@@ -5,19 +5,36 @@ import { parseTagList, formatFullDate } from '@/lib/note/utils';
 import { useModalShell } from '@/hooks/useModalShell';
 import { OVERLAY_COLOR } from '@/lib/ui/styles';
 
-export function NoteDetailModal({ note, onClose, onEdit }) {
-  const { containerRef, isClosing, close: handleClose } = useModalShell(onClose, { closeMs: 175 });
-  const sc   = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
-  const sb   = STATUS_BORDER[note.status] || 'var(--border)';
+const noop = () => {};
+
+function asText(value) {
+  if (value == null) return '';
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  return '';
+}
+
+export function NoteDetailModal({ note = {}, onClose, onEdit }) {
+  const close = typeof onClose === 'function' ? onClose : noop;
+  const edit = typeof onEdit === 'function' ? onEdit : noop;
+  const { containerRef, isClosing, close: handleClose } = useModalShell(close, { closeMs: 175 });
+  const status = note.status || '아이디어';
+  const category = asText(note.category) || '—';
+  const noteType = asText(note.noteType) || '—';
+  const testDate = typeof note.testDate === 'string' ? note.testDate : '';
+  const title = asText(note.title);
+  const menuName = asText(note.menuName);
+  const testContent = asText(note.testContent);
+  const sc   = STATUS_COLORS[status] || STATUS_COLORS['아이디어'];
+  const sb   = STATUS_BORDER[status] || 'var(--border)';
   const tags = parseTagList(note.tags);
 
   const rows = [
-    ['테스트 날짜', note.testDate ? formatFullDate(note.testDate) : null],
-    ['사용 재료',   note.materials],  ['맛 평가',     note.tasteEval],
-    ['상무님 평가', note.managerEval], ['원가 검토',   note.costNote],
-    ['이슈',         note.issues],
-    ['개선점',      note.improvements],['다음 액션',  note.nextAction],
-    ['보고용 요약', note.reportSummary],
+    ['테스트 날짜', testDate ? formatFullDate(testDate) : null],
+    ['사용 재료',   asText(note.materials)],  ['맛 평가',     asText(note.tasteEval)],
+    ['상무님 평가', asText(note.managerEval)], ['원가 검토',   asText(note.costNote)],
+    ['이슈',         asText(note.issues)],
+    ['개선점',      asText(note.improvements)],['다음 액션',  asText(note.nextAction)],
+    ['보고용 요약', asText(note.reportSummary)],
   ].filter(([,v]) => v);
 
   return (
@@ -28,22 +45,22 @@ export function NoteDetailModal({ note, onClose, onEdit }) {
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16}}>
           <div>
             <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}>
-              <span style={{fontSize:12,fontWeight:700,padding:'3px 10px',borderRadius:20,background:sc.bg,color:sc.color}}>{note.status}</span>
-              <span style={{fontSize:12,color:'var(--text-3)'}}>{note.category} · {note.noteType}</span>
+              <span style={{fontSize:12,fontWeight:700,padding:'3px 10px',borderRadius:20,background:sc.bg,color:sc.color}}>{status}</span>
+              <span style={{fontSize:12,color:'var(--text-3)'}}>{category} · {noteType}</span>
               {note.parentId && <span style={{fontSize:11,color:'var(--text-4)',background:'var(--surface-2)',padding:'2px 8px',borderRadius:8}}>버전 계보</span>}
             </div>
-            <div style={{fontWeight:700,fontSize:17,color:'var(--text-1)'}}>{note.title}</div>
+            <div style={{fontWeight:700,fontSize:17,color:'var(--text-1)'}}>{title}</div>
             <div style={{fontSize:13,color:'var(--text-3)',marginTop:2}}>
-              {note.menuName}{note.testDate ? ` · ${formatFullDate(note.testDate)}` : ''}
+              {menuName}{testDate ? ` · ${formatFullDate(testDate)}` : ''}
             </div>
           </div>
           <button className="btn xs" style={{flexShrink:0}} onClick={handleClose} aria-label="노트 상세 닫기">
             <Icon.close style={{width:16,height:16}}/>
           </button>
         </div>
-        {note.testContent && (
+        {testContent && (
           <div style={{background:'var(--surface-2)',borderRadius:10,padding:'12px 14px',fontSize:13,lineHeight:1.7,color:'var(--text-2)',marginBottom:16}}>
-            {note.testContent}
+            {testContent}
           </div>
         )}
         {rows.map(([label,val]) => (
@@ -59,7 +76,7 @@ export function NoteDetailModal({ note, onClose, onEdit }) {
         )}
         <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:20}}>
           <button className="btn" onClick={handleClose}>닫기</button>
-          <button className="btn primary" onClick={onEdit}><Icon.edit style={{width:13,height:13}}/> 수정하기</button>
+          <button className="btn primary" onClick={edit}><Icon.edit style={{width:13,height:13}}/> 수정하기</button>
         </div>
       </div>
     </div>

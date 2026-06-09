@@ -161,6 +161,8 @@ export default function Page() {
   });
 
   useEffect(() => {
+    let ignore = false;
+
     setIsLoading(true);
     initDB()
       .then(async () => {
@@ -180,6 +182,7 @@ export default function Page() {
             getAllEdges(),
             getPriceFiles(),
           ]);
+          if (ignore) return;
 
           // 최신 단가 파일 기준 집계 기간 설정
           const latestFile = priceFiles[0];
@@ -235,16 +238,23 @@ export default function Page() {
           setCostByCategory(updated);
           setDataError(null);
         } catch (err) {
+          if (ignore) return;
+
           console.error('[cost report]', err);
           setDataError('메뉴 가격 데이터를 불러오는 중 오류가 발생했어요.');
         } finally {
-          setIsLoading(false);
+          if (!ignore) setIsLoading(false);
         }
       })
       .catch(() => {
+        if (ignore) return;
+
         setIsLoading(false);
         setDataError('데이터베이스에 연결할 수 없어요. 데이터를 먼저 업로드해 주세요.');
       });
+    return () => {
+      ignore = true;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -323,7 +333,7 @@ export default function Page() {
               <select
                 className="period-select num"
                 value={year}
-                onChange={e => setYear(parseInt(e.target.value))}
+                onChange={e => setYear(parseInt(e.target.value, 10))}
               >
                 {yearOptions.map(y => (
                   <option key={y} value={y}>{y}년</option>
@@ -333,7 +343,7 @@ export default function Page() {
                 <select
                   className="period-select num"
                   value={month}
-                  onChange={e => setMonth(parseInt(e.target.value))}
+                  onChange={e => setMonth(parseInt(e.target.value, 10))}
                 >
                   {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
                     <option key={m} value={m}>{m}월</option>
@@ -365,7 +375,7 @@ export default function Page() {
                 max="50"
                 step="1"
                 value={riskThreshold}
-                onChange={e => setRiskThreshold(parseInt(e.target.value))}
+                onChange={e => setRiskThreshold(parseInt(e.target.value, 10))}
               />
               <div className="threshold-val num" style={{ minWidth: 64, color: 'var(--warn)' }}>
                 {riskThreshold}<span className="unit">%↑</span>

@@ -33,15 +33,25 @@ export default function Page() {
 
   // 품목 제외 수: ref_excluded + sales_rules 중 category='품목제외' 합산
   useEffect(() => {
+    let ignore = false;
+
     initDB()
       .then(async () => {
         const [excl, rules] = await Promise.all([getUserExcluded(), getUserRules()]);
+        if (ignore) return;
+
         setExcludeCount(excl.length + rules.filter(r => r.category === '품목제외').length);
       })
       .catch(err => {
+        if (ignore) return;
+
         console.error('[settings] 제외 수 조회 실패:', err);
         setExcludeLoadFailed(true);
       });
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   return (
@@ -101,11 +111,16 @@ export default function Page() {
 }
 
 function SummaryCard({ label, value, sub }) {
+  const hasUnit = typeof value !== 'string';
+
   return (
     <div className="card kpi-card">
       <div>
         <div className="label">{label}</div>
-        <div className="value num">{typeof value === 'string' ? value : formatNumber(value)}<span className="unit">개</span></div>
+        <div className="value num">
+          {hasUnit ? formatNumber(value) : value}
+          {hasUnit && <span className="unit">개</span>}
+        </div>
         <div className="trend"><span style={{color:'var(--text-3)'}}>{sub}</span></div>
       </div>
     </div>

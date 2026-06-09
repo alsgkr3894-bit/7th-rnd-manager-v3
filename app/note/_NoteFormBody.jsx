@@ -10,7 +10,7 @@ import { TagInput } from '@/components/ui/TagInput';
 import { ComboBox } from '@/components/ui/ComboBox';
 import { SegGroup, Field } from '@/components/note/FormFields';
 import { generateNoteReportText } from '@/lib/note/report';
-import { resizePhoto } from '@/lib/image/resize';
+import { isSupportedImageFile, resizePhoto } from '@/lib/image/resize';
 import { calcUnitPrice } from '@/lib/cost/calc-unit-price';
 import { calcCostRate } from '@/lib/cost/rate-color';
 import { KEYS } from '@/lib/note/keys';
@@ -102,13 +102,36 @@ export function NoteFormBody({ form, setForm }) {
   const [ingSearch, setIngSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const searchRef = useRef(null);
+  const dropdownTimerRef = useRef(null);
 
   useEffect(() => {
+    let ignore = false;
+
     initDB()
       .then(() => getAllIngredients())
-      .then(list => setIngredients(list.filter(i => !i.excluded && !i.discontinued)))
-      .catch(err => console.warn('[NoteFormBody]', err));
+      .then(list => {
+        if (!ignore) setIngredients(list.filter(i => !i.excluded && !i.discontinued));
+      })
+      .catch(err => {
+        if (!ignore) console.warn('[NoteFormBody]', err);
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, []);
+
+  useEffect(() => () => {
+    if (dropdownTimerRef.current) clearTimeout(dropdownTimerRef.current);
+  }, []);
+
+  function closeDropdownSoon() {
+    if (dropdownTimerRef.current) clearTimeout(dropdownTimerRef.current);
+    dropdownTimerRef.current = setTimeout(() => {
+      setShowDropdown(false);
+      dropdownTimerRef.current = null;
+    }, 150);
+  }
 
   const filteredIngs = useMemo(() => {
     if (!ingSearch.trim()) return [];
@@ -414,7 +437,7 @@ export function NoteFormBody({ form, setForm }) {
                 setShowDropdown(true);
               }}
               onFocus={() => ingSearch.trim() && setShowDropdown(true)}
-              onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+              onBlur={closeDropdownSoon}
               placeholder="재료명 검색 후 클릭해서 추가…"
             />
             {showDropdown && ingSearch.trim() && filteredIngs.length === 0 && (
@@ -686,16 +709,24 @@ export function NoteFormBody({ form, setForm }) {
 }
 
 /** 노트 사진 첨부 카드 (샘플기록과 동일한 base64 JPEG 방식) */
-function NotePhotoSection({ photos, onChange }) {
+function NotePhotoSection({ photos = [], onChange }) {
   const fileRef = useRef(null);
+  const safePhotos = Array.isArray(photos) ? photos.filter(p => p && typeof p === 'object') : [];
+  const change = typeof onChange === 'function' ? onChange : () => {};
 
   async function addFiles(files) {
-    const remaining = MAX_NOTE_PHOTOS - photos.length;
+    const allFiles = files ? Array.from(files) : [];
+    const imageFiles = allFiles.filter(isSupportedImageFile);
+    const rejected = allFiles.length - imageFiles.length;
+    if (rejected > 0) showToast('지원하지 않는 이미지 파일은 제외했어요', 'warn');
+
+    const remaining = MAX_NOTE_PHOTOS - safePhotos.length;
     if (remaining <= 0) {
       showToast(`사진은 최대 ${MAX_NOTE_PHOTOS}장까지 추가할 수 있습니다`, 'warn');
       return;
     }
-    const targets = Array.from(files).slice(0, remaining);
+    const targets = imageFiles.slice(0, remaining);
+    if (targets.length === 0) return;
     const settled = await Promise.allSettled(targets.map(f => resizePhoto(f)));
     const resized = [];
     const failed = [];
@@ -703,15 +734,15 @@ function NotePhotoSection({ photos, onChange }) {
       if (res.status === 'fulfilled') resized.push({ ...res.value, caption: '' });
       else failed.push(targets[i].name);
     });
-    if (resized.length) onChange([...photos, ...resized]);
+    if (resized.length) change([...safePhotos, ...resized]);
     if (failed.length) showToast(`사진 처리 실패: ${failed.join(', ')}`, 'warn');
   }
 
   function removePhoto(idx) {
-    onChange(photos.filter((_, i) => i !== idx));
+    change(safePhotos.filter((_, i) => i !== idx));
   }
   function setCaption(idx, v) {
-    onChange(photos.map((p, i) => (i === idx ? { ...p, caption: v } : p)));
+    change(safePhotos.map((p, i) => (i === idx ? { ...p, caption: v } : p)));
   }
 
   return (
@@ -726,13 +757,13 @@ function NotePhotoSection({ photos, onChange }) {
       >
         <div className="card-title" style={{ margin: 0 }}>
           사진 첨부
-          {photos.length > 0 && (
+          {safePhotos.length > 0 && (
             <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 500, color: 'var(--text-3)' }}>
-              {photos.length}/{MAX_NOTE_PHOTOS}
+              {safePhotos.length}/{MAX_NOTE_PHOTOS}
             </span>
           )}
         </div>
-        {photos.length < MAX_NOTE_PHOTOS && (
+        {safePhotos.length < MAX_NOTE_PHOTOS && (
           <button type="button" className="btn sm" onClick={() => fileRef.current?.click()}>
             <Icon.plus style={{ width: 12, height: 12 }} /> 사진 추가
           </button>
@@ -750,7 +781,7 @@ function NotePhotoSection({ photos, onChange }) {
         }}
       />
 
-      {photos.length < MAX_NOTE_PHOTOS && (
+      {safePhotos.length < MAX_NOTE_PHOTOS && (
         <div
           style={{
             border: '2px dashed var(--border)',
@@ -760,7 +791,7 @@ function NotePhotoSection({ photos, onChange }) {
             fontSize: 13,
             color: 'var(--text-3)',
             cursor: 'pointer',
-            marginBottom: photos.length > 0 ? 12 : 0,
+            marginBottom: safePhotos.length > 0 ? 12 : 0,
           }}
           onClick={() => fileRef.current?.click()}
           onDrop={e => {
@@ -773,9 +804,9 @@ function NotePhotoSection({ photos, onChange }) {
         </div>
       )}
 
-      {photos.length > 0 && (
+      {safePhotos.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {photos.map((p, i) => (
+          {safePhotos.map((p, i) => (
             <div key={i} style={{ position: 'relative' }}>
               {i === 0 && (
                 <span

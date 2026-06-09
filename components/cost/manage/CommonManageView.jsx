@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Icon } from '@/components/icons';
 import { SearchBox } from '@/components/ui/SearchBox';
@@ -60,6 +60,7 @@ export function CommonManageView({ tab = 'groups' }) {
   const [seeding,      setSeeding]      = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting,    setResetting]    = useState(false);
+  const mountedRef = useRef(true);
 
   const load = useCallback(async () => {
     await initDB();
@@ -72,13 +73,29 @@ export function CommonManageView({ tab = 'groups' }) {
       const rows = await getPriceRowsByFileId(latest.id);
       rows.forEach(r => { if (r.productCode) priceRowMap.set(r.productCode, r); });
     }
+    if (!mountedRef.current) return;
     setAllMeta(meta);
     setUnitPriceMap(buildUnitPriceMap(meta, priceRowMap));
     setGroups(gs);
     setEdges(edgeList);
   }, []);
 
-  useEffect(() => { load().catch(err => { console.error(err); setDbError(err.message || '데이터 로드 실패'); }).finally(() => setLoading(false)); }, [load]);
+  useEffect(() => {
+    mountedRef.current = true;
+    load()
+      .catch(err => {
+        if (!mountedRef.current) return;
+        console.error(err);
+        setDbError(err.message || '데이터 로드 실패');
+      })
+      .finally(() => {
+        if (mountedRef.current) setLoading(false);
+      });
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [load]);
 
   // ── Groups handlers ─────────────────────────────────────────
   function handleSelectGroup(id) {

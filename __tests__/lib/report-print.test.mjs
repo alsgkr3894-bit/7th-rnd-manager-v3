@@ -15,4 +15,25 @@ describe('makeReportPrintTitle', () => {
       { brandName: '7번가피자', now: new Date('2026-01-02T00:00:00.000Z') },
     )).toBe('7번가피자_원가마진위험메뉴요약_20260102');
   });
+
+  test('null 보고서 메타와 잘못된 옵션도 기본 보고서 제목으로 처리한다', () => {
+    expect(makeReportPrintTitle(
+      null,
+      { brandName: '테스트/브랜드', now: new Date('2026-06-08T00:00:00.000Z') },
+    )).toBe('테스트브랜드_보고서_20260608');
+  });
+
+  test('유효하지 않은 생성일은 오늘 날짜로 폴백한다', () => {
+    const today = new Date();
+    const expectedDate = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0'),
+    ].join('');
+
+    expect(makeReportPrintTitle(
+      { name: '판매량 보고서' },
+      { brandName: '테스트', now: new Date('invalid') },
+    )).toBe(`테스트_판매량보고서_${expectedDate}`);
+  });
 });

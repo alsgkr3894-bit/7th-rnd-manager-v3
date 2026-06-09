@@ -1,4 +1,12 @@
 'use client';
+import {
+  getNextToggleValue,
+  getToggleButtonStyle,
+  getToggleKnobStyle,
+  normalizeToggleChecked,
+  normalizeToggleDisabled,
+  normalizeToggleOnChange,
+} from '@/lib/ui/toggle';
 
 /**
  * Toggle — 공통 스위치 컴포넌트.
@@ -8,37 +16,19 @@
  * @param {boolean}  [disabled=false]
  */
 export function Toggle({ value, onChange, disabled = false }) {
+  const checked = normalizeToggleChecked(value);
+  const isDisabled = normalizeToggleDisabled(disabled);
+  const notifyChange = normalizeToggleOnChange(onChange);
+
   return (
     <button
       type="button"
-      onClick={() => !disabled && onChange(!value)}
-      aria-pressed={value}
-      disabled={disabled}
-      style={{
-        width: 44,
-        height: 24,
-        borderRadius: 12,
-        border: 'none',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        background: value ? 'var(--accent)' : 'var(--border-strong)',
-        transition: 'background 200ms',
-        position: 'relative',
-        flex: '0 0 auto',
-        opacity: disabled ? 0.5 : 1,
-      }}
+      onClick={() => !isDisabled && notifyChange(getNextToggleValue(checked))}
+      aria-pressed={checked}
+      disabled={isDisabled}
+      style={getToggleButtonStyle({ checked, disabled: isDisabled })}
     >
-      <span
-        style={{
-          position: 'absolute',
-          top: 3,
-          left: value ? 22 : 3,
-          width: 18,
-          height: 18,
-          borderRadius: '50%',
-          background: 'white',
-          transition: 'left 200ms',
-        }}
-      />
+      <span style={getToggleKnobStyle(checked)} />
     </button>
   );
 }

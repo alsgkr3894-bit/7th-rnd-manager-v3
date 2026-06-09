@@ -2,6 +2,7 @@
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { useModalShell } from '@/hooks/useModalShell';
+import { normalizeModalFrameStyle } from '@/lib/ui/modal-frame';
 import { OVERLAY_COLOR } from '@/lib/ui/styles';
 
 /**
@@ -22,18 +23,24 @@ export function ModalFrame({
   children,
 }) {
   const { containerRef, isClosing, close: handleClose } = useModalShell(onClose);
+  const modalStyle = normalizeModalFrameStyle({ width, zIndex, padding, maxHeight });
 
   return createPortal(
     <div style={{
       position: 'fixed', inset: 0,
       background: OVERLAY_COLOR,
       display: 'grid', placeItems: 'center',
-      zIndex,
+      zIndex: modalStyle.zIndex,
     }}>
       <div
         ref={containerRef}
         className={`card modal-anim${isClosing ? ' modal-exit' : ''}`}
-        style={{ width, maxHeight, overflowY: 'auto', padding }}
+        style={{
+          width: modalStyle.width,
+          maxHeight: modalStyle.maxHeight,
+          overflowY: 'auto',
+          padding: modalStyle.padding,
+        }}
       >
         <div style={{
           display: 'flex', justifyContent: 'space-between',

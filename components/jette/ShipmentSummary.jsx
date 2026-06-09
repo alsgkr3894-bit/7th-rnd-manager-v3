@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { Chip } from '@/components/ui/Chip';
 import { formatNumber } from '@/lib/format';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
  * ShipmentSummary — 출고량 요약 4카드 + 카테고리 multi-select 필터
@@ -12,9 +13,16 @@ const TYPE_OPTIONS = [
 ];
 const ALL_TYPES = TYPE_OPTIONS.map(o => o.value);
 
+function toFiniteNumber(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
 export function ShipmentSummary({ aggRows, managedCount }) {
   const [selectedTypes, setSelectedTypes] = useState(new Set(ALL_TYPES));
   const [managedOnly, setManagedOnly] = useState(false);
+  const safeAggRows = useMemo(() => asObjectArray(aggRows), [aggRows]);
+  const safeManagedCount = Number.isFinite(Number(managedCount)) ? Number(managedCount) : 0;
   const isAll = selectedTypes.size === ALL_TYPES.length;
 
   function toggleType(t) {
@@ -34,22 +42,24 @@ export function ShipmentSummary({ aggRows, managedCount }) {
   }
 
   const counts = useMemo(() => ({
-    exclusive: aggRows.filter(r => r.productType === 'exclusive').length,
-    generic:   aggRows.filter(r => r.productType === 'generic').length,
-    managed:   aggRows.filter(r => r.isManaged).length,
-  }), [aggRows]);
+    exclusive: safeAggRows.filter(r => r.productType === 'exclusive').length,
+    generic:   safeAggRows.filter(r => r.productType === 'generic').length,
+    managed:   safeAggRows.filter(r => r.isManaged).length,
+  }), [safeAggRows]);
 
   const filtered = useMemo(() => {
-    let list = aggRows.filter(r => selectedTypes.has(r.productType));
+    let list = safeAggRows.filter(r => selectedTypes.has(r.productType));
     if (managedOnly) list = list.filter(r => r.isManaged);
     return list;
-  }, [aggRows, selectedTypes, managedOnly]);
+  }, [safeAggRows, selectedTypes, managedOnly]);
 
   const summary = useMemo(() => {
-    const totalQty = filtered.reduce((s, r) => s + (r.totalQuantity || 0), 0);
-    const totalAmt = filtered.reduce((s, r) => s + (r.totalAmount || 0), 0);
+    const totalQty = filtered.reduce((s, r) => s + toFiniteNumber(r.totalQuantity), 0);
+    const totalAmt = filtered.reduce((s, r) => s + toFiniteNumber(r.totalAmount), 0);
     const max = filtered.length > 0
-      ? filtered.reduce((m, r) => r.totalQuantity > m.totalQuantity ? r : m, filtered[0])
+      ? filtered.reduce((m, r) => (
+          toFiniteNumber(r.totalQuantity) > toFiniteNumber(m.totalQuantity) ? r : m
+        ), filtered[0])
       : null;
     return { totalQty, totalAmt, max };
   }, [filtered]);
@@ -66,7 +76,7 @@ export function ShipmentSummary({ aggRows, managedCount }) {
       {/* 카테고리 multi-select chip */}
       <div style={{display:'flex', gap:6, flexWrap:'wrap', marginTop:16, alignItems:'center'}}>
         <span style={{fontSize:12, color:'var(--text-3)', marginRight:4}}>요약 필터</span>
-        <Chip label="전체" count={aggRows.length} active={isAll} onClick={clickAll}/>
+        <Chip label="전체" count={safeAggRows.length} active={isAll} onClick={clickAll}/>
         {TYPE_OPTIONS.map(o => (
           <Chip
             key={o.value}
@@ -102,15 +112,15 @@ export function ShipmentSummary({ aggRows, managedCount }) {
         />
         <SummaryCard
           label="최다 출고 제품"
-          value={summary.max ? summary.max.productName : '—'}
-          foot={summary.max ? `${formatNumber(summary.max.totalQuantity)}개` : '데이터 없음'}
+          value={summary.max ? asDisplayText(summary.max.productName, '—') : '—'}
+          foot={summary.max ? `${formatNumber(toFiniteNumber(summary.max.totalQuantity))}개` : '데이터 없음'}
           footColor={summary.max ? 'var(--accent-text)' : undefined}
           small
         />
         <SummaryCard
           label="대상 제품 수"
           value={String(filtered.length)}
-          unit={`/ ${managedCount}`}
+          unit={`/ ${safeManagedCount}`}
           foot="선택 카테고리 출고 제품 수"
         />
       </div>
@@ -119,19 +129,25 @@ export function ShipmentSummary({ aggRows, managedCount }) {
 }
 
 function SummaryCard({ label, value, unit, foot, footColor, small }) {
+  const safeLabel = asDisplayText(label);
+  const safeValue = asDisplayText(value, '—');
+  const safeUnit = asDisplayText(unit);
+  const safeFoot = asDisplayText(foot);
+  const safeFootColor = asDisplayText(footColor, 'var(--text-3)');
+
   return (
     <div className="card" style={{padding:'16px 20px'}}>
-      <div style={{fontSize:12, color:'var(--text-3)', fontWeight:600, marginBottom:6}}>{label}</div>
+      <div style={{fontSize:12, color:'var(--text-3)', fontWeight:600, marginBottom:6}}>{safeLabel}</div>
       <div style={{
         fontSize: small ? 16 : 24,
         fontWeight:700, color:'var(--text-1)',
         whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
         lineHeight:1.2, marginBottom:4,
       }}>
-        {value}
-        {unit && <span style={{fontSize:13, fontWeight:600, opacity:0.5, marginLeft:3}}>{unit}</span>}
+        {safeValue}
+        {safeUnit && <span style={{fontSize:13, fontWeight:600, opacity:0.5, marginLeft:3}}>{safeUnit}</span>}
       </div>
-      <div style={{fontSize:11, color: footColor || 'var(--text-3)'}}>{foot}</div>
+      <div style={{fontSize:11, color: safeFootColor}}>{safeFoot}</div>
     </div>
   );
 }

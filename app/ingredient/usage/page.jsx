@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
+import { useEffect, useState, useMemo, useCallback, Fragment, useRef } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SortableTh } from '@/components/ui/SortableTh';
 import { SearchBox } from '@/components/ui/SearchBox';
@@ -51,6 +51,11 @@ const TIER_LABEL = ['많이 쓰는 재료 (8개 이상)', '보통 (4–7개)', '
 const tierOf = count => (count >= USAGE_THRESHOLD.HIGH ? 0 : count >= USAGE_THRESHOLD.MID ? 1 : 2);
 const keyOf = r => r.code || r.name;
 
+function toStringSet(value) {
+  if (!Array.isArray(value)) return new Set();
+  return new Set(value.filter(v => typeof v === 'string' && v.trim()));
+}
+
 /** 사용횟수 배지 색상 — 많이(파랑)/보통(초록)/단발(주의)/그 외(중립) */
 function usageCountStyle(count) {
   if (count >= USAGE_THRESHOLD.HIGH) return { background: '#DBEAFE', color: '#1D4ED8' };
@@ -74,16 +79,17 @@ export default function Page() {
   const [onlyOne, setOnlyOne] = useState(false);
   const [showUnused, setShowUnused] = useState(false);
   const [excludedMenus, setExcludedMenus] = useState(() => new Set()); // 목록에서 제외할 메뉴명
+  const mountedRef = useRef(true);
 
   // 숨김 목록 복원 (마운트 1회)
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEYS.INGREDIENT_USAGE_HIDDEN);
-      if (raw) setHidden(new Set(JSON.parse(raw)));
+      if (raw) setHidden(toStringSet(JSON.parse(raw)));
     } catch {}
     try {
       const rawM = localStorage.getItem(KEYS.INGREDIENT_USAGE_EXCL_MENUS);
-      if (rawM) setExcludedMenus(new Set(JSON.parse(rawM)));
+      if (rawM) setExcludedMenus(toStringSet(JSON.parse(rawM)));
     } catch {}
   }, []);
   function toggleHidden(k) {
@@ -134,6 +140,7 @@ export default function Page() {
       getAllRecipes(),
       seedManagedProductsIfEmpty().then(() => getManagedProducts()),
     ]);
+    if (!mountedRef.current) return;
     setAllMeta(meta);
 
     // 전용/범용 단일 출처 = 제때 관리품목(productType)
@@ -172,9 +179,18 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     load()
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(err => {
+        if (mountedRef.current) console.error(err);
+      })
+      .finally(() => {
+        if (mountedRef.current) setLoading(false);
+      });
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, [load]);
 
   const totalUsedCount = useMemo(() => {

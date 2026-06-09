@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
@@ -29,6 +29,7 @@ import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
+import { parseOptionalNonNegativeNumber } from '@/lib/parse';
 
 // 7번가(main) 전용 피자 카테고리 프리셋. 다른 브랜드는 빈 프리셋 → 자유 입력,
 // 칩·통계는 실제 데이터에 존재하는 카테고리에서 동적으로 도출한다.
@@ -104,19 +105,26 @@ function EditModal({ row, isNew, onSave, onClose, presetCategories = [] }) {
     note: row?.note || '',
     excludeFromOrigin: row?.excludeFromOrigin === true,
   });
+  const [errors, setErrors] = useState({});
   const set = makeFieldUpdater(setForm);
   const defaultPrice = getDefaultPrice(form.menuCode);
   const canSave = form.menuCode.trim() && form.menuName.trim();
 
   function submit() {
     if (!canSave) return;
+    const price = parseOptionalNonNegativeNumber(form.price);
+    if (!price.ok) {
+      setErrors({ price: '판매가는 0 이상의 숫자만 입력하세요' });
+      return;
+    }
+    setErrors({});
     onSave({
       ...(row || {}),
       menuCode: form.menuCode.trim(),
       menuName: form.menuName.trim(),
       category: form.category,
       size: form.size.trim() || null,
-      price: form.price !== '' ? Number(form.price) : null,
+      price: price.value,
       status: form.status,
       note: form.note,
       excludeFromOrigin: form.excludeFromOrigin,
@@ -273,7 +281,9 @@ function EditModal({ row, isNew, onSave, onClose, presetCategories = [] }) {
               <input
                 className="input"
                 type="number"
+                min="0"
                 value={form.price}
+                aria-describedby={errors.price ? 'menu-master-price-error' : undefined}
                 onChange={e => set('price', e.target.value)}
                 placeholder={defaultPrice ? String(defaultPrice) : '직접 입력'}
                 style={{ flex: 1 }}
@@ -285,6 +295,14 @@ function EditModal({ row, isNew, onSave, onClose, presetCategories = [] }) {
                 </button>
               )}
             </div>
+            {errors.price && (
+              <div
+                id="menu-master-price-error"
+                style={{ marginTop: 6, fontSize: 12, color: 'var(--danger)' }}
+              >
+                {errors.price}
+              </div>
+            )}
           </div>
 
           <div>
@@ -376,6 +394,7 @@ export default function Page() {
   // 브랜드 카테고리 프리셋 — SSR/첫 렌더는 서버와 동일하게 기본값(피자)로 두고,
   // 마운트 후 활성 브랜드에 맞춰 교정한다(하이드레이션 불일치 방지).
   const [brandCats, setBrandCats] = useState(PIZZA_CATEGORIES);
+  const mountedRef = useRef(true);
   // 마운트 후 실제 활성 브랜드 판별 — localStorage를 읽어 비-main이면 빈 프리셋으로 교정
   useEffect(() => { setBrandCats(getActiveBrandId() === 'main' ? PIZZA_CATEGORIES : []); }, []);
 
@@ -385,13 +404,23 @@ export default function Page() {
     await normalizePersonalPizzaCodes().catch(e =>
       console.warn('[menu-master] 코드 정규화 실패', e)
     );
-    setRows(await getAllMenuMaster());
+    const nextRows = await getAllMenuMaster();
+    if (mountedRef.current) setRows(nextRows);
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     load()
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(err => {
+        if (mountedRef.current) console.error(err);
+      })
+      .finally(() => {
+        if (mountedRef.current) setLoading(false);
+      });
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, [load]);
   useVisibilityRefresh(load);
 

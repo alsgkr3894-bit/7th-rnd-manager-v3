@@ -1,5 +1,12 @@
 'use client';
 import { Icon } from '@/components/icons';
+import {
+  DEFAULT_SEARCH_PLACEHOLDER,
+  getSearchBoxRightPadding,
+  normalizeSearchBoxOnChange,
+  normalizeSearchBoxPlaceholder,
+  normalizeSearchBoxValue,
+} from '@/lib/ui/search-box';
 
 /**
  * SearchBox — 좌측 검색 아이콘 + 인풋
@@ -8,7 +15,11 @@ import { Icon } from '@/components/icons';
  * @param {Function} onChange  - 새 문자열을 인자로 받음 (이벤트 아님)
  * @param {string}   [placeholder='제품명·제품코드 검색']
  */
-export function SearchBox({ value, onChange, placeholder = '제품명·제품코드 검색' }) {
+export function SearchBox({ value, onChange, placeholder = DEFAULT_SEARCH_PLACEHOLDER }) {
+  const safeValue = normalizeSearchBoxValue(value);
+  const safePlaceholder = normalizeSearchBoxPlaceholder(placeholder);
+  const notifyChange = normalizeSearchBoxOnChange(onChange);
+
   return (
     <div style={{position:'relative', marginBottom:12}}>
       <Icon.search style={{
@@ -17,20 +28,20 @@ export function SearchBox({ value, onChange, placeholder = '제품명·제품코
       }}/>
       <input
         type="search"
-        aria-label={placeholder}
-        placeholder={placeholder}
-        value={value}
-        onChange={e => onChange(e.target.value)}
+        aria-label={safePlaceholder}
+        placeholder={safePlaceholder}
+        value={safeValue}
+        onChange={e => notifyChange(e.target.value)}
         style={{
-          width:'100%', padding:`8px ${value ? 32 : 12}px 8px 32px`, borderRadius:8,
+          width:'100%', padding:`8px ${getSearchBoxRightPadding(safeValue)}px 8px 32px`, borderRadius:8,
           border:'1px solid var(--border)', background:'var(--surface-2)',
           color:'var(--text-1)', fontSize:13,
         }}
       />
-      {value && (
+      {safeValue && (
         <button
           type="button"
-          onClick={() => onChange('')}
+          onClick={() => notifyChange('')}
           aria-label="검색어 지우기"
           style={{
             position:'absolute', top:'50%', right:10, transform:'translateY(-50%)',

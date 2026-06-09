@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
@@ -72,6 +72,7 @@ export default function Page() {
   });
   const [tagFilter, setTagFilter] = useState('all');
   const [sort, setSort] = useState('default');
+  const mountedRef = useRef(true);
 
   const load = useCallback(async () => {
     await initDB();
@@ -83,6 +84,7 @@ export default function Page() {
       getIngredientMetaMap(),
       seedManagedProductsIfEmpty().then(() => getManagedProducts()),
     ]);
+    if (!mountedRef.current) return;
     const typeMap = buildProductTypeMap(managed);
 
     if (!latest) {
@@ -91,6 +93,7 @@ export default function Page() {
     }
 
     const priceRows = await getPriceRowsByFileId(latest.id);
+    if (!mountedRef.current) return;
     // 마스터(시드/수동)에 등록된 항목만 표시
     const merged = mergeIngredientRows(priceRows, metaMap, typeMap).filter(r => r.hasRecord);
     const priceCodeSet = new Set(priceRows.map(r => r.productCode).filter(Boolean));
@@ -104,9 +107,18 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     load()
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(err => {
+        if (mountedRef.current) console.error(err);
+      })
+      .finally(() => {
+        if (mountedRef.current) setLoading(false);
+      });
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, [load]);
 
   // 카테고리 필터는 새로고침 후에도 유지

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -84,6 +84,7 @@ export default function Page() {
   const [usageMap, setUsageMap] = useState({ byCode: new Map(), byName: new Map() });
   const [usageCat, setUsageCat] = useState('전체');
   const [usageSort, setUsageSort] = useState('count_desc'); // count_desc|count_asc|name_asc
+  const mountedRef = useRef(true);
 
   const load = useCallback(async () => {
     await initDB();
@@ -96,6 +97,7 @@ export default function Page() {
       getIngredientMetaMap(),
       seedManagedProductsIfEmpty().then(() => getManagedProducts()),
     ]);
+    if (!mountedRef.current) return;
     const typeMap = buildProductTypeMap(managed);
 
     // 마스터가 비어있으면 빈 목록 (usageMap 빌드는 계속 진행)
@@ -116,6 +118,7 @@ export default function Page() {
         getPriceRowsByFileId(latest.id),
         prev ? getPriceRowsByFileId(prev.id) : Promise.resolve([]),
       ]);
+      if (!mountedRef.current) return;
       priceRows = latestRows;
       priceCodeSet = new Set(priceRows.map(r => r.productCode).filter(Boolean));
       if (prev) {
@@ -191,6 +194,7 @@ export default function Page() {
         };
       });
 
+    if (!mountedRef.current) return;
     setRows([...linkedRows, ...manualRows]);
 
     // ── 제품별 사용현황 빌드 (오류 시 토스트만 — 단가 탭은 유지) ──────
@@ -201,20 +205,30 @@ export default function Page() {
         getAllSideRecipes(),
         getAllRecipes(),
       ]);
+      if (!mountedRef.current) return;
       setUsageMap(buildIngredientUsageMap({ allMeta, pizzaRecs, personalRecs, sideRecs, oldRecs }));
     } catch (usageErr) {
+      if (!mountedRef.current) return;
       console.warn('[ingredient-price] 사용현황 빌드 실패:', usageErr);
       showToast('사용현황 데이터를 불러오지 못했습니다', 'err');
     }
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     load()
       .catch(err => {
+        if (!mountedRef.current) return;
         console.error(err);
         setDbError(err.message || '데이터 로드 실패');
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (mountedRef.current) setLoading(false);
+      });
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, [load]);
   useVisibilityRefresh(load);
 
@@ -344,7 +358,7 @@ export default function Page() {
         title="식자재 단가 마스터"
         sub="제때 최신 단가 기준 — 마스터에 등록된 항목은 포장단위·개당 단가가 자동 계산돼요."
         actions={
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', minWidth: 0, width: '100%', maxWidth: '100%', flex: '1 1 100%' }}>
             {resetConfirm ? (
               <>
                 <button className="btn" onClick={() => setResetConfirm(false)} disabled={resetting}>취소</button>

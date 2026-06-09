@@ -112,6 +112,7 @@ export default function HomePage() {
   const [quickNote, setQuickNote]   = useState('');
   const [quickSaved, setQuickSaved] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const mountedRef = useRef(false);
   const quickResetTimer = useRef(null);
 
   const {
@@ -124,6 +125,14 @@ export default function HomePage() {
 
   // chartTab ref — useEffect 클로저 stale 방지
   useEffect(() => { chartTabRef.current = chartTab; }, [chartTab]);
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      if (quickResetTimer.current) clearTimeout(quickResetTimer.current);
+    };
+  }, []);
 
   const salesCount = useCountUp(salesKpi?.current ?? 0, { duration: 1400, delay: 250 });
   const noteCount  = useCountUp(noteKpi?.total ?? 0,    { duration: 900,  delay: 460 });
@@ -131,6 +140,8 @@ export default function HomePage() {
   const loadData = useCallback(async () => {
     try {
       await initDB();
+      if (!mountedRef.current) return;
+
       dbReadyRef.current = true;
       setProfile(getProfile());
 
@@ -144,6 +155,8 @@ export default function HomePage() {
       ]);
       const [an, sm, ca, tdo, pl, ws, pc, iss, ac, c, n, uf] =
         live.map(r => (r.status === 'fulfilled' ? r.value : null));
+      if (!mountedRef.current) return;
+
       if (an) { setAllNotes(an); setReportingNotes(an.filter(x => x.status === '보고예정')); }
       if (sm) setRecentSamples(sm);
       if (ca) setCostAlertData(ca);
@@ -168,6 +181,8 @@ export default function HomePage() {
           getMonthlyBriefing(),
         ]);
         const [s, td, dn, tp, bt, br] = sales.map(r => (r.status === 'fulfilled' ? r.value : null));
+        if (!mountedRef.current) return;
+
         if (s)  { setSalesKpi(s); setDetectedPeriod({ year: s.year, month: s.month }); }
         if (td) { setTrend(td); setChartKey(k => k + 1); }
         if (dn) setDonut(dn);
@@ -176,6 +191,8 @@ export default function HomePage() {
         if (br) setBriefing(br);
       }
     } catch (err) {
+      if (!mountedRef.current) return;
+
       devError('[Home] 데이터 로드 실패:', err);
       showToast('데이터를 불러오는 중 문제가 발생했어요. 새로고침해 주세요.', 'error', 5000);
     }
@@ -187,9 +204,22 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!trend) return;
+    let ignore = false;
+
     getSalesTrend(chartTab, anchor)
-      .then(t => { setTrend(t); setChartKey(k => k + 1); })
-      .catch(err => devError('[Home] 트렌드 로드 실패:', err));
+      .then(t => {
+        if (!ignore) {
+          setTrend(t);
+          setChartKey(k => k + 1);
+        }
+      })
+      .catch(err => {
+        if (!ignore) devError('[Home] 트렌드 로드 실패:', err);
+      });
+
+    return () => {
+      ignore = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chartTab]);
 
@@ -250,10 +280,16 @@ export default function HomePage() {
         title: text.slice(0, 30), testContent: text,
         menuName: '', status: '아이디어', category: '기타',
       });
+      if (!mountedRef.current) return;
+
       setQuickSaved(true);
       showToast('노트 저장됨 ✓', 'ok');
-      getNoteKpi().then(setNoteKpi);
-      getRecentActivities(8).then(setActivities);
+      getNoteKpi()
+        .then(v => { if (mountedRef.current) setNoteKpi(v); })
+        .catch(err => devError('[Home] 노트 KPI 갱신 실패:', err));
+      getRecentActivities(8)
+        .then(v => { if (mountedRef.current) setActivities(v); })
+        .catch(err => devError('[Home] 최근 활동 갱신 실패:', err));
       if (quickResetTimer.current) clearTimeout(quickResetTimer.current);
       quickResetTimer.current = setTimeout(() => { setQuickNote(''); setQuickSaved(false); }, QUICK_NOTE_RESET_MS);
     } catch (err) {

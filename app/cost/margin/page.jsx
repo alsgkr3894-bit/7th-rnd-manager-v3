@@ -53,6 +53,15 @@ const MarginTrendModal = dynamic(
   { ssr: false, loading: () => null }
 );
 
+function normalizePercentSetting(value, fallback) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(0, Math.min(100, n));
+}
+
+const normalizeWarnPercentSetting = value => normalizePercentSetting(value, 30);
+const normalizeCritPercentSetting = value => normalizePercentSetting(value, 40);
+
 export default function Page() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -70,8 +79,16 @@ export default function Page() {
   const [sortDir, setSortDir] = useState('asc');
   const [search, setSearch] = useState('');
   // 원가율 경고/비상 임계값 (사용자 조절, 마운트 후 localStorage 복원)
-  const [warnPct, setWarnPct] = useLocalStorage(KEYS.MARGIN_COST_WARN, 30);
-  const [critPct, setCritPct] = useLocalStorage(KEYS.MARGIN_COST_CRIT, 40);
+  const [warnPct, setWarnPct] = useLocalStorage(
+    KEYS.MARGIN_COST_WARN,
+    30,
+    normalizeWarnPercentSetting
+  );
+  const [critPct, setCritPct] = useLocalStorage(
+    KEYS.MARGIN_COST_CRIT,
+    40,
+    normalizeCritPercentSetting
+  );
   const [showHidden, setShowHidden] = useState(false); // 숨김 행 임시 표시
 
   const load = useCallback(async () => {

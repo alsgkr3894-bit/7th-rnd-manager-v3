@@ -1,4 +1,4 @@
-import { readCsvFile, detectHeaderRow, matchColumn } from '../../lib/excel.js';
+import { readCsvFile, readSpreadsheetFile, detectHeaderRow, matchColumn } from '../../lib/excel.js';
 
 // ─── readCsvFile ──────────────────────────────────────────────────────────────
 
@@ -63,6 +63,20 @@ describe('readCsvFile', () => {
   });
 });
 
+// ─── readSpreadsheetFile ────────────────────────────────────────────────────
+
+describe('readSpreadsheetFile', () => {
+  test('지원하지 않는 확장자는 파서 진입 전에 거부한다', async () => {
+    const file = {
+      name: 'price.txt',
+      text: async () => 'name,price\nA,1000',
+      arrayBuffer: async () => new ArrayBuffer(0),
+    };
+
+    await expect(readSpreadsheetFile(file)).rejects.toThrow('지원하지 않는 파일 형식');
+  });
+});
+
 // ─── detectHeaderRow ──────────────────────────────────────────────────────────
 
 describe('detectHeaderRow', () => {
@@ -78,6 +92,11 @@ describe('detectHeaderRow', () => {
 
   test('빈 배열 → 0 반환 (기본값)', () => {
     expect(detectHeaderRow([])).toBe(0);
+  });
+
+  test('배열이 아닌 입력 → 0 반환', () => {
+    expect(detectHeaderRow(null)).toBe(0);
+    expect(detectHeaderRow(undefined)).toBe(0);
   });
 
   test('비어있지 않은 셀이 3개 미만인 행은 건너뜀', () => {
@@ -109,5 +128,10 @@ describe('matchColumn', () => {
 
   test('빈 헤더 배열 → null', () => {
     expect(matchColumn([], ['판매가'])).toBeNull();
+  });
+
+  test('배열이 아닌 입력 → null', () => {
+    expect(matchColumn(null, ['판매가'])).toBeNull();
+    expect(matchColumn(headers, null)).toBeNull();
   });
 });

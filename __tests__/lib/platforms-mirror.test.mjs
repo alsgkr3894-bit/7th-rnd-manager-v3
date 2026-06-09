@@ -62,6 +62,34 @@ describe('loadPlatforms()', () => {
     _ls[KEYS.COST_PLATFORMS] = JSON.stringify(data);
     expect(loadPlatforms()).toEqual(data);
   });
+
+  test('localStorage 값이 플랫폼 배열이 아니면 기본값 반환', () => {
+    _ls[KEYS.COST_PLATFORMS] = JSON.stringify({ id: 'broken', name: '깨짐' });
+    expect(loadPlatforms()).toEqual(DEFAULT_PLATFORMS);
+  });
+
+  test('깨진 플랫폼 항목은 제외하고 정상 항목만 반환', () => {
+    _ls[KEYS.COST_PLATFORMS] = JSON.stringify([
+      null,
+      { id: '', name: '빈 ID', fees: [] },
+      {
+        id: 'safe',
+        name: '정상',
+        fees: [
+          { id: 'fee1', label: '수수료', type: 'pct', value: '7.5' },
+          { id: 'bad-fee', label: '깨짐', type: 'unknown', value: 10 },
+        ],
+      },
+    ]);
+
+    expect(loadPlatforms()).toEqual([
+      {
+        id: 'safe',
+        name: '정상',
+        fees: [{ id: 'fee1', label: '수수료', type: 'pct', value: 7.5 }],
+      },
+    ]);
+  });
 });
 
 // ── savePlatforms ─────────────────────────────────────────────────────────────
@@ -104,6 +132,12 @@ describe('hydratePlatformsFromDB()', () => {
     _dbRecord = { id: 'config', platforms: data, updatedAt: '2026-01-01T00:00:00.000Z' };
     await hydratePlatformsFromDB();
     expect(JSON.parse(_ls[KEYS.COST_PLATFORMS])).toEqual(data);
+  });
+
+  test('DB 레코드의 플랫폼 값이 깨져 있으면 localStorage에 쓰지 않음', async () => {
+    _dbRecord = { id: 'config', platforms: { id: 'broken' }, updatedAt: '2026-01-01T00:00:00.000Z' };
+    await hydratePlatformsFromDB();
+    expect(_ls[KEYS.COST_PLATFORMS]).toBeUndefined();
   });
 
   test('localStorage 이미 있으면 덮어쓰지 않음 (localStorage 우선)', async () => {

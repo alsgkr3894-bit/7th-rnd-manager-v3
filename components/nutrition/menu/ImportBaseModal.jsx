@@ -5,6 +5,7 @@ import { showToast } from '@/components/Toast';
 import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import { parseLabExcel, buildImportRows, toRawValueRecord } from '@/lib/nutrition/values/import';
 import { upsertMenuRef, upsertRawValue } from '@/lib/nutrition/values/store';
+import { asObjectArray } from '@/lib/ui/prop-guards';
 
 const STATUS_CFG = {
   matched:   { label: '매칭',     color: '#16a34a', bg: '#dcfce7' },
@@ -36,9 +37,60 @@ const TH = {
 };
 const TD = { padding: '5px 8px', borderBottom: '1px solid var(--divider)', verticalAlign: 'middle' };
 
-function ImportRow({ row, idx, menuMasters, onToggle, onUpdate }) {
+const EMPTY_MAP = {};
+const noop = () => {};
+
+function asRecord(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : EMPTY_MAP;
+}
+
+function isSupportedLabFile(file) {
+  const name = String(file?.name || '').toLowerCase();
+  return name.endsWith('.xlsx') || name.endsWith('.xls');
+}
+
+const CRUST_OPTIONS = ['석쇠L', '석쇠R', '씬바사삭L'];
+const CATEGORY_OPTIONS = ['피자', '1인피자', '사이드', '추가토핑', '음료', '소스', '기타'];
+const NON_PIZZA_CATS = new Set(['사이드', '추가토핑', '음료', '소스', '기타']);
+
+function crustAutoForCategory(cat) {
+  if (cat === '1인피자') return '씬바사삭L';
+  return '석쇠L';
+}
+
+const selectStyle = {
+  fontSize: 11, padding: '2px 4px', border: '1px solid var(--border)', borderRadius: 4,
+  background: 'var(--surface)', color: 'var(--text-1)', cursor: 'pointer',
+};
+const fixedCrustStyle = {
+  fontSize: 11, padding: '3px 8px', borderRadius: 10,
+  background: 'var(--surface-2)', color: 'var(--text-3)', display: 'inline-block',
+};
+
+function ImportRow({ row = {}, idx, menuMasters, onToggle = noop, onUpdate = noop }) {
+  const safeMenuMasters = asObjectArray(menuMasters);
+  const values = asRecord(row.values);
   const disabled = row.status === 'skipped' || row.status === 'exists';
-  const showPicker = !disabled && (row.status === 'unmatched' || (!row.menuCode && row.status !== 'skipped'));
+  const isSide = row.basis === 'serving' || NON_PIZZA_CATS.has(row.category);
+  const isPersonal = row.category === '1인피자';
+  const isPizza = !isSide && !isPersonal;
+
+  // 크러스트 셀 렌더
+  function renderCrustCell() {
+    if (disabled) return <span style={{ fontFamily: 'monospace', fontSize: 11 }}>{row.crustType || '–'}</span>;
+    if (isSide) return <span style={fixedCrustStyle}>단품</span>;
+    if (isPersonal) return <span style={fixedCrustStyle}>1인도우</span>;
+    // 피자: 3종 선택
+    return (
+      <select
+        style={selectStyle}
+        value={row.crustType || '석쇠L'}
+        onChange={e => onUpdate(idx, { crustType: e.target.value })}
+      >
+        {CRUST_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+      </select>
+    );
+  }
 
   return (
     <tr style={{ opacity: (disabled || !row.include) ? 0.4 : 1 }}>
@@ -46,29 +98,12 @@ function ImportRow({ row, idx, menuMasters, onToggle, onUpdate }) {
         <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={row.rawName}>
           {row.rawName}
         </div>
+        {isSide    && <div style={{ fontSize: 10, color: '#2563eb' }}>1회분 기준</div>}
         {row.skipReason && <div style={{ fontSize: 10, color: '#6b7280' }}>{row.skipReason}</div>}
         {row.dupNote    && <div style={{ fontSize: 10, color: '#b45309' }}>{row.dupNote}</div>}
       </td>
       <td style={{ ...TD, minWidth: 170 }}>
-        {showPicker ? (
-          <MenuCodePicker
-            menuMasters={menuMasters}
-            value={row.menuCode}
-            onChange={(code, meta) => {
-              const m = code ? menuMasters.find(m2 => {
-                const base = m2.size ? m2.menuCode.replace(new RegExp(`-${m2.size}$`), '') : m2.menuCode;
-                return base === code;
-              }) : null;
-              onUpdate(idx, {
-                menuCode: code,
-                menuName: m?.menuName || row.baseName,
-                category: meta?.category || '',
-                status: code ? 'matched' : 'unmatched',
-                include: !!code,
-              });
-            }}
-          />
-        ) : (
+        {disabled ? (
           <div>
             {row.menuCode && (
               <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--accent-text)', marginRight: 4 }}>
@@ -77,15 +112,65 @@ function ImportRow({ row, idx, menuMasters, onToggle, onUpdate }) {
             )}
             <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{row.menuName}</span>
           </div>
+        ) : (
+          <MenuCodePicker
+            menuMasters={safeMenuMasters}
+            value={row.menuCode}
+            onChange={(code, meta) => {
+              const m = code ? safeMenuMasters.find(m2 => {
+                const menuCode = String(m2.menuCode || '');
+                const base = m2.size ? menuCode.replace(new RegExp(`-${m2.size}$`), '') : menuCode;
+                return base === code;
+              }) : null;
+              onUpdate(idx, {
+                menuCode: code,
+                menuName: m?.menuName || row.baseName,
+                category: meta?.category || row.category || '',
+                status: code ? 'matched' : 'unmatched',
+                include: !!code,
+              });
+            }}
+          />
         )}
       </td>
-      <td style={{ ...TD, fontFamily: 'monospace', fontSize: 11 }}>{row.crustType || '–'}</td>
-      <td style={TD}><FmtNum v={row.values.weight}  unit="g" /></td>
-      <td style={TD}><FmtNum v={row.values.kcal}    unit="kcal" /></td>
-      <td style={TD}><FmtNum v={row.values.sugar}   unit="g" /></td>
-      <td style={TD}><FmtNum v={row.values.protein} unit="g" /></td>
-      <td style={TD}><FmtNum v={row.values.satFat}  unit="g" /></td>
-      <td style={TD}><FmtNum v={row.values.sodium}  unit="mg" /></td>
+      <td style={{ ...TD, minWidth: 90 }}>
+        {renderCrustCell()}
+      </td>
+      <td style={{ ...TD, minWidth: 90 }}>
+        {disabled ? (
+          <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{row.category || '–'}</span>
+        ) : (
+          <select
+            style={selectStyle}
+            value={row.category || ''}
+            onChange={e => {
+              const cat = e.target.value;
+              const patch = { category: cat };
+              // 카테고리 변경 시 크러스트 자동 설정
+              if (cat === '피자') {
+                patch.crustType = row.crustType || '석쇠L';
+                patch.basis = undefined;
+              } else if (cat === '1인피자') {
+                patch.crustType = '씬바사삭L';
+                patch.basis = undefined;
+              } else if (NON_PIZZA_CATS.has(cat)) {
+                patch.crustType = '석쇠L';
+                patch.basis = 'serving';
+              }
+              onUpdate(idx, patch);
+            }}
+          >
+            <option value="">–</option>
+            {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        )}
+      </td>
+      <td style={TD}><FmtNum v={values.weight}  unit="g" /></td>
+      <td style={TD}><FmtNum v={values.kcal}    unit="kcal" /></td>
+      <td style={TD}><FmtNum v={values.sugar}   unit="g" /></td>
+      <td style={TD}><FmtNum v={values.protein} unit="g" /></td>
+      <td style={TD}><FmtNum v={values.satFat}  unit="g" /></td>
+      <td style={TD}><FmtNum v={values.sodium}  unit="mg" /></td>
       <td style={TD}><StatusBadge status={row.status} /></td>
       <td style={{ ...TD, textAlign: 'center' }}>
         <input
@@ -101,6 +186,11 @@ function ImportRow({ row, idx, menuMasters, onToggle, onUpdate }) {
 }
 
 export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh }) {
+  const safeMenuMasters = asObjectArray(menuMasters);
+  const safeMenus = asObjectArray(menus);
+  const safeRawMap = asRecord(rawMap);
+  const close = typeof onClose === 'function' ? onClose : noop;
+  const refresh = typeof onRefresh === 'function' ? onRefresh : noop;
   const [step,     setStep]     = useState('upload');
   const [rows,     setRows]     = useState([]);
   const [saving,   setSaving]   = useState(false);
@@ -109,21 +199,25 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
 
   const handleFile = async (file) => {
     if (!file) return;
+    if (!isSupportedLabFile(file)) {
+      showToast('지원하지 않는 파일 형식입니다. .xlsx 또는 .xls 파일을 선택해주세요', 'error');
+      return;
+    }
     try {
       const buf = await file.arrayBuffer();
       const rawRows = await parseLabExcel(buf);
-      const existingKeys = Object.fromEntries(Object.keys(rawMap).map(k => [k, true]));
-      setRows(buildImportRows({ rawRows, menuMasters, existingKeys }));
+      const existingKeys = Object.fromEntries(Object.keys(safeRawMap).map(k => [k, true]));
+      setRows(buildImportRows({ rawRows, menuMasters: safeMenuMasters, existingKeys }));
       setStep('preview');
     } catch (e) {
-      showToast(`파싱 실패: ${e.message}`, 'error');
+      showToast(`파싱 실패: ${e?.message || e}`, 'error');
     }
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     setDragOver(false);
-    const file = e.dataTransfer.files[0];
+    const file = e.dataTransfer.files?.[0];
     if (file) handleFile(file);
   };
 
@@ -140,14 +234,14 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
     if (toSave.length === 0) { showToast('저장할 항목이 없어요', 'warn'); return; }
     setSaving(true);
     let saved = 0;
-    const savedMenuCodes = new Set(menus.map(m => m.menuCode));
+    const savedMenuCodes = new Set(safeMenus.map(m => m.menuCode));
     try {
       for (const row of toSave) {
         if (!savedMenuCodes.has(row.menuCode)) {
           await upsertMenuRef({ menuCode: row.menuCode, menuName: row.menuName, category: row.category });
           savedMenuCodes.add(row.menuCode);
         }
-        const existing = rawMap[`${row.menuCode}__${row.crustType}`];
+        const existing = safeRawMap[`${row.menuCode}__${row.crustType}`];
         await upsertRawValue({
           ...(existing?.id ? { id: existing.id } : {}),
           ...toRawValueRecord(row),
@@ -156,10 +250,10 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
       }
       const skipped = rows.filter(r => !r.include).length;
       showToast(`${saved}건 저장 완료 (${skipped}건 제외)`, 'ok');
-      onRefresh();
-      onClose();
+      refresh();
+      close();
     } catch (e) {
-      showToast(`저장 실패: ${e.message}`, 'error');
+      showToast(`저장 실패: ${e?.message || e}`, 'error');
     }
     setSaving(false);
   };
@@ -180,11 +274,11 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
 
   if (step === 'upload') {
     return (
-      <ModalFrame title="베이스 영양성분 엑셀 가져오기" onClose={onClose} width="min(480px,95vw)" zIndex={300} padding="24px 28px">
+      <ModalFrame title="베이스 영양성분 엑셀 가져오기" onClose={close} width="min(480px,95vw)" zIndex={300} padding="24px 28px">
         <div style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 16, lineHeight: 1.7 }}>
           연구기관 분석 엑셀 파일을 업로드하면 베이스 영양성분에 일괄 저장됩니다.<br />
           <span style={{ fontSize: 12, color: 'var(--text-4)' }}>
-            ※ 값은 100g 기준으로 저장됩니다 | 지원 형식: .xlsx, .xls
+            ※ 여러 시트(피자·사이드) 지원 | 피자=100g 기준, 사이드=1회분 기준 | 총중량 열 인식 | 지원 형식: .xlsx, .xls
           </span>
         </div>
         <div
@@ -211,10 +305,10 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
           type="file"
           accept=".xlsx,.xls"
           style={{ display: 'none' }}
-          onChange={e => { const f = e.target.files[0]; if (f) handleFile(f); e.target.value = ''; }}
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }}
         />
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-          <button className="btn" onClick={onClose}>취소</button>
+          <button className="btn" onClick={close}>취소</button>
         </div>
       </ModalFrame>
     );
@@ -223,7 +317,7 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
   return (
     <ModalFrame
       title="베이스 영양성분 가져오기 — 미리보기"
-      onClose={onClose}
+      onClose={close}
       width="min(1060px,98vw)"
       zIndex={300}
       padding="16px 20px"
@@ -258,7 +352,9 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
             <tr>
               <th style={TH}>원본명</th>
               <th style={{ ...TH, minWidth: 170 }}>메뉴 매칭</th>
-              <th style={TH}>크러스트</th>
+              <th style={{ ...TH, minWidth: 90 }}>크러스트</th>
+              <th style={{ ...TH, minWidth: 90 }}>카테고리</th>
+              <th style={TH}>중량</th>
               <th style={TH}>열량</th>
               <th style={TH}>당류</th>
               <th style={TH}>단백질</th>
@@ -274,7 +370,7 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
                 key={idx}
                 row={row}
                 idx={idx}
-                menuMasters={menuMasters}
+                menuMasters={safeMenuMasters}
                 onToggle={toggleInclude}
                 onUpdate={updateRow}
               />

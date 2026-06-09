@@ -1,5 +1,12 @@
 'use client';
 import { formatNumber } from '@/lib/format';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+
+function normalizeShare(value) {
+  const share = Number(value);
+  if (!Number.isFinite(share)) return 0;
+  return Math.max(0, Math.min(1, share));
+}
 
 /**
  * CategoryDetailGrid — 카테고리별 판매 비중 카드 그리드
@@ -15,7 +22,9 @@ import { formatNumber } from '@/lib/format';
  * @param {(category) => void} onCategoryClick
  */
 export function CategoryDetailGrid({ detail, onCategoryClick }) {
-  if (!detail || detail.total === 0) {
+  const total = Number.isFinite(Number(detail?.total)) ? Number(detail.total) : 0;
+  const categories = asObjectArray(detail?.categories);
+  if (!detail || total === 0) {
     return (
       <div className="card" style={{padding:'40px 0', textAlign:'center', color:'var(--text-3)', fontSize:13}}>
         해당 월에 판매 데이터가 없습니다
@@ -31,7 +40,7 @@ export function CategoryDetailGrid({ detail, onCategoryClick }) {
           <div className="card-sub">상위 카테고리 · 카테고리별 TOP 3</div>
         </div>
         <div style={{fontSize:12, color:'var(--text-3)'}}>
-          총 <b className="num" style={{color:'var(--text-1)'}}>{formatNumber(detail.total)}</b>개
+          총 <b className="num" style={{color:'var(--text-1)'}}>{formatNumber(total)}</b>개
         </div>
       </div>
 
@@ -40,12 +49,17 @@ export function CategoryDetailGrid({ detail, onCategoryClick }) {
         display:'flex', height:10, borderRadius:6, overflow:'hidden',
         background:'var(--surface-2)', marginBottom:20,
       }}>
-        {detail.categories.map(c => (
-          <div key={c.name}
-            title={`${c.name} ${(c.share * 100).toFixed(1)}%`}
-            style={{width: `${c.share * 100}%`, background: c.color}}
+        {categories.map((c, index) => {
+          const name = asDisplayText(c.name, `카테고리 ${index + 1}`);
+          const color = asDisplayText(c.color, 'var(--surface-3)');
+          const share = normalizeShare(c.share);
+          return (
+          <div key={`${name}-${index}`}
+            title={`${name} ${(share * 100).toFixed(1)}%`}
+            style={{width: `${share * 100}%`, background: color}}
           />
-        ))}
+          );
+        })}
       </div>
 
       {/* 카드 그리드 */}
@@ -54,8 +68,8 @@ export function CategoryDetailGrid({ detail, onCategoryClick }) {
         gridTemplateColumns:'repeat(auto-fit, minmax(240px, 1fr))',
         gap:12,
       }}>
-        {detail.categories.map(c => (
-          <CategoryCard key={c.name} cat={c} onClick={onCategoryClick} />
+        {categories.map((c, index) => (
+          <CategoryCard key={`${asDisplayText(c.name, 'category')}-${index}`} cat={c} onClick={onCategoryClick} />
         ))}
       </div>
     </div>
@@ -64,9 +78,14 @@ export function CategoryDetailGrid({ detail, onCategoryClick }) {
 
 function CategoryCard({ cat, onClick }) {
   const clickable = typeof onClick === 'function';
+  const categoryName = asDisplayText(cat.name, '카테고리');
+  const color = asDisplayText(cat.color, 'var(--surface-3)');
+  const share = normalizeShare(cat.share);
+  const value = Number.isFinite(Number(cat.value)) ? Number(cat.value) : 0;
+  const topMenus = asObjectArray(cat.topMenus);
   return (
     <button
-      onClick={() => clickable && onClick(cat.name)}
+      onClick={() => clickable && onClick(categoryName)}
       disabled={!clickable}
       style={{
         padding:'14px 16px',
@@ -78,31 +97,36 @@ function CategoryCard({ cat, onClick }) {
     >
       <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
         <span style={{display:'flex', alignItems:'center', gap:6, fontSize:13, fontWeight:700}}>
-          <span style={{width:8, height:8, borderRadius:'50%', background: cat.color}}/>
-          {cat.name}
+          <span style={{width:8, height:8, borderRadius:'50%', background: color}}/>
+          {categoryName}
         </span>
-        <span className="num" style={{fontSize:13, fontWeight:700}}>{(cat.share * 100).toFixed(1)}%</span>
+        <span className="num" style={{fontSize:13, fontWeight:700}}>{(share * 100).toFixed(1)}%</span>
       </div>
       <div className="num" style={{fontSize:20, fontWeight:800, marginBottom:8}}>
-        {formatNumber(cat.value)}<span className="unit" style={{fontSize:13, opacity:0.6}}>개</span>
+        {formatNumber(value)}<span className="unit" style={{fontSize:13, opacity:0.6}}>개</span>
       </div>
       <div style={{display:'flex', flexDirection:'column', gap:3}}>
-        {cat.topMenus.length === 0 ? (
+        {topMenus.length === 0 ? (
           <div style={{fontSize:12, color:'var(--text-4)'}}>판매 기록 없음</div>
-        ) : cat.topMenus.map((m, i) => (
-          <div key={m.name} style={{
+        ) : topMenus.map((m, i) => {
+          const menuName = asDisplayText(m.name, '-');
+          const quantity = Number.isFinite(Number(m.quantity)) ? Number(m.quantity) : 0;
+
+          return (
+          <div key={`${menuName}-${i}`} style={{
             display:'flex', alignItems:'center', justifyContent:'space-between',
             fontSize:12, color:'var(--text-2)',
           }}>
             <span style={{display:'flex', gap:6, minWidth:0, alignItems:'baseline'}}>
               <span className="num" style={{color:'var(--text-4)', minWidth:10}}>{i + 1}</span>
               <span style={{overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:140}}>
-                {m.name}
+                {menuName}
               </span>
             </span>
-            <span className="num" style={{fontWeight:600}}>{formatNumber(m.quantity)}</span>
+            <span className="num" style={{fontWeight:600}}>{formatNumber(quantity)}</span>
           </div>
-        ))}
+          );
+        })}
       </div>
     </button>
   );

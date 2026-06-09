@@ -6,6 +6,9 @@ import { Stars } from './_Stars';
 import { sampleNamesText, sampleNamesOf } from '@/lib/sample';
 import { usePinchZoom } from '@/hooks/usePinchZoom';
 import { useModalShell } from '@/hooks/useModalShell';
+import { asDisplayText, asFiniteNumber, asObjectArray, clampInteger } from '@/lib/ui/prop-guards';
+
+const noop = () => {};
 
 function Section({ title, children }) {
   return (
@@ -16,20 +19,37 @@ function Section({ title, children }) {
   );
 }
 
-export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
+export function SampleDetailModal({ sample = {}, onClose, onEdit, onDelete }) {
   const router = useRouter();
   const [photoIdx, setPhotoIdx] = useState(0);
-  const photos = sample.photos || [];
+  const safeSample = sample && typeof sample === 'object' ? sample : {};
+  const photos = asObjectArray(safeSample.photos).filter(p => asDisplayText(p.data));
+  const currentPhotoIdx = photos.length > 0 ? Math.min(photoIdx, photos.length - 1) : 0;
+  const currentPhoto = photos[currentPhotoIdx];
   const { imgRef, scale, resetScale } = usePinchZoom();
-  const { containerRef, isClosing, close } = useModalShell(onClose);
+  const closeModal = typeof onClose === 'function' ? onClose : noop;
+  const edit = typeof onEdit === 'function' ? onEdit : noop;
+  const remove = typeof onDelete === 'function' ? onDelete : noop;
+  const { containerRef, isClosing, close } = useModalShell(closeModal);
 
   useEffect(() => {
     resetScale();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photoIdx]);
 
-  const tags = sample.tags ? sample.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
-  const names = sampleNamesText(sample);
+  const tags = asDisplayText(safeSample.tags).split(',').map(t => t.trim()).filter(Boolean);
+  const names = sampleNamesText(safeSample);
+  const title = asDisplayText(safeSample.title, '제목 없음');
+  const category = asDisplayText(safeSample.category);
+  const testDate = asDisplayText(safeSample.testDate);
+  const company = asDisplayText(safeSample.company);
+  const tester = asDisplayText(safeSample.tester);
+  const description = asDisplayText(safeSample.description);
+  const result = asDisplayText(safeSample.result);
+  const improvements = asDisplayText(safeSample.improvements);
+  const nextAction = asDisplayText(safeSample.nextAction);
+  const rating = clampInteger(safeSample.rating, { min: 0, max: 5, fallback: 0 });
+  const price = asFiniteNumber(safeSample.price);
 
   return (
     <div
@@ -55,21 +75,21 @@ export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
         }}>
           <div>
             <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:4 }}>
-              {sample.category && (
+              {category && (
                 <span style={{
                   background:'var(--accent-soft)', color:'var(--accent-text)',
                   fontSize:11, padding:'2px 8px', borderRadius:6, fontWeight:700,
-                }}>{sample.category}</span>
+                }}>{category}</span>
               )}
-              {sample.rating > 0 && <Stars value={sample.rating}/>}
+              {rating > 0 && <Stars value={rating}/>}
             </div>
-            <div style={{ fontSize:18, fontWeight:800, color:'var(--text-1)' }}>{sample.title}</div>
+            <div style={{ fontSize:18, fontWeight:800, color:'var(--text-1)' }}>{title}</div>
             <div style={{ fontSize:13, color:'var(--text-3)', marginTop:2, display:'flex', flexWrap:'wrap', gap:'2px 10px' }}>
               {names && <span style={{ fontWeight:600, color:'var(--text-2)' }}>{names}</span>}
-              {sample.testDate && <span>{sample.testDate}</span>}
-              {sample.company && <span>{sample.company}</span>}
-              {sample.tester  && <span>담당: {sample.tester}</span>}
-              {sample.price   && <span>{Number(sample.price).toLocaleString('ko-KR')}원 {sample.priceTaxType === 'excl' ? '(부가세 별도)' : '(부가세 포함)'}</span>}
+              {testDate && <span>{testDate}</span>}
+              {company && <span>{company}</span>}
+              {tester  && <span>담당: {tester}</span>}
+              {price != null && <span>{price.toLocaleString('ko-KR')}원 {safeSample.priceTaxType === 'excl' ? '(부가세 별도)' : '(부가세 포함)'}</span>}
             </div>
           </div>
           <div style={{ display:'flex', gap:8, flexShrink:0, marginLeft:16 }}>
@@ -78,19 +98,19 @@ export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
               title="이 샘플 기록을 기반으로 레시피 초안 만들기"
               onClick={() => {
                 const params = new URLSearchParams();
-                const firstName = sampleNamesOf(sample)[0];
+                const firstName = sampleNamesOf(safeSample)[0];
                 if (firstName) params.set('name', firstName);
-                if (sample.category) params.set('cat', sample.category);
+                if (category) params.set('cat', category);
                 params.set('from', 'sample');
                 router.push('/cost/recipe?' + params.toString());
-                onClose();
+                closeModal();
               }}
               style={{ fontSize:11, display:'flex', alignItems:'center', gap:4 }}
             >
               <Icon.plus style={{ width:11, height:11 }}/> 레시피 초안
             </button>
-            <button className="btn sm" onClick={onEdit}>수정</button>
-            <button className="btn sm" style={{ color:'var(--negative)' }} onClick={onDelete}>삭제</button>
+            <button className="btn sm" onClick={edit}>수정</button>
+            <button className="btn sm" style={{ color:'var(--negative)' }} onClick={remove}>삭제</button>
             <button
               aria-label="닫기"
               style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-3)', padding:4 }}
@@ -106,8 +126,8 @@ export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
             <div style={{ background:'#000', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:320, position:'relative', overflow:'hidden' }}>
               <img
                 ref={imgRef}
-                src={photos[photoIdx]?.data}
-                alt={`${names || sample.title} 테스트 사진 ${photoIdx + 1}번 / 총 ${photos.length}장`}
+                src={currentPhoto?.data}
+                alt={`${names || title} 테스트 사진 ${currentPhotoIdx + 1}번 / 총 ${photos.length}장`}
                 loading="lazy"
                 style={{
                   maxWidth:'100%', maxHeight:480, objectFit:'contain',
@@ -121,34 +141,34 @@ export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
                   <button
                     aria-label="이전 사진"
                     onClick={() => setPhotoIdx(i => Math.max(0, i - 1))}
-                    disabled={photoIdx === 0}
+                    disabled={currentPhotoIdx === 0}
                     style={{
                       position:'absolute', left:8, top:'50%', transform:'translateY(-50%)',
                       background:'rgba(255,255,255,0.15)', border:'none', borderRadius:8,
                       color:'#fff', width:32, height:32, cursor:'pointer', fontSize:18,
-                      opacity: photoIdx === 0 ? 0.3 : 1,
+                      opacity: currentPhotoIdx === 0 ? 0.3 : 1,
                     }}
                   ><span aria-hidden="true">‹</span></button>
                   <button
                     aria-label="다음 사진"
                     onClick={() => setPhotoIdx(i => Math.min(photos.length - 1, i + 1))}
-                    disabled={photoIdx === photos.length - 1}
+                    disabled={currentPhotoIdx === photos.length - 1}
                     style={{
                       position:'absolute', right:8, top:'50%', transform:'translateY(-50%)',
                       background:'rgba(255,255,255,0.15)', border:'none', borderRadius:8,
                       color:'#fff', width:32, height:32, cursor:'pointer', fontSize:18,
-                      opacity: photoIdx === photos.length - 1 ? 0.3 : 1,
+                      opacity: currentPhotoIdx === photos.length - 1 ? 0.3 : 1,
                     }}
                   ><span aria-hidden="true">›</span></button>
                   <div style={{ display:'flex', gap:6, padding:'10px 12px', overflowX:'auto', width:'100%', boxSizing:'border-box' }}>
                     {photos.map((p, i) => (
                       <button key={i}
-                        aria-label={`사진 ${i + 1}번${i === photoIdx ? ' (현재)' : ''}`}
-                        aria-pressed={i === photoIdx}
+                        aria-label={`사진 ${i + 1}번${i === currentPhotoIdx ? ' (현재)' : ''}`}
+                        aria-pressed={i === currentPhotoIdx}
                         onClick={() => setPhotoIdx(i)}
                         style={{
                           width:52, height:40, flexShrink:0, borderRadius:6, overflow:'hidden',
-                          border: i === photoIdx ? '2px solid #fff' : '2px solid transparent',
+                          border: i === currentPhotoIdx ? '2px solid #fff' : '2px solid transparent',
                           padding:0, cursor:'pointer', background:'#222',
                         }}>
                         <img src={p.data} alt="" loading="lazy" />
@@ -161,17 +181,17 @@ export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
           )}
 
           <div style={{ padding:20, display:'flex', flexDirection:'column', gap:14 }}>
-            {sample.description && (
-              <Section title="테스트 내용 / 조건">{sample.description}</Section>
+            {description && (
+              <Section title="테스트 내용 / 조건">{description}</Section>
             )}
-            {sample.result && (
-              <Section title="평가 / 결과">{sample.result}</Section>
+            {result && (
+              <Section title="평가 / 결과">{result}</Section>
             )}
-            {sample.improvements && (
-              <Section title="개선사항">{sample.improvements}</Section>
+            {improvements && (
+              <Section title="개선사항">{improvements}</Section>
             )}
-            {sample.nextAction && (
-              <Section title="다음 액션">{sample.nextAction}</Section>
+            {nextAction && (
+              <Section title="다음 액션">{nextAction}</Section>
             )}
             {tags.length > 0 && (
               <div>
@@ -186,7 +206,7 @@ export function SampleDetailModal({ sample, onClose, onEdit, onDelete }) {
                 </div>
               </div>
             )}
-            {!sample.description && !sample.result && !sample.improvements && !sample.nextAction && tags.length === 0 && (
+            {!description && !result && !improvements && !nextAction && tags.length === 0 && (
               <div style={{ color:'var(--text-3)', fontSize:13 }}>상세 내용이 없습니다.</div>
             )}
           </div>

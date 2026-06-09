@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { suggestRulesByMenuName, getClassificationNameOptions, CATEGORY_ORDER as CATEGORY_OPTIONS } from '@/lib/sales';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ComboBox } from '@/components/ui/ComboBox';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
  * UnmatchedResolveForm — 미매칭 issue 해결 인라인 폼
@@ -13,6 +14,10 @@ import { ComboBox } from '@/components/ui/ComboBox';
  * @param {boolean} busy
  */
 export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
+  const safeIssue = issue && typeof issue === 'object' ? issue : {};
+  const normalizedMenuName = asDisplayText(safeIssue.normalizedMenuName, '-');
+  const handleSubmitAction = typeof onSubmit === 'function' ? onSubmit : () => {};
+  const handleCancel = typeof onCancel === 'function' ? onCancel : undefined;
   const [actionType, setActionType] = useState('alias'); // alias | rule | exclude
   const [outputName, setOutputName] = useState('');
   const [ruleCategory, setRuleCategory] = useState('피자');
@@ -26,8 +31,8 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
 
   // 자동 추천 (정규화된 메뉴명 기반)
   const suggestions = useMemo(
-    () => suggestRulesByMenuName(issue.normalizedMenuName || '', 5),
-    [issue.normalizedMenuName],
+    () => asObjectArray(suggestRulesByMenuName(normalizedMenuName === '-' ? '' : normalizedMenuName, 5)),
+    [normalizedMenuName],
   );
 
   // 중분류·상세 자동완성 후보 (기존 규칙의 groupName/detailName)
@@ -40,22 +45,23 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
   }, []);
 
   function applySuggestion(rule) {
+    const safeRule = rule && typeof rule === 'object' ? rule : {};
     if (actionType === 'alias') {
-      setOutputName(rule.pattern || rule.detailName || rule.groupName || '');
+      setOutputName(asDisplayText(safeRule.pattern || safeRule.detailName || safeRule.groupName));
     } else if (actionType === 'rule') {
-      setRuleCategory(rule.category || '피자');
-      setRuleGroup(rule.groupName || '');
-      setRuleDetail(rule.detailName || '');
+      setRuleCategory(asDisplayText(safeRule.category, '피자'));
+      setRuleGroup(asDisplayText(safeRule.groupName));
+      setRuleDetail(asDisplayText(safeRule.detailName));
     }
   }
 
   function handleSubmit() {
     if (actionType === 'alias') {
       if (!outputName.trim()) return;
-      onSubmit('alias', { outputName: outputName.trim() });
+      handleSubmitAction('alias', { outputName: outputName.trim() });
     } else if (actionType === 'rule') {
       if (!ruleCategory || !ruleGroup.trim()) return;
-      onSubmit('rule', {
+      handleSubmitAction('rule', {
         category: ruleCategory,
         groupName: ruleGroup.trim(),
         detailName: ruleDetail.trim() || ruleGroup.trim(),
@@ -73,9 +79,9 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
       <ConfirmDialog
         open={confirmExclude}
         title="제외 처리하시겠어요?"
-        message={`"${issue.normalizedMenuName}" 메뉴가 통계에서 제외됩니다. 이 작업은 되돌리기 어렵습니다.`}
+        message={`"${normalizedMenuName}" 메뉴가 통계에서 제외됩니다. 이 작업은 되돌리기 어렵습니다.`}
         confirmLabel="제외 처리" cancelLabel="취소" danger
-        onConfirm={() => { setConfirmExclude(false); onSubmit('exclude', {}); }}
+        onConfirm={() => { setConfirmExclude(false); handleSubmitAction('exclude', {}); }}
         onCancel={() => setConfirmExclude(false)}
       />
       <div style={{display:'flex', gap:6, marginBottom:10}}>
@@ -90,9 +96,16 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
             추천 — 비슷한 메뉴의 기존 룰 (클릭 시 자동 채움)
           </div>
           <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
-            {suggestions.map(({ rule }) => (
+            {suggestions.map(({ rule }, index) => {
+              const ruleId = asDisplayText(rule?.ruleId, `rule-${index}`);
+              const pattern = asDisplayText(rule?.pattern);
+              const category = asDisplayText(rule?.category, '-');
+              const groupName = asDisplayText(rule?.groupName, '-');
+              const detailName = asDisplayText(rule?.detailName);
+
+              return (
               <button
-                key={rule.ruleId}
+                key={ruleId}
                 onClick={() => applySuggestion(rule)}
                 className="chip"
                 style={{
@@ -100,16 +113,17 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
                   background:'var(--surface-2)', color:'var(--text-2)', fontSize:11,
                   display:'inline-flex', alignItems:'center', gap:4,
                 }}
-                title={`pattern: ${rule.pattern}`}
+                title={`pattern: ${pattern}`}
               >
-                <b style={{color:'var(--accent-text)'}}>{rule.category}</b>
+                <b style={{color:'var(--accent-text)'}}>{category}</b>
                 <span style={{color:'var(--text-3)'}}>/</span>
-                <span>{rule.groupName}</span>
-                {rule.detailName && rule.detailName !== rule.groupName && (
-                  <span style={{color:'var(--text-4)', fontSize:10}}>· {rule.detailName}</span>
+                <span>{groupName}</span>
+                {detailName && detailName !== groupName && (
+                  <span style={{color:'var(--text-4)', fontSize:10}}>· {detailName}</span>
                 )}
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -150,12 +164,12 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
 
       {actionType === 'exclude' && (
         <div style={{fontSize:13, color:'var(--text-3)'}}>
-          이 메뉴를 통계에서 제외합니다 — <b>{issue.normalizedMenuName}</b>
+          이 메뉴를 통계에서 제외합니다 — <b>{normalizedMenuName}</b>
         </div>
       )}
 
       <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:12}}>
-        <button className="btn sm" onClick={onCancel} disabled={busy}>취소</button>
+        <button className="btn sm" onClick={handleCancel} disabled={busy}>취소</button>
         <button
           className="btn primary sm"
           onClick={handleSubmit}

@@ -36,6 +36,18 @@ describe('buildMenuAllergenMap', () => {
     const map = buildMenuAllergenMap({ ingredients, ingredientToMenus: i2m });
     expect([...(map.get('PZ2') || [])]).toEqual(['AL02']);
   });
+
+  test('비정상 입력은 빈 집계로 안전하게 처리한다', () => {
+    expect(buildMenuAllergenMap()).toBeInstanceOf(Map);
+    expect(buildMenuAllergenMap().size).toBe(0);
+    expect(buildMenuAllergenMap({ ingredients: null, ingredientToMenus: {} }).size).toBe(0);
+    expect(
+      buildMenuAllergenMap({
+        ingredients: [{ ingredientName: { ko: '치즈' }, allergens: ['AL02'] }, null, 'bad'],
+        ingredientToMenus: new Map([['name:치즈', { bad: true }]]),
+      }).size
+    ).toBe(0);
+  });
 });
 
 describe('allergenNames', () => {
@@ -48,5 +60,6 @@ describe('allergenNames', () => {
   test('빈 입력은 빈 문자열', () => {
     expect(allergenNames(new Set())).toBe('');
     expect(allergenNames(undefined)).toBe('');
+    expect(allergenNames(new Set([null, 'ZZ99']))).toBe('ZZ99');
   });
 });

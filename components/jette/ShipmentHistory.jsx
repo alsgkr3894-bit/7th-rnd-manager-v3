@@ -1,9 +1,15 @@
 'use client';
 import { formatNumber, formatRelative } from '@/lib/format';
 import { ConfirmDeleteButton } from './_ConfirmDeleteButton';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 export function ShipmentHistory({ files, selectedYM, onSelectYM, onDelete }) {
-  if (!files || files.length === 0) {
+  const safeFiles = asObjectArray(files);
+  const safeSelectedYM = selectedYM && typeof selectedYM === 'object' ? selectedYM : null;
+  const handleSelectYM = typeof onSelectYM === 'function' ? onSelectYM : null;
+  const handleDelete = typeof onDelete === 'function' ? onDelete : null;
+
+  if (safeFiles.length === 0) {
     return (
       <div className="card" style={{marginTop:16}}>
         <div className="card-header">
@@ -24,7 +30,7 @@ export function ShipmentHistory({ files, selectedYM, onSelectYM, onDelete }) {
       <div className="card-header">
         <div>
           <div className="card-title">업로드 이력</div>
-          <div className="card-sub">총 {files.length}건 · 행을 클릭하면 해당 월 집계가 표시됩니다</div>
+          <div className="card-sub">총 {safeFiles.length}건 · 행을 클릭하면 해당 월 집계가 표시됩니다</div>
         </div>
       </div>
       <div style={{overflowX:'auto'}}>
@@ -39,42 +45,55 @@ export function ShipmentHistory({ files, selectedYM, onSelectYM, onDelete }) {
             </tr>
           </thead>
           <tbody>
-            {files.map(f => {
-              const isSelected = selectedYM
-                && selectedYM.year === f.year && selectedYM.month === f.month;
+            {safeFiles.map((f, index) => {
+              const fileId = f.id;
+              const rowKey = asDisplayText(fileId, `shipment-file-${index}`);
+              const year = Number.isFinite(Number(f.year)) ? Number(f.year) : null;
+              const month = Number.isFinite(Number(f.month)) ? Number(f.month) : null;
+              const monthLabel = month == null ? '--' : String(month).padStart(2, '0');
+              const fileName = asDisplayText(f.fileName, '(이름 없음)');
+              const uploadedAt = asDisplayText(f.uploadedAt);
+              const totalRows = Number.isFinite(Number(f.totalRows)) ? Number(f.totalRows) : 0;
+              const sourceTotalRows = Number.isFinite(Number(f.sourceTotalRows)) ? Number(f.sourceTotalRows) : null;
+              const canSelect = handleSelectYM && year != null && month != null;
+              const canDelete = handleDelete && fileId != null;
+              const isSelected = safeSelectedYM
+                && Number(safeSelectedYM.year) === year
+                && Number(safeSelectedYM.month) === month;
+
               return (
                 <tr
-                  key={f.id}
+                  key={rowKey}
                   style={{
                     background: isSelected ? 'var(--accent-soft)' : undefined,
-                    cursor: 'pointer',
+                    cursor: canSelect ? 'pointer' : 'default',
                   }}
                   onClick={(e) => {
-                    if (e.target.closest('button')) return;
-                    onSelectYM?.({ year: f.year, month: f.month });
+                    if (!canSelect || e.target.closest('button')) return;
+                    handleSelectYM({ year, month });
                   }}
                 >
                   <td>
                     <span className="period-pill num">
-                      {f.year}.{String(f.month).padStart(2, '0')}
+                      {year ?? '-'}.{monthLabel}
                     </span>
                   </td>
                   <td className="cell-name">
-                    <div className="menu-name">{f.fileName || '(이름 없음)'}</div>
+                    <div className="menu-name">{fileName}</div>
                     <div style={{fontSize:12, color:'var(--text-2)', marginTop:4, fontWeight:500}}>
-                      업로드 {f.uploadedAt ? formatRelative(f.uploadedAt) : '-'}
+                      업로드 {uploadedAt ? formatRelative(uploadedAt) : '-'}
                     </div>
                   </td>
                   <td className="num right" style={{fontWeight:700}}>
-                    {formatNumber(f.totalRows ?? 0)}<span className="unit">건</span>
+                    {formatNumber(totalRows)}<span className="unit">건</span>
                   </td>
                   <td className="num right" style={{color:'var(--text-3)', fontSize:12}}>
-                    {f.sourceTotalRows != null
-                      ? `(${formatNumber(f.sourceTotalRows)}건)`
+                    {sourceTotalRows != null
+                      ? `(${formatNumber(sourceTotalRows)}건)`
                       : '-'}
                   </td>
                   <td style={{textAlign:'right'}}>
-                    <ConfirmDeleteButton onDelete={() => onDelete(f.id)} />
+                    {canDelete && <ConfirmDeleteButton onDelete={() => handleDelete(fileId)} />}
                   </td>
                 </tr>
               );

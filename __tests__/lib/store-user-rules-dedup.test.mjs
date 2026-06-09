@@ -11,6 +11,8 @@ describe('store-user-rules 중복 판정', () => {
     expect(normKey('  Pep Peroni ')).toBe('pepperoni');
     expect(normKey('페퍼로니')).toBe('페퍼로니');
     expect(normKey(null)).toBe('');
+    expect(normKey(123)).toBe('123');
+    expect(normKey({ value: 'bad' })).toBe('');
   });
 
   test('sameId — 문자열/숫자 혼용 비교', () => {
@@ -28,6 +30,10 @@ describe('store-user-rules 중복 판정', () => {
     });
     test('다른 이름이면 중복 아님', () => {
       expect(sameAlias({ id: 1, rawName: '치즈' }, '불고기', 99)).toBe(false);
+    });
+    test('깨진 행이나 입력은 예외 없이 중복 아님으로 처리', () => {
+      expect(() => sameAlias(null, '치즈', 99)).not.toThrow();
+      expect(sameAlias(null, '치즈', 99)).toBe(false);
     });
   });
 
@@ -48,6 +54,10 @@ describe('store-user-rules 중복 판정', () => {
       const legacy = { id: 3, pattern: '불고기', category: '피자', groupName: '클래식', detailName: '불고기' };
       expect(sameRule(legacy, { rawMenuName: '불고기', category: '피자', groupName: '클래식', detailName: '불고기' }, 99)).toBe(true);
     });
+    test('깨진 행이나 입력은 예외 없이 중복 아님으로 처리', () => {
+      expect(() => sameRule(null, null, 99)).not.toThrow();
+      expect(sameRule(null, null, 99)).toBe(false);
+    });
   });
 
   describe('sameExcluded', () => {
@@ -56,6 +66,10 @@ describe('store-user-rules 중복 판정', () => {
     });
     test('자기 자신은 중복 아님', () => {
       expect(sameExcluded({ id: 7, menuName: 'A' }, 'A', 7)).toBe(false);
+    });
+    test('깨진 행이나 입력은 예외 없이 중복 아님으로 처리', () => {
+      expect(() => sameExcluded(null, 'A', 99)).not.toThrow();
+      expect(sameExcluded(null, 'A', 99)).toBe(false);
     });
   });
 });

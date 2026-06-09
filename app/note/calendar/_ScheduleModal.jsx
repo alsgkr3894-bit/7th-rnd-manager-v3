@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { SCHEDULE_TYPES, SCHEDULE_COLORS } from '@/lib/note/schedules';
+import { asDisplayText } from '@/lib/ui/prop-guards';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 
 const REPEAT_OPTIONS = [
@@ -11,24 +12,43 @@ const REPEAT_OPTIONS = [
   { value: 'monthly', label: '매월' },
 ];
 
+const REPEAT_VALUES = new Set(REPEAT_OPTIONS.map(option => option.value));
+const noop = () => {};
+
+function normalizeRepeatType(value) {
+  const repeatType = asDisplayText(value, 'none');
+  return REPEAT_VALUES.has(repeatType) ? repeatType : 'none';
+}
+
+function normalizeScheduleType(value) {
+  return SCHEDULE_TYPES.includes(value) ? value : SCHEDULE_TYPES[0];
+}
+
 export function ScheduleModal({ initial, defaultDate, onSave, onClose, onDelete }) {
-  const isEdit = !!initial?.id;
-  const [title,       setTitle]       = useState(initial?.title || '');
-  const [date,        setDate]        = useState(initial?.date  || defaultDate || '');
-  const [time,        setTime]        = useState(initial?.time  || '');
-  const [type,        setType]        = useState(initial?.type  || SCHEDULE_TYPES[0]);
-  const [desc,        setDesc]        = useState(initial?.description || '');
-  const [repeatType,  setRepeatType]  = useState(initial?.repeatType  || 'none');
-  const [repeatUntil, setRepeatUntil] = useState(initial?.repeatUntil || '');
+  const safeInitial = initial && typeof initial === 'object' ? initial : {};
+  const close = typeof onClose === 'function' ? onClose : noop;
+  const save = typeof onSave === 'function' ? onSave : null;
+  const remove = typeof onDelete === 'function' ? onDelete : noop;
+  const isEdit = !!safeInitial.id;
+  const canDelete = isEdit && typeof onDelete === 'function';
+
+  const [title,       setTitle]       = useState(asDisplayText(safeInitial.title));
+  const [date,        setDate]        = useState(asDisplayText(safeInitial.date) || asDisplayText(defaultDate));
+  const [time,        setTime]        = useState(asDisplayText(safeInitial.time));
+  const [type,        setType]        = useState(normalizeScheduleType(safeInitial.type));
+  const [desc,        setDesc]        = useState(asDisplayText(safeInitial.description));
+  const [repeatType,  setRepeatType]  = useState(normalizeRepeatType(safeInitial.repeatType));
+  const [repeatUntil, setRepeatUntil] = useState(asDisplayText(safeInitial.repeatUntil));
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!title.trim()) { showToast('제목을 입력해주세요', 'err'); return; }
     if (!date) { showToast('날짜를 입력해주세요', 'err'); return; }
+    if (!save) { showToast('저장 동작이 연결되지 않았습니다', 'err'); return; }
     setSaving(true);
     try {
-      await onSave({
+      await save({
         title, date, time, type, description: desc,
         repeatType,
         repeatUntil: repeatType !== 'none' && repeatUntil ? repeatUntil : null,
@@ -39,7 +59,7 @@ export function ScheduleModal({ initial, defaultDate, onSave, onClose, onDelete 
   return (
     <ModalFrame
       title={isEdit ? '일정 편집' : '일정 추가'}
-      onClose={onClose}
+      onClose={close}
       width="min(480px,94vw)"
       zIndex={400}
       padding="22px 24px"
@@ -49,7 +69,7 @@ export function ScheduleModal({ initial, defaultDate, onSave, onClose, onDelete 
           <label style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', display:'block', marginBottom:6 }}>유형</label>
           <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
             {SCHEDULE_TYPES.map(t => {
-              const c = SCHEDULE_COLORS[t];
+              const c = SCHEDULE_COLORS[t] || SCHEDULE_COLORS['기타'];
               const on = type === t;
               return (
                 <button key={t} type="button"
@@ -94,7 +114,11 @@ export function ScheduleModal({ initial, defaultDate, onSave, onClose, onDelete 
         <div style={{ display:'grid', gridTemplateColumns: repeatType !== 'none' ? '1fr 1fr' : '1fr', gap:10 }}>
           <div>
             <label style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', display:'block', marginBottom:5 }}>반복</label>
-            <select className="form-input" value={repeatType} onChange={e => { setRepeatType(e.target.value); if (e.target.value === 'none') setRepeatUntil(''); }}>
+            <select className="form-input" value={repeatType} onChange={e => {
+              const nextRepeatType = normalizeRepeatType(e.target.value);
+              setRepeatType(nextRepeatType);
+              if (nextRepeatType === 'none') setRepeatUntil('');
+            }}>
               {REPEAT_OPTIONS.map(o => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
@@ -111,13 +135,13 @@ export function ScheduleModal({ initial, defaultDate, onSave, onClose, onDelete 
 
         <div style={{ display:'flex', gap:8, justifyContent:'space-between', marginTop:4 }}>
           <div>
-            {isEdit && (
+            {canDelete && (
               <button type="button" className="btn" style={{ color:'var(--negative)', borderColor:'var(--negative)' }}
-                onClick={onDelete}>삭제</button>
+                onClick={remove}>삭제</button>
             )}
           </div>
           <div style={{ display:'flex', gap:8 }}>
-            <button type="button" className="btn" onClick={onClose}>취소</button>
+            <button type="button" className="btn" onClick={close}>취소</button>
             <button type="submit" className="btn primary" disabled={saving}>
               {saving ? '저장 중…' : isEdit ? '수정' : '추가'}
             </button>

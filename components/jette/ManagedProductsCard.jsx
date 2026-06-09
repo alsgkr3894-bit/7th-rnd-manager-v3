@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { Chip } from '@/components/ui/Chip';
@@ -49,14 +49,27 @@ export function ManagedProductsCard() {
   const [sortKey, setSortKey] = useState('productName');
   const [sortDir, setSortDir] = useState('asc');
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const mountedRef = useRef(false);
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    mountedRef.current = true;
+    refresh();
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // 가격비교 등 다른 화면에서 분류를 바꿔도 이 목록이 같은 마스터를 반영하도록 동기화
   useEffect(() => onManagedProductsChange(refresh), []);
 
   async function refresh() {
-    try { setList(await getAllManagedProducts()); } catch (err) { console.warn(err); }
+    try {
+      const rows = await getAllManagedProducts();
+      if (mountedRef.current) setList(rows);
+    } catch (err) {
+      if (mountedRef.current) console.warn(err);
+    }
   }
 
   async function handleAdd() {

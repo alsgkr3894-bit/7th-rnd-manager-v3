@@ -38,16 +38,23 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let alive = true;
+
     (async () => {
       try {
         await initDB();
-        setData(await getMenuSalesDashboard());
+        const nextData = await getMenuSalesDashboard();
+        if (alive) setData(nextData);
       } catch (err) {
-        console.warn('[menu-sales hub] dashboard load failed:', err);
+        if (alive) console.warn('[menu-sales hub] dashboard load failed:', err);
       } finally {
-        setLoading(false);
+        if (alive) setLoading(false);
       }
     })();
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const kpi = data?.kpi;

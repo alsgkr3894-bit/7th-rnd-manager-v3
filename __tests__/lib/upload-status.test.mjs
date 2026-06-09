@@ -26,4 +26,12 @@ describe('upload-status 신선도 기준', () => {
     expect(isUploadPeriodStale(2026, 6, target)).toBe(false);
     expect(isUploadPeriodStale(2025, 12, target)).toBe(true);
   });
+
+  test('isUploadPeriodStale는 깨진 연월을 stale로 처리한다', () => {
+    const target = { year: 2026, month: 5 };
+
+    expect(isUploadPeriodStale(null, 5, target)).toBe(true);
+    expect(isUploadPeriodStale(2026, 'bad', target)).toBe(true);
+    expect(isUploadPeriodStale(2026, 13, target)).toBe(true);
+  });
 });

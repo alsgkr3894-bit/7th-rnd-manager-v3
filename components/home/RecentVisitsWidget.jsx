@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/icons';
-import { KEYS } from '@/lib/note/keys';
+import { getRecentPaletteItems } from '@/lib/palette-recent';
 
 /**
  * 최근 방문 위젯
@@ -13,13 +13,7 @@ const RecentVisitsWidget = React.memo(function RecentVisitsWidget() {
   const [recent, setRecent] = useState([]);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEYS.PALETTE_RECENT);
-      const parsed = raw ? JSON.parse(raw) : [];
-      setRecent(Array.isArray(parsed) ? parsed.slice(0, 5) : []);
-    } catch (err) {
-      console.warn('[RecentVisitsWidget] localStorage 읽기 실패:', err);
-    }
+    setRecent(getRecentPaletteItems());
   }, []);
 
   if (!recent.length) return null;
@@ -46,9 +40,9 @@ const RecentVisitsWidget = React.memo(function RecentVisitsWidget() {
         최근 방문
       </div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {recent.map(p => (
+        {recent.map((p, index) => (
           <Link
-            key={p.href}
+            key={p.href || index}
             href={p.href}
             style={{
               display: 'inline-flex',

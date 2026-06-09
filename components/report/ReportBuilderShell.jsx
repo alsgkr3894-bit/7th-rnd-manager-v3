@@ -1,18 +1,22 @@
 'use client';
-import { useRef, useLayoutEffect, useState } from 'react';
+import { useEffect, useRef, useLayoutEffect, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { KIND_CHIP } from '@/lib/report/constants';
 import { printReportElement } from '@/lib/report/print';
+import { asArray, asDisplayText } from '@/lib/ui/prop-guards';
 
 export { KIND_CHIP };
 
 export function OptGroup({ label, children, hint }) {
+  const safeLabel = asDisplayText(label);
+  const safeHint = asDisplayText(hint);
+
   return (
     <div className="opt-group">
-      <div className="opt-label">{label}</div>
-      {hint && <div className="opt-hint">{hint}</div>}
+      <div className="opt-label">{safeLabel}</div>
+      {safeHint && <div className="opt-hint">{safeHint}</div>}
       <div className="opt-body">{children}</div>
     </div>
   );
@@ -21,6 +25,18 @@ export function OptGroup({ label, children, hint }) {
 export function Seg({ value, onChange, options }) {
   const rowRef = useRef(null);
   const [ind, setInd] = useState(null);
+  const safeOptions = asArray(options).map((option, index) => {
+    const rawValue = option && typeof option === 'object' && !Array.isArray(option)
+      ? option.value
+      : option;
+    const valueText = asDisplayText(rawValue);
+    const label = option && typeof option === 'object' && !Array.isArray(option)
+      ? asDisplayText(option.label, valueText)
+      : valueText;
+    return { rawValue, valueText, label, key: valueText || `option-${index}` };
+  });
+  const safeValue = asDisplayText(value);
+  const handleChange = typeof onChange === 'function' ? onChange : () => {};
 
   useLayoutEffect(() => {
     const row = rowRef.current;
@@ -35,15 +51,15 @@ export function Seg({ value, onChange, options }) {
       {ind && (
         <span className="seg-indicator" style={{ left: ind.left, width: ind.width }} />
       )}
-      {options.map(o => (
+      {safeOptions.map(o => (
         <button
-          key={o.value ?? o}
+          key={o.key}
           role="radio"
-          aria-checked={value === (o.value ?? o)}
-          className={'seg-pill ' + (value === (o.value ?? o) ? 'active' : '')}
-          onClick={() => onChange(o.value ?? o)}
+          aria-checked={safeValue === o.valueText}
+          className={'seg-pill ' + (safeValue === o.valueText ? 'active' : '')}
+          onClick={() => handleChange(o.rawValue)}
         >
-          {o.label ?? o}
+          {o.label}
         </button>
       ))}
     </div>
@@ -51,13 +67,17 @@ export function Seg({ value, onChange, options }) {
 }
 
 export function Check({ label, value, onChange, hint }) {
+  const safeLabel = asDisplayText(label);
+  const safeHint = asDisplayText(hint);
+  const handleChange = typeof onChange === 'function' ? onChange : () => {};
+
   return (
     <label className="opt-check">
-      <input type="checkbox" checked={value} onChange={e => onChange(e.target.checked)} />
+      <input type="checkbox" checked={Boolean(value)} onChange={e => handleChange(e.target.checked)} />
       <span className="opt-check-box"><Icon.check style={{width:12, height:12}}/></span>
       <div>
-        <div className="opt-check-label">{label}</div>
-        {hint && <div className="opt-check-hint">{hint}</div>}
+        <div className="opt-check-label">{safeLabel}</div>
+        {safeHint && <div className="opt-check-hint">{safeHint}</div>}
       </div>
     </label>
   );
@@ -74,22 +94,31 @@ export default function ReportBuilderShell({
   docFormat = { pdf: true, excel: false }, onExcelExport,
 }) {
   const [generating, setGenerating] = useState(false);
+  const generatingTimer = useRef(null);
+  const kindMeta = KIND_CHIP[kind] || KIND_CHIP.sales;
+  const safeDocFormat = docFormat && typeof docFormat === 'object' ? docFormat : {};
+  const safeDataError = asDisplayText(dataError);
+  const safeExportNote = asDisplayText(exportNote);
+  const handleExcelExport = typeof onExcelExport === 'function' ? onExcelExport : null;
+
+  useEffect(() => () => clearTimeout(generatingTimer.current), []);
 
   const handleGenerate = async () => {
-    if (!docFormat.pdf && !docFormat.excel) {
+    if (!safeDocFormat.pdf && !safeDocFormat.excel) {
       showToast('문서 형식을 하나 이상 선택해 주세요', 'error');
       return;
     }
     setGenerating(true);
     try {
-      if (docFormat.pdf) triggerPrint(reportMeta);
-      if (docFormat.excel && onExcelExport) await Promise.resolve(onExcelExport());
+      if (safeDocFormat.pdf) triggerPrint(reportMeta);
+      if (safeDocFormat.excel && handleExcelExport) await Promise.resolve(handleExcelExport());
       showToast('보고서 생성 요청 완료', 'ok', 1800);
     } catch (err) {
       const message = err?.message || '알 수 없는 오류';
       showToast(`보고서 생성 실패: ${message}`, 'error');
     } finally {
-      setTimeout(() => setGenerating(false), 700);
+      clearTimeout(generatingTimer.current);
+      generatingTimer.current = setTimeout(() => setGenerating(false), 700);
     }
   };
 
@@ -121,8 +150,8 @@ export default function ReportBuilderShell({
             </div>
             <div className="report-paper-meta">
               <span className="mono muted" style={{fontSize:12}}>RPT-DRAFT</span>
-              <span className="chip" style={{background: KIND_CHIP[kind].bg, color: KIND_CHIP[kind].color}}>
-                {KIND_CHIP[kind].label}
+              <span className="chip" style={{background: kindMeta.bg, color: kindMeta.color}}>
+                {kindMeta.label}
               </span>
             </div>
           </div>
@@ -132,22 +161,22 @@ export default function ReportBuilderShell({
               <div className="report-loading-spinner"/>
               <span style={{fontSize:13, color:'var(--text-3)'}}>데이터 불러오는 중…</span>
             </div>
-          ) : dataError ? (
+          ) : safeDataError ? (
             <div className="report-empty-banner">
               <Icon.alert style={{width:18, height:18, flexShrink:0, color:'var(--warn)'}}/>
               <div>
                 <div style={{fontWeight:600, marginBottom:3}}>데이터를 불러올 수 없어요</div>
-                <div style={{fontSize:12, color:'var(--text-3)'}}>{dataError}</div>
+                <div style={{fontSize:12, color:'var(--text-3)'}}>{safeDataError}</div>
               </div>
             </div>
           ) : (
             <div className="report-paper">{preview}</div>
           )}
 
-          {exportNote && (
+          {safeExportNote && (
             <div className="report-export-note">
               <Icon.alert style={{width:14, height:14, color:"var(--accent)"}}/>
-              <span>{exportNote}</span>
+              <span>{safeExportNote}</span>
             </div>
           )}
           {generating && (

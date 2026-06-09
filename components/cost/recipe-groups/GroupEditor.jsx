@@ -193,7 +193,7 @@ export function GroupEditor({ draft, setDraft, allMeta, unitPriceMap, isNew, sav
                         : null;
                       return [
                         <td key={sl + '_q'} style={{ padding: '4px 4px', width: 70 }}>
-                          <input className="form-input" type="number" value={qty}
+                          <input className="form-input" type="number" min="0" value={qty}
                             onChange={e => setIngredientQty(i, sl, e.target.value)}
                             placeholder="0"
                             style={{ width: '100%', padding: '3px 5px', textAlign: 'right' }}/>

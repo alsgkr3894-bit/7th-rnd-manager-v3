@@ -1,7 +1,17 @@
 'use client';
-import { useRef, useState, useLayoutEffect } from 'react';
+import { useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { Icon } from '@/components/icons';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+
+function normalizeItem(item, index) {
+  const key = typeof item.key === 'number' || typeof item.key === 'string' ? item.key : `item-${index}`;
+  return {
+    ...item,
+    key,
+    label: asDisplayText(item.label, String(key)),
+  };
+}
 
 /**
  * 순서 변경 모달 — 드래그로 항목을 이동하고 위/아래 버튼도 지원.
@@ -9,15 +19,23 @@ import { Icon } from '@/components/icons';
  * "적용"을 누르면 정렬된 key 배열을 onApply로 넘긴다.
  */
 export function ReorderModal({ title, items, onApply, onClose }) {
-  const [list, setList] = useState(() => items.map(it => ({ ...it })));
+  const [list, setList] = useState(() => asObjectArray(items).map(normalizeItem));
   const [draggingIdx, setDraggingIdx] = useState(null);
   const [overIdx, setOverIdx] = useState(null);
   const dragNode = useRef(null);
+  const handleApply = typeof onApply === 'function' ? onApply : () => {};
+  const handleClose = typeof onClose === 'function' ? onClose : () => {};
 
   // FLIP: 이전 위치를 기억하는 Map (key → y좌표)
   const prevRects = useRef(new Map());
   const rowRefs = useRef([]);
   const animating = useRef(new Set());
+  const rafIds = useRef(new Set());
+
+  useEffect(() => () => {
+    rafIds.current.forEach(id => cancelAnimationFrame(id));
+    rafIds.current.clear();
+  }, []);
 
   function captureRects() {
     prevRects.current.clear();
@@ -43,7 +61,8 @@ export function ReorderModal({ title, items, onApply, onClose }) {
       animating.current.add(key);
       el.style.transition = 'none';
       el.style.transform = `translateY(${dy}px)`;
-      requestAnimationFrame(() => {
+      const rafId = requestAnimationFrame(() => {
+        rafIds.current.delete(rafId);
         el.style.transition = 'transform 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
         el.style.transform = 'translateY(0)';
         el.addEventListener('transitionend', () => {
@@ -52,6 +71,7 @@ export function ReorderModal({ title, items, onApply, onClose }) {
           el.style.transform = '';
         }, { once: true });
       });
+      rafIds.current.add(rafId);
     });
   }
 
@@ -118,13 +138,16 @@ export function ReorderModal({ title, items, onApply, onClose }) {
     });
   }
 
-  function apply() { onApply(list.map(it => it.key)); onClose(); }
+  function apply() {
+    handleApply(list.map(it => it.key));
+    handleClose();
+  }
 
   return (
     <ModalFrame
       title={title}
       subtitle="드래그하거나 ▲▼ 버튼으로 순서를 바꾼 뒤 적용하세요."
-      onClose={onClose}
+      onClose={handleClose}
       width="min(480px,95vw)"
     >
       <div style={{ display:'flex', flexDirection:'column', gap:4, maxHeight:'60vh', overflowY:'auto' }}>
@@ -181,7 +204,7 @@ export function ReorderModal({ title, items, onApply, onClose }) {
         })}
       </div>
       <div style={{ display:'flex', justifyContent:'flex-end', gap:8, marginTop:16 }}>
-        <button type="button" className="btn" onClick={onClose}>취소</button>
+        <button type="button" className="btn" onClick={handleClose}>취소</button>
         <button type="button" className="btn primary" onClick={apply}>적용</button>
       </div>
     </ModalFrame>

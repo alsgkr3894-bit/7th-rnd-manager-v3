@@ -1,5 +1,6 @@
 'use client';
 import { formatPeriodKor } from '@/lib/format';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 const MODE_TABS = [
   { id: 'single', label: '월별 순위' },
@@ -7,10 +8,16 @@ const MODE_TABS = [
   { id: 'yoy',    label: '전년 동월' },
   { id: 'custom', label: '직접 지정' },
 ];
+const MODE_IDS = new Set(MODE_TABS.map(tab => tab.id));
 
 export function PeriodBar({ mode, onModeChange, periodA, periodB, availablePeriods = [], onCustomChange }) {
-  const isCustom = mode === 'custom';
-  const isSingle = mode === 'single';
+  const requestedMode = asDisplayText(mode, 'single');
+  const safeMode = MODE_IDS.has(requestedMode) ? requestedMode : 'single';
+  const isCustom = safeMode === 'custom';
+  const isSingle = safeMode === 'single';
+  const safePeriods = asObjectArray(availablePeriods).filter(isValidPeriod);
+  const handleModeChange = typeof onModeChange === 'function' ? onModeChange : () => {};
+  const handleCustomChange = typeof onCustomChange === 'function' ? onCustomChange : () => {};
 
   return (
     <div className="period-bar">
@@ -19,8 +26,8 @@ export function PeriodBar({ mode, onModeChange, periodA, periodB, availablePerio
         {MODE_TABS.map(t => (
           <button
             key={t.id}
-            className={mode === t.id ? 'active' : ''}
-            onClick={() => onModeChange(t.id)}
+            className={safeMode === t.id ? 'active' : ''}
+            onClick={() => handleModeChange(t.id)}
           >
             {t.label}
           </button>
@@ -35,8 +42,8 @@ export function PeriodBar({ mode, onModeChange, periodA, periodB, availablePerio
           label={isSingle ? '선택 월' : '기준'}
           period={periodA}
           editable={isCustom || isSingle}
-          options={availablePeriods}
-          onChange={p => onCustomChange?.('a', p)}
+          options={safePeriods}
+          onChange={p => handleCustomChange('a', p)}
         />
 
         {!isSingle && (
@@ -48,9 +55,9 @@ export function PeriodBar({ mode, onModeChange, periodA, periodB, availablePerio
               label="비교"
               period={periodB}
               editable={isCustom}
-              options={availablePeriods}
-              onChange={p => onCustomChange?.('b', p)}
-              hint={!isCustom ? (mode === 'yoy' ? '전년 동월' : '전월') : null}
+              options={safePeriods}
+              onChange={p => handleCustomChange('b', p)}
+              hint={!isCustom ? (safeMode === 'yoy' ? '전년 동월' : '전월') : null}
             />
           </>
         )}
@@ -60,18 +67,23 @@ export function PeriodBar({ mode, onModeChange, periodA, periodB, availablePerio
 }
 
 function PeriodSlot({ badge, badgeColor, label, period, editable, options, onChange, hint }) {
+  const safeBadge = asDisplayText(badge);
+  const safeBadgeColor = asDisplayText(badgeColor, 'var(--text-3)');
+  const safeLabel = asDisplayText(label);
+  const safeHint = asDisplayText(hint);
+
   return (
     <div className="period-slot">
       <div className="period-slot-head">
-        <span className="period-badge" style={{ background: badgeColor + '22', color: badgeColor }}>{badge}</span>
-        <span className="period-slot-label">{label}</span>
+        <span className="period-badge" style={{ background: safeBadgeColor + '22', color: safeBadgeColor }}>{safeBadge}</span>
+        <span className="period-slot-label">{safeLabel}</span>
       </div>
       {editable ? (
         <PeriodSelect value={period} options={options} onChange={onChange} />
       ) : (
         <div className="period-slot-val">
           {formatPeriodKor(period)}
-          {hint && <span className="period-slot-hint">{hint}</span>}
+          {safeHint && <span className="period-slot-hint">{safeHint}</span>}
         </div>
       )}
     </div>
@@ -79,21 +91,28 @@ function PeriodSlot({ badge, badgeColor, label, period, editable, options, onCha
 }
 
 function PeriodSelect({ value, options, onChange }) {
-  const key = value ? `${value.year}-${value.month}` : '';
+  const safeOptions = asObjectArray(options).filter(isValidPeriod);
+  const key = isValidPeriod(value) ? periodKey(value) : '';
+  const handleChange = typeof onChange === 'function' ? onChange : () => {};
+
   return (
     <select
       className="period-select"
       value={key}
       onChange={e => {
         const [y, m] = e.target.value.split('-').map(Number);
-        onChange({ year: y, month: m });
+        if (Number.isFinite(y) && Number.isFinite(m)) {
+          handleChange({ year: y, month: m });
+        }
       }}
     >
-      {!options.find(o => o.year === value?.year && o.month === value?.month) && (
+      {!key ? (
+        <option value="">-</option>
+      ) : !safeOptions.find(o => periodKey(o) === key) && (
         <option value={key}>{formatPeriodKor(value)}</option>
       )}
-      {options.map(o => (
-        <option key={`${o.year}-${o.month}`} value={`${o.year}-${o.month}`}>
+      {safeOptions.map(o => (
+        <option key={periodKey(o)} value={periodKey(o)}>
           {formatPeriodKor(o)}
         </option>
       ))}
@@ -101,3 +120,22 @@ function PeriodSelect({ value, options, onChange }) {
   );
 }
 
+function isValidPeriod(period) {
+  const year = period?.year;
+  const month = period?.month;
+
+  return Boolean(
+    period
+      && typeof period === 'object'
+      && year != null
+      && month != null
+      && asDisplayText(year).trim() !== ''
+      && asDisplayText(month).trim() !== ''
+      && Number.isFinite(Number(year))
+      && Number.isFinite(Number(month)),
+  );
+}
+
+function periodKey(period) {
+  return `${Number(period.year)}-${Number(period.month)}`;
+}

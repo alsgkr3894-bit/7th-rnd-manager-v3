@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
 
+export function countReportingNotes(notes) {
+  if (!Array.isArray(notes)) return 0;
+  return notes.filter(n => n && typeof n === 'object' && n.status === '보고예정').length;
+}
+
 /**
  * 사이드바/탑바 배지에 필요한 카운트를 pathname 변경 시마다 로드.
  *
@@ -37,10 +42,11 @@ export function usePageStats(pathname) {
           getAllNotes(),
         ]);
         if (!alive) return;
-        setUnmatchedCount(issues.length);
-        setReportingCount(notes.filter(n => n.status === '보고예정').length);
+        const issueList = Array.isArray(issues) ? issues : [];
+        setUnmatchedCount(issueList.length);
+        setReportingCount(countReportingNotes(notes));
       } catch (e) {
-        console.warn('[usePageStats] 배지 로드 실패', e);
+        if (alive) console.warn('[usePageStats] 배지 로드 실패', e);
       }
     })();
     return () => { alive = false; };

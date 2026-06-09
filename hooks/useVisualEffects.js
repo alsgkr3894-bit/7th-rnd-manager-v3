@@ -10,6 +10,25 @@ const SELECTORS = {
   CARD_LIFT: '.card-lift',
 };
 
+export function closestElement(target, selector) {
+  if (!target || !selector) return null;
+  if (typeof target.closest === 'function') return target.closest(selector);
+  const parent = target.parentElement;
+  return typeof parent?.closest === 'function' ? parent.closest(selector) : null;
+}
+
+export function getTiltTransform(clientX, clientY, rect) {
+  const width = Number(rect?.width);
+  const height = Number(rect?.height);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return '';
+
+  const cx = (Number(clientX) - Number(rect.left || 0)) / width - 0.5;
+  const cy = (Number(clientY) - Number(rect.top || 0)) / height - 0.5;
+  if (!Number.isFinite(cx) || !Number.isFinite(cy)) return '';
+
+  return `perspective(${TILT_PERSPECTIVE_PX}px) rotateY(${cx * TILT_ROTATE_Y_DEG}deg) rotateX(${-cy * TILT_ROTATE_X_DEG}deg) translateY(-3px)`;
+}
+
 /**
  * 버튼 ripple 효과와 카드 tilt 효과를 document.body에 위임하여 적용.
  * AppShell에서 마운트 1회 호출.
@@ -21,8 +40,10 @@ const SELECTORS = {
 export function useVisualEffects() {
   // Ripple: .btn 클릭 시 물결 효과
   useEffect(() => {
+    const timers = new Set();
+
     function addRipple(e) {
-      const btn = e.target.closest(SELECTORS.BTN);
+      const btn = closestElement(e.target, SELECTORS.BTN);
       if (!btn) return;
       const circle = document.createElement('span');
       circle.className = 'ripple-effect';
@@ -32,11 +53,19 @@ export function useVisualEffects() {
       circle.style.left = (cx - rect.left) + 'px';
       circle.style.top  = (cy - rect.top)  + 'px';
       btn.appendChild(circle);
-      setTimeout(() => circle.remove(), RIPPLE_CLEANUP_MS);
+      const timer = setTimeout(() => {
+        circle.remove();
+        timers.delete(timer);
+      }, RIPPLE_CLEANUP_MS);
+      timers.add(timer);
     }
 
     document.body.addEventListener('click', addRipple);
-    return () => document.body.removeEventListener('click', addRipple);
+    return () => {
+      document.body.removeEventListener('click', addRipple);
+      timers.forEach(timer => clearTimeout(timer));
+      document.querySelectorAll('.ripple-effect').forEach(el => el.remove());
+    };
   }, []);
 
   // Tilt: .card-lift 마우스 이동 시 원근감 기울기
@@ -48,14 +77,13 @@ export function useVisualEffects() {
     }
 
     function onMove(e) {
-      const card = e.target.closest(SELECTORS.CARD_LIFT);
+      const card = closestElement(e.target, SELECTORS.CARD_LIFT);
       if (card !== active) reset();
       if (!card) return;
       active = card;
       const rect = card.getBoundingClientRect();
-      const cx = (e.clientX - rect.left) / rect.width  - 0.5;
-      const cy = (e.clientY - rect.top)  / rect.height - 0.5;
-      card.style.transform = `perspective(${TILT_PERSPECTIVE_PX}px) rotateY(${cx * TILT_ROTATE_Y_DEG}deg) rotateX(${-cy * TILT_ROTATE_X_DEG}deg) translateY(-3px)`;
+      const transform = getTiltTransform(e.clientX, e.clientY, rect);
+      if (transform) card.style.transform = transform;
     }
 
     document.body.addEventListener('mousemove', onMove);

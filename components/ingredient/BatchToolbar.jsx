@@ -7,20 +7,24 @@
  * @param {{ selected: Set<number>, onDelete: ()=>void, onExit: ()=>void }} props
  */
 export function IngredientBatchToolbar({ selected, onDelete, onExit }) {
+  const selectedCount = selected instanceof Set ? selected.size : 0;
+  const handleDelete = typeof onDelete === 'function' ? onDelete : undefined;
+  const handleExit = typeof onExit === 'function' ? onExit : undefined;
+
   return (
     <>
       <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600, marginRight: 4 }}>
-        {selected.size}개 선택됨
+        {selectedCount}개 선택됨
       </span>
       <button
         className="btn"
         style={{ color: 'var(--negative)' }}
-        onClick={onDelete}
-        disabled={selected.size === 0}
+        onClick={handleDelete}
+        disabled={selectedCount === 0}
       >
-        선택 삭제 {selected.size > 0 && `(${selected.size})`}
+        선택 삭제 {selectedCount > 0 && `(${selectedCount})`}
       </button>
-      <button className="btn" onClick={onExit}>취소</button>
+      <button className="btn" onClick={handleExit}>취소</button>
     </>
   );
 }

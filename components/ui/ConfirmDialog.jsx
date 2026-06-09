@@ -2,14 +2,18 @@
 import { useModalShell } from '@/hooks/useModalShell';
 import { OVERLAY_COLOR } from '@/lib/ui/styles';
 
+const noop = () => {};
+
 export function ConfirmDialog({ open, ...props }) {
   if (!open) return null;
   return <ConfirmDialogBody {...props} />;
 }
 
 function ConfirmDialogBody({ title, message, confirmLabel = '확인', cancelLabel = '취소', onConfirm, onCancel, danger = false }) {
+  const cancel = typeof onCancel === 'function' ? onCancel : noop;
+  const confirm = typeof onConfirm === 'function' ? onConfirm : noop;
   // 공통 모달 동작(포커스 트랩·복원·Esc·origin·exit). autoFocus:false → 확인 버튼의 네이티브 autoFocus 보존
-  const { containerRef, isClosing, close } = useModalShell(onCancel, { autoFocus: false });
+  const { containerRef, isClosing, close } = useModalShell(cancel, { autoFocus: false });
   return (
     <div
       style={{ position:'fixed', inset:0, background:OVERLAY_COLOR, zIndex:600, display:'grid', placeItems:'center', animation:'fade 150ms ease' }}
@@ -25,7 +29,7 @@ function ConfirmDialogBody({ title, message, confirmLabel = '확인', cancelLabe
           <button
             className="btn primary"
             style={danger ? { background:'var(--negative)', borderColor:'var(--negative)' } : {}}
-            onClick={onConfirm}
+            onClick={confirm}
             autoFocus
           >
             {confirmLabel}

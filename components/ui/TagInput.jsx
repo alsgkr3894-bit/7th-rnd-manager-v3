@@ -1,5 +1,15 @@
 'use client';
 import { useState, useRef, useMemo } from 'react';
+import {
+  DEFAULT_TAG_INPUT_PLACEHOLDER,
+  DEFAULT_TAG_SUGGESTION_LIMIT,
+  filterTagSuggestions,
+  normalizeTagInputPlaceholder,
+  normalizeTagInputOnChange,
+  normalizeTagText,
+  parseTagInputValue,
+  serializeTagInputValue,
+} from '@/lib/ui/tag-input';
 
 /**
  * TagInput — comma-string value ↔ visual chip input with autocomplete
@@ -10,22 +20,22 @@ import { useState, useRef, useMemo } from 'react';
  *   suggestions  string[]  existing tags to suggest
  *   placeholder  string
  */
-export function TagInput({ value = '', onChange, suggestions = [], placeholder = '태그 입력 후 Enter…' }) {
-  const tags  = (value || '').split(',').map(t => t.trim()).filter(Boolean);
+export function TagInput({ value = '', onChange, suggestions = [], placeholder = DEFAULT_TAG_INPUT_PLACEHOLDER }) {
+  const tags = useMemo(() => parseTagInputValue(value), [value]);
+  const safePlaceholder = useMemo(() => normalizeTagInputPlaceholder(placeholder), [placeholder]);
+  const notifyChange = useMemo(() => normalizeTagInputOnChange(onChange), [onChange]);
   const [input, setInput]     = useState('');
   const [open,  setOpen]      = useState(false);
   const inputRef = useRef(null);
 
   const matches = useMemo(() =>
-    input.length === 0 ? [] : suggestions.filter(s =>
-      s.toLowerCase().includes(input.toLowerCase()) && !tags.includes(s)
-    ).slice(0, 7),
+    filterTagSuggestions(suggestions, input, tags, DEFAULT_TAG_SUGGESTION_LIMIT),
   [input, suggestions, tags]);
 
-  function emit(newTags) { onChange(newTags.join(', ')); }
+  function emit(newTags) { notifyChange(serializeTagInputValue(newTags)); }
 
   function add(tag) {
-    const t = tag.trim();
+    const t = normalizeTagText(tag);
     if (!t || tags.includes(t)) { setInput(''); setOpen(false); return; }
     emit([...tags, t]);
     setInput('');
@@ -83,7 +93,7 @@ export function TagInput({ value = '', onChange, suggestions = [], placeholder =
           /* 드롭다운 옵션·태그삭제 버튼이 모두 onMouseDown+preventDefault라
              클릭 시 blur가 발생하지 않음 → 고정 타임아웃 없이 즉시 닫아도 안전 */
           onBlur={() => setOpen(false)}
-          placeholder={tags.length === 0 ? placeholder : ''}
+          placeholder={tags.length === 0 ? safePlaceholder : ''}
           style={{
             border:'none', outline:'none', background:'transparent',
             fontFamily:'inherit', fontSize:13, color:'var(--text-1)',

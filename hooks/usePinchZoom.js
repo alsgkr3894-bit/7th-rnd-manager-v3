@@ -1,5 +1,26 @@
 import { useRef, useState, useEffect } from 'react';
 
+export function getTouchDistance(touches) {
+  if (!touches || touches.length < 2) return null;
+  const a = touches[0];
+  const b = touches[1];
+  if (!a || !b) return null;
+  const dx = Number(a.clientX) - Number(b.clientX);
+  const dy = Number(a.clientY) - Number(b.clientY);
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  return Number.isFinite(dist) && dist > 0 ? dist : null;
+}
+
+export function normalizePinchScale(currentScale, distance, lastDistance) {
+  const current = Number(currentScale);
+  const dist = Number(distance);
+  const prev = Number(lastDistance);
+  if (!Number.isFinite(current) || !Number.isFinite(dist) || !Number.isFinite(prev) || dist <= 0 || prev <= 0) {
+    return 1;
+  }
+  return Math.min(4, Math.max(1, current * (dist / prev)));
+}
+
 export function usePinchZoom() {
   const imgRef = useRef(null);
   const scaleRef = useRef(1);
@@ -11,15 +32,9 @@ export function usePinchZoom() {
     const el = imgRef.current;
     if (!el) return;
 
-    function getDistance(touches) {
-      const dx = touches[0].clientX - touches[1].clientX;
-      const dy = touches[0].clientY - touches[1].clientY;
-      return Math.sqrt(dx * dx + dy * dy);
-    }
-
     function onTouchStart(e) {
       if (e.touches.length === 2) {
-        lastDistRef.current = getDistance(e.touches);
+        lastDistRef.current = getTouchDistance(e.touches);
         e.preventDefault();
       } else if (e.touches.length === 1) {
         const now = Date.now();
@@ -36,10 +51,10 @@ export function usePinchZoom() {
     function onTouchMove(e) {
       if (e.touches.length === 2 && lastDistRef.current !== null) {
         e.preventDefault();
-        const dist = getDistance(e.touches);
-        const delta = dist / lastDistRef.current;
+        const dist = getTouchDistance(e.touches);
+        if (dist === null) return;
+        const next = normalizePinchScale(scaleRef.current, dist, lastDistRef.current);
         lastDistRef.current = dist;
-        const next = Math.min(4, Math.max(1, scaleRef.current * delta));
         scaleRef.current = next;
         setScale(next);
         el.style.transform = `scale(${next})`;

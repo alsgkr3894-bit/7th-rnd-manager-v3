@@ -2,11 +2,20 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { parseCategoryFromCode } from '@/lib/cost/menu-price/code';
+import { asObjectArray } from '@/lib/ui/prop-guards';
+
+function asText(value) {
+  if (value == null) return '';
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  return '';
+}
 
 export function getBaseCode(m) {
-  if (!m.size) return m.menuCode;
-  const suffix = `-${m.size}`;
-  return m.menuCode.endsWith(suffix) ? m.menuCode.slice(0, -suffix.length) : m.menuCode;
+  const menuCode = String(m?.menuCode ?? '');
+  const size = asText(m?.size);
+  if (!size) return menuCode;
+  const suffix = `-${size}`;
+  return menuCode.endsWith(suffix) ? menuCode.slice(0, -suffix.length) : menuCode;
 }
 
 export default function MenuCodePicker({
@@ -24,21 +33,29 @@ export default function MenuCodePicker({
   const listRef = useRef(null);
 
   const displayList = useMemo(() => {
-    const active = menuMasters.filter(m => m.status !== 'discontinued');
+    const active = asObjectArray(menuMasters).filter(m => m.status !== 'discontinued' && m.menuCode);
     if (!dedup) {
       return active.map(m => ({
-        code: m.menuCode, menuName: m.menuName,
-        subCategory: m.subCategory, category: m.category,
-        sizes: m.size ? [m.size] : [],
+        code: String(m.menuCode ?? ''), menuName: asText(m.menuName),
+        subCategory: asText(m.subCategory), category: asText(m.category),
+        sizes: asText(m.size) ? [asText(m.size)] : [],
       }));
     }
     const seen = new Map();
     for (const m of active) {
       const base = getBaseCode(m);
+      const size = asText(m.size);
       if (!seen.has(base)) {
-        seen.set(base, { code: base, menuName: m.menuName, subCategory: m.subCategory, category: m.category, sizes: m.size ? [m.size] : [] });
-      } else if (m.size) {
-        seen.get(base).sizes.push(m.size);
+        seen.set(base, {
+          code: base,
+          menuName: asText(m.menuName),
+          subCategory: asText(m.subCategory),
+          category: asText(m.category),
+          sizes: size ? [size] : [],
+        });
+      } else if (size) {
+        const bucket = seen.get(base);
+        if (!bucket.sizes.includes(size)) bucket.sizes.push(size);
       }
     }
     return [...seen.values()].sort((a, b) => a.code.localeCompare(b.code));
@@ -71,13 +88,14 @@ export default function MenuCodePicker({
   }, []);
 
   const handleSelect = (m) => {
+    if (!m?.code) return;
     const meta = parseCategoryFromCode(m.code);
-    onChange(m.code, meta);
+    onChange?.(m.code, meta);
     setQ('');
     setOpen(false);
     setActiveIdx(-1);
   };
-  const handleClear = () => { onChange('', {}); setQ(''); setActiveIdx(-1); };
+  const handleClear = () => { onChange?.('', {}); setQ(''); setActiveIdx(-1); };
 
   const handleKeyDown = (e) => {
     if (!open || results.length === 0) return;
@@ -115,7 +133,7 @@ export default function MenuCodePicker({
           )}
           {selected.sizes.length > 0 && (
             <span style={{ fontSize: 11, color: 'var(--text-4)', flexShrink: 0 }}>
-              ({selected.sizes.sort().join(' · ')})
+              ({[...selected.sizes].sort().join(' · ')})
             </span>
           )}
           <button onClick={handleClear}
@@ -171,7 +189,7 @@ export default function MenuCodePicker({
                 </div>
                 {m.sizes.length > 0 && (
                   <span style={{ fontSize: 11, color: 'var(--text-4)', flexShrink: 0 }}>
-                    {m.sizes.sort().join(' / ')}
+                    {[...m.sizes].sort().join(' / ')}
                   </span>
                 )}
               </button>

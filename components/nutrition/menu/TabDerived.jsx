@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
+import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
 import {
   upsertComposition, deleteComposition,
   upsertTopping, deleteTopping,
@@ -18,7 +19,14 @@ const GROUP_HEADER_STYLE = {
   letterSpacing: '0.05em', marginTop: 8,
 };
 
+const noop = () => {};
+
 export function TabDerived({ menus, toppings, compositions, onRefresh, menuMasters }) {
+  const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
+  const safeToppings = useMemo(() => asObjectArray(toppings), [toppings]);
+  const safeCompositions = useMemo(() => asObjectArray(compositions), [compositions]);
+  const safeMenuMasters = useMemo(() => asObjectArray(menuMasters), [menuMasters]);
+  const refresh = typeof onRefresh === 'function' ? onRefresh : noop;
   const [modal,        setModal]        = useState(null);
   const [toppingModal, setToppingModal] = useState(null);
   const [form,         setForm]         = useState({ menuCode: '', menuName: '', baseMenuCode: '', toppingCodes: [] });
@@ -27,77 +35,80 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
   const [saving,       setSaving]       = useState(false);
 
   const masterByCode = useMemo(
-    () => Object.fromEntries((menuMasters || []).map(m => [m.menuCode, m])),
-    [menuMasters]
+    () => Object.fromEntries(safeMenuMasters.map(m => [m.menuCode, m])),
+    [safeMenuMasters]
   );
 
   // 파생 메뉴를 베이스 메뉴 카테고리 기준으로 그룹화
   const groupedCompositions = useMemo(() => {
     const buckets = {};
     NUTRITION_GROUP_ORDER.forEach(g => { buckets[g] = []; });
-    compositions.forEach(comp => {
-      const baseMenu = menus.find(m => m.menuCode === comp.baseMenuCode) || { menuCode: comp.baseMenuCode, category: '' };
+    safeCompositions.forEach(comp => {
+      const baseMenu = safeMenus.find(m => m.menuCode === comp.baseMenuCode) || { menuCode: comp.baseMenuCode, category: '' };
       const g = resolveNutritionGroup(baseMenu, masterByCode);
       buckets[g].push(comp);
     });
     return NUTRITION_GROUP_ORDER
       .filter(g => buckets[g].length > 0)
       .map(g => ({ group: g, items: buckets[g] }));
-  }, [compositions, menus, masterByCode]);
+  }, [safeCompositions, safeMenus, masterByCode]);
 
   const toggleTopping = (code) => {
     setForm(f => ({
       ...f,
-      toppingCodes: f.toppingCodes.includes(code)
+      toppingCodes: Array.isArray(f.toppingCodes) && f.toppingCodes.includes(code)
         ? f.toppingCodes.filter(c => c !== code)
-        : [...f.toppingCodes, code],
+        : [...(Array.isArray(f.toppingCodes) ? f.toppingCodes : []), code],
     }));
   };
 
   const openAdd = () => {
-    setForm({ menuCode: '', menuName: '', baseMenuCode: menus[0]?.menuCode || '', toppingCodes: [] });
+    setForm({ menuCode: '', menuName: '', baseMenuCode: safeMenus[0]?.menuCode || '', toppingCodes: [] });
     setModal('add');
   };
-  const openEdit = (comp) => { setForm({ ...comp }); setModal(comp); };
+  const openEdit = (comp) => {
+    setForm({ ...comp, toppingCodes: asStringArray(comp.toppingCodes) });
+    setModal(comp);
+  };
 
   const handleSaveComp = async () => {
-    if (!form.menuName.trim()) { showToast('파생 메뉴명 입력 필요', 'error'); return; }
+    if (!String(form.menuName || '').trim()) { showToast('파생 메뉴명 입력 필요', 'error'); return; }
     if (!form.baseMenuCode)    { showToast('베이스 메뉴 선택 필요', 'error'); return; }
     setSaving(true);
     try {
       const id   = modal !== 'add' ? modal.id : undefined;
-      const code = form.menuCode.trim() || `DERIVED-${Date.now()}`;
+      const code = String(form.menuCode || '').trim() || `DERIVED-${Date.now()}`;
       await upsertComposition({ ...(id ? { id } : {}), ...form, menuCode: code });
       showToast('저장 완료', 'ok');
       setModal(null);
-      onRefresh();
+      refresh();
     } catch { showToast('저장 실패', 'error'); }
     setSaving(false);
   };
 
   const handleDeleteComp = async (comp) => {
     await deleteComposition(comp.id);
-    showToast(`'${comp.menuName}' 삭제`, 'ok');
-    onRefresh();
+    showToast(`'${asDisplayText(comp.menuName, '파생 메뉴')}' 삭제`, 'ok');
+    refresh();
   };
 
   const handleSaveTopping = async () => {
-    if (!toppingForm.toppingName.trim()) { showToast('소스/토핑명 입력 필요', 'error'); return; }
+    if (!String(toppingForm.toppingName || '').trim()) { showToast('소스/토핑명 입력 필요', 'error'); return; }
     setSaving(true);
     try {
       const id   = toppingModal !== 'add' ? toppingModal.id : undefined;
-      const code = toppingForm.toppingCode.trim() || `TOP-${Date.now()}`;
+      const code = String(toppingForm.toppingCode || '').trim() || `TOP-${Date.now()}`;
       await upsertTopping({ ...(id ? { id } : {}), ...toppingForm, toppingCode: code, ...toppingValues });
       showToast('저장 완료', 'ok');
       setToppingModal(null);
-      onRefresh();
+      refresh();
     } catch { showToast('저장 실패', 'error'); }
     setSaving(false);
   };
 
   const openToppingAdd = () => { setToppingForm({ toppingCode: '', toppingName: '' }); setToppingValues({}); setToppingModal('add'); };
   const openToppingEdit = (t) => {
-    setToppingForm({ toppingCode: t.toppingCode, toppingName: t.toppingName });
+    setToppingForm({ toppingCode: t.toppingCode || '', toppingName: t.toppingName || '' });
     setToppingValues(NUTRITION_FIELDS.reduce((acc, { key }) => ({ ...acc, [key]: t[key] ?? '' }), {}));
     setToppingModal(t);
   };
@@ -113,7 +124,7 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
           </div>
           <button className="btn sm" onClick={openToppingAdd}><Icon.plus style={{ width: 13, height: 13 }} />추가</button>
         </div>
-        {toppings.length === 0 ? (
+        {safeToppings.length === 0 ? (
           <div className="empty-state" style={{ padding: '20px 12px' }}>
             <div className="empty-icon-wrap"><Icon.box style={{ width: 24, height: 24 }}/></div>
             <div style={{ fontWeight: 700, fontSize: 13 }}>등록된 소스/토핑이 없어요</div>
@@ -121,17 +132,22 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
           </div>
         ) : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {toppings.map(t => (
-              <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--surface-2)', borderRadius: 8, cursor: 'pointer' }}
-                onClick={() => openToppingEdit(t)}>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{t.toppingName}</span>
-                <span style={{ fontSize: 11, color: 'var(--text-4)' }}>{t.kcal ? `${t.kcal}kcal` : '값 미입력'}</span>
-                <button onClick={e => { e.stopPropagation(); deleteTopping(t.id).then(onRefresh); }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-4)', padding: 0 }}>
-                  <Icon.close style={{ width: 12, height: 12 }} />
-                </button>
-              </div>
-            ))}
+            {safeToppings.map((t, index) => {
+              const toppingCode = asDisplayText(t.toppingCode);
+              const toppingName = asDisplayText(t.toppingName, `소스/토핑 ${index + 1}`);
+              const kcal = asDisplayText(t.kcal);
+              return (
+                <div key={`${t.id || toppingCode || toppingName}-${index}`} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--surface-2)', borderRadius: 8, cursor: 'pointer' }}
+                  onClick={() => openToppingEdit(t)}>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{toppingName}</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-4)' }}>{kcal ? `${kcal}kcal` : '값 미입력'}</span>
+                  <button type="button" onClick={e => { e.stopPropagation(); deleteTopping(t.id).then(refresh); }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-4)', padding: 0 }}>
+                    <Icon.close style={{ width: 12, height: 12 }} />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -142,7 +158,7 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
         <button className="btn sm primary" onClick={openAdd}><Icon.plus style={{ width: 13, height: 13 }} />파생 메뉴 추가</button>
       </div>
 
-      {compositions.length === 0 ? (
+      {safeCompositions.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon-wrap"><Icon.plus style={{ width: 28, height: 28 }}/></div>
           <div className="empty-title">파생 메뉴가 없어요</div>
@@ -157,14 +173,18 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {items.map(comp => {
-                  const base = menus.find(m => m.menuCode === comp.baseMenuCode);
-                  const tops = (comp.toppingCodes || []).map(c => toppings.find(t => t.toppingCode === c)?.toppingName).filter(Boolean);
+                  const base = safeMenus.find(m => m.menuCode === comp.baseMenuCode);
+                  const menuName = asDisplayText(comp.menuName, '이름 없음');
+                  const baseName = asDisplayText(base?.menuName || comp.baseMenuCode, '베이스 미지정');
+                  const tops = asStringArray(comp.toppingCodes)
+                    .map(c => asDisplayText(safeToppings.find(t => t.toppingCode === c)?.toppingName))
+                    .filter(Boolean);
                   return (
-                    <div key={comp.id} className="card" style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div key={comp.id || comp.menuCode || menuName} className="card" style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <span style={{ fontWeight: 700, fontSize: 14 }}>{comp.menuName}</span>
+                        <span style={{ fontWeight: 700, fontSize: 14 }}>{menuName}</span>
                         <span style={{ fontSize: 12, color: 'var(--text-4)', marginLeft: 10 }}>
-                          {base?.menuName || comp.baseMenuCode} + {tops.join(', ') || '(소스 미선택)'}
+                          {baseName} + {tops.join(', ') || '(소스 미선택)'}
                         </span>
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
@@ -192,19 +212,26 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
                 <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>베이스 메뉴 *</label>
                 <select className="input" value={form.baseMenuCode} onChange={e => setForm(f => ({ ...f, baseMenuCode: e.target.value }))}>
                   <option value="">선택하세요</option>
-                  {menus.map(m => <option key={m.id} value={m.menuCode}>{m.menuName}</option>)}
+                  {safeMenus.map((m, index) => {
+                    const menuCode = asDisplayText(m.menuCode);
+                    const menuName = asDisplayText(m.menuName, menuCode || `메뉴 ${index + 1}`);
+                    return <option key={m.id || menuCode || index} value={menuCode}>{menuName}</option>;
+                  })}
                 </select>
               </div>
               <div>
                 <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 8 }}>추가 소스/토핑</label>
-                {toppings.length === 0
+                {safeToppings.length === 0
                   ? <div style={{ fontSize: 12, color: 'var(--text-4)' }}>소스/토핑 마스터를 먼저 등록해주세요</div>
                   : (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {toppings.map(t => {
-                        const on = form.toppingCodes.includes(t.toppingCode);
+                      {safeToppings.map(t => {
+                        const selectedCodes = Array.isArray(form.toppingCodes) ? form.toppingCodes : [];
+                        const toppingCode = asDisplayText(t.toppingCode);
+                        const toppingName = asDisplayText(t.toppingName, toppingCode || '이름 없음');
+                        const on = selectedCodes.includes(toppingCode);
                         return (
-                          <button key={t.toppingCode} onClick={() => toggleTopping(t.toppingCode)}
+                          <button key={toppingCode || t.id || toppingName} onClick={() => toggleTopping(toppingCode)} disabled={!toppingCode}
                             style={{
                               padding: '5px 12px', borderRadius: 20, fontSize: 13, cursor: 'pointer', border: '1.5px solid',
                               borderColor: on ? 'var(--accent)' : 'var(--border)',
@@ -212,7 +239,7 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
                               color: on ? 'var(--accent-text)' : 'var(--text-2)',
                               fontWeight: on ? 700 : 400,
                             }}>
-                            {t.toppingName}
+                            {toppingName}
                           </button>
                         );
                       })}
@@ -230,7 +257,7 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
 
       {/* 소스/토핑 모달 */}
       {toppingModal && (
-        <ModalFrame title={toppingModal === 'add' ? '소스·토핑 추가' : `${toppingModal.toppingName} 편집`} onClose={() => setToppingModal(null)} width="min(480px,95vw)" zIndex={300} padding="24px 28px">
+        <ModalFrame title={toppingModal === 'add' ? '소스·토핑 추가' : `${asDisplayText(toppingModal.toppingName, '소스·토핑')} 편집`} onClose={() => setToppingModal(null)} width="min(480px,95vw)" zIndex={300} padding="24px 28px">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div className="form-row two" style={{ marginTop: 0 }}>
                 <div>

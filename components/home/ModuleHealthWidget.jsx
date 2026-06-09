@@ -4,6 +4,7 @@ import {
   buildModuleHealth,
   countModuleHealth,
 } from '@/lib/stats/module-health';
+import { asDisplayText } from '@/lib/ui/prop-guards';
 
 const TONE = {
   good: {
@@ -94,14 +95,19 @@ export function ModuleHealthWidget({
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 8 }}>
-        {modules.map(module => {
+        {modules.map((module, index) => {
           const tone = TONE[module.status] || TONE.warn;
           const StatusIcon = tone.icon;
+          const href = asDisplayText(module.href);
+          const label = asDisplayText(module.label);
+          const metric = asDisplayText(module.metric);
+          const detail = asDisplayText(module.detail);
           return (
             <button
-              key={module.id}
+              key={asDisplayText(module.id) || index}
               className="widget-row"
-              onClick={() => router.push(module.href)}
+              onClick={() => href && router?.push?.(href)}
+              disabled={!href}
               style={{
                 display: 'grid',
                 gridTemplateRows: 'auto 1fr auto',
@@ -112,7 +118,7 @@ export function ModuleHealthWidget({
                 borderRadius: 8,
                 background: 'var(--surface)',
                 textAlign: 'left',
-                cursor: 'pointer',
+                cursor: href ? 'pointer' : 'default',
                 font: 'inherit',
               }}
             >
@@ -132,7 +138,7 @@ export function ModuleHealthWidget({
                     <StatusIcon style={{ width: 15, height: 15 }} />
                   </span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {module.label}
+                    {label}
                   </span>
                 </span>
                 <HealthBadge status={module.status} />
@@ -140,10 +146,10 @@ export function ModuleHealthWidget({
 
               <span style={{ display: 'block', minWidth: 0 }}>
                 <span style={{ display: 'block', fontSize: 17, fontWeight: 900, color: 'var(--text-1)', lineHeight: 1.25 }}>
-                  {module.metric}
+                  {metric}
                 </span>
                 <span style={{ display: 'block', marginTop: 5, fontSize: 11, lineHeight: 1.45, color: 'var(--text-3)' }}>
-                  {module.detail}
+                  {detail}
                 </span>
               </span>
 

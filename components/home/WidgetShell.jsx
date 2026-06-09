@@ -1,5 +1,6 @@
 'use client';
 import { Icon } from '@/components/icons';
+import { asDisplayText } from '@/lib/ui/prop-guards';
 
 /**
  * WidgetShell — 위젯 접기/펼치기 래퍼.
@@ -10,6 +11,9 @@ import { Icon } from '@/components/icons';
  * @param {{ widgetKey, label, isCollapsed, onToggle, children }} props
  */
 export function WidgetShell({ widgetKey, label, isCollapsed, onToggle, children }) {
+  const safeLabel = asDisplayText(label);
+  const handleToggle = typeof onToggle === 'function' ? onToggle : () => {};
+
   if (isCollapsed) {
     return (
       <div
@@ -22,11 +26,11 @@ export function WidgetShell({ widgetKey, label, isCollapsed, onToggle, children 
           minHeight: 44,
           cursor: 'pointer',
         }}
-        onClick={() => onToggle(widgetKey)}
+        onClick={() => handleToggle(widgetKey)}
         title="클릭해서 펼치기"
       >
         <span style={{ fontSize: 13, fontWeight: 600, flex: 1, color: 'var(--text-2)' }}>
-          {label}
+          {safeLabel}
         </span>
         <Icon.chevRight style={{ width: 14, height: 14, color: 'var(--text-3)' }} />
       </div>
@@ -37,7 +41,7 @@ export function WidgetShell({ widgetKey, label, isCollapsed, onToggle, children 
     <div style={{ position: 'relative' }}>
       {children}
       <button
-        onClick={() => onToggle(widgetKey)}
+        onClick={() => handleToggle(widgetKey)}
         title="접기"
         style={{
           position: 'absolute',

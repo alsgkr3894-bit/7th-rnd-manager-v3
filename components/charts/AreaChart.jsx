@@ -1,6 +1,13 @@
 'use client';
 import { useState, useRef, useMemo } from 'react';
 import { fmtShort } from '@/lib/format';
+import {
+  normalizeAreaSeries,
+  normalizeChartColors,
+  normalizeChartDimension,
+  normalizeChartFormatter,
+  normalizeChartLabels,
+} from '@/lib/ui/chart-data';
 
 /* ── 유틸 ─────────────────────────────────────────────────────── */
 
@@ -54,7 +61,10 @@ export function AreaChart({
   colors  = ['#1D766F', '#7C3AED'],
   formatY,
 }) {
-  const fmt  = formatY || fmtShort;
+  const fmt = normalizeChartFormatter(formatY, fmtShort);
+  const safeSeries = useMemo(() => normalizeAreaSeries(series), [series]);
+  const safeLabels = useMemo(() => normalizeChartLabels(labels), [labels]);
+  const safeColors = useMemo(() => normalizeChartColors(colors), [colors]);
   const [hover, setHover] = useState(null);
   const svgWrapRef = useRef(null);
   // 안정적 gradient ID — 마운트 시 1회 생성
@@ -62,12 +72,12 @@ export function AreaChart({
 
   const Y_W   = 46;   // Y축 라벨 영역 너비 (px)
   const X_H   = 24;   // X축 라벨 영역 높이 (px)
-  const CHART_H = height;
+  const CHART_H = normalizeChartDimension(height, 200, { min: 80, max: 1200 });
   // 포인트 개수는 labels 우선, 없으면 series 데이터 길이로 도출.
   // (labels=[] 인데 series에 데이터가 있으면 선이 안 그려지는 문제 방지)
-  const n     = (labels?.length) || Math.max(0, ...(series || []).map(s => s.data?.length || 0));
+  const n     = safeLabels.length || Math.max(0, ...safeSeries.map(s => s.data.length));
 
-  const allVals = series.flatMap(s => s.data).filter(v => Number.isFinite(v));
+  const allVals = safeSeries.flatMap(s => s.data).filter(v => Number.isFinite(v));
   const dataMax = Math.max(...allVals, 1);
 
   const TICK_COUNT = 4;
@@ -80,8 +90,8 @@ export function AreaChart({
 
   /* 시리즈 경로 메모이제이션 — n=0(labels=[]) 시 빈 경로 반환 */
   const paths = useMemo(() => {
-    if (n === 0) return series.map(() => ({ pts: [], line: '', area: '' }));
-    return series.map(s => {
+    if (n === 0) return safeSeries.map(() => ({ pts: [], line: '', area: '' }));
+    return safeSeries.map(s => {
       const pts  = s.data.map((v, i) => [xPct(i), yPct(v)]);
       const line = smoothPath(pts);
       const area = pts.length > 0
@@ -90,7 +100,7 @@ export function AreaChart({
       return { pts, line, area };
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [series, n, niceMax]);
+  }, [safeSeries, n, niceMax]);
 
   function handleMouseMove(e) {
     if (!svgWrapRef.current || n === 0) return;
@@ -135,10 +145,10 @@ export function AreaChart({
             style={{ width: '100%', height: '100%', display: 'block', overflow: 'visible' }}
           >
             <defs>
-              {series.map((_, si) => (
+              {safeSeries.map((_, si) => (
                 <linearGradient key={si} id={`${uid}-g${si}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor={colors[si] ?? '#888'} stopOpacity={si === 0 ? 0.22 : 0.11} />
-                  <stop offset="100%" stopColor={colors[si] ?? '#888'} stopOpacity="0" />
+                  <stop offset="0%"   stopColor={safeColors[si] ?? '#888'} stopOpacity={si === 0 ? 0.22 : 0.11} />
+                  <stop offset="100%" stopColor={safeColors[si] ?? '#888'} stopOpacity="0" />
                 </linearGradient>
               ))}
             </defs>
@@ -163,7 +173,7 @@ export function AreaChart({
               <g key={`l${si}`}>
                 <path
                   d={line} fill="none"
-                  stroke={colors[si] ?? '#888'}
+                  stroke={safeColors[si] ?? '#888'}
                   strokeWidth="0.8"
                   strokeLinecap="round" strokeLinejoin="round"
                 />
@@ -174,7 +184,7 @@ export function AreaChart({
                   return (
                     <circle key={i} cx={x} cy={y}
                       r={active ? 2.4 : 1.6}
-                      fill={colors[si] ?? '#888'}
+                      fill={safeColors[si] ?? '#888'}
                       stroke="var(--surface)" strokeWidth="0.55"
                     />
                   );
@@ -213,16 +223,16 @@ export function AreaChart({
                   fontSize: 11, fontWeight: 700, color: 'var(--text-3)',
                   marginBottom: 7, letterSpacing: '0.02em',
                 }}>
-                  {labels[hover]}
+                  {safeLabels[hover]}
                 </div>
-                {series.map((s, si) => (
+                {safeSeries.map((s, si) => (
                   <div key={si} style={{
                     display: 'flex', alignItems: 'center', gap: 7,
                     fontSize: 12, marginTop: si > 0 ? 5 : 0,
                   }}>
                     <span style={{
                       width: 8, height: 8, borderRadius: '50%',
-                      background: colors[si], flexShrink: 0,
+                      background: safeColors[si] ?? '#888', flexShrink: 0,
                     }} />
                     <span style={{ color: 'var(--text-3)', fontWeight: 600, flex: 1 }}>
                       {s.name}
@@ -231,7 +241,7 @@ export function AreaChart({
                       fontWeight: 800, color: 'var(--text-1)',
                       fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em',
                     }}>
-                      {fmt(s.data[hover])}
+                      {fmt(s.data[hover] ?? 0)}
                     </span>
                   </div>
                 ))}
@@ -244,7 +254,7 @@ export function AreaChart({
       {/* ── X축 라벨 (HTML — SVG 왜곡 없음) ── */}
       {n > 0 && (
         <div style={{ position: 'relative', marginLeft: Y_W, height: X_H, marginTop: 5 }}>
-          {labels.map((l, i) => {
+          {safeLabels.map((l, i) => {
             const isFirst = i === 0;
             const isLast  = i === n - 1;
             const xp      = xPct(i);

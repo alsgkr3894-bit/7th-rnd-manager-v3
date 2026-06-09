@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { asDisplayText, asObjectArray, clampInteger } from '@/lib/ui/prop-guards';
 
 const CACHE_TTL = 30_000;
 let _cache = { notes: null, samples: null, ingredients: null, at: 0 };
@@ -40,6 +41,11 @@ const STATUS_ICON = {
 
 export { STATUS_ICON };
 
+function detailPath(basePath, id) {
+  const safeId = asDisplayText(id);
+  return safeId ? `${basePath}/${safeId}` : basePath;
+}
+
 /** 팔레트 열릴 때 노트/샘플/식자재를 동적 로드해 반환하는 훅 (30초 캐시) */
 export function usePaletteItems(open) {
   const [noteItems,       setNoteItems]       = useState(() => _cache.notes       || []);
@@ -59,17 +65,27 @@ export function usePaletteItems(open) {
         import('@/lib/sample').then(({ getAllSamples }) => getAllSamples()),
       ]))
       .then(([notes, samples]) => {
-        const mapped = notes.map(n => ({
-          kind: 'note', label: n.title,
-          sub: `${n.menuName || ''} · ${n.status}`,
-          href: `/note/${n.id}`, status: n.status,
-        }));
-        const mappedS = samples.map(s => ({
-          kind: 'sample', label: s.title,
-          sub: `${s.menuName || ''} · ${s.rating > 0 ? STAR_ICON[s.rating] : '샘플'}`,
-          href: `/note/sample/${s.id}`,
-          hasPhoto: (s.photos?.length || 0) > 0,
-        }));
+        const mapped = asObjectArray(notes).map(n => {
+          const title = asDisplayText(n.title || n.menuName, '제목 없음');
+          const menuName = asDisplayText(n.menuName);
+          const status = asDisplayText(n.status, '상태 없음');
+          return {
+            kind: 'note', label: title,
+            sub: `${menuName} · ${status}`,
+            href: detailPath('/note', n.id), status,
+          };
+        });
+        const mappedS = asObjectArray(samples).map(s => {
+          const title = asDisplayText(s.title || s.menuName, '샘플');
+          const menuName = asDisplayText(s.menuName);
+          const rating = clampInteger(s.rating, { min: 0, max: 5, fallback: 0 });
+          return {
+            kind: 'sample', label: title,
+            sub: `${menuName} · ${rating > 0 ? STAR_ICON[rating] : '샘플'}`,
+            href: detailPath('/note/sample', s.id),
+            hasPhoto: asObjectArray(s.photos).some(p => asDisplayText(p.data)),
+          };
+        });
         _cache.notes = mapped; _cache.samples = mappedS; _cache.at = Date.now();
         setNoteItems(mapped);
         setSampleItems(mappedS);
@@ -78,9 +94,10 @@ export function usePaletteItems(open) {
 
     import('@/lib/ingredient').then(({ getAllIngredients }) => getAllIngredients())
       .then(items => {
-        const mapped = items.filter(m => !m.discontinued && !m.excluded).map(i => ({
-          kind: 'ingredient', label: i.ingredientName,
-          sub: `${i.category || ''} · ${i.productCode || '수동'}`,
+        const mapped = asObjectArray(items).filter(m => !m.discontinued && !m.excluded).map(i => ({
+          kind: 'ingredient',
+          label: asDisplayText(i.ingredientName || i.displayName || i.productCode, '식자재'),
+          sub: `${asDisplayText(i.category)} · ${asDisplayText(i.productCode, '수동')}`,
           href: '/ingredient/manage',
         }));
         _cache.ingredients = mapped;

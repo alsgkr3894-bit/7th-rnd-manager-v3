@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -26,6 +26,30 @@ import { NoteCard } from './_NoteCard';
 import { NoteDetailModal } from './_NoteDetailModal';
 import { NoteBatchToolbar } from './_NoteBatchToolbar';
 import { NotePresetBar } from './_NotePresetBar';
+
+const NOTE_VIEW_KEYS = new Set(['card', 'table']);
+
+function normalizeNoteView(value) {
+  return NOTE_VIEW_KEYS.has(value) ? value : 'card';
+}
+
+function normalizeNotePresets(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(p => p && typeof p === 'object' && !Array.isArray(p))
+    .map(p => ({
+      name: typeof p.name === 'string' ? p.name.trim() : '',
+      status: typeof p.status === 'string' ? p.status : 'all',
+      search: typeof p.search === 'string' ? p.search : '',
+      sort: typeof p.sort === 'string' ? p.sort : 'createdAt',
+    }))
+    .filter(p => p.name);
+}
+
+function normalizeIdList(value) {
+  if (!Array.isArray(value)) return [];
+  return value.filter(id => typeof id === 'string' || typeof id === 'number');
+}
 
 const NoteTableRow = React.memo(function NoteTableRow({ note, focusedRow, handleStatusChange, router, handleDelete, setFocusedRow, setDetailNote }) {
   const sc = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
@@ -80,7 +104,7 @@ export function NoteContent() {
 
   const [notes,        setNotes]        = useState([]);
   const [loading,      setLoading]      = useState(true);
-  const [viewMode,     setViewMode]     = useState(() => tryLS(KEYS.NOTE_VIEW, 'card'));
+  const [viewMode,     setViewMode]     = useState(() => normalizeNoteView(tryLS(KEYS.NOTE_VIEW, 'card')));
   const PAGE_SIZE = 20;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [detailNote,   setDetailNote]   = useState(null);
@@ -93,10 +117,10 @@ export function NoteContent() {
   const [confirmDeletePreset, setConfirmDeletePreset] = useState(null);
   const [singleDeleteNote, setSingleDeleteNote] = useState(null);
   const [presets,      setPresets]      = useState(() => {
-    try { return JSON.parse(localStorage.getItem(KEYS.NOTE_PRESETS) || '[]'); } catch { return []; }
+    try { return normalizeNotePresets(JSON.parse(localStorage.getItem(KEYS.NOTE_PRESETS) || '[]')); } catch { return []; }
   });
   const [pinnedIds, setPinnedIds] = useState(() => {
-    try { return new Set(JSON.parse(localStorage.getItem(KEYS.NOTE_PINS) || '[]')); } catch { return new Set(); }
+    try { return new Set(normalizeIdList(JSON.parse(localStorage.getItem(KEYS.NOTE_PINS) || '[]'))); } catch { return new Set(); }
   });
 
   useScrollMemory(pathname);
@@ -119,6 +143,8 @@ export function NoteContent() {
 
   const [ctxMenu,    setCtxMenu]    = useState(null);
   const [focusedRow, setFocusedRow] = useState(null);
+  const popTimersRef = useRef(new Set());
+  const searchBlurTimerRef = useRef(null);
 
   const load = useCallback(async () => {
     await initDB();
@@ -130,6 +156,12 @@ export function NoteContent() {
   useEffect(() => {
     load().catch(console.error).finally(() => setLoading(false));
   }, [load]);
+
+  useEffect(() => () => {
+    popTimersRef.current.forEach(timer => clearTimeout(timer));
+    popTimersRef.current.clear();
+    if (searchBlurTimerRef.current) clearTimeout(searchBlurTimerRef.current);
+  }, []);
 
   useVisibilityRefresh(load);
 
@@ -169,6 +201,14 @@ export function NoteContent() {
     setSearch(val);
     setVisibleCount(PAGE_SIZE);
     scheduleSearchHistory(val);
+  }
+
+  function closeSearchHistorySoon() {
+    if (searchBlurTimerRef.current) clearTimeout(searchBlurTimerRef.current);
+    searchBlurTimerRef.current = setTimeout(() => {
+      setShowSearchHist(false);
+      searchBlurTimerRef.current = null;
+    }, 150);
   }
 
   const handleDelete = useCallback(function handleDelete(note, e) {
@@ -218,7 +258,11 @@ export function NoteContent() {
       showToast(`상태 → ${newStatus}`, 'ok');
       setNotes(prev => prev.map(n => n.id === noteId ? { ...n, status: newStatus } : n));
       setPopIds(s => new Set([...s, noteId]));
-      setTimeout(() => setPopIds(s => { const n = new Set(s); n.delete(noteId); return n; }), 400);
+      const timer = setTimeout(() => {
+        setPopIds(s => { const n = new Set(s); n.delete(noteId); return n; });
+        popTimersRef.current.delete(timer);
+      }, 400);
+      popTimersRef.current.add(timer);
       setDetailNote(n => n?.id === noteId ? { ...n, status: newStatus } : n);
     } catch (err) { console.error('[NoteContent] handleStatusChange', err); showToast('상태 변경 실패', 'error'); }
   }, []);
@@ -339,7 +383,7 @@ export function NoteContent() {
         title="메뉴개발노트"
         sub={`전체 ${notes.length}개`}
         actions={
-          <div style={{display:'flex',gap:8}}>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap',minWidth:0,width:'100%',maxWidth:'100%',flex:'1 1 100%'}}>
             {batchMode ? (
               <NoteBatchToolbar
                 selected={selected}
@@ -464,7 +508,7 @@ export function NoteContent() {
             onChange={e => handleSearchChange(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') saveSearchHistory(search); }}
             onFocus={() => setShowSearchHist(true)}
-            onBlur={() => { cancelSearchHistory(); setTimeout(() => setShowSearchHist(false), 150); }}
+            onBlur={() => { cancelSearchHistory(); closeSearchHistorySoon(); }}
           />
         </div>
         {showSearchHist && searchHistory.length > 0 && (

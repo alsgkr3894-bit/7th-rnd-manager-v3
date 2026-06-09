@@ -1,5 +1,5 @@
 'use client';
-import { useState, useId, useRef } from 'react';
+import { useEffect, useState, useId, useRef } from 'react';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { createPortal } from 'react-dom';
@@ -9,6 +9,7 @@ import { SEED_MAIN_CATEGORIES, SEED_HASH_TAGS, sortMainCategories } from '@/lib/
 import { SCOPE, SCOPE_ORDER, SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { KEYS } from '@/lib/note/keys';
+import { parseOptionalNonNegativeNumber } from '@/lib/parse';
 
 const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병'];
 
@@ -24,6 +25,20 @@ function getLastUnitType() {
 function OriginSuggest({ value, onChange, suggestions = [], placeholder = '' }) {
   const [open, setOpen] = useState(false);
   const [hi, setHi] = useState(-1);
+  const blurTimerRef = useRef(null);
+
+  useEffect(() => () => {
+    if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+  }, []);
+
+  function closeSoon() {
+    if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+    blurTimerRef.current = setTimeout(() => {
+      setOpen(false);
+      setHi(-1);
+      blurTimerRef.current = null;
+    }, 150);
+  }
 
   const filtered = value
     ? suggestions
@@ -67,12 +82,7 @@ function OriginSuggest({ value, onChange, suggestions = [], placeholder = '' }) 
         onFocus={() => {
           if (value) setOpen(true);
         }}
-        onBlur={() =>
-          setTimeout(() => {
-            setOpen(false);
-            setHi(-1);
-          }, 150)
-        }
+        onBlur={closeSoon}
         onKeyDown={handleKeyDown}
       />
       {open && filtered.length > 0 && (
@@ -201,9 +211,12 @@ export function IngredientForm({
   function validate() {
     const e = {};
     if (!isJetteLinked && !form.ingredientName.trim()) e.ingredientName = '재료명을 입력하세요';
-    if (form.baseQuantity && isNaN(Number(form.baseQuantity))) e.baseQuantity = '숫자만 입력하세요';
-    if (!isJetteLinked && form.priceOverride && isNaN(Number(form.priceOverride)))
-      e.priceOverride = '숫자만 입력하세요';
+    if (!parseOptionalNonNegativeNumber(form.baseQuantity).ok) {
+      e.baseQuantity = '0 이상의 숫자만 입력하세요';
+    }
+    if (!isJetteLinked && !parseOptionalNonNegativeNumber(form.priceOverride).ok) {
+      e.priceOverride = '0 이상의 숫자만 입력하세요';
+    }
     // 제품코드 중복 검사 — 신규 등록 또는 코드 변경 시
     const newCode = (form.productCode || '').trim();
     const origCode = (initial?.productCode || '').trim();
@@ -225,6 +238,8 @@ export function IngredientForm({
     }
     setSaving(true);
     try {
+      const baseQuantity = parseOptionalNonNegativeNumber(form.baseQuantity).value;
+      const priceOverride = parseOptionalNonNegativeNumber(form.priceOverride).value;
       // origin: 표시품목명·원산지 둘 다 있어야 저장 (빈값 항목이 DB에 누적되지 않도록)
       const origin = (form.origin || [])
         .filter(it => it.country?.trim() && it.displayName?.trim())
@@ -232,7 +247,7 @@ export function IngredientForm({
       const originValue = origin.length ? origin : null;
       const data = {
         ...form,
-        baseQuantity: form.baseQuantity ? Number(form.baseQuantity) : null,
+        baseQuantity,
         origin: originValue,
         originHidden: form.originHidden === true,
         allergens: form.allergens || [],
@@ -241,7 +256,7 @@ export function IngredientForm({
         // 제때 연동 항목은 수동단가 입력칸이 없으므로 payload에서 제외 → 기존값 보존
         delete data.priceOverride;
       } else {
-        data.priceOverride = form.priceOverride ? Number(form.priceOverride) : null;
+        data.priceOverride = priceOverride;
       }
       await onSave(data);
       try {

@@ -7,9 +7,10 @@ import { initDB } from '@/lib/db';
 import { TagInput } from '@/components/ui/TagInput';
 import { ComboBox } from '@/components/ui/ComboBox';
 import { SegGroup, Field } from '@/components/note/FormFields';
-import { resizePhoto } from '@/lib/image/resize';
+import { isSupportedImageFile, resizePhoto } from '@/lib/image/resize';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllMenuMaster } from '@/lib/menu-master';
+import { asDisplayText, asObjectArray, clampInteger } from '@/lib/ui/prop-guards';
 
 export const SAMPLE_INIT = {
   title: '', sampleNames: [''], category: '',
@@ -21,9 +22,11 @@ export const SAMPLE_INIT = {
 };
 
 const MAX_PHOTOS = 8;
+const noop = () => {};
 
 export function SampleFormBody({ form, setForm }) {
   const fileInputRef = useRef(null);
+  const productSearchTimerRef = useRef(null);
   const [allTags,        setAllTags]        = useState([]);
   const [catOptions,     setCatOptions]     = useState(SAMPLE_CATEGORIES);
   const [companyOptions, setCompanyOptions] = useState([]);
@@ -75,11 +78,29 @@ export function SampleFormBody({ form, setForm }) {
     }).catch(() => {});
   }, []);
 
+  useEffect(() => () => {
+    if (productSearchTimerRef.current) clearTimeout(productSearchTimerRef.current);
+  }, []);
+
+  function clearProductSearchSoon() {
+    if (productSearchTimerRef.current) clearTimeout(productSearchTimerRef.current);
+    productSearchTimerRef.current = setTimeout(() => {
+      setProductSearch('');
+      productSearchTimerRef.current = null;
+    }, 160);
+  }
+
   async function handleFiles(files) {
-    const current = form.photos || [];
+    const current = Array.isArray(form.photos) ? form.photos.filter(p => p && typeof p === 'object') : [];
     const slots = MAX_PHOTOS - current.length;
     if (slots <= 0) { showToast(`사진은 최대 ${MAX_PHOTOS}장까지만 등록할 수 있어요`, 'warn'); return; }
-    const candidates = Array.from(files).slice(0, slots);
+    const allFiles = files ? Array.from(files) : [];
+    const imageFiles = allFiles.filter(isSupportedImageFile);
+    const rejected = allFiles.length - imageFiles.length;
+    if (rejected > 0) showToast('지원하지 않는 이미지 파일은 제외했어요', 'warn');
+
+    const candidates = imageFiles.slice(0, slots);
+    if (candidates.length === 0) return;
     const toAdd = [];
     for (const file of candidates) {
       if (file.size > 5 * 1024 * 1024) { showToast('파일 크기 초과: ' + file.name + ' (최대 5MB)', 'warn'); continue; }
@@ -97,16 +118,16 @@ export function SampleFormBody({ form, setForm }) {
   }
 
   function removePhoto(i) {
-    upd('photos', (form.photos || []).filter((_, idx) => idx !== i));
+    const current = Array.isArray(form.photos) ? form.photos.filter(p => p && typeof p === 'object') : [];
+    upd('photos', current.filter((_, idx) => idx !== i));
   }
 
   function handleDrop(e) {
     e.preventDefault();
-    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') && f.type !== 'image/svg+xml');
-    if (files.length) handleFiles(files);
+    handleFiles(e.dataTransfer.files);
   }
 
-  const photos = form.photos || [];
+  const photos = Array.isArray(form.photos) ? form.photos.filter(p => p && typeof p === 'object') : [];
 
   return (
     <div className="form-layout" style={{ display:'grid', gridTemplateColumns:'1fr 340px', gap:24, marginTop:24, alignItems:'start' }}>
@@ -237,6 +258,7 @@ export function SampleFormBody({ form, setForm }) {
           options={productOptions}
           search={productSearch}
           onSearchChange={setProductSearch}
+          onBlurSearch={clearProductSearchSoon}
           onAdd={item => {
             const already = (form.linkedProducts || []).some(p => p.kind === item.kind && p.code === item.code);
             if (!already) upd('linkedProducts', [...(form.linkedProducts || []), item]);
@@ -345,14 +367,17 @@ export function SampleFormBody({ form, setForm }) {
 
 function StarPicker({ value, onChange }) {
   const [hovered, setHovered] = useState(0);
+  const rating = clampInteger(value, { min: 0, max: 5, fallback: 0 });
+  const change = typeof onChange === 'function' ? onChange : noop;
+
   function handleClick(e, n) {
     const btn = e.currentTarget;
     btn.classList.remove('star-pop');
     void btn.offsetWidth;
     btn.classList.add('star-pop');
-    onChange(value === n ? 0 : n);
+    change(rating === n ? 0 : n);
   }
-  const lit = hovered > 0 ? hovered : value;
+  const lit = hovered > 0 ? hovered : rating;
   return (
     <div style={{ display:'flex', gap:4, alignItems:'center' }}>
       {[1,2,3,4,5].map(n => (
@@ -365,9 +390,9 @@ function StarPicker({ value, onChange }) {
           onMouseLeave={() => setHovered(0)}
         >★</button>
       ))}
-      {value > 0 && (
-        <span style={{ marginLeft:6, fontSize:12, color: RATING_COLOR[value] || 'var(--text-2)', fontWeight:600 }}>
-          {RATING_LABELS[value]}
+      {rating > 0 && (
+        <span style={{ marginLeft:6, fontSize:12, color: RATING_COLOR[rating] || 'var(--text-2)', fontWeight:600 }}>
+          {RATING_LABELS[rating]}
         </span>
       )}
     </div>
@@ -375,10 +400,23 @@ function StarPicker({ value, onChange }) {
 }
 
 /** 샘플기록 — 식자재·메뉴 제품 연결 카드 */
-function LinkedProductsCard({ linked, options, search, onSearchChange, onAdd, onRemove }) {
-  const filtered = search.trim()
-    ? options.filter(o => o.name.toLowerCase().includes(search.toLowerCase()) ||
-        (o.code || '').toLowerCase().includes(search.toLowerCase()))
+function LinkedProductsCard({ linked, options, search, onSearchChange, onBlurSearch, onAdd, onRemove }) {
+  const linkedItems = Array.isArray(linked)
+    ? linked
+        .map((item, sourceIndex) => ({ item, sourceIndex }))
+        .filter(({ item }) => item && typeof item === 'object' && !Array.isArray(item))
+    : [];
+  const safeOptions = asObjectArray(options);
+  const safeSearch = asDisplayText(search);
+  const updateSearch = typeof onSearchChange === 'function' ? onSearchChange : noop;
+  const blurSearch = typeof onBlurSearch === 'function' ? onBlurSearch : noop;
+  const add = typeof onAdd === 'function' ? onAdd : noop;
+  const remove = typeof onRemove === 'function' ? onRemove : noop;
+  const query = safeSearch.trim().toLowerCase();
+  const filtered = query
+    ? safeOptions.filter(o =>
+        asDisplayText(o.name).toLowerCase().includes(query) ||
+        asDisplayText(o.code).toLowerCase().includes(query))
       .slice(0, 12)
     : [];
 
@@ -388,57 +426,69 @@ function LinkedProductsCard({ linked, options, search, onSearchChange, onAdd, on
 
       {/* 검색 */}
       <div style={{ position: 'relative' }}>
-        <input className="form-input" value={search} placeholder="식자재명 또는 메뉴명 검색"
-          onChange={e => onSearchChange(e.target.value)}
-          onBlur={() => setTimeout(() => onSearchChange(''), 160)}/>
+        <input className="form-input" value={safeSearch} placeholder="식자재명 또는 메뉴명 검색"
+          onChange={e => updateSearch(e.target.value)}
+          onBlur={blurSearch}/>
         {filtered.length > 0 && (
           <div style={{
             position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0, zIndex: 200,
             background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8,
             boxShadow: '0 4px 16px rgba(0,0,0,.12)', maxHeight: 200, overflowY: 'auto',
           }}>
-            {filtered.map(o => (
-              <div key={`${o.kind}-${o.code}`}
-                style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', gap: 8, alignItems: 'center' }}
-                onMouseDown={e => { e.preventDefault(); onAdd(o); }}>
-                <span style={{
-                  fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 3,
-                  background: o.kind === 'ingredient' ? 'var(--positive-soft)' : 'var(--accent-soft)',
-                  color: o.kind === 'ingredient' ? 'var(--positive)' : 'var(--accent-text)',
-                }}>
-                  {o.kind === 'ingredient' ? '식자재' : '메뉴'}
-                </span>
-                {o.name}
-                {o.code && <span style={{ fontSize: 11, color: 'var(--text-4)', marginLeft: 'auto' }}>{o.code}</span>}
-              </div>
-            ))}
+            {filtered.map((o, i) => {
+              const kind = asDisplayText(o.kind);
+              const code = asDisplayText(o.code);
+              const name = asDisplayText(o.name, '이름 없음');
+
+              return (
+                <div
+                  key={`${kind || 'item'}-${code || name}-${i}`}
+                  style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', gap: 8, alignItems: 'center' }}
+                  onMouseDown={e => { e.preventDefault(); add(o); }}
+                >
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 3,
+                    background: kind === 'ingredient' ? 'var(--positive-soft)' : 'var(--accent-soft)',
+                    color: kind === 'ingredient' ? 'var(--positive)' : 'var(--accent-text)',
+                  }}>
+                    {kind === 'ingredient' ? '식자재' : '메뉴'}
+                  </span>
+                  {name}
+                  {code && <span style={{ fontSize: 11, color: 'var(--text-4)', marginLeft: 'auto' }}>{code}</span>}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
       {/* 연결된 제품 칩 */}
-      {linked.length > 0 && (
+      {linkedItems.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
-          {linked.map((p, i) => (
-            <span key={i} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4,
-              padding: '3px 8px', borderRadius: 999, fontSize: 12, fontWeight: 600,
-              background: p.kind === 'ingredient' ? 'var(--positive-soft)' : 'var(--accent-soft)',
-              color: p.kind === 'ingredient' ? 'var(--positive)' : 'var(--accent-text)',
-            }}>
-              {p.name}
-              <button type="button" onClick={() => onRemove(i)}
-                style={{ border: 0, background: 'transparent', cursor: 'pointer', padding: 0, display: 'flex', color: 'inherit', opacity: .6 }}>
-                <Icon.close style={{ width: 11, height: 11 }}/>
-              </button>
-            </span>
-          ))}
+          {linkedItems.map(({ item: p, sourceIndex }, i) => {
+            const kind = asDisplayText(p.kind);
+            const name = asDisplayText(p.name, '이름 없음');
+
+            return (
+              <span key={`${kind || 'item'}-${asDisplayText(p.code) || name}-${i}`} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                padding: '3px 8px', borderRadius: 999, fontSize: 12, fontWeight: 600,
+                background: kind === 'ingredient' ? 'var(--positive-soft)' : 'var(--accent-soft)',
+                color: kind === 'ingredient' ? 'var(--positive)' : 'var(--accent-text)',
+              }}>
+                {name}
+                <button type="button" onClick={() => remove(sourceIndex)}
+                  style={{ border: 0, background: 'transparent', cursor: 'pointer', padding: 0, display: 'flex', color: 'inherit', opacity: .6 }}>
+                  <Icon.close style={{ width: 11, height: 11 }}/>
+                </button>
+              </span>
+            );
+          })}
         </div>
       )}
-      {linked.length === 0 && (
+      {linkedItems.length === 0 && (
         <div style={{ fontSize: 12, color: 'var(--text-4)', marginTop: 8 }}>연결된 제품 없음</div>
       )}
     </div>
   );
 }
-

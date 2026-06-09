@@ -1,4 +1,13 @@
 'use client';
+import {
+  getChipBadgeStyle,
+  getChipButtonStyle,
+  normalizeChipActive,
+  normalizeChipCount,
+  normalizeChipDim,
+  normalizeChipLabel,
+  normalizeChipOnClick,
+} from '@/lib/ui/chip';
 
 /**
  * Chip — 필터/카테고리 토글 버튼
@@ -11,26 +20,21 @@
  * @param {Function} onClick
  */
 export function Chip({ label, count, active, dim, color, onClick }) {
+  const text = normalizeChipLabel(label);
+  const safeCount = normalizeChipCount(count);
+  const isActive = normalizeChipActive(active);
+  const isDim = normalizeChipDim(dim);
+  const click = normalizeChipOnClick(onClick);
+
   return (
     <button
-      onClick={onClick}
+      onClick={click}
       className="chip"
-      style={{
-        cursor:'pointer', border:'none',
-        background: active ? 'var(--accent)' : 'var(--surface-2)',
-        color: active ? '#fff' : (dim ? 'var(--text-4)' : (color || 'var(--text-2)')),
-        fontWeight: 600,
-        opacity: dim ? 0.7 : 1,
-        display:'inline-flex', alignItems:'center', gap:6,
-      }}
+      style={getChipButtonStyle({ active: isActive, dim: isDim, color })}
     >
-      {label}
-      {count != null && (
-        <span style={{
-          background: active ? 'rgba(255,255,255,0.2)' : 'var(--surface)',
-          color: active ? '#fff' : 'var(--text-3)',
-          padding:'1px 6px', borderRadius:10, fontSize:11, fontWeight:700,
-        }}>{count}</span>
+      {text}
+      {safeCount != null && (
+        <span style={getChipBadgeStyle(isActive)}>{safeCount}</span>
       )}
     </button>
   );

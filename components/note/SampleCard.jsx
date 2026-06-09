@@ -3,6 +3,14 @@ import React from 'react';
 import { Icon } from '@/components/icons';
 import { sampleNamesText } from '@/lib/sample';
 
+const noop = () => {};
+
+function asText(value) {
+  if (value == null) return '';
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  return '';
+}
+
 /**
  * SampleCard — 샘플 갤러리 그리드의 개별 카드 컴포넌트.
  *
@@ -19,12 +27,12 @@ import { sampleNamesText } from '@/lib/sample';
  * @param {function} props.onDelete        - 삭제 버튼 클릭
  */
 export const SampleCard = React.memo(function SampleCard({
-  sample,
+  sample = {},
   batchMode,
   isBatchSelected,
   compareMode,
-  compareIdx,
-  animDelay,
+  compareIdx = -1,
+  animDelay = 0,
   onCardClick,
   onRatingChange,
   onEdit,
@@ -32,10 +40,22 @@ export const SampleCard = React.memo(function SampleCard({
   onDelete,
 }) {
   const rec = sample;
-  const thumb = rec.photos?.[0]?.data;
+  const photos = Array.isArray(rec.photos) ? rec.photos.filter(p => p && typeof p === 'object') : [];
+  const thumb = photos[0]?.data;
   const names = sampleNamesText(rec);
-  const tags = rec.tags ? rec.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const tags = typeof rec.tags === 'string' ? rec.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const title = asText(rec.title);
+  const category = asText(rec.category);
+  const testDate = asText(rec.testDate);
+  const company = asText(rec.company);
+  const description = asText(rec.description);
+  const price = asText(rec.price).trim();
   const isCompareSelected = compareIdx !== -1;
+  const cardClick = typeof onCardClick === 'function' ? onCardClick : noop;
+  const ratingChange = typeof onRatingChange === 'function' ? onRatingChange : noop;
+  const edit = typeof onEdit === 'function' ? onEdit : noop;
+  const copy = typeof onCopy === 'function' ? onCopy : noop;
+  const remove = typeof onDelete === 'function' ? onDelete : noop;
 
   return (
     <div
@@ -83,7 +103,7 @@ export const SampleCard = React.memo(function SampleCard({
               ? '2px solid var(--accent)'
               : 'none',
         }}
-        onClick={onCardClick}
+        onClick={cardClick}
       >
         {/* 썸네일 */}
         <div style={{
@@ -94,7 +114,7 @@ export const SampleCard = React.memo(function SampleCard({
           {thumb ? (
             <img
               src={thumb}
-              alt={`${names || rec.title} 샘플 사진`}
+              alt={`${names || title} 샘플 사진`}
               loading="lazy"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
@@ -103,13 +123,13 @@ export const SampleCard = React.memo(function SampleCard({
           )}
 
           {/* 사진 수 배지 */}
-          {(rec.photos?.length || 0) > 1 && (
+          {photos.length > 1 && (
             <span style={{
               position: 'absolute', top: 8, right: 8,
               background: 'rgba(0,0,0,0.55)', color: '#fff',
               fontSize: 10, padding: '2px 7px', borderRadius: 10, fontWeight: 700,
             }}>
-              📷 {rec.photos.length}
+              📷 {photos.length}
             </span>
           )}
 
@@ -118,7 +138,7 @@ export const SampleCard = React.memo(function SampleCard({
             position: 'absolute', bottom: 8, left: 8,
             background: 'rgba(0,0,0,0.5)', color: '#fff',
             fontSize: 10, padding: '2px 8px', borderRadius: 6, fontWeight: 700,
-          }}>{rec.category}</span>
+          }}>{category}</span>
         </div>
 
         {/* 카드 내용 */}
@@ -127,14 +147,14 @@ export const SampleCard = React.memo(function SampleCard({
             <div style={{
               fontSize: 14, fontWeight: 700, color: 'var(--text-1)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
-            }}>{rec.title}</div>
+            }}>{title}</div>
 
             <div className="inline-stars" onClick={e => e.stopPropagation()}>
               {[1, 2, 3, 4, 5].map(n => (
                 <button
                   key={n}
                   className={'inline-star' + (n <= (rec.rating || 0) ? ' lit' : '')}
-                  onClick={e => onRatingChange(rec.id, (rec.rating || 0) === n ? 0 : n, e)}
+                  onClick={e => ratingChange(rec.id, (rec.rating || 0) === n ? 0 : n, e)}
                 >★</button>
               ))}
             </div>
@@ -142,17 +162,17 @@ export const SampleCard = React.memo(function SampleCard({
 
           <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
             {names && <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{names}</span>}
-            {rec.testDate && <span>· {rec.testDate}</span>}
-            {rec.company  && <span>· {rec.company}</span>}
-            {rec.price    && <span>· {rec.price}원{rec.priceTaxType === 'excl' ? '(별도)' : ''}</span>}
+            {testDate && <span>· {testDate}</span>}
+            {company  && <span>· {company}</span>}
+            {price    && <span>· {price}원{rec.priceTaxType === 'excl' ? '(별도)' : ''}</span>}
           </div>
 
-          {rec.description && (
+          {description && (
             <div style={{
               fontSize: 12, color: 'var(--text-3)', lineHeight: 1.6,
               display: '-webkit-box', WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: 8,
-            }}>{rec.description}</div>
+            }}>{description}</div>
           )}
 
           {tags.length > 0 && (
@@ -169,13 +189,13 @@ export const SampleCard = React.memo(function SampleCard({
           {/* 액션 버튼 (배치/비교 모드 아닐 때만) */}
           {!batchMode && !compareMode && (
             <div style={{ display: 'flex', gap: 6, marginTop: 4 }} onClick={e => e.stopPropagation()}>
-              <button className="btn sm" style={{ flex: 1 }} onClick={onEdit}>
+              <button className="btn sm" style={{ flex: 1 }} onClick={edit}>
                 수정
               </button>
-              <button className="btn sm" onClick={onCopy}>
+              <button className="btn sm" onClick={copy}>
                 복사
               </button>
-              <button className="btn sm" style={{ color: 'var(--negative)' }} onClick={onDelete}>
+              <button className="btn sm" style={{ color: 'var(--negative)' }} onClick={remove}>
                 삭제
               </button>
             </div>

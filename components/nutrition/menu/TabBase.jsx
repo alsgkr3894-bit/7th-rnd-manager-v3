@@ -1,10 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
 import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import { ImportBaseModal } from '@/components/nutrition/menu/ImportBaseModal';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import {
   upsertMenuRef, deleteMenuRef,
   upsertRawValue, CRUST_TYPES, NUTRITION_FIELDS,
@@ -30,38 +31,54 @@ const GROUP_HEADER_STYLE = {
   userSelect: 'none',
 };
 
+const EMPTY_MAP = {};
+const noop = () => {};
+
+function asRecord(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : EMPTY_MAP;
+}
+
 function MenuGroupList({ menus, rawMap, menuMasters, selMenu, onSelect }) {
-  const masterByCode = Object.fromEntries((menuMasters || []).map(m => [m.menuCode, m]));
-  const groups = groupMenusOrdered(menus, masterByCode);
+  const safeMenus = asObjectArray(menus);
+  const safeRawMap = asRecord(rawMap);
+  const masterByCode = Object.fromEntries(asObjectArray(menuMasters).map(m => [m.menuCode, m]));
+  const groups = groupMenusOrdered(safeMenus, masterByCode);
   const multiGroup = groups.length > 1;
+  const selectMenu = typeof onSelect === 'function' ? onSelect : noop;
 
   return (
     <>
       {groups.map(({ group, items }) => (
         <div key={group}>
           {multiGroup && <div style={GROUP_HEADER_STYLE}>{group}</div>}
-          {items.map(m => (
-            <div key={m.id} onClick={() => onSelect(m)}
-              style={{
-                padding: '9px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                background: selMenu?.id === m.id ? 'var(--accent-soft)' : 'transparent',
-                borderLeft: selMenu?.id === m.id ? '3px solid var(--accent)' : '3px solid transparent',
-              }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: selMenu?.id === m.id ? 700 : 400, color: selMenu?.id === m.id ? 'var(--accent-text)' : 'var(--text-1)' }}>{m.menuName}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
-                  {m.category}
-                  {m.menuCode && <span style={{ marginLeft: 4, fontFamily: 'monospace', color: 'var(--accent-text)', opacity: 0.7 }}>{m.menuCode}</span>}
+          {items.map((m, index) => {
+            const menuCode = asDisplayText(m.menuCode);
+            const menuName = asDisplayText(m.menuName, menuCode || `메뉴 ${index + 1}`);
+            const category = asDisplayText(m.category, '기타');
+            const selected = selMenu?.id === m.id || (menuCode && selMenu?.menuCode === menuCode);
+            return (
+              <div key={m.id || menuCode || `${group}-${index}`} onClick={() => selectMenu(m)}
+                style={{
+                  padding: '9px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  background: selected ? 'var(--accent-soft)' : 'transparent',
+                  borderLeft: selected ? '3px solid var(--accent)' : '3px solid transparent',
+                }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: selected ? 700 : 400, color: selected ? 'var(--accent-text)' : 'var(--text-1)' }}>{menuName}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
+                    {category}
+                    {menuCode && <span style={{ marginLeft: 4, fontFamily: 'monospace', color: 'var(--accent-text)', opacity: 0.7 }}>{menuCode}</span>}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 2 }}>
+                  {CRUST_TYPES.map(ct => {
+                    const done = !!safeRawMap[`${menuCode}__${ct}`]?.kcal;
+                    return <span key={ct} style={{ width: 6, height: 6, borderRadius: '50%', background: done ? 'var(--accent)' : 'var(--border)' }} />;
+                  })}
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 2 }}>
-                {CRUST_TYPES.map(ct => {
-                  const done = !!rawMap[`${m.menuCode}__${ct}`]?.kcal;
-                  return <span key={ct} style={{ width: 6, height: 6, borderRadius: '50%', background: done ? 'var(--accent)' : 'var(--border)' }} />;
-                })}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ))}
     </>
@@ -74,6 +91,14 @@ const MENU_CATS = [
 ];
 
 export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
+  const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
+  const safeMenuMasters = useMemo(() => asObjectArray(menuMasters), [menuMasters]);
+  const safeRawMap = asRecord(rawMap);
+  const refresh = typeof onRefresh === 'function' ? onRefresh : noop;
+  const masterByCode = useMemo(
+    () => Object.fromEntries(safeMenuMasters.map(m => [m.menuCode, m])),
+    [safeMenuMasters]
+  );
   const [selMenu,     setSelMenu]     = useState(null);
   const [selCrust,    setSelCrust]    = useState(CRUST_TYPES[0]);
   const [form,        setForm]        = useState({});
@@ -85,7 +110,8 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
   const [importOpen,     setImportOpen]     = useState(false);
 
   const key      = selMenu ? `${selMenu.menuCode}__${selCrust}` : null;
-  const existing = key ? rawMap[key] : null;
+  const existing = key ? safeRawMap[key] : null;
+  const selectedMenuName = asDisplayText(selMenu?.menuName, '선택한 메뉴');
 
   useEffect(() => {
     if (existing) setForm({ ...existing });
@@ -130,7 +156,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
     if (!autoCalcPreview || !selMenu) return;
     setSaving(true);
     try {
-      const existing = rawMap[`${selMenu.menuCode}__${selCrust}`];
+      const existing = safeRawMap[`${selMenu.menuCode}__${selCrust}`];
       // 100g 기준 영양값 + 레시피 총중량을 중량(weight)에 자동 채움
       const applied = { ...autoCalcPreview.values, weight: autoCalcPreview.totalGrams };
       await upsertRawValue({
@@ -144,7 +170,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
       setForm(f => ({ ...f, ...applied }));
       setAutoCalcPreview(null);
       showToast('자동 계산값이 적용됐어요 (100g 기준)', 'ok');
-      onRefresh();
+      refresh();
     } catch {
       showToast('저장 실패', 'error');
     }
@@ -163,7 +189,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
         ...form,
       });
       showToast('저장 완료', 'ok');
-      onRefresh();
+      refresh();
     } catch { showToast('저장 실패', 'error'); }
     setSaving(false);
   };
@@ -175,14 +201,14 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
     showToast('메뉴 추가 완료', 'ok');
     setAddMenu(false);
     setNewMenuForm({ menuCode: '', menuName: '', category: '피자', displayOrder: '' });
-    onRefresh();
+    refresh();
   };
 
   const handleDeleteMenu = async (menu) => {
     await deleteMenuRef(menu.id, menu.menuCode);
     if (selMenu?.id === menu.id) setSelMenu(null);
-    showToast(`'${menu.menuName}' 삭제`, 'ok');
-    onRefresh();
+    showToast(`'${asDisplayText(menu.menuName, '메뉴')}' 삭제`, 'ok');
+    refresh();
   };
 
   return (
@@ -202,11 +228,11 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
                 await clearAllBaseData();
                 setSelMenu(null);
                 showToast('전체 삭제 완료', 'ok');
-                onRefresh();
+                refresh();
               }}>전체삭제</button>
           </div>
         </div>
-        {menus.length === 0 ? (
+        {safeMenus.length === 0 ? (
           <div className="empty-state" style={{ padding: '24px 12px' }}>
             <div className="empty-icon-wrap"><Icon.doc style={{ width: 28, height: 28 }}/></div>
             <div style={{ fontWeight: 700, fontSize: 13 }}>메뉴가 없어요</div>
@@ -214,7 +240,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
           </div>
         ) : (
           <div style={{ overflowY: 'auto', flex: 1 }}>
-            <MenuGroupList menus={menus} rawMap={rawMap} menuMasters={menuMasters} selMenu={selMenu} onSelect={setSelMenu} />
+            <MenuGroupList menus={safeMenus} rawMap={safeRawMap} menuMasters={safeMenuMasters} selMenu={selMenu} onSelect={setSelMenu} />
           </div>
         )}
       </div>
@@ -232,7 +258,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
           <div className="card" style={{ padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 700 }}>{selMenu.menuName}</div>
+                <div style={{ fontSize: 16, fontWeight: 700 }}>{selectedMenuName}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>영양성분 수치 입력 (업체 분석값)</div>
               </div>
               <button className="btn sm ghost" style={{ color: 'var(--danger)' }} onClick={() => handleDeleteMenu(selMenu)}>
@@ -242,7 +268,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
 
             <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
               {CRUST_TYPES.map(ct => {
-                const done = !!rawMap[`${selMenu.menuCode}__${ct}`]?.kcal;
+                const done = !!safeRawMap[`${selMenu.menuCode}__${ct}`]?.kcal;
                 return (
                   <button key={ct} onClick={() => setSelCrust(ct)}
                     style={{
@@ -262,7 +288,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
 
             <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8, padding: '6px 10px', background: 'var(--surface-2)', borderRadius: 6, lineHeight: 1.5 }}>
               ※ 영양성분 수치는 <strong>100g 기준</strong>으로 입력하세요.
-              {selMenu && resolveNutritionGroup(selMenu, Object.fromEntries((menuMasters || []).map(m => [m.menuCode, m]))) === '피자'
+              {selMenu && resolveNutritionGroup(selMenu, masterByCode) === '피자'
                 && <> · <strong>중량</strong>은 이 크러스트의 <strong>한판 총중량(g)</strong>을 입력하면 하프앤하프·세트·조각 계산에 사용됩니다.</>}
             </div>
 
@@ -280,7 +306,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
                 {autoCalcBusy ? '계산 중…' : '레시피 기반 자동계산'}
               </button>
               <button className="btn primary" onClick={handleSave} disabled={saving}>
-                {saving ? '저장 중…' : `${selMenu.menuName} ${selCrust} 저장`}
+                {saving ? '저장 중…' : `${selectedMenuName} ${selCrust} 저장`}
               </button>
             </div>
           </div>
@@ -297,8 +323,8 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
           padding="24px 28px"
         >
           <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5 }}>
-            <strong style={{ color: 'var(--text-1)' }}>{selMenu?.menuName}</strong> 레시피 재료 기반 <strong>100g 기준</strong> 영양성분이에요.<br />
-            <span style={{ fontSize: 12 }}>적용하면 <strong>{selCrust}</strong> 크러스트에 아래 값 + 중량 <strong>{autoCalcPreview.totalGrams}g</strong>이 입력됩니다.</span>
+            <strong style={{ color: 'var(--text-1)' }}>{selectedMenuName}</strong> 레시피 재료 기반 <strong>100g 기준</strong> 영양성분이에요.<br />
+            <span style={{ fontSize: 12 }}>적용하면 <strong>{selCrust}</strong> 크러스트에 아래 값 + 중량 <strong>{asDisplayText(autoCalcPreview.totalGrams, '0')}g</strong>이 입력됩니다.</span>
           </div>
           {autoCalcPreview.matched < autoCalcPreview.total && (
             <div style={{ marginBottom: 12, fontSize: 12, padding: '8px 10px', borderRadius: 8, background: 'var(--warn-soft, #fff4e5)', color: 'var(--warn-text, #92600a)' }}>
@@ -337,10 +363,10 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
       {importOpen && (
         <ImportBaseModal
           menuMasters={menuMasters}
-          menus={menus}
-          rawMap={rawMap}
+          menus={safeMenus}
+          rawMap={safeRawMap}
           onClose={() => setImportOpen(false)}
-          onRefresh={onRefresh}
+          onRefresh={refresh}
         />
       )}
 
@@ -350,12 +376,12 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
               <div>
                 <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>메뉴코드 <span style={{ color: 'var(--text-4)' }}>(선택 시 메뉴명 자동 입력)</span></label>
                 <MenuCodePicker
-                  menuMasters={menuMasters}
+                  menuMasters={safeMenuMasters}
                   value={newMenuForm.menuCode}
                   onChange={(code, meta) => setNewMenuForm(f => ({
                     ...f,
                     menuCode: code,
-                    menuName: code ? (menuMasters.find(m => m.menuCode === code)?.menuName ?? f.menuName) : f.menuName,
+                    menuName: code ? (safeMenuMasters.find(m => m.menuCode === code)?.menuName ?? f.menuName) : f.menuName,
                     category: meta?.category || f.category,
                   }))}
                 />

@@ -4,6 +4,7 @@ import { SearchBox } from '@/components/ui/SearchBox';
 import { SALES_RULES } from '@/lib/sales';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { UserExcludedSection } from './UserExcludedSection';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
  * SettingsExcludeCard — 품목 제외 목록 (정책 표시)
@@ -16,17 +17,18 @@ export function SettingsExcludeCard() {
   // 기본 제외 목록은 7번가(main) 전용. 다른 브랜드는 빈 목록(DB 사용자 제외만).
   const [rules, setRules] = useState(SALES_RULES);
   useEffect(() => { setRules(getActiveBrandId() === 'main' ? SALES_RULES : []); }, []);
+  const safeRules = useMemo(() => asObjectArray(rules), [rules]);
 
   const excluded = useMemo(() => {
-    return rules.filter(r => r.category === '품목제외');
-  }, [rules]);
+    return safeRules.filter(r => asDisplayText(r.category) === '품목제외');
+  }, [safeRules]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return excluded;
     return excluded.filter(r => {
-      const pat = String(r.pattern || '').toLowerCase();
-      const name = String(r.name || '').toLowerCase();
+      const pat = asDisplayText(r.pattern).toLowerCase();
+      const name = asDisplayText(r.name).toLowerCase();
       return pat.includes(q) || name.includes(q);
     });
   }, [excluded, query]);
@@ -58,21 +60,30 @@ export function SettingsExcludeCard() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(r => (
-                <tr key={r.ruleId}>
-                  <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{r.ruleId}</td>
-                  <td className="cell-name"><div className="menu-name">{String(r.pattern)}</div></td>
-                  <td style={{color:'var(--text-2)', fontSize:13}}>{r.name}</td>
+              {filtered.map((r, index) => {
+                const key = asDisplayText(r.ruleId, `excluded-rule-${index}`);
+                const ruleId = asDisplayText(r.ruleId, '-');
+                const pattern = asDisplayText(r.pattern, '-');
+                const name = asDisplayText(r.name, '-');
+                const matchType = asDisplayText(r.matchType);
+                const isExact = matchType === 'exact';
+
+                return (
+                <tr key={key}>
+                  <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{ruleId}</td>
+                  <td className="cell-name"><div className="menu-name">{pattern}</div></td>
+                  <td style={{color:'var(--text-2)', fontSize:13}}>{name}</td>
                   <td>
                     <span className="chip" style={{
-                      background: r.matchType === 'exact' ? 'var(--surface-2)' : 'var(--accent-soft)',
-                      color: r.matchType === 'exact' ? 'var(--text-2)' : 'var(--accent-text)',
+                      background: isExact ? 'var(--surface-2)' : 'var(--accent-soft)',
+                      color: isExact ? 'var(--text-2)' : 'var(--accent-text)',
                     }}>
-                      {r.matchType === 'exact' ? '정확' : '정규식'}
+                      {isExact ? '정확' : '정규식'}
                     </span>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

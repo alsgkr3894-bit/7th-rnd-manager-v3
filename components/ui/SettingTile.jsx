@@ -1,4 +1,5 @@
 'use client';
+import { asDisplayText } from '@/lib/ui/prop-guards';
 
 /**
  * SettingTile — 설정 화면의 정보 표시 카드/타일.
@@ -23,6 +24,9 @@ export function SettingTile({
   variant = 'card',
 }) {
   const isTile = variant === 'tile';
+  const safeLabel = asDisplayText(label);
+  const safeValue = asDisplayText(value, '—');
+  const safeSub = asDisplayText(sub);
 
   const wrapStyle = isTile
     ? {
@@ -42,9 +46,9 @@ export function SettingTile({
 
   return (
     <div className={isTile ? '' : 'card'} style={wrapStyle}>
-      <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 6 }}>{label}</div>
-      <div className={num ? 'num' : ''} style={valueStyle}>{value}</div>
-      {sub && (
+      <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 6 }}>{safeLabel}</div>
+      <div className={num ? 'num' : ''} style={valueStyle}>{safeValue}</div>
+      {safeSub && (
         <div
           style={{
             fontSize: 11,
@@ -54,7 +58,7 @@ export function SettingTile({
             whiteSpace: 'nowrap',
           }}
         >
-          {sub}
+          {safeSub}
         </div>
       )}
     </div>

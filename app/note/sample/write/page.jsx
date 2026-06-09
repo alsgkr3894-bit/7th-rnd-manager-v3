@@ -27,11 +27,15 @@ export default function Page() {
       if (raw) {
         sessionStorage.removeItem(KEYS.SAMPLE_FROM_NOTE);
         const d = JSON.parse(raw);
+        if (!d || typeof d !== 'object' || Array.isArray(d)) return;
+        const menuName = typeof d.menuName === 'string' ? d.menuName : '';
+        const category = typeof d.category === 'string' ? d.category : '';
+        const tags = typeof d.tags === 'string' ? d.tags : '';
         setForm(f => ({
           ...f,
-          sampleNames: d.menuName ? [d.menuName] : f.sampleNames,
-          category:    d.category || f.category,
-          tags:        d.tags     || f.tags,
+          sampleNames: menuName ? [menuName] : f.sampleNames,
+          category:    category || f.category,
+          tags:        tags || f.tags,
         }));
       }
     } catch {}

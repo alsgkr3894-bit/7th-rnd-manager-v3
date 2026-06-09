@@ -1,6 +1,7 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
  * 미매칭 메뉴 처리 — 미매칭 이슈 트리아지 카드.
@@ -11,12 +12,13 @@ import { formatNumber } from '@/lib/format';
  * @param {{ issues: Array, router }} props — issues = 전체 이슈(open + resolved)
  */
 export function UnmatchedWidget({ issues = [], router }) {
-  if (!issues.length) return null;
+  const safeIssues = asObjectArray(issues);
+  if (!safeIssues.length) return null;
 
-  const open = issues.filter(i => i.status === 'open');
-  const resolvedCount = issues.length - open.length;
-  const rate = issues.length > 0 ? Math.round((resolvedCount / issues.length) * 100) : 100;
-  const go = () => router.push('/menu-sales/unmatched');
+  const open = safeIssues.filter(i => i.status === 'open');
+  const resolvedCount = safeIssues.length - open.length;
+  const rate = safeIssues.length > 0 ? Math.round((resolvedCount / safeIssues.length) * 100) : 100;
+  const go = () => router?.push?.('/menu-sales/unmatched');
 
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
@@ -36,14 +38,19 @@ export function UnmatchedWidget({ issues = [], router }) {
       </div>
 
       <div>
-        {open.slice(0, 4).map(i => (
-          <button key={i.id} className="unmatch-row" onClick={go} style={{ width: '100%', border: 0, cursor: 'pointer' }}>
-            <span className="um-raw">{i.representativeRawMenuName || i.normalizedMenuName || '(미상)'}</span>
+        {open.slice(0, 4).map((i, index) => {
+          const quantity = Number(i.totalQuantity);
+          const rawName = asDisplayText(i.representativeRawMenuName || i.normalizedMenuName, '(미상)');
+          const suggestedName = asDisplayText(i.normalizedMenuName, '확인 필요');
+          return (
+          <button key={i.id ?? index} className="unmatch-row" onClick={go} style={{ width: '100%', border: 0, cursor: 'pointer' }}>
+            <span className="um-raw">{rawName}</span>
             <Icon.chevRight className="um-arrow" style={{ width: 13, height: 13 }} />
-            <span className="um-sug">추정 <b>{i.normalizedMenuName || '확인 필요'}</b></span>
-            {i.totalQuantity > 0 && <span className="um-tag">{formatNumber(i.totalQuantity)}개</span>}
+            <span className="um-sug">추정 <b>{suggestedName}</b></span>
+            {quantity > 0 && <span className="um-tag">{formatNumber(quantity)}개</span>}
           </button>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mini-foot">
@@ -52,7 +59,7 @@ export function UnmatchedWidget({ issues = [], router }) {
           <b style={{ color: 'var(--positive)' }}>{rate}%</b>
         </div>
         <div className="mini-bar"><div style={{ width: `${rate}%`, background: 'var(--positive)' }} /></div>
-        <div className="mf-sub">전체 {issues.length}건 중 {resolvedCount}건 처리 · {open.length}건 매칭 필요</div>
+        <div className="mf-sub">전체 {safeIssues.length}건 중 {resolvedCount}건 처리 · {open.length}건 매칭 필요</div>
       </div>
 
       <button className="btn primary" style={{ width: '100%', marginTop: 14 }} onClick={go}>지금 매칭하기</button>

@@ -1,6 +1,26 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { formatNumber } from '@/lib/format';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+
+function toFiniteNumber(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function compareValues(a, b, dir) {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+
+  if (typeof a === 'number' || typeof b === 'number') {
+    const na = toFiniteNumber(a, 0);
+    const nb = toFiniteNumber(b, 0);
+    return na > nb ? dir : na < nb ? -dir : 0;
+  }
+
+  return asDisplayText(a).localeCompare(asDisplayText(b), 'ko') * dir;
+}
 
 /**
  * CompareTable — 메뉴별 상세 비교 테이블 (정렬 가능 + 신규/단종 chip)
@@ -10,18 +30,15 @@ import { formatNumber } from '@/lib/format';
 export function CompareTable({ rows }) {
   const [sortKey, setSortKey] = useState('a');
   const [sortDir, setSortDir] = useState('desc');
+  const safeRows = useMemo(() => asObjectArray(rows), [rows]);
 
   const sorted = useMemo(() => {
     const dir = sortDir === 'asc' ? 1 : -1;
-    return [...rows].sort((a, b) => {
+    return [...safeRows].sort((a, b) => {
       const va = a[sortKey], vb = b[sortKey];
-      if (va == null && vb == null) return 0;
-      if (va == null) return 1;
-      if (vb == null) return -1;
-      if (typeof va === 'string') return va.localeCompare(vb, 'ko') * dir;
-      return va > vb ? dir : va < vb ? -dir : 0;
+      return compareValues(va, vb, dir);
     });
-  }, [rows, sortKey, sortDir]);
+  }, [safeRows, sortKey, sortDir]);
 
   function toggleSort(key) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -53,7 +70,7 @@ export function CompareTable({ rows }) {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((r, i) => <Row key={r.name} r={r} rank={i + 1}/>)}
+              {sorted.map((r, i) => <Row key={`${asDisplayText(r.name, 'menu')}-${i}`} r={r} rank={i + 1}/>)}
             </tbody>
           </table>
         </div>
@@ -64,9 +81,11 @@ export function CompareTable({ rows }) {
 
 function Th({ sortKey, active, dir, onClick, children, width, right }) {
   const isActive = active === sortKey;
+  const handleClick = typeof onClick === 'function' ? onClick : () => {};
+
   return (
     <th
-      onClick={() => onClick(sortKey)}
+      onClick={() => handleClick(sortKey)}
       className="sortable"
       style={{ width, textAlign: right ? 'right' : undefined, cursor: 'pointer', userSelect: 'none' }}
     >
@@ -79,31 +98,40 @@ function Th({ sortKey, active, dir, onClick, children, width, right }) {
 }
 
 function Row({ r, rank }) {
-  const isNew = r.bIsZero && !r.aIsZero;
-  const isDropped = r.aIsZero && !r.bIsZero;
+  const row = r && typeof r === 'object' ? r : {};
+  const name = asDisplayText(row.name, '-');
+  const category = asDisplayText(row.category, '-');
+  const a = toFiniteNumber(row.a, 0);
+  const b = toFiniteNumber(row.b, 0);
+  const diff = toFiniteNumber(row.diff, 0);
+  const pct = row.pct == null || !Number.isFinite(Number(row.pct)) ? null : Number(row.pct);
+  const aIsZero = Boolean(row.aIsZero);
+  const bIsZero = Boolean(row.bIsZero);
+  const isNew = bIsZero && !aIsZero;
+  const isDropped = aIsZero && !bIsZero;
 
   return (
     <tr>
       <td className="num" style={{color:'var(--text-2)', fontWeight:600}}>{rank}</td>
       <td className="cell-name">
-        <span className="menu-name">{r.name}</span>
+        <span className="menu-name">{name}</span>
         {isNew     && <span className="chip" style={{background:'var(--positive-soft)', color:'var(--positive)', marginLeft:6}}>신규</span>}
         {isDropped && <span className="chip" style={{background:'var(--negative-soft)', color:'var(--negative)', marginLeft:6}}>단종</span>}
       </td>
-      <td><span className="chip" style={{background:'var(--surface-2)', color:'var(--text-2)'}}>{r.category || '-'}</span></td>
-      <td className="num right">{r.a > 0 ? formatNumber(r.a) : '—'}{r.a > 0 && <span className="unit">개</span>}</td>
-      <td className="num right">{r.b > 0 ? formatNumber(r.b) : '—'}{r.b > 0 && <span className="unit">개</span>}</td>
-      <td className="num right" style={{color: r.diff >= 0 ? 'var(--positive)' : 'var(--negative)', fontWeight: 700}}>
-        {r.diff >= 0 ? '+' : ''}{formatNumber(r.diff)}
+      <td><span className="chip" style={{background:'var(--surface-2)', color:'var(--text-2)'}}>{category}</span></td>
+      <td className="num right">{a > 0 ? formatNumber(a) : '—'}{a > 0 && <span className="unit">개</span>}</td>
+      <td className="num right">{b > 0 ? formatNumber(b) : '—'}{b > 0 && <span className="unit">개</span>}</td>
+      <td className="num right" style={{color: diff >= 0 ? 'var(--positive)' : 'var(--negative)', fontWeight: 700}}>
+        {diff >= 0 ? '+' : ''}{formatNumber(diff)}
       </td>
       <td className="num right">
-        {r.pct == null ? (
+        {pct == null ? (
           <span className="chip" style={{background:'var(--positive-soft)', color:'var(--positive)'}}>신규</span>
-        ) : r.aIsZero ? (
+        ) : aIsZero ? (
           <span className="chip" style={{background:'var(--negative-soft)', color:'var(--negative)'}}>단종</span>
         ) : (
-          <span style={{color: r.pct >= 0 ? 'var(--positive)' : 'var(--negative)', fontWeight: 700}}>
-            {r.pct >= 0 ? '▲' : '▼'} {Math.abs(r.pct).toFixed(1)}%
+          <span style={{color: pct >= 0 ? 'var(--positive)' : 'var(--negative)', fontWeight: 700}}>
+            {pct >= 0 ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}%
           </span>
         )}
       </td>

@@ -3,14 +3,27 @@ import { useState, useEffect } from 'react';
 
 let _setToasts = null;
 let _toastSeq = 0;
+const EXIT_MS = 220;
+const DEFAULT_DURATION_MS = 2800;
+
+function updateToasts(updater) {
+  if (!_setToasts) return false;
+  _setToasts(updater);
+  return true;
+}
+
+function normalizeToastDuration(duration, fallback = DEFAULT_DURATION_MS) {
+  const n = Number(duration);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
 
 export function ToastContainer() {
   const [toasts, setToasts] = useState([]);
   useEffect(() => { _setToasts = setToasts; return () => { _setToasts = null; }; }, []);
 
   function dismiss(id) {
-    _setToasts(t => t.map(x => x.id === id ? { ...x, exiting: true } : x));
-    setTimeout(() => _setToasts(t => t.filter(x => x.id !== id)), 220);
+    updateToasts(t => t.map(x => x.id === id ? { ...x, exiting: true } : x));
+    setTimeout(() => updateToasts(t => t.filter(x => x.id !== id)), EXIT_MS);
   }
 
   const icons = {
@@ -28,7 +41,7 @@ export function ToastContainer() {
           {t.action && (
             <button
               className="toast-action"
-              onClick={() => { dismiss(t.id); t.action.onClick(); }}
+              onClick={() => { dismiss(t.id); t.action?.onClick?.(); }}
             >
               {t.action.label}
             </button>
@@ -44,17 +57,16 @@ export function ToastContainer() {
   );
 }
 
-export function showToast(msg, type = 'ok', duration = 2800, action = null) {
-  if (!_setToasts) return;
+export function showToast(msg, type = 'ok', duration = DEFAULT_DURATION_MS, action = null) {
   const id = ++_toastSeq;
   const resolvedType = type === 'err' ? 'error' : type;
   // 최대 3개까지만 쌓임 — 초과 시 가장 오래된 것부터 제거
-  _setToasts(t => {
+  if (!updateToasts(t => {
     const next = [...t, { id, msg, type: resolvedType, action }];
     return next.length > 3 ? next.slice(next.length - 3) : next;
-  });
+  })) return;
   setTimeout(() => {
-    _setToasts(t => t.map(x => x.id === id ? { ...x, exiting: true } : x));
-    setTimeout(() => _setToasts(t => t.filter(x => x.id !== id)), 220);
-  }, duration);
+    updateToasts(t => t.map(x => x.id === id ? { ...x, exiting: true } : x));
+    setTimeout(() => updateToasts(t => t.filter(x => x.id !== id)), EXIT_MS);
+  }, normalizeToastDuration(duration));
 }

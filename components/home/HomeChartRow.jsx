@@ -4,12 +4,33 @@ import { formatNumber, formatPercent } from '@/lib/format';
 import { useCountUp } from '@/hooks/useCountUp';
 import { AreaChart } from '@/components/charts/AreaChart';
 import { Donut } from '@/components/charts/Donut';
+import { normalizeChartColor, normalizeDonutItems } from '@/lib/ui/chart-data';
+import { asDisplayText } from '@/lib/ui/prop-guards';
 import { EmptyState, SkeletonChart } from './HomeWidgets';
 
 export function HomeChartRow({
   trend, donut, hoveredCat, setHoveredCat,
   chartTab, setChartTab, chartKey, salesKpi, router, isTrendEmpty,
 }) {
+  const donutItems = normalizeDonutItems(donut?.items);
+  const safeDonutItems = donutItems.map((item, index) => ({
+    ...item,
+    name: asDisplayText(item.name, `카테고리 ${index + 1}`),
+    color: normalizeChartColor(item.color),
+  }));
+  const rawDonutTotal = Number(donut?.total);
+  const safeDonut = donut
+    ? {
+        ...donut,
+        items: safeDonutItems,
+        total: Number.isFinite(rawDonutTotal)
+          ? Math.max(0, rawDonutTotal)
+          : safeDonutItems.reduce((sum, item) => sum + item.value, 0),
+      }
+    : null;
+  const salesYear = asDisplayText(salesKpi?.year);
+  const salesMonth = asDisplayText(salesKpi?.month);
+
   return (
     <div className="mid-row motion-stagger">
       <div className="card chart-card">
@@ -21,8 +42,8 @@ export function HomeChartRow({
             </div>
           </div>
           <div className="chart-tabs">
-            <button className={chartTab==='month'?'active':''} onClick={()=>setChartTab('month')}>월별</button>
-            <button className={chartTab==='year'?'active':''} onClick={()=>setChartTab('year')}>년별</button>
+            <button className={chartTab==='month'?'active':''} onClick={()=>setChartTab?.('month')}>월별</button>
+            <button className={chartTab==='year'?'active':''} onClick={()=>setChartTab?.('year')}>년별</button>
           </div>
         </div>
         {isTrendEmpty ? (
@@ -31,7 +52,7 @@ export function HomeChartRow({
             title="판매량 데이터가 없습니다"
             desc="메뉴 판매량을 업로드하면 추이가 표시됩니다"
             action="판매량 업로드"
-            onAction={() => router.push('/menu-sales/upload')}
+            onAction={() => router?.push?.('/menu-sales/upload')}
           />
         ) : trend ? (
           <>
@@ -64,29 +85,29 @@ export function HomeChartRow({
           <div>
             <div className="card-title">카테고리별 비중</div>
             <div className="card-sub">
-              {salesKpi?.year && salesKpi?.month ? `${salesKpi.year}년 ${salesKpi.month}월 기준` : '데이터 없음'}
+              {salesYear && salesMonth ? `${salesYear}년 ${salesMonth}월 기준` : '데이터 없음'}
             </div>
           </div>
-          <button className="link" onClick={()=>router.push('/menu-sales/rank')}>자세히</button>
+          <button className="link" onClick={()=>router?.push?.('/menu-sales/rank')}>자세히</button>
         </div>
-        {donut?.total === 0 ? (
+        {safeDonut?.total === 0 ? (
           <EmptyState
             icon={<Icon.pizza style={{width:32,height:32}}/>}
             title="데이터 없음"
             desc="판매량을 업로드하면 카테고리 비중이 표시됩니다"
           />
-        ) : donut ? (
+        ) : safeDonut ? (
           <>
-            <DonutSection donut={donut} hoveredCat={hoveredCat} setHoveredCat={setHoveredCat}/>
-            {donut.items.length > 0 && (
+            <DonutSection donut={safeDonut} hoveredCat={hoveredCat} setHoveredCat={setHoveredCat}/>
+            {safeDonut.items.length > 0 && (
               <div className="ring-foot">
                 <div className="rf">
                   <div className="l">최다 카테고리</div>
-                  <div className="v">{donut.items[0].name} {formatPercent((donut.items[0].value / donut.total) * 100)}</div>
+                  <div className="v">{safeDonut.items[0].name} {formatPercent((safeDonut.items[0].value / safeDonut.total) * 100)}</div>
                 </div>
                 <div className="rf">
                   <div className="l">카테고리</div>
-                  <div className="v">{donut.items.length}개</div>
+                  <div className="v">{safeDonut.items.length}개</div>
                 </div>
               </div>
             )}
@@ -101,6 +122,8 @@ export function HomeChartRow({
 
 function DonutSection({ donut, hoveredCat, setHoveredCat }) {
   const center = useCountUp(donut?.total ?? 0, { duration: 1400, delay: 250 });
+  const safeHoveredCat = Number.isInteger(hoveredCat) ? hoveredCat : null;
+
   return (
     <div className="ring-wrap">
       <div className="ring">
@@ -112,10 +135,10 @@ function DonutSection({ donut, hoveredCat, setHoveredCat }) {
       </div>
       <div className="ring-rows">
         {donut.items.map((c,i) => (
-          <div key={c.name} className="ring-row" style={{
-            opacity: hoveredCat !== null && hoveredCat !== i ? 0.4 : 1,
+          <div key={`${c.name}-${i}`} className="ring-row" style={{
+            opacity: safeHoveredCat !== null && safeHoveredCat !== i ? 0.4 : 1,
             transition: 'opacity 200ms ease',
-            fontWeight: hoveredCat === i ? 800 : undefined,
+            fontWeight: safeHoveredCat === i ? 800 : undefined,
           }}>
             <div className="swatch" style={{background:c.color}}></div>
             <div className="name">{c.name}</div>

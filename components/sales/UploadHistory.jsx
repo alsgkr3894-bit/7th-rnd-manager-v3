@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Icon } from '@/components/icons';
 import { formatNumber, formatRelative } from '@/lib/format';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
  * UploadHistory — 업로드 이력 테이블 (개별 삭제 지원)
@@ -12,19 +13,22 @@ import { formatNumber, formatRelative } from '@/lib/format';
 export function UploadHistory({ files, onDelete }) {
   const [confirmId, setConfirmId] = useState(null);
   const [busyId, setBusyId] = useState(null);
+  const safeFiles = asObjectArray(files);
+  const handleDeleteFile = typeof onDelete === 'function' ? onDelete : null;
 
-  async function handleDelete(file) {
-    if (!onDelete) return;
-    setBusyId(file.id);
+  async function handleDelete(file, rowKey) {
+    if (!handleDeleteFile) return;
+    const fileId = file?.id;
+    setBusyId(rowKey);
     try {
-      await onDelete(file.id, file.year, file.month);
+      await handleDeleteFile(fileId, file.year, file.month);
     } finally {
       setBusyId(null);
       setConfirmId(null);
     }
   }
 
-  if (!files || files.length === 0) {
+  if (safeFiles.length === 0) {
     return (
       <div className="card" style={{marginTop:8}}>
         <div className="card-header" style={{borderBottom:'none'}}>
@@ -61,52 +65,65 @@ export function UploadHistory({ files, onDelete }) {
             </tr>
           </thead>
           <tbody>
-            {files.map(f => (
-              <tr key={f.id}>
-                <td>
-                  <span className="period-pill num">
-                    {f.year}.{String(f.month).padStart(2, '0')}
-                  </span>
-                </td>
-                <td className="cell-name">
-                  <div className="menu-name">{f.fileName || '(이름 없음)'}</div>
-                  <div style={{fontSize:12, color:'var(--text-2)', marginTop:4, fontWeight:500}}>
-                    업로드 {f.uploadedAt ? formatRelative(f.uploadedAt) : '-'}
-                  </div>
-                </td>
-                <td className="num right">
-                  {formatNumber(f.totalRows ?? 0)}<span className="unit">건</span>
-                </td>
-                <td style={{textAlign:'right'}}>
-                  {confirmId === f.id ? (
-                    <div style={{display:'inline-flex', gap:6, alignItems:'center'}}>
-                      <span style={{fontSize:12, color:'var(--negative)'}}>삭제할까요?</span>
-                      <button
-                        className="btn sm"
-                        onClick={() => setConfirmId(null)}
-                        disabled={busyId === f.id}
-                      >취소</button>
-                      <button
-                        className="btn sm"
-                        style={{background:'var(--negative)', color:'#fff', borderColor:'var(--negative)'}}
-                        onClick={() => handleDelete(f)}
-                        disabled={busyId === f.id}
-                      >
-                        {busyId === f.id ? '삭제 중...' : '삭제'}
-                      </button>
+            {safeFiles.map((f, index) => {
+              const rowKey = asDisplayText(f.id, `file-${index}`);
+              const canDelete = handleDeleteFile && f.id != null;
+              const year = asDisplayText(f.year, '-');
+              const month = asDisplayText(f.month);
+              const monthLabel = month ? month.padStart(2, '0') : '--';
+              const fileName = asDisplayText(f.fileName, '(이름 없음)');
+              const uploadedAt = asDisplayText(f.uploadedAt);
+              const isBusy = busyId === rowKey;
+              const isConfirming = confirmId === rowKey;
+
+              return (
+                <tr key={rowKey}>
+                  <td>
+                    <span className="period-pill num">
+                      {year}.{monthLabel}
+                    </span>
+                  </td>
+                  <td className="cell-name">
+                    <div className="menu-name">{fileName}</div>
+                    <div style={{fontSize:12, color:'var(--text-2)', marginTop:4, fontWeight:500}}>
+                      업로드 {uploadedAt ? formatRelative(uploadedAt) : '-'}
                     </div>
-                  ) : (
-                    <button
-                      className="btn sm"
-                      onClick={() => setConfirmId(f.id)}
-                      style={{color:'var(--negative)'}}
-                    >
-                      삭제
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="num right">
+                    {formatNumber(f.totalRows ?? 0)}<span className="unit">건</span>
+                  </td>
+                  <td style={{textAlign:'right'}}>
+                    {isConfirming ? (
+                      <div style={{display:'inline-flex', gap:6, alignItems:'center'}}>
+                        <span style={{fontSize:12, color:'var(--negative)'}}>삭제할까요?</span>
+                        <button
+                          className="btn sm"
+                          onClick={() => setConfirmId(null)}
+                          disabled={isBusy}
+                        >취소</button>
+                        <button
+                          className="btn sm"
+                          style={{background:'var(--negative)', color:'#fff', borderColor:'var(--negative)'}}
+                          onClick={() => handleDelete(f, rowKey)}
+                          disabled={isBusy || !canDelete}
+                        >
+                          {isBusy ? '삭제 중...' : '삭제'}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        className="btn sm"
+                        onClick={() => setConfirmId(rowKey)}
+                        style={{color:'var(--negative)'}}
+                        disabled={!canDelete}
+                      >
+                        삭제
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

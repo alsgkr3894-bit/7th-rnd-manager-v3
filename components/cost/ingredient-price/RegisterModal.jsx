@@ -6,6 +6,7 @@ import { SEED_MAIN_CATEGORIES, sortMainCategories } from '@/lib/ingredient';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { getAllSuppliers } from '@/lib/cost/suppliers/store';
 import { recordPriceChange } from '@/lib/cost/price-history';
+import { parseOptionalNonNegativeNumber } from '@/lib/parse';
 
 const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병', 'EA', 'BOX'];
 
@@ -47,12 +48,23 @@ export function RegisterModal({ row, onSave, onClose, extraCategories = [] }) {
   );
   const [suppliers,    setSuppliers]    = useState([]);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useKeyboardSave(() => { if (!saving) handleSubmit({ preventDefault() {} }); });
 
   // 공급업체 목록 로드
   useEffect(() => {
-    getAllSuppliers().then(setSuppliers).catch(() => {});
+    let ignore = false;
+
+    getAllSuppliers()
+      .then(rows => {
+        if (!ignore) setSuppliers(rows);
+      })
+      .catch(() => {});
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   function handleSupplierChange(e) {
@@ -68,15 +80,36 @@ export function RegisterModal({ row, onSave, onClose, extraCategories = [] }) {
     }
   }
 
+  function validateNumbers() {
+    const next = {};
+    const baseQty = parseOptionalNonNegativeNumber(baseQuantity);
+    const override = parseOptionalNonNegativeNumber(priceOverride);
+
+    if (!baseQty.ok) {
+      next.baseQuantity = '포장수량은 0 이상 숫자만 입력하세요';
+    }
+    if (!override.ok) {
+      next.priceOverride = '단가는 0 이상 숫자만 입력하세요';
+    }
+
+    return { errors: next, baseQty: baseQty.value, override: override.value };
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
+    const validated = validateNumbers();
+    if (Object.keys(validated.errors).length > 0) {
+      setErrors(validated.errors);
+      return;
+    }
+    setErrors({});
     setSaving(true);
     try {
-      const newPriceOverride = priceOverride ? Number(priceOverride) : null;
+      const newPriceOverride = validated.override;
       await onSave({
         ingredientName: ingredientName.trim() || row.productName,
         category:       category.trim(),
-        baseQuantity:   baseQuantity ? Number(baseQuantity) : null,
+        baseQuantity:   validated.baseQty,
         baseUnitType:   baseUnitType,
         taxType:        row.taxType || '과세',
         supplierId:     supplierId   || null,
@@ -153,7 +186,7 @@ export function RegisterModal({ row, onSave, onClose, extraCategories = [] }) {
 
           <FormField label="포장수량" hint="개당 단가 계산에 사용 (예: 1000 g, 20 ea)">
             <div style={{display:'flex', gap:8}}>
-              <input className="form-input" type="number" value={baseQuantity}
+              <input className="form-input" type="number" min="0" value={baseQuantity}
                 onChange={e => setBaseQuantity(e.target.value)}
                 placeholder="예) 1000" style={{flex:1}}/>
               <select className="form-input" value={baseUnitType}
@@ -161,6 +194,11 @@ export function RegisterModal({ row, onSave, onClose, extraCategories = [] }) {
                 {UNIT_TYPES.map(u => <option key={u} value={u}>{u}</option>)}
               </select>
             </div>
+            {errors.baseQuantity && (
+              <div style={{ fontSize: 12, color: 'var(--negative)', marginTop: 6 }}>
+                {errors.baseQuantity}
+              </div>
+            )}
           </FormField>
 
           <FormField label="공급업체" hint="선택 안 하면 빈칸으로 저장">
@@ -177,6 +215,11 @@ export function RegisterModal({ row, onSave, onClose, extraCategories = [] }) {
               value={priceOverride}
               onChange={e => setPriceOverride(e.target.value)}
               placeholder="예) 5000"/>
+            {errors.priceOverride && (
+              <div style={{ fontSize: 12, color: 'var(--negative)', marginTop: 6 }}>
+                {errors.priceOverride}
+              </div>
+            )}
           </FormField>
 
           <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:4}}>

@@ -1,4 +1,5 @@
 'use client';
+import { asDisplayText } from '@/lib/ui/prop-guards';
 
 /**
  * InlineConfirmButtons — 테이블 행 안에서 쓰는 작은 확인 UI.
@@ -12,6 +13,12 @@ export function InlineConfirmButtons({
   onConfirm,
   onCancel,
 }) {
+  const safeMessage = asDisplayText(message, '삭제할까요?');
+  const safeConfirmLabel = asDisplayText(confirmLabel, '삭제');
+  const safeCancelLabel = asDisplayText(cancelLabel, '취소');
+  const handleConfirm = typeof onConfirm === 'function' ? onConfirm : undefined;
+  const handleCancel = typeof onCancel === 'function' ? onCancel : undefined;
+
   return (
     <span style={{
       display: 'inline-flex',
@@ -21,13 +28,13 @@ export function InlineConfirmButtons({
       flexWrap: 'wrap',
     }}>
       <span style={{ fontSize: 11, color: 'var(--negative)', fontWeight: 700 }}>
-        {message}
+        {safeMessage}
       </span>
-      <button className="btn sm" onClick={onCancel} disabled={busy}>
-        {cancelLabel}
+      <button className="btn sm" onClick={handleCancel} disabled={busy}>
+        {safeCancelLabel}
       </button>
-      <button className="btn sm" onClick={onConfirm} disabled={busy} style={{ color: 'var(--negative)' }}>
-        {busy ? '처리 중…' : confirmLabel}
+      <button className="btn sm" onClick={handleConfirm} disabled={busy} style={{ color: 'var(--negative)' }}>
+        {busy ? '처리 중…' : safeConfirmLabel}
       </button>
     </span>
   );

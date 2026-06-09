@@ -7,12 +7,18 @@ import { Pagination } from '@/components/ui/Pagination';
 import { usePagination } from '@/hooks/usePagination';
 import { formatNumber } from '@/lib/format';
 import { sortByKey } from '@/lib/jette/utils';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 const PRODUCT_TYPE_ORDER = { exclusive: 0, generic: 1, 'generic-managed': 2 };
 const SHIPMENT_KEY_TRANSFORM = {
   productType: (v) => PRODUCT_TYPE_ORDER[v] ?? 9,
   isManaged:   (v) => (v ? 1 : 0),
 };
+
+function toFiniteNumber(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
 
 /**
  * ShipmentTable — 단일 파일 집계 테이블
@@ -25,27 +31,28 @@ export function ShipmentTable({ aggRows }) {
   const [managedOnly, setManagedOnly] = useState(false);
   const [sortKey, setSortKey] = useState('totalAmount');
   const [sortDir, setSortDir] = useState('desc');
+  const safeAggRows = useMemo(() => asObjectArray(aggRows), [aggRows]);
 
   const filtered = useMemo(() => {
-    let list = aggRows;
+    let list = safeAggRows;
     if (typeFilter !== 'all') list = list.filter(r => r.productType === typeFilter);
     if (managedOnly)          list = list.filter(r => r.isManaged);
     const q = search.trim().toLowerCase();
     if (q) list = list.filter(r =>
-      (r.productName || '').toLowerCase().includes(q)
-      || (r.productCode || '').toLowerCase().includes(q)
+      asDisplayText(r.productName).toLowerCase().includes(q)
+      || asDisplayText(r.productCode).toLowerCase().includes(q)
     );
     return sortByKey(list, sortKey, sortDir, SHIPMENT_KEY_TRANSFORM[sortKey] ?? null);
-  }, [aggRows, search, typeFilter, managedOnly, sortKey, sortDir]);
+  }, [safeAggRows, search, typeFilter, managedOnly, sortKey, sortDir]);
   const { page, goTo, totalPages, paged, total } = usePagination(filtered, 80);
 
   const counts = useMemo(() => ({
-    all:         aggRows.length,
-    exclusive:   aggRows.filter(r => r.productType === 'exclusive').length,
-    generic:     aggRows.filter(r => r.productType === 'generic').length,
-    'generic-managed': aggRows.filter(r => r.productType === 'generic-managed').length,
-    managed:     aggRows.filter(r => r.isManaged).length,
-  }), [aggRows]);
+    all:         safeAggRows.length,
+    exclusive:   safeAggRows.filter(r => r.productType === 'exclusive').length,
+    generic:     safeAggRows.filter(r => r.productType === 'generic').length,
+    'generic-managed': safeAggRows.filter(r => r.productType === 'generic-managed').length,
+    managed:     safeAggRows.filter(r => r.isManaged).length,
+  }), [safeAggRows]);
 
   function toggleSort(key) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -57,7 +64,7 @@ export function ShipmentTable({ aggRows }) {
       <div className="card-header">
         <div>
           <div className="card-title">출고량 집계</div>
-          <div className="card-sub">{formatNumber(filtered.length)} / {formatNumber(aggRows.length)}개 표시</div>
+          <div className="card-sub">{formatNumber(filtered.length)} / {formatNumber(safeAggRows.length)}개 표시</div>
         </div>
       </div>
 
@@ -95,7 +102,12 @@ export function ShipmentTable({ aggRows }) {
               </tr>
             </thead>
             <tbody>
-              {paged.map((row, i) => <Row key={`${row.productCode || row.productName}-${page}-${i}`} row={row}/>)}
+              {paged.map((row, i) => (
+                <Row
+                  key={`${asDisplayText(row.productCode || row.productName, 'product')}-${page}-${i}`}
+                  row={row}
+                />
+              ))}
             </tbody>
           </table>
           <Pagination page={page} totalPages={totalPages} onPage={goTo} total={total} pageSize={80} />
@@ -106,29 +118,40 @@ export function ShipmentTable({ aggRows }) {
 }
 
 function Row({ row }) {
+  const safeRow = row && typeof row === 'object' ? row : {};
+  const productCode = asDisplayText(safeRow.productCode, '-');
+  const productName = asDisplayText(safeRow.productName, '-');
+  const unit = asDisplayText(safeRow.unit, '-');
+  const temperature = asDisplayText(safeRow.temperature, '-');
+  const taxType = asDisplayText(safeRow.taxType, '-');
+  const totalQuantity = toFiniteNumber(safeRow.totalQuantity);
+  const priceWithTax = Number.isFinite(Number(safeRow.priceWithTax)) ? Number(safeRow.priceWithTax) : null;
+  const totalAmount = toFiniteNumber(safeRow.totalAmount);
+  const isManaged = Boolean(safeRow.isManaged);
+
   return (
     <tr>
-      <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{row.productCode || '-'}</td>
-      <td className="cell-name"><div className="menu-name">{row.productName}</div></td>
-      <td style={{color:'var(--text-2)', fontSize:13}}>{row.unit || '-'}</td>
-      <td style={{color:'var(--text-2)', fontSize:13}}>{row.temperature || '-'}</td>
-      <td style={{fontSize:12, color:'var(--text-3)'}}>{row.taxType || '-'}</td>
+      <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{productCode}</td>
+      <td className="cell-name"><div className="menu-name">{productName}</div></td>
+      <td style={{color:'var(--text-2)', fontSize:13}}>{unit}</td>
+      <td style={{color:'var(--text-2)', fontSize:13}}>{temperature}</td>
+      <td style={{fontSize:12, color:'var(--text-3)'}}>{taxType}</td>
       <td className="num right" style={{fontWeight:700}}>
-        {formatNumber(row.totalQuantity)}<span className="unit">개</span>
+        {formatNumber(totalQuantity)}<span className="unit">개</span>
       </td>
       <td className="num right">
-        {row.priceWithTax != null
-          ? `${formatNumber(row.priceWithTax)}원`
+        {priceWithTax != null
+          ? `${formatNumber(priceWithTax)}원`
           : <span className="chip" style={{background:'var(--warn-soft)', color:'var(--warn)', fontSize:11}}>단가 미연동</span>}
       </td>
       <td className="num right" style={{fontWeight:700}}>
-        {formatNumber(row.totalAmount)}<span className="unit">원</span>
+        {formatNumber(totalAmount)}<span className="unit">원</span>
       </td>
       <td>
-        <ProductTypeChip type={row.productType}/>
+        <ProductTypeChip type={safeRow.productType}/>
       </td>
       <td style={{textAlign:'center'}}>
-        {row.isManaged
+        {isManaged
           ? <span title="관리품목" style={{color:'var(--warn)', fontSize:14}}>★</span>
           : <span style={{color:'var(--text-4)', fontSize:12}}>—</span>}
       </td>
@@ -143,7 +166,8 @@ const PRODUCT_TYPE_META = {
 };
 
 function ProductTypeChip({ type }) {
-  const meta = PRODUCT_TYPE_META[type] || PRODUCT_TYPE_META.generic;
+  const safeType = asDisplayText(type);
+  const meta = PRODUCT_TYPE_META[safeType] || PRODUCT_TYPE_META.generic;
   return (
     <span className="chip" style={{background: meta.bg, color: meta.color}}>
       {meta.label}

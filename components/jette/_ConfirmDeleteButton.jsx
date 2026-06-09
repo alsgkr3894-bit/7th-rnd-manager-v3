@@ -10,8 +10,13 @@ import { useState } from 'react';
 export function ConfirmDeleteButton({ onDelete }) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+  const canDelete = typeof onDelete === 'function';
 
   async function handleConfirm() {
+    if (!canDelete) {
+      setConfirming(false);
+      return;
+    }
     setBusy(true);
     try { await onDelete(); }
     finally { setBusy(false); setConfirming(false); }
@@ -23,7 +28,7 @@ export function ConfirmDeleteButton({ onDelete }) {
         <button className="btn sm" disabled={busy} onClick={() => setConfirming(false)}>취소</button>
         <button
           className="btn sm"
-          disabled={busy}
+          disabled={busy || !canDelete}
           onClick={handleConfirm}
           style={{background:'var(--negative)', color:'#fff', borderColor:'var(--negative)'}}
         >

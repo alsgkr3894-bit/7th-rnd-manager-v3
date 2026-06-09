@@ -4,37 +4,56 @@ import { Icon } from '@/components/icons';
 import { NUTRITION_FIELDS, calcAllResults } from '@/lib/nutrition/values/store';
 import { downloadCsv } from '@/lib/download';
 import { resolveNutritionGroup, NUTRITION_GROUP_ORDER } from '@/lib/nutrition/menu-group';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 const GROUP_HEADER_STYLE = {
   fontWeight: 800, fontSize: 11, color: 'var(--text-4)',
   background: 'var(--surface-2)', letterSpacing: '0.05em',
   textTransform: 'uppercase',
 };
+const EMPTY_MAP = {};
+
+function asRecord(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : EMPTY_MAP;
+}
 
 export function TabResults({ menus, rawMap, edgeMap, compositions, toppings, menuMasters }) {
   const [filterMenu,    setFilterMenu]    = useState('전체');
   const [filterDerived, setFilterDerived] = useState('전체');
   const [missingOnly,   setMissingOnly]   = useState(false);
+  const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
+  const safeCompositions = useMemo(() => asObjectArray(compositions), [compositions]);
+  const safeToppings = useMemo(() => asObjectArray(toppings), [toppings]);
+  const safeMenuMasters = useMemo(() => asObjectArray(menuMasters), [menuMasters]);
+  const safeRawMap = asRecord(rawMap);
+  const safeEdgeMap = asRecord(edgeMap);
 
   const masterByCode = useMemo(
-    () => Object.fromEntries((menuMasters || []).map(m => [m.menuCode, m])),
-    [menuMasters]
+    () => Object.fromEntries(safeMenuMasters.map(m => [m.menuCode, m])),
+    [safeMenuMasters]
   );
 
   const toppingMap = useMemo(() => {
     const m = {};
-    toppings.forEach(t => { m[t.toppingCode] = t; });
+    safeToppings.forEach(t => { m[t.toppingCode] = t; });
     return m;
-  }, [toppings]);
+  }, [safeToppings]);
 
   const results = useMemo(
-    () => calcAllResults({ menus, rawMap, edgeMap, compositions, toppingMap, masterByCode }),
-    [menus, rawMap, edgeMap, compositions, toppingMap, masterByCode]
+    () => calcAllResults({
+      menus: safeMenus,
+      rawMap: safeRawMap,
+      edgeMap: safeEdgeMap,
+      compositions: safeCompositions,
+      toppingMap,
+      masterByCode,
+    }),
+    [safeMenus, safeRawMap, safeEdgeMap, safeCompositions, toppingMap, masterByCode]
   );
 
   const menuNames = useMemo(
-    () => ['전체', ...menus.map(m => m.menuName), ...compositions.map(c => c.menuName)],
-    [menus, compositions]
+    () => ['전체', ...safeMenus.map(m => m.menuName), ...safeCompositions.map(c => c.menuName)],
+    [safeMenus, safeCompositions]
   );
 
   const filtered = useMemo(() => {
@@ -47,7 +66,10 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, toppings, men
   }, [results, filterMenu, filterDerived, missingOnly]);
 
   // 그룹 헤더 삽입용 — menuCode 단위로 그룹을 추적
-  const allMenusForGroup = useMemo(() => [...menus, ...compositions], [menus, compositions]);
+  const allMenusForGroup = useMemo(
+    () => [...safeMenus, ...safeCompositions],
+    [safeMenus, safeCompositions]
+  );
   const menuGroupMap = useMemo(() => {
     const map = {};
     allMenusForGroup.forEach(m => {
@@ -91,7 +113,7 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, toppings, men
     <div style={{ marginTop: 20 }}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         <select className="input" style={{ width: 160 }} value={filterMenu} onChange={e => setFilterMenu(e.target.value)}>
-          {menuNames.map(n => <option key={n} value={n}>{n}</option>)}
+          {menuNames.map((n, index) => <option key={`${n || 'menu'}-${index}`} value={n}>{n}</option>)}
         </select>
         {['전체', '기본', '파생'].map(v => (
           <button key={v} className={'chip ' + (filterDerived === v ? 'active' : '')} onClick={() => setFilterDerived(v)}>{v}</button>
@@ -145,8 +167,11 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, toppings, men
                   }
                   const r = item.row;
                   const isEmpty = isMissingResult(r);
+                  const crustType = asDisplayText(r.crustType, '—');
+                  const isCheeseCrust = crustType.includes('치즈');
+                  const isGoldCrust = crustType.includes('골드');
                   return (
-                    <tr key={i} style={{ opacity: isEmpty ? 0.35 : 1 }}>
+                    <tr key={`${r.menuCode || r.menuName || 'row'}-${crustType}-${i}`} style={{ opacity: isEmpty ? 0.35 : 1 }}>
                       <td>
                         <div style={{ fontWeight: 600 }}>{r.menuName}</div>
                         {r.isDerived && <div style={{ fontSize: 11, color: 'var(--text-4)' }}>↳ {r.baseMenuName}</div>}
@@ -154,10 +179,10 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, toppings, men
                       <td>
                         <span style={{
                           fontSize: 12, padding: '2px 8px', borderRadius: 20,
-                          background: r.crustType.includes('치즈') ? '#fff4e0' : r.crustType.includes('골드') ? '#fff9e0' : 'var(--surface-2)',
-                          color: r.crustType.includes('치즈') ? '#b06800' : r.crustType.includes('골드') ? '#8a7000' : 'var(--text-2)',
+                          background: isCheeseCrust ? '#fff4e0' : isGoldCrust ? '#fff9e0' : 'var(--surface-2)',
+                          color: isCheeseCrust ? '#b06800' : isGoldCrust ? '#8a7000' : 'var(--text-2)',
                         }}>
-                          {r.crustType}
+                          {crustType}
                         </span>
                       </td>
                       {NUTRITION_FIELDS.map(f => (

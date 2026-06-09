@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SearchBox } from '@/components/ui/SearchBox';
@@ -40,8 +40,13 @@ export default function Page() {
   const [backupProgress, setBackupProgress] = useState(null);
   const [diagnostics, setDiagnostics] = useState(null);
   const [backupReminder, setBackupReminder] = useState(null);
+  const backupProgressTimerRef = useRef(null);
 
   useEffect(() => { setActiveBrand(getActiveBrand()); }, []);
+
+  useEffect(() => () => {
+    if (backupProgressTimerRef.current) clearTimeout(backupProgressTimerRef.current);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -152,7 +157,11 @@ export default function Page() {
       showToast('백업 중 오류가 발생했습니다.', 'err');
     } finally {
       setBusy(false);
-      setTimeout(() => setBackupProgress(null), 900);
+      if (backupProgressTimerRef.current) clearTimeout(backupProgressTimerRef.current);
+      backupProgressTimerRef.current = setTimeout(() => {
+        setBackupProgress(null);
+        backupProgressTimerRef.current = null;
+      }, 900);
     }
   }
 

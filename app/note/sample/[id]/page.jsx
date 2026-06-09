@@ -13,7 +13,8 @@ import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 export default function Page() {
   const router  = useRouter();
   const { id }  = useParams();
-  const sampleId = id ? Number(id) : null;
+  const parsedSampleId = Number(id);
+  const sampleId = Number.isSafeInteger(parsedSampleId) && parsedSampleId > 0 ? parsedSampleId : null;
 
   const [form,    setForm]    = useState(SAMPLE_INIT);
   const [saving,  setSaving]  = useState(false);
@@ -21,15 +22,18 @@ export default function Page() {
 
   useEffect(() => {
     if (!sampleId) { router.replace('/note/sample'); return; }
+    let alive = true;
     initDB()
       .then(() => getSampleById(sampleId))
       .then(rec => {
+        if (!alive) return;
         if (!rec) { showToast('샘플을 찾을 수 없어요', 'warn'); router.replace('/note/sample'); return; }
         const names = sampleNamesOf(rec);
         setForm({ ...SAMPLE_INIT, ...rec, sampleNames: names.length ? names : [''] });
       })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(err => { if (alive) console.error(err); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
   }, [sampleId, router]);
 
   useKeyboardSave(handleSave);

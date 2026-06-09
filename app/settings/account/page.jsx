@@ -27,6 +27,8 @@ import { useSettingsAuth } from '@/hooks/useSettingsAuth';
 
 const ROLES = ['관리자', '에디터', '조회자', 'API'];
 
+const PROFILE_FORM_DEFAULT = { name: '', email: '', team: '', role: '관리자' };
+
 const ROLE_COLORS = {
   '관리자': { bg: 'var(--accent-soft)',   color: 'var(--accent-text)' },
   '에디터': { bg: 'var(--positive-soft)', color: 'var(--positive)' },
@@ -63,9 +65,10 @@ export default function Page() {
   const [ipLoading, setIpLoading] = useState(true);
 
   useEffect(() => {
+    let alive = true;
     const p = getProfile();
     setProfileState(p);
-    setForm(p);
+    setForm(p || PROFILE_FORM_DEFAULT);
 
     setLastLogin(getLastLogin());
 
@@ -74,19 +77,26 @@ export default function Page() {
     if (cached) setIpEntry(cached);
 
     fetchClientIP().then(entry => {
+      if (!alive) return;
       if (entry) setIpEntry(entry);
       setIpLoading(false);
+    }).catch(() => {
+      if (alive) setIpLoading(false);
     });
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   function startEdit() {
-    setForm({ ...profile });
+    setForm({ ...(profile || PROFILE_FORM_DEFAULT) });
     setEditing(true);
   }
 
   function cancelEdit() {
     setEditing(false);
-    setForm({ ...profile });
+    setForm({ ...(profile || PROFILE_FORM_DEFAULT) });
   }
 
   function saveEdit() {

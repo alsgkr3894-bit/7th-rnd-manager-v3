@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { initDB } from '@/lib/db';
 import { getAllMenuPrices } from '@/lib/cost/menu-price';
 import { showToast } from '@/components/Toast';
@@ -36,12 +36,14 @@ export function useDetailRecipePage({ category, fetchRecipeMap, upsertRecipe, ca
   const [dbError,   setDbError]   = useState(null);
   const [target,    setTarget]    = useState(null);
   const [extraData, setExtraData] = useState(null);
+  const mountedRef = useRef(true);
 
   const load = useCallback(async () => {
     await initDB();
     const fetches = [getAllMenuPrices(), fetchRecipeMap()];
     if (extraFetch) fetches.push(extraFetch());
     const [allMenus, recMap, extra] = await Promise.all(fetches);
+    if (!mountedRef.current) return;
     setMenus(allMenus.filter(m => m.category === category));
     setRecipeMap(recMap);
     if (extra !== undefined) setExtraData(extra);
@@ -49,9 +51,20 @@ export function useDetailRecipePage({ category, fetchRecipeMap, upsertRecipe, ca
   }, [category, fetchRecipeMap, extraFetch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    mountedRef.current = true;
     load()
-      .catch(err => { console.error(err); setDbError(err.message || '데이터 로드 실패'); })
-      .finally(() => setLoading(false));
+      .catch(err => {
+        if (!mountedRef.current) return;
+        console.error(err);
+        setDbError(err.message || '데이터 로드 실패');
+      })
+      .finally(() => {
+        if (mountedRef.current) setLoading(false);
+      });
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, [load]);
 
   async function handleSave(data) {

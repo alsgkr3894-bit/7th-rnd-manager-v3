@@ -193,7 +193,10 @@ export default function AppShell({ children }) {
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (gTimerRef.current) clearTimeout(gTimerRef.current);
+    };
   }, [router]);
 
   // 사용자 설정 (다크모드/밀도/알림) 페이지 진입 시 적용

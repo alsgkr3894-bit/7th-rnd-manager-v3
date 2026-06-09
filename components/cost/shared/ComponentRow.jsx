@@ -4,13 +4,23 @@ import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { componentSubtotal } from '@/lib/cost/shared/calc';
 import { UNIT_OPTIONS } from '@/lib/cost/shared/unit-options';
-export const ComponentRow = memo(function ComponentRow({ c, onChange, onRemove, ingredients, listId }) {
+
+const noop = () => {};
+
+export const ComponentRow = memo(function ComponentRow({
+  c = {},
+  onChange = noop,
+  onRemove = noop,
+  ingredients = [],
+  listId,
+}) {
   const subtotal = componentSubtotal(c);
+  const safeIngredients = Array.isArray(ingredients) ? ingredients : [];
 
   function handleNameChange(value) {
     onChange({ ingredientName: value });
     // 입력값이 ingredients에 정확히 매칭되면 productCode/unit/unitPrice 자동 채움
-    const match = ingredients?.find(i =>
+    const match = safeIngredients.find(i =>
       i.ingredientName === value || i.productName === value
     );
     if (match) {
@@ -35,7 +45,7 @@ export const ComponentRow = memo(function ComponentRow({ c, onChange, onRemove, 
         placeholder="재료명 (예: 도우 L)"
         style={{fontSize:13}}/>
 
-      <input className="form-input" type="number" step="any" value={c.quantity ?? ''}
+      <input className="form-input" type="number" min="0" step="any" value={c.quantity ?? ''}
         onChange={e => onChange({ quantity: e.target.value })}
         placeholder="수량" style={{textAlign:'right'}}/>
 
@@ -44,7 +54,7 @@ export const ComponentRow = memo(function ComponentRow({ c, onChange, onRemove, 
         {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
       </select>
 
-      <input className="form-input" type="number" step="any" value={c.unitPrice ?? ''}
+      <input className="form-input" type="number" min="0" step="any" value={c.unitPrice ?? ''}
         onChange={e => onChange({ unitPrice: e.target.value })}
         placeholder="단가" style={{textAlign:'right'}}/>
 

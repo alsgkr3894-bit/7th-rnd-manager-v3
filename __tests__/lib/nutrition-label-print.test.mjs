@@ -64,4 +64,20 @@ describe('buildNutritionLabelPrintHtml', () => {
     expect(html).toContain('밀 &amp; 우유');
     expect(html).not.toContain('피자 <script>');
   });
+
+  test('배열이 아닌 시트와 잘못된 행은 빈 본문으로 안전하게 처리한다', () => {
+    const html = buildNutritionLabelPrintHtml({
+      pizzaSheet: null,
+      pizzaSliceSheet: [{ menuName: '행 없음', rows: null }, 'bad'],
+      toppingSheet: {},
+      sideSheet: [],
+      setHalfSheet: null,
+      beverageSheet: [{ menuName: '콜라', weight: null, kcal: '', allergen: null }],
+    });
+
+    expect(html).toContain('영양성분표 — 피자 (조각 기준)');
+    expect(html).toContain('콜라');
+    expect(html).toContain('<span class="dash">—</span>');
+    expect(html).not.toContain('행 없음</td>');
+  });
 });

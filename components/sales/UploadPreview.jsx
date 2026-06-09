@@ -1,6 +1,7 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
  * UploadPreview — 검증/분류 결과 미리보기
@@ -14,14 +15,21 @@ import { formatNumber } from '@/lib/format';
  * @param {boolean}  props.saving
  */
 export function UploadPreview({ period, classifiedRows, groupedIssues, onCancel, onConfirm, saving }) {
-  const total = classifiedRows.length;
-  const classified   = classifiedRows.filter(r => r.status === 'classified').length;
-  const excluded     = classifiedRows.filter(r => r.status === 'excluded').length;
-  const unclassified = classifiedRows.filter(r => r.status === 'unclassified').length;
-  const unmatchedGroups = groupedIssues.length;
+  const safeRows = asObjectArray(classifiedRows);
+  const safeIssues = asObjectArray(groupedIssues);
+  const total = safeRows.length;
+  const classified   = safeRows.filter(r => r.status === 'classified').length;
+  const excluded     = safeRows.filter(r => r.status === 'excluded').length;
+  const unclassified = safeRows.filter(r => r.status === 'unclassified').length;
+  const unmatchedGroups = safeIssues.length;
+  const safePeriod = period && typeof period === 'object' ? period : {};
+  const periodYear = asDisplayText(safePeriod.year, '-');
+  const periodMonth = asDisplayText(safePeriod.month, '-');
+  const handleCancel = typeof onCancel === 'function' ? onCancel : undefined;
+  const handleConfirm = typeof onConfirm === 'function' ? onConfirm : undefined;
 
   // 표시는 위에서부터: 미매칭 → 제외 → 정상 (사용자 확인 우선순)
-  const sortedRows = [...classifiedRows].sort((a, b) => {
+  const sortedRows = [...safeRows].sort((a, b) => {
     const order = { unclassified: 0, excluded: 1, classified: 2 };
     return (order[a.status] ?? 9) - (order[b.status] ?? 9);
   }).slice(0, 100); // 처음 100건만 표시
@@ -34,7 +42,7 @@ export function UploadPreview({ period, classifiedRows, groupedIssues, onCancel,
           <Icon.alert style={{width:16,height:16}}/>
         </div>
         <div>
-          <b>{period.year}년 {period.month}월 검증 완료</b> — 총 {formatNumber(total)}건 ·{' '}
+          <b>{periodYear}년 {periodMonth}월 검증 완료</b> — 총 {formatNumber(total)}건 ·{' '}
           정상 {formatNumber(classified)}건 · 제외 {formatNumber(excluded)}건 ·{' '}
           <span style={{color: unclassified ? 'var(--negative)' : undefined}}>
             미매칭 {formatNumber(unclassified)}건 ({unmatchedGroups}개 그룹)
@@ -61,10 +69,10 @@ export function UploadPreview({ period, classifiedRows, groupedIssues, onCancel,
             </tr>
           </thead>
           <tbody>
-            {sortedRows.map(r => (
-              <tr key={`${r.originalIndex}-${r.rawMenuName}`}>
-                <td className="muted num">{r.originalIndex}</td>
-                <td className="cell-name"><div className="menu-name">{r.rawMenuName}</div></td>
+            {sortedRows.map((r, index) => (
+              <tr key={`${asDisplayText(r.originalIndex, index)}-${asDisplayText(r.rawMenuName, 'menu')}`}>
+                <td className="muted num">{asDisplayText(r.originalIndex, '-')}</td>
+                <td className="cell-name"><div className="menu-name">{asDisplayText(r.rawMenuName, '-')}</div></td>
                 <td>{r.status === 'unclassified'
                   ? <span className="muted">—</span>
                   : <CategoryCell row={r} />}</td>
@@ -78,8 +86,8 @@ export function UploadPreview({ period, classifiedRows, groupedIssues, onCancel,
       </div>
 
       <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:16}}>
-        <button className="btn" onClick={onCancel} disabled={saving}>취소</button>
-        <button className="btn primary" onClick={onConfirm} disabled={saving}>
+        <button className="btn" onClick={handleCancel} disabled={saving}>취소</button>
+        <button className="btn primary" onClick={handleConfirm} disabled={saving}>
           <Icon.check style={{width:14, height:14}}/>
           {saving ? '저장 중...' : '최신본으로 반영'}
         </button>
@@ -89,11 +97,14 @@ export function UploadPreview({ period, classifiedRows, groupedIssues, onCancel,
 }
 
 function CategoryCell({ row }) {
+  const category = asDisplayText(row.category, '—');
+  const detailName = asDisplayText(row.detailName);
+
   return (
     <span>
-      <b>{row.category || '—'}</b>
-      {row.detailName && row.detailName !== row.category && (
-        <span style={{color:'var(--text-3)', marginLeft:6, fontSize:12}}>· {row.detailName}</span>
+      <b>{category}</b>
+      {detailName && detailName !== category && (
+        <span style={{color:'var(--text-3)', marginLeft:6, fontSize:12}}>· {detailName}</span>
       )}
     </span>
   );

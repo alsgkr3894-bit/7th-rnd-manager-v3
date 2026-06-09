@@ -1,6 +1,9 @@
 import { NUTRITION_FIELDS } from '@/lib/nutrition/values/store';
+import { asDisplayText } from '@/lib/ui/prop-guards';
 
 export function NutritionGrid({ values, onChange, disabled }) {
+  const changeField = typeof onChange === 'function' ? onChange : null;
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px 12px' }}>
       {NUTRITION_FIELDS.map(f => (
@@ -10,8 +13,8 @@ export function NutritionGrid({ values, onChange, disabled }) {
           </label>
           <input
             className="input" type="number" min="0" step="0.1"
-            value={values?.[f.key] ?? ''}
-            onChange={e => onChange?.(f.key, e.target.value)}
+            value={asDisplayText(values?.[f.key])}
+            onChange={e => changeField?.(f.key, e.target.value)}
             disabled={disabled}
             style={{ fontSize: 13 }}
           />

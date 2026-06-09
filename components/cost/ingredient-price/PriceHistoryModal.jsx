@@ -41,10 +41,27 @@ export function PriceHistoryModal({ ingredientId, ingredientName, onClose }) {
   const [history, setHistory] = useState(null); // null = 로딩 중
 
   useEffect(() => {
+    let ignore = false;
+
     setHistory(null);
+    if (ingredientId == null) {
+      setHistory([]);
+      return () => {
+        ignore = true;
+      };
+    }
+
     getHistoryByIngredient(ingredientId)
-      .then(setHistory)
-      .catch(() => setHistory([]));
+      .then(rows => {
+        if (!ignore) setHistory(rows);
+      })
+      .catch(() => {
+        if (!ignore) setHistory([]);
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, [ingredientId]);
 
   const subtitle = (

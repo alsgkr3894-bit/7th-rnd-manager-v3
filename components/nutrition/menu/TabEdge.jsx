@@ -4,12 +4,21 @@ import { showToast } from '@/components/Toast';
 import { upsertEdge, EDGE_CODES, EDGE_NAMES } from '@/lib/nutrition/values/store';
 import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
 
+const EMPTY_MAP = {};
+const noop = () => {};
+
+function asRecord(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : EMPTY_MAP;
+}
+
 export function TabEdge({ edges, edgeMap, onRefresh }) {
+  const safeEdgeMap = asRecord(edgeMap);
+  const refresh = typeof onRefresh === 'function' ? onRefresh : noop;
   const [selCode, setSelCode] = useState(EDGE_CODES[0]);
   const [form,    setForm]    = useState({});
   const [saving,  setSaving]  = useState(false);
 
-  const existing = edgeMap[selCode];
+  const existing = safeEdgeMap[selCode];
 
   useEffect(() => {
     setForm(existing ? { ...existing } : {});
@@ -28,7 +37,7 @@ export function TabEdge({ edges, edgeMap, onRefresh }) {
         ...form,
       });
       showToast('저장 완료', 'ok');
-      onRefresh();
+      refresh();
     } catch { showToast('저장 실패', 'error'); }
     setSaving(false);
   };
@@ -44,7 +53,7 @@ export function TabEdge({ edges, edgeMap, onRefresh }) {
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {EDGE_CODES.map(code => {
-          const done = !!edgeMap[code]?.kcal;
+          const done = !!safeEdgeMap[code]?.kcal;
           return (
             <button key={code} onClick={() => setSelCode(code)}
               style={{

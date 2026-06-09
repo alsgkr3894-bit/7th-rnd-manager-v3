@@ -1,4 +1,12 @@
 'use client';
+import {
+  getSortIndicator,
+  normalizeSortChangeHandler,
+  normalizeSortValue,
+  normalizeSortableStyle,
+  normalizeSortableWidth,
+  normalizeTableSpan,
+} from '@/lib/ui/sort-controls';
 
 /**
  * SortableTh — 클릭으로 정렬 가능한 테이블 헤더
@@ -14,18 +22,26 @@
  * @param {ReactNode} children - 헤더 라벨
  */
 export function SortableTh({ sortKey, active, dir, onClick, children, width, right, style, className, rowSpan, colSpan }) {
-  const isActive = active === sortKey;
+  const safeSortKey = normalizeSortValue(sortKey);
+  const indicator = getSortIndicator(safeSortKey, active, dir);
+  const handleClick = normalizeSortChangeHandler(onClick);
+  const safeClassName = normalizeSortValue(className);
+  const safeWidth = normalizeSortableWidth(width);
+  const safeStyle = normalizeSortableStyle(style);
+  const safeRowSpan = normalizeTableSpan(rowSpan);
+  const safeColSpan = normalizeTableSpan(colSpan);
+
   return (
     <th
-      onClick={() => onClick(sortKey)}
-      rowSpan={rowSpan}
-      colSpan={colSpan}
-      className={className ? `sortable ${className}` : 'sortable'}
-      style={{ width, textAlign: right ? 'right' : undefined, cursor:'pointer', userSelect:'none', ...style }}
+      onClick={() => handleClick(safeSortKey)}
+      rowSpan={safeRowSpan}
+      colSpan={safeColSpan}
+      className={safeClassName ? `sortable ${safeClassName}` : 'sortable'}
+      style={{ width: safeWidth, textAlign: right ? 'right' : undefined, cursor:'pointer', userSelect:'none', ...safeStyle }}
     >
       {children}{' '}
-      <span style={{color: isActive ? 'var(--accent)' : 'var(--text-4)', fontSize: 10}}>
-        {isActive ? (dir === 'asc' ? '▲' : '▼') : '▾'}
+      <span style={{color: indicator.active ? 'var(--accent)' : 'var(--text-4)', fontSize: 10}}>
+        {indicator.symbol}
       </span>
     </th>
   );

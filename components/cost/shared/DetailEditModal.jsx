@@ -5,6 +5,7 @@ import { formatNumber } from '@/lib/format';
 import { getAllIngredients, buildMetaOnlyRow } from '@/lib/ingredient';
 import { ComponentRow } from './ComponentRow';
 import { ModalFrame } from '@/components/ui/ModalFrame';
+import { asObjectArray } from '@/lib/ui/prop-guards';
 
 const EMPTY_COMPONENT = { productCode: null, ingredientName: '', quantity: '', unit: 'g', unitPrice: '' };
 const COST_RATE_WARN_PCT = 35;
@@ -40,22 +41,32 @@ export function DetailEditModal({
   listIdPrefix,
   extraSaveFields = {},
 }) {
-  const [components,   setComponents]   = useState(initial?.components || []);
+  const [components,   setComponents]   = useState(() => asObjectArray(initial?.components));
   const [note,         setNote]         = useState(initial?.note || '');
   const [ingredients,  setIngredients]  = useState([]);
   const [saving,       setSaving]       = useState(false);
   const [saveError,    setSaveError]    = useState(null);
 
   useEffect(() => {
+    let ignore = false;
+
     (async () => {
       try {
         const all = await getAllIngredients();
+        if (ignore) return;
+
         setIngredients(
           all.filter(m => !m.discontinued && !m.excluded && (m.isSeeded || m.isManual))
              .map(buildMetaOnlyRow)
         );
-      } catch (err) { console.warn(err); }
+      } catch (err) {
+        if (!ignore) console.warn(err);
+      }
     })();
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   function patchComponent(i, patch) {

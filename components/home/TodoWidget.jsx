@@ -1,12 +1,18 @@
 'use client';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { getJSONLS, setJSONLS } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 const TAG_LABEL = { report: '보고예정', due: '마감임박' };
 const LEAVE_MS = 240;
+
+function normalizeDoneIds(value) {
+  if (!Array.isArray(value)) return [];
+  return value.filter(id => typeof id === 'string' || typeof id === 'number');
+}
 
 /**
  * 오늘 할 일 — 보고예정 노트 + 마감 임박 일정.
@@ -15,16 +21,22 @@ const LEAVE_MS = 240;
  * @param {{ todos: Array, router }} props
  */
 export function TodoWidget({ todos = [], router }) {
-  const [doneIds, setDoneIds] = useState(() => new Set(getJSONLS(KEYS.HOME_TODO_DONE) || []));
+  const [doneIds, setDoneIds] = useState(() => new Set(normalizeDoneIds(getJSONLS(KEYS.HOME_TODO_DONE))));
   const [leavingId, setLeavingId] = useState(null);
   const [filter, setFilter] = useState('all');
+  const leaveTimerRef = useRef(null);
+  const safeTodos = useMemo(() => asObjectArray(todos), [todos]);
 
   const persist = useCallback((set) => {
     setDoneIds(new Set(set));
     setJSONLS(KEYS.HOME_TODO_DONE, Array.from(set));
   }, []);
 
-  const pending = useMemo(() => todos.filter(t => !doneIds.has(t.id)), [todos, doneIds]);
+  useEffect(() => () => {
+    if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+  }, []);
+
+  const pending = useMemo(() => safeTodos.filter(t => !doneIds.has(t.id)), [safeTodos, doneIds]);
   const counts = useMemo(() => ({
     all: pending.length,
     report: pending.filter(t => t.f === 'report').length,
@@ -35,7 +47,8 @@ export function TodoWidget({ todos = [], router }) {
 
   function complete(todo) {
     setLeavingId(todo.id);
-    setTimeout(() => {
+    if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+    leaveTimerRef.current = setTimeout(() => {
       const next = new Set(doneIds); next.add(todo.id);
       persist(next);
       setLeavingId(null);
@@ -43,6 +56,7 @@ export function TodoWidget({ todos = [], router }) {
         label: '실행취소',
         onClick: () => { const back = new Set(doneIds); back.delete(todo.id); persist(back); },
       });
+      leaveTimerRef.current = null;
     }, LEAVE_MS);
   }
 
@@ -66,21 +80,27 @@ export function TodoWidget({ todos = [], router }) {
         <div className="todo-empty">🎉 오늘 챙길 일을 모두 끝냈어요!</div>
       ) : (
         <div className="todo-list">
-          {shown.map(t => (
-            <button key={t.id} className={`todo${leavingId === t.id ? ' leaving' : ''}`}
-              onClick={() => router.push(t.href)}>
-              <span className="check"
-                role="checkbox" aria-checked="false" aria-label="완료 처리"
-                onClick={(e) => { e.stopPropagation(); complete(t); }}>
-                <Icon.check />
-              </span>
-              <span className="tmain">
-                <span className="ttitle">{t.title}</span>
-                <span className="tsub">{t.sub}</span>
-              </span>
-              <span className={`tagchip ${t.tag}`}>{TAG_LABEL[t.tag]}</span>
-            </button>
-          ))}
+          {shown.map((t, index) => {
+            const href = typeof t.href === 'string' ? t.href : null;
+            const title = asDisplayText(t.title);
+            const sub = asDisplayText(t.sub);
+            const tag = TAG_LABEL[t.tag] ? t.tag : '';
+            return (
+              <button key={t.id ?? index} className={`todo${leavingId === t.id ? ' leaving' : ''}`}
+                onClick={() => href && router?.push?.(href)}>
+                <span className="check"
+                  role="checkbox" aria-checked="false" aria-label="완료 처리"
+                  onClick={(e) => { e.stopPropagation(); complete(t); }}>
+                  <Icon.check />
+                </span>
+                <span className="tmain">
+                  <span className="ttitle">{title}</span>
+                  {sub && <span className="tsub">{sub}</span>}
+                </span>
+                {tag && <span className={`tagchip ${tag}`}>{TAG_LABEL[tag]}</span>}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

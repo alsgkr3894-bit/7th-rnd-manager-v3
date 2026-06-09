@@ -42,13 +42,15 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
+    let alive = true;
     let fromId = null;
     try { fromId = sessionStorage.getItem(KEYS.NOTE_FROM); sessionStorage.removeItem(KEYS.NOTE_FROM); } catch {}
-    if (fromId) {
+    const sourceNoteId = Number(fromId);
+    if (Number.isSafeInteger(sourceNoteId) && sourceNoteId > 0) {
       initDB()
-        .then(() => getNoteById(Number(fromId)))
+        .then(() => getNoteById(sourceNoteId))
         .then(note => {
-          if (!note) return;
+          if (!alive || !note) return;
           setFromTitle(note.title);
           setForm(f => ({
             ...f,
@@ -67,6 +69,7 @@ export default function Page() {
         setShowDraftBanner(true);
       }
     }
+    return () => { alive = false; };
   }, []);
 
   useEffect(() => {

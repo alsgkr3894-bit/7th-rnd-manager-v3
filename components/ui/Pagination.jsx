@@ -1,4 +1,5 @@
 'use client';
+import { buildPaginationPages, normalizePaginationState } from '@/lib/ui/pagination';
 
 /**
  * Pagination — 클라이언트-사이드 페이지 네비게이션 바.
@@ -8,26 +9,17 @@
  * @param {{ page, totalPages, onPage, total, pageSize }} props
  */
 export function Pagination({ page, totalPages, onPage, total, pageSize }) {
-  if (totalPages <= 1) return null;
+  const {
+    page: safePage,
+    totalPages: safeTotalPages,
+    total: safeTotal,
+    start,
+    end,
+  } = normalizePaginationState({ page, totalPages, total, pageSize });
 
-  const start = (page - 1) * pageSize + 1;
-  const end   = Math.min(page * pageSize, total);
+  if (safeTotalPages <= 1) return null;
 
-  /** 표시할 페이지 번호 목록 (ellipsis는 null로 표현) */
-  function buildPages() {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    const pages = [];
-    pages.push(1);
-    if (page > 3) pages.push(null);
-    for (let p = Math.max(2, page - 1); p <= Math.min(totalPages - 1, page + 1); p++) {
-      pages.push(p);
-    }
-    if (page < totalPages - 2) pages.push(null);
-    pages.push(totalPages);
-    return pages;
-  }
-
-  const pages = buildPages();
+  const pages = buildPaginationPages(safePage, safeTotalPages);
 
   const btnStyle = (active) => ({
     minWidth: 32, height: 32, padding: '0 6px',
@@ -51,9 +43,9 @@ export function Pagination({ page, totalPages, onPage, total, pageSize }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '10px 16px', flexWrap: 'wrap' }}>
       <button
-        style={arrowStyle(page === 1)}
-        disabled={page === 1}
-        onClick={() => onPage(page - 1)}
+        style={arrowStyle(safePage === 1)}
+        disabled={safePage === 1}
+        onClick={() => onPage?.(safePage - 1)}
         aria-label="이전"
       >
         ←
@@ -65,9 +57,9 @@ export function Pagination({ page, totalPages, onPage, total, pageSize }) {
         ) : (
           <button
             key={p}
-            style={btnStyle(p === page)}
-            disabled={p === page}
-            onClick={() => onPage(p)}
+            style={btnStyle(p === safePage)}
+            disabled={p === safePage}
+            onClick={() => onPage?.(p)}
           >
             {p}
           </button>
@@ -75,16 +67,16 @@ export function Pagination({ page, totalPages, onPage, total, pageSize }) {
       )}
 
       <button
-        style={arrowStyle(page === totalPages)}
-        disabled={page === totalPages}
-        onClick={() => onPage(page + 1)}
+        style={arrowStyle(safePage === safeTotalPages)}
+        disabled={safePage === safeTotalPages}
+        onClick={() => onPage?.(safePage + 1)}
         aria-label="다음"
       >
         →
       </button>
 
       <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--text-3)' }}>
-        {start}–{end} / {total}개
+        {start}–{end} / {safeTotal}개
       </span>
     </div>
   );

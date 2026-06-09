@@ -1,5 +1,13 @@
 'use client';
-import { useId, useState, useRef } from 'react';
+import { useEffect, useId, useState, useRef } from 'react';
+import {
+  filterComboBoxOptions,
+  normalizeComboBoxClassName,
+  normalizeComboBoxMaxItems,
+  normalizeComboBoxOnChange,
+  normalizeComboBoxStyle,
+  normalizeComboBoxValue,
+} from '@/lib/ui/combo-box';
 
 /**
  * ComboBox — 자유 입력 + 입력 기반 자동완성 드롭다운.
@@ -22,11 +30,19 @@ export function ComboBox({ value, onChange, options = [], placeholder, style, in
   const inputId = useId();
   const listboxId = `${inputId}-listbox`;
 
-  const q = (value || '').trim().toLowerCase();
-  const filtered = (q ? options.filter(o => o.toLowerCase().includes(q)) : options).slice(0, maxItems);
+  useEffect(() => () => clearTimeout(blurTimer.current), []);
+
+  const safeValue = normalizeComboBoxValue(value);
+  const safePlaceholder = normalizeComboBoxValue(placeholder);
+  const safeClassName = normalizeComboBoxClassName(inputClassName);
+  const safeStyle = normalizeComboBoxStyle(style);
+  const safeInputStyle = normalizeComboBoxStyle(inputStyle);
+  const itemLimit = normalizeComboBoxMaxItems(maxItems);
+  const notifyChange = normalizeComboBoxOnChange(onChange);
+  const filtered = filterComboBoxOptions(options, safeValue, itemLimit);
 
   function pick(opt) {
-    onChange(opt);
+    notifyChange(opt);
     setOpen(false);
     setActive(-1);
   }
@@ -40,22 +56,22 @@ export function ComboBox({ value, onChange, options = [], placeholder, style, in
   }
 
   return (
-    <div style={{ position: 'relative', ...style }}>
+    <div style={{ position: 'relative', ...safeStyle }}>
       <input
-        value={value || ''}
-        placeholder={placeholder}
+        value={safeValue}
+        placeholder={safePlaceholder}
         autoComplete="off"
         role="combobox"
         aria-autocomplete="list"
         aria-expanded={open && filtered.length > 0}
         aria-controls={listboxId}
         aria-activedescendant={active >= 0 && filtered[active] ? `${listboxId}-option-${active}` : undefined}
-        onChange={e => { onChange(e.target.value); setOpen(true); setActive(-1); }}
+        onChange={e => { notifyChange(e.target.value); setOpen(true); setActive(-1); }}
         onFocus={() => setOpen(true)}
         onBlur={() => { blurTimer.current = setTimeout(() => setOpen(false), 120); }}
         onKeyDown={onKeyDown}
-        className={inputClassName}
-        style={{ width: '100%', ...inputStyle }}
+        className={safeClassName}
+        style={{ width: '100%', ...safeInputStyle }}
       />
       {open && filtered.length > 0 && (
         <div

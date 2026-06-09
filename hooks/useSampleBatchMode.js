@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { deleteSample } from '@/lib/sample';
+import { toSampleSelectionIds, toggleSampleSelection } from '@/lib/sample/selection';
 
 /**
  * 샘플 배치 삭제 모드의 선택 상태와 액션을 관리한다.
@@ -15,11 +16,7 @@ export function useSampleBatchMode(onDeletedOptimistic, onRefresh) {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   function toggleSelect(id) {
-    setSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
+    setSelected(prev => toggleSampleSelection(prev, id));
   }
 
   function exitBatchMode() {
@@ -29,24 +26,24 @@ export function useSampleBatchMode(onDeletedOptimistic, onRefresh) {
   }
 
   function handleBatchDelete() {
-    if (selected.size === 0) return;
+    if (toSampleSelectionIds(selected).length === 0) return;
     setConfirmOpen(true);
   }
 
   async function confirmBatchDelete() {
-    if (selected.size === 0) {
+    const ids = toSampleSelectionIds(selected);
+    if (ids.length === 0) {
       setConfirmOpen(false);
       return;
     }
-    const ids = [...selected];
-    onDeletedOptimistic(ids);
+    onDeletedOptimistic?.(ids);
     exitBatchMode();
     try {
       await Promise.all(ids.map(id => deleteSample(id)));
       showToast(`${ids.length}개 샘플 삭제됨`, 'ok');
     } catch {
       showToast('일부 삭제 실패', 'error');
-      onRefresh();
+      onRefresh?.();
     }
   }
 

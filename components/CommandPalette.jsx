@@ -3,19 +3,15 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from './icons';
 import { usePaletteItems, STATUS_ICON } from '@/hooks/usePaletteItems';
-import { getJSONLS, setJSONLS } from '@/lib/note/storage';
-import { KEYS } from '@/lib/note/keys';
+import { getRecentPaletteItems, saveRecentPaletteItem } from '@/lib/palette-recent';
 import { useDebounce } from '@/hooks/useDebounce';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 function getRecent() {
-  return getJSONLS(KEYS.PALETTE_RECENT) ?? [];
+  return getRecentPaletteItems();
 }
 function saveRecent(item) {
-  const list = [
-    { href: item.href, label: item.label, kind: item.kind },
-    ...getRecent().filter(r => r.href !== item.href),
-  ].slice(0, 5);
-  setJSONLS(KEYS.PALETTE_RECENT, list);
+  saveRecentPaletteItem(item);
 }
 
 export default function CommandPalette({ open, onClose }) {
@@ -23,6 +19,7 @@ export default function CommandPalette({ open, onClose }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [recent,    setRecent]    = useState([]);
   const inputRef = useRef(null);
+  const focusTimerRef = useRef(null);
   const router   = useRouter();
   const allItems = usePaletteItems(open);
   const debouncedQ = useDebounce(q, 150);
@@ -32,13 +29,23 @@ export default function CommandPalette({ open, onClose }) {
     setQ('');
     setActiveIdx(0);
     setRecent(getRecent());
-    setTimeout(() => inputRef.current?.focus(), 30);
+    if (focusTimerRef.current) clearTimeout(focusTimerRef.current);
+    focusTimerRef.current = setTimeout(() => {
+      inputRef.current?.focus();
+      focusTimerRef.current = null;
+    }, 30);
+    return () => {
+      if (focusTimerRef.current) {
+        clearTimeout(focusTimerRef.current);
+        focusTimerRef.current = null;
+      }
+    };
   }, [open]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') e.preventDefault();
-      if (e.key === 'Escape' && open) onClose();
+      if (e.key === 'Escape' && open) onClose?.();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -46,11 +53,13 @@ export default function CommandPalette({ open, onClose }) {
 
   if (!open) return null;
 
-  const norm = s => s.toLowerCase().replace(/\s+/g, '');
+  const safeAllItems = asObjectArray(allItems).filter(item => asDisplayText(item.href) && asDisplayText(item.label));
+  const safeRecent = asObjectArray(recent).filter(item => asDisplayText(item.href) && asDisplayText(item.label));
+  const norm = s => asDisplayText(s).toLowerCase().replace(/\s+/g, '');
   const isSearching = debouncedQ.trim().length > 0;
   const filtered = isSearching
-    ? allItems.filter(x => norm(x.label).includes(norm(debouncedQ)) || (x.sub && norm(x.sub).includes(norm(debouncedQ))))
-    : allItems.slice(0, 9);
+    ? safeAllItems.filter(x => norm(x.label).includes(norm(debouncedQ)) || (x.sub && norm(x.sub).includes(norm(debouncedQ))))
+    : safeAllItems.slice(0, 9);
 
   const GROUPS = [
     { kind: 'sample',     label: '샘플기록' },
@@ -74,12 +83,15 @@ export default function CommandPalette({ open, onClose }) {
   // 그룹 결과는 GROUPS 순서로 재정렬되므로 filtered 배열 순서와 다르다 →
   // activeIdx/Enter가 강조 항목과 어긋나지 않도록 같은 순서로 맞춘다.
   const groupedFiltered = GROUPS.flatMap(({ kind }) => filtered.filter(x => x.kind === kind));
-  const navItems = isSearching ? groupedFiltered : [...recent, ...groupedFiltered];
+  const navItems = isSearching ? groupedFiltered : [...safeRecent, ...groupedFiltered];
 
   const pick = (item) => {
-    saveRecent(item);
-    onClose();
-    router.push(item.href);
+    const href = asDisplayText(item?.href);
+    const label = asDisplayText(item?.label, href);
+    if (!href) return;
+    saveRecent({ ...item, href, label, kind: asDisplayText(item?.kind, 'nav') });
+    onClose?.();
+    router.push(href);
   };
 
   function handleKey(e) {
@@ -107,14 +119,17 @@ export default function CommandPalette({ open, onClose }) {
 
         <div className="palette-results" id="palette-results" role="menu" aria-label="검색 결과">
           {/* 최근 방문 — 검색어 없을 때만 */}
-          {!isSearching && recent.length > 0 && (
+          {!isSearching && safeRecent.length > 0 && (
             <div>
               <div className="palette-group">최근 방문</div>
-              {recent.map((r, ri) => {
+              {safeRecent.map(r => {
                 const fi = flatIdx++;
-                const { bg, color } = ICO_STYLE[r.kind] || ICO_STYLE.menu;
+                const kind = asDisplayText(r.kind, 'nav');
+                const href = asDisplayText(r.href);
+                const label = asDisplayText(r.label);
+                const { bg, color } = ICO_STYLE[kind] || ICO_STYLE.menu;
                 return (
-                  <button key={'recent-' + r.href}
+                  <button key={'recent-' + href}
                     role="menuitem"
                     className={'palette-row' + (fi === activeIdx ? ' palette-row-active' : '')}
                     onMouseEnter={() => setActiveIdx(fi)}
@@ -122,8 +137,8 @@ export default function CommandPalette({ open, onClose }) {
                     <div className="palette-row-ico" style={{background: bg, color, fontSize:13}}>
                       <Icon.chevRight style={{width:14,height:14}}/>
                     </div>
-                    <span className="palette-row-label">{r.label}</span>
-                    <span className="palette-recent-time">{r.href}</span>
+                    <span className="palette-row-label">{label}</span>
+                    <span className="palette-recent-time">{href}</span>
                   </button>
                 );
               })}
@@ -140,8 +155,10 @@ export default function CommandPalette({ open, onClose }) {
                 <div className="palette-group">{label}</div>
                 {rows.map(r => {
                   const fi = flatIdx++;
+                  const labelText = asDisplayText(r.label);
+                  const subText = asDisplayText(r.sub);
                   return (
-                    <button key={r.href + r.label}
+                    <button key={asDisplayText(r.href) + labelText}
                       role="menuitem"
                       className={'palette-row' + (fi === activeIdx ? ' palette-row-active' : '')}
                       onMouseEnter={() => setActiveIdx(fi)}
@@ -155,11 +172,11 @@ export default function CommandPalette({ open, onClose }) {
                          : <Icon.plus style={{width:14,height:14}}/>}
                       </div>
                       <div style={{flex:1, minWidth:0}}>
-                        <span className="palette-row-label">{r.label}</span>
-                        {r.sub && (
+                        <span className="palette-row-label">{labelText}</span>
+                        {subText && (
                           <span style={{display:'block', fontSize:11, color:'var(--text-3)',
                             overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
-                            {r.sub}
+                            {subText}
                           </span>
                         )}
                       </div>

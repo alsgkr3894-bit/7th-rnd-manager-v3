@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import dynamic from 'next/dynamic';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -11,6 +11,7 @@ import {
   getAllMenuRefs, getRawValueMap,
   getAllEdges, getAllToppings, getAllCompositions, getAllSetCompositions,
 } from '@/lib/nutrition/values/store';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 const TabBase             = dynamic(() => import('@/components/nutrition/menu/TabBase').then(m => ({ default: m.TabBase })), { ssr: false });
 const TabEdge             = dynamic(() => import('@/components/nutrition/menu/TabEdge').then(m => ({ default: m.TabEdge })), { ssr: false });
@@ -20,6 +21,11 @@ const TabIngredientValues = dynamic(() => import('@/components/nutrition/menu/Ta
 const TabSetCalc          = dynamic(() => import('@/components/nutrition/menu/TabSetCalc').then(m => ({ default: m.TabSetCalc })), { ssr: false });
 
 const TABS = ['베이스 영양성분', '엣지 설정', '파생 메뉴', '식자재 영양값', '계산 결과', '세트 계산'];
+const EMPTY_MAP = {};
+
+function asRecord(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : EMPTY_MAP;
+}
 
 export default function Page() {
   const [tab,          setTab]          = useState(0);
@@ -33,12 +39,14 @@ export default function Page() {
   const [setComps,     setSetComps]     = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [menuSearch,   setMenuSearch]   = useState('');
+  const mountedRef = useRef(true);
 
   const filteredMenus = useMemo(() => {
-    const q = menuSearch.trim().toLowerCase();
-    if (!q) return menus;
-    return menus.filter(m =>
-      m.menuName?.toLowerCase().includes(q) || m.menuCode?.toLowerCase().includes(q)
+    const safeMenus = asObjectArray(menus);
+    const q = asDisplayText(menuSearch).trim().toLowerCase();
+    if (!q) return safeMenus;
+    return safeMenus.filter(m =>
+      asDisplayText(m.menuName).toLowerCase().includes(q) || asDisplayText(m.menuCode).toLowerCase().includes(q)
     );
   }, [menus, menuSearch]);
 
@@ -49,19 +57,36 @@ export default function Page() {
       getAllEdges(), getAllToppings(), getAllCompositions(),
       getAllMenuMaster(), getAllSetCompositions(),
     ]);
-    const edgeMap = Object.fromEntries(edgeList.map(edge => [edge.edgeCode, edge]));
-    setMenus([...menuRefs].sort((a, b) => (a.menuCode || '').localeCompare(b.menuCode || '', 'ko')));
-    setMenuMasters(masters);
-    setRawMap(rawValues);
-    setEdges(edgeList);
-    setEdgeMap(edgeMap);
-    setToppings(toppingList);
-    setCompositions(compositionList);
-    setSetComps(setCompList);
+    if (!mountedRef.current) return;
+    const safeEdgeList = asObjectArray(edgeList);
+    const nextEdgeMap = Object.fromEntries(
+      safeEdgeList
+        .map(edge => [asDisplayText(edge.edgeCode), edge])
+        .filter(([edgeCode]) => edgeCode)
+    );
+    setMenus(asObjectArray(menuRefs).sort((a, b) => asDisplayText(a.menuCode).localeCompare(asDisplayText(b.menuCode), 'ko')));
+    setMenuMasters(asObjectArray(masters));
+    setRawMap(asRecord(rawValues));
+    setEdges(safeEdgeList);
+    setEdgeMap(nextEdgeMap);
+    setToppings(asObjectArray(toppingList));
+    setCompositions(asObjectArray(compositionList));
+    setSetComps(asObjectArray(setCompList));
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    mountedRef.current = true;
+    load().catch(err => {
+      if (!mountedRef.current) return;
+      console.error(err);
+      setLoading(false);
+    });
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [load]);
   useVisibilityRefresh(load);
 
   return (

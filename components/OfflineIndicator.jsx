@@ -1,26 +1,36 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { showToast } from '@/components/Toast';
 
 export default function OfflineIndicator() {
   const [online, setOnline] = useState(true);
   const [justBack, setJustBack] = useState(false);
+  const resetTimer = useRef(null);
   const router = useRouter();
 
   useEffect(() => {
     setOnline(navigator.onLine);
-    function onOffline() { setOnline(false); setJustBack(false); }
+    function onOffline() {
+      clearTimeout(resetTimer.current);
+      setOnline(false);
+      setJustBack(false);
+    }
     function onOnline() {
       setOnline(true);
       setJustBack(true);
-      setTimeout(() => setJustBack(false), 3000);
+      clearTimeout(resetTimer.current);
+      resetTimer.current = setTimeout(() => setJustBack(false), 3000);
       showToast('연결이 복구됐어요, 데이터를 갱신 중...', 'ok', 3000);
       router.refresh();
     }
     window.addEventListener('offline', onOffline);
     window.addEventListener('online',  onOnline);
-    return () => { window.removeEventListener('offline', onOffline); window.removeEventListener('online', onOnline); };
+    return () => {
+      window.removeEventListener('offline', onOffline);
+      window.removeEventListener('online', onOnline);
+      clearTimeout(resetTimer.current);
+    };
   }, [router]);
 
   if (online && !justBack) return null;

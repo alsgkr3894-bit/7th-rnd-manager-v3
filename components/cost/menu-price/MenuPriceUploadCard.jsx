@@ -21,6 +21,7 @@ export function MenuPriceUploadCard({ onReplaced }) {
   const fileInputRef = useRef(null);
   const [preview, setPreview]   = useState(null); // { success, failed, fileName }
   const [committing, setCommitting] = useState(false);
+  const notifyReplaced = typeof onReplaced === 'function' ? onReplaced : null;
 
   function handleDownloadTemplate() {
     downloadCsv(buildTemplateRows(), makeFileName('menu-price-template', 'csv'));
@@ -37,13 +38,13 @@ export function MenuPriceUploadCard({ onReplaced }) {
       const ext = file.name.split('.').pop()?.toLowerCase();
       let parsed;
       if (ext === 'csv') {
-        const text = await readFileAsText(file);
+        const text = await readFileAsText(file, ['.csv']);
         parsed = readCsvFile(text);
       } else if (ext === 'xlsx' || ext === 'xls') {
-        const buf = await readFileAsArrayBuffer(file);
+        const buf = await readFileAsArrayBuffer(file, ['.xlsx', '.xls']);
         parsed = await readExcelFile(buf);
       } else {
-        showToast('CSV 또는 엑셀(xlsx) 파일만 지원합니다', 'err');
+        showToast('CSV 또는 엑셀(.xlsx, .xls) 파일만 지원합니다', 'err');
         return;
       }
       const { headers, rows } = parsed;
@@ -54,8 +55,7 @@ export function MenuPriceUploadCard({ onReplaced }) {
       }
       setPreview({ ...result, fileName: file.name });
     } catch (err) {
-      console.error(err);
-      showToast('파일 읽기 실패: ' + err.message, 'err');
+      showToast('파일 읽기 실패: ' + (err?.message || err), 'err');
     }
   }
 
@@ -66,9 +66,9 @@ export function MenuPriceUploadCard({ onReplaced }) {
       const { replaced } = await replaceAllMenuPrices(preview.success);
       showToast(`반영 완료 — ${replaced}개`, 'ok');
       setPreview(null);
-      onReplaced?.();
+      notifyReplaced?.();
     } catch (err) {
-      showToast('반영 실패: ' + err.message, 'err');
+      showToast('반영 실패: ' + (err?.message || err), 'err');
     } finally { setCommitting(false); }
   }
 

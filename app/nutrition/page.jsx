@@ -32,16 +32,23 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let alive = true;
+
     (async () => {
       try {
         await initDB();
-        setStats(await getNutritionDashboard());
+        const nextStats = await getNutritionDashboard();
+        if (alive) setStats(nextStats);
       } catch (err) {
-        console.warn('[nutrition hub] dashboard load failed:', err);
+        if (alive) console.warn('[nutrition hub] dashboard load failed:', err);
       } finally {
-        setLoading(false);
+        if (alive) setLoading(false);
       }
     })();
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const cards = stats ? [

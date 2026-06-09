@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
+import { DEFAULT_PLATFORMS, normalizePlatforms } from '@/lib/cost/margin/platforms';
 
 const uid = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID
@@ -10,9 +11,23 @@ const uid = () =>
 
 const blankFee = () => ({ id: uid(), label: '', type: 'fixed', value: '', sizeOverrides: {} });
 
+function clonePlatforms(platforms) {
+  const safePlatforms = normalizePlatforms(platforms) || DEFAULT_PLATFORMS;
+  return safePlatforms.map(platform => ({
+    ...platform,
+    fees: (Array.isArray(platform.fees) ? platform.fees : []).map(fee => {
+      const next = { ...fee };
+      if (fee.sizeOverrides && typeof fee.sizeOverrides === 'object') {
+        next.sizeOverrides = { ...fee.sizeOverrides };
+      }
+      return next;
+    }),
+  }));
+}
+
 export function PlatformSettingsModal({ platforms, onSave, onClose }) {
-  const [plats, setPlats] = useState(() => JSON.parse(JSON.stringify(platforms)));
-  const [selId, setSelId] = useState(() => platforms[0]?.id ?? 'default');
+  const [plats, setPlats] = useState(() => clonePlatforms(platforms));
+  const [selId, setSelId] = useState(() => (normalizePlatforms(platforms) || DEFAULT_PLATFORMS)[0]?.id ?? 'default');
 
   const sel = plats.find(p => p.id === selId) ?? null;
 
@@ -37,20 +52,20 @@ export function PlatformSettingsModal({ platforms, onSave, onClose }) {
   /* ── fee ── */
   function addFee() {
     setPlats(prev => prev.map(p =>
-      p.id === selId ? { ...p, fees: [...p.fees, blankFee()] } : p
+      p.id === selId ? { ...p, fees: [...(Array.isArray(p.fees) ? p.fees : []), blankFee()] } : p
     ));
   }
 
   function deleteFee(feeId) {
     setPlats(prev => prev.map(p =>
-      p.id === selId ? { ...p, fees: p.fees.filter(f => f.id !== feeId) } : p
+      p.id === selId ? { ...p, fees: (Array.isArray(p.fees) ? p.fees : []).filter(f => f.id !== feeId) } : p
     ));
   }
 
   function patchFee(feeId, patch) {
     setPlats(prev => prev.map(p =>
       p.id === selId
-        ? { ...p, fees: p.fees.map(f => f.id === feeId ? { ...f, ...patch } : f) }
+        ? { ...p, fees: (Array.isArray(p.fees) ? p.fees : []).map(f => f.id === feeId ? { ...f, ...patch } : f) }
         : p
     ));
   }
@@ -58,7 +73,7 @@ export function PlatformSettingsModal({ platforms, onSave, onClose }) {
   function patchSizeOverride(feeId, sizeKey, val) {
     setPlats(prev => prev.map(p =>
       p.id === selId
-        ? { ...p, fees: p.fees.map(f =>
+        ? { ...p, fees: (Array.isArray(p.fees) ? p.fees : []).map(f =>
             f.id === feeId
               ? { ...f, sizeOverrides: { ...(f.sizeOverrides || {}), [sizeKey]: val } }
               : f
@@ -72,7 +87,7 @@ export function PlatformSettingsModal({ platforms, onSave, onClose }) {
     const cleaned = plats.map(p => ({
       ...p,
       name: (p.name || '').trim() || '플랫폼',
-      fees: p.fees
+      fees: (Array.isArray(p.fees) ? p.fees : [])
         .filter(f => {
           // 항목명이나 금액 중 하나라도 있어야 저장 (둘 다 비어있으면 제외)
           const hasLabel = (f.label ?? '').trim().length > 0;
@@ -99,7 +114,7 @@ export function PlatformSettingsModal({ platforms, onSave, onClose }) {
           return out;
         }),
     }));
-    onSave(cleaned);
+    onSave?.(cleaned);
   }
 
   return createPortal(

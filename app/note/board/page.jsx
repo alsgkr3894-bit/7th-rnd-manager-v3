@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
@@ -20,6 +20,7 @@ export default function Page() {
   const [dropTarget,      setDropTarget]      = useState(null); // { status, beforeIdx }
   const [bouncingIds,     setBouncingIds]     = useState(new Set());
   const [search,          setSearch]          = useState('');
+  const bounceTimersRef = useRef(new Set());
   const searchActive = search.trim().length > 0;
 
   const load = useCallback(async () => {
@@ -30,6 +31,11 @@ export default function Page() {
   useEffect(() => {
     load().catch(console.error).finally(() => setLoading(false));
   }, [load]);
+
+  useEffect(() => () => {
+    bounceTimersRef.current.forEach(timer => clearTimeout(timer));
+    bounceTimersRef.current.clear();
+  }, []);
 
   useVisibilityRefresh(load);
 
@@ -42,7 +48,11 @@ export default function Page() {
       await load();
       if (bounce) {
         setBouncingIds(s => new Set([...s, note.id]));
-        setTimeout(() => setBouncingIds(s => { const n = new Set(s); n.delete(note.id); return n; }), 400);
+        const timer = setTimeout(() => {
+          setBouncingIds(s => { const n = new Set(s); n.delete(note.id); return n; });
+          bounceTimersRef.current.delete(timer);
+        }, 400);
+        bounceTimersRef.current.add(timer);
       }
     } catch {
       showToast('상태 변경 실패', 'err');
@@ -102,7 +112,11 @@ export default function Page() {
       showToast(`→ ${status}`, 'ok');
       await load();
       setBouncingIds(s => new Set([...s, note.id]));
-      setTimeout(() => setBouncingIds(s => { const n = new Set(s); n.delete(note.id); return n; }), 400);
+      const timer = setTimeout(() => {
+        setBouncingIds(s => { const n = new Set(s); n.delete(note.id); return n; });
+        bounceTimersRef.current.delete(timer);
+      }, 400);
+      bounceTimersRef.current.add(timer);
     }
     setDragId(null);
   }

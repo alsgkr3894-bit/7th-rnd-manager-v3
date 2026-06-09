@@ -5,6 +5,7 @@ import { SearchBox } from '@/components/ui/SearchBox';
 import { SALES_ALIASES } from '@/lib/sales';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { UserAliasesSection } from './UserAliasesSection';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
  * SettingsAliasCard — 메뉴별 별칭 관리 (정책 표시)
@@ -17,16 +18,17 @@ export function SettingsAliasCard() {
   // 기본 별칭은 7번가(main) 전용. 다른 브랜드는 빈 목록(DB 사용자 별칭만).
   const [aliases, setAliases] = useState(SALES_ALIASES);
   useEffect(() => { setAliases(getActiveBrandId() === 'main' ? SALES_ALIASES : []); }, []);
+  const safeAliases = useMemo(() => asObjectArray(aliases), [aliases]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return aliases;
-    return aliases.filter(a =>
-      a.inputName.toLowerCase().includes(q) ||
-      a.outputName.toLowerCase().includes(q) ||
-      a.description?.toLowerCase().includes(q)
+    if (!q) return safeAliases;
+    return safeAliases.filter(a =>
+      asDisplayText(a.inputName).toLowerCase().includes(q) ||
+      asDisplayText(a.outputName).toLowerCase().includes(q) ||
+      asDisplayText(a.description).toLowerCase().includes(q)
     );
-  }, [query, aliases]);
+  }, [query, safeAliases]);
 
   return (
     <div className="card" style={{marginTop:16}}>
@@ -35,7 +37,7 @@ export function SettingsAliasCard() {
       <div className="card-header">
         <div>
           <div className="card-title">메뉴별 별칭 관리</div>
-          <div className="card-sub">엑셀에서 자주 쓰는 줄임말·동의어 → 표준 메뉴명 매핑 · 총 {aliases.length}개</div>
+          <div className="card-sub">엑셀에서 자주 쓰는 줄임말·동의어 → 표준 메뉴명 매핑 · 총 {safeAliases.length}개</div>
         </div>
       </div>
 
@@ -55,19 +57,27 @@ export function SettingsAliasCard() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(a => (
-                <tr key={a.aliasId}>
-                  <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{a.aliasId}</td>
-                  <td className="cell-name"><div className="menu-name">{a.inputName}</div></td>
+              {filtered.map((a, index) => {
+                const key = asDisplayText(a.aliasId, `alias-${index}`);
+                const aliasId = asDisplayText(a.aliasId, '-');
+                const inputName = asDisplayText(a.inputName, '-');
+                const outputName = asDisplayText(a.outputName, '-');
+                const description = asDisplayText(a.description);
+
+                return (
+                <tr key={key}>
+                  <td className="num" style={{color:'var(--text-3)', fontSize:12}}>{aliasId}</td>
+                  <td className="cell-name"><div className="menu-name">{inputName}</div></td>
                   <td>
                     <span style={{display:'inline-flex', alignItems:'center', gap:6}}>
                       <Icon.chevRight style={{width:12, height:12, color:'var(--text-4)'}}/>
-                      <b>{a.outputName}</b>
+                      <b>{outputName}</b>
                     </span>
                   </td>
-                  <td style={{color:'var(--text-3)', fontSize:13}}>{a.description}</td>
+                  <td style={{color:'var(--text-3)', fontSize:13}}>{description}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

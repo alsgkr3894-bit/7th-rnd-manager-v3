@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import ReportBuilderShell, { OptGroup, Seg, Check } from '@/components/report/ReportBuilderShell';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
+import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 import { formatNumber } from '@/lib/format';
 import { initDB } from '@/lib/db/init';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price/store';
@@ -18,6 +19,23 @@ const STATUS_COLOR = {
   삭제: 'var(--text-4)',
 };
 const STATUS_MARK = { 인상: '▲', 인하: '▼', 신규: 'NEW', 삭제: 'DEL' };
+
+function safeDateInput(value, fallback) {
+  const text = asDisplayText(value).slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : fallback;
+}
+
+function safeChangeRate(value) {
+  return asFiniteNumber(value, 0) ?? 0;
+}
+
+function safePrice(value) {
+  return asFiniteNumber(value, null);
+}
+
+function safeCategory(value) {
+  return asDisplayText(value, '기타') || '기타';
+}
 
 export default function Page() {
   const [periodMode, setPeriodMode] = useState('week');
@@ -48,21 +66,29 @@ export default function Page() {
   });
 
   useEffect(() => {
+    let ignore = false;
+
     setIsLoading(true);
     initDB()
       .then(async () => {
         try {
-          const files = await getPriceFiles();
+          const files = asObjectArray(await getPriceFiles());
+          if (ignore) return;
+
           if (files.length < 2) {
             setIsLoading(false);
             return;
           }
-          const sorted = [...files].sort((a, b) => (a.updateDate > b.updateDate ? -1 : 1));
+          const sorted = [...files].sort((a, b) =>
+            asDisplayText(a.updateDate) > asDisplayText(b.updateDate) ? -1 : 1
+          );
 
           let base, latest;
           if (periodMode === 'custom') {
-            const toFiles = sorted.filter(f => f.updateDate <= customTo);
-            const fromFiles = sorted.filter(f => f.updateDate <= customFrom);
+            const safeCustomTo = safeDateInput(customTo, todayStr);
+            const safeCustomFrom = safeDateInput(customFrom, weekAgoStr);
+            const toFiles = sorted.filter(f => asDisplayText(f.updateDate) <= safeCustomTo);
+            const fromFiles = sorted.filter(f => asDisplayText(f.updateDate) <= safeCustomFrom);
             latest = toFiles[0];
             base = fromFiles.find(f => f.id !== latest?.id) || sorted[1];
             if (!latest || !base || latest.id === base.id) {
@@ -72,24 +98,31 @@ export default function Page() {
           } else {
             [latest, base] = sorted;
           }
-          setDateRange(`${base.updateDate} ~ ${latest.updateDate}`);
+          if (ignore) return;
+
+          setDateRange(
+            `${asDisplayText(base.updateDate, '—')} ~ ${asDisplayText(latest.updateDate, '—')}`
+          );
 
           const [latestRows, baseRows] = await Promise.all([
             getPriceRowsByFileId(latest.id),
             getPriceRowsByFileId(base.id),
           ]);
-          const diff = comparePriceLists(baseRows, latestRows).filter(
+          if (ignore) return;
+
+          const diff = asObjectArray(comparePriceLists(baseRows, latestRows)).filter(
             c => c.changeStatus !== '변동없음'
           );
+          const safeThreshold = asFiniteNumber(threshold, 0) ?? 0;
           const filtered = diff.filter(c => {
             if (c.changeStatus === '신규' || c.changeStatus === '삭제') return true;
-            return Math.abs((c.changeRate || 0) * 100) >= threshold;
+            return Math.abs(safeChangeRate(c.changeRate) * 100) >= safeThreshold;
           });
           setChanges(filtered);
 
           const catMap = new Map();
           for (const c of filtered) {
-            const cat = c.temperature || '기타';
+            const cat = safeCategory(c.temperature);
             const entry = catMap.get(cat) || {
               cat,
               total: 0,
@@ -101,7 +134,7 @@ export default function Page() {
               count: 0,
             };
             entry.total++;
-            const pct = Math.abs((c.changeRate || 0) * 100);
+            const pct = Math.abs(safeChangeRate(c.changeRate) * 100);
             if (c.changeStatus === '인상') {
               entry.up++;
               entry.sum += pct;
@@ -123,36 +156,47 @@ export default function Page() {
           setCatSummary(Array.from(catMap.values()));
           setDataError(null);
         } catch (err) {
+          if (ignore) return;
+
           console.error('[price report]', err);
           setDataError('가격 파일을 비교하는 중 오류가 발생했어요.');
         } finally {
-          setIsLoading(false);
+          if (!ignore) setIsLoading(false);
         }
       })
       .catch(() => {
+        if (ignore) return;
+
         setIsLoading(false);
         setDataError('데이터베이스에 연결할 수 없어요. 가격 파일을 먼저 업로드해 주세요.');
       });
-  }, [threshold, periodMode, customFrom, customTo]);
 
-  const rising = changes.filter(c => c.changeStatus === '인상').length;
-  const falling = changes.filter(c => c.changeStatus === '인하').length;
-  const newItem = changes.filter(c => c.changeStatus === '신규').length;
-  const delItem = changes.filter(c => c.changeStatus === '삭제').length;
+    return () => {
+      ignore = true;
+    };
+  }, [threshold, periodMode, customFrom, customTo, todayStr, weekAgoStr]);
+
+  const thresholdValue = asFiniteNumber(threshold, 0) ?? 0;
+  const safeChanges = asObjectArray(changes);
+  const safeCatSummary = asObjectArray(catSummary);
+  const rising = safeChanges.filter(c => c.changeStatus === '인상').length;
+  const falling = safeChanges.filter(c => c.changeStatus === '인하').length;
+  const newItem = safeChanges.filter(c => c.changeStatus === '신규').length;
+  const delItem = safeChanges.filter(c => c.changeStatus === '삭제').length;
 
   const todayLabel = new Date().toLocaleDateString('ko-KR').replace(/\. /g, '.').replace(/\.$/, '');
   const reportMeta = {
     kind: 'price',
     period: dateRange,
     name: `제때 가격 변동 보고서 (${dateRange})`,
-    options: { periodMode, threshold, opts },
+    options: { periodMode, threshold: thresholdValue, opts },
   };
 
   // 카테고리별로 그룹핑 (미리보기 + PDF용)
-  const catOrder = catSummary.map(c => c.cat);
+  const catOrder = safeCatSummary.map(c => safeCategory(c.cat));
   const byCategory = {};
-  for (const c of changes) {
-    const cat = c.temperature || '기타';
+  for (const c of safeChanges) {
+    const cat = safeCategory(c.temperature);
     if (!byCategory[cat]) byCategory[cat] = [];
     byCategory[cat].push(c);
   }
@@ -185,16 +229,16 @@ export default function Page() {
                 <input
                   type="date"
                   className="input"
-                  value={customFrom}
-                  max={customTo}
+                  value={safeDateInput(customFrom, weekAgoStr)}
+                  max={safeDateInput(customTo, todayStr)}
                   onChange={e => setCustomFrom(e.target.value)}
                 />
                 <span style={{ color: 'var(--text-3)' }}>~</span>
                 <input
                   type="date"
                   className="input"
-                  value={customTo}
-                  min={customFrom}
+                  value={safeDateInput(customTo, todayStr)}
+                  min={safeDateInput(customFrom, weekAgoStr)}
                   onChange={e => setCustomTo(e.target.value)}
                 />
               </div>
@@ -208,11 +252,11 @@ export default function Page() {
                 min="0"
                 max="10"
                 step="0.5"
-                value={threshold}
-                onChange={e => setThreshold(parseFloat(e.target.value))}
+                value={thresholdValue}
+                onChange={e => setThreshold(asFiniteNumber(e.target.value, 0) ?? 0)}
               />
               <div className="threshold-val num" style={{ minWidth: 64 }}>
-                ±{threshold}
+                ±{thresholdValue}
                 <span className="unit">%</span>
               </div>
             </div>
@@ -246,7 +290,7 @@ export default function Page() {
             <div className="paper-meta">
               <span>기간: {dateRange}</span>
               <span>·</span>
-              <span>임계값 ±{threshold}%</span>
+              <span>임계값 ±{thresholdValue}%</span>
               <span>·</span>
               <span className="mono">
                 생성일 {todayLabel} · {getProfile().name}
@@ -289,12 +333,12 @@ export default function Page() {
             </div>
             <div className="paper-stat">
               <div className="paper-stat-label">총 변동</div>
-              <div className="paper-stat-val num">{changes.length}</div>
+              <div className="paper-stat-val num">{safeChanges.length}</div>
             </div>
           </div>
 
           {/* ── 카테고리별 요약 ── */}
-          {opts.catSummary && catSummary.length > 0 && (
+          {opts.catSummary && safeCatSummary.length > 0 && (
             <div className="paper-section">
               <div className="paper-section-title">카테고리별 변동 요약</div>
               <table className="paper-table">
@@ -310,86 +354,102 @@ export default function Page() {
                   </tr>
                 </thead>
                 <tbody>
-                  {catSummary.map(c => (
-                    <tr key={c.cat}>
-                      <td style={{ fontWeight: 600 }}>{c.cat}</td>
-                      <td className="num right">{c.total}</td>
-                      <td className="num right" style={{ color: 'var(--negative)' }}>
-                        {c.up || '—'}
-                      </td>
-                      <td className="num right" style={{ color: 'var(--positive)' }}>
-                        {c.down || '—'}
-                      </td>
-                      <td className="num right" style={{ color: 'var(--accent)' }}>
-                        {c.newItem || '—'}
-                      </td>
-                      <td className="num right muted">{c.del || '—'}</td>
-                      <td className="num right">
-                        {c.count > 0 ? `${(c.sum / c.count).toFixed(1)}%` : '—'}
-                      </td>
-                    </tr>
-                  ))}
+                  {safeCatSummary.map((c, index) => {
+                    const count = asFiniteNumber(c.count, 0) ?? 0;
+                    const sum = asFiniteNumber(c.sum, 0) ?? 0;
+                    return (
+                      <tr key={`${safeCategory(c.cat)}-${index}`}>
+                        <td style={{ fontWeight: 600 }}>{safeCategory(c.cat)}</td>
+                        <td className="num right">{asFiniteNumber(c.total, 0) ?? 0}</td>
+                        <td className="num right" style={{ color: 'var(--negative)' }}>
+                          {asFiniteNumber(c.up, 0) || '—'}
+                        </td>
+                        <td className="num right" style={{ color: 'var(--positive)' }}>
+                          {asFiniteNumber(c.down, 0) || '—'}
+                        </td>
+                        <td className="num right" style={{ color: 'var(--accent)' }}>
+                          {asFiniteNumber(c.newItem, 0) || '—'}
+                        </td>
+                        <td className="num right muted">{asFiniteNumber(c.del, 0) || '—'}</td>
+                        <td className="num right">
+                          {count > 0 ? `${(sum / count).toFixed(1)}%` : '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
 
           {/* ── 카테고리별 변동 품목 상세 ── */}
-          {changes.length > 0 ? (
-            cats.map(cat => (
-              <div className="paper-section paper-cat-section" key={cat}>
-                <div className="paper-section-title">{cat} — 변동 품목</div>
-                <table className="paper-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 80 }}>코드</th>
-                      <th>제품명</th>
-                      <th style={{ width: 90, textAlign: 'right' }}>이전 단가</th>
-                      <th style={{ width: 90, textAlign: 'right' }}>현재 단가</th>
-                      <th style={{ width: 90, textAlign: 'right' }}>변동</th>
-                      <th style={{ width: 80, textAlign: 'right' }}>변동률</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {byCategory[cat].map((c, ci) => {
-                      const pct = (c.changeRate || 0) * 100;
-                      const isSpecial = c.changeStatus === '신규' || c.changeStatus === '삭제';
-                      return (
-                        <tr key={`${c.productCode || c.productName}-${ci}`}>
-                          <td className="muted mono" style={{ fontSize: 11 }}>
-                            {c.productCode || '—'}
-                          </td>
-                          <td style={{ fontWeight: 600 }}>{c.productName}</td>
-                          <td className="num right muted">
-                            {c.basePrice != null ? formatNumber(c.basePrice) : '—'}
-                          </td>
-                          <td className="num right" style={{ fontWeight: 700 }}>
-                            {c.latestPrice != null
-                              ? formatNumber(c.latestPrice)
-                              : c.changeStatus === '신규'
-                                ? '신규'
-                                : '—'}
-                          </td>
-                          <td className="num right" style={{ color: STATUS_COLOR[c.changeStatus] }}>
-                            {isSpecial
-                              ? '—'
-                              : `${c.latestPrice - c.basePrice > 0 ? '+' : ''}${formatNumber(c.latestPrice - c.basePrice)}`}
-                          </td>
-                          <td
-                            className="num right"
-                            style={{ fontWeight: 700, color: STATUS_COLOR[c.changeStatus] }}
-                          >
-                            {isSpecial
-                              ? STATUS_MARK[c.changeStatus]
-                              : `${STATUS_MARK[c.changeStatus]} ${Math.abs(pct).toFixed(1)}%`}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ))
+          {safeChanges.length > 0 ? (
+            cats.map(cat => {
+              const rows = asObjectArray(byCategory[cat]);
+              return (
+                <div className="paper-section paper-cat-section" key={cat}>
+                  <div className="paper-section-title">{cat} — 변동 품목</div>
+                  <table className="paper-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: 80 }}>코드</th>
+                        <th>제품명</th>
+                        <th style={{ width: 90, textAlign: 'right' }}>이전 단가</th>
+                        <th style={{ width: 90, textAlign: 'right' }}>현재 단가</th>
+                        <th style={{ width: 90, textAlign: 'right' }}>변동</th>
+                        <th style={{ width: 80, textAlign: 'right' }}>변동률</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((c, ci) => {
+                        const pct = safeChangeRate(c.changeRate) * 100;
+                        const status = asDisplayText(c.changeStatus);
+                        const isSpecial = status === '신규' || status === '삭제';
+                        const productCode = asDisplayText(c.productCode);
+                        const productName = asDisplayText(c.productName, '—');
+                        const basePrice = safePrice(c.basePrice);
+                        const latestPrice = safePrice(c.latestPrice);
+                        const changeAmount =
+                          latestPrice != null && basePrice != null
+                            ? latestPrice - basePrice
+                            : null;
+                        return (
+                          <tr key={`${productCode || productName}-${ci}`}>
+                            <td className="muted mono" style={{ fontSize: 11 }}>
+                              {productCode || '—'}
+                            </td>
+                            <td style={{ fontWeight: 600 }}>{productName}</td>
+                            <td className="num right muted">
+                              {basePrice != null ? formatNumber(basePrice) : '—'}
+                            </td>
+                            <td className="num right" style={{ fontWeight: 700 }}>
+                              {latestPrice != null
+                                ? formatNumber(latestPrice)
+                                : status === '신규'
+                                  ? '신규'
+                                  : '—'}
+                            </td>
+                            <td className="num right" style={{ color: STATUS_COLOR[status] }}>
+                              {isSpecial || changeAmount == null
+                                ? '—'
+                                : `${changeAmount > 0 ? '+' : ''}${formatNumber(changeAmount)}`}
+                            </td>
+                            <td
+                              className="num right"
+                              style={{ fontWeight: 700, color: STATUS_COLOR[status] }}
+                            >
+                              {isSpecial
+                                ? STATUS_MARK[status]
+                                : `${STATUS_MARK[status] || ''} ${Math.abs(pct).toFixed(1)}%`}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })
           ) : (
             <div
               style={{
@@ -402,7 +462,7 @@ export default function Page() {
             >
               {dateRange === '—'
                 ? '가격 파일 2개 이상 업로드 후 비교할 수 있어요'
-                : `임계값 ±${threshold}% 이상 변동 품목 없음`}
+                : `임계값 ±${thresholdValue}% 이상 변동 품목 없음`}
             </div>
           )}
 

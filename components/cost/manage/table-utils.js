@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 
 export const DEFAULT_PAGE_SIZE = 60;
+const noop = () => {};
 
 function valueOf(row, key) {
   if (!row || !key) return '';
@@ -21,10 +22,12 @@ function compareValues(a, b) {
 }
 
 export function sortRows(rows, sort, options = []) {
-  const opt = options.find(o => o.id === sort?.id);
-  if (!opt) return rows;
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const safeOptions = Array.isArray(options) ? options : [];
+  const opt = safeOptions.find(o => o.id === sort?.id);
+  if (!opt) return safeRows;
   const dir = sort.dir === 'desc' ? -1 : 1;
-  return [...rows].sort((a, b) => compareValues(valueOf(a, opt.key || opt.id), valueOf(b, opt.key || opt.id)) * dir);
+  return [...safeRows].sort((a, b) => compareValues(valueOf(a, opt.key || opt.id), valueOf(b, opt.key || opt.id)) * dir);
 }
 
 export function useCostManageTable(rows, {
@@ -33,16 +36,19 @@ export function useCostManageTable(rows, {
   initialSort = null,
   getRowId = row => row.id,
 } = {}) {
+  const safeRows = useMemo(() => Array.isArray(rows) ? rows : [], [rows]);
+  const safeSortOptions = useMemo(() => Array.isArray(sortOptions) ? sortOptions : [], [sortOptions]);
+  const rowId = typeof getRowId === 'function' ? getRowId : (row => row?.id);
   // initialSort.id가 sortOptions에 없으면 첫 번째 옵션으로 fallback (silent fail 방지)
-  const resolvedInitial = initialSort && sortOptions.some(o => o.id === initialSort.id)
+  const resolvedInitial = initialSort && safeSortOptions.some(o => o.id === initialSort.id)
     ? initialSort
-    : (sortOptions[0] ? { id: sortOptions[0].id, dir: 'asc' } : null);
+    : (safeSortOptions[0] ? { id: safeSortOptions[0].id, dir: 'asc' } : null);
   const [sort, setSort] = useState(resolvedInitial);
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(() => new Set());
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  const sorted = useMemo(() => sortRows(rows, sort, sortOptions), [rows, sort, sortOptions]);
+  const sorted = useMemo(() => sortRows(safeRows, sort, safeSortOptions), [safeRows, sort, safeSortOptions]);
   const total = sorted.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -70,7 +76,7 @@ export function useCostManageTable(rows, {
   }
 
   function togglePage() {
-    const ids = paged.map(getRowId).filter(id => id != null);
+    const ids = paged.map(rowId).filter(id => id != null);
     const allSelected = ids.length > 0 && ids.every(id => selected.has(id));
     setSelected(prev => {
       const next = new Set(prev);
@@ -94,13 +100,14 @@ export function useCostManageTable(rows, {
     confirmingDelete, setConfirmingDelete,
     // getRowId(row)가 undefined인 행(레시피 없음)은 선택 대상 제외 후 판별
     allPageSelected: paged.length > 0 && paged
-      .filter(row => getRowId(row) != null)
-      .every(row => selected.has(getRowId(row))),
+      .filter(row => rowId(row) != null)
+      .every(row => selected.has(rowId(row))),
   };
 }
 
 export function sortButtonOptions(options, sort) {
-  return options.map(opt => ({
+  const safeOptions = Array.isArray(options) ? options : [];
+  return safeOptions.map(opt => ({
     id: opt.id,
     label: `${opt.label}${sort?.id === opt.id ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}`,
   }));
@@ -108,11 +115,12 @@ export function sortButtonOptions(options, sort) {
 
 export function SortableHeader({ label, id, sort, onSort, style }) {
   const active = sort?.id === id;
+  const handleSort = typeof onSort === 'function' ? onSort : noop;
   return (
     <th style={style}>
       <button
         type="button"
-        onClick={() => onSort(id)}
+        onClick={() => handleSort(id)}
         style={{
           border: 0,
           background: 'transparent',
@@ -133,6 +141,7 @@ export function InlineEditCell({ value, onSave, type = 'text', align = 'left', r
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? '');
   const display = formatter ? formatter(value) : (value ?? '');
+  const save = typeof onSave === 'function' ? onSave : noop;
 
   async function commit() {
     const next = type === 'number' ? (draft === '' ? null : Number(draft)) : String(draft).trim();
@@ -141,7 +150,7 @@ export function InlineEditCell({ value, onSave, type = 'text', align = 'left', r
       setEditing(false);
       return;
     }
-    await onSave(next);
+    await save(next);
     setEditing(false);
   }
 
@@ -181,6 +190,9 @@ export function InlineEditCell({ value, onSave, type = 'text', align = 'left', r
 
 export function SelectionToolbar({ selectedCount, confirming, onAskDelete, onConfirmDelete, onCancel, noun = '항목' }) {
   if (selectedCount <= 0) return null;
+  const askDelete = typeof onAskDelete === 'function' ? onAskDelete : noop;
+  const confirmDelete = typeof onConfirmDelete === 'function' ? onConfirmDelete : noop;
+  const cancel = typeof onCancel === 'function' ? onCancel : noop;
   return (
     <div style={{
       display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap',
@@ -193,17 +205,17 @@ export function SelectionToolbar({ selectedCount, confirming, onAskDelete, onCon
           <span style={{ color: 'var(--negative)', fontWeight: 700 }}>
             선택한 {noun}을 삭제할까요?
           </span>
-          <button className="btn sm" style={{ background: 'var(--negative)', color: '#fff', border: 'none' }} onClick={onConfirmDelete}>
+          <button className="btn sm" style={{ background: 'var(--negative)', color: '#fff', border: 'none' }} onClick={confirmDelete}>
             삭제
           </button>
-          <button className="btn sm" onClick={onCancel}>취소</button>
+          <button className="btn sm" onClick={cancel}>취소</button>
         </>
       ) : (
         <>
-          <button className="btn sm" style={{ color: 'var(--negative)' }} onClick={onAskDelete}>
+          <button className="btn sm" style={{ color: 'var(--negative)' }} onClick={askDelete}>
             선택 삭제
           </button>
-          <button className="btn sm" onClick={onCancel}>선택 해제</button>
+          <button className="btn sm" onClick={cancel}>선택 해제</button>
         </>
       )}
     </div>

@@ -2,28 +2,37 @@
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { MasterSourceBadge } from '@/components/ui/MasterSourceBadge';
+import {
+  getBreadcrumbKey,
+  getFilterChipKey,
+  normalizeBreadcrumbs,
+  normalizeFilterChips,
+  normalizePageText,
+} from '@/lib/ui/page-header';
 
 export function PageHeader({ title, sub, breadcrumb, actions, masterSource }) {
   const router = useRouter();
+  const breadcrumbs = normalizeBreadcrumbs(breadcrumb);
+  const safeTitle = normalizePageText(title);
+  const safeSub = normalizePageText(sub);
+
   return (
     <div className="page-head">
-      {breadcrumb && (
+      {breadcrumbs.length > 0 && (
         <div className="breadcrumb">
-          {breadcrumb.map((b, i) => {
-            const isLast = i === breadcrumb.length - 1;
-            const label  = typeof b === 'string' ? b : b.label;
-            const href   = typeof b === 'object' && b.href ? b.href : null;
+          {breadcrumbs.map((b, i) => {
+            const isLast = i === breadcrumbs.length - 1;
             return (
-              <span key={i} style={{display:'inline-flex',alignItems:'center',gap:4}}>
+              <span key={getBreadcrumbKey(b, i)} style={{display:'inline-flex',alignItems:'center',gap:4}}>
                 {i > 0 && <Icon.chevRight style={{width:12,height:12,color:'var(--text-4)'}}/>}
-                {!isLast && href ? (
+                {!isLast && b.href ? (
                   <button
                     className="bc-link"
                     style={{background:'none',border:'none',padding:0,cursor:'pointer',font:'inherit'}}
-                    onClick={() => router.push(href)}
-                  >{label}</button>
+                    onClick={() => router.push(b.href)}
+                  >{b.label}</button>
                 ) : (
-                  <span className={isLast ? 'bc-current' : 'bc-link'} {...(isLast ? { 'aria-current': 'page' } : {})}>{label}</span>
+                  <span className={isLast ? 'bc-current' : 'bc-link'} {...(isLast ? { 'aria-current': 'page' } : {})}>{b.label}</span>
                 )}
               </span>
             );
@@ -33,10 +42,10 @@ export function PageHeader({ title, sub, breadcrumb, actions, masterSource }) {
       <div className="page-head-row">
         <div>
           <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
-            <h1 className="page-title">{title}</h1>
+            <h1 className="page-title">{safeTitle}</h1>
             {masterSource && <MasterSourceBadge />}
           </div>
-          {sub && <div className="page-sub">{sub}</div>}
+          {safeSub && <div className="page-sub">{safeSub}</div>}
         </div>
         {actions && <div className="page-actions">{actions}</div>}
       </div>
@@ -45,26 +54,37 @@ export function PageHeader({ title, sub, breadcrumb, actions, masterSource }) {
 }
 
 export function FilterBar({ search, onSearch, chips, dateRange }) {
+  const chipItems = normalizeFilterChips(chips);
+  const handleSearch = typeof onSearch === 'function' ? onSearch : null;
+  const safeSearch = normalizePageText(search);
+  const safeDateRange = normalizePageText(dateRange);
+
   return (
     <div className="filter-bar">
-      {onSearch && (
+      {handleSearch && (
         <div className="filter-search">
           <Icon.search style={{width:16,height:16,color:'var(--text-3)'}}/>
-          <input value={search||''} onChange={e=>onSearch(e.target.value)} placeholder="검색"/>
+          <input value={safeSearch} onChange={e=>handleSearch(e.target.value)} placeholder="검색"/>
         </div>
       )}
-      {chips && (
+      {chipItems.length > 0 && (
         <div className="filter-chips">
-          {chips.map((c,i)=>(
-            <button key={i} className={'chip '+(c.active?'active':'')} onClick={c.onClick}>
-              {c.label}{c.count!=null&&<span className="chip-count">{c.count}</span>}
-            </button>
-          ))}
+          {chipItems.map((c,i) => {
+            return (
+              <button
+                key={getFilterChipKey(c, i)}
+                className={'chip '+(c.active?'active':'')}
+                onClick={c.onClick}
+              >
+                {c.label}{c.count&&<span className="chip-count">{c.count}</span>}
+              </button>
+            );
+          })}
         </div>
       )}
-      {dateRange && (
+      {safeDateRange && (
         <button className="filter-date">
-          <Icon.doc style={{width:14,height:14}}/>{dateRange}
+          <Icon.doc style={{width:14,height:14}}/>{safeDateRange}
           <Icon.chevDown style={{width:14,height:14,color:'var(--text-3)'}}/>
         </button>
       )}

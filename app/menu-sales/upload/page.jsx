@@ -12,6 +12,14 @@ export default function Page() {
     ready, stage, error, preview, history,
     handleFile, handleConfirm, handleCancel, handleDeleteFile,
   } = useSalesUpload();
+  const safePreview = preview && typeof preview === 'object' && !Array.isArray(preview) ? preview : null;
+  const isPreviewStage = stage === 'preview' || stage === 'saving';
+  const isDropzoneDisabled = !ready || stage === 'parsing' || (isPreviewStage && !safePreview);
+  const busyText = stage === 'parsing'
+    ? '검증 중...'
+    : isPreviewStage && !safePreview
+      ? '미리보기 준비 중...'
+      : 'DB 초기화 중...';
 
   return (
     <main className="main">
@@ -25,17 +33,17 @@ export default function Page() {
 
       <UploadErrorBanner error={error} />
 
-      {stage !== 'preview' && stage !== 'saving' ? (
+      {!isPreviewStage || !safePreview ? (
         <UploadDropzone
           onFile={handleFile}
-          disabled={!ready || stage === 'parsing'}
-          busyText={stage === 'parsing' ? '검증 중...' : 'DB 초기화 중...'}
+          disabled={isDropzoneDisabled}
+          busyText={busyText}
         />
       ) : (
         <UploadPreview
-          period={preview.period}
-          classifiedRows={preview.classifiedRows}
-          groupedIssues={preview.groupedIssues}
+          period={safePreview.period}
+          classifiedRows={safePreview.classifiedRows}
+          groupedIssues={safePreview.groupedIssues}
           onCancel={handleCancel}
           onConfirm={handleConfirm}
           saving={stage === 'saving'}

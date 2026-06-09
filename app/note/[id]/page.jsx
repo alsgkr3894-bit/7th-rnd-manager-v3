@@ -70,7 +70,8 @@ function ChainTimeline({ chain, currentId, onNavigate }) {
 export default function Page() {
   const router  = useRouter();
   const { id }  = useParams();
-  const noteId  = id ? Number(id) : null;
+  const parsedNoteId = Number(id);
+  const noteId  = Number.isSafeInteger(parsedNoteId) && parsedNoteId > 0 ? parsedNoteId : null;
 
   const [form,           setForm]          = useState(INIT);
   const [saving,         setSaving]        = useState(false);
@@ -87,9 +88,11 @@ export default function Page() {
 
   useEffect(() => {
     if (!noteId) { router.replace('/note'); return; }
+    let alive = true;
     initDB()
       .then(() => Promise.all([getNoteById(noteId), getNotesInChain(noteId), getAllSamples()]))
       .then(([note, ch, allSamples]) => {
+        if (!alive) return;
         if (!note) { showToast('노트를 찾을 수 없어요', 'warn'); router.replace('/note'); return; }
         const merged = { ...INIT, ...note };
         setForm(merged);
@@ -106,8 +109,9 @@ export default function Page() {
           setShowDraftBanner(true);
         }
       })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(err => { if (alive) console.error(err); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
   }, [noteId, router]);
 
   useEffect(() => {

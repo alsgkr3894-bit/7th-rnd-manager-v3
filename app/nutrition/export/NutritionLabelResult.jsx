@@ -20,6 +20,7 @@ import { loadMenuNames, applyMenuName } from '@/lib/nutrition/menu-name-override
 import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
 import { loadSliceCounts, saveSliceCounts } from '@/lib/nutrition/slice-config';
 import { SliceConfigModal } from '@/components/nutrition/SliceConfigModal';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import {
   buildPizzaSheet, buildPizzaSliceSheet, buildToppingSheet, buildSideSheet,
   buildSetHalfSheet, buildBeverageSheet, LABEL_COLS,
@@ -39,9 +40,16 @@ const SUB_TABS = [
 
 const COL_STYLE = { textAlign: 'right', minWidth: 70, fontSize: 12, padding: '6px 8px' };
 const HEADER_STYLE = { ...COL_STYLE, background: '#f0f0f0', fontWeight: 700, fontSize: 11 };
+const EMPTY_DASH_STYLE = { color: '#aaa' };
 
 // 음료 컬럼 — 1회중량(g) 대신 용량(ml)
 const BEVERAGE_COLS = LABEL_COLS.map(c => (c.key === 'weight' ? { ...c, label: '용량', unit: 'ml' } : c));
+
+function ValueText({ value }) {
+  const text = asDisplayText(value);
+  if (!text || text === '—') return <span style={EMPTY_DASH_STYLE}>—</span>;
+  return text;
+}
 
 export default function NutritionLabelResult() {
   const [tab, setTab] = useState('pizza');
@@ -79,6 +87,8 @@ export default function NutritionLabelResult() {
   }, []);
 
   useEffect(() => {
+    let alive = true;
+
     (async () => {
       await initDB();
       const [menuRefs, rawMap, edgeList, setComps, masters,
@@ -115,6 +125,7 @@ export default function NutritionLabelResult() {
       );
 
       const ctx = { menus: orderedMenus, rawMap, edgeMap, masterByCode, menuAllergenMap, setComps };
+      if (!alive) return;
       ctxRef.current = ctx;
       setLabelContext(ctx);
       setPizzaSheet(buildPizzaSheet(ctx));
@@ -123,7 +134,17 @@ export default function NutritionLabelResult() {
       setSetHalfSheet(buildSetHalfSheet(ctx));
       setBeverageSheet(buildBeverageSheet(ctx));
       setPizzaSliceSheet(buildPizzaSliceSheet({ ...ctx, sliceCounts: loadSliceCounts() }));
-    })().catch(console.error).finally(() => setLoading(false));
+    })()
+      .catch(err => {
+        if (alive) console.error(err);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   async function handleExcel() {
@@ -222,7 +243,8 @@ export default function NutritionLabelResult() {
 /* ── 하위 렌더러 ─────────────────────────────────────────────── */
 
 function PizzaTable({ rows }) {
-  if (!rows.length) return <Empty msg="피자 영양성분 데이터가 없어요. 베이스 영양성분을 먼저 입력해주세요." />;
+  const safeRows = asObjectArray(rows);
+  if (!safeRows.length) return <Empty msg="피자 영양성분 데이터가 없어요. 베이스 영양성분을 먼저 입력해주세요." />;
   return (
     <div style={{ overflowX: 'auto' }}>
       <div className="origin-result-title large">영양성분표 (피자) — 150g 기준</div>
@@ -246,25 +268,27 @@ function PizzaTable({ rows }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ menuName, rows: crustRows }) =>
-            crustRows.map((r, i) => (
-              <tr key={`${menuName}-${r.crustLabel}-${r.side}`}>
+          {safeRows.map(({ menuName, rows: crustRows }, groupIndex) => {
+            const safeCrustRows = asObjectArray(crustRows);
+            const displayMenuName = asDisplayText(menuName, `메뉴 ${groupIndex + 1}`);
+            return safeCrustRows.map((r, i) => (
+              <tr key={`${displayMenuName}-${asDisplayText(r.crustLabel)}-${asDisplayText(r.side)}-${i}`}>
                 {i === 0 && (
-                  <td rowSpan={crustRows.length} style={{ fontWeight: 700, verticalAlign: 'middle', padding: '6px 8px', fontSize: 13, borderRight: '1px solid #ccc' }}>
-                    {menuName}
+                  <td rowSpan={safeCrustRows.length} style={{ fontWeight: 700, verticalAlign: 'middle', padding: '6px 8px', fontSize: 13, borderRight: '1px solid #ccc' }}>
+                    {displayMenuName}
                   </td>
                 )}
-                <td style={{ padding: '5px 8px', fontSize: 12 }}>{r.crustLabel}</td>
-                <td style={{ padding: '5px 6px', fontSize: 11, textAlign: 'center', color: '#666' }}>{r.side}</td>
+                <td style={{ padding: '5px 8px', fontSize: 12 }}>{asDisplayText(r.crustLabel, '—')}</td>
+                <td style={{ padding: '5px 6px', fontSize: 11, textAlign: 'center', color: '#666' }}>{asDisplayText(r.side, '—')}</td>
                 {LABEL_COLS.map(c => (
                   <td key={c.key} style={COL_STYLE}>
-                    {(r[c.key] === '' || r[c.key] == null) ? <span style={{ color: '#aaa' }}>—</span> : r[c.key]}
+                    <ValueText value={r[c.key]} />
                   </td>
                 ))}
-                <td style={{ padding: '5px 8px', fontSize: 11 }}>{r.allergen || '—'}</td>
+                <td style={{ padding: '5px 8px', fontSize: 11 }}>{asDisplayText(r.allergen, '—')}</td>
               </tr>
-            ))
-          )}
+            ));
+          })}
         </tbody>
       </table>
     </div>
@@ -272,7 +296,8 @@ function PizzaTable({ rows }) {
 }
 
 function PizzaSliceTable({ rows }) {
-  if (!rows.length) return <Empty msg="피자 영양성분 데이터가 없어요. 베이스 영양성분(중량 포함)을 먼저 입력해주세요." />;
+  const safeRows = asObjectArray(rows);
+  if (!safeRows.length) return <Empty msg="피자 영양성분 데이터가 없어요. 베이스 영양성분(중량 포함)을 먼저 입력해주세요." />;
   const nutCols = LABEL_COLS.filter(c => c.key !== 'weight');
 
   return (
@@ -307,28 +332,30 @@ function PizzaSliceTable({ rows }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ menuName, rows: crustRows }) =>
-            crustRows.map((r, i) => (
-              <tr key={`${menuName}-${r.crustLabel}-${r.side}`}>
+          {safeRows.map(({ menuName, rows: crustRows }, groupIndex) => {
+            const safeCrustRows = asObjectArray(crustRows);
+            const displayMenuName = asDisplayText(menuName, `메뉴 ${groupIndex + 1}`);
+            return safeCrustRows.map((r, i) => (
+              <tr key={`${displayMenuName}-${asDisplayText(r.crustLabel)}-${asDisplayText(r.side)}-${i}`}>
                 {i === 0 && (
-                  <td rowSpan={crustRows.length} style={{ fontWeight: 700, verticalAlign: 'middle', padding: '6px 8px', fontSize: 13, borderRight: '1px solid #ccc' }}>
-                    {menuName}
+                  <td rowSpan={safeCrustRows.length} style={{ fontWeight: 700, verticalAlign: 'middle', padding: '6px 8px', fontSize: 13, borderRight: '1px solid #ccc' }}>
+                    {displayMenuName}
                   </td>
                 )}
-                <td style={{ padding: '5px 8px', fontSize: 12 }}>{r.crustLabel}</td>
-                <td style={{ padding: '5px 6px', fontSize: 11, textAlign: 'center', color: '#666' }}>{r.side}</td>
-                <td style={{ ...COL_STYLE, textAlign: 'center' }}>{r.slice}</td>
-                <td style={{ ...COL_STYLE, textAlign: 'center', fontWeight: 600 }}>{r.servingLabel}</td>
-                <td style={COL_STYLE}>{(r.weight === '' || r.weight == null || r.weight === '—') ? <span style={{ color: '#aaa' }}>—</span> : r.weight}</td>
+                <td style={{ padding: '5px 8px', fontSize: 12 }}>{asDisplayText(r.crustLabel, '—')}</td>
+                <td style={{ padding: '5px 6px', fontSize: 11, textAlign: 'center', color: '#666' }}>{asDisplayText(r.side, '—')}</td>
+                <td style={{ ...COL_STYLE, textAlign: 'center' }}><ValueText value={r.slice} /></td>
+                <td style={{ ...COL_STYLE, textAlign: 'center', fontWeight: 600 }}><ValueText value={r.servingLabel} /></td>
+                <td style={COL_STYLE}><ValueText value={r.weight} /></td>
                 {nutCols.map(c => (
                   <td key={c.key} style={COL_STYLE}>
-                    {(r[c.key] === '' || r[c.key] == null || r[c.key] === '—') ? <span style={{ color: '#aaa' }}>—</span> : r[c.key]}
+                    <ValueText value={r[c.key]} />
                   </td>
                 ))}
-                <td style={{ padding: '5px 8px', fontSize: 11 }}>{r.allergen || '—'}</td>
+                <td style={{ padding: '5px 8px', fontSize: 11 }}>{asDisplayText(r.allergen, '—')}</td>
               </tr>
-            ))
-          )}
+            ));
+          })}
         </tbody>
       </table>
     </div>
@@ -336,7 +363,9 @@ function PizzaSliceTable({ rows }) {
 }
 
 function SimpleTable({ title, rows, cols = LABEL_COLS }) {
-  if (!rows.length) return <Empty msg={`${title} 영양성분 데이터가 없어요.`} />;
+  const safeRows = asObjectArray(rows);
+  const safeCols = asObjectArray(cols);
+  if (!safeRows.length) return <Empty msg={`${title} 영양성분 데이터가 없어요.`} />;
   return (
     <div style={{ overflowX: 'auto' }}>
       <div className="origin-result-title large">{`영양성분표 (${title})`}</div>
@@ -344,22 +373,22 @@ function SimpleTable({ title, rows, cols = LABEL_COLS }) {
         <thead>
           <tr>
             <th style={{ ...HEADER_STYLE, textAlign: 'left', width: 200 }}>메뉴명</th>
-            {cols.map(c => (
+            {safeCols.map(c => (
               <th key={c.key} style={HEADER_STYLE}>{c.label}<br /><span style={{ fontWeight: 400, fontSize: 9 }}>({c.unit})</span></th>
             ))}
             <th style={{ ...HEADER_STYLE, textAlign: 'left' }}>함유알레르기</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => (
-            <tr key={i}>
-              <td style={{ padding: '6px 8px', fontWeight: 600, fontSize: 13 }}>{r.menuName}</td>
-              {cols.map(c => (
+          {safeRows.map((r, i) => (
+            <tr key={r.menuCode || r.menuName || i}>
+              <td style={{ padding: '6px 8px', fontWeight: 600, fontSize: 13 }}>{asDisplayText(r.menuName, `메뉴 ${i + 1}`)}</td>
+              {safeCols.map(c => (
                 <td key={c.key} style={COL_STYLE}>
-                  {(r[c.key] === '' || r[c.key] == null || r[c.key] === '—') ? <span style={{ color: '#aaa' }}>—</span> : r[c.key]}
+                  <ValueText value={r[c.key]} />
                 </td>
               ))}
-              <td style={{ padding: '6px 8px', fontSize: 11 }}>{r.allergen || '—'}</td>
+              <td style={{ padding: '6px 8px', fontSize: 11 }}>{asDisplayText(r.allergen, '—')}</td>
             </tr>
           ))}
         </tbody>
@@ -369,7 +398,8 @@ function SimpleTable({ title, rows, cols = LABEL_COLS }) {
 }
 
 function SetHalfTable({ rows }) {
-  if (!rows.length) return <Empty msg="세트/하프앤하프 데이터가 없어요." />;
+  const safeRows = asObjectArray(rows);
+  if (!safeRows.length) return <Empty msg="세트/하프앤하프 데이터가 없어요." />;
   return (
     <div style={{ overflowX: 'auto' }}>
       <div className="origin-result-title large">영양성분표 (세트박스·하프앤하프) — 1회중량 150g 기준</div>
@@ -384,13 +414,13 @@ function SetHalfTable({ rows }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => (
-            <tr key={i}>
-              <td style={{ padding: '6px 8px', fontWeight: 600, fontSize: 13 }}>{r.menuName}</td>
-              <td style={COL_STYLE}>{r.weight}</td>
-              <td style={COL_STYLE}>{r.minKcal === '—' ? <span style={{ color: '#aaa' }}>—</span> : r.minKcal}</td>
-              <td style={COL_STYLE}>{r.maxKcal === '—' ? <span style={{ color: '#aaa' }}>—</span> : r.maxKcal}</td>
-              <td style={{ padding: '6px 8px', fontSize: 11 }}>{r.allergen || '—'}</td>
+          {safeRows.map((r, i) => (
+            <tr key={r.menuCode || r.menuName || i}>
+              <td style={{ padding: '6px 8px', fontWeight: 600, fontSize: 13 }}>{asDisplayText(r.menuName, `메뉴 ${i + 1}`)}</td>
+              <td style={COL_STYLE}><ValueText value={r.weight} /></td>
+              <td style={COL_STYLE}><ValueText value={r.minKcal} /></td>
+              <td style={COL_STYLE}><ValueText value={r.maxKcal} /></td>
+              <td style={{ padding: '6px 8px', fontSize: 11 }}>{asDisplayText(r.allergen, '—')}</td>
             </tr>
           ))}
         </tbody>

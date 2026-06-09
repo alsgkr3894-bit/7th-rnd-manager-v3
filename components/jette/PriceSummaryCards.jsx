@@ -2,6 +2,7 @@
 import { useMemo } from 'react';
 import { formatNumber } from '@/lib/format';
 import { CHANGE_STATUS } from './managed-products-constants';
+import { asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
  * PriceSummaryCards — 가격 변동 요약 4카드 (인상/인하/변동없음/관리대상)
@@ -9,13 +10,14 @@ import { CHANGE_STATUS } from './managed-products-constants';
  * @param {Array} diffRows — comparePriceLists 결과
  */
 export function PriceSummaryCards({ diffRows }) {
+  const safeDiffRows = useMemo(() => asObjectArray(diffRows), [diffRows]);
   const summary = useMemo(() => {
-    const up    = diffRows.filter(r => r.changeStatus === CHANGE_STATUS.UP).length;
-    const down  = diffRows.filter(r => r.changeStatus === CHANGE_STATUS.DOWN).length;
-    const same  = diffRows.filter(r => r.changeStatus === CHANGE_STATUS.SAME).length;
-    const total = diffRows.length;
+    const up    = safeDiffRows.filter(r => r.changeStatus === CHANGE_STATUS.UP).length;
+    const down  = safeDiffRows.filter(r => r.changeStatus === CHANGE_STATUS.DOWN).length;
+    const same  = safeDiffRows.filter(r => r.changeStatus === CHANGE_STATUS.SAME).length;
+    const total = safeDiffRows.length;
     return { up, down, same, total };
-  }, [diffRows]);
+  }, [safeDiffRows]);
 
   const pctOf = (n) => summary.total > 0 ? Math.round((n / summary.total) * 100) : 0;
 

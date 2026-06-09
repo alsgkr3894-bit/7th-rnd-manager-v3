@@ -1,15 +1,23 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
 
 export function PinGate({ onVerify, onCancel }) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
+  const errorTimer = useRef(null);
+
+  useEffect(() => () => clearTimeout(errorTimer.current), []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const ok = onVerify(pin);
-    if (!ok) { setError(true); setPin(''); setTimeout(() => setError(false), 1500); }
+    const ok = onVerify?.(pin);
+    if (!ok) {
+      setError(true);
+      setPin('');
+      clearTimeout(errorTimer.current);
+      errorTimer.current = setTimeout(() => setError(false), 1500);
+    }
   };
 
   return (

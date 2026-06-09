@@ -12,6 +12,23 @@ import { ShipmentHistory } from '@/components/jette/ShipmentHistory';
 const NOW = new Date();
 const CURRENT_YEAR  = NOW.getFullYear();
 const CURRENT_MONTH = NOW.getMonth() + 1;
+const MIN_PERIOD_YEAR = 2000;
+const MAX_PERIOD_YEAR = 2100;
+
+function normalizePeriodYear(value, fallback) {
+  const year = parseInt(value, 10);
+  if (!Number.isFinite(year)) return fallback;
+  return year;
+}
+
+function normalizeShipmentPeriod(period) {
+  const year = Math.max(
+    MIN_PERIOD_YEAR,
+    Math.min(MAX_PERIOD_YEAR, normalizePeriodYear(period?.year, CURRENT_YEAR))
+  );
+  const month = Math.max(1, Math.min(12, parseInt(period?.month, 10) || CURRENT_MONTH));
+  return { year, month };
+}
 
 export default function Page() {
   const {
@@ -61,7 +78,7 @@ export default function Page() {
         title="출고량 엑셀(.xlsx) 또는 CSV 파일을 끌어다 놓으세요"
         onFile={(f, err) => {
           if (err) { showToast(err, 'err'); return; }
-          handleFile(f, period);
+          handleFile(f, normalizeShipmentPeriod(period));
         }}
       />
 
@@ -129,14 +146,16 @@ function PeriodInput({ period, onChange }) {
       <span style={{display:'flex', gap:4}}>
         <input
           type="number"
+          min={MIN_PERIOD_YEAR}
+          max={MAX_PERIOD_YEAR}
           value={period.year}
-          onChange={e => onChange({ ...period, year: Number(e.target.value) })}
+          onChange={e => onChange({ ...period, year: normalizePeriodYear(e.target.value, period.year) })}
           style={{...numInputStyle, width:84}}
         />
         <span style={{alignSelf:'center', color:'var(--text-3)'}}>년</span>
         <select
           value={period.month}
-          onChange={e => onChange({ ...period, month: Number(e.target.value) })}
+          onChange={e => onChange({ ...period, month: parseInt(e.target.value, 10) })}
           style={{...numInputStyle, width:64}}
         >
           {Array.from({length:12}, (_, i) => i + 1).map(m => (

@@ -10,6 +10,7 @@ import {
 } from '@/lib/cost/menu-price';
 import { parseCategoryFromCode } from '@/lib/cost/menu-price/code';
 import { getAllMenuMaster } from '@/lib/menu-master';
+import { parseOptionalNonNegativeNumber } from '@/lib/parse';
 
 const CODE_GROUPS = [
   { sub: 'PS',  label: '프리미엄 스페셜', sizes: ['L', 'R'] },
@@ -19,7 +20,11 @@ const CODE_GROUPS = [
   { sub: 'ONE', label: '1인피자',         sizes: ['단품'] },
 ];
 
+const noop = () => {};
+
 export function BulkPriceModal({ onClose, onDone }) {
+  const close = typeof onClose === 'function' ? onClose : noop;
+  const done = typeof onDone === 'function' ? onDone : noop;
   const [prices, setPrices] = useState(() => {
     const init = {};
     CODE_GROUPS.forEach(g => {
@@ -29,21 +34,42 @@ export function BulkPriceModal({ onClose, onDone }) {
     return init;
   });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   useKeyboardSave(() => { if (!saving) handleApply(); });
 
   const setPrice = (sub, size, val) =>
     setPrices(p => ({ ...p, [sub]: { ...p[sub], [size]: val } }));
 
+  function validatePrices() {
+    for (const group of CODE_GROUPS) {
+      for (const size of group.sizes) {
+        const parsed = parseOptionalNonNegativeNumber(prices[group.sub]?.[size]);
+        if (!parsed.ok) {
+          return `${group.label} ${size} 가격은 0 이상의 숫자만 입력하세요`;
+        }
+      }
+    }
+    return '';
+  }
+
   const handleApply = async () => {
+    const nextError = validatePrices();
+    if (nextError) {
+      setError(nextError);
+      return;
+    }
+    setError('');
     setSaving(true);
     try {
       await initDB();
       const [masters, existing] = await Promise.all([getAllMenuMaster(), getAllMenuPrices()]);
-      const existingMap = new Map(existing.map(r => [r.menuCode, r]));
+      const safeMasters = Array.isArray(masters) ? masters : [];
+      const safeExisting = Array.isArray(existing) ? existing : [];
+      const existingMap = new Map(safeExisting.map(r => [r.menuCode, r]));
       let created = 0, updated = 0;
 
-      for (const m of masters) {
+      for (const m of safeMasters) {
         if (!m.menuCode || m.status === 'discontinued') continue;
         const parts = m.menuCode.toUpperCase().split('-');
         const sub  = parts[1];
@@ -51,7 +77,7 @@ export function BulkPriceModal({ onClose, onDone }) {
         const size = lastPart === 'ONE' ? '단품' : lastPart;
         const group = CODE_GROUPS.find(g => g.sub === sub);
         if (!group) continue;
-        const priceVal = Number(prices[sub]?.[size]);
+        const priceVal = parseOptionalNonNegativeNumber(prices[sub]?.[size]).value;
         if (!priceVal) continue;
 
         const { category } = parseCategoryFromCode(m.menuCode);
@@ -65,10 +91,10 @@ export function BulkPriceModal({ onClose, onDone }) {
         }
       }
       showToast(`${created}개 생성 · ${updated}개 업데이트`, 'ok');
-      onDone();
-      onClose();
+      done();
+      close();
     } catch (err) {
-      showToast('실패: ' + err.message, 'err');
+      showToast('실패: ' + (err?.message || err), 'err');
     } finally {
       setSaving(false);
     }
@@ -78,7 +104,7 @@ export function BulkPriceModal({ onClose, onDone }) {
     <ModalFrame
       title="코드별 일괄 가격 설정"
       subtitle="메뉴 마스터의 코드를 기준으로 일치하는 모든 메뉴에 가격을 일괄 적용합니다"
-      onClose={onClose}
+      onClose={close}
       width="min(580px,95vw)"
       zIndex={300}
       padding="28px 32px"
@@ -113,6 +139,7 @@ export function BulkPriceModal({ onClose, onDone }) {
             {g.sizes.includes('L') ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
                 <input type="number" className="input"
+                  min="0"
                   style={{ textAlign: 'right', fontSize: 14, fontWeight: 600, width: 110 }}
                   value={prices[g.sub]?.L ?? ''}
                   onChange={e => setPrice(g.sub, 'L', e.target.value)}
@@ -126,6 +153,7 @@ export function BulkPriceModal({ onClose, onDone }) {
             {(g.sizes.includes('R') || g.sizes.includes('단품')) ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
                 <input type="number" className="input"
+                  min="0"
                   style={{ textAlign: 'right', fontSize: 14, fontWeight: 600, width: 110 }}
                   value={prices[g.sub]?.[g.sizes.includes('R') ? 'R' : '단품'] ?? ''}
                   onChange={e => setPrice(g.sub, g.sizes.includes('R') ? 'R' : '단품', e.target.value)}
@@ -138,8 +166,14 @@ export function BulkPriceModal({ onClose, onDone }) {
           </div>
         ))}
 
+        {error && (
+          <div style={{ marginTop: 12, fontSize: 12, color: 'var(--negative)' }}>
+            {error}
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
-          <button className="btn" onClick={onClose}>취소</button>
+          <button className="btn" onClick={close}>취소</button>
           <button className="btn primary" onClick={handleApply} disabled={saving}>
             {saving ? '적용 중…' : '일괄 적용'}
           </button>

@@ -1,15 +1,12 @@
+import {
+  getSkeletonStyle,
+  getSkeletonTableCellWidth,
+  normalizeSkeletonColumnCount,
+  normalizeSkeletonRowCount,
+} from '@/lib/ui/skeleton';
+
 export function Skeleton({ width = '100%', height = 16, radius = 6, style }) {
-  return (
-    <div style={{
-      width, height,
-      borderRadius: radius,
-      background: 'var(--surface-2)',
-      backgroundImage: 'linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%)',
-      backgroundSize: '200% 100%',
-      animation: 'shimmer 1.4s infinite',
-      ...style,
-    }}/>
-  );
+  return <div style={getSkeletonStyle({ width, height, radius, style })}/>;
 }
 
 export function NoteCardSkeleton() {
@@ -83,13 +80,16 @@ export function SampleCardSkeleton() {
 
 // cols: number of columns to render per row
 export function SkeletonTableRows({ rows = 5, cols = 5 }) {
+  const safeRows = normalizeSkeletonRowCount(rows);
+  const safeCols = normalizeSkeletonColumnCount(cols);
+
   return (
     <>
-      {Array.from({ length: rows }).map((_, i) => (
+      {Array.from({ length: safeRows }).map((_, i) => (
         <tr key={i}>
-          {Array.from({ length: cols }).map((_, j) => (
+          {Array.from({ length: safeCols }).map((_, j) => (
             <td key={j} style={{ padding:'10px 12px' }}>
-              <Skeleton height={13} width={j === 0 ? '60%' : j === cols - 1 ? 40 : '85%'} radius={4}/>
+              <Skeleton height={13} width={getSkeletonTableCellWidth(j, safeCols)} radius={4}/>
             </td>
           ))}
         </tr>

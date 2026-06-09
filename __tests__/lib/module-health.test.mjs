@@ -92,4 +92,57 @@ describe('module-health', () => {
     expect(modules.find(item => item.id === 'system').status).toBe('bad');
     expect(countModuleHealth(modules)).toEqual({ good: 2, warn: 1, bad: 2 });
   });
+
+  test('손상된 배열 입력은 기본 상태로 복구한다', () => {
+    const modules = buildModuleHealth({
+      freshness: { sales: freshStatus, price: freshStatus, shipment: freshStatus },
+      backupReminder: { stale: false, daysSince: 3, never: false },
+      issues: null,
+      costAlertData: { items: null },
+      todos: null,
+      pipeline: { columns: null },
+      isMain: true,
+    });
+
+    expect(modules.map(item => item.status)).toEqual(['good', 'good', 'good', 'good', 'good']);
+    expect(countModuleHealth(null)).toEqual({ good: 0, warn: 0, bad: 0 });
+    expect(countModuleHealth([null, { status: 'warn' }])).toEqual({ good: 0, warn: 1, bad: 0 });
+  });
+
+  test('숫자 문자열과 깨진 기간 값은 표시 가능한 상태로 보정한다', () => {
+    const modules = buildModuleHealth({
+      freshness: {
+        sales: { year: '2026', month: '5', stale: false, never: false },
+        price: { year: 2026, month: 13, stale: false, never: false },
+        shipment: { year: '2026', month: '06', stale: false, never: false },
+      },
+      backupReminder: { stale: false, daysSince: '2.9', never: false },
+      issues: ['bad', { status: 'open' }],
+      costAlertData: { items: [null, { costRate: '41' }, { costRate: '35' }] },
+      todos: ['bad', { id: 1 }],
+      pipeline: { columns: [null, { count: '2' }, { count: 'bad' }] },
+      isMain: true,
+    });
+
+    expect(modules.find(item => item.id === 'sales')).toMatchObject({
+      status: 'warn',
+      metric: '미매칭 1건',
+    });
+    expect(modules.find(item => item.id === 'jette')).toMatchObject({
+      status: 'warn',
+      metric: '단가 확인 중 · 출고 2026.06',
+    });
+    expect(modules.find(item => item.id === 'cost')).toMatchObject({
+      status: 'bad',
+      metric: '경보 1건',
+    });
+    expect(modules.find(item => item.id === 'note')).toMatchObject({
+      status: 'warn',
+      metric: '할 일 1건',
+    });
+    expect(modules.find(item => item.id === 'system')).toMatchObject({
+      status: 'good',
+      metric: '백업 2일 전',
+    });
+  });
 });

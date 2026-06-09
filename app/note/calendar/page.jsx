@@ -107,6 +107,8 @@ export default function Page() {
   const [monthDir, setMonthDir] = useState(0); // -1 | 0 | 1 (animation direction)
   const calKey = useRef(0);
   const isAnimating = useRef(false); // 월 이동 중 연속 클릭 방지
+  const animationTimerRef = useRef(null);
+  const panelTimerRef = useRef(null);
 
   const today = useMemo(() => todayKey(), []); // 마운트 시 1회 계산 (캐시 함수가 자정에도 갱신)
 
@@ -133,12 +135,18 @@ export default function Page() {
     });
   }, [load]);
 
+  useEffect(() => () => {
+    if (animationTimerRef.current) clearTimeout(animationTimerRef.current);
+    if (panelTimerRef.current) clearTimeout(panelTimerRef.current);
+  }, []);
+
   /* 달 이동 — 애니메이션 중 연속 클릭 방지 */
   const shiftMonth = useCallback(delta => {
     if (isAnimating.current) return;
     isAnimating.current = true;
-    setTimeout(() => {
+    animationTimerRef.current = setTimeout(() => {
       isAnimating.current = false;
+      animationTimerRef.current = null;
     }, 250);
 
     setMonthDir(delta);
@@ -175,9 +183,11 @@ export default function Page() {
   function closePanel() {
     if (panelClosing) return;
     setPanelClosing(true);
-    setTimeout(() => {
+    if (panelTimerRef.current) clearTimeout(panelTimerRef.current);
+    panelTimerRef.current = setTimeout(() => {
       setSelectedDay(null);
       setPanelClosing(false);
+      panelTimerRef.current = null;
     }, 180);
   }
 

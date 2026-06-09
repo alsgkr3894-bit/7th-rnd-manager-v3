@@ -1,6 +1,7 @@
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { reclassifyAllFiles } from '@/lib/sales';
+import { asDisplayText, clampInteger } from '@/lib/ui/prop-guards';
 
 /** 세 설정 섹션(Aliases·Rules·Excluded)이 공유하는 스타일·컴포넌트 */
 
@@ -30,12 +31,16 @@ export const inputStyle = {
 };
 
 export function SectionHeader({ title, count, adding, onAdd }) {
+  const safeTitle = asDisplayText(title, '설정');
+  const safeCount = clampInteger(count, { min: 0, fallback: 0 });
+  const handleAdd = typeof onAdd === 'function' ? onAdd : null;
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
       <div style={{ fontSize: 13, fontWeight: 700 }}>
-        {title} <span style={{ color: 'var(--text-3)', fontWeight: 500, marginLeft: 6 }}>{count}개</span>
+        {safeTitle} <span style={{ color: 'var(--text-3)', fontWeight: 500, marginLeft: 6 }}>{safeCount}개</span>
       </div>
-      <button className="btn sm" onClick={onAdd}>
+      <button type="button" className="btn sm" onClick={handleAdd || undefined} disabled={!handleAdd}>
         {adding ? '닫기' : <><Icon.plus style={{ width: 12, height: 12 }}/> 추가</>}
       </button>
     </div>

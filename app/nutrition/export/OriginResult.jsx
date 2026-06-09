@@ -20,7 +20,13 @@ import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
 import { loadMenuNames, applyMenuName } from '@/lib/nutrition/menu-name-override';
 import { loadIngredientNames, saveIngredientNames, applyIngredientName } from '@/lib/nutrition/ingredient-name-override';
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import './origin-result.css';
+
+const EMPTY_MENU_MAP = new Map();
+const EMPTY_SET = new Set();
+const asMenuMap = value => (value instanceof Map ? value : EMPTY_MENU_MAP);
+const asSet = value => (value instanceof Set ? value : EMPTY_SET);
 
 /**
  * 식자재 origin 배열 + 레시피 매핑 → 출력용 origins 배열로 변환.
@@ -34,30 +40,42 @@ function buildOriginsFromIngredients(
   excludedMenuNames = new Set(),
   overrides = {}
 ) {
+  const ingredientMenuMap = asMenuMap(ingredientToMenus);
+  const excludedCodes = asSet(excludedMenuCodes);
+  const excludedNames = asSet(excludedMenuNames);
   const result = [];
-  for (const ing of ingredients) {
-    if (!ing.origin?.length || ing.discontinued || ing.excluded || ing.originHidden) continue;
-    const codeKey = ing.productCode ? `code:${ing.productCode}` : null;
-    const nameKey = `name:${(ing.ingredientName || '').trim().toLowerCase().replace(/\s+/g, '')}`;
-    const byCode = codeKey ? ingredientToMenus.get(codeKey) || new Map() : new Map();
-    const byName = ingredientToMenus.get(nameKey) || new Map();
+  for (const ing of asObjectArray(ingredients)) {
+    const originItems = asObjectArray(ing.origin);
+    if (!originItems.length || ing.discontinued || ing.excluded || ing.originHidden) continue;
+    const productCode = asDisplayText(ing.productCode);
+    const ingredientName = asDisplayText(ing.ingredientName);
+    const codeKey = productCode ? `code:${productCode}` : null;
+    const nameKey = `name:${ingredientName.trim().toLowerCase().replace(/\s+/g, '')}`;
+    const byCode = codeKey ? asMenuMap(ingredientMenuMap.get(codeKey)) : new Map();
+    const byName = asMenuMap(ingredientMenuMap.get(nameKey));
     const merged = new Map([...byName, ...byCode]);
 
     const menuCodes = [...merged.entries()]
       .filter(
-        ([menuCode, meta]) =>
-          !excludedMenuCodes.has(menuCode) && !excludedMenuNames.has((meta.menuName || '').trim())
+        ([menuCode, meta]) => {
+          const safeMenuCode = asDisplayText(menuCode);
+          return (
+            !excludedCodes.has(menuCode) &&
+            !excludedCodes.has(safeMenuCode) &&
+            !excludedNames.has(asDisplayText(meta?.menuName).trim())
+          );
+        }
       )
       .map(([menuCode, meta]) => ({
-        menuCode,
-        menuName: applyMenuName(menuCode, meta.menuName, overrides),
+        menuCode: asDisplayText(menuCode),
+        menuName: applyMenuName(asDisplayText(menuCode), asDisplayText(meta?.menuName), overrides),
       }));
 
     result.push({
-      ingredientName: ing.ingredientName,
-      items: ing.origin.map(it => ({
-        displayName: it.displayName || ing.ingredientName,
-        country: it.country,
+      ingredientName,
+      items: originItems.map(it => ({
+        displayName: asDisplayText(it.displayName) || ingredientName,
+        country: asDisplayText(it.country),
       })),
       menuCodes,
     });
@@ -75,20 +93,23 @@ const NOTICE = '※ 재료 수급에 따라 원산지가 다소 변경 될 수 �
  */
 function buildSheet1(origins) {
   const map = new Map();
-  for (const row of origins) {
-    for (const it of row.items) {
-      const key = `${it.displayName}||${it.country}`;
+  for (const row of asObjectArray(origins)) {
+    for (const it of asObjectArray(row.items)) {
+      const displayName = asDisplayText(it.displayName);
+      const country = asDisplayText(it.country);
+      const key = `${displayName}||${country}`;
       if (!map.has(key)) {
-        map.set(key, { displayName: it.displayName, originCountry: it.country, menus: new Set() });
+        map.set(key, { displayName, originCountry: country, menus: new Set() });
       }
       const entry = map.get(key);
-      for (const { menuName } of row.menuCodes || []) {
-        if (menuName) entry.menus.add(menuName);
+      for (const { menuName } of asObjectArray(row.menuCodes)) {
+        const safeMenuName = asDisplayText(menuName);
+        if (safeMenuName) entry.menus.add(safeMenuName);
       }
     }
   }
   return [...map.values()].sort((a, b) =>
-    (a.displayName || '').localeCompare(b.displayName || '', 'ko')
+    asDisplayText(a.displayName).localeCompare(asDisplayText(b.displayName), 'ko')
   );
 }
 
@@ -97,20 +118,24 @@ function buildSheet1(origins) {
  * 재료당 1행 — 복수 원산지는 items 배열로 합산 (중복 제거).
  */
 function buildSheet2(origins, ingOverrides = {}) {
-  return origins
+  return asObjectArray(origins)
     .map(row => {
       const seen = new Set();
       const items = [];
-      for (const it of row.items) {
-        const k = `${it.displayName}||${it.country}`;
-        if (!seen.has(k)) { seen.add(k); items.push(it); }
+      for (const it of asObjectArray(row.items)) {
+        const item = {
+          displayName: asDisplayText(it.displayName),
+          country: asDisplayText(it.country),
+        };
+        const k = `${item.displayName}||${item.country}`;
+        if (!seen.has(k)) { seen.add(k); items.push(item); }
       }
       return {
-        ingredientName: applyIngredientName(row.ingredientName, ingOverrides),
+        ingredientName: applyIngredientName(asDisplayText(row.ingredientName), ingOverrides),
         items,
       };
     })
-    .sort((a, b) => (a.ingredientName || '').localeCompare(b.ingredientName || '', 'ko'));
+    .sort((a, b) => asDisplayText(a.ingredientName).localeCompare(asDisplayText(b.ingredientName), 'ko'));
 }
 
 /**
@@ -118,14 +143,19 @@ function buildSheet2(origins, ingOverrides = {}) {
  */
 function buildSheet3(origins, ingOverrides = {}) {
   const menuMap = new Map();
-  for (const row of origins) {
-    const inner = row.items.map(it => `${it.displayName}:${it.country}`).join('/');
-    const ingText = `${applyIngredientName(row.ingredientName, ingOverrides)}(${inner})`;
-    for (const { menuCode, menuName } of row.menuCodes || []) {
-      const key = menuCode || menuName;
+  for (const row of asObjectArray(origins)) {
+    const inner = asObjectArray(row.items)
+      .map(it => `${asDisplayText(it.displayName)}:${asDisplayText(it.country)}`)
+      .join('/');
+    const ingredientName = applyIngredientName(asDisplayText(row.ingredientName), ingOverrides);
+    const ingText = `${ingredientName}(${inner})`;
+    for (const { menuCode, menuName } of asObjectArray(row.menuCodes)) {
+      const safeMenuCode = asDisplayText(menuCode);
+      const safeMenuName = asDisplayText(menuName);
+      const key = safeMenuCode || safeMenuName;
       if (!key) continue;
       if (!menuMap.has(key))
-        menuMap.set(key, { menuCode: key, menuName: menuName || menuCode, parts: [] });
+        menuMap.set(key, { menuCode: key, menuName: safeMenuName || safeMenuCode, parts: [] });
       const entry = menuMap.get(key);
       if (!entry.parts.includes(ingText)) entry.parts.push(ingText);
     }
@@ -133,8 +163,8 @@ function buildSheet3(origins, ingOverrides = {}) {
   return applyOrder(
     [...menuMap.values()],
     loadOrder(MENU_ORDER_KEY),
-    m => m.menuCode,
-    m => m.menuName
+    m => asDisplayText(m.menuCode),
+    m => asDisplayText(m.menuName)
   );
 }
 
@@ -146,20 +176,22 @@ function buildSheet3(origins, ingOverrides = {}) {
  */
 function buildSheet4(origins, ingOverrides = {}) {
   const entries = [];
-  for (const row of origins) {
-    if (!row.items?.length) continue;
+  for (const row of asObjectArray(origins)) {
+    const items = asObjectArray(row.items);
+    if (!items.length) continue;
     // 표시품목 단위로 원산지 묶기 (삽입순 유지)
     const byDisplay = new Map();
-    for (const it of row.items) {
-      const dn = it.displayName || row.ingredientName;
+    for (const it of items) {
+      const dn = asDisplayText(it.displayName) || asDisplayText(row.ingredientName);
       if (!byDisplay.has(dn)) byDisplay.set(dn, []);
       const arr = byDisplay.get(dn);
-      if (it.country && !arr.includes(it.country)) arr.push(it.country);
+      const country = asDisplayText(it.country);
+      if (country && !arr.includes(country)) arr.push(country);
     }
     const breakdown = [...byDisplay.entries()]
       .map(([dn, countries]) => `${dn} : ${countries.join(', ')}${countries.length > 1 ? ' 섞음' : ''}`)
       .join(', ');
-    entries.push({ name: applyIngredientName(row.ingredientName, ingOverrides), breakdown });
+    entries.push({ name: applyIngredientName(asDisplayText(row.ingredientName), ingOverrides), breakdown });
   }
 
   // 동일 원산지 구성끼리 재료명 병합
@@ -173,7 +205,7 @@ function buildSheet4(origins, ingOverrides = {}) {
   // 재료명 ㄱㄴㄷ 순 — 그룹 내 재료명 정렬 후, 각 줄을 첫 재료명 기준으로 정렬
   return [...merged.entries()]
     .map(([breakdown, names]) => {
-      const sorted = [...names].sort((a, b) => (a || '').localeCompare(b || '', 'ko'));
+      const sorted = [...names].sort((a, b) => asDisplayText(a).localeCompare(asDisplayText(b), 'ko'));
       return { names: sorted.join(', '), breakdown, sortKey: sorted[0] || '' };
     })
     .sort((a, b) => a.sortKey.localeCompare(b.sortKey, 'ko'));
@@ -182,7 +214,8 @@ function buildSheet4(origins, ingOverrides = {}) {
 /* ── 시트 렌더러 ─────────────────────────────────────────── */
 
 function Sheet1({ rows }) {
-  if (!rows.length)
+  const safeRows = asObjectArray(rows);
+  if (!safeRows.length)
     return (
       <div className="origin-result-empty">
         원산지 데이터가 없습니다. 식자재 관리에서 원산지를 입력해주세요.
@@ -205,11 +238,11 @@ function Sheet1({ rows }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => (
-            <tr key={i}>
-              <td>{r.displayName}</td>
-              <td>{r.originCountry}</td>
-              <td>{[...r.menus].join(', ')}</td>
+          {safeRows.map((r, i) => (
+            <tr key={`${asDisplayText(r.displayName)}-${asDisplayText(r.originCountry)}-${i}`}>
+              <td>{asDisplayText(r.displayName)}</td>
+              <td>{asDisplayText(r.originCountry)}</td>
+              <td>{[...asSet(r.menus)].join(', ')}</td>
             </tr>
           ))}
         </tbody>
@@ -220,7 +253,8 @@ function Sheet1({ rows }) {
 }
 
 function Sheet2({ rows }) {
-  if (!rows.length) return <div className="origin-result-empty">원산지 데이터가 없습니다.</div>;
+  const safeRows = asObjectArray(rows);
+  if (!safeRows.length) return <div className="origin-result-empty">원산지 데이터가 없습니다.</div>;
   return (
     <div id="origin-print-area">
       <div className="origin-result-title large">원산지 표시판 (냉장고부착용)</div>
@@ -238,13 +272,20 @@ function Sheet2({ rows }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => (
-            <tr key={i}>
-              <td>{r.ingredientName}</td>
-              <td className="origin-multiline">{r.items.map(it => it.displayName).join('\n')}</td>
-              <td className="origin-multiline">{r.items.map(it => it.country).join('\n')}</td>
+          {safeRows.map((r, i) => {
+            const items = asObjectArray(r.items);
+            return (
+            <tr key={`${asDisplayText(r.ingredientName)}-${i}`}>
+              <td>{asDisplayText(r.ingredientName)}</td>
+              <td className="origin-multiline">
+                {items.map(it => asDisplayText(it.displayName)).join('\n')}
+              </td>
+              <td className="origin-multiline">
+                {items.map(it => asDisplayText(it.country)).join('\n')}
+              </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
       <div className="origin-result-notice large">{NOTICE}</div>
@@ -253,7 +294,8 @@ function Sheet2({ rows }) {
 }
 
 function Sheet3({ rows }) {
-  if (!rows.length) return <div className="origin-result-empty">원산지 데이터가 없습니다.</div>;
+  const safeRows = asObjectArray(rows);
+  if (!safeRows.length) return <div className="origin-result-empty">원산지 데이터가 없습니다.</div>;
   return (
     <div id="origin-print-area">
       <div className="origin-result-title">배달플랫폼 원산지 표기</div>
@@ -269,10 +311,12 @@ function Sheet3({ rows }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => (
-            <tr key={i}>
-              <td style={{ fontWeight: 600 }}>{r.menuName}</td>
-              <td>{r.parts.join(', ')}</td>
+          {safeRows.map((r, i) => (
+            <tr key={`${asDisplayText(r.menuCode) || asDisplayText(r.menuName)}-${i}`}>
+              <td style={{ fontWeight: 600 }}>{asDisplayText(r.menuName)}</td>
+              <td>
+                {Array.isArray(r.parts) ? r.parts.map(part => asDisplayText(part)).join(', ') : ''}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -283,15 +327,16 @@ function Sheet3({ rows }) {
 }
 
 function Sheet4({ rows }) {
-  if (!rows.length) return <div className="origin-result-empty">원산지 데이터가 없습니다.</div>;
+  const safeRows = asObjectArray(rows);
+  if (!safeRows.length) return <div className="origin-result-empty">원산지 데이터가 없습니다.</div>;
   return (
     <div id="origin-print-area">
       <div className="origin-result-title large">원산지 정보</div>
       <div className="origin-statement-box">
-        {rows.map((r, i) => (
-          <p className="origin-statement-line" key={i}>
-            <span className="origin-statement-names">{r.names}</span>
-            <span className="origin-statement-paren">({r.breakdown})</span>
+        {safeRows.map((r, i) => (
+          <p className="origin-statement-line" key={`${asDisplayText(r.names)}-${i}`}>
+            <span className="origin-statement-names">{asDisplayText(r.names)}</span>
+            <span className="origin-statement-paren">({asDisplayText(r.breakdown)})</span>
           </p>
         ))}
       </div>
@@ -317,6 +362,8 @@ export default function OriginResult() {
   const [ingOverrides, setIngOverrides] = useState(() => loadIngredientNames());
 
   useEffect(() => {
+    let alive = true;
+
     (async () => {
       await initDB();
       const overrides = loadMenuNames();
@@ -332,18 +379,29 @@ export default function OriginResult() {
           getAllSetRecipes(),
           getAllRecipes(),
         ]);
-      const detailRecipes = tagDetailRecipes(pizzaRecs, personalRecs, sideRecs, setRecs);
+      const safeIngredients = asObjectArray(ings);
+      const safeMenuMasters = asObjectArray(masters);
+      const safeGroups = asObjectArray(groups);
+      const safeEdges = asObjectArray(edges);
+      const safeOldRecipes = asObjectArray(oldRecs);
+      const detailRecipes = tagDetailRecipes(
+        asObjectArray(pizzaRecs),
+        asObjectArray(personalRecs),
+        asObjectArray(sideRecs),
+        asObjectArray(setRecs)
+      );
       const { ingredientToMenus } = buildIngredientMenuMap({
-        menuMasters: masters,
+        menuMasters: safeMenuMasters,
         detailRecipes,
-        oldRecipes: oldRecs,
-        groups,
-        edges,
+        oldRecipes: safeOldRecipes,
+        groups: safeGroups,
+        edges: safeEdges,
       });
-      const { excludedMenuCodes, excludedMenuNames } = extractExcludedMenuSets(masters);
+      const { excludedMenuCodes, excludedMenuNames } = extractExcludedMenuSets(safeMenuMasters);
+      if (!alive) return;
       setOrigins(
         buildOriginsFromIngredients(
-          ings,
+          safeIngredients,
           ingredientToMenus,
           excludedMenuCodes,
           excludedMenuNames,
@@ -351,8 +409,16 @@ export default function OriginResult() {
         )
       );
     })()
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(err => {
+        if (alive) console.error(err);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const sheet1 = useMemo(() => buildSheet1(origins), [origins]);
@@ -370,7 +436,7 @@ export default function OriginResult() {
       await exportOriginToExcel({ sheet1, sheet2, sheet3, sheet4 });
       showToast('엑셀 다운로드 완료', 'ok');
     } catch (e) {
-      showToast('엑셀 출력 실패: ' + e.message, 'err');
+      showToast('엑셀 출력 실패: ' + asDisplayText(e?.message, '알 수 없는 오류'), 'err');
     } finally {
       setExporting(false);
     }
@@ -433,7 +499,12 @@ export default function OriginResult() {
 
       {ingEditOpen && (
         <MenuNameEditModal
-          menus={origins.map(o => ({ menuCode: o.ingredientName, menuName: o.ingredientName }))}
+          menus={asObjectArray(origins)
+            .map(o => {
+              const ingredientName = asDisplayText(o.ingredientName);
+              return { menuCode: ingredientName, menuName: ingredientName };
+            })
+            .filter(menu => menu.menuCode)}
           overrides={ingOverrides}
           onApply={next => {
             saveIngredientNames(next);

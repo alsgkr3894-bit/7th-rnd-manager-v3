@@ -87,6 +87,19 @@ function getRecipeSearchText(recipe, groups) {
   ].join(' ').toLowerCase();
 }
 
+function normalizeRecipeSort(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([, ids]) => Array.isArray(ids))
+      .map(([cat, ids]) => [
+        cat,
+        ids.filter(id => typeof id === 'string' || typeof id === 'number'),
+      ])
+      .filter(([, ids]) => ids.length > 0)
+  );
+}
+
 function handleExportCsv(filtered) {
   const headers = ['메뉴코드', '메뉴명', '카테고리', '규격'];
   const rows = filtered.map(r => [r.menuCode||'', r.menuName||'', r.menuCategory||'', r.size||'']);
@@ -136,7 +149,7 @@ function RecipeContent() {
   });
   const [customOrder,  setCustomOrder]  = useState(() => {
     if (typeof window === 'undefined') return {};
-    try { return JSON.parse(localStorage.getItem(KEYS.RECIPE_SORT) || '{}'); }
+    try { return normalizeRecipeSort(JSON.parse(localStorage.getItem(KEYS.RECIPE_SORT) || '{}')); }
     catch { return {}; }
   });
   const [dragSrc,   setDragSrc]    = useState(null);  // { cat, fromIdx }
@@ -386,7 +399,7 @@ function RecipeContent() {
       )}
 
       {tab === 'recipe' && (
-      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 16, marginTop: 8, alignItems: 'start' }}>
+      <div className="recipe-main-grid" style={{ marginTop: 8 }}>
 
         {/* ── 왼쪽: 메뉴 목록 ── */}
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>

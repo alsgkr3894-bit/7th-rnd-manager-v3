@@ -1,10 +1,14 @@
 'use client';
 import { Icon } from '@/components/icons';
+import { clampInteger } from '@/lib/ui/prop-guards';
 
 function ymText(status) {
   if (!status) return '확인 중';
   if (status.never) return '이력 없음';
-  return `${status.year}.${String(status.month).padStart(2, '0')}`;
+  const year = clampInteger(status.year, { min: 2000, max: 2100, fallback: 0 });
+  const month = clampInteger(status.month, { min: 1, max: 12, fallback: 0 });
+  if (!year || !month) return '확인 중';
+  return `${year}.${String(month).padStart(2, '0')}`;
 }
 
 function statusMeta(status) {
@@ -17,13 +21,17 @@ function statusMeta(status) {
 function backupMeta(reminder) {
   if (!reminder) return { label: '확인 중', detail: '확인 중', color: 'var(--text-3)', bg: 'var(--surface-2)', border: 'var(--border)' };
   if (reminder.never) return { label: '백업 필요', detail: '이력 없음', color: 'var(--negative)', bg: 'var(--negative-soft)', border: 'rgba(239,68,68,.25)' };
-  if (reminder.stale) return { label: '백업 권장', detail: `${reminder.daysSince}일 전`, color: 'var(--warn)', bg: 'var(--warn-soft)', border: 'rgba(245,158,11,.28)' };
-  return { label: '정상', detail: `${reminder.daysSince}일 전`, color: 'var(--positive)', bg: 'var(--positive-soft)', border: 'rgba(16,185,129,.25)' };
+  const daysSince = clampInteger(reminder.daysSince, { min: 0, fallback: 0 });
+  if (reminder.stale) return { label: '백업 권장', detail: `${daysSince}일 전`, color: 'var(--warn)', bg: 'var(--warn-soft)', border: 'rgba(245,158,11,.28)' };
+  return { label: '정상', detail: `${daysSince}일 전`, color: 'var(--positive)', bg: 'var(--positive-soft)', border: 'rgba(16,185,129,.25)' };
 }
 
 function targetText(target) {
   if (!target) return '지난달 기준';
-  return `${target.year}.${String(target.month).padStart(2, '0')} 기준`;
+  const year = clampInteger(target.year, { min: 2000, max: 2100, fallback: 0 });
+  const month = clampInteger(target.month, { min: 1, max: 12, fallback: 0 });
+  if (!year || !month) return '지난달 기준';
+  return `${year}.${String(month).padStart(2, '0')} 기준`;
 }
 
 export function DataFreshnessWidget({ freshness, backupReminder, isMain, router }) {
@@ -45,7 +53,7 @@ export function DataFreshnessWidget({ freshness, backupReminder, isMain, router 
             {needsAttention > 0 ? `${needsAttention}개 항목 확인 필요` : '핵심 데이터 최신 상태'} · {targetText(freshness?.target)}
           </div>
         </div>
-        <button className="link accent" onClick={() => router.push('/settings/backup')}>
+        <button className="link accent" onClick={() => router?.push?.('/settings/backup')}>
           백업 <Icon.chevRight />
         </button>
       </div>
@@ -55,7 +63,7 @@ export function DataFreshnessWidget({ freshness, backupReminder, isMain, router 
           const meta = statusMeta(row.status);
           return (
             <button key={row.key} className="widget-row"
-              onClick={() => router.push(row.href)}
+              onClick={() => router?.push?.(row.href)}
               style={{
                 display: 'grid',
                 gridTemplateColumns: '32px minmax(0, 1fr) auto',
@@ -105,7 +113,7 @@ export function DataFreshnessWidget({ freshness, backupReminder, isMain, router 
         })}
 
         <button className="widget-row"
-          onClick={() => router.push('/settings/backup')}
+          onClick={() => router?.push?.('/settings/backup')}
           style={{
             display: 'grid',
             gridTemplateColumns: '32px minmax(0, 1fr) auto',

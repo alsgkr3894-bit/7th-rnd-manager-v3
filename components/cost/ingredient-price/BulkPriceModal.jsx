@@ -1,11 +1,12 @@
 'use client';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { showToast } from '@/components/Toast';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { readSpreadsheetFile } from '@/lib/excel';
 import { parseBulkPriceRows, matchAndApply, commitBulkPrice } from '@/lib/cost/bulk-price-update';
+import { asObjectArray } from '@/lib/ui/prop-guards';
 
 // ── 보조 스타일 컴포넌트 ──────────────────────────────────────
 
@@ -34,6 +35,8 @@ function PriceDelta({ oldPrice, newPrice }) {
   );
 }
 
+const noop = () => {};
+
 // ── 메인 컴포넌트 ─────────────────────────────────────────────
 
 /**
@@ -46,6 +49,8 @@ function PriceDelta({ oldPrice, newPrice }) {
  */
 export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
   const fileRef = useRef(null);
+  const safeExistingIngredients = useMemo(() => asObjectArray(existingIngredients), [existingIngredients]);
+  const close = typeof onClose === 'function' ? onClose : noop;
 
   const [phase,     setPhase]     = useState('idle');   // idle | parsing | preview | committing | done
   const [error,     setError]     = useState(null);
@@ -70,14 +75,14 @@ export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
         );
       }
 
-      const diff = matchAndApply(parsed, existingIngredients);
+      const diff = matchAndApply(parsed, safeExistingIngredients);
       setPreview(diff);
       setPhase('preview');
     } catch (e) {
-      setError(e.message || '파일 파싱 중 오류가 발생했습니다.');
+      setError(e?.message || '파일 파싱 중 오류가 발생했습니다.');
       setPhase('idle');
     }
-  }, [existingIngredients]);
+  }, [safeExistingIngredients]);
 
   const handleInputChange = useCallback((e) => {
     const file = e.target.files?.[0];
@@ -88,11 +93,12 @@ export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
 
   // ── 커밋 ────────────────────────────────────────────────
   const handleCommit = useCallback(async () => {
-    if (!preview || preview.matched.length === 0) return;
+    const matched = asObjectArray(preview?.matched);
+    if (matched.length === 0) return;
     setCommitting(true);
     setError(null);
     try {
-      const result = await commitBulkPrice(preview.matched);
+      const result = await commitBulkPrice(matched);
       const { applied, skipped } = typeof result === 'object' ? result : { applied: result, skipped: 0 };
       setPhase('done');
       if (skipped > 0) {
@@ -100,7 +106,7 @@ export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
       }
       onDone?.(applied);
     } catch (e) {
-      setError(e.message || '저장 중 오류가 발생했습니다.');
+      setError(e?.message || '저장 중 오류가 발생했습니다.');
     } finally {
       setCommitting(false);
     }
@@ -119,7 +125,7 @@ export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
     <ModalFrame
       title="일괄 가격 업로드"
       subtitle="CSV 또는 Excel 파일로 식자재 단가를 한 번에 업데이트합니다"
-      onClose={onClose}
+      onClose={close}
       width="min(720px, 96vw)"
       zIndex={300}
       padding="24px 28px"
@@ -176,14 +182,17 @@ export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
       )}
 
       {/* 미리보기 */}
-      {phase === 'preview' && preview && (
+      {phase === 'preview' && preview && (() => {
+        const matched = asObjectArray(preview.matched);
+        const unmatched = asObjectArray(preview.unmatched);
+        return (
         <>
           {/* 요약 배지 */}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{fileName}</span>
-            <StatusBadge count={preview.matched.length}   color="var(--accent)"          label="매칭" />
-            <StatusBadge count={preview.unmatched.length} color="var(--text-3)"           label="미매칭" />
-            {preview.matched.length > 0 && (
+            <StatusBadge count={matched.length}   color="var(--accent)"          label="매칭" />
+            <StatusBadge count={unmatched.length} color="var(--text-3)"           label="미매칭" />
+            {matched.length > 0 && (
               <span style={{ fontSize: 12, color: 'var(--text-3)', marginLeft: 'auto' }}>
                 매칭된 항목의 <b>priceOverride</b> 필드를 업데이트합니다
               </span>
@@ -191,10 +200,10 @@ export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
           </div>
 
           {/* 매칭 테이블 */}
-          {preview.matched.length > 0 && (
+          {matched.length > 0 && (
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-2)', marginBottom: 6 }}>
-                업데이트 항목 ({preview.matched.length}개)
+                업데이트 항목 ({matched.length}개)
               </div>
               <div style={{ overflowX: 'auto', maxHeight: 320, overflowY: 'auto', borderRadius: 8, border: '1px solid var(--border)' }}>
                 <table className="data-table" style={{ minWidth: 480 }}>
@@ -208,7 +217,7 @@ export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {preview.matched.map(item => (
+                    {matched.map(item => (
                       <tr key={item.id}>
                         <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{item.productCode}</td>
                         <td style={{ fontSize: 13 }}>{item.name}</td>
@@ -230,13 +239,13 @@ export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
           )}
 
           {/* 미매칭 목록 (접힘) */}
-          {preview.unmatched.length > 0 && (
+          {unmatched.length > 0 && (
             <details style={{ marginBottom: 12 }}>
               <summary style={{ fontSize: 12, color: 'var(--text-3)', cursor: 'pointer', userSelect: 'none' }}>
-                마스터에 없는 항목 {preview.unmatched.length}개 (클릭하여 펼치기)
+                마스터에 없는 항목 {unmatched.length}개 (클릭하여 펼치기)
               </summary>
               <div style={{ marginTop: 8, padding: '8px 12px', background: 'var(--surface-2)', borderRadius: 6, fontSize: 12 }}>
-                {preview.unmatched.map((u, i) => (
+                {unmatched.map((u, i) => (
                   <div key={i} style={{ color: 'var(--text-3)', lineHeight: 1.8 }}>
                     <span style={{ fontFamily: 'monospace' }}>{u.productCode}</span>
                     {' — '}{formatNumber(u.newPrice)}원
@@ -246,7 +255,7 @@ export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
             </details>
           )}
 
-          {preview.matched.length === 0 && (
+          {matched.length === 0 && (
             <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
               마스터에 매칭되는 항목이 없습니다. 다른 파일을 선택하거나 제품코드를 확인하세요.
             </div>
@@ -260,27 +269,28 @@ export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
             <button
               className="btn primary"
               onClick={handleCommit}
-              disabled={committing || preview.matched.length === 0}
+              disabled={committing || matched.length === 0}
             >
               {committing
                 ? '저장 중…'
-                : `${preview.matched.length}개 단가 업데이트`}
+                : `${matched.length}개 단가 업데이트`}
             </button>
           </div>
         </>
-      )}
+        );
+      })()}
 
       {/* 완료 */}
       {phase === 'done' && (
         <div style={{ padding: '40px 0', textAlign: 'center' }}>
           <Icon.check style={{ width: 36, height: 36, color: 'var(--positive)', marginBottom: 12 }}/>
           <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>
-            {preview?.matched.length ?? 0}개 단가 업데이트 완료
+            {asObjectArray(preview?.matched).length}개 단가 업데이트 완료
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 20 }}>
             목록이 자동으로 새로고침됩니다.
           </div>
-          <button className="btn primary" onClick={onClose}>닫기</button>
+          <button className="btn primary" onClick={close}>닫기</button>
         </div>
       )}
 

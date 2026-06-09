@@ -16,6 +16,7 @@ import {
 import { inputStyle, SectionHeader, SectionEmpty, reapplyToUploadedData } from './shared/SectionUtils';
 import { useSettingsSection } from '@/hooks/useSettingsSection';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
+import { asDisplayText } from '@/lib/ui/prop-guards';
 
 const INITIAL_FORM = { rawMenuName: '', category: '', groupName: '', detailName: '' };
 
@@ -38,26 +39,39 @@ export function UserRulesSection() {
     update:          (id, f) => updateUserRule({ id, ...f }),
     remove:          deleteUserRule,
     getFormFromItem: (r) => ({
-      rawMenuName: r.rawMenuName || r.pattern || '',
-      category:    r.category    || '',
-      groupName:   r.groupName   || '',
-      detailName:  r.detailName  || '',
+      rawMenuName: asDisplayText(r.rawMenuName || r.pattern),
+      category:    asDisplayText(r.category),
+      groupName:   asDisplayText(r.groupName),
+      detailName:  asDisplayText(r.detailName),
     }),
     validateAdd:    (f) => !!(f.rawMenuName.trim() && f.category && f.groupName.trim()),
     validateUpdate: (f) => !!(f.rawMenuName.trim() && f.category && f.groupName.trim()),
     messages:       { add: '규칙이 추가됐어요' },
   });
 
-  useEffect(() => { loadNameOpts(); }, []);
+  useEffect(() => {
+    let ignore = false;
+
+    (async () => {
+      try {
+        const opts = await getClassificationNameOptions();
+        if (!ignore) setNameOpts(opts);
+      } catch (err) {
+        if (!ignore) console.warn(err);
+      }
+    })();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   // 검색어 변경 시 편집 중 행 자동 취소 (필터로 사라진 행 편집 방지)
   useEffect(() => { if (query) cancelEdit(); }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function loadNameOpts() {
-    try { setNameOpts(await getClassificationNameOptions()); } catch (err) { console.warn(err); }
-  }
-
   async function handleToggle(r) {
+    if (!r || r.id == null) return;
+
     try {
       await updateUserRule({ id: r.id, enable: r.enable !== false ? false : true });
       refresh();
@@ -69,10 +83,10 @@ export function UserRulesSection() {
     const q = query.trim().toLowerCase();
     if (!q) return list;
     return list.filter(r =>
-      (r.rawMenuName || r.pattern || '').toLowerCase().includes(q) ||
-      (r.category || '').toLowerCase().includes(q) ||
-      (r.groupName || '').toLowerCase().includes(q) ||
-      (r.detailName || '').toLowerCase().includes(q)
+      asDisplayText(r.rawMenuName || r.pattern).toLowerCase().includes(q) ||
+      asDisplayText(r.category).toLowerCase().includes(q) ||
+      asDisplayText(r.groupName).toLowerCase().includes(q) ||
+      asDisplayText(r.detailName).toLowerCase().includes(q)
     );
   }, [list, query]);
 
@@ -136,39 +150,49 @@ export function UserRulesSection() {
               </tr>
             </thead>
             <tbody>
-              {paged.map(r => editingId === r.id ? (
-                <tr key={r.id}>
-                  <td colSpan={6} style={{padding:8}}>
-                    <RowForm form={form} setForm={setForm} onCancel={() => setEditingId(null)} onSubmit={() => handleUpdate(r.id)} busy={busy} submitLabel="저장" nameOpts={nameOpts} isMain={isMain}/>
-                  </td>
-                </tr>
-              ) : (
-                <tr key={r.id} style={{opacity: r.enable === false ? 0.5 : 1}}>
-                  <td className="cell-name"><div className="menu-name">{r.rawMenuName || r.pattern}</div></td>
-                  <td><span className="chip" style={{background:'var(--surface-2)', color:'var(--text-2)'}}>{r.category}</span></td>
-                  <td>{r.groupName}</td>
-                  <td style={{color:'var(--text-3)', fontSize:12}}>{r.detailName || '-'}</td>
-                  <td style={{textAlign:'center'}}>
-                    <Toggle value={r.enable !== false} onChange={() => handleToggle(r)} />
-                  </td>
-                  <td style={{textAlign:'right'}}>
-                    {pendingDeleteId === r.id ? (
-                      <InlineConfirmButtons
-                        message="규칙을 삭제할까요?"
-                        busy={busy}
-                        onCancel={cancelDelete}
-                        onConfirm={() => confirmDelete(r.id)}
-                      />
-                    ) : (
-                      <>
-                        <button className="btn sm" onClick={() => startEdit(r)}>수정</button>
-                        {' '}
-                        <button className="btn sm" style={{color:'var(--negative)'}} onClick={() => requestDelete(r.id)}>삭제</button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {paged.map((r, index) => {
+                const ruleId = r.id;
+                const hasRuleId = ruleId != null;
+                const key = asDisplayText(ruleId, `user-rule-${index}`);
+                const pattern = asDisplayText(r.rawMenuName || r.pattern, '-');
+                const category = asDisplayText(r.category, '-');
+                const groupName = asDisplayText(r.groupName, '-');
+                const detailName = asDisplayText(r.detailName, '-');
+
+                return editingId === ruleId && hasRuleId ? (
+                  <tr key={key}>
+                    <td colSpan={6} style={{padding:8}}>
+                      <RowForm form={form} setForm={setForm} onCancel={() => setEditingId(null)} onSubmit={() => handleUpdate(ruleId)} busy={busy} submitLabel="저장" nameOpts={nameOpts} isMain={isMain}/>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={key} style={{opacity: r.enable === false ? 0.5 : 1}}>
+                    <td className="cell-name"><div className="menu-name">{pattern}</div></td>
+                    <td><span className="chip" style={{background:'var(--surface-2)', color:'var(--text-2)'}}>{category}</span></td>
+                    <td>{groupName}</td>
+                    <td style={{color:'var(--text-3)', fontSize:12}}>{detailName}</td>
+                    <td style={{textAlign:'center'}}>
+                      <Toggle value={r.enable !== false} onChange={() => handleToggle(r)} disabled={!hasRuleId} />
+                    </td>
+                    <td style={{textAlign:'right'}}>
+                      {pendingDeleteId === ruleId && hasRuleId ? (
+                        <InlineConfirmButtons
+                          message="규칙을 삭제할까요?"
+                          busy={busy}
+                          onCancel={cancelDelete}
+                          onConfirm={() => confirmDelete(ruleId)}
+                        />
+                      ) : hasRuleId ? (
+                        <>
+                          <button className="btn sm" onClick={() => startEdit(r)}>수정</button>
+                          {' '}
+                          <button className="btn sm" style={{color:'var(--negative)'}} onClick={() => requestDelete(ruleId)}>삭제</button>
+                        </>
+                      ) : null}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           <Pagination page={page} totalPages={totalPages} onPage={goTo} total={total} pageSize={20} />
@@ -179,37 +203,50 @@ export function UserRulesSection() {
 }
 
 function valueForSort(row, key) {
-  if (key === 'pattern') return row.rawMenuName || row.pattern || '';
-  if (key === 'createdAt') return row.createdAt || row.updatedAt || '';
-  return row[key] || '';
+  if (key === 'pattern') return asDisplayText(row.rawMenuName || row.pattern);
+  if (key === 'createdAt') return asDisplayText(row.createdAt || row.updatedAt);
+  return asDisplayText(row[key]);
 }
 
 function RowForm({ form, setForm, onCancel, onSubmit, busy, submitLabel = '추가', nameOpts = { groupNames: [], detailNames: [], byCategory: {} }, isMain = true }) {
+  const safeForm = form && typeof form === 'object' ? form : INITIAL_FORM;
+  const safeNameOpts = nameOpts && typeof nameOpts === 'object' ? nameOpts : { groupNames: [], detailNames: [], byCategory: {} };
+  const updateForm = typeof setForm === 'function' ? setForm : () => {};
+  const handleCancel = typeof onCancel === 'function' ? onCancel : undefined;
+  const handleSubmit = typeof onSubmit === 'function' ? onSubmit : undefined;
+  const rawMenuName = asDisplayText(safeForm.rawMenuName);
+  const category = asDisplayText(safeForm.category);
+  const groupName = asDisplayText(safeForm.groupName);
+  const detailName = asDisplayText(safeForm.detailName);
+
   // main 브랜드에서 category가 비어있으면(초기 상태) 첫 옵션으로 자동 초기화
   // — select는 첫 항목을 시각적으로 보여주지만 form.category=''라 추가 버튼이 비활성화되는 UX 불일치 해소
   useEffect(() => {
-    if (isMain && !form.category && CATEGORY_OPTIONS.length > 0) {
-      setForm(f => ({ ...f, category: CATEGORY_OPTIONS[0] }));
+    if (isMain && !category && CATEGORY_OPTIONS.length > 0) {
+      updateForm(f => ({
+        ...(f && typeof f === 'object' ? f : INITIAL_FORM),
+        category: CATEGORY_OPTIONS[0],
+      }));
     }
   }, [isMain]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 선택한 대분류(category)에 속한 중분류·상세만 자동완성 후보로
-  const catOpts = nameOpts.byCategory?.[form.category] || { groupNames: [], detailNames: [] };
+  const catOpts = safeNameOpts.byCategory?.[category] || { groupNames: [], detailNames: [] };
   return (
     <div style={{display:'grid', gridTemplateColumns:'minmax(0,1.5fr) minmax(80px,140px) minmax(0,1fr) minmax(0,1fr) auto auto', gap:8}}>
-      <input value={form.rawMenuName} onChange={e => setForm({ ...form, rawMenuName: e.target.value })} placeholder="패턴 (정규화 후)" style={inputStyle}/>
+      <input value={rawMenuName} onChange={e => updateForm({ ...safeForm, rawMenuName: e.target.value })} placeholder="패턴 (정규화 후)" style={inputStyle}/>
       {isMain ? (
-        <select value={form.category}   onChange={e => setForm({ ...form, category:    e.target.value })} style={inputStyle}>
+        <select value={category} onChange={e => updateForm({ ...safeForm, category: e.target.value })} style={inputStyle}>
           {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
       ) : (
-        <input value={form.category}    onChange={e => setForm({ ...form, category:    e.target.value })} placeholder="카테고리" style={inputStyle}/>
+        <input value={category} onChange={e => updateForm({ ...safeForm, category: e.target.value })} placeholder="카테고리" style={inputStyle}/>
       )}
-      <ComboBox value={form.groupName}  onChange={v => setForm({ ...form, groupName: v })}  options={catOpts.groupNames}  placeholder="중분류"      inputStyle={inputStyle}/>
-      <ComboBox value={form.detailName} onChange={v => setForm({ ...form, detailName: v })} options={catOpts.detailNames} placeholder="상세 (선택)" inputStyle={inputStyle}/>
-      <button className="btn sm" onClick={onCancel} disabled={busy}>취소</button>
-      <button className="btn sm primary" onClick={onSubmit}
-        disabled={busy || !form.rawMenuName.trim() || !form.category || !form.groupName.trim()}>
+      <ComboBox value={groupName}  onChange={v => updateForm({ ...safeForm, groupName: v })}  options={catOpts.groupNames}  placeholder="중분류"      inputStyle={inputStyle}/>
+      <ComboBox value={detailName} onChange={v => updateForm({ ...safeForm, detailName: v })} options={catOpts.detailNames} placeholder="상세 (선택)" inputStyle={inputStyle}/>
+      <button className="btn sm" onClick={handleCancel} disabled={busy}>취소</button>
+      <button className="btn sm primary" onClick={handleSubmit}
+        disabled={busy || !rawMenuName.trim() || !category || !groupName.trim()}>
         {busy ? '...' : submitLabel}
       </button>
     </div>

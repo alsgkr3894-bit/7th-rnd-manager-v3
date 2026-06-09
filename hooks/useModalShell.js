@@ -5,6 +5,15 @@ import { useModalOrigin } from '@/hooks/useModalOrigin';
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 const CLOSE_MS = 180;
 
+export function normalizeCloseMs(value, fallback = CLOSE_MS) {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+
+export function normalizeCloseHandler(onClose) {
+  return typeof onClose === 'function' ? onClose : () => {};
+}
+
 /**
  * 모달 공통 동작 훅 — 레이아웃/포털 여부는 호출 컴포넌트가 결정하고, 동작만 제공한다.
  *
@@ -23,6 +32,7 @@ export function useModalShell(onClose, { closeMs = CLOSE_MS, autoFocus = true } 
   const previousFocusRef = useRef(null);
   const closeTimerRef = useRef(null);
   const [isClosing, setIsClosing] = useState(false);
+  const closeHandler = normalizeCloseHandler(onClose);
 
   // 클릭한 위치에서 모달이 펼쳐지도록 transform-origin 설정
   useModalOrigin(containerRef);
@@ -30,8 +40,8 @@ export function useModalShell(onClose, { closeMs = CLOSE_MS, autoFocus = true } 
   const close = useCallback(() => {
     if (closeTimerRef.current) return; // 이미 닫히는 중
     setIsClosing(true);
-    closeTimerRef.current = setTimeout(() => onClose?.(), closeMs);
-  }, [onClose, closeMs]);
+    closeTimerRef.current = setTimeout(closeHandler, normalizeCloseMs(closeMs));
+  }, [closeHandler, closeMs]);
 
   // 타이머 cleanup
   useEffect(() => () => clearTimeout(closeTimerRef.current), []);

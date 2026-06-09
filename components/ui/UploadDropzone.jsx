@@ -1,6 +1,9 @@
 'use client';
 import { useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
+import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
+
+const DEFAULT_ACCEPT = ['.xlsx', '.xls', '.csv'];
 
 /**
  * UploadDropzone — 범용 파일 드롭존 (드래그 + 클릭)
@@ -17,7 +20,7 @@ import { Icon } from '@/components/icons';
  */
 export function UploadDropzone({
   onFile,
-  accept = ['.xlsx', '.xls', '.csv'],
+  accept = DEFAULT_ACCEPT,
   maxSizeMB = 20,
   title = '파일을 끌어다 놓으세요',
   subText,
@@ -28,19 +31,31 @@ export function UploadDropzone({
 }) {
   const [drag, setDrag] = useState(false);
   const inputRef = useRef(null);
+  const safeAccept = Array.isArray(accept) ? asStringArray(accept) : DEFAULT_ACCEPT;
+  const acceptedExts = safeAccept.map(ext => ext.trim().toLowerCase()).filter(Boolean);
+  const maxSize = Number.isFinite(Number(maxSizeMB)) && Number(maxSizeMB) > 0 ? Number(maxSizeMB) : 20;
+  const safeTitle = asDisplayText(title, '파일을 끌어다 놓으세요');
+  const safeBusyText = asDisplayText(busyText, '처리 중...');
+  const safeSubText = subText == null
+    ? `또는 클릭해서 파일 선택 · 최대 ${maxSize}MB`
+    : asDisplayText(subText);
+  const safeRules = asObjectArray(rules);
+  const handleFile = typeof onFile === 'function' ? onFile : () => {};
 
   function pickFile(file) {
     if (!file) return;
-    const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
-    if (!accept.includes(ext)) {
-      onFile(null, `지원하지 않는 파일 형식입니다. (${accept.join(' / ')} 만 허용)`);
+    const fileName = asDisplayText(file.name);
+    const dotIndex = fileName.lastIndexOf('.');
+    const ext = dotIndex >= 0 ? fileName.slice(dotIndex).toLowerCase() : '';
+    if (!acceptedExts.includes(ext)) {
+      handleFile(null, `지원하지 않는 파일 형식입니다. (${safeAccept.join(' / ')} 만 허용)`);
       return;
     }
-    if (file.size > maxSizeMB * 1024 * 1024) {
-      onFile(null, `파일 크기는 ${maxSizeMB}MB 이하여야 합니다.`);
+    if (file.size > maxSize * 1024 * 1024) {
+      handleFile(null, `파일 크기는 ${maxSize}MB 이하여야 합니다.`);
       return;
     }
-    onFile(file);
+    handleFile(file);
   }
 
   return (
@@ -60,9 +75,12 @@ export function UploadDropzone({
       <input
         ref={inputRef}
         type="file"
-        accept={accept.join(',')}
+        accept={safeAccept.join(',')}
         style={{ display: 'none' }}
-        onChange={e => pickFile(e.target.files?.[0])}
+        onChange={e => {
+          pickFile(e.target.files?.[0]);
+          e.target.value = '';
+        }}
       />
       <div className="dropzone-ico">
         {disabled && showSpinner
@@ -71,20 +89,25 @@ export function UploadDropzone({
         }
       </div>
       <div className="dropzone-title">
-        {disabled ? busyText : title}
+        {disabled ? safeBusyText : safeTitle}
       </div>
       <div className="dropzone-sub">
-        {subText ?? `또는 클릭해서 파일 선택 · 최대 ${maxSizeMB}MB`}
+        {safeSubText}
       </div>
-      {rules.length > 0 && (
+      {safeRules.length > 0 && (
         <div className="dropzone-rules">
-          {rules.map((r, i) => (
+          {safeRules.map((r, i) => {
+            const type = asDisplayText(r.type);
+            const text = asDisplayText(r.text);
+
+            return (
             <div key={i} className="rule-item">
-              {r.type === 'ok'   && <Icon.check style={{width:14, height:14, color:'var(--positive)'}}/>}
-              {r.type === 'warn' && <Icon.alert style={{width:14, height:14, color:'var(--warn)'}}/>}
-              <span>{r.text}</span>
+              {type === 'ok'   && <Icon.check style={{width:14, height:14, color:'var(--positive)'}}/>}
+              {type === 'warn' && <Icon.alert style={{width:14, height:14, color:'var(--warn)'}}/>}
+              <span>{text}</span>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

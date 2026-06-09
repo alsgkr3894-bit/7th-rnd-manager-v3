@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SearchBox } from '@/components/ui/SearchBox';
@@ -25,14 +25,29 @@ export default function Page() {
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [search, setSearch] = useState('');
+  const mountedRef = useRef(true);
 
   const load = useCallback(async () => {
     await initDB();
-    setEdges(await getAllEdges());
+    const nextEdges = await getAllEdges();
+    if (mountedRef.current) setEdges(nextEdges);
   }, []);
 
   useEffect(() => {
-    load().catch(err => { console.error(err); setDbError(err.message || '데이터 로드 실패'); }).finally(() => setLoading(false));
+    mountedRef.current = true;
+    load()
+      .catch(err => {
+        if (!mountedRef.current) return;
+        console.error(err);
+        setDbError(err.message || '데이터 로드 실패');
+      })
+      .finally(() => {
+        if (mountedRef.current) setLoading(false);
+      });
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, [load]);
 
   async function handleSave(data) {

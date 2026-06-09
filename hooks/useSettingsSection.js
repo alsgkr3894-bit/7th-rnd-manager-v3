@@ -1,7 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { showToast } from '@/components/Toast';
 import { reapplyToUploadedData } from '@/components/sales/shared/SectionUtils';
+import { asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
  * 판매 설정 섹션 공통 CRUD 훅 (UserAliases · UserRules · UserExcluded).
@@ -40,11 +41,24 @@ export function useSettingsSection({
   const [form,      setForm]      = useState(initialForm);
   const [busy,      setBusy]      = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const mountedRef = useRef(false);
 
-  useEffect(() => { refresh(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    mountedRef.current = true;
+    refresh();
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function refresh() {
-    try { setList(await getAll()); } catch (err) { console.warn(err); }
+    try {
+      const rows = await getAll();
+      if (mountedRef.current) setList(asObjectArray(rows));
+    } catch (err) {
+      console.warn(err);
+    }
   }
 
   async function handleAdd() {
@@ -105,10 +119,13 @@ export function useSettingsSection({
   }
 
   function startEdit(item) {
+    if (!item || typeof item !== 'object' || item.id == null) return;
+
     setEditingId(item.id);
     setPendingDeleteId(null);
     setAdding(false);
-    setForm(getFormFromItem(item));
+    const nextForm = getFormFromItem(item);
+    setForm(nextForm && typeof nextForm === 'object' ? nextForm : initialForm);
   }
 
   function resetAdding() {

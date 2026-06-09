@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import {
@@ -40,6 +40,7 @@ export default function Page() {
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [confirmingRecreate, setConfirmingRecreate] = useState(false);
   const [storageEst, setStorageEst] = useState(null); // { usage, quota } in bytes
+  const mountedRef = useRef(false);
 
   const SETTING_KEYS = [
     'theme',
@@ -56,12 +57,19 @@ export default function Page() {
   );
 
   useEffect(() => {
+    let alive = true;
+    mountedRef.current = true;
+
     (async () => {
       try {
         await initDB();
+        if (!alive) return;
         setReady(true);
-        setStats(await collectStoreStats());
+        const nextStats = await collectStoreStats();
+        if (!alive) return;
+        setStats(nextStats);
       } catch (err) {
+        if (!alive) return;
         console.error('[Settings/System] DB 초기화 실패:', err);
         showToast('DB 초기화에 실패했습니다.', 'err');
       }
@@ -69,17 +77,29 @@ export default function Page() {
     if (navigator.storage?.estimate) {
       navigator.storage
         .estimate()
-        .then(est => setStorageEst(est))
+        .then(est => {
+          if (alive) setStorageEst(est);
+        })
         .catch(() => {});
     }
+
+    return () => {
+      alive = false;
+      mountedRef.current = false;
+    };
   }, []);
 
   async function refreshStats() {
-    setStats(await collectStoreStats());
+    const nextStats = await collectStoreStats();
+    if (!mountedRef.current) return;
+
+    setStats(nextStats);
     if (navigator.storage?.estimate) {
       navigator.storage
         .estimate()
-        .then(est => setStorageEst(est))
+        .then(est => {
+          if (mountedRef.current) setStorageEst(est);
+        })
         .catch(() => {});
     }
   }
@@ -491,14 +511,17 @@ function SettingsRow({ name, desc, control, last }) {
 }
 
 function Segmented({ value, options, onChange }) {
+  const safeOptions = Array.isArray(options) ? options : [];
+  const handleChange = typeof onChange === 'function' ? onChange : () => {};
+
   return (
     <div style={{ display: 'flex', gap: 6 }}>
-      {options.map(opt => {
+      {safeOptions.map(opt => {
         const active = value === opt.value;
         return (
           <button
             key={opt.value}
-            onClick={() => onChange(opt.value)}
+            onClick={() => handleChange(opt.value)}
             style={{
               padding: '6px 14px',
               fontSize: 13,

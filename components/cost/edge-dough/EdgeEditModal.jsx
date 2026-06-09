@@ -11,6 +11,8 @@ import { initDB } from '@/lib/db';
 import { UNIT_OPTIONS } from '@/lib/cost/shared/unit-options';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { FieldLabel } from '@/components/cost/shared/FormLabels';
+import { parseOptionalNumber, parseOptionalNonNegativeNumber } from '@/lib/parse';
+
 const EMPTY_COMP = () => ({ productCode: null, ingredientName: '', quantity: '', unit: 'g', unitPrice: '' });
 
 export function EdgeEditModal({ initial, onSave, onClose }) {
@@ -26,6 +28,7 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
   const [allMeta,  setAllMeta]    = useState([]);
   const [upm,      setUpm]        = useState(new Map());
   const [saving,   setSaving]     = useState(false);
+  const [errors,   setErrors]     = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -48,19 +51,37 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
   function handleRemoveItem(i) { setComps(prev => prev.filter((_, idx) => idx !== i)); }
   function handleAddItem()     { setComps(prev => [...prev, EMPTY_COMP()]); }
 
+  function normalizeComponents() {
+    const nextErrors = [];
+    const components = comps.map((c, idx) => {
+      const quantity = parseOptionalNumber(c.quantity);
+      const unitPrice = parseOptionalNonNegativeNumber(c.unitPrice);
+      if (!quantity.ok) nextErrors.push(`${idx + 1}번째 구성품 수량은 숫자만 입력하세요`);
+      if (!unitPrice.ok) nextErrors.push(`${idx + 1}번째 구성품 단가는 0 이상의 숫자만 입력하세요`);
+      return {
+        ...c,
+        quantity: quantity.value,
+        unitPrice: unitPrice.value,
+      };
+    });
+    return { components, errors: nextErrors };
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
+    const normalized = normalizeComponents();
+    if (normalized.errors.length > 0) {
+      setErrors(normalized.errors);
+      return;
+    }
+    setErrors([]);
     setSaving(true);
     try {
       await onSave({
         id: initial?.id,
         edgeCode: edgeCodeOf(edgeType, size),
         edgeType, size,
-        components: comps.map(c => ({
-          ...c,
-          quantity:  c.quantity  !== '' ? Number(c.quantity)  : null,
-          unitPrice: c.unitPrice !== '' ? Number(c.unitPrice) : null,
-        })),
+        components: normalized.components,
         note,
         expandInMargin,
         marginSuffix: marginSuffix.trim() || defaultMarginSuffix(edgeType),
@@ -138,6 +159,11 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
             <button type="button" className="btn sm" onClick={handleAddItem} style={{ marginTop:8 }}>
               <Icon.plus style={{ width:13, height:13 }}/> 구성품 추가
             </button>
+            {errors.length > 0 && (
+              <div role="alert" style={{ marginTop: 8, fontSize: 12, color: 'var(--negative)' }}>
+                {errors[0]}
+              </div>
+            )}
           </div>
 
           {/* 비고 */}
@@ -341,7 +367,7 @@ function CompRow({ c, allMeta, upm, onChange, onRemove }) {
       </select>
 
       {/* 단가 */}
-      <input className="form-input" type="number" step="any" value={c.unitPrice ?? ''}
+      <input className="form-input" type="number" min="0" step="any" value={c.unitPrice ?? ''}
         onChange={e => onChange({ unitPrice: e.target.value })}
         placeholder="단가" style={{ textAlign:'right' }}/>
 
@@ -360,4 +386,3 @@ function CompRow({ c, allMeta, upm, onChange, onRemove }) {
     </div>
   );
 }
-
