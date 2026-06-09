@@ -14,9 +14,9 @@ describe('full-rt 직접 진입 QA 스크립트', () => {
     const block = directEntryBlockOf(script);
 
     expect(block).toContain('ctx.addInitScript');
-    expect(block).toContain("localStorage.setItem(key, val)");
-    expect(block).toContain('p2.goto(`${BASE}${route}`');
-    expect(block).not.toContain("p2.goto(`${BASE}/`");
+    expect(block).toContain('localStorage.setItem(key, val)');
+    expect(block).toContain('p2.goto(routeUrl(BASE, route)');
+    expect(block).not.toContain("p2.goto(routeUrl(BASE, '/')");
   });
 
   test('주요 모듈 라우트가 회귀 검사 대상에 포함된다', () => {

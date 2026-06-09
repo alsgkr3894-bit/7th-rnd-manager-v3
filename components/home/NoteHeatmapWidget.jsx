@@ -1,5 +1,5 @@
 'use client';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { asObjectArray } from '@/lib/ui/prop-guards';
 
 const WEEKS = 16;
@@ -31,7 +31,7 @@ export function NoteHeatmapWidget({ notes }) {
     // 요일별 합계 → 최다 작성 요일
     const dowTotals = Array(7).fill(0);
     for (const [diffStr, cnt] of Object.entries(map)) {
-      const dow = ((todayDow - Number(diffStr)) % 7 + 7) % 7;
+      const dow = (((todayDow - Number(diffStr)) % 7) + 7) % 7;
       dowTotals[dow] += cnt;
     }
     const maxDow = dowTotals.indexOf(Math.max(...dowTotals));
@@ -42,7 +42,10 @@ export function NoteHeatmapWidget({ notes }) {
     while (st < DAYS && (map[st] || 0) > 0) st++;
 
     return {
-      countMap: map, total: tot, topDow: topDowLabel, streak: st,
+      countMap: map,
+      total: tot,
+      topDow: topDowLabel,
+      streak: st,
       weekAvg: tot > 0 ? (tot / WEEKS).toFixed(1) : '0',
     };
   }, [notes, todayTs, todayDow]);
@@ -56,26 +59,36 @@ export function NoteHeatmapWidget({ notes }) {
   }
 
   // weekIdx 0 = 가장 오래된 주, 15 = 이번 주 / dowIdx 0 = 일요일
-  function getCount(weekIdx, dowIdx) {
-    const daysAgo = (WEEKS - 1 - weekIdx) * 7 + (todayDow - dowIdx);
-    if (daysAgo < 0 || daysAgo >= DAYS) return -1; // 미래 (범위 밖)
-    return countMap[daysAgo] || 0;
-  }
+  const getCount = useCallback(
+    (weekIdx, dowIdx) => {
+      const daysAgo = (WEEKS - 1 - weekIdx) * 7 + (todayDow - dowIdx);
+      if (daysAgo < 0 || daysAgo >= DAYS) return -1; // 미래 (범위 밖)
+      return countMap[daysAgo] || 0;
+    },
+    [countMap, todayDow]
+  );
 
-  const cells = useMemo(() =>
-    Array.from({ length: WEEKS }, (_, wi) =>
-      Array.from({ length: 7 }, (_, di) => {
-        const c = getCount(wi, di);
-        return (
-          <div key={`${wi}-${di}`}
-            className={`heatmap-cell ${c < 0 ? '' : lvClass(c)}`}
-            title={c >= 0 ? `${c}건` : ''}
-            style={{ gridColumn: wi + 1, gridRow: di + 1, visibility: c < 0 ? 'hidden' : undefined }}
-          />
-        );
-      })
-    )
-  , [countMap, todayDow]); // eslint-disable-line react-hooks/exhaustive-deps
+  const cells = useMemo(
+    () =>
+      Array.from({ length: WEEKS }, (_, wi) =>
+        Array.from({ length: 7 }, (_, di) => {
+          const c = getCount(wi, di);
+          return (
+            <div
+              key={`${wi}-${di}`}
+              className={`heatmap-cell ${c < 0 ? '' : lvClass(c)}`}
+              title={c >= 0 ? `${c}건` : ''}
+              style={{
+                gridColumn: wi + 1,
+                gridRow: di + 1,
+                visibility: c < 0 ? 'hidden' : undefined,
+              }}
+            />
+          );
+        })
+      ),
+    [getCount]
+  );
 
   return (
     <div className="card">
@@ -97,15 +110,28 @@ export function NoteHeatmapWidget({ notes }) {
 
       <div className="heatmap-wrap">
         <div className="heatmap-dows">
-          {['일', '', '화', '', '목', '', '토'].map((d, i) => <div key={i}>{d}</div>)}
+          {['일', '', '화', '', '목', '', '토'].map((d, i) => (
+            <div key={i}>{d}</div>
+          ))}
         </div>
         <div className="heatmap-grid">{cells}</div>
       </div>
 
       <div className="heatmap-stats">
-        <div><div className="hs-l">최다 작성 요일</div><div className="hs-v">{topDow}</div></div>
-        <div><div className="hs-l">연속 작성</div><div className="hs-v">{streak}일째{streak >= 3 ? ' 🔥' : ''}</div></div>
-        <div><div className="hs-l">주 평균</div><div className="hs-v">{weekAvg}건</div></div>
+        <div>
+          <div className="hs-l">최다 작성 요일</div>
+          <div className="hs-v">{topDow}</div>
+        </div>
+        <div>
+          <div className="hs-l">연속 작성</div>
+          <div className="hs-v">
+            {streak}일째{streak >= 3 ? ' 🔥' : ''}
+          </div>
+        </div>
+        <div>
+          <div className="hs-l">주 평균</div>
+          <div className="hs-v">{weekAvg}건</div>
+        </div>
       </div>
     </div>
   );

@@ -8,13 +8,17 @@
     "dev:lan": "next dev -H 0.0.0.0 -p 3000",
     "dev:clean": "pkill -f 'next dev' 2>/dev/null; pkill -f 'next-server' 2>/dev/null; sleep 1; rm -rf .next; next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
+    "build:clean": "node scripts/clean-build.mjs",
     "start": "next start",
     "demo": "rm -rf .next && next build && next start -H 0.0.0.0 -p 3000",
     "lint": "next lint",
     "qa:smoke": "node scripts/smoke-qa.mjs",
+    "qa:runtime": "node scripts/full-rt.mjs",
+    "qa:prod": "node scripts/qa-prod.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=__tests__ --no-coverage 2>/dev/null || npx jest --testPathPattern=__tests__ --no-coverage"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=__tests__ --no-coverage",
+    "test:ci": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=__tests__ --no-coverage --runInBand"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
