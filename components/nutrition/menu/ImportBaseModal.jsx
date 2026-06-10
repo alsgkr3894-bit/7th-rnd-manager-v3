@@ -5,6 +5,7 @@ import { showToast } from '@/components/Toast';
 import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import { parseLabExcel, buildImportRows, toRawValueRecord } from '@/lib/nutrition/values/import';
 import { upsertMenuRef, upsertRawValue } from '@/lib/nutrition/values/store';
+import { getMenuCodeBase } from '@/lib/menu-master/code-policy';
 import { asObjectArray } from '@/lib/ui/prop-guards';
 import {
   isPersonalPizzaMenu,
@@ -172,14 +173,11 @@ function ImportRow({ row = {}, idx, menuMasters, onToggle = noop, onUpdate = noo
           <MenuCodePicker
             menuMasters={safeMenuMasters}
             value={row.menuCode}
+            mode="base"
             onChange={(code, meta) => {
               const m = code
                 ? safeMenuMasters.find(m2 => {
-                    const menuCode = String(m2.menuCode || '');
-                    const base = m2.size
-                      ? menuCode.replace(new RegExp(`-${m2.size}$`), '')
-                      : menuCode;
-                    return base === code;
+                    return getMenuCodeBase(m2) === code;
                   })
                 : null;
               onUpdate(idx, {

@@ -5,6 +5,7 @@ import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
 import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import { ImportBaseModal } from '@/components/nutrition/menu/ImportBaseModal';
+import { getMenuCodeBase } from '@/lib/menu-master/code-policy';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import {
   upsertMenuRef,
@@ -576,16 +577,18 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
               <MenuCodePicker
                 menuMasters={safeMenuMasters}
                 value={newMenuForm.menuCode}
-                onChange={(code, meta) =>
+                mode="base"
+                onChange={(code, meta) => {
+                  const matchedMenu = code
+                    ? safeMenuMasters.find(m => getMenuCodeBase(m) === code)
+                    : null;
                   setNewMenuForm(f => ({
                     ...f,
                     menuCode: code,
-                    menuName: code
-                      ? (safeMenuMasters.find(m => m.menuCode === code)?.menuName ?? f.menuName)
-                      : f.menuName,
+                    menuName: code ? (matchedMenu?.menuName ?? f.menuName) : f.menuName,
                     category: normalizeNutritionCategory(meta?.category || f.category, '피자'),
-                  }))
-                }
+                  }));
+                }}
               />
             </div>
             <div>

@@ -7,6 +7,7 @@ import { formatNumber } from '@/lib/format';
 import { calcMarginRate, MENU_CATEGORIES } from '@/lib/recipe';
 import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import { parseMenuCode } from '@/lib/cost/menu-price/code';
+import { getMenuCodeBase } from '@/lib/menu-master/code-policy';
 import { IngredientSearch } from '@/components/cost/shared/IngredientSearch';
 import { SectionLabel, FieldLabel, thStyle } from '@/components/cost/shared/FormLabels';
 import { costRateColor } from '@/lib/cost/rate-color';
@@ -243,14 +244,13 @@ export function RecipeEditor({
           <MenuCodePicker
             menuMasters={menuMasters}
             value={draft.menuCode || ''}
+            mode="base"
             onChange={(val, meta) => {
               setDraft(d => {
                 const next = { ...d, menuCode: val };
                 if (meta?.category) next.menuCategory = meta.category;
                 if (val) {
-                  const found = menuMasters.find(
-                    m => m.menuCode === val || m.menuCode.startsWith(val + '-')
-                  );
+                  const found = menuMasters.find(m => getMenuCodeBase(m) === val);
                   if (found?.menuName) next.menuName = found.menuName;
                 }
                 const parsedVal = val ? parseMenuCode(val) : null;

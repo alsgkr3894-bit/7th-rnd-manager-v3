@@ -21,6 +21,7 @@ import { getAllMenuMaster } from '@/lib/menu-master/store';
 import { normalizePersonalPizzaCodes } from '@/lib/menu-master/normalize';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
 import { parseMenuCode } from '@/lib/cost/menu-price/code';
+import { getMenuCodeBase } from '@/lib/menu-master/code-policy';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { costRateColor } from '@/lib/cost/rate-color';
 import { KEYS } from '@/lib/note/keys';
@@ -223,7 +224,10 @@ function RecipeContent() {
     const pmap = new Map();
     for (const p of menuPrices) {
       const parsed = parseMenuCode(p.menuCode);
-      const base = parsed ? `${parsed.prefix}-${String(parsed.base).padStart(3, '0')}` : p.menuCode;
+      const fullCode = String(p.menuCode || '').trim();
+      const policyBase = getMenuCodeBase({ menuCode: p.menuCode, size: p.size });
+      const parsedBase = parsed ? `${parsed.prefix}-${String(parsed.base).padStart(3, '0')}` : '';
+      const base = policyBase && policyBase !== fullCode ? policyBase : parsedBase || fullCode;
       if (!pmap.has(base)) pmap.set(base, {});
       pmap.get(base)[p.size] = p.price;
     }

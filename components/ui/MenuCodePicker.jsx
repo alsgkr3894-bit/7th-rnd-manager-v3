@@ -2,6 +2,11 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { parseCategoryFromCode } from '@/lib/cost/menu-price/code';
+import {
+  MENU_CODE_MODE,
+  getMenuCodeBase,
+  normalizeMenuCodeForModule,
+} from '@/lib/menu-master/code-policy';
 import { asObjectArray } from '@/lib/ui/prop-guards';
 
 function asText(value) {
@@ -11,11 +16,7 @@ function asText(value) {
 }
 
 export function getBaseCode(m) {
-  const menuCode = String(m?.menuCode ?? '');
-  const size = asText(m?.size);
-  if (!size) return menuCode;
-  const suffix = `-${size}`;
-  return menuCode.endsWith(suffix) ? menuCode.slice(0, -suffix.length) : menuCode;
+  return getMenuCodeBase(m);
 }
 
 export default function MenuCodePicker({
@@ -23,6 +24,7 @@ export default function MenuCodePicker({
   value = '',
   onChange,
   dedup = true,
+  mode = null,
   placeholder = '코드·메뉴명·중분류로 검색…',
   style,
 }) {
@@ -36,9 +38,10 @@ export default function MenuCodePicker({
     const active = asObjectArray(menuMasters).filter(
       m => m.status !== 'discontinued' && m.menuCode
     );
-    if (!dedup) {
+    const effectiveMode = mode || (dedup ? MENU_CODE_MODE.BASE : MENU_CODE_MODE.FULL);
+    if (effectiveMode === MENU_CODE_MODE.FULL) {
       return active.map(m => ({
-        code: String(m.menuCode ?? ''),
+        code: normalizeMenuCodeForModule(m, { mode: MENU_CODE_MODE.FULL }),
         menuName: asText(m.menuName),
         subCategory: asText(m.subCategory),
         category: asText(m.category),
@@ -47,7 +50,7 @@ export default function MenuCodePicker({
     }
     const seen = new Map();
     for (const m of active) {
-      const base = getBaseCode(m);
+      const base = normalizeMenuCodeForModule(m, { mode: MENU_CODE_MODE.BASE });
       const size = asText(m.size);
       if (!seen.has(base)) {
         seen.set(base, {
@@ -63,7 +66,7 @@ export default function MenuCodePicker({
       }
     }
     return [...seen.values()].sort((a, b) => a.code.localeCompare(b.code));
-  }, [menuMasters, dedup]);
+  }, [menuMasters, dedup, mode]);
 
   const selected = value ? displayList.find(m => m.code === value) : null;
 
