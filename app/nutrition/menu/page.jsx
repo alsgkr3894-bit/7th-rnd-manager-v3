@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { SearchBox } from '@/components/ui/SearchBox';
+import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import {
@@ -14,6 +15,8 @@ import {
   getAllToppings,
   getAllCompositions,
   getAllSetCompositions,
+  getNutritionBaseDuplicateDiagnostics,
+  repairNutritionBaseDuplicates,
 } from '@/lib/nutrition/values/store';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
@@ -59,6 +62,56 @@ function asRecord(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : EMPTY_MAP;
 }
 
+function DuplicateNotice({ diagnostics, repairing, onRepair }) {
+  const duplicateRows = Number(diagnostics?.duplicateRows) || 0;
+  if (!duplicateRows) return null;
+  const menuSamples = asObjectArray(diagnostics?.menuGroups)
+    .slice(0, 2)
+    .map(group => asDisplayText(group.label || group.key))
+    .filter(Boolean);
+  const rawSamples = asObjectArray(diagnostics?.rawGroups)
+    .slice(0, 2)
+    .map(group => asDisplayText(group.label || group.key))
+    .filter(Boolean);
+  const samples = [...menuSamples, ...rawSamples].slice(0, 3);
+
+  return (
+    <div
+      style={{
+        marginTop: 14,
+        padding: '12px 14px',
+        border: '1px solid var(--warn)',
+        borderRadius: 8,
+        background: 'var(--warn-soft)',
+        color: 'var(--text-1)',
+        display: 'flex',
+        gap: 12,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+      }}
+    >
+      <div style={{ minWidth: 260, flex: '1 1 420px' }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--warn)' }}>
+          영양성분 중복 데이터 {duplicateRows}건 감지
+        </div>
+        <div style={{ marginTop: 3, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+          메뉴코드 또는 메뉴+크러스트 기준으로 중복된 행이 있습니다. 최신 수정값을 남기고
+          나머지를 정리할 수 있습니다.
+          {samples.length > 0 && (
+            <span style={{ display: 'block', color: 'var(--text-3)' }}>
+              예: {samples.join(', ')}
+            </span>
+          )}
+        </div>
+      </div>
+      <button className="btn sm" type="button" onClick={onRepair} disabled={repairing}>
+        {repairing ? '정리 중…' : '중복 정리'}
+      </button>
+    </div>
+  );
+}
+
 export default function Page() {
   const [tab, setTab] = useState(0);
   const [menus, setMenus] = useState([]);
@@ -71,6 +124,8 @@ export default function Page() {
   const [setComps, setSetComps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [menuSearch, setMenuSearch] = useState('');
+  const [duplicateDiagnostics, setDuplicateDiagnostics] = useState(null);
+  const [repairingDuplicates, setRepairingDuplicates] = useState(false);
   const mountedRef = useRef(true);
 
   const filteredMenus = useMemo(() => {
@@ -86,8 +141,16 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    const [menuRefs, rawValues, edgeList, toppingList, compositionList, masters, setCompList] =
-      await Promise.all([
+    const [
+      menuRefs,
+      rawValues,
+      edgeList,
+      toppingList,
+      compositionList,
+      masters,
+      setCompList,
+      duplicateDiag,
+    ] = await Promise.all([
         getAllMenuRefs(),
         getRawValueMap(),
         getAllEdges(),
@@ -95,6 +158,7 @@ export default function Page() {
         getAllCompositions(),
         getAllMenuMaster(),
         getAllSetCompositions(),
+        getNutritionBaseDuplicateDiagnostics(),
       ]);
     if (!mountedRef.current) return;
     const safeEdgeList = asObjectArray(edgeList);
@@ -115,6 +179,7 @@ export default function Page() {
     setToppings(asObjectArray(toppingList));
     setCompositions(asObjectArray(compositionList));
     setSetComps(asObjectArray(setCompList));
+    setDuplicateDiagnostics(duplicateDiag);
     setLoading(false);
   }, []);
 
@@ -132,6 +197,21 @@ export default function Page() {
   }, [load]);
   useVisibilityRefresh(load);
 
+  const handleRepairDuplicates = useCallback(async () => {
+    if (repairingDuplicates) return;
+    if (!confirm('중복된 영양성분 데이터를 정리합니다. 최신 수정값 1건만 남길까요?')) return;
+    setRepairingDuplicates(true);
+    try {
+      const result = await repairNutritionBaseDuplicates();
+      showToast(`중복 ${result.removed || 0}건 정리 완료`, 'ok');
+      await load();
+    } catch (err) {
+      showToast(`중복 정리 실패: ${err?.message || err}`, 'error');
+    } finally {
+      if (mountedRef.current) setRepairingDuplicates(false);
+    }
+  }, [load, repairingDuplicates]);
+
   return (
     <main className="main">
       <PageHeader
@@ -139,6 +219,12 @@ export default function Page() {
         title="영양성분 정보 및 계산"
         masterSource
         sub="베이스 영양성분 입력 → 엣지 설정 → 파생 메뉴 → 계산 결과 확인"
+      />
+
+      <DuplicateNotice
+        diagnostics={duplicateDiagnostics}
+        repairing={repairingDuplicates}
+        onRepair={handleRepairDuplicates}
       />
 
       {loading ? (
