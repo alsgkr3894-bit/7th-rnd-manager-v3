@@ -937,7 +937,21 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   margin-bottom: 16px;
+}
+.card-header > :first-child {
+  min-width: 0;
+}
+.card-header-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.card-header-actions .btn {
+  min-width: 0;
 }
 .card-title {
   font-size: 16px;
@@ -1516,6 +1530,18 @@ button {
 }
 .rank-row:hover .chev {
   color: var(--text-2);
+}
+
+@media (max-width: 520px) {
+  .rank-row {
+    gap: 8px;
+  }
+  .rank-mini {
+    width: 44px;
+  }
+  .rank-val {
+    font-size: 12px;
+  }
 }
 
 .tx-list {
@@ -2455,6 +2481,22 @@ button {
     padding: 8px 12px;
     font-size: 13px;
   }
+  .card-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .card-title,
+  .card-sub {
+    white-space: normal;
+  }
+  .card-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .card-header-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
 
   .hero-row {
     grid-template-columns: 1fr;
@@ -3267,6 +3309,8 @@ button {
   flex-wrap: wrap;
   position: relative;
   align-items: stretch;
+  min-width: 0;
+  max-width: 100%;
 }
 .seg-indicator {
   position: absolute;
@@ -3785,10 +3829,11 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 220px;
+  min-width: 0;
 }
 .threshold-bar input[type='range'] {
   flex: 1;
+  min-width: 0;
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
@@ -5237,6 +5282,173 @@ button {
   }
 }
 
+.cost-detail-card,
+.cost-detail-main,
+.cost-detail-metric {
+  min-width: 0;
+}
+.cost-manage-grid {
+  min-width: 0;
+}
+.cost-manage-grid > * {
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .cost-manage-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .cost-detail-card {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  .cost-detail-metric {
+    min-width: 0 !important;
+    text-align: left !important;
+  }
+  .cost-detail-action {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.usage-chip-row,
+.usage-action-row {
+  min-width: 0;
+}
+.usage-chip-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.usage-action-row {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+@media (max-width: 520px) {
+  .usage-action-row {
+    width: 100%;
+    margin-left: 0;
+    justify-content: stretch;
+  }
+  .usage-action-row .btn {
+    flex: 1 1 calc(50% - 6px);
+    justify-content: center;
+  }
+}
+
+.calendar-actions,
+.sample-actions,
+.sample-filter-row,
+.sample-rating-row {
+  min-width: 0;
+}
+.calendar-actions,
+.sample-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.sample-rating-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 520px) {
+  .calendar-actions,
+  .sample-actions {
+    width: 100%;
+    align-items: stretch;
+  }
+  .calendar-actions .btn,
+  .sample-actions .btn {
+    flex: 1 1 calc(50% - 8px);
+    justify-content: center;
+    min-width: 0;
+  }
+  .sample-actions button:not(.btn) {
+    flex: 0 0 auto;
+  }
+  .sample-filter-row {
+    gap: 8px !important;
+  }
+  .sample-rating-row {
+    width: 100%;
+  }
+  .sample-rating-dist {
+    flex: 1 1 100%;
+    white-space: normal !important;
+    line-height: 1.45;
+  }
+}
+
+.sales-rank-row-button,
+.sales-rank-name,
+.sales-rank-share {
+  min-width: 0;
+}
+.sales-rank-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .sales-rank-row-button {
+    grid-template-columns: 32px minmax(0, 1fr) 24px !important;
+    gap: 8px !important;
+    padding: 12px !important;
+  }
+  .sales-rank-pos {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .sales-rank-name {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .sales-rank-category {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+  }
+  .sales-rank-quantity {
+    grid-column: 1 / 3;
+    grid-row: 3;
+    text-align: left !important;
+  }
+  .sales-rank-share {
+    grid-column: 1 / 4;
+    grid-row: 4;
+  }
+  .sales-rank-spacer {
+    display: none;
+  }
+  .sales-rank-chevron {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+  }
+  .sales-rank-size-detail {
+    padding-left: 12px !important;
+  }
+  .sales-rank-size-row {
+    grid-template-columns: minmax(0, 1fr) 72px 52px !important;
+    gap: 8px !important;
+  }
+  .sales-rank-size-row > :nth-child(2) {
+    display: none;
+  }
+}
+
 /* Density tweaks for compact */
 [data-density='compact'] .balance-card .amount {
   font-size: 38px;
@@ -5349,14 +5561,20 @@ button {
 ============================================================ */
 .report-builder {
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
   gap: var(--gap);
   align-items: start;
+}
+.report-builder > * {
+  min-width: 0;
 }
 .report-options {
   padding: 22px 22px;
   position: sticky;
   top: 80px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 .report-options .section-h {
   margin-bottom: 12px;
@@ -5365,6 +5583,7 @@ button {
 .opt-group {
   padding: 14px 0;
   border-bottom: 1px dashed var(--divider);
+  min-width: 0;
 }
 .opt-group:first-of-type {
   padding-top: 4px;
@@ -5391,6 +5610,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 .opt-period-row {
   display: flex;
@@ -5449,6 +5669,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
 }
 .report-preview-head {
   display: flex;
@@ -5874,6 +6095,17 @@ button {
   }
   .report-paper {
     padding: 24px 20px;
+    overflow: hidden;
+  }
+  .paper-section {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .paper-section .paper-table {
+    width: max-content;
+    min-width: 100%;
+    max-width: none;
   }
   .paper-stat-row {
     grid-template-columns: 1fr;
@@ -9126,13 +9358,17 @@ div:hover .cal-add-btn:hover {
 /* 대칭 2열 그리드 — 같은 행 카드 높이 동일 */
 .row-2b {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--gap);
   align-items: stretch;
+  min-width: 0;
+}
+.row-2b > * {
+  min-width: 0;
 }
 @media (max-width: 1080px) {
   .row-2b {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -9266,6 +9502,39 @@ div:hover .cal-add-btn:hover {
   font-size: 11px;
   color: var(--text-3);
   font-weight: 600;
+}
+@media (max-width: 768px) {
+  .brief-aside {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-width: 0;
+  }
+  .brief-spark {
+    flex: 0 1 140px;
+    width: min(140px, 42vw);
+    min-width: 0;
+  }
+  .brief-spark-cap {
+    max-width: 42vw;
+    text-align: right;
+    white-space: normal;
+  }
+}
+@media (max-width: 420px) {
+  .brief-aside {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .brief-spark {
+    flex-basis: 100%;
+    width: 100%;
+  }
+  .brief-spark-cap {
+    max-width: 100%;
+    text-align: left;
+  }
 }
 
 /* ── KPI 월 비교 미니 막대 ── */

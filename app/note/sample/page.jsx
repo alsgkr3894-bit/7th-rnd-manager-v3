@@ -263,7 +263,7 @@ function SampleContent() {
 
   /* ── Actions for PageHeader ── */
   const headerActions = (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+    <div className="sample-actions">
       {!batchMode && !compareMode && (
         <>
           <button
@@ -380,6 +380,7 @@ function SampleContent() {
 
       {/* 별점 필터 + 정렬 + 뷰 토글 */}
       <div
+        className="sample-filter-row"
         style={{
           display: 'flex',
           gap: 12,
@@ -388,7 +389,7 @@ function SampleContent() {
           marginBottom: 12,
         }}
       >
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        <div className="sample-rating-row">
           {[
             { min: 0, label: '전체' },
             { min: 3, label: '★3이상' },
@@ -407,6 +408,7 @@ function SampleContent() {
           ))}
           {samples.length > 0 && (
             <span
+              className="sample-rating-dist"
               style={{ fontSize: 11, color: 'var(--text-4)', marginLeft: 2, whiteSpace: 'nowrap' }}
             >
               5★ {ratingDist[5]} · 4★ {ratingDist[4]} · 3★ {ratingDist[3]} · 2★ {ratingDist[2]} · 1★{' '}

@@ -463,7 +463,7 @@ export default function Page() {
         title="일정 달력"
         sub="테스트 일지와 일정을 달력에서 함께 관리합니다"
         actions={
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="calendar-actions">
             <button
               className="btn no-print"
               onClick={exportMonthCsv}

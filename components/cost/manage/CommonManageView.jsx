@@ -271,6 +271,7 @@ export function CommonManageView({ tab = 'groups' }) {
       {/* ── 묶음 관리 탭 ── */}
       {tab === 'groups' && (
         <div
+          className="cost-manage-grid"
           style={{
             display: 'grid',
             gridTemplateColumns: '280px 1fr',

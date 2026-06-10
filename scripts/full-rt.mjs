@@ -10,6 +10,7 @@
 import { chromium, getQaBase, newAuthedContext, routeUrl } from './qa-browser-utils.mjs';
 
 const BASE = getQaBase();
+const NAV_TIMEOUT_MS = Number.parseInt(process.env.QA_NAV_TIMEOUT_MS || '', 10) || 90_000;
 
 const MAIN_ROUTES = [
   '/',
@@ -96,6 +97,13 @@ const results = [];
 async function checkRoute(page, brand, route, directEntry = false) {
   const errs = [],
     consoleErrs = [];
+  const onPageError = e => errs.push(e.message.split('\n')[0]);
+  const onConsole = m => {
+    if (m.type() === 'error') {
+      const t = m.text();
+      if (filterErr(t)) consoleErrs.push(t.split('\n')[0]);
+    }
+  };
 
   if (directEntry) {
     // 진짜 직접 진입: addInitScript로 홈 방문 없이 localStorage를 미리 세팅 후 바로 라우트 이동.
@@ -108,49 +116,48 @@ async function checkRoute(page, brand, route, directEntry = false) {
       { key: 'v3:active-brand', val: brand }
     );
     const p2 = await ctx.newPage();
-    p2.on('pageerror', e => errs.push(e.message.split('\n')[0]));
-    p2.on('console', m => {
-      if (m.type() === 'error') {
-        const t = m.text();
-        if (filterErr(t)) consoleErrs.push(t.split('\n')[0]);
-      }
-    });
-    await p2.goto(routeUrl(BASE, route), { waitUntil: 'networkidle' });
-    await p2.waitForTimeout(1500);
-    const hasContent = await p2.evaluate(
-      () => !!(document.querySelector('h1') || document.querySelector('main'))
-    );
-    const hyd = errs.filter(e => /hydrat/i.test(e));
-    await ctx.close();
-    return {
-      brand: `${brand}(직접)`,
-      route,
-      errs: errs.filter(e => !/hydrat/i.test(e)),
-      hyd,
-      consoleErrs,
-      hasContent,
-    };
+    p2.on('pageerror', onPageError);
+    p2.on('console', onConsole);
+    try {
+      await p2.goto(routeUrl(BASE, route), { waitUntil: 'networkidle', timeout: NAV_TIMEOUT_MS });
+      await p2.waitForTimeout(1500);
+      const hasContent = await p2.evaluate(
+        () => !!(document.querySelector('h1') || document.querySelector('main'))
+      );
+      const hyd = errs.filter(e => /hydrat/i.test(e));
+      return {
+        brand: `${brand}(직접)`,
+        route,
+        errs: errs.filter(e => !/hydrat/i.test(e)),
+        hyd,
+        consoleErrs,
+        hasContent,
+      };
+    } finally {
+      p2.off('pageerror', onPageError);
+      p2.off('console', onConsole);
+      await ctx.close();
+    }
   }
 
-  page.on('pageerror', e => errs.push(e.message.split('\n')[0]));
-  page.on('console', m => {
-    if (m.type() === 'error') {
-      const t = m.text();
-      if (filterErr(t)) consoleErrs.push(t.split('\n')[0]);
-    }
-  });
+  page.on('pageerror', onPageError);
+  page.on('console', onConsole);
+  try {
+    await page.evaluate(b => localStorage.setItem('v3:active-brand', b), brand);
+    await page.goto(routeUrl(BASE, route), { waitUntil: 'networkidle', timeout: NAV_TIMEOUT_MS });
+    await page.waitForTimeout(800);
 
-  await page.evaluate(b => localStorage.setItem('v3:active-brand', b), brand);
-  await page.goto(routeUrl(BASE, route), { waitUntil: 'networkidle' });
-  await page.waitForTimeout(800);
+    const hyd = errs.filter(e => /hydrat/i.test(e));
+    const jsErrs = errs.filter(e => !/hydrat/i.test(e));
+    const hasContent = await page.evaluate(
+      () => !!(document.querySelector('h1') || document.querySelector('main'))
+    );
 
-  const hyd = errs.filter(e => /hydrat/i.test(e));
-  const jsErrs = errs.filter(e => !/hydrat/i.test(e));
-  const hasContent = await page.evaluate(
-    () => !!(document.querySelector('h1') || document.querySelector('main'))
-  );
-
-  return { brand, route, errs: jsErrs, hyd, consoleErrs, hasContent };
+    return { brand, route, errs: jsErrs, hyd, consoleErrs, hasContent };
+  } finally {
+    page.off('pageerror', onPageError);
+    page.off('console', onConsole);
+  }
 }
 
 // main 브랜드
@@ -234,4 +241,5 @@ if (failed.length > 0) {
     for (const e of [...r.errs, ...r.hyd, ...r.consoleErrs].slice(0, 3))
       console.log('    ' + e.slice(0, 100));
   }
+  process.exitCode = 1;
 }

@@ -447,7 +447,7 @@ export default function Page() {
               margin: '0 0 8px',
             }}
           >
-            <div style={{ display: 'flex', gap: 4 }}>
+            <div className="usage-chip-row">
               {USAGE_CATS.map(c => (
                 <button
                   key={c}
@@ -458,7 +458,7 @@ export default function Page() {
                 </button>
               ))}
             </div>
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
+            <div className="usage-action-row">
               <button
                 className="btn sm"
                 onClick={() => setExpanded(new Set(displayRows.map(keyOf)))}

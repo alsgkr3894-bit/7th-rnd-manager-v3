@@ -17,6 +17,11 @@ import {
 import { downloadJson, makeFileName, readFileAsText } from '@/lib/download';
 import { addEntry } from '@/lib/backup-history';
 import { validateBackupPayload } from '@/lib/backup/validation';
+import {
+  buildRestoreImpact,
+  pickRestoreStores,
+  selectedStoresMissingFromBackup,
+} from '@/lib/backup/restore-impact';
 import { formatNumber } from '@/lib/format';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
@@ -107,19 +112,13 @@ export default function Page() {
   // 백업 vs 현재 차이 (선택 범위 한정)
   const impact = useMemo(() => {
     if (!parsed || !currentStats) return null;
-    const rows = [];
-    let totalNow = 0,
-      totalAfter = 0;
-    for (const name of selectedStores) {
-      const now = currentStats[name] || 0;
-      const after = Array.isArray(parsed.stores?.[name]) ? parsed.stores[name].length : 0;
-      if (now === 0 && after === 0) continue;
-      rows.push({ name, now, after, diff: after - now });
-      totalNow += now;
-      totalAfter += after;
-    }
-    return { rows, totalNow, totalAfter };
+    return buildRestoreImpact(parsed.stores, currentStats, selectedStores);
   }, [parsed, currentStats, selectedStores]);
+  const unchangedSelectedStores = useMemo(() => {
+    if (!parsed || !currentStats) return [];
+    return selectedStoresMissingFromBackup(parsed.stores, currentStats, selectedStores);
+  }, [parsed, currentStats, selectedStores]);
+  const selectedRestoreStoreCount = impact?.storeCount ?? 0;
 
   // 위험 store — 현재 데이터가 줄어드는 행
   const dangerRows = useMemo(
@@ -184,9 +183,7 @@ export default function Page() {
       // 2) 선택된 모듈의 store만 import
       const partialData = {
         ...parsed,
-        stores: Object.fromEntries(
-          Object.entries(parsed.stores).filter(([name]) => selectedStores.includes(name))
-        ),
+        stores: pickRestoreStores(parsed.stores, selectedStores),
       };
       const restoreTotal = Object.keys(partialData.stores).length || 1;
       setRestoreProgress({ label: 'store 복원 시작', current: 0, total: restoreTotal });
@@ -582,6 +579,42 @@ export default function Page() {
                 ))
               )}
             </div>
+            {unchangedSelectedStores.length > 0 && (
+              <div
+                style={{
+                  marginTop: 10,
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  background: 'var(--surface-2)',
+                  fontSize: 12,
+                  color: 'var(--text-2)',
+                  lineHeight: 1.5,
+                }}
+              >
+                <b>백업 파일에 없는 store는 현재 상태를 유지합니다.</b>{' '}
+                <span className="num" style={{ color: 'var(--text-3)' }}>
+                  {unchangedSelectedStores.slice(0, 5).join(', ')}
+                  {unchangedSelectedStores.length > 5
+                    ? ` 외 ${unchangedSelectedStores.length - 5}개`
+                    : ''}
+                </span>
+              </div>
+            )}
+            {selectedKeys.length > 0 && selectedRestoreStoreCount === 0 && (
+              <div
+                style={{
+                  marginTop: 10,
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  background: 'var(--warn-soft)',
+                  fontSize: 12,
+                  color: 'var(--warn)',
+                  fontWeight: 700,
+                }}
+              >
+                선택한 범위와 백업 파일이 겹치지 않아 복원할 store가 없습니다.
+              </div>
+            )}
           </div>
 
           {/* ── 4. 예상 변경 사항 (위험 store 강조) ──────────── */}
@@ -937,7 +970,7 @@ export default function Page() {
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <button
                   className="btn"
-                  disabled={busy || selectedKeys.length === 0}
+                  disabled={busy || selectedKeys.length === 0 || selectedRestoreStoreCount === 0}
                   onClick={() => setConfirming(true)}
                   style={{ color: 'var(--negative)', borderColor: 'var(--negative)' }}
                 >
@@ -953,7 +986,7 @@ export default function Page() {
                 </button>
                 <button
                   className="btn"
-                  disabled={busy || !ready}
+                  disabled={busy || !ready || selectedRestoreStoreCount === 0}
                   onClick={() => handleRestore(false)}
                   style={{
                     background: 'var(--negative)',

@@ -216,7 +216,7 @@ export function ManagedProductsCard() {
             {counts['generic-managed']} · 관리품목 {counts.managed})
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div className="card-header-actions">
           <button className="btn sm" onClick={exportCsv} disabled={filtered.length === 0}>
             CSV 내보내기
           </button>

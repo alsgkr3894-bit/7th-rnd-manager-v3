@@ -12,10 +12,10 @@ export function SetDetailCard({ menu, recipe, onEdit }) {
 
   return (
     <div
-      className="card"
+      className="card cost-detail-card"
       style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 }}
     >
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div className="cost-detail-main" style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span style={{ fontWeight: 700, fontSize: 15 }}>{menu.menuName}</span>
           <span
@@ -60,7 +60,7 @@ export function SetDetailCard({ menu, recipe, onEdit }) {
         </div>
       </div>
 
-      <div style={{ textAlign: 'right', minWidth: 140 }}>
+      <div className="cost-detail-metric" style={{ textAlign: 'right', minWidth: 140 }}>
         <div style={{ fontSize: 11, color: 'var(--text-3)' }}>총 원가</div>
         <div
           style={{
@@ -98,7 +98,7 @@ export function SetDetailCard({ menu, recipe, onEdit }) {
         )}
       </div>
 
-      <button className="btn sm" onClick={onEdit}>
+      <button className="btn sm cost-detail-action" onClick={onEdit}>
         <Icon.edit style={{ width: 13, height: 13 }} />
         {hasRecipe ? '편집' : '레시피 작성'}
       </button>

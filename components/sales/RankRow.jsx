@@ -39,6 +39,7 @@ export const RankRow = memo(function RankRow({ rank, row, total, expanded, onTog
       }}
     >
       <button
+        className="sales-rank-row-button"
         onClick={handleToggle}
         style={{
           width: '100%',
@@ -55,10 +56,10 @@ export const RankRow = memo(function RankRow({ rank, row, total, expanded, onTog
           textAlign: 'left',
         }}
       >
-        <div className="num" style={{ fontWeight: 700, color: 'var(--text-2)' }}>
+        <div className="num sales-rank-pos" style={{ fontWeight: 700, color: 'var(--text-2)' }}>
           {asDisplayText(rank, '-')}
         </div>
-        <div style={{ fontWeight: 700 }}>
+        <div className="sales-rank-name" style={{ fontWeight: 700 }}>
           {name}
           <span
             style={{
@@ -72,7 +73,7 @@ export const RankRow = memo(function RankRow({ rank, row, total, expanded, onTog
           </span>
         </div>
         <span
-          className="chip"
+          className="chip sales-rank-category"
           style={{
             background: 'var(--surface-2)',
             color: 'var(--text-2)',
@@ -81,11 +82,11 @@ export const RankRow = memo(function RankRow({ rank, row, total, expanded, onTog
         >
           {category}
         </span>
-        <div className="num right" style={{ textAlign: 'right' }}>
+        <div className="num right sales-rank-quantity" style={{ textAlign: 'right' }}>
           {formatNumber(quantity)}
           <span className="unit">개</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="sales-rank-share" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div
             style={{
               flex: 1,
@@ -107,8 +108,9 @@ export const RankRow = memo(function RankRow({ rank, row, total, expanded, onTog
             {(share * 100).toFixed(1)}%
           </span>
         </div>
-        <div></div>
+        <div className="sales-rank-spacer"></div>
         <Icon.chevDown
+          className="sales-rank-chevron"
           style={{
             width: 16,
             height: 16,
@@ -128,7 +130,10 @@ function SizeDetail({ row }) {
   const name = asDisplayText(row?.name, '-');
   const sizes = asObjectArray(row?.sizes);
   return (
-    <div style={{ padding: '4px 12px 14px 62px', borderTop: '1px solid var(--border)' }}>
+    <div
+      className="sales-rank-size-detail"
+      style={{ padding: '4px 12px 14px 62px', borderTop: '1px solid var(--border)' }}
+    >
       <div style={{ fontSize: 11, color: 'var(--text-3)', margin: '8px 0 6px' }}>
         {name} · 규격별 판매량
       </div>
@@ -140,6 +145,7 @@ function SizeDetail({ row }) {
           return (
             <div
               key={`${size}-${index}`}
+              className="sales-rank-size-row"
               style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr 80px 60px',

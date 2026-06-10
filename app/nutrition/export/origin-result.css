@@ -19,6 +19,7 @@
 /* ── 탭 ───────────────────────────────────────────────────── */
 .origin-result-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 0;
   border-bottom: 2px solid #333;
   margin-bottom: 0;
@@ -33,6 +34,7 @@
   background: #f9f9f9;
 }
 .origin-result-tab {
+  flex: 0 1 auto;
   padding: 10px 20px;
   border: 1px solid #ccc;
   border-bottom: none;
@@ -74,6 +76,22 @@
   background: #fff;
   border-color: #555;
   border-bottom: 2px solid #fff;
+}
+
+@media (max-width: 520px) {
+  .origin-result-tabs {
+    gap: 4px;
+    border-bottom-width: 1px;
+  }
+  .origin-result-tab,
+  .origin-result-tabs-top .origin-result-tab,
+  .origin-result-subtab {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    padding: 8px 10px;
+    font-size: 12px;
+    text-align: center;
+  }
 }
 
 /* ── 액션 버튼 ────────────────────────────────────────────── */
