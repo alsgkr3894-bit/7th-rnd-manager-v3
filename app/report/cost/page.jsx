@@ -18,6 +18,7 @@ import { getPriceFiles } from '@/lib/price';
 import { getActiveBrand } from '@/lib/active-brand';
 import { useDraftRestore } from '@/hooks/useDraftRestore';
 import { getProfile } from '@/lib/profile';
+import { isPizzaCategory } from '@/lib/menu-master/category-policy';
 
 // ── 상수 ──────────────────────────────────────────────────────
 const matchEdge = cat => cat === '엣지' || cat === '엣지&도우' || cat === '엣지 & 도우';
@@ -241,7 +242,7 @@ export default function Page() {
               catLabel === '엣지'
                 ? matchEdge(p.category)
                 : catLabel === '피자'
-                  ? p.category === '피자' || (p.category || '').startsWith('피자/')
+                  ? isPizzaCategory(p.category, { includePersonal: false })
                   : p.category === catLabel
             );
             // 메뉴 오브젝트에 menuCode 포함(정렬·xlsx용)

@@ -15,6 +15,7 @@ import { getProfile } from '@/lib/profile';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { getActiveBrand } from '@/lib/active-brand';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
+import { isPizzaCategory } from '@/lib/menu-master/category-policy';
 
 const DRAFT_KEY = 'report_draft_sales';
 
@@ -628,7 +629,7 @@ export default function Page() {
             safeViewMode === 'rank' &&
             (() => {
               const all = safeGroupRanking.filter(
-                m => m.category?.includes('피자') && !m.category?.includes('1인피자')
+                m => isPizzaCategory(m.category, { includePersonal: false })
               );
               if (all.length === 0) return null;
               const pizzaColor =

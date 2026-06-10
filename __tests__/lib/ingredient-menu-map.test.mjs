@@ -125,6 +125,19 @@ describe('buildIngredientMenuMap', () => {
       expect(menus.has('S-CHK-001')).toBe(false);
     });
 
+    test('엣지 재료는 새 피자 하위분류에 적용되고 1인피자는 제외된다', () => {
+      const menuMasters = [
+        ...MENUS,
+        { menuCode: 'P-NEW-001-L', menuName: '신메뉴 L', category: '피자/신메뉴' },
+        { menuCode: 'P-ONE-001', menuName: '1인피자', category: '1인피자' },
+      ];
+      const { ingredientToMenus } = buildIngredientMenuMap({ menuMasters, edges: EDGES });
+      const menus = ingredientToMenus.get('code:ING-MOZZARELLA');
+
+      expect(menus.has('P-NEW-001-L')).toBe(true);
+      expect(menus.has('P-ONE-001')).toBe(false);
+    });
+
     test('expandInMargin=false 엣지는 매핑 제외', () => {
       const disabledEdge = [
         {

@@ -65,7 +65,7 @@ function logicalMenuKey(menuCode, menuName, category) {
   const code = asDisplayText(menuCode);
   const name = stripSizeSuffix(menuName);
   const cat = asDisplayText(category);
-  if (cat.startsWith('피자') && code) {
+  if (isPizzaCategory(cat) && code) {
     const match = code.match(/^(.+?-\d{3})(?:-[LR])$/i);
     if (match) return match[1];
   }

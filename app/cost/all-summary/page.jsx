@@ -19,6 +19,12 @@ import { costRateColor, calcCostRate } from '@/lib/cost/rate-color';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { downloadCsv } from '@/lib/download';
 import { onPriceUpload } from '@/lib/price/price-events';
+import {
+  isPersonalPizzaCategory,
+  isPizzaCategory,
+  isSetCategory,
+  isSideCategory,
+} from '@/lib/menu-master/category-policy';
 
 // ── 카테고리 정규화 ───────────────────────────────────────────
 const CAT_ORDER = [
@@ -31,10 +37,10 @@ const CAT_ORDER = [
 
 function normalizeCategory(cat) {
   if (!cat) return '기타';
-  if (cat.startsWith('피자')) return '피자';
-  if (cat === '1인피자') return '1인피자';
-  if (cat === '사이드' || cat === '소스' || cat === '음료' || cat === '엣지') return '사이드';
-  if (cat === '세트박스') return '세트박스';
+  if (isPizzaCategory(cat, { includePersonal: false })) return '피자';
+  if (isPersonalPizzaCategory(cat)) return '1인피자';
+  if (isSideCategory(cat) || cat === '음료' || cat === '엣지') return '사이드';
+  if (isSetCategory(cat)) return '세트박스';
   return '기타';
 }
 
