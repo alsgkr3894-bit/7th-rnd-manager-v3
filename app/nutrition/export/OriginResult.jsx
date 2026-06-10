@@ -14,10 +14,11 @@ import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 import { exportOriginToExcel } from '@/lib/nutrition/origin/export';
 import { printOriginAll } from '@/lib/nutrition/origin/print';
 import { showToast } from '@/components/Toast';
-import { MENU_ORDER_KEY, loadOrder, applyOrder } from '@/lib/nutrition/order';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
 import { loadMenuNames, applyMenuName } from '@/lib/nutrition/menu-name-override';
+import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
+import { MENU_ORDER_KEY, loadOrder } from '@/lib/nutrition/order';
 import {
   loadIngredientNames,
   saveIngredientNames,
@@ -31,6 +32,65 @@ const EMPTY_MENU_MAP = new Map();
 const EMPTY_SET = new Set();
 const asMenuMap = value => (value instanceof Map ? value : EMPTY_MENU_MAP);
 const asSet = value => (value instanceof Set ? value : EMPTY_SET);
+const DELIVERY_GROUPS = ['피자', '사이드'];
+
+function normalizeOriginItems(items) {
+  const seen = new Set();
+  const out = [];
+  for (const it of asObjectArray(items)) {
+    const displayName = asDisplayText(it.displayName);
+    const country = asDisplayText(it.country);
+    const key = `${displayName}||${country}`;
+    if (!country || seen.has(key)) continue;
+    seen.add(key);
+    out.push({ displayName, country });
+  }
+  return out;
+}
+
+function formatOriginCountries(items) {
+  const safeItems = normalizeOriginItems(items);
+  if (safeItems.length <= 1) return safeItems[0]?.country || '';
+  return safeItems
+    .map(it => {
+      const displayName = asDisplayText(it.displayName);
+      return displayName ? `${displayName}:${it.country}` : it.country;
+    })
+    .filter(Boolean)
+    .join(', ');
+}
+
+function makeMenuRank(menuOrder = []) {
+  return new Map(
+    (Array.isArray(menuOrder) ? menuOrder : [])
+      .map((key, index) => [asDisplayText(key), index])
+      .filter(([key]) => key)
+  );
+}
+
+function menuRankValue(menu, rank) {
+  const code = asDisplayText(menu?.menuCode);
+  const name = asDisplayText(menu?.menuName);
+  if (rank.has(code)) return rank.get(code);
+  if (rank.has(name)) return rank.get(name);
+  return Infinity;
+}
+
+function deliveryGroupRank(group) {
+  const idx = DELIVERY_GROUPS.indexOf(group);
+  return idx === -1 ? DELIVERY_GROUPS.length : idx;
+}
+
+function sortMenuRefs(menuRefs, menuOrder = []) {
+  const rank = makeMenuRank(menuOrder);
+  return [...asObjectArray(menuRefs)].sort(
+    (a, b) =>
+      menuRankValue(a, rank) - menuRankValue(b, rank) ||
+      deliveryGroupRank(a.group) - deliveryGroupRank(b.group) ||
+      asDisplayText(a.menuName).localeCompare(asDisplayText(b.menuName), 'ko') ||
+      asDisplayText(a.menuCode).localeCompare(asDisplayText(b.menuCode), 'ko')
+  );
+}
 
 /**
  * 식자재 origin 배열 + 레시피 매핑 → 출력용 origins 배열로 변환.
@@ -42,7 +102,8 @@ function buildOriginsFromIngredients(
   ingredientToMenus,
   excludedMenuCodes = new Set(),
   excludedMenuNames = new Set(),
-  overrides = {}
+  overrides = {},
+  masterByCode = {}
 ) {
   const ingredientMenuMap = asMenuMap(ingredientToMenus);
   const excludedCodes = asSet(excludedMenuCodes);
@@ -71,6 +132,7 @@ function buildOriginsFromIngredients(
       .map(([menuCode, meta]) => ({
         menuCode: asDisplayText(menuCode),
         menuName: applyMenuName(asDisplayText(menuCode), asDisplayText(meta?.menuName), overrides),
+        category: asDisplayText(masterByCode?.[asDisplayText(menuCode)]?.category || meta?.category),
       }));
 
     result.push({
@@ -93,7 +155,7 @@ const NOTICE = '※ 재료 수급에 따라 원산지가 다소 변경 될 수 �
 /**
  * 매장비치용: 표시품목 / 원산지 / 음식명
  */
-function buildSheet1(origins) {
+function buildSheet1(origins, menuOrder = []) {
   const map = new Map();
   for (const row of asObjectArray(origins)) {
     for (const it of asObjectArray(row.items)) {
@@ -101,18 +163,35 @@ function buildSheet1(origins) {
       const country = asDisplayText(it.country);
       const key = `${displayName}||${country}`;
       if (!map.has(key)) {
-        map.set(key, { displayName, originCountry: country, menus: new Set() });
+        map.set(key, { displayName, originCountry: country, menuRefs: new Map() });
       }
       const entry = map.get(key);
-      for (const { menuName } of asObjectArray(row.menuCodes)) {
+      for (const { menuCode, menuName, category } of asObjectArray(row.menuCodes)) {
+        const safeMenuCode = asDisplayText(menuCode);
         const safeMenuName = asDisplayText(menuName);
-        if (safeMenuName) entry.menus.add(safeMenuName);
+        const key = safeMenuCode || safeMenuName;
+        if (key) {
+          const group =
+            resolveNutritionGroup({ menuCode: safeMenuCode, menuName: safeMenuName, category }) ===
+            '피자'
+              ? '피자'
+              : '사이드';
+          entry.menuRefs.set(key, {
+            menuCode: safeMenuCode,
+            menuName: safeMenuName || safeMenuCode,
+            category,
+            group,
+          });
+        }
       }
     }
   }
-  return [...map.values()].sort((a, b) =>
-    asDisplayText(a.displayName).localeCompare(asDisplayText(b.displayName), 'ko')
-  );
+  return [...map.values()]
+    .map(entry => ({
+      ...entry,
+      menus: sortMenuRefs([...entry.menuRefs.values()], menuOrder).map(m => m.menuName),
+    }))
+    .sort((a, b) => asDisplayText(a.displayName).localeCompare(asDisplayText(b.displayName), 'ko'));
 }
 
 /**
@@ -122,22 +201,12 @@ function buildSheet1(origins) {
 function buildSheet2(origins, ingOverrides = {}) {
   return asObjectArray(origins)
     .map(row => {
-      const seen = new Set();
-      const items = [];
-      for (const it of asObjectArray(row.items)) {
-        const item = {
-          displayName: asDisplayText(it.displayName),
-          country: asDisplayText(it.country),
-        };
-        const k = `${item.displayName}||${item.country}`;
-        if (!seen.has(k)) {
-          seen.add(k);
-          items.push(item);
-        }
-      }
+      const items = normalizeOriginItems(row.items);
       return {
         ingredientName: applyIngredientName(asDisplayText(row.ingredientName), ingOverrides),
         items,
+        itemText: items.map(it => asDisplayText(it.displayName)).filter(Boolean).join(', '),
+        originText: formatOriginCountries(items),
       };
     })
     .sort((a, b) =>
@@ -148,30 +217,41 @@ function buildSheet2(origins, ingOverrides = {}) {
 /**
  * 배달플랫폼용: 메뉴명 / 재료명(표시품목:원산지)
  */
-function buildSheet3(origins, ingOverrides = {}) {
+function buildSheet3(origins, ingOverrides = {}, menuOrder = []) {
   const menuMap = new Map();
   for (const row of asObjectArray(origins)) {
-    const inner = asObjectArray(row.items)
-      .map(it => `${asDisplayText(it.displayName)}:${asDisplayText(it.country)}`)
-      .join('/');
+    const inner = formatOriginCountries(row.items);
     const ingredientName = applyIngredientName(asDisplayText(row.ingredientName), ingOverrides);
     const ingText = `${ingredientName}(${inner})`;
-    for (const { menuCode, menuName } of asObjectArray(row.menuCodes)) {
+    for (const { menuCode, menuName, category } of asObjectArray(row.menuCodes)) {
       const safeMenuCode = asDisplayText(menuCode);
       const safeMenuName = asDisplayText(menuName);
       const key = safeMenuCode || safeMenuName;
       if (!key) continue;
-      if (!menuMap.has(key))
-        menuMap.set(key, { menuCode: key, menuName: safeMenuName || safeMenuCode, parts: [] });
+      const group =
+        resolveNutritionGroup({ menuCode: safeMenuCode, menuName: safeMenuName, category }) ===
+        '피자'
+          ? '피자'
+          : '사이드';
+      if (!menuMap.has(key)) {
+        menuMap.set(key, {
+          group,
+          menuCode: key,
+          menuName: safeMenuName || safeMenuCode,
+          parts: [],
+        });
+      }
       const entry = menuMap.get(key);
       if (!entry.parts.includes(ingText)) entry.parts.push(ingText);
     }
   }
-  return applyOrder(
-    [...menuMap.values()],
-    loadOrder(MENU_ORDER_KEY),
-    m => asDisplayText(m.menuCode),
-    m => asDisplayText(m.menuName)
+  const rank = makeMenuRank(menuOrder);
+  return [...menuMap.values()].sort(
+    (a, b) =>
+      menuRankValue(a, rank) - menuRankValue(b, rank) ||
+      deliveryGroupRank(a.group) - deliveryGroupRank(b.group) ||
+      asDisplayText(a.menuName).localeCompare(asDisplayText(b.menuName), 'ko') ||
+      asDisplayText(a.menuCode).localeCompare(asDisplayText(b.menuCode), 'ko')
   );
 }
 
@@ -256,7 +336,9 @@ function Sheet1({ rows }) {
             <tr key={`${asDisplayText(r.displayName)}-${asDisplayText(r.originCountry)}-${i}`}>
               <td>{asDisplayText(r.displayName)}</td>
               <td>{asDisplayText(r.originCountry)}</td>
-              <td>{[...asSet(r.menus)].join(', ')}</td>
+              <td>
+                {Array.isArray(r.menus) ? r.menus.join(', ') : [...asSet(r.menus)].join(', ')}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -286,20 +368,13 @@ function Sheet2({ rows }) {
           </tr>
         </thead>
         <tbody>
-          {safeRows.map((r, i) => {
-            const items = asObjectArray(r.items);
-            return (
-              <tr key={`${asDisplayText(r.ingredientName)}-${i}`}>
-                <td>{asDisplayText(r.ingredientName)}</td>
-                <td className="origin-multiline">
-                  {items.map(it => asDisplayText(it.displayName)).join('\n')}
-                </td>
-                <td className="origin-multiline">
-                  {items.map(it => asDisplayText(it.country)).join('\n')}
-                </td>
-              </tr>
-            );
-          })}
+          {safeRows.map((r, i) => (
+            <tr key={`${asDisplayText(r.ingredientName)}-${i}`}>
+              <td>{asDisplayText(r.ingredientName)}</td>
+              <td>{asDisplayText(r.itemText)}</td>
+              <td>{asDisplayText(r.originText)}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
       <div className="origin-result-notice large">{NOTICE}</div>
@@ -315,11 +390,13 @@ function Sheet3({ rows }) {
       <div className="origin-result-title">배달플랫폼 원산지 표기</div>
       <table className="origin-result-table origin-delivery-table">
         <colgroup>
+          <col style={{ width: '90px' }} />
           <col className="col-menu" />
           <col className="col-ing" />
         </colgroup>
         <thead>
           <tr>
+            <th>구분</th>
             <th>메뉴명</th>
             <th>재료명(원산지)</th>
           </tr>
@@ -327,6 +404,7 @@ function Sheet3({ rows }) {
         <tbody>
           {safeRows.map((r, i) => (
             <tr key={`${asDisplayText(r.menuCode) || asDisplayText(r.menuName)}-${i}`}>
+              <td style={{ fontWeight: 700, textAlign: 'center' }}>{asDisplayText(r.group)}</td>
               <td style={{ fontWeight: 600 }}>{asDisplayText(r.menuName)}</td>
               <td>
                 {Array.isArray(r.parts) ? r.parts.map(part => asDisplayText(part)).join(', ') : ''}
@@ -374,6 +452,7 @@ export default function OriginResult() {
   const [exporting, setExporting] = useState(false);
   const [ingEditOpen, setIngEditOpen] = useState(false);
   const [ingOverrides, setIngOverrides] = useState(() => loadIngredientNames());
+  const [menuOrder, setMenuOrder] = useState([]);
 
   useEffect(() => {
     let alive = true;
@@ -398,6 +477,9 @@ export default function OriginResult() {
       const safeGroups = asObjectArray(groups);
       const safeEdges = asObjectArray(edges);
       const safeOldRecipes = asObjectArray(oldRecs);
+      const masterByCode = Object.fromEntries(
+        safeMenuMasters.map(m => [asDisplayText(m.menuCode), m]).filter(([menuCode]) => menuCode)
+      );
       const detailRecipes = tagDetailRecipes(
         asObjectArray(pizzaRecs),
         asObjectArray(personalRecs),
@@ -413,13 +495,15 @@ export default function OriginResult() {
       });
       const { excludedMenuCodes, excludedMenuNames } = extractExcludedMenuSets(safeMenuMasters);
       if (!alive) return;
+      setMenuOrder(loadOrder(MENU_ORDER_KEY));
       setOrigins(
         buildOriginsFromIngredients(
           safeIngredients,
           ingredientToMenus,
           excludedMenuCodes,
           excludedMenuNames,
-          overrides
+          overrides,
+          masterByCode
         )
       );
     })()
@@ -435,9 +519,12 @@ export default function OriginResult() {
     };
   }, []);
 
-  const sheet1 = useMemo(() => buildSheet1(origins), [origins]);
+  const sheet1 = useMemo(() => buildSheet1(origins, menuOrder), [origins, menuOrder]);
   const sheet2 = useMemo(() => buildSheet2(origins, ingOverrides), [origins, ingOverrides]);
-  const sheet3 = useMemo(() => buildSheet3(origins, ingOverrides), [origins, ingOverrides]);
+  const sheet3 = useMemo(
+    () => buildSheet3(origins, ingOverrides, menuOrder),
+    [origins, ingOverrides, menuOrder]
+  );
   const sheet4 = useMemo(() => buildSheet4(origins, ingOverrides), [origins, ingOverrides]);
 
   async function handleExcel() {

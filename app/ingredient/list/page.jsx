@@ -63,6 +63,121 @@ function exportIngredientCsv(rows) {
   downloadCsv([headers, ...data], '식자재리스트.csv');
 }
 
+function esc(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function ingredientName(row) {
+  return row.ingredientName || row.displayName || row.productName || '';
+}
+
+function originText(row) {
+  return (row.origin || [])
+    .map(o => [o.displayName, o.country].filter(Boolean).join(':'))
+    .filter(Boolean)
+    .join(', ');
+}
+
+function allergenText(row) {
+  return (row.allergens || []).map(c => ALLERGEN_MAP[c] || c).join(', ');
+}
+
+function printIngredientPdf(rows, { includePhotos = true } = {}) {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const win = window.open('', '_blank', 'width=1100,height=900');
+  if (!win) {
+    alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.');
+    return;
+  }
+  const date = new Date().toISOString().slice(0, 10);
+  const title = `식자재 리스트 ${date}`;
+  const cardBody = safeRows
+    .map(row => {
+      const photo = row.photo && typeof row.photo === 'object' && row.photo.data ? row.photo : null;
+      const unit = row.baseUnitType || row.salesUnit || 'g';
+      return `
+        <article class="ing-card">
+          ${
+            includePhotos
+              ? `<div class="photo-box">${
+                  photo
+                    ? `<img src="${esc(photo.data)}" alt="${esc(photo.name || ingredientName(row))}">`
+                    : '<span>사진 없음</span>'
+                }</div>`
+              : ''
+          }
+          <div class="ing-info">
+            <div class="name">${esc(ingredientName(row))}</div>
+            <div class="code">${esc(row.productCode || '자체/수동')}</div>
+            <dl>
+              <dt>분류</dt><dd>${esc(row.category || '-')}</dd>
+              <dt>단위</dt><dd>${esc(row.baseUnitType || row.salesUnit || '-')}</dd>
+              <dt>단가</dt><dd>${esc(formatUnitPrice(row.unitPrice, unit) || '-')}</dd>
+              <dt>거래처</dt><dd>${esc(row.manufacturer || '-')}</dd>
+              <dt>원산지</dt><dd>${esc(originText(row) || '-')}</dd>
+              <dt>알레르기</dt><dd>${esc(allergenText(row) || '-')}</dd>
+            </dl>
+          </div>
+        </article>`;
+    })
+    .join('');
+  const tableBody = safeRows
+    .map(
+      row => `
+        <tr>
+          <td>${esc(row.productCode || '-')}</td>
+          <td class="name-cell">${esc(ingredientName(row))}</td>
+          <td>${esc(row.category || '-')}</td>
+          <td>${esc(row.baseUnitType || row.salesUnit || '-')}</td>
+          <td class="right">${esc(formatUnitPrice(row.unitPrice, row.baseUnitType || row.salesUnit || 'g') || '-')}</td>
+          <td>${esc(row.manufacturer || '-')}</td>
+          <td>${esc(allergenText(row) || '-')}</td>
+        </tr>`
+    )
+    .join('');
+  const body = includePhotos
+    ? `<section class="card-grid">${cardBody}</section>`
+    : `<table><thead><tr><th>코드</th><th>식자재명</th><th>분류</th><th>단위</th><th>단가</th><th>거래처</th><th>알레르기</th></tr></thead><tbody>${tableBody}</tbody></table>`;
+  const html = `<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>${esc(title)}</title>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; padding: 18mm; font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif; color: #111827; background: #fff; }
+.doc-head { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid #111827; padding-bottom: 10px; margin-bottom: 14px; }
+.doc-title { font-size: 24px; font-weight: 900; letter-spacing: 0; }
+.doc-meta { font-size: 11px; color: #4B5563; font-weight: 700; }
+.card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ing-card { display: grid; grid-template-columns: 138px 1fr; gap: 12px; min-height: 162px; border: 1px solid #D1D5DB; border-radius: 8px; padding: 10px; break-inside: avoid; page-break-inside: avoid; }
+.photo-box { height: 138px; border: 1px solid #D1D5DB; border-radius: 6px; background: #F3F4F6; display: grid; place-items: center; overflow: hidden; color: #9CA3AF; font-size: 12px; font-weight: 700; }
+.photo-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.name { font-size: 15px; font-weight: 900; line-height: 1.35; margin-bottom: 2px; }
+.code { font-size: 10px; color: #6B7280; font-weight: 800; margin-bottom: 8px; }
+dl { display: grid; grid-template-columns: 54px 1fr; gap: 4px 8px; margin: 0; font-size: 11px; line-height: 1.4; }
+dt { color: #6B7280; font-weight: 800; }
+dd { margin: 0; color: #111827; word-break: keep-all; overflow-wrap: anywhere; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+th, td { border: 1px solid #D1D5DB; padding: 7px 8px; font-size: 11px; line-height: 1.45; vertical-align: top; word-break: keep-all; overflow-wrap: anywhere; }
+th { background: #F3F4F6; font-weight: 900; text-align: center; }
+.name-cell { font-weight: 800; }
+.right { text-align: right; }
+@media print {
+  @page { size: A4 portrait; margin: 12mm; }
+  body { padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style></head><body>
+<header class="doc-head"><div class="doc-title">${esc(title)}</div><div class="doc-meta">${safeRows.length}개 · ${includePhotos ? '사진 포함' : '사진 미포함'}</div></header>
+${body}
+<script>window.onload = function() { window.focus(); window.print(); };<\/script>
+</body></html>`;
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+}
+
 const SCOPE_TABS = [
   { id: 'all', label: '전체' },
   { id: SCOPE.EXCLUSIVE, label: SCOPE.EXCLUSIVE },
@@ -84,6 +199,7 @@ export default function Page() {
   });
   const [tagFilter, setTagFilter] = useState('all');
   const [sort, setSort] = useState('default');
+  const [pdfPhoto, setPdfPhoto] = useState(true);
   const mountedRef = useRef(true);
 
   const load = useCallback(async () => {
@@ -249,9 +365,32 @@ export default function Page() {
         title="식자재 리스트"
         sub="전체 식자재 마스터 카탈로그 — 단가·분류·매핑 상태를 한 곳에서 확인해요."
         actions={
-          <button className="btn" onClick={() => exportIngredientCsv(rows)}>
-            <Icon.download style={{ width: 14, height: 14 }} /> CSV 내보내기
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <label
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 12,
+                color: 'var(--text-3)',
+                fontWeight: 700,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={pdfPhoto}
+                onChange={e => setPdfPhoto(e.target.checked)}
+                style={{ accentColor: 'var(--accent)' }}
+              />
+              PDF 사진 포함
+            </label>
+            <button className="btn" onClick={() => printIngredientPdf(filtered, { includePhotos: pdfPhoto })}>
+              <Icon.doc style={{ width: 14, height: 14 }} /> PDF
+            </button>
+            <button className="btn" onClick={() => exportIngredientCsv(rows)}>
+              <Icon.download style={{ width: 14, height: 14 }} /> CSV
+            </button>
+          </div>
         }
       />
 
@@ -489,6 +628,7 @@ export default function Page() {
                 <thead>
                   <tr>
                     <th style={{ width: 80 }}>제품코드</th>
+                    <th style={{ width: 70 }}>사진</th>
                     <th>재료명</th>
                     <th style={{ width: 96 }}>분류</th>
                     <th style={{ width: 160 }}>#태그</th>
@@ -535,6 +675,7 @@ function IngredientRow({ r }) {
   const uPrice = r.unitPrice;
   const unitPriceLabel = formatUnitPrice(uPrice, unit);
   const tags = sortHashTags(r.tags || []);
+  const photo = r.photo && typeof r.photo === 'object' && r.photo.data ? r.photo : null;
   const { color: scopeColor = 'var(--text-2)', bg: scopeBg = 'var(--surface-3)' } =
     SCOPE_STYLES[r.scope] || {};
 
@@ -555,6 +696,25 @@ function IngredientRow({ r }) {
           </span>
         ) : (
           r.productCode || '-'
+        )}
+      </td>
+      <td style={{ width: 70 }}>
+        {photo ? (
+          <img
+            src={photo.data}
+            alt={photo.name || name}
+            style={{
+              width: 54,
+              height: 42,
+              objectFit: 'cover',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--surface-2)',
+              display: 'block',
+            }}
+          />
+        ) : (
+          <span style={{ color: 'var(--text-4)', fontSize: 11 }}>—</span>
         )}
       </td>
       <td style={{ fontWeight: 600, fontSize: 13 }}>

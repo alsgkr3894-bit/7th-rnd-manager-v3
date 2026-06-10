@@ -153,26 +153,61 @@ export function NoteFormBody({ form, setForm }) {
     return ingredients
       .filter(i => {
         const name = (i.ingredientName || i.productName || '').toLowerCase().replace(/\s/g, '');
-        return name.includes(q);
+        const code = (i.productCode || '').toLowerCase().replace(/\s/g, '');
+        return name.includes(q) || code.includes(q);
       })
       .slice(0, 8);
   }, [ingSearch, ingredients]);
 
-  function addIngRow(ing) {
+  function unitPriceFromIngredient(ing) {
     const baseQty = ing.baseQuantity;
-    const price = ing.priceOverride ?? ing.price ?? null;
+    const price = ing.priceOverride ?? ing.priceWithTax ?? ing.price ?? null;
     const up = calcUnitPrice(price, baseQty);
-    const unitPrice = up != null ? String(up) : price ? String(Math.round(price)) : '';
+    return up != null ? String(up) : price ? String(Math.round(price)) : '';
+  }
+
+  function linkedIngredient(row) {
+    if (!row) return null;
+    const productCode = row.productCode ? String(row.productCode) : '';
+    return (
+      ingredients.find(i => row.ingredientId && i.id === row.ingredientId) ||
+      ingredients.find(i => productCode && i.productCode === productCode) ||
+      null
+    );
+  }
+
+  const hasLinkedCostRows = parsedCostCalc.rows.some(r => r.productCode || r.ingredientId);
+
+  function addIngRow(ing) {
     const newRow = {
       id: Date.now(),
+      ingredientId: ing.id ?? null,
+      productCode: ing.productCode || '',
       name: ing.ingredientName || ing.productName || '',
       unit: ing.baseUnitType || 'g',
       quantity: '',
-      unitPrice,
+      unitPrice: unitPriceFromIngredient(ing),
     };
     updCost([...parsedCostCalc.rows, newRow], parsedCostCalc.sellingPrice);
     setIngSearch('');
     setShowDropdown(false);
+  }
+
+  function refreshLinkedCostRows() {
+    const rows = parsedCostCalc.rows.map(row => {
+      const ing = linkedIngredient(row);
+      if (!ing) return row;
+      return {
+        ...row,
+        ingredientId: ing.id ?? row.ingredientId ?? null,
+        productCode: ing.productCode || row.productCode || '',
+        name: ing.ingredientName || ing.productName || row.name || '',
+        unit: ing.baseUnitType || row.unit || 'g',
+        unitPrice: unitPriceFromIngredient(ing),
+      };
+    });
+    updCost(rows, parsedCostCalc.sellingPrice);
+    showToast('식자재 연동값을 갱신했습니다', 'ok');
   }
 
   function removeIngRow(rowId) {
@@ -445,19 +480,20 @@ export function NoteFormBody({ form, setForm }) {
           </div>
 
           {/* 재료 검색 */}
-          <div style={{ position: 'relative', marginBottom: 12 }} ref={searchRef}>
-            <input
-              className="form-input"
-              value={ingSearch}
-              onChange={e => {
-                setIngSearch(e.target.value);
-                setShowDropdown(true);
-              }}
-              onFocus={() => ingSearch.trim() && setShowDropdown(true)}
-              onBlur={closeDropdownSoon}
-              placeholder="재료명 검색 후 클릭해서 추가…"
-            />
-            {showDropdown && ingSearch.trim() && filteredIngs.length === 0 && (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'flex-start' }}>
+            <div style={{ position: 'relative', flex: 1 }} ref={searchRef}>
+              <input
+                className="form-input"
+                value={ingSearch}
+                onChange={e => {
+                  setIngSearch(e.target.value);
+                  setShowDropdown(true);
+                }}
+                onFocus={() => ingSearch.trim() && setShowDropdown(true)}
+                onBlur={closeDropdownSoon}
+                placeholder="재료명·식자재 코드 검색 후 클릭해서 추가…"
+              />
+              {showDropdown && ingSearch.trim() && filteredIngs.length === 0 && (
               <div
                 style={{
                   position: 'absolute',
@@ -476,8 +512,8 @@ export function NoteFormBody({ form, setForm }) {
               >
                 "{ingSearch}" 결과 없음 — 식자재 관리에서 먼저 등록하세요
               </div>
-            )}
-            {showDropdown && filteredIngs.length > 0 && (
+              )}
+              {showDropdown && filteredIngs.length > 0 && (
               <div
                 style={{
                   position: 'absolute',
@@ -495,9 +531,8 @@ export function NoteFormBody({ form, setForm }) {
               >
                 {filteredIngs.map(ing => {
                   const name = ing.ingredientName || ing.productName || '';
-                  const baseQty = ing.baseQuantity;
-                  const price = ing.priceOverride ?? ing.price ?? null;
-                  const up = calcUnitPrice(price, baseQty);
+                  const unitPrice = unitPriceFromIngredient(ing);
+                  const up = unitPrice ? Number(unitPrice) : null;
                   return (
                     <button
                       key={ing.id}
@@ -520,6 +555,11 @@ export function NoteFormBody({ form, setForm }) {
                           {up.toLocaleString()}원/{ing.baseUnitType || 'g'}
                         </span>
                       )}
+                      {ing.productCode && (
+                        <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--text-4)' }}>
+                          {ing.productCode}
+                        </span>
+                      )}
                       {ing.category && (
                         <span
                           style={{
@@ -538,6 +578,17 @@ export function NoteFormBody({ form, setForm }) {
                   );
                 })}
               </div>
+              )}
+            </div>
+            {hasLinkedCostRows && (
+              <button
+                type="button"
+                className="btn sm"
+                onClick={refreshLinkedCostRows}
+                style={{ height: 34, whiteSpace: 'nowrap' }}
+              >
+                연동값 갱신
+              </button>
             )}
           </div>
 
@@ -569,8 +620,13 @@ export function NoteFormBody({ form, setForm }) {
                     const subtotal = (Number(r.quantity) || 0) * (Number(r.unitPrice) || 0);
                     return (
                       <tr key={r.id} style={{ borderBottom: '1px solid var(--surface-2)' }}>
-                        <td style={{ padding: '6px 8px', color: 'var(--text-1)', minWidth: 100 }}>
-                          {r.name}
+                        <td style={{ padding: '6px 8px', color: 'var(--text-1)', minWidth: 120 }}>
+                          <div style={{ fontWeight: 600 }}>{r.name}</div>
+                          {r.productCode && (
+                            <div style={{ fontSize: 10, color: 'var(--text-4)', marginTop: 1 }}>
+                              {r.productCode}
+                            </div>
+                          )}
                         </td>
                         <td style={{ padding: '6px 8px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

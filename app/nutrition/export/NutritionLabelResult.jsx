@@ -18,11 +18,11 @@ import { getAllSetRecipes } from '@/lib/cost/set-detail';
 import { getAllRecipes } from '@/lib/recipe';
 import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
-import { buildMenuAllergenMap } from '@/lib/nutrition/allergen/aggregate';
-import { loadOrder, applyOrder, MENU_ORDER_KEY } from '@/lib/nutrition/order';
+import { buildEdgeAllergenMap, buildMenuAllergenMap } from '@/lib/nutrition/allergen/aggregate';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import { loadMenuNames, applyMenuName } from '@/lib/nutrition/menu-name-override';
 import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
+import { MENU_ORDER_KEY, loadOrder } from '@/lib/nutrition/order';
 import { loadSliceCounts, saveSliceCounts } from '@/lib/nutrition/slice-config';
 import { SliceConfigModal } from '@/components/nutrition/SliceConfigModal';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
@@ -33,6 +33,7 @@ import {
   buildSideSheet,
   buildSetHalfSheet,
   buildBeverageSheet,
+  sortNutritionLabelMenus,
   LABEL_COLS,
 } from '@/lib/nutrition/label/build';
 import { exportNutritionLabelToExcel } from '@/lib/nutrition/label/export';
@@ -42,8 +43,8 @@ import './origin-result.css';
 
 const SUB_TABS = [
   { key: 'pizza', label: '피자' },
-  { key: 'topping', label: '추가토핑' },
   { key: 'side', label: '사이드·파스타' },
+  { key: 'topping', label: '추가토핑' },
   { key: 'set', label: '세트박스·하프앤하프' },
   { key: 'drink', label: '음료' },
 ];
@@ -79,7 +80,7 @@ export default function NutritionLabelResult() {
   const [sliceCounts, setSliceCounts] = useState({});
   const [sliceModalOpen, setSliceModalOpen] = useState(false);
   const [labelContext, setLabelContext] = useState(null);
-  const ctxRef = useRef(null); // { menus, rawMap, edgeMap, masterByCode, menuAllergenMap }
+  const ctxRef = useRef(null); // { menus, rawMap, edgeMap, masterByCode, menuAllergenMap, edgeAllergenMap }
 
   // 조각 시트 재계산 (sliceCounts 변경 시 DB 재조회 없이)
   const rebuildSliceSheet = counts => {
@@ -138,21 +139,23 @@ export default function NutritionLabelResult() {
       const masterByCode = Object.fromEntries(masters.map(m => [m.menuCode, m]));
       const edgeMap = Object.fromEntries(edgeList.map(e => [e.edgeCode, e]));
 
-      // 알레르기 집계 — 원산지/알레르기 페이지와 동일하게 엣지(도우·크러스트) 포함
+      // 알레르기 집계 — 메뉴 기본 알레르기와 엣지별 알레르기를 분리해 행별로 합산
       const detailRecipes = tagDetailRecipes(pizzaRecs, personalRecs, sideRecs, setRecs);
       const { ingredientToMenus } = buildIngredientMenuMap({
         menuMasters: masters,
         detailRecipes,
         oldRecipes: oldRecs,
         groups,
-        edges: costEdges,
+        edges: [],
       });
       const menuAllergenMap = buildMenuAllergenMap({ ingredients: ings, ingredientToMenus });
+      const edgeAllergenMap = buildEdgeAllergenMap({ ingredients: ings, edges: costEdges });
 
-      // 출력 메뉴 전처리: 제외 필터 → 메뉴명 오버라이드 → 정렬 (원산지/알레르기 출력과 동일 규칙)
+      // 출력 메뉴 전처리: 제외 필터 → 메뉴명 오버라이드 → 피자/사이드 우선 가나다 정렬
       const { excludedMenuCodes, excludedMenuNames } = extractExcludedMenuSets(masters);
       const nameOverrides = loadMenuNames();
-      const orderedMenus = applyOrder(
+      const menuOrder = loadOrder(MENU_ORDER_KEY);
+      const orderedMenus = sortNutritionLabelMenus(
         menuRefs
           .filter(
             m =>
@@ -160,12 +163,20 @@ export default function NutritionLabelResult() {
               !excludedMenuNames.has((m.menuName || '').trim())
           )
           .map(m => ({ ...m, menuName: applyMenuName(m.menuCode, m.menuName, nameOverrides) })),
-        loadOrder(MENU_ORDER_KEY),
-        m => m.menuCode,
-        m => m.menuName
+        masterByCode,
+        menuOrder
       );
 
-      const ctx = { menus: orderedMenus, rawMap, edgeMap, masterByCode, menuAllergenMap, setComps };
+      const ctx = {
+        menus: orderedMenus,
+        rawMap,
+        edgeMap,
+        masterByCode,
+        menuAllergenMap,
+        edgeAllergenMap,
+        setComps,
+        menuOrder,
+      };
       if (!alive) return;
       ctxRef.current = ctx;
       setLabelContext(ctx);
@@ -421,8 +432,8 @@ function PizzaSliceTable({ rows }) {
     <div style={{ overflowX: 'auto' }}>
       <div className="origin-result-title large">영양성분표 (피자) — 조각 기준</div>
       <div style={{ fontSize: 11, color: '#888', margin: '0 0 6px' }}>
-        ※ 한판 총중량 ÷ 조각수로 1조각 산출. 1조각이 100kcal 이하면 100kcal를 넘는 최소 조각수를 1회
-        제공량으로 표기. 중량 미입력 시 '—'.
+        ※ 한판 총중량 ÷ 조각수로 1조각 산출. 1조각이 100kcal 이상이면 1조각, 미만이면 2조각,
+        2조각도 100kcal 이하면 3조각을 1회 제공량으로 표기. 중량 미입력 시 '—'.
       </div>
       <table
         className="origin-result-table"

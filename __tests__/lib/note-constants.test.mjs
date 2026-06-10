@@ -8,6 +8,7 @@ describe('NOTE_STATUS', () => {
   });
   test('추가 상태 키 검증', () => {
     expect(NOTE_STATUS.RETEST).toBe('재테스트');
+    expect(NOTE_STATUS.RELEASE_READY).toBe('출시예정');
     expect(NOTE_STATUS.RELEASE).toBe('출시');
     expect(NOTE_STATUS.ABANDON).toBe('폐기');
   });

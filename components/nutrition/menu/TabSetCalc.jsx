@@ -23,7 +23,7 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
   const safeEdgeMap = asRecord(edgeMap);
   const refresh = typeof onRefresh === 'function' ? onRefresh : noop;
   const [modal, setModal] = useState(null); // null | 'add' | comp object
-  const [form, setForm] = useState({ setCode: '', setName: '', kind: 'set', slots: [] });
+  const [form, setForm] = useState({ setCode: '', setName: '', kind: 'set', setSide: 'L', slots: [] });
   const [saving, setSaving] = useState(false);
 
   const masterByCode = useMemo(
@@ -49,24 +49,36 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
   const setsWithCalc = useMemo(() => {
     return safeSetComps
       .filter(c => c.kind === 'set')
-      .map(comp => ({
-        ...comp,
-        ...calcSetMinMax(
+      .filter(c => ['L', 'R'].includes(asDisplayText(c.setSide)))
+      .map(comp => {
+        const result = calcSetMinMax(
           Array.isArray(comp.slots) ? comp.slots : [],
           safeMenus,
           safeRawMap,
           masterByCode,
-          pizzaMenus
-        ),
-      }));
-  }, [safeSetComps, safeMenus, safeRawMap, masterByCode, pizzaMenus]);
+          pizzaMenus,
+          safeEdgeMap
+        );
+        const side = asDisplayText(comp.setSide, 'L') === 'R' ? 'R' : 'L';
+        return {
+          ...comp,
+          setSide: side,
+          ...result,
+          selectedResult: result.bySize?.[side] || { minKcal: null, maxKcal: null },
+        };
+      });
+  }, [safeSetComps, safeMenus, safeRawMap, safeEdgeMap, masterByCode, pizzaMenus]);
 
   const openAdd = () => {
-    setForm({ setCode: '', setName: '', kind: 'set', slots: [] });
+    setForm({ setCode: '', setName: '', kind: 'set', setSide: 'L', slots: [] });
     setModal('add');
   };
   const openEdit = comp => {
-    setForm({ ...comp, slots: Array.isArray(comp.slots) ? comp.slots : [] });
+    setForm({
+      ...comp,
+      setSide: asDisplayText(comp.setSide, 'L') === 'R' ? 'R' : 'L',
+      slots: Array.isArray(comp.slots) ? comp.slots : [],
+    });
     setModal(comp);
   };
 
@@ -96,8 +108,9 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
     setSaving(true);
     try {
       const id = modal !== 'add' ? modal.id : undefined;
-      const code = String(form.setCode || '').trim() || `SET-${Date.now()}`;
-      await upsertSetComposition({ ...(id ? { id } : {}), ...form, setCode: code });
+      const side = asDisplayText(form.setSide, 'L') === 'R' ? 'R' : 'L';
+      const code = String(form.setCode || '').trim() || `SET-${side}-${Date.now()}`;
+      await upsertSetComposition({ ...(id ? { id } : {}), ...form, kind: 'set', setSide: side, setCode: code });
       showToast('저장 완료', 'ok');
       setModal(null);
       refresh();
@@ -113,7 +126,11 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
     refresh();
   };
 
-  const fmtKcal = v => (v != null ? `${v} kcal` : '—');
+  const fmtKcal = v => (v != null ? `${Math.round(Number(v)).toLocaleString()} kcal` : '—');
+  const fmtRange = result =>
+    result?.minKcal != null || result?.maxKcal != null
+      ? `${fmtKcal(result.minKcal)} ~ ${fmtKcal(result.maxKcal)}`
+      : '—';
 
   return (
     <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -130,7 +147,8 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
           <div>
             <div style={{ fontSize: 14, fontWeight: 700 }}>하프앤하프</div>
             <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
-              모든 피자 한판 총열량(kcal×총중량÷100) — 열량 최저 2종 반반 최소 / 최고 2종 반반 최대
+              모든 피자 한판 총열량(kcal×총중량÷100) — 석쇠·치즈크러스트·씬바사삭·골드스윗
+              L/R 후보 기준
             </div>
           </div>
           <span
@@ -145,82 +163,77 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
             자동 계산 · 한판 총열량 기준
           </span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
           <KcalCard
             label="피자 메뉴 수"
             value={`${pizzaMenus.length}개`}
-            sub="크러스트/엣지 변형 포함"
+            sub={`${halfResult.variants?.length || 0}개 후보`}
           />
           <KcalCard
-            label="최소열량 (한판)"
-            value={fmtKcal(halfResult.minKcal)}
-            sub="가장 낮은 조합"
+            label="L 하프앤하프"
+            value={fmtRange(halfResult.bySide?.L)}
+            sub="L 후보 최저/최고 2종 반반"
             accent
           />
           <KcalCard
-            label="최대열량 (한판)"
-            value={fmtKcal(halfResult.maxKcal)}
-            sub="가장 높은 조합"
+            label="R 하프앤하프"
+            value={fmtRange(halfResult.bySide?.R)}
+            sub="R 후보 최저/최고 2종 반반"
             accent
           />
         </div>
         {pizzaMenus.length > 0 && (
           <div style={{ marginTop: 12, borderTop: '1px solid var(--border-1)', paddingTop: 10 }}>
             <div style={{ fontSize: 11, color: 'var(--text-4)', marginBottom: 6 }}>
-              피자 메뉴 목록 — 한판 총열량 (석쇠L / 씬바사삭L 기준)
+              피자 후보 총열량 높은순 — 최고 2개 / 최저 2개 색상 표시
             </div>
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
                 gap: 4,
+                maxHeight: 260,
+                overflowY: 'auto',
               }}
             >
-              {pizzaMenus.map((m, index) => {
-                const menuCode = asDisplayText(m.menuCode);
-                const menuName = asDisplayText(m.menuName, menuCode || `피자 메뉴 ${index + 1}`);
-                const raw100 =
-                  safeRawMap[`${menuCode}__석쇠L`] || safeRawMap[`${menuCode}__씬바사삭L`] || {};
-                const k = parseFloat(raw100.kcal);
-                const w = parseFloat(raw100.weight);
-                const kcal =
-                  !isNaN(k) && k > 0 && !isNaN(w) && w > 0 ? Math.round((k * w) / 100) : null;
+              {(halfResult.variants || []).map((variant, index) => {
+                const high = variant.highRank;
+                const low = variant.lowRank;
                 return (
                   <div
-                    key={menuCode || index}
+                    key={`${variant.menuCode}-${variant.crustType}-${index}`}
                     style={{
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       padding: '4px 8px',
-                      background: 'var(--surface-2)',
+                      background: high
+                        ? '#FEE2E2'
+                        : low
+                          ? '#DCFCE7'
+                          : 'var(--surface-2)',
                       borderRadius: 6,
                       fontSize: 12,
+                      color: high ? '#991B1B' : low ? '#166534' : 'var(--text-2)',
                     }}
                   >
                     <span
                       style={{
-                        color: 'var(--text-2)',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {menuName}
+                      {index + 1}. {variant.menuName} · {variant.label}
                     </span>
                     <span
                       style={{
                         fontWeight: 600,
-                        color: 'var(--text-1)',
                         marginLeft: 8,
                         flexShrink: 0,
                       }}
                     >
-                      {kcal != null ? (
-                        `${kcal} kcal`
-                      ) : (
-                        <span style={{ color: 'var(--text-4)' }}>중량 미입력</span>
-                      )}
+                      {fmtKcal(variant.kcal)}
                     </span>
                   </div>
                 );
@@ -276,6 +289,7 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {setsWithCalc.map((comp, index) => {
+              const side = asDisplayText(comp.setSide, 'L') === 'R' ? 'R' : 'L';
               const setName = asDisplayText(comp.setName, `세트 ${index + 1}`);
               const slots = Array.isArray(comp.slots) ? comp.slots : [];
               const slotLabels = slots.map(s => asDisplayText(s?.label, '구성품')).join(' + ');
@@ -293,18 +307,20 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
                     }}
                   >
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 14 }}>{setName}</div>
+                      <div style={{ fontWeight: 700, fontSize: 14 }}>
+                        {setName} {side}세트
+                      </div>
                       <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 2 }}>
-                        피자(자동){slotLabels ? ` + ${slotLabels}` : ''}
+                        피자 {side} 사이즈 자동 후보{slotLabels ? ` + ${slotLabels}` : ''}
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
-                          최소 {fmtKcal(comp.minKcal)} ~ 최대 {fmtKcal(comp.maxKcal)}
+                          {side}세트 {fmtRange(comp.selectedResult)}
                         </div>
                         <div style={{ fontSize: 10, color: 'var(--text-4)' }}>
-                          총열량 기준 (피자 한판 + 구성품)
+                          선택 사이즈와 전체 엣지 기준
                         </div>
                       </div>
                       <button className="btn sm ghost" onClick={() => openEdit(comp)}>
@@ -350,6 +366,27 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
               />
             </div>
 
+            <div>
+              <label
+                style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 6 }}
+              >
+                세트 구분 *
+              </label>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {['L', 'R'].map(side => (
+                  <button
+                    key={side}
+                    type="button"
+                    className={`btn sm${asDisplayText(form.setSide, 'L') === side ? ' primary' : ''}`}
+                    onClick={() => setForm(f => ({ ...f, setSide: side }))}
+                    style={{ flex: 1, justifyContent: 'center' }}
+                  >
+                    {side}세트
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* 피자 고정 슬롯 */}
             <div
               style={{
@@ -367,7 +404,8 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 12, fontWeight: 600 }}>피자</div>
                 <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
-                  최저/최고 피자 자동 산출 (고정)
+                  선택한 {asDisplayText(form.setSide, 'L') === 'R' ? 'R' : 'L'} 사이즈와 전체 엣지
+                  기준으로 최저/최고 피자 자동 산출
                 </div>
               </div>
               <span
@@ -418,9 +456,12 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
                 safeMenus,
                 safeRawMap,
                 masterByCode,
-                pizzaMenus
+                pizzaMenus,
+                safeEdgeMap
               );
-              return preview.minKcal != null ? (
+              const side = asDisplayText(form.setSide, 'L') === 'R' ? 'R' : 'L';
+              const sidePreview = preview.bySize?.[side];
+              return sidePreview?.minKcal != null ? (
                 <div
                   style={{
                     background: 'var(--surface-2)',
@@ -433,10 +474,7 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
                 >
                   <span style={{ color: 'var(--text-3)' }}>미리보기</span>
                   <span>
-                    최소 <strong>{preview.minKcal} kcal</strong>
-                  </span>
-                  <span>
-                    최대 <strong>{preview.maxKcal} kcal</strong>
+                    {side}세트 <strong>{fmtRange(sidePreview)}</strong>
                   </span>
                 </div>
               ) : null;

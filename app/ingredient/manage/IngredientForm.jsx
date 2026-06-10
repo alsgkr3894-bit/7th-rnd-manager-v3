@@ -10,6 +10,8 @@ import { SCOPE, SCOPE_ORDER, SCOPE_UNASSIGNED } from '@/lib/ingredient/constants
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { KEYS } from '@/lib/note/keys';
 import { parseOptionalNonNegativeNumber } from '@/lib/parse';
+import { imageFileError, resizePhoto } from '@/lib/image/resize';
+import { showToast } from '@/components/Toast';
 
 const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병'];
 
@@ -147,6 +149,7 @@ const EMPTY = {
   priceOverride: '',
   scope: '',
   note: '',
+  photo: null,
   // 원산지·알레르기
   origin: [], // [{displayName, country}] — 복수 가능
   originHidden: false, // 원산지 미표시대상 여부
@@ -189,6 +192,7 @@ export function IngredientForm({
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const datalistId = useId();
+  const photoInputRef = useRef(null);
   const initialFormRef = useRef(JSON.stringify(buildInitialForm()));
   const isDirty = JSON.stringify(form) !== initialFormRef.current;
   useBeforeUnload(isDirty);
@@ -270,6 +274,21 @@ export function IngredientForm({
       } catch {}
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handlePhotoFile(file) {
+    if (!file) return;
+    const error = imageFileError(file);
+    if (error) {
+      showToast(error, 'warn');
+      return;
+    }
+    try {
+      const photo = await resizePhoto(file);
+      set('photo', photo);
+    } catch (err) {
+      showToast(err?.message || '사진 처리 실패', 'warn');
     }
   }
 
@@ -407,6 +426,68 @@ export function IngredientForm({
               onChange={e => set('ingredientName', e.target.value)}
               placeholder={isJetteLinked ? initial.displayName : '예) 모짜렐라치즈'}
             />
+          </Field>
+
+          <Field label="사진" hint="대표 사진 1장">
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={e => {
+                handlePhotoFile(e.target.files?.[0]);
+                e.target.value = '';
+              }}
+            />
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              {form.photo?.data ? (
+                <img
+                  src={form.photo.data}
+                  alt={form.photo.name || form.ingredientName || '식자재 사진'}
+                  style={{
+                    width: 92,
+                    height: 72,
+                    objectFit: 'cover',
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                    background: 'var(--surface-2)',
+                  }}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  style={{
+                    width: 92,
+                    height: 72,
+                    borderRadius: 8,
+                    border: '1px dashed var(--border)',
+                    background: 'var(--surface-2)',
+                    color: 'var(--text-4)',
+                    cursor: 'pointer',
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}
+                  aria-label="식자재 사진 추가"
+                >
+                  <Icon.plus style={{ width: 18, height: 18 }} />
+                </button>
+              )}
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn sm"
+                  onClick={() => photoInputRef.current?.click()}
+                >
+                  사진 선택
+                </button>
+                {form.photo?.data && (
+                  <button type="button" className="btn sm ghost" onClick={() => set('photo', null)}>
+                    삭제
+                  </button>
+                )}
+              </div>
+            </div>
           </Field>
 
           {/* 분류 (메인 1개) */}
@@ -1077,6 +1158,7 @@ function toForm(r) {
     priceOverride: r.priceOverride != null ? String(r.priceOverride) : '',
     scope: r.scope && r.scope !== SCOPE_UNASSIGNED ? r.scope : '',
     note: r.note || '',
+    photo: r.photo || null,
     temperature: r.temperature || '',
     origin: toOriginItems(r.origin),
     originHidden: r.originHidden === true,

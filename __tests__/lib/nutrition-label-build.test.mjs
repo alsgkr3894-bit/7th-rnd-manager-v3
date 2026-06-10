@@ -1,6 +1,7 @@
 import { describe, expect, test } from '@jest/globals';
 import {
   buildBeverageSheet,
+  buildPizzaSheet,
   buildPizzaSliceSheet,
   parseVolumeMl,
   scaleVal,
@@ -39,6 +40,14 @@ describe('buildPizzaSliceSheet', () => {
           satFat: 2,
           sodium: 240,
         },
+        'P-001__씬바사삭R': {
+          weight: 560,
+          kcal: 140,
+          sugar: 5,
+          protein: 14,
+          satFat: 2,
+          sodium: 220,
+        },
       },
       edgeMap: {},
       masterByCode: {},
@@ -47,6 +56,7 @@ describe('buildPizzaSliceSheet', () => {
     });
 
     expect(rows).toHaveLength(1);
+    expect(rows[0].rows.some(row => row.crustLabel === '씬바사삭' && row.side === 'R')).toBe(true);
     expect(rows[0].rows[0]).toMatchObject({
       crustLabel: '석쇠',
       side: 'L',
@@ -61,7 +71,26 @@ describe('buildPizzaSliceSheet', () => {
     });
   });
 
-  test('1조각 열량이 100kcal 이하이면 100kcal를 처음 넘는 조각수로 만든다', () => {
+  test('1조각 열량이 정확히 100kcal이면 1조각으로 만든다', () => {
+    const rows = buildPizzaSliceSheet({
+      menus: [{ menuCode: 'P-100', menuName: '경계값 피자', category: '피자' }],
+      rawMap: {
+        'P-100__석쇠L': { weight: 800, kcal: 100, sugar: 1, protein: 2, satFat: 1, sodium: 50 },
+      },
+      edgeMap: {},
+      masterByCode: {},
+      menuAllergenMap,
+      sliceCounts: { 'P-100': { L: 8 } },
+    });
+
+    expect(rows[0].rows[0]).toMatchObject({
+      servingLabel: '1조각',
+      weight: 100,
+      kcal: 100,
+    });
+  });
+
+  test('1조각 열량이 100kcal 이하이고 2조각도 100kcal 이하이면 3조각으로 만든다', () => {
     const rows = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-LOW', menuName: '저열량 피자', category: '피자' }],
       rawMap: {
@@ -81,6 +110,25 @@ describe('buildPizzaSliceSheet', () => {
       protein: 12,
       satFat: 3,
       sodium: 240,
+    });
+  });
+
+  test('1조각은 100kcal 이하이고 2조각은 100kcal 초과이면 2조각으로 만든다', () => {
+    const rows = buildPizzaSliceSheet({
+      menus: [{ menuCode: 'P-MID', menuName: '중간열량 피자', category: '피자' }],
+      rawMap: {
+        'P-MID__석쇠L': { weight: 800, kcal: 60, sugar: 2, protein: 4, satFat: 1, sodium: 80 },
+      },
+      edgeMap: {},
+      masterByCode: {},
+      menuAllergenMap,
+      sliceCounts: { 'P-MID': { L: 8 } },
+    });
+
+    expect(rows[0].rows[0]).toMatchObject({
+      servingLabel: '2조각',
+      weight: 200,
+      kcal: 120,
     });
   });
 
@@ -106,6 +154,43 @@ describe('buildPizzaSliceSheet', () => {
   });
 });
 
+describe('buildPizzaSheet', () => {
+  test('엣지 행은 메뉴 기본 알레르기에 해당 엣지 알레르기를 합산한다', () => {
+    const rows = buildPizzaSheet({
+      menus: [{ menuCode: 'P-EDGE', menuName: '엣지 피자', category: '피자' }],
+      rawMap: {
+        'P-EDGE__석쇠L': { weight: 800, kcal: 200 },
+      },
+      edgeMap: {
+        치즈크러스트L: { kcal: 10 },
+      },
+      masterByCode: {},
+      menuAllergenMap: new Map([['P-EDGE', new Set(['AL02'])]]),
+      edgeAllergenMap: new Map([['치즈크러스트L', new Set(['AL01'])]]),
+    });
+
+    const edgeRow = rows[0].rows.find(row => row.crustLabel === '치즈크러스트' && row.side === 'L');
+    expect(edgeRow.allergen).toBe('우유, 계란');
+  });
+
+  test('1인피자는 피자 시트 맨 아래에 배치한다', () => {
+    const rows = buildPizzaSheet({
+      menus: [
+        { menuCode: 'P-ONE-001', menuName: '더블치즈 (1인용)', category: '피자' },
+        { menuCode: 'P-001', menuName: '테스트 피자', category: '피자' },
+      ],
+      rawMap: {},
+      edgeMap: {},
+      masterByCode: {},
+      menuAllergenMap,
+    });
+
+    expect(rows.map(row => row.menuCode)).toEqual(['P-001', 'P-ONE-001']);
+    expect(rows[1].rows).toHaveLength(1);
+    expect(rows[1].rows[0]).toMatchObject({ crustLabel: '씬바사삭', side: 'L' });
+  });
+});
+
 describe('buildBeverageSheet', () => {
   test('음료는 g 중량 대신 파싱한 용량 ml 기준으로 환산한다', () => {
     const rows = buildBeverageSheet({
@@ -122,10 +207,10 @@ describe('buildBeverageSheet', () => {
         menuCode: 'D-COLA',
         weight: 1250,
         kcal: 500,
-        sugar: 112.5,
+        sugar: 113,
         protein: 0,
         satFat: 0,
-        sodium: 62.5,
+        sodium: 63,
       }),
     ]);
   });

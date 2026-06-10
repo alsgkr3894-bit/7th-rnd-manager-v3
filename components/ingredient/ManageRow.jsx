@@ -34,6 +34,7 @@ export const ManageRow = memo(function ManageRow({
   const scope = asDisplayText(r.scope, '-');
   const category = asDisplayText(r.category);
   const manufacturer = asDisplayText(r.manufacturer, '-');
+  const photo = r.photo && typeof r.photo === 'object' && r.photo.data ? r.photo : null;
   const priceWithTax = Number.isFinite(Number(r.priceWithTax)) ? Number(r.priceWithTax) : null;
   const originCount = Array.isArray(r.origin) ? r.origin.length : 0;
   const allergenCount = Array.isArray(r.allergens) ? r.allergens.length : 0;
@@ -93,6 +94,25 @@ export const ManageRow = memo(function ManageRow({
             {r.jetteLinked ? '연동' : '수동'}
           </span>
         </div>
+      </td>
+      <td style={{ width: 58 }}>
+        {photo ? (
+          <img
+            src={photo.data}
+            alt={photo.name || name}
+            style={{
+              width: 44,
+              height: 34,
+              objectFit: 'cover',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--surface-2)',
+              display: 'block',
+            }}
+          />
+        ) : (
+          <span style={{ color: 'var(--text-4)', fontSize: 11 }}>—</span>
+        )}
       </td>
       <td style={{ fontWeight: 600, fontSize: 13 }}>
         <span title={productName && productName !== name ? `원본: ${productName}` : undefined}>

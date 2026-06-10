@@ -6,6 +6,11 @@ import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import { parseLabExcel, buildImportRows, toRawValueRecord } from '@/lib/nutrition/values/import';
 import { upsertMenuRef, upsertRawValue } from '@/lib/nutrition/values/store';
 import { asObjectArray } from '@/lib/ui/prop-guards';
+import {
+  isPersonalPizzaMenu,
+  normalizeNutritionCategory,
+  NUTRITION_CATEGORY_OPTIONS,
+} from '@/lib/nutrition/menu-group';
 
 const STATUS_CFG = {
   matched: { label: '매칭', color: '#16a34a', bg: '#dcfce7' },
@@ -71,13 +76,17 @@ function isSupportedLabFile(file) {
   return name.endsWith('.xlsx') || name.endsWith('.xls');
 }
 
-const CRUST_OPTIONS = ['석쇠L', '석쇠R', '씬바사삭L'];
-const CATEGORY_OPTIONS = ['피자', '1인피자', '사이드', '추가토핑', '음료', '소스', '기타'];
-const NON_PIZZA_CATS = new Set(['사이드', '추가토핑', '음료', '소스', '기타']);
+const CRUST_OPTIONS = ['석쇠L', '석쇠R', '씬바사삭L', '씬바사삭R'];
+const CATEGORY_OPTIONS = NUTRITION_CATEGORY_OPTIONS;
+const NON_PIZZA_CATS = new Set(['사이드', '추가토핑', '음료']);
 
 function crustAutoForCategory(cat) {
-  if (cat === '1인피자') return '씬바사삭L';
   return '석쇠L';
+}
+
+function categoryForImportRow(row = {}) {
+  const fallback = row.basis === 'serving' ? '사이드' : row.category ? '피자' : '';
+  return normalizeNutritionCategory(row.category, fallback);
 }
 
 const selectStyle = {
@@ -102,8 +111,9 @@ function ImportRow({ row = {}, idx, menuMasters, onToggle = noop, onUpdate = noo
   const safeMenuMasters = asObjectArray(menuMasters);
   const values = asRecord(row.values);
   const disabled = row.status === 'skipped' || row.status === 'exists';
-  const isSide = row.basis === 'serving' || NON_PIZZA_CATS.has(row.category);
-  const isPersonal = row.category === '1인피자';
+  const category = categoryForImportRow(row);
+  const isSide = row.basis === 'serving' || NON_PIZZA_CATS.has(category);
+  const isPersonal = !isSide && isPersonalPizzaMenu(row);
   const isPizza = !isSide && !isPersonal;
 
   // 크러스트 셀 렌더
@@ -175,7 +185,7 @@ function ImportRow({ row = {}, idx, menuMasters, onToggle = noop, onUpdate = noo
               onUpdate(idx, {
                 menuCode: code,
                 menuName: m?.menuName || row.baseName,
-                category: meta?.category || row.category || '',
+                category: normalizeNutritionCategory(meta?.category || row.category || '', category),
                 status: code ? 'matched' : 'unmatched',
                 include: !!code,
               });
@@ -186,20 +196,17 @@ function ImportRow({ row = {}, idx, menuMasters, onToggle = noop, onUpdate = noo
       <td style={{ ...TD, minWidth: 90 }}>{renderCrustCell()}</td>
       <td style={{ ...TD, minWidth: 90 }}>
         {disabled ? (
-          <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{row.category || '–'}</span>
+          <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{category || '–'}</span>
         ) : (
           <select
             style={selectStyle}
-            value={row.category || ''}
+            value={category}
             onChange={e => {
               const cat = e.target.value;
               const patch = { category: cat };
               // 카테고리 변경 시 크러스트 자동 설정
               if (cat === '피자') {
                 patch.crustType = row.crustType || '석쇠L';
-                patch.basis = undefined;
-              } else if (cat === '1인피자') {
-                patch.crustType = '씬바사삭L';
                 patch.basis = undefined;
               } else if (NON_PIZZA_CATS.has(cat)) {
                 patch.crustType = '석쇠L';
@@ -306,18 +313,19 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
     const savedMenuCodes = new Set(safeMenus.map(m => m.menuCode));
     try {
       for (const row of toSave) {
+        const normalizedCategory = categoryForImportRow(row);
         if (!savedMenuCodes.has(row.menuCode)) {
           await upsertMenuRef({
             menuCode: row.menuCode,
             menuName: row.menuName,
-            category: row.category,
+            category: normalizedCategory,
           });
           savedMenuCodes.add(row.menuCode);
         }
         const existing = safeRawMap[`${row.menuCode}__${row.crustType}`];
         await upsertRawValue({
           ...(existing?.id ? { id: existing.id } : {}),
-          ...toRawValueRecord(row),
+          ...toRawValueRecord({ ...row, category: normalizedCategory }),
         });
         saved++;
       }

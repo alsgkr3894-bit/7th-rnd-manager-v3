@@ -1,5 +1,9 @@
 import { describe, expect, test } from '@jest/globals';
-import { buildMenuAllergenMap, allergenNames } from '@/lib/nutrition/allergen/aggregate';
+import {
+  allergenNames,
+  buildEdgeAllergenMap,
+  buildMenuAllergenMap,
+} from '@/lib/nutrition/allergen/aggregate';
 
 /**
  * B1 회귀 방지: 출력 영양성분표의 메뉴별 알레르기 집계.
@@ -52,7 +56,7 @@ describe('buildMenuAllergenMap', () => {
 
 describe('allergenNames', () => {
   test('코드 Set을 한글 이름 쉼표 문자열로 변환', () => {
-    expect(allergenNames(new Set(['AL01', 'AL02']))).toBe('알류(계란), 우유');
+    expect(allergenNames(new Set(['AL01', 'AL02']))).toBe('계란, 우유');
   });
   test('알 수 없는 코드는 코드 그대로 폴백', () => {
     expect(allergenNames(new Set(['ZZ99']))).toBe('ZZ99');
@@ -61,5 +65,50 @@ describe('allergenNames', () => {
     expect(allergenNames(new Set())).toBe('');
     expect(allergenNames(undefined)).toBe('');
     expect(allergenNames(new Set([null, 'ZZ99']))).toBe('ZZ99');
+  });
+});
+
+describe('buildEdgeAllergenMap', () => {
+  test('엣지 구성품 알레르기를 nutrition edgeCode별로 변환한다', () => {
+    const map = buildEdgeAllergenMap({
+      ingredients: [
+        { productCode: 'EGG', ingredientName: '계란액', allergens: ['AL01'] },
+        { productCode: 'MILK', ingredientName: '치즈', allergens: ['AL02'] },
+      ],
+      edges: [
+        {
+          edgeType: '치즈크러스트',
+          size: 'L',
+          components: [{ productCode: 'EGG' }, { productCode: 'MILK' }],
+        },
+      ],
+    });
+
+    expect([...(map.get('치즈크러스트L') || [])].sort()).toEqual(['AL01', 'AL02']);
+  });
+
+  test('씬바사삭은 L/R 모두 엣지 알레르기를 밀만 남기고 대두를 제거한다', () => {
+    const map = buildEdgeAllergenMap({
+      ingredients: [
+        { productCode: 'SOY', ingredientName: '대두유', allergens: ['AL05'] },
+        { productCode: 'WHEAT', ingredientName: '밀가루', allergens: ['AL06'] },
+      ],
+      edges: [
+        {
+          edgeType: '씬도우',
+          size: 'L',
+          components: [{ productCode: 'SOY' }, { productCode: 'WHEAT' }],
+        },
+      ],
+    });
+
+    expect([...(map.get('씬바사삭L') || [])]).toEqual(['AL06']);
+    expect([...(map.get('씬바사삭R') || [])]).toEqual(['AL06']);
+  });
+
+  test('치즈크러스트는 구성품 누락 시에도 우유 알레르기를 보정한다', () => {
+    const map = buildEdgeAllergenMap({ ingredients: [], edges: [] });
+    expect([...(map.get('치즈크러스트L') || [])]).toEqual(['AL02']);
+    expect([...(map.get('치즈크러스트R') || [])]).toEqual(['AL02']);
   });
 });

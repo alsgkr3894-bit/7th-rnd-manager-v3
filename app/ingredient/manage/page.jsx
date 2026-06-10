@@ -761,6 +761,7 @@ export default function Page() {
                     <tr>
                       {batchMode && <th style={{ width: 36 }} />}
                       <th style={{ width: 88 }}>제품코드</th>
+                      <th style={{ width: 58 }}>사진</th>
                       <th>제품명</th>
                       <th style={{ width: 60 }}>온도</th>
                       <th style={{ width: 88 }}>포장단위</th>

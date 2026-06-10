@@ -20,7 +20,12 @@ import {
   buildIngredientNutritionMap,
   findRecipeForMenu,
 } from '@/lib/nutrition/auto-calc';
-import { groupMenusOrdered, resolveNutritionGroup } from '@/lib/nutrition/menu-group';
+import {
+  groupMenusOrdered,
+  normalizeNutritionCategory,
+  NUTRITION_CATEGORY_OPTIONS,
+  resolveNutritionGroup,
+} from '@/lib/nutrition/menu-group';
 
 const GROUP_HEADER_STYLE = {
   padding: '5px 14px 4px',
@@ -57,7 +62,7 @@ function MenuGroupList({ menus, rawMap, menuMasters, selMenu, onSelect }) {
           {items.map((m, index) => {
             const menuCode = asDisplayText(m.menuCode);
             const menuName = asDisplayText(m.menuName, menuCode || `메뉴 ${index + 1}`);
-            const category = asDisplayText(m.category, '기타');
+            const category = normalizeNutritionCategory(asDisplayText(m.category), '피자');
             const selected = selMenu?.id === m.id || (menuCode && selMenu?.menuCode === menuCode);
             return (
               <div
@@ -123,21 +128,6 @@ function MenuGroupList({ menus, rawMap, menuMasters, selMenu, onSelect }) {
     </>
   );
 }
-
-const MENU_CATS = [
-  '피자',
-  '피자/프리미엄 스페셜',
-  '피자/프리미엄',
-  '피자/오리지널',
-  '피자/하프앤하프',
-  '1인피자',
-  '세트박스',
-  '사이드',
-  '소스',
-  '음료',
-  '엣지',
-  '기타',
-];
 
 export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
   const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
@@ -259,6 +249,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
     await upsertMenuRef({
       ...newMenuForm,
       menuCode: code,
+      category: normalizeNutritionCategory(newMenuForm.category, '피자'),
       displayOrder: newMenuForm.displayOrder ? Number(newMenuForm.displayOrder) : undefined,
     });
     showToast('메뉴 추가 완료', 'ok');
@@ -592,7 +583,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
                     menuName: code
                       ? (safeMenuMasters.find(m => m.menuCode === code)?.menuName ?? f.menuName)
                       : f.menuName,
-                    category: meta?.category || f.category,
+                    category: normalizeNutritionCategory(meta?.category || f.category, '피자'),
                   }))
                 }
               />
@@ -618,10 +609,10 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
               </label>
               <select
                 className="input"
-                value={newMenuForm.category}
+                value={normalizeNutritionCategory(newMenuForm.category, '피자')}
                 onChange={e => setNewMenuForm(f => ({ ...f, category: e.target.value }))}
               >
-                {MENU_CATS.map(c => (
+                {NUTRITION_CATEGORY_OPTIONS.map(c => (
                   <option key={c} value={c}>
                     {c}
                   </option>

@@ -7,7 +7,7 @@ import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { initDB } from '@/lib/db';
 import { downloadCsv } from '@/lib/download';
-import { getAllNotes } from '@/lib/note';
+import { getAllNotes, addNote, updateNote } from '@/lib/note';
 import { getAllSamples, sampleNamesText } from '@/lib/sample';
 import { STATUSES, STATUS_COLORS, STATUS_BORDER } from '@/lib/note/constants';
 import {
@@ -29,6 +29,9 @@ import { DayPanel } from './_DayPanel';
 import { CalendarSkeleton } from './_CalendarSkeleton';
 import { expandOccurrences } from './_recurrence';
 import { pad } from '@/lib/format';
+import { getJSONLS, setJSONLS } from '@/lib/note/storage';
+import { KEYS } from '@/lib/note/keys';
+import { asDisplayText } from '@/lib/ui/prop-guards';
 
 /* ── 유틸 ─────────────────────────────────────────────────── */
 const toKey = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
@@ -66,6 +69,35 @@ function todayKey() {
   return _todayCache;
 }
 
+function normalizeChecklistMap(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([date, items]) => [
+        date,
+        Array.isArray(items)
+          ? items
+              .filter(item => item && typeof item === 'object' && String(item.text || '').trim())
+              .map(item => ({
+                id: String(item.id || `${date}-${Math.random()}`),
+                text: String(item.text || '').trim(),
+                done: item.done === true,
+              }))
+          : [],
+      ])
+      .filter(([, items]) => items.length > 0)
+  );
+}
+
+function checklistJournalTitle(dateKey) {
+  return `${dateKey} 체크리스트 완료`;
+}
+
+function checklistJournalContent(doneItems) {
+  if (!doneItems.length) return '완료 항목 없음';
+  return ['완료 체크리스트', ...doneItems.map(item => `- ${item.text}`)].join('\n');
+}
+
 function daysInMonth(y, m) {
   return new Date(y, m, 0).getDate();
 }
@@ -83,6 +115,7 @@ const NOTE_DOT = {
   테스트중: 'var(--accent)',
   재테스트: 'var(--warn)',
   보고예정: '#7C3AED',
+  출시예정: '#0284C7',
   보류: '#9CA3AF',
   출시: 'var(--positive)',
   폐기: 'var(--negative)',
@@ -105,12 +138,18 @@ export default function Page() {
   const [modal, setModal] = useState(null); // null | { mode: 'add'|'edit', schedule?, date? }
   const [confirmDel, setConfirmDel] = useState(false);
   const [monthDir, setMonthDir] = useState(0); // -1 | 0 | 1 (animation direction)
+  const [checklistMap, setChecklistMap] = useState({});
+  const [checkInput, setCheckInput] = useState('');
   const calKey = useRef(0);
   const isAnimating = useRef(false); // 월 이동 중 연속 클릭 방지
   const animationTimerRef = useRef(null);
   const panelTimerRef = useRef(null);
 
   const today = useMemo(() => todayKey(), []); // 마운트 시 1회 계산 (캐시 함수가 자정에도 갱신)
+  const todayChecklist = useMemo(
+    () => checklistMap[today] || [],
+    [checklistMap, today]
+  );
 
   const load = useCallback(async () => {
     await initDB();
@@ -134,6 +173,10 @@ export default function Page() {
       setLoading(false);
     });
   }, [load]);
+
+  useEffect(() => {
+    setChecklistMap(normalizeChecklistMap(getJSONLS(KEYS.NOTE_CALENDAR_CHECKLIST)));
+  }, []);
 
   useEffect(
     () => () => {
@@ -427,6 +470,66 @@ export default function Page() {
     downloadCsv([headers, ...monthEventRows], `일정달력_${viewYear}-${pad(viewMonth)}.csv`);
   }
 
+  function saveTodayChecklist(items) {
+    const next = { ...checklistMap };
+    const safeItems = Array.isArray(items) ? items.filter(item => item.text) : [];
+    if (safeItems.length) next[today] = safeItems;
+    else delete next[today];
+    setChecklistMap(next);
+    setJSONLS(KEYS.NOTE_CALENDAR_CHECKLIST, next);
+    return safeItems;
+  }
+
+  function addChecklistItem() {
+    const text = checkInput.trim();
+    if (!text) return;
+    saveTodayChecklist([
+      ...todayChecklist,
+      { id: `${today}-${Date.now()}`, text, done: false },
+    ]);
+    setCheckInput('');
+  }
+
+  async function syncChecklistJournal(items) {
+    const doneItems = (Array.isArray(items) ? items : []).filter(item => item.done && item.text);
+    const title = checklistJournalTitle(today);
+    const data = {
+      title,
+      menuName: '체크리스트',
+      category: '기타',
+      noteType: '체크리스트',
+      status: '출시예정',
+      testDate: today,
+      testContent: checklistJournalContent(doneItems),
+      reportSummary: `${doneItems.length}개 완료`,
+      tags: '체크리스트',
+    };
+    const existing = notes.find(
+      note =>
+        asDisplayText(note.title) === title &&
+        asDisplayText(note.testDate).slice(0, 10) === today
+    );
+    if (existing?.id != null) await updateNote(existing.id, data);
+    else await addNote(data);
+    await load();
+  }
+
+  async function toggleChecklistItem(id) {
+    const nextItems = saveTodayChecklist(
+      todayChecklist.map(item => (item.id === id ? { ...item, done: !item.done } : item))
+    );
+    try {
+      await syncChecklistJournal(nextItems);
+      showToast('연구일지에 체크리스트를 저장했습니다', 'ok');
+    } catch (e) {
+      showToast('연구일지 저장 실패: ' + asDisplayText(e?.message, '알 수 없는 오류'), 'error');
+    }
+  }
+
+  function removeChecklistItem(id) {
+    saveTodayChecklist(todayChecklist.filter(item => item.id !== id));
+  }
+
   async function copyMonthSummary() {
     const lines = [`${viewYear}년 ${viewMonth}월 일정 요약 (${monthEventRows.length}건)`];
     const byDate = new Map();
@@ -590,6 +693,16 @@ export default function Page() {
           ))}
         </div>
       </div>
+
+      <TodayChecklist
+        dateKey={today}
+        items={todayChecklist}
+        input={checkInput}
+        onInput={setCheckInput}
+        onAdd={addChecklistItem}
+        onToggle={toggleChecklistItem}
+        onRemove={removeChecklistItem}
+      />
 
       <div
         style={{
@@ -1037,5 +1150,99 @@ export default function Page() {
         onCancel={() => setConfirmDel(false)}
       />
     </main>
+  );
+}
+
+function TodayChecklist({ dateKey, items, input, onInput, onAdd, onToggle, onRemove }) {
+  const doneCount = items.filter(item => item.done).length;
+  return (
+    <div className="card" style={{ padding: '14px 16px', marginBottom: 14 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 12,
+          marginBottom: 10,
+          flexWrap: 'wrap',
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 800 }}>오늘 하루 체크리스트</div>
+          <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 2 }}>
+            {dateKey} · {doneCount}/{items.length} 완료
+          </div>
+        </div>
+        <form
+          onSubmit={e => {
+            e.preventDefault();
+            onAdd();
+          }}
+          style={{ display: 'flex', gap: 6, minWidth: 260, flex: '0 1 360px' }}
+        >
+          <input
+            className="form-input"
+            value={input}
+            onChange={e => onInput(e.target.value)}
+            placeholder="오늘 할 일 입력"
+            style={{ height: 34, fontSize: 12 }}
+          />
+          <button className="btn sm primary" type="submit" disabled={!input.trim()}>
+            <Icon.plus style={{ width: 13, height: 13 }} />
+            추가
+          </button>
+        </form>
+      </div>
+      {items.length === 0 ? (
+        <div style={{ fontSize: 12, color: 'var(--text-4)', padding: '4px 0' }}>
+          등록된 체크 항목이 없습니다.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {items.map(item => (
+            <span
+              key={item.id}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '5px 8px',
+                borderRadius: 8,
+                background: item.done ? 'var(--positive-soft)' : 'var(--surface-2)',
+                color: item.done ? 'var(--positive)' : 'var(--text-2)',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={item.done}
+                onChange={() => onToggle(item.id)}
+                style={{ accentColor: 'var(--positive)' }}
+              />
+              <span style={{ textDecoration: item.done ? 'line-through' : 'none' }}>
+                {item.text}
+              </span>
+              <button
+                type="button"
+                onClick={() => onRemove(item.id)}
+                aria-label="체크 항목 삭제"
+                style={{
+                  border: 0,
+                  background: 'transparent',
+                  color: 'inherit',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  padding: 0,
+                  opacity: 0.65,
+                }}
+              >
+                <Icon.close style={{ width: 12, height: 12 }} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

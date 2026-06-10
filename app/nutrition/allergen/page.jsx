@@ -20,12 +20,12 @@ import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { SmallStatCard } from '@/components/ui/SmallStatCard';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { ReorderModal } from '@/components/ui/ReorderModal';
+import { ModalFrame } from '@/components/ui/ModalFrame';
 import {
   ALLERGEN_MENU_ORDER_KEY,
   ALLERGEN_ORDER_KEY,
   loadOrder,
   saveOrder,
-  applyOrder,
 } from '@/lib/nutrition/order';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
@@ -35,6 +35,7 @@ import {
   isPizzaCategory,
 } from '@/lib/nutrition/crust-config';
 import { loadMenuNames, saveMenuNames, applyMenuName } from '@/lib/nutrition/menu-name-override';
+import { applyEdgeAllergenRules } from '@/lib/nutrition/allergen/rules';
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
 import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
 
@@ -52,6 +53,45 @@ const asMenuMap = value => (value instanceof Map ? value : EMPTY_MENU_MAP);
  *   - 메뉴별 매트릭스: 메뉴 × 22종 알레르기 체크 (출력용)
  */
 const normStr = s => asDisplayText(s).trim().toLowerCase().replace(/\s+/g, '');
+
+function stripSizeSuffix(value) {
+  return asDisplayText(value)
+    .replace(/\s+L$/i, '')
+    .replace(/\s+R$/i, '')
+    .trim();
+}
+
+function logicalMenuKey(menuCode, menuName, category) {
+  const code = asDisplayText(menuCode);
+  const name = stripSizeSuffix(menuName);
+  const cat = asDisplayText(category);
+  if (cat.startsWith('피자') && code) {
+    const match = code.match(/^(.+?-\d{3})(?:-[LR])$/i);
+    if (match) return match[1];
+  }
+  return code || normStr(name);
+}
+
+function edgeTypeForCrust(crust) {
+  const label = asDisplayText(crust);
+  if (label === '치즈크러스트') return '치즈크러스트';
+  if (label === '골드스윗') return '골드스윗크러스트';
+  if (label === '씬바사삭') return '씬도우';
+  return null;
+}
+
+function nutritionEdgeCodeFor(edgeType) {
+  if (edgeType === '치즈크러스트') return '치즈크러스트L';
+  if (edgeType === '골드스윗크러스트') return '골드스윗L';
+  if (edgeType === '씬도우') return '씬바사삭L';
+  return null;
+}
+
+function sourceLabel(source) {
+  const type = asDisplayText(source?.type, '직접');
+  const name = asDisplayText(source?.name);
+  return name ? `${type} · ${name}` : type;
+}
 
 export default function Page() {
   const [ingredients, setIngredients] = useState([]);
@@ -73,6 +113,7 @@ export default function Page() {
   const [reorderTarget, setReorderTarget] = useState(null); // 'menu' | 'allergen' | null
   const [menuNameEditOpen, setMenuNameEditOpen] = useState(false);
   const [menuNameOverrides, setMenuNameOverrides] = useState(() => loadMenuNames());
+  const [detailRow, setDetailRow] = useState(null);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -226,10 +267,14 @@ export default function Page() {
         if (ing) for (const code of asStringArray(ing.allergens)) set.add(code);
       }
     }
+    for (const edgeType of ['치즈크러스트', '골드스윗크러스트', '씬도우']) {
+      const edgeCode = nutritionEdgeCodeFor(edgeType);
+      if (edgeCode) edgeAllergens.set(edgeType, applyEdgeAllergenRules(edgeCode, edgeAllergens.get(edgeType)));
+    }
 
     // base(엣지 제외) 메뉴별 알레르겐 — 석쇠 기준.
     // codes=전체(도우 포함), nonDoughCodes=도우 재료 제외 (씬바사삭은 석쇠 도우를 씬도우로 교체)
-    const menuBase = new Map(); // menuCode → { meta, codes:Set, nonDoughCodes:Set }
+    const menuBase = new Map(); // logicalKey → { meta, menuCodes:Set, codes:Set, nonDoughCodes:Set }
     for (const [key, menus] of baseIngredientToMenus) {
       if (!(menus instanceof Map)) continue;
       const ing = ingByKey.get(key);
@@ -238,9 +283,21 @@ export default function Page() {
       const isDough = isDoughCategory(asDisplayText(ing.category));
       for (const [menuCode, meta] of menus) {
         if (isExcludedMenu(menuCode, meta?.menuName)) continue;
-        if (!menuBase.has(menuCode))
-          menuBase.set(menuCode, { meta, codes: new Set(), nonDoughCodes: new Set() });
-        const e = menuBase.get(menuCode);
+        const logicalKey = logicalMenuKey(menuCode, meta?.menuName, meta?.category);
+        if (!menuBase.has(logicalKey)) {
+          menuBase.set(logicalKey, {
+            meta: {
+              ...meta,
+              menuName: stripSizeSuffix(meta?.menuName) || asDisplayText(meta?.menuName),
+            },
+            menuCode: logicalKey,
+            menuCodes: new Set(),
+            codes: new Set(),
+            nonDoughCodes: new Set(),
+          });
+        }
+        const e = menuBase.get(logicalKey);
+        e.menuCodes.add(asDisplayText(menuCode));
         for (const code of allergenCodes) {
           e.codes.add(code);
           if (!isDough) e.nonDoughCodes.add(code);
@@ -253,10 +310,18 @@ export default function Page() {
     //  · 치즈크러스트/골드스윗 = base 전체 + 해당 엣지 (석쇠에 더함)
     //  · 씬바사삭 = base에서 도우 제외 + 씬도우 (도우만 교체)
     const rows = [];
-    for (const [menuCode, { meta, codes, nonDoughCodes }] of menuBase) {
+    for (const [menuCode, { meta, menuCodes, codes, nonDoughCodes }] of menuBase) {
       const isPizza = isPizzaCategory(asDisplayText(meta?.category));
       if (!isPizza) {
-        rows.push({ rowKey: menuCode, menuCode, ...meta, crust: '', allergenCodes: codes });
+        rows.push({
+          rowKey: menuCode,
+          menuCode,
+          sourceMenuCodes: [...menuCodes],
+          ...meta,
+          crust: '',
+          edgeType: null,
+          allergenCodes: codes,
+        });
         continue;
       }
       for (const v of CRUST_VARIANTS) {
@@ -265,8 +330,10 @@ export default function Page() {
         rows.push({
           rowKey: `${menuCode}__${v.key}`,
           menuCode,
+          sourceMenuCodes: [...menuCodes],
           ...meta,
           crust: v.label,
+          edgeType: v.edgeType,
           allergenCodes: merged,
         });
       }
@@ -274,11 +341,18 @@ export default function Page() {
 
     // 사용자 메뉴 순서 적용 — menuCode 단위로 정렬하므로 같은 메뉴의 변형(석쇠+엣지) 행이
     // 함께 묶여 이동하고, 변형 간 순서는 CRUST_VARIANTS 삽입순(안정 정렬)으로 유지됨.
-    const sorted = applyOrder(
-      rows,
-      menuOrder,
-      r => asDisplayText(r.menuCode),
-      r => asDisplayText(r.menuName)
+    const rank = new Map(asStringArray(menuOrder).map((key, index) => [key, index]));
+    const rowRank = row => {
+      const keys = [asDisplayText(row.menuCode), ...asStringArray(row.sourceMenuCodes)];
+      const ranks = keys.filter(key => rank.has(key)).map(key => rank.get(key));
+      return ranks.length ? Math.min(...ranks) : Infinity;
+    };
+    const sorted = [...rows].sort(
+      (a, b) =>
+        rowRank(a) - rowRank(b) ||
+        asDisplayText(a.menuName).localeCompare(asDisplayText(b.menuName), 'ko') ||
+        asDisplayText(a.crust).localeCompare(asDisplayText(b.crust), 'ko') ||
+        asDisplayText(a.menuCode).localeCompare(asDisplayText(b.menuCode), 'ko')
     );
     // 출력용 메뉴명 오버라이드 적용 (표시 전용, 원래 이름 보존)
     return sorted.map(r => ({
@@ -291,6 +365,88 @@ export default function Page() {
       ),
     }));
   }, [allergenIngredients, baseMapData, edges, isExcludedMenu, menuOrder, menuNameOverrides]);
+
+  const ingredientByKey = useMemo(() => {
+    const map = new Map();
+    for (const ing of allergenIngredients) {
+      const productCode = asDisplayText(ing.productCode);
+      if (productCode) map.set(`code:${productCode}`, ing);
+      const nameKey = normStr(ing.ingredientName);
+      if (nameKey) map.set(`name:${nameKey}`, ing);
+    }
+    return map;
+  }, [allergenIngredients]);
+
+  const detailRows = useMemo(() => {
+    if (!detailRow) return [];
+    const sourceCodes = new Set(asStringArray(detailRow.sourceMenuCodes));
+    const rows = [];
+    const pushRow = ({ ing, source, fromEdge = false }) => {
+      const allergens = asStringArray(ing?.allergens);
+      if (!allergens.length) return;
+      const ingredientName = asDisplayText(ing.ingredientName);
+      const productCode = asDisplayText(ing.productCode);
+      const sourceText = sourceLabel(source);
+      const key = `${fromEdge ? 'edge' : 'base'}|${productCode || normStr(ingredientName)}|${sourceText}`;
+      if (rows.some(row => row.key === key)) return;
+      rows.push({
+        key,
+        sourceText,
+        ingredientName,
+        productCode,
+        category: asDisplayText(ing.category),
+        allergens,
+      });
+    };
+
+    for (const [ingredientKey, menus] of asMenuMap(baseMapData?.ingredientToMenus)) {
+      if (!(menus instanceof Map)) continue;
+      const ing = ingredientByKey.get(ingredientKey);
+      if (!ing) continue;
+      if (
+        asDisplayText(detailRow.crust) === '씬바사삭' &&
+        isDoughCategory(asDisplayText(ing.category))
+      ) {
+        continue;
+      }
+      for (const [menuCode, meta] of menus) {
+        if (!sourceCodes.has(asDisplayText(menuCode))) continue;
+        const sources = Array.isArray(meta?.sources) && meta.sources.length
+          ? meta.sources
+          : [{ type: '직접', name: '' }];
+        sources.forEach(source => pushRow({ ing, source }));
+      }
+    }
+
+    const edgeType = asDisplayText(detailRow.edgeType);
+    if (edgeType) {
+      for (const edge of asObjectArray(edges)) {
+        if (asDisplayText(edge.edgeType) !== edgeType) continue;
+        for (const component of asObjectArray(edge.components)) {
+          const productCode = asDisplayText(component.productCode);
+          const key = productCode
+            ? `code:${productCode}`
+            : `name:${normStr(component.ingredientName)}`;
+          const ing = ingredientByKey.get(key);
+          if (!ing) continue;
+          pushRow({
+            ing,
+            source: {
+              type: '엣지관리',
+              name: `${edgeType}${edge.size ? ` ${edge.size}` : ''}`,
+            },
+            fromEdge: true,
+          });
+        }
+      }
+    }
+
+    return rows.sort(
+      (a, b) =>
+        a.sourceText.localeCompare(b.sourceText, 'ko') ||
+        a.ingredientName.localeCompare(b.ingredientName, 'ko')
+    );
+  }, [baseMapData, detailRow, edges, ingredientByKey]);
 
   const menuMatrix = useMemo(() => {
     const q = asDisplayText(search).toLowerCase().trim();
@@ -616,23 +772,38 @@ export default function Page() {
                           zIndex: 1,
                         }}
                       >
-                        {asDisplayText(row.menuName)}
-                        {crust && (
-                          <span
-                            style={{
-                              marginLeft: 6,
-                              fontSize: 10,
-                              fontWeight: 700,
-                              padding: '1px 6px',
-                              borderRadius: 999,
-                              background: 'var(--surface-3)',
-                              color: 'var(--text-2)',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {crust}
-                          </span>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => setDetailRow(row)}
+                          style={{
+                            border: 0,
+                            background: 'transparent',
+                            padding: 0,
+                            cursor: 'pointer',
+                            font: 'inherit',
+                            color: 'inherit',
+                            textAlign: 'left',
+                          }}
+                          title="식자재 알레르기 상세 보기"
+                        >
+                          {asDisplayText(row.menuName)}
+                          {crust && (
+                            <span
+                              style={{
+                                marginLeft: 6,
+                                fontSize: 10,
+                                fontWeight: 700,
+                                padding: '1px 6px',
+                                borderRadius: 999,
+                                background: 'var(--surface-3)',
+                                color: 'var(--text-2)',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {crust}
+                            </span>
+                          )}
+                        </button>
                       </td>
                       <td>
                         <span className="chip">{asDisplayText(row.category)}</span>
@@ -712,6 +883,75 @@ export default function Page() {
           }}
           onClose={() => setMenuNameEditOpen(false)}
         />
+      )}
+      {detailRow && (
+        <ModalFrame
+          title={`${asDisplayText(detailRow.menuName)}${detailRow.crust ? ` · ${detailRow.crust}` : ''}`}
+          onClose={() => setDetailRow(null)}
+          width="min(760px, 96vw)"
+          padding="22px 24px"
+          zIndex={300}
+        >
+          <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>
+            직접 레시피, 묶음관리, 엣지관리에서 이 메뉴에 반영된 식자재 알레르기입니다.
+          </div>
+          {detailRows.length === 0 ? (
+            <div className="empty-state" style={{ padding: '24px 16px' }}>
+              <div className="empty-title">상세 식자재가 없습니다</div>
+              <div className="empty-sub">알레르기 식자재 매칭 정보를 찾지 못했습니다.</div>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table className="data-table" style={{ minWidth: 680 }}>
+                <thead>
+                  <tr>
+                    <th style={{ width: 140 }}>출처</th>
+                    <th>식자재명</th>
+                    <th style={{ width: 110 }}>코드</th>
+                    <th style={{ width: 110 }}>카테고리</th>
+                    <th style={{ width: 180 }}>알레르기</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detailRows.map(row => (
+                    <tr key={row.key}>
+                      <td style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 700 }}>
+                        {row.sourceText}
+                      </td>
+                      <td style={{ fontWeight: 700 }}>{row.ingredientName}</td>
+                      <td className="mono muted">{row.productCode || '—'}</td>
+                      <td>{row.category || '—'}</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                          {row.allergens.map(code => {
+                            const allergen = ALLERGEN_SEED.find(
+                              item => asDisplayText(item.allergenCode) === code
+                            );
+                            return (
+                              <span
+                                key={code}
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  padding: '2px 7px',
+                                  borderRadius: 999,
+                                  background: 'var(--warn-soft)',
+                                  color: 'var(--warn)',
+                                }}
+                              >
+                                {asDisplayText(allergen?.allergenName, code)}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </ModalFrame>
       )}
     </main>
   );

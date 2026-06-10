@@ -37,8 +37,47 @@ describe('nutrition import guards', () => {
       status: 'matched',
       menuCode: 'P-OR-001',
       menuName: '슈퍼콤비네이션',
+      category: '피자',
       crustType: '석쇠L',
       include: true,
+    });
+  });
+
+  test('1인용 피자 가져오기는 카테고리를 피자로 저장하되 personal 플래그를 유지', () => {
+    const rows = buildImportRows({
+      rawRows: [{ rawName: '더블치즈 (1인용)', kcal: 250 }],
+      menuMasters: [
+        {
+          menuCode: 'P-ONE-001',
+          menuName: '더블치즈 (1인용)',
+          category: '1인피자',
+        },
+      ],
+      existingKeys: {},
+    });
+
+    expect(rows[0]).toMatchObject({
+      status: 'matched',
+      menuCode: 'P-ONE-001',
+      menuName: '더블치즈 (1인용)',
+      category: '피자',
+      crustType: '씬바사삭L',
+      personal: true,
+      include: true,
+    });
+  });
+
+  test('씬바사삭 R도 지원 크러스트로 파싱한다', () => {
+    expect(parseCrustSuffix('슈퍼콤비네이션 (씬바샤삭 R)')).toEqual({
+      baseName: '슈퍼콤비네이션',
+      crustType: '씬바사삭R',
+      personal: false,
+      skipReason: null,
+    });
+    expect(parseCrustSuffix('슈퍼콤비네이션 씬바사삭 R')).toMatchObject({
+      baseName: '슈퍼콤비네이션',
+      crustType: '씬바사삭R',
+      skipReason: null,
     });
   });
 
@@ -48,5 +87,16 @@ describe('nutrition import guards', () => {
       menuName: '테스트',
       crustType: '석쇠L',
     });
+  });
+
+  test('toRawValueRecord는 세부 카테고리를 네 가지 영양 카테고리로 정규화', () => {
+    expect(
+      toRawValueRecord({
+        menuCode: 'A',
+        menuName: '테스트',
+        crustType: '석쇠L',
+        category: '피자/프리미엄',
+      }).category
+    ).toBe('피자');
   });
 });
