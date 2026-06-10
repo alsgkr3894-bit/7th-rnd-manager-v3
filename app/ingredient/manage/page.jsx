@@ -32,6 +32,8 @@ import {
   seedMasterIngredients,
   INGREDIENT_MASTER_SEED,
   resetAllIngredients,
+  getIngredientProductCodeDuplicateDiagnostics,
+  repairIngredientProductCodeDuplicates,
   removeCategoryFromAll,
   removeTagFromAll,
   buildMetaOnlyRow,
@@ -130,6 +132,9 @@ export default function Page() {
   const [resetting, setResetting] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(null); // { type:'cat'|'tag', value }
   const [brokenRefs, setBrokenRefs] = useState([]);
+  const [productCodeDupes, setProductCodeDupes] = useState(null);
+  const [dedupeConfirm, setDedupeConfirm] = useState(false);
+  const [dedupeBusy, setDedupeBusy] = useState(false);
   const [batchMode, setBatchMode] = useState(false);
   const [selected, setSelected] = useState(new Set());
 
@@ -144,11 +149,13 @@ export default function Page() {
     const prev = files[1] ?? null;
     setPriceDate(latest?.updateDate || null);
 
-    const [allMeta, metaMap, managed] = await Promise.all([
+    const [allMeta, metaMap, managed, productCodeDiagnostics] = await Promise.all([
       getAllIngredients(),
       getIngredientMetaMap(),
       seedManagedProductsIfEmpty().then(() => getManagedProducts()),
+      getIngredientProductCodeDuplicateDiagnostics(),
     ]);
+    setProductCodeDupes(productCodeDiagnostics);
     // 전용/범용 단일 출처 = 제때 관리품목(productType)
     const typeMap = new Map(
       managed.filter(p => p.productCode).map(p => [p.productCode, p.productType])
@@ -265,6 +272,21 @@ export default function Page() {
       await load();
     } catch (e) {
       showToast('삭제 실패: ' + e.message, 'err');
+    }
+  }
+
+  async function handleRepairProductCodeDuplicates() {
+    if (dedupeBusy) return;
+    setDedupeBusy(true);
+    try {
+      const result = await repairIngredientProductCodeDuplicates();
+      showToast(`제품코드 중복 ${result.removed || 0}건 정리 완료`, 'ok');
+      setDedupeConfirm(false);
+      await load();
+    } catch (err) {
+      showToast('중복 정리 실패: ' + err.message, 'err');
+    } finally {
+      setDedupeBusy(false);
     }
   }
 
@@ -615,6 +637,62 @@ export default function Page() {
             {brokenRefs.length > 3 && ` 외 ${brokenRefs.length - 3}개`}가 존재하지 않는 코드를
             compositeOf로 참조합니다.
           </div>
+        </div>
+      )}
+
+      {productCodeDupes?.hasDuplicates && (
+        <div
+          className="info-banner"
+          style={{
+            marginBottom: 8,
+            background: 'var(--warn-soft)',
+            borderColor: 'var(--warn-soft)',
+          }}
+        >
+          <div className="info-banner-ico" style={{ background: 'var(--warn)', color: '#fff' }}>
+            <Icon.alert style={{ width: 16, height: 16 }} />
+          </div>
+          <div style={{ fontSize: 13, display: 'grid', gap: 8, flex: 1 }}>
+            <div>
+              <b>제품코드 중복 {productCodeDupes.groupCount}그룹</b> — 대표 식자재 1건에
+              태그·알레르기·비어 있는 필드를 병합하고 나머지 행을 정리할 수 있습니다.
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {productCodeDupes.groups.slice(0, 4).map(group => (
+                <span
+                  key={group.key}
+                  className="chip"
+                  title={`병합 대상: ${group.removeNames.filter(Boolean).join(', ') || '-'}`}
+                >
+                  {group.productCode} · 대표 {group.keepName || group.keepId} · 병합{' '}
+                  {group.removeIds.length}개 · 영양값 {group.hasNutritionValue ? '연결' : '없음'}
+                </span>
+              ))}
+            </div>
+            {dedupeConfirm && (
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12, color: 'var(--negative)', fontWeight: 700 }}>
+                  최신 대표행만 남기고 {productCodeDupes.duplicateRows}개 중복 행을 정리할까요?
+                </span>
+                <button
+                  className="btn sm"
+                  style={{ background: 'var(--negative)', color: '#fff', border: 0 }}
+                  onClick={handleRepairProductCodeDuplicates}
+                  disabled={dedupeBusy}
+                >
+                  {dedupeBusy ? '정리 중…' : '정리'}
+                </button>
+                <button className="btn sm" onClick={() => setDedupeConfirm(false)}>
+                  취소
+                </button>
+              </div>
+            )}
+          </div>
+          {!dedupeConfirm && (
+            <button className="btn sm" onClick={() => setDedupeConfirm(true)}>
+              제품코드 중복 정리
+            </button>
+          )}
         </div>
       )}
 
