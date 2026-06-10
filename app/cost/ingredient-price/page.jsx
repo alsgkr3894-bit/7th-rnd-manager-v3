@@ -9,7 +9,7 @@ import { showToast } from '@/components/Toast';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { initDB } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
-import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
+import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import {
   getAllIngredients,
   getIngredientMetaMap,
@@ -119,17 +119,19 @@ export default function Page() {
         prev ? getPriceRowsByFileId(prev.id) : Promise.resolve([]),
       ]);
       if (!mountedRef.current) return;
-      priceRows = latestRows;
+      const latestPrice = buildPriceRowMap(latestRows);
+      const prevPrice = buildPriceRowMap(prevRows);
+      priceRows = latestPrice.rows;
       priceCodeSet = new Set(priceRows.map(r => r.productCode).filter(Boolean));
       if (prev) {
-        prevRows.forEach(r => {
+        prevPrice.rows.forEach(r => {
           if (r.productCode) prevPriceMap.set(r.productCode, r.priceWithTax);
         });
       }
     }
 
     // 제때 파일 Row → Map
-    const priceRowMap = new Map(priceRows.map(r => [r.productCode, r]));
+    const priceRowMap = buildPriceRowMap(priceRows).map;
 
     // 1) 제때 연동 항목 (마스터에 등록된 것 중 제때 파일에 있는 것)
     const linkedRows = allMeta

@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
-import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
+import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { getAllIngredients } from '@/lib/ingredient';
 import {
   getAllRecipes,
@@ -216,9 +216,7 @@ function RecipeContent() {
     let priceRowMap = new Map();
     if (latest) {
       const rows = await getPriceRowsByFileId(latest.id);
-      rows.forEach(r => {
-        if (r.productCode) priceRowMap.set(r.productCode, r);
-      });
+      priceRowMap = buildPriceRowMap(rows).map;
     }
     // 판매가 맵: baseCode → { L: price, R: price, ... }
     const pmap = new Map();

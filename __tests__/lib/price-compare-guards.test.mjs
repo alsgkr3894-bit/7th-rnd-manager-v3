@@ -45,4 +45,22 @@ describe('price compare guards', () => {
       ])
     );
   });
+
+  test('같은 productCode가 중복되면 마지막 행만 비교에 사용한다', () => {
+    const result = comparePriceLists(
+      [{ productCode: 'A', productName: '치즈', price: 1000 }],
+      [
+        { productCode: 'A', productName: '치즈 이전', price: 1100 },
+        { productCode: 'A', productName: '치즈 최신', price: 1200 },
+      ]
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      productCode: 'A',
+      productName: '치즈',
+      latestPrice: 1200,
+      changeStatus: '인상',
+    });
+  });
 });

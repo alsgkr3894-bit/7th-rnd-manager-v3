@@ -8,7 +8,7 @@ import { SortButton } from '@/components/ui/SortButton';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { initDB } from '@/lib/db';
-import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
+import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { getAllIngredients } from '@/lib/ingredient';
 import { buildUnitPriceMap } from '@/lib/recipe';
 import {
@@ -90,9 +90,7 @@ export function CommonManageView({ tab = 'groups' }) {
     let priceRowMap = new Map();
     if (latest) {
       const rows = await getPriceRowsByFileId(latest.id);
-      rows.forEach(r => {
-        if (r.productCode) priceRowMap.set(r.productCode, r);
-      });
+      priceRowMap = buildPriceRowMap(rows).map;
     }
     if (!mountedRef.current) return;
     setAllMeta(meta);

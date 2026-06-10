@@ -12,7 +12,7 @@ import {
 } from '@/lib/cost/edge-dough';
 import { getAllIngredients } from '@/lib/ingredient';
 import { buildUnitPriceMap } from '@/lib/recipe';
-import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
+import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { initDB } from '@/lib/db';
 import { UNIT_OPTIONS } from '@/lib/cost/shared/unit-options';
 import { ModalFrame } from '@/components/ui/ModalFrame';
@@ -54,9 +54,7 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
       let priceRowMap = new Map();
       if (latest) {
         const rows = await getPriceRowsByFileId(latest.id);
-        rows.forEach(r => {
-          if (r.productCode) priceRowMap.set(r.productCode, r);
-        });
+        priceRowMap = buildPriceRowMap(rows).map;
       }
       setAllMeta(meta);
       setUpm(buildUnitPriceMap(meta, priceRowMap));

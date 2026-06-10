@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Icon } from '@/components/icons';
 import { initDB } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
-import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
+import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllRecipes, buildUnitPriceMap, calcCostBySizes } from '@/lib/recipe';
 import { getMenuPriceCategories, getAllMenuPrices } from '@/lib/cost/menu-price';
@@ -121,12 +121,10 @@ export default function Page() {
 
     // lib/recipe rows (old system)
     const latest = files[0] || null;
-    const priceRowMap = new Map();
+    let priceRowMap = new Map();
     if (latest) {
       const priceRows = await getPriceRowsByFileId(latest.id);
-      priceRows.forEach(r => {
-        if (r.productCode) priceRowMap.set(r.productCode, r);
-      });
+      priceRowMap = buildPriceRowMap(priceRows).map;
     }
     const upm = buildUnitPriceMap(meta, priceRowMap);
 
