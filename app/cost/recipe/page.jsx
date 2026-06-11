@@ -5,7 +5,7 @@ import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { withDownloadDateSuffix } from '@/lib/download';
+import { downloadCsvText } from '@/lib/download';
 import { formatNumber } from '@/lib/format';
 import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { getAllIngredients } from '@/lib/ingredient';
@@ -130,15 +130,7 @@ function handleExportCsv(filtered) {
   const csv = [headers, ...rows]
     .map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(','))
     .join('\n');
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = withDownloadDateSuffix('레시피목록.csv');
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  downloadCsvText(csv, '레시피목록.csv');
 }
 
 // ── 메인 페이지 ───────────────────────────────────────────────

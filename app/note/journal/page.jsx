@@ -257,7 +257,7 @@ function buildPrintHtml(dateLabel, dayNotes) {
   <div class="doc-footer">
     7번가피자 R&amp;D 플랫폼 · ${new Date().toLocaleDateString('ko-KR')} 출력
   </div>
-  <script>window.onload = function() { window.focus(); window.print(); };</script>
+  <script>window.onload = function() { window.focus(); window.print(); }; window.onafterprint = function() { window.close(); };</script>
 </body>
 </html>`;
 }

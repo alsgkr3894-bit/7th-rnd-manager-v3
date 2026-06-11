@@ -53,6 +53,7 @@ export default function Page() {
   useKeyboardSave(handleSave);
 
   async function handleSave() {
+    if (saving) return;
     const names = (form.sampleNames || []).map(s => (s || '').trim()).filter(Boolean);
     if (!form.title.trim() || !names.length) {
       showToast('제목과 샘플명은 필수입니다', 'warn');

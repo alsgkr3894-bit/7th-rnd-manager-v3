@@ -203,6 +203,7 @@ window.onload = function() {
     });
   });
 };
+window.onafterprint = function() { window.close(); };
 <\/script>
 </body></html>`;
   win.document.open();

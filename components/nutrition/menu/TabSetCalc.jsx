@@ -121,7 +121,7 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
   };
 
   const handleDelete = async comp => {
-    if (!confirm(`'${comp.setName || '세트'}' 세트가 삭제됩니다. 계속할까요?`)) return;
+    if (!confirm(`'${comp.setName || '세트'}' 세트가 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`)) return;
     await deleteSetComposition(comp.id);
     showToast(`'${comp.setName}' 삭제`, 'ok');
     refresh();

@@ -195,7 +195,7 @@ function SampleContent() {
 
   async function handleDelete(rec) {
     const label = rec.title?.trim() || '샘플';
-    if (!confirm(`'${label}' 기록이 삭제됩니다. 계속할까요?`)) return;
+    if (!confirm(`'${label}' 기록이 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`)) return;
     try {
       await deleteSample(rec.id);
       setSamples(prev => prev.filter(s => s.id !== rec.id));
