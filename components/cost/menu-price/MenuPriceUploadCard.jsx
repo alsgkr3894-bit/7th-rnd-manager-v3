@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
-import { downloadCsv, makeFileName, readFileAsText, readFileAsArrayBuffer } from '@/lib/download';
+import { downloadCsv, readFileAsText, readFileAsArrayBuffer } from '@/lib/download';
 import { readCsvFile, readExcelFile } from '@/lib/excel';
 import { formatNumber } from '@/lib/format';
 import { buildTemplateRows, parseMenuPriceRows, replaceAllMenuPrices } from '@/lib/cost/menu-price';
@@ -20,7 +20,7 @@ export function MenuPriceUploadCard({ onReplaced }) {
   const notifyReplaced = typeof onReplaced === 'function' ? onReplaced : null;
 
   function handleDownloadTemplate() {
-    downloadCsv(buildTemplateRows(), makeFileName('menu-price-template', 'csv'));
+    downloadCsv(buildTemplateRows(), '메뉴판매가업로드양식.csv');
     showToast('양식이 다운로드됐어요', 'ok');
   }
 

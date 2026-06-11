@@ -29,7 +29,7 @@ import { CompareModal } from './_CompareModal';
 import { SampleDetailModal } from './_SampleDetailModal';
 import { SampleCard } from '@/components/note/SampleCard';
 import { SampleListRow } from '@/components/note/SampleListRow';
-import { downloadCsv } from '@/lib/download';
+import { downloadCsv, printCurrentPageWithDownloadDate } from '@/lib/download';
 
 const SORT_OPTIONS = [
   { key: 'createdAt', label: '최신순' },
@@ -305,7 +305,7 @@ function SampleContent() {
               borderRadius: 8,
               color: 'var(--text-2)',
             }}
-            onClick={() => window.print()}
+            onClick={() => printCurrentPageWithDownloadDate('샘플기록')}
             title="인쇄"
           >
             🖨

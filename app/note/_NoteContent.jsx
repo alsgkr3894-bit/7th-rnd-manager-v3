@@ -279,7 +279,7 @@ export function NoteContent() {
       n.tempCostCalc?.totalCost != null ? String(n.tempCostCalc.totalCost) : '',
       n.tempCostCalc?.ingredients != null ? String(n.tempCostCalc.ingredients.length) : '',
     ]);
-    downloadCsv([cols, ...dataRows], `notes_${new Date().toISOString().slice(0, 10)}.csv`);
+    downloadCsv([cols, ...dataRows], '개발노트목록.csv');
     showToast(`CSV ${filtered.length}개 내보내기 완료`, 'ok');
   }
 

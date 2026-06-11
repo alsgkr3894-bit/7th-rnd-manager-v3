@@ -131,9 +131,6 @@ export const HomeKpiRow = memo(function HomeKpiRow({
             {safeCostRate == null ? '—' : safeCostRate.toFixed(1)}
             <span className="unit">%</span>
           </div>
-          <div className="trend">
-            <span style={{ color: 'var(--text-4)' }}>원가 모듈 구축 예정</span>
-          </div>
         </div>
         <Sparkline data={costSparkline} color="#10B981" />
       </div>

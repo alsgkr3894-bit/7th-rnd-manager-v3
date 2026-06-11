@@ -2,6 +2,14 @@
 import { useMemo, useRef, useState } from 'react';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { calcMarginRate, MENU_CATEGORIES } from '@/lib/recipe';
@@ -13,6 +21,132 @@ import { SectionLabel, FieldLabel, thStyle } from '@/components/cost/shared/Form
 import { costRateColor } from '@/lib/cost/rate-color';
 import { BulkIngredientModal } from '@/components/cost/recipe/BulkIngredientModal';
 import { showToast } from '@/components/Toast';
+
+function ingredientRowId(line, index) {
+  return `${line?.productCode || line?.ingredientName || 'ingredient'}__${index}`;
+}
+
+function SortableIngredientRow({
+  id,
+  line,
+  index,
+  info,
+  hasPrice,
+  sizeLabels,
+  discontinued,
+  onQtyChange,
+  onRemove,
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.65 : 1,
+    background: isDragging ? 'var(--surface-2)' : undefined,
+    borderBottom: '1px solid var(--divider)',
+  };
+
+  return (
+    <tr ref={setNodeRef} style={style}>
+      <td style={{ padding: '6px 2px', textAlign: 'center', width: 32 }}>
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          aria-label={`${line.ingredientName || index + 1} 식자재 순서 이동`}
+          title="드래그로 순서 변경"
+          style={{
+            border: 0,
+            background: 'transparent',
+            cursor: isDragging ? 'grabbing' : 'grab',
+            color: 'var(--text-4)',
+            padding: '2px 4px',
+            lineHeight: 1,
+            fontSize: 15,
+          }}
+        >
+          ≡
+        </button>
+      </td>
+      <td style={{ padding: '6px 8px' }}>
+        <div style={{ fontWeight: 500 }}>
+          {line.ingredientName}
+          {discontinued && (
+            <span title="단종 식자재" style={{ color: 'var(--negative)', fontSize: 11, marginLeft: 4 }}>
+              ⚠ 단종
+            </span>
+          )}
+        </div>
+        {!hasPrice && (
+          <div style={{ fontSize: 10, color: '#f59e0b', marginTop: 1 }}>⚠ 단가 미등록</div>
+        )}
+      </td>
+      <td
+        style={{
+          padding: '6px 8px',
+          textAlign: 'right',
+          color: 'var(--text-3)',
+          fontSize: 12,
+        }}
+      >
+        {hasPrice
+          ? `${info.unitPrice < 1 ? info.unitPrice.toFixed(2) : formatNumber(info.unitPrice)}원`
+          : '—'}
+      </td>
+      {sizeLabels.map(sl => {
+        const qty = line.quantities?.[sl] ?? '';
+        const sub =
+          hasPrice && parseFloat(qty) > 0
+            ? Math.round(info.unitPrice * parseFloat(qty) * 10) / 10
+            : null;
+        return [
+          <td key={sl + '_q'} style={{ padding: '4px 4px', width: 70 }}>
+            <input
+              className="form-input"
+              type="number"
+              min="0"
+              value={qty}
+              onChange={e => onQtyChange(index, sl, e.target.value)}
+              placeholder="0"
+              style={{ width: '100%', padding: '3px 5px', textAlign: 'right' }}
+            />
+          </td>,
+          <td
+            key={sl + '_s'}
+            style={{
+              padding: '4px 6px',
+              textAlign: 'right',
+              fontSize: 12,
+              color: sub != null ? 'var(--text-1)' : 'var(--text-4)',
+              fontWeight: sub != null ? 600 : undefined,
+              width: 60,
+            }}
+          >
+            {sub != null ? `${formatNumber(sub)}원` : '—'}
+          </td>,
+        ];
+      })}
+      <td style={{ padding: '6px 4px', fontSize: 12, color: 'var(--text-3)' }}>{line.unitType}</td>
+      <td style={{ padding: '6px 2px', textAlign: 'center' }}>
+        <button
+          onClick={() => onRemove(index)}
+          aria-label={`${line.ingredientName} 식자재 삭제`}
+          style={{
+            border: 0,
+            background: 'transparent',
+            cursor: 'pointer',
+            color: 'var(--text-4)',
+            padding: '2px',
+          }}
+        >
+          <Icon.close style={{ width: 11, height: 11 }} />
+        </button>
+      </td>
+    </tr>
+  );
+}
 
 export function RecipeEditor({
   draft,
@@ -29,8 +163,13 @@ export function RecipeEditor({
   onCancel,
 }) {
   const [bulkOpen, setBulkOpen] = useState(false);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const sizeLabels = useMemo(() => draft.sizes.map(s => s.label).filter(Boolean), [draft.sizes]);
+  const ingredientIds = useMemo(
+    () => draft.ingredients.map((line, index) => ingredientRowId(line, index)),
+    [draft.ingredients]
+  );
 
   const discontinuedSet = useMemo(
     () => new Set(allMeta.filter(m => m.discontinued).map(m => m.productCode)),
@@ -155,6 +294,14 @@ export function RecipeEditor({
   }
   function removeIngredient(idx) {
     setDraft(d => ({ ...d, ingredients: d.ingredients.filter((_, i) => i !== idx) }));
+  }
+  function handleIngredientDragEnd(event) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = ingredientIds.indexOf(active.id);
+    const newIdx = ingredientIds.indexOf(over.id);
+    if (oldIdx < 0 || newIdx < 0) return;
+    setDraft(d => ({ ...d, ingredients: arrayMove(d.ingredients, oldIdx, newIdx) }));
   }
 
   const costBySizes = useMemo(() => {
@@ -352,215 +499,159 @@ export function RecipeEditor({
 
       {draft.ingredients.length > 0 && (
         <div style={{ marginBottom: 8, overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--divider)' }}>
-                <th style={thStyle}>식자재명</th>
-                <th style={{ ...thStyle, width: 80, textAlign: 'right' }}>단가/단위</th>
-                {sizeLabels.map(sl => (
-                  <th key={sl} style={{ ...thStyle, width: 100 }} colSpan={2}>
-                    <span
-                      style={{
-                        fontSize: 10,
-                        padding: '1px 5px',
-                        borderRadius: 3,
-                        fontWeight: 700,
-                        background: 'rgba(56,189,248,.15)',
-                        color: 'var(--accent, #38bdf8)',
-                        marginRight: 4,
-                      }}
-                    >
-                      {sl}
-                    </span>
-                    사용량 / 소계
-                  </th>
-                ))}
-                <th style={{ ...thStyle, width: 40 }}>단위</th>
-                <th style={{ ...thStyle, width: 32 }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {draft.ingredients.map((line, i) => {
-                const info = unitPriceMap.get(line.productCode);
-                const hasPrice = info?.unitPrice != null;
-                return (
-                  <tr key={i} style={{ borderBottom: '1px solid var(--divider)' }}>
-                    <td style={{ padding: '6px 8px' }}>
-                      <div style={{ fontWeight: 500 }}>
-                        {line.ingredientName}
-                        {discontinuedSet.has(line.productCode) && (
-                          <span
-                            title="단종 식자재"
-                            style={{ color: 'var(--negative)', fontSize: 11, marginLeft: 4 }}
-                          >
-                            ⚠ 단종
-                          </span>
-                        )}
-                      </div>
-                      {!hasPrice && (
-                        <div style={{ fontSize: 10, color: '#f59e0b', marginTop: 1 }}>
-                          ⚠ 단가 미등록
-                        </div>
-                      )}
-                    </td>
-                    <td
-                      style={{
-                        padding: '6px 8px',
-                        textAlign: 'right',
-                        color: 'var(--text-3)',
-                        fontSize: 12,
-                      }}
-                    >
-                      {hasPrice
-                        ? `${info.unitPrice < 1 ? info.unitPrice.toFixed(2) : formatNumber(info.unitPrice)}원`
-                        : '—'}
-                    </td>
-                    {sizeLabels.map(sl => {
-                      const qty = line.quantities?.[sl] ?? '';
-                      const sub =
-                        hasPrice && parseFloat(qty) > 0
-                          ? Math.round(info.unitPrice * parseFloat(qty) * 10) / 10
-                          : null;
-                      return [
-                        <td key={sl + '_q'} style={{ padding: '4px 4px', width: 70 }}>
-                          <input
-                            className="form-input"
-                            type="number"
-                            min="0"
-                            value={qty}
-                            onChange={e => setIngredientQty(i, sl, e.target.value)}
-                            placeholder="0"
-                            style={{ width: '100%', padding: '3px 5px', textAlign: 'right' }}
-                          />
-                        </td>,
-                        <td
-                          key={sl + '_s'}
-                          style={{
-                            padding: '4px 6px',
-                            textAlign: 'right',
-                            fontSize: 12,
-                            color: sub != null ? 'var(--text-1)' : 'var(--text-4)',
-                            fontWeight: sub != null ? 600 : undefined,
-                            width: 60,
-                          }}
-                        >
-                          {sub != null ? `${formatNumber(sub)}원` : '—'}
-                        </td>,
-                      ];
-                    })}
-                    <td style={{ padding: '6px 4px', fontSize: 12, color: 'var(--text-3)' }}>
-                      {line.unitType}
-                    </td>
-                    <td style={{ padding: '6px 2px', textAlign: 'center' }}>
-                      <button
-                        onClick={() => removeIngredient(i)}
-                        aria-label={`${line.ingredientName} 식자재 삭제`}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleIngredientDragEnd}
+          >
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid var(--divider)' }}>
+                  <th style={{ ...thStyle, width: 32 }}></th>
+                  <th style={thStyle}>식자재명</th>
+                  <th style={{ ...thStyle, width: 80, textAlign: 'right' }}>단가/단위</th>
+                  {sizeLabels.map(sl => (
+                    <th key={sl} style={{ ...thStyle, width: 100 }} colSpan={2}>
+                      <span
                         style={{
-                          border: 0,
-                          background: 'transparent',
-                          cursor: 'pointer',
-                          color: 'var(--text-4)',
-                          padding: '2px',
+                          fontSize: 10,
+                          padding: '1px 5px',
+                          borderRadius: 3,
+                          fontWeight: 700,
+                          background: 'rgba(56,189,248,.15)',
+                          color: 'var(--accent, #38bdf8)',
+                          marginRight: 4,
                         }}
                       >
-                        <Icon.close style={{ width: 11, height: 11 }} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            {sizeLabels.length > 0 && (
-              <tfoot>
-                {activeGroupIds.size > 0 && (
+                        {sl}
+                      </span>
+                      사용량 / 소계
+                    </th>
+                  ))}
+                  <th style={{ ...thStyle, width: 40 }}>단위</th>
+                  <th style={{ ...thStyle, width: 32 }}></th>
+                </tr>
+              </thead>
+              <SortableContext items={ingredientIds} strategy={verticalListSortingStrategy}>
+                <tbody>
+                  {draft.ingredients.map((line, i) => {
+                    const info = unitPriceMap.get(line.productCode);
+                    const hasPrice = info?.unitPrice != null;
+                    return (
+                      <SortableIngredientRow
+                        key={ingredientIds[i]}
+                        id={ingredientIds[i]}
+                        line={line}
+                        index={i}
+                        info={info}
+                        hasPrice={hasPrice}
+                        sizeLabels={sizeLabels}
+                        discontinued={discontinuedSet.has(line.productCode)}
+                        onQtyChange={setIngredientQty}
+                        onRemove={removeIngredient}
+                      />
+                    );
+                  })}
+                </tbody>
+              </SortableContext>
+              {sizeLabels.length > 0 && (
+                <tfoot>
+                  {activeGroupIds.size > 0 && (
+                    <tr
+                      style={{
+                        borderTop: '1px solid var(--divider)',
+                        background: 'var(--surface-2)',
+                      }}
+                    >
+                      <td />
+                      <td style={{ padding: '4px 8px', fontSize: 11, color: 'var(--text-3)' }}>
+                        레시피 소계
+                      </td>
+                      <td />
+                      {sizeLabels.map(sl => {
+                        const sub = costBySizes[sl] || 0;
+                        return [
+                          <td key={sl + '_qt'} />,
+                          <td
+                            key={sl + '_st'}
+                            style={{
+                              padding: '4px 6px',
+                              textAlign: 'right',
+                              fontSize: 11,
+                              color: 'var(--text-3)',
+                            }}
+                          >
+                            {sub > 0 ? `${formatNumber(Math.round(sub))}원` : '—'}
+                          </td>,
+                        ];
+                      })}
+                      <td />
+                      <td />
+                    </tr>
+                  )}
+                  {activeGroupIds.size > 0 && (
+                    <tr style={{ background: 'var(--surface-2)' }}>
+                      <td />
+                      <td style={{ padding: '4px 8px', fontSize: 11, color: 'var(--text-3)' }}>
+                        공통묶음 소계{' '}
+                        <span style={{ color: 'var(--text-4)' }}>({activeGroupIds.size}개)</span>
+                      </td>
+                      <td />
+                      {sizeLabels.map(sl => {
+                        const sub = groupCostBySizes[sl] || 0;
+                        return [
+                          <td key={sl + '_qt'} />,
+                          <td
+                            key={sl + '_st'}
+                            style={{
+                              padding: '4px 6px',
+                              textAlign: 'right',
+                              fontSize: 11,
+                              color: 'var(--text-3)',
+                            }}
+                          >
+                            {sub > 0 ? `${formatNumber(Math.round(sub))}원` : '—'}
+                          </td>,
+                        ];
+                      })}
+                      <td />
+                      <td />
+                    </tr>
+                  )}
                   <tr
                     style={{
-                      borderTop: '1px solid var(--divider)',
+                      borderTop: '2px solid var(--divider)',
                       background: 'var(--surface-2)',
                     }}
                   >
-                    <td style={{ padding: '4px 8px', fontSize: 11, color: 'var(--text-3)' }}>
-                      레시피 소계
-                    </td>
+                    <td />
+                    <td style={{ padding: '6px 8px', fontWeight: 700, fontSize: 12 }}>합계</td>
                     <td />
                     {sizeLabels.map(sl => {
-                      const sub = costBySizes[sl] || 0;
+                      const total = totalCostBySizes[sl] || 0;
                       return [
                         <td key={sl + '_qt'} />,
                         <td
                           key={sl + '_st'}
                           style={{
-                            padding: '4px 6px',
+                            padding: '6px 6px',
                             textAlign: 'right',
-                            fontSize: 11,
-                            color: 'var(--text-3)',
+                            fontWeight: 700,
+                            fontSize: 13,
+                            color: 'var(--accent, #38bdf8)',
                           }}
                         >
-                          {sub > 0 ? `${formatNumber(Math.round(sub))}원` : '—'}
+                          {total > 0 ? `${formatNumber(Math.round(total))}원` : '—'}
                         </td>,
                       ];
                     })}
                     <td />
                     <td />
                   </tr>
-                )}
-                {activeGroupIds.size > 0 && (
-                  <tr style={{ background: 'var(--surface-2)' }}>
-                    <td style={{ padding: '4px 8px', fontSize: 11, color: 'var(--text-3)' }}>
-                      공통묶음 소계{' '}
-                      <span style={{ color: 'var(--text-4)' }}>({activeGroupIds.size}개)</span>
-                    </td>
-                    <td />
-                    {sizeLabels.map(sl => {
-                      const sub = groupCostBySizes[sl] || 0;
-                      return [
-                        <td key={sl + '_qt'} />,
-                        <td
-                          key={sl + '_st'}
-                          style={{
-                            padding: '4px 6px',
-                            textAlign: 'right',
-                            fontSize: 11,
-                            color: 'var(--text-3)',
-                          }}
-                        >
-                          {sub > 0 ? `${formatNumber(Math.round(sub))}원` : '—'}
-                        </td>,
-                      ];
-                    })}
-                    <td />
-                    <td />
-                  </tr>
-                )}
-                <tr
-                  style={{ borderTop: '2px solid var(--divider)', background: 'var(--surface-2)' }}
-                >
-                  <td style={{ padding: '6px 8px', fontWeight: 700, fontSize: 12 }}>합계</td>
-                  <td />
-                  {sizeLabels.map(sl => {
-                    const total = totalCostBySizes[sl] || 0;
-                    return [
-                      <td key={sl + '_qt'} />,
-                      <td
-                        key={sl + '_st'}
-                        style={{
-                          padding: '6px 6px',
-                          textAlign: 'right',
-                          fontWeight: 700,
-                          fontSize: 13,
-                          color: 'var(--accent, #38bdf8)',
-                        }}
-                      >
-                        {total > 0 ? `${formatNumber(Math.round(total))}원` : '—'}
-                      </td>,
-                    ];
-                  })}
-                  <td />
-                  <td />
-                </tr>
-              </tfoot>
-            )}
-          </table>
+                </tfoot>
+              )}
+            </table>
+          </DndContext>
         </div>
       )}
 

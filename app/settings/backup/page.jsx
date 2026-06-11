@@ -161,7 +161,7 @@ export default function Page() {
           },
         }
       );
-      const fileName = makeFileName('rnd-manager-backup', 'json');
+      const fileName = makeFileName('7번가시스템백업', 'json');
       setBackupProgress({
         label: '파일 다운로드 준비 중',
         current: Math.max(selectedStores.length, 1),

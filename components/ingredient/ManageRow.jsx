@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
-import { getCategoryStyle, sortHashTags } from '@/lib/ingredient';
+import { countIngredientPhotos, getCategoryStyle, getPrimaryIngredientPhoto, sortHashTags } from '@/lib/ingredient';
 import { SCOPE_STYLES } from '@/lib/ingredient/constants';
 import { asDisplayText, asStringArray } from '@/lib/ui/prop-guards';
 
@@ -34,7 +34,8 @@ export const ManageRow = memo(function ManageRow({
   const scope = asDisplayText(r.scope, '-');
   const category = asDisplayText(r.category);
   const manufacturer = asDisplayText(r.manufacturer, '-');
-  const photo = r.photo && typeof r.photo === 'object' && r.photo.data ? r.photo : null;
+  const photo = getPrimaryIngredientPhoto(r);
+  const photoCount = countIngredientPhotos(r);
   const priceWithTax = Number.isFinite(Number(r.priceWithTax)) ? Number(r.priceWithTax) : null;
   const originCount = Array.isArray(r.origin) ? r.origin.length : 0;
   const allergenCount = Array.isArray(r.allergens) ? r.allergens.length : 0;
@@ -97,6 +98,7 @@ export const ManageRow = memo(function ManageRow({
       </td>
       <td style={{ width: 58 }}>
         {photo ? (
+          <div style={{ position: 'relative', width: 44, height: 34 }}>
           <img
             src={photo.data}
             alt={photo.name || name}
@@ -110,6 +112,29 @@ export const ManageRow = memo(function ManageRow({
               display: 'block',
             }}
           />
+            {photoCount > 1 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  right: -4,
+                  bottom: -4,
+                  minWidth: 16,
+                  height: 16,
+                  padding: '0 4px',
+                  borderRadius: 999,
+                  background: 'var(--accent)',
+                  color: '#fff',
+                  fontSize: 9,
+                  fontWeight: 900,
+                  display: 'grid',
+                  placeItems: 'center',
+                  border: '1px solid var(--surface)',
+                }}
+              >
+                {photoCount}
+              </span>
+            )}
+          </div>
         ) : (
           <span style={{ color: 'var(--text-4)', fontSize: 11 }}>—</span>
         )}

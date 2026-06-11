@@ -6,7 +6,7 @@ import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { initDB } from '@/lib/db';
-import { downloadCsv } from '@/lib/download';
+import { downloadCsv, printCurrentPageWithDownloadDate } from '@/lib/download';
 import { getAllNotes, addNote, updateNote } from '@/lib/note';
 import { getAllSamples, sampleNamesText } from '@/lib/sample';
 import { STATUSES, STATUS_COLORS, STATUS_BORDER } from '@/lib/note/constants';
@@ -146,10 +146,7 @@ export default function Page() {
   const panelTimerRef = useRef(null);
 
   const today = useMemo(() => todayKey(), []); // 마운트 시 1회 계산 (캐시 함수가 자정에도 갱신)
-  const todayChecklist = useMemo(
-    () => checklistMap[today] || [],
-    [checklistMap, today]
-  );
+  const todayChecklist = useMemo(() => checklistMap[today] || [], [checklistMap, today]);
 
   const load = useCallback(async () => {
     await initDB();
@@ -467,7 +464,7 @@ export default function Page() {
 
   function exportMonthCsv() {
     const headers = ['날짜', '시간', '구분', '제목', '상태/분류', '내용'];
-    downloadCsv([headers, ...monthEventRows], `일정달력_${viewYear}-${pad(viewMonth)}.csv`);
+    downloadCsv([headers, ...monthEventRows], `일정달력_${viewYear}년${pad(viewMonth)}월.csv`);
   }
 
   function saveTodayChecklist(items) {
@@ -483,10 +480,7 @@ export default function Page() {
   function addChecklistItem() {
     const text = checkInput.trim();
     if (!text) return;
-    saveTodayChecklist([
-      ...todayChecklist,
-      { id: `${today}-${Date.now()}`, text, done: false },
-    ]);
+    saveTodayChecklist([...todayChecklist, { id: `${today}-${Date.now()}`, text, done: false }]);
     setCheckInput('');
   }
 
@@ -506,8 +500,7 @@ export default function Page() {
     };
     const existing = notes.find(
       note =>
-        asDisplayText(note.title) === title &&
-        asDisplayText(note.testDate).slice(0, 10) === today
+        asDisplayText(note.title) === title && asDisplayText(note.testDate).slice(0, 10) === today
     );
     if (existing?.id != null) await updateNote(existing.id, data);
     else await addNote(data);
@@ -582,7 +575,10 @@ export default function Page() {
             >
               <Icon.copy style={{ width: 14, height: 14 }} /> 보고용 복사
             </button>
-            <button className="btn no-print" onClick={() => window.print()}>
+            <button
+              className="btn no-print"
+              onClick={() => printCurrentPageWithDownloadDate('일정 달력')}
+            >
               인쇄
             </button>
             <button

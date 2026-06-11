@@ -10,6 +10,7 @@ import { SCOPE_STYLES, SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { printUsageReport } from '@/lib/cost/usage-print';
+import { getUsageMenuCounts, getUsageRowsMenuCounts } from '@/lib/cost/usage-counts';
 import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
 import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
 import { getAllSideRecipes } from '@/lib/cost/side-detail';
@@ -229,7 +230,16 @@ export default function Page() {
 
         // 코드 있으면 제때 관리품목(productType) 기준, 없으면 지정값 또는 미지정
         const scope = code ? scopeLabelFor(typeMap, code) : m.scope || SCOPE_UNASSIGNED;
-        return { code, name: dispName, scope, count: menus.length, menus };
+        const menuCounts = getUsageMenuCounts(menus);
+        return {
+          code,
+          name: dispName,
+          scope,
+          count: menuCounts.total,
+          pizzaCount: menuCounts.pizza,
+          sideCount: menuCounts.side,
+          menus,
+        };
       })
       .filter(Boolean);
   }, [allMeta, usageMap, usageCat, menuSearch, typeMap, excludedMenus]);
@@ -287,10 +297,7 @@ export default function Page() {
     return arr;
   }, [sorted, onlyOne, showHidden, showUnused, hidden]);
 
-  const totalMenus = useMemo(
-    () => new Set(nonHidden.flatMap(r => r.menus.map(m => m.menuName))).size,
-    [nonHidden]
-  );
+  const menuCounts = useMemo(() => getUsageRowsMenuCounts(displayRows), [displayRows]);
 
   function toggle(code) {
     setExpanded(prev => {
@@ -310,12 +317,22 @@ export default function Page() {
   }
 
   function exportCsv() {
-    const headers = ['식자재명', '제품코드', '구분', '사용 메뉴수', '사용 메뉴'];
+    const headers = [
+      '식자재명',
+      '제품코드',
+      '구분',
+      '전체 메뉴수',
+      '피자 메뉴수',
+      '사이드 메뉴수',
+      '사용 메뉴',
+    ];
     const rows = displayRows.map(r => [
       r.name || '',
       r.code || '',
       r.scope || '',
       r.count,
+      r.pizzaCount || 0,
+      r.sideCount || 0,
       (r.menus || []).map(m => `${m.menuName}(${m.cat})`).join(', '),
     ]);
     downloadCsv([headers, ...rows], showUnused ? '미사용식자재.csv' : '식자재사용현황.csv');
@@ -479,7 +496,13 @@ export default function Page() {
 
           {/* 메뉴 해당 수 / 상태 */}
           <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8 }}>
-            해당 메뉴 <b style={{ color: 'var(--text-1)' }}>{totalMenus}</b>개
+            해당 메뉴 <b style={{ color: 'var(--text-1)' }}>{menuCounts.total}</b>개
+            <span style={{ marginLeft: 8 }}>
+              · 피자메뉴 <b style={{ color: 'var(--text-1)' }}>{menuCounts.pizza}</b>개
+            </span>
+            <span style={{ marginLeft: 8 }}>
+              · 사이드메뉴 <b style={{ color: 'var(--text-1)' }}>{menuCounts.side}</b>개
+            </span>
             {showHidden && (
               <span style={{ marginLeft: 8, color: 'var(--accent)' }}>· 숨김 항목만 표시 중</span>
             )}
@@ -586,6 +609,7 @@ export default function Page() {
                     >
                       사용 메뉴수
                     </SortableTh>
+                    <th style={{ width: 112, textAlign: 'center' }}>피자/사이드</th>
                     <th>메뉴 목록</th>
                     <th style={{ width: 56 }}></th>
                   </tr>
@@ -607,7 +631,7 @@ export default function Page() {
                         {showTier && (
                           <tr>
                             <td
-                              colSpan={5}
+                              colSpan={6}
                               style={{
                                 padding: '7px 12px',
                                 background: 'var(--surface-2)',
@@ -678,6 +702,26 @@ export default function Page() {
                             >
                               {r.count}
                             </span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <div
+                              style={{
+                                display: 'inline-flex',
+                                flexDirection: 'column',
+                                gap: 2,
+                                alignItems: 'stretch',
+                                minWidth: 76,
+                                fontSize: 11,
+                                color: 'var(--text-3)',
+                              }}
+                            >
+                              <span>
+                                피자 <b style={{ color: 'var(--text-1)' }}>{r.pizzaCount || 0}</b>
+                              </span>
+                              <span>
+                                사이드 <b style={{ color: 'var(--text-1)' }}>{r.sideCount || 0}</b>
+                              </span>
+                            </div>
                           </td>
                           <td>
                             <div

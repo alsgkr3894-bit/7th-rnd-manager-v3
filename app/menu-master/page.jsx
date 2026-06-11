@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { initDB } from '@/lib/db';
+import { withDownloadDateSuffix } from '@/lib/download';
 import {
   getAllMenuMaster,
   upsertMenuMaster,
@@ -517,7 +518,7 @@ export default function Page() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = '메뉴마스터.csv';
+    a.download = withDownloadDateSuffix('메뉴마스터.csv');
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

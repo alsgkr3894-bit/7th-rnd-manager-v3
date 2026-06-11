@@ -1,6 +1,7 @@
 'use client';
 import { Fragment, useState, useEffect, useMemo } from 'react';
 import { loadXlsx } from '@/lib/excel';
+import { withDownloadDateSuffix } from '@/lib/download';
 import ReportBuilderShell from '@/components/report/ReportBuilderShell';
 import SalesReportControls from '@/components/report/SalesReportControls';
 import SalesKpiCards from '@/components/report/SalesKpiCards';
@@ -433,13 +434,11 @@ export default function Page() {
   // Excel export — multi-sheet
   const handleExcelExport = async () => {
     const XLSX = await loadXlsx();
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
     const periodPart = periodLabel.replace(
       /(\d+)년 (\d+)월/,
       (_, y, m) => `${y}년${m.padStart(2, '0')}월`
     );
-    const fileName = `${asDisplayText(getActiveBrand()?.name, '7번가')}_${periodPart} 판매량보고서_${dateStr}.xlsx`;
+    const fileName = `${asDisplayText(getActiveBrand()?.name, '7번가')}_${periodPart} 판매량 보고서.xlsx`;
 
     const wb = XLSX.utils.book_new();
 
@@ -520,7 +519,7 @@ export default function Page() {
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetData), sheetName);
     }
 
-    XLSX.writeFile(wb, fileName);
+    XLSX.writeFile(wb, withDownloadDateSuffix(fileName));
   };
 
   const todayLabel = new Date().toLocaleDateString('ko-KR').replace(/\. /g, '.').replace(/\.$/, '');
@@ -628,8 +627,8 @@ export default function Page() {
           {safeOpts.pizzaMover &&
             safeViewMode === 'rank' &&
             (() => {
-              const all = safeGroupRanking.filter(
-                m => isPizzaCategory(m.category, { includePersonal: false })
+              const all = safeGroupRanking.filter(m =>
+                isPizzaCategory(m.category, { includePersonal: false })
               );
               if (all.length === 0) return null;
               const pizzaColor =

@@ -5,7 +5,7 @@ import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { downloadCsv } from '@/lib/download';
+import { downloadCsv, printCurrentPageWithDownloadDate } from '@/lib/download';
 import { getSampleById, updateSample, sampleNamesOf, RATING_LABELS } from '@/lib/sample';
 import { SampleFormBody, SAMPLE_INIT } from '../_SampleFormBody';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
@@ -112,7 +112,7 @@ export default function Page() {
       linkedProducts,
       (form.photos || []).length,
     ];
-    downloadCsv([headers, row], `샘플_${sampleId || 'detail'}.csv`);
+    downloadCsv([headers, row], `샘플상세_${sampleId || '상세'}.csv`);
   }
 
   async function copyReportText() {
@@ -166,7 +166,11 @@ export default function Page() {
             <button className="btn no-print" onClick={copyReportText}>
               <Icon.copy style={{ width: 14, height: 14 }} /> 보고용 복사
             </button>
-            <button className="btn no-print" onClick={() => window.print()} title="인쇄">
+            <button
+              className="btn no-print"
+              onClick={() => printCurrentPageWithDownloadDate(`샘플상세_${sampleId || '상세'}`)}
+              title="인쇄"
+            >
               인쇄
             </button>
             <button className="btn no-print" onClick={() => router.push('/note/sample')}>

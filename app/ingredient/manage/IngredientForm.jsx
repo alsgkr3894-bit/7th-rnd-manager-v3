@@ -5,7 +5,14 @@ import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
-import { SEED_MAIN_CATEGORIES, SEED_HASH_TAGS, sortMainCategories } from '@/lib/ingredient';
+import {
+  INGREDIENT_PHOTO_SLOTS,
+  SEED_MAIN_CATEGORIES,
+  SEED_HASH_TAGS,
+  getPrimaryIngredientPhoto,
+  normalizeIngredientPhotos,
+  sortMainCategories,
+} from '@/lib/ingredient';
 import { SCOPE, SCOPE_ORDER, SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { KEYS } from '@/lib/note/keys';
@@ -150,6 +157,7 @@ const EMPTY = {
   scope: '',
   note: '',
   photo: null,
+  photos: normalizeIngredientPhotos(null),
   // 원산지·알레르기
   origin: [], // [{displayName, country}] — 복수 가능
   originHidden: false, // 원산지 미표시대상 여부
@@ -192,7 +200,14 @@ export function IngredientForm({
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const datalistId = useId();
-  const photoInputRef = useRef(null);
+  const packagingPhotoInputRef = useRef(null);
+  const detailPhotoInputRef = useRef(null);
+  const actualPhotoInputRef = useRef(null);
+  const photoInputRefs = {
+    packaging: packagingPhotoInputRef,
+    detail: detailPhotoInputRef,
+    actual: actualPhotoInputRef,
+  };
   const initialFormRef = useRef(JSON.stringify(buildInitialForm()));
   const isDirty = JSON.stringify(form) !== initialFormRef.current;
   useBeforeUnload(isDirty);
@@ -262,6 +277,8 @@ export function IngredientForm({
         originHidden: form.originHidden === true,
         allergens: form.allergens || [],
       };
+      data.photos = normalizeIngredientPhotos(form.photos, form.photo);
+      data.photo = getPrimaryIngredientPhoto({ photos: data.photos });
       if (isJetteLinked) {
         // 제때 연동 항목은 수동단가 입력칸이 없으므로 payload에서 제외 → 기존값 보존
         delete data.priceOverride;
@@ -277,7 +294,7 @@ export function IngredientForm({
     }
   }
 
-  async function handlePhotoFile(file) {
+  async function handlePhotoFile(slotKey, file) {
     if (!file) return;
     const error = imageFileError(file);
     if (error) {
@@ -286,10 +303,30 @@ export function IngredientForm({
     }
     try {
       const photo = await resizePhoto(file);
-      set('photo', photo);
+      setForm(f => {
+        const photos = normalizeIngredientPhotos(f.photos, f.photo);
+        const nextPhotos = { ...photos, [slotKey]: photo };
+        return {
+          ...f,
+          photos: nextPhotos,
+          photo: getPrimaryIngredientPhoto({ photos: nextPhotos }),
+        };
+      });
     } catch (err) {
       showToast(err?.message || '사진 처리 실패', 'warn');
     }
+  }
+
+  function removePhoto(slotKey) {
+    setForm(f => {
+      const photos = normalizeIngredientPhotos(f.photos, f.photo);
+      const nextPhotos = { ...photos, [slotKey]: null };
+      return {
+        ...f,
+        photos: nextPhotos,
+        photo: getPrimaryIngredientPhoto({ photos: nextPhotos }),
+      };
+    });
   }
 
   const isNew = !initial;
@@ -301,6 +338,7 @@ export function IngredientForm({
         ? '제때 식자재 설정'
         : '식자재 수정';
   const scopeLabel = initial?.scope || (initial?.hasRecord ? SCOPE.EXCLUSIVE : SCOPE.GENERIC);
+  const formPhotos = normalizeIngredientPhotos(form.photos, form.photo);
 
   return createPortal(
     <div
@@ -428,65 +466,60 @@ export function IngredientForm({
             />
           </Field>
 
-          <Field label="사진" hint="대표 사진 1장">
-            <input
-              ref={photoInputRef}
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={e => {
-                handlePhotoFile(e.target.files?.[0]);
-                e.target.value = '';
-              }}
-            />
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              {form.photo?.data ? (
-                <img
-                  src={form.photo.data}
-                  alt={form.photo.name || form.ingredientName || '식자재 사진'}
-                  style={{
-                    width: 92,
-                    height: 72,
-                    objectFit: 'cover',
-                    borderRadius: 8,
-                    border: '1px solid var(--border)',
-                    background: 'var(--surface-2)',
-                  }}
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => photoInputRef.current?.click()}
-                  style={{
-                    width: 92,
-                    height: 72,
-                    borderRadius: 8,
-                    border: '1px dashed var(--border)',
-                    background: 'var(--surface-2)',
-                    color: 'var(--text-4)',
-                    cursor: 'pointer',
-                    display: 'grid',
-                    placeItems: 'center',
-                  }}
-                  aria-label="식자재 사진 추가"
-                >
-                  <Icon.plus style={{ width: 18, height: 18 }} />
-                </button>
-              )}
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className="btn sm"
-                  onClick={() => photoInputRef.current?.click()}
-                >
-                  사진 선택
-                </button>
-                {form.photo?.data && (
-                  <button type="button" className="btn sm ghost" onClick={() => set('photo', null)}>
-                    삭제
-                  </button>
-                )}
-              </div>
+          <Field label="사진" hint="포장·상세정보·실물 사진을 각각 1장씩 등록">
+            <div className="ingredient-photo-slot-grid">
+              {INGREDIENT_PHOTO_SLOTS.map(slot => {
+                const photo = formPhotos[slot.key];
+                const inputRef = photoInputRefs[slot.key];
+                return (
+                  <div key={slot.key} className="ingredient-photo-slot">
+                    <input
+                      ref={inputRef}
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      onChange={e => {
+                        handlePhotoFile(slot.key, e.target.files?.[0]);
+                        e.target.value = '';
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="ingredient-photo-preview"
+                      onClick={() => inputRef.current?.click()}
+                      aria-label={`${slot.label} 선택`}
+                    >
+                      {photo?.data ? (
+                        <img src={photo.data} alt={photo.name || slot.label} />
+                      ) : (
+                        <Icon.plus style={{ width: 18, height: 18 }} />
+                      )}
+                    </button>
+                    <div className="ingredient-photo-slot-copy">
+                      <div>{slot.label}</div>
+                      <span>{slot.hint}</span>
+                    </div>
+                    <div className="ingredient-photo-slot-actions">
+                      <button
+                        type="button"
+                        className="btn xs"
+                        onClick={() => inputRef.current?.click()}
+                      >
+                        선택
+                      </button>
+                      {photo?.data && (
+                        <button
+                          type="button"
+                          className="btn xs ghost"
+                          onClick={() => removePhoto(slot.key)}
+                        >
+                          삭제
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </Field>
 
@@ -1158,7 +1191,8 @@ function toForm(r) {
     priceOverride: r.priceOverride != null ? String(r.priceOverride) : '',
     scope: r.scope && r.scope !== SCOPE_UNASSIGNED ? r.scope : '',
     note: r.note || '',
-    photo: r.photo || null,
+    photos: normalizeIngredientPhotos(r.photos, r.photo),
+    photo: getPrimaryIngredientPhoto(r),
     temperature: r.temperature || '',
     origin: toOriginItems(r.origin),
     originHidden: r.originHidden === true,

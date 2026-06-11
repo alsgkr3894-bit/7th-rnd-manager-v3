@@ -6,6 +6,7 @@ import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getNoteById, updateNote, getNotesInChain, STATUS_COLORS, duplicateNote } from '@/lib/note';
 import { getAllSamples, sampleNamesOf } from '@/lib/sample';
+import { printCurrentPageWithDownloadDate } from '@/lib/download';
 import { NoteFormBody, INIT } from '@/app/note/_NoteFormBody';
 import { NoteDetailSkeleton } from '@/components/ui/Skeleton';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
@@ -226,7 +227,7 @@ export default function Page() {
   }
 
   function handlePrint() {
-    window.print();
+    printCurrentPageWithDownloadDate(`노트상세_${noteId || '상세'}`);
   }
 
   async function handleDuplicate() {

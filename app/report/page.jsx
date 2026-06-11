@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { loadXlsx } from '@/lib/excel';
+import { withDownloadDateSuffix } from '@/lib/download';
 import { Icon } from '@/components/icons';
 import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -100,7 +101,7 @@ async function exportToExcel(rows) {
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '보고서 목록');
-  XLSX.writeFile(wb, `보고서목록_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  XLSX.writeFile(wb, withDownloadDateSuffix('보고서 목록.xlsx'));
 }
 
 /* ============================================================

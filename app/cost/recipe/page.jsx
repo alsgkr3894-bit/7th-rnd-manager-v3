@@ -5,6 +5,7 @@ import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
+import { withDownloadDateSuffix } from '@/lib/download';
 import { formatNumber } from '@/lib/format';
 import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { getAllIngredients } from '@/lib/ingredient';
@@ -133,7 +134,7 @@ function handleExportCsv(filtered) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = '레시피목록.csv';
+  a.download = withDownloadDateSuffix('레시피목록.csv');
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

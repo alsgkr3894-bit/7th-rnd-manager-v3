@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import ReportBuilderShell, { OptGroup, Seg, Check } from '@/components/report/ReportBuilderShell';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { formatNumber, pad } from '@/lib/format';
+import { withDownloadDateSuffix } from '@/lib/download';
 import { Icon } from '@/components/icons';
 import { initDB } from '@/lib/db/init';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
@@ -80,8 +81,6 @@ async function loadXlsx() {
 
 async function exportCostXlsx(periodLabel, activeCats) {
   const XLSX = await loadXlsx();
-  const now = new Date();
-  const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
   const periodPart = periodLabel.replace(
     /(\d+)년 (\d+)월/,
     (_, y, m) => `${y}년${m.padStart(2, '0')}월`
@@ -127,7 +126,10 @@ async function exportCostXlsx(periodLabel, activeCats) {
   sheet2['!cols'] = [{ wch: 14 }, { wch: 32 }, { wch: 14 }, { wch: 14 }, { wch: 12 }];
   XLSX.utils.book_append_sheet(wb, sheet2, '메뉴 상세');
 
-  XLSX.writeFile(wb, `${getActiveBrand().name}_${periodPart}_원가계산보고서_${dateStr}.xlsx`);
+  XLSX.writeFile(
+    wb,
+    withDownloadDateSuffix(`${getActiveBrand().name}_${periodPart} 원가계산 보고서.xlsx`)
+  );
 }
 
 // ── 메인 컴포넌트 ──────────────────────────────────────────────

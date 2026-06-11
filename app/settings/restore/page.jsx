@@ -162,7 +162,7 @@ export default function Page() {
             total: Math.max(selectedStores.length, 1),
           });
           const backup = await exportAll();
-          const fileName = makeFileName('rnd-manager-auto-before-restore', 'json');
+          const fileName = makeFileName('복원용임시백업파일', 'json');
           downloadJson(backup, fileName);
           addEntry({
             scopes: MODULE_KEYS,

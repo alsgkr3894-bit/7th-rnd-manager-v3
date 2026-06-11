@@ -5,6 +5,7 @@ import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { initDB } from '@/lib/db';
 import { getAllNotes } from '@/lib/note';
+import { withDownloadDateSuffix } from '@/lib/download';
 import { STATUS_COLORS } from '@/lib/note/constants';
 import { showToast } from '@/components/Toast';
 
@@ -99,7 +100,7 @@ function buildPrintHtml(dateLabel, dayNotes) {
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>연구일지 ${dateLabel}</title>
+<title>${esc(withDownloadDateSuffix(`연구일지 ${dateLabel}`))}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {

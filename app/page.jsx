@@ -60,6 +60,7 @@ import { getActiveBrandId } from '@/lib/active-brand';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 import { getUploadFreshness } from '@/lib/stats/upload-status';
 import { getBackupReminder } from '@/lib/backup-history';
+import { getRecentPaletteItems } from '@/lib/palette-recent';
 
 // 홈 베스트/워스트·평균원가율 집계 카테고리 — 7번가만 '피자'로 한정, 그 외 브랜드는 전체
 const homeRankCategory = () => (getActiveBrandId() === 'main' ? '피자' : null);
@@ -129,6 +130,7 @@ export default function HomePage() {
 
   const [quickNote, setQuickNote] = useState('');
   const [quickSaved, setQuickSaved] = useState(false);
+  const [hasRecentVisits, setHasRecentVisits] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const mountedRef = useRef(false);
   const quickResetTimer = useRef(null);
@@ -156,6 +158,7 @@ export default function HomePage() {
   }, [chartTab]);
   useEffect(() => {
     mountedRef.current = true;
+    setHasRecentVisits(getRecentPaletteItems().length > 0);
 
     return () => {
       mountedRef.current = false;
@@ -454,7 +457,7 @@ export default function HomePage() {
     favOnly && favorites.length > 0 ? effectiveOrder.filter(id => favSet.has(id)) : effectiveOrder;
 
   return (
-    <main className="main page-enter">
+    <main className="main home-main page-enter">
       {/* 위젯 설정 패널 */}
       {widgetConfigOpen && (
         <WidgetConfigModal
@@ -542,27 +545,11 @@ export default function HomePage() {
 
       {/* 기간 네비게이터 */}
       {detectedPeriod && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 8,
-            animation: 'slide-up 320ms 120ms cubic-bezier(0.2,0.8,0.2,1) both',
-          }}
-        >
+        <div className="home-period-nav">
           <button className="btn sm" onClick={() => shiftAnchor(-1)} title="이전 달">
             ←
           </button>
-          <span
-            style={{
-              fontSize: 13,
-              color: 'var(--text-2)',
-              fontWeight: 600,
-              minWidth: 96,
-              textAlign: 'center',
-            }}
-          >
+          <span className="home-period-label">
             {(anchor || detectedPeriod).year}년 {(anchor || detectedPeriod).month}월
           </span>
           <button
@@ -588,7 +575,7 @@ export default function HomePage() {
       {rowsToRender.map(rowId => {
         switch (rowId) {
           case 'recent':
-            return isVisible('recent') ? (
+            return isVisible('recent') && hasRecentVisits ? (
               <WidgetShell
                 key="recent"
                 widgetKey="recent"

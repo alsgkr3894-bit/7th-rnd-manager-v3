@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect, Fragment } from 'react';
 import { SCOPE_STYLES } from '@/lib/ingredient/constants';
 import { printUsageReport } from '@/lib/cost/usage-print';
+import { getUsageMenuCounts, getUsageRowsMenuCounts } from '@/lib/cost/usage-counts';
 
 const TIER_LABEL = ['많이 쓰는 재료 (8개 이상)', '보통 (4–7개)', '적게 쓰는 재료 (1–3개)'];
 const tierOf = count => (count >= 8 ? 0 : count >= 4 ? 1 : 2);
@@ -42,7 +43,17 @@ export function UsageView({ rows, usageMap, usageCat, setUsageCat, usageSort, se
           .sort((a, b) => a.menuName.localeCompare(b.menuName, 'ko'));
 
         const uid = code || `_idx_${idx}`;
-        return { uid, code, name: dispName, scope: r.scope || null, count: menus.length, menus };
+        const menuCounts = getUsageMenuCounts(menus);
+        return {
+          uid,
+          code,
+          name: dispName,
+          scope: r.scope || null,
+          count: menuCounts.total,
+          pizzaCount: menuCounts.pizza,
+          sideCount: menuCounts.side,
+          menus,
+        };
       })
       .filter(r => r.count > 0);
   }, [rows, usageMap, usageCat]);
@@ -57,10 +68,7 @@ export function UsageView({ rows, usageMap, usageCat, setUsageCat, usageSort, se
     return arr;
   }, [usageRows, usageSort]);
 
-  const totalUsed = useMemo(
-    () => new Set(usageRows.flatMap(r => r.menus.map(m => m.menuName))).size,
-    [usageRows]
-  );
+  const menuCounts = useMemo(() => getUsageRowsMenuCounts(sorted), [sorted]);
 
   function toggle(code) {
     setExpanded(prev => {
@@ -88,7 +96,15 @@ export function UsageView({ rows, usageMap, usageCat, setUsageCat, usageSort, se
         </span>
         <span>·</span>
         <span>
-          해당 메뉴 <b style={{ color: 'var(--text-1)' }}>{totalUsed}</b>개
+          해당 메뉴 <b style={{ color: 'var(--text-1)' }}>{menuCounts.total}</b>개
+        </span>
+        <span>·</span>
+        <span>
+          피자메뉴 <b style={{ color: 'var(--text-1)' }}>{menuCounts.pizza}</b>개
+        </span>
+        <span>·</span>
+        <span>
+          사이드메뉴 <b style={{ color: 'var(--text-1)' }}>{menuCounts.side}</b>개
         </span>
       </div>
 
@@ -154,6 +170,7 @@ export function UsageView({ rows, usageMap, usageCat, setUsageCat, usageSort, se
                 <th>식자재명</th>
                 <th style={{ width: 80 }}>제품코드</th>
                 <th style={{ width: 90, textAlign: 'center' }}>사용 메뉴수</th>
+                <th style={{ width: 112, textAlign: 'center' }}>피자/사이드</th>
                 <th>메뉴 목록</th>
               </tr>
             </thead>
@@ -172,7 +189,7 @@ export function UsageView({ rows, usageMap, usageCat, setUsageCat, usageSort, se
                     {showTier && (
                       <tr>
                         <td
-                          colSpan={5}
+                          colSpan={6}
                           style={{
                             padding: '7px 12px',
                             background: 'var(--surface-2)',
@@ -233,6 +250,26 @@ export function UsageView({ rows, usageMap, usageCat, setUsageCat, usageSort, se
                         >
                           {r.count}
                         </span>
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <div
+                          style={{
+                            display: 'inline-flex',
+                            flexDirection: 'column',
+                            gap: 2,
+                            alignItems: 'stretch',
+                            minWidth: 76,
+                            fontSize: 11,
+                            color: 'var(--text-3)',
+                          }}
+                        >
+                          <span>
+                            피자 <b style={{ color: 'var(--text-1)' }}>{r.pizzaCount || 0}</b>
+                          </span>
+                          <span>
+                            사이드 <b style={{ color: 'var(--text-1)' }}>{r.sideCount || 0}</b>
+                          </span>
+                        </div>
                       </td>
                       <td>
                         <div

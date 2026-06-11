@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { downloadCsv } from '@/lib/download';
+import { downloadCsv, printCurrentPageWithDownloadDate } from '@/lib/download';
 import { STATUSES, STATUS_COLORS, STATUS_BORDER, getAllNotes, updateNote } from '@/lib/note';
 import { formatShortDate } from '@/lib/note/utils';
 
@@ -221,7 +221,11 @@ export default function Page() {
             >
               <Icon.download style={{ width: 14, height: 14 }} /> CSV
             </button>
-            <button className="btn no-print" onClick={() => window.print()} title="인쇄">
+            <button
+              className="btn no-print"
+              onClick={() => printCurrentPageWithDownloadDate('칸반 보드')}
+              title="인쇄"
+            >
               인쇄
             </button>
             <button className="btn primary no-print" onClick={() => router.push('/note/write')}>
