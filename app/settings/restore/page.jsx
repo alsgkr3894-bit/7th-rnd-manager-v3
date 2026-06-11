@@ -180,10 +180,11 @@ export default function Page() {
         }
       }
 
-      // 2) 선택된 모듈의 store만 import
+      // 2) 선택된 모듈의 store만 import (localStorage는 nutrition 선택 시에만 복원)
       const partialData = {
         ...parsed,
         stores: pickRestoreStores(parsed.stores, selectedStores),
+        localStorage: selectedKeys.includes('nutrition') ? parsed.localStorage : undefined,
       };
       const restoreTotal = Object.keys(partialData.stores).length || 1;
       setRestoreProgress({ label: 'store 복원 시작', current: 0, total: restoreTotal });

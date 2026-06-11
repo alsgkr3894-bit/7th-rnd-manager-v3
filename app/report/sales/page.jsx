@@ -1,6 +1,7 @@
 'use client';
 import { Fragment, useState, useEffect, useMemo } from 'react';
 import { loadXlsx } from '@/lib/excel';
+import { safeSheetName } from '@/lib/sales/export-xlsx';
 import { withDownloadDateSuffix } from '@/lib/download';
 import ReportBuilderShell from '@/components/report/ReportBuilderShell';
 import SalesReportControls from '@/components/report/SalesReportControls';
@@ -504,6 +505,7 @@ export default function Page() {
     const categories = [
       ...new Set(safeGroupRanking.map(m => asDisplayText(m.category)).filter(Boolean)),
     ];
+    const usedSheetNames = new Map();
     for (const cat of categories) {
       const items = safeGroupRanking.filter(m => asDisplayText(m.category) === cat);
       const sheetData = [
@@ -515,7 +517,10 @@ export default function Page() {
           ...(safeOpts.prevComp ? [safeQuantity(m.prevQty), safeQuantity(m.delta)] : []),
         ]),
       ];
-      const sheetName = cat.slice(0, 31); // Excel sheet name max 31 chars
+      const baseName = safeSheetName(cat);
+      const count = usedSheetNames.get(baseName) ?? 0;
+      usedSheetNames.set(baseName, count + 1);
+      const sheetName = count > 0 ? safeSheetName(`${cat}(${count})`) : baseName;
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetData), sheetName);
     }
 

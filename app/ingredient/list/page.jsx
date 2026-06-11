@@ -791,7 +791,7 @@ function IngredientRow({ r, rowKey, isExpanded, onToggle }) {
                 style={{
                   width: 54,
                   height: 42,
-                  objectFit: 'cover',
+                  objectFit: 'contain',
                   borderRadius: 6,
                   border: '1px solid var(--border)',
                   background: 'var(--surface-2)',

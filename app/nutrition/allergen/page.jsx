@@ -15,7 +15,7 @@ import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
 import { getAllSideRecipes } from '@/lib/cost/side-detail';
 import { getAllSetRecipes } from '@/lib/cost/set-detail';
 import { getAllRecipes } from '@/lib/recipe';
-import { getAllToppings } from '@/lib/nutrition/values/store';
+import { getAllToppings, getAllCompositions } from '@/lib/nutrition/values/store';
 import { buildIngredientMenuMap, getMenusForIngredient } from '@/lib/cost/ingredient-menu-map';
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { SmallStatCard } from '@/components/ui/SmallStatCard';
@@ -151,6 +151,7 @@ export default function Page() {
       sideRecs,
       setRecs,
       oldRecs,
+      compositions,
     ] = await Promise.all([
         getAllIngredients(),
         getAllMenuMaster(),
@@ -162,6 +163,7 @@ export default function Page() {
         getAllSideRecipes(),
         getAllSetRecipes(),
         getAllRecipes(),
+        getAllCompositions(),
       ]);
     if (!mountedRef.current) return;
     const safeIngredients = asObjectArray(ings);
@@ -186,6 +188,7 @@ export default function Page() {
         oldRecipes: safeOldRecipes,
         groups: safeGroups,
         edges: safeEdges,
+        compositions: asObjectArray(compositions),
       })
     );
     // 엣지 제외 base 맵 — 크러스트 변형별 알레르겐 분리용 (석쇠 = 엣지 없는 기본)
@@ -196,6 +199,7 @@ export default function Page() {
         oldRecipes: safeOldRecipes,
         groups: safeGroups,
         edges: [],
+        compositions: asObjectArray(compositions),
       })
     );
   }, []);

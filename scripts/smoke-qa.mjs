@@ -95,8 +95,20 @@ async function main() {
       errs: 0,
     };
     try {
-      await page.goto(routeUrl(BASE, path), { waitUntil: 'networkidle', timeout: 30000 });
-      await page.waitForTimeout(2500); // 데이터 로드·렌더 대기
+      await page.goto(routeUrl(BASE, path), { waitUntil: 'domcontentloaded', timeout: 30000 });
+      // DOM 확정 후 h1/main이 나타날 때까지 대기 (최대 15초)
+      await Promise.race([
+        page.waitForSelector('h1, main', { timeout: 15000 }).catch(() => {}),
+        page.waitForTimeout(3000),
+      ]);
+      // 영구 로딩 마커가 사라질 때까지 폴링 (최대 10초)
+      await page
+        .waitForFunction(
+          markers => !markers.some(m => (document.body.innerText || '').includes(m)),
+          LOADING_MARKERS,
+          { timeout: 10000 }
+        )
+        .catch(() => {});
 
       const probe = await page.evaluate(
         markers => {

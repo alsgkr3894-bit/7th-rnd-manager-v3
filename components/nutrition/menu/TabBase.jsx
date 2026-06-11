@@ -457,6 +457,12 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
   };
 
   const handleDeleteMenu = async menu => {
+    if (
+      !confirm(
+        `'${asDisplayText(menu.menuName, '메뉴')}' 및 모든 영양성분값이 삭제됩니다. 계속할까요?`
+      )
+    )
+      return;
     await deleteMenuRef(menu.id, menu.menuCode);
     if (selMenu?.id === menu.id) setSelMenu(null);
     showToast(`'${asDisplayText(menu.menuName, '메뉴')}' 삭제`, 'ok');

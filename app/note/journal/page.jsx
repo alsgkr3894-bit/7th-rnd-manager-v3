@@ -202,8 +202,8 @@ function buildPrintHtml(dateLabel, dayNotes) {
   }
   .photo-wrap img {
     width: 100%;
-    aspect-ratio: 4/3;
-    object-fit: cover;
+    max-height: 200px;
+    object-fit: contain;
     border-radius: 3px;
     display: block;
   }

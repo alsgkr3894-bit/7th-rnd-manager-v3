@@ -7,6 +7,8 @@ import {
   getAllEdges,
   getAllToppings,
   getAllSetCompositions,
+  getAllCompositions,
+  getIngredientValuesMap,
 } from '@/lib/nutrition/values/store';
 import { getAllEdges as getCostEdges } from '@/lib/cost/edge-dough';
 import { getAllMenuMaster } from '@/lib/menu-master';
@@ -39,6 +41,7 @@ import {
   buildSetHalfSheet,
   buildBeverageSheet,
   sortNutritionLabelMenus,
+  augmentWithDerived,
   LABEL_COLS,
 } from '@/lib/nutrition/label/build';
 import { exportNutritionLabelToExcel } from '@/lib/nutrition/label/export';
@@ -126,6 +129,8 @@ export default function NutritionLabelResult() {
         sideRecs,
         setRecs,
         oldRecs,
+        compositions,
+        ingredientNutritionMap,
       ] = await Promise.all([
         getAllMenuRefs(),
         getRawValueMap(),
@@ -141,6 +146,8 @@ export default function NutritionLabelResult() {
         getAllSideRecipes(),
         getAllSetRecipes(),
         getAllRecipes(),
+        getAllCompositions(),
+        getIngredientValuesMap(),
       ]);
 
       const masterByCode = Object.fromEntries(masters.map(m => [m.menuCode, m]));
@@ -166,7 +173,7 @@ export default function NutritionLabelResult() {
       const { excludedMenuCodes, excludedMenuNames } = extractExcludedMenuSets(masters);
       const nameOverrides = loadMenuNames();
       const menuOrder = loadOrder(MENU_ORDER_KEY);
-      const orderedMenus = sortNutritionLabelMenus(
+      const baseMenus = sortNutritionLabelMenus(
         menuRefs
           .filter(
             m =>
@@ -178,9 +185,19 @@ export default function NutritionLabelResult() {
         menuOrder
       );
 
+      // 파생 메뉴 병합 후 재정렬 (파생 menuRef의 category=베이스 복사로 동일 그룹 정렬)
+      const { menus: augmentedMenus, rawMap: augmentedRawMap } = augmentWithDerived({
+        menus: baseMenus,
+        rawMap,
+        compositions,
+        ingredientNutritionMap,
+        masterByCode,
+      });
+      const orderedMenus = sortNutritionLabelMenus(augmentedMenus, masterByCode, menuOrder);
+
       const ctx = {
         menus: orderedMenus,
-        rawMap,
+        rawMap: augmentedRawMap,
         edgeMap,
         masterByCode,
         menuAllergenMap,
