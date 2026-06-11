@@ -148,6 +148,7 @@ export function CommonManageView({ tab = 'groups' }) {
   }
   async function handleDeleteGroup(id) {
     if (!id) return;
+    if (!confirm('이 묶음 및 연결된 레시피 참조가 제거됩니다. 계속할까요?')) return;
     try {
       await deleteRecipeGroup(id);
     } catch (e) {

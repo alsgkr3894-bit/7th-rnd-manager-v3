@@ -520,7 +520,7 @@ export default function Page() {
       const baseName = safeSheetName(cat);
       const count = usedSheetNames.get(baseName) ?? 0;
       usedSheetNames.set(baseName, count + 1);
-      const sheetName = count > 0 ? safeSheetName(`${cat}(${count})`) : baseName;
+      const sheetName = count > 0 ? safeSheetName(cat, { suffix: `(${count})` }) : baseName;
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetData), sheetName);
     }
 

@@ -7,7 +7,7 @@ import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { initDB } from '@/lib/db';
 import { downloadCsv, printCurrentPageWithDownloadDate } from '@/lib/download';
-import { getAllNotes, addNote, updateNote } from '@/lib/note';
+import { getAllNotes, addNote, updateNote, deleteNote } from '@/lib/note';
 import { getAllSamples, sampleNamesText } from '@/lib/sample';
 import { STATUSES, STATUS_COLORS, STATUS_BORDER } from '@/lib/note/constants';
 import {
@@ -487,6 +487,15 @@ export default function Page() {
   async function syncChecklistJournal(items) {
     const doneItems = (Array.isArray(items) ? items : []).filter(item => item.done && item.text);
     const title = checklistJournalTitle(today);
+    const existing = notes.find(
+      note =>
+        asDisplayText(note.title) === title && asDisplayText(note.testDate).slice(0, 10) === today
+    );
+    if (doneItems.length === 0) {
+      if (existing?.id != null) await deleteNote(existing.id);
+      await load();
+      return;
+    }
     const data = {
       title,
       menuName: '체크리스트',
@@ -498,10 +507,6 @@ export default function Page() {
       reportSummary: `${doneItems.length}개 완료`,
       tags: '체크리스트',
     };
-    const existing = notes.find(
-      note =>
-        asDisplayText(note.title) === title && asDisplayText(note.testDate).slice(0, 10) === today
-    );
     if (existing?.id != null) await updateNote(existing.id, data);
     else await addNote(data);
     await load();
@@ -519,8 +524,13 @@ export default function Page() {
     }
   }
 
-  function removeChecklistItem(id) {
-    saveTodayChecklist(todayChecklist.filter(item => item.id !== id));
+  async function removeChecklistItem(id) {
+    const nextItems = saveTodayChecklist(todayChecklist.filter(item => item.id !== id));
+    try {
+      await syncChecklistJournal(nextItems);
+    } catch (e) {
+      showToast('연구일지 동기화 실패: ' + asDisplayText(e?.message, '알 수 없는 오류'), 'error');
+    }
   }
 
   async function copyMonthSummary() {

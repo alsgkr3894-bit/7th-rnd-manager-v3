@@ -15,6 +15,7 @@ export const metadata = {
   title: '7번가 R&D 플랫폼',
   description: '7번가피자 R&D팀 원가계산 · 식자재 · 메뉴개발 통합 플랫폼',
   manifest: '/manifest.json',
+  icons: { icon: '/favicon.ico' },
 };
 
 // WCAG 1.4.4: 저시력 사용자 확대 허용 (user-scalable 제한 없음, maximum-scale=5)
