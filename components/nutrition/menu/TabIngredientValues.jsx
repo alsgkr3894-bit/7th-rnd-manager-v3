@@ -230,7 +230,7 @@ export function TabIngredientValues({ onRefresh }) {
                   <th style={{ width: 70 }}>열량</th>
                   <th style={{ width: 70 }}>탄수화물</th>
                   <th style={{ width: 70 }}>단백질</th>
-                  <th style={{ width: 70 }}>지방</th>
+                  <th style={{ width: 70 }}>조지방</th>
                   <th style={{ width: 60 }}>상태</th>
                   <th style={{ width: 56 }}></th>
                 </tr>

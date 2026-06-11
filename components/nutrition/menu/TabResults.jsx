@@ -20,29 +20,39 @@ function asRecord(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : EMPTY_MAP;
 }
 
-export function TabResults({ menus, rawMap, edgeMap, compositions, toppings, menuMasters }) {
+export function TabResults({
+  menus,
+  rawMap,
+  edgeMap,
+  compositions,
+  ingredientValues,
+  menuMasters,
+  menuSearch = '',
+}) {
   const [filterMenu, setFilterMenu] = useState('전체');
   const [filterDerived, setFilterDerived] = useState('전체');
   const [missingOnly, setMissingOnly] = useState(false);
   const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
   const safeCompositions = useMemo(() => asObjectArray(compositions), [compositions]);
-  const safeToppings = useMemo(() => asObjectArray(toppings), [toppings]);
+  const safeIngredientValues = useMemo(() => asObjectArray(ingredientValues), [ingredientValues]);
   const safeMenuMasters = useMemo(() => asObjectArray(menuMasters), [menuMasters]);
   const safeRawMap = asRecord(rawMap);
   const safeEdgeMap = asRecord(edgeMap);
+  const searchText = asDisplayText(menuSearch).trim().toLowerCase();
 
   const masterByCode = useMemo(
     () => Object.fromEntries(safeMenuMasters.map(m => [m.menuCode, m])),
     [safeMenuMasters]
   );
 
-  const toppingMap = useMemo(() => {
-    const m = {};
-    safeToppings.forEach(t => {
-      m[t.toppingCode] = t;
+  const ingredientNutritionMap = useMemo(() => {
+    const map = {};
+    safeIngredientValues.forEach(row => {
+      const productCode = asDisplayText(row.productCode);
+      if (productCode) map[productCode] = row;
     });
-    return m;
-  }, [safeToppings]);
+    return map;
+  }, [safeIngredientValues]);
 
   const results = useMemo(
     () =>
@@ -51,10 +61,10 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, toppings, men
         rawMap: safeRawMap,
         edgeMap: safeEdgeMap,
         compositions: safeCompositions,
-        toppingMap,
+        ingredientNutritionMap,
         masterByCode,
       }),
-    [safeMenus, safeRawMap, safeEdgeMap, safeCompositions, toppingMap, masterByCode]
+    [safeMenus, safeRawMap, safeEdgeMap, safeCompositions, ingredientNutritionMap, masterByCode]
   );
 
   const menuNames = useMemo(
@@ -64,12 +74,26 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, toppings, men
 
   const filtered = useMemo(() => {
     let r = results;
+    if (searchText) {
+      r = r.filter(row =>
+        [
+          row.menuName,
+          row.menuCode,
+          row.baseMenuName,
+          row.baseMenuCode,
+          row.crustType,
+          row.isDerived ? '파생' : '기본',
+        ]
+          .map(value => asDisplayText(value).toLowerCase())
+          .some(value => value.includes(searchText))
+      );
+    }
     if (filterMenu !== '전체') r = r.filter(x => x.menuName === filterMenu);
     if (filterDerived === '기본') r = r.filter(x => !x.isDerived);
     if (filterDerived === '파생') r = r.filter(x => x.isDerived);
     if (missingOnly) r = r.filter(isMissingResult);
     return r;
-  }, [results, filterMenu, filterDerived, missingOnly]);
+  }, [results, searchText, filterMenu, filterDerived, missingOnly]);
 
   // 그룹 헤더 삽입용 — menuCode 단위로 그룹을 추적
   const allMenusForGroup = useMemo(

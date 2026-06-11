@@ -3,6 +3,7 @@ import {
   buildBeverageSheet,
   buildPizzaSheet,
   buildPizzaSliceSheet,
+  buildToppingSheet,
   parseVolumeMl,
   scaleVal,
 } from '../../lib/nutrition/label/build.js';
@@ -40,14 +41,6 @@ describe('buildPizzaSliceSheet', () => {
           satFat: 2,
           sodium: 240,
         },
-        'P-001__씬바사삭R': {
-          weight: 560,
-          kcal: 140,
-          sugar: 5,
-          protein: 14,
-          satFat: 2,
-          sodium: 220,
-        },
       },
       edgeMap: {},
       masterByCode: {},
@@ -56,7 +49,7 @@ describe('buildPizzaSliceSheet', () => {
     });
 
     expect(rows).toHaveLength(1);
-    expect(rows[0].rows.some(row => row.crustLabel === '씬바사삭' && row.side === 'R')).toBe(true);
+    expect(rows[0].rows.some(row => row.crustLabel === '씬바사삭' && row.side === 'R')).toBe(false);
     expect(rows[0].rows[0]).toMatchObject({
       crustLabel: '석쇠',
       side: 'L',
@@ -213,5 +206,71 @@ describe('buildBeverageSheet', () => {
         sodium: 63,
       }),
     ]);
+  });
+});
+
+describe('buildToppingSheet', () => {
+  test('추가토핑 마스터 입력값과 식자재 알레르기를 표출력 행으로 만든다', () => {
+    const rows = buildToppingSheet({
+      menus: [],
+      rawMap: {},
+      masterByCode: {},
+      menuAllergenMap,
+      toppings: [
+        {
+          toppingCode: 'TOP-PEP',
+          toppingName: '페퍼로니 추가',
+          productCode: 'P001',
+          ingredientName: '페퍼로니',
+          weight: 30,
+          kcal: 55.4,
+          sugar: 1.2,
+          protein: 3.6,
+          satFat: 0.4,
+          sodium: 120.2,
+        },
+      ],
+      toppingAllergenMap: new Map([['TOP-PEP', new Set(['AL06'])]]),
+    });
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        menuCode: 'TOP-PEP',
+        menuName: '페퍼로니 추가',
+        productCode: 'P001',
+        ingredientName: '페퍼로니',
+        weight: 30,
+        kcal: 55,
+        sugar: 1,
+        protein: 4,
+        satFat: 0,
+        sodium: 120,
+        allergen: '밀',
+      }),
+    ]);
+  });
+
+  test('추가토핑 마스터와 기존 메뉴마스터 추가토핑을 함께 유지한다', () => {
+    const rows = buildToppingSheet({
+      menus: [{ menuCode: 'LEGACY-TOP', menuName: '기존 토핑', category: '추가토핑' }],
+      rawMap: {
+        'LEGACY-TOP__석쇠L': {
+          basis: 'serving',
+          weight: 20,
+          kcal: 40,
+          sugar: 1,
+          protein: 2,
+          satFat: 0,
+          sodium: 30,
+        },
+      },
+      masterByCode: {},
+      menuAllergenMap: new Map([['LEGACY-TOP', new Set(['AL02'])]]),
+      toppings: [{ toppingCode: 'TOP-NEW', toppingName: '신규 토핑', kcal: 10 }],
+      toppingAllergenMap: new Map(),
+    });
+
+    expect(rows.map(row => row.menuName)).toEqual(['신규 토핑', '기존 토핑']);
+    expect(rows[1].allergen).toBe('우유');
   });
 });

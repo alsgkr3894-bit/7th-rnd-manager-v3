@@ -15,6 +15,7 @@ import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
 import { getAllSideRecipes } from '@/lib/cost/side-detail';
 import { getAllSetRecipes } from '@/lib/cost/set-detail';
 import { getAllRecipes } from '@/lib/recipe';
+import { getAllToppings } from '@/lib/nutrition/values/store';
 import { buildIngredientMenuMap, getMenusForIngredient } from '@/lib/cost/ingredient-menu-map';
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { SmallStatCard } from '@/components/ui/SmallStatCard';
@@ -105,6 +106,7 @@ export default function Page() {
     menuToIngredients: new Map(),
   });
   const [edges, setEdges] = useState([]);
+  const [toppings, setToppings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState('ingredient'); // 'ingredient' | 'menu'
@@ -138,12 +140,23 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    const [ings, masters, groups, edges, pizzaRecs, personalRecs, sideRecs, setRecs, oldRecs] =
-      await Promise.all([
+    const [
+      ings,
+      masters,
+      groups,
+      edges,
+      toppingList,
+      pizzaRecs,
+      personalRecs,
+      sideRecs,
+      setRecs,
+      oldRecs,
+    ] = await Promise.all([
         getAllIngredients(),
         getAllMenuMaster(),
         getAllRecipeGroups(),
         getAllEdges(),
+        getAllToppings(),
         getAllPizzaRecipes(),
         getAllPersonalRecipes(),
         getAllSideRecipes(),
@@ -165,6 +178,7 @@ export default function Page() {
     setIngredients(safeIngredients);
     setMenuMasters(safeMenuMasters);
     setEdges(safeEdges);
+    setToppings(asObjectArray(toppingList));
     setMapData(
       buildIngredientMenuMap({
         menuMasters: safeMenuMasters,
@@ -339,6 +353,33 @@ export default function Page() {
       }
     }
 
+    for (const topping of asObjectArray(toppings)) {
+      const toppingCode = asDisplayText(topping.toppingCode);
+      const toppingName = asDisplayText(topping.toppingName, toppingCode || '추가토핑');
+      if (!toppingCode && !toppingName) continue;
+      const productCode = asDisplayText(topping.productCode);
+      const ingredientName = asDisplayText(topping.ingredientName || toppingName);
+      const key = productCode ? `code:${productCode}` : `name:${normStr(ingredientName)}`;
+      const ing = ingByKey.get(key);
+      const allergenCodes = new Set(asStringArray(ing?.allergens));
+      if (!allergenCodes.size) continue;
+      rows.push({
+        rowKey: `topping__${toppingCode || normStr(toppingName)}`,
+        kind: 'topping',
+        menuCode: toppingCode || normStr(toppingName),
+        sourceMenuCodes: [],
+        originalMenuName: toppingName,
+        menuName: toppingName,
+        category: '추가토핑',
+        crust: '',
+        edgeType: null,
+        toppingCode,
+        productCode,
+        ingredientName,
+        allergenCodes,
+      });
+    }
+
     // 사용자 메뉴 순서 적용 — menuCode 단위로 정렬하므로 같은 메뉴의 변형(석쇠+엣지) 행이
     // 함께 묶여 이동하고, 변형 간 순서는 CRUST_VARIANTS 삽입순(안정 정렬)으로 유지됨.
     const rank = new Map(asStringArray(menuOrder).map((key, index) => [key, index]));
@@ -364,7 +405,15 @@ export default function Page() {
         menuNameOverrides
       ),
     }));
-  }, [allergenIngredients, baseMapData, edges, isExcludedMenu, menuOrder, menuNameOverrides]);
+  }, [
+    allergenIngredients,
+    baseMapData,
+    edges,
+    isExcludedMenu,
+    menuOrder,
+    menuNameOverrides,
+    toppings,
+  ]);
 
   const ingredientByKey = useMemo(() => {
     const map = new Map();
@@ -398,6 +447,21 @@ export default function Page() {
         allergens,
       });
     };
+
+    if (detailRow.kind === 'topping') {
+      const productCode = asDisplayText(detailRow.productCode);
+      const key = productCode
+        ? `code:${productCode}`
+        : `name:${normStr(detailRow.ingredientName || detailRow.menuName)}`;
+      const ing = ingredientByKey.get(key);
+      if (ing) {
+        pushRow({
+          ing,
+          source: { type: '추가토핑', name: asDisplayText(detailRow.menuName) },
+        });
+      }
+      return rows;
+    }
 
     for (const [ingredientKey, menus] of asMenuMap(baseMapData?.ingredientToMenus)) {
       if (!(menus instanceof Map)) continue;
@@ -893,7 +957,9 @@ export default function Page() {
           zIndex={300}
         >
           <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>
-            직접 레시피, 묶음관리, 엣지관리에서 이 메뉴에 반영된 식자재 알레르기입니다.
+            {detailRow.kind === 'topping'
+              ? '추가토핑 탭에서 연결한 식자재 알레르기입니다.'
+              : '직접 레시피, 묶음관리, 엣지관리에서 이 메뉴에 반영된 식자재 알레르기입니다.'}
           </div>
           {detailRows.length === 0 ? (
             <div className="empty-state" style={{ padding: '24px 16px' }}>

@@ -1,5 +1,8 @@
 import { describe, expect, test } from '@jest/globals';
-import { calcNutritionFromComponents } from '@/lib/nutrition/auto-calc';
+import {
+  calcNutritionFromComponents,
+  calcNutritionFromIngredientAmounts,
+} from '@/lib/nutrition/auto-calc';
 
 describe('calcNutritionFromComponents guards', () => {
   test('정상 재료는 기존 100g 기준 가중평균 수식으로 계산한다', () => {
@@ -54,6 +57,49 @@ describe('calcNutritionFromComponents guards', () => {
     expect(calcNutritionFromComponents([{ productCode: 'A', quantity: 10 }], {})).toBeNull();
     expect(
       calcNutritionFromComponents(['bad', null], new Map([['code:A', { kcal: 1 }]]))
+    ).toBeNull();
+  });
+
+  test('직접 입력한 L/R 식자재 용량은 요청 사이즈만 사용해 계산한다', () => {
+    const nutritionMap = new Map([
+      ['code:A', { kcal: 200, protein: 10 }],
+      ['code:B', { kcal: 100, protein: 4 }],
+    ]);
+    const rows = [
+      { productCode: 'A', ingredientName: '치즈', lAmount: 100, rAmount: 50 },
+      { productCode: 'B', ingredientName: '소스', lAmount: 100, rAmount: 0 },
+    ];
+
+    const lResult = calcNutritionFromIngredientAmounts(rows, nutritionMap, 'L');
+    expect(lResult).toMatchObject({
+      totalGrams: 200,
+      matched: 2,
+    });
+    expect(lResult.values).toMatchObject({
+      kcal: 150,
+      protein: 7,
+    });
+
+    const rResult = calcNutritionFromIngredientAmounts(rows, nutritionMap, 'R');
+    expect(rResult).toMatchObject({
+      totalGrams: 50,
+      matched: 1,
+    });
+    expect(rResult.values).toMatchObject({
+      kcal: 200,
+      protein: 10,
+    });
+  });
+
+  test('직접 입력 계산은 반대 사이즈 용량으로 폴백하지 않는다', () => {
+    const nutritionMap = new Map([['code:A', { kcal: 200 }]]);
+
+    expect(
+      calcNutritionFromIngredientAmounts(
+        [{ productCode: 'A', ingredientName: '치즈', lAmount: 100 }],
+        nutritionMap,
+        'R'
+      )
     ).toBeNull();
   });
 });

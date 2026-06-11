@@ -24,6 +24,10 @@ import {
   saveIngredientNames,
   applyIngredientName,
 } from '@/lib/nutrition/ingredient-name-override';
+import {
+  formatStoreDisplayItem,
+  formatStoreOriginCountry,
+} from '@/lib/nutrition/origin/store-display-format';
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import './origin-result.css';
@@ -155,17 +159,26 @@ const NOTICE = '※ 재료 수급에 따라 원산지가 다소 변경 될 수 �
 /**
  * 매장비치용: 표시품목 / 원산지 / 음식명
  */
-function buildSheet1(origins, menuOrder = []) {
+function buildSheet1(origins, menuOrder = [], ingOverrides = {}) {
   const map = new Map();
   for (const row of asObjectArray(origins)) {
+    const ingredientName = applyIngredientName(asDisplayText(row.ingredientName), ingOverrides);
     for (const it of asObjectArray(row.items)) {
       const displayName = asDisplayText(it.displayName);
       const country = asDisplayText(it.country);
       const key = `${displayName}||${country}`;
       if (!map.has(key)) {
-        map.set(key, { displayName, originCountry: country, menuRefs: new Map() });
+        map.set(key, {
+          rawDisplayName: displayName,
+          rawOriginCountry: country,
+          ingredientNames: [],
+          menuRefs: new Map(),
+        });
       }
       const entry = map.get(key);
+      if (ingredientName && !entry.ingredientNames.includes(ingredientName)) {
+        entry.ingredientNames.push(ingredientName);
+      }
       for (const { menuCode, menuName, category } of asObjectArray(row.menuCodes)) {
         const safeMenuCode = asDisplayText(menuCode);
         const safeMenuName = asDisplayText(menuName);
@@ -189,9 +202,13 @@ function buildSheet1(origins, menuOrder = []) {
   return [...map.values()]
     .map(entry => ({
       ...entry,
+      displayName: formatStoreDisplayItem(entry.rawDisplayName, entry.ingredientNames),
+      originCountry: formatStoreOriginCountry(entry.rawDisplayName, entry.rawOriginCountry),
       menus: sortMenuRefs([...entry.menuRefs.values()], menuOrder).map(m => m.menuName),
     }))
-    .sort((a, b) => asDisplayText(a.displayName).localeCompare(asDisplayText(b.displayName), 'ko'));
+    .sort((a, b) =>
+      asDisplayText(a.rawDisplayName).localeCompare(asDisplayText(b.rawDisplayName), 'ko')
+    );
 }
 
 /**
@@ -519,7 +536,10 @@ export default function OriginResult() {
     };
   }, []);
 
-  const sheet1 = useMemo(() => buildSheet1(origins, menuOrder), [origins, menuOrder]);
+  const sheet1 = useMemo(
+    () => buildSheet1(origins, menuOrder, ingOverrides),
+    [origins, menuOrder, ingOverrides]
+  );
   const sheet2 = useMemo(() => buildSheet2(origins, ingOverrides), [origins, ingOverrides]);
   const sheet3 = useMemo(
     () => buildSheet3(origins, ingOverrides, menuOrder),

@@ -4,7 +4,7 @@ import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
 import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import { parseLabExcel, buildImportRows, toRawValueRecord } from '@/lib/nutrition/values/import';
-import { upsertMenuRef, upsertRawValue } from '@/lib/nutrition/values/store';
+import { CRUST_TYPES, upsertMenuRef, upsertRawValue } from '@/lib/nutrition/values/store';
 import { getMenuCodeBase } from '@/lib/menu-master/code-policy';
 import { asObjectArray } from '@/lib/ui/prop-guards';
 import {
@@ -77,7 +77,7 @@ function isSupportedLabFile(file) {
   return name.endsWith('.xlsx') || name.endsWith('.xls');
 }
 
-const CRUST_OPTIONS = ['석쇠L', '석쇠R', '씬바사삭L', '씬바사삭R'];
+const CRUST_OPTIONS = CRUST_TYPES;
 const CATEGORY_OPTIONS = NUTRITION_CATEGORY_OPTIONS;
 const NON_PIZZA_CATS = new Set(['사이드', '추가토핑', '음료']);
 

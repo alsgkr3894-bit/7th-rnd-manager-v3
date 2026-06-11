@@ -3,6 +3,7 @@ import {
   allergenNames,
   buildEdgeAllergenMap,
   buildMenuAllergenMap,
+  buildToppingAllergenMap,
 } from '@/lib/nutrition/allergen/aggregate';
 
 /**
@@ -87,7 +88,7 @@ describe('buildEdgeAllergenMap', () => {
     expect([...(map.get('치즈크러스트L') || [])].sort()).toEqual(['AL01', 'AL02']);
   });
 
-  test('씬바사삭은 L/R 모두 엣지 알레르기를 밀만 남기고 대두를 제거한다', () => {
+  test('씬바사삭은 L 엣지 알레르기를 밀만 남기고 대두를 제거한다', () => {
     const map = buildEdgeAllergenMap({
       ingredients: [
         { productCode: 'SOY', ingredientName: '대두유', allergens: ['AL05'] },
@@ -103,12 +104,39 @@ describe('buildEdgeAllergenMap', () => {
     });
 
     expect([...(map.get('씬바사삭L') || [])]).toEqual(['AL06']);
-    expect([...(map.get('씬바사삭R') || [])]).toEqual(['AL06']);
+    expect(map.has('씬바사삭' + 'R')).toBe(false);
   });
 
   test('치즈크러스트는 구성품 누락 시에도 우유 알레르기를 보정한다', () => {
     const map = buildEdgeAllergenMap({ ingredients: [], edges: [] });
     expect([...(map.get('치즈크러스트L') || [])]).toEqual(['AL02']);
     expect([...(map.get('치즈크러스트R') || [])]).toEqual(['AL02']);
+  });
+});
+
+describe('buildToppingAllergenMap', () => {
+  test('추가토핑 식자재코드로 알레르기를 집계한다', () => {
+    const map = buildToppingAllergenMap({
+      ingredients: [
+        { productCode: 'TOP-ING', ingredientName: '페퍼로니', allergens: ['AL06'] },
+        { productCode: 'OLD', ingredientName: '단종토핑', allergens: ['AL02'], discontinued: true },
+      ],
+      toppings: [
+        { toppingCode: 'TOP-PEP', toppingName: '페퍼로니 추가', productCode: 'TOP-ING' },
+        { toppingCode: 'TOP-OLD', toppingName: '단종 추가', productCode: 'OLD' },
+      ],
+    });
+
+    expect([...(map.get('TOP-PEP') || [])]).toEqual(['AL06']);
+    expect(map.has('TOP-OLD')).toBe(false);
+  });
+
+  test('식자재코드가 없으면 식자재명으로 추가토핑 알레르기를 매칭한다', () => {
+    const map = buildToppingAllergenMap({
+      ingredients: [{ ingredientName: '체다 치즈', allergens: ['AL02'] }],
+      toppings: [{ toppingCode: 'TOP-CHZ', toppingName: '치즈 추가', ingredientName: '체다치즈' }],
+    });
+
+    expect([...(map.get('TOP-CHZ') || [])]).toEqual(['AL02']);
   });
 });

@@ -3,15 +3,9 @@ import { useState, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
+import { IngredientSearch } from '@/components/cost/shared/IngredientSearch';
 import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
-import {
-  upsertComposition,
-  deleteComposition,
-  upsertTopping,
-  deleteTopping,
-  NUTRITION_FIELDS,
-} from '@/lib/nutrition/values/store';
-import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
+import { upsertComposition, deleteComposition } from '@/lib/nutrition/values/store';
 import { resolveNutritionGroup, NUTRITION_GROUP_ORDER } from '@/lib/nutrition/menu-group';
 
 const GROUP_HEADER_STYLE = {
@@ -25,29 +19,117 @@ const GROUP_HEADER_STYLE = {
 };
 
 const noop = () => {};
+const EMPTY_UNIT_PRICE_MAP = new Map();
 
-export function TabDerived({ menus, toppings, compositions, onRefresh, menuMasters }) {
+function asAmountMap(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+
+function amountText(amounts, code) {
+  const row = asAmountMap(amounts)[code];
+  if (!row || typeof row !== 'object') return '';
+  const l = asDisplayText(row.L);
+  const r = asDisplayText(row.R);
+  if (!l && !r) return '';
+  return `L ${l || '-'}g / R ${r || '-'}g`;
+}
+
+export function TabDerived({
+  menus,
+  ingredients,
+  ingredientValues,
+  compositions,
+  onRefresh,
+  menuMasters,
+  menuSearch = '',
+  onOpenBase,
+  onOpenIngredientValues,
+}) {
   const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
-  const safeToppings = useMemo(() => asObjectArray(toppings), [toppings]);
+  const safeIngredients = useMemo(() => asObjectArray(ingredients), [ingredients]);
+  const safeIngredientValues = useMemo(() => asObjectArray(ingredientValues), [ingredientValues]);
   const safeCompositions = useMemo(() => asObjectArray(compositions), [compositions]);
   const safeMenuMasters = useMemo(() => asObjectArray(menuMasters), [menuMasters]);
   const refresh = typeof onRefresh === 'function' ? onRefresh : noop;
+  const openBaseTab = typeof onOpenBase === 'function' ? onOpenBase : noop;
+  const openIngredientValuesTab =
+    typeof onOpenIngredientValues === 'function' ? onOpenIngredientValues : noop;
   const [modal, setModal] = useState(null);
-  const [toppingModal, setToppingModal] = useState(null);
   const [form, setForm] = useState({
     menuCode: '',
     menuName: '',
     baseMenuCode: '',
-    toppingCodes: [],
+    ingredientCodes: [],
+    ingredientAmounts: {},
   });
-  const [toppingForm, setToppingForm] = useState({ toppingCode: '', toppingName: '' });
-  const [toppingValues, setToppingValues] = useState({});
   const [saving, setSaving] = useState(false);
 
   const masterByCode = useMemo(
     () => Object.fromEntries(safeMenuMasters.map(m => [m.menuCode, m])),
     [safeMenuMasters]
   );
+  const menuByCode = useMemo(
+    () =>
+      Object.fromEntries(
+        safeMenus.map(m => [asDisplayText(m.menuCode), m]).filter(([menuCode]) => menuCode)
+      ),
+    [safeMenus]
+  );
+  const ingredientMetaByCode = useMemo(
+    () =>
+      Object.fromEntries(
+        safeIngredients.map(row => [asDisplayText(row.productCode), row]).filter(([code]) => code)
+      ),
+    [safeIngredients]
+  );
+  const ingredientValueByCode = useMemo(
+    () =>
+      Object.fromEntries(
+        safeIngredientValues
+          .map(row => [asDisplayText(row.productCode), row])
+          .filter(([code]) => code)
+      ),
+    [safeIngredientValues]
+  );
+  const ingredientOptions = useMemo(() => {
+    const byCode = new Map();
+    safeIngredientValues.forEach(row => {
+      const productCode = asDisplayText(row.productCode);
+      if (!productCode) return;
+      const meta = ingredientMetaByCode[productCode] || {};
+      byCode.set(productCode, {
+        ...meta,
+        ...row,
+        productCode,
+        ingredientName: asDisplayText(
+          meta.ingredientName || row.ingredientName || meta.productName || productCode
+        ),
+      });
+    });
+    return [...byCode.values()];
+  }, [safeIngredientValues, ingredientMetaByCode]);
+  const searchText = asDisplayText(menuSearch).trim().toLowerCase();
+
+  const visibleCompositions = useMemo(() => {
+    if (!searchText) return safeCompositions;
+    return safeCompositions.filter(comp => {
+      const baseMenu = menuByCode[asDisplayText(comp.baseMenuCode)];
+      const ingredientNames = asStringArray(comp.ingredientCodes)
+        .map(code => ingredientValueByCode[code] || ingredientMetaByCode[code])
+        .map(row => asDisplayText(row?.ingredientName || row?.productCode))
+        .filter(Boolean);
+      return [
+        comp.menuName,
+        comp.menuCode,
+        comp.baseMenuCode,
+        baseMenu?.menuName,
+        baseMenu?.menuCode,
+        ...ingredientNames,
+      ]
+        .map(value => asDisplayText(value).toLowerCase())
+        .some(value => value.includes(searchText));
+    });
+  }, [safeCompositions, searchText, menuByCode, ingredientValueByCode, ingredientMetaByCode]);
 
   // 파생 메뉴를 베이스 메뉴 카테고리 기준으로 그룹화
   const groupedCompositions = useMemo(() => {
@@ -55,8 +137,8 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
     NUTRITION_GROUP_ORDER.forEach(g => {
       buckets[g] = [];
     });
-    safeCompositions.forEach(comp => {
-      const baseMenu = safeMenus.find(m => m.menuCode === comp.baseMenuCode) || {
+    visibleCompositions.forEach(comp => {
+      const baseMenu = menuByCode[asDisplayText(comp.baseMenuCode)] || {
         menuCode: comp.baseMenuCode,
         category: '',
       };
@@ -67,15 +149,46 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
       group: g,
       items: buckets[g],
     }));
-  }, [safeCompositions, safeMenus, masterByCode]);
+  }, [visibleCompositions, menuByCode, masterByCode]);
 
-  const toggleTopping = code => {
+  const addIngredient = ingredient => {
+    const code = asDisplayText(ingredient?.productCode);
+    if (!code) return;
     setForm(f => ({
       ...f,
-      toppingCodes:
-        Array.isArray(f.toppingCodes) && f.toppingCodes.includes(code)
-          ? f.toppingCodes.filter(c => c !== code)
-          : [...(Array.isArray(f.toppingCodes) ? f.toppingCodes : []), code],
+      ingredientCodes: asStringArray(f.ingredientCodes).includes(code)
+        ? asStringArray(f.ingredientCodes)
+        : [...asStringArray(f.ingredientCodes), code],
+      ingredientAmounts: {
+        ...asAmountMap(f.ingredientAmounts),
+        [code]: {
+          L: asAmountMap(f.ingredientAmounts)[code]?.L ?? '',
+          R: asAmountMap(f.ingredientAmounts)[code]?.R ?? '',
+        },
+      },
+    }));
+  };
+
+  const removeIngredient = code => {
+    setForm(f => ({
+      ...f,
+      ingredientCodes: asStringArray(f.ingredientCodes).filter(item => item !== code),
+      ingredientAmounts: Object.fromEntries(
+        Object.entries(asAmountMap(f.ingredientAmounts)).filter(([amountCode]) => amountCode !== code)
+      ),
+    }));
+  };
+
+  const updateIngredientAmount = (code, side, value) => {
+    setForm(f => ({
+      ...f,
+      ingredientAmounts: {
+        ...asAmountMap(f.ingredientAmounts),
+        [code]: {
+          ...asAmountMap(f.ingredientAmounts)[code],
+          [side]: value,
+        },
+      },
     }));
   };
 
@@ -84,12 +197,17 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
       menuCode: '',
       menuName: '',
       baseMenuCode: safeMenus[0]?.menuCode || '',
-      toppingCodes: [],
+      ingredientCodes: [],
+      ingredientAmounts: {},
     });
     setModal('add');
   };
   const openEdit = comp => {
-    setForm({ ...comp, toppingCodes: asStringArray(comp.toppingCodes) });
+    setForm({
+      ...comp,
+      ingredientCodes: asStringArray(comp.ingredientCodes),
+      ingredientAmounts: asAmountMap(comp.ingredientAmounts),
+    });
     setModal(comp);
   };
 
@@ -106,139 +224,44 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
     try {
       const id = modal !== 'add' ? modal.id : undefined;
       const code = String(form.menuCode || '').trim() || `DERIVED-${Date.now()}`;
-      await upsertComposition({ ...(id ? { id } : {}), ...form, menuCode: code });
+      const ingredientCodes = asStringArray(form.ingredientCodes);
+      const ingredientAmounts = Object.fromEntries(
+        ingredientCodes.map(ingredientCode => [
+          ingredientCode,
+          asAmountMap(form.ingredientAmounts)[ingredientCode] || { L: '', R: '' },
+        ])
+      );
+      await upsertComposition({
+        ...(id ? { id } : {}),
+        ...form,
+        menuCode: code,
+        ingredientCodes,
+        ingredientAmounts,
+        toppingCodes: [],
+        toppingAmounts: {},
+      });
       showToast('저장 완료', 'ok');
       setModal(null);
-      refresh();
-    } catch {
-      showToast('저장 실패', 'error');
+      await refresh();
+    } catch (err) {
+      showToast(`저장 실패: ${err?.message || err}`, 'error');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const handleDeleteComp = async comp => {
-    await deleteComposition(comp.id);
-    showToast(`'${asDisplayText(comp.menuName, '파생 메뉴')}' 삭제`, 'ok');
-    refresh();
-  };
-
-  const handleSaveTopping = async () => {
-    if (!String(toppingForm.toppingName || '').trim()) {
-      showToast('소스/토핑명 입력 필요', 'error');
-      return;
-    }
-    setSaving(true);
     try {
-      const id = toppingModal !== 'add' ? toppingModal.id : undefined;
-      const code = String(toppingForm.toppingCode || '').trim() || `TOP-${Date.now()}`;
-      await upsertTopping({
-        ...(id ? { id } : {}),
-        ...toppingForm,
-        toppingCode: code,
-        ...toppingValues,
-      });
-      showToast('저장 완료', 'ok');
-      setToppingModal(null);
-      refresh();
-    } catch {
-      showToast('저장 실패', 'error');
+      await deleteComposition(comp.id);
+      showToast(`'${asDisplayText(comp.menuName, '파생 메뉴')}' 삭제`, 'ok');
+      await refresh();
+    } catch (err) {
+      showToast(`삭제 실패: ${err?.message || err}`, 'error');
     }
-    setSaving(false);
-  };
-
-  const openToppingAdd = () => {
-    setToppingForm({ toppingCode: '', toppingName: '' });
-    setToppingValues({});
-    setToppingModal('add');
-  };
-  const openToppingEdit = t => {
-    setToppingForm({ toppingCode: t.toppingCode || '', toppingName: t.toppingName || '' });
-    setToppingValues(
-      NUTRITION_FIELDS.reduce((acc, { key }) => ({ ...acc, [key]: t[key] ?? '' }), {})
-    );
-    setToppingModal(t);
   };
 
   return (
     <div style={{ marginTop: 20 }}>
-      {/* 소스/토핑 마스터 */}
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 12,
-          }}
-        >
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700 }}>소스·토핑 마스터</div>
-            <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
-              파생 메뉴에 추가되는 소스·토핑의 영양성분
-            </div>
-          </div>
-          <button className="btn sm" onClick={openToppingAdd}>
-            <Icon.plus style={{ width: 13, height: 13 }} />
-            추가
-          </button>
-        </div>
-        {safeToppings.length === 0 ? (
-          <div className="empty-state" style={{ padding: '20px 12px' }}>
-            <div className="empty-icon-wrap">
-              <Icon.box style={{ width: 24, height: 24 }} />
-            </div>
-            <div style={{ fontWeight: 700, fontSize: 13 }}>등록된 소스/토핑이 없어요</div>
-            <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
-              추가 버튼으로 소스·토핑을 등록하세요
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {safeToppings.map((t, index) => {
-              const toppingCode = asDisplayText(t.toppingCode);
-              const toppingName = asDisplayText(t.toppingName, `소스/토핑 ${index + 1}`);
-              const kcal = asDisplayText(t.kcal);
-              return (
-                <div
-                  key={`${t.id || toppingCode || toppingName}-${index}`}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 12px',
-                    background: 'var(--surface-2)',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => openToppingEdit(t)}
-                >
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>{toppingName}</span>
-                  <span style={{ fontSize: 11, color: 'var(--text-4)' }}>
-                    {kcal ? `${kcal}kcal` : '값 미입력'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={e => {
-                      e.stopPropagation();
-                      deleteTopping(t.id).then(refresh);
-                    }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: 'var(--text-4)',
-                      padding: 0,
-                    }}
-                  >
-                    <Icon.close style={{ width: 12, height: 12 }} />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
       {/* 파생 메뉴 목록 */}
       <div
         style={{
@@ -267,6 +290,14 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
             <span style={{ fontSize: 11 }}>예: 컨츄리치킨 + 마요네즈 = 컨츄리마요치킨</span>
           </div>
         </div>
+      ) : groupedCompositions.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-icon-wrap">
+            <Icon.search style={{ width: 28, height: 28 }} />
+          </div>
+          <div className="empty-title">검색 결과가 없어요</div>
+          <div className="empty-sub">파생 메뉴명, 베이스 메뉴명, 토핑명으로 다시 검색해보세요</div>
+        </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {groupedCompositions.map(({ group, items }) => (
@@ -274,16 +305,19 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
               {groupedCompositions.length > 1 && <div style={GROUP_HEADER_STYLE}>{group}</div>}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {items.map(comp => {
-                  const base = safeMenus.find(m => m.menuCode === comp.baseMenuCode);
+                  const base = menuByCode[asDisplayText(comp.baseMenuCode)];
                   const menuName = asDisplayText(comp.menuName, '이름 없음');
                   const baseName = asDisplayText(
                     base?.menuName || comp.baseMenuCode,
                     '베이스 미지정'
                   );
-                  const tops = asStringArray(comp.toppingCodes)
-                    .map(c =>
-                      asDisplayText(safeToppings.find(t => t.toppingCode === c)?.toppingName)
-                    )
+                  const ingredientsText = asStringArray(comp.ingredientCodes)
+                    .map(c => {
+                      const row = ingredientValueByCode[c] || ingredientMetaByCode[c];
+                      const name = asDisplayText(row?.ingredientName || c);
+                      const sizeText = amountText(comp.ingredientAmounts, c);
+                      return [name, sizeText ? `(${sizeText})` : ''].filter(Boolean).join(' ');
+                    })
                     .filter(Boolean);
                   return (
                     <div
@@ -299,7 +333,7 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
                       <div>
                         <span style={{ fontWeight: 700, fontSize: 14 }}>{menuName}</span>
                         <span style={{ fontSize: 12, color: 'var(--text-4)', marginLeft: 10 }}>
-                          {baseName} + {tops.join(', ') || '(소스 미선택)'}
+                          {baseName} + {ingredientsText.join(', ') || '(식자재 미선택)'}
                         </span>
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
@@ -328,7 +362,7 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
         <ModalFrame
           title={modal === 'add' ? '파생 메뉴 추가' : '파생 메뉴 편집'}
           onClose={() => setModal(null)}
-          width="min(480px,95vw)"
+          width="min(620px,95vw)"
           zIndex={300}
           padding="24px 28px"
         >
@@ -368,46 +402,146 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
                   );
                 })}
               </select>
+              {safeMenus.length === 0 && (
+                <div
+                  style={{
+                    marginTop: 8,
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    background: 'var(--surface-2)',
+                    color: 'var(--text-3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 10,
+                  }}
+                >
+                  <span style={{ fontSize: 12 }}>
+                    베이스 영양성분 탭에서 메뉴를 먼저 등록해주세요
+                  </span>
+                  <button
+                    type="button"
+                    className="btn sm"
+                    onClick={() => {
+                      setModal(null);
+                      openBaseTab();
+                    }}
+                  >
+                    이동
+                  </button>
+                </div>
+              )}
             </div>
             <div>
               <label
                 style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 8 }}
               >
-                추가 소스/토핑
+                추가 식자재
               </label>
-              {safeToppings.length === 0 ? (
-                <div style={{ fontSize: 12, color: 'var(--text-4)' }}>
-                  소스/토핑 마스터를 먼저 등록해주세요
+              {ingredientOptions.length === 0 ? (
+                <div
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    background: 'var(--surface-2)',
+                    color: 'var(--text-3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 10,
+                  }}
+                >
+                  <span style={{ fontSize: 12 }}>
+                    식자재 영양값 탭에서 식자재별 100g 기준값을 먼저 등록해주세요
+                  </span>
+                  <button
+                    type="button"
+                    className="btn sm"
+                    onClick={() => {
+                      setModal(null);
+                      openIngredientValuesTab();
+                    }}
+                  >
+                    이동
+                  </button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {safeToppings.map(t => {
-                    const selectedCodes = Array.isArray(form.toppingCodes) ? form.toppingCodes : [];
-                    const toppingCode = asDisplayText(t.toppingCode);
-                    const toppingName = asDisplayText(t.toppingName, toppingCode || '이름 없음');
-                    const on = selectedCodes.includes(toppingCode);
-                    return (
-                      <button
-                        key={toppingCode || t.id || toppingName}
-                        onClick={() => toggleTopping(toppingCode)}
-                        disabled={!toppingCode}
-                        style={{
-                          padding: '5px 12px',
-                          borderRadius: 20,
-                          fontSize: 13,
-                          cursor: 'pointer',
-                          border: '1.5px solid',
-                          borderColor: on ? 'var(--accent)' : 'var(--border)',
-                          background: on ? 'var(--accent-soft)' : 'var(--surface)',
-                          color: on ? 'var(--accent-text)' : 'var(--text-2)',
-                          fontWeight: on ? 700 : 400,
-                        }}
-                      >
-                        {toppingName}
-                      </button>
-                    );
-                  })}
-                </div>
+                <>
+                  <IngredientSearch
+                    allMeta={ingredientOptions}
+                    unitPriceMap={EMPTY_UNIT_PRICE_MAP}
+                    alreadyAdded={asStringArray(form.ingredientCodes)}
+                    onSelect={addIngredient}
+                    style={{ marginTop: 0 }}
+                  />
+                  {asStringArray(form.ingredientCodes).length > 0 && (
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 6 }}>
+                        L/R 식자재 사용량
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {asStringArray(form.ingredientCodes).map(code => {
+                          const row = ingredientValueByCode[code] || ingredientMetaByCode[code];
+                          const ingredientName = asDisplayText(
+                            row?.ingredientName || row?.productName,
+                            code || '식자재'
+                          );
+                          const amounts = asAmountMap(form.ingredientAmounts)[code] || {};
+                          return (
+                            <div
+                              key={code}
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 100px 100px 42px',
+                                gap: 8,
+                                alignItems: 'center',
+                                padding: '8px 10px',
+                                border: '1px solid var(--border)',
+                                borderRadius: 8,
+                                background: 'var(--surface-2)',
+                              }}
+                            >
+                              <div>
+                                <div style={{ fontSize: 13, fontWeight: 800 }}>
+                                  {ingredientName}
+                                </div>
+                                <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
+                                  {code} · 식자재 영양값 100g 기준, 입력한 사용량만 반영
+                                </div>
+                              </div>
+                              <input
+                                className="input"
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                value={amounts.L ?? ''}
+                                onChange={e => updateIngredientAmount(code, 'L', e.target.value)}
+                                placeholder="L g"
+                              />
+                              <input
+                                className="input"
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                value={amounts.R ?? ''}
+                                onChange={e => updateIngredientAmount(code, 'R', e.target.value)}
+                                placeholder="R g"
+                              />
+                              <button
+                                type="button"
+                                className="btn sm ghost"
+                                onClick={() => removeIngredient(code)}
+                                style={{ color: 'var(--danger)' }}
+                              >
+                                <Icon.trash style={{ width: 13, height: 13 }} />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -415,82 +549,11 @@ export function TabDerived({ menus, toppings, compositions, onRefresh, menuMaste
             <button className="btn" onClick={() => setModal(null)}>
               취소
             </button>
-            <button className="btn primary" onClick={handleSaveComp} disabled={saving}>
-              {saving ? '저장 중…' : '저장'}
-            </button>
-          </div>
-        </ModalFrame>
-      )}
-
-      {/* 소스/토핑 모달 */}
-      {toppingModal && (
-        <ModalFrame
-          title={
-            toppingModal === 'add'
-              ? '소스·토핑 추가'
-              : `${asDisplayText(toppingModal.toppingName, '소스·토핑')} 편집`
-          }
-          onClose={() => setToppingModal(null)}
-          width="min(480px,95vw)"
-          zIndex={300}
-          padding="24px 28px"
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div className="form-row two" style={{ marginTop: 0 }}>
-              <div>
-                <label
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--text-3)',
-                    display: 'block',
-                    marginBottom: 4,
-                  }}
-                >
-                  소스/토핑명 *
-                </label>
-                <input
-                  className="input"
-                  value={toppingForm.toppingName}
-                  onChange={e => setToppingForm(f => ({ ...f, toppingName: e.target.value }))}
-                  placeholder="예: 마요네즈"
-                />
-              </div>
-              <div>
-                <label
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--text-3)',
-                    display: 'block',
-                    marginBottom: 4,
-                  }}
-                >
-                  코드 (선택)
-                </label>
-                <input
-                  className="input"
-                  value={toppingForm.toppingCode}
-                  onChange={e => setToppingForm(f => ({ ...f, toppingCode: e.target.value }))}
-                  placeholder="자동생성"
-                />
-              </div>
-            </div>
-            <div>
-              <label
-                style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 8 }}
-              >
-                영양성분 (1회 제공량 기준)
-              </label>
-              <NutritionGrid
-                values={toppingValues}
-                onChange={(k, v) => setToppingValues(f => ({ ...f, [k]: v }))}
-              />
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
-            <button className="btn" onClick={() => setToppingModal(null)}>
-              취소
-            </button>
-            <button className="btn primary" onClick={handleSaveTopping} disabled={saving}>
+            <button
+              className="btn primary"
+              onClick={handleSaveComp}
+              disabled={saving || safeMenus.length === 0}
+            >
               {saving ? '저장 중…' : '저장'}
             </button>
           </div>

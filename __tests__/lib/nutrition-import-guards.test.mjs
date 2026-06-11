@@ -67,17 +67,17 @@ describe('nutrition import guards', () => {
     });
   });
 
-  test('씬바사삭 R도 지원 크러스트로 파싱한다', () => {
+  test('미사용 씬 도우 R 표기는 건너뛴다', () => {
     expect(parseCrustSuffix('슈퍼콤비네이션 (씬바샤삭 R)')).toEqual({
       baseName: '슈퍼콤비네이션',
-      crustType: '씬바사삭R',
+      crustType: null,
       personal: false,
-      skipReason: null,
+      skipReason: '미사용 크러스트',
     });
-    expect(parseCrustSuffix('슈퍼콤비네이션 씬바사삭 R')).toMatchObject({
+    expect(parseCrustSuffix('슈퍼콤비네이션 씬바샤삭 R')).toMatchObject({
       baseName: '슈퍼콤비네이션',
-      crustType: '씬바사삭R',
-      skipReason: null,
+      crustType: null,
+      skipReason: '미사용 크러스트',
     });
   });
 

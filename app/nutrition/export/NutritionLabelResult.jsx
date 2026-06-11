@@ -5,6 +5,7 @@ import {
   getAllMenuRefs,
   getRawValueMap,
   getAllEdges,
+  getAllToppings,
   getAllSetCompositions,
 } from '@/lib/nutrition/values/store';
 import { getAllEdges as getCostEdges } from '@/lib/cost/edge-dough';
@@ -18,7 +19,11 @@ import { getAllSetRecipes } from '@/lib/cost/set-detail';
 import { getAllRecipes } from '@/lib/recipe';
 import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
-import { buildEdgeAllergenMap, buildMenuAllergenMap } from '@/lib/nutrition/allergen/aggregate';
+import {
+  buildEdgeAllergenMap,
+  buildMenuAllergenMap,
+  buildToppingAllergenMap,
+} from '@/lib/nutrition/allergen/aggregate';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import { loadMenuNames, applyMenuName } from '@/lib/nutrition/menu-name-override';
 import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
@@ -110,6 +115,7 @@ export default function NutritionLabelResult() {
         menuRefs,
         rawMap,
         edgeList,
+        toppingList,
         setComps,
         masters,
         ings,
@@ -124,6 +130,7 @@ export default function NutritionLabelResult() {
         getAllMenuRefs(),
         getRawValueMap(),
         getAllEdges(),
+        getAllToppings(),
         getAllSetCompositions(),
         getAllMenuMaster(),
         getAllIngredients(),
@@ -150,6 +157,10 @@ export default function NutritionLabelResult() {
       });
       const menuAllergenMap = buildMenuAllergenMap({ ingredients: ings, ingredientToMenus });
       const edgeAllergenMap = buildEdgeAllergenMap({ ingredients: ings, edges: costEdges });
+      const toppingAllergenMap = buildToppingAllergenMap({
+        ingredients: ings,
+        toppings: toppingList,
+      });
 
       // 출력 메뉴 전처리: 제외 필터 → 메뉴명 오버라이드 → 피자/사이드 우선 가나다 정렬
       const { excludedMenuCodes, excludedMenuNames } = extractExcludedMenuSets(masters);
@@ -174,6 +185,8 @@ export default function NutritionLabelResult() {
         masterByCode,
         menuAllergenMap,
         edgeAllergenMap,
+        toppingAllergenMap,
+        toppings: asObjectArray(toppingList),
         setComps,
         menuOrder,
       };

@@ -10,11 +10,9 @@ const rawMap = {
   'P-A__석쇠L': { weight: 100, kcal: 100 },
   'P-A__석쇠R': { weight: 100, kcal: 90 },
   'P-A__씬바사삭L': { weight: 100, kcal: 80 },
-  'P-A__씬바사삭R': { weight: 100, kcal: 70 },
   'P-B__석쇠L': { weight: 100, kcal: 200 },
   'P-B__석쇠R': { weight: 100, kcal: 180 },
   'P-B__씬바사삭L': { weight: 100, kcal: 160 },
-  'P-B__씬바사삭R': { weight: 100, kcal: 140 },
   'S-1__석쇠L': { weight: 100, kcal: 10 },
 };
 
@@ -36,8 +34,8 @@ describe('nutrition set calc', () => {
     });
     expect(result.variants[result.variants.length - 1]).toMatchObject({
       menuCode: 'P-A',
-      crustType: '씬바사삭R',
-      kcal: 70,
+      crustType: '씬바사삭L',
+      kcal: 80,
       lowRank: true,
     });
     expect(result.bySide.L.maxKcal).toBe(235);
@@ -55,8 +53,8 @@ describe('nutrition set calc', () => {
     );
 
     expect(result.bySize.L).toEqual({ minKcal: 90, maxKcal: 260 });
-    expect(result.bySize.R).toEqual({ minKcal: 80, maxKcal: 230 });
-    expect(result.minKcal).toBe(80);
+    expect(result.bySize.R).toEqual({ minKcal: 100, maxKcal: 230 });
+    expect(result.minKcal).toBe(90);
     expect(result.maxKcal).toBe(260);
   });
 });

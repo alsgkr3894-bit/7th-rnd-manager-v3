@@ -7,12 +7,14 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
+import { getAllIngredients } from '@/lib/ingredient';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import {
   getAllMenuRefs,
   getRawValueMap,
   getAllEdges,
   getAllToppings,
+  getAllIngredientValues,
   getAllCompositions,
   getAllSetCompositions,
   getNutritionBaseDuplicateDiagnostics,
@@ -30,6 +32,10 @@ const TabEdge = dynamic(
 );
 const TabDerived = dynamic(
   () => import('@/components/nutrition/menu/TabDerived').then(m => ({ default: m.TabDerived })),
+  { ssr: false }
+);
+const TabToppings = dynamic(
+  () => import('@/components/nutrition/menu/TabToppings').then(m => ({ default: m.TabToppings })),
   { ssr: false }
 );
 const TabResults = dynamic(
@@ -51,6 +57,7 @@ const TabSetCalc = dynamic(
 const TABS = [
   '베이스 영양성분',
   '엣지 설정',
+  '추가토핑',
   '파생 메뉴',
   '식자재 영양값',
   '계산 결과',
@@ -120,6 +127,8 @@ export default function Page() {
   const [edges, setEdges] = useState([]);
   const [edgeMap, setEdgeMap] = useState({});
   const [toppings, setToppings] = useState([]);
+  const [ingredients, setIngredients] = useState([]);
+  const [ingredientValues, setIngredientValues] = useState([]);
   const [compositions, setCompositions] = useState([]);
   const [setComps, setSetComps] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -146,8 +155,10 @@ export default function Page() {
       rawValues,
       edgeList,
       toppingList,
+      ingredientValueList,
       compositionList,
       masters,
+      ingredientList,
       setCompList,
       duplicateDiag,
     ] = await Promise.all([
@@ -155,8 +166,10 @@ export default function Page() {
         getRawValueMap(),
         getAllEdges(),
         getAllToppings(),
+        getAllIngredientValues(),
         getAllCompositions(),
         getAllMenuMaster(),
+        getAllIngredients(),
         getAllSetCompositions(),
         getNutritionBaseDuplicateDiagnostics(),
       ]);
@@ -177,6 +190,8 @@ export default function Page() {
     setEdges(safeEdgeList);
     setEdgeMap(nextEdgeMap);
     setToppings(asObjectArray(toppingList));
+    setIngredients(asObjectArray(ingredientList));
+    setIngredientValues(asObjectArray(ingredientValueList));
     setCompositions(asObjectArray(compositionList));
     setSetComps(asObjectArray(setCompList));
     setDuplicateDiagnostics(duplicateDiag);
@@ -320,7 +335,7 @@ export default function Page() {
                 </button>
               ))}
             </div>
-            {(tab === 0 || tab === 2 || tab === 4) && !loading && (
+            {(tab === 0 || tab === 3 || tab === 5) && !loading && (
               <div style={{ flex: '0 0 220px' }}>
                 <SearchBox
                   value={menuSearch}
@@ -341,26 +356,35 @@ export default function Page() {
           )}
           {tab === 1 && <TabEdge edges={edges} edgeMap={edgeMap} onRefresh={load} />}
           {tab === 2 && (
+            <TabToppings toppings={toppings} ingredients={ingredients} onRefresh={load} />
+          )}
+          {tab === 3 && (
             <TabDerived
-              menus={filteredMenus}
-              toppings={toppings}
+              menus={menus}
+              ingredients={ingredients}
+              ingredientValues={ingredientValues}
               compositions={compositions}
               onRefresh={load}
               menuMasters={menuMasters}
+              menuSearch={menuSearch}
+              onOpenBase={() => setTab(0)}
+              onOpenIngredientValues={() => setTab(4)}
             />
           )}
-          {tab === 3 && <TabIngredientValues onRefresh={load} />}
-          {tab === 4 && (
+          {tab === 4 && <TabIngredientValues onRefresh={load} />}
+          {tab === 5 && (
             <TabResults
-              menus={filteredMenus}
+              menus={menus}
               rawMap={rawMap}
               edgeMap={edgeMap}
               compositions={compositions}
               toppings={toppings}
+              ingredientValues={ingredientValues}
               menuMasters={menuMasters}
+              menuSearch={menuSearch}
             />
           )}
-          {tab === 5 && (
+          {tab === 6 && (
             <TabSetCalc
               menus={menus}
               rawMap={rawMap}
