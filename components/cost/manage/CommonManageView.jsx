@@ -258,6 +258,11 @@ export function CommonManageView({ tab = 'groups' }) {
     getRowId: row => row.id,
   });
 
+  // 검색어 변경 시 선택 상태 초기화 — 화면에서 사라진 행이 선택된 채 일괄삭제 방지
+  useEffect(() => {
+    edgeTable.clearSelection();
+  }, [edgeSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (dbError)
     return (
       <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--negative)' }}>

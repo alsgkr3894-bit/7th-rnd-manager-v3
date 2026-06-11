@@ -38,6 +38,10 @@ export function ModalFrame({
     >
       <div
         ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? 'modal-frame-title' : undefined}
+        aria-label={title ? undefined : '모달'}
         className={`card modal-anim${isClosing ? ' modal-exit' : ''}`}
         style={{
           width: modalStyle.width,
@@ -55,7 +59,7 @@ export function ModalFrame({
           }}
         >
           <div>
-            {title && <div style={{ fontWeight: 700, fontSize: 16 }}>{title}</div>}
+            {title && <div id="modal-frame-title" style={{ fontWeight: 700, fontSize: 16 }}>{title}</div>}
             {subtitle && (
               <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{subtitle}</div>
             )}

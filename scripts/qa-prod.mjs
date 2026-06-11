@@ -1,5 +1,14 @@
 import { rmSync } from 'node:fs';
 import { spawn } from 'node:child_process';
+import net from 'node:net';
+
+function isPortBusy(port) {
+  return new Promise(resolve => {
+    const socket = net.createConnection(port, '127.0.0.1');
+    socket.once('connect', () => { socket.destroy(); resolve(true); });
+    socket.once('error', () => resolve(false));
+  });
+}
 
 const HOST = process.env.HOST || '127.0.0.1';
 const PORT = process.env.PORT || '3000';
@@ -65,6 +74,11 @@ async function stopServer(child) {
 let server = null;
 
 try {
+  if (await isPortBusy(Number(PORT))) {
+    process.stderr.write(`포트 ${PORT}이 이미 사용 중입니다. 실행 중인 서버를 종료 후 다시 시도하세요.\n`);
+    process.exit(1);
+  }
+
   rmSync('.next', { recursive: true, force: true });
   await run(npm, ['run', 'build']);
 

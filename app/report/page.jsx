@@ -27,6 +27,7 @@ import {
   toggleReportFav,
   saveReport,
   pruneOldReports,
+  findPrunableReports,
 } from '@/lib/report';
 import { KIND_META, KIND_CHIP, KIND_EMOJI } from '@/lib/report/constants';
 import { useCountUp } from '@/hooks/useCountUp';
@@ -118,6 +119,8 @@ export default function Page() {
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [pruneConfirmOpen, setPruneConfirmOpen] = useState(false);
+  const [prunableCount, setPrunableCount] = useState(0);
   const [newReportOpen, setNewReportOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
@@ -130,14 +133,13 @@ export default function Page() {
   const editFocusTimerRef = useRef(null);
 
   /* 로드 */
-  const { data: reportsData, loading, reload } = useDBLoad(() => getReports());
+  const { data: reportsData, loading, error: loadError, reload } = useDBLoad(() => getReports());
   const reports = useMemo(() => asObjectArray(reportsData), [reportsData]);
 
   useVisibilityRefresh(reload);
 
   /* URL 상태 복원 (page, sort, dir) + 새 보고서 하이라이트 */
   useEffect(() => {
-    pruneOldReports(90).catch(e => console.warn('[report] pruneOldReports 실패', e));
     const url = new URL(window.location.href);
     const initialPage = clampInteger(url.searchParams.get('p') || 1, { min: 1, fallback: 1 });
     const sortParam = url.searchParams.get('sort');
@@ -192,6 +194,31 @@ export default function Page() {
       showToast('삭제 중 오류가 발생했어요.', 'error');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  /* 오래된 보고서 수동 정리 */
+  const handlePruneClick = async () => {
+    try {
+      const list = await findPrunableReports(90);
+      setPrunableCount(list.length);
+      if (list.length === 0) {
+        showToast('90일 이내 보고서만 있습니다. 정리할 항목이 없어요.', 'ok');
+      } else {
+        setPruneConfirmOpen(true);
+      }
+    } catch {
+      showToast('정리 대상 조회 실패', 'err');
+    }
+  };
+  const confirmPrune = async () => {
+    setPruneConfirmOpen(false);
+    try {
+      await pruneOldReports(90);
+      showToast('오래된 보고서가 정리됐어요.', 'ok');
+      reload();
+    } catch {
+      showToast('정리 중 오류가 발생했어요.', 'err');
     }
   };
 
@@ -287,6 +314,25 @@ export default function Page() {
   const cThisMonth = useCountUp(stats.thisMonth, { duration: 900, delay: 80 });
   const cSharedLinks = useCountUp(stats.sharedLinks, { duration: 900, delay: 160 });
 
+  if (loadError) {
+    return (
+      <main className="main">
+        <div
+          className="card"
+          style={{ padding: 32, textAlign: 'center', color: 'var(--negative)', marginTop: 32 }}
+        >
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>보고서 로드 실패</div>
+          <div style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 16 }}>
+            {loadError.message || String(loadError)}
+          </div>
+          <button className="btn primary" onClick={reload}>
+            다시 시도
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="main">
       <ConfirmDialog
@@ -299,12 +345,25 @@ export default function Page() {
         onConfirm={confirmDelete}
         onCancel={() => setConfirmDeleteId(null)}
       />
+      <ConfirmDialog
+        open={pruneConfirmOpen}
+        title="오래된 보고서 정리"
+        message={`90일이 지난 보고서 ${prunableCount}건을 삭제합니다. 되돌릴 수 없습니다.`}
+        confirmLabel="정리"
+        cancelLabel="취소"
+        danger
+        onConfirm={confirmPrune}
+        onCancel={() => setPruneConfirmOpen(false)}
+      />
       <PageHeader
         breadcrumb={['보고서센터']}
         title="보고서센터"
         sub="판매량·가격·출고량·비교·원가 보고서를 한 곳에서 생성하고 보관해요."
         actions={
           <>
+            <button className="btn" onClick={handlePruneClick}>
+              오래된 보고서 정리
+            </button>
             <button className="btn" onClick={() => exportToExcel(reports)}>
               <Icon.download style={{ width: 14, height: 14 }} />
               Excel 내보내기

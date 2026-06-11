@@ -403,6 +403,11 @@ export default function Page() {
     setExpandedKey(null);
   }, [page, search, scopeFilter, catFilter, tagFilter, sort]);
 
+  // 검색/필터 변경 시 1페이지로 리셋
+  useEffect(() => {
+    goTo(1);
+  }, [search, scopeFilter, catFilter, tagFilter, sort]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <main className="main">
       <PageHeader
@@ -435,8 +440,8 @@ export default function Page() {
             >
               <Icon.doc style={{ width: 14, height: 14 }} /> PDF
             </button>
-            <button className="btn" onClick={() => exportIngredientCsv(rows)}>
-              <Icon.download style={{ width: 14, height: 14 }} /> CSV
+            <button className="btn" onClick={() => exportIngredientCsv(filtered)}>
+              <Icon.download style={{ width: 14, height: 14 }} /> 현재 목록 CSV
             </button>
           </div>
         }
@@ -646,8 +651,8 @@ export default function Page() {
                     { id: 'default', label: '기본' },
                     { id: 'name', label: '이름순' },
                     { id: 'category', label: '분류순' },
-                    { id: 'price-desc', label: '단가↑' },
-                    { id: 'price-asc', label: '단가↓' },
+                    { id: 'price-desc', label: '단가 높은순' },
+                    { id: 'price-asc', label: '단가 낮은순' },
                   ]}
                 />
               </div>

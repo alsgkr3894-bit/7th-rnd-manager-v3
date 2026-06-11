@@ -92,7 +92,7 @@ function SampleContent() {
   );
   const [calMonth, setCalMonth] = useState(() => new Date());
 
-  const { data: loadedSamples, loading, reload } = useDBLoad(() => getAllSamples());
+  const { data: loadedSamples, loading, error: loadError, reload } = useDBLoad(() => getAllSamples());
 
   useEffect(() => {
     if (loadedSamples) setSamples(loadedSamples);
@@ -350,6 +350,25 @@ function SampleContent() {
   );
 
   const days = calDays;
+
+  if (loadError) {
+    return (
+      <main className="main">
+        <div
+          className="card"
+          style={{ padding: 32, textAlign: 'center', color: 'var(--negative)', marginTop: 32 }}
+        >
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>데이터 로드 실패</div>
+          <div style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 16 }}>
+            {loadError.message || String(loadError)}
+          </div>
+          <button className="btn primary" onClick={reload}>
+            다시 시도
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="main page-enter">

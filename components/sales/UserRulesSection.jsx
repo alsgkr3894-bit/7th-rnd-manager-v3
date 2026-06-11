@@ -100,7 +100,9 @@ export function UserRulesSection() {
     try {
       await updateUserRule({ id: r.id, enable: r.enable !== false ? false : true });
       refresh();
-      await reapplyToUploadedData();
+      if (confirm('기존 업로드 파일의 분류를 지금 다시 반영할까요?\n취소 시 규칙은 저장되며 다음 업로드부터 적용됩니다.')) {
+        await reapplyToUploadedData();
+      }
     } catch {
       showToast('토글 실패', 'err');
     }

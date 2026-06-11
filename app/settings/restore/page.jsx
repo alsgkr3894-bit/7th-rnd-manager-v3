@@ -99,7 +99,15 @@ export default function Page() {
           6000
         );
       }
-      setParsed({ ...backup, _fileName: file.name, _summary: summary });
+      const failedStores = Array.isArray(data.failedStores) ? data.failedStores : [];
+      if (failedStores.length > 0) {
+        showToast(
+          `백업 생성 시 ${failedStores.length}개 store 오류 — 해당 store는 백업에 포함되지 않았습니다.`,
+          'warn',
+          8000
+        );
+      }
+      setParsed({ ...backup, _fileName: file.name, _summary: summary, _failedStores: failedStores });
     } catch (err) {
       console.error('[Restore] 파일 파싱 실패:', err);
       showToast('백업 파일을 읽을 수 없습니다: ' + err.message, 'err');
@@ -580,10 +588,45 @@ export default function Page() {
                 ))
               )}
             </div>
+            {/* 공통 store 항상 포함 안내 */}
+            <div
+              style={{
+                marginTop: 10,
+                padding: '10px 12px',
+                borderRadius: 8,
+                background: 'var(--surface-2)',
+                fontSize: 12,
+                color: 'var(--text-3)',
+                lineHeight: 1.5,
+              }}
+            >
+              <b style={{ color: 'var(--text-2)' }}>항상 포함:</b>{' '}
+              시스템 설정·메뉴마스터·보고서 등 공통 데이터는 모듈 선택과 무관하게 복원됩니다.
+            </div>
+            {/* 백업 생성 시 실패한 store 경고 */}
+            {(parsed._failedStores?.length ?? 0) > 0 && (
+              <div
+                style={{
+                  marginTop: 8,
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  background: 'var(--warn-soft)',
+                  fontSize: 12,
+                  color: 'var(--warn)',
+                  lineHeight: 1.5,
+                }}
+              >
+                <b>⚠ 백업 생성 오류:</b> 아래 store는 백업 당시 읽기에 실패하여 포함되지 않았습니다. 복원 시 현재 데이터가 유지됩니다.{' '}
+                <span style={{ color: 'var(--text-3)' }}>
+                  {parsed._failedStores.map(f => f.store).slice(0, 5).join(', ')}
+                  {parsed._failedStores.length > 5 ? ` 외 ${parsed._failedStores.length - 5}개` : ''}
+                </span>
+              </div>
+            )}
             {unchangedSelectedStores.length > 0 && (
               <div
                 style={{
-                  marginTop: 10,
+                  marginTop: 8,
                   padding: '10px 12px',
                   borderRadius: 8,
                   background: 'var(--surface-2)',
