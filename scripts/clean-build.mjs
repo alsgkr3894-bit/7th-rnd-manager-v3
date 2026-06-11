@@ -4,13 +4,9 @@ import net from 'node:net';
 
 function isPortBusy(port) {
   return new Promise(resolve => {
-    const server = net.createServer();
-    server.once('error', () => resolve(true));
-    server.once('listening', () => {
-      server.close();
-      resolve(false);
-    });
-    server.listen(port);
+    const socket = net.createConnection(port, '127.0.0.1');
+    socket.once('connect', () => { socket.destroy(); resolve(true); });
+    socket.once('error', () => resolve(false));
   });
 }
 
