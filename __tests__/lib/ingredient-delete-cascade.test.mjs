@@ -74,11 +74,8 @@ jest.unstable_mockModule('@/lib/active-brand', () => ({
 
 // ── 모듈 ─────────────────────────────────────────────────
 
-const {
-  getIngredientValueByCode,
-  deleteIngredientValueByCode,
-  deleteMenuRefsByMenuCode,
-} = await import('../../lib/nutrition/values/store.js');
+const { getIngredientValueByCode, deleteIngredientValueByCode, deleteMenuRefsByMenuCode } =
+  await import('../../lib/nutrition/values/store.js');
 
 const { deleteIngredient, bulkDeleteIngredients } = await import('../../lib/ingredient/store.js');
 
