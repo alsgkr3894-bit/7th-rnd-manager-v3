@@ -520,12 +520,17 @@ export default function Page() {
 
   async function handleSaveRow(data) {
     try {
-      await upsertMenuMaster(data);
+      const result = await upsertMenuMaster(data);
       await syncMirror();
       setRows(await getAllMenuMaster());
       setEditRow(null);
       setAddOpen(false);
-      showToast('저장 완료', 'ok');
+      // data.id 없이 mode:'update' → menuCode 중복으로 기존 항목 병합
+      if (result.mode === 'update' && !data.id) {
+        showToast(`기존 항목(${data.menuCode}) 갱신됨 — 새 항목으로 추가되지 않았습니다`, 'warn');
+      } else {
+        showToast('저장 완료', 'ok');
+      }
     } catch (err) {
       showToast('저장 실패: ' + err.message, 'err');
     }
