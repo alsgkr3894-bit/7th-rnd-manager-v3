@@ -99,6 +99,20 @@ export function UploadHistory({ files, onDelete }) {
                   <td className="num right">
                     {formatNumber(f.totalRows ?? 0)}
                     <span className="unit">건</span>
+                    {f.issueGroupCount > 0 && (
+                      <span
+                        className="chip"
+                        style={{
+                          marginLeft: 6,
+                          background: 'var(--warn-soft)',
+                          color: 'var(--warn)',
+                          fontSize: 11,
+                          padding: '1px 6px',
+                        }}
+                      >
+                        {f.issueGroupCount}그룹 미매칭
+                      </span>
+                    )}
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     {isConfirming ? (
