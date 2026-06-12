@@ -178,11 +178,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **왜 보류**: 효과 < 회귀 위험. 기능 추가 시점에 함께 진행 예정.
 - **관련 메모리**: [[deferred-refactors]]
 
-#### B-7. localStorage 백업 범위 확대  🟡 ⏸  _(선행: B-10 정책 결정)_
-- **파일**: `lib/nutrition/backup-keys.js`(NUTRITION_LS_KEYS), `lib/db/operations.js`(exportSelected)
-- **문제**: nutrition 키 6종만 수집. 누락: `v3:note-calendar-checklist`, `v3:ingredient-usage-hidden`, `v3:ingredient-usage-excl-menus`, `v3:recipe-sort` 등
-- **해결 방향**: 모듈별 키 수집 조건 설계 후 백업 포맷·복원 매칭 로직 확장.
-- **왜 보류**: 백업 포맷 변경. [[multi-brand]] 브랜드 스코프 검토 필요. 정책(B-10) 결정 후 진행.
+#### B-7. localStorage 백업 범위 확대  ✅ 완료(2026-06-12)
+- **완료**: `lib/nutrition/backup-keys.js`에 `PERSISTENT_LS_KEYS` 29종 추가(note·sample·recipe·cost·ingredient·home·jette·앱 설정). `lib/db/operations.js` `exportSelected`/`importAll`에서 nutrition 게이트 제거 → 항상 수집·복원. `NUTRITION_LS_KEYS`는 하위 호환 유지.
 
 #### B-8. 칸반 드래그 순서 원자성  ✅ 완료(2026-06-12)
 - **완료**: `lib/note/store.js`에 `bulkUpdateBoardOrder(updates)` 추가 — 단일 `runTransaction`으로 boardOrder 일괄 갱신. `app/note/board/page.jsx` 같은 컬럼 reorder + 크로스 컬럼 move 모두 교체. `lib/note/index.js` re-export 추가.
@@ -205,13 +202,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 #### B-13. build:clean 가드 범위 확대(프로세스 감지)  ✅ 완료(2026-06-12)
 - **완료**: `scripts/clean-build.mjs`에 `hasNextDevProcess()` 추가(`ps -eo pid,command`로 `next dev`/`next-server` 감지, win32 제외). 포트 3000·3001 동시 점검(`Promise.all`). 오류 메시지에 트리거 출처(포트/프로세스) 표시.
 
-#### B-14. 백업/복원 localStorage 키 정책 결정  🟡 ⏸  _(B-7 선행 조건)_
-- **내용**: B-7(localStorage 백업 범위)을 구현하려면 먼저 **어떤 화면 설정까지 백업에 포함할지 기준**을 정해야 함.
-- **결정 옵션**:
-  - (a) **영속 설정만** (권장): 체크리스트·usage 숨김/제외·recipe 정렬 등 사용자 의도 상태만 화이트리스트
-  - (b) 전체 `v3:` 키: 단순하나 임시 UI 상태 오염
-  - (c) 모듈 연동: 백업 모듈 선택에 맞춰 해당 모듈 키만
-- **왜 보류**: 정책 확정 전 B-7 진행 금지.
+#### B-14. 백업/복원 localStorage 키 정책 결정  ✅ 완료(2026-06-12)
+- **완료**: 옵션 (a) "영속 설정만" 확정. 검색어·필터·초안·내비게이션 상태·보안 토큰은 제외. `lib/nutrition/backup-keys.js`에 `PERSISTENT_LS_KEYS` 추가(29종). B-7 구현 가능 상태 진입.
 
 #### B-16. 메뉴 판매가 업로드 파일 가드 일관화  ✅ 완료(2026-06-12)
 - **완료**: `components/cost/menu-price/MenuPriceUploadCard.jsx` `handleFile`에 빈 파일(`file.size===0`)·20MB 초과 가드 추가. 확장자는 `accept` 속성으로 이미 필터링됨.
@@ -272,6 +264,6 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ---
 
-_최종 업데이트: 2026-06-12 — B-10·B-11·B-13·B-16 구현완료 반영(이전 세션 누락분). 모든 구현 가능 항목 완료. 잔여: B-3 legacy store 제거(DB migration), B-5/B-6(회귀위험), B-7/B-14(정책 결정), B-9(도메인 확인) — 외부 조건 충족 후 진행._
+_최종 업데이트: 2026-06-12 — B-14 정책(a) 영속 설정만 확정 + B-7 localStorage 백업 범위 확대 구현. 잔여: B-3 legacy store 제거(DB migration), B-5/B-6(회귀위험), B-9(도메인 확인) — 외부 조건 충족 후 진행._
 _[이전] B-8·C-2·C-3 완료 표시. 문서 정합성 정정: B-1 파일 경로·B-4 모듈 혼동·C-2 전제·B-3 경로. B-2 저위험 이동._
 _[이전] SITE_IMPROVEMENT_AUDIT 통합·삭제. NEXT_TASKS(CL1~CL8) 통합, B-2/C-1/메뉴코드정책 완료 정정._
