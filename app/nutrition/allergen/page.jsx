@@ -31,19 +31,15 @@ import {
 } from '@/lib/nutrition/order';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
-import {
-  ALLERGEN_CRUST_VARIANTS as CRUST_VARIANTS,
-  isDoughCategory,
-  isPizzaCategory,
-} from '@/lib/nutrition/crust-config';
-import { loadMenuNames, saveMenuNames, applyMenuName } from '@/lib/nutrition/menu-name-override';
-import { applyEdgeAllergenRules } from '@/lib/nutrition/allergen/rules';
+import { loadMenuNames, saveMenuNames } from '@/lib/nutrition/menu-name-override';
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
 import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
-import { getMenuCodeRank } from '@/lib/menu-categories';
-
-const EMPTY_MENU_MAP = new Map();
-const asMenuMap = value => (value instanceof Map ? value : EMPTY_MENU_MAP);
+import {
+  asMenuMap,
+  normStr,
+  buildMenuMatrix,
+  buildDetailRows,
+} from '@/lib/nutrition/allergen/matrix';
 
 /**
  * 알레르기 정보 페이지 — 자동 집계 뷰
@@ -55,44 +51,6 @@ const asMenuMap = value => (value instanceof Map ? value : EMPTY_MENU_MAP);
  *   - 식자재별: 각 식자재의 알레르기 항목 + 매칭된 메뉴 수
  *   - 메뉴별 매트릭스: 메뉴 × 22종 알레르기 체크 (출력용)
  */
-const normStr = s => asDisplayText(s).trim().toLowerCase().replace(/\s+/g, '');
-
-function stripSizeSuffix(value) {
-  return asDisplayText(value).replace(/\s+L$/i, '').replace(/\s+R$/i, '').trim();
-}
-
-function logicalMenuKey(menuCode, menuName, category) {
-  const code = asDisplayText(menuCode);
-  const name = stripSizeSuffix(menuName);
-  const cat = asDisplayText(category);
-  if (isPizzaCategory(cat) && code) {
-    const match = code.match(/^(.+?-\d{3})(?:-[LR])$/i);
-    if (match) return match[1];
-  }
-  return code || normStr(name);
-}
-
-function edgeTypeForCrust(crust) {
-  const label = asDisplayText(crust);
-  if (label === '치즈크러스트') return '치즈크러스트';
-  if (label === '골드스윗') return '골드스윗크러스트';
-  if (label === '씬바사삭') return '씬도우';
-  return null;
-}
-
-function nutritionEdgeCodeFor(edgeType) {
-  if (edgeType === '치즈크러스트') return '치즈크러스트L';
-  if (edgeType === '골드스윗크러스트') return '골드스윗L';
-  if (edgeType === '씬도우') return '씬바사삭L';
-  return null;
-}
-
-function sourceLabel(source) {
-  const type = asDisplayText(source?.type, '직접');
-  const name = asDisplayText(source?.name);
-  return name ? `${type} · ${name}` : type;
-}
-
 export default function Page() {
   const [ingredients, setIngredients] = useState([]);
   const [menuMasters, setMenuMasters] = useState([]);
@@ -254,170 +212,19 @@ export default function Page() {
   }, [allergenIngredients, search]);
 
   // ── 메뉴별 매트릭스 뷰 (피자는 크러스트/엣지 변형별 행) ──────
-  const menuMatrixAll = useMemo(() => {
-    const baseIngredientToMenus = asMenuMap(baseMapData?.ingredientToMenus);
-    // 알레르겐 보유 식자재 키맵
-    const ingByKey = new Map();
-    for (const ing of allergenIngredients) {
-      const productCode = asDisplayText(ing.productCode);
-      if (productCode) ingByKey.set(`code:${productCode}`, ing);
-      const n = normStr(ing.ingredientName);
-      if (n) ingByKey.set(`name:${n}`, ing);
-    }
-
-    // 엣지타입 → 알레르겐 집합 (해당 엣지 구성재료의 알레르겐)
-    const edgeAllergens = new Map();
-    for (const edge of asObjectArray(edges)) {
-      const edgeType = asDisplayText(edge.edgeType);
-      if (!edgeType) continue;
-      if (!edgeAllergens.has(edgeType)) edgeAllergens.set(edgeType, new Set());
-      const set = edgeAllergens.get(edgeType);
-      for (const c of asObjectArray(edge.components)) {
-        const productCode = asDisplayText(c.productCode);
-        const key = productCode ? `code:${productCode}` : `name:${normStr(c.ingredientName)}`;
-        const ing = ingByKey.get(key);
-        if (ing) for (const code of asStringArray(ing.allergens)) set.add(code);
-      }
-    }
-    for (const edgeType of ['치즈크러스트', '골드스윗크러스트', '씬도우']) {
-      const edgeCode = nutritionEdgeCodeFor(edgeType);
-      if (edgeCode)
-        edgeAllergens.set(edgeType, applyEdgeAllergenRules(edgeCode, edgeAllergens.get(edgeType)));
-    }
-
-    // base(엣지 제외) 메뉴별 알레르겐 — 석쇠 기준.
-    // codes=전체(도우 포함), nonDoughCodes=도우 재료 제외 (씬바사삭은 석쇠 도우를 씬도우로 교체)
-    const menuBase = new Map(); // logicalKey → { meta, menuCodes:Set, codes:Set, nonDoughCodes:Set }
-    for (const [key, menus] of baseIngredientToMenus) {
-      if (!(menus instanceof Map)) continue;
-      const ing = ingByKey.get(key);
-      const allergenCodes = asStringArray(ing?.allergens);
-      if (!allergenCodes.length) continue;
-      const isDough = isDoughCategory(asDisplayText(ing.category));
-      for (const [menuCode, meta] of menus) {
-        if (isExcludedMenu(menuCode, meta?.menuName)) continue;
-        const logicalKey = logicalMenuKey(menuCode, meta?.menuName, meta?.category);
-        if (!menuBase.has(logicalKey)) {
-          menuBase.set(logicalKey, {
-            meta: {
-              ...meta,
-              menuName: stripSizeSuffix(meta?.menuName) || asDisplayText(meta?.menuName),
-            },
-            menuCode: logicalKey,
-            menuCodes: new Set(),
-            codes: new Set(),
-            nonDoughCodes: new Set(),
-          });
-        }
-        const e = menuBase.get(logicalKey);
-        e.menuCodes.add(asDisplayText(menuCode));
-        for (const code of allergenCodes) {
-          e.codes.add(code);
-          if (!isDough) e.nonDoughCodes.add(code);
-        }
-      }
-    }
-
-    // 행 생성: 피자는 4변형, 그 외 단일
-    //  · 석쇠 = base 전체
-    //  · 치즈크러스트/골드스윗 = base 전체 + 해당 엣지 (석쇠에 더함)
-    //  · 씬바사삭 = base에서 도우 제외 + 씬도우 (도우만 교체)
-    const rows = [];
-    for (const [menuCode, { meta, menuCodes, codes, nonDoughCodes }] of menuBase) {
-      const isPizza = isPizzaCategory(asDisplayText(meta?.category));
-      if (!isPizza) {
-        rows.push({
-          rowKey: menuCode,
-          menuCode,
-          sourceMenuCodes: [...menuCodes],
-          ...meta,
-          crust: '',
-          edgeType: null,
-          allergenCodes: codes,
-        });
-        continue;
-      }
-      for (const v of CRUST_VARIANTS) {
-        const merged = new Set(v.key === '씬바사삭' ? nonDoughCodes : codes);
-        if (v.edgeType) for (const code of edgeAllergens.get(v.edgeType) || []) merged.add(code);
-        rows.push({
-          rowKey: `${menuCode}__${v.key}`,
-          menuCode,
-          sourceMenuCodes: [...menuCodes],
-          ...meta,
-          crust: v.label,
-          edgeType: v.edgeType,
-          allergenCodes: merged,
-        });
-      }
-    }
-
-    for (const topping of asObjectArray(toppings)) {
-      const toppingCode = asDisplayText(topping.toppingCode);
-      const toppingName = asDisplayText(topping.toppingName, toppingCode || '추가토핑');
-      if (!toppingCode && !toppingName) continue;
-      const productCode = asDisplayText(topping.productCode);
-      const ingredientName = asDisplayText(topping.ingredientName || toppingName);
-      const key = productCode ? `code:${productCode}` : `name:${normStr(ingredientName)}`;
-      const ing = ingByKey.get(key);
-      const allergenCodes = new Set(asStringArray(ing?.allergens));
-      if (!allergenCodes.size) continue;
-      rows.push({
-        rowKey: `topping__${toppingCode || normStr(toppingName)}`,
-        kind: 'topping',
-        menuCode: toppingCode || normStr(toppingName),
-        sourceMenuCodes: [],
-        originalMenuName: toppingName,
-        menuName: toppingName,
-        category: '추가토핑',
-        crust: '',
-        edgeType: null,
-        toppingCode,
-        productCode,
-        ingredientName,
-        allergenCodes,
-      });
-    }
-
-    // 사용자 메뉴 순서 적용 — menuCode 단위로 정렬하므로 같은 메뉴의 변형(석쇠+엣지) 행이
-    // 함께 묶여 이동하고, 변형 간 순서는 CRUST_VARIANTS 정의 순서대로 유지됨.
-    const rank = new Map(asStringArray(menuOrder).map((key, index) => [key, index]));
-    const offset = rank.size;
-    const crustOrder = new Map(CRUST_VARIANTS.map((v, i) => [v.key, i]));
-    const rowRank = row => {
-      const keys = [asDisplayText(row.menuCode), ...asStringArray(row.sourceMenuCodes)];
-      const ranks = keys.filter(key => rank.has(key)).map(key => rank.get(key));
-      return ranks.length
-        ? Math.min(...ranks)
-        : offset + getMenuCodeRank(asDisplayText(row.menuCode));
-    };
-    const sorted = [...rows].sort(
-      (a, b) =>
-        rowRank(a) - rowRank(b) ||
-        asDisplayText(a.menuCode).localeCompare(asDisplayText(b.menuCode), 'ko') ||
-        asDisplayText(a.menuName).localeCompare(asDisplayText(b.menuName), 'ko') ||
-        (crustOrder.get(asDisplayText(a.crust)) ?? 99) -
-          (crustOrder.get(asDisplayText(b.crust)) ?? 99)
-    );
-    // 출력용 메뉴명 오버라이드 적용 (표시 전용, 원래 이름 보존)
-    return sorted.map(r => ({
-      ...r,
-      originalMenuName: asDisplayText(r.menuName),
-      menuName: applyMenuName(
-        asDisplayText(r.menuCode),
-        asDisplayText(r.menuName),
-        menuNameOverrides
+  const menuMatrixAll = useMemo(
+    () =>
+      buildMenuMatrix(
+        allergenIngredients,
+        baseMapData,
+        edges,
+        isExcludedMenu,
+        menuOrder,
+        menuNameOverrides,
+        toppings
       ),
-    }));
-  }, [
-    allergenIngredients,
-    baseMapData,
-    edges,
-    isExcludedMenu,
-    menuOrder,
-    menuNameOverrides,
-    toppings,
-  ]);
+    [allergenIngredients, baseMapData, edges, isExcludedMenu, menuOrder, menuNameOverrides, toppings]
+  );
 
   const ingredientByKey = useMemo(() => {
     const map = new Map();
@@ -430,92 +237,10 @@ export default function Page() {
     return map;
   }, [allergenIngredients]);
 
-  const detailRows = useMemo(() => {
-    if (!detailRow) return [];
-    const sourceCodes = new Set(asStringArray(detailRow.sourceMenuCodes));
-    const rows = [];
-    const pushRow = ({ ing, source, fromEdge = false }) => {
-      const allergens = asStringArray(ing?.allergens);
-      if (!allergens.length) return;
-      const ingredientName = asDisplayText(ing.ingredientName);
-      const productCode = asDisplayText(ing.productCode);
-      const sourceText = sourceLabel(source);
-      const key = `${fromEdge ? 'edge' : 'base'}|${productCode || normStr(ingredientName)}|${sourceText}`;
-      if (rows.some(row => row.key === key)) return;
-      rows.push({
-        key,
-        sourceText,
-        ingredientName,
-        productCode,
-        category: asDisplayText(ing.category),
-        allergens,
-      });
-    };
-
-    if (detailRow.kind === 'topping') {
-      const productCode = asDisplayText(detailRow.productCode);
-      const key = productCode
-        ? `code:${productCode}`
-        : `name:${normStr(detailRow.ingredientName || detailRow.menuName)}`;
-      const ing = ingredientByKey.get(key);
-      if (ing) {
-        pushRow({
-          ing,
-          source: { type: '추가토핑', name: asDisplayText(detailRow.menuName) },
-        });
-      }
-      return rows;
-    }
-
-    for (const [ingredientKey, menus] of asMenuMap(baseMapData?.ingredientToMenus)) {
-      if (!(menus instanceof Map)) continue;
-      const ing = ingredientByKey.get(ingredientKey);
-      if (!ing) continue;
-      if (
-        asDisplayText(detailRow.crust) === '씬바사삭' &&
-        isDoughCategory(asDisplayText(ing.category))
-      ) {
-        continue;
-      }
-      for (const [menuCode, meta] of menus) {
-        if (!sourceCodes.has(asDisplayText(menuCode))) continue;
-        const sources =
-          Array.isArray(meta?.sources) && meta.sources.length
-            ? meta.sources
-            : [{ type: '직접', name: '' }];
-        sources.forEach(source => pushRow({ ing, source }));
-      }
-    }
-
-    const edgeType = asDisplayText(detailRow.edgeType);
-    if (edgeType) {
-      for (const edge of asObjectArray(edges)) {
-        if (asDisplayText(edge.edgeType) !== edgeType) continue;
-        for (const component of asObjectArray(edge.components)) {
-          const productCode = asDisplayText(component.productCode);
-          const key = productCode
-            ? `code:${productCode}`
-            : `name:${normStr(component.ingredientName)}`;
-          const ing = ingredientByKey.get(key);
-          if (!ing) continue;
-          pushRow({
-            ing,
-            source: {
-              type: '엣지관리',
-              name: `${edgeType}${edge.size ? ` ${edge.size}` : ''}`,
-            },
-            fromEdge: true,
-          });
-        }
-      }
-    }
-
-    return rows.sort(
-      (a, b) =>
-        a.sourceText.localeCompare(b.sourceText, 'ko') ||
-        a.ingredientName.localeCompare(b.ingredientName, 'ko')
-    );
-  }, [baseMapData, detailRow, edges, ingredientByKey]);
+  const detailRows = useMemo(
+    () => buildDetailRows(detailRow, baseMapData, edges, ingredientByKey),
+    [baseMapData, detailRow, edges, ingredientByKey]
+  );
 
   const menuMatrix = useMemo(() => {
     const q = asDisplayText(search).toLowerCase().trim();

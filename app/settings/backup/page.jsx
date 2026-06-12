@@ -24,6 +24,7 @@ import {
 import { SettingTile } from '@/components/ui/SettingTile';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
+import { useDiagnostics } from '@/hooks/useDiagnostics';
 import { getActiveBrand } from '@/lib/active-brand';
 
 /**
@@ -44,7 +45,7 @@ export default function Page() {
   const [historyQuery, setHistoryQuery] = useState('');
   const [historyFilter, setHistoryFilter] = useState('all'); // all | pinned | week
   const [backupProgress, setBackupProgress] = useState(null);
-  const [diagnostics, setDiagnostics] = useState(null);
+  const { diagnostics, collectDiagnostics } = useDiagnostics();
   const [backupReminder, setBackupReminder] = useState(null);
   const backupProgressTimerRef = useRef(null);
 
@@ -124,23 +125,6 @@ export default function Page() {
       h.pinned ? 'Y' : '',
     ]);
     downloadCsv([headers, ...rows], '백업이력.csv');
-  }
-
-  async function collectDiagnostics() {
-    const storage = navigator.storage?.estimate
-      ? await navigator.storage.estimate().catch(() => null)
-      : null;
-    const nav = performance.getEntriesByType?.('navigation')?.[0];
-    setDiagnostics({
-      at: new Date().toLocaleString('ko-KR'),
-      url: window.location.href,
-      userAgent: navigator.userAgent,
-      storageUsage: storage?.usage ?? null,
-      storageQuota: storage?.quota ?? null,
-      navigationType: nav?.type || 'unknown',
-      loadMs: nav ? Math.round(nav.loadEventEnd || nav.duration || 0) : null,
-    });
-    showToast('진단 정보를 수집했어요', 'ok');
   }
 
   async function handleBackup() {

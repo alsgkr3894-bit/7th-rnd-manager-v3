@@ -317,10 +317,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 #### R-13. `PlatformSettingsModal.jsx` 서브컴포넌트 분리 (518줄)  ✅ 완료(2026-06-12)
 - **완료(부분)**: `components/cost/margin/FeeRow.jsx` 신설 — 인라인 `FeeRow`(140줄) 분리. 모달 518줄 → 375줄. PlatformSelector/PlatformRow 분리 및 useReducer 전환은 상태 공유 복잡도로 보류.
 
-#### R-14. settings 페이지 2종 서브컴포넌트 분리  ⏸
-- **파일**: `app/settings/backup/page.jsx`, `app/settings/account/page.jsx`
-- **문제**: backup: 실행·이력·진단·진행률 UI 혼재. account: 프로필·PIN·세션·비밀번호 카드 혼재.
-- **해결 방향**: account → `ProfileCard`, `PinSection`, `SessionInfoCard`. backup → 진단 수집 훅 분리.
+#### R-14. settings 페이지 2종 서브컴포넌트 분리  ✅ 완료(2026-06-12)
+- **완료**: account → `components/settings/PinSection.jsx`(내부 FormField 포함), `components/settings/PasswordChangeCard.jsx` 분리. account/page.jsx 674줄→441줄. backup → `hooks/useDiagnostics.js`(diagnostics state + collectDiagnostics) 훅 추출, backup/page.jsx 인라인 collectDiagnostics 제거.
 
 #### R-15. `app/note/sample/page.jsx` 달력 계산 공통화  ✅ 완료(2026-06-12)
 - **완료**: `lib/note/calendar-utils.js` 신설(`buildCalendarDays(month, totalCells=42)`). `app/note/sample/page.jsx`의 20줄짜리 `calDays` useMemo → `useMemo(() => buildCalendarDays(calMonth, CALENDAR_CELLS), [calMonth])` 한 줄로 교체.
@@ -341,9 +339,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 #### R-19. `app/note/_NoteContent.jsx` 선택·핀·프리셋 hooks 분리  ✅ 완료(2026-06-12)
 - **완료**: `hooks/useNotePins.js`(pinnedIds+togglePin, localStorage KEYS.NOTE_PINS), `hooks/useNotePresets.js`(presets·confirmDeletePreset·savePreset/applyPreset/deletePreset, filter setters를 params로 수신), `hooks/useNoteBatchActions.js`(batchMode·selected·confirmBatch·toggleSelect·exitBatch·handleBatchDelete/StatusChange/confirmBatchDelete) 3개 hook 신설. `_NoteContent`에서 normalizeNotePresets·normalizeIdList 함수 정의 제거, deletingIds(never-mutated dead state) 제거, `onExit` inline fn → `exitBatch` 교체. 1124줄 → 1017줄.
 
-#### R-20. `app/nutrition/allergen/page.jsx` matrix 계산 → lib 이동  ⏸
-- **파일**: `app/nutrition/allergen/page.jsx` L260 `menuMatrixAll`, `detailRows` 계산
-- **해결 방향**: `lib/nutrition/allergen/matrix.js`로 추출.
+#### R-20. `app/nutrition/allergen/page.jsx` matrix 계산 → lib 이동  ✅ 완료(2026-06-12)
+- **완료**: `lib/nutrition/allergen/matrix.js` 신설. `asMenuMap`·`normStr`·`stripSizeSuffix`·`logicalMenuKey`·`edgeTypeForCrust`·`nutritionEdgeCodeFor`·`sourceLabel` 헬퍼 + `buildMenuMatrix(allergenIngredients, baseMapData, edges, isExcludedMenu, menuOrder, menuNameOverrides, toppings)` + `buildDetailRows(detailRow, baseMapData, edges, ingredientByKey)` 추출. 페이지에서 inline 200줄 제거, `isPizzaCategory`·`isDoughCategory`·`CRUST_VARIANTS`·`applyMenuName`·`getMenuCodeRank`·`applyEdgeAllergenRules` 7개 import 제거.
 
 #### R-21. `app/nutrition/export/OriginResult.jsx` 빌더 → lib 이동  ✅ 완료(2026-06-12)
 - **완료**: `lib/nutrition/origin/build.js` 신설. `buildOriginsFromIngredients` + 내부 의존 상수(`asMenuMap`, `asSet`) 이동. OriginResult.jsx는 함수 제거 후 import로 교체 (단, `asSet`은 L365 렌더링에서도 사용되므로 로컬 사본 유지).
