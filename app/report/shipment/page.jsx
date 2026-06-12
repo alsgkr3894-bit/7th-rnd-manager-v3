@@ -1,14 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
 import ReportBuilderShell, { OptGroup, Check } from '@/components/report/ReportBuilderShell';
-import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { fmtShort, formatNumber } from '@/lib/format';
 import { AreaChart } from '@/components/charts/AreaChart';
 import { initDB } from '@/lib/db/init';
 import { getShipmentFiles, getShipmentRowsByFileId } from '@/lib/shipment/store-files';
 import { aggregateShipmentRows } from '@/lib/shipment/aggregate';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment/store-managed';
-import { useDraftRestore } from '@/hooks/useDraftRestore';
+import { useReportPageState } from '@/hooks/useReportPageState';
 import { getProfile } from '@/lib/profile';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { safeMonth, safeQuantity, safeYear } from '@/lib/report/period';
@@ -113,17 +112,21 @@ export default function Page() {
   const periodMode = 'month';
   const [shipYear, setShipYear] = useState(new Date().getFullYear());
   const [shipMonth, setShipMonth] = useState(new Date().getMonth() + 1);
-  const [opts, setOpts] = useState({
-    scope: 'all', // all | exclusive | generic — 표시 범위
-    chart: true,
-    catSummary: true,
-    amountSummary: true,
-    fullList: true,
-    notShippedList: true, // 금월 미출고 품목 리스트
-  });
-  const upd = makeFieldUpdater(setOpts);
-  const [docFormat, setDocFormat] = useState({ pdf: true, excel: false });
-  const updFmt = makeFieldUpdater(setDocFormat);
+  const { opts, setOpts, updOpts: upd, docFormat, setDocFormat, updFmt } = useReportPageState(
+    DRAFT_KEY,
+    {
+      scope: 'all',
+      chart: true,
+      catSummary: true,
+      amountSummary: true,
+      fullList: true,
+      notShippedList: true,
+    },
+    draft => {
+      if (draft.shipYear) setShipYear(safeYear(draft.shipYear));
+      if (draft.shipMonth) setShipMonth(safeMonth(draft.shipMonth));
+    }
+  );
 
   const [aggRows, setAggRows] = useState([]);
   const [regProducts, setRegProducts] = useState([]); // 등록된 대상 제품(마스터) — 총 상품수 산출용
@@ -133,14 +136,6 @@ export default function Page() {
   const [availPeriods, setAvailPeriods] = useState([]); // [{ year, month }]
   const [dataError, setDataError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  useDraftRestore(DRAFT_KEY, draft => {
-    if (draft.shipYear) setShipYear(safeYear(draft.shipYear));
-    if (draft.shipMonth) setShipMonth(safeMonth(draft.shipMonth));
-    if (draft.opts && typeof draft.opts === 'object' && !Array.isArray(draft.opts)) {
-      setOpts(o => ({ ...o, ...draft.opts }));
-    }
-  });
 
   useEffect(() => {
     // StrictMode 이중 마운트·빠른 월 변경 시 무거운 로드가 겹쳐 DB 조회가 느려지지 않도록

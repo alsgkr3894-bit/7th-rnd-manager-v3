@@ -17,7 +17,7 @@ import { getSetRecipeMap } from '@/lib/cost/set-detail';
 import { getAllEdges, edgeTotalCost } from '@/lib/cost/edge-dough';
 import { getPriceFiles } from '@/lib/price';
 import { getActiveBrand } from '@/lib/active-brand';
-import { useDraftRestore } from '@/hooks/useDraftRestore';
+import { useReportPageState } from '@/hooks/useReportPageState';
 import { getProfile } from '@/lib/profile';
 import { isPizzaCategory } from '@/lib/menu-master/category-policy';
 import { getMenuCodeRank } from '@/lib/menu-categories';
@@ -153,16 +153,18 @@ export default function Page() {
     set: true,
     edge: true,
   });
-  const [opts, setOpts] = useState({
-    summary: true,
-    catTable: true,
-    perCategory: true,
-    riskList: true,
-  });
   const updCat = makeFieldUpdater(setCats);
-  const updOpt = makeFieldUpdater(setOpts);
-  const [docFormat, setDocFormat] = useState({ pdf: true, excel: false });
-  const updFmt = makeFieldUpdater(setDocFormat);
+  const { opts, setOpts, updOpts: updOpt, docFormat, setDocFormat, updFmt } = useReportPageState(
+    DRAFT_KEY,
+    { summary: true, catTable: true, perCategory: true, riskList: true },
+    draft => {
+      if (draft.periodMode) setPeriodMode(draft.periodMode);
+      if (draft.year) setYear(draft.year);
+      if (draft.month) setMonth(draft.month);
+      if (draft.riskThreshold) setRiskThreshold(draft.riskThreshold);
+      if (draft.cats) setCats(c => ({ ...c, ...draft.cats }));
+    }
+  );
   const [dataError, setDataError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -171,15 +173,6 @@ export default function Page() {
       Object.entries(CAT_META).map(([, m]) => [m.id, { label: m.label, color: m.color, menus: [] }])
     )
   );
-
-  useDraftRestore(DRAFT_KEY, draft => {
-    if (draft.periodMode) setPeriodMode(draft.periodMode);
-    if (draft.year) setYear(draft.year);
-    if (draft.month) setMonth(draft.month);
-    if (draft.riskThreshold) setRiskThreshold(draft.riskThreshold);
-    if (draft.cats) setCats(c => ({ ...c, ...draft.cats }));
-    if (draft.opts) setOpts(o => ({ ...o, ...draft.opts }));
-  });
 
   useEffect(() => {
     let ignore = false;

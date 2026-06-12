@@ -30,6 +30,7 @@ import { SampleDetailModal } from './_SampleDetailModal';
 import { SampleCard } from '@/components/note/SampleCard';
 import { SampleListRow } from '@/components/note/SampleListRow';
 import { downloadCsv, printCurrentPageWithDownloadDate } from '@/lib/download';
+import { buildCalendarDays } from '@/lib/note/calendar-utils';
 
 const SORT_OPTIONS = [
   { key: 'createdAt', label: '최신순' },
@@ -236,27 +237,7 @@ function SampleContent() {
     }
   }
 
-  // 캘린더 헬퍼 — calMonth가 바뀔 때만 재계산
-  const calDays = useMemo(() => {
-    const month = calMonth;
-    const year = month.getFullYear();
-    const mon = month.getMonth();
-    const first = new Date(year, mon, 1);
-    const last = new Date(year, mon + 1, 0);
-    const startDow = first.getDay();
-    const days = [];
-    for (let i = 0; i < startDow; i++) {
-      days.push({ date: new Date(year, mon, -startDow + i + 1), cur: false });
-    }
-    for (let d = 1; d <= last.getDate(); d++) {
-      days.push({ date: new Date(year, mon, d), cur: true });
-    }
-    const rem = CALENDAR_CELLS - days.length;
-    for (let d = 1; d <= rem; d++) {
-      days.push({ date: new Date(year, mon + 1, d), cur: false });
-    }
-    return days;
-  }, [calMonth]);
+  const calDays = useMemo(() => buildCalendarDays(calMonth, CALENDAR_CELLS), [calMonth]);
 
   const samplesByDate = useMemo(() => {
     const m = {};

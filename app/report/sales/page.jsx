@@ -12,9 +12,8 @@ import { getAll } from '@/lib/db';
 import { buildPeriodCompare } from '@/lib/sales/compare';
 import { buildGroupRanking } from '@/lib/sales/ranking';
 import { getUserExcluded, getUserRules } from '@/lib/sales';
-import { useDraftRestore } from '@/hooks/useDraftRestore';
+import { useReportPageState } from '@/hooks/useReportPageState';
 import { getProfile } from '@/lib/profile';
-import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { getActiveBrand } from '@/lib/active-brand';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 import { isPizzaCategory } from '@/lib/menu-master/category-policy';
@@ -166,19 +165,25 @@ export default function Page() {
   const [viewMode, setViewMode] = useState('rank');
   const [cmpYear, setCmpYear] = useState(null);
   const [cmpMonth, setCmpMonth] = useState(null);
-  const [opts, setOpts] = useState({
-    summary: true,
-    catShare: true,
-    pizzaMover: true,
-    rankTable: true,
-    catBar: true,
-    prevComp: true,
-    variant: false,
-    excluded: true,
-  });
-  const upd = makeFieldUpdater(setOpts);
-  const [docFormat, setDocFormat] = useState({ pdf: true, excel: false });
-  const updFmt = makeFieldUpdater(setDocFormat);
+  const { opts, setOpts, updOpts: upd, docFormat, setDocFormat, updFmt } = useReportPageState(
+    DRAFT_KEY,
+    {
+      summary: true,
+      catShare: true,
+      pizzaMover: true,
+      rankTable: true,
+      catBar: true,
+      prevComp: true,
+      variant: false,
+      excluded: true,
+    },
+    draft => {
+      if (draft.periodMode) setPeriodMode(normalizePeriodMode(draft.periodMode));
+      if (draft.year) setYear(safeYear(draft.year));
+      if (draft.month) setMonth(safeMonth(draft.month));
+      if (draft.scope) setScope(normalizeScope(draft.scope));
+    }
+  );
 
   // raw data
   const [salesRows, setSalesRows] = useState([]);
@@ -190,16 +195,6 @@ export default function Page() {
   const [compareData, setCompareData] = useState(null);
   const [dataError, setDataError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  useDraftRestore(DRAFT_KEY, draft => {
-    if (draft.periodMode) setPeriodMode(normalizePeriodMode(draft.periodMode));
-    if (draft.year) setYear(safeYear(draft.year));
-    if (draft.month) setMonth(safeMonth(draft.month));
-    if (draft.scope) setScope(normalizeScope(draft.scope));
-    if (draft.opts && typeof draft.opts === 'object' && !Array.isArray(draft.opts)) {
-      setOpts(o => ({ ...o, ...draft.opts }));
-    }
-  });
 
   // Effect 1: mount — load raw rows, detect available periods
   useEffect(() => {

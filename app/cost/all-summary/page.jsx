@@ -8,168 +8,17 @@ import { usePagination } from '@/hooks/usePagination';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { formatNumber } from '@/lib/format';
 import { getAllMenuPrices } from '@/lib/cost/menu-price';
-import { getAllRecipes, buildUnitPriceMap, calcCostBySizes } from '@/lib/recipe';
+import { getAllRecipes, buildUnitPriceMap } from '@/lib/recipe';
 import { getAllIngredients } from '@/lib/ingredient';
-import { componentSubtotal } from '@/lib/cost/shared/calc';
 import { getPizzaRecipeMap } from '@/lib/cost/pizza-detail';
 import { getPersonalRecipeMap } from '@/lib/cost/personal-detail';
 import { getSideRecipeMap } from '@/lib/cost/side-detail';
 import { getSetRecipeMap } from '@/lib/cost/set-detail';
-import { costRateColor, calcCostRate } from '@/lib/cost/rate-color';
-import { MENU_CATEGORY, getMenuCodeRank } from '@/lib/menu-categories';
+import { costRateColor } from '@/lib/cost/rate-color';
+import { getMenuCodeRank } from '@/lib/menu-categories';
 import { downloadCsv } from '@/lib/download';
 import { onPriceUpload } from '@/lib/price/price-events';
-import {
-  isPersonalPizzaCategory,
-  isPizzaCategory,
-  isSetCategory,
-  isSideCategory,
-} from '@/lib/menu-master/category-policy';
-
-// ── 카테고리 정규화 ───────────────────────────────────────────
-const CAT_ORDER = [
-  MENU_CATEGORY.PIZZA,
-  MENU_CATEGORY.PERSONAL,
-  MENU_CATEGORY.SIDE,
-  MENU_CATEGORY.SET,
-  MENU_CATEGORY.ETC,
-];
-
-function normalizeCategory(cat) {
-  if (!cat) return '기타';
-  if (isPizzaCategory(cat, { includePersonal: false })) return '피자';
-  if (isPersonalPizzaCategory(cat)) return '1인피자';
-  if (isSideCategory(cat) || cat === '음료' || cat === '엣지') return '사이드';
-  if (isSetCategory(cat)) return '세트박스';
-  return '기타';
-}
-
-function catRank(cat) {
-  const i = CAT_ORDER.indexOf(cat);
-  return i === -1 ? 99 : i;
-}
-
-// 정규화 카테고리 → 해당 원가 입력 페이지 경로
-const CATEGORY_TO_PATH = {
-  피자: 'pizza',
-  '1인피자': 'personal',
-  사이드: 'side',
-  세트박스: 'set',
-  기타: 'recipe',
-};
-function costPathFor(cat) {
-  return CATEGORY_TO_PATH[cat] || 'recipe';
-}
-
-// 메뉴판매가 카테고리 → detail 레시피 스토어 맵 (margin 페이지와 동일 규칙)
-function detailStoreFor(rawCat, maps) {
-  const c = rawCat || '';
-  if (c === '1인피자') return maps.personal;
-  if (c === '세트박스') return maps.set;
-  if (c === '사이드' || c === '소스' || c === '음료' || c === '엣지') return maps.side;
-  if (c === '피자' || c.startsWith('피자/')) return maps.pizza;
-  return null;
-}
-
-// detail 레시피 원가 = 구성품 합계 (피자 베이스 원가 기준, 엣지 제외)
-function detailComponentCost(components) {
-  return Array.isArray(components)
-    ? Math.round(components.reduce((acc, c) => acc + componentSubtotal(c), 0))
-    : 0;
-}
-
-// ── 행 데이터 빌드 ────────────────────────────────────────────
-// 메뉴 판매가를 1차 기준으로, 원가는 (1) detail 레시피(menuCode 매칭) → (2) 레거시 레시피(메뉴명 매칭) 순.
-// detail 페이지(피자/1인피자/사이드/세트)에 입력한 레시피도 종합표에 반영된다.
-function buildRows(recipes, unitPriceMap, menuPrices, detailMaps) {
-  const rows = [];
-
-  // 레거시 레시피 — 메뉴명으로 빠르게 조회
-  const recipeByName = new Map();
-  for (const r of recipes) {
-    if (r.menuName && !recipeByName.has(r.menuName)) recipeByName.set(r.menuName, r);
-  }
-
-  // 메뉴 판매가를 메뉴명 단위로 묶음 (사이즈별 entry 보존)
-  const byMenu = new Map(); // menuName → { category, entries:[{menuCode,size,price}] }
-  for (const mp of menuPrices) {
-    if (!mp.menuName) continue;
-    if (!byMenu.has(mp.menuName))
-      byMenu.set(mp.menuName, { category: mp.category || '', entries: [] });
-    const g = byMenu.get(mp.menuName);
-    if (!g.category && mp.category) g.category = mp.category;
-    g.entries.push({ menuCode: mp.menuCode, size: mp.size, price: mp.price });
-  }
-
-  const usedRecipeNames = new Set();
-
-  // 1) 메뉴 판매가 기준 행 — 첫 사이즈(대표) 기준 원가
-  for (const [menuName, { category, entries }] of byMenu) {
-    const firstEntry = entries[0];
-    const norm = normalizeCategory(category);
-    const detailMap = detailStoreFor(category, detailMaps);
-
-    let cost = 0;
-    let sellingPrice = firstEntry?.price ?? null;
-
-    // (1) detail 레시피 — 첫 사이즈 menuCode 우선, 없으면 다른 사이즈 매칭
-    if (detailMap) {
-      const rec =
-        detailMap.get(firstEntry?.menuCode) ||
-        entries.map(e => detailMap.get(e.menuCode)).find(Boolean);
-      if (rec) cost = detailComponentCost(rec.components);
-    }
-
-    // (2) detail 매칭 실패 시 레거시 레시피(메뉴명)로 원가 계산
-    if (!cost) {
-      const lr = recipeByName.get(menuName);
-      if (lr) {
-        usedRecipeNames.add(menuName);
-        const cm = calcCostBySizes(lr, unitPriceMap);
-        const fs = lr.sizes?.[0];
-        if (fs) {
-          cost = cm[fs.label] || 0;
-          if (sellingPrice == null) sellingPrice = fs.sellingPrice || null;
-        }
-      }
-    }
-
-    const costRate = cost > 0 ? calcCostRate(cost, sellingPrice) : null;
-    rows.push({
-      id: `mp-${menuName}`,
-      menuName,
-      menuCode: firstEntry?.menuCode || '',
-      rawCategory: category || '',
-      category: norm,
-      cost: cost > 0 ? Math.round(cost) : null,
-      sellingPrice,
-      costRate,
-      hasCost: cost > 0,
-    });
-  }
-
-  // 2) 메뉴 판매가에 없는 레거시 레시피도 포함
-  for (const recipe of recipes) {
-    if (byMenu.has(recipe.menuName) || usedRecipeNames.has(recipe.menuName)) continue;
-    const firstSize = recipe.sizes?.[0];
-    if (!firstSize) continue;
-    const costMap = calcCostBySizes(recipe, unitPriceMap);
-    const cost = costMap[firstSize.label] || 0;
-    const sellingPrice = firstSize.sellingPrice || null;
-    rows.push({
-      id: recipe.id,
-      menuName: recipe.menuName,
-      rawCategory: recipe.menuCategory || '기타',
-      category: normalizeCategory(recipe.menuCategory),
-      cost: cost > 0 ? Math.round(cost) : null,
-      sellingPrice,
-      costRate: cost > 0 ? calcCostRate(cost, sellingPrice) : null,
-      hasCost: cost > 0,
-    });
-  }
-
-  return rows;
-}
+import { buildRows, catRank, CAT_ORDER, costPathFor } from '@/lib/cost/shared/buildSummaryRows';
 
 // ── CSV 내보내기 ─────────────────────────────────────────────
 function exportCSV(rows) {

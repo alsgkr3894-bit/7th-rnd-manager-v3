@@ -301,15 +301,11 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **문제**: 로딩·URL 동기화·필터·정렬·드래그 재정렬·좌측 리스트·편집 상태가 한 파일.
 - **해결 방향**: `useRecipeWorkbenchData`, `useRecipeListState`, `RecipeSidebar`.
 
-#### R-9. 보고서 3종 공통 state hook 추출  ⏸
-- **파일**: `app/report/sales/page.jsx`(1165줄), `app/report/cost/page.jsx`(779줄), `app/report/shipment/page.jsx`(754줄)
-- **문제**: `useDraftRestore` + `makeFieldUpdater` 체인, opts/docFormat 관리 패턴이 3파일에 반복.
-- **해결 방향**: `useReportPageState(draftKey, initialState, stateSetters)` hook 공통 추출.
+#### R-9. 보고서 4종 공통 state hook 추출  ✅ 완료(2026-06-12)
+- **완료**: `hooks/useReportPageState.js` 신설. `opts`/`docFormat` useState + `makeFieldUpdater` + `useDraftRestore`(opts 복원) 공통 처리. 페이지별 추가 복원은 `onRestoreExtra` 콜백으로 위임. 4개 페이지(`app/report/sales`, `cost`, `shipment`, `menu-sales-compare`)에 적용. 각 페이지의 `useDraftRestore` import → `useReportPageState`로 교체, 불필요 `makeFieldUpdater` import 제거.
 
-#### R-10. `app/cost/all-summary/page.jsx` buildRows → lib 이동  ⏸
-- **파일**: `app/cost/all-summary/page.jsx` L84 `buildRows`, L38 `normalizeCategory`
-- **문제**: 원가 집계 순수 함수가 page 파일에 인라인. 테스트 불가.
-- **해결 방향**: `buildRows` → `lib/cost/shared/buildSummaryRows.js`. `normalizeCategory`·`costPathFor` → `lib/cost/shared/categoryNormalization.js`.
+#### R-10. `app/cost/all-summary/page.jsx` buildRows → lib 이동  ✅ 완료(2026-06-12)
+- **완료**: `lib/cost/shared/buildSummaryRows.js` 신설. `normalizeCategory`, `catRank`, `CAT_ORDER`, `costPathFor`, `detailStoreFor`, `detailComponentCost`, `buildRows` 7종 이동. 페이지에서 관련 import 5개 제거(`calcCostBySizes`, `componentSubtotal`, `calcCostRate`, `MENU_CATEGORY`, `is*Category` 4종). 페이지는 `buildRows, catRank, CAT_ORDER, costPathFor` 4개만 re-import.
 
 #### R-11. `TabSetCalc.jsx` / `TabDerived.jsx` 분해  ⏸
 - **파일**: `components/nutrition/menu/TabSetCalc.jsx`(727줄), `components/nutrition/menu/TabDerived.jsx`(572줄)
@@ -332,10 +328,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **문제**: backup: 실행·이력·진단·진행률 UI 혼재. account: 프로필·PIN·세션·비밀번호 카드 혼재.
 - **해결 방향**: account → `ProfileCard`, `PinSection`, `SessionInfoCard`. backup → 진단 수집 훅 분리.
 
-#### R-15. `app/note/sample/page.jsx` 달력 계산 공통화  ⏸
-- **파일**: `app/note/sample/page.jsx` L240 달력 계산
-- **문제**: `filtered`, `calDays`, `samplesByDate` 달력 계산이 페이지에 남음.
-- **해결 방향**: `lib/note/calendar-utils.js`로 이동.
+#### R-15. `app/note/sample/page.jsx` 달력 계산 공통화  ✅ 완료(2026-06-12)
+- **완료**: `lib/note/calendar-utils.js` 신설(`buildCalendarDays(month, totalCells=42)`). `app/note/sample/page.jsx`의 20줄짜리 `calDays` useMemo → `useMemo(() => buildCalendarDays(calMonth, CALENDAR_CELLS), [calMonth])` 한 줄로 교체.
 
 ---
 

@@ -1,13 +1,12 @@
 'use client';
 import { useState, useEffect } from 'react';
 import ReportBuilderShell, { OptGroup, Seg, Check } from '@/components/report/ReportBuilderShell';
-import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { fmtShort } from '@/lib/format';
 import { AreaChart } from '@/components/charts/AreaChart';
 import { initDB } from '@/lib/db/init';
 import { buildPeriodCompare, deriveCompareB } from '@/lib/sales/compare';
 import { safeAll } from '@/lib/stats/_helpers';
-import { useDraftRestore } from '@/hooks/useDraftRestore';
+import { useReportPageState } from '@/hooks/useReportPageState';
 import { getProfile } from '@/lib/profile';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 import { normalizeScope, safeMonth, safeQuantity, safeYear } from '@/lib/report/period';
@@ -30,26 +29,18 @@ export default function Page() {
   const [yearB, setYearB] = useState(2026);
   const [monthB, setMonthB] = useState(4);
 
-  const [opts, setOpts] = useState({
-    summary: true,
-    catCompare: true,
-    rankShift: true,
-    chart: true,
-    winners: true,
-  });
-  const upd = makeFieldUpdater(setOpts);
-
-  useDraftRestore(DRAFT_KEY, draft => {
-    if (draft.mode) setMode(normalizeMode(draft.mode));
-    if (draft.scope) setScope(normalizeScope(draft.scope));
-    if (draft.yearA) setYearA(safeYear(draft.yearA));
-    if (draft.monthA) setMonthA(safeMonth(draft.monthA));
-    if (draft.yearB) setYearB(safeYear(draft.yearB));
-    if (draft.monthB) setMonthB(safeMonth(draft.monthB));
-    if (draft.opts && typeof draft.opts === 'object' && !Array.isArray(draft.opts)) {
-      setOpts(o => ({ ...o, ...draft.opts }));
+  const { opts, setOpts, updOpts: upd } = useReportPageState(
+    DRAFT_KEY,
+    { summary: true, catCompare: true, rankShift: true, chart: true, winners: true },
+    draft => {
+      if (draft.mode) setMode(normalizeMode(draft.mode));
+      if (draft.scope) setScope(normalizeScope(draft.scope));
+      if (draft.yearA) setYearA(safeYear(draft.yearA));
+      if (draft.monthA) setMonthA(safeMonth(draft.monthA));
+      if (draft.yearB) setYearB(safeYear(draft.yearB));
+      if (draft.monthB) setMonthB(safeMonth(draft.monthB));
     }
-  });
+  );
 
   const [compareResult, setCompareResult] = useState(null);
   const [series, setSeries] = useState([]);
