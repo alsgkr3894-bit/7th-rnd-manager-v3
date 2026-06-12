@@ -212,11 +212,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **해결 방향**: `.filter-bar .chip` 또는 필터 칩에만 `.no-print` 부여. 모든 인쇄 경로 시각 검증 필요.
 - **왜 보류**: 전역 CSS 수정 → 모든 인쇄 경로 교차 영향. 시각 검증 필요.
 
-#### B-12. 연구일지 PDF 긴 내용 페이지 분할  🟡 ⏸
-- **파일**: `app/note/journal/page.jsx:134`
-- **문제**: `page-break-inside:avoid` + `overflow:hidden` → 페이지 높이 초과 카드 클리핑/빈 공간.
-- **해결 방향**: 카드 overflow·max-height·photos 분할 재조정. 인쇄 결과 시각 검증 필요.
-- **왜 보류**: 데이터·사진 양에 따라 달라짐. 시각 검증 필수.
+#### B-12. 연구일지 PDF 긴 내용 페이지 분할  ✅ 완료(2026-06-12)
+- **완료**: `.note-card` `overflow:hidden`→`overflow:visible`, `page-break-inside:avoid`→`break-inside:avoid`(현대 속성). `.note-header`에 `break-after:avoid` 추가(헤더-내용 분리 방지). 시각 검증 필요 시 실 인쇄로 확인 권장.
 
 #### B-13. build:clean 가드 범위 확대(프로세스 감지)  🟡 ⏸
 - **파일**: `scripts/clean-build.mjs`

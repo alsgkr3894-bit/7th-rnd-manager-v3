@@ -131,8 +131,8 @@ function buildPrintHtml(dateLabel, dayNotes) {
     border: 1px solid #ccc;
     border-radius: 4px;
     margin-bottom: 16px;
-    page-break-inside: avoid;
-    overflow: hidden;
+    break-inside: avoid;
+    overflow: visible;
   }
   .note-header {
     background: #f5f5f5;
@@ -141,6 +141,7 @@ function buildPrintHtml(dateLabel, dayNotes) {
     display: flex;
     align-items: center;
     gap: 8px;
+    break-after: avoid;
   }
   .note-num {
     font-size: 10pt; font-weight: 800; color: #555;
