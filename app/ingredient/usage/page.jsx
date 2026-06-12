@@ -1,46 +1,24 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
+import { useEffect, useState, useCallback, Fragment } from 'react';
 import { useMounted } from '@/hooks/useMounted';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SortableTh } from '@/components/ui/SortableTh';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { initDB } from '@/lib/db';
 import { downloadCsv } from '@/lib/download';
-import { getAllIngredients, buildProductTypeMap, scopeLabelFor } from '@/lib/ingredient';
-import { SCOPE_STYLES, SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
+import { getAllIngredients, buildProductTypeMap } from '@/lib/ingredient';
+import { SCOPE_STYLES } from '@/lib/ingredient/constants';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { printUsageReport } from '@/lib/cost/usage-print';
-import { getUsageMenuCounts, getUsageRowsMenuCounts } from '@/lib/cost/usage-counts';
+import { buildIngredientUsageMap } from '@/lib/cost/ingredient-price-helpers';
+import { useIngredientUsageRows } from '@/hooks/useIngredientUsageRows';
 import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
 import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
 import { getAllSideRecipes } from '@/lib/cost/side-detail';
 import { getAllRecipes } from '@/lib/recipe';
 import { KEYS } from '@/lib/note/keys';
 
-function normStr(s) {
-  return (s || '').trim().toLowerCase().replace(/\s+/g, '');
-}
-function cleanMenu(name) {
-  return (name || '').replace(/\s+[LR]$/i, '').trim();
-}
-
-function makeAddUsage(nameToCode, uByCode, uByName) {
-  return function addUsage(productCode, ingredientName, menuName, topCat) {
-    if (!menuName) return;
-    const menu = cleanMenu(menuName);
-    const n = normStr(ingredientName);
-    const code = productCode || nameToCode.get(n) || null;
-    if (code) {
-      if (!uByCode.has(code)) uByCode.set(code, new Map());
-      uByCode.get(code).set(menu, topCat);
-    }
-    if (n) {
-      if (!uByName.has(n)) uByName.set(n, new Map());
-      uByName.get(n).set(menu, topCat);
-    }
-  };
-}
 
 const CAT_COLORS = {
   피자: { bg: '#EFF6FF', color: '#1D4ED8' },
@@ -148,36 +126,14 @@ export default function Page() {
     // 전용/범용 단일 출처 = 제때 관리품목(productType)
     setTypeMap(buildProductTypeMap(managed));
 
-    const uByCode = new Map();
-    const uByName = new Map();
-    const INCLUDE_TOP = new Set(['피자', '1인피자', '사이드']);
-
-    const nameToCode = new Map();
-    for (const m of meta) {
-      if (!m.productCode) continue;
-      const n = normStr(m.ingredientName);
-      if (n && !nameToCode.has(n)) nameToCode.set(n, m.productCode);
-    }
-
-    const addUsage = makeAddUsage(nameToCode, uByCode, uByName);
-
-    for (const r of pizzaRecs)
-      for (const c of r.components || [])
-        addUsage(c.productCode, c.ingredientName, r.menuName, '피자');
-    for (const r of personalRecs)
-      for (const c of r.components || [])
-        addUsage(c.productCode, c.ingredientName, r.menuName, '1인피자');
-    for (const r of sideRecs)
-      for (const c of r.components || [])
-        addUsage(c.productCode, c.ingredientName, r.menuName, '사이드');
-    for (const r of oldRecs) {
-      const top = (r.menuCategory || '').split('/')[0];
-      if (!INCLUDE_TOP.has(top)) continue;
-      for (const ing of r.ingredients || [])
-        addUsage(ing.productCode, ing.ingredientName, r.menuName, top);
-    }
-
-    setUsageMap({ byCode: uByCode, byName: uByName });
+    const { byCode, byName } = buildIngredientUsageMap({
+      allMeta: meta,
+      pizzaRecs,
+      personalRecs,
+      sideRecs,
+      oldRecs,
+    });
+    setUsageMap({ byCode, byName });
   }, [mountedRef]);
 
   useEffect(() => {
@@ -190,110 +146,21 @@ export default function Page() {
       });
   }, [load, mountedRef]);
 
-  const totalUsedCount = useMemo(() => {
-    const { byCode, byName } = usageMap;
-    return allMeta.filter(m => {
-      const fromCode = (m.productCode ? byCode.get(m.productCode) : null) || new Map();
-      const fromName = byName.get(normStr(m.ingredientName)) || new Map();
-      return fromCode.size > 0 || fromName.size > 0;
-    }).length;
-  }, [allMeta, usageMap]);
-
-  const usageRows = useMemo(() => {
-    const { byCode, byName } = usageMap;
-    const q = menuSearch.trim().toLowerCase();
-    return allMeta
-      .filter(m => !m.discontinued)
-      .map(m => {
-        const code = m.productCode || '';
-        const dispName = m.ingredientName || '';
-
-        const fromCode = (code ? byCode.get(code) : null) || new Map();
-        const fromMaster = byName.get(normStr(dispName)) || new Map();
-        const menuMap = new Map([...fromMaster, ...fromCode]);
-        if (!menuMap.size) return null;
-
-        const menus = [...menuMap.entries()]
-          .filter(
-            ([menuName, cat]) =>
-              !excludedMenus.has(menuName) &&
-              (usageCat === '전체' || cat === usageCat) &&
-              (!q || menuName.toLowerCase().includes(q))
-          )
-          .map(([menuName, cat]) => ({ menuName, cat }))
-          .sort((a, b) => a.menuName.localeCompare(b.menuName, 'ko'));
-        if (!menus.length) return null;
-
-        // 코드 있으면 제때 관리품목(productType) 기준, 없으면 지정값 또는 미지정
-        const scope = code ? scopeLabelFor(typeMap, code) : m.scope || SCOPE_UNASSIGNED;
-        const menuCounts = getUsageMenuCounts(menus);
-        return {
-          code,
-          name: dispName,
-          scope,
-          count: menuCounts.total,
-          pizzaCount: menuCounts.pizza,
-          sideCount: menuCounts.side,
-          menus,
-        };
-      })
-      .filter(Boolean);
-  }, [allMeta, usageMap, usageCat, menuSearch, typeMap, excludedMenus]);
-
-  const unusedRows = useMemo(() => {
-    const { byCode, byName } = usageMap;
-    const q = menuSearch.trim().toLowerCase();
-    return allMeta
-      .filter(m => m && !m.discontinued) // null guard + 단종 항목 제외
-      .map(m => {
-        const code = m.productCode || '';
-        const name = m.ingredientName || '';
-        const fromCode = (code ? byCode.get(code) : null) || new Map();
-        const fromName = byName.get(normStr(name)) || new Map();
-        if (fromCode.size > 0 || fromName.size > 0) return null;
-        if (q && !name.toLowerCase().includes(q) && !code.toLowerCase().includes(q)) return null;
-        const scope = code ? scopeLabelFor(typeMap, code) : m.scope || SCOPE_UNASSIGNED;
-        return { code, name, scope, count: 0, menus: [] };
-      })
-      .filter(Boolean);
-  }, [allMeta, menuSearch, typeMap, usageMap]);
-
-  const sorted = useMemo(() => {
-    const arr = [...(showUnused ? unusedRows : usageRows)];
-    if (sortKey === 'count') {
-      arr.sort(
-        (a, b) =>
-          (sortDir === 'asc' ? a.count - b.count : b.count - a.count) ||
-          a.name.localeCompare(b.name, 'ko')
-      );
-    } else {
-      arr.sort((a, b) => {
-        const c = a.name.localeCompare(b.name, 'ko');
-        return sortDir === 'asc' ? c : -c;
-      });
-    }
-    return arr;
-  }, [showUnused, unusedRows, usageRows, sortKey, sortDir]);
-
-  const nonHidden = useMemo(
-    () => usageRows.filter(r => !hidden.has(keyOf(r))),
-    [usageRows, hidden]
-  );
-  const hiddenCount = usageRows.length - nonHidden.length;
-  const oneCount = useMemo(() => nonHidden.filter(r => r.count === 1).length, [nonHidden]);
-
-  const displayRows = useMemo(() => {
-    let arr = sorted;
-    if (onlyOne && !showUnused) arr = arr.filter(r => r.count === 1);
-    arr = showUnused
-      ? arr
-      : showHidden
-        ? arr.filter(r => hidden.has(keyOf(r)))
-        : arr.filter(r => !hidden.has(keyOf(r)));
-    return arr;
-  }, [sorted, onlyOne, showHidden, showUnused, hidden]);
-
-  const menuCounts = useMemo(() => getUsageRowsMenuCounts(displayRows), [displayRows]);
+  const { usageRows, unusedRows, displayRows, hiddenCount, oneCount, menuCounts, totalUsedCount } =
+    useIngredientUsageRows({
+      allMeta,
+      usageMap,
+      typeMap,
+      usageCat,
+      menuSearch,
+      sortKey,
+      sortDir,
+      showUnused,
+      showHidden,
+      onlyOne,
+      hidden,
+      excludedMenus,
+    });
 
   function toggle(code) {
     setExpanded(prev => {
