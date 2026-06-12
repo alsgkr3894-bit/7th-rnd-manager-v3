@@ -54,7 +54,7 @@ export function PinGate({ onVerify, onCancel }) {
               PIN이 올바르지 않습니다
             </div>
           )}
-          <button className="btn primary" style={{ width: '100%' }} disabled={!pin}>
+          <button type="submit" className="btn primary" style={{ width: '100%' }} disabled={!pin}>
             확인
           </button>
           {onCancel && (
