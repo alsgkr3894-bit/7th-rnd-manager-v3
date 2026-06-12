@@ -373,11 +373,10 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
   app/page.jsx 817→624줄.
 - **관련**: B-6
 
-#### R-30. `components/cost/recipe/RecipeEditor.jsx` 분해 (853줄)  ⏸
-- **파일**: `components/cost/recipe/RecipeEditor.jsx`
-- **문제**: 계산(`costBySizes`·`groupCostBySizes`·`totalCostBySizes`)·폼 핸들러·dnd 드래그·size/ingredient mutation이 한 컴포넌트.
-- **해결 방향**: `useRecipeEditorDraft`, `RecipeIngredientTable`, `RecipeGroupSelector`, 순수 `calcRecipeCosts`.
-- **관련**: R-8(이쪽은 `app/cost/recipe/page.jsx` 워크벤치 — 별개 파일)
+#### R-30. `components/cost/recipe/RecipeEditor.jsx` 분해 (853줄)  ✅ 완료(2026-06-13)
+- **완료**: `SortableIngredientRow` → 별도 파일 분리. `calcGroupCostBySizes`·`calcIngredientCostBySizes`·`calcTotalCostBySizes` → `lib/recipe/calc-costs.js` 순수 함수 추출.
+  RecipeEditor 852→708줄.
+- **관련**: R-8
 
 #### R-31. 보고서 4종 데이터 빌더 → lib 이동  ✅ 완료(2026-06-12)
 - **완료**: `lib/report/build-price-report.js`·`build-cost-report.js`·`build-shipment-report.js`·`build-compare-report.js` 신설. 4개 페이지 useEffect 인라인 집계 블록 교체 및 중복 로컬 헬퍼 제거. price 인라인 ~40줄, cost 인라인 ~28줄, shipment monthMap+trend ~28줄, compare series ~22줄 제거.
