@@ -388,11 +388,9 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **해결 방향**: `lib/report/build-cost-report.js`, `build-shipment-report.js`, `build-price-report.js`, `build-compare-report.js` 빌더로 추출.
 - **관련**: R-9(이쪽은 `useDraftRestore`/`makeFieldUpdater` 공통 state hook — 다른 관심사. 병행 가능)
 
-#### R-32. `app/nutrition/origin/page.jsx` 집계 분리 (614줄)  ⏸
-- **파일**: `app/nutrition/origin/page.jsx`
-- **문제**: `ingredientRows`(L148)·`menuRowsAll`(L177) 집계, 필터, `exportCsv`(L251), UI, 메뉴명 override·재정렬이 한 파일.
-- **해결 방향**: `useOriginMappingData`, 순수 `buildOriginIngredientRows`·`buildOriginMenuRows`.
-- **관련**: R-21(이쪽은 `app/nutrition/export/OriginResult.jsx` — 별개 export 컴포넌트)
+#### R-32. `app/nutrition/origin/page.jsx` 집계 분리 (614줄)  ✅ 완료(2026-06-12)
+- **완료**: `lib/nutrition/origin/build.js`에 `buildOriginIngredientRows`·`buildOriginMenuRows` 추가. `ingredientRows`·`menuRowsAll` useMemo 인라인 코드(~80줄) 제거. 614줄→549줄, `applyOrder`·`getMenuCodeRank`·`applyMenuName` import 제거.
+- **관련**: R-21
 
 #### R-33. `app/note/board/page.jsx` 칸반 분해 (597줄)  ⏸
 - **파일**: `app/note/board/page.jsx`

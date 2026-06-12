@@ -20,11 +20,14 @@ import { buildIngredientMenuMap, getMenusForIngredient } from '@/lib/cost/ingred
 import { SmallStatCard } from '@/components/ui/SmallStatCard';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { ReorderModal } from '@/components/ui/ReorderModal';
-import { MENU_ORDER_KEY, loadOrder, saveOrder, applyOrder } from '@/lib/nutrition/order';
-import { getMenuCodeRank } from '@/lib/menu-categories';
+import { MENU_ORDER_KEY, loadOrder, saveOrder } from '@/lib/nutrition/order';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
-import { loadMenuNames, saveMenuNames, applyMenuName } from '@/lib/nutrition/menu-name-override';
+import { loadMenuNames, saveMenuNames } from '@/lib/nutrition/menu-name-override';
+import {
+  buildOriginIngredientRows,
+  buildOriginMenuRows,
+} from '@/lib/nutrition/origin/build';
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
@@ -145,84 +148,17 @@ export default function Page() {
   );
 
   // ── 식자재 기준 뷰 ─────────────────────────────────────────
-  const ingredientRows = useMemo(() => {
-    const q = asDisplayText(search).toLowerCase().trim();
-    const ingredientToMenus = asMenuMap(mapData?.ingredientToMenus);
-    const filtered = originIngredients.filter(ing => {
-      if (!q) return true;
-      const productCode = asDisplayText(ing.productCode);
-      const ingredientName = asDisplayText(ing.ingredientName);
-      const menus = getMenusForIngredient(ingredientToMenus, productCode, ingredientName);
-      const menuText = [...menus.entries()]
-        .filter(([mc, m]) => !isExcludedMenu(mc, m?.menuName))
-        .map(([, m]) => asDisplayText(m?.menuName))
-        .join(' ');
-      const originText = asObjectArray(ing.origin)
-        .map(it => `${asDisplayText(it.displayName)} ${asDisplayText(it.country)}`)
-        .join(' ');
-      return (
-        ingredientName.toLowerCase().includes(q) ||
-        originText.toLowerCase().includes(q) ||
-        productCode.toLowerCase().includes(q) ||
-        menuText.toLowerCase().includes(q)
-      );
-    });
-    // 식자재별 보기는 식자재명 ㄱㄴㄷ 순
-    return filtered.sort((a, b) =>
-      asDisplayText(a.ingredientName).localeCompare(asDisplayText(b.ingredientName), 'ko')
-    );
-  }, [originIngredients, search, mapData, isExcludedMenu]);
+  const ingredientRows = useMemo(
+    () => buildOriginIngredientRows(originIngredients, mapData, isExcludedMenu, search),
+    [originIngredients, search, mapData, isExcludedMenu]
+  );
 
   // ── 메뉴 기준 뷰 ───────────────────────────────────────────
-  const menuRowsAll = useMemo(() => {
-    const ingredientToMenus = asMenuMap(mapData?.ingredientToMenus);
-    const ingByKey = new Map();
-    for (const ing of originIngredients) {
-      const productCode = asDisplayText(ing.productCode);
-      const ingredientName = asDisplayText(ing.ingredientName);
-      if (productCode) ingByKey.set(`code:${productCode}`, ing);
-      const n = ingredientName.trim().toLowerCase().replace(/\s+/g, '');
-      if (n) ingByKey.set(`name:${n}`, ing);
-    }
-
-    const menuMap = new Map(); // menuCode → { menuName, category, origins: [{displayName, country, region}] }
-    for (const [key, menus] of ingredientToMenus) {
-      if (!(menus instanceof Map)) continue;
-      const ing = ingByKey.get(key);
-      const origins = asObjectArray(ing?.origin);
-      if (!origins.length) continue;
-      for (const [menuCode, meta] of menus) {
-        if (isExcludedMenu(menuCode, meta?.menuName)) continue;
-        if (!menuMap.has(menuCode)) menuMap.set(menuCode, { ...meta, menuCode, origins: [] });
-        const existing = menuMap.get(menuCode).origins;
-        for (const it of origins) {
-          const label = asDisplayText(it.displayName) || asDisplayText(ing.ingredientName);
-          const country = asDisplayText(it.country);
-          const dup = existing.find(o => o.country === country && o.displayName === label);
-          if (!dup) existing.push({ displayName: label, country });
-        }
-      }
-    }
-
-    // 사용자가 정한 메뉴 순서 적용 (없는 메뉴는 코드 기본 순위 → 메뉴명 ㄱㄴㄷ)
-    const sorted = applyOrder(
-      [...menuMap.values()],
-      menuOrder,
-      m => asDisplayText(m.menuCode),
-      m => asDisplayText(m.menuName),
-      m => getMenuCodeRank(asDisplayText(m.menuCode))
-    );
-    // 출력용 메뉴명 오버라이드 적용 (표시 전용, 원래 이름 보존)
-    return sorted.map(m => ({
-      ...m,
-      originalMenuName: asDisplayText(m.menuName),
-      menuName: applyMenuName(
-        asDisplayText(m.menuCode),
-        asDisplayText(m.menuName),
-        menuNameOverrides
-      ),
-    }));
-  }, [originIngredients, mapData, isExcludedMenu, menuOrder, menuNameOverrides]);
+  const menuRowsAll = useMemo(
+    () =>
+      buildOriginMenuRows(originIngredients, mapData, isExcludedMenu, menuOrder, menuNameOverrides),
+    [originIngredients, mapData, isExcludedMenu, menuOrder, menuNameOverrides]
+  );
 
   const menuRows = useMemo(() => {
     const q = asDisplayText(search).toLowerCase().trim();
