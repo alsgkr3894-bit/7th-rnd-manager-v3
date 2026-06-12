@@ -382,11 +382,9 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **해결 방향**: `useRecipeEditorDraft`, `RecipeIngredientTable`, `RecipeGroupSelector`, 순수 `calcRecipeCosts`.
 - **관련**: R-8(이쪽은 `app/cost/recipe/page.jsx` 워크벤치 — 별개 파일)
 
-#### R-31. 보고서 4종 데이터 빌더 → lib 이동  ⏸
-- **파일**: `app/report/cost/page.jsx`(780줄, L184~), `app/report/shipment/page.jsx`(755줄, L145~), `app/report/price/page.jsx`(476줄, L68~), `app/report/menu-sales-compare/page.jsx`(493줄, L73~)
-- **문제**: load→aggregate→preview 흐름이 페이지 useEffect 안에 인라인 → 단위 테스트 불가.
-- **해결 방향**: `lib/report/build-cost-report.js`, `build-shipment-report.js`, `build-price-report.js`, `build-compare-report.js` 빌더로 추출.
-- **관련**: R-9(이쪽은 `useDraftRestore`/`makeFieldUpdater` 공통 state hook — 다른 관심사. 병행 가능)
+#### R-31. 보고서 4종 데이터 빌더 → lib 이동  ✅ 완료(2026-06-12)
+- **완료**: `lib/report/build-price-report.js`·`build-cost-report.js`·`build-shipment-report.js`·`build-compare-report.js` 신설. 4개 페이지 useEffect 인라인 집계 블록 교체 및 중복 로컬 헬퍼 제거. price 인라인 ~40줄, cost 인라인 ~28줄, shipment monthMap+trend ~28줄, compare series ~22줄 제거.
+- **관련**: R-9
 
 #### R-32. `app/nutrition/origin/page.jsx` 집계 분리 (614줄)  ✅ 완료(2026-06-12)
 - **완료**: `lib/nutrition/origin/build.js`에 `buildOriginIngredientRows`·`buildOriginMenuRows` 추가. `ingredientRows`·`menuRowsAll` useMemo 인라인 코드(~80줄) 제거. 614줄→549줄, `applyOrder`·`getMenuCodeRank`·`applyMenuName` import 제거.
@@ -464,6 +462,6 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ---
 
-_최종 업데이트: 2026-06-12 — R-34(journal print 분리)·R-35(report options registry)·R-36(useSectionSearch)·R-38(useTableSearchSort) 구현. R-29~R-40 2차 발굴 등록. B-14 정책(a) 영속 설정만 확정 + B-7 localStorage 백업 범위 확대 구현. 잔여: B-3 legacy store 제거(DB migration), B-5/B-6(회귀위험), B-9(도메인 확인) — 외부 조건 충족 후 진행._
+_최종 업데이트: 2026-06-12 — R-31 보고서 4종 빌더 lib 이동 완료. R-34(journal print 분리)·R-35(report options registry)·R-36(useSectionSearch)·R-38(useTableSearchSort) 구현. R-29~R-40 2차 발굴 등록. B-14 정책(a) 영속 설정만 확정 + B-7 localStorage 백업 범위 확대 구현. 잔여: B-3 legacy store 제거(DB migration), B-5/B-6(회귀위험), B-9(도메인 확인) — 외부 조건 충족 후 진행._
 _[이전] B-8·C-2·C-3 완료 표시. 문서 정합성 정정: B-1 파일 경로·B-4 모듈 혼동·C-2 전제·B-3 경로. B-2 저위험 이동._
 _[이전] SITE_IMPROVEMENT_AUDIT 통합·삭제. NEXT_TASKS(CL1~CL8) 통합, B-2/C-1/메뉴코드정책 완료 정정._

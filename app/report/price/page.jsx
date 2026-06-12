@@ -6,7 +6,7 @@ import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guar
 import { formatNumber } from '@/lib/format';
 import { initDB } from '@/lib/db/init';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price/store';
-import { comparePriceLists } from '@/lib/price/compare';
+import { buildPriceReportData } from '@/lib/report/build-price-report';
 import { useDraftRestore } from '@/hooks/useDraftRestore';
 import { getProfile } from '@/lib/profile';
 
@@ -110,50 +110,13 @@ export default function Page() {
           ]);
           if (ignore) return;
 
-          const diff = asObjectArray(comparePriceLists(baseRows, latestRows)).filter(
-            c => c.changeStatus !== '변동없음'
+          const { changes: filtered, catSummary: summary } = buildPriceReportData(
+            baseRows,
+            latestRows,
+            threshold
           );
-          const safeThreshold = asFiniteNumber(threshold, 0) ?? 0;
-          const filtered = diff.filter(c => {
-            if (c.changeStatus === '신규' || c.changeStatus === '삭제') return true;
-            return Math.abs(safeChangeRate(c.changeRate) * 100) >= safeThreshold;
-          });
           setChanges(filtered);
-
-          const catMap = new Map();
-          for (const c of filtered) {
-            const cat = safeCategory(c.temperature);
-            const entry = catMap.get(cat) || {
-              cat,
-              total: 0,
-              up: 0,
-              down: 0,
-              newItem: 0,
-              del: 0,
-              sum: 0,
-              count: 0,
-            };
-            entry.total++;
-            const pct = Math.abs(safeChangeRate(c.changeRate) * 100);
-            if (c.changeStatus === '인상') {
-              entry.up++;
-              entry.sum += pct;
-              entry.count++;
-            }
-            if (c.changeStatus === '인하') {
-              entry.down++;
-              entry.sum += pct;
-              entry.count++;
-            }
-            if (c.changeStatus === '신규') {
-              entry.newItem++;
-            }
-            if (c.changeStatus === '삭제') {
-              entry.del++;
-            }
-            catMap.set(cat, entry);
-          }
-          setCatSummary(Array.from(catMap.values()));
+          setCatSummary(summary);
           setDataError(null);
         } catch (err) {
           if (ignore) return;

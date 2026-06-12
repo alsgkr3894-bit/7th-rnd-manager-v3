@@ -7,25 +7,21 @@ import { withDownloadDateSuffix } from '@/lib/download';
 import { Icon } from '@/components/icons';
 import { initDB } from '@/lib/db/init';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
-import { getAllRecipes, buildUnitPriceMap, calcCostBySizes } from '@/lib/recipe';
+import { getAllRecipes, buildUnitPriceMap } from '@/lib/recipe';
 import { getAllIngredients } from '@/lib/ingredient';
-import { componentSubtotal } from '@/lib/cost/shared/calc';
 import { getPizzaRecipeMap } from '@/lib/cost/pizza-detail';
 import { getPersonalRecipeMap } from '@/lib/cost/personal-detail';
 import { getSideRecipeMap } from '@/lib/cost/side-detail';
 import { getSetRecipeMap } from '@/lib/cost/set-detail';
-import { getAllEdges, edgeTotalCost } from '@/lib/cost/edge-dough';
+import { getAllEdges } from '@/lib/cost/edge-dough';
 import { getPriceFiles } from '@/lib/price';
 import { getActiveBrand } from '@/lib/active-brand';
 import { useReportPageState } from '@/hooks/useReportPageState';
 import { getProfile } from '@/lib/profile';
-import { isPizzaCategory } from '@/lib/menu-master/category-policy';
 import { getMenuCodeRank } from '@/lib/menu-categories';
+import { buildCostReportData } from '@/lib/report/build-cost-report';
 
 // ── 상수 ──────────────────────────────────────────────────────
-const matchEdge = cat => cat === '엣지' || cat === '엣지&도우' || cat === '엣지 & 도우';
-const stripName = s => (s || '').replace(/\s/g, '');
-
 // 카테고리 순서: 원가마진표와 동일
 const CAT_KEYS = ['피자', '1인피자', '세트박스', '사이드', '엣지'];
 
@@ -38,40 +34,6 @@ const CAT_META = {
 };
 
 const DRAFT_KEY = 'report_draft_cost';
-
-// ── 원가 계산 헬퍼 ─────────────────────────────────────────────
-const detailComponentCost = comps =>
-  Array.isArray(comps) ? Math.round(comps.reduce((a, c) => a + componentSubtotal(c), 0)) : 0;
-
-function detailStoreFor(rawCat, maps) {
-  const c = rawCat || '';
-  if (c === '1인피자') return maps.personal;
-  if (c === '세트박스') return maps.set;
-  if (c === '사이드' || c === '소스' || c === '음료') return maps.side;
-  if (c === '피자' || c.startsWith('피자/')) return maps.pizza;
-  return null;
-}
-
-function costForPrice(p, ctx) {
-  if (matchEdge(p.category)) {
-    const name = stripName(p.menuName);
-    const edge = ctx.edges.find(
-      e => stripName(e.edgeType) === name && (!p.size || p.size === '단일' || e.size === p.size)
-    );
-    return edge ? edgeTotalCost(edge) : 0;
-  }
-  const map = detailStoreFor(p.category, ctx.detailMaps);
-  if (map && p.menuCode) {
-    const rec = map.get(p.menuCode);
-    if (rec) return detailComponentCost(rec.components);
-  }
-  const lr = ctx.recipeByName.get(p.menuName);
-  if (lr) {
-    const cm = calcCostBySizes(lr, ctx.upm);
-    return cm[p.size] || cm[lr.sizes?.[0]?.label] || 0;
-  }
-  return 0;
-}
 
 // ── xlsx 빌더 (동적 import, 클라이언트 전용) ───────────────────
 let _xlsxPromise = null;
@@ -230,35 +192,7 @@ export default function Page() {
             upm: buildUnitPriceMap(ingredients, new Map()),
           };
 
-          const updated = {};
-          for (const catLabel of CAT_KEYS) {
-            const meta = CAT_META[catLabel];
-            if (!meta) continue;
-            const catPrices = prices.filter(p =>
-              catLabel === '엣지'
-                ? matchEdge(p.category)
-                : catLabel === '피자'
-                  ? isPizzaCategory(p.category, { includePersonal: false })
-                  : p.category === catLabel
-            );
-            // 메뉴 오브젝트에 menuCode 포함(정렬·xlsx용)
-            const menus = catPrices.map(p => {
-              const cost = Math.round(costForPrice(p, ctx));
-              const sale = p.price || 0;
-              const rate = cost > 0 && sale > 0 ? (cost / sale) * 100 : 0;
-              return {
-                code: p.menuCode || '',
-                name: p.size && p.size !== '단일' ? `${p.menuName} ${p.size}` : p.menuName,
-                cost,
-                sale,
-                rate,
-              };
-            });
-            // 카테고리 내 menuCode 오름차순 (마진표와 동일)
-            menus.sort((a, b) => getMenuCodeRank(a.code) - getMenuCodeRank(b.code) || (a.code || '').localeCompare(b.code || '', 'ko'));
-            updated[meta.id] = { label: meta.label, color: meta.color, menus };
-          }
-          setCostByCategory(updated);
+          setCostByCategory(buildCostReportData(prices, ctx, CAT_KEYS, CAT_META));
           setDataError(null);
         } catch (err) {
           if (ignore) return;

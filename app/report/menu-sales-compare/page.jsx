@@ -5,6 +5,7 @@ import { fmtShort } from '@/lib/format';
 import { AreaChart } from '@/components/charts/AreaChart';
 import { initDB } from '@/lib/db/init';
 import { buildPeriodCompare, deriveCompareB } from '@/lib/sales/compare';
+import { buildCompareSeries } from '@/lib/report/build-compare-report';
 import { safeAll } from '@/lib/stats/_helpers';
 import { useReportPageState } from '@/hooks/useReportPageState';
 import { getProfile } from '@/lib/profile';
@@ -87,29 +88,7 @@ export default function Page() {
           setCompareResult(result);
 
           // 시리즈: 카테고리별 A/B 집계
-          const catMap = new Map();
-          for (const r of rows) {
-            if (r.status !== 'classified') continue;
-            // 표·요약(compareResult)과 동일하게 scope로 필터해 차트가 어긋나지 않도록 한다.
-            if (safeScope !== 'all' && r.category !== safeScope) continue;
-            const cat = asDisplayText(r.category, '기타') || '기타';
-            if (!catMap.has(cat)) catMap.set(cat, { a: 0, b: 0 });
-            const rowYear = safeYear(r.year, 0);
-            const rowMonth = safeMonth(r.month, 0);
-            const isA = rowYear === periodA.year && rowMonth === periodA.month;
-            const isB = rowYear === periodB.year && rowMonth === periodB.month;
-            if (isA) catMap.get(cat).a += safeQuantity(r.quantity);
-            if (isB) catMap.get(cat).b += safeQuantity(r.quantity);
-          }
-          const cats = Array.from(catMap.entries()).filter(([, v]) => v.a > 0 || v.b > 0);
-          setSeries(
-            cats.length > 0
-              ? [
-                  { name: `A (${safeMonthA}월)`, data: cats.map(([, v]) => v.a) },
-                  { name: `B (${periodB.month}월)`, data: cats.map(([, v]) => v.b) },
-                ]
-              : []
-          );
+          setSeries(buildCompareSeries(rows, periodA, periodB, safeScope, safeMonthA));
           setDataError(null);
         } catch (err) {
           if (ignore) return;

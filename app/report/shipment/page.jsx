@@ -7,6 +7,7 @@ import { initDB } from '@/lib/db/init';
 import { getShipmentFiles, getShipmentRowsByFileId } from '@/lib/shipment/store-files';
 import { aggregateShipmentRows } from '@/lib/shipment/aggregate';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment/store-managed';
+import { buildShipmentMonthMap, buildShipmentTrendSeries } from '@/lib/report/build-shipment-report';
 import { useReportPageState } from '@/hooks/useReportPageState';
 import { getProfile } from '@/lib/profile';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
@@ -155,19 +156,7 @@ export default function Page() {
           }
 
           // 파일을 월 단위로 그룹핑 (같은 월의 파일은 합산 대상)
-          const monthMap = new Map();
-          for (const f of files) {
-            const yearValue = safeYear(f.year, 0);
-            const monthValue = safeMonth(f.month, 0);
-            if (!yearValue || !monthValue) continue;
-            const key = `${yearValue}-${monthValue}`;
-            if (!monthMap.has(key)) {
-              monthMap.set(key, { year: yearValue, month: monthValue, files: [] });
-            }
-            monthMap.get(key).files.push(f);
-          }
-          // files는 이미 년월 내림차순 → monthMap 삽입 순서도 최신순
-          const monthList = [...monthMap.values()];
+          const monthList = buildShipmentMonthMap(files);
           // year/month 없는 파일만 있으면 monthList가 빈 배열 → 빠른 종료
           if (monthList.length === 0) {
             setIsLoading(false);
@@ -208,21 +197,7 @@ export default function Page() {
             })
           );
           if (ignore) return;
-          const exclusiveData = [];
-          const genericData = [];
-          for (const rows of monthlyRows) {
-            const a = aggregateShipmentRows(rows, managedProducts);
-            exclusiveData.push(
-              a
-                .filter(x => x.productType === 'exclusive')
-                .reduce((s, x) => s + safeQuantity(x.totalQuantity), 0)
-            );
-            genericData.push(
-              a
-                .filter(x => x.productType !== 'exclusive')
-                .reduce((s, x) => s + safeQuantity(x.totalQuantity), 0)
-            );
-          }
+          const { exclusiveData, genericData } = buildShipmentTrendSeries(monthlyRows, managedProducts);
           if (exclusiveData.some(v => v > 0) || genericData.some(v => v > 0)) {
             setSeries([
               { name: '전용상품', data: exclusiveData },
