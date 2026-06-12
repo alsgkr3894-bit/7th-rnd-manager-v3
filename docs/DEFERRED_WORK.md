@@ -300,10 +300,9 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 #### R-10. `app/cost/all-summary/page.jsx` buildRows → lib 이동  ✅ 완료(2026-06-12)
 - **완료**: `lib/cost/shared/buildSummaryRows.js` 신설. `normalizeCategory`, `catRank`, `CAT_ORDER`, `costPathFor`, `detailStoreFor`, `detailComponentCost`, `buildRows` 7종 이동. 페이지에서 관련 import 5개 제거(`calcCostBySizes`, `componentSubtotal`, `calcCostRate`, `MENU_CATEGORY`, `is*Category` 4종). 페이지는 `buildRows, catRank, CAT_ORDER, costPathFor` 4개만 re-import.
 
-#### R-11. `TabSetCalc.jsx` / `TabDerived.jsx` 분해  ⏸
-- **파일**: `components/nutrition/menu/TabSetCalc.jsx`(727줄), `components/nutrition/menu/TabDerived.jsx`(572줄)
-- **문제**: 계산·목록·저장·모달·메뉴 검색 슬롯이 한 컴포넌트.
-- **해결 방향**: `SetCalcList`, `SetCompositionModal`, `SlotMenuPicker`, `useSetCompositionForm`.
+#### R-11. `TabSetCalc.jsx` / `TabDerived.jsx` 분해  ✅ 완료(2026-06-13)
+- **완료**: `useSetCompositionForm`(`hooks/`) + `useDerivedCompositionForm`(`hooks/`) 추출.
+  TabSetCalc 727→667줄, TabDerived 572→460줄.
 - **관련**: R-4, B-6
 
 #### R-12. BulkPriceModal 기반 컴포넌트 통합  ⏸
