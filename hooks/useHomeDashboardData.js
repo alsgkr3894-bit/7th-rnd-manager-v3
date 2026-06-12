@@ -255,6 +255,7 @@ export function useHomeDashboardData({ chartTab }) {
     uploadFreshness,
     backupReminder,
     anchor,
+    setAnchor,
     detectedPeriod,
     shiftAnchor,
     chartKey,

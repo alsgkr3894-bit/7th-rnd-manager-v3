@@ -120,12 +120,16 @@ export default function HomePage() {
     uploadFreshness,
     backupReminder,
     anchor,
+    setAnchor,
     detectedPeriod,
     shiftAnchor,
     chartKey,
     loadData,
     mountedRef,
   } = useHomeDashboardData({ chartTab });
+
+  const salesCount = useCountUp(salesKpi?.current ?? 0, { duration: 1400, delay: 250 });
+  const noteCount = useCountUp(noteKpi?.total ?? 0, { duration: 900, delay: 460 });
 
   useEffect(() => {
     setHasRecentVisits(getRecentPaletteItems().length > 0);
