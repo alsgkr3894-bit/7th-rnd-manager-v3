@@ -45,7 +45,10 @@ function ConfirmDialogBody({
         className={'card modal-anim' + (isClosing ? ' modal-exit' : '')}
         style={{ width: 'min(420px,92vw)', padding: '28px 28px 24px' }}
       >
-        <div id="confirm-dialog-title" style={{ fontWeight: 800, fontSize: 16, color: 'var(--text-1)', marginBottom: 8 }}>
+        <div
+          id="confirm-dialog-title"
+          style={{ fontWeight: 800, fontSize: 16, color: 'var(--text-1)', marginBottom: 8 }}
+        >
           {title}
         </div>
         {message && (

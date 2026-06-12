@@ -136,7 +136,9 @@ function buildOriginsFromIngredients(
       .map(([menuCode, meta]) => ({
         menuCode: asDisplayText(menuCode),
         menuName: applyMenuName(asDisplayText(menuCode), asDisplayText(meta?.menuName), overrides),
-        category: asDisplayText(masterByCode?.[asDisplayText(menuCode)]?.category || meta?.category),
+        category: asDisplayText(
+          masterByCode?.[asDisplayText(menuCode)]?.category || meta?.category
+        ),
       }));
 
     result.push({
@@ -222,7 +224,10 @@ function buildSheet2(origins, ingOverrides = {}) {
       return {
         ingredientName: applyIngredientName(asDisplayText(row.ingredientName), ingOverrides),
         items,
-        itemText: items.map(it => asDisplayText(it.displayName)).filter(Boolean).join(', '),
+        itemText: items
+          .map(it => asDisplayText(it.displayName))
+          .filter(Boolean)
+          .join(', '),
         originText: formatOriginCountries(items),
       };
     })

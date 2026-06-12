@@ -56,10 +56,7 @@ const asMenuMap = value => (value instanceof Map ? value : EMPTY_MENU_MAP);
 const normStr = s => asDisplayText(s).trim().toLowerCase().replace(/\s+/g, '');
 
 function stripSizeSuffix(value) {
-  return asDisplayText(value)
-    .replace(/\s+L$/i, '')
-    .replace(/\s+R$/i, '')
-    .trim();
+  return asDisplayText(value).replace(/\s+L$/i, '').replace(/\s+R$/i, '').trim();
 }
 
 function logicalMenuKey(menuCode, menuName, category) {
@@ -153,18 +150,18 @@ export default function Page() {
       oldRecs,
       compositions,
     ] = await Promise.all([
-        getAllIngredients(),
-        getAllMenuMaster(),
-        getAllRecipeGroups(),
-        getAllEdges(),
-        getAllToppings(),
-        getAllPizzaRecipes(),
-        getAllPersonalRecipes(),
-        getAllSideRecipes(),
-        getAllSetRecipes(),
-        getAllRecipes(),
-        getAllCompositions(),
-      ]);
+      getAllIngredients(),
+      getAllMenuMaster(),
+      getAllRecipeGroups(),
+      getAllEdges(),
+      getAllToppings(),
+      getAllPizzaRecipes(),
+      getAllPersonalRecipes(),
+      getAllSideRecipes(),
+      getAllSetRecipes(),
+      getAllRecipes(),
+      getAllCompositions(),
+    ]);
     if (!mountedRef.current) return;
     const safeIngredients = asObjectArray(ings);
     const safeMenuMasters = asObjectArray(masters);
@@ -287,7 +284,8 @@ export default function Page() {
     }
     for (const edgeType of ['치즈크러스트', '골드스윗크러스트', '씬도우']) {
       const edgeCode = nutritionEdgeCodeFor(edgeType);
-      if (edgeCode) edgeAllergens.set(edgeType, applyEdgeAllergenRules(edgeCode, edgeAllergens.get(edgeType)));
+      if (edgeCode)
+        edgeAllergens.set(edgeType, applyEdgeAllergenRules(edgeCode, edgeAllergens.get(edgeType)));
     }
 
     // base(엣지 제외) 메뉴별 알레르겐 — 석쇠 기준.
@@ -479,9 +477,10 @@ export default function Page() {
       }
       for (const [menuCode, meta] of menus) {
         if (!sourceCodes.has(asDisplayText(menuCode))) continue;
-        const sources = Array.isArray(meta?.sources) && meta.sources.length
-          ? meta.sources
-          : [{ type: '직접', name: '' }];
+        const sources =
+          Array.isArray(meta?.sources) && meta.sources.length
+            ? meta.sources
+            : [{ type: '직접', name: '' }];
         sources.forEach(source => pushRow({ ing, source }));
       }
     }

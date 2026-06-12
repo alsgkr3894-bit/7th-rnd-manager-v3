@@ -1,7 +1,12 @@
 import { memo } from 'react';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
-import { countIngredientPhotos, getCategoryStyle, getPrimaryIngredientPhoto, sortHashTags } from '@/lib/ingredient';
+import {
+  countIngredientPhotos,
+  getCategoryStyle,
+  getPrimaryIngredientPhoto,
+  sortHashTags,
+} from '@/lib/ingredient';
 import { SCOPE_STYLES } from '@/lib/ingredient/constants';
 import { asDisplayText, asStringArray } from '@/lib/ui/prop-guards';
 
@@ -99,19 +104,19 @@ export const ManageRow = memo(function ManageRow({
       <td style={{ width: 58 }}>
         {photo ? (
           <div style={{ position: 'relative', width: 44, height: 34 }}>
-          <img
-            src={photo.data}
-            alt={photo.name || name}
-            style={{
-              width: 44,
-              height: 34,
-              objectFit: 'cover',
-              borderRadius: 6,
-              border: '1px solid var(--border)',
-              background: 'var(--surface-2)',
-              display: 'block',
-            }}
-          />
+            <img
+              src={photo.data}
+              alt={photo.name || name}
+              style={{
+                width: 44,
+                height: 34,
+                objectFit: 'cover',
+                borderRadius: 6,
+                border: '1px solid var(--border)',
+                background: 'var(--surface-2)',
+                display: 'block',
+              }}
+            />
             {photoCount > 1 && (
               <span
                 style={{

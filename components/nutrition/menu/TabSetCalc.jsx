@@ -23,7 +23,13 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
   const safeEdgeMap = asRecord(edgeMap);
   const refresh = typeof onRefresh === 'function' ? onRefresh : noop;
   const [modal, setModal] = useState(null); // null | 'add' | comp object
-  const [form, setForm] = useState({ setCode: '', setName: '', kind: 'set', setSide: 'L', slots: [] });
+  const [form, setForm] = useState({
+    setCode: '',
+    setName: '',
+    kind: 'set',
+    setSide: 'L',
+    slots: [],
+  });
   const [saving, setSaving] = useState(false);
 
   const masterByCode = useMemo(
@@ -110,7 +116,13 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
       const id = modal !== 'add' ? modal.id : undefined;
       const side = asDisplayText(form.setSide, 'L') === 'R' ? 'R' : 'L';
       const code = String(form.setCode || '').trim() || `SET-${side}-${Date.now()}`;
-      await upsertSetComposition({ ...(id ? { id } : {}), ...form, kind: 'set', setSide: side, setCode: code });
+      await upsertSetComposition({
+        ...(id ? { id } : {}),
+        ...form,
+        kind: 'set',
+        setSide: side,
+        setCode: code,
+      });
       showToast('저장 완료', 'ok');
       setModal(null);
       refresh();
@@ -121,7 +133,8 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
   };
 
   const handleDelete = async comp => {
-    if (!confirm(`'${comp.setName || '세트'}' 세트가 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`)) return;
+    if (!confirm(`'${comp.setName || '세트'}' 세트가 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`))
+      return;
     await deleteSetComposition(comp.id);
     showToast(`'${comp.setName}' 삭제`, 'ok');
     refresh();
@@ -148,8 +161,8 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
           <div>
             <div style={{ fontSize: 14, fontWeight: 700 }}>하프앤하프</div>
             <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
-              모든 피자 한판 총열량(kcal×총중량÷100) — 석쇠·치즈크러스트·씬바사삭·골드스윗
-              L/R 후보 기준
+              모든 피자 한판 총열량(kcal×총중량÷100) — 석쇠·치즈크러스트·씬바사삭·골드스윗 L/R 후보
+              기준
             </div>
           </div>
           <span
@@ -208,11 +221,7 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       padding: '4px 8px',
-                      background: high
-                        ? '#FEE2E2'
-                        : low
-                          ? '#DCFCE7'
-                          : 'var(--surface-2)',
+                      background: high ? '#FEE2E2' : low ? '#DCFCE7' : 'var(--surface-2)',
                       borderRadius: 6,
                       fontSize: 12,
                       color: high ? '#991B1B' : low ? '#166534' : 'var(--text-2)',

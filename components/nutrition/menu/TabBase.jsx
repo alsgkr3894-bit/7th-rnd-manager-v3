@@ -74,7 +74,10 @@ function getCrustPair(crustType) {
 }
 
 function formatCrustPairLabel(pair) {
-  return ['L', 'R'].map(size => pair?.[size]).filter(Boolean).join('/');
+  return ['L', 'R']
+    .map(size => pair?.[size])
+    .filter(Boolean)
+    .join('/');
 }
 
 function formatCalcValue(value, suffix = '') {
@@ -223,7 +226,9 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
       ]);
       const nutritionMap = buildIngredientNutritionMapFromRows(nutritionRows);
       const nutritionCodeSet = new Set(
-        asObjectArray(nutritionRows).map(row => asDisplayText(row.productCode)).filter(Boolean)
+        asObjectArray(nutritionRows)
+          .map(row => asDisplayText(row.productCode))
+          .filter(Boolean)
       );
       const metaByCode = new Map();
       asObjectArray(ingredientRows).forEach(row => {
@@ -318,7 +323,9 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
     const currentSize = getCrustSize(selCrust);
     const targets =
       mode === 'both'
-        ? ['L', 'R'].map(size => ({ size, crustType: pair[size] })).filter(target => target.crustType)
+        ? ['L', 'R']
+            .map(size => ({ size, crustType: pair[size] }))
+            .filter(target => target.crustType)
         : [{ size: currentSize, crustType: selCrust }];
     const validTargets = targets.filter(target => preview[target.size]);
     if (!validTargets.length) {
@@ -332,7 +339,11 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
         const result = preview[target.size];
         const existingRaw = safeRawMap[`${selMenu.menuCode}__${target.crustType}`];
         const baseValues =
-          target.crustType === selCrust ? form : existingRaw && typeof existingRaw === 'object' ? existingRaw : {};
+          target.crustType === selCrust
+            ? form
+            : existingRaw && typeof existingRaw === 'object'
+              ? existingRaw
+              : {};
         const applied = { ...result.values, weight: result.totalGrams };
         await upsertRawValue({
           ...(existingRaw?.id ? { id: existingRaw.id } : {}),
@@ -737,7 +748,9 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
                   <Icon.beaker style={{ width: 28, height: 28 }} />
                 </div>
                 <div className="empty-title">가져올 식자재 영양값이 없어요</div>
-                <div className="empty-sub">식자재 영양값 탭에서 재료별 100g 기준값을 먼저 입력하세요.</div>
+                <div className="empty-sub">
+                  식자재 영양값 탭에서 재료별 100g 기준값을 먼저 입력하세요.
+                </div>
               </div>
             ) : (
               <>
@@ -764,7 +777,9 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
                 {ingredientCalcRows.length === 0 ? (
                   <div className="empty-state" style={{ padding: '22px 12px' }}>
                     <div className="empty-title">계산할 식자재를 추가하세요</div>
-                    <div className="empty-sub">검색으로 식자재를 추가한 뒤 L/R 사용량(g)을 입력하세요.</div>
+                    <div className="empty-sub">
+                      검색으로 식자재를 추가한 뒤 L/R 사용량(g)을 입력하세요.
+                    </div>
                   </div>
                 ) : (
                   <div className="card table-card">
@@ -885,28 +900,26 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
                                   gap: 6,
                                 }}
                               >
-                                {['kcal', 'carbs', 'protein', 'fat', 'sodium', 'sugar'].map(
-                                  key => {
-                                    const field = NUTRITION_FIELDS.find(f => f.key === key);
-                                    return (
-                                      <div
-                                        key={key}
-                                        style={{
-                                          padding: '7px 8px',
-                                          borderRadius: 8,
-                                          background: 'var(--surface-2)',
-                                        }}
-                                      >
-                                        <div style={{ fontSize: 10, color: 'var(--text-4)' }}>
-                                          {field?.label || key}
-                                        </div>
-                                        <div style={{ fontSize: 13, fontWeight: 800 }}>
-                                          {formatCalcValue(result.values[key])}
-                                        </div>
+                                {['kcal', 'carbs', 'protein', 'fat', 'sodium', 'sugar'].map(key => {
+                                  const field = NUTRITION_FIELDS.find(f => f.key === key);
+                                  return (
+                                    <div
+                                      key={key}
+                                      style={{
+                                        padding: '7px 8px',
+                                        borderRadius: 8,
+                                        background: 'var(--surface-2)',
+                                      }}
+                                    >
+                                      <div style={{ fontSize: 10, color: 'var(--text-4)' }}>
+                                        {field?.label || key}
                                       </div>
-                                    );
-                                  }
-                                )}
+                                      <div style={{ fontSize: 13, fontWeight: 800 }}>
+                                        {formatCalcValue(result.values[key])}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </>
                           ) : (

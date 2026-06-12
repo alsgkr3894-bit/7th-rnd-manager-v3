@@ -103,8 +103,8 @@ function DuplicateNotice({ diagnostics, repairing, onRepair }) {
           영양성분 중복 데이터 {duplicateRows}건 감지
         </div>
         <div style={{ marginTop: 3, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-          메뉴코드 또는 메뉴+크러스트 기준으로 중복된 행이 있습니다. 최신 수정값을 남기고
-          나머지를 정리할 수 있습니다.
+          메뉴코드 또는 메뉴+크러스트 기준으로 중복된 행이 있습니다. 최신 수정값을 남기고 나머지를
+          정리할 수 있습니다.
           {samples.length > 0 && (
             <span style={{ display: 'block', color: 'var(--text-3)' }}>
               예: {samples.join(', ')}
@@ -162,17 +162,17 @@ export default function Page() {
       setCompList,
       duplicateDiag,
     ] = await Promise.all([
-        getAllMenuRefs(),
-        getRawValueMap(),
-        getAllEdges(),
-        getAllToppings(),
-        getAllIngredientValues(),
-        getAllCompositions(),
-        getAllMenuMaster(),
-        getAllIngredients(),
-        getAllSetCompositions(),
-        getNutritionBaseDuplicateDiagnostics(),
-      ]);
+      getAllMenuRefs(),
+      getRawValueMap(),
+      getAllEdges(),
+      getAllToppings(),
+      getAllIngredientValues(),
+      getAllCompositions(),
+      getAllMenuMaster(),
+      getAllIngredients(),
+      getAllSetCompositions(),
+      getNutritionBaseDuplicateDiagnostics(),
+    ]);
     if (!mountedRef.current) return;
     const safeEdgeList = asObjectArray(edgeList);
     const nextEdgeMap = Object.fromEntries(

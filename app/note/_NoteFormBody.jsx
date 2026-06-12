@@ -494,90 +494,90 @@ export function NoteFormBody({ form, setForm }) {
                 placeholder="재료명·식자재 코드 검색 후 클릭해서 추가…"
               />
               {showDropdown && ingSearch.trim() && filteredIngs.length === 0 && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 4px)',
-                  left: 0,
-                  right: 0,
-                  zIndex: 20,
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  boxShadow: 'var(--shadow-md)',
-                  padding: '12px 14px',
-                  fontSize: 12,
-                  color: 'var(--text-3)',
-                }}
-              >
-                "{ingSearch}" 결과 없음 — 식자재 관리에서 먼저 등록하세요
-              </div>
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 4px)',
+                    left: 0,
+                    right: 0,
+                    zIndex: 20,
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    boxShadow: 'var(--shadow-md)',
+                    padding: '12px 14px',
+                    fontSize: 12,
+                    color: 'var(--text-3)',
+                  }}
+                >
+                  "{ingSearch}" 결과 없음 — 식자재 관리에서 먼저 등록하세요
+                </div>
               )}
               {showDropdown && filteredIngs.length > 0 && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 4px)',
-                  left: 0,
-                  right: 0,
-                  zIndex: 20,
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  boxShadow: 'var(--shadow-md)',
-                  maxHeight: 200,
-                  overflowY: 'auto',
-                }}
-              >
-                {filteredIngs.map(ing => {
-                  const name = ing.ingredientName || ing.productName || '';
-                  const unitPrice = unitPriceFromIngredient(ing);
-                  const up = unitPrice ? Number(unitPrice) : null;
-                  return (
-                    <button
-                      key={ing.id}
-                      onMouseDown={() => addIngRow(ing)}
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        textAlign: 'left',
-                        padding: '8px 12px',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: 13,
-                        color: 'var(--text-1)',
-                      }}
-                    >
-                      <span style={{ fontWeight: 600 }}>{name}</span>
-                      {up != null && (
-                        <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--text-3)' }}>
-                          {up.toLocaleString()}원/{ing.baseUnitType || 'g'}
-                        </span>
-                      )}
-                      {ing.productCode && (
-                        <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--text-4)' }}>
-                          {ing.productCode}
-                        </span>
-                      )}
-                      {ing.category && (
-                        <span
-                          style={{
-                            marginLeft: 6,
-                            fontSize: 10,
-                            background: 'var(--surface-2)',
-                            color: 'var(--text-3)',
-                            padding: '1px 6px',
-                            borderRadius: 4,
-                          }}
-                        >
-                          {ing.category}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 4px)',
+                    left: 0,
+                    right: 0,
+                    zIndex: 20,
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    boxShadow: 'var(--shadow-md)',
+                    maxHeight: 200,
+                    overflowY: 'auto',
+                  }}
+                >
+                  {filteredIngs.map(ing => {
+                    const name = ing.ingredientName || ing.productName || '';
+                    const unitPrice = unitPriceFromIngredient(ing);
+                    const up = unitPrice ? Number(unitPrice) : null;
+                    return (
+                      <button
+                        key={ing.id}
+                        onMouseDown={() => addIngRow(ing)}
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '8px 12px',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: 13,
+                          color: 'var(--text-1)',
+                        }}
+                      >
+                        <span style={{ fontWeight: 600 }}>{name}</span>
+                        {up != null && (
+                          <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--text-3)' }}>
+                            {up.toLocaleString()}원/{ing.baseUnitType || 'g'}
+                          </span>
+                        )}
+                        {ing.productCode && (
+                          <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--text-4)' }}>
+                            {ing.productCode}
+                          </span>
+                        )}
+                        {ing.category && (
+                          <span
+                            style={{
+                              marginLeft: 6,
+                              fontSize: 10,
+                              background: 'var(--surface-2)',
+                              color: 'var(--text-3)',
+                              padding: '1px 6px',
+                              borderRadius: 4,
+                            }}
+                          >
+                            {ing.category}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               )}
             </div>
             {hasLinkedCostRows && (

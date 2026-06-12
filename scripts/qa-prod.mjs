@@ -5,7 +5,10 @@ import net from 'node:net';
 function isPortBusy(port) {
   return new Promise(resolve => {
     const socket = net.createConnection(port, '127.0.0.1');
-    socket.once('connect', () => { socket.destroy(); resolve(true); });
+    socket.once('connect', () => {
+      socket.destroy();
+      resolve(true);
+    });
     socket.once('error', () => resolve(false));
   });
 }
@@ -75,7 +78,9 @@ let server = null;
 
 try {
   if (await isPortBusy(Number(PORT))) {
-    process.stderr.write(`포트 ${PORT}이 이미 사용 중입니다. 실행 중인 서버를 종료 후 다시 시도하세요.\n`);
+    process.stderr.write(
+      `포트 ${PORT}이 이미 사용 중입니다. 실행 중인 서버를 종료 후 다시 시도하세요.\n`
+    );
     process.exit(1);
   }
 

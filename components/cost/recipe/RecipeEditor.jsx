@@ -74,7 +74,10 @@ function SortableIngredientRow({
         <div style={{ fontWeight: 500 }}>
           {line.ingredientName}
           {discontinued && (
-            <span title="단종 식자재" style={{ color: 'var(--negative)', fontSize: 11, marginLeft: 4 }}>
+            <span
+              title="단종 식자재"
+              style={{ color: 'var(--negative)', fontSize: 11, marginLeft: 4 }}
+            >
               ⚠ 단종
             </span>
           )}

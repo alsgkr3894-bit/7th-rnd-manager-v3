@@ -183,7 +183,10 @@ function ImportRow({ row = {}, idx, menuMasters, onToggle = noop, onUpdate = noo
               onUpdate(idx, {
                 menuCode: code,
                 menuName: m?.menuName || row.baseName,
-                category: normalizeNutritionCategory(meta?.category || row.category || '', category),
+                category: normalizeNutritionCategory(
+                  meta?.category || row.category || '',
+                  category
+                ),
                 status: code ? 'matched' : 'unmatched',
                 include: !!code,
               });

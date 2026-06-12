@@ -174,7 +174,9 @@ export function TabDerived({
       ...f,
       ingredientCodes: asStringArray(f.ingredientCodes).filter(item => item !== code),
       ingredientAmounts: Object.fromEntries(
-        Object.entries(asAmountMap(f.ingredientAmounts)).filter(([amountCode]) => amountCode !== code)
+        Object.entries(asAmountMap(f.ingredientAmounts)).filter(
+          ([amountCode]) => amountCode !== code
+        )
       ),
     }));
   };
@@ -251,7 +253,12 @@ export function TabDerived({
   };
 
   const handleDeleteComp = async comp => {
-    if (!confirm(`'${asDisplayText(comp.menuName, '파생 메뉴')}' 및 연결된 영양정보가 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`)) return;
+    if (
+      !confirm(
+        `'${asDisplayText(comp.menuName, '파생 메뉴')}' 및 연결된 영양정보가 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`
+      )
+    )
+      return;
     try {
       await deleteComposition(comp.id);
       showToast(`'${asDisplayText(comp.menuName, '파생 메뉴')}' 삭제`, 'ok');

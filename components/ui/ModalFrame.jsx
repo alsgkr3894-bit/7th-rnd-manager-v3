@@ -59,7 +59,11 @@ export function ModalFrame({
           }}
         >
           <div>
-            {title && <div id="modal-frame-title" style={{ fontWeight: 700, fontSize: 16 }}>{title}</div>}
+            {title && (
+              <div id="modal-frame-title" style={{ fontWeight: 700, fontSize: 16 }}>
+                {title}
+              </div>
+            )}
             {subtitle && (
               <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{subtitle}</div>
             )}

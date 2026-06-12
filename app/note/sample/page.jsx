@@ -92,7 +92,12 @@ function SampleContent() {
   );
   const [calMonth, setCalMonth] = useState(() => new Date());
 
-  const { data: loadedSamples, loading, error: loadError, reload } = useDBLoad(() => getAllSamples());
+  const {
+    data: loadedSamples,
+    loading,
+    error: loadError,
+    reload,
+  } = useDBLoad(() => getAllSamples());
 
   useEffect(() => {
     if (loadedSamples) setSamples(loadedSamples);
