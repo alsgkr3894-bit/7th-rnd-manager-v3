@@ -8405,9 +8405,11 @@ input:checked + .toggle-box::after {
     margin-bottom: 8pt !important;
   }
 
-  /* 버튼·필터 칩·검색바 숨김 */
+  /* 버튼·필터 칩·검색바 숨김 (데이터 표시 .chip은 보존) */
   .btn,
-  .chip,
+  .filter-chips .chip,
+  .filter-chip-row .chip,
+  button.chip,
   .filter-search,
   .tabs,
   .tab,
