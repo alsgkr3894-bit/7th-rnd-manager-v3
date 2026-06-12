@@ -1,8 +1,9 @@
 'use client';
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { showToast } from '@/components/Toast';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { Icon } from '@/components/icons';
+import { UploadDropzone } from '@/components/ui/UploadDropzone';
 import { formatNumber } from '@/lib/format';
 import { readSpreadsheetFile } from '@/lib/excel';
 import { parseBulkPriceRows, matchAndApply, commitBulkPrice } from '@/lib/cost/bulk-price-update';
@@ -56,7 +57,6 @@ const noop = () => {};
  *   onClose              - 모달 닫기
  */
 export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
-  const fileRef = useRef(null);
   const safeExistingIngredients = useMemo(
     () => asObjectArray(existingIngredients),
     [existingIngredients]
@@ -96,16 +96,6 @@ export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
       }
     },
     [safeExistingIngredients]
-  );
-
-  const handleInputChange = useCallback(
-    e => {
-      const file = e.target.files?.[0];
-      if (file) handleFile(file);
-      // Reset input so same file can be re-selected
-      e.target.value = '';
-    },
-    [handleFile]
   );
 
   // ── 커밋 ────────────────────────────────────────────────
@@ -169,35 +159,14 @@ export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
 
       {/* 파일 선택 영역 */}
       {phase === 'idle' && (
-        <div
-          style={{
-            border: '2px dashed var(--border)',
-            borderRadius: 10,
-            padding: '40px 24px',
-            textAlign: 'center',
-            cursor: 'pointer',
-            background: 'var(--surface)',
-            transition: 'border-color .15s, background .15s',
+        <UploadDropzone
+          accept={['.csv', '.xlsx', '.xls']}
+          title="파일을 선택하거나 드래그하세요"
+          onFile={(file, err) => {
+            if (err) { setError(err); return; }
+            handleFile(file);
           }}
-          onClick={() => fileRef.current?.click()}
-          onDragOver={e => e.preventDefault()}
-          onDrop={e => {
-            e.preventDefault();
-            const file = e.dataTransfer.files?.[0];
-            if (file) handleFile(file);
-          }}
-        >
-          <Icon.upload style={{ width: 32, height: 32, opacity: 0.4, marginBottom: 12 }} />
-          <div style={{ fontWeight: 600, marginBottom: 4 }}>파일을 선택하거나 드래그하세요</div>
-          <div style={{ fontSize: 12, color: 'var(--text-3)' }}>.csv · .xlsx · .xls</div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".csv,.xlsx,.xls"
-            style={{ display: 'none' }}
-            onChange={handleInputChange}
-          />
-        </div>
+        />
       )}
 
       {/* 파싱 중 */}

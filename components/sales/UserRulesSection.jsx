@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useCallback, useMemo, useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { Toggle } from '@/components/ui/Toggle';
 import { ComboBox } from '@/components/ui/ComboBox';
@@ -24,6 +24,7 @@ import {
   markPendingReclassify,
 } from './shared/SectionUtils';
 import { useSettingsSection } from '@/hooks/useSettingsSection';
+import { useSectionSearch } from '@/hooks/useSectionSearch';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 
@@ -33,7 +34,6 @@ export function UserRulesSection() {
   // 마운트 후 교정 — SSR 불일치 없음, 폼 카테고리 기본값도 안전
   const isMain = useIsMainBrand();
   const [nameOpts, setNameOpts] = useState({ groupNames: [], detailNames: [] });
-  const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState('createdAt');
   const [sortDir, setSortDir] = useState('desc');
 
@@ -90,6 +90,16 @@ export function UserRulesSection() {
     };
   }, []);
 
+  const ruleFilterFn = useCallback(
+    (r, q) =>
+      asDisplayText(r.rawMenuName || r.pattern).toLowerCase().includes(q) ||
+      asDisplayText(r.category).toLowerCase().includes(q) ||
+      asDisplayText(r.groupName).toLowerCase().includes(q) ||
+      asDisplayText(r.detailName).toLowerCase().includes(q),
+    []
+  );
+  const { query, setQuery, filtered } = useSectionSearch(list, ruleFilterFn);
+
   // 검색어 변경 시 편집 중 행 자동 취소 (필터로 사라진 행 편집 방지)
   useEffect(() => {
     if (query) cancelEdit();
@@ -113,20 +123,6 @@ export function UserRulesSection() {
       showToast('토글 실패', 'err');
     }
   }
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter(
-      r =>
-        asDisplayText(r.rawMenuName || r.pattern)
-          .toLowerCase()
-          .includes(q) ||
-        asDisplayText(r.category).toLowerCase().includes(q) ||
-        asDisplayText(r.groupName).toLowerCase().includes(q) ||
-        asDisplayText(r.detailName).toLowerCase().includes(q)
-    );
-  }, [list, query]);
 
   const sorted = useMemo(() => {
     const dir = sortDir === 'asc' ? 1 : -1;

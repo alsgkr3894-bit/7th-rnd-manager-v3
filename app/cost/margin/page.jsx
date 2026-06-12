@@ -10,7 +10,7 @@ import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/pri
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllRecipes, buildUnitPriceMap, calcCostBySizes } from '@/lib/recipe';
 import { getMenuPriceCategories, getAllMenuPrices } from '@/lib/cost/menu-price';
-import { PIZZA_CATEGORY_VARIANTS } from '@/lib/menu-categories';
+import { PIZZA_CATEGORY_VARIANTS, getMenuCodeRank } from '@/lib/menu-categories';
 import { getMenuMasterMap, upsertMenuMaster } from '@/lib/menu-master';
 import {
   loadPlatforms,
@@ -90,6 +90,7 @@ export default function Page() {
     normalizeCritPercentSetting
   );
   const [showHidden, setShowHidden] = useState(false); // 숨김 행 임시 표시
+  const [edgeFilter, setEdgeFilter] = useState(null); // null=전체, 'base'=석쇠기본, 또는 edgeType 문자열
 
   const load = useCallback(async () => {
     await initDB();
@@ -323,6 +324,12 @@ export default function Page() {
       const m = r.menuCode ? masterByCode.get(r.menuCode) : null;
       r.hidden = m?.hidden === true;
     }
+    allRows.sort((a, b) => {
+      const ra = getMenuCodeRank(a.menuCode);
+      const rb = getMenuCodeRank(b.menuCode);
+      if (ra !== rb) return ra - rb;
+      return (a.menuName || '').localeCompare(b.menuName || '', 'ko');
+    });
     setRows(allRows);
     setPlatforms(loadPlatforms());
   }, []);
@@ -399,9 +406,17 @@ export default function Page() {
     return result;
   }, [rows, catFilter, search, showHidden]);
 
+  const edgeFiltered = useMemo(() => {
+    if (!edgeFilter) return filtered;
+    if (edgeFilter === 'base') return filtered.filter(r => !r.id?.startsWith('derived||'));
+    return filtered.filter(
+      r => r.id?.startsWith('derived||') && r.id.split('||').pop() === edgeFilter
+    );
+  }, [filtered, edgeFilter]);
+
   const sizeLabels = useMemo(() => {
     const set = new Set();
-    filtered.forEach(r =>
+    edgeFiltered.forEach(r =>
       r.sizes?.forEach(s => {
         if (s.label) set.add(s.label);
       })
@@ -413,11 +428,11 @@ export default function Page() {
       if (ia !== -1 && ib !== -1) return ia - ib;
       return ia !== -1 ? -1 : ib !== -1 ? 1 : a.localeCompare(b, 'ko');
     });
-  }, [filtered]);
+  }, [edgeFiltered]);
 
   const stats = useMemo(() => {
-    // filtered 기준으로 계산 (catFilter 적용 후 테이블과 일치)
-    if (!filtered.length) return null;
+    // edgeFiltered 기준으로 계산 (엣지 필터 포함, 테이블과 일치)
+    if (!edgeFiltered.length) return null;
     // Single reduce pass — avoids flatMap+map+filter allocations
     let sum = 0,
       count = 0;
@@ -425,7 +440,7 @@ export default function Page() {
       highCostCount = 0,
       goodMarginCount = 0,
       badMarginCount = 0;
-    for (const r of filtered) {
+    for (const r of edgeFiltered) {
       for (const s of r.sizes || []) {
         const cost = r.costMap?.[s.label] || 0;
         const eff = applyDiscount(s.sellingPrice, discount);
@@ -451,7 +466,7 @@ export default function Page() {
       goodMarginCount,
       badMarginCount,
     };
-  }, [filtered, activePlatform, discount, warnPct, critPct]);
+  }, [edgeFiltered, activePlatform, discount, warnPct, critPct]);
 
   function handleSort(key) {
     if (sortKey === key) {
@@ -463,10 +478,22 @@ export default function Page() {
   }
 
   const sortedFiltered = useMemo(() => {
-    if (!sortKey) return filtered;
+    if (!sortKey) return edgeFiltered;
+
+    // 코드 정렬: getMenuCodeRank 기반 (같은 rank 내에서는 코드 문자열 오름차순)
+    if (sortKey === 'code') {
+      return [...edgeFiltered].sort((a, b) => {
+        const ra = getMenuCodeRank(a.menuCode);
+        const rb = getMenuCodeRank(b.menuCode);
+        if (ra !== rb) return sortDir === 'asc' ? ra - rb : rb - ra;
+        const ca = (a.menuCode || '~~~').toLowerCase();
+        const cb = (b.menuCode || '~~~').toLowerCase();
+        const c = ca.localeCompare(cb, 'ko');
+        return sortDir === 'asc' ? c : -c;
+      });
+    }
 
     function getVal(r) {
-      if (sortKey === 'code') return (r.menuCode || '~~~').toLowerCase(); // 코드 없는 행은 뒤로
       if (sortKey === 'name') return (r.menuName || '').toLowerCase();
       if (sortKey === 'cat') return (r.menuCategory || '기타').toLowerCase();
       const ul = sortKey.lastIndexOf('_');
@@ -487,7 +514,7 @@ export default function Page() {
       return 0;
     }
 
-    return [...filtered].sort((a, b) => {
+    return [...edgeFiltered].sort((a, b) => {
       const va = getVal(a);
       const vb = getVal(b);
       if (va === Infinity && vb === Infinity) return 0;
@@ -499,7 +526,7 @@ export default function Page() {
       }
       return sortDir === 'asc' ? va - vb : vb - va;
     });
-  }, [filtered, sortKey, sortDir, discount, activePlatform, viewMode]);
+  }, [edgeFiltered, sortKey, sortDir, discount, activePlatform, viewMode]);
 
   async function handleSaveSnapshot() {
     if (!stats) {
@@ -508,7 +535,7 @@ export default function Page() {
     }
     const avgCostRate = stats.avg;
     const avgMargin = 100 - avgCostRate;
-    const menuCount = filtered.length;
+    const menuCount = edgeFiltered.length;
     const label = catFilter !== '전체' ? catFilter : '전체 메뉴';
     try {
       await saveSnapshot({ avgCostRate, avgMargin, menuCount, label });
@@ -609,7 +636,7 @@ export default function Page() {
             <button
               className="btn"
               onClick={() =>
-                exportMarginExcel(filtered, sizeLabels, viewMode, activePlatform, discount)
+                exportMarginExcel(edgeFiltered, sizeLabels, viewMode, activePlatform, discount)
               }
             >
               <Icon.download style={{ width: 13, height: 13 }} /> Excel 내보내기
@@ -638,6 +665,8 @@ export default function Page() {
         cats={cats}
         catFilter={catFilter}
         onCatFilter={setCatFilter}
+        edgeFilter={edgeFilter}
+        onEdgeFilter={setEdgeFilter}
         search={search}
         onSearch={setSearch}
       />
@@ -859,7 +888,7 @@ export default function Page() {
               borderTop: '1px solid var(--divider)',
             }}
           >
-            {filtered.length}개 메뉴{rows.length !== filtered.length && ` (전체 ${rows.length}개)`}
+            {edgeFiltered.length}개 메뉴{rows.length !== edgeFiltered.length && ` (전체 ${rows.length}개)`}
             {hasAdjustment && (
               <span style={{ marginLeft: 8, color: 'var(--accent)' }}>
                 · {activePlatform.id !== 'default' ? activePlatform.name : ''}

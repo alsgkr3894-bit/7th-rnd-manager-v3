@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback, Fragment, useRef } from 'react';
+import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SortableTh } from '@/components/ui/SortableTh';
 import { SearchBox } from '@/components/ui/SearchBox';
@@ -80,7 +81,7 @@ export default function Page() {
   const [onlyOne, setOnlyOne] = useState(false);
   const [showUnused, setShowUnused] = useState(false);
   const [excludedMenus, setExcludedMenus] = useState(() => new Set()); // 목록에서 제외할 메뉴명
-  const mountedRef = useRef(true);
+  const mountedRef = useMounted();
 
   // 숨김 목록 복원 (마운트 1회)
   useEffect(() => {
@@ -177,10 +178,9 @@ export default function Page() {
     }
 
     setUsageMap({ byCode: uByCode, byName: uByName });
-  }, []);
+  }, [mountedRef]);
 
   useEffect(() => {
-    mountedRef.current = true;
     load()
       .catch(err => {
         if (mountedRef.current) console.error(err);
@@ -188,11 +188,7 @@ export default function Page() {
       .finally(() => {
         if (mountedRef.current) setLoading(false);
       });
-
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [load]);
+  }, [load, mountedRef]);
 
   const totalUsedCount = useMemo(() => {
     const { byCode, byName } = usageMap;

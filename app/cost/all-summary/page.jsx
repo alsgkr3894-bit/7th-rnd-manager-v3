@@ -16,7 +16,7 @@ import { getPersonalRecipeMap } from '@/lib/cost/personal-detail';
 import { getSideRecipeMap } from '@/lib/cost/side-detail';
 import { getSetRecipeMap } from '@/lib/cost/set-detail';
 import { costRateColor, calcCostRate } from '@/lib/cost/rate-color';
-import { MENU_CATEGORY } from '@/lib/menu-categories';
+import { MENU_CATEGORY, getMenuCodeRank } from '@/lib/menu-categories';
 import { downloadCsv } from '@/lib/download';
 import { onPriceUpload } from '@/lib/price/price-events';
 import {
@@ -138,6 +138,7 @@ function buildRows(recipes, unitPriceMap, menuPrices, detailMaps) {
     rows.push({
       id: `mp-${menuName}`,
       menuName,
+      menuCode: firstEntry?.menuCode || '',
       rawCategory: category || '',
       category: norm,
       cost: cost > 0 ? Math.round(cost) : null,
@@ -205,10 +206,12 @@ export default function Page() {
     const detailMaps = { pizza: pizzaMap, personal: personalMap, side: sideMap, set: setMap };
     const built = buildRows(allRecipes, upm, allMenuPrices, detailMaps);
 
-    // 정렬: 카테고리 순 → 메뉴명 가나다
+    // 정렬: 카테고리 순 → 메뉴코드 rank → 메뉴명 가나다
     built.sort((a, b) => {
       const cr = catRank(a.category) - catRank(b.category);
       if (cr !== 0) return cr;
+      const rr = getMenuCodeRank(a.menuCode) - getMenuCodeRank(b.menuCode);
+      if (rr !== 0) return rr;
       return (a.menuName || '').localeCompare(b.menuName || '', 'ko');
     });
 

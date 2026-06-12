@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useCallback } from 'react';
 import { showToast } from '@/components/Toast';
 import { Toggle } from '@/components/ui/Toggle';
 import { InlineConfirmButtons } from '@/components/ui/InlineConfirmButtons';
@@ -15,13 +15,13 @@ import {
   markPendingReclassify,
 } from './shared/SectionUtils';
 import { useSettingsSection } from '@/hooks/useSettingsSection';
+import { useSectionSearch } from '@/hooks/useSectionSearch';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 
 const INITIAL_FORM = { rawName: '', mappedName: '' };
 const PAGE_SIZE = 20;
 
 export function UserAliasesSection() {
-  const [query, setQuery] = useState('');
 
   const {
     list,
@@ -54,20 +54,18 @@ export function UserAliasesSection() {
     messages: { add: '별칭이 추가됐어요' },
   });
 
+  const aliasFilterFn = useCallback(
+    (a, q) =>
+      asDisplayText(a.rawName).toLowerCase().includes(q) ||
+      asDisplayText(a.mappedName).toLowerCase().includes(q),
+    []
+  );
+  const { query, setQuery, filtered } = useSectionSearch(list, aliasFilterFn);
+
   // 검색어 변경 시 편집 중 상태 해제 (사라진 행에서 편집 중 방지)
   useEffect(() => {
     if (query) cancelEdit();
   }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter(
-      a =>
-        asDisplayText(a.rawName).toLowerCase().includes(q) ||
-        asDisplayText(a.mappedName).toLowerCase().includes(q)
-    );
-  }, [list, query]);
 
   const { page, goTo, totalPages, paged, total } = usePagination(filtered, PAGE_SIZE);
 

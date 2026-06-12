@@ -1,0 +1,195 @@
+/* ===== Theme tokens ===== */
+:root {
+  color-scheme: light dark;
+  --bg: #f2f4f6;
+  --bg-2: #e9ecef;
+  --surface: #ffffff;
+  --surface-2: #f7f8fa;
+  --surface-3: #f1f3f5;
+  --surface-4: #e9ecef;
+  --text-1: #191f28;
+  --text-2: #4e5968;
+  --text-3: #5c6472; /* #F7F8FA 배경 기준 5.1:1 — WCAG AA ✓ */
+  --text-4: #767676;
+  --border: #ebeef1;
+  --border-strong: #d1d6db;
+  --divider: #f1f3f5;
+
+  --accent: #e1101f;
+  --accent-press: #c0101c;
+  --accent-soft: #fee8ea;
+  --accent-text: #b80d18;
+
+  --positive: #1a8917;
+  --positive-soft: #e6f4e6;
+  --negative: #e03131;
+  --negative-soft: #fceaea;
+  --warn: #c76a00;
+  --warn-soft: #fff1e0;
+  --scope-generic: #6d28d9; /* 범용 계열 — 보라 (전용/미지정과 구분) */
+  --scope-generic-soft: #f1ecfd; /* 범용: 외곽(연보라) */
+  --scope-generic-ink: #ffffff; /* 범용관리: 채운 보라 위 글자색 */
+  --star: #f5a623; /* 별점 골드 — 라이트/다크 공통 */
+
+  --shadow-sm: 0 1px 2px rgba(20, 24, 35, 0.04);
+  --shadow-md: 0 1px 3px rgba(20, 24, 35, 0.06), 0 6px 16px rgba(20, 24, 35, 0.04);
+  --shadow-lg: 0 8px 32px rgba(20, 24, 35, 0.08);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  --gap: 24px;
+  --pad-card: 28px;
+
+  /* Palette / activity icon accent colors */
+  --sample-ico-bg: #fff3e0;
+  --sample-ico-color: #e65100;
+  --note-ico-bg: #f0ebff;
+  --note-ico-color: #6b3fcb;
+  --color-reporting: #6b3fcb;
+
+  /* Category chip colors (8-color cycle) */
+  --cat-1-bg: #eef2ff;
+  --cat-1-text: #3730a3;
+  --cat-2-bg: #f0fdf4;
+  --cat-2-text: #166534;
+  --cat-3-bg: #fff7ed;
+  --cat-3-text: #9a3412;
+  --cat-4-bg: #faf5ff;
+  --cat-4-text: #6b21a8;
+  --cat-5-bg: #fdf2f8;
+  --cat-5-text: #9d174d;
+  --cat-6-bg: #f0fdfa;
+  --cat-6-text: #115e59;
+  --cat-7-bg: #fffbeb;
+  --cat-7-text: #92400e;
+  --cat-8-bg: #fef2f2;
+  --cat-8-text: #991b1b;
+}
+
+[data-theme='dark'] {
+  --bg: #0f1217;
+  --bg-2: #181c22;
+  --surface: #1b1f26;
+  --surface-2: #22272f;
+  --text-1: #f4f6f9;
+  --text-2: #b0b8c1;
+  --text-3: #8b95a1;
+  --text-4: #858fa0; /* #6B7682에서 상향 — dark surface 대비 4.5:1 충족 */
+  --border: #2a2f37;
+  --border-strong: #3a4049;
+  --divider: #23282f;
+
+  --accent-soft: #2d1114;
+  --accent-text: #ff8080;
+
+  --positive: #2ba84a;
+  --negative: #e5534b;
+  --positive-soft: rgba(43, 168, 74, 0.12);
+  --negative-soft: rgba(229, 83, 75, 0.12);
+  --warn-soft: #2a1f0f;
+  --scope-generic: #a78bfa; /* 범용 계열 — 다크모드 보라 */
+  --scope-generic-soft: rgba(139, 92, 246, 0.16);
+  --scope-generic-ink: #1e1530; /* 범용관리: 채운(연보라) 배지 위 글자색 */
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+
+  /* Palette / activity icon accent colors — dark mode */
+  --sample-ico-bg: #3a1e05;
+  --sample-ico-color: #fb923c;
+  --note-ico-bg: #2e1a4a;
+  --note-ico-color: #c084fc;
+
+  /* Category chip colors — dark mode */
+  --cat-1-bg: #1e1b4b;
+  --cat-1-text: #a5b4fc;
+  --cat-2-bg: #14532d;
+  --cat-2-text: #86efac;
+  --cat-3-bg: #431407;
+  --cat-3-text: #fdba74;
+  --cat-4-bg: #3b0764;
+  --cat-4-text: #d8b4fe;
+  --cat-5-bg: #500724;
+  --cat-5-text: #f9a8d4;
+  --cat-6-bg: #042f2e;
+  --cat-6-text: #5eead4;
+  --cat-7-bg: #451a03;
+  --cat-7-text: #fde68a;
+  --cat-8-bg: #450a0a;
+  --cat-8-text: #fca5a5;
+}
+
+[data-density='compact'] {
+  --gap: 16px;
+  --pad-card: 20px;
+}
+
+/* ===== 글씨 크기 (글씨 위주) — 주요 텍스트 클래스의 font-size만 키움 ===== */
+/* large */
+html[data-font-scale='large'] body {
+  font-size: 16px;
+}
+html[data-font-scale='large'] .data-table thead th {
+  font-size: 12px;
+}
+html[data-font-scale='large'] .data-table td {
+  font-size: 14px;
+}
+html[data-font-scale='large'] .card-title {
+  font-size: 17px;
+}
+html[data-font-scale='large'] .card-sub,
+html[data-font-scale='large'] .page-sub,
+html[data-font-scale='large'] .stat-label {
+  font-size: 13px;
+}
+html[data-font-scale='large'] .page-title {
+  font-size: 28px;
+}
+html[data-font-scale='large'] .stat-value {
+  font-size: 24px;
+}
+html[data-font-scale='large'] .btn,
+html[data-font-scale='large'] .chip,
+html[data-font-scale='large'] .filter-chip,
+html[data-font-scale='large'] .nav-item,
+html[data-font-scale='large'] .nav-child,
+html[data-font-scale='large'] .form-input {
+  font-size: 15px;
+}
+/* xlarge */
+html[data-font-scale='xlarge'] body {
+  font-size: 17px;
+}
+html[data-font-scale='xlarge'] .data-table thead th {
+  font-size: 13px;
+}
+html[data-font-scale='xlarge'] .data-table td {
+  font-size: 15px;
+}
+html[data-font-scale='xlarge'] .card-title {
+  font-size: 18px;
+}
+html[data-font-scale='xlarge'] .card-sub,
+html[data-font-scale='xlarge'] .page-sub,
+html[data-font-scale='xlarge'] .stat-label {
+  font-size: 14px;
+}
+html[data-font-scale='xlarge'] .page-title {
+  font-size: 30px;
+}
+html[data-font-scale='xlarge'] .stat-value {
+  font-size: 26px;
+}
+html[data-font-scale='xlarge'] .btn,
+html[data-font-scale='xlarge'] .chip,
+html[data-font-scale='xlarge'] .filter-chip,
+html[data-font-scale='xlarge'] .nav-item,
+html[data-font-scale='xlarge'] .nav-child,
+html[data-font-scale='xlarge'] .form-input {
+  font-size: 16px;
+}

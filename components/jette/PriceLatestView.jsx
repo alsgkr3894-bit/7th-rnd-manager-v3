@@ -11,6 +11,7 @@ import { getPriceRowsByFileId } from '@/lib/price';
 import { PriceLatestKpi } from './PriceLatestKpi';
 import { TypeSelect } from './_TypeSelect';
 import { sortByKey, getProductTypeCounts } from '@/lib/jette/utils';
+import { useTableSearchSort } from '@/hooks/useTableSearchSort';
 
 export function PriceLatestView({
   files,
@@ -20,11 +21,9 @@ export function PriceLatestView({
   onTypeChange,
 }) {
   const [rows, setRows] = useState([]);
-  const [search, setSearch] = useState('');
   const [taxFilter, setTaxFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [sortKey, setSortKey] = useState('productName');
-  const [sortDir, setSortDir] = useState('asc');
+  const { search, setSearch, sortKey, setSortKey, sortDir, setSortDir } = useTableSearchSort('productName', 'asc');
 
   const latestFile = files.find(f => f.id === latestFileId);
 
@@ -32,7 +31,7 @@ export function PriceLatestView({
     setTypeFilter('all');
     setTaxFilter('all');
     setSearch('');
-  }, [latestFileId]);
+  }, [latestFileId, setSearch]);
 
   useEffect(() => {
     (async () => {

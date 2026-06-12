@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useCallback } from 'react';
 import { InlineConfirmButtons } from '@/components/ui/InlineConfirmButtons';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { Pagination } from '@/components/ui/Pagination';
@@ -12,14 +12,13 @@ import {
 } from '@/lib/sales';
 import { inputStyle, SectionHeader, SectionEmpty } from './shared/SectionUtils';
 import { useSettingsSection } from '@/hooks/useSettingsSection';
+import { useSectionSearch } from '@/hooks/useSectionSearch';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 
 const INITIAL_FORM = { menuName: '' };
 const PAGE_SIZE = 20;
 
 export function UserExcludedSection() {
-  const [query, setQuery] = useState('');
-
   const {
     list,
     adding,
@@ -50,15 +49,15 @@ export function UserExcludedSection() {
     messages: { add: '제외 메뉴가 추가됐어요' },
   });
 
+  const excludedFilterFn = useCallback(
+    (e, q) => asDisplayText(e.menuName).toLowerCase().includes(q),
+    []
+  );
+  const { query, setQuery, filtered } = useSectionSearch(list, excludedFilterFn);
+
   useEffect(() => {
     if (query) cancelEdit();
   }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter(e => asDisplayText(e.menuName).toLowerCase().includes(q));
-  }, [list, query]);
 
   const { page, goTo, totalPages, paged, total } = usePagination(filtered, PAGE_SIZE);
 

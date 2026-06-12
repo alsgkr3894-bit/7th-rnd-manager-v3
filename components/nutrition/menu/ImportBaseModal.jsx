@@ -1,7 +1,8 @@
 'use client';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
+import { UploadDropzone } from '@/components/ui/UploadDropzone';
 import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import { parseLabExcel, buildImportRows, toRawValueRecord } from '@/lib/nutrition/values/import';
 import { CRUST_TYPES, upsertMenuRef, upsertRawValue } from '@/lib/nutrition/values/store';
@@ -268,15 +269,9 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
   const [step, setStep] = useState('upload');
   const [rows, setRows] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const fileRef = useRef(null);
-
-  const handleFile = async file => {
+  const handleFile = async (file, err) => {
     if (!file) return;
-    if (!isSupportedLabFile(file)) {
-      showToast('지원하지 않는 파일 형식입니다. .xlsx 또는 .xls 파일을 선택해주세요', 'error');
-      return;
-    }
+    if (err) { showToast(err, 'error'); return; }
     try {
       const buf = await file.arrayBuffer();
       const rawRows = await parseLabExcel(buf);
@@ -286,13 +281,6 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
     } catch (e) {
       showToast(`파싱 실패: ${e?.message || e}`, 'error');
     }
-  };
-
-  const handleDrop = e => {
-    e.preventDefault();
-    setDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFile(file);
   };
 
   const toggleInclude = useCallback(idx => {
@@ -371,40 +359,10 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
             지원 형식: .xlsx, .xls
           </span>
         </div>
-        <div
-          onClick={() => fileRef.current?.click()}
-          onDrop={handleDrop}
-          onDragOver={e => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          style={{
-            border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--border)'}`,
-            borderRadius: 10,
-            padding: '44px 20px',
-            textAlign: 'center',
-            cursor: 'pointer',
-            background: dragOver ? 'var(--accent-soft)' : 'var(--surface-2)',
-            transition: 'border-color 0.15s, background 0.15s',
-          }}
-        >
-          <div style={{ fontSize: 36, marginBottom: 10 }}>📊</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-2)', marginBottom: 4 }}>
-            엑셀 파일을 드래그하거나 클릭하여 선택
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-4)' }}>.xlsx / .xls</div>
-        </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".xlsx,.xls"
-          style={{ display: 'none' }}
-          onChange={e => {
-            const f = e.target.files?.[0];
-            if (f) handleFile(f);
-            e.target.value = '';
-          }}
+        <UploadDropzone
+          accept={['.xlsx', '.xls']}
+          title="엑셀 파일을 드래그하거나 클릭하여 선택"
+          onFile={handleFile}
         />
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
           <button className="btn" onClick={close}>

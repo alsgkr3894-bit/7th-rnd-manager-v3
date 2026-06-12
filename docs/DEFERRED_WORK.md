@@ -242,6 +242,228 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ---
 
+## R. 리팩토링 후보 (Refactoring Candidates)
+
+> 기능 동작 변경 없이 구조·가독성·테스트 가능성을 개선하는 작업.
+> 위험도순 배치. 🔴·🟡는 충분한 검토 후 착수, 🟢는 언제든 착수 가능.
+> **관련**: B-5(useDBLoad 전면 확산), B-6(대형 컴포넌트 분해)와 연계 항목에 표기.
+
+---
+
+### 🔴 고위험
+
+#### R-1. `lib/sales/ms9-rules.js` 카테고리별 파일 분리  ⏸
+- **파일**: `lib/sales/ms9-rules.js` (2262줄)
+- **문제**: 석쇠/치즈/골드스윗/씬바사삭 규칙 등 전체 판매량 매칭 룰이 단일 파일에 집결. 룰 추가·수정 시 충돌 위험.
+- **해결 방향**: `rules-pizza.js`, `rules-side.js`, `rules-edge.js`, `rules-set.js`로 분리 후 `ms9-rules.js`에서 re-export.
+- **왜 보류**: 판매량 집계 핵심 로직. 분리 후 전체 룰 누락 없는지 테스트 필수.
+
+#### R-2. `app/cost/margin/page.jsx` load() 순수 함수 분리  ⏸
+- **파일**: `app/cost/margin/page.jsx` L143–L331
+- **문제**: `recipeRows`, `detailRows`, `derivedRows` 생성 로직이 `load()` 안에 혼재. 단위 테스트 불가.
+- **해결 방향**: `lib/cost/margin/build-rows.js` 순수 함수로 추출.
+- **왜 보류**: 엣지 파생 행 생성 로직이 복잡해 추출 시 회귀 위험.
+
+#### R-3. `app/settings/restore/page.jsx` 분해  ⏸
+- **파일**: `app/settings/restore/page.jsx`
+- **문제**: 파일 파싱·영향도 계산·자동백업·import 실행·진행률 UI·완료 UI가 한 파일.
+- **해결 방향**: `useRestoreFile`, `useRestoreImpact`, `useRestoreExecution`, `RestorePreview`, `RestoreProgressCard`.
+- **왜 보류**: 고위험 기능. 분리 후 복원 시나리오 전체 재검증 필요.
+
+---
+
+### 🟡 중위험
+
+#### R-4. `TabBase.jsx` 분해 (1153줄)  ⏸
+- **파일**: `components/nutrition/menu/TabBase.jsx`
+- **문제**: 영양값 입력·메뉴 CRUD·레시피 자동계산·식자재 기반 계산·import modal이 한 컴포넌트.
+- **해결 방향**: `useNutritionBaseEditor`, `useRecipeNutritionCalc`, `useIngredientNutritionCalc`, `MenuGroupList`, `NutritionInputPanel`, `IngredientCalcModal`.
+- **관련**: B-6
+
+#### R-5. `app/ingredient/list/page.jsx` PDF 함수 이동 + hook 분리  ⏸
+- **파일**: `app/ingredient/list/page.jsx` L93 `printIngredientPdf`, L229 필터/카테고리
+- **문제**: PDF 생성 함수가 page 파일에 인라인. 필터·카테고리 계산이 컴포넌트 안에 혼재.
+- **해결 방향**: `printIngredientPdf` → `lib/ingredient/print.js`. `useIngredientCatalogData`, `useIngredientCatalogView` hook 분리.
+- **관련**: B-5, B-6
+
+#### R-6. `app/ingredient/usage/page.jsx` buildIngredientUsageMap 중복  ⏸
+- **파일**: `app/ingredient/usage/page.jsx` L134, `lib/cost/ingredient-price-helpers.js` L59
+- **문제**: usage page가 사용맵을 직접 재구성. `buildIngredientUsageMap` helper와 역할 중복.
+- **해결 방향**: usage page도 helper 재사용. `useIngredientUsageRows` hook으로 usageRows/unusedRows/displayRows 통합.
+
+#### R-7. `app/cost/ingredient-price/page.jsx` load() 분리  ⏸
+- **파일**: `app/cost/ingredient-price/page.jsx` L89
+- **문제**: 가격파일·식자재 마스터·제때/수동 row 생성·사용현황 모두 `load()` 한 함수 처리.
+- **해결 방향**: `useIngredientPriceData`, `buildIngredientPriceRows`, `useIngredientPriceFilters`.
+
+#### R-8. `app/cost/recipe/page.jsx` 워크벤치 분해  ⏸
+- **파일**: `app/cost/recipe/page.jsx` L151
+- **문제**: 로딩·URL 동기화·필터·정렬·드래그 재정렬·좌측 리스트·편집 상태가 한 파일.
+- **해결 방향**: `useRecipeWorkbenchData`, `useRecipeListState`, `RecipeSidebar`.
+
+#### R-9. 보고서 3종 공통 state hook 추출  ⏸
+- **파일**: `app/report/sales/page.jsx`(1165줄), `app/report/cost/page.jsx`(779줄), `app/report/shipment/page.jsx`(754줄)
+- **문제**: `useDraftRestore` + `makeFieldUpdater` 체인, opts/docFormat 관리 패턴이 3파일에 반복.
+- **해결 방향**: `useReportPageState(draftKey, initialState, stateSetters)` hook 공통 추출.
+
+#### R-10. `app/cost/all-summary/page.jsx` buildRows → lib 이동  ⏸
+- **파일**: `app/cost/all-summary/page.jsx` L84 `buildRows`, L38 `normalizeCategory`
+- **문제**: 원가 집계 순수 함수가 page 파일에 인라인. 테스트 불가.
+- **해결 방향**: `buildRows` → `lib/cost/shared/buildSummaryRows.js`. `normalizeCategory`·`costPathFor` → `lib/cost/shared/categoryNormalization.js`.
+
+#### R-11. `TabSetCalc.jsx` / `TabDerived.jsx` 분해  ⏸
+- **파일**: `components/nutrition/menu/TabSetCalc.jsx`(727줄), `components/nutrition/menu/TabDerived.jsx`(572줄)
+- **문제**: 계산·목록·저장·모달·메뉴 검색 슬롯이 한 컴포넌트.
+- **해결 방향**: `SetCalcList`, `SetCompositionModal`, `SlotMenuPicker`, `useSetCompositionForm`.
+- **관련**: R-4, B-6
+
+#### R-12. BulkPriceModal 기반 컴포넌트 통합  ⏸
+- **파일**: `components/cost/ingredient-price/BulkPriceModal.jsx`(396줄), `components/cost/menu-price/BulkPriceModal.jsx`(268줄)
+- **문제**: StatusBadge, PriceDelta, phase 관리(`idle→parsing→preview→committing`), FileUploadZone 패턴이 양쪽에 중복.
+- **해결 방향**: `BulkPriceModalBase` 공통 컴포넌트 + 파싱·매칭·커밋 전략 주입 패턴.
+
+#### R-13. `PlatformSettingsModal.jsx` 서브컴포넌트 분리 (518줄)  ⏸
+- **파일**: `components/cost/margin/PlatformSettingsModal.jsx`
+- **문제**: `FeeRow`(L376+) 인라인 정의. `patchFee`/`patchSizeOverride` 등 중첩 state 패치 함수 다수.
+- **해결 방향**: `FeeRow`, `PlatformRow`, `PlatformSelector` 분리. 패치 로직 `useReducer`로 전환.
+
+#### R-14. settings 페이지 2종 서브컴포넌트 분리  ⏸
+- **파일**: `app/settings/backup/page.jsx`, `app/settings/account/page.jsx`
+- **문제**: backup: 실행·이력·진단·진행률 UI 혼재. account: 프로필·PIN·세션·비밀번호 카드 혼재.
+- **해결 방향**: account → `ProfileCard`, `PinSection`, `SessionInfoCard`. backup → 진단 수집 훅 분리.
+
+#### R-15. `app/note/sample/page.jsx` 달력 계산 공통화  ⏸
+- **파일**: `app/note/sample/page.jsx` L240 달력 계산
+- **문제**: `filtered`, `calDays`, `samplesByDate` 달력 계산이 페이지에 남음.
+- **해결 방향**: `lib/note/calendar-utils.js`로 이동.
+
+---
+
+### 🟢 저위험
+
+#### R-16. `lib/print/window-print.js` 공통 헬퍼 추출  ✅ 완료(2026-06-12)
+- **완료**: `lib/print/window-print.js`에 `openPrintWindow(html, {width, height})` 헬퍼 추출. `lib/cost/usage-print.js`, `lib/nutrition/label/print.js`, `lib/nutrition/origin/print.js`, `app/ingredient/list/page.jsx` 4곳 교체.
+
+#### R-17. `app/menu-master/page.jsx` EditModal 분리 + hooks  ✅ 완료(2026-06-12)
+- **완료**: `CategoryTags`·`EditModal`(~318줄) → `components/menu-master/MenuMasterEditModal.jsx` 분리. 필터 상태(`catFilter`/`statusFilter`/`subFilter`/`search`) + 4개 useMemo(`statusFiltered`/`displayCategories`/`catCounts`/`filtered`) → `hooks/useMenuMasterFilters.js` 추출. page.jsx 불필요 imports 7개 제거(parseCategoryFromCode·OVERLAY_COLOR·SUB_TAG_STYLE·CAT_TAG_STYLE·makeFieldUpdater·useKeyboardSave·parseOptionalNonNegativeNumber). page.jsx 1051줄 → 약 700줄로 감소.
+
+#### R-18. `app/note/_NoteFormBody.jsx` TempCostCalculator 분리  ✅ 완료(2026-06-12)
+- **완료**: `components/note/TempCostCalculator.jsx` 신설. 임시 원가 계산 상태(parsedCostCalc·ingredients·ingSearch·showDropdown·refs) + 관련 함수(addIngRow·refreshLinkedCostRows·removeIngRow·updateIngRow·nonNeg) + JSX(검색 드롭다운·재료 테이블·원가율 요약) 전량 이동. `_NoteFormBody`는 `<TempCostCalculator value={form.tempCostCalc} onChange={...} />` 한 줄로 교체. 불필요 import 3개 제거(getAllIngredients·calcUnitPrice·calcCostRate).
+
+#### R-19. `app/note/_NoteContent.jsx` 선택·핀·프리셋 hooks 분리  ✅ 완료(2026-06-12)
+- **완료**: `hooks/useNotePins.js`(pinnedIds+togglePin, localStorage KEYS.NOTE_PINS), `hooks/useNotePresets.js`(presets·confirmDeletePreset·savePreset/applyPreset/deletePreset, filter setters를 params로 수신), `hooks/useNoteBatchActions.js`(batchMode·selected·confirmBatch·toggleSelect·exitBatch·handleBatchDelete/StatusChange/confirmBatchDelete) 3개 hook 신설. `_NoteContent`에서 normalizeNotePresets·normalizeIdList 함수 정의 제거, deletingIds(never-mutated dead state) 제거, `onExit` inline fn → `exitBatch` 교체. 1124줄 → 1017줄.
+
+#### R-20. `app/nutrition/allergen/page.jsx` matrix 계산 → lib 이동  ⏸
+- **파일**: `app/nutrition/allergen/page.jsx` L260 `menuMatrixAll`, `detailRows` 계산
+- **해결 방향**: `lib/nutrition/allergen/matrix.js`로 추출.
+
+#### R-21. `app/nutrition/export/OriginResult.jsx` 빌더 → lib 이동  ✅ 완료(2026-06-12)
+- **완료**: `lib/nutrition/origin/build.js` 신설. `buildOriginsFromIngredients` + 내부 의존 상수(`asMenuMap`, `asSet`) 이동. OriginResult.jsx는 함수 제거 후 import로 교체 (단, `asSet`은 L365 렌더링에서도 사용되므로 로컬 사본 유지).
+
+#### R-22. `app/report/page.jsx` 보고서 목록 hooks 분리  ✅ 완료(2026-06-12)
+- **완료**: `hooks/useReportListState.js`(kindFilter·search·favOnly·page·sortKey·sortDir·newIds + filtered·totalPages·list + URL 복원/갱신 effects + toggleSort) 및 `hooks/useReportActions.js`(삭제·정리·즐겨찾기·인라인 편집 상태+핸들러, reload 수신) 신설. page.jsx에서 관련 state/effect/함수 제거, 불필요 import 8개 제거(useRef·useEffect·deleteReport·toggleReportFav·saveReport·pruneOldReports·findPrunableReports·clampInteger). 914줄 → 739줄.
+
+#### R-23. `EdgeEditModal.jsx` CompRow → `IngredientSearch` 재사용  ✅ 완료(2026-06-12)
+- **완료**: CompRow의 자체 검색 상태(searchQ/dropOpen/activeIdx/rect) + 5개 useEffect + createPortal dropdown 제거. `IngredientSearch` 컴포넌트로 교체. `selectIng` 로직은 `onSelect` 콜백 인라인으로 이전. EdgeEditModal imports에서 `useRef`, `useMemo`, `useCallback`, `createPortal` 제거.
+
+#### R-24. `useWidgetConfig.js` sanitize 로직 분리 (236줄)  ✅ 완료(2026-06-12)
+- **완료**: `lib/home/widget-config-utils.js` 신설. `HOME_WIDGET_ROWS`, `HOME_WIDGET_DEFS`, `DEFAULT_ORDER`, `ALL_ROW_IDS`, `ALL_WIDGET_KEYS`, `sanitizeWidgetConfig`, `sanitizeWidgetCollapsed`, `reconcileWidgetOrder`, `reconcileWidgetFavorites`, `normalizeWidgetKeys`, `visibleRowCount` 모두 이동. `hooks/useWidgetConfig.js`는 lib에서 import 후 re-export.
+
+#### R-25. `MarginFilterBar.jsx` DiscountSimulator 분리  ✅ 완료(2026-06-12)
+- **완료**: `components/cost/margin/DiscountSimulator.jsx` 신설. `DiscountSimulator.Toggle`(플랫폼 bar 우측 버튼)·`DiscountSimulator.Panel`(펼침 폼) 서브컴포넌트로 분리. `MarginFilterBar`는 인라인 ~100줄 제거 후 두 서브컴포넌트 참조로 교체.
+
+#### R-26. `useMounted()` 헬퍼 hook 추출  ✅ 완료(2026-06-12)
+- **완료**: `hooks/useMounted.js` 신설(`useRef(true)` + useEffect cleanup 캡슐화). `mountedRef = useRef(true/false)` + 수동 cleanup 패턴을 10개 파일에서 교체: `hooks/useDetailRecipePage.js`, `hooks/useSettingsSection.js`, `app/nutrition/menu/page.jsx`, `app/nutrition/allergen/page.jsx`, `app/nutrition/origin/page.jsx`, `app/ingredient/list/page.jsx`, `app/ingredient/usage/page.jsx`, `app/cost/edge-dough/page.jsx`, `app/cost/ingredient-price/page.jsx`, `app/menu-master/page.jsx`, `app/settings/system/page.jsx`, `app/page.jsx`.
+
+#### R-27. 4종 detail page 팩토리 정리  ✅ 완료(2026-06-12)
+- **완료**: `components/cost/shared/makeDetailRecipePage.jsx` 팩토리 신설. `useDetailRecipePage` + `CostDetailView` + `handleDeleteRecipes` 보일러플레이트를 팩토리로 통합. pizza는 `usePizzaSummaryContent` 커스텀 훅으로 `useMemo` 유지. 4개 page 파일 모두 `makeDetailRecipePage({...})` 호출로 교체.
+
+#### R-28. UploadDropzone 중복 자체 구현 수렴  ✅ 완료(2026-06-12)
+- **완료**: `ImportBaseModal.jsx`, `BulkPriceModal.jsx` 2곳을 `UploadDropzone` 교체. `_NoteFormBody.jsx` L874는 복수 이미지 업로더(`image/*` + multiple)로 단일파일 `UploadDropzone`와 API 호환 불가 → 제외.
+
+---
+
+#### ▸ 2차 발굴 (2026-06-12)
+
+### 🟡 중위험
+
+#### R-29. 홈 대시보드 `app/page.jsx` 분해 (817줄)  ⏸
+- **파일**: `app/page.jsx`
+- **문제**: KPI·노트·샘플·가격변동·일정·이슈·빠른메모·위젯 렌더링 + 기간 네비게이션 + 초안 관리가 한 파일에서 조립.
+- **해결 방향**: `useHomeDashboardData`(다중 소스 로드), `useHomeSalesPeriod`(anchor/기간 탐색), `QuickNoteWidget` 분리.
+- **관련**: B-6
+
+#### R-30. `components/cost/recipe/RecipeEditor.jsx` 분해 (853줄)  ⏸
+- **파일**: `components/cost/recipe/RecipeEditor.jsx`
+- **문제**: 계산(`costBySizes`·`groupCostBySizes`·`totalCostBySizes`)·폼 핸들러·dnd 드래그·size/ingredient mutation이 한 컴포넌트.
+- **해결 방향**: `useRecipeEditorDraft`, `RecipeIngredientTable`, `RecipeGroupSelector`, 순수 `calcRecipeCosts`.
+- **관련**: R-8(이쪽은 `app/cost/recipe/page.jsx` 워크벤치 — 별개 파일)
+
+#### R-31. 보고서 4종 데이터 빌더 → lib 이동  ⏸
+- **파일**: `app/report/cost/page.jsx`(780줄, L184~), `app/report/shipment/page.jsx`(755줄, L145~), `app/report/price/page.jsx`(476줄, L68~), `app/report/menu-sales-compare/page.jsx`(493줄, L73~)
+- **문제**: load→aggregate→preview 흐름이 페이지 useEffect 안에 인라인 → 단위 테스트 불가.
+- **해결 방향**: `lib/report/build-cost-report.js`, `build-shipment-report.js`, `build-price-report.js`, `build-compare-report.js` 빌더로 추출.
+- **관련**: R-9(이쪽은 `useDraftRestore`/`makeFieldUpdater` 공통 state hook — 다른 관심사. 병행 가능)
+
+#### R-32. `app/nutrition/origin/page.jsx` 집계 분리 (614줄)  ⏸
+- **파일**: `app/nutrition/origin/page.jsx`
+- **문제**: `ingredientRows`(L148)·`menuRowsAll`(L177) 집계, 필터, `exportCsv`(L251), UI, 메뉴명 override·재정렬이 한 파일.
+- **해결 방향**: `useOriginMappingData`, 순수 `buildOriginIngredientRows`·`buildOriginMenuRows`.
+- **관련**: R-21(이쪽은 `app/nutrition/export/OriginResult.jsx` — 별개 export 컴포넌트)
+
+#### R-33. `app/note/board/page.jsx` 칸반 분해 (597줄)  ⏸
+- **파일**: `app/note/board/page.jsx`
+- **문제**: 드래그 상태·optimistic update·순서 저장·CSV·`KanbanCard` UI(L446~)가 혼재.
+- **해결 방향**: `useKanbanBoard`(드래그+순서), `KanbanColumn`/`KanbanCard` 컴포넌트, `exportBoardCsv`.
+- **참고**: 순서 저장 원자성은 이미 `bulkUpdateBoardOrder`(`lib/note/store.js`)로 공유됨(B-8 완료). 이번은 페이지 UI/상태 분해.
+
+#### R-39. `lib/db/operations.js` 책임 분리 (516줄)  ⏸
+- **파일**: `lib/db/operations.js`
+- **문제**: CRUD 프리미티브 + 파일 cascade 삭제(`deleteFileWithLog`) + export/import 백업 + 트랜잭션 + store 검증이 한 파일.
+- **해결 방향**: `crud.js`(getAll/getById/put/deleteById/runTransaction), `backup.js`(exportAll/exportSelected/importAll), `upload-log.js`(deleteFileWithLog/checkUploadHash)로 분리, `operations.js`는 re-export.
+- **왜 보류**: 백업/복원 경로가 의존 → 분리 후 export/import·복원 시나리오 재검증 필요.
+
+#### R-40. `lib/nutrition/values/store.js` 계산 분리 (627줄)  ⏸
+- **파일**: `lib/nutrition/values/store.js` L489 `calcAllResults`
+- **문제**: store CRUD(6개 스토어)와 영양 계산 로직(`calcAllResults` 및 헬퍼)이 한 파일.
+- **해결 방향**: `calcAllResults` + 순수 헬퍼(`addNutrition`·`buildIngredientAdditionSumForSide`)를 `lib/nutrition/values/calc.js`로 이동. store는 CRUD만.
+- **왜 보류**: 영양 계산은 라벨/알레르기 출력의 단일 출처 → 분리 후 출력 5종 회귀 검증 필요.
+
+---
+
+### 🟢 저위험
+
+#### R-34. `app/note/journal/page.jsx` 출력 분리 (639줄)  ✅ 완료(2026-06-12)
+- **파일**: `app/note/journal/page.jsx` L35 `buildPrintHtml`, L266 자체 `openPrintWindow`, L400 `WebJournalCard`
+- **문제**: 출력 HTML 빌더가 페이지에 인라인, **자체 `openPrintWindow`(window.open+document.write)** 사용 — R-16 공용 헬퍼 미사용.
+- **해결 방향**: `buildPrintHtml` → `lib/note/journal-print.js`로 이동하고 공용 `openPrintWindow`(`lib/print/window-print.js`) 호출로 교체. `WebJournalCard`·`TwoColFields` → `components/note/WebJournalCard.jsx`로 분리.
+- **관련**: R-16(공용 print 헬퍼 — 이 파일이 마지막 미마이그레이션 사용처)
+
+#### R-35. `_ReportPreviewModal.jsx` 옵션 렌더러 registry화 (523줄)  ✅ 완료(2026-06-12)
+- **파일**: `components/report/_ReportPreviewModal.jsx` L114 `ReportOptionsPage`
+- **문제**: `kindOpts()`(L122~)가 sales/price/shipment/compare/cost 5종 옵션 표시를 if 분기로 모두 보유.
+- **해결 방향**: `REPORT_OPTION_RENDERERS` registry(종류→렌더러 맵)로 분리 → 새 보고서 추가 시 분기 수정 불필요.
+
+#### R-36. 판매 규칙 섹션 검색 상태 공통화  ✅ 완료(2026-06-12)
+- **파일**: `components/sales/UserRulesSection.jsx`(421줄), `UserAliasesSection.jsx`(260줄), `UserExcludedSection.jsx`(202줄)
+- **문제**: CRUD 로직은 이미 `hooks/useSettingsSection.js`로 공유됨. 그러나 검색 state(`query`)·filtered useMemo·`usePagination` 패턴이 3곳 중복.
+- **해결 방향**: `hooks/useSectionSearch.js` — search state + filterFn injection 훅으로 수렴.
+- **관련**: R-38(동일한 search 패턴 — 공통 hook 후보)
+
+#### R-37. `app/styles/features.css` 2차 분리 (7829줄)  ⏸
+- **파일**: `app/styles/features.css`
+- **문제**: 1차로 globals와는 분리됐으나 여전히 단일 7829줄 모놀리식(페이지·필터·테이블·칸반·레시피·가격·출고·영양·식자재 전부 포함).
+- **해결 방향**: `features/ingredient.css`·`features/report.css`·`features/note.css`·`features/nutrition.css`로 도메인별 2차 분리. `features.css`는 @import 파일만 남김.
+- **왜 보류**: 7829줄 전체 도메인 분류 + 브라우저 캐스케이드 검증 필요.
+
+#### R-38. 제때 테이블 4종 `useTableSearchSort` 수렴  ✅ 완료(2026-06-12)
+- **파일**: `components/jette/ManagedProductsCard.jsx`(389줄), `PriceLatestView.jsx`(344줄), `PriceCompareTable.jsx`(361줄), `ShipmentTable.jsx`(332줄)
+- **문제**: 4파일 모두 search·sortKey/sortDir 상태를 각자 중복 구현(`sortByKey`·`usePagination`은 이미 공용).
+- **해결 방향**: `hooks/useTableSearchSort.js`(검색+정렬 상태 통합) hook으로 수렴.
+- **관련**: R-36
+
+---
+
 ## D. 운영·실데이터 QA 영역 (구 SITE_IMPROVEMENT_AUDIT — 코드 보류 아님)
 
 > SITE_IMPROVEMENT_AUDIT(574줄)는 **production 코드를 바꾸지 않는 QA·검증 가이드**(문서 §7 명시)였음.
@@ -264,6 +486,6 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ---
 
-_최종 업데이트: 2026-06-12 — B-14 정책(a) 영속 설정만 확정 + B-7 localStorage 백업 범위 확대 구현. 잔여: B-3 legacy store 제거(DB migration), B-5/B-6(회귀위험), B-9(도메인 확인) — 외부 조건 충족 후 진행._
+_최종 업데이트: 2026-06-12 — R-34(journal print 분리)·R-35(report options registry)·R-36(useSectionSearch)·R-38(useTableSearchSort) 구현. R-29~R-40 2차 발굴 등록. B-14 정책(a) 영속 설정만 확정 + B-7 localStorage 백업 범위 확대 구현. 잔여: B-3 legacy store 제거(DB migration), B-5/B-6(회귀위험), B-9(도메인 확인) — 외부 조건 충족 후 진행._
 _[이전] B-8·C-2·C-3 완료 표시. 문서 정합성 정정: B-1 파일 경로·B-4 모듈 혼동·C-2 전제·B-3 경로. B-2 저위험 이동._
 _[이전] SITE_IMPROVEMENT_AUDIT 통합·삭제. NEXT_TASKS(CL1~CL8) 통합, B-2/C-1/메뉴코드정책 완료 정정._

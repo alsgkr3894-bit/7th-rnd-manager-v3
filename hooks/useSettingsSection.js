@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { showToast } from '@/components/Toast';
 import { reapplyToUploadedData } from '@/components/sales/shared/SectionUtils';
 import { asObjectArray } from '@/lib/ui/prop-guards';
@@ -41,15 +42,10 @@ export function useSettingsSection({
   const [form, setForm] = useState(initialForm);
   const [busy, setBusy] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
-  const mountedRef = useRef(false);
+  const mountedRef = useMounted();
 
   useEffect(() => {
-    mountedRef.current = true;
     refresh();
-
-    return () => {
-      mountedRef.current = false;
-    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function refresh() {

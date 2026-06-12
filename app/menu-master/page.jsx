@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
@@ -17,28 +18,24 @@ import {
   resetAllMenuMaster,
   pushMasterToPrices,
 } from '@/lib/menu-master';
-import { parseCategoryFromCode } from '@/lib/cost/menu-price/code';
 import { getDefaultPrice, resetAllMenuPrices } from '@/lib/cost/menu-price';
 import { seedMenuMaster } from '@/lib/menu-master/seed';
 import { normalizePersonalPizzaCodes } from '@/lib/menu-master/normalize';
 import { MenuPriceUploadCard } from '@/components/cost/menu-price/MenuPriceUploadCard';
 import { BulkPriceModal } from '@/components/cost/menu-price/BulkPriceModal';
-import { OVERLAY_COLOR } from '@/lib/ui/styles';
-import { SUB_TAG_STYLE, CAT_TAG_STYLE } from '@/lib/ui/colors';
-import { makeFieldUpdater } from '@/lib/ui/form-state';
+import { CategoryTags, MenuMasterEditModal } from '@/components/menu-master/MenuMasterEditModal';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
-import { useKeyboardSave } from '@/hooks/useKeyboardSave';
-import { parseOptionalNonNegativeNumber } from '@/lib/parse';
+import { useMenuMasterFilters } from '@/hooks/useMenuMasterFilters';
 
 // 7번가(main) 전용 피자 카테고리 프리셋. 다른 브랜드는 빈 프리셋 → 자유 입력,
 // 칩·통계는 실제 데이터에 존재하는 카테고리에서 동적으로 도출한다.
 const PIZZA_CATEGORIES = [
   MENU_CATEGORY.PIZZA,
   MENU_CATEGORY.PERSONAL,
-  MENU_CATEGORY.SET,
   MENU_CATEGORY.SIDE,
+  MENU_CATEGORY.SET,
   MENU_CATEGORY.SAUCE,
   MENU_CATEGORY.DRINK,
   MENU_CATEGORY.EDGE,
@@ -54,326 +51,6 @@ const STATUS_STYLE = {
   test: { background: 'var(--accent-soft)', color: 'var(--accent)' },
 };
 
-function CategoryTags({ menuCode }) {
-  if (!menuCode) return null;
-  const parts = menuCode.toUpperCase().split('-');
-  const sub = parts[1];
-  const subStyle = SUB_TAG_STYLE[sub];
-  const { category } = parseCategoryFromCode(menuCode);
-  const catKey = category?.split('/')[0];
-  const catStyle = CAT_TAG_STYLE[catKey] || { bg: 'var(--surface-2)', color: 'var(--text-3)' };
-  return (
-    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-      <span
-        style={{
-          fontSize: 11,
-          fontWeight: 700,
-          padding: '2px 7px',
-          borderRadius: 999,
-          background: catStyle.bg,
-          color: catStyle.color,
-        }}
-      >
-        {catKey || '—'}
-      </span>
-      {subStyle && (
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            padding: '2px 7px',
-            borderRadius: 999,
-            background: subStyle.bg,
-            color: subStyle.color,
-          }}
-        >
-          {subStyle.label}
-        </span>
-      )}
-    </div>
-  );
-}
-
-/* ── 메뉴 추가/수정 모달 (마스터가 메뉴코드·분류·규격·판매가의 기준) ── */
-function EditModal({ row, isNew, onSave, onClose, presetCategories = [] }) {
-  const [form, setForm] = useState({
-    menuCode: row?.menuCode || '',
-    menuName: row?.menuName || '',
-    category: row?.category || presetCategories[0] || '',
-    size: row?.size || '',
-    price: row?.price != null ? String(row.price) : '',
-    status: row?.status || 'active',
-    note: row?.note || '',
-    excludeFromOrigin: row?.excludeFromOrigin === true,
-  });
-  const [errors, setErrors] = useState({});
-  const set = makeFieldUpdater(setForm);
-  const defaultPrice = getDefaultPrice(form.menuCode);
-  const canSave = form.menuCode.trim() && form.menuName.trim();
-
-  function submit() {
-    if (!canSave) return;
-    const price = parseOptionalNonNegativeNumber(form.price);
-    if (!price.ok) {
-      setErrors({ price: '판매가는 0 이상의 숫자만 입력하세요' });
-      return;
-    }
-    setErrors({});
-    onSave({
-      ...(row || {}),
-      menuCode: form.menuCode.trim(),
-      menuName: form.menuName.trim(),
-      category: form.category,
-      size: form.size.trim() || null,
-      price: price.value,
-      status: form.status,
-      note: form.note,
-      excludeFromOrigin: form.excludeFromOrigin,
-    });
-  }
-  useKeyboardSave(submit);
-
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: OVERLAY_COLOR,
-        display: 'grid',
-        placeItems: 'center',
-        zIndex: 300,
-      }}
-    >
-      <div
-        className="card"
-        style={{
-          width: 'min(440px,95vw)',
-          padding: '24px 28px',
-          maxHeight: '92vh',
-          overflowY: 'auto',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 16,
-          }}
-        >
-          <div style={{ fontWeight: 700, fontSize: 15 }}>{isNew ? '메뉴 추가' : '메뉴 수정'}</div>
-          <button className="btn ghost" style={{ padding: '4px 8px' }} onClick={onClose}>
-            <Icon.close style={{ width: 16, height: 16 }} />
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {/* 메뉴코드 — 신규는 입력, 기존은 읽기전용 */}
-          <div>
-            <label
-              style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}
-            >
-              메뉴코드
-            </label>
-            {isNew ? (
-              <>
-                <input
-                  className="input"
-                  value={form.menuCode}
-                  onChange={e => set('menuCode', e.target.value.toUpperCase())}
-                  placeholder="예) P-OR-005-L"
-                  style={{ fontFamily: 'monospace' }}
-                />
-                <div style={{ marginTop: 6 }}>
-                  <CategoryTags menuCode={form.menuCode} />
-                </div>
-              </>
-            ) : (
-              <div
-                style={{
-                  padding: '8px 12px',
-                  background: 'var(--surface-2)',
-                  borderRadius: 8,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                }}
-              >
-                <span
-                  style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--accent-text)' }}
-                >
-                  {row.menuCode}
-                </span>
-                <CategoryTags menuCode={row.menuCode} />
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label
-              style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}
-            >
-              메뉴명
-            </label>
-            <input
-              className="input"
-              value={form.menuName}
-              onChange={e => set('menuName', e.target.value)}
-              placeholder="예) 슈퍼콤비네이션"
-            />
-          </div>
-
-          {/* 분류 + 규격 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div>
-              <label
-                style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}
-              >
-                카테고리
-              </label>
-              {presetCategories.length > 0 ? (
-                <select
-                  className="input"
-                  value={form.category}
-                  onChange={e => set('category', e.target.value)}
-                >
-                  {presetCategories.map(c => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  className="input"
-                  value={form.category}
-                  onChange={e => set('category', e.target.value)}
-                  placeholder="예) 탕수육 / 짜장 / 세트"
-                />
-              )}
-            </div>
-            <div>
-              <label
-                style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}
-              >
-                규격(사이즈)
-              </label>
-              <input
-                className="input"
-                value={form.size}
-                onChange={e => set('size', e.target.value)}
-                placeholder="L / R / 단일"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label
-              style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}
-            >
-              판매가 (부가세 포함)
-              {defaultPrice && (
-                <span style={{ marginLeft: 8, color: 'var(--text-4)' }}>
-                  기본가 {defaultPrice.toLocaleString()}원
-                </span>
-              )}
-            </label>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                className="input"
-                type="number"
-                min="0"
-                value={form.price}
-                aria-describedby={errors.price ? 'menu-master-price-error' : undefined}
-                onChange={e => set('price', e.target.value)}
-                placeholder={defaultPrice ? String(defaultPrice) : '직접 입력'}
-                style={{ flex: 1 }}
-              />
-              <span style={{ fontSize: 13, color: 'var(--text-3)' }}>원</span>
-              {defaultPrice && !form.price && (
-                <button className="btn sm" onClick={() => set('price', String(defaultPrice))}>
-                  기본가 적용
-                </button>
-              )}
-            </div>
-            {errors.price && (
-              <div
-                id="menu-master-price-error"
-                style={{ marginTop: 6, fontSize: 12, color: 'var(--danger)' }}
-              >
-                {errors.price}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label
-              style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}
-            >
-              상태
-            </label>
-            <select
-              className="input"
-              value={form.status}
-              onChange={e => set('status', e.target.value)}
-            >
-              <option value="active">활성</option>
-              <option value="discontinued">단종</option>
-              <option value="test">테스트</option>
-            </select>
-          </div>
-
-          <div>
-            <label
-              style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}
-            >
-              비고
-            </label>
-            <input
-              className="input"
-              value={form.note}
-              onChange={e => set('note', e.target.value)}
-              placeholder="선택 입력"
-            />
-          </div>
-
-          <div style={{ borderTop: '1px solid var(--divider)', paddingTop: 12 }}>
-            <label
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                cursor: 'pointer',
-                fontSize: 13,
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={form.excludeFromOrigin}
-                onChange={e => set('excludeFromOrigin', e.target.checked)}
-                style={{ accentColor: 'var(--warn)', width: 15, height: 15 }}
-              />
-              <span style={{ fontWeight: 600 }}>원산지·알레르기 출력에서 제외</span>
-              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                (패밀리박스·하프앤하프 등 공통 구성품이 겹치는 메뉴)
-              </span>
-            </label>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
-          <button className="btn" onClick={onClose}>
-            취소
-          </button>
-          <button className="btn primary" disabled={!canSave} onClick={submit}>
-            저장
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ── 메인 페이지 ── */
 export default function Page() {
   const isMain = useIsMainBrand(); // 기본 코드 등록·피자 일괄가는 7번가 전용
@@ -382,10 +59,6 @@ export default function Page() {
   const [seeding, setSeeding] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [bulking, setBulking] = useState(false);
-  const [catFilter, setCatFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('active');
-  const [subFilter, setSubFilter] = useState('all');
-  const [search, setSearch] = useState('');
   const [editRow, setEditRow] = useState(null);
   const [addOpen, setAddOpen] = useState(false);
   const [bulkModal, setBulkModal] = useState(false);
@@ -395,7 +68,17 @@ export default function Page() {
   // 브랜드 카테고리 프리셋 — SSR/첫 렌더는 서버와 동일하게 기본값(피자)로 두고,
   // 마운트 후 활성 브랜드에 맞춰 교정한다(하이드레이션 불일치 방지).
   const [brandCats, setBrandCats] = useState(PIZZA_CATEGORIES);
-  const mountedRef = useRef(true);
+  const {
+    catFilter, setCatFilter,
+    statusFilter, setStatusFilter,
+    subFilter, setSubFilter,
+    search, setSearch,
+    statusFiltered,
+    displayCategories,
+    catCounts,
+    filtered,
+  } = useMenuMasterFilters(rows, brandCats);
+  const mountedRef = useMounted();
   // 마운트 후 실제 활성 브랜드 판별 — localStorage를 읽어 비-main이면 빈 프리셋으로 교정
   useEffect(() => {
     setBrandCats(getActiveBrandId() === 'main' ? PIZZA_CATEGORIES : []);
@@ -409,10 +92,9 @@ export default function Page() {
     );
     const nextRows = await getAllMenuMaster();
     if (mountedRef.current) setRows(nextRows);
-  }, []);
+  }, [mountedRef]);
 
   useEffect(() => {
-    mountedRef.current = true;
     load()
       .catch(err => {
         if (mountedRef.current) console.error(err);
@@ -420,11 +102,7 @@ export default function Page() {
       .finally(() => {
         if (mountedRef.current) setLoading(false);
       });
-
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [load]);
+  }, [load, mountedRef]);
   useVisibilityRefresh(load);
 
   // 마스터 변경 후 소비처 미러(cost_selling_prices) 동기화.
@@ -539,43 +217,6 @@ export default function Page() {
   const active = rows.filter(r => r.status === 'active');
   const discontinued = rows.filter(r => r.status === 'discontinued');
   const test = rows.filter(r => r.status === 'test');
-
-  const statusFiltered = useMemo(
-    () => (statusFilter === 'all' ? rows : rows.filter(r => r.status === statusFilter)),
-    [rows, statusFilter]
-  );
-
-  // 표시용 카테고리 목록 — 7번가는 피자 프리셋, 타 브랜드는 데이터에 존재하는 분류
-  const displayCategories = useMemo(() => {
-    if (brandCats.length > 0) return brandCats;
-    return [...new Set(rows.map(r => r.category).filter(Boolean))].sort((a, b) =>
-      a.localeCompare(b, 'ko')
-    );
-  }, [rows, brandCats]);
-
-  const catCounts = useMemo(() => {
-    const m = { all: statusFiltered.length };
-    displayCategories.forEach(c => {
-      m[c] = statusFiltered.filter(r => (r.category || '').startsWith(c)).length;
-    });
-    return m;
-  }, [statusFiltered, displayCategories]);
-
-  const filtered = useMemo(() => {
-    let list = statusFilter === 'all' ? rows : rows.filter(r => r.status === statusFilter);
-    if (catFilter !== 'all') list = list.filter(r => (r.category || '').startsWith(catFilter));
-    if (catFilter === '피자' && subFilter !== 'all')
-      list = list.filter(r => r.subCategory === subFilter);
-    const q = search.trim().toLowerCase();
-    if (q)
-      list = list.filter(
-        r =>
-          (r.menuCode || '').toLowerCase().includes(q) ||
-          (r.menuName || '').toLowerCase().includes(q) ||
-          (r.subCategory || '').toLowerCase().includes(q)
-      );
-    return list;
-  }, [rows, catFilter, subFilter, statusFilter, search]);
 
   const { page, goTo, totalPages, paged, total } = usePagination(filtered, 60);
 
@@ -995,7 +636,7 @@ export default function Page() {
       )}
 
       {editRow && (
-        <EditModal
+        <MenuMasterEditModal
           row={editRow}
           isNew={false}
           onSave={handleSaveRow}
@@ -1005,7 +646,7 @@ export default function Page() {
       )}
 
       {addOpen && (
-        <EditModal
+        <MenuMasterEditModal
           row={null}
           isNew
           onSave={handleSaveRow}

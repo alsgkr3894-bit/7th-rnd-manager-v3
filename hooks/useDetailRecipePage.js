@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { initDB } from '@/lib/db';
 import { getAllMenuPrices } from '@/lib/cost/menu-price';
 import { showToast } from '@/components/Toast';
@@ -42,7 +43,7 @@ export function useDetailRecipePage({
   const [dbError, setDbError] = useState(null);
   const [target, setTarget] = useState(null);
   const [extraData, setExtraData] = useState(null);
-  const mountedRef = useRef(true);
+  const mountedRef = useMounted();
 
   const load = useCallback(async () => {
     await initDB();
@@ -57,7 +58,6 @@ export function useDetailRecipePage({
   }, [category, fetchRecipeMap, extraFetch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    mountedRef.current = true;
     load()
       .catch(err => {
         if (!mountedRef.current) return;
@@ -67,11 +67,7 @@ export function useDetailRecipePage({
       .finally(() => {
         if (mountedRef.current) setLoading(false);
       });
-
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [load]);
+  }, [load, mountedRef]);
 
   async function handleSave(data) {
     try {

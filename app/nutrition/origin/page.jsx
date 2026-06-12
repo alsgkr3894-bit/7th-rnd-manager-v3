@@ -1,5 +1,6 @@
 'use client';
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import Link from 'next/link';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { Icon } from '@/components/icons';
@@ -20,6 +21,7 @@ import { SmallStatCard } from '@/components/ui/SmallStatCard';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { ReorderModal } from '@/components/ui/ReorderModal';
 import { MENU_ORDER_KEY, loadOrder, saveOrder, applyOrder } from '@/lib/nutrition/order';
+import { getMenuCodeRank } from '@/lib/menu-categories';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
 import { loadMenuNames, saveMenuNames, applyMenuName } from '@/lib/nutrition/menu-name-override';
@@ -50,7 +52,7 @@ export default function Page() {
   const [showHidden, setShowHidden] = useState(false);
   const [menuNameEditOpen, setMenuNameEditOpen] = useState(false);
   const [menuNameOverrides, setMenuNameOverrides] = useState(() => loadMenuNames());
-  const mountedRef = useRef(true);
+  const mountedRef = useMounted();
 
   useEffect(() => {
     setMenuOrder(loadOrder(MENU_ORDER_KEY));
@@ -93,10 +95,9 @@ export default function Page() {
         edges: safeEdges,
       })
     );
-  }, []);
+  }, [mountedRef]);
 
   useEffect(() => {
-    mountedRef.current = true;
     load()
       .catch(err => {
         if (mountedRef.current) console.error(err);
@@ -104,11 +105,7 @@ export default function Page() {
       .finally(() => {
         if (mountedRef.current) setLoading(false);
       });
-
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [load]);
+  }, [load, mountedRef]);
   useVisibilityRefresh(load);
 
   // 원산지 있는 식자재만 (미표시대상은 토글에 따라 포함/제외)
@@ -207,12 +204,13 @@ export default function Page() {
       }
     }
 
-    // 사용자가 정한 메뉴 순서 적용 (없는 메뉴는 뒤에 ㄱㄴㄷ)
+    // 사용자가 정한 메뉴 순서 적용 (없는 메뉴는 코드 기본 순위 → 메뉴명 ㄱㄴㄷ)
     const sorted = applyOrder(
       [...menuMap.values()],
       menuOrder,
       m => asDisplayText(m.menuCode),
-      m => asDisplayText(m.menuName)
+      m => asDisplayText(m.menuName),
+      m => getMenuCodeRank(asDisplayText(m.menuCode))
     );
     // 출력용 메뉴명 오버라이드 적용 (표시 전용, 원래 이름 보존)
     return sorted.map(m => ({

@@ -6,7 +6,6 @@ import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import {
-  INGREDIENT_PHOTO_SLOTS,
   SEED_MAIN_CATEGORIES,
   SEED_HASH_TAGS,
   getPrimaryIngredientPhoto,
@@ -14,11 +13,17 @@ import {
   sortMainCategories,
 } from '@/lib/ingredient';
 import { SCOPE, SCOPE_ORDER, SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
-import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { KEYS } from '@/lib/note/keys';
 import { parseOptionalNonNegativeNumber } from '@/lib/parse';
 import { imageFileError, resizePhoto } from '@/lib/image/resize';
 import { showToast } from '@/components/Toast';
+import {
+  AllergenSection,
+  Field,
+  OriginSection,
+  PhotoSection,
+  SourceField,
+} from './IngredientFormSections';
 
 const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병'];
 
@@ -28,116 +33,6 @@ function getLastUnitType() {
   } catch {
     return 'g';
   }
-}
-
-/** 원산지 표시품목명·국가 자동완성 드롭다운 */
-function OriginSuggest({ value, onChange, suggestions = [], placeholder = '' }) {
-  const [open, setOpen] = useState(false);
-  const [hi, setHi] = useState(-1);
-  const blurTimerRef = useRef(null);
-
-  useEffect(
-    () => () => {
-      if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
-    },
-    []
-  );
-
-  function closeSoon() {
-    if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
-    blurTimerRef.current = setTimeout(() => {
-      setOpen(false);
-      setHi(-1);
-      blurTimerRef.current = null;
-    }, 150);
-  }
-
-  const filtered = value
-    ? suggestions
-        .filter(
-          s =>
-            s.toLowerCase().includes(value.toLowerCase()) && s.toLowerCase() !== value.toLowerCase()
-        )
-        .slice(0, 10)
-    : [];
-
-  function handleKeyDown(e) {
-    if (!open || !filtered.length) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setHi(h => Math.min(h + 1, filtered.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setHi(h => Math.max(h - 1, 0));
-    } else if (e.key === 'Enter' && hi >= 0) {
-      e.preventDefault();
-      onChange(filtered[hi]);
-      setOpen(false);
-      setHi(-1);
-    } else if (e.key === 'Escape') {
-      setOpen(false);
-      setHi(-1);
-    }
-  }
-
-  return (
-    <div style={{ position: 'relative' }}>
-      <input
-        className="form-input"
-        value={value}
-        placeholder={placeholder}
-        onChange={e => {
-          onChange(e.target.value);
-          setOpen(true);
-          setHi(-1);
-        }}
-        onFocus={() => {
-          if (value) setOpen(true);
-        }}
-        onBlur={closeSoon}
-        onKeyDown={handleKeyDown}
-      />
-      {open && filtered.length > 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 2px)',
-            left: 0,
-            right: 0,
-            zIndex: 200,
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 8,
-            boxShadow: '0 4px 16px rgba(0,0,0,.12)',
-            maxHeight: 180,
-            overflowY: 'auto',
-          }}
-        >
-          {filtered.map((s, i) => (
-            <div
-              key={s}
-              style={{
-                padding: '8px 12px',
-                cursor: 'pointer',
-                fontSize: 13,
-                background: i === hi ? 'var(--accent-soft)' : 'transparent',
-                color: i === hi ? 'var(--accent-text)' : 'var(--text-1)',
-                fontWeight: i === hi ? 600 : 400,
-              }}
-              onMouseDown={e => {
-                e.preventDefault();
-                onChange(s);
-                setOpen(false);
-                setHi(-1);
-              }}
-            >
-              {s}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 const TEMP_OPTIONS = ['냉장', '냉동', '상온', '공산품'];
@@ -466,62 +361,12 @@ export function IngredientForm({
             />
           </Field>
 
-          <Field label="사진" hint="포장·상세정보·실물 사진을 각각 1장씩 등록">
-            <div className="ingredient-photo-slot-grid">
-              {INGREDIENT_PHOTO_SLOTS.map(slot => {
-                const photo = formPhotos[slot.key];
-                const inputRef = photoInputRefs[slot.key];
-                return (
-                  <div key={slot.key} className="ingredient-photo-slot">
-                    <input
-                      ref={inputRef}
-                      type="file"
-                      accept="image/*"
-                      hidden
-                      onChange={e => {
-                        handlePhotoFile(slot.key, e.target.files?.[0]);
-                        e.target.value = '';
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="ingredient-photo-preview"
-                      onClick={() => inputRef.current?.click()}
-                      aria-label={`${slot.label} 선택`}
-                    >
-                      {photo?.data ? (
-                        <img src={photo.data} alt={photo.name || slot.label} />
-                      ) : (
-                        <Icon.plus style={{ width: 18, height: 18 }} />
-                      )}
-                    </button>
-                    <div className="ingredient-photo-slot-copy">
-                      <div>{slot.label}</div>
-                      <span>{slot.hint}</span>
-                    </div>
-                    <div className="ingredient-photo-slot-actions">
-                      <button
-                        type="button"
-                        className="btn xs"
-                        onClick={() => inputRef.current?.click()}
-                      >
-                        선택
-                      </button>
-                      {photo?.data && (
-                        <button
-                          type="button"
-                          className="btn xs ghost"
-                          onClick={() => removePhoto(slot.key)}
-                        >
-                          삭제
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Field>
+          <PhotoSection
+            formPhotos={formPhotos}
+            photoInputRefs={photoInputRefs}
+            onPhotoFile={handlePhotoFile}
+            onRemovePhoto={removePhoto}
+          />
 
           {/* 분류 (메인 1개) */}
           <Field label="분류" hint="메인 카테고리 1개 (예: 토핑재료, 엣지, 사이드)">
@@ -885,221 +730,14 @@ export function IngredientForm({
             />
           </Field>
 
-          {/* ── 원산지 ── */}
-          <div style={{ borderTop: '1px solid var(--divider)', paddingTop: 16 }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 10,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: 'var(--text-2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                }}
-              >
-                원산지 정보
-                <label
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    cursor: 'pointer',
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: form.originHidden ? 'var(--warn)' : 'var(--text-3)',
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={form.originHidden}
-                    onChange={e => set('originHidden', e.target.checked)}
-                    style={{ accentColor: 'var(--warn)', width: 13, height: 13 }}
-                  />
-                  미표시대상
-                </label>
-                {form.origin?.length > 0 && (
-                  <span
-                    style={{
-                      marginLeft: 8,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: 'var(--accent)',
-                      background: 'var(--accent-soft)',
-                      padding: '1px 7px',
-                      borderRadius: 999,
-                    }}
-                  >
-                    {form.origin.length}개
-                  </span>
-                )}
-              </div>
-              <button
-                type="button"
-                className="btn sm"
-                onClick={() =>
-                  set('origin', [...(form.origin || []), { displayName: '', country: '' }])
-                }
-              >
-                <Icon.plus style={{ width: 12, height: 12 }} /> 추가
-              </button>
-            </div>
-            {(form.origin || []).length > 0 && (
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr 28px',
-                  gap: 4,
-                  marginBottom: 4,
-                  padding: '0 2px',
-                }}
-              >
-                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>
-                  표시품목명
-                </div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)' }}>
-                  원산지 국가
-                </div>
-                <div />
-              </div>
-            )}
-            {(form.origin || []).map((item, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr 28px',
-                  gap: 4,
-                  marginBottom: 6,
-                }}
-              >
-                <OriginSuggest
-                  value={item.displayName}
-                  suggestions={originSuggestions.names}
-                  placeholder="예) 돼지고기, 밀가루"
-                  onChange={v => {
-                    const arr = [...form.origin];
-                    arr[idx] = { ...arr[idx], displayName: v };
-                    set('origin', arr);
-                  }}
-                />
-                <OriginSuggest
-                  value={item.country}
-                  suggestions={originSuggestions.countries}
-                  placeholder="예) 국내산, 미국산"
-                  onChange={v => {
-                    const arr = [...form.origin];
-                    arr[idx] = { ...arr[idx], country: v };
-                    set('origin', arr);
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() =>
-                    set(
-                      'origin',
-                      form.origin.filter((_, i) => i !== idx)
-                    )
-                  }
-                  style={{
-                    border: 0,
-                    background: 'transparent',
-                    cursor: 'pointer',
-                    color: 'var(--text-3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: 6,
-                    padding: 0,
-                  }}
-                >
-                  <Icon.close style={{ width: 13, height: 13 }} />
-                </button>
-              </div>
-            ))}
-            {(form.origin || []).length === 0 && (
-              <div style={{ fontSize: 12, color: 'var(--text-4)', padding: '4px 0 8px' }}>
-                미등록 — 추가 버튼으로 입력하세요
-              </div>
-            )}
-          </div>
+          <OriginSection
+            origin={form.origin || []}
+            originHidden={form.originHidden}
+            originSuggestions={originSuggestions}
+            onSet={set}
+          />
 
-          {/* ── 알레르기 유발물질 ── */}
-          <div style={{ borderTop: '1px solid var(--divider)', paddingTop: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)', marginBottom: 8 }}>
-              알레르기 유발물질
-              {form.allergens?.length > 0 && (
-                <span
-                  style={{
-                    marginLeft: 8,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: 'var(--accent)',
-                    background: 'var(--accent-soft)',
-                    padding: '1px 7px',
-                    borderRadius: 999,
-                  }}
-                >
-                  {form.allergens.length}개 선택
-                </span>
-              )}
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {ALLERGEN_SEED.map(a => {
-                const active = (form.allergens || []).includes(a.allergenCode);
-                return (
-                  <button
-                    key={a.allergenCode}
-                    type="button"
-                    onClick={() =>
-                      set(
-                        'allergens',
-                        active
-                          ? (form.allergens || []).filter(c => c !== a.allergenCode)
-                          : [...(form.allergens || []), a.allergenCode]
-                      )
-                    }
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: 999,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      border: active ? 'none' : '1px solid var(--border)',
-                      background: active ? 'var(--accent)' : 'transparent',
-                      color: active ? '#fff' : 'var(--text-3)',
-                      cursor: 'pointer',
-                      transition: 'all 120ms ease',
-                    }}
-                  >
-                    {a.allergenName}
-                  </button>
-                );
-              })}
-            </div>
-            {form.allergens?.length > 0 && (
-              <button
-                type="button"
-                style={{
-                  marginTop: 8,
-                  fontSize: 11,
-                  color: 'var(--text-4)',
-                  background: 'transparent',
-                  border: 0,
-                  cursor: 'pointer',
-                }}
-                onClick={() => set('allergens', [])}
-              >
-                선택 초기화
-              </button>
-            )}
-          </div>
+          <AllergenSection allergens={form.allergens || []} onSet={set} />
 
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
             <button type="button" className="btn" onClick={onClose}>
@@ -1113,51 +751,6 @@ export function IngredientForm({
       </div>
     </div>,
     document.body
-  );
-}
-
-function SourceField({ label, value }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-      <span style={{ fontSize: 11, color: 'var(--text-3)', minWidth: 64, fontWeight: 500 }}>
-        {label}
-      </span>
-      <span
-        style={{
-          fontSize: 12,
-          color: value ? 'var(--text-1)' : 'var(--text-4)',
-          fontWeight: value ? 600 : 400,
-        }}
-      >
-        {value || '—'}
-      </span>
-    </div>
-  );
-}
-
-function Field({ label, required, hint, error, errorId, children }) {
-  return (
-    <div>
-      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>
-        {label}
-        {required && <span style={{ color: 'var(--negative)', marginLeft: 2 }}>*</span>}
-        {hint && (
-          <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-3)', marginLeft: 6 }}>
-            {hint}
-          </span>
-        )}
-      </div>
-      {children}
-      {error && (
-        <div
-          id={errorId}
-          role="alert"
-          style={{ fontSize: 12, color: 'var(--negative)', marginTop: 4 }}
-        >
-          {error}
-        </div>
-      )}
-    </div>
   );
 }
 

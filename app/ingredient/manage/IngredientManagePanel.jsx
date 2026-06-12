@@ -1,0 +1,182 @@
+import { FilterBar } from '@/components/ui/PageHeader';
+import { ManageRow } from '@/components/ingredient/ManageRow';
+import { DISCONTINUED_FILTER, UNCATEGORIZED_FILTER } from '@/lib/ingredient/constants';
+import { getCategoryStyle } from '@/lib/ingredient';
+
+export function IngredientManagePanel({
+  rows,
+  filtered,
+  activeCount,
+  managedCount,
+  mainCats,
+  categoryCounts,
+  hashTags,
+  tagCounts,
+  uncategorized,
+  discontinuedCount,
+  catFilter,
+  tagFilter,
+  search,
+  onSearch,
+  onCatFilter,
+  onTagFilter,
+  batchMode,
+  selected,
+  toggleSelect,
+  deletePending,
+  onEdit,
+  onCopy,
+  onDeleteStart,
+  onDeleteCancel,
+  onDeleteConfirm,
+  onRestore,
+}) {
+  return (
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: 12, color: 'var(--text-3)', marginRight: 4, fontWeight: 600 }}>
+            분류
+          </span>
+          <button
+            className={'chip' + (catFilter === 'all' ? ' active' : '')}
+            onClick={() => onCatFilter('all')}
+          >
+            전체 {activeCount}
+          </button>
+          {mainCats.map(category => (
+            <button
+              key={category}
+              className={'chip' + (catFilter === category ? ' active' : '')}
+              style={catFilter !== category ? getCategoryStyle(category) : undefined}
+              onClick={() => onCatFilter(category)}
+            >
+              {category} {categoryCounts.get(category) || 0}
+            </button>
+          ))}
+          {uncategorized > 0 && (
+            <button
+              className={'chip' + (catFilter === UNCATEGORIZED_FILTER ? ' active' : '')}
+              style={catFilter !== UNCATEGORIZED_FILTER ? { color: 'var(--warn)' } : undefined}
+              onClick={() =>
+                onCatFilter(catFilter === UNCATEGORIZED_FILTER ? 'all' : UNCATEGORIZED_FILTER)
+              }
+            >
+              미분류 {uncategorized}
+            </button>
+          )}
+          {discontinuedCount > 0 && (
+            <button
+              className={'chip' + (catFilter === DISCONTINUED_FILTER ? ' active' : '')}
+              style={
+                catFilter !== DISCONTINUED_FILTER
+                  ? { color: 'var(--text-3)', marginLeft: 'auto' }
+                  : { marginLeft: 'auto' }
+              }
+              onClick={() =>
+                onCatFilter(catFilter === DISCONTINUED_FILTER ? 'all' : DISCONTINUED_FILTER)
+              }
+            >
+              단종 {discontinuedCount}
+            </button>
+          )}
+        </div>
+
+        {hashTags.length > 0 && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: 12, color: 'var(--text-3)', marginRight: 4, fontWeight: 600 }}>
+              #태그
+            </span>
+            <button
+              className={'chip' + (tagFilter === 'all' ? ' active' : '')}
+              onClick={() => onTagFilter('all')}
+            >
+              전체
+            </button>
+            {hashTags.map(tag => (
+              <button
+                key={tag}
+                className={'chip' + (tagFilter === tag ? ' active' : '')}
+                onClick={() => onTagFilter(tagFilter === tag ? 'all' : tag)}
+              >
+                #{tag} {tagCounts.get(tag) || 0}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <FilterBar search={search} onSearch={onSearch} />
+      </div>
+
+      <div className="card table-card">
+        {filtered.length === 0 ? (
+          <div
+            style={{
+              padding: '40px 0',
+              textAlign: 'center',
+              color: 'var(--text-3)',
+              fontSize: 13,
+            }}
+          >
+            조건에 맞는 항목이 없습니다
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="data-table stagger-rows">
+              <thead>
+                <tr>
+                  {batchMode && <th style={{ width: 36 }} />}
+                  <th style={{ width: 88 }}>제품코드</th>
+                  <th style={{ width: 58 }}>사진</th>
+                  <th>제품명</th>
+                  <th style={{ width: 60 }}>온도</th>
+                  <th style={{ width: 88 }}>포장단위</th>
+                  <th style={{ width: 80 }}>전용/범용</th>
+                  <th style={{ width: 108, textAlign: 'right' }}>부가세포함단가</th>
+                  <th style={{ width: 96 }}>분류</th>
+                  <th style={{ width: 140 }}>#태그</th>
+                  <th style={{ width: 96 }}>제조사</th>
+                  <th style={{ width: 76 }} />
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((row, index) => {
+                  const rowKey = `${row.productCode ?? row.id ?? 'm'}-${index}`;
+                  const isPending = row.isManual
+                    ? deletePending?.isManual && deletePending?.id === row.id
+                    : deletePending?.productCode === row.productCode;
+                  return (
+                    <ManageRow
+                      key={rowKey}
+                      r={row}
+                      deletePending={isPending}
+                      onEdit={() => onEdit(row)}
+                      onCopy={() => onCopy(row)}
+                      onDeleteStart={() => onDeleteStart(row)}
+                      onDeleteCancel={onDeleteCancel}
+                      onDeleteConfirm={() => onDeleteConfirm(row)}
+                      onRestore={() => onRestore(row.productCode)}
+                      batchMode={batchMode}
+                      isSelected={selected.has(row.id)}
+                      onToggleSelect={toggleSelect}
+                    />
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div
+          style={{
+            padding: '8px 16px',
+            fontSize: 11,
+            color: 'var(--text-3)',
+            borderTop: '1px solid var(--divider)',
+          }}
+        >
+          {filtered.length}개 표시 / 전체 {rows.length}개 · 관리 중 {managedCount}개
+        </div>
+      </div>
+    </>
+  );
+}

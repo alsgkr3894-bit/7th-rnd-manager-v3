@@ -28,6 +28,9 @@ import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useScrollMemory } from '@/hooks/useScrollMemory';
 import { useNoteFilter } from '@/hooks/useNoteFilter';
+import { useNotePins } from '@/hooks/useNotePins';
+import { useNotePresets } from '@/hooks/useNotePresets';
+import { useNoteBatchActions } from '@/hooks/useNoteBatchActions';
 import { buildHighlightRegex, parseTagList, formatFullDate } from '@/lib/note/utils';
 import { NoteCard } from './_NoteCard';
 import { NoteDetailModal } from './_NoteDetailModal';
@@ -40,23 +43,6 @@ function normalizeNoteView(value) {
   return NOTE_VIEW_KEYS.has(value) ? value : 'card';
 }
 
-function normalizeNotePresets(value) {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter(p => p && typeof p === 'object' && !Array.isArray(p))
-    .map(p => ({
-      name: typeof p.name === 'string' ? p.name.trim() : '',
-      status: typeof p.status === 'string' ? p.status : 'all',
-      search: typeof p.search === 'string' ? p.search : '',
-      sort: typeof p.sort === 'string' ? p.sort : 'createdAt',
-    }))
-    .filter(p => p.name);
-}
-
-function normalizeIdList(value) {
-  if (!Array.isArray(value)) return [];
-  return value.filter(id => typeof id === 'string' || typeof id === 'number');
-}
 
 const NoteTableRow = React.memo(function NoteTableRow({
   note,
@@ -149,27 +135,9 @@ export function NoteContent() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [detailNote, setDetailNote] = useState(null);
   const [stats, setStats] = useState(null);
-  const [batchMode, setBatchMode] = useState(false);
-  const [selected, setSelected] = useState(new Set());
   const [popIds, setPopIds] = useState(new Set());
-  const [deletingIds, setDeletingIds] = useState(new Set());
-  const [confirmBatch, setConfirmBatch] = useState(false);
-  const [confirmDeletePreset, setConfirmDeletePreset] = useState(null);
   const [singleDeleteNote, setSingleDeleteNote] = useState(null);
-  const [presets, setPresets] = useState(() => {
-    try {
-      return normalizeNotePresets(JSON.parse(localStorage.getItem(KEYS.NOTE_PRESETS) || '[]'));
-    } catch {
-      return [];
-    }
-  });
-  const [pinnedIds, setPinnedIds] = useState(() => {
-    try {
-      return new Set(normalizeIdList(JSON.parse(localStorage.getItem(KEYS.NOTE_PINS) || '[]')));
-    } catch {
-      return new Set();
-    }
-  });
+  const { pinnedIds, togglePin } = useNotePins();
 
   useScrollMemory(pathname);
 
@@ -188,13 +156,8 @@ export function NoteContent() {
   } = useNoteFilter(notes, pinnedIds, { pathname });
 
   const {
-    history: searchHistory,
-    isOpen: showSearchHist,
-    setIsOpen: setShowSearchHist,
-    add: saveSearchHistory,
-    scheduleAdd: scheduleSearchHistory,
-    cancelScheduled: cancelSearchHistory,
-  } = useSearchHistory(KEYS.NOTE_SEARCH_HISTORY);
+    presets, confirmDeletePreset, setConfirmDeletePreset, savePreset, applyPreset, deletePreset,
+  } = useNotePresets({ statusFilter, search, sortBy, setStatusFilter, setSearch, setSortBy });
 
   const [ctxMenu, setCtxMenu] = useState(null);
   const [focusedRow, setFocusedRow] = useState(null);
@@ -207,6 +170,23 @@ export function NoteContent() {
     setNotes(data);
     setStats(s);
   }, []);
+
+  const {
+    batchMode, setBatchMode,
+    selected, setSelected,
+    confirmBatch, setConfirmBatch,
+    toggleSelect, exitBatch,
+    handleBatchDelete, handleBatchStatusChange, confirmBatchDelete,
+  } = useNoteBatchActions({ setNotes, load });
+
+  const {
+    history: searchHistory,
+    isOpen: showSearchHist,
+    setIsOpen: setShowSearchHist,
+    add: saveSearchHistory,
+    scheduleAdd: scheduleSearchHistory,
+    cancelScheduled: cancelSearchHistory,
+  } = useSearchHistory(KEYS.NOTE_SEARCH_HISTORY);
 
   useEffect(() => {
     load()
@@ -237,18 +217,6 @@ export function NoteContent() {
   const hlRe = useMemo(() => buildHighlightRegex(search.trim()), [search]);
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
-
-  function togglePin(noteId, e) {
-    e?.stopPropagation();
-    setPinnedIds(prev => {
-      const next = new Set(prev);
-      next.has(noteId) ? next.delete(noteId) : next.add(noteId);
-      try {
-        localStorage.setItem(KEYS.NOTE_PINS, JSON.stringify([...next]));
-      } catch {}
-      return next;
-    });
-  }
 
   function exportCsv() {
     const cols = [
@@ -368,53 +336,6 @@ export function NoteContent() {
     }
   }, []);
 
-  function handleBatchDelete() {
-    if (selected.size === 0) return;
-    setConfirmBatch(true);
-  }
-
-  async function handleBatchStatusChange(newStatus) {
-    if (selected.size === 0) return;
-    const ids = [...selected];
-    try {
-      await Promise.all(ids.map(id => updateNote(id, { status: newStatus })));
-      setNotes(prev => prev.map(n => (ids.includes(n.id) ? { ...n, status: newStatus } : n)));
-      showToast(`${ids.length}개 → ${newStatus}`, 'ok');
-      setSelected(new Set());
-      setBatchMode(false);
-    } catch (err) {
-      console.error('[NoteContent] handleBatchStatusChange', err);
-      showToast('상태 변경 실패', 'error');
-    }
-  }
-
-  async function confirmBatchDelete() {
-    setConfirmBatch(false);
-    const ids = [...selected];
-    setSelected(new Set());
-    setBatchMode(false);
-    try {
-      const CHUNK = 10;
-      for (let i = 0; i < ids.length; i += CHUNK) {
-        await Promise.all(ids.slice(i, i + CHUNK).map(id => deleteNote(id)));
-      }
-      setNotes(prev => prev.filter(n => !ids.includes(n.id)));
-      showToast(`${ids.length}개 삭제됨`, 'ok');
-    } catch (err) {
-      console.error('[NoteContent] confirmBatchDelete', err);
-      showToast('일부 삭제 실패', 'error');
-      load();
-    }
-  }
-
-  function toggleSelect(id) {
-    setSelected(s => {
-      const n = new Set(s);
-      n.has(id) ? n.delete(id) : n.add(id);
-      return n;
-    });
-  }
-
   function handleNewVersion(note, e) {
     e.stopPropagation();
     try {
@@ -454,29 +375,6 @@ export function NoteContent() {
   function changeView(mode) {
     setViewMode(mode);
     setLS(KEYS.NOTE_VIEW, mode);
-  }
-
-  function savePreset(name) {
-    const next = [...presets, { name, status: statusFilter, search, sort: sortBy }];
-    setPresets(next);
-    try {
-      localStorage.setItem(KEYS.NOTE_PRESETS, JSON.stringify(next));
-    } catch {}
-    showToast(`"${name}" 프리셋 저장됨`, 'ok');
-  }
-
-  function applyPreset(p) {
-    setStatusFilter(p.status);
-    setSearch(p.search || '');
-    setSortBy(p.sort); // 영속은 useNoteFilter가 담당
-  }
-
-  function deletePreset(idx) {
-    const next = presets.filter((_, i) => i !== idx);
-    setPresets(next);
-    try {
-      localStorage.setItem(KEYS.NOTE_PRESETS, JSON.stringify(next));
-    } catch {}
   }
 
   const hasActiveFilter = statusFilter !== 'all' || search.trim() || sortBy !== 'createdAt';
@@ -537,10 +435,7 @@ export function NoteContent() {
                 selected={selected}
                 onStatusChange={handleBatchStatusChange}
                 onDelete={handleBatchDelete}
-                onExit={() => {
-                  setBatchMode(false);
-                  setSelected(new Set());
-                }}
+                onExit={exitBatch}
               />
             ) : (
               <>
@@ -988,9 +883,7 @@ export function NoteContent() {
             {visible.map((note, i) => (
               <div
                 key={note.id}
-                className={
-                  'stagger note-card-wrap' + (deletingIds.has(note.id) ? ' note-card-exit' : '')
-                }
+                className="stagger note-card-wrap"
                 style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
                 onContextMenu={e => {
                   e.preventDefault();

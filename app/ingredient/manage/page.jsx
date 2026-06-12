@@ -1,94 +1,44 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { Icon } from '@/components/icons';
 import { restoreRecord } from '@/lib/db';
-import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { initDB } from '@/lib/db';
-import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
-import {
-  getManagedProducts,
-  addManagedProduct,
-  updateManagedProduct,
-  seedManagedProductsIfEmpty,
-} from '@/lib/shipment';
+import { getManagedProducts, addManagedProduct, updateManagedProduct } from '@/lib/shipment';
 import { TYPE_LABEL } from '@/components/jette/managed-products-constants';
 import {
-  getAllIngredients,
-  getIngredientMetaMap,
-  mergeIngredientRows,
   addIngredient,
   updateIngredient,
   upsertIngredientMeta,
   excludeIngredientByCode,
   restoreIngredientByCode,
   deleteIngredient,
-  getCategoryStyle,
-  sortMainCategories,
-  sortHashTags,
   seedMasterIngredients,
   INGREDIENT_MASTER_SEED,
   resetAllIngredients,
-  getIngredientProductCodeDuplicateDiagnostics,
   repairIngredientProductCodeDuplicates,
   removeCategoryFromAll,
   removeTagFromAll,
-  buildMetaOnlyRow,
-  computeIngredientIssues,
+  bulkDeleteIngredients,
 } from '@/lib/ingredient';
 import { KEYS } from '@/lib/note/keys';
-import { DISCONTINUED_FILTER, UNCATEGORIZED_FILTER } from '@/lib/ingredient/constants';
-import { migrateNutritionToIngredients } from '@/lib/nutrition/migrate-to-ingredient';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
+import { useBatchSelection } from '@/hooks/useBatchSelection';
 import { IngredientForm } from './IngredientForm';
-import { ManageRow } from '@/components/ingredient/ManageRow';
 import { IssuesView } from '@/components/ingredient/IssuesView';
 import { IngredientBatchToolbar } from '@/components/ingredient/BatchToolbar';
-import { bulkDeleteIngredients } from '@/lib/ingredient';
 import { TabButton } from '@/components/cost/shared/TabButton';
+import { IngredientManagePanel } from './IngredientManagePanel';
+import { IngredientSettingsPanel } from './IngredientSettingsPanel';
+import { IngredientDiagnostics } from './IngredientDiagnostics';
+import { useIngredientManageData } from './useIngredientManageData';
+import { useIngredientManageView } from './useIngredientManageView';
 
 // scope 라벨('전용'/'범용'/'범용관리') → productType 코드
 const scopeToType = label =>
   Object.keys(TYPE_LABEL).find(code => TYPE_LABEL[code] === label) || null;
-
-const DUPLICATE_CHECKS = [
-  { key: 'productCode', label: '제품코드', get: r => r.productCode },
-  { key: 'jetteCode', label: '제때코드', get: r => r.jetteCode || r.jetteProductCode },
-  {
-    key: 'displayName',
-    label: '표시명',
-    get: r => r.ingredientName || r.displayName || r.productName,
-  },
-];
-
-function duplicateKey(value) {
-  return String(value || '')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '');
-}
-
-function rowLabel(row) {
-  return row.ingredientName || row.displayName || row.productName || row.productCode || '이름 없음';
-}
-
-function findDuplicateGroups(rows, check) {
-  const buckets = new Map();
-  for (const row of rows) {
-    if (row.discontinued || row.excluded) continue;
-    const raw = check.get(row);
-    const key = duplicateKey(raw);
-    if (!key) continue;
-    if (!buckets.has(key)) buckets.set(key, { value: String(raw).trim(), rows: [] });
-    buckets.get(key).rows.push(row);
-  }
-  return [...buckets.values()]
-    .filter(group => group.rows.length > 1)
-    .sort((a, b) => b.rows.length - a.rows.length || a.value.localeCompare(b.value, 'ko'));
-}
 
 // 제때 연동 항목의 전용/범용을 제때 관리품목(ref_shipment_products.productType)에 반영
 async function syncManagedScope(target, scopeLabel) {
@@ -110,10 +60,8 @@ async function syncManagedScope(target, scopeLabel) {
 
 export default function Page() {
   const isMain = useIsMainBrand(); // 마스터 시드는 7번가 전용
-  const [rows, setRows] = useState([]);
-  const [prevPriceMap, setPrevPriceMap] = useState(null);
-  const [priceDate, setPriceDate] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { rows, setRows, prevPriceMap, priceDate, loading, load, brokenRefs, productCodeDupes } =
+    useIngredientManageData();
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 200);
   const [catFilter, setCatFilter] = useState(() => {
@@ -131,90 +79,34 @@ export default function Page() {
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(null); // { type:'cat'|'tag', value }
-  const [brokenRefs, setBrokenRefs] = useState([]);
-  const [productCodeDupes, setProductCodeDupes] = useState(null);
   const [dedupeConfirm, setDedupeConfirm] = useState(false);
   const [dedupeBusy, setDedupeBusy] = useState(false);
-  const [batchMode, setBatchMode] = useState(false);
-  const [selected, setSelected] = useState(new Set());
-
-  const load = useCallback(async () => {
-    await initDB();
-    // 기존 수동 원산지/알레르기 데이터를 식자재로 일회성 이전 (idempotent)
-    await migrateNutritionToIngredients().catch(e =>
-      console.warn('[ingredient/manage] 마이그레이션 실패', e)
-    );
-    const files = await getPriceFiles();
-    const latest = files[0] || null;
-    const prev = files[1] ?? null;
-    setPriceDate(latest?.updateDate || null);
-
-    const [allMeta, metaMap, managed, productCodeDiagnostics] = await Promise.all([
-      getAllIngredients(),
-      getIngredientMetaMap(),
-      seedManagedProductsIfEmpty().then(() => getManagedProducts()),
-      getIngredientProductCodeDuplicateDiagnostics(),
-    ]);
-    setProductCodeDupes(productCodeDiagnostics);
-    // 전용/범용 단일 출처 = 제때 관리품목(productType)
-    const typeMap = new Map(
-      managed.filter(p => p.productCode).map(p => [p.productCode, p.productType])
-    );
-
-    if (!latest) {
-      setPrevPriceMap(null);
-      const metaRows = allMeta.filter(m => m.isManual || m.isSeeded).map(buildMetaOnlyRow);
-      setRows(metaRows);
-      const codeSetMeta = new Set(allMeta.filter(m => m.productCode).map(m => m.productCode));
-      setBrokenRefs(
-        allMeta.filter(
-          m =>
-            Array.isArray(m.compositeOf) &&
-            m.compositeOf.length > 0 &&
-            m.compositeOf.some(c => c && !codeSetMeta.has(c))
-        )
-      );
-      return;
-    }
-
-    const priceRows = await getPriceRowsByFileId(latest.id);
-    const merged = mergeIngredientRows(priceRows, metaMap, typeMap).filter(r => r.hasRecord);
-    const priceCodeSet = new Set(priceRows.map(r => r.productCode).filter(Boolean));
-
-    const orphanMetaRows = allMeta
-      .filter(
-        m => (m.isManual || m.isSeeded) && (!m.productCode || !priceCodeSet.has(m.productCode))
-      )
-      .map(buildMetaOnlyRow);
-
-    // 이전 가격파일 — 단가 변동 이슈 감지용
-    if (prev) {
-      const prevRows = await getPriceRowsByFileId(prev.id);
-      setPrevPriceMap(new Map(prevRows.map(r => [r.productCode, r.priceWithTax])));
-    } else {
-      setPrevPriceMap(null);
-    }
-
-    const allRows = [...merged, ...orphanMetaRows];
-    setRows(allRows);
-
-    // compositeOf 참조 무결성 검사
-    const codeSet = new Set(allMeta.filter(m => m.productCode).map(m => m.productCode));
-    const broken = allMeta.filter(
-      m =>
-        Array.isArray(m.compositeOf) &&
-        m.compositeOf.length > 0 &&
-        m.compositeOf.some(c => c && !codeSet.has(c))
-    );
-    setBrokenRefs(broken);
-  }, []);
-
-  useEffect(() => {
-    load()
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [load]);
-  useVisibilityRefresh(load);
+  const { batchMode, selected, clearSelection, startBatch, exitBatch, toggleSelect } =
+    useBatchSelection();
+  const {
+    activeCount,
+    managedCount,
+    discontinuedCount,
+    categoryCounts,
+    mainCats,
+    tagCounts,
+    hashTags,
+    originSuggestions,
+    uncategorized,
+    issueRows,
+    duplicateDiagnostics,
+    duplicateGroupCount,
+    filtered,
+    sub,
+  } = useIngredientManageView({
+    rows,
+    prevPriceMap,
+    catFilter,
+    tagFilter,
+    debouncedSearch,
+    loading,
+    priceDate,
+  });
 
   useEffect(() => {
     try {
@@ -224,8 +116,8 @@ export default function Page() {
 
   // 검색어 변경 시에도 선택 초기화
   useEffect(() => {
-    setSelected(new Set());
-  }, [debouncedSearch]);
+    clearSelection();
+  }, [debouncedSearch, clearSelection]);
 
   async function handleSeed() {
     if (seeding) return;
@@ -355,40 +247,40 @@ export default function Page() {
         showToast('실패: ' + err.message, 'err');
       }
     },
-    [load]
+    [load, setRows]
   );
 
-  const handleRestore = useCallback(async productCode => {
-    try {
-      await restoreIngredientByCode(productCode);
-      setRows(prev =>
-        prev.map(r => (r.productCode === productCode ? { ...r, excluded: false } : r))
-      );
-      showToast('복원됐습니다', 'ok');
-    } catch (err) {
-      showToast('실패: ' + err.message, 'err');
-    }
-  }, []);
+  const handleRestore = useCallback(
+    async productCode => {
+      try {
+        await restoreIngredientByCode(productCode);
+        setRows(prev =>
+          prev.map(r => (r.productCode === productCode ? { ...r, excluded: false } : r))
+        );
+        showToast('복원됐습니다', 'ok');
+      } catch (err) {
+        showToast('실패: ' + err.message, 'err');
+      }
+    },
+    [setRows]
+  );
 
   // 필터 변경 시 선택 Set 초기화 — 필터로 숨겨진 항목이 선택된 채로 일괄삭제되는 것 방지
-  const handleSetCatFilter = useCallback(val => {
-    setCatFilter(val);
-    setSelected(new Set());
-  }, []);
-  const handleSetTagFilter = useCallback(val => {
-    setTagFilter(val);
-    setSelected(new Set());
-  }, []);
+  const handleSetCatFilter = useCallback(
+    val => {
+      setCatFilter(val);
+      clearSelection();
+    },
+    [clearSelection]
+  );
+  const handleSetTagFilter = useCallback(
+    val => {
+      setTagFilter(val);
+      clearSelection();
+    },
+    [clearSelection]
+  );
   const handleDeleteCancel = useCallback(() => setDeletePending(null), []);
-
-  const toggleSelect = useCallback(id => {
-    setSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
 
   const handleBatchDelete = useCallback(async () => {
     if (selected.size === 0) return;
@@ -396,8 +288,7 @@ export default function Page() {
     try {
       const removed = await bulkDeleteIngredients(ids);
       setRows(prev => prev.filter(r => !ids.includes(r.id)));
-      setSelected(new Set());
-      setBatchMode(false);
+      exitBatch();
       showToast(`${removed.length}개 삭제됨`, 'ok', 5000, {
         label: '실행취소',
         onClick: async () => {
@@ -415,100 +306,7 @@ export default function Page() {
     } catch (err) {
       showToast('삭제 실패: ' + err.message, 'error');
     }
-  }, [selected, load]);
-
-  // ── 분류·태그 집합 ──
-  const mainCats = useMemo(() => {
-    const set = new Set();
-    rows.forEach(r => {
-      if (!r.discontinued && r.category) set.add(r.category);
-    });
-    return sortMainCategories(Array.from(set));
-  }, [rows]);
-
-  const hashTags = useMemo(() => {
-    const set = new Set();
-    rows.forEach(r => {
-      if (r.discontinued) return;
-      (r.tags || []).forEach(t => t && set.add(t));
-    });
-    return sortHashTags(Array.from(set));
-  }, [rows]);
-
-  const discontinuedCount = rows.filter(r => r.discontinued).length;
-
-  // 원산지 자동완성 후보 — 기존 입력된 표시품목명·국가 수집
-  const originSuggestions = useMemo(() => {
-    const names = new Set(),
-      countries = new Set();
-    for (const r of rows) {
-      const origin = r.origin;
-      if (!origin) continue;
-      const items = Array.isArray(origin) ? origin : [origin]; // 구버전 객체 방어
-      for (const it of items) {
-        if (it.displayName) names.add(it.displayName);
-        if (it.country) countries.add(it.country);
-      }
-    }
-    return { names: [...names], countries: [...countries] };
-  }, [rows]);
-  const uncategorized = rows.filter(r => !r.discontinued && !r.excluded && !r.category).length;
-
-  // ── 이슈 행 추출 ──
-  const issueRows = useMemo(
-    () => computeIngredientIssues(rows, prevPriceMap),
-    [rows, prevPriceMap]
-  );
-
-  const duplicateDiagnostics = useMemo(
-    () =>
-      DUPLICATE_CHECKS.map(check => ({
-        ...check,
-        groups: findDuplicateGroups(rows, check),
-      })).filter(check => check.groups.length > 0),
-    [rows]
-  );
-  const duplicateGroupCount = duplicateDiagnostics.reduce(
-    (sum, check) => sum + check.groups.length,
-    0
-  );
-
-  // ── 필터링 ──
-  const filtered = useMemo(() => {
-    let list;
-    if (catFilter === DISCONTINUED_FILTER) {
-      list = rows.filter(r => r.discontinued);
-    } else {
-      list = rows.filter(r => !r.discontinued && !r.excluded);
-      if (catFilter === UNCATEGORIZED_FILTER) {
-        list = list.filter(r => !r.category);
-      } else if (catFilter !== 'all') {
-        list = list.filter(r => r.category === catFilter);
-      }
-      if (tagFilter !== 'all') list = list.filter(r => (r.tags || []).includes(tagFilter));
-    }
-    const q = debouncedSearch.trim().toLowerCase();
-    if (q)
-      list = list.filter(
-        r =>
-          (r.ingredientName || r.displayName || r.productName || '').toLowerCase().includes(q) ||
-          (r.productCode || '').toLowerCase().includes(q) ||
-          (r.category || '').toLowerCase().includes(q) ||
-          (r.tags || []).some(t => t.toLowerCase().includes(q)) ||
-          (r.manufacturer || '').toLowerCase().includes(q)
-      );
-    return list;
-  }, [rows, catFilter, tagFilter, debouncedSearch]);
-
-  const managedCount = rows.filter(r => r.hasRecord).length;
-
-  const sub = loading
-    ? '로딩 중…'
-    : priceDate
-      ? `제때 단가 기준 ${priceDate} · 전체 ${rows.length}개 · 관리 중 ${managedCount}개${discontinuedCount ? ` · 단종 ${discontinuedCount}개` : ''}`
-      : rows.length > 0
-        ? `제때 가격 파일 없음 · 메타 ${rows.length}개`
-        : '제때 가격 파일이 없습니다 — 마스터 시드 적용 또는 가격파일 업로드 필요';
+  }, [selected, load, exitBatch, setRows]);
 
   return (
     <main className="main page-enter">
@@ -522,10 +320,7 @@ export default function Page() {
               <IngredientBatchToolbar
                 selected={selected}
                 onDelete={handleBatchDelete}
-                onExit={() => {
-                  setBatchMode(false);
-                  setSelected(new Set());
-                }}
+                onExit={exitBatch}
               />
             ) : (
               <>
@@ -556,14 +351,7 @@ export default function Page() {
                     <Icon.trash style={{ width: 14, height: 14 }} /> 데이터 초기화
                   </button>
                 )}
-                <button
-                  className="btn"
-                  onClick={() => {
-                    setBatchMode(true);
-                    setSelected(new Set());
-                  }}
-                  disabled={rows.length === 0}
-                >
+                <button className="btn" onClick={startBatch} disabled={rows.length === 0}>
                   선택
                 </button>
                 {isMain && (
@@ -592,7 +380,7 @@ export default function Page() {
           }}
         >
           <TabButton active={view === 'manage'} onClick={() => setView('manage')}>
-            관리 {rows.filter(r => !r.discontinued).length}
+            관리 {activeCount}
           </TabButton>
           <TabButton
             active={view === 'issues'}
@@ -628,282 +416,48 @@ export default function Page() {
         </div>
       )}
 
-      {/* compositeOf 깨진 참조 경고 */}
-      {brokenRefs.length > 0 && (
-        <div
-          className="info-banner"
-          style={{
-            marginBottom: 8,
-            background: 'var(--warn-soft)',
-            borderColor: 'var(--warn-soft)',
-          }}
-        >
-          <div className="info-banner-ico" style={{ background: 'var(--warn)', color: '#fff' }}>
-            <Icon.alert style={{ width: 16, height: 16 }} />
-          </div>
-          <div style={{ fontSize: 13 }}>
-            <b>복합 식자재 참조 오류 {brokenRefs.length}건</b> —{' '}
-            {brokenRefs
-              .slice(0, 3)
-              .map(r => r.ingredientName)
-              .join(', ')}
-            {brokenRefs.length > 3 && ` 외 ${brokenRefs.length - 3}개`}가 존재하지 않는 코드를
-            compositeOf로 참조합니다.
-          </div>
-        </div>
-      )}
-
-      {productCodeDupes?.hasDuplicates && (
-        <div
-          className="info-banner"
-          style={{
-            marginBottom: 8,
-            background: 'var(--warn-soft)',
-            borderColor: 'var(--warn-soft)',
-          }}
-        >
-          <div className="info-banner-ico" style={{ background: 'var(--warn)', color: '#fff' }}>
-            <Icon.alert style={{ width: 16, height: 16 }} />
-          </div>
-          <div style={{ fontSize: 13, display: 'grid', gap: 8, flex: 1 }}>
-            <div>
-              <b>제품코드 중복 {productCodeDupes.groupCount}그룹</b> — 대표 식자재 1건에
-              태그·알레르기·비어 있는 필드를 병합하고 나머지 행을 정리할 수 있습니다.
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {productCodeDupes.groups.slice(0, 4).map(group => (
-                <span
-                  key={group.key}
-                  className="chip"
-                  title={`병합 대상: ${group.removeNames.filter(Boolean).join(', ') || '-'}`}
-                >
-                  {group.productCode} · 대표 {group.keepName || group.keepId} · 병합{' '}
-                  {group.removeIds.length}개 · 영양값 {group.hasNutritionValue ? '연결' : '없음'}
-                </span>
-              ))}
-            </div>
-            {dedupeConfirm && (
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 12, color: 'var(--negative)', fontWeight: 700 }}>
-                  최신 대표행만 남기고 {productCodeDupes.duplicateRows}개 중복 행을 정리할까요?
-                </span>
-                <button
-                  className="btn sm"
-                  style={{ background: 'var(--negative)', color: '#fff', border: 0 }}
-                  onClick={handleRepairProductCodeDuplicates}
-                  disabled={dedupeBusy}
-                >
-                  {dedupeBusy ? '정리 중…' : '정리'}
-                </button>
-                <button className="btn sm" onClick={() => setDedupeConfirm(false)}>
-                  취소
-                </button>
-              </div>
-            )}
-          </div>
-          {!dedupeConfirm && (
-            <button className="btn sm" onClick={() => setDedupeConfirm(true)}>
-              제품코드 중복 정리
-            </button>
-          )}
-        </div>
-      )}
-
-      {duplicateGroupCount > 0 && (
-        <div
-          className="info-banner"
-          style={{
-            marginBottom: 8,
-            background: 'var(--warn-soft)',
-            borderColor: 'var(--warn-soft)',
-          }}
-        >
-          <div className="info-banner-ico" style={{ background: 'var(--warn)', color: '#fff' }}>
-            <Icon.alert style={{ width: 16, height: 16 }} />
-          </div>
-          <div style={{ fontSize: 13, display: 'grid', gap: 6 }}>
-            <div>
-              <b>중복 가능성 {duplicateGroupCount}그룹</b> — 제품코드·제때코드·표시명 기준으로
-              확인이 필요합니다.
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {duplicateDiagnostics.flatMap(check =>
-                check.groups.slice(0, 3).map(group => (
-                  <span
-                    key={`${check.key}:${group.value}`}
-                    className="chip"
-                    title={group.rows.map(rowLabel).join(', ')}
-                  >
-                    {check.label} {group.value} · {group.rows.length}개
-                  </span>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <IngredientDiagnostics
+        brokenRefs={brokenRefs}
+        productCodeDupes={productCodeDupes}
+        duplicateGroupCount={duplicateGroupCount}
+        duplicateDiagnostics={duplicateDiagnostics}
+        dedupeConfirm={dedupeConfirm}
+        dedupeBusy={dedupeBusy}
+        onDedupeConfirm={() => setDedupeConfirm(true)}
+        onDedupeCancel={() => setDedupeConfirm(false)}
+        onRepairProductCodeDuplicates={handleRepairProductCodeDuplicates}
+      />
 
       {/* ── 관리 뷰 ── */}
       {rows.length > 0 && view === 'manage' && (
-        <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span
-                style={{ fontSize: 12, color: 'var(--text-3)', marginRight: 4, fontWeight: 600 }}
-              >
-                분류
-              </span>
-              <button
-                className={'chip' + (catFilter === 'all' ? ' active' : '')}
-                onClick={() => handleSetCatFilter('all')}
-              >
-                전체 {rows.filter(r => !r.discontinued).length}
-              </button>
-              {mainCats.map(c => (
-                <button
-                  key={c}
-                  className={'chip' + (catFilter === c ? ' active' : '')}
-                  style={catFilter !== c ? getCategoryStyle(c) : undefined}
-                  onClick={() => handleSetCatFilter(c)}
-                >
-                  {c} {rows.filter(r => !r.discontinued && r.category === c).length}
-                </button>
-              ))}
-              {uncategorized > 0 && (
-                <button
-                  className={'chip' + (catFilter === UNCATEGORIZED_FILTER ? ' active' : '')}
-                  style={catFilter !== UNCATEGORIZED_FILTER ? { color: 'var(--warn)' } : undefined}
-                  onClick={() =>
-                    handleSetCatFilter(
-                      catFilter === UNCATEGORIZED_FILTER ? 'all' : UNCATEGORIZED_FILTER
-                    )
-                  }
-                >
-                  미분류 {uncategorized}
-                </button>
-              )}
-              {discontinuedCount > 0 && (
-                <button
-                  className={'chip' + (catFilter === DISCONTINUED_FILTER ? ' active' : '')}
-                  style={
-                    catFilter !== DISCONTINUED_FILTER
-                      ? { color: 'var(--text-3)', marginLeft: 'auto' }
-                      : { marginLeft: 'auto' }
-                  }
-                  onClick={() =>
-                    handleSetCatFilter(
-                      catFilter === DISCONTINUED_FILTER ? 'all' : DISCONTINUED_FILTER
-                    )
-                  }
-                >
-                  단종 {discontinuedCount}
-                </button>
-              )}
-            </div>
-            {hashTags.length > 0 && (
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                <span
-                  style={{ fontSize: 12, color: 'var(--text-3)', marginRight: 4, fontWeight: 600 }}
-                >
-                  #태그
-                </span>
-                <button
-                  className={'chip' + (tagFilter === 'all' ? ' active' : '')}
-                  onClick={() => handleSetTagFilter('all')}
-                >
-                  전체
-                </button>
-                {hashTags.map(t => {
-                  const cnt = rows.filter(
-                    r => !r.discontinued && (r.tags || []).includes(t)
-                  ).length;
-                  if (!cnt) return null;
-                  return (
-                    <button
-                      key={t}
-                      className={'chip' + (tagFilter === t ? ' active' : '')}
-                      onClick={() => handleSetTagFilter(tagFilter === t ? 'all' : t)}
-                    >
-                      #{t} {cnt}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            <FilterBar search={search} onSearch={setSearch} />
-          </div>
-
-          <div className="card table-card">
-            {filtered.length === 0 ? (
-              <div
-                style={{
-                  padding: '40px 0',
-                  textAlign: 'center',
-                  color: 'var(--text-3)',
-                  fontSize: 13,
-                }}
-              >
-                조건에 맞는 항목이 없습니다
-              </div>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table className="data-table stagger-rows">
-                  <thead>
-                    <tr>
-                      {batchMode && <th style={{ width: 36 }} />}
-                      <th style={{ width: 88 }}>제품코드</th>
-                      <th style={{ width: 58 }}>사진</th>
-                      <th>제품명</th>
-                      <th style={{ width: 60 }}>온도</th>
-                      <th style={{ width: 88 }}>포장단위</th>
-                      <th style={{ width: 80 }}>전용/범용</th>
-                      <th style={{ width: 108, textAlign: 'right' }}>부가세포함단가</th>
-                      <th style={{ width: 96 }}>분류</th>
-                      <th style={{ width: 140 }}>#태그</th>
-                      <th style={{ width: 96 }}>제조사</th>
-                      <th style={{ width: 76 }} />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((r, i) => {
-                      // 인덱스 suffix — 제때 파일에 같은 productCode가 중복돼도 key 충돌 방지
-                      const rowKey = `${r.productCode ?? r.id ?? 'm'}-${i}`;
-                      const isPending = r.isManual
-                        ? deletePending?.isManual && deletePending?.id === r.id
-                        : deletePending?.productCode === r.productCode;
-                      return (
-                        <ManageRow
-                          key={rowKey}
-                          r={r}
-                          deletePending={isPending}
-                          onEdit={() => setFormTarget(r)}
-                          onCopy={() => setFormTarget({ __copyFrom: r })}
-                          onDeleteStart={() => setDeletePending(r)}
-                          onDeleteCancel={handleDeleteCancel}
-                          onDeleteConfirm={() => handleExclude(r)}
-                          onRestore={() => handleRestore(r.productCode)}
-                          batchMode={batchMode}
-                          isSelected={selected.has(r.id)}
-                          onToggleSelect={toggleSelect}
-                        />
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            <div
-              style={{
-                padding: '8px 16px',
-                fontSize: 11,
-                color: 'var(--text-3)',
-                borderTop: '1px solid var(--divider)',
-              }}
-            >
-              {filtered.length}개 표시 / 전체 {rows.length}개 · 관리 중 {managedCount}개
-            </div>
-          </div>
-        </>
+        <IngredientManagePanel
+          rows={rows}
+          filtered={filtered}
+          activeCount={activeCount}
+          managedCount={managedCount}
+          mainCats={mainCats}
+          categoryCounts={categoryCounts}
+          hashTags={hashTags}
+          tagCounts={tagCounts}
+          uncategorized={uncategorized}
+          discontinuedCount={discontinuedCount}
+          catFilter={catFilter}
+          tagFilter={tagFilter}
+          search={search}
+          onSearch={setSearch}
+          onCatFilter={handleSetCatFilter}
+          onTagFilter={handleSetTagFilter}
+          batchMode={batchMode}
+          selected={selected}
+          toggleSelect={toggleSelect}
+          deletePending={deletePending}
+          onEdit={setFormTarget}
+          onCopy={row => setFormTarget({ __copyFrom: row })}
+          onDeleteStart={setDeletePending}
+          onDeleteCancel={handleDeleteCancel}
+          onDeleteConfirm={handleExclude}
+          onRestore={handleRestore}
+        />
       )}
 
       {/* ── 이슈 뷰 ── */}
@@ -913,110 +467,13 @@ export default function Page() {
 
       {/* ── 분류·태그 관리 뷰 ── */}
       {rows.length > 0 && view === 'settings' && (
-        <div
-          className="card"
-          style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 20 }}
-        >
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
-              분류 ({mainCats.length})
-            </div>
-            {mainCats.length === 0 ? (
-              <div style={{ fontSize: 13, color: 'var(--text-3)' }}>등록된 분류가 없습니다</div>
-            ) : (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {mainCats.map(c => {
-                  const cnt = rows.filter(r => !r.discontinued && r.category === c).length;
-                  return (
-                    <span
-                      key={c}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        padding: '4px 6px 4px 10px',
-                        borderRadius: 8,
-                        border: '1px solid var(--border)',
-                        fontSize: 13,
-                        fontWeight: 600,
-                        ...getCategoryStyle(c),
-                      }}
-                    >
-                      {c} <span style={{ fontSize: 11, opacity: 0.7 }}>{cnt}</span>
-                      <button
-                        onClick={() => setConfirmRemove({ type: 'cat', value: c })}
-                        title="분류 삭제"
-                        style={{
-                          border: 0,
-                          background: 'transparent',
-                          cursor: 'pointer',
-                          color: 'inherit',
-                          opacity: 0.6,
-                          display: 'inline-flex',
-                          padding: 0,
-                        }}
-                      >
-                        <Icon.close style={{ width: 12, height: 12 }} />
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
-              #태그 ({hashTags.length})
-            </div>
-            {hashTags.length === 0 ? (
-              <div style={{ fontSize: 13, color: 'var(--text-3)' }}>등록된 태그가 없습니다</div>
-            ) : (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {hashTags.map(t => {
-                  const cnt = rows.filter(
-                    r => !r.discontinued && (r.tags || []).includes(t)
-                  ).length;
-                  return (
-                    <span
-                      key={t}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        padding: '4px 6px 4px 10px',
-                        borderRadius: 8,
-                        background: 'var(--surface-2)',
-                        color: 'var(--text-2)',
-                        fontSize: 13,
-                        fontWeight: 500,
-                      }}
-                    >
-                      #{t} <span style={{ fontSize: 11, opacity: 0.7 }}>{cnt}</span>
-                      <button
-                        onClick={() => setConfirmRemove({ type: 'tag', value: t })}
-                        title="태그 삭제"
-                        style={{
-                          border: 0,
-                          background: 'transparent',
-                          cursor: 'pointer',
-                          color: 'inherit',
-                          opacity: 0.6,
-                          display: 'inline-flex',
-                          padding: 0,
-                        }}
-                      >
-                        <Icon.close style={{ width: 12, height: 12 }} />
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
-            ※ 삭제 시 해당 분류/태그가 모든 식자재에서 제거됩니다(식자재 자체는 유지).
-          </div>
-        </div>
+        <IngredientSettingsPanel
+          mainCats={mainCats}
+          categoryCounts={categoryCounts}
+          hashTags={hashTags}
+          tagCounts={tagCounts}
+          onRemoveRequest={setConfirmRemove}
+        />
       )}
 
       {confirmRemove && (

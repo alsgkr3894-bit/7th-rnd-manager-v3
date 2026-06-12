@@ -10,31 +10,12 @@ import { safeAll } from '@/lib/stats/_helpers';
 import { useDraftRestore } from '@/hooks/useDraftRestore';
 import { getProfile } from '@/lib/profile';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
+import { normalizeScope, safeMonth, safeQuantity, safeYear } from '@/lib/report/period';
 
 const DRAFT_KEY = 'report_draft_compare';
 
-function safeYear(value, fallback = new Date().getFullYear()) {
-  const n = asFiniteNumber(value, null);
-  if (n == null || n < 1900 || n > 2999) return fallback;
-  return Math.floor(n);
-}
-
-function safeMonth(value, fallback = new Date().getMonth() + 1) {
-  const n = asFiniteNumber(value, null);
-  if (n == null || n < 1 || n > 12) return fallback;
-  return Math.floor(n);
-}
-
-function safeQuantity(value) {
-  return asFiniteNumber(value, 0) ?? 0;
-}
-
 function normalizeMode(value) {
   return ['mom', 'yoy', 'custom'].includes(value) ? value : 'mom';
-}
-
-function normalizeScope(value) {
-  return ['all', 'pizza', 'side'].includes(value) ? value : 'all';
 }
 
 function safePercent(value) {

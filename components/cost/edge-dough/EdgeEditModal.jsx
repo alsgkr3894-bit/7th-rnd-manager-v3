@@ -1,7 +1,7 @@
 'use client';
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useEffect } from 'react';
 import { Icon } from '@/components/icons';
+import { IngredientSearch } from '@/components/cost/shared/IngredientSearch';
 import { formatNumber } from '@/lib/format';
 import {
   EDGE_TYPES,
@@ -335,173 +335,7 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
 
 // ── 구성품 행 ─────────────────────────────────────────────────
 function CompRow({ c, allMeta, upm, onChange, onRemove }) {
-  const [searchQ, setSearchQ] = useState('');
-  const [dropOpen, setDropOpen] = useState(false);
-  const [activeIdx, setActiveIdx] = useState(-1);
-  const [rect, setRect] = useState(null);
-  const inputRef = useRef(null);
-  const listRef = useRef(null);
-
-  const results = useMemo(() => {
-    const q = searchQ.trim().toLowerCase();
-    if (!q) return [];
-    return allMeta
-      .filter(
-        m =>
-          !m.discontinued &&
-          !m.excluded &&
-          ((m.ingredientName || '').toLowerCase().includes(q) ||
-            (m.productCode || '').toLowerCase().includes(q))
-      )
-      .slice(0, 15);
-  }, [searchQ, allMeta]);
-
-  useEffect(() => {
-    setActiveIdx(-1);
-  }, [results]);
-
-  const updateRect = useCallback(() => {
-    if (inputRef.current) {
-      const r = inputRef.current.getBoundingClientRect();
-      setRect({ top: r.bottom + 2, left: r.left, width: r.width });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (dropOpen) updateRect();
-  }, [dropOpen, searchQ, updateRect]);
-  useEffect(() => {
-    if (!dropOpen) return;
-    window.addEventListener('scroll', updateRect, true);
-    return () => window.removeEventListener('scroll', updateRect, true);
-  }, [dropOpen, updateRect]);
-
-  useEffect(() => {
-    const h = e => {
-      if (
-        inputRef.current &&
-        !inputRef.current.closest('[data-comp-row]')?.contains(e.target) &&
-        !(listRef.current && listRef.current.contains(e.target))
-      ) {
-        setDropOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
-  }, []);
-
-  useEffect(() => {
-    if (activeIdx < 0 || !listRef.current) return;
-    listRef.current.children[activeIdx]?.scrollIntoView({ block: 'nearest' });
-  }, [activeIdx]);
-
-  function selectIng(meta) {
-    const info = upm.get(meta.productCode);
-    const patch = {
-      ingredientName: meta.ingredientName || '',
-      productCode: meta.productCode || null,
-      unit: info?.baseUnitType || meta.baseUnitType || 'g',
-    };
-    // DB에 단가가 있을 때만 덮어씀 — 없으면 사용자가 직접 입력한 값 유지
-    if (info?.unitPrice != null) patch.unitPrice = String(info.unitPrice);
-    onChange(patch);
-    setSearchQ('');
-    setDropOpen(false);
-    setActiveIdx(-1);
-  }
-
-  function handleNameKey(e) {
-    if (!dropOpen || !results.length) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActiveIdx(i => Math.min(i + 1, results.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActiveIdx(i => Math.max(i - 1, 0));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (activeIdx >= 0) selectIng(results[activeIdx]);
-    } else if (e.key === 'Escape') {
-      setDropOpen(false);
-      setActiveIdx(-1);
-    }
-  }
-
   const subtotal = (parseFloat(c.quantity) || 0) * (parseFloat(c.unitPrice) || 0);
-
-  const dropdown =
-    dropOpen &&
-    results.length > 0 &&
-    rect &&
-    createPortal(
-      <div
-        ref={listRef}
-        style={{
-          position: 'fixed',
-          top: rect.top,
-          left: rect.left,
-          width: Math.max(rect.width, 260),
-          zIndex: 9999,
-          background: 'var(--surface-1)',
-          border: '1px solid var(--border)',
-          borderRadius: 8,
-          boxShadow: 'var(--shadow-md)',
-          maxHeight: 220,
-          overflowY: 'auto',
-        }}
-      >
-        {results.map((m, idx) => {
-          const info = upm.get(m.productCode);
-          const isActive = idx === activeIdx;
-          return (
-            <button
-              key={m.productCode || m.ingredientName}
-              type="button"
-              onClick={() => selectIng(m)}
-              onMouseEnter={() => setActiveIdx(idx)}
-              style={{
-                display: 'block',
-                width: '100%',
-                textAlign: 'left',
-                padding: '7px 12px',
-                border: 0,
-                background: isActive ? 'var(--accent-soft)' : 'transparent',
-                cursor: 'pointer',
-                borderBottom: '1px solid var(--divider)',
-              }}
-            >
-              <div
-                style={{
-                  fontWeight: 500,
-                  fontSize: 13,
-                  color: isActive ? 'var(--accent-text)' : undefined,
-                }}
-              >
-                {m.ingredientName}
-              </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: 'var(--text-3)',
-                  display: 'flex',
-                  gap: 8,
-                  marginTop: 1,
-                }}
-              >
-                <span style={{ fontFamily: 'monospace' }}>{m.productCode || '수동'}</span>
-                {info?.unitPrice != null && (
-                  <span style={{ color: 'var(--positive)' }}>
-                    {info.unitPrice < 1 ? info.unitPrice.toFixed(2) : formatNumber(info.unitPrice)}
-                    원/{info.baseUnitType}
-                  </span>
-                )}
-              </div>
-            </button>
-          );
-        })}
-      </div>,
-      document.body
-    );
 
   return (
     <div
@@ -515,7 +349,7 @@ function CompRow({ c, allMeta, upm, onChange, onRemove }) {
     >
       {/* 재료명 검색 */}
       <div style={{ position: 'relative' }}>
-        {c.ingredientName && !searchQ ? (
+        {c.ingredientName ? (
           <div
             style={{
               display: 'flex',
@@ -556,26 +390,21 @@ function CompRow({ c, allMeta, upm, onChange, onRemove }) {
             </button>
           </div>
         ) : (
-          <>
-            <input
-              ref={inputRef}
-              className="form-input"
-              style={{ fontSize: 13 }}
-              value={searchQ}
-              onChange={e => {
-                const v = e.target.value;
-                setSearchQ(v);
-                // 검색 도중 부분 텍스트를 재료명으로 저장하지 않음 — 선택 시에만 onChange 호출
-                setDropOpen(!!v.trim());
-              }}
-              onFocus={() => {
-                if (searchQ.trim()) setDropOpen(true);
-              }}
-              onKeyDown={handleNameKey}
-              placeholder="재료명 검색…"
-            />
-            {dropdown}
-          </>
+          <IngredientSearch
+            allMeta={allMeta}
+            unitPriceMap={upm}
+            onSelect={meta => {
+              const info = upm.get(meta.productCode);
+              const patch = {
+                ingredientName: meta.ingredientName || '',
+                productCode: meta.productCode || null,
+                unit: info?.baseUnitType || meta.baseUnitType || 'g',
+              };
+              if (info?.unitPrice != null) patch.unitPrice = String(info.unitPrice);
+              onChange(patch);
+            }}
+            style={{ marginTop: 0 }}
+          />
         )}
       </div>
 

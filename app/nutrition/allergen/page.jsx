@@ -1,5 +1,6 @@
 'use client';
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import Link from 'next/link';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { Icon } from '@/components/icons';
@@ -39,6 +40,7 @@ import { loadMenuNames, saveMenuNames, applyMenuName } from '@/lib/nutrition/men
 import { applyEdgeAllergenRules } from '@/lib/nutrition/allergen/rules';
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
 import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
+import { getMenuCodeRank } from '@/lib/menu-categories';
 
 const EMPTY_MENU_MAP = new Map();
 const asMenuMap = value => (value instanceof Map ? value : EMPTY_MENU_MAP);
@@ -113,7 +115,7 @@ export default function Page() {
   const [menuNameEditOpen, setMenuNameEditOpen] = useState(false);
   const [menuNameOverrides, setMenuNameOverrides] = useState(() => loadMenuNames());
   const [detailRow, setDetailRow] = useState(null);
-  const mountedRef = useRef(true);
+  const mountedRef = useMounted();
 
   useEffect(() => {
     setMenuOrder(loadOrder(ALLERGEN_MENU_ORDER_KEY));
@@ -199,10 +201,9 @@ export default function Page() {
         compositions: asObjectArray(compositions),
       })
     );
-  }, []);
+  }, [mountedRef]);
 
   useEffect(() => {
-    mountedRef.current = true;
     load()
       .catch(err => {
         if (mountedRef.current) console.error(err);
@@ -210,11 +211,7 @@ export default function Page() {
       .finally(() => {
         if (mountedRef.current) setLoading(false);
       });
-
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [load]);
+  }, [load, mountedRef]);
   useVisibilityRefresh(load);
 
   // 알레르기 있는 식자재
@@ -383,19 +380,24 @@ export default function Page() {
     }
 
     // 사용자 메뉴 순서 적용 — menuCode 단위로 정렬하므로 같은 메뉴의 변형(석쇠+엣지) 행이
-    // 함께 묶여 이동하고, 변형 간 순서는 CRUST_VARIANTS 삽입순(안정 정렬)으로 유지됨.
+    // 함께 묶여 이동하고, 변형 간 순서는 CRUST_VARIANTS 정의 순서대로 유지됨.
     const rank = new Map(asStringArray(menuOrder).map((key, index) => [key, index]));
+    const offset = rank.size;
+    const crustOrder = new Map(CRUST_VARIANTS.map((v, i) => [v.key, i]));
     const rowRank = row => {
       const keys = [asDisplayText(row.menuCode), ...asStringArray(row.sourceMenuCodes)];
       const ranks = keys.filter(key => rank.has(key)).map(key => rank.get(key));
-      return ranks.length ? Math.min(...ranks) : Infinity;
+      return ranks.length
+        ? Math.min(...ranks)
+        : offset + getMenuCodeRank(asDisplayText(row.menuCode));
     };
     const sorted = [...rows].sort(
       (a, b) =>
         rowRank(a) - rowRank(b) ||
+        asDisplayText(a.menuCode).localeCompare(asDisplayText(b.menuCode), 'ko') ||
         asDisplayText(a.menuName).localeCompare(asDisplayText(b.menuName), 'ko') ||
-        asDisplayText(a.crust).localeCompare(asDisplayText(b.crust), 'ko') ||
-        asDisplayText(a.menuCode).localeCompare(asDisplayText(b.menuCode), 'ko')
+        (crustOrder.get(asDisplayText(a.crust)) ?? 99) -
+          (crustOrder.get(asDisplayText(b.crust)) ?? 99)
     );
     // 출력용 메뉴명 오버라이드 적용 (표시 전용, 원래 이름 보존)
     return sorted.map(r => ({
@@ -786,7 +788,7 @@ export default function Page() {
             </div>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 400px)', minHeight: 300 }}>
             <table className="data-table" style={{ minWidth: 900 }}>
               <thead>
                 <tr>
@@ -795,13 +797,24 @@ export default function Page() {
                       minWidth: 160,
                       position: 'sticky',
                       left: 0,
+                      top: 0,
                       background: 'var(--surface-2)',
-                      zIndex: 2,
+                      zIndex: 4,
                     }}
                   >
                     메뉴명
                   </th>
-                  <th style={{ width: 80 }}>카테고리</th>
+                  <th
+                    style={{
+                      width: 80,
+                      position: 'sticky',
+                      top: 0,
+                      background: 'var(--surface-2)',
+                      zIndex: 2,
+                    }}
+                  >
+                    카테고리
+                  </th>
                   {orderedAllergens.map(al => (
                     <th
                       key={al.allergenCode}
@@ -812,6 +825,10 @@ export default function Page() {
                         padding: '8px 2px',
                         wordBreak: 'keep-all',
                         lineHeight: 1.3,
+                        position: 'sticky',
+                        top: 0,
+                        background: 'var(--surface-2)',
+                        zIndex: 2,
                       }}
                     >
                       {al.allergenName}
@@ -820,7 +837,7 @@ export default function Page() {
                 </tr>
               </thead>
               <tbody>
-                {menuMatrix.map(row => {
+                {menuMatrix.map((row, i) => {
                   const rowKey =
                     asDisplayText(row.rowKey) ||
                     asDisplayText(row.menuCode) ||
@@ -828,8 +845,21 @@ export default function Page() {
                   const crust = asDisplayText(row.crust);
                   const allergenCodes =
                     row.allergenCodes instanceof Set ? row.allergenCodes : new Set();
+                  const groupKey = r =>
+                    asDisplayText(r.menuCode) ||
+                    asDisplayText(r.originalMenuName) ||
+                    asDisplayText(r.menuName);
+                  const next = menuMatrix[i + 1];
+                  const isLastInGroup = !next || groupKey(next) !== groupKey(row);
                   return (
-                    <tr key={rowKey}>
+                    <tr
+                      key={rowKey}
+                      style={
+                        isLastInGroup
+                          ? { borderBottom: '2px solid var(--text-3)' }
+                          : undefined
+                      }
+                    >
                       <td
                         style={{
                           fontWeight: 600,

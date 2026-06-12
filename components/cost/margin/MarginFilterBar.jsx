@@ -1,7 +1,7 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { SearchBox } from '@/components/ui/SearchBox';
-import { formatNumber } from '@/lib/format';
+import { DiscountSimulator } from '@/components/cost/margin/DiscountSimulator';
 import { asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
 
 /**
@@ -26,7 +26,18 @@ import { asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
  * @param {(cat:string) => void} props.onCatFilter - 카테고리 변경
  * @param {string} props.search - 검색어
  * @param {(val:string) => void} props.onSearch - 검색어 변경
+ * @param {string|null} props.edgeFilter - 엣지 필터 (null=전체, 'base'=석쇠기본, 또는 edgeType 문자열)
+ * @param {(key:string|null) => void} props.onEdgeFilter - 엣지 필터 변경
  */
+
+const EDGE_BUTTONS = [
+  { key: null, label: '전체' },
+  { key: 'base', label: '석쇠기본' },
+  { key: '씬도우', label: '씬도우' },
+  { key: '치즈크러스트', label: '치즈크러스트' },
+  { key: '골드스윗크러스트', label: '골드스윗크러스트' },
+];
+
 export function MarginFilterBar({
   platforms,
   activePlatId,
@@ -45,6 +56,8 @@ export function MarginFilterBar({
   cats,
   catFilter,
   onCatFilter,
+  edgeFilter,
+  onEdgeFilter,
   search,
   onSearch,
 }) {
@@ -58,6 +71,7 @@ export function MarginFilterBar({
   const handleDiscVal = typeof onDiscVal === 'function' ? onDiscVal : () => {};
   const handleViewMode = typeof onViewMode === 'function' ? onViewMode : () => {};
   const handleCatFilter = typeof onCatFilter === 'function' ? onCatFilter : () => {};
+  const handleEdgeFilter = typeof onEdgeFilter === 'function' ? onEdgeFilter : () => {};
 
   return (
     <>
@@ -92,115 +106,22 @@ export function MarginFilterBar({
           <Icon.gear style={{ width: 13, height: 13 }} />
         </button>
         <div style={{ marginLeft: 'auto' }}>
-          <button
-            className={'btn sm' + (discOpen ? ' primary' : '')}
-            onClick={() => handleDiscOpen(o => !o)}
-            style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}
-          >
-            <Icon.calc style={{ width: 12, height: 12 }} />
-            할인 시뮬레이터
-            {discount && <span style={{ fontWeight: 700, marginLeft: 2 }}>ON</span>}
-          </button>
+          <DiscountSimulator.Toggle
+            discOpen={discOpen}
+            onDiscOpen={handleDiscOpen}
+            discount={discount}
+          />
         </div>
       </div>
 
-      {/* Discount simulator bar */}
-      {discOpen && (
-        <div
-          className="card"
-          style={{
-            padding: '10px 16px',
-            display: 'flex',
-            gap: 10,
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            marginTop: 6,
-          }}
-        >
-          <span
-            style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-2)', whiteSpace: 'nowrap' }}
-          >
-            할인 적용
-          </span>
-
-          {/* Type toggle */}
-          <div
-            style={{
-              display: 'flex',
-              border: '1px solid var(--border)',
-              borderRadius: 6,
-              overflow: 'hidden',
-            }}
-          >
-            {['pct', 'fixed'].map(t => (
-              <button
-                key={t}
-                onClick={() => {
-                  handleDiscType(t);
-                  handleDiscVal('');
-                }}
-                style={{
-                  padding: '5px 12px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  border: 'none',
-                  background: discType === t ? 'var(--accent)' : 'var(--surface-2)',
-                  color: discType === t ? '#fff' : 'var(--text-2)',
-                  cursor: 'pointer',
-                }}
-              >
-                {t === 'pct' ? '% 할인' : '원 할인'}
-              </button>
-            ))}
-          </div>
-
-          {/* Value input */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <input
-              className="form-input"
-              type="number"
-              value={discVal}
-              onChange={e => handleDiscVal(e.target.value)}
-              placeholder={discType === 'pct' ? '예) 20' : '예) 5000'}
-              style={{ width: 90, textAlign: 'right' }}
-              min="0"
-              max={discType === 'pct' ? '100' : undefined}
-            />
-            <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
-              {discType === 'pct' ? '%' : '원'}
-            </span>
-          </div>
-
-          {/* Status badge */}
-          {discount ? (
-            <span
-              style={{
-                fontSize: 12,
-                color: 'var(--accent)',
-                background: 'var(--surface-2)',
-                padding: '3px 10px',
-                borderRadius: 20,
-                fontWeight: 600,
-              }}
-            >
-              {discType === 'pct'
-                ? `${discount.value}% 할인`
-                : `${formatNumber(discount.value)}원 할인`}{' '}
-              적용 중
-            </span>
-          ) : discVal ? (
-            <span style={{ fontSize: 11, color: 'var(--text-4)' }}>양수 값을 입력하세요</span>
-          ) : null}
-
-          <button
-            className="btn sm"
-            onClick={() => handleDiscVal('')}
-            style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-3)' }}
-          >
-            초기화
-          </button>
-        </div>
-      )}
+      <DiscountSimulator.Panel
+        discOpen={discOpen}
+        discType={discType}
+        onDiscType={handleDiscType}
+        discVal={discVal}
+        onDiscVal={handleDiscVal}
+        discount={discount}
+      />
 
       {/* Platform fee summary (non-default) */}
       {safeFees.length > 0 && (
@@ -265,7 +186,7 @@ export function MarginFilterBar({
       </div>
 
       {/* Category filter */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '8px 0 8px' }}>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '8px 0 4px' }}>
         {safeCats.map(c => (
           <button
             key={c}
@@ -273,6 +194,30 @@ export function MarginFilterBar({
             onClick={() => handleCatFilter(c)}
           >
             {c}
+          </button>
+        ))}
+      </div>
+
+      {/* Edge type filter */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', margin: '0 0 8px' }}>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: 'var(--text-3)',
+            letterSpacing: '0.05em',
+            marginRight: 2,
+          }}
+        >
+          엣지
+        </span>
+        {EDGE_BUTTONS.map(({ key, label }) => (
+          <button
+            key={String(key)}
+            className={'chip' + (edgeFilter === key ? ' active' : '')}
+            onClick={() => handleEdgeFilter(key)}
+          >
+            {label}
           </button>
         ))}
       </div>

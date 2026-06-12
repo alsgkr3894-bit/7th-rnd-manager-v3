@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import dynamic from 'next/dynamic';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -84,7 +85,7 @@ export default function Page() {
   const [usageMap, setUsageMap] = useState({ byCode: new Map(), byName: new Map() });
   const [usageCat, setUsageCat] = useState('전체');
   const [usageSort, setUsageSort] = useState('count_desc'); // count_desc|count_asc|name_asc
-  const mountedRef = useRef(true);
+  const mountedRef = useMounted();
 
   const load = useCallback(async () => {
     await initDB();
@@ -214,10 +215,9 @@ export default function Page() {
       console.warn('[ingredient-price] 사용현황 빌드 실패:', usageErr);
       showToast('사용현황 데이터를 불러오지 못했습니다', 'err');
     }
-  }, []);
+  }, [mountedRef]);
 
   useEffect(() => {
-    mountedRef.current = true;
     load()
       .catch(err => {
         if (!mountedRef.current) return;
@@ -227,11 +227,7 @@ export default function Page() {
       .finally(() => {
         if (mountedRef.current) setLoading(false);
       });
-
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [load]);
+  }, [load, mountedRef]);
   useVisibilityRefresh(load);
 
   const handleReset = useCallback(async () => {

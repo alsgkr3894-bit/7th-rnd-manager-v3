@@ -18,40 +18,18 @@ import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { getActiveBrand } from '@/lib/active-brand';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 import { isPizzaCategory } from '@/lib/menu-master/category-policy';
+import {
+  normalizePeriodMode,
+  normalizeScope,
+  safeMonth,
+  safePercentWidth,
+  safeQuantity,
+  safeYear,
+} from '@/lib/report/period';
 
 const DRAFT_KEY = 'report_draft_sales';
 
 const CAT_COLORS = ['#3182F6', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6', '#E1101F', '#6B7280'];
-
-function safeYear(value, fallback = new Date().getFullYear()) {
-  const n = asFiniteNumber(value, null);
-  if (n == null || n < 1900 || n > 2999) return fallback;
-  return Math.floor(n);
-}
-
-function safeMonth(value, fallback = new Date().getMonth() + 1) {
-  const n = asFiniteNumber(value, null);
-  if (n == null || n < 1 || n > 12) return fallback;
-  return Math.floor(n);
-}
-
-function safeQuantity(value) {
-  return asFiniteNumber(value, 0) ?? 0;
-}
-
-function safePercentWidth(value, maxValue) {
-  const max = Math.abs(safeQuantity(maxValue));
-  if (max <= 0) return 0;
-  return Math.min(100, Math.max(0, (Math.abs(safeQuantity(value)) / max) * 100));
-}
-
-function normalizeScope(value) {
-  return ['all', 'pizza', 'side'].includes(value) ? value : 'all';
-}
-
-function normalizePeriodMode(value) {
-  return ['month', 'year'].includes(value) ? value : 'month';
-}
 
 function normalizeViewMode(value) {
   return ['rank', 'compare'].includes(value) ? value : 'rank';

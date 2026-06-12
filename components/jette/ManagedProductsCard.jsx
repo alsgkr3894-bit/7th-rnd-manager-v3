@@ -21,6 +21,7 @@ import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { ManagedProductsForm } from './ManagedProductsForm';
 import { ManagedProductsRow } from './ManagedProductsRow';
 import { sortByKey } from '@/lib/jette/utils';
+import { useTableSearchSort } from '@/hooks/useTableSearchSort';
 
 /**
  * ManagedProductsCard — 제때 출고량 대상 제품 관리
@@ -41,16 +42,14 @@ const SORT_TRANSFORM = {
 
 export function ManagedProductsCard() {
   const [list, setList] = useState([]);
-  const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all'); // all | exclusive | generic | disabled
   const [managedOnly, setManagedOnly] = useState(false);
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [busy, setBusy] = useState(false);
   const [migrating, setMigrating] = useState(false);
-  const [sortKey, setSortKey] = useState('productName');
-  const [sortDir, setSortDir] = useState('asc');
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const { search, setSearch, sortKey, setSortKey, sortDir, setSortDir } = useTableSearchSort('productName', 'asc');
   const mountedRef = useRef(false);
 
   useEffect(() => {

@@ -11,6 +11,7 @@ import { CHANGE_STATUS, CHANGE_STATUS_STYLE } from './managed-products-constants
 import { TypeSelect } from './_TypeSelect';
 import { sortByKey, getProductTypeCounts } from '@/lib/jette/utils';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { useTableSearchSort } from '@/hooks/useTableSearchSort';
 
 const FILTER_TO_STATUS = {
   up: CHANGE_STATUS.UP,
@@ -21,11 +22,9 @@ const FILTER_TO_STATUS = {
 };
 
 export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onTypeChange }) {
-  const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [sortKey, setSortKey] = useState('changeRate');
-  const [sortDir, setSortDir] = useState('desc');
+  const { search, setSearch, sortKey, setSortKey, sortDir, setSortDir } = useTableSearchSort('changeRate', 'desc');
   const safeDiffRows = useMemo(() => asObjectArray(diffRows), [diffRows]);
   const safeProductTypeLookup = useMemo(
     () => (productTypeLookup instanceof Map ? productTypeLookup : new Map()),
@@ -36,7 +35,7 @@ export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onT
     setTypeFilter('all');
     setFilter('all');
     setSearch('');
-  }, [safeDiffRows]);
+  }, [safeDiffRows, setSearch]);
 
   const typeCounts = useMemo(
     () => getProductTypeCounts(safeDiffRows, safeProductTypeLookup),

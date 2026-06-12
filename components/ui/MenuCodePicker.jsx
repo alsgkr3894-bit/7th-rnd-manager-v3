@@ -8,6 +8,7 @@ import {
   normalizeMenuCodeForModule,
 } from '@/lib/menu-master/code-policy';
 import { asObjectArray } from '@/lib/ui/prop-guards';
+import { getMenuCodeRank } from '@/lib/menu-categories';
 
 function asText(value) {
   if (value == null) return '';
@@ -40,13 +41,20 @@ export default function MenuCodePicker({
     );
     const effectiveMode = mode || (dedup ? MENU_CODE_MODE.BASE : MENU_CODE_MODE.FULL);
     if (effectiveMode === MENU_CODE_MODE.FULL) {
-      return active.map(m => ({
-        code: normalizeMenuCodeForModule(m, { mode: MENU_CODE_MODE.FULL }),
-        menuName: asText(m.menuName),
-        subCategory: asText(m.subCategory),
-        category: asText(m.category),
-        sizes: asText(m.size) ? [asText(m.size)] : [],
-      }));
+      return active
+        .map(m => ({
+          code: normalizeMenuCodeForModule(m, { mode: MENU_CODE_MODE.FULL }),
+          menuName: asText(m.menuName),
+          subCategory: asText(m.subCategory),
+          category: asText(m.category),
+          sizes: asText(m.size) ? [asText(m.size)] : [],
+        }))
+        .sort((a, b) => {
+          const ra = getMenuCodeRank(a.code);
+          const rb = getMenuCodeRank(b.code);
+          if (ra !== rb) return ra - rb;
+          return a.code.localeCompare(b.code);
+        });
     }
     const seen = new Map();
     for (const m of active) {
@@ -65,7 +73,12 @@ export default function MenuCodePicker({
         if (!bucket.sizes.includes(size)) bucket.sizes.push(size);
       }
     }
-    return [...seen.values()].sort((a, b) => a.code.localeCompare(b.code));
+    return [...seen.values()].sort((a, b) => {
+      const ra = getMenuCodeRank(a.code);
+      const rb = getMenuCodeRank(b.code);
+      if (ra !== rb) return ra - rb;
+      return a.code.localeCompare(b.code);
+    });
   }, [menuMasters, dedup, mode]);
 
   const selected = value ? displayList.find(m => m.code === value) : null;

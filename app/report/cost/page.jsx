@@ -20,6 +20,7 @@ import { getActiveBrand } from '@/lib/active-brand';
 import { useDraftRestore } from '@/hooks/useDraftRestore';
 import { getProfile } from '@/lib/profile';
 import { isPizzaCategory } from '@/lib/menu-master/category-policy';
+import { getMenuCodeRank } from '@/lib/menu-categories';
 
 // ── 상수 ──────────────────────────────────────────────────────
 const matchEdge = cat => cat === '엣지' || cat === '엣지&도우' || cat === '엣지 & 도우';
@@ -112,7 +113,7 @@ async function exportCostXlsx(periodLabel, activeCats) {
     ['카테고리', '메뉴명', '판매가(원)', '원가(원)', '원가율(%)'],
     ...activeCats.flatMap(([, c]) =>
       [...c.menus]
-        .sort((a, b) => (a.code || '~~~').localeCompare(b.code || '~~~', 'ko'))
+        .sort((a, b) => getMenuCodeRank(a.code) - getMenuCodeRank(b.code) || (a.code || '').localeCompare(b.code || '', 'ko'))
         .map(m => [
           c.label,
           m.name,
@@ -261,7 +262,7 @@ export default function Page() {
               };
             });
             // 카테고리 내 menuCode 오름차순 (마진표와 동일)
-            menus.sort((a, b) => (a.code || '~~~').localeCompare(b.code || '~~~', 'ko'));
+            menus.sort((a, b) => getMenuCodeRank(a.code) - getMenuCodeRank(b.code) || (a.code || '').localeCompare(b.code || '', 'ko'));
             updated[meta.id] = { label: meta.label, color: meta.color, menus };
           }
           setCostByCategory(updated);

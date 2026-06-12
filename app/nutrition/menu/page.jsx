@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import dynamic from 'next/dynamic';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -21,6 +22,7 @@ import {
   repairNutritionBaseDuplicates,
 } from '@/lib/nutrition/values/store';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { getMenuCodeRank } from '@/lib/menu-categories';
 
 const TabBase = dynamic(
   () => import('@/components/nutrition/menu/TabBase').then(m => ({ default: m.TabBase })),
@@ -135,7 +137,7 @@ export default function Page() {
   const [menuSearch, setMenuSearch] = useState('');
   const [duplicateDiagnostics, setDuplicateDiagnostics] = useState(null);
   const [repairingDuplicates, setRepairingDuplicates] = useState(false);
-  const mountedRef = useRef(true);
+  const mountedRef = useMounted();
 
   const filteredMenus = useMemo(() => {
     const safeMenus = asObjectArray(menus);
@@ -181,9 +183,12 @@ export default function Page() {
         .filter(([edgeCode]) => edgeCode)
     );
     setMenus(
-      asObjectArray(menuRefs).sort((a, b) =>
-        asDisplayText(a.menuCode).localeCompare(asDisplayText(b.menuCode), 'ko')
-      )
+      asObjectArray(menuRefs).sort((a, b) => {
+        const ra = getMenuCodeRank(a.menuCode);
+        const rb = getMenuCodeRank(b.menuCode);
+        if (ra !== rb) return ra - rb;
+        return asDisplayText(a.menuCode).localeCompare(asDisplayText(b.menuCode), 'ko');
+      })
     );
     setMenuMasters(asObjectArray(masters));
     setRawMap(asRecord(rawValues));
@@ -196,20 +201,15 @@ export default function Page() {
     setSetComps(asObjectArray(setCompList));
     setDuplicateDiagnostics(duplicateDiag);
     setLoading(false);
-  }, []);
+  }, [mountedRef]);
 
   useEffect(() => {
-    mountedRef.current = true;
     load().catch(err => {
       if (!mountedRef.current) return;
       console.error(err);
       setLoading(false);
     });
-
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [load]);
+  }, [load, mountedRef]);
   useVisibilityRefresh(load);
 
   const handleRepairDuplicates = useCallback(async () => {
@@ -225,7 +225,7 @@ export default function Page() {
     } finally {
       if (mountedRef.current) setRepairingDuplicates(false);
     }
-  }, [load, repairingDuplicates]);
+  }, [load, repairingDuplicates, mountedRef]);
 
   return (
     <main className="main">

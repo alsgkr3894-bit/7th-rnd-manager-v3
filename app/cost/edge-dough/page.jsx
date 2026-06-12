@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SearchBox } from '@/components/ui/SearchBox';
@@ -29,16 +30,15 @@ export default function Page() {
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [search, setSearch] = useState('');
-  const mountedRef = useRef(true);
+  const mountedRef = useMounted();
 
   const load = useCallback(async () => {
     await initDB();
     const nextEdges = await getAllEdges();
     if (mountedRef.current) setEdges(nextEdges);
-  }, []);
+  }, [mountedRef]);
 
   useEffect(() => {
-    mountedRef.current = true;
     load()
       .catch(err => {
         if (!mountedRef.current) return;
@@ -48,11 +48,7 @@ export default function Page() {
       .finally(() => {
         if (mountedRef.current) setLoading(false);
       });
-
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [load]);
+  }, [load, mountedRef]);
 
   async function handleSave(data) {
     try {

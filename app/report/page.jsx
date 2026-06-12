@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { loadXlsx } from '@/lib/excel';
@@ -21,22 +21,16 @@ const ReportPreviewModal = dynamic(
   { ssr: false }
 );
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import {
-  getReports,
-  deleteReport,
-  toggleReportFav,
-  saveReport,
-  pruneOldReports,
-  findPrunableReports,
-} from '@/lib/report';
+import { getReports } from '@/lib/report';
 import { KIND_META, KIND_CHIP, KIND_EMOJI } from '@/lib/report/constants';
 import { useCountUp } from '@/hooks/useCountUp';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useDBLoad } from '@/hooks/useDBLoad';
-import { asDisplayText, asObjectArray, asFiniteNumber, clampInteger } from '@/lib/ui/prop-guards';
+import { useReportListState } from '@/hooks/useReportListState';
+import { useReportActions } from '@/hooks/useReportActions';
+import { asDisplayText, asObjectArray, asFiniteNumber } from '@/lib/ui/prop-guards';
 
 const REPORT_KINDS = KIND_META;
-const REPORT_SORT_KEYS = new Set(['id', 'name', 'kind', 'createdAt']);
 
 function SortIco({ k, sortKey, sortDir }) {
   return (
@@ -46,7 +40,6 @@ function SortIco({ k, sortKey, sortDir }) {
   );
 }
 
-const ITEMS_PER_PAGE = 10;
 const thisMonth = new Date().toISOString().slice(0, 7);
 
 function formatReportId(id) {
@@ -70,14 +63,6 @@ function formatReportDate(value) {
 
 function safeReportKind(kind) {
   return asDisplayText(kind);
-}
-
-function reportSearchText(report) {
-  return [
-    asDisplayText(report?.name),
-    asDisplayText(report?.period),
-    asDisplayText(report?.author),
-  ].join('');
 }
 
 function reportNumber(value) {
@@ -110,27 +95,11 @@ async function exportToExcel(rows) {
 ============================================================ */
 export default function Page() {
   const router = useRouter();
-  const [kindFilter, setKindFilter] = useState('all');
-  const [search, setSearch] = useState('');
-  const [favOnly, setFavOnly] = useState(false);
   const [shareTarget, setShareTarget] = useState(null);
   const [previewTarget, setPreviewTarget] = useState(null);
   const [previewPrintOnOpen, setPreviewPrintOnOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [pruneConfirmOpen, setPruneConfirmOpen] = useState(false);
-  const [prunableCount, setPrunableCount] = useState(0);
   const [newReportOpen, setNewReportOpen] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [editName, setEditName] = useState('');
-  const [page, setPage] = useState(1);
-  const [sortKey, setSortKey] = useState('createdAt');
-  const [sortDir, setSortDir] = useState('desc');
-  const [newIds, setNewIds] = useState(new Set());
-  const editInputRef = useRef(null);
-  const newIdsTimerRef = useRef(null);
-  const editFocusTimerRef = useRef(null);
 
   /* 로드 */
   const { data: reportsData, loading, error: loadError, reload } = useDBLoad(() => getReports());
@@ -138,170 +107,26 @@ export default function Page() {
 
   useVisibilityRefresh(reload);
 
-  /* URL 상태 복원 (page, sort, dir) + 새 보고서 하이라이트 */
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    const initialPage = clampInteger(url.searchParams.get('p') || 1, { min: 1, fallback: 1 });
-    const sortParam = url.searchParams.get('sort');
-    const dirParam = url.searchParams.get('dir');
-    const newIdParam = url.searchParams.get('new');
-    const newId = newIdParam ? clampInteger(newIdParam, { min: 1, fallback: null }) : null;
-    if (initialPage > 1) setPage(initialPage);
-    if (REPORT_SORT_KEYS.has(sortParam)) setSortKey(sortParam);
-    if (dirParam === 'asc' || dirParam === 'desc') setSortDir(dirParam);
-    if (newId && !Number.isNaN(newId)) {
-      setNewIds(new Set([newId]));
-      if (newIdsTimerRef.current) clearTimeout(newIdsTimerRef.current);
-      newIdsTimerRef.current = setTimeout(() => {
-        setNewIds(new Set());
-        newIdsTimerRef.current = null;
-      }, 5000);
-    }
-    url.searchParams.delete('new');
-    window.history.replaceState({}, '', url.toString());
-    return () => {
-      if (newIdsTimerRef.current) clearTimeout(newIdsTimerRef.current);
-      if (editFocusTimerRef.current) clearTimeout(editFocusTimerRef.current);
-    };
-  }, []);
+  const {
+    kindFilter, setKindFilter,
+    search, setSearch,
+    favOnly, setFavOnly,
+    page, setPage,
+    sortKey, sortDir,
+    newIds,
+    filtered, totalPages, safePage, list,
+    toggleSort,
+  } = useReportListState(reports);
 
-  /* 정렬·페이지 변경 시 URL 갱신 */
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    if (page > 1) url.searchParams.set('p', page);
-    else url.searchParams.delete('p');
-    if (sortKey !== 'createdAt') url.searchParams.set('sort', sortKey);
-    else url.searchParams.delete('sort');
-    if (sortDir !== 'desc') url.searchParams.set('dir', sortDir);
-    else url.searchParams.delete('dir');
-    window.history.replaceState({}, '', url.toString());
-  }, [page, sortKey, sortDir]);
-
-  /* 삭제 (페이드아웃) */
-  const handleDelete = async id => {
-    setConfirmDeleteId(id);
-  };
-  const confirmDelete = async () => {
-    const id = confirmDeleteId;
-    setConfirmDeleteId(null);
-    setDeletingId(id);
-    await new Promise(r => setTimeout(r, 360));
-    try {
-      await deleteReport(id);
-      showToast('보고서가 삭제됐어요.', 'ok');
-      reload();
-    } catch {
-      showToast('삭제 중 오류가 발생했어요.', 'error');
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
-  /* 오래된 보고서 수동 정리 */
-  const handlePruneClick = async () => {
-    try {
-      const list = await findPrunableReports(90);
-      setPrunableCount(list.length);
-      if (list.length === 0) {
-        showToast('90일 이내 보고서만 있습니다. 정리할 항목이 없어요.', 'ok');
-      } else {
-        setPruneConfirmOpen(true);
-      }
-    } catch {
-      showToast('정리 대상 조회 실패', 'err');
-    }
-  };
-  const confirmPrune = async () => {
-    setPruneConfirmOpen(false);
-    try {
-      await pruneOldReports(90);
-      showToast('오래된 보고서가 정리됐어요.', 'ok');
-      reload();
-    } catch {
-      showToast('정리 중 오류가 발생했어요.', 'err');
-    }
-  };
-
-  /* 즐겨찾기 */
-  const handleToggleFav = async (id, fav) => {
-    try {
-      await toggleReportFav(id, fav);
-      reload();
-    } catch {
-      showToast('즐겨찾기 변경 중 오류가 발생했어요.', 'error');
-    }
-  };
-
-  /* 이름 인라인 편집 */
-  const startEdit = r => {
-    setEditingId(r?.id);
-    setEditName(asDisplayText(r?.name));
-    if (editFocusTimerRef.current) clearTimeout(editFocusTimerRef.current);
-    editFocusTimerRef.current = setTimeout(() => {
-      editInputRef.current?.focus();
-      editFocusTimerRef.current = null;
-    }, 50);
-  };
-  const commitEdit = async r => {
-    const nextName = asDisplayText(editName).trim();
-    const prevName = asDisplayText(r?.name);
-    if (nextName && nextName !== prevName) {
-      try {
-        await saveReport({ ...r, name: nextName });
-        reload();
-      } catch {
-        showToast('이름 변경 중 오류가 발생했어요.', 'error');
-      }
-    }
-    setEditingId(null);
-  };
-
-  /* 정렬 */
-  const toggleSort = key => {
-    if (!REPORT_SORT_KEYS.has(key)) return;
-    if (sortKey === key) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
-    else {
-      setSortKey(key);
-      setSortDir('desc');
-    }
-  };
-  /* 필터 + 정렬 */
-  const filtered = useMemo(
-    () =>
-      reports
-        .filter(r => {
-          if (kindFilter !== 'all' && safeReportKind(r.kind) !== kindFilter) return false;
-          if (favOnly && !r.fav) return false;
-          const q = asDisplayText(search).trim().toLowerCase();
-          if (q && !reportSearchText(r).toLowerCase().includes(q)) return false;
-          return true;
-        })
-        .sort((a, b) => {
-          let valA = a[sortKey],
-            valB = b[sortKey];
-          if (sortKey === 'name' || sortKey === 'kind') {
-            valA = asDisplayText(valA);
-            valB = asDisplayText(valB);
-            return sortDir === 'asc'
-              ? valA.localeCompare(valB, 'ko')
-              : valB.localeCompare(valA, 'ko');
-          }
-          if (!valA && !valB) return 0;
-          if (!valA) return 1;
-          if (!valB) return -1;
-          const cmp = valA > valB ? 1 : valA < valB ? -1 : 0;
-          return sortDir === 'asc' ? cmp : -cmp;
-        }),
-    [reports, kindFilter, favOnly, search, sortKey, sortDir]
-  );
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
-  const safePage = Math.min(page, totalPages);
-  const list = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
-
-  useEffect(() => {
-    setPage(1);
-  }, [kindFilter, search, favOnly, sortKey, sortDir]);
+  const {
+    deletingId, confirmDeleteId, setConfirmDeleteId,
+    pruneConfirmOpen, setPruneConfirmOpen, prunableCount,
+    editingId, editName, setEditName, editInputRef,
+    handleDelete, confirmDelete,
+    handlePruneClick, confirmPrune,
+    handleToggleFav,
+    startEdit, commitEdit,
+  } = useReportActions({ reload });
 
   /* 통계 */
   const stats = {

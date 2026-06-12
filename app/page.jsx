@@ -6,6 +6,7 @@ const devError = (...a) => {
 };
 
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { useCountUp } from '@/hooks/useCountUp';
@@ -132,7 +133,7 @@ export default function HomePage() {
   const [quickSaved, setQuickSaved] = useState(false);
   const [hasRecentVisits, setHasRecentVisits] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const mountedRef = useRef(false);
+  const mountedRef = useMounted();
   const quickResetTimer = useRef(null);
 
   const {
@@ -157,11 +158,8 @@ export default function HomePage() {
     chartTabRef.current = chartTab;
   }, [chartTab]);
   useEffect(() => {
-    mountedRef.current = true;
     setHasRecentVisits(getRecentPaletteItems().length > 0);
-
     return () => {
-      mountedRef.current = false;
       if (quickResetTimer.current) clearTimeout(quickResetTimer.current);
     };
   }, []);
@@ -247,7 +245,7 @@ export default function HomePage() {
       devError('[Home] 데이터 로드 실패:', err);
       showToast('데이터를 불러오는 중 문제가 발생했어요. 새로고침해 주세요.', 'error', 5000);
     }
-  }, [anchor]);
+  }, [anchor, mountedRef]);
 
   useEffect(() => {
     loadData();

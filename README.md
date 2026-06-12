@@ -45,7 +45,8 @@ npm run qa:smoke
 nextjs-wonpay/
 ├── app/                        # Next.js App Router
 │   ├── layout.jsx              # 루트 레이아웃 (AppShell 포함)
-│   ├── globals.css             # 전역 스타일 (CSS 변수 토큰)
+│   ├── globals.css             # 전역 스타일 import 집계
+│   ├── styles/                 # tokens/base/layout/components/features CSS 분리
 │   ├── page.jsx                # 홈 대시보드
 │   ├── menu-sales/             # 메뉴 판매량
 │   │   ├── upload/page.jsx     # 파일 업로드
@@ -75,9 +76,15 @@ nextjs-wonpay/
 │       └── PageHeader.jsx      # PageHeader + FilterBar 공통 컴포넌트
 │
 ├── lib/
-│   ├── data.js                 # 더미 데이터 (메뉴, 식자재, 차트)
-│   ├── fmt.js                  # 숫자 포맷 유틸 (fmtKRW, fmtShort)
-│   └── useCountUp.js           # 숫자 카운트업 훅
+│   ├── db/                     # IndexedDB init / schema / operations
+│   ├── cost/                   # 원가 계산 store / calc / import helpers
+│   ├── ingredient/             # 식자재 store / seed / dashboard helpers
+│   ├── nutrition/              # 영양성분 / 원산지 / 알레르기
+│   ├── report/                 # 보고서 저장소 / 공통 report helpers
+│   ├── sales/                  # 판매량 parse / classify / compare / export
+│   └── ui/                     # React 없는 UI normalizer / guard / helper
+│
+├── hooks/                      # 클라이언트 상태/브라우저 동작 공통 hooks
 │
 ├── public/
 │   └── logo-7thstreet.png      # 브랜드 로고
@@ -91,7 +98,15 @@ nextjs-wonpay/
 
 ## 주요 디자인 토큰
 
-`app/globals.css` 에 모든 CSS 변수가 정의되어 있어요.
+CSS는 `app/globals.css`가 아래 파일을 순서대로 import합니다.
+
+- `app/styles/tokens.css`: CSS 변수, 테마, density/font-scale 토큰
+- `app/styles/base.css`: reset, body, focus/accessibility 기본값
+- `app/styles/layout.css`: app shell, sidebar, topbar, main layout
+- `app/styles/components.css`: 카드, 버튼, 모달, 표, 공통 UI
+- `app/styles/features.css`: 페이지/도메인별 스타일과 모션
+
+주요 CSS 변수는 `app/styles/tokens.css`에 정의되어 있어요.
 
 ```css
 --accent: #3182F6;        /* 강조색 */
@@ -123,22 +138,12 @@ showToast('확인이 필요해요', 'warn');    // ⚠ 주황색
 
 ---
 
-## 실제 API 연동 방법
+## 코드 구조 규칙
 
-현재 모든 데이터는 `lib/data.js` 의 더미 데이터를 사용해요.
-
-실제 API 연동 시:
-1. `lib/data.js` → API 호출 함수로 교체
-2. 각 페이지에서 `useEffect` + `fetch` 또는 `SWR` / `React Query` 사용
-3. Next.js API Routes: `app/api/` 폴더에 엔드포인트 추가
-
-```js
-// 예시: app/api/menus/route.js
-export async function GET() {
-  const data = await db.menus.findMany();
-  return Response.json(data);
-}
-```
+- `components/ui/*`: React 컴포넌트입니다.
+- `lib/ui/*`: React 없는 normalizer, prop guard, 순수 helper입니다.
+- 도메인별 DB 접근은 `lib/{domain}/store.js` 또는 세부 store 모듈에 둡니다.
+- 큰 페이지는 데이터 로딩 hook, 순수 계산 helper, 프레젠테이션 컴포넌트 순서로 분리합니다.
 
 ---
 

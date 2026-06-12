@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
@@ -24,6 +25,7 @@ import {
 } from '@/lib/ingredient';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
 import { downloadCsv, withDownloadDateSuffix } from '@/lib/download';
+import { openPrintWindow } from '@/lib/print/window-print';
 import {
   SCOPE,
   SCOPE_STYLES,
@@ -92,11 +94,6 @@ function allergenText(row) {
 
 function printIngredientPdf(rows, { includePhotos = true } = {}) {
   const safeRows = Array.isArray(rows) ? rows : [];
-  const win = window.open('', '_blank', 'width=1100,height=900');
-  if (!win) {
-    alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.');
-    return;
-  }
   const title = withDownloadDateSuffix('식자재 리스트');
   const cardBody = safeRows
     .map(row => {
@@ -206,9 +203,7 @@ window.onload = function() {
 window.onafterprint = function() { window.close(); };
 <\/script>
 </body></html>`;
-  win.document.open();
-  win.document.write(html);
-  win.document.close();
+  openPrintWindow(html, { width: 1100, height: 900 });
 }
 
 const SCOPE_TABS = [
@@ -242,7 +237,7 @@ export default function Page() {
   const [sort, setSort] = useState('default');
   const [pdfPhoto, setPdfPhoto] = useState(true);
   const [expandedKey, setExpandedKey] = useState(null);
-  const mountedRef = useRef(true);
+  const mountedRef = useMounted();
 
   const load = useCallback(async () => {
     await initDB();
@@ -274,10 +269,9 @@ export default function Page() {
       .map(buildMetaOnlyRow);
 
     setRows([...merged, ...orphanRows]);
-  }, []);
+  }, [mountedRef]);
 
   useEffect(() => {
-    mountedRef.current = true;
     load()
       .catch(err => {
         if (mountedRef.current) console.error(err);
@@ -285,11 +279,7 @@ export default function Page() {
       .finally(() => {
         if (mountedRef.current) setLoading(false);
       });
-
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [load]);
+  }, [load, mountedRef]);
 
   // 카테고리 필터는 새로고침 후에도 유지
   useEffect(() => {

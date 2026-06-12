@@ -8,6 +8,7 @@ import { usePagination } from '@/hooks/usePagination';
 import { formatNumber } from '@/lib/format';
 import { sortByKey } from '@/lib/jette/utils';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { useTableSearchSort } from '@/hooks/useTableSearchSort';
 
 const PRODUCT_TYPE_ORDER = { exclusive: 0, generic: 1, 'generic-managed': 2 };
 const SHIPMENT_KEY_TRANSFORM = {
@@ -26,11 +27,9 @@ function toFiniteNumber(value) {
  * @param {Array} aggRows — aggregateShipmentRows 결과
  */
 export function ShipmentTable({ aggRows }) {
-  const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all'); // all | exclusive | generic
   const [managedOnly, setManagedOnly] = useState(false);
-  const [sortKey, setSortKey] = useState('totalAmount');
-  const [sortDir, setSortDir] = useState('desc');
+  const { search, setSearch, sortKey, setSortKey, sortDir, setSortDir } = useTableSearchSort('totalAmount', 'desc');
   const safeAggRows = useMemo(() => asObjectArray(aggRows), [aggRows]);
 
   const filtered = useMemo(() => {

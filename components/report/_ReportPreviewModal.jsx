@@ -111,6 +111,130 @@ function OptionRow({ label, value }) {
   );
 }
 
+const REPORT_OPTION_RENDERERS = {
+  sales: (opts, subOpts, topN) => (
+    <>
+      <OptionRow label="집계 기간" value={opts.periodMode === 'year' ? '년 단위' : '월 단위'} />
+      <OptionRow
+        label="대상 범위"
+        value={opts.scope === 'all' ? '전체 메뉴' : opts.scope === 'pizza' ? '피자만' : '사이드만'}
+      />
+      <OptionRow label="순위 깊이" value={topN} />
+      {Object.keys(subOpts).length > 0 && (
+        <>
+          <OptionRow label="카테고리 비중" value={subOpts.catShare ? '포함' : '제외'} />
+          <OptionRow label="메뉴 순위표" value={subOpts.rankTable ? '포함' : '제외'} />
+          <OptionRow label="전월 대비" value={subOpts.prevComp ? '포함' : '제외'} />
+        </>
+      )}
+    </>
+  ),
+  price: (opts, subOpts) => (
+    <>
+      <OptionRow label="변동률 임계값" value={`±${asDisplayText(opts.threshold, '3')}%`} />
+      <OptionRow
+        label="기간 모드"
+        value={
+          opts.periodMode === 'week'
+            ? '이번 주'
+            : opts.periodMode === 'month'
+              ? '이번 달'
+              : '사용자 지정'
+        }
+      />
+      {Object.keys(subOpts).length > 0 && (
+        <>
+          <OptionRow label="스파크라인" value={subOpts.history7 ? '포함' : '제외'} />
+          <OptionRow label="원가 영향" value={subOpts.costImpact ? '포함' : '제외'} />
+        </>
+      )}
+    </>
+  ),
+  shipment: (opts, subOpts) => (
+    <>
+      <OptionRow
+        label="집계 단위"
+        value={
+          opts.periodMode === 'week'
+            ? '주 단위'
+            : opts.periodMode === 'quart'
+              ? '분기 단위'
+              : '월 단위'
+        }
+      />
+      <OptionRow
+        label="대상 분류"
+        value={opts.type === 'managed' ? '관리품목' : opts.type === 'common' ? '범용상품' : '전체'}
+      />
+      {Object.keys(subOpts).length > 0 && (
+        <>
+          <OptionRow label="추이 차트" value={subOpts.chart ? '포함' : '제외'} />
+          <OptionRow label="TOP 10 목록" value={subOpts.topList ? '포함' : '제외'} />
+        </>
+      )}
+    </>
+  ),
+  compare: (opts, subOpts) => (
+    <>
+      <OptionRow
+        label="비교 모드"
+        value={
+          opts.mode === 'mom' ? '전월 대비' : opts.mode === 'yoy' ? '전년 동월' : '사용자 지정'
+        }
+      />
+      <OptionRow
+        label="기간 A"
+        value={
+          opts.yearA && opts.monthA
+            ? `${asDisplayText(opts.yearA)}년 ${asDisplayText(opts.monthA)}월`
+            : '—'
+        }
+      />
+      <OptionRow
+        label="대상 범위"
+        value={opts.scope === 'all' ? '전체' : opts.scope === 'pizza' ? '피자' : '사이드'}
+      />
+      {Object.keys(subOpts).length > 0 && (
+        <>
+          <OptionRow label="순위 이동표" value={subOpts.rankShift ? '포함' : '제외'} />
+          <OptionRow label="Winners/Losers" value={subOpts.winners ? '포함' : '제외'} />
+        </>
+      )}
+    </>
+  ),
+  cost: (opts, subOpts) => {
+    const cats = asPlainObject(opts.cats);
+    const catLabel =
+      Object.entries(cats)
+        .filter(([, v]) => v)
+        .map(([k]) =>
+          k === 'pizza'
+            ? '피자'
+            : k === 'personal'
+              ? '1인피자'
+              : k === 'side'
+                ? '사이드'
+                : k === 'set'
+                  ? '세트박스'
+                  : '엣지&도우'
+        )
+        .join(', ') || '—';
+    return (
+      <>
+        <OptionRow label="집계 기간" value={opts.periodMode === 'year' ? '년 단위' : '월 단위'} />
+        <OptionRow label="위험 기준" value={`${asDisplayText(opts.riskThreshold, '35')}%↑`} />
+        {Object.keys(cats).length > 0 && <OptionRow label="포함 카테고리" value={catLabel} />}
+        {Object.keys(subOpts).length > 0 && (
+          <>
+            <OptionRow label="카테고리 비교표" value={subOpts.catTable ? '포함' : '제외'} />
+            <OptionRow label="위험 메뉴 부록" value={subOpts.riskList ? '포함' : '제외'} />
+          </>
+        )}
+      </>
+    );
+  },
+};
+
 function ReportOptionsPage({ report }) {
   const kind = asDisplayText(report.kind);
   const opts = asPlainObject(report.options);
@@ -119,142 +243,7 @@ function ReportOptionsPage({ report }) {
   const topNText = asDisplayText(opts.topN);
   const topN = opts.topN === 50 ? '전체' : topNText ? `TOP ${topNText}` : '—';
 
-  const kindOpts = () => {
-    if (kind === 'sales')
-      return (
-        <>
-          <OptionRow label="집계 기간" value={opts.periodMode === 'year' ? '년 단위' : '월 단위'} />
-          <OptionRow
-            label="대상 범위"
-            value={
-              opts.scope === 'all' ? '전체 메뉴' : opts.scope === 'pizza' ? '피자만' : '사이드만'
-            }
-          />
-          <OptionRow label="순위 깊이" value={topN} />
-          {Object.keys(subOpts).length > 0 && (
-            <>
-              <OptionRow label="카테고리 비중" value={subOpts.catShare ? '포함' : '제외'} />
-              <OptionRow label="메뉴 순위표" value={subOpts.rankTable ? '포함' : '제외'} />
-              <OptionRow label="전월 대비" value={subOpts.prevComp ? '포함' : '제외'} />
-            </>
-          )}
-        </>
-      );
-    if (kind === 'price')
-      return (
-        <>
-          <OptionRow label="변동률 임계값" value={`±${asDisplayText(opts.threshold, '3')}%`} />
-          <OptionRow
-            label="기간 모드"
-            value={
-              opts.periodMode === 'week'
-                ? '이번 주'
-                : opts.periodMode === 'month'
-                  ? '이번 달'
-                  : '사용자 지정'
-            }
-          />
-          {Object.keys(subOpts).length > 0 && (
-            <>
-              <OptionRow label="스파크라인" value={subOpts.history7 ? '포함' : '제외'} />
-              <OptionRow label="원가 영향" value={subOpts.costImpact ? '포함' : '제외'} />
-            </>
-          )}
-        </>
-      );
-    if (kind === 'shipment')
-      return (
-        <>
-          <OptionRow
-            label="집계 단위"
-            value={
-              opts.periodMode === 'week'
-                ? '주 단위'
-                : opts.periodMode === 'quart'
-                  ? '분기 단위'
-                  : '월 단위'
-            }
-          />
-          <OptionRow
-            label="대상 분류"
-            value={
-              opts.type === 'managed' ? '관리품목' : opts.type === 'common' ? '범용상품' : '전체'
-            }
-          />
-          {Object.keys(subOpts).length > 0 && (
-            <>
-              <OptionRow label="추이 차트" value={subOpts.chart ? '포함' : '제외'} />
-              <OptionRow label="TOP 10 목록" value={subOpts.topList ? '포함' : '제외'} />
-            </>
-          )}
-        </>
-      );
-    if (kind === 'compare')
-      return (
-        <>
-          <OptionRow
-            label="비교 모드"
-            value={
-              opts.mode === 'mom' ? '전월 대비' : opts.mode === 'yoy' ? '전년 동월' : '사용자 지정'
-            }
-          />
-          <OptionRow
-            label="기간 A"
-            value={
-              opts.yearA && opts.monthA
-                ? `${asDisplayText(opts.yearA)}년 ${asDisplayText(opts.monthA)}월`
-                : '—'
-            }
-          />
-          <OptionRow
-            label="대상 범위"
-            value={opts.scope === 'all' ? '전체' : opts.scope === 'pizza' ? '피자' : '사이드'}
-          />
-          {Object.keys(subOpts).length > 0 && (
-            <>
-              <OptionRow label="순위 이동표" value={subOpts.rankShift ? '포함' : '제외'} />
-              <OptionRow label="Winners/Losers" value={subOpts.winners ? '포함' : '제외'} />
-            </>
-          )}
-        </>
-      );
-    if (kind === 'cost') {
-      const cats = asPlainObject(opts.cats);
-      const catLabel =
-        Object.entries(cats)
-          .filter(([, v]) => v)
-          .map(([k]) =>
-            k === 'pizza'
-              ? '피자'
-              : k === 'personal'
-                ? '1인피자'
-                : k === 'side'
-                  ? '사이드'
-                  : k === 'set'
-                    ? '세트박스'
-                    : '엣지&도우'
-          )
-          .join(', ') || '—';
-      return (
-        <>
-          <OptionRow label="집계 기간" value={opts.periodMode === 'year' ? '년 단위' : '월 단위'} />
-          <OptionRow label="위험 기준" value={`${asDisplayText(opts.riskThreshold, '35')}%↑`} />
-          {Object.keys(cats).length > 0 && <OptionRow label="포함 카테고리" value={catLabel} />}
-          {Object.keys(subOpts).length > 0 && (
-            <>
-              <OptionRow label="카테고리 비교표" value={subOpts.catTable ? '포함' : '제외'} />
-              <OptionRow label="위험 메뉴 부록" value={subOpts.riskList ? '포함' : '제외'} />
-            </>
-          )}
-        </>
-      );
-    }
-    return (
-      <div style={{ color: 'var(--text-4)', fontSize: 13, padding: '16px 0' }}>
-        저장된 옵션 없음
-      </div>
-    );
-  };
+  const renderer = REPORT_OPTION_RENDERERS[kind];
 
   return (
     <div style={{ padding: '16px 0' }}>
@@ -270,7 +259,13 @@ function ReportOptionsPage({ report }) {
       >
         보고서 설정
       </div>
-      {kindOpts()}
+      {renderer ? (
+        renderer(opts, subOpts, topN)
+      ) : (
+        <div style={{ color: 'var(--text-4)', fontSize: 13, padding: '16px 0' }}>
+          저장된 옵션 없음
+        </div>
+      )}
     </div>
   );
 }

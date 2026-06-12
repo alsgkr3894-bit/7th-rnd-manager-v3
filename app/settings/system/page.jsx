@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import {
@@ -40,7 +41,7 @@ export default function Page() {
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [confirmingRecreate, setConfirmingRecreate] = useState(false);
   const [storageEst, setStorageEst] = useState(null); // { usage, quota } in bytes
-  const mountedRef = useRef(false);
+  const mountedRef = useMounted();
 
   const SETTING_KEYS = [
     'theme',
@@ -58,7 +59,6 @@ export default function Page() {
 
   useEffect(() => {
     let alive = true;
-    mountedRef.current = true;
 
     (async () => {
       try {
@@ -85,7 +85,6 @@ export default function Page() {
 
     return () => {
       alive = false;
-      mountedRef.current = false;
     };
   }, []);
 
