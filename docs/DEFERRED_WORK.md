@@ -416,11 +416,9 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **해결 방향**: `hooks/useSectionSearch.js` — search state + filterFn injection 훅으로 수렴.
 - **관련**: R-38(동일한 search 패턴 — 공통 hook 후보)
 
-#### R-37. `app/styles/features.css` 2차 분리 (7829줄)  ⏸
-- **파일**: `app/styles/features.css`
-- **문제**: 1차로 globals와는 분리됐으나 여전히 단일 7829줄 모놀리식(페이지·필터·테이블·칸반·레시피·가격·출고·영양·식자재 전부 포함).
-- **해결 방향**: `features/ingredient.css`·`features/report.css`·`features/note.css`·`features/nutrition.css`로 도메인별 2차 분리. `features.css`는 @import 파일만 남김.
-- **왜 보류**: 7829줄 전체 도메인 분류 + 브라우저 캐스케이드 검증 필요.
+#### R-37. `app/styles/features.css` 2차 분리 (7829줄)  ✅ 완료(2026-06-13)
+- **완료**: `features/motion.css`(모션 시스템 + UX 개선 2462줄) + `features/home.css`(홈 대시보드 768줄) 분리. globals.css에 import 추가.
+  features.css 7829→4599줄. 캐스케이드 순서 유지(features.css 이후 순서대로 import).
 
 #### R-38. 제때 테이블 4종 `useTableSearchSort` 수렴  ✅ 완료(2026-06-12)
 - **파일**: `components/jette/ManagedProductsCard.jsx`(389줄), `PriceLatestView.jsx`(344줄), `PriceCompareTable.jsx`(361줄), `ShipmentTable.jsx`(332줄)
