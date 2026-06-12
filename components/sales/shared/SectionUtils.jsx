@@ -5,6 +5,31 @@ import { asDisplayText, clampInteger } from '@/lib/ui/prop-guards';
 
 /** 세 설정 섹션(Aliases·Rules·Excluded)이 공유하는 스타일·컴포넌트 */
 
+const PENDING_KEY = 'v3:sales-pending-reclassify';
+
+/** 규칙/별칭 변경 시 호출 — 재분류 미반영 상태를 localStorage에 기록 */
+export function markPendingReclassify() {
+  try {
+    localStorage.setItem(PENDING_KEY, '1');
+  } catch {}
+}
+
+/** 재분류 미반영 상태 확인 */
+export function hasPendingReclassify() {
+  try {
+    return localStorage.getItem(PENDING_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** 재분류 완료 후 플래그 해제 */
+export function clearPendingReclassify() {
+  try {
+    localStorage.removeItem(PENDING_KEY);
+  } catch {}
+}
+
 /**
  * 규칙·별칭·제외 변경 후 이미 업로드된 데이터를 다시 분류해 보고서·통계에 즉시 반영.
  * (변경만 저장하면 기존 sales_rows는 옛 분류 결과를 유지하므로 호출 필요)
@@ -16,6 +41,7 @@ export async function reapplyToUploadedData() {
   showToast('기존 데이터 재분류 중…', 'info', 1800);
   try {
     const { files } = await reclassifyAllFiles();
+    clearPendingReclassify();
     if (files > 0) showToast(`기존 업로드 ${files}개 파일에 반영했어요`, 'ok');
     else showToast('반영할 업로드 파일이 없어요', 'info', 2000);
   } catch (err) {

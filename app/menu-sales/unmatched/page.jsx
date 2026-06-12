@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Icon } from '@/components/icons';
 import { useUnmatchedIssues } from '@/lib/sales/use-unmatched-issues';
@@ -12,6 +12,10 @@ import {
 } from '@/components/sales/UnmatchedEmpty';
 import { UnmatchedFilterBar } from '@/components/sales/UnmatchedFilterBar';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
+import {
+  hasPendingReclassify,
+  reapplyToUploadedData,
+} from '@/components/sales/shared/SectionUtils';
 
 const STATUS_FILTERS = new Set(['open', 'resolved', 'all']);
 
@@ -32,6 +36,22 @@ export default function Page() {
   const [statusFilter, setStatusFilter] = useState('open'); // open | resolved | all
   const [monthFilter, setMonthFilter] = useState('all'); // 'all' | 'YYYY-M'
   const [search, setSearch] = useState('');
+  const [pendingReclassify, setPendingReclassify] = useState(false);
+  const [reclassifying, setReclassifying] = useState(false);
+
+  useEffect(() => {
+    setPendingReclassify(hasPendingReclassify());
+  }, []);
+
+  async function handleReclassify() {
+    setReclassifying(true);
+    try {
+      await reapplyToUploadedData();
+      setPendingReclassify(false);
+    } finally {
+      setReclassifying(false);
+    }
+  }
   const safeIssues = useMemo(() => asObjectArray(issues), [issues]);
   const selectedStatus = safeStatusFilter(statusFilter);
   const selectedMonth = asDisplayText(monthFilter, 'all') || 'all';
@@ -77,6 +97,37 @@ export default function Page() {
         title="미매칭 관리"
         sub="분류 규칙으로 매칭되지 않은 메뉴를 확인할 수 있어요"
       />
+
+      {pendingReclassify && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            background: 'var(--warn-soft)',
+            border: '1px solid var(--warn)',
+            borderRadius: 8,
+            padding: '10px 14px',
+            marginBottom: 12,
+            fontSize: 13,
+            color: 'var(--warn)',
+          }}
+        >
+          <Icon.alertCircle style={{ width: 16, height: 16, flexShrink: 0 }} />
+          <span style={{ flex: 1 }}>
+            분류 규칙이 변경되었지만 기존 업로드 데이터에 아직 반영되지 않았어요.
+          </span>
+          <button
+            type="button"
+            className="btn sm"
+            style={{ borderColor: 'var(--warn)', color: 'var(--warn)', flexShrink: 0 }}
+            onClick={handleReclassify}
+            disabled={reclassifying}
+          >
+            {reclassifying ? '반영 중…' : '지금 반영'}
+          </button>
+        </div>
+      )}
 
       <UnmatchedSummary openCount={openCount} resolvedCount={resolvedCount} months={months} />
 

@@ -12,6 +12,7 @@ import {
   SectionHeader,
   SectionEmpty,
   reapplyToUploadedData,
+  markPendingReclassify,
 } from './shared/SectionUtils';
 import { useSettingsSection } from '@/hooks/useSettingsSection';
 import { asDisplayText } from '@/lib/ui/prop-guards';
@@ -76,6 +77,7 @@ export function UserAliasesSection() {
     try {
       await updateUserAlias({ id: a.id, enable: a.enable !== false ? false : true });
       refresh();
+      markPendingReclassify();
       if (
         confirm(
           '기존 업로드 파일의 분류를 지금 다시 반영할까요?\n취소 시 별칭은 저장되며 다음 업로드부터 적용됩니다.'

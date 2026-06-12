@@ -191,11 +191,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **해결 방향**: 모듈별 키 수집 조건 설계 후 백업 포맷·복원 매칭 로직 확장.
 - **왜 보류**: 백업 포맷 변경. [[multi-brand]] 브랜드 스코프 검토 필요. 정책(B-10) 결정 후 진행.
 
-#### B-8. 칸반 드래그 순서 원자성  🟡 ⏸
-- **파일**: `app/note/board/page.jsx:116–149`
-- **문제**: `Promise.all(updateNote…)` 개별 트랜잭션 → 중간 실패 시 일부만 반영.
-- **해결 방향**: `runTransaction`(operations.js:223)으로 boardOrder 일괄 갱신.
-- **왜 보류**: `menu_dev_notes`는 공유 store(main DB). 트랜잭션 범위·드래그 UX 회귀 검증 필요.
+#### B-8. 칸반 드래그 순서 원자성  ✅ 완료(2026-06-12)
+- **완료**: `lib/note/store.js`에 `bulkUpdateBoardOrder(updates)` 추가 — 단일 `runTransaction`으로 boardOrder 일괄 갱신. `app/note/board/page.jsx` 같은 컬럼 reorder + 크로스 컬럼 move 모두 교체. `lib/note/index.js` re-export 추가.
 
 #### B-9. 1인피자 알레르기 표시 기준 정리  🟡 ⏸
 - **파일**: `lib/nutrition/label/build.js:265`, `app/nutrition/allergen/page.jsx:345`
@@ -253,17 +250,11 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **완료**: CL1(`4ff4941`) 영양 메뉴/원시값 저장 전 중복 진단 UI(`app/nutrition/menu/page.jsx`), CL3(`5df8e34`) 식자재 productCode 중복 진단/복구 UI(`app/ingredient/manage/page.jsx`). 저장 경로 조용한 덮어쓰기도 가드됨.
 - **참고**: 백업 화면(`settings/backup`)에도 진단 표기 존재.
 
-#### C-2. 판매량 업로드 행/파일 단위 중복 시각화  🟢 ⏸
-- **파일**: `lib/sales/use-sales-upload.js`(:112 월 중복 사전 차단), `lib/sales/store-files.js`(:17 year_month 복합 인덱스), `app/menu-sales/upload/`
-- **현황**: **월 단위 중복은 이미 감지·차단·사용자 메시지 노출**(use-sales-upload.js:112 "…이미 업로드되어 있습니다. 기존 데이터를 삭제한 뒤 다시 시도"). 차단이 아닌 `dedupeUploadRows`·`dedupe.js`는 존재하지 않음.
-- **잔여 범위**: 파일 업로드 목록 화면에서 **행 단위 중복·파일명 배지** 시각화만 미구현.
-- **해결 방향**: 업로드 완료 후 중복 행 수·파일명을 요약 배지로 표시하는 UI 추가.
-- **참고**: 제때 **가격** 업로드 중복 진단은 CL8(`9c8014e`)에서 완료. 여기서는 **판매량(sales)** 행 시각화만 남음.
+#### C-2. 판매량 업로드 행/파일 단위 중복 시각화  ✅ 완료(2026-06-12)
+- **완료**: `lib/sales/use-sales-upload.js` `buildUploadArtifacts`에 `issueGroupCount` 추가, `components/sales/UploadHistory.jsx` "처리 건수" 셀에 `{N}그룹 미매칭` 배지 표시(기존 레코드는 `issueGroupCount` 없어도 배지 미노출로 하위 호환). 월 단위 중복 차단은 기존부터 완료.
 
-#### C-3. 판매 분류 미반영 구간 안내  🟢 ⏸
-- **파일**: `app/menu-sales/unmatched/page.jsx`, `components/sales/UnmatchedTable.jsx`
-- **문제**: 재분류 취소 시 규칙은 저장되나 기존 파일은 구버전 분류 유지. 사용자가 이 상태를 모를 수 있음.
-- **해결 방향**: 미매칭/설정 페이지에 "분류 재반영 미실행" 배지/경고 표시.
+#### C-3. 판매 분류 미반영 구간 안내  ✅ 완료(2026-06-12)
+- **완료**: `components/sales/shared/SectionUtils.jsx`에 `markPendingReclassify`·`hasPendingReclassify`·`clearPendingReclassify`(localStorage `v3:sales-pending-reclassify`) 추가. `UserRulesSection`·`UserAliasesSection` 토글 시 confirm 직전 플래그 설정. `reapplyToUploadedData` 성공 시 자동 해제. `app/menu-sales/unmatched/page.jsx`에 마운트 시 플래그 확인 → 배너 + "지금 반영" 버튼 표시.
 
 #### C-4. Prettier 잔여 31개 파일 정리  ✅ 완료(2026-06-12)
 - **완료**: `npm run format` 일괄 적용 → `format:check` 0건. 131 suite/749 test 통과. (커밋 5e2306d)
@@ -307,5 +298,6 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ---
 
-_최종 업데이트: 2026-06-12 — 문서 정합성 정정: B-1 파일 경로(`lib/cost/menu-master.js`→`lib/menu-master/store.js`), B-4 모듈 혼동(`filterTargetRows`→`reclassifyAllFiles`+`lib/sales/reclassify.js`), C-2 전제 갱신(월 중복 이미 차단·존재하지 않는 파일 제거), B-3 store 경로 보정. B-2 잔여를 🟢 저위험으로 이동. 번호=등록순 ID 안내 추가._
+_최종 업데이트: 2026-06-12 — B-8·C-2·C-3 구현 완료 표시. C-3: localStorage 재분류 미반영 플래그 + unmatched 배너. C-2: issueGroupCount 배지. B-8: bulkUpdateBoardOrder 단일 트랜잭션._
+_[이전] 문서 정합성 정정: B-1 파일 경로·B-4 모듈 혼동·C-2 전제 갱신·B-3 store 경로 보정. B-2 저위험 이동. 번호=등록순 ID 안내._
 _[이전] SITE_IMPROVEMENT_AUDIT 통합·삭제. NEXT_TASKS(CL1~CL8) 통합, B-2/C-1/메뉴코드정책 완료 정정._
