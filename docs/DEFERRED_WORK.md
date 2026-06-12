@@ -368,10 +368,9 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ### 🟡 중위험
 
-#### R-29. 홈 대시보드 `app/page.jsx` 분해 (817줄)  ⏸
-- **파일**: `app/page.jsx`
-- **문제**: KPI·노트·샘플·가격변동·일정·이슈·빠른메모·위젯 렌더링 + 기간 네비게이션 + 초안 관리가 한 파일에서 조립.
-- **해결 방향**: `useHomeDashboardData`(다중 소스 로드), `useHomeSalesPeriod`(anchor/기간 탐색), `QuickNoteWidget` 분리.
+#### R-29. 홈 대시보드 `app/page.jsx` 분해 (817줄)  ✅ 완료(2026-06-13)
+- **완료**: `useHomeDashboardData`(`hooks/`) 추출 — 모든 데이터 로드 상태·anchor·shiftAnchor·chartKey 포함.
+  app/page.jsx 817→624줄.
 - **관련**: B-6
 
 #### R-30. `components/cost/recipe/RecipeEditor.jsx` 분해 (853줄)  ⏸

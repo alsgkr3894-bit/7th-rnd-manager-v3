@@ -5,32 +5,11 @@ const devError = (...a) => {
   if (process.env.NODE_ENV !== 'production') console.error(...a);
 };
 
-import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
-import { useMounted } from '@/hooks/useMounted';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { useCountUp } from '@/hooks/useCountUp';
-import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { showToast } from '@/components/Toast';
-import { initDB } from '@/lib/db';
-import { getProfile } from '@/lib/profile';
-
-import {
-  getSalesKpi,
-  getNoteKpi,
-  getCostRateKpi,
-  getSalesTrend,
-  getCategoryShare,
-  getTopMenusWithTrend,
-  getRecentActivities,
-  getCostAlertData,
-  getMonthlyBriefing,
-  getTodayTodos,
-  getPipelineStats,
-  getWeekSchedule,
-  getRecentPriceChanges,
-} from '@/lib/stats';
-import { getIssues } from '@/lib/sales';
 import { HomeKpiRow } from '@/components/home/HomeKpiRow';
 import { HomeChartRow } from '@/components/home/HomeChartRow';
 import { HomeActivities } from '@/components/home/HomeActivities';
@@ -54,17 +33,12 @@ import { ModuleHealthWidget } from '@/components/home/ModuleHealthWidget';
 import { WidgetConfigModal } from '@/components/home/WidgetConfigModal';
 import { WidgetShell } from '@/components/home/WidgetShell';
 import { useWidgetConfig, HOME_WIDGET_ROWS } from '@/hooks/useWidgetConfig';
-import { getAllNotes, addNote } from '@/lib/note';
-import { getAllSamples } from '@/lib/sample';
+import { addNote } from '@/lib/note';
 import { KEYS } from '@/lib/note/keys';
-import { getActiveBrandId } from '@/lib/active-brand';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
-import { getUploadFreshness } from '@/lib/stats/upload-status';
-import { getBackupReminder } from '@/lib/backup-history';
 import { getRecentPaletteItems } from '@/lib/palette-recent';
-
-// 홈 베스트/워스트·평균원가율 집계 카테고리 — 7번가만 '피자'로 한정, 그 외 브랜드는 전체
-const homeRankCategory = () => (getActiveBrandId() === 'main' ? '피자' : null);
+import { getNoteKpi, getRecentActivities } from '@/lib/stats';
+import { useHomeDashboardData } from '@/hooks/useHomeDashboardData';
 
 /** 시간대별 인사말 */
 function greetingByHour() {
@@ -94,47 +68,16 @@ function pairRow(a, b, rowKey) {
 
 export default function HomePage() {
   const router = useRouter();
-  const isMain = useIsMainBrand(); // 7번가만 피자 카테고리 라벨 노출
-
-  const [profile, setProfile] = useState(null);
-  const [salesKpi, setSalesKpi] = useState(null);
-  const [costKpi, setCostKpi] = useState(null);
-  const [noteKpi, setNoteKpi] = useState(null);
-  const [trend, setTrend] = useState(null);
-  const [donut, setDonut] = useState(null);
-  const [top, setTop] = useState([]);
-  const [bottom, setBottom] = useState([]);
-  const [activities, setActivities] = useState([]);
-  const [reportingNotes, setReportingNotes] = useState([]);
-  const [allNotes, setAllNotes] = useState([]);
-  const [recentSamples, setRecentSamples] = useState([]);
-  const [costAlertData, setCostAlertData] = useState(null);
-
-  // 신규 위젯 데이터
-  const [briefing, setBriefing] = useState(null);
-  const [todos, setTodos] = useState([]);
-  const [pipeline, setPipeline] = useState(null);
-  const [weekSchedule, setWeekSchedule] = useState(null);
-  const [priceChanges, setPriceChanges] = useState([]);
-  const [issues, setIssues] = useState([]);
-  const [uploadFreshness, setUploadFreshness] = useState(null);
-  const [backupReminder, setBackupReminder] = useState(null);
-
-  const [anchor, setAnchor] = useState(null); // {year, month} | null = auto-latest
-  const [detectedPeriod, setDetectedPeriod] = useState(null);
-  const dbReadyRef = useRef(false);
-  const chartTabRef = useRef('month');
+  const isMain = useIsMainBrand();
 
   const [chartTab, setChartTab] = useState('month');
-  const [chartKey, setChartKey] = useState(0);
   const [hoveredCat, setHoveredCat] = useState(null);
-
   const [quickNote, setQuickNote] = useState('');
   const [quickSaved, setQuickSaved] = useState(false);
   const [hasRecentVisits, setHasRecentVisits] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const mountedRef = useMounted();
   const quickResetTimer = useRef(null);
+  const [widgetConfigOpen, setWidgetConfigOpen] = useState(false);
 
   const {
     isVisible,
@@ -151,180 +94,45 @@ export default function HomePage() {
     effectiveOrder,
     resetConfig,
   } = useWidgetConfig();
-  const [widgetConfigOpen, setWidgetConfigOpen] = useState(false);
 
-  // chartTab ref — useEffect 클로저 stale 방지
-  useEffect(() => {
-    chartTabRef.current = chartTab;
-  }, [chartTab]);
+  const {
+    profile,
+    salesKpi,
+    costKpi,
+    noteKpi,
+    setNoteKpi,
+    trend,
+    donut,
+    top,
+    bottom,
+    activities,
+    setActivities,
+    reportingNotes,
+    allNotes,
+    recentSamples,
+    costAlertData,
+    briefing,
+    todos,
+    pipeline,
+    weekSchedule,
+    priceChanges,
+    issues,
+    uploadFreshness,
+    backupReminder,
+    anchor,
+    detectedPeriod,
+    shiftAnchor,
+    chartKey,
+    loadData,
+    mountedRef,
+  } = useHomeDashboardData({ chartTab });
+
   useEffect(() => {
     setHasRecentVisits(getRecentPaletteItems().length > 0);
     return () => {
       if (quickResetTimer.current) clearTimeout(quickResetTimer.current);
     };
   }, []);
-
-  const salesCount = useCountUp(salesKpi?.current ?? 0, { duration: 1400, delay: 250 });
-  const noteCount = useCountUp(noteKpi?.total ?? 0, { duration: 900, delay: 460 });
-
-  const loadData = useCallback(async () => {
-    try {
-      await initDB();
-      if (!mountedRef.current) return;
-
-      dbReadyRef.current = true;
-      setProfile(getProfile());
-
-      // 기간 비종속 위젯 — 다른 탭에서 자주 바뀌는 데이터(노트·샘플·가격·이슈 등)
-      const live = await Promise.allSettled([
-        getAllNotes(),
-        getAllSamples(),
-        getCostAlertData(),
-        getTodayTodos(),
-        getPipelineStats(),
-        getWeekSchedule(),
-        getRecentPriceChanges(6),
-        getIssues(),
-        getRecentActivities(8),
-        getCostRateKpi(),
-        getNoteKpi(),
-        getUploadFreshness(),
-      ]);
-      const [an, sm, ca, tdo, pl, ws, pc, iss, ac, c, n, uf] = live.map(r =>
-        r.status === 'fulfilled' ? r.value : null
-      );
-      if (!mountedRef.current) return;
-
-      if (an) {
-        setAllNotes(an);
-        setReportingNotes(an.filter(x => x.status === '보고예정'));
-      }
-      if (sm) setRecentSamples(sm);
-      if (ca) setCostAlertData(ca);
-      if (tdo) setTodos(tdo);
-      if (pl) setPipeline(pl);
-      if (ws) setWeekSchedule(ws);
-      if (pc) setPriceChanges(pc);
-      if (iss) setIssues(iss);
-      if (ac) setActivities(ac);
-      if (c) setCostKpi(c);
-      if (n) setNoteKpi(n);
-      if (uf) setUploadFreshness(uf);
-      setBackupReminder(getBackupReminder());
-
-      // 판매·차트·브리핑 — anchor(과거 월 탐색) 미설정일 때만 현재 기준 갱신.
-      // anchor가 설정돼 있으면 anchor 전용 useEffect가 담당하므로 건드리지 않음.
-      if (!anchor) {
-        const sales = await Promise.allSettled([
-          getSalesKpi(),
-          getSalesTrend(chartTabRef.current),
-          getCategoryShare(),
-          getTopMenusWithTrend(5, homeRankCategory(), true, 'desc'),
-          getTopMenusWithTrend(5, homeRankCategory(), true, 'asc'),
-          getMonthlyBriefing(),
-        ]);
-        const [s, td, dn, tp, bt, br] = sales.map(r => (r.status === 'fulfilled' ? r.value : null));
-        if (!mountedRef.current) return;
-
-        if (s) {
-          setSalesKpi(s);
-          setDetectedPeriod({ year: s.year, month: s.month });
-        }
-        if (td) {
-          setTrend(td);
-          setChartKey(k => k + 1);
-        }
-        if (dn) setDonut(dn);
-        if (tp) setTop(tp);
-        if (bt) setBottom(bt);
-        if (br) setBriefing(br);
-      }
-    } catch (err) {
-      if (!mountedRef.current) return;
-
-      devError('[Home] 데이터 로드 실패:', err);
-      showToast('데이터를 불러오는 중 문제가 발생했어요. 새로고침해 주세요.', 'error', 5000);
-    }
-  }, [anchor, mountedRef]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-  // 다른 탭에서 데이터 수정 후 홈으로 돌아오면 자동 갱신
-  useVisibilityRefresh(loadData);
-
-  useEffect(() => {
-    if (!trend) return;
-    let ignore = false;
-
-    getSalesTrend(chartTab, anchor)
-      .then(t => {
-        if (!ignore) {
-          setTrend(t);
-          setChartKey(k => k + 1);
-        }
-      })
-      .catch(err => {
-        if (!ignore) devError('[Home] 트렌드 로드 실패:', err);
-      });
-
-    return () => {
-      ignore = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chartTab]);
-
-  // anchor(기준 월) 변경 시 판매·브리핑 통계 재조회
-  useEffect(() => {
-    if (!dbReadyRef.current || !anchor) return;
-    const a = anchor;
-    let isMounted = true;
-    Promise.allSettled([
-      getSalesKpi(a),
-      getSalesTrend(chartTabRef.current, a),
-      getCategoryShare(a),
-      getTopMenusWithTrend(5, homeRankCategory(), true, 'desc', a),
-      getTopMenusWithTrend(5, homeRankCategory(), true, 'asc', a),
-      getMonthlyBriefing(a),
-    ])
-      .then(([s, td, dn, tp, bt, br]) => {
-        if (!isMounted) return;
-        const val = r => (r.status === 'fulfilled' ? r.value : null);
-        if (val(s)) setSalesKpi(val(s));
-        if (val(td)) {
-          setTrend(val(td));
-          setChartKey(k => k + 1);
-        }
-        if (val(dn)) setDonut(val(dn));
-        if (val(tp)) setTop(val(tp));
-        if (val(bt)) setBottom(val(bt));
-        if (val(br)) setBriefing(val(br));
-      })
-      .catch(devError);
-    return () => {
-      isMounted = false;
-    };
-  }, [anchor]);
-
-  function shiftAnchor(delta) {
-    const base = anchor || detectedPeriod;
-    if (!base) return;
-    let { year, month } = base;
-    month += delta;
-    while (month < 1) {
-      month += 12;
-      year--;
-    }
-    while (month > 12) {
-      month -= 12;
-      year++;
-    }
-    // 미래 월은 이동 불가
-    const now = new Date();
-    if (year > now.getFullYear() || (year === now.getFullYear() && month > now.getMonth() + 1))
-      return;
-    setAnchor({ year, month });
-  }
 
   function openDraftInNoteWrite() {
     const text = quickNote.trim();
