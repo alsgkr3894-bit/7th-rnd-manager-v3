@@ -142,12 +142,9 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ### 🔴 고위험 — 다중 store / 집계 결과 변경
 
-#### B-1. 메뉴마스터 삭제 cascade  🔴 ⏸
-- **파일**: `lib/menu-master/store.js`(`deleteMenuMaster`; `lib/menu-master/index.js`로 re-export), `lib/nutrition/`, `lib/sales/`, `cost_selling_prices`(판매가 mirror)
-- **문제**: `deleteMenuMaster`는 `menu_master` store만 삭제. 원가(`cost_recipes`)·영양(`nutrition_menu_ref`)·판매량(`sales_rows`)·**판매가 mirror(`cost_selling_prices`)**에 orphan 레코드 잔존. 판매가 mirror가 남으면 삭제한 메뉴가 다시 생성될 수 있음. 현재는 삭제 다이얼로그 경고 표시만.
-- **해결 방향**: 삭제 전 관련 store orphan 목록 미리보기 → ConfirmDialog → 동적 import로 각 모듈 cascade 삭제(판매가 mirror 정리 또는 tombstone 정책 포함).
-- **왜 보류**: 여러 store 동기 삭제는 트랜잭션 범위 조율 필요. 잘못 구현 시 정상 데이터 소실 위험.
-- **관련 메모리**: [[db-write-footguns]]
+#### B-1. 메뉴마스터 삭제 cascade  ✅ 완료(2026-06-12)
+- **완료**: `deleteMenuMaster`에 cascade 삭제 추가 — `cost_selling_prices`(판매가 mirror), `cost_recipes`(원가 레시피), `nutrition_menu_ref`+`nutrition_raw_values`(영양 참조)를 menuCode 기준 일괄 삭제. `deleteMenuRefsByMenuCode` 헬퍼 추가(`lib/nutrition/values/store.js`). `sales_rows`는 역사 데이터로 보존.
+- **참고**: `pushMasterToPrices`(syncMirror)는 `discontinued` 상태만 제거 — 삭제된 메뉴를 별도 cascade하지 않아 orphan이 남던 버그 수정.
 
 
 #### B-15. 식자재 삭제 실행취소(undo) cascade 복구 불완전  ✅ 완료(2026-06-12)
