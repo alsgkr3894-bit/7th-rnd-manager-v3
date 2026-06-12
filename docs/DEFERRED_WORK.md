@@ -314,10 +314,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **문제**: StatusBadge, PriceDelta, phase 관리(`idle→parsing→preview→committing`), FileUploadZone 패턴이 양쪽에 중복.
 - **해결 방향**: `BulkPriceModalBase` 공통 컴포넌트 + 파싱·매칭·커밋 전략 주입 패턴.
 
-#### R-13. `PlatformSettingsModal.jsx` 서브컴포넌트 분리 (518줄)  ⏸
-- **파일**: `components/cost/margin/PlatformSettingsModal.jsx`
-- **문제**: `FeeRow`(L376+) 인라인 정의. `patchFee`/`patchSizeOverride` 등 중첩 state 패치 함수 다수.
-- **해결 방향**: `FeeRow`, `PlatformRow`, `PlatformSelector` 분리. 패치 로직 `useReducer`로 전환.
+#### R-13. `PlatformSettingsModal.jsx` 서브컴포넌트 분리 (518줄)  ✅ 완료(2026-06-12)
+- **완료(부분)**: `components/cost/margin/FeeRow.jsx` 신설 — 인라인 `FeeRow`(140줄) 분리. 모달 518줄 → 375줄. PlatformSelector/PlatformRow 분리 및 useReducer 전환은 상태 공유 복잡도로 보류.
 
 #### R-14. settings 페이지 2종 서브컴포넌트 분리  ⏸
 - **파일**: `app/settings/backup/page.jsx`, `app/settings/account/page.jsx`
