@@ -167,7 +167,9 @@ export default function Page() {
           // 선택 월이 없으면 최신 월로 자동 맞춤 (early return 없이 그대로 로드)
           const selectedYear = safeYear(shipYear);
           const selectedMonth = safeMonth(shipMonth);
-          const targetMonth = monthMap.get(`${selectedYear}-${selectedMonth}`) || monthList[0];
+          const targetMonth =
+            monthList.find(m => m.year === selectedYear && m.month === selectedMonth) ||
+            monthList[0];
           if (targetMonth.year !== selectedYear || targetMonth.month !== selectedMonth) {
             setShipYear(targetMonth.year);
             setShipMonth(targetMonth.month);
