@@ -61,6 +61,10 @@ export function UploadDropzone({
   return (
     <div
       className={'card dropzone ' + (drag ? 'drag' : '') + (disabled ? ' disabled' : '')}
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-label={disabled ? safeBusyText : `${safeTitle} — 클릭하거나 Enter/Space로 파일 선택`}
+      aria-disabled={disabled}
       onDragOver={e => {
         if (disabled) return;
         e.preventDefault();
@@ -76,6 +80,13 @@ export function UploadDropzone({
       onClick={() => {
         if (disabled) return;
         inputRef.current?.click();
+      }}
+      onKeyDown={e => {
+        if (disabled) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          inputRef.current?.click();
+        }
       }}
       style={{ cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}
     >

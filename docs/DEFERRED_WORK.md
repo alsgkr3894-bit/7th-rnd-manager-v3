@@ -262,11 +262,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 #### C-5. 피자 슬라이스 시트 satFat 레거시 참조 확인  ✅ 완료(2026-06-12)
 - **완료**: `build.js`에 satFat 잔존 없음 확인. 나머지 satFat 참조(`auto-calc.js`·`values/import.js`·`values/store.js`·`ImportBaseModal.jsx`)는 모두 포화지방(정상 영양 필드) 용도로 라벨 출력 경로와 무관 — 추가 조치 불필요.
 
-#### C-6. 드래그·업로드 키보드 접근성 검증  🟢 ⏸
-- **파일**: `app/note/calendar/page.jsx`, `app/note/board/page.jsx`, `components/cost/recipe/RecipeEditor.jsx`(dnd-kit), `components/ui/UploadDropzone.jsx`·`components/sales/UploadDropzone.jsx`, `app/globals.css`
-- **현황**: 일부 화면에 키보드 드래그 안내 문구 존재. (1) 모든 드래그 항목에 일관 적용·언어 정책 일치 여부, (2) 공통 드롭존이 클릭 `div`+숨김 input 구조라 **키보드만으로 파일 선택 가능한지** 미확인.
-- **해결 방향**: 드래그 안내("space로 집기, 화살표로 이동, …")가 스크린리더에 전달되는지, 업로드 드롭존이 `role`/`tabIndex`/`button`으로 키보드 접근 가능한지 화면별 점검 후 누락분 보완.
-- **출처**: SITE_IMPROVEMENT_AUDIT §13.5(업로드 접근성) + 기존 안정화 §8.4.
+#### C-6. 드래그·업로드 키보드 접근성 검증  ✅ 완료(2026-06-12)
+- **완료**: `components/ui/UploadDropzone.jsx`에 `role="button"`, `tabIndex`, `aria-label`, `onKeyDown`(Enter/Space → input.click()) 추가. 보드(`app/note/board/page.jsx`) 드래그 카드는 이미 `tabIndex={0}`·`aria-label`·`onKeyDown` 완료. `RecipeEditor.jsx` dnd-kit 핸들은 이미 `aria-label` 완료.
 
 #### C-7. 테스트 보강 잔여(BOM 복원·체크리스트↔연구일지 동기화)  ✅ 완료(2026-06-12)
 - **완료**: `__tests__/lib/restore-bom-sync.test.mjs` 추가 — BOM 선행 JSON stripBom+JSON.parse+validateBackupPayload, 체크리스트 타이틀/콘텐츠 생성, doneItems=[]→deleteNote 조건 회귀(5케이스). 132 suite / 759 test. (커밋 b0518b9)
