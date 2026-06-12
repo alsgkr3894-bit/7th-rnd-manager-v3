@@ -18,11 +18,8 @@ import {
   bulkDeleteIngredients,
   bulkImportIngredients,
   resetAllIngredients,
-  sortMainCategories,
   buildProductTypeMap,
-  scopeLabelFor,
 } from '@/lib/ingredient';
-import { SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
 import { MASTER_IMPORT_SEED } from '@/lib/ingredient/master-import-seed';
 import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
@@ -30,8 +27,9 @@ import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
 import { getAllSideRecipes } from '@/lib/cost/side-detail';
 import { getAllRecipes } from '@/lib/recipe';
 import { MasterRow } from '@/components/cost/ingredient-price/MasterRow';
-import { calcUnitPrice } from '@/lib/cost/calc-unit-price';
-import { buildIngredientUsageMap, sumCompositePrice } from '@/lib/cost/ingredient-price-helpers';
+import { buildIngredientUsageMap } from '@/lib/cost/ingredient-price-helpers';
+import { buildIngredientPriceRows } from '@/lib/cost/ingredient-price/buildRows';
+import { useIngredientPriceFilters } from '@/hooks/useIngredientPriceFilters';
 import { IngredientPriceSkeleton } from '@/components/ui/Skeleton';
 import {
   SelectionToolbar,
@@ -72,9 +70,6 @@ export default function Page() {
   const [fileInfo, setFileInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState(null);
-  const [search, setSearch] = useState('');
-  const [taxFilter, setTaxFilter] = useState('all');
-  const [deltaFilter, setDeltaFilter] = useState('all'); // all | up | down | new | same
   const [regTarget, setRegTarget] = useState(null); // 마스터 등록 모달 대상 행
   const [bulkOpen, setBulkOpen] = useState(false); // 일괄 가격 업로드 모달
   const [syncQtyOpen, setSyncQtyOpen] = useState(false); // 제때 수량 동기화 모달
@@ -86,6 +81,8 @@ export default function Page() {
   const [usageCat, setUsageCat] = useState('전체');
   const [usageSort, setUsageSort] = useState('count_desc'); // count_desc|count_asc|name_asc
   const mountedRef = useMounted();
+  const { search, setSearch, taxFilter, setTaxFilter, deltaFilter, setDeltaFilter, mainCats, filtered } =
+    useIngredientPriceFilters(rows);
 
   const load = useCallback(async () => {
     await initDB();
@@ -134,71 +131,8 @@ export default function Page() {
     // 제때 파일 Row → Map
     const priceRowMap = buildPriceRowMap(priceRows).map;
 
-    // 1) 제때 연동 항목 (마스터에 등록된 것 중 제때 파일에 있는 것)
-    const linkedRows = allMeta
-      .filter(
-        m => !m.discontinued && !m.excluded && m.productCode && priceCodeSet.has(m.productCode)
-      )
-      .map(m => {
-        const pr = priceRowMap.get(m.productCode);
-        const baseQty = m.baseQuantity ?? null;
-        const unitType = m.baseUnitType || pr?.salesUnit || 'g';
-        const unitPrice = calcUnitPrice(pr?.priceWithTax, baseQty);
-        const prevPrice = prevPriceMap.get(m.productCode);
-        const priceDelta = prevPrice != null ? pr.priceWithTax - prevPrice : null;
-        const isNew = prevPrice == null && prev != null;
-        return {
-          ...pr,
-          meta: m,
-          isLinked: true,
-          scope: scopeLabelFor(typeMap, m.productCode),
-          masterName: m.ingredientName || pr?.productName || '',
-          category: m.category || '',
-          baseQuantity: baseQty,
-          baseUnitType: unitType,
-          taxType: pr?.taxType || m.taxType || '과세',
-          unitPrice,
-          priceDelta,
-          isNew,
-        };
-      });
-
-    // 2) 수동 항목 (마스터에 있지만 제때 파일에 없는 것 — 자체코드·합산코드 포함)
-    const manualRows = allMeta
-      .filter(
-        m => !m.discontinued && !m.excluded && (!m.productCode || !priceCodeSet.has(m.productCode))
-      )
-      .map(m => {
-        const baseQty = m.baseQuantity ?? null;
-        const unitType = m.baseUnitType || 'g';
-
-        // 합산 단가: compositeOf 코드들의 제때 단가를 합산
-        const compositePrice = sumCompositePrice(m.compositeOf, priceRowMap);
-
-        const effectivePrice = compositePrice ?? m.priceOverride ?? null;
-        const unitPrice = calcUnitPrice(effectivePrice, baseQty);
-
-        return {
-          productCode: m.productCode || '',
-          productName: m.ingredientName || '',
-          meta: m,
-          isLinked: false,
-          scope: m.scope || SCOPE_UNASSIGNED,
-          isComposite: Array.isArray(m.compositeOf) && m.compositeOf.length > 0,
-          masterName: m.ingredientName || '',
-          category: m.category || '',
-          taxType: m.taxType || '과세',
-          priceWithTax: effectivePrice,
-          baseQuantity: baseQty,
-          baseUnitType: unitType,
-          unitPrice,
-          priceDelta: null,
-          isNew: false,
-        };
-      });
-
     if (!mountedRef.current) return;
-    setRows([...linkedRows, ...manualRows]);
+    setRows(buildIngredientPriceRows(allMeta, priceRowMap, prevPriceMap, prev, priceCodeSet, typeMap));
 
     // ── 제품별 사용현황 빌드 (오류 시 토스트만 — 단가 탭은 유지) ──────
     try {
@@ -264,33 +198,6 @@ export default function Page() {
     return { total: rows.length, upCount, downCount, newCount };
   }, [rows]);
 
-  // ── 분류 목록 ─────────────────────────────────────────────────
-  const mainCats = useMemo(() => {
-    const set = new Set();
-    rows.forEach(r => {
-      if (r.category) set.add(r.category);
-    });
-    return sortMainCategories(Array.from(set));
-  }, [rows]);
-
-  // ── 필터 ─────────────────────────────────────────────────────
-  const filtered = useMemo(() => {
-    let list = rows;
-    if (taxFilter !== 'all') list = list.filter(r => r.taxType === taxFilter);
-    if (deltaFilter === 'up') list = list.filter(r => r.priceDelta > 0);
-    if (deltaFilter === 'down') list = list.filter(r => r.priceDelta < 0);
-    if (deltaFilter === 'new') list = list.filter(r => r.isNew);
-    if (deltaFilter === 'same') list = list.filter(r => r.priceDelta === 0 || r.priceDelta == null);
-    const q = search.trim().toLowerCase();
-    if (q)
-      list = list.filter(
-        r =>
-          (r.productName || '').toLowerCase().includes(q) ||
-          (r.productCode || '').toLowerCase().includes(q) ||
-          (r.masterName || '').toLowerCase().includes(q)
-      );
-    return list;
-  }, [rows, taxFilter, deltaFilter, search]);
 
   const priceSortOptions = useMemo(
     () => [

@@ -280,10 +280,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **해결 방향**: `useNutritionBaseEditor`, `useRecipeNutritionCalc`, `useIngredientNutritionCalc`, `MenuGroupList`, `NutritionInputPanel`, `IngredientCalcModal`.
 - **관련**: B-6
 
-#### R-5. `app/ingredient/list/page.jsx` PDF 함수 이동 + hook 분리  ⏸
-- **파일**: `app/ingredient/list/page.jsx` L93 `printIngredientPdf`, L229 필터/카테고리
-- **문제**: PDF 생성 함수가 page 파일에 인라인. 필터·카테고리 계산이 컴포넌트 안에 혼재.
-- **해결 방향**: `printIngredientPdf` → `lib/ingredient/print.js`. `useIngredientCatalogData`, `useIngredientCatalogView` hook 분리.
+#### R-5. `app/ingredient/list/page.jsx` PDF 함수 이동 + hook 분리  ✅ 완료(2026-06-12)
+- **완료(부분)**: `lib/ingredient/print.js` 신설 — `printIngredientPdf`, `ingredientName`, `originText`, `allergenText`, `ALLERGEN_MAP` 이동. 페이지에서 관련 인라인 함수 5개 + `ALLERGEN_SEED` import + `openPrintWindow`/`withDownloadDateSuffix` import 제거. hook 분리(`useIngredientCatalogData`, `useIngredientCatalogView`)는 B-5·B-6 연계 대형 작업 — 별도 진행.
 - **관련**: B-5, B-6
 
 #### R-6. `app/ingredient/usage/page.jsx` buildIngredientUsageMap 중복  ⏸
@@ -291,10 +289,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **문제**: usage page가 사용맵을 직접 재구성. `buildIngredientUsageMap` helper와 역할 중복.
 - **해결 방향**: usage page도 helper 재사용. `useIngredientUsageRows` hook으로 usageRows/unusedRows/displayRows 통합.
 
-#### R-7. `app/cost/ingredient-price/page.jsx` load() 분리  ⏸
-- **파일**: `app/cost/ingredient-price/page.jsx` L89
-- **문제**: 가격파일·식자재 마스터·제때/수동 row 생성·사용현황 모두 `load()` 한 함수 처리.
-- **해결 방향**: `useIngredientPriceData`, `buildIngredientPriceRows`, `useIngredientPriceFilters`.
+#### R-7. `app/cost/ingredient-price/page.jsx` load() 분리  ✅ 완료(2026-06-12)
+- **완료(부분)**: `lib/cost/ingredient-price/buildRows.js` 신설(`buildIngredientPriceRows`) — 제때 연동 row·수동 row 빌드 로직 이동. `hooks/useIngredientPriceFilters.js` 신설 — search/taxFilter/deltaFilter/mainCats/filtered 관리. 페이지에서 관련 인라인 useMemo 2개·useState 3개 제거, `sortMainCategories`·`scopeLabelFor`·`SCOPE_UNASSIGNED`·`calcUnitPrice`·`sumCompositePrice` import 제거. `useIngredientPriceData` 훅화는 mountedRef 비동기 패턴 복잡도로 보류.
 
 #### R-8. `app/cost/recipe/page.jsx` 워크벤치 분해  ⏸
 - **파일**: `app/cost/recipe/page.jsx` L151
