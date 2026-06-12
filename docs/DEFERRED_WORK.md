@@ -115,7 +115,7 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 | 부분 복원 범위 안내 | ✅ 완료 | QA R3 A4 |
 | 보고서 자동 삭제 제거 | ✅ 완료 | QA R3 A2(수동 정리 버튼) |
 | 메뉴판매량 자동 재분류 분리 | ✅ 완료 | QA R3 A3(confirm 게이트). 신규대상 한계는 → **B-4** |
-| 메뉴마스터 삭제 동기화(판매가 mirror) | ⏸ 보류 | → **B-1**(cost_selling_prices 포함하도록 보강) |
+| 메뉴마스터 삭제 동기화(판매가 mirror) | ✅ 완료 | **B-1** cascade 완료 (cost_selling_prices·cost_recipes·nutrition_menu_ref) |
 | 합산 식자재 가격 정책 통일 | ✅ 완료 | `lib/cost/composite-price.js` 공통 util 존재 |
 | 원가 detail menuCode 인덱스 통일 | ✅ 완료 | `lib/db/schema/cost.js` — pizza/personal/side/set 전부 `menuCode` 인덱스 |
 | 메뉴코드 base/full 정책 명시·util화 | ✅ 완료 | CL6 `normalizeMenuCodeForModule`(`lib/menu-master/code-policy.js`) |
@@ -128,8 +128,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 | CSV 필터 기준·정렬 라벨·페이지 리셋·모달 ARIA | ✅ 완료 | QA R3 C1·C2·C3·C4 |
 | `format:check` 산출물 제외 | ✅ 완료 | `.prettierignore`에 `.next.stale-*` 존재. 코드 잔여는 → **C-4** |
 | `qa:prod` 포트 충돌 방지 | ✅ 완료 | QA R3 C5 |
-| 드래그 정렬 접근성 안내 확인 | ⏸ 보류 | → **C-6**(신규) |
-| 테스트 보강(BOM 복원·체크리스트↔연구일지) | ⏸ 보류 | → **C-7**(신규). Excel 시트명·알레르기 fallback 테스트는 존재 |
+| 드래그 정렬 접근성 안내 확인 | ✅ 완료 | **C-6** UploadDropzone role/tabIndex/onKeyDown, 보드·레시피 기존 완료 |
+| 테스트 보강(BOM 복원·체크리스트↔연구일지) | ✅ 완료 | **C-7** restore-bom-sync.test.mjs 5케이스 (커밋 b0518b9) |
 
 **최종 build / 수동 시나리오**(안정화 §4·§6)는 코드 보류 항목이 아닌 **운영 체크리스트**(릴리스 시 매번 수동 확인)로, `docs/RELEASE_CHECKLIST.md`·`docs/QA_CHECKLIST.md` 소관.
 
@@ -285,6 +285,6 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ---
 
-_최종 업데이트: 2026-06-12 — B-8·C-2·C-3 구현 완료 표시. C-3: localStorage 재분류 미반영 플래그 + unmatched 배너. C-2: issueGroupCount 배지. B-8: bulkUpdateBoardOrder 단일 트랜잭션._
-_[이전] 문서 정합성 정정: B-1 파일 경로·B-4 모듈 혼동·C-2 전제 갱신·B-3 store 경로 보정. B-2 저위험 이동. 번호=등록순 ID 안내._
+_최종 업데이트: 2026-06-12 — B-1·B-8·B-12·B-15·C-2·C-3·C-6 구현 완료. B-1: deleteMenuMaster cascade. B-15: undo 영양값 복구. B-12: PDF overflow 수정. C-3: 재분류 미반영 배너. C-6: UploadDropzone 키보드 접근성._
+_[이전] B-8·C-2·C-3 완료 표시. 문서 정합성 정정: B-1 파일 경로·B-4 모듈 혼동·C-2 전제·B-3 경로. B-2 저위험 이동._
 _[이전] SITE_IMPROVEMENT_AUDIT 통합·삭제. NEXT_TASKS(CL1~CL8) 통합, B-2/C-1/메뉴코드정책 완료 정정._
