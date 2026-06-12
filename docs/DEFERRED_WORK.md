@@ -393,11 +393,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 #### R-33. `app/note/board/page.jsx` 칸반 분해 (597줄)  ✅ 완료(2026-06-12)
 - **완료(부분)**: `components/note/KanbanCard.jsx` 신설 — `buildNoteCopyText`·`copyNoteText`·`KanbanCard`(React.memo) 이동. board/page.jsx 597줄→427줄, `React` namespace·`formatShortDate` import 제거. `useKanbanBoard` 훅화는 handleDrop이 groupedNotes에 의존(순환 복잡도)으로 보류.
 
-#### R-39. `lib/db/operations.js` 책임 분리 (516줄)  ⏸
-- **파일**: `lib/db/operations.js`
-- **문제**: CRUD 프리미티브 + 파일 cascade 삭제(`deleteFileWithLog`) + export/import 백업 + 트랜잭션 + store 검증이 한 파일.
-- **해결 방향**: `crud.js`(getAll/getById/put/deleteById/runTransaction), `backup.js`(exportAll/exportSelected/importAll), `upload-log.js`(deleteFileWithLog/checkUploadHash)로 분리, `operations.js`는 re-export.
-- **왜 보류**: 백업/복원 경로가 의존 → 분리 후 export/import·복원 시나리오 재검증 필요.
+#### R-39. `lib/db/operations.js` 책임 분리 (516줄)  ✅ 완료(2026-06-12)
+- **완료**: `lib/db/crud.js`(CRUD 12종)·`upload-log.js`(checkUploadHash·deleteFileWithLog)·`backup.js`(replaceStore·exportAll·exportSelected·importAll) 신설. `operations.js` → 30줄 re-export 파일로 교체. 기존 `@/lib/db` 및 직접 `operations.js` import 경로 무변경.
 
 #### R-40. `lib/nutrition/values/store.js` 계산 분리 (627줄)  ✅ 완료(2026-06-12)
 - **완료**: `lib/nutrition/values/calc.js` 신설 — `NUTRITION_FIELDS`·`addNutrition`·`scaleNutritionByAmount`·`ingredientAmountForSide`·`buildIngredientAdditionSumForSide`·`_isPizzaMenu`·`calcAllResults` 이동. `store.js`에서 re-export 유지 → 기존 import 경로(TabResults·NutritionGrid·label/build.js 등) 무변경. category-policy 5종 import 제거.
@@ -459,6 +456,6 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ---
 
-_최종 업데이트: 2026-06-12 — R-31 보고서 4종 빌더 lib 이동, R-40 영양 계산 calc.js 분리 완료. R-34(journal print 분리)·R-35(report options registry)·R-36(useSectionSearch)·R-38(useTableSearchSort) 구현. R-29~R-40 2차 발굴 등록. B-14 정책(a) 영속 설정만 확정 + B-7 localStorage 백업 범위 확대 구현. 잔여: B-3 legacy store 제거(DB migration), B-5/B-6(회귀위험), B-9(도메인 확인) — 외부 조건 충족 후 진행._
+_최종 업데이트: 2026-06-12 — R-31 보고서 4종 빌더 lib 이동, R-39 db/operations 책임 분리, R-40 영양 계산 calc.js 분리 완료. R-34(journal print 분리)·R-35(report options registry)·R-36(useSectionSearch)·R-38(useTableSearchSort) 구현. R-29~R-40 2차 발굴 등록. B-14 정책(a) 영속 설정만 확정 + B-7 localStorage 백업 범위 확대 구현. 잔여: B-3 legacy store 제거(DB migration), B-5/B-6(회귀위험), B-9(도메인 확인) — 외부 조건 충족 후 진행._
 _[이전] B-8·C-2·C-3 완료 표시. 문서 정합성 정정: B-1 파일 경로·B-4 모듈 혼동·C-2 전제·B-3 경로. B-2 저위험 이동._
 _[이전] SITE_IMPROVEMENT_AUDIT 통합·삭제. NEXT_TASKS(CL1~CL8) 통합, B-2/C-1/메뉴코드정책 완료 정정._
