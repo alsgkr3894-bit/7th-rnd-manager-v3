@@ -392,11 +392,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **완료**: `lib/nutrition/origin/build.js`에 `buildOriginIngredientRows`·`buildOriginMenuRows` 추가. `ingredientRows`·`menuRowsAll` useMemo 인라인 코드(~80줄) 제거. 614줄→549줄, `applyOrder`·`getMenuCodeRank`·`applyMenuName` import 제거.
 - **관련**: R-21
 
-#### R-33. `app/note/board/page.jsx` 칸반 분해 (597줄)  ⏸
-- **파일**: `app/note/board/page.jsx`
-- **문제**: 드래그 상태·optimistic update·순서 저장·CSV·`KanbanCard` UI(L446~)가 혼재.
-- **해결 방향**: `useKanbanBoard`(드래그+순서), `KanbanColumn`/`KanbanCard` 컴포넌트, `exportBoardCsv`.
-- **참고**: 순서 저장 원자성은 이미 `bulkUpdateBoardOrder`(`lib/note/store.js`)로 공유됨(B-8 완료). 이번은 페이지 UI/상태 분해.
+#### R-33. `app/note/board/page.jsx` 칸반 분해 (597줄)  ✅ 완료(2026-06-12)
+- **완료(부분)**: `components/note/KanbanCard.jsx` 신설 — `buildNoteCopyText`·`copyNoteText`·`KanbanCard`(React.memo) 이동. board/page.jsx 597줄→427줄, `React` namespace·`formatShortDate` import 제거. `useKanbanBoard` 훅화는 handleDrop이 groupedNotes에 의존(순환 복잡도)으로 보류.
 
 #### R-39. `lib/db/operations.js` 책임 분리 (516줄)  ⏸
 - **파일**: `lib/db/operations.js`
