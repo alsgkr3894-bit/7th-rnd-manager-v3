@@ -32,6 +32,14 @@ export function MenuPriceUploadCard({ onReplaced }) {
     const file = e.target.files?.[0];
     e.target.value = ''; // 같은 파일 재선택 가능하게
     if (!file) return;
+    if (file.size === 0) {
+      showToast('파일이 비어 있습니다', 'err');
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      showToast('파일 크기가 너무 큽니다 (최대 20MB)', 'err');
+      return;
+    }
     try {
       const ext = file.name.split('.').pop()?.toLowerCase();
       let parsed;

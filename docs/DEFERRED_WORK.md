@@ -249,11 +249,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ### 🟢 저위험 — UI 정보·안내 개선 (사이드이펙트 없음)
 
-#### B-2. `_isPizzaMenu` wrapper 정리  🟢 ⏸
-- **파일**: `lib/nutrition/values/store.js`(474·511·557행)
-- **현황**: CL7(`fc90148`)로 `lib/menu-master/category-policy.js` 단일 `isPizzaCategory` 도입 완료. 레거시 `lib/cost/category-policy.js`·`lib/cost/menu-categories.js` 제거됨. 남은 것은 `_isPizzaMenu(menu, masterByCode)` 로컬 wrapper(메뉴 객체→카테고리 해석 래퍼)뿐.
-- **해결 방향**: wrapper가 내부적으로 중앙 정책에 위임하는지 확인 후 직접 `isPizzaCategory` 호출로 정리.
-- **왜 보류**: 영향 작음. 우선순위 낮음.
+#### B-2. `_isPizzaMenu` wrapper 정리  ✅ 완료(2026-06-12)
+- **완료**: `lib/nutrition/values/store.js` — `isBeverageCategory`·`isSideCategory`·`isExtraToppingCategory`·`isSetCategory`·`isHalfAndHalfCategory` import 추가, `_isPizzaMenu` 내부를 해당 헬퍼 호출로 교체. 동일 deny-list 동작 유지, 중앙 정책 위임. (커밋 5e2306d)
 
 #### C-1. 영양성분·식자재 중복 진단 UI 노출  ✅ 완료(CL1·CL3)
 - **완료**: CL1(`4ff4941`) 영양 메뉴/원시값 저장 전 중복 진단 UI(`app/nutrition/menu/page.jsx`), CL3(`5df8e34`) 식자재 productCode 중복 진단/복구 UI(`app/ingredient/manage/page.jsx`). 저장 경로 조용한 덮어쓰기도 가드됨.
@@ -271,16 +268,11 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **문제**: 재분류 취소 시 규칙은 저장되나 기존 파일은 구버전 분류 유지. 사용자가 이 상태를 모를 수 있음.
 - **해결 방향**: 미매칭/설정 페이지에 "분류 재반영 미실행" 배지/경고 표시.
 
-#### C-4. Prettier 잔여 31개 파일 정리  🟢 ⏸
-- **파일**: `format:check` 경고 31개 (`lib/nutrition/values/store.js`, `scripts/clean-build.mjs`, `scripts/qa-prod.mjs` 등)
-- **문제**: 전체 정비에서 499 → 31개로 줄었으나 잔여분 미정리로 `format:check` 실패.
-- **해결 방향**: `npm run format` 일괄 실행 후 diff 검토. 단, 자동 포맷이 의미상 변경을 일으키지 않는지 확인.
-- **왜 보류**: 잔여 파일 다수가 스크립트/유틸. 기능 영향 없으나 diff 노이즈 검토 필요.
+#### C-4. Prettier 잔여 31개 파일 정리  ✅ 완료(2026-06-12)
+- **완료**: `npm run format` 일괄 적용 → `format:check` 0건. 131 suite/749 test 통과. (커밋 5e2306d)
 
-#### C-5. 피자 슬라이스 시트 satFat 레거시 참조 확인  🟢 ⏸
-- **파일**: `lib/nutrition/label/build.js`의 `buildPizzaSliceSheet`
-- **현황**: 슬라이스 시트의 `satFat → fat` 변환은 완료(현재 `build.js`에 satFat 잔존 없음 확인). 남은 `satFat` 참조는 `auto-calc.js`·`values/import.js`·`values/store.js`·`ImportBaseModal.jsx`로, 모두 **포화지방(정상 영양 필드)** 용도.
-- **해결 방향**: 추가 작업 거의 없음 — 위 참조가 라벨 출력 경로에 잘못 새어들지 않는지만 점검 후 종료.
+#### C-5. 피자 슬라이스 시트 satFat 레거시 참조 확인  ✅ 완료(2026-06-12)
+- **완료**: `build.js`에 satFat 잔존 없음 확인. 나머지 satFat 참조(`auto-calc.js`·`values/import.js`·`values/store.js`·`ImportBaseModal.jsx`)는 모두 포화지방(정상 영양 필드) 용도로 라벨 출력 경로와 무관 — 추가 조치 불필요.
 
 #### C-6. 드래그·업로드 키보드 접근성 검증  🟢 ⏸
 - **파일**: `app/note/calendar/page.jsx`, `app/note/board/page.jsx`, `components/cost/recipe/RecipeEditor.jsx`(dnd-kit), `components/ui/UploadDropzone.jsx`·`components/sales/UploadDropzone.jsx`, `app/globals.css`
@@ -288,18 +280,11 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **해결 방향**: 드래그 안내("space로 집기, 화살표로 이동, …")가 스크린리더에 전달되는지, 업로드 드롭존이 `role`/`tabIndex`/`button`으로 키보드 접근 가능한지 화면별 점검 후 누락분 보완.
 - **출처**: SITE_IMPROVEMENT_AUDIT §13.5(업로드 접근성) + 기존 안정화 §8.4.
 
-#### C-7. 테스트 보강 잔여(BOM 복원·체크리스트↔연구일지 동기화)  🟢 ⏸
-- **파일**: `__tests__/lib/` 신규 테스트
-- **현황**: Excel 시트명/중복 suffix, 알레르기 fallback, 백업 검증/범위 테스트는 이미 존재. **BOM 포함 JSON 복원** 전용 테스트와 **체크리스트 삭제→연구일지 동기화** 테스트는 부재.
-- **해결 방향**: (1) BOM(`﻿`) 선행 백업 JSON을 `readFileAsText`로 정상 복원하는 회귀, (2) 체크리스트 항목 삭제 시 연구일지 연결 데이터 정합 회귀 추가.
-- **왜 보류**: 기능은 동작 중(안정화 §1 확인). 회귀 안전망 보강 차원, 우선순위 낮음.
+#### C-7. 테스트 보강 잔여(BOM 복원·체크리스트↔연구일지 동기화)  ✅ 완료(2026-06-12)
+- **완료**: `__tests__/lib/restore-bom-sync.test.mjs` 추가 — BOM 선행 JSON stripBom+JSON.parse+validateBackupPayload, 체크리스트 타이틀/콘텐츠 생성, doneItems=[]→deleteNote 조건 회귀(5케이스). 132 suite / 759 test. (커밋 b0518b9)
 
-#### C-8. 폼 내부 `<button>` type 누락 점검  🟢 ⏸
-- **파일**: `app/**`, `components/**`(전역, `<button type=...>` 미지정 약 640곳)
-- **문제**: `type` 없는 `<button>`은 기본 `submit`이라, 폼 내부에 있으면 저장/취소/필터 버튼이 의도치 않게 form submit을 유발할 수 있음.
-- **해결 방향**: **폼(`<form>`) 내부 버튼만** 스캔해 `type="button"` 필요 대상 선별 후 적용(전역 일괄 변경 금지). 적용 후 입력 흐름 수동 QA.
-- **왜 보류**: 대상 다수·오변경 위험. 폼 중첩 위치 확인 선행 필요.
-- **출처**: SITE_IMPROVEMENT_AUDIT §13.5.
+#### C-8. 폼 내부 `<button>` type 누락 점검  ✅ 완료(2026-06-12)
+- **완료**: `<form>` 내부 버튼 스캔 → `components/settings/PinGate.jsx` 확인 버튼 1건만 해당(`type="submit"` 추가). 나머지 form 파일(login·IngredientForm·EdgeEditModal 등) 검사 완료, 추가 미처리 없음. (커밋 201b806)
 
 ---
 
