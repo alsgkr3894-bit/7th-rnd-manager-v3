@@ -193,26 +193,17 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **해결 방향**: 도메인 확인(1인피자가 씬바사삭만 맞는지) 후 allergen 행 생성 필터 통일.
 - **왜 보류**: 알레르기 출력은 법적 표기 영향. 도메인 확인 필수.
 
-#### B-10. menuCode 중복 사전 검증/안내  🟡 ⏸
-- **파일**: `lib/menu-master/store.js`(`upsertMenuMaster`, store.js:60~), `app/menu-master/page.jsx`
-- **문제**: 신규 저장 시 동일 menuCode가 있으면 `upsertMenuMaster`가 조용히 기존 레코드를 `put`(`mode:'update'` 반환)하지만, UI는 이를 구분 없이 "저장 완료"로 안내 → 사용자가 병합 사실을 모름. (영양/식자재 중복은 CL1/CL3에서 처리됐으나 menu_master 저장 UX는 별개.)
-- **해결 방향**: 반환된 `mode:'update'`를 활용해 (a) 저장 전 ConfirmDialog "기존 항목을 덮어쓸까요?" 안내, 또는 (b) 토스트 문구를 "기존 항목 갱신"으로 구분.
-- **왜 보류**: 저장 흐름 UX 변경. 방향 결정 필요.
+#### B-10. menuCode 중복 사전 검증/안내  ✅ 완료(2026-06-12)
+- **완료**: `app/menu-master/page.jsx` `handleSaveRow`에서 `upsertMenuMaster` 반환 `mode:'update'`를 확인 — `data.id`없이 update이면 `showToast('기존 항목(code) 갱신됨 — 새 항목으로 추가되지 않았습니다', 'warn')`.
 
-#### B-11. 인쇄 CSS `.chip` 숨김 범위 조정  🟡 ⏸
-- **파일**: `app/globals.css:8408`
-- **문제**: `@media print { .chip { display:none !important } }` 전역 → 표 안 카테고리/태그 데이터 칩, nutrition 뷰 토글 칩까지 인쇄에서 사라짐.
-- **해결 방향**: `.filter-bar .chip` 또는 필터 칩에만 `.no-print` 부여. 모든 인쇄 경로 시각 검증 필요.
-- **왜 보류**: 전역 CSS 수정 → 모든 인쇄 경로 교차 영향. 시각 검증 필요.
+#### B-11. 인쇄 CSS `.chip` 숨김 범위 조정  ✅ 완료(2026-06-12)
+- **완료**: `app/globals.css` `@media print` — 전역 `.chip{display:none}` → `.filter-chips .chip, .filter-chip-row .chip, button.chip`으로 범위 축소. 표 내 데이터 칩·nutrition 토글 칩 인쇄 시 보존.
 
 #### B-12. 연구일지 PDF 긴 내용 페이지 분할  ✅ 완료(2026-06-12)
 - **완료**: `.note-card` `overflow:hidden`→`overflow:visible`, `page-break-inside:avoid`→`break-inside:avoid`(현대 속성). `.note-header`에 `break-after:avoid` 추가(헤더-내용 분리 방지). 시각 검증 필요 시 실 인쇄로 확인 권장.
 
-#### B-13. build:clean 가드 범위 확대(프로세스 감지)  🟡 ⏸
-- **파일**: `scripts/clean-build.mjs`
-- **문제**: `isPortBusy`가 포트 3000만 점검. 다른 포트(3001 등)로 띄운 dev는 감지 못 함.
-- **해결 방향**: 현재 프로젝트의 `next dev` 프로세스 감지 추가(`ps`로 cwd·명령행 매칭).
-- **왜 보류**: OS별(win32) 처리 차이·오탐 가능. 오탐 시 빌드 차단. 우선순위 낮음(포트 3000은 이미 커버).
+#### B-13. build:clean 가드 범위 확대(프로세스 감지)  ✅ 완료(2026-06-12)
+- **완료**: `scripts/clean-build.mjs`에 `hasNextDevProcess()` 추가(`ps -eo pid,command`로 `next dev`/`next-server` 감지, win32 제외). 포트 3000·3001 동시 점검(`Promise.all`). 오류 메시지에 트리거 출처(포트/프로세스) 표시.
 
 #### B-14. 백업/복원 localStorage 키 정책 결정  🟡 ⏸  _(B-7 선행 조건)_
 - **내용**: B-7(localStorage 백업 범위)을 구현하려면 먼저 **어떤 화면 설정까지 백업에 포함할지 기준**을 정해야 함.
@@ -222,12 +213,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
   - (c) 모듈 연동: 백업 모듈 선택에 맞춰 해당 모듈 키만
 - **왜 보류**: 정책 확정 전 B-7 진행 금지.
 
-#### B-16. 메뉴 판매가 업로드 파일 가드 일관화  🟡 ⏸
-- **파일**: `components/cost/menu-price/MenuPriceUploadCard.jsx`, `lib/excel.js`
-- **문제**: 공통 `UploadDropzone`은 `maxSizeMB` 크기 검사(`file.size > maxSize`)·빈 파일·확장자 차단을 수행하지만, 메뉴 판매가 업로드는 **직접 `<input>` + FileReader**로 처리해 `accept` 확장자 필터만 있고 크기/빈 파일 가드가 없음. 판매가는 기존 데이터를 일괄 교체하는 흐름이라 잘못된 파일 영향이 큼.
-- **해결 방향**: 공통 드롭존 사용으로 통일하거나, 동일한 크기·빈 파일·헤더 누락 가드를 추가. fixture로 저장 전 차단 회귀 테스트.
-- **왜 보류**: 일괄 교체 흐름 변경이라 회귀 검증 필요.
-- **출처**: SITE_IMPROVEMENT_AUDIT §13.5.
+#### B-16. 메뉴 판매가 업로드 파일 가드 일관화  ✅ 완료(2026-06-12)
+- **완료**: `components/cost/menu-price/MenuPriceUploadCard.jsx` `handleFile`에 빈 파일(`file.size===0`)·20MB 초과 가드 추가. 확장자는 `accept` 속성으로 이미 필터링됨.
 
 ---
 
@@ -285,6 +272,6 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ---
 
-_최종 업데이트: 2026-06-12 — B-1·B-8·B-12·B-15·C-2·C-3·C-6 구현 완료. B-1: deleteMenuMaster cascade. B-15: undo 영양값 복구. B-12: PDF overflow 수정. C-3: 재분류 미반영 배너. C-6: UploadDropzone 키보드 접근성._
+_최종 업데이트: 2026-06-12 — B-10·B-11·B-13·B-16 구현완료 반영(이전 세션 누락분). 모든 구현 가능 항목 완료. 잔여: B-3 legacy store 제거(DB migration), B-5/B-6(회귀위험), B-7/B-14(정책 결정), B-9(도메인 확인) — 외부 조건 충족 후 진행._
 _[이전] B-8·C-2·C-3 완료 표시. 문서 정합성 정정: B-1 파일 경로·B-4 모듈 혼동·C-2 전제·B-3 경로. B-2 저위험 이동._
 _[이전] SITE_IMPROVEMENT_AUDIT 통합·삭제. NEXT_TASKS(CL1~CL8) 통합, B-2/C-1/메뉴코드정책 완료 정정._
