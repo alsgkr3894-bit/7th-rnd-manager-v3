@@ -323,13 +323,21 @@ export default function Page() {
     async row => {
       try {
         if (row.isManual && row.id && !row.productCode) {
-          // deleteIngredient가 삭제된 원본 cost_ingredients 레코드를 반환 → 그걸로 복원
+          // deleteIngredient가 { ingredient, nutritionSnapshot } 반환 → 모두 복원
           const backup = await deleteIngredient(row.id);
           setRows(prev => prev.filter(r => !(r.isManual && r.id === row.id)));
           showToast(`"${row.ingredientName || row.displayName || '식자재'}" 삭제됨`, 'ok', 5000, {
             label: '실행취소',
             onClick: async () => {
-              if (backup) await restoreRecord('cost_ingredients', backup).catch(() => {});
+              if (backup?.ingredient) {
+                await restoreRecord('cost_ingredients', backup.ingredient).catch(() => {});
+                if (backup.nutritionSnapshot) {
+                  await restoreRecord(
+                    'nutrition_ingredient_values',
+                    backup.nutritionSnapshot
+                  ).catch(() => {});
+                }
+              }
               await load();
             },
           });
@@ -394,7 +402,12 @@ export default function Page() {
         label: '실행취소',
         onClick: async () => {
           for (const rec of removed) {
-            await restoreRecord('cost_ingredients', rec).catch(() => {});
+            await restoreRecord('cost_ingredients', rec.ingredient).catch(() => {});
+            if (rec.nutritionSnapshot) {
+              await restoreRecord('nutrition_ingredient_values', rec.nutritionSnapshot).catch(
+                () => {}
+              );
+            }
           }
           await load();
         },

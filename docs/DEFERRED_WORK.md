@@ -150,12 +150,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **관련 메모리**: [[db-write-footguns]]
 
 
-#### B-15. 식자재 삭제 실행취소(undo) cascade 복구 불완전  🔴 ⏸
-- **파일**: `lib/ingredient/store.js`(`deleteIngredient` store.js:463), `app/ingredient/manage/page.jsx`(undo: 326~332·394~397행)
-- **문제**: `deleteIngredient`는 `cost_ingredients` 삭제 시 영양값(`deleteIngredientValueByCode`)·알레르기 링크(`deleteAllergenLinksByIngredient`)까지 cascade 삭제하지만, **반환·복원은 `cost_ingredients` 원본 레코드 1건뿐**. undo(`restoreRecord('cost_ingredients', backup)`)는 식자재 본문만 되살리고 **cascade 삭제된 영양값·알레르기 링크는 복구하지 못함** → 사용자는 "실행취소"로 완전 복구됐다고 오인, 조용한 데이터 손실.
-- **해결 방향**: 삭제 시 cascade 대상(영양값·알레르기 링크) 스냅샷도 함께 반환 → undo에서 3개 store를 모두 복원. 또는 cascade를 soft-delete(tombstone)로 전환해 undo 일괄 복구.
-- **왜 보류**: 다중 store 복원 트랜잭션 조율 필요. [[db-write-footguns]](삭제 Undo는 반환 레코드로 복원) 원칙과 충돌 → 반환 구조 확장 설계 필요.
-- **출처**: SITE_IMPROVEMENT_AUDIT §13.5·§13.6 최우선 확인 항목.
+#### B-15. 식자재 삭제 실행취소(undo) cascade 복구 불완전  ✅ 완료(2026-06-12)
+- **완료**: `lib/nutrition/values/store.js`에 `getIngredientValueByCode` 추가. `deleteIngredient`가 cascade 삭제 전 영양값 스냅샷 후 `{ ingredient, nutritionSnapshot }` 반환. `handleExclude`·`handleBatchDelete` undo에서 `restoreRecord('nutrition_ingredient_values', nutritionSnapshot)` 추가. 알레르기 링크(`nutrition_allergy_links`)는 CL2 이후 빈 legacy store라 실질 손실 없음.
 
 ---
 
