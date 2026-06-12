@@ -34,6 +34,29 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - A-D2: 데이터 삭제 confirm 문구 통일 ("되돌릴 수 없습니다." 포함)
 - 항목5(조사): 파생메뉴 탭 그룹 — 이미 부모 카테고리 상속으로 정상 동작
 
+### 안정화 라운드 (구 STABILIZATION_STATUS) — ✅ 2026-06-12
+핵심 수정: 공유 스토어 main DB 라우팅, `replaceStore` clear+put 단일 트랜잭션(500건+ 복원), 영양 복원 localStorage gate, 파생메뉴 영양·알레르기 집계 반영, 베이스 메뉴 삭제 confirm, `build:clean` 포트 가드, smoke-qa networkidle 안정화, CSV/Excel 안전성(시트명 31자·금지문자), 사진 `contain`, BOM 제거, 조지방(fat) 라벨 전환, 추가토핑 알레르기 name fallback, favicon 200.
+검증: `lint` 통과 · `test:ci` 131 suite/749 test · `qa:smoke` 22/22 · `qa:runtime` 60/60.
+
+### 정합성 감사 CL1~CL8 (구 NEXT_TASKS) — ✅ 2026-06-11
+모듈 연결 기준값(menuCode·productCode·category·compositeOf) 정합성 감사 8건 모두 코드 반영·검증 완료.
+- **CL1** 영양 메뉴/원시값 중복 방지(menuCode·menuCode+crustType upsert 가드 + 저장 전 진단 UI) — `4ff4941`
+- **CL2** 알레르기 링크를 식자재(`ingredientId`/`productCode`) 기준으로 정렬, 잘못된 메뉴 cascade 제거 — `d5a0b9f`
+- **CL3** 식자재 `productCode` 중복 가드 + 진단/복구 UI(`ingredient/manage`) — `5df8e34`
+- **CL4** 합산 식자재 가격 `resolveCompositePrice()` 공통화(엄격·부분 모드) — `3f7b509`
+- **CL5** 원가 detail(personal/side/set)에 `menuCode` 인덱스 + 마이그레이션 — `fc7063a`
+- **CL6** `normalizeMenuCodeForModule()` + `MenuCodePicker mode`로 base/full 정책 명시(`lib/menu-master/code-policy.js`) — `bdd3cd7`
+- **CL7** 카테고리 판정 `lib/menu-master/category-policy.js`로 공통화(`isPizzaCategory` 등, 원가·영양·판매 전역 import) — `fc90148`
+- **CL8** 제때 가격 row `productCode` 중복 dedupe + 진단 — `9c8014e`
+검증: 125 suite/723 test, `lint`·`build`·`qa:smoke`(22 route, 콘솔 오류 0) 통과.
+잔여: 알레르기 `nutrition_allergy_links` legacy store 제거(→ B-3), `_isPizzaMenu` wrapper 정리(→ B-2 소규모), 판매량 업로드 중복 진단 UI(→ C-2).
+
+### 원가 관리 탭 인라인 수정·삭제·정렬 (구 NEXT_TASKS 후반) — ✅ 구현됨
+원가 관리 탭(B~H)의 인라인 수정·체크박스 삭제·컬럼 정렬 기능 구현 확인.
+- `components/cost/manage/table-utils.js` — `sortRows()` + `useCostManageTable()`(정렬·페이지네이션 훅)
+- `MenuPriceRow.jsx`(menuCode/category/menuName/price inlineSave + 선택 체크박스), `MasterRow.jsx`, `CostDetailView.jsx`, `EdgeEditModal.jsx` 등
+- toast 안내·인라인 확인 UI 정책(`alert/confirm` 금지) 반영.
+
 ---
 
 ## A. 완료된 정비 (QA/버그 정비 — 구 BUG_FIX_PLAN)
@@ -80,40 +103,75 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ---
 
+## A3. 안정화 우선순위 작업 검증 (구 STABILIZATION_STATUS §8)
+
+> STABILIZATION_STATUS 8장(데이터 손상 방지·정합성·UX·품질 게이트) 항목을 실제 코드와 대조.
+> 대부분 QA 라운드 3/4에서 처리 완료. 미처리분만 아래 B/C 플랜으로 이관.
+
+| 우선순위 항목 | 상태 | 근거 / 이관처 |
+|---------------|------|---------------|
+| 백업 export 실패 처리(manifest) | ✅ 완료 | QA R3 A1 + `backup-validation.test.mjs` |
+| 대용량 복원 보완(트랜잭션) | ✅ 완료 | `replaceStore` 단일 트랜잭션 + `backup-restore-impact`·`backup-scope-coverage` 테스트 |
+| 부분 복원 범위 안내 | ✅ 완료 | QA R3 A4 |
+| 보고서 자동 삭제 제거 | ✅ 완료 | QA R3 A2(수동 정리 버튼) |
+| 메뉴판매량 자동 재분류 분리 | ✅ 완료 | QA R3 A3(confirm 게이트). 신규대상 한계는 → **B-4** |
+| 메뉴마스터 삭제 동기화(판매가 mirror) | ⏸ 보류 | → **B-1**(cost_selling_prices 포함하도록 보강) |
+| 합산 식자재 가격 정책 통일 | ✅ 완료 | `lib/cost/composite-price.js` 공통 util 존재 |
+| 원가 detail menuCode 인덱스 통일 | ✅ 완료 | `lib/db/schema/cost.js` — pizza/personal/side/set 전부 `menuCode` 인덱스 |
+| 메뉴코드 base/full 정책 명시·util화 | ✅ 완료 | CL6 `normalizeMenuCodeForModule`(`lib/menu-master/code-policy.js`) |
+| 영양/식자재 중복 차단·진단 | ✅ 완료 | CL1·CL3 저장 가드 + 진단 UI(`nutrition/menu`·`ingredient/manage`). 판매량 업로드 진단만 → **C-2** |
+| 알레르기 링크 기준 정리 | 🟡 부분 | CL2 식자재 기준 정렬 완료. legacy store 제거만 → **B-3** |
+| 피자 카테고리 판정 공통화 | ✅ 완료 | CL7 `lib/menu-master/category-policy.js`(전역 import). `_isPizzaMenu` wrapper만 → **B-2** |
+| 삭제 확인 UX 통일(영양·샘플·노트) | ✅ 완료 | 안정화 §1 + QA R4 A-D2 |
+| 원가 테이블 선택 상태 prune | ✅ 완료 | QA R3 B1(edgeSearch) |
+| 로드 실패/빈 상태 구분 | ✅ 완료 | QA R3 B2(useDBLoad error UI). 전면 확산은 → **B-5** |
+| CSV 필터 기준·정렬 라벨·페이지 리셋·모달 ARIA | ✅ 완료 | QA R3 C1·C2·C3·C4 |
+| `format:check` 산출물 제외 | ✅ 완료 | `.prettierignore`에 `.next.stale-*` 존재. 코드 잔여는 → **C-4** |
+| `qa:prod` 포트 충돌 방지 | ✅ 완료 | QA R3 C5 |
+| 드래그 정렬 접근성 안내 확인 | ⏸ 보류 | → **C-6**(신규) |
+| 테스트 보강(BOM 복원·체크리스트↔연구일지) | ⏸ 보류 | → **C-7**(신규). Excel 시트명·알레르기 fallback 테스트는 존재 |
+
+**최종 build / 수동 시나리오**(안정화 §4·§6)는 코드 보류 항목이 아닌 **운영 체크리스트**(릴리스 시 매번 수동 확인)로, `docs/RELEASE_CHECKLIST.md`·`docs/QA_CHECKLIST.md` 소관.
+
+---
+
 ## B. 보류 작업 플랜 (위험도 순)
 
 > 진행 시 위에서 아래로(고위험 먼저 충분히 검토, 저위험은 언제든 착수 가능).
+> **항목 번호는 등록순 ID이며, 배치는 위험도순입니다** (B-15·B-16 등 번호가 섞이는 것은 이 이유).
 
 ### 🔴 고위험 — 다중 store / 집계 결과 변경
 
 #### B-1. 메뉴마스터 삭제 cascade  🔴 ⏸
-- **파일**: `lib/cost/menu-master.js`, `lib/nutrition/`, `lib/sales/`
-- **문제**: `deleteMenuMaster`는 `menu_master` store만 삭제. 원가(`cost_recipes`)·영양(`nutrition_menu_ref`)·판매량(`sales_rows`)에 orphan 레코드 잔존. 현재는 삭제 다이얼로그 경고 표시만.
-- **해결 방향**: 삭제 전 관련 store orphan 목록 미리보기 → ConfirmDialog → 동적 import로 각 모듈 cascade 삭제.
+- **파일**: `lib/menu-master/store.js`(`deleteMenuMaster`; `lib/menu-master/index.js`로 re-export), `lib/nutrition/`, `lib/sales/`, `cost_selling_prices`(판매가 mirror)
+- **문제**: `deleteMenuMaster`는 `menu_master` store만 삭제. 원가(`cost_recipes`)·영양(`nutrition_menu_ref`)·판매량(`sales_rows`)·**판매가 mirror(`cost_selling_prices`)**에 orphan 레코드 잔존. 판매가 mirror가 남으면 삭제한 메뉴가 다시 생성될 수 있음. 현재는 삭제 다이얼로그 경고 표시만.
+- **해결 방향**: 삭제 전 관련 store orphan 목록 미리보기 → ConfirmDialog → 동적 import로 각 모듈 cascade 삭제(판매가 mirror 정리 또는 tombstone 정책 포함).
 - **왜 보류**: 여러 store 동기 삭제는 트랜잭션 범위 조율 필요. 잘못 구현 시 정상 데이터 소실 위험.
 - **관련 메모리**: [[db-write-footguns]]
 
-#### B-2. 피자 카테고리 판정 통합  🔴 ⏸
-- **파일**: `lib/cost/category-policy.js`, `lib/cost/crust-config.js`, `lib/cost/menu-categories.js`(레거시), `lib/cost/values/store.js`의 `_isPizzaMenu`
-- **문제**: `isPizzaCategory` 판정 로직이 4곳에 분산. 1인피자 포함 여부 옵션도 갈림. 단일화하면 집계 결과(원가·판매량)가 달라질 수 있음.
-- **해결 방향**: `category-policy.js` 기준 단일 `isPizzaCategory(cat, opts)`로 통합 → 나머지 3곳은 import로 교체.
-- **왜 보류**: 집계 결과 변경 위험. 브랜드별 카테고리 정책 차이 확인 필요.
+
+#### B-15. 식자재 삭제 실행취소(undo) cascade 복구 불완전  🔴 ⏸
+- **파일**: `lib/ingredient/store.js`(`deleteIngredient` store.js:463), `app/ingredient/manage/page.jsx`(undo: 326~332·394~397행)
+- **문제**: `deleteIngredient`는 `cost_ingredients` 삭제 시 영양값(`deleteIngredientValueByCode`)·알레르기 링크(`deleteAllergenLinksByIngredient`)까지 cascade 삭제하지만, **반환·복원은 `cost_ingredients` 원본 레코드 1건뿐**. undo(`restoreRecord('cost_ingredients', backup)`)는 식자재 본문만 되살리고 **cascade 삭제된 영양값·알레르기 링크는 복구하지 못함** → 사용자는 "실행취소"로 완전 복구됐다고 오인, 조용한 데이터 손실.
+- **해결 방향**: 삭제 시 cascade 대상(영양값·알레르기 링크) 스냅샷도 함께 반환 → undo에서 3개 store를 모두 복원. 또는 cascade를 soft-delete(tombstone)로 전환해 undo 일괄 복구.
+- **왜 보류**: 다중 store 복원 트랜잭션 조율 필요. [[db-write-footguns]](삭제 Undo는 반환 레코드로 복원) 원칙과 충돌 → 반환 구조 확장 설계 필요.
+- **출처**: SITE_IMPROVEMENT_AUDIT §13.5·§13.6 최우선 확인 항목.
 
 ---
 
 ### 🟡 중위험 — 단일 모듈 구조 변경 / 테스트 필요
 
 #### B-3. 알레르기 링크 테이블(legacy) 정리  🟡 ⏸
-- **파일**: `lib/db/init.js` store 목록, `lib/nutrition/allergen/`
+- **파일**: `lib/db/constants.js`·`lib/db/module-stores.js`·`lib/db/schema/nutrition.js`(store 정의 6곳), `lib/nutrition/allergen/`
 - **문제**: `nutrition_allergy_links` store가 legacy로 잔존. `saveIngredientAllergens`는 **호출처 없음**. 실제 알레르기 입력·집계는 `cost_ingredients.allergens` 기준으로 일관 동작. 대시보드 통계 1곳에서 best-effort 읽기 + 식자재 삭제 cascade만 사용.
 - **해결 방향**: `nutrition_allergy_links`를 read 경로에서 완전 제거하고 `cost_ingredients.allergens`로 일원화. `saveIngredientAllergens` 및 관련 코드 제거.
-- **현재 상태**: 활성 손상 없음. 주석/문서 정정 완료. 테이블은 보존.
-- **왜 보류**: 통계 집계 코드 수정 범위 파악 필요. 브랜드별 알레르기 데이터 구조 확인 후 진행.
+- **현재 상태**: CL2(`d5a0b9f`)로 **링크 기준을 식자재(`ingredientId`/`productCode`)로 정렬, 잘못된 메뉴 cascade 삭제 제거 완료**. `migrate-to-ingredient.js` 마이그레이션 존재. 활성 손상 없음. **남은 작업은 legacy store 자체 제거뿐**(constants·module-stores·schema/index·schema/nutrition·allergen/store·migrate-to-ingredient 6곳 참조).
+- **왜 보류**: 스키마에서 store 제거는 마이그레이션·브랜드별 데이터 확인 필요. 기능 영향 없어 우선순위 낮음.
 
-#### B-4. filterTargetRows 신규 대상 재분류 한계  🟡 ⏸
-- **파일**: `lib/sales/resolve.js`, `lib/sales/use-unmatched-issues.js`
-- **문제**: `filterTargetRows`는 기존 업로드 행의 재분류는 지원하지만, 규칙 추가 후 **신규 대상(이전엔 미분류)**이었던 행은 재업로드해야만 반영됨.
-- **해결 방향**: `reclassifyAllFiles` 실행 시 미분류 행도 재시도하도록 로직 확장. 또는 "전체 재처리" 옵션 추가.
+#### B-4. reclassifyAllFiles 신규 미분류 대상 한계  🟡 ⏸
+- **파일**: `lib/sales/reclassify.js`(`reclassifyAllFiles`, :39)
+- **문제**: `reclassifyAllFiles`는 기존 업로드 행을 새 규칙으로 재분류하지만, **규칙 추가 후 신규로 매칭 가능해진 행(이전엔 미분류)**은 재업로드하지 않으면 반영되지 않음. 출고량의 `filterTargetRows`도 동일 한계를 공유하나 별도 모듈(`lib/shipment/`)에 존재.
+- **해결 방향**: `reclassifyAllFiles` 실행 시 미분류 행도 재시도하도록 로직 확장. 또는 "전체 재처리" UI 옵션 추가.
 - **관련 메모리**: [[classification-staleness]]
 
 #### B-5. useDBLoad 전면 확산  🟡 ⏸
@@ -149,10 +207,10 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **왜 보류**: 알레르기 출력은 법적 표기 영향. 도메인 확인 필수.
 
 #### B-10. menuCode 중복 사전 검증/안내  🟡 ⏸
-- **파일**: `lib/cost/menu-master/store.js`(upsertMenuMaster), `app/menu-master/page.jsx:538`
-- **문제**: 중복 menuCode 시 조용히 기존 레코드 update, UI는 항상 "저장 완료". 병합 사실을 사용자가 모름.
-- **해결 방향**: (a) ConfirmDialog "기존 항목을 덮어쓸까요?" 안내 후 진행, 또는 (b) 거부·에러.
-- **왜 보류**: 동작 변경. 방향 결정 필요.
+- **파일**: `lib/menu-master/store.js`(`upsertMenuMaster`, store.js:60~), `app/menu-master/page.jsx`
+- **문제**: 신규 저장 시 동일 menuCode가 있으면 `upsertMenuMaster`가 조용히 기존 레코드를 `put`(`mode:'update'` 반환)하지만, UI는 이를 구분 없이 "저장 완료"로 안내 → 사용자가 병합 사실을 모름. (영양/식자재 중복은 CL1/CL3에서 처리됐으나 menu_master 저장 UX는 별개.)
+- **해결 방향**: 반환된 `mode:'update'`를 활용해 (a) 저장 전 ConfirmDialog "기존 항목을 덮어쓸까요?" 안내, 또는 (b) 토스트 문구를 "기존 항목 갱신"으로 구분.
+- **왜 보류**: 저장 흐름 UX 변경. 방향 결정 필요.
 
 #### B-11. 인쇄 CSS `.chip` 숨김 범위 조정  🟡 ⏸
 - **파일**: `app/globals.css:8408`
@@ -180,20 +238,33 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
   - (c) 모듈 연동: 백업 모듈 선택에 맞춰 해당 모듈 키만
 - **왜 보류**: 정책 확정 전 B-7 진행 금지.
 
+#### B-16. 메뉴 판매가 업로드 파일 가드 일관화  🟡 ⏸
+- **파일**: `components/cost/menu-price/MenuPriceUploadCard.jsx`, `lib/excel.js`
+- **문제**: 공통 `UploadDropzone`은 `maxSizeMB` 크기 검사(`file.size > maxSize`)·빈 파일·확장자 차단을 수행하지만, 메뉴 판매가 업로드는 **직접 `<input>` + FileReader**로 처리해 `accept` 확장자 필터만 있고 크기/빈 파일 가드가 없음. 판매가는 기존 데이터를 일괄 교체하는 흐름이라 잘못된 파일 영향이 큼.
+- **해결 방향**: 공통 드롭존 사용으로 통일하거나, 동일한 크기·빈 파일·헤더 누락 가드를 추가. fixture로 저장 전 차단 회귀 테스트.
+- **왜 보류**: 일괄 교체 흐름 변경이라 회귀 검증 필요.
+- **출처**: SITE_IMPROVEMENT_AUDIT §13.5.
+
 ---
 
 ### 🟢 저위험 — UI 정보·안내 개선 (사이드이펙트 없음)
 
-#### C-1. 영양성분·식자재 중복 진단 UI 노출  🟢 ⏸
-- **파일**: `lib/nutrition/diagnostics.js`, `lib/cost/diagnostics.js`(유틸 보유)
-- **문제**: `repairNutritionDuplicates`, `buildIngredientDiagnostics` 진단·복구 유틸이 있지만 UI에서 실행 불가. 중복 감지 시 사용자가 직접 해결 불가.
-- **해결 방향**: 설정 > 데이터 관리 화면에 "중복 진단" 버튼 → 결과 미리보기 → 수동 정리.
-- **왜 보류**: UI 설계 필요. 우선순위 낮음(발생 빈도 낮음).
+#### B-2. `_isPizzaMenu` wrapper 정리  🟢 ⏸
+- **파일**: `lib/nutrition/values/store.js`(474·511·557행)
+- **현황**: CL7(`fc90148`)로 `lib/menu-master/category-policy.js` 단일 `isPizzaCategory` 도입 완료. 레거시 `lib/cost/category-policy.js`·`lib/cost/menu-categories.js` 제거됨. 남은 것은 `_isPizzaMenu(menu, masterByCode)` 로컬 wrapper(메뉴 객체→카테고리 해석 래퍼)뿐.
+- **해결 방향**: wrapper가 내부적으로 중앙 정책에 위임하는지 확인 후 직접 `isPizzaCategory` 호출로 정리.
+- **왜 보류**: 영향 작음. 우선순위 낮음.
 
-#### C-2. 업로드 중복 파일 진단 UI  🟢 ⏸
-- **파일**: `lib/sales/dedupe.js`, `lib/sales/diagnostics.js`
-- **문제**: 같은 날짜 파일 재업로드 시 `dedupeUploadRows` 처리는 되나 사용자가 중복 상태를 확인 불가.
-- **해결 방향**: 판매량 업로드 페이지에 중복 파일 배지 또는 경고 표시.
+#### C-1. 영양성분·식자재 중복 진단 UI 노출  ✅ 완료(CL1·CL3)
+- **완료**: CL1(`4ff4941`) 영양 메뉴/원시값 저장 전 중복 진단 UI(`app/nutrition/menu/page.jsx`), CL3(`5df8e34`) 식자재 productCode 중복 진단/복구 UI(`app/ingredient/manage/page.jsx`). 저장 경로 조용한 덮어쓰기도 가드됨.
+- **참고**: 백업 화면(`settings/backup`)에도 진단 표기 존재.
+
+#### C-2. 판매량 업로드 행/파일 단위 중복 시각화  🟢 ⏸
+- **파일**: `lib/sales/use-sales-upload.js`(:112 월 중복 사전 차단), `lib/sales/store-files.js`(:17 year_month 복합 인덱스), `app/menu-sales/upload/`
+- **현황**: **월 단위 중복은 이미 감지·차단·사용자 메시지 노출**(use-sales-upload.js:112 "…이미 업로드되어 있습니다. 기존 데이터를 삭제한 뒤 다시 시도"). 차단이 아닌 `dedupeUploadRows`·`dedupe.js`는 존재하지 않음.
+- **잔여 범위**: 파일 업로드 목록 화면에서 **행 단위 중복·파일명 배지** 시각화만 미구현.
+- **해결 방향**: 업로드 완료 후 중복 행 수·파일명을 요약 배지로 표시하는 UI 추가.
+- **참고**: 제때 **가격** 업로드 중복 진단은 CL8(`9c8014e`)에서 완료. 여기서는 **판매량(sales)** 행 시각화만 남음.
 
 #### C-3. 판매 분류 미반영 구간 안내  🟢 ⏸
 - **파일**: `app/menu-sales/unmatched/page.jsx`, `components/sales/UnmatchedTable.jsx`
@@ -211,6 +282,48 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **현황**: 슬라이스 시트의 `satFat → fat` 변환은 완료(현재 `build.js`에 satFat 잔존 없음 확인). 남은 `satFat` 참조는 `auto-calc.js`·`values/import.js`·`values/store.js`·`ImportBaseModal.jsx`로, 모두 **포화지방(정상 영양 필드)** 용도.
 - **해결 방향**: 추가 작업 거의 없음 — 위 참조가 라벨 출력 경로에 잘못 새어들지 않는지만 점검 후 종료.
 
+#### C-6. 드래그·업로드 키보드 접근성 검증  🟢 ⏸
+- **파일**: `app/note/calendar/page.jsx`, `app/note/board/page.jsx`, `components/cost/recipe/RecipeEditor.jsx`(dnd-kit), `components/ui/UploadDropzone.jsx`·`components/sales/UploadDropzone.jsx`, `app/globals.css`
+- **현황**: 일부 화면에 키보드 드래그 안내 문구 존재. (1) 모든 드래그 항목에 일관 적용·언어 정책 일치 여부, (2) 공통 드롭존이 클릭 `div`+숨김 input 구조라 **키보드만으로 파일 선택 가능한지** 미확인.
+- **해결 방향**: 드래그 안내("space로 집기, 화살표로 이동, …")가 스크린리더에 전달되는지, 업로드 드롭존이 `role`/`tabIndex`/`button`으로 키보드 접근 가능한지 화면별 점검 후 누락분 보완.
+- **출처**: SITE_IMPROVEMENT_AUDIT §13.5(업로드 접근성) + 기존 안정화 §8.4.
+
+#### C-7. 테스트 보강 잔여(BOM 복원·체크리스트↔연구일지 동기화)  🟢 ⏸
+- **파일**: `__tests__/lib/` 신규 테스트
+- **현황**: Excel 시트명/중복 suffix, 알레르기 fallback, 백업 검증/범위 테스트는 이미 존재. **BOM 포함 JSON 복원** 전용 테스트와 **체크리스트 삭제→연구일지 동기화** 테스트는 부재.
+- **해결 방향**: (1) BOM(`﻿`) 선행 백업 JSON을 `readFileAsText`로 정상 복원하는 회귀, (2) 체크리스트 항목 삭제 시 연구일지 연결 데이터 정합 회귀 추가.
+- **왜 보류**: 기능은 동작 중(안정화 §1 확인). 회귀 안전망 보강 차원, 우선순위 낮음.
+
+#### C-8. 폼 내부 `<button>` type 누락 점검  🟢 ⏸
+- **파일**: `app/**`, `components/**`(전역, `<button type=...>` 미지정 약 640곳)
+- **문제**: `type` 없는 `<button>`은 기본 `submit`이라, 폼 내부에 있으면 저장/취소/필터 버튼이 의도치 않게 form submit을 유발할 수 있음.
+- **해결 방향**: **폼(`<form>`) 내부 버튼만** 스캔해 `type="button"` 필요 대상 선별 후 적용(전역 일괄 변경 금지). 적용 후 입력 흐름 수동 QA.
+- **왜 보류**: 대상 다수·오변경 위험. 폼 중첩 위치 확인 선행 필요.
+- **출처**: SITE_IMPROVEMENT_AUDIT §13.5.
+
 ---
 
-_최종 업데이트: 2026-06-12 — 완료 이력(라운드 2·3·4) 추가, QA R4 신규 보류 8건(B-7~B-14) 등록_
+## D. 운영·실데이터 QA 영역 (구 SITE_IMPROVEMENT_AUDIT — 코드 보류 아님)
+
+> SITE_IMPROVEMENT_AUDIT(574줄)는 **production 코드를 바꾸지 않는 QA·검증 가이드**(문서 §7 명시)였음.
+> 42개 카테고리·성능·실데이터 체크리스트 대부분은 **실제 업무 파일·기준 원가표·담당자 승인**이 필요한 **수동 QA**로, 코드 보류가 아니라 `docs/RELEASE_CHECKLIST.md`·`docs/QA_CHECKLIST.md` 운영 소관.
+
+**§13에서 검토한 작업트리 변경분 = 이미 구현 완료** (실데이터 QA만 운영 대기):
+- 영양 파생메뉴 `ingredientCodes/ingredientAmounts` 기반 계산(`lib/nutrition/values/store.js`)
+- 추가토핑 마스터(식자재코드 연결 + 알레르기 출력 반영, `TabToppings.jsx`)
+- 식자재 사진 3종(packaging/detail/actual, `lib/ingredient/photos.js`, legacy fallback 포함)
+- 레시피 식자재 드래그 정렬(dnd-kit, `RecipeEditor.jsx`)
+- 영양 메뉴에 `추가토핑` 탭 추가, `씬바사삭R` 행 제외
+- 검증 기록: `npm test` 129 suite/739 test · `lint`·`build`(56 static page) 통과(2026-06-11 기준).
+
+**코드로 추출해 B/C 플랜에 등록한 구체 항목**(나머지는 운영 QA):
+- 🔴 **B-15** 식자재 삭제 undo cascade 복구 불완전(데이터 손실) — §13.6 최우선
+- 🟡 **B-16** 메뉴 판매가 업로드 파일 가드 일관화 — §13.5
+- 🟢 **C-6**(확장) 업로드 키보드 접근성, **C-8** 폼 button type — §13.5
+
+**운영 QA로만 분류(코드 보류 아님)**: 원가/판매가/원가율 기준표 대조, 엑셀 입출력 Excel 앱 확인, 코드 매칭 원장 대조, 대용량(500MB) 복원 freeze·진행률, usage-counts `menuName` dedupe 규격 누락, 다운로드 파일명/출력 컬럼 정책, 인증·설정 PIN 보안경계 문서화, 성능(1천/1만 행) 측정. → 실데이터·담당자 승인 확보 후 `QA_CHECKLIST`/`RELEASE_CHECKLIST`에서 수행.
+
+---
+
+_최종 업데이트: 2026-06-12 — 문서 정합성 정정: B-1 파일 경로(`lib/cost/menu-master.js`→`lib/menu-master/store.js`), B-4 모듈 혼동(`filterTargetRows`→`reclassifyAllFiles`+`lib/sales/reclassify.js`), C-2 전제 갱신(월 중복 이미 차단·존재하지 않는 파일 제거), B-3 store 경로 보정. B-2 잔여를 🟢 저위험으로 이동. 번호=등록순 ID 안내 추가._
+_[이전] SITE_IMPROVEMENT_AUDIT 통합·삭제. NEXT_TASKS(CL1~CL8) 통합, B-2/C-1/메뉴코드정책 완료 정정._

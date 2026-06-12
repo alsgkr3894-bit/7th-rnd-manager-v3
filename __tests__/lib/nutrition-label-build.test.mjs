@@ -31,14 +31,14 @@ describe('buildPizzaSliceSheet', () => {
     const rows = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-001', menuName: '테스트 피자', category: '피자' }],
       rawMap: {
-        'P-001__석쇠L': { weight: 800, kcal: 200, sugar: 10, protein: 20, satFat: 4, sodium: 300 },
-        'P-001__석쇠R': { weight: 640, kcal: 180, sugar: 8, protein: 18, satFat: 3, sodium: 280 },
+        'P-001__석쇠L': { weight: 800, kcal: 200, sugar: 10, protein: 20, fat: 4, sodium: 300 },
+        'P-001__석쇠R': { weight: 640, kcal: 180, sugar: 8, protein: 18, fat: 3, sodium: 280 },
         'P-001__씬바사삭L': {
           weight: 720,
           kcal: 160,
           sugar: 6,
           protein: 16,
-          satFat: 2,
+          fat: 2,
           sodium: 240,
         },
       },
@@ -59,7 +59,7 @@ describe('buildPizzaSliceSheet', () => {
       kcal: 200,
       sugar: 10,
       protein: 20,
-      satFat: 4,
+      fat: 4,
       sodium: 300,
     });
   });
@@ -68,7 +68,7 @@ describe('buildPizzaSliceSheet', () => {
     const rows = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-100', menuName: '경계값 피자', category: '피자' }],
       rawMap: {
-        'P-100__석쇠L': { weight: 800, kcal: 100, sugar: 1, protein: 2, satFat: 1, sodium: 50 },
+        'P-100__석쇠L': { weight: 800, kcal: 100, sugar: 1, protein: 2, fat: 1, sodium: 50 },
       },
       edgeMap: {},
       masterByCode: {},
@@ -87,7 +87,7 @@ describe('buildPizzaSliceSheet', () => {
     const rows = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-LOW', menuName: '저열량 피자', category: '피자' }],
       rawMap: {
-        'P-LOW__석쇠L': { weight: 800, kcal: 40, sugar: 2, protein: 4, satFat: 1, sodium: 80 },
+        'P-LOW__석쇠L': { weight: 800, kcal: 40, sugar: 2, protein: 4, fat: 1, sodium: 80 },
       },
       edgeMap: {},
       masterByCode: {},
@@ -101,7 +101,7 @@ describe('buildPizzaSliceSheet', () => {
       kcal: 120,
       sugar: 6,
       protein: 12,
-      satFat: 3,
+      fat: 3,
       sodium: 240,
     });
   });
@@ -110,7 +110,7 @@ describe('buildPizzaSliceSheet', () => {
     const rows = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-MID', menuName: '중간열량 피자', category: '피자' }],
       rawMap: {
-        'P-MID__석쇠L': { weight: 800, kcal: 60, sugar: 2, protein: 4, satFat: 1, sodium: 80 },
+        'P-MID__석쇠L': { weight: 800, kcal: 60, sugar: 2, protein: 4, fat: 1, sodium: 80 },
       },
       edgeMap: {},
       masterByCode: {},
@@ -141,7 +141,7 @@ describe('buildPizzaSliceSheet', () => {
       kcal: '—',
       sugar: '—',
       protein: '—',
-      satFat: '—',
+      fat: '—',
       sodium: '—',
     });
   });
@@ -189,7 +189,7 @@ describe('buildBeverageSheet', () => {
     const rows = buildBeverageSheet({
       menus: [{ menuCode: 'D-COLA', menuName: '콜라 1.25L', category: '음료' }],
       rawMap: {
-        'D-COLA__석쇠L': { kcal: 40, sugar: 9, protein: 0, satFat: 0, sodium: 5 },
+        'D-COLA__석쇠L': { kcal: 40, sugar: 9, protein: 0, fat: 0, sodium: 5 },
       },
       masterByCode: {},
       menuAllergenMap,
@@ -202,7 +202,7 @@ describe('buildBeverageSheet', () => {
         kcal: 500,
         sugar: 113,
         protein: 0,
-        satFat: 0,
+        fat: 0,
         sodium: 63,
       }),
     ]);
@@ -226,7 +226,7 @@ describe('buildToppingSheet', () => {
           kcal: 55.4,
           sugar: 1.2,
           protein: 3.6,
-          satFat: 0.4,
+          fat: 0.4,
           sodium: 120.2,
         },
       ],
@@ -243,7 +243,7 @@ describe('buildToppingSheet', () => {
         kcal: 55,
         sugar: 1,
         protein: 4,
-        satFat: 0,
+        fat: 0,
         sodium: 120,
         allergen: '밀',
       }),
@@ -260,7 +260,7 @@ describe('buildToppingSheet', () => {
           kcal: 40,
           sugar: 1,
           protein: 2,
-          satFat: 0,
+          fat: 0,
           sodium: 30,
         },
       },
