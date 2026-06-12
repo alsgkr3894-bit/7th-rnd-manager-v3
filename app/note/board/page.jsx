@@ -8,7 +8,14 @@ import { SearchBox } from '@/components/ui/SearchBox';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { downloadCsv, printCurrentPageWithDownloadDate } from '@/lib/download';
-import { STATUSES, STATUS_COLORS, STATUS_BORDER, getAllNotes, updateNote } from '@/lib/note';
+import {
+  STATUSES,
+  STATUS_COLORS,
+  STATUS_BORDER,
+  getAllNotes,
+  updateNote,
+  bulkUpdateBoardOrder,
+} from '@/lib/note';
 import { formatShortDate } from '@/lib/note/utils';
 
 export default function Page() {
@@ -114,26 +121,26 @@ export default function Page() {
     setDropTarget(null);
 
     if (note.status === status) {
-      // 같은 컬럼 내 순서 변경 — boardOrder를 DB에 저장
+      // 같은 컬럼 내 순서 변경 — boardOrder를 단일 트랜잭션으로 일괄 저장
       const without = colNotes.filter(n => n.id !== note.id);
       const origIdx = colNotes.findIndex(n => n.id === note.id);
       const insertAt = origIdx < beforeIdx ? beforeIdx - 1 : beforeIdx;
       without.splice(Math.max(0, Math.min(insertAt, without.length)), 0, note);
-      await Promise.all(without.map((n, i) => updateNote(n.id, { boardOrder: i * 10 })));
+      await bulkUpdateBoardOrder(without.map((n, i) => ({ id: n.id, boardOrder: i * 10 })));
       await load();
     } else {
-      // 다른 컬럼으로 이동 — 상태 변경 + 새 위치에 삽입
+      // 다른 컬럼으로 이동 — 상태 변경(updateNote) + 나머지 순서 일괄 갱신
       const newCol = [...colNotes];
       newCol.splice(Math.min(beforeIdx, newCol.length), 0, note);
-      await Promise.all([
-        updateNote(note.id, { status, boardOrder: Math.min(beforeIdx, newCol.length - 1) * 10 }),
-        ...newCol
-          .filter(n => n.id !== note.id)
-          .map((n, i) => {
-            const order = (i >= Math.min(beforeIdx, newCol.length - 1) ? i + 1 : i) * 10;
-            return updateNote(n.id, { boardOrder: order });
-          }),
-      ]);
+      const targetOrder = Math.min(beforeIdx, newCol.length - 1) * 10;
+      await updateNote(note.id, { status, boardOrder: targetOrder });
+      const siblingUpdates = newCol
+        .filter(n => n.id !== note.id)
+        .map((n, i) => ({
+          id: n.id,
+          boardOrder: (i >= Math.min(beforeIdx, newCol.length - 1) ? i + 1 : i) * 10,
+        }));
+      await bulkUpdateBoardOrder(siblingUpdates);
       showToast(`→ ${status}`, 'ok');
       await load();
       setBouncingIds(s => new Set([...s, note.id]));
