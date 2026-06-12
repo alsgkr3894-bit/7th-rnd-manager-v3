@@ -1,29 +1,19 @@
 'use client';
-import { useEffect, useRef, useState, useMemo, useCallback, Suspense } from 'react';
+import { useEffect, useRef, useState, useMemo, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
-import { initDB } from '@/lib/db';
 import { downloadCsvText } from '@/lib/download';
 import { formatNumber } from '@/lib/format';
-import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
-import { getAllIngredients } from '@/lib/ingredient';
 import {
-  getAllRecipes,
   saveRecipe,
   deleteRecipe,
-  buildUnitPriceMap,
   calcCostBySizes,
   calcMarginRate,
   MENU_CATEGORIES,
 } from '@/lib/recipe';
-import { getAllMenuMaster } from '@/lib/menu-master/store';
-import { normalizePersonalPizzaCodes } from '@/lib/menu-master/normalize';
-import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
-import { parseMenuCode } from '@/lib/cost/menu-price/code';
-import { getMenuCodeBase } from '@/lib/menu-master/code-policy';
-import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
+import { useRecipeWorkbenchData } from '@/hooks/useRecipeWorkbenchData';
 import { costRateColor } from '@/lib/cost/rate-color';
 import { KEYS } from '@/lib/note/keys';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
@@ -152,12 +142,7 @@ function RecipeContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [recipes, setRecipes] = useState([]);
-  const [allMeta, setAllMeta] = useState([]);
-  const [menuMasters, setMenuMasters] = useState([]);
-  const [unitPriceMap, setUnitPriceMap] = useState(new Map());
-  const [menuPricesMap, setMenuPricesMap] = useState(new Map());
-  const [allGroups, setAllGroups] = useState([]);
+  const { recipes, allMeta, menuMasters, unitPriceMap, menuPricesMap, allGroups, loading, dbError, reload } = useRecipeWorkbenchData();
   const [selectedId, setSelectedId] = useState(null);
   // from=sample 파라미터: URL sync effect보다 먼저 읽어야 하므로 useState initializer 사용
   const [isNew, setIsNew] = useState(() => searchParams?.get('from') === 'sample');
@@ -172,8 +157,6 @@ function RecipeContent() {
     };
   });
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [dbError, setDbError] = useState(null);
   const [search, setSearch] = useState(() => searchParams?.get('q') || '');
   const [tab, setTab] = useState(() => {
     const t = searchParams?.get('tab');
@@ -194,53 +177,8 @@ function RecipeContent() {
   // selectedId 변경 감지용 ref — draft 동기화 effect에서 불필요한 재실행 방지
   const prevSelectedId = useRef(null);
 
-  const load = useCallback(async () => {
-    await initDB();
-    await normalizePersonalPizzaCodes().catch(e => console.warn('[recipe] 코드 정규화 실패', e));
-    const [files, meta, recs, masters, menuPrices, groups] = await Promise.all([
-      getPriceFiles(),
-      getAllIngredients(),
-      getAllRecipes(),
-      getAllMenuMaster(),
-      getAllMenuPrices(),
-      getAllRecipeGroups(),
-    ]);
-    const latest = files[0] || null;
-    let priceRowMap = new Map();
-    if (latest) {
-      const rows = await getPriceRowsByFileId(latest.id);
-      priceRowMap = buildPriceRowMap(rows).map;
-    }
-    // 판매가 맵: baseCode → { L: price, R: price, ... }
-    const pmap = new Map();
-    for (const p of menuPrices) {
-      const parsed = parseMenuCode(p.menuCode);
-      const fullCode = String(p.menuCode || '').trim();
-      const policyBase = getMenuCodeBase({ menuCode: p.menuCode, size: p.size });
-      const parsedBase = parsed ? `${parsed.prefix}-${String(parsed.base).padStart(3, '0')}` : '';
-      const base = policyBase && policyBase !== fullCode ? policyBase : parsedBase || fullCode;
-      if (!pmap.has(base)) pmap.set(base, {});
-      pmap.get(base)[p.size] = p.price;
-    }
-    setAllMeta(meta);
-    setMenuMasters(masters);
-    setMenuPricesMap(pmap);
-    setUnitPriceMap(buildUnitPriceMap(meta, priceRowMap));
-    setRecipes(recs);
-    setAllGroups(groups);
-  }, []);
-
-  useEffect(() => {
-    load()
-      .catch(err => {
-        console.error(err);
-        setDbError(err.message || '데이터 로드 실패');
-      })
-      .finally(() => setLoading(false));
-  }, [load]);
-
-  useVisibilityRefresh(load);
-  useEffect(() => onPriceUpload(load), [load]);
+  useVisibilityRefresh(reload);
+  useEffect(() => onPriceUpload(reload), [reload]);
 
   // URL sync for search filter + active tab
   useEffect(() => {
@@ -294,7 +232,7 @@ function RecipeContent() {
           })),
       });
       showToast(isNew ? '레시피 등록 완료' : '레시피 수정 완료');
-      await load();
+      await reload();
       setIsNew(false);
       setSelectedId(savedId);
     } catch (e) {
@@ -316,7 +254,7 @@ function RecipeContent() {
         menuCode: '',
       });
       showToast(`"${rec.menuName}" 복제 완료`);
-      await load();
+      await reload();
       setIsNew(false);
       setSelectedId(newId);
     } catch (err) {
@@ -332,7 +270,7 @@ function RecipeContent() {
       setSelectedId(null);
       setIsNew(false);
       setDraft(null);
-      await load();
+      await reload();
     } catch (e) {
       showToast('삭제 실패: ' + e.message);
     }

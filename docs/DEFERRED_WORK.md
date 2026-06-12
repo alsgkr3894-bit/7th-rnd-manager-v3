@@ -290,10 +290,9 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 #### R-7. `app/cost/ingredient-price/page.jsx` load() 분리  ✅ 완료(2026-06-12)
 - **완료(부분)**: `lib/cost/ingredient-price/buildRows.js` 신설(`buildIngredientPriceRows`) — 제때 연동 row·수동 row 빌드 로직 이동. `hooks/useIngredientPriceFilters.js` 신설 — search/taxFilter/deltaFilter/mainCats/filtered 관리. 페이지에서 관련 인라인 useMemo 2개·useState 3개 제거, `sortMainCategories`·`scopeLabelFor`·`SCOPE_UNASSIGNED`·`calcUnitPrice`·`sumCompositePrice` import 제거. `useIngredientPriceData` 훅화는 mountedRef 비동기 패턴 복잡도로 보류.
 
-#### R-8. `app/cost/recipe/page.jsx` 워크벤치 분해  ⏸
-- **파일**: `app/cost/recipe/page.jsx` L151
-- **문제**: 로딩·URL 동기화·필터·정렬·드래그 재정렬·좌측 리스트·편집 상태가 한 파일.
-- **해결 방향**: `useRecipeWorkbenchData`, `useRecipeListState`, `RecipeSidebar`.
+#### R-8. `app/cost/recipe/page.jsx` 워크벤치 분해  ✅ 완료(부분)(2026-06-12)
+- **완료**: `hooks/useRecipeWorkbenchData.js` 신설 — 6종 데이터 로드(getAll 7개 + buildPriceRowMap + buildUnitPriceMap) + loading/dbError/reload 캡슐화. page.jsx 851줄→789줄, `initDB`·`normalizePersonalPizzaCodes`·7개 fetch import 제거.
+- **잔여**: `useRecipeListState`(필터·정렬·드래그 상태), `RecipeSidebar` 컴포넌트 분리. 드래그 상태와 필터가 밀결합돼 있어 별도 진행 필요.
 
 #### R-9. 보고서 4종 공통 state hook 추출  ✅ 완료(2026-06-12)
 - **완료**: `hooks/useReportPageState.js` 신설. `opts`/`docFormat` useState + `makeFieldUpdater` + `useDraftRestore`(opts 복원) 공통 처리. 페이지별 추가 복원은 `onRestoreExtra` 콜백으로 위임. 4개 페이지(`app/report/sales`, `cost`, `shipment`, `menu-sales-compare`)에 적용. 각 페이지의 `useDraftRestore` import → `useReportPageState`로 교체, 불필요 `makeFieldUpdater` import 제거.
@@ -456,6 +455,6 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ---
 
-_최종 업데이트: 2026-06-12 — R-31 보고서 4종 빌더 lib 이동, R-39 db/operations 책임 분리, R-40 영양 계산 calc.js 분리 완료. R-34(journal print 분리)·R-35(report options registry)·R-36(useSectionSearch)·R-38(useTableSearchSort) 구현. R-29~R-40 2차 발굴 등록. B-14 정책(a) 영속 설정만 확정 + B-7 localStorage 백업 범위 확대 구현. 잔여: B-3 legacy store 제거(DB migration), B-5/B-6(회귀위험), B-9(도메인 확인) — 외부 조건 충족 후 진행._
+_최종 업데이트: 2026-06-12 — R-8(부분)·R-31·R-39·R-40 완료. 잔여 중위험: R-4·R-8(잔여)·R-11·R-12·R-29·R-30, B-5·B-6·B-9. R-34(journal print 분리)·R-35(report options registry)·R-36(useSectionSearch)·R-38(useTableSearchSort) 구현. R-29~R-40 2차 발굴 등록. B-14 정책(a) 영속 설정만 확정 + B-7 localStorage 백업 범위 확대 구현. 잔여: B-3 legacy store 제거(DB migration), B-5/B-6(회귀위험), B-9(도메인 확인) — 외부 조건 충족 후 진행._
 _[이전] B-8·C-2·C-3 완료 표시. 문서 정합성 정정: B-1 파일 경로·B-4 모듈 혼동·C-2 전제·B-3 경로. B-2 저위험 이동._
 _[이전] SITE_IMPROVEMENT_AUDIT 통합·삭제. NEXT_TASKS(CL1~CL8) 통합, B-2/C-1/메뉴코드정책 완료 정정._
