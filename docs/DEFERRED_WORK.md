@@ -161,18 +161,15 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ### 🟡 중위험 — 단일 모듈 구조 변경 / 테스트 필요
 
-#### B-3. 알레르기 링크 테이블(legacy) 정리  🟡 ⏸
+#### B-3. 알레르기 링크 테이블(legacy) 정리  🟡 부분 완료
 - **파일**: `lib/db/constants.js`·`lib/db/module-stores.js`·`lib/db/schema/nutrition.js`(store 정의 6곳), `lib/nutrition/allergen/`
-- **문제**: `nutrition_allergy_links` store가 legacy로 잔존. `saveIngredientAllergens`는 **호출처 없음**. 실제 알레르기 입력·집계는 `cost_ingredients.allergens` 기준으로 일관 동작. 대시보드 통계 1곳에서 best-effort 읽기 + 식자재 삭제 cascade만 사용.
-- **해결 방향**: `nutrition_allergy_links`를 read 경로에서 완전 제거하고 `cost_ingredients.allergens`로 일원화. `saveIngredientAllergens` 및 관련 코드 제거.
-- **현재 상태**: CL2(`d5a0b9f`)로 **링크 기준을 식자재(`ingredientId`/`productCode`)로 정렬, 잘못된 메뉴 cascade 삭제 제거 완료**. `migrate-to-ingredient.js` 마이그레이션 존재. 활성 손상 없음. **남은 작업은 legacy store 자체 제거뿐**(constants·module-stores·schema/index·schema/nutrition·allergen/store·migrate-to-ingredient 6곳 참조).
-- **왜 보류**: 스키마에서 store 제거는 마이그레이션·브랜드별 데이터 확인 필요. 기능 영향 없어 우선순위 낮음.
+- **완료(2026-06-12)**: `lib/nutrition/dashboard.js`의 `allergenRate` 계산을 `nutrition_allergy_links`(legacy, 사실상 빈 store) → `cost_ingredients.allergens`(CL2 이후 단일 출처)로 교체. 이전에는 legacy store가 비어 allergenRate가 항상 0이었던 버그 수정.
+- **잔여**: `nutrition_allergy_links` store 정의 제거(constants·module-stores·schema 6곳), `saveIngredientAllergens` 함수·`migrate-to-ingredient.js` 제거. `deleteAllergenLinksByIngredient` cascade는 store가 없으면 `hasStore` 가드로 안전하게 no-op.
+- **왜 잔여 보류**: 스키마 store 제거는 브랜드별 DB 마이그레이션·데이터 확인 필요. 기능 영향 없어 우선순위 낮음.
 
-#### B-4. reclassifyAllFiles 신규 미분류 대상 한계  🟡 ⏸
-- **파일**: `lib/sales/reclassify.js`(`reclassifyAllFiles`, :39)
-- **문제**: `reclassifyAllFiles`는 기존 업로드 행을 새 규칙으로 재분류하지만, **규칙 추가 후 신규로 매칭 가능해진 행(이전엔 미분류)**은 재업로드하지 않으면 반영되지 않음. 출고량의 `filterTargetRows`도 동일 한계를 공유하나 별도 모듈(`lib/shipment/`)에 존재.
-- **해결 방향**: `reclassifyAllFiles` 실행 시 미분류 행도 재시도하도록 로직 확장. 또는 "전체 재처리" UI 옵션 추가.
-- **관련 메모리**: [[classification-staleness]]
+#### B-4. reclassifyAllFiles 신규 미분류 대상 처리  ✅ 구현됨(검증 2026-06-12)
+- **확인**: `lib/sales/reclassify.js`는 `sales_rows`에서 `status:'unclassified'` 행도 **rawMenuName 기준으로 재구성해 re-classify**함 — `sourceRows`가 status 필터 없이 모든 원본 행을 포함하기 때문. 규칙 추가 후 `reclassifyAllFiles`를 실행하면 이전 미분류 행이 새 규칙에 매칭돼 정상 분류됨. 재업로드 불필요.
+- **출고량(shipment) 한계**: `lib/shipment/`의 `filterTargetRows`만 신규 대상 재반영 한계 존재([[classification-staleness]] 출고량 항목). 이는 별도 모듈 문제로 판매량과 무관.
 
 #### B-5. useDBLoad 전면 확산  🟡 ⏸
 - **파일**: 직접 `getAll()`·`initDB()` 호출하는 페이지 다수
