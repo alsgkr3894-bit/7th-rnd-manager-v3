@@ -210,6 +210,8 @@ export default function Page() {
 
   const periodLabel = PERIOD_LABEL;
 
+  const diagnostics = costByCategory._diagnostics || [];
+
   // CAT_KEYS 순서 유지하면서 활성 카테고리 추출
   const activeCats = CAT_KEYS.map(k => CAT_META[k])
     .filter(m => cats[m.id])
@@ -627,6 +629,38 @@ export default function Page() {
                       <td className="num right" style={{ fontWeight: 800, color: 'var(--warn)' }}>
                         {m.rate.toFixed(1)}% ⚠
                       </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* ── 원가 미연결 진단 ── */}
+          {diagnostics.length > 0 && (
+            <div className="paper-section" style={{ marginTop: 24 }}>
+              <div
+                className="paper-section-title"
+                style={{ borderBottomColor: 'var(--text-3)', color: 'var(--text-2)' }}
+              >
+                원가 미연결 메뉴 ({diagnostics.length}개)
+              </div>
+              <table className="paper-table" style={{ marginTop: 8 }}>
+                <thead>
+                  <tr>
+                    <th>메뉴명</th>
+                    <th style={{ width: 90 }}>카테고리</th>
+                    <th style={{ width: 100 }}>메뉴코드</th>
+                    <th style={{ width: 120 }}>원인</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {diagnostics.map((d, i) => (
+                    <tr key={`${d.code}-${i}`}>
+                      <td>{d.name}</td>
+                      <td className="muted">{d.catLabel}</td>
+                      <td className="mono muted" style={{ fontSize: 11 }}>{d.code}</td>
+                      <td style={{ color: 'var(--negative)', fontSize: 12, fontWeight: 600 }}>{d.reason}</td>
                     </tr>
                   ))}
                 </tbody>
