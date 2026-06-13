@@ -71,7 +71,7 @@ export default function Page() {
           bounceTimersRef.current.add(timer);
         }
       } catch {
-        showToast('상태 변경 실패', 'err');
+        showToast('상태 변경 실패', 'error');
         await load(); // 낙관적 업데이트 실패 시 롤백
       }
     },

@@ -89,7 +89,11 @@
   --negative: #e5534b;
   --positive-soft: rgba(43, 168, 74, 0.12);
   --negative-soft: rgba(229, 83, 75, 0.12);
+  --warn: #f59e0b;
   --warn-soft: #2a1f0f;
+  --surface-3: #272c35;
+  --surface-4: #2d333c;
+  --color-reporting: #a78bfa;
   --scope-generic: #a78bfa; /* 범용 계열 — 다크모드 보라 */
   --scope-generic-soft: rgba(139, 92, 246, 0.16);
   --scope-generic-ink: #1e1530; /* 범용관리: 채운(연보라) 배지 위 글자색 */

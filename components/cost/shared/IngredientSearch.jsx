@@ -100,7 +100,7 @@ export function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded
           top: rect.top,
           left: rect.left,
           width: rect.width,
-          zIndex: 9999,
+          zIndex: 350,
           background: 'var(--surface-1)',
           border: '1px solid var(--border)',
           borderRadius: 8,

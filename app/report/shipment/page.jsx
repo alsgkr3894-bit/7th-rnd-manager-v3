@@ -474,7 +474,6 @@ export default function Page() {
 
           <OptGroup label="문서 형식">
             <Check label="PDF" value={docFormat.pdf} onChange={v => updFmt('pdf', v)} />
-            <Check label="Excel" value={docFormat.excel} onChange={v => updFmt('excel', v)} />
           </OptGroup>
         </>
       }
