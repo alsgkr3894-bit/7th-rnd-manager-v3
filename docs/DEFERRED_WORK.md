@@ -463,15 +463,17 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **부수 수정(별건)**: R-14 분해 시 누락됐던 `app/settings/account/page.jsx`의 `FormField` 미정의 빌드오류를 발견 — `components/settings/FormField.jsx` 공용 컴포넌트로 추출해 account·PinSection 양쪽에서 import(중복 제거 + 빌드 복구).
 - **관련**: B-6
 
-#### R-5. `app/ingredient/list/page.jsx` PDF 함수 이동 + hook 분리  ✅ 완료(2026-06-12)
-- **완료(부분)**: `lib/ingredient/print.js` 신설 — `printIngredientPdf`, `ingredientName`, `originText`, `allergenText`, `ALLERGEN_MAP` 이동. 페이지에서 관련 인라인 함수 5개 + `ALLERGEN_SEED` import + `openPrintWindow`/`withDownloadDateSuffix` import 제거. hook 분리(`useIngredientCatalogData`, `useIngredientCatalogView`)는 B-5·B-6 연계 대형 작업 — 별도 진행.
+#### R-5. `app/ingredient/list/page.jsx` PDF 함수 이동 + hook 분리  ✅ 완료(2026-06-14)
+- **완료(1차, 2026-06-12)**: `lib/ingredient/print.js` 신설 — `printIngredientPdf`, `ingredientName`, `originText`, `allergenText`, `ALLERGEN_MAP` 이동. 페이지에서 관련 인라인 함수 5개 + `ALLERGEN_SEED` import + `openPrintWindow`/`withDownloadDateSuffix` import 제거.
+- **완료(잔여, 2026-06-14)**: `hooks/useIngredientCatalogData.js` 신설 — 로드 로직(mountedRef 패턴 + initDB + getPriceFiles + mergeIngredientRows), stats(active·totalCount·exclusiveCnt·generalCnt·generalMgtCnt·linkedCount·discontinuedCount·linkPct), mainCats, hashTags, uncategorizedCount 6종 useMemo 캡슐화. `hooks/useIngredientCatalogView.js` 신설 — search·scopeFilter·catFilter(localStorage)·tagFilter·sort 상태 + filtered useMemo + usePagination + 페이지 리셋 effect. page.jsx 불필요 import 15개 제거.
 - **관련**: B-5, B-6
 
 #### R-6. `app/ingredient/usage/page.jsx` buildIngredientUsageMap 중복  ✅ 완료(2026-06-12)
 - **완료**: `hooks/useIngredientUsageRows.js` 신설(usageRows·unusedRows·sorted·nonHidden·displayRows·menuCounts·totalUsedCount 7개 memoized 값 통합). usage/page.jsx의 inline normStr·cleanMenu·makeAddUsage 제거, `load()`에서 `buildIngredientUsageMap` 재사용. 848줄→715줄, useMemo·scopeLabelFor·SCOPE_UNASSIGNED·getUsageMenuCounts 등 import 제거.
 
-#### R-7. `app/cost/ingredient-price/page.jsx` load() 분리  ✅ 완료(2026-06-12)
-- **완료(부분)**: `lib/cost/ingredient-price/buildRows.js` 신설(`buildIngredientPriceRows`) — 제때 연동 row·수동 row 빌드 로직 이동. `hooks/useIngredientPriceFilters.js` 신설 — search/taxFilter/deltaFilter/mainCats/filtered 관리. 페이지에서 관련 인라인 useMemo 2개·useState 3개 제거, `sortMainCategories`·`scopeLabelFor`·`SCOPE_UNASSIGNED`·`calcUnitPrice`·`sumCompositePrice` import 제거. `useIngredientPriceData` 훅화는 mountedRef 비동기 패턴 복잡도로 보류.
+#### R-7. `app/cost/ingredient-price/page.jsx` load() 분리  ✅ 완료(2026-06-14)
+- **완료(1차, 2026-06-12)**: `lib/cost/ingredient-price/buildRows.js` 신설(`buildIngredientPriceRows`) — 제때 연동 row·수동 row 빌드 로직 이동. `hooks/useIngredientPriceFilters.js` 신설 — search/taxFilter/deltaFilter/mainCats/filtered 관리. 페이지에서 관련 인라인 useMemo 2개·useState 3개 제거.
+- **완료(잔여, 2026-06-14)**: `hooks/useIngredientPriceData.js` 신설 — rows·fileInfo·loading·dbError state + load() 전체(mountedRef 비동기 패턴·getPriceFiles·getPriceRowsByFileId·buildIngredientPriceRows) + useVisibilityRefresh 캡슐화. page.jsx에서 useMounted·useVisibilityRefresh·initDB·getPriceFiles 등 import 7개 제거. 부수: handleReset/handleInlineSave/handleSelectedDelete의 잘못된 `'err'` toast 타입 → `'error'` 수정.
 
 #### R-8. `app/cost/recipe/page.jsx` 워크벤치 분해  ✅ 완료(2026-06-13)
 - **완료(1차, 2026-06-12)**: `hooks/useRecipeWorkbenchData.js` 신설 — 6종 데이터 로드(getAll 7개 + buildPriceRowMap + buildUnitPriceMap) + loading/dbError/reload 캡슐화. page.jsx 851줄→789줄.
@@ -503,8 +505,9 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **왜 미구현**: 실제 공통 표면은 `ModalFrame`·`showToast`·`onClose/onDone` 콜백 가드·`saving/error`·버튼 행 — 앱 내 거의 모든 모달이 공유하는 일반 보일러플레이트뿐. `BulkPriceModalBase` + 전략 주입은 본질적으로 다른 두 UI를 억지로 묶어 **재사용량≈0인데 분기·props만 증가 → 효과 < 회귀 위험**.
 - **관련 메모리**: [[deferred-refactors]]
 
-#### R-13. `PlatformSettingsModal.jsx` 서브컴포넌트 분리 (518줄)  ✅ 완료(2026-06-12)
-- **완료(부분)**: `components/cost/margin/FeeRow.jsx` 신설 — 인라인 `FeeRow`(140줄) 분리. 모달 518줄 → 375줄. PlatformSelector/PlatformRow 분리 및 useReducer 전환은 상태 공유 복잡도로 보류.
+#### R-13. `PlatformSettingsModal.jsx` 서브컴포넌트 분리 (518줄)  ✅ 완료(2026-06-14)
+- **완료(1차, 2026-06-12)**: `components/cost/margin/FeeRow.jsx` 신설 — 인라인 `FeeRow`(140줄) 분리. 모달 518줄 → 375줄.
+- **완료(잔여, 2026-06-14)**: `PlatformRow`(개별 플랫폼 버튼)·`PlatformSelector`(좌측 목록 패널) 서브컴포넌트 추출. `useState(plats) + 8개 핸들러 함수` → `useReducer(reducer, platforms, initState)` 전환(ADD_PLATFORM·DELETE_PLATFORM·SET_PLAT_NAME·ADD_FEE·DELETE_FEE·PATCH_FEE·PATCH_SIZE_OVERRIDE·SET_SEL 8액션). 375줄→280줄.
 
 #### R-14. settings 페이지 2종 서브컴포넌트 분리  ✅ 완료(2026-06-12)
 - **완료**: account → `components/settings/PinSection.jsx`(내부 FormField 포함), `components/settings/PasswordChangeCard.jsx` 분리. account/page.jsx 674줄→441줄. backup → `hooks/useDiagnostics.js`(diagnostics state + collectDiagnostics) 훅 추출, backup/page.jsx 인라인 collectDiagnostics 제거.
@@ -579,8 +582,9 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **완료**: `lib/nutrition/origin/build.js`에 `buildOriginIngredientRows`·`buildOriginMenuRows` 추가. `ingredientRows`·`menuRowsAll` useMemo 인라인 코드(~80줄) 제거. 614줄→549줄, `applyOrder`·`getMenuCodeRank`·`applyMenuName` import 제거.
 - **관련**: R-21
 
-#### R-33. `app/note/board/page.jsx` 칸반 분해 (597줄)  ✅ 완료(2026-06-12)
-- **완료(부분)**: `components/note/KanbanCard.jsx` 신설 — `buildNoteCopyText`·`copyNoteText`·`KanbanCard`(React.memo) 이동. board/page.jsx 597줄→427줄, `React` namespace·`formatShortDate` import 제거. `useKanbanBoard` 훅화는 handleDrop이 groupedNotes에 의존(순환 복잡도)으로 보류.
+#### R-33. `app/note/board/page.jsx` 칸반 분해 (597줄)  ✅ 완료(2026-06-14)
+- **완료(1차, 2026-06-12)**: `components/note/KanbanCard.jsx` 신설 — `buildNoteCopyText`·`copyNoteText`·`KanbanCard`(React.memo) 이동. board/page.jsx 597줄→401줄.
+- **완료(잔여, 2026-06-14)**: `hooks/useKanbanBoard.js` 신설 — notes·loading·dragId·dragOverStatus·dropTarget·bouncingIds·search 상태, load·applyStatusChange·moveStatus·changeStatus·handleDrop 핸들러, filteredNotes·groupedNotes useMemo, bounceTimers cleanup effect, useVisibilityRefresh 전량 캡슐화. handleDrop/groupedNotes 순환 의존은 같은 훅 스코프 내 클로저로 해소. board/page.jsx 401줄→212줄, 불필요 import 8개 제거.
 
 #### R-39. `lib/db/operations.js` 책임 분리 (516줄)  ✅ 완료(2026-06-12)
 - **완료**: `lib/db/crud.js`(CRUD 12종)·`upload-log.js`(checkUploadHash·deleteFileWithLog)·`backup.js`(replaceStore·exportAll·exportSelected·importAll) 신설. `operations.js` → 30줄 re-export 파일로 교체. 기존 `@/lib/db` 및 직접 `operations.js` import 경로 무변경.
@@ -671,5 +675,6 @@ _2026-06-13 — `docs/QA_REPORT_REFACTOR_2026-06-13.md` 통합 완료: 대형 se
 _2026-06-13 — `docs/UI_INSPECTION_2026-06-13.md` 통합 완료: 기존 HIGH 14·MEDIUM 18 완료 이력에 원본 점검 내용을 매핑. LOW 중 L-03·L-04·L-06·L-07 추가 처리, L-01·L-05는 기처리 확인, L-02·L-08·L-09·L-10은 별도 UI 정리 보류로 유지. 원본 UI 점검 리포트 삭제._
 _2026-06-13 — UI 점검 라운드 42건 완료: HIGH 14건(즉시 4·나머지 10, 커밋 8c1cd00·cfe0698), MEDIUM 18건(M-01~M-18, 커밋 ed7df1b). 빌드 57페이지 prerender 클린 통과. LOW 10건 보류(N-42·N-43 설계 합의·예시 파일 대기)._
 _2026-06-13 — L-02·L-08·L-09 저위험 UI 정리 완료(커밋 05fc724). L-10(폰트 preload)은 이미 최적화 완료로 변경 없음. 잔여 보류: B-3 Phase 2·B-5·B-6·B-9·N-42·N-43(외부 조건 대기). R-5·R-7·R-13·R-33 리팩토링 잔여(중위험)._
+_2026-06-14 — 중위험 리팩토링 잔여 4건 완료. R-5: useIngredientCatalogData·useIngredientCatalogView 훅 신설. R-7: useIngredientPriceData 훅 신설 + showToast 'err'→'error' 수정. R-13: PlatformRow·PlatformSelector 서브컴포넌트 분리 + useReducer 전환. R-33: useKanbanBoard 훅 신설(handleDrop/groupedNotes 순환 의존 클로저로 해소). 신규 훅 4개, 신규 컴포넌트 2개. 빌드 57페이지 prerender 통과, 테스트 794 통과, ESLint 0 위반. 잔여 보류: B-3 Phase 2·B-5·B-6·B-9·N-42·N-43(외부 조건 대기)._
 _[이전] B-8·C-2·C-3 완료 표시. 문서 정합성 정정: B-1 파일 경로·B-4 모듈 혼동·C-2 전제·B-3 경로. B-2 저위험 이동._
 _[이전] SITE_IMPROVEMENT_AUDIT 통합·삭제. NEXT_TASKS(CL1~CL8) 통합, B-2/C-1/메뉴코드정책 완료 정정._

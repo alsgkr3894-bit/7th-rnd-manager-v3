@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useReducer } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { DEFAULT_PLATFORMS, normalizePlatforms } from '@/lib/cost/margin/platforms';
@@ -26,82 +26,154 @@ function clonePlatforms(platforms) {
   }));
 }
 
-export function PlatformSettingsModal({ platforms, onSave, onClose }) {
-  const [plats, setPlats] = useState(() => clonePlatforms(platforms));
-  const [selId, setSelId] = useState(
-    () => (normalizePlatforms(platforms) || DEFAULT_PLATFORMS)[0]?.id ?? 'default'
+function initState(platforms) {
+  const plats = clonePlatforms(platforms);
+  return { plats, selId: plats[0]?.id ?? 'default' };
+}
+
+function reducer(state, action) {
+  const { plats, selId } = state;
+  switch (action.type) {
+    case 'SET_SEL':
+      return { ...state, selId: action.id };
+    case 'ADD_PLATFORM': {
+      const p = { id: uid(), name: '새 플랫폼', fees: [] };
+      return { ...state, plats: [...plats, p], selId: p.id };
+    }
+    case 'DELETE_PLATFORM': {
+      if (action.id === 'default') return state;
+      const next = plats.filter(p => p.id !== action.id);
+      return { plats: next, selId: selId === action.id ? (next[0]?.id ?? 'default') : selId };
+    }
+    case 'SET_PLAT_NAME':
+      return { ...state, plats: plats.map(p => (p.id === selId ? { ...p, name: action.name } : p)) };
+    case 'ADD_FEE':
+      return {
+        ...state,
+        plats: plats.map(p =>
+          p.id === selId
+            ? { ...p, fees: [...(Array.isArray(p.fees) ? p.fees : []), blankFee()] }
+            : p
+        ),
+      };
+    case 'DELETE_FEE':
+      return {
+        ...state,
+        plats: plats.map(p =>
+          p.id === selId
+            ? { ...p, fees: (Array.isArray(p.fees) ? p.fees : []).filter(f => f.id !== action.id) }
+            : p
+        ),
+      };
+    case 'PATCH_FEE':
+      return {
+        ...state,
+        plats: plats.map(p =>
+          p.id === selId
+            ? {
+                ...p,
+                fees: (Array.isArray(p.fees) ? p.fees : []).map(f =>
+                  f.id === action.id ? { ...f, ...action.patch } : f
+                ),
+              }
+            : p
+        ),
+      };
+    case 'PATCH_SIZE_OVERRIDE':
+      return {
+        ...state,
+        plats: plats.map(p =>
+          p.id === selId
+            ? {
+                ...p,
+                fees: (Array.isArray(p.fees) ? p.fees : []).map(f =>
+                  f.id === action.id
+                    ? {
+                        ...f,
+                        sizeOverrides: { ...(f.sizeOverrides || {}), [action.key]: action.val },
+                      }
+                    : f
+                ),
+              }
+            : p
+        ),
+      };
+    default:
+      return state;
+  }
+}
+
+function PlatformRow({ platform, isSelected, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        textAlign: 'left',
+        padding: '10px 16px',
+        fontSize: 13,
+        border: 'none',
+        cursor: 'pointer',
+        background: isSelected ? 'var(--accent)' : 'transparent',
+        color: isSelected ? '#fff' : 'var(--text-1)',
+        fontWeight: isSelected ? 600 : 400,
+      }}
+    >
+      {platform.name}
+      {platform.fees?.length > 0 && (
+        <span style={{ fontSize: 11, marginLeft: 5, opacity: 0.7 }}>({platform.fees.length})</span>
+      )}
+    </button>
   );
+}
+
+function PlatformSelector({ plats, selId, onSelect, onAdd }) {
+  return (
+    <div
+      style={{
+        width: 160,
+        borderRight: '1px solid var(--divider)',
+        display: 'flex',
+        flexDirection: 'column',
+        flexShrink: 0,
+        overflowY: 'auto',
+      }}
+    >
+      {plats.map(p => (
+        <PlatformRow
+          key={p.id}
+          platform={p}
+          isSelected={p.id === selId}
+          onClick={() => onSelect(p.id)}
+        />
+      ))}
+      <button
+        type="button"
+        onClick={onAdd}
+        style={{
+          textAlign: 'left',
+          padding: '10px 16px',
+          fontSize: 12,
+          border: 'none',
+          cursor: 'pointer',
+          background: 'transparent',
+          color: 'var(--accent)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          marginTop: 2,
+        }}
+      >
+        <Icon.plus style={{ width: 12, height: 12 }} /> 플랫폼 추가
+      </button>
+    </div>
+  );
+}
+
+export function PlatformSettingsModal({ platforms, onSave, onClose }) {
+  const [{ plats, selId }, dispatch] = useReducer(reducer, platforms, initState);
 
   const sel = plats.find(p => p.id === selId) ?? null;
-
-  /* ── platform ── */
-  function addPlatform() {
-    const p = { id: uid(), name: '새 플랫폼', fees: [] };
-    setPlats(prev => [...prev, p]);
-    setSelId(p.id);
-  }
-
-  function deletePlatform(id) {
-    if (id === 'default') return;
-    const next = plats.filter(p => p.id !== id);
-    setPlats(next);
-    if (selId === id) setSelId(next[0]?.id ?? 'default');
-  }
-
-  function setPlatName(name) {
-    setPlats(prev => prev.map(p => (p.id === selId ? { ...p, name } : p)));
-  }
-
-  /* ── fee ── */
-  function addFee() {
-    setPlats(prev =>
-      prev.map(p =>
-        p.id === selId ? { ...p, fees: [...(Array.isArray(p.fees) ? p.fees : []), blankFee()] } : p
-      )
-    );
-  }
-
-  function deleteFee(feeId) {
-    setPlats(prev =>
-      prev.map(p =>
-        p.id === selId
-          ? { ...p, fees: (Array.isArray(p.fees) ? p.fees : []).filter(f => f.id !== feeId) }
-          : p
-      )
-    );
-  }
-
-  function patchFee(feeId, patch) {
-    setPlats(prev =>
-      prev.map(p =>
-        p.id === selId
-          ? {
-              ...p,
-              fees: (Array.isArray(p.fees) ? p.fees : []).map(f =>
-                f.id === feeId ? { ...f, ...patch } : f
-              ),
-            }
-          : p
-      )
-    );
-  }
-
-  function patchSizeOverride(feeId, sizeKey, val) {
-    setPlats(prev =>
-      prev.map(p =>
-        p.id === selId
-          ? {
-              ...p,
-              fees: (Array.isArray(p.fees) ? p.fees : []).map(f =>
-                f.id === feeId
-                  ? { ...f, sizeOverrides: { ...(f.sizeOverrides || {}), [sizeKey]: val } }
-                  : f
-              ),
-            }
-          : p
-      )
-    );
-  }
 
   /* ── save ── */
   function handleSave() {
@@ -181,60 +253,12 @@ export function PlatformSettingsModal({ platforms, onSave, onClose }) {
         {/* ── Body: 좌우 패널 ── */}
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
           {/* 좌: 플랫폼 목록 */}
-          <div
-            style={{
-              width: 160,
-              borderRight: '1px solid var(--divider)',
-              display: 'flex',
-              flexDirection: 'column',
-              flexShrink: 0,
-              overflowY: 'auto',
-            }}
-          >
-            {plats.map(p => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setSelId(p.id)}
-                style={{
-                  textAlign: 'left',
-                  padding: '10px 16px',
-                  fontSize: 13,
-                  border: 'none',
-                  cursor: 'pointer',
-                  background: p.id === selId ? 'var(--accent)' : 'transparent',
-                  color: p.id === selId ? '#fff' : 'var(--text-1)',
-                  fontWeight: p.id === selId ? 600 : 400,
-                }}
-              >
-                {p.name}
-                {p.fees?.length > 0 && (
-                  <span style={{ fontSize: 11, marginLeft: 5, opacity: 0.7 }}>
-                    ({p.fees.length})
-                  </span>
-                )}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={addPlatform}
-              style={{
-                textAlign: 'left',
-                padding: '10px 16px',
-                fontSize: 12,
-                border: 'none',
-                cursor: 'pointer',
-                background: 'transparent',
-                color: 'var(--accent)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                marginTop: 2,
-              }}
-            >
-              <Icon.plus style={{ width: 12, height: 12 }} /> 플랫폼 추가
-            </button>
-          </div>
+          <PlatformSelector
+            plats={plats}
+            selId={selId}
+            onSelect={id => dispatch({ type: 'SET_SEL', id })}
+            onAdd={() => dispatch({ type: 'ADD_PLATFORM' })}
+          />
 
           {/* 우: 선택된 플랫폼 에디터 */}
           <div
@@ -277,7 +301,7 @@ export function PlatformSettingsModal({ platforms, onSave, onClose }) {
                   <input
                     className="form-input"
                     value={sel.name}
-                    onChange={e => setPlatName(e.target.value)}
+                    onChange={e => dispatch({ type: 'SET_PLAT_NAME', name: e.target.value })}
                     placeholder="예) 쿠팡이츠"
                     style={{ maxWidth: 220 }}
                   />
@@ -310,9 +334,11 @@ export function PlatformSettingsModal({ platforms, onSave, onClose }) {
                         key={f.id}
                         f={f}
                         isLast={i === sel.fees.length - 1}
-                        onPatch={patch => patchFee(f.id, patch)}
-                        onSizeOverride={(k, v) => patchSizeOverride(f.id, k, v)}
-                        onDelete={() => deleteFee(f.id)}
+                        onPatch={patch => dispatch({ type: 'PATCH_FEE', id: f.id, patch })}
+                        onSizeOverride={(k, v) =>
+                          dispatch({ type: 'PATCH_SIZE_OVERRIDE', id: f.id, key: k, val: v })
+                        }
+                        onDelete={() => dispatch({ type: 'DELETE_FEE', id: f.id })}
                       />
                     ))}
                   </div>
@@ -320,7 +346,7 @@ export function PlatformSettingsModal({ platforms, onSave, onClose }) {
                   <button
                     type="button"
                     className="btn sm"
-                    onClick={addFee}
+                    onClick={() => dispatch({ type: 'ADD_FEE' })}
                     style={{ fontSize: 11, marginTop: 10 }}
                   >
                     <Icon.plus style={{ width: 11, height: 11 }} /> 항목 추가
@@ -338,7 +364,7 @@ export function PlatformSettingsModal({ platforms, onSave, onClose }) {
                   <button
                     type="button"
                     className="btn sm"
-                    onClick={() => deletePlatform(sel.id)}
+                    onClick={() => dispatch({ type: 'DELETE_PLATFORM', id: sel.id })}
                     style={{ fontSize: 11, color: 'var(--negative)' }}
                   >
                     <Icon.trash style={{ width: 11, height: 11 }} /> 이 플랫폼 삭제

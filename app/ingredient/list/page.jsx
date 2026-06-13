@@ -1,32 +1,17 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useMounted } from '@/hooks/useMounted';
+import { useEffect, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
 import { SortButton } from '@/components/ui/SortButton';
-import { usePagination } from '@/hooks/usePagination';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { initDB } from '@/lib/db';
-import { showToast } from '@/components/Toast';
-import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
-import {
-  getAllIngredients,
-  getIngredientMetaMap,
-  mergeIngredientRows,
-  getCategoryStyle,
-  sortMainCategories,
-  sortHashTags,
-  buildMetaOnlyRow,
-  buildProductTypeMap,
-} from '@/lib/ingredient';
-import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
+import { getCategoryStyle } from '@/lib/ingredient';
 import { downloadCsv } from '@/lib/download';
-import { SCOPE, DISCONTINUED_FILTER, UNCATEGORIZED_FILTER } from '@/lib/ingredient/constants';
+import { DISCONTINUED_FILTER, UNCATEGORIZED_FILTER, SCOPE } from '@/lib/ingredient/constants';
 import { IngredientListSkeleton } from '@/components/ui/Skeleton';
-import { KEYS } from '@/lib/note/keys';
 import { ALLERGEN_MAP, printIngredientPdf } from '@/lib/ingredient/print';
 import { IngredientRow, ingredientRowKey } from './IngredientListRows';
+import { useIngredientCatalogData } from '@/hooks/useIngredientCatalogData';
+import { useIngredientCatalogView } from '@/hooks/useIngredientCatalogView';
 
 function exportIngredientCsv(rows) {
   const headers = [
@@ -67,68 +52,11 @@ const SCOPE_TABS = [
 ];
 
 export default function Page() {
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [scopeFilter, setScopeFilter] = useState('all');
-  const [catFilter, setCatFilter] = useLocalStorage(
-    KEYS.INGREDIENT_LIST_CAT_FILTER,
-    'all',
-    value => (typeof value === 'string' && value ? value : 'all')
-  );
-  const [tagFilter, setTagFilter] = useState('all');
-  const [sort, setSort] = useState('default');
   const [pdfPhoto, setPdfPhoto] = useState(true);
   const [expandedKey, setExpandedKey] = useState(null);
-  const mountedRef = useMounted();
-
-  const load = useCallback(async () => {
-    await initDB();
-    const files = await getPriceFiles();
-    const latest = files[0] || null;
-
-    const [allMeta, metaMap, managed] = await Promise.all([
-      getAllIngredients(),
-      getIngredientMetaMap(),
-      seedManagedProductsIfEmpty().then(() => getManagedProducts()),
-    ]);
-    if (!mountedRef.current) return;
-    const typeMap = buildProductTypeMap(managed);
-
-    if (!latest) {
-      setRows(allMeta.filter(m => m.isManual || m.isSeeded).map(buildMetaOnlyRow));
-      return;
-    }
-
-    const priceRows = await getPriceRowsByFileId(latest.id);
-    if (!mountedRef.current) return;
-    // 마스터(시드/수동)에 등록된 항목만 표시
-    const merged = mergeIngredientRows(priceRows, metaMap, typeMap).filter(r => r.hasRecord);
-    const priceCodeSet = new Set(priceRows.map(r => r.productCode).filter(Boolean));
-    const orphanRows = allMeta
-      .filter(
-        m => (m.isManual || m.isSeeded) && (!m.productCode || !priceCodeSet.has(m.productCode))
-      )
-      .map(buildMetaOnlyRow);
-
-    setRows([...merged, ...orphanRows]);
-  }, [mountedRef]);
-
-  useEffect(() => {
-    load()
-      .catch(err => {
-        if (mountedRef.current) {
-          console.error(err);
-          showToast('데이터 로드 실패: ' + err.message, 'error');
-        }
-      })
-      .finally(() => {
-        if (mountedRef.current) setLoading(false);
-      });
-  }, [load, mountedRef]);
-
-  // ── 통계 ────────────────────────────────────────────────────
   const {
+    rows,
+    loading,
     active,
     totalCount,
     exclusiveCnt,
@@ -137,106 +65,37 @@ export default function Page() {
     linkedCount,
     discontinuedCount,
     linkPct,
-  } = useMemo(() => {
-    const active = rows.filter(r => !r.discontinued && !r.excluded);
-    const totalCount = active.length;
-    const exclusiveCnt = active.filter(r => r.scope === SCOPE.EXCLUSIVE).length;
-    const generalCnt = active.filter(r => r.scope === SCOPE.GENERIC).length;
-    const generalMgtCnt = active.filter(r => r.scope === SCOPE.GENERIC_MANAGED).length;
-    const linkedCount = active.filter(r => r.jetteLinked).length;
-    const discontinuedCount = rows.filter(r => r.discontinued).length;
-    const linkPct = totalCount > 0 ? Math.round((linkedCount / totalCount) * 100) : 0;
-    return {
-      active,
-      totalCount,
-      exclusiveCnt,
-      generalCnt,
-      generalMgtCnt,
-      linkedCount,
-      discontinuedCount,
-      linkPct,
-    };
-  }, [rows]);
-
-  // ── 분류(메인) 집합 ─────────────────────────────────────────
-  const mainCats = useMemo(() => {
-    const set = new Set();
-    rows.forEach(r => {
-      if (!r.discontinued && !r.excluded && r.category) set.add(r.category);
-    });
-    return sortMainCategories(Array.from(set));
-  }, [rows]);
-
-  // ── 해시태그 집합 ──────────────────────────────────────────
-  const hashTags = useMemo(() => {
-    const set = new Set();
-    rows.forEach(r => {
-      if (r.discontinued || r.excluded) return;
-      (r.tags || []).forEach(t => t && set.add(t));
-    });
-    return sortHashTags(Array.from(set));
-  }, [rows]);
-
-  const uncategorizedCount = rows.filter(r => !r.discontinued && !r.excluded && !r.category).length;
-
-  // ── 필터링 + 정렬 ────────────────────────────────────────────
-  const filtered = useMemo(() => {
-    let list;
-    if (catFilter === DISCONTINUED_FILTER) {
-      list = rows.filter(r => r.discontinued);
-    } else {
-      list = rows.filter(r => !r.discontinued && !r.excluded);
-      if (scopeFilter !== 'all') list = list.filter(r => r.scope === scopeFilter);
-      if (catFilter === UNCATEGORIZED_FILTER) list = list.filter(r => !r.category);
-      else if (catFilter !== 'all') list = list.filter(r => r.category === catFilter);
-      if (tagFilter !== 'all') list = list.filter(r => (r.tags || []).includes(tagFilter));
-    }
-    const q = search.trim().toLowerCase();
-    if (q)
-      list = list.filter(
-        r =>
-          (r.ingredientName || r.displayName || r.productName || '').toLowerCase().includes(q) ||
-          (r.productCode || '').toLowerCase().includes(q) ||
-          (r.category || '').toLowerCase().includes(q) ||
-          (r.tags || []).some(t => t.toLowerCase().includes(q)) ||
-          (r.manufacturer || '').toLowerCase().includes(q)
-      );
-    if (sort === 'name')
-      return [...list].sort((a, b) =>
-        (a.ingredientName || a.displayName || '').localeCompare(
-          b.ingredientName || b.displayName || '',
-          'ko'
-        )
-      );
-    if (sort === 'category')
-      return [...list].sort((a, b) => {
-        const ca = a.category || 'ㅎ',
-          cb = b.category || 'ㅎ';
-        if (ca !== cb) return ca.localeCompare(cb, 'ko');
-        return (a.ingredientName || '').localeCompare(b.ingredientName || '', 'ko');
-      });
-    if (sort === 'price-desc')
-      return [...list].sort((a, b) => (b.unitPrice || 0) - (a.unitPrice || 0));
-    if (sort === 'price-asc')
-      return [...list].sort((a, b) => (a.unitPrice || 0) - (b.unitPrice || 0));
-    return list;
-  }, [rows, scopeFilter, catFilter, tagFilter, search, sort]);
+    mainCats,
+    hashTags,
+    uncategorizedCount,
+  } = useIngredientCatalogData();
+  const {
+    search,
+    setSearch,
+    scopeFilter,
+    setScopeFilter,
+    catFilter,
+    setCatFilter,
+    tagFilter,
+    setTagFilter,
+    sort,
+    setSort,
+    filtered,
+    page,
+    goTo,
+    totalPages,
+    paged,
+    total,
+  } = useIngredientCatalogView(rows);
 
   const scopeTabCount = id => {
     if (id === 'all') return totalCount;
     return active.filter(r => r.scope === id).length;
   };
 
-  const { page, goTo, totalPages, paged, total } = usePagination(filtered, 60);
-
   useEffect(() => {
     setExpandedKey(null);
   }, [page, search, scopeFilter, catFilter, tagFilter, sort]);
-
-  // 검색/필터 변경 시 1페이지로 리셋
-  useEffect(() => {
-    goTo(1);
-  }, [search, scopeFilter, catFilter, tagFilter, sort]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <main className="main">
