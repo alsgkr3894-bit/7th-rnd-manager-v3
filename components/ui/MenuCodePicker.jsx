@@ -9,6 +9,7 @@ import {
 } from '@/lib/menu-master/code-policy';
 import { asObjectArray } from '@/lib/ui/prop-guards';
 import { getMenuCodeRank } from '@/lib/menu-categories';
+import { useOutsideClick } from '@/hooks/useOutsideClick';
 
 function asText(value) {
   if (value == null) return '';
@@ -106,13 +107,7 @@ export default function MenuCodePicker({
     listRef.current.children[activeIdx]?.scrollIntoView({ block: 'nearest' });
   }, [activeIdx]);
 
-  useEffect(() => {
-    const handler = e => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  useOutsideClick({ refs: ref, enabled: open, onOutside: () => setOpen(false) });
 
   const handleSelect = m => {
     if (!m?.code) return;

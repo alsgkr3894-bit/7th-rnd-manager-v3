@@ -4,7 +4,7 @@ import { Icon } from '@/components/icons';
 import { NUTRITION_FIELDS, calcAllResults } from '@/lib/nutrition/values/store';
 import { downloadCsv } from '@/lib/download';
 import { resolveNutritionGroup, NUTRITION_GROUP_ORDER } from '@/lib/nutrition/menu-group';
-import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { asDisplayText, asObjectArray, asRecord } from '@/lib/ui/prop-guards';
 
 const GROUP_HEADER_STYLE = {
   fontWeight: 800,
@@ -14,11 +14,6 @@ const GROUP_HEADER_STYLE = {
   letterSpacing: '0.05em',
   textTransform: 'uppercase',
 };
-const EMPTY_MAP = {};
-
-function asRecord(value) {
-  return value && typeof value === 'object' && !Array.isArray(value) ? value : EMPTY_MAP;
-}
 
 export function TabResults({
   menus,

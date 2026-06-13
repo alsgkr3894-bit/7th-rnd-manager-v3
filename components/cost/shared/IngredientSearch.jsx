@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
+import { useOutsideClick } from '@/hooks/useOutsideClick';
 
 export function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded, style }) {
   const [q, setQ] = useState('');
@@ -11,6 +12,7 @@ export function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded
   const [rect, setRect] = useState(null);
   const ref = useRef(null);
   const listRef = useRef(null);
+  const outsideRefs = useMemo(() => [ref, listRef], []);
   const addedSet = useMemo(() => new Set(alreadyAdded), [alreadyAdded]);
 
   const results = useMemo(() => {
@@ -54,19 +56,7 @@ export function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded
     };
   }, [open, updateRect]);
 
-  useEffect(() => {
-    function onClickOutside(e) {
-      if (
-        ref.current &&
-        !ref.current.contains(e.target) &&
-        !(listRef.current && listRef.current.contains(e.target))
-      ) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', onClickOutside);
-    return () => document.removeEventListener('mousedown', onClickOutside);
-  }, []);
+  useOutsideClick({ refs: outsideRefs, enabled: open, onOutside: () => setOpen(false) });
 
   useEffect(() => {
     if (activeIdx < 0 || !listRef.current) return;

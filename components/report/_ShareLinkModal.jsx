@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { asDisplayText } from '@/lib/ui/prop-guards';
+import { copyText } from '@/lib/ui/clipboard';
 
 export function ShareLinkModal({ report, onClose }) {
   const [expiry, setExpiry] = useState('7d');
@@ -27,12 +28,6 @@ export function ShareLinkModal({ report, onClose }) {
 
   useEffect(() => () => clearTimeout(copiedTimer.current), []);
 
-  async function copyToClipboard(text) {
-    if (!text || typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return false;
-    await navigator.clipboard.writeText(text);
-    return true;
-  }
-
   function markCopied() {
     setCopied(true);
     clearTimeout(copiedTimer.current);
@@ -49,7 +44,7 @@ export function ShareLinkModal({ report, onClose }) {
       return;
     }
     try {
-      const copiedToClipboard = await copyToClipboard(linkUrl);
+      const copiedToClipboard = await copyText(linkUrl);
       if (!copiedToClipboard) throw new Error('clipboard unavailable');
       markCopied();
       showToast('공유 링크를 복사했어요', 'ok', 1600);

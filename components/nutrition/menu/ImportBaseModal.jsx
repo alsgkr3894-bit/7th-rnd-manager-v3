@@ -7,7 +7,7 @@ import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import { parseLabExcel, buildImportRows, toRawValueRecord } from '@/lib/nutrition/values/import';
 import { CRUST_TYPES, upsertMenuRef, upsertRawValue } from '@/lib/nutrition/values/store';
 import { getMenuCodeBase } from '@/lib/menu-master/code-policy';
-import { asObjectArray } from '@/lib/ui/prop-guards';
+import { asObjectArray, asRecord, noop } from '@/lib/ui/prop-guards';
 import {
   isPersonalPizzaMenu,
   normalizeNutritionCategory,
@@ -65,13 +65,6 @@ const TD = {
   borderBottom: '1px solid var(--divider)',
   verticalAlign: 'middle',
 };
-
-const EMPTY_MAP = {};
-const noop = () => {};
-
-function asRecord(value) {
-  return value && typeof value === 'object' && !Array.isArray(value) ? value : EMPTY_MAP;
-}
 
 function isSupportedLabFile(file) {
   const name = String(file?.name || '').toLowerCase();

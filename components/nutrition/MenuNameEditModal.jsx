@@ -1,14 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { ModalFrame } from '@/components/ui/ModalFrame';
-import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
-
-const EMPTY_OBJECT = {};
-const noop = () => {};
-
-function asRecord(value) {
-  return value && typeof value === 'object' && !Array.isArray(value) ? value : EMPTY_OBJECT;
-}
+import { asDisplayText, asObjectArray, asRecord, noop } from '@/lib/ui/prop-guards';
 
 /**
  * 출력용 메뉴명 편집 모달.

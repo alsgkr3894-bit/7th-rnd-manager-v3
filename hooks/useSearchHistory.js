@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 const MAX_HISTORY = 5;
 const DEBOUNCE_MS = 1000;
@@ -18,13 +19,7 @@ export function normalizeSearchHistory(value) {
 }
 
 export function useSearchHistory(storageKey) {
-  const [history, setHistory] = useState(() => {
-    try {
-      return normalizeSearchHistory(JSON.parse(localStorage.getItem(storageKey) || '[]'));
-    } catch {
-      return [];
-    }
-  });
+  const [history, setHistory] = useLocalStorage(storageKey, [], normalizeSearchHistory);
   const [isOpen, setIsOpen] = useState(false);
   const timer = useRef(null);
 
@@ -35,9 +30,6 @@ export function useSearchHistory(storageKey) {
     if (!q) return;
     setHistory(prev => {
       const next = [q, ...prev.filter(h => h !== q)].slice(0, MAX_HISTORY);
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(next));
-      } catch {}
       return next;
     });
   }

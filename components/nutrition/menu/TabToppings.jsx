@@ -7,10 +7,9 @@ import { IngredientSearch } from '@/components/cost/shared/IngredientSearch';
 import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { deleteTopping, NUTRITION_FIELDS, upsertTopping } from '@/lib/nutrition/values/store';
-import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
+import { asDisplayText, asObjectArray, asStringArray, noop } from '@/lib/ui/prop-guards';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
-const noop = () => {};
 const EMPTY_MAP = new Map();
 const ALLERGEN_NAME_BY_CODE = Object.fromEntries(
   ALLERGEN_SEED.map(item => [asDisplayText(item.allergenCode), asDisplayText(item.allergenName)])

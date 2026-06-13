@@ -1,6 +1,7 @@
 'use client';
-import { useEffect, useState, useCallback, Fragment } from 'react';
+import { useEffect, useState, useCallback, Fragment, useMemo } from 'react';
 import { useMounted } from '@/hooks/useMounted';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SortableTh } from '@/components/ui/SortableTh';
 import { SearchBox } from '@/components/ui/SearchBox';
@@ -32,8 +33,12 @@ const tierOf = count => (count >= USAGE_THRESHOLD.HIGH ? 0 : count >= USAGE_THRE
 const keyOf = r => r.code || r.name;
 
 function toStringSet(value) {
-  if (!Array.isArray(value)) return new Set();
-  return new Set(value.filter(v => typeof v === 'string' && v.trim()));
+  return new Set(normalizeStringList(value));
+}
+
+function normalizeStringList(value) {
+  if (!Array.isArray(value)) return [];
+  return value.filter(v => typeof v === 'string' && v.trim());
 }
 
 /** 사용횟수 배지 색상 — 많이(파랑)/보통(초록)/단발(주의)/그 외(중립) */
@@ -54,60 +59,46 @@ export default function Page() {
   const [sortDir, setSortDir] = useState('desc');
   const [expanded, setExpanded] = useState(new Set());
   const [typeMap, setTypeMap] = useState(new Map()); // productCode → 제때 관리품목 productType (전용/범용)
-  const [hidden, setHidden] = useState(() => new Set());
+  const [hiddenList, setHiddenList] = useLocalStorage(
+    KEYS.INGREDIENT_USAGE_HIDDEN,
+    [],
+    normalizeStringList
+  );
+  const hidden = useMemo(() => toStringSet(hiddenList), [hiddenList]);
   const [showHidden, setShowHidden] = useState(false);
   const [onlyOne, setOnlyOne] = useState(false);
   const [showUnused, setShowUnused] = useState(false);
-  const [excludedMenus, setExcludedMenus] = useState(() => new Set()); // 목록에서 제외할 메뉴명
+  const [excludedMenuList, setExcludedMenuList] = useLocalStorage(
+    KEYS.INGREDIENT_USAGE_EXCL_MENUS,
+    [],
+    normalizeStringList
+  );
+  const excludedMenus = useMemo(() => toStringSet(excludedMenuList), [excludedMenuList]);
   const mountedRef = useMounted();
 
-  // 숨김 목록 복원 (마운트 1회)
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEYS.INGREDIENT_USAGE_HIDDEN);
-      if (raw) setHidden(toStringSet(JSON.parse(raw)));
-    } catch {}
-    try {
-      const rawM = localStorage.getItem(KEYS.INGREDIENT_USAGE_EXCL_MENUS);
-      if (rawM) setExcludedMenus(toStringSet(JSON.parse(rawM)));
-    } catch {}
-  }, []);
   function toggleHidden(k) {
-    setHidden(prev => {
+    setHiddenList(prev => {
       const next = new Set(prev);
       if (next.has(k)) next.delete(k);
       else next.add(k);
-      try {
-        localStorage.setItem(KEYS.INGREDIENT_USAGE_HIDDEN, JSON.stringify([...next]));
-      } catch {}
-      return next;
+      return [...next];
     });
   }
-  function persistExcluded(next) {
-    try {
-      localStorage.setItem(KEYS.INGREDIENT_USAGE_EXCL_MENUS, JSON.stringify([...next]));
-    } catch {}
-  }
   function excludeMenu(menuName) {
-    setExcludedMenus(prev => {
+    setExcludedMenuList(prev => {
       const next = new Set(prev).add(menuName);
-      persistExcluded(next);
-      return next;
+      return [...next];
     });
   }
   function restoreMenu(menuName) {
-    setExcludedMenus(prev => {
+    setExcludedMenuList(prev => {
       const next = new Set(prev);
       next.delete(menuName);
-      persistExcluded(next);
-      return next;
+      return [...next];
     });
   }
   function restoreAllMenus() {
-    setExcludedMenus(() => {
-      persistExcluded(new Set());
-      return new Set();
-    });
+    setExcludedMenuList([]);
   }
 
   const load = useCallback(async () => {

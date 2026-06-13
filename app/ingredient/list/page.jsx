@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
 import { SortButton } from '@/components/ui/SortButton';
 import { usePagination } from '@/hooks/usePagination';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { initDB } from '@/lib/db';
 import { formatNumber, formatUnitPrice } from '@/lib/format';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
@@ -93,13 +94,9 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [scopeFilter, setScopeFilter] = useState('all');
-  const [catFilter, setCatFilter] = useState(() => {
-    try {
-      return localStorage.getItem(KEYS.INGREDIENT_LIST_CAT_FILTER) || 'all';
-    } catch {
-      return 'all';
-    }
-  });
+  const [catFilter, setCatFilter] = useLocalStorage(KEYS.INGREDIENT_LIST_CAT_FILTER, 'all', value =>
+    typeof value === 'string' && value ? value : 'all'
+  );
   const [tagFilter, setTagFilter] = useState('all');
   const [sort, setSort] = useState('default');
   const [pdfPhoto, setPdfPhoto] = useState(true);
@@ -147,13 +144,6 @@ export default function Page() {
         if (mountedRef.current) setLoading(false);
       });
   }, [load, mountedRef]);
-
-  // 카테고리 필터는 새로고침 후에도 유지
-  useEffect(() => {
-    try {
-      localStorage.setItem(KEYS.INGREDIENT_LIST_CAT_FILTER, catFilter);
-    } catch {}
-  }, [catFilter]);
 
   // ── 통계 ────────────────────────────────────────────────────
   const {

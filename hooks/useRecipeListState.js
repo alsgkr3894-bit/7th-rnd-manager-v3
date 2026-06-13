@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { usePagination } from '@/hooks/usePagination';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { KEYS } from '@/lib/note/keys';
 import { MENU_CATEGORIES } from '@/lib/recipe';
 
@@ -54,14 +55,11 @@ function normalizeRecipeSort(value) {
  */
 export function useRecipeListState({ recipes, allGroups, initialSearch = '' }) {
   const [search, setSearch] = useState(initialSearch);
-  const [customOrder, setCustomOrder] = useState(() => {
-    if (typeof window === 'undefined') return {};
-    try {
-      return normalizeRecipeSort(JSON.parse(localStorage.getItem(KEYS.RECIPE_SORT) || '{}'));
-    } catch {
-      return {};
-    }
-  });
+  const [customOrder, setCustomOrder] = useLocalStorage(
+    KEYS.RECIPE_SORT,
+    {},
+    normalizeRecipeSort
+  );
   const [dragSrc, setDragSrc] = useState(null); // { cat, fromIdx }
   const [dropTarget, setDropTarget] = useState(null); // { cat, beforeIdx }
 
@@ -129,16 +127,10 @@ export function useRecipeListState({ recipes, allGroups, initialSearch = '' }) {
   function saveOrder(cat, items) {
     const newOrder = { ...customOrder, [cat]: items.map(r => r.id) };
     setCustomOrder(newOrder);
-    try {
-      localStorage.setItem(KEYS.RECIPE_SORT, JSON.stringify(newOrder));
-    } catch {}
   }
   function resetCatOrder(cat) {
     const { [cat]: _removed, ...rest } = customOrder;
     setCustomOrder(rest);
-    try {
-      localStorage.setItem(KEYS.RECIPE_SORT, JSON.stringify(rest));
-    } catch {}
   }
 
   return {

@@ -3,13 +3,7 @@ import { useState, useEffect } from 'react';
 import { showToast } from '@/components/Toast';
 import { upsertEdge, EDGE_CODES, EDGE_NAMES } from '@/lib/nutrition/values/store';
 import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
-
-const EMPTY_MAP = {};
-const noop = () => {};
-
-function asRecord(value) {
-  return value && typeof value === 'object' && !Array.isArray(value) ? value : EMPTY_MAP;
-}
+import { asRecord, noop } from '@/lib/ui/prop-guards';
 
 export function TabEdge({ edges, edgeMap, onRefresh }) {
   const safeEdgeMap = asRecord(edgeMap);

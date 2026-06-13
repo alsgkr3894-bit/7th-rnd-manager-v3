@@ -26,6 +26,7 @@ import {
 import { KEYS } from '@/lib/note/keys';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 import { useBatchSelection } from '@/hooks/useBatchSelection';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { IngredientForm } from './IngredientForm';
 import { IssuesView } from '@/components/ingredient/IssuesView';
 import { IngredientBatchToolbar } from '@/components/ingredient/BatchToolbar';
@@ -64,13 +65,9 @@ export default function Page() {
     useIngredientManageData();
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 200);
-  const [catFilter, setCatFilter] = useState(() => {
-    try {
-      return localStorage.getItem(KEYS.INGREDIENT_CAT_FILTER) || 'all';
-    } catch {
-      return 'all';
-    }
-  });
+  const [catFilter, setCatFilter] = useLocalStorage(KEYS.INGREDIENT_CAT_FILTER, 'all', value =>
+    typeof value === 'string' && value ? value : 'all'
+  );
   const [tagFilter, setTagFilter] = useState('all');
   const [view, setView] = useState('manage'); // 'manage' | 'issues'
   const [formTarget, setFormTarget] = useState(null);
@@ -107,12 +104,6 @@ export default function Page() {
     loading,
     priceDate,
   });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(KEYS.INGREDIENT_CAT_FILTER, catFilter);
-    } catch {}
-  }, [catFilter]);
 
   // 검색어 변경 시에도 선택 초기화
   useEffect(() => {

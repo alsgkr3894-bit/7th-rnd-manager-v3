@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { KEYS } from '@/lib/note/keys';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 function normalizeIdList(value) {
   if (!Array.isArray(value)) return [];
@@ -7,23 +8,15 @@ function normalizeIdList(value) {
 }
 
 export function useNotePins() {
-  const [pinnedIds, setPinnedIds] = useState(() => {
-    try {
-      return new Set(normalizeIdList(JSON.parse(localStorage.getItem(KEYS.NOTE_PINS) || '[]')));
-    } catch {
-      return new Set();
-    }
-  });
+  const [pinnedList, setPinnedList] = useLocalStorage(KEYS.NOTE_PINS, [], normalizeIdList);
+  const pinnedIds = useMemo(() => new Set(pinnedList), [pinnedList]);
 
   function togglePin(noteId, e) {
     e?.stopPropagation();
-    setPinnedIds(prev => {
-      const next = new Set(prev);
+    setPinnedList(prev => {
+      const next = new Set(normalizeIdList(prev));
       next.has(noteId) ? next.delete(noteId) : next.add(noteId);
-      try {
-        localStorage.setItem(KEYS.NOTE_PINS, JSON.stringify([...next]));
-      } catch {}
-      return next;
+      return [...next];
     });
   }
 

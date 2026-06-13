@@ -28,6 +28,7 @@ import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { useReportListState } from '@/hooks/useReportListState';
 import { useReportActions } from '@/hooks/useReportActions';
+import { formatLocalMonthInput } from '@/lib/date/local-date';
 import { asDisplayText, asObjectArray, asFiniteNumber } from '@/lib/ui/prop-guards';
 
 const REPORT_KINDS = KIND_META;
@@ -40,7 +41,7 @@ function SortIco({ k, sortKey, sortDir }) {
   );
 }
 
-const thisMonth = new Date().toISOString().slice(0, 7);
+const thisMonth = formatLocalMonthInput();
 
 function formatReportId(id) {
   const text = asDisplayText(id);

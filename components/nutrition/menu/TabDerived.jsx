@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { IngredientSearch } from '@/components/cost/shared/IngredientSearch';
-import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
+import { asDisplayText, asObjectArray, asStringArray, noop } from '@/lib/ui/prop-guards';
 import { resolveNutritionGroup, NUTRITION_GROUP_ORDER } from '@/lib/nutrition/menu-group';
 import { useDerivedCompositionForm } from '@/hooks/useDerivedCompositionForm';
 
@@ -17,7 +17,6 @@ const GROUP_HEADER_STYLE = {
   marginTop: 8,
 };
 
-const noop = () => {};
 const EMPTY_UNIT_PRICE_MAP = new Map();
 
 function asAmountMap(value) {

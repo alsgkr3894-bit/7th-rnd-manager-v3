@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { KEYS } from '@/lib/note/keys';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 function normalizeNotePresets(value) {
   if (!Array.isArray(value)) return [];
@@ -16,21 +17,12 @@ function normalizeNotePresets(value) {
 }
 
 export function useNotePresets({ statusFilter, search, sortBy, setStatusFilter, setSearch, setSortBy }) {
-  const [presets, setPresets] = useState(() => {
-    try {
-      return normalizeNotePresets(JSON.parse(localStorage.getItem(KEYS.NOTE_PRESETS) || '[]'));
-    } catch {
-      return [];
-    }
-  });
+  const [presets, setPresets] = useLocalStorage(KEYS.NOTE_PRESETS, [], normalizeNotePresets);
   const [confirmDeletePreset, setConfirmDeletePreset] = useState(null);
 
   function savePreset(name) {
     const next = [...presets, { name, status: statusFilter, search, sort: sortBy }];
     setPresets(next);
-    try {
-      localStorage.setItem(KEYS.NOTE_PRESETS, JSON.stringify(next));
-    } catch {}
     showToast(`"${name}" 프리셋 저장됨`, 'ok');
   }
 
@@ -43,9 +35,6 @@ export function useNotePresets({ statusFilter, search, sortBy, setStatusFilter, 
   function deletePreset(idx) {
     const next = presets.filter((_, i) => i !== idx);
     setPresets(next);
-    try {
-      localStorage.setItem(KEYS.NOTE_PRESETS, JSON.stringify(next));
-    } catch {}
   }
 
   return { presets, confirmDeletePreset, setConfirmDeletePreset, savePreset, applyPreset, deletePreset };

@@ -13,15 +13,9 @@ import {
   NUTRITION_FIELDS,
 } from '@/lib/nutrition/values/store';
 import { initDB } from '@/lib/db';
-import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { asDisplayText, asObjectArray, asRecord, noop } from '@/lib/ui/prop-guards';
 
 const VALUE_FIELDS = NUTRITION_FIELDS.filter(f => f.key !== 'weight');
-const EMPTY_OBJECT = {};
-const noop = () => {};
-
-function asRecord(value) {
-  return value && typeof value === 'object' && !Array.isArray(value) ? value : EMPTY_OBJECT;
-}
 
 function IngredientValueForm({ ingredient, existing, onSave, onCancel }) {
   const safeIngredient = asRecord(ingredient);

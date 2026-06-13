@@ -5,15 +5,8 @@ import { Icon } from '@/components/icons';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
 import { calcSetMinMax, calcHalfMinMax } from '@/lib/nutrition/values/set-calc';
-import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
+import { asDisplayText, asObjectArray, asRecord, asStringArray, noop } from '@/lib/ui/prop-guards';
 import { useSetCompositionForm } from '@/hooks/useSetCompositionForm';
-
-const EMPTY_MAP = {};
-const noop = () => {};
-
-function asRecord(value) {
-  return value && typeof value === 'object' && !Array.isArray(value) ? value : EMPTY_MAP;
-}
 
 export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRefresh }) {
   const safeMenus = useMemo(() => asObjectArray(menus), [menus]);

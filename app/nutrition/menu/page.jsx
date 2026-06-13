@@ -21,7 +21,7 @@ import {
   getNutritionBaseDuplicateDiagnostics,
   repairNutritionBaseDuplicates,
 } from '@/lib/nutrition/values/store';
-import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { asDisplayText, asObjectArray, asRecord } from '@/lib/ui/prop-guards';
 import { getMenuCodeRank } from '@/lib/menu-categories';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
@@ -66,11 +66,6 @@ const TABS = [
   '계산 결과',
   '세트 계산',
 ];
-const EMPTY_MAP = {};
-
-function asRecord(value) {
-  return value && typeof value === 'object' && !Array.isArray(value) ? value : EMPTY_MAP;
-}
 
 function DuplicateNotice({ diagnostics, repairing, onRepair }) {
   const duplicateRows = Number(diagnostics?.duplicateRows) || 0;

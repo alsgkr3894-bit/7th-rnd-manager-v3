@@ -6,6 +6,7 @@ import { getProfile, getInitial } from '@/lib/profile';
 import { clearAuthCookie } from '@/lib/auth';
 import { getSetting, setSetting } from '@/lib/settings';
 import { COMPANIES } from '@/lib/companies';
+import { useOutsideClick } from '@/hooks/useOutsideClick';
 
 export default function TopBar({
   onOpenPalette,
@@ -59,32 +60,17 @@ export default function TopBar({
     setSetting('theme', next ? 'dark' : 'light');
   };
 
-  useEffect(() => {
-    if (!notifOpen) return;
-    const handleOutsideClick = e => {
-      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
-    };
-    window.addEventListener('mousedown', handleOutsideClick);
-    return () => window.removeEventListener('mousedown', handleOutsideClick);
-  }, [notifOpen]);
-
-  useEffect(() => {
-    if (!companyOpen) return;
-    const handleCompanyOutsideClick = e => {
-      if (companyRef.current && !companyRef.current.contains(e.target)) setCompanyOpen(false);
-    };
-    window.addEventListener('mousedown', handleCompanyOutsideClick);
-    return () => window.removeEventListener('mousedown', handleCompanyOutsideClick);
-  }, [companyOpen]);
-
-  useEffect(() => {
-    if (!profileOpen) return;
-    const handler = e => {
-      if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
-    };
-    window.addEventListener('mousedown', handler);
-    return () => window.removeEventListener('mousedown', handler);
-  }, [profileOpen]);
+  useOutsideClick({ refs: notifRef, enabled: notifOpen, onOutside: () => setNotifOpen(false) });
+  useOutsideClick({
+    refs: companyRef,
+    enabled: companyOpen,
+    onOutside: () => setCompanyOpen(false),
+  });
+  useOutsideClick({
+    refs: profileRef,
+    enabled: profileOpen,
+    onOutside: () => setProfileOpen(false),
+  });
 
   function handleLogout() {
     clearAuthCookie();

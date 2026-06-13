@@ -31,6 +31,7 @@ import { useRankCompareData } from '@/lib/sales/use-rank-compare-data';
 import { useAvgCostRate } from '@/lib/sales/use-avg-cost-rate';
 import { formatShareText } from '@/lib/sales/share-formatter';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
+import { copyText } from '@/lib/ui/clipboard';
 
 const VALID_MODES = new Set(['single', 'mom', 'yoy', 'custom']);
 
@@ -150,8 +151,7 @@ export default function Page() {
         singleCategory: selectedSingleCategory,
         compare,
       });
-      if (!navigator.clipboard?.writeText) throw new Error('CLIPBOARD_UNAVAILABLE');
-      await navigator.clipboard.writeText(text);
+      if (!(await copyText(text))) throw new Error('CLIPBOARD_UNAVAILABLE');
       showToast('순위 복사 완료', 'ok');
     } catch {
       showToast('복사 실패', 'warn');
