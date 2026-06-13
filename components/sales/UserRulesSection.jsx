@@ -8,6 +8,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { SortableTh } from '@/components/ui/SortableTh';
 import { usePagination } from '@/hooks/usePagination';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import {
   getUserRules,
   addUserRule,
@@ -105,6 +106,8 @@ export function UserRulesSection() {
     if (query) cancelEdit();
   }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const { showConfirm, confirmElement } = useConfirmDialog();
+
   async function handleToggle(r) {
     if (!r || r.id == null) return;
 
@@ -112,13 +115,11 @@ export function UserRulesSection() {
       await updateUserRule({ id: r.id, enable: r.enable !== false ? false : true });
       refresh();
       markPendingReclassify();
-      if (
-        confirm(
-          '기존 업로드 파일의 분류를 지금 다시 반영할까요?\n취소 시 규칙은 저장되며 다음 업로드부터 적용됩니다.'
-        )
-      ) {
-        await reapplyToUploadedData();
-      }
+      const apply = await showConfirm({
+        message:
+          '기존 업로드 파일의 분류를 지금 다시 반영할까요?\n취소 시 규칙은 저장되며 다음 업로드부터 적용됩니다.',
+      });
+      if (apply) await reapplyToUploadedData();
     } catch {
       showToast('토글 실패', 'err');
     }
@@ -307,6 +308,7 @@ export function UserRulesSection() {
           </div>
         )
       )}
+      {confirmElement}
     </div>
   );
 }

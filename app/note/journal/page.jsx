@@ -8,6 +8,7 @@ import { getAllNotes } from '@/lib/note';
 import { buildJournalPrintHtml } from '@/lib/note/journal-print';
 import { openPrintWindow } from '@/lib/print/window-print';
 import { WebJournalCard } from '@/components/note/WebJournalCard';
+import { todayLocalDate } from '@/lib/date/local-date';
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -21,7 +22,7 @@ export default function Page() {
   const router = useRouter();
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => todayLocalDate());
 
   const load = useCallback(async () => {
     await initDB();

@@ -8,6 +8,7 @@ import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { deleteTopping, NUTRITION_FIELDS, upsertTopping } from '@/lib/nutrition/values/store';
 import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 const noop = () => {};
 const EMPTY_MAP = new Map();
@@ -34,6 +35,7 @@ function formatNutritionValue(value, suffix = '') {
 }
 
 export function TabToppings({ toppings, ingredients, onRefresh }) {
+  const { showConfirm, confirmElement } = useConfirmDialog();
   const safeToppings = useMemo(() => asObjectArray(toppings), [toppings]);
   const safeIngredients = useMemo(
     () =>
@@ -150,7 +152,8 @@ export function TabToppings({ toppings, ingredients, onRefresh }) {
 
   const remove = async topping => {
     const name = asDisplayText(topping.toppingName, '추가토핑');
-    if (!confirm(`'${name}' 추가토핑을 삭제할까요?`)) return;
+    const ok = await showConfirm({ message: `'${name}' 추가토핑을 삭제할까요?`, danger: true });
+    if (!ok) return;
     await deleteTopping(topping.id);
     showToast('삭제 완료', 'ok');
     refresh();
@@ -367,6 +370,7 @@ export function TabToppings({ toppings, ingredients, onRefresh }) {
           </div>
         </ModalFrame>
       )}
+      {confirmElement}
     </div>
   );
 }

@@ -148,8 +148,6 @@ export function CommonManageView({ tab = 'groups' }) {
   }
   async function handleDeleteGroup(id) {
     if (!id) return;
-    if (!confirm('이 묶음 및 연결된 레시피 참조가 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?'))
-      return;
     try {
       await deleteRecipeGroup(id);
     } catch (e) {
@@ -599,7 +597,7 @@ export function CommonManageView({ tab = 'groups' }) {
       {pendingDeleteId && (
         <ConfirmDialog
           open
-          message="묶음을 삭제할까요?"
+          message="이 묶음 및 연결된 레시피 참조가 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?"
           danger
           onConfirm={() => {
             handleDeleteGroup(pendingDeleteId);

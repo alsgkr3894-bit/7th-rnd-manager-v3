@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useId } from 'react';
 import { fmtShort } from '@/lib/format';
 import {
   normalizeAreaSeries,
@@ -67,8 +67,8 @@ export function AreaChart({
   const safeColors = useMemo(() => normalizeChartColors(colors), [colors]);
   const [hover, setHover] = useState(null);
   const svgWrapRef = useRef(null);
-  // 안정적 gradient ID — 마운트 시 1회 생성
-  const uid = useRef(`ac-${Math.random().toString(36).slice(2, 8)}`).current;
+  const reactId = useId();
+  const uid = `ac-${reactId.replace(/:/g, '')}`;
 
   const Y_W = 46; // Y축 라벨 영역 너비 (px)
   const X_H = 24; // X축 라벨 영역 높이 (px)

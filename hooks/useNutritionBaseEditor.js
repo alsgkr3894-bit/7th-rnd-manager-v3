@@ -9,12 +9,14 @@ import {
   CRUST_TYPES,
 } from '@/lib/nutrition/values/store';
 import { normalizeNutritionCategory } from '@/lib/nutrition/menu-group';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 /**
  * 베이스 영양성분 에디터의 핵심 상태와 메뉴 CRUD/저장 로직.
  * 레시피·식자재 계산 훅은 여기서 노출하는 selMenu/selCrust/form/setForm/setSaving를 공유한다.
  */
 export function useNutritionBaseEditor({ safeRawMap, refresh }) {
+  const { showConfirm, confirmElement } = useConfirmDialog();
   const [selMenu, setSelMenu] = useState(null);
   const [selCrust, setSelCrust] = useState(CRUST_TYPES[0]);
   const [form, setForm] = useState({});
@@ -75,12 +77,11 @@ export function useNutritionBaseEditor({ safeRawMap, refresh }) {
   };
 
   const handleDeleteMenu = async menu => {
-    if (
-      !confirm(
-        `'${asDisplayText(menu.menuName, '메뉴')}' 및 모든 영양성분값이 삭제됩니다. 계속할까요?`
-      )
-    )
-      return;
+    const ok = await showConfirm({
+      message: `'${asDisplayText(menu.menuName, '메뉴')}' 및 모든 영양성분값이 삭제됩니다. 계속할까요?`,
+      danger: true,
+    });
+    if (!ok) return;
     await deleteMenuRef(menu.id, menu.menuCode);
     if (selMenu?.id === menu.id) setSelMenu(null);
     showToast(`'${asDisplayText(menu.menuName, '메뉴')}' 삭제`, 'ok');
@@ -105,5 +106,6 @@ export function useNutritionBaseEditor({ safeRawMap, refresh }) {
     handleSave,
     handleAddMenu,
     handleDeleteMenu,
+    confirmElement,
   };
 }

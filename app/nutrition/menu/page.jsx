@@ -23,6 +23,7 @@ import {
 } from '@/lib/nutrition/values/store';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { getMenuCodeRank } from '@/lib/menu-categories';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 const TabBase = dynamic(
   () => import('@/components/nutrition/menu/TabBase').then(m => ({ default: m.TabBase })),
@@ -138,6 +139,7 @@ export default function Page() {
   const [duplicateDiagnostics, setDuplicateDiagnostics] = useState(null);
   const [repairingDuplicates, setRepairingDuplicates] = useState(false);
   const mountedRef = useMounted();
+  const { showConfirm, confirmElement } = useConfirmDialog();
 
   const filteredMenus = useMemo(() => {
     const safeMenus = asObjectArray(menus);
@@ -214,7 +216,10 @@ export default function Page() {
 
   const handleRepairDuplicates = useCallback(async () => {
     if (repairingDuplicates) return;
-    if (!confirm('중복된 영양성분 데이터를 정리합니다. 최신 수정값 1건만 남길까요?')) return;
+    const ok = await showConfirm({
+      message: '중복된 영양성분 데이터를 정리합니다. 최신 수정값 1건만 남길까요?',
+    });
+    if (!ok) return;
     setRepairingDuplicates(true);
     try {
       const result = await repairNutritionBaseDuplicates();
@@ -225,7 +230,7 @@ export default function Page() {
     } finally {
       if (mountedRef.current) setRepairingDuplicates(false);
     }
-  }, [load, repairingDuplicates, mountedRef]);
+  }, [load, repairingDuplicates, mountedRef, showConfirm]);
 
   return (
     <main className="main">
@@ -396,6 +401,7 @@ export default function Page() {
           )}
         </div>
       )}
+      {confirmElement}
     </main>
   );
 }

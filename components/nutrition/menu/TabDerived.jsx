@@ -67,6 +67,7 @@ export function TabDerived({
     updateIngredientAmount,
     handleSaveComp,
     handleDeleteComp,
+    confirmElement,
   } = useDerivedCompositionForm({ onRefresh: refresh });
 
   const masterByCode = useMemo(
@@ -455,6 +456,7 @@ export function TabDerived({
           </div>
         </ModalFrame>
       )}
+      {confirmElement}
     </div>
   );
 }

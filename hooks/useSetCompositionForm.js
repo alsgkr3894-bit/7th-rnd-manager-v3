@@ -3,8 +3,10 @@ import { useState } from 'react';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 import { upsertSetComposition, deleteSetComposition } from '@/lib/nutrition/values/store';
 import { showToast } from '@/components/Toast';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 export function useSetCompositionForm({ onRefresh = () => {} } = {}) {
+  const { showConfirm, confirmElement } = useConfirmDialog();
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({
     setCode: '',
@@ -76,12 +78,11 @@ export function useSetCompositionForm({ onRefresh = () => {} } = {}) {
   };
 
   const handleDelete = async comp => {
-    if (
-      !confirm(
-        `'${comp.setName || '세트'}' 세트가 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`
-      )
-    )
-      return;
+    const ok = await showConfirm({
+      message: `'${comp.setName || '세트'}' 세트가 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`,
+      danger: true,
+    });
+    if (!ok) return;
     await deleteSetComposition(comp.id);
     showToast(`'${comp.setName}' 삭제`, 'ok');
     onRefresh();
@@ -100,5 +101,6 @@ export function useSetCompositionForm({ onRefresh = () => {} } = {}) {
     updateSlot,
     handleSave,
     handleDelete,
+    confirmElement,
   };
 }

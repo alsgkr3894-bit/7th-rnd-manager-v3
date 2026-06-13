@@ -6,6 +6,7 @@ import { InlineConfirmButtons } from '@/components/ui/InlineConfirmButtons';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { Pagination } from '@/components/ui/Pagination';
 import { usePagination } from '@/hooks/usePagination';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { getUserAliases, addUserAlias, deleteUserAlias, updateUserAlias } from '@/lib/sales';
 import {
   inputStyle,
@@ -68,6 +69,7 @@ export function UserAliasesSection() {
   }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { page, goTo, totalPages, paged, total } = usePagination(filtered, PAGE_SIZE);
+  const { showConfirm, confirmElement } = useConfirmDialog();
 
   async function handleToggle(a) {
     if (!a || a.id == null) return;
@@ -76,13 +78,11 @@ export function UserAliasesSection() {
       await updateUserAlias({ id: a.id, enable: a.enable !== false ? false : true });
       refresh();
       markPendingReclassify();
-      if (
-        confirm(
-          '기존 업로드 파일의 분류를 지금 다시 반영할까요?\n취소 시 별칭은 저장되며 다음 업로드부터 적용됩니다.'
-        )
-      ) {
-        await reapplyToUploadedData();
-      }
+      const apply = await showConfirm({
+        message:
+          '기존 업로드 파일의 분류를 지금 다시 반영할까요?\n취소 시 별칭은 저장되며 다음 업로드부터 적용됩니다.',
+      });
+      if (apply) await reapplyToUploadedData();
     } catch {
       showToast('토글 실패', 'err');
     }
@@ -211,6 +211,7 @@ export function UserAliasesSection() {
           </>
         )
       )}
+      {confirmElement}
     </div>
   );
 }

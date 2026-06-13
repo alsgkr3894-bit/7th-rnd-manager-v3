@@ -9,12 +9,13 @@ import { SampleFormBody, SAMPLE_INIT } from '../_SampleFormBody';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { KEYS } from '@/lib/note/keys';
+import { todayLocalDate } from '@/lib/date/local-date';
 
 export default function Page() {
   const router = useRouter();
   const [form, setForm] = useState(() => ({
     ...SAMPLE_INIT,
-    testDate: new Date().toISOString().slice(0, 10),
+    testDate: todayLocalDate(),
   }));
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);

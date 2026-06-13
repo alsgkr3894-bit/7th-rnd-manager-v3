@@ -23,6 +23,7 @@ import { useDBLoad } from '@/hooks/useDBLoad';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useSampleBatchMode } from '@/hooks/useSampleBatchMode';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { useSampleCompareMode } from '@/hooks/useSampleCompareMode';
 import { Stars } from './_Stars';
 import { CompareModal } from './_CompareModal';
@@ -125,6 +126,8 @@ function SampleContent() {
     confirmBatchDelete,
   } = useSampleBatchMode(ids => setSamples(prev => prev.filter(s => !ids.includes(s.id))), reload);
 
+  const { showConfirm, confirmElement } = useConfirmDialog();
+
   const {
     compareMode,
     setCompareMode,
@@ -201,7 +204,11 @@ function SampleContent() {
 
   async function handleDelete(rec) {
     const label = rec.title?.trim() || '샘플';
-    if (!confirm(`'${label}' 기록이 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`)) return;
+    const ok = await showConfirm({
+      message: `'${label}' 기록이 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`,
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await deleteSample(rec.id);
       setSamples(prev => prev.filter(s => s.id !== rec.id));
@@ -827,6 +834,7 @@ function SampleContent() {
         onConfirm={confirmBatchDelete}
         onCancel={() => setConfirmOpen(false)}
       />
+      {confirmElement}
     </main>
   );
 }

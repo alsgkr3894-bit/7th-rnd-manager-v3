@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { asDisplayText, asStringArray } from '@/lib/ui/prop-guards';
 import { upsertComposition, deleteComposition } from '@/lib/nutrition/values/store';
 import { showToast } from '@/components/Toast';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 function asAmountMap(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -10,6 +11,7 @@ function asAmountMap(value) {
 
 // firstMenuCode: 추가 모달 기본 baseMenuCode (호출 시 주입)
 export function useDerivedCompositionForm({ onRefresh = () => {} } = {}) {
+  const { showConfirm, confirmElement } = useConfirmDialog();
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({
     menuCode: '',
@@ -123,12 +125,11 @@ export function useDerivedCompositionForm({ onRefresh = () => {} } = {}) {
   };
 
   const handleDeleteComp = async comp => {
-    if (
-      !confirm(
-        `'${asDisplayText(comp.menuName, '파생 메뉴')}' 및 연결된 영양정보가 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`
-      )
-    )
-      return;
+    const ok = await showConfirm({
+      message: `'${asDisplayText(comp.menuName, '파생 메뉴')}' 및 연결된 영양정보가 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`,
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await deleteComposition(comp.id);
       showToast(`'${asDisplayText(comp.menuName, '파생 메뉴')}' 삭제`, 'ok');
@@ -151,5 +152,6 @@ export function useDerivedCompositionForm({ onRefresh = () => {} } = {}) {
     updateIngredientAmount,
     handleSaveComp,
     handleDeleteComp,
+    confirmElement,
   };
 }

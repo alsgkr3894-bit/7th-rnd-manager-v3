@@ -14,6 +14,7 @@ import { clearAllBaseData } from '@/lib/nutrition/values/store';
 import { useNutritionBaseEditor } from '@/hooks/useNutritionBaseEditor';
 import { useRecipeNutritionCalc } from '@/hooks/useRecipeNutritionCalc';
 import { useIngredientNutritionCalc } from '@/hooks/useIngredientNutritionCalc';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
   const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
@@ -43,7 +44,9 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
     handleSave,
     handleAddMenu,
     handleDeleteMenu,
+    confirmElement: editorConfirmElement,
   } = editor;
+  const { showConfirm, confirmElement } = useConfirmDialog();
 
   const recipeCalc = useRecipeNutritionCalc({
     selMenu,
@@ -110,8 +113,11 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
               title="전체 삭제"
               style={{ fontSize: 11, padding: '3px 7px', color: 'var(--danger)' }}
               onClick={async () => {
-                if (!confirm('베이스 영양성분 전체(메뉴 목록 + 값)를 삭제합니다. 계속할까요?'))
-                  return;
+                const ok = await showConfirm({
+                  message: '베이스 영양성분 전체(메뉴 목록 + 값)를 삭제합니다. 계속할까요?',
+                  danger: true,
+                });
+                if (!ok) return;
                 await clearAllBaseData();
                 setSelMenu(null);
                 showToast('전체 삭제 완료', 'ok');
@@ -213,6 +219,9 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
           onClose={() => setAddMenu(false)}
         />
       )}
+
+      {confirmElement}
+      {editorConfirmElement}
     </div>
   );
 }

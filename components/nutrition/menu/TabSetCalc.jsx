@@ -35,6 +35,7 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
     updateSlot,
     handleSave,
     handleDelete,
+    confirmElement,
   } = useSetCompositionForm({ onRefresh: refresh });
 
   const masterByCode = useMemo(
@@ -440,6 +441,7 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
           </div>
         </ModalFrame>
       )}
+      {confirmElement}
     </div>
   );
 }

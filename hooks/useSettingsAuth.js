@@ -13,9 +13,24 @@ const listeners = new Set();
 function emit() {
   listeners.forEach(l => l());
 }
+
+function onStorageEvent(e) {
+  if (e.key === LS_KEY || e.key === null) emit();
+}
+
+// 다른 탭의 localStorage 변경도 반영. storage 리스너는 첫 구독자 시 등록,
+// 마지막 구독자 해제 시 제거 — 모듈 레벨 사이드이펙트 없음.
 function subscribe(l) {
+  if (listeners.size === 0 && typeof window !== 'undefined') {
+    window.addEventListener('storage', onStorageEvent);
+  }
   listeners.add(l);
-  return () => listeners.delete(l);
+  return () => {
+    listeners.delete(l);
+    if (listeners.size === 0 && typeof window !== 'undefined') {
+      window.removeEventListener('storage', onStorageEvent);
+    }
+  };
 }
 
 function readPin() {
@@ -31,13 +46,6 @@ function readAuth() {
   } catch {
     return true;
   }
-}
-
-// 다른 탭의 localStorage 변경도 반영
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', e => {
-    if (e.key === LS_KEY || e.key === null) emit();
-  });
 }
 
 /**

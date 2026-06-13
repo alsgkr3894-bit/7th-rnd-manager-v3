@@ -11,12 +11,13 @@ import { KEYS } from '@/lib/note/keys';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { getActiveBrandId } from '@/lib/active-brand';
+import { todayLocalDate } from '@/lib/date/local-date';
 
 export default function Page() {
   const router = useRouter();
   const [form, setForm] = useState(() => ({
     ...INIT,
-    testDate: new Date().toISOString().slice(0, 10),
+    testDate: todayLocalDate(),
   }));
   const [saving, setSaving] = useState(false);
   const [fromTitle, setFromTitle] = useState('');

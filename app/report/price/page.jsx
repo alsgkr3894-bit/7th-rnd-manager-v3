@@ -9,6 +9,7 @@ import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price/store';
 import { buildPriceReportData } from '@/lib/report/build-price-report';
 import { useDraftRestore } from '@/hooks/useDraftRestore';
 import { getProfile } from '@/lib/profile';
+import { todayLocalDate, localDateBefore } from '@/lib/date/local-date';
 
 const DRAFT_KEY = 'report_draft_price';
 
@@ -48,8 +49,8 @@ export default function Page() {
   const [docFormat, setDocFormat] = useState({ pdf: true, excel: false });
   const updFmt = makeFieldUpdater(setDocFormat);
 
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const weekAgoStr = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+  const todayStr = todayLocalDate();
+  const weekAgoStr = localDateBefore(7);
   const [customFrom, setCustomFrom] = useState(weekAgoStr);
   const [customTo, setCustomTo] = useState(todayStr);
 
