@@ -28,6 +28,7 @@ import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 import { useMenuMasterFilters } from '@/hooks/useMenuMasterFilters';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 // 7번가(main) 전용 피자 카테고리 프리셋. 다른 브랜드는 빈 프리셋 → 자유 입력,
 // 칩·통계는 실제 데이터에 존재하는 카테고리에서 동적으로 도출한다.
@@ -54,6 +55,7 @@ const STATUS_STYLE = {
 /* ── 메인 페이지 ── */
 export default function Page() {
   const isMain = useIsMainBrand(); // 기본 코드 등록·피자 일괄가는 7번가 전용
+  const { isViewer } = useCurrentRole();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
@@ -215,11 +217,11 @@ export default function Page() {
             >
               <Icon.download style={{ width: 14, height: 14 }} /> 엑셀로 내보내기
             </button>
-            <button className="btn" onClick={() => setBulkModal(true)} disabled={rows.length === 0}>
+            <button className="btn" onClick={() => setBulkModal(true)} disabled={rows.length === 0 || isViewer}>
               <Icon.calc style={{ width: 14, height: 14 }} /> 코드별 일괄 가격
             </button>
             {isMain && (
-              <button className="btn" onClick={handleSeed} disabled={seeding}>
+              <button className="btn" onClick={handleSeed} disabled={seeding || isViewer}>
                 <Icon.download style={{ width: 14, height: 14 }} />
                 {seeding ? '등록 중…' : '기본 코드 등록'}
               </button>
@@ -227,13 +229,13 @@ export default function Page() {
             <button
               className="btn"
               onClick={() => setConfirmReset(true)}
-              disabled={resetting}
+              disabled={resetting || isViewer}
               style={{ color: 'var(--negative)' }}
             >
               <Icon.trash style={{ width: 14, height: 14 }} />
               {resetting ? '처리 중…' : '초기화'}
             </button>
-            <button className="btn primary" onClick={() => setAddOpen(true)}>
+            <button className="btn primary" onClick={() => setAddOpen(true)} disabled={isViewer}>
               <Icon.plus style={{ width: 14, height: 14 }} /> 메뉴 추가
             </button>
           </>
@@ -561,7 +563,7 @@ export default function Page() {
                             justifyContent: 'flex-end',
                           }}
                         >
-                          <button className="btn sm ghost" onClick={() => setEditRow(row)}>
+                          <button className="btn sm ghost" onClick={() => setEditRow(row)} disabled={isViewer}>
                             <Icon.edit style={{ width: 13, height: 13 }} />
                           </button>
                           <button
@@ -569,6 +571,7 @@ export default function Page() {
                             onClick={() => setDeleteTarget(row)}
                             style={{ color: 'var(--negative)' }}
                             title="삭제"
+                            disabled={isViewer}
                           >
                             <Icon.trash style={{ width: 13, height: 13 }} />
                           </button>

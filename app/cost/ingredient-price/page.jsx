@@ -28,6 +28,7 @@ import {
   SortableHeader,
   useCostManageTable,
 } from '@/components/cost/manage/table-utils';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 const RegisterModal = dynamic(
   () => import('@/components/cost/ingredient-price/RegisterModal').then(m => m.RegisterModal),
@@ -43,6 +44,7 @@ const VIEW_TABS = [
 ];
 
 export default function Page() {
+  const { isViewer } = useCurrentRole();
   const [rows, setRows] = useState([]);
   const [fileInfo, setFileInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -240,7 +242,7 @@ export default function Page() {
                     setResetConfirm(false);
                     handleReset();
                   }}
-                  disabled={resetting}
+                  disabled={resetting || isViewer}
                   style={{ color: 'var(--negative)', fontWeight: 700 }}
                 >
                   {resetting ? '초기화 중…' : '진행하기'}
@@ -250,7 +252,7 @@ export default function Page() {
               <button
                 className="btn sm"
                 onClick={() => setResetConfirm(true)}
-                disabled={resetting}
+                disabled={resetting || isViewer}
                 style={{ color: 'var(--negative)' }}
               >
                 초기화
@@ -259,7 +261,7 @@ export default function Page() {
             <button
               className="btn"
               onClick={() => setSyncQtyOpen(true)}
-              disabled={resetting}
+              disabled={resetting || isViewer}
             >
               <Icon.arrowDown style={{ width: 14, height: 14 }} />
               제때 수량 동기화
@@ -369,6 +371,7 @@ export default function Page() {
                             className="btn sm"
                             onClick={() => setRegTarget(r)}
                             style={{ fontSize: 11 }}
+                            disabled={isViewer}
                           >
                             수정
                           </button>
@@ -622,6 +625,7 @@ export default function Page() {
                         selected={r.meta?.id != null && priceTable.selected.has(r.meta.id)}
                         onToggleSelect={() => r.meta?.id != null && priceTable.toggle(r.meta.id)}
                         onInlineSave={handleInlineSave}
+                        readOnly={isViewer}
                       />
                     ))}
                   </tbody>

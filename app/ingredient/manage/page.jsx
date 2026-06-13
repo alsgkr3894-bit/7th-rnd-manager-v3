@@ -36,6 +36,7 @@ import { IngredientSettingsPanel } from './IngredientSettingsPanel';
 import { IngredientDiagnostics } from './IngredientDiagnostics';
 import { useIngredientManageData } from './useIngredientManageData';
 import { useIngredientManageView } from './useIngredientManageView';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 import dynamic from 'next/dynamic';
 
 const SuppliersView = dynamic(
@@ -67,6 +68,7 @@ async function syncManagedScope(target, scopeLabel) {
 
 export default function Page() {
   const isMain = useIsMainBrand(); // 마스터 시드는 7번가 전용
+  const { isViewer } = useCurrentRole();
   const { rows, setRows, prevPriceMap, priceDate, loading, load, brokenRefs, productCodeDupes, newJetteRows, jetteRemovedRows } =
     useIngredientManageData();
   const [search, setSearch] = useState('');
@@ -350,7 +352,7 @@ export default function Page() {
                       className="btn"
                       style={{ background: 'var(--negative)', color: '#fff', border: 'none' }}
                       onClick={handleReset}
-                      disabled={resetting}
+                      disabled={resetting || isViewer}
                     >
                       {resetting ? '삭제 중…' : '삭제'}
                     </button>
@@ -363,21 +365,21 @@ export default function Page() {
                     className="btn"
                     onClick={() => setResetConfirm(true)}
                     style={{ color: 'var(--text-3)' }}
-                    disabled={rows.length === 0}
+                    disabled={rows.length === 0 || isViewer}
                   >
                     <Icon.trash style={{ width: 14, height: 14 }} /> 데이터 초기화
                   </button>
                 )}
-                <button className="btn" onClick={startBatch} disabled={rows.length === 0}>
+                <button className="btn" onClick={startBatch} disabled={rows.length === 0 || isViewer}>
                   선택
                 </button>
                 {isMain && (
-                  <button className="btn" onClick={handleSeed} disabled={seeding}>
+                  <button className="btn" onClick={handleSeed} disabled={seeding || isViewer}>
                     <Icon.download style={{ width: 14, height: 14 }} />
                     {seeding ? '시드 중…' : `마스터 시드 (${INGREDIENT_MASTER_SEED.length})`}
                   </button>
                 )}
-                <button className="btn primary" onClick={() => setFormTarget('new')}>
+                <button className="btn primary" onClick={() => setFormTarget('new')} disabled={isViewer}>
                   <Icon.plus style={{ width: 14, height: 14 }} /> 식자재 추가
                 </button>
               </>
@@ -510,6 +512,7 @@ export default function Page() {
                         <button
                           className="btn sm"
                           onClick={() => handleAutoRegister(row)}
+                          disabled={isViewer}
                         >
                           자동 등록
                         </button>
@@ -549,6 +552,7 @@ export default function Page() {
                           className="btn sm"
                           style={{ color: 'var(--negative)' }}
                           onClick={() => row.productCode && handleExclude(row)}
+                          disabled={isViewer}
                         >
                           단종 처리
                         </button>

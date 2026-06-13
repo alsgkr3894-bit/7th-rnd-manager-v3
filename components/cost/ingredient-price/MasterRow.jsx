@@ -5,7 +5,7 @@ import { formatNumber, formatUnitPrice } from '@/lib/format';
 import { PriceHistoryModal } from '@/components/cost/ingredient-price/PriceHistoryModal';
 import { InlineEditCell } from '@/components/cost/manage/table-utils';
 
-export function MasterRow({ r, onRegClick, selected, onToggleSelect, onInlineSave }) {
+export function MasterRow({ r, onRegClick, selected, onToggleSelect, onInlineSave, readOnly = false }) {
   const [showNote, setShowNote] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const note = r.meta?.note || '';
@@ -67,6 +67,7 @@ export function MasterRow({ r, onRegClick, selected, onToggleSelect, onInlineSav
         <InlineEditCell
           value={r.masterName || r.productName || ''}
           required
+          readOnly={readOnly}
           onSave={value => onInlineSave(r, { ingredientName: value })}
           formatter={value => (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -105,6 +106,7 @@ export function MasterRow({ r, onRegClick, selected, onToggleSelect, onInlineSav
         />
         <InlineEditCell
           value={r.category || ''}
+          readOnly={readOnly}
           onSave={value => onInlineSave(r, { category: value })}
         />
         {r.isLinked ? (
@@ -123,6 +125,7 @@ export function MasterRow({ r, onRegClick, selected, onToggleSelect, onInlineSav
             value={r.priceWithTax ?? ''}
             type="number"
             align="right"
+            readOnly={readOnly}
             onSave={value => onInlineSave(r, { priceOverride: value })}
             formatter={value => (
               <>
@@ -193,7 +196,7 @@ export function MasterRow({ r, onRegClick, selected, onToggleSelect, onInlineSav
                 이력
               </button>
             )}
-            <button className="btn xs" onClick={onRegClick} title="포장단위·분류 수정">
+            <button className="btn xs" onClick={onRegClick} title="포장단위·분류 수정" disabled={readOnly}>
               수정
             </button>
           </div>

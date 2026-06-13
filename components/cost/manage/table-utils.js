@@ -178,6 +178,7 @@ export function InlineEditCell({
   align = 'left',
   required = false,
   formatter,
+  readOnly = false,
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? '');
@@ -220,12 +221,12 @@ export function InlineEditCell({
 
   return (
     <td
-      onClick={() => {
+      onClick={readOnly ? undefined : () => {
         setDraft(value ?? '');
         setEditing(true);
       }}
-      title="클릭해서 수정"
-      style={{ textAlign: align, cursor: 'text' }}
+      title={readOnly ? undefined : '클릭해서 수정'}
+      style={{ textAlign: align, cursor: readOnly ? 'default' : 'text' }}
     >
       {display || <span style={{ color: 'var(--text-4)' }}>—</span>}
     </td>
