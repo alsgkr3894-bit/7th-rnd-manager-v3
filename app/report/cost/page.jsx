@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import ReportBuilderShell, { OptGroup, Check } from '@/components/report/ReportBuilderShell';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
-import { formatNumber, pad } from '@/lib/format';
+import { formatNumber } from '@/lib/format';
 import { withDownloadDateSuffix } from '@/lib/download';
 import { loadXlsx } from '@/lib/excel';
 import { showToast } from '@/components/Toast';
