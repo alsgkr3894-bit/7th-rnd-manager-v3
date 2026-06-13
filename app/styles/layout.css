@@ -243,6 +243,11 @@
   border-bottom: 1px solid var(--border);
   min-width: 0;
 }
+.topbar .search {
+  flex: 1;
+  min-width: 0;
+  max-width: 480px;
+}
 .topbar.scrolled {
   box-shadow: var(--shadow-md);
   backdrop-filter: blur(8px);
