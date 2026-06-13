@@ -130,5 +130,14 @@ export function useIngredientUsageRows({
     }).length;
   }, [allMeta, usageMap]);
 
-  return { usageRows, unusedRows, displayRows, hiddenCount, oneCount, menuCounts, totalUsedCount };
+  return {
+    usageRows,
+    unusedRows,
+    nonHidden,
+    displayRows,
+    hiddenCount,
+    oneCount,
+    menuCounts,
+    totalUsedCount,
+  };
 }

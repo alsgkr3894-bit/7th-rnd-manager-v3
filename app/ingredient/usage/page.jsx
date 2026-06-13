@@ -146,8 +146,16 @@ export default function Page() {
       });
   }, [load, mountedRef]);
 
-  const { usageRows, unusedRows, displayRows, hiddenCount, oneCount, menuCounts, totalUsedCount } =
-    useIngredientUsageRows({
+  const {
+    usageRows,
+    unusedRows,
+    nonHidden,
+    displayRows,
+    hiddenCount,
+    oneCount,
+    menuCounts,
+    totalUsedCount,
+  } = useIngredientUsageRows({
       allMeta,
       usageMap,
       typeMap,
