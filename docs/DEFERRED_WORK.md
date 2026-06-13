@@ -41,11 +41,18 @@
 - **왜 보류**: 변경 범위 넓음. 회귀 위험 > 현재 효과. 안전 우선.
 - **관련 메모리**: [[deferred-refactors]]
 
-#### B-6. 대형 컴포넌트 분해  🟡 ⏸
-- **파일**: `app/ingredient/list/page.jsx`(904줄), `app/note/_NoteContent.jsx`(1017줄) 등
-- **참고**: `app/note/calendar/page.jsx`는 이미 분해 완료(370줄) — CalendarGrid·_DayPanel·_ScheduleModal 컴포넌트 + useCalendarData·useCalendarMonth·useCalendarNavigation·useTodayChecklist 훅 분리.
-- **해결 방향**: 기능별 서브컴포넌트 분리. 상태 관리 훅 추출.
+#### B-6 / C-P4. 대형 컴포넌트 분해  🟡 ⏸  (C-P4 통합)
+- **진행 현황**:
+  - `app/report/cost/page.jsx` ✅ 2026-06-14 — 869→407줄. `CostReportView`·`CostTableView` → `components/report/cost/`로 추출. `groupPizzaLR` 이전 완료.
+- **잔여 대상** (우선순위 순):
+  1. `app/note/_NoteContent.jsx` (~994줄) — table·panel·hook 추가 분리
+  2. `app/report/sales/page.jsx` (~948줄) — 차트 패널·섹션 컴포넌트 분리
+  3. `app/ingredient/manage/IngredientForm.jsx` (~807줄) — 섹션별 서브폼 분리
+  4. `app/nutrition/allergen/page.jsx` (~796줄) — 매트릭스·드로어 패널 분리
+  5. `app/ingredient/list/page.jsx` — R-5에서 이미 420줄로 축소됨, 추가 분해 필요 시 재평가
+- **방향**: page는 조립만 담당, table/panel/modal/hook으로 분리.
 - **왜 보류**: 효과 < 회귀 위험. 기능 추가 시점에 함께 진행 예정.
+- **검증**: `npm run test:ci` + 주요 화면 수동 확인
 - **관련 메모리**: [[deferred-refactors]]
 
 #### B-9. 1인피자 알레르기 표시 기준 정리  🟡 ⏸
@@ -106,16 +113,9 @@
 
 ### 🟡 3순위 — 대형 화면 파일 분리 (중위험, 파일별 단독 PR)
 
-#### C-P4. 대형 page/컴포넌트 분해  🟡 ⏸
-- **대상 우선순위**:
-  1. `app/note/_NoteContent.jsx` (~1017줄) — table·panel·hook 추가 분리
-  2. `app/report/sales/page.jsx` (~984줄) — 차트 패널·섹션 컴포넌트 분리
-  3. `app/report/cost/page.jsx` (~900줄+) — 진단 패널·원가표 탭 분리
-  4. `app/note/sample/page.jsx` — 달력·목록 섹션 분리
-  5. `app/ingredient/manage/IngredientForm.jsx` — 섹션별 서브폼 분리
-  6. `app/nutrition/allergen/page.jsx` — 매트릭스·드로어 패널 분리
-- **방향**: page는 조립만 담당, table/panel/modal/hook으로 분리. B-6과 연계.
-- **검증**: `npm run test:ci` + 주요 화면 수동 확인
+#### C-P4. 대형 page/컴포넌트 분해  → **B-6에 통합**
+- `app/report/cost/page.jsx` ✅ 2026-06-14 완료 (869→407줄, CostReportView·CostTableView 추출)
+- 잔여 항목은 위 B-6 / C-P4 항목 참조.
 
 ---
 
@@ -325,4 +325,4 @@ LOW 완료: L-02 border-radius 토큰화 · L-03 비교월 동일 경고 · L-04
 
 ---
 
-_잔여 보류(외부 조건 대기): **B-3 Phase 2**(DB schema, 브랜드별 migration) · **B-5**(useDBLoad 전면, 회귀위험) · **B-6**(대형 컴포넌트, 회귀위험) · **B-9**(1인피자 알레르기, 도메인 확인) · **N-42**(엣지 알레르기, 설계 합의) · **N-43**(과거 단가, 동작 명세)._
+_잔여 보류(외부 조건 대기): **B-3 Phase 2**(DB schema, 브랜드별 migration) · **B-5**(useDBLoad 전면, 회귀위험) · **B-6/C-P4**(대형 컴포넌트 잔여 4개, 회귀위험) · **B-9**(1인피자 알레르기, 도메인 확인) · **N-42**(엣지 알레르기, 설계 합의) · **N-43**(과거 단가, 동작 명세)._
