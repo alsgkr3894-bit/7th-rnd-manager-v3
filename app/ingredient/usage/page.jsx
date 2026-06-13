@@ -23,9 +23,9 @@ import { KEYS } from '@/lib/note/keys';
 
 
 const CAT_COLORS = {
-  피자: { bg: '#EFF6FF', color: '#1D4ED8' },
-  '1인피자': { bg: '#FFF7ED', color: '#C2410C' },
-  사이드: { bg: '#F0FDF4', color: '#15803D' },
+  피자: { bg: 'var(--cat-1-bg)', color: 'var(--cat-1-text)' },
+  '1인피자': { bg: 'var(--cat-3-bg)', color: 'var(--cat-3-text)' },
+  사이드: { bg: 'var(--cat-2-bg)', color: 'var(--cat-2-text)' },
 };
 const USAGE_CATS = ['전체', MENU_CATEGORY.PIZZA, MENU_CATEGORY.SIDE, MENU_CATEGORY.PERSONAL];
 const USAGE_THRESHOLD = { HIGH: 8, MID: 4 };
@@ -44,8 +44,8 @@ function normalizeStringList(value) {
 
 /** 사용횟수 배지 색상 — 많이(파랑)/보통(초록)/단발(주의)/그 외(중립) */
 function usageCountStyle(count) {
-  if (count >= USAGE_THRESHOLD.HIGH) return { background: '#DBEAFE', color: '#1D4ED8' };
-  if (count >= USAGE_THRESHOLD.MID) return { background: '#D1FAE5', color: '#065F46' };
+  if (count >= USAGE_THRESHOLD.HIGH) return { background: 'var(--cat-1-bg)', color: 'var(--cat-1-text)' };
+  if (count >= USAGE_THRESHOLD.MID) return { background: 'var(--cat-2-bg)', color: 'var(--cat-2-text)' };
   if (count === 1) return { background: 'var(--warn-soft)', color: 'var(--warn)' };
   return { background: 'var(--surface-2)', color: 'var(--text-2)' };
 }

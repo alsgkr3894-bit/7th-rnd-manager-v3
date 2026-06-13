@@ -252,7 +252,7 @@ th{background:#f5f5f5;font-weight:800;text-align:center;}
             </span>
           )}
           {monthStats.eventTotal > 0 && (
-            <span style={{ fontSize: 12, color: '#7C3AED', fontWeight: 600 }}>
+            <span style={{ fontSize: 12, color: 'var(--color-reporting)', fontWeight: 600 }}>
               일정 <b>{monthStats.eventTotal}</b>건
             </span>
           )}
@@ -283,7 +283,7 @@ th{background:#f5f5f5;font-weight:800;text-align:center;}
                 border: 'none',
                 cursor: 'pointer',
                 background: viewMode === k ? 'var(--accent)' : 'var(--surface-2)',
-                color: viewMode === k ? '#fff' : 'var(--text-3)',
+                color: viewMode === k ? 'var(--surface)' : 'var(--text-3)',
                 transition: 'background 0.12s',
               }}
             >

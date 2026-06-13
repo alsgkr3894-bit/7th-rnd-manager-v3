@@ -471,7 +471,7 @@ function NotePhotoSection({ photos = [], onChange }) {
                     padding: '1px 6px',
                     borderRadius: 999,
                     background: 'var(--accent)',
-                    color: '#fff',
+                    color: 'var(--surface)',
                     zIndex: 1,
                   }}
                 >
@@ -481,6 +481,7 @@ function NotePhotoSection({ photos = [], onChange }) {
               <button
                 type="button"
                 onClick={() => removePhoto(i)}
+                aria-label={`${p.caption || p.name || '사진'} 삭제`}
                 style={{
                   position: 'absolute',
                   top: 6,
@@ -489,7 +490,7 @@ function NotePhotoSection({ photos = [], onChange }) {
                   height: 22,
                   borderRadius: '50%',
                   border: 'none',
-                  background: 'rgba(0,0,0,.5)',
+                  background: 'rgba(0,0,0,.55)',
                   color: '#fff',
                   cursor: 'pointer',
                   display: 'flex',

@@ -89,17 +89,20 @@ export default function Page() {
   }, []);
 
   async function refreshStats() {
-    const nextStats = await collectStoreStats();
-    if (!mountedRef.current) return;
-
-    setStats(nextStats);
-    if (navigator.storage?.estimate) {
-      navigator.storage
-        .estimate()
-        .then(est => {
-          if (mountedRef.current) setStorageEst(est);
-        })
-        .catch(() => {});
+    try {
+      const nextStats = await collectStoreStats();
+      if (!mountedRef.current) return;
+      setStats(nextStats);
+      if (navigator.storage?.estimate) {
+        navigator.storage
+          .estimate()
+          .then(est => {
+            if (mountedRef.current) setStorageEst(est);
+          })
+          .catch(() => {});
+      }
+    } catch (err) {
+      showToast('통계 새로고침 실패: ' + err.message, 'error');
     }
   }
 
@@ -115,11 +118,12 @@ export default function Page() {
     try {
       await deleteDatabase(dbNameFor(getActiveBrandId()));
       showToast('DB 삭제 완료. 새로고침합니다…', 'ok');
+      setConfirmingRecreate(false);
       // 1초 후 자동 새로고침 — 새 페이지 로드 시 최신 schema로 DB 자동 생성
       setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
       console.error('[Recreate] 실패:', err);
-      showToast('DB 재생성 실패: ' + err.message, 'err');
+      showToast('DB 재생성 실패: ' + err.message, 'error');
       setBusy(false);
     }
   }

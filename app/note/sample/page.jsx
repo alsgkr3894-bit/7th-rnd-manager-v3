@@ -741,16 +741,16 @@ function SampleContent() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th style={{ width: 48 }}></th>
-                  <th>제목</th>
-                  <th>샘플명</th>
-                  <th style={{ width: 90 }}>카테고리</th>
-                  <th style={{ width: 110 }}>수령일</th>
-                  <th style={{ width: 120 }}>업체</th>
-                  <th style={{ width: 84 }}>담당자</th>
-                  <th style={{ width: 84 }}>평점</th>
-                  <th style={{ width: 110, textAlign: 'right' }}>단가</th>
-                  <th style={{ width: 150 }}></th>
+                  <th scope="col" style={{ width: 48 }} aria-label="선택"></th>
+                  <th scope="col">제목</th>
+                  <th scope="col">샘플명</th>
+                  <th scope="col" style={{ width: 90 }}>카테고리</th>
+                  <th scope="col" style={{ width: 110 }}>수령일</th>
+                  <th scope="col" style={{ width: 120 }}>업체</th>
+                  <th scope="col" style={{ width: 84 }}>담당자</th>
+                  <th scope="col" style={{ width: 84 }}>평점</th>
+                  <th scope="col" style={{ width: 110, textAlign: 'right' }}>단가</th>
+                  <th scope="col" style={{ width: 150 }} aria-label="액션"></th>
                 </tr>
               </thead>
               <tbody>
@@ -789,12 +789,12 @@ function SampleContent() {
             left: '50%',
             transform: 'translateX(-50%)',
             background: 'var(--accent)',
-            color: '#fff',
+            color: 'var(--surface)',
             borderRadius: 40,
             padding: '12px 28px',
             fontWeight: 800,
             fontSize: 15,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.22)',
+            boxShadow: 'var(--shadow-lg)',
             cursor: 'pointer',
             zIndex: 200,
             display: 'flex',

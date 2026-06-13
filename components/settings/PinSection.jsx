@@ -75,6 +75,7 @@ export function PinSection({
               type="password"
               inputMode="numeric"
               pattern="[0-9]*"
+              autoComplete="off"
               value={pinInput}
               onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))}
               placeholder="4~8자리 숫자"
@@ -87,6 +88,7 @@ export function PinSection({
               type="password"
               inputMode="numeric"
               pattern="[0-9]*"
+              autoComplete="off"
               value={pinConfirm}
               onChange={e => setPinConfirm(e.target.value.replace(/\D/g, ''))}
               placeholder="다시 입력"

@@ -927,7 +927,7 @@ export default function Page() {
                     width: 10,
                     height: 10,
                     borderRadius: '50%',
-                    background: '#94A3B8',
+                    background: 'var(--text-3)',
                     display: 'inline-block',
                     flexShrink: 0,
                   }}
@@ -960,7 +960,7 @@ export default function Page() {
                           width: 4,
                           height: 4,
                           borderRadius: '50%',
-                          background: '#94A3B8',
+                          background: 'var(--text-3)',
                           flexShrink: 0,
                         }}
                       />

@@ -491,7 +491,7 @@ export default function Page() {
                                 padding: '2px 8px',
                                 borderRadius: 999,
                                 background: 'var(--accent)',
-                                color: '#fff',
+                                color: 'var(--surface)',
                                 fontWeight: 700,
                               }}
                             >

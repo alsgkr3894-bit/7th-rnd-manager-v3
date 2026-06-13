@@ -88,6 +88,7 @@ export function SortableIngredientRow({
               className="form-input"
               type="number"
               min="0"
+              step="any"
               value={qty}
               onChange={e => onQtyChange(index, sl, e.target.value)}
               placeholder="0"

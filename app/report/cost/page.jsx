@@ -6,6 +6,7 @@ import { formatNumber, pad } from '@/lib/format';
 import { withDownloadDateSuffix } from '@/lib/download';
 import { loadXlsx } from '@/lib/excel';
 import { Icon } from '@/components/icons';
+import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db/init';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
 import { getAllRecipes, buildUnitPriceMap } from '@/lib/recipe';
@@ -271,7 +272,7 @@ export default function Page() {
     options: { riskThreshold, cats, opts },
   };
 
-  const handleExcelExport = () => exportCostXlsx(periodLabel, activeCats);
+  const handleExcelExport = () => exportCostXlsx(periodLabel, activeCats).catch(err => showToast('엑셀 내보내기 실패: ' + err.message, 'error'));
 
   return (
     <ReportBuilderShell
@@ -375,7 +376,7 @@ export default function Page() {
           </div>
 
           {/* ── 뷰 탭 ── */}
-          <div style={{ display: 'flex', gap: 4, margin: '4px 0 12px' }}>
+          <div className="no-print" style={{ display: 'flex', gap: 4, margin: '4px 0 12px' }}>
             <button
               className={`btn sm ${viewTab === 'report' ? 'primary' : 'ghost'}`}
               onClick={() => setViewTab('report')}
@@ -399,7 +400,7 @@ export default function Page() {
                   <div className="paper-stat">
                     <div className="paper-stat-label">대상 메뉴</div>
                     <div className="paper-stat-val num">
-                      {totalCount > 0 ? totalCount : '—'}
+                      {totalCount > 0 ? formatNumber(totalCount) : '—'}
                       <span className="unit">{totalCount > 0 ? '개' : ''}</span>
                     </div>
                     <div className="paper-stat-foot">{activeCats.length}개 카테고리</div>
@@ -415,7 +416,7 @@ export default function Page() {
                   <div className="paper-stat">
                     <div className="paper-stat-label">위험 메뉴</div>
                     <div className="paper-stat-val num" style={{ color: 'var(--warn)' }}>
-                      {allRisk}
+                      {formatNumber(allRisk)}
                     </div>
                     <div className="paper-stat-foot">{riskThreshold}% 초과</div>
                   </div>

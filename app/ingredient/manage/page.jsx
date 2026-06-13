@@ -350,7 +350,7 @@ export default function Page() {
                     </span>
                     <button
                       className="btn"
-                      style={{ background: 'var(--negative)', color: '#fff', border: 'none' }}
+                      style={{ background: 'var(--negative)', color: 'var(--surface)', border: 'none' }}
                       onClick={handleReset}
                       disabled={resetting || isViewer}
                     >

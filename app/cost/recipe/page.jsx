@@ -222,6 +222,14 @@ function RecipeContent() {
 
   const showEditor = isNew || selectedId != null;
 
+  if (loading)
+    return (
+      <main className="main">
+        <PageHeader breadcrumb={['원가계산', '원가 계산']} title="메뉴 원가 계산" sub="불러오는 중…" />
+        <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-3)' }}>불러오는 중…</div>
+      </main>
+    );
+
   if (dbError)
     return (
       <main className="main">

@@ -318,6 +318,7 @@ export function RecipeEditor({
                 className="form-input"
                 type="number"
                 min="0"
+                step="1"
                 value={s.sellingPrice}
                 onChange={e => setSize(i, 'sellingPrice', e.target.value)}
                 placeholder="판매가"

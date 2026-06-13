@@ -92,7 +92,10 @@ export function SampleStatsWidget({ samples, router }) {
             <div
               key={s.id ?? index}
               className="widget-row"
+              role="button"
+              tabIndex={0}
               onClick={() => href && router?.push?.(href)}
+              onKeyDown={e => e.key === 'Enter' && href && router?.push?.(href)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -272,7 +275,10 @@ export function ReportingNotesWidget({ notes, router }) {
             <div
               key={n.id ?? index}
               className="widget-row"
+              role="button"
+              tabIndex={0}
               onClick={() => href && router?.push?.(href)}
+              onKeyDown={e => e.key === 'Enter' && href && router?.push?.(href)}
               style={{
                 display: 'flex',
                 alignItems: 'center',

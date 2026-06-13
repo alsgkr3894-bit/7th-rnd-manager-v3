@@ -242,7 +242,7 @@ export default function Page() {
                     setResetConfirm(false);
                     handleReset();
                   }}
-                  disabled={resetting || isViewer}
+                  disabled={loading || resetting || isViewer}
                   style={{ color: 'var(--negative)', fontWeight: 700 }}
                 >
                   {resetting ? '초기화 중…' : '진행하기'}
@@ -252,7 +252,7 @@ export default function Page() {
               <button
                 className="btn sm"
                 onClick={() => setResetConfirm(true)}
-                disabled={resetting || isViewer}
+                disabled={loading || resetting || isViewer}
                 style={{ color: 'var(--negative)' }}
               >
                 초기화
@@ -261,7 +261,7 @@ export default function Page() {
             <button
               className="btn"
               onClick={() => setSyncQtyOpen(true)}
-              disabled={resetting || isViewer}
+              disabled={loading || resetting || isViewer}
             >
               <Icon.arrowDown style={{ width: 14, height: 14 }} />
               제때 수량 동기화
@@ -294,7 +294,7 @@ export default function Page() {
                 border: 'none',
                 cursor: 'pointer',
                 background: viewTab === key ? 'var(--accent)' : 'var(--surface-2)',
-                color: viewTab === key ? '#fff' : 'var(--text-2)',
+                color: viewTab === key ? 'var(--surface)' : 'var(--text-2)',
                 position: 'relative',
               }}
             >
@@ -308,8 +308,8 @@ export default function Page() {
                     minWidth: 16,
                     height: 16,
                     borderRadius: 999,
-                    background: 'var(--warn, #f59e0b)',
-                    color: '#fff',
+                    background: 'var(--warn)',
+                    color: 'var(--surface)',
                     fontSize: 9,
                     fontWeight: 900,
                     display: 'flex',
@@ -420,8 +420,11 @@ export default function Page() {
             </div>
             <div
               className="stat-card"
+              role="button"
+              tabIndex={0}
               style={{ cursor: 'pointer' }}
               onClick={() => setDeltaFilter(v => (v === 'up' ? 'all' : 'up'))}
+              onKeyDown={e => e.key === 'Enter' && setDeltaFilter(v => (v === 'up' ? 'all' : 'up'))}
             >
               <div className="stat-label">단가 인상</div>
               <div
@@ -437,8 +440,11 @@ export default function Page() {
             </div>
             <div
               className="stat-card"
+              role="button"
+              tabIndex={0}
               style={{ cursor: 'pointer' }}
               onClick={() => setDeltaFilter(v => (v === 'down' ? 'all' : 'down'))}
+              onKeyDown={e => e.key === 'Enter' && setDeltaFilter(v => (v === 'down' ? 'all' : 'down'))}
             >
               <div className="stat-label">단가 인하</div>
               <div

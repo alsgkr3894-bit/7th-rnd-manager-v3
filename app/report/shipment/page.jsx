@@ -53,7 +53,7 @@ function ItemTable({ items, maxQty }) {
               style={isManaged ? { background: 'var(--warn-soft)' } : undefined}
             >
               <td className="num">{i + 1}</td>
-              <td style={isManaged ? { borderLeft: '3px solid #D97706' } : undefined}>
+              <td style={isManaged ? { borderLeft: '3px solid var(--warn)' } : undefined}>
                 <div
                   style={{
                     marginBottom: 2,
@@ -67,8 +67,8 @@ function ItemTable({ items, maxQty }) {
                   {isManaged && (
                     <span
                       style={{
-                        background: '#D97706',
-                        color: '#fff',
+                        background: 'var(--warn)',
+                        color: 'var(--surface)',
                         fontSize: 10,
                         fontWeight: 700,
                         padding: '1px 6px',
@@ -92,7 +92,7 @@ function ItemTable({ items, maxQty }) {
                     style={{
                       width: `${pct}%`,
                       height: '100%',
-                      background: isManaged ? '#D97706' : 'var(--accent)',
+                      background: isManaged ? 'var(--warn)' : 'var(--accent)',
                       borderRadius: 2,
                       opacity: 0.6,
                     }}
@@ -555,14 +555,14 @@ export default function Page() {
               <div className="paper-legend">
                 {showExclusive && (
                   <div className="paper-legend-item">
-                    <span className="dot" style={{ background: '#1D766F' }} />
+                    <span className="dot" style={{ background: 'var(--positive)' }} />
                     <span>전용상품</span>
                     <span className="num muted">{qtyTxt(exclusiveQty)}</span>
                   </div>
                 )}
                 {showGeneric && (
                   <div className="paper-legend-item">
-                    <span className="dot" style={{ background: '#7C3AED' }} />
+                    <span className="dot" style={{ background: 'var(--scope-generic)' }} />
                     <span>범용상품</span>
                     <span className="num muted">{qtyTxt(genericQty)}</span>
                   </div>
@@ -583,7 +583,7 @@ export default function Page() {
                     width: 10,
                     height: 10,
                     borderRadius: '50%',
-                    background: '#1D766F',
+                    background: 'var(--positive)',
                     display: 'inline-block',
                     flexShrink: 0,
                   }}
@@ -609,7 +609,7 @@ export default function Page() {
                     width: 10,
                     height: 10,
                     borderRadius: '50%',
-                    background: '#7C3AED',
+                    background: 'var(--scope-generic)',
                     display: 'inline-block',
                     flexShrink: 0,
                   }}
@@ -633,7 +633,7 @@ export default function Page() {
                         width: 8,
                         height: 8,
                         borderRadius: 2,
-                        background: '#D97706',
+                        background: 'var(--warn)',
                       }}
                     />
                     관리품목 {managed.length}개 · {qtyTxt(managedQty)})
@@ -659,7 +659,7 @@ export default function Page() {
                     width: 10,
                     height: 10,
                     borderRadius: '50%',
-                    background: '#9CA3AF',
+                    background: 'var(--text-3)',
                     display: 'inline-block',
                     flexShrink: 0,
                   }}

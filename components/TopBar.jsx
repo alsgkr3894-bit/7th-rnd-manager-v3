@@ -329,6 +329,7 @@ export default function TopBar({
           onClick={() => setProfileOpen(v => !v)}
           aria-haspopup="menu"
           aria-expanded={profileOpen}
+          className="profile-btn"
           style={{
             border: 'none',
             background: 'none',

@@ -165,7 +165,7 @@ export default function ReportBuilderShell({
         </aside>
 
         <div className="report-preview-wrap">
-          <div className="report-preview-head">
+          <div className="report-preview-head no-print">
             <div>
               <div className="card-title">미리보기</div>
               <div className="card-sub">실제 보고서 1쪽 시안 — 옵션 변경 시 자동 갱신</div>

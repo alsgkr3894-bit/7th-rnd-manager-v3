@@ -175,7 +175,7 @@ export default function Page() {
             <div className="stat-label">원가율 경보 (40% 초과)</div>
             <div
               className="stat-value"
-              style={{ color: stats.alertCnt > 0 ? 'var(--negative, #ef4444)' : undefined }}
+              style={{ color: stats.alertCnt > 0 ? 'var(--negative)' : undefined }}
             >
               {stats.alertCnt}
               <span className="unit">개</span>
