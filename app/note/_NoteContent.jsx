@@ -101,7 +101,11 @@ const NoteTableRow = React.memo(function NoteTableRow({
       <td style={{ fontSize: 12, color: 'var(--text-3)' }}>{formatFullDate(note.testDate)}</td>
       <td onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', gap: 4 }}>
-          <button className="btn sm" onClick={() => router.push(`/note/${note.id}`)} aria-label={`${note.title || '노트'} 수정`}>
+          <button
+            className="btn sm"
+            onClick={() => router.push(`/note/${note.id}`)}
+            aria-label={`${note.title || '노트'} 수정`}
+          >
             <Icon.edit style={{ width: 12, height: 12 }} />
           </button>
           <button
@@ -228,8 +232,6 @@ export function NoteContent() {
   const hlRe = useMemo(() => buildHighlightRegex(search.trim()), [search]);
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
-
-
 
   function handleSearchChange(val) {
     setSearch(val);
@@ -949,10 +951,18 @@ export function NoteContent() {
               >
                 <tr>
                   <th scope="col">제목</th>
-                  <th scope="col" style={{ width: 100 }}>메뉴명</th>
-                  <th scope="col" style={{ width: 80 }}>카테고리</th>
-                  <th scope="col" style={{ width: 90 }}>상태</th>
-                  <th scope="col" style={{ width: 90 }}>날짜</th>
+                  <th scope="col" style={{ width: 100 }}>
+                    메뉴명
+                  </th>
+                  <th scope="col" style={{ width: 80 }}>
+                    카테고리
+                  </th>
+                  <th scope="col" style={{ width: 90 }}>
+                    상태
+                  </th>
+                  <th scope="col" style={{ width: 90 }}>
+                    날짜
+                  </th>
                   <th scope="col" style={{ width: 80 }} aria-label="액션" />
                 </tr>
               </thead>
