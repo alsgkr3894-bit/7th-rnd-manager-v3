@@ -8,7 +8,7 @@ import { initDB } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { getAllIngredients } from '@/lib/ingredient';
-import { getAllRecipes, buildUnitPriceMap, calcCostBySizes } from '@/lib/recipe';
+import { getAllRecipes, buildUnitPriceMap } from '@/lib/recipe';
 import { getMenuPriceCategories, getAllMenuPrices } from '@/lib/cost/menu-price';
 import { PIZZA_CATEGORY_VARIANTS, getMenuCodeRank } from '@/lib/menu-categories';
 import { getMenuMasterMap, upsertMenuMaster } from '@/lib/menu-master';
@@ -19,15 +19,12 @@ import {
   calcNetRevenue,
   calcPlatformMargin,
 } from '@/lib/cost/margin/platforms';
-import { componentSubtotal } from '@/lib/cost/shared/calc';
 import { getPizzaRecipeMap } from '@/lib/cost/pizza-detail';
 import { getAllEdges } from '@/lib/cost/edge-dough/store';
-import { edgeTotalCost, defaultExpandInMargin, defaultMarginSuffix } from '@/lib/cost/edge-dough';
 import { getPersonalRecipeMap } from '@/lib/cost/personal-detail';
 import { getSideRecipeMap } from '@/lib/cost/side-detail';
 import { getSetRecipeMap } from '@/lib/cost/set-detail';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
-import { createDefaultGroupResolver } from '@/lib/cost/recipe-groups/apply';
 import { MarginFilterBar } from '@/components/cost/margin/MarginFilterBar';
 import { MarginSummaryCards } from '@/components/cost/margin/MarginSummaryCards';
 import { saveSnapshot } from '@/lib/cost/margin/snapshots';
@@ -43,6 +40,13 @@ import {
   buildRecipesByName,
   mergeRecipeIntoDetail,
 } from '@/lib/cost/margin/matching';
+import {
+  buildRecipeRows,
+  buildDetailRows,
+  buildEdgeMetadata,
+  buildDerivedRows,
+  toNum,
+} from '@/lib/cost/margin/build-rows';
 
 const PlatformSettingsModal = dynamic(
   () => import('@/components/cost/margin/PlatformSettingsModal').then(m => m.PlatformSettingsModal),
@@ -120,7 +124,6 @@ export default function Page() {
       getMenuMasterMap(),
     ]);
 
-    // lib/recipe rows (old system)
     const latest = files[0] || null;
     let priceRowMap = new Map();
     if (latest) {
@@ -129,196 +132,34 @@ export default function Page() {
     }
     const upm = buildUnitPriceMap(meta, priceRowMap);
 
-    // 카테고리별 기본 적용 그룹은 한 번만 계산해 재사용 (레시피마다 전체 그룹 순회 방지)
-    const resolveDefaultGroupIds = createDefaultGroupResolver(allGroups);
-    const groupById = new Map(allGroups.map(g => [g.id, g]));
+    const recipeRows = buildRecipeRows(recipes, upm, allGroups);
+    const detailRows = buildDetailRows(allMenuPrices, { pizzaMap, personalMap, sideMap, setMap });
 
-    // 판매가 정규화: 레시피의 판매가는 문자열('18000'/'')이라 숫자/null로 통일
-    // (할인·수수료 계산과 엣지 파생 행의 판매가 합산이 문자열 연결되지 않도록)
-    const toNum = v => {
-      const n = parseFloat(v);
-      return Number.isFinite(n) ? n : null;
-    };
-
-    // 레시피 rows — 공통묶음 원가까지 합산
-    const recipeRows = recipes.map(r => {
-      const baseCostMap = calcCostBySizes(r, upm);
-
-      // 이 레시피에 적용할 그룹 ID 세트 결정
-      const activeGids =
-        r.groupIds == null ? resolveDefaultGroupIds(r.menuCategory) : new Set(r.groupIds);
-
-      const costMap = {};
-      for (const s of r.sizes || []) {
-        if (!s.label) continue;
-        let total = baseCostMap[s.label] || 0;
-        // 적용 그룹만 순회 (전체 그룹 스캔 대신 활성 그룹 id 기준)
-        for (const gid of activeGids) {
-          const g = groupById.get(gid);
-          if (!g) continue;
-          for (const ing of g.ingredients || []) {
-            const info = upm.get(ing.productCode);
-            if (!info?.unitPrice) continue;
-            const qty = parseFloat(ing.quantities?.[s.label]) || 0;
-            if (qty) total += info.unitPrice * qty;
-          }
-        }
-        costMap[s.label] = total;
-      }
-      const sizes = (r.sizes || []).map(s => ({ ...s, sellingPrice: toNum(s.sellingPrice) }));
-      return { ...r, sizes, costMap };
-    });
-
-    // detail store rows (new system: pizza/personal/side/set)
-    const DETAIL_STORE_MAP = {
-      피자: pizzaMap,
-      '피자/프리미엄 스페셜': pizzaMap,
-      '피자/프리미엄': pizzaMap,
-      '피자/오리지널': pizzaMap,
-      '피자/하프앤하프': pizzaMap,
-      '1인피자': personalMap,
-      세트박스: setMap,
-      사이드: sideMap,
-      소스: sideMap,
-      음료: sideMap,
-      엣지: sideMap,
-    };
-
-    const calcComponentCost = components =>
-      Array.isArray(components)
-        ? Math.round(components.reduce((acc, c) => acc + componentSubtotal(c), 0))
-        : 0;
-
-    // Group menu prices by (menuName, category)
-    const menuGroups = new Map();
-    for (const m of allMenuPrices) {
-      if (!DETAIL_STORE_MAP[m.category]) continue; // only detail-store categories
-      const key = `${m.menuName}||${m.category}`;
-      if (!menuGroups.has(key))
-        menuGroups.set(key, { menuName: m.menuName, category: m.category, entries: [] });
-      menuGroups.get(key).entries.push({ menuCode: m.menuCode, size: m.size, price: m.price });
-    }
-
-    const detailRows = [];
-    for (const { menuName, category, entries } of menuGroups.values()) {
-      const recMap = DETAIL_STORE_MAP[category];
-      const costMap = {};
-      const sizes = [];
-      for (const { menuCode, size, price } of entries) {
-        sizes.push({ label: size, sellingPrice: price });
-        const recipe = recMap?.get(menuCode);
-        if (recipe) {
-          const cost = calcComponentCost(recipe.components);
-          if (cost > 0) costMap[size] = cost;
-        }
-      }
-      const repCode = entries.find(e => e.menuCode)?.menuCode || '';
-      detailRows.push({
-        id: `detail||${menuName}||${category}`,
-        menuCode: repCode,
-        menuName,
-        menuCategory: category,
-        sizes,
-        costMap,
-        isDetailStore: true,
-      });
-    }
-
-    // 마진표 확장 엣지 — 엣지별 expandInMargin 플래그 기반(데이터 주도).
-    // 레거시 데이터(플래그 미존재)는 EXPAND_EDGE_TYPES fallback.
-    const isExpandEdge = e =>
-      e.expandInMargin != null ? !!e.expandInMargin : defaultExpandInMargin(e.edgeType);
-    const EXPAND_EDGES = [...new Set(edges.filter(isExpandEdge).map(e => e.edgeType))];
-
-    // 엣지 유형별 마진표 접미사 (엣지 레코드의 marginSuffix 우선)
-    const edgeSuffixByType = {};
-    for (const e of edges) {
-      if (!isExpandEdge(e)) continue;
-      if (!edgeSuffixByType[e.edgeType]) {
-        edgeSuffixByType[e.edgeType] =
-          (e.marginSuffix || '').trim() || defaultMarginSuffix(e.edgeType);
-      }
-    }
-
-    const PIZZA_EDGE_CATS = new Set(PIZZA_CATEGORY_VARIANTS);
-    const edgeCostByType = {};
-    for (const e of edges) {
-      if (!isExpandEdge(e)) continue;
-      if (!edgeCostByType[e.edgeType]) edgeCostByType[e.edgeType] = {};
-      edgeCostByType[e.edgeType][e.size] = edgeTotalCost(e);
-    }
-
-    // 엣지 판매가 맵: edgeType → price (메뉴 판매가에서 '엣지' 카테고리 조회)
-    const edgePriceByType = {};
-    for (const p of allMenuPrices) {
-      if (p.category !== '엣지' || !p.price) continue;
-      const name = (p.menuName || '').replace(/\s/g, '');
-      for (const edgeType of EXPAND_EDGES) {
-        if (name === edgeType.replace(/\s/g, '')) {
-          edgePriceByType[edgeType] = p.price;
-          break;
-        }
-      }
-    }
-
-    // 레시피 매칭 — 순수함수는 lib/cost/margin/matching.js에 분리
     const recipesByName = buildRecipesByName(recipeRows);
     const enrichedDetailRows = detailRows.map(d => mergeRecipeIntoDetail(d, recipesByName, toNum));
 
-    // Merge: detail store rows take precedence.
-    // detailKeySet: 정확 키 — 파생 엣지행이 이미 디테일 메뉴로 존재하는지 확인용
     const detailKeySet = new Set(enrichedDetailRows.map(r => `${r.menuName}||${r.menuCategory}`));
-    // detailCatsByName: 메뉴명 → 디테일 카테고리들 — 호환 카테고리 레시피행 dedup용
     const detailCatsByName = new Map();
     for (const r of enrichedDetailRows) {
       const arr = detailCatsByName.get(r.menuName);
       if (arr) arr.push(r.menuCategory || '');
       else detailCatsByName.set(r.menuName, [r.menuCategory || '']);
     }
-    // 같은 메뉴명에 호환 카테고리 디테일행이 있으면 그 레시피행은 제거(중복 방지)
     const filteredRecipeRows = recipeRows.filter(r => {
       const cats = detailCatsByName.get(r.menuName);
       if (!cats) return true;
       return !cats.some(dc => catCompatible(r.menuCategory || '', dc));
     });
 
-    // 엣지 파생 행 생성 — detail-store 피자 + 레시피 피자 모두 처리
-    // 파생행 메뉴코드: 베이스코드 + 접미사 (엣지별 marginSuffix)
-    const EDGE_SUFFIX = edgeSuffixByType;
-    const derivedRows = [];
+    const PIZZA_EDGE_CATS = new Set(PIZZA_CATEGORY_VARIANTS);
     const pizzaSources = [
       ...enrichedDetailRows.filter(r => PIZZA_EDGE_CATS.has(r.menuCategory || '')),
       ...filteredRecipeRows.filter(r => PIZZA_EDGE_CATS.has(r.menuCategory || '')),
     ];
-    for (const r of pizzaSources) {
-      for (const edgeType of EXPAND_EDGES) {
-        const edgeCosts = edgeCostByType[edgeType];
-        if (!edgeCosts) continue;
-        const newCostMap = {};
-        for (const s of r.sizes || []) {
-          if (!s.label) continue;
-          newCostMap[s.label] = (r.costMap?.[s.label] || 0) + (edgeCosts[s.label] || 0);
-        }
-        const derivedName = `${r.menuName} ${edgeType}`;
-        if (detailKeySet.has(`${derivedName}||${r.menuCategory}`)) continue;
-        const edgePrice = edgePriceByType[edgeType] ?? null;
-        const sfx = EDGE_SUFFIX[edgeType];
-        derivedRows.push({
-          id: `derived||${r.id}||${edgeType}`,
-          menuCode: r.menuCode && sfx ? `${r.menuCode}-${sfx}` : '',
-          menuName: derivedName,
-          menuCategory: r.menuCategory,
-          sizes: (r.sizes || []).map(s => ({
-            ...s,
-            // 엣지 추가금 0원·미등록 → 추가금 없이 기존(베이스) 판매가 사용 (씬도우 등)
-            sellingPrice: s.sellingPrice != null ? s.sellingPrice + (edgePrice ?? 0) : null,
-          })),
-          costMap: newCostMap,
-        });
-      }
-    }
 
-    // 메뉴 마스터의 hidden 플래그 부여 (menuCode 기준) — 숨김 행은 표·통계에서 제외
+    const edgeMeta = buildEdgeMetadata(edges, allMenuPrices);
+    const derivedRows = buildDerivedRows(pizzaSources, edgeMeta, detailKeySet);
+
     const allRows = [...enrichedDetailRows, ...filteredRecipeRows, ...derivedRows];
     for (const r of allRows) {
       const m = r.menuCode ? masterByCode.get(r.menuCode) : null;
@@ -408,10 +249,10 @@ export default function Page() {
 
   const edgeFiltered = useMemo(() => {
     if (!edgeFilter) return filtered;
-    if (edgeFilter === 'base') return filtered.filter(r => !r.id?.startsWith('derived||'));
-    return filtered.filter(
-      r => r.id?.startsWith('derived||') && r.id.split('||').pop() === edgeFilter
-    );
+    // 일반 행은 숫자 id, 파생 행만 'derived||...' 문자열 id → String 강제 후 판별
+    const isDerived = r => String(r.id ?? '').startsWith('derived||');
+    if (edgeFilter === 'base') return filtered.filter(r => !isDerived(r));
+    return filtered.filter(r => isDerived(r) && String(r.id).split('||').pop() === edgeFilter);
   }, [filtered, edgeFilter]);
 
   const sizeLabels = useMemo(() => {
