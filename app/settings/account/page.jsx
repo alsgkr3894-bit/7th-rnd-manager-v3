@@ -10,6 +10,7 @@ import { FormField } from '@/components/settings/FormField';
 import { getLastLogin, getCachedIP, fetchClientIP } from '@/lib/session';
 import { formatRelative } from '@/lib/format';
 import { SettingTile } from '@/components/ui/SettingTile';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useSettingsAuth } from '@/hooks/useSettingsAuth';
 import { initDB } from '@/lib/db';
 import {
@@ -72,6 +73,7 @@ export default function Page() {
   const [activeId, setActiveId] = useState(null);
   const [newAccForm, setNewAccForm] = useState({ name: '', email: '', role: 'viewer' });
   const [addingAccount, setAddingAccount] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const loadAccounts = useCallback(async () => {
     await initDB();
@@ -535,20 +537,7 @@ export default function Page() {
                           <button
                             className="btn sm"
                             style={{ color: 'var(--negative)', fontSize: 11 }}
-                            onClick={async () => {
-                              if (!confirm(`${acc.name} 계정을 삭제할까요?`)) return;
-                              try {
-                                await deleteAccount(acc.id);
-                                if (isActive) {
-                                  const remaining = accounts.filter(a => a.id !== acc.id);
-                                  setActiveAccountId(remaining[0]?.id ?? null);
-                                }
-                                await loadAccounts();
-                                showToast('계정 삭제됨', 'ok');
-                              } catch (err) {
-                                showToast('실패: ' + err.message, 'err');
-                              }
-                            }}
+                            onClick={() => setDeleteConfirmId(acc.id)}
                           >
                             삭제
                           </button>
@@ -623,6 +612,31 @@ export default function Page() {
           </table>
         </div>
       </div>
+      {deleteConfirmId != null && (() => {
+        const target = accounts.find(a => a.id === deleteConfirmId);
+        return (
+          <ConfirmDialog
+            open
+            message={`"${target?.name}" 계정을 삭제합니다. 되돌릴 수 없습니다.`}
+            danger
+            onConfirm={async () => {
+              setDeleteConfirmId(null);
+              try {
+                await deleteAccount(deleteConfirmId);
+                if (deleteConfirmId === activeId) {
+                  const remaining = accounts.filter(a => a.id !== deleteConfirmId);
+                  setActiveAccountId(remaining[0]?.id ?? null);
+                }
+                await loadAccounts();
+                showToast('계정 삭제됨', 'ok');
+              } catch (err) {
+                showToast('실패: ' + err.message, 'err');
+              }
+            }}
+            onCancel={() => setDeleteConfirmId(null)}
+          />
+        );
+      })()}
     </main>
   );
 }
