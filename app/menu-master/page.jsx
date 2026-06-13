@@ -284,7 +284,7 @@ export default function Page() {
 
       {loading && (
         <div className="card table-card">
-          <div style={{ overflowX: 'auto' }}>
+          <div className="table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
@@ -479,7 +479,7 @@ export default function Page() {
                 조건에 맞는 항목이 없습니다
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
+              <div className="table-wrap">
                 <table className="data-table stagger-rows">
                   <thead>
                     <tr>

@@ -67,10 +67,13 @@ export function MenuMasterEditModal({ row, isNew, onSave, onClose, presetCategor
   const canSave = form.menuCode.trim() && form.menuName.trim();
 
   function submit() {
-    if (!canSave) return;
+    const errs = {};
+    if (!form.menuCode.trim()) errs.menuCode = '메뉴코드를 입력하세요';
+    if (!form.menuName.trim()) errs.menuName = '메뉴명을 입력하세요';
     const price = parseOptionalNonNegativeNumber(form.price);
-    if (!price.ok) {
-      setErrors({ price: '판매가는 0 이상의 숫자만 입력하세요' });
+    if (!price.ok) errs.price = '판매가는 0 이상의 숫자만 입력하세요';
+    if (Object.keys(errs).length) {
+      setErrors(errs);
       return;
     }
     setErrors({});
@@ -144,10 +147,16 @@ export function MenuMasterEditModal({ row, isNew, onSave, onClose, presetCategor
                 <input
                   className="input"
                   value={form.menuCode}
-                  onChange={e => set('menuCode', e.target.value.toUpperCase())}
+                  onChange={e => { set('menuCode', e.target.value.toUpperCase()); setErrors(p => ({ ...p, menuCode: undefined })); }}
                   placeholder="예) P-OR-005-L"
                   style={{ fontFamily: 'monospace' }}
+                  aria-describedby={errors.menuCode ? 'menu-master-code-error' : undefined}
                 />
+                {errors.menuCode && (
+                  <div id="menu-master-code-error" role="alert" style={{ fontSize: 11, color: 'var(--negative)', marginTop: 4 }}>
+                    {errors.menuCode}
+                  </div>
+                )}
                 <div style={{ marginTop: 6 }}>
                   <CategoryTags menuCode={form.menuCode} />
                 </div>
@@ -182,9 +191,15 @@ export function MenuMasterEditModal({ row, isNew, onSave, onClose, presetCategor
             <input
               className="input"
               value={form.menuName}
-              onChange={e => set('menuName', e.target.value)}
+              onChange={e => { set('menuName', e.target.value); setErrors(p => ({ ...p, menuName: undefined })); }}
               placeholder="예) 슈퍼콤비네이션"
+              aria-describedby={errors.menuName ? 'menu-master-name-error' : undefined}
             />
+            {errors.menuName && (
+              <div id="menu-master-name-error" role="alert" style={{ fontSize: 11, color: 'var(--negative)', marginTop: 4 }}>
+                {errors.menuName}
+              </div>
+            )}
           </div>
 
           {/* 분류 + 규격 */}

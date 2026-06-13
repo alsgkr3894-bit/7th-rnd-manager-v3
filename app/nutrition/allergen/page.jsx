@@ -739,7 +739,7 @@ export default function Page() {
               <div className="empty-sub">알레르기 식자재 매칭 정보를 찾지 못했습니다.</div>
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <div className="table-wrap">
               <table className="data-table" style={{ minWidth: 680 }}>
                 <thead>
                   <tr>

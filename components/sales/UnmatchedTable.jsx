@@ -298,7 +298,7 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule })
         </div>
       )}
 
-      <div style={{ overflowX: 'auto' }}>
+      <div className="table-wrap">
         <table className="data-table">
           <thead>
             <tr>

@@ -164,7 +164,7 @@
   padding: 9px 12px 9px 16px;
   margin: 1px 0;
   min-height: 40px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
   border: 0;
   outline: none;
@@ -218,7 +218,7 @@
 .sidebar-footer {
   margin-top: auto;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   outline: none;
   background: var(--surface-2);
   font-size: 12px;
@@ -369,7 +369,7 @@
 .cdrop-avatar {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: white;
   display: grid;
   place-items: center;
@@ -402,7 +402,7 @@
   padding: 10px 16px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   color: var(--text-3);
   min-width: 0;
 }
@@ -438,7 +438,7 @@
   place-items: center;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   color: var(--text-2);
   position: relative;
 }

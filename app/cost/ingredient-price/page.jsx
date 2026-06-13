@@ -340,7 +340,7 @@ export default function Page() {
               <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>
                 분류·포장단위·가격 중 하나 이상이 없는 항목 {issueRows.length}개
               </div>
-              <div style={{ overflowX: 'auto' }}>
+              <div className="table-wrap">
                 <table className="data-table">
                   <thead>
                     <tr>
@@ -563,7 +563,7 @@ export default function Page() {
                 조건에 맞는 항목이 없습니다
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
+              <div className="table-wrap">
                 <table className="data-table">
                   <thead>
                     <tr>
