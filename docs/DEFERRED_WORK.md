@@ -213,6 +213,41 @@ _2026-06-14 — N-01~19 저위험 배치 코드 스캔 중 누락 2건 추가 �
 
 ---
 
+### N-20~38 중위험 배치 QA — ✅ 2026-06-14
+
+_2026-06-14 — C배치 전체 코드 레벨 버그 검사 + 수정 1건_
+
+**검증 결과**: ESLint 0 warnings, 테스트 140 suites / 794 passed, build 57 pages prerender 성공.
+
+**버그 수정 1건**:
+- `components/report/_ReportPreviewModal.jsx:120` 판매보고서 미리보기 "대상 범위" 표시: N-32에서 scope 값이 `'pizza'` → `'피자'` 등 한글로 변경됐으나 미리보기 조건 분기가 구 영문 값 기준으로 남아 있어 수정 (`opts.scope === 'pizza' ? '피자만' : '사이드만'` → `opts.scope`)
+
+**확인 완료 항목** (코드 기구현):
+- N-20: STATUSES 9개 확장 + NOTE_STATUS·STATUS_COLORS·STATUS_BORDER 전파 ✅
+- N-21: journal-print.js break-inside 처리 ✅
+- N-22: SAMPLE_CATEGORIES 독립 enum ✅
+- N-23: _DayPanel 자동일지 맨밑 기본 접힘 ✅
+- N-24: exportMonthPdf PDF 출력 ✅
+- N-25: CalendarGrid 셀 여백·오늘 강조 ✅
+- N-26: includeEdge 옵션 + build-cost-report 반영 ✅
+- N-27: RecipeEditor sticky 헤더 ✅
+- N-28: 묶음관리 `var(--accent-text)` → `var(--accent)` 수정 ✅
+- N-29: SortableIngredientRow input 70→80px, padding 3px5px→5px8px, fontSize 13 ✅
+- N-30: printIngredientPdf 2단 그리드·필드 확장 ✅
+- N-31: 재료단가표 탭 정리 ✅
+- N-32: scope 한글 카테고리 확장 + build-sales-report 필터 연결 ✅
+- N-33: 임계값 슬라이더 제거 ✅
+- N-34: costImpact UI + 변동 건수 집계 ✅
+- N-35: 집계기준 삭제 ✅
+- N-36: PriceSummaryCards 신규/삭제 카드 + onFilter 클릭 연동 ✅
+- N-37: CategoryTags subStyle.label === catKey 중복 제거 ✅
+- N-38: allergen orderedAllergens 빈도 내림차순 기본 정렬 ✅
+
+**ESLint 추가 수정**:
+- `.eslintrc.json`에 `@next/next/no-img-element: "off"` 추가 — IndexedDB base64 이미지는 Next.js `<Image />`를 사용할 수 없음
+
+---
+
 ### QA 라운드 4 (5건 구현 + 1건 조사) — ✅ 2026-06-12
 - A-3: `downloadCsvText` 헬퍼 추가 → recipe/menu-master CSV 즉시 revoke 제거
 - A-6: note/[id] + sample/[id] `if (saving) return` 재진입 가드

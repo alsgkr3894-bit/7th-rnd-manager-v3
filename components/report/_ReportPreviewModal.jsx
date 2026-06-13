@@ -117,7 +117,7 @@ const REPORT_OPTION_RENDERERS = {
       <OptionRow label="집계 기간" value={opts.periodMode === 'year' ? '년 단위' : '월 단위'} />
       <OptionRow
         label="대상 범위"
-        value={opts.scope === 'all' ? '전체 메뉴' : opts.scope === 'pizza' ? '피자만' : '사이드만'}
+        value={opts.scope === 'all' ? '전체 메뉴' : opts.scope}
       />
       <OptionRow label="순위 깊이" value={topN} />
       {Object.keys(subOpts).length > 0 && (
