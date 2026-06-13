@@ -22,7 +22,7 @@ import {
 import { NOTE_STATUS, NOTE_BRANDS } from '@/lib/note/constants';
 import { getNoteDetailStats } from '@/lib/stats/note-stats';
 import { tryLS, setLS } from '@/lib/note/storage';
-import { KEYS } from '@/lib/note/keys';
+import { KEYS, setNoteFrom } from '@/lib/note/keys';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useScrollMemory } from '@/hooks/useScrollMemory';
@@ -318,9 +318,7 @@ export function NoteContent() {
 
   function handleNewVersion(note, e) {
     e.stopPropagation();
-    try {
-      sessionStorage.setItem(KEYS.NOTE_FROM, String(note.id));
-    } catch {}
+    setNoteFrom(note.id);
     router.push('/note/write');
   }
 

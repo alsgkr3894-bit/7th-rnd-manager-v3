@@ -8,7 +8,7 @@ import { addSample } from '@/lib/sample';
 import { SampleFormBody, SAMPLE_INIT } from '../_SampleFormBody';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
-import { KEYS } from '@/lib/note/keys';
+import { consumeSampleFromNote } from '@/lib/note/keys';
 import { todayLocalDate } from '@/lib/date/local-date';
 
 export default function Page() {
@@ -23,23 +23,19 @@ export default function Page() {
   useBeforeUnload(isDirty);
 
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem(KEYS.SAMPLE_FROM_NOTE);
-      if (raw) {
-        sessionStorage.removeItem(KEYS.SAMPLE_FROM_NOTE);
-        const d = JSON.parse(raw);
-        if (!d || typeof d !== 'object' || Array.isArray(d)) return;
-        const menuName = typeof d.menuName === 'string' ? d.menuName : '';
-        const category = typeof d.category === 'string' ? d.category : '';
-        const tags = typeof d.tags === 'string' ? d.tags : '';
-        setForm(f => ({
-          ...f,
-          sampleNames: menuName ? [menuName] : f.sampleNames,
-          category: category || f.category,
-          tags: tags || f.tags,
-        }));
-      }
-    } catch {}
+    const d = consumeSampleFromNote();
+    if (!d || typeof d !== 'object' || Array.isArray(d)) return;
+    const menuName = typeof d.menuName === 'string' ? d.menuName : '';
+    const category = typeof d.category === 'string' ? d.category : '';
+    const tags = typeof d.tags === 'string' ? d.tags : '';
+    const linkedNoteId = typeof d.noteId === 'number' ? d.noteId : null;
+    setForm(f => ({
+      ...f,
+      sampleNames: menuName ? [menuName] : f.sampleNames,
+      category: category || f.category,
+      tags: tags || f.tags,
+      ...(linkedNoteId != null && { linkedNoteId }),
+    }));
   }, []);
 
   function handleFormChange(updater) {

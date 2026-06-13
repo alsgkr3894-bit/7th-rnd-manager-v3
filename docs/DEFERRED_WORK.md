@@ -121,23 +121,22 @@
 
 ### 🟢 4순위 — CSS 세부 분리 (저위험)
 
-#### C-P5. CSS 파일 추가 분리  🟢 ⏸
-- **대상**:
-  - `app/styles/components.css` → button·form·chip·badge 등 컴포넌트 단위로 분리
-  - `app/styles/features/report.css` → report-table·report-preview·report-modal로 분리
-  - `app/styles/features/motion.css` → motion-note·motion-ui 등 도메인별 분리
-  - `app/styles/features/motion-note.css` → 검토 후 motion.css 재통합 또는 유지
-- **원칙**: 각 파일 500줄 이하 목표. `globals.css` import 순서·cascade 유지 필수.
-- **검증**: `npm run lint` + 빌드 + 주요 화면 시각 확인
+#### C-P5. CSS 파일 추가 분리  ✅ 2026-06-14
+- `components.css`(1715줄) → `components/home-hero.css`(365) · `home-body.css`(399) · `overlay.css`(410) · `palette.css`(239) · `chrome.css`(302)
+- `features/report.css`(1696줄) → `features/report/table.css`(601) · `builder.css`(501) · `modal.css`(594)
+- `features/motion.css`(906줄) → `motion.css`(320) + `motion-enhanced.css`(587) — ENHANCED 섹션 분리
+- `features/motion-note.css`(964줄) → 유지 (이미 독립 파일, 단일 도메인으로 분리 불필요)
+- `globals.css` import 순서·cascade 유지. ESLint 0, build 57 pages 성공.
 
 ---
 
 ### 🟢 5순위 — storage 책임 경계 문서화 (저위험)
 
-#### C-P6. localStorage/sessionStorage 직접 접근 정리  🟢 ⏸
-- **현황**: 대부분 `lib/session`·`lib/note/storage`·`useLocalStorage` 등 책임 파일에 집중됨. 일부 화면 컴포넌트가 직접 접근.
-- **방향**: 무조건 제거보다는 화면 직접 접근(page.jsx 내 `localStorage.setItem` 등)만 책임 파일로 이동. 경계 정책 간단히 주석으로 문서화.
-- **검증**: `npm run lint`
+#### C-P6. localStorage/sessionStorage 직접 접근 정리  ✅ 2026-06-14
+- `lib/note/keys.js`에 sessionStorage 헬퍼 5종 추가: `setNoteFrom`·`consumeNoteFrom`·`setSampleFromNote`·`consumeSampleFromNote`·`setHomeNoteDraft`
+- 직접 접근 제거: `app/page.jsx` · `note/write/page.jsx` · `note/[id]/page.jsx` · `note/sample/write/page.jsx` · `note/_NoteContent.jsx` 5개 파일
+- `app/layout.jsx` 인라인 테마 스크립트는 하이드레이션 전 실행 필수 → 유지
+- ESLint 0, build 성공.
 
 ---
 

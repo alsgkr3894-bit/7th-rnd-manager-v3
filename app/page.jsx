@@ -34,7 +34,7 @@ import { WidgetConfigModal } from '@/components/home/WidgetConfigModal';
 import { WidgetShell } from '@/components/home/WidgetShell';
 import { useWidgetConfig, HOME_WIDGET_ROWS } from '@/hooks/useWidgetConfig';
 import { addNote } from '@/lib/note';
-import { KEYS } from '@/lib/note/keys';
+import { setHomeNoteDraft } from '@/lib/note/keys';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 import { getRecentPaletteItems } from '@/lib/palette-recent';
 import { getNoteKpi, getRecentActivities } from '@/lib/stats';
@@ -141,11 +141,7 @@ export default function HomePage() {
   function openDraftInNoteWrite() {
     const text = quickNote.trim();
     if (!text) return;
-    try {
-      sessionStorage.setItem(KEYS.HOME_NOTE_DRAFT, text);
-    } catch (err) {
-      console.warn('[Home] storage access failed:', err);
-    }
+    setHomeNoteDraft(text);
     router.push('/note/write');
   }
 

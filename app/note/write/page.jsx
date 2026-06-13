@@ -8,7 +8,7 @@ import { initDB } from '@/lib/db';
 import { addNote, getNoteById, CATEGORIES } from '@/lib/note';
 import { NoteFormBody, INIT } from '@/app/note/_NoteFormBody';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
-import { KEYS } from '@/lib/note/keys';
+import { KEYS, consumeNoteFrom, consumeHomeNoteDraft } from '@/lib/note/keys';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { getActiveBrandId } from '@/lib/active-brand';
@@ -30,7 +30,7 @@ export default function Page() {
   const [showDraftBanner, setShowDraftBanner] = useState(false);
   const [draftStatus, setDraftStatus] = useState('idle'); // idle | saving | saved
   const [isDirty, setIsDirty] = useState(false);
-  const skipRef = useRef(true);
+  const isDirtyRef = useRef(false);
   const timerRef = useRef(null);
   const draftTimer = useRef(null);
   const [lastCategory, setLastCategory, lastCategoryHydrated] = useLocalStorage(
@@ -44,6 +44,7 @@ export default function Page() {
   function handleFormChange(updater) {
     setForm(updater);
     setIsDirty(true);
+    isDirtyRef.current = true;
   }
 
   // 마운트 후 brand·category를 실제 브랜드/저장값으로 교정 (SSR 초기값 'main' 덮기)
@@ -58,11 +59,8 @@ export default function Page() {
 
   useEffect(() => {
     let alive = true;
-    let fromId = null;
-    try {
-      fromId = sessionStorage.getItem(KEYS.NOTE_FROM);
-      sessionStorage.removeItem(KEYS.NOTE_FROM);
-    } catch {}
+    const fromId = consumeNoteFrom();
+    const homeDraft = consumeHomeNoteDraft(); // note-from-note 분기 시에도 항상 소비 (stale key 방지)
     const sourceNoteId = Number(fromId);
     if (Number.isSafeInteger(sourceNoteId) && sourceNoteId > 0) {
       initDB()
@@ -79,12 +77,20 @@ export default function Page() {
             parentId: note.id,
             brand: note.brand || f.brand, // 부모 brand 계승
           }));
+          setIsDirty(true);
+          isDirtyRef.current = true;
         })
         .catch(console.error);
     } else {
-      const draft = loadDraft(KEYS.NOTE_DRAFT_WRITE);
-      if (draft && (draft.title || draft.menuName || draft.testContent)) {
-        setShowDraftBanner(true);
+      if (homeDraft) {
+        setForm(f => ({ ...f, title: homeDraft.slice(0, 30), testContent: homeDraft }));
+        setIsDirty(true);
+        isDirtyRef.current = true;
+      } else {
+        const draft = loadDraft(KEYS.NOTE_DRAFT_WRITE);
+        if (draft && (draft.title || draft.menuName || draft.testContent)) {
+          setShowDraftBanner(true);
+        }
       }
     }
     return () => {
@@ -93,10 +99,7 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    if (skipRef.current) {
-      skipRef.current = false;
-      return;
-    }
+    if (!isDirtyRef.current) return;
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setDraftStatus('saving');
@@ -122,6 +125,8 @@ export default function Page() {
       return;
     }
     setSaving(true);
+    clearTimeout(timerRef.current);
+    clearTimeout(draftTimer.current);
     try {
       await initDB();
       await addNote(form);
@@ -136,6 +141,9 @@ export default function Page() {
   }
 
   function handleCancel() {
+    clearTimeout(timerRef.current);
+    clearTimeout(draftTimer.current);
+    isDirtyRef.current = false;
     clearDraft(KEYS.NOTE_DRAFT_WRITE);
     setIsDirty(false);
     router.push('/note');
@@ -144,7 +152,9 @@ export default function Page() {
   function restoreDraft() {
     const draft = loadDraft(KEYS.NOTE_DRAFT_WRITE);
     if (draft) {
-      setForm(draft);
+      setForm(f => ({ ...f, ...draft, photos: [] }));
+      setIsDirty(true);
+      isDirtyRef.current = true;
       showToast('임시저장된 내용을 불러왔어요', 'ok');
     }
     setShowDraftBanner(false);

@@ -29,6 +29,7 @@ export const SAMPLE_INIT = {
   tags: '',
   photos: [],
   linkedProducts: [], // [{kind:'ingredient'|'menu', code, name}]
+  linkedNoteId: null,
 };
 
 const MAX_PHOTOS = 8;

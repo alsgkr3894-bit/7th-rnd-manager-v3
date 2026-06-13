@@ -11,7 +11,7 @@ import { printCurrentPageWithDownloadDate } from '@/lib/download';
 import { NoteFormBody, INIT } from '@/app/note/_NoteFormBody';
 import { NoteDetailSkeleton } from '@/components/ui/Skeleton';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
-import { KEYS } from '@/lib/note/keys';
+import { KEYS, setSampleFromNote } from '@/lib/note/keys';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 
 const COST_LINKS = [
@@ -209,22 +209,18 @@ export default function Page() {
   }
 
   function handleCancel() {
+    clearTimeout(timerRef.current);
     clearDraft(KEYS.NOTE_DRAFT(noteId));
     router.push('/note');
   }
 
   function handleCreateSample() {
-    try {
-      sessionStorage.setItem(
-        KEYS.SAMPLE_FROM_NOTE,
-        JSON.stringify({
-          menuName: form.menuName,
-          category: form.category,
-          tags: form.tags,
-          noteId,
-        })
-      );
-    } catch {}
+    setSampleFromNote({
+      menuName: form.menuName,
+      category: form.category,
+      tags: form.tags,
+      noteId,
+    });
     router.push('/note/sample/write');
   }
 
