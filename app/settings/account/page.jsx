@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -11,6 +11,17 @@ import { getLastLogin, getCachedIP, fetchClientIP } from '@/lib/session';
 import { formatRelative } from '@/lib/format';
 import { SettingTile } from '@/components/ui/SettingTile';
 import { useSettingsAuth } from '@/hooks/useSettingsAuth';
+import { initDB } from '@/lib/db';
+import {
+  getAllAccounts,
+  addAccount,
+  deleteAccount,
+  seedDefaultAdminIfEmpty,
+  getActiveAccountId,
+  setActiveAccountId,
+  ROLE_LABELS,
+} from '@/lib/auth/accounts';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 /**
  * 계정 관리 페이지
@@ -54,6 +65,21 @@ export default function Page() {
   const [profile, setProfileState] = useState(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', team: '', role: '' });
+  const { role: currentRole, isAdmin } = useCurrentRole();
+
+  // 로컬 계정 목록
+  const [accounts, setAccounts] = useState([]);
+  const [activeId, setActiveId] = useState(null);
+  const [newAccForm, setNewAccForm] = useState({ name: '', email: '', role: 'viewer' });
+  const [addingAccount, setAddingAccount] = useState(false);
+
+  const loadAccounts = useCallback(async () => {
+    await initDB();
+    await seedDefaultAdminIfEmpty();
+    const list = await getAllAccounts();
+    setAccounts(list);
+    setActiveId(getActiveAccountId() ?? list[0]?.id ?? null);
+  }, []);
 
   // PIN 관리
   const { hasPin, setPin: savePin } = useSettingsAuth();
@@ -71,10 +97,10 @@ export default function Page() {
     setProfileState(p);
     setForm(p || PROFILE_FORM_DEFAULT);
     setLastLogin(getLastLogin());
-    // 캐시된 IP만 즉시 표시 — 외부 API 호출은 사용자가 직접 요청할 때만 실행
     const cached = getCachedIP();
     if (cached) setIpEntry(cached);
-  }, []);
+    loadAccounts();
+  }, [loadAccounts]);
 
   async function handleRefreshIP() {
     setIpLoading(true);
@@ -378,6 +404,164 @@ export default function Page() {
         onSetPin={handleSetPin}
         onClearPin={handleClearPin}
       />
+
+      {/* ── 로컬 계정 관리 ── */}
+      <div className="card" style={{ marginTop: 16 }}>
+        <div className="card-header">
+          <div>
+            <div className="card-title">구성원 계정</div>
+            <div className="card-sub">활성 계정의 역할이 앱 내 수정 권한을 제어합니다</div>
+          </div>
+          {isAdmin && (
+            <button className="btn sm" onClick={() => setAddingAccount(v => !v)}>
+              {addingAccount ? '취소' : '+ 계정 추가'}
+            </button>
+          )}
+        </div>
+
+        {addingAccount && isAdmin && (
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              flexWrap: 'wrap',
+              alignItems: 'flex-end',
+              padding: '12px 0 8px',
+              borderBottom: '1px solid var(--divider)',
+              marginBottom: 8,
+            }}
+          >
+            <input
+              className="input"
+              style={{ flex: 1, minWidth: 120 }}
+              placeholder="이름"
+              value={newAccForm.name}
+              onChange={e => setNewAccForm(f => ({ ...f, name: e.target.value }))}
+            />
+            <input
+              className="input"
+              style={{ flex: 1, minWidth: 140 }}
+              placeholder="이메일 (선택)"
+              value={newAccForm.email}
+              onChange={e => setNewAccForm(f => ({ ...f, email: e.target.value }))}
+            />
+            <select
+              className="input"
+              style={{ width: 100 }}
+              value={newAccForm.role}
+              onChange={e => setNewAccForm(f => ({ ...f, role: e.target.value }))}
+            >
+              <option value="admin">관리자</option>
+              <option value="viewer">조회자</option>
+            </select>
+            <button
+              className="btn primary sm"
+              onClick={async () => {
+                if (!newAccForm.name.trim()) {
+                  showToast('이름을 입력하세요', 'err');
+                  return;
+                }
+                try {
+                  await addAccount(newAccForm);
+                  await loadAccounts();
+                  setNewAccForm({ name: '', email: '', role: 'viewer' });
+                  setAddingAccount(false);
+                  showToast('계정 추가됨', 'ok');
+                } catch (err) {
+                  showToast('실패: ' + err.message, 'err');
+                }
+              }}
+            >
+              추가
+            </button>
+          </div>
+        )}
+
+        {accounts.length === 0 ? (
+          <div style={{ color: 'var(--text-4)', fontSize: 13, padding: '12px 0' }}>
+            계정 없음 — 자동 관리자 계정이 생성됩니다
+          </div>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>이름</th>
+                <th>이메일</th>
+                <th style={{ width: 80 }}>역할</th>
+                <th style={{ width: 100 }}>상태</th>
+                {isAdmin && <th style={{ width: 60 }} />}
+              </tr>
+            </thead>
+            <tbody>
+              {accounts.map(acc => {
+                const isActive = acc.id === activeId;
+                return (
+                  <tr key={acc.id} style={isActive ? { background: 'var(--accent-soft)' } : undefined}>
+                    <td style={{ fontWeight: isActive ? 700 : 500 }}>{acc.name}</td>
+                    <td className="muted" style={{ fontSize: 12 }}>{acc.email || '—'}</td>
+                    <td>
+                      <span
+                        className="chip"
+                        style={{
+                          background: acc.role === 'admin' ? 'var(--accent-soft)' : 'var(--surface-2)',
+                          color: acc.role === 'admin' ? 'var(--accent-text)' : 'var(--text-2)',
+                        }}
+                      >
+                        {ROLE_LABELS[acc.role] || acc.role}
+                      </span>
+                    </td>
+                    <td>
+                      {isActive ? (
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)' }}>
+                          활성
+                        </span>
+                      ) : (
+                        <button
+                          className="btn sm"
+                          style={{ fontSize: 11 }}
+                          onClick={() => {
+                            setActiveAccountId(acc.id);
+                            setActiveId(acc.id);
+                            showToast(`${acc.name}(${ROLE_LABELS[acc.role]}) 계정으로 전환됨`, 'ok');
+                          }}
+                        >
+                          전환
+                        </button>
+                      )}
+                    </td>
+                    {isAdmin && (
+                      <td>
+                        {accounts.length > 1 && (
+                          <button
+                            className="btn sm"
+                            style={{ color: 'var(--negative)', fontSize: 11 }}
+                            onClick={async () => {
+                              if (!confirm(`${acc.name} 계정을 삭제할까요?`)) return;
+                              try {
+                                await deleteAccount(acc.id);
+                                if (isActive) {
+                                  const remaining = accounts.filter(a => a.id !== acc.id);
+                                  setActiveAccountId(remaining[0]?.id ?? null);
+                                }
+                                await loadAccounts();
+                                showToast('계정 삭제됨', 'ok');
+                              } catch (err) {
+                                showToast('실패: ' + err.message, 'err');
+                              }
+                            }}
+                          >
+                            삭제
+                          </button>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
 
       {/* 역할별 권한 매트릭스 (정보 표시) */}
       <div className="card" style={{ marginTop: 16 }}>
