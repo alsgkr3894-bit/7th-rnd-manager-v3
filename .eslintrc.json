@@ -6,6 +6,7 @@
     "es2021": true
   },
   "rules": {
-    "no-undef": "error"
+    "no-undef": "error",
+    "@next/next/no-img-element": "off"
   }
 }
