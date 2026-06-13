@@ -94,7 +94,7 @@ export function useReportActions({ reload }) {
   return {
     deletingId, confirmDeleteId, setConfirmDeleteId,
     pruneConfirmOpen, setPruneConfirmOpen, prunableCount,
-    editingId, editName, setEditName, editInputRef,
+    editingId, setEditingId, editName, setEditName, editInputRef,
     handleDelete, confirmDelete,
     handlePruneClick, confirmPrune,
     handleToggleFav,

@@ -3,6 +3,7 @@ import { Icon } from '@/components/icons';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { DiscountSimulator } from '@/components/cost/margin/DiscountSimulator';
 import { asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
+import { formatNumber } from '@/lib/format';
 
 /**
  * 마진 페이지 상단 필터 바 (플랫폼 선택, 할인 시뮬레이터, 카테고리·검색).
