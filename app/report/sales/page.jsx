@@ -6,11 +6,11 @@ import { withDownloadDateSuffix } from '@/lib/download';
 import ReportBuilderShell from '@/components/report/ReportBuilderShell';
 import SalesReportControls from '@/components/report/SalesReportControls';
 import SalesKpiCards from '@/components/report/SalesKpiCards';
+import { SalesMoverRow, SalesRankRow } from '@/components/report/sales/SalesChartRows';
 import { formatNumber, pad } from '@/lib/format';
 import { initDB } from '@/lib/db/init';
 import { getAll } from '@/lib/db';
 import { buildPeriodCompare } from '@/lib/sales/compare';
-import { buildGroupRanking } from '@/lib/sales/ranking';
 import { getUserExcluded, getUserRules } from '@/lib/sales';
 import { useReportPageState } from '@/hooks/useReportPageState';
 import { getProfile } from '@/lib/profile';
@@ -21,140 +21,15 @@ import {
   normalizePeriodMode,
   normalizeScope,
   safeMonth,
-  safePercentWidth,
   safeQuantity,
   safeYear,
 } from '@/lib/report/period';
+import { buildSalesStats, CAT_COLORS } from '@/lib/report/build-sales-report';
 
 const DRAFT_KEY = 'report_draft_sales';
 
-const CAT_COLORS = ['#3182F6', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6', '#E1101F', '#6B7280'];
-
 function normalizeViewMode(value) {
   return ['rank', 'compare'].includes(value) ? value : 'rank';
-}
-
-/** 피자 전월 대비 상승/하락 행. maxAbs는 바 너비 계산에 사용. */
-function MoverRow({ m, up, maxAbs }) {
-  const row = m && typeof m === 'object' && !Array.isArray(m) ? m : {};
-  const name = asDisplayText(row.name, '—');
-  const delta = safeQuantity(row.delta);
-  const quantity = safeQuantity(row.quantity);
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 7,
-        padding: '4px 0',
-        borderBottom: '1px solid var(--border)',
-      }}
-    >
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: 11,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            marginBottom: 2,
-          }}
-        >
-          {name}
-        </div>
-        <div
-          style={{ height: 5, background: 'var(--surface-2)', borderRadius: 2, overflow: 'hidden' }}
-        >
-          <div
-            style={{
-              width: `${safePercentWidth(delta, maxAbs)}%`,
-              height: '100%',
-              background: up ? 'var(--positive)' : 'var(--negative)',
-              borderRadius: 2,
-            }}
-          />
-        </div>
-      </div>
-      <div style={{ flexShrink: 0, textAlign: 'right', minWidth: 52 }}>
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: up ? 'var(--positive)' : 'var(--negative)',
-            fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          {up ? '+' : ''}
-          {formatNumber(delta)}
-        </div>
-        <div style={{ fontSize: 10, color: 'var(--text-4)', fontVariantNumeric: 'tabular-nums' }}>
-          {formatNumber(quantity)}건
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** 피자 베스트/워스트 순위 행. bestMax는 바 너비 계산에 사용. */
-function RankRow({ m, accent, valueColor, bestMax }) {
-  const row = m && typeof m === 'object' && !Array.isArray(m) ? m : {};
-  const name = asDisplayText(row.name, '—');
-  const quantity = safeQuantity(row.quantity);
-  const rank = asFiniteNumber(row.rank, 0) ?? 0;
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 7,
-        padding: '4px 0',
-        borderBottom: '1px solid var(--border)',
-      }}
-    >
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: 11,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            marginBottom: 2,
-          }}
-        >
-          {name}
-        </div>
-        <div
-          style={{ height: 5, background: 'var(--surface-2)', borderRadius: 2, overflow: 'hidden' }}
-        >
-          <div
-            style={{
-              width: `${safePercentWidth(quantity, bestMax)}%`,
-              height: '100%',
-              background: accent,
-              borderRadius: 2,
-            }}
-          />
-        </div>
-      </div>
-      <div style={{ flexShrink: 0, textAlign: 'right', minWidth: 52 }}>
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: valueColor,
-            fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          {formatNumber(quantity)}건
-        </div>
-        <div style={{ fontSize: 10, color: 'var(--text-4)', fontVariantNumeric: 'tabular-nums' }}>
-          전체 {rank}위
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export default function Page() {
@@ -298,62 +173,11 @@ export default function Page() {
     [salesRows]
   );
 
-  // Computed: stats derived from salesRows + filters (useMemo avoids re-running on unrelated state changes)
-  const { catShares, groupRanking, kpi } = useMemo(() => {
-    if (normRows.length === 0) return { catShares: [], groupRanking: [], kpi: null };
-
-    const period = { year: safeYearValue, month: safeMonthValue };
-    const prevPeriod = {
-      year: safeMonthValue === 1 ? safeYearValue - 1 : safeYearValue,
-      month: safeMonthValue === 1 ? 12 : safeMonthValue - 1,
-    };
-
-    const scopeFilter = r => safeScope === 'all' || r.category === safeScope;
-
-    // Category shares
-    const catMap = new Map();
-    for (const r of normRows) {
-      if (r.status !== 'classified') continue;
-      if (r.year !== safeYearValue || r.month !== safeMonthValue) continue;
-      if (!scopeFilter(r)) continue;
-      const cat = asDisplayText(r.category, '미분류') || '미분류';
-      catMap.set(cat, (catMap.get(cat) || 0) + safeQuantity(r.quantity));
-    }
-    const cs = Array.from(catMap, ([name, value], i) => ({
-      name,
-      value,
-      color: CAT_COLORS[i % CAT_COLORS.length],
-    }))
-      .filter(c => c.value > 0)
-      .sort((a, b) => b.value - a.value);
-
-    // Group ranking for current period (uses buildGroupRanking for sizes)
-    const scopedRows =
-      safeScope === 'all' ? normRows : normRows.filter(r => r.category === safeScope);
-    const ranking = buildGroupRanking(scopedRows, period);
-
-    // Previous month ranking for delta
-    const prevRanking = buildGroupRanking(scopedRows, prevPeriod);
-    const prevMap = new Map(prevRanking.map(m => [m.name, m.quantity]));
-
-    const withDelta = ranking.map((m, i) => {
-      const prevQty = prevMap.get(m.name) || 0;
-      const delta = m.quantity - prevQty;
-      const deltaPct = prevQty === 0 ? null : (delta / prevQty) * 100;
-      return { ...m, rank: i + 1, prevQty, delta, deltaPct };
-    });
-
-    // KPI
-    const total = ranking.reduce((s, m) => s + m.quantity, 0);
-    const prevTotal = prevRanking.reduce((s, m) => s + m.quantity, 0);
-    const deltaPct = prevTotal === 0 ? null : ((total - prevTotal) / prevTotal) * 100;
-
-    return {
-      catShares: cs,
-      groupRanking: withDelta,
-      kpi: { current: total, previous: prevTotal, deltaPct },
-    };
-  }, [normRows, safeYearValue, safeMonthValue, safeScope]);
+  // Computed: stats derived from salesRows + filters
+  const { catShares, groupRanking, kpi } = useMemo(
+    () => buildSalesStats(normRows, { year: safeYearValue, month: safeMonthValue, scope: safeScope }),
+    [normRows, safeYearValue, safeMonthValue, safeScope]
+  );
 
   // Clear loading once salesRows arrives (success path)
   useEffect(() => {
@@ -656,7 +480,7 @@ export default function Page() {
                           ▲ 상승 TOP 5
                         </div>
                         {risers.map(m => (
-                          <MoverRow key={m.name} m={m} up maxAbs={maxAbs} />
+                          <SalesMoverRow key={m.name} m={m} up maxAbs={maxAbs} />
                         ))}
                       </div>
                       <div style={{ width: 1, background: 'var(--border)', flexShrink: 0 }} />
@@ -672,7 +496,7 @@ export default function Page() {
                           ▼ 하락 TOP 5
                         </div>
                         {fallers.map(m => (
-                          <MoverRow key={m.name} m={m} up={false} maxAbs={maxAbs} />
+                          <SalesMoverRow key={m.name} m={m} up={false} maxAbs={maxAbs} />
                         ))}
                       </div>
                     </div>
@@ -697,7 +521,7 @@ export default function Page() {
                           ▲ 베스트 5
                         </div>
                         {best.map(m => (
-                          <RankRow
+                          <SalesRankRow
                             key={m.name}
                             m={m}
                             accent={pizzaColor}
@@ -719,7 +543,7 @@ export default function Page() {
                           ▼ 워스트 5
                         </div>
                         {worst.map(m => (
-                          <RankRow
+                          <SalesRankRow
                             key={m.name}
                             m={m}
                             accent="#94A3B8"

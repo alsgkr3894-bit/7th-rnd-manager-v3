@@ -173,7 +173,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **관련 메모리**: [[deferred-refactors]]
 
 #### B-6. 대형 컴포넌트 분해  🟡 ⏸
-- **파일**: `app/note/calendar/page.jsx`(900줄+), `app/ingredient/list/page.jsx`(800줄+) 등
+- **파일**: `app/ingredient/list/page.jsx`(904줄), `app/note/_NoteContent.jsx`(1017줄) 등
+- **참고**: `app/note/calendar/page.jsx`는 이미 분해 완료(370줄) — CalendarGrid·_DayPanel·_ScheduleModal 컴포넌트 + useCalendarData·useCalendarMonth·useCalendarNavigation·useTodayChecklist 훅 분리.
 - **문제**: 단일 파일이 너무 커서 유지보수 어려움.
 - **해결 방향**: 기능별 서브컴포넌트 분리. 상태 관리 훅 추출.
 - **왜 보류**: 효과 < 회귀 위험. 기능 추가 시점에 함께 진행 예정.
@@ -440,6 +441,13 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 - **해결 방향**: `hooks/useTableSearchSort.js`(검색+정렬 상태 통합) hook으로 수렴.
 - **관련**: R-36
 
+#### R-41. `app/report/sales/page.jsx` 빌더 + 인라인 컴포넌트 분리  ✅ 완료(2026-06-13)
+- **완료**: 1160줄 → 984줄.
+  - `buildSalesStats(normRows, {year, month, scope})` → `lib/report/build-sales-report.js` 신설(catShares·groupRanking·kpi 계산, R-31 패턴 동일). `CAT_COLORS`도 함께 이동.
+  - `MoverRow`·`RankRow` 인라인 컴포넌트 → `components/report/sales/SalesChartRows.jsx`(`SalesMoverRow`·`SalesRankRow`) 분리.
+  - `buildGroupRanking`·`safePercentWidth` import 제거. 검증: lint 0 · 776 test · build 통과.
+- **관련**: R-31
+
 ---
 
 ## D. 운영·실데이터 QA 영역 (구 SITE_IMPROVEMENT_AUDIT — 코드 보류 아님)
@@ -464,7 +472,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ---
 
-_최종 업데이트: 2026-06-13 — B-3 Phase 1(allergen/store.js dead code 6종 제거 — 외부 참조 없음) 완료. 테스트 2종(calendar-utils·report-period) 커밋. 잔여 고위험: 없음. 잔여 중위험: B-3 Phase 2(DB schema 제거, 외부 조건 대기)·B-5·B-6·B-9._
+_최종 업데이트: 2026-06-13 — R-41(report/sales 1160→984줄, buildSalesStats→lib·MoverRow/RankRow→SalesChartRows.jsx) 완료. B-6 항목 정정(calendar/page.jsx는 이미 분해 완료). 잔여 고위험: 없음. 잔여 중위험: B-3 Phase 2(DB schema, 외부 조건 대기)·B-5·B-6·B-9._
+_2026-06-13 — B-3 Phase 1(allergen/store.js dead code 6종 제거 — 외부 참조 없음) 완료. 테스트 2종(calendar-utils·report-period) 커밋. 잔여 고위험: 없음. 잔여 중위험: B-3 Phase 2(DB schema 제거, 외부 조건 대기)·B-5·B-6·B-9._
 _2026-06-13 — R-3(restore/page.jsx 1124줄→366줄, 서브컴포넌트3+hook1 분해) 완료. 잔여 고위험: 없음. 잔여 중위험: B-5·B-6·B-9(외부 조건 대기)._
 _2026-06-13 — R-8 잔여(useRecipeListState + RecipeSidebar 분리, recipe/page 789→344줄) 완료. 잔여 중위험: B-5·B-6·B-9 (외부 조건 대기). 착수 가능: R-1·R-2·R-3(고위험)._
 _2026-06-13 — `cost/margin` edgeFiltered 런타임 TypeError 수정(숫자 id에 `.startsWith` 호출 — 파생행만 'derived||' 문자열 id라 `String(r.id)` 강제 필요). 타입 가정 버그라 no-undef로는 안 잡힘._
