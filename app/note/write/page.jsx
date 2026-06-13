@@ -113,8 +113,8 @@ export default function Page() {
 
   async function handleSave() {
     if (saving) return; // Ctrl+S 연타 시 중복 저장(레코드 중복 생성) 방지
-    if (!form.title.trim() || !form.menuName.trim() || !form.testContent.trim()) {
-      showToast('제목, 메뉴명, 테스트 내용은 필수입니다', 'warn');
+    if (!form.title.trim() || !form.testContent.trim()) {
+      showToast('제목과 테스트 내용은 필수입니다', 'warn');
       return;
     }
     setSaving(true);

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import ReportBuilderShell, { OptGroup, Seg, Check } from '@/components/report/ReportBuilderShell';
+import ReportBuilderShell, { OptGroup, Check } from '@/components/report/ReportBuilderShell';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { formatNumber, pad } from '@/lib/format';
 import { withDownloadDateSuffix } from '@/lib/download';
