@@ -64,6 +64,11 @@ export default function SalesReportControls({
     return periodList(safeAvailMonthsByYear[targetYear], fallbackMonth);
   };
   const hasMonth = (targetYear, targetMonth) => monthsFor(targetYear, null).includes(targetMonth);
+  const isSameCompareMonth =
+    viewMode === 'compare' &&
+    periodMode === 'month' &&
+    safeCmpYear === safeYear &&
+    safeCmpMonth === safeMonth;
 
   return (
     <>
@@ -152,6 +157,15 @@ export default function SalesReportControls({
                 ))}
               </select>
             </div>
+            {isSameCompareMonth && (
+              <div
+                className="opt-help"
+                role="alert"
+                style={{ color: 'var(--warn)', marginTop: 6 }}
+              >
+                기준 월과 비교 월이 같습니다.
+              </div>
+            )}
           </div>
         )}
       </OptGroup>

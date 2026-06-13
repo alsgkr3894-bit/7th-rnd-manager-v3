@@ -26,6 +26,184 @@ satFat→fat 변환, BOM 통일, usePagination 훅, useDBLoad 부분 도입, Mod
 ### QA 라운드 3 (12건) — ✅ 2026-06-12 커밋 3480850
 A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분류 토글 confirm 게이트 / A4: 복원 공통 store 안내 / B1: edgeSearch 선택 초기화 / B2: useDBLoad error UI / C1: CSV filtered 기반 / C2: 단가 정렬 라벨 / C3: 페이지 리셋 / C4: ModalFrame+ConfirmDialog ARIA / C5: qa-prod 포트 가드
 
+### UI 점검 라운드 (42건 — HIGH 14·MEDIUM 18·LOW 10) — ✅ 2026-06-13
+
+`docs/UI_INSPECTION_2026-06-13.md` 내용을 이 섹션으로 통합하고 원본 리포트는 삭제 대상으로 정리.
+
+**커밋 3건**: 8c1cd00 (즉시 HIGH 4), cfe0698 (나머지 HIGH 10), ed7df1b (MEDIUM 18)
+
+**HIGH 즉시 수정 4건** (8c1cd00):
+- H-01: `showToast(…, 'err')` → `'error'` (note/board)
+- H-02: `tokens.css` 다크모드 누락 4토큰 추가 (`--warn`, `--surface-3`, `--surface-4`, `--color-reporting`)
+- H-03: `IngredientSearch` 드롭다운 `zIndex: 9999` → `350` (모달 z-index 계층 준수)
+- H-04: 가격보고서·출고보고서 미구현 Excel 체크박스 제거
+
+**HIGH 나머지 10건** (cfe0698):
+- H-05: `settings/system` DangerConfirm 확장 div `role="alert"` 추가
+- H-06: `settings/account` PIN 해제 → `ConfirmDialog` 2단계 확인 + addingBusy 스피너
+- H-07: `note/board` 로딩 중 스피너 표시
+- H-08: `ingredient/list` catch showToast + PDF/Excel 버튼 `disabled={loading || filtered.length === 0}`
+- H-09: `ingredient/usage`, `nutrition/allergen` catch showToast 추가
+- H-10: `report/cost` 빈 데이터 `setDataError()` 호출
+- H-11: `report/price` 파일 부족·비교 불가 `setDataError()` 2종
+- H-12: `report/shipment` 빈 데이터·날짜 없음 `setDataError()` 2종
+- H-13: `report/menu-sales-compare` 빈 데이터 `setDataError()` + 연도 동적 추출
+- H-14: `MenuMasterEditModal` ESC 키 닫기 + 오버레이 클릭 닫기
+- 기타: RecipeEditor 저장 중 삭제·취소 버튼 disabled, `--accent-soft`/`var(--warn)` 토큰화, `menu-master` 셀 `cell-name/menu-name` 클래스, `settings/account` `'err'`→`'error'` 4곳
+
+**MEDIUM 18건** (ed7df1b):
+- M-01~06: 하드코딩 hex → CSS 토큰 (`--warn`/`--surface`/`--positive`/`--scope-generic`/`--text-3`/`--cat-*`), 접근성 `aria-label`/`scope` (calendar·sample·NoteFormBody·ingredient-price·all-summary·manage·allergen·shipment·sales·usage·_NoteContent)
+- M-07: 클릭 가능 div `role="button" tabIndex={0} onKeyDown` (ingredient-price stat-cards, HomeWidgets widget-rows)
+- M-08: `.search:focus-visible`, `.profile-btn:focus-visible` CSS 포커스 링 추가
+- M-09: 원가레시피 `loading` early return, 재료단가표 버튼 `disabled` `|| loading` 추가
+- M-10: `refreshStats` try-catch + showToast on failure
+- M-11: `handleRecreate` `setConfirmingRecreate(false)` + `'err'`→`'error'`
+- M-12: `handleExcelExport` Promise 반환 + catch showToast
+- M-13: 원가보고서 뷰 탭 `no-print`, ReportBuilderShell preview-head `no-print`
+- M-14: `totalCount`/`allRisk` → `formatNumber()` 적용
+- M-15: PIN 입력 `autoComplete="off"`
+- M-16: 사용량 input `step="any"`, 판매가 input `step="1"`
+- M-17: `.notif-pop z-index` 50 → 95
+- M-18: `base.css` 전역 `scrollbar-width: thin` + `::-webkit-scrollbar 6px`
+
+**LOW 10건 처리/보류**
+- 추가 처리(통합 중): L-03 판매 보고서 비교 월 동일 선택 경고 표시, L-04 제때 출고량 업로드 제한 표시 30MB 일치 + toast 타입 `'error'` 교정, L-06 백업 진단 버튼 중복 실행 방지, L-07 회사 드롭다운·홈 인사 제목 모바일 overflow 완화.
+- 이미 처리/확인: L-01 노트 보드 loading 표시·영양 메뉴 empty-state, L-05 미매칭 테이블 페이지네이션.
+- 보류: L-02 고정 px값 추가 정리, L-08 메뉴마스터 폼 인라인 오류, L-09 테이블 가로 스크롤 래퍼 감사, L-10 폰트 preload 정책 변경. 디자인·검증 범위가 커서 별도 UI 정리 때 재검토.
+
+---
+
+### QA 리포트 통합 — ✅ 2026-06-13
+
+`docs/QA_REPORT_20260613.md` 내용을 이 파일로 통합하고 원본 리포트는 삭제 대상으로 정리.
+
+**리포트 판정**
+- 빌드·테스트·ESLint 모두 정상으로 기록됨.
+- UTC 날짜 기본값, `confirm()` 제거, `AreaChart` `useId`, `useSettingsAuth` storage listener, 가짜 공유 링크 차단, IP 조회 opt-in, ESLint 예외 축소 모두 정상.
+- 즉시 수정 필요한 크리티컬 버그 없음.
+
+**비긴급 잔존 패턴 처리**
+- `lib/work-log.js`의 `toISOString().slice(0, 10)`은 사용자 입력 날짜가 아닌 작업로그 TTL cutoff 계산이라 수정 불필요로 분류.
+- `Math.random()` 잔존은 404 이펙트·진행 시뮬레이션·모달 내부 id·캘린더 fallback 등 SSR 위험 낮은 용도라 즉시 수정하지 않음. 캘린더 fallback은 추후 client-only 구조 변경 시 재검토.
+
+**보류 항목 매핑**
+- B-3 Phase 2: `nutrition_allergy_links` legacy store schema 제거 — 브랜드별 DB migration 검증 필요.
+- B-5: `useDBLoad` 전면 확산 — 회귀 위험 때문에 보류.
+- B-6: 대형 컴포넌트 추가 분해 — 기능 변경 시점에 병행.
+- B-9: 공유 링크 real backend — 도메인/백엔드 정책 확인 필요.
+- 로컬 인증 경계 문서화는 정보성 항목으로 유지. 현재 구조는 로컬 앱 잠금이며 프로덕션 인증 체계가 아님.
+
+---
+
+### QA 리포트 통합(N-01~N-19 저위험 배치) — ✅ 2026-06-13
+
+`docs/QA_REPORT_N01-N19.md` 내용을 이 파일로 통합하고 원본 리포트는 삭제 대상으로 정리.
+
+**리포트 판정**
+- 커밋 `08bcea6`(N-01~19 구현) + `7f54977`(버그 수정) 기준 검증 기록.
+- `npm run build` 57페이지, `npm test` 140 suites / 793 tests, ESLint 0 errors로 기록됨.
+- N-01~N-19 저위험 배치 전량 정상으로 판정됨.
+- 잔존 이슈 없음. 보고서 결론상 중위험 배치(N-20~N-38) 진행 가능 상태로 기록됨.
+
+**수정 완료 버그**
+- N-05: 노트 작성·수정 저장 로직에 `menuName` 필수 검증이 남아 메뉴명 없이 저장할 수 없던 문제 수정 완료.
+- N-06: 원가보고서 집계기간 UI 제거 후 남은 `Seg` 미사용 import 정리 완료.
+
+**완료 항목 요약**
+- 노트 탭 순서 변경, 노트목록/칸반/달력의 불필요 CSV·인쇄·복사 버튼 제거.
+- 노트작성 메뉴명 필수 해제, 토핑 카테고리 제거.
+- 원가보고서 제목 변경 및 집계기간 UI 제거.
+- 공통 "CSV 내보내기" 라벨을 "엑셀로 내보내기"로 변경.
+- TopBar 우측 정렬, 다크모드 모션은 기구현 확인.
+- 메뉴마스터 규격 컬럼 추가, 피자 기본가 일괄 버튼 삭제, 양식업로드 카드 하단 이동.
+- 재료단가표 초기화 버튼 축소, 일괄 가격 업로드·제품별 사용현황 탭·SortButton 제거.
+- 식자재 사용현황 액션 버튼 상단 이동, 제때 업로드 박스 축소, 샘플기록 placeholder 변경.
+
+---
+
+### QA 리포트 통합(N-39~N-44 D배치) — ✅ 2026-06-13
+
+`docs/QA_REPORT_N39-N44_2026-06-13.md` 내용을 이 파일로 통합하고 원본 리포트는 삭제 대상으로 정리.
+
+**리포트 판정**
+- 이번 세션에서 구현된 D배치 고위험 6개 항목과 버그 수정 2건 검증 기록.
+- ESLint 에러 0, 테스트 140 suites / 793 passed, build 57 pages prerender 성공으로 기록됨.
+- 발견 버그 2건은 fix 커밋 `1b15e5f`에서 수정 완료로 기록됨.
+- 즉시 추가 수정할 코드 작업은 없음.
+
+**완료 항목 요약**
+- N-39: 원가보고서 미연결 메뉴 진단 추가. `detailStoreFor`를 `category-policy.js` 정책함수 기반으로 정리하고, `분류 미매핑`·`메뉴코드 없음`·`레시피 미등록`·`레시피 원가 0` 진단을 보고서에 표시.
+- N-40: 제때 최신 파일과 식자재 메타 자동연동. 신규 제때 항목 자동등록, 최신 파일에서 사라진 항목 단종 처리, 뷰어 권한 버튼 비활성화.
+- N-41: 메뉴마스터 편집 모달에 레시피 입력 섹션 연결. 카테고리별 detail store 라우팅, 비동기 race 방지, 신규 메뉴 가드 적용.
+- N-44①: DB v19 및 `ref_accounts` store 추가, 계정 CRUD와 기본 admin seed, 백업 공통 store 포함.
+- N-44②: 계정 관리 UI 추가. 계정 목록, 추가, 전환, 삭제 ConfirmDialog, 마지막 계정 삭제 방지.
+- N-44③: 조회자 UI 게이팅 적용. `menu-master`, `ingredient-price`, `ingredient/manage`, `MasterRow`, `InlineEditCell`의 수정 동작을 readOnly 기준으로 차단.
+
+**수정 완료 버그**
+- Bug 1: `settings/account` 계정 삭제의 raw `confirm()` 사용을 `ConfirmDialog`로 교체. "되돌릴 수 없습니다." 문구 포함.
+- Bug 2: 같은 탭 계정 전환 후 `useCurrentRole`이 즉시 갱신되지 않던 문제를 `rnd:account-changed` CustomEvent와 `storage` listener로 수정.
+
+**보류 항목 정리**
+- N-42: 엣지별 알레르기 탭 — 크러스트 변형 기대값 설계 합의 대기.
+- N-43: 재료단가표 과거 단가 가져오기 — 조회 전용인지 일시 적용인지 동작 명세 대기.
+- N-45·N-46은 이 리포트 작성 시점에는 예시 파일 대기로 표기됐으나, 현재 문서 최신 로그에는 후속 구현 완료로 기록되어 있어 신규 보류 항목으로 추가하지 않음.
+
+---
+
+### QA 리포트 통합(N-45·N-46·B배치) — ✅ 2026-06-13
+
+`docs/QA_REPORT_N45-N46_N배치_2026-06-13.md` 내용을 이 파일로 통합하고 원본 리포트는 삭제 대상으로 정리.
+
+**리포트 판정**
+- 이번 세션 구현 항목(N-45·N-46), B배치 기구현 확인(N-01~N-19), C배치 기구현 확인(N-20~N-38) 검증 기록.
+- ESLint 에러 0, 테스트 140 suites / 794 passed, build 57 pages prerender 성공으로 기록됨.
+- 발견 버그 1건은 `87d6248`에서 수정 완료로 기록됨.
+- 즉시 추가 수정할 코드 작업은 없음.
+
+**완료 항목 요약**
+- N-45: 영양성분 시험성적서 기반 입력 추가. 크러스트 탭 "성적서" 뱃지, "시험성적서 기반 입력" 체크박스, `certLinked` 저장 반영 검증.
+- N-46: 원가보고서 제품원가표 탭 추가. `viewTab`, `groupPizzaLR`, 피자/1인피자 L/R 7컬럼 테이블, 사이드/세트/엣지 4컬럼 테이블, 카테고리 필터와 위험 원가율 색상 검증.
+- N-05·N-07·N-09·N-18: 제목 required 제거, CSV→엑셀 명칭 변경, 다크모드 토글 트랜지션, dropzone 축소 검증 완료.
+- N-01~N-19 B배치와 N-20~N-38 C배치는 이미 구현된 상태로 재확인됨.
+
+**수정 완료 버그**
+- N-07: `settings/backup`과 `note/sample/[id]`에 남아 있던 "CSV" 버튼 텍스트 2건을 "엑셀로 내보내기"로 변경 완료.
+
+**보류 항목 정리**
+- N-42: 엣지별 알레르기 탭 — 크러스트 변형 기대값 설계 합의 대기.
+- N-43: 재료단가표 과거 단가 가져오기 — 조회 전용인지 일시 적용인지 동작 명세 대기.
+
+---
+
+### QA 리포트 통합(리팩터링 미커밋 변경사항) — ✅ 2026-06-13
+
+`docs/QA_REPORT_REFACTOR_2026-06-13.md` 내용을 이 파일로 통합하고 원본 리포트는 삭제 대상으로 정리.
+
+**리포트 판정**
+- N-01~N-19 이후 working tree에 쌓인 리팩터링 변경사항 검증 기록.
+- `npm run build` 57페이지, `npm test` 140 suites / 793 tests, ESLint 0 errors로 기록됨.
+- 공개 API와 기존 import 경로는 유지된 것으로 판정됨.
+- 잔존 style 이슈 1건은 통합 중 바로 정리함.
+
+**완료 항목 요약**
+- 판매 분류 규칙과 식자재 seed 대형 데이터를 `lib/sales/data/rules/`, `lib/ingredient/data/`로 분리하고 기존 경로는 re-export shell로 유지.
+- `buildAutoPrintScript({ waitForImages, closeAfterPrint })`를 `lib/print/window-print.js`에 추가하고 원가 사용현황, 식자재, 연구일지, 영양 라벨, 원산지 인쇄 스크립트를 공통화.
+- `SortableTh`, `ReportModalShell`, `copyText`, `useTableSearchSort.toggleSort` 등 공유 UI/helper 적용.
+- `useLocalStorage` stale closure 버그 수정, `useOutsideClick` 테스트 가능 단위 분리, `useTableSearchSort` 초기 정렬 방향 옵션 추가.
+- `ingredient/manage` `useCallback` deps 누락 수정, `sales/export-xlsx` 동적 로드를 `loadXlsx` 공통 helper로 통일.
+- 신규 테스트: calendar-utils, report-period, useOutsideClick, local-date, sales-rule-matcher, sales-seed-data, ui-browser-helpers.
+
+**수정 완료 버그**
+- `hooks/useLocalStorage.js`: `initialValue`·`normalize` stale closure 문제 수정 완료.
+- `app/ingredient/manage/page.jsx`: `setCatFilter`, `setTagFilter` deps 누락 수정 완료.
+- `lib/note/journal-print.js`: `buildAutoPrintScript` import가 함수 선언 이후에 있던 style 이슈를 통합 작업 중 파일 상단 import로 이동 완료.
+
+**운영 메모**
+- 리포트는 당시 "커밋 가능 상태"로 판정했지만, 이 파일 통합 작업에서는 커밋은 수행하지 않음.
+- `npx jest` 직접 실행은 ESM 플래그가 없어 실패할 수 있으므로 기존처럼 `npm test` 경로를 사용.
+
+---
+
 ### QA 라운드 4 (5건 구현 + 1건 조사) — ✅ 2026-06-12
 - A-3: `downloadCsvText` 헬퍼 추가 → recipe/menu-master CSV 즉시 revoke 제거
 - A-6: note/[id] + sample/[id] `if (saving) return` 재진입 가드
@@ -485,5 +663,12 @@ _2026-06-13 — N-배치(B배치/C배치) 완료 요약: N-05(노트작성 제�
 _2026-06-13 — N-45(영양성분 시험성적서 기반 입력): NutritionInputPanel 크러스트 탭에 "성적서" 뱃지 추가(safeRawMap[key].certLinked), NutritionGrid 아래 "시험성적서 기반 입력" 체크박스 추가. useNutritionBaseEditor handleSave의 ...form spread가 certLinked 자동 저장. N-46(제품원가표): report/cost/page.jsx에 viewTab state('report'|'costTable') + 탭 스위처 추가. 피자/1인피자 L/R 7컬럼 그룹 테이블, 사이드/세트/엣지 4컬럼 평면 테이블 신설. groupPizzaLR 순수함수 추가._
 _2026-06-13 — 개선 로드맵(docs/IMPROVEMENT_ROADMAP_2026-06.md 계획) N-배치 완료 요약: N-39(원가 미연결 진단 + detailStoreFor 정책함수 교체), N-40(제때↔식자재 자동연동 — newJetteRows 자동등록·jetteRemovedRows 단종처리), N-41(MenuRecipeSection 신설, MenuMasterEditModal 레시피 입력 통합), N-44①②(ref_accounts DB v19, lib/auth/accounts.js, useCurrentRole 훅, settings/account 관리 UI), N-44③(조회자 UI 게이팅 — menu-master·ingredient-price·ingredient/manage 3페이지, InlineEditCell readOnly 프롭, MasterRow readOnly 전파). 보류: N-42(엣지 알레르기, 설계 합의 대기), N-43(과거 단가 동작 명세 대기)._
 _2026-06-12 — R-8(부분)·R-31·R-39·R-40 완료. 잔여 중위험: R-4·R-8(잔여)·R-11·R-29·R-30, B-5·B-6·B-9. R-34(journal print 분리)·R-35(report options registry)·R-36(useSectionSearch)·R-38(useTableSearchSort) 구현. R-29~R-40 2차 발굴 등록. B-14 정책(a) 영속 설정만 확정 + B-7 localStorage 백업 범위 확대 구현. 잔여: B-3 legacy store 제거(DB migration), B-5/B-6(회귀위험), B-9(도메인 확인) — 외부 조건 충족 후 진행._
+_2026-06-13 — `docs/QA_REPORT_20260613.md` 통합 완료: 즉시 수정 필요 버그 없음, 비긴급 잔존 패턴(`work-log` cutoff UTC·SSR 위험 낮은 Math.random)과 보류 항목(B-3 Phase 2·B-5·B-6·B-9·로컬 인증 경계 문서화)을 본 파일로 이관. 원본 QA 리포트 삭제._
+_2026-06-13 — `docs/QA_REPORT_N01-N19.md` 통합 완료: N-01~N-19 저위험 배치 전량 정상, N-05·N-06 발견 버그는 `7f54977`에서 수정 완료, 잔존 이슈 없음으로 기록. 원본 QA 리포트 삭제._
+_2026-06-13 — `docs/QA_REPORT_N39-N44_2026-06-13.md` 통합 완료: D배치 N-39·N-40·N-41·N-44①②③ 정상, 버그 2건(raw confirm·useCurrentRole 미갱신)은 `1b15e5f`에서 수정 완료로 기록. N-42·N-43은 외부 설계/명세 대기, N-45·N-46은 후속 완료 로그가 있어 신규 보류로 추가하지 않음. 원본 QA 리포트 삭제._
+_2026-06-13 — `docs/QA_REPORT_N45-N46_N배치_2026-06-13.md` 통합 완료: N-45 시험성적서 기반 입력, N-46 제품원가표 탭, B배치(N-05·07·09·18) 및 C배치(N-20~N-38) 기구현 확인. N-07 누락 2건(settings/backup·note/sample/[id])은 `87d6248`에서 수정 완료. 보류는 N-42·N-43만 유지. 원본 QA 리포트 삭제._
+_2026-06-13 — `docs/QA_REPORT_REFACTOR_2026-06-13.md` 통합 완료: 대형 seed/rule 데이터 분리, print script 공통화, SortableTh/ReportModalShell/copyText/useTableSearchSort 정리, useLocalStorage stale closure·ingredient/manage deps 수정, 신규 테스트 7종 검증 기록 이관. 잔존 style 이슈였던 `lib/note/journal-print.js` import 위치는 통합 중 수정. 원본 QA 리포트 삭제._
+_2026-06-13 — `docs/UI_INSPECTION_2026-06-13.md` 통합 완료: 기존 HIGH 14·MEDIUM 18 완료 이력에 원본 점검 내용을 매핑. LOW 중 L-03·L-04·L-06·L-07 추가 처리, L-01·L-05는 기처리 확인, L-02·L-08·L-09·L-10은 별도 UI 정리 보류로 유지. 원본 UI 점검 리포트 삭제._
+_2026-06-13 — UI 점검 라운드 42건 완료: HIGH 14건(즉시 4·나머지 10, 커밋 8c1cd00·cfe0698), MEDIUM 18건(M-01~M-18, 커밋 ed7df1b). 빌드 57페이지 prerender 클린 통과. LOW 10건 보류(N-42·N-43 설계 합의·예시 파일 대기)._
 _[이전] B-8·C-2·C-3 완료 표시. 문서 정합성 정정: B-1 파일 경로·B-4 모듈 혼동·C-2 전제·B-3 경로. B-2 저위험 이동._
 _[이전] SITE_IMPROVEMENT_AUDIT 통합·삭제. NEXT_TASKS(CL1~CL8) 통합, B-2/C-1/메뉴코드정책 완료 정정._

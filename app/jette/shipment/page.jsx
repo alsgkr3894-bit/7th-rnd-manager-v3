@@ -78,10 +78,11 @@ export default function Page() {
       <UploadDropzone
         disabled={!ready || busy}
         busyText="업로드 중..."
+        maxSizeMB={30}
         title="출고량 엑셀(.xlsx) 또는 CSV 파일을 끌어다 놓으세요"
         onFile={(f, err) => {
           if (err) {
-            showToast(err, 'err');
+            showToast(err, 'error');
             return;
           }
           handleFile(f, normalizeShipmentPeriod(period));

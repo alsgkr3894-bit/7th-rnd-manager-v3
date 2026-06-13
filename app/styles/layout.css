@@ -315,6 +315,8 @@
   top: calc(100% + 8px);
   left: 0;
   min-width: 260px;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -559,9 +561,9 @@
 .greet h1 {
   font-size: 26px;
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   margin: 0;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .greet h1 .accent {
   color: var(--accent);

@@ -45,7 +45,7 @@ export default function Page() {
   const [historyQuery, setHistoryQuery] = useState('');
   const [historyFilter, setHistoryFilter] = useState('all'); // all | pinned | week
   const [backupProgress, setBackupProgress] = useState(null);
-  const { diagnostics, collectDiagnostics } = useDiagnostics();
+  const { diagnostics, collectDiagnostics, collecting } = useDiagnostics();
   const [backupReminder, setBackupReminder] = useState(null);
   const backupProgressTimerRef = useRef(null);
 
@@ -499,8 +499,8 @@ export default function Page() {
         <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>
           로컬 점검 중 서버 연결이 끊길 때 브라우저 환경 정보를 빠르게 남깁니다.
         </p>
-        <button className="btn sm" onClick={collectDiagnostics}>
-          진단 정보 수집
+        <button className="btn sm" onClick={collectDiagnostics} disabled={collecting}>
+          {collecting ? '수집 중...' : '진단 정보 수집'}
         </button>
         {diagnostics && (
           <div
