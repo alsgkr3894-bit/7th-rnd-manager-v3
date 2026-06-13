@@ -69,7 +69,7 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 **LOW 10건 처리/보류**
 - 추가 처리(통합 중): L-03 판매 보고서 비교 월 동일 선택 경고 표시, L-04 제때 출고량 업로드 제한 표시 30MB 일치 + toast 타입 `'error'` 교정, L-06 백업 진단 버튼 중복 실행 방지, L-07 회사 드롭다운·홈 인사 제목 모바일 overflow 완화.
 - 이미 처리/확인: L-01 노트 보드 loading 표시·영양 메뉴 empty-state, L-05 미매칭 테이블 페이지네이션.
-- 보류: L-02 고정 px값 추가 정리, L-08 메뉴마스터 폼 인라인 오류, L-09 테이블 가로 스크롤 래퍼 감사, L-10 폰트 preload 정책 변경. 디자인·검증 범위가 커서 별도 UI 정리 때 재검토.
+- 완료(2026-06-13): L-02(layout·components.css border-radius 8/12/16px → 토큰 20곳), L-08(MenuMasterEditModal menuCode·menuName 인라인 오류), L-09(overflowX:auto 인라인 → className="table-wrap" 5파일 6곳), L-10(preload:false+display:swap 이미 최적화 완료 — 변경 없음).
 
 ---
 
@@ -670,5 +670,6 @@ _2026-06-13 — `docs/QA_REPORT_N45-N46_N배치_2026-06-13.md` 통합 완료: N-
 _2026-06-13 — `docs/QA_REPORT_REFACTOR_2026-06-13.md` 통합 완료: 대형 seed/rule 데이터 분리, print script 공통화, SortableTh/ReportModalShell/copyText/useTableSearchSort 정리, useLocalStorage stale closure·ingredient/manage deps 수정, 신규 테스트 7종 검증 기록 이관. 잔존 style 이슈였던 `lib/note/journal-print.js` import 위치는 통합 중 수정. 원본 QA 리포트 삭제._
 _2026-06-13 — `docs/UI_INSPECTION_2026-06-13.md` 통합 완료: 기존 HIGH 14·MEDIUM 18 완료 이력에 원본 점검 내용을 매핑. LOW 중 L-03·L-04·L-06·L-07 추가 처리, L-01·L-05는 기처리 확인, L-02·L-08·L-09·L-10은 별도 UI 정리 보류로 유지. 원본 UI 점검 리포트 삭제._
 _2026-06-13 — UI 점검 라운드 42건 완료: HIGH 14건(즉시 4·나머지 10, 커밋 8c1cd00·cfe0698), MEDIUM 18건(M-01~M-18, 커밋 ed7df1b). 빌드 57페이지 prerender 클린 통과. LOW 10건 보류(N-42·N-43 설계 합의·예시 파일 대기)._
+_2026-06-13 — L-02·L-08·L-09 저위험 UI 정리 완료(커밋 05fc724). L-10(폰트 preload)은 이미 최적화 완료로 변경 없음. 잔여 보류: B-3 Phase 2·B-5·B-6·B-9·N-42·N-43(외부 조건 대기). R-5·R-7·R-13·R-33 리팩토링 잔여(중위험)._
 _[이전] B-8·C-2·C-3 완료 표시. 문서 정합성 정정: B-1 파일 경로·B-4 모듈 혼동·C-2 전제·B-3 경로. B-2 저위험 이동._
 _[이전] SITE_IMPROVEMENT_AUDIT 통합·삭제. NEXT_TASKS(CL1~CL8) 통합, B-2/C-1/메뉴코드정책 완료 정정._
