@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useMounted } from '@/hooks/useMounted';
 import { Icon } from '@/components/icons';

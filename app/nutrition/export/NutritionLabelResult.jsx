@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { initDB } from '@/lib/db';
 import {

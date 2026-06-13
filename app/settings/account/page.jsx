@@ -64,34 +64,27 @@ export default function Page() {
   // 세션 정보
   const [lastLogin, setLastLogin] = useState(null);
   const [ipEntry, setIpEntry] = useState(null); // { ip, at } | null
-  const [ipLoading, setIpLoading] = useState(true);
+  const [ipLoading, setIpLoading] = useState(false);
 
   useEffect(() => {
-    let alive = true;
     const p = getProfile();
     setProfileState(p);
     setForm(p || PROFILE_FORM_DEFAULT);
-
     setLastLogin(getLastLogin());
-
-    // 캐시된 IP 먼저 즉시 표시 → 백그라운드에서 최신 IP fetch
+    // 캐시된 IP만 즉시 표시 — 외부 API 호출은 사용자가 직접 요청할 때만 실행
     const cached = getCachedIP();
     if (cached) setIpEntry(cached);
-
-    fetchClientIP()
-      .then(entry => {
-        if (!alive) return;
-        if (entry) setIpEntry(entry);
-        setIpLoading(false);
-      })
-      .catch(() => {
-        if (alive) setIpLoading(false);
-      });
-
-    return () => {
-      alive = false;
-    };
   }, []);
+
+  async function handleRefreshIP() {
+    setIpLoading(true);
+    try {
+      const entry = await fetchClientIP();
+      if (entry) setIpEntry(entry);
+    } finally {
+      setIpLoading(false);
+    }
+  }
 
   function startEdit() {
     setForm({ ...(profile || PROFILE_FORM_DEFAULT) });
@@ -341,19 +334,30 @@ export default function Page() {
             value={lastLogin ? new Date(lastLogin).toLocaleString('ko-KR') : '기록 없음'}
             sub={lastLogin ? formatRelative(lastLogin) : '새 브라우저 세션이 시작되면 기록됩니다'}
           />
-          <SettingTile
-            variant="tile"
-            label="접속 IP"
-            value={ipEntry ? ipEntry.ip : ipLoading ? '조회 중…' : '외부 미연결'}
-            sub={
-              ipEntry
-                ? `갱신: ${new Date(ipEntry.at).toLocaleString('ko-KR')}`
-                : ipLoading
-                  ? '잠시만 기다려 주세요'
-                  : '외부 API 호출 실패 (오프라인 또는 차단)'
-            }
-            mono
-          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <SettingTile
+              variant="tile"
+              label="접속 IP"
+              value={ipEntry ? ipEntry.ip : ipLoading ? '조회 중…' : '—'}
+              sub={
+                ipEntry
+                  ? `갱신: ${new Date(ipEntry.at).toLocaleString('ko-KR')}`
+                  : ipLoading
+                    ? '잠시만 기다려 주세요'
+                    : 'api.ipify.org 조회 — 버튼을 눌러 실행'
+              }
+              mono
+            />
+            {!ipLoading && (
+              <button
+                className="btn sm ghost"
+                onClick={handleRefreshIP}
+                style={{ fontSize: 11, alignSelf: 'flex-start' }}
+              >
+                IP 조회
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

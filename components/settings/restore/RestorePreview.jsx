@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable react/no-unescaped-entities */
 import { Icon } from '@/components/icons';
 import { MODULE_GROUPS, ALL_STORES, hasStore } from '@/lib/db';
 import { formatNumber } from '@/lib/format';

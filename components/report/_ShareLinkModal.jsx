@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable react/no-unescaped-entities */
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
@@ -38,25 +39,8 @@ export function ShareLinkModal({ report, onClose }) {
     copiedTimer.current = setTimeout(() => setCopied(false), 2000);
   }
 
-  const handleCreateLink = async () => {
-    if (usePassword && !password.trim()) {
-      showToast('비밀번호를 입력해 주세요', 'error');
-      return;
-    }
-    const url = `https://share.wonpay.kr/r/${Math.random().toString(36).slice(2, 11)}`;
-    setLinkUrl(url);
-    setLinkCreated(true);
-    try {
-      const copiedToClipboard = await copyToClipboard(url);
-      if (copiedToClipboard) {
-        markCopied();
-        showToast('공유 링크를 복사했어요', 'ok', 1600);
-      } else {
-        showToast('링크를 생성했어요. 필요하면 직접 복사해 주세요', 'info', 2200);
-      }
-    } catch {
-      showToast('링크를 생성했어요. 클립보드 복사는 실패했습니다', 'info', 2400);
-    }
+  const handleCreateLink = () => {
+    showToast('공유 링크 기능은 현재 준비 중입니다', 'info', 2400);
   };
 
   const handleCopyLink = async () => {

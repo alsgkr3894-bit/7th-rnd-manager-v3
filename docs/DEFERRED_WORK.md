@@ -472,7 +472,8 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ---
 
-_최종 업데이트: 2026-06-13 — R-41(report/sales 1160→984줄, buildSalesStats→lib·MoverRow/RankRow→SalesChartRows.jsx) 완료. B-6 항목 정정(calendar/page.jsx는 이미 분해 완료). 잔여 고위험: 없음. 잔여 중위험: B-3 Phase 2(DB schema, 외부 조건 대기)·B-5·B-6·B-9._
+_최종 업데이트: 2026-06-13 — 코드 품질 8종 수정 완료: UTC 날짜 버그(lib/date/local-date.js 신설·4곳 교체), confirm() 10곳 → useConfirmDialog 훅(새 파일)+ConfirmDialog, AreaChart Math.random→useId(), useSettingsAuth storage listener lazy 등록, ShareLinkModal 가짜 링크 비활성화(준비 중 안내), 외부 IP조회 자동→사용자 opt-in, ESLint 전역 예외 2종 → 파일 레벨 축소(no-img-element 3파일·no-unescaped-entities 8파일). 잔여 고위험: 없음. 잔여 중위험: B-3 Phase 2(DB schema, 외부 조건 대기)·B-5·B-6·B-9._
+_2026-06-13 — R-41(report/sales 1160→984줄, buildSalesStats→lib·MoverRow/RankRow→SalesChartRows.jsx) 완료. B-6 항목 정정(calendar/page.jsx는 이미 분해 완료). 잔여 고위험: 없음. 잔여 중위험: B-3 Phase 2(DB schema, 외부 조건 대기)·B-5·B-6·B-9._
 _2026-06-13 — B-3 Phase 1(allergen/store.js dead code 6종 제거 — 외부 참조 없음) 완료. 테스트 2종(calendar-utils·report-period) 커밋. 잔여 고위험: 없음. 잔여 중위험: B-3 Phase 2(DB schema 제거, 외부 조건 대기)·B-5·B-6·B-9._
 _2026-06-13 — R-3(restore/page.jsx 1124줄→366줄, 서브컴포넌트3+hook1 분해) 완료. 잔여 고위험: 없음. 잔여 중위험: B-5·B-6·B-9(외부 조건 대기)._
 _2026-06-13 — R-8 잔여(useRecipeListState + RecipeSidebar 분리, recipe/page 789→344줄) 완료. 잔여 중위험: B-5·B-6·B-9 (외부 조건 대기). 착수 가능: R-1·R-2·R-3(고위험)._

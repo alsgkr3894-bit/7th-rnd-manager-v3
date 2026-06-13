@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { INGREDIENT_PHOTO_SLOTS } from '@/lib/ingredient';
