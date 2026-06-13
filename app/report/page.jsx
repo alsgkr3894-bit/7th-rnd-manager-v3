@@ -6,6 +6,7 @@ import { loadXlsx } from '@/lib/excel';
 import { withDownloadDateSuffix } from '@/lib/download';
 import { Icon } from '@/components/icons';
 import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
+import { SortableTh } from '@/components/ui/SortableTh';
 import { showToast } from '@/components/Toast';
 
 const ShareLinkModal = dynamic(
@@ -32,14 +33,6 @@ import { formatLocalMonthInput } from '@/lib/date/local-date';
 import { asDisplayText, asObjectArray, asFiniteNumber } from '@/lib/ui/prop-guards';
 
 const REPORT_KINDS = KIND_META;
-
-function SortIco({ k, sortKey, sortDir }) {
-  return (
-    <span style={{ marginLeft: 4, opacity: sortKey === k ? 1 : 0.3, fontSize: 10 }}>
-      {sortKey === k ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
-    </span>
-  );
-}
 
 const thisMonth = formatLocalMonthInput();
 
@@ -109,24 +102,43 @@ export default function Page() {
   useVisibilityRefresh(reload);
 
   const {
-    kindFilter, setKindFilter,
-    search, setSearch,
-    favOnly, setFavOnly,
-    page, setPage,
-    sortKey, sortDir,
+    kindFilter,
+    setKindFilter,
+    search,
+    setSearch,
+    favOnly,
+    setFavOnly,
+    page,
+    setPage,
+    sortKey,
+    sortDir,
     newIds,
-    filtered, totalPages, safePage, list,
+    filtered,
+    totalPages,
+    safePage,
+    list,
     toggleSort,
   } = useReportListState(reports);
 
   const {
-    deletingId, confirmDeleteId, setConfirmDeleteId,
-    pruneConfirmOpen, setPruneConfirmOpen, prunableCount,
-    editingId, setEditingId, editName, setEditName, editInputRef,
-    handleDelete, confirmDelete,
-    handlePruneClick, confirmPrune,
+    deletingId,
+    confirmDeleteId,
+    setConfirmDeleteId,
+    pruneConfirmOpen,
+    setPruneConfirmOpen,
+    prunableCount,
+    editingId,
+    setEditingId,
+    editName,
+    setEditName,
+    editInputRef,
+    handleDelete,
+    confirmDelete,
+    handlePruneClick,
+    confirmPrune,
     handleToggleFav,
-    startEdit, commitEdit,
+    startEdit,
+    commitEdit,
   } = useReportActions({ reload });
 
   /* 통계 */
@@ -365,27 +377,38 @@ export default function Page() {
               <thead>
                 <tr>
                   <th style={{ width: 36 }}></th>
-                  <th style={{ width: 110, cursor: 'pointer' }} onClick={() => toggleSort('id')}>
+                  <SortableTh
+                    sortKey="id"
+                    active={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    width={110}
+                  >
                     보고서 ID
-                    <SortIco k="id" sortKey={sortKey} sortDir={sortDir} />
-                  </th>
-                  <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('name')}>
+                  </SortableTh>
+                  <SortableTh sortKey="name" active={sortKey} dir={sortDir} onClick={toggleSort}>
                     제목
-                    <SortIco k="name" sortKey={sortKey} sortDir={sortDir} />
-                  </th>
-                  <th style={{ width: 80, cursor: 'pointer' }} onClick={() => toggleSort('kind')}>
+                  </SortableTh>
+                  <SortableTh
+                    sortKey="kind"
+                    active={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    width={80}
+                  >
                     유형
-                    <SortIco k="kind" sortKey={sortKey} sortDir={sortDir} />
-                  </th>
+                  </SortableTh>
                   <th style={{ width: 150 }}>대상 기간</th>
                   <th style={{ width: 100 }}>작성자</th>
-                  <th
-                    style={{ width: 140, cursor: 'pointer' }}
-                    onClick={() => toggleSort('createdAt')}
+                  <SortableTh
+                    sortKey="createdAt"
+                    active={sortKey}
+                    dir={sortDir}
+                    onClick={toggleSort}
+                    width={140}
                   >
                     생성일시
-                    <SortIco k="createdAt" sortKey={sortKey} sortDir={sortDir} />
-                  </th>
+                  </SortableTh>
                   <th style={{ width: 100 }}>활동</th>
                   <th style={{ width: 250 }}></th>
                 </tr>

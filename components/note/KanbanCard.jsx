@@ -4,6 +4,7 @@ import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { STATUSES, STATUS_COLORS, STATUS_BORDER } from '@/lib/note';
 import { formatShortDate } from '@/lib/note/utils';
+import { copyText } from '@/lib/ui/clipboard';
 
 function buildNoteCopyText(note) {
   const lines = [`[${note.status}] ${note.title || '제목 없음'}`];
@@ -16,7 +17,7 @@ function buildNoteCopyText(note) {
 
 async function copyNoteText(note) {
   try {
-    await navigator.clipboard.writeText(buildNoteCopyText(note));
+    if (!(await copyText(buildNoteCopyText(note)))) throw new Error('CLIPBOARD_UNAVAILABLE');
     showToast('보고용 텍스트를 복사했어요', 'ok');
   } catch {
     showToast('복사에 실패했어요', 'error');

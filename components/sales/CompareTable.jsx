@@ -1,5 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
+import { SortableTh } from '@/components/ui/SortableTh';
 import { formatNumber } from '@/lib/format';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
@@ -67,10 +68,10 @@ export function CompareTable({ rows }) {
             <thead>
               <tr>
                 <th style={{ width: 60 }}>순위</th>
-                <Th sortKey="name" active={sortKey} dir={sortDir} onClick={toggleSort}>
+                <SortableTh sortKey="name" active={sortKey} dir={sortDir} onClick={toggleSort}>
                   메뉴명
-                </Th>
-                <Th
+                </SortableTh>
+                <SortableTh
                   sortKey="category"
                   active={sortKey}
                   dir={sortDir}
@@ -78,8 +79,8 @@ export function CompareTable({ rows }) {
                   width={120}
                 >
                   카테고리
-                </Th>
-                <Th
+                </SortableTh>
+                <SortableTh
                   sortKey="a"
                   active={sortKey}
                   dir={sortDir}
@@ -88,8 +89,8 @@ export function CompareTable({ rows }) {
                   right
                 >
                   기준 (A)
-                </Th>
-                <Th
+                </SortableTh>
+                <SortableTh
                   sortKey="b"
                   active={sortKey}
                   dir={sortDir}
@@ -98,8 +99,8 @@ export function CompareTable({ rows }) {
                   right
                 >
                   비교 (B)
-                </Th>
-                <Th
+                </SortableTh>
+                <SortableTh
                   sortKey="diff"
                   active={sortKey}
                   dir={sortDir}
@@ -108,8 +109,8 @@ export function CompareTable({ rows }) {
                   right
                 >
                   증감
-                </Th>
-                <Th
+                </SortableTh>
+                <SortableTh
                   sortKey="pct"
                   active={sortKey}
                   dir={sortDir}
@@ -118,7 +119,7 @@ export function CompareTable({ rows }) {
                   right
                 >
                   증감률
-                </Th>
+                </SortableTh>
               </tr>
             </thead>
             <tbody>
@@ -130,29 +131,6 @@ export function CompareTable({ rows }) {
         </div>
       )}
     </div>
-  );
-}
-
-function Th({ sortKey, active, dir, onClick, children, width, right }) {
-  const isActive = active === sortKey;
-  const handleClick = typeof onClick === 'function' ? onClick : () => {};
-
-  return (
-    <th
-      onClick={() => handleClick(sortKey)}
-      className="sortable"
-      style={{
-        width,
-        textAlign: right ? 'right' : undefined,
-        cursor: 'pointer',
-        userSelect: 'none',
-      }}
-    >
-      {children}{' '}
-      <span style={{ color: isActive ? 'var(--accent)' : 'var(--text-4)', fontSize: 10 }}>
-        {isActive ? (dir === 'asc' ? '▲' : '▼') : '▾'}
-      </span>
-    </th>
   );
 }
 

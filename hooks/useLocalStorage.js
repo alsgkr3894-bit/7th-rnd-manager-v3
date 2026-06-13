@@ -32,8 +32,14 @@ export function normalizeLocalStorageValue(value, fallback, normalize = identity
 
 export function useLocalStorage(key, initialValue, normalize = identity) {
   const [value, setValue] = useState(initialValue);
+  const initialRef = useRef(initialValue);
+  const normalizeRef = useRef(normalize);
   // 첫 마운트 저장 스킵 — 복원 전에 initialValue가 저장되지 않도록
   const isFirstSave = useRef(true);
+
+  useEffect(() => {
+    normalizeRef.current = normalize;
+  }, [normalize]);
 
   // 마운트 후 1회 복원 (클라이언트 전용)
   useEffect(() => {
@@ -41,9 +47,11 @@ export function useLocalStorage(key, initialValue, normalize = identity) {
       const raw = localStorage.getItem(key);
       if (raw !== null) {
         try {
-          setValue(normalizeLocalStorageValue(JSON.parse(raw), initialValue, normalize));
+          setValue(
+            normalizeLocalStorageValue(JSON.parse(raw), initialRef.current, normalizeRef.current)
+          );
         } catch {
-          setValue(normalizeLocalStorageValue(raw, initialValue, normalize));
+          setValue(normalizeLocalStorageValue(raw, initialRef.current, normalizeRef.current));
         }
       }
     } catch {}
@@ -59,10 +67,10 @@ export function useLocalStorage(key, initialValue, normalize = identity) {
     try {
       localStorage.setItem(
         key,
-        JSON.stringify(normalizeLocalStorageValue(value, initialValue, normalize))
+        JSON.stringify(normalizeLocalStorageValue(value, initialRef.current, normalizeRef.current))
       );
     } catch {}
-  }, [key, value, initialValue, normalize]);
+  }, [key, value]);
 
   return [value, setValue];
 }

@@ -2,6 +2,7 @@
 import { memo, Fragment } from 'react';
 import { formatNumber } from '@/lib/format';
 import { applyDiscount, calcNetRevenue, calcPlatformMargin } from '@/lib/cost/margin/platforms';
+import { copyText } from '@/lib/ui/clipboard';
 
 // 임계값(경고/비상) 기본 30/40 — 사용자 조절값을 받으면 그 값 사용
 const MC_COST = (pct, warn = 30, crit = 40) => {
@@ -169,7 +170,7 @@ export const MarginRow = memo(function MarginRow({
                 }),
               ];
               try {
-                await navigator.clipboard.writeText(parts.join(' | '));
+                await copyText(parts.join(' | '));
               } catch {}
             }}
           >

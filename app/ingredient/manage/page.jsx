@@ -262,14 +262,14 @@ export default function Page() {
       setCatFilter(val);
       clearSelection();
     },
-    [clearSelection]
+    [clearSelection, setCatFilter]
   );
   const handleSetTagFilter = useCallback(
     val => {
       setTagFilter(val);
       clearSelection();
     },
-    [clearSelection]
+    [clearSelection, setTagFilter]
   );
   const handleDeleteCancel = useCallback(() => setDeletePending(null), []);
 

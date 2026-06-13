@@ -9,6 +9,7 @@ import { downloadCsv, printCurrentPageWithDownloadDate } from '@/lib/download';
 import { getSampleById, updateSample, sampleNamesOf, RATING_LABELS } from '@/lib/sample';
 import { SampleFormBody, SAMPLE_INIT } from '../_SampleFormBody';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
+import { copyText } from '@/lib/ui/clipboard';
 
 export default function Page() {
   const router = useRouter();
@@ -139,7 +140,7 @@ export default function Page() {
       form.nextAction || '-',
     ].join('\n');
     try {
-      await navigator.clipboard.writeText(lines);
+      if (!(await copyText(lines))) throw new Error('CLIPBOARD_UNAVAILABLE');
       showToast('보고용 텍스트를 복사했어요', 'ok');
     } catch {
       showToast('복사에 실패했어요', 'error');

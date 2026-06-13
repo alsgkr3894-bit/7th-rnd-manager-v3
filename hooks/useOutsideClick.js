@@ -4,6 +4,14 @@ function toRefList(refs) {
   return Array.isArray(refs) ? refs : [refs];
 }
 
+export function isOutsideClickTarget(target, refs) {
+  if (!target) return false;
+  return !toRefList(refs).some(ref => {
+    const node = ref?.current;
+    return node && typeof node.contains === 'function' && node.contains(target);
+  });
+}
+
 export function useOutsideClick({
   refs,
   enabled = true,
@@ -17,12 +25,7 @@ export function useOutsideClick({
     const refList = toRefList(refs);
 
     function handleEvent(event) {
-      const target = event.target;
-      const inside = refList.some(ref => {
-        const node = ref?.current;
-        return node && target && node.contains(target);
-      });
-      if (!inside) onOutside(event);
+      if (isOutsideClickTarget(event.target, refList)) onOutside(event);
     }
 
     doc.addEventListener(eventName, handleEvent);

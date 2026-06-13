@@ -29,7 +29,10 @@ function toFiniteNumber(value) {
 export function ShipmentTable({ aggRows }) {
   const [typeFilter, setTypeFilter] = useState('all'); // all | exclusive | generic
   const [managedOnly, setManagedOnly] = useState(false);
-  const { search, setSearch, sortKey, setSortKey, sortDir, setSortDir } = useTableSearchSort('totalAmount', 'desc');
+  const { search, setSearch, sortKey, sortDir, toggleSort } = useTableSearchSort(
+    'totalAmount',
+    'desc'
+  );
   const safeAggRows = useMemo(() => asObjectArray(aggRows), [aggRows]);
 
   const filtered = useMemo(() => {
@@ -57,14 +60,6 @@ export function ShipmentTable({ aggRows }) {
     }),
     [safeAggRows]
   );
-
-  function toggleSort(key) {
-    if (sortKey === key) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
-    else {
-      setSortKey(key);
-      setSortDir('desc');
-    }
-  }
 
   return (
     <div className="card" style={{ marginTop: 16 }}>
