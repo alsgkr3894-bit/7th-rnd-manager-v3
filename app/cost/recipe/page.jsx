@@ -1,26 +1,17 @@
 'use client';
-import { useEffect, useRef, useState, useMemo, Suspense } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { downloadCsvText } from '@/lib/download';
-import { formatNumber } from '@/lib/format';
-import {
-  saveRecipe,
-  deleteRecipe,
-  calcCostBySizes,
-  calcMarginRate,
-  MENU_CATEGORIES,
-} from '@/lib/recipe';
+import { saveRecipe, deleteRecipe, MENU_CATEGORIES } from '@/lib/recipe';
 import { useRecipeWorkbenchData } from '@/hooks/useRecipeWorkbenchData';
-import { costRateColor } from '@/lib/cost/rate-color';
-import { KEYS } from '@/lib/note/keys';
+import { useRecipeListState } from '@/hooks/useRecipeListState';
+import { RecipeSidebar } from '@/components/cost/recipe/RecipeSidebar';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { onPriceUpload } from '@/lib/price/price-events';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { Pagination } from '@/components/ui/Pagination';
-import { usePagination } from '@/hooks/usePagination';
 import { TabButton } from '@/components/cost/shared/TabButton';
 import { CommonManageView } from '@/components/cost/manage/CommonManageView';
 import dynamic from 'next/dynamic';
@@ -65,50 +56,6 @@ function prepareRecipeForEdit(rec) {
   };
 }
 
-function getRecipeSearchText(recipe, groups) {
-  const ownIngredients = (recipe.ingredients || [])
-    .map(i => `${i.ingredientName || ''} ${i.productCode || ''}`)
-    .join(' ');
-  const activeGroups = groups.filter(g => {
-    if (Array.isArray(recipe.groupIds)) return recipe.groupIds.includes(g.id);
-    return (g.defaultCategories || []).some(
-      c => (recipe.menuCategory || '') === c || (recipe.menuCategory || '').startsWith(c + '/')
-    );
-  });
-  const groupText = activeGroups
-    .map(g =>
-      [
-        g.name || '',
-        g.description || '',
-        ...(g.ingredients || []).map(i => `${i.ingredientName || ''} ${i.productCode || ''}`),
-      ].join(' ')
-    )
-    .join(' ');
-  return [
-    recipe.menuName,
-    recipe.menuCode,
-    recipe.menuCategory,
-    recipe.note,
-    ownIngredients,
-    groupText,
-  ]
-    .join(' ')
-    .toLowerCase();
-}
-
-function normalizeRecipeSort(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
-  return Object.fromEntries(
-    Object.entries(value)
-      .filter(([, ids]) => Array.isArray(ids))
-      .map(([cat, ids]) => [
-        cat,
-        ids.filter(id => typeof id === 'string' || typeof id === 'number'),
-      ])
-      .filter(([, ids]) => ids.length > 0)
-  );
-}
-
 function handleExportCsv(filtered) {
   const headers = ['메뉴코드', '메뉴명', '카테고리', '규격'];
   const rows = filtered.map(r => [
@@ -142,7 +89,15 @@ function RecipeContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const { recipes, allMeta, menuMasters, unitPriceMap, menuPricesMap, allGroups, loading, dbError, reload } = useRecipeWorkbenchData();
+  const { recipes, allMeta, menuMasters, unitPriceMap, menuPricesMap, allGroups, loading, dbError, reload } =
+    useRecipeWorkbenchData();
+
+  const listState = useRecipeListState({
+    recipes,
+    allGroups,
+    initialSearch: searchParams?.get('q') || '',
+  });
+
   const [selectedId, setSelectedId] = useState(null);
   // from=sample 파라미터: URL sync effect보다 먼저 읽어야 하므로 useState initializer 사용
   const [isNew, setIsNew] = useState(() => searchParams?.get('from') === 'sample');
@@ -157,21 +112,10 @@ function RecipeContent() {
     };
   });
   const [saving, setSaving] = useState(false);
-  const [search, setSearch] = useState(() => searchParams?.get('q') || '');
   const [tab, setTab] = useState(() => {
     const t = searchParams?.get('tab');
     return t === 'groups' || t === 'edges' ? t : 'recipe';
   });
-  const [customOrder, setCustomOrder] = useState(() => {
-    if (typeof window === 'undefined') return {};
-    try {
-      return normalizeRecipeSort(JSON.parse(localStorage.getItem(KEYS.RECIPE_SORT) || '{}'));
-    } catch {
-      return {};
-    }
-  });
-  const [dragSrc, setDragSrc] = useState(null); // { cat, fromIdx }
-  const [dropTarget, setDropTarget] = useState(null); // { cat, beforeIdx }
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   // selectedId 변경 감지용 ref — draft 동기화 effect에서 불필요한 재실행 방지
@@ -184,10 +128,10 @@ function RecipeContent() {
   useEffect(() => {
     const params = new URLSearchParams();
     if (tab !== 'recipe') params.set('tab', tab);
-    if (search) params.set('q', search);
+    if (listState.search) params.set('q', listState.search);
     const qs = params.toString();
     window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
-  }, [search, tab, pathname]);
+  }, [listState.search, tab, pathname]);
 
   // load 후 선택된 레시피 draft 동기화 — selectedId가 실제로 바뀔 때만 실행
   useEffect(() => {
@@ -276,82 +220,6 @@ function RecipeContent() {
     }
   }
 
-  const filteredRecipes = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return recipes;
-    return recipes.filter(r => getRecipeSearchText(r, allGroups).includes(q));
-  }, [recipes, search, allGroups]);
-
-  const orderedRecipes = useMemo(() => {
-    const map = new Map();
-    for (const r of filteredRecipes) {
-      const cat = r.menuCategory || '기타';
-      if (!map.has(cat)) map.set(cat, []);
-      map.get(cat).push(r);
-    }
-    const order = [...MENU_CATEGORIES, '기타'];
-    const sorted = [...map.entries()].sort(([a], [b]) => {
-      const ia = order.indexOf(a),
-        ib = order.indexOf(b);
-      if (ia !== ib) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-      return a.localeCompare(b, 'ko');
-    });
-    // 커스텀 순서 적용
-    return sorted.map(([cat, items]) => {
-      const ids = customOrder[cat];
-      if (!ids?.length) return [cat, items];
-      const byId = new Map(items.map(r => [r.id, r]));
-      const ordered = ids.map(id => byId.get(id)).filter(Boolean);
-      const inOrder = new Set(ids);
-      const rest = items.filter(r => !inOrder.has(r.id)); // 새로 추가된 항목
-      return [cat, [...ordered, ...rest]];
-    });
-  }, [filteredRecipes, customOrder]);
-
-  const flattenedRecipes = useMemo(
-    () => orderedRecipes.flatMap(([, items]) => items),
-    [orderedRecipes]
-  );
-
-  const {
-    page: recipePage,
-    goTo: recipeGoTo,
-    totalPages: recipeTotalPages,
-    paged: pagedRecipes,
-    total: recipeTotal,
-  } = usePagination(flattenedRecipes, 40);
-
-  const grouped = useMemo(() => {
-    const map = new Map();
-    for (const r of pagedRecipes) {
-      const cat = r.menuCategory || '기타';
-      if (!map.has(cat)) map.set(cat, []);
-      map.get(cat).push(r);
-    }
-    const order = [...MENU_CATEGORIES, '기타'];
-    return [...map.entries()].sort(([a], [b]) => {
-      const ia = order.indexOf(a),
-        ib = order.indexOf(b);
-      if (ia !== ib) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-      return a.localeCompare(b, 'ko');
-    });
-  }, [pagedRecipes]);
-
-  function saveOrder(cat, items) {
-    const newOrder = { ...customOrder, [cat]: items.map(r => r.id) };
-    setCustomOrder(newOrder);
-    try {
-      localStorage.setItem(KEYS.RECIPE_SORT, JSON.stringify(newOrder));
-    } catch {}
-  }
-  function resetCatOrder(cat) {
-    const { [cat]: _removed, ...rest } = customOrder;
-    setCustomOrder(rest);
-    try {
-      localStorage.setItem(KEYS.RECIPE_SORT, JSON.stringify(rest));
-    } catch {}
-  }
-
   const showEditor = isNew || selectedId != null;
 
   if (dbError)
@@ -379,10 +247,10 @@ function RecipeContent() {
             <button
               className="btn"
               onClick={() => {
-                handleExportCsv(filteredRecipes);
-                showToast(`CSV ${filteredRecipes.length}개 내보내기 완료`, 'ok');
+                handleExportCsv(listState.filteredRecipes);
+                showToast(`CSV ${listState.filteredRecipes.length}개 내보내기 완료`, 'ok');
               }}
-              disabled={filteredRecipes.length === 0}
+              disabled={listState.filteredRecipes.length === 0}
             >
               <Icon.download style={{ width: 14, height: 14 }} /> CSV 내보내기
             </button>
@@ -415,330 +283,17 @@ function RecipeContent() {
       {tab === 'recipe' && (
         <div className="recipe-main-grid" style={{ marginTop: 8 }}>
           {/* ── 왼쪽: 메뉴 목록 ── */}
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ padding: '12px 14px 8px', borderBottom: '1px solid var(--divider)' }}>
-              <button
-                className="btn primary"
-                style={{ width: '100%', justifyContent: 'center' }}
-                onClick={handleNew}
-              >
-                <Icon.plus style={{ width: 13, height: 13 }} /> 새 메뉴 추가
-              </button>
-              <div className="filter-search" style={{ marginTop: 8 }}>
-                <Icon.search
-                  style={{ width: 14, height: 14, color: 'var(--text-3)', flexShrink: 0 }}
-                />
-                <input
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="메뉴명·코드·식자재·묶음 검색"
-                />
-              </div>
-            </div>
-
-            {loading ? (
-              <div
-                style={{ padding: 24, textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}
-              >
-                로딩 중…
-              </div>
-            ) : recipes.length === 0 ? (
-              <div className="empty-state" style={{ margin: 16 }}>
-                <div className="empty-icon-wrap">
-                  <Icon.doc style={{ width: 32, height: 32 }} />
-                </div>
-                <div style={{ fontWeight: 700, fontSize: 15 }}>레시피가 없어요</div>
-                <div style={{ fontSize: 13, color: 'var(--text-3)' }}>새 레시피를 추가해보세요</div>
-              </div>
-            ) : filteredRecipes.length === 0 ? (
-              <div className="empty-state" style={{ margin: 16 }}>
-                <div className="empty-icon-wrap">
-                  <Icon.search style={{ width: 28, height: 28 }} />
-                </div>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>검색 결과가 없어요</div>
-                <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
-                  다른 키워드로 검색해보세요
-                </div>
-              </div>
-            ) : (
-              <div
-                style={{ maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' }}
-                onDragLeave={e => {
-                  if (!e.currentTarget.contains(e.relatedTarget)) setDropTarget(null);
-                }}
-              >
-                {grouped.map(([cat, items]) => {
-                  const hasCustOrder = !!customOrder[cat]?.length;
-                  return (
-                    <div key={cat}>
-                      {/* 카테고리 헤더 */}
-                      <div
-                        style={{
-                          padding: '6px 14px 3px',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: 'var(--text-3)',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
-                          background: 'var(--surface-2)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                        }}
-                      >
-                        <span>{cat}</span>
-                        {hasCustOrder && !search && recipeTotalPages <= 1 && (
-                          <button
-                            onClick={() => resetCatOrder(cat)}
-                            title="이 카테고리 순서 초기화"
-                            style={{
-                              fontSize: 9,
-                              color: 'var(--text-4)',
-                              border: 0,
-                              background: 'transparent',
-                              cursor: 'pointer',
-                              padding: '0 2px',
-                              fontWeight: 500,
-                              letterSpacing: 0,
-                            }}
-                          >
-                            순서초기화
-                          </button>
-                        )}
-                      </div>
-
-                      {/* 아이템 목록 */}
-                      {items.map((r, idx) => {
-                        const recipeCostMap = calcCostBySizes(r, unitPriceMap);
-                        const activeGids =
-                          r.groupIds == null
-                            ? new Set(
-                                allGroups
-                                  .filter(g =>
-                                    (g.defaultCategories || []).some(
-                                      c =>
-                                        (r.menuCategory || '') === c ||
-                                        (r.menuCategory || '').startsWith(c + '/')
-                                    )
-                                  )
-                                  .map(g => g.id)
-                              )
-                            : new Set(r.groupIds);
-                        const costMap = {};
-                        for (const s of r.sizes || []) {
-                          let total = recipeCostMap[s.label] || 0;
-                          for (const g of allGroups) {
-                            if (!activeGids.has(g.id)) continue;
-                            for (const ing of g.ingredients || []) {
-                              const info = unitPriceMap.get(ing.productCode);
-                              if (!info?.unitPrice) continue;
-                              const qty = parseFloat(ing.quantities?.[s.label]) || 0;
-                              if (qty) total += info.unitPrice * qty;
-                            }
-                          }
-                          costMap[s.label] = total;
-                        }
-                        const active = r.id === selectedId;
-                        const isDragging = dragSrc?.cat === cat && dragSrc?.fromIdx === idx;
-                        const showTop =
-                          !search && dropTarget?.cat === cat && dropTarget?.beforeIdx === idx;
-                        const showBot =
-                          !search &&
-                          idx === items.length - 1 &&
-                          dropTarget?.cat === cat &&
-                          dropTarget?.beforeIdx === items.length;
-
-                        return (
-                          <div
-                            key={r.id}
-                            draggable={!search && recipeTotalPages <= 1}
-                            onDragStart={e => {
-                              e.dataTransfer.effectAllowed = 'move';
-                              setDragSrc({ cat, fromIdx: idx });
-                              setDropTarget(null);
-                            }}
-                            onDragOver={e => {
-                              e.preventDefault();
-                              if (!dragSrc || dragSrc.cat !== cat) return;
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              const before = e.clientY < rect.top + rect.height / 2 ? idx : idx + 1;
-                              setDropTarget(prev =>
-                                prev?.cat === cat && prev?.beforeIdx === before
-                                  ? prev
-                                  : { cat, beforeIdx: before }
-                              );
-                            }}
-                            onDrop={e => {
-                              e.preventDefault();
-                              const src = dragSrc;
-                              setDragSrc(null);
-                              setDropTarget(null);
-                              if (!src || src.cat !== cat) return;
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              let insertAt = e.clientY < rect.top + rect.height / 2 ? idx : idx + 1;
-                              if (src.fromIdx < insertAt) insertAt--;
-                              if (src.fromIdx === insertAt) return;
-                              const arr = [...items];
-                              const [moved] = arr.splice(src.fromIdx, 1);
-                              arr.splice(insertAt, 0, moved);
-                              saveOrder(cat, arr);
-                            }}
-                            onDragEnd={() => {
-                              setDragSrc(null);
-                              setDropTarget(null);
-                            }}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'stretch',
-                              borderTop: showTop
-                                ? '2px solid var(--accent)'
-                                : '2px solid transparent',
-                              borderBottom: showBot
-                                ? '2px solid var(--accent)'
-                                : '2px solid transparent',
-                              opacity: isDragging ? 0.35 : 1,
-                            }}
-                          >
-                            {/* 드래그 핸들 */}
-                            {!search && recipeTotalPages <= 1 && (
-                              <div
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  paddingLeft: 8,
-                                  paddingRight: 2,
-                                  cursor: 'grab',
-                                  color: 'var(--text-4)',
-                                  flexShrink: 0,
-                                  userSelect: 'none',
-                                  fontSize: 13,
-                                }}
-                              >
-                                <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
-                                  <circle cx="3" cy="3" r="1.4" />
-                                  <circle cx="7" cy="3" r="1.4" />
-                                  <circle cx="3" cy="8" r="1.4" />
-                                  <circle cx="7" cy="8" r="1.4" />
-                                  <circle cx="3" cy="13" r="1.4" />
-                                  <circle cx="7" cy="13" r="1.4" />
-                                </svg>
-                              </div>
-                            )}
-                            {/* 선택 버튼 */}
-                            <button
-                              onClick={() => handleSelect(r.id)}
-                              style={{
-                                flex: 1,
-                                display: 'block',
-                                textAlign: 'left',
-                                padding: search ? '9px 14px' : '9px 14px 9px 4px',
-                                border: 0,
-                                cursor: 'pointer',
-                                background: active
-                                  ? 'var(--accent-soft, rgba(56,189,248,.12))'
-                                  : 'transparent',
-                                borderLeft: active
-                                  ? '3px solid var(--accent, #38bdf8)'
-                                  : '3px solid transparent',
-                                transition: 'background .12s',
-                              }}
-                            >
-                              <div
-                                style={{
-                                  fontWeight: 600,
-                                  fontSize: 13,
-                                  color: 'var(--text-1)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 6,
-                                }}
-                              >
-                                {r.menuName}
-                                {r.menuCode && (
-                                  <span
-                                    style={{
-                                      fontSize: 10,
-                                      fontWeight: 700,
-                                      color: 'var(--accent-text)',
-                                      background: 'var(--accent-soft)',
-                                      padding: '1px 5px',
-                                      borderRadius: 4,
-                                      fontFamily: 'monospace',
-                                    }}
-                                  >
-                                    {r.menuCode}
-                                  </span>
-                                )}
-                              </div>
-                              <div
-                                style={{
-                                  marginTop: 3,
-                                  display: 'flex',
-                                  gap: 6,
-                                  flexWrap: 'wrap',
-                                  alignItems: 'center',
-                                }}
-                              >
-                                {(r.sizes || []).map(s => {
-                                  const cost = costMap[s.label] || 0;
-                                  const mr = calcMarginRate(cost, s.sellingPrice);
-                                  return (
-                                    <span
-                                      key={s.label}
-                                      style={{
-                                        fontSize: 10,
-                                        fontWeight: 600,
-                                        color: costRateColor(mr),
-                                        background: 'var(--surface-2)',
-                                        padding: '1px 5px',
-                                        borderRadius: 3,
-                                      }}
-                                    >
-                                      {s.label}{' '}
-                                      {cost > 0 ? formatNumber(Math.round(cost)) + '원' : '—'}
-                                      {mr != null ? ` (${mr.toFixed(0)}%)` : ''}
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            </button>
-                            {/* 복제 버튼 */}
-                            <button
-                              title="레시피 복제"
-                              onClick={e => handleDuplicate(r.id, e)}
-                              style={{
-                                flexShrink: 0,
-                                alignSelf: 'center',
-                                marginRight: 6,
-                                padding: '3px 7px',
-                                fontSize: 10,
-                                fontWeight: 600,
-                                border: '1px solid var(--border)',
-                                borderRadius: 5,
-                                cursor: 'pointer',
-                                background: 'var(--surface-2)',
-                                color: 'var(--text-3)',
-                                lineHeight: 1.4,
-                              }}
-                            >
-                              복제
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-                <Pagination
-                  page={recipePage}
-                  totalPages={recipeTotalPages}
-                  onPage={recipeGoTo}
-                  total={recipeTotal}
-                  pageSize={40}
-                />
-              </div>
-            )}
-          </div>
+          <RecipeSidebar
+            listState={listState}
+            loading={loading}
+            recipes={recipes}
+            selectedId={selectedId}
+            unitPriceMap={unitPriceMap}
+            allGroups={allGroups}
+            onNew={handleNew}
+            onSelect={handleSelect}
+            onDuplicate={handleDuplicate}
+          />
 
           {/* ── 오른쪽: 에디터 ── */}
           {showEditor && draft ? (
