@@ -204,6 +204,15 @@ A1: export failedStores manifest / A2: 보고서 수동 정리 버튼 / A3: 분�
 
 ---
 
+### N-07·N-18 잔여 수정 — ✅ 2026-06-14
+
+_2026-06-14 — N-01~19 저위험 배치 코드 스캔 중 누락 2건 추가 수정_
+
+- N-07: `app/report/page.jsx`·`app/cost/margin/page.jsx`에 남은 "Excel 내보내기" 버튼 텍스트 2곳 → "엑셀로 내보내기"
+- N-18: `app/styles/features.css` dropzone 패딩 `16px 24px` → `10px 20px`, 아이콘 44px → 36px, 갭 6px → 4px
+
+---
+
 ### QA 라운드 4 (5건 구현 + 1건 조사) — ✅ 2026-06-12
 - A-3: `downloadCsvText` 헬퍼 추가 → recipe/menu-master CSV 즉시 revoke 제거
 - A-6: note/[id] + sample/[id] `if (saving) return` 재진입 가드

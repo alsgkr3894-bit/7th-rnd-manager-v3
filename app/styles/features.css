@@ -481,14 +481,14 @@
 .dropzone {
   border: 2px dashed var(--border-strong);
   background: var(--surface);
-  padding: 16px 24px;
+  padding: 10px 20px;
   text-align: center;
   cursor: pointer;
   transition: all 200ms ease;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 .dropzone:hover,
 .dropzone.drag {
@@ -499,14 +499,14 @@
   cursor: copy;
 }
 .dropzone-ico {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   background: var(--accent-soft);
   color: var(--accent-text);
   display: grid;
   place-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 .dropzone-title {
   font-size: 14px;

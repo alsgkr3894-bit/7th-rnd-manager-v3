@@ -480,7 +480,7 @@ export default function Page() {
                 exportMarginExcel(edgeFiltered, sizeLabels, viewMode, activePlatform, discount)
               }
             >
-              <Icon.download style={{ width: 13, height: 13 }} /> Excel 내보내기
+              <Icon.download style={{ width: 13, height: 13 }} /> 엑셀로 내보내기
             </button>
           </>
         }

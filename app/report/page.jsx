@@ -204,7 +204,7 @@ export default function Page() {
             </button>
             <button className="btn" onClick={() => exportToExcel(reports)}>
               <Icon.download style={{ width: 14, height: 14 }} />
-              Excel 내보내기
+              엑셀로 내보내기
             </button>
             <button className="btn" onClick={() => setScheduleOpen(true)}>
               <Icon.gear style={{ width: 14, height: 14 }} />
