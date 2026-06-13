@@ -8,6 +8,7 @@ import { parseOptionalNonNegativeNumber } from '@/lib/parse';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { parseCategoryFromCode } from '@/lib/cost/menu-price/code';
 import { SUB_TAG_STYLE, CAT_TAG_STYLE } from '@/lib/ui/colors';
+import { MenuRecipeSection } from './MenuRecipeSection';
 
 export function CategoryTags({ menuCode }) {
   if (!menuCode) return null;
@@ -313,6 +314,18 @@ export function MenuMasterEditModal({ row, isNew, onSave, onClose, presetCategor
               </span>
             </label>
           </div>
+
+          {/* ── 레시피 구성품 (원가 detail store 연동) ── */}
+          {!isNew && form.menuCode && form.category && (
+            <div style={{ borderTop: '1px solid var(--divider)', paddingTop: 12 }}>
+              <MenuRecipeSection
+                menuCode={form.menuCode}
+                menuName={form.menuName}
+                category={form.category}
+                size={form.size || '단일'}
+              />
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
