@@ -1,0 +1,109 @@
+'use client';
+import { useState, useEffect } from 'react';
+import { showToast } from '@/components/Toast';
+import { asDisplayText } from '@/lib/ui/prop-guards';
+import {
+  upsertMenuRef,
+  deleteMenuRef,
+  upsertRawValue,
+  CRUST_TYPES,
+} from '@/lib/nutrition/values/store';
+import { normalizeNutritionCategory } from '@/lib/nutrition/menu-group';
+
+/**
+ * 베이스 영양성분 에디터의 핵심 상태와 메뉴 CRUD/저장 로직.
+ * 레시피·식자재 계산 훅은 여기서 노출하는 selMenu/selCrust/form/setForm/setSaving를 공유한다.
+ */
+export function useNutritionBaseEditor({ safeRawMap, refresh }) {
+  const [selMenu, setSelMenu] = useState(null);
+  const [selCrust, setSelCrust] = useState(CRUST_TYPES[0]);
+  const [form, setForm] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [addMenu, setAddMenu] = useState(false);
+  const [newMenuForm, setNewMenuForm] = useState({
+    menuCode: '',
+    menuName: '',
+    category: '피자',
+    displayOrder: '',
+  });
+
+  const key = selMenu ? `${selMenu.menuCode}__${selCrust}` : null;
+  const existing = key ? safeRawMap[key] : null;
+
+  useEffect(() => {
+    if (existing) setForm({ ...existing });
+    else setForm({});
+  }, [existing, selMenu, selCrust]);
+
+  const setField = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSave = async () => {
+    if (!selMenu) return;
+    setSaving(true);
+    try {
+      await upsertRawValue({
+        ...(existing?.id ? { id: existing.id } : {}),
+        menuCode: selMenu.menuCode,
+        menuName: selMenu.menuName,
+        crustType: selCrust,
+        ...form,
+      });
+      showToast('저장 완료', 'ok');
+      refresh();
+    } catch {
+      showToast('저장 실패', 'error');
+    }
+    setSaving(false);
+  };
+
+  const handleAddMenu = async () => {
+    if (!newMenuForm.menuName.trim()) {
+      showToast('메뉴명 입력 필요', 'error');
+      return;
+    }
+    const code = newMenuForm.menuCode.trim() || `MENU-${Date.now()}`;
+    await upsertMenuRef({
+      ...newMenuForm,
+      menuCode: code,
+      category: normalizeNutritionCategory(newMenuForm.category, '피자'),
+      displayOrder: newMenuForm.displayOrder ? Number(newMenuForm.displayOrder) : undefined,
+    });
+    showToast('메뉴 추가 완료', 'ok');
+    setAddMenu(false);
+    setNewMenuForm({ menuCode: '', menuName: '', category: '피자', displayOrder: '' });
+    refresh();
+  };
+
+  const handleDeleteMenu = async menu => {
+    if (
+      !confirm(
+        `'${asDisplayText(menu.menuName, '메뉴')}' 및 모든 영양성분값이 삭제됩니다. 계속할까요?`
+      )
+    )
+      return;
+    await deleteMenuRef(menu.id, menu.menuCode);
+    if (selMenu?.id === menu.id) setSelMenu(null);
+    showToast(`'${asDisplayText(menu.menuName, '메뉴')}' 삭제`, 'ok');
+    refresh();
+  };
+
+  return {
+    selMenu,
+    setSelMenu,
+    selCrust,
+    setSelCrust,
+    form,
+    setForm,
+    setField,
+    saving,
+    setSaving,
+    existing,
+    addMenu,
+    setAddMenu,
+    newMenuForm,
+    setNewMenuForm,
+    handleSave,
+    handleAddMenu,
+    handleDeleteMenu,
+  };
+}
