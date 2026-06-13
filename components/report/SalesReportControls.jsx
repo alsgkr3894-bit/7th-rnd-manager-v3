@@ -15,13 +15,6 @@ import { asArray } from '@/lib/ui/prop-guards';
  * opts, upd                                         — section checkboxes state + updater
  * docFormat, updFmt                                 — document format state + updater
  */
-const _now = new Date();
-const _tm = { year: _now.getFullYear(), month: _now.getMonth() + 1 };
-const _lm = {
-  year: _now.getMonth() === 0 ? _now.getFullYear() - 1 : _now.getFullYear(),
-  month: _now.getMonth() === 0 ? 12 : _now.getMonth(),
-};
-
 function toPeriodNumber(value, fallback) {
   const n = Number(value);
   return Number.isFinite(n) ? Math.floor(n) : fallback;
@@ -56,8 +49,8 @@ export default function SalesReportControls({
   docFormat,
   updFmt,
 }) {
-  const safeYear = toPeriodNumber(year, _tm.year);
-  const safeMonth = toPeriodNumber(month, _tm.month);
+  const safeYear = toPeriodNumber(year, new Date().getFullYear());
+  const safeMonth = toPeriodNumber(month, new Date().getMonth() + 1);
   const safeCmpYear = toPeriodNumber(cmpYear, safeYear);
   const safeCmpMonth = toPeriodNumber(cmpMonth, safeMonth);
   const safeAvailYears = periodList(availYears, safeYear);
@@ -125,30 +118,6 @@ export default function SalesReportControls({
             </select>
           )}
         </div>
-        {periodMode === 'month' && (
-          <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-            <button
-              className="btn sm"
-              disabled={!hasMonth(_lm.year, _lm.month)}
-              onClick={() => {
-                onYear?.(_lm.year);
-                onMonth?.(_lm.month);
-              }}
-            >
-              지난달
-            </button>
-            <button
-              className="btn sm"
-              disabled={!hasMonth(_tm.year, _tm.month)}
-              onClick={() => {
-                onYear?.(_tm.year);
-                onMonth?.(_tm.month);
-              }}
-            >
-              이번달
-            </button>
-          </div>
-        )}
         {viewMode === 'compare' && (
           <div style={{ marginTop: 8 }}>
             <div className="opt-label" style={{ fontSize: 11, marginBottom: 4 }}>
@@ -188,15 +157,24 @@ export default function SalesReportControls({
       </OptGroup>
 
       <OptGroup label="대상 범위">
-        <Seg
+        <select
+          className="period-select"
           value={scope}
-          onChange={onScope}
-          options={[
+          onChange={e => onScope?.(e.target.value)}
+          style={{ width: '100%' }}
+        >
+          {[
             { value: 'all', label: '전체' },
-            { value: 'pizza', label: '피자' },
-            { value: 'side', label: '사이드' },
-          ]}
-        />
+            { value: '피자', label: '피자' },
+            { value: '1인피자', label: '1인피자' },
+            { value: '사이드', label: '사이드' },
+            { value: '세트박스', label: '세트박스' },
+            { value: '음료', label: '음료' },
+            { value: '기타', label: '기타' },
+          ].map(o => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
       </OptGroup>
 
       <OptGroup label="포함 섹션">

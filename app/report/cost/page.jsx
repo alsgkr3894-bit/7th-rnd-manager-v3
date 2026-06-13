@@ -95,16 +95,9 @@ async function exportCostXlsx(periodLabel, activeCats) {
 
 // ── 메인 컴포넌트 ──────────────────────────────────────────────
 const NOW = new Date();
-const _TM = { year: NOW.getFullYear(), month: NOW.getMonth() + 1 };
-const _LM = {
-  year: NOW.getMonth() === 0 ? NOW.getFullYear() - 1 : NOW.getFullYear(),
-  month: NOW.getMonth() === 0 ? 12 : NOW.getMonth(),
-};
+const PERIOD_LABEL = `${NOW.getFullYear()}년 ${NOW.getMonth() + 1}월`;
 
 export default function Page() {
-  const [periodMode, setPeriodMode] = useState('month');
-  const [year, setYear] = useState(NOW.getFullYear());
-  const [month, setMonth] = useState(NOW.getMonth() + 1);
   const [riskThreshold, setRiskThreshold] = useState(35);
   const [cats, setCats] = useState({
     pizza: true,
@@ -125,9 +118,6 @@ export default function Page() {
     DRAFT_KEY,
     { summary: true, catTable: true, perCategory: true, riskList: true },
     draft => {
-      if (draft.periodMode) setPeriodMode(draft.periodMode);
-      if (draft.year) setYear(draft.year);
-      if (draft.month) setMonth(draft.month);
       if (draft.riskThreshold) setRiskThreshold(draft.riskThreshold);
       if (draft.cats) setCats(c => ({ ...c, ...draft.cats }));
     }
@@ -171,16 +161,6 @@ export default function Page() {
           ]);
           if (ignore) return;
 
-          // 최신 단가 파일 기준 집계 기간 설정
-          const latestFile = priceFiles[0];
-          if (latestFile?.updateDate) {
-            const d = new Date(latestFile.updateDate);
-            if (!isNaN(d)) {
-              setYear(d.getFullYear());
-              setMonth(d.getMonth() + 1);
-            }
-          }
-
           if (prices.length === 0) {
             setIsLoading(false);
             return;
@@ -220,7 +200,7 @@ export default function Page() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const periodLabel = periodMode === 'year' ? `${year}년` : `${year}년 ${month}월`;
+  const periodLabel = PERIOD_LABEL;
 
   // CAT_KEYS 순서 유지하면서 활성 카테고리 추출
   const activeCats = CAT_KEYS.map(k => CAT_META[k])
@@ -258,14 +238,10 @@ export default function Page() {
   const reportMeta = {
     period: periodLabel,
     name: `${periodLabel} 원가계산 종합 보고서`,
-    options: { periodMode, year, month, riskThreshold, cats, opts },
+    options: { riskThreshold, cats, opts },
   };
 
   const handleExcelExport = () => exportCostXlsx(periodLabel, activeCats);
-
-  const yearOptions = [];
-  const curY = new Date().getFullYear();
-  for (let y = curY - 2; y <= curY; y++) yearOptions.push(y);
 
   return (
     <ReportBuilderShell

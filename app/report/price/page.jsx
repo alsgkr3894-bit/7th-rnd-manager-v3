@@ -40,7 +40,6 @@ function safeCategory(value) {
 
 export default function Page() {
   const [periodMode, setPeriodMode] = useState('week');
-  const [threshold, setThreshold] = useState(3);
   const [opts, setOpts] = useState({
     catSummary: true,
     costImpact: true,
@@ -62,7 +61,6 @@ export default function Page() {
 
   useDraftRestore(DRAFT_KEY, draft => {
     if (draft.periodMode) setPeriodMode(draft.periodMode);
-    if (draft.threshold != null) setThreshold(draft.threshold);
     if (draft.opts) setOpts(o => ({ ...o, ...draft.opts }));
   });
 
@@ -114,7 +112,7 @@ export default function Page() {
           const { changes: filtered, catSummary: summary } = buildPriceReportData(
             baseRows,
             latestRows,
-            threshold
+            0
           );
           setChanges(filtered);
           setCatSummary(summary);
@@ -138,9 +136,8 @@ export default function Page() {
     return () => {
       ignore = true;
     };
-  }, [threshold, periodMode, customFrom, customTo, todayStr, weekAgoStr]);
+  }, [periodMode, customFrom, customTo, todayStr, weekAgoStr]);
 
-  const thresholdValue = asFiniteNumber(threshold, 0) ?? 0;
   const safeChanges = asObjectArray(changes);
   const safeCatSummary = asObjectArray(catSummary);
   const rising = safeChanges.filter(c => c.changeStatus === '인상').length;
@@ -153,7 +150,7 @@ export default function Page() {
     kind: 'price',
     period: dateRange,
     name: `제때 가격 변동 보고서 (${dateRange})`,
-    options: { periodMode, threshold: thresholdValue, opts },
+    options: { periodMode, opts },
   };
 
   // 카테고리별로 그룹핑 (미리보기 + PDF용)
@@ -170,7 +167,7 @@ export default function Page() {
     <ReportBuilderShell
       breadcrumb={['보고서센터', '제때 가격 보고서']}
       title="제때 가격 보고서 생성"
-      sub="제때 단가 변동 — 임계값을 넘는 품목만 자동 추출돼요."
+      sub="제때 단가 변동 — 변동된 품목을 전체 자동 추출해요."
       kind="price"
       reportMeta={reportMeta}
       dataError={dataError}
@@ -209,26 +206,9 @@ export default function Page() {
             )}
           </OptGroup>
 
-          <OptGroup label="변동률 임계값" hint="이 비율 이상 변동된 품목만 포함">
-            <div className="threshold-bar">
-              <input
-                type="range"
-                min="0"
-                max="10"
-                step="0.5"
-                value={thresholdValue}
-                onChange={e => setThreshold(asFiniteNumber(e.target.value, 0) ?? 0)}
-              />
-              <div className="threshold-val num" style={{ minWidth: 64 }}>
-                ±{thresholdValue}
-                <span className="unit">%</span>
-              </div>
-            </div>
-          </OptGroup>
-
           <OptGroup label="포함 섹션">
             <Check
-              label="카테고리별 변동 요약"
+              label="전체 식자재 변동 요약"
               value={opts.catSummary}
               onChange={v => upd('catSummary', v)}
             />
@@ -253,8 +233,6 @@ export default function Page() {
             <h2 className="paper-title">제때 가격 변동 보고서</h2>
             <div className="paper-meta">
               <span>기간: {dateRange}</span>
-              <span>·</span>
-              <span>임계값 ±{thresholdValue}%</span>
               <span>·</span>
               <span className="mono">
                 생성일 {todayLabel} · {getProfile().name}
@@ -304,11 +282,10 @@ export default function Page() {
           {/* ── 카테고리별 요약 ── */}
           {opts.catSummary && safeCatSummary.length > 0 && (
             <div className="paper-section">
-              <div className="paper-section-title">카테고리별 변동 요약</div>
+              <div className="paper-section-title">전체 식자재 변동 요약</div>
               <table className="paper-table">
                 <thead>
                   <tr>
-                    <th>카테고리</th>
                     <th style={{ width: 70, textAlign: 'right' }}>총 변동</th>
                     <th style={{ width: 60, textAlign: 'right' }}>인상</th>
                     <th style={{ width: 60, textAlign: 'right' }}>인하</th>
@@ -322,8 +299,7 @@ export default function Page() {
                     const count = asFiniteNumber(c.count, 0) ?? 0;
                     const sum = asFiniteNumber(c.sum, 0) ?? 0;
                     return (
-                      <tr key={`${safeCategory(c.cat)}-${index}`}>
-                        <td style={{ fontWeight: 600 }}>{safeCategory(c.cat)}</td>
+                      <tr key={`cat-summary-${index}`}>
                         <td className="num right">{asFiniteNumber(c.total, 0) ?? 0}</td>
                         <td className="num right" style={{ color: 'var(--negative)' }}>
                           {asFiniteNumber(c.up, 0) || '—'}
@@ -346,7 +322,20 @@ export default function Page() {
             </div>
           )}
 
-          {/* ── 카테고리별 변동 품목 상세 ── */}
+          {/* ── 원가 영향 식자재 수 ── */}
+          {opts.costImpact && safeChanges.length > 0 && (
+            <div className="paper-section">
+              <div className="paper-section-title">원가 영향 식자재</div>
+              <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: 13 }}>
+                <span>인상 <b style={{ color: 'var(--negative)' }}>{safeChanges.filter(c => c.changeStatus === '인상').length}건</b></span>
+                <span>인하 <b style={{ color: 'var(--positive)' }}>{safeChanges.filter(c => c.changeStatus === '인하').length}건</b></span>
+                <span>신규 <b style={{ color: 'var(--accent)' }}>{safeChanges.filter(c => c.changeStatus === '신규').length}건</b></span>
+                <span>삭제 <b style={{ color: 'var(--text-3)' }}>{safeChanges.filter(c => c.changeStatus === '삭제').length}건</b></span>
+              </div>
+            </div>
+          )}
+
+          {/* ── 변동 품목 상세 ── */}
           {safeChanges.length > 0 ? (
             cats.map(cat => {
               const rows = asObjectArray(byCategory[cat]);
@@ -424,7 +413,7 @@ export default function Page() {
             >
               {dateRange === '—'
                 ? '가격 파일 2개 이상 업로드 후 비교할 수 있어요'
-                : `임계값 ±${thresholdValue}% 이상 변동 품목 없음`}
+                : '변동 품목 없음'}
             </div>
           )}
 
