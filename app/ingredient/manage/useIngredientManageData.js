@@ -31,6 +31,8 @@ export function useIngredientManageData() {
   const [loading, setLoading] = useState(true);
   const [brokenRefs, setBrokenRefs] = useState([]);
   const [productCodeDupes, setProductCodeDupes] = useState(null);
+  const [newJetteRows, setNewJetteRows] = useState([]);
+  const [jetteRemovedRows, setJetteRemovedRows] = useState([]);
 
   const load = useCallback(async () => {
     await initDB();
@@ -59,13 +61,16 @@ export function useIngredientManageData() {
 
     if (!latest) {
       setPrevPriceMap(null);
+      setNewJetteRows([]);
+      setJetteRemovedRows([]);
       setRows(allMeta.filter(meta => meta.isManual || meta.isSeeded).map(buildMetaOnlyRow));
       setBrokenRefs(findBrokenCompositeRefs(allMeta));
       return;
     }
 
     const priceRows = await getPriceRowsByFileId(latest.id);
-    const merged = mergeIngredientRows(priceRows, metaMap, typeMap).filter(row => row.hasRecord);
+    const allMerged = mergeIngredientRows(priceRows, metaMap, typeMap);
+    const merged = allMerged.filter(row => row.hasRecord);
     const priceCodeSet = new Set(priceRows.map(row => row.productCode).filter(Boolean));
     const orphanMetaRows = allMeta
       .filter(
@@ -75,11 +80,23 @@ export function useIngredientManageData() {
       )
       .map(buildMetaOnlyRow);
 
+    // 제때 신규 미등록 항목 (최신 파일에 있지만 식자재 메타 없음)
+    setNewJetteRows(allMerged.filter(row => !row.hasRecord));
+
     if (prev) {
       const prevRows = await getPriceRowsByFileId(prev.id);
       setPrevPriceMap(new Map(prevRows.map(row => [row.productCode, row.priceWithTax])));
+      // 제때에서 제거된 항목 (이전 파일에 있었으나 최신 파일에서 사라짐 + 메타 존재)
+      const prevCodeSet = new Set(prevRows.map(row => row.productCode).filter(Boolean));
+      const removedWithMeta = [...prevCodeSet]
+        .filter(c => c && !priceCodeSet.has(c))
+        .map(c => metaMap.get(c))
+        .filter(Boolean)
+        .map(buildMetaOnlyRow);
+      setJetteRemovedRows(removedWithMeta);
     } else {
       setPrevPriceMap(null);
+      setJetteRemovedRows([]);
     }
 
     setRows([...merged, ...orphanMetaRows]);
@@ -103,5 +120,7 @@ export function useIngredientManageData() {
     load,
     brokenRefs,
     productCodeDupes,
+    newJetteRows,
+    jetteRemovedRows,
   };
 }
