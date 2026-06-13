@@ -31,7 +31,7 @@ export function CategoryTags({ menuCode }) {
       >
         {catKey || '—'}
       </span>
-      {subStyle && (
+      {subStyle && subStyle.label !== catKey && (
         <span
           style={{
             fontSize: 11,

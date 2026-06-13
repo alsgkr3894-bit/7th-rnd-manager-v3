@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ReportBuilderShell, { OptGroup, Check } from '@/components/report/ReportBuilderShell';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { formatNumber, pad } from '@/lib/format';
@@ -116,7 +116,7 @@ export default function Page() {
     updFmt,
   } = useReportPageState(
     DRAFT_KEY,
-    { summary: true, catTable: true, perCategory: true, riskList: true },
+    { summary: true, catTable: true, perCategory: true, riskList: true, includeEdge: false },
     draft => {
       if (draft.riskThreshold) setRiskThreshold(draft.riskThreshold);
       if (draft.cats) setCats(c => ({ ...c, ...draft.cats }));
@@ -130,6 +130,7 @@ export default function Page() {
       Object.entries(CAT_META).map(([, m]) => [m.id, { label: m.label, color: m.color, menus: [] }])
     )
   );
+  const loadedCtxRef = useRef(null); // { prices, ctx } — loaded once, reused for includeEdge toggle
 
   useEffect(() => {
     let ignore = false;
@@ -176,8 +177,8 @@ export default function Page() {
             recipeByName,
             upm: buildUnitPriceMap(ingredients, new Map()),
           };
-
-          setCostByCategory(buildCostReportData(prices, ctx, CAT_KEYS, CAT_META));
+          loadedCtxRef.current = { prices, ctx };
+          setCostByCategory(buildCostReportData(prices, { ...ctx, includeEdge: opts.includeEdge }, CAT_KEYS, CAT_META));
           setDataError(null);
         } catch (err) {
           if (ignore) return;
@@ -199,6 +200,13 @@ export default function Page() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 엣지 포함 옵션 변경 시 비용 재계산
+  useEffect(() => {
+    if (!loadedCtxRef.current) return;
+    const { prices, ctx } = loadedCtxRef.current;
+    setCostByCategory(buildCostReportData(prices, { ...ctx, includeEdge: opts.includeEdge }, CAT_KEYS, CAT_META));
+  }, [opts.includeEdge]);
 
   const periodLabel = PERIOD_LABEL;
 
@@ -263,6 +271,15 @@ export default function Page() {
             <Check label="세트박스" value={cats.set} onChange={v => updCat('set', v)} />
             <Check label="사이드" value={cats.side} onChange={v => updCat('side', v)} />
             <Check label="엣지 & 도우" value={cats.edge} onChange={v => updCat('edge', v)} />
+          </OptGroup>
+
+          <OptGroup label="피자 옵션">
+            <Check
+              label="피자 원가에 기본 엣지 포함"
+              value={opts.includeEdge}
+              onChange={v => updOpt('includeEdge', v)}
+              hint="석쇠 기준 엣지 원가를 피자 원가에 합산합니다"
+            />
           </OptGroup>
 
           <OptGroup label="위험 메뉴 기준" hint="이 원가율을 초과하는 메뉴는 ⚠ 표시">

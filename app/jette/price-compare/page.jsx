@@ -34,6 +34,7 @@ export default function Page() {
   } = useJettePrice();
 
   const [tab, setTab] = useState('latest');
+  const [cardFilter, setCardFilter] = useState('all');
   const [uploadDate, setUploadDate] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -133,11 +134,12 @@ export default function Page() {
                 onLatestChange={setLatestFileId}
                 summary={summary}
               />
-              <PriceSummaryCards diffRows={diffRows} />
+              <PriceSummaryCards diffRows={diffRows} onFilter={setCardFilter} />
               <PriceCompareTable
                 diffRows={diffRows}
                 productTypeLookup={productTypeLookup}
                 onTypeChange={handleTypeChange}
+                externalFilter={cardFilter}
               />
             </>
           )}

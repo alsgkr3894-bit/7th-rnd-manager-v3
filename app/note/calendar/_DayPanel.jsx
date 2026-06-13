@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { Icon } from '@/components/icons';
 import { STATUS_COLORS, STATUS_BORDER } from '@/lib/note/constants';
 import { SCHEDULE_COLORS } from '@/lib/note/schedules';
@@ -53,6 +54,7 @@ export function DayPanel({
   const sortedLogs = [...safeWorkLogs].sort((a, b) =>
     asDisplayText(a.at).localeCompare(asDisplayText(b.at))
   );
+  const [logsOpen, setLogsOpen] = useState(false);
 
   return (
     <>
@@ -197,58 +199,6 @@ export function DayPanel({
               + 일정 추가하기
             </button>
           )}
-        </div>
-      )}
-
-      {/* 작업 자동일지 */}
-      {sortedLogs.length > 0 && (
-        <div style={{ marginBottom: 12 }}>
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 800,
-              color: 'var(--text-4)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              marginBottom: 6,
-            }}
-          >
-            자동 일지
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {sortedLogs.map((w, i) => {
-              const type = asDisplayText(w.type);
-              const summary = asDisplayText(w.summary);
-              const at = asDisplayText(w.at);
-              const t = WORK_LOG_TYPES[type] || WORK_LOG_TYPES.OTHER;
-              return (
-                <div
-                  key={asDisplayText(w.id, `work-${i}`)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '6px 10px',
-                    borderRadius: 8,
-                    background: 'var(--surface-2)',
-                  }}
-                >
-                  <span style={{ fontSize: 13, flexShrink: 0 }}>{t.icon}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: t.color }}>{t.label}</span>
-                    {summary && (
-                      <span style={{ fontSize: 11, color: 'var(--text-3)', marginLeft: 6 }}>
-                        {summary}
-                      </span>
-                    )}
-                  </div>
-                  <span style={{ fontSize: 10, color: 'var(--text-4)', flexShrink: 0 }}>
-                    {at.slice(11, 16)}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
         </div>
       )}
 
@@ -451,6 +401,78 @@ export function DayPanel({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* 작업 자동일지 — 기본 접힘, 맨 아래 배치 */}
+      {sortedLogs.length > 0 && (
+        <div style={{ marginTop: 12, borderTop: '1px solid var(--divider)', paddingTop: 8 }}>
+          <button
+            onClick={() => setLogsOpen(v => !v)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              width: '100%',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              font: 'inherit',
+              color: 'var(--text-3)',
+              fontSize: 11,
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}
+          >
+            자동 일지 · {sortedLogs.length}
+            <Icon.arrowDown
+              style={{
+                width: 12,
+                height: 12,
+                marginLeft: 'auto',
+                transform: logsOpen ? 'rotate(180deg)' : undefined,
+                transition: 'transform 0.15s',
+              }}
+            />
+          </button>
+          {logsOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
+              {sortedLogs.map((w, i) => {
+                const type = asDisplayText(w.type);
+                const summary = asDisplayText(w.summary);
+                const at = asDisplayText(w.at);
+                const t = WORK_LOG_TYPES[type] || WORK_LOG_TYPES.OTHER;
+                return (
+                  <div
+                    key={asDisplayText(w.id, `work-${i}`)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '6px 10px',
+                      borderRadius: 8,
+                      background: 'var(--surface-2)',
+                    }}
+                  >
+                    <span style={{ fontSize: 13, flexShrink: 0 }}>{t.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: t.color }}>{t.label}</span>
+                      {summary && (
+                        <span style={{ fontSize: 11, color: 'var(--text-3)', marginLeft: 6 }}>
+                          {summary}
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 10, color: 'var(--text-4)', flexShrink: 0 }}>
+                      {at.slice(11, 16)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </>

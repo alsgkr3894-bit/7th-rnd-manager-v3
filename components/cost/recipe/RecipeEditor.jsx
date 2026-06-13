@@ -186,13 +186,20 @@ export function RecipeEditor({
 
   return (
     <div className="card" aria-busy={saving} style={{ padding: '20px 24px' }}>
-      {/* 상단 */}
+      {/* 상단 — sticky so action buttons are always visible while scrolling */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: 18,
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          background: 'var(--surface)',
+          paddingTop: 4,
+          paddingBottom: 8,
+          marginTop: -4,
         }}
       >
         <div style={{ fontWeight: 700, fontSize: 15 }}>
@@ -577,7 +584,7 @@ export function RecipeEditor({
                       style={{
                         fontWeight: 600,
                         fontSize: 13,
-                        color: on ? 'var(--accent-text)' : 'var(--text-1)',
+                        color: on ? 'var(--accent)' : 'var(--text-1)',
                       }}
                     >
                       {g.name}

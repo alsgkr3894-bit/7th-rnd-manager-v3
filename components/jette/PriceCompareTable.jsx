@@ -21,8 +21,8 @@ const FILTER_TO_STATUS = {
   deleted: CHANGE_STATUS.DELETED,
 };
 
-export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onTypeChange }) {
-  const [filter, setFilter] = useState('all');
+export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onTypeChange, externalFilter }) {
+  const [filter, setFilter] = useState(externalFilter || 'all');
   const [typeFilter, setTypeFilter] = useState('all');
   const { search, setSearch, sortKey, sortDir, toggleSort } = useTableSearchSort(
     'changeRate',
@@ -39,6 +39,10 @@ export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onT
     setFilter('all');
     setSearch('');
   }, [safeDiffRows, setSearch]);
+
+  useEffect(() => {
+    if (externalFilter) setFilter(externalFilter);
+  }, [externalFilter]);
 
   const typeCounts = useMemo(
     () => getProductTypeCounts(safeDiffRows, safeProductTypeLookup),

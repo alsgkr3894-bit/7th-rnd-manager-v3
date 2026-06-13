@@ -5,7 +5,9 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { downloadCsv, printCurrentPageWithDownloadDate } from '@/lib/download';
+import { printCurrentPageWithDownloadDate } from '@/lib/download';
+import { openPrintWindow, buildAutoPrintScript } from '@/lib/print/window-print';
+import { withDownloadDateSuffix } from '@/lib/download';
 import { addSchedule, updateSchedule, deleteSchedule } from '@/lib/note/schedules';
 import { ScheduleModal } from './_ScheduleModal';
 import { DayPanel } from './_DayPanel';
@@ -64,6 +66,8 @@ export default function Page() {
   }, [closePanel, selectedDay, shiftMonth]);
 
   const {
+    notesByDate,
+    schedulesByDate,
     workLogsByDate,
     samplesByDate,
     monthStats,
@@ -120,9 +124,41 @@ export default function Page() {
     setModal(null);
   }
 
-  function exportMonthCsv() {
-    const headers = ['날짜', '시간', '구분', '제목', '상태/분류', '내용'];
-    downloadCsv([headers, ...monthEventRows], `일정달력_${viewYear}년${pad(viewMonth)}월.csv`);
+  function exportMonthPdf() {
+    const title = withDownloadDateSuffix(`${viewYear}년 ${viewMonth}월 달력`);
+    const prefix = `${viewYear}-${pad(viewMonth)}`;
+    const dateSet = new Set([
+      ...Array.from((notesByDate || new Map()).keys()),
+      ...Array.from((schedulesByDate || new Map()).keys()),
+    ]);
+    const dates = [...dateSet].filter(d => d.startsWith(prefix)).sort();
+    function esc(v) {
+      return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    const body = dates.map(date => {
+      const [, , d] = date.split('-');
+      const scheds = schedulesByDate.get(date) || [];
+      const noteItems = notesByDate.get(date) || [];
+      const rows = [
+        ...scheds.map(s => `<tr><td class="type sched">일정</td><td>${esc(s.time || '—')}</td><td>${esc(s.title)}</td><td>${esc(s.type || '')}</td><td>${esc(s.memo || s.description || '')}</td></tr>`),
+        ...noteItems.map(n => `<tr><td class="type note">노트</td><td>—</td><td>${esc(n.menuName || n.title || '')}</td><td>${esc(n.status || '')}</td><td>${esc(n.result || n.summary || '')}</td></tr>`),
+      ].join('');
+      if (!rows) return '';
+      return `<section class="day"><div class="day-head">${viewMonth}/${d}</div><table><thead><tr><th style="width:48px">구분</th><th style="width:50px">시간</th><th>제목</th><th style="width:72px">상태</th><th>내용</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+    }).filter(Boolean).join('');
+    const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${esc(title)}</title><style>
+*{box-sizing:border-box;}body{margin:0;padding:14mm 16mm;font-family:Pretendard,-apple-system,sans-serif;font-size:10pt;color:#111;background:#fff;}
+@page{size:A4 portrait;margin:14mm 16mm;}
+h1{font-size:18pt;font-weight:900;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:16px;}
+.day{margin-bottom:14px;break-inside:avoid;}
+.day-head{font-size:12pt;font-weight:800;margin-bottom:4px;color:#111;}
+table{width:100%;border-collapse:collapse;font-size:9pt;}
+th,td{border:1px solid #ddd;padding:4px 6px;vertical-align:top;}
+th{background:#f5f5f5;font-weight:800;text-align:center;}
+.type{font-weight:700;text-align:center;white-space:nowrap;}
+.type.sched{color:#0369A1;}.type.note{color:#7C3AED;}
+</style></head><body><h1>${esc(title)}</h1>${body || '<p style="color:#999">이번 달 항목이 없습니다</p>'}${buildAutoPrintScript()}</body></html>`;
+    openPrintWindow(html, { width: 900, height: 700 });
   }
 
   if (loading)
@@ -145,10 +181,10 @@ export default function Page() {
           <div className="calendar-actions">
             <button
               className="btn no-print"
-              onClick={exportMonthCsv}
+              onClick={exportMonthPdf}
               disabled={monthEventRows.length === 0}
             >
-              <Icon.download style={{ width: 14, height: 14 }} /> CSV
+              <Icon.doc style={{ width: 14, height: 14 }} /> PDF
             </button>
             <button
               className="btn no-print"

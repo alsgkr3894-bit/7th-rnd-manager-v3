@@ -81,15 +81,15 @@ export function CalendarGrid({
               key={key}
               onClick={() => (isSelected ? onClosePanel() : onSelectDay(key))}
               style={{
-                minHeight: 90,
-                padding: '5px 6px',
+                minHeight: 96,
+                padding: '6px 8px',
                 borderRight: '1px solid var(--divider)',
                 borderBottom: '1px solid var(--divider)',
                 cursor: 'pointer',
                 background: isSelected
                   ? 'var(--accent-soft)'
                   : hasToday
-                    ? 'color-mix(in oklab, var(--accent-soft) 35%, var(--surface))'
+                    ? 'color-mix(in oklab, var(--accent-soft) 45%, var(--surface))'
                     : 'var(--surface)',
                 transition: 'background 0.12s',
                 position: 'relative',
@@ -105,14 +105,14 @@ export function CalendarGrid({
               >
                 <span
                   style={{
-                    width: 22,
-                    height: 22,
+                    width: hasToday ? 24 : 22,
+                    height: hasToday ? 24 : 22,
                     borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 12,
-                    fontWeight: hasToday ? 800 : 600,
+                    fontSize: hasToday ? 13 : 12,
+                    fontWeight: hasToday ? 900 : 600,
                     background: hasToday ? 'var(--accent)' : 'transparent',
                     color: dayNumColor({ hasToday, dow, past }),
                   }}
@@ -215,7 +215,7 @@ function CalendarItem({ item, past, onEditSchedule, onOpenNote, onOpenSample }) 
         style={{
           fontSize: 10,
           fontWeight: 600,
-          padding: '2px 5px',
+          padding: '2px 6px',
           borderRadius: 4,
           background: color.bg,
           color: color.text,
@@ -250,7 +250,7 @@ function CalendarItem({ item, past, onEditSchedule, onOpenNote, onOpenSample }) 
         style={{
           fontSize: 10,
           fontWeight: 600,
-          padding: '2px 5px',
+          padding: '2px 6px',
           borderRadius: 4,
           background: 'var(--positive-soft)',
           color: 'var(--positive)',

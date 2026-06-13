@@ -83,7 +83,7 @@ export function SortableIngredientRow({
             ? Math.round(info.unitPrice * parseFloat(qty) * 10) / 10
             : null;
         return [
-          <td key={sl + '_q'} style={{ padding: '4px 4px', width: 70 }}>
+          <td key={sl + '_q'} style={{ padding: '4px 4px', width: 80 }}>
             <input
               className="form-input"
               type="number"
@@ -91,7 +91,7 @@ export function SortableIngredientRow({
               value={qty}
               onChange={e => onQtyChange(index, sl, e.target.value)}
               placeholder="0"
-              style={{ width: '100%', padding: '3px 5px', textAlign: 'right' }}
+              style={{ width: '100%', padding: '5px 8px', textAlign: 'right', fontSize: 13 }}
             />
           </td>,
           <td

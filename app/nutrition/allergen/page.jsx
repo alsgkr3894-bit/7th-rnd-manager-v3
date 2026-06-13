@@ -80,21 +80,6 @@ export default function Page() {
     setAllergenOrder(loadOrder(ALLERGEN_ORDER_KEY));
   }, []);
 
-  // 알레르기 22종 표시 순서 — 저장된 순서 우선, 없으면 기본 displayOrder
-  const orderedAllergens = useMemo(() => {
-    const safeOrder = asStringArray(allergenOrder);
-    if (!safeOrder.length) return ALLERGEN_SEED;
-    const rank = new Map(safeOrder.map((c, i) => [c, i]));
-    return [...ALLERGEN_SEED].sort((a, b) => {
-      const aCode = asDisplayText(a.allergenCode);
-      const bCode = asDisplayText(b.allergenCode);
-      const ra = rank.has(aCode) ? rank.get(aCode) : Infinity;
-      const rb = rank.has(bCode) ? rank.get(bCode) : Infinity;
-      if (ra !== rb) return ra - rb;
-      return (a.displayOrder ?? 999) - (b.displayOrder ?? 999);
-    });
-  }, [allergenOrder]);
-
   const load = useCallback(async () => {
     await initDB();
     const [
@@ -225,6 +210,31 @@ export default function Page() {
       ),
     [allergenIngredients, baseMapData, edges, isExcludedMenu, menuOrder, menuNameOverrides, toppings]
   );
+
+  // 알레르기 22종 표시 순서 — 저장된 순서 우선, 없으면 빈도 내림차순
+  const orderedAllergens = useMemo(() => {
+    const safeOrder = asStringArray(allergenOrder);
+    if (safeOrder.length) {
+      const rank = new Map(safeOrder.map((c, i) => [c, i]));
+      return [...ALLERGEN_SEED].sort((a, b) => {
+        const ra = rank.has(asDisplayText(a.allergenCode)) ? rank.get(asDisplayText(a.allergenCode)) : Infinity;
+        const rb = rank.has(asDisplayText(b.allergenCode)) ? rank.get(asDisplayText(b.allergenCode)) : Infinity;
+        if (ra !== rb) return ra - rb;
+        return (a.displayOrder ?? 999) - (b.displayOrder ?? 999);
+      });
+    }
+    const freq = new Map();
+    for (const row of menuMatrixAll) {
+      const codes = row.allergenCodes instanceof Set ? row.allergenCodes : new Set();
+      for (const code of codes) freq.set(code, (freq.get(code) ?? 0) + 1);
+    }
+    return [...ALLERGEN_SEED].sort((a, b) => {
+      const fa = freq.get(asDisplayText(a.allergenCode)) ?? 0;
+      const fb = freq.get(asDisplayText(b.allergenCode)) ?? 0;
+      if (fb !== fa) return fb - fa;
+      return (a.displayOrder ?? 999) - (b.displayOrder ?? 999);
+    });
+  }, [allergenOrder, menuMatrixAll]);
 
   const ingredientByKey = useMemo(() => {
     const map = new Map();
