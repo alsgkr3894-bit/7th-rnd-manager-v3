@@ -637,13 +637,13 @@ function IngredientRow({ r, rowKey, isExpanded, onToggle }) {
         </td>
         <td style={{ width: 70 }}>
           {photo ? (
-            <div style={{ position: 'relative', width: 54, height: 42 }}>
+            <div style={{ position: 'relative', width: 72, height: 56 }}>
               <img
                 src={photo.data}
                 alt={photo.name || name}
                 style={{
-                  width: 54,
-                  height: 42,
+                  width: 72,
+                  height: 56,
                   objectFit: 'contain',
                   borderRadius: 6,
                   border: '1px solid var(--border)',

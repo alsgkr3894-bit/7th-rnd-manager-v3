@@ -15,12 +15,10 @@ import {
   getIngredientMetaMap,
   upsertIngredientMeta,
   bulkDeleteIngredients,
-  bulkImportIngredients,
   resetAllIngredients,
   buildProductTypeMap,
 } from '@/lib/ingredient';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
-import { MASTER_IMPORT_SEED } from '@/lib/ingredient/master-import-seed';
 import { MasterRow } from '@/components/cost/ingredient-price/MasterRow';
 import { buildIngredientPriceRows } from '@/lib/cost/ingredient-price/buildRows';
 import { useIngredientPriceFilters } from '@/hooks/useIngredientPriceFilters';
@@ -39,14 +37,9 @@ const SyncBaseQtyModal = dynamic(
   () => import('@/components/cost/ingredient-price/SyncBaseQtyModal').then(m => m.SyncBaseQtyModal),
   { ssr: false, loading: () => null }
 );
-const SuppliersView = dynamic(
-  () => import('@/components/cost/ingredient-price/SuppliersView').then(m => m.SuppliersView),
-  { ssr: false, loading: () => <div className="skeleton" style={{ height: 200 }} /> }
-);
-
 const VIEW_TABS = [
   { key: 'price', label: '단가 목록' },
-  { key: 'suppliers', label: '공급업체' },
+  { key: 'issues', label: '이슈' },
 ];
 
 export default function Page() {
@@ -56,7 +49,6 @@ export default function Page() {
   const [dbError, setDbError] = useState(null);
   const [regTarget, setRegTarget] = useState(null); // 마스터 등록 모달 대상 행
   const [syncQtyOpen, setSyncQtyOpen] = useState(false); // 제때 수량 동기화 모달
-  const [importing, setImporting] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [viewTab, setViewTab] = useState('price');
@@ -142,19 +134,6 @@ export default function Page() {
     }
   }, [load]);
 
-  const handleBulkImport = useCallback(async () => {
-    setImporting(true);
-    try {
-      const result = await bulkImportIngredients(MASTER_IMPORT_SEED);
-      showToast(`마스터 가져오기 완료 — 신규 ${result.inserted}개, 업데이트 ${result.updated}개`);
-      await load();
-    } catch (e) {
-      showToast('가져오기 실패: ' + e.message);
-    } finally {
-      setImporting(false);
-    }
-  }, [load]);
-
   // ── 통계 ─────────────────────────────────────────────────────
   const stats = useMemo(() => {
     const upCount = rows.filter(r => r.priceDelta > 0).length;
@@ -163,6 +142,10 @@ export default function Page() {
     return { total: rows.length, upCount, downCount, newCount };
   }, [rows]);
 
+  const issueRows = useMemo(
+    () => rows.filter(r => !r.category || !r.baseQuantity || r.priceWithTax == null),
+    [rows]
+  );
 
   const priceSortOptions = useMemo(
     () => [
@@ -267,7 +250,7 @@ export default function Page() {
               <button
                 className="btn sm"
                 onClick={() => setResetConfirm(true)}
-                disabled={resetting || importing}
+                disabled={resetting}
                 style={{ color: 'var(--negative)' }}
               >
                 초기화
@@ -276,18 +259,10 @@ export default function Page() {
             <button
               className="btn"
               onClick={() => setSyncQtyOpen(true)}
-              disabled={importing || resetting}
+              disabled={resetting}
             >
               <Icon.arrowDown style={{ width: 14, height: 14 }} />
               제때 수량 동기화
-            </button>
-            <button
-              className="btn primary"
-              onClick={handleBulkImport}
-              disabled={importing || resetting}
-            >
-              <Icon.download style={{ width: 14, height: 14 }} />
-              {importing ? '가져오는 중…' : '마스터 시드 가져오기 (118개)'}
             </button>
           </div>
         }
@@ -318,9 +293,32 @@ export default function Page() {
                 cursor: 'pointer',
                 background: viewTab === key ? 'var(--accent)' : 'var(--surface-2)',
                 color: viewTab === key ? '#fff' : 'var(--text-2)',
+                position: 'relative',
               }}
             >
               {label}
+              {key === 'issues' && issueRows.length > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    right: 4,
+                    minWidth: 16,
+                    height: 16,
+                    borderRadius: 999,
+                    background: 'var(--warn, #f59e0b)',
+                    color: '#fff',
+                    fontSize: 9,
+                    fontWeight: 900,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0 3px',
+                  }}
+                >
+                  {issueRows.length}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -328,11 +326,65 @@ export default function Page() {
 
       {loading && <IngredientPriceSkeleton />}
 
-      {/* ── 공급업체 탭 ── */}
-      {!loading && viewTab === 'suppliers' && <SuppliersView />}
+      {/* ── 이슈 탭 ── */}
+      {!loading && viewTab === 'issues' && (
+        <div className="card" style={{ padding: 16 }}>
+          {issueRows.length === 0 ? (
+            <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: '32px 0' }}>
+              이슈 항목이 없습니다
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>
+                분류·포장단위·가격 중 하나 이상이 없는 항목 {issueRows.length}개
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>제품코드</th>
+                      <th>제품명</th>
+                      <th style={{ width: 80 }}>분류</th>
+                      <th style={{ width: 90 }}>포장단위</th>
+                      <th style={{ width: 110, textAlign: 'right' }}>부가세포함가</th>
+                      <th style={{ width: 60 }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {issueRows.map((r, i) => (
+                      <tr key={r.meta?.id ?? r.productCode ?? `issue-${i}`}>
+                        <td style={{ fontSize: 11, color: 'var(--text-3)' }}>{r.productCode || '—'}</td>
+                        <td style={{ fontWeight: 600 }}>{r.masterName || r.productName || '—'}</td>
+                        <td style={{ color: !r.category ? 'var(--warn)' : undefined }}>
+                          {r.category || '미설정'}
+                        </td>
+                        <td style={{ color: !r.baseQuantity ? 'var(--warn)' : undefined }}>
+                          {r.baseQuantity != null ? `${r.baseQuantity}${r.baseUnitType || ''}` : '미설정'}
+                        </td>
+                        <td style={{ textAlign: 'right', color: r.priceWithTax == null ? 'var(--warn)' : undefined }}>
+                          {r.priceWithTax != null ? `${r.priceWithTax.toLocaleString()}원` : '미연동'}
+                        </td>
+                        <td>
+                          <button
+                            className="btn sm"
+                            onClick={() => setRegTarget(r)}
+                            style={{ fontSize: 11 }}
+                          >
+                            수정
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
-      {/* ── 단가/사용현황 탭 (식자재 마스터 컨텍스트) ── */}
-      {!loading && viewTab !== 'suppliers' && (
+      {/* ── 단가 탭 (식자재 마스터 컨텍스트) ── */}
+      {!loading && viewTab !== 'issues' && (
         <>
           {/* 파일 기준 */}
           {fileInfo && (
@@ -423,13 +475,9 @@ export default function Page() {
                 <div style={{ fontWeight: 600, marginBottom: 6 }}>
                   마스터에 등록된 식자재가 없습니다
                 </div>
-                <div style={{ fontSize: 13, marginBottom: 12 }}>
-                  우측 상단 버튼으로 마스터 시드를 가져오면 제때 단가와 자동 연동됩니다.
+                <div style={{ fontSize: 13 }}>
+                  식자재 관리에서 식자재를 등록하면 자동으로 표시됩니다.
                 </div>
-                <button className="btn primary" onClick={handleBulkImport} disabled={importing}>
-                  <Icon.download style={{ width: 14, height: 14 }} />
-                  {importing ? '가져오는 중…' : '마스터 시드 가져오기 (118개)'}
-                </button>
               </div>
             </div>
           )}

@@ -36,6 +36,12 @@ import { IngredientSettingsPanel } from './IngredientSettingsPanel';
 import { IngredientDiagnostics } from './IngredientDiagnostics';
 import { useIngredientManageData } from './useIngredientManageData';
 import { useIngredientManageView } from './useIngredientManageView';
+import dynamic from 'next/dynamic';
+
+const SuppliersView = dynamic(
+  () => import('@/components/cost/ingredient-price/SuppliersView').then(m => m.SuppliersView),
+  { ssr: false, loading: () => <div className="skeleton" style={{ height: 200 }} /> }
+);
 
 // scope 라벨('전용'/'범용'/'범용관리') → productType 코드
 const scopeToType = label =>
@@ -69,7 +75,7 @@ export default function Page() {
     typeof value === 'string' && value ? value : 'all'
   );
   const [tagFilter, setTagFilter] = useState('all');
-  const [view, setView] = useState('manage'); // 'manage' | 'issues'
+  const [view, setView] = useState('manage'); // 'manage' | 'issues' | 'settings' | 'suppliers'
   const [formTarget, setFormTarget] = useState(null);
   const [deletePending, setDeletePending] = useState(null);
   const [seeding, setSeeding] = useState(false);
@@ -383,6 +389,9 @@ export default function Page() {
           <TabButton active={view === 'settings'} onClick={() => setView('settings')}>
             분류·태그
           </TabButton>
+          <TabButton active={view === 'suppliers'} onClick={() => setView('suppliers')}>
+            공급업체
+          </TabButton>
         </div>
       )}
 
@@ -466,6 +475,9 @@ export default function Page() {
           onRemoveRequest={setConfirmRemove}
         />
       )}
+
+      {/* ── 공급업체 뷰 ── */}
+      {view === 'suppliers' && <SuppliersView />}
 
       {confirmRemove && (
         <ConfirmDialog
