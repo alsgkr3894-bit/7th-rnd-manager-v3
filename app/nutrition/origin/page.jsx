@@ -319,7 +319,7 @@ export default function Page() {
               viewMode === 'ingredient' ? ingredientRows.length === 0 : menuRows.length === 0
             }
           >
-            CSV 내보내기
+            엑셀로 내보내기
           </button>
           {hiddenCount > 0 && (
             <button

@@ -22,12 +22,12 @@ import {
 import { NOTE_STATUS, NOTE_BRANDS } from '@/lib/note/constants';
 import { getNoteDetailStats } from '@/lib/stats/note-stats';
 import { tryLS, setLS } from '@/lib/note/storage';
-import { downloadCsv } from '@/lib/download';
 import { KEYS } from '@/lib/note/keys';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useScrollMemory } from '@/hooks/useScrollMemory';
 import { useNoteFilter } from '@/hooks/useNoteFilter';
+import { copyText } from '@/lib/ui/clipboard';
 import { useNotePins } from '@/hooks/useNotePins';
 import { useNotePresets } from '@/hooks/useNotePresets';
 import { useNoteBatchActions } from '@/hooks/useNoteBatchActions';
@@ -42,7 +42,6 @@ const NOTE_VIEW_KEYS = new Set(['card', 'table']);
 function normalizeNoteView(value) {
   return NOTE_VIEW_KEYS.has(value) ? value : 'card';
 }
-
 
 const NoteTableRow = React.memo(function NoteTableRow({
   note,
@@ -156,7 +155,12 @@ export function NoteContent() {
   } = useNoteFilter(notes, pinnedIds, { pathname });
 
   const {
-    presets, confirmDeletePreset, setConfirmDeletePreset, savePreset, applyPreset, deletePreset,
+    presets,
+    confirmDeletePreset,
+    setConfirmDeletePreset,
+    savePreset,
+    applyPreset,
+    deletePreset,
   } = useNotePresets({ statusFilter, search, sortBy, setStatusFilter, setSearch, setSortBy });
 
   const [ctxMenu, setCtxMenu] = useState(null);
@@ -172,11 +176,17 @@ export function NoteContent() {
   }, []);
 
   const {
-    batchMode, setBatchMode,
-    selected, setSelected,
-    confirmBatch, setConfirmBatch,
-    toggleSelect, exitBatch,
-    handleBatchDelete, handleBatchStatusChange, confirmBatchDelete,
+    batchMode,
+    setBatchMode,
+    selected,
+    setSelected,
+    confirmBatch,
+    setConfirmBatch,
+    toggleSelect,
+    exitBatch,
+    handleBatchDelete,
+    handleBatchStatusChange,
+    confirmBatchDelete,
   } = useNoteBatchActions({ setNotes, load });
 
   const {
@@ -218,38 +228,7 @@ export function NoteContent() {
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
-  function exportCsv() {
-    const cols = [
-      'id',
-      'title',
-      'menuName',
-      'category',
-      'noteType',
-      'status',
-      'testDate',
-      'testContent',
-      'createdAt',
-      '임시원가합계',
-      '임시원가재료수',
-    ];
-    const dataRows = filtered.map(n => [
-      ...[
-        'id',
-        'title',
-        'menuName',
-        'category',
-        'noteType',
-        'status',
-        'testDate',
-        'testContent',
-        'createdAt',
-      ].map(k => (n[k] != null ? String(n[k]) : '')),
-      n.tempCostCalc?.totalCost != null ? String(n.tempCostCalc.totalCost) : '',
-      n.tempCostCalc?.ingredients != null ? String(n.tempCostCalc.ingredients.length) : '',
-    ]);
-    downloadCsv([cols, ...dataRows], '개발노트목록.csv');
-    showToast(`CSV ${filtered.length}개 내보내기 완료`, 'ok');
-  }
+
 
   function handleSearchChange(val) {
     setSearch(val);
@@ -361,7 +340,7 @@ export function NoteContent() {
       )
       .join('\n\n─────────────────\n\n');
     try {
-      await navigator.clipboard.writeText(text);
+      if (!(await copyText(text))) throw new Error('CLIPBOARD_UNAVAILABLE');
       showToast(`보고예정 ${targets.length}개 복사 완료`, 'ok');
     } catch {
       showToast('복사 실패', 'warn');
@@ -451,9 +430,6 @@ export function NoteContent() {
                     <Icon.doc style={{ width: 13, height: 13 }} /> 보고예정 일괄복사
                   </button>
                 )}
-                <button className="btn" onClick={exportCsv} style={{ color: 'var(--text-2)' }}>
-                  CSV 내보내기
-                </button>
                 <button className="btn" onClick={() => setBatchMode(true)}>
                   선택
                 </button>

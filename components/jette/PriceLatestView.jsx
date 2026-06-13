@@ -13,6 +13,8 @@ import { TypeSelect } from './_TypeSelect';
 import { sortByKey, getProductTypeCounts } from '@/lib/jette/utils';
 import { useTableSearchSort } from '@/hooks/useTableSearchSort';
 
+const PRODUCT_SORT_DIR = key => (key === 'productName' || key === 'productCode' ? 'asc' : 'desc');
+
 export function PriceLatestView({
   files,
   latestFileId,
@@ -23,7 +25,11 @@ export function PriceLatestView({
   const [rows, setRows] = useState([]);
   const [taxFilter, setTaxFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-  const { search, setSearch, sortKey, setSortKey, sortDir, setSortDir } = useTableSearchSort('productName', 'asc');
+  const { search, setSearch, sortKey, sortDir, toggleSort } = useTableSearchSort(
+    'productName',
+    'asc',
+    PRODUCT_SORT_DIR
+  );
 
   const latestFile = files.find(f => f.id === latestFileId);
 
@@ -105,14 +111,6 @@ export function PriceLatestView({
     downloadCsv([headers, ...body], '제때_최신단가.csv');
   }
 
-  function toggleSort(key) {
-    if (sortKey === key) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
-    else {
-      setSortKey(key);
-      setSortDir(key === 'productName' || key === 'productCode' ? 'asc' : 'desc');
-    }
-  }
-
   if (files.length === 0) {
     return (
       <div
@@ -149,7 +147,7 @@ export function PriceLatestView({
             </div>
           </div>
           <button className="btn sm" onClick={exportCsv} disabled={filtered.length === 0}>
-            CSV 내보내기
+            엑셀로 내보내기
           </button>
         </div>
 

@@ -236,6 +236,7 @@ export default function TopBar({
         <kbd aria-hidden="true">⌘K</kbd>
       </button>
 
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
       <button
         className="icon-btn"
         aria-label="새 노트 작성"
@@ -409,6 +410,7 @@ export default function TopBar({
             </button>
           </div>
         )}
+      </div>
       </div>
     </header>
   );

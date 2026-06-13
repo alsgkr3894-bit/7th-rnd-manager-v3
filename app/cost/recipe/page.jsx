@@ -252,7 +252,7 @@ function RecipeContent() {
               }}
               disabled={listState.filteredRecipes.length === 0}
             >
-              <Icon.download style={{ width: 14, height: 14 }} /> CSV 내보내기
+              <Icon.download style={{ width: 14, height: 14 }} /> 엑셀로 내보내기
             </button>
           ) : undefined
         }

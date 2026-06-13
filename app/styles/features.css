@@ -1202,7 +1202,7 @@
 .dropzone {
   border: 2px dashed var(--border-strong);
   background: var(--surface);
-  padding: 60px 32px;
+  padding: 28px 32px;
   text-align: center;
   cursor: pointer;
   transition: all 200ms ease;

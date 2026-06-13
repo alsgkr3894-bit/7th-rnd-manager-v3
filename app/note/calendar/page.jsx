@@ -125,25 +125,6 @@ export default function Page() {
     downloadCsv([headers, ...monthEventRows], `일정달력_${viewYear}년${pad(viewMonth)}월.csv`);
   }
 
-  async function copyMonthSummary() {
-    const lines = [`${viewYear}년 ${viewMonth}월 일정 요약 (${monthEventRows.length}건)`];
-    const byDate = new Map();
-    for (const row of monthEventRows) {
-      const d = row[0];
-      if (!byDate.has(d)) byDate.set(d, []);
-      byDate.get(d).push(`  [${row[2]}] ${row[3]}${row[4] ? ` (${row[4]})` : ''}`);
-    }
-    for (const [date, items] of [...byDate.entries()].sort()) {
-      lines.push(date, ...items);
-    }
-    try {
-      await navigator.clipboard.writeText(lines.join('\n'));
-      showToast('월간 일정 요약을 복사했어요', 'ok');
-    } catch {
-      showToast('복사에 실패했어요', 'error');
-    }
-  }
-
   if (loading)
     return (
       <main className="main">
@@ -168,14 +149,6 @@ export default function Page() {
               disabled={monthEventRows.length === 0}
             >
               <Icon.download style={{ width: 14, height: 14 }} /> CSV
-            </button>
-            <button
-              className="btn no-print"
-              onClick={copyMonthSummary}
-              disabled={monthEventRows.length === 0}
-              title="월간 일정 요약 복사"
-            >
-              <Icon.copy style={{ width: 14, height: 14 }} /> 보고용 복사
             </button>
             <button
               className="btn no-print"

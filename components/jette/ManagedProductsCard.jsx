@@ -39,6 +39,7 @@ const SORT_TRANSFORM = {
   enable: v => (v === false ? 0 : 1),
   isManaged: v => (v ? 1 : 0),
 };
+const productSortDir = key => (key === 'productName' || key === 'productCode' ? 'asc' : 'desc');
 
 export function ManagedProductsCard() {
   const [list, setList] = useState([]);
@@ -49,7 +50,11 @@ export function ManagedProductsCard() {
   const [busy, setBusy] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
-  const { search, setSearch, sortKey, setSortKey, sortDir, setSortDir } = useTableSearchSort('productName', 'asc');
+  const { search, setSearch, sortKey, sortDir, toggleSort } = useTableSearchSort(
+    'productName',
+    'asc',
+    productSortDir
+  );
   const mountedRef = useRef(false);
 
   useEffect(() => {
@@ -185,14 +190,6 @@ export function ManagedProductsCard() {
 
   const { page, goTo, totalPages, paged, total } = usePagination(filtered, 50);
 
-  function toggleSort(key) {
-    if (sortKey === key) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
-    else {
-      setSortKey(key);
-      setSortDir(key === 'productName' || key === 'productCode' ? 'asc' : 'desc');
-    }
-  }
-
   function exportCsv() {
     const headers = ['제품코드', '제품명', '활성', '분류', '관리품목'];
     const rows = filtered.map(p => [
@@ -217,7 +214,7 @@ export function ManagedProductsCard() {
         </div>
         <div className="card-header-actions">
           <button className="btn sm" onClick={exportCsv} disabled={filtered.length === 0}>
-            CSV 내보내기
+            엑셀로 내보내기
           </button>
           <button className="btn sm" onClick={handleMigrate} disabled={migrating}>
             <Icon.download style={{ width: 12, height: 12 }} />

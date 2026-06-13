@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
-import { SortButton } from '@/components/ui/SortButton';
 import { showToast } from '@/components/Toast';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { initDB } from '@/lib/db';
@@ -22,18 +21,12 @@ import {
 } from '@/lib/ingredient';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
 import { MASTER_IMPORT_SEED } from '@/lib/ingredient/master-import-seed';
-import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
-import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
-import { getAllSideRecipes } from '@/lib/cost/side-detail';
-import { getAllRecipes } from '@/lib/recipe';
 import { MasterRow } from '@/components/cost/ingredient-price/MasterRow';
-import { buildIngredientUsageMap } from '@/lib/cost/ingredient-price-helpers';
 import { buildIngredientPriceRows } from '@/lib/cost/ingredient-price/buildRows';
 import { useIngredientPriceFilters } from '@/hooks/useIngredientPriceFilters';
 import { IngredientPriceSkeleton } from '@/components/ui/Skeleton';
 import {
   SelectionToolbar,
-  sortButtonOptions,
   SortableHeader,
   useCostManageTable,
 } from '@/components/cost/manage/table-utils';
@@ -42,17 +35,9 @@ const RegisterModal = dynamic(
   () => import('@/components/cost/ingredient-price/RegisterModal').then(m => m.RegisterModal),
   { ssr: false, loading: () => null }
 );
-const BulkPriceModal = dynamic(
-  () => import('@/components/cost/ingredient-price/BulkPriceModal').then(m => m.BulkPriceModal),
-  { ssr: false, loading: () => null }
-);
 const SyncBaseQtyModal = dynamic(
   () => import('@/components/cost/ingredient-price/SyncBaseQtyModal').then(m => m.SyncBaseQtyModal),
   { ssr: false, loading: () => null }
-);
-const UsageView = dynamic(
-  () => import('@/components/cost/ingredient-price/UsageView').then(m => m.UsageView),
-  { ssr: false, loading: () => <div className="skeleton" style={{ height: 200 }} /> }
 );
 const SuppliersView = dynamic(
   () => import('@/components/cost/ingredient-price/SuppliersView').then(m => m.SuppliersView),
@@ -61,7 +46,6 @@ const SuppliersView = dynamic(
 
 const VIEW_TABS = [
   { key: 'price', label: '단가 목록' },
-  { key: 'usage', label: '제품별 사용현황' },
   { key: 'suppliers', label: '공급업체' },
 ];
 
@@ -71,15 +55,11 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState(null);
   const [regTarget, setRegTarget] = useState(null); // 마스터 등록 모달 대상 행
-  const [bulkOpen, setBulkOpen] = useState(false); // 일괄 가격 업로드 모달
   const [syncQtyOpen, setSyncQtyOpen] = useState(false); // 제때 수량 동기화 모달
   const [importing, setImporting] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const [viewTab, setViewTab] = useState('price'); // 'price' | 'usage'
-  const [usageMap, setUsageMap] = useState({ byCode: new Map(), byName: new Map() });
-  const [usageCat, setUsageCat] = useState('전체');
-  const [usageSort, setUsageSort] = useState('count_desc'); // count_desc|count_asc|name_asc
+  const [viewTab, setViewTab] = useState('price');
   const mountedRef = useMounted();
   const { search, setSearch, taxFilter, setTaxFilter, deltaFilter, setDeltaFilter, mainCats, filtered } =
     useIngredientPriceFilters(rows);
@@ -134,21 +114,6 @@ export default function Page() {
     if (!mountedRef.current) return;
     setRows(buildIngredientPriceRows(allMeta, priceRowMap, prevPriceMap, prev, priceCodeSet, typeMap));
 
-    // ── 제품별 사용현황 빌드 (오류 시 토스트만 — 단가 탭은 유지) ──────
-    try {
-      const [pizzaRecs, personalRecs, sideRecs, oldRecs] = await Promise.all([
-        getAllPizzaRecipes(),
-        getAllPersonalRecipes(),
-        getAllSideRecipes(),
-        getAllRecipes(),
-      ]);
-      if (!mountedRef.current) return;
-      setUsageMap(buildIngredientUsageMap({ allMeta, pizzaRecs, personalRecs, sideRecs, oldRecs }));
-    } catch (usageErr) {
-      if (!mountedRef.current) return;
-      console.warn('[ingredient-price] 사용현황 빌드 실패:', usageErr);
-      showToast('사용현황 데이터를 불러오지 못했습니다', 'err');
-    }
   }, [mountedRef]);
 
   useEffect(() => {
@@ -295,27 +260,19 @@ export default function Page() {
                   disabled={resetting}
                   style={{ color: 'var(--negative)', fontWeight: 700 }}
                 >
-                  {resetting ? '초기화 중…' : '정말 초기화'}
+                  {resetting ? '초기화 중…' : '진행하기'}
                 </button>
               </>
             ) : (
               <button
-                className="btn"
+                className="btn sm"
                 onClick={() => setResetConfirm(true)}
                 disabled={resetting || importing}
                 style={{ color: 'var(--negative)' }}
               >
-                마스터 초기화
+                초기화
               </button>
             )}
-            <button
-              className="btn"
-              onClick={() => setBulkOpen(true)}
-              disabled={importing || resetting}
-            >
-              <Icon.upload style={{ width: 14, height: 14 }} />
-              일괄 가격 업로드
-            </button>
             <button
               className="btn"
               onClick={() => setSyncQtyOpen(true)}
@@ -479,17 +436,6 @@ export default function Page() {
         </>
       )}
 
-      {!loading && viewTab === 'usage' && rows.length > 0 && (
-        <UsageView
-          rows={rows}
-          usageMap={usageMap}
-          usageCat={usageCat}
-          setUsageCat={setUsageCat}
-          usageSort={usageSort}
-          setUsageSort={setUsageSort}
-        />
-      )}
-
       {!loading && viewTab === 'price' && rows.length > 0 && (
         <>
           {/* 필터 바 */}
@@ -536,11 +482,6 @@ export default function Page() {
                 placeholder="제품코드·제품명·마스터명 검색"
               />
             </div>
-            <SortButton
-              value={priceTable.sort?.id}
-              options={sortButtonOptions(priceSortOptions, priceTable.sort)}
-              onChange={priceTable.changeSort}
-            />
             <SelectionToolbar
               selectedCount={priceTable.selected.size}
               confirming={priceTable.confirmingDelete}
@@ -676,19 +617,6 @@ export default function Page() {
             await load();
           }}
           onClose={() => setRegTarget(null)}
-        />
-      )}
-
-      {/* 일괄 가격 업로드 모달 */}
-      {bulkOpen && (
-        <BulkPriceModal
-          existingIngredients={rows.map(r => r.meta).filter(Boolean)}
-          onDone={async count => {
-            showToast(`${count}개 단가 업데이트 완료`);
-            setBulkOpen(false);
-            await load();
-          }}
-          onClose={() => setBulkOpen(false)}
         />
       )}
 

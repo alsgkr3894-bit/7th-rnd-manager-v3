@@ -7,7 +7,6 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { downloadCsv, printCurrentPageWithDownloadDate } from '@/lib/download';
 import {
   STATUSES,
   STATUS_COLORS,
@@ -157,21 +156,6 @@ export default function Page() {
     setDragId(null);
   }
 
-  // ── CSV 내보내기 ──────────────────────────────────────────
-  function exportBoardCsv() {
-    const target = searchActive ? filteredNotes : notes;
-    const headers = ['상태', '제목', '메뉴명', '테스트일', '결과 요약', '태그'];
-    const rows = target.map(n => [
-      n.status || '',
-      n.title || '',
-      n.menuName || '',
-      n.testDate || '',
-      n.reportSummary || '',
-      n.tags || '',
-    ]);
-    downloadCsv([headers, ...rows], `칸반보드${searchActive ? '_필터' : ''}.csv`);
-  }
-
   const filteredNotes = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return notes;
@@ -219,21 +203,6 @@ export default function Page() {
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn no-print" onClick={() => router.push('/note')}>
               목록 뷰
-            </button>
-            <button
-              className="btn no-print"
-              onClick={exportBoardCsv}
-              disabled={notes.length === 0}
-              title="현재 보드 CSV 내보내기"
-            >
-              <Icon.download style={{ width: 14, height: 14 }} /> CSV
-            </button>
-            <button
-              className="btn no-print"
-              onClick={() => printCurrentPageWithDownloadDate('칸반 보드')}
-              title="인쇄"
-            >
-              인쇄
             </button>
             <button className="btn primary no-print" onClick={() => router.push('/note/write')}>
               <Icon.plus style={{ width: 14, height: 14 }} /> 노트 작성

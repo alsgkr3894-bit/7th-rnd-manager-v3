@@ -24,7 +24,10 @@ const FILTER_TO_STATUS = {
 export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onTypeChange }) {
   const [filter, setFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-  const { search, setSearch, sortKey, setSortKey, sortDir, setSortDir } = useTableSearchSort('changeRate', 'desc');
+  const { search, setSearch, sortKey, sortDir, toggleSort } = useTableSearchSort(
+    'changeRate',
+    'desc'
+  );
   const safeDiffRows = useMemo(() => asObjectArray(diffRows), [diffRows]);
   const safeProductTypeLookup = useMemo(
     () => (productTypeLookup instanceof Map ? productTypeLookup : new Map()),
@@ -100,14 +103,6 @@ export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onT
     downloadCsv([headers, ...body], '제때_가격비교.csv');
   }
 
-  function toggleSort(key) {
-    if (sortKey === key) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
-    else {
-      setSortKey(key);
-      setSortDir('desc');
-    }
-  }
-
   return (
     <div className="card" style={{ marginTop: 16 }}>
       <div className="card-header">
@@ -116,7 +111,7 @@ export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onT
           <div className="card-sub">제품코드 우선 매칭 · 변동률 기준 정렬</div>
         </div>
         <button className="btn sm" onClick={exportCsv} disabled={filtered.length === 0}>
-          CSV 내보내기
+          엑셀로 내보내기
         </button>
       </div>
 

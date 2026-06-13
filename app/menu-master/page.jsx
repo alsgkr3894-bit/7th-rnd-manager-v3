@@ -18,7 +18,7 @@ import {
   resetAllMenuMaster,
   pushMasterToPrices,
 } from '@/lib/menu-master';
-import { getDefaultPrice, resetAllMenuPrices } from '@/lib/cost/menu-price';
+import { resetAllMenuPrices } from '@/lib/cost/menu-price';
 import { seedMenuMaster } from '@/lib/menu-master/seed';
 import { normalizePersonalPizzaCodes } from '@/lib/menu-master/normalize';
 import { MenuPriceUploadCard } from '@/components/cost/menu-price/MenuPriceUploadCard';
@@ -58,12 +58,10 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const [bulking, setBulking] = useState(false);
   const [editRow, setEditRow] = useState(null);
   const [addOpen, setAddOpen] = useState(false);
   const [bulkModal, setBulkModal] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
-  const [confirmBulkPizza, setConfirmBulkPizza] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null); // 개별 삭제 대상 row
   // 브랜드 카테고리 프리셋 — SSR/첫 렌더는 서버와 동일하게 기본값(피자)로 두고,
   // 마운트 후 활성 브랜드에 맞춰 교정한다(하이드레이션 불일치 방지).
@@ -156,35 +154,12 @@ export default function Page() {
     }
   }
 
-  // 피자 기본가를 마스터의 피자 항목에 일괄 적용 (가격 없는 항목만)
-  async function handleBulkPizza() {
-    setBulking(true);
-    try {
-      const masters = await getAllMenuMaster();
-      let applied = 0;
-      for (const m of masters) {
-        if (m.status === 'discontinued' || !m.menuCode) continue;
-        const dp = getDefaultPrice(m.menuCode);
-        if (dp && (m.price == null || m.price === '')) {
-          await upsertMenuMaster({ ...m, price: dp });
-          applied++;
-        }
-      }
-      await syncMirror();
-      setRows(await getAllMenuMaster());
-      showToast(`${applied}개 피자 기본가 적용`, 'ok');
-    } catch (err) {
-      showToast('일괄 적용 실패: ' + err.message, 'err');
-    } finally {
-      setBulking(false);
-    }
-  }
-
   function handleExportCsv() {
-    const headers = ['메뉴코드', '메뉴명', '판매가', '상태', '카테고리'];
+    const headers = ['메뉴코드', '메뉴명', '규격', '판매가', '상태', '카테고리'];
     const rows = filtered.map(r => [
       r.menuCode || '',
       r.menuName || '',
+      r.size || '',
       r.price != null ? String(r.price) : '',
       r.status || '',
       r.category || '',
@@ -238,21 +213,11 @@ export default function Page() {
               disabled={rows.length === 0}
               style={{ color: 'var(--text-2)' }}
             >
-              <Icon.download style={{ width: 14, height: 14 }} /> CSV 내보내기
+              <Icon.download style={{ width: 14, height: 14 }} /> 엑셀로 내보내기
             </button>
             <button className="btn" onClick={() => setBulkModal(true)} disabled={rows.length === 0}>
               <Icon.calc style={{ width: 14, height: 14 }} /> 코드별 일괄 가격
             </button>
-            {isMain && (
-              <button
-                className="btn"
-                onClick={() => setConfirmBulkPizza(true)}
-                disabled={bulking || rows.length === 0}
-              >
-                <Icon.pizza style={{ width: 14, height: 14 }} />{' '}
-                {bulking ? '적용 중…' : '피자 기본가 일괄'}
-              </button>
-            )}
             {isMain && (
               <button className="btn" onClick={handleSeed} disabled={seeding}>
                 <Icon.download style={{ width: 14, height: 14 }} />
@@ -314,9 +279,6 @@ export default function Page() {
           </div>
         </div>
       </div>
-
-      {/* 일괄 업로드 — 업로드 시 마스터로 자동 반영 */}
-      <MenuPriceUploadCard onReplaced={load} />
 
       {loading && (
         <div className="card table-card">
@@ -635,6 +597,9 @@ export default function Page() {
         </div>
       )}
 
+      {/* 일괄 업로드 — 업로드 시 마스터로 자동 반영 */}
+      <MenuPriceUploadCard onReplaced={load} />
+
       {editRow && (
         <MenuMasterEditModal
           row={editRow}
@@ -680,17 +645,6 @@ export default function Page() {
         />
       )}
 
-      {confirmBulkPizza && (
-        <ConfirmDialog
-          open
-          message={`피자 항목 중 판매가가 비어 있는 메뉴에 기본가를 일괄 적용합니다. 계속할까요?`}
-          onConfirm={() => {
-            setConfirmBulkPizza(false);
-            handleBulkPizza();
-          }}
-          onCancel={() => setConfirmBulkPizza(false)}
-        />
-      )}
     </main>
   );
 }

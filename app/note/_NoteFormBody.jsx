@@ -19,6 +19,7 @@ import { generateNoteReportText } from '@/lib/note/report';
 import { isSupportedImageFile, resizePhoto } from '@/lib/image/resize';
 import { KEYS } from '@/lib/note/keys';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
+import { copyText } from '@/lib/ui/clipboard';
 
 // SSR 안전 초기값 — brand와 category는 SSR에서 항상 기본값으로 두고
 // 마운트 후 실제 브랜드/저장값으로 교정한다(hydration 불일치 방지).
@@ -78,7 +79,7 @@ export function NoteFormBody({ form, setForm }) {
 
   async function copyReport() {
     try {
-      await navigator.clipboard.writeText(reportText);
+      if (!(await copyText(reportText))) throw new Error('CLIPBOARD_UNAVAILABLE');
       showToast('보고용 요약이 복사됐어요', 'ok');
     } catch {
       showToast('복사 실패 (보안 컨텍스트 필요)', 'warn');
@@ -117,8 +118,6 @@ export function NoteFormBody({ form, setForm }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Field
               label={form.noteType === '샘플' ? '샘플명 / 메뉴명' : '메뉴명'}
-              required
-              error={touched.menuName && !form.menuName.trim()}
             >
               <ComboBox
                 value={form.menuName}

@@ -4,6 +4,7 @@ import ReportBuilderShell, { OptGroup, Seg, Check } from '@/components/report/Re
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { formatNumber, pad } from '@/lib/format';
 import { withDownloadDateSuffix } from '@/lib/download';
+import { loadXlsx } from '@/lib/excel';
 import { Icon } from '@/components/icons';
 import { initDB } from '@/lib/db/init';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
@@ -34,13 +35,6 @@ const CAT_META = {
 };
 
 const DRAFT_KEY = 'report_draft_cost';
-
-// ── xlsx 빌더 (동적 import, 클라이언트 전용) ───────────────────
-let _xlsxPromise = null;
-async function loadXlsx() {
-  if (!_xlsxPromise) _xlsxPromise = import('xlsx');
-  return _xlsxPromise;
-}
 
 async function exportCostXlsx(periodLabel, activeCats) {
   const XLSX = await loadXlsx();
@@ -75,7 +69,11 @@ async function exportCostXlsx(periodLabel, activeCats) {
     ['카테고리', '메뉴명', '판매가(원)', '원가(원)', '원가율(%)'],
     ...activeCats.flatMap(([, c]) =>
       [...c.menus]
-        .sort((a, b) => getMenuCodeRank(a.code) - getMenuCodeRank(b.code) || (a.code || '').localeCompare(b.code || '', 'ko'))
+        .sort(
+          (a, b) =>
+            getMenuCodeRank(a.code) - getMenuCodeRank(b.code) ||
+            (a.code || '').localeCompare(b.code || '', 'ko')
+        )
         .map(m => [
           c.label,
           m.name,
@@ -116,7 +114,14 @@ export default function Page() {
     edge: true,
   });
   const updCat = makeFieldUpdater(setCats);
-  const { opts, setOpts, updOpts: updOpt, docFormat, setDocFormat, updFmt } = useReportPageState(
+  const {
+    opts,
+    setOpts,
+    updOpts: updOpt,
+    docFormat,
+    setDocFormat,
+    updFmt,
+  } = useReportPageState(
     DRAFT_KEY,
     { summary: true, catTable: true, perCategory: true, riskList: true },
     draft => {
@@ -276,65 +281,6 @@ export default function Page() {
       onExcelExport={handleExcelExport}
       options={
         <>
-          <OptGroup label="집계 기준 기간">
-            <Seg
-              value={periodMode}
-              onChange={setPeriodMode}
-              options={[
-                { value: 'month', label: '월 단위' },
-                { value: 'year', label: '년 단위' },
-              ]}
-            />
-            <div className="opt-period-row">
-              <select
-                className="period-select num"
-                value={year}
-                onChange={e => setYear(parseInt(e.target.value, 10))}
-              >
-                {yearOptions.map(y => (
-                  <option key={y} value={y}>
-                    {y}년
-                  </option>
-                ))}
-              </select>
-              {periodMode === 'month' && (
-                <select
-                  className="period-select num"
-                  value={month}
-                  onChange={e => setMonth(parseInt(e.target.value, 10))}
-                >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                    <option key={m} value={m}>
-                      {m}월
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-            {periodMode === 'month' && (
-              <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-                <button
-                  className="btn sm"
-                  onClick={() => {
-                    setYear(_LM.year);
-                    setMonth(_LM.month);
-                  }}
-                >
-                  지난달
-                </button>
-                <button
-                  className="btn sm"
-                  onClick={() => {
-                    setYear(_TM.year);
-                    setMonth(_TM.month);
-                  }}
-                >
-                  이번달
-                </button>
-              </div>
-            )}
-          </OptGroup>
-
           <OptGroup label="포함 카테고리" hint="체크된 카테고리만 종합 원가표에 포함돼요">
             <Check label="피자" value={cats.pizza} onChange={v => updCat('pizza', v)} />
             <Check label="1인피자" value={cats.personal} onChange={v => updCat('personal', v)} />
@@ -398,7 +344,7 @@ export default function Page() {
           {/* ── 보고서 헤더 ── */}
           <div className="paper-head">
             <div className="paper-eyebrow">7번가피자 본사 · 원가관리</div>
-            <h2 className="paper-title">{periodLabel} 원가계산 종합 보고서</h2>
+            <h2 className="paper-title">7번가피자 제품원가표 (단가 기준)</h2>
             <div className="paper-meta">
               <span>
                 대상: {activeCats.length}개 카테고리 · {totalCount}개 메뉴

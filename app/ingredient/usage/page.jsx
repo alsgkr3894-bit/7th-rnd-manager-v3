@@ -316,7 +316,26 @@ export default function Page() {
             />
           </div>
 
-          {/* 카테고리 필터 + 액션 */}
+          {/* 액션 버튼 (상단) */}
+          <div className="usage-action-row" style={{ marginBottom: 8 }}>
+            <button
+              className="btn sm"
+              onClick={() => setExpanded(new Set(displayRows.map(keyOf)))}
+            >
+              모두 펼치기
+            </button>
+            <button className="btn sm" onClick={() => setExpanded(new Set())}>
+              모두 접기
+            </button>
+            <button className="btn sm" onClick={() => printUsageReport(displayRows, usageCat)}>
+              PDF 출력
+            </button>
+            <button className="btn sm" onClick={exportCsv} disabled={displayRows.length === 0}>
+              엑셀로 내보내기
+            </button>
+          </div>
+
+          {/* 카테고리 필터 */}
           <div
             style={{
               display: 'flex',
@@ -336,23 +355,6 @@ export default function Page() {
                   {c}
                 </button>
               ))}
-            </div>
-            <div className="usage-action-row">
-              <button
-                className="btn sm"
-                onClick={() => setExpanded(new Set(displayRows.map(keyOf)))}
-              >
-                모두 펼치기
-              </button>
-              <button className="btn sm" onClick={() => setExpanded(new Set())}>
-                모두 접기
-              </button>
-              <button className="btn sm" onClick={() => printUsageReport(displayRows, usageCat)}>
-                PDF 출력
-              </button>
-              <button className="btn sm" onClick={exportCsv} disabled={displayRows.length === 0}>
-                CSV 내보내기
-              </button>
             </div>
           </div>
 

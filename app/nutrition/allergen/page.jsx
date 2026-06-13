@@ -305,7 +305,7 @@ export default function Page() {
             }}
             disabled={menuMatrix.length === 0}
           >
-            <Icon.download style={{ width: 14, height: 14 }} /> CSV 내보내기
+            <Icon.download style={{ width: 14, height: 14 }} /> 엑셀로 내보내기
           </button>
         }
       />

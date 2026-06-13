@@ -174,7 +174,7 @@ export function TabResults({
           입력 누락만
         </button>
         <button className="btn sm" onClick={exportCsv} disabled={filtered.length === 0}>
-          CSV 내보내기
+          엑셀로 내보내기
         </button>
         <span
           style={{

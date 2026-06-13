@@ -194,7 +194,7 @@ export function SampleFormBody({ form, setForm }) {
               className="form-input"
               value={form.title}
               onChange={e => upd('title', e.target.value)}
-              placeholder="예) 불고기 피자 3차 샘플 — 소스 비율 조정"
+              placeholder="예) ○○ 0차 샘플"
             />
           </Field>
 
@@ -207,7 +207,7 @@ export function SampleFormBody({ form, setForm }) {
                     className="form-input"
                     value={name}
                     onChange={e => setSampleName(i, e.target.value)}
-                    placeholder="예) 불고기피자"
+                    placeholder="식자재명"
                   />
                   {(form.sampleNames || ['']).length > 1 && (
                     <button

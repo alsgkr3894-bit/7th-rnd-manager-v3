@@ -20,7 +20,7 @@ import { downloadCsv } from '@/lib/download';
 import { onPriceUpload } from '@/lib/price/price-events';
 import { buildRows, catRank, CAT_ORDER, costPathFor } from '@/lib/cost/shared/buildSummaryRows';
 
-// ── CSV 내보내기 ─────────────────────────────────────────────
+// ── 엑셀로 내보내기 ─────────────────────────────────────────────
 function exportCSV(rows) {
   const headers = ['메뉴명', '카테고리', '원가', '판매가', '원가율'];
   const body = rows.map(r => [
@@ -138,7 +138,7 @@ export default function Page() {
         actions={
           hasAnyData && (
             <button className="btn" onClick={() => exportCSV(filtered)}>
-              <Icon.download style={{ width: 13, height: 13 }} /> CSV 내보내기
+              <Icon.download style={{ width: 13, height: 13 }} /> 엑셀로 내보내기
             </button>
           )
         }
