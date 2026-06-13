@@ -1,11 +1,11 @@
 'use client';
 import { useState } from 'react';
-import { asDisplayText } from '@/lib/ui/prop-guards';
+import { asDisplayText, noop } from '@/lib/ui/prop-guards';
 import { upsertSetComposition, deleteSetComposition } from '@/lib/nutrition/values/store';
 import { showToast } from '@/components/Toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
-export function useSetCompositionForm({ onRefresh = () => {} } = {}) {
+export function useSetCompositionForm({ onRefresh = noop } = {}) {
   const { showConfirm, confirmElement } = useConfirmDialog();
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({

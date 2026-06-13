@@ -4,8 +4,7 @@ import { STATUS_COLORS, STATUS_BORDER } from '@/lib/note';
 import { parseTagList, formatFullDate } from '@/lib/note/utils';
 import { useModalShell } from '@/hooks/useModalShell';
 import { OVERLAY_COLOR } from '@/lib/ui/styles';
-
-const noop = () => {};
+import { noop } from '@/lib/ui/prop-guards';
 
 function asText(value) {
   if (value == null) return '';

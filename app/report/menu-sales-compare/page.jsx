@@ -45,6 +45,7 @@ export default function Page() {
 
   const [compareResult, setCompareResult] = useState(null);
   const [series, setSeries] = useState([]);
+  const [availYears, setAvailYears] = useState([2024, 2025, 2026]);
   const [dataError, setDataError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -75,9 +76,12 @@ export default function Page() {
           if (rows.length === 0) {
             setCompareResult(null);
             setSeries([]);
+            setDataError('판매 데이터가 없어요. 판매량 파일을 먼저 업로드해 주세요.');
             setIsLoading(false);
             return;
           }
+          const years = [...new Set(rows.map(r => r.year).filter(y => Number.isFinite(y)))].sort();
+          if (years.length > 0) setAvailYears(years);
           const result = buildPeriodCompare(rows, periodA, periodB, {
             groupBy: 'group',
             category: safeScope === 'all' ? null : safeScope,
@@ -171,7 +175,7 @@ export default function Page() {
                 value={safeYearA}
                 onChange={e => setYearA(safeYear(e.target.value, safeYearA))}
               >
-                {[2024, 2025, 2026].map(y => (
+                {availYears.map(y => (
                   <option key={y} value={y}>
                     {y}년
                   </option>
@@ -199,7 +203,7 @@ export default function Page() {
                   value={safeYearB}
                   onChange={e => setYearB(safeYear(e.target.value, safeYearB))}
                 >
-                  {[2024, 2025, 2026].map(y => (
+                  {availYears.map(y => (
                     <option key={y} value={y}>
                       {y}년
                     </option>

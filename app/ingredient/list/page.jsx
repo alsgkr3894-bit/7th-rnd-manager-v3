@@ -8,6 +8,7 @@ import { SortButton } from '@/components/ui/SortButton';
 import { usePagination } from '@/hooks/usePagination';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { initDB } from '@/lib/db';
+import { showToast } from '@/components/Toast';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import {
   getAllIngredients,
@@ -116,7 +117,10 @@ export default function Page() {
   useEffect(() => {
     load()
       .catch(err => {
-        if (mountedRef.current) console.error(err);
+        if (mountedRef.current) {
+          console.error(err);
+          showToast('데이터 로드 실패: ' + err.message, 'error');
+        }
       })
       .finally(() => {
         if (mountedRef.current) setLoading(false);
@@ -263,10 +267,11 @@ export default function Page() {
             <button
               className="btn"
               onClick={() => printIngredientPdf(filtered, { includePhotos: pdfPhoto })}
+              disabled={loading || filtered.length === 0}
             >
               <Icon.doc style={{ width: 14, height: 14 }} /> PDF
             </button>
-            <button className="btn" onClick={() => exportIngredientCsv(filtered)}>
+            <button className="btn" onClick={() => exportIngredientCsv(filtered)} disabled={loading || filtered.length === 0}>
               <Icon.download style={{ width: 14, height: 14 }} /> 엑셀로 내보내기
             </button>
           </div>

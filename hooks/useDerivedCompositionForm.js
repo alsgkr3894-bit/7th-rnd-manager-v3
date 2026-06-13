@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { asDisplayText, asStringArray } from '@/lib/ui/prop-guards';
+import { asDisplayText, asStringArray, noop } from '@/lib/ui/prop-guards';
 import { upsertComposition, deleteComposition } from '@/lib/nutrition/values/store';
 import { showToast } from '@/components/Toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
@@ -10,7 +10,7 @@ function asAmountMap(value) {
 }
 
 // firstMenuCode: 추가 모달 기본 baseMenuCode (호출 시 주입)
-export function useDerivedCompositionForm({ onRefresh = () => {} } = {}) {
+export function useDerivedCompositionForm({ onRefresh = noop } = {}) {
   const { showConfirm, confirmElement } = useConfirmDialog();
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({

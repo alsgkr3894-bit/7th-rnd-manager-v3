@@ -1,9 +1,13 @@
 'use client';
 import React from 'react';
 import { sampleNamesText, RATING_COLOR } from '@/lib/sample';
-import { asDisplayText, asFiniteNumber, asObjectArray, clampInteger } from '@/lib/ui/prop-guards';
-
-const noop = () => {};
+import {
+  asDisplayText,
+  asFiniteNumber,
+  asObjectArray,
+  clampInteger,
+  noop,
+} from '@/lib/ui/prop-guards';
 
 /**
  * SampleListRow — 샘플기록 리스트 뷰의 행(<tr>).

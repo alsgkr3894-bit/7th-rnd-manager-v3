@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Icon } from '@/components/icons';
 import { OVERLAY_COLOR } from '@/lib/ui/styles';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
@@ -88,6 +88,14 @@ export function MenuMasterEditModal({ row, isNew, onSave, onClose, presetCategor
   }
   useKeyboardSave(submit);
 
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   return (
     <div
       style={{
@@ -98,6 +106,7 @@ export function MenuMasterEditModal({ row, isNew, onSave, onClose, presetCategor
         placeItems: 'center',
         zIndex: 300,
       }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         className="card"

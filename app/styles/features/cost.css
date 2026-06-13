@@ -1,0 +1,543 @@
+/* Extracted from app/styles/features.css: cost feature styles. */
+
+/* ── 원가마진표: 메뉴명 열·헤더 고정 + 사이즈 그룹 ──────────────
+   세로 스크롤 시 헤더(2행)를, 가로 스크롤 시 메뉴명 열을 고정한다.
+   --mt-grp-h: 1행(사이즈 그룹) 높이 = 2행(메트릭)의 sticky top 오프셋. */
+.margin-table {
+  --mt-grp-h: 30px;
+}
+.margin-table thead th {
+  position: sticky;
+  z-index: 2;
+  background: var(--surface-2);
+  box-sizing: border-box;
+}
+.margin-table thead tr.mt-group th {
+  top: 0;
+  height: var(--mt-grp-h);
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.margin-table thead tr.mt-metric th {
+  top: var(--mt-grp-h);
+}
+.margin-table th.sticky-col,
+.margin-table td.sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface);
+  /* 가로 스크롤 시 고정 열과 본문 분리감 — 우측 미세 그림자 */
+  box-shadow: 2px 0 0 -1px var(--divider);
+}
+.margin-table thead th.sticky-col {
+  z-index: 3;
+  background: var(--surface-2);
+}
+/* 고정 열이 가로 스크롤 시 떨리지 않도록 hover translate 무력화 */
+.margin-table tbody tr:hover {
+  transform: none;
+}
+
+/* 줄무늬 — 행 추적 용이 (sticky 열은 본문보다 약간 진하게 유지) */
+.margin-table tbody tr:nth-child(even) td {
+  background: var(--surface-2);
+}
+.margin-table tbody tr:nth-child(even) td.sticky-col {
+  background: var(--surface-2);
+}
+.margin-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+}
+.margin-table tbody tr:hover td.sticky-col {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
+/* 숫자 정렬용 tabular-nums + 단위(원) 약화 */
+.margin-table .mt-num {
+  font-variant-numeric: tabular-nums;
+}
+.margin-table .mt-won {
+  color: var(--text-4);
+  font-size: 0.85em;
+  margin-left: 1px;
+}
+
+/* 원가율 배지 — 연한 배경 pill로 시인성 강화 */
+.margin-table .mt-rate {
+  display: inline-block;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 1px 7px;
+  border-radius: 999px;
+  line-height: 1.5;
+}
+
+.rank-pill {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-3);
+}
+.rank-pill.top {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.cell-name {
+  min-width: 0;
+}
+.menu-name {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.ing-product {
+  font-size: 11px;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.cat-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+}
+.cat-pill.neutral {
+  background: var(--surface-2);
+  color: var(--text-3);
+}
+
+.tag-risk {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  background: var(--negative-soft);
+  color: var(--negative);
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 999px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.risk-num {
+  color: var(--negative);
+  font-weight: 800;
+}
+
+.trend-pill {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Cost landing — category cards + ref cards
+============================================================ */
+.cost-section-h {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 8px 4px 12px;
+}
+
+.cost-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
+}
+.cost-cat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: all 140ms ease;
+}
+.cost-cat-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+.cost-cat-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.cost-cat-ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.cost-cat-meta {
+  flex: 1;
+  min-width: 0;
+}
+.cost-cat-title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+}
+.cost-cat-sub {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+.cost-cat-stats {
+  display: flex;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--divider);
+  border-bottom: 1px solid var(--divider);
+}
+.cost-stat {
+  flex: 1;
+}
+.cost-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+.cost-stat-val {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-top: 2px;
+  color: var(--text-1);
+}
+.cost-stat-val .unit {
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.5;
+  margin-left: 1px;
+}
+.cost-cat-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cost-cat-actions .btn {
+  justify-content: space-between;
+  padding: 10px 14px;
+}
+
+.cost-ref-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
+}
+.cost-ref-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  text-align: left;
+  font-family: inherit;
+  color: var(--text-1);
+  transition: all 140ms ease;
+}
+.cost-ref-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+.cost-ref-ico {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.cost-ref-meta {
+  flex: 1;
+  min-width: 0;
+}
+.cost-ref-title {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cost-ref-sub {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+/* Margin bar (마진율 시각화) */
+.margin-bar {
+  position: relative;
+  height: 24px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+.margin-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 240ms ease;
+}
+.margin-bar-text {
+  position: absolute;
+  right: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-1);
+  letter-spacing: -0.01em;
+}
+
+/* Table footer (total) */
+.data-table tfoot tr.row-total {
+  background: var(--surface-2);
+  border-top: 2px solid var(--border-strong);
+}
+.data-table tfoot tr.row-total td {
+  padding: 14px 16px;
+}
+
+/* Edge & dough cards */
+.edge-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--gap);
+}
+.edge-card {
+  padding: 0;
+  overflow: hidden;
+}
+.edge-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 22px;
+  cursor: pointer;
+  gap: 12px;
+}
+.edge-head:hover {
+  background: var(--surface-2);
+}
+.edge-card.open .edge-head {
+  background: var(--accent-soft);
+}
+.edge-title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.edge-sub {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+.edge-cost {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+}
+.edge-cost .unit {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.55;
+  margin-left: 1px;
+}
+.edge-body {
+  padding: 0 22px 18px;
+  border-top: 1px solid var(--divider);
+  animation: variant-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.edge-comp {
+  display: grid;
+  grid-template-columns: 1fr 80px 100px;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--divider);
+  font-size: 13px;
+}
+.edge-comp:last-of-type {
+  border-bottom: 0;
+}
+.edge-comp-name {
+  font-weight: 600;
+}
+.edge-comp-qty {
+  text-align: right;
+}
+.edge-comp-cost {
+  text-align: right;
+  font-weight: 700;
+}
+.edge-comp .unit {
+  font-size: 10px;
+  opacity: 0.6;
+  margin-left: 2px;
+}
+.edge-foot {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 0 4px;
+  border-top: 2px solid var(--border-strong);
+  margin-top: 4px;
+}
+
+@media (max-width: 1280px) {
+  .cost-cat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .cost-ref-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  .cost-cat-grid {
+    grid-template-columns: 1fr;
+  }
+  .cost-ref-grid {
+    grid-template-columns: 1fr;
+  }
+  .edge-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.recipe-main-grid {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .recipe-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cost-detail-card,
+.cost-detail-main,
+.cost-detail-metric {
+  min-width: 0;
+}
+.cost-manage-grid {
+  min-width: 0;
+}
+.cost-manage-grid > * {
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .cost-manage-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .cost-detail-card {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  .cost-detail-metric {
+    min-width: 0 !important;
+    text-align: left !important;
+  }
+  .cost-detail-action {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ============================================================
+   원가계산 보고서 — 카테고리별 평균 원가율 가로 막대
+============================================================ */
+.cost-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+.cost-bar-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 140px;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+}
+.cost-bar-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-1);
+  font-weight: 700;
+}
+.cost-bar-label .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.cost-bar-track {
+  position: relative;
+  height: 14px;
+  background: var(--surface-2);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--divider);
+}
+.cost-bar-fill {
+  height: 100%;
+  border-radius: 3px 0 0 3px;
+  transition: width 200ms ease;
+}
+.cost-bar-threshold {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--warn);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+}
+.cost-bar-val {
+  text-align: right;
+  font-weight: 700;
+  color: var(--text-1);
+}
+.cost-bar-val .unit {
+  font-size: 10px;
+  color: var(--text-3);
+  font-weight: 600;
+  margin-left: 1px;
+}
+
+@media (max-width: 768px) {
+  .cost-bar-row {
+    grid-template-columns: 90px 1fr 110px;
+  }
+}

@@ -6,15 +6,10 @@ import { formatNumber } from '@/lib/format';
 import { getCostRateStyles } from '@/lib/cost/rate-color';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Sparkline } from '@/components/charts/Sparkline';
-import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 
 // 정식 위치는 @/components/ui/EmptyState — 기존 import 경로 호환을 위해 재export
 export { EmptyState };
-
-function toFiniteNumber(value, fallback = 0) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : fallback;
-}
 
 function toTime(value) {
   const time = Date.parse(asDisplayText(value));
@@ -27,16 +22,18 @@ export function SampleStatsWidget({ samples, router }) {
   // 파생 통계는 samples 변경 시에만 재계산 (정렬·다중 필터 매 렌더 반복 방지)
   const stats = useMemo(() => {
     const list = safeSamples;
-    const rated = list.filter(s => toFiniteNumber(s.rating) > 0);
+    const rated = list.filter(s => asFiniteNumber(s.rating, 0) > 0);
     const avg =
-      rated.length > 0 ? rated.reduce((a, s) => a + toFiniteNumber(s.rating), 0) / rated.length : 0;
+      rated.length > 0
+        ? rated.reduce((a, s) => a + asFiniteNumber(s.rating, 0), 0) / rated.length
+        : 0;
     const withPhoto = list.filter(s =>
       asObjectArray(s.photos).some(p => asDisplayText(p.data))
     ).length;
     const recent = [...list].sort((a, b) => toTime(b.createdAt) - toTime(a.createdAt)).slice(0, 3);
     const ratingDist = [1, 2, 3, 4, 5].map(r => ({
       r,
-      count: list.filter(s => toFiniteNumber(s.rating) === r).length,
+      count: list.filter(s => asFiniteNumber(s.rating, 0) === r).length,
     }));
     return { avg, withPhoto, recent, ratingDist };
   }, [safeSamples]);
@@ -87,7 +84,7 @@ export function SampleStatsWidget({ samples, router }) {
         {recent.map((s, index) => {
           const photo = asObjectArray(s.photos).find(p => asDisplayText(p.data));
           const photoData = asDisplayText(photo?.data);
-          const rating = Math.max(0, Math.min(5, Math.floor(toFiniteNumber(s.rating))));
+          const rating = Math.max(0, Math.min(5, Math.floor(asFiniteNumber(s.rating, 0))));
           const href = s.id == null ? null : `/note/sample/${s.id}`;
           const title = asDisplayText(s.title || s.menuName, '제목 없음');
           const menuName = asDisplayText(s.menuName);
@@ -335,7 +332,7 @@ export function ReportingNotesWidget({ notes, router }) {
 export function CostAlertWidget({ data, router }) {
   const items = asObjectArray(data?.items).map(item => ({
     ...item,
-    costRate: toFiniteNumber(item.costRate),
+    costRate: asFiniteNumber(item.costRate, 0),
   }));
   if (items.length === 0) return null;
 
@@ -343,7 +340,7 @@ export function CostAlertWidget({ data, router }) {
   const alerts = allAlerts.slice(0, 5);
   const caution = items.filter(i => i.costRate > 30 && i.costRate <= 40).length;
   const good = items.filter(i => i.costRate <= 30).length;
-  const total = toFiniteNumber(data?.total, items.length);
+  const total = asFiniteNumber(data?.total, items.length);
   const goMargin = () => router?.push?.('/cost/margin');
 
   return (

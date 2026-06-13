@@ -215,6 +215,12 @@ export default function Page() {
         <SearchBox value={search} onChange={setSearch} placeholder="제목·메뉴명·내용·태그 검색" />
       </div>
 
+      {loading && (
+        <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-3)' }}>
+          불러오는 중…
+        </div>
+      )}
+
       {/* 칸반 컬럼 컨테이너 */}
       {filteredNotes.length > 0 && (
         <div

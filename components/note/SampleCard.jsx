@@ -2,8 +2,7 @@
 import React from 'react';
 import { Icon } from '@/components/icons';
 import { sampleNamesText } from '@/lib/sample';
-
-const noop = () => {};
+import { noop } from '@/lib/ui/prop-guards';
 
 function asText(value) {
   if (value == null) return '';

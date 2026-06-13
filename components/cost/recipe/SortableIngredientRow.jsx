@@ -61,7 +61,7 @@ export function SortableIngredientRow({
           )}
         </div>
         {!hasPrice && (
-          <div style={{ fontSize: 10, color: '#f59e0b', marginTop: 1 }}>⚠ 단가 미등록</div>
+          <div style={{ fontSize: 10, color: 'var(--warn)', marginTop: 1 }}>⚠ 단가 미등록</div>
         )}
       </td>
       <td

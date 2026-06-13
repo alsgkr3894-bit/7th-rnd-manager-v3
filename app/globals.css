@@ -3,5 +3,13 @@
 @import './styles/layout.css';
 @import './styles/components.css';
 @import './styles/features.css';
+@import './styles/features/ingredient.css';
+@import './styles/features/cost.css';
+@import './styles/features/note.css';
+@import './styles/features/nutrition.css';
+@import './styles/features/settings.css';
+@import './styles/features/report.css';
 @import './styles/features/motion.css';
+@import './styles/features/motion-report.css';
+@import './styles/features/motion-note.css';
 @import './styles/features/home.css';

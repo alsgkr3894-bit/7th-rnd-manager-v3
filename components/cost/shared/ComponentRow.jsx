@@ -4,8 +4,7 @@ import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { componentSubtotal } from '@/lib/cost/shared/calc';
 import { UNIT_OPTIONS } from '@/lib/cost/shared/unit-options';
-
-const noop = () => {};
+import { noop } from '@/lib/ui/prop-guards';
 
 export const ComponentRow = memo(function ComponentRow({
   c = {},

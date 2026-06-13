@@ -7,7 +7,7 @@ import { UploadDropzone } from '@/components/ui/UploadDropzone';
 import { formatNumber } from '@/lib/format';
 import { readSpreadsheetFile } from '@/lib/excel';
 import { parseBulkPriceRows, matchAndApply, commitBulkPrice } from '@/lib/cost/bulk-price-update';
-import { asObjectArray } from '@/lib/ui/prop-guards';
+import { asObjectArray, noop } from '@/lib/ui/prop-guards';
 
 // ── 보조 스타일 컴포넌트 ──────────────────────────────────────
 
@@ -43,8 +43,6 @@ function PriceDelta({ oldPrice, newPrice }) {
     </span>
   );
 }
-
-const noop = () => {};
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────
 
@@ -163,7 +161,10 @@ export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
           accept={['.csv', '.xlsx', '.xls']}
           title="파일을 선택하거나 드래그하세요"
           onFile={(file, err) => {
-            if (err) { setError(err); return; }
+            if (err) {
+              setError(err);
+              return;
+            }
             handleFile(file);
           }}
         />

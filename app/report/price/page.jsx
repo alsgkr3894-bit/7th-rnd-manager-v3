@@ -75,6 +75,7 @@ export default function Page() {
           if (ignore) return;
 
           if (files.length < 2) {
+            setDataError('비교할 가격 파일이 부족해요. 제때 가격 파일을 2개 이상 업로드해 주세요.');
             setIsLoading(false);
             return;
           }
@@ -91,6 +92,7 @@ export default function Page() {
             latest = toFiles[0];
             base = fromFiles.find(f => f.id !== latest?.id) || sorted[1];
             if (!latest || !base || latest.id === base.id) {
+              setDataError('선택한 기간에 비교할 가격 파일이 없어요. 기간을 조정해 주세요.');
               setIsLoading(false);
               return;
             }

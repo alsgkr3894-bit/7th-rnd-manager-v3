@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react';
 import { Chip } from '@/components/ui/Chip';
 import { formatNumber } from '@/lib/format';
-import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
  * ShipmentSummary — 출고량 요약 4카드 + 카테고리 multi-select 필터
@@ -12,11 +12,6 @@ const TYPE_OPTIONS = [
   { value: 'generic', label: '범용상품' },
 ];
 const ALL_TYPES = TYPE_OPTIONS.map(o => o.value);
-
-function toFiniteNumber(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
-}
 
 export function ShipmentSummary({ aggRows, managedCount }) {
   const [selectedTypes, setSelectedTypes] = useState(new Set(ALL_TYPES));
@@ -58,12 +53,13 @@ export function ShipmentSummary({ aggRows, managedCount }) {
   }, [safeAggRows, selectedTypes, managedOnly]);
 
   const summary = useMemo(() => {
-    const totalQty = filtered.reduce((s, r) => s + toFiniteNumber(r.totalQuantity), 0);
-    const totalAmt = filtered.reduce((s, r) => s + toFiniteNumber(r.totalAmount), 0);
+    const totalQty = filtered.reduce((s, r) => s + asFiniteNumber(r.totalQuantity, 0), 0);
+    const totalAmt = filtered.reduce((s, r) => s + asFiniteNumber(r.totalAmount, 0), 0);
     const max =
       filtered.length > 0
         ? filtered.reduce(
-            (m, r) => (toFiniteNumber(r.totalQuantity) > toFiniteNumber(m.totalQuantity) ? r : m),
+            (m, r) =>
+              asFiniteNumber(r.totalQuantity, 0) > asFiniteNumber(m.totalQuantity, 0) ? r : m,
             filtered[0]
           )
         : null;
@@ -134,7 +130,7 @@ export function ShipmentSummary({ aggRows, managedCount }) {
           value={summary.max ? asDisplayText(summary.max.productName, '—') : '—'}
           foot={
             summary.max
-              ? `${formatNumber(toFiniteNumber(summary.max.totalQuantity))}개`
+              ? `${formatNumber(asFiniteNumber(summary.max.totalQuantity, 0))}개`
               : '데이터 없음'
           }
           footColor={summary.max ? 'var(--accent-text)' : undefined}

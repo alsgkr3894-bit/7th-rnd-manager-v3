@@ -151,6 +151,7 @@ export default function Page() {
           const files = asObjectArray(await getShipmentFiles());
           if (ignore) return;
           if (files.length === 0) {
+            setDataError('출고 데이터가 없어요. 출고관리 → 파일 업로드를 먼저 해 주세요.');
             setIsLoading(false);
             return;
           }
@@ -159,6 +160,7 @@ export default function Page() {
           const monthList = buildShipmentMonthMap(files);
           // year/month 없는 파일만 있으면 monthList가 빈 배열 → 빠른 종료
           if (monthList.length === 0) {
+            setDataError('업로드된 파일에 날짜 정보가 없어요. 올바른 출고 파일을 업로드해 주세요.');
             setIsLoading(false);
             return;
           }

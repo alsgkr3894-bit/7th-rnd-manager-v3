@@ -2,8 +2,7 @@
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { InlineEditCell } from '@/components/cost/manage/table-utils';
-
-const noop = () => {};
+import { noop } from '@/lib/ui/prop-guards';
 
 export function MenuPriceRow({
   r = {},

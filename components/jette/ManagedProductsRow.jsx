@@ -2,9 +2,8 @@
 import { Toggle } from '@/components/ui/Toggle';
 import { InlineConfirmButtons } from '@/components/ui/InlineConfirmButtons';
 import { TYPE_OPTIONS, inputStyle } from './managed-products-constants';
-import { asDisplayText } from '@/lib/ui/prop-guards';
+import { asDisplayText, noop } from '@/lib/ui/prop-guards';
 
-const noop = () => {};
 const TYPE_VALUES = new Set(TYPE_OPTIONS.map(option => option.value));
 
 /**

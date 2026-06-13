@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { SCHEDULE_TYPES, SCHEDULE_COLORS } from '@/lib/note/schedules';
-import { asDisplayText } from '@/lib/ui/prop-guards';
+import { asDisplayText, noop } from '@/lib/ui/prop-guards';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 
 const REPEAT_OPTIONS = [
@@ -13,7 +13,6 @@ const REPEAT_OPTIONS = [
 ];
 
 const REPEAT_VALUES = new Set(REPEAT_OPTIONS.map(option => option.value));
-const noop = () => {};
 
 function normalizeRepeatType(value) {
   const repeatType = asDisplayText(value, 'none');

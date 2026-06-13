@@ -1,9 +1,8 @@
 'use client';
 import { TYPE_OPTIONS, inputStyle } from './managed-products-constants';
-import { asDisplayText } from '@/lib/ui/prop-guards';
+import { asDisplayText, noop } from '@/lib/ui/prop-guards';
 
 const EMPTY_FORM = { productCode: '', productName: '', productType: 'generic', isManaged: false };
-const noop = () => {};
 const TYPE_VALUES = new Set(TYPE_OPTIONS.map(option => option.value));
 
 /**

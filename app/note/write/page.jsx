@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { addNote, getNoteById } from '@/lib/note';
+import { addNote, getNoteById, CATEGORIES } from '@/lib/note';
 import { NoteFormBody, INIT } from '@/app/note/_NoteFormBody';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
@@ -13,6 +13,11 @@ import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { todayLocalDate } from '@/lib/date/local-date';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+
+function normalizeNoteCategory(value) {
+  return CATEGORIES.includes(value) ? value : CATEGORIES[0];
+}
 
 export default function Page() {
   const router = useRouter();
@@ -28,6 +33,11 @@ export default function Page() {
   const skipRef = useRef(true);
   const timerRef = useRef(null);
   const draftTimer = useRef(null);
+  const [lastCategory, setLastCategory, lastCategoryHydrated] = useLocalStorage(
+    KEYS.NOTE_LAST_CATEGORY,
+    CATEGORIES[0],
+    normalizeNoteCategory
+  );
 
   useBeforeUnload(isDirty);
 
@@ -38,19 +48,13 @@ export default function Page() {
 
   // 마운트 후 brand·category를 실제 브랜드/저장값으로 교정 (SSR 초기값 'main' 덮기)
   useEffect(() => {
+    if (!lastCategoryHydrated) return;
     setForm(f => ({
       ...f,
       brand: getActiveBrandId() || 'main',
-      category: (() => {
-        try {
-          return localStorage.getItem(KEYS.NOTE_LAST_CATEGORY) || f.category;
-        } catch {
-          return f.category;
-        }
-      })(),
+      category: lastCategory || f.category,
     }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [lastCategory, lastCategoryHydrated]);
 
   useEffect(() => {
     let alive = true;
@@ -220,7 +224,7 @@ export default function Page() {
           </div>
         </div>
       )}
-      <NoteFormBody form={form} setForm={handleFormChange} />
+      <NoteFormBody form={form} setForm={handleFormChange} onCategoryChange={setLastCategory} />
     </main>
   );
 }

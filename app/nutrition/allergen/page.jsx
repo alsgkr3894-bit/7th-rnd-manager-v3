@@ -6,6 +6,7 @@ import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { downloadCsv } from '@/lib/download';
+import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllMenuMaster } from '@/lib/menu-master';
@@ -149,7 +150,10 @@ export default function Page() {
   useEffect(() => {
     load()
       .catch(err => {
-        if (mountedRef.current) console.error(err);
+        if (mountedRef.current) {
+          console.error(err);
+          showToast('데이터 로드 실패: ' + err.message, 'error');
+        }
       })
       .finally(() => {
         if (mountedRef.current) setLoading(false);

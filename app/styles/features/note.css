@@ -1,0 +1,218 @@
+/* Extracted from app/styles/features.css: note feature styles. */
+
+/* ===== Note grid ===== */
+.note-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap);
+}
+.note-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: left;
+  font-family: inherit;
+  color: var(--text-1);
+  transition:
+    border-color 120ms ease,
+    transform 120ms ease,
+    box-shadow 120ms ease;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.note-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+.note-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.note-date {
+  font-size: 11px;
+  color: var(--text-3);
+  font-weight: 600;
+}
+.note-card-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+}
+.note-card-menu {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.note-card-menu .muted {
+  color: var(--text-4);
+  font-weight: 500;
+}
+.note-card-summary {
+  font-size: 13px;
+  color: var(--text-3);
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.note-card-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.note-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  background: var(--surface-2);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  padding: 60px 20px;
+  text-align: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  animation: slide-up 300ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.empty-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 12px;
+}
+.empty-sub {
+  font-size: 13px;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+
+/* ===== Form (노트 작성) ===== */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: var(--gap);
+  align-items: start;
+}
+.form-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+.form-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  position: sticky;
+  top: 80px;
+}
+
+.form-section {
+  padding: 24px 26px;
+}
+.section-h {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--divider);
+}
+.form-row {
+  margin-bottom: 16px;
+}
+.form-row.two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.field-block {
+  display: flex;
+  flex-direction: column;
+}
+.field-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.field-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+.field-label .req {
+  color: var(--negative);
+  margin-left: 3px;
+}
+.field-hint {
+  font-size: 11px;
+  color: var(--text-4);
+  font-weight: 500;
+}
+
+.calendar-actions,
+.sample-actions,
+.sample-filter-row,
+.sample-rating-row {
+  min-width: 0;
+}
+.calendar-actions,
+.sample-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.sample-rating-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 520px) {
+  .calendar-actions,
+  .sample-actions {
+    width: 100%;
+    align-items: stretch;
+  }
+  .calendar-actions .btn,
+  .sample-actions .btn {
+    flex: 1 1 calc(50% - 8px);
+    justify-content: center;
+    min-width: 0;
+  }
+  .sample-actions button:not(.btn) {
+    flex: 0 0 auto;
+  }
+  .sample-filter-row {
+    gap: 8px !important;
+  }
+  .sample-rating-row {
+    width: 100%;
+  }
+  .sample-rating-dist {
+    flex: 1 1 100%;
+    white-space: normal !important;
+    line-height: 1.45;
+  }
+}

@@ -1,0 +1,231 @@
+/* Extracted from app/styles/features.css: nutrition feature styles. */
+
+/* ============================================================
+   Nutrition — allergen cards, compliance status
+============================================================ */
+.allergen-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+.allergen-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: left;
+  font-family: inherit;
+  color: var(--text-1);
+  transition: all 140ms ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+}
+.allergen-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+.allergen-card.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.allergen-card.active .allergen-name {
+  color: var(--accent-text);
+}
+.allergen-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.01em;
+}
+.allergen-count {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+}
+.allergen-count .unit {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.55;
+  margin-left: 1px;
+}
+.allergen-bar {
+  height: 4px;
+  background: var(--surface-2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.allergen-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 240ms ease;
+}
+.allergen-card.active .allergen-bar-fill {
+  background: var(--accent-text);
+}
+
+.allergen-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  background: color-mix(in oklab, var(--warn) 14%, var(--surface));
+  color: var(--warn);
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  border: 1px solid color-mix(in oklab, var(--warn) 25%, transparent);
+}
+.allergen-chip.active {
+  background: var(--negative);
+  color: white;
+  border-color: var(--negative);
+}
+
+/* Compliance status banner */
+.compliance-status {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 28px;
+  border-radius: 16px;
+}
+.compliance-status.ok {
+  background: color-mix(in oklab, var(--positive) 8%, var(--surface));
+  border-color: color-mix(in oklab, var(--positive) 25%, transparent);
+}
+.compliance-status.warn {
+  background: color-mix(in oklab, var(--warn) 10%, var(--surface));
+  border-color: color-mix(in oklab, var(--warn) 28%, transparent);
+}
+.compliance-ico {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.compliance-status.ok .compliance-ico {
+  background: var(--positive-soft);
+  color: var(--positive);
+}
+.compliance-status.warn .compliance-ico {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.compliance-meta {
+  flex: 1;
+  min-width: 0;
+}
+.compliance-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+}
+.compliance-sub {
+  font-size: 13px;
+  color: var(--text-3);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.compliance-pct {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  flex-shrink: 0;
+}
+.compliance-status.ok .compliance-pct {
+  color: var(--positive);
+}
+.compliance-status.warn .compliance-pct {
+  color: var(--warn);
+}
+.compliance-pct .unit {
+  font-size: 18px;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+.compliance-bullet {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+}
+.compliance-bullet.ok {
+  background: var(--positive-soft);
+  color: var(--positive);
+}
+.compliance-bullet.warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.compliance-bullet.fail {
+  background: var(--negative-soft);
+  color: var(--negative);
+}
+
+@media (max-width: 1100px) {
+  .allergen-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  .allergen-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .compliance-status {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    gap: 12px;
+  }
+  .compliance-pct {
+    font-size: 32px;
+  }
+}
+
+.threshold-card {
+  display: grid;
+  grid-template-columns: 1fr minmax(260px, 360px);
+  gap: 32px;
+  padding: 22px 26px;
+  align-items: center;
+}
+.threshold-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-1);
+  letter-spacing: -0.02em;
+}
+.threshold-desc {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 6px;
+  line-height: 1.55;
+}
+.threshold-desc b {
+  color: var(--text-1);
+  font-weight: 700;
+}
+.threshold-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.threshold-ticks {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-4);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}

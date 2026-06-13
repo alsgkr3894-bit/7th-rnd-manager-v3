@@ -10,7 +10,7 @@ import { SegGroup, Field } from '@/components/note/FormFields';
 import { isSupportedImageFile, resizePhoto } from '@/lib/image/resize';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllMenuMaster } from '@/lib/menu-master';
-import { asDisplayText, asObjectArray, clampInteger } from '@/lib/ui/prop-guards';
+import { asDisplayText, asObjectArray, clampInteger, noop } from '@/lib/ui/prop-guards';
 
 export const SAMPLE_INIT = {
   title: '',
@@ -32,7 +32,6 @@ export const SAMPLE_INIT = {
 };
 
 const MAX_PHOTOS = 8;
-const noop = () => {};
 
 export function SampleFormBody({ form, setForm }) {
   const fileInputRef = useRef(null);

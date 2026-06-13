@@ -2,6 +2,7 @@
 import { Icon } from '@/components/icons';
 import { STATUSES, STATUS_COLORS, STATUS_BORDER } from '@/lib/note';
 import { parseTagList, formatFullDate } from '@/lib/note/utils';
+import { noop } from '@/lib/ui/prop-guards';
 
 /** 검색어 하이라이트 적용 (React 요소 배열 반환) */
 export function highlightText(text, regex) {
@@ -17,8 +18,6 @@ export function highlightText(text, regex) {
     )
   );
 }
-
-const noop = () => {};
 
 function asText(value) {
   if (value == null) return '';

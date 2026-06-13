@@ -2,12 +2,7 @@
 import { useMemo, useState } from 'react';
 import { SortableTh } from '@/components/ui/SortableTh';
 import { formatNumber } from '@/lib/format';
-import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
-
-function toFiniteNumber(value, fallback = 0) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : fallback;
-}
+import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 
 function compareValues(a, b, dir) {
   if (a == null && b == null) return 0;
@@ -15,8 +10,8 @@ function compareValues(a, b, dir) {
   if (b == null) return -1;
 
   if (typeof a === 'number' || typeof b === 'number') {
-    const na = toFiniteNumber(a, 0);
-    const nb = toFiniteNumber(b, 0);
+    const na = asFiniteNumber(a, 0);
+    const nb = asFiniteNumber(b, 0);
     return na > nb ? dir : na < nb ? -dir : 0;
   }
 
@@ -138,9 +133,9 @@ function Row({ r, rank }) {
   const row = r && typeof r === 'object' ? r : {};
   const name = asDisplayText(row.name, '-');
   const category = asDisplayText(row.category, '-');
-  const a = toFiniteNumber(row.a, 0);
-  const b = toFiniteNumber(row.b, 0);
-  const diff = toFiniteNumber(row.diff, 0);
+  const a = asFiniteNumber(row.a, 0);
+  const b = asFiniteNumber(row.b, 0);
+  const diff = asFiniteNumber(row.diff, 0);
   const pct = row.pct == null || !Number.isFinite(Number(row.pct)) ? null : Number(row.pct);
   const aIsZero = Boolean(row.aIsZero);
   const bIsZero = Boolean(row.bIsZero);

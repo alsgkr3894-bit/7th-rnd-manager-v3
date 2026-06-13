@@ -17,6 +17,7 @@ import { KEYS } from '@/lib/note/keys';
 import { parseOptionalNonNegativeNumber } from '@/lib/parse';
 import { imageFileError, resizePhoto } from '@/lib/image/resize';
 import { showToast } from '@/components/Toast';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import {
   AllergenSection,
   Field,
@@ -27,12 +28,8 @@ import {
 
 const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병'];
 
-function getLastUnitType() {
-  try {
-    return localStorage.getItem(KEYS.INGREDIENT_LAST_UNIT_TYPE) || 'g';
-  } catch {
-    return 'g';
-  }
+function normalizeUnitType(value) {
+  return UNIT_TYPES.includes(value) ? value : 'g';
 }
 
 const TEMP_OPTIONS = ['냉장', '냉동', '상온', '공산품'];
@@ -46,7 +43,7 @@ const EMPTY = {
   discontinued: false,
   temperature: '',
   baseQuantity: '',
-  baseUnitType: getLastUnitType(),
+  baseUnitType: 'g',
   taxType: '과세',
   priceOverride: '',
   scope: '',
@@ -73,6 +70,12 @@ export function IngredientForm({
   const catOptions = sortMainCategories([
     ...new Set([...SEED_MAIN_CATEGORIES, ...extraCategories].filter(Boolean)),
   ]);
+  const [lastUnitType, setLastUnitType, lastUnitHydrated] = useLocalStorage(
+    KEYS.INGREDIENT_LAST_UNIT_TYPE,
+    'g',
+    normalizeUnitType
+  );
+
   // 초기 폼 값: 편집(initial) > 복사(copyFrom, 제품코드 비우고 이름에 '복사' 접미) > 빈값
   const buildInitialForm = () => {
     if (initial) return toForm(initial);
@@ -84,7 +87,7 @@ export function IngredientForm({
         ingredientName: `${base.ingredientName || copyFrom.displayName || ''} 복사`.trim(),
       };
     }
-    return EMPTY;
+    return { ...EMPTY, baseUnitType: lastUnitType, photos: normalizeIngredientPhotos(null) };
   };
   const [form, setForm] = useState(buildInitialForm);
   const [tagInput, setTagInput] = useState('');
@@ -106,6 +109,18 @@ export function IngredientForm({
   const initialFormRef = useRef(JSON.stringify(buildInitialForm()));
   const isDirty = JSON.stringify(form) !== initialFormRef.current;
   useBeforeUnload(isDirty);
+
+  useEffect(() => {
+    if (!lastUnitHydrated || initial || copyFrom || lastUnitType === 'g') return;
+    setForm(f => {
+      if (f.baseUnitType !== 'g') return f;
+      const next = { ...f, baseUnitType: lastUnitType };
+      if (JSON.stringify(f) === initialFormRef.current) {
+        initialFormRef.current = JSON.stringify(next);
+      }
+      return next;
+    });
+  }, [copyFrom, initial, lastUnitHydrated, lastUnitType]);
 
   function set(key, val) {
     setForm(f => ({ ...f, [key]: val }));
@@ -181,9 +196,7 @@ export function IngredientForm({
         data.priceOverride = priceOverride;
       }
       await onSave(data);
-      try {
-        localStorage.setItem(KEYS.INGREDIENT_LAST_UNIT_TYPE, data.baseUnitType || 'g');
-      } catch {}
+      setLastUnitType(data.baseUnitType || 'g');
     } finally {
       setSaving(false);
     }

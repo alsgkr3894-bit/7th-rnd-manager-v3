@@ -20,7 +20,7 @@ const identity = v => v;
  * @param {string} key - localStorage 키
  * @param {T} initialValue - SSR / 초기 렌더 기본값
  * @param {(v: unknown) => T} [normalize] - 저장소 복원값 정규화 함수
- * @returns {[T, (v: T) => void]}
+ * @returns {[T, (v: T) => void, boolean]}
  */
 export function normalizeLocalStorageValue(value, fallback, normalize = identity) {
   try {
@@ -32,6 +32,7 @@ export function normalizeLocalStorageValue(value, fallback, normalize = identity
 
 export function useLocalStorage(key, initialValue, normalize = identity) {
   const [value, setValue] = useState(initialValue);
+  const [hydrated, setHydrated] = useState(false);
   const initialRef = useRef(initialValue);
   const normalizeRef = useRef(normalize);
   // 첫 마운트 저장 스킵 — 복원 전에 initialValue가 저장되지 않도록
@@ -55,6 +56,7 @@ export function useLocalStorage(key, initialValue, normalize = identity) {
         }
       }
     } catch {}
+    setHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -72,5 +74,5 @@ export function useLocalStorage(key, initialValue, normalize = identity) {
     } catch {}
   }, [key, value]);
 
-  return [value, setValue];
+  return [value, setValue, hydrated];
 }

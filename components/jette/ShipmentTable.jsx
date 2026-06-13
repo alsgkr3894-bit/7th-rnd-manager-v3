@@ -7,7 +7,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import { usePagination } from '@/hooks/usePagination';
 import { formatNumber } from '@/lib/format';
 import { sortByKey } from '@/lib/jette/utils';
-import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 import { useTableSearchSort } from '@/hooks/useTableSearchSort';
 
 const PRODUCT_TYPE_ORDER = { exclusive: 0, generic: 1, 'generic-managed': 2 };
@@ -15,11 +15,6 @@ const SHIPMENT_KEY_TRANSFORM = {
   productType: v => PRODUCT_TYPE_ORDER[v] ?? 9,
   isManaged: v => (v ? 1 : 0),
 };
-
-function toFiniteNumber(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
-}
 
 /**
  * ShipmentTable — 단일 파일 집계 테이블
@@ -251,11 +246,11 @@ function Row({ row }) {
   const unit = asDisplayText(safeRow.unit, '-');
   const temperature = asDisplayText(safeRow.temperature, '-');
   const taxType = asDisplayText(safeRow.taxType, '-');
-  const totalQuantity = toFiniteNumber(safeRow.totalQuantity);
+  const totalQuantity = asFiniteNumber(safeRow.totalQuantity, 0);
   const priceWithTax = Number.isFinite(Number(safeRow.priceWithTax))
     ? Number(safeRow.priceWithTax)
     : null;
-  const totalAmount = toFiniteNumber(safeRow.totalAmount);
+  const totalAmount = asFiniteNumber(safeRow.totalAmount, 0);
   const isManaged = Boolean(safeRow.isManaged);
 
   return (

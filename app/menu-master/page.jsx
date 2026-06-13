@@ -506,23 +506,25 @@ export default function Page() {
                         >
                           {row.menuCode}
                         </td>
-                        <td style={{ fontWeight: 600 }}>
-                          {row.menuName}
-                          {row.excludeFromOrigin && (
-                            <span
-                              style={{
-                                marginLeft: 6,
-                                fontSize: 10,
-                                fontWeight: 700,
-                                padding: '1px 5px',
-                                borderRadius: 3,
-                                background: 'var(--warn-soft)',
-                                color: 'var(--warn)',
-                              }}
-                            >
-                              원산지제외
-                            </span>
-                          )}
+                        <td className="cell-name">
+                          <div className="menu-name">
+                            {row.menuName}
+                            {row.excludeFromOrigin && (
+                              <span
+                                style={{
+                                  marginLeft: 6,
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  padding: '1px 5px',
+                                  borderRadius: 3,
+                                  background: 'var(--warn-soft)',
+                                  color: 'var(--warn)',
+                                }}
+                              >
+                                원산지제외
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td>
                           <CategoryTags menuCode={row.menuCode} />

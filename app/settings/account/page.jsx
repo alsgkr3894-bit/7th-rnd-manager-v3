@@ -73,7 +73,9 @@ export default function Page() {
   const [activeId, setActiveId] = useState(null);
   const [newAccForm, setNewAccForm] = useState({ name: '', email: '', role: 'viewer' });
   const [addingAccount, setAddingAccount] = useState(false);
+  const [addingBusy, setAddingBusy] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [confirmClearPin, setConfirmClearPin] = useState(false);
 
   const loadAccounts = useCallback(async () => {
     await initDB();
@@ -126,7 +128,7 @@ export default function Page() {
 
   function saveEdit() {
     if (!form.name?.trim()) {
-      showToast('이름은 비울 수 없습니다.', 'err');
+      showToast('이름은 비울 수 없습니다.', 'error');
       return;
     }
     const next = setProfile({
@@ -162,6 +164,11 @@ export default function Page() {
   }
 
   function handleClearPin() {
+    setConfirmClearPin(true);
+  }
+
+  function doClearPin() {
+    setConfirmClearPin(false);
     savePin('');
     setPinInput('');
     setPinConfirm('');
@@ -458,11 +465,13 @@ export default function Page() {
             </select>
             <button
               className="btn primary sm"
+              disabled={addingBusy}
               onClick={async () => {
                 if (!newAccForm.name.trim()) {
-                  showToast('이름을 입력하세요', 'err');
+                  showToast('이름을 입력하세요', 'error');
                   return;
                 }
+                setAddingBusy(true);
                 try {
                   await addAccount(newAccForm);
                   await loadAccounts();
@@ -470,11 +479,13 @@ export default function Page() {
                   setAddingAccount(false);
                   showToast('계정 추가됨', 'ok');
                 } catch (err) {
-                  showToast('실패: ' + err.message, 'err');
+                  showToast('실패: ' + err.message, 'error');
+                } finally {
+                  setAddingBusy(false);
                 }
               }}
             >
-              추가
+              {addingBusy ? '추가 중…' : '추가'}
             </button>
           </div>
         )}
@@ -630,13 +641,22 @@ export default function Page() {
                 await loadAccounts();
                 showToast('계정 삭제됨', 'ok');
               } catch (err) {
-                showToast('실패: ' + err.message, 'err');
+                showToast('실패: ' + err.message, 'error');
               }
             }}
             onCancel={() => setDeleteConfirmId(null)}
           />
         );
       })()}
+      {confirmClearPin && (
+        <ConfirmDialog
+          open
+          message="PIN을 해제합니다. 이후 PIN 없이 설정에 접근할 수 있습니다."
+          danger
+          onConfirm={doClearPin}
+          onCancel={() => setConfirmClearPin(false)}
+        />
+      )}
     </main>
   );
 }

@@ -13,6 +13,7 @@ import {
 import { parseCategoryFromCode } from '@/lib/cost/menu-price/code';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { parseOptionalNonNegativeNumber } from '@/lib/parse';
+import { noop } from '@/lib/ui/prop-guards';
 
 const CODE_GROUPS = [
   { sub: 'PS', label: '프리미엄 스페셜', sizes: ['L', 'R'] },
@@ -21,8 +22,6 @@ const CODE_GROUPS = [
   { sub: 'HH', label: '하프앤하프', sizes: ['L', 'R'] },
   { sub: 'ONE', label: '1인피자', sizes: ['단품'] },
 ];
-
-const noop = () => {};
 
 export function BulkPriceModal({ onClose, onDone }) {
   const close = typeof onClose === 'function' ? onClose : noop;

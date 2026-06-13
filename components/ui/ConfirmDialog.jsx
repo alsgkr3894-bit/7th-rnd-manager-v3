@@ -1,8 +1,7 @@
 'use client';
 import { useModalShell } from '@/hooks/useModalShell';
 import { OVERLAY_COLOR } from '@/lib/ui/styles';
-
-const noop = () => {};
+import { noop } from '@/lib/ui/prop-guards';
 
 export function ConfirmDialog({ open, ...props }) {
   if (!open) return null;

@@ -5,7 +5,7 @@ import { STATUS_COLORS, STATUS_BORDER } from '@/lib/note/constants';
 import { SCHEDULE_COLORS } from '@/lib/note/schedules';
 import { WORK_LOG_TYPES } from '@/lib/work-log';
 import { RATING_COLOR, sampleNamesText } from '@/lib/sample';
-import { asDisplayText, asObjectArray, clampInteger } from '@/lib/ui/prop-guards';
+import { asDisplayText, asObjectArray, clampInteger, noop } from '@/lib/ui/prop-guards';
 
 function isPast(key, today) {
   return key < today;
@@ -13,7 +13,6 @@ function isPast(key, today) {
 function isToday(key, today) {
   return key === today;
 }
-const noop = () => {};
 
 export function DayPanel({
   dateKey,
@@ -458,7 +457,9 @@ export function DayPanel({
                   >
                     <span style={{ fontSize: 13, flexShrink: 0 }}>{t.icon}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: t.color }}>{t.label}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: t.color }}>
+                        {t.label}
+                      </span>
                       {summary && (
                         <span style={{ fontSize: 11, color: 'var(--text-3)', marginLeft: 6 }}>
                           {summary}

@@ -207,11 +207,11 @@ export function RecipeEditor({
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
           {onDelete && (
-            <button className="btn" style={{ color: 'var(--negative)' }} onClick={onDelete}>
+            <button className="btn" style={{ color: 'var(--negative)' }} onClick={onDelete} disabled={saving}>
               삭제
             </button>
           )}
-          <button className="btn" onClick={onCancel}>
+          <button className="btn" onClick={onCancel} disabled={saving}>
             취소
           </button>
           <button className="btn primary" onClick={onSave} disabled={saving}>
@@ -384,8 +384,8 @@ export function RecipeEditor({
                           padding: '1px 5px',
                           borderRadius: 3,
                           fontWeight: 700,
-                          background: 'rgba(56,189,248,.15)',
-                          color: 'var(--accent, #38bdf8)',
+                          background: 'var(--accent-soft)',
+                          color: 'var(--accent)',
                           marginRight: 4,
                         }}
                       >
@@ -504,7 +504,7 @@ export function RecipeEditor({
                             textAlign: 'right',
                             fontWeight: 700,
                             fontSize: 13,
-                            color: 'var(--accent, #38bdf8)',
+                            color: 'var(--accent)',
                           }}
                         >
                           {total > 0 ? `${formatNumber(Math.round(total))}원` : '—'}

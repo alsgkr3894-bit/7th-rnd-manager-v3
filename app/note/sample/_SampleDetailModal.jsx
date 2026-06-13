@@ -7,9 +7,13 @@ import { Stars } from './_Stars';
 import { sampleNamesText, sampleNamesOf } from '@/lib/sample';
 import { usePinchZoom } from '@/hooks/usePinchZoom';
 import { useModalShell } from '@/hooks/useModalShell';
-import { asDisplayText, asFiniteNumber, asObjectArray, clampInteger } from '@/lib/ui/prop-guards';
-
-const noop = () => {};
+import {
+  asDisplayText,
+  asFiniteNumber,
+  asObjectArray,
+  clampInteger,
+  noop,
+} from '@/lib/ui/prop-guards';
 
 function Section({ title, children }) {
   return (

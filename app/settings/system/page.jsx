@@ -583,7 +583,7 @@ function DangerConfirm({
     );
   }
   return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+    <div role="alert" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
       <span style={{ color: 'var(--negative)', fontWeight: 600, fontSize: 13 }}>{confirmMsg}</span>
       <button className="btn" disabled={busy} onClick={onClose}>
         취소

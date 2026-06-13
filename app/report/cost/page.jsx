@@ -182,6 +182,7 @@ export default function Page() {
           if (ignore) return;
 
           if (prices.length === 0) {
+            setDataError('메뉴 가격 데이터가 없어요. 원가계산 → 판매가를 먼저 등록해 주세요.');
             setIsLoading(false);
             return;
           }

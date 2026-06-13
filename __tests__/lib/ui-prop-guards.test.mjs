@@ -7,6 +7,7 @@ import {
   asStringArray,
   asTimestamp,
   clampInteger,
+  noop,
 } from '../../lib/ui/prop-guards.js';
 
 describe('ui prop guards', () => {
@@ -59,5 +60,9 @@ describe('ui prop guards', () => {
     expect(clampInteger('4.8', { min: 1, max: 5, fallback: 2 })).toBe(4);
     expect(clampInteger(99, { min: 1, max: 5, fallback: 2 })).toBe(5);
     expect(clampInteger('bad', { min: 1, max: 5, fallback: 2 })).toBe(2);
+  });
+
+  test('noop은 기본 핸들러로 안전하게 호출된다', () => {
+    expect(noop('ignored')).toBeUndefined();
   });
 });

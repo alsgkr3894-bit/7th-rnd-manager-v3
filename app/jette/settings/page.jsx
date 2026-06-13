@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -7,6 +7,7 @@ import { initDB } from '@/lib/db';
 import { seedManagedProductsIfEmpty } from '@/lib/shipment';
 import { ManagedProductsCard } from '@/components/jette/ManagedProductsCard';
 import { Toggle } from '@/components/ui/Toggle';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 const LS_KEY = 'v3:jette-settings';
 
@@ -16,39 +17,30 @@ const DEFAULT_SETTINGS = {
   autoRegisterNew: 'manual', // 'auto' | 'manual' — 신규 제품 자동 등록 vs 수동 승인
 };
 
-function loadSettings() {
-  try {
-    const stored = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-    if (!stored || typeof stored !== 'object' || Array.isArray(stored)) {
-      return { ...DEFAULT_SETTINGS };
-    }
-    const priceAlertThreshold = Number(stored.priceAlertThreshold);
-    return {
-      ...DEFAULT_SETTINGS,
-      priceAlertThreshold: Number.isFinite(priceAlertThreshold)
-        ? priceAlertThreshold
-        : DEFAULT_SETTINGS.priceAlertThreshold,
-      autoRecalcOnUpdate:
-        typeof stored.autoRecalcOnUpdate === 'boolean'
-          ? stored.autoRecalcOnUpdate
-          : DEFAULT_SETTINGS.autoRecalcOnUpdate,
-      autoRegisterNew:
-        stored.autoRegisterNew === 'auto' || stored.autoRegisterNew === 'manual'
-          ? stored.autoRegisterNew
-          : DEFAULT_SETTINGS.autoRegisterNew,
-    };
-  } catch {
+function normalizeSettings(stored) {
+  if (!stored || typeof stored !== 'object' || Array.isArray(stored)) {
     return { ...DEFAULT_SETTINGS };
   }
+  const priceAlertThreshold = Number(stored.priceAlertThreshold);
+  return {
+    ...DEFAULT_SETTINGS,
+    priceAlertThreshold: Number.isFinite(priceAlertThreshold)
+      ? priceAlertThreshold
+      : DEFAULT_SETTINGS.priceAlertThreshold,
+    autoRecalcOnUpdate:
+      typeof stored.autoRecalcOnUpdate === 'boolean'
+        ? stored.autoRecalcOnUpdate
+        : DEFAULT_SETTINGS.autoRecalcOnUpdate,
+    autoRegisterNew:
+      stored.autoRegisterNew === 'auto' || stored.autoRegisterNew === 'manual'
+        ? stored.autoRegisterNew
+        : DEFAULT_SETTINGS.autoRegisterNew,
+  };
 }
 
 export default function Page() {
   const [ready, setReady] = useState(false);
-  const [settings, setSettings] = useState(() => {
-    if (typeof window === 'undefined') return { ...DEFAULT_SETTINGS };
-    return loadSettings();
-  });
-  const isFirstRender = useRef(true);
+  const [settings, setSettings] = useLocalStorage(LS_KEY, DEFAULT_SETTINGS, normalizeSettings);
 
   useEffect(() => {
     (async () => {
@@ -62,20 +54,9 @@ export default function Page() {
     })();
   }, []);
 
-  // 설정 변경 시 localStorage 저장 + 토스트
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    try {
-      localStorage.setItem(LS_KEY, JSON.stringify(settings));
-    } catch {}
-    showToast('저장됐어요', 'ok');
-  }, [settings]);
-
   function update(key, value) {
     setSettings(prev => ({ ...prev, [key]: value }));
+    showToast('저장됐어요', 'ok');
   }
 
   return (

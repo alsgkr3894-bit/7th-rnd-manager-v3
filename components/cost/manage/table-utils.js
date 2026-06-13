@@ -1,8 +1,8 @@
 'use client';
 import { useMemo, useState } from 'react';
+import { noop } from '@/lib/ui/prop-guards';
 
 export const DEFAULT_PAGE_SIZE = 60;
-const noop = () => {};
 
 function valueOf(row, key) {
   if (!row || !key) return '';
@@ -221,10 +221,14 @@ export function InlineEditCell({
 
   return (
     <td
-      onClick={readOnly ? undefined : () => {
-        setDraft(value ?? '');
-        setEditing(true);
-      }}
+      onClick={
+        readOnly
+          ? undefined
+          : () => {
+              setDraft(value ?? '');
+              setEditing(true);
+            }
+      }
       title={readOnly ? undefined : '클릭해서 수정'}
       style={{ textAlign: align, cursor: readOnly ? 'default' : 'text' }}
     >

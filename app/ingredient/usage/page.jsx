@@ -7,6 +7,7 @@ import { SortableTh } from '@/components/ui/SortableTh';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { initDB } from '@/lib/db';
 import { downloadCsv } from '@/lib/download';
+import { showToast } from '@/components/Toast';
 import { getAllIngredients, buildProductTypeMap } from '@/lib/ingredient';
 import { SCOPE_STYLES } from '@/lib/ingredient/constants';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
@@ -130,7 +131,10 @@ export default function Page() {
   useEffect(() => {
     load()
       .catch(err => {
-        if (mountedRef.current) console.error(err);
+        if (mountedRef.current) {
+          console.error(err);
+          showToast('데이터 로드 실패: ' + err.message, 'error');
+        }
       })
       .finally(() => {
         if (mountedRef.current) setLoading(false);
