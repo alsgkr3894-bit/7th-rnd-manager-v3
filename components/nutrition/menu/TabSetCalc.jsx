@@ -8,6 +8,8 @@ import { calcSetMinMax, calcHalfMinMax } from '@/lib/nutrition/values/set-calc';
 import { asDisplayText, asObjectArray, asRecord, asStringArray, noop } from '@/lib/ui/prop-guards';
 import { useSetCompositionForm } from '@/hooks/useSetCompositionForm';
 
+const S_CARD_TITLE = { fontSize: 14, fontWeight: 700 };
+
 export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRefresh }) {
   const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
   const safeSetComps = useMemo(() => asObjectArray(setComps), [setComps]);
@@ -94,7 +96,7 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
           }}
         >
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700 }}>하프앤하프</div>
+            <div style={S_CARD_TITLE}>하프앤하프</div>
             <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
               모든 피자 한판 총열량(kcal×총중량÷100) — 석쇠·치즈크러스트·씬바사삭·골드스윗 L/R 후보
               기준
@@ -212,7 +214,7 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
           }}
         >
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700 }}>세트박스</div>
+            <div style={S_CARD_TITLE}>세트박스</div>
             <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
               피자(자동) + 추가 구성품으로 최소/최대 열량을 산출해요
             </div>
@@ -252,7 +254,7 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
                     }}
                   >
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 14 }}>
+                      <div style={S_CARD_TITLE}>
                         {setName} {side}세트
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 2 }}>

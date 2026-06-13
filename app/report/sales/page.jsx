@@ -28,6 +28,10 @@ import { buildSalesStats, CAT_COLORS } from '@/lib/report/build-sales-report';
 
 const DRAFT_KEY = 'report_draft_sales';
 
+const S_SECTION_TITLE_FLEX = { display: 'flex', alignItems: 'center', gap: 8 };
+const S_EMPTY_STATE = { height: 60, display: 'grid', placeItems: 'center', color: 'var(--text-4)', fontSize: 13 };
+const S_MOVER_LABEL = { fontSize: 11, fontWeight: 700, marginBottom: 6 };
+
 function normalizeViewMode(value) {
   return ['rank', 'compare'].includes(value) ? value : 'rank';
 }
@@ -451,7 +455,7 @@ export default function Page() {
                 <div className="paper-section">
                   <div
                     className="paper-section-title"
-                    style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                    style={S_SECTION_TITLE_FLEX}
                   >
                     <span
                       style={{
@@ -469,14 +473,7 @@ export default function Page() {
                   {pizzaItems.length > 0 ? (
                     <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
                       <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: 'var(--positive)',
-                            marginBottom: 6,
-                          }}
-                        >
+                        <div style={{ ...S_MOVER_LABEL, color: 'var(--positive)' }}>
                           ▲ 상승 TOP 5
                         </div>
                         {risers.map(m => (
@@ -485,14 +482,7 @@ export default function Page() {
                       </div>
                       <div style={{ width: 1, background: 'var(--border)', flexShrink: 0 }} />
                       <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: 'var(--negative)',
-                            marginBottom: 6,
-                          }}
-                        >
+                        <div style={{ ...S_MOVER_LABEL, color: 'var(--negative)' }}>
                           ▼ 하락 TOP 5
                         </div>
                         {fallers.map(m => (
@@ -510,14 +500,7 @@ export default function Page() {
                   <div style={{ marginTop: 14 }}>
                     <div style={{ display: 'flex', gap: 16 }}>
                       <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: pizzaColor,
-                            marginBottom: 6,
-                          }}
-                        >
+                        <div style={{ ...S_MOVER_LABEL, color: pizzaColor }}>
                           ▲ 베스트 5
                         </div>
                         {best.map(m => (
@@ -532,14 +515,7 @@ export default function Page() {
                       </div>
                       <div style={{ width: 1, background: 'var(--border)', flexShrink: 0 }} />
                       <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: 'var(--text-3)',
-                            marginBottom: 6,
-                          }}
-                        >
+                        <div style={{ ...S_MOVER_LABEL, color: 'var(--text-3)' }}>
                           ▼ 워스트 5
                         </div>
                         {worst.map(m => (
@@ -566,13 +542,7 @@ export default function Page() {
                 return (
                   <div className="paper-section">
                     <div
-                      style={{
-                        height: 60,
-                        display: 'grid',
-                        placeItems: 'center',
-                        color: 'var(--text-4)',
-                        fontSize: 13,
-                      }}
+                      style={S_EMPTY_STATE}
                     >
                       데이터 없음
                     </div>
@@ -597,7 +567,7 @@ export default function Page() {
                   <div className="paper-section paper-cat-section" key={cat}>
                     <div
                       className="paper-section-title"
-                      style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                      style={S_SECTION_TITLE_FLEX}
                     >
                       <span
                         style={{
@@ -791,13 +761,7 @@ export default function Page() {
                 return (
                   <div className="paper-section">
                     <div
-                      style={{
-                        height: 60,
-                        display: 'grid',
-                        placeItems: 'center',
-                        color: 'var(--text-4)',
-                        fontSize: 13,
-                      }}
+                      style={S_EMPTY_STATE}
                     >
                       비교 데이터 없음
                     </div>
@@ -832,7 +796,7 @@ export default function Page() {
                       <div className="paper-section paper-cat-section" key={cat}>
                         <div
                           className="paper-section-title"
-                          style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                          style={S_SECTION_TITLE_FLEX}
                         >
                           <span
                             style={{
@@ -920,7 +884,7 @@ export default function Page() {
             <div className="paper-section" style={{ pageBreakBefore: 'always', marginTop: 24 }}>
               <div
                 className="paper-section-title"
-                style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                style={S_SECTION_TITLE_FLEX}
               >
                 <span
                   style={{

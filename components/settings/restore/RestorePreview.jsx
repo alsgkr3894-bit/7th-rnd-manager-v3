@@ -5,6 +5,8 @@ import { MODULE_GROUPS, ALL_STORES, hasStore } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
 
+const S_FIELD_LABEL = { fontSize: 12, color: 'var(--text-3)' };
+
 const chipStyle = active => ({
   display: 'inline-block',
   padding: '2px 10px',
@@ -76,18 +78,18 @@ export function RestorePreview({
           }}
         >
           <div>
-            <div style={{ fontSize: 12, color: 'var(--text-3)' }}>파일</div>
+            <div style={S_FIELD_LABEL}>파일</div>
             <div style={{ fontWeight: 600, fontSize: 13, fontFamily: 'monospace' }}>
               {parsed._fileName}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 12, color: 'var(--text-3)' }}>버전</div>
+            <div style={S_FIELD_LABEL}>버전</div>
             <div style={{ fontWeight: 600, fontSize: 13 }}>{parsed.version || '미상'}</div>
           </div>
           {parsed.exportedAt && (
             <div>
-              <div style={{ fontSize: 12, color: 'var(--text-3)' }}>백업 시점</div>
+              <div style={S_FIELD_LABEL}>백업 시점</div>
               <div style={{ fontWeight: 600, fontSize: 13 }}>
                 {new Date(parsed.exportedAt).toLocaleString('ko-KR')}
                 {backupAgeDays !== null && backupAgeDays > 30 && (
@@ -106,7 +108,7 @@ export function RestorePreview({
             </div>
           )}
           <div>
-            <div style={{ fontSize: 12, color: 'var(--text-3)' }}>총 행</div>
+            <div style={S_FIELD_LABEL}>총 행</div>
             <div className="num" style={{ fontWeight: 700, fontSize: 18 }}>
               {formatNumber(backupTotalRows)}건
             </div>
@@ -148,7 +150,7 @@ export function RestorePreview({
             }}
           >
             <b>알 수 없는 store는 복원에서 건너뜁니다.</b>{' '}
-            <span className="num" style={{ fontSize: 12, color: 'var(--text-3)' }}>
+            <span className="num" style={S_FIELD_LABEL}>
               {unknownStores.slice(0, 5).join(', ')}
               {unknownStores.length > 5 ? ` 외 ${unknownStores.length - 5}개` : ''}
             </span>
@@ -337,20 +339,20 @@ export function RestorePreview({
             }}
           >
             <div>
-              <div style={{ fontSize: 12, color: 'var(--text-3)' }}>현재</div>
+              <div style={S_FIELD_LABEL}>현재</div>
               <div className="num" style={{ fontWeight: 700, fontSize: 18 }}>
                 {formatNumber(impact.totalNow)}건
               </div>
             </div>
             <div style={{ color: 'var(--text-4)', alignSelf: 'center', fontSize: 18 }}>→</div>
             <div>
-              <div style={{ fontSize: 12, color: 'var(--text-3)' }}>복원 후</div>
+              <div style={S_FIELD_LABEL}>복원 후</div>
               <div className="num" style={{ fontWeight: 700, fontSize: 18 }}>
                 {formatNumber(impact.totalAfter)}건
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 12, color: 'var(--text-3)' }}>변동</div>
+              <div style={S_FIELD_LABEL}>변동</div>
               <div
                 className="num"
                 style={{

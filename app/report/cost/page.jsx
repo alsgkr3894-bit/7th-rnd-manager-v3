@@ -37,6 +37,8 @@ const CAT_META = {
 
 const DRAFT_KEY = 'report_draft_cost';
 
+const S_DOT_LABEL = { display: 'inline-flex', alignItems: 'center', gap: 8 };
+
 async function exportCostXlsx(periodLabel, activeCats) {
   const XLSX = await loadXlsx();
   const periodPart = periodLabel.replace(
@@ -570,7 +572,7 @@ export default function Page() {
                           alignItems: 'flex-end',
                         }}
                       >
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                        <span style={S_DOT_LABEL}>
                           <span
                             className="dot"
                             style={{ width: 10, height: 10, borderRadius: 3, background: c.color }}
@@ -629,7 +631,7 @@ export default function Page() {
               {opts.riskList && riskMenus.length > 0 && (
                 <div className="paper-section">
                   <div className="paper-section-title" style={{ borderBottomColor: 'var(--warn)' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    <span style={S_DOT_LABEL}>
                       <Icon.alert style={{ width: 14, height: 14, color: 'var(--warn)' }} />
                       위험 메뉴 부록 (원가율 {riskThreshold}% 초과)
                     </span>
@@ -724,7 +726,7 @@ export default function Page() {
                         className="paper-section-title"
                         style={{ borderBottomColor: c.color }}
                       >
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                        <span style={S_DOT_LABEL}>
                           <span
                             className="dot"
                             style={{ width: 10, height: 10, borderRadius: 3, background: c.color }}
@@ -810,7 +812,7 @@ export default function Page() {
                         className="paper-section-title"
                         style={{ borderBottomColor: c.color }}
                       >
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                        <span style={S_DOT_LABEL}>
                           <span
                             className="dot"
                             style={{ width: 10, height: 10, borderRadius: 3, background: c.color }}

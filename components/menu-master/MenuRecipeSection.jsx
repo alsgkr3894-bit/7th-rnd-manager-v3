@@ -24,8 +24,9 @@ function storeApiFor(category) {
   return null;
 }
 
+let _rowKey = 0;
 function newRow() {
-  return { _key: Math.random(), ingredientName: '', productCode: '', quantity: '', unit: 'g' };
+  return { _key: ++_rowKey, ingredientName: '', productCode: '', quantity: '', unit: 'g' };
 }
 
 export function MenuRecipeSection({ menuCode, menuName, category, size }) {
@@ -48,7 +49,7 @@ export function MenuRecipeSection({ menuCode, menuName, category, size }) {
       const existing = all.find(r => r.menuCode === menuCode);
       setComponents(
         existing?.components?.length
-          ? existing.components.map(c => ({ ...c, _key: Math.random() }))
+          ? existing.components.map(c => ({ ...c, _key: ++_rowKey }))
           : []
       );
       setAllIngs(ings);
