@@ -418,7 +418,7 @@ export default function Page() {
                 onClick={exportHistoryCsv}
                 disabled={filteredHistory.length === 0}
               >
-                CSV
+                엑셀로 내보내기
               </button>
             </div>
             {filteredHistory.length === 0 ? (

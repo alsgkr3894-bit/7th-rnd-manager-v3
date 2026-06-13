@@ -163,7 +163,7 @@ export default function Page() {
         actions={
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <button className="btn no-print" onClick={exportSampleCsv}>
-              <Icon.download style={{ width: 14, height: 14 }} /> CSV
+              <Icon.download style={{ width: 14, height: 14 }} /> 엑셀로 내보내기
             </button>
             <button className="btn no-print" onClick={copyReportText}>
               <Icon.copy style={{ width: 14, height: 14 }} /> 보고용 복사
