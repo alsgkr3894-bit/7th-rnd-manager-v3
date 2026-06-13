@@ -170,7 +170,7 @@ export default function Page() {
       .map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(','))
       .join('\n');
     downloadCsvText(csv, '메뉴마스터.csv');
-    showToast(`CSV ${filtered.length}개 내보내기 완료`, 'ok');
+    showToast(`엑셀 ${filtered.length}개 내보내기 완료`, 'ok');
   }
 
   async function handleSaveRow(data) {

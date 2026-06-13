@@ -123,6 +123,20 @@
   --cat-8-text: #fca5a5;
 }
 
+/* smooth theme-toggle: targeted elements only — no global * transition */
+body,
+.topbar,
+.sidebar,
+.card,
+.stat-card,
+.nav-item,
+.btn,
+.chip,
+.paper-section,
+.icon-btn {
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+}
+
 [data-density='compact'] {
   --gap: 16px;
   --pad-card: 20px;

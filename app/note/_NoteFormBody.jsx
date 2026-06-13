@@ -17,9 +17,9 @@ import { ComboBox } from '@/components/ui/ComboBox';
 import { SegGroup, Field } from '@/components/note/FormFields';
 import { generateNoteReportText } from '@/lib/note/report';
 import { isSupportedImageFile, resizePhoto } from '@/lib/image/resize';
-import { KEYS } from '@/lib/note/keys';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { copyText } from '@/lib/ui/clipboard';
+import { noop } from '@/lib/ui/prop-guards';
 
 // SSR 안전 초기값 — brand와 category는 SSR에서 항상 기본값으로 두고
 // 마운트 후 실제 브랜드/저장값으로 교정한다(hydration 불일치 방지).
@@ -47,7 +47,7 @@ export const INIT = {
 
 const MAX_NOTE_PHOTOS = 8;
 
-export function NoteFormBody({ form, setForm }) {
+export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
   const updateField = makeFieldUpdater(setForm);
   const [allTags, setAllTags] = useState([]);
   const [menuNames, setMenuNames] = useState([]);
@@ -105,7 +105,7 @@ export function NoteFormBody({ form, setForm }) {
             필수 항목
           </div>
 
-          <Field label="제목" required error={touched.title && !form.title.trim()}>
+          <Field label="제목" error={touched.title && !form.title.trim()}>
             <input
               className="form-input"
               value={form.title}
@@ -116,9 +116,7 @@ export function NoteFormBody({ form, setForm }) {
           </Field>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Field
-              label={form.noteType === '샘플' ? '샘플명 / 메뉴명' : '메뉴명'}
-            >
+            <Field label={form.noteType === '샘플' ? '샘플명 / 메뉴명' : '메뉴명'}>
               <ComboBox
                 value={form.menuName}
                 onChange={v => {
@@ -159,9 +157,7 @@ export function NoteFormBody({ form, setForm }) {
               value={form.category}
               onChange={v => {
                 updateField('category', v);
-                try {
-                  localStorage.setItem(KEYS.NOTE_LAST_CATEGORY, v);
-                } catch {}
+                onCategoryChange(v);
               }}
             />
           </Field>
