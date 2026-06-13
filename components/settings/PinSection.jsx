@@ -1,24 +1,5 @@
 'use client';
-
-function FormField({ label, required, children }) {
-  return (
-    <div>
-      <label
-        style={{
-          display: 'block',
-          fontSize: 12,
-          color: 'var(--text-3)',
-          marginBottom: 4,
-          fontWeight: 600,
-        }}
-      >
-        {label}
-        {required && <span style={{ color: 'var(--negative)', marginLeft: 3 }}>*</span>}
-      </label>
-      {children}
-    </div>
-  );
-}
+import { FormField } from '@/components/settings/FormField';
 
 export function PinSection({
   hasPin,

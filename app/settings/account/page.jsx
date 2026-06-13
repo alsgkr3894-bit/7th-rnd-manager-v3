@@ -6,6 +6,7 @@ import { showToast } from '@/components/Toast';
 import { getProfile, setProfile, getInitial } from '@/lib/profile';
 import { PinSection } from '@/components/settings/PinSection';
 import { PasswordChangeCard } from '@/components/settings/PasswordChangeCard';
+import { FormField } from '@/components/settings/FormField';
 import { getLastLogin, getCachedIP, fetchClientIP } from '@/lib/session';
 import { formatRelative } from '@/lib/format';
 import { SettingTile } from '@/components/ui/SettingTile';
