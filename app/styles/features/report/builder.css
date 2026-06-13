@@ -1,0 +1,501 @@
+/* ============================================================
+   보고서센터 — 4종 보고서 카드
+============================================================ */
+.report-kind-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
+}
+.report-kind-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px 22px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  cursor: pointer;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    border-color 140ms ease;
+}
+.report-kind-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: color-mix(in oklab, var(--accent) 28%, var(--border));
+}
+.report-kind-ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+}
+.report-kind-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.report-kind-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+}
+.report-kind-sub {
+  font-size: 12.5px;
+  color: var(--text-3);
+  line-height: 1.55;
+}
+.report-kind-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--divider);
+  margin-top: auto;
+}
+.report-kind-meta {
+  font-size: 12px;
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+/* ============================================================
+   보고서 빌더 — 좌 옵션 / 우 미리보기
+============================================================ */
+.report-builder {
+  display: grid;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+  gap: var(--gap);
+  align-items: start;
+}
+.report-builder > * {
+  min-width: 0;
+}
+.report-options {
+  padding: 22px 22px;
+  position: sticky;
+  top: 80px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.report-options .section-h {
+  margin-bottom: 12px;
+}
+
+.opt-group {
+  padding: 14px 0;
+  border-bottom: 1px dashed var(--divider);
+  min-width: 0;
+}
+.opt-group:first-of-type {
+  padding-top: 4px;
+}
+.opt-group:last-child {
+  border-bottom: 0;
+  padding-bottom: 4px;
+}
+.opt-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-1);
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.opt-hint {
+  font-size: 11.5px;
+  color: var(--text-3);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+.opt-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.opt-period-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.opt-period-row .input {
+  width: 140px;
+}
+
+.opt-check {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 10px;
+  align-items: start;
+  cursor: pointer;
+  padding: 4px 0;
+}
+.opt-check input {
+  display: none;
+}
+.opt-check-box {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface);
+  display: grid;
+  place-items: center;
+  color: transparent;
+  transition: all 120ms ease;
+  margin-top: 1px;
+}
+.opt-check input:checked + .opt-check-box {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.opt-check-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-1);
+  line-height: 1.4;
+}
+.opt-check-hint {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* 보고서 미리보기 */
+.report-preview-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.report-preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 4px;
+}
+.report-paper-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.report-paper {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px 48px;
+  box-shadow: var(--shadow-md);
+  min-height: 600px;
+  position: relative;
+}
+.report-paper::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 4px;
+  border-radius: 16px 16px 0 0;
+  background: var(--accent);
+  opacity: 0.85;
+}
+.report-export-note {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-3);
+  padding: 10px 14px;
+  background: color-mix(in oklab, var(--accent) 6%, var(--surface));
+  border: 1px solid color-mix(in oklab, var(--accent) 18%, transparent);
+  border-radius: 10px;
+}
+
+/* 보고서 paper 내부 */
+.paper-head {
+  margin-bottom: 22px;
+}
+.paper-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+.paper-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 6px 0 8px;
+  color: var(--text-1);
+}
+.paper-meta {
+  font-size: 11.5px;
+  color: var(--text-3);
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.paper-stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 14px 0;
+  border-top: 1px solid var(--divider);
+  border-bottom: 1px solid var(--divider);
+  margin-bottom: 18px;
+}
+.paper-stat-label {
+  font-size: 11px;
+  color: var(--text-3);
+  font-weight: 700;
+}
+.paper-stat-val {
+  font-size: 22px;
+  font-weight: 800;
+  margin-top: 2px;
+  color: var(--text-1);
+  letter-spacing: -0.02em;
+}
+.paper-stat-val .unit {
+  font-size: 12px;
+  color: var(--text-3);
+  font-weight: 700;
+  margin-left: 2px;
+}
+.paper-stat-foot {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 3px;
+}
+.paper-stat-foot.positive {
+  color: var(--positive);
+  font-weight: 700;
+}
+
+.paper-section {
+  margin-bottom: 22px;
+}
+.paper-section-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-1);
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--text-1);
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+
+.paper-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.paper-table th {
+  padding: 7px 8px;
+  background: var(--surface-2);
+  font-weight: 800;
+  text-align: left;
+  border-bottom: 1px solid var(--divider);
+  color: var(--text-2);
+  font-size: 11px;
+}
+.paper-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--divider);
+}
+.paper-table .right {
+  text-align: right;
+}
+.paper-table .center {
+  text-align: center;
+}
+
+.paper-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-top: 10px;
+  font-size: 11.5px;
+}
+.paper-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+}
+.paper-legend-item .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.paper-pagebreak {
+  font-size: 11px;
+  color: var(--text-4);
+  text-align: center;
+  margin-top: 10px;
+  font-style: italic;
+}
+
+.paper-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-4);
+  padding-top: 14px;
+  margin-top: 24px;
+  border-top: 1px solid var(--divider);
+}
+
+/* Winners & Losers grid */
+.winners-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 10px;
+}
+.winner-col {
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  border: 1px solid var(--divider);
+}
+.winner-h {
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+.winner-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  font-size: 12px;
+  border-bottom: 1px dashed var(--divider);
+}
+.winner-row:last-child {
+  border-bottom: 0;
+}
+
+/* ============================================================
+   보고서센터 — 추가 (즐겨찾기 · 활동 · 5종 카드 그리드)
+============================================================ */
+.report-kind-grid-5 {
+  grid-template-columns: repeat(5, 1fr);
+}
+@media (max-width: 1400px) {
+  .report-kind-grid-5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 900px) {
+  .report-kind-grid-5 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .report-kind-grid-5 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.report-list-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: -4px;
+  padding: 0 4px;
+}
+.report-toolbar-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.report-toolbar-pill:hover {
+  border-color: var(--border-strong);
+}
+.report-toolbar-pill.active {
+  background: color-mix(in oklab, #f59e0b 14%, var(--surface));
+  border-color: #f59e0b;
+  color: var(--text-1);
+}
+.report-toolbar-pill .muted {
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+.fav-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  font-size: 18px;
+  color: var(--text-4);
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.fav-btn:hover {
+  background: var(--surface-2);
+  color: #f59e0b;
+}
+.fav-btn.on {
+  color: #f59e0b;
+}
+
+.report-name-btn {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-1);
+  cursor: pointer;
+  border-bottom: 1px dashed transparent;
+}
+.report-name-btn:hover {
+  color: var(--accent-text);
+  border-bottom-color: var(--accent-text);
+}
+
+.report-activity {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.activity-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--surface-2);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
