@@ -64,9 +64,11 @@ export function NutritionInputPanel({
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
         {CRUST_TYPES.map(ct => {
-          const done = !!safeRawMap[`${selMenu.menuCode}__${ct}`]?.kcal;
+          const key = `${selMenu.menuCode}__${ct}`;
+          const done = !!safeRawMap[key]?.kcal;
+          const cert = !!safeRawMap[key]?.certLinked;
           return (
             <button
               key={ct}
@@ -98,6 +100,21 @@ export function NutritionInputPanel({
                   }}
                 />
               )}
+              {cert && (
+                <span
+                  style={{
+                    fontSize: 9,
+                    padding: '0 3px',
+                    borderRadius: 3,
+                    lineHeight: 1.5,
+                    background: 'var(--positive-soft)',
+                    color: 'var(--positive)',
+                    fontWeight: 700,
+                  }}
+                >
+                  성적서
+                </span>
+              )}
             </button>
           );
         })}
@@ -125,6 +142,25 @@ export function NutritionInputPanel({
       </div>
 
       <NutritionGrid values={form} onChange={setField} />
+
+      <label
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          fontSize: 12,
+          cursor: 'pointer',
+          marginTop: 12,
+          color: 'var(--text-2)',
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={!!form.certLinked}
+          onChange={e => setField('certLinked', e.target.checked)}
+        />
+        시험성적서 기반 입력
+      </label>
 
       <div
         style={{
