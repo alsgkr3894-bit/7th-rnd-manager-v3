@@ -72,6 +72,95 @@
 
 ---
 
+## C. 코드 품질 정리 플랜 (2026-06-14 신규 등록)
+
+> 기능 변경 없이 코드 건강도를 높이는 작업. 위험도 낮은 것부터 진행.
+
+### 현재 상태 요약
+
+- `docs/v2-reference/` 삭제 완료. `docs/`에는 `DEFERRED_WORK.md`만 남아 문서 중복 없음.
+- `.DS_Store`·빈 디렉터리 정리 완료.
+- 대형 seed/rule 데이터는 `lib/*/data/*`로 이미 분리됨 — 추가 정리 우선순위 낮음.
+
+---
+
+### 🟢 1순위 — 정책 위반·불안정 key 제거 (즉시 착수 가능)
+
+#### C-P1. `lib/print/window-print.js` raw `alert()` 제거  🟢 ⏸
+- **문제**: `openPrintWindow` 내부 `alert()` 직접 호출 — 프로젝트 정책 위반(`showToast` 또는 에러 반환으로 교체).
+- **해결**: `alert()` → 호출 측에서 처리하도록 에러 throw 또는 반환값 교체.
+- **검증**: `npm run lint`
+
+#### C-P2. `Math.random()` key를 안정 id helper로 교체  🟢 ⏸
+- **대상**: `MenuRecipeSection` 등 리스트 렌더에서 `Math.random()`을 key로 사용하는 곳.
+- **문제**: 리렌더마다 key가 바뀌어 불필요한 DOM 재생성 + SSR 불일치 가능성.
+- **해결**: index key 또는 레코드 고유 필드(id·productCode 등)로 교체. 없으면 `useId`/`crypto.randomUUID` 1회 생성.
+- **검증**: `npm run lint`
+
+---
+
+### 🟢 2순위 — 인라인 스타일 축소 (파일별 단독 PR 권장)
+
+#### C-P3. 상위 파일 인라인 스타일 className 전환  🟢 ⏸
+- **대상 우선순위**:
+  1. `app/report/cost/page.jsx`
+  2. `components/nutrition/menu/TabSetCalc.jsx`
+  3. `app/note/_NoteContent.jsx`
+  4. `app/report/sales/page.jsx`
+  5. `components/settings/restore/RestorePreview.jsx`
+- **반복 패턴**: flex/gap 레이아웃, table cell 패딩, chip 크기, icon size, empty state 구조 → CSS class 또는 `app/styles/` 공통 상수로 이동.
+- **원칙**: 토큰(`var(--*)`) 이미 존재하는 값은 인라인 제거만, 신규 클래스 최소화.
+- **검증**: `npm run lint` → 수동 UI 확인
+
+---
+
+### 🟡 3순위 — 대형 화면 파일 분리 (중위험, 파일별 단독 PR)
+
+#### C-P4. 대형 page/컴포넌트 분해  🟡 ⏸
+- **대상 우선순위**:
+  1. `app/note/_NoteContent.jsx` (~1017줄) — table·panel·hook 추가 분리
+  2. `app/report/sales/page.jsx` (~984줄) — 차트 패널·섹션 컴포넌트 분리
+  3. `app/report/cost/page.jsx` (~900줄+) — 진단 패널·원가표 탭 분리
+  4. `app/note/sample/page.jsx` — 달력·목록 섹션 분리
+  5. `app/ingredient/manage/IngredientForm.jsx` — 섹션별 서브폼 분리
+  6. `app/nutrition/allergen/page.jsx` — 매트릭스·드로어 패널 분리
+- **방향**: page는 조립만 담당, table/panel/modal/hook으로 분리. B-6과 연계.
+- **검증**: `npm run test:ci` + 주요 화면 수동 확인
+
+---
+
+### 🟢 4순위 — CSS 세부 분리 (저위험)
+
+#### C-P5. CSS 파일 추가 분리  🟢 ⏸
+- **대상**:
+  - `app/styles/components.css` → button·form·chip·badge 등 컴포넌트 단위로 분리
+  - `app/styles/features/report.css` → report-table·report-preview·report-modal로 분리
+  - `app/styles/features/motion.css` → motion-note·motion-ui 등 도메인별 분리
+  - `app/styles/features/motion-note.css` → 검토 후 motion.css 재통합 또는 유지
+- **원칙**: 각 파일 500줄 이하 목표. `globals.css` import 순서·cascade 유지 필수.
+- **검증**: `npm run lint` + 빌드 + 주요 화면 시각 확인
+
+---
+
+### 🟢 5순위 — storage 책임 경계 문서화 (저위험)
+
+#### C-P6. localStorage/sessionStorage 직접 접근 정리  🟢 ⏸
+- **현황**: 대부분 `lib/session`·`lib/note/storage`·`useLocalStorage` 등 책임 파일에 집중됨. 일부 화면 컴포넌트가 직접 접근.
+- **방향**: 무조건 제거보다는 화면 직접 접근(page.jsx 내 `localStorage.setItem` 등)만 책임 파일로 이동. 경계 정책 간단히 주석으로 문서화.
+- **검증**: `npm run lint`
+
+---
+
+### 검증 기준 (C-P 배치 공통)
+
+| 변경 범위 | 검증 명령 |
+|-----------|-----------|
+| 소규모 정리(lint만 영향) | `npm run lint` |
+| 구조 분리(hook/컴포넌트 추출) | `npm run test:ci` |
+| UI 영향 있는 변경 | `npm run test:ci` + `npm run qa:smoke` + 주요 화면 수동 확인 |
+
+---
+
 ## D. 운영·실데이터 QA 영역
 
 > production 코드를 바꾸지 않는 QA·검증 가이드. `docs/RELEASE_CHECKLIST.md`·`docs/QA_CHECKLIST.md` 운영 소관.
