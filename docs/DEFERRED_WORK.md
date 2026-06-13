@@ -86,31 +86,21 @@
 
 ### 🟢 1순위 — 정책 위반·불안정 key 제거 (즉시 착수 가능)
 
-#### C-P1. `lib/print/window-print.js` raw `alert()` 제거  🟢 ⏸
-- **문제**: `openPrintWindow` 내부 `alert()` 직접 호출 — 프로젝트 정책 위반(`showToast` 또는 에러 반환으로 교체).
-- **해결**: `alert()` → 호출 측에서 처리하도록 에러 throw 또는 반환값 교체.
-- **검증**: `npm run lint`
+#### C-P1. `lib/print/window-print.js` raw `alert()` 제거  ✅ 2026-06-14
+- `alert()` → 동적 `import('@/components/Toast')` + `showToast('warn')`. 정적 import 시 Jest가 React 의존성 로드로 3 test suite 실패 → dynamic import로 해결.
 
-#### C-P2. `Math.random()` key를 안정 id helper로 교체  🟢 ⏸
-- **대상**: `MenuRecipeSection` 등 리스트 렌더에서 `Math.random()`을 key로 사용하는 곳.
-- **문제**: 리렌더마다 key가 바뀌어 불필요한 DOM 재생성 + SSR 불일치 가능성.
-- **해결**: index key 또는 레코드 고유 필드(id·productCode 등)로 교체. 없으면 `useId`/`crypto.randomUUID` 1회 생성.
-- **검증**: `npm run lint`
+#### C-P2. `Math.random()` key → 모듈 레벨 카운터  ✅ 2026-06-14
+- `MenuRecipeSection.jsx`: `Math.random()` → `let _rowKey = 0; ++_rowKey` 패턴. `newRow()`·useEffect load 2곳.
 
 ---
 
 ### 🟢 2순위 — 인라인 스타일 축소 (파일별 단독 PR 권장)
 
-#### C-P3. 상위 파일 인라인 스타일 className 전환  🟢 ⏸
-- **대상 우선순위**:
-  1. `app/report/cost/page.jsx`
-  2. `components/nutrition/menu/TabSetCalc.jsx`
-  3. `app/note/_NoteContent.jsx`
-  4. `app/report/sales/page.jsx`
-  5. `components/settings/restore/RestorePreview.jsx`
-- **반복 패턴**: flex/gap 레이아웃, table cell 패딩, chip 크기, icon size, empty state 구조 → CSS class 또는 `app/styles/` 공통 상수로 이동.
-- **원칙**: 토큰(`var(--*)`) 이미 존재하는 값은 인라인 제거만, 신규 클래스 최소화.
-- **검증**: `npm run lint` → 수동 UI 확인
+#### C-P3. 상위 파일 인라인 스타일 파일 상단 상수화  ✅ 2026-06-14
+- `cost/page.jsx`: `S_DOT_LABEL` (4곳)
+- `sales/page.jsx`: `S_SECTION_TITLE_FLEX`·`S_EMPTY_STATE`·`S_MOVER_LABEL` (10곳)
+- `RestorePreview.jsx`: `S_FIELD_LABEL` (8곳)
+- `TabSetCalc.jsx`: `S_CARD_TITLE` (3곳)
 
 ---
 
