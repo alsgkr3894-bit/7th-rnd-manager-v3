@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { usePagination } from '@/hooks/usePagination';
-import { SCOPE, DISCONTINUED_FILTER, UNCATEGORIZED_FILTER } from '@/lib/ingredient/constants';
+import { DISCONTINUED_FILTER, UNCATEGORIZED_FILTER } from '@/lib/ingredient/constants';
 import { KEYS } from '@/lib/note/keys';
 
 export function useIngredientCatalogView(rows) {

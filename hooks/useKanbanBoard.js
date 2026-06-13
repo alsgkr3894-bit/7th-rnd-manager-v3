@@ -1,4 +1,3 @@
-'use client';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { showToast } from '@/components/Toast';

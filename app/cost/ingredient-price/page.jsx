@@ -5,7 +5,6 @@ import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
 import { showToast } from '@/components/Toast';
-import { formatNumber } from '@/lib/format';
 import {
   upsertIngredientMeta,
   bulkDeleteIngredients,
@@ -43,7 +42,7 @@ export default function Page() {
   const [resetting, setResetting] = useState(false);
   const [viewTab, setViewTab] = useState('price');
   const { rows, fileInfo, loading, dbError, reload: load } = useIngredientPriceData();
-  const { search, setSearch, taxFilter, setTaxFilter, deltaFilter, setDeltaFilter, mainCats, filtered } =
+  const { search, setSearch, taxFilter, setTaxFilter, deltaFilter, setDeltaFilter, filtered } =
     useIngredientPriceFilters(rows);
 
   const handleReset = useCallback(async () => {
