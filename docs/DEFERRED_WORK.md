@@ -2,6 +2,10 @@
 
 > 이 파일이 미루어진 모든 작업 + 정비 이력의 **단일 최종 출처**입니다.
 > 새 보류 항목은 위험도에 맞춰 아래 플랜에 추가하고, 완료 시 상태를 `✅ 완료`로 바꾸고 완료일을 기입하세요.
+>
+> 2026-06-14 감사(구 `docs/BUG_AUDIT_2026-06-14.md`)는 내용 전부 이 문서에 흡수 후 삭제됐습니다.
+> 제품·UX 후보는 `docs/SITE_IMPROVEMENT_BACKLOG.md`에 남아 있습니다. 실행 여부·우선순위·완료 판단은
+> 이 문서의 정규화된 항목을 기준으로 합니다.
 
 ---
 
@@ -25,10 +29,74 @@
 
 ---
 
+### 🐞 버그 우선 처리 색인 (2026-06-14 코드 대조)
+
+> B/N 항목 중 **사용자 영향 버그/결함**만 우선순위순으로 추린 색인.
+> 정비(리팩토링)·QA 도구·문서·신기능은 버그가 아니므로 제외. 상세는 각 항목 본문 참조.
+
+| 우선 | 항목 | 버그 내용 | 상태 | 착수 조건 |
+|------|------|-----------|------|-----------|
+| 1 | **B-9** | 1인피자 알레르기 표시 불일치 — 라벨은 씬바사삭L만 출력(`label/build.js:266`), 알레르기 화면은 크러스트 변형 전부 생성(`allergen/matrix.js:96`). **법적 표기 영향.** | ⏸ 게이트 | 도메인 확인(1인피자 정답 크러스트 예시 1~2건) |
+| 2 | **B-25** | production 빌드 비결정적 실패 → dev/prod `.next` 섞이면 런타임 500 | ⏸ 환경 | Node 20 LTS 빌드 또는 Next 패치 업그레이드 |
+| 3 | **B-26** | route-level `error.jsx` 부재 → 한 화면 런타임 예외가 전체 앱을 다운시킴 | ✅ 완료(2026-06-14) | — |
+
+- **B-21**(silent catch)은 **버그 측면 완료**: 사용자 액션 실패(저장·삭제·복원·출력)는 모두 toast 노출 처리됨. 잔여 `settings/restore/page.jsx:203` `.catch(()=>{})`는 복원 성공 후 work-log 기록 실패를 무시하는 **의도적 background** 처리(버그 아님) — 의도 주석만 추가하면 종료.
+- **즉시 착수 가능한 버그**: ~~B-26(완료)~~. **게이트 대기**: B-9(도메인 답변), B-25(Node 버전 고정).
+- **버그 아님(정비/도구/문서/신기능)**: B-20·B-23(QA 도구), B-3 Phase 2·B-5·B-6(리팩토링), B-24(문서), N-42·N-43(신기능, 게이트).
+
+---
+
+### 🔴 고위험 — 운영 기준선 / QA 신뢰성
+
+#### B-20. 실업무 fixture 기반 업로드/다운로드/계산 회귀 테스트  🔴 ⏸
+- **파일**: `__tests__/`, `scripts/`, 판매량·제때 단가·메뉴 판매가·원가 기준표 관련 store/builder
+- **문제**: 현재 자동 QA는 빈 DB/비파괴 UI 검증 중심이고, 실업무 Excel fixture가 부족하다.
+- **해결 방향**: 익명화 fixture로 판매량 업로드, 중복 차단, 필수 컬럼 누락, 다운로드 헤더, 원가 계산 기준값 비교를 자동화한다.
+- **완료 기준**: fixture 테스트가 `npm run test:ci`에 포함되고, 업로드/중복/다운로드/계산 회귀를 검출한다.
+
+#### B-21. console-only / silent catch 분류  🟡 🚧
+- **파일**: `hooks/useKanbanBoard.js`, `hooks/useNoteBatchActions.js`, `hooks/useIngredientPriceData.js`, `app/settings/restore/page.jsx`, `app/settings/backup/page.jsx`, `app/nutrition/allergen/page.jsx`, `app/ingredient/usage/page.jsx`, `lib/ingredient/store.js` 등
+- **문제**: 2026-06-14 감사 기준 `.catch(console.error)`, `.catch(() => {})`, `console.error`, `console.warn` 패턴이 154건 확인됐다.
+- **해결 방향**: 사용자 액션 실패는 toast/화면 오류로 노출하고, background/optional 실패는 의도 주석 또는 helper로 분리한다.
+- **진행 완료(2026-06-14)**:
+  - 칸반 보드 초기 로드 실패: `loadError` 상태·실패 카드·`다시 시도` 액션·toast 추가.
+  - 칸반 드래그 저장 실패: console-only 처리에서 toast + 재동기화로 변경.
+  - 식자재 삭제 실행취소 실패: 단건/일괄 undo의 `restoreRecord` 실패를 숨기지 않고 toast + console context로 노출.
+  - 식자재 삭제 cascade 실패: 영양값/알레르기 링크 cascade 실패를 `cascadeErrors`로 반환하고 관리 화면에서 경고 toast 표시.
+  - 식자재 일괄 삭제 실패: `bulkDeleteIngredients`가 `{ removed, failures }`를 반환해 부분 실패를 사용자에게 표시.
+  - 메뉴마스터 삭제 cascade 실패: 영양 참조 정리 실패를 `cascadeErrors`로 반환하고 화면에서 경고 toast 표시.
+  - optional validation/log 실패: `validateCompositeRefs`, `logWork` 실패는 의도된 background 경고로 분류하고 context 있는 `console.warn`으로 정리.
+- **추가 테스트**:
+  - `__tests__/hooks/kanban-board-guards.test.mjs`
+  - `__tests__/lib/ingredient-manage-undo-guards.test.mjs`
+  - `__tests__/lib/ingredient-delete-cascade.test.mjs`
+- **잔여 분류 대상** (2026-06-14 코드 대조 — 버그성 잔여 거의 없음):
+  - `app/settings/restore/page.jsx:203` `.catch(() => {})` 1건만 잔존 → 복원 성공 후 `logWork` 기록 실패를 무시하는 **의도적 background** 처리. 버그 아님 — 의도 주석만 추가하면 종료.
+  - `hooks/useNoteBatchActions.js`·`hooks/useIngredientPriceData.js`·`app/settings/backup/page.jsx`·`app/nutrition/allergen/page.jsx`·`app/ingredient/usage/page.jsx` — silent catch **0건 확인** (이미 정리됨).
+  - 테스트 fixture에서 의도적으로 발생시키는 `price-history`, `managed-products` 경고의 사용자 액션/테스트 전용 분리(테스트 한정).
+- **완료 기준**: 저장/삭제/복원/출력처럼 사용자가 실행한 작업의 실패가 침묵하지 않는다. → **사용자 액션 측면 충족**, 잔여는 의도 주석 정리만 남음.
+
+#### B-23. smoke 미포함 중요 라우트와 동적 라우트 QA 확대  🟡 ⏸
+- **파일**: `scripts/smoke-qa.mjs`, `scripts/full-rt.mjs`
+- **문제**: smoke는 22개 대표 라우트만 확인한다. `qa:runtime`은 주요 정적 라우트 63개를 커버하지만, dynamic edit/detail 라우트와 실데이터 fixture 흐름은 별도 검증이 필요하다.
+- **현재 완화**: `scripts/smoke-qa.mjs`는 `/menu-sales/rank` redirect 대신 최종 목적지 `/menu-sales/rank-compare`를 보고, `npm run qa:runtime`은 63/63 통과했다.
+- **해결 방향**: fixture 기반 QA에서 dynamic route(`/note/[id]`, `/note/sample/[id]`)와 업로드/출력 흐름을 커버한다. `app/**/page.*` 정적 라우트와 `scripts/full-rt.mjs` 대상 목록을 비교하는 route drift guard를 추가한다.
+- **완료 기준**: dynamic edit/detail 라우트는 seed fixture 후 별도 케이스로 확인하고, 신규 정적 라우트가 QA 목록에서 빠지면 테스트가 실패한다.
+
+#### B-25. production 빌드 비결정적 실패 (Node 24 + Next 14.2.3 환경)  🔴 ⏸
+- **파일**: 빌드 환경 — `package.json`(`build`·`build:clean`), Node 런타임 버전
+- **문제**: `npm run build`·`build:clean`이 Node `v24.15.0` + Next `14.2.3`에서 **간헐적으로** `✓ Compiled successfully` 직후 "Collecting page data" 단계에서 실패한다. 통과한 적도 있으나(완료 이력 "QA 기준선 보강"의 57 pages 통과 기록), 실행마다 다른 `.next/server` 매니페스트 오류로 깨지는 경우가 잦다 — `PageNotFoundError: Cannot find module for page: /_document`, `ENOENT pages-manifest.json`, `Cannot find module './XXXX.js'`. **변경 이전 커밋(`ec378c7`)에서도 동일 재현 → 코드 아닌 환경(Next 빌드 워커 Node 24 비호환·파일시스템 경합) 문제.** lint·컴파일·dev 런타임은 정상.
+- **영향**: production 배포/릴리스 검증 기준선이 불안정하다. dev `.next`와 production 산출물이 섞이면 런타임 500으로 이어진다.
+- **현재 완화**: `scripts/prepare-dev.mjs`/`predev`로 dev `.next` 충돌 차단, `scripts/clean-build.mjs` try/finally로 실패 시에도 stale 정리·`exit 1`. 빌드 워커 불안정 자체는 미해결.
+- **해결 방향**: CI/릴리스 빌드를 Node 18/20 LTS로 고정하거나 Next 패치 업그레이드 후 재검증해 **결정적 성공**을 확보한다. 코드 검증 신호는 `next build`의 `Compiled successfully`까지 유효.
+- **완료 기준**: 지정 Node 버전에서 `npm run build:clean`이 page-data 수집까지 포함해 **반복 실행에도 안정적으로** 성공한다.
+
+---
+
 ### 🟡 중위험 — 단일 모듈 구조 변경 / 테스트 필요
 
 #### B-3 Phase 2. 알레르기 링크 테이블(legacy) store 정의 제거  🟡 ⏸
-- **파일**: `lib/db/constants.js`·`lib/db/module-stores.js`·`lib/db/schema/nutrition.js`(store 정의 6곳), `lib/nutrition/allergen/migrate-to-ingredient.js`
+- **파일**: `lib/db/constants.js`·`lib/db/module-stores.js`·`lib/db/schema/nutrition.js`(store 정의 6곳), `lib/nutrition/migrate-to-ingredient.js`
 - **완료(Phase 1, 2026-06-13)**: `lib/nutrition/allergen/store.js` dead code 6종 제거 — `MASTER_STORE`·`getAllAllergenMasters`·`getAllAllergenLinks`·`getAllergenLinkByIngredient`·`saveIngredientAllergens`·`deleteAllergenLink` 전부 외부 참조 없음. `allergenRate` 계산을 `nutrition_allergy_links`(legacy) → `cost_ingredients.allergens`로 교체.
 - **잔여 Phase 2**: `nutrition_allergy_links` store 정의 제거(constants·module-stores·schema 6곳), `migrate-to-ingredient.js`의 allergen 파트 제거(origin 파트는 유지).
 - **왜 보류**: store 제거는 브랜드별 DB 마이그레이션·데이터 확인 필요 — 외부 조건 대기.
@@ -61,12 +129,23 @@
 - **해결 방향**: 도메인 확인(1인피자가 씬바사삭만 맞는지) 후 allergen 행 생성 필터 통일.
 - **왜 보류**: 알레르기 출력은 법적 표기 영향. 도메인 확인 필수.
 
+#### B-24. 문서·README·아키텍처 정합성 최신화  🟢 ⏸
+- **파일**: `README.md`, `ARCHITECTURE.md`, `docs/SITE_IMPROVEMENT_BACKLOG.md`
+- **문제**: 구조 감사 기준 README의 스타일/폰트/검증 명령 설명 일부가 현재 코드와 다르고, `SITE_IMPROVEMENT_BACKLOG.md`에는 이미 완료·부분완료된 후보가 남아 있다.
+- **해결 방향**: README는 빠른 시작 + 검증 명령(`format:check`, `test:ci`, `build:clean`, `qa:smoke`, `qa:runtime`) 중심으로 최신화한다. `ARCHITECTURE.md`는 App Router/IndexedDB/store 그룹/라우트/QA 구조를 현재 코드 기준으로 확장한다. 사이트 백로그는 완료/부분완료/미완료를 재분류한다.
+- **완료 기준**: 주요 문서가 현재 라우트 수, 스타일 구조, 로컬 폰트, QA script, 문서 역할을 동일하게 설명한다.
+
+#### B-26. 무거운 라우트 route-level loading / error 경계 추가  🟢 ✅ 완료(2026-06-14)
+- **파일**: `app/_shared/RouteLoading.jsx`, `app/_shared/RouteError.jsx`(공유 컴포넌트) + 4개 라우트 각각 `loading.jsx`·`error.jsx`
+- **완료 내용**: `/nutrition/menu`, `/report/sales`, `/ingredient/usage`, `/settings/restore` 에 route-level `loading.jsx`(스피너) · `error.jsx`(국소 복구) 추가. 공유 컴포넌트를 `app/_shared/`에 두고 각 라우트가 re-export하는 구조.
+- **효과**: 특정 화면 런타임 예외가 전체 `app/error.jsx`(앱 전체 리셋)로 전파되지 않고 해당 라우트 세그먼트에서 격리됨.
+
 ---
 
 ### 🔴 고위험 — 설계 합의 / 외부 조건 대기
 
 #### N-42. 엣지별 알레르기 탭 (신중 점검)  🔴 ⏸
-- **파일**: `lib/nutrition/allergen/matrix.js:102-150`, `rules.js:19-31`, `crust-config.js:49-54`
+- **파일**: `lib/nutrition/allergen/matrix.js:102-150`, `lib/nutrition/allergen/rules.js:19-31`, `lib/nutrition/crust-config.js:49-54`
 - **내용**: 표출력에 엣지 선택 시 알레르기 합산. 씬바사삭: 기본 도우(석쇠) 알레르기 **제거(-)** + 씬도우 **추가(+)**, 단 도우에 있던 알레르기값이 다른 식자재에도 있으면 유지.
 - **왜 보류**: 크러스트 변형 기대값 설계 합의 대기. 구현 전 **별도 설계 합의** 필수.
 - **착수 게이트**: 크러스트별(석쇠/씬바사삭/치즈크러스트/골드스윗) **입력 식자재 → 기대 알레르기 결과** 예시 1~2건 제공 시 착수.
@@ -85,7 +164,7 @@
 
 ### 현재 상태 요약
 
-- `docs/v2-reference/` 삭제 완료. `docs/`에는 `DEFERRED_WORK.md`만 남아 문서 중복 없음.
+- `docs/v2-reference/` 삭제 완료. 2026-06-14 감사(`BUG_AUDIT_2026-06-14.md`)는 내용 흡수 후 삭제. 백로그 문서(`SITE_IMPROVEMENT_BACKLOG.md`)는 참고 자료이고, 보류·완료 판단의 최종 출처는 이 `DEFERRED_WORK.md`로 유지한다.
 - `.DS_Store`·빈 디렉터리 정리 완료.
 - 대형 seed/rule 데이터는 `lib/*/data/*`로 이미 분리됨 — 추가 정리 우선순위 낮음.
 
@@ -152,15 +231,45 @@
 
 ## D. 운영·실데이터 QA 영역
 
-> production 코드를 바꾸지 않는 QA·검증 가이드. `docs/RELEASE_CHECKLIST.md`·`docs/QA_CHECKLIST.md` 운영 소관.
+> production 코드를 바꾸지 않는 QA·검증 가이드. 별도 `docs/RELEASE_CHECKLIST.md`·`docs/QA_CHECKLIST.md`는 아직 없으므로, 필요 시 이 섹션을 기준으로 생성한다.
 
 **운영 QA로만 분류(코드 보류 아님)**: 원가/판매가/원가율 기준표 대조, 엑셀 입출력 Excel 앱 확인, 코드 매칭 원장 대조, 대용량(500MB) 복원 freeze·진행률, usage-counts `menuName` dedupe 규격 누락, 다운로드 파일명/출력 컬럼 정책, 인증·설정 PIN 보안경계 문서화, 성능(1천/1만 행) 측정.
+
+---
+
+## E. 참고 문서 흡수 상태
+
+> 이 섹션은 "다른 md에 있는 내용이 빠졌는지" 확인하기 위한 색인입니다.
+
+| 문서 | 이 파일에 반영된 내용 | 남겨둔 역할 |
+|------|----------------------|-------------|
+| `docs/BUG_AUDIT_2026-06-14.md` _(삭제됨)_ | clean build/dev 충돌, smoke/runtime QA, format, id/key, console-only, fixture/dynamic QA 항목 → B-20·B-21·B-23·B-25·B-26 및 완료 이력으로 흡수 | 내용 전부 흡수 후 2026-06-14 삭제 |
+| `docs/SITE_IMPROVEMENT_BACKLOG.md` | QA 안정화·fixture 확대·성능/운영 QA 후보를 B/D 섹션으로 정규화 | 제품/UX/성능 아이디어 후보 목록 |
+| `docs/PROJECT_CODEBASE_AUDIT.md` | 코드 구조, store/route/QA 체계, 책임 큰 파일, 운영 주의점을 B/D 섹션으로 흡수 | 전체 코드베이스 해설 문서 |
+| `docs/PROJECT_STRUCTURE_AUDIT_2026-06-14.md` | 문서 정합성, route drift, README/ARCHITECTURE 최신화, 삭제 문구 불일치 항목을 B-23/B-24/B-25로 흡수 | 구조·문서 감사 원본 |
+| `docs/DEFERRED_WORK.md` | 보류 항목, 진행 중 항목, 완료 이력, 운영 QA 구분 | 실행 우선순위와 완료 판단의 단일 기준 |
 
 ---
 
 ## 완료 이력
 
 > 완료된 모든 작업 기록. 라운드 순 → 가장 최근 항목이 위에 있습니다.
+
+---
+
+### QA 기준선 보강 — ✅ 2026-06-14
+
+- **dev 산출물 충돌 완화**: `scripts/prepare-dev.mjs` 추가. `predev`/`predev:lan`에서 dev 시작 전 `.next`를 정리하고, 실행 중인 dev 서버가 있으면 `.next`를 건드리지 않는다.
+- **표준 dev 재시작**: `npm run dev:clean`을 `scripts/prepare-dev.mjs --kill && next dev -H 127.0.0.1 -p 3000`로 교체해 꼬인 dev 서버와 `.next`를 같이 정리한다. LAN 접속은 `npm run dev:lan`으로 분리한다.
+- **smoke QA 안정화**: `scripts/smoke-qa.mjs` navigation timeout을 90초로 늘리고, 라우트별 console/pageerror/response listener를 격리하며, 대표 판매량 라우트를 redirect 전 `/menu-sales/rank`에서 최종 목적지 `/menu-sales/rank-compare`로 변경했다.
+- **runtime QA 안정화**: `scripts/full-rt.mjs` 시작 시 Playwright browser health check를 추가하고, `localhost` 실패 시 `127.0.0.1` fallback을 시도한다. 라우트 navigation 실패는 전체 스크립트 중단 대신 route별 `fatal` 결과로 기록한다.
+- **clean build 안정화**: `scripts/clean-build.mjs`가 build 성공/실패와 무관하게 `.next.stale-*`를 `finally`에서 정리한다. 실행 중 dev 서버가 있으면 build 전에 중단한다.
+- **format 기준선 복구**: 68개 Prettier 불일치 파일을 format-only로 정리해 `npm run format:check`가 통과한다.
+- **데이터 id/key fallback 안정화**: `PlatformSettingsModal` fallback id에서 `Math.random()`을 제거하고, `normalizeChecklistMap`의 체크리스트 fallback id를 날짜+텍스트+순번 기반으로 안정화했다. `ProgressBar`와 `not-found`의 랜덤은 저장 id/key가 아닌 시각 효과로 주석·테스트에서 분리했다.
+- **침묵 실패 일부 제거(B-21 진행분)**: 칸반 로드/드롭 실패 UI 노출, 식자재 삭제 undo 실패 노출, 식자재 cascade 실패 경고, 식자재 일괄 삭제 부분 실패 표시, 메뉴마스터 cascade 실패 경고를 추가했다.
+- **삭제 안내 문구 정합성**: 메뉴마스터 삭제 ConfirmDialog를 실제 cascade 범위(판매가, 원가 레시피, 영양 참조 데이터 정리)에 맞게 수정했다.
+- **문서화**: `README.md`에 dev 서버 실행 중 build 금지, `npm run dev`/`npm run dev:clean` 사용 기준을 추가했다.
+- **검증**: `npm run format:check` 통과, `npm run lint` 통과, `npm run test:ci` 145 suites / 816 tests 통과, `npm run build:clean` 통과(57 pages, stale 1개 정리), `npm run qa:smoke` 22/22 통과, `npm run qa:runtime` 63/63 통과, script targeted tests 3 suites / 13 tests 통과, B-21 targeted tests 3 suites / 19 tests 통과(2026-06-14).
 
 ---
 
@@ -324,4 +433,4 @@ LOW 완료: L-02 border-radius 토큰화 · L-03 비교월 동일 경고 · L-04
 
 ---
 
-_잔여 보류(외부 조건 대기): **B-3 Phase 2**(DB schema, 브랜드별 migration) · **B-5**(useDBLoad 전면, 회귀위험) · **B-6/C-P4**(대형 컴포넌트 잔여 4개, 회귀위험) · **B-9**(1인피자 알레르기, 도메인 확인) · **N-42**(엣지 알레르기, 설계 합의) · **N-43**(과거 단가, 동작 명세)._
+_잔여 보류: **B-3 Phase 2**(DB schema, 브랜드별 migration) · **B-5**(useDBLoad 전면, 회귀위험) · **B-6/C-P4**(대형 컴포넌트 잔여 4개, 회귀위험) · **B-9**(1인피자 알레르기, 도메인 확인) · **B-20~21, B-23**(fixture·silent catch·동적 라우트) · **N-42**(엣지 알레르기, 설계 합의) · **N-43**(과거 단가, 동작 명세)._
