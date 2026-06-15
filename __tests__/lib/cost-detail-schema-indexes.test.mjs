@@ -56,7 +56,7 @@ function indexNames(store) {
 
 describe('cost detail schema indexes', () => {
   test('DB_VERSION is bumped for detail menuCode index migration', () => {
-    expect(DB_VERSION).toBe(19);
+    expect(DB_VERSION).toBe(20);
   });
 
   test('new detail stores include menuCode indexes', () => {
