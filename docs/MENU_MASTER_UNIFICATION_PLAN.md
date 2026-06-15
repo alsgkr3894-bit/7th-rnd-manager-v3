@@ -1,7 +1,7 @@
 # 메뉴마스터 통합 계획
 
 작성: 2026-06-15
-상태: 구현 진행 중
+상태: 구현 진행 중 (Phase 1~4 구현 완료, Phase 5 일부 완료)
 전제: 기존 데이터는 가능하면 살리되, 통합 과정에서 기준 충돌이나 품질 문제가 크면 초기화 후 새 기준으로 다시 입력할 수 있다.
 
 ---
@@ -368,7 +368,7 @@ menu_master + menu_recipes
 
 - 원가마진표, 원가 전체요약, 원가 보고서가 `menu_recipes`를 우선 읽도록 연결했다.
 - 제품별 사용현황, 원산지 정보, 알레르기 정보, 영양/원산지 표 출력이 단일 레시피 기준을 공유한다.
-- 기존 상세 store는 아직 Phase 5 전까지 fallback으로만 남겨두고, 새 입력 데이터는 canonical 레시피 기준으로 집계된다.
+- 이후 Phase 5에서 출력/집계 화면의 legacy fallback은 제거했고, 남은 구형 detail store는 schema/backup/bridge cleanup 대상으로 분리했다.
 
 ### Phase 4. 기존 화면 정리
 
@@ -409,6 +409,10 @@ menu_master + menu_recipes
 - 홈/노트 원가율 KPI와 원가율 경보 통계도 `menu_recipes + cost_selling_prices` 기준으로 전환했다.
 - `menu_recipes` adapter의 기본 동작은 legacy detail fallback/mirror 없이 canonical store만 읽고 쓰도록 바꿨다.
 - 관련 단위 테스트는 legacy fallback 기대값 대신 canonical-only 기준으로 재작성했다.
+
+검증 메모:
+
+- 위 구현 완료 항목은 lint, 전체 Jest, clean build, 주요 route smoke 확인을 통과한 범위다.
 
 남은 항목:
 
