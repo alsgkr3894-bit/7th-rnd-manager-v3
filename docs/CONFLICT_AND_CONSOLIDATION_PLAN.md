@@ -397,13 +397,14 @@
 
 **구현 상태**
 
-- 부분 구현 완료: `3bcd997 fix: delete full note child chains`, `9a565dd fix: surface note undo restore failures`, `cb9ddcb fix: abort restore on backup preflight errors`, `f5bd8d9 fix: surface restore failure recovery details`
+- 구현 완료: `3bcd997 fix: delete full note child chains`, `9a565dd fix: surface note undo restore failures`, `cb9ddcb fix: abort restore on backup preflight errors`, `f5bd8d9 fix: surface restore failure recovery details`, `3518a8b fix: delete menu cascade in one transaction`
 - 노트 삭제는 parentId 하위 체인을 재귀 수집해 한 트랜잭션에서 삭제한다.
 - 노트 삭제 직후 UI state도 삭제된 전체 id 기준으로 제거한다.
 - 노트 삭제 실행취소는 `restoreRecord()` 실패를 숨기지 않고 실패 건수를 toast로 노출한다.
 - 백업 복원은 store 교체 전 모든 store payload를 먼저 검증하고, 사전 검증 오류가 있으면 정상 store도 교체하지 않는다.
 - 복원 완료 카드에는 실패 store 이름, 실패 사유, DB 완전 재생성 후 재복원 경로를 노출한다.
-- 남은 범위: 메뉴마스터/식자재 도메인 간 cascade 원자성 확장.
+- 메뉴마스터 삭제는 같은 브랜드 DB의 `menu_master`, `cost_selling_prices`, `menu_recipes`, `nutrition_menu_ref`, `nutrition_raw_values` 삭제를 하나의 transaction으로 묶는다.
+- 식자재 삭제의 legacy `nutrition_allergy_links`는 운영 schema에서 제거되어 실사용 cascade 대상이 아니며, 남은 helper는 구형 DB 호환 no-op 가드로 유지한다.
 
 **관련 파일**
 
@@ -414,8 +415,8 @@
 
 **현재 상태**
 
-- 메뉴마스터 삭제는 `menu_master` 삭제 후 판매가, 구형 레시피, 영양 참조를 별도 단계로 정리한다.
-- 식자재 삭제는 `cost_ingredients` 삭제 후 영양값, legacy 알레르기 링크를 별도 단계로 정리한다.
+- 메뉴마스터 삭제는 `menu_master`와 연결 판매가, 메뉴 레시피, 영양 참조/원시값을 같은 transaction에서 정리한다.
+- 식자재 삭제는 `cost_ingredients`를 삭제하고, 운영 schema에서 제거된 legacy 알레르기 링크 helper는 store 존재 시에만 no-op 호환 처리한다.
 - 노트 삭제는 parentId 하위 체인 전체를 같은 트랜잭션에서 삭제하고, undo 실패를 사용자에게 노출한다.
 - 백업 복원은 사전 구조 검증을 통과한 경우에만 store별 `replaceStore()`를 순차 실행한다.
 - 복원 중 오류가 발생하면 완료 카드에서 실패 store와 오류 메시지를 직접 확인할 수 있다.
@@ -423,7 +424,7 @@
 **충돌 가능성**
 
 - 중간 실패 시 일부 store만 정리된다.
-- 메뉴/식자재 cascade 실패 시 일부 store만 정리될 수 있다.
+- 완료: 메뉴 삭제 cascade는 같은 DB transaction으로 묶어 일부 store만 삭제되는 위험을 줄였다. (`3518a8b`)
 - 완료: malformed store가 있으면 복원 store 교체 자체를 시작하지 않아 일부 store만 교체되는 위험을 줄였다. (`cb9ddcb`)
 - 완료: 실행 중 replace/localStorage 실패 store는 완료 카드에 store명과 오류 메시지를 표시하고 시스템 설정으로 이동할 수 있게 했다. (`f5bd8d9`)
 
@@ -433,9 +434,10 @@
 - 같은 DB 안에서 묶을 수 있는 store는 단일 `runTransaction([...stores], 'readwrite')`로 묶는다.
 - dynamic import가 필요한 도메인 간 cascade는 실패를 명시적으로 반환하고 repair action을 제공한다.
 - 완료: 노트 삭제는 descendant collector를 재사용하고 undo 실패를 표시한다.
+- 완료: 메뉴마스터 삭제는 같은 DB의 연결 store를 단일 `runTransaction([...stores], 'readwrite')`로 묶었다. (`3518a8b`)
 - 완료: 복원은 전체 사전 검증 후 실행하고, 사전 검증 실패 시 store 교체를 중단한다. (`cb9ddcb`)
 - 완료: 실행 중 replace 실패 store를 복원 결과 화면에서 더 강하게 repair 경로로 연결했다. (`f5bd8d9`)
-- 남은 정리: 메뉴마스터/식자재 삭제 cascade를 같은 DB transaction 단위로 더 강하게 묶을 수 있는지 검토한다.
+- 완료: 식자재 legacy 알레르기 링크는 운영 schema 제거 상태를 유지하고, 구형 DB 호환 helper만 store 존재 가드로 남긴다.
 
 ---
 
