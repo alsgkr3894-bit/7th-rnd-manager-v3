@@ -16,7 +16,11 @@ import {
   NUTRITION_EDGE_GROUPS,
   SIDE_BASE_CRUST,
   ALLERGEN_CRUST_VARIANTS,
+  THIN_CRUST_CODE,
+  THIN_CRUST_KEY,
+  THIN_CRUST_LABEL,
   DOUGH_CATEGORY_PREFIX,
+  isThinCrustLabel,
   isDoughCategory,
   isPizzaCategory,
 } from '../../lib/nutrition/crust-config.js';
@@ -97,7 +101,7 @@ describe('NUTRITION_EDGE_GROUPS — 운영 기준 총엣지', () => {
 
   test('씬바샤삭은 L 사이즈만 가진다', () => {
     const thin = NUTRITION_EDGE_GROUPS.find(group => group.key === 'thin');
-    expect(thin.entries).toEqual([{ size: 'L', crustType: '씬바사삭L' }]);
+    expect(thin.entries).toEqual([{ size: 'L', crustType: THIN_CRUST_CODE }]);
   });
 
   test('치즈크러스트와 골드스윗만 엣지 조정값 입력 대상이다', () => {
@@ -108,6 +112,20 @@ describe('NUTRITION_EDGE_GROUPS — 운영 기준 총엣지', () => {
     adjustmentGroups
       .flatMap(group => group.entries)
       .forEach(entry => expect(EDGE_CODES).toContain(entry.edgeCode));
+  });
+});
+
+describe('THIN_CRUST display policy', () => {
+  test('내부 키는 유지하고 사용자 표시명은 씬바샤삭을 쓴다', () => {
+    expect(THIN_CRUST_KEY).toBe('씬바사삭');
+    expect(THIN_CRUST_CODE).toBe('씬바사삭L');
+    expect(THIN_CRUST_LABEL).toBe('씬바샤삭');
+    expect(CRUST_DISPLAY_NAMES[THIN_CRUST_CODE]).toBe('씬바샤삭 L');
+  });
+
+  test('구표기와 현표기 모두 씬바샤삭 계열로 인식한다', () => {
+    expect(isThinCrustLabel('씬바사삭')).toBe(true);
+    expect(isThinCrustLabel('씬바샤삭')).toBe(true);
   });
 });
 

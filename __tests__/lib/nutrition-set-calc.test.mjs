@@ -35,6 +35,8 @@ describe('nutrition set calc', () => {
     expect(result.variants[result.variants.length - 1]).toMatchObject({
       menuCode: 'P-A',
       crustType: '씬바사삭L',
+      crustLabel: '씬바샤삭',
+      label: '씬바샤삭L',
       kcal: 80,
       lowRank: true,
     });

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { ModalFrame } from '@/components/ui/ModalFrame';
+import { THIN_CRUST_LABEL } from '@/lib/nutrition/crust-config';
 import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
 import { calcSetMinMax, calcHalfMinMax } from '@/lib/nutrition/values/set-calc';
 import { asDisplayText, asObjectArray, asRecord, asStringArray, noop } from '@/lib/ui/prop-guards';
@@ -98,8 +99,7 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
           <div>
             <div style={S_CARD_TITLE}>하프앤하프</div>
             <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
-              모든 피자 한판 총열량(kcal×총중량÷100) — 석쇠·치즈크러스트·씬바사삭·골드스윗 L/R 후보
-              기준
+              {`모든 피자 한판 총열량(kcal×총중량÷100) — 석쇠·치즈크러스트·${THIN_CRUST_LABEL}·골드스윗 L/R 후보 기준`}
             </div>
           </div>
           <span

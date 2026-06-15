@@ -49,7 +49,7 @@ describe('buildPizzaSliceSheet', () => {
     });
 
     expect(rows).toHaveLength(1);
-    expect(rows[0].rows.some(row => row.crustLabel === '씬바사삭' && row.side === 'R')).toBe(false);
+    expect(rows[0].rows.some(row => row.crustLabel === '씬바샤삭' && row.side === 'R')).toBe(false);
     expect(rows[0].rows[0]).toMatchObject({
       crustLabel: '석쇠',
       side: 'L',
@@ -180,7 +180,7 @@ describe('buildPizzaSheet', () => {
 
     expect(rows.map(row => row.menuCode)).toEqual(['P-001', 'P-ONE-001']);
     expect(rows[1].rows).toHaveLength(1);
-    expect(rows[1].rows[0]).toMatchObject({ crustLabel: '씬바사삭', side: 'L' });
+    expect(rows[1].rows[0]).toMatchObject({ crustLabel: '씬바샤삭', side: 'L' });
   });
 });
 

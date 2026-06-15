@@ -44,7 +44,7 @@ describe('buildMenuAllergenMap', () => {
     expect([...(map.get('PZ2') || [])]).toEqual(['AL02']);
   });
 
-  test('1인피자는 씬바사삭 크러스트 행 1개만 생성된다 (B-9)', () => {
+  test('1인피자는 씬바샤삭 크러스트 행 1개만 생성된다 (B-9)', () => {
     const ingredientRows = [
       { productCode: 'CHZ', ingredientName: '치즈', allergens: ['AL02'] },
       { productCode: 'DGH', ingredientName: '도우', allergens: ['AL01'], category: '도우' },
@@ -66,8 +66,8 @@ describe('buildMenuAllergenMap', () => {
 
     const matrixRows = buildMenuMatrix(ingredientRows, mapData, [], () => false, [], {}, []);
     expect(matrixRows).toHaveLength(1);
-    expect(matrixRows[0].crust).toBe('씬바사삭');
-    // 도우 계열은 씬바사삭에서 제외돼야 함
+    expect(matrixRows[0].crust).toBe('씬바샤삭');
+    // 도우 계열은 씬바샤삭에서 제외돼야 함
     expect([...matrixRows[0].allergenCodes]).not.toContain('AL01');
     expect([...matrixRows[0].allergenCodes]).toContain('AL02');
   });
@@ -90,9 +90,9 @@ describe('buildMenuAllergenMap', () => {
     });
 
     const matrixRows = buildMenuMatrix(ingredientRows, mapData, [], () => false, [], {}, []);
-    // L/R이 논리 키(IP-001)로 묶여 씬바사삭 1행만 생성
+    // L/R이 논리 키(IP-001)로 묶여 씬바샤삭 1행만 생성
     expect(matrixRows).toHaveLength(1);
-    expect(matrixRows[0].crust).toBe('씬바사삭');
+    expect(matrixRows[0].crust).toBe('씬바샤삭');
   });
 
   test('원가레시피 productCode가 달라도 식자재명으로 알레르기 정보까지 집계된다', () => {
@@ -176,7 +176,7 @@ describe('buildEdgeAllergenMap', () => {
     expect([...(map.get('치즈크러스트L') || [])].sort()).toEqual(['AL01', 'AL02']);
   });
 
-  test('씬바사삭은 L 엣지 알레르기를 밀만 남기고 대두를 제거한다', () => {
+  test('씬바샤삭은 L 엣지 알레르기를 밀만 남기고 대두를 제거한다', () => {
     const map = buildEdgeAllergenMap({
       ingredients: [
         { productCode: 'SOY', ingredientName: '대두유', allergens: ['AL05'] },
