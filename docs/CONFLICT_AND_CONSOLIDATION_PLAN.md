@@ -839,6 +839,12 @@
 
 ### 8.8 보고서 비교 route가 상수/허브에는 있고 사이드바에는 없음
 
+**구현 상태**
+
+- 구현 완료: `a43b683 refactor: derive report navigation from metadata`
+- 보고서 사이드바 하위 메뉴를 `KIND_META`에서 파생하는 `REPORT_NAV_ITEMS`로 전환했다.
+- `/report/menu-sales-compare`도 사이드바 보고서 하위 메뉴에 포함되며, 보고서 종류 metadata와 사이드바 route가 함께 검증된다.
+
 **관련 파일**
 
 - `lib/report/constants.js`
@@ -851,7 +857,7 @@
 
 - `KIND_META.compare`는 `/report/menu-sales-compare`를 보고서 종류로 정의한다.
 - 보고서센터 허브의 5종 카드와 새 보고서 모달에서는 비교 보고서 접근이 가능하다.
-- 사이드바 보고서 하위 메뉴에는 비교 보고서가 없다.
+- 사이드바 보고서 하위 메뉴는 `KIND_META`의 5종 생성 route를 모두 노출한다.
 - `/menu-sales/rank-compare`에서는 "보고서 생성" 버튼으로 해당 route에 진입한다.
 
 **충돌 가능성**
