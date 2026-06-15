@@ -79,6 +79,7 @@ jest.unstable_mockModule('@/lib/active-brand', () => ({
 // ── 모듈 ─────────────────────────────────────────────────
 
 const { deleteMenuRefsByMenuCode } = await import('../../lib/nutrition/values/store.js');
+const dbModule = await import('@/lib/db');
 
 const { deleteIngredient, bulkDeleteIngredients } = await import('../../lib/ingredient/store.js');
 const { deleteMenuMaster } = await import('../../lib/menu-master/store.js');
@@ -180,6 +181,7 @@ describe('deleteMenuRefsByMenuCode (B-1 nutrition cascade)', () => {
 describe('deleteMenuMaster cascade (B-1)', () => {
   beforeEach(() => {
     deleteByIdError = null;
+    dbModule.runTransaction.mockClear();
     stores = {
       menu_master: [{ id: 100, menuCode: 'PZ-001', menuName: '피자A' }],
       cost_selling_prices: [
@@ -212,5 +214,22 @@ describe('deleteMenuMaster cascade (B-1)', () => {
     ]);
     expect(stores.nutrition_menu_ref).toEqual([{ id: 6, menuCode: 'PZ-002', menuName: '피자B' }]);
     expect(stores.nutrition_raw_values).toEqual([{ id: 8, menuCode: 'PZ-002', crustType: '석쇠' }]);
+  });
+
+  test('같은 DB cascade store를 하나의 transaction으로 묶는다', async () => {
+    await deleteMenuMaster(100);
+
+    expect(dbModule.runTransaction).toHaveBeenCalledTimes(1);
+    expect(dbModule.runTransaction).toHaveBeenCalledWith(
+      [
+        'menu_master',
+        'cost_selling_prices',
+        'menu_recipes',
+        'nutrition_menu_ref',
+        'nutrition_raw_values',
+      ],
+      'readwrite',
+      expect.any(Function)
+    );
   });
 });
