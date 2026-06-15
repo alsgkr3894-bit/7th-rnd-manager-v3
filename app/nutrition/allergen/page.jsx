@@ -13,13 +13,12 @@ import { getAllMenuMaster } from '@/lib/menu-master';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { getAllEdges } from '@/lib/cost/edge-dough';
 import { getAllToppings, getAllCompositions } from '@/lib/nutrition/values/store';
-import { buildIngredientMenuMap, getMenusForIngredient } from '@/lib/cost/ingredient-menu-map';
+import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 import { loadMenuRecipeArrays } from '@/lib/menu-recipes';
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { SmallStatCard } from '@/components/ui/SmallStatCard';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { ReorderModal } from '@/components/ui/ReorderModal';
-import { ModalFrame } from '@/components/ui/ModalFrame';
 import {
   ALLERGEN_MENU_ORDER_KEY,
   ALLERGEN_ORDER_KEY,
@@ -31,13 +30,11 @@ import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
 import { loadMenuNames, saveMenuNames } from '@/lib/nutrition/menu-name-override';
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
 import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
-import {
-  asMenuMap,
-  normStr,
-  buildMenuMatrix,
-  buildDetailRows,
-} from '@/lib/nutrition/allergen/matrix';
+import { normStr, buildMenuMatrix, buildDetailRows } from '@/lib/nutrition/allergen/matrix';
 import { migrateNutritionToIngredients } from '@/lib/nutrition/migrate-to-ingredient';
+import { AllergenDetailModal } from './AllergenDetailModal';
+import { AllergenIngredientTable } from './AllergenIngredientTable';
+import { AllergenMenuMatrixTable } from './AllergenMenuMatrixTable';
 
 /**
  * 알레르기 정보 페이지 — 자동 집계 뷰
@@ -83,23 +80,16 @@ export default function Page() {
     await migrateNutritionToIngredients().catch(e =>
       console.warn('[nutrition/allergen] 마이그레이션 실패', e)
     );
-    const [
-      ings,
-      masters,
-      groups,
-      edges,
-      toppingList,
-      recipeArrays,
-      compositions,
-    ] = await Promise.all([
-      getAllIngredients(),
-      getAllMenuMaster(),
-      getAllRecipeGroups(),
-      getAllEdges(),
-      getAllToppings(),
-      loadMenuRecipeArrays(),
-      getAllCompositions(),
-    ]);
+    const [ings, masters, groups, edges, toppingList, recipeArrays, compositions] =
+      await Promise.all([
+        getAllIngredients(),
+        getAllMenuMaster(),
+        getAllRecipeGroups(),
+        getAllEdges(),
+        getAllToppings(),
+        loadMenuRecipeArrays(),
+        getAllCompositions(),
+      ]);
     if (!mountedRef.current) return;
     const safeIngredients = asObjectArray(ings);
     const safeMenuMasters = asObjectArray(masters);
@@ -440,243 +430,17 @@ export default function Page() {
             불러오는 중…
           </div>
         ) : viewMode === 'ingredient' ? (
-          ingredientRows.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon-wrap">
-                <Icon.beaker style={{ width: 28, height: 28 }} />
-              </div>
-              <div className="empty-title">알레르기 등록 식자재가 없어요</div>
-              <div className="empty-sub">
-                <Link href="/ingredient/manage">식자재 관리</Link>에서 식자재별 알레르기를
-                체크하세요
-              </div>
-            </div>
-          ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>식자재명</th>
-                  <th>제때 코드</th>
-                  <th>알레르기 항목</th>
-                  <th>매칭 메뉴 수</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ingredientRows.map(ing => {
-                  const ingredientToMenus = asMenuMap(mapData?.ingredientToMenus);
-                  const productCode = asDisplayText(ing.productCode);
-                  const ingredientName = asDisplayText(ing.ingredientName);
-                  const ingredientAllergens = asStringArray(ing.allergens);
-                  const allMenus = getMenusForIngredient(
-                    ingredientToMenus,
-                    productCode,
-                    ingredientName
-                  );
-                  const menus = new Map(
-                    [...allMenus].filter(([mc, m]) => !isExcludedMenu(mc, m?.menuName))
-                  );
-                  const allergenNames = ALLERGEN_SEED.filter(a =>
-                    ingredientAllergens.includes(a.allergenCode)
-                  ).map(a => asDisplayText(a.allergenName));
-                  return (
-                    <tr key={asDisplayText(ing.id) || productCode || ingredientName}>
-                      <td style={{ fontWeight: 600 }}>{ingredientName}</td>
-                      <td className="mono muted">{productCode || '—'}</td>
-                      <td>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                          {allergenNames.map(name => (
-                            <span
-                              key={name}
-                              style={{
-                                fontSize: 11,
-                                padding: '2px 8px',
-                                borderRadius: 999,
-                                background: 'var(--accent)',
-                                color: 'var(--surface)',
-                                fontWeight: 700,
-                              }}
-                            >
-                              {name}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        {menus.size > 0 ? (
-                          <span style={{ fontWeight: 700, color: 'var(--positive)' }}>
-                            {menus.size}
-                          </span>
-                        ) : (
-                          <span style={{ color: 'var(--text-4)' }}>0</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )
-        ) : // 메뉴별 매트릭스
-        menuMatrix.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon-wrap">
-              <Icon.doc style={{ width: 28, height: 28 }} />
-            </div>
-            <div className="empty-title">표시할 메뉴가 없어요</div>
-            <div className="empty-sub">
-              식자재에 알레르기를 등록하고 메뉴마스터 레시피에 구성품을 추가하면 자동 매칭됩니다
-            </div>
-          </div>
+          <AllergenIngredientTable
+            ingredientRows={ingredientRows}
+            mapData={mapData}
+            isExcludedMenu={isExcludedMenu}
+          />
         ) : (
-          <div
-            style={{
-              overflowX: 'auto',
-              overflowY: 'auto',
-              maxHeight: 'calc(100vh - 400px)',
-              minHeight: 300,
-            }}
-          >
-            <table className="data-table" style={{ minWidth: 900 }}>
-              <thead>
-                <tr>
-                  <th
-                    style={{
-                      minWidth: 160,
-                      position: 'sticky',
-                      left: 0,
-                      top: 0,
-                      background: 'var(--surface-2)',
-                      zIndex: 4,
-                    }}
-                  >
-                    메뉴명
-                  </th>
-                  <th
-                    style={{
-                      width: 80,
-                      position: 'sticky',
-                      top: 0,
-                      background: 'var(--surface-2)',
-                      zIndex: 2,
-                    }}
-                  >
-                    카테고리
-                  </th>
-                  {orderedAllergens.map(al => (
-                    <th
-                      key={al.allergenCode}
-                      style={{
-                        width: 46,
-                        fontSize: 11,
-                        textAlign: 'center',
-                        padding: '8px 2px',
-                        wordBreak: 'keep-all',
-                        lineHeight: 1.3,
-                        position: 'sticky',
-                        top: 0,
-                        background: 'var(--surface-2)',
-                        zIndex: 2,
-                      }}
-                    >
-                      {al.allergenName}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {menuMatrix.map((row, i) => {
-                  const rowKey =
-                    asDisplayText(row.rowKey) ||
-                    asDisplayText(row.menuCode) ||
-                    asDisplayText(row.menuName);
-                  const crust = asDisplayText(row.crust);
-                  const allergenCodes =
-                    row.allergenCodes instanceof Set ? row.allergenCodes : new Set();
-                  const groupKey = r =>
-                    asDisplayText(r.menuCode) ||
-                    asDisplayText(r.originalMenuName) ||
-                    asDisplayText(r.menuName);
-                  const next = menuMatrix[i + 1];
-                  const isLastInGroup = !next || groupKey(next) !== groupKey(row);
-                  return (
-                    <tr
-                      key={rowKey}
-                      style={
-                        isLastInGroup ? { borderBottom: '2px solid var(--text-3)' } : undefined
-                      }
-                    >
-                      <td
-                        style={{
-                          fontWeight: 600,
-                          position: 'sticky',
-                          left: 0,
-                          background: 'var(--surface)',
-                          zIndex: 1,
-                        }}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => setDetailRow(row)}
-                          style={{
-                            border: 0,
-                            background: 'transparent',
-                            padding: 0,
-                            cursor: 'pointer',
-                            font: 'inherit',
-                            color: 'inherit',
-                            textAlign: 'left',
-                          }}
-                          title="식자재 알레르기 상세 보기"
-                        >
-                          {asDisplayText(row.menuName)}
-                          {crust && (
-                            <span
-                              style={{
-                                marginLeft: 6,
-                                fontSize: 10,
-                                fontWeight: 700,
-                                padding: '1px 6px',
-                                borderRadius: 999,
-                                background: 'var(--surface-3)',
-                                color: 'var(--text-2)',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {crust}
-                            </span>
-                          )}
-                        </button>
-                      </td>
-                      <td>
-                        <span className="chip">{asDisplayText(row.category)}</span>
-                      </td>
-                      {orderedAllergens.map(al => {
-                        const allergenCode = asDisplayText(al.allergenCode);
-                        const has = allergenCodes.has(allergenCode);
-                        return (
-                          <td key={allergenCode} style={{ textAlign: 'center' }}>
-                            {has ? (
-                              <span
-                                style={{
-                                  display: 'inline-block',
-                                  width: 16,
-                                  height: 16,
-                                  borderRadius: '50%',
-                                  background: 'var(--accent)',
-                                }}
-                              />
-                            ) : (
-                              <span style={{ color: 'var(--text-4)', fontSize: 11 }}>—</span>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <AllergenMenuMatrixTable
+            menuMatrix={menuMatrix}
+            orderedAllergens={orderedAllergens}
+            onDetailRow={setDetailRow}
+          />
         )}
       </div>
       <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-4)' }}>
@@ -726,77 +490,11 @@ export default function Page() {
           onClose={() => setMenuNameEditOpen(false)}
         />
       )}
-      {detailRow && (
-        <ModalFrame
-          title={`${asDisplayText(detailRow.menuName)}${detailRow.crust ? ` · ${detailRow.crust}` : ''}`}
-          onClose={() => setDetailRow(null)}
-          width="min(760px, 96vw)"
-          padding="22px 24px"
-          zIndex={300}
-        >
-          <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>
-            {detailRow.kind === 'topping'
-              ? '추가토핑 탭에서 연결한 식자재 알레르기입니다.'
-              : '직접 레시피, 묶음관리, 엣지관리에서 이 메뉴에 반영된 식자재 알레르기입니다.'}
-          </div>
-          {detailRows.length === 0 ? (
-            <div className="empty-state" style={{ padding: '24px 16px' }}>
-              <div className="empty-title">상세 식자재가 없습니다</div>
-              <div className="empty-sub">알레르기 식자재 매칭 정보를 찾지 못했습니다.</div>
-            </div>
-          ) : (
-            <div className="table-wrap">
-              <table className="data-table" style={{ minWidth: 680 }}>
-                <thead>
-                  <tr>
-                    <th style={{ width: 140 }}>출처</th>
-                    <th>식자재명</th>
-                    <th style={{ width: 110 }}>코드</th>
-                    <th style={{ width: 110 }}>카테고리</th>
-                    <th style={{ width: 180 }}>알레르기</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {detailRows.map(row => (
-                    <tr key={row.key}>
-                      <td style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 700 }}>
-                        {row.sourceText}
-                      </td>
-                      <td style={{ fontWeight: 700 }}>{row.ingredientName}</td>
-                      <td className="mono muted">{row.productCode || '—'}</td>
-                      <td>{row.category || '—'}</td>
-                      <td>
-                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                          {row.allergens.map(code => {
-                            const allergen = ALLERGEN_SEED.find(
-                              item => asDisplayText(item.allergenCode) === code
-                            );
-                            return (
-                              <span
-                                key={code}
-                                style={{
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  padding: '2px 7px',
-                                  borderRadius: 999,
-                                  background: 'var(--warn-soft)',
-                                  color: 'var(--warn)',
-                                }}
-                              >
-                                {asDisplayText(allergen?.allergenName, code)}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </ModalFrame>
-      )}
+      <AllergenDetailModal
+        detailRow={detailRow}
+        detailRows={detailRows}
+        onClose={() => setDetailRow(null)}
+      />
     </main>
   );
 }
