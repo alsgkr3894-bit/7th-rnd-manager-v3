@@ -827,11 +827,12 @@
 
 **구현 상태**
 
-- 구현 완료: `68aa43e fix: require menu master for nutrition menu refs`, `5a8bbcd feat: diagnose orphan nutrition menus`
+- 구현 완료: `68aa43e fix: require menu master for nutrition menu refs`, `5a8bbcd feat: diagnose orphan nutrition menus`, `54834de feat: repair orphan nutrition menus`
 - 영양성분 메뉴 추가는 메뉴마스터 menuCode 선택을 필수로 하며, 코드 없이 `MENU-*` 영양 전용 메뉴를 생성하지 않는다.
 - 메뉴명과 카테고리는 메뉴마스터 선택값을 표시하는 read-only 흐름으로 바꿨다.
 - `buildNutritionMenuRefPayload()` 테스트로 menuCode 없는 payload 생성을 차단한다.
 - 기존/복원 데이터 중 메뉴마스터에 없는 영양 메뉴는 `/nutrition/menu` 상단 진단 배너에서 감지한다.
+- orphan 영양 메뉴와 연결 원시값은 관리자 확인 후 같은 transaction으로 정리한다.
 
 **관련 파일**
 
@@ -848,16 +849,16 @@
 - 영양 메뉴 추가 시 메뉴마스터 menuCode 선택이 필요하다.
 - 메뉴코드 없이 메뉴명만 넣는 `MENU-*` 영양 전용 메뉴 생성 경로는 제거됐다.
 - 메뉴마스터 삭제 시 `nutrition_menu_ref`와 `nutrition_raw_values`가 함께 정리된다.
-- 메뉴마스터에 없는 기존 영양 메뉴는 orphan 진단으로 노출된다.
+- 메뉴마스터에 없는 기존 영양 메뉴는 orphan 진단으로 노출되고 관리자 정리 액션으로 삭제할 수 있다.
 
 **충돌 가능성**
 
-- 완료: 메뉴마스터에 없는 영양 메뉴가 원산지/알레르기/영양 출력에 섞이기 전에 화면 상단 진단으로 감지한다. (`5a8bbcd`)
+- 완료: 메뉴마스터에 없는 영양 메뉴가 원산지/알레르기/영양 출력에 섞이기 전에 화면 상단 진단으로 감지하고, 관리자 확인 후 정리할 수 있다. (`5a8bbcd`, `54834de`)
 
 **정리 방향**
 
 - 영양 전용 메뉴 신규 생성은 허용하지 않는다.
-- 기존/복원 orphan 영양 메뉴는 메뉴마스터에 다시 추가하거나 영양 메뉴에서 삭제해 정리한다.
+- 기존/복원 orphan 영양 메뉴는 메뉴마스터에 다시 추가하거나 영양 메뉴 상단 경고에서 삭제해 정리한다.
 
 ### 8.6 menuCode base/full 정책이 일부 화면에서 엇갈림
 
@@ -1156,13 +1157,13 @@
 ### Phase B. 메뉴 기준 정책 정리
 
 - 완료: `nutrition_menu_ref` 신규 생성은 메뉴마스터 밖 메뉴를 허용하지 않는다. (`68aa43e`)
-- 완료: `MENU-*` 영양 전용 메뉴/orphan 진단을 추가했다. (`5a8bbcd`)
+- 완료: `MENU-*` 영양 전용 메뉴/orphan 진단과 관리자 정리 액션을 추가했다. (`5a8bbcd`, `54834de`)
 - `cost_recipes` menuCode base/full 정책을 `recipe-source-precedence.js`에 고정한다.
 - 구형 레시피 주석과 CSV 헤더를 실제 정책에 맞춘다.
 
 **검증**
 
-- 메뉴마스터 없는 nutrition 메뉴 진단 테스트.
+- 메뉴마스터 없는 nutrition 메뉴 진단/정리 테스트.
 - base/full normalize precedence 테스트.
 - 영양 import와 원가 레시피 저장 smoke.
 
