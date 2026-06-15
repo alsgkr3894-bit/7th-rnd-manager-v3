@@ -1,14 +1,7 @@
 'use client';
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { downloadCsv } from '@/lib/download';
-import {
-  ALLERGEN_MENU_ORDER_KEY,
-  ALLERGEN_ORDER_KEY,
-  loadOrder,
-  saveOrder,
-} from '@/lib/nutrition/order';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
-import { loadMenuNames, saveMenuNames } from '@/lib/nutrition/menu-name-override';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { buildMenuMatrix, buildDetailRows } from '@/lib/nutrition/allergen/matrix';
 import {
@@ -22,20 +15,22 @@ import {
   filterMenuMatrix,
   orderAllergens,
 } from './allergenPageDataUtils';
+import { useAllergenOrderState } from './useAllergenOrderState';
 import { useAllergenSourceData } from './useAllergenSourceData';
 
 export function useAllergenPageData(search) {
   const { ingredients, menuMasters, mapData, baseMapData, edges, toppings, loading } =
     useAllergenSourceData();
-  const [menuOrder, setMenuOrder] = useState([]);
-  const [allergenOrder, setAllergenOrder] = useState([]);
-  const [menuNameOverrides, setMenuNameOverrides] = useState(() => loadMenuNames());
+  const {
+    menuOrder,
+    allergenOrder,
+    menuNameOverrides,
+    applyMenuOrder,
+    applyAllergenOrder,
+    resetOrder,
+    applyMenuNameOverrides,
+  } = useAllergenOrderState();
   const [detailRow, setDetailRow] = useState(null);
-
-  useEffect(() => {
-    setMenuOrder(loadOrder(ALLERGEN_MENU_ORDER_KEY));
-    setAllergenOrder(loadOrder(ALLERGEN_ORDER_KEY));
-  }, []);
 
   const allergenIngredients = useMemo(() => filterAllergenIngredients(ingredients), [ingredients]);
 
@@ -119,28 +114,6 @@ export function useAllergenPageData(search) {
   const exportCsv = useCallback(() => {
     downloadCsv(buildAllergenCsvRows(menuMatrix, orderedAllergens), '알레르기매트릭스.csv');
   }, [menuMatrix, orderedAllergens]);
-
-  const applyMenuOrder = useCallback(keys => {
-    saveOrder(ALLERGEN_MENU_ORDER_KEY, keys);
-    setMenuOrder(keys);
-  }, []);
-
-  const applyAllergenOrder = useCallback(keys => {
-    saveOrder(ALLERGEN_ORDER_KEY, keys);
-    setAllergenOrder(keys);
-  }, []);
-
-  const resetOrder = useCallback(() => {
-    saveOrder(ALLERGEN_MENU_ORDER_KEY, []);
-    saveOrder(ALLERGEN_ORDER_KEY, []);
-    setMenuOrder([]);
-    setAllergenOrder([]);
-  }, []);
-
-  const applyMenuNameOverrides = useCallback(next => {
-    saveMenuNames(next);
-    setMenuNameOverrides(next);
-  }, []);
 
   return {
     loading,

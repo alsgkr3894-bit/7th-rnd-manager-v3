@@ -10,6 +10,10 @@ const dataUtilsSource = readFileSync(
   resolve('app/nutrition/allergen/allergenPageDataUtils.js'),
   'utf8'
 );
+const orderHookSource = readFileSync(
+  resolve('app/nutrition/allergen/useAllergenOrderState.js'),
+  'utf8'
+);
 const sourceHookSource = readFileSync(
   resolve('app/nutrition/allergen/useAllergenSourceData.js'),
   'utf8'
@@ -93,10 +97,13 @@ describe('nutrition allergen page structure', () => {
     expect(dataHookSource).toContain('buildMenuMatrix');
     expect(dataHookSource).toContain('extractExcludedMenuSets');
     expect(dataHookSource).toContain('buildDetailRows');
+    expect(dataHookSource).toContain('useAllergenOrderState()');
     expect(dataHookSource).toContain('buildAllergenCsvRows(menuMatrix, orderedAllergens)');
     expect(dataHookSource).toContain('downloadCsv(buildAllergenCsvRows');
-    expect(dataHookSource).toContain('saveOrder(ALLERGEN_MENU_ORDER_KEY, keys)');
-    expect(dataHookSource).toContain('saveMenuNames(next)');
+    expect(dataHookSource).not.toContain('saveOrder(ALLERGEN_MENU_ORDER_KEY, keys)');
+    expect(dataHookSource).not.toContain('saveMenuNames(next)');
+    expect(dataHookSource).not.toContain('loadOrder(');
+    expect(dataHookSource).not.toContain('loadMenuNames');
     expect(dataHookSource).not.toContain('ALLERGEN_SEED');
     expect(dataHookSource).not.toContain("const headers = ['메뉴명'");
     expect(dataHookSource).not.toContain('const frequency = new Map()');
@@ -116,6 +123,19 @@ describe('nutrition allergen page structure', () => {
     expect(dataUtilsSource).toContain("'메뉴명'");
     expect(dataUtilsSource).toContain("'크러스트'");
     expect(dataUtilsSource).toContain('const frequency = new Map()');
+  });
+
+  test('order state hook owns saved order and menu name override persistence', () => {
+    expect(orderHookSource).toContain('export function useAllergenOrderState');
+    expect(orderHookSource).toContain('loadOrder(ALLERGEN_MENU_ORDER_KEY)');
+    expect(orderHookSource).toContain('loadOrder(ALLERGEN_ORDER_KEY)');
+    expect(orderHookSource).toContain('saveOrder(ALLERGEN_MENU_ORDER_KEY, keys)');
+    expect(orderHookSource).toContain('saveOrder(ALLERGEN_ORDER_KEY, keys)');
+    expect(orderHookSource).toContain('saveMenuNames(next)');
+    expect(orderHookSource).toContain('applyMenuOrder');
+    expect(orderHookSource).toContain('applyAllergenOrder');
+    expect(orderHookSource).toContain('resetOrder');
+    expect(orderHookSource).toContain('applyMenuNameOverrides');
   });
 
   test('extracted source hook owns db loading and recipe map building responsibilities', () => {
