@@ -372,7 +372,8 @@ menu_master + menu_recipes
 
 ### Phase 4. 기존 화면 정리
 
-상태: **진행 예정**
+상태: **구현 완료**
+관련 커밋: `5591241 feat: redirect legacy cost entry routes`, `3c074f3 refactor: remove unused legacy cost editors`, `ec417cc chore: align recipe terminology with menu master`
 
 - `/cost/recipe-master`는 `/menu-master` 또는 메뉴 상세로 이동시킨다.
 - `/cost/recipe`는 제거하거나 공통묶음/엣지 관리만 남긴다.
@@ -383,9 +384,17 @@ menu_master + menu_recipes
 - 메뉴 생성과 레시피 입력의 진입점이 하나다.
 - 사용자가 "어디서 레시피를 입력해야 하는지" 헷갈리지 않는다.
 
+구현 메모:
+
+- `/cost/recipe-master`와 구형 카테고리별 원가 편집 route는 새 기준 화면으로 redirect한다.
+- `/cost/recipe`는 메뉴별 레시피 입력을 제거하고 공통묶음/엣지 관리만 남겼다.
+- 사이드바, 모바일 원가 탭, 원가 허브, 검색 팔레트, 노트/샘플 링크에서 구형 레시피 입력 진입점을 제거했다.
+- 더 이상 사용하지 않는 legacy cost editor 컴포넌트와 hook을 제거했다.
+
 ### Phase 5. 구형 코드 정리
 
-상태: **진행 예정**
+상태: **진행 중**
+관련 커밋: `9d68970 feat: read canonical recipes in outputs only`
 
 전제상 구형 데이터는 새로 입력 가능하므로, 이관보다 제거를 우선한다.
 
@@ -393,6 +402,17 @@ menu_master + menu_recipes
 - detail recipe store 병행 로직 제거
 - 중복 매핑 함수 정리
 - 테스트는 새 기준 중심으로 재작성
+
+구현 완료된 항목:
+
+- 원가마진표, 전체요약, 제품별 사용현황, 원산지/알레르기, 영양/원산지/알레르기 표 출력, 원가 보고서에서 구형 `cost_recipes` fallback을 제거했다.
+- `menu_recipes` adapter의 기본 동작은 legacy detail fallback/mirror 없이 canonical store만 읽고 쓰도록 바꿨다.
+- 관련 단위 테스트는 legacy fallback 기대값 대신 canonical-only 기준으로 재작성했다.
+
+남은 항목:
+
+- IndexedDB schema와 백업 범위에 남아 있는 구형 detail store의 최종 제거 여부를 별도 단계에서 결정한다.
+- 명시적 마이그레이션/호환 API로 남겨둔 detail bridge 사용처가 더 이상 없는지 최종 검색 후 제거한다.
 
 완료 기준:
 

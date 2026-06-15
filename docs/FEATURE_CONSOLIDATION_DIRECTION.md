@@ -353,13 +353,18 @@
 | 제품별 사용현황의 `menu_recipes` 직접 연결 | 구현 완료 | `4767b9e` |
 | 원산지/알레르기 출력의 `menu_recipes + displayGroupKey` 직접 연결 | 구현 완료 | `4767b9e` |
 | 영양/원산지/알레르기 표 출력의 단일 레시피 기준 연결 | 구현 완료 | `4767b9e` |
+| 중복 route redirect와 사이드바 정리 | 구현 완료 | `5591241` |
+| 구형 legacy cost editor 컴포넌트 제거 | 구현 완료 | `3c074f3` |
+| 구형 레시피 입력 관련 표시 문구 정리 | 구현 완료 | `ec417cc` |
+| 출력/집계 화면의 구형 `cost_recipes` fallback 제거 | 구현 완료 | `9d68970` |
+| 테스트의 canonical-only 기준 재작성 | 구현 완료 | `9d68970` |
 
 아래 항목은 아직 후속 단계에서 계속 구현한다.
 
 | 영역 | 상태 |
 |------|------|
-| 중복 route redirect와 사이드바 정리 | 진행 예정 |
-| 구형 detail recipe fallback 제거 | 진행 예정 |
+| 구형 detail store schema/backup 범위 최종 제거 검토 | 진행 예정 |
+| 명시적 detail bridge API 잔여 사용처 제거 | 진행 예정 |
 
 ---
 
