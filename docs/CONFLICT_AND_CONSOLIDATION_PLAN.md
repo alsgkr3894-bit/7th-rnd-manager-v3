@@ -680,11 +680,12 @@
 
 **구현 상태**
 
-- 부분 구현 완료: `315fc65 fix: include system settings in backup keys`, `179c2cd fix: apply jette policy settings`
+- 부분 구현 완료: `315fc65 fix: include system settings in backup keys`, `179c2cd fix: apply jette policy settings`, `384f152 fix: enforce strict cost report posting`
 - `lib/settings.js`에서 `SETTING_LS_KEYS`를 노출하고, `lib/backup/local-storage-keys.js`가 이 목록을 공통 localStorage 백업/복원 key로 사용한다.
 - 구현 완료 범위: `theme`, `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert` localStorage 설정의 백업/복원 포함과 회귀 테스트.
 - 구현 완료 범위: `unmatchedAlert`, `costRateAlert`는 실제 알림 로직에 연결했고, `autoRecalc`와 `roundMode`는 현재 정책에 맞게 조작 가능한 no-op 토글이 아니라 고정 상태로 낮췄다.
-- 남은 범위: `settings` IndexedDB store의 역할 정리와 `strictPosting`의 실제 발행 차단 로직은 별도 단계에서 처리한다.
+- 구현 완료 범위: `strictPosting`은 원가 보고서 생성 직전 단가 누락 레시피 구성품을 검사해 PDF/Excel 생성을 차단한다.
+- 남은 범위: `settings` IndexedDB store의 역할 정리는 별도 단계에서 처리한다.
 
 **관련 파일**
 
@@ -703,24 +704,24 @@
 - 현재 백업 영속 key에는 `SETTING_LS_KEYS` 기준으로 모든 시스템 설정 localStorage key가 포함된다.
 - `theme`, `density`, `fontScale`은 UI dataset에 적용되고, `unmatchedAlert`, `costRateAlert`는 알림 로직에 연결된다.
 - `autoRecalc`는 가격 업로드 이벤트 기반 자동 반영 상태로 표시하고, `roundMode`는 단가 1자리 반올림 고정 정책으로 표시한다.
-- `strictPosting`은 아직 실제 발행 차단 로직이 없어 시스템 설정 화면에서 `준비 중` 상태로 낮췄다.
+- `strictPosting`은 시스템 설정에서 ON/OFF할 수 있고, ON이면 원가 보고서 생성 전 `recipeRows`의 단가 누락 구성품을 검사한다.
 
 **충돌 가능성**
 
 - `settings` store와 localStorage 설정이 병존하므로 장기적으로 source of truth가 헷갈릴 수 있다.
-- 사용자는 "미연동 차단"을 켰다고 생각할 수 있으므로, 실제 차단 로직 적용 전까지 `준비 중`으로만 표시한다.
 
 **정리 방향**
 
 - 구현 방향: 2안 기준으로 localStorage 설정을 실제 사용 source로 보고, 모든 실제 설정 key를 `PERSISTENT_LS_KEYS`와 `COMMON_LS_KEYS`에 포함했다.
 - 남은 정리: `settings` store를 legacy/예약 store로 명시하거나, 별도 단계에서 실제 설정 source of truth로 승격한다.
 - 완료: 실제 로직에서 쓰이지 않는 정책 토글은 고정 상태 또는 `준비 중` 상태로 낮췄다. (`179c2cd`)
+- 완료: `strictPosting`은 실제 원가 보고서 생성 차단 로직에 연결했다. (`384f152`)
 
 **검증**
 
 - 완료: `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert` 백업/복원 key 포함 테스트.
 - 완료: 시스템 원가 정책 no-op 토글이 다시 노출되지 않는 소스 가드 테스트. (`179c2cd`)
-- 남음: `strictPosting` 발행 차단 fixture 테스트.
+- 완료: `strictPosting` 단가 누락 진단과 보고서 생성 직전 가드 소스 테스트. (`384f152`)
 
 ### 8.3 멀티 브랜드 백업 파일에 source brand metadata가 없음
 
@@ -1019,25 +1020,25 @@
 
 **구현 상태**
 
-- 부분 구현 완료: `315fc65 fix: include system settings in backup keys`, `045ce2d fix: apply system alert settings`, `179c2cd fix: apply jette policy settings`
+- 부분 구현 완료: `315fc65 fix: include system settings in backup keys`, `045ce2d fix: apply system alert settings`, `179c2cd fix: apply jette policy settings`, `384f152 fix: enforce strict cost report posting`
 - `unmatchedAlert`는 TopBar/Sidebar/mobile badge/Home 미매칭 위젯/ModuleHealth 입력에 반영한다.
 - `costRateAlert`는 Home 인사말, CostAlertWidget, ModuleHealth 원가율 알림 입력에 반영한다.
 - `priceAlertThreshold`는 가격 비교 요약 카드와 비교 테이블 강조 조건에 반영한다.
 - `autoRegisterNew`는 단가 업로드 후 새 제품코드를 관리품목에 `generic`/미관리 상태로 자동 등록한다.
 - `autoRecalcOnUpdate`와 시스템 `autoRecalc`는 가격 업로드/삭제 이벤트가 열린 원가 화면을 갱신하는 현재 구조에 맞춰 `항상 자동 반영` 상태로 표시한다.
 - `roundMode`는 사용자가 확정한 `g`/`개` 단가 소수점 1자리 반올림 정책에 맞춰 조작 가능한 세그먼트를 제거하고 고정 상태로 표시한다.
-- 남은 범위: `strictPosting`의 실제 발행 차단 로직은 별도 단계에서 구현한다.
+- `strictPosting`은 원가 보고서 생성 직전 단가 누락 레시피 구성품이 있으면 PDF/Excel 생성을 차단한다.
 
 **충돌 가능성**
 
-- 사용자가 설정을 바꿨는데 실제 동작은 바뀌지 않을 수 있다.
-- `strictPosting`은 아직 실제 차단이 아니므로 준비 상태가 명확히 보여야 한다.
+- 공통 보고서 shell에 생성 직전 가드가 추가됐으므로, 다른 보고서가 필요하면 같은 `onBeforeGenerate` 흐름을 재사용할 수 있다.
 
 **정리 방향**
 
 - 완료: 실제 동작이 없는 설정은 "준비 중"으로 숨기거나 설명을 바꾼다.
 - 완료: 실제 동작이 필요한 제때 설정은 전용 설정 reader로 읽는다.
 - 완료: 자동 재계산은 가격 업로드 이벤트 기반 `항상 자동 반영` 상태로 정리한다.
+- 완료: `strictPosting`은 원가 보고서 발행 가드로 연결한다.
 
 ### 8.12 CSS 전역 selector 책임이 여러 파일에 분산됨
 
@@ -1177,11 +1178,10 @@
 ### Phase F. no-op 설정 정리
 
 - 완료: `autoRecalc`, `autoRecalcOnUpdate`, `roundMode`, `unmatchedAlert`, `costRateAlert`, `priceAlertThreshold`, `autoRegisterNew`의 실제 동작 또는 표시 정책을 정했다. (`179c2cd`)
-- 완료: 미구현 `strictPosting`은 UI에서 "준비 중" 배지로 낮췄다. (`179c2cd`)
-- 남음: `strictPosting` 발행 차단을 실제 저장/출력 workflow에 연결한다.
+- 완료: `strictPosting`은 원가 보고서 생성 직전 단가 누락 구성품 차단으로 연결했다. (`384f152`)
 
 **검증**
 
 - 완료: 제때 설정 정규화, 가격 임계값 판정, 신규 제품 자동등록 후보, 설정 사용처 소스 가드 테스트. (`179c2cd`)
-- 남음: `strictPosting` 설정 변경 전후 발행 차단 fixture 검증.
+- 완료: `strictPosting` 단가 누락 진단, 생성 직전 가드 순서, 시스템 설정 토글 소스 가드 테스트. (`384f152`)
 - 백업/복원 후 설정 동작 유지.
