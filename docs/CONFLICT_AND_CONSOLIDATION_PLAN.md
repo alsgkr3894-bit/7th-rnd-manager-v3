@@ -397,13 +397,14 @@
 
 **구현 상태**
 
-- 구현 완료: `3bcd997 fix: delete full note child chains`, `9a565dd fix: surface note undo restore failures`, `cb9ddcb fix: abort restore on backup preflight errors`, `f5bd8d9 fix: surface restore failure recovery details`, `3518a8b fix: delete menu cascade in one transaction`, `752c2aa fix: cascade menu code changes`
+- 구현 완료: `3bcd997 fix: delete full note child chains`, `9a565dd fix: surface note undo restore failures`, `cb9ddcb fix: abort restore on backup preflight errors`, `f5bd8d9 fix: surface restore failure recovery details`, `3518a8b fix: delete menu cascade in one transaction`, `752c2aa fix: cascade menu code changes`, `4fa91db feat: preview menu delete impact`
 - 노트 삭제는 parentId 하위 체인을 재귀 수집해 한 트랜잭션에서 삭제한다.
 - 노트 삭제 직후 UI state도 삭제된 전체 id 기준으로 제거한다.
 - 노트 삭제 실행취소는 `restoreRecord()` 실패를 숨기지 않고 실패 건수를 toast로 노출한다.
 - 백업 복원은 store 교체 전 모든 store payload를 먼저 검증하고, 사전 검증 오류가 있으면 정상 store도 교체하지 않는다.
 - 복원 완료 카드에는 실패 store 이름, 실패 사유, DB 완전 재생성 후 재복원 경로를 노출한다.
 - 메뉴마스터 삭제는 같은 브랜드 DB의 `menu_master`, `cost_selling_prices`, `menu_recipes`, `nutrition_menu_ref`, `nutrition_raw_values` 삭제를 하나의 transaction으로 묶는다.
+- 메뉴마스터 삭제 확인창은 삭제 전 연결 판매가, 메뉴 레시피, 영양 메뉴, 영양값 영향 건수를 표시한다.
 - 내부/복구 경로에서 메뉴코드가 변경되는 경우 같은 연결 store의 `menuCode`도 하나의 transaction으로 갱신하고, 대상 코드 충돌이 있으면 저장을 중단한다.
 - 식자재 삭제의 legacy `nutrition_allergy_links`는 운영 schema에서 제거되어 실사용 cascade 대상이 아니며, 남은 helper는 구형 DB 호환 no-op 가드로 유지한다.
 
@@ -417,6 +418,7 @@
 **현재 상태**
 
 - 메뉴마스터 삭제는 `menu_master`와 연결 판매가, 메뉴 레시피, 영양 참조/원시값을 같은 transaction에서 정리한다.
+- 메뉴마스터 삭제 전 영향 건수 preview는 `getMenuDeletePlan()`으로 계산한다.
 - 메뉴마스터 메뉴코드 변경은 연결 판매가, 메뉴 레시피, 영양 참조/원시값의 `menuCode`를 같은 transaction에서 갱신한다.
 - 식자재 삭제는 `cost_ingredients`를 삭제하고, 운영 schema에서 제거된 legacy 알레르기 링크 helper는 store 존재 시에만 no-op 호환 처리한다.
 - 노트 삭제는 parentId 하위 체인 전체를 같은 트랜잭션에서 삭제하고, undo 실패를 사용자에게 노출한다.
@@ -427,6 +429,7 @@
 
 - 중간 실패 시 일부 store만 정리된다.
 - 완료: 메뉴 삭제 cascade는 같은 DB transaction으로 묶어 일부 store만 삭제되는 위험을 줄였다. (`3518a8b`)
+- 완료: 메뉴 삭제 확인창은 cascade 대상 건수를 먼저 보여준다. (`4fa91db`)
 - 완료: 메뉴코드 변경 cascade도 같은 DB transaction으로 묶고, 대상 코드 충돌 시 저장 전 중단한다. (`752c2aa`)
 - 완료: malformed store가 있으면 복원 store 교체 자체를 시작하지 않아 일부 store만 교체되는 위험을 줄였다. (`cb9ddcb`)
 - 완료: 실행 중 replace/localStorage 실패 store는 완료 카드에 store명과 오류 메시지를 표시하고 시스템 설정으로 이동할 수 있게 했다. (`f5bd8d9`)
@@ -587,7 +590,8 @@
 
 ### Phase 5. cascade와 복원 안정화
 
-- 메뉴마스터/식자재/노트 삭제에 delete plan preview를 추가한다.
+- 완료: 메뉴마스터 삭제에 delete plan preview를 추가했다. (`4fa91db`)
+- 식자재/노트 삭제는 현재 undo 중심 확인 흐름을 유지하되, 신규 destructive action은 영향 범위 preview를 우선 검토한다.
 - 노트 삭제는 descendant 전체를 수집한다.
 - 복원은 store별 실행 전 전체 validation을 끝내고, 실패 store를 결과에서 강하게 노출한다.
 

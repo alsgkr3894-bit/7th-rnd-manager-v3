@@ -416,6 +416,7 @@
 | 무음 실패 catch allowlist와 중요 실패 가드 | 구현 완료 | `44b2e55` |
 | 메뉴마스터 삭제 cascade의 단일 transaction 처리 | 구현 완료 | `3518a8b` |
 | 메뉴마스터 메뉴코드 변경 cascade의 단일 transaction 처리 | 구현 완료 | `752c2aa` |
+| 메뉴마스터 삭제 영향 건수 preview | 구현 완료 | `4fa91db` |
 | CSS primitive selector 소유권 정리 | 구현 완료 | `4d378dd` |
 | 메뉴개발노트/샘플/일정/작업일지의 활성 브랜드 스코프 | 구현 완료 | `92207d5` |
 | 엣지 영양성분 기본 정책 정리 | 구현 완료 | `b309ac6` |
@@ -578,6 +579,7 @@
 | 활성 계정 선택 백업/복원 범위 | 구현 완료: `rnd_active_account_id`를 공통 localStorage key로 포함 |
 | localStorage 복원 실패 처리 | 구현 완료: `importAll()` 결과 `errors`에 실패 key를 보고 |
 | 무음 실패 catch 정책 | 구현 완료: 빈 catch allowlist와 삭제/복원 실패 노출 가드를 테스트로 고정 |
+| 메뉴마스터 삭제 영향 preview | 구현 완료: 판매가/레시피/영양 참조/영양값 영향 건수를 삭제 전 표시 |
 | CSS primitive selector 소유권 | 구현 완료: `.btn`, `.card`, `.input`, `.chip` 기본 스타일을 `base.css`로 일원화 |
 | 메뉴개발노트 브랜드 스코프 | 구현 완료: 노트/샘플/일정/작업일지 조회·수정·삭제를 현재 브랜드 기준으로 제한 |
 | 표기정보/영양 정책 정리 | 구현 완료: 엣지 직접 입력, 관리자 제한, 씬바샤삭 L 전용, 식자재 영양값 자동계산/store 제거 |
