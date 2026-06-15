@@ -121,6 +121,7 @@
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — 데이터 로드, 목록 필터/view 상태, 보고예정 복사 로직을 `useNoteListData`·`useNoteListState`·`useNoteReportingCopy`로 분리. 359→245줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — 카드/테이블/컨텍스트 메뉴/상세 모달 본문 wiring을 `NoteListBody`로 분리. 245→186줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-16 추가 보강 — 상단 헤더/필터/프리셋/다이얼로그/본문 props 조립을 `useNoteContentController`로 분리. 186→39줄.
+  - `hooks/useNoteContentController.js` ✅ 2026-06-16 추가 보강 — 노트 목록 props 조립을 `lib/note/content-props.js` helper로 분리. 174→40줄.
   - `app/note/sample/page.jsx` ✅ 2026-06-15 추가 보강 — 헤더 액션, 필터/검색, 캘린더, 갤러리/리스트 렌더링을 전용 컴포넌트로 분리. 852→422줄.
   - `app/note/sample/page.jsx` ✅ 2026-06-16 추가 보강 — 데이터 로드/검색·정렬·달력 파생 상태와 삭제·복사·별점 액션을 `useSamplePageState`·`useSampleRecordActions`로 분리. 422→263줄.
   - `app/note/sample/page.jsx` ✅ 2026-06-16 추가 보강 — 비교 하단바와 상세/비교/삭제 확인 다이얼로그를 `SampleCompareBar`·`SamplePageDialogs`로 분리. 263→230줄.
@@ -141,7 +142,7 @@
 - **잔여 대상** (우선순위 순):
   1. `app/note/sample/page.jsx` (~230줄) — header/filter/records callback wiring이 더 늘어날 때 shell hook 분리 재평가
   2. `app/note/sample/useSamplePageState.js` (~160줄) — 상태/URL/검색히스토리 wiring이 더 늘어날 때 state hook 추가 분리 재평가
-  3. `hooks/useNoteContentController.js` (~174줄) — 노트 목록 callback 정책이 더 늘어날 때 dialogs/header/body props helper 분리 재평가
+  3. `lib/note/content-props.js` (~167줄) — 노트 목록 props 그룹이 더 늘어날 때 dialogs/header/filter/body builder 추가 분리 재평가
   4. `app/nutrition/allergen/useAllergenPageData.js` (~139줄) — 매트릭스/filter 메모 조립이 더 커질 때 derivation hook 분리 재평가
   5. `app/nutrition/allergen/allergenPageDataUtils.js` (~88줄) — 현재 검색/정렬 helper 수준, 별도 분해 불필요
   6. `app/note/_NoteListBody.jsx` (~113줄) — 목록 본문 상호작용이 더 늘어날 때 context/detail state hook 분리 재평가
@@ -160,8 +161,9 @@
   19. `app/note/sample/samplePageStateUtils.js` (~70줄) — 검색 대상/정렬 정책이 더 늘어날 때 filter/sort helper 추가 분리 재평가
   20. `app/nutrition/allergen/allergenPageDetailUtils.js` (~26줄) — 상세 출처 표시 정책이 더 늘어날 때 source row helper 분리 재평가
   21. `app/note/sample/_SampleCompareBar.jsx` (~31줄) — 현재 단일 CTA 수준, 별도 분해 불필요
-  22. `app/note/_NoteContent.jsx` (~39줄) — 현재 조립 컴포넌트 수준, 별도 분해 불필요
-  23. `app/ingredient/list/page.jsx` — 현재 redirect route 5줄 수준, 별도 분해 불필요
+  22. `hooks/useNoteContentController.js` (~40줄) — 현재 shell hook 수준, 별도 분해 불필요
+  23. `app/note/_NoteContent.jsx` (~39줄) — 현재 조립 컴포넌트 수준, 별도 분해 불필요
+  24. `app/ingredient/list/page.jsx` — 현재 redirect route 5줄 수준, 별도 분해 불필요
 - **방향**: page는 조립만 담당, table/panel/modal/hook으로 분리.
 - **왜 보류**: 효과 < 회귀 위험. 기능 추가 시점에 함께 진행 예정.
 - **검증**: `npm run test:ci` + 주요 화면 수동 확인

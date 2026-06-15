@@ -13,6 +13,7 @@ describe('note list structure', () => {
     const statesSource = readFileSync(resolve('app/note/_NoteListStates.jsx'), 'utf8');
     const dialogsSource = readFileSync(resolve('app/note/_NotePageDialogs.jsx'), 'utf8');
     const controllerSource = readFileSync(resolve('hooks/useNoteContentController.js'), 'utf8');
+    const contentPropsSource = readFileSync(resolve('lib/note/content-props.js'), 'utf8');
     const itemActionsSource = readFileSync(resolve('hooks/useNoteItemActions.js'), 'utf8');
     const listDataSource = readFileSync(resolve('hooks/useNoteListData.js'), 'utf8');
     const listStateSource = readFileSync(resolve('hooks/useNoteListState.js'), 'utf8');
@@ -105,11 +106,18 @@ describe('note list structure', () => {
     expect(controllerSource).toContain(
       'useNoteItemActions({ router, setNotes, load, detailNote, setDetailNote })'
     );
-    expect(controllerSource).toContain('dialogsProps');
-    expect(controllerSource).toContain('headerProps');
-    expect(controllerSource).toContain('filterProps');
-    expect(controllerSource).toContain('bodyProps');
-    expect(controllerSource).toContain('NOTE_STATUS.REPORTING');
+    expect(controllerSource).toContain(
+      "import { buildNoteContentProps } from '@/lib/note/content-props'"
+    );
+    expect(controllerSource).toContain('return buildNoteContentProps({');
+    expect(contentPropsSource).toContain('export function buildNoteContentProps');
+    expect(contentPropsSource).toContain('dialogsProps');
+    expect(contentPropsSource).toContain('headerProps');
+    expect(contentPropsSource).toContain('filterProps');
+    expect(contentPropsSource).toContain('bodyProps');
+    expect(contentPropsSource).toContain('NOTE_STATUS.REPORTING');
+    expect(contentPropsSource).toContain("router.push('/note/calendar')");
+    expect(contentPropsSource).toContain("router.push('/note/write')");
     expect(itemActionsSource).toContain('export function useNoteItemActions');
     expect(itemActionsSource).toContain('async function restoreDeletedNotes');
     expect(itemActionsSource).toContain('await deleteNote(note.id)');
