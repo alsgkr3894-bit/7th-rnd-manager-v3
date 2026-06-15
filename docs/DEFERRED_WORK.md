@@ -113,6 +113,7 @@
   - `components/report/sales/SalesReportPreview.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 비중·피자 변동·순위표·비교표·제외 리스트 섹션 컴포넌트 분리. 587→94줄.
   - `components/report/sales/SalesRankTableSection.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 막대·순위표·사이즈 variant row 렌더링을 `SalesRankTableRows`로 분리. 197→52줄.
   - `components/report/sales/SalesRankTableRows.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 막대와 순위표 테이블을 `SalesCategoryBarRows`·`SalesRankTable`로 분리하고 기존 묶음 파일 제거. 163→0줄.
+  - `components/report/sales/SalesCategoryBarRows.jsx` ✅ 2026-06-16 추가 보강 — 카테고리 막대 row 렌더링과 수량/비율/opacity 계산을 `SalesCategoryBarRow`·`buildSalesCategoryBarMetrics`로 분리. 87→19줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 부분 보강 — `NoteTableRow`·`NoteContextMenu` 렌더링 컴포넌트 분리. 1022→843줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — `NoteStatsSummary`·`NoteFilterControls` 렌더링 컴포넌트 분리. 843→642줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — `NoteCardGrid`·`NoteTableView` 목록 렌더링 컴포넌트 분리. 642→546줄.
@@ -152,9 +153,9 @@
   - `app/nutrition/allergen/useAllergenDerivedData.js` ✅ 2026-06-16 추가 보강 — 제외 메뉴 판정, 메뉴 매트릭스 생성, 매트릭스 검색, 알레르기 정렬을 `useAllergenMatrixData`로 분리. 118→81줄.
 - **잔여 대상** (우선순위 순):
   1. `app/note/_NoteListBody.jsx` (~98줄) — 목록 본문 상호작용이 더 늘어날 때 상세 모달/body 하위 분리 재평가
-  2. `app/note/sample/useSamplePageFilterState.js` (~95줄) — 현재 검색/필터/정렬/view 상태 hook 수준, 별도 분해 불필요
-  3. `app/note/sample/_SampleRecordsView.jsx` (~88줄) — 현재 조립 컴포넌트 수준, 별도 분해 불필요
-  4. `components/report/sales/SalesCategoryBarRows.jsx` (~87줄) — 카테고리 막대 표시 정책이 늘어날 때 bar row 하위 분리 재평가
+  2. `components/report/sales/SalesCategoryBarRow.jsx` (~97줄) — 현재 막대 row 렌더링과 metric helper 수준, 별도 분해 불필요
+  3. `app/note/sample/useSamplePageFilterState.js` (~95줄) — 현재 검색/필터/정렬/view 상태 hook 수준, 별도 분해 불필요
+  4. `app/note/sample/_SampleRecordsView.jsx` (~88줄) — 현재 조립 컴포넌트 수준, 별도 분해 불필요
   5. `app/nutrition/allergen/useAllergenDerivedData.js` (~81줄) — 현재 식자재 행/상세/요약/순서 목록 파생 hook 수준, 별도 분해 불필요
   6. `app/nutrition/allergen/allergenPageDataUtils.js` (~81줄) — 현재 검색/정렬 helper 수준, 별도 분해 불필요
   7. `app/note/sample/useSamplePageState.js` (~80줄) — 현재 데이터 로드/파생 계산 hook 수준, 별도 분해 불필요
@@ -168,10 +169,10 @@
   15. `app/note/sample/_SampleGridView.jsx` (~65줄) — 카드 선택/비교 상호작용이 더 늘어날 때 card adapter helper 분리 재평가
   16. `app/note/sample/_SampleFilterControls.jsx` (~59줄) — 현재 조립 컴포넌트 수준, 별도 분해 불필요
   17. `app/nutrition/allergen/useAllergenPageData.js` (~58줄) — 현재 source/order/export 연결 hook 수준, 별도 분해 불필요
-  18. `app/nutrition/allergen/useAllergenOrderState.js` (~52줄) — 순서 저장 정책이 더 늘어날 때 저장 helper 분리 재평가
-  19. `app/note/sample/_SampleRatingViewControls.jsx` (~52줄) — 현재 별점/정렬/view 그룹 배치 컴포넌트 수준, 별도 분해 불필요
-  20. `lib/note/content-prop-header-builders.js` (~55줄) — 현재 header/stats/states helper 수준, 별도 분해 불필요
-  21. `app/note/sample/samplePageControllerProps.js` (~54줄) — 현재 props 최종 조립 함수 수준, 별도 분해 불필요
+  18. `lib/note/content-prop-header-builders.js` (~55줄) — 현재 header/stats/states helper 수준, 별도 분해 불필요
+  19. `app/note/sample/samplePageControllerProps.js` (~54줄) — 현재 props 최종 조립 함수 수준, 별도 분해 불필요
+  20. `app/nutrition/allergen/useAllergenOrderState.js` (~52줄) — 순서 저장 정책이 더 늘어날 때 저장 helper 분리 재평가
+  21. `app/note/sample/_SampleRatingViewControls.jsx` (~52줄) — 현재 별점/정렬/view 그룹 배치 컴포넌트 수준, 별도 분해 불필요
   22. `app/note/sample/samplePageControllerFilterProps.js` (~48줄) — 현재 filter props builder 수준, 별도 분해 불필요
   23. `app/note/sample/_SamplePageDialogs.jsx` (~48줄) — 모달 종류가 더 늘어날 때 dialog별 하위 분리 재평가
   24. `app/nutrition/allergen/allergenPageOutputUtils.js` (~47줄) — 출력 정책이 더 늘어날 때 CSV/목록 helper 분리 재평가
@@ -190,9 +191,10 @@
   37. `app/note/useNoteContextMenuState.js` (~29줄) — 현재 컨텍스트 메뉴 위치/닫기 hook 수준, 별도 분해 불필요
   38. `app/note/sample/samplePageControllerRecordsProps.js` (~26줄) — 현재 records props builder 수준, 별도 분해 불필요
   39. `app/nutrition/allergen/allergenPageDetailUtils.js` (~26줄) — 상세 출처 표시 정책이 더 늘어날 때 source row helper 분리 재평가
-  40. `app/note/sample/samplePageControllerCalendarProps.js` (~14줄) — 현재 calendar props builder 수준, 별도 분해 불필요
-  41. `app/note/sample/samplePageControllerViewProps.js` (~3줄) — 호환 re-export 파일 수준, 별도 분해 불필요
-  42. `app/ingredient/list/page.jsx` — 현재 redirect route 5줄 수준, 별도 분해 불필요
+  40. `components/report/sales/SalesCategoryBarRows.jsx` (~19줄) — 현재 category bar row 목록 wrapper 수준, 별도 분해 불필요
+  41. `app/note/sample/samplePageControllerCalendarProps.js` (~14줄) — 현재 calendar props builder 수준, 별도 분해 불필요
+  42. `app/note/sample/samplePageControllerViewProps.js` (~3줄) — 호환 re-export 파일 수준, 별도 분해 불필요
+  43. `app/ingredient/list/page.jsx` — 현재 redirect route 5줄 수준, 별도 분해 불필요
 - **방향**: page는 조립만 담당, table/panel/modal/hook으로 분리.
 - **왜 보류**: 효과 < 회귀 위험. 기능 추가 시점에 함께 진행 예정.
 - **검증**: `npm run test:ci` + 주요 화면 수동 확인

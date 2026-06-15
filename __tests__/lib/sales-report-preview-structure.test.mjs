@@ -20,6 +20,10 @@ describe('sales report preview structure', () => {
       resolve('components/report/sales/SalesCategoryBarRows.jsx'),
       'utf8'
     );
+    const categoryBarRowSource = readFileSync(
+      resolve('components/report/sales/SalesCategoryBarRow.jsx'),
+      'utf8'
+    );
     const rankTableSource = readFileSync(
       resolve('components/report/sales/SalesRankTable.jsx'),
       'utf8'
@@ -59,7 +63,14 @@ describe('sales report preview structure', () => {
     expect(rankSource).not.toContain('function SalesVariantRows');
     expect(rankSource).not.toContain('className="paper-table"');
     expect(categoryBarSource).toContain('export function SalesCategoryBarRows');
-    expect(categoryBarSource).toContain('pct.toFixed(1)');
+    expect(categoryBarSource).toContain("from './SalesCategoryBarRow'");
+    expect(categoryBarSource).toContain('<SalesCategoryBarRow');
+    expect(categoryBarSource).not.toContain('pct.toFixed(1)');
+    expect(categoryBarRowSource).toContain('export function buildSalesCategoryBarMetrics');
+    expect(categoryBarRowSource).toContain('export function SalesCategoryBarRow');
+    expect(categoryBarRowSource).toContain('safeQuantity(item.quantity)');
+    expect(categoryBarRowSource).toContain('pct.toFixed(1)');
+    expect(categoryBarRowSource).toContain('formatNumber(quantity)');
     expect(categoryBarSource).not.toContain('export function SalesRankTable');
     expect(rankTableSource).toContain('export function SalesRankTable');
     expect(rankTableSource).toContain('function SalesVariantRows');
