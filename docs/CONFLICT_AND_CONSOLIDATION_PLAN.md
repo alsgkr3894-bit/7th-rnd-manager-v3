@@ -756,6 +756,13 @@
 
 ### 8.5 영양 메뉴 목록이 메뉴마스터 밖에서도 생성될 수 있음
 
+**구현 상태**
+
+- 구현 완료: `68aa43e fix: require menu master for nutrition menu refs`
+- 영양성분 메뉴 추가는 메뉴마스터 menuCode 선택을 필수로 하며, 코드 없이 `MENU-*` 영양 전용 메뉴를 생성하지 않는다.
+- 메뉴명과 카테고리는 메뉴마스터 선택값을 표시하는 read-only 흐름으로 바꿨다.
+- `buildNutritionMenuRefPayload()` 테스트로 menuCode 없는 payload 생성을 차단한다.
+
 **관련 파일**
 
 - `hooks/useNutritionBaseEditor.js`
@@ -767,7 +774,8 @@
 **현재 상태**
 
 - `nutrition_menu_ref`는 메뉴마스터와 별개 store다.
-- 영양 메뉴 추가 시 메뉴마스터에서 고를 수 있지만, 메뉴코드 없이 메뉴명만 넣으면 `MENU-${Date.now()}` 코드로 영양 전용 메뉴가 만들어진다.
+- 영양 메뉴 추가 시 메뉴마스터 menuCode 선택이 필요하다.
+- 메뉴코드 없이 메뉴명만 넣는 `MENU-*` 영양 전용 메뉴 생성 경로는 제거됐다.
 - 메뉴마스터 삭제 시 `nutrition_menu_ref`와 `nutrition_raw_values` cascade는 있지만, 메뉴마스터에 없는 영양 메뉴를 탐지하는 진단은 별도 확인이 필요하다.
 
 **충돌 가능성**
