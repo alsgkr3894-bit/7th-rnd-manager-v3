@@ -8,6 +8,7 @@ const sharedGetByIndex = jest.fn(async () => []);
 const sharedDeleteById = jest.fn(async () => {});
 const sharedRunTransaction = jest.fn(async () => {});
 const logWork = jest.fn(async () => {});
+const getActiveBrandId = jest.fn(() => 'main');
 
 jest.unstable_mockModule('@/lib/db/shared', () => ({
   initSharedDB,
@@ -23,12 +24,17 @@ jest.unstable_mockModule('@/lib/work-log', () => ({
   logWork,
 }));
 
+jest.unstable_mockModule('@/lib/active-brand', () => ({
+  getActiveBrandId,
+}));
+
 const noteStore = await import('@/lib/note/store');
 const sampleStore = await import('@/lib/sample/store');
 
 describe('노트/샘플 store 읽기 가드', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getActiveBrandId.mockReturnValue('main');
     sharedHasStore.mockReturnValue(true);
     sharedGetAll.mockResolvedValue([]);
   });
@@ -77,6 +83,41 @@ describe('노트/샘플 store 읽기 가드', () => {
     const rows = await sampleStore.getAllSamples();
 
     expect(rows.map(row => row.id)).toEqual(['new', 'old', 'timestamp', 'bad-date']);
+  });
+
+  test('노트와 샘플 목록은 현재 브랜드 데이터만 반환하고 빈 brand는 main으로 취급한다', async () => {
+    getActiveBrandId.mockReturnValue('brand-b');
+    sharedGetAll.mockResolvedValueOnce([
+      { id: 'main-empty', createdAt: '2026-06-01T00:00:00.000Z' },
+      { id: 'brand-a', brand: 'brand-a', createdAt: '2026-06-02T00:00:00.000Z' },
+      { id: 'brand-b', brand: 'brand-b', createdAt: '2026-06-03T00:00:00.000Z' },
+    ]);
+
+    await expect(noteStore.getAllNotes()).resolves.toMatchObject([{ id: 'brand-b' }]);
+
+    sharedGetAll.mockResolvedValueOnce([
+      { id: 'main-empty', createdAt: '2026-06-01T00:00:00.000Z' },
+      { id: 'brand-b', brand: 'brand-b', createdAt: '2026-06-03T00:00:00.000Z' },
+    ]);
+
+    await expect(sampleStore.getAllSamples()).resolves.toMatchObject([{ id: 'brand-b' }]);
+
+    getActiveBrandId.mockReturnValue('main');
+    sharedGetAll.mockResolvedValueOnce([
+      { id: 'main-empty', createdAt: '2026-06-01T00:00:00.000Z' },
+      { id: 'brand-b', brand: 'brand-b', createdAt: '2026-06-03T00:00:00.000Z' },
+    ]);
+
+    await expect(noteStore.getAllNotes()).resolves.toMatchObject([{ id: 'main-empty' }]);
+  });
+
+  test('브랜드가 다른 노트와 샘플은 id 직접 조회에서도 숨긴다', async () => {
+    getActiveBrandId.mockReturnValue('brand-b');
+    sharedGetById.mockResolvedValueOnce({ id: 1, brand: 'brand-a' });
+    await expect(noteStore.getNoteById(1)).resolves.toBeNull();
+
+    sharedGetById.mockResolvedValueOnce({ id: 2, brand: 'brand-b' });
+    await expect(sampleStore.getSampleById(2)).resolves.toMatchObject({ id: 2 });
   });
 
   test('목록 조회 응답이 배열이 아니면 빈 목록으로 처리한다', async () => {
