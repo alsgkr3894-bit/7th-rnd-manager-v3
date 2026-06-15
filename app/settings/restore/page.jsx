@@ -19,7 +19,7 @@ import { formatNumber } from '@/lib/format';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { useRestoreImpact } from '@/hooks/useRestoreImpact';
 import { getActiveBrand } from '@/lib/active-brand';
-import { pickLocalStorageForScopes } from '@/lib/nutrition/backup-keys';
+import { pickLocalStorageForScopes } from '@/lib/backup/local-storage-keys';
 import { RestoreDoneCard } from '@/components/settings/restore/RestoreDoneCard';
 import { RestorePreview } from '@/components/settings/restore/RestorePreview';
 import { RestoreExecutePanel } from '@/components/settings/restore/RestoreExecutePanel';

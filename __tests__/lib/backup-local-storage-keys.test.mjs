@@ -4,7 +4,7 @@ import {
   persistentLocalStorageKeysForScopes,
   pickLocalStorageForScopes,
   restoreLocalStorage,
-} from '../../lib/nutrition/backup-keys.js';
+} from '../../lib/backup/local-storage-keys.js';
 
 const originalLocalStorage = globalThis.localStorage;
 
