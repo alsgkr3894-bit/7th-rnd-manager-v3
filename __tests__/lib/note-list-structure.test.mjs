@@ -9,6 +9,7 @@ describe('note list structure', () => {
     const cardGridSource = readFileSync(resolve('app/note/_NoteCardGrid.jsx'), 'utf8');
     const tableViewSource = readFileSync(resolve('app/note/_NoteTableView.jsx'), 'utf8');
     const bodySource = readFileSync(resolve('app/note/_NoteListBody.jsx'), 'utf8');
+    const bodyPropsSource = readFileSync(resolve('app/note/noteListBodyProps.js'), 'utf8');
     const contextMenuStateSource = readFileSync(
       resolve('app/note/useNoteContextMenuState.js'),
       'utf8'
@@ -103,9 +104,21 @@ describe('note list structure', () => {
     expect(bodySource).toContain('<NoteDetailModal');
     expect(bodySource).toContain('useNoteContextMenuState()');
     expect(bodySource).toContain('const [focusedRow');
+    expect(bodySource).toContain("from './noteListBodyProps'");
+    expect(bodySource).toContain('const bodyProps = {');
+    expect(bodySource).toContain('buildNoteContextMenuProps(bodyProps)');
+    expect(bodySource).toContain('buildNoteCardGridProps(bodyProps)');
+    expect(bodySource).toContain('buildNoteTableViewProps(bodyProps)');
+    expect(bodySource).toContain('buildNoteDetailModalProps(bodyProps)');
     expect(bodySource).not.toContain('const [ctxMenu');
     expect(bodySource).not.toContain('window.innerWidth - 180');
     expect(bodySource).not.toContain("e.key === 'Escape'");
+    expect(bodySource).not.toContain('stopPropagation: () => {}');
+    expect(bodyPropsSource).toContain('export function buildNoteContextMenuProps');
+    expect(bodyPropsSource).toContain('export function buildNoteCardGridProps');
+    expect(bodyPropsSource).toContain('export function buildNoteTableViewProps');
+    expect(bodyPropsSource).toContain('export function buildNoteDetailModalProps');
+    expect(bodyPropsSource).toContain('stopPropagation: () => {}');
     expect(contextMenuStateSource).toContain('export function useNoteContextMenuState');
     expect(contextMenuStateSource).toContain('const [ctxMenu');
     expect(contextMenuStateSource).toContain('window.innerWidth - 180');

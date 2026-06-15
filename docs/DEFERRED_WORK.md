@@ -123,6 +123,7 @@
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — 데이터 로드, 목록 필터/view 상태, 보고예정 복사 로직을 `useNoteListData`·`useNoteListState`·`useNoteReportingCopy`로 분리. 359→245줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — 카드/테이블/컨텍스트 메뉴/상세 모달 본문 wiring을 `NoteListBody`로 분리. 245→186줄.
   - `app/note/_NoteListBody.jsx` ✅ 2026-06-16 추가 보강 — 컨텍스트 메뉴 좌표 계산과 ESC 닫기 상태를 `useNoteContextMenuState`로 분리. 113→98줄.
+  - `app/note/_NoteListBody.jsx` ✅ 2026-06-16 추가 보강 — 컨텍스트 메뉴/카드/테이블/상세 모달 props 조립을 `noteListBodyProps` helper로 분리하고 단위 테스트 추가. 98→40줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-16 추가 보강 — 상단 헤더/필터/프리셋/다이얼로그/본문 props 조립을 `useNoteContentController`로 분리. 186→39줄.
   - `hooks/useNoteContentController.js` ✅ 2026-06-16 추가 보강 — 노트 목록 props 조립을 `lib/note/content-props.js` helper로 분리. 174→40줄.
   - `lib/note/content-props.js` ✅ 2026-06-16 추가 보강 — dialogs/header/filter/preset/states/body props 조립을 `content-prop-builders`로 분리. 167→43줄.
@@ -154,7 +155,7 @@
   - `app/nutrition/allergen/useAllergenPageData.js` ✅ 2026-06-16 추가 보강 — 제외 메뉴 판정, 매트릭스, 상세/요약, 순서 편집 목록 파생 계산을 `useAllergenDerivedData`로 분리. 139→58줄.
   - `app/nutrition/allergen/useAllergenDerivedData.js` ✅ 2026-06-16 추가 보강 — 제외 메뉴 판정, 메뉴 매트릭스 생성, 매트릭스 검색, 알레르기 정렬을 `useAllergenMatrixData`로 분리. 118→81줄.
 - **잔여 대상** (우선순위 순):
-  1. `app/note/_NoteListBody.jsx` (~98줄) — 목록 본문 상호작용이 더 늘어날 때 상세 모달/body 하위 분리 재평가
+  1. `app/note/noteListBodyProps.js` (~102줄) — 현재 목록 본문 props 조립 helper 수준, 분기 정책이 더 늘어날 때 context/card/table/detail builder 파일 분리 재평가
   2. `components/report/sales/SalesCategoryBarRow.jsx` (~83줄) — 현재 막대 row 렌더링 수준, 별도 분해 불필요
   3. `app/note/sample/useSamplePageFilterState.js` (~90줄) — 현재 검색 히스토리와 필터 상태 hook 수준, 별도 분해 불필요
   4. `app/note/sample/_SampleRecordsView.jsx` (~88줄) — 현재 조립 컴포넌트 수준, 별도 분해 불필요
