@@ -38,7 +38,7 @@
 | P2 | 엣지 관리 화면 중복 | `/cost/edge-dough`와 `/cost/recipe?tab=edges`가 같은 데이터를 편집 |
 | P2 | 메뉴 판매량 redirect route가 허브 카드에 그대로 노출 | 같은 기능이 여러 화면처럼 보임 |
 | P2 | 모바일 원가 primary route가 데스크톱과 다름 | 모바일은 `/cost/pizza`, 데스크톱은 `/cost/recipe` 중심으로 진입 |
-| P2 | 시스템 설정 store/localStorage/no-op 토글 분리 | 설정이 저장돼도 백업/복원 또는 실제 로직에 반영되지 않을 수 있음 |
+| P2 | 시스템 설정 store/localStorage/no-op 토글 분리 | 백업 범위는 구현 완료; 설정이 저장돼도 실제 로직에 반영되지 않을 수 있음 |
 | P2 | 영양 메뉴가 메뉴마스터 밖에서 생성 가능 | 메뉴마스터 단일 기준 정책과 충돌 가능 |
 | P2 | `cost_recipes` menuCode base/full 정책 불명확 | legacy fallback과 detail recipe 매칭 기준이 흔들릴 수 있음 |
 | P2 | 식자재 삭제 안전장치가 화면별로 다름 | 같은 삭제 작업의 undo/cascade 경고가 진입 화면마다 다름 |
@@ -653,6 +653,13 @@
 
 ### 8.2 시스템 설정 저장소가 localStorage와 IndexedDB로 갈라져 있음
 
+**구현 상태**
+
+- 부분 구현 완료: `315fc65 fix: include system settings in backup keys`
+- `lib/settings.js`에서 `SETTING_LS_KEYS`를 노출하고, `lib/backup/local-storage-keys.js`가 이 목록을 공통 localStorage 백업/복원 key로 사용한다.
+- 구현 완료 범위: `theme`, `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert` localStorage 설정의 백업/복원 포함과 회귀 테스트.
+- 남은 범위: `settings` IndexedDB store의 역할 정리와 `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert`의 실제 업무 로직 연결은 8.11/Phase F에서 처리한다.
+
 **관련 파일**
 
 - `lib/settings.js`
@@ -660,30 +667,30 @@
 - `lib/db/schema/common.js`
 - `lib/db/constants.js`
 - `lib/db/module-stores.js`
-- `lib/nutrition/backup-keys.js`
+- `lib/backup/local-storage-keys.js`
 
 **현재 상태**
 
 - IndexedDB에는 `settings` store가 정의되어 있고 백업 공통 store에 포함된다.
 - 실제 시스템 설정은 `lib/settings.js`가 `v3:<key>` localStorage에 저장한다.
 - `app/settings/system/page.jsx`에서 쓰는 설정 key는 `theme`, `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert`다.
-- 현재 백업 영속 key에는 `v3:theme`만 있고 나머지 시스템 설정 key는 빠져 있다.
+- 현재 백업 영속 key에는 `SETTING_LS_KEYS` 기준으로 모든 시스템 설정 localStorage key가 포함된다.
 - `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert`는 설정 화면 외 실제 업무 로직에서 읽는 사용처가 거의 없다.
 
 **충돌 가능성**
 
-- 백업/복원에서 `settings` store는 복원되지만 실제 UI 설정은 복원되지 않을 수 있다.
+- `settings` store와 localStorage 설정이 병존하므로 장기적으로 source of truth가 헷갈릴 수 있다.
 - 사용자는 "자동 재계산", "미연동 차단", "반올림 방식"을 켰다고 생각하지만 실제 계산 로직은 이 값을 참조하지 않을 수 있다.
 
 **정리 방향**
 
-- 1안: `settings` store를 실제 설정 source of truth로 승격하고 localStorage는 UI hydrate cache로 둔다.
-- 2안: `settings` store를 legacy/예약 store로 명시하고, 모든 실제 설정 key를 `PERSISTENT_LS_KEYS`에 포함한다.
+- 구현 방향: 2안 기준으로 localStorage 설정을 실제 사용 source로 보고, 모든 실제 설정 key를 `PERSISTENT_LS_KEYS`와 `COMMON_LS_KEYS`에 포함했다.
+- 남은 정리: `settings` store를 legacy/예약 store로 명시하거나, 별도 단계에서 실제 설정 source of truth로 승격한다.
 - 실제 로직에서 쓰이지 않는 정책 토글은 "준비 중" 상태로 낮추거나, 해당 계산/알림 로직에 연결한다.
 
 **검증**
 
-- `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert` 백업/복원 테스트.
+- 완료: `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert` 백업/복원 key 포함 테스트.
 - 원가 계산 또는 업로드 로직에서 정책 설정이 적용되는지 fixture 테스트.
 
 ### 8.3 멀티 브랜드 백업 파일에 source brand metadata가 없음
@@ -1036,7 +1043,7 @@
 
 - `PERSISTENT_LS_KEYS`를 module별 key map으로 분리한다.
 - restore에서 localStorage 복원 조건을 `nutrition` 선택과 분리한다.
-- 시스템 설정 key 전체의 백업 포함/제외 정책을 확정한다.
+- 완료: 시스템 설정 key 전체의 백업 포함 정책을 확정하고 `SETTING_LS_KEYS` 기준으로 반영했다. (`315fc65`)
 - `settings` IndexedDB store를 실제 사용하거나 legacy placeholder로 명시한다.
 - 백업 JSON에 source brand metadata를 추가한다.
 

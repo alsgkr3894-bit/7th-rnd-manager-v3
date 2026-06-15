@@ -398,6 +398,7 @@
 | 백업 source brand metadata와 복원 브랜드 mismatch 경고 | 구현 완료 | `44ce445` |
 | 백업 localStorage 복원 범위의 모듈별 분리 | 구현 완료 | `a9e1112` |
 | 백업 localStorage 키 기준 경로 정리 | 구현 완료 | `f284f1b` |
+| 시스템 설정 localStorage 백업/복원 범위 포함 | 구현 완료 | `315fc65` |
 | 메뉴개발노트/샘플/일정/작업일지의 활성 브랜드 스코프 | 구현 완료 | `92207d5` |
 | 엣지 영양성분 기본 정책 정리 | 구현 완료 | `b309ac6` |
 | `씬바샤삭` 사용자 표시명 통일 | 구현 완료 | `17be14e` |
@@ -542,6 +543,7 @@
 | 브랜드별 백업/복원 진입점 | 구현 완료 |
 | 백업 localStorage 복원 범위 분리 | 구현 완료: 선택 모듈별 영속 localStorage key만 복원 |
 | 백업 localStorage 키 기준 경로 정리 | 구현 완료: `lib/backup/local-storage-keys.js` 기준 |
+| 시스템 설정 localStorage 백업/복원 범위 | 구현 완료: `theme`, `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert` 포함 |
 | 메뉴개발노트 브랜드 스코프 | 구현 완료: 노트/샘플/일정/작업일지 조회·수정·삭제를 현재 브랜드 기준으로 제한 |
 | 표기정보/영양 정책 정리 | 구현 완료: 엣지 직접 입력, 관리자 제한, 씬바샤삭 L 전용, 식자재 영양값 자동계산/store 제거 |
 | 제때데이터 흐름 정리 | 구현 완료 |
