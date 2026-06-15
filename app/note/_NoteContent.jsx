@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { NOTE_STATUS } from '@/lib/note/constants';
 import { useNotePins } from '@/hooks/useNotePins';
@@ -8,14 +8,11 @@ import { useNoteItemActions } from '@/hooks/useNoteItemActions';
 import { useNoteListData } from '@/hooks/useNoteListData';
 import { useNoteListState } from '@/hooks/useNoteListState';
 import { useNoteReportingCopy } from '@/hooks/useNoteReportingCopy';
-import { NoteCardGrid } from './_NoteCardGrid';
-import { NoteContextMenu } from './_NoteContextMenu';
-import { NoteDetailModal } from './_NoteDetailModal';
 import { NoteFilterControls } from './_NoteFilterControls';
 import { NoteStatsSummary } from './_NoteStatsSummary';
-import { NoteTableView } from './_NoteTableView';
 import { NotePresetBar } from './_NotePresetBar';
 import { NoteListHeader } from './_NoteListHeader';
+import { NoteListBody } from './_NoteListBody';
 import { NoteListStates } from './_NoteListStates';
 import { NotePageDialogs } from './_NotePageDialogs';
 
@@ -59,9 +56,8 @@ export function NoteContent() {
     hasActiveFilter,
   } = useNoteListState({ notes, pinnedIds, pathname });
 
-  const [ctxMenu, setCtxMenu] = useState(null);
-  const [focusedRow, setFocusedRow] = useState(null);
   const handleBulkCopy = useNoteReportingCopy(notes);
+  const openNoteEditor = note => router.push(`/note/${note.id}`);
 
   const {
     batchMode,
@@ -87,15 +83,6 @@ export function NoteContent() {
     handleStatusChange,
     handleNewVersion,
   } = useNoteItemActions({ router, setNotes, load, detailNote, setDetailNote });
-
-  useEffect(() => {
-    if (!ctxMenu) return;
-    const handler = e => {
-      if (e.key === 'Escape') setCtxMenu(null);
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [ctxMenu]);
 
   return (
     <main className="main page-enter">
@@ -172,74 +159,28 @@ export function NoteContent() {
         onCreate={() => router.push('/note/write')}
       />
 
-      {/* 컨텍스트 메뉴 */}
-      <NoteContextMenu
-        ctxMenu={ctxMenu}
+      <NoteListBody
+        filtered={filtered}
+        visible={visible}
+        viewMode={viewMode}
+        batchMode={batchMode}
+        selected={selected}
         pinnedIds={pinnedIds}
-        onClose={() => setCtxMenu(null)}
-        onEdit={note => router.push(`/note/${note.id}`)}
-        onTogglePin={noteId => togglePin(noteId)}
-        onCopy={note => handleCopy(note, { stopPropagation: () => {} })}
-        onStatusChange={(noteId, status) =>
-          handleStatusChange(noteId, status, { stopPropagation: () => {} })
-        }
-        onDelete={note => handleDelete(note)}
+        popIds={popIds}
+        hlRe={hlRe}
+        detailNote={detailNote}
+        onOpenDetail={setDetailNote}
+        onCloseDetail={() => setDetailNote(null)}
+        onEditNote={openNoteEditor}
+        onToggleSelect={toggleSelect}
+        onTogglePin={togglePin}
+        onCopy={handleCopy}
+        onDelete={handleDelete}
+        onStatusChange={handleStatusChange}
+        onNewVersion={handleNewVersion}
+        onTagClick={handleTagSearch}
+        onLoadMore={loadMore}
       />
-
-      {/* 카드 그리드 */}
-      {filtered.length > 0 && viewMode === 'card' && (
-        <NoteCardGrid
-          visible={visible}
-          filteredCount={filtered.length}
-          batchMode={batchMode}
-          selected={selected}
-          pinnedIds={pinnedIds}
-          popIds={popIds}
-          hlRe={hlRe}
-          onContextMenu={(note, e) => {
-            e.preventDefault();
-            const x = Math.min(e.clientX || 0, window.innerWidth - 180);
-            const y = Math.min(e.clientY || 0, window.innerHeight - 220);
-            setCtxMenu({ x, y, note });
-          }}
-          onToggleSelect={toggleSelect}
-          onOpen={setDetailNote}
-          onEdit={(note, e) => {
-            e.stopPropagation();
-            router.push(`/note/${note.id}`);
-          }}
-          onDelete={handleDelete}
-          onCopy={handleCopy}
-          onStatusChange={handleStatusChange}
-          onNewVersion={handleNewVersion}
-          onPin={togglePin}
-          onTagClick={handleTagSearch}
-          onLoadMore={loadMore}
-        />
-      )}
-
-      {/* 테이블 뷰 */}
-      {filtered.length > 0 && viewMode === 'table' && (
-        <NoteTableView
-          visible={visible}
-          filtered={filtered}
-          focusedRow={focusedRow}
-          onFocusRow={setFocusedRow}
-          onOpen={setDetailNote}
-          onEdit={note => router.push(`/note/${note.id}`)}
-          onDelete={handleDelete}
-          onStatusChange={handleStatusChange}
-          onLoadMore={loadMore}
-        />
-      )}
-
-      {detailNote && (
-        <NoteDetailModal
-          note={detailNote}
-          onClose={() => setDetailNote(null)}
-          onEdit={() => router.push(`/note/${detailNote.id}`)}
-        />
-      )}
     </main>
   );
 }
