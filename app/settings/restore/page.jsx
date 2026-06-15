@@ -19,6 +19,7 @@ import { formatNumber } from '@/lib/format';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { useRestoreImpact } from '@/hooks/useRestoreImpact';
 import { getActiveBrand } from '@/lib/active-brand';
+import { pickLocalStorageForScopes } from '@/lib/nutrition/backup-keys';
 import { RestoreDoneCard } from '@/components/settings/restore/RestoreDoneCard';
 import { RestorePreview } from '@/components/settings/restore/RestorePreview';
 import { RestoreExecutePanel } from '@/components/settings/restore/RestoreExecutePanel';
@@ -161,11 +162,11 @@ export default function Page() {
         }
       }
 
-      // 2) 선택된 모듈의 store만 import (localStorage는 nutrition 선택 시에만 복원)
+      // 2) 선택된 모듈의 store와 해당 모듈의 영속 localStorage 설정만 import
       const partialData = {
         ...parsed,
         stores: pickRestoreStores(parsed.stores, selectedStores),
-        localStorage: selectedKeys.includes('nutrition') ? parsed.localStorage : undefined,
+        localStorage: pickLocalStorageForScopes(parsed.localStorage, selectedKeys),
       };
       const restoreTotal = Object.keys(partialData.stores).length || 1;
       setRestoreProgress({ label: 'store 복원 시작', current: 0, total: restoreTotal });

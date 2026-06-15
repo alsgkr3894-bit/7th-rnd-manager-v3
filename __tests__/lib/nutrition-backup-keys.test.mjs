@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, test } from '@jest/globals';
-import { collectLocalStorage, restoreLocalStorage } from '../../lib/nutrition/backup-keys.js';
+import {
+  collectLocalStorage,
+  persistentLocalStorageKeysForScopes,
+  pickLocalStorageForScopes,
+  restoreLocalStorage,
+} from '../../lib/nutrition/backup-keys.js';
 
 const originalLocalStorage = globalThis.localStorage;
 
@@ -46,5 +51,52 @@ describe('nutrition backup localStorage keys', () => {
       ])
     ).toBe(1);
     expect(saved).toEqual({ good: '1' });
+  });
+
+  test('모듈 선택에 맞는 localStorage key만 고른다', () => {
+    expect(persistentLocalStorageKeysForScopes(['jette'])).toEqual(
+      expect.arrayContaining(['v3:jette-settings', 'v3:home-widgets', 'v3:profile'])
+    );
+    expect(persistentLocalStorageKeysForScopes(['jette'])).not.toContain(
+      'v3:nutrition-menu-order'
+    );
+
+    expect(
+      pickLocalStorageForScopes(
+        {
+          'v3:jette-settings': 'jette',
+          'v3:home-widgets': 'home',
+          'v3:profile': 'profile',
+          'v3:nutrition-menu-order': 'nutrition',
+          'v3:unknown': 'unknown',
+        },
+        ['jette']
+      )
+    ).toEqual({
+      'v3:jette-settings': 'jette',
+      'v3:home-widgets': 'home',
+      'v3:profile': 'profile',
+    });
+  });
+
+  test('nutrition 선택은 nutrition key와 공통 key를 복원 대상으로 고른다', () => {
+    expect(
+      pickLocalStorageForScopes(
+        {
+          'v3:nutrition-menu-order': 'nutrition',
+          'v3:profile': 'profile',
+          'v3:jette-settings': 'jette',
+        },
+        ['nutrition']
+      )
+    ).toEqual({
+      'v3:nutrition-menu-order': 'nutrition',
+      'v3:profile': 'profile',
+    });
+  });
+
+  test('선택된 모듈이 없으면 localStorage 복원 대상을 만들지 않는다', () => {
+    expect(persistentLocalStorageKeysForScopes([])).toEqual([]);
+    expect(pickLocalStorageForScopes({ 'v3:profile': 'profile' }, [])).toBeUndefined();
   });
 });
