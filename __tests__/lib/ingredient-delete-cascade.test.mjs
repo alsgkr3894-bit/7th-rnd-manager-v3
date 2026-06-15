@@ -82,7 +82,7 @@ const { deleteMenuRefsByMenuCode } = await import('../../lib/nutrition/values/st
 const dbModule = await import('@/lib/db');
 
 const { deleteIngredient, bulkDeleteIngredients } = await import('../../lib/ingredient/store.js');
-const { deleteMenuMaster } = await import('../../lib/menu-master/store.js');
+const { deleteMenuMaster, upsertMenuMaster } = await import('../../lib/menu-master/store.js');
 
 // ── deleteIngredient — 식자재 스냅샷 ────────────────────
 
@@ -231,5 +231,132 @@ describe('deleteMenuMaster cascade (B-1)', () => {
       'readwrite',
       expect.any(Function)
     );
+  });
+});
+
+// ── upsertMenuMaster — menuCode 변경 cascade ──────────────
+
+describe('upsertMenuMaster menuCode cascade', () => {
+  beforeEach(() => {
+    deleteByIdError = null;
+    dbModule.runTransaction.mockClear();
+    stores = {
+      menu_master: [
+        {
+          id: 100,
+          menuCode: 'PZ-OLD',
+          menuName: '이전 피자',
+          category: '피자',
+          size: 'L',
+          price: 19000,
+        },
+      ],
+      cost_selling_prices: [
+        { id: 1, menuCode: 'PZ-OLD', menuName: '이전 피자', price: 19000 },
+        { id: 2, menuCode: 'PZ-KEEP', menuName: '유지 피자', price: 21000 },
+      ],
+      menu_recipes: [
+        { id: 3, menuCode: 'PZ-OLD', menuName: '이전 피자', components: [] },
+        { id: 4, menuCode: 'PZ-KEEP', menuName: '유지 피자', components: [] },
+      ],
+      nutrition_menu_ref: [
+        { id: 5, menuCode: 'PZ-OLD', menuName: '이전 피자' },
+        { id: 6, menuCode: 'PZ-KEEP', menuName: '유지 피자' },
+      ],
+      nutrition_raw_values: [
+        { id: 7, menuCode: 'PZ-OLD', menuName: '이전 피자', crustType: '석쇠L' },
+        { id: 8, menuCode: 'PZ-KEEP', menuName: '유지 피자', crustType: '석쇠L' },
+      ],
+    };
+  });
+
+  test('메뉴코드 변경 시 연결된 판매가, 원가 레시피, 영양 기준/원값을 함께 갱신한다', async () => {
+    const result = await upsertMenuMaster({
+      id: 100,
+      menuCode: 'PZ-NEW',
+      menuName: '새 피자',
+      category: '피자',
+      size: 'L',
+      price: 20000,
+    });
+
+    expect(result).toMatchObject({
+      id: 100,
+      mode: 'update',
+      cascadedMenuCode: {
+        from: 'PZ-OLD',
+        to: 'PZ-NEW',
+        updated: {
+          cost_selling_prices: 1,
+          menu_recipes: 1,
+          nutrition_menu_ref: 1,
+          nutrition_raw_values: 1,
+        },
+      },
+    });
+    expect(stores.menu_master[0]).toMatchObject({ id: 100, menuCode: 'PZ-NEW' });
+    expect(stores.cost_selling_prices.find(row => row.id === 1)).toMatchObject({
+      menuCode: 'PZ-NEW',
+      menuName: '새 피자',
+    });
+    expect(stores.menu_recipes.find(row => row.id === 3)).toMatchObject({
+      menuCode: 'PZ-NEW',
+      menuName: '새 피자',
+    });
+    expect(stores.nutrition_menu_ref.find(row => row.id === 5)).toMatchObject({
+      menuCode: 'PZ-NEW',
+      menuName: '새 피자',
+    });
+    expect(stores.nutrition_raw_values.find(row => row.id === 7)).toMatchObject({
+      menuCode: 'PZ-NEW',
+      menuName: '새 피자',
+    });
+    expect(stores.cost_selling_prices.find(row => row.id === 2)).toMatchObject({
+      menuCode: 'PZ-KEEP',
+    });
+    expect(dbModule.runTransaction).toHaveBeenCalledWith(
+      [
+        'menu_master',
+        'cost_selling_prices',
+        'menu_recipes',
+        'nutrition_menu_ref',
+        'nutrition_raw_values',
+      ],
+      'readwrite',
+      expect.any(Function)
+    );
+  });
+
+  test('변경 대상 menuCode가 이미 메뉴마스터에 있으면 저장하지 않는다', async () => {
+    stores.menu_master.push({ id: 101, menuCode: 'PZ-NEW', menuName: '중복 피자' });
+
+    await expect(
+      upsertMenuMaster({
+        id: 100,
+        menuCode: 'PZ-NEW',
+        menuName: '새 피자',
+        category: '피자',
+      })
+    ).rejects.toThrow('이미 같은 menuCode가 있습니다');
+
+    expect(stores.menu_master.find(row => row.id === 100)).toMatchObject({ menuCode: 'PZ-OLD' });
+    expect(dbModule.runTransaction).not.toHaveBeenCalled();
+  });
+
+  test('변경 대상 menuCode가 연결 데이터에 남아 있으면 저장하지 않는다', async () => {
+    stores.menu_recipes.push({ id: 9, menuCode: 'PZ-NEW', menuName: '고아 레시피' });
+
+    await expect(
+      upsertMenuMaster({
+        id: 100,
+        menuCode: 'PZ-NEW',
+        menuName: '새 피자',
+        category: '피자',
+      })
+    ).rejects.toThrow('연결 데이터에 같은 menuCode가 이미 있습니다: menu_recipes');
+
+    expect(stores.menu_master.find(row => row.id === 100)).toMatchObject({ menuCode: 'PZ-OLD' });
+    expect(stores.menu_recipes.find(row => row.id === 3)).toMatchObject({ menuCode: 'PZ-OLD' });
+    expect(dbModule.runTransaction).not.toHaveBeenCalled();
   });
 });
