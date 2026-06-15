@@ -10,6 +10,10 @@ const derivedHookSource = readFileSync(
   resolve('app/nutrition/allergen/useAllergenDerivedData.js'),
   'utf8'
 );
+const matrixHookSource = readFileSync(
+  resolve('app/nutrition/allergen/useAllergenMatrixData.js'),
+  'utf8'
+);
 const dataUtilsSource = readFileSync(
   resolve('app/nutrition/allergen/allergenPageDataUtils.js'),
   'utf8'
@@ -136,18 +140,31 @@ describe('nutrition allergen page structure', () => {
   test('derived data hook owns matrix, exclusion, detail, and summary derivations', () => {
     expect(derivedHookSource).toContain('export function useAllergenDerivedData');
     expect(derivedHookSource).toContain('filterAllergenIngredients(ingredients)');
-    expect(derivedHookSource).toContain('extractExcludedMenuSets(menuMasters)');
-    expect(derivedHookSource).toContain('buildMenuMatrix(');
-    expect(derivedHookSource).toContain('orderAllergens(allergenOrder, menuMatrixAll)');
+    expect(derivedHookSource).toContain('useAllergenMatrixData({');
     expect(derivedHookSource).toContain('buildAllergenDetailRows(');
-    expect(derivedHookSource).toContain('filterMenuMatrix(menuMatrixAll, search)');
     expect(derivedHookSource).toContain('buildMenuListForOrder(menuMatrixAll)');
     expect(derivedHookSource).toContain(
       'buildAllergenSummaryCounts(ingredients, allergenIngredients)'
     );
+    expect(derivedHookSource).not.toContain('extractExcludedMenuSets(menuMasters)');
+    expect(derivedHookSource).not.toContain('buildMenuMatrix(');
+    expect(derivedHookSource).not.toContain('orderAllergens(allergenOrder, menuMatrixAll)');
+    expect(derivedHookSource).not.toContain('filterMenuMatrix(menuMatrixAll, search)');
     expect(derivedHookSource).not.toContain('downloadCsv');
     expect(derivedHookSource).not.toContain('useAllergenSourceData()');
     expect(derivedHookSource).not.toContain('useAllergenOrderState()');
+  });
+
+  test('matrix data hook owns menu exclusion, matrix build, allergen order, and matrix search', () => {
+    expect(matrixHookSource).toContain('export function useAllergenMatrixData');
+    expect(matrixHookSource).toContain('extractExcludedMenuSets(menuMasters)');
+    expect(matrixHookSource).toContain('buildMenuMatrix(');
+    expect(matrixHookSource).toContain('orderAllergens(allergenOrder, menuMatrixAll)');
+    expect(matrixHookSource).toContain('filterMenuMatrix(menuMatrixAll, search)');
+    expect(matrixHookSource).toContain('excludedMenuCodes.has(asDisplayText(menuCode))');
+    expect(matrixHookSource).not.toContain('downloadCsv');
+    expect(matrixHookSource).not.toContain('buildAllergenDetailRows');
+    expect(matrixHookSource).not.toContain('buildAllergenSummaryCounts');
   });
 
   test('page data utils own allergen filtering and order derivation', () => {
