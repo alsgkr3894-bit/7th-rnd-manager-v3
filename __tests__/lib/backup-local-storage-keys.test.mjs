@@ -22,6 +22,25 @@ function installStorage(storage) {
   });
 }
 
+function installMapStorage(initial = {}) {
+  const store = { ...initial };
+  installStorage({
+    get length() {
+      return Object.keys(store).length;
+    },
+    key(index) {
+      return Object.keys(store)[index] ?? null;
+    },
+    getItem(key) {
+      return store[key] ?? null;
+    },
+    setItem(key, value) {
+      store[key] = value;
+    },
+  });
+  return store;
+}
+
 describe('nutrition backup localStorage keys', () => {
   test('collectLocalStorage는 읽기 실패 키만 건너뛴다', () => {
     installStorage({
@@ -82,6 +101,7 @@ describe('nutrition backup localStorage keys', () => {
           'v3:density': 'compact',
           'v3:roundMode': 'floor',
           rnd_active_account_id: '42',
+          'rnd_active_account_id:brand-b': '7',
           'v3:nutrition-menu-order': 'nutrition',
           'v3:unknown': 'unknown',
         },
@@ -94,7 +114,37 @@ describe('nutrition backup localStorage keys', () => {
       'v3:density': 'compact',
       'v3:roundMode': 'floor',
       rnd_active_account_id: '42',
+      'rnd_active_account_id:brand-b': '7',
     });
+  });
+
+  test('브랜드별 활성 계정 key도 공통 localStorage 백업/복원 대상으로 허용한다', () => {
+    const store = installMapStorage({
+      rnd_active_account_id: '1',
+      'rnd_active_account_id:main': '2',
+      'rnd_active_account_id:brand-b': '7',
+      'rnd_active_account_id:': 'bad',
+      other: 'skip',
+    });
+
+    expect(collectLocalStorage(['rnd_active_account_id'])).toEqual({
+      rnd_active_account_id: '1',
+      'rnd_active_account_id:main': '2',
+      'rnd_active_account_id:brand-b': '7',
+    });
+
+    expect(
+      restoreLocalStorage(
+        {
+          'rnd_active_account_id:brand-c': '9',
+          'rnd_active_account_id:': 'bad',
+          unknown: 'skip',
+        },
+        ['rnd_active_account_id']
+      )
+    ).toBe(1);
+    expect(store['rnd_active_account_id:brand-c']).toBe('9');
+    expect(store.unknown).toBeUndefined();
   });
 
   test('nutrition 선택은 nutrition key와 공통 key를 복원 대상으로 고른다', () => {

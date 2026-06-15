@@ -81,8 +81,15 @@ export default function Page() {
     await initDB();
     await seedDefaultAdminIfEmpty();
     const list = await getAllAccounts();
+    const storedActiveId = getActiveAccountId();
+    const validActiveId = list.some(account => account.id === storedActiveId)
+      ? storedActiveId
+      : list[0]?.id ?? null;
+    if (validActiveId != null && validActiveId !== storedActiveId) {
+      setActiveAccountId(validActiveId);
+    }
     setAccounts(list);
-    setActiveId(getActiveAccountId() ?? list[0]?.id ?? null);
+    setActiveId(validActiveId);
   }, []);
 
   // PIN 관리
