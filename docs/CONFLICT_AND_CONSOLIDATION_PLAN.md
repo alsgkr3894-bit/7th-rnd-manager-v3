@@ -268,6 +268,13 @@
 
 ### 3.6 카테고리 판정 함수 이름 충돌
 
+**구현 상태**
+
+- 구현 완료: `3381fef refactor: clarify pizza category helpers`
+- 실제 정책 판정 기준은 `lib/menu-master/category-policy.js`로 유지한다.
+- `lib/menu-categories.js`는 `isMenuCategoryPizzaVariant()`를 새 명확한 이름으로 제공하고, 기존 `isPizzaCategory`는 deprecated alias로 유지한다.
+- `lib/nutrition/crust-config.js`는 `isNutritionPizzaCategory()`를 새 명확한 이름으로 제공하고, 기존 `isPizzaCategory`는 deprecated alias로 유지한다.
+
 **관련 파일**
 
 - `lib/menu-master/category-policy.js`
@@ -278,7 +285,8 @@
 
 **현재 상태**
 
-- `isPizzaCategory` export가 3곳에 있다.
+- 실제 정책용 `isPizzaCategory`는 `lib/menu-master/category-policy.js`에 있다.
+- `lib/menu-categories.js`와 `lib/nutrition/crust-config.js`의 기존 `isPizzaCategory`는 하위 호환 alias다.
 - `category-policy.js`는 정책 판정 함수다.
 - `menu-categories.js`는 상수/정렬과 피자 변형 목록을 갖는다.
 - `nutrition/crust-config.js`는 nutrition용으로 `category-policy`를 감싼다.
