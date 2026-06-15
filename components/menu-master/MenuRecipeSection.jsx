@@ -7,27 +7,8 @@ import { getAllIngredients } from '@/lib/ingredient';
 import { formatNumber, formatPercent, formatUnitPrice } from '@/lib/format';
 import { COST_BASE_UNITS, normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
 import { loadLatestUnitPriceMap, summarizeMenuRecipe } from '@/lib/menu-master/recipe-summary';
-import {
-  isPersonalPizzaCategory,
-  isSetCategory,
-  isSideCategory,
-  isBeverageCategory,
-  isPizzaCategory,
-} from '@/lib/menu-master/category-policy';
-import { getAllPizzaRecipes, upsertPizzaRecipe } from '@/lib/cost/pizza-detail';
-import { getAllPersonalRecipes, upsertPersonalRecipe } from '@/lib/cost/personal-detail';
-import { getAllSideRecipes, upsertSideRecipe } from '@/lib/cost/side-detail';
-import { getAllSetRecipes, upsertSetRecipe } from '@/lib/cost/set-detail';
-
-function storeApiFor(category) {
-  if (isPersonalPizzaCategory(category))
-    return { getAll: getAllPersonalRecipes, upsert: upsertPersonalRecipe };
-  if (isSetCategory(category)) return { getAll: getAllSetRecipes, upsert: upsertSetRecipe };
-  if (isSideCategory(category) || isBeverageCategory(category))
-    return { getAll: getAllSideRecipes, upsert: upsertSideRecipe };
-  if (isPizzaCategory(category)) return { getAll: getAllPizzaRecipes, upsert: upsertPizzaRecipe };
-  return null;
-}
+import { getMenuRecipeForMenu, upsertMenuRecipeForMenu } from '@/lib/menu-recipes';
+import { recipeStoreKindForCategory } from '@/lib/recipe-master/sync';
 
 let _rowKey = 0;
 function newRow() {
@@ -83,8 +64,8 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
   const [searchIdx, setSearchIdx] = useState(null); // index of row being searched
   const [searchQ, setSearchQ] = useState('');
 
-  const api = storeApiFor(category);
-  const supported = Boolean(api && menuCode);
+  const recipeKind = recipeStoreKindForCategory(category);
+  const supported = Boolean(recipeKind && menuCode);
 
   useEffect(() => {
     setLoaded(false);
@@ -94,13 +75,12 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
     if (!supported) return;
     let ignore = false;
     initDB().then(async () => {
-      const [all, ings, latestUnitPriceMap] = await Promise.all([
-        api.getAll(),
+      const [existing, ings, latestUnitPriceMap] = await Promise.all([
+        getMenuRecipeForMenu({ menuCode, menuName, category, size }),
         getAllIngredients(),
         loadLatestUnitPriceMap(),
       ]);
       if (ignore) return;
-      const existing = all.find(r => r.menuCode === menuCode);
       setComponents(
         existing?.components?.length
           ? existing.components.map(c => hydrateComponent(c, latestUnitPriceMap))
@@ -176,12 +156,14 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
   );
 
   const handleSave = useCallback(async () => {
-    if (!api) return;
+    if (!supported) return;
     setSaving(true);
     try {
-      await api.upsert({
+      await upsertMenuRecipeForMenu({
         menuCode,
         menuName: menuName || '',
+        category,
+        kind: recipeKind,
         size: size || '단일',
         components: components.map(c => buildSaveComponent(c, unitPriceMap)),
       });
@@ -192,7 +174,7 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
     } finally {
       setSaving(false);
     }
-  }, [api, menuCode, menuName, size, components, unitPriceMap, onSaved]);
+  }, [supported, menuCode, menuName, category, recipeKind, size, components, unitPriceMap, onSaved]);
 
   if (!supported) return null;
 

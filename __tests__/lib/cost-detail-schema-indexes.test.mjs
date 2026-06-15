@@ -56,7 +56,7 @@ function indexNames(store) {
 
 describe('cost detail schema indexes', () => {
   test('DB_VERSION is bumped for detail menuCode index migration', () => {
-    expect(DB_VERSION).toBe(20);
+    expect(DB_VERSION).toBe(21);
   });
 
   test('new detail stores include menuCode indexes', () => {
@@ -64,6 +64,13 @@ describe('cost detail schema indexes', () => {
 
     createCostStores(idb);
 
+    expect(indexNames(idb.created.menu_recipes)).toEqual([
+      'menuCode',
+      'displayGroupKey',
+      'category',
+      'kind',
+      'updatedAt',
+    ]);
     expect(indexNames(idb.created.cost_pizza_detail)).toEqual(['menuCode', 'menuName', 'size']);
     expect(indexNames(idb.created.cost_personal_detail)).toEqual(['menuCode', 'menuName']);
     expect(indexNames(idb.created.cost_side_detail)).toEqual(['menuCode', 'menuName']);

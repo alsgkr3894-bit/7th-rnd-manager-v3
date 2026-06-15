@@ -140,6 +140,7 @@ describe('recipe master sync helpers', () => {
         payload: {
           menuCode: 'S-CHK-001',
           menuName: '치킨텐더',
+          category: '사이드',
           size: '단일',
           components: [],
           note: '',
