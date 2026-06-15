@@ -21,7 +21,7 @@ export function AddMenuModal({ newMenuForm, setNewMenuForm, safeMenuMasters, onA
           <label
             style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}
           >
-            메뉴코드 <span style={{ color: 'var(--text-4)' }}>(선택 시 메뉴명 자동 입력)</span>
+            메뉴코드 *
           </label>
           <MenuCodePicker
             menuMasters={safeMenuMasters}
@@ -49,8 +49,8 @@ export function AddMenuModal({ newMenuForm, setNewMenuForm, safeMenuMasters, onA
           <input
             className="input"
             value={newMenuForm.menuName}
-            onChange={e => setNewMenuForm(f => ({ ...f, menuName: e.target.value }))}
-            placeholder="예: 컨츄리치킨"
+            readOnly
+            placeholder="메뉴마스터 선택"
           />
         </div>
         <div>
@@ -62,6 +62,7 @@ export function AddMenuModal({ newMenuForm, setNewMenuForm, safeMenuMasters, onA
           <select
             className="input"
             value={normalizeNutritionCategory(newMenuForm.category, '피자')}
+            disabled
             onChange={e => setNewMenuForm(f => ({ ...f, category: e.target.value }))}
           >
             {NUTRITION_CATEGORY_OPTIONS.map(c => (
@@ -76,7 +77,7 @@ export function AddMenuModal({ newMenuForm, setNewMenuForm, safeMenuMasters, onA
         <button className="btn" onClick={onClose}>
           취소
         </button>
-        <button className="btn primary" onClick={onAdd}>
+        <button className="btn primary" onClick={onAdd} disabled={!newMenuForm.menuCode}>
           추가
         </button>
       </div>

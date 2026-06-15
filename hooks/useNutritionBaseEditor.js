@@ -8,7 +8,7 @@ import {
   upsertRawValue,
   CRUST_TYPES,
 } from '@/lib/nutrition/values/store';
-import { normalizeNutritionCategory } from '@/lib/nutrition/menu-group';
+import { buildNutritionMenuRefPayload } from '@/lib/nutrition/menu-ref-policy';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 /**
@@ -59,17 +59,14 @@ export function useNutritionBaseEditor({ safeRawMap, refresh }) {
   };
 
   const handleAddMenu = async () => {
-    if (!newMenuForm.menuName.trim()) {
-      showToast('메뉴명 입력 필요', 'error');
+    let payload;
+    try {
+      payload = buildNutritionMenuRefPayload(newMenuForm);
+    } catch (err) {
+      showToast(err?.message || '메뉴 추가 실패', 'error');
       return;
     }
-    const code = newMenuForm.menuCode.trim() || `MENU-${Date.now()}`;
-    await upsertMenuRef({
-      ...newMenuForm,
-      menuCode: code,
-      category: normalizeNutritionCategory(newMenuForm.category, '피자'),
-      displayOrder: newMenuForm.displayOrder ? Number(newMenuForm.displayOrder) : undefined,
-    });
+    await upsertMenuRef(payload);
     showToast('메뉴 추가 완료', 'ok');
     setAddMenu(false);
     setNewMenuForm({ menuCode: '', menuName: '', category: '피자', displayOrder: '' });
