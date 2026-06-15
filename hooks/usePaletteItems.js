@@ -21,7 +21,7 @@ const STATIC_ITEMS = [
   { kind: 'menu', label: '메뉴 마스터', href: MENU_MASTER_ROUTE },
   { kind: 'menu', label: '원가마진표', href: COST_MARGIN_ROUTE },
   { kind: 'menu', label: '전체 원가 요약', href: '/cost/all-summary' },
-  { kind: 'menu', label: '식자재 원가표', href: '/cost/ingredient-price' },
+  { kind: 'menu', label: '식자재 단가', href: '/ingredient/manage?view=price' },
   { kind: 'menu', label: '메뉴개발노트 목록', href: '/note' },
   { kind: 'menu', label: '노트 칸반 보드', href: '/note/board' },
   { kind: 'menu', label: '노트 작성', href: '/note/write' },
@@ -34,7 +34,7 @@ const STATIC_ITEMS = [
   { kind: 'action', label: '새 테스트 노트 작성', href: '/note/write' },
   { kind: 'action', label: '새 샘플 작성', href: '/note/sample/write' },
   { kind: 'action', label: '데이터 백업 실행', href: '/settings/backup' },
-  { kind: 'nav', label: '재료 단가 업데이트', href: '/cost/ingredient-price', icon: 'tag' },
+  { kind: 'nav', label: '재료 단가 업데이트', href: '/ingredient/manage?view=price', icon: 'tag' },
   { kind: 'nav', label: '샘플 사진 추가', href: '/note/sample/write', icon: 'beaker' },
   { kind: 'nav', label: '공통 원가 관리', href: COST_COMMON_GROUPS_ROUTE, icon: 'doc' },
 ];

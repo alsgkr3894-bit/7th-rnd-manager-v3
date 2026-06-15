@@ -47,6 +47,15 @@ describe('normalizeSidebarOpenIds', () => {
     expect(hrefs).not.toContain('/cost/set');
   });
 
+  test('식자재 통합 후 리스트와 단가표 중복 route를 사이드바에 노출하지 않는다', () => {
+    const hrefs = navChildren.map(item => item.href).filter(Boolean);
+
+    expect(hrefs).toContain('/ingredient/manage');
+    expect(hrefs).toContain('/ingredient/usage');
+    expect(hrefs).not.toContain('/ingredient/list');
+    expect(hrefs).not.toContain('/cost/ingredient-price');
+  });
+
   test('모바일 원가 탭도 구형 피자 원가표 대신 원가마진표로 이동한다', () => {
     const costTab = MOBILE_TAB_DEFS.find(item => item.label === '원가');
 

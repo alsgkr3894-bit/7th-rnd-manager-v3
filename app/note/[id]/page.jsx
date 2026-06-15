@@ -16,7 +16,7 @@ import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { COST_MARGIN_ROUTE, MENU_MASTER_ROUTE } from '@/lib/cost/routes';
 
 const COST_LINKS = [
-  { label: '식자재 원가표', href: '/cost/ingredient-price' },
+  { label: '식자재 단가', href: '/ingredient/manage?view=price' },
   { label: '메뉴 마스터', href: MENU_MASTER_ROUTE },
   { label: '원가마진표', href: COST_MARGIN_ROUTE },
 ];

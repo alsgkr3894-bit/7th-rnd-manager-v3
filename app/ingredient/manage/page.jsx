@@ -43,6 +43,24 @@ const SuppliersView = dynamic(
   () => import('@/components/cost/ingredient-price/SuppliersView').then(m => m.SuppliersView),
   { ssr: false, loading: () => <div className="skeleton" style={{ height: 200 }} /> }
 );
+const IngredientPriceView = dynamic(
+  () =>
+    import('@/components/cost/ingredient-price/IngredientPriceView').then(
+      m => m.IngredientPriceView
+    ),
+  { ssr: false, loading: () => <div className="skeleton" style={{ height: 320 }} /> }
+);
+
+const MANAGE_VIEW_KEYS = new Set(['manage', 'price', 'issues', 'settings', 'suppliers']);
+
+function normalizeManageView(value) {
+  return MANAGE_VIEW_KEYS.has(value) ? value : 'manage';
+}
+
+function readInitialManageView() {
+  if (typeof window === 'undefined') return 'manage';
+  return normalizeManageView(new URLSearchParams(window.location.search).get('view'));
+}
 
 // scope 라벨('전용'/'범용'/'범용관리') → productType 코드
 const scopeToType = label =>
@@ -125,7 +143,20 @@ export default function Page() {
     typeof value === 'string' && value ? value : 'all'
   );
   const [tagFilter, setTagFilter] = useState('all');
-  const [view, setView] = useState('manage'); // 'manage' | 'issues' | 'settings' | 'suppliers'
+  const [view, setViewState] = useState('manage');
+  const setView = useCallback(nextView => {
+    const normalized = normalizeManageView(nextView);
+    setViewState(normalized);
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (normalized === 'manage') url.searchParams.delete('view');
+    else url.searchParams.set('view', normalized);
+    window.history.replaceState(null, '', url);
+  }, []);
+
+  useEffect(() => {
+    setView(readInitialManageView());
+  }, [setView]);
   const [formTarget, setFormTarget] = useState(null);
   const [deletePending, setDeletePending] = useState(null);
   const [seeding, setSeeding] = useState(false);
@@ -456,7 +487,7 @@ export default function Page() {
       />
 
       {/* 탭 */}
-      {rows.length > 0 && (
+      {!loading && (
         <div
           style={{
             display: 'flex',
@@ -467,6 +498,9 @@ export default function Page() {
         >
           <TabButton active={view === 'manage'} onClick={() => setView('manage')}>
             관리 {activeCount}
+          </TabButton>
+          <TabButton active={view === 'price'} onClick={() => setView('price')}>
+            단가
           </TabButton>
           <TabButton
             active={view === 'issues'}
@@ -484,7 +518,7 @@ export default function Page() {
         </div>
       )}
 
-      {!loading && rows.length === 0 && (
+      {!loading && rows.length === 0 && view !== 'price' && view !== 'suppliers' && (
         <div className="card" style={{ minHeight: 180, display: 'grid', placeItems: 'center' }}>
           <div style={{ textAlign: 'center', color: 'var(--text-3)' }}>
             <Icon.box style={{ width: 32, height: 32, marginBottom: 12, opacity: 0.4 }} />
@@ -548,6 +582,9 @@ export default function Page() {
           onRestore={handleRestore}
         />
       )}
+
+      {/* ── 단가 뷰 ── */}
+      {view === 'price' && <IngredientPriceView embedded />}
 
       {/* ── 이슈 뷰 ── */}
       {view === 'issues' && (

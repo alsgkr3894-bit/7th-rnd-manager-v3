@@ -18,7 +18,10 @@ export function PriceChangeWidget({ items = [], router }) {
           <div className="card-title">식자재 단가 변동</div>
           <div className="card-sub">최근 단가 변경 이력</div>
         </div>
-        <button className="link accent" onClick={() => router?.push?.('/cost/ingredient-price')}>
+        <button
+          className="link accent"
+          onClick={() => router?.push?.('/ingredient/manage?view=price')}
+        >
           전체 <Icon.chevRight />
         </button>
       </div>

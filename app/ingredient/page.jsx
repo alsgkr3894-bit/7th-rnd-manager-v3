@@ -10,18 +10,10 @@ const GROUPS = [
     label: '식자재 관리',
     items: [
       {
-        href: '/ingredient/list',
-        icon: 'tag',
-        title: '식자재 목록',
-        sub: '등록된 식자재 전체 목록을 조회합니다',
-        iconBg: 'var(--positive-soft)',
-        iconColor: 'var(--positive)',
-      },
-      {
         href: '/ingredient/manage',
         icon: 'edit',
         title: '식자재 관리',
-        sub: '식자재 추가·수정·삭제를 수행합니다',
+        sub: '식자재 기본정보·단가·원산지·알레르기를 관리합니다',
         iconBg: 'var(--accent-soft)',
         iconColor: 'var(--accent-text)',
       },

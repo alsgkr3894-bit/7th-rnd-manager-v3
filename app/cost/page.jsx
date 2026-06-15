@@ -14,7 +14,7 @@ const GROUPS = [
     label: '기초 데이터',
     items: [
       {
-        href: '/cost/ingredient-price',
+        href: '/ingredient/manage?view=price',
         icon: 'tag',
         title: '식자재 가격',
         sub: '재료별 단가·공급업체 관리',
