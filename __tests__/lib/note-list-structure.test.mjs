@@ -12,6 +12,9 @@ describe('note list structure', () => {
     const statesSource = readFileSync(resolve('app/note/_NoteListStates.jsx'), 'utf8');
     const dialogsSource = readFileSync(resolve('app/note/_NotePageDialogs.jsx'), 'utf8');
     const itemActionsSource = readFileSync(resolve('hooks/useNoteItemActions.js'), 'utf8');
+    const listDataSource = readFileSync(resolve('hooks/useNoteListData.js'), 'utf8');
+    const listStateSource = readFileSync(resolve('hooks/useNoteListState.js'), 'utf8');
+    const reportingCopySource = readFileSync(resolve('hooks/useNoteReportingCopy.js'), 'utf8');
 
     expect(source).toContain("import { NoteStatsSummary } from './_NoteStatsSummary'");
     expect(source).toContain("import { NoteFilterControls } from './_NoteFilterControls'");
@@ -21,6 +24,9 @@ describe('note list structure', () => {
     expect(source).toContain("import { NoteListStates } from './_NoteListStates'");
     expect(source).toContain("import { NotePageDialogs } from './_NotePageDialogs'");
     expect(source).toContain("import { useNoteItemActions } from '@/hooks/useNoteItemActions'");
+    expect(source).toContain("import { useNoteListData } from '@/hooks/useNoteListData'");
+    expect(source).toContain("import { useNoteListState } from '@/hooks/useNoteListState'");
+    expect(source).toContain("import { useNoteReportingCopy } from '@/hooks/useNoteReportingCopy'");
     expect(source).toContain('<NoteStatsSummary');
     expect(source).toContain('<NoteFilterControls');
     expect(source).toContain('<NoteCardGrid');
@@ -40,6 +46,12 @@ describe('note list structure', () => {
     expect(source).not.toContain('await deleteNote(note.id)');
     expect(source).not.toContain('await addNote({');
     expect(source).not.toContain('await updateNote(noteId');
+    expect(source).not.toContain('getAllNotes');
+    expect(source).not.toContain('getNoteDetailStats');
+    expect(source).not.toContain('useSearchHistory');
+    expect(source).not.toContain('buildHighlightRegex');
+    expect(source).not.toContain('copyText');
+    expect(source).not.toContain('보고용 요약');
     expect(filterSource).toContain('const SORT_OPTIONS = [');
     expect(filterSource).toContain('제목, 메뉴명, 테스트 내용, 태그 검색');
     expect(statsSource).toContain('최근 6개월');
@@ -64,5 +76,20 @@ describe('note list structure', () => {
     expect(itemActionsSource).toContain('await addNote({');
     expect(itemActionsSource).toContain('await updateNote(noteId');
     expect(itemActionsSource).toContain('setNoteFrom(note.id)');
+    expect(listDataSource).toContain('export function useNoteListData');
+    expect(listDataSource).toContain('getAllNotes');
+    expect(listDataSource).toContain('getNoteDetailStats');
+    expect(listDataSource).toContain('useVisibilityRefresh(load)');
+    expect(listDataSource).toContain("showToast('노트 목록을 불러오지 못했어요', 'error')");
+    expect(listStateSource).toContain('export function useNoteListState');
+    expect(listStateSource).toContain('useNoteFilter(notes, pinnedIds, { pathname })');
+    expect(listStateSource).toContain('useNotePresets');
+    expect(listStateSource).toContain('useSearchHistory(KEYS.NOTE_SEARCH_HISTORY)');
+    expect(listStateSource).toContain('buildHighlightRegex(search.trim())');
+    expect(listStateSource).toContain('setLS(KEYS.NOTE_VIEW, mode)');
+    expect(reportingCopySource).toContain('export function useNoteReportingCopy');
+    expect(reportingCopySource).toContain('NOTE_STATUS.REPORTING');
+    expect(reportingCopySource).toContain('copyText(text)');
+    expect(reportingCopySource).toContain('보고용 요약');
   });
 });
