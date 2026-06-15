@@ -25,6 +25,7 @@ import { normalizePersonalPizzaCodes } from '@/lib/menu-master/normalize';
 import { MenuPriceUploadCard } from '@/components/cost/menu-price/MenuPriceUploadCard';
 import { BulkPriceModal } from '@/components/cost/menu-price/BulkPriceModal';
 import { MenuMasterEditModal } from '@/components/menu-master/MenuMasterEditModal';
+import { MenuMasterFilterPanel } from '@/components/menu-master/MenuMasterFilterPanel';
 import { MenuMasterStatsRow } from '@/components/menu-master/MenuMasterStatsRow';
 import { MenuMasterTableRow } from '@/components/menu-master/MenuMasterTableRow';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
@@ -48,10 +49,6 @@ const PIZZA_CATEGORIES = [
   MENU_CATEGORY.DRINK,
   MENU_CATEGORY.EDGE,
 ];
-// CATEGORIES는 모듈 레벨에서 평가하면 SSR/hydration에서 항상 main(피자)으로 고정된다.
-// 브랜드별 분기는 컴포넌트 내부 useEffect(brandCats)와 EditModal prop으로 처리한다.
-const PIZZA_SUBS = ['프리미엄 스페셜', '프리미엄', '오리지널', '하프앤하프'];
-
 const DELETE_PLAN_LABELS = {
   cost_selling_prices: '판매가',
   menu_recipes: '메뉴 레시피',
@@ -424,99 +421,22 @@ export default function Page() {
       {rows.length > 0 && (
         <div className="content-enter">
           {/* 필터 */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span
-                style={{ fontSize: 12, color: 'var(--text-3)', marginRight: 4, fontWeight: 600 }}
-              >
-                상태
-              </span>
-              {[
-                { id: 'all', label: `전체 ${rows.length}` },
-                { id: 'active', label: `활성 ${active.length}` },
-                { id: 'discontinued', label: `단종 ${discontinued.length}` },
-                { id: 'test', label: `테스트 ${testRows.length}` },
-              ].map(t => (
-                <button
-                  key={t.id}
-                  className={'chip' + (statusFilter === t.id ? ' active' : '')}
-                  onClick={() => {
-                    setStatusFilter(t.id);
-                    setCatFilter('all');
-                  }}
-                >
-                  {t.label}
-                </button>
-              ))}
-              <div className="filter-search" style={{ width: 220, marginLeft: 'auto' }}>
-                <Icon.search
-                  style={{ width: 14, height: 14, color: 'var(--text-3)', flexShrink: 0 }}
-                />
-                <input
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="코드·메뉴명 검색"
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span
-                style={{ fontSize: 12, color: 'var(--text-3)', marginRight: 4, fontWeight: 600 }}
-              >
-                분류
-              </span>
-              <button
-                className={'chip' + (catFilter === 'all' ? ' active' : '')}
-                onClick={() => {
-                  setCatFilter('all');
-                  setSubFilter('all');
-                }}
-              >
-                전체 {catCounts.all}
-              </button>
-              {displayCategories.map(
-                c =>
-                  catCounts[c] > 0 && (
-                    <button
-                      key={c}
-                      className={'chip' + (catFilter === c ? ' active' : '')}
-                      onClick={() => {
-                        setCatFilter(c);
-                        setSubFilter('all');
-                      }}
-                    >
-                      {c} {catCounts[c]}
-                    </button>
-                  )
-              )}
-            </div>
-
-            {catFilter === '피자' && (
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                <span
-                  style={{ fontSize: 12, color: 'var(--text-3)', marginRight: 4, fontWeight: 600 }}
-                >
-                  중분류
-                </span>
-                <button
-                  className={'chip' + (subFilter === 'all' ? ' active' : '')}
-                  onClick={() => setSubFilter('all')}
-                >
-                  전체
-                </button>
-                {PIZZA_SUBS.map(s => (
-                  <button
-                    key={s}
-                    className={'chip' + (subFilter === s ? ' active' : '')}
-                    onClick={() => setSubFilter(s)}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <MenuMasterFilterPanel
+            rows={rows}
+            activeRows={active}
+            discontinuedRows={discontinued}
+            testRows={testRows}
+            statusFilter={statusFilter}
+            onStatusFilter={setStatusFilter}
+            catFilter={catFilter}
+            onCatFilter={setCatFilter}
+            subFilter={subFilter}
+            onSubFilter={setSubFilter}
+            search={search}
+            onSearch={setSearch}
+            displayCategories={displayCategories}
+            catCounts={catCounts}
+          />
 
           {/* 테이블 */}
           <div className="card table-card">

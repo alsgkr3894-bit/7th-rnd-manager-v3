@@ -122,6 +122,7 @@
   - `components/report/sales/SalesCategoryBarRow.jsx` ✅ 2026-06-16 추가 보강 — 수량/비율/opacity 계산을 `salesCategoryBarMetrics` helper로 분리하고 단위 테스트 추가. 97→83줄.
   - `app/menu-master/page.jsx` ✅ 2026-06-16 추가 보강 — 레시피/원가 상태 cell과 통계 카드 row를 `MenuRecipeCostCell`·`MenuMasterStatsRow`로 분리. 835→735줄.
   - `app/menu-master/page.jsx` ✅ 2026-06-16 추가 보강 — 메뉴 테이블 row/status/action 렌더링을 `MenuMasterTableRow`로 분리. 735→636줄.
+  - `app/menu-master/page.jsx` ✅ 2026-06-16 추가 보강 — 상태/분류/검색 필터 패널을 `MenuMasterFilterPanel`로 분리. 636→556줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 부분 보강 — `NoteTableRow`·`NoteContextMenu` 렌더링 컴포넌트 분리. 1022→843줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — `NoteStatsSummary`·`NoteFilterControls` 렌더링 컴포넌트 분리. 843→642줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — `NoteCardGrid`·`NoteTableView` 목록 렌더링 컴포넌트 분리. 642→546줄.
