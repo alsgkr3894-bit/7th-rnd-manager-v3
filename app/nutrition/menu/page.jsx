@@ -15,7 +15,6 @@ import {
   getRawValueMap,
   getAllEdges,
   getAllToppings,
-  getAllIngredientValues,
   getAllCompositions,
   getAllSetCompositions,
   getNutritionBaseDuplicateDiagnostics,
@@ -118,7 +117,6 @@ export default function Page() {
   const [edgeMap, setEdgeMap] = useState({});
   const [toppings, setToppings] = useState([]);
   const [ingredients, setIngredients] = useState([]);
-  const [ingredientValues, setIngredientValues] = useState([]);
   const [compositions, setCompositions] = useState([]);
   const [setComps, setSetComps] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -146,7 +144,6 @@ export default function Page() {
       rawValues,
       edgeList,
       toppingList,
-      ingredientValueList,
       compositionList,
       masters,
       ingredientList,
@@ -157,7 +154,6 @@ export default function Page() {
       getRawValueMap(),
       getAllEdges(),
       getAllToppings(),
-      getAllIngredientValues(),
       getAllCompositions(),
       getAllMenuMaster(),
       getAllIngredients(),
@@ -185,7 +181,6 @@ export default function Page() {
     setEdgeMap(nextEdgeMap);
     setToppings(asObjectArray(toppingList));
     setIngredients(asObjectArray(ingredientList));
-    setIngredientValues(asObjectArray(ingredientValueList));
     setCompositions(asObjectArray(compositionList));
     setSetComps(asObjectArray(setCompList));
     setDuplicateDiagnostics(duplicateDiag);
@@ -354,7 +349,6 @@ export default function Page() {
             <TabDerived
               menus={menus}
               ingredients={ingredients}
-              ingredientValues={ingredientValues}
               compositions={compositions}
               onRefresh={load}
               menuMasters={menuMasters}
@@ -369,7 +363,6 @@ export default function Page() {
               edgeMap={edgeMap}
               compositions={compositions}
               toppings={toppings}
-              ingredientValues={ingredientValues}
               menuMasters={menuMasters}
               menuSearch={menuSearch}
             />

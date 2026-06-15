@@ -9,7 +9,6 @@ import {
   getAllToppings,
   getAllSetCompositions,
   getAllCompositions,
-  getIngredientValuesMap,
 } from '@/lib/nutrition/values/store';
 import { getAllEdges as getCostEdges } from '@/lib/cost/edge-dough';
 import { getAllMenuMaster } from '@/lib/menu-master';
@@ -123,7 +122,6 @@ export default function NutritionLabelResult() {
         costEdges,
         recipeArrays,
         compositions,
-        ingredientNutritionMap,
       ] = await Promise.all([
         getAllMenuRefs(),
         getRawValueMap(),
@@ -136,7 +134,6 @@ export default function NutritionLabelResult() {
         getCostEdges(),
         loadMenuRecipeArrays(),
         getAllCompositions(),
-        getIngredientValuesMap(),
       ]);
 
       const masterByCode = Object.fromEntries(masters.map(m => [m.menuCode, m]));
@@ -183,7 +180,6 @@ export default function NutritionLabelResult() {
         menus: baseMenus,
         rawMap,
         compositions,
-        ingredientNutritionMap,
         masterByCode,
       });
       const orderedMenus = sortNutritionLabelMenus(augmentedMenus, masterByCode, menuOrder);

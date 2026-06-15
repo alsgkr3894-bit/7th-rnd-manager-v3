@@ -2,7 +2,7 @@ import { describe, expect, test } from '@jest/globals';
 import { calcAllResults } from '../../lib/nutrition/values/store.js';
 
 describe('nutrition derived menu calc', () => {
-  test('파생 메뉴는 베이스 영양값에 추가토핑과 엣지를 더해 결과에 표시한다', () => {
+  test('파생 메뉴는 식자재 영양값을 더하지 않고 베이스 메뉴 직접 입력값을 따른다', () => {
     const results = calcAllResults({
       menus: [{ menuCode: 'PZ-BASE', menuName: '베이스 피자', category: '피자' }],
       rawMap: {
@@ -40,9 +40,9 @@ describe('nutrition derived menu calc', () => {
       baseMenuCode: 'PZ-BASE',
       baseMenuName: '베이스 피자',
       isDerived: true,
-      weight: 110,
-      kcal: 120,
-      protein: 12,
+      weight: 100,
+      kcal: 100,
+      protein: 10,
     });
 
     const edgeVariant = results.find(
@@ -50,16 +50,16 @@ describe('nutrition derived menu calc', () => {
     );
     expect(edgeVariant).toMatchObject({
       baseMenuCode: 'PZ-BASE',
-      weight: 120,
-      kcal: 150,
-      protein: 15,
+      weight: 110,
+      kcal: 130,
+      protein: 13,
     });
     expect(
       results.some(row => row.menuCode === 'PZ-DERIVED' && row.crustType === '씬바사삭' + 'R')
     ).toBe(false);
   });
 
-  test('파생 메뉴 추가토핑은 L/R 사용량을 사이즈별로 다르게 반영한다', () => {
+  test('파생 메뉴 엣지는 베이스 사이즈별 값에 엣지 조정값만 더한다', () => {
     const results = calcAllResults({
       menus: [{ menuCode: 'PZ-BASE', menuName: '베이스 피자', category: '피자' }],
       rawMap: {
@@ -82,7 +82,7 @@ describe('nutrition derived menu calc', () => {
         },
       ],
       ingredientNutritionMap: {
-        'ING-CHEESE': { kcal: 200, protein: 20 },
+        'ING-CHEESE': { weight: 100, kcal: 200, protein: 20 },
       },
       masterByCode: {
         'PZ-BASE': { menuCode: 'PZ-BASE', category: '피자' },
@@ -92,23 +92,23 @@ describe('nutrition derived menu calc', () => {
     expect(
       results.find(row => row.menuCode === 'PZ-DERIVED' && row.crustType === '석쇠L')
     ).toMatchObject({
-      weight: 120,
-      kcal: 140,
-      protein: 14,
-    });
-    expect(
-      results.find(row => row.menuCode === 'PZ-DERIVED' && row.crustType === '석쇠R')
-    ).toMatchObject({
-      weight: 95,
+      weight: 100,
       kcal: 100,
       protein: 10,
     });
     expect(
+      results.find(row => row.menuCode === 'PZ-DERIVED' && row.crustType === '석쇠R')
+    ).toMatchObject({
+      weight: 90,
+      kcal: 90,
+      protein: 9,
+    });
+    expect(
       results.find(row => row.menuCode === 'PZ-DERIVED' && row.crustType === '치즈크러스트R')
     ).toMatchObject({
-      weight: 103,
-      kcal: 116,
-      protein: 11,
+      weight: 98,
+      kcal: 106,
+      protein: 10,
     });
   });
 });

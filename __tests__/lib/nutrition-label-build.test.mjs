@@ -1,5 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
 import {
+  augmentWithDerived,
   buildBeverageSheet,
   buildPizzaSheet,
   buildPizzaSliceSheet,
@@ -23,6 +24,42 @@ describe('nutrition label build helpers', () => {
     expect(parseVolumeMl('제로콜라 355ml', 'D-ZERO')).toBe(355);
     expect(parseVolumeMl('사이다', 'SPRITE-1.25l')).toBe(1250);
     expect(parseVolumeMl('아이스티', 'D-TEA')).toBeNull();
+  });
+});
+
+describe('augmentWithDerived', () => {
+  test('파생 출력 rawMap은 식자재 영양값을 더하지 않고 베이스 입력값을 복사한다', () => {
+    const { menus, rawMap } = augmentWithDerived({
+      menus: [{ menuCode: 'P-BASE', menuName: '베이스', category: '피자' }],
+      rawMap: {
+        'P-BASE__석쇠L': { weight: 100, kcal: 100, protein: 10 },
+      },
+      compositions: [
+        {
+          menuCode: 'P-DERIVED',
+          menuName: '파생',
+          baseMenuCode: 'P-BASE',
+          ingredientCodes: ['ING-CHEESE'],
+          ingredientAmounts: { 'ING-CHEESE': { L: 20 } },
+        },
+      ],
+      ingredientNutritionMap: {
+        'ING-CHEESE': { weight: 100, kcal: 300, protein: 30 },
+      },
+      masterByCode: { 'P-BASE': { menuCode: 'P-BASE', category: '피자' } },
+    });
+
+    expect(menus).toEqual([
+      { menuCode: 'P-BASE', menuName: '베이스', category: '피자' },
+      {
+        menuCode: 'P-DERIVED',
+        menuName: '파생',
+        category: '피자',
+        displayOrder: undefined,
+        baseMenuCode: 'P-BASE',
+      },
+    ]);
+    expect(rawMap['P-DERIVED__석쇠L']).toEqual({ weight: 100, kcal: 100, protein: 10 });
   });
 });
 

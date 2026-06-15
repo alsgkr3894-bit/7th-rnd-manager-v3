@@ -35,7 +35,6 @@ function amountText(amounts, code) {
 export function TabDerived({
   menus,
   ingredients,
-  ingredientValues,
   compositions,
   onRefresh,
   menuMasters,
@@ -44,7 +43,6 @@ export function TabDerived({
 }) {
   const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
   const safeIngredients = useMemo(() => asObjectArray(ingredients), [ingredients]);
-  const safeIngredientValues = useMemo(() => asObjectArray(ingredientValues), [ingredientValues]);
   const safeCompositions = useMemo(() => asObjectArray(compositions), [compositions]);
   const safeMenuMasters = useMemo(() => asObjectArray(menuMasters), [menuMasters]);
   const refresh = typeof onRefresh === 'function' ? onRefresh : noop;
@@ -84,32 +82,21 @@ export function TabDerived({
       ),
     [safeIngredients]
   );
-  const ingredientValueByCode = useMemo(
-    () =>
-      Object.fromEntries(
-        safeIngredientValues
-          .map(row => [asDisplayText(row.productCode), row])
-          .filter(([code]) => code)
-      ),
-    [safeIngredientValues]
-  );
   const ingredientOptions = useMemo(() => {
     const byCode = new Map();
-    safeIngredientValues.forEach(row => {
+    safeIngredients.forEach(row => {
       const productCode = asDisplayText(row.productCode);
       if (!productCode) return;
-      const meta = ingredientMetaByCode[productCode] || {};
       byCode.set(productCode, {
-        ...meta,
         ...row,
         productCode,
         ingredientName: asDisplayText(
-          meta.ingredientName || row.ingredientName || meta.productName || productCode
+          row.ingredientName || row.displayName || row.productName || productCode
         ),
       });
     });
     return [...byCode.values()];
-  }, [safeIngredientValues, ingredientMetaByCode]);
+  }, [safeIngredients]);
   const searchText = asDisplayText(menuSearch).trim().toLowerCase();
 
   const visibleCompositions = useMemo(() => {
@@ -117,7 +104,7 @@ export function TabDerived({
     return safeCompositions.filter(comp => {
       const baseMenu = menuByCode[asDisplayText(comp.baseMenuCode)];
       const ingredientNames = asStringArray(comp.ingredientCodes)
-        .map(code => ingredientValueByCode[code] || ingredientMetaByCode[code])
+        .map(code => ingredientMetaByCode[code])
         .map(row => asDisplayText(row?.ingredientName || row?.productCode))
         .filter(Boolean);
       return [
@@ -131,7 +118,7 @@ export function TabDerived({
         .map(value => asDisplayText(value).toLowerCase())
         .some(value => value.includes(searchText));
     });
-  }, [safeCompositions, searchText, menuByCode, ingredientValueByCode, ingredientMetaByCode]);
+  }, [safeCompositions, searchText, menuByCode, ingredientMetaByCode]);
 
   // 파생 메뉴를 베이스 메뉴 카테고리 기준으로 그룹화
   const groupedCompositions = useMemo(() => {
@@ -206,7 +193,7 @@ export function TabDerived({
                   );
                   const ingredientsText = asStringArray(comp.ingredientCodes)
                     .map(c => {
-                      const row = ingredientValueByCode[c] || ingredientMetaByCode[c];
+                      const row = ingredientMetaByCode[c];
                       const name = asDisplayText(row?.ingredientName || c);
                       const sizeText = amountText(comp.ingredientAmounts, c);
                       return [name, sizeText ? `(${sizeText})` : ''].filter(Boolean).join(' ');
@@ -345,8 +332,8 @@ export function TabDerived({
                   }}
                 >
                   <span style={{ fontSize: 12 }}>
-                    식자재 영양값 자동계산은 사용하지 않습니다. 파생 메뉴는 베이스 메뉴
-                    영양성분을 먼저 직접 입력한 뒤 필요한 구성만 검수하세요.
+                    등록된 식자재가 없습니다. 파생 메뉴 영양성분은 베이스 메뉴 직접 입력값과
+                    엣지 조정값만 사용하며, 식자재 영양값은 자동 반영하지 않습니다.
                   </span>
                 </div>
               ) : (
@@ -365,9 +352,9 @@ export function TabDerived({
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {asStringArray(form.ingredientCodes).map(code => {
-                          const row = ingredientValueByCode[code] || ingredientMetaByCode[code];
+                          const row = ingredientMetaByCode[code];
                           const ingredientName = asDisplayText(
-                            row?.ingredientName || row?.productName,
+                            row?.ingredientName || row?.displayName || row?.productName,
                             code || '식자재'
                           );
                           const amounts = asAmountMap(form.ingredientAmounts)[code] || {};
@@ -390,7 +377,7 @@ export function TabDerived({
                                   {ingredientName}
                                 </div>
                                 <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
-                                  {code} · 식자재 영양값 100g 기준, 입력한 사용량만 반영
+                                  {code} · 구성 확인용, 영양값 자동 반영 없음
                                 </div>
                               </div>
                               <input

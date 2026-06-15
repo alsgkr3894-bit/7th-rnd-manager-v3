@@ -20,7 +20,6 @@ export function TabResults({
   rawMap,
   edgeMap,
   compositions,
-  ingredientValues,
   menuMasters,
   menuSearch = '',
 }) {
@@ -29,7 +28,6 @@ export function TabResults({
   const [missingOnly, setMissingOnly] = useState(false);
   const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
   const safeCompositions = useMemo(() => asObjectArray(compositions), [compositions]);
-  const safeIngredientValues = useMemo(() => asObjectArray(ingredientValues), [ingredientValues]);
   const safeMenuMasters = useMemo(() => asObjectArray(menuMasters), [menuMasters]);
   const safeRawMap = asRecord(rawMap);
   const safeEdgeMap = asRecord(edgeMap);
@@ -40,15 +38,6 @@ export function TabResults({
     [safeMenuMasters]
   );
 
-  const ingredientNutritionMap = useMemo(() => {
-    const map = {};
-    safeIngredientValues.forEach(row => {
-      const productCode = asDisplayText(row.productCode);
-      if (productCode) map[productCode] = row;
-    });
-    return map;
-  }, [safeIngredientValues]);
-
   const results = useMemo(
     () =>
       calcAllResults({
@@ -56,10 +45,9 @@ export function TabResults({
         rawMap: safeRawMap,
         edgeMap: safeEdgeMap,
         compositions: safeCompositions,
-        ingredientNutritionMap,
         masterByCode,
       }),
-    [safeMenus, safeRawMap, safeEdgeMap, safeCompositions, ingredientNutritionMap, masterByCode]
+    [safeMenus, safeRawMap, safeEdgeMap, safeCompositions, masterByCode]
   );
 
   const menuNames = useMemo(
