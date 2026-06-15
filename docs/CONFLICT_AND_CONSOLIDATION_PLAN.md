@@ -1033,6 +1033,13 @@
 
 ### 8.12 CSS 전역 selector 책임이 여러 파일에 분산됨
 
+**구현 상태**
+
+- 구현 완료: `4d378dd refactor: centralize css primitives`
+- `.card`, `.btn`, `.input`, `.chip`, `.filter-chip` 기본 스타일은 `app/styles/base.css`의 Global Primitives 섹션으로 모았다.
+- `home-hero.css`, `home-body.css`, `features.css`에서는 해당 primitive 본체 정의를 제거했다.
+- `css-primitive-ownership` 테스트가 base 소유권, feature/home 재정의 금지, motion 파일의 additive-only 버튼 보강을 고정한다.
+
 **관련 파일**
 
 - `app/globals.css`
@@ -1047,8 +1054,9 @@
 **현재 상태**
 
 - `globals.css`는 22개 CSS 파일을 순서대로 import한다.
-- `.btn`, `.card`, `.topbar`, `.sidebar`, `.chip`, `.bottom-tab-bar`, `.report-kind-grid-5` 같은 전역 selector가 여러 파일에 걸쳐 있다.
-- `home-hero.css`가 전역 `.btn` 본체 스타일을 정의하고, `motion.css`/`motion-note.css`가 같은 `.btn`에 transition/overflow를 덧씌운다.
+- `.btn`, `.card`, `.input`, `.chip`, `.filter-chip` primitive 본체는 `base.css`가 소유한다.
+- `.topbar`, `.sidebar`, `.bottom-tab-bar`, `.report-kind-grid-5` 같은 layout/feature selector는 각 영역 CSS에 남아 있다.
+- `motion.css`/`motion-note.css`/`motion-report.css`의 `.btn`은 transition, position, overflow 같은 보강만 허용한다.
 
 **충돌 가능성**
 
@@ -1057,8 +1065,8 @@
 
 **정리 방향**
 
-- `.btn`, `.card`, `.input`, `.modal-box` 같은 primitive는 `base.css` 또는 `components/chrome.css` 한곳으로 모은다.
-- motion 파일은 `.btn` 본체를 다시 정의하지 않고 additive class나 media query만 둔다.
+- 완료: `.btn`, `.card`, `.input`, `.chip`, `.filter-chip` primitive는 `base.css` 한곳으로 모은다.
+- 완료: motion 파일은 `.btn` 본체를 다시 정의하지 않고 additive class나 media query만 둔다.
 - report grid처럼 중복 media query가 있는 selector는 report CSS 내부에서만 관리한다.
 
 ### 8.13 무음 실패 처리 후보가 아직 남아 있음
