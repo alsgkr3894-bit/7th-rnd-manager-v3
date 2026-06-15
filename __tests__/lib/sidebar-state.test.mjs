@@ -2,6 +2,7 @@ import { describe, expect, test } from '@jest/globals';
 import { normalizeSidebarOpenIds } from '../../lib/ui/sidebar-state.js';
 import { MOBILE_TAB_DEFS, NAV_SECTIONS } from '../../lib/menu.js';
 import {
+  COST_COMMON_EDGES_ROUTE,
   COST_COMMON_GROUPS_ROUTE,
   COST_MARGIN_ROUTE,
   MENU_MASTER_ROUTE,
@@ -40,7 +41,9 @@ describe('normalizeSidebarOpenIds', () => {
     expect(hrefs).toContain(MENU_MASTER_ROUTE);
     expect(hrefs).toContain(COST_COMMON_GROUPS_ROUTE);
     expect(hrefs).toContain(COST_MARGIN_ROUTE);
+    expect(COST_COMMON_EDGES_ROUTE).toBe('/cost/recipe?tab=edges');
     expect(hrefs).not.toContain('/cost/recipe-master');
+    expect(hrefs).not.toContain('/cost/edge-dough');
     expect(hrefs).not.toContain('/cost/pizza');
     expect(hrefs).not.toContain('/cost/personal');
     expect(hrefs).not.toContain('/cost/side');
