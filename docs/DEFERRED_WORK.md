@@ -114,6 +114,7 @@
   - `components/report/sales/SalesRankTableSection.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 막대·순위표·사이즈 variant row 렌더링을 `SalesRankTableRows`로 분리. 197→52줄.
   - `components/report/sales/SalesRankTableRows.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 막대와 순위표 테이블을 `SalesCategoryBarRows`·`SalesRankTable`로 분리하고 기존 묶음 파일 제거. 163→0줄.
   - `components/report/sales/SalesCategoryBarRows.jsx` ✅ 2026-06-16 추가 보강 — 카테고리 막대 row 렌더링과 수량/비율/opacity 계산을 `SalesCategoryBarRow`·`buildSalesCategoryBarMetrics`로 분리. 87→19줄.
+  - `components/report/sales/SalesCategoryBarRow.jsx` ✅ 2026-06-16 추가 보강 — 수량/비율/opacity 계산을 `salesCategoryBarMetrics` helper로 분리하고 단위 테스트 추가. 97→83줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 부분 보강 — `NoteTableRow`·`NoteContextMenu` 렌더링 컴포넌트 분리. 1022→843줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — `NoteStatsSummary`·`NoteFilterControls` 렌더링 컴포넌트 분리. 843→642줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — `NoteCardGrid`·`NoteTableView` 목록 렌더링 컴포넌트 분리. 642→546줄.
@@ -153,7 +154,7 @@
   - `app/nutrition/allergen/useAllergenDerivedData.js` ✅ 2026-06-16 추가 보강 — 제외 메뉴 판정, 메뉴 매트릭스 생성, 매트릭스 검색, 알레르기 정렬을 `useAllergenMatrixData`로 분리. 118→81줄.
 - **잔여 대상** (우선순위 순):
   1. `app/note/_NoteListBody.jsx` (~98줄) — 목록 본문 상호작용이 더 늘어날 때 상세 모달/body 하위 분리 재평가
-  2. `components/report/sales/SalesCategoryBarRow.jsx` (~97줄) — 현재 막대 row 렌더링과 metric helper 수준, 별도 분해 불필요
+  2. `components/report/sales/SalesCategoryBarRow.jsx` (~83줄) — 현재 막대 row 렌더링 수준, 별도 분해 불필요
   3. `app/note/sample/useSamplePageFilterState.js` (~95줄) — 현재 검색/필터/정렬/view 상태 hook 수준, 별도 분해 불필요
   4. `app/note/sample/_SampleRecordsView.jsx` (~88줄) — 현재 조립 컴포넌트 수준, 별도 분해 불필요
   5. `app/nutrition/allergen/useAllergenDerivedData.js` (~81줄) — 현재 식자재 행/상세/요약/순서 목록 파생 hook 수준, 별도 분해 불필요

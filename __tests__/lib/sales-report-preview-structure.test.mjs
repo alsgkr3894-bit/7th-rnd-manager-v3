@@ -24,6 +24,10 @@ describe('sales report preview structure', () => {
       resolve('components/report/sales/SalesCategoryBarRow.jsx'),
       'utf8'
     );
+    const categoryBarMetricsSource = readFileSync(
+      resolve('components/report/sales/salesCategoryBarMetrics.js'),
+      'utf8'
+    );
     const rankTableSource = readFileSync(
       resolve('components/report/sales/SalesRankTable.jsx'),
       'utf8'
@@ -66,11 +70,15 @@ describe('sales report preview structure', () => {
     expect(categoryBarSource).toContain("from './SalesCategoryBarRow'");
     expect(categoryBarSource).toContain('<SalesCategoryBarRow');
     expect(categoryBarSource).not.toContain('pct.toFixed(1)');
-    expect(categoryBarRowSource).toContain('export function buildSalesCategoryBarMetrics');
+    expect(categoryBarRowSource).toContain("from './salesCategoryBarMetrics'");
     expect(categoryBarRowSource).toContain('export function SalesCategoryBarRow');
-    expect(categoryBarRowSource).toContain('safeQuantity(item.quantity)');
+    expect(categoryBarRowSource).not.toContain('safeQuantity(item.quantity)');
     expect(categoryBarRowSource).toContain('pct.toFixed(1)');
     expect(categoryBarRowSource).toContain('formatNumber(quantity)');
+    expect(categoryBarMetricsSource).toContain('export function buildSalesCategoryBarMetrics');
+    expect(categoryBarMetricsSource).toContain('safeQuantity(item.quantity)');
+    expect(categoryBarMetricsSource).toContain('dotOpacity');
+    expect(categoryBarMetricsSource).toContain('barOpacity');
     expect(categoryBarSource).not.toContain('export function SalesRankTable');
     expect(rankTableSource).toContain('export function SalesRankTable');
     expect(rankTableSource).toContain('function SalesVariantRows');

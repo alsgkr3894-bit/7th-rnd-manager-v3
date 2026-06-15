@@ -1,21 +1,7 @@
 'use client';
 import { formatNumber } from '@/lib/format';
-import { safeQuantity } from '@/lib/report/period';
 import { asDisplayText } from '@/lib/ui/prop-guards';
-
-export function buildSalesCategoryBarMetrics({ item, index, itemCount, catTotal }) {
-  const quantity = safeQuantity(item.quantity);
-  const pct = catTotal > 0 ? (quantity / catTotal) * 100 : 0;
-  const weight = 1 - index / Math.max(itemCount, 1);
-
-  return {
-    quantity,
-    pct,
-    dotOpacity: 0.5 + 0.5 * weight,
-    barOpacity: 0.55 + 0.45 * weight,
-    isTop: index === 0,
-  };
-}
+import { buildSalesCategoryBarMetrics } from './salesCategoryBarMetrics';
 
 export function SalesCategoryBarRow({ item, index, itemCount, catColor, catTotal }) {
   const { quantity, pct, dotOpacity, barOpacity, isTop } = buildSalesCategoryBarMetrics({
