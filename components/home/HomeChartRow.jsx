@@ -4,6 +4,7 @@ import { formatNumber, formatPercent } from '@/lib/format';
 import { useCountUp } from '@/hooks/useCountUp';
 import { AreaChart } from '@/components/charts/AreaChart';
 import { Donut } from '@/components/charts/Donut';
+import { MENU_SALES_ANALYSIS_ROUTE } from '@/lib/sales/navigation';
 import { normalizeChartColor, normalizeDonutItems } from '@/lib/ui/chart-data';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 import { EmptyState, SkeletonChart } from './HomeWidgets';
@@ -121,7 +122,7 @@ export function HomeChartRow({
               {salesYear && salesMonth ? `${salesYear}년 ${salesMonth}월 기준` : '데이터 없음'}
             </div>
           </div>
-          <button className="link" onClick={() => router?.push?.('/menu-sales/rank')}>
+          <button className="link" onClick={() => router?.push?.(MENU_SALES_ANALYSIS_ROUTE)}>
             자세히
           </button>
         </div>

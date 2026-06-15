@@ -5,16 +5,16 @@ import {
   COST_MARGIN_ROUTE,
   MENU_MASTER_ROUTE,
 } from '@/lib/cost/routes';
+import { MENU_SALES_ANALYSIS_ROUTE } from '@/lib/sales/navigation';
 import { asDisplayText, asObjectArray, clampInteger } from '@/lib/ui/prop-guards';
 
 const CACHE_TTL = 30_000;
 let _cache = { notes: null, samples: null, ingredients: null, at: 0 };
 
-const STATIC_ITEMS = [
+export const PALETTE_STATIC_ITEMS = [
   { kind: 'menu', label: '홈', href: '/' },
-  { kind: 'menu', label: '메뉴판매량 순위', href: '/menu-sales/rank' },
+  { kind: 'menu', label: '메뉴판매량 순위 및 비교', href: MENU_SALES_ANALYSIS_ROUTE },
   { kind: 'menu', label: '메뉴판매량 업로드', href: '/menu-sales/upload' },
-  { kind: 'menu', label: '메뉴판매량 비교', href: '/menu-sales/compare' },
   { kind: 'menu', label: '미매칭 관리', href: '/menu-sales/unmatched' },
   { kind: 'menu', label: '제때 상품 가격 비교', href: '/jette/price-compare' },
   { kind: 'menu', label: '제때 출고량', href: '/jette/shipment' },
@@ -128,5 +128,5 @@ export function usePaletteItems(open) {
       .catch(e => console.warn('[palette] 식자재 로드 실패:', e));
   }, [open]);
 
-  return [...STATIC_ITEMS, ...noteItems, ...sampleItems, ...ingredientItems];
+  return [...PALETTE_STATIC_ITEMS, ...noteItems, ...sampleItems, ...ingredientItems];
 }
