@@ -1,0 +1,1011 @@
+# 충돌 가능성·모듈 통합 후보 종합본
+
+> 기준일: 2026-06-15  
+> 기준 경로: `/Users/lmh/Documents/Codex/7th-rnd-manager-v3`  
+> 목적: 사이트 전체에서 기능 충돌 가능성, 데이터 기준 불일치, 이름/책임 중복, 합칠 수 있는 모듈을 찾고 실행 플랜까지 한곳에 정리한다.  
+> 작업 방식: 코드 수정 없이 현재 워크트리 기준으로 `app`, `components`, `hooks`, `lib`, `scripts`, `docs`, `README.md`, `ARCHITECTURE.md`를 스캔했다.
+
+---
+
+## 1. 확인 범위와 스캔 결과
+
+이번 점검은 이전 감사 문서(`SITE_AUDIT_REPORT.md`, `docs/PROJECT_CODEBASE_AUDIT.md`, `docs/PROJECT_STRUCTURE_AUDIT_2026-06-14.md`, `docs/DEFERRED_WORK.md`, `docs/SITE_IMPROVEMENT_BACKLOG.md`)의 내용에 더해 현재 파일을 다시 확인했다.
+
+| 항목 | 결과 | 의미 |
+|---|---:|---|
+| `app/**/page.jsx` 라우트 | 55개 | 화면 수가 많아 내비게이션/QA drift 관리 필요 |
+| 메뉴에 직접 노출된 href | 40개 | 직접 노출되지 않는 정적 route 16개 확인 |
+| 메뉴 href 중 실제 route 없음 | 0개 | 죽은 메뉴 링크는 없음 |
+| 중복 export 이름 후보 | 12개 | 일부는 통합 후보, 일부는 통합 금지 |
+| `store.js` 파일 | 18개 | store 명명은 정상이나 도메인 간 cascade 정책이 중요 |
+| 600줄 이상 파일 | 27개 | 리팩터링 후보가 많음, 기능 변경과 분리 필요 |
+
+현재 워크트리는 이미 다수 수정/미추적 파일이 있다. 구현 단계에서는 사용자 변경을 되돌리지 말고, 착수 전 `git diff -- <target>`로 해당 파일의 변경 의도를 먼저 확인해야 한다.
+
+---
+
+## 2. 우선순위 요약
+
+| 우선순위 | 항목 | 판단 |
+|---|---|---|
+| P1 | 식자재 사용현황과 영양/원산지의 식자재-메뉴 매핑 기준 불일치 | 같은 질문에 화면마다 답이 달라질 수 있음 |
+| P1 | 레시피 소스 이중화(`cost_recipes` vs detail 4종) | 보고서/마진/사용현황/영양 자동집계의 기준 고정 필요 |
+| P1 | 메뉴마스터와 판매가 양방향 동기화 | 어느 쪽이 주 데이터인지 정책이 흔들리면 덮어쓰기 위험 |
+| P1 | 백업 localStorage 복원이 `nutrition` 선택에 묶임 | 전역 설정이 백업 파일에 있어도 선택 복원에서 빠질 수 있음 |
+| P1 | 멀티 브랜드 백업 source metadata 부재 | 다른 브랜드 백업을 현재 브랜드 DB에 복원해도 코드상 검증이 없음 |
+| P1 | 삭제/복원 cascade 원자성 | 이미 경고는 있지만 일부 삭제·복원만 반영될 수 있음 |
+| P1 | 노트 삭제가 parentId 전체 체인과 UI state를 완전히 다루지 않음 | 손자 노트 orphan/삭제 직후 잔상/undo 실패 무시 가능성 |
+| P2 | 엣지 관리 화면 중복 | `/cost/edge-dough`와 `/cost/recipe?tab=edges`가 같은 데이터를 편집 |
+| P2 | 메뉴 판매량 redirect route가 허브 카드에 그대로 노출 | 같은 기능이 여러 화면처럼 보임 |
+| P2 | 모바일 원가 primary route가 데스크톱과 다름 | 모바일은 `/cost/pizza`, 데스크톱은 `/cost/recipe` 중심으로 진입 |
+| P2 | 시스템 설정 store/localStorage/no-op 토글 분리 | 설정이 저장돼도 백업/복원 또는 실제 로직에 반영되지 않을 수 있음 |
+| P2 | 영양 메뉴가 메뉴마스터 밖에서 생성 가능 | 메뉴마스터 단일 기준 정책과 충돌 가능 |
+| P2 | `cost_recipes` menuCode base/full 정책 불명확 | legacy fallback과 detail recipe 매칭 기준이 흔들릴 수 있음 |
+| P2 | 식자재 삭제 안전장치가 화면별로 다름 | 같은 삭제 작업의 undo/cascade 경고가 진입 화면마다 다름 |
+| P2 | 카테고리 판정 함수 중복 | `isPizzaCategory` 이름이 3곳에서 다른 의미로 사용됨 |
+| P2 | 백업 localStorage 키 파일 위치 | 전역 백업 설정이 `lib/nutrition` 아래에 있음 |
+| P2 | 보고서 비교 route 노출 기준 drift | `KIND_META`/허브에는 있으나 사이드바에는 없음 |
+| P2 | CSS primitive selector가 여러 파일에 분산 | `.btn`, `.card` 같은 전역 스타일이 import 순서에 민감 |
+| P2 | 대형 파일 분해 | 유지보수성 문제, 단 기능 안정화 후 진행 |
+| P3 | 계정 store와 활성 계정 key 범위 | 전역/브랜드별 계정 정책 명시 필요 |
+| P3 | 무음 실패 catch 허용 목록 부재 | 무시 가능한 실패와 노출해야 할 실패가 섞여 있음 |
+| P3 | 이름만 같은 export/컴포넌트 | 통합 대신 명명 정리 또는 그대로 유지 |
+
+---
+
+## 3. 상세 발견 사항
+
+### 3.1 식자재 사용현황과 영양/원산지 매핑 기준 불일치
+
+**관련 파일**
+
+- `app/ingredient/usage/page.jsx`
+- `lib/cost/ingredient-price-helpers.js`
+- `lib/cost/ingredient-menu-map.js`
+- `lib/cost/usage-counts.js`
+- `app/nutrition/origin/page.jsx`
+- `app/nutrition/allergen/page.jsx`
+- `app/nutrition/export/OriginResult.jsx`
+- `app/nutrition/export/NutritionLabelResult.jsx`
+
+**현재 상태**
+
+- `app/ingredient/usage/page.jsx`는 피자, 1인피자, 사이드, 구형 레시피만 읽는다.
+- `buildIngredientUsageMap()`은 세트 레시피, 공통묶음, 엣지, 파생메뉴를 포함하지 않는다.
+- 반면 `buildIngredientMenuMap()`은 detail 레시피, 구형 레시피, 공통묶음, 엣지, 파생메뉴까지 포함하는 더 넓은 매핑 정책을 이미 갖고 있다.
+- `lib/cost/usage-counts.js`는 현재 피자/사이드만 별도 집계한다.
+
+**충돌 가능성**
+
+- 같은 식자재가 영양/원산지 화면에서는 사용 중으로 잡히고, 제품별 사용현황에서는 미사용처럼 보일 수 있다.
+- 세트 구성품이 사용현황에서 누락될 수 있다.
+- 엣지/공통묶음 재료가 원산지/알레르기에는 반영되지만 식자재 사용현황에는 빠질 수 있다.
+
+**통합 방향**
+
+- `buildIngredientUsageMap()`을 `buildIngredientMenuMap()` 기반 adapter로 바꾼다.
+- 사용현황 페이지도 `menuMaster`, `setRecs`, `groups`, `edges`, `compositions`를 함께 로드한다.
+- 카운트는 기존 `pizza`, `side`를 유지하면서 `set`, `other`를 추가하거나, UI가 준비되기 전에는 `total`만 정확히 고정한다.
+
+**테스트**
+
+- 세트 레시피 구성품이 사용현황에 포함된다.
+- 공통묶음 default category가 해당 메뉴 전체에 반영된다.
+- `expandInMargin=false` 엣지는 사용현황에서도 제외된다.
+- 파생메뉴의 `ingredientCodes`가 사용 메뉴로 잡힌다.
+- 기존 피자/1인피자/사이드 카운트는 회귀하지 않는다.
+
+---
+
+### 3.2 레시피 기준 데이터 이중화
+
+**관련 파일**
+
+- `lib/recipe/store.js`
+- `lib/cost/shared/createDetailStore.js`
+- `lib/cost/pizza-detail/store.js`
+- `lib/cost/personal-detail/store.js`
+- `lib/cost/side-detail/store.js`
+- `lib/cost/set-detail/store.js`
+- `lib/cost/recipe-source-precedence.js`
+- `lib/report/build-cost-report.js`
+- `lib/recipe-master/data.js`
+- `app/cost/recipe/page.jsx`
+- `app/cost/recipe-master/page.jsx`
+
+**현재 상태**
+
+- 구형 레시피는 `cost_recipes`에 있고, 신규/상세 레시피는 `cost_pizza_detail`, `cost_personal_detail`, `cost_side_detail`, `cost_set_detail`에 있다.
+- `createDetailStore()`로 detail 4종 CRUD는 잘 공통화되어 있다.
+- `recipe-source-precedence.js`와 `build-cost-report.js`는 detail 레시피를 우선하고 구형 레시피는 fallback으로 쓰는 정책을 이미 일부 구현했다.
+- `recipe-master`는 menu master 기반으로 detail store에 skeleton을 생성한다.
+
+**충돌 가능성**
+
+- 한 메뉴가 `cost_recipes`와 detail store 양쪽에 있으면 화면마다 다른 레시피를 볼 수 있다.
+- 빈 skeleton detail 레시피가 있으면 구형 레시피 fallback을 막지 않아야 하는데, 이 규칙이 모든 사용처에 일관되게 적용되어야 한다.
+- `/cost/recipe`와 `/cost/recipe-master`가 둘 다 "레시피"를 다루므로 사용자 관점의 역할 구분이 필요하다.
+
+**통합 방향**
+
+- 정책 이름을 명확히 정한다: `detail recipes are authoritative, cost_recipes is legacy fallback`.
+- 모든 사용처가 `recipe-source-precedence.js`를 거쳐 판단하게 한다.
+- `cost_recipes`는 당장 삭제하지 않고 읽기/fallback/마이그레이션 대상으로 남긴다.
+- `/cost/recipe-master`는 메뉴마스터 연동형 표준 입력, `/cost/recipe`는 기존 원가 레시피/묶음/엣지 작업대로 문구를 분리한다.
+
+**테스트**
+
+- detail 레시피에 구성품이 있으면 같은 메뉴의 `cost_recipes`는 제외된다.
+- detail 레시피가 빈 skeleton이면 `cost_recipes` fallback이 유지된다.
+- 보고서, 마진표, 사용현황, 영양/원산지 자동집계가 같은 precedence 결과를 쓴다.
+
+---
+
+### 3.3 메뉴마스터와 판매가 동기화 정책 충돌
+
+**관련 파일**
+
+- `lib/menu-master/index.js`
+- `lib/menu-master/store.js`
+- `lib/cost/menu-price/store.js`
+- `app/menu-master/page.jsx`
+- `app/cost/ingredient-price/page.jsx`
+- `app/cost/margin/page.jsx`
+
+**현재 상태**
+
+- `lib/menu-master/index.js` 주석은 "메뉴 마스터가 모든 모듈의 메인 데이터 소스"라고 설명한다.
+- 하지만 `syncMenuMasterFromPrices()`는 판매가 행에서 메뉴마스터를 갱신하고, `pushMasterToPrices()`는 메뉴마스터에서 판매가를 갱신한다.
+- 즉 실질적으로 양방향 동기화가 있다.
+
+**충돌 가능성**
+
+- 판매가 일괄 업로드가 메뉴명/카테고리/size/price를 메뉴마스터에 다시 밀어 넣을 수 있다.
+- 메뉴마스터에서 상태, 노트, 표시순서 등을 수정한 뒤 판매가 sync가 의도치 않게 일부 필드를 덮을 수 있다.
+- `source` 필드가 있으나 정책 enforcement가 충분히 명시적이지 않다.
+
+**통합 방향**
+
+- 메뉴 identity 기준은 `menu_master`로 고정한다.
+- `cost_selling_prices`는 가격 mirror로 제한한다.
+- 판매가 업로드에서 메뉴마스터에 새 메뉴를 만들 수는 있어도, 기존 메뉴의 운영 필드(`status`, `note`, `hidden`, `excludeFromOrigin`, `displayOrder`)는 절대 덮지 않는다.
+- sync 결과를 UI에 표시한다: 신규 생성, 가격만 갱신, 충돌 후보.
+
+**테스트**
+
+- 기존 메뉴마스터의 `status`, `note`, `hidden`, `displayOrder`가 가격 업로드 후 보존된다.
+- 메뉴마스터에서 discontinued 처리한 메뉴가 판매가 mirror에서 제거된다.
+- menuCode 중복은 마지막 행으로 조용히 덮지 않고 진단된다.
+
+---
+
+### 3.4 엣지 관리 화면 중복
+
+**관련 파일**
+
+- `app/cost/edge-dough/page.jsx`
+- `components/cost/manage/CommonManageView.jsx`
+- `app/cost/recipe/page.jsx`
+- `app/cost/manage/page.jsx`
+- `lib/cost/edge-dough/store.js`
+
+**현재 상태**
+
+- `/cost/edge-dough`는 독립 엣지·도우 원가 화면이다.
+- `/cost/recipe?tab=edges`는 `CommonManageView` 안에서 같은 `cost_edge_dough` store를 편집한다.
+- `/cost/manage`는 `/cost/recipe?tab=groups`로 redirect한다.
+
+**충돌 가능성**
+
+- 같은 데이터를 두 화면에서 편집할 수 있어 QA/문서/사용자 안내가 갈라진다.
+- 한쪽에서 추가한 UX 개선이 다른 화면에 반영되지 않을 수 있다.
+
+**통합 방향**
+
+- 1안: `/cost/recipe?tab=edges`를 주 화면으로 정하고 `/cost/edge-dough`는 redirect한다.
+- 2안: `/cost/edge-dough`를 주 화면으로 정하고 `/cost/recipe` 탭은 링크/요약만 둔다.
+- 추천은 1안이다. 묶음 관리와 엣지 관리가 원가 레시피 작업대 안에 붙어 있어 사용 흐름이 자연스럽다.
+
+**테스트**
+
+- 기존 `/cost/edge-dough` 북마크가 깨지지 않는다.
+- 엣지 저장/삭제/시드/초기화가 주 화면에서만 QA된다.
+
+---
+
+### 3.5 메뉴 판매량 redirect route가 허브 카드에 노출
+
+**관련 파일**
+
+- `app/menu-sales/page.jsx`
+- `app/menu-sales/rank/page.jsx`
+- `app/menu-sales/compare/page.jsx`
+- `app/menu-sales/rank-compare/page.jsx`
+
+**현재 상태**
+
+- `/menu-sales/rank`와 `/menu-sales/compare`는 `/menu-sales/rank-compare`로 redirect한다.
+- 그런데 `/menu-sales` 허브에는 `순위 및 비교`, `기간 비교`, `판매 순위표` 카드가 모두 보인다.
+
+**충돌 가능성**
+
+- 사용자는 세 개의 다른 분석 화면이 있다고 기대하지만 실제로는 같은 통합 화면으로 이동한다.
+- QA에서는 redirect route와 실제 목적지를 별도로 다뤄야 한다.
+
+**통합 방향**
+
+- 허브에는 `/menu-sales/rank-compare` 카드 하나만 남긴다.
+- redirect route는 하위 호환용으로 유지하되, 메뉴/허브/문서에는 직접 노출하지 않는다.
+- QA에는 redirect route를 "호환 route"로 분류한다.
+
+---
+
+### 3.6 카테고리 판정 함수 이름 충돌
+
+**관련 파일**
+
+- `lib/menu-master/category-policy.js`
+- `lib/menu-categories.js`
+- `lib/nutrition/crust-config.js`
+- `lib/cost/margin/matching.js`
+- `lib/recipe-master/sync.js`
+
+**현재 상태**
+
+- `isPizzaCategory` export가 3곳에 있다.
+- `category-policy.js`는 정책 판정 함수다.
+- `menu-categories.js`는 상수/정렬과 피자 변형 목록을 갖는다.
+- `nutrition/crust-config.js`는 nutrition용으로 `category-policy`를 감싼다.
+
+**충돌 가능성**
+
+- 같은 이름을 import했는데 includePersonal 여부나 하위분류 처리 결과가 달라질 수 있다.
+- 신규 코드가 어느 함수를 써야 하는지 헷갈린다.
+
+**통합 방향**
+
+- 실제 판정 함수는 `lib/menu-master/category-policy.js`로 집중한다.
+- `lib/menu-categories.js`는 `MENU_CATEGORY`, `getMenuCodeRank` 중심으로 축소한다.
+- nutrition wrapper는 `isNutritionPizzaCategory`처럼 이름을 바꿔 의미를 드러낸다.
+
+**테스트**
+
+- `피자`, `피자/신메뉴`, `1인피자`, `세트박스`, `소스`, `파스타`, `음료`, `추가토핑` 판정 fixture를 둔다.
+
+---
+
+### 3.7 백업 localStorage 키 파일 위치와 책임
+
+**관련 파일**
+
+- `lib/nutrition/backup-keys.js`
+- `lib/db/backup.js`
+- `lib/note/keys.js`
+
+**현재 상태**
+
+- `lib/nutrition/backup-keys.js`는 이름과 달리 영양뿐 아니라 노트, 원가, 식자재, 홈, 제때, 전역 설정 localStorage 키를 모두 관리한다.
+- `lib/db/backup.js`가 이 파일에서 `collectLocalStorage`, `restoreLocalStorage`를 import한다.
+
+**충돌 가능성**
+
+- 신규 전역 설정을 추가하는 사람이 nutrition 폴더를 찾아야 한다.
+- 백업 책임이 nutrition 모듈에 있는 것처럼 보인다.
+
+**통합 방향**
+
+- 새 위치: `lib/backup/local-storage-keys.js`.
+- 기존 `lib/nutrition/backup-keys.js`는 하위 호환 re-export만 남기거나, 참조를 모두 변경한 뒤 deprecated 주석을 둔다.
+- `PERSISTENT_LS_KEYS`는 `lib/note/keys.js`의 `KEYS`와 수동 중복이 있으므로 장기적으로 영속/임시 분류 metadata를 둔다.
+
+**테스트**
+
+- 기존 `nutrition-backup-keys.test.mjs`를 새 경로 기준으로 갱신한다.
+- unknown key, non-string value, storage access failure 동작 유지.
+
+---
+
+### 3.8 legacy 알레르기 링크 store
+
+**관련 파일**
+
+- `lib/db/constants.js`
+- `lib/db/module-stores.js`
+- `lib/db/schema/nutrition.js`
+- `lib/nutrition/allergen/store.js`
+- `lib/ingredient/store.js`
+- `lib/nutrition/migrate-to-ingredient.js`
+
+**현재 상태**
+
+- `nutrition_allergy_links`는 legacy store로 남아 있다.
+- 실제 알레르기 기준은 `cost_ingredients.allergens`로 이동한 상태다.
+- `deleteAllergenLinksByIngredient()`는 store가 없으면 no-op 하도록 안전하게 작성되어 있다.
+
+**통합 방향**
+
+- 즉시 삭제하지 않는다.
+- 먼저 진단 UI나 migration check로 legacy link 잔여 0건을 확인한다.
+- 이후 DB version migration과 백업 호환 정책을 정한 뒤 store 정의에서 제거한다.
+
+**테스트**
+
+- legacy store가 있어도 삭제 cascade가 동작한다.
+- legacy store가 없어도 식자재 삭제가 실패하지 않는다.
+- 구버전 백업 복원 정책이 명확하다.
+
+---
+
+### 3.9 삭제/복원 cascade 원자성
+
+**관련 파일**
+
+- `lib/menu-master/store.js`
+- `lib/ingredient/store.js`
+- `lib/note/store.js`
+- `lib/db/backup.js`
+
+**현재 상태**
+
+- 메뉴마스터 삭제는 `menu_master` 삭제 후 판매가, 구형 레시피, 영양 참조를 별도 단계로 정리한다.
+- 식자재 삭제는 `cost_ingredients` 삭제 후 영양값, legacy 알레르기 링크를 별도 단계로 정리한다.
+- 노트 삭제 주석은 parentId 체인 삭제를 말하지만 구현은 직계 자식만 삭제한다.
+- 백업 복원은 store별 `replaceStore()` 순차 실행이다.
+
+**충돌 가능성**
+
+- 중간 실패 시 일부 store만 정리된다.
+- 노트 손자/후손이 orphan으로 남을 수 있다.
+- 복원 중 일부 store만 교체될 수 있다.
+
+**통합 방향**
+
+- 삭제 전 `delete preview plan`을 만든다: 삭제 대상 store, 레코드 수, rollback 가능 여부.
+- 같은 DB 안에서 묶을 수 있는 store는 단일 `runTransaction([...stores], 'readwrite')`로 묶는다.
+- dynamic import가 필요한 도메인 간 cascade는 실패를 명시적으로 반환하고 repair action을 제공한다.
+- 노트 삭제는 `getNotesInChain()` 또는 descendant collector를 재사용한다.
+- 복원은 전체 사전 검증 후 실행하고, 실패 store를 복원 결과 화면에서 강하게 표시한다.
+
+---
+
+### 3.10 내비게이션과 route 분류
+
+**관련 파일**
+
+- `lib/menu.js`
+- `app/cost/page.jsx`
+- `app/menu-sales/page.jsx`
+- `scripts/full-rt.mjs`
+
+**현재 상태**
+
+메뉴에 직접 노출되지 않는 정적 route 16개:
+
+| route | 분류 | 조치 |
+|---|---|---|
+| `/cost` | 허브 | 유지 |
+| `/cost/all-summary` | 원가 상세 | 원가 허브/문서에는 노출 유지 |
+| `/cost/edge-dough` | 중복 편집 후보 | redirect 또는 주 화면 결정 |
+| `/cost/manage` | redirect | 호환 route로 분류 |
+| `/cost/personal` | 원가 상세 | 허브 노출로 충분 |
+| `/cost/set` | 원가 상세 | 허브 노출로 충분 |
+| `/cost/side` | 원가 상세 | 허브 노출로 충분 |
+| `/ingredient` | 허브 | 유지 |
+| `/jette` | 허브 | 유지 |
+| `/menu-sales` | 허브 | 유지 |
+| `/menu-sales/compare` | redirect | 허브 카드 제거 |
+| `/menu-sales/rank` | redirect | 허브 카드 제거 |
+| `/note/sample/write` | 작성 flow | 유지 |
+| `/nutrition` | 허브 | 유지 |
+| `/report/menu-sales-compare` | 내부 보고서 flow | 보고서 허브 내부 카드 확인 |
+| `/settings` | redirect | 호환 route로 분류 |
+
+**통합 방향**
+
+- route를 `sidebar`, `hub`, `redirect`, `internal-flow`, `dynamic-detail`로 명시 분류한다.
+- `scripts/full-rt.mjs`와 문서가 이 분류를 공유하게 한다.
+
+---
+
+## 4. 합쳐도 되는 것 / 합치면 안 되는 것
+
+### 합쳐도 되는 것
+
+| 후보 | 통합 방향 |
+|---|---|
+| `buildIngredientUsageMap` + `buildIngredientMenuMap` | 후자를 단일 매핑 정책으로 삼고 사용현황용 adapter만 둔다 |
+| 카테고리 판정 함수 | `category-policy.js` 중심으로 통합 |
+| localStorage 백업 키 | `lib/backup/local-storage-keys.js`로 이동 |
+| 메뉴 판매량 rank/compare redirect 카드 | 허브에서 통합 카드 하나만 노출 |
+| 엣지 편집 화면 | `/cost/recipe?tab=edges` 또는 `/cost/edge-dough` 중 하나만 primary |
+| route 분류 | 메뉴/QA/문서가 같은 route classification을 사용 |
+
+### 합치면 안 되거나 신중해야 하는 것
+
+| 후보 | 이유 |
+|---|---|
+| `lib/nutrition/crust-config.js`와 `lib/cost/edge-dough/*` | nutrition의 L/R 포함 엣지 코드와 cost의 edgeType 체계가 다르다고 코드 주석에 명시되어 있음 |
+| `components/cost/ingredient-price/BulkPriceModal.jsx`와 `components/cost/menu-price/BulkPriceModal.jsx` | 이름은 같지만 다루는 데이터와 workflow가 다름. 기존 문서에도 통합 미구현으로 분류됨 |
+| `components/sales/UploadDropzone.jsx`와 `components/ui/UploadDropzone.jsx` | 이미 sales wrapper가 ui 공통 컴포넌트를 감싼 구조라 중복 구현이 아님. 이름만 `SalesUploadDropzone`로 바꾸면 더 명확함 |
+| `lib/nutrition/values/store.js`의 `CRUST_TYPES` re-export | 기존 import 경로 호환용. 바로 제거하면 호출부 변경이 커짐 |
+| `Field` 같은 로컬 작은 컴포넌트 | 이름만 같고 범위가 좁음. 통합 효과 낮음 |
+| `getAllEdges`/`upsertEdge` 이름 중복 | cost edge와 nutrition edge master가 다른 도메인. export alias로 명확화하는 정도가 적절 |
+
+---
+
+## 5. 실행 플랜
+
+### Phase 0. 기준 고정과 보호 장치
+
+- 현재 dirty worktree에서 변경 대상 파일의 `git diff`를 먼저 확인한다.
+- 기존 사용자 변경은 되돌리지 않는다.
+- DB schema 변경, legacy store 제거, 데이터 삭제 마이그레이션은 별도 승인 전까지 하지 않는다.
+- `docs/DEFERRED_WORK.md`와 이 문서의 관계를 정한다: 이 문서는 충돌/통합 후보, `DEFERRED_WORK.md`는 실제 착수/완료 상태.
+
+**완료 기준**
+
+- 이 문서가 최신 종합본으로 참조된다.
+- 구현 티켓을 만들 때 각 항목의 우선순위와 테스트가 명확하다.
+
+### Phase 1. 낮은 위험의 내비게이션 정리
+
+- `/menu-sales` 허브에서 `/menu-sales/rank`, `/menu-sales/compare` redirect 카드를 제거하거나 "통합 페이지" 하나로 합친다.
+- route 분류표를 문서와 QA 스크립트에 반영한다.
+- 엣지 primary route를 결정하고 보조 route는 redirect/링크로 정리한다.
+- `UploadDropzone` wrapper, nutrition/cost edge alias처럼 이름 혼동만 있는 항목은 rename 또는 주석만 정리한다.
+
+**검증**
+
+- `npm run qa:smoke`
+- `/menu-sales`, `/cost`, `/cost/recipe?tab=edges`, `/cost/edge-dough` 수동 확인
+
+### Phase 2. 식자재-메뉴 매핑 단일화
+
+- `buildIngredientMenuMap()`을 단일 매핑 정책으로 확정한다.
+- `buildIngredientUsageMap()`은 기존 return shape를 유지하는 adapter로 바꾼다.
+- 사용현황 페이지에서 세트, 묶음, 엣지, 파생메뉴 데이터를 함께 로드한다.
+- `getUsageMenuCounts()`에 세트/기타 카운트 정책을 추가하거나 UI에 영향이 크면 total 정확도부터 고정한다.
+
+**검증**
+
+- `__tests__/lib/ingredient-menu-map.test.mjs`
+- `__tests__/lib/usage-menu-counts.test.mjs`
+- 신규 `ingredient-usage-map.test.mjs`
+- `/ingredient/usage` smoke 및 CSV/PDF 출력 확인
+
+### Phase 3. 레시피 소스 정책 고정
+
+- `recipe-source-precedence.js`를 모든 report/margin/usage/nutrition 집계의 공통 판단 함수로 사용한다.
+- `cost_recipes`는 `legacy fallback`으로 표시한다.
+- 빈 detail skeleton과 실제 작성 detail 레시피를 명확히 구분한다.
+- `/cost/recipe-master`와 `/cost/recipe` 화면 문구를 역할 기준으로 정리한다.
+
+**검증**
+
+- `__tests__/lib/build-cost-report-recipes.test.mjs`
+- `__tests__/lib/ingredient-menu-map.test.mjs`
+- `__tests__/lib/recipe-master-sync.test.mjs`
+- 원가 보고서, 마진표, 영양/원산지 자동집계 기준 비교
+
+### Phase 4. 메뉴마스터-판매가 sync 정책 정리
+
+- `syncMenuMasterFromPrices()`는 신규 메뉴 생성/가격 갱신만 하도록 제한한다.
+- 기존 메뉴의 운영 필드는 보존한다.
+- 충돌 후보를 반환해 UI에서 보여준다.
+- `pushMasterToPrices()`는 master -> mirror 방향으로 유지한다.
+
+**검증**
+
+- 메뉴마스터 기존 상태/노트/숨김값 보존 테스트
+- 판매가 mirror 갱신 테스트
+- 메뉴 삭제 cascade 테스트
+
+### Phase 5. cascade와 복원 안정화
+
+- 메뉴마스터/식자재/노트 삭제에 delete plan preview를 추가한다.
+- 노트 삭제는 descendant 전체를 수집한다.
+- 복원은 store별 실행 전 전체 validation을 끝내고, 실패 store를 결과에서 강하게 노출한다.
+
+**검증**
+
+- `ingredient-delete-cascade.test.mjs`
+- 노트 descendant 삭제 테스트
+- backup/restore partial failure 테스트
+
+### Phase 6. 대형 파일 분리
+
+- 기능 안정화 후 파일별로 작게 진행한다.
+- 우선순위:
+  1. `app/note/_NoteContent.jsx`
+  2. `app/report/sales/page.jsx`
+  3. `app/note/sample/page.jsx`
+  4. `lib/ingredient/store.js`
+  5. `app/nutrition/allergen/page.jsx`
+  6. `app/ingredient/manage/IngredientForm.jsx`
+
+**검증**
+
+- 각 파일 분리마다 기존 테스트 + 해당 화면 smoke.
+- 기능 변경과 refactor-only diff를 섞지 않는다.
+
+---
+
+## 6. 추천 착수 순서
+
+1. **백업/설정 정책 정리**: localStorage 선택 복원, 시스템 설정 key, source brand metadata를 먼저 고정.
+2. **식자재 사용현황 정확도 보강**: `buildIngredientMenuMap` 기준으로 통합.
+3. **레시피·menuCode 소스 정책 고정**: detail 우선, legacy fallback, base/full 기준을 전 사용처에 적용.
+4. **메뉴마스터-판매가-영양 메뉴 기준 정리**: master identity, price mirror, nutrition-only 메뉴 허용 여부 확정.
+5. **cascade/복원/destructive action 안정화**: 노트 descendant 삭제, 식자재 삭제 공통 undo, partial restore 대응.
+6. **내비게이션/route metadata 정리**: 모바일 원가 탭, 보고서 비교 route, redirect 카드, 엣지 primary route 결정.
+7. **CSS primitive와 대형 파일 분리**: 회귀 테스트가 잡힌 뒤 전역 `.btn`/`.card`와 대형 파일을 작게 분리.
+
+---
+
+## 7. 명시적 기본값
+
+- 기존 데이터 store를 삭제하지 않는다.
+- `cost_recipes`는 바로 제거하지 않고 legacy fallback으로 유지한다.
+- `nutrition_allergy_links`는 잔여 데이터 0건 검증 전 제거하지 않는다.
+- nutrition edge config와 cost edge/dough config는 통합하지 않는다.
+- UI wrapper 수준의 중복은 무리하게 합치지 않고 이름/주석으로 역할을 명확히 한다.
+- 모든 통합 작업은 `npm run test:ci`와 관련 route smoke를 기준 검증으로 삼는다.
+
+---
+
+## 8. 2차 전체 재스캔 추가 발견분
+
+사용자 요청에 따라 1차 종합본 작성 후 다시 `app`, `components`, `hooks`, `lib`, `scripts`, `__tests__`, `app/styles`를 훑었다.
+
+| 항목 | 추가 확인 결과 |
+|---|---:|
+| 소스/스타일/테스트 대상 파일 | 794개 |
+| `app/**/page.jsx` route | 55개 |
+| redirect route | 3개 |
+| DB store 정의 | 49개 |
+| schema 생성 누락 store | 0개 |
+| 빈 `catch {}`/무시형 catch 후보 | 37줄 |
+| CSS import 파일 | 22개 |
+| 복수 CSS 파일에 걸친 전역 selector 후보 | 12개 이상 |
+
+### 8.1 백업 localStorage 복원 gate가 `nutrition` 선택에 묶여 있음
+
+**관련 파일**
+
+- `lib/nutrition/backup-keys.js`
+- `lib/db/backup.js`
+- `app/settings/restore/page.jsx`
+
+**현재 상태**
+
+- `PERSISTENT_LS_KEYS`는 영양뿐 아니라 노트, 샘플, 원가, 식자재, 홈, 제때, 프로필, 테마까지 포함한다.
+- `exportSelected()`와 `exportAll()`은 이 전역 localStorage 묶음을 백업 파일에 넣는다.
+- 하지만 복원 화면은 `selectedKeys.includes('nutrition')`일 때만 `parsed.localStorage`를 `importAll()`에 넘긴다.
+
+**충돌 가능성**
+
+- 사용자가 원가, 노트, 홈, 제때 설정만 복원하려고 선택하면 해당 localStorage 설정은 백업 파일에 있어도 복원되지 않는다.
+- 파일 이름은 "영속 설정"인데 복원 조건은 "영양성분 선택"이라 정책이 어긋난다.
+
+**정리 방향**
+
+- localStorage 복원 범위를 `nutrition`과 분리한다.
+- 선택 UI에 `앱 설정/localStorage` 별도 scope를 만들거나, 선택된 module이 하나라도 관련 key를 가지면 해당 key만 복원한다.
+- `restoreLocalStorage(map, keys)`에 module별 key subset을 넘길 수 있게 분리한다.
+
+**검증**
+
+- nutrition을 선택하지 않고 `v3:home-widgets`, `v3:jette-settings`, `v3:profile`이 복원되는지 테스트한다.
+- nutrition만 선택하면 nutrition key만 복원되는지 테스트한다.
+
+### 8.2 시스템 설정 저장소가 localStorage와 IndexedDB로 갈라져 있음
+
+**관련 파일**
+
+- `lib/settings.js`
+- `app/settings/system/page.jsx`
+- `lib/db/schema/common.js`
+- `lib/db/constants.js`
+- `lib/db/module-stores.js`
+- `lib/nutrition/backup-keys.js`
+
+**현재 상태**
+
+- IndexedDB에는 `settings` store가 정의되어 있고 백업 공통 store에 포함된다.
+- 실제 시스템 설정은 `lib/settings.js`가 `v3:<key>` localStorage에 저장한다.
+- `app/settings/system/page.jsx`에서 쓰는 설정 key는 `theme`, `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert`다.
+- 현재 백업 영속 key에는 `v3:theme`만 있고 나머지 시스템 설정 key는 빠져 있다.
+- `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert`는 설정 화면 외 실제 업무 로직에서 읽는 사용처가 거의 없다.
+
+**충돌 가능성**
+
+- 백업/복원에서 `settings` store는 복원되지만 실제 UI 설정은 복원되지 않을 수 있다.
+- 사용자는 "자동 재계산", "미연동 차단", "반올림 방식"을 켰다고 생각하지만 실제 계산 로직은 이 값을 참조하지 않을 수 있다.
+
+**정리 방향**
+
+- 1안: `settings` store를 실제 설정 source of truth로 승격하고 localStorage는 UI hydrate cache로 둔다.
+- 2안: `settings` store를 legacy/예약 store로 명시하고, 모든 실제 설정 key를 `PERSISTENT_LS_KEYS`에 포함한다.
+- 실제 로직에서 쓰이지 않는 정책 토글은 "준비 중" 상태로 낮추거나, 해당 계산/알림 로직에 연결한다.
+
+**검증**
+
+- `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert` 백업/복원 테스트.
+- 원가 계산 또는 업로드 로직에서 정책 설정이 적용되는지 fixture 테스트.
+
+### 8.3 멀티 브랜드 백업 파일에 source brand metadata가 없음
+
+**관련 파일**
+
+- `lib/db/backup.js`
+- `app/settings/backup/page.jsx`
+- `app/settings/restore/page.jsx`
+- `lib/active-brand.js`
+- `lib/db/init.js`
+- `lib/db/shared.js`
+
+**현재 상태**
+
+- 대부분의 store는 활성 브랜드 DB에 저장된다.
+- 노트 패밀리는 `lib/db/shared.js`에 따라 항상 main DB에 저장된다.
+- 백업/복원 화면은 현재 브랜드를 안내하지만, 백업 JSON 자체에는 `sourceBrandId`, `sourceBrandName`, `sourceDbName` 같은 metadata가 없다.
+
+**충돌 가능성**
+
+- A 브랜드에서 만든 백업 파일을 B 브랜드가 활성화된 상태에서 복원해도 코드상 파일 출처 검증이 없다.
+- 노트는 main DB 공유, 나머지는 활성 브랜드 DB라 같은 백업 안에서도 저장 DB 기준이 섞인다.
+
+**정리 방향**
+
+- `exportSelected()` meta에 source brand 정보를 항상 포함한다.
+- `app/settings/restore/page.jsx`에서 백업 source brand와 현재 target brand를 비교해 경고/확인 단계를 둔다.
+- shared store와 active-brand store를 복원 미리보기에서 분리 표시한다.
+
+**검증**
+
+- main 백업을 non-main에 복원하려 할 때 강한 경고가 뜬다.
+- non-main 백업을 main에 복원하려 할 때도 source/target mismatch를 보여준다.
+- shared store는 main DB로, active store는 현재 브랜드 DB로 들어간다는 설명이 미리보기에 노출된다.
+
+### 8.4 계정 store와 활성 계정 key의 범위가 애매함
+
+**관련 파일**
+
+- `lib/auth/accounts.js`
+- `hooks/useCurrentRole.js`
+- `app/settings/account/page.jsx`
+- `lib/db/module-stores.js`
+
+**현재 상태**
+
+- `ref_accounts`는 `COMMON_STORES`에 있어 백업 범위에는 항상 포함된다.
+- 하지만 `ref_accounts` CRUD는 일반 `getAll`, `put`, `deleteById`를 써서 활성 브랜드 DB를 따른다.
+- 활성 계정 ID는 localStorage `rnd_active_account_id`에 저장되며 `PERSISTENT_LS_KEYS`에는 없다.
+
+**충돌 가능성**
+
+- "계정 관리"가 전역 시스템 설정인지, 브랜드별 계정 설정인지 명확하지 않다.
+- 계정 목록은 복원됐는데 활성 계정 선택은 복원되지 않을 수 있다.
+- active account id가 다른 브랜드의 account id와 우연히 겹치면 다른 권한으로 보일 수 있다.
+
+**정리 방향**
+
+- 계정이 전역이면 `ref_accounts`를 shared/main DB로 이동하고 active account key 정책을 정한다.
+- 계정이 브랜드별이면 UI와 백업 문구에 "현재 브랜드 계정"이라고 명시한다.
+- `rnd_active_account_id`는 백업 제외/포함 여부를 명시적으로 문서화한다.
+
+### 8.5 영양 메뉴 목록이 메뉴마스터 밖에서도 생성될 수 있음
+
+**관련 파일**
+
+- `hooks/useNutritionBaseEditor.js`
+- `components/nutrition/menu/base/AddMenuModal.jsx`
+- `lib/nutrition/values/store.js`
+- `lib/menu-master/code-policy.js`
+- `lib/menu-master/store.js`
+
+**현재 상태**
+
+- `nutrition_menu_ref`는 메뉴마스터와 별개 store다.
+- 영양 메뉴 추가 시 메뉴마스터에서 고를 수 있지만, 메뉴코드 없이 메뉴명만 넣으면 `MENU-${Date.now()}` 코드로 영양 전용 메뉴가 만들어진다.
+- 메뉴마스터 삭제 시 `nutrition_menu_ref`와 `nutrition_raw_values` cascade는 있지만, 메뉴마스터에 없는 영양 메뉴를 탐지하는 진단은 별도 확인이 필요하다.
+
+**충돌 가능성**
+
+- 메뉴마스터가 "전 모듈의 메뉴 기준"이라면 영양 전용 메뉴는 기준 밖 데이터가 된다.
+- 원산지/알레르기/영양 출력에서 메뉴마스터에 없는 메뉴가 섞일 수 있다.
+
+**정리 방향**
+
+- 영양 전용 메뉴를 허용할지 정책을 정한다.
+- 허용한다면 `source: nutrition-only` 같은 표시와 진단을 둔다.
+- 허용하지 않는다면 AddMenuModal에서 메뉴마스터 선택을 필수로 바꾸고, 기존 `MENU-*` 레코드는 migration/진단 대상으로 둔다.
+
+### 8.6 menuCode base/full 정책이 일부 화면에서 엇갈림
+
+**관련 파일**
+
+- `lib/menu-master/code-policy.js`
+- `components/ui/MenuCodePicker.jsx`
+- `components/cost/recipe/RecipeEditor.jsx`
+- `hooks/useRecipeWorkbenchData.js`
+- `lib/recipe/store.js`
+- `lib/nutrition/values/import.js`
+
+**현재 상태**
+
+- `code-policy.js`는 nutrition은 base code, cost detail/selling price는 full code라고 설명한다.
+- `MenuCodePicker`는 mode에 따라 base/full을 고를 수 있다.
+- 영양 메뉴와 영양 import는 base mode를 쓴다.
+- 구형 원가 레시피 편집기(`components/cost/recipe/RecipeEditor.jsx`)도 `mode="base"`를 쓴다.
+- `lib/recipe/store.js` 주석은 `menuCode 'PZ-001-L' 등`이라고 설명해 full code처럼 보인다.
+
+**충돌 가능성**
+
+- `cost_recipes`의 menuCode가 base인지 full인지 화면/주석/보고서가 다르게 이해할 수 있다.
+- detail 레시피는 full menuCode 기준인데 legacy recipe fallback은 base code 기준이면 precedence 판단이 흔들릴 수 있다.
+
+**정리 방향**
+
+- `cost_recipes`의 menuCode 정책을 `legacy base code` 또는 `legacy mixed`로 명시한다.
+- `recipe-source-precedence.js`에서 base/full normalize를 강제한다.
+- 주석과 CSV export 헤더를 실제 정책에 맞게 수정한다.
+
+### 8.7 모바일 원가 탭 진입점이 데스크톱과 다름
+
+**관련 파일**
+
+- `lib/menu.js`
+- `app/cost/page.jsx`
+- `app/cost/pizza/page.jsx`
+- `app/cost/recipe/page.jsx`
+
+**현재 상태**
+
+- 데스크톱 사이드바의 원가 주요 진입점은 `/cost/ingredient-price`, `/cost/recipe`, `/cost/margin`이다.
+- 원가 허브는 `/cost/pizza`, `/cost/edge-dough`, `/cost/side`, `/cost/personal`, `/cost/set`, `/cost/all-summary`까지 노출한다.
+- 모바일 하단 탭은 원가 대표 href를 `/cost/pizza`로 둔다.
+
+**충돌 가능성**
+
+- 모바일 사용자는 원가 대표 화면을 피자 원가표로 인식하고, 데스크톱 사용자는 원가 레시피/마진표로 인식할 수 있다.
+- 같은 "원가" 탭에서 기기별로 다른 작업대가 열린다.
+
+**정리 방향**
+
+- 모바일 원가 탭을 `/cost` 또는 `/cost/recipe`로 변경한다.
+- `/cost/pizza`는 카테고리별 원가표로 명시한다.
+- route 분류표에 `mobile-primary`를 추가한다.
+
+### 8.8 보고서 비교 route가 상수/허브에는 있고 사이드바에는 없음
+
+**관련 파일**
+
+- `lib/report/constants.js`
+- `app/report/page.jsx`
+- `app/report/menu-sales-compare/page.jsx`
+- `lib/menu.js`
+- `app/menu-sales/rank-compare/page.jsx`
+
+**현재 상태**
+
+- `KIND_META.compare`는 `/report/menu-sales-compare`를 보고서 종류로 정의한다.
+- 보고서센터 허브의 5종 카드와 새 보고서 모달에서는 비교 보고서 접근이 가능하다.
+- 사이드바 보고서 하위 메뉴에는 비교 보고서가 없다.
+- `/menu-sales/rank-compare`에서는 "보고서 생성" 버튼으로 해당 route에 진입한다.
+
+**충돌 가능성**
+
+- 기능은 살아 있지만 사이드바만 보면 보고서 4종처럼 보인다.
+- QA route 분류에서 "직접 메뉴 노출 누락"과 "의도된 허브 내부 route"를 구분해야 한다.
+
+**정리 방향**
+
+- 비교 보고서를 사이드바에 추가하거나, "판매량 비교 화면에서 생성하는 내부 보고서"로 route 분류를 고정한다.
+- `KIND_META`에서 사이드바 노출 여부를 metadata로 관리하면 menu/hub drift를 줄일 수 있다.
+
+### 8.9 노트 삭제가 parentId 체인 전체를 삭제하지 않음
+
+**관련 파일**
+
+- `lib/note/store.js`
+- `app/note/_NoteContent.jsx`
+- `lib/db/shared.js`
+
+**현재 상태**
+
+- `deleteNote()` 주석은 "parentId 체인" 삭제라고 설명한다.
+- 실제 구현은 부모와 직계 자식만 `getByIndex('parentId', id)`로 가져와 삭제한다.
+- UI state 갱신은 `setNotes(prev => prev.filter(n => n.id !== note.id))`로 부모만 제거한다.
+- undo는 삭제된 배열을 복원하지만 각 복원 실패는 `.catch(() => {})`로 무시된다.
+
+**충돌 가능성**
+
+- 손자/후손 노트가 DB에 남아 orphan이 될 수 있다.
+- 삭제 직후 현재 목록에 직계 자식이 잔상으로 남을 수 있다.
+- undo 일부 실패를 사용자가 알 수 없다.
+
+**정리 방향**
+
+- `getNotesInChain()` 또는 descendant collector를 삭제에도 사용한다.
+- 삭제 후 UI state는 removed ids 전체를 기준으로 갱신한다.
+- undo 복원 실패는 실패 건수 toast로 표시한다.
+
+### 8.10 식자재 삭제 안전장치가 화면마다 다름
+
+**관련 파일**
+
+- `app/ingredient/manage/page.jsx`
+- `app/cost/ingredient-price/page.jsx`
+- `lib/ingredient/store.js`
+
+**현재 상태**
+
+- 두 화면 모두 `bulkDeleteIngredients()`를 호출한다.
+- 식자재 관리 화면은 cascade 경고와 실행취소를 제공한다.
+- 재료 단가표 화면은 삭제 완료/실패 toast와 reload만 제공한다.
+
+**충돌 가능성**
+
+- 같은 식자재 삭제인데 진입 화면에 따라 복구 가능성, cascade 경고 노출이 달라진다.
+- 재료 단가표에서 삭제하면 영양값 cascade 실패를 사용자가 놓칠 수 있다.
+
+**정리 방향**
+
+- destructive ingredient action을 공통 helper/hook으로 감싼다.
+- 두 화면 모두 cascade warning, undo, partial failure 표시를 공유한다.
+
+### 8.11 제때 설정과 시스템 설정의 자동화 토글이 실제 로직과 분리됨
+
+**관련 파일**
+
+- `app/settings/system/page.jsx`
+- `lib/settings.js`
+- `app/jette/settings/page.jsx`
+- `lib/nutrition/backup-keys.js`
+
+**현재 상태**
+
+- 시스템 설정에는 `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert`가 있다.
+- 제때 설정에는 `priceAlertThreshold`, `autoRecalcOnUpdate`, `autoRegisterNew`가 있다.
+- 검색 기준으로 이 값들은 설정 화면 외 실제 업로드/계산/알림 로직에서 거의 참조되지 않는다.
+- `v3:jette-settings`는 백업 key에 포함되어 있지만 시스템 설정 key 다수는 빠져 있다.
+
+**충돌 가능성**
+
+- 사용자가 설정을 바꿨는데 실제 동작은 바뀌지 않을 수 있다.
+- `autoRecalc`와 `autoRecalcOnUpdate`가 비슷한 의미로 보이지만 서로 연결되어 있지 않다.
+
+**정리 방향**
+
+- 실제 동작이 없는 설정은 "준비 중"으로 숨기거나 설명을 바꾼다.
+- 실제 동작이 필요한 설정은 해당 모듈 로직에서 `getSetting()` 또는 전용 설정 reader로 읽는다.
+- 자동 재계산은 전역 정책과 제때 업로드 정책 중 source of truth를 하나로 정한다.
+
+### 8.12 CSS 전역 selector 책임이 여러 파일에 분산됨
+
+**관련 파일**
+
+- `app/globals.css`
+- `app/styles/base.css`
+- `app/styles/tokens.css`
+- `app/styles/components/home-hero.css`
+- `app/styles/features/motion.css`
+- `app/styles/features/motion-note.css`
+- `app/styles/features/motion-report.css`
+- `app/styles/features/report/builder.css`
+
+**현재 상태**
+
+- `globals.css`는 22개 CSS 파일을 순서대로 import한다.
+- `.btn`, `.card`, `.topbar`, `.sidebar`, `.chip`, `.bottom-tab-bar`, `.report-kind-grid-5` 같은 전역 selector가 여러 파일에 걸쳐 있다.
+- `home-hero.css`가 전역 `.btn` 본체 스타일을 정의하고, `motion.css`/`motion-note.css`가 같은 `.btn`에 transition/overflow를 덧씌운다.
+
+**충돌 가능성**
+
+- 홈 전용처럼 보이는 파일이 앱 전체 버튼 스타일을 소유한다.
+- import 순서를 바꾸거나 특정 feature CSS를 수정하면 전역 버튼/카드가 예상 밖으로 바뀔 수 있다.
+
+**정리 방향**
+
+- `.btn`, `.card`, `.input`, `.modal-box` 같은 primitive는 `base.css` 또는 `components/chrome.css` 한곳으로 모은다.
+- motion 파일은 `.btn` 본체를 다시 정의하지 않고 additive class나 media query만 둔다.
+- report grid처럼 중복 media query가 있는 selector는 report CSS 내부에서만 관리한다.
+
+### 8.13 무음 실패 처리 후보가 아직 남아 있음
+
+**관련 파일**
+
+- `lib/db/backup.js`
+- `lib/nutrition/backup-keys.js`
+- `app/note/_NoteContent.jsx`
+- `hooks/useLocalStorage.js`
+- `hooks/useSettingsAuth.js`
+- `lib/note/storage.js`
+- `components/sales/shared/SectionUtils.jsx`
+
+**현재 상태**
+
+- 빈 `catch {}` 또는 실패 무시형 catch가 37줄 확인됐다.
+- storage 접근 실패처럼 무시 가능한 것도 있지만, localStorage 복원 실패나 undo 복원 실패처럼 사용자에게 알려야 할 수도 있는 경로도 있다.
+
+**정리 방향**
+
+- storage 편의 기능, visual effect, script cleanup은 무시 허용 목록으로 둔다.
+- 백업/복원, 삭제/undo, 데이터 저장 실패는 `errors` 배열 또는 toast로 노출한다.
+- `silent-catch-allowlist` 테스트를 두면 무음 실패가 다시 늘어나는 것을 막을 수 있다.
+
+---
+
+## 9. 보강 실행 플랜
+
+### Phase A. 백업/설정 정책 정리
+
+- `PERSISTENT_LS_KEYS`를 module별 key map으로 분리한다.
+- restore에서 localStorage 복원 조건을 `nutrition` 선택과 분리한다.
+- 시스템 설정 key 전체의 백업 포함/제외 정책을 확정한다.
+- `settings` IndexedDB store를 실제 사용하거나 legacy placeholder로 명시한다.
+- 백업 JSON에 source brand metadata를 추가한다.
+
+**검증**
+
+- localStorage 선택 복원 테스트.
+- source/target brand mismatch 미리보기 테스트.
+- 시스템 설정 백업/복원 fixture.
+
+### Phase B. 메뉴 기준 정책 정리
+
+- `nutrition_menu_ref`가 메뉴마스터 밖 메뉴를 허용하는지 결정한다.
+- `MENU-*` 영양 전용 메뉴 진단을 추가한다.
+- `cost_recipes` menuCode base/full 정책을 `recipe-source-precedence.js`에 고정한다.
+- 구형 레시피 주석과 CSV 헤더를 실제 정책에 맞춘다.
+
+**검증**
+
+- 메뉴마스터 없는 nutrition 메뉴 진단 테스트.
+- base/full normalize precedence 테스트.
+- 영양 import와 원가 레시피 저장 smoke.
+
+### Phase C. destructive action 공통화
+
+- ingredient delete helper/hook을 만들어 관리 화면과 재료 단가표가 같은 경고/undo를 쓰게 한다.
+- note delete를 descendant 전체 삭제로 고친다.
+- undo 일부 실패를 toast/결과로 노출한다.
+
+**검증**
+
+- 식자재 삭제 cascade + undo 테스트.
+- 노트 parent/child/grandchild 삭제 및 undo 테스트.
+
+### Phase D. 내비게이션/route metadata 정리
+
+- `KIND_META`에 sidebar 노출 여부를 추가하거나 사이드바 보고서 메뉴를 `KIND_META`에서 생성한다.
+- 모바일 원가 primary route를 `/cost` 또는 `/cost/recipe`로 바꾼다.
+- redirect/internal/hub/mobile-primary route classification을 문서와 QA 스크립트에 반영한다.
+
+**검증**
+
+- `scripts/full-rt.mjs` route classification 테스트.
+- 모바일/데스크톱 주요 진입 route smoke.
+
+### Phase E. CSS primitive 정리
+
+- `.btn`, `.card`, `.input`, `.modal-box`를 primitive layer로 이동한다.
+- feature/motion CSS는 primitive 재정의 대신 modifier/additive class만 둔다.
+- import 순서 의존 selector를 목록화한다.
+
+**검증**
+
+- 주요 route screenshot smoke.
+- `.btn`/`.card` computed style 회귀 확인.
+
+### Phase F. no-op 설정 정리
+
+- `autoRecalc`, `autoRecalcOnUpdate`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert`, `priceAlertThreshold`, `autoRegisterNew`의 실제 동작 여부를 하나씩 정한다.
+- 미구현 설정은 UI에서 숨기거나 "준비 중" 배지로 낮춘다.
+- 구현할 설정은 해당 모듈 로직과 테스트에 연결한다.
+
+**검증**
+
+- 설정 변경 전후 로직 차이를 fixture로 검증.
+- 백업/복원 후 설정 동작 유지.

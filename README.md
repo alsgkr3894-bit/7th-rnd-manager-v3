@@ -24,8 +24,9 @@ npm run start
 > - `next dev` 서버가 떠 있는 상태에서 `npm run build`를 돌리면 `.next` 청크가 꼬여
 >   기존 dev 서버가 500(`Cannot find module './xxxx.js'`)을 낼 수 있습니다.
 >   **dev 서버 실행 중에는 build를 돌리지 마세요.**
-> - 청크가 꼬였거나 QA 직전 깨끗한 상태가 필요하면 `npm run dev:clean`을 쓰세요
->   (`.next` 삭제 후 dev 재시작 표준 경로).
+> - `npm run dev`는 `predev` 단계에서 기존 `.next`를 정리해 production/dev 산출물 충돌을 피합니다.
+> - 이미 dev 서버가 꼬였거나 실행 중 서버까지 정리해야 하면 로컬 QA용 `npm run dev:clean`을 쓰세요.
+> - 같은 네트워크의 다른 기기에서 접속해야 할 때만 `npm run dev:lan`을 쓰세요.
 
 ## 스모크 QA
 
