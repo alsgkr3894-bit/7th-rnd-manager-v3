@@ -1,5 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import {
+  CHINA4_DIRECT_RUNTIME_ROUTES,
+  CHINA4_RUNTIME_ROUTES,
+  MAIN_RUNTIME_ROUTES,
+} from '../../lib/navigation/route-classification.js';
 
 const script = readFileSync(resolve('scripts/full-rt.mjs'), 'utf8');
 
@@ -50,12 +55,34 @@ describe('full-rt 직접 진입 QA 스크립트', () => {
       '/report/price',
       '/report/shipment',
       '/settings',
+      '/settings/brands',
       '/settings/system',
       '/settings/account',
     ];
 
     for (const route of expectedRoutes) {
-      expect(script).toContain(`'${route}'`);
+      expect(MAIN_RUNTIME_ROUTES).toContain(route);
     }
+  });
+
+  test('브랜드별 직접 진입 route도 분류표에서 공급한다', () => {
+    expect(CHINA4_RUNTIME_ROUTES).toEqual(
+      expect.arrayContaining([
+        '/',
+        '/menu-master',
+        '/cost/edge-dough',
+        '/ingredient/manage',
+        '/menu-sales/settings',
+        '/note',
+        '/settings/backup',
+        '/settings/restore',
+      ])
+    );
+    expect(CHINA4_DIRECT_RUNTIME_ROUTES).toEqual([
+      '/note',
+      '/note/write',
+      '/note/calendar',
+      '/note/sample',
+    ]);
   });
 });

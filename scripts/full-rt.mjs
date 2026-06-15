@@ -14,78 +14,21 @@ import {
   newAuthedContext,
   routeUrl,
 } from './qa-browser-utils.mjs';
+import {
+  CHINA4_DIRECT_RUNTIME_ROUTES,
+  CHINA4_RUNTIME_ROUTES,
+  MAIN_RUNTIME_ROUTES,
+} from '../lib/navigation/route-classification.js';
 
 const BASE = getQaBase();
 const NAV_TIMEOUT_MS = Number.parseInt(process.env.QA_NAV_TIMEOUT_MS || '', 10) || 90_000;
 const HEALTH_TIMEOUT_MS = Number.parseInt(process.env.QA_HEALTH_TIMEOUT_MS || '', 10) || 5000;
 
-const MAIN_ROUTES = [
-  '/',
-  '/menu-master',
-  '/menu-sales',
-  '/menu-sales/upload',
-  '/menu-sales/rank',
-  '/menu-sales/rank-compare',
-  '/menu-sales/compare',
-  '/menu-sales/unmatched',
-  '/menu-sales/settings',
-  '/jette',
-  '/jette/price-compare',
-  '/jette/shipment',
-  '/jette/settings',
-  '/ingredient',
-  '/ingredient/manage',
-  '/ingredient/list',
-  '/ingredient/usage',
-  '/cost',
-  '/cost/pizza',
-  '/cost/side',
-  '/cost/set',
-  '/cost/personal',
-  '/cost/edge-dough',
-  '/cost/all-summary',
-  '/cost/margin',
-  '/cost/recipe',
-  '/cost/ingredient-price',
-  '/cost/manage',
-  '/nutrition',
-  '/nutrition/menu',
-  '/nutrition/allergen',
-  '/nutrition/origin',
-  '/nutrition/export',
-  '/note',
-  '/note/write',
-  '/note/board',
-  '/note/calendar',
-  '/note/journal',
-  '/note/sample',
-  '/note/sample/write',
-  '/report',
-  '/report/cost',
-  '/report/sales',
-  '/report/price',
-  '/report/shipment',
-  '/report/menu-sales-compare',
-  '/settings',
-  '/settings/system',
-  '/settings/account',
-  '/settings/backup',
-  '/settings/restore',
-];
-
-const CHINA4_ROUTES = [
-  '/',
-  '/menu-master',
-  '/cost/edge-dough',
-  '/ingredient/manage',
-  '/menu-sales/settings',
-  '/note',
-  '/settings/backup',
-  '/settings/restore',
-];
+const MAIN_ROUTES = MAIN_RUNTIME_ROUTES;
+const CHINA4_ROUTES = CHINA4_RUNTIME_ROUTES;
 
 // 비-main 브랜드에서 노트 직접 진입 — 공유 DB 초기화 버그 검증
-const CHINA4_DIRECT_ROUTES = ['/note', '/note/write', '/note/sample', '/note/calendar'];
+const CHINA4_DIRECT_ROUTES = CHINA4_DIRECT_RUNTIME_ROUTES;
 
 const IGNORE_PATTERNS = [
   /share-modal/i,
