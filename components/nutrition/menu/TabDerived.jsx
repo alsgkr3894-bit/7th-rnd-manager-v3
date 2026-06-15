@@ -41,7 +41,6 @@ export function TabDerived({
   menuMasters,
   menuSearch = '',
   onOpenBase,
-  onOpenIngredientValues,
 }) {
   const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
   const safeIngredients = useMemo(() => asObjectArray(ingredients), [ingredients]);
@@ -50,8 +49,6 @@ export function TabDerived({
   const safeMenuMasters = useMemo(() => asObjectArray(menuMasters), [menuMasters]);
   const refresh = typeof onRefresh === 'function' ? onRefresh : noop;
   const openBaseTab = typeof onOpenBase === 'function' ? onOpenBase : noop;
-  const openIngredientValuesTab =
-    typeof onOpenIngredientValues === 'function' ? onOpenIngredientValues : noop;
 
   const {
     modal,
@@ -348,18 +345,9 @@ export function TabDerived({
                   }}
                 >
                   <span style={{ fontSize: 12 }}>
-                    식자재 영양값 탭에서 식자재별 100g 기준값을 먼저 등록해주세요
+                    식자재 영양값 자동계산은 사용하지 않습니다. 파생 메뉴는 베이스 메뉴
+                    영양성분을 먼저 직접 입력한 뒤 필요한 구성만 검수하세요.
                   </span>
-                  <button
-                    type="button"
-                    className="btn sm"
-                    onClick={() => {
-                      setModal(null);
-                      openIngredientValuesTab();
-                    }}
-                  >
-                    이동
-                  </button>
                 </div>
               ) : (
                 <>

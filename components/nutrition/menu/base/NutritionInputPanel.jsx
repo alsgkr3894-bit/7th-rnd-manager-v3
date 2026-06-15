@@ -18,10 +18,6 @@ export function NutritionInputPanel({
   form,
   setField,
   saving,
-  autoCalcBusy,
-  ingredientCalcLoading,
-  onAutoCalc,
-  onOpenIngredientCalc,
   onSave,
   onDeleteMenu,
 }) {
@@ -166,46 +162,12 @@ export function NutritionInputPanel({
         style={{
           marginTop: 16,
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           alignItems: 'center',
           gap: 8,
           flexWrap: 'wrap',
         }}
       >
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          <button
-            className="btn sm ghost"
-            onClick={onAutoCalc}
-            disabled={autoCalcBusy || saving}
-            title="cost_recipes 레시피 구성에서 영양성분을 자동 계산합니다"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              fontSize: 12,
-              color: 'var(--accent-text)',
-            }}
-          >
-            <Icon.beaker style={{ width: 13, height: 13 }} />
-            {autoCalcBusy ? '계산 중…' : '레시피 기반 자동계산'}
-          </button>
-          <button
-            className="btn sm ghost"
-            onClick={onOpenIngredientCalc}
-            disabled={ingredientCalcLoading || saving}
-            title="식자재 영양값과 L/R 사용량으로 영양성분을 계산합니다"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              fontSize: 12,
-              color: 'var(--accent-text)',
-            }}
-          >
-            <Icon.box style={{ width: 13, height: 13 }} />
-            {ingredientCalcLoading ? '불러오는 중…' : '식자재 영양값 계산'}
-          </button>
-        </div>
         <button className="btn primary" onClick={onSave} disabled={saving}>
           {saving ? '저장 중…' : `${selectedMenuName} ${selCrust} 저장`}
         </button>

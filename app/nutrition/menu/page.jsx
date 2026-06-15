@@ -45,13 +45,6 @@ const TabResults = dynamic(
   () => import('@/components/nutrition/menu/TabResults').then(m => ({ default: m.TabResults })),
   { ssr: false }
 );
-const TabIngredientValues = dynamic(
-  () =>
-    import('@/components/nutrition/menu/TabIngredientValues').then(m => ({
-      default: m.TabIngredientValues,
-    })),
-  { ssr: false }
-);
 const TabSetCalc = dynamic(
   () => import('@/components/nutrition/menu/TabSetCalc').then(m => ({ default: m.TabSetCalc })),
   { ssr: false }
@@ -62,7 +55,6 @@ const TABS = [
   '엣지 설정',
   '추가토핑',
   '파생 메뉴',
-  '식자재 영양값',
   '계산 결과',
   '세트 계산',
 ];
@@ -335,7 +327,7 @@ export default function Page() {
                 </button>
               ))}
             </div>
-            {(tab === 0 || tab === 3 || tab === 5) && !loading && (
+            {(tab === 0 || tab === 3 || tab === 4) && !loading && (
               <div style={{ flex: '0 0 220px' }}>
                 <SearchBox
                   value={menuSearch}
@@ -368,11 +360,9 @@ export default function Page() {
               menuMasters={menuMasters}
               menuSearch={menuSearch}
               onOpenBase={() => setTab(0)}
-              onOpenIngredientValues={() => setTab(4)}
             />
           )}
-          {tab === 4 && <TabIngredientValues onRefresh={load} />}
-          {tab === 5 && (
+          {tab === 4 && (
             <TabResults
               menus={menus}
               rawMap={rawMap}
@@ -384,7 +374,7 @@ export default function Page() {
               menuSearch={menuSearch}
             />
           )}
-          {tab === 6 && (
+          {tab === 5 && (
             <TabSetCalc
               menus={menus}
               rawMap={rawMap}

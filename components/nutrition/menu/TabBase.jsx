@@ -5,15 +5,11 @@ import { showToast } from '@/components/Toast';
 import { ImportBaseModal } from '@/components/nutrition/menu/ImportBaseModal';
 import { MenuGroupList } from '@/components/nutrition/menu/base/MenuGroupList';
 import { NutritionInputPanel } from '@/components/nutrition/menu/base/NutritionInputPanel';
-import { IngredientCalcModal } from '@/components/nutrition/menu/base/IngredientCalcModal';
-import { AutoCalcPreviewModal } from '@/components/nutrition/menu/base/AutoCalcPreviewModal';
 import { AddMenuModal } from '@/components/nutrition/menu/base/AddMenuModal';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { asRecord, noop } from '@/lib/nutrition/values/base-helpers';
 import { clearAllBaseData } from '@/lib/nutrition/values/store';
 import { useNutritionBaseEditor } from '@/hooks/useNutritionBaseEditor';
-import { useRecipeNutritionCalc } from '@/hooks/useRecipeNutritionCalc';
-import { useIngredientNutritionCalc } from '@/hooks/useIngredientNutritionCalc';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
@@ -47,25 +43,6 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
     confirmElement: editorConfirmElement,
   } = editor;
   const { showConfirm, confirmElement } = useConfirmDialog();
-
-  const recipeCalc = useRecipeNutritionCalc({
-    selMenu,
-    selCrust,
-    form,
-    safeRawMap,
-    setForm,
-    setSaving,
-    refresh,
-  });
-  const ingredientCalc = useIngredientNutritionCalc({
-    selMenu,
-    selCrust,
-    form,
-    safeRawMap,
-    setForm,
-    setSaving,
-    refresh,
-  });
 
   const [importOpen, setImportOpen] = useState(false);
   const selectedMenuName = asDisplayText(selMenu?.menuName, '선택한 메뉴');
@@ -161,44 +138,10 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
           form={form}
           setField={setField}
           saving={saving}
-          autoCalcBusy={recipeCalc.autoCalcBusy}
-          ingredientCalcLoading={ingredientCalc.ingredientCalcLoading}
-          onAutoCalc={recipeCalc.handleAutoCalc}
-          onOpenIngredientCalc={ingredientCalc.openIngredientCalc}
           onSave={handleSave}
           onDeleteMenu={handleDeleteMenu}
         />
       </div>
-
-      {ingredientCalc.ingredientCalcOpen && (
-        <IngredientCalcModal
-          onClose={() => ingredientCalc.setIngredientCalcOpen(false)}
-          selCrust={selCrust}
-          saving={saving}
-          ingredientCalcLoading={ingredientCalc.ingredientCalcLoading}
-          ingredientCalcIngredients={ingredientCalc.ingredientCalcIngredients}
-          ingredientNutritionMap={ingredientCalc.ingredientNutritionMap}
-          ingredientCalcRows={ingredientCalc.ingredientCalcRows}
-          ingredientCalcPreview={ingredientCalc.ingredientCalcPreview}
-          addIngredientCalcRow={ingredientCalc.addIngredientCalcRow}
-          updateIngredientCalcAmount={ingredientCalc.updateIngredientCalcAmount}
-          removeIngredientCalcRow={ingredientCalc.removeIngredientCalcRow}
-          buildIngredientCalcPreview={ingredientCalc.buildIngredientCalcPreview}
-          applyIngredientCalc={ingredientCalc.applyIngredientCalc}
-        />
-      )}
-
-      {/* 자동 계산 미리보기 모달 */}
-      {recipeCalc.autoCalcPreview && (
-        <AutoCalcPreviewModal
-          autoCalcPreview={recipeCalc.autoCalcPreview}
-          selectedMenuName={selectedMenuName}
-          selCrust={selCrust}
-          saving={saving}
-          onApply={recipeCalc.handleApplyAutoCalc}
-          onClose={() => recipeCalc.setAutoCalcPreview(null)}
-        />
-      )}
 
       {importOpen && (
         <ImportBaseModal
