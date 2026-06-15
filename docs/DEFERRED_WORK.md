@@ -117,6 +117,7 @@
   - `app/report/page.jsx` ✅ 2026-06-16 추가 보강 — 새 보고서 종류 선택 모달을 `components/report/NewReportModal.jsx`로 분리. 763→676줄.
   - `app/report/page.jsx` ✅ 2026-06-16 추가 보강 — 보고서 통계 카드 row와 count-up 표시를 `components/report/ReportStatsRow.jsx`로 분리. 676→637줄.
   - `app/report/page.jsx` ✅ 2026-06-16 추가 보강 — 보고서 종류 카드 grid와 최근 건수 표시를 `components/report/ReportKindGrid.jsx`로 분리. 637→610줄.
+  - `app/report/page.jsx` ✅ 2026-06-16 추가 보강 — 검색/종류 필터와 즐겨찾기/표시 건수 툴바를 `components/report/ReportFilterToolbar.jsx`로 분리. 610→587줄.
   - `components/report/sales/SalesReportPreview.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 비중·피자 변동·순위표·비교표·제외 리스트 섹션 컴포넌트 분리. 587→94줄.
   - `components/report/sales/SalesRankTableSection.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 막대·순위표·사이즈 variant row 렌더링을 `SalesRankTableRows`로 분리. 197→52줄.
   - `components/report/sales/SalesRankTableRows.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 막대와 순위표 테이블을 `SalesCategoryBarRows`·`SalesRankTable`로 분리하고 기존 묶음 파일 제거. 163→0줄.

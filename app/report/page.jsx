@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { loadXlsx } from '@/lib/excel';
 import { withDownloadDateSuffix } from '@/lib/download';
 import { Icon } from '@/components/icons';
-import { PageHeader, FilterBar } from '@/components/ui/PageHeader';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { SortableTh } from '@/components/ui/SortableTh';
 import { showToast } from '@/components/Toast';
 
@@ -30,6 +30,7 @@ import { useReportListState } from '@/hooks/useReportListState';
 import { useReportActions } from '@/hooks/useReportActions';
 import { formatLocalMonthInput } from '@/lib/date/local-date';
 import { asDisplayText, asObjectArray, asFiniteNumber } from '@/lib/ui/prop-guards';
+import { ReportFilterToolbar } from '@/components/report/ReportFilterToolbar';
 import { NewReportModal } from '@/components/report/NewReportModal';
 import { ReportKindGrid } from '@/components/report/ReportKindGrid';
 import { ReportStatsRow } from '@/components/report/ReportStatsRow';
@@ -222,40 +223,16 @@ export default function Page() {
 
       <ReportKindGrid reports={reports} onOpenKind={href => router.push(href)} />
 
-      {/* 필터바 */}
-      <FilterBar
+      <ReportFilterToolbar
+        reports={reports}
         search={search}
         onSearch={setSearch}
-        chips={[
-          { id: 'all', label: '전체' },
-          { id: 'sales', label: '판매량' },
-          { id: 'cost', label: '원가' },
-          { id: 'price', label: '가격' },
-          { id: 'shipment', label: '출고량' },
-          { id: 'compare', label: '비교' },
-        ].map(c => ({
-          label: c.label,
-          count:
-            c.id === 'all'
-              ? reports.length
-              : reports.filter(r => safeReportKind(r.kind) === c.id).length,
-          active: kindFilter === c.id,
-          onClick: () => setKindFilter(c.id),
-        }))}
+        kindFilter={kindFilter}
+        onKindFilterChange={setKindFilter}
+        favOnly={favOnly}
+        onFavOnlyChange={setFavOnly}
+        filteredCount={filtered.length}
       />
-
-      <div className="report-list-toolbar">
-        <button
-          className={'report-toolbar-pill ' + (favOnly ? 'active' : '')}
-          onClick={() => setFavOnly(v => !v)}
-        >
-          <span style={{ color: '#F59E0B' }}>★</span>즐겨찾기만
-          <span className="muted">({reports.filter(r => r.fav).length})</span>
-        </button>
-        <div className="muted" style={{ fontSize: 12, marginLeft: 'auto' }}>
-          {filtered.length}건 표시
-        </div>
-      </div>
 
       {/* 로딩 스켈레톤 */}
       {loading && (
