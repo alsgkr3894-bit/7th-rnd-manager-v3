@@ -12,6 +12,14 @@ const ratingViewSource = readFileSync(
   resolve('app/note/sample/_SampleRatingViewControls.jsx'),
   'utf8'
 );
+const chipOptionGroupSource = readFileSync(
+  resolve('app/note/sample/_SampleChipOptionGroup.jsx'),
+  'utf8'
+);
+const ratingFilterGroupSource = readFileSync(
+  resolve('app/note/sample/_SampleRatingFilterGroup.jsx'),
+  'utf8'
+);
 const searchFieldSource = readFileSync(resolve('app/note/sample/_SampleSearchField.jsx'), 'utf8');
 const calendarSource = readFileSync(resolve('app/note/sample/_SampleCalendarView.jsx'), 'utf8');
 const compareBarSource = readFileSync(resolve('app/note/sample/_SampleCompareBar.jsx'), 'utf8');
@@ -138,7 +146,19 @@ describe('sample page structure', () => {
     );
     expect(ratingViewSource).toContain('export function SampleRatingViewControls');
     expect(ratingViewSource).toContain('className="sample-filter-row"');
+    expect(ratingViewSource).toContain('<SampleRatingFilterGroup');
+    expect(ratingViewSource).toContain('<SampleChipOptionGroup');
     expect(ratingViewSource).toContain('const VIEW_OPTIONS = [');
+    expect(ratingViewSource).not.toContain('const RATING_FILTERS = [');
+    expect(chipOptionGroupSource).toContain('export function SampleChipOptionButtons');
+    expect(chipOptionGroupSource).toContain('export function SampleChipOptionGroup');
+    expect(chipOptionGroupSource).toContain(
+      "className={'chip' + (activeValue === value ? ' active' : '')}"
+    );
+    expect(ratingFilterGroupSource).toContain('export function SampleRatingFilterGroup');
+    expect(ratingFilterGroupSource).toContain('const RATING_FILTERS = [');
+    expect(ratingFilterGroupSource).toContain('className="sample-rating-row"');
+    expect(ratingFilterGroupSource).toContain('className="sample-rating-dist"');
     expect(searchFieldSource).toContain('export function SampleSearchField');
     expect(searchFieldSource).toContain('제목, 메뉴명, 내용, 태그 검색');
     expect(searchFieldSource).toContain('<Icon.search');

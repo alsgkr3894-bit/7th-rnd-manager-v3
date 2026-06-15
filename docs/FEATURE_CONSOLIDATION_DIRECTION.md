@@ -473,6 +473,7 @@
 | 샘플기록 화면의 데이터/필터/액션 hook 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 샘플기록 화면의 필터/검색 하위 컴포넌트 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 샘플기록 화면의 목록/빈 상태 하위 컴포넌트 분리 | 구현 완료 | 이번 보강(2026-06-16) |
+| 샘플기록 화면의 별점/정렬/view chip 그룹 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 샘플기록 화면의 비교 하단바/페이지 다이얼로그 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 샘플기록 화면의 검색/필터/달력 파생 helper 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 샘플기록 화면의 페이지 controller hook 분리 | 구현 완료 | 이번 보강(2026-06-16) |
@@ -657,6 +658,7 @@
 | 샘플기록 화면 filter state 구조 | 구현 완료: 검색/카테고리/별점/정렬/view 상태와 URL·검색히스토리 wiring은 `useSamplePageFilterState`로 분리 |
 | 샘플기록 화면 controller props 그룹 구조 | 구현 완료: `samplePageControllerProps`는 최종 조립과 route callback만 맡기고 top/view/dialog props builder를 독립 파일로 분리 |
 | 샘플기록 화면 view props builder 구조 | 구현 완료: filter/calendar/records props 조립은 각각 `samplePageControllerFilterProps`·`samplePageControllerCalendarProps`·`samplePageControllerRecordsProps`로 분리 |
+| 샘플기록 화면 별점/view control 구조 | 구현 완료: 공통 chip 옵션 렌더링은 `SampleChipOptionGroup`, 별점 필터와 분포 표시는 `SampleRatingFilterGroup`으로 분리 |
 | 식자재 상세 폼 필드 구조 | 구현 완료: 기존 `IngredientFormFields` import는 유지하면서 이름/기본정보/단가 필드 렌더링을 독립 파일로 분리 |
 | 식자재 상세 단가 필드 구조 | 구현 완료: 포장수량, 수동 단가/보관·과세, 전용/범용·비고 필드를 하위 컴포넌트로 분리 |
 | 알레르기 정보 화면 조립 구조 | 구현 완료: 헤더 export, 요약/법정 22종 안내, 검색·순서 toolbar, table wrapper를 분리해 page는 집계와 모달 연결 중심으로 유지 |
