@@ -202,45 +202,6 @@
   flex-wrap: wrap;
   margin-bottom: 12px;
 }
-/* Shared base: nav/filter chips and section filter-chips share layout + a11y tokens */
-.chip,
-.filter-chip {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  font-weight: 600;
-  color: var(--text-2);
-  white-space: nowrap;
-  cursor: pointer;
-  transition:
-    background 120ms ease,
-    color 120ms ease,
-    border-color 120ms ease;
-}
-.chip:focus-visible,
-.filter-chip:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-/* .chip — nav/category pills: surface-2 bg, transparent border, 36px touch target */
-.chip {
-  padding: 8px 12px;
-  background: var(--surface-2);
-  border: 1px solid transparent;
-  font-size: 12px;
-  gap: 6px;
-  min-height: 36px;
-}
-.chip.active {
-  background: var(--accent-soft);
-  color: var(--accent-text);
-  border-color: color-mix(in oklab, var(--accent) 25%, transparent);
-}
-.chip:hover {
-  color: var(--text-1);
-}
-
 /* Rank list — simple TOP 5 with no metadata */
 .rank-list {
   display: flex;

@@ -306,42 +306,6 @@
   opacity: 0.65;
 }
 
-/* ── 전역 .input 기본 스타일 ── */
-.input {
-  width: 100%;
-  padding: 10px 14px;
-  border: 1.5px solid transparent;
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  color: var(--text-1);
-  font-family: inherit;
-  font-size: 14px;
-  outline: none;
-  transition:
-    border-color 150ms ease,
-    background 150ms ease;
-  box-sizing: border-box;
-}
-.input:hover:not(:focus):not(:disabled) {
-  background: color-mix(in oklab, var(--text-1) 5%, var(--surface-2));
-}
-.input:focus {
-  border-color: var(--accent);
-  background: var(--surface);
-}
-.input::placeholder {
-  color: var(--text-4);
-}
-
-.input.textarea {
-  font-size: 14px;
-  font-weight: 500;
-  padding: 12px 14px;
-  min-height: 80px;
-  resize: vertical;
-  line-height: 1.5;
-}
-
 .seg-row {
   display: flex;
   gap: 6px;

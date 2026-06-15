@@ -69,6 +69,175 @@ button {
   cursor: pointer;
 }
 
+/* ===== Global Primitives ===== */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  padding: var(--pad-card);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+}
+.card.flat {
+  box-shadow: none;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  border: 0;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  background: var(--surface-2);
+  color: var(--text-1);
+  transition:
+    transform 80ms ease,
+    background 120ms ease;
+  white-space: nowrap;
+}
+.btn:hover {
+  background: var(--bg-2);
+}
+.btn:not(.primary):not([disabled]):hover {
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: scale(0.98);
+}
+.btn.primary {
+  background: var(--accent-press);
+  color: white;
+}
+.btn.primary:hover {
+  background: #a80e18;
+}
+.btn.ghost {
+  background: transparent;
+  color: var(--text-2);
+}
+.btn.ghost:hover {
+  background: var(--surface-2);
+  color: var(--text-1);
+}
+.btn.dark-onlight {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+}
+.btn.dark-onlight:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.btn.dark-onlight.primary {
+  background: white;
+  color: var(--text-1);
+}
+.btn.dark-onlight.primary:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+.btn.sm {
+  padding: 12px 14px;
+  font-size: 14px;
+  border-radius: 10px;
+}
+.btn.xs {
+  padding: 3px 8px;
+  font-size: 12px;
+  height: auto;
+  min-height: unset;
+  line-height: 1.4;
+}
+.btn.lg {
+  padding: 16px 22px;
+  font-size: 15px;
+  border-radius: 14px;
+}
+.btn.block {
+  width: 100%;
+}
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  transition:
+    opacity 150ms,
+    transform 150ms;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
+  box-sizing: border-box;
+}
+.input:hover:not(:focus):not(:disabled) {
+  background: color-mix(in oklab, var(--text-1) 5%, var(--surface-2));
+}
+.input:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+.input::placeholder {
+  color: var(--text-4);
+}
+.input.textarea {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 12px 14px;
+  min-height: 80px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.chip,
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-weight: 600;
+  color: var(--text-2);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+.chip:focus-visible,
+.filter-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.chip {
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  font-size: 12px;
+  gap: 6px;
+  min-height: 36px;
+}
+.chip.active {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  border-color: color-mix(in oklab, var(--accent) 25%, transparent);
+}
+.chip:hover {
+  color: var(--text-1);
+}
+
 /* tabular numbers everywhere */
 .num,
 .amount,
