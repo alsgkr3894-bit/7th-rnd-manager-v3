@@ -91,6 +91,7 @@
 - 레시피마스터와 구형 원가 입력 route는 메뉴마스터 또는 유지 화면으로 redirect된다.
 - 원가마진표, 전체요약, 원가 보고서, 제품별 사용현황, 원산지/알레르기, 표 출력은 `menu_recipes` 기준으로 연결됐다.
 - 홈/노트 원가율 KPI와 원가율 경보 통계는 `menu_recipes + cost_selling_prices` 기준으로 전환됐다.
+- redirect 이후 사용되지 않는 레시피마스터 전용 hook, form/table 컴포넌트, data/rows helper는 제거했다.
 
 구형 detail store schema/backup 범위와 bridge API 제거까지 완료되어, 레시피 입력/조회 기준은 `menu_recipes` 하나로 고정됐다.
 
@@ -401,6 +402,7 @@
 | 영양/원산지/알레르기 표 출력의 단일 레시피 기준 연결 | 구현 완료 | `4767b9e` |
 | 중복 route redirect와 사이드바 정리 | 구현 완료 | `5591241` |
 | 구형 legacy cost editor 컴포넌트 제거 | 구현 완료 | `3c074f3` |
+| 레시피마스터 전용 hook/form/table/data 제거 | 구현 완료 | `4617d0b` |
 | 구형 레시피 입력 관련 표시 문구 정리 | 구현 완료 | `ec417cc` |
 | 출력/집계 화면의 구형 `cost_recipes` fallback 제거 | 구현 완료 | `9d68970` |
 | 테스트의 canonical-only 기준 재작성 | 구현 완료 | `9d68970` |

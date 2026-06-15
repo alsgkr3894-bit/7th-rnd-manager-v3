@@ -109,7 +109,6 @@
 - `lib/cost/set-detail/store.js`
 - `lib/cost/recipe-source-precedence.js`
 - `lib/report/build-cost-report.js`
-- `lib/recipe-master/data.js`
 - `app/cost/recipe/page.jsx`
 - `app/cost/recipe-master/page.jsx`
 
