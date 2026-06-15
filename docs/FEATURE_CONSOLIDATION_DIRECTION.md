@@ -433,6 +433,7 @@
 | 엣지별 알레르기 합산 규칙과 fixture 검증 | 구현 완료 | 이번 보강(2026-06-15) |
 | 엣지별 영양성분 표 출력 fixture 검증 | 구현 완료 | 이번 보강(2026-06-15) |
 | 보고서센터 새 보고서 종류 선택 모달 컴포넌트 분리 | 구현 완료 | 이번 보강(2026-06-16) |
+| 보고서센터 통계 카드 row 컴포넌트 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 레시피 입력 단위 `g`, `개` 제한과 단가 1자리 정책 | 구현 완료 | `746d60f`, `22ef420`, `036bcc7` |
 | 메뉴마스터 레시피/원가 상태 표시 | 구현 완료 | `5781532` |
 | 메뉴마스터 통계/레시피 원가 표시 컴포넌트 분리 | 구현 완료 | 이번 보강(2026-06-16) |
@@ -668,7 +669,7 @@
 | 메뉴마스터 화면 구조 | 구현 완료: 상단 액션, 통계 카드, 필터 패널, 테이블 카드/페이지네이션, 레시피/원가 상태 cell, 테이블 row/status/action, 로딩/빈 상태, 편집/삭제/초기화 모달, 편집 모달 입력 필드, 편집 필드 하위 그룹, 카테고리 태그, 레시피 구성품 테이블, 레시피 저장 헤더/요약 렌더링을 `MenuMasterHeaderActions`·`MenuMasterStatsRow`·`MenuMasterFilterPanel`·`MenuMasterTablePanel`·`MenuRecipeCostCell`·`MenuMasterTableRow`·`MenuMasterLoadingTable`·`MenuMasterEmptyState`·`MenuMasterDialogs`·`MenuMasterEditFields`·`MenuMasterIdentityFields`·`MenuMasterCommercialFields`·`MenuMasterFieldPrimitives`·`MenuCategoryTags`·`MenuRecipeComponentsTable`·`MenuRecipeSectionHeader`로 분리해 page는 데이터 로드와 액션 연결 중심으로 축소 |
 | 판매량 분석 통합 | 구현 완료: 중복 분석 route redirect + 허브/검색 팔레트/홈/사이드바 링크 정리 |
 | 판매량 보고서 export 구조 | 구현 완료: Excel 시트/파일명 조립을 helper로 분리하고 fixture로 고정 |
-| 보고서센터 화면 구조 | 구현 완료: 새 보고서 종류 선택 모달을 `NewReportModal`로 분리해 센터 page는 목록 로드/필터/액션 연결 중심으로 축소 |
+| 보고서센터 화면 구조 | 구현 완료: 새 보고서 종류 선택 모달과 통계 카드 row를 `NewReportModal`·`ReportStatsRow`로 분리해 센터 page는 목록 로드/필터/액션 연결 중심으로 축소 |
 | 판매량 보고서 미리보기 구조 | 구현 완료: page에서 미리보기 렌더링을 분리해 데이터 준비와 출력 UI 책임을 구분 |
 | 판매량 보고서 순위표 구조 | 구현 완료: 카테고리 막대와 순위표 테이블을 `SalesCategoryBarRows`·`SalesRankTable`로 분리하고, 순위 row/variant/delta cell 렌더링은 `SalesRankTableRows`로 분리 |
 | 판매량 보고서 카테고리 막대 구조 | 구현 완료: 막대 row 렌더링과 수량/비율/opacity 계산은 `SalesCategoryBarRow`·`salesCategoryBarMetrics`로 분리하고 단위 테스트로 고정 |

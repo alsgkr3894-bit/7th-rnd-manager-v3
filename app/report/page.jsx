@@ -24,7 +24,6 @@ const ReportPreviewModal = dynamic(
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { getReports } from '@/lib/report';
 import { KIND_META, KIND_CHIP } from '@/lib/report/constants';
-import { useCountUp } from '@/hooks/useCountUp';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { useReportListState } from '@/hooks/useReportListState';
@@ -32,6 +31,7 @@ import { useReportActions } from '@/hooks/useReportActions';
 import { formatLocalMonthInput } from '@/lib/date/local-date';
 import { asDisplayText, asObjectArray, asFiniteNumber } from '@/lib/ui/prop-guards';
 import { NewReportModal } from '@/components/report/NewReportModal';
+import { ReportStatsRow } from '@/components/report/ReportStatsRow';
 
 const REPORT_KINDS = KIND_META;
 
@@ -149,9 +149,6 @@ export default function Page() {
     auto: 0,
     sharedLinks: reports.reduce((s, r) => s + reportNumber(r.links), 0),
   };
-  const cTotal = useCountUp(stats.total, { duration: 900 });
-  const cThisMonth = useCountUp(stats.thisMonth, { duration: 900, delay: 80 });
-  const cSharedLinks = useCountUp(stats.sharedLinks, { duration: 900, delay: 160 });
 
   if (loadError) {
     return (
@@ -218,47 +215,11 @@ export default function Page() {
         }
       />
 
-      {/* stat-row — stagger 진입 */}
-      <div className="stat-row motion-stagger">
-        <div className="stat-card">
-          <div className="stat-label">전체 보고서</div>
-          <div className="stat-value num">
-            {cTotal}
-            <span className="unit">건</span>
-          </div>
-          <div className="stat-foot">전체 기간</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">이번 달 생성</div>
-          <div className="stat-value num" style={{ color: 'var(--accent-text)' }}>
-            {cThisMonth}
-            <span className="unit">건</span>
-          </div>
-          <div className="stat-foot">{thisMonth.replace('-', '.')} 기준</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">자동 예약</div>
-          <div className="stat-value num">
-            {stats.auto}
-            <span className="unit">건</span>
-          </div>
-          <div className="stat-foot">
-            <button className="link" onClick={() => setScheduleOpen(true)}>
-              예약 관리 →
-            </button>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">활성 공유 링크</div>
-          <div className="stat-value num" style={{ color: '#6B3FCB' }}>
-            {cSharedLinks}
-            <span className="unit">개</span>
-          </div>
-          <div className="stat-foot">
-            {stats.sharedLinks === 0 ? '활성 링크 없음' : `${stats.sharedLinks}개 활성`}
-          </div>
-        </div>
-      </div>
+      <ReportStatsRow
+        stats={stats}
+        monthLabel={thisMonth.replace('-', '.')}
+        onOpenSchedule={() => setScheduleOpen(true)}
+      />
 
       {/* 5종 카드 — stagger 진입 */}
       <div className="report-kind-grid report-kind-grid-5 motion-stagger">
