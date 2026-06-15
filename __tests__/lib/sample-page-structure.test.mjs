@@ -25,6 +25,10 @@ const controllerSource = readFileSync(
   resolve('app/note/sample/useSamplePageController.js'),
   'utf8'
 );
+const controllerPropsSource = readFileSync(
+  resolve('app/note/sample/samplePageControllerProps.js'),
+  'utf8'
+);
 const stateHookSource = readFileSync(resolve('app/note/sample/useSamplePageState.js'), 'utf8');
 const stateUtilsSource = readFileSync(resolve('app/note/sample/samplePageStateUtils.js'), 'utf8');
 const actionsHookSource = readFileSync(
@@ -154,13 +158,22 @@ describe('sample page structure', () => {
     expect(controllerSource).toContain('useConfirmDialog()');
     expect(controllerSource).toContain('useSampleRecordActions({');
     expect(controllerSource).toContain('useSampleCompareMode(samples)');
-    expect(controllerSource).toContain('loadErrorProps');
-    expect(controllerSource).toContain('actionsProps');
-    expect(controllerSource).toContain('filterProps');
-    expect(controllerSource).toContain('recordsProps');
-    expect(controllerSource).toContain('dialogsProps');
-    expect(controllerSource).toContain("router.push('/note/sample/write')");
-    expect(controllerSource).toContain('router.push(`/note/sample/${sample.id}`)');
+    expect(controllerSource).toContain(
+      "import { buildSamplePageControllerProps } from './samplePageControllerProps'"
+    );
+    expect(controllerSource).toContain('return buildSamplePageControllerProps({');
+    expect(controllerSource).not.toContain('loadErrorProps');
+    expect(controllerSource).not.toContain("router.push('/note/sample/write')");
+    expect(controllerPropsSource).toContain('export function buildSamplePageControllerProps');
+    expect(controllerPropsSource).toContain('loadErrorProps');
+    expect(controllerPropsSource).toContain('actionsProps');
+    expect(controllerPropsSource).toContain('filterProps');
+    expect(controllerPropsSource).toContain('recordsProps');
+    expect(controllerPropsSource).toContain('dialogsProps');
+    expect(controllerPropsSource).toContain("router.push('/note/sample/write')");
+    expect(controllerPropsSource).toContain('router.push(`/note/sample/${sample.id}`)');
+    expect(controllerPropsSource).toContain("from '@/lib/sample/constants'");
+    expect(controllerPropsSource).toContain("from './samplePageStateUtils'");
     expect(stateHookSource).toContain('export function useSamplePageState');
     expect(stateHookSource).toContain('export { SAMPLE_SORT_OPTIONS }');
     expect(stateHookSource).toContain('getAllSamples');
