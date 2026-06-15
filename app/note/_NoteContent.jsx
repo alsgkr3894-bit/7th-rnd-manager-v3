@@ -22,12 +22,12 @@ import { useNotePins } from '@/hooks/useNotePins';
 import { useNotePresets } from '@/hooks/useNotePresets';
 import { useNoteBatchActions } from '@/hooks/useNoteBatchActions';
 import { buildHighlightRegex } from '@/lib/note/utils';
-import { NoteCard } from './_NoteCard';
+import { NoteCardGrid } from './_NoteCardGrid';
 import { NoteContextMenu } from './_NoteContextMenu';
 import { NoteDetailModal } from './_NoteDetailModal';
 import { NoteFilterControls } from './_NoteFilterControls';
 import { NoteStatsSummary } from './_NoteStatsSummary';
-import { NoteTableRow } from './_NoteTableRow';
+import { NoteTableView } from './_NoteTableView';
 import { NoteBatchToolbar } from './_NoteBatchToolbar';
 import { NotePresetBar } from './_NotePresetBar';
 
@@ -486,148 +486,52 @@ export function NoteContent() {
 
       {/* 카드 그리드 */}
       {filtered.length > 0 && viewMode === 'card' && (
-        <>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))',
-              gap: 16,
-              marginTop: 16,
-            }}
-          >
-            {visible.map((note, i) => (
-              <div
-                key={note.id}
-                className="stagger note-card-wrap"
-                style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
-                onContextMenu={e => {
-                  e.preventDefault();
-                  const x = Math.min(e.clientX || 0, window.innerWidth - 180);
-                  const y = Math.min(e.clientY || 0, window.innerHeight - 220);
-                  setCtxMenu({ x, y, note });
-                }}
-              >
-                {note.testContent && note.testContent.length > 80 && (
-                  <div className="note-hover-preview">{note.testContent}</div>
-                )}
-                {batchMode && (
-                  <div
-                    className={'batch-checkbox-wrap' + (selected.has(note.id) ? ' checked' : '')}
-                    onClick={e => {
-                      e.stopPropagation();
-                      toggleSelect(note.id);
-                    }}
-                  >
-                    {selected.has(note.id) && (
-                      <span style={{ fontSize: 12, fontWeight: 800 }}>✓</span>
-                    )}
-                  </div>
-                )}
-                <NoteCard
-                  note={note}
-                  onEdit={e => {
-                    e.stopPropagation();
-                    router.push(`/note/${note.id}`);
-                  }}
-                  onDelete={e => handleDelete(note, e)}
-                  onCopy={e => handleCopy(note, e)}
-                  onStatusChange={(s, e) => handleStatusChange(note.id, s, e)}
-                  onNewVersion={e => handleNewVersion(note, e)}
-                  onClick={() => (batchMode ? toggleSelect(note.id) : setDetailNote(note))}
-                  hlRe={hlRe}
-                  statusPop={popIds.has(note.id)}
-                  batchMode={batchMode}
-                  selected={selected.has(note.id)}
-                  pinned={pinnedIds.has(note.id)}
-                  onPin={e => togglePin(note.id, e)}
-                  onTagClick={t => {
-                    setSearch(t);
-                    setShowSearchHist(false);
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-          {visible.length < filtered.length && (
-            <button className="load-more-btn" onClick={() => setVisibleCount(v => v + PAGE_SIZE)}>
-              더 보기 ({filtered.length - visible.length}개 남음)
-            </button>
-          )}
-        </>
+        <NoteCardGrid
+          visible={visible}
+          filteredCount={filtered.length}
+          batchMode={batchMode}
+          selected={selected}
+          pinnedIds={pinnedIds}
+          popIds={popIds}
+          hlRe={hlRe}
+          onContextMenu={(note, e) => {
+            e.preventDefault();
+            const x = Math.min(e.clientX || 0, window.innerWidth - 180);
+            const y = Math.min(e.clientY || 0, window.innerHeight - 220);
+            setCtxMenu({ x, y, note });
+          }}
+          onToggleSelect={toggleSelect}
+          onOpen={setDetailNote}
+          onEdit={(note, e) => {
+            e.stopPropagation();
+            router.push(`/note/${note.id}`);
+          }}
+          onDelete={handleDelete}
+          onCopy={handleCopy}
+          onStatusChange={handleStatusChange}
+          onNewVersion={handleNewVersion}
+          onPin={togglePin}
+          onTagClick={tag => {
+            setSearch(tag);
+            setShowSearchHist(false);
+          }}
+          onLoadMore={() => setVisibleCount(v => v + PAGE_SIZE)}
+        />
       )}
 
       {/* 테이블 뷰 */}
       {filtered.length > 0 && viewMode === 'table' && (
-        <div className="card table-card" style={{ marginTop: 16 }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table
-              className="data-table stagger-rows"
-              tabIndex={0}
-              onKeyDown={e => {
-                if (e.key === 'ArrowDown') {
-                  e.preventDefault();
-                  setFocusedRow(r => {
-                    const cur = r == null ? -1 : filtered.findIndex(n => n.id === r);
-                    return filtered[Math.min(cur + 1, filtered.length - 1)]?.id ?? r;
-                  });
-                } else if (e.key === 'ArrowUp') {
-                  e.preventDefault();
-                  setFocusedRow(r => {
-                    const cur = r == null ? filtered.length : filtered.findIndex(n => n.id === r);
-                    return filtered[Math.max(cur - 1, 0)]?.id ?? r;
-                  });
-                } else if (e.key === 'Enter' && focusedRow != null) {
-                  const note = filtered.find(n => n.id === focusedRow);
-                  if (note) setDetailNote(note);
-                } else if (e.key === 'Escape') {
-                  setFocusedRow(null);
-                }
-              }}
-            >
-              <thead
-                style={{ position: 'sticky', top: 0, zIndex: 2, background: 'var(--surface)' }}
-              >
-                <tr>
-                  <th scope="col">제목</th>
-                  <th scope="col" style={{ width: 100 }}>
-                    메뉴명
-                  </th>
-                  <th scope="col" style={{ width: 80 }}>
-                    카테고리
-                  </th>
-                  <th scope="col" style={{ width: 90 }}>
-                    상태
-                  </th>
-                  <th scope="col" style={{ width: 90 }}>
-                    날짜
-                  </th>
-                  <th scope="col" style={{ width: 80 }} aria-label="액션" />
-                </tr>
-              </thead>
-              <tbody>
-                {visible.map(note => (
-                  <NoteTableRow
-                    key={note.id}
-                    note={note}
-                    focused={focusedRow === note.id}
-                    onOpen={target => {
-                      setFocusedRow(target.id);
-                      setDetailNote(target);
-                    }}
-                    onEdit={target => router.push(`/note/${target.id}`)}
-                    onDelete={handleDelete}
-                    onStatusChange={handleStatusChange}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {visible.length < filtered.length && (
-            <button className="load-more-btn" onClick={() => setVisibleCount(v => v + PAGE_SIZE)}>
-              더 보기 ({filtered.length - visible.length}개 남음)
-            </button>
-          )}
-        </div>
+        <NoteTableView
+          visible={visible}
+          filtered={filtered}
+          focusedRow={focusedRow}
+          onFocusRow={setFocusedRow}
+          onOpen={setDetailNote}
+          onEdit={note => router.push(`/note/${note.id}`)}
+          onDelete={handleDelete}
+          onStatusChange={handleStatusChange}
+          onLoadMore={() => setVisibleCount(v => v + PAGE_SIZE)}
+        />
       )}
 
       {detailNote && (

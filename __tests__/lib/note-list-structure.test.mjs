@@ -6,15 +6,27 @@ describe('note list structure', () => {
     const source = readFileSync(resolve('app/note/_NoteContent.jsx'), 'utf8');
     const filterSource = readFileSync(resolve('app/note/_NoteFilterControls.jsx'), 'utf8');
     const statsSource = readFileSync(resolve('app/note/_NoteStatsSummary.jsx'), 'utf8');
+    const cardGridSource = readFileSync(resolve('app/note/_NoteCardGrid.jsx'), 'utf8');
+    const tableViewSource = readFileSync(resolve('app/note/_NoteTableView.jsx'), 'utf8');
 
     expect(source).toContain("import { NoteStatsSummary } from './_NoteStatsSummary'");
     expect(source).toContain("import { NoteFilterControls } from './_NoteFilterControls'");
+    expect(source).toContain("import { NoteCardGrid } from './_NoteCardGrid'");
+    expect(source).toContain("import { NoteTableView } from './_NoteTableView'");
     expect(source).toContain('<NoteStatsSummary');
     expect(source).toContain('<NoteFilterControls');
+    expect(source).toContain('<NoteCardGrid');
+    expect(source).toContain('<NoteTableView');
     expect(source).not.toContain('const SORT_OPTIONS = [');
     expect(source).not.toContain("className={'chip' + (statusFilter === st ? ' active' : '')}");
+    expect(source).not.toContain('className="stagger note-card-wrap"');
+    expect(source).not.toContain('className="data-table stagger-rows"');
     expect(filterSource).toContain('const SORT_OPTIONS = [');
     expect(filterSource).toContain('제목, 메뉴명, 테스트 내용, 태그 검색');
     expect(statsSource).toContain('최근 6개월');
+    expect(cardGridSource).toContain('export function NoteCardGrid');
+    expect(cardGridSource).toContain('className="stagger note-card-wrap"');
+    expect(tableViewSource).toContain('export function NoteTableView');
+    expect(tableViewSource).toContain('className="data-table stagger-rows"');
   });
 });
