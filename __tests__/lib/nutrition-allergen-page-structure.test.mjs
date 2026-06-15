@@ -6,6 +6,10 @@ const dataHookSource = readFileSync(
   resolve('app/nutrition/allergen/useAllergenPageData.js'),
   'utf8'
 );
+const sourceHookSource = readFileSync(
+  resolve('app/nutrition/allergen/useAllergenSourceData.js'),
+  'utf8'
+);
 const ingredientTableSource = readFileSync(
   resolve('app/nutrition/allergen/AllergenIngredientTable.jsx'),
   'utf8'
@@ -79,14 +83,28 @@ describe('nutrition allergen page structure', () => {
     expect(detailModalSource).toContain('상세 식자재가 없습니다');
   });
 
-  test('extracted data hook owns loading, matrix, order, and export responsibilities', () => {
+  test('extracted data hook composes source data and owns matrix, order, and export responsibilities', () => {
     expect(dataHookSource).toContain('export function useAllergenPageData');
-    expect(dataHookSource).toContain('getAllIngredients');
+    expect(dataHookSource).toContain('useAllergenSourceData()');
     expect(dataHookSource).toContain('buildMenuMatrix');
     expect(dataHookSource).toContain('extractExcludedMenuSets');
     expect(dataHookSource).toContain('buildDetailRows');
     expect(dataHookSource).toContain("downloadCsv([headers, ...rows], '알레르기매트릭스.csv')");
     expect(dataHookSource).toContain('saveOrder(ALLERGEN_MENU_ORDER_KEY, keys)');
     expect(dataHookSource).toContain('saveMenuNames(next)');
+    expect(dataHookSource).not.toContain('getAllIngredients');
+    expect(dataHookSource).not.toContain('useVisibilityRefresh');
+    expect(dataHookSource).not.toContain('buildIngredientMenuMap');
+  });
+
+  test('extracted source hook owns db loading and recipe map building responsibilities', () => {
+    expect(sourceHookSource).toContain('export function useAllergenSourceData');
+    expect(sourceHookSource).toContain('getAllIngredients');
+    expect(sourceHookSource).toContain('getAllMenuMaster');
+    expect(sourceHookSource).toContain('loadMenuRecipeArrays');
+    expect(sourceHookSource).toContain('tagDetailRecipes');
+    expect(sourceHookSource).toContain('buildIngredientMenuMap');
+    expect(sourceHookSource).toContain('useVisibilityRefresh(load)');
+    expect(sourceHookSource).toContain("showToast('데이터 로드 실패: ' + err.message, 'error')");
   });
 });
