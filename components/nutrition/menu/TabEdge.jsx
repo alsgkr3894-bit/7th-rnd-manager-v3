@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { showToast } from '@/components/Toast';
-import { getProfile, isAdminProfile } from '@/lib/profile';
 import {
   upsertEdge,
   EDGE_CODES,
@@ -11,6 +10,7 @@ import {
 } from '@/lib/nutrition/values/store';
 import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
 import { asRecord, noop } from '@/lib/ui/prop-guards';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 export function TabEdge({ edges, edgeMap, onRefresh }) {
   const safeEdgeMap = asRecord(edgeMap);
@@ -18,20 +18,13 @@ export function TabEdge({ edges, edgeMap, onRefresh }) {
   const [selCode, setSelCode] = useState(EDGE_CODES[0]);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
-  const [profile, setProfile] = useState(() => getProfile());
+  const { isAdmin, ready: roleReady } = useCurrentRole();
 
   const existing = safeEdgeMap[selCode];
-  const isAdmin = isAdminProfile(profile);
 
   useEffect(() => {
     setForm(existing ? { ...existing } : {});
   }, [selCode, existing]);
-
-  useEffect(() => {
-    const syncProfile = () => setProfile(getProfile());
-    window.addEventListener('storage', syncProfile);
-    return () => window.removeEventListener('storage', syncProfile);
-  }, []);
 
   const setField = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -67,7 +60,13 @@ export function TabEdge({ edges, edgeMap, onRefresh }) {
           <br />
           석쇠와 씬바샤삭은 베이스 영양성분 탭에서 메뉴별 직접 입력하고,
           치즈크러스트와 골드스윗은 아래에서 사이즈별 조정값을 직접 입력합니다.
-          {!isAdmin && (
+          {!roleReady && (
+            <>
+              <br />
+              현재 계정 권한을 확인하는 중입니다.
+            </>
+          )}
+          {roleReady && !isAdmin && (
             <>
               <br />
               현재 계정은 조회 전용입니다. 저장과 덮어쓰기는 관리자만 가능합니다.

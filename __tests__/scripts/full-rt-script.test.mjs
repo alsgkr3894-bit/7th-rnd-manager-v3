@@ -85,4 +85,13 @@ describe('full-rt 직접 진입 QA 스크립트', () => {
       '/note/sample',
     ]);
   });
+
+  test('동적 상세 라우트는 fixture seed 후 직접 진입 검사한다', () => {
+    expect(script).toContain('DYNAMIC_FIXTURE_ROUTES');
+    expect(script).toContain('/note/900001');
+    expect(script).toContain('/note/sample/900001');
+    expect(script).toContain('seedDynamicRouteFixtures');
+    expect(script).toContain("tx.objectStore('menu_dev_notes').put");
+    expect(script).toContain("tx.objectStore('sample_records').put");
+  });
 });

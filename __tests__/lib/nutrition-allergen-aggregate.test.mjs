@@ -200,6 +200,59 @@ describe('buildEdgeAllergenMap', () => {
     expect([...(map.get('치즈크러스트L') || [])]).toEqual(['AL02']);
     expect([...(map.get('치즈크러스트R') || [])]).toEqual(['AL02']);
   });
+
+  test('골드스윗은 사이즈별 엣지 구성품 알레르기를 유지한다', () => {
+    const map = buildEdgeAllergenMap({
+      ingredients: [{ productCode: 'ALMOND', ingredientName: '아몬드분태', allergens: ['AL22'] }],
+      edges: [
+        {
+          edgeType: '골드스윗크러스트',
+          size: 'R',
+          components: [{ productCode: 'ALMOND' }],
+        },
+      ],
+    });
+
+    expect([...(map.get('골드스윗R') || [])]).toEqual(['AL22']);
+  });
+
+  test('씬바샤삭은 기본 도우 알레르기를 빼고 씬도우 알레르기와 비도우 알레르기를 합산한다 (N-42)', () => {
+    const ingredientRows = [
+      { productCode: 'BASE-DOUGH', ingredientName: '기본도우', allergens: ['AL05'], category: '도우' },
+      { productCode: 'SAUCE', ingredientName: '대두소스', allergens: ['AL05'] },
+      { productCode: 'THIN-DOUGH', ingredientName: '씬도우', allergens: ['AL01', 'AL05', 'AL06'] },
+    ];
+    const mapData = buildIngredientMenuMap({
+      menuMasters: [{ menuCode: 'PZ-THIN-L', menuName: '씬 테스트 L', category: '피자' }],
+      detailRecipes: [
+        {
+          menuCode: 'PZ-THIN-L',
+          menuName: '씬 테스트 L',
+          category: '피자',
+          components: [{ productCode: 'BASE-DOUGH' }, { productCode: 'SAUCE' }],
+        },
+      ],
+    });
+    const rows = buildMenuMatrix(
+      ingredientRows,
+      mapData,
+      [
+        {
+          edgeType: '씬도우',
+          size: 'L',
+          components: [{ productCode: 'THIN-DOUGH' }],
+        },
+      ],
+      () => false,
+      [],
+      {},
+      []
+    );
+
+    const thin = rows.find(row => row.crust === '씬바샤삭');
+    expect(thin).toBeTruthy();
+    expect([...thin.allergenCodes].sort()).toEqual(['AL01', 'AL05', 'AL06']);
+  });
 });
 
 describe('buildToppingAllergenMap', () => {

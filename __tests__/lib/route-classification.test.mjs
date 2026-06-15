@@ -1,4 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
+import { readdirSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
 import {
   CHINA4_DIRECT_RUNTIME_ROUTES,
   MAIN_RUNTIME_ROUTES,
@@ -9,10 +11,35 @@ import {
 } from '../../lib/navigation/route-classification.js';
 import { MOBILE_TAB_DEFS } from '../../lib/menu.js';
 
+function collectPageRoutes(dir = resolve('app')) {
+  const routes = [];
+  function walk(current) {
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      const next = join(current, entry.name);
+      if (entry.isDirectory()) {
+        walk(next);
+        continue;
+      }
+      if (!/^page\.(js|jsx|ts|tsx)$/.test(entry.name)) continue;
+      const routeDir = relative(resolve('app'), current);
+      routes.push(routeDir ? `/${routeDir}` : '/');
+    }
+  }
+  walk(dir);
+  return routes.sort();
+}
+
 describe('route classification', () => {
   test('정적 route 분류는 중복 route를 갖지 않는다', () => {
     const routes = ROUTE_CLASSIFICATIONS.map(item => item.route);
     expect(new Set(routes).size).toBe(routes.length);
+  });
+
+  test('모든 app page route는 route 분류표에 포함된다', () => {
+    const classified = new Set(ROUTE_CLASSIFICATIONS.map(item => item.route));
+    const missing = collectPageRoutes().filter(route => !classified.has(route));
+
+    expect(missing).toEqual([]);
   });
 
   test('legacy route는 redirect로 분류하고 canonical target을 기록한다', () => {
@@ -32,6 +59,11 @@ describe('route classification', () => {
           route: '/ingredient/list',
           kind: ROUTE_KIND.REDIRECT,
           target: '/ingredient/manage',
+        }),
+        expect.objectContaining({
+          route: '/cost/recipe-master',
+          kind: ROUTE_KIND.REDIRECT,
+          target: '/menu-master',
         }),
       ])
     );

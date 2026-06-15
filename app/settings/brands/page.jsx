@@ -6,7 +6,6 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { SettingTile } from '@/components/ui/SettingTile';
 import {
   getBrands,
-  isAdminProfile,
   normalizeBrandId,
   setBrandHidden,
   setDefaultBrandId,
@@ -15,10 +14,12 @@ import {
 import { getActiveBrandId, setActiveBrandId } from '@/lib/active-brand';
 import { exportAllForBrand, importAllToBrand, MODULE_KEYS } from '@/lib/db';
 import { validateBackupPayload } from '@/lib/backup/validation';
+import { backupSourceMetadataOf, isBackupSourceMismatch } from '@/lib/backup/brand-source';
 import { addEntry } from '@/lib/backup-history';
 import { downloadJson, makeFileName, readFileAsText } from '@/lib/download';
 import { formatNumber } from '@/lib/format';
-import { getProfile } from '@/lib/profile';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 const EMPTY_FORM = {
   id: '',
@@ -48,14 +49,13 @@ function countRows(stores) {
 export default function BrandMasterPage() {
   const [brands, setBrands] = useState([]);
   const [activeId, setActiveId] = useState('main');
-  const [profile, setProfile] = useState(() => getProfile());
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [busyBrandId, setBusyBrandId] = useState(null);
   const [restoreTarget, setRestoreTarget] = useState(null);
   const restoreInputRef = useRef(null);
-
-  const isAdmin = isAdminProfile(profile);
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const { showConfirm, confirmElement } = useConfirmDialog();
 
   const visibleCount = useMemo(() => brands.filter(brand => !brand.hidden).length, [brands]);
   const hiddenCount = brands.length - visibleCount;
@@ -67,7 +67,6 @@ export default function BrandMasterPage() {
   };
 
   useEffect(() => {
-    setProfile(getProfile());
     reloadBrands();
   }, []);
 
@@ -191,19 +190,55 @@ export default function BrandMasterPage() {
     e.target.value = '';
     setRestoreTarget(null);
     if (!file || !target || busyBrandId) return;
-    if (
-      !window.confirm(
-        `${target.name} 브랜드 데이터를 백업 파일 내용으로 덮어씁니다.\n복원 전 자동 백업을 만든 뒤 진행합니다.`
-      )
-    ) {
-      return;
-    }
 
     setBusyBrandId(target.id);
     try {
       const text = await readFileAsText(file, ['.json']);
       const raw = JSON.parse(text);
       const { backup, summary } = validateBackupPayload(raw);
+      const source = backupSourceMetadataOf(backup);
+      const sourceMismatch = isBackupSourceMismatch(backup, target.id);
+      const failedStores = Array.isArray(raw.failedStores) ? raw.failedStores : [];
+      const restoreOk = await showConfirm({
+        title: `${target.name} 브랜드 복원`,
+        message: (
+          <div>
+            <div>
+              <b>파일:</b> {file.name}
+            </div>
+            <div>
+              <b>백업 브랜드:</b>{' '}
+              {source.hasSourceBrand
+                ? `${source.sourceBrandName || source.sourceBrandId} (${source.sourceBrandId})`
+                : '출처 정보 없음'}
+            </div>
+            <div>
+              <b>복원 대상:</b> {target.name} ({target.id})
+            </div>
+            <div>
+              <b>복원 행수:</b> {formatNumber(summary.totalRows)}건 · store{' '}
+              {formatNumber(summary.knownStores.length)}개
+            </div>
+            {sourceMismatch && (
+              <div style={{ color: 'var(--warn)', fontWeight: 700 }}>
+                백업 브랜드와 복원 대상 브랜드가 다릅니다. 덮어쓰기 전 파일을 다시 확인하세요.
+              </div>
+            )}
+            {failedStores.length > 0 && (
+              <div style={{ color: 'var(--warn)', fontWeight: 700 }}>
+                백업 생성 당시 읽기 실패 store {failedStores.length}개가 있어 해당 store는 복원되지
+                않습니다.
+              </div>
+            )}
+            <div style={{ marginTop: 8 }}>
+              복원 전 자동 백업 파일을 만든 뒤, 선택 브랜드 데이터를 이 파일 내용으로 덮어씁니다.
+            </div>
+          </div>
+        ),
+        confirmLabel: '덮어쓰기 복원',
+        danger: true,
+      });
+      if (!restoreOk) return;
 
       const before = await exportAllForBrand(
         target.id,
@@ -218,10 +253,19 @@ export default function BrandMasterPage() {
       downloadJson(before, beforeFileName);
 
       const result = await importAllToBrand(backup, target.id);
-      showToast(
-        `${target.name} 복원 완료 — ${result.imported}개 store, ${formatNumber(summary.totalRows)}건`,
-        'ok'
-      );
+      if (result.errors?.length > 0) {
+        showToast(
+          `${target.name} 복원 일부 완료 — 성공 ${result.imported}개 / 오류 ${result.errors.length}개`,
+          'warn',
+          7000
+        );
+        console.warn('[BrandMaster] 브랜드 복원 일부 실패:', result.errors);
+      } else {
+        showToast(
+          `${target.name} 복원 완료 — ${result.imported}개 store, ${formatNumber(summary.totalRows)}건`,
+          'ok'
+        );
+      }
       if (target.id === activeId) {
         setTimeout(() => window.location.reload(), 800);
       }
@@ -233,7 +277,22 @@ export default function BrandMasterPage() {
     }
   }
 
-  if (profile && !isAdmin) {
+  if (!roleReady) {
+    return (
+      <main className="main page-enter">
+        <PageHeader
+          breadcrumb={['설정 / 백업', '브랜드마스터']}
+          title="브랜드마스터"
+          sub="브랜드 권한을 확인하고 있습니다."
+        />
+        <div className="card" style={{ marginTop: 16, padding: 24 }}>
+          <span style={{ color: 'var(--text-3)' }}>권한 확인 중...</span>
+        </div>
+      </main>
+    );
+  }
+
+  if (!isAdmin) {
     return (
       <main className="main page-enter">
         <PageHeader
@@ -447,6 +506,7 @@ export default function BrandMasterPage() {
           </table>
         </div>
       </section>
+      {confirmElement}
     </main>
   );
 }

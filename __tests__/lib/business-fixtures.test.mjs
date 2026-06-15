@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, test } from '@jest/globals';
 import { readCsvFile } from '../../lib/excel.js';
 import { validateSalesFile } from '../../lib/sales/parse.js';
+import { classifyAndPrepare } from '../../lib/sales/classify.js';
 import { parsePriceRows } from '../../lib/price/parse.js';
 import { parseMenuPriceRows } from '../../lib/cost/menu-price/parse.js';
 import { buildPizzaSummary } from '../../lib/cost/pizza-summary/calc.js';
@@ -31,6 +32,54 @@ describe('익명화 업무 fixture 회귀', () => {
 
     expect(result.success).toBe(false);
     expect(result.reason).toContain('필수 헤더');
+  });
+
+  test('판매량 fixture는 분류·제외·미매칭 이슈를 고정한다', () => {
+    const rows = [
+      { rawMenuName: '익명 콤비 별칭', quantity: 12, originalIndex: 1 },
+      { rawMenuName: '익명 제외 메뉴', quantity: 2, originalIndex: 2 },
+      { rawMenuName: '익명 신규 메뉴', quantity: 3, originalIndex: 3 },
+    ];
+    const classifier = {
+      mapAlias: name => (name === '익명 콤비 별칭' ? '익명 콤비네이션' : name),
+      matchRule: name =>
+        name === '익명 콤비네이션'
+          ? {
+              category: '피자',
+              groupName: '익명 피자',
+              detailName: '익명 콤비네이션',
+            }
+          : null,
+      isExcluded: name => name === '익명 제외 메뉴',
+    };
+
+    const result = classifyAndPrepare(rows, 2026, 5, classifier);
+
+    expect(result.classifiedRows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          rawMenuName: '익명 콤비 별칭',
+          mappedMenuName: '익명 콤비네이션',
+          status: 'classified',
+          category: '피자',
+        }),
+        expect.objectContaining({
+          rawMenuName: '익명 제외 메뉴',
+          status: 'excluded',
+        }),
+        expect.objectContaining({
+          rawMenuName: '익명 신규 메뉴',
+          status: 'unclassified',
+        }),
+      ])
+    );
+    expect(result.groupedIssues).toEqual([
+      expect.objectContaining({
+        issueType: 'unmatched',
+        normalizedMenuName: '익명 신규 메뉴',
+        totalQuantity: 3,
+      }),
+    ]);
   });
 
   test('제때 단가 fixture는 과세/면세 단가를 정규화한다', () => {

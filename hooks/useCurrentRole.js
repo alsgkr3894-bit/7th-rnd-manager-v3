@@ -11,16 +11,24 @@ import {
  * 현재 활성 계정의 역할을 반환한다.
  * 계정이 없으면 'admin' 기본값.
  * localStorage ACTIVE_ACCOUNT_KEY 계열 변경 시 자동 갱신.
- * @returns {{ role: 'admin'|'viewer', isAdmin: boolean, isViewer: boolean }}
+ * @returns {{ role: 'admin'|'viewer', isAdmin: boolean, isViewer: boolean, ready: boolean }}
  */
 export function useCurrentRole() {
-  const [role, setRole] = useState('admin');
+  const [role, setRole] = useState('viewer');
+  const [ready, setReady] = useState(false);
 
   const refresh = useCallback(() => {
+    setReady(false);
     initDB()
       .then(() => getActiveRole())
-      .then(r => setRole(r))
-      .catch(() => setRole('admin'));
+      .then(r => {
+        setRole(r);
+        setReady(true);
+      })
+      .catch(() => {
+        setRole('admin');
+        setReady(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -37,5 +45,5 @@ export function useCurrentRole() {
     };
   }, [refresh]);
 
-  return { role, isAdmin: role === 'admin', isViewer: role === 'viewer' };
+  return { role, isAdmin: role === 'admin', isViewer: role === 'viewer', ready };
 }

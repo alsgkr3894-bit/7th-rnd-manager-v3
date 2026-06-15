@@ -1,0 +1,15 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, test } from '@jest/globals';
+
+const source = readFileSync(resolve('app/settings/brands/page.jsx'), 'utf8');
+
+describe('brand restore preview guards', () => {
+  test('브랜드 복원은 백업 출처/대상 확인 후 ConfirmDialog로 진행한다', () => {
+    expect(source).not.toContain('window.confirm');
+    expect(source).toContain('backupSourceMetadataOf');
+    expect(source).toContain('isBackupSourceMismatch');
+    expect(source).toContain('showConfirm');
+    expect(source).toContain('덮어쓰기 복원');
+  });
+});
