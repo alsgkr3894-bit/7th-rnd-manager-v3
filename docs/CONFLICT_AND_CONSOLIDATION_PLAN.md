@@ -747,24 +747,26 @@
 
 - 대부분의 store는 활성 브랜드 DB에 저장된다.
 - 노트 패밀리는 `lib/db/shared.js`에 따라 항상 main DB에 저장된다.
-- 백업/복원 화면은 현재 브랜드를 안내하지만, 백업 JSON 자체에는 `sourceBrandId`, `sourceBrandName`, `sourceDbName` 같은 metadata가 없다.
+- 백업 JSON에는 `sourceBrandId`, `sourceBrandName`, `sourceDbName`, `sharedDbName` metadata가 포함된다.
+- 복원 미리보기는 백업 source 브랜드와 현재 target 브랜드를 함께 표시하고, 다르면 경고한다.
+- shared store와 active-brand store는 복원 미리보기에서 저장 위치를 분리해 안내한다.
 
 **충돌 가능성**
 
-- A 브랜드에서 만든 백업 파일을 B 브랜드가 활성화된 상태에서 복원해도 코드상 파일 출처 검증이 없다.
-- 노트는 main DB 공유, 나머지는 활성 브랜드 DB라 같은 백업 안에서도 저장 DB 기준이 섞인다.
+- 완료: source/target brand가 다르거나 구형 백업이라 source metadata가 없으면 복원 미리보기에서 경고한다. (`44ce445`)
+- 완료: 노트처럼 main DB에 저장되는 shared store와 활성 브랜드 DB store의 저장 위치를 미리보기에서 구분한다. (`44ce445`)
 
 **정리 방향**
 
-- `exportSelected()` meta에 source brand 정보를 항상 포함한다.
-- `app/settings/restore/page.jsx`에서 백업 source brand와 현재 target brand를 비교해 경고/확인 단계를 둔다.
-- shared store와 active-brand store를 복원 미리보기에서 분리 표시한다.
+- 완료: `exportSelected()` meta에 source brand 정보를 항상 포함한다. (`44ce445`)
+- 완료: `app/settings/restore/page.jsx`에서 백업 source brand와 현재 target brand를 비교해 경고/확인 단계를 둔다. (`44ce445`)
+- 완료: shared store와 active-brand store를 복원 미리보기에서 분리 표시한다. (`44ce445`)
 
 **검증**
 
-- main 백업을 non-main에 복원하려 할 때 강한 경고가 뜬다.
-- non-main 백업을 main에 복원하려 할 때도 source/target mismatch를 보여준다.
-- shared store는 main DB로, active store는 현재 브랜드 DB로 들어간다는 설명이 미리보기에 노출된다.
+- 완료: main 백업을 non-main에 복원하려 할 때 강한 경고가 뜬다.
+- 완료: non-main 백업을 main에 복원하려 할 때도 source/target mismatch를 보여준다.
+- 완료: shared store는 main DB로, active store는 현재 브랜드 DB로 들어간다는 설명이 미리보기에 노출된다.
 
 ### 8.4 계정 store와 활성 계정 key의 범위가 애매함
 
@@ -1017,12 +1019,12 @@
 - 시스템 설정에는 `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert`가 있다.
 - 제때 설정에는 `priceAlertThreshold`, `autoRecalcOnUpdate`, `autoRegisterNew`가 있다.
 - `unmatchedAlert`와 `costRateAlert`는 홈/상단 알림 표시에 반영된다.
-- 그 외 자동화 토글은 설정 화면 외 실제 업로드/계산 로직에서 거의 참조되지 않는다.
+- 자동 재계산 계열 토글은 가격 업로드 이벤트 기반 `항상 자동 반영` 상태로 정리했고, 사용자가 조작하는 no-op 토글로 노출하지 않는다.
 - `v3:jette-settings`와 시스템 설정 localStorage key는 백업 key 범위에 포함된다.
 
 **구현 상태**
 
-- 부분 구현 완료: `315fc65 fix: include system settings in backup keys`, `045ce2d fix: apply system alert settings`, `179c2cd fix: apply jette policy settings`, `384f152 fix: enforce strict cost report posting`
+- 구현 완료: `315fc65 fix: include system settings in backup keys`, `045ce2d fix: apply system alert settings`, `179c2cd fix: apply jette policy settings`, `384f152 fix: enforce strict cost report posting`
 - `unmatchedAlert`는 TopBar/Sidebar/mobile badge/Home 미매칭 위젯/ModuleHealth 입력에 반영한다.
 - `costRateAlert`는 Home 인사말, CostAlertWidget, ModuleHealth 원가율 알림 입력에 반영한다.
 - `priceAlertThreshold`는 가격 비교 요약 카드와 비교 테이블 강조 조건에 반영한다.
@@ -1123,7 +1125,7 @@
 - restore에서 localStorage 복원 조건을 `nutrition` 선택과 분리한다.
 - 완료: 시스템 설정 key 전체의 백업 포함 정책을 확정하고 `SETTING_LS_KEYS` 기준으로 반영했다. (`315fc65`)
 - 완료: `settings` IndexedDB store를 legacy/reserved placeholder로 명시하고 선택 백업 공통 범위에서 제외했다. (`996c221`)
-- 백업 JSON에 source brand metadata를 추가한다.
+- 완료: 백업 JSON에 source brand metadata를 추가했다. (`44ce445`)
 
 **검증**
 
