@@ -14,9 +14,9 @@ import { pruneOldWorkLogs } from '@/lib/work-log';
 import { hydratePlatformsFromDB } from '@/lib/cost/margin/platforms';
 import { initClickOrigin } from '@/lib/ui/click-origin';
 import { OVERLAY_COLOR } from '@/lib/ui/styles';
-import { getActiveBrandId, setActiveBrandId } from '@/lib/active-brand';
+import { getActiveBrand, getActiveBrandId, setActiveBrandId } from '@/lib/active-brand';
 import { BRAND_MASTER_EVENT, BRAND_MASTER_KEY, getVisibleBrands } from '@/lib/brand-master';
-import { getActiveBrand } from '@/lib/active-brand';
+import { COMPANIES } from '@/lib/companies';
 import { MOBILE_TAB_DEFS } from '@/lib/menu';
 import ProgressBar from './ProgressBar';
 import OfflineIndicator from './OfflineIndicator';
@@ -156,15 +156,27 @@ function applyBrandAccent(company) {
   }
 }
 
+const SSR_ACTIVE_COMPANY =
+  COMPANIES.find(company => company.id === 'main') ||
+  COMPANIES[0] ||
+  {
+    id: 'main',
+    name: '7번가피자',
+    sub: '본사직영',
+    logo: '/logo-7thstreet.png',
+    color: '#E1101F',
+  };
+const SSR_BRAND_OPTIONS = COMPANIES.length > 0 ? COMPANIES : [SSR_ACTIVE_COMPANY];
+
 export default function AppShell({ children }) {
   const [mobileNav, setMobileNav] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const gPressedRef = useRef(false);
   const gTimerRef = useRef(null);
-  // 활성 브랜드 복원 (localStorage). 전환 시 저장 후 새로고침으로 모든 모듈이 해당 브랜드 DB로 재초기화.
-  const [brandOptions, setBrandOptions] = useState(() => getVisibleBrands());
-  const [activeCompany, setActiveCompany] = useState(() => getActiveBrand());
+  // 첫 렌더는 SSR과 동일한 상수만 사용하고, 마운트 후 localStorage의 실제 브랜드로 교정한다.
+  const [brandOptions, setBrandOptions] = useState(SSR_BRAND_OPTIONS);
+  const [activeCompany, setActiveCompany] = useState(SSR_ACTIVE_COMPANY);
 
   useEffect(() => {
     const syncBrands = () => {
