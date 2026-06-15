@@ -466,6 +466,7 @@
 | 메뉴개발노트 목록의 카드/테이블/컨텍스트 메뉴/상세 모달 본문 분리 | 구현 완료 | 이번 보강(2026-06-15) |
 | 메뉴개발노트 목록의 페이지 controller hook 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 메뉴개발노트 목록의 controller props 조립 helper 분리 | 구현 완료 | 이번 보강(2026-06-16) |
+| 메뉴개발노트 목록의 controller props 그룹 builder 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 샘플기록 화면의 헤더/필터/캘린더/목록 렌더링 컴포넌트 분리 | 구현 완료 | 이번 보강(2026-06-15) |
 | 샘플기록 화면의 데이터/필터/액션 hook 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 샘플기록 화면의 필터/검색 하위 컴포넌트 분리 | 구현 완료 | 이번 보강(2026-06-16) |
@@ -641,6 +642,7 @@
 | 메뉴개발노트 목록 상태 구조 | 구현 완료: 데이터 로드, 필터/view 상태, 검색 히스토리, 보고예정 복사를 전용 hook으로 분리 |
 | 메뉴개발노트 목록 본문 구조 | 구현 완료: 카드/테이블 전환, 컨텍스트 메뉴 좌표, 상세 모달 렌더링을 `NoteListBody`로 분리 |
 | 메뉴개발노트 목록 controller props 구조 | 구현 완료: hook은 데이터/상태 hook 연결만 맡기고 dialogs/header/filter/body props 조립은 `lib/note/content-props.js`로 분리 |
+| 메뉴개발노트 목록 controller props 그룹 구조 | 구현 완료: `content-props`는 최종 조립만 맡기고 dialogs/header/filter/preset/states/body props 그룹은 `content-prop-builders`로 분리 |
 | 샘플기록 화면 controller 구조 | 구현 완료: page는 렌더 조립만 맡기고 상태/action/compare/batch 및 props wiring은 `useSamplePageController`로 분리 |
 | 샘플기록 화면 controller props 구조 | 구현 완료: hook은 상태/action hook 연결만 맡기고 actions/filter/calendar/records/dialog props 조립은 `samplePageControllerProps`로 분리 |
 | 식자재 상세 폼 필드 구조 | 구현 완료: 기존 `IngredientFormFields` import는 유지하면서 이름/기본정보/단가 필드 렌더링을 독립 파일로 분리 |

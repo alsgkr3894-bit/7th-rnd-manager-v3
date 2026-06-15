@@ -1,6 +1,11 @@
 import { jest } from '@jest/globals';
 import { NOTE_STATUS } from '@/lib/note/constants';
 import { buildNoteContentProps } from '@/lib/note/content-props';
+import {
+  buildNoteDialogProps,
+  buildNoteFilterProps,
+  buildNoteHeaderProps,
+} from '@/lib/note/content-prop-builders';
 
 const fn = () => jest.fn();
 
@@ -132,5 +137,29 @@ describe('buildNoteContentProps', () => {
     expect(inputs.listState.setShowSearchHist).toHaveBeenCalledWith(true);
     expect(inputs.listState.cancelSearchHistory).toHaveBeenCalled();
     expect(inputs.listState.closeSearchHistorySoon).toHaveBeenCalled();
+  });
+
+  test('하위 builder는 주요 prop 그룹을 독립적으로 조립한다', () => {
+    const inputs = createInputs();
+
+    const headerProps = buildNoteHeaderProps(inputs);
+    const filterProps = buildNoteFilterProps(inputs);
+    const dialogsProps = buildNoteDialogProps(inputs);
+
+    expect(headerProps.notesCount).toBe(2);
+    expect(headerProps.reportingCount).toBe(3);
+    expect(filterProps.search).toBe('트러플');
+    expect(filterProps.showSearchHistory).toBe(true);
+    expect(dialogsProps.selectedCount).toBe(2);
+    expect(dialogsProps.presetName).toBe('보고');
+
+    headerProps.onEnterBatchMode();
+    filterProps.onSearchSubmit();
+    dialogsProps.onConfirmPresetDelete();
+
+    expect(inputs.batchActions.setBatchMode).toHaveBeenCalledWith(true);
+    expect(inputs.listState.saveSearchHistory).toHaveBeenCalledWith('트러플');
+    expect(inputs.listState.deletePreset).toHaveBeenCalledWith(1);
+    expect(inputs.listState.setConfirmDeletePreset).toHaveBeenCalledWith(null);
   });
 });
