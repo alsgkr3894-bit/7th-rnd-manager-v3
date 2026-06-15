@@ -1,15 +1,11 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { initDB } from '@/lib/db';
-import {
-  ACTIVE_ACCOUNT_KEY,
-  getActiveRole,
-  isActiveAccountStorageKey,
-} from '@/lib/auth/accounts';
+import { ACTIVE_ACCOUNT_KEY, getActiveRole, isActiveAccountStorageKey } from '@/lib/auth/accounts';
 
 /**
  * 현재 활성 계정의 역할을 반환한다.
- * 계정이 없으면 'admin' 기본값.
+ * 계정이 없으면 'admin' 기본값, 권한 확인 실패 시에는 'viewer'로 닫는다.
  * localStorage ACTIVE_ACCOUNT_KEY 계열 변경 시 자동 갱신.
  * @returns {{ role: 'admin'|'viewer', isAdmin: boolean, isViewer: boolean, ready: boolean }}
  */
@@ -26,7 +22,7 @@ export function useCurrentRole() {
         setReady(true);
       })
       .catch(() => {
-        setRole('admin');
+        setRole('viewer');
         setReady(true);
       });
   }, []);

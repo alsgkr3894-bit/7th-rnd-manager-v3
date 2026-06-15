@@ -12,9 +12,37 @@ import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
 import { asRecord, noop } from '@/lib/ui/prop-guards';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 
-export function TabEdge({ edges, edgeMap, onRefresh }) {
+function hasNutritionValue(row) {
+  return [
+    'weight',
+    'kcal',
+    'carbs',
+    'sugar',
+    'fat',
+    'satFat',
+    'transFat',
+    'cholesterol',
+    'protein',
+    'sodium',
+  ].some(key => row?.[key] !== '' && row?.[key] != null);
+}
+
+function baseStatusOf({ entry, menus, rawMap }) {
+  if (!entry?.crustType) return null;
+  const safeMenus = Array.isArray(menus) ? menus : [];
+  const menuCodes = safeMenus.map(menu => String(menu?.menuCode || '').trim()).filter(Boolean);
+  const total = menuCodes.length;
+  const done = menuCodes.filter(code =>
+    hasNutritionValue(rawMap[`${code}__${entry.crustType}`])
+  ).length;
+  return { done, total };
+}
+
+export function TabEdge({ edges, edgeMap, rawMap, menus, onRefresh, onOpenBase }) {
   const safeEdgeMap = asRecord(edgeMap);
+  const safeRawMap = asRecord(rawMap);
   const refresh = typeof onRefresh === 'function' ? onRefresh : noop;
+  const openBase = typeof onOpenBase === 'function' ? onOpenBase : null;
   const [selCode, setSelCode] = useState(EDGE_CODES[0]);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
@@ -55,11 +83,18 @@ export function TabEdge({ edges, edgeMap, onRefresh }) {
     <div style={{ marginTop: 20 }}>
       <div className="card" style={{ padding: '14px 20px', marginBottom: 16 }}>
         <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
-          총 엣지는 <strong>석쇠, 치즈크러스트, 골드스윗, 씬바샤삭</strong> 기준으로
-          관리합니다.
+          총 엣지는 <strong>석쇠, 치즈크러스트, 골드스윗, 씬바샤삭</strong> 기준으로 관리합니다.
           <br />
-          석쇠와 씬바샤삭은 베이스 영양성분 탭에서 메뉴별 직접 입력하고,
-          치즈크러스트와 골드스윗은 아래에서 사이즈별 조정값을 직접 입력합니다.
+          석쇠와 씬바샤삭은 베이스 영양성분 탭에서 메뉴별 직접 입력하고, 치즈크러스트와 골드스윗은
+          아래에서 사이즈별 조정값을 직접 입력합니다.
+          {openBase && (
+            <>
+              <br />
+              <button className="btn sm" type="button" onClick={openBase} style={{ marginTop: 8 }}>
+                베이스 영양성분 열기
+              </button>
+            </>
+          )}
           {!roleReady && (
             <>
               <br />
@@ -100,16 +135,23 @@ export function TabEdge({ edges, edgeMap, onRefresh }) {
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 10 }}>
               {group.entries.map(entry => {
                 const code = entry.edgeCode || entry.crustType;
+                const baseStatus = baseStatusOf({ entry, menus, rawMap: safeRawMap });
                 const done = entry.edgeCode
-                  ? !!safeEdgeMap[entry.edgeCode]?.kcal
-                  : false;
+                  ? hasNutritionValue(safeEdgeMap[entry.edgeCode])
+                  : baseStatus?.done > 0;
+                const label = entry.edgeCode
+                  ? EDGE_NAMES[entry.edgeCode]
+                  : CRUST_DISPLAY_NAMES[entry.crustType];
                 return (
                   <span
                     key={code}
                     className={'chip' + (done ? ' active' : '')}
                     style={{ fontSize: 11, padding: '3px 7px' }}
                   >
-                    {entry.edgeCode ? EDGE_NAMES[entry.edgeCode] : CRUST_DISPLAY_NAMES[entry.crustType]}
+                    {label}
+                    {baseStatus && baseStatus.total > 0
+                      ? ` ${baseStatus.done}/${baseStatus.total}`
+                      : ''}
                   </span>
                 );
               })}
@@ -165,9 +207,7 @@ export function TabEdge({ edges, edgeMap, onRefresh }) {
         <NutritionGrid values={form} onChange={setField} disabled={!isAdmin || saving} />
         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
           <button className="btn primary" onClick={handleSave} disabled={saving || !isAdmin}>
-            {saving
-              ? '저장 중…'
-              : `${EDGE_NAMES[selCode]} ${existing ? '덮어쓰기 저장' : '저장'}`}
+            {saving ? '저장 중…' : `${EDGE_NAMES[selCode]} ${existing ? '덮어쓰기 저장' : '저장'}`}
           </button>
         </div>
       </div>

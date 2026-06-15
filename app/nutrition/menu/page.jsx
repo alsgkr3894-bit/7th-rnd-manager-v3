@@ -52,14 +52,7 @@ const TabSetCalc = dynamic(
   { ssr: false }
 );
 
-const TABS = [
-  '베이스 영양성분',
-  '엣지 설정',
-  '추가토핑',
-  '파생 메뉴',
-  '계산 결과',
-  '세트 계산',
-];
+const TABS = ['베이스 영양성분', '엣지 설정', '추가토핑', '파생 메뉴', '계산 결과', '세트 계산'];
 
 function DuplicateNotice({ diagnostics, repairing, onRepair }) {
   const duplicateRows = Number(diagnostics?.duplicateRows) || 0;
@@ -440,7 +433,16 @@ export default function Page() {
               menuMasters={menuMasters}
             />
           )}
-          {tab === 1 && <TabEdge edges={edges} edgeMap={edgeMap} onRefresh={load} />}
+          {tab === 1 && (
+            <TabEdge
+              edges={edges}
+              edgeMap={edgeMap}
+              rawMap={rawMap}
+              menus={menus}
+              onRefresh={load}
+              onOpenBase={() => setTab(0)}
+            />
+          )}
           {tab === 2 && (
             <TabToppings toppings={toppings} ingredients={ingredients} onRefresh={load} />
           )}

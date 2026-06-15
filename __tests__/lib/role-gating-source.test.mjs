@@ -22,5 +22,17 @@ describe('role gating source guards', () => {
 
     expect(hookSource).toContain("useState('viewer')");
     expect(hookSource).toContain('ready');
+    expect(hookSource).toContain("setRole('viewer')");
+  });
+
+  test('엣지 영양 화면은 베이스 입력 상태와 베이스 탭 이동을 노출한다', () => {
+    const pageSource = sourceOf('app/nutrition/menu/page.jsx');
+    const edgeSource = sourceOf('components/nutrition/menu/TabEdge.jsx');
+
+    expect(pageSource).toContain('rawMap={rawMap}');
+    expect(pageSource).toContain('menus={menus}');
+    expect(pageSource).toContain('onOpenBase={() => setTab(0)}');
+    expect(edgeSource).toContain('baseStatusOf');
+    expect(edgeSource).toContain('베이스 영양성분 열기');
   });
 });

@@ -6,16 +6,19 @@ jest.unstable_mockModule('@/lib/active-brand', () => ({
   getActiveBrandId: () => activeBrandId,
 }));
 
-jest.unstable_mockModule('@/lib/db', () => ({
+const dbMock = {
   getAll: jest.fn(),
   put: jest.fn(),
   deleteById: jest.fn(),
   hasStore: jest.fn(() => true),
-}));
+};
+
+jest.unstable_mockModule('@/lib/db', () => dbMock);
 
 const {
   ACTIVE_ACCOUNT_KEY,
   activeAccountKeyForBrand,
+  getActiveRole,
   getActiveAccountId,
   getActiveAccountStorageKey,
   isActiveAccountStorageKey,
@@ -65,6 +68,9 @@ function installStorage(initial = {}) {
 describe('active account brand-scoped storage', () => {
   beforeEach(() => {
     activeBrandId = 'brand-b';
+    jest.clearAllMocks();
+    dbMock.hasStore.mockReturnValue(true);
+    dbMock.getAll.mockResolvedValue([]);
   });
 
   test('uses a brand-scoped active account key', () => {
@@ -109,5 +115,15 @@ describe('active account brand-scoped storage', () => {
 
     expect(store[ACTIVE_ACCOUNT_KEY]).toBe('2');
     expect(store[activeAccountKeyForBrand('main')]).toBe('2');
+  });
+
+  test('active role keeps first-use admin but fails closed to viewer on DB errors', async () => {
+    installStorage();
+
+    dbMock.getAll.mockResolvedValueOnce([]);
+    await expect(getActiveRole()).resolves.toBe('admin');
+
+    dbMock.getAll.mockRejectedValueOnce(new Error('db down'));
+    await expect(getActiveRole()).resolves.toBe('viewer');
   });
 });
