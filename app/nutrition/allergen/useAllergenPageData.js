@@ -2,8 +2,9 @@
 import { useState, useMemo, useCallback } from 'react';
 import { downloadCsv } from '@/lib/download';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
-import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
-import { buildMenuMatrix, buildDetailRows } from '@/lib/nutrition/allergen/matrix';
+import { asDisplayText } from '@/lib/ui/prop-guards';
+import { buildMenuMatrix } from '@/lib/nutrition/allergen/matrix';
+import { buildAllergenDetailRows, buildAllergenSummaryCounts } from './allergenPageDetailUtils';
 import {
   buildAllergenCsvRows,
   buildAllergenListForOrder,
@@ -11,7 +12,6 @@ import {
   buildMenuNameEditMenus,
 } from './allergenPageOutputUtils';
 import {
-  buildIngredientByKey,
   filterAllergenIngredients,
   filterIngredientRows,
   filterMenuMatrix,
@@ -81,14 +81,9 @@ export function useAllergenPageData(search) {
     [allergenOrder, menuMatrixAll]
   );
 
-  const ingredientByKey = useMemo(
-    () => buildIngredientByKey(allergenIngredients),
-    [allergenIngredients]
-  );
-
   const detailRows = useMemo(
-    () => buildDetailRows(detailRow, baseMapData, edges, ingredientByKey),
-    [baseMapData, detailRow, edges, ingredientByKey]
+    () => buildAllergenDetailRows(detailRow, baseMapData, edges, allergenIngredients),
+    [allergenIngredients, baseMapData, detailRow, edges]
   );
 
   const menuMatrix = useMemo(
@@ -108,10 +103,10 @@ export function useAllergenPageData(search) {
     [menuListForOrder]
   );
 
-  const totalWithAllergen = allergenIngredients.length;
-  const totalIngredients = asObjectArray(ingredients).filter(
-    i => !i.discontinued && !i.excluded
-  ).length;
+  const { totalWithAllergen, totalIngredients } = useMemo(
+    () => buildAllergenSummaryCounts(ingredients, allergenIngredients),
+    [allergenIngredients, ingredients]
+  );
 
   const exportCsv = useCallback(() => {
     downloadCsv(buildAllergenCsvRows(menuMatrix, orderedAllergens), '알레르기매트릭스.csv');

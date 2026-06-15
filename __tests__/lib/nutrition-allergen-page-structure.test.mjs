@@ -10,6 +10,10 @@ const dataUtilsSource = readFileSync(
   resolve('app/nutrition/allergen/allergenPageDataUtils.js'),
   'utf8'
 );
+const detailUtilsSource = readFileSync(
+  resolve('app/nutrition/allergen/allergenPageDetailUtils.js'),
+  'utf8'
+);
 const outputUtilsSource = readFileSync(
   resolve('app/nutrition/allergen/allergenPageOutputUtils.js'),
   'utf8'
@@ -100,7 +104,9 @@ describe('nutrition allergen page structure', () => {
     expect(dataHookSource).toContain('useAllergenSourceData()');
     expect(dataHookSource).toContain('buildMenuMatrix');
     expect(dataHookSource).toContain('extractExcludedMenuSets');
-    expect(dataHookSource).toContain('buildDetailRows');
+    expect(dataHookSource).toContain("from './allergenPageDetailUtils'");
+    expect(dataHookSource).toContain('buildAllergenDetailRows');
+    expect(dataHookSource).toContain('buildAllergenSummaryCounts');
     expect(dataHookSource).toContain("from './allergenPageOutputUtils'");
     expect(dataHookSource).toContain('useAllergenOrderState()');
     expect(dataHookSource).toContain('buildAllergenCsvRows(menuMatrix, orderedAllergens)');
@@ -112,6 +118,9 @@ describe('nutrition allergen page structure', () => {
     expect(dataHookSource).not.toContain('ALLERGEN_SEED');
     expect(dataHookSource).not.toContain("const headers = ['메뉴명'");
     expect(dataHookSource).not.toContain('const frequency = new Map()');
+    expect(dataHookSource).not.toContain('buildIngredientByKey');
+    expect(dataHookSource).not.toContain('buildDetailRows');
+    expect(dataHookSource).not.toContain('asObjectArray(ingredients)');
     expect(dataHookSource).not.toContain('getAllIngredients');
     expect(dataHookSource).not.toContain('useVisibilityRefresh');
     expect(dataHookSource).not.toContain('buildIngredientMenuMap');
@@ -122,12 +131,24 @@ describe('nutrition allergen page structure', () => {
     expect(dataUtilsSource).toContain('export function filterIngredientRows');
     expect(dataUtilsSource).toContain('export function orderAllergens');
     expect(dataUtilsSource).toContain('export function filterMenuMatrix');
+    expect(dataUtilsSource).toContain("from './allergenPageDetailUtils'");
     expect(dataUtilsSource).toContain("from './allergenPageOutputUtils'");
     expect(dataUtilsSource).toContain('ALLERGEN_SEED');
     expect(dataUtilsSource).toContain('const frequency = new Map()');
     expect(dataUtilsSource).not.toContain('const headers = [');
+    expect(dataUtilsSource).not.toContain('export function buildIngredientByKey');
+    expect(dataUtilsSource).not.toContain('normStr');
     expect(dataUtilsSource).not.toContain("'메뉴명'");
     expect(dataUtilsSource).not.toContain("'크러스트'");
+  });
+
+  test('allergen detail utils own modal detail rows and summary counts', () => {
+    expect(detailUtilsSource).toContain('export function buildIngredientByKey');
+    expect(detailUtilsSource).toContain('export function buildAllergenDetailRows');
+    expect(detailUtilsSource).toContain('export function buildAllergenSummaryCounts');
+    expect(detailUtilsSource).toContain('buildDetailRows(');
+    expect(detailUtilsSource).toContain('normStr');
+    expect(detailUtilsSource).toContain('asObjectArray(ingredients)');
   });
 
   test('allergen output utils own order lists and csv row building', () => {

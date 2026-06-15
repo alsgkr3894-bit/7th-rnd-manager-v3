@@ -1,11 +1,15 @@
 import { describe, expect, test } from '@jest/globals';
 import {
-  buildIngredientByKey,
   filterAllergenIngredients,
   filterIngredientRows,
   filterMenuMatrix,
   orderAllergens,
 } from '@/app/nutrition/allergen/allergenPageDataUtils';
+import {
+  buildAllergenDetailRows,
+  buildAllergenSummaryCounts,
+  buildIngredientByKey,
+} from '@/app/nutrition/allergen/allergenPageDetailUtils';
 import {
   buildAllergenCsvRows,
   buildAllergenListForOrder,
@@ -108,5 +112,30 @@ describe('allergen page data utils', () => {
 
     expect(map.get('code:MILK')?.ingredientName).toBe('모짜렐라치즈');
     expect(map.get('name:모짜렐라치즈')?.productCode).toBe('MILK');
+  });
+
+  test('detail and summary helpers build modal rows and stat counts', () => {
+    const allergenIngredients = filterAllergenIngredients(ingredients);
+
+    expect(buildAllergenSummaryCounts(ingredients, allergenIngredients)).toEqual({
+      totalWithAllergen: 2,
+      totalIngredients: 3,
+    });
+
+    expect(
+      buildAllergenDetailRows(
+        { kind: 'topping', productCode: 'MILK', menuName: '치즈 피자' },
+        {},
+        [],
+        allergenIngredients
+      )
+    ).toMatchObject([
+      {
+        ingredientName: '모짜렐라치즈',
+        productCode: 'MILK',
+        sourceText: '추가토핑 · 치즈 피자',
+        allergens: ['AL02'],
+      },
+    ]);
   });
 });

@@ -1,7 +1,11 @@
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
-import { normStr } from '@/lib/nutrition/allergen/matrix';
 
+export {
+  buildAllergenDetailRows,
+  buildAllergenSummaryCounts,
+  buildIngredientByKey,
+} from './allergenPageDetailUtils';
 export {
   buildAllergenCsvRows,
   buildAllergenListForOrder,
@@ -59,17 +63,6 @@ export function orderAllergens(allergenOrder, menuMatrixAll) {
     if (bFrequency !== aFrequency) return bFrequency - aFrequency;
     return (a.displayOrder ?? 999) - (b.displayOrder ?? 999);
   });
-}
-
-export function buildIngredientByKey(allergenIngredients) {
-  const map = new Map();
-  for (const ingredient of allergenIngredients) {
-    const productCode = asDisplayText(ingredient.productCode);
-    if (productCode) map.set(`code:${productCode}`, ingredient);
-    const nameKey = normStr(ingredient.ingredientName);
-    if (nameKey) map.set(`name:${nameKey}`, ingredient);
-  }
-  return map;
 }
 
 export function filterMenuMatrix(menuMatrixAll, search) {
