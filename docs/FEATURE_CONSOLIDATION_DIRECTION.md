@@ -358,6 +358,7 @@
 | 구형 레시피 입력 관련 표시 문구 정리 | 구현 완료 | `ec417cc` |
 | 출력/집계 화면의 구형 `cost_recipes` fallback 제거 | 구현 완료 | `9d68970` |
 | 테스트의 canonical-only 기준 재작성 | 구현 완료 | `9d68970` |
+| 홈/노트 원가율 KPI의 `menu_recipes + cost_selling_prices` 기준 전환 | 구현 완료 | `08f7f91` |
 
 아래 항목은 아직 후속 단계에서 계속 구현한다.
 

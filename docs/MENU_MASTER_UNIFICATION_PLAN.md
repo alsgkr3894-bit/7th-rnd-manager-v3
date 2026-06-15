@@ -394,7 +394,7 @@ menu_master + menu_recipes
 ### Phase 5. 구형 코드 정리
 
 상태: **진행 중**
-관련 커밋: `9d68970 feat: read canonical recipes in outputs only`
+관련 커밋: `9d68970 feat: read canonical recipes in outputs only`, `08f7f91 feat: use canonical recipes for cost rate stats`
 
 전제상 구형 데이터는 새로 입력 가능하므로, 이관보다 제거를 우선한다.
 
@@ -406,6 +406,7 @@ menu_master + menu_recipes
 구현 완료된 항목:
 
 - 원가마진표, 전체요약, 제품별 사용현황, 원산지/알레르기, 영양/원산지/알레르기 표 출력, 원가 보고서에서 구형 `cost_recipes` fallback을 제거했다.
+- 홈/노트 원가율 KPI와 원가율 경보 통계도 `menu_recipes + cost_selling_prices` 기준으로 전환했다.
 - `menu_recipes` adapter의 기본 동작은 legacy detail fallback/mirror 없이 canonical store만 읽고 쓰도록 바꿨다.
 - 관련 단위 테스트는 legacy fallback 기대값 대신 canonical-only 기준으로 재작성했다.
 
