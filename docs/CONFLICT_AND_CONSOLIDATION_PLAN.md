@@ -106,6 +106,13 @@
 
 ### 3.2 레시피 기준 데이터 이중화
 
+**구현 상태**
+
+- 구현 완료: `0c72c95`, `4767b9e`, `9d68970`, `ad04fd7`
+- 새 단일 저장소 `menu_recipes`를 기준으로 메뉴마스터, 레시피마스터, 원가/마진/보고서, 제품별 사용현황, 원산지/알레르기/영양 출력이 연결됐다.
+- 구형 `cost_recipes`와 카테고리별 detail store schema/backup 범위, 출력/집계 fallback, detail bridge API는 제거됐다.
+- 현재 테스트는 canonical-only 기준과 구형 store 제거를 검증한다.
+
 **관련 파일**
 
 - `lib/recipe/store.js`
@@ -121,10 +128,9 @@
 
 **현재 상태**
 
-- 구형 레시피는 `cost_recipes`에 있고, 신규/상세 레시피는 `cost_pizza_detail`, `cost_personal_detail`, `cost_side_detail`, `cost_set_detail`에 있다.
-- `createDetailStore()`로 detail 4종 CRUD는 잘 공통화되어 있다.
-- `recipe-source-precedence.js`와 `build-cost-report.js`는 detail 레시피를 우선하고 구형 레시피는 fallback으로 쓰는 정책을 이미 일부 구현했다.
-- `recipe-master`는 menu master 기반으로 detail store에 skeleton을 생성한다.
+- 레시피 입력/조회 기준은 `menu_recipes` 단일 저장소다.
+- 구형 `cost_recipes`, `cost_pizza_detail`, `cost_personal_detail`, `cost_side_detail`, `cost_set_detail` store는 schema/backup 범위에서 제거됐다.
+- `recipe-master`와 메뉴마스터는 `menu_recipes`를 우선 저장·조회한다.
 
 **충돌 가능성**
 
@@ -777,6 +783,13 @@
 
 ### 8.6 menuCode base/full 정책이 일부 화면에서 엇갈림
 
+**구현 상태**
+
+- 구현 완료: `0c72c95`, `4767b9e`, `9d68970`, `ad04fd7`
+- 구형 `cost_recipes` 편집기와 base/full 혼합 fallback을 제거하고, 원가/레시피 기준을 full `menuCode` 기반 `menu_recipes`로 고정했다.
+- 영양 메뉴/import는 계속 base code 정책을 사용하며, 원가/판매가/레시피는 full code 정책으로 분리된다.
+- 구형 detail/cost recipe store 제거 테스트와 menu code policy 테스트가 기준을 검증한다.
+
 **관련 파일**
 
 - `lib/menu-master/code-policy.js`
@@ -791,8 +804,8 @@
 - `code-policy.js`는 nutrition은 base code, cost detail/selling price는 full code라고 설명한다.
 - `MenuCodePicker`는 mode에 따라 base/full을 고를 수 있다.
 - 영양 메뉴와 영양 import는 base mode를 쓴다.
-- 구형 원가 레시피 편집기(`components/cost/recipe/RecipeEditor.jsx`)도 `mode="base"`를 쓴다.
-- `lib/recipe/store.js` 주석은 `menuCode 'PZ-001-L' 등`이라고 설명해 full code처럼 보인다.
+- 구형 원가 레시피 편집기와 `cost_recipes` store는 제거됐다.
+- `menu_recipes`는 full `menuCode` 기준으로 원가/레시피 데이터를 연결한다.
 
 **충돌 가능성**
 
