@@ -1,10 +1,8 @@
 'use client';
 import { Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { SampleCardSkeleton } from '@/components/ui/Skeleton';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import {
@@ -13,7 +11,6 @@ import {
   updateSample,
   deleteSample,
   SAMPLE_CATEGORIES,
-  RATING_COLOR,
   sampleNamesText,
 } from '@/lib/sample';
 import { tryLS, setLS } from '@/lib/note/storage';
@@ -25,12 +22,12 @@ import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useSampleBatchMode } from '@/hooks/useSampleBatchMode';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { useSampleCompareMode } from '@/hooks/useSampleCompareMode';
-import { Stars } from './_Stars';
 import { CompareModal } from './_CompareModal';
 import { SampleDetailModal } from './_SampleDetailModal';
-import { SampleCard } from '@/components/note/SampleCard';
-import { SampleListRow } from '@/components/note/SampleListRow';
-import { downloadCsv, printCurrentPageWithDownloadDate } from '@/lib/download';
+import { SampleCalendarView } from './_SampleCalendarView';
+import { SampleFilterControls } from './_SampleFilterControls';
+import { SamplePageActions } from './_SamplePageActions';
+import { SampleRecordsView } from './_SampleRecordsView';
 import { buildCalendarDays } from '@/lib/note/calendar-utils';
 
 const SORT_OPTIONS = [
@@ -256,93 +253,20 @@ function SampleContent() {
 
   const today = formatDate(new Date());
 
-  /* ── Actions for PageHeader ── */
   const headerActions = (
-    <div className="sample-actions">
-      {!batchMode && !compareMode && (
-        <>
-          <button
-            className="btn"
-            onClick={() => {
-              const headers = [
-                '제목',
-                '카테고리',
-                '메뉴명',
-                '업체',
-                '테스트일',
-                '별점',
-                '설명',
-                '태그',
-              ];
-              const rows = filtered.map(s => [
-                s.title || '',
-                s.category || '',
-                sampleNamesText(s),
-                s.company || '',
-                s.testDate || '',
-                s.rating != null ? s.rating : '',
-                s.description || '',
-                s.tags || '',
-              ]);
-              downloadCsv([headers, ...rows], '샘플기록.csv');
-            }}
-            disabled={filtered.length === 0}
-          >
-            <Icon.download style={{ width: 14, height: 14 }} /> 엑셀로 내보내기
-          </button>
-          <button
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: 17,
-              padding: '4px 6px',
-              borderRadius: 8,
-              color: 'var(--text-2)',
-            }}
-            onClick={() => printCurrentPageWithDownloadDate('샘플기록')}
-            title="인쇄"
-          >
-            🖨
-          </button>
-        </>
-      )}
-      {batchMode ? (
-        <>
-          <button
-            className="btn sm"
-            style={{ color: 'var(--negative)', fontWeight: 700 }}
-            onClick={handleBatchDelete}
-          >
-            선택 삭제 ({selected.size})
-          </button>
-          <button className="btn sm" onClick={exitBatchMode}>
-            취소
-          </button>
-        </>
-      ) : compareMode ? (
-        <>
-          <button className="btn sm" onClick={exitCompareMode}>
-            비교 취소
-          </button>
-        </>
-      ) : (
-        <>
-          <button className="btn sm" onClick={() => setBatchMode(true)}>
-            선택
-          </button>
-          <button className="btn sm" onClick={() => setCompareMode(true)}>
-            비교
-          </button>
-          <button className="btn primary" onClick={() => router.push('/note/sample/write')}>
-            <Icon.plus style={{ width: 14, height: 14 }} /> 새 샘플 작성
-          </button>
-        </>
-      )}
-    </div>
+    <SamplePageActions
+      filtered={filtered}
+      batchMode={batchMode}
+      compareMode={compareMode}
+      selected={selected}
+      onBatchDelete={handleBatchDelete}
+      onExitBatchMode={exitBatchMode}
+      onExitCompareMode={exitCompareMode}
+      onStartBatchMode={() => setBatchMode(true)}
+      onStartCompareMode={() => setCompareMode(true)}
+      onCreateSample={() => router.push('/note/sample/write')}
+    />
   );
-
-  const days = calDays;
 
   if (loadError) {
     return (
@@ -372,425 +296,71 @@ function SampleContent() {
         actions={headerActions}
       />
 
-      {/* 카테고리 필터 */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16, marginBottom: 8 }}>
-        {[{ key: 'all', label: '전체' }, ...SAMPLE_CATEGORIES.map(c => ({ key: c, label: c }))].map(
-          ({ key, label }) => (
-            <button
-              key={key}
-              className={'chip' + (catFilter === key ? ' active' : '')}
-              onClick={() => setCatFilter(key)}
-            >
-              {label}
-              {catCounts[key] > 0 && (
-                <span style={{ marginLeft: 4, fontSize: 10, opacity: 0.7 }}>
-                  {catCounts[key] || 0}
-                </span>
-              )}
-            </button>
-          )
-        )}
-      </div>
-
-      {/* 별점 필터 + 정렬 + 뷰 토글 */}
-      <div
-        className="sample-filter-row"
-        style={{
-          display: 'flex',
-          gap: 12,
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          marginBottom: 12,
+      <SampleFilterControls
+        categories={SAMPLE_CATEGORIES}
+        catCounts={catCounts}
+        catFilter={catFilter}
+        onCatFilterChange={setCatFilter}
+        ratingMin={ratingMin}
+        onRatingMinChange={setRatingMin}
+        ratingDist={ratingDist}
+        sampleCount={samples.length}
+        sortOptions={SORT_OPTIONS}
+        sortBy={sortBy}
+        onSortChange={key => {
+          setSortBy(key);
+          setLS(KEYS.SAMPLE_SORT, key);
         }}
-      >
-        <div className="sample-rating-row">
-          {[
-            { min: 0, label: '전체' },
-            { min: 3, label: '★3이상' },
-            { min: 4, label: '★4이상' },
-            { min: 5, label: '★5' },
-            { min: -1, label: '★없음' },
-          ].map(({ min, label }) => (
-            <button
-              key={min}
-              className={'chip' + (ratingMin === min ? ' active' : '')}
-              style={{ fontSize: 11 }}
-              onClick={() => setRatingMin(min)}
-            >
-              {label}
-            </button>
-          ))}
-          {samples.length > 0 && (
-            <span
-              className="sample-rating-dist"
-              style={{ fontSize: 11, color: 'var(--text-4)', marginLeft: 2, whiteSpace: 'nowrap' }}
-            >
-              5★ {ratingDist[5]} · 4★ {ratingDist[4]} · 3★ {ratingDist[3]} · 2★ {ratingDist[2]} · 1★{' '}
-              {ratingDist[1]} · 없음 {ratingDist.none}
-            </span>
-          )}
-        </div>
-        <div style={{ width: 1, height: 20, background: 'var(--border)' }} />
-        <div style={{ display: 'flex', gap: 6 }}>
-          {SORT_OPTIONS.map(({ key, label }) => (
-            <button
-              key={key}
-              className={'chip' + (sortBy === key ? ' active' : '')}
-              style={{ fontSize: 11 }}
-              onClick={() => {
-                setSortBy(key);
-                setLS(KEYS.SAMPLE_SORT, key);
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <div style={{ width: 1, height: 20, background: 'var(--border)' }} />
-        {/* 뷰 토글 */}
-        <div style={{ display: 'flex', gap: 4 }}>
-          {[
-            { v: 'grid', label: '갤러리' },
-            { v: 'list', label: '리스트' },
-            { v: 'calendar', label: '캘린더' },
-          ].map(({ v, label }) => (
-            <button
-              key={v}
-              className={'chip' + (viewMode === v ? ' active' : '')}
-              style={{ fontSize: 11 }}
-              onClick={() => {
-                setViewMode(v);
-                setLS(KEYS.SAMPLE_VIEW, v);
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+        viewMode={viewMode}
+        onViewModeChange={mode => {
+          setViewMode(mode);
+          setLS(KEYS.SAMPLE_VIEW, mode);
+        }}
+        search={search}
+        onSearchChange={handleSearchChange}
+        showSearchHist={showSearchHist}
+        onSearchFocus={() => setShowSearchHist(true)}
+        onSearchBlur={closeSearchHistorySoon}
+        searchHistory={searchHistory}
+        onSelectSearchHistory={value => {
+          handleSearchChange(value);
+          setShowSearchHist(false);
+        }}
+      />
 
-      {/* 검색 */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ position: 'relative', maxWidth: 320 }}>
-          <Icon.search
-            style={{
-              position: 'absolute',
-              left: 10,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: 14,
-              height: 14,
-              color: 'var(--text-3)',
-            }}
-          />
-          <input
-            className="form-input filter-search"
-            style={{ paddingLeft: 32 }}
-            value={search}
-            onChange={e => handleSearchChange(e.target.value)}
-            onFocus={() => setShowSearchHist(true)}
-            onBlur={closeSearchHistorySoon}
-            placeholder="제목, 메뉴명, 내용, 태그 검색"
-          />
-          {showSearchHist && searchHistory.length > 0 && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                right: 0,
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                borderRadius: '0 0 10px 10px',
-                zIndex: 50,
-                overflow: 'hidden',
-                boxShadow: 'var(--shadow-md)',
-              }}
-            >
-              {searchHistory.map((h, i) => (
-                <button
-                  key={i}
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    textAlign: 'left',
-                    padding: '8px 14px',
-                    fontSize: 13,
-                    color: 'var(--text-2)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                  onMouseDown={e => {
-                    e.preventDefault();
-                    handleSearchChange(h);
-                    setShowSearchHist(false);
-                  }}
-                >
-                  🕐 {h}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 스켈레톤 로딩 */}
-      {loading && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-            gap: 16,
-          }}
-        >
-          {Array.from({ length: 8 }).map((_, i) => (
-            <SampleCardSkeleton key={i} />
-          ))}
-        </div>
-      )}
-
-      {/* ── 캘린더 뷰 ── */}
       {!loading && viewMode === 'calendar' && (
-        <div className="tab-content-enter">
-          {/* 월 네비게이션 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-            <button
-              className="btn sm"
-              onClick={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
-            >
-              ‹
-            </button>
-            <div
-              style={{
-                fontWeight: 800,
-                fontSize: 15,
-                color: 'var(--text-1)',
-                minWidth: 100,
-                textAlign: 'center',
-              }}
-            >
-              {calMonth.getFullYear()}년 {calMonth.getMonth() + 1}월
-            </div>
-            <button
-              className="btn sm"
-              onClick={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
-            >
-              ›
-            </button>
-          </div>
-
-          {/* 요일 헤더 */}
-          <div className="cal-grid" style={{ marginBottom: 4 }}>
-            {['일', '월', '화', '수', '목', '금', '토'].map(d => (
-              <div
-                key={d}
-                style={{
-                  textAlign: 'center',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--text-3)',
-                  padding: '4px 0',
-                }}
-              >
-                {d}
-              </div>
-            ))}
-          </div>
-
-          {/* 날짜 그리드 */}
-          <div className="cal-grid">
-            {days.map(({ date, cur }, idx) => {
-              const ymd = formatDate(date);
-              const daySamples = samplesByDate[ymd] || [];
-              const isToday = ymd === today;
-              return (
-                <div
-                  key={idx}
-                  className={'cal-cell' + (!cur ? ' other-month' : '') + (isToday ? ' today' : '')}
-                  style={{ cursor: daySamples.length > 0 ? 'pointer' : 'default' }}
-                  onClick={() => {
-                    if (daySamples.length > 0) setDetailRec(daySamples[0]);
-                  }}
-                >
-                  <span style={{ fontSize: 12, fontWeight: isToday ? 800 : 400 }}>
-                    {date.getDate()}
-                  </span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 }}>
-                    {daySamples.slice(0, 3).map(s => (
-                      <button
-                        key={s.id}
-                        onClick={e => {
-                          e.stopPropagation();
-                          setDetailRec(s);
-                        }}
-                        title={sampleNamesText(s) || s.title}
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 600,
-                          padding: '1px 5px',
-                          borderRadius: 4,
-                          background: 'var(--surface-2)',
-                          color: 'var(--text-2)',
-                          border: 'none',
-                          borderLeft: `3px solid ${RATING_COLOR?.[s.rating] || 'var(--accent)'}`,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          textAlign: 'left',
-                          width: '100%',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {sampleNamesText(s) || s.title}
-                      </button>
-                    ))}
-                    {daySamples.length > 3 && (
-                      <span style={{ fontSize: 9, color: 'var(--text-3)' }}>
-                        +{daySamples.length - 3}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <SampleCalendarView
+          days={calDays}
+          calMonth={calMonth}
+          samplesByDate={samplesByDate}
+          today={today}
+          onPrevMonth={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
+          onNextMonth={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+          onOpenSample={setDetailRec}
+        />
       )}
 
-      {/* 빈 상태 (갤러리·리스트 뷰) */}
-      {!loading && (viewMode === 'grid' || viewMode === 'list') && filtered.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-3)' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📷</div>
-          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>
-            {search
-              ? `"${search}" 검색 결과가 없어요`
-              : ratingMin === -1
-                ? '별점 없는 샘플이 없어요'
-                : ratingMin > 0
-                  ? `별점 ${ratingMin}점 이상 샘플이 없어요`
-                  : catFilter !== 'all'
-                    ? `${catFilter} 카테고리 샘플이 없어요`
-                    : '샘플 기록이 없어요'}
-          </div>
-          {!search && catFilter === 'all' && ratingMin === 0 && (
-            <button
-              className="btn primary"
-              style={{ marginTop: 8 }}
-              onClick={() => router.push('/note/sample/write')}
-            >
-              첫 샘플 작성하기
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* 갤러리 그리드 */}
-      {!loading && viewMode === 'grid' && filtered.length > 0 && (
-        <div
-          key={`${catFilter}|${ratingMin}|${sortBy}`}
-          className="tab-content-enter"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-            gap: 16,
-          }}
-        >
-          {filtered.map((rec, i) => {
-            const isBatchSelected = selected.has(rec.id);
-            const compareIdx = compareIdxMap.has(rec.id) ? compareIdxMap.get(rec.id) : -1;
-
-            return (
-              <SampleCard
-                key={rec.id}
-                sample={rec}
-                batchMode={batchMode}
-                isBatchSelected={isBatchSelected}
-                compareMode={compareMode}
-                compareIdx={compareIdx}
-                animDelay={Math.min(i, 8) * 40}
-                onCardClick={() => {
-                  if (batchMode) {
-                    toggleSelect(rec.id);
-                    return;
-                  }
-                  if (compareMode) {
-                    toggleCompare(rec.id);
-                    return;
-                  }
-                  setDetailRec(rec);
-                }}
-                onRatingChange={handleRatingChange}
-                onEdit={() => router.push(`/note/sample/${rec.id}`)}
-                onCopy={e => handleCopy(rec, e)}
-                onDelete={() => handleDelete(rec)}
-              />
-            );
-          })}
-        </div>
-      )}
-
-      {/* 리스트 뷰 */}
-      {!loading && viewMode === 'list' && filtered.length > 0 && (
-        <div
-          key={`list|${catFilter}|${ratingMin}|${sortBy}`}
-          className="card table-card tab-content-enter"
-        >
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th scope="col" style={{ width: 48 }} aria-label="선택"></th>
-                  <th scope="col">제목</th>
-                  <th scope="col">샘플명</th>
-                  <th scope="col" style={{ width: 90 }}>
-                    카테고리
-                  </th>
-                  <th scope="col" style={{ width: 110 }}>
-                    수령일
-                  </th>
-                  <th scope="col" style={{ width: 120 }}>
-                    업체
-                  </th>
-                  <th scope="col" style={{ width: 84 }}>
-                    담당자
-                  </th>
-                  <th scope="col" style={{ width: 84 }}>
-                    평점
-                  </th>
-                  <th scope="col" style={{ width: 110, textAlign: 'right' }}>
-                    단가
-                  </th>
-                  <th scope="col" style={{ width: 150 }} aria-label="액션"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(rec => (
-                  <SampleListRow
-                    key={rec.id}
-                    sample={rec}
-                    onClick={() => {
-                      if (batchMode) {
-                        toggleSelect(rec.id);
-                        return;
-                      }
-                      if (compareMode) {
-                        toggleCompare(rec.id);
-                        return;
-                      }
-                      setDetailRec(rec);
-                    }}
-                    onEdit={() => router.push(`/note/sample/${rec.id}`)}
-                    onCopy={e => handleCopy(rec, e)}
-                    onDelete={() => handleDelete(rec)}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      <SampleRecordsView
+        loading={loading}
+        viewMode={viewMode}
+        filtered={filtered}
+        catFilter={catFilter}
+        ratingMin={ratingMin}
+        sortBy={sortBy}
+        search={search}
+        batchMode={batchMode}
+        selected={selected}
+        toggleSelect={toggleSelect}
+        compareMode={compareMode}
+        toggleCompare={toggleCompare}
+        compareIdxMap={compareIdxMap}
+        onOpenSample={setDetailRec}
+        onEditSample={sample => router.push(`/note/sample/${sample.id}`)}
+        onCopySample={handleCopy}
+        onDeleteSample={handleDelete}
+        onRatingChange={handleRatingChange}
+        onCreateSample={() => router.push('/note/sample/write')}
+      />
 
       {/* 비교 모드 하단 바 */}
       {compareMode && compareSet.size >= 2 && (
