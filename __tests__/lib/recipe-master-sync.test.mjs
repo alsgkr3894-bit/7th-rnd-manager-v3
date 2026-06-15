@@ -33,9 +33,16 @@ describe('recipe master sync helpers', () => {
           productCode: ' ING-1 ',
           ingredientName: ' 치즈 ',
           quantity: '10.5',
-          unit: ' g ',
+          unit: 'kg',
           unitPrice: '12.3',
           note: ' memo ',
+        },
+        {
+          productCode: ' ING-2 ',
+          ingredientName: ' 피클 ',
+          quantity: '2',
+          unit: 'ea',
+          unitPrice: '50',
         },
         { productCode: '', ingredientName: '', quantity: '', unit: '', unitPrice: '' },
       ])
@@ -47,6 +54,14 @@ describe('recipe master sync helpers', () => {
         unit: 'g',
         unitPrice: 12.3,
         note: 'memo',
+      },
+      {
+        productCode: 'ING-2',
+        ingredientName: '피클',
+        quantity: 2,
+        unit: '개',
+        unitPrice: 50,
+        note: '',
       },
     ]);
   });
@@ -159,6 +174,7 @@ describe('recipe master sync helpers', () => {
   });
 
   test('메뉴와 레시피 맵을 목록 행으로 합친다', () => {
+    const unitPriceMap = new Map([['CHK', { unitPrice: 80, baseUnitType: 'g' }]]);
     const rows = buildRecipeMasterRows({
       menuRows: [{ menuCode: 'S-CHK-001', menuName: '치킨텐더', category: '사이드' }],
       recipeMaps: {
@@ -167,23 +183,29 @@ describe('recipe master sync helpers', () => {
             'S-CHK-001',
             {
               menuCode: 'S-CHK-001',
-              components: [{ ingredientName: '닭', quantity: 2, unitPrice: 100 }],
+              components: [
+                { productCode: 'CHK', ingredientName: '닭', quantity: 2, unitPrice: 100 },
+              ],
             },
           ],
         ]),
       },
       ingredientIndex: buildIngredientIndex([{ ingredientName: '닭', allergens: ['AL01'] }]),
+      unitPriceMap,
     });
 
     expect(rows).toEqual([
       expect.objectContaining({
         kind: 'side',
         allergenCount: 1,
-        cost: 200,
+        cost: 160,
       }),
     ]);
     expect(filterRecipeMasterRows(rows, '치킨')).toHaveLength(1);
     expect(filterRecipeMasterRows(rows, '피자')).toHaveLength(0);
     expect(calcComponentsCost([{ quantity: 3, unitPrice: 50 }])).toBe(150);
+    expect(
+      calcComponentsCost([{ productCode: 'CHK', quantity: 3, unitPrice: 50 }], unitPriceMap)
+    ).toBe(240);
   });
 });

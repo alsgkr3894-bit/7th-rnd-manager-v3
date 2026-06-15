@@ -5,6 +5,7 @@ import { MENU_CATEGORIES } from '@/lib/recipe';
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 import { recipeSyncTargetLabel } from '@/lib/recipe-master/sync';
+import { COST_BASE_UNITS, normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
 
 const ALLERGEN_NAME_BY_CODE = Object.fromEntries(
   ALLERGEN_SEED.map(item => [item.allergenCode, item.allergenName])
@@ -201,11 +202,19 @@ function RecipeComponentRow({
         />
       </td>
       <td>
-        <input
+        <select
           className="form-input"
-          value={component.unit || 'g'}
-          onChange={event => onPatchComponent(index, { unit: event.target.value })}
-        />
+          value={normalizeCostBaseUnit(component.unit)}
+          onChange={event =>
+            onPatchComponent(index, { unit: normalizeCostBaseUnit(event.target.value) })
+          }
+        >
+          {COST_BASE_UNITS.map(unit => (
+            <option key={unit} value={unit}>
+              {unit}
+            </option>
+          ))}
+        </select>
       </td>
       <td>
         <input
@@ -274,10 +283,7 @@ function RecipeMasterSummary({ draftKind, draftTotalCost, draftDerived }) {
       }}
     >
       <MiniSummary label="전송 대상" value={recipeSyncTargetLabel(draftKind)} />
-      <MiniSummary
-        label="원가 합계"
-        value={`${formatNumber(Math.round(draftTotalCost))}원`}
-      />
+      <MiniSummary label="원가 합계" value={`${formatNumber(Math.round(draftTotalCost))}원`} />
       <div>
         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)', marginBottom: 6 }}>
           알레르기

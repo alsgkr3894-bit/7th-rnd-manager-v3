@@ -4,6 +4,7 @@ import { showToast } from '@/components/Toast';
 import { useMounted } from '@/hooks/useMounted';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { asDisplayText } from '@/lib/ui/prop-guards';
+import { normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
 import { loadRecipeMasterData, saveRecipeMasterDraft } from '@/lib/recipe-master/data';
 import { recipeStoreKindForCategory, recipeSyncTargetLabel } from '@/lib/recipe-master/sync';
 import {
@@ -30,9 +31,22 @@ function newComponentRow(values = {}) {
   };
 }
 
-function withRowKeys(components) {
-  return components.length
-    ? components.map(component => newComponentRow(component))
+function latestComponentValues(component, unitPriceMap = new Map()) {
+  const productCode = asDisplayText(component?.productCode);
+  const priceInfo = productCode ? unitPriceMap.get(productCode) : null;
+  return {
+    ...component,
+    unit: normalizeCostBaseUnit(priceInfo?.baseUnitType || component?.unit),
+    unitPrice: priceInfo?.unitPrice ?? component?.unitPrice ?? '',
+  };
+}
+
+function withRowKeys(components, unitPriceMap = new Map()) {
+  const safeComponents = Array.isArray(components) ? components : [];
+  return safeComponents.length
+    ? safeComponents.map(component =>
+        newComponentRow(latestComponentValues(component, unitPriceMap))
+      )
     : [newComponentRow()];
 }
 
@@ -51,7 +65,7 @@ function emptyDraft() {
   };
 }
 
-function draftFromRow(row) {
+function draftFromRow(row, unitPriceMap = new Map()) {
   const menu = row.menu;
   return {
     menuId: menu.id ?? null,
@@ -63,7 +77,7 @@ function draftFromRow(row) {
     price: menu.price != null ? String(menu.price) : '',
     status: asDisplayText(menu.status, 'active'),
     note: asDisplayText(menu.note),
-    components: withRowKeys(row.components),
+    components: withRowKeys(row.components, unitPriceMap),
   };
 }
 
@@ -106,10 +120,7 @@ export function useRecipeMasterPage() {
   }, [load, mountedRef]);
   useVisibilityRefresh(load);
 
-  const ingredientIndex = useMemo(
-    () => buildIngredientIndex(data.ingredients),
-    [data.ingredients]
-  );
+  const ingredientIndex = useMemo(() => buildIngredientIndex(data.ingredients), [data.ingredients]);
 
   const rows = useMemo(
     () =>
@@ -117,8 +128,9 @@ export function useRecipeMasterPage() {
         menuRows: data.menuRows,
         recipeMaps: data.recipeMaps,
         ingredientIndex,
+        unitPriceMap: data.unitPriceMap,
       }),
-    [data.menuRows, data.recipeMaps, ingredientIndex]
+    [data.menuRows, data.recipeMaps, data.unitPriceMap, ingredientIndex]
   );
 
   const filteredRows = useMemo(() => filterRecipeMasterRows(rows, search), [rows, search]);
@@ -127,7 +139,10 @@ export function useRecipeMasterPage() {
     () => deriveComponentInfo(draft.components, ingredientIndex),
     [draft.components, ingredientIndex]
   );
-  const draftTotalCost = useMemo(() => calcComponentsCost(draft.components), [draft.components]);
+  const draftTotalCost = useMemo(
+    () => calcComponentsCost(draft.components, data.unitPriceMap),
+    [data.unitPriceMap, draft.components]
+  );
   const recipeItemCount = rows.filter(row => row.recipe).length;
   const completedRecipeCount = rows.filter(row => row.components.length > 0).length;
   const pendingRecipeCount = Math.max(0, recipeItemCount - completedRecipeCount);
@@ -156,7 +171,7 @@ export function useRecipeMasterPage() {
     patchComponent(index, {
       ingredientName: asDisplayText(direct.ingredientName || direct.productName),
       productCode,
-      unit: priceInfo?.baseUnitType || direct.baseUnitType || 'g',
+      unit: normalizeCostBaseUnit(priceInfo?.baseUnitType || direct.baseUnitType),
       unitPrice: priceInfo?.unitPrice ?? direct.unitPrice ?? '',
     });
   }
@@ -189,7 +204,7 @@ export function useRecipeMasterPage() {
   }
 
   function editRow(row) {
-    setDraft(draftFromRow(row));
+    setDraft(draftFromRow(row, data.unitPriceMap));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -215,7 +230,7 @@ export function useRecipeMasterPage() {
         ...prev,
         menuId: result.menuResult.id ?? prev.menuId,
         recipeId: result.recipeResult.id ?? prev.recipeId,
-        components: withRowKeys(result.components),
+        components: withRowKeys(result.components, data.unitPriceMap),
       }));
     } catch (err) {
       showToast('저장 실패: ' + err.message, 'error');

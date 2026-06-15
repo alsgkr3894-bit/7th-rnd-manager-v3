@@ -2,6 +2,7 @@
 import { Icon } from '@/components/icons';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { formatNumber } from '@/lib/format';
+import { MENU_RECIPE_SUMMARY_STATUS } from '@/lib/menu-master/recipe-summary';
 
 export function RecipeMasterTable({ loading, rows, search, onSearch, onEdit }) {
   return (
@@ -63,13 +64,25 @@ export function RecipeMasterTable({ loading, rows, search, onSearch, onEdit }) {
 }
 
 function RecipeStatus({ row }) {
-  const label = row.components.length > 0 ? '작성완료' : row.recipe ? '생성됨' : '미생성';
-  const color = row.components.length > 0 ? 'var(--accent)' : 'var(--text-3)';
-  return (
-    <span style={{ fontSize: 12, fontWeight: 800, color }}>
-      {label}
-    </span>
-  );
+  const summaryStatus = row.summary?.status;
+  const needsCheck =
+    summaryStatus === MENU_RECIPE_SUMMARY_STATUS.NEEDS_PRICE ||
+    summaryStatus === MENU_RECIPE_SUMMARY_STATUS.NEEDS_QUANTITY;
+  const label = needsCheck
+    ? summaryStatus === MENU_RECIPE_SUMMARY_STATUS.NEEDS_PRICE
+      ? '단가 확인'
+      : '수량 확인'
+    : row.components.length > 0
+      ? '작성완료'
+      : row.recipe
+        ? '생성됨'
+        : '미생성';
+  const color = needsCheck
+    ? 'var(--warn)'
+    : row.components.length > 0
+      ? 'var(--accent)'
+      : 'var(--text-3)';
+  return <span style={{ fontSize: 12, fontWeight: 800, color }}>{label}</span>;
 }
 
 function EmptyRow({ children }) {
