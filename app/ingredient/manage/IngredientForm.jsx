@@ -26,6 +26,8 @@ import {
   PhotoSection,
   SourceField,
 } from './IngredientFormSections';
+import { IngredientUsageSection } from './IngredientUsageSection';
+import { useIngredientUsageSummary } from './useIngredientUsageSummary';
 
 function normalizeUnitType(value) {
   return normalizeCostBaseUnit(value);
@@ -96,6 +98,7 @@ export function IngredientForm({
   });
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
+  const usageSummary = useIngredientUsageSummary(initial);
   const datalistId = useId();
   const packagingPhotoInputRef = useRef(null);
   const detailPhotoInputRef = useRef(null);
@@ -750,6 +753,14 @@ export function IngredientForm({
           />
 
           <AllergenSection allergens={form.allergens || []} onSet={set} />
+
+          {initial && (
+            <IngredientUsageSection
+              loading={usageSummary.loading}
+              rows={usageSummary.rows}
+              error={usageSummary.error}
+            />
+          )}
 
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
             <button type="button" className="btn" onClick={onClose}>
