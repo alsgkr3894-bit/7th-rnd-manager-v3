@@ -7,9 +7,11 @@ import { buildMenuMatrix, buildDetailRows } from '@/lib/nutrition/allergen/matri
 import {
   buildAllergenCsvRows,
   buildAllergenListForOrder,
-  buildIngredientByKey,
   buildMenuListForOrder,
   buildMenuNameEditMenus,
+} from './allergenPageOutputUtils';
+import {
+  buildIngredientByKey,
   filterAllergenIngredients,
   filterIngredientRows,
   filterMenuMatrix,

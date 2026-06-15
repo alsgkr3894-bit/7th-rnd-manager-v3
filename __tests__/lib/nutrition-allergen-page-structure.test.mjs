@@ -10,6 +10,10 @@ const dataUtilsSource = readFileSync(
   resolve('app/nutrition/allergen/allergenPageDataUtils.js'),
   'utf8'
 );
+const outputUtilsSource = readFileSync(
+  resolve('app/nutrition/allergen/allergenPageOutputUtils.js'),
+  'utf8'
+);
 const orderHookSource = readFileSync(
   resolve('app/nutrition/allergen/useAllergenOrderState.js'),
   'utf8'
@@ -97,6 +101,7 @@ describe('nutrition allergen page structure', () => {
     expect(dataHookSource).toContain('buildMenuMatrix');
     expect(dataHookSource).toContain('extractExcludedMenuSets');
     expect(dataHookSource).toContain('buildDetailRows');
+    expect(dataHookSource).toContain("from './allergenPageOutputUtils'");
     expect(dataHookSource).toContain('useAllergenOrderState()');
     expect(dataHookSource).toContain('buildAllergenCsvRows(menuMatrix, orderedAllergens)');
     expect(dataHookSource).toContain('downloadCsv(buildAllergenCsvRows');
@@ -112,17 +117,27 @@ describe('nutrition allergen page structure', () => {
     expect(dataHookSource).not.toContain('buildIngredientMenuMap');
   });
 
-  test('page data utils own allergen filtering, order derivation, and csv row building', () => {
+  test('page data utils own allergen filtering and order derivation', () => {
     expect(dataUtilsSource).toContain('export function filterAllergenIngredients');
     expect(dataUtilsSource).toContain('export function filterIngredientRows');
     expect(dataUtilsSource).toContain('export function orderAllergens');
     expect(dataUtilsSource).toContain('export function filterMenuMatrix');
-    expect(dataUtilsSource).toContain('export function buildAllergenCsvRows');
+    expect(dataUtilsSource).toContain("from './allergenPageOutputUtils'");
     expect(dataUtilsSource).toContain('ALLERGEN_SEED');
-    expect(dataUtilsSource).toContain('const headers = [');
-    expect(dataUtilsSource).toContain("'메뉴명'");
-    expect(dataUtilsSource).toContain("'크러스트'");
     expect(dataUtilsSource).toContain('const frequency = new Map()');
+    expect(dataUtilsSource).not.toContain('const headers = [');
+    expect(dataUtilsSource).not.toContain("'메뉴명'");
+    expect(dataUtilsSource).not.toContain("'크러스트'");
+  });
+
+  test('allergen output utils own order lists and csv row building', () => {
+    expect(outputUtilsSource).toContain('export function buildMenuListForOrder');
+    expect(outputUtilsSource).toContain('export function buildAllergenListForOrder');
+    expect(outputUtilsSource).toContain('export function buildMenuNameEditMenus');
+    expect(outputUtilsSource).toContain('export function buildAllergenCsvRows');
+    expect(outputUtilsSource).toContain('const headers = [');
+    expect(outputUtilsSource).toContain("'메뉴명'");
+    expect(outputUtilsSource).toContain("'크러스트'");
   });
 
   test('order state hook owns saved order and menu name override persistence', () => {

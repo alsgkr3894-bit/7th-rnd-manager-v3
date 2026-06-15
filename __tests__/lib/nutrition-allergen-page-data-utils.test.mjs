@@ -1,15 +1,17 @@
 import { describe, expect, test } from '@jest/globals';
 import {
-  buildAllergenCsvRows,
-  buildAllergenListForOrder,
   buildIngredientByKey,
-  buildMenuListForOrder,
-  buildMenuNameEditMenus,
   filterAllergenIngredients,
   filterIngredientRows,
   filterMenuMatrix,
   orderAllergens,
 } from '@/app/nutrition/allergen/allergenPageDataUtils';
+import {
+  buildAllergenCsvRows,
+  buildAllergenListForOrder,
+  buildMenuListForOrder,
+  buildMenuNameEditMenus,
+} from '@/app/nutrition/allergen/allergenPageOutputUtils';
 
 describe('allergen page data utils', () => {
   const ingredients = [
