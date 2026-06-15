@@ -110,17 +110,18 @@
   - `app/report/cost/page.jsx` ✅ 2026-06-14 — 869→407줄. `CostReportView`·`CostTableView` → `components/report/cost/`로 추출. `groupPizzaLR` 이전 완료.
   - `app/report/sales/page.jsx` ✅ 2026-06-15 부분 보강 — Excel export 시트/파일명 조립을 `lib/report/sales-export.js`로 분리하고 fixture 테스트 추가. 938→856줄.
   - `app/report/sales/page.jsx` ✅ 2026-06-15 추가 보강 — 보고서 미리보기 전체를 `components/report/sales/SalesReportPreview.jsx`로 분리. 856→307줄.
+  - `components/report/sales/SalesReportPreview.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 비중·피자 변동·순위표·비교표·제외 리스트 섹션 컴포넌트 분리. 587→94줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 부분 보강 — `NoteTableRow`·`NoteContextMenu` 렌더링 컴포넌트 분리. 1022→843줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — `NoteStatsSummary`·`NoteFilterControls` 렌더링 컴포넌트 분리. 843→642줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — `NoteCardGrid`·`NoteTableView` 목록 렌더링 컴포넌트 분리. 642→546줄.
   - `app/ingredient/manage/IngredientForm.jsx` ✅ 2026-06-15 추가 보강 — `IngredientNameField`·`BasicIngredientFields`·`IngredientCostFields` 렌더링 컴포넌트 분리. 817→468줄.
   - `app/nutrition/allergen/page.jsx` ✅ 2026-06-15 추가 보강 — `AllergenIngredientTable`·`AllergenMenuMatrixTable`·`AllergenDetailModal` 렌더링 컴포넌트 분리. 802→500줄.
 - **잔여 대상** (우선순위 순):
-  1. `components/report/sales/SalesReportPreview.jsx` (~587줄) — 미리보기 섹션 하위 컴포넌트 추가 분리 필요 시 재평가
-  2. `app/note/_NoteContent.jsx` (~546줄) — page action/header와 dialog 묶음 추가 분리 필요 시 재평가
-  3. `app/nutrition/allergen/page.jsx` (~500줄) — toolbar/stat panel 추가 분리 필요 시 재평가
-  4. `app/ingredient/manage/IngredientFormFields.jsx` (~410줄) — 필드군 추가 확장 시 basic/cost 하위 파일 재분리
-  5. `app/ingredient/list/page.jsx` — R-5에서 이미 420줄로 축소됨, 추가 분해 필요 시 재평가
+  1. `app/note/_NoteContent.jsx` (~546줄) — page action/header와 dialog 묶음 추가 분리 필요 시 재평가
+  2. `app/nutrition/allergen/page.jsx` (~500줄) — toolbar/stat panel 추가 분리 필요 시 재평가
+  3. `app/ingredient/manage/IngredientFormFields.jsx` (~410줄) — 필드군 추가 확장 시 basic/cost 하위 파일 재분리
+  4. `app/ingredient/list/page.jsx` — R-5에서 이미 420줄로 축소됨, 추가 분해 필요 시 재평가
+  5. `components/report/sales/SalesRankTableSection.jsx` (~197줄) — 순위표 요구가 늘어날 때 bar rows/variant rows 추가 분리
 - **방향**: page는 조립만 담당, table/panel/modal/hook으로 분리.
 - **왜 보류**: 효과 < 회귀 위험. 기능 추가 시점에 함께 진행 예정.
 - **검증**: `npm run test:ci` + 주요 화면 수동 확인
