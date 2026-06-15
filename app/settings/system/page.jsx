@@ -261,8 +261,19 @@ export default function Page() {
         />
         <SettingsRow
           name="미연동 재료 차단"
-          desc="현재는 원가 화면의 연결 이슈 표시를 우선 사용하며, 발행 차단은 별도 단계에서 적용합니다."
-          control={<StatusValue tone="pending">준비 중</StatusValue>}
+          desc="단가가 없는 레시피 구성품이 있으면 원가 보고서 생성을 차단합니다."
+          control={
+            <Toggle
+              value={settings.strictPosting === 'on'}
+              onChange={on =>
+                updateSetting(
+                  'strictPosting',
+                  on ? 'on' : 'off',
+                  '미연동 재료 차단 ' + (on ? 'ON' : 'OFF')
+                )
+              }
+            />
+          }
         />
         <SettingsRow
           name="단가 환산 자리수"

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import ReportBuilderShell, { OptGroup, Check } from '@/components/report/ReportBuilderShell';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { formatNumber } from '@/lib/format';
@@ -25,6 +25,11 @@ import {
   buildRecipePrintMenus,
   buildRecipePrintRows,
 } from '@/lib/report/build-cost-report';
+import { useSettingValue } from '@/hooks/useSettingValue';
+import {
+  buildStrictPostingMessage,
+  collectStrictPostingIssues,
+} from '@/lib/report/strict-posting';
 
 // ── 상수 ──────────────────────────────────────────────────────
 // 카테고리 순서: 원가마진표와 동일
@@ -199,6 +204,7 @@ export default function Page() {
   const [dataError, setDataError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [recipeRows, setRecipeRows] = useState([]);
+  const strictPostingEnabled = useSettingValue('strictPosting') === 'on';
 
   const [costByCategory, setCostByCategory] = useState(() =>
     Object.fromEntries(
@@ -294,6 +300,10 @@ export default function Page() {
   const periodLabel = PERIOD_LABEL;
 
   const diagnostics = costByCategory._diagnostics || [];
+  const strictPostingIssues = useMemo(
+    () => collectStrictPostingIssues(recipeRows),
+    [recipeRows]
+  );
 
   // CAT_KEYS 순서 유지하면서 활성 카테고리 추출
   const activeCats = CAT_KEYS.map(k => CAT_META[k])
@@ -334,8 +344,20 @@ export default function Page() {
   const reportMeta = {
     period: periodLabel,
     name: `${periodLabel} ${viewLabel}`,
-    options: { riskThreshold, cats, opts },
+    options: {
+      riskThreshold,
+      cats,
+      opts,
+      strictPosting: strictPostingEnabled,
+      strictPostingIssueCount: strictPostingIssues.length,
+    },
   };
+
+  const guardStrictPosting = useCallback(() => {
+    if (!strictPostingEnabled || strictPostingIssues.length === 0) return true;
+    showToast(buildStrictPostingMessage(strictPostingIssues), 'error', 7000);
+    return false;
+  }, [strictPostingEnabled, strictPostingIssues]);
 
   const handleExcelExport = () =>
     exportCostXlsx(periodLabel, activeCats, recipeRows).catch(err =>
@@ -348,12 +370,17 @@ export default function Page() {
       title="원가계산 보고서 생성"
       sub="5개 카테고리(피자·1인피자·세트박스·사이드·엣지&도우)의 종합 원가를 한 장에 모아요."
       kind="cost"
-      exportNote="단가는 최신 제때 업로드 기준으로 고정됩니다."
+      exportNote={
+        strictPostingEnabled && strictPostingIssues.length > 0
+          ? `단가는 최신 제때 업로드 기준입니다. 미연동 재료 ${strictPostingIssues.length}건이 있어 보고서 생성이 차단됩니다.`
+          : '단가는 최신 제때 업로드 기준으로 고정됩니다.'
+      }
       reportMeta={reportMeta}
       dataError={dataError}
       isLoading={isLoading}
       docFormat={docFormat}
       onExcelExport={handleExcelExport}
+      onBeforeGenerate={guardStrictPosting}
       options={
         <>
           <OptGroup label="포함 카테고리" hint="체크된 카테고리만 종합 원가표에 포함돼요">

@@ -108,6 +108,7 @@ export default function ReportBuilderShell({
   isLoading = false,
   docFormat = { pdf: true, excel: false },
   onExcelExport,
+  onBeforeGenerate,
 }) {
   const [generating, setGenerating] = useState(false);
   const generatingTimer = useRef(null);
@@ -116,6 +117,7 @@ export default function ReportBuilderShell({
   const safeDataError = asDisplayText(dataError);
   const safeExportNote = asDisplayText(exportNote);
   const handleExcelExport = typeof onExcelExport === 'function' ? onExcelExport : null;
+  const handleBeforeGenerate = typeof onBeforeGenerate === 'function' ? onBeforeGenerate : null;
 
   useEffect(() => () => clearTimeout(generatingTimer.current), []);
 
@@ -124,8 +126,16 @@ export default function ReportBuilderShell({
       showToast('문서 형식을 하나 이상 선택해 주세요', 'error');
       return;
     }
-    setGenerating(true);
+    let started = false;
     try {
+      if (handleBeforeGenerate) {
+        const proceed = await Promise.resolve(
+          handleBeforeGenerate({ reportMeta, docFormat: safeDocFormat })
+        );
+        if (proceed === false) return;
+      }
+      started = true;
+      setGenerating(true);
       if (safeDocFormat.pdf) triggerPrint(reportMeta);
       if (safeDocFormat.excel && handleExcelExport) await Promise.resolve(handleExcelExport());
       showToast('보고서 생성 요청 완료', 'ok', 1800);
@@ -133,8 +143,10 @@ export default function ReportBuilderShell({
       const message = err?.message || '알 수 없는 오류';
       showToast(`보고서 생성 실패: ${message}`, 'error');
     } finally {
-      clearTimeout(generatingTimer.current);
-      generatingTimer.current = setTimeout(() => setGenerating(false), 700);
+      if (started) {
+        clearTimeout(generatingTimer.current);
+        generatingTimer.current = setTimeout(() => setGenerating(false), 700);
+      }
     }
   };
 
