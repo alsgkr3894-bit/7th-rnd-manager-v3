@@ -1,5 +1,14 @@
-import { describe, expect, jest, test } from '@jest/globals';
+import { afterEach, describe, expect, jest, test } from '@jest/globals';
 import { importAll } from '../../lib/db/operations.js';
+
+const originalLocalStorage = globalThis.localStorage;
+
+afterEach(() => {
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: originalLocalStorage,
+  });
+});
 
 describe('importAll 구조 방어', () => {
   test('store 값이 배열이 아니면 복원을 건너뛰고 오류로 보고한다', async () => {
@@ -36,5 +45,34 @@ describe('importAll 구조 방어', () => {
     } finally {
       warnSpy.mockRestore();
     }
+  });
+
+  test('localStorage 복원 실패는 결과 errors에 보고한다', async () => {
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      value: {
+        setItem() {
+          throw new Error('quota');
+        },
+      },
+    });
+
+    const result = await importAll({
+      stores: {},
+      localStorage: {
+        'v3:profile': 'profile',
+      },
+    });
+
+    expect(result).toEqual({
+      imported: 0,
+      skipped: 0,
+      errors: [
+        {
+          store: 'localStorage',
+          error: 'localStorage 복원 실패 1건: v3:profile',
+        },
+      ],
+    });
   });
 });
