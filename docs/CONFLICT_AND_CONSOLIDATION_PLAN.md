@@ -356,6 +356,14 @@
 
 ### 3.8 legacy 알레르기 링크 store
 
+**구현 상태**
+
+- 구현 완료: `99d9cbc6 feat: B-3 Phase 2 — nutrition_allergy_links store 제거 (DB v20)`
+- 신규 DB schema는 `nutrition_allergy_links`를 생성하지 않는다.
+- v20 마이그레이션은 기존 `nutrition_allergy_links` store가 있으면 삭제한다.
+- 식자재 삭제 cascade의 `deleteAllergenLinksByIngredient()`는 구형 DB/테스트 호환을 위해 남아 있지만, store가 없으면 no-op으로 종료한다.
+- 회귀 테스트는 `nutrition-schema-allergy-links`와 `nutrition-allergen-links`에서 신규 생성 차단, 기존 store 삭제, no-op 안전성을 확인한다.
+
 **관련 파일**
 
 - `lib/db/constants.js`
@@ -367,21 +375,21 @@
 
 **현재 상태**
 
-- `nutrition_allergy_links`는 legacy store로 남아 있다.
+- `nutrition_allergy_links`는 운영 schema와 store 목록에서 제거됐다.
 - 실제 알레르기 기준은 `cost_ingredients.allergens`로 이동한 상태다.
 - `deleteAllergenLinksByIngredient()`는 store가 없으면 no-op 하도록 안전하게 작성되어 있다.
 
 **통합 방향**
 
-- 즉시 삭제하지 않는다.
-- 먼저 진단 UI나 migration check로 legacy link 잔여 0건을 확인한다.
-- 이후 DB version migration과 백업 호환 정책을 정한 뒤 store 정의에서 제거한다.
+- 유지 방향: 새 알레르기 기준은 `cost_ingredients.allergens`로 고정한다.
+- 구형 백업/테스트 호환용 삭제 helper는 store 존재 여부를 확인하는 no-op 가드를 유지한다.
+- 신규 코드에서 `nutrition_allergy_links`를 source of truth로 다시 참조하지 않는다.
 
 **테스트**
 
-- legacy store가 있어도 삭제 cascade가 동작한다.
-- legacy store가 없어도 식자재 삭제가 실패하지 않는다.
-- 구버전 백업 복원 정책이 명확하다.
+- 완료: 신규 schema에서 legacy store를 만들지 않는다.
+- 완료: 기존 DB v20 마이그레이션에서 legacy store를 삭제한다.
+- 완료: legacy store가 없어도 식자재 삭제가 실패하지 않는다.
 
 ---
 
