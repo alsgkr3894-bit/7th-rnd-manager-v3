@@ -1,5 +1,17 @@
-import { SAMPLE_CATEGORIES } from '@/lib/sample/constants';
-import { SAMPLE_SORT_OPTIONS } from './samplePageStateUtils';
+import {
+  buildSampleActionsProps,
+  buildSampleHeaderProps,
+  buildSampleLoadErrorProps,
+} from './samplePageControllerTopProps';
+import {
+  buildSampleCalendarProps,
+  buildSampleFilterProps,
+  buildSampleRecordsProps,
+} from './samplePageControllerViewProps';
+import {
+  buildSampleCompareBarProps,
+  buildSampleDialogsProps,
+} from './samplePageControllerDialogProps';
 
 export function buildSamplePageControllerProps({
   router,
@@ -9,38 +21,7 @@ export function buildSamplePageControllerProps({
   recordActions,
   confirmElement,
 }) {
-  const {
-    samples,
-    search,
-    searchHistory,
-    showSearchHist,
-    setShowSearchHist,
-    catFilter,
-    setCatFilter,
-    ratingMin,
-    setRatingMin,
-    sortBy,
-    applySortBy,
-    viewMode,
-    applyViewMode,
-    calMonth,
-    goPrevMonth,
-    goNextMonth,
-    detailRec,
-    setDetailRec,
-    loading,
-    loadError,
-    reload,
-    handleSearchChange,
-    closeSearchHistorySoon,
-    selectSearchHistory,
-    filtered,
-    catCounts,
-    ratingDist,
-    calDays,
-    samplesByDate,
-    today,
-  } = pageState;
+  const { detailRec, setDetailRec, loading, viewMode } = pageState;
 
   const openWrite = () => router.push('/note/sample/write');
   const openSampleEditor = sample => router.push(`/note/sample/${sample.id}`);
@@ -49,100 +30,25 @@ export function buildSamplePageControllerProps({
     setDetailRec(null);
     router.push(`/note/sample/${detailRec.id}`);
   };
+  const navigation = { openWrite, openSampleEditor, editDetail };
+  const context = {
+    pageState,
+    batch,
+    compare,
+    recordActions,
+    confirmElement,
+    navigation,
+  };
 
   return {
-    loadErrorProps: {
-      loadError,
-      onRetry: reload,
-    },
-    headerProps: {
-      breadcrumb: ['샘플기록'],
-      title: '샘플기록',
-      sub: `총 ${samples.length}개 샘플`,
-    },
-    actionsProps: {
-      filtered,
-      batchMode: batch.batchMode,
-      compareMode: compare.compareMode,
-      selected: batch.selected,
-      onBatchDelete: batch.handleBatchDelete,
-      onExitBatchMode: batch.exitBatchMode,
-      onExitCompareMode: compare.exitCompareMode,
-      onStartBatchMode: () => batch.setBatchMode(true),
-      onStartCompareMode: () => compare.setCompareMode(true),
-      onCreateSample: openWrite,
-    },
-    filterProps: {
-      categories: SAMPLE_CATEGORIES,
-      catCounts,
-      catFilter,
-      onCatFilterChange: setCatFilter,
-      ratingMin,
-      onRatingMinChange: setRatingMin,
-      ratingDist,
-      sampleCount: samples.length,
-      sortOptions: SAMPLE_SORT_OPTIONS,
-      sortBy,
-      onSortChange: applySortBy,
-      viewMode,
-      onViewModeChange: applyViewMode,
-      search,
-      onSearchChange: handleSearchChange,
-      showSearchHist,
-      onSearchFocus: () => setShowSearchHist(true),
-      onSearchBlur: closeSearchHistorySoon,
-      searchHistory,
-      onSelectSearchHistory: selectSearchHistory,
-    },
+    loadErrorProps: buildSampleLoadErrorProps(context),
+    headerProps: buildSampleHeaderProps(context),
+    actionsProps: buildSampleActionsProps(context),
+    filterProps: buildSampleFilterProps(context),
     calendarVisible: !loading && viewMode === 'calendar',
-    calendarProps: {
-      days: calDays,
-      calMonth,
-      samplesByDate,
-      today,
-      onPrevMonth: goPrevMonth,
-      onNextMonth: goNextMonth,
-      onOpenSample: setDetailRec,
-    },
-    recordsProps: {
-      loading,
-      viewMode,
-      filtered,
-      catFilter,
-      ratingMin,
-      sortBy,
-      search,
-      batchMode: batch.batchMode,
-      selected: batch.selected,
-      toggleSelect: batch.toggleSelect,
-      compareMode: compare.compareMode,
-      toggleCompare: compare.toggleCompare,
-      compareIdxMap: compare.compareIdxMap,
-      onOpenSample: setDetailRec,
-      onEditSample: openSampleEditor,
-      onCopySample: recordActions.handleCopy,
-      onDeleteSample: recordActions.handleDelete,
-      onRatingChange: recordActions.handleRatingChange,
-      onCreateSample: openWrite,
-    },
-    compareBarProps: {
-      compareMode: compare.compareMode,
-      compareCount: compare.compareSet.size,
-      onOpenCompare: () => compare.setShowCompare(true),
-    },
-    dialogsProps: {
-      detailRec,
-      showCompare: compare.showCompare,
-      compareItems: compare.compareItems,
-      confirmOpen: batch.confirmOpen,
-      selectedCount: batch.selected.size,
-      confirmElement,
-      onCloseDetail: () => setDetailRec(null),
-      onEditDetail: editDetail,
-      onDeleteDetail: () => detailRec && recordActions.handleDelete(detailRec),
-      onCloseCompare: () => compare.setShowCompare(false),
-      onConfirmBatchDelete: batch.confirmBatchDelete,
-      onCancelBatchDelete: () => batch.setConfirmOpen(false),
-    },
+    calendarProps: buildSampleCalendarProps(context),
+    recordsProps: buildSampleRecordsProps(context),
+    compareBarProps: buildSampleCompareBarProps(context),
+    dialogsProps: buildSampleDialogsProps(context),
   };
 }
