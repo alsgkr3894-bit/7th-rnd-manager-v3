@@ -31,6 +31,21 @@ describe('importAll 구조 방어', () => {
     ]);
   });
 
+  test('사전 검증 오류가 있으면 정상 store도 교체하지 않는다', async () => {
+    const result = await importAll({
+      stores: {
+        sales_files: [{ id: 1 }],
+        settings: {},
+      },
+    });
+
+    expect(result).toEqual({
+      imported: 0,
+      skipped: 0,
+      errors: [{ store: 'settings', error: 'store 데이터가 배열이 아닙니다.' }],
+    });
+  });
+
   test('현재 schema에서 제거된 legacy store는 복원 시 건너뛴다', async () => {
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
     try {
