@@ -10,10 +10,10 @@ import { buildSyncPlan } from '../../lib/cost/sync-base-quantity.js';
 // ── 픽스처 ───────────────────────────────────────────────────
 
 const ingredients = [
-  { id: 1, productCode: 'A001', ingredientName: '모짜렐라', baseQuantity: 5, baseUnitType: 'kg' },
+  { id: 1, productCode: 'A001', ingredientName: '모짜렐라', baseQuantity: 5000, baseUnitType: 'g' },
   { id: 2, productCode: 'A002', ingredientName: '피망', baseQuantity: null, baseUnitType: 'g' },
   { id: 3, productCode: 'B010', ingredientName: '소금', baseQuantity: 1000, baseUnitType: 'g' },
-  { id: 4, productCode: 'C001', ingredientName: '버터', baseQuantity: 2, baseUnitType: 'kg' },
+  { id: 4, productCode: 'C001', ingredientName: '버터', baseQuantity: 2000, baseUnitType: 'g' },
 ];
 
 // ── buildSyncPlan ─────────────────────────────────────────────
@@ -31,9 +31,9 @@ describe('buildSyncPlan', () => {
       id: 1,
       productCode: 'A001',
       name: '모짜렐라',
-      oldQty: 5,
-      newQty: 10,
-      unit: 'kg',
+      oldQty: 5000,
+      newQty: 10000,
+      unit: 'g',
     });
     expect(unchanged).toBe(0);
     expect(unmatched).toBe(0);
@@ -41,7 +41,7 @@ describe('buildSyncPlan', () => {
 
   test('이미 동일한 수량은 unchanged로 집계되고 changes에 포함되지 않는다', () => {
     const priceRows = [
-      { productCode: 'A001', quantity: 5, salesUnit: 'kg' }, // 기존 baseQuantity=5
+      { productCode: 'A001', quantity: 5, salesUnit: 'kg' }, // 기존 5000g
     ];
     const { changes, unchanged } = buildSyncPlan(priceRows, ingredients);
     expect(changes).toHaveLength(0);
@@ -150,32 +150,40 @@ describe('buildSyncPlan', () => {
 
   // ── 단위 fallback ────────────────────────────────────────
 
-  test('unit: baseUnitType 우선 → salesUnit → 기본값 g', () => {
-    // 1) baseUnitType 있는 경우
+  test('unit: 제때 단위를 g/개 기준으로 환산한다', () => {
+    // 1) kg → g
     const ing1 = [
       {
         id: 1,
         productCode: 'A001',
         ingredientName: '모짜렐라',
-        baseQuantity: 5,
-        baseUnitType: 'kg',
+        baseQuantity: 5000,
+        baseUnitType: 'g',
       },
     ];
-    const rows1 = [{ productCode: 'A001', quantity: 10, salesUnit: 'L' }];
+    const rows1 = [{ productCode: 'A001', quantity: 10, salesUnit: 'kg' }];
     const { changes: c1 } = buildSyncPlan(rows1, ing1);
-    expect(c1[0].unit).toBe('kg');
+    expect(c1[0]).toMatchObject({ newQty: 10000, unit: 'g' });
 
-    // 2) baseUnitType 없는 경우 → salesUnit
+    // 2) EA → 개
     const ing2 = [{ id: 2, productCode: 'B001', ingredientName: '소금', baseQuantity: 100 }]; // baseUnitType 없음
-    const rows2 = [{ productCode: 'B001', quantity: 200, salesUnit: 'g' }];
+    const rows2 = [{ productCode: 'B001', quantity: 200, salesUnit: 'EA' }];
     const { changes: c2 } = buildSyncPlan(rows2, ing2);
-    expect(c2[0].unit).toBe('g');
+    expect(c2[0]).toMatchObject({ newQty: 200, unit: '개' });
 
     // 3) 둘 다 없는 경우 → 'g'
     const ing3 = [{ id: 3, productCode: 'C001', ingredientName: '기름', baseQuantity: 1 }];
     const rows3 = [{ productCode: 'C001', quantity: 2 }];
     const { changes: c3 } = buildSyncPlan(rows3, ing3);
     expect(c3[0].unit).toBe('g');
+  });
+
+  test('g/개로 환산할 수 없는 단위는 unsupported로 집계한다', () => {
+    const ing = [{ id: 1, productCode: 'A001', ingredientName: '오일', baseQuantity: 1 }];
+    const rows = [{ productCode: 'A001', quantity: 1, salesUnit: 'L' }];
+    const result = buildSyncPlan(rows, ing);
+    expect(result.changes).toHaveLength(0);
+    expect(result.unsupported).toBe(1);
   });
 
   // ── 복합 시나리오 ────────────────────────────────────────

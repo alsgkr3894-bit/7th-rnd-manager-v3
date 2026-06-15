@@ -7,8 +7,7 @@ import { ModalFrame } from '@/components/ui/ModalFrame';
 import { getAllSuppliers } from '@/lib/cost/suppliers/store';
 import { recordPriceChange } from '@/lib/cost/price-history';
 import { parseOptionalNonNegativeNumber } from '@/lib/parse';
-
-const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병', 'EA', 'BOX'];
+import { COST_BASE_UNITS, normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
 
 function InfoRow({ label, value }) {
   return (
@@ -47,7 +46,7 @@ export function RegisterModal({ row, onSave, onClose, extraCategories = [] }) {
   const [baseQuantity, setBaseQuantity] = useState(
     existing?.baseQuantity != null ? String(existing.baseQuantity) : ''
   );
-  const [baseUnitType, setBaseUnitType] = useState(existing?.baseUnitType || 'g');
+  const [baseUnitType, setBaseUnitType] = useState(normalizeCostBaseUnit(existing?.baseUnitType));
   const [customCat, setCustomCat] = useState(
     !!existing?.category && !catOptions.includes(existing?.category)
   );
@@ -233,7 +232,7 @@ export function RegisterModal({ row, onSave, onClose, extraCategories = [] }) {
           </div>
         </FormField>
 
-        <FormField label="포장수량" hint="개당 단가 계산에 사용 (예: 1000 g, 20 ea)">
+        <FormField label="포장수량" hint="g·개 단가 계산에 사용 (예: 1000 g, 20 개)">
           <div style={{ display: 'flex', gap: 8 }}>
             <input
               className="form-input"
@@ -250,7 +249,7 @@ export function RegisterModal({ row, onSave, onClose, extraCategories = [] }) {
               onChange={e => setBaseUnitType(e.target.value)}
               style={{ width: 80 }}
             >
-              {UNIT_TYPES.map(u => (
+              {COST_BASE_UNITS.map(u => (
                 <option key={u} value={u}>
                   {u}
                 </option>

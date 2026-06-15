@@ -114,7 +114,8 @@ export function SyncBaseQtyModal({ onDone, onClose }) {
         <b>주의:</b> 이 작업은 기준수량(포장단위)을 덮어씁니다. 기준수량은 개당 단가 계산의 기준이
         되므로 변경 전 반드시 내용을 확인하세요.
         <br />
-        수량이 없는 제때 항목과 매칭이 안 되는 항목은 변경되지 않습니다.
+        수량이 없는 제때 항목, 매칭이 안 되는 항목, g/개로 환산할 수 없는 단위는 변경되지
+        않습니다.
       </div>
 
       {/* 파일 선택 */}
@@ -233,6 +234,21 @@ export function SyncBaseQtyModal({ onDone, onClose }) {
               }}
             >
               {plan.unmatched} 미매칭
+            </span>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '2px 10px',
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 700,
+                background: 'color-mix(in srgb, var(--warn) 14%, transparent)',
+                color: 'var(--warn)',
+              }}
+            >
+              {plan.unsupported || 0} 단위 미확정
             </span>
           </div>
 

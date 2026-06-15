@@ -18,6 +18,7 @@ import { parseOptionalNonNegativeNumber } from '@/lib/parse';
 import { imageFileError, resizePhoto } from '@/lib/image/resize';
 import { showToast } from '@/components/Toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { COST_BASE_UNITS, normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
 import {
   AllergenSection,
   Field,
@@ -26,10 +27,8 @@ import {
   SourceField,
 } from './IngredientFormSections';
 
-const UNIT_TYPES = ['g', 'kg', 'L', 'ml', '개', '캔', '팩', '봉', '병'];
-
 function normalizeUnitType(value) {
-  return UNIT_TYPES.includes(value) ? value : 'g';
+  return normalizeCostBaseUnit(value);
 }
 
 const TEMP_OPTIONS = ['냉장', '냉동', '상온', '공산품'];
@@ -575,7 +574,7 @@ export function IngredientForm({
                 onChange={e => set('baseUnitType', e.target.value)}
                 style={{ width: 80 }}
               >
-                {UNIT_TYPES.map(u => (
+                {COST_BASE_UNITS.map(u => (
                   <option key={u} value={u}>
                     {u}
                   </option>
