@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useMounted } from '@/hooks/useMounted';
-import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { usePagination } from '@/hooks/usePagination';
 import { showToast } from '@/components/Toast';
@@ -25,6 +24,7 @@ import { BulkPriceModal } from '@/components/cost/menu-price/BulkPriceModal';
 import { MenuMasterEmptyState } from '@/components/menu-master/MenuMasterEmptyState';
 import { MenuMasterEditModal } from '@/components/menu-master/MenuMasterEditModal';
 import { MenuMasterFilterPanel } from '@/components/menu-master/MenuMasterFilterPanel';
+import { MenuMasterHeaderActions } from '@/components/menu-master/MenuMasterHeaderActions';
 import { MenuMasterLoadingTable } from '@/components/menu-master/MenuMasterLoadingTable';
 import { MenuMasterStatsRow } from '@/components/menu-master/MenuMasterStatsRow';
 import { MenuMasterTablePanel } from '@/components/menu-master/MenuMasterTablePanel';
@@ -278,41 +278,18 @@ export default function Page() {
             : `총 ${rows.length}개 · 원가·영양·원산지·알레르기 전 모듈의 기준 데이터`
         }
         actions={
-          <>
-            <button
-              className="btn"
-              onClick={handleExportCsv}
-              disabled={rows.length === 0}
-              style={{ color: 'var(--text-2)' }}
-            >
-              <Icon.download style={{ width: 14, height: 14 }} /> 엑셀로 내보내기
-            </button>
-            <button
-              className="btn"
-              onClick={() => setBulkModal(true)}
-              disabled={rows.length === 0 || isViewer}
-            >
-              <Icon.calc style={{ width: 14, height: 14 }} /> 코드별 일괄 가격
-            </button>
-            {isMain && (
-              <button className="btn" onClick={handleSeed} disabled={seeding || isViewer}>
-                <Icon.download style={{ width: 14, height: 14 }} />
-                {seeding ? '등록 중…' : '기본 코드 등록'}
-              </button>
-            )}
-            <button
-              className="btn"
-              onClick={() => setConfirmReset(true)}
-              disabled={resetting || isViewer}
-              style={{ color: 'var(--negative)' }}
-            >
-              <Icon.trash style={{ width: 14, height: 14 }} />
-              {resetting ? '처리 중…' : '초기화'}
-            </button>
-            <button className="btn primary" onClick={() => setAddOpen(true)} disabled={isViewer}>
-              <Icon.plus style={{ width: 14, height: 14 }} /> 메뉴 추가
-            </button>
-          </>
+          <MenuMasterHeaderActions
+            hasRows={rows.length > 0}
+            isViewer={isViewer}
+            isMain={isMain}
+            seeding={seeding}
+            resetting={resetting}
+            onExportCsv={handleExportCsv}
+            onOpenBulkPrice={() => setBulkModal(true)}
+            onSeed={handleSeed}
+            onReset={() => setConfirmReset(true)}
+            onAdd={() => setAddOpen(true)}
+          />
         }
       />
 
