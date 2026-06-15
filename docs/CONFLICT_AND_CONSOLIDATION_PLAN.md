@@ -33,8 +33,8 @@
 | P1 | 메뉴마스터와 판매가 양방향 동기화 | 어느 쪽이 주 데이터인지 정책이 흔들리면 덮어쓰기 위험 |
 | P1 | 백업 localStorage 복원이 `nutrition` 선택에 묶임 | 전역 설정이 백업 파일에 있어도 선택 복원에서 빠질 수 있음 |
 | P1 | 멀티 브랜드 백업 source metadata 부재 | 다른 브랜드 백업을 현재 브랜드 DB에 복원해도 코드상 검증이 없음 |
-| P1 | 삭제/복원 cascade 원자성 | 이미 경고는 있지만 일부 삭제·복원만 반영될 수 있음 |
-| P1 | 노트 삭제가 parentId 전체 체인과 UI state를 완전히 다루지 않음 | 손자 노트 orphan/삭제 직후 잔상/undo 실패 무시 가능성 |
+| P1 | 삭제/복원 cascade 원자성 | 노트 체인은 구현 완료; 메뉴/식자재/백업 복원은 일부 삭제·복원만 반영될 수 있음 |
+| P1 | 노트 삭제가 parentId 전체 체인과 UI state를 완전히 다루지 않음 | 구현 완료; 신규 undo 경로 추가 시 실패 toast 유지 필요 |
 | P2 | 엣지 관리 화면 중복 | `/cost/edge-dough`와 `/cost/recipe?tab=edges`가 같은 데이터를 편집 |
 | P2 | 메뉴 판매량 redirect route가 허브 카드에 그대로 노출 | 같은 기능이 여러 화면처럼 보임 |
 | P2 | 모바일 원가 primary route가 데스크톱과 다름 | 모바일은 `/cost/pizza`, 데스크톱은 `/cost/recipe` 중심으로 진입 |
@@ -395,6 +395,14 @@
 
 ### 3.9 삭제/복원 cascade 원자성
 
+**구현 상태**
+
+- 부분 구현 완료: `3bcd997 fix: delete full note child chains`, `9a565dd fix: surface note undo restore failures`
+- 노트 삭제는 parentId 하위 체인을 재귀 수집해 한 트랜잭션에서 삭제한다.
+- 노트 삭제 직후 UI state도 삭제된 전체 id 기준으로 제거한다.
+- 노트 삭제 실행취소는 `restoreRecord()` 실패를 숨기지 않고 실패 건수를 toast로 노출한다.
+- 남은 범위: 메뉴마스터/식자재 도메인 간 cascade와 백업 복원 store별 교체를 전체 preview/repair 정책으로 확장하는 작업.
+
 **관련 파일**
 
 - `lib/menu-master/store.js`
@@ -406,13 +414,13 @@
 
 - 메뉴마스터 삭제는 `menu_master` 삭제 후 판매가, 구형 레시피, 영양 참조를 별도 단계로 정리한다.
 - 식자재 삭제는 `cost_ingredients` 삭제 후 영양값, legacy 알레르기 링크를 별도 단계로 정리한다.
-- 노트 삭제 주석은 parentId 체인 삭제를 말하지만 구현은 직계 자식만 삭제한다.
+- 노트 삭제는 parentId 하위 체인 전체를 같은 트랜잭션에서 삭제하고, undo 실패를 사용자에게 노출한다.
 - 백업 복원은 store별 `replaceStore()` 순차 실행이다.
 
 **충돌 가능성**
 
 - 중간 실패 시 일부 store만 정리된다.
-- 노트 손자/후손이 orphan으로 남을 수 있다.
+- 메뉴/식자재 cascade 실패 시 일부 store만 정리될 수 있다.
 - 복원 중 일부 store만 교체될 수 있다.
 
 **통합 방향**
@@ -420,7 +428,7 @@
 - 삭제 전 `delete preview plan`을 만든다: 삭제 대상 store, 레코드 수, rollback 가능 여부.
 - 같은 DB 안에서 묶을 수 있는 store는 단일 `runTransaction([...stores], 'readwrite')`로 묶는다.
 - dynamic import가 필요한 도메인 간 cascade는 실패를 명시적으로 반환하고 repair action을 제공한다.
-- 노트 삭제는 `getNotesInChain()` 또는 descendant collector를 재사용한다.
+- 완료: 노트 삭제는 descendant collector를 재사용하고 undo 실패를 표시한다.
 - 복원은 전체 사전 검증 후 실행하고, 실패 store를 복원 결과 화면에서 강하게 표시한다.
 
 ---
@@ -1047,6 +1055,13 @@
 
 ### 8.13 무음 실패 처리 후보가 아직 남아 있음
 
+**구현 상태**
+
+- 부분 구현 완료: `9a565dd fix: surface note undo restore failures`
+- 노트 삭제 실행취소의 `restoreRecord(...).catch(() => {})`를 제거하고, 복구 실패 건수를 error toast로 노출한다.
+- 삭제 직후 UI state도 삭제된 부모/하위 노트 전체 id 기준으로 갱신한다.
+- 남은 범위: storage/cleanup 허용 목록과 데이터 저장·복원 실패 금지 목록을 테스트로 고정한다.
+
 **관련 파일**
 
 - `lib/db/backup.js`
@@ -1061,6 +1076,7 @@
 
 - 빈 `catch {}` 또는 실패 무시형 catch가 37줄 확인됐다.
 - storage 접근 실패처럼 무시 가능한 것도 있지만, localStorage 복원 실패나 undo 복원 실패처럼 사용자에게 알려야 할 수도 있는 경로도 있다.
+- 노트 삭제 undo 복원 실패는 사용자에게 노출되도록 정리됐다.
 
 **정리 방향**
 

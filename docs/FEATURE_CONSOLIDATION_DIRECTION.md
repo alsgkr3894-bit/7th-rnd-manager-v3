@@ -425,6 +425,7 @@
 | 정적 route 분류표와 runtime QA route 파생 | 구현 완료 | `823f539` |
 | 카테고리 판정 helper 이름 정리 | 구현 완료 | `3381fef` |
 | 보고서 사이드바 route metadata 연동 | 구현 완료 | `a43b683` |
+| 노트 삭제 하위 체인 UI 제거와 undo 실패 노출 | 구현 완료 | `3bcd997`, `9a565dd` |
 | 구형 legacy cost editor 컴포넌트 제거 | 구현 완료 | `3c074f3` |
 | 레시피마스터 전용 hook/form/table/data 제거 | 구현 완료 | `4617d0b` |
 | 구형 레시피 입력 관련 표시 문구 정리 | 구현 완료 | `ec417cc` |
@@ -544,6 +545,7 @@
 | 정적 route 분류표 | 구현 완료: `sidebar`, `hub`, `redirect`, `internal-flow`, `dynamic-detail` 기준으로 runtime QA route 파생 |
 | 카테고리 판정 helper 이름 정리 | 구현 완료: 정책 helper와 도메인 alias 분리 |
 | 보고서 사이드바 route metadata 연동 | 구현 완료: `KIND_META` 5종 생성 route 기준 |
+| 노트 삭제/실행취소 안전장치 | 구현 완료: 하위 체인 삭제 후 UI 제거, undo 복원 실패 toast 노출 |
 | 구형 코드 제거 | 구현 완료: 레시피/detail store 기준 제거 |
 | 브랜드 관리/상단 브랜드 선택기 | 구현 완료 |
 | 브랜드별 백업/복원 진입점 | 구현 완료 |
