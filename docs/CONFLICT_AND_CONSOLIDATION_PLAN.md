@@ -819,6 +819,12 @@
 
 ### 8.9 노트 삭제가 parentId 체인 전체를 삭제하지 않음
 
+**구현 상태**
+
+- 구현 완료: `3bcd997 fix: delete full note child chains`
+- 노트 삭제 시 현재 브랜드 범위의 parentId 하위 체인을 모두 재귀 수집한다.
+- 부모와 모든 하위 노트를 한 트랜잭션에서 삭제하고, 삭제된 전체 레코드를 undo용으로 반환한다.
+
 **관련 파일**
 
 - `lib/note/store.js`
