@@ -11,7 +11,6 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { initDB } from '@/lib/db';
 import { downloadCsvText } from '@/lib/download';
-import { formatNumber, formatPercent } from '@/lib/format';
 import {
   getAllMenuMaster,
   upsertMenuMaster,
@@ -26,6 +25,8 @@ import { normalizePersonalPizzaCodes } from '@/lib/menu-master/normalize';
 import { MenuPriceUploadCard } from '@/components/cost/menu-price/MenuPriceUploadCard';
 import { BulkPriceModal } from '@/components/cost/menu-price/BulkPriceModal';
 import { CategoryTags, MenuMasterEditModal } from '@/components/menu-master/MenuMasterEditModal';
+import { MenuMasterStatsRow } from '@/components/menu-master/MenuMasterStatsRow';
+import { MenuRecipeCostCell } from '@/components/menu-master/MenuRecipeCostCell';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
@@ -58,37 +59,6 @@ const STATUS_STYLE = {
   test: { background: 'var(--accent-soft)', color: 'var(--accent)' },
 };
 
-const RECIPE_STATUS_STYLE = {
-  [MENU_RECIPE_SUMMARY_STATUS.READY]: {
-    background: 'var(--positive-soft)',
-    color: 'var(--positive)',
-  },
-  [MENU_RECIPE_SUMMARY_STATUS.MISSING]: {
-    background: 'var(--surface-2)',
-    color: 'var(--text-3)',
-  },
-  [MENU_RECIPE_SUMMARY_STATUS.NEEDS_PRICE]: {
-    background: 'var(--warn-soft)',
-    color: 'var(--warn)',
-  },
-  [MENU_RECIPE_SUMMARY_STATUS.NEEDS_QUANTITY]: {
-    background: 'var(--warn-soft)',
-    color: 'var(--warn)',
-  },
-  [MENU_RECIPE_SUMMARY_STATUS.UNSUPPORTED]: {
-    background: 'var(--surface-2)',
-    color: 'var(--text-4)',
-  },
-};
-
-const RECIPE_STATUS_LABEL = {
-  [MENU_RECIPE_SUMMARY_STATUS.READY]: '완료',
-  [MENU_RECIPE_SUMMARY_STATUS.MISSING]: '미작성',
-  [MENU_RECIPE_SUMMARY_STATUS.NEEDS_PRICE]: '단가 확인',
-  [MENU_RECIPE_SUMMARY_STATUS.NEEDS_QUANTITY]: '수량 확인',
-  [MENU_RECIPE_SUMMARY_STATUS.UNSUPPORTED]: '미지원',
-};
-
 const DELETE_PLAN_LABELS = {
   cost_selling_prices: '판매가',
   menu_recipes: '메뉴 레시피',
@@ -115,38 +85,6 @@ function buildMenuDeleteMessage(row, plan, loading) {
     .join(' · ');
   lines.push(`삭제 영향: ${summary}`);
   return lines.join('\n');
-}
-
-function RecipeCostCell({ summary }) {
-  if (!summary) {
-    return <span style={{ fontSize: 11, color: 'var(--text-4)' }}>계산 중</span>;
-  }
-
-  const style =
-    RECIPE_STATUS_STYLE[summary.status] || RECIPE_STATUS_STYLE[MENU_RECIPE_SUMMARY_STATUS.MISSING];
-  const label = RECIPE_STATUS_LABEL[summary.status] || '확인';
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
-      <span
-        style={{
-          padding: '2px 7px',
-          borderRadius: 6,
-          fontSize: 11,
-          fontWeight: 700,
-          ...style,
-        }}
-      >
-        {label}
-      </span>
-      {summary.hasRecipe && (
-        <span style={{ fontSize: 11, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
-          {formatNumber(summary.totalCost)}원
-          {summary.costRate != null ? ` · ${formatPercent(summary.costRate)}` : ''}
-        </span>
-      )}
-    </div>
-  );
 }
 
 /* ── 메인 페이지 ── */
@@ -328,7 +266,7 @@ export default function Page() {
 
   const active = rows.filter(r => r.status === 'active');
   const discontinued = rows.filter(r => r.status === 'discontinued');
-  const test = rows.filter(r => r.status === 'test');
+  const testRows = rows.filter(r => r.status === 'test');
   const recipeSummaries = [...recipeSummaryMap.values()].filter(
     summary => summary.status !== MENU_RECIPE_SUMMARY_STATUS.UNSUPPORTED
   );
@@ -389,54 +327,16 @@ export default function Page() {
       />
 
       {/* 통계 */}
-      <div className="stat-row">
-        <div className="stat-card">
-          <div className="stat-label">전체 메뉴</div>
-          <div className="stat-value">
-            {rows.length}
-            <span className="unit">개</span>
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>
-            {displayCategories
-              .map(c => `${c} ${rows.filter(r => (r.category || '').startsWith(c)).length}`)
-              .join(' · ')}
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">활성</div>
-          <div className="stat-value" style={{ color: 'var(--positive)' }}>
-            {active.length}
-            <span className="unit">개</span>
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>
-            가격 입력 {active.filter(r => r.price).length}개
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">단종</div>
-          <div className="stat-value" style={{ color: 'var(--text-3)' }}>
-            {discontinued.length}
-            <span className="unit">개</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">테스트</div>
-          <div className="stat-value" style={{ color: 'var(--accent)' }}>
-            {test.length}
-            <span className="unit">개</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">레시피 작성</div>
-          <div className="stat-value" style={{ color: 'var(--accent-text)' }}>
-            {recipeWritten}
-            <span className="unit">개</span>
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>
-            대상 {recipeSummaries.length}개 · 확인 필요 {recipeNeedsCheck}개
-          </div>
-        </div>
-      </div>
+      <MenuMasterStatsRow
+        rows={rows}
+        activeRows={active}
+        discontinuedRows={discontinued}
+        testRows={testRows}
+        displayCategories={displayCategories}
+        recipeSummaries={recipeSummaries}
+        recipeWritten={recipeWritten}
+        recipeNeedsCheck={recipeNeedsCheck}
+      />
 
       {loading && (
         <div className="card table-card">
@@ -542,7 +442,7 @@ export default function Page() {
                 { id: 'all', label: `전체 ${rows.length}` },
                 { id: 'active', label: `활성 ${active.length}` },
                 { id: 'discontinued', label: `단종 ${discontinued.length}` },
-                { id: 'test', label: `테스트 ${test.length}` },
+                { id: 'test', label: `테스트 ${testRows.length}` },
               ].map(t => (
                 <button
                   key={t.id}
@@ -713,7 +613,7 @@ export default function Page() {
                             )}
                           </td>
                           <td>
-                            <RecipeCostCell summary={recipeSummary} />
+                            <MenuRecipeCostCell summary={recipeSummary} />
                           </td>
                           <td>
                             <span
