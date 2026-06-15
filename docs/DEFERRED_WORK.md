@@ -120,12 +120,13 @@
   - `app/ingredient/manage/IngredientFormFields.jsx` ✅ 2026-06-15 추가 보강 — 이름·기본정보·단가 필드 파일 분리, 기존 import 호환용 re-export 유지. 410→3줄.
   - `app/nutrition/allergen/page.jsx` ✅ 2026-06-15 추가 보강 — `AllergenIngredientTable`·`AllergenMenuMatrixTable`·`AllergenDetailModal` 렌더링 컴포넌트 분리. 802→500줄.
   - `app/nutrition/allergen/page.jsx` ✅ 2026-06-15 추가 보강 — `AllergenPageHeader`·`AllergenSummaryPanel`·`AllergenToolbar`·`AllergenTablePanel` 렌더링 컴포넌트 분리. 500→381줄.
+  - `app/nutrition/allergen/page.jsx` ✅ 2026-06-15 추가 보강 — 데이터 로드·제외 메뉴 판정·매트릭스·순서·CSV 파생 계산을 `useAllergenPageData`로 분리. 381→113줄.
 - **잔여 대상** (우선순위 순):
-  1. `app/nutrition/allergen/page.jsx` (~381줄) — 데이터 로드/매트릭스 계산 요구가 늘어날 때 hook 분리 재평가
-  2. `app/note/_NoteContent.jsx` (~359줄) — 검색/필터 orchestration이 더 커질 때 hook 분리 재평가
-  3. `app/ingredient/manage/IngredientCostFields.jsx` (~205줄) — 단가/보관/범위 정책이 늘어날 때 cost 하위 필드 추가 분리 재평가
-  4. `app/ingredient/list/page.jsx` — 현재 redirect route 5줄 수준, 별도 분해 불필요
-  5. `components/report/sales/SalesRankTableSection.jsx` (~197줄) — 순위표 요구가 늘어날 때 bar rows/variant rows 추가 분리
+  1. `app/note/_NoteContent.jsx` (~359줄) — 검색/필터 orchestration이 더 커질 때 hook 분리 재평가
+  2. `app/ingredient/manage/IngredientCostFields.jsx` (~205줄) — 단가/보관/범위 정책이 늘어날 때 cost 하위 필드 추가 분리 재평가
+  3. `app/nutrition/allergen/useAllergenPageData.js` (~337줄) — 알레르기 데이터 source가 더 늘어날 때 loader/matrix 하위 hook 분리 재평가
+  4. `components/report/sales/SalesRankTableSection.jsx` (~197줄) — 순위표 요구가 늘어날 때 bar rows/variant rows 추가 분리
+  5. `app/ingredient/list/page.jsx` — 현재 redirect route 5줄 수준, 별도 분해 불필요
 - **방향**: page는 조립만 담당, table/panel/modal/hook으로 분리.
 - **왜 보류**: 효과 < 회귀 위험. 기능 추가 시점에 함께 진행 예정.
 - **검증**: `npm run test:ci` + 주요 화면 수동 확인
