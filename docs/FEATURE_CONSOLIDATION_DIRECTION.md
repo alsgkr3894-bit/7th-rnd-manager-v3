@@ -411,6 +411,7 @@
 | 활성 계정 선택 localStorage 백업/복원 범위 포함 | 구현 완료 | `211c7b7` |
 | 활성 계정 선택의 브랜드별 localStorage 분리 | 구현 완료 | `2845f5f` |
 | localStorage 복원 실패 결과 보고 | 구현 완료 | `866c6fd` |
+| 백업 복원 사전 검증 실패 시 store 교체 중단 | 구현 완료 | `cb9ddcb` |
 | 무음 실패 catch allowlist와 중요 실패 가드 | 구현 완료 | `44b2e55` |
 | CSS primitive selector 소유권 정리 | 구현 완료 | `4d378dd` |
 | 메뉴개발노트/샘플/일정/작업일지의 활성 브랜드 스코프 | 구현 완료 | `92207d5` |
