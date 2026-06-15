@@ -111,10 +111,11 @@
   - `app/report/sales/page.jsx` ✅ 2026-06-15 부분 보강 — Excel export 시트/파일명 조립을 `lib/report/sales-export.js`로 분리하고 fixture 테스트 추가. 938→856줄.
   - `app/report/sales/page.jsx` ✅ 2026-06-15 추가 보강 — 보고서 미리보기 전체를 `components/report/sales/SalesReportPreview.jsx`로 분리. 856→307줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 부분 보강 — `NoteTableRow`·`NoteContextMenu` 렌더링 컴포넌트 분리. 1022→843줄.
+  - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — `NoteStatsSummary`·`NoteFilterControls` 렌더링 컴포넌트 분리. 843→642줄.
 - **잔여 대상** (우선순위 순):
-  1. `app/note/_NoteContent.jsx` (~843줄) — stat/filter/list panel·hook 추가 분리
-  2. `app/ingredient/manage/IngredientForm.jsx` (~817줄) — 섹션별 서브폼 분리
-  3. `app/nutrition/allergen/page.jsx` (~802줄) — 매트릭스·드로어 패널 분리
+  1. `app/ingredient/manage/IngredientForm.jsx` (~817줄) — 섹션별 서브폼 분리
+  2. `app/nutrition/allergen/page.jsx` (~802줄) — 매트릭스·드로어 패널 분리
+  3. `app/note/_NoteContent.jsx` (~642줄) — list panel·hook 추가 분리 필요 시 재평가
   4. `components/report/sales/SalesReportPreview.jsx` (~587줄) — 미리보기 섹션 하위 컴포넌트 추가 분리 필요 시 재평가
   5. `app/ingredient/list/page.jsx` — R-5에서 이미 420줄로 축소됨, 추가 분해 필요 시 재평가
 - **방향**: page는 조립만 담당, table/panel/modal/hook으로 분리.

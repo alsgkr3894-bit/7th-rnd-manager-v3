@@ -8,18 +8,8 @@ import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { initDB } from '@/lib/db';
 import { sharedRestoreRecord as restoreRecord } from '@/lib/db/shared';
-import {
-  CATEGORIES,
-  NOTE_TYPES,
-  STATUSES,
-  STATUS_COLORS,
-  STATUS_BORDER,
-  getAllNotes,
-  addNote,
-  deleteNote,
-  updateNote,
-} from '@/lib/note';
-import { NOTE_STATUS, NOTE_BRANDS } from '@/lib/note/constants';
+import { getAllNotes, addNote, deleteNote, updateNote } from '@/lib/note';
+import { NOTE_STATUS } from '@/lib/note/constants';
 import { getNoteDetailStats } from '@/lib/stats/note-stats';
 import { tryLS, setLS } from '@/lib/note/storage';
 import { KEYS, setNoteFrom } from '@/lib/note/keys';
@@ -35,6 +25,8 @@ import { buildHighlightRegex } from '@/lib/note/utils';
 import { NoteCard } from './_NoteCard';
 import { NoteContextMenu } from './_NoteContextMenu';
 import { NoteDetailModal } from './_NoteDetailModal';
+import { NoteFilterControls } from './_NoteFilterControls';
+import { NoteStatsSummary } from './_NoteStatsSummary';
 import { NoteTableRow } from './_NoteTableRow';
 import { NoteBatchToolbar } from './_NoteBatchToolbar';
 import { NotePresetBar } from './_NotePresetBar';
@@ -58,12 +50,6 @@ async function restoreDeletedNotes(records = []) {
     throw new Error(`${failures.length}개 노트 복구 실패`);
   }
 }
-
-const SORT_OPTIONS = [
-  { key: 'createdAt', label: '최신순' },
-  { key: 'testDate', label: '날짜순' },
-  { key: 'menuName', label: '메뉴명순' },
-];
 
 export function NoteContent() {
   const router = useRouter();
@@ -174,6 +160,11 @@ export function NoteContent() {
     setSearch(val);
     setVisibleCount(PAGE_SIZE);
     scheduleSearchHistory(val);
+  }
+
+  function applySearchHistory(term) {
+    handleSearchChange(term);
+    setShowSearchHist(false);
   }
 
   function closeSearchHistorySoon() {
@@ -299,6 +290,14 @@ export function NoteContent() {
     setViewMode(mode);
     setLS(KEYS.NOTE_VIEW, mode);
   }
+  function changeBrandFilter(nextBrand) {
+    setBrandFilter(nextBrand);
+    setVisibleCount(PAGE_SIZE);
+  }
+  function changeStatusFilter(nextStatus) {
+    setStatusFilter(nextStatus);
+    setVisibleCount(PAGE_SIZE);
+  }
 
   const hasActiveFilter = statusFilter !== 'all' || search.trim() || sortBy !== 'createdAt';
 
@@ -392,230 +391,30 @@ export function NoteContent() {
         }
       />
 
-      {/* 통계 카드 */}
-      {stats && (
-        <div className="stat-row" style={{ marginTop: 8 }}>
-          <div className="stat-card">
-            <div className="stat-label">전체 노트</div>
-            <div className="stat-value">
-              {stats.total}
-              <span className="unit">개</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">이번 달 작성</div>
-            <div className="stat-value">
-              {stats.thisMonth}
-              <span className="unit">개</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">보고예정</div>
-            <div className="stat-value" style={{ color: 'var(--color-reporting)' }}>
-              {counts[NOTE_STATUS.REPORTING] || 0}
-              <span className="unit">개</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">출시 전환율</div>
-            <div className="stat-value" style={{ color: 'var(--positive)' }}>
-              {stats.releaseRate}
-              <span className="unit">%</span>
-            </div>
-          </div>
-          {stats.monthly && (
-            <div className="stat-card" style={{ flex: '2 1 200px' }}>
-              <div className="stat-label" style={{ marginBottom: 8 }}>
-                최근 6개월
-              </div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 36 }}>
-                {stats.monthly.map(m => {
-                  const max = Math.max(...stats.monthly.map(x => x.count), 1);
-                  const h = Math.max(4, Math.round((m.count / max) * 36));
-                  return (
-                    <div
-                      key={m.label}
-                      style={{
-                        flex: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: 2,
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: '100%',
-                          height: h,
-                          borderRadius: 3,
-                          background: m.count ? 'var(--accent)' : 'var(--border)',
-                          opacity: m.count ? 1 : 0.4,
-                        }}
-                      />
-                      <span style={{ fontSize: 9, color: 'var(--text-4)' }}>{m.label}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      <NoteStatsSummary stats={stats} counts={counts} />
 
-      {/* 브랜드 칩 필터 (브랜드 2개 이상일 때만) */}
-      {NOTE_BRANDS.length > 1 && (
-        <div
-          style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12, alignItems: 'center' }}
-        >
-          <span style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 600, marginRight: 2 }}>
-            브랜드
-          </span>
-          <button
-            className={'chip' + (brandFilter === 'all' ? ' active' : '')}
-            onClick={() => {
-              setBrandFilter('all');
-              setVisibleCount(PAGE_SIZE);
-            }}
-          >
-            전체
-          </button>
-          {NOTE_BRANDS.map(b => (
-            <button
-              key={b.id}
-              className={'chip' + (brandFilter === b.id ? ' active' : '')}
-              onClick={() => {
-                setBrandFilter(b.id);
-                setVisibleCount(PAGE_SIZE);
-              }}
-            >
-              {b.name}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* 상태 칩 필터 */}
-      <div
-        className="motion-stagger"
-        style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12, alignItems: 'center' }}
-      >
-        <button
-          className={'chip' + (statusFilter === 'all' ? ' active' : '')}
-          onClick={() => {
-            setStatusFilter('all');
-            setVisibleCount(PAGE_SIZE);
-          }}
-        >
-          전체 <span style={{ fontSize: 11, opacity: 0.7 }}>{counts.all}</span>
-        </button>
-        {STATUSES.map(st => (
-          <button
-            key={st}
-            className={'chip' + (statusFilter === st ? ' active' : '')}
-            onClick={() => {
-              setStatusFilter(st);
-              setVisibleCount(PAGE_SIZE);
-            }}
-            style={
-              statusFilter !== st && counts[st] > 0
-                ? { borderColor: STATUS_BORDER[st], color: STATUS_COLORS[st].color }
-                : {}
-            }
-          >
-            {st} <span style={{ fontSize: 11, opacity: 0.7 }}>{counts[st]}</span>
-          </button>
-        ))}
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
-          {SORT_OPTIONS.map(o => (
-            <button
-              key={o.key}
-              className={'chip' + (sortBy === o.key ? ' active' : '')}
-              onClick={() => changeSort(o.key)}
-              style={{ fontSize: 11 }}
-            >
-              {o.label}
-            </button>
-          ))}
-          <div style={{ width: 1, height: 16, background: 'var(--border)', margin: '0 2px' }} />
-          <button
-            className={'chip' + (viewMode === 'card' ? ' active' : '')}
-            onClick={() => changeView('card')}
-            title="카드 뷰"
-          >
-            <Icon.box style={{ width: 12, height: 12 }} />
-          </button>
-          <button
-            className={'chip' + (viewMode === 'table' ? ' active' : '')}
-            onClick={() => changeView('table')}
-            title="테이블 뷰"
-          >
-            <Icon.doc style={{ width: 12, height: 12 }} />
-          </button>
-        </div>
-      </div>
-
-      {/* 검색 */}
-      <div style={{ marginTop: 10, position: 'relative' }}>
-        <div className="filter-search">
-          <Icon.search style={{ width: 15, height: 15, color: 'var(--text-3)' }} />
-          <input
-            placeholder="제목, 메뉴명, 테스트 내용, 태그 검색"
-            value={search}
-            onChange={e => handleSearchChange(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') saveSearchHistory(search);
-            }}
-            onFocus={() => setShowSearchHist(true)}
-            onBlur={() => {
-              cancelSearchHistory();
-              closeSearchHistorySoon();
-            }}
-          />
-        </div>
-        {showSearchHist && searchHistory.length > 0 && (
-          <div
-            style={{
-              position: 'absolute',
-              top: 'calc(100% + 4px)',
-              left: 0,
-              right: 0,
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 10,
-              boxShadow: 'var(--shadow-md)',
-              zIndex: 50,
-              overflow: 'hidden',
-            }}
-          >
-            {searchHistory.map((h, i) => (
-              <button
-                key={i}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '8px 14px',
-                  fontSize: 13,
-                  color: 'var(--text-2)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  borderBottom: i < searchHistory.length - 1 ? '1px solid var(--border)' : 'none',
-                }}
-                onMouseDown={e => {
-                  e.preventDefault();
-                  handleSearchChange(h);
-                  setShowSearchHist(false);
-                }}
-              >
-                <Icon.search style={{ width: 11, height: 11, marginRight: 6, opacity: 0.5 }} />
-                {h}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      <NoteFilterControls
+        brandFilter={brandFilter}
+        statusFilter={statusFilter}
+        counts={counts}
+        sortBy={sortBy}
+        viewMode={viewMode}
+        search={search}
+        searchHistory={searchHistory}
+        showSearchHistory={showSearchHist}
+        onBrandFilter={changeBrandFilter}
+        onStatusFilter={changeStatusFilter}
+        onSort={changeSort}
+        onView={changeView}
+        onSearchChange={handleSearchChange}
+        onSearchSubmit={() => saveSearchHistory(search)}
+        onSearchFocus={() => setShowSearchHist(true)}
+        onSearchBlur={() => {
+          cancelSearchHistory();
+          closeSearchHistorySoon();
+        }}
+        onSearchHistoryPick={applySearchHistory}
+      />
 
       {/* 필터 프리셋 */}
       <NotePresetBar
