@@ -736,30 +736,39 @@
 
 ### 8.4 계정 store와 활성 계정 key의 범위가 애매함
 
+**구현 상태**
+
+- 부분 구현 완료: `211c7b7 fix: back up active account selection`
+- `ACTIVE_ACCOUNT_KEY`를 `lib/auth/account-constants.js`로 분리해 순환 import 없이 백업 key 목록에서 재사용한다.
+- 구현 완료 범위: 활성 계정 localStorage key `rnd_active_account_id`를 공통 localStorage 백업/복원 범위에 포함하고 회귀 테스트를 추가했다.
+- 남은 범위: `ref_accounts`를 브랜드별 계정으로 둘지 shared/main DB의 전역 계정으로 옮길지 정책을 확정해야 한다.
+
 **관련 파일**
 
+- `lib/auth/account-constants.js`
 - `lib/auth/accounts.js`
 - `hooks/useCurrentRole.js`
 - `app/settings/account/page.jsx`
+- `lib/backup/local-storage-keys.js`
 - `lib/db/module-stores.js`
 
 **현재 상태**
 
 - `ref_accounts`는 `COMMON_STORES`에 있어 백업 범위에는 항상 포함된다.
 - 하지만 `ref_accounts` CRUD는 일반 `getAll`, `put`, `deleteById`를 써서 활성 브랜드 DB를 따른다.
-- 활성 계정 ID는 localStorage `rnd_active_account_id`에 저장되며 `PERSISTENT_LS_KEYS`에는 없다.
+- 활성 계정 ID는 localStorage `rnd_active_account_id`에 저장되며 공통 localStorage 백업/복원 key에 포함된다.
 
 **충돌 가능성**
 
 - "계정 관리"가 전역 시스템 설정인지, 브랜드별 계정 설정인지 명확하지 않다.
-- 계정 목록은 복원됐는데 활성 계정 선택은 복원되지 않을 수 있다.
+- 계정 목록과 활성 계정 선택은 함께 백업/복원되지만, 계정을 브랜드별로 볼지 전역으로 볼지 정책은 아직 불명확하다.
 - active account id가 다른 브랜드의 account id와 우연히 겹치면 다른 권한으로 보일 수 있다.
 
 **정리 방향**
 
 - 계정이 전역이면 `ref_accounts`를 shared/main DB로 이동하고 active account key 정책을 정한다.
 - 계정이 브랜드별이면 UI와 백업 문구에 "현재 브랜드 계정"이라고 명시한다.
-- `rnd_active_account_id`는 백업 제외/포함 여부를 명시적으로 문서화한다.
+- 완료: `rnd_active_account_id`는 공통 localStorage 백업/복원 범위에 포함한다. (`211c7b7`)
 
 ### 8.5 영양 메뉴 목록이 메뉴마스터 밖에서도 생성될 수 있음
 
