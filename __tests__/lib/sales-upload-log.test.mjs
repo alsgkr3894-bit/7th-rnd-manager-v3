@@ -38,10 +38,27 @@ const dbMock = {
     (dbState[storeName] || []).filter(record => indexMatches(record, indexName, value))
   ),
   runTransaction: jest.fn(async (_stores, _mode, work) => {
+    let aborted = false;
     const tx = {
-      abort: jest.fn(),
+      abort: jest.fn(() => {
+        aborted = true;
+      }),
       objectStore(storeName) {
         return {
+          index(indexName) {
+            return {
+              getKey(value) {
+                const match = (dbState[storeName] || []).find(record =>
+                  indexMatches(record, indexName, value)
+                );
+                const req = { result: match?.id, onsuccess: null, onerror: null };
+                Promise.resolve().then(() => {
+                  if (req.onsuccess) req.onsuccess();
+                });
+                return req;
+              },
+            };
+          },
           add(record) {
             const id = addToStore(storeName, record);
             const req = { result: id, onsuccess: null, onerror: null };
@@ -58,6 +75,7 @@ const dbMock = {
     };
     work(tx);
     await new Promise(resolve => setTimeout(resolve, 5));
+    if (aborted) throw new Error('Transaction aborted');
   }),
 };
 
@@ -146,6 +164,47 @@ describe('메뉴판매량 upload_log 정합성', () => {
       },
     ]);
     expect(dbState.sales_rows).toEqual([{ id: 70, fileId: 7, rawMenuName: '기존 메뉴' }]);
+  });
+
+  test('saveSalesUpload는 저장 트랜잭션 안에서도 같은 연월 중복을 다시 차단한다', async () => {
+    dbState.sales_files = [
+      {
+        id: 7,
+        year: 2026,
+        month: 6,
+        fileName: 'existing.xlsx',
+      },
+    ];
+    dbMock.getByIndex.mockResolvedValueOnce([]);
+
+    await expect(
+      saveSalesUpload({
+        meta: {
+          year: 2026,
+          month: 6,
+          fileName: 'racing.xlsx',
+          uploadedAt: '2026-06-08T00:00:00.000Z',
+          totalRows: 1,
+        },
+        classifiedRows: [
+          { rawMenuName: '동시 업로드', normalizedMenuName: '동시 업로드', quantity: 1 },
+        ],
+        groupedIssues: [],
+        log: { fileName: 'racing.xlsx', uploadedAt: '2026-06-08T00:00:00.000Z' },
+      })
+    ).rejects.toThrow('DUPLICATE_MONTH');
+
+    expect(dbMock.runTransaction).toHaveBeenCalledTimes(1);
+    expect(dbState.sales_files).toEqual([
+      {
+        id: 7,
+        year: 2026,
+        month: 6,
+        fileName: 'existing.xlsx',
+      },
+    ]);
+    expect(dbState.sales_rows).toEqual([]);
+    expect(dbState.upload_log).toEqual([]);
   });
 
   test('deleteSalesFile은 같은 linkedFileId라도 다른 모듈 로그는 삭제하지 않는다', async () => {
