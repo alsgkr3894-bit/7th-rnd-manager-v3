@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, jest, test } from '@jest/globals';
 import { importAll } from '../../lib/db/operations.js';
+import { replaceStoresInDbTransaction } from '../../lib/db/backup.js';
 
 const originalLocalStorage = globalThis.localStorage;
 
@@ -90,4 +91,93 @@ describe('importAll 구조 방어', () => {
       ],
     });
   });
+
+  test('같은 DB의 여러 store는 하나의 교체 트랜잭션으로 묶는다', async () => {
+    const state = {
+      sales_files: [{ id: 1, year: 2026, month: 5 }],
+      sales_rows: [{ id: 10, fileId: 1 }],
+    };
+    const db = makeFakeDb(state);
+
+    const result = await replaceStoresInDbTransaction(db, [
+      ['sales_files', [{ id: 2, year: 2026, month: 6 }]],
+      ['sales_rows', [{ id: 20, fileId: 2 }]],
+    ]);
+
+    expect(result).toEqual({ sales_files: 1, sales_rows: 1 });
+    expect(db.transactions).toEqual([[['sales_files', 'sales_rows'], 'readwrite']]);
+    expect(state).toEqual({
+      sales_files: [{ id: 2, year: 2026, month: 6 }],
+      sales_rows: [{ id: 20, fileId: 2 }],
+    });
+  });
+
+  test('store 그룹 교체 중 실패하면 같은 DB의 기존 데이터는 유지된다', async () => {
+    const state = {
+      sales_files: [{ id: 1, year: 2026, month: 5 }],
+      sales_rows: [{ id: 10, fileId: 1 }],
+    };
+    const db = makeFakeDb(state, { failOnStore: 'sales_rows' });
+
+    await expect(
+      replaceStoresInDbTransaction(db, [
+        ['sales_files', [{ id: 2, year: 2026, month: 6 }]],
+        ['sales_rows', [{ id: 20, fileId: 2 }]],
+      ])
+    ).rejects.toThrow('put failed: sales_rows');
+
+    expect(state).toEqual({
+      sales_files: [{ id: 1, year: 2026, month: 5 }],
+      sales_rows: [{ id: 10, fileId: 1 }],
+    });
+  });
 });
+
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function makeFakeDb(state, options = {}) {
+  const transactions = [];
+  return {
+    transactions,
+    transaction(storeNames, mode) {
+      const stores = Array.isArray(storeNames) ? storeNames : [storeNames];
+      transactions.push([stores, mode]);
+      const draft = clone(state);
+      const tx = {
+        error: null,
+        oncomplete: null,
+        onerror: null,
+        onabort: null,
+        abort() {
+          tx.error = tx.error || new Error('transaction aborted');
+        },
+        objectStore(storeName) {
+          return {
+            clear() {
+              draft[storeName] = [];
+            },
+            put(record) {
+              if (options.failOnStore === storeName) {
+                throw new Error(`put failed: ${storeName}`);
+              }
+              draft[storeName].push(clone(record));
+            },
+          };
+        },
+      };
+      setTimeout(() => {
+        if (tx.error) {
+          tx.onabort?.();
+          return;
+        }
+        for (const storeName of stores) {
+          state[storeName] = draft[storeName];
+        }
+        tx.oncomplete?.();
+      }, 0);
+      return tx;
+    },
+  };
+}

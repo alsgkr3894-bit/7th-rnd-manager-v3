@@ -416,6 +416,7 @@
 | localStorage 복원 실패 결과 보고 | 구현 완료 | `866c6fd` |
 | 백업 복원 사전 검증 실패 시 store 교체 중단 | 구현 완료 | `cb9ddcb` |
 | 백업 복원 실패 store 완료 카드 표시와 복구 경로 연결 | 구현 완료 | `f5bd8d9` |
+| 백업 복원 시 같은 DB store 그룹의 단일 transaction 교체 | 구현 완료 | 이번 보강(2026-06-15) |
 | 무음 실패 catch allowlist와 중요 실패 가드 | 구현 완료 | `44b2e55` |
 | 메뉴마스터 삭제 cascade의 단일 transaction 처리 | 구현 완료 | `3518a8b` |
 | 메뉴마스터 메뉴코드 변경 cascade의 단일 transaction 처리 | 구현 완료 | `752c2aa` |
