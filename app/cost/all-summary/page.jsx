@@ -15,7 +15,8 @@ import { costRateColor } from '@/lib/cost/rate-color';
 import { getMenuCodeRank } from '@/lib/menu-categories';
 import { downloadCsv } from '@/lib/download';
 import { onPriceUpload } from '@/lib/price/price-events';
-import { buildRows, catRank, CAT_ORDER, costPathFor } from '@/lib/cost/shared/buildSummaryRows';
+import { MENU_MASTER_ROUTE } from '@/lib/cost/routes';
+import { buildRows, catRank, CAT_ORDER } from '@/lib/cost/shared/buildSummaryRows';
 
 // ── 엑셀로 내보내기 ─────────────────────────────────────────────
 function exportCSV(rows) {
@@ -224,7 +225,8 @@ export default function Page() {
             <div style={{ fontWeight: 600, marginBottom: 4 }}>등록된 메뉴가 없습니다</div>
             <div style={{ fontSize: 13 }}>
               먼저 <b>메뉴 판매가</b>에서 메뉴를 등록하고
-              <br />각 카테고리 원가 탭에서 레시피를 작성해주세요.
+              <br />
+              <b>메뉴 마스터</b>에서 레시피를 작성해주세요.
             </div>
           </div>
         </div>
@@ -245,8 +247,7 @@ export default function Page() {
           }}
         >
           <Icon.doc style={{ width: 16, height: 16, opacity: 0.5, flexShrink: 0 }} />
-          레시피가 등록된 메뉴가 없습니다. 각 카테고리 원가 탭(피자/1인피자/사이드/세트)에서
-          레시피를 먼저 작성해주세요.
+          레시피가 등록된 메뉴가 없습니다. 메뉴 마스터에서 레시피를 먼저 작성해주세요.
         </div>
       )}
 
@@ -276,13 +277,13 @@ export default function Page() {
                         `${formatNumber(r.cost)}원`
                       ) : (
                         <Link
-                          href={`/cost/${costPathFor(r.category)}`}
+                          href={MENU_MASTER_ROUTE}
                           style={{
                             color: 'var(--accent)',
                             fontSize: 12,
                             textDecoration: 'underline',
                           }}
-                          title="해당 원가 페이지에서 레시피 작성"
+                          title="메뉴 마스터에서 레시피 작성"
                         >
                           레시피 미등록
                         </Link>

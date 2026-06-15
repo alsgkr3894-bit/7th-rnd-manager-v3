@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { Stars } from './_Stars';
-import { sampleNamesText, sampleNamesOf } from '@/lib/sample';
+import { sampleNamesText } from '@/lib/sample';
+import { MENU_MASTER_ROUTE } from '@/lib/cost/routes';
 import { usePinchZoom } from '@/hooks/usePinchZoom';
 import { useModalShell } from '@/hooks/useModalShell';
 import {
@@ -156,19 +157,14 @@ export function SampleDetailModal({ sample = {}, onClose, onEdit, onDelete }) {
           <div style={{ display: 'flex', gap: 8, flexShrink: 0, marginLeft: 16 }}>
             <button
               className="btn sm"
-              title="이 샘플 기록을 기반으로 레시피 초안 만들기"
+              title="메뉴마스터로 이동"
               onClick={() => {
-                const params = new URLSearchParams();
-                const firstName = sampleNamesOf(safeSample)[0];
-                if (firstName) params.set('name', firstName);
-                if (category) params.set('cat', category);
-                params.set('from', 'sample');
-                router.push('/cost/recipe?' + params.toString());
+                router.push(MENU_MASTER_ROUTE);
                 closeModal();
               }}
               style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}
             >
-              <Icon.plus style={{ width: 11, height: 11 }} /> 레시피 초안
+              <Icon.plus style={{ width: 11, height: 11 }} /> 메뉴 마스터
             </button>
             <button className="btn sm" onClick={edit}>
               수정

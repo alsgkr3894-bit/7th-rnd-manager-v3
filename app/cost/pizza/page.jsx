@@ -1,52 +1,6 @@
-'use client';
-import { useMemo } from 'react';
-import {
-  getPizzaRecipeMap,
-  upsertPizzaRecipe,
-  deletePizzaRecipe,
-  pizzaBaseCost,
-} from '@/lib/cost/pizza-detail';
-import { getAllEdges } from '@/lib/cost/edge-dough';
-import { buildPizzaSummary } from '@/lib/cost/pizza-summary';
-import { PizzaDetailCard } from '@/components/cost/pizza-detail/PizzaDetailCard';
-import { PizzaDetailEditModal } from '@/components/cost/pizza-detail/PizzaDetailEditModal';
-import { PizzaSummaryTable } from '@/components/cost/pizza-summary/PizzaSummaryTable';
-import { makeDetailRecipePage } from '@/components/cost/shared/makeDetailRecipePage';
+import { redirect } from 'next/navigation';
+import { LEGACY_COST_DETAIL_REDIRECT_ROUTE } from '@/lib/cost/routes';
 
-function usePizzaSummaryContent({ menus, recipeMap, extraData: edges, unitPriceMap }) {
-  return useMemo(
-    () => (
-      <PizzaSummaryTable
-        rows={buildPizzaSummary({ menus, recipeMap, edges: edges || [], unitPriceMap })}
-      />
-    ),
-    [menus, recipeMap, edges, unitPriceMap]
-  );
+export default function Page() {
+  redirect(LEGACY_COST_DETAIL_REDIRECT_ROUTE);
 }
-
-export default makeDetailRecipePage({
-  hookOpts: {
-    category: '피자',
-    fetchRecipeMap: getPizzaRecipeMap,
-    upsertRecipe: upsertPizzaRecipe,
-    calcCost: pizzaBaseCost,
-    extraFetch: getAllEdges,
-  },
-  deleteRecipe: deletePizzaRecipe,
-  breadcrumb: ['원가계산', '피자'],
-  title: '피자 원가',
-  noun: '피자 메뉴',
-  emptySub: '메뉴 판매가에 등록된 피자 메뉴가 없습니다 — 먼저 메뉴 판매가에서 등록해주세요',
-  useSummaryContent: usePizzaSummaryContent,
-  DetailCard: PizzaDetailCard,
-  EditModal: PizzaDetailEditModal,
-  emptyTitle: '피자 메뉴가 없습니다',
-  emptyHint: (
-    <>
-      먼저 <b>메뉴 마스터</b>에서 기본 코드를 등록하고 <b>판매가로 내보내기</b>를 실행하세요.
-      <br />
-      메뉴코드 형식: <code>P-OR-005-L</code>, <code>P-OR-005-R</code>
-    </>
-  ),
-  footerLabel: '베이스 원가 합계',
-});

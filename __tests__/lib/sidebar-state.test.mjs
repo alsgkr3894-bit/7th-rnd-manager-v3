@@ -1,8 +1,16 @@
 import { describe, expect, test } from '@jest/globals';
 import { normalizeSidebarOpenIds } from '../../lib/ui/sidebar-state.js';
-import { NAV_SECTIONS } from '../../lib/menu.js';
+import { MOBILE_TAB_DEFS, NAV_SECTIONS } from '../../lib/menu.js';
+import {
+  COST_COMMON_GROUPS_ROUTE,
+  COST_MARGIN_ROUTE,
+  MENU_MASTER_ROUTE,
+} from '../../lib/cost/routes.js';
 
 const knownGroupId = NAV_SECTIONS[0].groups[0].id;
+const navChildren = NAV_SECTIONS.flatMap(section =>
+  section.groups.flatMap(group => group.children || [group])
+);
 
 describe('normalizeSidebarOpenIds', () => {
   test('객체가 아니면 빈 상태로 복구한다', () => {
@@ -24,5 +32,24 @@ describe('normalizeSidebarOpenIds', () => {
     expect(normalizeSidebarOpenIds({ [knownGroupId]: false })).toEqual({
       [knownGroupId]: false,
     });
+  });
+
+  test('통합 후 중복 레시피/세부 원가 route를 사이드바에 노출하지 않는다', () => {
+    const hrefs = navChildren.map(item => item.href).filter(Boolean);
+
+    expect(hrefs).toContain(MENU_MASTER_ROUTE);
+    expect(hrefs).toContain(COST_COMMON_GROUPS_ROUTE);
+    expect(hrefs).toContain(COST_MARGIN_ROUTE);
+    expect(hrefs).not.toContain('/cost/recipe-master');
+    expect(hrefs).not.toContain('/cost/pizza');
+    expect(hrefs).not.toContain('/cost/personal');
+    expect(hrefs).not.toContain('/cost/side');
+    expect(hrefs).not.toContain('/cost/set');
+  });
+
+  test('모바일 원가 탭도 구형 피자 원가표 대신 원가마진표로 이동한다', () => {
+    const costTab = MOBILE_TAB_DEFS.find(item => item.label === '원가');
+
+    expect(costTab?.href).toBe(COST_MARGIN_ROUTE);
   });
 });

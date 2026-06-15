@@ -1,5 +1,10 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import {
+  COST_COMMON_GROUPS_ROUTE,
+  COST_MARGIN_ROUTE,
+  MENU_MASTER_ROUTE,
+} from '@/lib/cost/routes';
 import { asDisplayText, asObjectArray, clampInteger } from '@/lib/ui/prop-guards';
 
 const CACHE_TTL = 30_000;
@@ -13,7 +18,8 @@ const STATIC_ITEMS = [
   { kind: 'menu', label: '미매칭 관리', href: '/menu-sales/unmatched' },
   { kind: 'menu', label: '제때 상품 가격 비교', href: '/jette/price-compare' },
   { kind: 'menu', label: '제때 출고량', href: '/jette/shipment' },
-  { kind: 'menu', label: '피자 원가표', href: '/cost/pizza' },
+  { kind: 'menu', label: '메뉴 마스터', href: MENU_MASTER_ROUTE },
+  { kind: 'menu', label: '원가마진표', href: COST_MARGIN_ROUTE },
   { kind: 'menu', label: '전체 원가 요약', href: '/cost/all-summary' },
   { kind: 'menu', label: '식자재 원가표', href: '/cost/ingredient-price' },
   { kind: 'menu', label: '메뉴개발노트 목록', href: '/note' },
@@ -30,7 +36,7 @@ const STATIC_ITEMS = [
   { kind: 'action', label: '데이터 백업 실행', href: '/settings/backup' },
   { kind: 'nav', label: '재료 단가 업데이트', href: '/cost/ingredient-price', icon: 'tag' },
   { kind: 'nav', label: '샘플 사진 추가', href: '/note/sample/write', icon: 'beaker' },
-  { kind: 'nav', label: '원가 레시피 관리', href: '/cost/recipe', icon: 'doc' },
+  { kind: 'nav', label: '공통 원가 관리', href: COST_COMMON_GROUPS_ROUTE, icon: 'doc' },
 ];
 
 const STAR_ICON = ['', '★', '★★', '★★★', '★★★★', '★★★★★'];

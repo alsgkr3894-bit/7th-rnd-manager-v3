@@ -2,6 +2,12 @@
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import {
+  COST_COMMON_EDGES_ROUTE,
+  COST_COMMON_GROUPS_ROUTE,
+  COST_MARGIN_ROUTE,
+  MENU_MASTER_ROUTE,
+} from '@/lib/cost/routes';
 
 const GROUPS = [
   {
@@ -13,64 +19,35 @@ const GROUPS = [
         title: '식자재 가격',
         sub: '재료별 단가·공급업체 관리',
       },
-      { href: '/cost/recipe', icon: 'doc', title: '레시피', sub: '메뉴별 사용 재료·배합 비율' },
-      { href: '/cost/manage', icon: 'box', title: '공통 관리', sub: '공통묶음 · 엣지 원가 관리' },
       {
-        href: '/cost/margin',
-        icon: 'chart',
-        title: '원가마진표',
-        sub: '원가율·마진율·플랫폼 시뮬레이션',
-      },
-    ],
-  },
-  {
-    label: '피자 원가',
-    items: [
-      {
-        href: '/cost/pizza',
-        icon: 'box',
-        title: '피자 원가표',
-        sub: '레시피 구성 · 세부 · 종합 원가',
-      },
-      {
-        href: '/cost/edge-dough',
+        href: MENU_MASTER_ROUTE,
         icon: 'doc',
-        title: '엣지·도우 원가',
+        title: '메뉴 마스터',
+        sub: '메뉴·판매가·레시피 기준',
+      },
+      {
+        href: COST_COMMON_GROUPS_ROUTE,
+        icon: 'box',
+        title: '공통묶음 관리',
+        sub: '공통 재료 묶음·기본 적용',
+      },
+      {
+        href: COST_COMMON_EDGES_ROUTE,
+        icon: 'box',
+        title: '엣지 원가 관리',
         sub: '엣지·도우 항목별 원가',
       },
     ],
   },
   {
-    label: '사이드 & 1인피자',
+    label: '원가 분석',
     items: [
       {
-        href: '/cost/side',
-        icon: 'box',
-        title: '사이드 원가표',
-        sub: '레시피 구성 · 세부 · 종합 원가',
+        href: COST_MARGIN_ROUTE,
+        icon: 'chart',
+        title: '원가마진표',
+        sub: '원가율·마진율·플랫폼 시뮬레이션',
       },
-      {
-        href: '/cost/personal',
-        icon: 'box',
-        title: '1인피자 원가표',
-        sub: '레시피 구성 · 세부 · 종합 원가',
-      },
-    ],
-  },
-  {
-    label: '세트 원가',
-    items: [
-      {
-        href: '/cost/set',
-        icon: 'box',
-        title: '세트 원가표',
-        sub: '레시피 구성 · 세부 · 종합 원가',
-      },
-    ],
-  },
-  {
-    label: '전체 종합',
-    items: [
       {
         href: '/cost/all-summary',
         icon: 'chart',
@@ -97,7 +74,7 @@ export default function Page() {
       <PageHeader
         breadcrumb={['원가계산']}
         title="원가계산"
-        sub="식자재 가격·레시피·원가율을 관리하고 카테고리별 원가표를 확인하세요."
+        sub="식자재 가격·공통 원가·원가율을 관리하세요."
       />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -108,7 +85,7 @@ export default function Page() {
                 fontSize: 11,
                 fontWeight: 700,
                 color: 'var(--text-4)',
-                letterSpacing: '0.06em',
+                letterSpacing: 0,
                 textTransform: 'uppercase',
                 paddingLeft: 2,
                 marginBottom: 10,
