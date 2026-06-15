@@ -16,8 +16,12 @@ describe('sales report preview structure', () => {
       resolve('components/report/sales/SalesRankTableSection.jsx'),
       'utf8'
     );
-    const rankRowsSource = readFileSync(
-      resolve('components/report/sales/SalesRankTableRows.jsx'),
+    const categoryBarSource = readFileSync(
+      resolve('components/report/sales/SalesCategoryBarRows.jsx'),
+      'utf8'
+    );
+    const rankTableSource = readFileSync(
+      resolve('components/report/sales/SalesRankTable.jsx'),
       'utf8'
     );
     const compareSource = readFileSync(
@@ -47,14 +51,21 @@ describe('sales report preview structure', () => {
     expect(previewSource).not.toContain("safeScope === 'pizza' ? '피자' : '사이드'");
     expect(moverSource).toContain('피자 전월 대비 상승 / 하락 TOP 5');
     expect(rankSource).toContain('export function SalesRankTableSection');
-    expect(rankSource).toContain("from './SalesRankTableRows'");
+    expect(rankSource).toContain("from './SalesCategoryBarRows'");
+    expect(rankSource).toContain("from './SalesRankTable'");
     expect(rankSource).toContain('<SalesRankTable');
+    expect(rankSource).toContain('<SalesCategoryBarRows');
+    expect(rankSource).not.toContain("from './SalesRankTableRows'");
     expect(rankSource).not.toContain('function SalesVariantRows');
     expect(rankSource).not.toContain('className="paper-table"');
-    expect(rankRowsSource).toContain('export function SalesCategoryBarRows');
-    expect(rankRowsSource).toContain('export function SalesRankTable');
-    expect(rankRowsSource).toContain('function SalesVariantRows');
-    expect(rankRowsSource).toContain('className="paper-table"');
+    expect(categoryBarSource).toContain('export function SalesCategoryBarRows');
+    expect(categoryBarSource).toContain('pct.toFixed(1)');
+    expect(categoryBarSource).not.toContain('export function SalesRankTable');
+    expect(rankTableSource).toContain('export function SalesRankTable');
+    expect(rankTableSource).toContain('function SalesVariantRows');
+    expect(rankTableSource).toContain('function SalesRankDeltaCell');
+    expect(rankTableSource).toContain('className="paper-table"');
+    expect(rankTableSource).not.toContain('export function SalesCategoryBarRows');
     expect(compareSource).toContain('export function SalesCompareTableSection');
     expect(excludedSource).toContain('export function SalesExcludedListSection');
   });

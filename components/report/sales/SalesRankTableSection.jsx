@@ -3,7 +3,8 @@ import { formatNumber } from '@/lib/format';
 import { safeQuantity } from '@/lib/report/period';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 import { SectionDot, S_EMPTY_STATE, S_SECTION_TITLE_FLEX } from './SalesReportSectionParts';
-import { SalesCategoryBarRows, SalesRankTable } from './SalesRankTableRows';
+import { SalesCategoryBarRows } from './SalesCategoryBarRows';
+import { SalesRankTable } from './SalesRankTable';
 
 export function SalesRankTableSection({ opts, periodLabel, catShares, groupRanking }) {
   if (groupRanking.length === 0) {
