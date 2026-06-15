@@ -1,7 +1,7 @@
 # 메뉴마스터 통합 계획
 
-작성: 2026-06-15  
-상태: 구현 진행 중  
+작성: 2026-06-15
+상태: 구현 진행 중
 전제: 기존 데이터는 가능하면 살리되, 통합 과정에서 기준 충돌이나 품질 문제가 크면 초기화 후 새 기준으로 다시 입력할 수 있다.
 
 ---
@@ -303,7 +303,7 @@ menu_master + menu_recipes
 
 ### Phase 1. 메뉴마스터 상세 구조 만들기
 
-상태: **구현 완료**  
+상태: **구현 완료**
 관련 커밋: `5781532 feat: surface menu recipe cost status`, `22ef420 feat: align recipe master cost units`
 
 - 메뉴마스터에서 메뉴를 선택하면 상세 영역을 연다.
@@ -324,7 +324,7 @@ menu_master + menu_recipes
 
 ### Phase 2. 새 레시피 저장소 도입
 
-상태: **구현 완료**  
+상태: **구현 완료**
 관련 커밋: `0c72c95 feat: introduce canonical menu recipes`
 
 - 새 `menu_recipes` 저장소 또는 동등한 단일 레시피 기준을 만든다.
@@ -347,7 +347,8 @@ menu_master + menu_recipes
 
 ### Phase 3. 계산/출력 화면 연결 변경
 
-상태: **진행 예정**
+상태: **구현 완료**
+관련 커밋: `4767b9e feat: read canonical recipes in output flows`
 
 아래 화면들이 새 기준을 읽도록 정리한다.
 
@@ -362,6 +363,12 @@ menu_master + menu_recipes
 
 - 같은 메뉴의 레시피가 화면마다 다르게 보이지 않는다.
 - 식자재 사용 메뉴 수, 원산지, 알레르기, 원가가 같은 레시피 기준으로 계산된다.
+
+구현 메모:
+
+- 원가마진표, 원가 전체요약, 원가 보고서가 `menu_recipes`를 우선 읽도록 연결했다.
+- 제품별 사용현황, 원산지 정보, 알레르기 정보, 영양/원산지 표 출력이 단일 레시피 기준을 공유한다.
+- 기존 상세 store는 아직 Phase 5 전까지 fallback으로만 남겨두고, 새 입력 데이터는 canonical 레시피 기준으로 집계된다.
 
 ### Phase 4. 기존 화면 정리
 
