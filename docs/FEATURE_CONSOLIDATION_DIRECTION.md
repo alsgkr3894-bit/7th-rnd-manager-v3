@@ -399,6 +399,7 @@
 | 백업 localStorage 복원 범위의 모듈별 분리 | 구현 완료 | `a9e1112` |
 | 백업 localStorage 키 기준 경로 정리 | 구현 완료 | `f284f1b` |
 | 시스템 설정 localStorage 백업/복원 범위 포함 | 구현 완료 | `315fc65` |
+| 시스템 알림 설정의 홈/상단 알림 연결 | 구현 완료 | `045ce2d` |
 | 활성 계정 선택 localStorage 백업/복원 범위 포함 | 구현 완료 | `211c7b7` |
 | localStorage 복원 실패 결과 보고 | 구현 완료 | `866c6fd` |
 | 메뉴개발노트/샘플/일정/작업일지의 활성 브랜드 스코프 | 구현 완료 | `92207d5` |
@@ -553,6 +554,7 @@
 | 백업 localStorage 복원 범위 분리 | 구현 완료: 선택 모듈별 영속 localStorage key만 복원 |
 | 백업 localStorage 키 기준 경로 정리 | 구현 완료: `lib/backup/local-storage-keys.js` 기준 |
 | 시스템 설정 localStorage 백업/복원 범위 | 구현 완료: `theme`, `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert` 포함 |
+| 시스템 알림 설정 연결 | 구현 완료: 미매칭/원가율 알림 표시가 설정값을 따름 |
 | 활성 계정 선택 백업/복원 범위 | 구현 완료: `rnd_active_account_id`를 공통 localStorage key로 포함 |
 | localStorage 복원 실패 처리 | 구현 완료: `importAll()` 결과 `errors`에 실패 key를 보고 |
 | 메뉴개발노트 브랜드 스코프 | 구현 완료: 노트/샘플/일정/작업일지 조회·수정·삭제를 현재 브랜드 기준으로 제한 |

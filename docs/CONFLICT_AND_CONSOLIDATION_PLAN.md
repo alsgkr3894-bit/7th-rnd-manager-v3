@@ -38,7 +38,7 @@
 | P2 | 엣지 관리 화면 중복 | `/cost/edge-dough`와 `/cost/recipe?tab=edges`가 같은 데이터를 편집 |
 | P2 | 메뉴 판매량 redirect route가 허브 카드에 그대로 노출 | 같은 기능이 여러 화면처럼 보임 |
 | P2 | 모바일 원가 primary route가 데스크톱과 다름 | 모바일은 `/cost/pizza`, 데스크톱은 `/cost/recipe` 중심으로 진입 |
-| P2 | 시스템 설정 store/localStorage/no-op 토글 분리 | 백업 범위는 구현 완료; 설정이 저장돼도 실제 로직에 반영되지 않을 수 있음 |
+| P2 | 시스템 설정 store/localStorage/no-op 토글 분리 | 백업 범위와 홈/상단 알림 설정은 구현 완료; 자동화 토글 일부는 실제 로직 연결 필요 |
 | P2 | 영양 메뉴가 메뉴마스터 밖에서 생성 가능 | 메뉴마스터 단일 기준 정책과 충돌 가능 |
 | P2 | `cost_recipes` menuCode base/full 정책 불명확 | legacy fallback과 detail recipe 매칭 기준이 흔들릴 수 있음 |
 | P2 | 식자재 삭제 안전장치가 화면별로 다름 | 구현 완료; 신규 삭제 진입점 추가 시 공통 undo/cascade 경고 흐름 유지 필요 |
@@ -1009,8 +1009,16 @@
 
 - 시스템 설정에는 `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert`가 있다.
 - 제때 설정에는 `priceAlertThreshold`, `autoRecalcOnUpdate`, `autoRegisterNew`가 있다.
-- 검색 기준으로 이 값들은 설정 화면 외 실제 업로드/계산/알림 로직에서 거의 참조되지 않는다.
-- `v3:jette-settings`는 백업 key에 포함되어 있지만 시스템 설정 key 다수는 빠져 있다.
+- `unmatchedAlert`와 `costRateAlert`는 홈/상단 알림 표시에 반영된다.
+- 그 외 자동화 토글은 설정 화면 외 실제 업로드/계산 로직에서 거의 참조되지 않는다.
+- `v3:jette-settings`와 시스템 설정 localStorage key는 백업 key 범위에 포함된다.
+
+**구현 상태**
+
+- 부분 구현 완료: `315fc65 fix: include system settings in backup keys`, `045ce2d fix: apply system alert settings`
+- `unmatchedAlert`는 TopBar/Sidebar/mobile badge/Home 미매칭 위젯/ModuleHealth 입력에 반영한다.
+- `costRateAlert`는 Home 인사말, CostAlertWidget, ModuleHealth 원가율 알림 입력에 반영한다.
+- 남은 범위: `autoRecalc`, `strictPosting`, `roundMode`, `v3:jette-settings`의 `autoRecalcOnUpdate`, `autoRegisterNew`, `priceAlertThreshold`를 실제 업무 로직에 연결하거나 준비 중 상태로 분리한다.
 
 **충돌 가능성**
 
