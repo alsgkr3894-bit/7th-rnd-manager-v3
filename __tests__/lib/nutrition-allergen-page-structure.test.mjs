@@ -6,6 +6,10 @@ const dataHookSource = readFileSync(
   resolve('app/nutrition/allergen/useAllergenPageData.js'),
   'utf8'
 );
+const derivedHookSource = readFileSync(
+  resolve('app/nutrition/allergen/useAllergenDerivedData.js'),
+  'utf8'
+);
 const dataUtilsSource = readFileSync(
   resolve('app/nutrition/allergen/allergenPageDataUtils.js'),
   'utf8'
@@ -102,15 +106,18 @@ describe('nutrition allergen page structure', () => {
   test('extracted data hook composes source data and delegates page derivations', () => {
     expect(dataHookSource).toContain('export function useAllergenPageData');
     expect(dataHookSource).toContain('useAllergenSourceData()');
-    expect(dataHookSource).toContain('buildMenuMatrix');
-    expect(dataHookSource).toContain('extractExcludedMenuSets');
-    expect(dataHookSource).toContain("from './allergenPageDetailUtils'");
-    expect(dataHookSource).toContain('buildAllergenDetailRows');
-    expect(dataHookSource).toContain('buildAllergenSummaryCounts');
+    expect(dataHookSource).toContain('useAllergenDerivedData({');
     expect(dataHookSource).toContain("from './allergenPageOutputUtils'");
     expect(dataHookSource).toContain('useAllergenOrderState()');
-    expect(dataHookSource).toContain('buildAllergenCsvRows(menuMatrix, orderedAllergens)');
-    expect(dataHookSource).toContain('downloadCsv(buildAllergenCsvRows');
+    expect(dataHookSource).toContain(
+      'buildAllergenCsvRows(derivedData.menuMatrix, derivedData.orderedAllergens)'
+    );
+    expect(dataHookSource).toContain('downloadCsv(');
+    expect(dataHookSource).not.toContain('buildMenuMatrix');
+    expect(dataHookSource).not.toContain('extractExcludedMenuSets');
+    expect(dataHookSource).not.toContain("from './allergenPageDetailUtils'");
+    expect(dataHookSource).not.toContain('buildAllergenDetailRows');
+    expect(dataHookSource).not.toContain('buildAllergenSummaryCounts');
     expect(dataHookSource).not.toContain('saveOrder(ALLERGEN_MENU_ORDER_KEY, keys)');
     expect(dataHookSource).not.toContain('saveMenuNames(next)');
     expect(dataHookSource).not.toContain('loadOrder(');
@@ -124,6 +131,23 @@ describe('nutrition allergen page structure', () => {
     expect(dataHookSource).not.toContain('getAllIngredients');
     expect(dataHookSource).not.toContain('useVisibilityRefresh');
     expect(dataHookSource).not.toContain('buildIngredientMenuMap');
+  });
+
+  test('derived data hook owns matrix, exclusion, detail, and summary derivations', () => {
+    expect(derivedHookSource).toContain('export function useAllergenDerivedData');
+    expect(derivedHookSource).toContain('filterAllergenIngredients(ingredients)');
+    expect(derivedHookSource).toContain('extractExcludedMenuSets(menuMasters)');
+    expect(derivedHookSource).toContain('buildMenuMatrix(');
+    expect(derivedHookSource).toContain('orderAllergens(allergenOrder, menuMatrixAll)');
+    expect(derivedHookSource).toContain('buildAllergenDetailRows(');
+    expect(derivedHookSource).toContain('filterMenuMatrix(menuMatrixAll, search)');
+    expect(derivedHookSource).toContain('buildMenuListForOrder(menuMatrixAll)');
+    expect(derivedHookSource).toContain(
+      'buildAllergenSummaryCounts(ingredients, allergenIngredients)'
+    );
+    expect(derivedHookSource).not.toContain('downloadCsv');
+    expect(derivedHookSource).not.toContain('useAllergenSourceData()');
+    expect(derivedHookSource).not.toContain('useAllergenOrderState()');
   });
 
   test('page data utils own allergen filtering and order derivation', () => {
