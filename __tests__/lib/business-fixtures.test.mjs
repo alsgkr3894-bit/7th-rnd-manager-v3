@@ -127,4 +127,40 @@ describe('익명화 업무 fixture 회귀', () => {
     expect(summary.byVariant.석쇠.rate).toBe(Number(row.expectedStoneRate));
     expect(summary.byVariant.치즈크러스트.cost).toBe(Number(row.expectedCheeseCrustCost));
   });
+
+  test('피자 종합 원가는 제품코드 최신 단가맵을 우선한다', () => {
+    const menu = {
+      menuCode: 'PZ-UNIT-L',
+      menuName: '익명 단가 피자',
+      size: 'L',
+      price: 20000,
+      category: '피자',
+    };
+    const recipeMap = new Map([
+      [
+        menu.menuCode,
+        {
+          components: [
+            { productCode: 'BASE', ingredientName: '베이스', quantity: 100, unitPrice: 99 },
+          ],
+        },
+      ],
+    ]);
+    const edges = [
+      {
+        edgeType: '치즈크러스트',
+        size: 'L',
+        components: [{ productCode: 'EDGE', ingredientName: '엣지', quantity: 10, unitPrice: 99 }],
+      },
+    ];
+    const unitPriceMap = new Map([
+      ['BASE', { unitPrice: 2, baseUnitType: 'g' }],
+      ['EDGE', { unitPrice: 5, baseUnitType: 'g' }],
+    ]);
+
+    const summary = buildPizzaSummary({ menus: [menu], recipeMap, edges, unitPriceMap })[0];
+
+    expect(summary.byVariant.석쇠.cost).toBe(200);
+    expect(summary.byVariant.치즈크러스트.cost).toBe(250);
+  });
 });

@@ -36,7 +36,7 @@ export function makeDetailRecipePage({
   return function Page() {
     const page = useDetailRecipePage(hookOpts);
     const summaryContent = useSummaryContent(page);
-    const { target, setTarget, handleSave, reload } = page;
+    const { target, setTarget, handleSave, reload, unitPriceMap } = page;
 
     async function handleDeleteRecipes(ids) {
       await Promise.all(ids.map(id => deleteRecipe(id)));
@@ -64,6 +64,7 @@ export function makeDetailRecipePage({
               initial={target.recipe}
               onSave={handleSave}
               onClose={() => setTarget(null)}
+              unitPriceMap={unitPriceMap}
             />
           )
         }

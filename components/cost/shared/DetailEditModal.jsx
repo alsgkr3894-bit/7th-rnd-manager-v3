@@ -6,6 +6,8 @@ import { getAllIngredients, buildMetaOnlyRow } from '@/lib/ingredient';
 import { ComponentRow } from './ComponentRow';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { asObjectArray } from '@/lib/ui/prop-guards';
+import { normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
+import { effectiveComponentsCost } from '@/lib/cost/shared/effective-cost';
 
 const EMPTY_COMPONENT = {
   productCode: null,
@@ -16,6 +18,31 @@ const EMPTY_COMPONENT = {
 };
 const COST_RATE_WARN_PCT = 35;
 
+function productCodeOf(component) {
+  return String(component?.productCode || '').trim();
+}
+
+function hydrateComponent(component, unitPriceMap) {
+  const productCode = productCodeOf(component);
+  const priceInfo = productCode ? unitPriceMap.get(productCode) : null;
+  return {
+    ...component,
+    unit: normalizeCostBaseUnit(priceInfo?.baseUnitType || component?.unit),
+    unitPrice: priceInfo?.unitPrice ?? component?.unitPrice ?? '',
+  };
+}
+
+function normalizeSaveComponent(component, unitPriceMap) {
+  const productCode = productCodeOf(component);
+  const priceInfo = productCode ? unitPriceMap.get(productCode) : null;
+  return {
+    ...component,
+    productCode: productCode || null,
+    unit: normalizeCostBaseUnit(priceInfo?.baseUnitType || component?.unit),
+    unitPrice: priceInfo?.unitPrice ?? component?.unitPrice ?? null,
+  };
+}
+
 /**
  * 원가 상세 편집 모달 — pizza/personal/set/side 4종 모달의 공유 골격.
  *
@@ -24,7 +51,6 @@ const COST_RATE_WARN_PCT = 35;
  *   initial          — 기존 레코드 (없으면 신규)
  *   onSave(payload)  — 저장 핸들러 (throws on failure)
  *   onClose()        — 닫기 핸들러
- *   calcCost(data)   — ({ components }) → 원가(원) 반환하는 순수 함수
  *   costLabel        — 원가 합계 레이블 (기본: '총 원가')
  *   costRatePrefix   — 원가율 앞 텍스트 (기본: '원가율')
  *   costRateSuffix   — 원가율 뒤 텍스트 (기본: '')
@@ -38,7 +64,6 @@ export function DetailEditModal({
   initial,
   onSave,
   onClose,
-  calcCost,
   costLabel = '총 원가',
   costRatePrefix = '원가율',
   costRateSuffix = '',
@@ -46,8 +71,11 @@ export function DetailEditModal({
   infoBanner = null,
   listIdPrefix,
   extraSaveFields = {},
+  unitPriceMap = new Map(),
 }) {
-  const [components, setComponents] = useState(() => asObjectArray(initial?.components));
+  const [components, setComponents] = useState(() =>
+    asObjectArray(initial?.components).map(component => hydrateComponent(component, unitPriceMap))
+  );
   const [note, setNote] = useState(initial?.note || '');
   const [ingredients, setIngredients] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -95,7 +123,7 @@ export function DetailEditModal({
         id: initial?.id,
         menuCode: menu.menuCode,
         menuName: menu.menuName,
-        components,
+        components: components.map(component => normalizeSaveComponent(component, unitPriceMap)),
         note,
         ...extraSaveFields,
       });
@@ -106,7 +134,7 @@ export function DetailEditModal({
     }
   }
 
-  const totalCost = calcCost({ components });
+  const totalCost = effectiveComponentsCost(components, unitPriceMap);
   const costRate = menu.price && totalCost > 0 ? (totalCost / menu.price) * 100 : null;
   const listId = `${listIdPrefix}-ing-options`;
   const title = titleSuffix ? `${menu.menuName} ${titleSuffix}` : menu.menuName;
@@ -169,6 +197,7 @@ export function DetailEditModal({
               c={c}
               listId={listId}
               ingredients={ingredients}
+              unitPriceMap={unitPriceMap}
               onChange={patch => patchComponent(i, patch)}
               onRemove={() => removeComponent(i)}
             />

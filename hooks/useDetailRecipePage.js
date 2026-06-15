@@ -4,6 +4,7 @@ import { useMounted } from '@/hooks/useMounted';
 import { initDB } from '@/lib/db';
 import { getAllMenuPrices } from '@/lib/cost/menu-price';
 import { showToast } from '@/components/Toast';
+import { loadLatestUnitPriceMap, summarizeMenuRecipe } from '@/lib/menu-master/recipe-summary';
 
 /**
  * 원가 세부 페이지 공통 로직 훅 (pizza / side / set / personal).
@@ -15,7 +16,6 @@ import { showToast } from '@/components/Toast';
  *   category:       string,               // 필터링 카테고리 ('사이드'|'피자'|'세트박스'|'1인피자')
  *   fetchRecipeMap: () => Promise<Map>,   // getXxxRecipeMap
  *   upsertRecipe:   (data:object) => Promise<{mode:string}>,
- *   calcCost:       (recipe:object) => number,
  *   extraFetch?:    () => Promise<any>,   // 선택 — 피자의 getAllEdges 등
  * }}
  * @returns {{
@@ -29,13 +29,7 @@ import { showToast } from '@/components/Toast';
  *   extraData,        // extraFetch 결과 (피자: edges)
  * }}
  */
-export function useDetailRecipePage({
-  category,
-  fetchRecipeMap,
-  upsertRecipe,
-  calcCost,
-  extraFetch,
-}) {
+export function useDetailRecipePage({ category, fetchRecipeMap, upsertRecipe, extraFetch }) {
   const [tab, setTab] = useState('detail');
   const [menus, setMenus] = useState([]);
   const [recipeMap, setRecipeMap] = useState(new Map());
@@ -43,16 +37,21 @@ export function useDetailRecipePage({
   const [dbError, setDbError] = useState(null);
   const [target, setTarget] = useState(null);
   const [extraData, setExtraData] = useState(null);
+  const [unitPriceMap, setUnitPriceMap] = useState(new Map());
   const mountedRef = useMounted();
 
   const load = useCallback(async () => {
     await initDB();
-    const fetches = [getAllMenuPrices(), fetchRecipeMap()];
-    if (extraFetch) fetches.push(extraFetch());
-    const [allMenus, recMap, extra] = await Promise.all(fetches);
+    const [allMenus, recMap, latestUnitPriceMap, extra] = await Promise.all([
+      getAllMenuPrices(),
+      fetchRecipeMap(),
+      loadLatestUnitPriceMap(),
+      extraFetch ? extraFetch() : Promise.resolve(undefined),
+    ]);
     if (!mountedRef.current) return;
     setMenus(allMenus.filter(m => m.category === category));
     setRecipeMap(recMap);
+    setUnitPriceMap(latestUnitPriceMap);
     if (extra !== undefined) setExtraData(extra);
     // extraFetch는 모듈 레벨 함수라 안정적이나, eslint 경고 방지를 위해 포함
   }, [category, fetchRecipeMap, extraFetch]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -93,22 +92,23 @@ export function useDetailRecipePage({
     for (const m of menus) {
       const r = recipeMap.get(m.menuCode);
       if (r && r.components?.length > 0) {
+        const cost = summarizeMenuRecipe(m, r, unitPriceMap).totalCost;
         withRecipe++;
-        totalCost += calcCost(r);
+        totalCost += cost;
       }
     }
     return { withRecipe, totalCost };
-  }, [menus, recipeMap, calcCost]);
+  }, [menus, recipeMap, unitPriceMap]);
 
   const summaryRows = useMemo(
     () =>
       menus.map(m => {
         const recipe = recipeMap.get(m.menuCode) ?? null;
-        const cost = recipe ? calcCost(recipe) : 0;
+        const cost = recipe ? summarizeMenuRecipe(m, recipe, unitPriceMap).totalCost : 0;
         const rate = m.price && cost > 0 ? (cost / m.price) * 100 : null;
         return { menuCode: m.menuCode, menuName: m.menuName, price: m.price, cost, rate };
       }),
-    [menus, recipeMap, calcCost]
+    [menus, recipeMap, unitPriceMap]
   );
 
   return {
@@ -124,6 +124,7 @@ export function useDetailRecipePage({
     stats,
     summaryRows,
     extraData,
+    unitPriceMap,
     reload: load,
   };
 }

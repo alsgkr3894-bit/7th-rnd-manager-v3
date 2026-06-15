@@ -13,10 +13,14 @@ import { PizzaDetailEditModal } from '@/components/cost/pizza-detail/PizzaDetail
 import { PizzaSummaryTable } from '@/components/cost/pizza-summary/PizzaSummaryTable';
 import { makeDetailRecipePage } from '@/components/cost/shared/makeDetailRecipePage';
 
-function usePizzaSummaryContent({ menus, recipeMap, extraData: edges }) {
+function usePizzaSummaryContent({ menus, recipeMap, extraData: edges, unitPriceMap }) {
   return useMemo(
-    () => <PizzaSummaryTable rows={buildPizzaSummary({ menus, recipeMap, edges: edges || [] })} />,
-    [menus, recipeMap, edges]
+    () => (
+      <PizzaSummaryTable
+        rows={buildPizzaSummary({ menus, recipeMap, edges: edges || [], unitPriceMap })}
+      />
+    ),
+    [menus, recipeMap, edges, unitPriceMap]
   );
 }
 

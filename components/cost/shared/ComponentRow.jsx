@@ -2,8 +2,9 @@
 import { memo } from 'react';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
-import { componentSubtotal } from '@/lib/cost/shared/calc';
 import { UNIT_OPTIONS } from '@/lib/cost/shared/unit-options';
+import { normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
+import { effectiveComponentSubtotal } from '@/lib/cost/shared/effective-cost';
 import { noop } from '@/lib/ui/prop-guards';
 
 export const ComponentRow = memo(function ComponentRow({
@@ -12,8 +13,9 @@ export const ComponentRow = memo(function ComponentRow({
   onRemove = noop,
   ingredients = [],
   listId,
+  unitPriceMap = new Map(),
 }) {
-  const subtotal = componentSubtotal(c);
+  const subtotal = effectiveComponentSubtotal(c, unitPriceMap);
   const safeIngredients = Array.isArray(ingredients) ? ingredients : [];
 
   function handleNameChange(value) {
@@ -21,11 +23,13 @@ export const ComponentRow = memo(function ComponentRow({
     // 입력값이 ingredients에 정확히 매칭되면 productCode/unit/unitPrice 자동 채움
     const match = safeIngredients.find(i => i.ingredientName === value || i.productName === value);
     if (match) {
+      const productCode = match.productCode || null;
+      const priceInfo = productCode ? unitPriceMap.get(productCode) : null;
       onChange({
         ingredientName: match.ingredientName || match.productName,
-        productCode: match.productCode || null,
-        unit: c.unit || match.baseUnitType || 'g',
-        unitPrice: match.unitPrice ?? c.unitPrice ?? null,
+        productCode,
+        unit: normalizeCostBaseUnit(priceInfo?.baseUnitType || match.baseUnitType || c.unit),
+        unitPrice: priceInfo?.unitPrice ?? match.unitPrice ?? c.unitPrice ?? null,
       });
     }
   }
@@ -62,8 +66,8 @@ export const ComponentRow = memo(function ComponentRow({
 
       <select
         className="form-input"
-        value={c.unit || 'g'}
-        onChange={e => onChange({ unit: e.target.value })}
+        value={normalizeCostBaseUnit(c.unit)}
+        onChange={e => onChange({ unit: normalizeCostBaseUnit(e.target.value) })}
       >
         {UNIT_OPTIONS.map(u => (
           <option key={u} value={u}>
