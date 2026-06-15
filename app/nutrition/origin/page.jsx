@@ -11,12 +11,9 @@ import { getAllIngredients } from '@/lib/ingredient';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { getAllEdges } from '@/lib/cost/edge-dough';
-import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
-import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
-import { getAllSideRecipes } from '@/lib/cost/side-detail';
-import { getAllSetRecipes } from '@/lib/cost/set-detail';
 import { getAllRecipes } from '@/lib/recipe';
 import { buildIngredientMenuMap, getMenusForIngredient } from '@/lib/cost/ingredient-menu-map';
+import { loadMenuRecipeArrays } from '@/lib/menu-recipes';
 import { SmallStatCard } from '@/components/ui/SmallStatCard';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { ReorderModal } from '@/components/ui/ReorderModal';
@@ -60,16 +57,13 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    const [ings, masters, groups, edges, pizzaRecs, personalRecs, sideRecs, setRecs, oldRecs] =
+    const [ings, masters, groups, edges, recipeArrays, oldRecs] =
       await Promise.all([
         getAllIngredients(),
         getAllMenuMaster(),
         getAllRecipeGroups(),
         getAllEdges(),
-        getAllPizzaRecipes(),
-        getAllPersonalRecipes(),
-        getAllSideRecipes(),
-        getAllSetRecipes(),
+        loadMenuRecipeArrays(),
         getAllRecipes(),
       ]);
     if (!mountedRef.current) return;
@@ -79,10 +73,10 @@ export default function Page() {
     const safeEdges = asObjectArray(edges);
     const safeOldRecipes = asObjectArray(oldRecs);
     const detailRecipes = tagDetailRecipes(
-      asObjectArray(pizzaRecs),
-      asObjectArray(personalRecs),
-      asObjectArray(sideRecs),
-      asObjectArray(setRecs)
+      asObjectArray(recipeArrays.pizza),
+      asObjectArray(recipeArrays.personal),
+      asObjectArray(recipeArrays.side),
+      asObjectArray(recipeArrays.set)
     );
     setIngredients(safeIngredients);
     setMenuMasters(safeMenuMasters);

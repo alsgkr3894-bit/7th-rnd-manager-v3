@@ -15,13 +15,10 @@ import { getAllEdges as getCostEdges } from '@/lib/cost/edge-dough';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
-import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
-import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
-import { getAllSideRecipes } from '@/lib/cost/side-detail';
-import { getAllSetRecipes } from '@/lib/cost/set-detail';
 import { getAllRecipes } from '@/lib/recipe';
 import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
+import { loadMenuRecipeArrays } from '@/lib/menu-recipes';
 import {
   buildEdgeAllergenMap,
   buildMenuAllergenMap,
@@ -125,10 +122,7 @@ export default function NutritionLabelResult() {
         ings,
         groups,
         costEdges,
-        pizzaRecs,
-        personalRecs,
-        sideRecs,
-        setRecs,
+        recipeArrays,
         oldRecs,
         compositions,
         ingredientNutritionMap,
@@ -142,10 +136,7 @@ export default function NutritionLabelResult() {
         getAllIngredients(),
         getAllRecipeGroups(),
         getCostEdges(),
-        getAllPizzaRecipes(),
-        getAllPersonalRecipes(),
-        getAllSideRecipes(),
-        getAllSetRecipes(),
+        loadMenuRecipeArrays(),
         getAllRecipes(),
         getAllCompositions(),
         getIngredientValuesMap(),
@@ -155,7 +146,12 @@ export default function NutritionLabelResult() {
       const edgeMap = Object.fromEntries(edgeList.map(e => [e.edgeCode, e]));
 
       // 알레르기 집계 — 메뉴 기본 알레르기와 엣지별 알레르기를 분리해 행별로 합산
-      const detailRecipes = tagDetailRecipes(pizzaRecs, personalRecs, sideRecs, setRecs);
+      const detailRecipes = tagDetailRecipes(
+        asObjectArray(recipeArrays.pizza),
+        asObjectArray(recipeArrays.personal),
+        asObjectArray(recipeArrays.side),
+        asObjectArray(recipeArrays.set)
+      );
       const { ingredientToMenus } = buildIngredientMenuMap({
         menuMasters: masters,
         detailRecipes,

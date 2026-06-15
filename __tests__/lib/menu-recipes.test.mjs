@@ -4,7 +4,7 @@ import {
   normalizeMenuRecipeComponents,
   recipeKindForRecord,
 } from '../../lib/menu-recipes/store.js';
-import { mergeCanonicalRecipeMaps } from '../../lib/menu-recipes/legacy.js';
+import { mergeCanonicalRecipeMaps, recipeArraysFromMaps } from '../../lib/menu-recipes/legacy.js';
 
 describe('menu recipes canonical store helpers', () => {
   test('레시피 구성품을 g/개 기준으로 정규화하고 빈 행은 제외한다', () => {
@@ -99,5 +99,18 @@ describe('menu recipes canonical store helpers', () => {
 
     expect(maps.pizza.get('P-OR-001-L').components[0].ingredientName).toBe('새 도우');
     expect(maps.side).toBeInstanceOf(Map);
+    expect(recipeArraysFromMaps(maps).pizza).toHaveLength(1);
+  });
+
+  test('화면 호환용 배열 구조로 recipe map을 변환한다', () => {
+    const arrays = recipeArraysFromMaps({
+      pizza: new Map([['P-OR-001-L', { menuCode: 'P-OR-001-L' }]]),
+      side: new Map([['S-001', { menuCode: 'S-001' }]]),
+    });
+
+    expect(arrays.pizza).toEqual([{ menuCode: 'P-OR-001-L' }]);
+    expect(arrays.personal).toEqual([]);
+    expect(arrays.side).toEqual([{ menuCode: 'S-001' }]);
+    expect(arrays.set).toEqual([]);
   });
 });

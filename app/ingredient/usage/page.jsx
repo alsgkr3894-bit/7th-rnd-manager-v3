@@ -15,10 +15,8 @@ import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { printUsageReport } from '@/lib/cost/usage-print';
 import { buildIngredientUsageMap } from '@/lib/cost/ingredient-price-helpers';
 import { useIngredientUsageRows } from '@/hooks/useIngredientUsageRows';
-import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
-import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
-import { getAllSideRecipes } from '@/lib/cost/side-detail';
 import { getAllRecipes } from '@/lib/recipe';
+import { loadMenuRecipeArrays } from '@/lib/menu-recipes';
 import { KEYS } from '@/lib/note/keys';
 
 const CAT_COLORS = {
@@ -105,11 +103,9 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    const [meta, pizzaRecs, personalRecs, sideRecs, oldRecs, managed] = await Promise.all([
+    const [meta, recipeArrays, oldRecs, managed] = await Promise.all([
       getAllIngredients(),
-      getAllPizzaRecipes(),
-      getAllPersonalRecipes(),
-      getAllSideRecipes(),
+      loadMenuRecipeArrays(),
       getAllRecipes(),
       seedManagedProductsIfEmpty().then(() => getManagedProducts()),
     ]);
@@ -121,9 +117,9 @@ export default function Page() {
 
     const { byCode, byName } = buildIngredientUsageMap({
       allMeta: meta,
-      pizzaRecs,
-      personalRecs,
-      sideRecs,
+      pizzaRecs: recipeArrays.pizza,
+      personalRecs: recipeArrays.personal,
+      sideRecs: recipeArrays.side,
       oldRecs,
     });
     setUsageMap({ byCode, byName });

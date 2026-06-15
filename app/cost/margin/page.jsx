@@ -19,12 +19,9 @@ import {
   calcNetRevenue,
   calcPlatformMargin,
 } from '@/lib/cost/margin/platforms';
-import { getPizzaRecipeMap } from '@/lib/cost/pizza-detail';
 import { getAllEdges } from '@/lib/cost/edge-dough/store';
-import { getPersonalRecipeMap } from '@/lib/cost/personal-detail';
-import { getSideRecipeMap } from '@/lib/cost/side-detail';
-import { getSetRecipeMap } from '@/lib/cost/set-detail';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
+import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
 import { MarginFilterBar } from '@/components/cost/margin/MarginFilterBar';
 import { MarginSummaryCards } from '@/components/cost/margin/MarginSummaryCards';
 import { saveSnapshot } from '@/lib/cost/margin/snapshots';
@@ -103,10 +100,7 @@ export default function Page() {
       meta,
       recipes,
       allMenuPrices,
-      pizzaMap,
-      personalMap,
-      sideMap,
-      setMap,
+      recipeMaps,
       edges,
       allGroups,
       masterByCode,
@@ -115,10 +109,7 @@ export default function Page() {
       getAllIngredients(),
       getAllRecipes(),
       getAllMenuPrices(),
-      getPizzaRecipeMap(),
-      getPersonalRecipeMap(),
-      getSideRecipeMap(),
-      getSetRecipeMap(),
+      loadMenuRecipeMaps(),
       getAllEdges(),
       getAllRecipeGroups(),
       getMenuMasterMap(),
@@ -133,7 +124,12 @@ export default function Page() {
     const upm = buildUnitPriceMap(meta, priceRowMap);
 
     const recipeRows = buildRecipeRows(recipes, upm, allGroups);
-    const detailRows = buildDetailRows(allMenuPrices, { pizzaMap, personalMap, sideMap, setMap });
+    const detailRows = buildDetailRows(allMenuPrices, {
+      pizzaMap: recipeMaps.pizza,
+      personalMap: recipeMaps.personal,
+      sideMap: recipeMaps.side,
+      setMap: recipeMaps.set,
+    });
 
     const recipesByName = buildRecipesByName(recipeRows);
     const enrichedDetailRows = detailRows.map(d => mergeRecipeIntoDetail(d, recipesByName, toNum));

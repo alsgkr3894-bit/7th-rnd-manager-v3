@@ -13,12 +13,9 @@ import { initDB } from '@/lib/db/init';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
 import { getAllRecipes, buildUnitPriceMap } from '@/lib/recipe';
 import { getAllIngredients } from '@/lib/ingredient';
-import { getPizzaRecipeMap } from '@/lib/cost/pizza-detail';
-import { getPersonalRecipeMap } from '@/lib/cost/personal-detail';
-import { getSideRecipeMap } from '@/lib/cost/side-detail';
-import { getSetRecipeMap } from '@/lib/cost/set-detail';
 import { getAllEdges } from '@/lib/cost/edge-dough';
 import { getPriceFiles } from '@/lib/price';
+import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
 import { getActiveBrand } from '@/lib/active-brand';
 import { useReportPageState } from '@/hooks/useReportPageState';
 import { getProfile } from '@/lib/profile';
@@ -221,20 +218,14 @@ export default function Page() {
             prices,
             recipes,
             ingredients,
-            pizzaMap,
-            personalMap,
-            sideMap,
-            setMap,
+            recipeMaps,
             edges,
             priceFiles,
           ] = await Promise.all([
             getAllMenuPrices(),
             getAllRecipes(),
             getAllIngredients(),
-            getPizzaRecipeMap(),
-            getPersonalRecipeMap(),
-            getSideRecipeMap(),
-            getSetRecipeMap(),
+            loadMenuRecipeMaps(),
             getAllEdges(),
             getPriceFiles(),
           ]);
@@ -251,7 +242,7 @@ export default function Page() {
             if (r.menuName && !recipeByName.has(r.menuName)) recipeByName.set(r.menuName, r);
           }
           const ctx = {
-            detailMaps: { pizza: pizzaMap, personal: personalMap, side: sideMap, set: setMap },
+            detailMaps: recipeMaps,
             edges,
             recipeByName,
             upm: buildUnitPriceMap(ingredients, new Map()),

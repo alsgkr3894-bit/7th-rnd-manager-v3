@@ -12,13 +12,10 @@ import { getAllIngredients } from '@/lib/ingredient';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { getAllEdges } from '@/lib/cost/edge-dough';
-import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
-import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
-import { getAllSideRecipes } from '@/lib/cost/side-detail';
-import { getAllSetRecipes } from '@/lib/cost/set-detail';
 import { getAllRecipes } from '@/lib/recipe';
 import { getAllToppings, getAllCompositions } from '@/lib/nutrition/values/store';
 import { buildIngredientMenuMap, getMenusForIngredient } from '@/lib/cost/ingredient-menu-map';
+import { loadMenuRecipeArrays } from '@/lib/menu-recipes';
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { SmallStatCard } from '@/components/ui/SmallStatCard';
 import { SearchBox } from '@/components/ui/SearchBox';
@@ -93,10 +90,7 @@ export default function Page() {
       groups,
       edges,
       toppingList,
-      pizzaRecs,
-      personalRecs,
-      sideRecs,
-      setRecs,
+      recipeArrays,
       oldRecs,
       compositions,
     ] = await Promise.all([
@@ -105,10 +99,7 @@ export default function Page() {
       getAllRecipeGroups(),
       getAllEdges(),
       getAllToppings(),
-      getAllPizzaRecipes(),
-      getAllPersonalRecipes(),
-      getAllSideRecipes(),
-      getAllSetRecipes(),
+      loadMenuRecipeArrays(),
       getAllRecipes(),
       getAllCompositions(),
     ]);
@@ -119,10 +110,10 @@ export default function Page() {
     const safeEdges = asObjectArray(edges);
     const safeOldRecipes = asObjectArray(oldRecs);
     const detailRecipes = tagDetailRecipes(
-      asObjectArray(pizzaRecs),
-      asObjectArray(personalRecs),
-      asObjectArray(sideRecs),
-      asObjectArray(setRecs)
+      asObjectArray(recipeArrays.pizza),
+      asObjectArray(recipeArrays.personal),
+      asObjectArray(recipeArrays.side),
+      asObjectArray(recipeArrays.set)
     );
     setIngredients(safeIngredients);
     setMenuMasters(safeMenuMasters);

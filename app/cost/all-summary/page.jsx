@@ -10,10 +10,7 @@ import { formatNumber } from '@/lib/format';
 import { getAllMenuPrices } from '@/lib/cost/menu-price';
 import { getAllRecipes, buildUnitPriceMap } from '@/lib/recipe';
 import { getAllIngredients } from '@/lib/ingredient';
-import { getPizzaRecipeMap } from '@/lib/cost/pizza-detail';
-import { getPersonalRecipeMap } from '@/lib/cost/personal-detail';
-import { getSideRecipeMap } from '@/lib/cost/side-detail';
-import { getSetRecipeMap } from '@/lib/cost/set-detail';
+import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
 import { costRateColor } from '@/lib/cost/rate-color';
 import { getMenuCodeRank } from '@/lib/menu-categories';
 import { downloadCsv } from '@/lib/download';
@@ -38,21 +35,18 @@ export default function Page() {
   const [catFilter, setCatFilter] = useState('전체');
 
   const fetchFn = useCallback(async () => {
-    const [allMenuPrices, allRecipes, allIngredients, pizzaMap, personalMap, sideMap, setMap] =
+    const [allMenuPrices, allRecipes, allIngredients, recipeMaps] =
       await Promise.all([
         getAllMenuPrices(),
         getAllRecipes(),
         getAllIngredients(),
-        getPizzaRecipeMap(),
-        getPersonalRecipeMap(),
-        getSideRecipeMap(),
-        getSetRecipeMap(),
+        loadMenuRecipeMaps(),
       ]);
 
     // unitPriceMap — priceRowMap 없이 priceOverride만 사용 (레거시 레시피용)
     const upm = buildUnitPriceMap(allIngredients, new Map());
 
-    const detailMaps = { pizza: pizzaMap, personal: personalMap, side: sideMap, set: setMap };
+    const detailMaps = recipeMaps;
     const built = buildRows(allRecipes, upm, allMenuPrices, detailMaps);
 
     // 정렬: 카테고리 순 → 메뉴코드 rank → 메뉴명 가나다

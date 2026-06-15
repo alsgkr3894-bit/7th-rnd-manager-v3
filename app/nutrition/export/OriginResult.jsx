@@ -5,12 +5,9 @@ import { getAllIngredients } from '@/lib/ingredient';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { getAllEdges } from '@/lib/cost/edge-dough';
-import { getAllPizzaRecipes } from '@/lib/cost/pizza-detail';
-import { getAllPersonalRecipes } from '@/lib/cost/personal-detail';
-import { getAllSideRecipes } from '@/lib/cost/side-detail';
-import { getAllSetRecipes } from '@/lib/cost/set-detail';
 import { getAllRecipes } from '@/lib/recipe';
 import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
+import { loadMenuRecipeArrays } from '@/lib/menu-recipes';
 import { exportOriginToExcel } from '@/lib/nutrition/origin/export';
 import { printOriginAll } from '@/lib/nutrition/origin/print';
 import { showToast } from '@/components/Toast';
@@ -427,16 +424,13 @@ export default function OriginResult() {
     (async () => {
       await initDB();
       const overrides = loadMenuNames();
-      const [ings, masters, groups, edges, pizzaRecs, personalRecs, sideRecs, setRecs, oldRecs] =
+      const [ings, masters, groups, edges, recipeArrays, oldRecs] =
         await Promise.all([
           getAllIngredients(),
           getAllMenuMaster(),
           getAllRecipeGroups(),
           getAllEdges(),
-          getAllPizzaRecipes(),
-          getAllPersonalRecipes(),
-          getAllSideRecipes(),
-          getAllSetRecipes(),
+          loadMenuRecipeArrays(),
           getAllRecipes(),
         ]);
       const safeIngredients = asObjectArray(ings);
@@ -448,10 +442,10 @@ export default function OriginResult() {
         safeMenuMasters.map(m => [asDisplayText(m.menuCode), m]).filter(([menuCode]) => menuCode)
       );
       const detailRecipes = tagDetailRecipes(
-        asObjectArray(pizzaRecs),
-        asObjectArray(personalRecs),
-        asObjectArray(sideRecs),
-        asObjectArray(setRecs)
+        asObjectArray(recipeArrays.pizza),
+        asObjectArray(recipeArrays.personal),
+        asObjectArray(recipeArrays.side),
+        asObjectArray(recipeArrays.set)
       );
       const { ingredientToMenus } = buildIngredientMenuMap({
         menuMasters: safeMenuMasters,
