@@ -25,8 +25,30 @@ describe('backup validation', () => {
       exportedAt: '2026-06-08T00:00:00.000Z',
       versionMismatch: false,
       unknownStores: [],
+      hasSourceBrand: false,
     });
     expect(result.summary.knownStores).toEqual(['settings', 'sales_files']);
+  });
+
+  test('백업 source brand metadata를 요약에 포함한다', () => {
+    const result = validateBackupPayload({
+      version: CURRENT_BACKUP_VERSION,
+      sourceBrandId: 'brand-a',
+      sourceBrandName: '브랜드 A',
+      sourceDbName: 'rnd_manager_v3__brand-a',
+      sharedDbName: 'rnd_manager_v3',
+      stores: {
+        settings: [],
+      },
+    });
+
+    expect(result.summary).toMatchObject({
+      sourceBrandId: 'brand-a',
+      sourceBrandName: '브랜드 A',
+      sourceDbName: 'rnd_manager_v3__brand-a',
+      sharedDbName: 'rnd_manager_v3',
+      hasSourceBrand: true,
+    });
   });
 
   test('알 수 없는 store는 요약에 남겨 UI가 경고할 수 있게 한다', () => {

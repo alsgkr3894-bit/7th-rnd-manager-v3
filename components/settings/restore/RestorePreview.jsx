@@ -1,9 +1,13 @@
 'use client';
 /* eslint-disable react/no-unescaped-entities */
+import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { MODULE_GROUPS, ALL_STORES, hasStore } from '@/lib/db';
+import { SHARED_STORE_NAMES } from '@/lib/db/module-stores';
 import { formatNumber } from '@/lib/format';
 import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
+import { getActiveBrand } from '@/lib/active-brand';
+import { backupSourceMetadataOf, isBackupSourceMismatch } from '@/lib/backup/brand-source';
 
 const S_FIELD_LABEL = { fontSize: 12, color: 'var(--text-3)' };
 
@@ -45,6 +49,11 @@ export function RestorePreview({
   setAllScopes,
   selectedKeys,
 }) {
+  const [targetBrand, setTargetBrand] = useState(null);
+  useEffect(() => {
+    setTargetBrand(getActiveBrand());
+  }, []);
+
   const missingStores =
     parsed && ready
       ? Object.keys(parsed.stores).filter(n => ALL_STORES.includes(n) && !hasStore(n))
@@ -59,6 +68,14 @@ export function RestorePreview({
     ? Math.floor((Date.now() - new Date(parsed.exportedAt).getTime()) / 86400000)
     : null;
   const selectedRestoreStoreCount = impact?.storeCount ?? 0;
+  const source = backupSourceMetadataOf(parsed);
+  const sourceMismatch = isBackupSourceMismatch(parsed, targetBrand?.id);
+  const storeSplit = useMemo(() => {
+    const names = Object.keys(parsed?.stores || {}).filter(name => ALL_STORES.includes(name));
+    const shared = names.filter(name => SHARED_STORE_NAMES.has(name));
+    const brandScoped = names.filter(name => !SHARED_STORE_NAMES.has(name));
+    return { shared, brandScoped };
+  }, [parsed]);
 
   return (
     <>
@@ -111,6 +128,62 @@ export function RestorePreview({
               {formatNumber(backupTotalRows)}건
             </div>
           </div>
+          <div>
+            <div style={S_FIELD_LABEL}>백업 브랜드</div>
+            <div style={{ fontWeight: 600, fontSize: 13 }}>
+              {source.hasSourceBrand
+                ? `${source.sourceBrandName || source.sourceBrandId} (${source.sourceBrandId})`
+                : '출처 정보 없음'}
+            </div>
+          </div>
+          {targetBrand && (
+            <div>
+              <div style={S_FIELD_LABEL}>복원 대상</div>
+              <div style={{ fontWeight: 600, fontSize: 13 }}>
+                {targetBrand.name} ({targetBrand.id})
+              </div>
+            </div>
+          )}
+        </div>
+
+        {(!source.hasSourceBrand || sourceMismatch) && (
+          <div
+            style={{
+              marginBottom: 10,
+              padding: 12,
+              background: 'var(--warn-soft)',
+              border: '1px solid color-mix(in oklab, var(--warn) 30%, transparent)',
+              borderRadius: 8,
+              fontSize: 13,
+              color: 'var(--text-1)',
+              lineHeight: 1.6,
+            }}
+          >
+            <b style={{ color: 'var(--warn)' }}>
+              {sourceMismatch
+                ? '백업 브랜드와 복원 대상 브랜드가 다릅니다.'
+                : '백업 브랜드 출처를 확인할 수 없습니다.'}
+            </b>{' '}
+            {sourceMismatch
+              ? `백업은 ${source.sourceBrandName || source.sourceBrandId}(${source.sourceBrandId}) 기준이고, 현재 복원 대상은 ${targetBrand?.name}(${targetBrand?.id})입니다.`
+              : '이전 형식의 백업 파일일 수 있으니 현재 브랜드에 덮어써도 되는 파일인지 다시 확인하세요.'}
+          </div>
+        )}
+
+        <div
+          style={{
+            marginBottom: 10,
+            padding: '10px 12px',
+            borderRadius: 8,
+            background: 'var(--surface-2)',
+            fontSize: 12,
+            color: 'var(--text-2)',
+            lineHeight: 1.5,
+          }}
+        >
+          <b>복원 저장 위치:</b> 브랜드 데이터 store {formatNumber(storeSplit.brandScoped.length)}개는
+          현재 선택 브랜드 DB에 들어가고, 개발노트/샘플/일정/작업일지 store{' '}
+          {formatNumber(storeSplit.shared.length)}개는 공유 DB에 들어갑니다.
         </div>
 
         {/* schema 불일치 경고 */}
