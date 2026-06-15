@@ -289,16 +289,25 @@
 
 ### 3.7 백업 localStorage 키 파일 위치와 책임
 
+**구현 상태**
+
+- 구현 완료: `f284f1b refactor: move localStorage backup keys`
+- localStorage 백업/복원 키의 기준 파일을 `lib/backup/local-storage-keys.js`로 이동했다.
+- `lib/nutrition/backup-keys.js`는 기존 import 호환을 위한 deprecated re-export만 유지한다.
+- 백업/복원 코드와 테스트는 새 `lib/backup` 경로를 직접 참조한다.
+
 **관련 파일**
 
 - `lib/nutrition/backup-keys.js`
+- `lib/backup/local-storage-keys.js`
 - `lib/db/backup.js`
 - `lib/note/keys.js`
 
 **현재 상태**
 
-- `lib/nutrition/backup-keys.js`는 이름과 달리 영양뿐 아니라 노트, 원가, 식자재, 홈, 제때, 전역 설정 localStorage 키를 모두 관리한다.
-- `lib/db/backup.js`가 이 파일에서 `collectLocalStorage`, `restoreLocalStorage`를 import한다.
+- `lib/backup/local-storage-keys.js`가 영양, 노트, 원가, 식자재, 홈, 제때, 전역 설정 localStorage 키를 관리한다.
+- `lib/db/backup.js`와 복원 화면은 `lib/backup/local-storage-keys.js`에서 localStorage helper를 import한다.
+- `lib/nutrition/backup-keys.js`는 하위 호환 re-export만 남아 있다.
 
 **충돌 가능성**
 
