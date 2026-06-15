@@ -576,6 +576,10 @@
 
 ### 8.1 백업 localStorage 복원 gate가 `nutrition` 선택에 묶여 있음
 
+- 구현 완료: `a9e1112 fix: restore scoped localStorage settings`
+- 복원 화면에서 선택된 모듈별 영속 localStorage key만 골라 `importAll()`에 넘기도록 변경했다.
+- 선택된 모듈이 없으면 공통 key도 복원 대상으로 만들지 않으며, `jette`/`nutrition`/공통 key 분리 테스트를 추가했다.
+
 **관련 파일**
 
 - `lib/nutrition/backup-keys.js`
@@ -586,7 +590,7 @@
 
 - `PERSISTENT_LS_KEYS`는 영양뿐 아니라 노트, 샘플, 원가, 식자재, 홈, 제때, 프로필, 테마까지 포함한다.
 - `exportSelected()`와 `exportAll()`은 이 전역 localStorage 묶음을 백업 파일에 넣는다.
-- 하지만 복원 화면은 `selectedKeys.includes('nutrition')`일 때만 `parsed.localStorage`를 `importAll()`에 넘긴다.
+- 복원 화면은 선택된 module scope에 해당하는 localStorage key subset만 `importAll()`에 넘긴다.
 
 **충돌 가능성**
 
