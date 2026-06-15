@@ -25,6 +25,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 import { useVisualEffects } from '@/hooks/useVisualEffects';
 import { usePageStats } from '@/hooks/usePageStats';
 import { useModalOrigin } from '@/hooks/useModalOrigin';
+import { useSettingValue } from '@/hooks/useSettingValue';
 
 const SHORTCUTS = [
   { key: 'N', desc: '새 테스트 노트 작성' },
@@ -202,6 +203,8 @@ export default function AppShell({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const { unmatchedCount, reportingCount } = usePageStats(pathname);
+  const unmatchedAlertEnabled = useSettingValue('unmatchedAlert') !== 'off';
+  const visibleUnmatchedCount = unmatchedAlertEnabled ? unmatchedCount : 0;
 
   // 키보드 단축키
   useEffect(() => {
@@ -339,7 +342,7 @@ export default function AppShell({ children }) {
       <Sidebar
         onClose={() => setMobileNav(false)}
         activeCompany={activeCompany}
-        unmatchedCount={unmatchedCount}
+        unmatchedCount={visibleUnmatchedCount}
         reportingCount={reportingCount}
       />
       {mobileNav && <div className="nav-scrim" onClick={() => setMobileNav(false)}></div>}
@@ -351,7 +354,7 @@ export default function AppShell({ children }) {
           activeCompany={activeCompany}
           companies={brandOptions}
           onCompanyChange={handleCompanyChange}
-          unmatchedCount={unmatchedCount}
+          unmatchedCount={visibleUnmatchedCount}
           reportingCount={reportingCount}
         />
         <ErrorBoundary key={pathname}>
@@ -372,7 +375,7 @@ export default function AppShell({ children }) {
       <div className="bottom-tab-bar">
         <div className="tabs-inner">
           {MOBILE_TAB_DEFS.map(tab => {
-            const badge = tab.badgeKey === 'unmatched' ? unmatchedCount : 0;
+            const badge = tab.badgeKey === 'unmatched' ? visibleUnmatchedCount : 0;
             const TabIcon = Icon[tab.iconKey];
             return (
               <button

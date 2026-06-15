@@ -33,6 +33,7 @@ import { ModuleHealthWidget } from '@/components/home/ModuleHealthWidget';
 import { WidgetConfigModal } from '@/components/home/WidgetConfigModal';
 import { WidgetShell } from '@/components/home/WidgetShell';
 import { useWidgetConfig, HOME_WIDGET_ROWS } from '@/hooks/useWidgetConfig';
+import { useSettingValue } from '@/hooks/useSettingValue';
 import { addNote } from '@/lib/note';
 import { setHomeNoteDraft } from '@/lib/note/keys';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
@@ -69,6 +70,8 @@ function pairRow(a, b, rowKey) {
 export default function HomePage() {
   const router = useRouter();
   const isMain = useIsMainBrand();
+  const unmatchedAlertEnabled = useSettingValue('unmatchedAlert') !== 'off';
+  const costRateAlertEnabled = useSettingValue('costRateAlert') !== 'off';
 
   const [chartTab, setChartTab] = useState('month');
   const [hoveredCat, setHoveredCat] = useState(null);
@@ -205,7 +208,11 @@ export default function HomePage() {
   });
 
   // 인사말 서브라인
-  const alertCount = costAlertData?.items?.filter(i => i.costRate > 40).length ?? 0;
+  const alertIssues = unmatchedAlertEnabled ? issues : [];
+  const alertCostAlertData = costRateAlertEnabled
+    ? costAlertData
+    : { ...(costAlertData || {}), items: [] };
+  const alertCount = alertCostAlertData?.items?.filter(i => i.costRate > 40).length ?? 0;
   const staleModules = [
     uploadFreshness?.sales?.stale && '판매량',
     isMain && uploadFreshness?.shipment?.stale && '출고량',
@@ -249,10 +256,11 @@ export default function HomePage() {
   })();
 
   // 표시 여부 (데이터 없으면 null 반환하는 위젯은 미리 거른다)
-  const openIssueCount = issues.filter(i => i.status === 'open').length;
-  const showUnmatched = isVisible('unmatched') && openIssueCount > 0;
+  const openIssueCount = alertIssues.filter(i => i.status === 'open').length;
+  const showUnmatched = unmatchedAlertEnabled && isVisible('unmatched') && openIssueCount > 0;
   const showPipeline = isVisible('pipeline') && pipeline?.columns?.some(c => c.count > 0);
-  const showCostAlert = isVisible('costalert') && (costAlertData?.items?.length ?? 0) > 0;
+  const showCostAlert =
+    costRateAlertEnabled && isVisible('costalert') && (alertCostAlertData?.items?.length ?? 0) > 0;
   const showNotes = isVisible('notes') && reportingNotes.length > 0;
   const showSamples = isVisible('samples') && recentSamples.length > 0;
 
@@ -455,8 +463,8 @@ export default function HomePage() {
                 <ModuleHealthWidget
                   freshness={uploadFreshness}
                   backupReminder={backupReminder}
-                  issues={issues}
-                  costAlertData={costAlertData}
+                  issues={alertIssues}
+                  costAlertData={alertCostAlertData}
                   todos={todos}
                   pipeline={pipeline}
                   isMain={isMain}
@@ -469,7 +477,7 @@ export default function HomePage() {
             return pairRow(
               isVisible('todo') ? <TodoWidget key="todo" todos={todos} router={router} /> : null,
               showUnmatched ? (
-                <UnmatchedWidget key="unmatched" issues={issues} router={router} />
+                <UnmatchedWidget key="unmatched" issues={alertIssues} router={router} />
               ) : null,
               rowId
             );
@@ -537,7 +545,7 @@ export default function HomePage() {
                 <PriceChangeWidget key="price" items={priceChanges} router={router} />
               ) : null,
               showCostAlert ? (
-                <CostAlertWidget key="costalert" data={costAlertData} router={router} />
+                <CostAlertWidget key="costalert" data={alertCostAlertData} router={router} />
               ) : null,
               rowId
             );
