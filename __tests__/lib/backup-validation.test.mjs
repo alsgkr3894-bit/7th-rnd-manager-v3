@@ -3,6 +3,7 @@ import {
   CURRENT_BACKUP_VERSION,
   invalidStoreRowsByStore,
   invalidStoreRowsOf,
+  failedBackupStoresOf,
   summarizeBackupStores,
   validateBackupPayload,
 } from '../../lib/backup/validation.js';
@@ -49,6 +50,29 @@ describe('backup validation', () => {
       sharedDbName: 'rnd_manager_v3',
       hasSourceBrand: true,
     });
+  });
+
+  test('백업 생성 실패 store manifest를 정규화한다', () => {
+    const result = validateBackupPayload({
+      version: CURRENT_BACKUP_VERSION,
+      stores: { settings: [] },
+      failedStores: [
+        { store: 'sales_rows', error: 'read failed' },
+        { store: '  cost_ingredients  ' },
+        { error: 'missing store name' },
+        'bad',
+      ],
+    });
+
+    expect(failedBackupStoresOf(result.backup)).toEqual([
+      { store: 'sales_rows', error: 'read failed' },
+      { store: 'cost_ingredients', error: '' },
+    ]);
+    expect(result.summary.failedStoreCount).toBe(2);
+    expect(result.summary.failedStores.map(item => item.store)).toEqual([
+      'sales_rows',
+      'cost_ingredients',
+    ]);
   });
 
   test('알 수 없는 store는 요약에 남겨 UI가 경고할 수 있게 한다', () => {

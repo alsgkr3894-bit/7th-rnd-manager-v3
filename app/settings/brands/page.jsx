@@ -198,7 +198,7 @@ export default function BrandMasterPage() {
       const { backup, summary } = validateBackupPayload(raw);
       const source = backupSourceMetadataOf(backup);
       const sourceMismatch = isBackupSourceMismatch(backup, target.id);
-      const failedStores = Array.isArray(raw.failedStores) ? raw.failedStores : [];
+      const failedStores = summary.failedStores;
       const restoreOk = await showConfirm({
         title: `${target.name} 브랜드 복원`,
         message: (
@@ -227,7 +227,7 @@ export default function BrandMasterPage() {
             {failedStores.length > 0 && (
               <div style={{ color: 'var(--warn)', fontWeight: 700 }}>
                 백업 생성 당시 읽기 실패 store {failedStores.length}개가 있어 해당 store는 복원되지
-                않습니다.
+                않습니다. 별도 위험 승인 전까지 복원을 진행하지 않습니다.
               </div>
             )}
             <div style={{ marginTop: 8 }}>
@@ -239,6 +239,34 @@ export default function BrandMasterPage() {
         danger: true,
       });
       if (!restoreOk) return;
+
+      if (failedStores.length > 0) {
+        const riskOk = await showConfirm({
+          title: '불완전 백업 위험 승인',
+          message: (
+            <div>
+              <div style={{ color: 'var(--warn)', fontWeight: 700, marginBottom: 8 }}>
+                이 백업은 생성 당시 store {failedStores.length}개 읽기에 실패했습니다.
+              </div>
+              <div>
+                누락 store:{' '}
+                {failedStores
+                  .map(item => item.store)
+                  .slice(0, 5)
+                  .join(', ')}
+                {failedStores.length > 5 ? ` 외 ${failedStores.length - 5}개` : ''}
+              </div>
+              <div style={{ marginTop: 8 }}>
+                누락된 store는 현재 브랜드 데이터가 유지됩니다. 완전한 시점 복원이 아니라는 점을
+                확인한 경우에만 진행하세요.
+              </div>
+            </div>
+          ),
+          confirmLabel: '누락 감수하고 복원',
+          danger: true,
+        });
+        if (!riskOk) return;
+      }
 
       const before = await exportAllForBrand(
         target.id,

@@ -32,6 +32,9 @@ const chipStyle = active => ({
  *   impact: object | null,
  *   dangerRows: object[],
  *   wipeRows: object[],
+ *   failedStoreCount: number,
+ *   allowFailedStoreRestore: boolean,
+ *   setAllowFailedStoreRestore: (v: boolean) => void,
  * }} props
  */
 export function RestoreExecutePanel({
@@ -50,7 +53,13 @@ export function RestoreExecutePanel({
   impact,
   dangerRows,
   wipeRows,
+  failedStoreCount = 0,
+  allowFailedStoreRestore = false,
+  setAllowFailedStoreRestore,
 }) {
+  const hasFailedStores = failedStoreCount > 0;
+  const restoreBlockedByFailedStores = hasFailedStores && !allowFailedStoreRestore;
+
   return (
     <div className="card" style={{ marginTop: 16, background: 'var(--negative-soft)' }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>5. 복원 실행</h2>
@@ -134,6 +143,44 @@ export function RestoreExecutePanel({
                 </span>
               </div>
             )}
+            {hasFailedStores && (
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  alignItems: 'flex-start',
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  background: 'var(--warn-soft)',
+                  border: '1px solid color-mix(in oklab, var(--warn) 30%, transparent)',
+                }}
+              >
+                <span style={{ color: 'var(--text-3)', minWidth: 80, flexShrink: 0 }}>
+                  백업 오류
+                </span>
+                <label
+                  style={{
+                    display: 'flex',
+                    gap: 8,
+                    alignItems: 'flex-start',
+                    color: 'var(--warn)',
+                    fontWeight: 700,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={allowFailedStoreRestore}
+                    onChange={e => setAllowFailedStoreRestore?.(e.target.checked)}
+                    disabled={busy}
+                    style={{ marginTop: 2 }}
+                  />
+                  <span>
+                    백업 생성 당시 읽기 실패 store {formatNumber(failedStoreCount)}개가 누락된
+                    불완전 백업임을 확인했고, 누락 store는 현재 데이터가 유지되는 조건으로 복원합니다.
+                  </span>
+                </label>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <span style={{ color: 'var(--text-3)', minWidth: 80, flexShrink: 0 }}>자동 백업</span>
               {autoBackup ? (
@@ -215,7 +262,7 @@ export function RestoreExecutePanel({
           </button>
           <button
             className="btn"
-            disabled={busy || !ready || selectedRestoreStoreCount === 0}
+            disabled={busy || !ready || selectedRestoreStoreCount === 0 || restoreBlockedByFailedStores}
             onClick={() => handleRestore(false)}
             style={{
               background: 'var(--negative)',

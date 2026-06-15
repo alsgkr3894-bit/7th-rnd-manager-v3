@@ -11,5 +11,8 @@ describe('brand restore preview guards', () => {
     expect(source).toContain('isBackupSourceMismatch');
     expect(source).toContain('showConfirm');
     expect(source).toContain('덮어쓰기 복원');
+    expect(source).toContain('summary.failedStores');
+    expect(source).toContain('불완전 백업 위험 승인');
+    expect(source).toContain('누락 감수하고 복원');
   });
 });

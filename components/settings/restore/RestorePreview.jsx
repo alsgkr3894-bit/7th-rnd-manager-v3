@@ -321,7 +321,7 @@ export function RestorePreview({
             }}
           >
             <b>⚠ 백업 생성 오류:</b> 아래 store는 백업 당시 읽기에 실패하여 포함되지 않았습니다.
-            복원 시 현재 데이터가 유지됩니다.{' '}
+            이 파일은 불완전 백업이므로 복원 실행 전 별도 위험 승인이 필요합니다.{' '}
             <span style={{ color: 'var(--text-3)' }}>
               {parsed._failedStores
                 .map(f => f.store)

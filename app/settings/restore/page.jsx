@@ -47,6 +47,7 @@ export default function Page() {
   const [restoreProgress, setRestoreProgress] = useState(null); // { label, current, total }
   const [restoreDone, setRestoreDone] = useState(null); // 완료 결과: { imported, skipped, modules }
   const [backupFailed, setBackupFailed] = useState(false); // 자동백업 실패 후 재확인 대기
+  const [allowFailedStoreRestore, setAllowFailedStoreRestore] = useState(false);
   const { scopes, toggleScope, setAllScopes } = useModuleScopes();
   const fileRef = useRef(null);
 
@@ -77,6 +78,7 @@ export default function Page() {
     setParsed(null);
     setConfirming(false);
     setRestoreDone(null);
+    setAllowFailedStoreRestore(false);
     try {
       const text = await readFileAsText(file);
       const data = JSON.parse(text);
@@ -95,10 +97,10 @@ export default function Page() {
           6000
         );
       }
-      const failedStores = Array.isArray(data.failedStores) ? data.failedStores : [];
+      const failedStores = summary.failedStores;
       if (failedStores.length > 0) {
         showToast(
-          `백업 생성 시 ${failedStores.length}개 store 오류 — 해당 store는 백업에 포함되지 않았습니다.`,
+          `백업 생성 시 ${failedStores.length}개 store 오류 — 위험 승인 전까지 복원을 실행할 수 없습니다.`,
           'warn',
           8000
         );
@@ -125,9 +127,16 @@ export default function Page() {
   );
 
   const selectedRestoreStoreCount = impact?.storeCount ?? 0;
+  const failedStoreCount = parsed?._failedStores?.length ?? 0;
+  const hasFailedStores = failedStoreCount > 0;
 
   async function handleRestore(skipBackupCheck = false) {
     if (!parsed || busy) return;
+    if (hasFailedStores && !allowFailedStoreRestore) {
+      setConfirming(true);
+      showToast('백업 생성 실패 store가 있어 위험 승인 체크가 필요합니다.', 'warn', 7000);
+      return;
+    }
     setBusy(true);
     setRestoreProgress({
       label: '복원 준비 중',
@@ -360,6 +369,9 @@ export default function Page() {
             impact={impact}
             dangerRows={dangerRows}
             wipeRows={wipeRows}
+            failedStoreCount={failedStoreCount}
+            allowFailedStoreRestore={allowFailedStoreRestore}
+            setAllowFailedStoreRestore={setAllowFailedStoreRestore}
           />
         </>
       )}

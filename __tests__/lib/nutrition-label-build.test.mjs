@@ -185,6 +185,79 @@ describe('buildPizzaSliceSheet', () => {
 });
 
 describe('buildPizzaSheet', () => {
+  test('엣지 영양성분은 베이스 메뉴 값에 사이즈별 엣지값을 더하고 씬바샤삭은 별도 입력값을 쓴다', () => {
+    const rows = buildPizzaSheet({
+      menus: [{ menuCode: 'P-NUTRI-EDGE', menuName: '엣지 영양 피자', category: '피자' }],
+      rawMap: {
+        'P-NUTRI-EDGE__석쇠L': {
+          weight: 800,
+          kcal: 200,
+          sugar: 10,
+          protein: 20,
+          fat: 5,
+          sodium: 300,
+        },
+        'P-NUTRI-EDGE__석쇠R': {
+          weight: 600,
+          kcal: 180,
+          sugar: 8,
+          protein: 18,
+          fat: 4,
+          sodium: 250,
+        },
+        'P-NUTRI-EDGE__씬바사삭L': {
+          weight: 700,
+          kcal: 160,
+          sugar: 6,
+          protein: 16,
+          fat: 3,
+          sodium: 220,
+        },
+      },
+      edgeMap: {
+        치즈크러스트L: { kcal: 20, sugar: 2, protein: 3, fat: 1, sodium: 40 },
+        골드스윗R: { kcal: 30, sugar: 5, protein: 1, fat: 2, sodium: 30 },
+      },
+      masterByCode: {},
+      menuAllergenMap,
+      edgeAllergenMap: new Map(),
+    });
+
+    const sheetRows = rows[0].rows;
+    expect(sheetRows.find(row => row.crustLabel === '석쇠' && row.side === 'L')).toMatchObject({
+      weight: 150,
+      kcal: 300,
+      sugar: 15,
+      protein: 30,
+      fat: 8,
+      sodium: 450,
+    });
+    expect(sheetRows.find(row => row.crustLabel === '치즈크러스트' && row.side === 'L')).toMatchObject({
+      weight: 150,
+      kcal: 330,
+      sugar: 18,
+      protein: 35,
+      fat: 9,
+      sodium: 510,
+    });
+    expect(sheetRows.find(row => row.crustLabel === '골드스윗' && row.side === 'R')).toMatchObject({
+      weight: 150,
+      kcal: 315,
+      sugar: 20,
+      protein: 29,
+      fat: 9,
+      sodium: 420,
+    });
+    expect(sheetRows.find(row => row.crustLabel === '씬바샤삭' && row.side === 'L')).toMatchObject({
+      weight: 150,
+      kcal: 240,
+      sugar: 9,
+      protein: 24,
+      fat: 5,
+      sodium: 330,
+    });
+  });
+
   test('엣지 행은 메뉴 기본 알레르기에 해당 엣지 알레르기를 합산한다', () => {
     const rows = buildPizzaSheet({
       menus: [{ menuCode: 'P-EDGE', menuName: '엣지 피자', category: '피자' }],

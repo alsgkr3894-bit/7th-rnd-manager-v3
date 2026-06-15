@@ -108,6 +108,46 @@ describe('메뉴판매량 upload_log 정합성', () => {
     });
   });
 
+  test('saveSalesUpload는 같은 연월 중복 업로드를 저장 전에 차단한다', async () => {
+    dbState.sales_files = [
+      {
+        id: 7,
+        year: 2026,
+        month: 6,
+        fileName: 'existing.xlsx',
+      },
+    ];
+    dbState.sales_rows = [{ id: 70, fileId: 7, rawMenuName: '기존 메뉴' }];
+
+    await expect(
+      saveSalesUpload({
+        meta: {
+          year: 2026,
+          month: 6,
+          fileName: 'duplicate.xlsx',
+          uploadedAt: '2026-06-08T00:00:00.000Z',
+          totalRows: 1,
+        },
+        classifiedRows: [
+          { rawMenuName: '중복 메뉴', normalizedMenuName: '중복 메뉴', quantity: 1 },
+        ],
+        groupedIssues: [],
+        log: { fileName: 'duplicate.xlsx', uploadedAt: '2026-06-08T00:00:00.000Z' },
+      })
+    ).rejects.toThrow('DUPLICATE_MONTH');
+
+    expect(dbMock.runTransaction).not.toHaveBeenCalled();
+    expect(dbState.sales_files).toEqual([
+      {
+        id: 7,
+        year: 2026,
+        month: 6,
+        fileName: 'existing.xlsx',
+      },
+    ]);
+    expect(dbState.sales_rows).toEqual([{ id: 70, fileId: 7, rawMenuName: '기존 메뉴' }]);
+  });
+
   test('deleteSalesFile은 같은 linkedFileId라도 다른 모듈 로그는 삭제하지 않는다', async () => {
     dbState.sales_files = [{ id: 1 }, { id: 2 }];
     dbState.sales_rows = [
