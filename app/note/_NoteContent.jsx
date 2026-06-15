@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -31,9 +31,11 @@ import { copyText } from '@/lib/ui/clipboard';
 import { useNotePins } from '@/hooks/useNotePins';
 import { useNotePresets } from '@/hooks/useNotePresets';
 import { useNoteBatchActions } from '@/hooks/useNoteBatchActions';
-import { buildHighlightRegex, parseTagList, formatFullDate } from '@/lib/note/utils';
+import { buildHighlightRegex } from '@/lib/note/utils';
 import { NoteCard } from './_NoteCard';
+import { NoteContextMenu } from './_NoteContextMenu';
 import { NoteDetailModal } from './_NoteDetailModal';
+import { NoteTableRow } from './_NoteTableRow';
 import { NoteBatchToolbar } from './_NoteBatchToolbar';
 import { NotePresetBar } from './_NotePresetBar';
 
@@ -56,85 +58,6 @@ async function restoreDeletedNotes(records = []) {
     throw new Error(`${failures.length}개 노트 복구 실패`);
   }
 }
-
-const NoteTableRow = React.memo(function NoteTableRow({
-  note,
-  focusedRow,
-  handleStatusChange,
-  router,
-  handleDelete,
-  setFocusedRow,
-  setDetailNote,
-}) {
-  const sc = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
-  const isFocused = focusedRow === note.id;
-  return (
-    <tr
-      style={{
-        cursor: 'pointer',
-        background: isFocused ? 'var(--accent-soft, rgba(99,102,241,.08))' : undefined,
-      }}
-      onClick={() => {
-        setFocusedRow(note.id);
-        setDetailNote(note);
-      }}
-    >
-      <td style={{ fontWeight: 600 }}>
-        {note.parentId && (
-          <span style={{ fontSize: 10, color: 'var(--accent)', marginLeft: 4 }}>🔗 체인</span>
-        )}
-        {note.title}
-      </td>
-      <td style={{ color: 'var(--text-2)' }}>{note.menuName}</td>
-      <td style={{ color: 'var(--text-3)', fontSize: 12 }}>{note.category}</td>
-      <td>
-        <select
-          value={note.status}
-          onChange={e => handleStatusChange(note.id, e.target.value, e)}
-          onClick={e => e.stopPropagation()}
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            padding: '2px 6px',
-            borderRadius: 12,
-            background: sc.bg,
-            color: sc.color,
-            border: `1px solid ${sc.color}40`,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            outline: 'none',
-          }}
-        >
-          {STATUSES.map(s => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td style={{ fontSize: 12, color: 'var(--text-3)' }}>{formatFullDate(note.testDate)}</td>
-      <td onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button
-            className="btn sm"
-            onClick={() => router.push(`/note/${note.id}`)}
-            aria-label={`${note.title || '노트'} 수정`}
-          >
-            <Icon.edit style={{ width: 12, height: 12 }} />
-          </button>
-          <button
-            className="btn sm"
-            style={{ color: 'var(--negative)' }}
-            onClick={e => handleDelete(note, e)}
-            aria-label={`${note.title || '노트'} 삭제`}
-          >
-            <Icon.trash style={{ width: 12, height: 12 }} />
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
-});
 
 const SORT_OPTIONS = [
   { key: 'createdAt', label: '최신순' },
@@ -749,122 +672,18 @@ export function NoteContent() {
       )}
 
       {/* 컨텍스트 메뉴 */}
-      {ctxMenu && (
-        <>
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 299 }}
-            onClick={() => setCtxMenu(null)}
-            onContextMenu={e => {
-              e.preventDefault();
-              setCtxMenu(null);
-            }}
-          />
-          <div
-            className="ctx-menu"
-            style={{
-              position: 'fixed',
-              left: ctxMenu.x,
-              top: ctxMenu.y,
-              zIndex: 300,
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 10,
-              boxShadow: 'var(--shadow-lg)',
-              minWidth: 160,
-              overflow: 'hidden',
-              animation: 'fade 120ms ease',
-            }}
-          >
-            {[
-              { label: '수정', action: () => router.push(`/note/${ctxMenu.note.id}`) },
-              {
-                label: pinnedIds.has(ctxMenu.note.id) ? '핀 해제' : '핀 고정',
-                action: () => togglePin(ctxMenu.note.id),
-              },
-              {
-                label: '복사',
-                action: () => handleCopy(ctxMenu.note, { stopPropagation: () => {} }),
-              },
-            ].map(item => (
-              <button
-                key={item.label}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '9px 14px',
-                  fontSize: 13,
-                  color: 'var(--text-1)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  borderBottom: '1px solid var(--border)',
-                }}
-                onMouseDown={e => {
-                  e.preventDefault();
-                  item.action();
-                  setCtxMenu(null);
-                }}
-              >
-                {item.label}
-              </button>
-            ))}
-            <div style={{ padding: '6px 10px', borderBottom: '1px solid var(--border)' }}>
-              <div
-                style={{ fontSize: 10, color: 'var(--text-4)', marginBottom: 4, paddingLeft: 4 }}
-              >
-                상태 변경
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                {STATUSES.map(s => (
-                  <button
-                    key={s}
-                    style={{
-                      fontSize: 10,
-                      padding: '2px 7px',
-                      borderRadius: 10,
-                      background: 'var(--surface-2)',
-                      color: 'var(--text-2)',
-                      border: '1px solid var(--border)',
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                    }}
-                    onMouseDown={e => {
-                      e.preventDefault();
-                      handleStatusChange(ctxMenu.note.id, s, { stopPropagation: () => {} });
-                      setCtxMenu(null);
-                    }}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <button
-              style={{
-                display: 'block',
-                width: '100%',
-                textAlign: 'left',
-                padding: '9px 14px',
-                fontSize: 13,
-                color: 'var(--negative)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-              onMouseDown={e => {
-                e.preventDefault();
-                handleDelete(ctxMenu.note);
-                setCtxMenu(null);
-              }}
-            >
-              삭제
-            </button>
-          </div>
-        </>
-      )}
+      <NoteContextMenu
+        ctxMenu={ctxMenu}
+        pinnedIds={pinnedIds}
+        onClose={() => setCtxMenu(null)}
+        onEdit={note => router.push(`/note/${note.id}`)}
+        onTogglePin={noteId => togglePin(noteId)}
+        onCopy={note => handleCopy(note, { stopPropagation: () => {} })}
+        onStatusChange={(noteId, status) =>
+          handleStatusChange(noteId, status, { stopPropagation: () => {} })
+        }
+        onDelete={note => handleDelete(note)}
+      />
 
       {/* 카드 그리드 */}
       {filtered.length > 0 && viewMode === 'card' && (
@@ -991,12 +810,14 @@ export function NoteContent() {
                   <NoteTableRow
                     key={note.id}
                     note={note}
-                    focusedRow={focusedRow}
-                    handleStatusChange={handleStatusChange}
-                    router={router}
-                    handleDelete={handleDelete}
-                    setFocusedRow={setFocusedRow}
-                    setDetailNote={setDetailNote}
+                    focused={focusedRow === note.id}
+                    onOpen={target => {
+                      setFocusedRow(target.id);
+                      setDetailNote(target);
+                    }}
+                    onEdit={target => router.push(`/note/${target.id}`)}
+                    onDelete={handleDelete}
+                    onStatusChange={handleStatusChange}
                   />
                 ))}
               </tbody>
