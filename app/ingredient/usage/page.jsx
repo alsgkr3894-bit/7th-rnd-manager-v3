@@ -15,7 +15,6 @@ import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { printUsageReport } from '@/lib/cost/usage-print';
 import { buildIngredientUsageMap } from '@/lib/cost/ingredient-price-helpers';
 import { useIngredientUsageRows } from '@/hooks/useIngredientUsageRows';
-import { getAllRecipes } from '@/lib/recipe';
 import { loadMenuRecipeArrays } from '@/lib/menu-recipes';
 import { KEYS } from '@/lib/note/keys';
 
@@ -103,10 +102,9 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    const [meta, recipeArrays, oldRecs, managed] = await Promise.all([
+    const [meta, recipeArrays, managed] = await Promise.all([
       getAllIngredients(),
       loadMenuRecipeArrays(),
-      getAllRecipes(),
       seedManagedProductsIfEmpty().then(() => getManagedProducts()),
     ]);
     if (!mountedRef.current) return;
@@ -120,7 +118,6 @@ export default function Page() {
       pizzaRecs: recipeArrays.pizza,
       personalRecs: recipeArrays.personal,
       sideRecs: recipeArrays.side,
-      oldRecs,
     });
     setUsageMap({ byCode, byName });
   }, [mountedRef]);

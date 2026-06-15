@@ -8,7 +8,7 @@ import { initDB } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
 import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { getAllIngredients } from '@/lib/ingredient';
-import { getAllRecipes, buildUnitPriceMap } from '@/lib/recipe';
+import { buildUnitPriceMap } from '@/lib/recipe';
 import { getMenuPriceCategories, getAllMenuPrices } from '@/lib/cost/menu-price';
 import { PIZZA_CATEGORY_VARIANTS, getMenuCodeRank } from '@/lib/menu-categories';
 import { getMenuMasterMap, upsertMenuMaster } from '@/lib/menu-master';
@@ -20,7 +20,6 @@ import {
   calcPlatformMargin,
 } from '@/lib/cost/margin/platforms';
 import { getAllEdges } from '@/lib/cost/edge-dough/store';
-import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
 import { MarginFilterBar } from '@/components/cost/margin/MarginFilterBar';
 import { MarginSummaryCards } from '@/components/cost/margin/MarginSummaryCards';
@@ -33,16 +32,9 @@ import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { onPriceUpload } from '@/lib/price/price-events';
 import { KEYS } from '@/lib/note/keys';
 import {
-  catCompatible,
-  buildRecipesByName,
-  mergeRecipeIntoDetail,
-} from '@/lib/cost/margin/matching';
-import {
-  buildRecipeRows,
   buildDetailRows,
   buildEdgeMetadata,
   buildDerivedRows,
-  toNum,
 } from '@/lib/cost/margin/build-rows';
 
 const PlatformSettingsModal = dynamic(
@@ -98,20 +90,16 @@ export default function Page() {
     const [
       files,
       meta,
-      recipes,
       allMenuPrices,
       recipeMaps,
       edges,
-      allGroups,
       masterByCode,
     ] = await Promise.all([
       getPriceFiles(),
       getAllIngredients(),
-      getAllRecipes(),
       getAllMenuPrices(),
       loadMenuRecipeMaps(),
       getAllEdges(),
-      getAllRecipeGroups(),
       getMenuMasterMap(),
     ]);
 
@@ -123,40 +111,25 @@ export default function Page() {
     }
     const upm = buildUnitPriceMap(meta, priceRowMap);
 
-    const recipeRows = buildRecipeRows(recipes, upm, allGroups);
-    const detailRows = buildDetailRows(allMenuPrices, {
-      pizzaMap: recipeMaps.pizza,
-      personalMap: recipeMaps.personal,
-      sideMap: recipeMaps.side,
-      setMap: recipeMaps.set,
-    });
+    const detailRows = buildDetailRows(
+      allMenuPrices,
+      {
+        pizzaMap: recipeMaps.pizza,
+        personalMap: recipeMaps.personal,
+        sideMap: recipeMaps.side,
+        setMap: recipeMaps.set,
+      },
+      upm
+    );
 
-    const recipesByName = buildRecipesByName(recipeRows);
-    const enrichedDetailRows = detailRows.map(d => mergeRecipeIntoDetail(d, recipesByName, toNum));
-
-    const detailKeySet = new Set(enrichedDetailRows.map(r => `${r.menuName}||${r.menuCategory}`));
-    const detailCatsByName = new Map();
-    for (const r of enrichedDetailRows) {
-      const arr = detailCatsByName.get(r.menuName);
-      if (arr) arr.push(r.menuCategory || '');
-      else detailCatsByName.set(r.menuName, [r.menuCategory || '']);
-    }
-    const filteredRecipeRows = recipeRows.filter(r => {
-      const cats = detailCatsByName.get(r.menuName);
-      if (!cats) return true;
-      return !cats.some(dc => catCompatible(r.menuCategory || '', dc));
-    });
-
+    const detailKeySet = new Set(detailRows.map(r => `${r.menuName}||${r.menuCategory}`));
     const PIZZA_EDGE_CATS = new Set(PIZZA_CATEGORY_VARIANTS);
-    const pizzaSources = [
-      ...enrichedDetailRows.filter(r => PIZZA_EDGE_CATS.has(r.menuCategory || '')),
-      ...filteredRecipeRows.filter(r => PIZZA_EDGE_CATS.has(r.menuCategory || '')),
-    ];
+    const pizzaSources = detailRows.filter(r => PIZZA_EDGE_CATS.has(r.menuCategory || ''));
 
     const edgeMeta = buildEdgeMetadata(edges, allMenuPrices);
     const derivedRows = buildDerivedRows(pizzaSources, edgeMeta, detailKeySet);
 
-    const allRows = [...enrichedDetailRows, ...filteredRecipeRows, ...derivedRows];
+    const allRows = [...detailRows, ...derivedRows];
     for (const r of allRows) {
       const m = r.menuCode ? masterByCode.get(r.menuCode) : null;
       r.hidden = m?.hidden === true;

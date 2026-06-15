@@ -11,10 +11,10 @@ import { CostTableView } from '@/components/report/cost/CostTableView';
 import { RecipePrintView } from '@/components/report/cost/RecipePrintView';
 import { initDB } from '@/lib/db/init';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
-import { getAllRecipes, buildUnitPriceMap } from '@/lib/recipe';
+import { buildUnitPriceMap } from '@/lib/recipe';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllEdges } from '@/lib/cost/edge-dough';
-import { getPriceFiles } from '@/lib/price';
+import { buildLatestPriceLookup } from '@/lib/price/price-lookup';
 import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
 import { getActiveBrand } from '@/lib/active-brand';
 import { useReportPageState } from '@/hooks/useReportPageState';
@@ -216,18 +216,16 @@ export default function Page() {
         try {
           const [
             prices,
-            recipes,
             ingredients,
             recipeMaps,
             edges,
-            priceFiles,
+            latestPriceLookup,
           ] = await Promise.all([
             getAllMenuPrices(),
-            getAllRecipes(),
             getAllIngredients(),
             loadMenuRecipeMaps(),
             getAllEdges(),
-            getPriceFiles(),
+            buildLatestPriceLookup(),
           ]);
           if (ignore) return;
 
@@ -237,19 +235,19 @@ export default function Page() {
             return;
           }
 
-          const recipeByName = new Map();
-          for (const r of recipes) {
-            if (r.menuName && !recipeByName.has(r.menuName)) recipeByName.set(r.menuName, r);
-          }
+          const latestPriceRows = new Map(
+            [...latestPriceLookup.entries()].map(([productCode, priceWithTax]) => [
+              productCode,
+              { productCode, priceWithTax },
+            ])
+          );
           const ctx = {
             detailMaps: recipeMaps,
             edges,
-            recipeByName,
-            upm: buildUnitPriceMap(ingredients, new Map()),
+            upm: buildUnitPriceMap(ingredients, latestPriceRows),
           };
           const nextRecipeRows = buildRecipePrintRows({
             detailMaps: ctx.detailMaps,
-            legacyRecipes: recipes,
             unitPriceMap: ctx.upm,
           });
           loadedCtxRef.current = { prices, ctx };

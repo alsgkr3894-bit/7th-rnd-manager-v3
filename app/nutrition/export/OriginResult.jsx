@@ -5,7 +5,6 @@ import { getAllIngredients } from '@/lib/ingredient';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { getAllEdges } from '@/lib/cost/edge-dough';
-import { getAllRecipes } from '@/lib/recipe';
 import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 import { loadMenuRecipeArrays } from '@/lib/menu-recipes';
 import { exportOriginToExcel } from '@/lib/nutrition/origin/export';
@@ -424,20 +423,17 @@ export default function OriginResult() {
     (async () => {
       await initDB();
       const overrides = loadMenuNames();
-      const [ings, masters, groups, edges, recipeArrays, oldRecs] =
-        await Promise.all([
-          getAllIngredients(),
-          getAllMenuMaster(),
-          getAllRecipeGroups(),
-          getAllEdges(),
-          loadMenuRecipeArrays(),
-          getAllRecipes(),
-        ]);
+      const [ings, masters, groups, edges, recipeArrays] = await Promise.all([
+        getAllIngredients(),
+        getAllMenuMaster(),
+        getAllRecipeGroups(),
+        getAllEdges(),
+        loadMenuRecipeArrays(),
+      ]);
       const safeIngredients = asObjectArray(ings);
       const safeMenuMasters = asObjectArray(masters);
       const safeGroups = asObjectArray(groups);
       const safeEdges = asObjectArray(edges);
-      const safeOldRecipes = asObjectArray(oldRecs);
       const masterByCode = Object.fromEntries(
         safeMenuMasters.map(m => [asDisplayText(m.menuCode), m]).filter(([menuCode]) => menuCode)
       );
@@ -450,7 +446,6 @@ export default function OriginResult() {
       const { ingredientToMenus } = buildIngredientMenuMap({
         menuMasters: safeMenuMasters,
         detailRecipes,
-        oldRecipes: safeOldRecipes,
         groups: safeGroups,
         edges: safeEdges,
       });

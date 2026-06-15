@@ -11,7 +11,6 @@ import { getAllIngredients } from '@/lib/ingredient';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { getAllEdges } from '@/lib/cost/edge-dough';
-import { getAllRecipes } from '@/lib/recipe';
 import { buildIngredientMenuMap, getMenusForIngredient } from '@/lib/cost/ingredient-menu-map';
 import { loadMenuRecipeArrays } from '@/lib/menu-recipes';
 import { SmallStatCard } from '@/components/ui/SmallStatCard';
@@ -57,21 +56,18 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    const [ings, masters, groups, edges, recipeArrays, oldRecs] =
-      await Promise.all([
-        getAllIngredients(),
-        getAllMenuMaster(),
-        getAllRecipeGroups(),
-        getAllEdges(),
-        loadMenuRecipeArrays(),
-        getAllRecipes(),
-      ]);
+    const [ings, masters, groups, edges, recipeArrays] = await Promise.all([
+      getAllIngredients(),
+      getAllMenuMaster(),
+      getAllRecipeGroups(),
+      getAllEdges(),
+      loadMenuRecipeArrays(),
+    ]);
     if (!mountedRef.current) return;
     const safeIngredients = asObjectArray(ings);
     const safeMenuMasters = asObjectArray(masters);
     const safeGroups = asObjectArray(groups);
     const safeEdges = asObjectArray(edges);
-    const safeOldRecipes = asObjectArray(oldRecs);
     const detailRecipes = tagDetailRecipes(
       asObjectArray(recipeArrays.pizza),
       asObjectArray(recipeArrays.personal),
@@ -84,7 +80,6 @@ export default function Page() {
       buildIngredientMenuMap({
         menuMasters: safeMenuMasters,
         detailRecipes,
-        oldRecipes: safeOldRecipes,
         groups: safeGroups,
         edges: safeEdges,
       })
@@ -442,7 +437,7 @@ export default function Page() {
             </div>
             <div className="empty-title">표시할 메뉴가 없어요</div>
             <div className="empty-sub">
-              식자재에 원산지를 등록하고 원가 레시피에 구성품을 추가하면 자동 매칭됩니다
+              식자재에 원산지를 등록하고 메뉴마스터 레시피에 구성품을 추가하면 자동 매칭됩니다
             </div>
           </div>
         ) : (

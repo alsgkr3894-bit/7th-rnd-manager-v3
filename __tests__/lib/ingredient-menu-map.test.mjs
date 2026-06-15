@@ -184,7 +184,7 @@ describe('buildIngredientMenuMap', () => {
     });
   });
 
-  describe('구형 레시피(oldRecipes) + groupIds', () => {
+  describe('구형 레시피(oldRecipes) 차단', () => {
     const OLD = [
       {
         menuCode: 'P-OR-001-L',
@@ -194,64 +194,26 @@ describe('buildIngredientMenuMap', () => {
         groupIds: [20],
       },
     ];
-    const GRP = [
-      {
-        id: 20,
-        name: 'groupIds 묶음',
-        defaultCategories: [],
-        ingredients: [{ productCode: 'GRP-001', ingredientName: '묶음재료' }],
-      },
-    ];
 
-    test('구형 레시피 ingredients 매핑', () => {
+    test('구형 레시피 ingredients는 더 이상 매핑하지 않는다', () => {
       const { ingredientToMenus } = buildIngredientMenuMap({ menuMasters: MENUS, oldRecipes: OLD });
-      expect(ingredientToMenus.get('code:OLD-001')?.has('P-OR-001-L')).toBe(true);
+      expect(ingredientToMenus.get('code:OLD-001')).toBeUndefined();
     });
 
-    test('groupIds로 명시된 묶음 재료도 매핑', () => {
+    test('구형 레시피 groupIds 묶음도 더 이상 매핑하지 않는다', () => {
       const { ingredientToMenus } = buildIngredientMenuMap({
         menuMasters: MENUS,
         oldRecipes: OLD,
-        groups: GRP,
-      });
-      expect(ingredientToMenus.get('code:GRP-001')?.has('P-OR-001-L')).toBe(true);
-    });
-
-    test('작성된 상세 레시피가 있으면 같은 메뉴의 구형 레시피는 제외한다', () => {
-      const { ingredientToMenus } = buildIngredientMenuMap({
-        menuMasters: MENUS,
-        detailRecipes: [
+        groups: [
           {
-            menuCode: 'P-OR-001-L',
-            menuName: '오리지널콤보 L',
-            category: '피자',
-            components: [{ productCode: 'NEW-001', ingredientName: '신규재료' }],
+            id: 20,
+            name: 'groupIds 묶음',
+            defaultCategories: [],
+            ingredients: [{ productCode: 'GRP-001', ingredientName: '묶음재료' }],
           },
         ],
-        oldRecipes: OLD,
-        groups: GRP,
       });
-
-      expect(ingredientToMenus.get('code:NEW-001')?.has('P-OR-001-L')).toBe(true);
-      expect(ingredientToMenus.get('code:OLD-001')?.has('P-OR-001-L')).toBeFalsy();
-      expect(ingredientToMenus.get('code:GRP-001')?.has('P-OR-001-L')).toBeFalsy();
-    });
-
-    test('자동 생성된 빈 상세 레시피는 구형 레시피 폴백을 막지 않는다', () => {
-      const { ingredientToMenus } = buildIngredientMenuMap({
-        menuMasters: MENUS,
-        detailRecipes: [
-          {
-            menuCode: 'P-OR-001-L',
-            menuName: '오리지널콤보 L',
-            category: '피자',
-            components: [],
-          },
-        ],
-        oldRecipes: OLD,
-      });
-
-      expect(ingredientToMenus.get('code:OLD-001')?.has('P-OR-001-L')).toBe(true);
+      expect(ingredientToMenus.get('code:GRP-001')).toBeUndefined();
     });
   });
 });

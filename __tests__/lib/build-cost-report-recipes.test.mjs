@@ -50,53 +50,53 @@ describe('buildRecipePrintRows', () => {
     ]);
   });
 
-  test('빈 상세 레시피는 구형 레시피를 폴백으로 포함한다', () => {
+  test('빈 canonical 레시피는 구형 레시피 폴백 없이 미작성 행으로 남긴다', () => {
     const rows = buildRecipePrintRows({
       detailMaps: {
         pizza: new Map([
           ['P-001-L', { menuCode: 'P-001-L', menuName: '중복 피자', components: [] }],
         ]),
       },
-      legacyRecipes: [
-        {
-          menuCode: 'P-001-L',
-          menuName: '중복 피자',
-          menuCategory: '피자',
-          sizes: [{ label: 'L' }],
-          ingredients: [{ productCode: 'CHZ', ingredientName: '치즈', quantities: { L: 10 } }],
-        },
-        {
-          menuCode: 'S-001',
-          menuName: '감자튀김',
-          menuCategory: '사이드',
-          sizes: [{ label: '단일' }],
-          ingredients: [
-            {
-              productCode: 'POT',
-              ingredientName: '감자',
-              quantities: { 단일: 25 },
-              unitType: 'g',
-            },
-          ],
-        },
-      ],
-      unitPriceMap: new Map([['POT', { ingredientName: '감자', unitPrice: 8, baseUnitType: 'g' }]]),
     });
 
-    expect(rows).toHaveLength(2);
-    expect(rows.find(row => row.menuCode === 'P-001-L')).toMatchObject({
-      source: 'legacy',
-      componentCount: 1,
+    expect(rows).toEqual([
+      expect.objectContaining({
+        source: 'detail',
+        categoryLabel: '피자',
+        menuCode: 'P-001-L',
+        componentCount: 0,
+        totalCost: 0,
+        components: [],
+      }),
+    ]);
+  });
+
+  test('레시피 출력 행은 최신 단가 맵을 우선한다', () => {
+    const rows = buildRecipePrintRows({
+      detailMaps: {
+        side: new Map([
+          [
+            'S-001',
+            {
+              menuCode: 'S-001',
+              menuName: '감자튀김',
+              components: [{ productCode: 'POT', ingredientName: '감자', quantity: 25, unitPrice: 1 }],
+            },
+          ],
+        ]),
+      },
+      unitPriceMap: new Map([['POT', { unitPrice: 8 }]]),
     });
-    expect(rows.find(row => row.menuCode === 'S-001')).toMatchObject({
-      source: 'legacy',
+
+    expect(rows[0]).toMatchObject({
+      source: 'detail',
       categoryLabel: '사이드',
       componentCount: 1,
       totalCost: 200,
     });
   });
 
-  test('작성된 상세 레시피는 같은 메뉴의 구형 레시피를 제외한다', () => {
+  test('작성된 canonical 레시피만 출력한다', () => {
     const rows = buildRecipePrintRows({
       detailMaps: {
         pizza: new Map([
@@ -119,15 +119,6 @@ describe('buildRecipePrintRows', () => {
           ],
         ]),
       },
-      legacyRecipes: [
-        {
-          menuCode: 'P-001-L',
-          menuName: '중복 피자',
-          menuCategory: '피자',
-          sizes: [{ label: 'L' }],
-          ingredients: [{ productCode: 'OLD', ingredientName: '구형치즈', quantities: { L: 10 } }],
-        },
-      ],
     });
 
     expect(rows).toHaveLength(1);
@@ -213,19 +204,12 @@ describe('buildCostReportData recipe precedence', () => {
     size: 'L',
     price: 10000,
   };
-  const legacyRecipe = {
-    menuCode: 'P-001-L',
-    menuName: '중복 피자',
-    sizes: [{ label: 'L' }],
-    ingredients: [{ productCode: 'OLD', quantities: { L: 10 } }],
-  };
   const baseCtx = {
     edges: [],
     upm: new Map([['OLD', { unitPrice: 100 }]]),
-    recipeByName: new Map([['중복 피자', legacyRecipe]]),
   };
 
-  test('작성된 상세 레시피는 원가가 0이어도 구형 원가레시피로 대체하지 않는다', () => {
+  test('작성된 canonical 레시피는 원가가 0이어도 구형 원가레시피로 대체하지 않는다', () => {
     const report = buildCostReportData(
       [price],
       {
@@ -251,7 +235,7 @@ describe('buildCostReportData recipe precedence', () => {
     expect(report.pizza.menus[0].cost).toBe(0);
   });
 
-  test('빈 상세 레시피는 구형 원가레시피 원가를 폴백으로 사용한다', () => {
+  test('빈 canonical 레시피는 구형 원가레시피 원가를 폴백으로 사용하지 않는다', () => {
     const report = buildCostReportData(
       [price],
       {
@@ -267,6 +251,6 @@ describe('buildCostReportData recipe precedence', () => {
       catMeta
     );
 
-    expect(report.pizza.menus[0].cost).toBe(1000);
+    expect(report.pizza.menus[0].cost).toBe(0);
   });
 });

@@ -12,7 +12,6 @@ import { getAllIngredients } from '@/lib/ingredient';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { getAllEdges } from '@/lib/cost/edge-dough';
-import { getAllRecipes } from '@/lib/recipe';
 import { getAllToppings, getAllCompositions } from '@/lib/nutrition/values/store';
 import { buildIngredientMenuMap, getMenusForIngredient } from '@/lib/cost/ingredient-menu-map';
 import { loadMenuRecipeArrays } from '@/lib/menu-recipes';
@@ -91,7 +90,6 @@ export default function Page() {
       edges,
       toppingList,
       recipeArrays,
-      oldRecs,
       compositions,
     ] = await Promise.all([
       getAllIngredients(),
@@ -100,7 +98,6 @@ export default function Page() {
       getAllEdges(),
       getAllToppings(),
       loadMenuRecipeArrays(),
-      getAllRecipes(),
       getAllCompositions(),
     ]);
     if (!mountedRef.current) return;
@@ -108,7 +105,6 @@ export default function Page() {
     const safeMenuMasters = asObjectArray(masters);
     const safeGroups = asObjectArray(groups);
     const safeEdges = asObjectArray(edges);
-    const safeOldRecipes = asObjectArray(oldRecs);
     const detailRecipes = tagDetailRecipes(
       asObjectArray(recipeArrays.pizza),
       asObjectArray(recipeArrays.personal),
@@ -123,7 +119,6 @@ export default function Page() {
       buildIngredientMenuMap({
         menuMasters: safeMenuMasters,
         detailRecipes,
-        oldRecipes: safeOldRecipes,
         groups: safeGroups,
         edges: safeEdges,
         compositions: asObjectArray(compositions),
@@ -134,7 +129,6 @@ export default function Page() {
       buildIngredientMenuMap({
         menuMasters: safeMenuMasters,
         detailRecipes,
-        oldRecipes: safeOldRecipes,
         groups: safeGroups,
         edges: [],
         compositions: asObjectArray(compositions),
@@ -530,7 +524,7 @@ export default function Page() {
             </div>
             <div className="empty-title">표시할 메뉴가 없어요</div>
             <div className="empty-sub">
-              식자재에 알레르기를 등록하고 원가 레시피에 구성품을 추가하면 자동 매칭됩니다
+              식자재에 알레르기를 등록하고 메뉴마스터 레시피에 구성품을 추가하면 자동 매칭됩니다
             </div>
           </div>
         ) : (

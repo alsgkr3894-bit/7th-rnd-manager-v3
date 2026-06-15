@@ -15,7 +15,6 @@ import { getAllEdges as getCostEdges } from '@/lib/cost/edge-dough';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
-import { getAllRecipes } from '@/lib/recipe';
 import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
 import { loadMenuRecipeArrays } from '@/lib/menu-recipes';
@@ -123,7 +122,6 @@ export default function NutritionLabelResult() {
         groups,
         costEdges,
         recipeArrays,
-        oldRecs,
         compositions,
         ingredientNutritionMap,
       ] = await Promise.all([
@@ -137,7 +135,6 @@ export default function NutritionLabelResult() {
         getAllRecipeGroups(),
         getCostEdges(),
         loadMenuRecipeArrays(),
-        getAllRecipes(),
         getAllCompositions(),
         getIngredientValuesMap(),
       ]);
@@ -155,7 +152,6 @@ export default function NutritionLabelResult() {
       const { ingredientToMenus } = buildIngredientMenuMap({
         menuMasters: masters,
         detailRecipes,
-        oldRecipes: oldRecs,
         groups,
         edges: [],
       });
