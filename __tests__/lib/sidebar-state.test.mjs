@@ -1,6 +1,7 @@
 import { describe, expect, test } from '@jest/globals';
 import { normalizeSidebarOpenIds } from '../../lib/ui/sidebar-state.js';
 import { MOBILE_TAB_DEFS, NAV_SECTIONS } from '../../lib/menu.js';
+import { KIND_META } from '../../lib/report/constants.js';
 import {
   COST_COMMON_EDGES_ROUTE,
   COST_COMMON_GROUPS_ROUTE,
@@ -75,6 +76,16 @@ describe('normalizeSidebarOpenIds', () => {
       '/jette/shipment',
       '/jette/settings',
     ]);
+  });
+
+  test('보고서 사이드바는 보고서 종류 메타의 5종 생성 route를 노출한다', () => {
+    const reportGroup = NAV_SECTIONS.flatMap(section => section.groups).find(
+      group => group.id === 'report'
+    );
+    const reportHrefs = (reportGroup?.children || []).map(item => item.href);
+
+    expect(reportHrefs).toEqual(['/report', ...Object.values(KIND_META).map(kind => kind.href)]);
+    expect(reportHrefs).toContain('/report/menu-sales-compare');
   });
 
   test('모바일 원가 탭도 구형 피자 원가표 대신 원가마진표로 이동한다', () => {
