@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from '@jest/globals';
-import { readCsvFile } from '../../lib/excel.js';
+import XLSX from 'xlsx';
+import { readCsvFile, readExcelFile } from '../../lib/excel.js';
 import { validateSalesFile } from '../../lib/sales/parse.js';
 import { classifyAndPrepare } from '../../lib/sales/classify.js';
 import { parsePriceRows } from '../../lib/price/parse.js';
@@ -10,6 +11,13 @@ import { buildPizzaSummary } from '../../lib/cost/pizza-summary/calc.js';
 function readFixture(name) {
   const text = readFileSync(new URL(`../fixtures/business/${name}`, import.meta.url), 'utf8');
   return readCsvFile(text);
+}
+
+function workbookBuffer(rows) {
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, '업무 fixture');
+  return XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
 }
 
 describe('익명화 업무 fixture 회귀', () => {
@@ -24,6 +32,17 @@ describe('익명화 업무 fixture 회귀', () => {
       rawMenuName: '익명 콤비네이션 피자',
       quantity: 12,
     });
+  });
+
+  test('판매량 fixture는 실제 xlsx workbook으로 읽어도 같은 검증을 통과한다', async () => {
+    const fixture = readFixture('sales-valid.csv');
+    const parsed = await readExcelFile(workbookBuffer(fixture.rawRows));
+    const result = validateSalesFile(parsed.rawRows);
+
+    expect(parsed.sheetName).toBe('업무 fixture');
+    expect(result.success).toBe(true);
+    expect(result.period).toEqual({ year: 2026, month: 5 });
+    expect(result.summary).toEqual({ totalRows: 2, validCount: 2, invalidCount: 0 });
   });
 
   test('판매량 fixture의 필수 헤더 누락은 명확히 실패한다', () => {

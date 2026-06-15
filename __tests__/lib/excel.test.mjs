@@ -1,3 +1,4 @@
+import XLSX from 'xlsx';
 import { readCsvFile, readSpreadsheetFile, detectHeaderRow, matchColumn } from '../../lib/excel.js';
 
 // ─── readCsvFile ──────────────────────────────────────────────────────────────
@@ -66,6 +67,28 @@ describe('readCsvFile', () => {
 // ─── readSpreadsheetFile ────────────────────────────────────────────────────
 
 describe('readSpreadsheetFile', () => {
+  test('xlsx 파일 객체는 실제 workbook 바이너리에서 첫 시트를 읽는다', async () => {
+    const buffer = workbookBuffer([
+      ['name', 'price', 'qty'],
+      ['사과', 1000, 5],
+      ['배', 2000, 3],
+    ]);
+    const file = {
+      name: 'price.xlsx',
+      arrayBuffer: async () => buffer,
+      text: async () => '',
+    };
+
+    const result = await readSpreadsheetFile(file);
+
+    expect(result.sheetName).toBe('Sheet1');
+    expect(result.headers).toEqual(['name', 'price', 'qty']);
+    expect(result.rows).toEqual([
+      { name: '사과', price: 1000, qty: 5 },
+      { name: '배', price: 2000, qty: 3 },
+    ]);
+  });
+
   test('지원하지 않는 확장자는 파서 진입 전에 거부한다', async () => {
     const file = {
       name: 'price.txt',
@@ -145,3 +168,10 @@ describe('matchColumn', () => {
     expect(matchColumn(headers, null)).toBeNull();
   });
 });
+
+function workbookBuffer(rows) {
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  return XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+}
