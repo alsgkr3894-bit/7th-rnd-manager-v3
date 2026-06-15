@@ -40,7 +40,7 @@ function SupplierModal({ initial, onSave, onClose }) {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!form.name.trim()) {
-      showToast('업체명을 입력해주세요');
+      showToast('업체명을 입력해주세요', 'error');
       return;
     }
     setSaving(true);

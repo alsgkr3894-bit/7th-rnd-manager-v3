@@ -130,7 +130,7 @@ export function CommonManageView({ tab = 'groups' }) {
   }
   async function handleSaveGroup() {
     if (!draft?.name?.trim()) {
-      showToast('묶음 이름을 입력해주세요');
+      showToast('묶음 이름을 입력해주세요', 'error');
       return;
     }
     setSaving(true);
@@ -141,7 +141,7 @@ export function CommonManageView({ tab = 'groups' }) {
       setIsNew(false);
       setSelectedId(isNew ? savedId : selectedId);
     } catch (e) {
-      showToast('저장 실패: ' + e.message);
+      showToast('저장 실패: ' + e.message, 'error');
     } finally {
       setSaving(false);
     }
@@ -151,7 +151,7 @@ export function CommonManageView({ tab = 'groups' }) {
     try {
       await deleteRecipeGroup(id);
     } catch (e) {
-      showToast('삭제 실패: ' + e.message);
+      showToast('삭제 실패: ' + e.message, 'error');
       return;
     }
     showToast('삭제 완료');
