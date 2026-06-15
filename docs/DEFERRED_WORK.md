@@ -125,12 +125,14 @@
   - `app/nutrition/allergen/page.jsx` ✅ 2026-06-15 추가 보강 — `AllergenPageHeader`·`AllergenSummaryPanel`·`AllergenToolbar`·`AllergenTablePanel` 렌더링 컴포넌트 분리. 500→381줄.
   - `app/nutrition/allergen/page.jsx` ✅ 2026-06-15 추가 보강 — 데이터 로드·제외 메뉴 판정·매트릭스·순서·CSV 파생 계산을 `useAllergenPageData`로 분리. 381→113줄.
   - `app/nutrition/allergen/useAllergenPageData.js` ✅ 2026-06-15 추가 보강 — DB 로드·레시피 매핑 생성을 `useAllergenSourceData`로 분리하고, 기존 훅은 매트릭스/정렬/CSV 파생 계산 중심으로 축소. 337→247줄.
+  - `app/nutrition/allergen/useAllergenPageData.js` ✅ 2026-06-15 추가 보강 — 검색 필터, 알레르기 정렬, 순서 편집 목록, CSV 행 조립을 `allergenPageDataUtils`로 분리. 247→169줄.
 - **잔여 대상** (우선순위 순):
-  1. `app/nutrition/allergen/useAllergenPageData.js` (~247줄) — 알레르기 파생 행/정렬 정책이 더 늘어날 때 matrix/order 하위 hook 분리 재평가
-  2. `app/note/_NoteContent.jsx` (~245줄) — 컨텍스트 메뉴 좌표/상세 모달 wiring이 더 커질 때 하위 hook 분리 재평가
-  3. `components/report/sales/SalesRankTableRows.jsx` (~164줄) — 순위표 row 변형/전월 비교 표시 요구가 늘어날 때 row type별 추가 분리
-  4. `app/ingredient/manage/IngredientManualCostFields.jsx` (~71줄) — 수동 단가 정책이 더 늘어날 때 보관/과세/가격 입력을 추가 분리 재평가
-  5. `app/ingredient/list/page.jsx` — 현재 redirect route 5줄 수준, 별도 분해 불필요
+  1. `app/note/_NoteContent.jsx` (~245줄) — 컨텍스트 메뉴 좌표/상세 모달 wiring이 더 커질 때 하위 hook 분리 재평가
+  2. `components/report/sales/SalesRankTableRows.jsx` (~164줄) — 순위표 row 변형/전월 비교 표시 요구가 늘어날 때 row type별 추가 분리
+  3. `app/nutrition/allergen/useAllergenPageData.js` (~169줄) — 순서 저장/메뉴명 override 상태가 더 커질 때 order state hook 분리 재평가
+  4. `app/nutrition/allergen/allergenPageDataUtils.js` (~123줄) — 검색/정렬/CSV 정책이 더 늘어날 때 filter/order/export helper 분리 재평가
+  5. `app/ingredient/manage/IngredientManualCostFields.jsx` (~71줄) — 수동 단가 정책이 더 늘어날 때 보관/과세/가격 입력을 추가 분리 재평가
+  6. `app/ingredient/list/page.jsx` — 현재 redirect route 5줄 수준, 별도 분해 불필요
 - **방향**: page는 조립만 담당, table/panel/modal/hook으로 분리.
 - **왜 보류**: 효과 < 회귀 위험. 기능 추가 시점에 함께 진행 예정.
 - **검증**: `npm run test:ci` + 주요 화면 수동 확인

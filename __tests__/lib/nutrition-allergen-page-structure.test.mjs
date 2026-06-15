@@ -6,6 +6,10 @@ const dataHookSource = readFileSync(
   resolve('app/nutrition/allergen/useAllergenPageData.js'),
   'utf8'
 );
+const dataUtilsSource = readFileSync(
+  resolve('app/nutrition/allergen/allergenPageDataUtils.js'),
+  'utf8'
+);
 const sourceHookSource = readFileSync(
   resolve('app/nutrition/allergen/useAllergenSourceData.js'),
   'utf8'
@@ -83,18 +87,35 @@ describe('nutrition allergen page structure', () => {
     expect(detailModalSource).toContain('상세 식자재가 없습니다');
   });
 
-  test('extracted data hook composes source data and owns matrix, order, and export responsibilities', () => {
+  test('extracted data hook composes source data and delegates page derivations', () => {
     expect(dataHookSource).toContain('export function useAllergenPageData');
     expect(dataHookSource).toContain('useAllergenSourceData()');
     expect(dataHookSource).toContain('buildMenuMatrix');
     expect(dataHookSource).toContain('extractExcludedMenuSets');
     expect(dataHookSource).toContain('buildDetailRows');
-    expect(dataHookSource).toContain("downloadCsv([headers, ...rows], '알레르기매트릭스.csv')");
+    expect(dataHookSource).toContain('buildAllergenCsvRows(menuMatrix, orderedAllergens)');
+    expect(dataHookSource).toContain('downloadCsv(buildAllergenCsvRows');
     expect(dataHookSource).toContain('saveOrder(ALLERGEN_MENU_ORDER_KEY, keys)');
     expect(dataHookSource).toContain('saveMenuNames(next)');
+    expect(dataHookSource).not.toContain('ALLERGEN_SEED');
+    expect(dataHookSource).not.toContain("const headers = ['메뉴명'");
+    expect(dataHookSource).not.toContain('const frequency = new Map()');
     expect(dataHookSource).not.toContain('getAllIngredients');
     expect(dataHookSource).not.toContain('useVisibilityRefresh');
     expect(dataHookSource).not.toContain('buildIngredientMenuMap');
+  });
+
+  test('page data utils own allergen filtering, order derivation, and csv row building', () => {
+    expect(dataUtilsSource).toContain('export function filterAllergenIngredients');
+    expect(dataUtilsSource).toContain('export function filterIngredientRows');
+    expect(dataUtilsSource).toContain('export function orderAllergens');
+    expect(dataUtilsSource).toContain('export function filterMenuMatrix');
+    expect(dataUtilsSource).toContain('export function buildAllergenCsvRows');
+    expect(dataUtilsSource).toContain('ALLERGEN_SEED');
+    expect(dataUtilsSource).toContain('const headers = [');
+    expect(dataUtilsSource).toContain("'메뉴명'");
+    expect(dataUtilsSource).toContain("'크러스트'");
+    expect(dataUtilsSource).toContain('const frequency = new Map()');
   });
 
   test('extracted source hook owns db loading and recipe map building responsibilities', () => {
