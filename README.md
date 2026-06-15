@@ -28,15 +28,27 @@ npm run start
 > - 이미 dev 서버가 꼬였거나 실행 중 서버까지 정리해야 하면 로컬 QA용 `npm run dev:clean`을 쓰세요.
 > - 같은 네트워크의 다른 기기에서 접속해야 할 때만 `npm run dev:lan`을 쓰세요.
 
-## 스모크 QA
+## 검증 명령
 
 ```bash
-# dev 서버(localhost:3000)가 떠 있는 상태에서 실행
+# 코드 형식 검사
+npm run format:check
+
+# 단위·회귀 테스트 (Jest)
+npm run test:ci
+
+# 프로덕션 빌드 검증 (.next 초기화 후 빌드)
+npm run build:clean
+
+# 스모크 QA — dev 서버(localhost:3000)가 떠 있는 상태에서 실행
 npm run qa:smoke
+
+# 전체 라우트 런타임 QA (63개 정적 라우트)
+npm run qa:runtime
 ```
 
-대표 라우트를 순회하며 각 페이지의 제목(h1)·`main`·콘솔 에러·가로 스크롤(`scrollWidth > innerWidth`)·
-에러 문구를 검사해 표로 출력합니다. 데이터 변경(업로드·저장·복원·초기화)은 실행하지 않습니다.
+`qa:smoke`는 대표 라우트를 순회하며 제목(h1)·`main`·콘솔 에러·가로 스크롤·에러 문구를 검사합니다.
+데이터 변경(업로드·저장·복원·초기화)은 실행하지 않습니다.
 
 ---
 
@@ -104,8 +116,8 @@ CSS는 `app/globals.css`가 아래 파일을 순서대로 import합니다.
 - `app/styles/tokens.css`: CSS 변수, 테마, density/font-scale 토큰
 - `app/styles/base.css`: reset, body, focus/accessibility 기본값
 - `app/styles/layout.css`: app shell, sidebar, topbar, main layout
-- `app/styles/components.css`: 카드, 버튼, 모달, 표, 공통 UI
-- `app/styles/features.css`: 페이지/도메인별 스타일과 모션
+- `app/styles/components/`: 공통 UI (home-hero · home-body · overlay · palette · chrome)
+- `app/styles/features.css` + `app/styles/features/`: 도메인별 스타일, 모션, 보고서
 
 주요 CSS 변수는 `app/styles/tokens.css`에 정의되어 있어요.
 
@@ -150,12 +162,7 @@ showToast('확인이 필요해요', 'warn');    // ⚠ 주황색
 
 ## 폰트
 
-Pretendard Variable (CDN 방식, `app/layout.jsx` 에 포함)
-
-로컬 폰트로 변경하려면:
-```bash
-npm install @fontsource-variable/pretendard
-```
+Pretendard Variable — `public/fonts/PretendardVariable.woff2` 로컬 파일을 `next/font/local`로 로드합니다 (`app/layout.jsx`).
 
 ---
 

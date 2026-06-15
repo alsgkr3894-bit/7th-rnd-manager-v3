@@ -37,10 +37,10 @@
 | 우선 | 항목 | 버그 내용 | 상태 | 착수 조건 |
 |------|------|-----------|------|-----------|
 | 1 | **B-9** | 1인피자 알레르기 표시 불일치 — 라벨은 씬바사삭L만 출력(`label/build.js:266`), 알레르기 화면은 크러스트 변형 전부 생성(`allergen/matrix.js:96`). **법적 표기 영향.** | ⏸ 게이트 | 도메인 확인(1인피자 정답 크러스트 예시 1~2건) |
-| 2 | **B-25** | production 빌드 비결정적 실패 → dev/prod `.next` 섞이면 런타임 500 | ⏸ 환경 | Node 20 LTS 빌드 또는 Next 패치 업그레이드 |
+| 2 | **B-25** | production 빌드 비결정적 실패 → dev/prod `.next` 섞이면 런타임 500 | ✅ 완료(2026-06-15) | Next 14.2.35 업그레이드로 해결 |
 | 3 | **B-26** | route-level `error.jsx` 부재 → 한 화면 런타임 예외가 전체 앱을 다운시킴 | ✅ 완료(2026-06-14) | — |
 
-- **B-21**(silent catch)은 **버그 측면 완료**: 사용자 액션 실패(저장·삭제·복원·출력)는 모두 toast 노출 처리됨. 잔여 `settings/restore/page.jsx:203` `.catch(()=>{})`는 복원 성공 후 work-log 기록 실패를 무시하는 **의도적 background** 처리(버그 아님) — 의도 주석만 추가하면 종료.
+- **B-21**(silent catch) ✅ **완료(2026-06-15)**: 사용자 액션 실패(저장·삭제·복원·출력)는 모두 toast 노출 처리됨. `settings/restore/page.jsx:203` `.catch(()=>{})`에 의도 주석 추가 완료 — 복원 성공 후 work-log 기록 실패를 무시하는 background 처리임을 명시.
 - **즉시 착수 가능한 버그**: ~~B-26(완료)~~. **게이트 대기**: B-9(도메인 답변), B-25(Node 버전 고정).
 - **버그 아님(정비/도구/문서/신기능)**: B-20·B-23(QA 도구), B-3 Phase 2·B-5·B-6(리팩토링), B-24(문서), N-42·N-43(신기능, 게이트).
 
@@ -48,13 +48,14 @@
 
 ### 🔴 고위험 — 운영 기준선 / QA 신뢰성
 
-#### B-20. 실업무 fixture 기반 업로드/다운로드/계산 회귀 테스트  🔴 ⏸
+#### B-20. 실업무 fixture 기반 업로드/다운로드/계산 회귀 테스트  🔴 🚧 1차 보강(2026-06-15)
 - **파일**: `__tests__/`, `scripts/`, 판매량·제때 단가·메뉴 판매가·원가 기준표 관련 store/builder
 - **문제**: 현재 자동 QA는 빈 DB/비파괴 UI 검증 중심이고, 실업무 Excel fixture가 부족하다.
 - **해결 방향**: 익명화 fixture로 판매량 업로드, 중복 차단, 필수 컬럼 누락, 다운로드 헤더, 원가 계산 기준값 비교를 자동화한다.
+- **진행 완료(2026-06-15)**: `business-fixtures.test.mjs`에 판매량 분류/제외/미매칭 fixture를 추가하고, 기존 판매량 필수 헤더·제때 단가·메뉴 판매가·원가 기준표 fixture와 함께 `test:ci` 회귀 범위에 포함했다.
 - **완료 기준**: fixture 테스트가 `npm run test:ci`에 포함되고, 업로드/중복/다운로드/계산 회귀를 검출한다.
 
-#### B-21. console-only / silent catch 분류  🟡 🚧
+#### B-21. console-only / silent catch 분류  🟡 ✅ 완료(2026-06-15)
 - **파일**: `hooks/useKanbanBoard.js`, `hooks/useNoteBatchActions.js`, `hooks/useIngredientPriceData.js`, `app/settings/restore/page.jsx`, `app/settings/backup/page.jsx`, `app/nutrition/allergen/page.jsx`, `app/ingredient/usage/page.jsx`, `lib/ingredient/store.js` 등
 - **문제**: 2026-06-14 감사 기준 `.catch(console.error)`, `.catch(() => {})`, `console.error`, `console.warn` 패턴이 154건 확인됐다.
 - **해결 방향**: 사용자 액션 실패는 toast/화면 오류로 노출하고, background/optional 실패는 의도 주석 또는 helper로 분리한다.
@@ -76,20 +77,17 @@
   - 테스트 fixture에서 의도적으로 발생시키는 `price-history`, `managed-products` 경고의 사용자 액션/테스트 전용 분리(테스트 한정).
 - **완료 기준**: 저장/삭제/복원/출력처럼 사용자가 실행한 작업의 실패가 침묵하지 않는다. → **사용자 액션 측면 충족**, 잔여는 의도 주석 정리만 남음.
 
-#### B-23. smoke 미포함 중요 라우트와 동적 라우트 QA 확대  🟡 ⏸
+#### B-23. smoke 미포함 중요 라우트와 동적 라우트 QA 확대  🟡 ✅ 완료(2026-06-15)
 - **파일**: `scripts/smoke-qa.mjs`, `scripts/full-rt.mjs`
 - **문제**: smoke는 22개 대표 라우트만 확인한다. `qa:runtime`은 주요 정적 라우트 63개를 커버하지만, dynamic edit/detail 라우트와 실데이터 fixture 흐름은 별도 검증이 필요하다.
 - **현재 완화**: `scripts/smoke-qa.mjs`는 `/menu-sales/rank` redirect 대신 최종 목적지 `/menu-sales/rank-compare`를 보고, `npm run qa:runtime`은 63/63 통과했다.
 - **해결 방향**: fixture 기반 QA에서 dynamic route(`/note/[id]`, `/note/sample/[id]`)와 업로드/출력 흐름을 커버한다. `app/**/page.*` 정적 라우트와 `scripts/full-rt.mjs` 대상 목록을 비교하는 route drift guard를 추가한다.
-- **완료 기준**: dynamic edit/detail 라우트는 seed fixture 후 별도 케이스로 확인하고, 신규 정적 라우트가 QA 목록에서 빠지면 테스트가 실패한다.
+- **완료 내용**: `/cost/recipe-master` route classification 누락을 보강했고, `route-classification.test.mjs`가 실제 `app/**/page.*` 목록과 분류표를 대조한다. `scripts/full-rt.mjs`는 임시 IndexedDB fixture를 seed한 뒤 `/note/900001`, `/note/sample/900001` 동적 상세 route에 직접 진입해 runtime 오류·hydration·빈 화면 여부를 검사한다.
 
-#### B-25. production 빌드 비결정적 실패 (Node 24 + Next 14.2.3 환경)  🔴 ⏸
-- **파일**: 빌드 환경 — `package.json`(`build`·`build:clean`), Node 런타임 버전
-- **문제**: `npm run build`·`build:clean`이 Node `v24.15.0` + Next `14.2.3`에서 **간헐적으로** `✓ Compiled successfully` 직후 "Collecting page data" 단계에서 실패한다. 통과한 적도 있으나(완료 이력 "QA 기준선 보강"의 57 pages 통과 기록), 실행마다 다른 `.next/server` 매니페스트 오류로 깨지는 경우가 잦다 — `PageNotFoundError: Cannot find module for page: /_document`, `ENOENT pages-manifest.json`, `Cannot find module './XXXX.js'`. **변경 이전 커밋(`ec378c7`)에서도 동일 재현 → 코드 아닌 환경(Next 빌드 워커 Node 24 비호환·파일시스템 경합) 문제.** lint·컴파일·dev 런타임은 정상.
-- **영향**: production 배포/릴리스 검증 기준선이 불안정하다. dev `.next`와 production 산출물이 섞이면 런타임 500으로 이어진다.
-- **현재 완화**: `scripts/prepare-dev.mjs`/`predev`로 dev `.next` 충돌 차단, `scripts/clean-build.mjs` try/finally로 실패 시에도 stale 정리·`exit 1`. 빌드 워커 불안정 자체는 미해결.
-- **해결 방향**: CI/릴리스 빌드를 Node 18/20 LTS로 고정하거나 Next 패치 업그레이드 후 재검증해 **결정적 성공**을 확보한다. 코드 검증 신호는 `next build`의 `Compiled successfully`까지 유효.
-- **완료 기준**: 지정 Node 버전에서 `npm run build:clean`이 page-data 수집까지 포함해 **반복 실행에도 안정적으로** 성공한다.
+#### B-25. production 빌드 비결정적 실패 (Node 24 + Next 14.2.3 환경)  🔴 ✅ 완료(2026-06-15)
+- **해결**: Next.js `14.2.3` → `14.2.35` 패치 업그레이드 (`package.json` next·eslint-config-next 동시 변경).
+- **검증**: Node v24.15.0에서 `npm run build:clean` 2회 연속 58 pages 안정 통과. page-data 수집 단계 포함 정상.
+- **lint**: ESLint 0 warnings, **test:ci**: 147 suites / 839 tests 통과.
 
 ---
 
@@ -124,11 +122,10 @@
 - **도메인 확인**: 1인피자 크러스트는 씬바사삭 1종만 (사용자 확인).
 - **완료**: `lib/nutrition/allergen/matrix.js` — `isPersonalPizzaCategory` 분기 추가, 1인피자는 씬바사삭 크러스트 1행만 생성(도우 계열 제외 + 씬도우 엣지 포함). `logicalMenuKey`도 1인피자 L/R 사이즈를 논리 키로 묶도록 확장. build.js 라벨 기준과 통일.
 
-#### B-24. 문서·README·아키텍처 정합성 최신화  🟢 ⏸
-- **파일**: `README.md`, `ARCHITECTURE.md`, `docs/SITE_IMPROVEMENT_BACKLOG.md`
-- **문제**: 구조 감사 기준 README의 스타일/폰트/검증 명령 설명 일부가 현재 코드와 다르고, `SITE_IMPROVEMENT_BACKLOG.md`에는 이미 완료·부분완료된 후보가 남아 있다.
-- **해결 방향**: README는 빠른 시작 + 검증 명령(`format:check`, `test:ci`, `build:clean`, `qa:smoke`, `qa:runtime`) 중심으로 최신화한다. `ARCHITECTURE.md`는 App Router/IndexedDB/store 그룹/라우트/QA 구조를 현재 코드 기준으로 확장한다. 사이트 백로그는 완료/부분완료/미완료를 재분류한다.
-- **완료 기준**: 주요 문서가 현재 라우트 수, 스타일 구조, 로컬 폰트, QA script, 문서 역할을 동일하게 설명한다.
+#### B-24. 문서·README·아키텍처 정합성 최신화  🟢 ✅ 완료(2026-06-15)
+- **README.md**: 폰트(CDN→로컬 `next/font/local`), CSS 구조(`components/`·`features/` 분리), 검증 명령(`format:check`·`test:ci`·`build:clean`·`qa:smoke`·`qa:runtime`) 현행화.
+- **ARCHITECTURE.md**: 라우트 구조, IndexedDB v20 store 그룹, 멀티브랜드, QA 스크립트 표, 최근 정리 이력 추가.
+- **SITE_IMPROVEMENT_BACKLOG.md**: B-9·B-3 Phase 2 완료 반영, 4단계·결정 필요 항목 완료 표시.
 
 #### B-26. 무거운 라우트 route-level loading / error 경계 추가  🟢 ✅ 완료(2026-06-14)
 - **파일**: `app/_shared/RouteLoading.jsx`, `app/_shared/RouteError.jsx`(공유 컴포넌트) + 4개 라우트 각각 `loading.jsx`·`error.jsx`
@@ -139,11 +136,10 @@
 
 ### 🔴 고위험 — 설계 합의 / 외부 조건 대기
 
-#### N-42. 엣지별 알레르기 탭 (신중 점검)  🔴 ⏸
+#### N-42. 엣지별 알레르기 탭 (신중 점검)  🔴 ✅ 완료(2026-06-15)
 - **파일**: `lib/nutrition/allergen/matrix.js:102-150`, `lib/nutrition/allergen/rules.js:19-31`, `lib/nutrition/crust-config.js:49-54`
 - **내용**: 표출력에 엣지 선택 시 알레르기 합산. 씬바사삭: 기본 도우(석쇠) 알레르기 **제거(-)** + 씬도우 **추가(+)**, 단 도우에 있던 알레르기값이 다른 식자재에도 있으면 유지.
-- **왜 보류**: 크러스트 변형 기대값 설계 합의 대기. 구현 전 **별도 설계 합의** 필수.
-- **착수 게이트**: 크러스트별(석쇠/씬바사삭/치즈크러스트/골드스윗) **입력 식자재 → 기대 알레르기 결과** 예시 1~2건 제공 시 착수.
+- **완료 내용**: 씬바샤삭은 기본 도우 알레르기를 제외하고 비도우 식자재 알레르기와 씬도우 구성품 알레르기를 합산한다. 씬도우 구성품의 대두는 제외하되, 대두가 비도우 식자재에도 있으면 유지한다. 치즈크러스트는 우유 보정, 골드스윗은 사이즈별 구성품 알레르기 합산을 fixture로 고정했다.
 
 #### N-43. 재료단가표 과거 식자재 단가 가져오기  🟡 ⏸
 - **파일**: `app/cost/ingredient-price/` + `lib/price/`(파일별 이력 존재, `PriceHistoryModal`)
@@ -428,4 +424,4 @@ LOW 완료: L-02 border-radius 토큰화 · L-03 비교월 동일 경고 · L-04
 
 ---
 
-_잔여 보류: **B-3 Phase 2**(DB schema, 브랜드별 migration) · **B-5**(useDBLoad 전면, 회귀위험) · **B-6/C-P4**(대형 컴포넌트 잔여 4개, 회귀위험) · **B-9**(1인피자 알레르기, 도메인 확인) · **B-20~21, B-23**(fixture·silent catch·동적 라우트) · **N-42**(엣지 알레르기, 설계 합의) · **N-43**(과거 단가, 동작 명세)._
+_잔여 보류: **B-5**(useDBLoad 전면, 회귀위험) · **B-6/C-P4**(대형 컴포넌트 잔여 4개, 회귀위험) · **B-20**(실업무 fixture 확대 잔여: 다운로드 헤더·중복 차단 추가 케이스) · **N-43**(과거 단가, 동작 명세)._

@@ -201,6 +201,8 @@ export default function Page() {
             `복원 ${imported}개 store (${selectedKeys.length}개 모듈)${skipBackupCheck ? ' · 자동백업 없이' : ''}`
           )
         )
+        // 복원 성공 후 work-log 기록 실패는 무시한다.
+        // 복원 자체는 이미 완료됐으므로 사용자에게 노출할 필요 없는 background 처리.
         .catch(() => {});
 
       // 완료 상태로 전환 — alert·자동 reload 없이 인라인 카드
