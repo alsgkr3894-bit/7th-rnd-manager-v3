@@ -15,15 +15,28 @@ import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { printUsageReport } from '@/lib/cost/usage-print';
 import { buildIngredientUsageMap } from '@/lib/cost/ingredient-price-helpers';
 import { useIngredientUsageRows } from '@/hooks/useIngredientUsageRows';
-import { loadMenuRecipeArrays } from '@/lib/menu-recipes';
+import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
+import { getAllEdges } from '@/lib/cost/edge-dough';
+import { getAllMenuMaster } from '@/lib/menu-master/store';
+import { getAllMenuRecipes } from '@/lib/menu-recipes';
+import { getAllCompositions } from '@/lib/nutrition/values/store';
 import { KEYS } from '@/lib/note/keys';
 
 const CAT_COLORS = {
   피자: { bg: 'var(--cat-1-bg)', color: 'var(--cat-1-text)' },
   '1인피자': { bg: 'var(--cat-3-bg)', color: 'var(--cat-3-text)' },
   사이드: { bg: 'var(--cat-2-bg)', color: 'var(--cat-2-text)' },
+  세트박스: { bg: 'var(--surface-2)', color: 'var(--text-2)' },
+  기타: { bg: 'var(--surface-2)', color: 'var(--text-3)' },
 };
-const USAGE_CATS = ['전체', MENU_CATEGORY.PIZZA, MENU_CATEGORY.SIDE, MENU_CATEGORY.PERSONAL];
+const USAGE_CATS = [
+  '전체',
+  MENU_CATEGORY.PIZZA,
+  MENU_CATEGORY.SIDE,
+  MENU_CATEGORY.PERSONAL,
+  MENU_CATEGORY.SET,
+  MENU_CATEGORY.ETC,
+];
 const USAGE_THRESHOLD = { HIGH: 8, MID: 4 };
 const TIER_LABEL = ['많이 쓰는 재료 (8개 이상)', '보통 (4–7개)', '적게 쓰는 재료 (1–3개)'];
 const tierOf = count => (count >= USAGE_THRESHOLD.HIGH ? 0 : count >= USAGE_THRESHOLD.MID ? 1 : 2);
@@ -102,9 +115,13 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    const [meta, recipeArrays, managed] = await Promise.all([
+    const [meta, menuMasters, recipes, groups, edges, compositions, managed] = await Promise.all([
       getAllIngredients(),
-      loadMenuRecipeArrays(),
+      getAllMenuMaster(),
+      getAllMenuRecipes(),
+      getAllRecipeGroups(),
+      getAllEdges(),
+      getAllCompositions(),
       seedManagedProductsIfEmpty().then(() => getManagedProducts()),
     ]);
     if (!mountedRef.current) return;
@@ -114,10 +131,11 @@ export default function Page() {
     setTypeMap(buildProductTypeMap(managed));
 
     const { byCode, byName } = buildIngredientUsageMap({
-      allMeta: meta,
-      pizzaRecs: recipeArrays.pizza,
-      personalRecs: recipeArrays.personal,
-      sideRecs: recipeArrays.side,
+      menuMasters,
+      detailRecipes: recipes,
+      groups,
+      edges,
+      compositions,
     });
     setUsageMap({ byCode, byName });
   }, [mountedRef]);

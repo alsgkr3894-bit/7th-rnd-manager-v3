@@ -6,6 +6,7 @@ import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { buildIngredientUsageRows, ingredientUsageIdentity } from '@/lib/ingredient/usage-summary';
 import { getAllMenuMaster } from '@/lib/menu-master/store';
 import { getAllMenuRecipes } from '@/lib/menu-recipes';
+import { getAllCompositions } from '@/lib/nutrition/values/store';
 
 const EMPTY_STATE = { loading: false, rows: [], error: null };
 
@@ -27,14 +28,16 @@ export function useIngredientUsageSummary(ingredient) {
       getAllMenuRecipes(),
       getAllRecipeGroups(),
       getAllEdges(),
+      getAllCompositions(),
     ])
-      .then(([menuMasters, recipes, groups, edges]) => {
+      .then(([menuMasters, recipes, groups, edges, compositions]) => {
         if (cancelled) return;
         const { ingredientToMenus } = buildIngredientMenuMap({
           menuMasters,
           detailRecipes: recipes,
           groups,
           edges,
+          compositions,
         });
         setState({
           loading: false,
