@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { showToast } from '@/components/Toast';
+import { getProfile, isAdminProfile } from '@/lib/profile';
 import {
   upsertEdge,
   EDGE_CODES,
@@ -17,31 +18,44 @@ export function TabEdge({ edges, edgeMap, onRefresh }) {
   const [selCode, setSelCode] = useState(EDGE_CODES[0]);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
+  const [profile, setProfile] = useState(() => getProfile());
 
   const existing = safeEdgeMap[selCode];
+  const isAdmin = isAdminProfile(profile);
 
   useEffect(() => {
     setForm(existing ? { ...existing } : {});
   }, [selCode, existing]);
 
+  useEffect(() => {
+    const syncProfile = () => setProfile(getProfile());
+    window.addEventListener('storage', syncProfile);
+    return () => window.removeEventListener('storage', syncProfile);
+  }, []);
+
   const setField = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSave = async () => {
+    if (!isAdmin) {
+      showToast('엣지 영양성분 저장은 관리자만 가능합니다.', 'warn');
+      return;
+    }
     setSaving(true);
     try {
       await upsertEdge({
+        ...form,
         ...(existing?.id ? { id: existing.id } : {}),
         edgeCode: selCode,
         edgeName: EDGE_NAMES[selCode],
         displayOrder: EDGE_CODES.indexOf(selCode) + 1,
-        ...form,
       });
-      showToast('저장 완료', 'ok');
+      showToast(existing ? '덮어쓰기 저장 완료' : '저장 완료', 'ok');
       refresh();
     } catch {
       showToast('저장 실패', 'error');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   return (
@@ -53,6 +67,12 @@ export function TabEdge({ edges, edgeMap, onRefresh }) {
           <br />
           석쇠와 씬바샤삭은 베이스 영양성분 탭에서 메뉴별 직접 입력하고,
           치즈크러스트와 골드스윗은 아래에서 사이즈별 조정값을 직접 입력합니다.
+          {!isAdmin && (
+            <>
+              <br />
+              현재 계정은 조회 전용입니다. 저장과 덮어쓰기는 관리자만 가능합니다.
+            </>
+          )}
         </div>
       </div>
 
@@ -143,10 +163,12 @@ export function TabEdge({ edges, edgeMap, onRefresh }) {
         <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 16 }}>
           석쇠 베이스 대비 조정 영양성분 값. 자동계산 없이 직접 입력/검수합니다.
         </div>
-        <NutritionGrid values={form} onChange={setField} />
+        <NutritionGrid values={form} onChange={setField} disabled={!isAdmin || saving} />
         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
-          <button className="btn primary" onClick={handleSave} disabled={saving}>
-            {saving ? '저장 중…' : `${EDGE_NAMES[selCode]} 저장`}
+          <button className="btn primary" onClick={handleSave} disabled={saving || !isAdmin}>
+            {saving
+              ? '저장 중…'
+              : `${EDGE_NAMES[selCode]} ${existing ? '덮어쓰기 저장' : '저장'}`}
           </button>
         </div>
       </div>

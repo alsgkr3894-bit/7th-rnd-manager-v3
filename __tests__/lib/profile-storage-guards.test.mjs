@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from '@jest/globals';
-import { getInitial, getProfile, setProfile } from '../../lib/profile.js';
+import { getInitial, getProfile, isAdminProfile, setProfile } from '../../lib/profile.js';
 import { KEYS } from '../../lib/note/keys.js';
 
 const originalLocalStorage = globalThis.localStorage;
@@ -53,5 +53,14 @@ describe('profile storage guards', () => {
     expect(getInitial(' 테스터 ')).toBe('테');
     expect(getInitial({ name: 'bad' })).toBe('?');
     expect(getInitial(7)).toBe('7');
+  });
+
+  test('isAdminProfile은 role이 관리자일 때만 true를 반환한다', () => {
+    installStorage();
+
+    expect(isAdminProfile()).toBe(true);
+    expect(isAdminProfile({ role: '관리자' })).toBe(true);
+    expect(isAdminProfile({ role: '조회자' })).toBe(false);
+    expect(isAdminProfile({ role: 'admin' })).toBe(false);
   });
 });
