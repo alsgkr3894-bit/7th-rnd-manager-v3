@@ -32,17 +32,6 @@ jest.unstable_mockModule('@/lib/recipe', () => ({
     }
     return map;
   },
-  calcCostBySizes: (recipe, unitPriceMap) => {
-    const result = {};
-    for (const size of recipe.sizes) {
-      result[size.label] = recipe.ingredients.reduce((sum, line) => {
-        const qty = line.quantities?.[size.label] ?? 0;
-        const unitPrice = unitPriceMap.get(line.productCode)?.unitPrice ?? 0;
-        return sum + unitPrice * qty;
-      }, 0);
-    }
-    return result;
-  },
   calcMarginRate: (cost, sellingPrice) => (sellingPrice > 0 ? (cost / sellingPrice) * 100 : null),
 }));
 
@@ -53,7 +42,7 @@ beforeEach(() => {
   hasStore.mockReturnValue(true);
   getAll.mockImplementation(async storeName => {
     if (storeName === 'cost_ingredients') return [];
-    if (storeName === 'cost_recipes') return [];
+    if (storeName === 'menu_recipes') return [];
     if (storeName === 'cost_selling_prices') return [];
     return [];
   });
@@ -74,27 +63,29 @@ describe('note cost-rate KPI guards', () => {
       if (storeName === 'cost_ingredients') {
         return [null, { productCode: 'A', baseQuantity: 100, priceOverride: 1000 }];
       }
-      if (storeName === 'cost_recipes') {
+      if (storeName === 'menu_recipes') {
         return [
           null,
           {
+            menuCode: 'P-001-L',
             menuName: '치즈피자',
-            ingredients: [{ productCode: 'A', quantities: { L: 50 } }],
-            sizes: [{ label: 'L', sellingPrice: '2000' }],
+            category: '피자',
+            size: 'L',
+            components: [{ productCode: 'A', quantity: 50 }],
           },
           {
             menuName: '깨진 레시피',
-            ingredients: 'bad',
-            sizes: [{ label: 'L', sellingPrice: 1000 }],
+            components: 'bad',
           },
           {
-            menuName: '깨진 사이즈',
-            ingredients: [{ productCode: 'A', quantities: { L: 50 } }],
-            sizes: 'bad',
+            menuName: '판매가 없는 레시피',
+            components: [{ productCode: 'A', quantity: 50 }],
           },
         ];
       }
-      if (storeName === 'cost_selling_prices') return [null, 'bad'];
+      if (storeName === 'cost_selling_prices') {
+        return [null, 'bad', { menuCode: 'P-001-L', menuName: '치즈피자', size: 'L', price: 2000 }];
+      }
       return [];
     });
     getPriceFiles.mockResolvedValue([{ id: 7 }, null]);
@@ -112,17 +103,18 @@ describe('note cost-rate KPI guards', () => {
       if (storeName === 'cost_ingredients') {
         return [{ productCode: 'A', baseQuantity: 100, priceOverride: 1000 }];
       }
-      if (storeName === 'cost_recipes') {
+      if (storeName === 'menu_recipes') {
         return [
           {
+            menuCode: 'P-001',
             menuName: '치즈피자',
-            ingredients: [{ productCode: 'A', quantities: { 단일: 25 } }],
-            sizes: [{ label: '단일' }],
+            size: '단일',
+            components: [{ productCode: 'A', quantity: 25 }],
           },
         ];
       }
       if (storeName === 'cost_selling_prices') {
-        return [{ menuName: '치즈피자', size: '단일', price: '1000' }];
+        return [{ menuCode: 'P-001', menuName: '치즈피자', size: '단일', price: '1000' }];
       }
       return [];
     });
