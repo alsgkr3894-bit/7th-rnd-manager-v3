@@ -16,6 +16,10 @@ describe('sales report preview structure', () => {
       resolve('components/report/sales/SalesRankTableSection.jsx'),
       'utf8'
     );
+    const rankRowsSource = readFileSync(
+      resolve('components/report/sales/SalesRankTableRows.jsx'),
+      'utf8'
+    );
     const compareSource = readFileSync(
       resolve('components/report/sales/SalesCompareTableSection.jsx'),
       'utf8'
@@ -43,6 +47,14 @@ describe('sales report preview structure', () => {
     expect(previewSource).not.toContain("safeScope === 'pizza' ? '피자' : '사이드'");
     expect(moverSource).toContain('피자 전월 대비 상승 / 하락 TOP 5');
     expect(rankSource).toContain('export function SalesRankTableSection');
+    expect(rankSource).toContain("from './SalesRankTableRows'");
+    expect(rankSource).toContain('<SalesRankTable');
+    expect(rankSource).not.toContain('function SalesVariantRows');
+    expect(rankSource).not.toContain('className="paper-table"');
+    expect(rankRowsSource).toContain('export function SalesCategoryBarRows');
+    expect(rankRowsSource).toContain('export function SalesRankTable');
+    expect(rankRowsSource).toContain('function SalesVariantRows');
+    expect(rankRowsSource).toContain('className="paper-table"');
     expect(compareSource).toContain('export function SalesCompareTableSection');
     expect(excludedSource).toContain('export function SalesExcludedListSection');
   });

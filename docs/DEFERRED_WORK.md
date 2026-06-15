@@ -111,6 +111,7 @@
   - `app/report/sales/page.jsx` ✅ 2026-06-15 부분 보강 — Excel export 시트/파일명 조립을 `lib/report/sales-export.js`로 분리하고 fixture 테스트 추가. 938→856줄.
   - `app/report/sales/page.jsx` ✅ 2026-06-15 추가 보강 — 보고서 미리보기 전체를 `components/report/sales/SalesReportPreview.jsx`로 분리. 856→307줄.
   - `components/report/sales/SalesReportPreview.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 비중·피자 변동·순위표·비교표·제외 리스트 섹션 컴포넌트 분리. 587→94줄.
+  - `components/report/sales/SalesRankTableSection.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 막대·순위표·사이즈 variant row 렌더링을 `SalesRankTableRows`로 분리. 197→52줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 부분 보강 — `NoteTableRow`·`NoteContextMenu` 렌더링 컴포넌트 분리. 1022→843줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — `NoteStatsSummary`·`NoteFilterControls` 렌더링 컴포넌트 분리. 843→642줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — `NoteCardGrid`·`NoteTableView` 목록 렌더링 컴포넌트 분리. 642→546줄.
@@ -127,7 +128,7 @@
   1. `app/nutrition/allergen/useAllergenPageData.js` (~247줄) — 알레르기 파생 행/정렬 정책이 더 늘어날 때 matrix/order 하위 hook 분리 재평가
   2. `app/note/_NoteContent.jsx` (~245줄) — 컨텍스트 메뉴 좌표/상세 모달 wiring이 더 커질 때 하위 hook 분리 재평가
   3. `app/ingredient/manage/IngredientCostFields.jsx` (~205줄) — 단가/보관/범위 정책이 늘어날 때 cost 하위 필드 추가 분리 재평가
-  4. `components/report/sales/SalesRankTableSection.jsx` (~197줄) — 순위표 요구가 늘어날 때 bar rows/variant rows 추가 분리
+  4. `components/report/sales/SalesRankTableRows.jsx` (~164줄) — 순위표 row 변형/전월 비교 표시 요구가 늘어날 때 row type별 추가 분리
   5. `app/ingredient/list/page.jsx` — 현재 redirect route 5줄 수준, 별도 분해 불필요
 - **방향**: page는 조립만 담당, table/panel/modal/hook으로 분리.
 - **왜 보류**: 효과 < 회귀 위험. 기능 추가 시점에 함께 진행 예정.
