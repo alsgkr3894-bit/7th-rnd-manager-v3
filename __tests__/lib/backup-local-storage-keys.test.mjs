@@ -62,6 +62,7 @@ describe('nutrition backup localStorage keys', () => {
         'v3:density',
         'v3:roundMode',
         'v3:costRateAlert',
+        'rnd_active_account_id',
       ])
     );
     expect(persistentLocalStorageKeysForScopes(['jette'])).not.toContain(
@@ -76,6 +77,7 @@ describe('nutrition backup localStorage keys', () => {
           'v3:profile': 'profile',
           'v3:density': 'compact',
           'v3:roundMode': 'floor',
+          rnd_active_account_id: '42',
           'v3:nutrition-menu-order': 'nutrition',
           'v3:unknown': 'unknown',
         },
@@ -87,6 +89,7 @@ describe('nutrition backup localStorage keys', () => {
       'v3:profile': 'profile',
       'v3:density': 'compact',
       'v3:roundMode': 'floor',
+      rnd_active_account_id: '42',
     });
   });
 
