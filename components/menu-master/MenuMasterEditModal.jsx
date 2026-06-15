@@ -50,7 +50,14 @@ export function CategoryTags({ menuCode }) {
   );
 }
 
-export function MenuMasterEditModal({ row, isNew, onSave, onClose, presetCategories = [] }) {
+export function MenuMasterEditModal({
+  row,
+  isNew,
+  onSave,
+  onClose,
+  presetCategories = [],
+  onRecipeSaved,
+}) {
   const [form, setForm] = useState({
     menuCode: row?.menuCode || '',
     menuName: row?.menuName || '',
@@ -363,6 +370,8 @@ export function MenuMasterEditModal({ row, isNew, onSave, onClose, presetCategor
                 menuName={form.menuName}
                 category={form.category}
                 size={form.size || '단일'}
+                sellingPrice={form.price}
+                onSaved={onRecipeSaved}
               />
             </div>
           )}

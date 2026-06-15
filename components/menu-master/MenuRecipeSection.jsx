@@ -4,6 +4,9 @@ import { initDB } from '@/lib/db';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { getAllIngredients } from '@/lib/ingredient';
+import { formatNumber, formatPercent, formatUnitPrice } from '@/lib/format';
+import { COST_BASE_UNITS, normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
+import { loadLatestUnitPriceMap, summarizeMenuRecipe } from '@/lib/menu-master/recipe-summary';
 import {
   isPersonalPizzaCategory,
   isSetCategory,
@@ -28,14 +31,55 @@ function storeApiFor(category) {
 
 let _rowKey = 0;
 function newRow() {
-  return { _key: ++_rowKey, ingredientName: '', productCode: '', quantity: '', unit: 'g' };
+  return {
+    _key: ++_rowKey,
+    ingredientName: '',
+    productCode: '',
+    quantity: '',
+    unit: 'g',
+    unitPrice: null,
+  };
 }
 
-export function MenuRecipeSection({ menuCode, menuName, category, size }) {
+function productCodeOf(component) {
+  return String(component?.productCode || '').trim();
+}
+
+function unitPriceInfoFor(component, unitPriceMap) {
+  const productCode = productCodeOf(component);
+  return productCode ? unitPriceMap.get(productCode) || null : null;
+}
+
+function hydrateComponent(component, unitPriceMap) {
+  const info = unitPriceInfoFor(component, unitPriceMap);
+  return {
+    ...component,
+    _key: ++_rowKey,
+    unit: normalizeCostBaseUnit(info?.baseUnitType || component?.unit),
+    unitPrice: info?.unitPrice ?? component?.unitPrice ?? null,
+  };
+}
+
+function buildSaveComponent(component, unitPriceMap) {
+  const productCode = productCodeOf(component);
+  const info = productCode ? unitPriceMap.get(productCode) : null;
+  const quantity = component.quantity !== '' ? Number(component.quantity) : null;
+  return {
+    ingredientName: component.ingredientName || '',
+    productCode: productCode || null,
+    quantity,
+    unit: normalizeCostBaseUnit(info?.baseUnitType || component.unit),
+    unitPrice:
+      info?.unitPrice ?? (component.unitPrice != null ? Number(component.unitPrice) : null),
+  };
+}
+
+export function MenuRecipeSection({ menuCode, menuName, category, size, sellingPrice, onSaved }) {
   const [components, setComponents] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [allIngs, setAllIngs] = useState([]);
+  const [unitPriceMap, setUnitPriceMap] = useState(new Map());
   const [searchIdx, setSearchIdx] = useState(null); // index of row being searched
   const [searchQ, setSearchQ] = useState('');
 
@@ -43,18 +87,27 @@ export function MenuRecipeSection({ menuCode, menuName, category, size }) {
   const supported = Boolean(api && menuCode);
 
   useEffect(() => {
+    setLoaded(false);
+    setComponents([]);
+    setAllIngs([]);
+    setUnitPriceMap(new Map());
     if (!supported) return;
     let ignore = false;
     initDB().then(async () => {
-      const [all, ings] = await Promise.all([api.getAll(), getAllIngredients()]);
+      const [all, ings, latestUnitPriceMap] = await Promise.all([
+        api.getAll(),
+        getAllIngredients(),
+        loadLatestUnitPriceMap(),
+      ]);
       if (ignore) return;
       const existing = all.find(r => r.menuCode === menuCode);
       setComponents(
         existing?.components?.length
-          ? existing.components.map(c => ({ ...c, _key: ++_rowKey }))
+          ? existing.components.map(c => hydrateComponent(c, latestUnitPriceMap))
           : []
       );
       setAllIngs(ings);
+      setUnitPriceMap(latestUnitPriceMap);
       setLoaded(true);
     });
     return () => {
@@ -89,22 +142,38 @@ export function MenuRecipeSection({ menuCode, menuName, category, size }) {
     setComponents(prev => [...prev, newRow()]);
   }, []);
 
-  const pickSuggestion = useCallback((idx, ing) => {
-    setComponents(prev =>
-      prev.map((c, i) =>
-        i === idx
-          ? {
-              ...c,
-              ingredientName: ing.ingredientName || '',
-              productCode: ing.productCode || '',
-              unit: ing.baseUnitType || 'g',
-            }
-          : c
-      )
-    );
-    setSearchIdx(null);
-    setSearchQ('');
-  }, []);
+  const pickSuggestion = useCallback(
+    (idx, ing) => {
+      setComponents(prev =>
+        prev.map((c, i) =>
+          i === idx
+            ? {
+                ...c,
+                ingredientName: ing.ingredientName || '',
+                productCode: ing.productCode || '',
+                unit: normalizeCostBaseUnit(
+                  unitPriceMap.get(ing.productCode)?.baseUnitType || ing.baseUnitType
+                ),
+                unitPrice: unitPriceMap.get(ing.productCode)?.unitPrice ?? null,
+              }
+            : c
+        )
+      );
+      setSearchIdx(null);
+      setSearchQ('');
+    },
+    [unitPriceMap]
+  );
+
+  const recipeSummary = useMemo(
+    () =>
+      summarizeMenuRecipe(
+        { menuCode, category, price: sellingPrice },
+        { components },
+        unitPriceMap
+      ),
+    [category, components, menuCode, sellingPrice, unitPriceMap]
+  );
 
   const handleSave = useCallback(async () => {
     if (!api) return;
@@ -114,21 +183,16 @@ export function MenuRecipeSection({ menuCode, menuName, category, size }) {
         menuCode,
         menuName: menuName || '',
         size: size || '단일',
-        components: components.map(c => ({
-          ingredientName: c.ingredientName || '',
-          productCode: c.productCode || null,
-          quantity: c.quantity !== '' ? Number(c.quantity) : null,
-          unit: c.unit || 'g',
-          unitPrice: null,
-        })),
+        components: components.map(c => buildSaveComponent(c, unitPriceMap)),
       });
+      await onSaved?.();
       showToast('레시피 저장됨', 'ok');
     } catch (err) {
       showToast('저장 실패: ' + err.message, 'err');
     } finally {
       setSaving(false);
     }
-  }, [api, menuCode, menuName, size, components]);
+  }, [api, menuCode, menuName, size, components, unitPriceMap, onSaved]);
 
   if (!supported) return null;
 
@@ -162,6 +226,38 @@ export function MenuRecipeSection({ menuCode, menuName, category, size }) {
           {saving ? '저장 중…' : '레시피 저장'}
         </button>
       </div>
+
+      {components.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+            fontSize: 11,
+            color: 'var(--text-3)',
+            margin: '0 0 8px',
+          }}
+        >
+          <span>
+            예상 원가{' '}
+            <b style={{ color: 'var(--text-1)' }}>{formatNumber(recipeSummary.totalCost)}원</b>
+          </span>
+          {recipeSummary.costRate != null && (
+            <span>원가율 {formatPercent(recipeSummary.costRate)}</span>
+          )}
+          {recipeSummary.missingQuantityCount > 0 && (
+            <span style={{ color: 'var(--warn)' }}>
+              수량 확인 {recipeSummary.missingQuantityCount}
+            </span>
+          )}
+          {recipeSummary.missingPriceCount > 0 && (
+            <span style={{ color: 'var(--warn)' }}>
+              단가 확인 {recipeSummary.missingPriceCount}
+            </span>
+          )}
+        </div>
+      )}
 
       {components.length === 0 ? (
         <div
@@ -210,6 +306,17 @@ export function MenuRecipeSection({ menuCode, menuName, category, size }) {
               >
                 단위
               </th>
+              <th
+                style={{
+                  width: 84,
+                  textAlign: 'right',
+                  padding: '4px 4px',
+                  fontWeight: 600,
+                  color: 'var(--text-3)',
+                }}
+              >
+                단가
+              </th>
               <th style={{ width: 24 }} />
             </tr>
           </thead>
@@ -249,22 +356,12 @@ export function MenuRecipeSection({ menuCode, menuName, category, size }) {
                       }}
                     >
                       {suggestions.map(ing => (
-                        <div
+                        <SuggestionItem
                           key={ing.id || ing.productCode}
-                          onMouseDown={() => pickSuggestion(idx, ing)}
-                          style={{
-                            padding: '6px 10px',
-                            cursor: 'pointer',
-                            fontSize: 12,
-                          }}
-                        >
-                          {ing.ingredientName}
-                          {ing.productCode && (
-                            <span style={{ color: 'var(--text-4)', marginLeft: 6, fontSize: 11 }}>
-                              {ing.productCode}
-                            </span>
-                          )}
-                        </div>
+                          ingredient={ing}
+                          unitPriceMap={unitPriceMap}
+                          onPick={() => pickSuggestion(idx, ing)}
+                        />
                       ))}
                     </div>
                   )}
@@ -281,18 +378,29 @@ export function MenuRecipeSection({ menuCode, menuName, category, size }) {
                   />
                 </td>
                 <td style={{ padding: '4px 4px' }}>
-                  <input
+                  <select
                     className="form-input"
-                    style={{ width: '100%', fontSize: 12, padding: '4px 6px' }}
-                    value={c.unit || 'g'}
-                    onChange={e => updateRow(idx, 'unit', e.target.value)}
-                    placeholder="g"
-                  />
+                    style={{ width: '100%', fontSize: 12, padding: '4px 4px' }}
+                    value={normalizeCostBaseUnit(c.unit)}
+                    onChange={e => updateRow(idx, 'unit', normalizeCostBaseUnit(e.target.value))}
+                  >
+                    {COST_BASE_UNITS.map(unit => (
+                      <option key={unit} value={unit}>
+                        {unit}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td style={{ padding: '4px 4px', textAlign: 'right', fontSize: 11 }}>
+                  <span style={{ color: c.unitPrice != null ? 'var(--text-2)' : 'var(--warn)' }}>
+                    {formatUnitPrice(c.unitPrice, normalizeCostBaseUnit(c.unit)) || '단가 없음'}
+                  </span>
                 </td>
                 <td style={{ padding: '4px 2px', textAlign: 'center' }}>
                   <button
                     type="button"
                     onClick={() => removeRow(idx)}
+                    title="구성품 삭제"
                     style={{
                       border: 0,
                       background: 'transparent',
@@ -318,6 +426,32 @@ export function MenuRecipeSection({ menuCode, menuName, category, size }) {
       >
         + 구성품 추가
       </button>
+    </div>
+  );
+}
+
+function SuggestionItem({ ingredient, unitPriceMap, onPick }) {
+  const info = ingredient.productCode ? unitPriceMap.get(ingredient.productCode) : null;
+  return (
+    <div
+      onMouseDown={onPick}
+      style={{
+        padding: '6px 10px',
+        cursor: 'pointer',
+        fontSize: 12,
+      }}
+    >
+      {ingredient.ingredientName}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 1 }}>
+        {ingredient.productCode && (
+          <span style={{ color: 'var(--text-4)', fontSize: 11 }}>{ingredient.productCode}</span>
+        )}
+        {info?.unitPrice != null && (
+          <span style={{ color: 'var(--text-3)', fontSize: 11 }}>
+            {formatUnitPrice(info.unitPrice, info.baseUnitType)}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
