@@ -1,7 +1,7 @@
 'use client';
 
 import { Icon } from '@/components/icons';
-import { CategoryTags } from '@/components/menu-master/MenuMasterEditModal';
+import { CategoryTags } from '@/components/menu-master/MenuCategoryTags';
 import { MenuRecipeCostCell } from '@/components/menu-master/MenuRecipeCostCell';
 
 const STATUS_LABEL = { active: '활성', discontinued: '단종', test: '테스트' };
