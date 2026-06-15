@@ -55,7 +55,14 @@ describe('nutrition backup localStorage keys', () => {
 
   test('모듈 선택에 맞는 localStorage key만 고른다', () => {
     expect(persistentLocalStorageKeysForScopes(['jette'])).toEqual(
-      expect.arrayContaining(['v3:jette-settings', 'v3:home-widgets', 'v3:profile'])
+      expect.arrayContaining([
+        'v3:jette-settings',
+        'v3:home-widgets',
+        'v3:profile',
+        'v3:density',
+        'v3:roundMode',
+        'v3:costRateAlert',
+      ])
     );
     expect(persistentLocalStorageKeysForScopes(['jette'])).not.toContain(
       'v3:nutrition-menu-order'
@@ -67,6 +74,8 @@ describe('nutrition backup localStorage keys', () => {
           'v3:jette-settings': 'jette',
           'v3:home-widgets': 'home',
           'v3:profile': 'profile',
+          'v3:density': 'compact',
+          'v3:roundMode': 'floor',
           'v3:nutrition-menu-order': 'nutrition',
           'v3:unknown': 'unknown',
         },
@@ -76,6 +85,8 @@ describe('nutrition backup localStorage keys', () => {
       'v3:jette-settings': 'jette',
       'v3:home-widgets': 'home',
       'v3:profile': 'profile',
+      'v3:density': 'compact',
+      'v3:roundMode': 'floor',
     });
   });
 

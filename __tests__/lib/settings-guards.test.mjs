@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from '@jest/globals';
-import { getSetting, setSetting } from '../../lib/settings.js';
+import { getSetting, setSetting, SETTING_KEYS, SETTING_LS_KEYS } from '../../lib/settings.js';
 
 const originalLocalStorage = globalThis.localStorage;
 
@@ -45,5 +45,12 @@ describe('settings guards', () => {
 
     expect(store['v3:fontScale']).toBe('normal');
     expect(store['v3:unmatchedAlert']).toBe('on');
+  });
+
+  test('백업용 localStorage key 목록은 설정 key와 1:1로 맞는다', () => {
+    expect(SETTING_LS_KEYS).toEqual(SETTING_KEYS.map(key => `v3:${key}`));
+    expect(SETTING_LS_KEYS).toEqual(
+      expect.arrayContaining(['v3:density', 'v3:fontScale', 'v3:roundMode'])
+    );
   });
 });
