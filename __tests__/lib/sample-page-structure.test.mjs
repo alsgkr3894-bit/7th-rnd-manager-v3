@@ -4,6 +4,15 @@ import { resolve } from 'path';
 const pageSource = readFileSync(resolve('app/note/sample/page.jsx'), 'utf8');
 const actionsSource = readFileSync(resolve('app/note/sample/_SamplePageActions.jsx'), 'utf8');
 const filtersSource = readFileSync(resolve('app/note/sample/_SampleFilterControls.jsx'), 'utf8');
+const categoryFilterSource = readFileSync(
+  resolve('app/note/sample/_SampleCategoryFilter.jsx'),
+  'utf8'
+);
+const ratingViewSource = readFileSync(
+  resolve('app/note/sample/_SampleRatingViewControls.jsx'),
+  'utf8'
+);
+const searchFieldSource = readFileSync(resolve('app/note/sample/_SampleSearchField.jsx'), 'utf8');
 const calendarSource = readFileSync(resolve('app/note/sample/_SampleCalendarView.jsx'), 'utf8');
 const recordsSource = readFileSync(resolve('app/note/sample/_SampleRecordsView.jsx'), 'utf8');
 const stateHookSource = readFileSync(resolve('app/note/sample/useSamplePageState.js'), 'utf8');
@@ -57,8 +66,21 @@ describe('sample page structure', () => {
     expect(actionsSource).toContain('printCurrentPageWithDownloadDate');
     expect(actionsSource).toContain('엑셀로 내보내기');
     expect(filtersSource).toContain('export function SampleFilterControls');
-    expect(filtersSource).toContain('className="sample-filter-row"');
-    expect(filtersSource).toContain('제목, 메뉴명, 내용, 태그 검색');
+    expect(filtersSource).toContain('<SampleCategoryFilter');
+    expect(filtersSource).toContain('<SampleRatingViewControls');
+    expect(filtersSource).toContain('<SampleSearchField');
+    expect(filtersSource).not.toContain('className="sample-filter-row"');
+    expect(filtersSource).not.toContain('제목, 메뉴명, 내용, 태그 검색');
+    expect(categoryFilterSource).toContain('export function SampleCategoryFilter');
+    expect(categoryFilterSource).toContain(
+      "className={'chip' + (catFilter === key ? ' active' : '')}"
+    );
+    expect(ratingViewSource).toContain('export function SampleRatingViewControls');
+    expect(ratingViewSource).toContain('className="sample-filter-row"');
+    expect(ratingViewSource).toContain('const VIEW_OPTIONS = [');
+    expect(searchFieldSource).toContain('export function SampleSearchField');
+    expect(searchFieldSource).toContain('제목, 메뉴명, 내용, 태그 검색');
+    expect(searchFieldSource).toContain('<Icon.search');
     expect(calendarSource).toContain('export function SampleCalendarView');
     expect(calendarSource).toContain('className="cal-grid"');
     expect(calendarSource).toContain('RATING_COLOR');
