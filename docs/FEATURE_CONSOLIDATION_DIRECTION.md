@@ -472,6 +472,7 @@
 | 메뉴개발노트 목록의 props builder 파일 세분화 | 구현 완료 | 이번 보강(2026-06-16) |
 | 메뉴개발노트 목록의 컨텍스트 메뉴 상태 hook 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 메뉴개발노트 목록 본문의 props 조립 helper 분리 | 구현 완료 | 이번 보강(2026-06-16) |
+| 메뉴개발노트 목록 본문의 overlay/view props helper 세분화 | 구현 완료 | 이번 보강(2026-06-16) |
 | 샘플기록 화면의 헤더/필터/캘린더/목록 렌더링 컴포넌트 분리 | 구현 완료 | 이번 보강(2026-06-15) |
 | 샘플기록 화면의 데이터/필터/액션 hook 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 샘플기록 화면의 필터/검색 하위 컴포넌트 분리 | 구현 완료 | 이번 보강(2026-06-16) |
@@ -653,7 +654,7 @@
 | 메뉴개발노트 목록 조립 구조 | 구현 완료: 헤더 액션, 확인 다이얼로그, 로딩/빈 상태까지 분리해 page는 데이터와 이벤트 연결 중심으로 유지 |
 | 메뉴개발노트 단일 노트 액션 구조 | 구현 완료: 삭제/undo 복원, 복사, 상태변경 pop 처리, 새 버전 이동을 `useNoteItemActions`로 분리 |
 | 메뉴개발노트 목록 상태 구조 | 구현 완료: 데이터 로드, 필터/view 상태, 검색 히스토리, 보고예정 복사를 전용 hook으로 분리 |
-| 메뉴개발노트 목록 본문 구조 | 구현 완료: 카드/테이블 전환, 컨텍스트 메뉴 좌표, 상세 모달 렌더링은 `NoteListBody`로 분리하고, 하위 컴포넌트 props 조립과 stopPropagation adapter는 `noteListBodyProps`와 단위 테스트로 고정 |
+| 메뉴개발노트 목록 본문 구조 | 구현 완료: 카드/테이블 전환, 컨텍스트 메뉴 좌표, 상세 모달 렌더링은 `NoteListBody`로 분리하고, 하위 props 조립은 `noteListBodyOverlayProps`·`noteListBodyViewProps`와 단위 테스트로 고정 |
 | 메뉴개발노트 목록 컨텍스트 메뉴 상태 구조 | 구현 완료: 우클릭 좌표 계산과 ESC 닫기 이벤트는 `useNoteContextMenuState`로 분리 |
 | 메뉴개발노트 목록 controller props 구조 | 구현 완료: hook은 데이터/상태 hook 연결만 맡기고 dialogs/header/filter/body props 조립은 `lib/note/content-props.js`로 분리 |
 | 메뉴개발노트 목록 controller props 그룹 구조 | 구현 완료: `content-props`는 최종 조립만 맡기고 dialogs/header/filter/preset/states/body props 그룹은 `content-prop-builders`로 분리 |

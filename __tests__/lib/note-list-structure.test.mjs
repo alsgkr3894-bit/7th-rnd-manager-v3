@@ -10,6 +10,11 @@ describe('note list structure', () => {
     const tableViewSource = readFileSync(resolve('app/note/_NoteTableView.jsx'), 'utf8');
     const bodySource = readFileSync(resolve('app/note/_NoteListBody.jsx'), 'utf8');
     const bodyPropsSource = readFileSync(resolve('app/note/noteListBodyProps.js'), 'utf8');
+    const bodyOverlayPropsSource = readFileSync(
+      resolve('app/note/noteListBodyOverlayProps.js'),
+      'utf8'
+    );
+    const bodyViewPropsSource = readFileSync(resolve('app/note/noteListBodyViewProps.js'), 'utf8');
     const contextMenuStateSource = readFileSync(
       resolve('app/note/useNoteContextMenuState.js'),
       'utf8'
@@ -114,11 +119,13 @@ describe('note list structure', () => {
     expect(bodySource).not.toContain('window.innerWidth - 180');
     expect(bodySource).not.toContain("e.key === 'Escape'");
     expect(bodySource).not.toContain('stopPropagation: () => {}');
-    expect(bodyPropsSource).toContain('export function buildNoteContextMenuProps');
-    expect(bodyPropsSource).toContain('export function buildNoteCardGridProps');
-    expect(bodyPropsSource).toContain('export function buildNoteTableViewProps');
-    expect(bodyPropsSource).toContain('export function buildNoteDetailModalProps');
-    expect(bodyPropsSource).toContain('stopPropagation: () => {}');
+    expect(bodyPropsSource).toContain("from './noteListBodyOverlayProps'");
+    expect(bodyPropsSource).toContain("from './noteListBodyViewProps'");
+    expect(bodyOverlayPropsSource).toContain('export function buildNoteContextMenuProps');
+    expect(bodyOverlayPropsSource).toContain('export function buildNoteDetailModalProps');
+    expect(bodyOverlayPropsSource).toContain('stopPropagation: () => {}');
+    expect(bodyViewPropsSource).toContain('export function buildNoteCardGridProps');
+    expect(bodyViewPropsSource).toContain('export function buildNoteTableViewProps');
     expect(contextMenuStateSource).toContain('export function useNoteContextMenuState');
     expect(contextMenuStateSource).toContain('const [ctxMenu');
     expect(contextMenuStateSource).toContain('window.innerWidth - 180');
