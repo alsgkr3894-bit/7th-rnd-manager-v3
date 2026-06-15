@@ -149,6 +149,13 @@
 
 ### 3.3 메뉴마스터와 판매가 동기화 정책 충돌
 
+**구현 상태**
+
+- 구현 완료: `7742193 fix: keep menu master authoritative for price sync`
+- 판매가 테이블 변경으로 기존 메뉴마스터의 메뉴명, 분류, 규격, 상태, 메모, 숨김, 원산지 제외, 표시순서가 덮이지 않도록 제한했다.
+- 판매가 쪽 신규 menuCode는 `source: price-sync`로 메뉴마스터에 생성하고, 기존 menuCode는 가격만 갱신한다.
+- 판매가 입력의 중복 menuCode는 마지막 행만 반영하되 `duplicateMenuCodes` 진단으로 반환한다.
+
 **관련 파일**
 
 - `lib/menu-master/index.js`
@@ -161,8 +168,8 @@
 **현재 상태**
 
 - `lib/menu-master/index.js` 주석은 "메뉴 마스터가 모든 모듈의 메인 데이터 소스"라고 설명한다.
-- 하지만 `syncMenuMasterFromPrices()`는 판매가 행에서 메뉴마스터를 갱신하고, `pushMasterToPrices()`는 메뉴마스터에서 판매가를 갱신한다.
-- 즉 실질적으로 양방향 동기화가 있다.
+- `syncMenuMasterFromPrices()`는 판매가 행에서 신규 메뉴 생성과 가격 갱신만 수행한다.
+- `pushMasterToPrices()`는 메뉴마스터에서 판매가 mirror를 갱신하며, 단종 메뉴는 판매가 mirror에서 제거한다.
 
 **충돌 가능성**
 
