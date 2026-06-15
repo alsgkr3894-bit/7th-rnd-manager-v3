@@ -406,7 +406,7 @@
 - 메뉴마스터 삭제는 같은 브랜드 DB의 `menu_master`, `cost_selling_prices`, `menu_recipes`, `nutrition_menu_ref`, `nutrition_raw_values` 삭제를 하나의 transaction으로 묶는다.
 - 메뉴마스터 삭제 확인창은 삭제 전 연결 판매가, 메뉴 레시피, 영양 메뉴, 영양값 영향 건수를 표시한다.
 - 내부/복구 경로에서 메뉴코드가 변경되는 경우 같은 연결 store의 `menuCode`도 하나의 transaction으로 갱신하고, 대상 코드 충돌이 있으면 저장을 중단한다.
-- 식자재 삭제의 legacy `nutrition_allergy_links`는 운영 schema에서 제거되어 실사용 cascade 대상이 아니며, 남은 helper는 구형 DB 호환 no-op 가드로 유지한다.
+- 식자재 삭제의 legacy `nutrition_allergy_links`는 운영 schema에서 제거되어 실사용 cascade 대상이 아니며, 호환 helper는 구형 DB no-op 가드로 유지한다.
 
 **관련 파일**
 
@@ -513,7 +513,7 @@
 | 후보 | 이유 |
 |---|---|
 | `lib/nutrition/crust-config.js`와 `lib/cost/edge-dough/*` | nutrition의 L/R 포함 엣지 코드와 cost의 edgeType 체계가 다르다고 코드 주석에 명시되어 있음 |
-| `components/cost/ingredient-price/BulkPriceModal.jsx`와 `components/cost/menu-price/BulkPriceModal.jsx` | 이름은 같지만 다루는 데이터와 workflow가 다름. 기존 문서에도 통합 미구현으로 분류됨 |
+| `components/cost/ingredient-price/BulkPriceModal.jsx`와 `components/cost/menu-price/BulkPriceModal.jsx` | 이름은 같지만 다루는 데이터와 workflow가 달라 통합 대상에서 제외함 |
 | `components/sales/UploadDropzone.jsx`와 `components/ui/UploadDropzone.jsx` | 이미 sales wrapper가 ui 공통 컴포넌트를 감싼 구조라 중복 구현이 아님. 이름만 `SalesUploadDropzone`로 바꾸면 더 명확함 |
 | `lib/nutrition/values/store.js`의 `CRUST_TYPES` re-export | 기존 import 경로 호환용. 바로 제거하면 호출부 변경이 커짐 |
 | `Field` 같은 로컬 작은 컴포넌트 | 이름만 같고 범위가 좁음. 통합 효과 낮음 |
