@@ -16,12 +16,6 @@ const GROUPS = [
       { href: '/cost/recipe', icon: 'doc', title: '레시피', sub: '메뉴별 사용 재료·배합 비율' },
       { href: '/cost/manage', icon: 'box', title: '공통 관리', sub: '공통묶음 · 엣지 원가 관리' },
       {
-        href: '/menu-master',
-        icon: 'download',
-        title: '메뉴 마스터',
-        sub: '메뉴코드·분류·판매가 기준 관리',
-      },
-      {
         href: '/cost/margin',
         icon: 'chart',
         title: '원가마진표',

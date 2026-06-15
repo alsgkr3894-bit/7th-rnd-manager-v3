@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import ReportBuilderShell, { OptGroup, Check } from '@/components/report/ReportBuilderShell';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { formatNumber } from '@/lib/format';
@@ -8,6 +8,7 @@ import { loadXlsx } from '@/lib/excel';
 import { showToast } from '@/components/Toast';
 import { CostReportView } from '@/components/report/cost/CostReportView';
 import { CostTableView } from '@/components/report/cost/CostTableView';
+import { RecipePrintView } from '@/components/report/cost/RecipePrintView';
 import { initDB } from '@/lib/db/init';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
 import { getAllRecipes, buildUnitPriceMap } from '@/lib/recipe';
@@ -22,7 +23,11 @@ import { getActiveBrand } from '@/lib/active-brand';
 import { useReportPageState } from '@/hooks/useReportPageState';
 import { getProfile } from '@/lib/profile';
 import { getMenuCodeRank } from '@/lib/menu-categories';
-import { buildCostReportData } from '@/lib/report/build-cost-report';
+import {
+  buildCostReportData,
+  buildRecipePrintMenus,
+  buildRecipePrintRows,
+} from '@/lib/report/build-cost-report';
 
 // ── 상수 ──────────────────────────────────────────────────────
 // 카테고리 순서: 원가마진표와 동일
@@ -38,7 +43,7 @@ const CAT_META = {
 
 const DRAFT_KEY = 'report_draft_cost';
 
-async function exportCostXlsx(periodLabel, activeCats) {
+async function exportCostXlsx(periodLabel, activeCats, recipeRows) {
   const XLSX = await loadXlsx();
   const periodPart = periodLabel.replace(
     /(\d+)년 (\d+)월/,
@@ -89,6 +94,75 @@ async function exportCostXlsx(periodLabel, activeCats) {
   sheet2['!cols'] = [{ wch: 14 }, { wch: 32 }, { wch: 14 }, { wch: 14 }, { wch: 12 }];
   XLSX.utils.book_append_sheet(wb, sheet2, '메뉴 상세');
 
+  // 시트3: 레시피 출력
+  const recipeSheetRows = [
+    [
+      '카테고리',
+      '메뉴코드',
+      '메뉴명',
+      '규격',
+      '원가식자재',
+      '제품코드',
+      '수량',
+      '단위',
+      '단가(원)',
+      '소계(원)',
+      '레시피합계(원)',
+      '비고',
+    ],
+    ...(Array.isArray(recipeRows) ? recipeRows : []).flatMap(row => {
+      const components = Array.isArray(row.components) ? row.components : [];
+      if (!components.length) {
+        return [
+          [
+            row.categoryLabel,
+            row.menuCode,
+            row.menuName,
+            row.size,
+            '구성품 미작성',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            row.note || '',
+          ],
+        ];
+      }
+      return components.map((component, index) => [
+        row.categoryLabel,
+        row.menuCode,
+        row.menuName,
+        row.size,
+        component.ingredientName,
+        component.productCode,
+        component.quantity ?? '',
+        component.unit || '',
+        component.unitPrice ?? '',
+        component.subtotal ?? '',
+        index === 0 ? row.totalCost || '' : '',
+        component.note || row.note || '',
+      ]);
+    }),
+  ];
+  const sheet3 = XLSX.utils.aoa_to_sheet(recipeSheetRows);
+  sheet3['!cols'] = [
+    { wch: 12 },
+    { wch: 16 },
+    { wch: 28 },
+    { wch: 8 },
+    { wch: 28 },
+    { wch: 16 },
+    { wch: 10 },
+    { wch: 8 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 14 },
+    { wch: 24 },
+  ];
+  XLSX.utils.book_append_sheet(wb, sheet3, '레시피 출력');
+
   XLSX.writeFile(
     wb,
     withDownloadDateSuffix(`${getActiveBrand().name}_${periodPart} 원가계산 보고서.xlsx`)
@@ -127,6 +201,7 @@ export default function Page() {
   const [viewTab, setViewTab] = useState('report');
   const [dataError, setDataError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [recipeRows, setRecipeRows] = useState([]);
 
   const [costByCategory, setCostByCategory] = useState(() =>
     Object.fromEntries(
@@ -181,8 +256,21 @@ export default function Page() {
             recipeByName,
             upm: buildUnitPriceMap(ingredients, new Map()),
           };
+          const nextRecipeRows = buildRecipePrintRows({
+            detailMaps: ctx.detailMaps,
+            legacyRecipes: recipes,
+            unitPriceMap: ctx.upm,
+          });
           loadedCtxRef.current = { prices, ctx };
-          setCostByCategory(buildCostReportData(prices, { ...ctx, includeEdge: opts.includeEdge }, CAT_KEYS, CAT_META));
+          setRecipeRows(nextRecipeRows);
+          setCostByCategory(
+            buildCostReportData(
+              prices,
+              { ...ctx, includeEdge: opts.includeEdge },
+              CAT_KEYS,
+              CAT_META
+            )
+          );
           setDataError(null);
         } catch (err) {
           if (ignore) return;
@@ -209,7 +297,9 @@ export default function Page() {
   useEffect(() => {
     if (!loadedCtxRef.current) return;
     const { prices, ctx } = loadedCtxRef.current;
-    setCostByCategory(buildCostReportData(prices, { ...ctx, includeEdge: opts.includeEdge }, CAT_KEYS, CAT_META));
+    setCostByCategory(
+      buildCostReportData(prices, { ...ctx, includeEdge: opts.includeEdge }, CAT_KEYS, CAT_META)
+    );
   }, [opts.includeEdge]);
 
   const periodLabel = PERIOD_LABEL;
@@ -248,14 +338,20 @@ export default function Page() {
         .map(m => ({ ...m, catLabel: c.label, catColor: c.color }))
     )
     .sort((a, b) => b.rate - a.rate);
+  const recipeMenus = useMemo(() => buildRecipePrintMenus(recipeRows), [recipeRows]);
+  const viewLabel =
+    viewTab === 'costTable' ? '제품원가표' : viewTab === 'recipe' ? '레시피 출력' : '원가계산 보고서';
 
   const reportMeta = {
     period: periodLabel,
-    name: `${periodLabel} 원가계산 종합 보고서`,
+    name: `${periodLabel} ${viewLabel}`,
     options: { riskThreshold, cats, opts },
   };
 
-  const handleExcelExport = () => exportCostXlsx(periodLabel, activeCats).catch(err => showToast('엑셀 내보내기 실패: ' + err.message, 'error'));
+  const handleExcelExport = () =>
+    exportCostXlsx(periodLabel, activeCats, recipeRows).catch(err =>
+      showToast('엑셀 내보내기 실패: ' + err.message, 'error')
+    );
 
   return (
     <ReportBuilderShell
@@ -343,11 +439,19 @@ export default function Page() {
           {/* ── 보고서 헤더 ── */}
           <div className="paper-head">
             <div className="paper-eyebrow">7번가피자 본사 · 원가관리</div>
-            <h2 className="paper-title">7번가피자 제품원가표 (단가 기준)</h2>
+            <h2 className="paper-title">
+              {viewTab === 'recipe' ? '7번가피자 레시피 출력' : '7번가피자 제품원가표 (단가 기준)'}
+            </h2>
             <div className="paper-meta">
               <span>
                 대상: {activeCats.length}개 카테고리 · {totalCount}개 메뉴
               </span>
+              {viewTab === 'recipe' && (
+                <>
+                  <span>·</span>
+                  <span>레시피 {recipeMenus.length}메뉴</span>
+                </>
+              )}
               <span>·</span>
               <span>위험 기준 {riskThreshold}%↑</span>
               <span>·</span>
@@ -372,6 +476,12 @@ export default function Page() {
             >
               제품원가표
             </button>
+            <button
+              className={`btn sm ${viewTab === 'recipe' ? 'primary' : 'ghost'}`}
+              onClick={() => setViewTab('recipe')}
+            >
+              레시피 출력
+            </button>
           </div>
 
           {/* ── 원가계산 보고서 뷰 ── */}
@@ -395,8 +505,13 @@ export default function Page() {
             <CostTableView activeCats={activeCats} riskThreshold={riskThreshold} />
           )}
 
+          {/* ── 레시피 출력 뷰 ── */}
+          {viewTab === 'recipe' && (
+            <RecipePrintView recipeRows={recipeRows} recipeMenus={recipeMenus} />
+          )}
+
           <div className="paper-foot">
-            <span>{viewTab === 'costTable' ? '제품원가표' : '원가계산 보고서'}</span>
+            <span>{viewLabel}</span>
             <span className="mono">7번가 R&amp;D 플랫폼</span>
           </div>
         </>

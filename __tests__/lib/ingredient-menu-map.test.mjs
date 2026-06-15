@@ -49,6 +49,22 @@ describe('buildIngredientMenuMap', () => {
       expect(menus.has('P-OR-001-L')).toBe(true);
     });
 
+    test('productCode 있는 식자재도 name 키를 함께 매핑해 과거 레시피 코드 불일치를 보완한다', () => {
+      const { ingredientToMenus } = buildIngredientMenuMap({
+        menuMasters: MENUS,
+        detailRecipes: [
+          {
+            menuCode: 'S-CHK-001',
+            menuName: '치킨텐더',
+            category: '사이드',
+            components: [{ productCode: 'OLD-CODE', ingredientName: '닭다리살' }],
+          },
+        ],
+      });
+      expect(ingredientToMenus.get('code:OLD-CODE')?.has('S-CHK-001')).toBe(true);
+      expect(ingredientToMenus.get('name:닭다리살')?.has('S-CHK-001')).toBe(true);
+    });
+
     test('사이드 레시피도 매핑', () => {
       const { ingredientToMenus } = buildIngredientMenuMap({
         menuMasters: MENUS,
@@ -199,6 +215,43 @@ describe('buildIngredientMenuMap', () => {
         groups: GRP,
       });
       expect(ingredientToMenus.get('code:GRP-001')?.has('P-OR-001-L')).toBe(true);
+    });
+
+    test('작성된 상세 레시피가 있으면 같은 메뉴의 구형 레시피는 제외한다', () => {
+      const { ingredientToMenus } = buildIngredientMenuMap({
+        menuMasters: MENUS,
+        detailRecipes: [
+          {
+            menuCode: 'P-OR-001-L',
+            menuName: '오리지널콤보 L',
+            category: '피자',
+            components: [{ productCode: 'NEW-001', ingredientName: '신규재료' }],
+          },
+        ],
+        oldRecipes: OLD,
+        groups: GRP,
+      });
+
+      expect(ingredientToMenus.get('code:NEW-001')?.has('P-OR-001-L')).toBe(true);
+      expect(ingredientToMenus.get('code:OLD-001')?.has('P-OR-001-L')).toBeFalsy();
+      expect(ingredientToMenus.get('code:GRP-001')?.has('P-OR-001-L')).toBeFalsy();
+    });
+
+    test('자동 생성된 빈 상세 레시피는 구형 레시피 폴백을 막지 않는다', () => {
+      const { ingredientToMenus } = buildIngredientMenuMap({
+        menuMasters: MENUS,
+        detailRecipes: [
+          {
+            menuCode: 'P-OR-001-L',
+            menuName: '오리지널콤보 L',
+            category: '피자',
+            components: [],
+          },
+        ],
+        oldRecipes: OLD,
+      });
+
+      expect(ingredientToMenus.get('code:OLD-001')?.has('P-OR-001-L')).toBe(true);
     });
   });
 });
