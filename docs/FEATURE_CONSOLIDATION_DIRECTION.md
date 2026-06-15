@@ -441,6 +441,7 @@
 | 모바일 원가 대표 route 정리 | 구현 완료 | `5591241` |
 | 엣지 관리 primary route 정리 | 구현 완료 | `4a7152f` |
 | 정적 route 분류표와 runtime QA route 파생 | 구현 완료 | `823f539` |
+| 모바일 primary route marker와 하단 탭 일치 테스트 | 구현 완료 | `27c46fb` |
 | 카테고리 판정 helper 이름 정리 | 구현 완료 | `3381fef` |
 | 보고서 사이드바 route metadata 연동 | 구현 완료 | `a43b683` |
 | 노트 삭제 하위 체인 UI 제거와 undo 실패 노출 | 구현 완료 | `3bcd997`, `9a565dd` |
@@ -561,6 +562,7 @@
 | 식자재 삭제 안전장치 | 구현 완료: 단가표 삭제 진입점을 식자재관리 가격 탭으로 통합해 undo/cascade warning 흐름 공유 |
 | route redirect와 사이드바 정리 | 구현 완료 |
 | 모바일 원가 대표 route 정리 | 구현 완료: 하단 탭을 원가마진표 기준으로 연결 |
+| 모바일 primary route marker | 구현 완료: 하단 탭 route와 route classification marker 일치 테스트 |
 | 엣지 관리 primary route 정리 | 구현 완료: `/cost/recipe?tab=edges` 기준, `/cost/edge-dough` redirect |
 | 정적 route 분류표 | 구현 완료: `sidebar`, `hub`, `redirect`, `internal-flow`, `dynamic-detail` 기준으로 runtime QA route 파생 |
 | 카테고리 판정 helper 이름 정리 | 구현 완료: 정책 helper와 도메인 alias 분리 |

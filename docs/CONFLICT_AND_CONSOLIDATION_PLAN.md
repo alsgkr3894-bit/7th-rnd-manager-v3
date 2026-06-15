@@ -901,9 +901,10 @@
 
 **구현 상태**
 
-- 구현 완료: `5591241 refactor: redirect duplicate cost routes`
+- 구현 완료: `5591241 refactor: redirect duplicate cost routes`, `27c46fb refactor: mark mobile primary routes`
 - 모바일 원가 탭은 구형 `/cost/pizza` 대신 `COST_MARGIN_ROUTE`로 이동한다.
 - 사이드바 테스트에서 모바일 원가 탭이 원가마진표 route를 가리키는지 검증한다.
+- route classification은 모바일 하단 탭 route를 `mobile-primary` marker로 분류한다.
 
 **관련 파일**
 
@@ -920,14 +921,12 @@
 
 **충돌 가능성**
 
-- 모바일 사용자는 원가 대표 화면을 피자 원가표로 인식하고, 데스크톱 사용자는 원가 레시피/마진표로 인식할 수 있다.
-- 같은 "원가" 탭에서 기기별로 다른 작업대가 열린다.
+- 완료: 모바일 하단 탭의 원가 route는 `COST_MARGIN_ROUTE`로 고정됐고, route 분류표에서 `mobile-primary`로 추적한다. (`5591241`, `27c46fb`)
 
 **정리 방향**
 
-- 모바일 원가 탭을 `/cost` 또는 `/cost/recipe`로 변경한다.
-- `/cost/pizza`는 카테고리별 원가표로 명시한다.
-- route 분류표에 `mobile-primary`를 추가한다.
+- `/cost/pizza`는 호환 redirect route로 유지한다.
+- 신규 모바일 하단 탭 route를 추가하면 `MOBILE_TAB_DEFS`와 `MOBILE_PRIMARY_ROUTES` 테스트를 함께 갱신한다.
 
 ### 8.8 보고서 비교 route가 상수/허브에는 있고 사이드바에는 없음
 
@@ -1181,8 +1180,8 @@
 ### Phase D. 내비게이션/route metadata 정리
 
 - `KIND_META`에 sidebar 노출 여부를 추가하거나 사이드바 보고서 메뉴를 `KIND_META`에서 생성한다.
-- 모바일 원가 primary route를 `/cost` 또는 `/cost/recipe`로 바꾼다.
-- redirect/internal/hub/mobile-primary route classification을 문서와 QA 스크립트에 반영한다.
+- 완료: 모바일 원가 primary route는 `COST_MARGIN_ROUTE`로 고정하고 `mobile-primary` marker로 추적한다. (`5591241`, `27c46fb`)
+- 완료: redirect/internal/hub/mobile-primary route classification을 문서와 QA 테스트에 반영했다. (`823f539`, `27c46fb`)
 
 **검증**
 
