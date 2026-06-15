@@ -66,6 +66,10 @@ const filterStateHookSource = readFileSync(
   resolve('app/note/sample/useSamplePageFilterState.js'),
   'utf8'
 );
+const filterStateUtilsSource = readFileSync(
+  resolve('app/note/sample/samplePageFilterStateUtils.js'),
+  'utf8'
+);
 const stateUtilsSource = readFileSync(resolve('app/note/sample/samplePageStateUtils.js'), 'utf8');
 const actionsHookSource = readFileSync(
   resolve('app/note/sample/useSampleRecordActions.js'),
@@ -275,11 +279,22 @@ describe('sample page structure', () => {
     expect(stateHookSource).not.toContain('setLS(KEYS.SAMPLE_VIEW, mode)');
     expect(filterStateHookSource).toContain('export function useSamplePageFilterState');
     expect(filterStateHookSource).toContain('useSearchHistory(KEYS.SAMPLE_SEARCH_HISTORY)');
+    expect(filterStateHookSource).toContain("from './samplePageFilterStateUtils'");
     expect(filterStateHookSource).toContain('window.history.replaceState');
-    expect(filterStateHookSource).toContain('setLS(KEYS.SAMPLE_SORT, key)');
-    expect(filterStateHookSource).toContain('setLS(KEYS.SAMPLE_VIEW, mode)');
+    expect(filterStateHookSource).toContain(
+      'buildSampleFilterPath({ pathname, catFilter, ratingMin })'
+    );
+    expect(filterStateHookSource).toContain('persistSampleSortBy(key)');
+    expect(filterStateHookSource).toContain('persistSampleViewMode(mode)');
     expect(filterStateHookSource).toContain('closeSearchHistorySoon');
     expect(filterStateHookSource).toContain('selectSearchHistory');
+    expect(filterStateHookSource).not.toContain('new URLSearchParams');
+    expect(filterStateHookSource).not.toContain('setLS(KEYS.SAMPLE_SORT, key)');
+    expect(filterStateHookSource).not.toContain('setLS(KEYS.SAMPLE_VIEW, mode)');
+    expect(filterStateUtilsSource).toContain('export function buildSampleFilterPath');
+    expect(filterStateUtilsSource).toContain('export function readSampleRatingMin');
+    expect(filterStateUtilsSource).toContain('setLS(KEYS.SAMPLE_SORT, key)');
+    expect(filterStateUtilsSource).toContain('setLS(KEYS.SAMPLE_VIEW, mode)');
     expect(filterStateHookSource).not.toContain('getAllSamples');
     expect(filterStateHookSource).not.toContain('filterSortSamples(samples');
     expect(stateUtilsSource).toContain('export function filterSortSamples');

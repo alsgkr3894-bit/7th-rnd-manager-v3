@@ -481,6 +481,7 @@
 | 샘플기록 화면의 페이지 controller hook 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 샘플기록 화면의 controller props 조립 helper 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 샘플기록 화면의 filter state hook 분리 | 구현 완료 | 이번 보강(2026-06-16) |
+| 샘플기록 화면의 filter state URL/helper 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 샘플기록 화면의 controller props 그룹 builder 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 샘플기록 화면의 view props builder 세분화 | 구현 완료 | 이번 보강(2026-06-16) |
 | 식자재 상세 폼의 기본정보/단가 입력 컴포넌트 분리 | 구현 완료 | 이번 보강(2026-06-15) |
@@ -658,7 +659,7 @@
 | 메뉴개발노트 목록 props builder 파일 구조 | 구현 완료: `content-prop-builders`는 re-export 허브로 축소하고 dialog/header/filter/body builder를 독립 파일로 분리 |
 | 샘플기록 화면 controller 구조 | 구현 완료: page는 렌더 조립만 맡기고 상태/action/compare/batch 및 props wiring은 `useSamplePageController`로 분리 |
 | 샘플기록 화면 controller props 구조 | 구현 완료: hook은 상태/action hook 연결만 맡기고 actions/filter/calendar/records/dialog props 조립은 `samplePageControllerProps`로 분리 |
-| 샘플기록 화면 filter state 구조 | 구현 완료: 검색/카테고리/별점/정렬/view 상태와 URL·검색히스토리 wiring은 `useSamplePageFilterState`로 분리 |
+| 샘플기록 화면 filter state 구조 | 구현 완료: 검색/카테고리/별점/정렬/view 상태와 URL·검색히스토리 wiring은 `useSamplePageFilterState`로 분리하고, URL query/초기값/저장 정책은 `samplePageFilterStateUtils`와 단위 테스트로 고정 |
 | 샘플기록 화면 controller props 그룹 구조 | 구현 완료: `samplePageControllerProps`는 최종 조립과 route callback만 맡기고 top/view/dialog props builder를 독립 파일로 분리 |
 | 샘플기록 화면 view props builder 구조 | 구현 완료: filter/calendar/records props 조립은 각각 `samplePageControllerFilterProps`·`samplePageControllerCalendarProps`·`samplePageControllerRecordsProps`로 분리 |
 | 샘플기록 화면 별점/view control 구조 | 구현 완료: 공통 chip 옵션 렌더링은 `SampleChipOptionGroup`, 별점 필터와 분포 표시는 `SampleRatingFilterGroup`으로 분리 |

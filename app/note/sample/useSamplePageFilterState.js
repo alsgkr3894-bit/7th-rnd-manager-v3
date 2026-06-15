@@ -2,14 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { KEYS } from '@/lib/note/keys';
-import { tryLS, setLS } from '@/lib/note/storage';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import {
-  SAMPLE_RATING_KEYS,
-  SAMPLE_SORT_KEYS,
-  SAMPLE_VIEW_KEYS,
-  pickAllowed,
-} from './samplePageStateUtils';
+  buildSampleFilterPath,
+  persistSampleSortBy,
+  persistSampleViewMode,
+  readSampleCatFilter,
+  readSampleRatingMin,
+  readSampleSortBy,
+  readSampleViewMode,
+} from './samplePageFilterStateUtils';
 
 export function useSamplePageFilterState({ searchParams, pathname }) {
   const [search, setSearch] = useState('');
@@ -19,18 +21,11 @@ export function useSamplePageFilterState({ searchParams, pathname }) {
     setIsOpen: setShowSearchHist,
     scheduleAdd: scheduleSearchHistory,
   } = useSearchHistory(KEYS.SAMPLE_SEARCH_HISTORY);
-  const [catFilter, setCatFilter] = useState(() => searchParams.get('cat') || 'all');
-  const [ratingMin, setRatingMin] = useState(() => {
-    const value = parseInt(searchParams.get('r') || '0', 10);
-    return pickAllowed(value, SAMPLE_RATING_KEYS, 0);
-  });
-  const [sortBy, setSortBy] = useState(() =>
-    pickAllowed(tryLS(KEYS.SAMPLE_SORT, 'createdAt'), SAMPLE_SORT_KEYS, 'createdAt')
-  );
+  const [catFilter, setCatFilter] = useState(() => readSampleCatFilter(searchParams));
+  const [ratingMin, setRatingMin] = useState(() => readSampleRatingMin(searchParams));
+  const [sortBy, setSortBy] = useState(readSampleSortBy);
   const searchBlurTimerRef = useRef(null);
-  const [viewMode, setViewMode] = useState(() =>
-    pickAllowed(tryLS(KEYS.SAMPLE_VIEW, 'grid'), SAMPLE_VIEW_KEYS, 'grid')
-  );
+  const [viewMode, setViewMode] = useState(readSampleViewMode);
 
   useEffect(
     () => () => {
@@ -40,11 +35,11 @@ export function useSamplePageFilterState({ searchParams, pathname }) {
   );
 
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (catFilter !== 'all') params.set('cat', catFilter);
-    if (ratingMin !== 0) params.set('r', String(ratingMin));
-    const qs = params.toString();
-    window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
+    window.history.replaceState(
+      null,
+      '',
+      buildSampleFilterPath({ pathname, catFilter, ratingMin })
+    );
   }, [catFilter, ratingMin, pathname]);
 
   function handleSearchChange(value) {
@@ -67,12 +62,12 @@ export function useSamplePageFilterState({ searchParams, pathname }) {
 
   function applySortBy(key) {
     setSortBy(key);
-    setLS(KEYS.SAMPLE_SORT, key);
+    persistSampleSortBy(key);
   }
 
   function applyViewMode(mode) {
     setViewMode(mode);
-    setLS(KEYS.SAMPLE_VIEW, mode);
+    persistSampleViewMode(mode);
   }
 
   return {
