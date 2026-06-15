@@ -323,12 +323,49 @@
 - 초기화가 필요한 경우에는 먼저 백업을 만들고, 초기화 범위를 명확히 기록한다.
 - 초기화 우선순위는 "전체 초기화"가 아니라 문제가 되는 도메인만 부분 초기화하는 방식이다.
 
+작업 전 백업 대상:
+
+| 영역 | 백업 대상 |
+|------|-----------|
+| 메뉴 | `menu_master`, `cost_selling_prices` |
+| 레시피/원가 | `cost_recipes`, `cost_pizza_detail`, `cost_personal_detail`, `cost_side_detail`, `cost_set_detail`, `cost_edge_dough`, `cost_recipe_groups` |
+| 식자재 | `cost_ingredients`, `cost_suppliers`, `cost_ingredient_price_history` |
+| 제때 | `price_files`, `price_rows`, `shipment_files`, `shipment_rows`, `ref_shipment_products` |
+| 영양/표기 | `nutrition_menu_ref`, `nutrition_raw_values`, `nutrition_pizza_composition`, `nutrition_topping_master`, `nutrition_edge_master`, `nutrition_set_composition` |
+| 판매량 | `sales_files`, `sales_rows`, `menu_sales_issues`, `sales_rules`, `ref_sales_aliases` |
+| 설정 | localStorage 기반 설정과 백업/복원 대상 설정 |
+
+초기화 후보:
+
+| 후보 | 기준 |
+|------|------|
+| 구형 레시피 | 새 `menu_recipes` 기준과 충돌하거나 품질이 낮으면 초기화 |
+| 식자재 영양값 자동계산 데이터 | 메뉴 직접 입력 영양성분 정책으로 전환 후 미사용 처리 |
+| 중복 메뉴/레시피 | 자동 병합이 위험하면 백업 후 초기화 |
+
 ### 12.2 안전한 route 정리
 
 - 기존 route는 바로 삭제하지 않는다.
 - 1차로 기존 route를 새 화면으로 redirect하거나 안내 화면으로 바꾼다.
 - 사이드바에서 먼저 중복 메뉴를 제거한 뒤, 실제 route 삭제는 마지막 단계에서 진행한다.
 - 북마크나 내부 링크가 깨지는지 smoke 확인 후 제거한다.
+
+추천 route 처리:
+
+| 현재 route | 추천 처리 |
+|------------|-----------|
+| `/menu-master` | 유지, 메뉴관리 메인으로 확장 |
+| `/cost/recipe-master` | `/menu-master`의 레시피 영역으로 redirect |
+| `/cost/recipe` | 공통묶음/엣지 관리가 남기 전까지 안내/redirect, 최종적으로 축소 |
+| `/cost/pizza` | `/menu-master` 또는 원가마진표 상세 필터로 redirect |
+| `/cost/personal` | `/menu-master` 또는 원가마진표 상세 필터로 redirect |
+| `/cost/side` | `/menu-master` 또는 원가마진표 상세 필터로 redirect |
+| `/cost/set` | `/menu-master` 또는 원가마진표 상세 필터로 redirect |
+| `/cost/margin` | 유지, 결과 분석 화면 |
+| `/cost/ingredient-price` | 식자재관리 단가 탭으로 흡수 후 redirect |
+| `/ingredient/manage` | 식자재관리 메인으로 유지 |
+| `/ingredient/list` | 식자재관리 보기 모드로 흡수 후 redirect |
+| `/ingredient/usage` | 전체 분석은 유지 가능, 식자재 상세 사용 메뉴와 연결 |
 
 ### 12.3 작업 단위와 커밋 전략
 
@@ -355,6 +392,19 @@
 - 제때 연동 식자재: 최신 제때 단가 반영
 - 제때 미연동 식자재: 수동 단가 반영
 - 메뉴 영양성분 직접 입력값: 최종 출력 우선 적용
+
+### 12.5 권한/역할 추천
+
+통합 화면은 한 화면에 여러 기능이 모이므로, 버튼/탭 단위 권한을 나눈다.
+
+| 역할 | 허용 |
+|------|------|
+| 관리자 | 메뉴, 레시피, 판매가, 식자재, 단가, 영양, 원산지, 알레르기, 설정 전체 |
+| R&D | 메뉴, 레시피, 원가 확인, 영양성분 입력, 원산지/알레르기 확인 |
+| 운영/구매 | 식자재, 제때 단가, 출고량, 수동 단가, 원산지/알레르기 입력 |
+| 조회자 | 모든 화면 조회만 가능, 저장/삭제/초기화 불가 |
+
+위 역할명이 실제 계정 역할과 다르면 기존 역할 체계에 매핑한다. 핵심은 조회자에게 저장/삭제/초기화 버튼이 노출되지 않는 것이다.
 
 ---
 
