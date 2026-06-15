@@ -22,6 +22,7 @@ import {
   DOUGH_CATEGORY_PREFIX,
   isThinCrustLabel,
   isDoughCategory,
+  isNutritionPizzaCategory,
   isPizzaCategory,
 } from '../../lib/nutrition/crust-config.js';
 
@@ -185,26 +186,30 @@ describe('isDoughCategory', () => {
   });
 });
 
-// ── isPizzaCategory ─────────────────────────────────────────────
+// ── isNutritionPizzaCategory ────────────────────────────────────
 
-describe('isPizzaCategory', () => {
+describe('isNutritionPizzaCategory', () => {
   test("'피자' → true", () => {
-    expect(isPizzaCategory('피자')).toBe(true);
+    expect(isNutritionPizzaCategory('피자')).toBe(true);
   });
 
   test("'피자/프리미엄' → true", () => {
-    expect(isPizzaCategory('피자/프리미엄')).toBe(true);
+    expect(isNutritionPizzaCategory('피자/프리미엄')).toBe(true);
   });
 
   test("'사이드' → false", () => {
-    expect(isPizzaCategory('사이드')).toBe(false);
+    expect(isNutritionPizzaCategory('사이드')).toBe(false);
   });
 
   test('null → false', () => {
-    expect(isPizzaCategory(null)).toBe(false);
+    expect(isNutritionPizzaCategory(null)).toBe(false);
   });
 
   test('undefined → false', () => {
-    expect(isPizzaCategory(undefined)).toBe(false);
+    expect(isNutritionPizzaCategory(undefined)).toBe(false);
+  });
+
+  test('기존 isPizzaCategory alias를 유지한다', () => {
+    expect(isPizzaCategory).toBe(isNutritionPizzaCategory);
   });
 });
