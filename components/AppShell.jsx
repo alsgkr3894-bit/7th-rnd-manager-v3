@@ -14,8 +14,9 @@ import { pruneOldWorkLogs } from '@/lib/work-log';
 import { hydratePlatformsFromDB } from '@/lib/cost/margin/platforms';
 import { initClickOrigin } from '@/lib/ui/click-origin';
 import { OVERLAY_COLOR } from '@/lib/ui/styles';
-import { COMPANIES } from '@/lib/companies';
 import { getActiveBrandId, setActiveBrandId } from '@/lib/active-brand';
+import { BRAND_MASTER_EVENT, BRAND_MASTER_KEY, getVisibleBrands } from '@/lib/brand-master';
+import { getActiveBrand } from '@/lib/active-brand';
 import { MOBILE_TAB_DEFS } from '@/lib/menu';
 import ProgressBar from './ProgressBar';
 import OfflineIndicator from './OfflineIndicator';
@@ -161,23 +162,41 @@ export default function AppShell({ children }) {
   const gPressedRef = useRef(false);
   const gTimerRef = useRef(null);
   // 활성 브랜드 복원 (localStorage). 전환 시 저장 후 새로고침으로 모든 모듈이 해당 브랜드 DB로 재초기화.
-  const [activeCompany, setActiveCompany] = useState(COMPANIES[0]);
-  useEffect(() => {
-    const id = getActiveBrandId();
-    const found = COMPANIES.find(c => c.id === id);
-    if (found && found.id !== activeCompany.id) setActiveCompany(found);
-    const company = found || COMPANIES[0];
-    applyBrandAccent(company);
+  const [brandOptions, setBrandOptions] = useState(() => getVisibleBrands());
+  const [activeCompany, setActiveCompany] = useState(() => getActiveBrand());
 
+  useEffect(() => {
+    const syncBrands = () => {
+      const visible = getVisibleBrands();
+      const active = getActiveBrand();
+      setBrandOptions(visible);
+      setActiveCompany(active);
+    };
+    const onStorage = event => {
+      if (!event.key || event.key === BRAND_MASTER_KEY || event.key === 'v3:active-brand') {
+        syncBrands();
+      }
+    };
+    syncBrands();
+    window.addEventListener(BRAND_MASTER_EVENT, syncBrands);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener(BRAND_MASTER_EVENT, syncBrands);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
+
+  useEffect(() => {
+    applyBrandAccent(activeCompany);
     // 다크/라이트 전환 시 accent-soft/text 재계산
-    const obs = new MutationObserver(() => applyBrandAccent(company));
+    const obs = new MutationObserver(() => applyBrandAccent(activeCompany));
     obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     return () => obs.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [activeCompany]);
+
   const handleCompanyChange = c => {
     if (!c || c.id === getActiveBrandId()) return;
-    setActiveBrandId(c.id);
+    if (!setActiveBrandId(c.id)) return;
     window.location.reload();
   };
   const pathname = usePathname();
@@ -330,6 +349,7 @@ export default function AppShell({ children }) {
           onOpenPalette={() => setPaletteOpen(true)}
           onToggleSidebar={() => setMobileNav(v => !v)}
           activeCompany={activeCompany}
+          companies={brandOptions}
           onCompanyChange={handleCompanyChange}
           unmatchedCount={unmatchedCount}
           reportingCount={reportingCount}

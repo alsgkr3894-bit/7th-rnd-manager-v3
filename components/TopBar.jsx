@@ -5,13 +5,13 @@ import { Icon } from './icons';
 import { getProfile, getInitial } from '@/lib/profile';
 import { clearAuthCookie } from '@/lib/auth';
 import { getSetting, setSetting } from '@/lib/settings';
-import { COMPANIES } from '@/lib/companies';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 
 export default function TopBar({
   onOpenPalette,
   onToggleSidebar,
   activeCompany,
+  companies = [],
   onCompanyChange,
   unmatchedCount = 0,
   reportingCount = 0,
@@ -182,7 +182,7 @@ export default function TopBar({
         {companyOpen && (
           <div className="company-drop" role="menu" aria-label="브랜드 목록">
             <div className="company-drop-label">브랜드 선택</div>
-            {COMPANIES.map(c => (
+            {companies.map(c => (
               <button
                 key={c.id}
                 role="menuitemcheckbox"
