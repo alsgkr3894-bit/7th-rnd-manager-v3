@@ -117,10 +117,11 @@
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — `NoteListHeader`·`NotePageDialogs`·`NoteListStates` 렌더링 컴포넌트 분리. 546→450줄.
   - `app/ingredient/manage/IngredientForm.jsx` ✅ 2026-06-15 추가 보강 — `IngredientNameField`·`BasicIngredientFields`·`IngredientCostFields` 렌더링 컴포넌트 분리. 817→468줄.
   - `app/nutrition/allergen/page.jsx` ✅ 2026-06-15 추가 보강 — `AllergenIngredientTable`·`AllergenMenuMatrixTable`·`AllergenDetailModal` 렌더링 컴포넌트 분리. 802→500줄.
+  - `app/nutrition/allergen/page.jsx` ✅ 2026-06-15 추가 보강 — `AllergenPageHeader`·`AllergenSummaryPanel`·`AllergenToolbar`·`AllergenTablePanel` 렌더링 컴포넌트 분리. 500→381줄.
 - **잔여 대상** (우선순위 순):
-  1. `app/nutrition/allergen/page.jsx` (~500줄) — toolbar/stat panel 추가 분리 필요 시 재평가
-  2. `app/note/_NoteContent.jsx` (~450줄) — 삭제/복사/상태변경 handler 묶음이 더 커질 때 hook 분리 재평가
-  3. `app/ingredient/manage/IngredientFormFields.jsx` (~410줄) — 필드군 추가 확장 시 basic/cost 하위 파일 재분리
+  1. `app/note/_NoteContent.jsx` (~450줄) — 삭제/복사/상태변경 handler 묶음이 더 커질 때 hook 분리 재평가
+  2. `app/ingredient/manage/IngredientFormFields.jsx` (~410줄) — 필드군 추가 확장 시 basic/cost 하위 파일 재분리
+  3. `app/nutrition/allergen/page.jsx` (~381줄) — 데이터 로드/매트릭스 계산 요구가 늘어날 때 hook 분리 재평가
   4. `app/ingredient/list/page.jsx` — 현재 redirect route 5줄 수준, 별도 분해 불필요
   5. `components/report/sales/SalesRankTableSection.jsx` (~197줄) — 순위표 요구가 늘어날 때 bar rows/variant rows 추가 분리
 - **방향**: page는 조립만 담당, table/panel/modal/hook으로 분리.

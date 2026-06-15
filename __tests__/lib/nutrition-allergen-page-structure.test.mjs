@@ -14,18 +14,48 @@ const detailModalSource = readFileSync(
   resolve('app/nutrition/allergen/AllergenDetailModal.jsx'),
   'utf8'
 );
+const headerSource = readFileSync(resolve('app/nutrition/allergen/AllergenPageHeader.jsx'), 'utf8');
+const summarySource = readFileSync(
+  resolve('app/nutrition/allergen/AllergenSummaryPanel.jsx'),
+  'utf8'
+);
+const toolbarSource = readFileSync(resolve('app/nutrition/allergen/AllergenToolbar.jsx'), 'utf8');
+const tablePanelSource = readFileSync(
+  resolve('app/nutrition/allergen/AllergenTablePanel.jsx'),
+  'utf8'
+);
 
 describe('nutrition allergen page structure', () => {
-  test('page delegates ingredient table, matrix table, and detail modal rendering', () => {
-    expect(pageSource).toContain('<AllergenIngredientTable');
-    expect(pageSource).toContain('<AllergenMenuMatrixTable');
+  test('page delegates header, summary, toolbar, table, and detail modal rendering', () => {
+    expect(pageSource).toContain('<AllergenPageHeader');
+    expect(pageSource).toContain('<AllergenSummaryPanel');
+    expect(pageSource).toContain('<AllergenToolbar');
+    expect(pageSource).toContain('<AllergenTablePanel');
     expect(pageSource).toContain('<AllergenDetailModal');
+    expect(pageSource).not.toContain('<PageHeader');
+    expect(pageSource).not.toContain('<SearchBox');
+    expect(pageSource).not.toContain('<SmallStatCard');
+    expect(pageSource).not.toContain('한국 법정 알레르기 22종');
+    expect(pageSource).not.toContain('불러오는 중…');
     expect(pageSource).not.toContain('getMenusForIngredient');
     expect(pageSource).not.toContain('title="식자재 알레르기 상세 보기"');
     expect(pageSource).not.toContain('<ModalFrame');
   });
 
   test('extracted components own their focused rendering responsibilities', () => {
+    expect(headerSource).toContain('export function AllergenPageHeader');
+    expect(headerSource).toContain('<PageHeader');
+    expect(headerSource).toContain('엑셀로 내보내기');
+    expect(summarySource).toContain('export function AllergenSummaryPanel');
+    expect(summarySource).toContain('<SmallStatCard');
+    expect(summarySource).toContain('한국 법정 알레르기 22종');
+    expect(toolbarSource).toContain('export function AllergenToolbar');
+    expect(toolbarSource).toContain('<SearchBox');
+    expect(toolbarSource).toContain('메뉴명 편집');
+    expect(tablePanelSource).toContain('export function AllergenTablePanel');
+    expect(tablePanelSource).toContain('<AllergenIngredientTable');
+    expect(tablePanelSource).toContain('<AllergenMenuMatrixTable');
+    expect(tablePanelSource).toContain('불러오는 중…');
     expect(ingredientTableSource).toContain('export function AllergenIngredientTable');
     expect(ingredientTableSource).toContain('getMenusForIngredient');
     expect(ingredientTableSource).toContain('알레르기 등록 식자재가 없어요');

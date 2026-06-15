@@ -1,10 +1,7 @@
 'use client';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useMounted } from '@/hooks/useMounted';
-import Link from 'next/link';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
-import { Icon } from '@/components/icons';
-import { PageHeader } from '@/components/ui/PageHeader';
 import { downloadCsv } from '@/lib/download';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
@@ -16,8 +13,6 @@ import { getAllToppings, getAllCompositions } from '@/lib/nutrition/values/store
 import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 import { loadMenuRecipeArrays } from '@/lib/menu-recipes';
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
-import { SmallStatCard } from '@/components/ui/SmallStatCard';
-import { SearchBox } from '@/components/ui/SearchBox';
 import { ReorderModal } from '@/components/ui/ReorderModal';
 import {
   ALLERGEN_MENU_ORDER_KEY,
@@ -33,8 +28,10 @@ import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guard
 import { normStr, buildMenuMatrix, buildDetailRows } from '@/lib/nutrition/allergen/matrix';
 import { migrateNutritionToIngredients } from '@/lib/nutrition/migrate-to-ingredient';
 import { AllergenDetailModal } from './AllergenDetailModal';
-import { AllergenIngredientTable } from './AllergenIngredientTable';
-import { AllergenMenuMatrixTable } from './AllergenMenuMatrixTable';
+import { AllergenPageHeader } from './AllergenPageHeader';
+import { AllergenSummaryPanel } from './AllergenSummaryPanel';
+import { AllergenTablePanel } from './AllergenTablePanel';
+import { AllergenToolbar } from './AllergenToolbar';
 
 /**
  * 알레르기 정보 페이지 — 자동 집계 뷰
@@ -280,175 +277,59 @@ export default function Page() {
     i => !i.discontinued && !i.excluded
   ).length;
 
+  const handleExportCsv = useCallback(() => {
+    const headers = [
+      '메뉴명',
+      '크러스트',
+      ...orderedAllergens.map(a => asDisplayText(a.allergenName)),
+    ];
+    const rows = menuMatrix.map(r => {
+      const allergenCodes = r.allergenCodes instanceof Set ? r.allergenCodes : new Set();
+      return [
+        asDisplayText(r.menuName),
+        asDisplayText(r.crust),
+        ...orderedAllergens.map(a => (allergenCodes.has(asDisplayText(a.allergenCode)) ? '●' : '')),
+      ];
+    });
+    downloadCsv([headers, ...rows], '알레르기매트릭스.csv');
+  }, [menuMatrix, orderedAllergens]);
+
+  const handleResetOrder = useCallback(() => {
+    saveOrder(ALLERGEN_MENU_ORDER_KEY, []);
+    saveOrder(ALLERGEN_ORDER_KEY, []);
+    setMenuOrder([]);
+    setAllergenOrder([]);
+  }, []);
+
   return (
     <main className="main">
-      <PageHeader
-        breadcrumb={['영양성분', '알레르기 정보']}
-        title="알레르기 정보"
-        masterSource
-        sub="식자재 관리에서 식자재별 알레르기 항목을 체크하면 자동으로 메뉴에 매칭됩니다"
-        actions={
-          <button
-            className="btn"
-            onClick={() => {
-              const headers = [
-                '메뉴명',
-                '크러스트',
-                ...orderedAllergens.map(a => asDisplayText(a.allergenName)),
-              ];
-              const rows = menuMatrix.map(r => {
-                const allergenCodes = r.allergenCodes instanceof Set ? r.allergenCodes : new Set();
-                return [
-                  asDisplayText(r.menuName),
-                  asDisplayText(r.crust),
-                  ...orderedAllergens.map(a =>
-                    allergenCodes.has(asDisplayText(a.allergenCode)) ? '●' : ''
-                  ),
-                ];
-              });
-              downloadCsv([headers, ...rows], '알레르기매트릭스.csv');
-            }}
-            disabled={menuMatrix.length === 0}
-          >
-            <Icon.download style={{ width: 14, height: 14 }} /> 엑셀로 내보내기
-          </button>
-        }
+      <AllergenPageHeader exportDisabled={menuMatrix.length === 0} onExport={handleExportCsv} />
+      <AllergenSummaryPanel
+        totalWithAllergen={totalWithAllergen}
+        totalIngredients={totalIngredients}
+        matchedMenuCount={menuMatrix.length}
       />
-
-      <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
-        <SmallStatCard label="알레르기 등록 식자재" value={totalWithAllergen} />
-        <SmallStatCard label="전체 식자재" value={totalIngredients} />
-        <SmallStatCard label="알레르기 매칭 메뉴" value={menuMatrix.length} />
-      </div>
-
-      {/* 법정 22종 안내 */}
-      <div className="card" style={{ marginTop: 16, padding: '12px 20px' }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-3)', marginBottom: 8 }}>
-          한국 법정 알레르기 22종
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {ALLERGEN_SEED.map(al => (
-            <span
-              key={asDisplayText(al.allergenCode)}
-              style={{
-                fontSize: 12,
-                padding: '3px 10px',
-                borderRadius: 20,
-                background: 'var(--surface-2)',
-                color: 'var(--text-2)',
-              }}
-            >
-              {asDisplayText(al.allergenName)}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {totalWithAllergen === 0 && (
-        <div
-          style={{
-            marginTop: 12,
-            padding: '10px 16px',
-            borderRadius: 10,
-            background: 'var(--warn-soft)',
-            color: 'var(--warn)',
-            fontSize: 13,
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <Icon.alert style={{ width: 16, height: 16, flexShrink: 0 }} />
-          알레르기 등록 식자재 없음 —{' '}
-          <Link href="/ingredient/manage" style={{ color: 'inherit', textDecoration: 'underline' }}>
-            식자재 관리에서 입력
-          </Link>
-        </div>
-      )}
-
-      <div style={{ marginTop: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
-        <SearchBox
-          value={search}
-          onChange={setSearch}
-          placeholder="식자재명·메뉴명·알레르기 검색"
-        />
-        <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)' }}>
-          {['ingredient', 'menu'].map(mode => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              style={{
-                padding: '8px 14px',
-                border: 0,
-                background: 'transparent',
-                fontSize: 13,
-                fontWeight: viewMode === mode ? 700 : 500,
-                color: viewMode === mode ? 'var(--accent)' : 'var(--text-3)',
-                borderBottom:
-                  viewMode === mode ? '2px solid var(--accent)' : '2px solid transparent',
-                cursor: 'pointer',
-                marginBottom: -1,
-              }}
-            >
-              {mode === 'ingredient' ? '식자재별' : '메뉴별 매트릭스'}
-            </button>
-          ))}
-        </div>
-        {viewMode === 'menu' && (
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-            <button className="btn sm" onClick={() => setMenuNameEditOpen(true)}>
-              메뉴명 편집
-            </button>
-            <button className="btn sm" onClick={() => setReorderTarget('menu')}>
-              메뉴 순서
-            </button>
-            <button className="btn sm" onClick={() => setReorderTarget('allergen')}>
-              알레르기 순서
-            </button>
-            {(menuOrder.length > 0 || allergenOrder.length > 0) && (
-              <button
-                className="btn sm"
-                onClick={() => {
-                  saveOrder(ALLERGEN_MENU_ORDER_KEY, []);
-                  saveOrder(ALLERGEN_ORDER_KEY, []);
-                  setMenuOrder([]);
-                  setAllergenOrder([]);
-                }}
-                title="저장된 메뉴·알레르기 순서를 지우고 기본 순서로 복원"
-              >
-                순서 초기화
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="card table-card" style={{ marginTop: 12 }}>
-        {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-4)' }}>
-            불러오는 중…
-          </div>
-        ) : viewMode === 'ingredient' ? (
-          <AllergenIngredientTable
-            ingredientRows={ingredientRows}
-            mapData={mapData}
-            isExcludedMenu={isExcludedMenu}
-          />
-        ) : (
-          <AllergenMenuMatrixTable
-            menuMatrix={menuMatrix}
-            orderedAllergens={orderedAllergens}
-            onDetailRow={setDetailRow}
-          />
-        )}
-      </div>
-      <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-4)' }}>
-        {viewMode === 'ingredient'
-          ? `${ingredientRows.length}개 식자재`
-          : `${menuMatrix.length}개 메뉴`}{' '}
-        표시
-      </div>
+      <AllergenToolbar
+        search={search}
+        viewMode={viewMode}
+        hasCustomOrder={menuOrder.length > 0 || allergenOrder.length > 0}
+        onSearchChange={setSearch}
+        onViewModeChange={setViewMode}
+        onEditMenuNames={() => setMenuNameEditOpen(true)}
+        onReorderMenu={() => setReorderTarget('menu')}
+        onReorderAllergen={() => setReorderTarget('allergen')}
+        onResetOrder={handleResetOrder}
+      />
+      <AllergenTablePanel
+        loading={loading}
+        viewMode={viewMode}
+        ingredientRows={ingredientRows}
+        mapData={mapData}
+        isExcludedMenu={isExcludedMenu}
+        menuMatrix={menuMatrix}
+        orderedAllergens={orderedAllergens}
+        onDetailRow={setDetailRow}
+      />
 
       {reorderTarget === 'menu' && (
         <ReorderModal
