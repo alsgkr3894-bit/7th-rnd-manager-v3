@@ -74,7 +74,7 @@ export function ManagedProductsCard() {
       const rows = await getAllManagedProducts();
       if (mountedRef.current) setList(rows);
     } catch (err) {
-      if (mountedRef.current) console.warn(err);
+      if (mountedRef.current) console.warn('[ManagedProductsCard] refresh failed', err);
     }
   }
 
@@ -154,7 +154,7 @@ export function ManagedProductsCard() {
       showToast(`전용상품 ${added}개 추가 (기존 ${skipped}개 유지)`, added > 0 ? 'ok' : 'info');
       refresh();
     } catch (err) {
-      console.error(err);
+      console.error('[ManagedProductsCard] migrate exclusive products failed', err);
       showToast(err.message || '마이그레이션 실패', 'error');
     } finally {
       setMigrating(false);

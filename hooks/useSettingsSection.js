@@ -53,7 +53,7 @@ export function useSettingsSection({
       const rows = await getAll();
       if (mountedRef.current) setList(asObjectArray(rows));
     } catch (err) {
-      console.warn(err);
+      console.warn('[useSettingsSection] refresh failed', err);
     }
   }
 

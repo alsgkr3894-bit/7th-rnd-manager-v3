@@ -74,6 +74,7 @@
   - `__tests__/lib/ingredient-delete-cascade.test.mjs`
 - **추가 보강(2026-06-16)**: `showToast(..., 'err')` legacy 호출부를 정식 `error` 타입으로 정규화하고, `toast-type-policy.test.mjs`로 재발을 방지한다. `components/Toast.jsx`의 `err` alias는 외부/구호출 하위호환용으로만 유지한다.
 - **추가 보강(2026-06-16)**: 실패/입력 필요 같은 부정 토스트가 타입 생략으로 `ok` 표시되지 않도록 묶음 관리·공급업체 입력 호출부를 보정하고, `toast-type-policy.test.mjs`에 단일 인자 부정 토스트 guard를 추가했다.
+- **추가 보강(2026-06-16)**: 남아 있던 `console.error(err)`·`console.warn(err)` 단독 로그에 화면/동작 컨텍스트 라벨을 붙이고, `console-context-policy.test.mjs`로 재발을 방지한다.
 - **정책 고정(2026-06-16)**:
   - 사용자 액션 실패는 toast/화면 오류/결과 errors로 노출한다.
   - optional/background 빈 catch는 `silent-catch-policy.test.mjs` allowlist에 파일·맥락·사유를 등록한 위치에만 허용한다.

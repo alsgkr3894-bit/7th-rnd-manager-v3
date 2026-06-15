@@ -89,7 +89,7 @@ export default function Page() {
   useEffect(() => {
     load()
       .catch(err => {
-        if (mountedRef.current) console.error(err);
+        if (mountedRef.current) console.error('[NutritionOrigin] load failed', err);
       })
       .finally(() => {
         if (mountedRef.current) setLoading(false);

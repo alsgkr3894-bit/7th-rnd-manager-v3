@@ -41,7 +41,7 @@ export default function Page() {
         setForm({ ...SAMPLE_INIT, ...rec, sampleNames: names.length ? names : [''] });
       })
       .catch(err => {
-        if (alive) console.error(err);
+        if (alive) console.error('[SampleDetail] load failed', err);
       })
       .finally(() => {
         if (alive) setLoading(false);

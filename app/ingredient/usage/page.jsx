@@ -144,7 +144,7 @@ export default function Page() {
     load()
       .catch(err => {
         if (mountedRef.current) {
-          console.error(err);
+          console.error('[IngredientUsage] load failed', err);
           showToast('데이터 로드 실패: ' + err.message, 'error');
         }
       })

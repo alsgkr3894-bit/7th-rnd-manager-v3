@@ -82,7 +82,7 @@ export function UserRulesSection() {
         const opts = await getClassificationNameOptions();
         if (!ignore) setNameOpts(opts);
       } catch (err) {
-        if (!ignore) console.warn(err);
+        if (!ignore) console.warn('[UserRulesSection] load classification options failed', err);
       }
     })();
 

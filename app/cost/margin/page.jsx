@@ -31,11 +31,7 @@ import { exportMarginExcel } from '@/lib/cost/margin/export';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { onPriceUpload } from '@/lib/price/price-events';
 import { KEYS } from '@/lib/note/keys';
-import {
-  buildDetailRows,
-  buildEdgeMetadata,
-  buildDerivedRows,
-} from '@/lib/cost/margin/build-rows';
+import { buildDetailRows, buildEdgeMetadata, buildDerivedRows } from '@/lib/cost/margin/build-rows';
 
 const PlatformSettingsModal = dynamic(
   () => import('@/components/cost/margin/PlatformSettingsModal').then(m => m.PlatformSettingsModal),
@@ -87,14 +83,7 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    const [
-      files,
-      meta,
-      allMenuPrices,
-      recipeMaps,
-      edges,
-      masterByCode,
-    ] = await Promise.all([
+    const [files, meta, allMenuPrices, recipeMaps, edges, masterByCode] = await Promise.all([
       getPriceFiles(),
       getAllIngredients(),
       getAllMenuPrices(),
@@ -147,7 +136,7 @@ export default function Page() {
   useEffect(() => {
     load()
       .catch(err => {
-        console.error(err);
+        console.error('[CostMargin] load failed', err);
         setDbError(err.message || '데이터 로드 실패');
       })
       .finally(() => setLoading(false));
@@ -351,7 +340,7 @@ export default function Page() {
       await saveSnapshot({ avgCostRate, avgMargin, menuCount, label });
       showToast('추이 스냅샷 저장 완료', 'ok');
     } catch (e) {
-      console.error(e);
+      console.error('[CostMargin] save snapshot failed', e);
       showToast('스냅샷 저장 실패: ' + e.message, 'error');
     }
   }

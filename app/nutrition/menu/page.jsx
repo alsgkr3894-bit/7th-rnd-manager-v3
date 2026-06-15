@@ -247,7 +247,7 @@ export default function Page() {
   useEffect(() => {
     load().catch(err => {
       if (!mountedRef.current) return;
-      console.error(err);
+      console.error('[NutritionMenu] load failed', err);
       setLoading(false);
     });
   }, [load, mountedRef]);

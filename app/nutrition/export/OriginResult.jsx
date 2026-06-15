@@ -464,7 +464,7 @@ export default function OriginResult() {
       );
     })()
       .catch(err => {
-        if (alive) console.error(err);
+        if (alive) console.error('[OriginResult] load failed', err);
       })
       .finally(() => {
         if (alive) setLoading(false);

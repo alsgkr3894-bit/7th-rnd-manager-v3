@@ -68,7 +68,7 @@ export function useIngredientPriceData() {
     load()
       .catch(err => {
         if (!mountedRef.current) return;
-        console.error(err);
+        console.error('[useIngredientPriceData] load failed', err);
         setDbError(err.message || '데이터 로드 실패');
       })
       .finally(() => {

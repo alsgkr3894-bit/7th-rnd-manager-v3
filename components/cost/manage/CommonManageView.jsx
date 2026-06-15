@@ -104,7 +104,7 @@ export function CommonManageView({ tab = 'groups' }) {
     load()
       .catch(err => {
         if (!mountedRef.current) return;
-        console.error(err);
+        console.error('[CommonManageView] load failed', err);
         setDbError(err.message || '데이터 로드 실패');
       })
       .finally(() => {

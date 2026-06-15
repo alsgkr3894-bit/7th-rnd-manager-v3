@@ -89,7 +89,7 @@ export function useAllergenSourceData() {
     load()
       .catch(err => {
         if (mountedRef.current) {
-          console.error(err);
+          console.error('[useAllergenSourceData] load failed', err);
           showToast('데이터 로드 실패: ' + err.message, 'error');
         }
       })

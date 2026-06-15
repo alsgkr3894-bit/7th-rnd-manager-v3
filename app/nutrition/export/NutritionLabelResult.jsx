@@ -207,7 +207,7 @@ export default function NutritionLabelResult() {
       setPizzaSliceSheet(buildPizzaSliceSheet({ ...ctx, sliceCounts: loadSliceCounts() }));
     })()
       .catch(err => {
-        if (alive) console.error(err);
+        if (alive) console.error('[NutritionLabelResult] load failed', err);
       })
       .finally(() => {
         if (alive) setLoading(false);

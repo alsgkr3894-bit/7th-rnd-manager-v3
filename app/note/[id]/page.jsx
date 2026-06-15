@@ -162,7 +162,7 @@ export default function Page() {
         }
       })
       .catch(err => {
-        if (alive) console.error(err);
+        if (alive) console.error('[NoteDetail] load failed', err);
       })
       .finally(() => {
         if (alive) setLoading(false);
