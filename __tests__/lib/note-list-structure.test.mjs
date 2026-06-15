@@ -11,6 +11,7 @@ describe('note list structure', () => {
     const headerSource = readFileSync(resolve('app/note/_NoteListHeader.jsx'), 'utf8');
     const statesSource = readFileSync(resolve('app/note/_NoteListStates.jsx'), 'utf8');
     const dialogsSource = readFileSync(resolve('app/note/_NotePageDialogs.jsx'), 'utf8');
+    const itemActionsSource = readFileSync(resolve('hooks/useNoteItemActions.js'), 'utf8');
 
     expect(source).toContain("import { NoteStatsSummary } from './_NoteStatsSummary'");
     expect(source).toContain("import { NoteFilterControls } from './_NoteFilterControls'");
@@ -19,6 +20,7 @@ describe('note list structure', () => {
     expect(source).toContain("import { NoteListHeader } from './_NoteListHeader'");
     expect(source).toContain("import { NoteListStates } from './_NoteListStates'");
     expect(source).toContain("import { NotePageDialogs } from './_NotePageDialogs'");
+    expect(source).toContain("import { useNoteItemActions } from '@/hooks/useNoteItemActions'");
     expect(source).toContain('<NoteStatsSummary');
     expect(source).toContain('<NoteFilterControls');
     expect(source).toContain('<NoteCardGrid');
@@ -34,6 +36,10 @@ describe('note list structure', () => {
     expect(source).not.toContain('<ConfirmDialog');
     expect(source).not.toContain('<NoteCardSkeleton');
     expect(source).not.toContain('아직 노트가 없어요');
+    expect(source).not.toContain('async function restoreDeletedNotes');
+    expect(source).not.toContain('await deleteNote(note.id)');
+    expect(source).not.toContain('await addNote({');
+    expect(source).not.toContain('await updateNote(noteId');
     expect(filterSource).toContain('const SORT_OPTIONS = [');
     expect(filterSource).toContain('제목, 메뉴명, 테스트 내용, 태그 검색');
     expect(statsSource).toContain('최근 6개월');
@@ -52,5 +58,11 @@ describe('note list structure', () => {
     expect(dialogsSource).toContain('export function NotePageDialogs');
     expect(dialogsSource).toContain('<ConfirmDialog');
     expect(dialogsSource).toContain('프리셋을 삭제할까요?');
+    expect(itemActionsSource).toContain('export function useNoteItemActions');
+    expect(itemActionsSource).toContain('async function restoreDeletedNotes');
+    expect(itemActionsSource).toContain('await deleteNote(note.id)');
+    expect(itemActionsSource).toContain('await addNote({');
+    expect(itemActionsSource).toContain('await updateNote(noteId');
+    expect(itemActionsSource).toContain('setNoteFrom(note.id)');
   });
 });

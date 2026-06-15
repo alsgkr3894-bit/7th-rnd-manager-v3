@@ -3,12 +3,11 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { sharedRestoreRecord as restoreRecord } from '@/lib/db/shared';
-import { getAllNotes, addNote, deleteNote, updateNote } from '@/lib/note';
+import { getAllNotes } from '@/lib/note';
 import { NOTE_STATUS } from '@/lib/note/constants';
 import { getNoteDetailStats } from '@/lib/stats/note-stats';
 import { tryLS, setLS } from '@/lib/note/storage';
-import { KEYS, setNoteFrom } from '@/lib/note/keys';
+import { KEYS } from '@/lib/note/keys';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useScrollMemory } from '@/hooks/useScrollMemory';
@@ -17,6 +16,7 @@ import { copyText } from '@/lib/ui/clipboard';
 import { useNotePins } from '@/hooks/useNotePins';
 import { useNotePresets } from '@/hooks/useNotePresets';
 import { useNoteBatchActions } from '@/hooks/useNoteBatchActions';
+import { useNoteItemActions } from '@/hooks/useNoteItemActions';
 import { buildHighlightRegex } from '@/lib/note/utils';
 import { NoteCardGrid } from './_NoteCardGrid';
 import { NoteContextMenu } from './_NoteContextMenu';
@@ -35,20 +35,6 @@ function normalizeNoteView(value) {
   return NOTE_VIEW_KEYS.has(value) ? value : 'card';
 }
 
-async function restoreDeletedNotes(records = []) {
-  const failures = [];
-  for (const rec of records) {
-    try {
-      await restoreRecord('menu_dev_notes', rec);
-    } catch (err) {
-      failures.push(err);
-    }
-  }
-  if (failures.length > 0) {
-    throw new Error(`${failures.length}개 노트 복구 실패`);
-  }
-}
-
 export function NoteContent() {
   const router = useRouter();
   const pathname = usePathname();
@@ -60,8 +46,6 @@ export function NoteContent() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [detailNote, setDetailNote] = useState(null);
   const [stats, setStats] = useState(null);
-  const [popIds, setPopIds] = useState(new Set());
-  const [singleDeleteNote, setSingleDeleteNote] = useState(null);
   const { pinnedIds, togglePin } = useNotePins();
 
   useScrollMemory(pathname);
@@ -91,7 +75,6 @@ export function NoteContent() {
 
   const [ctxMenu, setCtxMenu] = useState(null);
   const [focusedRow, setFocusedRow] = useState(null);
-  const popTimersRef = useRef(new Set());
   const searchBlurTimerRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -124,6 +107,17 @@ export function NoteContent() {
     cancelScheduled: cancelSearchHistory,
   } = useSearchHistory(KEYS.NOTE_SEARCH_HISTORY);
 
+  const {
+    popIds,
+    singleDeleteNote,
+    setSingleDeleteNote,
+    handleDelete,
+    execDelete,
+    handleCopy,
+    handleStatusChange,
+    handleNewVersion,
+  } = useNoteItemActions({ router, setNotes, load, detailNote, setDetailNote });
+
   useEffect(() => {
     load()
       .catch(console.error)
@@ -132,8 +126,6 @@ export function NoteContent() {
 
   useEffect(
     () => () => {
-      popTimersRef.current.forEach(timer => clearTimeout(timer));
-      popTimersRef.current.clear();
       if (searchBlurTimerRef.current) clearTimeout(searchBlurTimerRef.current);
     },
     []
@@ -171,89 +163,6 @@ export function NoteContent() {
       setShowSearchHist(false);
       searchBlurTimerRef.current = null;
     }, 150);
-  }
-
-  const handleDelete = useCallback(function handleDelete(note, e) {
-    e?.stopPropagation();
-    setSingleDeleteNote(note);
-  }, []);
-
-  async function execDelete(note) {
-    setSingleDeleteNote(null);
-    try {
-      // deleteNote가 삭제된 부모+자식 원본 레코드 배열을 반환 → 전부 복원해야 자식 유실 방지
-      const removed = await deleteNote(note.id);
-      const removedIds = new Set((removed || []).map(rec => rec.id));
-      setNotes(prev => prev.filter(n => !removedIds.has(n.id)));
-      if (detailNote?.id === note.id) setDetailNote(null);
-      const childCount = (removed?.length ?? 1) - 1;
-      const base = note.title?.trim() ? `"${note.title}" 삭제됨` : '노트 삭제됨';
-      const label = childCount > 0 ? `${base} (하위 ${childCount}개 포함)` : base;
-      showToast(label, 'ok', 5000, {
-        label: '실행취소',
-        onClick: async () => {
-          try {
-            await restoreDeletedNotes(removed || []);
-            await load();
-            showToast('삭제를 되돌렸습니다', 'ok');
-          } catch (err) {
-            console.error('[NoteContent] undo delete failed', err);
-            showToast('실행취소 실패: ' + err.message, 'error');
-            await load();
-          }
-        },
-      });
-    } catch (err) {
-      console.error('[NoteContent] deleteNote', err);
-      showToast('삭제 실패', 'error');
-    }
-  }
-
-  async function handleCopy(note, e) {
-    e.stopPropagation();
-    try {
-      await initDB();
-      await addNote({
-        ...note,
-        title: `${note.title} (복사)`,
-        createdAt: undefined,
-        parentId: null,
-      });
-      showToast('노트를 복사했어요', 'ok');
-      load();
-    } catch (err) {
-      console.error('[NoteContent] handleCopy', err);
-      showToast('복사 실패', 'error');
-    }
-  }
-
-  const handleStatusChange = useCallback(async function handleStatusChange(noteId, newStatus, e) {
-    e.stopPropagation();
-    try {
-      await updateNote(noteId, { status: newStatus });
-      showToast(`상태 → ${newStatus}`, 'ok');
-      setNotes(prev => prev.map(n => (n.id === noteId ? { ...n, status: newStatus } : n)));
-      setPopIds(s => new Set([...s, noteId]));
-      const timer = setTimeout(() => {
-        setPopIds(s => {
-          const n = new Set(s);
-          n.delete(noteId);
-          return n;
-        });
-        popTimersRef.current.delete(timer);
-      }, 400);
-      popTimersRef.current.add(timer);
-      setDetailNote(n => (n?.id === noteId ? { ...n, status: newStatus } : n));
-    } catch (err) {
-      console.error('[NoteContent] handleStatusChange', err);
-      showToast('상태 변경 실패', 'error');
-    }
-  }, []);
-
-  function handleNewVersion(note, e) {
-    e.stopPropagation();
-    setNoteFrom(note.id);
-    router.push('/note/write');
   }
 
   async function handleBulkCopy() {

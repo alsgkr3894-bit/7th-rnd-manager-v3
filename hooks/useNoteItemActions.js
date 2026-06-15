@@ -1,0 +1,140 @@
+'use client';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { showToast } from '@/components/Toast';
+import { initDB } from '@/lib/db';
+import { sharedRestoreRecord as restoreRecord } from '@/lib/db/shared';
+import { addNote, deleteNote, updateNote } from '@/lib/note';
+import { setNoteFrom } from '@/lib/note/keys';
+
+async function restoreDeletedNotes(records = []) {
+  const failures = [];
+  for (const rec of records) {
+    try {
+      await restoreRecord('menu_dev_notes', rec);
+    } catch (err) {
+      failures.push(err);
+    }
+  }
+  if (failures.length > 0) {
+    throw new Error(`${failures.length}개 노트 복구 실패`);
+  }
+}
+
+export function useNoteItemActions({ router, setNotes, load, detailNote, setDetailNote }) {
+  const [popIds, setPopIds] = useState(new Set());
+  const [singleDeleteNote, setSingleDeleteNote] = useState(null);
+  const popTimersRef = useRef(new Set());
+
+  useEffect(
+    () => () => {
+      popTimersRef.current.forEach(timer => clearTimeout(timer));
+      popTimersRef.current.clear();
+    },
+    []
+  );
+
+  const handleDelete = useCallback(function handleDelete(note, e) {
+    e?.stopPropagation();
+    setSingleDeleteNote(note);
+  }, []);
+
+  const execDelete = useCallback(
+    async function execDelete(note) {
+      setSingleDeleteNote(null);
+      try {
+        const removed = await deleteNote(note.id);
+        const removedIds = new Set((removed || []).map(rec => rec.id));
+        setNotes(prev => prev.filter(n => !removedIds.has(n.id)));
+        if (detailNote?.id === note.id) setDetailNote(null);
+        const childCount = (removed?.length ?? 1) - 1;
+        const base = note.title?.trim() ? `"${note.title}" 삭제됨` : '노트 삭제됨';
+        const label = childCount > 0 ? `${base} (하위 ${childCount}개 포함)` : base;
+        showToast(label, 'ok', 5000, {
+          label: '실행취소',
+          onClick: async () => {
+            try {
+              await restoreDeletedNotes(removed || []);
+              await load();
+              showToast('삭제를 되돌렸습니다', 'ok');
+            } catch (err) {
+              console.error('[useNoteItemActions] undo delete failed', err);
+              showToast('실행취소 실패: ' + err.message, 'error');
+              await load();
+            }
+          },
+        });
+      } catch (err) {
+        console.error('[useNoteItemActions] deleteNote', err);
+        showToast('삭제 실패', 'error');
+      }
+    },
+    [detailNote?.id, load, setDetailNote, setNotes]
+  );
+
+  const handleCopy = useCallback(
+    async function handleCopy(note, e) {
+      e?.stopPropagation();
+      try {
+        await initDB();
+        await addNote({
+          ...note,
+          title: `${note.title} (복사)`,
+          createdAt: undefined,
+          parentId: null,
+        });
+        showToast('노트를 복사했어요', 'ok');
+        load();
+      } catch (err) {
+        console.error('[useNoteItemActions] handleCopy', err);
+        showToast('복사 실패', 'error');
+      }
+    },
+    [load]
+  );
+
+  const handleStatusChange = useCallback(
+    async function handleStatusChange(noteId, newStatus, e) {
+      e?.stopPropagation();
+      try {
+        await updateNote(noteId, { status: newStatus });
+        showToast(`상태 → ${newStatus}`, 'ok');
+        setNotes(prev => prev.map(n => (n.id === noteId ? { ...n, status: newStatus } : n)));
+        setPopIds(s => new Set([...s, noteId]));
+        const timer = setTimeout(() => {
+          setPopIds(s => {
+            const n = new Set(s);
+            n.delete(noteId);
+            return n;
+          });
+          popTimersRef.current.delete(timer);
+        }, 400);
+        popTimersRef.current.add(timer);
+        setDetailNote(n => (n?.id === noteId ? { ...n, status: newStatus } : n));
+      } catch (err) {
+        console.error('[useNoteItemActions] handleStatusChange', err);
+        showToast('상태 변경 실패', 'error');
+      }
+    },
+    [setDetailNote, setNotes]
+  );
+
+  const handleNewVersion = useCallback(
+    function handleNewVersion(note, e) {
+      e?.stopPropagation();
+      setNoteFrom(note.id);
+      router.push('/note/write');
+    },
+    [router]
+  );
+
+  return {
+    popIds,
+    singleDeleteNote,
+    setSingleDeleteNote,
+    handleDelete,
+    execDelete,
+    handleCopy,
+    handleStatusChange,
+    handleNewVersion,
+  };
+}
