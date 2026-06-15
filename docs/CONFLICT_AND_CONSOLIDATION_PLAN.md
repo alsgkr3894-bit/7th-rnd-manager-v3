@@ -41,7 +41,7 @@
 | P2 | 시스템 설정 store/localStorage/no-op 토글 분리 | 백업 범위는 구현 완료; 설정이 저장돼도 실제 로직에 반영되지 않을 수 있음 |
 | P2 | 영양 메뉴가 메뉴마스터 밖에서 생성 가능 | 메뉴마스터 단일 기준 정책과 충돌 가능 |
 | P2 | `cost_recipes` menuCode base/full 정책 불명확 | legacy fallback과 detail recipe 매칭 기준이 흔들릴 수 있음 |
-| P2 | 식자재 삭제 안전장치가 화면별로 다름 | 같은 삭제 작업의 undo/cascade 경고가 진입 화면마다 다름 |
+| P2 | 식자재 삭제 안전장치가 화면별로 다름 | 구현 완료; 신규 삭제 진입점 추가 시 공통 undo/cascade 경고 흐름 유지 필요 |
 | P2 | 카테고리 판정 함수 중복 | `isPizzaCategory` 이름이 3곳에서 다른 의미로 사용됨 |
 | P2 | 백업 localStorage 키 파일 위치 | 전역 백업 설정이 `lib/nutrition` 아래에 있음 |
 | P2 | 보고서 비교 route 노출 기준 drift | `KIND_META`/허브에는 있으나 사이드바에는 없음 |
@@ -942,6 +942,13 @@
 
 ### 8.10 식자재 삭제 안전장치가 화면마다 다름
 
+**구현 상태**
+
+- 구현 완료: `8c39bed feat: consolidate ingredient management entrypoints`
+- `/cost/ingredient-price`는 `/ingredient/manage?view=price`로 redirect되어 재료 단가표 별도 삭제 흐름을 더 이상 제공하지 않는다.
+- 삭제 실행은 식자재관리 화면의 `deleteIngredient()`/`bulkDeleteIngredients()` 경로로 모이며, cascade warning, 실행취소, 부분 실패 toast를 공유한다.
+- 회귀 테스트는 `ingredient-manage-undo-guards`, `ingredient-delete-cascade`, `sidebar-state` 계열에서 삭제 undo와 route 통합 기준을 확인한다.
+
 **관련 파일**
 
 - `app/ingredient/manage/page.jsx`
@@ -952,17 +959,17 @@
 
 - 두 화면 모두 `bulkDeleteIngredients()`를 호출한다.
 - 식자재 관리 화면은 cascade 경고와 실행취소를 제공한다.
-- 재료 단가표 화면은 삭제 완료/실패 toast와 reload만 제공한다.
+- 재료 단가표 route는 식자재관리 가격 탭으로 redirect된다.
 
 **충돌 가능성**
 
-- 같은 식자재 삭제인데 진입 화면에 따라 복구 가능성, cascade 경고 노출이 달라진다.
-- 재료 단가표에서 삭제하면 영양값 cascade 실패를 사용자가 놓칠 수 있다.
+- 별도 재료 단가표 삭제 UI가 다시 생기면 복구 가능성, cascade 경고 노출이 화면별로 갈라질 수 있다.
+- 신규 식자재 삭제 진입점은 식자재관리의 공통 삭제 helper를 재사용해야 한다.
 
 **정리 방향**
 
-- destructive ingredient action을 공통 helper/hook으로 감싼다.
-- 두 화면 모두 cascade warning, undo, partial failure 표시를 공유한다.
+- 유지 방향: destructive ingredient action은 식자재관리의 공통 삭제 흐름으로만 제공한다.
+- 새 화면에서 삭제가 필요하면 `deleteIngredient()`/`bulkDeleteIngredients()` 결과의 `cascadeErrors`, `removed`, `failures`를 같은 toast/undo 정책으로 노출한다.
 
 ### 8.11 제때 설정과 시스템 설정의 자동화 토글이 실제 로직과 분리됨
 
