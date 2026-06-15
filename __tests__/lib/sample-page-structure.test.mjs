@@ -15,6 +15,10 @@ const ratingViewSource = readFileSync(
 const searchFieldSource = readFileSync(resolve('app/note/sample/_SampleSearchField.jsx'), 'utf8');
 const calendarSource = readFileSync(resolve('app/note/sample/_SampleCalendarView.jsx'), 'utf8');
 const recordsSource = readFileSync(resolve('app/note/sample/_SampleRecordsView.jsx'), 'utf8');
+const loadingGridSource = readFileSync(resolve('app/note/sample/_SampleLoadingGrid.jsx'), 'utf8');
+const emptyStateSource = readFileSync(resolve('app/note/sample/_SampleEmptyState.jsx'), 'utf8');
+const gridViewSource = readFileSync(resolve('app/note/sample/_SampleGridView.jsx'), 'utf8');
+const listViewSource = readFileSync(resolve('app/note/sample/_SampleListView.jsx'), 'utf8');
 const stateHookSource = readFileSync(resolve('app/note/sample/useSamplePageState.js'), 'utf8');
 const actionsHookSource = readFileSync(
   resolve('app/note/sample/useSampleRecordActions.js'),
@@ -85,11 +89,26 @@ describe('sample page structure', () => {
     expect(calendarSource).toContain('className="cal-grid"');
     expect(calendarSource).toContain('RATING_COLOR');
     expect(recordsSource).toContain('export function SampleRecordsView');
-    expect(recordsSource).toContain('SampleCardSkeleton');
-    expect(recordsSource).toContain('<SampleCard');
-    expect(recordsSource).toContain('<SampleListRow');
-    expect(recordsSource).toContain('첫 샘플 작성하기');
-    expect(recordsSource).toContain('className="data-table"');
+    expect(recordsSource).toContain('<SampleLoadingGrid');
+    expect(recordsSource).toContain('<SampleEmptyState');
+    expect(recordsSource).toContain('<SampleGridView');
+    expect(recordsSource).toContain('<SampleListView');
+    expect(recordsSource).not.toContain('SampleCardSkeleton');
+    expect(recordsSource).not.toContain('<SampleCard');
+    expect(recordsSource).not.toContain('<SampleListRow');
+    expect(recordsSource).not.toContain('첫 샘플 작성하기');
+    expect(recordsSource).not.toContain('className="data-table"');
+    expect(loadingGridSource).toContain('export function SampleLoadingGrid');
+    expect(loadingGridSource).toContain('SampleCardSkeleton');
+    expect(emptyStateSource).toContain('export function SampleEmptyState');
+    expect(emptyStateSource).toContain('첫 샘플 작성하기');
+    expect(emptyStateSource).toContain('샘플 기록이 없어요');
+    expect(gridViewSource).toContain('export function SampleGridView');
+    expect(gridViewSource).toContain('<SampleCard');
+    expect(gridViewSource).toContain('animDelay={Math.min(index, 8) * 40}');
+    expect(listViewSource).toContain('export function SampleListView');
+    expect(listViewSource).toContain('<SampleListRow');
+    expect(listViewSource).toContain('className="data-table"');
   });
 
   test('sample hooks own page data state and record mutations', () => {
