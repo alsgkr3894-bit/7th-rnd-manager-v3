@@ -1,24 +1,9 @@
 'use client';
-import { Suspense, useState, useEffect, useMemo, useRef } from 'react';
+import { Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { showToast } from '@/components/Toast';
-import { initDB } from '@/lib/db';
-import {
-  getAllSamples,
-  addSample,
-  updateSample,
-  deleteSample,
-  SAMPLE_CATEGORIES,
-  sampleNamesText,
-} from '@/lib/sample';
-import { tryLS, setLS } from '@/lib/note/storage';
-import { formatDate } from '@/lib/format';
-import { KEYS } from '@/lib/note/keys';
-import { useDBLoad } from '@/hooks/useDBLoad';
-import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
-import { useSearchHistory } from '@/hooks/useSearchHistory';
+import { SAMPLE_CATEGORIES } from '@/lib/sample';
 import { useSampleBatchMode } from '@/hooks/useSampleBatchMode';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { useSampleCompareMode } from '@/hooks/useSampleCompareMode';
@@ -28,23 +13,8 @@ import { SampleCalendarView } from './_SampleCalendarView';
 import { SampleFilterControls } from './_SampleFilterControls';
 import { SamplePageActions } from './_SamplePageActions';
 import { SampleRecordsView } from './_SampleRecordsView';
-import { buildCalendarDays } from '@/lib/note/calendar-utils';
-
-const SORT_OPTIONS = [
-  { key: 'createdAt', label: '최신순' },
-  { key: 'testDate', label: '날짜순' },
-  { key: 'rating', label: '별점순' },
-];
-
-const SAMPLE_SORT_KEYS = new Set(SORT_OPTIONS.map(o => o.key));
-const SAMPLE_VIEW_KEYS = new Set(['grid', 'list', 'calendar']);
-const SAMPLE_RATING_KEYS = new Set([-1, 0, 3, 4, 5]);
-
-function pickAllowed(value, allowed, fallback) {
-  return allowed.has(value) ? value : fallback;
-}
-
-const CALENDAR_CELLS = 42; // 6주 × 7일 — 달력 그리드 고정 칸 수
+import { SAMPLE_SORT_OPTIONS, useSamplePageState } from './useSamplePageState';
+import { useSampleRecordActions } from './useSampleRecordActions';
 
 /* ── 메인 페이지 ── */
 export default function Page() {
@@ -66,50 +36,39 @@ function SampleContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  const [samples, setSamples] = useState([]);
-  const [search, setSearch] = useState('');
   const {
-    history: searchHistory,
-    isOpen: showSearchHist,
-    setIsOpen: setShowSearchHist,
-    scheduleAdd: scheduleSearchHistory,
-  } = useSearchHistory(KEYS.SAMPLE_SEARCH_HISTORY);
-  const [catFilter, setCatFilter] = useState(() => searchParams.get('cat') || 'all');
-  const [ratingMin, setRatingMin] = useState(() => {
-    const v = parseInt(searchParams.get('r') || '0', 10);
-    return pickAllowed(v, SAMPLE_RATING_KEYS, 0);
-  });
-  const [sortBy, setSortBy] = useState(() =>
-    pickAllowed(tryLS(KEYS.SAMPLE_SORT, 'createdAt'), SAMPLE_SORT_KEYS, 'createdAt')
-  );
-  const [detailRec, setDetailRec] = useState(null);
-  const searchBlurTimerRef = useRef(null);
-
-  // 뷰 모드
-  const [viewMode, setViewMode] = useState(() =>
-    pickAllowed(tryLS(KEYS.SAMPLE_VIEW, 'grid'), SAMPLE_VIEW_KEYS, 'grid')
-  );
-  const [calMonth, setCalMonth] = useState(() => new Date());
-
-  const {
-    data: loadedSamples,
+    samples,
+    setSamples,
+    search,
+    searchHistory,
+    showSearchHist,
+    setShowSearchHist,
+    catFilter,
+    setCatFilter,
+    ratingMin,
+    setRatingMin,
+    sortBy,
+    applySortBy,
+    viewMode,
+    applyViewMode,
+    calMonth,
+    goPrevMonth,
+    goNextMonth,
+    detailRec,
+    setDetailRec,
     loading,
-    error: loadError,
+    loadError,
     reload,
-  } = useDBLoad(() => getAllSamples());
-
-  useEffect(() => {
-    if (loadedSamples) setSamples(loadedSamples);
-  }, [loadedSamples]);
-
-  useVisibilityRefresh(reload);
-
-  useEffect(
-    () => () => {
-      if (searchBlurTimerRef.current) clearTimeout(searchBlurTimerRef.current);
-    },
-    []
-  );
+    handleSearchChange,
+    closeSearchHistorySoon,
+    selectSearchHistory,
+    filtered,
+    catCounts,
+    ratingDist,
+    calDays,
+    samplesByDate,
+    today,
+  } = useSamplePageState({ searchParams, pathname });
 
   const {
     batchMode,
@@ -125,6 +84,13 @@ function SampleContent() {
 
   const { showConfirm, confirmElement } = useConfirmDialog();
 
+  const { handleDelete, handleCopy, handleRatingChange } = useSampleRecordActions({
+    setSamples,
+    setDetailRec,
+    reload,
+    showConfirm,
+  });
+
   const {
     compareMode,
     setCompareMode,
@@ -136,122 +102,6 @@ function SampleContent() {
     compareIdxMap,
     exitCompareMode,
   } = useSampleCompareMode(samples);
-
-  // URL sync for filters
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (catFilter !== 'all') params.set('cat', catFilter);
-    if (ratingMin !== 0) params.set('r', String(ratingMin));
-    const qs = params.toString();
-    window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
-  }, [catFilter, ratingMin, pathname]);
-
-  function handleSearchChange(val) {
-    setSearch(val);
-    scheduleSearchHistory(val);
-  }
-
-  function closeSearchHistorySoon() {
-    if (searchBlurTimerRef.current) clearTimeout(searchBlurTimerRef.current);
-    searchBlurTimerRef.current = setTimeout(() => {
-      setShowSearchHist(false);
-      searchBlurTimerRef.current = null;
-    }, 150);
-  }
-
-  const filtered = useMemo(() => {
-    let list = samples;
-    if (catFilter !== 'all') list = list.filter(s => s.category === catFilter);
-    if (ratingMin === -1) list = list.filter(s => !s.rating);
-    else if (ratingMin > 0) list = list.filter(s => (s.rating || 0) >= ratingMin);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(
-        s =>
-          (s.title || '').toLowerCase().includes(q) ||
-          sampleNamesText(s).toLowerCase().includes(q) ||
-          (s.company || '').toLowerCase().includes(q) ||
-          (s.description || '').toLowerCase().includes(q) ||
-          (s.tags || '').toLowerCase().includes(q)
-      );
-    }
-    return [...list].sort((a, b) => {
-      if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
-      if (sortBy === 'testDate') return (b.testDate || '').localeCompare(a.testDate || '');
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    });
-  }, [samples, catFilter, ratingMin, search, sortBy]);
-
-  const catCounts = useMemo(() => {
-    const m = { all: samples.length };
-    for (const s of samples) m[s.category] = (m[s.category] || 0) + 1;
-    return m;
-  }, [samples]);
-
-  // 별점 분포 (1~5별 + 별점 없음) — 필터칩 옆 요약 배지용
-  const ratingDist = useMemo(() => {
-    const d = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, none: 0 };
-    for (const s of samples) {
-      const r = s.rating || 0;
-      if (r >= 1 && r <= 5) d[r] += 1;
-      else d.none += 1;
-    }
-    return d;
-  }, [samples]);
-
-  async function handleDelete(rec) {
-    const label = rec.title?.trim() || '샘플';
-    const ok = await showConfirm({
-      message: `'${label}' 기록이 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`,
-      danger: true,
-    });
-    if (!ok) return;
-    try {
-      await deleteSample(rec.id);
-      setSamples(prev => prev.filter(s => s.id !== rec.id));
-      setDetailRec(null);
-      const label = rec.title?.trim() ? `"${rec.title}" 삭제됨` : '샘플 삭제됨';
-      showToast(label, 'ok');
-    } catch {
-      showToast('삭제 실패', 'error');
-    }
-  }
-
-  async function handleCopy(rec, e) {
-    e?.stopPropagation();
-    try {
-      await initDB();
-      await addSample({ ...rec, title: `${rec.title} (복사)` });
-      showToast('샘플을 복사했어요', 'ok');
-      reload();
-    } catch {
-      showToast('복사 실패', 'error');
-    }
-  }
-
-  async function handleRatingChange(sampleId, newRating, e) {
-    e?.stopPropagation();
-    try {
-      await initDB();
-      await updateSample(sampleId, { rating: newRating });
-      setSamples(prev => prev.map(s => (s.id === sampleId ? { ...s, rating: newRating } : s)));
-      showToast('별점 수정됨', 'ok', 1500);
-    } catch {
-      showToast('별점 변경 실패', 'error');
-    }
-  }
-
-  const calDays = useMemo(() => buildCalendarDays(calMonth, CALENDAR_CELLS), [calMonth]);
-
-  const samplesByDate = useMemo(() => {
-    const m = {};
-    for (const s of samples) {
-      if (s.testDate) (m[s.testDate] ??= []).push(s);
-    }
-    return m;
-  }, [samples]);
-
-  const today = formatDate(new Date());
 
   const headerActions = (
     <SamplePageActions
@@ -305,27 +155,18 @@ function SampleContent() {
         onRatingMinChange={setRatingMin}
         ratingDist={ratingDist}
         sampleCount={samples.length}
-        sortOptions={SORT_OPTIONS}
+        sortOptions={SAMPLE_SORT_OPTIONS}
         sortBy={sortBy}
-        onSortChange={key => {
-          setSortBy(key);
-          setLS(KEYS.SAMPLE_SORT, key);
-        }}
+        onSortChange={applySortBy}
         viewMode={viewMode}
-        onViewModeChange={mode => {
-          setViewMode(mode);
-          setLS(KEYS.SAMPLE_VIEW, mode);
-        }}
+        onViewModeChange={applyViewMode}
         search={search}
         onSearchChange={handleSearchChange}
         showSearchHist={showSearchHist}
         onSearchFocus={() => setShowSearchHist(true)}
         onSearchBlur={closeSearchHistorySoon}
         searchHistory={searchHistory}
-        onSelectSearchHistory={value => {
-          handleSearchChange(value);
-          setShowSearchHist(false);
-        }}
+        onSelectSearchHistory={selectSearchHistory}
       />
 
       {!loading && viewMode === 'calendar' && (
@@ -334,8 +175,8 @@ function SampleContent() {
           calMonth={calMonth}
           samplesByDate={samplesByDate}
           today={today}
-          onPrevMonth={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
-          onNextMonth={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+          onPrevMonth={goPrevMonth}
+          onNextMonth={goNextMonth}
           onOpenSample={setDetailRec}
         />
       )}

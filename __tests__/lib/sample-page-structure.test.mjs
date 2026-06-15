@@ -6,6 +6,11 @@ const actionsSource = readFileSync(resolve('app/note/sample/_SamplePageActions.j
 const filtersSource = readFileSync(resolve('app/note/sample/_SampleFilterControls.jsx'), 'utf8');
 const calendarSource = readFileSync(resolve('app/note/sample/_SampleCalendarView.jsx'), 'utf8');
 const recordsSource = readFileSync(resolve('app/note/sample/_SampleRecordsView.jsx'), 'utf8');
+const stateHookSource = readFileSync(resolve('app/note/sample/useSamplePageState.js'), 'utf8');
+const actionsHookSource = readFileSync(
+  resolve('app/note/sample/useSampleRecordActions.js'),
+  'utf8'
+);
 
 describe('sample page structure', () => {
   test('sample page delegates major rendering sections to focused components', () => {
@@ -13,10 +18,18 @@ describe('sample page structure', () => {
     expect(pageSource).toContain("import { SampleFilterControls } from './_SampleFilterControls'");
     expect(pageSource).toContain("import { SampleCalendarView } from './_SampleCalendarView'");
     expect(pageSource).toContain("import { SampleRecordsView } from './_SampleRecordsView'");
+    expect(pageSource).toContain(
+      "import { SAMPLE_SORT_OPTIONS, useSamplePageState } from './useSamplePageState'"
+    );
+    expect(pageSource).toContain(
+      "import { useSampleRecordActions } from './useSampleRecordActions'"
+    );
     expect(pageSource).toContain('<SamplePageActions');
     expect(pageSource).toContain('<SampleFilterControls');
     expect(pageSource).toContain('<SampleCalendarView');
     expect(pageSource).toContain('<SampleRecordsView');
+    expect(pageSource).toContain('useSamplePageState({ searchParams, pathname })');
+    expect(pageSource).toContain('useSampleRecordActions({');
     expect(pageSource).not.toContain('downloadCsv');
     expect(pageSource).not.toContain('printCurrentPageWithDownloadDate');
     expect(pageSource).not.toContain('SampleCardSkeleton');
@@ -26,6 +39,16 @@ describe('sample page structure', () => {
     expect(pageSource).not.toContain('className="cal-grid"');
     expect(pageSource).not.toContain('첫 샘플 작성하기');
     expect(pageSource).not.toContain('엑셀로 내보내기');
+    expect(pageSource).not.toContain('getAllSamples');
+    expect(pageSource).not.toContain('useDBLoad');
+    expect(pageSource).not.toContain('useVisibilityRefresh');
+    expect(pageSource).not.toContain('useSearchHistory');
+    expect(pageSource).not.toContain('sampleNamesText');
+    expect(pageSource).not.toContain('buildCalendarDays');
+    expect(pageSource).not.toContain('addSample');
+    expect(pageSource).not.toContain('updateSample');
+    expect(pageSource).not.toContain('deleteSample');
+    expect(pageSource).not.toContain('initDB');
   });
 
   test('extracted components own their sample page rendering responsibilities', () => {
@@ -45,5 +68,24 @@ describe('sample page structure', () => {
     expect(recordsSource).toContain('<SampleListRow');
     expect(recordsSource).toContain('첫 샘플 작성하기');
     expect(recordsSource).toContain('className="data-table"');
+  });
+
+  test('sample hooks own page data state and record mutations', () => {
+    expect(stateHookSource).toContain('export function useSamplePageState');
+    expect(stateHookSource).toContain('export const SAMPLE_SORT_OPTIONS');
+    expect(stateHookSource).toContain('getAllSamples');
+    expect(stateHookSource).toContain('useDBLoad(() => getAllSamples())');
+    expect(stateHookSource).toContain('useVisibilityRefresh(reload)');
+    expect(stateHookSource).toContain('useSearchHistory(KEYS.SAMPLE_SEARCH_HISTORY)');
+    expect(stateHookSource).toContain('sampleNamesText(sample)');
+    expect(stateHookSource).toContain('buildCalendarDays(calMonth, CALENDAR_CELLS)');
+    expect(stateHookSource).toContain('setLS(KEYS.SAMPLE_SORT, key)');
+    expect(stateHookSource).toContain('setLS(KEYS.SAMPLE_VIEW, mode)');
+    expect(actionsHookSource).toContain('export function useSampleRecordActions');
+    expect(actionsHookSource).toContain('await deleteSample(sample.id)');
+    expect(actionsHookSource).toContain('await addSample({ ...sample');
+    expect(actionsHookSource).toContain('await updateSample(sampleId');
+    expect(actionsHookSource).toContain('await initDB()');
+    expect(actionsHookSource).toContain("showToast('샘플을 복사했어요', 'ok')");
   });
 });
