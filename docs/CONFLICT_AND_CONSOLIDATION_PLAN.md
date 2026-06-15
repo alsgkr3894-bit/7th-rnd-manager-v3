@@ -397,12 +397,13 @@
 
 **구현 상태**
 
-- 부분 구현 완료: `3bcd997 fix: delete full note child chains`, `9a565dd fix: surface note undo restore failures`, `cb9ddcb fix: abort restore on backup preflight errors`
+- 부분 구현 완료: `3bcd997 fix: delete full note child chains`, `9a565dd fix: surface note undo restore failures`, `cb9ddcb fix: abort restore on backup preflight errors`, `f5bd8d9 fix: surface restore failure recovery details`
 - 노트 삭제는 parentId 하위 체인을 재귀 수집해 한 트랜잭션에서 삭제한다.
 - 노트 삭제 직후 UI state도 삭제된 전체 id 기준으로 제거한다.
 - 노트 삭제 실행취소는 `restoreRecord()` 실패를 숨기지 않고 실패 건수를 toast로 노출한다.
 - 백업 복원은 store 교체 전 모든 store payload를 먼저 검증하고, 사전 검증 오류가 있으면 정상 store도 교체하지 않는다.
-- 남은 범위: 메뉴마스터/식자재 도메인 간 cascade와 백업 복원 실패 store의 preview/repair 정책 확장.
+- 복원 완료 카드에는 실패 store 이름, 실패 사유, DB 완전 재생성 후 재복원 경로를 노출한다.
+- 남은 범위: 메뉴마스터/식자재 도메인 간 cascade 원자성 확장.
 
 **관련 파일**
 
@@ -417,12 +418,14 @@
 - 식자재 삭제는 `cost_ingredients` 삭제 후 영양값, legacy 알레르기 링크를 별도 단계로 정리한다.
 - 노트 삭제는 parentId 하위 체인 전체를 같은 트랜잭션에서 삭제하고, undo 실패를 사용자에게 노출한다.
 - 백업 복원은 사전 구조 검증을 통과한 경우에만 store별 `replaceStore()`를 순차 실행한다.
+- 복원 중 오류가 발생하면 완료 카드에서 실패 store와 오류 메시지를 직접 확인할 수 있다.
 
 **충돌 가능성**
 
 - 중간 실패 시 일부 store만 정리된다.
 - 메뉴/식자재 cascade 실패 시 일부 store만 정리될 수 있다.
 - 완료: malformed store가 있으면 복원 store 교체 자체를 시작하지 않아 일부 store만 교체되는 위험을 줄였다. (`cb9ddcb`)
+- 완료: 실행 중 replace/localStorage 실패 store는 완료 카드에 store명과 오류 메시지를 표시하고 시스템 설정으로 이동할 수 있게 했다. (`f5bd8d9`)
 
 **통합 방향**
 
@@ -431,7 +434,8 @@
 - dynamic import가 필요한 도메인 간 cascade는 실패를 명시적으로 반환하고 repair action을 제공한다.
 - 완료: 노트 삭제는 descendant collector를 재사용하고 undo 실패를 표시한다.
 - 완료: 복원은 전체 사전 검증 후 실행하고, 사전 검증 실패 시 store 교체를 중단한다. (`cb9ddcb`)
-- 남은 정리: 실행 중 replace 실패 store를 복원 결과 화면에서 더 강하게 preview/repair로 연결한다.
+- 완료: 실행 중 replace 실패 store를 복원 결과 화면에서 더 강하게 repair 경로로 연결했다. (`f5bd8d9`)
+- 남은 정리: 메뉴마스터/식자재 삭제 cascade를 같은 DB transaction 단위로 더 강하게 묶을 수 있는지 검토한다.
 
 ---
 
