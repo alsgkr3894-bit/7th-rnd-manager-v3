@@ -1,7 +1,7 @@
 # 메뉴마스터 통합 계획
 
 작성: 2026-06-15
-상태: 구현 진행 중 (Phase 1~5 구현 완료)
+상태: 메뉴마스터 통합 계획 범위 구현 완료
 전제: 기존 데이터는 가능하면 살리되, 통합 과정에서 기준 충돌이나 품질 문제가 크면 초기화 후 새 기준으로 다시 입력할 수 있다.
 
 ---
@@ -342,7 +342,7 @@ menu_master + menu_recipes
 
 - `menu_recipes` IndexedDB store를 추가하고 백업 범위에 포함했다.
 - 메뉴마스터와 레시피마스터 저장은 `menu_recipes`를 canonical 기준으로 사용한다.
-- 기존 카테고리별 detail store는 아직 남겨두되, 실제 저장 시 호환용 mirror/fallback으로만 사용한다.
+- 기존 카테고리별 detail store와 구형 `cost_recipes`는 DB v22에서 제거했다.
 - 개발 모드 중복 로드에서도 `menuCode` unique 충돌이 나지 않도록 `menu_recipes` upsert를 단일 transaction 기준으로 정리했다.
 
 ### Phase 3. 계산/출력 화면 연결 변경
@@ -394,7 +394,7 @@ menu_master + menu_recipes
 ### Phase 5. 구형 코드 정리
 
 상태: **구현 완료**
-관련 커밋: `9d68970 feat: read canonical recipes in outputs only`, `08f7f91 feat: use canonical recipes for cost rate stats`, 이번 단계
+관련 커밋: `9d68970 feat: read canonical recipes in outputs only`, `08f7f91 feat: use canonical recipes for cost rate stats`, `ad04fd7 refactor: remove legacy recipe stores`
 
 전제상 구형 데이터는 새로 입력 가능하므로, 이관보다 제거를 우선한다.
 
@@ -421,7 +421,7 @@ menu_master + menu_recipes
 남은 항목:
 
 - 메뉴 통합 자체의 구형 레시피/detail store 제거는 완료됐다.
-- 다음 단계는 식자재관리 상세 UI 통합과 판매량 분석 화면 정리다.
+- 식자재관리 상세 UI 통합과 판매량 분석 화면 정리도 후속 통합 단계에서 완료됐다.
 
 완료 기준:
 
