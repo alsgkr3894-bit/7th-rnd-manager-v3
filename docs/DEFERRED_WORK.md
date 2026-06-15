@@ -123,6 +123,7 @@
   - `app/note/sample/page.jsx` ✅ 2026-06-15 추가 보강 — 헤더 액션, 필터/검색, 캘린더, 갤러리/리스트 렌더링을 전용 컴포넌트로 분리. 852→422줄.
   - `app/note/sample/page.jsx` ✅ 2026-06-16 추가 보강 — 데이터 로드/검색·정렬·달력 파생 상태와 삭제·복사·별점 액션을 `useSamplePageState`·`useSampleRecordActions`로 분리. 422→263줄.
   - `app/note/sample/page.jsx` ✅ 2026-06-16 추가 보강 — 비교 하단바와 상세/비교/삭제 확인 다이얼로그를 `SampleCompareBar`·`SamplePageDialogs`로 분리. 263→230줄.
+  - `app/note/sample/useSamplePageState.js` ✅ 2026-06-16 추가 보강 — 검색/필터/정렬, 카테고리·별점 집계, 달력 일자/날짜별 묶음을 `samplePageStateUtils`로 분리. 198→160줄.
   - `app/note/sample/_SampleFilterControls.jsx` ✅ 2026-06-16 추가 보강 — 카테고리 필터, 별점/정렬/view 컨트롤, 검색 히스토리 필드를 하위 컴포넌트로 분리. 192→59줄.
   - `app/note/sample/_SampleRecordsView.jsx` ✅ 2026-06-16 추가 보강 — 로딩 그리드, 빈 상태, 카드 그리드, 리스트 테이블을 하위 컴포넌트로 분리. 179→88줄.
   - `app/ingredient/manage/IngredientForm.jsx` ✅ 2026-06-15 추가 보강 — `IngredientNameField`·`BasicIngredientFields`·`IngredientCostFields` 렌더링 컴포넌트 분리. 817→468줄.
@@ -138,7 +139,7 @@
   - `app/nutrition/allergen/useAllergenPageData.js` ✅ 2026-06-16 추가 보강 — 상세 모달 행과 요약 카운트 계산을 `allergenPageDetailUtils`로 분리. 144→139줄.
 - **잔여 대상** (우선순위 순):
   1. `app/note/sample/page.jsx` (~230줄) — header/filter/records callback wiring이 더 늘어날 때 shell hook 분리 재평가
-  2. `app/note/sample/useSamplePageState.js` (~198줄) — 검색/필터/달력 정책이 늘어날 때 filter/calendar helper 분리 재평가
+  2. `app/note/sample/useSamplePageState.js` (~160줄) — 상태/URL/검색히스토리 wiring이 더 늘어날 때 state hook 추가 분리 재평가
   3. `app/note/_NoteContent.jsx` (~186줄) — 상단 헤더/필터/프리셋/다이얼로그 callback wiring이 더 커질 때 controller hook 분리 재평가
   4. `app/nutrition/allergen/useAllergenPageData.js` (~139줄) — 매트릭스/filter 메모 조립이 더 커질 때 derivation hook 분리 재평가
   5. `app/nutrition/allergen/allergenPageDataUtils.js` (~88줄) — 현재 검색/정렬 helper 수준, 별도 분해 불필요
@@ -155,9 +156,10 @@
   16. `app/nutrition/allergen/useAllergenOrderState.js` (~52줄) — 순서 저장 정책이 더 늘어날 때 저장 helper 분리 재평가
   17. `app/nutrition/allergen/allergenPageOutputUtils.js` (~47줄) — 출력 정책이 더 늘어날 때 CSV/목록 helper 분리 재평가
   18. `app/note/sample/_SamplePageDialogs.jsx` (~48줄) — 모달 종류가 더 늘어날 때 dialog별 하위 분리 재평가
-  19. `app/nutrition/allergen/allergenPageDetailUtils.js` (~26줄) — 상세 출처 표시 정책이 더 늘어날 때 source row helper 분리 재평가
-  20. `app/note/sample/_SampleCompareBar.jsx` (~31줄) — 현재 단일 CTA 수준, 별도 분해 불필요
-  21. `app/ingredient/list/page.jsx` — 현재 redirect route 5줄 수준, 별도 분해 불필요
+  19. `app/note/sample/samplePageStateUtils.js` (~70줄) — 검색 대상/정렬 정책이 더 늘어날 때 filter/sort helper 추가 분리 재평가
+  20. `app/nutrition/allergen/allergenPageDetailUtils.js` (~26줄) — 상세 출처 표시 정책이 더 늘어날 때 source row helper 분리 재평가
+  21. `app/note/sample/_SampleCompareBar.jsx` (~31줄) — 현재 단일 CTA 수준, 별도 분해 불필요
+  22. `app/ingredient/list/page.jsx` — 현재 redirect route 5줄 수준, 별도 분해 불필요
 - **방향**: page는 조립만 담당, table/panel/modal/hook으로 분리.
 - **왜 보류**: 효과 < 회귀 위험. 기능 추가 시점에 함께 진행 예정.
 - **검증**: `npm run test:ci` + 주요 화면 수동 확인

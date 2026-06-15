@@ -22,6 +22,7 @@ const emptyStateSource = readFileSync(resolve('app/note/sample/_SampleEmptyState
 const gridViewSource = readFileSync(resolve('app/note/sample/_SampleGridView.jsx'), 'utf8');
 const listViewSource = readFileSync(resolve('app/note/sample/_SampleListView.jsx'), 'utf8');
 const stateHookSource = readFileSync(resolve('app/note/sample/useSamplePageState.js'), 'utf8');
+const stateUtilsSource = readFileSync(resolve('app/note/sample/samplePageStateUtils.js'), 'utf8');
 const actionsHookSource = readFileSync(
   resolve('app/note/sample/useSampleRecordActions.js'),
   'utf8'
@@ -131,15 +132,28 @@ describe('sample page structure', () => {
 
   test('sample hooks own page data state and record mutations', () => {
     expect(stateHookSource).toContain('export function useSamplePageState');
-    expect(stateHookSource).toContain('export const SAMPLE_SORT_OPTIONS');
+    expect(stateHookSource).toContain('export { SAMPLE_SORT_OPTIONS }');
     expect(stateHookSource).toContain('getAllSamples');
     expect(stateHookSource).toContain('useDBLoad(() => getAllSamples())');
     expect(stateHookSource).toContain('useVisibilityRefresh(reload)');
     expect(stateHookSource).toContain('useSearchHistory(KEYS.SAMPLE_SEARCH_HISTORY)');
-    expect(stateHookSource).toContain('sampleNamesText(sample)');
-    expect(stateHookSource).toContain('buildCalendarDays(calMonth, CALENDAR_CELLS)');
+    expect(stateHookSource).toContain('filterSortSamples(samples');
+    expect(stateHookSource).toContain('buildSampleCategoryCounts(samples)');
+    expect(stateHookSource).toContain('buildSampleRatingDist(samples)');
+    expect(stateHookSource).toContain('buildSampleCalendarDays(calMonth)');
+    expect(stateHookSource).toContain('buildSamplesByDate(samples)');
+    expect(stateHookSource).not.toContain('sampleNamesText(sample)');
+    expect(stateHookSource).not.toContain('buildCalendarDays(calMonth, CALENDAR_CELLS)');
     expect(stateHookSource).toContain('setLS(KEYS.SAMPLE_SORT, key)');
     expect(stateHookSource).toContain('setLS(KEYS.SAMPLE_VIEW, mode)');
+    expect(stateUtilsSource).toContain('export function filterSortSamples');
+    expect(stateUtilsSource).toContain('export function buildSampleCategoryCounts');
+    expect(stateUtilsSource).toContain('export function buildSampleRatingDist');
+    expect(stateUtilsSource).toContain('export function buildSampleCalendarDays');
+    expect(stateUtilsSource).toContain('export function buildSamplesByDate');
+    expect(stateUtilsSource).toContain('export const SAMPLE_SORT_OPTIONS');
+    expect(stateUtilsSource).toContain('sampleNamesText(sample)');
+    expect(stateUtilsSource).toContain('buildCalendarDays(calMonth, CALENDAR_CELLS)');
     expect(actionsHookSource).toContain('export function useSampleRecordActions');
     expect(actionsHookSource).toContain('await deleteSample(sample.id)');
     expect(actionsHookSource).toContain('await addSample({ ...sample');
