@@ -120,11 +120,9 @@
 - **검증**: `npm run test:ci` + 주요 화면 수동 확인
 - **관련 메모리**: [[deferred-refactors]]
 
-#### B-9. 1인피자 알레르기 표시 기준 정리  🟡 ⏸
-- **파일**: `lib/nutrition/label/build.js:265`, `app/nutrition/allergen/page.jsx:345`
-- **문제**: 라벨은 씬바사삭L만 출력, 알레르기 화면은 4크러스트 전부 생성 → 불일치.
-- **해결 방향**: 도메인 확인(1인피자가 씬바사삭만 맞는지) 후 allergen 행 생성 필터 통일.
-- **왜 보류**: 알레르기 출력은 법적 표기 영향. 도메인 확인 필수.
+#### B-9. 1인피자 알레르기 표시 기준 정리  🟡 ✅ 완료(2026-06-15)
+- **도메인 확인**: 1인피자 크러스트는 씬바사삭 1종만 (사용자 확인).
+- **완료**: `lib/nutrition/allergen/matrix.js` — `isPersonalPizzaCategory` 분기 추가, 1인피자는 씬바사삭 크러스트 1행만 생성(도우 계열 제외 + 씬도우 엣지 포함). `logicalMenuKey`도 1인피자 L/R 사이즈를 논리 키로 묶도록 확장. build.js 라벨 기준과 통일.
 
 #### B-24. 문서·README·아키텍처 정합성 최신화  🟢 ⏸
 - **파일**: `README.md`, `ARCHITECTURE.md`, `docs/SITE_IMPROVEMENT_BACKLOG.md`
