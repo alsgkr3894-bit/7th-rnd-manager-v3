@@ -2,16 +2,15 @@
 import { Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { SAMPLE_CATEGORIES } from '@/lib/sample';
 import { useSampleBatchMode } from '@/hooks/useSampleBatchMode';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { useSampleCompareMode } from '@/hooks/useSampleCompareMode';
-import { CompareModal } from './_CompareModal';
-import { SampleDetailModal } from './_SampleDetailModal';
 import { SampleCalendarView } from './_SampleCalendarView';
+import { SampleCompareBar } from './_SampleCompareBar';
 import { SampleFilterControls } from './_SampleFilterControls';
 import { SamplePageActions } from './_SamplePageActions';
+import { SamplePageDialogs } from './_SamplePageDialogs';
 import { SampleRecordsView } from './_SampleRecordsView';
 import { SAMPLE_SORT_OPTIONS, useSamplePageState } from './useSamplePageState';
 import { useSampleRecordActions } from './useSampleRecordActions';
@@ -203,61 +202,29 @@ function SampleContent() {
         onCreateSample={() => router.push('/note/sample/write')}
       />
 
-      {/* 비교 모드 하단 바 */}
-      {compareMode && compareSet.size >= 2 && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 80,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'var(--accent)',
-            color: 'var(--surface)',
-            borderRadius: 40,
-            padding: '12px 28px',
-            fontWeight: 800,
-            fontSize: 15,
-            boxShadow: 'var(--shadow-lg)',
-            cursor: 'pointer',
-            zIndex: 200,
-            display: 'flex',
-            gap: 12,
-            alignItems: 'center',
-          }}
-          onClick={() => setShowCompare(true)}
-        >
-          {compareSet.size}개 비교하기
-        </div>
-      )}
-
-      {/* 상세 모달 */}
-      {detailRec && (
-        <SampleDetailModal
-          sample={detailRec}
-          onClose={() => setDetailRec(null)}
-          onEdit={() => {
-            setDetailRec(null);
-            router.push(`/note/sample/${detailRec.id}`);
-          }}
-          onDelete={() => handleDelete(detailRec)}
-        />
-      )}
-
-      {/* 비교 모달 */}
-      {showCompare && compareItems.length >= 2 && (
-        <CompareModal samples={compareItems} onClose={() => setShowCompare(false)} />
-      )}
-
-      <ConfirmDialog
-        open={confirmOpen}
-        title={`샘플 ${selected.size}개를 삭제할까요?`}
-        message="삭제한 샘플은 목록에서 제거됩니다."
-        confirmLabel="삭제"
-        danger
-        onConfirm={confirmBatchDelete}
-        onCancel={() => setConfirmOpen(false)}
+      <SampleCompareBar
+        compareMode={compareMode}
+        compareCount={compareSet.size}
+        onOpenCompare={() => setShowCompare(true)}
       />
-      {confirmElement}
+
+      <SamplePageDialogs
+        detailRec={detailRec}
+        showCompare={showCompare}
+        compareItems={compareItems}
+        confirmOpen={confirmOpen}
+        selectedCount={selected.size}
+        confirmElement={confirmElement}
+        onCloseDetail={() => setDetailRec(null)}
+        onEditDetail={() => {
+          setDetailRec(null);
+          router.push(`/note/sample/${detailRec.id}`);
+        }}
+        onDeleteDetail={() => handleDelete(detailRec)}
+        onCloseCompare={() => setShowCompare(false)}
+        onConfirmBatchDelete={confirmBatchDelete}
+        onCancelBatchDelete={() => setConfirmOpen(false)}
+      />
     </main>
   );
 }

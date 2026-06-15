@@ -14,6 +14,8 @@ const ratingViewSource = readFileSync(
 );
 const searchFieldSource = readFileSync(resolve('app/note/sample/_SampleSearchField.jsx'), 'utf8');
 const calendarSource = readFileSync(resolve('app/note/sample/_SampleCalendarView.jsx'), 'utf8');
+const compareBarSource = readFileSync(resolve('app/note/sample/_SampleCompareBar.jsx'), 'utf8');
+const pageDialogsSource = readFileSync(resolve('app/note/sample/_SamplePageDialogs.jsx'), 'utf8');
 const recordsSource = readFileSync(resolve('app/note/sample/_SampleRecordsView.jsx'), 'utf8');
 const loadingGridSource = readFileSync(resolve('app/note/sample/_SampleLoadingGrid.jsx'), 'utf8');
 const emptyStateSource = readFileSync(resolve('app/note/sample/_SampleEmptyState.jsx'), 'utf8');
@@ -30,6 +32,8 @@ describe('sample page structure', () => {
     expect(pageSource).toContain("import { SamplePageActions } from './_SamplePageActions'");
     expect(pageSource).toContain("import { SampleFilterControls } from './_SampleFilterControls'");
     expect(pageSource).toContain("import { SampleCalendarView } from './_SampleCalendarView'");
+    expect(pageSource).toContain("import { SampleCompareBar } from './_SampleCompareBar'");
+    expect(pageSource).toContain("import { SamplePageDialogs } from './_SamplePageDialogs'");
     expect(pageSource).toContain("import { SampleRecordsView } from './_SampleRecordsView'");
     expect(pageSource).toContain(
       "import { SAMPLE_SORT_OPTIONS, useSamplePageState } from './useSamplePageState'"
@@ -40,11 +44,17 @@ describe('sample page structure', () => {
     expect(pageSource).toContain('<SamplePageActions');
     expect(pageSource).toContain('<SampleFilterControls');
     expect(pageSource).toContain('<SampleCalendarView');
+    expect(pageSource).toContain('<SampleCompareBar');
+    expect(pageSource).toContain('<SamplePageDialogs');
     expect(pageSource).toContain('<SampleRecordsView');
     expect(pageSource).toContain('useSamplePageState({ searchParams, pathname })');
     expect(pageSource).toContain('useSampleRecordActions({');
     expect(pageSource).not.toContain('downloadCsv');
     expect(pageSource).not.toContain('printCurrentPageWithDownloadDate');
+    expect(pageSource).not.toContain('<ConfirmDialog');
+    expect(pageSource).not.toContain('<CompareModal');
+    expect(pageSource).not.toContain('<SampleDetailModal');
+    expect(pageSource).not.toContain("position: 'fixed'");
     expect(pageSource).not.toContain('SampleCardSkeleton');
     expect(pageSource).not.toContain('<SampleCard');
     expect(pageSource).not.toContain('<SampleListRow');
@@ -88,6 +98,14 @@ describe('sample page structure', () => {
     expect(calendarSource).toContain('export function SampleCalendarView');
     expect(calendarSource).toContain('className="cal-grid"');
     expect(calendarSource).toContain('RATING_COLOR');
+    expect(compareBarSource).toContain('export function SampleCompareBar');
+    expect(compareBarSource).toContain("position: 'fixed'");
+    expect(compareBarSource).toContain('개 비교하기');
+    expect(pageDialogsSource).toContain('export function SamplePageDialogs');
+    expect(pageDialogsSource).toContain('<SampleDetailModal');
+    expect(pageDialogsSource).toContain('<CompareModal');
+    expect(pageDialogsSource).toContain('<ConfirmDialog');
+    expect(pageDialogsSource).toContain('샘플 ${selectedCount}개를 삭제할까요?');
     expect(recordsSource).toContain('export function SampleRecordsView');
     expect(recordsSource).toContain('<SampleLoadingGrid');
     expect(recordsSource).toContain('<SampleEmptyState');
