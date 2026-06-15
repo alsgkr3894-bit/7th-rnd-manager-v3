@@ -680,12 +680,12 @@
 
 **구현 상태**
 
-- 부분 구현 완료: `315fc65 fix: include system settings in backup keys`, `179c2cd fix: apply jette policy settings`, `384f152 fix: enforce strict cost report posting`
+- 구현 완료: `315fc65 fix: include system settings in backup keys`, `179c2cd fix: apply jette policy settings`, `384f152 fix: enforce strict cost report posting`, `996c221 refactor: mark indexeddb settings store legacy`
 - `lib/settings.js`에서 `SETTING_LS_KEYS`를 노출하고, `lib/backup/local-storage-keys.js`가 이 목록을 공통 localStorage 백업/복원 key로 사용한다.
 - 구현 완료 범위: `theme`, `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert` localStorage 설정의 백업/복원 포함과 회귀 테스트.
 - 구현 완료 범위: `unmatchedAlert`, `costRateAlert`는 실제 알림 로직에 연결했고, `autoRecalc`와 `roundMode`는 현재 정책에 맞게 조작 가능한 no-op 토글이 아니라 고정 상태로 낮췄다.
 - 구현 완료 범위: `strictPosting`은 원가 보고서 생성 직전 단가 누락 레시피 구성품을 검사해 PDF/Excel 생성을 차단한다.
-- 남은 범위: `settings` IndexedDB store의 역할 정리는 별도 단계에서 처리한다.
+- 구현 완료 범위: `settings` IndexedDB store는 구버전/전체 백업 호환용 예약 store로 명시하고, 선택 백업 공통 store 범위에서는 제외했다.
 
 **관련 파일**
 
@@ -698,7 +698,8 @@
 
 **현재 상태**
 
-- IndexedDB에는 `settings` store가 정의되어 있고 백업 공통 store에 포함된다.
+- IndexedDB에는 `settings` store가 정의되어 있고 `ALL_STORES`에는 남아 전체 백업/구버전 복원 호환성을 유지한다.
+- 선택 백업의 공통 store(`COMMON_STORES`)에서는 `settings`를 제외했고, 실제 설정값은 localStorage key로 백업/복원한다.
 - 실제 시스템 설정은 `lib/settings.js`가 `v3:<key>` localStorage에 저장한다.
 - `app/settings/system/page.jsx`에서 읽는 설정 key는 `theme`, `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert`다.
 - 현재 백업 영속 key에는 `SETTING_LS_KEYS` 기준으로 모든 시스템 설정 localStorage key가 포함된다.
@@ -708,12 +709,12 @@
 
 **충돌 가능성**
 
-- `settings` store와 localStorage 설정이 병존하므로 장기적으로 source of truth가 헷갈릴 수 있다.
+- 완료: `settings` IndexedDB store는 legacy/예약 store로 분류했고, 실제 설정 source of truth는 localStorage `SETTING_LS_KEYS`로 고정했다. (`996c221`)
 
 **정리 방향**
 
 - 구현 방향: 2안 기준으로 localStorage 설정을 실제 사용 source로 보고, 모든 실제 설정 key를 `PERSISTENT_LS_KEYS`와 `COMMON_LS_KEYS`에 포함했다.
-- 남은 정리: `settings` store를 legacy/예약 store로 명시하거나, 별도 단계에서 실제 설정 source of truth로 승격한다.
+- 완료: `settings` store는 legacy/예약 store로 명시하고 선택 백업 공통 store에서 제외했다. (`996c221`)
 - 완료: 실제 로직에서 쓰이지 않는 정책 토글은 고정 상태 또는 `준비 중` 상태로 낮췄다. (`179c2cd`)
 - 완료: `strictPosting`은 실제 원가 보고서 생성 차단 로직에 연결했다. (`384f152`)
 
@@ -722,6 +723,7 @@
 - 완료: `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert` 백업/복원 key 포함 테스트.
 - 완료: 시스템 원가 정책 no-op 토글이 다시 노출되지 않는 소스 가드 테스트. (`179c2cd`)
 - 완료: `strictPosting` 단가 누락 진단과 보고서 생성 직전 가드 소스 테스트. (`384f152`)
+- 완료: `settings` 예약 store가 `ALL_STORES`에는 남고 `COMMON_STORES`/`storesForScopes()` 선택 백업 범위에서는 제외되는 회귀 테스트. (`996c221`)
 
 ### 8.3 멀티 브랜드 백업 파일에 source brand metadata가 없음
 
@@ -1120,7 +1122,7 @@
 - `PERSISTENT_LS_KEYS`를 module별 key map으로 분리한다.
 - restore에서 localStorage 복원 조건을 `nutrition` 선택과 분리한다.
 - 완료: 시스템 설정 key 전체의 백업 포함 정책을 확정하고 `SETTING_LS_KEYS` 기준으로 반영했다. (`315fc65`)
-- `settings` IndexedDB store를 실제 사용하거나 legacy placeholder로 명시한다.
+- 완료: `settings` IndexedDB store를 legacy/reserved placeholder로 명시하고 선택 백업 공통 범위에서 제외했다. (`996c221`)
 - 백업 JSON에 source brand metadata를 추가한다.
 
 **검증**
