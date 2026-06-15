@@ -24,9 +24,9 @@ import { seedMenuMaster } from '@/lib/menu-master/seed';
 import { normalizePersonalPizzaCodes } from '@/lib/menu-master/normalize';
 import { MenuPriceUploadCard } from '@/components/cost/menu-price/MenuPriceUploadCard';
 import { BulkPriceModal } from '@/components/cost/menu-price/BulkPriceModal';
-import { CategoryTags, MenuMasterEditModal } from '@/components/menu-master/MenuMasterEditModal';
+import { MenuMasterEditModal } from '@/components/menu-master/MenuMasterEditModal';
 import { MenuMasterStatsRow } from '@/components/menu-master/MenuMasterStatsRow';
-import { MenuRecipeCostCell } from '@/components/menu-master/MenuRecipeCostCell';
+import { MenuMasterTableRow } from '@/components/menu-master/MenuMasterTableRow';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
@@ -51,13 +51,6 @@ const PIZZA_CATEGORIES = [
 // CATEGORIES는 모듈 레벨에서 평가하면 SSR/hydration에서 항상 main(피자)으로 고정된다.
 // 브랜드별 분기는 컴포넌트 내부 useEffect(brandCats)와 EditModal prop으로 처리한다.
 const PIZZA_SUBS = ['프리미엄 스페셜', '프리미엄', '오리지널', '하프앤하프'];
-
-const STATUS_LABEL = { active: '활성', discontinued: '단종', test: '테스트' };
-const STATUS_STYLE = {
-  active: { background: 'var(--positive-soft)', color: 'var(--positive)' },
-  discontinued: { background: 'var(--surface-2)', color: 'var(--text-3)' },
-  test: { background: 'var(--accent-soft)', color: 'var(--accent)' },
-};
 
 const DELETE_PLAN_LABELS = {
   cost_selling_prices: '판매가',
@@ -554,108 +547,16 @@ export default function Page() {
                     </tr>
                   </thead>
                   <tbody>
-                    {paged.map(row => {
-                      const recipeSummary = recipeSummaryMap.get(row.menuCode);
-                      return (
-                        <tr
-                          key={row.id}
-                          style={{ opacity: row.status === 'discontinued' ? 0.5 : 1 }}
-                        >
-                          <td
-                            style={{
-                              fontFamily: 'monospace',
-                              fontSize: 12,
-                              fontWeight: 700,
-                              color: 'var(--accent-text)',
-                              letterSpacing: '.5px',
-                            }}
-                          >
-                            {row.menuCode}
-                          </td>
-                          <td className="cell-name">
-                            <div className="menu-name">
-                              {row.menuName}
-                              {row.excludeFromOrigin && (
-                                <span
-                                  style={{
-                                    marginLeft: 6,
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    padding: '1px 5px',
-                                    borderRadius: 3,
-                                    background: 'var(--warn-soft)',
-                                    color: 'var(--warn)',
-                                  }}
-                                >
-                                  원산지제외
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td>
-                            <CategoryTags menuCode={row.menuCode} />
-                          </td>
-                          <td style={{ fontSize: 12, color: 'var(--text-2)' }}>
-                            {row.size || <span style={{ color: 'var(--text-4)' }}>단일</span>}
-                          </td>
-                          <td style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>
-                            {row.price != null ? (
-                              <span>
-                                {row.price.toLocaleString()}
-                                <span
-                                  style={{ fontSize: 11, color: 'var(--text-4)', marginLeft: 2 }}
-                                >
-                                  원
-                                </span>
-                              </span>
-                            ) : (
-                              <span style={{ color: 'var(--text-4)', fontWeight: 400 }}>—</span>
-                            )}
-                          </td>
-                          <td>
-                            <MenuRecipeCostCell summary={recipeSummary} />
-                          </td>
-                          <td>
-                            <span
-                              style={{
-                                padding: '2px 8px',
-                                borderRadius: 6,
-                                fontSize: 11,
-                                fontWeight: 600,
-                                ...STATUS_STYLE[row.status],
-                              }}
-                            >
-                              {STATUS_LABEL[row.status] || row.status}
-                            </span>
-                          </td>
-                          <td
-                            style={{
-                              textAlign: 'right',
-                              display: 'flex',
-                              gap: 4,
-                              justifyContent: 'flex-end',
-                            }}
-                          >
-                            <button
-                              className="btn sm ghost"
-                              onClick={() => setEditRow(row)}
-                              disabled={isViewer}
-                            >
-                              <Icon.edit style={{ width: 13, height: 13 }} />
-                            </button>
-                            <button
-                              className="btn sm ghost"
-                              onClick={() => openDeleteDialog(row)}
-                              style={{ color: 'var(--negative)' }}
-                              title="삭제"
-                              disabled={isViewer}
-                            >
-                              <Icon.trash style={{ width: 13, height: 13 }} />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {paged.map(row => (
+                      <MenuMasterTableRow
+                        key={row.id}
+                        row={row}
+                        recipeSummary={recipeSummaryMap.get(row.menuCode)}
+                        isViewer={isViewer}
+                        onEdit={setEditRow}
+                        onDelete={openDeleteDialog}
+                      />
+                    ))}
                   </tbody>
                 </table>
               </div>
