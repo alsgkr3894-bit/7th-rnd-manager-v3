@@ -91,7 +91,7 @@ export default function Page() {
         maxSizeMB={30}
         onFile={(f, err) => {
           if (err) {
-            showToast(err, 'err');
+            showToast(err, 'error');
             return;
           }
           handleFile(f, uploadDate);

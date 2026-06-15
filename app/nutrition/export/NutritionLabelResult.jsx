@@ -231,7 +231,7 @@ export default function NutritionLabelResult() {
       });
       showToast('엑셀 다운로드 완료', 'ok');
     } catch (e) {
-      showToast('엑셀 출력 실패: ' + e.message, 'err');
+      showToast('엑셀 출력 실패: ' + e.message, 'error');
     } finally {
       setExporting(false);
     }

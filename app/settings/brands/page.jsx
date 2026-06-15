@@ -106,7 +106,7 @@ export default function BrandMasterPage() {
       resetForm();
       showToast('브랜드 정보를 저장했습니다.', 'ok');
     } catch (err) {
-      showToast(err.message || '브랜드 저장에 실패했습니다.', 'err');
+      showToast(err.message || '브랜드 저장에 실패했습니다.', 'error');
     }
   }
 
@@ -125,7 +125,7 @@ export default function BrandMasterPage() {
       reloadBrands();
       showToast(hidden ? '브랜드를 숨김 처리했습니다.' : '브랜드 숨김을 해제했습니다.', 'ok');
     } catch (err) {
-      showToast(err.message || '브랜드 상태 변경에 실패했습니다.', 'err');
+      showToast(err.message || '브랜드 상태 변경에 실패했습니다.', 'error');
     }
   }
 
@@ -136,7 +136,7 @@ export default function BrandMasterPage() {
       reloadBrands();
       showToast('기본 브랜드를 변경했습니다.', 'ok');
     } catch (err) {
-      showToast(err.message || '기본 브랜드 변경에 실패했습니다.', 'err');
+      showToast(err.message || '기본 브랜드 변경에 실패했습니다.', 'error');
     }
   }
 
@@ -172,7 +172,7 @@ export default function BrandMasterPage() {
       showToast(`${brand.name} 백업 파일을 다운로드했습니다.`, 'ok');
     } catch (err) {
       console.error('[BrandMaster] 브랜드 백업 실패:', err);
-      showToast('브랜드 백업에 실패했습니다.', 'err');
+      showToast('브랜드 백업에 실패했습니다.', 'error');
     } finally {
       setBusyBrandId(null);
     }
@@ -299,7 +299,7 @@ export default function BrandMasterPage() {
       }
     } catch (err) {
       console.error('[BrandMaster] 브랜드 복원 실패:', err);
-      showToast(err.message || '브랜드 복원에 실패했습니다.', 'err');
+      showToast(err.message || '브랜드 복원에 실패했습니다.', 'error');
     } finally {
       setBusyBrandId(null);
     }
@@ -363,8 +363,17 @@ export default function BrandMasterPage() {
         }}
       >
         <SettingTile label="전체 브랜드" value={`${brands.length}개`} sub="숨김 포함" num />
-        <SettingTile label="상단 노출" value={`${visibleCount}개`} sub={`숨김 ${hiddenCount}개`} num />
-        <SettingTile label="기본 브랜드" value={defaultBrand?.name || '없음'} sub="신규 작업 기본값" />
+        <SettingTile
+          label="상단 노출"
+          value={`${visibleCount}개`}
+          sub={`숨김 ${hiddenCount}개`}
+          num
+        />
+        <SettingTile
+          label="기본 브랜드"
+          value={defaultBrand?.name || '없음'}
+          sub="신규 작업 기본값"
+        />
       </div>
 
       <section className="card" style={{ marginTop: 16 }}>

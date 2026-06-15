@@ -169,7 +169,7 @@ export function CommonManageView({ tab = 'groups' }) {
       setEdgeTarget(null);
       setEdges(await getAllEdges());
     } catch (err) {
-      showToast('저장 실패: ' + err.message, 'err');
+      showToast('저장 실패: ' + err.message, 'error');
       throw err;
     }
   }
@@ -180,7 +180,7 @@ export function CommonManageView({ tab = 'groups' }) {
       setDeletePending(null);
       showToast('삭제 완료', 'ok');
     } catch (err) {
-      showToast('삭제 실패: ' + err.message, 'err');
+      showToast('삭제 실패: ' + err.message, 'error');
     }
   }
   async function handleBatchDeleteEdges(ids) {
@@ -190,7 +190,7 @@ export function CommonManageView({ tab = 'groups' }) {
       edgeTable.clearSelection();
       showToast(`${ids.length}개 삭제 완료`, 'ok');
     } catch (err) {
-      showToast('삭제 실패: ' + err.message, 'err');
+      showToast('삭제 실패: ' + err.message, 'error');
     }
   }
   async function handleSeedEdges() {
@@ -201,7 +201,7 @@ export function CommonManageView({ tab = 'groups' }) {
       showToast(`시드 완료 — 신규 ${result.inserted}개`, 'ok');
       setEdges(await getAllEdges());
     } catch (err) {
-      showToast('시드 실패: ' + err.message, 'err');
+      showToast('시드 실패: ' + err.message, 'error');
     } finally {
       setSeeding(false);
     }
@@ -215,7 +215,7 @@ export function CommonManageView({ tab = 'groups' }) {
       setResetConfirm(false);
       setEdges([]);
     } catch (err) {
-      showToast('초기화 실패: ' + err.message, 'err');
+      showToast('초기화 실패: ' + err.message, 'error');
     } finally {
       setResetting(false);
     }

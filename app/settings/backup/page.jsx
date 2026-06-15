@@ -68,7 +68,7 @@ export default function Page() {
         setStats(await collectStoreStats());
       } catch (err) {
         console.error('[Backup] DB 초기화 실패:', err);
-        showToast('DB 초기화에 실패했습니다.', 'err');
+        showToast('DB 초기화에 실패했습니다.', 'error');
       }
     })();
     setHistory(getHistory());
@@ -169,7 +169,7 @@ export default function Page() {
       }
     } catch (err) {
       console.error('[Backup] 실패:', err);
-      showToast('백업 중 오류가 발생했습니다.', 'err');
+      showToast('백업 중 오류가 발생했습니다.', 'error');
     } finally {
       setBusy(false);
       if (backupProgressTimerRef.current) clearTimeout(backupProgressTimerRef.current);

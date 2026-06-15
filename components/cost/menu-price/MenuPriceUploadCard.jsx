@@ -33,11 +33,11 @@ export function MenuPriceUploadCard({ onReplaced }) {
     e.target.value = ''; // 같은 파일 재선택 가능하게
     if (!file) return;
     if (file.size === 0) {
-      showToast('파일이 비어 있습니다', 'err');
+      showToast('파일이 비어 있습니다', 'error');
       return;
     }
     if (file.size > 20 * 1024 * 1024) {
-      showToast('파일 크기가 너무 큽니다 (최대 20MB)', 'err');
+      showToast('파일 크기가 너무 큽니다 (최대 20MB)', 'error');
       return;
     }
     try {
@@ -50,18 +50,18 @@ export function MenuPriceUploadCard({ onReplaced }) {
         const buf = await readFileAsArrayBuffer(file, ['.xlsx', '.xls']);
         parsed = await readExcelFile(buf);
       } else {
-        showToast('CSV 또는 엑셀(.xlsx, .xls) 파일만 지원합니다', 'err');
+        showToast('CSV 또는 엑셀(.xlsx, .xls) 파일만 지원합니다', 'error');
         return;
       }
       const { headers, rows } = parsed;
       const result = parseMenuPriceRows(headers, rows);
       if (!result.ok) {
-        showToast(result.error || '파일 형식 오류', 'err');
+        showToast(result.error || '파일 형식 오류', 'error');
         return;
       }
       setPreview({ ...result, fileName: file.name });
     } catch (err) {
-      showToast('파일 읽기 실패: ' + (err?.message || err), 'err');
+      showToast('파일 읽기 실패: ' + (err?.message || err), 'error');
     }
   }
 
@@ -74,7 +74,7 @@ export function MenuPriceUploadCard({ onReplaced }) {
       setPreview(null);
       notifyReplaced?.();
     } catch (err) {
-      showToast('반영 실패: ' + (err?.message || err), 'err');
+      showToast('반영 실패: ' + (err?.message || err), 'error');
     } finally {
       setCommitting(false);
     }

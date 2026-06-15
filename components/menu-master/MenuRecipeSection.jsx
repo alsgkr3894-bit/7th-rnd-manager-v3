@@ -170,11 +170,21 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
       await onSaved?.();
       showToast('레시피 저장됨', 'ok');
     } catch (err) {
-      showToast('저장 실패: ' + err.message, 'err');
+      showToast('저장 실패: ' + err.message, 'error');
     } finally {
       setSaving(false);
     }
-  }, [supported, menuCode, menuName, category, recipeKind, size, components, unitPriceMap, onSaved]);
+  }, [
+    supported,
+    menuCode,
+    menuName,
+    category,
+    recipeKind,
+    size,
+    components,
+    unitPriceMap,
+    onSaved,
+  ]);
 
   if (!supported) return null;
 

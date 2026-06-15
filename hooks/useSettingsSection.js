@@ -69,7 +69,7 @@ export function useSettingsSection({
       refresh();
       await reapplyToUploadedData();
     } catch (err) {
-      showToast(err?.message || '추가 실패', 'err');
+      showToast(err?.message || '추가 실패', 'error');
     } finally {
       setBusy(false);
     }
@@ -86,7 +86,7 @@ export function useSettingsSection({
       refresh();
       await reapplyToUploadedData();
     } catch (err) {
-      showToast(err?.message || '수정 실패', 'err');
+      showToast(err?.message || '수정 실패', 'error');
     } finally {
       setBusy(false);
     }
@@ -112,7 +112,7 @@ export function useSettingsSection({
       refresh();
       await reapplyToUploadedData();
     } catch {
-      showToast(messages.deleteError || '삭제 실패', 'err');
+      showToast(messages.deleteError || '삭제 실패', 'error');
     } finally {
       setBusy(false);
     }

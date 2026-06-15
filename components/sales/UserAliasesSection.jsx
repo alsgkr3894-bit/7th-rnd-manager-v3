@@ -83,7 +83,7 @@ export function UserAliasesSection() {
       });
       if (apply) await reapplyToUploadedData();
     } catch {
-      showToast('토글 실패', 'err');
+      showToast('토글 실패', 'error');
     }
   }
 

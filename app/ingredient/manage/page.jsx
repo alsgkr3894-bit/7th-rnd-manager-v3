@@ -202,7 +202,7 @@ export default function Page() {
       showToast(`마스터 시드 적용 완료 — 신규 ${result.inserted} · 갱신 ${result.updated}`, 'ok');
       await load();
     } catch (err) {
-      showToast('시드 실패: ' + err.message, 'err');
+      showToast('시드 실패: ' + err.message, 'error');
     } finally {
       setSeeding(false);
     }
@@ -217,7 +217,7 @@ export default function Page() {
       setResetConfirm(false);
       await load();
     } catch (err) {
-      showToast('초기화 실패: ' + err.message, 'err');
+      showToast('초기화 실패: ' + err.message, 'error');
     } finally {
       setResetting(false);
     }
@@ -229,7 +229,7 @@ export default function Page() {
       showToast(`'${cat}' 분류 삭제 — ${updated}개 항목 갱신`, 'ok');
       await load();
     } catch (e) {
-      showToast('삭제 실패: ' + e.message, 'err');
+      showToast('삭제 실패: ' + e.message, 'error');
     }
   }
   async function handleRemoveTag(tag) {
@@ -238,7 +238,7 @@ export default function Page() {
       showToast(`'#${tag}' 태그 삭제 — ${updated}개 항목 갱신`, 'ok');
       await load();
     } catch (e) {
-      showToast('삭제 실패: ' + e.message, 'err');
+      showToast('삭제 실패: ' + e.message, 'error');
     }
   }
 
@@ -251,7 +251,7 @@ export default function Page() {
       setDedupeConfirm(false);
       await load();
     } catch (err) {
-      showToast('중복 정리 실패: ' + err.message, 'err');
+      showToast('중복 정리 실패: ' + err.message, 'error');
     } finally {
       setDedupeBusy(false);
     }
@@ -279,7 +279,7 @@ export default function Page() {
         setFormTarget(null);
         await load();
       } catch (err) {
-        showToast('저장 실패: ' + err.message, 'err');
+        showToast('저장 실패: ' + err.message, 'error');
         throw err;
       }
     },
@@ -317,7 +317,7 @@ export default function Page() {
         }
         setDeletePending(null);
       } catch (err) {
-        showToast('실패: ' + err.message, 'err');
+        showToast('실패: ' + err.message, 'error');
       }
     },
     [load, setRows]
@@ -332,7 +332,7 @@ export default function Page() {
         );
         showToast('복원됐습니다', 'ok');
       } catch (err) {
-        showToast('실패: ' + err.message, 'err');
+        showToast('실패: ' + err.message, 'error');
       }
     },
     [setRows]
@@ -369,7 +369,7 @@ export default function Page() {
         showToast(`${row.displayName || row.productName} 등록됨`, 'ok');
         await load();
       } catch (err) {
-        showToast('등록 실패: ' + err.message, 'err');
+        showToast('등록 실패: ' + err.message, 'error');
       }
     },
     [load]

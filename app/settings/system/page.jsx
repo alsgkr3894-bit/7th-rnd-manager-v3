@@ -71,7 +71,7 @@ export default function Page() {
       } catch (err) {
         if (!alive) return;
         console.error('[Settings/System] DB 초기화 실패:', err);
-        showToast('DB 초기화에 실패했습니다.', 'err');
+        showToast('DB 초기화에 실패했습니다.', 'error');
       }
     })();
     if (navigator.storage?.estimate) {
@@ -145,7 +145,7 @@ export default function Page() {
       showToast('모든 데이터가 초기화되었습니다.', 'ok');
     } catch (err) {
       console.error('[Reset] 실패:', err);
-      showToast('초기화 중 오류가 발생했습니다.', 'err');
+      showToast('초기화 중 오류가 발생했습니다.', 'error');
     } finally {
       setBusy(false);
     }

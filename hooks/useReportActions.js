@@ -49,7 +49,7 @@ export function useReportActions({ reload }) {
         setPruneConfirmOpen(true);
       }
     } catch {
-      showToast('정리 대상 조회 실패', 'err');
+      showToast('정리 대상 조회 실패', 'error');
     }
   };
 
@@ -60,7 +60,7 @@ export function useReportActions({ reload }) {
       showToast('오래된 보고서가 정리됐어요.', 'ok');
       reload();
     } catch {
-      showToast('정리 중 오류가 발생했어요.', 'err');
+      showToast('정리 중 오류가 발생했어요.', 'error');
     }
   };
 

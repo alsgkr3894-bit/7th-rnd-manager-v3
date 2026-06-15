@@ -106,7 +106,7 @@ export function BulkPriceModal({ onClose, onDone }) {
       done();
       close();
     } catch (err) {
-      showToast('실패: ' + (err?.message || err), 'err');
+      showToast('실패: ' + (err?.message || err), 'error');
     } finally {
       setSaving(false);
     }

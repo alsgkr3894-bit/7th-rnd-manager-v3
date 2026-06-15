@@ -43,15 +43,15 @@ export function ScheduleModal({ initial, defaultDate, onSave, onClose, onDelete 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!title.trim()) {
-      showToast('제목을 입력해주세요', 'err');
+      showToast('제목을 입력해주세요', 'error');
       return;
     }
     if (!date) {
-      showToast('날짜를 입력해주세요', 'err');
+      showToast('날짜를 입력해주세요', 'error');
       return;
     }
     if (!save) {
-      showToast('저장 동작이 연결되지 않았습니다', 'err');
+      showToast('저장 동작이 연결되지 않았습니다', 'error');
       return;
     }
     setSaving(true);

@@ -449,6 +449,7 @@
 | 엣지 관리 primary route 정리 | 구현 완료 | `4a7152f` |
 | 정적 route 분류표와 runtime QA route 파생 | 구현 완료 | `823f539` |
 | route drift guard와 동적 상세 route fixture runtime QA | 구현 완료 | 이번 보강(2026-06-15) |
+| Toast 오류 타입 호출부 정규화와 재발 방지 테스트 | 구현 완료 | 이번 보강(2026-06-16) |
 | 판매량 중복 업로드 차단과 오류 CSV 헤더 fixture 검증 | 구현 완료 | 이번 보강(2026-06-15) |
 | 판매량 저장 트랜잭션 내부의 같은 연월 중복 재확인 | 구현 완료 | 이번 보강(2026-06-15) |
 | 실제 xlsx workbook 기반 판매량 fixture 파싱/검증 | 구현 완료 | 이번 보강(2026-06-15) |
@@ -639,6 +640,7 @@
 | 활성 계정 선택 백업/복원 범위 | 구현 완료: `rnd_active_account_id`를 공통 localStorage key로 포함 |
 | localStorage 복원 실패 처리 | 구현 완료: `importAll()` 결과 `errors`에 실패 key를 보고 |
 | 무음 실패 catch 정책 | 구현 완료: 빈 catch allowlist와 삭제/복원 실패 노출 가드를 테스트로 고정 |
+| Toast 오류 타입 정책 | 구현 완료: 호출부는 `error` 타입으로 통일하고 `err` alias는 Toast 내부 하위호환으로만 유지 |
 | 메뉴마스터 삭제 영향 preview | 구현 완료: 판매가/레시피/영양 참조/영양값 영향 건수를 삭제 전 표시 |
 | CSS primitive selector 소유권 | 구현 완료: `.btn`, `.card`, `.input`, `.chip` 기본 스타일을 `base.css`로 일원화 |
 | 메뉴개발노트 브랜드 스코프 | 구현 완료: 노트/샘플/일정/작업일지 조회·수정·삭제를 현재 브랜드 기준으로 제한 |

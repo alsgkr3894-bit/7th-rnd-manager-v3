@@ -169,7 +169,7 @@ export function SuppliersView() {
       setModalTarget(null);
       await load();
     } catch (e) {
-      showToast('저장 실패: ' + e.message, 'err');
+      showToast('저장 실패: ' + e.message, 'error');
       throw e;
     }
   }
@@ -180,7 +180,7 @@ export function SuppliersView() {
       showToast('삭제 완료', 'ok');
       await load();
     } catch (e) {
-      showToast('삭제 실패: ' + e.message, 'err');
+      showToast('삭제 실패: ' + e.message, 'error');
     }
   }
 

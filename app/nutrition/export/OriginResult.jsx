@@ -496,7 +496,7 @@ export default function OriginResult() {
       await exportOriginToExcel({ sheet1, sheet2, sheet3, sheet4 });
       showToast('엑셀 다운로드 완료', 'ok');
     } catch (e) {
-      showToast('엑셀 출력 실패: ' + asDisplayText(e?.message, '알 수 없는 오류'), 'err');
+      showToast('엑셀 출력 실패: ' + asDisplayText(e?.message, '알 수 없는 오류'), 'error');
     } finally {
       setExporting(false);
     }

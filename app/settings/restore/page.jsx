@@ -63,7 +63,7 @@ export default function Page() {
         setCurrentStats(await collectStoreStats());
       } catch (err) {
         console.error('[Restore] DB 초기화 실패:', err);
-        showToast('DB 초기화에 실패했습니다.', 'err');
+        showToast('DB 초기화에 실패했습니다.', 'error');
       }
     })();
   }, []);
@@ -72,7 +72,7 @@ export default function Page() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 500 * 1024 * 1024) {
-      showToast('파일이 너무 큽니다 (최대 500MB)', 'err');
+      showToast('파일이 너무 큽니다 (최대 500MB)', 'error');
       return;
     }
     setParsed(null);
@@ -113,7 +113,7 @@ export default function Page() {
       });
     } catch (err) {
       console.error('[Restore] 파일 파싱 실패:', err);
-      showToast('백업 파일을 읽을 수 없습니다: ' + err.message, 'err');
+      showToast('백업 파일을 읽을 수 없습니다: ' + err.message, 'error');
     }
   }
 
@@ -233,7 +233,7 @@ export default function Page() {
         '복원 중 오류: ' +
           err.message +
           (isSchemaIssue ? ' (해결: 시스템 설정 → 위험 영역 → "DB 완전 재생성")' : ''),
-        'err'
+        'error'
       );
     } finally {
       setBusy(false);

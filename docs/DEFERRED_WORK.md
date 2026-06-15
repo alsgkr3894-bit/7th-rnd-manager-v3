@@ -72,6 +72,7 @@
   - `__tests__/hooks/kanban-board-guards.test.mjs`
   - `__tests__/lib/ingredient-manage-undo-guards.test.mjs`
   - `__tests__/lib/ingredient-delete-cascade.test.mjs`
+- **추가 보강(2026-06-16)**: `showToast(..., 'err')` legacy 호출부를 정식 `error` 타입으로 정규화하고, `toast-type-policy.test.mjs`로 재발을 방지한다. `components/Toast.jsx`의 `err` alias는 외부/구호출 하위호환용으로만 유지한다.
 - **잔여 분류 대상** (2026-06-14 코드 대조 — 버그성 잔여 거의 없음):
   - `app/settings/restore/page.jsx:203` `.catch(() => {})` 1건만 잔존 → 복원 성공 후 `logWork` 기록 실패를 무시하는 **의도적 background** 처리. 버그 아님 — 의도 주석만 추가하면 종료.
   - `hooks/useNoteBatchActions.js`·`hooks/useIngredientPriceData.js`·`app/settings/backup/page.jsx`·`app/nutrition/allergen/page.jsx`·`app/ingredient/usage/page.jsx` — silent catch **0건 확인** (이미 정리됨).

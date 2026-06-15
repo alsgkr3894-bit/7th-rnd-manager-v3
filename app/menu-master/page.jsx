@@ -271,7 +271,7 @@ export default function Page() {
       await load();
       showToast('초기화 완료', 'ok');
     } catch (err) {
-      showToast('실패: ' + err.message, 'err');
+      showToast('실패: ' + err.message, 'error');
     } finally {
       setResetting(false);
     }
@@ -285,7 +285,7 @@ export default function Page() {
       await load();
       showToast(`${inserted}개 등록 완료`, 'ok');
     } catch (err) {
-      showToast('등록 실패: ' + err.message, 'err');
+      showToast('등록 실패: ' + err.message, 'error');
     } finally {
       setSeeding(false);
     }
@@ -322,7 +322,7 @@ export default function Page() {
         showToast('저장 완료', 'ok');
       }
     } catch (err) {
-      showToast('저장 실패: ' + err.message, 'err');
+      showToast('저장 실패: ' + err.message, 'error');
     }
   }
 

@@ -88,8 +88,8 @@ export function ManagedProductsCard() {
       setAdding(false);
       refresh();
     } catch (err) {
-      if (err.message === 'CODE_DUPLICATE') showToast('이미 등록된 제품코드입니다', 'err');
-      else showToast(err.message || '추가 실패', 'err');
+      if (err.message === 'CODE_DUPLICATE') showToast('이미 등록된 제품코드입니다', 'error');
+      else showToast(err.message || '추가 실패', 'error');
     } finally {
       setBusy(false);
     }
@@ -102,7 +102,7 @@ export function ManagedProductsCard() {
       setPendingDeleteId(null);
       refresh();
     } catch {
-      showToast('삭제 실패', 'err');
+      showToast('삭제 실패', 'error');
     }
   }
 
@@ -111,7 +111,7 @@ export function ManagedProductsCard() {
       await updateManagedProduct({ id: p.id, enable: p.enable === false });
       refresh();
     } catch {
-      showToast('토글 실패', 'err');
+      showToast('토글 실패', 'error');
     }
   }
 
@@ -120,7 +120,7 @@ export function ManagedProductsCard() {
       await updateManagedProduct({ id: p.id, productType });
       refresh();
     } catch {
-      showToast('변경 실패', 'err');
+      showToast('변경 실패', 'error');
     }
   }
 
@@ -129,7 +129,7 @@ export function ManagedProductsCard() {
       await updateManagedProduct({ id: p.id, isManaged: !p.isManaged });
       refresh();
     } catch {
-      showToast('변경 실패', 'err');
+      showToast('변경 실패', 'error');
     }
   }
 
@@ -139,12 +139,12 @@ export function ManagedProductsCard() {
     try {
       const files = await getPriceFiles();
       if (files.length === 0) {
-        showToast('가격비교 데이터가 없습니다', 'err');
+        showToast('가격비교 데이터가 없습니다', 'error');
         return;
       }
       const rows = await getPriceRowsByFileId(files[0].id);
       if (rows.length === 0) {
-        showToast('가격비교 행이 없습니다', 'err');
+        showToast('가격비교 행이 없습니다', 'error');
         return;
       }
       const priceProducts = rows
@@ -155,7 +155,7 @@ export function ManagedProductsCard() {
       refresh();
     } catch (err) {
       console.error(err);
-      showToast(err.message || '마이그레이션 실패', 'err');
+      showToast(err.message || '마이그레이션 실패', 'error');
     } finally {
       setMigrating(false);
     }

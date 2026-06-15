@@ -184,7 +184,7 @@ export default function HomePage() {
       }, QUICK_NOTE_RESET_MS);
     } catch (err) {
       devError('[Home] 빠른 메모 저장 실패:', err);
-      showToast('저장에 실패했습니다', 'err');
+      showToast('저장에 실패했습니다', 'error');
     }
   }
 
