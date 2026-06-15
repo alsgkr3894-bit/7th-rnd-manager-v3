@@ -7,7 +7,6 @@ import { Pagination } from '@/components/ui/Pagination';
 import { usePagination } from '@/hooks/usePagination';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { initDB } from '@/lib/db';
 import { downloadCsvText } from '@/lib/download';
@@ -24,8 +23,10 @@ import { seedMenuMaster } from '@/lib/menu-master/seed';
 import { normalizePersonalPizzaCodes } from '@/lib/menu-master/normalize';
 import { MenuPriceUploadCard } from '@/components/cost/menu-price/MenuPriceUploadCard';
 import { BulkPriceModal } from '@/components/cost/menu-price/BulkPriceModal';
+import { MenuMasterEmptyState } from '@/components/menu-master/MenuMasterEmptyState';
 import { MenuMasterEditModal } from '@/components/menu-master/MenuMasterEditModal';
 import { MenuMasterFilterPanel } from '@/components/menu-master/MenuMasterFilterPanel';
+import { MenuMasterLoadingTable } from '@/components/menu-master/MenuMasterLoadingTable';
 import { MenuMasterStatsRow } from '@/components/menu-master/MenuMasterStatsRow';
 import { MenuMasterTableRow } from '@/components/menu-master/MenuMasterTableRow';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
@@ -328,94 +329,10 @@ export default function Page() {
         recipeNeedsCheck={recipeNeedsCheck}
       />
 
-      {loading && (
-        <div className="card table-card">
-          <div className="table-wrap">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ width: 145 }}>메뉴코드</th>
-                  <th>메뉴명</th>
-                  <th style={{ width: 200 }}>분류 태그</th>
-                  <th style={{ width: 60 }}>사이즈</th>
-                  <th style={{ width: 100 }}>판매가</th>
-                  <th style={{ width: 120 }}>레시피/원가</th>
-                  <th style={{ width: 80 }}>상태</th>
-                  <th style={{ width: 60 }}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>
-                    <td>
-                      <Skeleton width={100} height={13} />
-                    </td>
-                    <td>
-                      <Skeleton width="80%" height={13} />
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        <Skeleton width={44} height={20} radius={999} />
-                        <Skeleton width={72} height={20} radius={999} />
-                      </div>
-                    </td>
-                    <td>
-                      <Skeleton width={32} height={13} />
-                    </td>
-                    <td>
-                      <Skeleton width={60} height={13} style={{ marginLeft: 'auto' }} />
-                    </td>
-                    <td>
-                      <Skeleton width={70} height={20} radius={6} />
-                    </td>
-                    <td>
-                      <Skeleton width={44} height={20} radius={6} />
-                    </td>
-                    <td>
-                      <Skeleton width={28} height={28} radius={6} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      {loading && <MenuMasterLoadingTable />}
 
       {!loading && rows.length === 0 && (
-        <div className="empty-state" style={{ padding: '60px 20px' }}>
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: 16,
-              background: 'var(--surface-2)',
-              display: 'grid',
-              placeItems: 'center',
-              color: 'var(--text-4)',
-              border: '1px solid var(--border)',
-            }}
-          >
-            <Icon.box style={{ width: 28, height: 28 }} />
-          </div>
-          <div className="empty-title">메뉴 마스터 데이터가 없습니다</div>
-          <div className="empty-sub">
-            {isMain
-              ? '기본 코드 등록 버튼으로 전체 코드 체계를 불러오세요.'
-              : '메뉴 추가 버튼으로 메뉴를 직접 등록하세요.'}
-          </div>
-          {isMain && (
-            <button
-              className="btn primary"
-              onClick={handleSeed}
-              disabled={seeding}
-              style={{ marginTop: 4 }}
-            >
-              <Icon.plus style={{ width: 14, height: 14 }} />
-              {seeding ? '등록 중…' : '기본 코드 등록'}
-            </button>
-          )}
-        </div>
+        <MenuMasterEmptyState isMain={isMain} seeding={seeding} onSeed={handleSeed} />
       )}
 
       {rows.length > 0 && (
