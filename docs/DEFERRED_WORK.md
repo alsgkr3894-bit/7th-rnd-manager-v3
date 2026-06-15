@@ -36,12 +36,12 @@
 
 | 우선 | 항목 | 버그 내용 | 상태 | 착수 조건 |
 |------|------|-----------|------|-----------|
-| 1 | **B-9** | 1인피자 알레르기 표시 불일치 — 라벨은 씬바사삭L만 출력(`label/build.js:266`), 알레르기 화면은 크러스트 변형 전부 생성(`allergen/matrix.js:96`). **법적 표기 영향.** | ⏸ 게이트 | 도메인 확인(1인피자 정답 크러스트 예시 1~2건) |
+| 1 | **B-9** | 1인피자 알레르기 표시 불일치 — 라벨은 씬바사삭L만 출력(`label/build.js:266`), 알레르기 화면은 크러스트 변형 전부 생성(`allergen/matrix.js:96`). **법적 표기 영향.** | ✅ 완료(2026-06-15) | 도메인 확인 완료 — 1인피자는 씬바사삭 1종 |
 | 2 | **B-25** | production 빌드 비결정적 실패 → dev/prod `.next` 섞이면 런타임 500 | ✅ 완료(2026-06-15) | Next 14.2.35 업그레이드로 해결 |
 | 3 | **B-26** | route-level `error.jsx` 부재 → 한 화면 런타임 예외가 전체 앱을 다운시킴 | ✅ 완료(2026-06-14) | — |
 
-- **B-21**(silent catch) ✅ **완료(2026-06-15)**: 사용자 액션 실패(저장·삭제·복원·출력)는 모두 toast 노출 처리됨. `settings/restore/page.jsx:203` `.catch(()=>{})`에 의도 주석 추가 완료 — 복원 성공 후 work-log 기록 실패를 무시하는 background 처리임을 명시.
-- **즉시 착수 가능한 버그**: ~~B-26(완료)~~. **게이트 대기**: B-9(도메인 답변), B-25(Node 버전 고정).
+- **B-21**(silent catch) ✅ **완료(2026-06-15)**: 사용자 액션 실패(저장·삭제·복원·출력)는 모두 toast 노출 처리됨. 남아 있는 optional/background 빈 catch는 `silent-catch-policy.test.mjs` allowlist와 사유로 고정한다.
+- **즉시 착수 가능한 버그**: 없음. **게이트 대기 버그**: 없음.
 - **버그 아님(정비/도구/문서/신기능)**: B-20·B-23(QA 도구), B-3 Phase 2·B-5·B-6(리팩토링), B-24(문서), N-42·N-43(신기능, 게이트).
 
 ---
@@ -73,11 +73,12 @@
   - `__tests__/lib/ingredient-manage-undo-guards.test.mjs`
   - `__tests__/lib/ingredient-delete-cascade.test.mjs`
 - **추가 보강(2026-06-16)**: `showToast(..., 'err')` legacy 호출부를 정식 `error` 타입으로 정규화하고, `toast-type-policy.test.mjs`로 재발을 방지한다. `components/Toast.jsx`의 `err` alias는 외부/구호출 하위호환용으로만 유지한다.
-- **잔여 분류 대상** (2026-06-14 코드 대조 — 버그성 잔여 거의 없음):
-  - `app/settings/restore/page.jsx:203` `.catch(() => {})` 1건만 잔존 → 복원 성공 후 `logWork` 기록 실패를 무시하는 **의도적 background** 처리. 버그 아님 — 의도 주석만 추가하면 종료.
+- **정책 고정(2026-06-16)**:
+  - 사용자 액션 실패는 toast/화면 오류/결과 errors로 노출한다.
+  - optional/background 빈 catch는 `silent-catch-policy.test.mjs` allowlist에 파일·맥락·사유를 등록한 위치에만 허용한다.
   - `hooks/useNoteBatchActions.js`·`hooks/useIngredientPriceData.js`·`app/settings/backup/page.jsx`·`app/nutrition/allergen/page.jsx`·`app/ingredient/usage/page.jsx` — silent catch **0건 확인** (이미 정리됨).
   - 테스트 fixture에서 의도적으로 발생시키는 `price-history`, `managed-products` 경고의 사용자 액션/테스트 전용 분리(테스트 한정).
-- **완료 기준**: 저장/삭제/복원/출력처럼 사용자가 실행한 작업의 실패가 침묵하지 않는다. → **사용자 액션 측면 충족**, 잔여는 의도 주석 정리만 남음.
+- **완료 기준**: 저장/삭제/복원/출력처럼 사용자가 실행한 작업의 실패가 침묵하지 않는다. → **사용자 액션 측면 충족**.
 
 #### B-23. smoke 미포함 중요 라우트와 동적 라우트 QA 확대  🟡 ✅ 완료(2026-06-15)
 - **파일**: `scripts/smoke-qa.mjs`, `scripts/full-rt.mjs`
@@ -515,4 +516,4 @@ LOW 완료: L-02 border-radius 토큰화 · L-03 비교월 동일 경고 · L-04
 
 ---
 
-_잔여 보류: **B-5**(useDBLoad 전면, 회귀위험) · **B-6/C-P4**(대형 컴포넌트 잔여 4개, 회귀위험) · **B-20**(실업무 fixture 확대 잔여: Excel 앱 수동 확인·다운로드 열람·대용량 케이스) · **N-43**(과거 단가, 동작 명세)._
+_잔여 보류: **B-5**(useDBLoad 전면, 회귀위험) · **B-6/C-P4**(대형 컴포넌트 추가 분해 재평가) · **B-20**(실업무 fixture 확대 잔여: Excel 앱 수동 확인·다운로드 열람·대용량 케이스) · **N-43**(과거 단가, 동작 명세)._
