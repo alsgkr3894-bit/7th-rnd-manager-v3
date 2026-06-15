@@ -56,6 +56,24 @@ describe('normalizeSidebarOpenIds', () => {
     expect(hrefs).not.toContain('/cost/ingredient-price');
   });
 
+  test('제때데이터는 단가, 출고량, 관리품목 흐름으로 노출한다', () => {
+    const jetteGroup = NAV_SECTIONS.flatMap(section => section.groups).find(
+      group => group.id === 'jette'
+    );
+
+    expect(jetteGroup?.label).toBe('제때데이터');
+    expect((jetteGroup?.children || []).map(item => item.label)).toEqual([
+      '단가',
+      '출고량',
+      '관리품목',
+    ]);
+    expect((jetteGroup?.children || []).map(item => item.href)).toEqual([
+      '/jette/price-compare',
+      '/jette/shipment',
+      '/jette/settings',
+    ]);
+  });
+
   test('모바일 원가 탭도 구형 피자 원가표 대신 원가마진표로 이동한다', () => {
     const costTab = MOBILE_TAB_DEFS.find(item => item.label === '원가');
 

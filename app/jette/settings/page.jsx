@@ -62,8 +62,8 @@ export default function Page() {
   return (
     <main className="main">
       <PageHeader
-        breadcrumb={['제때상품관리', '제때 상품 관리 설정']}
-        title="제때 상품 관리 설정"
+        breadcrumb={['제때데이터', '관리품목']}
+        title="제때 관리품목"
         sub="출고량 집계 대상 제품을 관리합니다. 대상 외 제품은 자동 제외됩니다."
       />
 

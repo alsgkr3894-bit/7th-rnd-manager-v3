@@ -51,8 +51,8 @@ export default function Page() {
   return (
     <main className="main">
       <PageHeader
-        breadcrumb={['제때상품관리', '제때 상품 가격 비교']}
-        title="제때 상품 가격 비교"
+        breadcrumb={['제때데이터', '단가']}
+        title="제때 단가"
         sub="최신 단가와 이전 단가를 비교합니다. 원가계산 모듈은 이 데이터를 단일 기준으로 사용합니다."
         actions={
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>

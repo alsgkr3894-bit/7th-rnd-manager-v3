@@ -69,8 +69,8 @@ export default function Page() {
   return (
     <main className="main">
       <PageHeader
-        breadcrumb={['제때상품관리', '제때 제품 출고량']}
-        title="제때 제품 출고량"
+        breadcrumb={['제때데이터', '출고량']}
+        title="제때 출고량"
         sub={`등록된 ${managedProducts.length}개 대상 제품의 출고량을 집계합니다. 대상 외 제품은 자동 제외.`}
         actions={<PeriodInput period={period} onChange={setPeriod} />}
       />
