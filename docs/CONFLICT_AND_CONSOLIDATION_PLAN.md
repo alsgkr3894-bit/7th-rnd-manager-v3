@@ -680,10 +680,11 @@
 
 **구현 상태**
 
-- 부분 구현 완료: `315fc65 fix: include system settings in backup keys`
+- 부분 구현 완료: `315fc65 fix: include system settings in backup keys`, `179c2cd fix: apply jette policy settings`
 - `lib/settings.js`에서 `SETTING_LS_KEYS`를 노출하고, `lib/backup/local-storage-keys.js`가 이 목록을 공통 localStorage 백업/복원 key로 사용한다.
 - 구현 완료 범위: `theme`, `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert` localStorage 설정의 백업/복원 포함과 회귀 테스트.
-- 남은 범위: `settings` IndexedDB store의 역할 정리와 `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert`의 실제 업무 로직 연결은 8.11/Phase F에서 처리한다.
+- 구현 완료 범위: `unmatchedAlert`, `costRateAlert`는 실제 알림 로직에 연결했고, `autoRecalc`와 `roundMode`는 현재 정책에 맞게 조작 가능한 no-op 토글이 아니라 고정 상태로 낮췄다.
+- 남은 범위: `settings` IndexedDB store의 역할 정리와 `strictPosting`의 실제 발행 차단 로직은 별도 단계에서 처리한다.
 
 **관련 파일**
 
@@ -698,25 +699,28 @@
 
 - IndexedDB에는 `settings` store가 정의되어 있고 백업 공통 store에 포함된다.
 - 실제 시스템 설정은 `lib/settings.js`가 `v3:<key>` localStorage에 저장한다.
-- `app/settings/system/page.jsx`에서 쓰는 설정 key는 `theme`, `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert`다.
+- `app/settings/system/page.jsx`에서 읽는 설정 key는 `theme`, `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert`다.
 - 현재 백업 영속 key에는 `SETTING_LS_KEYS` 기준으로 모든 시스템 설정 localStorage key가 포함된다.
-- `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert`는 설정 화면 외 실제 업무 로직에서 읽는 사용처가 거의 없다.
+- `theme`, `density`, `fontScale`은 UI dataset에 적용되고, `unmatchedAlert`, `costRateAlert`는 알림 로직에 연결된다.
+- `autoRecalc`는 가격 업로드 이벤트 기반 자동 반영 상태로 표시하고, `roundMode`는 단가 1자리 반올림 고정 정책으로 표시한다.
+- `strictPosting`은 아직 실제 발행 차단 로직이 없어 시스템 설정 화면에서 `준비 중` 상태로 낮췄다.
 
 **충돌 가능성**
 
 - `settings` store와 localStorage 설정이 병존하므로 장기적으로 source of truth가 헷갈릴 수 있다.
-- 사용자는 "자동 재계산", "미연동 차단", "반올림 방식"을 켰다고 생각하지만 실제 계산 로직은 이 값을 참조하지 않을 수 있다.
+- 사용자는 "미연동 차단"을 켰다고 생각할 수 있으므로, 실제 차단 로직 적용 전까지 `준비 중`으로만 표시한다.
 
 **정리 방향**
 
 - 구현 방향: 2안 기준으로 localStorage 설정을 실제 사용 source로 보고, 모든 실제 설정 key를 `PERSISTENT_LS_KEYS`와 `COMMON_LS_KEYS`에 포함했다.
 - 남은 정리: `settings` store를 legacy/예약 store로 명시하거나, 별도 단계에서 실제 설정 source of truth로 승격한다.
-- 실제 로직에서 쓰이지 않는 정책 토글은 "준비 중" 상태로 낮추거나, 해당 계산/알림 로직에 연결한다.
+- 완료: 실제 로직에서 쓰이지 않는 정책 토글은 고정 상태 또는 `준비 중` 상태로 낮췄다. (`179c2cd`)
 
 **검증**
 
 - 완료: `density`, `fontScale`, `autoRecalc`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert` 백업/복원 key 포함 테스트.
-- 원가 계산 또는 업로드 로직에서 정책 설정이 적용되는지 fixture 테스트.
+- 완료: 시스템 원가 정책 no-op 토글이 다시 노출되지 않는 소스 가드 테스트. (`179c2cd`)
+- 남음: `strictPosting` 발행 차단 fixture 테스트.
 
 ### 8.3 멀티 브랜드 백업 파일에 source brand metadata가 없음
 
@@ -1015,21 +1019,25 @@
 
 **구현 상태**
 
-- 부분 구현 완료: `315fc65 fix: include system settings in backup keys`, `045ce2d fix: apply system alert settings`
+- 부분 구현 완료: `315fc65 fix: include system settings in backup keys`, `045ce2d fix: apply system alert settings`, `179c2cd fix: apply jette policy settings`
 - `unmatchedAlert`는 TopBar/Sidebar/mobile badge/Home 미매칭 위젯/ModuleHealth 입력에 반영한다.
 - `costRateAlert`는 Home 인사말, CostAlertWidget, ModuleHealth 원가율 알림 입력에 반영한다.
-- 남은 범위: `autoRecalc`, `strictPosting`, `roundMode`, `v3:jette-settings`의 `autoRecalcOnUpdate`, `autoRegisterNew`, `priceAlertThreshold`를 실제 업무 로직에 연결하거나 준비 중 상태로 분리한다.
+- `priceAlertThreshold`는 가격 비교 요약 카드와 비교 테이블 강조 조건에 반영한다.
+- `autoRegisterNew`는 단가 업로드 후 새 제품코드를 관리품목에 `generic`/미관리 상태로 자동 등록한다.
+- `autoRecalcOnUpdate`와 시스템 `autoRecalc`는 가격 업로드/삭제 이벤트가 열린 원가 화면을 갱신하는 현재 구조에 맞춰 `항상 자동 반영` 상태로 표시한다.
+- `roundMode`는 사용자가 확정한 `g`/`개` 단가 소수점 1자리 반올림 정책에 맞춰 조작 가능한 세그먼트를 제거하고 고정 상태로 표시한다.
+- 남은 범위: `strictPosting`의 실제 발행 차단 로직은 별도 단계에서 구현한다.
 
 **충돌 가능성**
 
 - 사용자가 설정을 바꿨는데 실제 동작은 바뀌지 않을 수 있다.
-- `autoRecalc`와 `autoRecalcOnUpdate`가 비슷한 의미로 보이지만 서로 연결되어 있지 않다.
+- `strictPosting`은 아직 실제 차단이 아니므로 준비 상태가 명확히 보여야 한다.
 
 **정리 방향**
 
-- 실제 동작이 없는 설정은 "준비 중"으로 숨기거나 설명을 바꾼다.
-- 실제 동작이 필요한 설정은 해당 모듈 로직에서 `getSetting()` 또는 전용 설정 reader로 읽는다.
-- 자동 재계산은 전역 정책과 제때 업로드 정책 중 source of truth를 하나로 정한다.
+- 완료: 실제 동작이 없는 설정은 "준비 중"으로 숨기거나 설명을 바꾼다.
+- 완료: 실제 동작이 필요한 제때 설정은 전용 설정 reader로 읽는다.
+- 완료: 자동 재계산은 가격 업로드 이벤트 기반 `항상 자동 반영` 상태로 정리한다.
 
 ### 8.12 CSS 전역 selector 책임이 여러 파일에 분산됨
 
@@ -1168,11 +1176,12 @@
 
 ### Phase F. no-op 설정 정리
 
-- `autoRecalc`, `autoRecalcOnUpdate`, `strictPosting`, `roundMode`, `unmatchedAlert`, `costRateAlert`, `priceAlertThreshold`, `autoRegisterNew`의 실제 동작 여부를 하나씩 정한다.
-- 미구현 설정은 UI에서 숨기거나 "준비 중" 배지로 낮춘다.
-- 구현할 설정은 해당 모듈 로직과 테스트에 연결한다.
+- 완료: `autoRecalc`, `autoRecalcOnUpdate`, `roundMode`, `unmatchedAlert`, `costRateAlert`, `priceAlertThreshold`, `autoRegisterNew`의 실제 동작 또는 표시 정책을 정했다. (`179c2cd`)
+- 완료: 미구현 `strictPosting`은 UI에서 "준비 중" 배지로 낮췄다. (`179c2cd`)
+- 남음: `strictPosting` 발행 차단을 실제 저장/출력 workflow에 연결한다.
 
 **검증**
 
-- 설정 변경 전후 로직 차이를 fixture로 검증.
+- 완료: 제때 설정 정규화, 가격 임계값 판정, 신규 제품 자동등록 후보, 설정 사용처 소스 가드 테스트. (`179c2cd`)
+- 남음: `strictPosting` 설정 변경 전후 발행 차단 fixture 검증.
 - 백업/복원 후 설정 동작 유지.
