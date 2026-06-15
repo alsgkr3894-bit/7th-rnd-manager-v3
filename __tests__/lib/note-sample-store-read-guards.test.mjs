@@ -6,7 +6,24 @@ const sharedGetAll = jest.fn(async () => []);
 const sharedGetById = jest.fn(async () => null);
 const sharedGetByIndex = jest.fn(async () => []);
 const sharedDeleteById = jest.fn(async () => {});
-const sharedRunTransaction = jest.fn(async () => {});
+const txDeletes = [];
+const sharedRunTransaction = jest.fn(async (_stores, _mode, work) => {
+  work({
+    objectStore() {
+      return {
+        add(record) {
+          const req = { result: record?.id ?? 1, onsuccess: null };
+          Promise.resolve().then(() => req.onsuccess?.());
+          return req;
+        },
+        put() {},
+        delete(id) {
+          txDeletes.push(id);
+        },
+      };
+    },
+  });
+});
 const logWork = jest.fn(async () => {});
 const getActiveBrandId = jest.fn(() => 'main');
 
@@ -34,9 +51,12 @@ const sampleStore = await import('@/lib/sample/store');
 describe('노트/샘플 store 읽기 가드', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    txDeletes.length = 0;
     getActiveBrandId.mockReturnValue('main');
     sharedHasStore.mockReturnValue(true);
     sharedGetAll.mockResolvedValue([]);
+    sharedGetById.mockResolvedValue(null);
+    globalThis.localStorage = { removeItem: jest.fn() };
   });
 
   test('노트 목록은 객체 행만 보존하고 안전한 createdAt 내림차순으로 정렬한다', async () => {
@@ -118,6 +138,22 @@ describe('노트/샘플 store 읽기 가드', () => {
 
     sharedGetById.mockResolvedValueOnce({ id: 2, brand: 'brand-b' });
     await expect(sampleStore.getSampleById(2)).resolves.toMatchObject({ id: 2 });
+  });
+
+  test('노트 삭제는 parentId 하위 체인 전체를 같은 트랜잭션에서 삭제한다', async () => {
+    sharedGetById.mockResolvedValueOnce({ id: 1, title: '루트', brand: 'main' });
+    sharedGetAll.mockResolvedValueOnce([
+      { id: 1, title: '루트', brand: 'main' },
+      { id: 2, title: '자식', parentId: 1, brand: 'main' },
+      { id: 3, title: '손자', parentId: 2, brand: 'main' },
+      { id: 4, title: '다른 브랜드 자식', parentId: 1, brand: 'brand-b' },
+    ]);
+
+    const deleted = await noteStore.deleteNote(1);
+
+    expect(deleted.map(row => row.id)).toEqual([1, 2, 3]);
+    expect(txDeletes).toEqual([1, 2, 3]);
+    expect(globalThis.localStorage.removeItem).toHaveBeenCalledTimes(3);
   });
 
   test('목록 조회 응답이 배열이 아니면 빈 목록으로 처리한다', async () => {
