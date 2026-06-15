@@ -37,6 +37,18 @@ const controllerViewPropsSource = readFileSync(
   resolve('app/note/sample/samplePageControllerViewProps.js'),
   'utf8'
 );
+const controllerFilterPropsSource = readFileSync(
+  resolve('app/note/sample/samplePageControllerFilterProps.js'),
+  'utf8'
+);
+const controllerCalendarPropsSource = readFileSync(
+  resolve('app/note/sample/samplePageControllerCalendarProps.js'),
+  'utf8'
+);
+const controllerRecordsPropsSource = readFileSync(
+  resolve('app/note/sample/samplePageControllerRecordsProps.js'),
+  'utf8'
+);
 const controllerDialogPropsSource = readFileSync(
   resolve('app/note/sample/samplePageControllerDialogProps.js'),
   'utf8'
@@ -200,12 +212,26 @@ describe('sample page structure', () => {
     expect(controllerTopPropsSource).toContain('export function buildSampleHeaderProps');
     expect(controllerTopPropsSource).toContain('export function buildSampleActionsProps');
     expect(controllerTopPropsSource).toContain('onStartBatchMode: () => batch.setBatchMode(true)');
-    expect(controllerViewPropsSource).toContain('export function buildSampleFilterProps');
-    expect(controllerViewPropsSource).toContain('export function buildSampleCalendarProps');
-    expect(controllerViewPropsSource).toContain('export function buildSampleRecordsProps');
-    expect(controllerViewPropsSource).toContain("from '@/lib/sample/constants'");
-    expect(controllerViewPropsSource).toContain("from './samplePageStateUtils'");
-    expect(controllerViewPropsSource).toContain('onSearchBlur: closeSearchHistorySoon');
+    expect(controllerViewPropsSource).toContain(
+      "export { buildSampleFilterProps } from './samplePageControllerFilterProps'"
+    );
+    expect(controllerViewPropsSource).toContain(
+      "export { buildSampleCalendarProps } from './samplePageControllerCalendarProps'"
+    );
+    expect(controllerViewPropsSource).toContain(
+      "export { buildSampleRecordsProps } from './samplePageControllerRecordsProps'"
+    );
+    expect(controllerViewPropsSource).not.toContain("from '@/lib/sample/constants'");
+    expect(controllerViewPropsSource).not.toContain("from './samplePageStateUtils'");
+    expect(controllerViewPropsSource).not.toContain('onSearchBlur: closeSearchHistorySoon');
+    expect(controllerFilterPropsSource).toContain('export function buildSampleFilterProps');
+    expect(controllerFilterPropsSource).toContain("from '@/lib/sample/constants'");
+    expect(controllerFilterPropsSource).toContain("from './samplePageStateUtils'");
+    expect(controllerFilterPropsSource).toContain('onSearchBlur: closeSearchHistorySoon');
+    expect(controllerCalendarPropsSource).toContain('export function buildSampleCalendarProps');
+    expect(controllerCalendarPropsSource).toContain('onOpenSample: setDetailRec');
+    expect(controllerRecordsPropsSource).toContain('export function buildSampleRecordsProps');
+    expect(controllerRecordsPropsSource).toContain('onCreateSample: openWrite');
     expect(controllerDialogPropsSource).toContain('export function buildSampleCompareBarProps');
     expect(controllerDialogPropsSource).toContain('export function buildSampleDialogsProps');
     expect(controllerDialogPropsSource).toContain(
