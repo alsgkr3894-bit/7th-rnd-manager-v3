@@ -18,6 +18,22 @@ describe('note list structure', () => {
       resolve('lib/note/content-prop-builders.js'),
       'utf8'
     );
+    const contentPropDialogBuildersSource = readFileSync(
+      resolve('lib/note/content-prop-dialog-builders.js'),
+      'utf8'
+    );
+    const contentPropHeaderBuildersSource = readFileSync(
+      resolve('lib/note/content-prop-header-builders.js'),
+      'utf8'
+    );
+    const contentPropFilterBuildersSource = readFileSync(
+      resolve('lib/note/content-prop-filter-builders.js'),
+      'utf8'
+    );
+    const contentPropBodyBuildersSource = readFileSync(
+      resolve('lib/note/content-prop-body-builders.js'),
+      'utf8'
+    );
     const itemActionsSource = readFileSync(resolve('hooks/useNoteItemActions.js'), 'utf8');
     const listDataSource = readFileSync(resolve('hooks/useNoteListData.js'), 'utf8');
     const listStateSource = readFileSync(resolve('hooks/useNoteListState.js'), 'utf8');
@@ -124,13 +140,24 @@ describe('note list structure', () => {
     expect(contentPropsSource).toContain('buildNoteBodyProps({');
     expect(contentPropsSource).not.toContain('NOTE_STATUS.REPORTING');
     expect(contentPropsSource).not.toContain("router.push('/note/calendar')");
-    expect(contentPropBuildersSource).toContain('export function buildNoteDialogProps');
-    expect(contentPropBuildersSource).toContain('export function buildNoteHeaderProps');
-    expect(contentPropBuildersSource).toContain('export function buildNoteFilterProps');
-    expect(contentPropBuildersSource).toContain('export function buildNoteBodyProps');
-    expect(contentPropBuildersSource).toContain('NOTE_STATUS.REPORTING');
-    expect(contentPropBuildersSource).toContain("router.push('/note/calendar')");
-    expect(contentPropBuildersSource).toContain("router.push('/note/write')");
+    expect(contentPropBuildersSource).toContain("from '@/lib/note/content-prop-dialog-builders'");
+    expect(contentPropBuildersSource).toContain("from '@/lib/note/content-prop-header-builders'");
+    expect(contentPropBuildersSource).toContain("from '@/lib/note/content-prop-filter-builders'");
+    expect(contentPropBuildersSource).toContain("from '@/lib/note/content-prop-body-builders'");
+    expect(contentPropBuildersSource).not.toContain('NOTE_STATUS.REPORTING');
+    expect(contentPropBuildersSource).not.toContain("router.push('/note/calendar')");
+    expect(contentPropDialogBuildersSource).toContain('export function buildNoteDialogProps');
+    expect(contentPropDialogBuildersSource).toContain('export function buildNotePresetProps');
+    expect(contentPropHeaderBuildersSource).toContain('export function buildNoteHeaderProps');
+    expect(contentPropHeaderBuildersSource).toContain('export function buildNoteStatsProps');
+    expect(contentPropHeaderBuildersSource).toContain('export function buildNoteStatesProps');
+    expect(contentPropHeaderBuildersSource).toContain('NOTE_STATUS.REPORTING');
+    expect(contentPropHeaderBuildersSource).toContain("router.push('/note/calendar')");
+    expect(contentPropHeaderBuildersSource).toContain("router.push('/note/write')");
+    expect(contentPropFilterBuildersSource).toContain('export function buildNoteFilterProps');
+    expect(contentPropFilterBuildersSource).toContain('saveSearchHistory(search)');
+    expect(contentPropBodyBuildersSource).toContain('export function buildNoteBodyProps');
+    expect(contentPropBodyBuildersSource).toContain('router.push(`/note/${note.id}`)');
     expect(itemActionsSource).toContain('export function useNoteItemActions');
     expect(itemActionsSource).toContain('async function restoreDeletedNotes');
     expect(itemActionsSource).toContain('await deleteNote(note.id)');
