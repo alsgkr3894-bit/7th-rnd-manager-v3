@@ -92,7 +92,7 @@
 - 원가마진표, 전체요약, 원가 보고서, 제품별 사용현황, 원산지/알레르기, 표 출력은 `menu_recipes` 기준으로 연결됐다.
 - 홈/노트 원가율 KPI와 원가율 경보 통계는 `menu_recipes + cost_selling_prices` 기준으로 전환됐다.
 
-남은 정리는 구형 detail store schema/backup 범위와 bridge API 제거다.
+구형 detail store schema/backup 범위와 bridge API 제거까지 완료되면, 레시피 입력/조회 기준은 `menu_recipes` 하나로 고정된다.
 
 ---
 
@@ -370,13 +370,16 @@
 | 출력/집계 화면의 구형 `cost_recipes` fallback 제거 | 구현 완료 | `9d68970` |
 | 테스트의 canonical-only 기준 재작성 | 구현 완료 | `9d68970` |
 | 홈/노트 원가율 KPI의 `menu_recipes + cost_selling_prices` 기준 전환 | 구현 완료 | `08f7f91` |
+| 구형 detail bridge API 제거 | 구현 완료 | 이번 단계 |
+| 구형 `cost_recipes`/detail store schema 및 백업 범위 제거 | 구현 완료 | 이번 단계 |
+| 메뉴 삭제/1인피자 코드 정규화의 `menu_recipes` 기준 전환 | 구현 완료 | 이번 단계 |
 
 아래 항목은 아직 후속 단계에서 계속 구현한다.
 
 | 영역 | 상태 |
 |------|------|
-| 구형 detail store schema/backup 범위 최종 제거 검토 | 진행 예정 |
-| 명시적 detail bridge API 잔여 사용처 제거 | 진행 예정 |
+| 식자재관리 상세 UI 통합 | 진행 예정 |
+| 판매량 분석 화면 통합 | 진행 예정 |
 
 ---
 
@@ -405,7 +408,7 @@
 | 영역 | 백업 대상 |
 |------|-----------|
 | 메뉴 | `menu_master`, `cost_selling_prices` |
-| 레시피/원가 | `cost_recipes`, `cost_pizza_detail`, `cost_personal_detail`, `cost_side_detail`, `cost_set_detail`, `cost_edge_dough`, `cost_recipe_groups` |
+| 레시피/원가 | `menu_recipes`, `cost_edge_dough`, `cost_recipe_groups` |
 | 식자재 | `cost_ingredients`, `cost_suppliers`, `cost_ingredient_price_history` |
 | 제때 | `price_files`, `price_rows`, `shipment_files`, `shipment_rows`, `ref_shipment_products` |
 | 영양/표기 | `nutrition_menu_ref`, `nutrition_raw_values`, `nutrition_pizza_composition`, `nutrition_topping_master`, `nutrition_edge_master`, `nutrition_set_composition` |
@@ -470,7 +473,7 @@
 | 원산지/알레르기/영양 출력 연결 | 구현 완료 |
 | 식자재관리 UI 통합 | 후속 구현 |
 | route redirect와 사이드바 정리 | 구현 완료 |
-| 구형 코드 제거 | 진행 중 |
+| 구형 코드 제거 | 구현 완료: 레시피/detail store 기준 제거 |
 
 ### 12.4 QA 확인 기준
 

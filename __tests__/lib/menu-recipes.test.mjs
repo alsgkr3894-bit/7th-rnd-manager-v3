@@ -76,26 +76,16 @@ describe('menu recipes canonical store helpers', () => {
     expect(recipeKindForRecord(record)).toBe('pizza');
   });
 
-  test('canonical menu_recipes가 legacy detail map보다 우선한다', () => {
-    const maps = mergeCanonicalRecipeMaps(
-      [
-        {
-          menuCode: 'P-OR-001-L',
-          menuName: '새 피자',
-          category: '피자',
-          kind: 'pizza',
-          components: [{ ingredientName: '새 도우' }],
-        },
-      ],
+  test('canonical menu_recipes만 카테고리별 map으로 변환한다', () => {
+    const maps = mergeCanonicalRecipeMaps([
       {
-        pizza: new Map([
-          [
-            'P-OR-001-L',
-            { menuCode: 'P-OR-001-L', components: [{ ingredientName: '구형 도우' }] },
-          ],
-        ]),
-      }
-    );
+        menuCode: 'P-OR-001-L',
+        menuName: '새 피자',
+        category: '피자',
+        kind: 'pizza',
+        components: [{ ingredientName: '새 도우' }],
+      },
+    ]);
 
     expect(maps.pizza.get('P-OR-001-L').components[0].ingredientName).toBe('새 도우');
     expect(maps.side).toBeInstanceOf(Map);

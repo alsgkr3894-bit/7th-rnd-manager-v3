@@ -1,7 +1,7 @@
 # 메뉴마스터 통합 계획
 
 작성: 2026-06-15
-상태: 구현 진행 중 (Phase 1~4 구현 완료, Phase 5 일부 완료)
+상태: 구현 진행 중 (Phase 1~5 구현 완료)
 전제: 기존 데이터는 가능하면 살리되, 통합 과정에서 기준 충돌이나 품질 문제가 크면 초기화 후 새 기준으로 다시 입력할 수 있다.
 
 ---
@@ -393,8 +393,8 @@ menu_master + menu_recipes
 
 ### Phase 5. 구형 코드 정리
 
-상태: **진행 중**
-관련 커밋: `9d68970 feat: read canonical recipes in outputs only`, `08f7f91 feat: use canonical recipes for cost rate stats`
+상태: **구현 완료**
+관련 커밋: `9d68970 feat: read canonical recipes in outputs only`, `08f7f91 feat: use canonical recipes for cost rate stats`, 이번 단계
 
 전제상 구형 데이터는 새로 입력 가능하므로, 이관보다 제거를 우선한다.
 
@@ -409,6 +409,10 @@ menu_master + menu_recipes
 - 홈/노트 원가율 KPI와 원가율 경보 통계도 `menu_recipes + cost_selling_prices` 기준으로 전환했다.
 - `menu_recipes` adapter의 기본 동작은 legacy detail fallback/mirror 없이 canonical store만 읽고 쓰도록 바꿨다.
 - 관련 단위 테스트는 legacy fallback 기대값 대신 canonical-only 기준으로 재작성했다.
+- `menu_recipes` adapter에서 detail bridge API와 legacy fallback 옵션을 제거했다.
+- DB v22에서 `cost_recipes`, `cost_pizza_detail`, `cost_personal_detail`, `cost_side_detail`, `cost_set_detail` store를 제거한다.
+- 백업/복원 범위도 `menu_recipes` 기준으로 정리했다.
+- 메뉴 삭제 cascade와 1인피자 코드 정규화도 `menu_recipes`만 대상으로 정리했다.
 
 검증 메모:
 
@@ -416,8 +420,8 @@ menu_master + menu_recipes
 
 남은 항목:
 
-- IndexedDB schema와 백업 범위에 남아 있는 구형 detail store의 최종 제거 여부를 별도 단계에서 결정한다.
-- 명시적 마이그레이션/호환 API로 남겨둔 detail bridge 사용처가 더 이상 없는지 최종 검색 후 제거한다.
+- 메뉴 통합 자체의 구형 레시피/detail store 제거는 완료됐다.
+- 다음 단계는 식자재관리 상세 UI 통합과 판매량 분석 화면 정리다.
 
 완료 기준:
 

@@ -1,4 +1,4 @@
-import { describe, expect, test } from '@jest/globals';
+import { describe, expect, jest, test } from '@jest/globals';
 import { importAll } from '../../lib/db/operations.js';
 
 describe('importAll 구조 방어', () => {
@@ -20,5 +20,21 @@ describe('importAll 구조 방어', () => {
     expect(result.errors).toEqual([
       { store: 'settings', error: 'store 레코드가 객체가 아닙니다. index: 1, 2' },
     ]);
+  });
+
+  test('현재 schema에서 제거된 legacy store는 복원 시 건너뛴다', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const result = await importAll({
+        stores: {
+          cost_recipes: [{ id: 1 }],
+          cost_pizza_detail: [{ id: 2 }],
+        },
+      });
+
+      expect(result).toEqual({ imported: 0, skipped: 2, errors: [] });
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 });

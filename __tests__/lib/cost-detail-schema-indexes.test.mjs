@@ -23,8 +23,10 @@ function makeStore(name, initialIndexes = []) {
 
 function makeIdbStub(existing = {}) {
   const stores = new Map(Object.entries(existing));
+  const deleted = [];
   return {
     stores,
+    deleted,
     created: {},
     objectStoreNames: {
       contains(name) {
@@ -36,6 +38,10 @@ function makeIdbStub(existing = {}) {
       stores.set(name, store);
       this.created[name] = store;
       return store;
+    },
+    deleteObjectStore(name) {
+      stores.delete(name);
+      deleted.push(name);
     },
   };
 }
@@ -54,12 +60,12 @@ function indexNames(store) {
   return [...store.indexes.keys()];
 }
 
-describe('cost detail schema indexes', () => {
-  test('DB_VERSION is bumped for detail menuCode index migration', () => {
-    expect(DB_VERSION).toBe(21);
+describe('legacy cost recipe schema cleanup', () => {
+  test('DB_VERSION is bumped for legacy recipe store removal', () => {
+    expect(DB_VERSION).toBe(22);
   });
 
-  test('new detail stores include menuCode indexes', () => {
+  test('new cost schema creates canonical menu_recipes only', () => {
     const idb = makeIdbStub();
 
     createCostStores(idb);
@@ -71,29 +77,35 @@ describe('cost detail schema indexes', () => {
       'kind',
       'updatedAt',
     ]);
-    expect(indexNames(idb.created.cost_pizza_detail)).toEqual(['menuCode', 'menuName', 'size']);
-    expect(indexNames(idb.created.cost_personal_detail)).toEqual(['menuCode', 'menuName']);
-    expect(indexNames(idb.created.cost_side_detail)).toEqual(['menuCode', 'menuName']);
-    expect(indexNames(idb.created.cost_set_detail)).toEqual(['menuCode', 'setName']);
+    expect(idb.created.cost_recipes).toBeUndefined();
+    expect(idb.created.cost_pizza_detail).toBeUndefined();
+    expect(idb.created.cost_personal_detail).toBeUndefined();
+    expect(idb.created.cost_side_detail).toBeUndefined();
+    expect(idb.created.cost_set_detail).toBeUndefined();
   });
 
-  test('v18 migration adds missing menuCode indexes to existing detail stores', () => {
+  test('v22 migration deletes existing legacy recipe stores', () => {
     const idb = makeIdbStub({
+      cost_recipes: makeStore('cost_recipes', ['menuName']),
       cost_pizza_detail: makeStore('cost_pizza_detail', ['menuName', 'size']),
       cost_personal_detail: makeStore('cost_personal_detail', ['menuName']),
       cost_side_detail: makeStore('cost_side_detail', ['menuName']),
       cost_set_detail: makeStore('cost_set_detail', ['setName']),
     });
 
-    createStores(idb, 17, makeUpgradeTx(idb));
+    createStores(idb, 21, makeUpgradeTx(idb));
 
-    expect(indexNames(idb.stores.get('cost_pizza_detail'))).toEqual([
-      'menuName',
-      'size',
-      'menuCode',
+    expect(idb.deleted).toEqual([
+      'cost_recipes',
+      'cost_pizza_detail',
+      'cost_personal_detail',
+      'cost_side_detail',
+      'cost_set_detail',
     ]);
-    expect(indexNames(idb.stores.get('cost_personal_detail'))).toEqual(['menuName', 'menuCode']);
-    expect(indexNames(idb.stores.get('cost_side_detail'))).toEqual(['menuName', 'menuCode']);
-    expect(indexNames(idb.stores.get('cost_set_detail'))).toEqual(['setName', 'menuCode']);
+    expect(idb.stores.has('cost_recipes')).toBe(false);
+    expect(idb.stores.has('cost_pizza_detail')).toBe(false);
+    expect(idb.stores.has('cost_personal_detail')).toBe(false);
+    expect(idb.stores.has('cost_side_detail')).toBe(false);
+    expect(idb.stores.has('cost_set_detail')).toBe(false);
   });
 });

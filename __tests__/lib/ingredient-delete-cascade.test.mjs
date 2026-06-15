@@ -244,7 +244,6 @@ describe('deleteMenuMaster cascade (B-1)', () => {
         { id: 3, menuCode: 'PZ-001', recipeName: '피자A 레시피' },
         { id: 4, menuCode: 'PZ-002', recipeName: '피자B 레시피' },
       ],
-      cost_recipes: [{ id: 9, menuCode: 'PZ-001', recipeName: '구형 피자A 레시피' }],
       nutrition_menu_ref: [
         { id: 5, menuCode: 'PZ-001', menuName: '피자A' },
         { id: 6, menuCode: 'PZ-002', menuName: '피자B' },
@@ -264,9 +263,6 @@ describe('deleteMenuMaster cascade (B-1)', () => {
     expect(stores.cost_selling_prices).toEqual([{ id: 2, menuCode: 'PZ-002', price: 12000 }]);
     expect(stores.menu_recipes).toEqual([
       { id: 4, menuCode: 'PZ-002', recipeName: '피자B 레시피' },
-    ]);
-    expect(stores.cost_recipes).toEqual([
-      { id: 9, menuCode: 'PZ-001', recipeName: '구형 피자A 레시피' },
     ]);
     expect(stores.nutrition_menu_ref).toEqual([{ id: 6, menuCode: 'PZ-002', menuName: '피자B' }]);
     expect(stores.nutrition_raw_values).toEqual([{ id: 8, menuCode: 'PZ-002', crustType: '석쇠' }]);
