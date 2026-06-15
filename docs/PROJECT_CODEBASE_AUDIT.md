@@ -104,9 +104,9 @@
 | sales | `sales_files`, `sales_rows`, `sales_rules`, `menu_sales_issues`, `ref_sales_*` | 판매량 업로드/분류/미매칭/규칙 |
 | price | `price_files`, `price_rows` | 제때 가격 파일/행 |
 | shipment | `shipment_files`, `shipment_rows`, `ref_shipment_products`, `ref_shipment_rules` | 제때 출고량/관리품목 |
-| cost | `cost_recipes`, `cost_ingredients`, `cost_selling_prices`, `cost_*_detail`, `cost_margin_snapshots`, `cost_platform_fees` | 원가/식자재/판매가/마진 |
+| cost | `menu_recipes`, `cost_ingredients`, `cost_selling_prices`, `cost_recipe_groups`, `cost_edge_dough`, `cost_margin_snapshots`, `cost_platform_fees` | 원가/식자재/판매가/마진 |
 | notes | `menu_dev_notes`, `sample_records`, `note_schedules`, `work_log` | 메뉴개발노트, 샘플, 일정, 작업 이력 |
-| nutrition | `nutrition_menu_ref`, `nutrition_raw_values`, `nutrition_allergy_links`, `nutrition_origin_master`, `nutrition_ingredient_values`, `nutrition_set_composition` 등 | 영양성분, 원산지, 알레르기 |
+| nutrition | `nutrition_menu_ref`, `nutrition_raw_values`, `nutrition_origin_master`, `nutrition_allergy_master`, `nutrition_topping_master`, `nutrition_edge_master`, `nutrition_set_composition` | 영양성분, 원산지, 알레르기 |
 | report | `generated_reports` | 생성 보고서 |
 | account | `ref_accounts` | 로컬 계정/역할 |
 

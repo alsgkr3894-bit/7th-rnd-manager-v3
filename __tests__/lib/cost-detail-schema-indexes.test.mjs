@@ -62,7 +62,7 @@ function indexNames(store) {
 
 describe('legacy cost recipe schema cleanup', () => {
   test('DB_VERSION is bumped for legacy recipe store removal', () => {
-    expect(DB_VERSION).toBe(22);
+    expect(DB_VERSION).toBe(23);
   });
 
   test('new cost schema creates canonical menu_recipes only', () => {
@@ -107,5 +107,16 @@ describe('legacy cost recipe schema cleanup', () => {
     expect(idb.stores.has('cost_personal_detail')).toBe(false);
     expect(idb.stores.has('cost_side_detail')).toBe(false);
     expect(idb.stores.has('cost_set_detail')).toBe(false);
+  });
+
+  test('v23 migration deletes ingredient nutrition value store', () => {
+    const idb = makeIdbStub({
+      nutrition_ingredient_values: makeStore('nutrition_ingredient_values', ['productCode']),
+    });
+
+    createStores(idb, 22, makeUpgradeTx(idb));
+
+    expect(idb.deleted).toEqual(['nutrition_ingredient_values']);
+    expect(idb.stores.has('nutrition_ingredient_values')).toBe(false);
   });
 });

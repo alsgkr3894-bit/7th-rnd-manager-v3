@@ -87,9 +87,6 @@ async function syncManagedScope(target, scopeLabel) {
 async function restoreDeletedIngredientBackup(backup) {
   if (!backup?.ingredient) return;
   await restoreRecord('cost_ingredients', backup.ingredient);
-  if (backup.nutritionSnapshot) {
-    await restoreRecord('nutrition_ingredient_values', backup.nutritionSnapshot);
-  }
 }
 
 async function restoreDeletedIngredientBackups(backups) {
@@ -293,7 +290,6 @@ export default function Page() {
     async row => {
       try {
         if (row.isManual && row.id && !row.productCode) {
-          // deleteIngredient가 { ingredient, nutritionSnapshot } 반환 → 모두 복원
           const backup = await deleteIngredient(row.id);
           warnIngredientCascadeFailures([backup]);
           setRows(prev => prev.filter(r => !(r.isManual && r.id === row.id)));

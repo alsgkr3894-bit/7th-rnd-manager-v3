@@ -63,7 +63,7 @@ export function IngredientDiagnostics({
                   title={`병합 대상: ${group.removeNames.filter(Boolean).join(', ') || '-'}`}
                 >
                   {group.productCode} · 대표 {group.keepName || group.keepId} · 병합{' '}
-                  {group.removeIds.length}개 · 영양값 {group.hasNutritionValue ? '연결' : '없음'}
+                  {group.removeIds.length}개
                 </span>
               ))}
             </div>

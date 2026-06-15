@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 
 let ingredientRows = [];
-let nutritionRows = [];
 let nextId = 100;
 
 function upsertRow(record) {
@@ -17,7 +16,6 @@ jest.unstable_mockModule('@/lib/db', () => ({
   hasStore: jest.fn(() => true),
   getAll: jest.fn(storeName => {
     if (storeName === 'cost_ingredients') return Promise.resolve([...ingredientRows]);
-    if (storeName === 'nutrition_ingredient_values') return Promise.resolve([...nutritionRows]);
     return Promise.resolve([]);
   }),
   runTransaction: jest.fn((storeNames, mode, work) => {
@@ -64,7 +62,6 @@ const {
 
 beforeEach(() => {
   ingredientRows = [];
-  nutritionRows = [];
   nextId = 100;
   jest.clearAllMocks();
 });
@@ -145,13 +142,10 @@ describe('ingredient productCode duplicate guards', () => {
         updatedAt: '2026-02-01T00:00:00.000Z',
       },
     ];
-    nutritionRows = [{ id: 7, productCode: 'PC-001', kcal: 100 }];
-
-    const before = buildIngredientProductCodeDuplicateDiagnostics(ingredientRows, nutritionRows);
+    const before = buildIngredientProductCodeDuplicateDiagnostics(ingredientRows);
     expect(before.groups[0]).toMatchObject({
       keepId: 2,
       removeIds: [1],
-      hasNutritionValue: true,
     });
 
     const result = await repairIngredientProductCodeDuplicates();

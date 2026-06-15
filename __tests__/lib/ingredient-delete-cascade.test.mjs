@@ -1,5 +1,5 @@
 /**
- * B-15: deleteIngredient cascade — 영양값 스냅샷 + undo 복원
+ * B-15: deleteIngredient cascade — 식자재 스냅샷 + undo 복원
  * B-1:  deleteMenuMaster cascade — cost_selling_prices·menu_recipes·nutrition_menu_ref
  */
 import { beforeEach, describe, expect, jest, test } from '@jest/globals';
@@ -78,36 +78,37 @@ jest.unstable_mockModule('@/lib/active-brand', () => ({
 
 // ── 모듈 ─────────────────────────────────────────────────
 
-const { getIngredientValueByCode, deleteIngredientValueByCode, deleteMenuRefsByMenuCode } =
-  await import('../../lib/nutrition/values/store.js');
+const { deleteMenuRefsByMenuCode } = await import('../../lib/nutrition/values/store.js');
 
 const { deleteIngredient, bulkDeleteIngredients } = await import('../../lib/ingredient/store.js');
 const { deleteMenuMaster } = await import('../../lib/menu-master/store.js');
 
-// ── deleteIngredient — 영양값 스냅샷 ────────────────────
+// ── deleteIngredient — 식자재 스냅샷 ────────────────────
 
 describe('deleteIngredient cascade (B-15)', () => {
   beforeEach(() => {
     deleteByIdError = null;
     stores = {
       cost_ingredients: [{ id: 1, productCode: 'PC-001', ingredientName: '밀가루' }],
-      nutrition_ingredient_values: [{ id: 10, productCode: 'PC-001', kcal: 350 }],
       nutrition_allergy_links: [],
     };
   });
 
-  test('반환값이 { ingredient, nutritionSnapshot } 형태다', async () => {
+  test('반환값이 { ingredient, cascadeErrors } 형태다', async () => {
     const result = await deleteIngredient(1);
     expect(result).toMatchObject({
       ingredient: { id: 1, productCode: 'PC-001', ingredientName: '밀가루' },
-      nutritionSnapshot: { id: 10, productCode: 'PC-001', kcal: 350 },
+      cascadeErrors: [],
     });
   });
 
-  test('nutritionSnapshot은 cascade 삭제 전 원본 값을 담는다', async () => {
+  test('식자재 삭제 후에도 반환 스냅샷은 삭제 전 원본 값을 담는다', async () => {
     const result = await deleteIngredient(1);
-    // cascade 삭제 후에도 스냅샷 값은 삭제 전 데이터여야 함
-    expect(result.nutritionSnapshot.kcal).toBe(350);
+    expect(result.ingredient).toMatchObject({
+      id: 1,
+      productCode: 'PC-001',
+      ingredientName: '밀가루',
+    });
   });
 
   test('없는 id면 null 반환', async () => {
@@ -115,78 +116,23 @@ describe('deleteIngredient cascade (B-15)', () => {
     expect(result).toBeNull();
   });
 
-  test('productCode 없는 식자재는 nutritionSnapshot이 null', async () => {
+  test('productCode 없는 식자재도 원본 스냅샷만 반환한다', async () => {
     stores.cost_ingredients.push({ id: 2, ingredientName: '수동항목' });
     const result = await deleteIngredient(2);
-    expect(result.nutritionSnapshot).toBeNull();
-  });
-
-  test('cascade 삭제 실패는 결과에 남기고 원본 삭제는 유지한다', async () => {
-    deleteByIdError = {
-      storeName: 'nutrition_ingredient_values',
-      error: new Error('cascade boom'),
-    };
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-
-    const result = await deleteIngredient(1);
-
-    expect(result.cascadeErrors).toEqual([
-      expect.objectContaining({ step: 'nutritionIngredientValue', message: 'cascade boom' }),
-    ]);
-    expect(stores.cost_ingredients).toEqual([]);
-    expect(stores.nutrition_ingredient_values).toHaveLength(1);
-    expect(warnSpy).toHaveBeenCalledWith(
-      '[ingredient/store] deleteIngredient cascade 일부 실패',
-      result.cascadeErrors
-    );
-    warnSpy.mockRestore();
+    expect(result).toMatchObject({
+      ingredient: { id: 2, ingredientName: '수동항목' },
+      cascadeErrors: [],
+    });
   });
 
   test('일괄 삭제는 항목별 실패를 삼키지 않고 failures에 담는다', async () => {
     stores.cost_ingredients.push({ id: 2, productCode: 'PC-002', ingredientName: '소스' });
-    deleteByIdError = {
-      storeName: 'nutrition_ingredient_values',
-      error: new Error('cascade boom'),
-    };
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     const result = await bulkDeleteIngredients([1, 999, 2]);
 
     expect(result.removed).toHaveLength(2);
     expect(result.failures).toEqual([{ id: 999, message: '항목을 찾을 수 없습니다' }]);
-    expect(result.removed[0].cascadeErrors).toEqual([
-      expect.objectContaining({ step: 'nutritionIngredientValue', message: 'cascade boom' }),
-    ]);
-    warnSpy.mockRestore();
-  });
-});
-
-// ── getIngredientValueByCode ─────────────────────────────
-
-describe('getIngredientValueByCode', () => {
-  beforeEach(() => {
-    stores = {
-      nutrition_ingredient_values: [
-        { id: 10, productCode: 'PC-001', kcal: 350 },
-        { id: 11, productCode: 'PC-002', kcal: 200 },
-      ],
-    };
-  });
-
-  test('productCode로 영양값 레코드 반환', async () => {
-    const row = await getIngredientValueByCode('PC-001');
-    expect(row).toMatchObject({ id: 10, kcal: 350 });
-  });
-
-  test('없는 코드면 null 반환', async () => {
-    const row = await getIngredientValueByCode('NONE');
-    expect(row).toBeNull();
-  });
-
-  test('store가 없으면 null 반환', async () => {
-    stores = {};
-    const row = await getIngredientValueByCode('PC-001');
-    expect(row).toBeNull();
+    expect(result.removed.every(item => item.cascadeErrors.length === 0)).toBe(true);
   });
 });
 
