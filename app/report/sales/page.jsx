@@ -1,8 +1,6 @@
 'use client';
 import { Fragment, useState, useEffect, useMemo } from 'react';
 import { loadXlsx } from '@/lib/excel';
-import { safeSheetName } from '@/lib/sales/export-xlsx';
-import { withDownloadDateSuffix } from '@/lib/download';
 import ReportBuilderShell from '@/components/report/ReportBuilderShell';
 import SalesReportControls from '@/components/report/SalesReportControls';
 import SalesKpiCards from '@/components/report/SalesKpiCards';
@@ -25,6 +23,7 @@ import {
   safeYear,
 } from '@/lib/report/period';
 import { buildSalesStats, CAT_COLORS } from '@/lib/report/build-sales-report';
+import { exportSalesReportWorkbook } from '@/lib/report/sales-export';
 
 const DRAFT_KEY = 'report_draft_sales';
 
@@ -250,96 +249,15 @@ export default function Page() {
   // Excel export — multi-sheet
   const handleExcelExport = async () => {
     const XLSX = await loadXlsx();
-    const periodPart = periodLabel.replace(
-      /(\d+)년 (\d+)월/,
-      (_, y, m) => `${y}년${m.padStart(2, '0')}월`
-    );
-    const fileName = `${asDisplayText(getActiveBrand()?.name, '7번가')}_${periodPart} 판매량 보고서.xlsx`;
-
-    const wb = XLSX.utils.book_new();
-
-    // Sheet 1: 요약
-    const summaryData = [
-      ['항목', '값'],
-      ['기간', periodLabel],
-      ['대상', safeScope === 'all' ? '전체' : safeScope === 'pizza' ? '피자' : '사이드'],
-      ['총 판매량', safeQuantity(kpi?.current)],
-      ['전월 판매량', safeQuantity(kpi?.previous)],
-      [
-        '전월 대비(%)',
-        kpi?.deltaPct != null ? `${kpi.deltaPct >= 0 ? '+' : ''}${kpi.deltaPct.toFixed(1)}%` : '—',
-      ],
-      ['카테고리 수', safeCatShares.length],
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryData), '요약');
-
-    // Sheet 2: 카테고리별 비중
-    const catData = [
-      ['카테고리', '판매량', '비중(%)'],
-      ...safeCatShares.map(c => [
-        asDisplayText(c.name, '미분류'),
-        safeQuantity(c.value),
-        totalShare > 0 ? ((safeQuantity(c.value) / totalShare) * 100).toFixed(1) : '0',
-      ]),
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(catData), '카테고리별 비중');
-
-    // Sheet 3: 전체 메뉴 순위
-    const rankHeaders = ['순위', '메뉴명', '카테고리', '판매량'];
-    if (safeOpts.prevComp) rankHeaders.push('전월', '증감', '증감(%)');
-    if (safeOpts.variant) rankHeaders.push('L판매', 'R판매', '기타');
-    const rankData = [
-      rankHeaders,
-      ...safeGroupRanking.map(m => {
-        const row = [
-          asFiniteNumber(m.rank, 0) ?? 0,
-          asDisplayText(m.name, '—'),
-          asDisplayText(m.category),
-          safeQuantity(m.quantity),
-        ];
-        if (safeOpts.prevComp) {
-          row.push(
-            safeQuantity(m.prevQty),
-            safeQuantity(m.delta),
-            m.deltaPct != null ? `${m.deltaPct >= 0 ? '+' : ''}${m.deltaPct.toFixed(1)}%` : '—'
-          );
-        }
-        if (safeOpts.variant) {
-          const sizes = asObjectArray(m.sizes);
-          const L = sizes.find(s => s.size === 'L')?.quantity || 0;
-          const R = sizes.find(s => s.size === 'R')?.quantity || 0;
-          const etc = safeQuantity(m.quantity) - safeQuantity(L) - safeQuantity(R);
-          row.push(L, R, etc > 0 ? etc : 0);
-        }
-        return row;
-      }),
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rankData), '전체 메뉴 순위');
-
-    // Sheet per category
-    const categories = [
-      ...new Set(safeGroupRanking.map(m => asDisplayText(m.category)).filter(Boolean)),
-    ];
-    const usedSheetNames = new Map();
-    for (const cat of categories) {
-      const items = safeGroupRanking.filter(m => asDisplayText(m.category) === cat);
-      const sheetData = [
-        ['순위', '메뉴명', '판매량', ...(safeOpts.prevComp ? ['전월', '증감'] : [])],
-        ...items.map((m, i) => [
-          i + 1,
-          asDisplayText(m.name, '—'),
-          safeQuantity(m.quantity),
-          ...(safeOpts.prevComp ? [safeQuantity(m.prevQty), safeQuantity(m.delta)] : []),
-        ]),
-      ];
-      const baseName = safeSheetName(cat);
-      const count = usedSheetNames.get(baseName) ?? 0;
-      usedSheetNames.set(baseName, count + 1);
-      const sheetName = count > 0 ? safeSheetName(cat, { suffix: `(${count})` }) : baseName;
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetData), sheetName);
-    }
-
-    XLSX.writeFile(wb, withDownloadDateSuffix(fileName));
+    exportSalesReportWorkbook(XLSX, {
+      periodLabel,
+      scope: safeScope,
+      kpi,
+      catShares: safeCatShares,
+      groupRanking: safeGroupRanking,
+      opts: safeOpts,
+      brandName: getActiveBrand()?.name,
+    });
   };
 
   const todayLabel = new Date().toLocaleDateString('ko-KR').replace(/\. /g, '.').replace(/\.$/, '');

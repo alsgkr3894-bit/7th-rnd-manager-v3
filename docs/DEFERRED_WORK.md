@@ -108,9 +108,10 @@
 #### B-6 / C-P4. 대형 컴포넌트 분해  🟡 ⏸  (C-P4 통합)
 - **진행 현황**:
   - `app/report/cost/page.jsx` ✅ 2026-06-14 — 869→407줄. `CostReportView`·`CostTableView` → `components/report/cost/`로 추출. `groupPizzaLR` 이전 완료.
+  - `app/report/sales/page.jsx` ✅ 2026-06-15 부분 보강 — Excel export 시트/파일명 조립을 `lib/report/sales-export.js`로 분리하고 fixture 테스트 추가. 938→856줄.
 - **잔여 대상** (우선순위 순):
   1. `app/note/_NoteContent.jsx` (~994줄) — table·panel·hook 추가 분리
-  2. `app/report/sales/page.jsx` (~948줄) — 차트 패널·섹션 컴포넌트 분리
+  2. `app/report/sales/page.jsx` (~856줄) — 차트 패널·섹션 컴포넌트 추가 분리
   3. `app/ingredient/manage/IngredientForm.jsx` (~807줄) — 섹션별 서브폼 분리
   4. `app/nutrition/allergen/page.jsx` (~796줄) — 매트릭스·드로어 패널 분리
   5. `app/ingredient/list/page.jsx` — R-5에서 이미 420줄로 축소됨, 추가 분해 필요 시 재평가
