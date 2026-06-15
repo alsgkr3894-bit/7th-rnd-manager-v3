@@ -729,7 +729,8 @@ export default function Page() {
               borderTop: '1px solid var(--divider)',
             }}
           >
-            {edgeFiltered.length}개 메뉴{rows.length !== edgeFiltered.length && ` (전체 ${rows.length}개)`}
+            {edgeFiltered.length}개 메뉴
+            {rows.length !== edgeFiltered.length && ` (전체 ${rows.length}개)`}
             {hasAdjustment && (
               <span style={{ marginLeft: 8, color: 'var(--accent)' }}>
                 · {activePlatform.id !== 'default' ? activePlatform.name : ''}

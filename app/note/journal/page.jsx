@@ -91,7 +91,12 @@ export default function Page() {
             {dayNotes.length > 0 && (
               <button
                 className="btn primary"
-                onClick={() => openPrintWindow(buildJournalPrintHtml(dateLabel, dayNotes), { width: 800, height: 900 })}
+                onClick={() =>
+                  openPrintWindow(buildJournalPrintHtml(dateLabel, dayNotes), {
+                    width: 800,
+                    height: 900,
+                  })
+                }
               >
                 <Icon.download style={{ width: 14, height: 14 }} /> PDF 출력
               </button>

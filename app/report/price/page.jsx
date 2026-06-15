@@ -328,10 +328,30 @@ export default function Page() {
             <div className="paper-section">
               <div className="paper-section-title">원가 영향 식자재</div>
               <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: 13 }}>
-                <span>인상 <b style={{ color: 'var(--negative)' }}>{safeChanges.filter(c => c.changeStatus === '인상').length}건</b></span>
-                <span>인하 <b style={{ color: 'var(--positive)' }}>{safeChanges.filter(c => c.changeStatus === '인하').length}건</b></span>
-                <span>신규 <b style={{ color: 'var(--accent)' }}>{safeChanges.filter(c => c.changeStatus === '신규').length}건</b></span>
-                <span>삭제 <b style={{ color: 'var(--text-3)' }}>{safeChanges.filter(c => c.changeStatus === '삭제').length}건</b></span>
+                <span>
+                  인상{' '}
+                  <b style={{ color: 'var(--negative)' }}>
+                    {safeChanges.filter(c => c.changeStatus === '인상').length}건
+                  </b>
+                </span>
+                <span>
+                  인하{' '}
+                  <b style={{ color: 'var(--positive)' }}>
+                    {safeChanges.filter(c => c.changeStatus === '인하').length}건
+                  </b>
+                </span>
+                <span>
+                  신규{' '}
+                  <b style={{ color: 'var(--accent)' }}>
+                    {safeChanges.filter(c => c.changeStatus === '신규').length}건
+                  </b>
+                </span>
+                <span>
+                  삭제{' '}
+                  <b style={{ color: 'var(--text-3)' }}>
+                    {safeChanges.filter(c => c.changeStatus === '삭제').length}건
+                  </b>
+                </span>
               </div>
             </div>
           )}

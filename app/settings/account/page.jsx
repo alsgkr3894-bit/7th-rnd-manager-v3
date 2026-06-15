@@ -509,14 +509,20 @@ export default function Page() {
               {accounts.map(acc => {
                 const isActive = acc.id === activeId;
                 return (
-                  <tr key={acc.id} style={isActive ? { background: 'var(--accent-soft)' } : undefined}>
+                  <tr
+                    key={acc.id}
+                    style={isActive ? { background: 'var(--accent-soft)' } : undefined}
+                  >
                     <td style={{ fontWeight: isActive ? 700 : 500 }}>{acc.name}</td>
-                    <td className="muted" style={{ fontSize: 12 }}>{acc.email || '—'}</td>
+                    <td className="muted" style={{ fontSize: 12 }}>
+                      {acc.email || '—'}
+                    </td>
                     <td>
                       <span
                         className="chip"
                         style={{
-                          background: acc.role === 'admin' ? 'var(--accent-soft)' : 'var(--surface-2)',
+                          background:
+                            acc.role === 'admin' ? 'var(--accent-soft)' : 'var(--surface-2)',
                           color: acc.role === 'admin' ? 'var(--accent-text)' : 'var(--text-2)',
                         }}
                       >
@@ -535,7 +541,10 @@ export default function Page() {
                           onClick={() => {
                             setActiveAccountId(acc.id);
                             setActiveId(acc.id);
-                            showToast(`${acc.name}(${ROLE_LABELS[acc.role]}) 계정으로 전환됨`, 'ok');
+                            showToast(
+                              `${acc.name}(${ROLE_LABELS[acc.role]}) 계정으로 전환됨`,
+                              'ok'
+                            );
                           }}
                         >
                           전환
@@ -623,31 +632,32 @@ export default function Page() {
           </table>
         </div>
       </div>
-      {deleteConfirmId != null && (() => {
-        const target = accounts.find(a => a.id === deleteConfirmId);
-        return (
-          <ConfirmDialog
-            open
-            message={`"${target?.name}" 계정을 삭제합니다. 되돌릴 수 없습니다.`}
-            danger
-            onConfirm={async () => {
-              setDeleteConfirmId(null);
-              try {
-                await deleteAccount(deleteConfirmId);
-                if (deleteConfirmId === activeId) {
-                  const remaining = accounts.filter(a => a.id !== deleteConfirmId);
-                  setActiveAccountId(remaining[0]?.id ?? null);
+      {deleteConfirmId != null &&
+        (() => {
+          const target = accounts.find(a => a.id === deleteConfirmId);
+          return (
+            <ConfirmDialog
+              open
+              message={`"${target?.name}" 계정을 삭제합니다. 되돌릴 수 없습니다.`}
+              danger
+              onConfirm={async () => {
+                setDeleteConfirmId(null);
+                try {
+                  await deleteAccount(deleteConfirmId);
+                  if (deleteConfirmId === activeId) {
+                    const remaining = accounts.filter(a => a.id !== deleteConfirmId);
+                    setActiveAccountId(remaining[0]?.id ?? null);
+                  }
+                  await loadAccounts();
+                  showToast('계정 삭제됨', 'ok');
+                } catch (err) {
+                  showToast('실패: ' + err.message, 'error');
                 }
-                await loadAccounts();
-                showToast('계정 삭제됨', 'ok');
-              } catch (err) {
-                showToast('실패: ' + err.message, 'error');
-              }
-            }}
-            onCancel={() => setDeleteConfirmId(null)}
-          />
-        );
-      })()}
+              }}
+              onCancel={() => setDeleteConfirmId(null)}
+            />
+          );
+        })()}
       {confirmClearPin && (
         <ConfirmDialog
           open
@@ -660,4 +670,3 @@ export default function Page() {
     </main>
   );
 }
-

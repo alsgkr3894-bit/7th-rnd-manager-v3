@@ -237,181 +237,181 @@ export default function TopBar({
       </button>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
-      <button
-        className="icon-btn"
-        aria-label="새 노트 작성"
-        onClick={() => router.push('/note/write')}
-      >
-        <Icon.plus aria-hidden="true" style={{ width: 18, height: 18 }} />
-      </button>
-
-      <button
-        className="icon-btn"
-        onClick={toggleDark}
-        aria-label={dark ? '라이트 모드로 전환' : '다크 모드로 전환'}
-      >
-        {dark ? (
-          <Icon.sun aria-hidden="true" style={{ width: 18, height: 18 }} />
-        ) : (
-          <Icon.moon aria-hidden="true" style={{ width: 18, height: 18 }} />
-        )}
-      </button>
-
-      <div className="notif-wrap" ref={notifRef}>
         <button
           className="icon-btn"
-          aria-label={`알림${notifs.length > 0 ? ` (${notifs.length}건)` : ''}`}
-          aria-haspopup="menu"
-          aria-expanded={notifOpen}
-          onClick={() => setNotifOpen(v => !v)}
-          style={{ position: 'relative' }}
+          aria-label="새 노트 작성"
+          onClick={() => router.push('/note/write')}
         >
-          <Icon.bell aria-hidden="true" style={{ width: 18, height: 18 }} />
-          {notifs.length > 0 && <span className="notif-dot" aria-hidden="true"></span>}
+          <Icon.plus aria-hidden="true" style={{ width: 18, height: 18 }} />
         </button>
-        {notifOpen && (
-          <div className="notif-pop" role="region" aria-label="알림 목록" aria-live="polite">
-            <div className="notif-head">
-              <div className="notif-title">
-                알림 {notifs.length > 0 && <span className="notif-count">{notifs.length}</span>}
-              </div>
-              <button className="link" onClick={() => setNotifOpen(false)}>
-                모두 읽음
-              </button>
-            </div>
-            <div className="notif-list">
-              {notifs.length === 0 ? (
-                <div
-                  style={{
-                    padding: '24px 16px',
-                    textAlign: 'center',
-                    color: 'var(--text-3)',
-                    fontSize: 13,
-                  }}
-                >
-                  새 알림이 없습니다
-                </div>
-              ) : (
-                notifs.map((n, i) => {
-                  const m = meta[n.kind];
-                  return (
-                    <button
-                      className="notif-item"
-                      key={i}
-                      onClick={() => {
-                        if (n.href) {
-                          router.push(n.href);
-                          setNotifOpen(false);
-                        }
-                      }}
-                    >
-                      <div className="notif-ico" style={{ background: m.bg, color: m.color }}>
-                        {m.ico}
-                      </div>
-                      <div className="notif-body">
-                        <div className="notif-row1">
-                          <span className="notif-name">{n.title}</span>
-                          <span className="notif-time">{n.time}</span>
-                        </div>
-                        <div className="notif-desc">{n.desc}</div>
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        )}
-      </div>
 
-      <div className="profile" ref={profileRef} style={{ position: 'relative' }}>
         <button
-          onClick={() => setProfileOpen(v => !v)}
-          aria-haspopup="menu"
-          aria-expanded={profileOpen}
-          className="profile-btn"
-          style={{
-            border: 'none',
-            background: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '4px 8px',
-            borderRadius: 8,
-            font: 'inherit',
-          }}
+          className="icon-btn"
+          onClick={toggleDark}
+          aria-label={dark ? '라이트 모드로 전환' : '다크 모드로 전환'}
         >
-          <div className="avatar">{profile ? getInitial(profile.name) : '?'}</div>
-          <div className="who">
-            <div className="name">{profile?.name || '...'}</div>
-            <div className="role">{profile?.team || profile?.role || ''}</div>
-          </div>
+          {dark ? (
+            <Icon.sun aria-hidden="true" style={{ width: 18, height: 18 }} />
+          ) : (
+            <Icon.moon aria-hidden="true" style={{ width: 18, height: 18 }} />
+          )}
         </button>
 
-        {profileOpen && (
-          <div
-            role="menu"
+        <div className="notif-wrap" ref={notifRef}>
+          <button
+            className="icon-btn"
+            aria-label={`알림${notifs.length > 0 ? ` (${notifs.length}건)` : ''}`}
+            aria-haspopup="menu"
+            aria-expanded={notifOpen}
+            onClick={() => setNotifOpen(v => !v)}
+            style={{ position: 'relative' }}
+          >
+            <Icon.bell aria-hidden="true" style={{ width: 18, height: 18 }} />
+            {notifs.length > 0 && <span className="notif-dot" aria-hidden="true"></span>}
+          </button>
+          {notifOpen && (
+            <div className="notif-pop" role="region" aria-label="알림 목록" aria-live="polite">
+              <div className="notif-head">
+                <div className="notif-title">
+                  알림 {notifs.length > 0 && <span className="notif-count">{notifs.length}</span>}
+                </div>
+                <button className="link" onClick={() => setNotifOpen(false)}>
+                  모두 읽음
+                </button>
+              </div>
+              <div className="notif-list">
+                {notifs.length === 0 ? (
+                  <div
+                    style={{
+                      padding: '24px 16px',
+                      textAlign: 'center',
+                      color: 'var(--text-3)',
+                      fontSize: 13,
+                    }}
+                  >
+                    새 알림이 없습니다
+                  </div>
+                ) : (
+                  notifs.map((n, i) => {
+                    const m = meta[n.kind];
+                    return (
+                      <button
+                        className="notif-item"
+                        key={i}
+                        onClick={() => {
+                          if (n.href) {
+                            router.push(n.href);
+                            setNotifOpen(false);
+                          }
+                        }}
+                      >
+                        <div className="notif-ico" style={{ background: m.bg, color: m.color }}>
+                          {m.ico}
+                        </div>
+                        <div className="notif-body">
+                          <div className="notif-row1">
+                            <span className="notif-name">{n.title}</span>
+                            <span className="notif-time">{n.time}</span>
+                          </div>
+                          <div className="notif-desc">{n.desc}</div>
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="profile" ref={profileRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => setProfileOpen(v => !v)}
+            aria-haspopup="menu"
+            aria-expanded={profileOpen}
+            className="profile-btn"
             style={{
-              position: 'absolute',
-              top: 'calc(100% + 8px)',
-              right: 0,
-              minWidth: 160,
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 10,
-              boxShadow: 'var(--shadow-lg)',
-              padding: 6,
-              zIndex: 200,
-              animation: 'fade-in 140ms ease both',
+              border: 'none',
+              background: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '4px 8px',
+              borderRadius: 8,
+              font: 'inherit',
             }}
           >
-            <button
-              role="menuitem"
-              onClick={() => {
-                setProfileOpen(false);
-                router.push('/settings/account');
-              }}
+            <div className="avatar">{profile ? getInitial(profile.name) : '?'}</div>
+            <div className="who">
+              <div className="name">{profile?.name || '...'}</div>
+              <div className="role">{profile?.team || profile?.role || ''}</div>
+            </div>
+          </button>
+
+          {profileOpen && (
+            <div
+              role="menu"
               style={{
-                width: '100%',
-                textAlign: 'left',
-                padding: '8px 12px',
-                borderRadius: 7,
-                border: 'none',
-                background: 'none',
-                cursor: 'pointer',
-                fontSize: 13,
-                color: 'var(--text-1)',
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                right: 0,
+                minWidth: 160,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 10,
+                boxShadow: 'var(--shadow-lg)',
+                padding: 6,
+                zIndex: 200,
+                animation: 'fade-in 140ms ease both',
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
             >
-              계정 설정
-            </button>
-            <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
-            <button
-              role="menuitem"
-              onClick={handleLogout}
-              style={{
-                width: '100%',
-                textAlign: 'left',
-                padding: '8px 12px',
-                borderRadius: 7,
-                border: 'none',
-                background: 'none',
-                cursor: 'pointer',
-                fontSize: 13,
-                color: 'var(--negative)',
-                fontWeight: 600,
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-            >
-              로그아웃
-            </button>
-          </div>
-        )}
-      </div>
+              <button
+                role="menuitem"
+                onClick={() => {
+                  setProfileOpen(false);
+                  router.push('/settings/account');
+                }}
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '8px 12px',
+                  borderRadius: 7,
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  color: 'var(--text-1)',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+              >
+                계정 설정
+              </button>
+              <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
+              <button
+                role="menuitem"
+                onClick={handleLogout}
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '8px 12px',
+                  borderRadius: 7,
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  color: 'var(--negative)',
+                  fontWeight: 600,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+              >
+                로그아웃
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

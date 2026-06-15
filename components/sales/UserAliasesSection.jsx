@@ -23,7 +23,6 @@ const INITIAL_FORM = { rawName: '', mappedName: '' };
 const PAGE_SIZE = 20;
 
 export function UserAliasesSection() {
-
   const {
     list,
     adding,
