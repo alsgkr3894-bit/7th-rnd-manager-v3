@@ -9,9 +9,11 @@
 import { describe, test, expect } from '@jest/globals';
 import {
   CRUST_TYPES,
+  CRUST_DISPLAY_NAMES,
   EDGE_CODES,
   EDGE_NAMES,
   EDGE_VARIANTS,
+  NUTRITION_EDGE_GROUPS,
   SIDE_BASE_CRUST,
   ALLERGEN_CRUST_VARIANTS,
   DOUGH_CATEGORY_PREFIX,
@@ -29,6 +31,10 @@ describe('CRUST_TYPES', () => {
 
   test('모든 항목이 문자열이다', () => {
     CRUST_TYPES.forEach(ct => expect(typeof ct).toBe('string'));
+  });
+
+  test('모든 CRUST_TYPES에 표시명이 있다', () => {
+    CRUST_TYPES.forEach(ct => expect(typeof CRUST_DISPLAY_NAMES[ct]).toBe('string'));
   });
 });
 
@@ -76,6 +82,32 @@ describe('EDGE_VARIANTS — EDGE_CODES와 동기화 불변식', () => {
   test('EDGE_CODES 전체를 커버한다 (누락 없음)', () => {
     const variantCodes = new Set(EDGE_VARIANTS.map(v => v.edgeCode));
     expect(variantCodes).toEqual(codeSet);
+  });
+});
+
+describe('NUTRITION_EDGE_GROUPS — 운영 기준 총엣지', () => {
+  test('석쇠, 치즈크러스트, 골드스윗, 씬바샤삭 4개 그룹을 가진다', () => {
+    expect(NUTRITION_EDGE_GROUPS.map(group => group.label)).toEqual([
+      '석쇠',
+      '치즈크러스트',
+      '골드스윗',
+      '씬바샤삭',
+    ]);
+  });
+
+  test('씬바샤삭은 L 사이즈만 가진다', () => {
+    const thin = NUTRITION_EDGE_GROUPS.find(group => group.key === 'thin');
+    expect(thin.entries).toEqual([{ size: 'L', crustType: '씬바사삭L' }]);
+  });
+
+  test('치즈크러스트와 골드스윗만 엣지 조정값 입력 대상이다', () => {
+    const adjustmentGroups = NUTRITION_EDGE_GROUPS.filter(
+      group => group.inputType === 'edgeAdjustment'
+    );
+    expect(adjustmentGroups.map(group => group.label)).toEqual(['치즈크러스트', '골드스윗']);
+    adjustmentGroups
+      .flatMap(group => group.entries)
+      .forEach(entry => expect(EDGE_CODES).toContain(entry.edgeCode));
   });
 });
 

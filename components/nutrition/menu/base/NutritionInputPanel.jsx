@@ -1,7 +1,7 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
-import { CRUST_TYPES } from '@/lib/nutrition/values/store';
+import { CRUST_TYPES, CRUST_DISPLAY_NAMES } from '@/lib/nutrition/values/store';
 import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
 
 /**
@@ -88,7 +88,7 @@ export function NutritionInputPanel({
                 gap: 4,
               }}
             >
-              {ct}
+              {CRUST_DISPLAY_NAMES[ct] || ct}
               {done && (
                 <span
                   style={{
