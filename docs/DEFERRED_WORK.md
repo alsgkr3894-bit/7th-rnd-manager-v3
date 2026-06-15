@@ -95,12 +95,9 @@
 
 ### 🟡 중위험 — 단일 모듈 구조 변경 / 테스트 필요
 
-#### B-3 Phase 2. 알레르기 링크 테이블(legacy) store 정의 제거  🟡 ⏸
-- **파일**: `lib/db/constants.js`·`lib/db/module-stores.js`·`lib/db/schema/nutrition.js`(store 정의 6곳), `lib/nutrition/migrate-to-ingredient.js`
-- **완료(Phase 1, 2026-06-13)**: `lib/nutrition/allergen/store.js` dead code 6종 제거 — `MASTER_STORE`·`getAllAllergenMasters`·`getAllAllergenLinks`·`getAllergenLinkByIngredient`·`saveIngredientAllergens`·`deleteAllergenLink` 전부 외부 참조 없음. `allergenRate` 계산을 `nutrition_allergy_links`(legacy) → `cost_ingredients.allergens`로 교체.
-- **잔여 Phase 2**: `nutrition_allergy_links` store 정의 제거(constants·module-stores·schema 6곳), `migrate-to-ingredient.js`의 allergen 파트 제거(origin 파트는 유지).
-- **왜 보류**: store 제거는 브랜드별 DB 마이그레이션·데이터 확인 필요 — 외부 조건 대기.
-- **주의**: `deleteAllergenLinksByIngredient`는 `lib/ingredient/store.js` dynamic import에서 여전히 호출됨 — store 제거 후에도 `hasStore` 가드로 no-op 처리되므로 Phase 2 이후에도 안전.
+#### B-3 Phase 2. 알레르기 링크 테이블(legacy) store 정의 제거  🟡 ✅ 완료(2026-06-15)
+- **완료(Phase 1, 2026-06-13)**: `lib/nutrition/allergen/store.js` dead code 6종 제거.
+- **완료(Phase 2, 2026-06-15)**: DB v20 — `nutrition_allergy_links` store 정의 제거(constants·module-stores·schema), v20 마이그레이션에서 기존 DB의 store를 `deleteObjectStore`로 삭제. `migrate-to-ingredient.js` allergen 파트 제거(origin 파트 유지). 7번가 DB 0/0 확인 후 착수.
 
 #### B-5. useDBLoad 전면 확산  🟡 ⏸
 - **파일**: 직접 `getAll()`·`initDB()` 호출하는 페이지 다수
