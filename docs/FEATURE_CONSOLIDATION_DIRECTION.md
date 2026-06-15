@@ -440,6 +440,7 @@
 | 메뉴마스터 로딩/빈 상태 컴포넌트 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 메뉴마스터 테이블 패널/페이지네이션 컴포넌트 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 메뉴마스터 상단 액션 버튼 컴포넌트 분리 | 구현 완료 | 이번 보강(2026-06-16) |
+| 메뉴마스터 모달/확인창 컴포넌트 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 메뉴마스터 기준 판매가 sync 정책 | 구현 완료 | `7742193` |
 | 영양성분 메뉴 추가의 메뉴마스터 기준 강제 | 구현 완료 | `68aa43e` |
 | 메뉴마스터 누락 영양 메뉴 진단/정리 | 구현 완료 | `5a8bbcd`, `54834de` |
@@ -659,7 +660,7 @@
 | 표기정보/영양 정책 정리 | 구현 완료: 엣지 직접 입력, 관리자 제한, 씬바샤삭 L 전용, 식자재 영양값 자동계산/store 제거 |
 | legacy 알레르기 링크 store | 구현 완료: `nutrition_allergy_links` 신규 생성 차단 및 v20 마이그레이션 삭제 |
 | 제때데이터 흐름 정리 | 구현 완료 |
-| 메뉴마스터 화면 구조 | 구현 완료: 상단 액션, 통계 카드, 필터 패널, 테이블 카드/페이지네이션, 레시피/원가 상태 cell, 테이블 row/status/action, 로딩/빈 상태 렌더링을 `MenuMasterHeaderActions`·`MenuMasterStatsRow`·`MenuMasterFilterPanel`·`MenuMasterTablePanel`·`MenuRecipeCostCell`·`MenuMasterTableRow`·`MenuMasterLoadingTable`·`MenuMasterEmptyState`로 분리해 page는 데이터 로드와 액션 연결 중심으로 축소 |
+| 메뉴마스터 화면 구조 | 구현 완료: 상단 액션, 통계 카드, 필터 패널, 테이블 카드/페이지네이션, 레시피/원가 상태 cell, 테이블 row/status/action, 로딩/빈 상태, 편집/삭제/초기화 모달 렌더링을 `MenuMasterHeaderActions`·`MenuMasterStatsRow`·`MenuMasterFilterPanel`·`MenuMasterTablePanel`·`MenuRecipeCostCell`·`MenuMasterTableRow`·`MenuMasterLoadingTable`·`MenuMasterEmptyState`·`MenuMasterDialogs`로 분리해 page는 데이터 로드와 액션 연결 중심으로 축소 |
 | 판매량 분석 통합 | 구현 완료: 중복 분석 route redirect + 허브/검색 팔레트/홈/사이드바 링크 정리 |
 | 판매량 보고서 export 구조 | 구현 완료: Excel 시트/파일명 조립을 helper로 분리하고 fixture로 고정 |
 | 판매량 보고서 미리보기 구조 | 구현 완료: page에서 미리보기 렌더링을 분리해 데이터 준비와 출력 UI 책임을 구분 |

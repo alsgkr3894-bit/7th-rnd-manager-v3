@@ -4,7 +4,6 @@ import { useMounted } from '@/hooks/useMounted';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { usePagination } from '@/hooks/usePagination';
 import { showToast } from '@/components/Toast';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { initDB } from '@/lib/db';
 import { downloadCsvText } from '@/lib/download';
@@ -20,9 +19,8 @@ import { resetAllMenuPrices } from '@/lib/cost/menu-price';
 import { seedMenuMaster } from '@/lib/menu-master/seed';
 import { normalizePersonalPizzaCodes } from '@/lib/menu-master/normalize';
 import { MenuPriceUploadCard } from '@/components/cost/menu-price/MenuPriceUploadCard';
-import { BulkPriceModal } from '@/components/cost/menu-price/BulkPriceModal';
+import { MenuMasterDialogs } from '@/components/menu-master/MenuMasterDialogs';
 import { MenuMasterEmptyState } from '@/components/menu-master/MenuMasterEmptyState';
-import { MenuMasterEditModal } from '@/components/menu-master/MenuMasterEditModal';
 import { MenuMasterFilterPanel } from '@/components/menu-master/MenuMasterFilterPanel';
 import { MenuMasterHeaderActions } from '@/components/menu-master/MenuMasterHeaderActions';
 import { MenuMasterLoadingTable } from '@/components/menu-master/MenuMasterLoadingTable';
@@ -49,33 +47,6 @@ const PIZZA_CATEGORIES = [
   MENU_CATEGORY.DRINK,
   MENU_CATEGORY.EDGE,
 ];
-const DELETE_PLAN_LABELS = {
-  cost_selling_prices: '판매가',
-  menu_recipes: '메뉴 레시피',
-  nutrition_menu_ref: '영양 메뉴',
-  nutrition_raw_values: '영양값',
-};
-
-function buildMenuDeleteMessage(row, plan, loading) {
-  const lines = [
-    `"${row.menuName}" 메뉴를 삭제합니다.`,
-    '연결된 판매가, 메뉴 레시피, 영양 참조 데이터도 함께 정리됩니다.',
-  ];
-  if (loading) {
-    lines.push('영향 범위를 계산 중입니다.');
-    return lines.join('\n');
-  }
-  if (!plan) {
-    lines.push('영향 범위를 불러오지 못했습니다.');
-    return lines.join('\n');
-  }
-  const counts = plan.linkedCounts || {};
-  const summary = Object.entries(DELETE_PLAN_LABELS)
-    .map(([storeName, label]) => `${label} ${Number(counts[storeName]) || 0}건`)
-    .join(' · ');
-  lines.push(`삭제 영향: ${summary}`);
-  return lines.join('\n');
-}
 
 /* ── 메인 페이지 ── */
 export default function Page() {
@@ -351,55 +322,31 @@ export default function Page() {
       {/* 일괄 업로드 — 업로드 시 마스터로 자동 반영 */}
       <MenuPriceUploadCard onReplaced={load} />
 
-      {editRow && (
-        <MenuMasterEditModal
-          row={editRow}
-          isNew={false}
-          onSave={handleSaveRow}
-          onClose={() => setEditRow(null)}
-          presetCategories={brandCats}
-          onRecipeSaved={load}
-        />
-      )}
-
-      {addOpen && (
-        <MenuMasterEditModal
-          row={null}
-          isNew
-          onSave={handleSaveRow}
-          onClose={() => setAddOpen(false)}
-          presetCategories={brandCats}
-          onRecipeSaved={load}
-        />
-      )}
-
-      {bulkModal && <BulkPriceModal onClose={() => setBulkModal(false)} onDone={load} />}
-
-      {deleteTarget && (
-        <ConfirmDialog
-          open
-          message={buildMenuDeleteMessage(deleteTarget, deletePlan, deletePlanLoading)}
-          danger
-          onConfirm={() => handleDeleteRow(deleteTarget)}
-          onCancel={() => {
-            setDeleteTarget(null);
-            setDeletePlan(null);
-          }}
-        />
-      )}
-
-      {confirmReset && (
-        <ConfirmDialog
-          open
-          message="메뉴 마스터 전체를 삭제합니다. 계속할까요?"
-          danger
-          onConfirm={() => {
-            setConfirmReset(false);
-            handleResetAndSeed();
-          }}
-          onCancel={() => setConfirmReset(false)}
-        />
-      )}
+      <MenuMasterDialogs
+        editRow={editRow}
+        addOpen={addOpen}
+        bulkOpen={bulkModal}
+        deleteTarget={deleteTarget}
+        deletePlan={deletePlan}
+        deletePlanLoading={deletePlanLoading}
+        confirmReset={confirmReset}
+        brandCats={brandCats}
+        onSaveRow={handleSaveRow}
+        onRecipeSaved={load}
+        onCloseEdit={() => setEditRow(null)}
+        onCloseAdd={() => setAddOpen(false)}
+        onCloseBulk={() => setBulkModal(false)}
+        onConfirmDelete={handleDeleteRow}
+        onCancelDelete={() => {
+          setDeleteTarget(null);
+          setDeletePlan(null);
+        }}
+        onConfirmReset={() => {
+          setConfirmReset(false);
+          handleResetAndSeed();
+        }}
+        onCancelReset={() => setConfirmReset(false)}
+      />
     </main>
   );
 }
