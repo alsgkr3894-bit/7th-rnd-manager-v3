@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useNoteContextMenuState } from './useNoteContextMenuState';
 import { NoteCardGrid } from './_NoteCardGrid';
 import { NoteContextMenu } from './_NoteContextMenu';
 import { NoteDetailModal } from './_NoteDetailModal';
@@ -27,31 +28,15 @@ export function NoteListBody({
   onTagClick,
   onLoadMore,
 }) {
-  const [ctxMenu, setCtxMenu] = useState(null);
   const [focusedRow, setFocusedRow] = useState(null);
-
-  useEffect(() => {
-    if (!ctxMenu) return;
-    const handler = e => {
-      if (e.key === 'Escape') setCtxMenu(null);
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [ctxMenu]);
-
-  const openContextMenu = (note, e) => {
-    e.preventDefault();
-    const x = Math.min(e.clientX || 0, window.innerWidth - 180);
-    const y = Math.min(e.clientY || 0, window.innerHeight - 220);
-    setCtxMenu({ x, y, note });
-  };
+  const { ctxMenu, openContextMenu, closeContextMenu } = useNoteContextMenuState();
 
   return (
     <>
       <NoteContextMenu
         ctxMenu={ctxMenu}
         pinnedIds={pinnedIds}
-        onClose={() => setCtxMenu(null)}
+        onClose={closeContextMenu}
         onEdit={onEditNote}
         onTogglePin={onTogglePin}
         onCopy={note => onCopy(note, { stopPropagation: () => {} })}

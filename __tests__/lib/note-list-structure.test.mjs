@@ -9,6 +9,10 @@ describe('note list structure', () => {
     const cardGridSource = readFileSync(resolve('app/note/_NoteCardGrid.jsx'), 'utf8');
     const tableViewSource = readFileSync(resolve('app/note/_NoteTableView.jsx'), 'utf8');
     const bodySource = readFileSync(resolve('app/note/_NoteListBody.jsx'), 'utf8');
+    const contextMenuStateSource = readFileSync(
+      resolve('app/note/useNoteContextMenuState.js'),
+      'utf8'
+    );
     const headerSource = readFileSync(resolve('app/note/_NoteListHeader.jsx'), 'utf8');
     const statesSource = readFileSync(resolve('app/note/_NoteListStates.jsx'), 'utf8');
     const dialogsSource = readFileSync(resolve('app/note/_NotePageDialogs.jsx'), 'utf8');
@@ -97,10 +101,16 @@ describe('note list structure', () => {
     expect(bodySource).toContain('<NoteCardGrid');
     expect(bodySource).toContain('<NoteTableView');
     expect(bodySource).toContain('<NoteDetailModal');
-    expect(bodySource).toContain('const [ctxMenu');
+    expect(bodySource).toContain('useNoteContextMenuState()');
     expect(bodySource).toContain('const [focusedRow');
-    expect(bodySource).toContain('window.innerWidth - 180');
-    expect(bodySource).toContain("e.key === 'Escape'");
+    expect(bodySource).not.toContain('const [ctxMenu');
+    expect(bodySource).not.toContain('window.innerWidth - 180');
+    expect(bodySource).not.toContain("e.key === 'Escape'");
+    expect(contextMenuStateSource).toContain('export function useNoteContextMenuState');
+    expect(contextMenuStateSource).toContain('const [ctxMenu');
+    expect(contextMenuStateSource).toContain('window.innerWidth - 180');
+    expect(contextMenuStateSource).toContain("e.key === 'Escape'");
+    expect(contextMenuStateSource).toContain('closeContextMenu');
     expect(cardGridSource).toContain('export function NoteCardGrid');
     expect(cardGridSource).toContain('className="stagger note-card-wrap"');
     expect(tableViewSource).toContain('export function NoteTableView');
