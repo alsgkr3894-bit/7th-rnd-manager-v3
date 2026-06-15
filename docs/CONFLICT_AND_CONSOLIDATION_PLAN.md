@@ -194,6 +194,13 @@
 
 ### 3.4 엣지 관리 화면 중복
 
+**구현 상태**
+
+- 구현 완료: `4a7152f refactor: redirect legacy edge dough route`
+- `/cost/recipe?tab=edges`를 엣지 관리 primary route로 고정했다.
+- `/cost/edge-dough`는 기존 북마크 호환용 redirect route로만 유지한다.
+- `COST_COMMON_EDGES_ROUTE`가 `/cost/recipe?tab=edges`를 가리키고, 사이드바에 `/cost/edge-dough`가 직접 노출되지 않는지 테스트한다.
+
 **관련 파일**
 
 - `app/cost/edge-dough/page.jsx`
@@ -204,8 +211,8 @@
 
 **현재 상태**
 
-- `/cost/edge-dough`는 독립 엣지·도우 원가 화면이다.
-- `/cost/recipe?tab=edges`는 `CommonManageView` 안에서 같은 `cost_edge_dough` store를 편집한다.
+- `/cost/recipe?tab=edges`는 `CommonManageView` 안에서 `cost_edge_dough` store를 편집하는 primary route다.
+- `/cost/edge-dough`는 `/cost/recipe?tab=edges`로 redirect한다.
 - `/cost/manage`는 `/cost/recipe?tab=groups`로 redirect한다.
 
 **충돌 가능성**
