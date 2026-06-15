@@ -422,6 +422,7 @@
 | 중복 route redirect와 사이드바 정리 | 구현 완료 | `5591241` |
 | 모바일 원가 대표 route 정리 | 구현 완료 | `5591241` |
 | 엣지 관리 primary route 정리 | 구현 완료 | `4a7152f` |
+| 정적 route 분류표와 runtime QA route 파생 | 구현 완료 | `823f539` |
 | 카테고리 판정 helper 이름 정리 | 구현 완료 | `3381fef` |
 | 보고서 사이드바 route metadata 연동 | 구현 완료 | `a43b683` |
 | 구형 legacy cost editor 컴포넌트 제거 | 구현 완료 | `3c074f3` |
@@ -540,6 +541,7 @@
 | route redirect와 사이드바 정리 | 구현 완료 |
 | 모바일 원가 대표 route 정리 | 구현 완료: 하단 탭을 원가마진표 기준으로 연결 |
 | 엣지 관리 primary route 정리 | 구현 완료: `/cost/recipe?tab=edges` 기준, `/cost/edge-dough` redirect |
+| 정적 route 분류표 | 구현 완료: `sidebar`, `hub`, `redirect`, `internal-flow`, `dynamic-detail` 기준으로 runtime QA route 파생 |
 | 카테고리 판정 helper 이름 정리 | 구현 완료: 정책 helper와 도메인 alias 분리 |
 | 보고서 사이드바 route metadata 연동 | 구현 완료: `KIND_META` 5종 생성 route 기준 |
 | 구형 코드 제거 | 구현 완료: 레시피/detail store 기준 제거 |

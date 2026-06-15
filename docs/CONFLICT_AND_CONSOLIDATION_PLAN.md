@@ -427,11 +427,19 @@
 
 ### 3.10 내비게이션과 route 분류
 
+**구현 상태**
+
+- 구현 완료: `823f539 refactor: centralize route classification`
+- `lib/navigation/route-classification.js`에서 정적 route를 `sidebar`, `hub`, `redirect`, `internal-flow`, `dynamic-detail`로 분류한다.
+- `scripts/full-rt.mjs`는 하드코딩 route 배열 대신 route 분류표에서 main/china4/direct-entry QA route를 파생한다.
+- 회귀 테스트는 route 중복, legacy redirect target, runtime QA route 파생 기준을 확인한다.
+
 **관련 파일**
 
 - `lib/menu.js`
 - `app/cost/page.jsx`
 - `app/menu-sales/page.jsx`
+- `lib/navigation/route-classification.js`
 - `scripts/full-rt.mjs`
 
 **현재 상태**
@@ -459,8 +467,9 @@
 
 **통합 방향**
 
-- route를 `sidebar`, `hub`, `redirect`, `internal-flow`, `dynamic-detail`로 명시 분류한다.
-- `scripts/full-rt.mjs`와 문서가 이 분류를 공유하게 한다.
+- 완료: route를 `sidebar`, `hub`, `redirect`, `internal-flow`, `dynamic-detail`로 명시 분류한다.
+- 완료: `scripts/full-rt.mjs`와 테스트가 이 분류를 공유한다.
+- 유지 방향: 신규 정적 route 추가 시 `ROUTE_CLASSIFICATIONS`에 분류와 runtime QA 포함 여부를 먼저 등록한다.
 
 ---
 
