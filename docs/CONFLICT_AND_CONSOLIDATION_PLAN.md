@@ -228,6 +228,12 @@
 
 ### 3.5 메뉴 판매량 redirect route가 허브 카드에 노출
 
+**구현 상태**
+
+- 구현 완료: `6c87b23 feat: consolidate menu sales analysis routes`, `7fda5b8 feat: align sales navigation entrypoints`
+- `/menu-sales` 허브는 `/menu-sales/rank-compare` 단일 분석 카드만 노출한다.
+- `/menu-sales/rank`, `/menu-sales/compare`는 호환 redirect route로만 유지하며 허브와 검색 팔레트에는 직접 노출하지 않는다.
+
 **관련 파일**
 
 - `app/menu-sales/page.jsx`
@@ -238,7 +244,7 @@
 **현재 상태**
 
 - `/menu-sales/rank`와 `/menu-sales/compare`는 `/menu-sales/rank-compare`로 redirect한다.
-- 그런데 `/menu-sales` 허브에는 `순위 및 비교`, `기간 비교`, `판매 순위표` 카드가 모두 보인다.
+- `/menu-sales` 허브와 검색 팔레트는 `순위 및 비교` 단일 분석 route만 노출한다.
 
 **충돌 가능성**
 
@@ -786,6 +792,12 @@
 
 ### 8.7 모바일 원가 탭 진입점이 데스크톱과 다름
 
+**구현 상태**
+
+- 구현 완료: `5591241 refactor: redirect duplicate cost routes`
+- 모바일 원가 탭은 구형 `/cost/pizza` 대신 `COST_MARGIN_ROUTE`로 이동한다.
+- 사이드바 테스트에서 모바일 원가 탭이 원가마진표 route를 가리키는지 검증한다.
+
 **관련 파일**
 
 - `lib/menu.js`
@@ -797,7 +809,7 @@
 
 - 데스크톱 사이드바의 원가 주요 진입점은 `/cost/ingredient-price`, `/cost/recipe`, `/cost/margin`이다.
 - 원가 허브는 `/cost/pizza`, `/cost/edge-dough`, `/cost/side`, `/cost/personal`, `/cost/set`, `/cost/all-summary`까지 노출한다.
-- 모바일 하단 탭은 원가 대표 href를 `/cost/pizza`로 둔다.
+- 모바일 하단 탭은 원가 대표 href를 `COST_MARGIN_ROUTE`로 둔다.
 
 **충돌 가능성**
 
