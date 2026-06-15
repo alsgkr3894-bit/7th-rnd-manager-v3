@@ -1,19 +1,13 @@
 'use client';
 import { Suspense } from 'react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { SAMPLE_CATEGORIES } from '@/lib/sample';
-import { useSampleBatchMode } from '@/hooks/useSampleBatchMode';
-import { useConfirmDialog } from '@/hooks/useConfirmDialog';
-import { useSampleCompareMode } from '@/hooks/useSampleCompareMode';
 import { SampleCalendarView } from './_SampleCalendarView';
 import { SampleCompareBar } from './_SampleCompareBar';
 import { SampleFilterControls } from './_SampleFilterControls';
 import { SamplePageActions } from './_SamplePageActions';
 import { SamplePageDialogs } from './_SamplePageDialogs';
 import { SampleRecordsView } from './_SampleRecordsView';
-import { SAMPLE_SORT_OPTIONS, useSamplePageState } from './useSamplePageState';
-import { useSampleRecordActions } from './useSampleRecordActions';
+import { useSamplePageController } from './useSamplePageController';
 
 /* ── 메인 페이지 ── */
 export default function Page() {
@@ -31,93 +25,19 @@ export default function Page() {
 }
 
 function SampleContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-
   const {
-    samples,
-    setSamples,
-    search,
-    searchHistory,
-    showSearchHist,
-    setShowSearchHist,
-    catFilter,
-    setCatFilter,
-    ratingMin,
-    setRatingMin,
-    sortBy,
-    applySortBy,
-    viewMode,
-    applyViewMode,
-    calMonth,
-    goPrevMonth,
-    goNextMonth,
-    detailRec,
-    setDetailRec,
-    loading,
-    loadError,
-    reload,
-    handleSearchChange,
-    closeSearchHistorySoon,
-    selectSearchHistory,
-    filtered,
-    catCounts,
-    ratingDist,
-    calDays,
-    samplesByDate,
-    today,
-  } = useSamplePageState({ searchParams, pathname });
+    loadErrorProps,
+    headerProps,
+    actionsProps,
+    filterProps,
+    calendarVisible,
+    calendarProps,
+    recordsProps,
+    compareBarProps,
+    dialogsProps,
+  } = useSamplePageController();
 
-  const {
-    batchMode,
-    setBatchMode,
-    selected,
-    toggleSelect,
-    exitBatchMode,
-    handleBatchDelete,
-    confirmOpen,
-    setConfirmOpen,
-    confirmBatchDelete,
-  } = useSampleBatchMode(ids => setSamples(prev => prev.filter(s => !ids.includes(s.id))), reload);
-
-  const { showConfirm, confirmElement } = useConfirmDialog();
-
-  const { handleDelete, handleCopy, handleRatingChange } = useSampleRecordActions({
-    setSamples,
-    setDetailRec,
-    reload,
-    showConfirm,
-  });
-
-  const {
-    compareMode,
-    setCompareMode,
-    compareSet,
-    toggleCompare,
-    showCompare,
-    setShowCompare,
-    compareItems,
-    compareIdxMap,
-    exitCompareMode,
-  } = useSampleCompareMode(samples);
-
-  const headerActions = (
-    <SamplePageActions
-      filtered={filtered}
-      batchMode={batchMode}
-      compareMode={compareMode}
-      selected={selected}
-      onBatchDelete={handleBatchDelete}
-      onExitBatchMode={exitBatchMode}
-      onExitCompareMode={exitCompareMode}
-      onStartBatchMode={() => setBatchMode(true)}
-      onStartCompareMode={() => setCompareMode(true)}
-      onCreateSample={() => router.push('/note/sample/write')}
-    />
-  );
-
-  if (loadError) {
+  if (loadErrorProps.loadError) {
     return (
       <main className="main">
         <div
@@ -126,9 +46,9 @@ function SampleContent() {
         >
           <div style={{ fontWeight: 700, marginBottom: 8 }}>데이터 로드 실패</div>
           <div style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 16 }}>
-            {loadError.message || String(loadError)}
+            {loadErrorProps.loadError.message || String(loadErrorProps.loadError)}
           </div>
-          <button className="btn primary" onClick={reload}>
+          <button className="btn primary" onClick={loadErrorProps.onRetry}>
             다시 시도
           </button>
         </div>
@@ -139,92 +59,21 @@ function SampleContent() {
   return (
     <main className="main page-enter">
       <PageHeader
-        breadcrumb={['샘플기록']}
-        title="샘플기록"
-        sub={`총 ${samples.length}개 샘플`}
-        actions={headerActions}
+        breadcrumb={headerProps.breadcrumb}
+        title={headerProps.title}
+        sub={headerProps.sub}
+        actions={<SamplePageActions {...actionsProps} />}
       />
 
-      <SampleFilterControls
-        categories={SAMPLE_CATEGORIES}
-        catCounts={catCounts}
-        catFilter={catFilter}
-        onCatFilterChange={setCatFilter}
-        ratingMin={ratingMin}
-        onRatingMinChange={setRatingMin}
-        ratingDist={ratingDist}
-        sampleCount={samples.length}
-        sortOptions={SAMPLE_SORT_OPTIONS}
-        sortBy={sortBy}
-        onSortChange={applySortBy}
-        viewMode={viewMode}
-        onViewModeChange={applyViewMode}
-        search={search}
-        onSearchChange={handleSearchChange}
-        showSearchHist={showSearchHist}
-        onSearchFocus={() => setShowSearchHist(true)}
-        onSearchBlur={closeSearchHistorySoon}
-        searchHistory={searchHistory}
-        onSelectSearchHistory={selectSearchHistory}
-      />
+      <SampleFilterControls {...filterProps} />
 
-      {!loading && viewMode === 'calendar' && (
-        <SampleCalendarView
-          days={calDays}
-          calMonth={calMonth}
-          samplesByDate={samplesByDate}
-          today={today}
-          onPrevMonth={goPrevMonth}
-          onNextMonth={goNextMonth}
-          onOpenSample={setDetailRec}
-        />
-      )}
+      {calendarVisible && <SampleCalendarView {...calendarProps} />}
 
-      <SampleRecordsView
-        loading={loading}
-        viewMode={viewMode}
-        filtered={filtered}
-        catFilter={catFilter}
-        ratingMin={ratingMin}
-        sortBy={sortBy}
-        search={search}
-        batchMode={batchMode}
-        selected={selected}
-        toggleSelect={toggleSelect}
-        compareMode={compareMode}
-        toggleCompare={toggleCompare}
-        compareIdxMap={compareIdxMap}
-        onOpenSample={setDetailRec}
-        onEditSample={sample => router.push(`/note/sample/${sample.id}`)}
-        onCopySample={handleCopy}
-        onDeleteSample={handleDelete}
-        onRatingChange={handleRatingChange}
-        onCreateSample={() => router.push('/note/sample/write')}
-      />
+      <SampleRecordsView {...recordsProps} />
 
-      <SampleCompareBar
-        compareMode={compareMode}
-        compareCount={compareSet.size}
-        onOpenCompare={() => setShowCompare(true)}
-      />
+      <SampleCompareBar {...compareBarProps} />
 
-      <SamplePageDialogs
-        detailRec={detailRec}
-        showCompare={showCompare}
-        compareItems={compareItems}
-        confirmOpen={confirmOpen}
-        selectedCount={selected.size}
-        confirmElement={confirmElement}
-        onCloseDetail={() => setDetailRec(null)}
-        onEditDetail={() => {
-          setDetailRec(null);
-          router.push(`/note/sample/${detailRec.id}`);
-        }}
-        onDeleteDetail={() => handleDelete(detailRec)}
-        onCloseCompare={() => setShowCompare(false)}
-        onConfirmBatchDelete={confirmBatchDelete}
-        onCancelBatchDelete={() => setConfirmOpen(false)}
-      />
+      <SamplePageDialogs {...dialogsProps} />
     </main>
   );
 }

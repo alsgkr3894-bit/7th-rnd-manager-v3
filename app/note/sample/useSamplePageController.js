@@ -1,0 +1,170 @@
+'use client';
+
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { SAMPLE_CATEGORIES } from '@/lib/sample';
+import { useSampleBatchMode } from '@/hooks/useSampleBatchMode';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import { useSampleCompareMode } from '@/hooks/useSampleCompareMode';
+import { SAMPLE_SORT_OPTIONS, useSamplePageState } from './useSamplePageState';
+import { useSampleRecordActions } from './useSampleRecordActions';
+
+export function useSamplePageController() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  const pageState = useSamplePageState({ searchParams, pathname });
+  const {
+    samples,
+    setSamples,
+    search,
+    searchHistory,
+    showSearchHist,
+    setShowSearchHist,
+    catFilter,
+    setCatFilter,
+    ratingMin,
+    setRatingMin,
+    sortBy,
+    applySortBy,
+    viewMode,
+    applyViewMode,
+    calMonth,
+    goPrevMonth,
+    goNextMonth,
+    detailRec,
+    setDetailRec,
+    loading,
+    loadError,
+    reload,
+    handleSearchChange,
+    closeSearchHistorySoon,
+    selectSearchHistory,
+    filtered,
+    catCounts,
+    ratingDist,
+    calDays,
+    samplesByDate,
+    today,
+  } = pageState;
+
+  const batch = useSampleBatchMode(
+    ids => setSamples(prev => prev.filter(sample => !ids.includes(sample.id))),
+    reload
+  );
+
+  const { showConfirm, confirmElement } = useConfirmDialog();
+
+  const recordActions = useSampleRecordActions({
+    setSamples,
+    setDetailRec,
+    reload,
+    showConfirm,
+  });
+
+  const compare = useSampleCompareMode(samples);
+
+  const openWrite = () => router.push('/note/sample/write');
+  const openSampleEditor = sample => router.push(`/note/sample/${sample.id}`);
+  const editDetail = () => {
+    if (!detailRec) return;
+    setDetailRec(null);
+    router.push(`/note/sample/${detailRec.id}`);
+  };
+
+  return {
+    loadErrorProps: {
+      loadError,
+      onRetry: reload,
+    },
+    headerProps: {
+      breadcrumb: ['샘플기록'],
+      title: '샘플기록',
+      sub: `총 ${samples.length}개 샘플`,
+    },
+    actionsProps: {
+      filtered,
+      batchMode: batch.batchMode,
+      compareMode: compare.compareMode,
+      selected: batch.selected,
+      onBatchDelete: batch.handleBatchDelete,
+      onExitBatchMode: batch.exitBatchMode,
+      onExitCompareMode: compare.exitCompareMode,
+      onStartBatchMode: () => batch.setBatchMode(true),
+      onStartCompareMode: () => compare.setCompareMode(true),
+      onCreateSample: openWrite,
+    },
+    filterProps: {
+      categories: SAMPLE_CATEGORIES,
+      catCounts,
+      catFilter,
+      onCatFilterChange: setCatFilter,
+      ratingMin,
+      onRatingMinChange: setRatingMin,
+      ratingDist,
+      sampleCount: samples.length,
+      sortOptions: SAMPLE_SORT_OPTIONS,
+      sortBy,
+      onSortChange: applySortBy,
+      viewMode,
+      onViewModeChange: applyViewMode,
+      search,
+      onSearchChange: handleSearchChange,
+      showSearchHist,
+      onSearchFocus: () => setShowSearchHist(true),
+      onSearchBlur: closeSearchHistorySoon,
+      searchHistory,
+      onSelectSearchHistory: selectSearchHistory,
+    },
+    calendarVisible: !loading && viewMode === 'calendar',
+    calendarProps: {
+      days: calDays,
+      calMonth,
+      samplesByDate,
+      today,
+      onPrevMonth: goPrevMonth,
+      onNextMonth: goNextMonth,
+      onOpenSample: setDetailRec,
+    },
+    recordsProps: {
+      loading,
+      viewMode,
+      filtered,
+      catFilter,
+      ratingMin,
+      sortBy,
+      search,
+      batchMode: batch.batchMode,
+      selected: batch.selected,
+      toggleSelect: batch.toggleSelect,
+      compareMode: compare.compareMode,
+      toggleCompare: compare.toggleCompare,
+      compareIdxMap: compare.compareIdxMap,
+      onOpenSample: setDetailRec,
+      onEditSample: openSampleEditor,
+      onCopySample: recordActions.handleCopy,
+      onDeleteSample: recordActions.handleDelete,
+      onRatingChange: recordActions.handleRatingChange,
+      onCreateSample: openWrite,
+    },
+    compareBarProps: {
+      compareMode: compare.compareMode,
+      compareCount: compare.compareSet.size,
+      onOpenCompare: () => compare.setShowCompare(true),
+    },
+    dialogsProps: {
+      detailRec,
+      showCompare: compare.showCompare,
+      compareItems: compare.compareItems,
+      confirmOpen: batch.confirmOpen,
+      selectedCount: batch.selected.size,
+      confirmElement,
+      onCloseDetail: () => setDetailRec(null),
+      onEditDetail: editDetail,
+      onDeleteDetail: () => detailRec && recordActions.handleDelete(detailRec),
+      onCloseCompare: () => compare.setShowCompare(false),
+      onConfirmBatchDelete: batch.confirmBatchDelete,
+      onCancelBatchDelete: () => batch.setConfirmOpen(false),
+    },
+  };
+}

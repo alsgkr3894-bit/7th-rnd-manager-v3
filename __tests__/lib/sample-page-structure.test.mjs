@@ -21,6 +21,10 @@ const loadingGridSource = readFileSync(resolve('app/note/sample/_SampleLoadingGr
 const emptyStateSource = readFileSync(resolve('app/note/sample/_SampleEmptyState.jsx'), 'utf8');
 const gridViewSource = readFileSync(resolve('app/note/sample/_SampleGridView.jsx'), 'utf8');
 const listViewSource = readFileSync(resolve('app/note/sample/_SampleListView.jsx'), 'utf8');
+const controllerSource = readFileSync(
+  resolve('app/note/sample/useSamplePageController.js'),
+  'utf8'
+);
 const stateHookSource = readFileSync(resolve('app/note/sample/useSamplePageState.js'), 'utf8');
 const stateUtilsSource = readFileSync(resolve('app/note/sample/samplePageStateUtils.js'), 'utf8');
 const actionsHookSource = readFileSync(
@@ -37,10 +41,7 @@ describe('sample page structure', () => {
     expect(pageSource).toContain("import { SamplePageDialogs } from './_SamplePageDialogs'");
     expect(pageSource).toContain("import { SampleRecordsView } from './_SampleRecordsView'");
     expect(pageSource).toContain(
-      "import { SAMPLE_SORT_OPTIONS, useSamplePageState } from './useSamplePageState'"
-    );
-    expect(pageSource).toContain(
-      "import { useSampleRecordActions } from './useSampleRecordActions'"
+      "import { useSamplePageController } from './useSamplePageController'"
     );
     expect(pageSource).toContain('<SamplePageActions');
     expect(pageSource).toContain('<SampleFilterControls');
@@ -48,10 +49,23 @@ describe('sample page structure', () => {
     expect(pageSource).toContain('<SampleCompareBar');
     expect(pageSource).toContain('<SamplePageDialogs');
     expect(pageSource).toContain('<SampleRecordsView');
-    expect(pageSource).toContain('useSamplePageState({ searchParams, pathname })');
-    expect(pageSource).toContain('useSampleRecordActions({');
+    expect(pageSource).toContain('useSamplePageController()');
+    expect(pageSource).toContain('actions={<SamplePageActions {...actionsProps} />}');
+    expect(pageSource).toContain('<SampleFilterControls {...filterProps} />');
+    expect(pageSource).toContain('<SampleRecordsView {...recordsProps} />');
+    expect(pageSource).toContain('<SamplePageDialogs {...dialogsProps} />');
     expect(pageSource).not.toContain('downloadCsv');
     expect(pageSource).not.toContain('printCurrentPageWithDownloadDate');
+    expect(pageSource).not.toContain('useRouter');
+    expect(pageSource).not.toContain('useSearchParams');
+    expect(pageSource).not.toContain('usePathname');
+    expect(pageSource).not.toContain('useSamplePageState({ searchParams, pathname })');
+    expect(pageSource).not.toContain('useSampleRecordActions({');
+    expect(pageSource).not.toContain('useSampleBatchMode');
+    expect(pageSource).not.toContain('useSampleCompareMode');
+    expect(pageSource).not.toContain('useConfirmDialog');
+    expect(pageSource).not.toContain('SAMPLE_CATEGORIES');
+    expect(pageSource).not.toContain('SAMPLE_SORT_OPTIONS');
     expect(pageSource).not.toContain('<ConfirmDialog');
     expect(pageSource).not.toContain('<CompareModal');
     expect(pageSource).not.toContain('<SampleDetailModal');
@@ -131,6 +145,22 @@ describe('sample page structure', () => {
   });
 
   test('sample hooks own page data state and record mutations', () => {
+    expect(controllerSource).toContain('export function useSamplePageController');
+    expect(controllerSource).toContain('useRouter()');
+    expect(controllerSource).toContain('useSearchParams()');
+    expect(controllerSource).toContain('usePathname()');
+    expect(controllerSource).toContain('useSamplePageState({ searchParams, pathname })');
+    expect(controllerSource).toContain('useSampleBatchMode(');
+    expect(controllerSource).toContain('useConfirmDialog()');
+    expect(controllerSource).toContain('useSampleRecordActions({');
+    expect(controllerSource).toContain('useSampleCompareMode(samples)');
+    expect(controllerSource).toContain('loadErrorProps');
+    expect(controllerSource).toContain('actionsProps');
+    expect(controllerSource).toContain('filterProps');
+    expect(controllerSource).toContain('recordsProps');
+    expect(controllerSource).toContain('dialogsProps');
+    expect(controllerSource).toContain("router.push('/note/sample/write')");
+    expect(controllerSource).toContain('router.push(`/note/sample/${sample.id}`)');
     expect(stateHookSource).toContain('export function useSamplePageState');
     expect(stateHookSource).toContain('export { SAMPLE_SORT_OPTIONS }');
     expect(stateHookSource).toContain('getAllSamples');
