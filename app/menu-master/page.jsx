@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useMounted } from '@/hooks/useMounted';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Pagination } from '@/components/ui/Pagination';
 import { usePagination } from '@/hooks/usePagination';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -28,7 +27,7 @@ import { MenuMasterEditModal } from '@/components/menu-master/MenuMasterEditModa
 import { MenuMasterFilterPanel } from '@/components/menu-master/MenuMasterFilterPanel';
 import { MenuMasterLoadingTable } from '@/components/menu-master/MenuMasterLoadingTable';
 import { MenuMasterStatsRow } from '@/components/menu-master/MenuMasterStatsRow';
-import { MenuMasterTableRow } from '@/components/menu-master/MenuMasterTableRow';
+import { MenuMasterTablePanel } from '@/components/menu-master/MenuMasterTablePanel';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
@@ -356,63 +355,19 @@ export default function Page() {
           />
 
           {/* 테이블 */}
-          <div className="card table-card">
-            {filtered.length === 0 ? (
-              <div
-                style={{
-                  padding: '40px 0',
-                  textAlign: 'center',
-                  color: 'var(--text-3)',
-                  fontSize: 13,
-                }}
-              >
-                조건에 맞는 항목이 없습니다
-              </div>
-            ) : (
-              <div className="table-wrap">
-                <table className="data-table stagger-rows">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 145 }}>메뉴코드</th>
-                      <th>메뉴명</th>
-                      <th style={{ width: 200 }}>분류 태그</th>
-                      <th style={{ width: 60 }}>사이즈</th>
-                      <th style={{ width: 100, textAlign: 'right' }}>판매가</th>
-                      <th style={{ width: 120 }}>레시피/원가</th>
-                      <th style={{ width: 80 }}>상태</th>
-                      <th style={{ width: 60 }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paged.map(row => (
-                      <MenuMasterTableRow
-                        key={row.id}
-                        row={row}
-                        recipeSummary={recipeSummaryMap.get(row.menuCode)}
-                        isViewer={isViewer}
-                        onEdit={setEditRow}
-                        onDelete={openDeleteDialog}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            <div style={{ borderTop: '1px solid var(--divider)' }}>
-              <Pagination
-                page={page}
-                totalPages={totalPages}
-                onPage={goTo}
-                total={total}
-                pageSize={60}
-              />
-              {totalPages <= 1 && (
-                <div style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text-3)' }}>
-                  {filtered.length}개 표시 / 전체 {rows.length}개
-                </div>
-              )}
-            </div>
-          </div>
+          <MenuMasterTablePanel
+            filteredRows={filtered}
+            pagedRows={paged}
+            totalRows={rows}
+            recipeSummaryMap={recipeSummaryMap}
+            isViewer={isViewer}
+            onEdit={setEditRow}
+            onDelete={openDeleteDialog}
+            page={page}
+            totalPages={totalPages}
+            onPage={goTo}
+            total={total}
+          />
         </div>
       )}
 
