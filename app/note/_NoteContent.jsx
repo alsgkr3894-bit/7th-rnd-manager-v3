@@ -1,11 +1,7 @@
 'use client';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Icon } from '@/components/icons';
-import { PageHeader } from '@/components/ui/PageHeader';
-import { NoteCardSkeleton } from '@/components/ui/Skeleton';
 import { showToast } from '@/components/Toast';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { initDB } from '@/lib/db';
 import { sharedRestoreRecord as restoreRecord } from '@/lib/db/shared';
 import { getAllNotes, addNote, deleteNote, updateNote } from '@/lib/note';
@@ -28,8 +24,10 @@ import { NoteDetailModal } from './_NoteDetailModal';
 import { NoteFilterControls } from './_NoteFilterControls';
 import { NoteStatsSummary } from './_NoteStatsSummary';
 import { NoteTableView } from './_NoteTableView';
-import { NoteBatchToolbar } from './_NoteBatchToolbar';
 import { NotePresetBar } from './_NotePresetBar';
+import { NoteListHeader } from './_NoteListHeader';
+import { NoteListStates } from './_NoteListStates';
+import { NotePageDialogs } from './_NotePageDialogs';
 
 const NOTE_VIEW_KEYS = new Set(['card', 'table']);
 
@@ -303,92 +301,35 @@ export function NoteContent() {
 
   return (
     <main className="main page-enter">
-      <ConfirmDialog
-        open={confirmBatch}
-        title={`노트 ${selected.size}개를 삭제할까요?`}
-        message="삭제한 후 잠시 동안 실행취소가 가능합니다."
-        confirmLabel="삭제"
-        cancelLabel="취소"
-        danger
-        onConfirm={confirmBatchDelete}
-        onCancel={() => setConfirmBatch(false)}
-      />
-      <ConfirmDialog
-        open={confirmDeletePreset !== null}
-        title="프리셋을 삭제할까요?"
-        message={`"${presets[confirmDeletePreset]?.name}" 프리셋이 삭제됩니다.`}
-        confirmLabel="삭제"
-        cancelLabel="취소"
-        danger
-        onConfirm={() => {
+      <NotePageDialogs
+        confirmBatch={confirmBatch}
+        selectedCount={selected.size}
+        onConfirmBatchDelete={confirmBatchDelete}
+        onCancelBatchDelete={() => setConfirmBatch(false)}
+        confirmDeletePreset={confirmDeletePreset}
+        presetName={presets[confirmDeletePreset]?.name}
+        onConfirmPresetDelete={() => {
           deletePreset(confirmDeletePreset);
           setConfirmDeletePreset(null);
         }}
-        onCancel={() => setConfirmDeletePreset(null)}
+        onCancelPresetDelete={() => setConfirmDeletePreset(null)}
+        singleDeleteOpen={singleDeleteNote !== null}
+        onConfirmSingleDelete={() => execDelete(singleDeleteNote)}
+        onCancelSingleDelete={() => setSingleDeleteNote(null)}
       />
-      <ConfirmDialog
-        open={singleDeleteNote !== null}
-        title="노트를 삭제할까요?"
-        message="삭제한 후 잠시 동안 실행취소가 가능합니다."
-        confirmLabel="삭제"
-        cancelLabel="취소"
-        danger
-        onConfirm={() => execDelete(singleDeleteNote)}
-        onCancel={() => setSingleDeleteNote(null)}
-      />
-      <PageHeader
-        breadcrumb={['메뉴개발노트', '노트 목록']}
-        title="메뉴개발노트"
-        sub={`전체 ${notes.length}개`}
-        actions={
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              flexWrap: 'wrap',
-              minWidth: 0,
-              width: '100%',
-              maxWidth: '100%',
-              flex: '1 1 100%',
-            }}
-          >
-            {batchMode ? (
-              <NoteBatchToolbar
-                selected={selected}
-                onStatusChange={handleBatchStatusChange}
-                onDelete={handleBatchDelete}
-                onExit={exitBatch}
-              />
-            ) : (
-              <>
-                {counts[NOTE_STATUS.REPORTING] > 0 && (
-                  <button
-                    className="btn"
-                    onClick={handleBulkCopy}
-                    style={{
-                      color: 'var(--color-reporting)',
-                      borderColor: 'var(--color-reporting-dim, #6B3FCB40)',
-                    }}
-                  >
-                    <Icon.doc style={{ width: 13, height: 13 }} /> 보고예정 일괄복사
-                  </button>
-                )}
-                <button className="btn" onClick={() => setBatchMode(true)}>
-                  선택
-                </button>
-                <button className="btn" onClick={() => router.push('/note/calendar')}>
-                  달력 뷰
-                </button>
-                <button className="btn" onClick={() => router.push('/note/board')}>
-                  칸반 보드
-                </button>
-                <button className="btn primary" onClick={() => router.push('/note/write')}>
-                  <Icon.plus style={{ width: 14, height: 14 }} /> 노트 작성
-                </button>
-              </>
-            )}
-          </div>
-        }
+      <NoteListHeader
+        notesCount={notes.length}
+        batchMode={batchMode}
+        selected={selected}
+        reportingCount={counts[NOTE_STATUS.REPORTING]}
+        onBulkCopy={handleBulkCopy}
+        onEnterBatchMode={() => setBatchMode(true)}
+        onCalendar={() => router.push('/note/calendar')}
+        onBoard={() => router.push('/note/board')}
+        onWrite={() => router.push('/note/write')}
+        onBatchStatusChange={handleBatchStatusChange}
+        onBatchDelete={handleBatchDelete}
+        onBatchExit={exitBatch}
       />
 
       <NoteStatsSummary stats={stats} counts={counts} />
@@ -425,50 +366,13 @@ export function NoteContent() {
         onDelete={idx => setConfirmDeletePreset(idx)}
       />
 
-      {/* 스켈레톤 로딩 */}
-      {loading && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-            gap: 16,
-            marginTop: 24,
-          }}
-        >
-          {Array.from({ length: 6 }).map((_, i) => (
-            <NoteCardSkeleton key={i} />
-          ))}
-        </div>
-      )}
-
-      {/* 빈 상태 */}
-      {!loading && notes.length === 0 && (
-        <div className="empty-state" style={{ marginTop: 16 }}>
-          <div className="empty-icon-wrap empty-float">
-            <Icon.note style={{ width: 32, height: 32 }} />
-          </div>
-          <div className="empty-title">아직 노트가 없어요</div>
-          <div className="empty-sub">메뉴 테스트 결과나 아이디어를 기록해보세요.</div>
-          <button
-            className="btn primary"
-            style={{ marginTop: 8 }}
-            onClick={() => router.push('/note/write')}
-          >
-            <Icon.plus style={{ width: 13, height: 13 }} /> 첫 노트 작성
-          </button>
-        </div>
-      )}
-      {!loading && notes.length > 0 && filtered.length === 0 && (
-        <div className="empty-state" style={{ marginTop: 16 }}>
-          <div className="empty-icon-wrap">
-            <Icon.search style={{ width: 32, height: 32 }} />
-          </div>
-          <div className="empty-title">
-            {search ? `"${search}" 검색 결과가 없어요` : '조건에 맞는 노트가 없어요'}
-          </div>
-          <div className="empty-sub">필터를 바꾸거나 다른 검색어를 입력해보세요.</div>
-        </div>
-      )}
+      <NoteListStates
+        loading={loading}
+        notesCount={notes.length}
+        filteredCount={filtered.length}
+        search={search}
+        onCreate={() => router.push('/note/write')}
+      />
 
       {/* 컨텍스트 메뉴 */}
       <NoteContextMenu

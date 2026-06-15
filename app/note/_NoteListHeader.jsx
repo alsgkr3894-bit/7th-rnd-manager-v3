@@ -1,0 +1,76 @@
+'use client';
+import { Icon } from '@/components/icons';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { NoteBatchToolbar } from './_NoteBatchToolbar';
+
+const ACTIONS_STYLE = {
+  display: 'flex',
+  gap: 8,
+  flexWrap: 'wrap',
+  minWidth: 0,
+  width: '100%',
+  maxWidth: '100%',
+  flex: '1 1 100%',
+};
+
+export function NoteListHeader({
+  notesCount,
+  batchMode,
+  selected,
+  reportingCount,
+  onBulkCopy,
+  onEnterBatchMode,
+  onCalendar,
+  onBoard,
+  onWrite,
+  onBatchStatusChange,
+  onBatchDelete,
+  onBatchExit,
+}) {
+  return (
+    <PageHeader
+      breadcrumb={['메뉴개발노트', '노트 목록']}
+      title="메뉴개발노트"
+      sub={`전체 ${notesCount}개`}
+      actions={
+        <div style={ACTIONS_STYLE}>
+          {batchMode ? (
+            <NoteBatchToolbar
+              selected={selected}
+              onStatusChange={onBatchStatusChange}
+              onDelete={onBatchDelete}
+              onExit={onBatchExit}
+            />
+          ) : (
+            <>
+              {reportingCount > 0 && (
+                <button
+                  className="btn"
+                  onClick={onBulkCopy}
+                  style={{
+                    color: 'var(--color-reporting)',
+                    borderColor: 'var(--color-reporting-dim, #6B3FCB40)',
+                  }}
+                >
+                  <Icon.doc style={{ width: 13, height: 13 }} /> 보고예정 일괄복사
+                </button>
+              )}
+              <button className="btn" onClick={onEnterBatchMode}>
+                선택
+              </button>
+              <button className="btn" onClick={onCalendar}>
+                달력 뷰
+              </button>
+              <button className="btn" onClick={onBoard}>
+                칸반 보드
+              </button>
+              <button className="btn primary" onClick={onWrite}>
+                <Icon.plus style={{ width: 14, height: 14 }} /> 노트 작성
+              </button>
+            </>
+          )}
+        </div>
+      }
+    />
+  );
+}
