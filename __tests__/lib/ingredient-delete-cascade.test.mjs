@@ -82,7 +82,9 @@ const { deleteMenuRefsByMenuCode } = await import('../../lib/nutrition/values/st
 const dbModule = await import('@/lib/db');
 
 const { deleteIngredient, bulkDeleteIngredients } = await import('../../lib/ingredient/store.js');
-const { deleteMenuMaster, upsertMenuMaster } = await import('../../lib/menu-master/store.js');
+const { deleteMenuMaster, getMenuDeletePlan, upsertMenuMaster } = await import(
+  '../../lib/menu-master/store.js'
+);
 
 // ── deleteIngredient — 식자재 스냅샷 ────────────────────
 
@@ -231,6 +233,21 @@ describe('deleteMenuMaster cascade (B-1)', () => {
       'readwrite',
       expect.any(Function)
     );
+  });
+
+  test('삭제 전에 연결 판매가, 원가 레시피, 영양 데이터 영향 건수를 계산한다', async () => {
+    const plan = await getMenuDeletePlan(100);
+
+    expect(plan).toMatchObject({
+      menuCode: 'PZ-001',
+      linkedCounts: {
+        cost_selling_prices: 1,
+        menu_recipes: 1,
+        nutrition_menu_ref: 1,
+        nutrition_raw_values: 1,
+      },
+      totalLinkedRows: 4,
+    });
   });
 });
 

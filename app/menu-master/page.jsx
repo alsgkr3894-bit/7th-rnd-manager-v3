@@ -16,6 +16,7 @@ import {
   getAllMenuMaster,
   upsertMenuMaster,
   deleteMenuMaster,
+  getMenuDeletePlan,
   resetAllMenuMaster,
   pushMasterToPrices,
 } from '@/lib/menu-master';
@@ -88,6 +89,34 @@ const RECIPE_STATUS_LABEL = {
   [MENU_RECIPE_SUMMARY_STATUS.UNSUPPORTED]: '미지원',
 };
 
+const DELETE_PLAN_LABELS = {
+  cost_selling_prices: '판매가',
+  menu_recipes: '메뉴 레시피',
+  nutrition_menu_ref: '영양 메뉴',
+  nutrition_raw_values: '영양값',
+};
+
+function buildMenuDeleteMessage(row, plan, loading) {
+  const lines = [
+    `"${row.menuName}" 메뉴를 삭제합니다.`,
+    '연결된 판매가, 메뉴 레시피, 영양 참조 데이터도 함께 정리됩니다.',
+  ];
+  if (loading) {
+    lines.push('영향 범위를 계산 중입니다.');
+    return lines.join('\n');
+  }
+  if (!plan) {
+    lines.push('영향 범위를 불러오지 못했습니다.');
+    return lines.join('\n');
+  }
+  const counts = plan.linkedCounts || {};
+  const summary = Object.entries(DELETE_PLAN_LABELS)
+    .map(([storeName, label]) => `${label} ${Number(counts[storeName]) || 0}건`)
+    .join(' · ');
+  lines.push(`삭제 영향: ${summary}`);
+  return lines.join('\n');
+}
+
 function RecipeCostCell({ summary }) {
   if (!summary) {
     return <span style={{ fontSize: 11, color: 'var(--text-4)' }}>계산 중</span>;
@@ -133,6 +162,8 @@ export default function Page() {
   const [bulkModal, setBulkModal] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null); // 개별 삭제 대상 row
+  const [deletePlan, setDeletePlan] = useState(null);
+  const [deletePlanLoading, setDeletePlanLoading] = useState(false);
   const [recipeSummaryMap, setRecipeSummaryMap] = useState(new Map());
   // 브랜드 카테고리 프리셋 — SSR/첫 렌더는 서버와 동일하게 기본값(피자)로 두고,
   // 마운트 후 활성 브랜드에 맞춰 교정한다(하이드레이션 불일치 방지).
@@ -214,6 +245,21 @@ export default function Page() {
       await load();
     } catch (err) {
       showToast('삭제 실패: ' + err.message, 'error');
+    }
+  }
+
+  async function openDeleteDialog(row) {
+    setDeleteTarget(row);
+    setDeletePlan(null);
+    setDeletePlanLoading(true);
+    try {
+      const plan = await getMenuDeletePlan(row.id);
+      if (mountedRef.current) setDeletePlan(plan);
+    } catch (err) {
+      console.warn('[menu-master] 삭제 영향 계산 실패', err);
+      if (mountedRef.current) setDeletePlan(null);
+    } finally {
+      if (mountedRef.current) setDeletePlanLoading(false);
     }
   }
 
@@ -699,7 +745,7 @@ export default function Page() {
                             </button>
                             <button
                               className="btn sm ghost"
-                              onClick={() => setDeleteTarget(row)}
+                              onClick={() => openDeleteDialog(row)}
                               style={{ color: 'var(--negative)' }}
                               title="삭제"
                               disabled={isViewer}
@@ -762,10 +808,13 @@ export default function Page() {
       {deleteTarget && (
         <ConfirmDialog
           open
-          message={`"${deleteTarget.menuName}" 메뉴를 삭제합니다.\n연결된 판매가, 메뉴 레시피, 영양 참조 데이터도 함께 정리됩니다.`}
+          message={buildMenuDeleteMessage(deleteTarget, deletePlan, deletePlanLoading)}
           danger
           onConfirm={() => handleDeleteRow(deleteTarget)}
-          onCancel={() => setDeleteTarget(null)}
+          onCancel={() => {
+            setDeleteTarget(null);
+            setDeletePlan(null);
+          }}
         />
       )}
 
