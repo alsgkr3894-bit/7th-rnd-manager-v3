@@ -64,9 +64,7 @@ export function RestorePreview({
     <>
       {/* ── 2. 미리보기 ──────────────────────────────────── */}
       <div className="card" style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>
-          2. 백업 파일 미리보기
-        </h2>
+        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>2. 백업 파일 미리보기</h2>
         <div
           style={{
             display: 'flex',
@@ -133,8 +131,7 @@ export function RestorePreview({
               {missingStores.length > 5 ? ` 외 ${missingStores.length - 5}개` : ''}
             </span>
             <br />
-            전체 복원을 원하면 먼저 <b>시스템 설정 → 위험 영역 → "DB 완전 재생성"</b>을
-            실행하세요.
+            전체 복원을 원하면 먼저 <b>시스템 설정 → 위험 영역 → "DB 완전 재생성"</b>을 실행하세요.
           </div>
         )}
         {unknownStores.length > 0 && (
@@ -188,8 +185,7 @@ export function RestorePreview({
           onToggle={toggleScope}
           getCountLabel={(key, g) => {
             const count = g.stores.reduce(
-              (sum, n) =>
-                sum + (Array.isArray(parsed.stores?.[n]) ? parsed.stores[n].length : 0),
+              (sum, n) => sum + (Array.isArray(parsed.stores?.[n]) ? parsed.stores[n].length : 0),
               0
             );
             return `백업 ${formatNumber(count)}건`;
@@ -208,9 +204,7 @@ export function RestorePreview({
             alignItems: 'center',
           }}
         >
-          <span
-            style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 600, marginRight: 2 }}
-          >
+          <span style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 600, marginRight: 2 }}>
             선택:
           </span>
           {selectedKeys.length === 0 ? (
@@ -237,8 +231,8 @@ export function RestorePreview({
             lineHeight: 1.5,
           }}
         >
-          <b style={{ color: 'var(--text-2)' }}>항상 포함:</b> 시스템 설정·메뉴마스터·보고서 등
-          공통 데이터는 모듈 선택과 무관하게 복원됩니다.
+          <b style={{ color: 'var(--text-2)' }}>항상 포함:</b> 시스템 설정·메뉴마스터·보고서 등 공통
+          데이터는 모듈 선택과 무관하게 복원됩니다.
         </div>
         {/* 백업 생성 시 실패한 store 경고 */}
         {(parsed._failedStores?.length ?? 0) > 0 && (
@@ -260,9 +254,7 @@ export function RestorePreview({
                 .map(f => f.store)
                 .slice(0, 5)
                 .join(', ')}
-              {parsed._failedStores.length > 5
-                ? ` 외 ${parsed._failedStores.length - 5}개`
-                : ''}
+              {parsed._failedStores.length > 5 ? ` 외 ${parsed._failedStores.length - 5}개` : ''}
             </span>
           </div>
         )}

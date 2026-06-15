@@ -3,11 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  arrayMove,
-} from '@dnd-kit/sortable';
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { calcMarginRate, MENU_CATEGORIES } from '@/lib/recipe';
@@ -207,7 +203,12 @@ export function RecipeEditor({
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
           {onDelete && (
-            <button className="btn" style={{ color: 'var(--negative)' }} onClick={onDelete} disabled={saving}>
+            <button
+              className="btn"
+              style={{ color: 'var(--negative)' }}
+              onClick={onDelete}
+              disabled={saving}
+            >
               삭제
             </button>
           )}

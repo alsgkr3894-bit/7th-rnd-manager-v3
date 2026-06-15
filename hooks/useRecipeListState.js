@@ -55,11 +55,7 @@ function normalizeRecipeSort(value) {
  */
 export function useRecipeListState({ recipes, allGroups, initialSearch = '' }) {
   const [search, setSearch] = useState(initialSearch);
-  const [customOrder, setCustomOrder] = useLocalStorage(
-    KEYS.RECIPE_SORT,
-    {},
-    normalizeRecipeSort
-  );
+  const [customOrder, setCustomOrder] = useLocalStorage(KEYS.RECIPE_SORT, {}, normalizeRecipeSort);
   const [dragSrc, setDragSrc] = useState(null); // { cat, fromIdx }
   const [dropTarget, setDropTarget] = useState(null); // { cat, beforeIdx }
 

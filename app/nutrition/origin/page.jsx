@@ -24,10 +24,7 @@ import { MENU_ORDER_KEY, loadOrder, saveOrder } from '@/lib/nutrition/order';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
 import { loadMenuNames, saveMenuNames } from '@/lib/nutrition/menu-name-override';
-import {
-  buildOriginIngredientRows,
-  buildOriginMenuRows,
-} from '@/lib/nutrition/origin/build';
+import { buildOriginIngredientRows, buildOriginMenuRows } from '@/lib/nutrition/origin/build';
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 

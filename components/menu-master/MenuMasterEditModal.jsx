@@ -109,7 +109,9 @@ export function MenuMasterEditModal({ row, isNew, onSave, onClose, presetCategor
         placeItems: 'center',
         zIndex: 300,
       }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={e => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         className="card"
@@ -147,13 +149,20 @@ export function MenuMasterEditModal({ row, isNew, onSave, onClose, presetCategor
                 <input
                   className="input"
                   value={form.menuCode}
-                  onChange={e => { set('menuCode', e.target.value.toUpperCase()); setErrors(p => ({ ...p, menuCode: undefined })); }}
+                  onChange={e => {
+                    set('menuCode', e.target.value.toUpperCase());
+                    setErrors(p => ({ ...p, menuCode: undefined }));
+                  }}
                   placeholder="예) P-OR-005-L"
                   style={{ fontFamily: 'monospace' }}
                   aria-describedby={errors.menuCode ? 'menu-master-code-error' : undefined}
                 />
                 {errors.menuCode && (
-                  <div id="menu-master-code-error" role="alert" style={{ fontSize: 11, color: 'var(--negative)', marginTop: 4 }}>
+                  <div
+                    id="menu-master-code-error"
+                    role="alert"
+                    style={{ fontSize: 11, color: 'var(--negative)', marginTop: 4 }}
+                  >
                     {errors.menuCode}
                   </div>
                 )}
@@ -191,12 +200,19 @@ export function MenuMasterEditModal({ row, isNew, onSave, onClose, presetCategor
             <input
               className="input"
               value={form.menuName}
-              onChange={e => { set('menuName', e.target.value); setErrors(p => ({ ...p, menuName: undefined })); }}
+              onChange={e => {
+                set('menuName', e.target.value);
+                setErrors(p => ({ ...p, menuName: undefined }));
+              }}
               placeholder="예) 슈퍼콤비네이션"
               aria-describedby={errors.menuName ? 'menu-master-name-error' : undefined}
             />
             {errors.menuName && (
-              <div id="menu-master-name-error" role="alert" style={{ fontSize: 11, color: 'var(--negative)', marginTop: 4 }}>
+              <div
+                id="menu-master-name-error"
+                role="alert"
+                style={{ fontSize: 11, color: 'var(--negative)', marginTop: 4 }}
+              >
                 {errors.menuName}
               </div>
             )}

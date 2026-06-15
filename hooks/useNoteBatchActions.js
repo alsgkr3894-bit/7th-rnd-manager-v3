@@ -60,10 +60,16 @@ export function useNoteBatchActions({ setNotes, load }) {
   }
 
   return {
-    batchMode, setBatchMode,
-    selected, setSelected,
-    confirmBatch, setConfirmBatch,
-    toggleSelect, exitBatch,
-    handleBatchDelete, handleBatchStatusChange, confirmBatchDelete,
+    batchMode,
+    setBatchMode,
+    selected,
+    setSelected,
+    confirmBatch,
+    setConfirmBatch,
+    toggleSelect,
+    exitBatch,
+    handleBatchDelete,
+    handleBatchStatusChange,
+    confirmBatchDelete,
   };
 }

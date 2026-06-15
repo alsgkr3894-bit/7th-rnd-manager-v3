@@ -38,6 +38,21 @@ function run(command, args) {
   });
 }
 
+function cleanupStaleDirs() {
+  let cleaned = 0;
+  try {
+    readdirSync('.')
+      .filter(f => f.startsWith('.next.stale-'))
+      .forEach(f => {
+        try {
+          rmSync(f, { recursive: true, force: true });
+          cleaned += 1;
+        } catch {}
+      });
+  } catch {}
+  return cleaned;
+}
+
 // dev 서버 가동 중이면 중단 (포트 3000·3001, 프로세스 감지)
 const [busy3000, busy3001] = await Promise.all([isPortBusy(3000), isPortBusy(3001)]);
 if (busy3000 || busy3001 || hasNextDevProcess()) {
@@ -55,15 +70,15 @@ try {
   // .next가 없으면 무시
 }
 
-await run(process.platform === 'win32' ? 'npx.cmd' : 'npx', ['next', 'build']);
-
-// 오래된 .next.stale-* 정리
+let buildFailed = false;
 try {
-  readdirSync('.')
-    .filter(f => f.startsWith('.next.stale-'))
-    .forEach(f => {
-      try {
-        rmSync(f, { recursive: true, force: true });
-      } catch {}
-    });
-} catch {}
+  await run(process.platform === 'win32' ? 'npx.cmd' : 'npx', ['next', 'build']);
+} catch (error) {
+  buildFailed = true;
+  console.error(`\n✖ clean build failed: ${error.message}`);
+} finally {
+  const cleaned = cleanupStaleDirs();
+  if (cleaned > 0) console.error(`clean-build: removed ${cleaned} stale .next directory(s).`);
+}
+
+if (buildFailed) process.exit(1);

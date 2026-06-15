@@ -2,10 +2,7 @@
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import { getMenuCodeBase } from '@/lib/menu-master/code-policy';
-import {
-  normalizeNutritionCategory,
-  NUTRITION_CATEGORY_OPTIONS,
-} from '@/lib/nutrition/menu-group';
+import { normalizeNutritionCategory, NUTRITION_CATEGORY_OPTIONS } from '@/lib/nutrition/menu-group';
 
 /**
  * 베이스 메뉴 추가 모달.
@@ -21,7 +18,9 @@ export function AddMenuModal({ newMenuForm, setNewMenuForm, safeMenuMasters, onA
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div>
-          <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>
+          <label
+            style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}
+          >
             메뉴코드 <span style={{ color: 'var(--text-4)' }}>(선택 시 메뉴명 자동 입력)</span>
           </label>
           <MenuCodePicker
@@ -42,7 +41,9 @@ export function AddMenuModal({ newMenuForm, setNewMenuForm, safeMenuMasters, onA
           />
         </div>
         <div>
-          <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>
+          <label
+            style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}
+          >
             메뉴명 *
           </label>
           <input
@@ -53,7 +54,9 @@ export function AddMenuModal({ newMenuForm, setNewMenuForm, safeMenuMasters, onA
           />
         </div>
         <div>
-          <label style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}>
+          <label
+            style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}
+          >
             카테고리
           </label>
           <select

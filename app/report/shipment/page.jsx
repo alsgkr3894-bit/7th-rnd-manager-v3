@@ -7,7 +7,10 @@ import { initDB } from '@/lib/db/init';
 import { getShipmentFiles, getShipmentRowsByFileId } from '@/lib/shipment/store-files';
 import { aggregateShipmentRows } from '@/lib/shipment/aggregate';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment/store-managed';
-import { buildShipmentMonthMap, buildShipmentTrendSeries } from '@/lib/report/build-shipment-report';
+import {
+  buildShipmentMonthMap,
+  buildShipmentTrendSeries,
+} from '@/lib/report/build-shipment-report';
 import { useReportPageState } from '@/hooks/useReportPageState';
 import { getProfile } from '@/lib/profile';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
@@ -113,7 +116,14 @@ export default function Page() {
   const periodMode = 'month';
   const [shipYear, setShipYear] = useState(new Date().getFullYear());
   const [shipMonth, setShipMonth] = useState(new Date().getMonth() + 1);
-  const { opts, setOpts, updOpts: upd, docFormat, setDocFormat, updFmt } = useReportPageState(
+  const {
+    opts,
+    setOpts,
+    updOpts: upd,
+    docFormat,
+    setDocFormat,
+    updFmt,
+  } = useReportPageState(
     DRAFT_KEY,
     {
       scope: 'all',
@@ -201,7 +211,10 @@ export default function Page() {
             })
           );
           if (ignore) return;
-          const { exclusiveData, genericData } = buildShipmentTrendSeries(monthlyRows, managedProducts);
+          const { exclusiveData, genericData } = buildShipmentTrendSeries(
+            monthlyRows,
+            managedProducts
+          );
           if (exclusiveData.some(v => v > 0) || genericData.some(v => v > 0)) {
             setSeries([
               { name: '전용상품', data: exclusiveData },

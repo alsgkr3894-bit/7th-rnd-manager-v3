@@ -5,7 +5,14 @@ import { formatNumber, formatUnitPrice } from '@/lib/format';
 import { PriceHistoryModal } from '@/components/cost/ingredient-price/PriceHistoryModal';
 import { InlineEditCell } from '@/components/cost/manage/table-utils';
 
-export function MasterRow({ r, onRegClick, selected, onToggleSelect, onInlineSave, readOnly = false }) {
+export function MasterRow({
+  r,
+  onRegClick,
+  selected,
+  onToggleSelect,
+  onInlineSave,
+  readOnly = false,
+}) {
   const [showNote, setShowNote] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const note = r.meta?.note || '';
@@ -196,7 +203,12 @@ export function MasterRow({ r, onRegClick, selected, onToggleSelect, onInlineSav
                 이력
               </button>
             )}
-            <button className="btn xs" onClick={onRegClick} title="포장단위·분류 수정" disabled={readOnly}>
+            <button
+              className="btn xs"
+              onClick={onRegClick}
+              title="포장단위·분류 수정"
+              disabled={readOnly}
+            >
               수정
             </button>
           </div>

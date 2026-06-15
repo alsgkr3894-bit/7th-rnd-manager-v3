@@ -21,7 +21,6 @@ import { getAllSideRecipes } from '@/lib/cost/side-detail';
 import { getAllRecipes } from '@/lib/recipe';
 import { KEYS } from '@/lib/note/keys';
 
-
 const CAT_COLORS = {
   피자: { bg: 'var(--cat-1-bg)', color: 'var(--cat-1-text)' },
   '1인피자': { bg: 'var(--cat-3-bg)', color: 'var(--cat-3-text)' },
@@ -44,8 +43,10 @@ function normalizeStringList(value) {
 
 /** 사용횟수 배지 색상 — 많이(파랑)/보통(초록)/단발(주의)/그 외(중립) */
 function usageCountStyle(count) {
-  if (count >= USAGE_THRESHOLD.HIGH) return { background: 'var(--cat-1-bg)', color: 'var(--cat-1-text)' };
-  if (count >= USAGE_THRESHOLD.MID) return { background: 'var(--cat-2-bg)', color: 'var(--cat-2-text)' };
+  if (count >= USAGE_THRESHOLD.HIGH)
+    return { background: 'var(--cat-1-bg)', color: 'var(--cat-1-text)' };
+  if (count >= USAGE_THRESHOLD.MID)
+    return { background: 'var(--cat-2-bg)', color: 'var(--cat-2-text)' };
   if (count === 1) return { background: 'var(--warn-soft)', color: 'var(--warn)' };
   return { background: 'var(--surface-2)', color: 'var(--text-2)' };
 }
@@ -151,19 +152,19 @@ export default function Page() {
     menuCounts,
     totalUsedCount,
   } = useIngredientUsageRows({
-      allMeta,
-      usageMap,
-      typeMap,
-      usageCat,
-      menuSearch,
-      sortKey,
-      sortDir,
-      showUnused,
-      showHidden,
-      onlyOne,
-      hidden,
-      excludedMenus,
-    });
+    allMeta,
+    usageMap,
+    typeMap,
+    usageCat,
+    menuSearch,
+    sortKey,
+    sortDir,
+    showUnused,
+    showHidden,
+    onlyOne,
+    hidden,
+    excludedMenus,
+  });
 
   function toggle(code) {
     setExpanded(prev => {
@@ -322,10 +323,7 @@ export default function Page() {
 
           {/* 액션 버튼 (상단) */}
           <div className="usage-action-row" style={{ marginBottom: 8 }}>
-            <button
-              className="btn sm"
-              onClick={() => setExpanded(new Set(displayRows.map(keyOf)))}
-            >
+            <button className="btn sm" onClick={() => setExpanded(new Set(displayRows.map(keyOf)))}>
               모두 펼치기
             </button>
             <button className="btn sm" onClick={() => setExpanded(new Set())}>

@@ -113,13 +113,21 @@ export function useReportListState(reports) {
   }
 
   return {
-    kindFilter, setKindFilter,
-    search, setSearch,
-    favOnly, setFavOnly,
-    page, setPage,
-    sortKey, sortDir,
+    kindFilter,
+    setKindFilter,
+    search,
+    setSearch,
+    favOnly,
+    setFavOnly,
+    page,
+    setPage,
+    sortKey,
+    sortDir,
     newIds,
-    filtered, totalPages, safePage, list,
+    filtered,
+    totalPages,
+    safePage,
+    list,
     toggleSort,
   };
 }

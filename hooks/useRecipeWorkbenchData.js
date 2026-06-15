@@ -64,5 +64,15 @@ export function useRecipeWorkbenchData() {
       .finally(() => setLoading(false));
   }, [reload]);
 
-  return { recipes, allMeta, menuMasters, unitPriceMap, menuPricesMap, allGroups, loading, dbError, reload };
+  return {
+    recipes,
+    allMeta,
+    menuMasters,
+    unitPriceMap,
+    menuPricesMap,
+    allGroups,
+    loading,
+    dbError,
+    reload,
+  };
 }

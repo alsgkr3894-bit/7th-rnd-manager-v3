@@ -43,10 +43,14 @@ export function useMenuMasterFilters(rows, brandCats) {
   }, [rows, catFilter, subFilter, statusFilter, search]);
 
   return {
-    catFilter, setCatFilter,
-    statusFilter, setStatusFilter,
-    subFilter, setSubFilter,
-    search, setSearch,
+    catFilter,
+    setCatFilter,
+    statusFilter,
+    setStatusFilter,
+    subFilter,
+    setSubFilter,
+    search,
+    setSearch,
     statusFiltered,
     displayCategories,
     catCounts,

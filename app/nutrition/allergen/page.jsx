@@ -41,6 +41,7 @@ import {
   buildMenuMatrix,
   buildDetailRows,
 } from '@/lib/nutrition/allergen/matrix';
+import { migrateNutritionToIngredients } from '@/lib/nutrition/migrate-to-ingredient';
 
 /**
  * 알레르기 정보 페이지 — 자동 집계 뷰
@@ -83,6 +84,9 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
+    await migrateNutritionToIngredients().catch(e =>
+      console.warn('[nutrition/allergen] 마이그레이션 실패', e)
+    );
     const [
       ings,
       masters,
@@ -212,7 +216,15 @@ export default function Page() {
         menuNameOverrides,
         toppings
       ),
-    [allergenIngredients, baseMapData, edges, isExcludedMenu, menuOrder, menuNameOverrides, toppings]
+    [
+      allergenIngredients,
+      baseMapData,
+      edges,
+      isExcludedMenu,
+      menuOrder,
+      menuNameOverrides,
+      toppings,
+    ]
   );
 
   // 알레르기 22종 표시 순서 — 저장된 순서 우선, 없으면 빈도 내림차순
@@ -221,8 +233,12 @@ export default function Page() {
     if (safeOrder.length) {
       const rank = new Map(safeOrder.map((c, i) => [c, i]));
       return [...ALLERGEN_SEED].sort((a, b) => {
-        const ra = rank.has(asDisplayText(a.allergenCode)) ? rank.get(asDisplayText(a.allergenCode)) : Infinity;
-        const rb = rank.has(asDisplayText(b.allergenCode)) ? rank.get(asDisplayText(b.allergenCode)) : Infinity;
+        const ra = rank.has(asDisplayText(a.allergenCode))
+          ? rank.get(asDisplayText(a.allergenCode))
+          : Infinity;
+        const rb = rank.has(asDisplayText(b.allergenCode))
+          ? rank.get(asDisplayText(b.allergenCode))
+          : Infinity;
         if (ra !== rb) return ra - rb;
         return (a.displayOrder ?? 999) - (b.displayOrder ?? 999);
       });
@@ -527,7 +543,14 @@ export default function Page() {
             </div>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 400px)', minHeight: 300 }}>
+          <div
+            style={{
+              overflowX: 'auto',
+              overflowY: 'auto',
+              maxHeight: 'calc(100vh - 400px)',
+              minHeight: 300,
+            }}
+          >
             <table className="data-table" style={{ minWidth: 900 }}>
               <thead>
                 <tr>
@@ -594,9 +617,7 @@ export default function Page() {
                     <tr
                       key={rowKey}
                       style={
-                        isLastInGroup
-                          ? { borderBottom: '2px solid var(--text-3)' }
-                          : undefined
+                        isLastInGroup ? { borderBottom: '2px solid var(--text-3)' } : undefined
                       }
                     >
                       <td

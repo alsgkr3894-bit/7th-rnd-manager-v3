@@ -21,7 +21,12 @@ const FILTER_TO_STATUS = {
   deleted: CHANGE_STATUS.DELETED,
 };
 
-export function PriceCompareTable({ diffRows, productTypeLookup = new Map(), onTypeChange, externalFilter }) {
+export function PriceCompareTable({
+  diffRows,
+  productTypeLookup = new Map(),
+  onTypeChange,
+  externalFilter,
+}) {
   const [filter, setFilter] = useState(externalFilter || 'all');
   const [typeFilter, setTypeFilter] = useState('all');
   const { search, setSearch, sortKey, sortDir, toggleSort } = useTableSearchSort(

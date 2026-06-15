@@ -744,12 +744,24 @@ function SampleContent() {
                   <th scope="col" style={{ width: 48 }} aria-label="선택"></th>
                   <th scope="col">제목</th>
                   <th scope="col">샘플명</th>
-                  <th scope="col" style={{ width: 90 }}>카테고리</th>
-                  <th scope="col" style={{ width: 110 }}>수령일</th>
-                  <th scope="col" style={{ width: 120 }}>업체</th>
-                  <th scope="col" style={{ width: 84 }}>담당자</th>
-                  <th scope="col" style={{ width: 84 }}>평점</th>
-                  <th scope="col" style={{ width: 110, textAlign: 'right' }}>단가</th>
+                  <th scope="col" style={{ width: 90 }}>
+                    카테고리
+                  </th>
+                  <th scope="col" style={{ width: 110 }}>
+                    수령일
+                  </th>
+                  <th scope="col" style={{ width: 120 }}>
+                    업체
+                  </th>
+                  <th scope="col" style={{ width: 84 }}>
+                    담당자
+                  </th>
+                  <th scope="col" style={{ width: 84 }}>
+                    평점
+                  </th>
+                  <th scope="col" style={{ width: 110, textAlign: 'right' }}>
+                    단가
+                  </th>
                   <th scope="col" style={{ width: 150 }} aria-label="액션"></th>
                 </tr>
               </thead>

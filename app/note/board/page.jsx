@@ -12,6 +12,8 @@ export default function Page() {
   const {
     notes,
     loading,
+    loadError,
+    retryLoad,
     search,
     setSearch,
     searchActive,
@@ -61,8 +63,30 @@ export default function Page() {
         </div>
       )}
 
+      {!loading && loadError && (
+        <div
+          className="card"
+          style={{
+            textAlign: 'center',
+            padding: '32px 24px',
+            color: 'var(--text-2)',
+            marginTop: 16,
+            borderColor: 'color-mix(in oklab, var(--negative) 28%, var(--border))',
+          }}
+        >
+          <Icon.alert
+            style={{ width: 28, height: 28, marginBottom: 10, color: 'var(--negative)' }}
+          />
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>칸반 데이터를 불러오지 못했습니다</div>
+          <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>{loadError}</div>
+          <button className="btn" onClick={retryLoad}>
+            다시 시도
+          </button>
+        </div>
+      )}
+
       {/* 칸반 컬럼 컨테이너 */}
-      {filteredNotes.length > 0 && (
+      {!loadError && filteredNotes.length > 0 && (
         <div
           style={{
             display: 'grid',
@@ -200,7 +224,7 @@ export default function Page() {
         </div>
       )}
 
-      {!loading && notes.length === 0 && (
+      {!loading && !loadError && notes.length === 0 && (
         <div
           className="card"
           style={{
@@ -221,7 +245,7 @@ export default function Page() {
           </button>
         </div>
       )}
-      {!loading && notes.length > 0 && filteredNotes.length === 0 && (
+      {!loading && !loadError && notes.length > 0 && filteredNotes.length === 0 && (
         <div
           className="card"
           style={{
@@ -239,4 +263,3 @@ export default function Page() {
     </main>
   );
 }
-

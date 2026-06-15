@@ -1,8 +1,5 @@
 import { useMemo } from 'react';
-import {
-  buildRestoreImpact,
-  selectedStoresMissingFromBackup,
-} from '@/lib/backup/restore-impact';
+import { buildRestoreImpact, selectedStoresMissingFromBackup } from '@/lib/backup/restore-impact';
 
 /**
  * 백업 파일과 현재 DB의 영향도를 계산하는 순수 derived-state hook.

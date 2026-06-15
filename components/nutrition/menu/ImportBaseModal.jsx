@@ -264,7 +264,10 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
   const [saving, setSaving] = useState(false);
   const handleFile = async (file, err) => {
     if (!file) return;
-    if (err) { showToast(err, 'error'); return; }
+    if (err) {
+      showToast(err, 'error');
+      return;
+    }
     try {
       const buf = await file.arrayBuffer();
       const rawRows = await parseLabExcel(buf);

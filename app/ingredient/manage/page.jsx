@@ -66,11 +66,59 @@ async function syncManagedScope(target, scopeLabel) {
   }
 }
 
+async function restoreDeletedIngredientBackup(backup) {
+  if (!backup?.ingredient) return;
+  await restoreRecord('cost_ingredients', backup.ingredient);
+  if (backup.nutritionSnapshot) {
+    await restoreRecord('nutrition_ingredient_values', backup.nutritionSnapshot);
+  }
+}
+
+async function restoreDeletedIngredientBackups(backups) {
+  const failures = [];
+  for (const backup of backups) {
+    try {
+      await restoreDeletedIngredientBackup(backup);
+    } catch (err) {
+      failures.push(err);
+    }
+  }
+  if (failures.length > 0) {
+    throw new Error(`${failures.length}개 항목 복구 실패`);
+  }
+}
+
+function warnIngredientCascadeFailures(records) {
+  const count = records.reduce((sum, rec) => sum + (rec?.cascadeErrors?.length || 0), 0);
+  if (count > 0) {
+    showToast(`삭제는 완료됐지만 연관 데이터 정리 ${count}건을 확인해야 합니다.`, 'warn', 7000);
+  }
+}
+
+function buildBulkDeleteToast(removed, failures) {
+  if (failures.length === 0) return { message: `${removed.length}개 삭제됨`, type: 'ok' };
+  if (removed.length === 0) return { message: `${failures.length}개 삭제 실패`, type: 'error' };
+  return {
+    message: `${removed.length}개 삭제됨 · ${failures.length}개 실패`,
+    type: 'warn',
+  };
+}
+
 export default function Page() {
   const isMain = useIsMainBrand(); // 마스터 시드는 7번가 전용
   const { isViewer } = useCurrentRole();
-  const { rows, setRows, prevPriceMap, priceDate, loading, load, brokenRefs, productCodeDupes, newJetteRows, jetteRemovedRows } =
-    useIngredientManageData();
+  const {
+    rows,
+    setRows,
+    prevPriceMap,
+    priceDate,
+    loading,
+    load,
+    brokenRefs,
+    productCodeDupes,
+    newJetteRows,
+    jetteRemovedRows,
+  } = useIngredientManageData();
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 200);
   const [catFilter, setCatFilter] = useLocalStorage(KEYS.INGREDIENT_CAT_FILTER, 'all', value =>
@@ -216,20 +264,19 @@ export default function Page() {
         if (row.isManual && row.id && !row.productCode) {
           // deleteIngredient가 { ingredient, nutritionSnapshot } 반환 → 모두 복원
           const backup = await deleteIngredient(row.id);
+          warnIngredientCascadeFailures([backup]);
           setRows(prev => prev.filter(r => !(r.isManual && r.id === row.id)));
           showToast(`"${row.ingredientName || row.displayName || '식자재'}" 삭제됨`, 'ok', 5000, {
             label: '실행취소',
             onClick: async () => {
-              if (backup?.ingredient) {
-                await restoreRecord('cost_ingredients', backup.ingredient).catch(() => {});
-                if (backup.nutritionSnapshot) {
-                  await restoreRecord(
-                    'nutrition_ingredient_values',
-                    backup.nutritionSnapshot
-                  ).catch(() => {});
-                }
+              try {
+                await restoreDeletedIngredientBackup(backup);
+                await load();
+                showToast('삭제를 되돌렸습니다', 'ok');
+              } catch (err) {
+                console.error('[IngredientManage] undo delete failed', err);
+                showToast('실행취소 실패: ' + err.message, 'error');
               }
-              await load();
             },
           });
         } else {
@@ -305,23 +352,31 @@ export default function Page() {
     if (selected.size === 0) return;
     const ids = Array.from(selected);
     try {
-      const removed = await bulkDeleteIngredients(ids);
-      setRows(prev => prev.filter(r => !ids.includes(r.id)));
-      exitBatch();
-      showToast(`${removed.length}개 삭제됨`, 'ok', 5000, {
-        label: '실행취소',
-        onClick: async () => {
-          for (const rec of removed) {
-            await restoreRecord('cost_ingredients', rec.ingredient).catch(() => {});
-            if (rec.nutritionSnapshot) {
-              await restoreRecord('nutrition_ingredient_values', rec.nutritionSnapshot).catch(
-                () => {}
-              );
+      const { removed, failures } = await bulkDeleteIngredients(ids);
+      warnIngredientCascadeFailures(removed);
+      if (removed.length > 0) {
+        const removedIds = new Set(removed.map(rec => rec.ingredient?.id).filter(Boolean));
+        setRows(prev => prev.filter(r => !removedIds.has(r.id)));
+        exitBatch();
+      }
+      const toast = buildBulkDeleteToast(removed, failures);
+      const undoAction =
+        removed.length > 0
+          ? {
+              label: '실행취소',
+              onClick: async () => {
+                try {
+                  await restoreDeletedIngredientBackups(removed);
+                  await load();
+                  showToast(`${removed.length}개 복구했습니다`, 'ok');
+                } catch (err) {
+                  console.error('[IngredientManage] undo batch delete failed', err);
+                  showToast('실행취소 실패: ' + err.message, 'error');
+                }
+              },
             }
-          }
-          await load();
-        },
-      });
+          : null;
+      showToast(toast.message, toast.type, 5000, undoAction);
     } catch (err) {
       showToast('삭제 실패: ' + err.message, 'error');
     }
@@ -350,7 +405,11 @@ export default function Page() {
                     </span>
                     <button
                       className="btn"
-                      style={{ background: 'var(--negative)', color: 'var(--surface)', border: 'none' }}
+                      style={{
+                        background: 'var(--negative)',
+                        color: 'var(--surface)',
+                        border: 'none',
+                      }}
                       onClick={handleReset}
                       disabled={resetting || isViewer}
                     >
@@ -370,7 +429,11 @@ export default function Page() {
                     <Icon.trash style={{ width: 14, height: 14 }} /> 데이터 초기화
                   </button>
                 )}
-                <button className="btn" onClick={startBatch} disabled={rows.length === 0 || isViewer}>
+                <button
+                  className="btn"
+                  onClick={startBatch}
+                  disabled={rows.length === 0 || isViewer}
+                >
                   선택
                 </button>
                 {isMain && (
@@ -379,7 +442,11 @@ export default function Page() {
                     {seeding ? '시드 중…' : `마스터 시드 (${INGREDIENT_MASTER_SEED.length})`}
                   </button>
                 )}
-                <button className="btn primary" onClick={() => setFormTarget('new')} disabled={isViewer}>
+                <button
+                  className="btn primary"
+                  onClick={() => setFormTarget('new')}
+                  disabled={isViewer}
+                >
                   <Icon.plus style={{ width: 14, height: 14 }} /> 식자재 추가
                 </button>
               </>
@@ -507,7 +574,9 @@ export default function Page() {
                   {newJetteRows.map(row => (
                     <tr key={row.productCode}>
                       <td style={{ fontWeight: 500 }}>{row.displayName || row.productName}</td>
-                      <td className="mono muted" style={{ fontSize: 12 }}>{row.productCode || '—'}</td>
+                      <td className="mono muted" style={{ fontSize: 12 }}>
+                        {row.productCode || '—'}
+                      </td>
                       <td>
                         <button
                           className="btn sm"
@@ -545,8 +614,12 @@ export default function Page() {
                 <tbody>
                   {jetteRemovedRows.map(row => (
                     <tr key={row.productCode || row.id}>
-                      <td style={{ fontWeight: 500 }}>{row.ingredientName || row.displayName || '—'}</td>
-                      <td className="mono muted" style={{ fontSize: 12 }}>{row.productCode || '—'}</td>
+                      <td style={{ fontWeight: 500 }}>
+                        {row.ingredientName || row.displayName || '—'}
+                      </td>
+                      <td className="mono muted" style={{ fontSize: 12 }}>
+                        {row.productCode || '—'}
+                      </td>
                       <td>
                         <button
                           className="btn sm"

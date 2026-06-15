@@ -29,7 +29,13 @@ import { buildSalesStats, CAT_COLORS } from '@/lib/report/build-sales-report';
 const DRAFT_KEY = 'report_draft_sales';
 
 const S_SECTION_TITLE_FLEX = { display: 'flex', alignItems: 'center', gap: 8 };
-const S_EMPTY_STATE = { height: 60, display: 'grid', placeItems: 'center', color: 'var(--text-4)', fontSize: 13 };
+const S_EMPTY_STATE = {
+  height: 60,
+  display: 'grid',
+  placeItems: 'center',
+  color: 'var(--text-4)',
+  fontSize: 13,
+};
 const S_MOVER_LABEL = { fontSize: 11, fontWeight: 700, marginBottom: 6 };
 
 function normalizeViewMode(value) {
@@ -44,7 +50,14 @@ export default function Page() {
   const [viewMode, setViewMode] = useState('rank');
   const [cmpYear, setCmpYear] = useState(null);
   const [cmpMonth, setCmpMonth] = useState(null);
-  const { opts, setOpts, updOpts: upd, docFormat, setDocFormat, updFmt } = useReportPageState(
+  const {
+    opts,
+    setOpts,
+    updOpts: upd,
+    docFormat,
+    setDocFormat,
+    updFmt,
+  } = useReportPageState(
     DRAFT_KEY,
     {
       summary: true,
@@ -179,7 +192,8 @@ export default function Page() {
 
   // Computed: stats derived from salesRows + filters
   const { catShares, groupRanking, kpi } = useMemo(
-    () => buildSalesStats(normRows, { year: safeYearValue, month: safeMonthValue, scope: safeScope }),
+    () =>
+      buildSalesStats(normRows, { year: safeYearValue, month: safeMonthValue, scope: safeScope }),
     [normRows, safeYearValue, safeMonthValue, safeScope]
   );
 
@@ -453,10 +467,7 @@ export default function Page() {
 
               return (
                 <div className="paper-section">
-                  <div
-                    className="paper-section-title"
-                    style={S_SECTION_TITLE_FLEX}
-                  >
+                  <div className="paper-section-title" style={S_SECTION_TITLE_FLEX}>
                     <span
                       style={{
                         width: 10,
@@ -500,9 +511,7 @@ export default function Page() {
                   <div style={{ marginTop: 14 }}>
                     <div style={{ display: 'flex', gap: 16 }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ ...S_MOVER_LABEL, color: pizzaColor }}>
-                          ▲ 베스트 5
-                        </div>
+                        <div style={{ ...S_MOVER_LABEL, color: pizzaColor }}>▲ 베스트 5</div>
                         {best.map(m => (
                           <SalesRankRow
                             key={m.name}
@@ -515,9 +524,7 @@ export default function Page() {
                       </div>
                       <div style={{ width: 1, background: 'var(--border)', flexShrink: 0 }} />
                       <div style={{ flex: 1 }}>
-                        <div style={{ ...S_MOVER_LABEL, color: 'var(--text-3)' }}>
-                          ▼ 워스트 5
-                        </div>
+                        <div style={{ ...S_MOVER_LABEL, color: 'var(--text-3)' }}>▼ 워스트 5</div>
                         {worst.map(m => (
                           <SalesRankRow
                             key={m.name}
@@ -541,11 +548,7 @@ export default function Page() {
               if (safeGroupRanking.length === 0)
                 return (
                   <div className="paper-section">
-                    <div
-                      style={S_EMPTY_STATE}
-                    >
-                      데이터 없음
-                    </div>
+                    <div style={S_EMPTY_STATE}>데이터 없음</div>
                   </div>
                 );
               const catOrder = safeCatShares.map(c => asDisplayText(c.name, '미분류'));
@@ -565,10 +568,7 @@ export default function Page() {
                 const catTotal = items.reduce((s, m) => s + safeQuantity(m.quantity), 0);
                 return (
                   <div className="paper-section paper-cat-section" key={cat}>
-                    <div
-                      className="paper-section-title"
-                      style={S_SECTION_TITLE_FLEX}
-                    >
+                    <div className="paper-section-title" style={S_SECTION_TITLE_FLEX}>
                       <span
                         style={{
                           width: 10,
@@ -760,11 +760,7 @@ export default function Page() {
               if (!safeCompareData)
                 return (
                   <div className="paper-section">
-                    <div
-                      style={S_EMPTY_STATE}
-                    >
-                      비교 데이터 없음
-                    </div>
+                    <div style={S_EMPTY_STATE}>비교 데이터 없음</div>
                   </div>
                 );
               const catNameMap = new Map(
@@ -794,10 +790,7 @@ export default function Page() {
                       safeCatShares.find(c => asDisplayText(c.name) === cat)?.color || '#6B7280';
                     return (
                       <div className="paper-section paper-cat-section" key={cat}>
-                        <div
-                          className="paper-section-title"
-                          style={S_SECTION_TITLE_FLEX}
-                        >
+                        <div className="paper-section-title" style={S_SECTION_TITLE_FLEX}>
                           <span
                             style={{
                               width: 10,
@@ -882,10 +875,7 @@ export default function Page() {
           {/* ── 품목 제외 리스트 (마지막 페이지) ── */}
           {safeOpts.excluded && (
             <div className="paper-section" style={{ pageBreakBefore: 'always', marginTop: 24 }}>
-              <div
-                className="paper-section-title"
-                style={S_SECTION_TITLE_FLEX}
-              >
+              <div className="paper-section-title" style={S_SECTION_TITLE_FLEX}>
                 <span
                   style={{
                     width: 10,

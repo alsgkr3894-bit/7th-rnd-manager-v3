@@ -46,8 +46,8 @@ export function AutoCalcPreviewModal({
             color: 'var(--warn-text, #92600a)',
           }}
         >
-          ⚠ 재료 {autoCalcPreview.matched}/{autoCalcPreview.total}개만 영양DB에 매칭됐어요.
-          나머지는 계산에서 제외되어 값이 작을 수 있어요.
+          ⚠ 재료 {autoCalcPreview.matched}/{autoCalcPreview.total}개만 영양DB에 매칭됐어요. 나머지는
+          계산에서 제외되어 값이 작을 수 있어요.
         </div>
       )}
       {autoCalcPreview.matched === autoCalcPreview.total && (
@@ -78,8 +78,8 @@ export function AutoCalcPreviewModal({
         ))}
       </div>
       <div style={{ fontSize: 11, color: 'var(--text-4)', marginBottom: 16 }}>
-        * 재료 100g 기준값 × 사용량을 합산 후 총중량으로 나눠 100g 기준으로 정규화한 값입니다.
-        중량 칸도 함께 채워집니다.
+        * 재료 100g 기준값 × 사용량을 합산 후 총중량으로 나눠 100g 기준으로 정규화한 값입니다. 중량
+        칸도 함께 채워집니다.
       </div>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
         <button className="btn" onClick={onClose}>

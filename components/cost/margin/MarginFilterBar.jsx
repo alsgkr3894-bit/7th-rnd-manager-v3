@@ -200,7 +200,15 @@ export function MarginFilterBar({
       </div>
 
       {/* Edge type filter */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', margin: '0 0 8px' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 6,
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          margin: '0 0 8px',
+        }}
+      >
         <span
           style={{
             fontSize: 11,

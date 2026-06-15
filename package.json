@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node scripts/prepare-dev.mjs",
     "dev": "next dev",
+    "predev:lan": "node scripts/prepare-dev.mjs",
     "dev:lan": "next dev -H 0.0.0.0 -p 3000",
-    "dev:clean": "pkill -f 'next dev' 2>/dev/null; pkill -f 'next-server' 2>/dev/null; sleep 1; rm -rf .next; next dev -H 0.0.0.0 -p 3000",
+    "dev:clean": "node scripts/prepare-dev.mjs --kill && next dev -H 127.0.0.1 -p 3000",
     "build": "next build",
     "build:clean": "node scripts/clean-build.mjs",
     "start": "next start",

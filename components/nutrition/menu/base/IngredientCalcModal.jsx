@@ -55,8 +55,8 @@ export function IngredientCalcModal({
             borderRadius: 8,
           }}
         >
-          식자재 영양값 탭에 입력된 100g 기준값을 가져와 L/R 사용량으로 계산합니다. 적용하면
-          선택한 메뉴의 100g 기준 영양값과 한판 총중량이 저장됩니다.
+          식자재 영양값 탭에 입력된 100g 기준값을 가져와 L/R 사용량으로 계산합니다. 적용하면 선택한
+          메뉴의 100g 기준 영양값과 한판 총중량이 저장됩니다.
           <br />
           계산 미리보기만으로는 저장되지 않고, 아래 적용 버튼을 눌러야 저장됩니다.
         </div>
@@ -204,8 +204,8 @@ export function IngredientCalcModal({
                       {result ? (
                         <>
                           <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
-                            총중량 {formatCalcValue(result.totalGrams, 'g')} · 매칭{' '}
-                            {result.matched}/{result.total}
+                            총중량 {formatCalcValue(result.totalGrams, 'g')} · 매칭 {result.matched}
+                            /{result.total}
                           </div>
                           <div
                             style={{

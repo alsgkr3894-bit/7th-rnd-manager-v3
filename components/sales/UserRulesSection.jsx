@@ -93,7 +93,9 @@ export function UserRulesSection() {
 
   const ruleFilterFn = useCallback(
     (r, q) =>
-      asDisplayText(r.rawMenuName || r.pattern).toLowerCase().includes(q) ||
+      asDisplayText(r.rawMenuName || r.pattern)
+        .toLowerCase()
+        .includes(q) ||
       asDisplayText(r.category).toLowerCase().includes(q) ||
       asDisplayText(r.groupName).toLowerCase().includes(q) ||
       asDisplayText(r.detailName).toLowerCase().includes(q),

@@ -40,6 +40,21 @@ describe('calendar utils', () => {
     });
   });
 
+  test('체크리스트 fallback id는 날짜와 내용 기준으로 안정적으로 생성한다', () => {
+    const input = {
+      '2026-06-12': [
+        { text: '샘플 확인!', done: true },
+        { text: '  메뉴 테스트  ', done: false },
+      ],
+    };
+
+    expect(normalizeChecklistMap(input)).toEqual(normalizeChecklistMap(input));
+    expect(normalizeChecklistMap(input)['2026-06-12'].map(item => item.id)).toEqual([
+      '2026-06-12-1-샘플-확인',
+      '2026-06-12-2-메뉴-테스트',
+    ]);
+  });
+
   test('체크리스트 연구일지 텍스트를 생성한다', () => {
     expect(checklistJournalTitle('2026-06-12')).toBe('2026-06-12 체크리스트 완료');
     expect(checklistJournalContent([{ text: '샘플 확인' }])).toContain('- 샘플 확인');

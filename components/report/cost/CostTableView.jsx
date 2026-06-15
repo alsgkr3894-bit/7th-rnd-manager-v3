@@ -45,7 +45,9 @@ export function CostTableView({ activeCats, riskThreshold }) {
               <table className="paper-table">
                 <thead>
                   <tr>
-                    <th rowSpan={2} style={{ verticalAlign: 'bottom' }}>메뉴명</th>
+                    <th rowSpan={2} style={{ verticalAlign: 'bottom' }}>
+                      메뉴명
+                    </th>
                     <th
                       colSpan={3}
                       style={{ textAlign: 'center', borderBottom: '1px solid var(--border)' }}

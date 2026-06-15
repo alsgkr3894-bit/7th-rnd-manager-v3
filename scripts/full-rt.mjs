@@ -7,10 +7,17 @@
  * 검사 항목: JS pageerror, console.error, hydration 오류, h1/main 존재, HTTP 500
  * 특이 케이스: 비-main 브랜드에서 노트 관련 라우트 직접 진입 (공유 DB 초기화 검증)
  */
-import { chromium, getQaBase, newAuthedContext, routeUrl } from './qa-browser-utils.mjs';
+import {
+  assertQaBaseReachableWithBrowser,
+  chromium,
+  getQaBase,
+  newAuthedContext,
+  routeUrl,
+} from './qa-browser-utils.mjs';
 
 const BASE = getQaBase();
 const NAV_TIMEOUT_MS = Number.parseInt(process.env.QA_NAV_TIMEOUT_MS || '', 10) || 90_000;
+const HEALTH_TIMEOUT_MS = Number.parseInt(process.env.QA_HEALTH_TIMEOUT_MS || '', 10) || 5000;
 
 const MAIN_ROUTES = [
   '/',
@@ -26,6 +33,7 @@ const MAIN_ROUTES = [
   '/jette/price-compare',
   '/jette/shipment',
   '/jette/settings',
+  '/ingredient',
   '/ingredient/manage',
   '/ingredient/list',
   '/ingredient/usage',
@@ -51,12 +59,14 @@ const MAIN_ROUTES = [
   '/note/calendar',
   '/note/journal',
   '/note/sample',
+  '/note/sample/write',
   '/report',
   '/report/cost',
   '/report/sales',
   '/report/price',
   '/report/shipment',
   '/report/menu-sales-compare',
+  '/settings',
   '/settings/system',
   '/settings/account',
   '/settings/backup',
@@ -91,7 +101,21 @@ function filterErr(msg) {
   return !IGNORE_PATTERNS.some(p => p.test(msg));
 }
 
+function fatalMessage(error) {
+  return (error?.message || String(error)).split('\n')[0];
+}
+
 const browser = await chromium.launch();
+
+try {
+  await assertQaBaseReachableWithBrowser(browser, BASE, { timeoutMs: HEALTH_TIMEOUT_MS });
+} catch (error) {
+  await browser.close();
+  console.error('\n  qa:runtime 사전 확인 실패\n');
+  console.error(`  ${error.message}\n`);
+  process.exit(2);
+}
+
 const results = [];
 
 async function checkRoute(page, brand, route, directEntry = false) {
@@ -133,6 +157,16 @@ async function checkRoute(page, brand, route, directEntry = false) {
         consoleErrs,
         hasContent,
       };
+    } catch (error) {
+      return {
+        brand: `${brand}(직접)`,
+        route,
+        errs: errs.filter(e => !/hydrat/i.test(e)),
+        hyd: errs.filter(e => /hydrat/i.test(e)),
+        consoleErrs,
+        hasContent: false,
+        fatal: fatalMessage(error),
+      };
     } finally {
       p2.off('pageerror', onPageError);
       p2.off('console', onConsole);
@@ -154,6 +188,16 @@ async function checkRoute(page, brand, route, directEntry = false) {
     );
 
     return { brand, route, errs: jsErrs, hyd, consoleErrs, hasContent };
+  } catch (error) {
+    return {
+      brand,
+      route,
+      errs: errs.filter(e => !/hydrat/i.test(e)),
+      hyd: errs.filter(e => /hydrat/i.test(e)),
+      consoleErrs,
+      hasContent: false,
+      fatal: fatalMessage(error),
+    };
   } finally {
     page.off('pageerror', onPageError);
     page.off('console', onConsole);
@@ -212,7 +256,11 @@ let pass = 0,
 const failed = [];
 for (const r of results) {
   const ok =
-    r.errs.length === 0 && r.hyd.length === 0 && r.consoleErrs.length === 0 && r.hasContent;
+    !r.fatal &&
+    r.errs.length === 0 &&
+    r.hyd.length === 0 &&
+    r.consoleErrs.length === 0 &&
+    r.hasContent;
   const status = ok ? '✅' : '❌';
   if (ok) pass++;
   else {
@@ -237,6 +285,7 @@ if (failed.length > 0) {
   console.log('  ── FAIL 상세 ──');
   for (const r of failed) {
     console.log(`\n  [${r.brand}] ${r.route}`);
+    if (r.fatal) console.log('    fatal: ' + r.fatal.slice(0, 100));
     if (!r.hasContent) console.log('    빈 화면 (h1/main 없음)');
     for (const e of [...r.errs, ...r.hyd, ...r.consoleErrs].slice(0, 3))
       console.log('    ' + e.slice(0, 100));

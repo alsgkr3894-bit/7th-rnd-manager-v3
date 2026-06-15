@@ -19,6 +19,7 @@ export default function ProgressBar() {
       setActive(true);
       clearTimeout(settleTimer.current);
       timer.current = setInterval(() => {
+        // 시각 진행감 전용 랜덤값이다. 저장 id/key에는 사용하지 않는다.
         cur.current = Math.min(cur.current + Math.random() * 14, 82);
         setPct(cur.current);
       }, 280);

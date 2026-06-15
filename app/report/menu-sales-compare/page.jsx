@@ -30,7 +30,11 @@ export default function Page() {
   const [yearB, setYearB] = useState(2026);
   const [monthB, setMonthB] = useState(4);
 
-  const { opts, setOpts, updOpts: upd } = useReportPageState(
+  const {
+    opts,
+    setOpts,
+    updOpts: upd,
+  } = useReportPageState(
     DRAFT_KEY,
     { summary: true, catCompare: true, rankShift: true, chart: true, winners: true },
     draft => {

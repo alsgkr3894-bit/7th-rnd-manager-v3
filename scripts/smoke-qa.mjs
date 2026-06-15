@@ -26,11 +26,12 @@ import {
 
 const BASE = getQaBase();
 const VIEWPORT = { width: 702, height: 900 }; // 좁은 폭(가로 스크롤 검출용) 기준
+const NAV_TIMEOUT_MS = Number.parseInt(process.env.QA_NAV_TIMEOUT_MS || '', 10) || 90_000;
 
 // 대표 라우트 — 모듈별 진입 화면
 const ROUTES = [
   ['홈', '/'],
-  ['메뉴 판매량', '/menu-sales/rank'],
+  ['메뉴 판매량', '/menu-sales/rank-compare'],
   ['판매 설정', '/menu-sales/settings'],
   ['제때상품관리', '/jette/price-compare'],
   ['식자재 관리', '/ingredient/manage'],
@@ -65,24 +66,27 @@ async function main() {
     },
     BASE
   );
+  const page = await ctx.newPage();
   const results = [];
 
   for (const [name, path] of ROUTES) {
-    const page = await ctx.newPage();
     const consoleErrors = [];
     const nextStatic404Urls = [];
-    page.on('console', m => {
+    const onConsole = m => {
       if (m.type() === 'error') consoleErrors.push(m.text());
-    });
-    page.on('pageerror', e => consoleErrors.push('PAGEERROR: ' + e.message));
-    page.on('response', r => {
+    };
+    const onPageError = e => consoleErrors.push('PAGEERROR: ' + e.message);
+    const onResponse = r => {
       if (isNextStaticAsset404(r.url(), r.status())) {
         nextStatic404Urls.push(r.url());
         return;
       }
       if (r.status() >= 500)
         consoleErrors.push(`HTTP${r.status()} ${resourcePathOf(r.url()).slice(0, 40)}`);
-    });
+    };
+    page.on('console', onConsole);
+    page.on('pageerror', onPageError);
+    page.on('response', onResponse);
 
     const row = {
       name,
@@ -95,7 +99,10 @@ async function main() {
       errs: 0,
     };
     try {
-      await page.goto(routeUrl(BASE, path), { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.goto(routeUrl(BASE, path), {
+        waitUntil: 'domcontentloaded',
+        timeout: NAV_TIMEOUT_MS,
+      });
       // DOM 확정 후 h1/main이 나타날 때까지 대기 (최대 15초)
       await Promise.race([
         page.waitForSelector('h1, main', { timeout: 15000 }).catch(() => {}),
@@ -134,6 +141,7 @@ async function main() {
       row.innerW = probe.innerW;
       row.loading = probe.loading;
       row.errText = probe.errText;
+      await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
       const splitErrors = splitConsoleErrors(consoleErrors, {
         ignorableNextStatic404Count: nextStatic404Urls.length,
       });
@@ -145,9 +153,12 @@ async function main() {
     } catch (e) {
       row.fatal = e.message;
     }
-    await page.close();
+    page.off('console', onConsole);
+    page.off('pageerror', onPageError);
+    page.off('response', onResponse);
     results.push(row);
   }
+  await page.close();
   await browser.close();
 
   // ── 출력: 표 ──

@@ -158,11 +158,7 @@ export default function SalesReportControls({
               </select>
             </div>
             {isSameCompareMonth && (
-              <div
-                className="opt-help"
-                role="alert"
-                style={{ color: 'var(--warn)', marginTop: 6 }}
-              >
+              <div className="opt-help" role="alert" style={{ color: 'var(--warn)', marginTop: 6 }}>
                 기준 월과 비교 월이 같습니다.
               </div>
             )}
@@ -186,7 +182,9 @@ export default function SalesReportControls({
             { value: '음료', label: '음료' },
             { value: '기타', label: '기타' },
           ].map(o => (
-            <option key={o.value} value={o.value}>{o.label}</option>
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
           ))}
         </select>
       </OptGroup>

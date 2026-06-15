@@ -24,8 +24,7 @@ export function RestoreDoneCard({ restoreDone, onReset }) {
       style={{
         marginTop: 24,
         padding: '18px 20px',
-        background:
-          restoreDone.errors.length === 0 ? 'var(--positive-soft)' : 'var(--warn-soft)',
+        background: restoreDone.errors.length === 0 ? 'var(--positive-soft)' : 'var(--warn-soft)',
         border: `1px solid ${
           restoreDone.errors.length === 0
             ? 'color-mix(in oklab, var(--positive) 30%, transparent)'

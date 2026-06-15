@@ -98,9 +98,7 @@ export function RestoreExecutePanel({
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13 }}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-              <span style={{ color: 'var(--text-3)', minWidth: 80, flexShrink: 0 }}>
-                교체 모듈
-              </span>
+              <span style={{ color: 'var(--text-3)', minWidth: 80, flexShrink: 0 }}>교체 모듈</span>
               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                 {selectedKeys.map(k => (
                   <span key={k} style={chipStyle(true)}>
@@ -115,8 +113,8 @@ export function RestoreExecutePanel({
                   데이터 규모
                 </span>
                 <span className="num" style={{ fontWeight: 700 }}>
-                  현재 {formatNumber(impact.totalNow)}건 → 복원 후{' '}
-                  {formatNumber(impact.totalAfter)}건
+                  현재 {formatNumber(impact.totalNow)}건 → 복원 후 {formatNumber(impact.totalAfter)}
+                  건
                   {impact.totalAfter < impact.totalNow && (
                     <span style={{ color: 'var(--negative)', marginLeft: 6 }}>
                       ({formatNumber(impact.totalAfter - impact.totalNow)}건)
@@ -137,9 +135,7 @@ export function RestoreExecutePanel({
               </div>
             )}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ color: 'var(--text-3)', minWidth: 80, flexShrink: 0 }}>
-                자동 백업
-              </span>
+              <span style={{ color: 'var(--text-3)', minWidth: 80, flexShrink: 0 }}>자동 백업</span>
               {autoBackup ? (
                 <span style={{ color: 'var(--positive)', fontWeight: 600 }}>
                   ✓ 복원 직전 현재 상태 백업 후 진행
@@ -165,9 +161,7 @@ export function RestoreExecutePanel({
             border: '1px solid color-mix(in oklab, var(--warn) 30%, transparent)',
           }}
         >
-          <div
-            style={{ fontWeight: 700, fontSize: 13, color: 'var(--warn)', marginBottom: 6 }}
-          >
+          <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--warn)', marginBottom: 6 }}>
             ⚠ 자동 백업에 실패했습니다
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-1)', marginBottom: 10 }}>
@@ -215,9 +209,7 @@ export function RestoreExecutePanel({
           </button>
         </div>
       ) : (
-        <div
-          style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}
-        >
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
           <button className="btn" disabled={busy} onClick={() => setConfirming(false)}>
             취소
           </button>

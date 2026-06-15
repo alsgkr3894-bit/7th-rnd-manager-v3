@@ -130,7 +130,11 @@ export default function Page() {
             >
               <Icon.doc style={{ width: 14, height: 14 }} /> PDF
             </button>
-            <button className="btn" onClick={() => exportIngredientCsv(filtered)} disabled={loading || filtered.length === 0}>
+            <button
+              className="btn"
+              onClick={() => exportIngredientCsv(filtered)}
+              disabled={loading || filtered.length === 0}
+            >
               <Icon.download style={{ width: 14, height: 14 }} /> 엑셀로 내보내기
             </button>
           </div>

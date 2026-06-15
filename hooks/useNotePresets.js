@@ -16,7 +16,14 @@ function normalizeNotePresets(value) {
     .filter(p => p.name);
 }
 
-export function useNotePresets({ statusFilter, search, sortBy, setStatusFilter, setSearch, setSortBy }) {
+export function useNotePresets({
+  statusFilter,
+  search,
+  sortBy,
+  setStatusFilter,
+  setSearch,
+  setSortBy,
+}) {
   const [presets, setPresets] = useLocalStorage(KEYS.NOTE_PRESETS, [], normalizeNotePresets);
   const [confirmDeletePreset, setConfirmDeletePreset] = useState(null);
 
@@ -37,5 +44,12 @@ export function useNotePresets({ statusFilter, search, sortBy, setStatusFilter, 
     setPresets(next);
   }
 
-  return { presets, confirmDeletePreset, setConfirmDeletePreset, savePreset, applyPreset, deletePreset };
+  return {
+    presets,
+    confirmDeletePreset,
+    setConfirmDeletePreset,
+    savePreset,
+    applyPreset,
+    deletePreset,
+  };
 }

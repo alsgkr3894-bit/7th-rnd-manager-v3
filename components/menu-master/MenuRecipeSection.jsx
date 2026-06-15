@@ -17,9 +17,11 @@ import { getAllSideRecipes, upsertSideRecipe } from '@/lib/cost/side-detail';
 import { getAllSetRecipes, upsertSetRecipe } from '@/lib/cost/set-detail';
 
 function storeApiFor(category) {
-  if (isPersonalPizzaCategory(category)) return { getAll: getAllPersonalRecipes, upsert: upsertPersonalRecipe };
+  if (isPersonalPizzaCategory(category))
+    return { getAll: getAllPersonalRecipes, upsert: upsertPersonalRecipe };
   if (isSetCategory(category)) return { getAll: getAllSetRecipes, upsert: upsertSetRecipe };
-  if (isSideCategory(category) || isBeverageCategory(category)) return { getAll: getAllSideRecipes, upsert: upsertSideRecipe };
+  if (isSideCategory(category) || isBeverageCategory(category))
+    return { getAll: getAllSideRecipes, upsert: upsertSideRecipe };
   if (isPizzaCategory(category)) return { getAll: getAllPizzaRecipes, upsert: upsertPizzaRecipe };
   return null;
 }
@@ -55,7 +57,9 @@ export function MenuRecipeSection({ menuCode, menuName, category, size }) {
       setAllIngs(ings);
       setLoaded(true);
     });
-    return () => { ignore = true; };
+    return () => {
+      ignore = true;
+    };
     // api functions are stable module-level imports, category/menuCode cover the relevant deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menuCode, category]);
@@ -85,25 +89,22 @@ export function MenuRecipeSection({ menuCode, menuName, category, size }) {
     setComponents(prev => [...prev, newRow()]);
   }, []);
 
-  const pickSuggestion = useCallback(
-    (idx, ing) => {
-      setComponents(prev =>
-        prev.map((c, i) =>
-          i === idx
-            ? {
-                ...c,
-                ingredientName: ing.ingredientName || '',
-                productCode: ing.productCode || '',
-                unit: ing.baseUnitType || 'g',
-              }
-            : c
-        )
-      );
-      setSearchIdx(null);
-      setSearchQ('');
-    },
-    []
-  );
+  const pickSuggestion = useCallback((idx, ing) => {
+    setComponents(prev =>
+      prev.map((c, i) =>
+        i === idx
+          ? {
+              ...c,
+              ingredientName: ing.ingredientName || '',
+              productCode: ing.productCode || '',
+              unit: ing.baseUnitType || 'g',
+            }
+          : c
+      )
+    );
+    setSearchIdx(null);
+    setSearchQ('');
+  }, []);
 
   const handleSave = useCallback(async () => {
     if (!api) return;
@@ -133,9 +134,7 @@ export function MenuRecipeSection({ menuCode, menuName, category, size }) {
 
   if (!loaded) {
     return (
-      <div style={{ fontSize: 12, color: 'var(--text-4)', padding: '8px 0' }}>
-        레시피 로딩 중…
-      </div>
+      <div style={{ fontSize: 12, color: 'var(--text-4)', padding: '8px 0' }}>레시피 로딩 중…</div>
     );
   }
 
@@ -179,9 +178,38 @@ export function MenuRecipeSection({ menuCode, menuName, category, size }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--divider)' }}>
-              <th style={{ textAlign: 'left', padding: '4px 4px', fontWeight: 600, color: 'var(--text-3)' }}>식자재명</th>
-              <th style={{ width: 70, textAlign: 'right', padding: '4px 4px', fontWeight: 600, color: 'var(--text-3)' }}>수량</th>
-              <th style={{ width: 40, textAlign: 'right', padding: '4px 4px', fontWeight: 600, color: 'var(--text-3)' }}>단위</th>
+              <th
+                style={{
+                  textAlign: 'left',
+                  padding: '4px 4px',
+                  fontWeight: 600,
+                  color: 'var(--text-3)',
+                }}
+              >
+                식자재명
+              </th>
+              <th
+                style={{
+                  width: 70,
+                  textAlign: 'right',
+                  padding: '4px 4px',
+                  fontWeight: 600,
+                  color: 'var(--text-3)',
+                }}
+              >
+                수량
+              </th>
+              <th
+                style={{
+                  width: 40,
+                  textAlign: 'right',
+                  padding: '4px 4px',
+                  fontWeight: 600,
+                  color: 'var(--text-3)',
+                }}
+              >
+                단위
+              </th>
               <th style={{ width: 24 }} />
             </tr>
           </thead>
@@ -192,7 +220,7 @@ export function MenuRecipeSection({ menuCode, menuName, category, size }) {
                   <input
                     className="form-input"
                     style={{ width: '100%', fontSize: 12, padding: '4px 6px' }}
-                    value={searchIdx === idx ? searchQ : (c.ingredientName || '')}
+                    value={searchIdx === idx ? searchQ : c.ingredientName || ''}
                     onChange={e => {
                       setSearchIdx(idx);
                       setSearchQ(e.target.value);

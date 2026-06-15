@@ -3,11 +3,7 @@ import { useMounted } from '@/hooks/useMounted';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { initDB } from '@/lib/db';
 import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
-import {
-  getAllIngredients,
-  getIngredientMetaMap,
-  buildProductTypeMap,
-} from '@/lib/ingredient';
+import { getAllIngredients, getIngredientMetaMap, buildProductTypeMap } from '@/lib/ingredient';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
 import { buildIngredientPriceRows } from '@/lib/cost/ingredient-price/buildRows';
 

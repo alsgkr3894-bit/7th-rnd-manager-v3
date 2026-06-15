@@ -5,12 +5,38 @@ import { Icon } from '@/components/icons';
 import { DEFAULT_PLATFORMS, normalizePlatforms } from '@/lib/cost/margin/platforms';
 import { FeeRow } from './FeeRow';
 
-const uid = () =>
-  typeof crypto !== 'undefined' && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `u${Date.now()}-${Math.random().toString(36).slice(2)}`;
+let uidSeq = 0;
 
-const blankFee = () => ({ id: uid(), label: '', type: 'fixed', value: '', sizeOverrides: {} });
+function makeId(prefix, existingIds = []) {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return `${prefix}-${crypto.randomUUID()}`;
+
+  const used = new Set(existingIds.map(String));
+  let id = '';
+  do {
+    uidSeq += 1;
+    id = `${prefix}-${uidSeq.toString(36)}`;
+  } while (used.has(id));
+  return id;
+}
+
+function collectIds(platforms) {
+  const ids = [];
+  for (const platform of platforms || []) {
+    if (platform?.id) ids.push(platform.id);
+    for (const fee of Array.isArray(platform?.fees) ? platform.fees : []) {
+      if (fee?.id) ids.push(fee.id);
+    }
+  }
+  return ids;
+}
+
+const blankFee = existingIds => ({
+  id: makeId('fee', existingIds),
+  label: '',
+  type: 'fixed',
+  value: '',
+  sizeOverrides: {},
+});
 
 function clonePlatforms(platforms) {
   const safePlatforms = normalizePlatforms(platforms) || DEFAULT_PLATFORMS;
@@ -37,7 +63,7 @@ function reducer(state, action) {
     case 'SET_SEL':
       return { ...state, selId: action.id };
     case 'ADD_PLATFORM': {
-      const p = { id: uid(), name: '새 플랫폼', fees: [] };
+      const p = { id: makeId('platform', collectIds(plats)), name: '새 플랫폼', fees: [] };
       return { ...state, plats: [...plats, p], selId: p.id };
     }
     case 'DELETE_PLATFORM': {
@@ -46,13 +72,19 @@ function reducer(state, action) {
       return { plats: next, selId: selId === action.id ? (next[0]?.id ?? 'default') : selId };
     }
     case 'SET_PLAT_NAME':
-      return { ...state, plats: plats.map(p => (p.id === selId ? { ...p, name: action.name } : p)) };
+      return {
+        ...state,
+        plats: plats.map(p => (p.id === selId ? { ...p, name: action.name } : p)),
+      };
     case 'ADD_FEE':
       return {
         ...state,
         plats: plats.map(p =>
           p.id === selId
-            ? { ...p, fees: [...(Array.isArray(p.fees) ? p.fees : []), blankFee()] }
+            ? {
+                ...p,
+                fees: [...(Array.isArray(p.fees) ? p.fees : []), blankFee(collectIds(plats))],
+              }
             : p
         ),
       };
@@ -398,4 +430,3 @@ export function PlatformSettingsModal({ platforms, onSave, onClose }) {
     document.body
   );
 }
-

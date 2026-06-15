@@ -122,7 +122,12 @@ export function CostReportView({
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                           <span
                             className="dot"
-                            style={{ width: 8, height: 8, borderRadius: '50%', background: c.color }}
+                            style={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              background: c.color,
+                            }}
                           />
                           <b>{c.label}</b>
                         </span>
@@ -147,7 +152,9 @@ export function CostReportView({
                   ))}
                   <tr style={{ background: 'var(--surface-2)' }}>
                     <td style={{ fontWeight: 800 }}>합계</td>
-                    <td className="num right" style={{ fontWeight: 800 }}>{totalCount}</td>
+                    <td className="num right" style={{ fontWeight: 800 }}>
+                      {totalCount}
+                    </td>
                     <td className="num right" style={{ fontWeight: 800 }}>
                       {allAvg > 0 ? `${allAvg.toFixed(1)}%` : '—'}
                     </td>
@@ -314,7 +321,9 @@ export function CostReportView({
                 <tr key={`${d.code}-${i}`}>
                   <td>{d.name}</td>
                   <td className="muted">{d.catLabel}</td>
-                  <td className="mono muted" style={{ fontSize: 11 }}>{d.code}</td>
+                  <td className="mono muted" style={{ fontSize: 11 }}>
+                    {d.code}
+                  </td>
                   <td style={{ color: 'var(--negative)', fontSize: 12, fontWeight: 600 }}>
                     {d.reason}
                   </td>

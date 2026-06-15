@@ -47,7 +47,12 @@ function Panel({ discOpen, discType, onDiscType, discVal, onDiscVal, discount })
       </span>
 
       <div
-        style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden' }}
+        style={{
+          display: 'flex',
+          border: '1px solid var(--border)',
+          borderRadius: 6,
+          overflow: 'hidden',
+        }}
       >
         {['pct', 'fixed'].map(t => (
           <button

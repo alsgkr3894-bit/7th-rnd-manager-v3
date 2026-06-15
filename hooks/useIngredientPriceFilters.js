@@ -24,8 +24,7 @@ export function useIngredientPriceFilters(rows) {
     if (deltaFilter === 'up') list = list.filter(r => r.priceDelta > 0);
     if (deltaFilter === 'down') list = list.filter(r => r.priceDelta < 0);
     if (deltaFilter === 'new') list = list.filter(r => r.isNew);
-    if (deltaFilter === 'same')
-      list = list.filter(r => r.priceDelta === 0 || r.priceDelta == null);
+    if (deltaFilter === 'same') list = list.filter(r => r.priceDelta === 0 || r.priceDelta == null);
     const q = search.trim().toLowerCase();
     if (q)
       list = list.filter(
@@ -37,5 +36,14 @@ export function useIngredientPriceFilters(rows) {
     return list;
   }, [rows, taxFilter, deltaFilter, search]);
 
-  return { search, setSearch, taxFilter, setTaxFilter, deltaFilter, setDeltaFilter, mainCats, filtered };
+  return {
+    search,
+    setSearch,
+    taxFilter,
+    setTaxFilter,
+    deltaFilter,
+    setDeltaFilter,
+    mainCats,
+    filtered,
+  };
 }

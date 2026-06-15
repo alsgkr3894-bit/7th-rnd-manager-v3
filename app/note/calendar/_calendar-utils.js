@@ -48,6 +48,15 @@ export function todayKey() {
   return _todayCache;
 }
 
+function fallbackChecklistId(date, text, index) {
+  const normalized = String(text || '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w가-힣-]/g, '')
+    .slice(0, 40);
+  return `${date}-${index + 1}-${normalized || 'item'}`;
+}
+
 export function normalizeChecklistMap(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   return Object.fromEntries(
@@ -57,11 +66,14 @@ export function normalizeChecklistMap(value) {
         Array.isArray(items)
           ? items
               .filter(item => item && typeof item === 'object' && String(item.text || '').trim())
-              .map(item => ({
-                id: String(item.id || `${date}-${Math.random()}`),
-                text: String(item.text || '').trim(),
-                done: item.done === true,
-              }))
+              .map((item, index) => {
+                const text = String(item.text || '').trim();
+                return {
+                  id: String(item.id || fallbackChecklistId(date, text, index)),
+                  text,
+                  done: item.done === true,
+                };
+              })
           : [],
       ])
       .filter(([, items]) => items.length > 0)

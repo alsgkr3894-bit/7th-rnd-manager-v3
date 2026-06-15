@@ -1,6 +1,12 @@
 import { useState, useRef } from 'react';
 import { showToast } from '@/components/Toast';
-import { deleteReport, toggleReportFav, saveReport, pruneOldReports, findPrunableReports } from '@/lib/report';
+import {
+  deleteReport,
+  toggleReportFav,
+  saveReport,
+  pruneOldReports,
+  findPrunableReports,
+} from '@/lib/report';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 
 export function useReportActions({ reload }) {
@@ -92,12 +98,23 @@ export function useReportActions({ reload }) {
   };
 
   return {
-    deletingId, confirmDeleteId, setConfirmDeleteId,
-    pruneConfirmOpen, setPruneConfirmOpen, prunableCount,
-    editingId, setEditingId, editName, setEditName, editInputRef,
-    handleDelete, confirmDelete,
-    handlePruneClick, confirmPrune,
+    deletingId,
+    confirmDeleteId,
+    setConfirmDeleteId,
+    pruneConfirmOpen,
+    setPruneConfirmOpen,
+    prunableCount,
+    editingId,
+    setEditingId,
+    editName,
+    setEditName,
+    editInputRef,
+    handleDelete,
+    confirmDelete,
+    handlePruneClick,
+    confirmPrune,
     handleToggleFav,
-    startEdit, commitEdit,
+    startEdit,
+    commitEdit,
   };
 }

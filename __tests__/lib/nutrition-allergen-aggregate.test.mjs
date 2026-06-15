@@ -5,6 +5,8 @@ import {
   buildMenuAllergenMap,
   buildToppingAllergenMap,
 } from '@/lib/nutrition/allergen/aggregate';
+import { buildMenuMatrix } from '@/lib/nutrition/allergen/matrix';
+import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 
 /**
  * B1 회귀 방지: 출력 영양성분표의 메뉴별 알레르기 집계.
@@ -40,6 +42,41 @@ describe('buildMenuAllergenMap', () => {
     ]);
     const map = buildMenuAllergenMap({ ingredients, ingredientToMenus: i2m });
     expect([...(map.get('PZ2') || [])]).toEqual(['AL02']);
+  });
+
+  test('원가레시피 productCode가 달라도 식자재명으로 알레르기 정보까지 집계된다', () => {
+    const ingredientRows = [
+      { productCode: 'REAL-CHZ', ingredientName: '체다 치즈', allergens: ['AL02'] },
+    ];
+    const mapData = buildIngredientMenuMap({
+      menuMasters: [{ menuCode: 'S-CHZ-001', menuName: '치즈볼', category: '사이드' }],
+      detailRecipes: [
+        {
+          menuCode: 'S-CHZ-001',
+          menuName: '치즈볼',
+          category: '사이드',
+          components: [{ productCode: 'OLD-CHZ', ingredientName: '체다치즈' }],
+        },
+      ],
+    });
+
+    const allergenMap = buildMenuAllergenMap({
+      ingredients: ingredientRows,
+      ingredientToMenus: mapData.ingredientToMenus,
+    });
+    expect([...(allergenMap.get('S-CHZ-001') || [])]).toEqual(['AL02']);
+
+    const matrixRows = buildMenuMatrix(
+      ingredientRows,
+      mapData,
+      [],
+      () => false,
+      [],
+      {},
+      []
+    );
+    expect(matrixRows).toHaveLength(1);
+    expect([...matrixRows[0].allergenCodes]).toEqual(['AL02']);
   });
 
   test('비정상 입력은 빈 집계로 안전하게 처리한다', () => {

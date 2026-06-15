@@ -12,19 +12,57 @@ export function useKanbanBoard() {
   const [dropTarget, setDropTarget] = useState(null);
   const [bouncingIds, setBouncingIds] = useState(new Set());
   const [search, setSearch] = useState('');
+  const [loadError, setLoadError] = useState(null);
   const bounceTimersRef = useRef(new Set());
   const searchActive = search.trim().length > 0;
 
   const load = useCallback(async () => {
     await initDB();
     setNotes(await getAllNotes());
+    setLoadError(null);
   }, []);
 
+  const refreshNotes = useCallback(
+    async ({ toast = false, finishLoading = false } = {}) => {
+      try {
+        await load();
+      } catch (err) {
+        console.error('[useKanbanBoard] load failed', err);
+        const message = err?.message || '노트 데이터를 불러오지 못했습니다.';
+        setLoadError(message);
+        if (toast) showToast(`칸반 데이터 로드 실패: ${message}`, 'error');
+      } finally {
+        if (finishLoading) setLoading(false);
+      }
+    },
+    [load]
+  );
+
   useEffect(() => {
-    load()
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [load]);
+    refreshNotes({ toast: true, finishLoading: true });
+  }, [refreshNotes]);
+
+  useVisibilityRefresh(() => {
+    refreshNotes();
+  });
+
+  const retryLoad = useCallback(() => {
+    setLoading(true);
+    refreshNotes({ toast: true, finishLoading: true });
+  }, [refreshNotes]);
+
+  const pulseNote = useCallback(noteId => {
+    setBouncingIds(s => new Set([...s, noteId]));
+    const timer = setTimeout(() => {
+      setBouncingIds(s => {
+        const n = new Set(s);
+        n.delete(noteId);
+        return n;
+      });
+      bounceTimersRef.current.delete(timer);
+    }, 400);
+    bounceTimersRef.current.add(timer);
+  }, []);
 
   useEffect(
     () => () => {
@@ -34,33 +72,20 @@ export function useKanbanBoard() {
     []
   );
 
-  useVisibilityRefresh(load);
-
   const applyStatusChange = useCallback(
     async (note, newStatus, { bounce = true } = {}) => {
       setNotes(prev => prev.map(n => (n.id === note.id ? { ...n, status: newStatus } : n)));
       try {
         await updateNote(note.id, { status: newStatus });
         showToast(`→ ${newStatus}`, 'ok');
-        await load();
-        if (bounce) {
-          setBouncingIds(s => new Set([...s, note.id]));
-          const timer = setTimeout(() => {
-            setBouncingIds(s => {
-              const n = new Set(s);
-              n.delete(note.id);
-              return n;
-            });
-            bounceTimersRef.current.delete(timer);
-          }, 400);
-          bounceTimersRef.current.add(timer);
-        }
+        await refreshNotes();
+        if (bounce) pulseNote(note.id);
       } catch {
         showToast('상태 변경 실패', 'error');
-        await load();
+        await refreshNotes();
       }
     },
-    [load]
+    [pulseNote, refreshNotes]
   );
 
   const moveStatus = useCallback(
@@ -136,44 +161,44 @@ export function useKanbanBoard() {
       dropTarget?.status === status ? (dropTarget.beforeIdx ?? colNotes.length) : colNotes.length;
     setDropTarget(null);
 
-    if (note.status === status) {
-      const without = colNotes.filter(n => n.id !== note.id);
-      const origIdx = colNotes.findIndex(n => n.id === note.id);
-      const insertAt = origIdx < beforeIdx ? beforeIdx - 1 : beforeIdx;
-      without.splice(Math.max(0, Math.min(insertAt, without.length)), 0, note);
-      await bulkUpdateBoardOrder(without.map((n, i) => ({ id: n.id, boardOrder: i * 10 })));
-      await load();
-    } else {
-      const newCol = [...colNotes];
-      newCol.splice(Math.min(beforeIdx, newCol.length), 0, note);
-      const targetOrder = Math.min(beforeIdx, newCol.length - 1) * 10;
-      await updateNote(note.id, { status, boardOrder: targetOrder });
-      const siblingUpdates = newCol
-        .filter(n => n.id !== note.id)
-        .map((n, i) => ({
-          id: n.id,
-          boardOrder: (i >= Math.min(beforeIdx, newCol.length - 1) ? i + 1 : i) * 10,
-        }));
-      await bulkUpdateBoardOrder(siblingUpdates);
-      showToast(`→ ${status}`, 'ok');
-      await load();
-      setBouncingIds(s => new Set([...s, note.id]));
-      const timer = setTimeout(() => {
-        setBouncingIds(s => {
-          const n = new Set(s);
-          n.delete(note.id);
-          return n;
-        });
-        bounceTimersRef.current.delete(timer);
-      }, 400);
-      bounceTimersRef.current.add(timer);
+    try {
+      if (note.status === status) {
+        const without = colNotes.filter(n => n.id !== note.id);
+        const origIdx = colNotes.findIndex(n => n.id === note.id);
+        const insertAt = origIdx < beforeIdx ? beforeIdx - 1 : beforeIdx;
+        without.splice(Math.max(0, Math.min(insertAt, without.length)), 0, note);
+        await bulkUpdateBoardOrder(without.map((n, i) => ({ id: n.id, boardOrder: i * 10 })));
+        await refreshNotes();
+      } else {
+        const newCol = [...colNotes];
+        newCol.splice(Math.min(beforeIdx, newCol.length), 0, note);
+        const targetOrder = Math.min(beforeIdx, newCol.length - 1) * 10;
+        await updateNote(note.id, { status, boardOrder: targetOrder });
+        const siblingUpdates = newCol
+          .filter(n => n.id !== note.id)
+          .map((n, i) => ({
+            id: n.id,
+            boardOrder: (i >= Math.min(beforeIdx, newCol.length - 1) ? i + 1 : i) * 10,
+          }));
+        await bulkUpdateBoardOrder(siblingUpdates);
+        showToast(`→ ${status}`, 'ok');
+        await refreshNotes();
+        pulseNote(note.id);
+      }
+    } catch (err) {
+      console.error('[useKanbanBoard] handleDrop failed', err);
+      showToast('칸반 순서 저장 실패', 'error');
+      await refreshNotes();
+    } finally {
+      setDragId(null);
     }
-    setDragId(null);
   }
 
   return {
     notes,
     loading,
+    loadError,
+    retryLoad,
     search,
     setSearch,
     searchActive,

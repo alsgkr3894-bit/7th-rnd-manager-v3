@@ -14,6 +14,7 @@ export default function NotFound() {
     for (let i = 0; i < 22; i++) {
       const p = document.createElement('div');
       p.className = styles.particle;
+      // 404 배경 장식 전용 랜덤값이다. 저장 id/key에는 사용하지 않는다.
       const sz = Math.random() * 90 + 10;
       p.style.cssText = [
         `width:${sz}px`,
