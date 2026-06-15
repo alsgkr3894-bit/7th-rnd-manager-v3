@@ -772,10 +772,11 @@
 
 **구현 상태**
 
-- 부분 구현 완료: `211c7b7 fix: back up active account selection`
+- 구현 완료: `211c7b7 fix: back up active account selection`, `2845f5f fix: scope active account selection by brand`
 - `ACTIVE_ACCOUNT_KEY`를 `lib/auth/account-constants.js`로 분리해 순환 import 없이 백업 key 목록에서 재사용한다.
 - 구현 완료 범위: 활성 계정 localStorage key `rnd_active_account_id`를 공통 localStorage 백업/복원 범위에 포함하고 회귀 테스트를 추가했다.
-- 남은 범위: `ref_accounts`를 브랜드별 계정으로 둘지 shared/main DB의 전역 계정으로 옮길지 정책을 확정해야 한다.
+- 구현 완료 범위: 계정 목록은 활성 브랜드 DB의 `ref_accounts`로 브랜드별 분리하고, 활성 계정 선택도 `rnd_active_account_id:<brandId>` key로 브랜드별 분리했다.
+- 구현 완료 범위: main 브랜드는 구형/백업 호환을 위해 `rnd_active_account_id` legacy key도 함께 mirror한다.
 
 **관련 파일**
 
@@ -788,21 +789,28 @@
 
 **현재 상태**
 
-- `ref_accounts`는 `COMMON_STORES`에 있어 백업 범위에는 항상 포함된다.
-- 하지만 `ref_accounts` CRUD는 일반 `getAll`, `put`, `deleteById`를 써서 활성 브랜드 DB를 따른다.
-- 활성 계정 ID는 localStorage `rnd_active_account_id`에 저장되며 공통 localStorage 백업/복원 key에 포함된다.
+- `ref_accounts`는 `COMMON_STORES`에 있어 선택 백업 범위에는 항상 포함되지만, CRUD는 활성 브랜드 DB를 따르므로 브랜드별 계정 목록으로 동작한다.
+- 활성 계정 ID는 현재 브랜드 기준 `rnd_active_account_id:<brandId>`에 저장된다.
+- main 브랜드는 기존 `rnd_active_account_id`를 함께 기록해 구형 백업과 호환한다.
+- localStorage 백업/복원은 legacy key와 브랜드별 활성 계정 key를 모두 허용한다.
 
 **충돌 가능성**
 
-- "계정 관리"가 전역 시스템 설정인지, 브랜드별 계정 설정인지 명확하지 않다.
-- 계정 목록과 활성 계정 선택은 함께 백업/복원되지만, 계정을 브랜드별로 볼지 전역으로 볼지 정책은 아직 불명확하다.
-- active account id가 다른 브랜드의 account id와 우연히 겹치면 다른 권한으로 보일 수 있다.
+- 완료: 계정 관리는 브랜드별 계정 설정으로 확정했다. (`2845f5f`)
+- 완료: active account id가 다른 브랜드 계정 id와 우연히 겹쳐 권한이 바뀌는 문제를 브랜드별 key로 차단했다. (`2845f5f`)
 
 **정리 방향**
 
-- 계정이 전역이면 `ref_accounts`를 shared/main DB로 이동하고 active account key 정책을 정한다.
-- 계정이 브랜드별이면 UI와 백업 문구에 "현재 브랜드 계정"이라고 명시한다.
+- 완료: `ref_accounts`는 활성 브랜드 DB에 유지해 브랜드별 계정으로 둔다. (`2845f5f`)
+- 완료: 활성 계정 선택은 브랜드별 localStorage key로 분리한다. (`2845f5f`)
 - 완료: `rnd_active_account_id`는 공통 localStorage 백업/복원 범위에 포함한다. (`211c7b7`)
+- 완료: 브랜드별 활성 계정 key도 공통 localStorage 백업/복원 범위에 포함한다. (`2845f5f`)
+
+**검증**
+
+- 완료: 브랜드별 활성 계정 key 생성, legacy fallback, main mirror 단위 테스트. (`2845f5f`)
+- 완료: 브랜드별 활성 계정 localStorage key의 백업/복원 허용 테스트. (`2845f5f`)
+- 완료: `/settings/account` 브라우저 렌더링 및 console error 없음 확인. (`2845f5f`)
 
 ### 8.5 영양 메뉴 목록이 메뉴마스터 밖에서도 생성될 수 있음
 
