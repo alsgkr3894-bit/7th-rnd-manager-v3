@@ -127,6 +127,7 @@
   - `app/menu-master/page.jsx` ✅ 2026-06-16 추가 보강 — 테이블 카드·필터 결과 빈 상태·페이지네이션을 `MenuMasterTablePanel`로 분리. 473→428줄.
   - `app/menu-master/page.jsx` ✅ 2026-06-16 추가 보강 — 상단 CSV/일괄가격/초기화/추가 액션 버튼 묶음을 `MenuMasterHeaderActions`로 분리. 428→405줄.
   - `app/menu-master/page.jsx` ✅ 2026-06-16 추가 보강 — 편집/추가/일괄가격/삭제/초기화 모달 묶음과 삭제 영향 메시지를 `MenuMasterDialogs`로 분리. 405→352줄.
+  - `components/menu-master/MenuRecipeSection.jsx` ✅ 2026-06-16 추가 보강 — 레시피 구성품 테이블·식자재 검색 제안·단가 표시 row를 `MenuRecipeComponentsTable`로 분리. 449→286줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 부분 보강 — `NoteTableRow`·`NoteContextMenu` 렌더링 컴포넌트 분리. 1022→843줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — `NoteStatsSummary`·`NoteFilterControls` 렌더링 컴포넌트 분리. 843→642줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — `NoteCardGrid`·`NoteTableView` 목록 렌더링 컴포넌트 분리. 642→546줄.
