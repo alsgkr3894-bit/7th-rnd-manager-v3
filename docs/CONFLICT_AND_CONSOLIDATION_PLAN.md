@@ -634,6 +634,13 @@
 
 ### 8.3 멀티 브랜드 백업 파일에 source brand metadata가 없음
 
+**구현 상태**
+
+- 구현 완료: `44ce445 feat: record backup source brand metadata`
+- 백업 JSON에 `sourceBrandId`, `sourceBrandName`, `sourceDbName`, `sharedDbName`을 포함한다.
+- 복원 미리보기에서 백업 source 브랜드와 현재 복원 대상 브랜드를 함께 표시하고, 서로 다르거나 구형 백업이라 출처가 없으면 경고한다.
+- 복원 미리보기에서 브랜드 DB로 들어가는 store와 공유 DB로 들어가는 store의 저장 위치를 안내한다.
+
 **관련 파일**
 
 - `lib/db/backup.js`
