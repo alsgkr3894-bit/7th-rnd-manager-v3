@@ -23,7 +23,7 @@ const ReportPreviewModal = dynamic(
 );
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { getReports } from '@/lib/report';
-import { KIND_META, KIND_CHIP } from '@/lib/report/constants';
+import { KIND_CHIP } from '@/lib/report/constants';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { useReportListState } from '@/hooks/useReportListState';
@@ -31,9 +31,8 @@ import { useReportActions } from '@/hooks/useReportActions';
 import { formatLocalMonthInput } from '@/lib/date/local-date';
 import { asDisplayText, asObjectArray, asFiniteNumber } from '@/lib/ui/prop-guards';
 import { NewReportModal } from '@/components/report/NewReportModal';
+import { ReportKindGrid } from '@/components/report/ReportKindGrid';
 import { ReportStatsRow } from '@/components/report/ReportStatsRow';
-
-const REPORT_KINDS = KIND_META;
 
 const thisMonth = formatLocalMonthInput();
 
@@ -221,33 +220,7 @@ export default function Page() {
         onOpenSchedule={() => setScheduleOpen(true)}
       />
 
-      {/* 5종 카드 — stagger 진입 */}
-      <div className="report-kind-grid report-kind-grid-5 motion-stagger">
-        {Object.values(REPORT_KINDS).map(k => {
-          const IconEl = Icon[k.icon] || Icon.doc;
-          const href = k.id === 'compare' ? '/report/menu-sales-compare' : `/report/${k.id}`;
-          return (
-            <button key={k.id} className="report-kind-card" onClick={() => router.push(href)}>
-              <div
-                className="report-kind-ico"
-                style={{ background: k.color + '1A', color: k.color }}
-              >
-                <IconEl style={{ width: 22, height: 22 }} />
-              </div>
-              <div className="report-kind-body">
-                <div className="report-kind-title">{k.title}</div>
-                <div className="report-kind-sub">{k.sub}</div>
-              </div>
-              <div className="report-kind-foot">
-                <span className="report-kind-meta">
-                  최근 {reports.filter(r => safeReportKind(r.kind) === k.id).length}건
-                </span>
-                <Icon.chevRight style={{ width: 14, height: 14, color: 'var(--text-4)' }} />
-              </div>
-            </button>
-          );
-        })}
-      </div>
+      <ReportKindGrid reports={reports} onOpenKind={href => router.push(href)} />
 
       {/* 필터바 */}
       <FilterBar
