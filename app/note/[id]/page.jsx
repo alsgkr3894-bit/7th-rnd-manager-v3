@@ -13,11 +13,12 @@ import { NoteDetailSkeleton } from '@/components/ui/Skeleton';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
 import { KEYS, setSampleFromNote } from '@/lib/note/keys';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
+import { COST_MARGIN_ROUTE, MENU_MASTER_ROUTE } from '@/lib/cost/routes';
 
 const COST_LINKS = [
   { label: '식자재 원가표', href: '/cost/ingredient-price' },
-  { label: '메뉴 마스터', href: '/menu-master' },
-  { label: '피자 세부 원가표', href: '/cost/pizza-detail' },
+  { label: '메뉴 마스터', href: MENU_MASTER_ROUTE },
+  { label: '원가마진표', href: COST_MARGIN_ROUTE },
 ];
 
 function ChainTimeline({ chain, currentId, onNavigate }) {

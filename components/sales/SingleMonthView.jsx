@@ -67,7 +67,7 @@ export function SingleMonthView({
                   {rate <= 30 ? '양호' : rate <= 40 ? '보통' : '주의'}
                 </span>
               ) : (
-                <span style={{ color: 'var(--text-4)' }}>원가 레시피를 먼저 등록하세요</span>
+                <span style={{ color: 'var(--text-4)' }}>메뉴마스터에서 레시피를 등록하세요</span>
               )}
             </div>
           </div>

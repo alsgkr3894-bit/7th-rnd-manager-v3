@@ -762,7 +762,7 @@ export default function Page() {
       {deleteTarget && (
         <ConfirmDialog
           open
-          message={`"${deleteTarget.menuName}" 메뉴를 삭제합니다.\n연결된 판매가, 원가 레시피, 영양 참조 데이터도 함께 정리됩니다.`}
+          message={`"${deleteTarget.menuName}" 메뉴를 삭제합니다.\n연결된 판매가, 메뉴 레시피, 영양 참조 데이터도 함께 정리됩니다.`}
           danger
           onConfirm={() => handleDeleteRow(deleteTarget)}
           onCancel={() => setDeleteTarget(null)}
