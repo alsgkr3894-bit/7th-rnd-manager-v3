@@ -24,7 +24,7 @@ import { Toggle } from '@/components/ui/Toggle';
  *
  * 구성:
  *   1. 환경 설정 (다크 모드, 화면 밀도)
- *   2. 원가 계산 정책 (자동 재계산 / 미연동 차단 / 반올림 방식)
+ *   2. 원가 계산 정책 (자동 반영 상태 / 미연동 차단 준비 상태 / 단가 1자리 정책)
  *   3. 알림 (미매칭 / 원가율 35% 초과)
  *   4. 지역 / 언어 (정보 표시, read-only)
  *   5. 앱 정보
@@ -255,53 +255,19 @@ export default function Page() {
       {/* 3. 원가 계산 정책 (한 번 설정 후 거의 변경 없음 — 사업 정책) */}
       <SettingsGroup title="원가 계산 정책">
         <SettingsRow
-          name="단가 변경 시 원가표 자동 재계산"
-          desc="제때 단가가 변경되면 모든 원가표를 자동으로 다시 계산합니다."
-          control={
-            <Toggle
-              value={settings.autoRecalc === 'on'}
-              onChange={on =>
-                updateSetting('autoRecalc', on ? 'on' : 'off', '자동 재계산 ' + (on ? 'ON' : 'OFF'))
-              }
-            />
-          }
+          name="단가 변경 시 원가 화면 자동 반영"
+          desc="제때 단가 업로드/삭제 이벤트가 열린 원가 화면을 최신 단가로 갱신합니다."
+          control={<StatusValue tone="ok">항상 자동 반영</StatusValue>}
         />
         <SettingsRow
           name="미연동 재료 차단"
-          desc="제때 단가에 등록되지 않은 재료가 포함된 메뉴는 원가표 발행을 차단합니다."
-          control={
-            <Toggle
-              value={settings.strictPosting === 'on'}
-              onChange={on =>
-                updateSetting(
-                  'strictPosting',
-                  on ? 'on' : 'off',
-                  '미연동 차단 ' + (on ? 'ON' : 'OFF')
-                )
-              }
-            />
-          }
+          desc="현재는 원가 화면의 연결 이슈 표시를 우선 사용하며, 발행 차단은 별도 단계에서 적용합니다."
+          control={<StatusValue tone="pending">준비 중</StatusValue>}
         />
         <SettingsRow
-          name="원가 반올림 방식"
-          desc="g·개당 단가에서 원 단위 환산 시 적용"
-          control={
-            <Segmented
-              value={settings.roundMode}
-              options={[
-                { value: 'round', label: '반올림' },
-                { value: 'ceil', label: '올림' },
-                { value: 'floor', label: '내림' },
-              ]}
-              onChange={v =>
-                updateSetting(
-                  'roundMode',
-                  v,
-                  { round: '반올림', ceil: '올림', floor: '내림' }[v] + ' 적용'
-                )
-              }
-            />
-          }
+          name="단가 환산 자리수"
+          desc="g·개당 단가는 소수점 1자리 반올림으로 고정합니다."
+          control={<StatusValue>1자리 반올림</StatusValue>}
           last
         />
       </SettingsGroup>
@@ -556,6 +522,40 @@ function StaticValue({ children }) {
         borderRadius: 8,
         background: 'var(--surface-2)',
         border: '1px solid var(--border)',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function StatusValue({ children, tone = 'default' }) {
+  const style =
+    tone === 'ok'
+      ? {
+          background: 'var(--success-soft, rgba(34,197,94,.12))',
+          color: 'var(--positive)',
+          borderColor: 'color-mix(in srgb, var(--positive) 35%, var(--border))',
+        }
+      : tone === 'pending'
+        ? {
+            background: 'var(--warning-soft, rgba(245,158,11,.14))',
+            color: 'var(--warning-text, #b45309)',
+            borderColor: 'color-mix(in srgb, #f59e0b 35%, var(--border))',
+          }
+        : {};
+
+  return (
+    <div
+      style={{
+        fontSize: 13,
+        fontWeight: 700,
+        color: 'var(--text-2)',
+        padding: '6px 12px',
+        borderRadius: 8,
+        background: 'var(--surface-2)',
+        border: '1px solid var(--border)',
+        ...style,
       }}
     >
       {children}

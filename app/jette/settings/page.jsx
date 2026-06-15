@@ -6,41 +6,21 @@ import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { seedManagedProductsIfEmpty } from '@/lib/shipment';
 import { ManagedProductsCard } from '@/components/jette/ManagedProductsCard';
-import { Toggle } from '@/components/ui/Toggle';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-
-const LS_KEY = 'v3:jette-settings';
-
-const DEFAULT_SETTINGS = {
-  priceAlertThreshold: 5, // 가격 인상/인하 알림 임계값 (%)
-  autoRecalcOnUpdate: false, // 단가 업데이트 시 원가표 자동 재계산
-  autoRegisterNew: 'manual', // 'auto' | 'manual' — 신규 제품 자동 등록 vs 수동 승인
-};
-
-function normalizeSettings(stored) {
-  if (!stored || typeof stored !== 'object' || Array.isArray(stored)) {
-    return { ...DEFAULT_SETTINGS };
-  }
-  const priceAlertThreshold = Number(stored.priceAlertThreshold);
-  return {
-    ...DEFAULT_SETTINGS,
-    priceAlertThreshold: Number.isFinite(priceAlertThreshold)
-      ? priceAlertThreshold
-      : DEFAULT_SETTINGS.priceAlertThreshold,
-    autoRecalcOnUpdate:
-      typeof stored.autoRecalcOnUpdate === 'boolean'
-        ? stored.autoRecalcOnUpdate
-        : DEFAULT_SETTINGS.autoRecalcOnUpdate,
-    autoRegisterNew:
-      stored.autoRegisterNew === 'auto' || stored.autoRegisterNew === 'manual'
-        ? stored.autoRegisterNew
-        : DEFAULT_SETTINGS.autoRegisterNew,
-  };
-}
+import {
+  DEFAULT_JETTE_SETTINGS,
+  JETTE_SETTINGS_KEY,
+  normalizeJetteSettings,
+  normalizePriceAlertThreshold,
+} from '@/lib/jette/settings';
 
 export default function Page() {
   const [ready, setReady] = useState(false);
-  const [settings, setSettings] = useLocalStorage(LS_KEY, DEFAULT_SETTINGS, normalizeSettings);
+  const [settings, setSettings] = useLocalStorage(
+    JETTE_SETTINGS_KEY,
+    DEFAULT_JETTE_SETTINGS,
+    normalizeJetteSettings
+  );
 
   useEffect(() => {
     (async () => {
@@ -133,8 +113,7 @@ export default function Page() {
               step={1}
               value={settings.priceAlertThreshold}
               onChange={e => {
-                const v = Math.max(1, Math.min(50, Number(e.target.value) || 1));
-                update('priceAlertThreshold', v);
+                update('priceAlertThreshold', normalizePriceAlertThreshold(e.target.value));
               }}
               style={{
                 width: 60,
@@ -164,16 +143,22 @@ export default function Page() {
         >
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)' }}>
-              단가 업데이트 시 원가표 자동 재계산
+              단가 업데이트 시 원가 화면 자동 반영
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
-              제때 가격 파일 업로드 시 원가 계산 결과를 자동으로 갱신합니다
+              제때 가격 파일 업로드/삭제 이벤트가 열린 원가 화면을 갱신합니다
             </div>
           </div>
-          <Toggle
-            value={settings.autoRecalcOnUpdate}
-            onChange={v => update('autoRecalcOnUpdate', v)}
-          />
+          <span
+            className="chip"
+            style={{
+              background: 'var(--success-soft, rgba(34,197,94,.12))',
+              color: 'var(--positive)',
+              fontWeight: 700,
+            }}
+          >
+            항상 자동 반영
+          </span>
         </div>
 
         {/* 신규 제품 자동 등록 / 수동 승인 */}

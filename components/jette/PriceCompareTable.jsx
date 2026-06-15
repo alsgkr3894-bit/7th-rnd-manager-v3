@@ -12,6 +12,7 @@ import { TypeSelect } from './_TypeSelect';
 import { sortByKey, getProductTypeCounts } from '@/lib/jette/utils';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { useTableSearchSort } from '@/hooks/useTableSearchSort';
+import { getPriceAlertThreshold, isPriceChangeAlert } from '@/lib/jette/settings';
 
 const FILTER_TO_STATUS = {
   up: CHANGE_STATUS.UP,
@@ -26,6 +27,7 @@ export function PriceCompareTable({
   productTypeLookup = new Map(),
   onTypeChange,
   externalFilter,
+  priceAlertThreshold,
 }) {
   const [filter, setFilter] = useState(externalFilter || 'all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -37,6 +39,10 @@ export function PriceCompareTable({
   const safeProductTypeLookup = useMemo(
     () => (productTypeLookup instanceof Map ? productTypeLookup : new Map()),
     [productTypeLookup]
+  );
+  const alertThreshold = useMemo(
+    () => getPriceAlertThreshold(priceAlertThreshold),
+    [priceAlertThreshold]
   );
 
   useEffect(() => {
@@ -275,6 +281,7 @@ export function PriceCompareTable({
                   row={row}
                   productTypeLookup={safeProductTypeLookup}
                   onTypeChange={onTypeChange}
+                  priceAlertThreshold={alertThreshold}
                 />
               ))}
             </tbody>
@@ -292,7 +299,7 @@ export function PriceCompareTable({
   );
 }
 
-function Row({ row, productTypeLookup, onTypeChange }) {
+function Row({ row, productTypeLookup, onTypeChange, priceAlertThreshold }) {
   const safeRow = row && typeof row === 'object' ? row : {};
   const productCode = asDisplayText(safeRow.productCode, '-');
   const productName = asDisplayText(safeRow.productName, '-');
@@ -313,9 +320,21 @@ function Row({ row, productTypeLookup, onTypeChange }) {
       : changeStatus === CHANGE_STATUS.DOWN
         ? 'var(--positive)'
         : undefined;
+  const alert = isPriceChangeAlert(safeRow, priceAlertThreshold);
 
   return (
-    <tr>
+    <tr
+      style={
+        alert
+          ? {
+              background:
+                changeStatus === CHANGE_STATUS.UP
+                  ? 'color-mix(in srgb, var(--negative) 7%, transparent)'
+                  : 'color-mix(in srgb, var(--positive) 7%, transparent)',
+            }
+          : undefined
+      }
+    >
       <td className="num" style={{ color: 'var(--text-3)', fontSize: 12 }}>
         {productCode}
       </td>
@@ -341,23 +360,30 @@ function Row({ row, productTypeLookup, onTypeChange }) {
           ? '—'
           : `${changeAmount >= 0 ? '+' : ''}${formatNumber(changeAmount)}원`}
       </td>
-      <td className="num right" style={{ color, fontWeight: 700 }}>
+      <td className="num right" style={{ color, fontWeight: alert ? 800 : 700 }}>
         {changeRate == null
           ? '—'
           : `${changeRate >= 0 ? '▲' : '▼'} ${Math.abs(changeRate * 100).toFixed(1)}%`}
       </td>
       <td>
-        <StatusChip status={changeStatus} />
+        <StatusChip status={changeStatus} alert={alert} />
       </td>
     </tr>
   );
 }
 
-function StatusChip({ status }) {
+function StatusChip({ status, alert = false }) {
   const safeStatus = asDisplayText(status, '-');
   const { bg, color } = CHANGE_STATUS_STYLE[safeStatus] || CHANGE_STATUS_STYLE._default;
   return (
-    <span className="chip" style={{ background: bg, color }}>
+    <span
+      className="chip"
+      style={{
+        background: bg,
+        color,
+        boxShadow: alert ? `inset 0 0 0 1px ${color}` : undefined,
+      }}
+    >
       {safeStatus}
     </span>
   );

@@ -28,6 +28,7 @@ export default function Page() {
     setLatestFileId,
     diffRows,
     productTypeLookup,
+    jetteSettings,
     handleFile,
     handleDelete,
     handleTypeChange,
@@ -134,12 +135,17 @@ export default function Page() {
                 onLatestChange={setLatestFileId}
                 summary={summary}
               />
-              <PriceSummaryCards diffRows={diffRows} onFilter={setCardFilter} />
+              <PriceSummaryCards
+                diffRows={diffRows}
+                onFilter={setCardFilter}
+                priceAlertThreshold={jetteSettings.priceAlertThreshold}
+              />
               <PriceCompareTable
                 diffRows={diffRows}
                 productTypeLookup={productTypeLookup}
                 onTypeChange={handleTypeChange}
                 externalFilter={cardFilter}
+                priceAlertThreshold={jetteSettings.priceAlertThreshold}
               />
             </>
           )}

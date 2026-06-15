@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { formatNumber } from '@/lib/format';
 import { CHANGE_STATUS } from './managed-products-constants';
 import { asObjectArray } from '@/lib/ui/prop-guards';
+import { getPriceAlertThreshold, isPriceChangeAlert } from '@/lib/jette/settings';
 
 /**
  * PriceSummaryCards — 가격 변동 요약 6카드 (인상/인하/신규/삭제/변동없음/관리대상)
@@ -10,19 +11,28 @@ import { asObjectArray } from '@/lib/ui/prop-guards';
  * @param {Array} diffRows — comparePriceLists 결과
  * @param {function} [onFilter] — (filterKey: string) => void — 카드 클릭 시 호출
  */
-export function PriceSummaryCards({ diffRows, onFilter }) {
+export function PriceSummaryCards({ diffRows, onFilter, priceAlertThreshold }) {
   const safeDiffRows = useMemo(() => asObjectArray(diffRows), [diffRows]);
+  const alertThreshold = useMemo(
+    () => getPriceAlertThreshold(priceAlertThreshold),
+    [priceAlertThreshold]
+  );
   const summary = useMemo(() => {
     const up = safeDiffRows.filter(r => r.changeStatus === CHANGE_STATUS.UP).length;
     const down = safeDiffRows.filter(r => r.changeStatus === CHANGE_STATUS.DOWN).length;
+    const upAlerts = safeDiffRows.filter(
+      r => r.changeStatus === CHANGE_STATUS.UP && isPriceChangeAlert(r, alertThreshold)
+    ).length;
+    const downAlerts = safeDiffRows.filter(
+      r => r.changeStatus === CHANGE_STATUS.DOWN && isPriceChangeAlert(r, alertThreshold)
+    ).length;
     const same = safeDiffRows.filter(r => r.changeStatus === CHANGE_STATUS.SAME).length;
     const newItems = safeDiffRows.filter(r => r.changeStatus === CHANGE_STATUS.NEW).length;
     const deleted = safeDiffRows.filter(r => r.changeStatus === CHANGE_STATUS.DELETED).length;
     const total = safeDiffRows.length;
-    return { up, down, same, newItems, deleted, total };
-  }, [safeDiffRows]);
+    return { up, down, upAlerts, downAlerts, same, newItems, deleted, total };
+  }, [safeDiffRows, alertThreshold]);
 
-  const pctOf = n => (summary.total > 0 ? Math.round((n / summary.total) * 100) : 0);
   const filter = onFilter instanceof Function ? onFilter : null;
 
   return (
@@ -32,7 +42,7 @@ export function PriceSummaryCards({ diffRows, onFilter }) {
         value={summary.up}
         unit="개"
         color="var(--negative)"
-        foot={`전체 ${formatNumber(summary.total)}개 중 ${pctOf(summary.up)}%`}
+        foot={`${alertThreshold}% 이상 ${formatNumber(summary.upAlerts)}개`}
         onClick={filter ? () => filter('up') : null}
       />
       <Card
@@ -40,7 +50,7 @@ export function PriceSummaryCards({ diffRows, onFilter }) {
         value={summary.down}
         unit="개"
         color="var(--positive)"
-        foot={`전체 ${formatNumber(summary.total)}개 중 ${pctOf(summary.down)}%`}
+        foot={`${alertThreshold}% 이상 ${formatNumber(summary.downAlerts)}개`}
         onClick={filter ? () => filter('down') : null}
       />
       <Card
