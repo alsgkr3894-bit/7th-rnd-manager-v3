@@ -43,6 +43,20 @@ function normalizeNoteView(value) {
   return NOTE_VIEW_KEYS.has(value) ? value : 'card';
 }
 
+async function restoreDeletedNotes(records = []) {
+  const failures = [];
+  for (const rec of records) {
+    try {
+      await restoreRecord('menu_dev_notes', rec);
+    } catch (err) {
+      failures.push(err);
+    }
+  }
+  if (failures.length > 0) {
+    throw new Error(`${failures.length}개 노트 복구 실패`);
+  }
+}
+
 const NoteTableRow = React.memo(function NoteTableRow({
   note,
   focusedRow,
@@ -257,7 +271,8 @@ export function NoteContent() {
     try {
       // deleteNote가 삭제된 부모+자식 원본 레코드 배열을 반환 → 전부 복원해야 자식 유실 방지
       const removed = await deleteNote(note.id);
-      setNotes(prev => prev.filter(n => n.id !== note.id));
+      const removedIds = new Set((removed || []).map(rec => rec.id));
+      setNotes(prev => prev.filter(n => !removedIds.has(n.id)));
       if (detailNote?.id === note.id) setDetailNote(null);
       const childCount = (removed?.length ?? 1) - 1;
       const base = note.title?.trim() ? `"${note.title}" 삭제됨` : '노트 삭제됨';
@@ -265,10 +280,15 @@ export function NoteContent() {
       showToast(label, 'ok', 5000, {
         label: '실행취소',
         onClick: async () => {
-          for (const rec of removed || []) {
-            await restoreRecord('menu_dev_notes', rec).catch(() => {});
+          try {
+            await restoreDeletedNotes(removed || []);
+            await load();
+            showToast('삭제를 되돌렸습니다', 'ok');
+          } catch (err) {
+            console.error('[NoteContent] undo delete failed', err);
+            showToast('실행취소 실패: ' + err.message, 'error');
+            await load();
           }
-          load();
         },
       });
     } catch (err) {
