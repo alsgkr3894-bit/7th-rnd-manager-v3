@@ -1065,11 +1065,12 @@
 
 **구현 상태**
 
-- 부분 구현 완료: `9a565dd fix: surface note undo restore failures`, `866c6fd fix: report localStorage restore failures`
+- 구현 완료: `9a565dd fix: surface note undo restore failures`, `866c6fd fix: report localStorage restore failures`, `44b2e55 test: guard silent catch policy`
 - 노트 삭제 실행취소의 `restoreRecord(...).catch(() => {})`를 제거하고, 복구 실패 건수를 error toast로 노출한다.
 - 삭제 직후 UI state도 삭제된 부모/하위 노트 전체 id 기준으로 갱신한다.
 - `importAll()`의 localStorage 복원 실패는 결과 `errors`에 `localStorage` 항목으로 보고한다.
-- 남은 범위: storage/cleanup 허용 목록과 데이터 저장·복원 실패 금지 목록을 테스트로 고정한다.
+- `silent-catch-policy` 테스트가 app/components/hooks/lib의 빈 `catch {}`와 빈 Promise catch를 명시 allowlist에 고정한다.
+- 삭제 실행취소, 복원 일부 실패, localStorage 복원 실패는 무음 처리하지 않는다는 소스 가드를 둔다.
 
 **관련 파일**
 
@@ -1083,15 +1084,15 @@
 
 **현재 상태**
 
-- 빈 `catch {}` 또는 실패 무시형 catch가 37줄 확인됐다.
-- storage 접근 실패처럼 무시 가능한 것도 있지만, localStorage 복원 실패나 undo 복원 실패처럼 사용자에게 알려야 할 수도 있는 경로도 있다.
+- 빈 `catch {}`와 빈 Promise catch는 allowlist 테스트에 등록된 위치만 허용된다.
+- storage 접근 실패처럼 무시 가능한 경로와 localStorage 복원 실패/undo 복원 실패처럼 사용자에게 알려야 하는 경로를 테스트로 분리했다.
 - 노트 삭제 undo 복원 실패와 localStorage 복원 실패는 사용자/결과 객체에 노출되도록 정리됐다.
 
 **정리 방향**
 
-- storage 편의 기능, visual effect, script cleanup은 무시 허용 목록으로 둔다.
-- 진행 중: 백업/복원, 삭제/undo, 데이터 저장 실패는 `errors` 배열 또는 toast로 노출한다.
-- `silent-catch-allowlist` 테스트를 두면 무음 실패가 다시 늘어나는 것을 막을 수 있다.
+- 완료: storage 편의 기능, visual effect, cleanup, work-log 같은 best-effort 경로만 무음 허용 목록으로 둔다.
+- 완료: 백업/복원, 삭제/undo, 데이터 저장 실패는 `errors` 배열 또는 toast로 노출하는 가드를 둔다.
+- 완료: `silent-catch-policy` 테스트로 빈 catch가 다시 늘어나는 것을 막는다.
 
 ---
 
