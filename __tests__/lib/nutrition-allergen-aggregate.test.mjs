@@ -44,6 +44,57 @@ describe('buildMenuAllergenMap', () => {
     expect([...(map.get('PZ2') || [])]).toEqual(['AL02']);
   });
 
+  test('1인피자는 씬바사삭 크러스트 행 1개만 생성된다 (B-9)', () => {
+    const ingredientRows = [
+      { productCode: 'CHZ', ingredientName: '치즈', allergens: ['AL02'] },
+      { productCode: 'DGH', ingredientName: '도우', allergens: ['AL01'], category: '도우' },
+    ];
+    const mapData = buildIngredientMenuMap({
+      menuMasters: [{ menuCode: 'IP-001', menuName: '1인 페퍼로니', category: '1인피자' }],
+      detailRecipes: [
+        {
+          menuCode: 'IP-001',
+          menuName: '1인 페퍼로니',
+          category: '1인피자',
+          components: [
+            { productCode: 'CHZ', ingredientName: '치즈' },
+            { productCode: 'DGH', ingredientName: '도우' },
+          ],
+        },
+      ],
+    });
+
+    const matrixRows = buildMenuMatrix(ingredientRows, mapData, [], () => false, [], {}, []);
+    expect(matrixRows).toHaveLength(1);
+    expect(matrixRows[0].crust).toBe('씬바사삭');
+    // 도우 계열은 씬바사삭에서 제외돼야 함
+    expect([...matrixRows[0].allergenCodes]).not.toContain('AL01');
+    expect([...matrixRows[0].allergenCodes]).toContain('AL02');
+  });
+
+  test('1인피자 L/R 사이즈는 논리 키로 묶인다 (B-9)', () => {
+    const ingredientRows = [{ productCode: 'CHZ', ingredientName: '치즈', allergens: ['AL02'] }];
+    const mapData = buildIngredientMenuMap({
+      menuMasters: [
+        { menuCode: 'IP-001-L', menuName: '1인 페퍼로니 L', category: '1인피자' },
+        { menuCode: 'IP-001-R', menuName: '1인 페퍼로니 R', category: '1인피자' },
+      ],
+      detailRecipes: [
+        {
+          menuCode: 'IP-001-L',
+          menuName: '1인 페퍼로니 L',
+          category: '1인피자',
+          components: [{ productCode: 'CHZ', ingredientName: '치즈' }],
+        },
+      ],
+    });
+
+    const matrixRows = buildMenuMatrix(ingredientRows, mapData, [], () => false, [], {}, []);
+    // L/R이 논리 키(IP-001)로 묶여 씬바사삭 1행만 생성
+    expect(matrixRows).toHaveLength(1);
+    expect(matrixRows[0].crust).toBe('씬바사삭');
+  });
+
   test('원가레시피 productCode가 달라도 식자재명으로 알레르기 정보까지 집계된다', () => {
     const ingredientRows = [
       { productCode: 'REAL-CHZ', ingredientName: '체다 치즈', allergens: ['AL02'] },
