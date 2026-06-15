@@ -23,6 +23,7 @@ import {
 import { asDisplayText, asObjectArray, asRecord } from '@/lib/ui/prop-guards';
 import { getMenuCodeRank } from '@/lib/menu-categories';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import { buildNutritionMenuMasterDiagnostics } from '@/lib/nutrition/menu-master-diagnostics';
 
 const TabBase = dynamic(
   () => import('@/components/nutrition/menu/TabBase').then(m => ({ default: m.TabBase })),
@@ -108,6 +109,40 @@ function DuplicateNotice({ diagnostics, repairing, onRepair }) {
   );
 }
 
+function MissingMasterNotice({ diagnostics }) {
+  const orphanCount = Number(diagnostics?.orphanCount) || 0;
+  if (!orphanCount) return null;
+  const samples = asObjectArray(diagnostics?.orphanMenuRefs)
+    .slice(0, 3)
+    .map(row => `${asDisplayText(row.menuName, '메뉴')} (${asDisplayText(row.menuCode)})`);
+
+  return (
+    <div
+      style={{
+        marginTop: 14,
+        padding: '12px 14px',
+        border: '1px solid var(--negative)',
+        borderRadius: 8,
+        background: 'var(--negative-soft)',
+        color: 'var(--text-1)',
+      }}
+      role="alert"
+    >
+      <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--negative)' }}>
+        메뉴마스터에 없는 영양 메뉴 {orphanCount}건 감지
+      </div>
+      <div style={{ marginTop: 3, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+        메뉴마스터에 다시 추가하거나 영양 메뉴에서 삭제한 뒤 출력하세요.
+        {samples.length > 0 && (
+          <span style={{ display: 'block', color: 'var(--text-3)' }}>
+            예: {samples.join(', ')}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Page() {
   const [tab, setTab] = useState(0);
   const [menus, setMenus] = useState([]);
@@ -122,6 +157,7 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [menuSearch, setMenuSearch] = useState('');
   const [duplicateDiagnostics, setDuplicateDiagnostics] = useState(null);
+  const [menuMasterDiagnostics, setMenuMasterDiagnostics] = useState(null);
   const [repairingDuplicates, setRepairingDuplicates] = useState(false);
   const mountedRef = useMounted();
   const { showConfirm, confirmElement } = useConfirmDialog();
@@ -184,6 +220,9 @@ export default function Page() {
     setCompositions(asObjectArray(compositionList));
     setSetComps(asObjectArray(setCompList));
     setDuplicateDiagnostics(duplicateDiag);
+    setMenuMasterDiagnostics(
+      buildNutritionMenuMasterDiagnostics({ menuRefs, menuMasters: masters })
+    );
     setLoading(false);
   }, [mountedRef]);
 
@@ -228,6 +267,7 @@ export default function Page() {
         repairing={repairingDuplicates}
         onRepair={handleRepairDuplicates}
       />
+      <MissingMasterNotice diagnostics={menuMasterDiagnostics} />
 
       {loading ? (
         <>
