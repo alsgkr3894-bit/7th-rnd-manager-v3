@@ -69,10 +69,14 @@ export default function Page() {
   // 마운트 후 활성 브랜드에 맞춰 교정한다(하이드레이션 불일치 방지).
   const [brandCats, setBrandCats] = useState(PIZZA_CATEGORIES);
   const {
-    catFilter, setCatFilter,
-    statusFilter, setStatusFilter,
-    subFilter, setSubFilter,
-    search, setSearch,
+    catFilter,
+    setCatFilter,
+    statusFilter,
+    setStatusFilter,
+    subFilter,
+    setSubFilter,
+    search,
+    setSearch,
     statusFiltered,
     displayCategories,
     catCounts,
@@ -118,9 +122,16 @@ export default function Page() {
 
   async function handleDeleteRow(row) {
     try {
-      await deleteMenuMaster(row.id);
+      const result = await deleteMenuMaster(row.id);
       setRows(prev => prev.filter(r => r.id !== row.id));
-      showToast(`"${row.menuName}" 삭제됨`, 'ok');
+      if (result?.cascadeErrors?.length) {
+        showToast(
+          `"${row.menuName}" 삭제됨 · 연관 영양 데이터 정리 ${result.cascadeErrors.length}건 확인 필요`,
+          'warn'
+        );
+      } else {
+        showToast(`"${row.menuName}" 삭제됨`, 'ok');
+      }
       setDeleteTarget(null);
       await syncMirror();
     } catch (err) {
@@ -200,7 +211,7 @@ export default function Page() {
   return (
     <main className="main">
       <PageHeader
-        breadcrumb={['상품 관리', '메뉴 마스터']}
+        breadcrumb={['메뉴', '메뉴 마스터']}
         title="메뉴 마스터"
         sub={
           loading
@@ -217,7 +228,11 @@ export default function Page() {
             >
               <Icon.download style={{ width: 14, height: 14 }} /> 엑셀로 내보내기
             </button>
-            <button className="btn" onClick={() => setBulkModal(true)} disabled={rows.length === 0 || isViewer}>
+            <button
+              className="btn"
+              onClick={() => setBulkModal(true)}
+              disabled={rows.length === 0 || isViewer}
+            >
               <Icon.calc style={{ width: 14, height: 14 }} /> 코드별 일괄 가격
             </button>
             {isMain && (
@@ -565,7 +580,11 @@ export default function Page() {
                             justifyContent: 'flex-end',
                           }}
                         >
-                          <button className="btn sm ghost" onClick={() => setEditRow(row)} disabled={isViewer}>
+                          <button
+                            className="btn sm ghost"
+                            onClick={() => setEditRow(row)}
+                            disabled={isViewer}
+                          >
                             <Icon.edit style={{ width: 13, height: 13 }} />
                           </button>
                           <button
@@ -630,7 +649,7 @@ export default function Page() {
       {deleteTarget && (
         <ConfirmDialog
           open
-          message={`"${deleteTarget.menuName}" 메뉴를 삭제합니다.\n원가·영양·판매량에서 이 메뉴 참조가 고아 레코드로 남을 수 있습니다.`}
+          message={`"${deleteTarget.menuName}" 메뉴를 삭제합니다.\n연결된 판매가, 원가 레시피, 영양 참조 데이터도 함께 정리됩니다.`}
           danger
           onConfirm={() => handleDeleteRow(deleteTarget)}
           onCancel={() => setDeleteTarget(null)}
@@ -649,7 +668,6 @@ export default function Page() {
           onCancel={() => setConfirmReset(false)}
         />
       )}
-
     </main>
   );
 }

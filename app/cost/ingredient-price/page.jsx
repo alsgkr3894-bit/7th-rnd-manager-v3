@@ -5,11 +5,7 @@ import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
 import { showToast } from '@/components/Toast';
-import {
-  upsertIngredientMeta,
-  bulkDeleteIngredients,
-  resetAllIngredients,
-} from '@/lib/ingredient';
+import { upsertIngredientMeta, bulkDeleteIngredients, resetAllIngredients } from '@/lib/ingredient';
 import { MasterRow } from '@/components/cost/ingredient-price/MasterRow';
 import { useIngredientPriceFilters } from '@/hooks/useIngredientPriceFilters';
 import { useIngredientPriceData } from '@/hooks/useIngredientPriceData';
@@ -109,9 +105,14 @@ export default function Page() {
     const ids = Array.from(priceTable.selected);
     if (ids.length === 0) return;
     try {
-      await bulkDeleteIngredients(ids);
-      showToast(`${ids.length}개 삭제 완료`, 'ok');
-      priceTable.clearSelection();
+      const { removed, failures } = await bulkDeleteIngredients(ids);
+      if (removed.length > 0) priceTable.clearSelection();
+      if (failures.length > 0) {
+        const prefix = removed.length > 0 ? `${removed.length}개 삭제, ` : '';
+        showToast(`${prefix}${failures.length}개 삭제 실패`, 'error');
+      } else {
+        showToast(`${removed.length}개 삭제 완료`, 'ok');
+      }
       await load();
     } catch (err) {
       showToast('삭제 실패: ' + err.message, 'error');
@@ -277,16 +278,27 @@ export default function Page() {
                   <tbody>
                     {issueRows.map((r, i) => (
                       <tr key={r.meta?.id ?? r.productCode ?? `issue-${i}`}>
-                        <td style={{ fontSize: 11, color: 'var(--text-3)' }}>{r.productCode || '—'}</td>
+                        <td style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                          {r.productCode || '—'}
+                        </td>
                         <td style={{ fontWeight: 600 }}>{r.masterName || r.productName || '—'}</td>
                         <td style={{ color: !r.category ? 'var(--warn)' : undefined }}>
                           {r.category || '미설정'}
                         </td>
                         <td style={{ color: !r.baseQuantity ? 'var(--warn)' : undefined }}>
-                          {r.baseQuantity != null ? `${r.baseQuantity}${r.baseUnitType || ''}` : '미설정'}
+                          {r.baseQuantity != null
+                            ? `${r.baseQuantity}${r.baseUnitType || ''}`
+                            : '미설정'}
                         </td>
-                        <td style={{ textAlign: 'right', color: r.priceWithTax == null ? 'var(--warn)' : undefined }}>
-                          {r.priceWithTax != null ? `${r.priceWithTax.toLocaleString()}원` : '미연동'}
+                        <td
+                          style={{
+                            textAlign: 'right',
+                            color: r.priceWithTax == null ? 'var(--warn)' : undefined,
+                          }}
+                        >
+                          {r.priceWithTax != null
+                            ? `${r.priceWithTax.toLocaleString()}원`
+                            : '미연동'}
                         </td>
                         <td>
                           <button
@@ -366,7 +378,9 @@ export default function Page() {
               tabIndex={0}
               style={{ cursor: 'pointer' }}
               onClick={() => setDeltaFilter(v => (v === 'down' ? 'all' : 'down'))}
-              onKeyDown={e => e.key === 'Enter' && setDeltaFilter(v => (v === 'down' ? 'all' : 'down'))}
+              onKeyDown={e =>
+                e.key === 'Enter' && setDeltaFilter(v => (v === 'down' ? 'all' : 'down'))
+              }
             >
               <div className="stat-label">단가 인하</div>
               <div

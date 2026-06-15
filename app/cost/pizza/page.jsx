@@ -15,9 +15,7 @@ import { makeDetailRecipePage } from '@/components/cost/shared/makeDetailRecipeP
 
 function usePizzaSummaryContent({ menus, recipeMap, extraData: edges }) {
   return useMemo(
-    () => (
-      <PizzaSummaryTable rows={buildPizzaSummary({ menus, recipeMap, edges: edges || [] })} />
-    ),
+    () => <PizzaSummaryTable rows={buildPizzaSummary({ menus, recipeMap, edges: edges || [] })} />,
     [menus, recipeMap, edges]
   );
 }

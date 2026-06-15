@@ -89,8 +89,17 @@ function RecipeContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const { recipes, allMeta, menuMasters, unitPriceMap, menuPricesMap, allGroups, loading, dbError, reload } =
-    useRecipeWorkbenchData();
+  const {
+    recipes,
+    allMeta,
+    menuMasters,
+    unitPriceMap,
+    menuPricesMap,
+    allGroups,
+    loading,
+    dbError,
+    reload,
+  } = useRecipeWorkbenchData();
 
   const listState = useRecipeListState({
     recipes,
@@ -225,8 +234,14 @@ function RecipeContent() {
   if (loading)
     return (
       <main className="main">
-        <PageHeader breadcrumb={['원가계산', '원가 계산']} title="메뉴 원가 계산" sub="불러오는 중…" />
-        <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-3)' }}>불러오는 중…</div>
+        <PageHeader
+          breadcrumb={['원가계산', '원가 계산']}
+          title="메뉴 원가 계산"
+          sub="불러오는 중…"
+        />
+        <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-3)' }}>
+          불러오는 중…
+        </div>
       </main>
     );
 

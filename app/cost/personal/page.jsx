@@ -28,6 +28,10 @@ export default makeDetailRecipePage({
   DetailCard: PersonalDetailCard,
   EditModal: PersonalDetailEditModal,
   emptyTitle: '1인피자 메뉴가 없습니다',
-  emptyHint: <>메뉴 판매가에서 1인피자 분류로 등록해주세요 (예: <code>IP-001</code>).</>,
+  emptyHint: (
+    <>
+      메뉴 판매가에서 1인피자 분류로 등록해주세요 (예: <code>IP-001</code>).
+    </>
+  ),
   footerLabel: '원가 합계',
 });
