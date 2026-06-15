@@ -113,6 +113,7 @@
   - `components/report/sales/SalesReportPreview.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 비중·피자 변동·순위표·비교표·제외 리스트 섹션 컴포넌트 분리. 587→94줄.
   - `components/report/sales/SalesRankTableSection.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 막대·순위표·사이즈 variant row 렌더링을 `SalesRankTableRows`로 분리. 197→52줄.
   - `components/report/sales/SalesRankTableRows.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 막대와 순위표 테이블을 `SalesCategoryBarRows`·`SalesRankTable`로 분리하고 기존 묶음 파일 제거. 163→0줄.
+  - `components/report/sales/SalesRankTable.jsx` ✅ 2026-06-16 추가 보강 — 순위 row, 사이즈 variant row, 전월 증감 cell 렌더링을 순위표 row 전용 `SalesRankTableRows`로 분리. 80→23줄.
   - `components/report/sales/SalesCategoryBarRows.jsx` ✅ 2026-06-16 추가 보강 — 카테고리 막대 row 렌더링과 수량/비율/opacity 계산을 `SalesCategoryBarRow`·`buildSalesCategoryBarMetrics`로 분리. 87→19줄.
   - `components/report/sales/SalesCategoryBarRow.jsx` ✅ 2026-06-16 추가 보강 — 수량/비율/opacity 계산을 `salesCategoryBarMetrics` helper로 분리하고 단위 테스트 추가. 97→83줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 부분 보강 — `NoteTableRow`·`NoteContextMenu` 렌더링 컴포넌트 분리. 1022→843줄.
@@ -163,14 +164,14 @@
   5. `app/nutrition/allergen/allergenPageDataUtils.js` (~81줄) — 현재 검색/정렬 helper 수준, 별도 분해 불필요
   6. `app/note/sample/useSamplePageState.js` (~80줄) — 현재 데이터 로드/파생 계산 hook 수준, 별도 분해 불필요
   7. `app/note/sample/_SampleSearchField.jsx` (~80줄) — 검색 히스토리 UI 정책이 더 늘어날 때 history list 분리 재평가
-  8. `components/report/sales/SalesRankTable.jsx` (~80줄) — 순위표 row 변형/전월 비교 표시 요구가 늘어날 때 row type별 추가 분리
-  9. `app/note/sample/page.jsx` (~79줄) — 현재 조립 컴포넌트 수준, 별도 분해 불필요
-  10. `app/note/sample/_SampleListView.jsx` (~78줄) — 리스트 컬럼/액션 정책이 더 늘어날 때 header/body 분리 재평가
-  11. `app/nutrition/allergen/useAllergenMatrixData.js` (~71줄) — 현재 제외 메뉴/매트릭스/search/order hook 수준, 별도 분해 불필요
-  12. `app/ingredient/manage/IngredientManualCostFields.jsx` (~71줄) — 수동 단가 정책이 더 늘어날 때 보관/과세/가격 입력을 추가 분리 재평가
-  13. `app/note/sample/samplePageStateUtils.js` (~70줄) — 검색 대상/정렬 정책이 더 늘어날 때 filter/sort helper 추가 분리 재평가
-  14. `app/note/noteListBodyViewProps.js` (~68줄) — 현재 카드/테이블 props 조립 helper 수준, 별도 분해 불필요
-  15. `app/note/sample/_SampleGridView.jsx` (~65줄) — 카드 선택/비교 상호작용이 더 늘어날 때 card adapter helper 분리 재평가
+  8. `app/note/sample/page.jsx` (~79줄) — 현재 조립 컴포넌트 수준, 별도 분해 불필요
+  9. `app/note/sample/_SampleListView.jsx` (~78줄) — 리스트 컬럼/액션 정책이 더 늘어날 때 header/body 분리 재평가
+  10. `app/nutrition/allergen/useAllergenMatrixData.js` (~71줄) — 현재 제외 메뉴/매트릭스/search/order hook 수준, 별도 분해 불필요
+  11. `app/ingredient/manage/IngredientManualCostFields.jsx` (~71줄) — 수동 단가 정책이 더 늘어날 때 보관/과세/가격 입력을 추가 분리 재평가
+  12. `app/note/sample/samplePageStateUtils.js` (~70줄) — 검색 대상/정렬 정책이 더 늘어날 때 filter/sort helper 추가 분리 재평가
+  13. `app/note/noteListBodyViewProps.js` (~68줄) — 현재 카드/테이블 props 조립 helper 수준, 별도 분해 불필요
+  14. `app/note/sample/_SampleGridView.jsx` (~65줄) — 카드 선택/비교 상호작용이 더 늘어날 때 card adapter helper 분리 재평가
+  15. `components/report/sales/SalesRankTableRows.jsx` (~59줄) — 현재 순위표 row 렌더링 helper 수준, 별도 분해 불필요
   16. `app/note/sample/_SampleFilterControls.jsx` (~59줄) — 현재 조립 컴포넌트 수준, 별도 분해 불필요
   17. `app/nutrition/allergen/useAllergenPageData.js` (~58줄) — 현재 source/order/export 연결 hook 수준, 별도 분해 불필요
   18. `lib/note/content-prop-header-builders.js` (~55줄) — 현재 header/stats/states helper 수준, 별도 분해 불필요

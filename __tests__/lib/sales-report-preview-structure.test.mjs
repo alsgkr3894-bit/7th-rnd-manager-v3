@@ -32,6 +32,10 @@ describe('sales report preview structure', () => {
       resolve('components/report/sales/SalesRankTable.jsx'),
       'utf8'
     );
+    const rankTableRowsSource = readFileSync(
+      resolve('components/report/sales/SalesRankTableRows.jsx'),
+      'utf8'
+    );
     const compareSource = readFileSync(
       resolve('components/report/sales/SalesCompareTableSection.jsx'),
       'utf8'
@@ -81,10 +85,16 @@ describe('sales report preview structure', () => {
     expect(categoryBarMetricsSource).toContain('barOpacity');
     expect(categoryBarSource).not.toContain('export function SalesRankTable');
     expect(rankTableSource).toContain('export function SalesRankTable');
-    expect(rankTableSource).toContain('function SalesVariantRows');
-    expect(rankTableSource).toContain('function SalesRankDeltaCell');
+    expect(rankTableSource).toContain("from './SalesRankTableRows'");
+    expect(rankTableSource).toContain('<SalesRankItemRows');
     expect(rankTableSource).toContain('className="paper-table"');
     expect(rankTableSource).not.toContain('export function SalesCategoryBarRows');
+    expect(rankTableSource).not.toContain('function SalesVariantRows');
+    expect(rankTableSource).not.toContain('function SalesRankDeltaCell');
+    expect(rankTableRowsSource).toContain('export function SalesVariantRows');
+    expect(rankTableRowsSource).toContain('export function SalesRankDeltaCell');
+    expect(rankTableRowsSource).toContain('export function SalesRankItemRows');
+    expect(rankTableRowsSource).toContain('safeQuantity(item.prevQty)');
     expect(compareSource).toContain('export function SalesCompareTableSection');
     expect(excludedSource).toContain('export function SalesExcludedListSection');
   });
