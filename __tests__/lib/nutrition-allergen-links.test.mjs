@@ -35,10 +35,13 @@ jest.unstable_mockModule('@/lib/db', () => ({
 }));
 
 const { deleteAllergenLinksByIngredient } = await import('../../lib/nutrition/allergen/store.js');
-const { deleteMenuRef } = await import('../../lib/nutrition/values/store.js');
+const { deleteMenuRef, deleteMenuRefsByMenuCodes } = await import(
+  '../../lib/nutrition/values/store.js'
+);
 
 beforeEach(() => {
   rowsByStore.nutrition_allergy_links = [];
+  rowsByStore.nutrition_menu_ref = [];
   rowsByStore.nutrition_raw_values = [];
   deleteCalls.length = 0;
   mockGetAll.mockClear();
@@ -84,5 +87,33 @@ describe('nutrition_allergy_links linkage basis', () => {
       'menuCode',
       'MENU-1'
     );
+  });
+
+  test('deleteMenuRefsByMenuCodes는 orphan 메뉴 ref와 원시값을 같은 transaction에서 정리한다', async () => {
+    rowsByStore.nutrition_menu_ref = [
+      { id: 7, menuCode: 'MENU-1', menuName: '구형 메뉴 1' },
+      { id: 8, menuCode: 'MENU-2', menuName: '구형 메뉴 2' },
+      { id: 9, menuCode: 'MENU-KEEP', menuName: '유지 메뉴' },
+    ];
+    rowsByStore.nutrition_raw_values = [
+      { id: 11, menuCode: 'MENU-1', crustType: '석쇠L' },
+      { id: 12, menuCode: 'MENU-2', crustType: '석쇠L' },
+      { id: 13, menuCode: 'MENU-KEEP', crustType: '석쇠L' },
+    ];
+
+    const result = await deleteMenuRefsByMenuCodes(['MENU-1', 'MENU-2', 'MENU-1', '']);
+
+    expect(result).toEqual({ deletedMenuRefs: 2, deletedRawValues: 2 });
+    expect(mockRunTransaction).toHaveBeenCalledWith(
+      ['nutrition_menu_ref', 'nutrition_raw_values'],
+      'readwrite',
+      expect.any(Function)
+    );
+    expect(deleteCalls).toEqual([
+      ['nutrition_menu_ref', 7],
+      ['nutrition_menu_ref', 8],
+      ['nutrition_raw_values', 11],
+      ['nutrition_raw_values', 12],
+    ]);
   });
 });

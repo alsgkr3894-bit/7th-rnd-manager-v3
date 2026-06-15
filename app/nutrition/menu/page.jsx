@@ -19,11 +19,13 @@ import {
   getAllSetCompositions,
   getNutritionBaseDuplicateDiagnostics,
   repairNutritionBaseDuplicates,
+  deleteMenuRefsByMenuCodes,
 } from '@/lib/nutrition/values/store';
 import { asDisplayText, asObjectArray, asRecord } from '@/lib/ui/prop-guards';
 import { getMenuCodeRank } from '@/lib/menu-categories';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { buildNutritionMenuMasterDiagnostics } from '@/lib/nutrition/menu-master-diagnostics';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 const TabBase = dynamic(
   () => import('@/components/nutrition/menu/TabBase').then(m => ({ default: m.TabBase })),
@@ -109,7 +111,7 @@ function DuplicateNotice({ diagnostics, repairing, onRepair }) {
   );
 }
 
-function MissingMasterNotice({ diagnostics }) {
+function MissingMasterNotice({ diagnostics, repairing, onRepair, isAdmin }) {
   const orphanCount = Number(diagnostics?.orphanCount) || 0;
   if (!orphanCount) return null;
   const samples = asObjectArray(diagnostics?.orphanMenuRefs)
@@ -125,20 +127,41 @@ function MissingMasterNotice({ diagnostics }) {
         borderRadius: 8,
         background: 'var(--negative-soft)',
         color: 'var(--text-1)',
+        display: 'flex',
+        gap: 12,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
       }}
       role="alert"
     >
-      <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--negative)' }}>
-        메뉴마스터에 없는 영양 메뉴 {orphanCount}건 감지
+      <div style={{ minWidth: 260, flex: '1 1 420px' }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--negative)' }}>
+          메뉴마스터에 없는 영양 메뉴 {orphanCount}건 감지
+        </div>
+        <div style={{ marginTop: 3, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+          메뉴마스터에 다시 추가하거나 영양 메뉴에서 삭제한 뒤 출력하세요.
+          {samples.length > 0 && (
+            <span style={{ display: 'block', color: 'var(--text-3)' }}>
+              예: {samples.join(', ')}
+            </span>
+          )}
+        </div>
       </div>
-      <div style={{ marginTop: 3, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-        메뉴마스터에 다시 추가하거나 영양 메뉴에서 삭제한 뒤 출력하세요.
-        {samples.length > 0 && (
-          <span style={{ display: 'block', color: 'var(--text-3)' }}>
-            예: {samples.join(', ')}
-          </span>
-        )}
-      </div>
+      <button
+        className="btn sm"
+        type="button"
+        onClick={onRepair}
+        disabled={repairing || !isAdmin}
+        style={{ color: 'var(--negative)', borderColor: 'var(--negative)' }}
+      >
+        {repairing ? '정리 중…' : '누락 메뉴 정리'}
+      </button>
+      {!isAdmin && (
+        <div style={{ width: '100%', fontSize: 11, color: 'var(--text-3)' }}>
+          정리는 관리자만 실행할 수 있습니다.
+        </div>
+      )}
     </div>
   );
 }
@@ -159,8 +182,10 @@ export default function Page() {
   const [duplicateDiagnostics, setDuplicateDiagnostics] = useState(null);
   const [menuMasterDiagnostics, setMenuMasterDiagnostics] = useState(null);
   const [repairingDuplicates, setRepairingDuplicates] = useState(false);
+  const [repairingOrphanMenus, setRepairingOrphanMenus] = useState(false);
   const mountedRef = useMounted();
   const { showConfirm, confirmElement } = useConfirmDialog();
+  const { isAdmin } = useCurrentRole();
 
   const filteredMenus = useMemo(() => {
     const safeMenus = asObjectArray(menus);
@@ -253,6 +278,35 @@ export default function Page() {
     }
   }, [load, repairingDuplicates, mountedRef, showConfirm]);
 
+  const handleRepairOrphanMenus = useCallback(async () => {
+    if (repairingOrphanMenus) return;
+    if (!isAdmin) {
+      showToast('누락 영양 메뉴 정리는 관리자만 가능합니다.', 'warn');
+      return;
+    }
+    const orphanRefs = asObjectArray(menuMasterDiagnostics?.orphanMenuRefs);
+    if (orphanRefs.length === 0) return;
+    const ok = await showConfirm({
+      message: `메뉴마스터에 없는 영양 메뉴 ${orphanRefs.length}건과 연결 영양값을 삭제합니다. 계속할까요?`,
+      danger: true,
+    });
+    if (!ok) return;
+    setRepairingOrphanMenus(true);
+    try {
+      const result = await deleteMenuRefsByMenuCodes(orphanRefs.map(row => row.menuCode));
+      showToast(
+        `누락 메뉴 ${result.deletedMenuRefs || 0}건 · 영양값 ${result.deletedRawValues || 0}건 정리 완료`,
+        'ok',
+        7000
+      );
+      await load();
+    } catch (err) {
+      showToast(`누락 메뉴 정리 실패: ${err?.message || err}`, 'error');
+    } finally {
+      if (mountedRef.current) setRepairingOrphanMenus(false);
+    }
+  }, [isAdmin, load, menuMasterDiagnostics, mountedRef, repairingOrphanMenus, showConfirm]);
+
   return (
     <main className="main">
       <PageHeader
@@ -267,7 +321,12 @@ export default function Page() {
         repairing={repairingDuplicates}
         onRepair={handleRepairDuplicates}
       />
-      <MissingMasterNotice diagnostics={menuMasterDiagnostics} />
+      <MissingMasterNotice
+        diagnostics={menuMasterDiagnostics}
+        repairing={repairingOrphanMenus}
+        onRepair={handleRepairOrphanMenus}
+        isAdmin={isAdmin}
+      />
 
       {loading ? (
         <>
