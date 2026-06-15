@@ -57,6 +57,13 @@
 
 ### 3.1 식자재 사용현황과 영양/원산지 매핑 기준 불일치
 
+**구현 상태**
+
+- 구현 완료: `81d6fa3 refactor: unify ingredient usage mapping`
+- 제품별 사용현황과 식자재 상세 사용 메뉴가 `buildIngredientMenuMap()` 기준을 공유한다.
+- 직접 레시피, 공통묶음, 엣지, 파생메뉴 식자재 연결을 같은 기준으로 포함한다.
+- 기존 피자/사이드 보조 카운트는 유지하고, 총 사용 메뉴 수는 통합 매핑 기준으로 계산한다.
+
 **관련 파일**
 
 - `app/ingredient/usage/page.jsx`
