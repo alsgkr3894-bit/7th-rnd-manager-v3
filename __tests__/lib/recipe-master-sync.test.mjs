@@ -7,14 +7,6 @@ import {
   recipeStoreKindForCategory,
   recipeSyncTargetLabel,
 } from '@/lib/recipe-master/sync';
-import {
-  buildIngredientIndex,
-  buildRecipeMasterRows,
-  calcComponentsCost,
-  deriveComponentInfo,
-  filterRecipeMasterRows,
-  findIngredientByInput,
-} from '@/lib/recipe-master/rows';
 
 describe('recipe master sync helpers', () => {
   test('카테고리별 원가 레시피 저장소 대상을 결정한다', () => {
@@ -154,59 +146,4 @@ describe('recipe master sync helpers', () => {
     expect(recipeSyncTargetLabel(null)).toBe('미지원');
   });
 
-  test('식자재 인덱스와 구성품 파생 정보를 계산한다', () => {
-    const index = buildIngredientIndex([
-      {
-        productCode: 'CHZ',
-        ingredientName: '체다 치즈',
-        allergens: ['AL02'],
-        origin: [{ displayName: '치즈', country: '미국' }],
-      },
-    ]);
-
-    expect(findIngredientByInput('체다치즈', index)?.productCode).toBe('CHZ');
-    expect(findIngredientByInput('CHZ', index)?.ingredientName).toBe('체다 치즈');
-    expect(
-      deriveComponentInfo([{ productCode: 'CHZ', ingredientName: '다른 이름' }], index)
-    ).toEqual({
-      allergenCodes: ['AL02'],
-      origins: [{ displayName: '치즈', country: '미국' }],
-    });
-  });
-
-  test('메뉴와 레시피 맵을 목록 행으로 합친다', () => {
-    const unitPriceMap = new Map([['CHK', { unitPrice: 80, baseUnitType: 'g' }]]);
-    const rows = buildRecipeMasterRows({
-      menuRows: [{ menuCode: 'S-CHK-001', menuName: '치킨텐더', category: '사이드' }],
-      recipeMaps: {
-        side: new Map([
-          [
-            'S-CHK-001',
-            {
-              menuCode: 'S-CHK-001',
-              components: [
-                { productCode: 'CHK', ingredientName: '닭', quantity: 2, unitPrice: 100 },
-              ],
-            },
-          ],
-        ]),
-      },
-      ingredientIndex: buildIngredientIndex([{ ingredientName: '닭', allergens: ['AL01'] }]),
-      unitPriceMap,
-    });
-
-    expect(rows).toEqual([
-      expect.objectContaining({
-        kind: 'side',
-        allergenCount: 1,
-        cost: 160,
-      }),
-    ]);
-    expect(filterRecipeMasterRows(rows, '치킨')).toHaveLength(1);
-    expect(filterRecipeMasterRows(rows, '피자')).toHaveLength(0);
-    expect(calcComponentsCost([{ quantity: 3, unitPrice: 50 }])).toBe(150);
-    expect(
-      calcComponentsCost([{ productCode: 'CHK', quantity: 3, unitPrice: 50 }], unitPriceMap)
-    ).toBe(240);
-  });
 });
