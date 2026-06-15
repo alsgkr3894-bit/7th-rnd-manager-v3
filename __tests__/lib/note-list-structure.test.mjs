@@ -12,6 +12,7 @@ describe('note list structure', () => {
     const headerSource = readFileSync(resolve('app/note/_NoteListHeader.jsx'), 'utf8');
     const statesSource = readFileSync(resolve('app/note/_NoteListStates.jsx'), 'utf8');
     const dialogsSource = readFileSync(resolve('app/note/_NotePageDialogs.jsx'), 'utf8');
+    const controllerSource = readFileSync(resolve('hooks/useNoteContentController.js'), 'utf8');
     const itemActionsSource = readFileSync(resolve('hooks/useNoteItemActions.js'), 'utf8');
     const listDataSource = readFileSync(resolve('hooks/useNoteListData.js'), 'utf8');
     const listStateSource = readFileSync(resolve('hooks/useNoteListState.js'), 'utf8');
@@ -23,10 +24,9 @@ describe('note list structure', () => {
     expect(source).toContain("import { NoteListHeader } from './_NoteListHeader'");
     expect(source).toContain("import { NoteListStates } from './_NoteListStates'");
     expect(source).toContain("import { NotePageDialogs } from './_NotePageDialogs'");
-    expect(source).toContain("import { useNoteItemActions } from '@/hooks/useNoteItemActions'");
-    expect(source).toContain("import { useNoteListData } from '@/hooks/useNoteListData'");
-    expect(source).toContain("import { useNoteListState } from '@/hooks/useNoteListState'");
-    expect(source).toContain("import { useNoteReportingCopy } from '@/hooks/useNoteReportingCopy'");
+    expect(source).toContain(
+      "import { useNoteContentController } from '@/hooks/useNoteContentController'"
+    );
     expect(source).toContain('<NoteStatsSummary');
     expect(source).toContain('<NoteFilterControls');
     expect(source).toContain('<NoteListBody');
@@ -37,6 +37,14 @@ describe('note list structure', () => {
     expect(source).not.toContain("import { NoteTableView } from './_NoteTableView'");
     expect(source).not.toContain("import { NoteContextMenu } from './_NoteContextMenu'");
     expect(source).not.toContain("import { NoteDetailModal } from './_NoteDetailModal'");
+    expect(source).not.toContain("import { useNoteItemActions } from '@/hooks/useNoteItemActions'");
+    expect(source).not.toContain("import { useNoteListData } from '@/hooks/useNoteListData'");
+    expect(source).not.toContain("import { useNoteListState } from '@/hooks/useNoteListState'");
+    expect(source).not.toContain(
+      "import { useNoteReportingCopy } from '@/hooks/useNoteReportingCopy'"
+    );
+    expect(source).not.toContain('useRouter');
+    expect(source).not.toContain('usePathname');
     expect(source).not.toContain('const SORT_OPTIONS = [');
     expect(source).not.toContain("className={'chip' + (statusFilter === st ? ' active' : '')}");
     expect(source).not.toContain('className="stagger note-card-wrap"');
@@ -87,6 +95,21 @@ describe('note list structure', () => {
     expect(dialogsSource).toContain('export function NotePageDialogs');
     expect(dialogsSource).toContain('<ConfirmDialog');
     expect(dialogsSource).toContain('프리셋을 삭제할까요?');
+    expect(controllerSource).toContain('export function useNoteContentController');
+    expect(controllerSource).toContain('useRouter()');
+    expect(controllerSource).toContain('usePathname()');
+    expect(controllerSource).toContain('useNoteListData()');
+    expect(controllerSource).toContain('useNoteListState({ notes, pinnedIds, pathname })');
+    expect(controllerSource).toContain('useNoteReportingCopy(notes)');
+    expect(controllerSource).toContain('useNoteBatchActions({ setNotes, load })');
+    expect(controllerSource).toContain(
+      'useNoteItemActions({ router, setNotes, load, detailNote, setDetailNote })'
+    );
+    expect(controllerSource).toContain('dialogsProps');
+    expect(controllerSource).toContain('headerProps');
+    expect(controllerSource).toContain('filterProps');
+    expect(controllerSource).toContain('bodyProps');
+    expect(controllerSource).toContain('NOTE_STATUS.REPORTING');
     expect(itemActionsSource).toContain('export function useNoteItemActions');
     expect(itemActionsSource).toContain('async function restoreDeletedNotes');
     expect(itemActionsSource).toContain('await deleteNote(note.id)');

@@ -327,13 +327,15 @@ describe('silent catch policy', () => {
   });
 
   test('삭제 실행취소와 복원 실패는 무음 처리하지 않는다', () => {
-    const noteSource = readFileSync(resolve('app/note/_NoteContent.jsx'), 'utf8');
+    const noteControllerSource = readFileSync(resolve('hooks/useNoteContentController.js'), 'utf8');
     const noteActionSource = readFileSync(resolve('hooks/useNoteItemActions.js'), 'utf8');
     const ingredientSource = readFileSync(resolve('app/ingredient/manage/page.jsx'), 'utf8');
     const restoreSource = readFileSync(resolve('app/settings/restore/page.jsx'), 'utf8');
     const backupSource = readFileSync(resolve('lib/db/backup.js'), 'utf8');
 
-    expect(noteSource).toContain("import { useNoteItemActions } from '@/hooks/useNoteItemActions'");
+    expect(noteControllerSource).toContain(
+      "import { useNoteItemActions } from '@/hooks/useNoteItemActions'"
+    );
     expect(noteActionSource).not.toMatch(
       /restoreRecord\([^)]*\)\.catch\(\s*\(\s*\)\s*=>\s*\{\s*\}\s*\)/
     );

@@ -1,12 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const pageSource = readFileSync(resolve('app/note/_NoteContent.jsx'), 'utf8');
+const controllerSource = readFileSync(resolve('hooks/useNoteContentController.js'), 'utf8');
 const actionHookSource = readFileSync(resolve('hooks/useNoteItemActions.js'), 'utf8');
 
 describe('note delete undo guards', () => {
   test('삭제 실행취소는 restoreRecord 실패를 숨기지 않는다', () => {
-    expect(pageSource).toContain("import { useNoteItemActions } from '@/hooks/useNoteItemActions'");
+    expect(controllerSource).toContain(
+      "import { useNoteItemActions } from '@/hooks/useNoteItemActions'"
+    );
     expect(actionHookSource).not.toContain("restoreRecord('menu_dev_notes', rec).catch(() => {})");
     expect(actionHookSource).toContain('restoreDeletedNotes');
     expect(actionHookSource).toContain("console.error('[useNoteItemActions] undo delete failed'");
