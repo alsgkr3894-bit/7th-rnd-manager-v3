@@ -6,21 +6,15 @@ import { SearchBox } from '@/components/ui/SearchBox';
 import { showToast } from '@/components/Toast';
 import {
   initDB,
-  exportSelected,
   storesForScopes,
   MODULE_GROUPS,
   MODULE_KEYS,
   collectStoreStats,
 } from '@/lib/db';
-import { downloadCsv, downloadJson, makeFileName } from '@/lib/download';
 import { formatNumber, formatRelative } from '@/lib/format';
-import {
-  getHistory,
-  addEntry,
-  getLastBackupAt,
-  togglePin,
-  getBackupReminder,
-} from '@/lib/backup-history';
+import { getHistory, getLastBackupAt, togglePin, getBackupReminder } from '@/lib/backup-history';
+import { exportHistoryCsv } from './backupPageUtils';
+import { useBackupActions } from './useBackupActions';
 import { SettingTile } from '@/components/ui/SettingTile';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
@@ -62,13 +56,6 @@ export default function Page() {
   useEffect(() => {
     setActiveBrand(getActiveBrand());
   }, []);
-
-  useEffect(
-    () => () => {
-      if (backupProgressTimerRef.current) clearTimeout(backupProgressTimerRef.current);
-    },
-    []
-  );
 
   useEffect(() => {
     (async () => {
@@ -124,71 +111,17 @@ export default function Page() {
     });
   }, [historyFilter, historyQuery, sortedHistory]);
 
-  function exportHistoryCsv() {
-    const headers = ['백업 ID', '일시', '범위', '행 수', '파일명', '고정'];
-    const rows = filteredHistory.map(h => [
-      h.id || '',
-      h.at ? new Date(h.at).toLocaleString('ko-KR') : '',
-      (h.scopes || []).map(k => MODULE_GROUPS[k]?.label || k).join(', ') || '전체',
-      h.totalRows ?? '',
-      h.fileName || '',
-      h.pinned ? 'Y' : '',
-    ]);
-    downloadCsv([headers, ...rows], '백업이력.csv');
-  }
-
-  async function handleBackup() {
-    if (busy || selectedKeys.length === 0) return;
-    setBusy(true);
-    setBackupProgress({
-      label: '백업 준비 중',
-      current: 0,
-      total: Math.max(selectedStores.length, 1),
-    });
-    try {
-      const data = await exportSelected(
-        selectedStores,
-        { scopes: selectedKeys },
-        {
-          onProgress: ({ store, index, total }) => {
-            setBackupProgress({ label: `${store} 내보내는 중`, current: index, total });
-          },
-        }
-      );
-      const fileName = makeFileName('7번가시스템백업', 'json');
-      setBackupProgress({
-        label: '파일 다운로드 준비 중',
-        current: Math.max(selectedStores.length, 1),
-        total: Math.max(selectedStores.length, 1),
-      });
-      downloadJson(data, fileName);
-      // 이력 기록 (실패해도 백업 파일은 이미 다운로드됨 — 경고만)
-      const recorded = addEntry({
-        scopes: selectedKeys,
-        totalRows: selectedRows,
-        fileName,
-      });
-      setHistory(getHistory());
-      setLastBackupAt(getLastBackupAt());
-      showToast(`백업 완료 — ${fileName}`, 'ok');
-      if (!recorded) {
-        showToast(
-          '백업 이력 저장에 실패했어요 (저장 공간 부족). 백업 파일은 정상 다운로드되었습니다.',
-          'warn'
-        );
-      }
-    } catch (err) {
-      console.error('[Backup] 실패:', err);
-      showToast('백업 중 오류가 발생했습니다.', 'error');
-    } finally {
-      setBusy(false);
-      if (backupProgressTimerRef.current) clearTimeout(backupProgressTimerRef.current);
-      backupProgressTimerRef.current = setTimeout(() => {
-        setBackupProgress(null);
-        backupProgressTimerRef.current = null;
-      }, 900);
-    }
-  }
+  const { handleBackup } = useBackupActions({
+    busy,
+    setBusy,
+    selectedKeys,
+    selectedStores,
+    selectedRows,
+    setBackupProgress,
+    backupProgressTimerRef,
+    setHistory,
+    setLastBackupAt,
+  });
 
   return (
     <main className="main page-enter">
@@ -421,7 +354,7 @@ export default function Page() {
               </div>
               <button
                 className="btn sm"
-                onClick={exportHistoryCsv}
+                onClick={() => exportHistoryCsv(filteredHistory)}
                 disabled={filteredHistory.length === 0}
               >
                 엑셀로 내보내기
