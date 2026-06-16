@@ -3,7 +3,7 @@ import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 import { buildOriginMenuRows } from '@/lib/nutrition/origin/build';
 
 describe('nutrition origin common recipe groups', () => {
-  test('공통묶음 재료의 원산지도 적용 카테고리 메뉴에 집계된다', () => {
+  test('체크한 공통묶음 재료의 원산지도 해당 메뉴에 집계된다', () => {
     const originIngredients = [
       {
         productCode: 'COMMON-SAUCE',
@@ -15,6 +15,16 @@ describe('nutrition origin common recipe groups', () => {
       menuMasters: [
         { menuCode: 'P-OR-003-L', menuName: '공통 테스트 L', category: '피자/오리지널' },
         { menuCode: 'S-CHK-001', menuName: '치킨텐더', category: '사이드' },
+      ],
+      detailRecipes: [
+        {
+          menuCode: 'P-OR-003-L',
+          menuName: '공통 테스트 L',
+          category: '피자/오리지널',
+          size: 'L',
+          components: [],
+          selectedRecipeGroupIds: ['10'],
+        },
       ],
       groups: [
         {

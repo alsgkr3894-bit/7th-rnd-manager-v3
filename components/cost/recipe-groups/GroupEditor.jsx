@@ -181,12 +181,12 @@ export function GroupEditor({
           </button>
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
-          레시피의 사이즈 레이블과 일치하면 해당 사이즈 원가에 자동 반영됩니다
+          메뉴마스터 레시피에서 체크할 수 있는 사이즈 후보입니다
         </div>
       </div>
 
-      {/* 기본 적용 카테고리 */}
-      <SectionLabel>기본 적용 카테고리</SectionLabel>
+      {/* 선택 가능 카테고리 */}
+      <SectionLabel>선택 가능 카테고리</SectionLabel>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
         {ALL_CATS.map(cat => {
           const on = (draft.defaultCategories || []).includes(cat);

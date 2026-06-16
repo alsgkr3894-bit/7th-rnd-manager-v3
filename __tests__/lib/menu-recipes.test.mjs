@@ -2,6 +2,7 @@ import { describe, expect, test } from '@jest/globals';
 import {
   buildMenuRecipeRecord,
   normalizeMenuRecipeComponents,
+  normalizeSelectedRecipeGroupIds,
   recipeKindForRecord,
 } from '../../lib/menu-recipes/store.js';
 import { mergeCanonicalRecipeMaps, recipeArraysFromMaps } from '../../lib/menu-recipes/legacy.js';
@@ -60,6 +61,7 @@ describe('menu recipes canonical store helpers', () => {
       category: '피자/오리지널',
       size: 'L',
       components: [{ ingredientName: '도우', quantity: '100', unitPrice: '2' }],
+      selectedRecipeGroupIds: [10, ' 20 ', 10, null],
     });
 
     expect(record).toMatchObject({
@@ -73,7 +75,15 @@ describe('menu recipes canonical store helpers', () => {
       source: 'menu-recipes',
     });
     expect(record.components).toHaveLength(1);
+    expect(record.selectedRecipeGroupIds).toEqual(['10', '20']);
     expect(recipeKindForRecord(record)).toBe('pizza');
+  });
+
+  test('선택한 공통묶음 id는 문자열 기준으로 정규화하고 중복 제거한다', () => {
+    expect(normalizeSelectedRecipeGroupIds([10, ' 10 ', '20', '', null, undefined])).toEqual([
+      '10',
+      '20',
+    ]);
   });
 
   test('canonical menu_recipes만 카테고리별 map으로 변환한다', () => {

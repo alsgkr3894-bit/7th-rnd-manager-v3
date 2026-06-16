@@ -43,7 +43,7 @@ describe('menu master recipe summary', () => {
     expect(summary.costRate).toBe(12.3);
   });
 
-  test('메뉴 카테고리와 사이즈에 맞는 공통묶음 원가를 메뉴마스터 요약에 포함한다', () => {
+  test('메뉴에서 체크한 공통묶음만 메뉴마스터 요약에 포함한다', () => {
     const unitPriceMap = new Map([
       ['CHZ', { unitPrice: 5, baseUnitType: 'g' }],
       ['SAUCE', { unitPrice: 10, baseUnitType: 'g' }],
@@ -53,6 +53,7 @@ describe('menu master recipe summary', () => {
       { menuCode: 'P-OR-001-L', category: '피자/오리지널', size: 'L', price: 10000 },
       {
         components: [{ productCode: 'CHZ', ingredientName: '치즈', quantity: 100 }],
+        selectedRecipeGroupIds: ['10'],
       },
       unitPriceMap,
       {
@@ -89,10 +90,60 @@ describe('menu master recipe summary', () => {
     expect(summary.costRate).toBe(8);
   });
 
-  test('직접 구성품이 없어도 공통묶음만으로 메뉴 원가를 표시한다', () => {
+  test('공통묶음을 체크하지 않으면 카테고리가 맞아도 자동 포함하지 않는다', () => {
+    const summary = summarizeMenuRecipe(
+      { menuCode: 'P-OR-001-L', category: '피자/오리지널', size: 'L', price: 10000 },
+      { components: [{ productCode: 'CHZ', ingredientName: '치즈', quantity: 100 }] },
+      new Map([
+        ['CHZ', { unitPrice: 5, baseUnitType: 'g' }],
+        ['SAUCE', { unitPrice: 10, baseUnitType: 'g' }],
+      ]),
+      {
+        recipeGroups: [
+          {
+            id: 10,
+            name: '피자 공통',
+            sizes: ['L'],
+            defaultCategories: ['피자'],
+            ingredients: [
+              {
+                productCode: 'SAUCE',
+                ingredientName: '공통소스',
+                quantities: { L: 30 },
+              },
+            ],
+          },
+        ],
+      }
+    );
+
+    expect(summary).toMatchObject({
+      status: MENU_RECIPE_SUMMARY_STATUS.READY,
+      componentCount: 1,
+      directComponentCount: 1,
+      commonComponentCount: 0,
+      commonGroupCount: 0,
+      totalCost: 500,
+    });
+  });
+
+  test('직접 구성품이 없어도 체크한 공통묶음만으로 메뉴 원가를 표시한다', () => {
     const result = buildMenuRecipeSummaryMap(
       [{ menuCode: 'P-OR-002-R', category: '피자/오리지널', size: 'R', price: 12000 }],
-      { pizza: new Map() },
+      {
+        pizza: new Map([
+          [
+            'P-OR-002-R',
+            {
+              menuCode: 'P-OR-002-R',
+              category: '피자/오리지널',
+              size: 'R',
+              components: [],
+              selectedRecipeGroupIds: ['11'],
+            },
+          ],
+        ]),
+      },
       new Map([['SAUCE', { unitPrice: 10, baseUnitType: 'g' }]]),
       {
         recipeGroups: [

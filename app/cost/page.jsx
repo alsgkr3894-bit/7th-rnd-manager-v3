@@ -29,7 +29,7 @@ const GROUPS = [
         href: COST_COMMON_GROUPS_ROUTE,
         icon: 'box',
         title: '공통묶음 관리',
-        sub: '공통 재료 묶음·기본 적용',
+        sub: '공통 재료 묶음·메뉴별 선택 후보',
       },
       {
         href: COST_COMMON_EDGES_ROUTE,

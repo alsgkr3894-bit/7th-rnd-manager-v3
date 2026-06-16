@@ -6,9 +6,15 @@ import { getAllIngredients } from '@/lib/ingredient';
 import { normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { loadLatestUnitPriceMap, summarizeMenuRecipe } from '@/lib/menu-master/recipe-summary';
-import { getMenuRecipeForMenu, upsertMenuRecipeForMenu } from '@/lib/menu-recipes';
+import {
+  getMenuRecipeForMenu,
+  normalizeSelectedRecipeGroupIds,
+  upsertMenuRecipeForMenu,
+} from '@/lib/menu-recipes';
+import { eligibleRecipeGroupsForMenu } from '@/lib/cost/recipe-groups/effective';
 import { recipeStoreKindForCategory } from '@/lib/recipe-master/sync';
 import { MenuRecipeComponentsTable } from '@/components/menu-master/MenuRecipeComponentsTable';
+import { MenuRecipeGroupSelector } from '@/components/menu-master/MenuRecipeGroupSelector';
 import { MenuRecipeSectionHeader } from '@/components/menu-master/MenuRecipeSectionHeader';
 
 let _rowKey = 0;
@@ -58,6 +64,7 @@ function buildSaveComponent(component, unitPriceMap) {
 
 export function MenuRecipeSection({ menuCode, menuName, category, size, sellingPrice, onSaved }) {
   const [components, setComponents] = useState([]);
+  const [selectedRecipeGroupIds, setSelectedRecipeGroupIds] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [allIngs, setAllIngs] = useState([]);
@@ -72,6 +79,7 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
   useEffect(() => {
     setLoaded(false);
     setComponents([]);
+    setSelectedRecipeGroupIds([]);
     setAllIngs([]);
     setRecipeGroups([]);
     setUnitPriceMap(new Map());
@@ -90,6 +98,7 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
           ? existing.components.map(c => hydrateComponent(c, latestUnitPriceMap))
           : []
       );
+      setSelectedRecipeGroupIds(normalizeSelectedRecipeGroupIds(existing?.selectedRecipeGroupIds));
       setAllIngs(ings);
       setRecipeGroups(groups);
       setUnitPriceMap(latestUnitPriceMap);
@@ -150,15 +159,47 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
     [unitPriceMap]
   );
 
+  const eligibleRecipeGroups = useMemo(
+    () => eligibleRecipeGroupsForMenu({ menuCode, category, size }, recipeGroups),
+    [category, menuCode, recipeGroups, size]
+  );
+
+  const eligibleRecipeGroupIds = useMemo(
+    () => new Set(eligibleRecipeGroups.map(group => String(group.id ?? '').trim()).filter(Boolean)),
+    [eligibleRecipeGroups]
+  );
+
+  const toggleRecipeGroup = useCallback(groupId => {
+    const id = String(groupId ?? '').trim();
+    if (!id) return;
+    setSelectedRecipeGroupIds(prev =>
+      prev.includes(id) ? prev.filter(value => value !== id) : [...prev, id]
+    );
+  }, []);
+
+  const savableRecipeGroupIds = useMemo(
+    () => selectedRecipeGroupIds.filter(id => eligibleRecipeGroupIds.has(id)),
+    [eligibleRecipeGroupIds, selectedRecipeGroupIds]
+  );
+
   const recipeSummary = useMemo(
     () =>
       summarizeMenuRecipe(
         { menuCode, category, size, price: sellingPrice },
-        { components },
+        { components, selectedRecipeGroupIds: savableRecipeGroupIds },
         unitPriceMap,
         { recipeGroups }
       ),
-    [category, components, menuCode, recipeGroups, sellingPrice, size, unitPriceMap]
+    [
+      category,
+      components,
+      menuCode,
+      recipeGroups,
+      savableRecipeGroupIds,
+      sellingPrice,
+      size,
+      unitPriceMap,
+    ]
   );
 
   const handleSave = useCallback(async () => {
@@ -172,6 +213,7 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
         kind: recipeKind,
         size: size || '단일',
         components: components.map(c => buildSaveComponent(c, unitPriceMap)),
+        selectedRecipeGroupIds: savableRecipeGroupIds,
       });
       await onSaved?.();
       showToast('레시피 저장됨', 'ok');
@@ -188,6 +230,7 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
     recipeKind,
     size,
     components,
+    savableRecipeGroupIds,
     unitPriceMap,
     onSaved,
   ]);
@@ -203,10 +246,16 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
   return (
     <div style={{ marginTop: 4 }}>
       <MenuRecipeSectionHeader
-        hasComponents={components.length > 0}
+        hasComponents={recipeSummary.componentCount > 0}
         recipeSummary={recipeSummary}
         saving={saving}
         onSave={handleSave}
+      />
+
+      <MenuRecipeGroupSelector
+        groups={eligibleRecipeGroups}
+        selectedGroupIds={savableRecipeGroupIds}
+        onToggle={toggleRecipeGroup}
       />
 
       <MenuRecipeComponentsTable

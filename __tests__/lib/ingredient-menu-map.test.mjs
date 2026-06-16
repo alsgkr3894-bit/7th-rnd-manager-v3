@@ -85,7 +85,7 @@ describe('buildIngredientMenuMap', () => {
     });
   });
 
-  describe('공통묶음 defaultCategories', () => {
+  describe('공통묶음 selectedRecipeGroupIds', () => {
     const GROUPS = [
       {
         id: 10,
@@ -95,30 +95,42 @@ describe('buildIngredientMenuMap', () => {
       },
     ];
 
-    test('피자 카테고리 메뉴 전체에 공통묶음 재료 매핑', () => {
-      const { ingredientToMenus } = buildIngredientMenuMap({ menuMasters: MENUS, groups: GROUPS });
+    test('메뉴 레시피에서 체크한 공통묶음 재료만 해당 메뉴에 매핑', () => {
+      const { ingredientToMenus } = buildIngredientMenuMap({
+        menuMasters: MENUS,
+        detailRecipes: [
+          {
+            menuCode: 'P-OR-001-L',
+            menuName: '오리지널콤보 L',
+            category: '피자',
+            size: 'L',
+            components: [],
+            selectedRecipeGroupIds: ['10'],
+          },
+        ],
+        groups: GROUPS,
+      });
       const menus = ingredientToMenus.get('code:ING-CHZ');
-      // 피자 2개 모두 매핑
       expect(menus.has('P-OR-001-L')).toBe(true);
-      expect(menus.has('P-OR-001-R')).toBe(true);
-      // 사이드는 미포함
+      expect(menus.has('P-OR-001-R')).toBe(false);
       expect(menus.has('S-CHK-001')).toBe(false);
     });
 
-    test('defaultCategories가 없는 묶음은 무시', () => {
-      const emptyGroup = [
-        {
-          id: 11,
-          name: '미할당',
-          defaultCategories: [],
-          ingredients: [{ productCode: 'X', ingredientName: '무관재료' }],
-        },
-      ];
+    test('체크하지 않은 공통묶음은 카테고리가 맞아도 매핑하지 않는다', () => {
       const { ingredientToMenus } = buildIngredientMenuMap({
         menuMasters: MENUS,
-        groups: emptyGroup,
+        detailRecipes: [
+          {
+            menuCode: 'P-OR-001-L',
+            menuName: '오리지널콤보 L',
+            category: '피자',
+            size: 'L',
+            components: [],
+          },
+        ],
+        groups: GROUPS,
       });
-      expect(ingredientToMenus.get('code:X')).toBeUndefined();
+      expect(ingredientToMenus.get('code:ING-CHZ')).toBeUndefined();
     });
   });
 

@@ -14,6 +14,7 @@ import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
 import { buildUnitPriceMap } from '@/lib/recipe';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllEdges } from '@/lib/cost/edge-dough';
+import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { buildLatestPriceLookup } from '@/lib/price/price-lookup';
 import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
 import { getActiveBrand } from '@/lib/active-brand';
@@ -26,10 +27,7 @@ import {
   buildRecipePrintRows,
 } from '@/lib/report/build-cost-report';
 import { useSettingValue } from '@/hooks/useSettingValue';
-import {
-  buildStrictPostingMessage,
-  collectStrictPostingIssues,
-} from '@/lib/report/strict-posting';
+import { buildStrictPostingMessage, collectStrictPostingIssues } from '@/lib/report/strict-posting';
 
 // ── 상수 ──────────────────────────────────────────────────────
 // 카테고리 순서: 원가마진표와 동일
@@ -220,19 +218,15 @@ export default function Page() {
     initDB()
       .then(async () => {
         try {
-          const [
-            prices,
-            ingredients,
-            recipeMaps,
-            edges,
-            latestPriceLookup,
-          ] = await Promise.all([
-            getAllMenuPrices(),
-            getAllIngredients(),
-            loadMenuRecipeMaps(),
-            getAllEdges(),
-            buildLatestPriceLookup(),
-          ]);
+          const [prices, ingredients, recipeMaps, edges, latestPriceLookup, recipeGroups] =
+            await Promise.all([
+              getAllMenuPrices(),
+              getAllIngredients(),
+              loadMenuRecipeMaps(),
+              getAllEdges(),
+              buildLatestPriceLookup(),
+              getAllRecipeGroups(),
+            ]);
           if (ignore) return;
 
           if (prices.length === 0) {
@@ -250,11 +244,13 @@ export default function Page() {
           const ctx = {
             detailMaps: recipeMaps,
             edges,
+            recipeGroups,
             upm: buildUnitPriceMap(ingredients, latestPriceRows),
           };
           const nextRecipeRows = buildRecipePrintRows({
             detailMaps: ctx.detailMaps,
             unitPriceMap: ctx.upm,
+            recipeGroups: ctx.recipeGroups,
           });
           loadedCtxRef.current = { prices, ctx };
           setRecipeRows(nextRecipeRows);
@@ -300,10 +296,7 @@ export default function Page() {
   const periodLabel = PERIOD_LABEL;
 
   const diagnostics = costByCategory._diagnostics || [];
-  const strictPostingIssues = useMemo(
-    () => collectStrictPostingIssues(recipeRows),
-    [recipeRows]
-  );
+  const strictPostingIssues = useMemo(() => collectStrictPostingIssues(recipeRows), [recipeRows]);
 
   // CAT_KEYS 순서 유지하면서 활성 카테고리 추출
   const activeCats = CAT_KEYS.map(k => CAT_META[k])
@@ -339,7 +332,11 @@ export default function Page() {
     .sort((a, b) => b.rate - a.rate);
   const recipeMenus = useMemo(() => buildRecipePrintMenus(recipeRows), [recipeRows]);
   const viewLabel =
-    viewTab === 'costTable' ? '제품원가표' : viewTab === 'recipe' ? '레시피 출력' : '원가계산 보고서';
+    viewTab === 'costTable'
+      ? '제품원가표'
+      : viewTab === 'recipe'
+        ? '레시피 출력'
+        : '원가계산 보고서';
 
   const reportMeta = {
     period: periodLabel,

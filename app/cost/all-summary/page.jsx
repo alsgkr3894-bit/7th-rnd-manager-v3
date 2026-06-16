@@ -10,6 +10,7 @@ import { formatNumber } from '@/lib/format';
 import { getAllMenuPrices } from '@/lib/cost/menu-price';
 import { buildUnitPriceMap } from '@/lib/recipe';
 import { getAllIngredients } from '@/lib/ingredient';
+import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
 import { buildLatestPriceLookup } from '@/lib/price/price-lookup';
 import { costRateColor } from '@/lib/cost/rate-color';
@@ -37,12 +38,14 @@ export default function Page() {
   const [catFilter, setCatFilter] = useState('전체');
 
   const fetchFn = useCallback(async () => {
-    const [allMenuPrices, allIngredients, recipeMaps, latestPriceLookup] = await Promise.all([
-      getAllMenuPrices(),
-      getAllIngredients(),
-      loadMenuRecipeMaps(),
-      buildLatestPriceLookup(),
-    ]);
+    const [allMenuPrices, allIngredients, recipeMaps, latestPriceLookup, recipeGroups] =
+      await Promise.all([
+        getAllMenuPrices(),
+        getAllIngredients(),
+        loadMenuRecipeMaps(),
+        buildLatestPriceLookup(),
+        getAllRecipeGroups(),
+      ]);
 
     const latestPriceRows = new Map(
       [...latestPriceLookup.entries()].map(([productCode, priceWithTax]) => [
@@ -53,7 +56,7 @@ export default function Page() {
     const upm = buildUnitPriceMap(allIngredients, latestPriceRows);
 
     const detailMaps = recipeMaps;
-    const built = buildRows(allMenuPrices, detailMaps, upm);
+    const built = buildRows(allMenuPrices, detailMaps, upm, recipeGroups);
 
     // 정렬: 카테고리 순 → 메뉴코드 rank → 메뉴명 가나다
     built.sort((a, b) => {

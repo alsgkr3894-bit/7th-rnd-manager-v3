@@ -66,9 +66,17 @@ describe('buildIngredientUsageMap', () => {
           category: '피자',
           components: [{ productCode: 'ING-SAUCE', ingredientName: '토마토소스' }],
         },
+        {
+          menuCode: 'SIDE-001',
+          menuName: '치즈볼',
+          category: '사이드',
+          components: [],
+          selectedRecipeGroupIds: ['20'],
+        },
       ],
       groups: [
         {
+          id: 20,
           name: '사이드 공통',
           defaultCategories: ['사이드'],
           ingredients: [{ productCode: 'ING-GROUP', ingredientName: '공통분말' }],

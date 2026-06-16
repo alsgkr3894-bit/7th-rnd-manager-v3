@@ -122,13 +122,23 @@ describe('buildMenuAllergenMap', () => {
     expect([...matrixRows[0].allergenCodes]).toEqual(['AL02']);
   });
 
-  test('공통묶음 재료의 알레르기도 적용 카테고리 메뉴에 집계된다', () => {
+  test('체크한 공통묶음 재료의 알레르기도 해당 메뉴에 집계된다', () => {
     const ingredientRows = [
       { productCode: 'COMMON-SAUCE', ingredientName: '공통소스', allergens: ['AL05'] },
     ];
     const mapData = buildIngredientMenuMap({
       menuMasters: [
         { menuCode: 'P-OR-003-L', menuName: '공통 테스트 L', category: '피자/오리지널' },
+      ],
+      detailRecipes: [
+        {
+          menuCode: 'P-OR-003-L',
+          menuName: '공통 테스트 L',
+          category: '피자/오리지널',
+          size: 'L',
+          components: [],
+          selectedRecipeGroupIds: ['10'],
+        },
       ],
       groups: [
         {

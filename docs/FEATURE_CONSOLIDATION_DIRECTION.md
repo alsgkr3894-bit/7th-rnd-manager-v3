@@ -88,7 +88,7 @@
 아래 범위는 구현 완료로 본다.
 
 - 메뉴마스터에서 레시피/원가 상태를 확인하고, 새 단일 레시피 저장소 `menu_recipes` 기준으로 저장/조회한다.
-- 공통 원가 관리의 공통묶음은 메뉴 카테고리와 사이즈 기준으로 메뉴마스터 원가 요약에 포함한다.
+- 공통 원가 관리의 공통묶음은 메뉴 카테고리와 사이즈 기준으로 메뉴마스터에서 후보로 노출하고, 메뉴별로 체크한 묶음만 원가 요약에 포함한다.
 - 레시피마스터와 구형 원가 입력 route는 메뉴마스터 또는 유지 화면으로 redirect된다.
 - 원가마진표, 전체요약, 원가 보고서, 제품별 사용현황, 원산지/알레르기, 표 출력은 `menu_recipes` 기준으로 연결됐다.
 - 홈/노트 원가율 KPI와 원가율 경보 통계는 `menu_recipes + cost_selling_prices` 기준으로 전환됐다.
@@ -164,7 +164,7 @@
 
 영양성분은 메뉴 기준 직접 입력값을 최우선으로 하며, 식자재 영양값 자동계산은 제거한다.
 
-원산지와 알레르기는 식자재에 입력된 정보를 레시피 기준으로 모아 출력한다. 공통 원가 관리의 공통묶음 재료도 적용 카테고리 메뉴의 원산지/알레르기 집계에 포함한다. 기본 메뉴는 `displayGroupKey`로 단일 출력하되, 엣지처럼 옵션별 알레르기가 달라지는 경우에는 `메뉴명 + 엣지명` 파생 출력행을 별도로 만든다.
+원산지와 알레르기는 식자재에 입력된 정보를 레시피 기준으로 모아 출력한다. 공통 원가 관리의 공통묶음 재료도 메뉴마스터에서 체크한 메뉴의 원산지/알레르기 집계에 포함한다. 기본 메뉴는 `displayGroupKey`로 단일 출력하되, 엣지처럼 옵션별 알레르기가 달라지는 경우에는 `메뉴명 + 엣지명` 파생 출력행을 별도로 만든다.
 
 영양성분은 기본 메뉴 값을 직접 입력하고, 기본 엣지 4종은 사이즈별 조정값을 직접 입력한다. 엣지 파생 영양성분은 `기본 메뉴 영양성분 + 엣지 조정값`으로 만들고, 출력명은 `메뉴명 + 엣지명`을 사용한다.
 
@@ -460,6 +460,8 @@
 | 메뉴마스터 레시피 구성품 테이블 컴포넌트 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 메뉴마스터 레시피 저장 헤더/요약 컴포넌트 분리 | 구현 완료 | 이번 보강(2026-06-16) |
 | 메뉴마스터 공통묶음 원가 반영 | 구현 완료 | 이번 보강(2026-06-16) |
+| 메뉴마스터 공통원가 체크 선택 적용 | 구현 완료 | 이번 보강(2026-06-16) |
+| 원가 결과 화면의 체크 공통원가 반영 | 구현 완료 | 이번 보강(2026-06-16) |
 | 공통묶음 원산지/알레르기 fixture 검증 | 구현 완료 | 이번 보강(2026-06-16) |
 | 메뉴마스터 기준 판매가 sync 정책 | 구현 완료 | `7742193` |
 | 영양성분 메뉴 추가의 메뉴마스터 기준 강제 | 구현 완료 | `68aa43e` |
@@ -681,7 +683,7 @@
 | 표기정보/영양 정책 정리 | 구현 완료: 엣지 직접 입력, 관리자 제한, 씬바샤삭 L 전용, 식자재 영양값 자동계산/store 제거 |
 | legacy 알레르기 링크 store | 구현 완료: `nutrition_allergy_links` 신규 생성 차단 및 v20 마이그레이션 삭제 |
 | 제때데이터 흐름 정리 | 구현 완료 |
-| 메뉴마스터 화면 구조 | 구현 완료: 상단 액션, 통계 카드, 필터 패널, 테이블 카드/페이지네이션, 레시피/원가 상태 cell, 테이블 row/status/action, 로딩/빈 상태, 편집/삭제/초기화 모달, 편집 모달 입력 필드, 편집 필드 하위 그룹, 카테고리 태그, 레시피 구성품 테이블, 레시피 저장 헤더/요약 렌더링을 `MenuMasterHeaderActions`·`MenuMasterStatsRow`·`MenuMasterFilterPanel`·`MenuMasterTablePanel`·`MenuRecipeCostCell`·`MenuMasterTableRow`·`MenuMasterLoadingTable`·`MenuMasterEmptyState`·`MenuMasterDialogs`·`MenuMasterEditFields`·`MenuMasterIdentityFields`·`MenuMasterCommercialFields`·`MenuMasterFieldPrimitives`·`MenuCategoryTags`·`MenuRecipeComponentsTable`·`MenuRecipeSectionHeader`로 분리해 page는 데이터 로드와 액션 연결 중심으로 축소 |
+| 메뉴마스터 화면 구조 | 구현 완료: 상단 액션, 통계 카드, 필터 패널, 테이블 카드/페이지네이션, 레시피/원가 상태 cell, 테이블 row/status/action, 로딩/빈 상태, 편집/삭제/초기화 모달, 편집 모달 입력 필드, 편집 필드 하위 그룹, 카테고리 태그, 레시피 구성품 테이블, 공통원가 선택, 레시피 저장 헤더/요약 렌더링을 `MenuMasterHeaderActions`·`MenuMasterStatsRow`·`MenuMasterFilterPanel`·`MenuMasterTablePanel`·`MenuRecipeCostCell`·`MenuMasterTableRow`·`MenuMasterLoadingTable`·`MenuMasterEmptyState`·`MenuMasterDialogs`·`MenuMasterEditFields`·`MenuMasterIdentityFields`·`MenuMasterCommercialFields`·`MenuMasterFieldPrimitives`·`MenuCategoryTags`·`MenuRecipeComponentsTable`·`MenuRecipeGroupSelector`·`MenuRecipeSectionHeader`로 분리해 page는 데이터 로드와 액션 연결 중심으로 축소 |
 | 판매량 분석 통합 | 구현 완료: 중복 분석 route redirect + 허브/검색 팔레트/홈/사이드바 링크 정리 |
 | 판매량 보고서 export 구조 | 구현 완료: Excel 시트/파일명 조립을 helper로 분리하고 fixture로 고정 |
 | 보고서센터 화면 구조 | 구현 완료: 새 보고서 종류 선택 모달, 통계 카드 row, 종류 카드 grid, 필터/즐겨찾기 툴바, 목록 로딩 skeleton을 `NewReportModal`·`ReportStatsRow`·`ReportKindGrid`·`ReportFilterToolbar`·`ReportListSkeleton`으로 분리해 센터 page는 목록 로드/필터/액션 연결 중심으로 축소 |

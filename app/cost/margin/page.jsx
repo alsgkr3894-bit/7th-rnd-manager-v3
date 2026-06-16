@@ -20,6 +20,7 @@ import {
   calcPlatformMargin,
 } from '@/lib/cost/margin/platforms';
 import { getAllEdges } from '@/lib/cost/edge-dough/store';
+import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
 import { MarginFilterBar } from '@/components/cost/margin/MarginFilterBar';
 import { MarginSummaryCards } from '@/components/cost/margin/MarginSummaryCards';
@@ -83,14 +84,16 @@ export default function Page() {
 
   const load = useCallback(async () => {
     await initDB();
-    const [files, meta, allMenuPrices, recipeMaps, edges, masterByCode] = await Promise.all([
-      getPriceFiles(),
-      getAllIngredients(),
-      getAllMenuPrices(),
-      loadMenuRecipeMaps(),
-      getAllEdges(),
-      getMenuMasterMap(),
-    ]);
+    const [files, meta, allMenuPrices, recipeMaps, edges, masterByCode, recipeGroups] =
+      await Promise.all([
+        getPriceFiles(),
+        getAllIngredients(),
+        getAllMenuPrices(),
+        loadMenuRecipeMaps(),
+        getAllEdges(),
+        getMenuMasterMap(),
+        getAllRecipeGroups(),
+      ]);
 
     const latest = files[0] || null;
     let priceRowMap = new Map();
@@ -108,7 +111,8 @@ export default function Page() {
         sideMap: recipeMaps.side,
         setMap: recipeMaps.set,
       },
-      upm
+      upm,
+      recipeGroups
     );
 
     const detailKeySet = new Set(detailRows.map(r => `${r.menuName}||${r.menuCategory}`));
