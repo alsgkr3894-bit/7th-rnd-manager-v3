@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
 import { normalizeSidebarOpenIds } from '../../lib/ui/sidebar-state.js';
-import { MOBILE_TAB_DEFS, NAV_SECTIONS } from '../../lib/menu.js';
+import { MOBILE_TAB_DEFS, NAV_HOME, NAV_SECTIONS } from '../../lib/menu.js';
 import { KIND_META } from '../../lib/report/constants.js';
 import {
   COST_COMMON_EDGES_ROUTE,
@@ -13,6 +13,38 @@ const knownGroupId = NAV_SECTIONS[0].groups[0].id;
 const navChildren = NAV_SECTIONS.flatMap(section =>
   section.groups.flatMap(group => group.children || [group])
 );
+
+describe('sidebar navigation order', () => {
+  test('요청한 카테고리 흐름대로 사이드바 그룹을 노출한다', () => {
+    const visibleOrder = [
+      NAV_HOME.label,
+      ...NAV_SECTIONS.flatMap(section => section.groups.map(group => group.label)),
+    ];
+
+    expect(visibleOrder).toEqual([
+      '홈',
+      '메뉴개발노트',
+      '보고서',
+      '제때데이터',
+      '식자재',
+      '메뉴',
+      '원가계산',
+      '영양성분',
+      '메뉴 판매량',
+      '설정 / 백업',
+    ]);
+  });
+
+  test('모바일 하단 탭도 요청 흐름에 맞춘 대표 탭 순서를 유지한다', () => {
+    expect(MOBILE_TAB_DEFS.map(item => item.label)).toEqual([
+      '홈',
+      '노트',
+      '보고서',
+      '원가',
+      '판매량',
+    ]);
+  });
+});
 
 describe('normalizeSidebarOpenIds', () => {
   test('객체가 아니면 빈 상태로 복구한다', () => {
