@@ -101,11 +101,17 @@
 - **완료(Phase 1, 2026-06-13)**: `lib/nutrition/allergen/store.js` dead code 6종 제거.
 - **완료(Phase 2, 2026-06-15)**: DB v20 — `nutrition_allergy_links` store 정의 제거(constants·module-stores·schema), v20 마이그레이션에서 기존 DB의 store를 `deleteObjectStore`로 삭제. `migrate-to-ingredient.js` allergen 파트 제거(origin 파트 유지). 7번가 DB 0/0 확인 후 착수.
 
-#### B-5. useDBLoad 전면 확산  🟡 ⏸
-- **파일**: 직접 `getAll()`·`initDB()` 호출하는 페이지 다수
-- **문제**: 일부 페이지가 `useDBLoad` 대신 useEffect + 직접 DB 호출 패턴 사용. 에러 핸들링·로딩 상태 누락.
-- **해결 방향**: 각 페이지를 `useDBLoad` 패턴으로 통일.
-- **왜 보류**: 변경 범위 넓음. 회귀 위험 > 현재 효과. 안전 우선.
+#### B-5. useDBLoad 전면 확산  🟡 🚧 Phase 1·2 완료, 중/고위험 대기
+
+- **Phase 1 완료 (2026-06-16)**: `useDBLoad` 옵션 강화(`initialData`·`deps`·`enabled`·`onError`·`mapErrorMessage`·`keepDataOnReload`·`reload`) + 저위험 hub 5개 및 보고서 2개 적용.
+  - hub: `menu-sales`, `nutrition`, `ingredient`, `jette`, `note/journal`
+  - report: `report/menu-sales-compare`(rows 1회 로드 + useMemo 파생), `report/price`(deps+keepDataOnReload+mapErrorMessage)
+  - 구조 테스트: `__tests__/hooks/use-db-load.test.mjs` 신설
+- **Phase 2 완료 (2026-06-16)**: `menu-sales/settings`(제외 수 합산), `ingredient/usage`(7개 병렬 쿼리 번들) 적용.
+  - `ingredient/usage`의 `mountedRef`·`useMounted`·`useCallback` 제거 → `cancelled` 플래그 일원화.
+- **남은 저위험 후보**: 없음 (note/form/write/sample 페이지는 DB 쓰기 포함, 고위험 대상 목록과 중복 없음).
+- **중위험 (별도 착수)**: `hooks/useMarginData.js`, `hooks/useIngredientPriceData.js`, `app/settings/backup/page.jsx` — 돈·백업 데이터 접근이라 테스트 먼저 고정 필요.
+- **고위험 (보류)**: `ingredient/manage`, `settings/restore`, `nutrition/menu`, `menu-master`, `settings/account`, `report/cost` — 다중 상태·마이그레이션·이벤트 혼합, 별도 라운드.
 - **관련 메모리**: [[deferred-refactors]]
 
 #### B-6 / C-P4. 대형 컴포넌트 분해  🟡 ✅ 완료(2026-06-16)  (C-P4 통합)
@@ -708,4 +714,4 @@ LOW 완료: L-02 border-radius 토큰화 · L-03 비교월 동일 경고 · L-04
 
 ---
 
-_잔여 보류: **B-5**(useDBLoad 전면, 회귀위험) · **B-6/C-P4**(대형 컴포넌트 추가 분해 재평가) · **B-20**(실업무 fixture 확대 잔여: Excel 앱 수동 확인·다운로드 열람·대용량 케이스) · **N-43**(과거 단가, 동작 명세)._
+_잔여 보류: **B-5** Phase 1·2 완료, 중/고위험 페이지 별도 착수 대기 · **B-6/C-P4**(대형 컴포넌트 추가 분해 재평가) · **B-20**(실업무 fixture 확대 잔여: Excel 앱 수동 확인·다운로드 열람·대용량 케이스) · **N-43**(과거 단가, 동작 명세)._
