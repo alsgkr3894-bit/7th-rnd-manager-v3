@@ -1,8 +1,7 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { SectionHubPage } from '@/components/ui/SectionHubPage';
 import { SectionDashboard } from '@/components/ui/SectionDashboard';
-import { initDB } from '@/lib/db';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import { getIngredientDashboard } from '@/lib/ingredient/dashboard';
 
 const GROUPS = [
@@ -35,21 +34,9 @@ const GROUPS = [
 ];
 
 export default function Page() {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        await initDB();
-        setStats(await getIngredientDashboard());
-      } catch (err) {
-        console.warn('[ingredient hub] dashboard load failed:', err);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+  const { data: stats, loading } = useDBLoad(() => getIngredientDashboard(), {
+    onError: err => console.warn('[ingredient hub] dashboard load failed:', err),
+  });
 
   const cards = stats
     ? [
@@ -85,7 +72,7 @@ export default function Page() {
         loading={loading}
         cards={cards}
         isEmpty={!loading && (!stats || stats.totalCount === 0)}
-        emptyHint="아직 등록된 식자재가 없어요. ‘식자재 관리’에서 마스터를 시드하거나 제때 가격을 업로드하세요."
+        emptyHint="아직 등록된 식자재가 없어요. '식자재 관리'에서 마스터를 시드하거나 제때 가격을 업로드하세요."
       />
     </SectionHubPage>
   );

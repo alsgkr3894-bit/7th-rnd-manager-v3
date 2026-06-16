@@ -1,35 +1,15 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { SectionHubPage } from '@/components/ui/SectionHubPage';
 import { SectionDashboard } from '@/components/ui/SectionDashboard';
-import { initDB } from '@/lib/db';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import { getJetteDashboard } from '@/lib/jette/dashboard';
 import { JETTE_HUB_GROUPS } from '@/lib/jette/navigation';
 import { formatNumber } from '@/lib/format';
 
 export default function Page() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      try {
-        await initDB();
-        const nextData = await getJetteDashboard();
-        if (alive) setData(nextData);
-      } catch (err) {
-        if (alive) console.warn('[jette hub] dashboard load failed:', err);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const { data, loading } = useDBLoad(() => getJetteDashboard(), {
+    onError: err => console.warn('[jette hub] dashboard load failed:', err),
+  });
 
   const price = data?.price;
   const shipment = data?.shipment;
@@ -72,7 +52,7 @@ export default function Page() {
         loading={loading}
         cards={cards}
         isEmpty={!loading && cards.length === 0}
-        emptyHint="아직 업로드된 제때 단가·출고량 데이터가 없어요. ‘단가’ 또는 ‘출고량’에서 파일을 업로드하세요."
+        emptyHint="아직 업로드된 제때 단가·출고량 데이터가 없어요. '단가' 또는 '출고량'에서 파일을 업로드하세요."
       />
     </SectionHubPage>
   );

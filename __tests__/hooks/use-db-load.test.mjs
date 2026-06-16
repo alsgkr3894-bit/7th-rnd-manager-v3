@@ -5,6 +5,9 @@ import { resolve } from 'path';
 const src = readFileSync(resolve('hooks/useDBLoad.js'), 'utf8');
 const menuSalesSrc = readFileSync(resolve('app/menu-sales/page.jsx'), 'utf8');
 const nutritionSrc = readFileSync(resolve('app/nutrition/page.jsx'), 'utf8');
+const ingredientSrc = readFileSync(resolve('app/ingredient/page.jsx'), 'utf8');
+const jetteSrc = readFileSync(resolve('app/jette/page.jsx'), 'utf8');
+const journalSrc = readFileSync(resolve('app/note/journal/page.jsx'), 'utf8');
 
 describe('useDBLoad 옵션 API', () => {
   test('6가지 옵션이 모두 구현됐다', () => {
@@ -58,5 +61,25 @@ describe('저위험 hub 페이지 useDBLoad 적용', () => {
     expect(nutritionSrc).toContain('useDBLoad');
     expect(nutritionSrc).not.toContain("import { initDB }");
     expect(nutritionSrc).not.toContain('setLoading(');
+  });
+
+  test('ingredient/page.jsx가 useDBLoad를 사용한다', () => {
+    expect(ingredientSrc).toContain('useDBLoad');
+    expect(ingredientSrc).not.toContain("import { initDB }");
+    expect(ingredientSrc).not.toContain('setLoading(');
+  });
+
+  test('jette/page.jsx가 useDBLoad를 사용한다', () => {
+    expect(jetteSrc).toContain('useDBLoad');
+    expect(jetteSrc).not.toContain("import { initDB }");
+    expect(jetteSrc).not.toContain('setLoading(');
+  });
+
+  test('note/journal/page.jsx가 useDBLoad를 사용하고 date 변경은 re-fetch를 유발하지 않는다', () => {
+    expect(journalSrc).toContain('useDBLoad');
+    expect(journalSrc).not.toContain("import { initDB }");
+    expect(journalSrc).not.toContain('setLoading(');
+    // date는 deps에 넣지 않고 useMemo 필터로만 처리함
+    expect(journalSrc).toContain('initialData: []');
   });
 });

@@ -1,9 +1,9 @@
 'use client';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { initDB } from '@/lib/db';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import { getAllNotes } from '@/lib/note';
 import { buildJournalPrintHtml } from '@/lib/note/journal-print';
 import { openPrintWindow } from '@/lib/print/window-print';
@@ -20,20 +20,13 @@ function toDateLabel(dateStr) {
 // ── 메인 페이지 ─────────────────────────────────────────────
 export default function Page() {
   const router = useRouter();
-  const [notes, setNotes] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [date, setDate] = useState(() => todayLocalDate());
 
-  const load = useCallback(async () => {
-    await initDB();
-    setNotes(await getAllNotes());
-  }, []);
-
-  useEffect(() => {
-    load()
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [load]);
+  // date 변경은 re-fetch 없이 JS 필터만 하므로 deps 불필요
+  const { data: notes = [], loading } = useDBLoad(() => getAllNotes(), {
+    initialData: [],
+    onError: console.error,
+  });
 
   const dayNotes = useMemo(
     () =>
