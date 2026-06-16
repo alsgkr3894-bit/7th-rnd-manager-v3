@@ -1,314 +1,62 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import CommandPalette from './CommandPalette';
 import { ToastContainer } from './Toast';
 import { ScrollToTop } from './ui/ScrollToTop';
-import { Icon } from './icons';
-import { applyAllSettings, getSetting, setSetting } from '@/lib/settings';
+import { applyAllSettings } from '@/lib/settings';
 import { KEYS } from '@/lib/note/keys';
 import { ensureSession } from '@/lib/session';
 import { pruneOldWorkLogs } from '@/lib/work-log';
 import { hydratePlatformsFromDB } from '@/lib/cost/margin/platforms';
 import { initClickOrigin } from '@/lib/ui/click-origin';
-import { OVERLAY_COLOR } from '@/lib/ui/styles';
-import { getActiveBrand, getActiveBrandId, setActiveBrandId } from '@/lib/active-brand';
-import { BRAND_MASTER_EVENT, BRAND_MASTER_KEY, getVisibleBrands } from '@/lib/brand-master';
-import { COMPANIES } from '@/lib/companies';
 import { MOBILE_TAB_DEFS } from '@/lib/menu';
+import { Icon } from './icons';
 import ProgressBar from './ProgressBar';
 import OfflineIndicator from './OfflineIndicator';
 import DbVersionNotice from './DbVersionNotice';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useVisualEffects } from '@/hooks/useVisualEffects';
 import { usePageStats } from '@/hooks/usePageStats';
-import { useModalOrigin } from '@/hooks/useModalOrigin';
 import { useSettingValue } from '@/hooks/useSettingValue';
-
-const SHORTCUTS = [
-  { key: 'N', desc: '새 테스트 노트 작성' },
-  { key: '⌘K', desc: '커맨드 팔레트 열기' },
-  { key: '/', desc: '페이지 내 검색창 포커스' },
-  { key: 'D', desc: '다크모드 토글' },
-  { key: '?', desc: '단축키 도움말 토글' },
-  { key: 'Esc', desc: '모달/팔레트 닫기' },
-  { key: 'G H', desc: '홈으로 이동' },
-  { key: 'G N', desc: '노트 목록으로 이동' },
-  { key: 'G C', desc: '원가 계산으로 이동' },
-  { key: 'G R', desc: '보고서로 이동' },
-  { key: 'G S', desc: '샘플 기록으로 이동' },
-  { key: 'G I', desc: '식자재로 이동' },
-  { key: 'G U', desc: '영양성분으로 이동' },
-  { key: 'G B', desc: '보고서로 이동' },
-  { key: 'G J', desc: '제때로 이동' },
-];
-
-const G_NAV = {
-  h: '/',
-  n: '/note',
-  c: '/cost',
-  r: '/report',
-  s: '/note/sample',
-  i: '/ingredient',
-  u: '/nutrition',
-  b: '/report',
-  j: '/jette',
-};
-
-function ShortcutsHelp({ onClose }) {
-  const cardRef = useRef(null);
-  useModalOrigin(cardRef);
-
-  return (
-    <div
-      role="presentation"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: OVERLAY_COLOR,
-        zIndex: 600,
-        display: 'grid',
-        placeItems: 'center',
-        animation: 'fade 150ms ease',
-      }}
-      onClick={e => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div
-        ref={cardRef}
-        className="card modal-anim"
-        role="dialog"
-        aria-label="키보드 단축키"
-        aria-modal="true"
-        style={{ width: 'min(380px,92vw)', padding: '24px 28px' }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 16,
-          }}
-        >
-          <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--text-1)' }}>키보드 단축키</div>
-          <button className="btn" style={{ padding: '4px 8px' }} onClick={onClose}>
-            <Icon.close style={{ width: 15, height: 15 }} />
-          </button>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {SHORTCUTS.map(s => (
-            <div
-              key={s.key}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-            >
-              <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{s.desc}</span>
-              <kbd
-                style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  padding: '3px 10px',
-                  borderRadius: 7,
-                  background: 'var(--surface-2)',
-                  border: '1px solid var(--border-strong)',
-                  color: 'var(--text-1)',
-                  fontFamily: 'inherit',
-                  flexShrink: 0,
-                }}
-              >
-                {s.key}
-              </kbd>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * 활성 브랜드 색을 앱 테마(accent)에 적용.
- * 7번가(main)는 globals.css의 손튜닝 레드 테마를 그대로 사용(덮어쓰지 않음).
- * 그 외 브랜드는 브랜드색을 기준으로 press/soft/text를 color-mix로 파생.
- */
-function applyBrandAccent(company) {
-  if (typeof document === 'undefined') return;
-  const root = document.documentElement;
-  const vars = ['--accent', '--accent-press', '--accent-soft', '--accent-text'];
-  if (!company || company.id === 'main') {
-    vars.forEach(v => root.style.removeProperty(v)); // 기본 테마 복귀
-    return;
-  }
-  const c = company.color;
-  const isDark = root.getAttribute('data-theme') === 'dark';
-  root.style.setProperty('--accent', c);
-  root.style.setProperty('--accent-press', `color-mix(in oklab, ${c} 82%, black)`);
-  if (isDark) {
-    // 다크모드: 브랜드색 + 어두운 배경 혼합 → 눈에 띄되 너무 밝지 않게
-    root.style.setProperty('--accent-soft', `color-mix(in oklab, ${c} 22%, #111111)`);
-    root.style.setProperty('--accent-text', `color-mix(in oklab, ${c} 55%, white)`);
-  } else {
-    // 라이트모드: 브랜드색 + 흰 배경 혼합 → 연한 틴트
-    root.style.setProperty('--accent-soft', `color-mix(in oklab, ${c} 12%, white)`);
-    root.style.setProperty('--accent-text', `color-mix(in oklab, ${c} 78%, black)`);
-  }
-}
-
-const SSR_ACTIVE_COMPANY =
-  COMPANIES.find(company => company.id === 'main') ||
-  COMPANIES[0] ||
-  {
-    id: 'main',
-    name: '7번가피자',
-    sub: '본사직영',
-    logo: '/logo-7thstreet.png',
-    color: '#E1101F',
-  };
-const SSR_BRAND_OPTIONS = COMPANIES.length > 0 ? COMPANIES : [SSR_ACTIVE_COMPANY];
+import { useAppBrands } from '@/hooks/useAppBrands';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { ShortcutsHelp } from './ShortcutsHelp';
 
 export default function AppShell({ children }) {
   const [mobileNav, setMobileNav] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  const gPressedRef = useRef(false);
-  const gTimerRef = useRef(null);
-  // 첫 렌더는 SSR과 동일한 상수만 사용하고, 마운트 후 localStorage의 실제 브랜드로 교정한다.
-  const [brandOptions, setBrandOptions] = useState(SSR_BRAND_OPTIONS);
-  const [activeCompany, setActiveCompany] = useState(SSR_ACTIVE_COMPANY);
-
-  useEffect(() => {
-    const syncBrands = () => {
-      const visible = getVisibleBrands();
-      const active = getActiveBrand();
-      setBrandOptions(visible);
-      setActiveCompany(active);
-    };
-    const onStorage = event => {
-      if (!event.key || event.key === BRAND_MASTER_KEY || event.key === 'v3:active-brand') {
-        syncBrands();
-      }
-    };
-    syncBrands();
-    window.addEventListener(BRAND_MASTER_EVENT, syncBrands);
-    window.addEventListener('storage', onStorage);
-    return () => {
-      window.removeEventListener(BRAND_MASTER_EVENT, syncBrands);
-      window.removeEventListener('storage', onStorage);
-    };
-  }, []);
-
-  useEffect(() => {
-    applyBrandAccent(activeCompany);
-    // 다크/라이트 전환 시 accent-soft/text 재계산
-    const obs = new MutationObserver(() => applyBrandAccent(activeCompany));
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-    return () => obs.disconnect();
-  }, [activeCompany]);
-
-  const handleCompanyChange = c => {
-    if (!c || c.id === getActiveBrandId()) return;
-    if (!setActiveBrandId(c.id)) return;
-    window.location.reload();
-  };
   const pathname = usePathname();
   const router = useRouter();
+
+  const { brandOptions, activeCompany, handleCompanyChange } = useAppBrands();
   const { unmatchedCount, reportingCount } = usePageStats(pathname);
   const unmatchedAlertEnabled = useSettingValue('unmatchedAlert') !== 'off';
   const visibleUnmatchedCount = unmatchedAlertEnabled ? unmatchedCount : 0;
 
-  // 키보드 단축키
-  useEffect(() => {
-    const unmodified = e => !e.metaKey && !e.ctrlKey && !e.altKey;
+  useKeyboardShortcuts({
+    router,
+    onOpenPalette: () => setPaletteOpen(true),
+    onToggleShortcuts: () => setShortcutsOpen(v => !v),
+    onClosePalette: () => setPaletteOpen(false),
+    onCloseShortcuts: () => setShortcutsOpen(false),
+  });
 
-    // 수정자 없는 단일 키 → 동작 맵
-    const PLAIN_KEY_ACTIONS = {
-      n: e => {
-        e.preventDefault();
-        router.push('/note/write');
-      },
-      '/': e => {
-        e.preventDefault();
-        document
-          .querySelector('.filter-search input, [data-search-input], input[placeholder*="검색"]')
-          ?.focus();
-      },
-      d: e => {
-        e.preventDefault();
-        setSetting('theme', getSetting('theme') === 'dark' ? 'light' : 'dark');
-        applyAllSettings();
-      },
-    };
-
-    const handleKeyDown = e => {
-      // ⌘K / Ctrl+K → 커맨드 팔레트
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setPaletteOpen(true);
-        return;
-      }
-
-      const tag = document.activeElement?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-
-      // G+키 시퀀스 네비게이션
-      if (gPressedRef.current) {
-        const dest = G_NAV[e.key.toLowerCase()];
-        gPressedRef.current = false;
-        clearTimeout(gTimerRef.current);
-        if (dest) {
-          e.preventDefault();
-          router.push(dest);
-        }
-        return;
-      }
-      if (e.key === 'g' && unmodified(e)) {
-        e.preventDefault();
-        gPressedRef.current = true;
-        clearTimeout(gTimerRef.current);
-        gTimerRef.current = setTimeout(() => {
-          gPressedRef.current = false;
-        }, 800);
-        return;
-      }
-
-      // 수정자 없는 단일 키
-      if (unmodified(e) && PLAIN_KEY_ACTIONS[e.key]) {
-        PLAIN_KEY_ACTIONS[e.key](e);
-        return;
-      }
-
-      if (e.key === '?') setShortcutsOpen(v => !v);
-      if (e.key === 'Escape') {
-        setShortcutsOpen(false);
-        setPaletteOpen(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      if (gTimerRef.current) clearTimeout(gTimerRef.current);
-    };
-  }, [router]);
-
-  // 사용자 설정 (다크모드/밀도/알림) 페이지 진입 시 적용
   useEffect(() => {
     applyAllSettings();
   }, []);
 
-  // 모달이 클릭 지점에서 펼쳐지도록 포인터 위치 추적 시작
   useEffect(() => {
     initClickOrigin();
   }, []);
 
-  // 새 브라우저 세션이면 마지막 로그인 시각 갱신
   useEffect(() => {
     ensureSession();
   }, []);
 
-  // 오래된 작업 로그 정리 (세션당 1회)
   useEffect(() => {
     const PRUNE_KEY = KEYS.LAST_WL_PRUNE;
     const hasPruned = (() => {
@@ -326,17 +74,14 @@ export default function AppShell({ children }) {
     }
   }, []);
 
-  // IndexedDB → localStorage 복원: 새 기기/브라우저에서 백업 복원 후 플랫폼 설정 hydrate
   useEffect(() => {
     hydratePlatformsFromDB().catch(() => {});
   }, []);
 
-  // 모바일 nav 닫기 on route change
   useEffect(() => {
     setMobileNav(false);
   }, [pathname]);
 
-  // 버튼 ripple + 카드 tilt 시각 효과
   useVisualEffects();
 
   const isTabActive = href => {
@@ -346,7 +91,6 @@ export default function AppShell({ children }) {
 
   return (
     <div className={'app ' + (mobileNav ? 'nav-open' : '')} suppressHydrationWarning>
-      {/* 키보드 사용자 Skip Link — 포커스 받을 때만 화면에 나타남 */}
       <a href="#main-content" className="skip-link">
         콘텐츠로 건너뛰기
       </a>
@@ -370,7 +114,6 @@ export default function AppShell({ children }) {
           reportingCount={reportingCount}
         />
         <ErrorBoundary key={pathname}>
-          {/* 페이지 전환: 세로 슬라이드 대신 은은한 페이드만 (본문이 튀어 보이는 현상 제거) */}
           <div id="main-content" style={{ animation: 'fade-in 180ms ease both' }}>
             {children}
           </div>
@@ -383,7 +126,6 @@ export default function AppShell({ children }) {
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       {shortcutsOpen && <ShortcutsHelp onClose={() => setShortcutsOpen(false)} />}
 
-      {/* 모바일 하단 탭바 */}
       <div className="bottom-tab-bar">
         <div className="tabs-inner">
           {MOBILE_TAB_DEFS.map(tab => {
