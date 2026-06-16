@@ -6,7 +6,7 @@ import { SettingsAliasCard } from '@/components/sales/SettingsAliasCard';
 import { SettingsExcludeCard } from '@/components/sales/SettingsExcludeCard';
 import { SettingsRuleCard } from '@/components/sales/SettingsRuleCard';
 import { formatNumber } from '@/lib/format';
-import { initDB } from '@/lib/db';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import { getActiveBrandId } from '@/lib/active-brand';
 
 const TABS = [
@@ -17,8 +17,6 @@ const TABS = [
 
 export default function Page() {
   const [tab, setTab] = useState('rule');
-  const [excludeCount, setExcludeCount] = useState(0);
-  const [excludeLoadFailed, setExcludeLoadFailed] = useState(false);
 
   // 기본 규칙·별칭 수는 7번가(main) 전용. 다른 브랜드는 0.
   // 초기값 0: SSR/클라이언트 모두 동일 → hydration 불일치 없음. 마운트 후 main이면 실제 수로 교정.
@@ -32,27 +30,17 @@ export default function Page() {
   }, []);
 
   // 품목 제외 수: ref_excluded + sales_rules 중 category='품목제외' 합산
-  useEffect(() => {
-    let ignore = false;
-
-    initDB()
-      .then(async () => {
-        const [excl, rules] = await Promise.all([getUserExcluded(), getUserRules()]);
-        if (ignore) return;
-
-        setExcludeCount(excl.length + rules.filter(r => r.category === '품목제외').length);
-      })
-      .catch(err => {
-        if (ignore) return;
-
-        console.error('[settings] 제외 수 조회 실패:', err);
-        setExcludeLoadFailed(true);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  const { data: excludeCount = 0, error: excludeError } = useDBLoad(
+    async () => {
+      const [excl, rules] = await Promise.all([getUserExcluded(), getUserRules()]);
+      return excl.length + rules.filter(r => r.category === '품목제외').length;
+    },
+    {
+      initialData: 0,
+      onError: err => console.error('[settings] 제외 수 조회 실패:', err),
+    }
+  );
+  const excludeLoadFailed = !!excludeError;
 
   return (
     <main className="main">

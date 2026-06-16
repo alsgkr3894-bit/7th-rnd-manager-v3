@@ -1,14 +1,13 @@
 'use client';
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { useMounted } from '@/hooks/useMounted';
+import { useState, useMemo } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { initDB } from '@/lib/db';
 import { downloadCsv } from '@/lib/download';
 import { showToast } from '@/components/Toast';
 import { getAllIngredients, buildProductTypeMap } from '@/lib/ingredient';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
 import { buildIngredientUsageMap } from '@/lib/cost/ingredient-price-helpers';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import { useIngredientUsageRows } from '@/hooks/useIngredientUsageRows';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { getAllEdges } from '@/lib/cost/edge-dough';
@@ -29,15 +28,11 @@ function normalizeStringList(value) {
 }
 
 export default function Page() {
-  const [loading, setLoading] = useState(true);
-  const [allMeta, setAllMeta] = useState([]);
-  const [usageMap, setUsageMap] = useState({ byCode: new Map(), byName: new Map() });
   const [usageCat, setUsageCat] = useState('전체');
   const [menuSearch, setMenuSearch] = useState('');
   const [sortKey, setSortKey] = useState('count'); // 'count' | 'name'
   const [sortDir, setSortDir] = useState('desc');
   const [expanded, setExpanded] = useState(new Set());
-  const [typeMap, setTypeMap] = useState(new Map()); // productCode → 제때 관리품목 productType (전용/범용)
   const [hiddenList, setHiddenList] = useLocalStorage(
     KEYS.INGREDIENT_USAGE_HIDDEN,
     [],
@@ -53,7 +48,41 @@ export default function Page() {
     normalizeStringList
   );
   const excludedMenus = useMemo(() => toStringSet(excludedMenuList), [excludedMenuList]);
-  const mountedRef = useMounted();
+
+  const { data, loading } = useDBLoad(
+    async () => {
+      const [meta, menuMasters, recipes, groups, edges, compositions, managed] = await Promise.all([
+        getAllIngredients(),
+        getAllMenuMaster(),
+        getAllMenuRecipes(),
+        getAllRecipeGroups(),
+        getAllEdges(),
+        getAllCompositions(),
+        seedManagedProductsIfEmpty().then(() => getManagedProducts()),
+      ]);
+      return {
+        allMeta: meta,
+        typeMap: buildProductTypeMap(managed),
+        usageMap: buildIngredientUsageMap({
+          menuMasters,
+          detailRecipes: recipes,
+          groups,
+          edges,
+          compositions,
+        }),
+      };
+    },
+    {
+      initialData: null,
+      onError: err => {
+        console.warn('[ingredient/usage] 로드 실패', err);
+        showToast('데이터 로드 실패: ' + err.message, 'error');
+      },
+    }
+  );
+  const allMeta = data?.allMeta ?? [];
+  const typeMap = data?.typeMap ?? new Map();
+  const usageMap = data?.usageMap ?? { byCode: new Map(), byName: new Map() };
 
   function toggleHidden(k) {
     setHiddenList(prev => {
@@ -79,46 +108,6 @@ export default function Page() {
   function restoreAllMenus() {
     setExcludedMenuList([]);
   }
-
-  const load = useCallback(async () => {
-    await initDB();
-    const [meta, menuMasters, recipes, groups, edges, compositions, managed] = await Promise.all([
-      getAllIngredients(),
-      getAllMenuMaster(),
-      getAllMenuRecipes(),
-      getAllRecipeGroups(),
-      getAllEdges(),
-      getAllCompositions(),
-      seedManagedProductsIfEmpty().then(() => getManagedProducts()),
-    ]);
-    if (!mountedRef.current) return;
-    setAllMeta(meta);
-
-    // 전용/범용 단일 출처 = 제때 관리품목(productType)
-    setTypeMap(buildProductTypeMap(managed));
-
-    const { byCode, byName } = buildIngredientUsageMap({
-      menuMasters,
-      detailRecipes: recipes,
-      groups,
-      edges,
-      compositions,
-    });
-    setUsageMap({ byCode, byName });
-  }, [mountedRef]);
-
-  useEffect(() => {
-    load()
-      .catch(err => {
-        if (mountedRef.current) {
-          console.error('[IngredientUsage] load failed', err);
-          showToast('데이터 로드 실패: ' + err.message, 'error');
-        }
-      })
-      .finally(() => {
-        if (mountedRef.current) setLoading(false);
-      });
-  }, [load, mountedRef]);
 
   const { nonHidden, displayRows, hiddenCount, oneCount, menuCounts, totalUsedCount } =
     useIngredientUsageRows({

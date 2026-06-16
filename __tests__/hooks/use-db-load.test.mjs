@@ -8,6 +8,8 @@ const nutritionSrc = readFileSync(resolve('app/nutrition/page.jsx'), 'utf8');
 const ingredientSrc = readFileSync(resolve('app/ingredient/page.jsx'), 'utf8');
 const jetteSrc = readFileSync(resolve('app/jette/page.jsx'), 'utf8');
 const journalSrc = readFileSync(resolve('app/note/journal/page.jsx'), 'utf8');
+const salesSettingsSrc = readFileSync(resolve('app/menu-sales/settings/page.jsx'), 'utf8');
+const ingredientUsageSrc = readFileSync(resolve('app/ingredient/usage/page.jsx'), 'utf8');
 
 describe('useDBLoad 옵션 API', () => {
   test('6가지 옵션이 모두 구현됐다', () => {
@@ -81,5 +83,26 @@ describe('저위험 hub 페이지 useDBLoad 적용', () => {
     expect(journalSrc).not.toContain('setLoading(');
     // date는 deps에 넣지 않고 useMemo 필터로만 처리함
     expect(journalSrc).toContain('initialData: []');
+  });
+});
+
+describe('저위험 기타 페이지 useDBLoad 적용', () => {
+  test('menu-sales/settings/page.jsx가 useDBLoad로 제외 수를 조회한다', () => {
+    expect(salesSettingsSrc).toContain('useDBLoad');
+    expect(salesSettingsSrc).not.toContain("import { initDB }");
+    expect(salesSettingsSrc).not.toContain('setLoading(');
+    expect(salesSettingsSrc).toContain('excludeCount');
+    expect(salesSettingsSrc).toContain('excludeLoadFailed');
+  });
+
+  test('ingredient/usage/page.jsx가 useDBLoad로 7개 병렬 쿼리를 로드한다', () => {
+    expect(ingredientUsageSrc).toContain('useDBLoad');
+    expect(ingredientUsageSrc).not.toContain("import { initDB }");
+    expect(ingredientUsageSrc).not.toContain("import { useMounted }");
+    expect(ingredientUsageSrc).not.toContain('setLoading(');
+    expect(ingredientUsageSrc).toContain('allMeta');
+    expect(ingredientUsageSrc).toContain('typeMap');
+    expect(ingredientUsageSrc).toContain('usageMap');
+    expect(ingredientUsageSrc).toContain('initialData: null');
   });
 });
