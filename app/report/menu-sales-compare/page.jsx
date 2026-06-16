@@ -1,13 +1,13 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import ReportBuilderShell from '@/components/report/ReportBuilderShell';
 import { MenuSalesCompareOptions } from '@/components/report/compare/MenuSalesCompareOptions';
 import { MenuSalesComparePreview } from '@/components/report/compare/MenuSalesComparePreview';
-import { initDB } from '@/lib/db/init';
 import { buildPeriodCompare, deriveCompareB } from '@/lib/sales/compare';
 import { buildCompareSeries } from '@/lib/report/build-compare-report';
 import { safeAll } from '@/lib/stats/_helpers';
 import { useReportPageState } from '@/hooks/useReportPageState';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import { asObjectArray } from '@/lib/ui/prop-guards';
 import { normalizeScope, safeMonth, safeYear } from '@/lib/report/period';
 
@@ -42,11 +42,14 @@ export default function Page() {
     }
   );
 
-  const [compareResult, setCompareResult] = useState(null);
-  const [series, setSeries] = useState([]);
-  const [availYears, setAvailYears] = useState([2024, 2025, 2026]);
-  const [dataError, setDataError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // rows는 DB에서 1회 로드. 기간·범위 변경은 DB 재조회 없이 useMemo로 파생.
+  const { data: rows = [], loading: isLoading, error } = useDBLoad(
+    () => safeAll('sales_rows').then(asObjectArray),
+    {
+      initialData: [],
+      onError: err => console.error('[compare report]', err),
+    }
+  );
 
   const safeMode = normalizeMode(mode);
   const safeScope = normalizeScope(scope);
@@ -62,57 +65,35 @@ export default function Page() {
       ? { year: safeYearB, month: safeMonthB }
       : deriveCompareB(periodA, safeMode);
 
-  useEffect(() => {
-    let ignore = false;
+  const availYears = useMemo(() => {
+    const years = [...new Set(rows.map(r => r.year).filter(y => Number.isFinite(y)))].sort();
+    return years.length > 0 ? years : [2024, 2025, 2026];
+  }, [rows]);
 
-    setIsLoading(true);
-    initDB()
-      .then(async () => {
-        try {
-          const rows = asObjectArray(await safeAll('sales_rows'));
-          if (ignore) return;
-
-          if (rows.length === 0) {
-            setCompareResult(null);
-            setSeries([]);
-            setDataError('판매 데이터가 없어요. 판매량 파일을 먼저 업로드해 주세요.');
-            setIsLoading(false);
-            return;
-          }
-          const years = [...new Set(rows.map(r => r.year).filter(y => Number.isFinite(y)))].sort();
-          if (years.length > 0) setAvailYears(years);
-          const result = buildPeriodCompare(rows, periodA, periodB, {
-            groupBy: 'group',
-            category: safeScope === 'all' ? null : safeScope,
-            topN: 6,
-          });
-          if (ignore) return;
-
-          setCompareResult(result);
-
-          // 시리즈: 카테고리별 A/B 집계
-          setSeries(buildCompareSeries(rows, periodA, periodB, safeScope, safeMonthA));
-          setDataError(null);
-        } catch (err) {
-          if (ignore) return;
-
-          console.error('[compare report]', err);
-          setDataError('판매 비교 데이터를 집계하는 중 오류가 발생했어요.');
-        } finally {
-          if (!ignore) setIsLoading(false);
-        }
-      })
-      .catch(() => {
-        if (ignore) return;
-
-        setIsLoading(false);
-        setDataError('데이터베이스에 연결할 수 없어요. 판매 데이터를 먼저 업로드해 주세요.');
-      });
-    return () => {
-      ignore = true;
-    };
+  const { compareResult, series } = useMemo(() => {
+    if (rows.length === 0) return { compareResult: null, series: [] };
+    try {
+      return {
+        compareResult: buildPeriodCompare(rows, periodA, periodB, {
+          groupBy: 'group',
+          category: safeScope === 'all' ? null : safeScope,
+          topN: 6,
+        }),
+        series: buildCompareSeries(rows, periodA, periodB, safeScope, safeMonthA),
+      };
+    } catch (err) {
+      console.error('[compare report] 집계 실패', err);
+      return { compareResult: null, series: [] };
+    }
+    // periodA/B는 객체라 직접 나열
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [safeMode, safeScope, safeYearA, safeMonthA, safeYearB, safeMonthB]);
+  }, [rows, safeMode, safeScope, safeYearA, safeMonthA, safeYearB, safeMonthB]);
+
+  const dataError = error
+    ? '데이터베이스에 연결할 수 없어요. 판매 데이터를 먼저 업로드해 주세요.'
+    : !isLoading && rows.length === 0
+      ? '판매 데이터가 없어요. 판매량 파일을 먼저 업로드해 주세요.'
+      : null;
 
   const periodALabel = `${safeYearA}.${String(safeMonthA).padStart(2, '0')}`;
   const periodBLabel = `${periodB.year}.${String(periodB.month).padStart(2, '0')}`;
