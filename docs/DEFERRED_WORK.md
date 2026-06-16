@@ -101,7 +101,7 @@
 - **완료(Phase 1, 2026-06-13)**: `lib/nutrition/allergen/store.js` dead code 6종 제거.
 - **완료(Phase 2, 2026-06-15)**: DB v20 — `nutrition_allergy_links` store 정의 제거(constants·module-stores·schema), v20 마이그레이션에서 기존 DB의 store를 `deleteObjectStore`로 삭제. `migrate-to-ingredient.js` allergen 파트 제거(origin 파트 유지). 7번가 DB 0/0 확인 후 착수.
 
-#### B-5. useDBLoad 전면 확산  🟡 🚧 Phase 1·2 완료, 중/고위험 대기
+#### B-5. useDBLoad 전면 확산  🟡 ✅ 완료(2026-06-17)
 
 - **Phase 1 완료 (2026-06-16)**: `useDBLoad` 옵션 강화(`initialData`·`deps`·`enabled`·`onError`·`mapErrorMessage`·`keepDataOnReload`·`reload`) + 저위험 hub 5개 및 보고서 2개 적용.
   - hub: `menu-sales`, `nutrition`, `ingredient`, `jette`, `note/journal`
@@ -109,12 +109,17 @@
   - 구조 테스트: `__tests__/hooks/use-db-load.test.mjs` 신설
 - **Phase 2 완료 (2026-06-16)**: `menu-sales/settings`(제외 수 합산), `ingredient/usage`(7개 병렬 쿼리 번들) 적용.
   - `ingredient/usage`의 `mountedRef`·`useMounted`·`useCallback` 제거 → `cancelled` 플래그 일원화.
-- **Phase 3 완료 (2026-06-16)**: 중위험 3개 적용.
+- **Phase 3 완료 (2026-06-16)**: 중위험 3개 + 고위험 settings/restore 적용.
   - `useMarginData`: load callback+initDB → useDBLoad. platforms는 loadPlatforms() 직접 초기화(localStorage 동기). setRows 미사용 → 제거.
   - `useIngredientPriceData`: mountedRef·useMounted·useCallback → useDBLoad. rows+fileInfo 번들 반환. cancelled 플래그 자동 처리.
   - `settings/backup`: initDB+setReady+setStats useEffect → useDBLoad. `ready = stats !== null` 파생. localStorage 읽기는 별도 useEffect 유지.
-- **남은 저위험 후보**: 없음.
-- **고위험 (보류)**: `ingredient/manage`, `settings/restore`, `nutrition/menu`, `menu-master`, `settings/account`, `report/cost` — 다중 상태·마이그레이션·이벤트 혼합, 별도 라운드.
+  - `settings/restore`: 동일 패턴. reloadStats()로 복원 후 통계 갱신.
+- **고위험 5단계 완료 (2026-06-17)**:
+  - 단계 2: `settings/account` — loadAccounts useCallback+initDB → useDBLoad. accounts는 accountData 파생. reloadAccounts() 호출.
+  - 단계 3: `menu-master/page` + `useMenuMasterActions` — useDBLoad 번들 패턴. mountedRef 제거. reload() 직접 호출.
+  - 단계 3: `useIngredientManageData` — load useCallback → useDBLoad. setRows는 optimistic update용 로컬 상태 보존.
+  - 단계 4: `nutrition/menu` — 9개 병렬 쿼리 번들. mountedRef·useCallback 제거.
+  - 단계 5: `report/cost` — ignore+loadedCtxRef+initDB 제거. keepDataOnReload:false. includeEdge 재계산은 useMemo. 에러 분기 → throw Error + mapErrorMessage.
 - **관련 메모리**: [[deferred-refactors]]
 
 #### B-6 / C-P4. 대형 컴포넌트 분해  🟡 ✅ 완료(2026-06-16)  (C-P4 통합)
@@ -717,4 +722,4 @@ LOW 완료: L-02 border-radius 토큰화 · L-03 비교월 동일 경고 · L-04
 
 ---
 
-_잔여 보류: **B-5** Phase 1·2·3 완료, 고위험 페이지 별도 라운드 대기 · **B-6/C-P4**(대형 컴포넌트 추가 분해 재평가) · **B-20**(실업무 fixture 확대 잔여: Excel 앱 수동 확인·다운로드 열람·대용량 케이스) · **N-43**(과거 단가, 동작 명세)._
+_잔여 보류: **B-5** ✅ 전체 완료(2026-06-17) · **B-6/C-P4**(대형 컴포넌트 추가 분해 재평가) · **B-20**(실업무 fixture 확대 잔여: Excel 앱 수동 확인·다운로드 열람·대용량 케이스) · **N-43**(과거 단가, 동작 명세)._
