@@ -1,11 +1,10 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
-import { useMounted } from '@/hooks/useMounted';
+import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { usePagination } from '@/hooks/usePagination';
 import { showToast } from '@/components/Toast';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
-import { initDB } from '@/lib/db';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import { downloadCsvText } from '@/lib/download';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { MenuPriceUploadCard } from '@/components/cost/menu-price/MenuPriceUploadCard';
@@ -45,8 +44,6 @@ const PIZZA_CATEGORIES = [
 export default function Page() {
   const isMain = useIsMainBrand();
   const { isViewer } = useCurrentRole();
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [editRow, setEditRow] = useState(null);
@@ -56,10 +53,34 @@ export default function Page() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deletePlan, setDeletePlan] = useState(null);
   const [deletePlanLoading, setDeletePlanLoading] = useState(false);
-  const [recipeSummaryMap, setRecipeSummaryMap] = useState(new Map());
   // 브랜드 카테고리 프리셋 — SSR/첫 렌더는 서버와 동일하게 기본값(피자)로 두고,
   // 마운트 후 활성 브랜드에 맞춰 교정한다(하이드레이션 불일치 방지).
   const [brandCats, setBrandCats] = useState(PIZZA_CATEGORIES);
+
+  useEffect(() => {
+    setBrandCats(getActiveBrandId() === 'main' ? PIZZA_CATEGORIES : []);
+  }, []);
+
+  const { data, loading, reload } = useDBLoad(
+    async () => {
+      await normalizePersonalPizzaCodes().catch(e =>
+        console.warn('[menu-master] 코드 정규화 실패', e)
+      );
+      const nextRows = await getAllMenuMaster();
+      let nextRecipeSummaryMap = new Map();
+      try {
+        nextRecipeSummaryMap = await loadMenuRecipeSummaryMap(nextRows);
+      } catch (err) {
+        console.warn('[menu-master] 레시피 원가 요약 계산 실패', err);
+      }
+      return { rows: nextRows, recipeSummaryMap: nextRecipeSummaryMap };
+    },
+    { initialData: null, onError: err => console.error('[MenuMaster] load failed', err) }
+  );
+  const rows = data?.rows ?? [];
+  const recipeSummaryMap = data?.recipeSummaryMap ?? new Map();
+  useVisibilityRefresh(reload);
+
   const {
     catFilter,
     setCatFilter,
@@ -74,45 +95,10 @@ export default function Page() {
     catCounts,
     filtered,
   } = useMenuMasterFilters(rows, brandCats);
-  const mountedRef = useMounted();
-
-  useEffect(() => {
-    setBrandCats(getActiveBrandId() === 'main' ? PIZZA_CATEGORIES : []);
-  }, []);
-
-  const load = useCallback(async () => {
-    await initDB();
-    await normalizePersonalPizzaCodes().catch(e =>
-      console.warn('[menu-master] 코드 정규화 실패', e)
-    );
-    const nextRows = await getAllMenuMaster();
-    let nextRecipeSummaryMap = new Map();
-    try {
-      nextRecipeSummaryMap = await loadMenuRecipeSummaryMap(nextRows);
-    } catch (err) {
-      console.warn('[menu-master] 레시피 원가 요약 계산 실패', err);
-    }
-    if (mountedRef.current) {
-      setRows(nextRows);
-      setRecipeSummaryMap(nextRecipeSummaryMap);
-    }
-  }, [mountedRef]);
-
-  useEffect(() => {
-    load()
-      .catch(err => {
-        if (mountedRef.current) console.error('[MenuMaster] load failed', err);
-      })
-      .finally(() => {
-        if (mountedRef.current) setLoading(false);
-      });
-  }, [load, mountedRef]);
-  useVisibilityRefresh(load);
 
   const { handleDeleteRow, openDeleteDialog, handleResetAndSeed, handleSeed, handleSaveRow } =
     useMenuMasterActions({
-      load,
-      mountedRef,
+      reload,
       setDeleteTarget,
       setDeletePlan,
       setDeletePlanLoading,
@@ -219,7 +205,7 @@ export default function Page() {
         </div>
       )}
 
-      <MenuPriceUploadCard onReplaced={load} />
+      <MenuPriceUploadCard onReplaced={reload} />
 
       <MenuMasterDialogs
         editRow={editRow}
@@ -231,7 +217,7 @@ export default function Page() {
         confirmReset={confirmReset}
         brandCats={brandCats}
         onSaveRow={handleSaveRow}
-        onRecipeSaved={load}
+        onRecipeSaved={reload}
         onCloseEdit={() => setEditRow(null)}
         onCloseAdd={() => setAddOpen(false)}
         onCloseBulk={() => setBulkModal(false)}

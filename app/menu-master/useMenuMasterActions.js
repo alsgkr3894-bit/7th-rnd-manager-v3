@@ -10,13 +10,8 @@ import {
 import { resetAllMenuPrices } from '@/lib/cost/menu-price';
 import { seedMenuMaster } from '@/lib/menu-master/seed';
 
-/**
- * 메뉴마스터 액션 훅.
- * @param {{ load: Function, mountedRef: { current: boolean }, setDeleteTarget: Function, setDeletePlan: Function, setDeletePlanLoading: Function, setSeeding: Function, setResetting: Function, setEditRow: Function, setAddOpen: Function }} deps
- */
 export function useMenuMasterActions({
-  load,
-  mountedRef,
+  reload,
   setDeleteTarget,
   setDeletePlan,
   setDeletePlanLoading,
@@ -46,7 +41,7 @@ export function useMenuMasterActions({
       }
       setDeleteTarget(null);
       await syncMirror();
-      await load();
+      reload();
     } catch (err) {
       showToast('삭제 실패: ' + err.message, 'error');
     }
@@ -58,12 +53,12 @@ export function useMenuMasterActions({
     setDeletePlanLoading(true);
     try {
       const plan = await getMenuDeletePlan(row.id);
-      if (mountedRef.current) setDeletePlan(plan);
+      setDeletePlan(plan);
     } catch (err) {
       console.warn('[menu-master] 삭제 영향 계산 실패', err);
-      if (mountedRef.current) setDeletePlan(null);
+      setDeletePlan(null);
     } finally {
-      if (mountedRef.current) setDeletePlanLoading(false);
+      setDeletePlanLoading(false);
     }
   }
 
@@ -72,7 +67,7 @@ export function useMenuMasterActions({
     try {
       await resetAllMenuMaster();
       await resetAllMenuPrices();
-      await load();
+      reload();
       showToast('초기화 완료', 'ok');
     } catch (err) {
       showToast('실패: ' + err.message, 'error');
@@ -86,7 +81,7 @@ export function useMenuMasterActions({
     try {
       const { inserted } = await seedMenuMaster();
       await syncMirror();
-      await load();
+      reload();
       showToast(`${inserted}개 등록 완료`, 'ok');
     } catch (err) {
       showToast('등록 실패: ' + err.message, 'error');
@@ -99,7 +94,7 @@ export function useMenuMasterActions({
     try {
       const result = await upsertMenuMaster(data);
       await syncMirror();
-      await load();
+      reload();
       setEditRow(null);
       setAddOpen(false);
       if (result.mode === 'update' && !data.id) {

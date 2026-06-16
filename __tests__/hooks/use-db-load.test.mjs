@@ -15,6 +15,9 @@ const ingredientPriceSrc = readFileSync(resolve('hooks/useIngredientPriceData.js
 const backupSrc = readFileSync(resolve('app/settings/backup/page.jsx'), 'utf8');
 const restoreSrc = readFileSync(resolve('app/settings/restore/page.jsx'), 'utf8');
 const accountSrc = readFileSync(resolve('app/settings/account/page.jsx'), 'utf8');
+const menuMasterSrc = readFileSync(resolve('app/menu-master/page.jsx'), 'utf8');
+const menuMasterActionsSrc = readFileSync(resolve('app/menu-master/useMenuMasterActions.js'), 'utf8');
+const ingredientManageDataSrc = readFileSync(resolve('app/ingredient/manage/useIngredientManageData.js'), 'utf8');
 
 describe('useDBLoad 옵션 API', () => {
   test('6가지 옵션이 모두 구현됐다', () => {
@@ -131,6 +134,30 @@ describe('고위험 단계 2: settings/account', () => {
     expect(accountSrc).not.toContain('await loadAccounts');
     expect(accountSrc).toContain('reloadAccounts');
     expect(accountSrc).toContain('accountData');
+  });
+});
+
+describe('고위험 단계 3: menu-master + useIngredientManageData', () => {
+  test('menu-master page가 useDBLoad를 사용하고 mountedRef·initDB를 제거했다', () => {
+    expect(menuMasterSrc).toContain('useDBLoad');
+    expect(menuMasterSrc).not.toContain('useMounted');
+    expect(menuMasterSrc).not.toContain('import { initDB }');
+    expect(menuMasterSrc).not.toContain('useCallback');
+    expect(menuMasterSrc).toContain('reload');
+  });
+
+  test('useMenuMasterActions가 reload를 사용하고 mountedRef를 제거했다', () => {
+    expect(menuMasterActionsSrc).not.toContain('mountedRef');
+    expect(menuMasterActionsSrc).not.toContain('await load()');
+    expect(menuMasterActionsSrc).toContain('reload()');
+  });
+
+  test('useIngredientManageData가 useDBLoad를 사용하고 mountedRef·initDB를 제거했다', () => {
+    expect(ingredientManageDataSrc).toContain('useDBLoad');
+    expect(ingredientManageDataSrc).not.toContain('initDB');
+    expect(ingredientManageDataSrc).not.toContain('useCallback');
+    expect(ingredientManageDataSrc).toContain('setRows');
+    expect(ingredientManageDataSrc).toContain('initialData: null');
   });
 });
 
