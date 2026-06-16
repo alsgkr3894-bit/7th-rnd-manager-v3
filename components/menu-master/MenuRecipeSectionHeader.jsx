@@ -59,6 +59,11 @@ function RecipeSummaryLine({ recipeSummary }) {
       {recipeSummary.missingPriceCount > 0 && (
         <span style={{ color: 'var(--warn)' }}>단가 확인 {recipeSummary.missingPriceCount}</span>
       )}
+      {recipeSummary.commonGroupCount > 0 && (
+        <span style={{ color: 'var(--text-4)' }}>
+          공통묶음 {recipeSummary.commonGroupCount}개 포함
+        </span>
+      )}
     </div>
   );
 }

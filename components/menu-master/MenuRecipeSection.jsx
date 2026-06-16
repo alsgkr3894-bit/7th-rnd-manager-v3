@@ -4,6 +4,7 @@ import { initDB } from '@/lib/db';
 import { showToast } from '@/components/Toast';
 import { getAllIngredients } from '@/lib/ingredient';
 import { normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
+import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { loadLatestUnitPriceMap, summarizeMenuRecipe } from '@/lib/menu-master/recipe-summary';
 import { getMenuRecipeForMenu, upsertMenuRecipeForMenu } from '@/lib/menu-recipes';
 import { recipeStoreKindForCategory } from '@/lib/recipe-master/sync';
@@ -60,6 +61,7 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [allIngs, setAllIngs] = useState([]);
+  const [recipeGroups, setRecipeGroups] = useState([]);
   const [unitPriceMap, setUnitPriceMap] = useState(new Map());
   const [searchIdx, setSearchIdx] = useState(null); // index of row being searched
   const [searchQ, setSearchQ] = useState('');
@@ -71,14 +73,16 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
     setLoaded(false);
     setComponents([]);
     setAllIngs([]);
+    setRecipeGroups([]);
     setUnitPriceMap(new Map());
     if (!supported) return;
     let ignore = false;
     initDB().then(async () => {
-      const [existing, ings, latestUnitPriceMap] = await Promise.all([
+      const [existing, ings, latestUnitPriceMap, groups] = await Promise.all([
         getMenuRecipeForMenu({ menuCode, menuName, category, size }),
         getAllIngredients(),
         loadLatestUnitPriceMap(),
+        getAllRecipeGroups(),
       ]);
       if (ignore) return;
       setComponents(
@@ -87,6 +91,7 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
           : []
       );
       setAllIngs(ings);
+      setRecipeGroups(groups);
       setUnitPriceMap(latestUnitPriceMap);
       setLoaded(true);
     });
@@ -148,11 +153,12 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
   const recipeSummary = useMemo(
     () =>
       summarizeMenuRecipe(
-        { menuCode, category, price: sellingPrice },
+        { menuCode, category, size, price: sellingPrice },
         { components },
-        unitPriceMap
+        unitPriceMap,
+        { recipeGroups }
       ),
-    [category, components, menuCode, sellingPrice, unitPriceMap]
+    [category, components, menuCode, recipeGroups, sellingPrice, size, unitPriceMap]
   );
 
   const handleSave = useCallback(async () => {

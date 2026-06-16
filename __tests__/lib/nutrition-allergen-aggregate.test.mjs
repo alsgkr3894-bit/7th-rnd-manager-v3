@@ -117,17 +117,34 @@ describe('buildMenuAllergenMap', () => {
     });
     expect([...(allergenMap.get('S-CHZ-001') || [])]).toEqual(['AL02']);
 
-    const matrixRows = buildMenuMatrix(
-      ingredientRows,
-      mapData,
-      [],
-      () => false,
-      [],
-      {},
-      []
-    );
+    const matrixRows = buildMenuMatrix(ingredientRows, mapData, [], () => false, [], {}, []);
     expect(matrixRows).toHaveLength(1);
     expect([...matrixRows[0].allergenCodes]).toEqual(['AL02']);
+  });
+
+  test('공통묶음 재료의 알레르기도 적용 카테고리 메뉴에 집계된다', () => {
+    const ingredientRows = [
+      { productCode: 'COMMON-SAUCE', ingredientName: '공통소스', allergens: ['AL05'] },
+    ];
+    const mapData = buildIngredientMenuMap({
+      menuMasters: [
+        { menuCode: 'P-OR-003-L', menuName: '공통 테스트 L', category: '피자/오리지널' },
+      ],
+      groups: [
+        {
+          id: 10,
+          name: '피자 공통',
+          defaultCategories: ['피자'],
+          ingredients: [{ productCode: 'COMMON-SAUCE', ingredientName: '공통소스' }],
+        },
+      ],
+    });
+
+    const matrixRows = buildMenuMatrix(ingredientRows, mapData, [], () => false, [], {}, []);
+
+    const rows = matrixRows.filter(row => row.sourceMenuCodes.includes('P-OR-003-L'));
+    expect(rows).toHaveLength(4);
+    expect(rows.every(row => row.allergenCodes.has('AL05'))).toBe(true);
   });
 
   test('비정상 입력은 빈 집계로 안전하게 처리한다', () => {
@@ -218,7 +235,12 @@ describe('buildEdgeAllergenMap', () => {
 
   test('씬바샤삭은 기본 도우 알레르기를 빼고 씬도우 알레르기와 비도우 알레르기를 합산한다 (N-42)', () => {
     const ingredientRows = [
-      { productCode: 'BASE-DOUGH', ingredientName: '기본도우', allergens: ['AL05'], category: '도우' },
+      {
+        productCode: 'BASE-DOUGH',
+        ingredientName: '기본도우',
+        allergens: ['AL05'],
+        category: '도우',
+      },
       { productCode: 'SAUCE', ingredientName: '대두소스', allergens: ['AL05'] },
       { productCode: 'THIN-DOUGH', ingredientName: '씬도우', allergens: ['AL01', 'AL05', 'AL06'] },
     ];

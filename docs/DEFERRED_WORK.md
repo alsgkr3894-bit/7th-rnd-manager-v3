@@ -136,6 +136,7 @@
   - `components/menu-master/MenuMasterEditFields.jsx` ✅ 2026-06-16 추가 보강 — 식별/분류 필드, 가격/상태/출력 제외 필드, 공통 라벨/에러 표시를 `MenuMasterIdentityFields`·`MenuMasterCommercialFields`·`MenuMasterFieldPrimitives`로 분리. 277→74줄.
   - `components/menu-master/MenuRecipeSection.jsx` ✅ 2026-06-16 추가 보강 — 레시피 구성품 테이블·식자재 검색 제안·단가 표시 row를 `MenuRecipeComponentsTable`로 분리. 449→286줄.
   - `components/menu-master/MenuRecipeSection.jsx` ✅ 2026-06-16 추가 보강 — 레시피 저장 헤더와 예상 원가/확인 요약 표시를 `MenuRecipeSectionHeader`로 분리. 286→238줄.
+  - `lib/menu-master/recipe-summary.js` ✅ 2026-06-16 추가 보강 — 공통 원가 관리의 공통묶음을 메뉴 카테고리/사이즈 기준으로 메뉴마스터 원가 요약에 포함하고, 공통묶음 원산지/알레르기 fixture를 추가.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 부분 보강 — `NoteTableRow`·`NoteContextMenu` 렌더링 컴포넌트 분리. 1022→843줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — `NoteStatsSummary`·`NoteFilterControls` 렌더링 컴포넌트 분리. 843→642줄.
   - `app/note/_NoteContent.jsx` ✅ 2026-06-15 추가 보강 — `NoteCardGrid`·`NoteTableView` 목록 렌더링 컴포넌트 분리. 642→546줄.
