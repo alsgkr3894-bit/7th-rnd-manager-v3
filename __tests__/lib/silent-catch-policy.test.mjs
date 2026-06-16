@@ -319,7 +319,11 @@ describe('silent catch policy', () => {
   test('삭제 실행취소와 복원 실패는 무음 처리하지 않는다', () => {
     const noteControllerSource = readFileSync(resolve('hooks/useNoteContentController.js'), 'utf8');
     const noteActionSource = readFileSync(resolve('hooks/useNoteItemActions.js'), 'utf8');
-    const ingredientSource = readFileSync(resolve('app/ingredient/manage/page.jsx'), 'utf8');
+    // 실행취소 로직은 useIngredientManageActions.js 로 이동됨
+    const ingredientActionsSource = readFileSync(
+      resolve('app/ingredient/manage/useIngredientManageActions.js'),
+      'utf8'
+    );
     const restoreSource = readFileSync(resolve('app/settings/restore/page.jsx'), 'utf8');
     const backupSource = readFileSync(resolve('lib/db/backup.js'), 'utf8');
 
@@ -331,10 +335,12 @@ describe('silent catch policy', () => {
     );
     expect(noteActionSource).toContain("showToast('실행취소 실패: ' + err.message, 'error')");
 
-    expect(ingredientSource).not.toMatch(
+    expect(ingredientActionsSource).not.toMatch(
       /restoreRecord\([^)]*\)\.catch\(\s*\(\s*\)\s*=>\s*\{\s*\}\s*\)/
     );
-    expect(ingredientSource).toContain("showToast('실행취소 실패: ' + err.message, 'error')");
+    expect(ingredientActionsSource).toContain(
+      "showToast('실행취소 실패: ' + err.message, 'error')"
+    );
 
     expect(restoreSource).toContain('errors?.length > 0');
     expect(restoreSource).toContain("console.warn('[Restore] 일부 실패:', errors)");

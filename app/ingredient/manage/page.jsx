@@ -2,28 +2,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Icon } from '@/components/icons';
-import { restoreRecord } from '@/lib/db';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { getManagedProducts, addManagedProduct, updateManagedProduct } from '@/lib/shipment';
-import { TYPE_LABEL } from '@/components/jette/managed-products-constants';
-import {
-  addIngredient,
-  updateIngredient,
-  upsertIngredientMeta,
-  excludeIngredientByCode,
-  restoreIngredientByCode,
-  deleteIngredient,
-  seedMasterIngredients,
-  INGREDIENT_MASTER_SEED,
-  resetAllIngredients,
-  repairIngredientProductCodeDuplicates,
-  removeCategoryFromAll,
-  removeTagFromAll,
-  bulkDeleteIngredients,
-} from '@/lib/ingredient';
-import { KEYS } from '@/lib/note/keys';
+import { INGREDIENT_MASTER_SEED } from '@/lib/ingredient';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 import { useBatchSelection } from '@/hooks/useBatchSelection';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -39,6 +20,9 @@ import { useIngredientManageData } from './useIngredientManageData';
 import { useIngredientManageView } from './useIngredientManageView';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { IngredientReportPanel } from './IngredientReportPanel';
+import { KEYS } from '@/lib/note/keys';
+import { useIngredientManageActions } from './useIngredientManageActions';
+import { normalizeManageView, readInitialManageView } from './ingredientManageUtils';
 import dynamic from 'next/dynamic';
 
 const SuppliersView = dynamic(
@@ -53,76 +37,8 @@ const IngredientPriceView = dynamic(
   { ssr: false, loading: () => <div className="skeleton" style={{ height: 320 }} /> }
 );
 
-const MANAGE_VIEW_KEYS = new Set(['manage', 'price', 'issues', 'settings', 'suppliers', 'report']);
-
-function normalizeManageView(value) {
-  return MANAGE_VIEW_KEYS.has(value) ? value : 'manage';
-}
-
-function readInitialManageView() {
-  if (typeof window === 'undefined') return 'manage';
-  return normalizeManageView(new URLSearchParams(window.location.search).get('view'));
-}
-
-// scope 라벨('전용'/'범용'/'범용관리') → productType 코드
-const scopeToType = label =>
-  Object.keys(TYPE_LABEL).find(code => TYPE_LABEL[code] === label) || null;
-
-// 제때 연동 항목의 전용/범용을 제때 관리품목(ref_shipment_products.productType)에 반영
-async function syncManagedScope(target, scopeLabel) {
-  const productType = scopeToType(scopeLabel);
-  if (!target.productCode || !productType) return;
-  const managed = await getManagedProducts();
-  const existing = managed.find(p => p.productCode === target.productCode);
-  if (existing) {
-    if (existing.productType !== productType)
-      await updateManagedProduct({ id: existing.id, productType });
-  } else {
-    await addManagedProduct({
-      productCode: target.productCode,
-      productName: target.productName || target.ingredientName || '',
-      productType,
-    });
-  }
-}
-
-async function restoreDeletedIngredientBackup(backup) {
-  if (!backup?.ingredient) return;
-  await restoreRecord('cost_ingredients', backup.ingredient);
-}
-
-async function restoreDeletedIngredientBackups(backups) {
-  const failures = [];
-  for (const backup of backups) {
-    try {
-      await restoreDeletedIngredientBackup(backup);
-    } catch (err) {
-      failures.push(err);
-    }
-  }
-  if (failures.length > 0) {
-    throw new Error(`${failures.length}개 항목 복구 실패`);
-  }
-}
-
-function warnIngredientCascadeFailures(records) {
-  const count = records.reduce((sum, rec) => sum + (rec?.cascadeErrors?.length || 0), 0);
-  if (count > 0) {
-    showToast(`삭제는 완료됐지만 연관 데이터 정리 ${count}건을 확인해야 합니다.`, 'warn', 7000);
-  }
-}
-
-function buildBulkDeleteToast(removed, failures) {
-  if (failures.length === 0) return { message: `${removed.length}개 삭제됨`, type: 'ok' };
-  if (removed.length === 0) return { message: `${failures.length}개 삭제 실패`, type: 'error' };
-  return {
-    message: `${removed.length}개 삭제됨 · ${failures.length}개 실패`,
-    type: 'warn',
-  };
-}
-
 export default function Page() {
-  const isMain = useIsMainBrand(); // 마스터 시드는 7번가 전용
+  const isMain = useIsMainBrand();
   const { isViewer } = useCurrentRole();
   const {
     rows,
@@ -157,12 +73,13 @@ export default function Page() {
   useEffect(() => {
     setView(readInitialManageView());
   }, [setView]);
+
   const [formTarget, setFormTarget] = useState(null);
   const [deletePending, setDeletePending] = useState(null);
   const [seeding, setSeeding] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const [confirmRemove, setConfirmRemove] = useState(null); // { type:'cat'|'tag', value }
+  const [confirmRemove, setConfirmRemove] = useState(null);
   const [dedupeConfirm, setDedupeConfirm] = useState(false);
   const [dedupeBusy, setDedupeBusy] = useState(false);
   const { batchMode, selected, clearSelection, startBatch, exitBatch, toggleSelect } =
@@ -192,225 +109,44 @@ export default function Page() {
     priceDate,
   });
 
-  // 검색어 변경 시에도 선택 초기화
   useEffect(() => {
     clearSelection();
   }, [debouncedSearch, clearSelection]);
 
-  async function handleSeed() {
-    if (seeding) return;
-    setSeeding(true);
-    try {
-      const result = await seedMasterIngredients(INGREDIENT_MASTER_SEED);
-      showToast(`마스터 시드 적용 완료 — 신규 ${result.inserted} · 갱신 ${result.updated}`, 'ok');
-      await load();
-    } catch (err) {
-      showToast('시드 실패: ' + err.message, 'error');
-    } finally {
-      setSeeding(false);
-    }
-  }
-
-  async function handleReset() {
-    if (resetting) return;
-    setResetting(true);
-    try {
-      const result = await resetAllIngredients();
-      showToast(`초기화 완료 — ${result.deleted}개 삭제`, 'ok');
-      setResetConfirm(false);
-      await load();
-    } catch (err) {
-      showToast('초기화 실패: ' + err.message, 'error');
-    } finally {
-      setResetting(false);
-    }
-  }
-
-  async function handleRemoveCategory(cat) {
-    try {
-      const { updated } = await removeCategoryFromAll(cat);
-      showToast(`'${cat}' 분류 삭제 — ${updated}개 항목 갱신`, 'ok');
-      await load();
-    } catch (e) {
-      showToast('삭제 실패: ' + e.message, 'error');
-    }
-  }
-  async function handleRemoveTag(tag) {
-    try {
-      const { updated } = await removeTagFromAll(tag);
-      showToast(`'#${tag}' 태그 삭제 — ${updated}개 항목 갱신`, 'ok');
-      await load();
-    } catch (e) {
-      showToast('삭제 실패: ' + e.message, 'error');
-    }
-  }
-
-  async function handleRepairProductCodeDuplicates() {
-    if (dedupeBusy) return;
-    setDedupeBusy(true);
-    try {
-      const result = await repairIngredientProductCodeDuplicates();
-      showToast(`제품코드 중복 ${result.removed || 0}건 정리 완료`, 'ok');
-      setDedupeConfirm(false);
-      await load();
-    } catch (err) {
-      showToast('중복 정리 실패: ' + err.message, 'error');
-    } finally {
-      setDedupeBusy(false);
-    }
-  }
-
-  const handleSave = useCallback(
-    async formData => {
-      try {
-        if (formTarget === 'new' || formTarget?.__copyFrom) {
-          await addIngredient(formData);
-          showToast('식자재 추가 완료', 'ok');
-        } else if (formTarget.isManual && formTarget.id) {
-          // 수동 항목은 productCode(자체코드) 유무와 무관하게 전체 필드 저장(buildRecord)
-          // — 단가·분류 등이 누락 없이 반영되도록 updateIngredient 경로 사용
-          await updateIngredient(formTarget.id, formData);
-          showToast('저장 완료', 'ok');
-        } else {
-          if (!formTarget.productCode)
-            throw new Error('제때 연동 항목에 productCode가 없습니다. 데이터를 확인해 주세요.');
-          await upsertIngredientMeta({ productCode: formTarget.productCode, ...formData });
-          // 제때 연동 항목의 전용/범용 단일 출처 = 제때 관리품목(productType)
-          await syncManagedScope(formTarget, formData.scope);
-          showToast('저장 완료', 'ok');
-        }
-        setFormTarget(null);
-        await load();
-      } catch (err) {
-        showToast('저장 실패: ' + err.message, 'error');
-        throw err;
-      }
-    },
-    [formTarget, load]
-  );
-
-  const handleExclude = useCallback(
-    async row => {
-      try {
-        if (row.isManual && row.id && !row.productCode) {
-          const backup = await deleteIngredient(row.id);
-          warnIngredientCascadeFailures([backup]);
-          setRows(prev => prev.filter(r => !(r.isManual && r.id === row.id)));
-          showToast(`"${row.ingredientName || row.displayName || '식자재'}" 삭제됨`, 'ok', 5000, {
-            label: '실행취소',
-            onClick: async () => {
-              try {
-                await restoreDeletedIngredientBackup(backup);
-                await load();
-                showToast('삭제를 되돌렸습니다', 'ok');
-              } catch (err) {
-                console.error('[IngredientManage] undo delete failed', err);
-                showToast('실행취소 실패: ' + err.message, 'error');
-              }
-            },
-          });
-        } else {
-          await excludeIngredientByCode(row.productCode);
-          setRows(prev =>
-            prev.map(r =>
-              r.productCode === row.productCode ? { ...r, excluded: true, hasRecord: true } : r
-            )
-          );
-          showToast('숨겼습니다', 'ok');
-        }
-        setDeletePending(null);
-      } catch (err) {
-        showToast('실패: ' + err.message, 'error');
-      }
-    },
-    [load, setRows]
-  );
-
-  const handleRestore = useCallback(
-    async productCode => {
-      try {
-        await restoreIngredientByCode(productCode);
-        setRows(prev =>
-          prev.map(r => (r.productCode === productCode ? { ...r, excluded: false } : r))
-        );
-        showToast('복원됐습니다', 'ok');
-      } catch (err) {
-        showToast('실패: ' + err.message, 'error');
-      }
-    },
-    [setRows]
-  );
-
-  // 필터 변경 시 선택 Set 초기화 — 필터로 숨겨진 항목이 선택된 채로 일괄삭제되는 것 방지
-  const handleSetCatFilter = useCallback(
-    val => {
-      setCatFilter(val);
-      clearSelection();
-    },
-    [clearSelection, setCatFilter]
-  );
-  const handleSetTagFilter = useCallback(
-    val => {
-      setTagFilter(val);
-      clearSelection();
-    },
-    [clearSelection, setTagFilter]
-  );
-  const handleDeleteCancel = useCallback(() => setDeletePending(null), []);
-
-  // 제때 신규 미등록 항목 → 식자재관리 자동 등록
-  const handleAutoRegister = useCallback(
-    async row => {
-      try {
-        await addIngredient({
-          ingredientName: row.displayName || row.productName || '',
-          productCode: row.productCode || '',
-          category: '',
-          tags: [],
-          isManual: true,
-        });
-        showToast(`${row.displayName || row.productName} 등록됨`, 'ok');
-        await load();
-      } catch (err) {
-        showToast('등록 실패: ' + err.message, 'error');
-      }
-    },
-    [load]
-  );
-
-  const handleBatchDelete = useCallback(async () => {
-    if (selected.size === 0) return;
-    const ids = Array.from(selected);
-    try {
-      const { removed, failures } = await bulkDeleteIngredients(ids);
-      warnIngredientCascadeFailures(removed);
-      if (removed.length > 0) {
-        const removedIds = new Set(removed.map(rec => rec.ingredient?.id).filter(Boolean));
-        setRows(prev => prev.filter(r => !removedIds.has(r.id)));
-        exitBatch();
-      }
-      const toast = buildBulkDeleteToast(removed, failures);
-      const undoAction =
-        removed.length > 0
-          ? {
-              label: '실행취소',
-              onClick: async () => {
-                try {
-                  await restoreDeletedIngredientBackups(removed);
-                  await load();
-                  showToast(`${removed.length}개 복구했습니다`, 'ok');
-                } catch (err) {
-                  console.error('[IngredientManage] undo batch delete failed', err);
-                  showToast('실행취소 실패: ' + err.message, 'error');
-                }
-              },
-            }
-          : null;
-      showToast(toast.message, toast.type, 5000, undoAction);
-    } catch (err) {
-      showToast('삭제 실패: ' + err.message, 'error');
-    }
-  }, [selected, load, exitBatch, setRows]);
+  const {
+    handleSeed,
+    handleReset,
+    handleRemoveCategory,
+    handleRemoveTag,
+    handleRepairProductCodeDuplicates,
+    handleSave,
+    handleExclude,
+    handleRestore,
+    handleAutoRegister,
+    handleBatchDelete,
+    handleSetCatFilter,
+    handleSetTagFilter,
+    handleDeleteCancel,
+  } = useIngredientManageActions({
+    load,
+    setRows,
+    formTarget,
+    setFormTarget,
+    seeding,
+    setSeeding,
+    resetting,
+    setResetting,
+    setResetConfirm,
+    setDeletePending,
+    dedupeBusy,
+    setDedupeBusy,
+    setDedupeConfirm,
+    selected,
+    exitBatch,
+    clearSelection,
+    setCatFilter,
+    setTagFilter,
+  });
 
   return (
     <main className="main page-enter">
@@ -485,7 +221,6 @@ export default function Page() {
         }
       />
 
-      {/* 탭 */}
       {!loading && (
         <div
           style={{
@@ -553,7 +288,6 @@ export default function Page() {
         onRepairProductCodeDuplicates={handleRepairProductCodeDuplicates}
       />
 
-      {/* ── 관리 뷰 ── */}
       {rows.length > 0 && view === 'manage' && (
         <IngredientManagePanel
           rows={rows}
@@ -585,10 +319,8 @@ export default function Page() {
         />
       )}
 
-      {/* ── 단가 뷰 ── */}
       {view === 'price' && <IngredientPriceView embedded />}
 
-      {/* ── 이슈 뷰 ── */}
       {view === 'issues' && (
         <>
           <IngredientJetteIssuesPanel
@@ -602,7 +334,6 @@ export default function Page() {
         </>
       )}
 
-      {/* ── 분류·태그 관리 뷰 ── */}
       {rows.length > 0 && view === 'settings' && (
         <IngredientSettingsPanel
           mainCats={mainCats}
@@ -613,10 +344,8 @@ export default function Page() {
         />
       )}
 
-      {/* ── 공급업체 뷰 ── */}
       {view === 'suppliers' && <SuppliersView />}
 
-      {/* ── 보고서 뷰 ── */}
       {view === 'report' && (
         <IngredientReportPanel
           filtered={filtered}
