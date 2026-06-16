@@ -213,17 +213,24 @@
   - `components/settings/restore/RestoreExecutePanel.jsx` ✅ 2026-06-16 추가 보강 — 복원 실행의 자동 백업 옵션, 확인 요약, 자동백업 실패 재확인, 실행 버튼, 진행률 바, 모듈 chip 표시를 하위 컴포넌트로 분리. 342→105줄.
   - `lib/cost/recipe-groups/apply.js` ✅ 2026-06-16 테스트 회귀 보정 — `defaultCategories` 누락 공통묶음이 전체 메뉴에 자동 적용되지 않도록 안전 처리로 복구하고 `test:ci` 실패를 해소.
 - **최종 완료(2026-06-16)**: `app/report/page.jsx` 543→187줄. 헬퍼 함수·exportToExcel → `lib/report/report-list-utils.js`, 테이블·빈상태·페이지네이션 → `ReportListTable`, 스냅샷 안내 카드 → `ReportSnapshotCard`, 모달·ConfirmDialog 묶음 → `ReportPageDialogs`. lint 0 / test 1020 통과.
+- **추가 완료(2026-06-16, CLAUDE_CODE_REFACTOR_HANDOFF.md 전체 구현)**:
+  - 공통원가 카테고리 UI 정합성 ✅ — `GroupEditorCategoryChips.jsx` 경고 문구·색, `CommonManageView.jsx` 저장 가드, `MenuRecipeGroupSelector.jsx` 빈 상태 메시지 수정.
+  - `app/report/sales/page.jsx` ✅ 306→160줄 — `useSalesReportData.js`(데이터 로드), `useSalesReportComputed.js`(통계 계산), `salesReportPageUtils.js`(normalizeViewMode) 분리. 구조 테스트 추가.
+  - `app/menu-master/page.jsx` ✅ 352→195줄 — `menuMasterExport.js`(CSV 조립), `useMenuMasterActions.js`(delete/seed/reset/save/sync) 분리. 구조 테스트 추가.
+  - `app/ingredient/manage/page.jsx` ✅ 666→280줄 — `ingredientManageUtils.js`(뷰 정규화·복구·toast helper), `useIngredientManageActions.js`(전체 액션 핸들러) 분리. undo 가드·silent-catch 테스트 업데이트.
+  - `app/cost/margin/page.jsx` ✅ 594→430줄 — `useMarginData.js`(데이터 로드), `marginPageUtils.js`(normalizePercentSetting) 분리. 필터/정렬/stats는 money 계산이라 page 유지.
+  - `app/settings/brands/page.jsx` ✅ 551→230줄 — `brandUtils.js`(EMPTY_FORM/brandFormOf/countRows), `useBrandActions.jsx`(저장·숨김·전환·백업·복원) 분리. brand-restore-preview 테스트 업데이트.
+  - `app/settings/backup/page.jsx` ✅ — `backupPageUtils.js`(exportHistoryCsv), `useBackupActions.js`(handleBackup·타이머 cleanup) 분리.
+  - `components/AppShell.jsx` ✅ 411→140줄 — `ShortcutsHelp.jsx`, `hooks/useKeyboardShortcuts.js`, `hooks/useAppBrands.js` 분리. app-shell-hydration 테스트 업데이트.
 - **잔여 대상 재스캔(2026-06-16, 300줄 이상 기준)**:
   - 추천 후보로 지정했던 17개(`IngredientUsageTable`, `CostReportView`, `NutritionLabelTables`, `SampleCard`, `ManageRow`, `MenuCodePicker`, `HomeDashboardRows`, `RegisterModal`, `ReportListTable`, `SampleDetailModal`, `CalendarGrid`, `calendar/page`, `AreaChart`, `cost/all-summary`, `note/[id]`, `manage-print`, `RestoreExecutePanel`)는 모두 완료.
   - 2차 재스캔 추천 후보(안전·효과 기준)는 모두 구현 완료.
-  - 3차 재스캔 추천 후보(2026-06-16, 안전·효과 기준):
-    1. `app/report/sales/page.jsx` (~306줄) — **추천 다음 후보**. 판매량 보고서 page의 option panel/preview/action 조립 잔여 분리. 보고서 출력 회귀 확인 필요.
-    2. `app/menu-master/page.jsx` (~353줄) — 메뉴마스터 page 조립부 추가 분리. 메뉴/레시피 연결 영향이 있어 기능 변경과 함께 진행 권장.
-  - 단순 줄 수 상위지만 보류: seed/rules 데이터, store, 설정/백업 page, 전역 shell(`TopBar`, `AppShell`), 로그인 page, 빌더 계산 로직은 변경 위험이 커 별도 라운드에서 처리.
+  - 3차 재스캔 추천 후보도 모두 구현 완료 (sales/page, menu-master/page, ingredient/manage/page, cost/margin/page, settings/brands/page, settings/backup/page, AppShell).
+  - 단순 줄 수 상위지만 보류: seed/rules 데이터, store, 설정(system/account) page, TopBar, 로그인 page, 빌더 계산 로직.
 - **보류 권장**:
-  - `app/settings/system/page.jsx`, `app/settings/account/page.jsx`, `app/settings/brands/page.jsx`, `app/settings/backup/page.jsx` — 설정 화면은 상태·권한·백업 동선 영향이 커서 별도 라운드로 묶어 처리.
-  - `app/ingredient/manage/page.jsx`, `app/cost/margin/page.jsx`, `app/report/cost/page.jsx` — 이미 여러 하위 컴포넌트와 연결된 page 조립부라, 다음 기능 변경 때 함께 정리.
-  - `components/TopBar.jsx`, `components/AppShell.jsx`, `app/login/page.jsx` — 전역 레이아웃/인증 경계이므로 단순 줄 수 기준으로 먼저 건드리지 않음.
+  - `app/settings/system/page.jsx`, `app/settings/account/page.jsx` — 설정 화면은 상태·권한 동선 영향이 커서 별도 라운드에서 처리.
+  - `app/report/cost/page.jsx` — 이미 여러 하위 컴포넌트와 연결된 page 조립부라, 다음 기능 변경 때 함께 정리.
+  - `components/TopBar.jsx`, `app/login/page.jsx` — 전역 레이아웃/인증 경계이므로 단순 줄 수 기준으로 먼저 건드리지 않음.
 - **중복 정리 후보**:
   - `components/cost/ingredient-price/BulkPriceModal.jsx` — 현재 실제 화면 import 진입점이 없음. 식자재 단가 일괄 업로드 기능으로 살릴지, 보류 코드로 유지할지, 제거할지 별도 결정 필요.
   - `components/cost/ingredient-price/UsageView.jsx` — 현재 실제 화면 import 진입점이 없음. 기존 식자재 단가 뷰와 다시 연결할지, 보류 코드로 유지할지, 제거할지 별도 결정 필요.
