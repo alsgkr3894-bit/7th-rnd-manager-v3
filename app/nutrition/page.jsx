@@ -1,8 +1,7 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { SectionHubPage } from '@/components/ui/SectionHubPage';
 import { SectionDashboard } from '@/components/ui/SectionDashboard';
-import { initDB } from '@/lib/db';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import { getNutritionDashboard } from '@/lib/nutrition/dashboard';
 
 const GROUPS = [
@@ -56,28 +55,9 @@ const GROUPS = [
 ];
 
 export default function Page() {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      try {
-        await initDB();
-        const nextStats = await getNutritionDashboard();
-        if (alive) setStats(nextStats);
-      } catch (err) {
-        if (alive) console.warn('[nutrition hub] dashboard load failed:', err);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const { data: stats, loading } = useDBLoad(() => getNutritionDashboard(), {
+    onError: err => console.warn('[nutrition hub] dashboard load failed:', err),
+  });
 
   const cards = stats
     ? [
@@ -114,7 +94,7 @@ export default function Page() {
         loading={loading}
         cards={cards}
         isEmpty={!loading && (!stats || stats.menuCount === 0)}
-        emptyHint="아직 등록된 메뉴 영양성분이 없어요. ‘메뉴 영양성분’에서 데이터를 입력하세요."
+        emptyHint="아직 등록된 메뉴 영양성분이 없어요. '메뉴 영양성분'에서 데이터를 입력해 주세요."
       />
     </SectionHubPage>
   );

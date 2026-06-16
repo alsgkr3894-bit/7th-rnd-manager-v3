@@ -1,38 +1,18 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SectionHubPage } from '@/components/ui/SectionHubPage';
 import { SectionDashboard } from '@/components/ui/SectionDashboard';
 import { RankCard } from '@/components/home/HomeWidgets';
-import { initDB } from '@/lib/db';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import { getMenuSalesDashboard } from '@/lib/sales/dashboard';
 import { formatNumber } from '@/lib/format';
 import { MENU_SALES_HUB_GROUPS } from '@/lib/sales/navigation';
 
 export default function Page() {
   const router = useRouter();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      try {
-        await initDB();
-        const nextData = await getMenuSalesDashboard();
-        if (alive) setData(nextData);
-      } catch (err) {
-        if (alive) console.warn('[menu-sales hub] dashboard load failed:', err);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const { data, loading } = useDBLoad(() => getMenuSalesDashboard(), {
+    onError: err => console.warn('[menu-sales hub] dashboard load failed:', err),
+  });
 
   const kpi = data?.kpi;
   const cards = data
@@ -74,7 +54,7 @@ export default function Page() {
         loading={loading}
         cards={cards}
         isEmpty={isEmpty}
-        emptyHint="아직 업로드된 판매 데이터가 없어요. ‘파일 업로드’에서 메뉴 판매량 파일을 올려보세요."
+        emptyHint="아직 업로드된 판매 데이터가 없어요. '파일 업로드'에서 메뉴 판매량 파일을 올려보세요."
       >
         {!isEmpty && (data?.best?.length > 0 || data?.worst?.length > 0) && (
           <div
