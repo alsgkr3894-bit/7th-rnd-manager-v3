@@ -4,26 +4,20 @@ import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
-import { formatNumber } from '@/lib/format';
 import {
   SEED_MAIN_CATEGORIES,
   getPrimaryIngredientPhoto,
   normalizeIngredientPhotos,
   sortMainCategories,
 } from '@/lib/ingredient';
-import { SCOPE, SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
+import { SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
 import { KEYS } from '@/lib/note/keys';
 import { parseOptionalNonNegativeNumber } from '@/lib/parse';
 import { imageFileError, resizePhoto } from '@/lib/image/resize';
 import { showToast } from '@/components/Toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
-import {
-  AllergenSection,
-  OriginSection,
-  PhotoSection,
-  SourceField,
-} from './IngredientFormSections';
+import { AllergenSection, OriginSection, PhotoSection } from './IngredientFormSections';
 import {
   BasicIngredientFields,
   IngredientCostFields,
@@ -31,6 +25,8 @@ import {
 } from './IngredientFormFields';
 import { IngredientUsageSection } from './IngredientUsageSection';
 import { useIngredientUsageSummary } from './useIngredientUsageSummary';
+import { JetteLinkedSourcePanel } from './JetteLinkedSourcePanel';
+import { JettePriceImportField } from './JettePriceImportField';
 
 function normalizeUnitType(value) {
   return normalizeCostBaseUnit(value);
@@ -66,6 +62,7 @@ export function IngredientForm({
   extraCategories = [],
   originSuggestions = { names: [], countries: [] },
   existingProductCodes = [], // 중복 검사용 — 부모가 현재 등록된 코드 목록 전달
+  jettePriceRows = [],
 }) {
   const isJetteLinked = !!initial?.jetteLinked;
   // 시드 분류 + 실제 사용 중인 분류(직접입력 포함) 합본 → 직접입력 분류도 다음부터 드롭다운에 노출
@@ -141,6 +138,24 @@ export function IngredientForm({
   }
   function removeTag(t) {
     setForm(f => ({ ...f, tags: (f.tags || []).filter(x => x !== t) }));
+  }
+
+  function applyJettePriceDraft(draft) {
+    setForm(f => ({
+      ...f,
+      productCode: draft.productCode || f.productCode,
+      ingredientName: draft.ingredientName || f.ingredientName,
+      taxType: draft.taxType || f.taxType,
+      temperature: draft.temperature || f.temperature,
+      priceOverride: draft.priceOverride !== '' ? draft.priceOverride : f.priceOverride,
+    }));
+    setErrors(e => {
+      const next = { ...e };
+      delete next.productCode;
+      delete next.ingredientName;
+      delete next.priceOverride;
+      return next;
+    });
   }
 
   function validate() {
@@ -248,7 +263,6 @@ export function IngredientForm({
       : isJetteLinked
         ? '제때 식자재 설정'
         : '식자재 수정';
-  const scopeLabel = initial?.scope || (initial?.hasRecord ? SCOPE.EXCLUSIVE : SCOPE.GENERIC);
   const formPhotos = normalizeIngredientPhotos(form.photos, form.photo);
 
   return createPortal(
@@ -295,72 +309,22 @@ export function IngredientForm({
           </button>
         </div>
 
-        {/* 제때 연동 — source 정보 (read-only) */}
-        {isJetteLinked && (
-          <div
-            style={{
-              background: 'var(--surface-2)',
-              borderRadius: 10,
-              padding: '12px 14px',
-              marginBottom: 16,
-              fontSize: 13,
-              border: '1px solid var(--border)',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 8,
-              }}
-            >
-              <div style={{ fontWeight: 700 }}>{initial.productName}</div>
-              <span
-                className="chip"
-                style={{
-                  padding: '2px 8px',
-                  fontSize: 11,
-                  background: 'var(--accent-soft)',
-                  color: 'var(--accent-text)',
-                }}
-              >
-                {scopeLabel}
-              </span>
-            </div>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '6px 16px',
-                fontSize: 12,
-                color: 'var(--text-2)',
-              }}
-            >
-              <SourceField label="제품코드" value={initial.productCode} />
-              <SourceField label="온도" value={initial.temperature} />
-              <SourceField label="판매단위" value={initial.salesUnit} />
-              <SourceField label="과세구분" value={initial.taxType} />
-              <SourceField
-                label="부가세포함단가"
-                value={
-                  initial.priceWithTax != null ? `${formatNumber(initial.priceWithTax)}원` : null
-                }
-              />
-            </div>
-            <div
-              style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 8, fontStyle: 'italic' }}
-            >
-              ※ 위 값들은 제때 가격파일에서 자동 가져옵니다 (수정 불가)
-            </div>
-          </div>
-        )}
+        {isJetteLinked && <JetteLinkedSourcePanel ingredient={initial} />}
 
         <form
           onSubmit={handleSubmit}
           aria-busy={saving}
           style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
         >
+          {!isJetteLinked && (
+            <JettePriceImportField
+              priceRows={jettePriceRows}
+              form={form}
+              existingProductCodes={existingProductCodes}
+              onApply={applyJettePriceDraft}
+            />
+          )}
+
           <IngredientNameField
             form={form}
             errors={errors}

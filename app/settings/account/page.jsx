@@ -50,6 +50,22 @@ const ROLE_COLORS = {
   API: { bg: '#F0EBFF', color: '#6B3FCB' },
 };
 
+const S_CARD_MT = { marginTop: 16 };
+const S_SECTION_TITLE = { fontSize: 15, fontWeight: 700, marginBottom: 4 };
+const S_SECTION_DESC = { fontSize: 13, color: 'var(--text-3)', marginBottom: 16 };
+const S_MUTED_DOT = { color: 'var(--text-4)' };
+const S_PERM_CHECK = {
+  display: 'inline-flex',
+  width: 24,
+  height: 24,
+  borderRadius: 6,
+  background: 'var(--positive-soft)',
+  color: 'var(--positive)',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontWeight: 800,
+};
+
 // 권한 매트릭스 (정보용)
 const PERMISSIONS = [
   { name: '판매량 업로드', r: ['✓', '✓', '', '✓'] },
@@ -84,7 +100,7 @@ export default function Page() {
     const storedActiveId = getActiveAccountId();
     const validActiveId = list.some(account => account.id === storedActiveId)
       ? storedActiveId
-      : list[0]?.id ?? null;
+      : (list[0]?.id ?? null);
     if (validActiveId != null && validActiveId !== storedActiveId) {
       setActiveAccountId(validActiveId);
     }
@@ -268,7 +284,7 @@ export default function Page() {
                 }}
               >
                 {profile.team && <span>{profile.team}</span>}
-                {profile.team && profile.email && <span style={{ color: 'var(--text-4)' }}>·</span>}
+                {profile.team && profile.email && <span style={S_MUTED_DOT}>·</span>}
                 {profile.email && <span style={{ fontFamily: 'monospace' }}>{profile.email}</span>}
                 <span
                   className="chip"
@@ -357,9 +373,9 @@ export default function Page() {
       </div>
 
       {/* 세션 정보 — 마지막 로그인 / 접속 IP */}
-      <div className="card" style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>세션 정보</h2>
-        <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 16 }}>
+      <div className="card" style={S_CARD_MT}>
+        <h2 style={S_SECTION_TITLE}>세션 정보</h2>
+        <p style={S_SECTION_DESC}>
           현재 브라우저 세션 기준 마지막 로그인 시각과 접속 IP입니다. IP는 외부 공개 API(
           <span style={{ fontFamily: 'monospace' }}>api.ipify.org</span>)로 조회합니다.
         </p>
@@ -422,7 +438,7 @@ export default function Page() {
       />
 
       {/* ── 로컬 계정 관리 ── */}
-      <div className="card" style={{ marginTop: 16 }}>
+      <div className="card" style={S_CARD_MT}>
         <div className="card-header">
           <div>
             <div className="card-title">구성원 계정</div>
@@ -580,9 +596,9 @@ export default function Page() {
       </div>
 
       {/* 역할별 권한 매트릭스 (정보 표시) */}
-      <div className="card" style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>역할별 권한 (정보)</h2>
-        <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 16 }}>
+      <div className="card" style={S_CARD_MT}>
+        <h2 style={S_SECTION_TITLE}>역할별 권한 (정보)</h2>
+        <p style={S_SECTION_DESC}>
           향후 멀티 사용자 환경 도입 시 기준이 되는 역할·권한 표입니다. 현재는 표시용입니다.
         </p>
         <div style={{ overflowX: 'auto' }}>
@@ -613,23 +629,9 @@ export default function Page() {
                   {row.r.map((v, i) => (
                     <td key={i} style={{ textAlign: 'center' }}>
                       {v ? (
-                        <span
-                          style={{
-                            display: 'inline-flex',
-                            width: 24,
-                            height: 24,
-                            borderRadius: 6,
-                            background: 'var(--positive-soft)',
-                            color: 'var(--positive)',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 800,
-                          }}
-                        >
-                          {v}
-                        </span>
+                        <span style={S_PERM_CHECK}>{v}</span>
                       ) : (
-                        <span style={{ color: 'var(--text-4)' }}>—</span>
+                        <span style={S_MUTED_DOT}>—</span>
                       )}
                     </td>
                   ))}

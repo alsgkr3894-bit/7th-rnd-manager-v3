@@ -19,15 +19,16 @@ export function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded
     const term = q.trim().toLowerCase();
     if (!term) return [];
     return allMeta
-      .filter(
-        m =>
-          m.productCode &&
-          !m.discontinued &&
-          !m.excluded &&
-          !addedSet.has(m.productCode) &&
-          ((m.ingredientName || '').toLowerCase().includes(term) ||
-            (m.productCode || '').toLowerCase().includes(term))
-      )
+      .filter(m => {
+        const key = m.productCode || (m.id != null ? String(m.id) : null);
+        if (!key) return false;
+        if (m.discontinued || m.excluded) return false;
+        if (addedSet.has(key)) return false;
+        return (
+          (m.ingredientName || '').toLowerCase().includes(term) ||
+          (m.productCode || '').toLowerCase().includes(term)
+        );
+      })
       .slice(0, 15);
   }, [q, allMeta, addedSet]);
 
@@ -110,11 +111,12 @@ export function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded
         }}
       >
         {results.map((m, idx) => {
-          const info = unitPriceMap.get(m.productCode);
+          const key = m.productCode || (m.id != null ? String(m.id) : '');
+          const info = unitPriceMap.get(key);
           const isActive = idx === activeIdx;
           return (
             <button
-              key={m.productCode}
+              key={key}
               onClick={() => select(m)}
               onMouseEnter={() => setActiveIdx(idx)}
               style={{
@@ -146,7 +148,7 @@ export function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded
                   gap: 8,
                 }}
               >
-                <span style={{ fontFamily: 'monospace' }}>{m.productCode}</span>
+                <span style={{ fontFamily: 'monospace' }}>{m.productCode || '수동입력'}</span>
                 {info?.unitPrice != null ? (
                   <span>
                     {info.unitPrice < 1 ? info.unitPrice.toFixed(2) : formatNumber(info.unitPrice)}

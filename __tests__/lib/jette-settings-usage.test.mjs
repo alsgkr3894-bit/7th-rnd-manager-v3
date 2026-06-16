@@ -5,6 +5,10 @@ const settingsPageSource = readFileSync(resolve('app/jette/settings/page.jsx'), 
 const pricePageSource = readFileSync(resolve('app/jette/price-compare/page.jsx'), 'utf8');
 const priceHookSource = readFileSync(resolve('lib/price/use-price-upload.js'), 'utf8');
 const compareTableSource = readFileSync(resolve('components/jette/PriceCompareTable.jsx'), 'utf8');
+const compareRowSource = readFileSync(
+  resolve('components/jette/price-compare/PriceCompareRow.jsx'),
+  'utf8'
+);
 const summaryCardsSource = readFileSync(resolve('components/jette/PriceSummaryCards.jsx'), 'utf8');
 
 describe('jette settings usage guards', () => {
@@ -20,7 +24,8 @@ describe('jette settings usage guards', () => {
     expect(pricePageSource).toContain(
       'priceAlertThreshold={jetteSettings.priceAlertThreshold}'
     );
-    expect(compareTableSource).toContain('isPriceChangeAlert');
+    expect(compareTableSource).toContain('priceAlertThreshold');
+    expect(compareRowSource).toContain('isPriceChangeAlert');
     expect(summaryCardsSource).toContain('isPriceChangeAlert');
   });
 

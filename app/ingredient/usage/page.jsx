@@ -1,18 +1,13 @@
 'use client';
-import { useEffect, useState, useCallback, Fragment, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useMounted } from '@/hooks/useMounted';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { SortableTh } from '@/components/ui/SortableTh';
-import { SearchBox } from '@/components/ui/SearchBox';
 import { initDB } from '@/lib/db';
 import { downloadCsv } from '@/lib/download';
 import { showToast } from '@/components/Toast';
 import { getAllIngredients, buildProductTypeMap } from '@/lib/ingredient';
-import { SCOPE_STYLES } from '@/lib/ingredient/constants';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
-import { MENU_CATEGORY } from '@/lib/menu-categories';
-import { printUsageReport } from '@/lib/cost/usage-print';
 import { buildIngredientUsageMap } from '@/lib/cost/ingredient-price-helpers';
 import { useIngredientUsageRows } from '@/hooks/useIngredientUsageRows';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
@@ -21,26 +16,8 @@ import { getAllMenuMaster } from '@/lib/menu-master/store';
 import { getAllMenuRecipes } from '@/lib/menu-recipes';
 import { getAllCompositions } from '@/lib/nutrition/values/store';
 import { KEYS } from '@/lib/note/keys';
-
-const CAT_COLORS = {
-  피자: { bg: 'var(--cat-1-bg)', color: 'var(--cat-1-text)' },
-  '1인피자': { bg: 'var(--cat-3-bg)', color: 'var(--cat-3-text)' },
-  사이드: { bg: 'var(--cat-2-bg)', color: 'var(--cat-2-text)' },
-  세트박스: { bg: 'var(--surface-2)', color: 'var(--text-2)' },
-  기타: { bg: 'var(--surface-2)', color: 'var(--text-3)' },
-};
-const USAGE_CATS = [
-  '전체',
-  MENU_CATEGORY.PIZZA,
-  MENU_CATEGORY.SIDE,
-  MENU_CATEGORY.PERSONAL,
-  MENU_CATEGORY.SET,
-  MENU_CATEGORY.ETC,
-];
-const USAGE_THRESHOLD = { HIGH: 8, MID: 4 };
-const TIER_LABEL = ['많이 쓰는 재료 (8개 이상)', '보통 (4–7개)', '적게 쓰는 재료 (1–3개)'];
-const tierOf = count => (count >= USAGE_THRESHOLD.HIGH ? 0 : count >= USAGE_THRESHOLD.MID ? 1 : 2);
-const keyOf = r => r.code || r.name;
+import { IngredientUsageDashboard } from '@/components/ingredient/usage/IngredientUsageDashboard';
+import { keyOf } from '@/components/ingredient/usage/usage-display-utils';
 
 function toStringSet(value) {
   return new Set(normalizeStringList(value));
@@ -49,16 +26,6 @@ function toStringSet(value) {
 function normalizeStringList(value) {
   if (!Array.isArray(value)) return [];
   return value.filter(v => typeof v === 'string' && v.trim());
-}
-
-/** 사용횟수 배지 색상 — 많이(파랑)/보통(초록)/단발(주의)/그 외(중립) */
-function usageCountStyle(count) {
-  if (count >= USAGE_THRESHOLD.HIGH)
-    return { background: 'var(--cat-1-bg)', color: 'var(--cat-1-text)' };
-  if (count >= USAGE_THRESHOLD.MID)
-    return { background: 'var(--cat-2-bg)', color: 'var(--cat-2-text)' };
-  if (count === 1) return { background: 'var(--warn-soft)', color: 'var(--warn)' };
-  return { background: 'var(--surface-2)', color: 'var(--text-2)' };
 }
 
 export default function Page() {
@@ -153,29 +120,21 @@ export default function Page() {
       });
   }, [load, mountedRef]);
 
-  const {
-    usageRows,
-    unusedRows,
-    nonHidden,
-    displayRows,
-    hiddenCount,
-    oneCount,
-    menuCounts,
-    totalUsedCount,
-  } = useIngredientUsageRows({
-    allMeta,
-    usageMap,
-    typeMap,
-    usageCat,
-    menuSearch,
-    sortKey,
-    sortDir,
-    showUnused,
-    showHidden,
-    onlyOne,
-    hidden,
-    excludedMenus,
-  });
+  const { nonHidden, displayRows, hiddenCount, oneCount, menuCounts, totalUsedCount } =
+    useIngredientUsageRows({
+      allMeta,
+      usageMap,
+      typeMap,
+      usageCat,
+      menuSearch,
+      sortKey,
+      sortDir,
+      showUnused,
+      showHidden,
+      onlyOne,
+      hidden,
+      excludedMenus,
+    });
 
   function toggle(code) {
     setExpanded(prev => {
@@ -216,8 +175,6 @@ export default function Page() {
     downloadCsv([headers, ...rows], showUnused ? '미사용식자재.csv' : '식자재사용현황.csv');
   }
 
-  const byCount = sortKey === 'count' && !showUnused;
-
   return (
     <main className="main">
       <PageHeader
@@ -246,483 +203,39 @@ export default function Page() {
           식자재 마스터 데이터가 없습니다. 식자재 관리 페이지에서 먼저 등록해주세요.
         </div>
       ) : (
-        <>
-          {/* 요약 카드 */}
-          <div className="stat-row">
-            <div className="stat-card">
-              <div className="stat-label">사용 재료</div>
-              <div className="stat-value">
-                {nonHidden.length}
-                <span className="unit">개</span>
-              </div>
-            </div>
-            <div
-              className="stat-card"
-              style={{ cursor: 'pointer', outline: onlyOne ? '2px solid var(--warn)' : undefined }}
-              onClick={() => {
-                setOnlyOne(v => !v);
-                setShowUnused(false);
-              }}
-            >
-              <div className="stat-label">1개 메뉴만 사용 ⚠</div>
-              <div
-                className="stat-value"
-                style={{ color: oneCount > 0 ? 'var(--warn)' : undefined }}
-              >
-                {oneCount}
-                <span className="unit">개</span>
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>
-                {onlyOne ? '필터 해제' : '클릭하여 보기'}
-              </div>
-            </div>
-            <div
-              className="stat-card"
-              style={{
-                cursor: 'pointer',
-                outline: showUnused ? '2px solid var(--accent)' : undefined,
-              }}
-              onClick={() => {
-                setShowUnused(v => !v);
-                setOnlyOne(false);
-                setShowHidden(false);
-              }}
-            >
-              <div className="stat-label">미사용</div>
-              <div className="stat-value" style={{ color: 'var(--text-3)' }}>
-                {allMeta.length - totalUsedCount}
-                <span className="unit">개</span>
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>
-                {showUnused ? '필터 해제' : '클릭하여 보기'}
-              </div>
-            </div>
-            <div
-              className="stat-card"
-              style={{
-                cursor: hiddenCount ? 'pointer' : 'default',
-                outline: showHidden ? '2px solid var(--accent)' : undefined,
-              }}
-              onClick={() => hiddenCount && setShowHidden(v => !v)}
-            >
-              <div className="stat-label">숨김</div>
-              <div
-                className="stat-value"
-                style={{ color: hiddenCount > 0 ? 'var(--accent)' : undefined }}
-              >
-                {hiddenCount}
-                <span className="unit">개</span>
-              </div>
-              {hiddenCount > 0 && (
-                <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>
-                  {showHidden ? '숨김 보기 끄기' : '숨김만 보기'}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 메뉴명 검색 */}
-          <div style={{ margin: '10px 0 0' }}>
-            <SearchBox
-              value={menuSearch}
-              onChange={setMenuSearch}
-              placeholder={
-                showUnused ? '식자재명·제품코드 검색' : '메뉴명으로 사용 식자재 찾기 (예: 페퍼로니)'
-              }
-            />
-          </div>
-
-          {/* 액션 버튼 (상단) */}
-          <div className="usage-action-row" style={{ marginBottom: 8 }}>
-            <button className="btn sm" onClick={() => setExpanded(new Set(displayRows.map(keyOf)))}>
-              모두 펼치기
-            </button>
-            <button className="btn sm" onClick={() => setExpanded(new Set())}>
-              모두 접기
-            </button>
-            <button className="btn sm" onClick={() => printUsageReport(displayRows, usageCat)}>
-              PDF 출력
-            </button>
-            <button className="btn sm" onClick={exportCsv} disabled={displayRows.length === 0}>
-              엑셀로 내보내기
-            </button>
-          </div>
-
-          {/* 카테고리 필터 */}
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              margin: '0 0 8px',
-            }}
-          >
-            <div className="usage-chip-row">
-              {USAGE_CATS.map(c => (
-                <button
-                  key={c}
-                  className={'chip' + (usageCat === c ? ' active' : '')}
-                  onClick={() => setUsageCat(c)}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 메뉴 해당 수 / 상태 */}
-          <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8 }}>
-            해당 메뉴 <b style={{ color: 'var(--text-1)' }}>{menuCounts.total}</b>개
-            <span style={{ marginLeft: 8 }}>
-              · 피자메뉴 <b style={{ color: 'var(--text-1)' }}>{menuCounts.pizza}</b>개
-            </span>
-            <span style={{ marginLeft: 8 }}>
-              · 사이드메뉴 <b style={{ color: 'var(--text-1)' }}>{menuCounts.side}</b>개
-            </span>
-            {showHidden && (
-              <span style={{ marginLeft: 8, color: 'var(--accent)' }}>· 숨김 항목만 표시 중</span>
-            )}
-            {showUnused && (
-              <span style={{ marginLeft: 8, color: 'var(--accent)' }}>
-                · 미사용 식자재만 표시 중
-              </span>
-            )}
-            {onlyOne && (
-              <span style={{ marginLeft: 8, color: 'var(--warn)' }}>· 1개 사용만 표시 중</span>
-            )}
-          </div>
-
-          {/* 제외된 메뉴 복원 바 */}
-          {!showUnused && excludedMenus.size > 0 && (
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                gap: 6,
-                padding: '8px 10px',
-                marginBottom: 8,
-                borderRadius: 8,
-                background: 'var(--surface-2)',
-                border: '1px solid var(--border)',
-              }}
-            >
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)' }}>
-                목록 제외 메뉴 {excludedMenus.size}개
-              </span>
-              {[...excludedMenus].map(name => (
-                <span
-                  key={name}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    padding: '2px 6px 2px 8px',
-                    borderRadius: 99,
-                    background: 'var(--surface)',
-                    color: 'var(--text-2)',
-                    border: '1px solid var(--border)',
-                  }}
-                >
-                  {name}
-                  <button
-                    onClick={() => restoreMenu(name)}
-                    title="다시 목록에 표시"
-                    style={{
-                      border: 0,
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      color: 'var(--accent)',
-                      padding: 0,
-                      lineHeight: 1,
-                      fontSize: 13,
-                      display: 'inline-flex',
-                    }}
-                  >
-                    ↺
-                  </button>
-                </span>
-              ))}
-              <button className="btn sm" style={{ marginLeft: 'auto' }} onClick={restoreAllMenus}>
-                전체 복원
-              </button>
-            </div>
-          )}
-
-          {/* 테이블 */}
-          <div className="card table-card">
-            {displayRows.length === 0 ? (
-              <div
-                style={{
-                  padding: '40px 0',
-                  textAlign: 'center',
-                  color: 'var(--text-3)',
-                  fontSize: 13,
-                }}
-              >
-                {showHidden
-                  ? '숨긴 재료가 없습니다.'
-                  : showUnused
-                    ? '조건에 맞는 미사용 식자재가 없습니다.'
-                    : '등록된 레시피가 없거나 해당 조건에 맞는 재료가 없어요.'}
-              </div>
-            ) : (
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 36 }}>순위</th>
-                    <SortableTh sortKey="name" active={sortKey} dir={sortDir} onClick={handleSort}>
-                      식자재명
-                    </SortableTh>
-                    <SortableTh
-                      sortKey="count"
-                      active={sortKey}
-                      dir={sortDir}
-                      onClick={handleSort}
-                      width={96}
-                    >
-                      사용 메뉴수
-                    </SortableTh>
-                    <th style={{ width: 112, textAlign: 'center' }}>피자/사이드</th>
-                    <th>메뉴 목록</th>
-                    <th style={{ width: 56 }}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayRows.map((r, idx) => {
-                    const k = keyOf(r);
-                    const open = expanded.has(k);
-                    const SHOW = 4;
-                    const visible = open ? r.menus : r.menus.slice(0, SHOW);
-                    const more = r.menus.length - SHOW;
-                    const tier = tierOf(r.count);
-                    const showTier =
-                      byCount && (idx === 0 || tierOf(displayRows[idx - 1].count) !== tier);
-                    const sc = r.scope ? SCOPE_STYLES[r.scope] : null;
-                    const isHidden = hidden.has(k);
-                    return (
-                      <Fragment key={`${k}-${idx}`}>
-                        {showTier && (
-                          <tr>
-                            <td
-                              colSpan={6}
-                              style={{
-                                padding: '7px 12px',
-                                background: 'var(--surface-2)',
-                                fontSize: 11,
-                                fontWeight: 700,
-                                color: 'var(--text-3)',
-                                borderTop: '1px solid var(--divider)',
-                              }}
-                            >
-                              {TIER_LABEL[tier]}
-                            </td>
-                          </tr>
-                        )}
-                        <tr style={isHidden ? { opacity: 0.55 } : undefined}>
-                          <td style={{ textAlign: 'center', color: 'var(--text-4)', fontSize: 12 }}>
-                            {idx + 1}
-                          </td>
-                          <td>
-                            <div
-                              style={{
-                                fontWeight: 600,
-                                fontSize: 13,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 6,
-                              }}
-                            >
-                              {r.name}
-                              {r.scope && (
-                                <span
-                                  style={{
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    padding: '1px 6px',
-                                    borderRadius: 8,
-                                    color: sc?.color || 'var(--text-3)',
-                                    background: sc?.bg || 'var(--surface-2)',
-                                    whiteSpace: 'nowrap',
-                                  }}
-                                >
-                                  {r.scope}
-                                </span>
-                              )}
-                            </div>
-                            {r.code && (
-                              <div
-                                style={{
-                                  fontSize: 11,
-                                  color: 'var(--text-4)',
-                                  fontFamily: 'monospace',
-                                }}
-                              >
-                                {r.code}
-                              </div>
-                            )}
-                          </td>
-                          <td style={{ textAlign: 'center' }}>
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                minWidth: 32,
-                                padding: '2px 8px',
-                                borderRadius: 99,
-                                fontWeight: 700,
-                                fontSize: 13,
-                                ...usageCountStyle(r.count),
-                              }}
-                            >
-                              {r.count}
-                            </span>
-                          </td>
-                          <td style={{ textAlign: 'center' }}>
-                            <div
-                              style={{
-                                display: 'inline-flex',
-                                flexDirection: 'column',
-                                gap: 2,
-                                alignItems: 'stretch',
-                                minWidth: 76,
-                                fontSize: 11,
-                                color: 'var(--text-3)',
-                              }}
-                            >
-                              <span>
-                                피자 <b style={{ color: 'var(--text-1)' }}>{r.pizzaCount || 0}</b>
-                              </span>
-                              <span>
-                                사이드 <b style={{ color: 'var(--text-1)' }}>{r.sideCount || 0}</b>
-                              </span>
-                            </div>
-                          </td>
-                          <td>
-                            <div
-                              style={{
-                                display: 'flex',
-                                flexWrap: 'wrap',
-                                gap: 4,
-                                alignItems: 'center',
-                              }}
-                            >
-                              {visible.map(m => {
-                                const cs = CAT_COLORS[m.cat] || {
-                                  bg: 'var(--surface-2)',
-                                  color: 'var(--text-3)',
-                                };
-                                return (
-                                  <span
-                                    key={m.menuName}
-                                    style={{
-                                      fontSize: 11,
-                                      fontWeight: 600,
-                                      padding: '2px 6px 2px 8px',
-                                      borderRadius: 99,
-                                      background: cs.bg,
-                                      color: cs.color,
-                                      whiteSpace: 'nowrap',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: 4,
-                                    }}
-                                  >
-                                    {m.menuName}
-                                    <button
-                                      onClick={() => excludeMenu(m.menuName)}
-                                      title="이 메뉴를 사용현황 목록에서 제외"
-                                      style={{
-                                        border: 0,
-                                        background: 'transparent',
-                                        cursor: 'pointer',
-                                        color: 'inherit',
-                                        opacity: 0.55,
-                                        padding: 0,
-                                        lineHeight: 1,
-                                        fontSize: 12,
-                                        display: 'inline-flex',
-                                      }}
-                                    >
-                                      ×
-                                    </button>
-                                  </span>
-                                );
-                              })}
-                              {!open && more > 0 && (
-                                <button
-                                  onClick={() => toggle(k)}
-                                  style={{
-                                    fontSize: 11,
-                                    color: 'var(--accent)',
-                                    border: 0,
-                                    background: 'none',
-                                    cursor: 'pointer',
-                                    padding: '2px 4px',
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  +{more}개 더보기
-                                </button>
-                              )}
-                              {open && r.menus.length > SHOW && (
-                                <button
-                                  onClick={() => toggle(k)}
-                                  style={{
-                                    fontSize: 11,
-                                    color: 'var(--text-3)',
-                                    border: 0,
-                                    background: 'none',
-                                    cursor: 'pointer',
-                                    padding: '2px 4px',
-                                  }}
-                                >
-                                  접기
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                          <td style={{ textAlign: 'center' }}>
-                            <button
-                              className="btn sm"
-                              style={{
-                                fontSize: 10,
-                                padding: '2px 6px',
-                                color: isHidden ? 'var(--accent)' : 'var(--text-3)',
-                              }}
-                              title={isHidden ? '표시' : '숨김(목록·출력 제외)'}
-                              onClick={() => toggleHidden(k)}
-                            >
-                              {isHidden ? '표시' : '숨김'}
-                            </button>
-                          </td>
-                        </tr>
-                      </Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-            <div
-              style={{
-                padding: '8px 16px',
-                fontSize: 11,
-                color: 'var(--text-3)',
-                borderTop: '1px solid var(--divider)',
-              }}
-            >
-              {displayRows.length}개 표시 ·{' '}
-              {showUnused
-                ? '미사용 필터 중'
-                : usageCat !== '전체'
-                  ? `${usageCat} 필터 중`
-                  : '전체 카테고리'}
-              {hiddenCount > 0 ? ` · 숨김 ${hiddenCount}개` : ''}
-            </div>
-          </div>
-        </>
+        <IngredientUsageDashboard
+          allMetaCount={allMeta.length}
+          displayRows={displayRows}
+          nonHidden={nonHidden}
+          hidden={hidden}
+          hiddenCount={hiddenCount}
+          oneCount={oneCount}
+          menuCounts={menuCounts}
+          totalUsedCount={totalUsedCount}
+          usageCat={usageCat}
+          onUsageCat={setUsageCat}
+          menuSearch={menuSearch}
+          onMenuSearch={setMenuSearch}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={handleSort}
+          expanded={expanded}
+          onExpandAll={() => setExpanded(new Set(displayRows.map(keyOf)))}
+          onCollapseAll={() => setExpanded(new Set())}
+          onToggleRow={toggle}
+          onToggleHidden={toggleHidden}
+          showHidden={showHidden}
+          onShowHidden={setShowHidden}
+          onlyOne={onlyOne}
+          onOnlyOne={setOnlyOne}
+          showUnused={showUnused}
+          onShowUnused={setShowUnused}
+          excludedMenus={excludedMenus}
+          onExcludeMenu={excludeMenu}
+          onRestoreMenu={restoreMenu}
+          onRestoreAllMenus={restoreAllMenus}
+          onExportCsv={exportCsv}
+        />
       )}
     </main>
   );

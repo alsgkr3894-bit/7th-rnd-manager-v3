@@ -62,16 +62,6 @@ const ALLOWED_SILENT_CATCHES = [
     reason: 'platform setting hydration is best-effort fallback sync',
   },
   {
-    file: 'components/cost/ingredient-price/RegisterModal.jsx',
-    snippets: ['setSuppliers(rows)'],
-    reason: 'supplier autocomplete is optional',
-  },
-  {
-    file: 'components/cost/ingredient-price/RegisterModal.jsx',
-    snippets: ["source: 'register'"],
-    reason: 'price history must not block ingredient save',
-  },
-  {
     file: 'components/cost/margin/MarginRow.jsx',
     snippets: ['copyText(parts.join'],
     reason: 'copy shortcut failure is non-blocking inside a dense table row',

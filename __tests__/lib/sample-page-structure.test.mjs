@@ -29,6 +29,43 @@ const loadingGridSource = readFileSync(resolve('app/note/sample/_SampleLoadingGr
 const emptyStateSource = readFileSync(resolve('app/note/sample/_SampleEmptyState.jsx'), 'utf8');
 const gridViewSource = readFileSync(resolve('app/note/sample/_SampleGridView.jsx'), 'utf8');
 const listViewSource = readFileSync(resolve('app/note/sample/_SampleListView.jsx'), 'utf8');
+const sampleCardSource = readFileSync(resolve('components/note/SampleCard.jsx'), 'utf8');
+const sampleCardBodySource = readFileSync(
+  resolve('components/note/sample-card/SampleCardBody.jsx'),
+  'utf8'
+);
+const sampleCardMediaSource = readFileSync(
+  resolve('components/note/sample-card/SampleCardMedia.jsx'),
+  'utf8'
+);
+const sampleCardSelectionSource = readFileSync(
+  resolve('components/note/sample-card/SampleCardSelectionOverlay.jsx'),
+  'utf8'
+);
+const sampleCardHeaderSource = readFileSync(
+  resolve('components/note/sample-card/SampleCardHeader.jsx'),
+  'utf8'
+);
+const sampleRatingStarsSource = readFileSync(
+  resolve('components/note/sample-card/SampleRatingStars.jsx'),
+  'utf8'
+);
+const sampleCardMetaSource = readFileSync(
+  resolve('components/note/sample-card/SampleCardMeta.jsx'),
+  'utf8'
+);
+const sampleCardTagsSource = readFileSync(
+  resolve('components/note/sample-card/SampleCardTags.jsx'),
+  'utf8'
+);
+const sampleCardActionsSource = readFileSync(
+  resolve('components/note/sample-card/SampleCardActions.jsx'),
+  'utf8'
+);
+const sampleCardUtilsSource = readFileSync(
+  resolve('components/note/sample-card/sampleCardUtils.js'),
+  'utf8'
+);
 const controllerSource = readFileSync(
   resolve('app/note/sample/useSamplePageController.js'),
   'utf8'
@@ -198,6 +235,36 @@ describe('sample page structure', () => {
     expect(listViewSource).toContain('export function SampleListView');
     expect(listViewSource).toContain('<SampleListRow');
     expect(listViewSource).toContain('className="data-table"');
+    expect(sampleCardSource).toContain('export const SampleCard');
+    expect(sampleCardSource).toContain('buildSampleCardViewModel');
+    expect(sampleCardSource).toContain('<SampleCardSelectionOverlay');
+    expect(sampleCardSource).toContain('<SampleCardMedia');
+    expect(sampleCardSource).toContain('<SampleCardBody');
+    expect(sampleCardSource).not.toContain('function asText');
+    expect(sampleCardSource).not.toContain('className="inline-stars"');
+    expect(sampleCardSource).not.toContain('batch-checkbox-wrap');
+    expect(sampleCardBodySource).toContain('export function SampleCardBody');
+    expect(sampleCardBodySource).toContain('<SampleCardHeader');
+    expect(sampleCardBodySource).toContain('<SampleCardMeta');
+    expect(sampleCardBodySource).toContain('<SampleCardTags');
+    expect(sampleCardBodySource).toContain('<SampleCardActions');
+    expect(sampleCardMediaSource).toContain('export function SampleCardMedia');
+    expect(sampleCardMediaSource).toContain('photosCount > 1');
+    expect(sampleCardSelectionSource).toContain('export function SampleCardSelectionOverlay');
+    expect(sampleCardSelectionSource).toContain('batch-checkbox-wrap');
+    expect(sampleCardSelectionSource).toContain('CompareSelectionBadge');
+    expect(sampleCardHeaderSource).toContain('export function SampleCardHeader');
+    expect(sampleCardHeaderSource).toContain('<SampleRatingStars');
+    expect(sampleRatingStarsSource).toContain('export function SampleRatingStars');
+    expect(sampleRatingStarsSource).toContain('className="inline-stars"');
+    expect(sampleCardMetaSource).toContain('export function SampleCardMeta');
+    expect(sampleCardMetaSource).toContain('priceTaxType ===');
+    expect(sampleCardTagsSource).toContain('export function SampleCardTags');
+    expect(sampleCardTagsSource).toContain('tags.slice(0, 4)');
+    expect(sampleCardActionsSource).toContain('export function SampleCardActions');
+    expect(sampleCardActionsSource).toContain('event.stopPropagation()');
+    expect(sampleCardUtilsSource).toContain('export function buildSampleCardViewModel');
+    expect(sampleCardUtilsSource).toContain('sampleNamesText(rec)');
   });
 
   test('sample hooks own page data state and record mutations', () => {

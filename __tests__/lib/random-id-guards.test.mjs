@@ -9,6 +9,7 @@ describe('random id/key guards', () => {
   test('데이터 id/key fallback은 Math.random에 의존하지 않는다', () => {
     const dataIdFiles = [
       'components/cost/margin/PlatformSettingsModal.jsx',
+      'components/cost/margin/platform-settings/platformSettingsState.js',
       'app/note/calendar/_calendar-utils.js',
     ];
 

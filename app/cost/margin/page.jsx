@@ -1,6 +1,6 @@
 'use client';
 import dynamic from 'next/dynamic';
-import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Icon } from '@/components/icons';
@@ -24,9 +24,10 @@ import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
 import { MarginFilterBar } from '@/components/cost/margin/MarginFilterBar';
 import { MarginSummaryCards } from '@/components/cost/margin/MarginSummaryCards';
+import { MarginCostThresholdBar } from '@/components/cost/margin/MarginCostThresholdBar';
+import { MarginTableHeader } from '@/components/cost/margin/MarginTableHeader';
 import { saveSnapshot } from '@/lib/cost/margin/snapshots';
 import { showToast } from '@/components/Toast';
-import { SortableTh } from '@/components/ui/SortableTh';
 import { MarginRow } from '@/components/cost/margin/MarginRow';
 import { exportMarginExcel } from '@/lib/cost/margin/export';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
@@ -474,67 +475,15 @@ export default function Page() {
         onSearch={setSearch}
       />
 
-      {/* 원가율 경고/비상 임계값 + 숨김 보기 */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 14,
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          margin: '2px 0 10px',
-          fontSize: 12,
-          color: 'var(--text-3)',
-        }}
-      >
-        <span style={{ fontWeight: 700 }}>원가율 경고선</span>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          경고 ≥
-          <input
-            type="number"
-            min={0}
-            max={100}
-            value={warnPct}
-            onChange={e => setWarnPct(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
-            style={{
-              width: 56,
-              padding: '3px 6px',
-              borderRadius: 6,
-              border: '1px solid var(--border)',
-              background: 'var(--surface)',
-              color: 'var(--text-1)',
-            }}
-          />
-          %
-        </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          비상 ≥
-          <input
-            type="number"
-            min={0}
-            max={100}
-            value={critPct}
-            onChange={e => setCritPct(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
-            style={{
-              width: 56,
-              padding: '3px 6px',
-              borderRadius: 6,
-              border: '1px solid var(--border)',
-              background: 'var(--surface)',
-              color: 'var(--text-1)',
-            }}
-          />
-          %
-        </label>
-        {hiddenCount > 0 && (
-          <button
-            className="btn sm"
-            style={{ marginLeft: 'auto' }}
-            onClick={() => setShowHidden(v => !v)}
-          >
-            {showHidden ? '숨김 행 감추기' : `숨김 ${hiddenCount}개 보기`}
-          </button>
-        )}
-      </div>
+      <MarginCostThresholdBar
+        warnPct={warnPct}
+        setWarnPct={setWarnPct}
+        critPct={critPct}
+        setCritPct={setCritPct}
+        showHidden={showHidden}
+        hiddenCount={hiddenCount}
+        setShowHidden={setShowHidden}
+      />
 
       {/* Table */}
       {loading ? (
@@ -562,92 +511,14 @@ export default function Page() {
           <div style={{ overflowX: 'auto' }}>
             <table className="data-table stagger-rows margin-table">
               <thead>
-                {/* 1행: 사이즈 그룹 헤더 — 사이즈마다 원가·판매가·(할인)·율을 한 묶음으로 */}
-                <tr className="mt-group">
-                  <SortableTh
-                    sortKey="name"
-                    active={sortKey}
-                    dir={sortDir}
-                    onClick={handleSort}
-                    width={160}
-                    rowSpan={2}
-                    className="sticky-col"
-                  >
-                    메뉴명
-                  </SortableTh>
-                  <SortableTh
-                    sortKey="cat"
-                    active={sortKey}
-                    dir={sortDir}
-                    onClick={handleSort}
-                    width={90}
-                    rowSpan={2}
-                  >
-                    카테고리
-                  </SortableTh>
-                  {sizeLabels.map(l => (
-                    <th
-                      key={l + '_grp'}
-                      colSpan={hasAdjustment ? 4 : 3}
-                      style={{ textAlign: 'center', borderLeft: '2px solid var(--divider)' }}
-                    >
-                      <span className="chip" style={{ fontSize: 11 }}>
-                        {l}
-                      </span>
-                    </th>
-                  ))}
-                  <th rowSpan={2} style={{ width: 60 }} />
-                </tr>
-                {/* 2행: 메트릭 헤더 (정렬) */}
-                <tr className="mt-metric">
-                  {sizeLabels.map(l => (
-                    <Fragment key={l + '_mh'}>
-                      <SortableTh
-                        sortKey={`cost_${l}`}
-                        active={sortKey}
-                        dir={sortDir}
-                        onClick={handleSort}
-                        width={92}
-                        right
-                        style={{ borderLeft: '2px solid var(--divider)' }}
-                      >
-                        원가
-                      </SortableTh>
-                      <SortableTh
-                        sortKey={`price_${l}`}
-                        active={sortKey}
-                        dir={sortDir}
-                        onClick={handleSort}
-                        width={96}
-                        right
-                      >
-                        판매가
-                      </SortableTh>
-                      {hasAdjustment && (
-                        <SortableTh
-                          sortKey={`net_${l}`}
-                          active={sortKey}
-                          dir={sortDir}
-                          onClick={handleSort}
-                          width={110}
-                          right
-                        >
-                          <span style={{ color: 'var(--accent)' }}>할인적용</span>
-                        </SortableTh>
-                      )}
-                      <SortableTh
-                        sortKey={`rate_${l}`}
-                        active={sortKey}
-                        dir={sortDir}
-                        onClick={handleSort}
-                        width={92}
-                        right
-                      >
-                        {viewMode === 'margin' ? '마진율' : '원가율'}
-                      </SortableTh>
-                    </Fragment>
-                  ))}
-                </tr>
+                <MarginTableHeader
+                  sizeLabels={sizeLabels}
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                  hasAdjustment={hasAdjustment}
+                  viewMode={viewMode}
+                />
               </thead>
               <tbody>
                 {sortedFiltered.length === 0 ? (

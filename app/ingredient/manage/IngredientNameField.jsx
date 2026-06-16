@@ -1,5 +1,5 @@
 'use client';
-import { Field } from './IngredientFormSections';
+import { Field } from './IngredientFieldPrimitives';
 
 export function IngredientNameField({ form, errors, isJetteLinked, initial, onSet }) {
   return (

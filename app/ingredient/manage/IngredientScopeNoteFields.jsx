@@ -1,6 +1,6 @@
 'use client';
 import { SCOPE_ORDER, SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
-import { Field } from './IngredientFormSections';
+import { Field } from './IngredientFieldPrimitives';
 import { IngredientRadioOption } from './IngredientRadioOption';
 
 export function IngredientScopeNoteFields({ form, isJetteLinked, onSet }) {

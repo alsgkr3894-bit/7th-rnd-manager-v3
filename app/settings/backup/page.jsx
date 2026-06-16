@@ -27,6 +27,16 @@ import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
 import { useDiagnostics } from '@/hooks/useDiagnostics';
 import { getActiveBrand } from '@/lib/active-brand';
 
+const S_CARD_MT = { marginTop: 16 };
+const S_SECTION_TITLE = { fontSize: 15, fontWeight: 700, marginBottom: 4 };
+const S_ALERT_ICON = { width: 16, height: 16, flexShrink: 0, color: 'var(--warn)' };
+const S_HISTORY_EMPTY = {
+  padding: '24px 0',
+  textAlign: 'center',
+  color: 'var(--text-3)',
+  fontSize: 13,
+};
+
 /**
  * 데이터 백업 페이지
  *
@@ -219,7 +229,7 @@ export default function Page() {
               border: '1px solid color-mix(in oklab, var(--warn) 30%, transparent)',
             }}
           >
-            <Icon.alert style={{ width: 16, height: 16, flexShrink: 0, color: 'var(--warn)' }} />
+            <Icon.alert style={S_ALERT_ICON} />
             <span style={{ fontSize: 13 }}>
               <b>현재 브랜드: {activeBrand.name}</b>
               <span style={{ color: 'var(--warn)', fontWeight: 700 }}>
@@ -330,7 +340,7 @@ export default function Page() {
       )}
 
       {/* 백업 범위 선택 */}
-      <div className="card" style={{ marginTop: 16 }}>
+      <div className="card" style={S_CARD_MT}>
         <div
           style={{
             display: 'flex',
@@ -367,19 +377,15 @@ export default function Page() {
       </div>
 
       {/* 최근 백업 이력 */}
-      <div className="card" style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>최근 백업 이력</h2>
+      <div className="card" style={S_CARD_MT}>
+        <h2 style={S_SECTION_TITLE}>최근 백업 이력</h2>
         <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 16 }}>
           이 브라우저에서 실행한 백업 기록입니다. 실제 백업 파일은 다운로드한 위치에 저장되어
           있습니다.
         </p>
 
         {history.length === 0 ? (
-          <div
-            style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}
-          >
-            아직 백업 이력이 없습니다.
-          </div>
+          <div style={S_HISTORY_EMPTY}>아직 백업 이력이 없습니다.</div>
         ) : (
           <>
             <div
@@ -422,16 +428,7 @@ export default function Page() {
               </button>
             </div>
             {filteredHistory.length === 0 ? (
-              <div
-                style={{
-                  padding: '24px 0',
-                  textAlign: 'center',
-                  color: 'var(--text-3)',
-                  fontSize: 13,
-                }}
-              >
-                조건에 맞는 백업 이력이 없습니다.
-              </div>
+              <div style={S_HISTORY_EMPTY}>조건에 맞는 백업 이력이 없습니다.</div>
             ) : (
               <div className="table-wrap">
                 <table className="data-table">
@@ -494,8 +491,8 @@ export default function Page() {
         )}
       </div>
 
-      <div className="card" style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>개발 서버 진단</h2>
+      <div className="card" style={S_CARD_MT}>
+        <h2 style={S_SECTION_TITLE}>개발 서버 진단</h2>
         <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>
           로컬 점검 중 서버 연결이 끊길 때 브라우저 환경 정보를 빠르게 남깁니다.
         </p>

@@ -109,7 +109,7 @@
 - **왜 보류**: 변경 범위 넓음. 회귀 위험 > 현재 효과. 안전 우선.
 - **관련 메모리**: [[deferred-refactors]]
 
-#### B-6 / C-P4. 대형 컴포넌트 분해  🟡 ⏸  (C-P4 통합)
+#### B-6 / C-P4. 대형 컴포넌트 분해  🟡 ✅ 완료(2026-06-16)  (C-P4 통합)
 - **진행 현황**:
   - `app/report/cost/page.jsx` ✅ 2026-06-14 — 869→407줄. `CostReportView`·`CostTableView` → `components/report/cost/`로 추출. `groupPizzaLR` 이전 완료.
   - `app/report/sales/page.jsx` ✅ 2026-06-15 부분 보강 — Excel export 시트/파일명 조립을 `lib/report/sales-export.js`로 분리하고 fixture 테스트 추가. 938→856줄.
@@ -177,54 +177,60 @@
   - `app/nutrition/allergen/useAllergenPageData.js` ✅ 2026-06-16 추가 보강 — 상세 모달 행과 요약 카운트 계산을 `allergenPageDetailUtils`로 분리. 144→139줄.
   - `app/nutrition/allergen/useAllergenPageData.js` ✅ 2026-06-16 추가 보강 — 제외 메뉴 판정, 매트릭스, 상세/요약, 순서 편집 목록 파생 계산을 `useAllergenDerivedData`로 분리. 139→58줄.
   - `app/nutrition/allergen/useAllergenDerivedData.js` ✅ 2026-06-16 추가 보강 — 제외 메뉴 판정, 메뉴 매트릭스 생성, 매트릭스 검색, 알레르기 정렬을 `useAllergenMatrixData`로 분리. 118→81줄.
-- **잔여 대상** (우선순위 순):
-  - `app/report/page.jsx` (~543줄) — 보고서 table, 페이지네이션, 스냅샷 안내 card가 아직 inline. 다음 단계는 스냅샷 안내 card 또는 table panel 분리부터 재검토.
-  1. `components/report/sales/SalesCategoryBarRow.jsx` (~83줄) — 현재 막대 row 렌더링 수준, 별도 분해 불필요
-  2. `app/note/sample/useSamplePageFilterState.js` (~90줄) — 현재 검색 히스토리와 필터 상태 hook 수준, 별도 분해 불필요
-  3. `app/note/sample/_SampleRecordsView.jsx` (~88줄) — 현재 조립 컴포넌트 수준, 별도 분해 불필요
-  4. `app/nutrition/allergen/useAllergenDerivedData.js` (~78줄) — 현재 식자재 행/상세/요약/순서 목록 파생 hook 수준, 별도 분해 불필요
-  5. `app/nutrition/allergen/allergenPageDataUtils.js` (~81줄) — 현재 검색/정렬 helper 수준, 별도 분해 불필요
-  6. `app/note/sample/useSamplePageState.js` (~80줄) — 현재 데이터 로드/파생 계산 hook 수준, 별도 분해 불필요
-  7. `app/note/sample/_SampleSearchField.jsx` (~80줄) — 검색 히스토리 UI 정책이 더 늘어날 때 history list 분리 재평가
-  8. `app/note/sample/page.jsx` (~79줄) — 현재 조립 컴포넌트 수준, 별도 분해 불필요
-  9. `app/note/sample/_SampleListView.jsx` (~78줄) — 리스트 컬럼/액션 정책이 더 늘어날 때 header/body 분리 재평가
-  10. `app/nutrition/allergen/useAllergenMatrixData.js` (~71줄) — 현재 제외 메뉴/매트릭스/search/order hook 수준, 별도 분해 불필요
-  11. `app/ingredient/manage/IngredientManualCostFields.jsx` (~71줄) — 수동 단가 정책이 더 늘어날 때 보관/과세/가격 입력을 추가 분리 재평가
-  12. `app/note/sample/samplePageStateUtils.js` (~70줄) — 검색 대상/정렬 정책이 더 늘어날 때 filter/sort helper 추가 분리 재평가
-  13. `app/note/noteListBodyViewProps.js` (~68줄) — 현재 카드/테이블 props 조립 helper 수준, 별도 분해 불필요
-  14. `app/note/sample/_SampleGridView.jsx` (~65줄) — 카드 선택/비교 상호작용이 더 늘어날 때 card adapter helper 분리 재평가
-  15. `components/report/sales/SalesRankTableRows.jsx` (~59줄) — 현재 순위표 row 렌더링 helper 수준, 별도 분해 불필요
-  16. `app/note/sample/_SampleFilterControls.jsx` (~59줄) — 현재 조립 컴포넌트 수준, 별도 분해 불필요
-  17. `app/nutrition/allergen/useAllergenPageData.js` (~58줄) — 현재 source/order/export 연결 hook 수준, 별도 분해 불필요
-  18. `lib/note/content-prop-header-builders.js` (~55줄) — 현재 header/stats/states helper 수준, 별도 분해 불필요
-  19. `app/note/sample/samplePageControllerProps.js` (~54줄) — 현재 props 최종 조립 함수 수준, 별도 분해 불필요
-  20. `app/nutrition/allergen/useAllergenOrderState.js` (~52줄) — 순서 저장 정책이 더 늘어날 때 저장 helper 분리 재평가
-  21. `app/note/sample/_SampleRatingViewControls.jsx` (~52줄) — 현재 별점/정렬/view 그룹 배치 컴포넌트 수준, 별도 분해 불필요
-  22. `app/note/sample/samplePageControllerFilterProps.js` (~48줄) — 현재 filter props builder 수준, 별도 분해 불필요
-  23. `app/note/sample/_SamplePageDialogs.jsx` (~48줄) — 모달 종류가 더 늘어날 때 dialog별 하위 분리 재평가
-  24. `app/nutrition/allergen/allergenPageOutputUtils.js` (~47줄) — 출력 정책이 더 늘어날 때 CSV/목록 helper 분리 재평가
-  25. `lib/note/content-prop-filter-builders.js` (~45줄) — 현재 검색/filter props helper 수준, 별도 분해 불필요
-  26. `app/note/sample/samplePageFilterStateUtils.js` (~45줄) — 현재 필터 URL/저장 정책 helper 수준, 별도 분해 불필요
-  27. `app/note/sample/useSamplePageController.js` (~43줄) — 현재 shell hook 수준, 별도 분해 불필요
-  28. `lib/note/content-props.js` (~43줄) — 현재 props builder 조립 함수 수준, 별도 분해 불필요
-  29. `hooks/useNoteContentController.js` (~40줄) — 현재 shell hook 수준, 별도 분해 불필요
-  30. `lib/note/content-prop-body-builders.js` (~39줄) — 현재 body props helper 수준, 별도 분해 불필요
-  31. `app/note/_NoteContent.jsx` (~39줄) — 현재 조립 컴포넌트 수준, 별도 분해 불필요
-  32. `app/note/sample/_SampleChipOptionGroup.jsx` (~36줄) — 현재 chip 옵션 버튼/그룹 렌더 helper 수준, 별도 분해 불필요
-  33. `app/note/sample/samplePageControllerTopProps.js` (~36줄) — 현재 load/header/actions props builder 수준, 별도 분해 불필요
-  34. `lib/note/content-prop-dialog-builders.js` (~34줄) — 현재 dialog/preset props helper 수준, 별도 분해 불필요
-  35. `app/note/sample/samplePageControllerDialogProps.js` (~34줄) — 현재 compare/dialog props builder 수준, 별도 분해 불필요
-  36. `app/note/sample/_SampleRatingFilterGroup.jsx` (~33줄) — 현재 별점 filter group 수준, 별도 분해 불필요
-  37. `app/note/noteListBodyOverlayProps.js` (~33줄) — 현재 context/detail overlay props helper 수준, 별도 분해 불필요
-  38. `app/note/sample/_SampleCompareBar.jsx` (~31줄) — 현재 단일 CTA 수준, 별도 분해 불필요
-  39. `app/note/useNoteContextMenuState.js` (~29줄) — 현재 컨텍스트 메뉴 위치/닫기 hook 수준, 별도 분해 불필요
-  40. `app/note/sample/samplePageControllerRecordsProps.js` (~26줄) — 현재 records props builder 수준, 별도 분해 불필요
-  41. `app/nutrition/allergen/allergenPageDetailUtils.js` (~26줄) — 상세 출처 표시 정책이 더 늘어날 때 source row helper 분리 재평가
-  42. `components/report/sales/SalesCategoryBarRows.jsx` (~19줄) — 현재 category bar row 목록 wrapper 수준, 별도 분해 불필요
-  43. `app/note/sample/samplePageControllerCalendarProps.js` (~14줄) — 현재 calendar props builder 수준, 별도 분해 불필요
-  44. `app/note/sample/samplePageControllerViewProps.js` (~3줄) — 호환 re-export 파일 수준, 별도 분해 불필요
-  45. `app/note/noteListBodyProps.js` (~2줄) — 호환 re-export 허브 수준, 별도 분해 불필요
-  46. `app/ingredient/list/page.jsx` — 현재 redirect route 5줄 수준, 별도 분해 불필요
+  - `components/nutrition/menu/TabDerived.jsx` ✅ 2026-06-16 추가 보강 — 파생 메뉴 목록, 추가/편집 모달, L/R 식자재 사용량 row, 검색·그룹핑 helper를 `components/nutrition/menu/derived/`로 분리. 437→107줄.
+  - `components/sales/UnmatchedTable.jsx` ✅ 2026-06-16 추가 보강 — 선택 일괄 액션, 일괄 분류 패널, 미매칭 테이블, row/해결 폼 연결을 `components/sales/unmatched/`로 분리. 437→210줄.
+  - `components/cost/margin/PlatformSettingsModal.jsx` ✅ 2026-06-16 추가 보강 — portal shell, 플랫폼 selector, 플랫폼 editor, reducer/저장 정리 helper를 `components/cost/margin/platform-settings/`로 분리. 433→46줄.
+  - `components/note/TempCostCalculator.jsx` ✅ 2026-06-16 추가 보강 — 재료 검색/연동 갱신, 원가 행 테이블, 합계/원가율 요약, parse/filter/refresh helper를 `components/note/temp-cost/`로 분리. 426→60줄.
+  - `components/sales/UserRulesSection.jsx` ✅ 2026-06-16 추가 보강 — 사용자 규칙 폼, 규칙 테이블/row, 검색·정렬·검증 helper를 `components/sales/user-rules/`로 분리. 422→185줄.
+  - `components/cost/ingredient-price/SuppliersView.jsx` ✅ 2026-06-16 추가 보강 — 공급업체 등록/수정 모달, 검색 툴바, 로딩/빈상태/테이블 패널, 검색 helper를 `components/cost/ingredient-price/suppliers/`로 분리. 413→128줄.
+  - `components/cost/ingredient-price/SyncBaseQtyModal.jsx` ✅ 2026-06-16 추가 보강 — 제때 단가 파일 선택, 주의 안내, 프리뷰 요약·변경 테이블, 완료/오류 표시, 표시 helper를 `components/cost/ingredient-price/sync-base-qty/`로 분리. 389→134줄.
+  - `components/jette/PriceCompareTable.jsx` ✅ 2026-06-16 추가 보강 — 제때 가격 비교의 분류/변동 필터, 비교 테이블, row/status 표시, CSV·카운트·포맷 helper를 `components/jette/price-compare/`로 분리. 390→121줄.
+  - `components/jette/ManagedProductsCard.jsx` ✅ 2026-06-16 추가 보강 — 제때 대상 제품 목록의 헤더 액션, 필터/검색, 테이블/빈상태, CSV·카운트·검색 helper를 `components/jette/managed-products/`로 분리. 385→226줄.
+  - `components/cost/recipe-groups/GroupEditor.jsx` ✅ 2026-06-16 추가 보강 — 공통묶음 편집기의 헤더, 기본 필드, 사이즈 입력, 카테고리 chip, 식자재 테이블, 사이즈별 원가 helper를 `components/cost/recipe-groups/editor/`로 분리. 381→121줄.
+  - `components/nutrition/menu/TabToppings.jsx` ✅ 2026-06-16 추가 보강 — 추가토핑 영양성분 탭의 헤더/빈상태/목록 테이블, 편집 모달, 식자재 연결·알레르기·저장 payload helper를 `components/nutrition/menu/toppings/`로 분리. 376→123줄.
+  - `components/cost/ingredient-price/BulkPriceModal.jsx` ✅ 2026-06-16 추가 보강 — 식자재 일괄 단가 업로드 모달의 포맷 안내, 파일 선택, 파싱 상태, 프리뷰 테이블, 완료/오류 표시, 금액·변동 helper를 `components/cost/ingredient-price/bulk-price/`로 분리. 367→135줄.
+  - `components/cost/ingredient-price/UsageView.jsx` ✅ 2026-06-16 추가 보강 — 식자재 사용현황 뷰의 사용행 파생 helper, 요약바, 필터/출력 툴바, 사용 메뉴 테이블을 `components/cost/ingredient-price/usage-view/`로 분리. 360→56줄.
+  - `components/jette/PriceLatestView.jsx` ✅ 2026-06-16 추가 보강 — 최신 제때 단가 현황의 파일 없음 상태, 목록 카드, 분류/과세 필터, 단가 테이블/row, CSV·필터·표시 helper를 `components/jette/price-latest/`로 분리. 341→124줄.
+  - `components/cost/ingredient-price/IngredientPriceListPanel.jsx` ✅ 2026-06-16 추가 보강 — 식자재 단가 목록 패널의 기준 파일 표시, 통계 카드, 과세/검색/선택 툴바, 목록 테이블/row shell을 `components/cost/ingredient-price/list-panel/`로 분리. 338→51줄.
+  - `components/report/ReportPreviewPages.jsx` ✅ 2026-06-16 추가 보강 — 보고서 미리보기의 표지, 옵션 row, 설정 페이지, 요약 페이지, 날짜/object guard helper를 `components/report/preview-pages/`로 분리. 329→29줄.
+  - `components/jette/ShipmentTable.jsx` ✅ 2026-06-16 추가 보강 — 제때 출고량 집계의 필터, 테이블 카드, header/body/row, 분류 chip, 검색·정렬·row 값 helper를 `components/jette/shipment-table/`로 분리. 321→56줄.
+  - `components/ingredient/usage/IngredientUsageTable.jsx` ✅ 2026-06-16 추가 보강 — 식자재 사용현황 테이블의 header/footer/빈상태, row, 식자재명 cell, 피자·사이드 카운트, 메뉴 chip/제외 액션을 `components/ingredient/usage/table/`로 분리. 349→57줄.
+  - `components/report/cost/CostReportView.jsx` ✅ 2026-06-16 추가 보강 — 원가 보고서 미리보기의 summary stats, 카테고리 종합 비교, 카테고리별 메뉴표, 위험 메뉴 부록, 원가 미연결 진단을 `components/report/cost/report-view/`로 분리. 338→55줄.
+  - `app/nutrition/export/NutritionLabelTables.jsx` ✅ 2026-06-16 추가 보강 — 영양성분 출력의 피자 150g 표, 피자 조각 표, 단순 영양표, 세트/하프앤하프 표, 공통 셀/빈상태 primitive를 `app/nutrition/export/label-tables/`로 분리. 336→35줄.
+  - `components/note/SampleCard.jsx` ✅ 2026-06-16 추가 보강 — 샘플 카드의 view model 정리, 선택/비교 overlay, 썸네일, 헤더/별점, 메타, 태그, 액션 버튼을 `components/note/sample-card/`로 분리. 311→95줄.
+  - `components/ingredient/ManageRow.jsx` ✅ 2026-06-16 추가 보강 — 식자재 관리 행의 view model, 선택 cell, 코드/연동 badge, 사진 cell, 이름/원산지/알레르기 badge, scope/가격/분류/태그/action cell을 `components/ingredient/manage-row/`로 분리. 315→105줄.
+  - `components/ui/MenuCodePicker.jsx` ✅ 2026-06-16 추가 보강 — 메뉴코드 후보 생성/검색/키보드 이동 helper, 선택 상태 pill, 검색 입력, dropdown/row 렌더링을 `components/ui/menu-code-picker/`로 분리. 314→113줄.
+  - `components/home/HomeDashboardRows.jsx` ✅ 2026-06-16 추가 보강 — 홈 대시보드 rowId 렌더링을 renderer map, single row renderer, pair row renderer, 공통 row shell로 `components/home/home-dashboard-rows/`에 분리. 311→5줄.
+  - `components/cost/ingredient-price/RegisterModal.jsx` ✅ 2026-06-16 추가 보강 — 식자재 단가 등록 모달의 controller hook, 제품 정보 패널, 기본 필드, 포장/공급업체/단가 필드, footer action, 저장/검증 helper를 `components/cost/ingredient-price/register-modal/`로 분리. 305→66줄.
+  - `components/report/ReportListTable.jsx` ✅ 2026-06-16 추가 보강 — 보고서 목록 테이블의 row model, table header, 이름 편집 cell, 활동 cell, row action, 빈 상태, pagination helper를 `components/report/report-list-table/`로 분리. 303→73줄.
+  - `app/note/sample/_SampleDetailModal.jsx` ✅ 2026-06-16 추가 보강 — 샘플 상세 모달의 view model, shell/header, 사진 carousel/thumbnail/zoom panel, 본문 section/tag/empty state를 `app/note/sample/detail-modal/`로 분리. 349→71줄.
+  - `app/note/calendar/CalendarGrid.jsx` ✅ 2026-06-16 추가 보강 — 달력 주간 헤더, 월 그리드, 날짜 셀/header, 일정·노트·샘플 item, 업무 로그 dot, 표시/overflow helper를 `app/note/calendar/calendar-grid/`로 분리. 331→41줄.
+  - `app/note/calendar/page.jsx` ✅ 2026-06-16 추가 보강 — 달력 월별 PDF 출력 builder, 상단 액션, 월 이동/통계/view mode 툴바, 그리드+사이드패널, 일정 모달/삭제 확인 묶음을 `app/note/calendar/` 하위 컴포넌트와 `calendar-print.js`로 분리. 391→209줄.
+  - `components/charts/AreaChart.jsx` ✅ 2026-06-16 추가 보강 — area chart의 tick/path/scale/hover helper, Y축 라벨, SVG layer, tooltip, X축 라벨을 `components/charts/area-chart/`로 분리. 350→121줄.
+  - `app/cost/all-summary/page.jsx` ✅ 2026-06-16 추가 보강 — 종합전메뉴원가의 data loader/sort, 통계·카테고리·CSV helper, stats/filter/loading/empty/notice/table/error 컴포넌트를 `app/cost/all-summary/` 하위로 분리. 336→92줄.
+  - `app/note/[id]/page.jsx` ✅ 2026-06-16 추가 보강 — 노트 수정 화면의 route id/draft 비교/관련 샘플 helper, action/cost menu, draft banner, version timeline, related sample panel을 `app/note/[id]/detail/`로 분리. 458→206줄.
+  - `lib/ingredient/manage-print.js` ✅ 2026-06-16 추가 보강 — 식자재관리 목록/사진 PDF 출력의 formatter, 테이블 출력 builder, 사진 카드 출력 builder를 `lib/ingredient/manage-print/`로 분리. 353→8줄.
+  - `components/settings/restore/RestoreExecutePanel.jsx` ✅ 2026-06-16 추가 보강 — 복원 실행의 자동 백업 옵션, 확인 요약, 자동백업 실패 재확인, 실행 버튼, 진행률 바, 모듈 chip 표시를 하위 컴포넌트로 분리. 342→105줄.
+  - `lib/cost/recipe-groups/apply.js` ✅ 2026-06-16 테스트 회귀 보정 — `defaultCategories` 누락 공통묶음이 전체 메뉴에 자동 적용되지 않도록 안전 처리로 복구하고 `test:ci` 실패를 해소.
+- **최종 완료(2026-06-16)**: `app/report/page.jsx` 543→187줄. 헬퍼 함수·exportToExcel → `lib/report/report-list-utils.js`, 테이블·빈상태·페이지네이션 → `ReportListTable`, 스냅샷 안내 카드 → `ReportSnapshotCard`, 모달·ConfirmDialog 묶음 → `ReportPageDialogs`. lint 0 / test 1020 통과.
+- **잔여 대상 재스캔(2026-06-16, 300줄 이상 기준)**:
+  - 추천 후보로 지정했던 17개(`IngredientUsageTable`, `CostReportView`, `NutritionLabelTables`, `SampleCard`, `ManageRow`, `MenuCodePicker`, `HomeDashboardRows`, `RegisterModal`, `ReportListTable`, `SampleDetailModal`, `CalendarGrid`, `calendar/page`, `AreaChart`, `cost/all-summary`, `note/[id]`, `manage-print`, `RestoreExecutePanel`)는 모두 완료.
+  - 2차 재스캔 추천 후보(안전·효과 기준)는 모두 구현 완료.
+  - 3차 재스캔 추천 후보(2026-06-16, 안전·효과 기준):
+    1. `app/report/sales/page.jsx` (~306줄) — **추천 다음 후보**. 판매량 보고서 page의 option panel/preview/action 조립 잔여 분리. 보고서 출력 회귀 확인 필요.
+    2. `app/menu-master/page.jsx` (~353줄) — 메뉴마스터 page 조립부 추가 분리. 메뉴/레시피 연결 영향이 있어 기능 변경과 함께 진행 권장.
+  - 단순 줄 수 상위지만 보류: seed/rules 데이터, store, 설정/백업 page, 전역 shell(`TopBar`, `AppShell`), 로그인 page, 빌더 계산 로직은 변경 위험이 커 별도 라운드에서 처리.
+- **보류 권장**:
+  - `app/settings/system/page.jsx`, `app/settings/account/page.jsx`, `app/settings/brands/page.jsx`, `app/settings/backup/page.jsx` — 설정 화면은 상태·권한·백업 동선 영향이 커서 별도 라운드로 묶어 처리.
+  - `app/ingredient/manage/page.jsx`, `app/cost/margin/page.jsx`, `app/report/cost/page.jsx` — 이미 여러 하위 컴포넌트와 연결된 page 조립부라, 다음 기능 변경 때 함께 정리.
+  - `components/TopBar.jsx`, `components/AppShell.jsx`, `app/login/page.jsx` — 전역 레이아웃/인증 경계이므로 단순 줄 수 기준으로 먼저 건드리지 않음.
+- **중복 정리 후보**:
+  - `components/cost/ingredient-price/BulkPriceModal.jsx` — 현재 실제 화면 import 진입점이 없음. 식자재 단가 일괄 업로드 기능으로 살릴지, 보류 코드로 유지할지, 제거할지 별도 결정 필요.
+  - `components/cost/ingredient-price/UsageView.jsx` — 현재 실제 화면 import 진입점이 없음. 기존 식자재 단가 뷰와 다시 연결할지, 보류 코드로 유지할지, 제거할지 별도 결정 필요.
+  - `ModalFrame` 하단 버튼 영역(`취소`/`저장`/`다시 선택`) 반복 → `ModalActions` 또는 작은 modal footer primitive 후보.
+  - `data-table`의 로딩/빈상태/가로 스크롤 wrapper 반복 → 기능별 분리 후 공통화 여부 재평가.
+  - `formatNumber`와 직접 `toLocaleString()` 혼용 → 금액/개수/kcal 포맷 helper를 점진 통일.
+  - 반복되는 inline flex/gap 스타일 → 전역 CSS화는 위험하므로, 새로 분리하는 컴포넌트 내부에서만 국소 상수화.
 - **방향**: page는 조립만 담당, table/panel/modal/hook으로 분리.
 - **왜 보류**: 효과 < 회귀 위험. 기능 추가 시점에 함께 진행 예정.
 - **검증**: `npm run test:ci` + 주요 화면 수동 확인
@@ -243,6 +249,30 @@
 - **파일**: `app/_shared/RouteLoading.jsx`, `app/_shared/RouteError.jsx`(공유 컴포넌트) + 4개 라우트 각각 `loading.jsx`·`error.jsx`
 - **완료 내용**: `/nutrition/menu`, `/report/sales`, `/ingredient/usage`, `/settings/restore` 에 route-level `loading.jsx`(스피너) · `error.jsx`(국소 복구) 추가. 공유 컴포넌트를 `app/_shared/`에 두고 각 라우트가 re-export하는 구조.
 - **효과**: 특정 화면 런타임 예외가 전체 `app/error.jsx`(앱 전체 리셋)로 전파되지 않고 해당 라우트 세그먼트에서 격리됨.
+
+#### A-1. Route loading/error 경계 확대  🟢 ✅ 완료(2026-06-16)
+- **대상**: B-26에서 빠진 9개 라우트 — `ingredient/usage`(error 추가), `settings/restore`(loading 추가), `cost/margin`, `cost/recipe`, `cost/all-summary`, `note/calendar`, `note/board`, `jette/price-compare`, `report/cost`
+- **완료 내용**: 각 라우트에 `loading.jsx`·`error.jsx` 파일 18개 추가. 공유 컴포넌트 re-export 패턴 동일.
+- **검증**: `npm run lint` ESLint 0 warnings. 총 loading/error 파일 23개 확인.
+
+#### A-2. 인라인 스타일 상수화 확대  🟢 ✅ 완료(2026-06-16)
+- **대상**: `settings/account/page.jsx`, `settings/system/page.jsx`, `settings/backup/page.jsx`, `settings/brands/page.jsx`
+- **완료 내용**: 2회 이상 반복되는 인라인 스타일을 파일 상단 `const S_XXX = { ... }` 상수로 추출. account 5개, system 4개, backup 4개, brands 3개 상수 추출.
+- **검증**: `npm run lint` + `npm run format:check` 통과.
+
+#### A-3. 테스트 갭 보강 (`lib/report/build-*.js`)  🟢 ✅ 완료(2026-06-16)
+- **대상**: `lib/report/build-shipment-report.js`, `lib/report/build-compare-report.js`
+- **완료 내용**: `__tests__/lib/build-shipment-report.test.mjs`(8 tests), `__tests__/lib/build-compare-report.test.mjs`(6 tests) 신규 작성.
+- **검증**: `npm run test:ci` 198 suites / 1041 tests 통과.
+
+#### B-1. 대형 page 분해  🟡 ✅ 완료(2026-06-16)
+- **대상 5개 파일**: `report/shipment`, `ingredient/manage`, `cost/margin`, `settings/account`(PIN·PW·FormField 이미 추출됨), `settings/system`
+- **완료 내용**:
+  - `report/shipment/page.jsx`: 740→209줄. `ShipmentItemTable`, `useShipmentReportData`, `ShipmentReportOptions`, `ShipmentReportPreview` 추출.
+  - `ingredient/manage/page.jsx`: 761→684줄. `IngredientJetteIssuesPanel` (newJette/jetteRemoved 테이블) 추출.
+  - `cost/margin/page.jsx`: 723→594줄. `MarginCostThresholdBar`, `MarginTableHeader` 추출.
+- **신규 파일**: `components/report/shipment/` 3개, `hooks/useShipmentReportData.js`, `components/ingredient/IngredientJetteIssuesPanel.jsx`, `components/cost/margin/MarginCostThresholdBar.jsx`, `components/cost/margin/MarginTableHeader.jsx`
+- **검증**: `npm run lint` + `npm run test:ci` 198 suites / 1041 tests 통과.
 
 ---
 
@@ -465,9 +495,9 @@ N-20(STATUSES 9개 확장 + NOTE_STATUS·STATUS_COLORS·STATUS_BORDER 전파) ·
 - R-8: `cost/recipe` → `useRecipeWorkbenchData` + `useRecipeListState` + `RecipeSidebar` (789→344줄)
 - R-9: 보고서 4종 `useReportPageState` 공통 state hook
 - R-10: `cost/all-summary` buildRows → `lib/cost/shared/buildSummaryRows.js`
-- R-11: `TabSetCalc·TabDerived` → `useSetCompositionForm·useDerivedCompositionForm`
+- R-11: `TabSetCalc·TabDerived` → `useSetCompositionForm·useDerivedCompositionForm`, `TabDerived` derived UI/helper 분리(437→107줄)
 - R-12: BulkPriceModal 통합 미구현 확정 (두 모달 구조 완전히 상이)
-- R-13: `PlatformSettingsModal` `FeeRow·PlatformRow·PlatformSelector` 분리 + `useReducer` 전환 (518→280줄)
+- R-13: `PlatformSettingsModal` `FeeRow·PlatformRow·PlatformSelector` 분리 + `useReducer` 전환, 이후 shell/editor/reducer helper까지 추가 분리(433→46줄)
 - R-14: `settings/account` → `PinSection·PasswordChangeCard` + `hooks/useDiagnostics`
 - R-15: `note/sample/page.jsx` 달력 → `lib/note/calendar-utils.js`(`buildCalendarDays`)
 - R-32: `nutrition/origin` 집계 → `lib/nutrition/origin/build.js`(`buildOriginIngredientRows·MenuRows`)

@@ -1,14 +1,12 @@
 'use client';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import ReportBuilderShell, { OptGroup, Check } from '@/components/report/ReportBuilderShell';
+import ReportBuilderShell from '@/components/report/ReportBuilderShell';
+import { CostReportOptions } from '@/components/report/cost/CostReportOptions';
+import { CostReportPreview } from '@/components/report/cost/CostReportPreview';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
-import { formatNumber } from '@/lib/format';
 import { withDownloadDateSuffix } from '@/lib/download';
 import { loadXlsx } from '@/lib/excel';
 import { showToast } from '@/components/Toast';
-import { CostReportView } from '@/components/report/cost/CostReportView';
-import { CostTableView } from '@/components/report/cost/CostTableView';
-import { RecipePrintView } from '@/components/report/cost/RecipePrintView';
 import { initDB } from '@/lib/db/init';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
 import { buildUnitPriceMap } from '@/lib/recipe';
@@ -19,7 +17,6 @@ import { buildLatestPriceLookup } from '@/lib/price/price-lookup';
 import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
 import { getActiveBrand } from '@/lib/active-brand';
 import { useReportPageState } from '@/hooks/useReportPageState';
-import { getProfile } from '@/lib/profile';
 import { getMenuCodeRank } from '@/lib/menu-categories';
 import {
   buildCostReportData,
@@ -379,155 +376,35 @@ export default function Page() {
       onExcelExport={handleExcelExport}
       onBeforeGenerate={guardStrictPosting}
       options={
-        <>
-          <OptGroup label="포함 카테고리" hint="체크된 카테고리만 종합 원가표에 포함돼요">
-            <Check label="피자" value={cats.pizza} onChange={v => updCat('pizza', v)} />
-            <Check label="1인피자" value={cats.personal} onChange={v => updCat('personal', v)} />
-            <Check label="세트박스" value={cats.set} onChange={v => updCat('set', v)} />
-            <Check label="사이드" value={cats.side} onChange={v => updCat('side', v)} />
-            <Check label="엣지 & 도우" value={cats.edge} onChange={v => updCat('edge', v)} />
-          </OptGroup>
-
-          <OptGroup label="피자 옵션">
-            <Check
-              label="피자 원가에 기본 엣지 포함"
-              value={opts.includeEdge}
-              onChange={v => updOpt('includeEdge', v)}
-              hint="석쇠 기준 엣지 원가를 피자 원가에 합산합니다"
-            />
-          </OptGroup>
-
-          <OptGroup label="위험 메뉴 기준" hint="이 원가율을 초과하는 메뉴는 ⚠ 표시">
-            <div className="threshold-bar">
-              <input
-                type="range"
-                min="25"
-                max="50"
-                step="1"
-                value={riskThreshold}
-                onChange={e => setRiskThreshold(parseInt(e.target.value, 10))}
-              />
-              <div className="threshold-val num" style={{ minWidth: 64, color: 'var(--warn)' }}>
-                {riskThreshold}
-                <span className="unit">%↑</span>
-              </div>
-            </div>
-          </OptGroup>
-
-          <OptGroup label="포함 섹션">
-            <Check
-              label="요약 (평균 원가율·위험 메뉴 수)"
-              value={opts.summary}
-              onChange={v => updOpt('summary', v)}
-            />
-            <Check
-              label="카테고리별 종합 비교표"
-              value={opts.catTable}
-              onChange={v => updOpt('catTable', v)}
-            />
-            <Check
-              label="카테고리별 메뉴 전체"
-              value={opts.perCategory}
-              onChange={v => updOpt('perCategory', v)}
-            />
-            <Check
-              label="위험 메뉴 부록 (원가율 높은 순)"
-              value={opts.riskList}
-              onChange={v => updOpt('riskList', v)}
-            />
-          </OptGroup>
-
-          <OptGroup label="문서 형식">
-            <Check label="PDF" value={docFormat.pdf} onChange={v => updFmt('pdf', v)} />
-            <Check
-              label="Excel (.xlsx)"
-              value={docFormat.excel}
-              onChange={v => updFmt('excel', v)}
-            />
-          </OptGroup>
-        </>
+        <CostReportOptions
+          cats={cats}
+          onCatChange={updCat}
+          opts={opts}
+          onOptionChange={updOpt}
+          riskThreshold={riskThreshold}
+          onRiskThreshold={setRiskThreshold}
+          docFormat={docFormat}
+          onFormatChange={updFmt}
+        />
       }
       preview={
-        <>
-          {/* ── 보고서 헤더 ── */}
-          <div className="paper-head">
-            <div className="paper-eyebrow">7번가피자 본사 · 원가관리</div>
-            <h2 className="paper-title">
-              {viewTab === 'recipe' ? '7번가피자 레시피 출력' : '7번가피자 제품원가표 (단가 기준)'}
-            </h2>
-            <div className="paper-meta">
-              <span>
-                대상: {activeCats.length}개 카테고리 · {totalCount}개 메뉴
-              </span>
-              {viewTab === 'recipe' && (
-                <>
-                  <span>·</span>
-                  <span>레시피 {recipeMenus.length}메뉴</span>
-                </>
-              )}
-              <span>·</span>
-              <span>위험 기준 {riskThreshold}%↑</span>
-              <span>·</span>
-              <span className="mono">
-                단가 기준 {new Date().toLocaleDateString('ko-KR').slice(0, -1)} ·{' '}
-                {getProfile().name}
-              </span>
-            </div>
-          </div>
-
-          {/* ── 뷰 탭 ── */}
-          <div className="no-print" style={{ display: 'flex', gap: 4, margin: '4px 0 12px' }}>
-            <button
-              className={`btn sm ${viewTab === 'report' ? 'primary' : 'ghost'}`}
-              onClick={() => setViewTab('report')}
-            >
-              원가계산 보고서
-            </button>
-            <button
-              className={`btn sm ${viewTab === 'costTable' ? 'primary' : 'ghost'}`}
-              onClick={() => setViewTab('costTable')}
-            >
-              제품원가표
-            </button>
-            <button
-              className={`btn sm ${viewTab === 'recipe' ? 'primary' : 'ghost'}`}
-              onClick={() => setViewTab('recipe')}
-            >
-              레시피 출력
-            </button>
-          </div>
-
-          {/* ── 원가계산 보고서 뷰 ── */}
-          {viewTab === 'report' && (
-            <CostReportView
-              opts={opts}
-              catStats={catStats}
-              totalCount={totalCount}
-              allAvg={allAvg}
-              allRisk={allRisk}
-              allMaxRate={allMaxRate}
-              riskThreshold={riskThreshold}
-              activeCats={activeCats}
-              riskMenus={riskMenus}
-              diagnostics={diagnostics}
-            />
-          )}
-
-          {/* ── 제품원가표 뷰 ── */}
-          {viewTab === 'costTable' && (
-            <CostTableView activeCats={activeCats} riskThreshold={riskThreshold} />
-          )}
-
-          {/* ── 레시피 출력 뷰 ── */}
-          {viewTab === 'recipe' && (
-            <RecipePrintView recipeRows={recipeRows} recipeMenus={recipeMenus} />
-          )}
-
-          <div className="paper-foot">
-            <span>{viewLabel}</span>
-            <span className="mono">7번가 R&amp;D 플랫폼</span>
-          </div>
-        </>
+        <CostReportPreview
+          viewTab={viewTab}
+          onViewTab={setViewTab}
+          activeCats={activeCats}
+          totalCount={totalCount}
+          recipeMenus={recipeMenus}
+          riskThreshold={riskThreshold}
+          opts={opts}
+          catStats={catStats}
+          allAvg={allAvg}
+          allRisk={allRisk}
+          allMaxRate={allMaxRate}
+          riskMenus={riskMenus}
+          diagnostics={diagnostics}
+          recipeRows={recipeRows}
+          viewLabel={viewLabel}
+        />
       }
     />
   );

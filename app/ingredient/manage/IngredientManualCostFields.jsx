@@ -1,5 +1,5 @@
 'use client';
-import { Field } from './IngredientFormSections';
+import { Field } from './IngredientFieldPrimitives';
 import { IngredientRadioOption } from './IngredientRadioOption';
 
 const TEMP_OPTIONS = ['냉장', '냉동', '상온', '공산품'];

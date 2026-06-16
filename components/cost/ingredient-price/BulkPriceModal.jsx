@@ -2,47 +2,16 @@
 import { useState, useCallback, useMemo } from 'react';
 import { showToast } from '@/components/Toast';
 import { ModalFrame } from '@/components/ui/ModalFrame';
-import { Icon } from '@/components/icons';
-import { UploadDropzone } from '@/components/ui/UploadDropzone';
-import { formatNumber } from '@/lib/format';
 import { readSpreadsheetFile } from '@/lib/excel';
 import { parseBulkPriceRows, matchAndApply, commitBulkPrice } from '@/lib/cost/bulk-price-update';
 import { asObjectArray, noop } from '@/lib/ui/prop-guards';
-
-// ── 보조 스타일 컴포넌트 ──────────────────────────────────────
-
-function StatusBadge({ count, color, label }) {
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 4,
-        padding: '2px 10px',
-        borderRadius: 20,
-        fontSize: 12,
-        fontWeight: 700,
-        background: `color-mix(in srgb, ${color} 14%, transparent)`,
-        color,
-      }}
-    >
-      {count} {label}
-    </span>
-  );
-}
-
-function PriceDelta({ oldPrice, newPrice }) {
-  if (oldPrice == null) return <span style={{ color: 'var(--text-3)', fontSize: 11 }}>신규</span>;
-  const delta = newPrice - oldPrice;
-  if (delta === 0) return <span style={{ color: 'var(--text-3)', fontSize: 11 }}>변동 없음</span>;
-  const color = delta > 0 ? 'var(--negative, #ef4444)' : 'var(--positive)';
-  return (
-    <span style={{ color, fontWeight: 600, fontSize: 12 }}>
-      {delta > 0 ? '+' : ''}
-      {formatNumber(delta)}원
-    </span>
-  );
-}
+import { BulkPriceDoneState } from './bulk-price/BulkPriceDoneState';
+import { BulkPriceErrorBanner } from './bulk-price/BulkPriceErrorBanner';
+import { BulkPriceFormatHint } from './bulk-price/BulkPriceFormatHint';
+import { BulkPriceIdleDropzone } from './bulk-price/BulkPriceIdleDropzone';
+import { BulkPriceParsingState } from './bulk-price/BulkPriceParsingState';
+import { BulkPricePreview } from './bulk-price/BulkPricePreview';
+import { normalizeBulkPricePreview } from './bulk-price/bulkPriceModalUtils';
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────
 
@@ -98,7 +67,7 @@ export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
 
   // ── 커밋 ────────────────────────────────────────────────
   const handleCommit = useCallback(async () => {
-    const matched = asObjectArray(preview?.matched);
+    const { matched } = normalizeBulkPricePreview(preview);
     if (matched.length === 0) return;
     setCommitting(true);
     setError(null);
@@ -136,231 +105,31 @@ export function BulkPriceModal({ existingIngredients, onDone, onClose }) {
       zIndex={300}
       padding="24px 28px"
     >
-      {/* 포맷 힌트 */}
-      <div
-        style={{
-          padding: '10px 14px',
-          borderRadius: 8,
-          background: 'var(--surface-2)',
-          fontSize: 12,
-          color: 'var(--text-2)',
-          marginBottom: 16,
-          lineHeight: 1.7,
-        }}
-      >
-        <b>필수 컬럼:</b> 상품코드 (또는 제품코드·코드·productCode)&emsp;
-        <b>단가</b> (또는 가격·부가세포함가·price)
-        <br />
-        <b>선택 컬럼:</b> 재료명 (또는 품목명·제품명)&emsp;
-        <span style={{ color: 'var(--text-3)' }}>지원 형식: .csv, .xlsx, .xls</span>
-      </div>
+      <BulkPriceFormatHint />
 
-      {/* 파일 선택 영역 */}
       {phase === 'idle' && (
-        <UploadDropzone
-          accept={['.csv', '.xlsx', '.xls']}
-          title="파일을 선택하거나 드래그하세요"
-          onFile={(file, err) => {
-            if (err) {
-              setError(err);
-              return;
-            }
-            handleFile(file);
-          }}
+        <BulkPriceIdleDropzone onFile={handleFile} onError={setError} />
+      )}
+
+      {phase === 'parsing' && (
+        <BulkPriceParsingState fileName={fileName} />
+      )}
+
+      {phase === 'preview' && preview && (
+        <BulkPricePreview
+          fileName={fileName}
+          preview={preview}
+          committing={committing}
+          onReset={handleReset}
+          onCommit={handleCommit}
         />
       )}
 
-      {/* 파싱 중 */}
-      {phase === 'parsing' && (
-        <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-3)' }}>
-          <div style={{ fontSize: 13 }}>
-            파일 분석 중… <b>{fileName}</b>
-          </div>
-        </div>
-      )}
-
-      {/* 미리보기 */}
-      {phase === 'preview' &&
-        preview &&
-        (() => {
-          const matched = asObjectArray(preview.matched);
-          const unmatched = asObjectArray(preview.unmatched);
-          return (
-            <>
-              {/* 요약 배지 */}
-              <div
-                style={{
-                  display: 'flex',
-                  gap: 8,
-                  alignItems: 'center',
-                  marginBottom: 12,
-                  flexWrap: 'wrap',
-                }}
-              >
-                <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{fileName}</span>
-                <StatusBadge count={matched.length} color="var(--accent)" label="매칭" />
-                <StatusBadge count={unmatched.length} color="var(--text-3)" label="미매칭" />
-                {matched.length > 0 && (
-                  <span style={{ fontSize: 12, color: 'var(--text-3)', marginLeft: 'auto' }}>
-                    매칭된 항목의 <b>priceOverride</b> 필드를 업데이트합니다
-                  </span>
-                )}
-              </div>
-
-              {/* 매칭 테이블 */}
-              {matched.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: 'var(--text-2)',
-                      marginBottom: 6,
-                    }}
-                  >
-                    업데이트 항목 ({matched.length}개)
-                  </div>
-                  <div
-                    style={{
-                      overflowX: 'auto',
-                      maxHeight: 320,
-                      overflowY: 'auto',
-                      borderRadius: 8,
-                      border: '1px solid var(--border)',
-                    }}
-                  >
-                    <table className="data-table" style={{ minWidth: 480 }}>
-                      <thead>
-                        <tr>
-                          <th style={{ width: 90 }}>제품코드</th>
-                          <th>재료명</th>
-                          <th style={{ width: 110, textAlign: 'right' }}>현재 단가</th>
-                          <th style={{ width: 110, textAlign: 'right' }}>새 단가</th>
-                          <th style={{ width: 100, textAlign: 'right' }}>변동</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {matched.map(item => (
-                          <tr key={item.id}>
-                            <td style={{ fontFamily: 'monospace', fontSize: 12 }}>
-                              {item.productCode}
-                            </td>
-                            <td style={{ fontSize: 13 }}>{item.name}</td>
-                            <td
-                              style={{ textAlign: 'right', fontSize: 13, color: 'var(--text-3)' }}
-                            >
-                              {item.oldPrice != null ? `${formatNumber(item.oldPrice)}원` : '—'}
-                            </td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, fontSize: 13 }}>
-                              {formatNumber(item.newPrice)}원
-                            </td>
-                            <td style={{ textAlign: 'right' }}>
-                              <PriceDelta oldPrice={item.oldPrice} newPrice={item.newPrice} />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* 미매칭 목록 (접힘) */}
-              {unmatched.length > 0 && (
-                <details style={{ marginBottom: 12 }}>
-                  <summary
-                    style={{
-                      fontSize: 12,
-                      color: 'var(--text-3)',
-                      cursor: 'pointer',
-                      userSelect: 'none',
-                    }}
-                  >
-                    마스터에 없는 항목 {unmatched.length}개 (클릭하여 펼치기)
-                  </summary>
-                  <div
-                    style={{
-                      marginTop: 8,
-                      padding: '8px 12px',
-                      background: 'var(--surface-2)',
-                      borderRadius: 6,
-                      fontSize: 12,
-                    }}
-                  >
-                    {unmatched.map((u, i) => (
-                      <div key={i} style={{ color: 'var(--text-3)', lineHeight: 1.8 }}>
-                        <span style={{ fontFamily: 'monospace' }}>{u.productCode}</span>
-                        {' — '}
-                        {formatNumber(u.newPrice)}원
-                      </div>
-                    ))}
-                  </div>
-                </details>
-              )}
-
-              {matched.length === 0 && (
-                <div
-                  style={{
-                    padding: '20px 0',
-                    textAlign: 'center',
-                    color: 'var(--text-3)',
-                    fontSize: 13,
-                  }}
-                >
-                  마스터에 매칭되는 항목이 없습니다. 다른 파일을 선택하거나 제품코드를 확인하세요.
-                </div>
-              )}
-
-              {/* 액션 버튼 */}
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
-                <button className="btn" onClick={handleReset} disabled={committing}>
-                  다시 선택
-                </button>
-                <button
-                  className="btn primary"
-                  onClick={handleCommit}
-                  disabled={committing || matched.length === 0}
-                >
-                  {committing ? '저장 중…' : `${matched.length}개 단가 업데이트`}
-                </button>
-              </div>
-            </>
-          );
-        })()}
-
-      {/* 완료 */}
       {phase === 'done' && (
-        <div style={{ padding: '40px 0', textAlign: 'center' }}>
-          <Icon.check
-            style={{ width: 36, height: 36, color: 'var(--positive)', marginBottom: 12 }}
-          />
-          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>
-            {asObjectArray(preview?.matched).length}개 단가 업데이트 완료
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 20 }}>
-            목록이 자동으로 새로고침됩니다.
-          </div>
-          <button className="btn primary" onClick={close}>
-            닫기
-          </button>
-        </div>
+        <BulkPriceDoneState preview={preview} onClose={close} />
       )}
 
-      {/* 오류 */}
-      {error && (
-        <div
-          style={{
-            marginTop: 12,
-            padding: '10px 14px',
-            borderRadius: 8,
-            background: 'color-mix(in srgb, var(--negative, #ef4444) 10%, transparent)',
-            color: 'var(--negative, #ef4444)',
-            fontSize: 13,
-          }}
-        >
-          {error}
-        </div>
-      )}
+      <BulkPriceErrorBanner error={error} />
     </ModalFrame>
   );
 }

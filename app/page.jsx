@@ -7,32 +7,13 @@ const devError = (...a) => {
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Icon } from '@/components/icons';
 import { useCountUp } from '@/hooks/useCountUp';
 import { showToast } from '@/components/Toast';
-import { HomeKpiRow } from '@/components/home/HomeKpiRow';
-import { HomeChartRow } from '@/components/home/HomeChartRow';
-import { HomeActivities } from '@/components/home/HomeActivities';
-import {
-  RankCard,
-  ReportingNotesWidget,
-  SampleStatsWidget,
-  CostAlertWidget,
-  QuickReportWidget,
-} from '@/components/home/HomeWidgets';
-import RecentVisitsWidget from '@/components/home/RecentVisitsWidget';
-import { NoteHeatmapWidget } from '@/components/home/NoteHeatmapWidget';
-import { BriefingWidget } from '@/components/home/BriefingWidget';
-import { TodoWidget } from '@/components/home/TodoWidget';
-import { UnmatchedWidget } from '@/components/home/UnmatchedWidget';
-import { PipelineWidget } from '@/components/home/PipelineWidget';
-import { ScheduleWidget } from '@/components/home/ScheduleWidget';
-import { PriceChangeWidget } from '@/components/home/PriceChangeWidget';
-import { DataFreshnessWidget } from '@/components/home/DataFreshnessWidget';
-import { ModuleHealthWidget } from '@/components/home/ModuleHealthWidget';
+import { HomeGreetingBar } from '@/components/home/HomeGreetingBar';
+import { HomePeriodNav } from '@/components/home/HomePeriodNav';
+import { HomeDashboardRows } from '@/components/home/HomeDashboardRows';
 import { WidgetConfigModal } from '@/components/home/WidgetConfigModal';
-import { WidgetShell } from '@/components/home/WidgetShell';
-import { useWidgetConfig, HOME_WIDGET_ROWS } from '@/hooks/useWidgetConfig';
+import { useWidgetConfig } from '@/hooks/useWidgetConfig';
 import { useSettingValue } from '@/hooks/useSettingValue';
 import { addNote } from '@/lib/note';
 import { setHomeNoteDraft } from '@/lib/note/keys';
@@ -48,23 +29,6 @@ function greetingByHour() {
   if (h < 12) return '좋은 아침이에요';
   if (h < 18) return '좋은 오후예요';
   return '좋은 저녁이에요';
-}
-
-/** 좌/우 위젯을 row-2b 그리드로 묶음. 한쪽만 있으면 전체 폭 차지. */
-function pairRow(a, b, rowKey) {
-  if (!a && !b) return null;
-  if (a && b)
-    return (
-      <div key={rowKey} className="row-2b motion-stagger">
-        {a}
-        {b}
-      </div>
-    );
-  return (
-    <div key={rowKey} className="row-2b motion-stagger">
-      <div style={{ gridColumn: '1 / -1' }}>{a || b}</div>
-    </div>
-  );
 }
 
 export default function HomePage() {
@@ -286,347 +250,87 @@ export default function HomePage() {
         />
       )}
 
-      {/* 인사말 */}
-      <div
-        className="greet"
-        style={{ animation: 'slide-up 340ms 0ms cubic-bezier(0.2,0.8,0.2,1) both' }}
-      >
-        <div>
-          <div className="greet-meta">{todayStr}</div>
-          <h1>
-            {greetingByHour()}, <span className="accent">{userName}</span>님
-          </h1>
-          <div className="sub">{greetSub}</div>
-        </div>
-        <div className="right">
-          {favorites.length > 0 && (
-            <button
-              className="btn"
-              title={favOnly ? '전체 위젯 보기' : '즐겨찾기 위젯만 보기'}
-              aria-pressed={favOnly}
-              onClick={() => setFavOnly(!favOnly)}
-              style={
-                favOnly
-                  ? { background: 'var(--accent)', color: '#fff', borderColor: 'var(--accent)' }
-                  : undefined
-              }
-            >
-              {favOnly ? (
-                <Icon.starFill style={{ width: 15, height: 15 }} />
-              ) : (
-                <Icon.star style={{ width: 15, height: 15 }} />
-              )}
-              즐겨찾기만
-            </button>
-          )}
-          <button
-            className="btn"
-            title="대시보드 새로고침"
-            disabled={refreshing}
-            onClick={async () => {
-              setRefreshing(true);
-              try {
-                await loadData();
-                showToast('대시보드를 새로고침했어요', 'ok');
-              } finally {
-                setRefreshing(false);
-              }
-            }}
-          >
-            <span
-              style={{
-                fontSize: 15,
-                lineHeight: 1,
-                display: 'inline-block',
-                transform: 'rotate(45deg)',
-              }}
-            >
-              ↻
-            </span>
-            {refreshing ? ' 갱신 중…' : ''}
-          </button>
-          <button className="btn" title="위젯 설정" onClick={() => setWidgetConfigOpen(true)}>
-            <Icon.gear style={{ width: 15, height: 15 }} />
-          </button>
-          <button className="btn" onClick={() => router.push('/menu-sales/upload')}>
-            <Icon.upload style={{ width: 16, height: 16 }} /> 판매량 업로드
-          </button>
-          <button className="btn primary" onClick={() => router.push('/note/write')}>
-            <Icon.plus style={{ width: 16, height: 16 }} /> 새 테스트 노트
-          </button>
-        </div>
-      </div>
+      <HomeGreetingBar
+        todayStr={todayStr}
+        greeting={greetingByHour()}
+        userName={userName}
+        greetSub={greetSub}
+        favoritesCount={favorites.length}
+        favOnly={favOnly}
+        onToggleFavOnly={() => setFavOnly(!favOnly)}
+        refreshing={refreshing}
+        onRefresh={async () => {
+          setRefreshing(true);
+          try {
+            await loadData();
+            showToast('대시보드를 새로고침했어요', 'ok');
+          } finally {
+            setRefreshing(false);
+          }
+        }}
+        onOpenWidgetConfig={() => setWidgetConfigOpen(true)}
+        onUploadSales={() => router.push('/menu-sales/upload')}
+        onNewNote={() => router.push('/note/write')}
+      />
 
-      {/* 기간 네비게이터 */}
-      {detectedPeriod && (
-        <div className="home-period-nav">
-          <button className="btn sm" onClick={() => shiftAnchor(-1)} title="이전 달">
-            ←
-          </button>
-          <span className="home-period-label">
-            {(anchor || detectedPeriod).year}년 {(anchor || detectedPeriod).month}월
-          </span>
-          <button
-            className="btn sm"
-            onClick={() => shiftAnchor(1)}
-            title="다음 달"
-            disabled={!anchor}
-          >
-            →
-          </button>
-          {anchor && (
-            <button
-              className="btn sm"
-              style={{ color: 'var(--accent)', fontWeight: 600 }}
-              onClick={() => setAnchor(null)}
-            >
-              최신
-            </button>
-          )}
-        </div>
-      )}
+      <HomePeriodNav
+        detectedPeriod={detectedPeriod}
+        anchor={anchor}
+        onShiftAnchor={shiftAnchor}
+        onResetAnchor={() => setAnchor(null)}
+      />
 
-      {rowsToRender.map(rowId => {
-        switch (rowId) {
-          case 'recent':
-            return isVisible('recent') && hasRecentVisits ? (
-              <WidgetShell
-                key="recent"
-                widgetKey="recent"
-                label="최근 방문"
-                isCollapsed={isCollapsed('recent')}
-                onToggle={toggleCollapse}
-              >
-                <RecentVisitsWidget />
-              </WidgetShell>
-            ) : null;
-
-          case 'briefing':
-            return isVisible('briefing') && briefing ? (
-              <WidgetShell
-                key="briefing"
-                widgetKey="briefing"
-                label="이번 달 브리핑"
-                isCollapsed={isCollapsed('briefing')}
-                onToggle={toggleCollapse}
-              >
-                <BriefingWidget data={briefing} />
-              </WidgetShell>
-            ) : null;
-
-          case 'kpi':
-            return isVisible('kpi') ? (
-              <WidgetShell
-                key="kpi"
-                widgetKey="kpi"
-                label="KPI 지표"
-                isCollapsed={isCollapsed('kpi')}
-                onToggle={toggleCollapse}
-              >
-                <HomeKpiRow
-                  salesKpi={salesKpi}
-                  costKpi={costKpi}
-                  noteKpi={noteKpi}
-                  salesCount={salesCount}
-                  noteCount={noteCount}
-                />
-              </WidgetShell>
-            ) : null;
-
-          case 'freshness':
-            return isVisible('freshness') ? (
-              <WidgetShell
-                key="freshness"
-                widgetKey="freshness"
-                label="데이터 신선도"
-                isCollapsed={isCollapsed('freshness')}
-                onToggle={toggleCollapse}
-              >
-                <DataFreshnessWidget
-                  freshness={uploadFreshness}
-                  backupReminder={backupReminder}
-                  isMain={isMain}
-                  router={router}
-                />
-              </WidgetShell>
-            ) : null;
-
-          case 'health':
-            return isVisible('health') ? (
-              <WidgetShell
-                key="health"
-                widgetKey="health"
-                label="모듈별 헬스체크"
-                isCollapsed={isCollapsed('health')}
-                onToggle={toggleCollapse}
-              >
-                <ModuleHealthWidget
-                  freshness={uploadFreshness}
-                  backupReminder={backupReminder}
-                  issues={alertIssues}
-                  costAlertData={alertCostAlertData}
-                  todos={todos}
-                  pipeline={pipeline}
-                  isMain={isMain}
-                  router={router}
-                />
-              </WidgetShell>
-            ) : null;
-
-          case 'todo-pair':
-            return pairRow(
-              isVisible('todo') ? <TodoWidget key="todo" todos={todos} router={router} /> : null,
-              showUnmatched ? (
-                <UnmatchedWidget key="unmatched" issues={alertIssues} router={router} />
-              ) : null,
-              rowId
-            );
-
-          case 'pipeline-pair':
-            return pairRow(
-              showPipeline ? (
-                <PipelineWidget key="pipeline" data={pipeline} router={router} />
-              ) : null,
-              isVisible('schedule') ? (
-                <ScheduleWidget key="schedule" data={weekSchedule} router={router} />
-              ) : null,
-              rowId
-            );
-
-          case 'ranks':
-            return isVisible('ranks') ? (
-              <div key="ranks" className="row-2b motion-stagger">
-                <RankCard
-                  title="메뉴 판매 베스트 5"
-                  sub={rankSub}
-                  items={top}
-                  emptyTitle="순위 데이터 없음"
-                  accent="up"
-                  router={router}
-                />
-                <RankCard
-                  title="메뉴 판매 워스트 5"
-                  sub={rankSub}
-                  items={bottom}
-                  emptyTitle="워스트 데이터 없음"
-                  accent="down"
-                  router={router}
-                />
-              </div>
-            ) : null;
-
-          case 'charts':
-            return isVisible('charts') ? (
-              <WidgetShell
-                key="charts"
-                widgetKey="charts"
-                label="차트 (트렌드 · 카테고리)"
-                isCollapsed={isCollapsed('charts')}
-                onToggle={toggleCollapse}
-              >
-                <HomeChartRow
-                  trend={trend}
-                  donut={donut}
-                  hoveredCat={hoveredCat}
-                  setHoveredCat={setHoveredCat}
-                  chartTab={chartTab}
-                  setChartTab={setChartTab}
-                  chartKey={chartKey}
-                  salesKpi={salesKpi}
-                  router={router}
-                  isTrendEmpty={isTrendEmpty}
-                />
-              </WidgetShell>
-            ) : null;
-
-          case 'price-pair':
-            return pairRow(
-              isVisible('pricechange') ? (
-                <PriceChangeWidget key="price" items={priceChanges} router={router} />
-              ) : null,
-              showCostAlert ? (
-                <CostAlertWidget key="costalert" data={alertCostAlertData} router={router} />
-              ) : null,
-              rowId
-            );
-
-          case 'quicknote':
-            return isVisible('quicknote') ? (
-              <div key="quicknote" className="card quick-note">
-                <div className="quick-note-ico">
-                  <Icon.beaker style={{ width: 18, height: 18 }} />
-                </div>
-                <input
-                  className="quick-note-input"
-                  placeholder="끝난 테스트 한 줄 메모를 입력하세요"
-                  value={quickNote}
-                  maxLength={200}
-                  onChange={e => {
-                    setQuickNote(e.target.value);
-                    setQuickSaved(false);
-                  }}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') saveQuickNote();
-                  }}
-                />
-                <div className="quick-note-hint">
-                  {quickSaved ? (
-                    <span style={{ color: 'var(--positive)' }}>
-                      <Icon.check style={{ width: 14, height: 14, verticalAlign: '-2px' }} /> 저장됨
-                    </span>
-                  ) : (
-                    <span>
-                      <kbd>Enter</kbd>로 저장
-                    </span>
-                  )}
-                </div>
-                <button
-                  className="btn primary sm"
-                  disabled={!quickNote.trim()}
-                  onClick={openDraftInNoteWrite}
-                >
-                  자세히
-                </button>
-              </div>
-            ) : null;
-
-          case 'notes-pair':
-            return pairRow(
-              showNotes ? (
-                <ReportingNotesWidget key="notes" notes={reportingNotes} router={router} />
-              ) : null,
-              showSamples ? (
-                <SampleStatsWidget key="samples" samples={recentSamples} router={router} />
-              ) : null,
-              rowId
-            );
-
-          case 'heat-pair':
-            return pairRow(
-              isVisible('heatmap') ? <NoteHeatmapWidget key="heatmap" notes={allNotes} /> : null,
-              isVisible('quickreport') ? (
-                <QuickReportWidget key="quickreport" router={router} />
-              ) : null,
-              rowId
-            );
-
-          case 'activities':
-            return isVisible('activities') ? (
-              <WidgetShell
-                key="activities"
-                widgetKey="activities"
-                label="최근 활동"
-                isCollapsed={isCollapsed('activities')}
-                onToggle={toggleCollapse}
-              >
-                <HomeActivities activities={activities} router={router} />
-              </WidgetShell>
-            ) : null;
-
-          default:
-            return null;
-        }
-      })}
+      <HomeDashboardRows
+        rowsToRender={rowsToRender}
+        isVisible={isVisible}
+        hasRecentVisits={hasRecentVisits}
+        isCollapsed={isCollapsed}
+        toggleCollapse={toggleCollapse}
+        briefing={briefing}
+        salesKpi={salesKpi}
+        costKpi={costKpi}
+        noteKpi={noteKpi}
+        salesCount={salesCount}
+        noteCount={noteCount}
+        uploadFreshness={uploadFreshness}
+        backupReminder={backupReminder}
+        isMain={isMain}
+        router={router}
+        alertIssues={alertIssues}
+        alertCostAlertData={alertCostAlertData}
+        todos={todos}
+        pipeline={pipeline}
+        weekSchedule={weekSchedule}
+        rankSub={rankSub}
+        top={top}
+        bottom={bottom}
+        trend={trend}
+        donut={donut}
+        hoveredCat={hoveredCat}
+        setHoveredCat={setHoveredCat}
+        chartTab={chartTab}
+        setChartTab={setChartTab}
+        chartKey={chartKey}
+        isTrendEmpty={isTrendEmpty}
+        priceChanges={priceChanges}
+        showUnmatched={showUnmatched}
+        showPipeline={showPipeline}
+        showCostAlert={showCostAlert}
+        quickNote={quickNote}
+        quickSaved={quickSaved}
+        onQuickNoteChange={value => {
+          setQuickNote(value);
+          setQuickSaved(false);
+        }}
+        onSaveQuickNote={saveQuickNote}
+        onOpenQuickNoteDraft={openDraftInNoteWrite}
+        showNotes={showNotes}
+        reportingNotes={reportingNotes}
+        showSamples={showSamples}
+        recentSamples={recentSamples}
+        allNotes={allNotes}
+        activities={activities}
+      />
     </main>
   );
 }

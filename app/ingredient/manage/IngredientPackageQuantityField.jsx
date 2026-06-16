@@ -1,6 +1,6 @@
 'use client';
 import { COST_BASE_UNITS } from '@/lib/cost/unit-policy';
-import { Field } from './IngredientFormSections';
+import { Field } from './IngredientFieldPrimitives';
 
 export function IngredientPackageQuantityField({ form, errors, isJetteLinked, onSet }) {
   return (

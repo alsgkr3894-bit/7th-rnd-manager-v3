@@ -21,6 +21,10 @@ import { formatNumber } from '@/lib/format';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
+const S_GUARD_CARD = { marginTop: 16, padding: 24 };
+const S_CARD_MT = { marginTop: 16 };
+const S_SECTION_TITLE = { fontSize: 15, fontWeight: 700, marginBottom: 12 };
+
 const EMPTY_FORM = {
   id: '',
   name: '',
@@ -313,7 +317,7 @@ export default function BrandMasterPage() {
           title="브랜드마스터"
           sub="브랜드 권한을 확인하고 있습니다."
         />
-        <div className="card" style={{ marginTop: 16, padding: 24 }}>
+        <div className="card" style={S_GUARD_CARD}>
           <span style={{ color: 'var(--text-3)' }}>권한 확인 중...</span>
         </div>
       </main>
@@ -328,7 +332,7 @@ export default function BrandMasterPage() {
           title="브랜드마스터"
           sub="브랜드 추가/수정/복원은 관리자만 실행할 수 있습니다."
         />
-        <div className="card" style={{ marginTop: 16, padding: 24 }}>
+        <div className="card" style={S_GUARD_CARD}>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             <Icon.alert style={{ width: 18, height: 18, color: 'var(--warn)' }} />
             <span>현재 계정은 관리자 권한이 아닙니다.</span>
@@ -376,10 +380,8 @@ export default function BrandMasterPage() {
         />
       </div>
 
-      <section className="card" style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>
-          {editingId ? '브랜드 수정' : '브랜드 추가'}
-        </h2>
+      <section className="card" style={S_CARD_MT}>
+        <h2 style={S_SECTION_TITLE}>{editingId ? '브랜드 수정' : '브랜드 추가'}</h2>
         <form
           onSubmit={handleSave}
           style={{
@@ -434,8 +436,8 @@ export default function BrandMasterPage() {
         </form>
       </section>
 
-      <section className="card" style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>브랜드 목록</h2>
+      <section className="card" style={S_CARD_MT}>
+        <h2 style={S_SECTION_TITLE}>브랜드 목록</h2>
         <div className="table-wrap">
           <table className="data-table">
             <thead>

@@ -1,9 +1,7 @@
 'use client';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useMounted } from '@/hooks/useMounted';
-import Link from 'next/link';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
-import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { initDB } from '@/lib/db';
 import { downloadCsv } from '@/lib/download';
@@ -13,8 +11,6 @@ import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { getAllEdges } from '@/lib/cost/edge-dough';
 import { buildIngredientMenuMap, getMenusForIngredient } from '@/lib/cost/ingredient-menu-map';
 import { loadMenuRecipeArrays } from '@/lib/menu-recipes';
-import { SmallStatCard } from '@/components/ui/SmallStatCard';
-import { SearchBox } from '@/components/ui/SearchBox';
 import { ReorderModal } from '@/components/ui/ReorderModal';
 import { MENU_ORDER_KEY, loadOrder, saveOrder } from '@/lib/nutrition/order';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
@@ -23,6 +19,9 @@ import { loadMenuNames, saveMenuNames } from '@/lib/nutrition/menu-name-override
 import { buildOriginIngredientRows, buildOriginMenuRows } from '@/lib/nutrition/origin/build';
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { OriginSummaryPanel } from './OriginSummaryPanel';
+import { OriginToolbar } from './OriginToolbar';
+import { OriginTablePanel } from './OriginTablePanel';
 
 const EMPTY_MENU_MAP = new Map();
 const asMenuMap = value => (value instanceof Map ? value : EMPTY_MENU_MAP);
@@ -225,281 +224,42 @@ export default function Page() {
         sub="식자재 관리에서 식자재별 원산지를 입력하면 자동으로 매칭됩니다"
       />
 
-      <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
-        <SmallStatCard label="원산지 등록 식자재" value={totalWithOrigin} />
-        <SmallStatCard label="전체 식자재" value={totalIngredients} />
-        <SmallStatCard
-          label="미등록"
-          value={withoutOrigin}
-          valueColor={withoutOrigin > 0 ? 'var(--warn)' : undefined}
-        />
-        <SmallStatCard label="매핑 메뉴 수" value={menuRows.length} />
-      </div>
+      <OriginSummaryPanel
+        totalWithOrigin={totalWithOrigin}
+        totalIngredients={totalIngredients}
+        withoutOrigin={withoutOrigin}
+        menuCount={menuRows.length}
+      />
 
-      {withoutOrigin > 0 && (
-        <div
-          style={{
-            marginTop: 12,
-            padding: '10px 16px',
-            borderRadius: 10,
-            background: 'var(--warn-soft)',
-            color: 'var(--warn)',
-            fontSize: 13,
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <Icon.alert style={{ width: 16, height: 16, flexShrink: 0 }} />
-          원산지 미등록 식자재 {withoutOrigin}개 —{' '}
-          <Link href="/ingredient/manage" style={{ color: 'inherit', textDecoration: 'underline' }}>
-            식자재 관리에서 입력
-          </Link>
-        </div>
-      )}
+      <OriginToolbar
+        search={search}
+        onSearch={setSearch}
+        viewMode={viewMode}
+        onViewMode={setViewMode}
+        onExportCsv={exportCsv}
+        exportDisabled={
+          viewMode === 'ingredient' ? ingredientRows.length === 0 : menuRows.length === 0
+        }
+        hiddenCount={hiddenCount}
+        showHidden={showHidden}
+        onToggleHidden={() => setShowHidden(v => !v)}
+        onOpenMenuNameEdit={() => setMenuNameEditOpen(true)}
+        onOpenReorder={() => setReorderOpen(true)}
+        menuOrderCount={menuOrder.length}
+        onResetOrder={() => {
+          saveOrder(MENU_ORDER_KEY, []);
+          setMenuOrder([]);
+        }}
+      />
 
-      <div style={{ marginTop: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
-        <SearchBox value={search} onChange={setSearch} placeholder="식자재명·메뉴명·원산지 검색" />
-        <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)' }}>
-          <button
-            onClick={() => setViewMode('ingredient')}
-            style={{
-              padding: '8px 14px',
-              border: 0,
-              background: 'transparent',
-              fontSize: 13,
-              fontWeight: viewMode === 'ingredient' ? 700 : 500,
-              color: viewMode === 'ingredient' ? 'var(--accent)' : 'var(--text-3)',
-              borderBottom:
-                viewMode === 'ingredient' ? '2px solid var(--accent)' : '2px solid transparent',
-              cursor: 'pointer',
-              marginBottom: -1,
-            }}
-          >
-            식자재별
-          </button>
-          <button
-            onClick={() => setViewMode('menu')}
-            style={{
-              padding: '8px 14px',
-              border: 0,
-              background: 'transparent',
-              fontSize: 13,
-              fontWeight: viewMode === 'menu' ? 700 : 500,
-              color: viewMode === 'menu' ? 'var(--accent)' : 'var(--text-3)',
-              borderBottom:
-                viewMode === 'menu' ? '2px solid var(--accent)' : '2px solid transparent',
-              cursor: 'pointer',
-              marginBottom: -1,
-            }}
-          >
-            메뉴별
-          </button>
-        </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
-          <button
-            className="btn sm"
-            onClick={exportCsv}
-            disabled={
-              viewMode === 'ingredient' ? ingredientRows.length === 0 : menuRows.length === 0
-            }
-          >
-            엑셀로 내보내기
-          </button>
-          {hiddenCount > 0 && (
-            <button
-              className={'btn sm' + (showHidden ? ' active' : '')}
-              onClick={() => setShowHidden(v => !v)}
-              title="미표시대상으로 지정된 식자재 포함 여부"
-            >
-              {showHidden
-                ? `미표시대상 ${hiddenCount}개 포함 중`
-                : `미표시대상 ${hiddenCount}개 숨김`}
-            </button>
-          )}
-          {viewMode === 'menu' && (
-            <>
-              <button className="btn sm" onClick={() => setMenuNameEditOpen(true)}>
-                메뉴명 편집
-              </button>
-              <button className="btn sm" onClick={() => setReorderOpen(true)}>
-                메뉴 순서 변경
-              </button>
-              {menuOrder.length > 0 && (
-                <button
-                  className="btn sm"
-                  onClick={() => {
-                    saveOrder(MENU_ORDER_KEY, []);
-                    setMenuOrder([]);
-                  }}
-                  title="저장된 메뉴 순서를 지우고 기본(ㄱㄴㄷ) 순서로 복원"
-                >
-                  순서 초기화
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="card table-card" style={{ marginTop: 12 }}>
-        {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-4)' }}>
-            불러오는 중…
-          </div>
-        ) : viewMode === 'ingredient' ? (
-          ingredientRows.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon-wrap">
-                <Icon.tag style={{ width: 28, height: 28 }} />
-              </div>
-              <div className="empty-title">원산지 등록 식자재가 없어요</div>
-              <div className="empty-sub">
-                <Link href="/ingredient/manage">식자재 관리</Link>에서 식자재별 원산지를 입력하세요
-              </div>
-            </div>
-          ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>식자재명</th>
-                  <th>표시품목명</th>
-                  <th>원산지</th>
-                  <th>제때 코드</th>
-                  <th>매칭 메뉴 수</th>
-                  <th>매칭 메뉴 (일부)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ingredientRows.map(ing => {
-                  const ingredientToMenus = asMenuMap(mapData?.ingredientToMenus);
-                  const productCode = asDisplayText(ing.productCode);
-                  const ingredientName = asDisplayText(ing.ingredientName);
-                  const origins = asObjectArray(ing.origin);
-                  const allMenus = getMenusForIngredient(
-                    ingredientToMenus,
-                    productCode,
-                    ingredientName
-                  );
-                  const menus = new Map(
-                    [...allMenus].filter(([mc, m]) => !isExcludedMenu(mc, m?.menuName))
-                  );
-                  const menuList = [...menus.values()];
-                  return (
-                    <tr key={asDisplayText(ing.id) || productCode || ingredientName}>
-                      <td style={{ fontWeight: 600 }}>{ingredientName}</td>
-                      <td style={{ color: 'var(--text-2)' }}>
-                        {origins
-                          .map(it => asDisplayText(it.displayName) || ingredientName)
-                          .join(' · ')}
-                      </td>
-                      <td>
-                        {origins.map((it, i) => (
-                          <span key={i}>
-                            {i > 0 && (
-                              <span style={{ color: 'var(--text-4)', margin: '0 4px' }}>/</span>
-                            )}
-                            <span style={{ fontWeight: 600, color: 'var(--text-1)' }}>
-                              {asDisplayText(it.country)}
-                            </span>
-                          </span>
-                        ))}
-                      </td>
-                      <td className="mono muted">{productCode || '—'}</td>
-                      <td style={{ textAlign: 'center' }}>
-                        {menus.size > 0 ? (
-                          <span style={{ fontWeight: 700, color: 'var(--positive)' }}>
-                            {menus.size}
-                          </span>
-                        ) : (
-                          <span style={{ color: 'var(--text-4)' }}>0</span>
-                        )}
-                      </td>
-                      <td style={{ fontSize: 12, color: 'var(--text-3)' }}>
-                        {menuList
-                          .slice(0, 3)
-                          .map(m => asDisplayText(m?.menuName))
-                          .join(', ')}
-                        {menuList.length > 3 && ` 외 ${menuList.length - 3}개`}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )
-        ) : // 메뉴별 뷰
-        menuRows.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon-wrap">
-              <Icon.doc style={{ width: 28, height: 28 }} />
-            </div>
-            <div className="empty-title">표시할 메뉴가 없어요</div>
-            <div className="empty-sub">
-              식자재에 원산지를 등록하고 메뉴마스터 레시피에 구성품을 추가하면 자동 매칭됩니다
-            </div>
-          </div>
-        ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>메뉴명</th>
-                <th>카테고리</th>
-                <th>표시품목 · 원산지</th>
-              </tr>
-            </thead>
-            <tbody>
-              {menuRows.map(row => {
-                const origins = asObjectArray(row.origins);
-                const menuCode = asDisplayText(row.menuCode);
-                const menuName = asDisplayText(row.menuName);
-                return (
-                  <tr key={menuCode || menuName}>
-                    <td style={{ fontWeight: 600 }}>{menuName}</td>
-                    <td>
-                      <span className="chip">{asDisplayText(row.category)}</span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                        {origins.map((o, i) => (
-                          <span
-                            key={i}
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 3,
-                              background: 'var(--surface-2)',
-                              borderRadius: 6,
-                              padding: '2px 8px',
-                              fontSize: 12,
-                              fontWeight: 600,
-                            }}
-                          >
-                            <span style={{ color: 'var(--text-2)' }}>
-                              {asDisplayText(o.displayName)}
-                            </span>
-                            <span style={{ color: 'var(--text-4)' }}>:</span>
-                            <span style={{ color: 'var(--text-1)' }}>
-                              {asDisplayText(o.country)}
-                            </span>
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-      <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-4)' }}>
-        {viewMode === 'ingredient'
-          ? `${ingredientRows.length}개 식자재`
-          : `${menuRows.length}개 메뉴`}{' '}
-        표시
-      </div>
+      <OriginTablePanel
+        loading={loading}
+        viewMode={viewMode}
+        ingredientRows={ingredientRows}
+        menuRows={menuRows}
+        mapData={mapData}
+        isExcludedMenu={isExcludedMenu}
+      />
 
       {reorderOpen && (
         <ReorderModal

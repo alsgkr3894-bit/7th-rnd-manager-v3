@@ -29,6 +29,7 @@ import { useBatchSelection } from '@/hooks/useBatchSelection';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { IngredientForm } from './IngredientForm';
 import { IssuesView } from '@/components/ingredient/IssuesView';
+import { IngredientJetteIssuesPanel } from '@/components/ingredient/IngredientJetteIssuesPanel';
 import { IngredientBatchToolbar } from '@/components/ingredient/BatchToolbar';
 import { TabButton } from '@/components/cost/shared/TabButton';
 import { IngredientManagePanel } from './IngredientManagePanel';
@@ -37,7 +38,7 @@ import { IngredientDiagnostics } from './IngredientDiagnostics';
 import { useIngredientManageData } from './useIngredientManageData';
 import { useIngredientManageView } from './useIngredientManageView';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
-import { printIngredientManageReport } from '@/lib/ingredient/manage-print';
+import { IngredientReportPanel } from './IngredientReportPanel';
 import dynamic from 'next/dynamic';
 
 const SuppliersView = dynamic(
@@ -52,7 +53,7 @@ const IngredientPriceView = dynamic(
   { ssr: false, loading: () => <div className="skeleton" style={{ height: 320 }} /> }
 );
 
-const MANAGE_VIEW_KEYS = new Set(['manage', 'price', 'issues', 'settings', 'suppliers']);
+const MANAGE_VIEW_KEYS = new Set(['manage', 'price', 'issues', 'settings', 'suppliers', 'report']);
 
 function normalizeManageView(value) {
   return MANAGE_VIEW_KEYS.has(value) ? value : 'manage';
@@ -134,6 +135,7 @@ export default function Page() {
     productCodeDupes,
     newJetteRows,
     jetteRemovedRows,
+    latestPriceRows,
   } = useIngredientManageData();
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 200);
@@ -410,28 +412,6 @@ export default function Page() {
     }
   }, [selected, load, exitBatch, setRows]);
 
-  const handlePrintPdf = useCallback(() => {
-    printIngredientManageReport(filtered, {
-      filters: {
-        category: catFilter,
-        tag: tagFilter,
-        search: debouncedSearch || search,
-      },
-      managedCount,
-      priceDate,
-      totalCount: rows.length,
-    });
-  }, [
-    catFilter,
-    debouncedSearch,
-    filtered,
-    managedCount,
-    priceDate,
-    rows.length,
-    search,
-    tagFilter,
-  ]);
-
   return (
     <main className="main page-enter">
       <PageHeader
@@ -448,18 +428,6 @@ export default function Page() {
               />
             ) : (
               <>
-                <button
-                  className="btn"
-                  onClick={handlePrintPdf}
-                  disabled={view !== 'manage' || filtered.length === 0}
-                  title={
-                    view === 'manage'
-                      ? '현재 필터된 식자재 목록을 PDF로 출력'
-                      : '관리 탭에서 PDF 출력 가능'
-                  }
-                >
-                  <Icon.doc style={{ width: 14, height: 14 }} /> PDF 출력
-                </button>
                 {resetConfirm ? (
                   <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     <span style={{ fontSize: 12, color: 'var(--negative)', fontWeight: 600 }}>
@@ -546,10 +514,13 @@ export default function Page() {
           <TabButton active={view === 'suppliers'} onClick={() => setView('suppliers')}>
             공급업체
           </TabButton>
+          <TabButton active={view === 'report'} onClick={() => setView('report')}>
+            보고서
+          </TabButton>
         </div>
       )}
 
-      {!loading && rows.length === 0 && view !== 'price' && view !== 'suppliers' && (
+      {!loading && rows.length === 0 && view !== 'price' && view !== 'suppliers' && view !== 'report' && (
         <div className="card" style={{ minHeight: 180, display: 'grid', placeItems: 'center' }}>
           <div style={{ textAlign: 'center', color: 'var(--text-3)' }}>
             <Icon.box style={{ width: 32, height: 32, marginBottom: 12, opacity: 0.4 }} />
@@ -620,91 +591,13 @@ export default function Page() {
       {/* ── 이슈 뷰 ── */}
       {view === 'issues' && (
         <>
-          {newJetteRows.length > 0 && (
-            <div className="card" style={{ marginBottom: 12 }}>
-              <div className="card-header">
-                <div>
-                  <div className="card-title" style={{ color: 'var(--accent)' }}>
-                    제때 신규 미등록 ({newJetteRows.length}개)
-                  </div>
-                  <div className="card-sub">최신 제때 파일에 있지만 식자재관리에 없는 항목</div>
-                </div>
-              </div>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>제품명</th>
-                    <th style={{ width: 110 }}>제품코드</th>
-                    <th style={{ width: 90 }} />
-                  </tr>
-                </thead>
-                <tbody>
-                  {newJetteRows.map(row => (
-                    <tr key={row.productCode}>
-                      <td style={{ fontWeight: 500 }}>{row.displayName || row.productName}</td>
-                      <td className="mono muted" style={{ fontSize: 12 }}>
-                        {row.productCode || '—'}
-                      </td>
-                      <td>
-                        <button
-                          className="btn sm"
-                          onClick={() => handleAutoRegister(row)}
-                          disabled={isViewer}
-                        >
-                          자동 등록
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {jetteRemovedRows.length > 0 && (
-            <div className="card" style={{ marginBottom: 12 }}>
-              <div className="card-header">
-                <div>
-                  <div className="card-title" style={{ color: 'var(--warn)' }}>
-                    제때 제거 후보 ({jetteRemovedRows.length}개)
-                  </div>
-                  <div className="card-sub">이전 파일에 있었으나 최신 파일에서 사라진 항목</div>
-                </div>
-              </div>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>식자재명</th>
-                    <th style={{ width: 110 }}>제품코드</th>
-                    <th style={{ width: 100 }} />
-                  </tr>
-                </thead>
-                <tbody>
-                  {jetteRemovedRows.map(row => (
-                    <tr key={row.productCode || row.id}>
-                      <td style={{ fontWeight: 500 }}>
-                        {row.ingredientName || row.displayName || '—'}
-                      </td>
-                      <td className="mono muted" style={{ fontSize: 12 }}>
-                        {row.productCode || '—'}
-                      </td>
-                      <td>
-                        <button
-                          className="btn sm"
-                          style={{ color: 'var(--negative)' }}
-                          onClick={() => row.productCode && handleExclude(row)}
-                          disabled={isViewer}
-                        >
-                          단종 처리
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
+          <IngredientJetteIssuesPanel
+            newJetteRows={newJetteRows}
+            jetteRemovedRows={jetteRemovedRows}
+            onAutoRegister={handleAutoRegister}
+            onExclude={handleExclude}
+            isViewer={isViewer}
+          />
           {rows.length > 0 && <IssuesView issueRows={issueRows} onEdit={setFormTarget} />}
         </>
       )}
@@ -722,6 +615,19 @@ export default function Page() {
 
       {/* ── 공급업체 뷰 ── */}
       {view === 'suppliers' && <SuppliersView />}
+
+      {/* ── 보고서 뷰 ── */}
+      {view === 'report' && (
+        <IngredientReportPanel
+          filtered={filtered}
+          rows={rows}
+          catFilter={catFilter}
+          tagFilter={tagFilter}
+          search={debouncedSearch || search}
+          managedCount={managedCount}
+          priceDate={priceDate}
+        />
+      )}
 
       {confirmRemove && (
         <ConfirmDialog
@@ -752,6 +658,7 @@ export default function Page() {
           extraCategories={mainCats}
           originSuggestions={originSuggestions}
           existingProductCodes={rows.filter(r => r.productCode).map(r => r.productCode)}
+          jettePriceRows={latestPriceRows}
         />
       )}
     </main>

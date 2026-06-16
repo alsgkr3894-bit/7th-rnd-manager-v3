@@ -34,6 +34,11 @@ import { Toggle } from '@/components/ui/Toggle';
 
 const APP_VERSION = '0.1.0';
 
+const S_CARD_MT = { marginTop: 16 };
+const S_CARD_TITLE = { fontSize: 15, fontWeight: 700, marginBottom: 16 };
+const S_DANGER_ITEM_TITLE = { fontWeight: 700, fontSize: 14, marginBottom: 4 };
+const S_DANGER_ITEM_DESC = { fontSize: 13, color: 'var(--text-2)', marginBottom: 12 };
+
 export default function Page() {
   const [ready, setReady] = useState(false);
   const [stats, setStats] = useState(null);
@@ -304,8 +309,8 @@ export default function Page() {
       </SettingsGroup>
 
       {/* 5. 앱 정보 */}
-      <div className="card" style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>앱 정보</h2>
+      <div className="card" style={S_CARD_MT}>
+        <h2 style={S_CARD_TITLE}>앱 정보</h2>
         <div
           style={{
             display: 'grid',
@@ -321,8 +326,8 @@ export default function Page() {
       </div>
 
       {/* 6. 저장소 상태 */}
-      <div className="card" style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>저장소 상태</h2>
+      <div className="card" style={S_CARD_MT}>
+        <h2 style={S_CARD_TITLE}>저장소 상태</h2>
         {!ready ? (
           <div style={{ color: 'var(--text-3)' }}>DB 초기화 중…</div>
         ) : (
@@ -408,8 +413,8 @@ export default function Page() {
 
         {/* 모든 데이터 초기화 */}
         <div style={{ paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
-          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>모든 데이터 초기화</div>
-          <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 12 }}>
+          <div style={S_DANGER_ITEM_TITLE}>모든 데이터 초기화</div>
+          <p style={S_DANGER_ITEM_DESC}>
             모든 store의 데이터를 삭제합니다. schema는 유지되며 빈 store로 남습니다.
             <br />
             백업이 필요한 경우 먼저 <b>데이터 백업</b> 메뉴에서 다운로드하세요.
@@ -432,8 +437,8 @@ export default function Page() {
 
         {/* DB 완전 재생성 */}
         <div style={{ paddingTop: 16 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>DB 완전 재생성</div>
-          <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 12 }}>
+          <div style={S_DANGER_ITEM_TITLE}>DB 완전 재생성</div>
+          <p style={S_DANGER_ITEM_DESC}>
             DB 자체를 삭제하고 최신 schema로 새로 생성합니다.
             <br />
             schema 업그레이드가 누락된 경우(<code>NotFoundError</code>) 해결 가능.

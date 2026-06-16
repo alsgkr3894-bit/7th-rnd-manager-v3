@@ -1,16 +1,6 @@
 'use client';
 import { Icon } from '@/components/icons';
-import { MODULE_GROUPS } from '@/lib/db';
-
-const chipStyle = active => ({
-  display: 'inline-block',
-  padding: '2px 10px',
-  borderRadius: 99,
-  fontSize: 12,
-  fontWeight: 700,
-  background: active ? 'var(--accent-soft)' : 'var(--surface-2)',
-  color: active ? 'var(--accent-text)' : 'var(--text-3)',
-});
+import { RestoreModuleChip } from './RestoreModuleChip';
 
 /**
  * 복원 완료 결과 카드.
@@ -70,9 +60,7 @@ export function RestoreDoneCard({ restoreDone, onReset }) {
           </div>
           <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {restoreDone.modules.map(k => (
-              <span key={k} style={chipStyle(true)}>
-                {MODULE_GROUPS[k]?.label || k}
-              </span>
+              <RestoreModuleChip key={k} moduleKey={k} />
             ))}
           </div>
           {restoreDone.backupSkipped && (

@@ -33,6 +33,7 @@ export function useIngredientManageData() {
   const [productCodeDupes, setProductCodeDupes] = useState(null);
   const [newJetteRows, setNewJetteRows] = useState([]);
   const [jetteRemovedRows, setJetteRemovedRows] = useState([]);
+  const [latestPriceRows, setLatestPriceRows] = useState([]);
 
   const load = useCallback(async () => {
     await initDB();
@@ -63,12 +64,14 @@ export function useIngredientManageData() {
       setPrevPriceMap(null);
       setNewJetteRows([]);
       setJetteRemovedRows([]);
+      setLatestPriceRows([]);
       setRows(allMeta.filter(meta => meta.isManual || meta.isSeeded).map(buildMetaOnlyRow));
       setBrokenRefs(findBrokenCompositeRefs(allMeta));
       return;
     }
 
     const priceRows = await getPriceRowsByFileId(latest.id);
+    setLatestPriceRows(priceRows);
     const allMerged = mergeIngredientRows(priceRows, metaMap, typeMap);
     const merged = allMerged.filter(row => row.hasRecord);
     const priceCodeSet = new Set(priceRows.map(row => row.productCode).filter(Boolean));
@@ -122,5 +125,6 @@ export function useIngredientManageData() {
     productCodeDupes,
     newJetteRows,
     jetteRemovedRows,
+    latestPriceRows,
   };
 }

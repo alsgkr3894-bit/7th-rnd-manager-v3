@@ -1,12 +1,10 @@
 'use client';
 import { useReducer, useMemo, useState, useEffect } from 'react';
-import { formatNumber } from '@/lib/format';
 import { getClassificationNameOptions, CATEGORY_ORDER } from '@/lib/sales';
-import { ComboBox } from '@/components/ui/ComboBox';
-import { UnmatchedResolveForm } from './UnmatchedResolveForm';
-import { Pagination } from '@/components/ui/Pagination';
 import { usePagination } from '@/hooks/usePagination';
-import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { asObjectArray } from '@/lib/ui/prop-guards';
+import { UnmatchedBulkActions } from './unmatched/UnmatchedBulkActions';
+import { UnmatchedIssueTable } from './unmatched/UnmatchedIssueTable';
 
 const initialState = {
   openId: null,
@@ -108,13 +106,15 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule })
   );
 
   const catOpts = nameOpts[bulkRuleCat] || { groupNames: [], detailNames: [] };
+  const allOpenSelected = selectedOpen.length === openIssues.length;
 
   function toggleSel(id) {
     dispatch({ type: 'TOGGLE_SEL', id });
   }
+
   function toggleAll() {
     dispatch(
-      selectedOpen.length === openIssues.length
+      allOpenSelected
         ? { type: 'SEL_CLEAR' }
         : { type: 'SEL_ALL', ids: new Set(openIssues.map(i => i.id)) }
     );
@@ -158,279 +158,53 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule })
     }
   }
 
+  function handleBulkRuleCatChange(nextCategory) {
+    setBulkRuleCat(nextCategory);
+    setBulkRuleGroup('');
+    setBulkRuleDetail('');
+  }
+
   return (
     <div className="card" style={{ marginTop: 16 }}>
-      {selectedOpen.length > 0 && (
-        <div style={{ marginBottom: 12 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '10px 16px',
-              background: 'var(--accent-soft)',
-              borderRadius: showBulkRule ? '8px 8px 0 0' : 8,
-            }}
-          >
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-text)' }}>
-              <b>{selectedOpen.length}건</b> 선택됨
-            </span>
-            {confirmBulk ? (
-              <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-                <span style={{ fontSize: 12, color: 'var(--negative)' }}>
-                  선택한 항목을 모두 제외 처리할까요?
-                </span>
-                <button
-                  className="btn sm"
-                  onClick={() => dispatch({ type: 'BULK_CANCEL' })}
-                  disabled={bulkBusy}
-                >
-                  취소
-                </button>
-                <button
-                  className="btn sm"
-                  onClick={handleBulk}
-                  disabled={bulkBusy}
-                  style={{
-                    background: 'var(--negative)',
-                    color: '#fff',
-                    borderColor: 'var(--negative)',
-                  }}
-                >
-                  {bulkBusy ? '처리 중...' : '일괄 제외 확인'}
-                </button>
-              </span>
-            ) : (
-              <span style={{ display: 'inline-flex', gap: 6 }}>
-                <button className="btn sm" onClick={() => dispatch({ type: 'SEL_CLEAR' })}>
-                  선택 해제
-                </button>
-                <button
-                  className="btn sm"
-                  onClick={() =>
-                    dispatch({ type: showBulkRule ? 'BULK_RULE_HIDE' : 'BULK_RULE_SHOW' })
-                  }
-                >
-                  {showBulkRule ? '분류 적용 닫기' : '분류 일괄 적용'}
-                </button>
-                <button
-                  className="btn sm"
-                  onClick={() => dispatch({ type: 'BULK_CONFIRM' })}
-                  style={{ color: 'var(--negative)' }}
-                >
-                  선택 일괄 제외
-                </button>
-              </span>
-            )}
-          </div>
-
-          {showBulkRule && (
-            <div
-              style={{
-                padding: '12px 16px',
-                border: '1px solid var(--accent-soft)',
-                borderTop: '1px solid var(--divider)',
-                borderRadius: '0 0 8px 8px',
-                background: 'var(--surface-1)',
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 8,
-                alignItems: 'flex-end',
-              }}
-            >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 100 }}>
-                <span style={{ fontSize: 11, color: 'var(--text-3)' }}>카테고리</span>
-                <select
-                  className="form-input"
-                  style={{ fontSize: 12 }}
-                  value={bulkRuleCat}
-                  onChange={e => {
-                    setBulkRuleCat(e.target.value);
-                    setBulkRuleGroup('');
-                    setBulkRuleDetail('');
-                  }}
-                >
-                  {CATEGORY_ORDER.map(c => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 140 }}>
-                <span style={{ fontSize: 11, color: 'var(--text-3)' }}>그룹명</span>
-                <ComboBox
-                  value={bulkRuleGroup}
-                  onChange={setBulkRuleGroup}
-                  options={catOpts.groupNames || []}
-                  placeholder="그룹명"
-                  inputClassName="form-input"
-                />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 140 }}>
-                <span style={{ fontSize: 11, color: 'var(--text-3)' }}>상세명</span>
-                <ComboBox
-                  value={bulkRuleDetail}
-                  onChange={setBulkRuleDetail}
-                  options={catOpts.detailNames || []}
-                  placeholder="상세명"
-                  inputClassName="form-input"
-                />
-              </div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  className="btn sm"
-                  onClick={() => dispatch({ type: 'BULK_RULE_HIDE' })}
-                  disabled={bulkRuleBusy}
-                >
-                  취소
-                </button>
-                <button
-                  className="btn sm primary"
-                  onClick={handleBulkRuleApply}
-                  disabled={bulkRuleBusy || !bulkRuleCat}
-                >
-                  {bulkRuleBusy ? '적용 중...' : `${selectedOpen.length}건 분류 적용`}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="table-wrap">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th style={{ width: 40 }}>
-                <input
-                  type="checkbox"
-                  checked={openIssues.length > 0 && selectedOpen.length === openIssues.length}
-                  onChange={toggleAll}
-                />
-              </th>
-              <th style={{ width: 110 }}>월</th>
-              <th>대표 메뉴명 (원본)</th>
-              <th>정규화 후</th>
-              <th style={{ width: 110, textAlign: 'right' }}>총 수량</th>
-              <th style={{ width: 100, textAlign: 'right' }}>영향 행</th>
-              <th style={{ width: 100 }}>상태</th>
-              <th style={{ width: 90 }}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {umPaged.map((it, index) => {
-              const issueId = it.id;
-              const hasIssueId = issueId != null;
-              const issueKey = asDisplayText(issueId, `issue-${index}`);
-              return (
-                <Row
-                  key={issueKey}
-                  issue={it}
-                  expanded={hasIssueId && openId === issueId}
-                  busy={hasIssueId && busyId === issueId}
-                  checked={hasIssueId && selected.has(issueId)}
-                  onCheck={() => toggleSel(issueId)}
-                  onToggle={() => dispatch({ type: 'TOGGLE_ROW', id: issueId })}
-                  onSubmit={(at, ad) => handleResolveSingle(it, at, ad)}
-                />
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      <div style={{ borderTop: '1px solid var(--divider)' }}>
-        <Pagination
-          page={umPage}
-          totalPages={umTotalPages}
-          onPage={umGoTo}
-          total={umTotal}
-          pageSize={50}
-        />
-      </div>
+      <UnmatchedBulkActions
+        selectedCount={selectedOpen.length}
+        confirmBulk={confirmBulk}
+        bulkBusy={bulkBusy}
+        showBulkRule={showBulkRule}
+        bulkRuleBusy={bulkRuleBusy}
+        bulkRuleCat={bulkRuleCat}
+        bulkRuleGroup={bulkRuleGroup}
+        bulkRuleDetail={bulkRuleDetail}
+        categoryOptions={catOpts}
+        onClearSelection={() => dispatch({ type: 'SEL_CLEAR' })}
+        onCancelBulkConfirm={() => dispatch({ type: 'BULK_CANCEL' })}
+        onConfirmBulkExclude={handleBulk}
+        onToggleBulkRule={() =>
+          dispatch({ type: showBulkRule ? 'BULK_RULE_HIDE' : 'BULK_RULE_SHOW' })
+        }
+        onAskBulkExclude={() => dispatch({ type: 'BULK_CONFIRM' })}
+        onBulkRuleCatChange={handleBulkRuleCatChange}
+        onBulkRuleGroupChange={setBulkRuleGroup}
+        onBulkRuleDetailChange={setBulkRuleDetail}
+        onCancelBulkRule={() => dispatch({ type: 'BULK_RULE_HIDE' })}
+        onApplyBulkRule={handleBulkRuleApply}
+      />
+      <UnmatchedIssueTable
+        pagedIssues={umPaged}
+        openIssuesCount={openIssues.length}
+        allOpenSelected={allOpenSelected}
+        selected={selected}
+        openId={openId}
+        busyId={busyId}
+        page={umPage}
+        totalPages={umTotalPages}
+        total={umTotal}
+        onPage={umGoTo}
+        onToggleAll={toggleAll}
+        onToggleSelected={toggleSel}
+        onToggleRow={id => dispatch({ type: 'TOGGLE_ROW', id })}
+        onResolveSingle={handleResolveSingle}
+      />
     </div>
-  );
-}
-
-function Row({ issue, expanded, busy, checked, onCheck, onToggle, onSubmit }) {
-  const safeIssue = issue && typeof issue === 'object' ? issue : {};
-  const issueId = safeIssue.id;
-  const canResolve = safeIssue.status === 'open' && issueId != null;
-  const year = asDisplayText(safeIssue.year, '-');
-  const month = asDisplayText(safeIssue.month);
-  const monthLabel = month ? month.padStart(2, '0') : '--';
-  const rawMenuName = asDisplayText(safeIssue.representativeRawMenuName, '-');
-  const normalizedMenuName = asDisplayText(safeIssue.normalizedMenuName, '-');
-  const totalQuantity = Number.isFinite(Number(safeIssue.totalQuantity))
-    ? Number(safeIssue.totalQuantity)
-    : 0;
-  const affectedRowCount = Number.isFinite(Number(safeIssue.affectedRowCount))
-    ? Number(safeIssue.affectedRowCount)
-    : 0;
-  const handleCheck = typeof onCheck === 'function' ? onCheck : undefined;
-  const handleToggle = typeof onToggle === 'function' ? onToggle : undefined;
-
-  return (
-    <>
-      <tr>
-        <td>
-          {canResolve && (
-            <input type="checkbox" checked={Boolean(checked)} onChange={handleCheck} />
-          )}
-        </td>
-        <td>
-          <span className="period-pill num">
-            {year}.{monthLabel}
-          </span>
-        </td>
-        <td className="cell-name">
-          <div className="menu-name">{rawMenuName}</div>
-        </td>
-        <td className="cell-name">
-          <span style={{ color: 'var(--text-3)', fontSize: 12 }}>{normalizedMenuName}</span>
-        </td>
-        <td className="num right">
-          {formatNumber(totalQuantity)}
-          <span className="unit">개</span>
-        </td>
-        <td className="num right">{formatNumber(affectedRowCount)}</td>
-        <td>
-          {safeIssue.status === 'open' ? (
-            <span
-              className="chip"
-              style={{ background: 'var(--negative-soft)', color: 'var(--negative)' }}
-            >
-              미해결
-            </span>
-          ) : (
-            <span
-              className="chip"
-              style={{ background: 'var(--positive-soft)', color: 'var(--positive)' }}
-            >
-              해결됨
-            </span>
-          )}
-        </td>
-        <td style={{ textAlign: 'right' }}>
-          {canResolve && (
-            <button className="btn sm primary" onClick={handleToggle} disabled={busy}>
-              {expanded ? '닫기' : '해결'}
-            </button>
-          )}
-        </td>
-      </tr>
-      {expanded && (
-        <tr>
-          <td colSpan={8} style={{ padding: 0 }}>
-            <UnmatchedResolveForm
-              issue={safeIssue}
-              onSubmit={onSubmit}
-              onCancel={handleToggle}
-              busy={busy}
-            />
-          </td>
-        </tr>
-      )}
-    </>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { SEED_HASH_TAGS } from '@/lib/ingredient';
-import { Field } from './IngredientFormSections';
+import { Field } from './IngredientFieldPrimitives';
 
 export function BasicIngredientFields({
   form,
