@@ -37,6 +37,7 @@ import { IngredientDiagnostics } from './IngredientDiagnostics';
 import { useIngredientManageData } from './useIngredientManageData';
 import { useIngredientManageView } from './useIngredientManageView';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
+import { printIngredientManageReport } from '@/lib/ingredient/manage-print';
 import dynamic from 'next/dynamic';
 
 const SuppliersView = dynamic(
@@ -409,6 +410,28 @@ export default function Page() {
     }
   }, [selected, load, exitBatch, setRows]);
 
+  const handlePrintPdf = useCallback(() => {
+    printIngredientManageReport(filtered, {
+      filters: {
+        category: catFilter,
+        tag: tagFilter,
+        search: debouncedSearch || search,
+      },
+      managedCount,
+      priceDate,
+      totalCount: rows.length,
+    });
+  }, [
+    catFilter,
+    debouncedSearch,
+    filtered,
+    managedCount,
+    priceDate,
+    rows.length,
+    search,
+    tagFilter,
+  ]);
+
   return (
     <main className="main page-enter">
       <PageHeader
@@ -425,6 +448,18 @@ export default function Page() {
               />
             ) : (
               <>
+                <button
+                  className="btn"
+                  onClick={handlePrintPdf}
+                  disabled={view !== 'manage' || filtered.length === 0}
+                  title={
+                    view === 'manage'
+                      ? '현재 필터된 식자재 목록을 PDF로 출력'
+                      : '관리 탭에서 PDF 출력 가능'
+                  }
+                >
+                  <Icon.doc style={{ width: 14, height: 14 }} /> PDF 출력
+                </button>
                 {resetConfirm ? (
                   <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     <span style={{ fontSize: 12, color: 'var(--negative)', fontWeight: 600 }}>
