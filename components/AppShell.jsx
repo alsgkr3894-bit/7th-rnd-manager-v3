@@ -1,10 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
-import CommandPalette from './CommandPalette';
 import { ToastContainer } from './Toast';
+
+const CommandPalette = dynamic(() => import('./CommandPalette'), { ssr: false });
+const ShortcutsHelp = dynamic(() => import('./ShortcutsHelp').then(m => ({ default: m.ShortcutsHelp })), { ssr: false });
 import { ScrollToTop } from './ui/ScrollToTop';
 import { applyAllSettings } from '@/lib/settings';
 import { KEYS } from '@/lib/note/keys';
@@ -23,7 +26,6 @@ import { usePageStats } from '@/hooks/usePageStats';
 import { useSettingValue } from '@/hooks/useSettingValue';
 import { useAppBrands } from '@/hooks/useAppBrands';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { ShortcutsHelp } from './ShortcutsHelp';
 
 export default function AppShell({ children }) {
   const [mobileNav, setMobileNav] = useState(false);
