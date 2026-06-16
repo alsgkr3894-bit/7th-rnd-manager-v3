@@ -4,8 +4,7 @@
 > 새 보류 항목은 위험도에 맞춰 아래 플랜에 추가하고, 완료 시 상태를 `✅ 완료`로 바꾸고 완료일을 기입하세요.
 >
 > 2026-06-14 감사(구 `docs/BUG_AUDIT_2026-06-14.md`)는 내용 전부 이 문서에 흡수 후 삭제됐습니다.
-> 제품·UX 후보는 `docs/SITE_IMPROVEMENT_BACKLOG.md`에 남아 있습니다. 실행 여부·우선순위·완료 판단은
-> 이 문서의 정규화된 항목을 기준으로 합니다.
+> 실행 여부·우선순위·완료 판단은 이 문서의 정규화된 항목을 기준으로 합니다.
 
 ---
 
@@ -384,9 +383,13 @@
 | 문서 | 이 파일에 반영된 내용 | 남겨둔 역할 |
 |------|----------------------|-------------|
 | `docs/BUG_AUDIT_2026-06-14.md` _(삭제됨)_ | clean build/dev 충돌, smoke/runtime QA, format, id/key, console-only, fixture/dynamic QA 항목 → B-20·B-21·B-23·B-25·B-26 및 완료 이력으로 흡수 | 내용 전부 흡수 후 2026-06-14 삭제 |
-| `docs/SITE_IMPROVEMENT_BACKLOG.md` | QA 안정화·fixture 확대·성능/운영 QA 후보를 B/D 섹션으로 정규화 | 제품/UX/성능 아이디어 후보 목록 |
-| `docs/PROJECT_CODEBASE_AUDIT.md` | 코드 구조, store/route/QA 체계, 책임 큰 파일, 운영 주의점을 B/D 섹션으로 흡수 | 전체 코드베이스 해설 문서 |
-| `docs/PROJECT_STRUCTURE_AUDIT_2026-06-14.md` | 문서 정합성, route drift, README/ARCHITECTURE 최신화, 삭제 문구 불일치 항목을 B-23/B-24/B-25로 흡수 | 구조·문서 감사 원본 |
+| `docs/CONFLICT_AND_CONSOLIDATION_PLAN.md` _(삭제됨)_ | 충돌 가능성·통합 후보 23개 항목 전부 구현 완료 → 완료 이력으로 흡수 | 내용 전부 흡수 후 2026-06-16 삭제 |
+| `docs/CLAUDE_CODE_REFACTOR_HANDOFF.md` _(삭제됨)_ | 분리·정리 인수인계 항목 전부 구현 완료. 주요 항목 B-6에 수록; 보완 항목 완료 이력으로 흡수 | 내용 전부 흡수 후 2026-06-16 삭제 |
+| `docs/FEATURE_CONSOLIDATION_DIRECTION.md` _(삭제됨)_ | 기능 통합 방향 설계 문서. 5개 영역 통합 항목 전부 구현 완료(11.1 표 기준). 완료 이력으로 흡수 | 내용 전부 흡수 후 2026-06-16 삭제 |
+| `docs/SITE_IMPROVEMENT_BACKLOG.md` _(삭제됨)_ | QA 안정화·fixture 확대·성능/운영 QA 후보를 B/D 섹션으로 정규화; 제품/UX 아이디어 후보 흡수 | 내용 전부 흡수 후 2026-06-16 삭제 |
+| `docs/PROJECT_CODEBASE_AUDIT.md` _(삭제됨)_ | 코드 구조, store/route/QA 체계, 책임 큰 파일, 운영 주의점을 B/D 섹션으로 흡수 | 내용 전부 흡수 후 2026-06-16 삭제 |
+| `docs/PROJECT_STRUCTURE_AUDIT_2026-06-14.md` _(삭제됨)_ | 문서 정합성, route drift, README/ARCHITECTURE 최신화, 삭제 문구 불일치 항목을 B-23/B-24/B-25로 흡수 | 내용 전부 흡수 후 2026-06-16 삭제 |
+| `docs/MENU_MASTER_UNIFICATION_PLAN.md` _(삭제됨)_ | 메뉴마스터 통합 계획(Phase 1~5) 전부 구현 완료 → 완료 이력으로 흡수 | 내용 전부 흡수 후 2026-06-16 삭제 |
 | `docs/DEFERRED_WORK.md` | 보류 항목, 진행 중 항목, 완료 이력, 운영 QA 구분 | 실행 우선순위와 완료 판단의 단일 기준 |
 
 ---
@@ -394,6 +397,124 @@
 ## 완료 이력
 
 > 완료된 모든 작업 기록. 라운드 순 → 가장 최근 항목이 위에 있습니다.
+
+---
+
+### SITE_IMPROVEMENT_BACKLOG.md 흡수 — ✅ 2026-06-16
+
+> 제품·UX·성능·안정성 개선 백로그(기준일 2026-06-14, 659줄). P0~P3 우선순위 후보 항목 목록.  
+> 작업자: Claude Code (claude-sonnet-4-6). 2026-06-16 DEFERRED_WORK.md 흡수 후 원본 삭제.
+
+**이미 완료된 항목**
+- P0 1인피자 알레르기 기준: 씬바사삭 1종 확정 → B-9 / N-42 (2026-06-15) ✅
+- P0 legacy 알레르기 링크 store 제거: B-3 Phase 2 (2026-06-15) ✅
+- format 기준선 복구, data id/key fallback, 식자재 productCode 중복 차단, 합산 단가 정책, 원가 detail 인덱스, 피자 카테고리 판정 공통화 ✅
+
+**B/D 섹션 등록 항목**
+- 백업/복원 안전성(export 실패 처리, 대용량 복원, 공통 store 범위): D섹션 운영 QA에 이미 포함
+- B-20 실업무 fixture, B-23 dynamic route QA: 이미 추적 중
+- N-43 과거 단가 가져오기: 보류 게이트 대기 중
+
+**미착수 UX/성능 후보 (product backlog 수준, 사용자 승인 후 B섹션 이동 예정)**
+- 홈 판매 통계 단일 집계(`sales_rows` 1회 조회), sidebar 배지 count 전용 조회, CommandPalette dynamic import
+- 대형 표 페이지네이션/windowing (사용현황·알레르기·원산지·판매보고서)
+- 검색/필터 프리셋 확산 (식자재·원가·영양성분·보고서)
+- 삭제·수정 UX 통일: 영양성분 삭제 ConfirmDialog, 샘플 단건 삭제 확인, 노트 일괄 삭제 문구, 로드 실패 vs 빈 상태 구분
+- 화면 신뢰도: 식자재 CSV 필터 기준 통일, 단가 정렬 라벨, 페이지네이션 검색 초기화, 모달 ARIA
+- 모듈별 P2/P3: 메뉴마스터 연결 상태 dashboard, 식자재 병합 wizard, 영양 변경 영향 미리보기, 보고서 섹션 토글 등
+
+---
+
+### PROJECT_STRUCTURE_AUDIT_2026-06-14.md 흡수 — ✅ 2026-06-16
+
+> 2026-06-14 프로젝트 구조·문서 감사 리포트(260줄). 문서 정합성, 라우트 현황, MD 파일 역할 분석.  
+> 작업자: Claude Code (claude-sonnet-4-6). 2026-06-16 DEFERRED_WORK.md 흡수 후 원본 삭제.  
+> 주요 발견 항목(route drift, README/ARCHITECTURE 최신화, SITE_IMPROVEMENT_BACKLOG 정리)은 B-23/B-24/B-25로 흡수 완료.
+
+- 54 정적 route / 2 동적 route 현황 확인. `qa:runtime` 정적 route 누락 0개 확인.
+- MD 파일 역할 불일치(README 폰트/CSS 구조, ARCHITECTURE 상세 미흡, DEFERRED_WORK 경로 오류) → B-24로 흡수 후 완료
+
+---
+
+### PROJECT_CODEBASE_AUDIT.md 흡수 — ✅ 2026-06-16
+
+> 2026-06-14 전체 코드베이스 구조 해설 문서(302줄). 도메인별 파일 구조, store 그룹, QA 체계, 큰 파일 목록, 운영 주의점.  
+> 작업자: Claude Code (claude-sonnet-4-6). 2026-06-16 DEFERRED_WORK.md 흡수 후 원본 삭제.
+
+- 큰 파일 목록 상위 11개(1002~558줄): B-6/B-1에서 전부 분리 완료
+- store 그룹 기준(43개 store, v19→v20 마이그레이션) 및 도메인별 코드 구조: README/ARCHITECTURE로 반영(B-24)
+- 운영 주의점(백업 실패 store, localStorage 복원 실패, productCode/menuCode 기준, 출력물 QA): D섹션 유지
+
+---
+
+### MENU_MASTER_UNIFICATION_PLAN.md 흡수 — ✅ 2026-06-16
+
+> 메뉴마스터 통합 계획(Phase 1~5 전부 구현 완료). 기준일 2026-06-15, 558줄.  
+> 작업자: Claude Code (claude-sonnet-4-6). 2026-06-16 DEFERRED_WORK.md 흡수 후 원본 삭제.
+
+- **Phase 1** 메뉴마스터 상세 구조: `5781532`, `22ef420`
+- **Phase 2** `menu_recipes` 단일 저장소 확정: `0c72c95`
+- **Phase 3** 계산/출력 화면 연결: `4767b9e`
+- **Phase 4** 기존 화면 정리: `5591241`, `3c074f3`, `ec417cc`
+- **Phase 5** 구형 코드 정리: `9d68970`, `08f7f91`, `ad04fd7`
+- 주요 아키텍처 정책(단일 저장소, `displayGroupKey` 규칙, `g`/`개` 단위, 판매가 fallback)은 FEATURE_CONSOLIDATION_DIRECTION 완료 이력과 통합됨
+
+---
+
+### FEATURE_CONSOLIDATION_DIRECTION.md 흡수 — ✅ 2026-06-15~16
+
+> 기능 통합 방향 설계 문서(작성 2026-06-15). 5개 영역 통합·정책 결정 항목 전부 구현 완료.  
+> 작업자: Claude Code (claude-sonnet-4-6). 2026-06-16 DEFERRED_WORK.md 흡수 후 원본 삭제.  
+> 세부 구현 기록은 이 파일의 다른 완료 이력(B-6, 충돌·통합 종합 정리 배치 등)에 수록됨.
+
+**확정된 주요 아키텍처 정책 (코드에 고정됨)**
+- 메뉴관리: `menu_recipes` 단일 저장소. 레시피마스터·구형 detail store·bridge API 제거.
+- 식자재관리: `/ingredient/manage` 단일 진입점. `/cost/ingredient-price`·`/ingredient/list` redirect 흡수.
+- 표기정보/영양: 메뉴 직접 입력 영양성분 우선. `nutrition_ingredient_values` store v23 제거. 엣지 파생은 베이스+조정값만 사용.
+- 제때데이터: 식자재와 합치지 않고 단가 원천으로 유지. 제때 허브는 `단가 → 출고량 → 관리품목` 흐름.
+- 판매량관리: `/menu-sales/rank-compare` 단일 분석 진입점. rank/compare는 호환 redirect.
+- 레시피 입력 단위: `g`·`개` 2종 고정. `g` 단가는 소수점 1자리 반올림 고정.
+- 브랜드 분리: 모든 실사용 데이터는 `brandId` 범위 안에서만 연결. 브랜드 간 공유 없음.
+
+---
+
+### CLAUDE_CODE_REFACTOR_HANDOFF.md 흡수 — ✅ 2026-06-16
+
+> 작업자: Claude Code (claude-sonnet-4-6). 2026-06-16 DEFERRED_WORK.md 흡수 후 원본 삭제.  
+> 주요 분리 항목(report/sales, menu-master, ingredient/manage, cost/margin, settings/brands·backup, AppShell)은 B-6에 이미 수록. 아래는 보완 항목.
+
+- **식자재관리 보고서 탭**: 헤더 PDF 버튼 제거 → 보고서 탭으로 통합. `IngredientReportPanel.jsx` 신설 (표 형식/사진 카드 2모드, 필터 기준 개수 표시). (`4ced2dbe`)
+- **IngredientSearch 수동입력 노출**: `productCode &&` 필터 제거 → `productCode: null` 수동 식자재도 공통원가 묶음 검색에 노출.
+- **buildUnitPriceMap 키 정책**: `productCode` 없으면 `String(m.id)` 키·`priceOverride` 단가로 처리.
+- **최종 검증 기준**: lint 0 / 247 suites / 1172 tests / qa:smoke 22/22 (2026-06-16).
+
+---
+
+### 충돌·통합 종합 정리 (CONFLICT_AND_CONSOLIDATION_PLAN.md 흡수) — ✅ 2026-06-15~16
+
+> `docs/CONFLICT_AND_CONSOLIDATION_PLAN.md` 전체 항목(기준일 2026-06-15, 재스캔 포함 23개) 구현 완료.  
+> 작업자: Claude Code (claude-sonnet-4-6). 2026-06-16 DEFERRED_WORK.md 흡수 후 원본 삭제.
+
+- **식자재 사용현황·영양 매핑 통합**: `buildIngredientUsageMap` → `buildIngredientMenuMap` 어댑터 교체. 세트·공통묶음·엣지·파생메뉴 포함. (`81d6fa3`)
+- **레시피 소스 단일화**: `menu_recipes` 단일 저장소 확정. 구형 `cost_recipes`/detail store schema 제거. detail 우선·legacy fallback 정책. (`0c72c95 4767b9e 9d68970 ad04fd7`)
+- **메뉴마스터-판매가 sync 정책**: 판매가 업로드가 기존 메뉴 운영 필드(status·note·hidden·displayOrder)를 덮지 않도록 제한. (`7742193`)
+- **엣지 관리 화면 중복**: `/cost/recipe?tab=edges` primary, `/cost/edge-dough` redirect. (`4a7152f`)
+- **판매량 redirect 카드 통합**: `/menu-sales` 허브를 `rank-compare` 단일 카드로 정리. rank/compare는 호환 redirect. (`6c87b23 7fda5b8`)
+- **카테고리 판정 함수 명확화**: `category-policy.js` 중심 통합. deprecated alias 유지. (`3381fef`)
+- **localStorage 백업 키 이동**: `lib/backup/local-storage-keys.js`로 이동. nutrition re-export 호환. (`f284f1b`)
+- **cascade 원자성 강화**: 노트 descendant 체인 삭제·UI state 동기, 백업 전체 사전 검증 후 실행, 메뉴 삭제 transaction 묶기, 복원 실패 강조 표시. (`3bcd997 9a565dd cb9ddcb f5bd8d9 3518a8b 752c2aa 4fa91db`)
+- **route 분류 중앙화**: `route-classification.js` sidebar/hub/redirect/internal-flow/dynamic-detail 분류. QA 스크립트 파생. (`823f539`)
+- **localStorage 복원 scope 분리**: 선택 모듈별 key subset만 복원. nutrition 선택 의존성 제거. (`a9e1112`)
+- **시스템 설정 저장소 정리**: `SETTING_LS_KEYS` 기준 백업 포함. `settings` IndexedDB legacy 예약. `strictPosting` 원가 보고서 가드 연결. (`315fc65 179c2cd 384f152 996c221`)
+- **멀티브랜드 백업 source metadata**: `sourceBrandId/Name/sourceDbName/sharedDbName` 백업 JSON 포함. 복원 미리보기 mismatch 경고. (`44ce445`)
+- **계정 store 브랜드별 분리**: `rnd_active_account_id:<brandId>` key 분리. main은 legacy key mirror. (`211c7b7 2845f5f`)
+- **영양 메뉴 메뉴마스터 강제**: 신규 영양 메뉴 menuCode 필수. orphan 진단 배너·정리 액션. (`68aa43e 5a8bbcd 54834de`)
+- **모바일 원가 탭 route**: `COST_MARGIN_ROUTE` 고정. `mobile-primary` marker 추적. (`5591241 27c46fb`)
+- **보고서 비교 route 사이드바 노출**: `REPORT_NAV_ITEMS`를 `KIND_META`에서 파생. 사이드바에 비교 보고서 포함. (`a43b683`)
+- **식자재 삭제 진입점 통합**: `/cost/ingredient-price` → `/ingredient/manage?view=price` redirect. 삭제 흐름 단일화. (`8c39bed`)
+- **제때·시스템 설정 토글 연결**: `unmatchedAlert`/`costRateAlert` 알림 로직 연결. `autoRecalc`/`roundMode` 고정 상태 표시. (`045ce2d 179c2cd 384f152`)
+- **CSS primitive 중앙화**: `.btn/.card/.input/.chip/.filter-chip` 본체를 `base.css`로 이동. motion 파일 additive-only. (`4d378dd`)
+- **무음 실패 처리 정책**: `silent-catch-policy.test.mjs` allowlist 고정. 사용자 액션 실패 toast/결과 노출 가드. (`9a565dd 866c6fd 44b2e55`)
 
 ---
 
