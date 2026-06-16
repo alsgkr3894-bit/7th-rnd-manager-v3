@@ -4,24 +4,16 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Icon } from '@/components/icons';
-import { initDB } from '@/lib/db';
 import { formatNumber } from '@/lib/format';
-import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
-import { getAllIngredients } from '@/lib/ingredient';
-import { buildUnitPriceMap } from '@/lib/recipe';
-import { getMenuPriceCategories, getAllMenuPrices } from '@/lib/cost/menu-price';
-import { PIZZA_CATEGORY_VARIANTS, getMenuCodeRank } from '@/lib/menu-categories';
+import { getMenuPriceCategories } from '@/lib/cost/menu-price';
+import { getMenuCodeRank } from '@/lib/menu-categories';
 import { getMenuMasterMap, upsertMenuMaster } from '@/lib/menu-master';
 import {
-  loadPlatforms,
   savePlatforms,
   applyDiscount,
   calcNetRevenue,
   calcPlatformMargin,
 } from '@/lib/cost/margin/platforms';
-import { getAllEdges } from '@/lib/cost/edge-dough/store';
-import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
-import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
 import { MarginFilterBar } from '@/components/cost/margin/MarginFilterBar';
 import { MarginSummaryCards } from '@/components/cost/margin/MarginSummaryCards';
 import { MarginCostThresholdBar } from '@/components/cost/margin/MarginCostThresholdBar';
@@ -30,10 +22,12 @@ import { saveSnapshot } from '@/lib/cost/margin/snapshots';
 import { showToast } from '@/components/Toast';
 import { MarginRow } from '@/components/cost/margin/MarginRow';
 import { exportMarginExcel } from '@/lib/cost/margin/export';
-import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
-import { onPriceUpload } from '@/lib/price/price-events';
 import { KEYS } from '@/lib/note/keys';
-import { buildDetailRows, buildEdgeMetadata, buildDerivedRows } from '@/lib/cost/margin/build-rows';
+import { useMarginData } from './useMarginData';
+import {
+  normalizeWarnPercentSetting,
+  normalizeCritPercentSetting,
+} from './marginPageUtils';
 
 const PlatformSettingsModal = dynamic(
   () => import('@/components/cost/margin/PlatformSettingsModal').then(m => m.PlatformSettingsModal),
@@ -44,113 +38,26 @@ const MarginTrendModal = dynamic(
   { ssr: false, loading: () => null }
 );
 
-function normalizePercentSetting(value, fallback) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.max(0, Math.min(100, n));
-}
-
-const normalizeWarnPercentSetting = value => normalizePercentSetting(value, 30);
-const normalizeCritPercentSetting = value => normalizePercentSetting(value, 40);
-
 export default function Page() {
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [dbError, setDbError] = useState(null);
+  const { rows, setRows, platforms, setPlatforms, loading, dbError, load } = useMarginData();
+
   const [catFilter, setCatFilter] = useLocalStorage(KEYS.MARGIN_CAT_FILTER, '전체');
-  const [platforms, setPlatforms] = useState([]);
   const [activePlatId, setActivePlatId] = useState('default');
   const [showSettings, setShowSettings] = useState(false);
   const [showTrend, setShowTrend] = useState(false);
   const [discOpen, setDiscOpen] = useState(false);
-  const [discType, setDiscType] = useState('pct'); // 'pct' | 'fixed'
+  const [discType, setDiscType] = useState('pct');
   const [discVal, setDiscVal] = useState('');
-  const [viewMode, setViewMode] = useState('cost'); // 'cost' | 'margin'
-  const [sortKey, setSortKey] = useState('code'); // 기본: 메뉴코드 정렬
+  const [viewMode, setViewMode] = useState('cost');
+  const [sortKey, setSortKey] = useState('code');
   const [sortDir, setSortDir] = useState('asc');
   const [search, setSearch] = useState('');
-  // 원가율 경고/비상 임계값 (사용자 조절, 마운트 후 localStorage 복원)
-  const [warnPct, setWarnPct] = useLocalStorage(
-    KEYS.MARGIN_COST_WARN,
-    30,
-    normalizeWarnPercentSetting
-  );
-  const [critPct, setCritPct] = useLocalStorage(
-    KEYS.MARGIN_COST_CRIT,
-    40,
-    normalizeCritPercentSetting
-  );
-  const [showHidden, setShowHidden] = useState(false); // 숨김 행 임시 표시
-  const [edgeFilter, setEdgeFilter] = useState(null); // null=전체, 'base'=석쇠기본, 또는 edgeType 문자열
+  const [warnPct, setWarnPct] = useLocalStorage(KEYS.MARGIN_COST_WARN, 30, normalizeWarnPercentSetting);
+  const [critPct, setCritPct] = useLocalStorage(KEYS.MARGIN_COST_CRIT, 40, normalizeCritPercentSetting);
+  const [showHidden, setShowHidden] = useState(false);
+  const [edgeFilter, setEdgeFilter] = useState(null);
 
-  const load = useCallback(async () => {
-    await initDB();
-    const [files, meta, allMenuPrices, recipeMaps, edges, masterByCode, recipeGroups] =
-      await Promise.all([
-        getPriceFiles(),
-        getAllIngredients(),
-        getAllMenuPrices(),
-        loadMenuRecipeMaps(),
-        getAllEdges(),
-        getMenuMasterMap(),
-        getAllRecipeGroups(),
-      ]);
-
-    const latest = files[0] || null;
-    let priceRowMap = new Map();
-    if (latest) {
-      const priceRows = await getPriceRowsByFileId(latest.id);
-      priceRowMap = buildPriceRowMap(priceRows).map;
-    }
-    const upm = buildUnitPriceMap(meta, priceRowMap);
-
-    const detailRows = buildDetailRows(
-      allMenuPrices,
-      {
-        pizzaMap: recipeMaps.pizza,
-        personalMap: recipeMaps.personal,
-        sideMap: recipeMaps.side,
-        setMap: recipeMaps.set,
-      },
-      upm,
-      recipeGroups
-    );
-
-    const detailKeySet = new Set(detailRows.map(r => `${r.menuName}||${r.menuCategory}`));
-    const PIZZA_EDGE_CATS = new Set(PIZZA_CATEGORY_VARIANTS);
-    const pizzaSources = detailRows.filter(r => PIZZA_EDGE_CATS.has(r.menuCategory || ''));
-
-    const edgeMeta = buildEdgeMetadata(edges, allMenuPrices);
-    const derivedRows = buildDerivedRows(pizzaSources, edgeMeta, detailKeySet);
-
-    const allRows = [...detailRows, ...derivedRows];
-    for (const r of allRows) {
-      const m = r.menuCode ? masterByCode.get(r.menuCode) : null;
-      r.hidden = m?.hidden === true;
-    }
-    allRows.sort((a, b) => {
-      const ra = getMenuCodeRank(a.menuCode);
-      const rb = getMenuCodeRank(b.menuCode);
-      if (ra !== rb) return ra - rb;
-      return (a.menuName || '').localeCompare(b.menuName || '', 'ko');
-    });
-    setRows(allRows);
-    setPlatforms(loadPlatforms());
-  }, []);
-
-  useEffect(() => {
-    load()
-      .catch(err => {
-        console.error('[CostMargin] load failed', err);
-        setDbError(err.message || '데이터 로드 실패');
-      })
-      .finally(() => setLoading(false));
-  }, [load]);
-
-  useVisibilityRefresh(load);
-  useEffect(() => onPriceUpload(load), [load]);
-
-  // 저장된 필터가 현재 행에 없는 카테고리면 '전체'로 되돌림 — 빈 표로 보이는 것 방지
+  // 저장된 필터가 현재 행에 없는 카테고리면 '전체'로 되돌림
   useEffect(() => {
     if (catFilter === '전체' || !rows.length) return;
     const has = rows.some(r => {
@@ -212,7 +119,6 @@ export default function Page() {
 
   const edgeFiltered = useMemo(() => {
     if (!edgeFilter) return filtered;
-    // 일반 행은 숫자 id, 파생 행만 'derived||...' 문자열 id → String 강제 후 판별
     const isDerived = r => String(r.id ?? '').startsWith('derived||');
     if (edgeFilter === 'base') return filtered.filter(r => !isDerived(r));
     return filtered.filter(r => isDerived(r) && String(r.id).split('||').pop() === edgeFilter);
@@ -235,9 +141,7 @@ export default function Page() {
   }, [edgeFiltered]);
 
   const stats = useMemo(() => {
-    // edgeFiltered 기준으로 계산 (엣지 필터 포함, 테이블과 일치)
     if (!edgeFiltered.length) return null;
-    // Single reduce pass — avoids flatMap+map+filter allocations
     let sum = 0,
       count = 0;
     let lowCostCount = 0,
@@ -253,23 +157,15 @@ export default function Page() {
         if (m == null) continue;
         sum += m;
         count++;
-        // cost view: 좋음 = 원가율 < 경고%, 비상 = 원가율 ≥ 비상%
         if (m < warnPct) lowCostCount++;
         if (m >= critPct) highCostCount++;
-        // margin view: 좋음 = 마진율 ≥ (100-경고), 위험 = 마진율 < (100-비상)
         const margin = 100 - m;
         if (margin >= 100 - warnPct) goodMarginCount++;
         if (margin < 100 - critPct) badMarginCount++;
       }
     }
     if (!count) return null;
-    return {
-      avg: sum / count,
-      lowCostCount,
-      highCostCount,
-      goodMarginCount,
-      badMarginCount,
-    };
+    return { avg: sum / count, lowCostCount, highCostCount, goodMarginCount, badMarginCount };
   }, [edgeFiltered, activePlatform, discount, warnPct, critPct]);
 
   function handleSort(key) {
@@ -284,7 +180,6 @@ export default function Page() {
   const sortedFiltered = useMemo(() => {
     if (!sortKey) return edgeFiltered;
 
-    // 코드 정렬: getMenuCodeRank 기반 (같은 rank 내에서는 코드 문자열 오름차순)
     if (sortKey === 'code') {
       return [...edgeFiltered].sort((a, b) => {
         const ra = getMenuCodeRank(a.menuCode);
@@ -358,7 +253,6 @@ export default function Page() {
     showToast('플랫폼 설정 저장됨', 'ok');
   }
 
-  // 행 숨김 토글 — 메뉴 마스터의 hidden 플래그로 저장(표·통계에서 제외)
   const handleToggleHide = useCallback(
     async r => {
       if (!r.menuCode) return;
@@ -485,7 +379,6 @@ export default function Page() {
         setShowHidden={setShowHidden}
       />
 
-      {/* Table */}
       {loading ? (
         <div className="card" style={{ padding: 16 }}>
           {[1, 2, 3, 4, 5].map(i => (
