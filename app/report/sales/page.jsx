@@ -1,12 +1,8 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { loadXlsx } from '@/lib/excel';
 import ReportBuilderShell from '@/components/report/ReportBuilderShell';
 import SalesReportControls from '@/components/report/SalesReportControls';
-import { initDB } from '@/lib/db/init';
-import { getAll } from '@/lib/db';
-import { buildPeriodCompare } from '@/lib/sales/compare';
-import { getUserExcluded, getUserRules } from '@/lib/sales';
 import { useReportPageState } from '@/hooks/useReportPageState';
 import { getProfile } from '@/lib/profile';
 import { getActiveBrand } from '@/lib/active-brand';
@@ -18,15 +14,13 @@ import {
   safeQuantity,
   safeYear,
 } from '@/lib/report/period';
-import { buildSalesStats } from '@/lib/report/build-sales-report';
 import SalesReportPreview from '@/components/report/sales/SalesReportPreview';
 import { exportSalesReportWorkbook } from '@/lib/report/sales-export';
+import { useSalesReportData } from './useSalesReportData';
+import { useSalesReportComputed } from './useSalesReportComputed';
+import { normalizeViewMode } from './salesReportPageUtils';
 
 const DRAFT_KEY = 'report_draft_sales';
-
-function normalizeViewMode(value) {
-  return ['rank', 'compare'].includes(value) ? value : 'rank';
-}
 
 export default function Page() {
   const [periodMode, setPeriodMode] = useState('month');
@@ -61,95 +55,26 @@ export default function Page() {
     }
   );
 
-  // raw data
-  const [salesRows, setSalesRows] = useState([]);
-  const [excludedList, setExcludedList] = useState([]);
-  const [availYears, setAvailYears] = useState([]);
-  const [availMonthsByYear, setAvailMonthsByYear] = useState({});
+  const {
+    salesRows,
+    excludedList,
+    availYears,
+    availMonthsByYear,
+    defaultPeriod,
+    dataError,
+    isLoading,
+  } = useSalesReportData();
 
-  // computed (compare mode still uses state since it's async)
-  const [compareData, setCompareData] = useState(null);
-  const [dataError, setDataError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Effect 1: mount — load raw rows, detect available periods
+  // Apply defaultPeriod once when data first arrives
+  const defaultApplied = useRef(false);
   useEffect(() => {
-    let ignore = false;
-
-    initDB()
-      .then(async () => {
-        try {
-          const [rows, excluded, rules] = await Promise.all([
-            getAll('sales_rows'),
-            getUserExcluded(),
-            getUserRules(),
-          ]);
-          if (ignore) return;
-
-          const safeRows = asObjectArray(rows);
-          const safeExcluded = asObjectArray(excluded);
-          const safeRules = asObjectArray(rules);
-
-          // ref_excluded + sales_rules 중 category='품목제외' 합산 후 중복 제거
-          const excludedNames = new Set();
-          safeExcluded.forEach(e => {
-            const name = asDisplayText(e.menuName);
-            if (name) excludedNames.add(name);
-          });
-          safeRules
-            .filter(r => asDisplayText(r.category) === '품목제외' && r.enable !== false)
-            .forEach(r => {
-              const name = asDisplayText(r.rawMenuName);
-              if (name) excludedNames.add(name);
-            });
-          setExcludedList([...excludedNames].sort((a, b) => a.localeCompare(b, 'ko')));
-          const byYear = {};
-          for (const r of safeRows) {
-            const y = safeYear(r.year, 0);
-            const m = safeMonth(r.month, 0);
-            if (!y || !m) continue;
-            if (!byYear[y]) byYear[y] = new Set();
-            byYear[y].add(m);
-          }
-          const years = Object.keys(byYear)
-            .map(Number)
-            .sort((a, b) => b - a);
-          const byYearArr = {};
-          for (const y of years) byYearArr[y] = [...byYear[y]].sort((a, b) => a - b);
-          setAvailYears(years);
-          setAvailMonthsByYear(byYearArr);
-          setSalesRows(safeRows);
-
-          if (years.length > 0) {
-            const latestY = years[0];
-            const latestM = byYearArr[latestY].at(-1);
-            setYear(latestY);
-            setMonth(latestM);
-            setCmpYear(latestM === 1 ? latestY - 1 : latestY);
-            setCmpMonth(latestM === 1 ? 12 : latestM - 1);
-          } else {
-            // 데이터 없음 — Effect 2는 salesRows.length === 0 이면 early return 하므로 여기서 해제
-            setIsLoading(false);
-          }
-        } catch (err) {
-          if (ignore) return;
-
-          console.error('[sales report]', err);
-          setDataError('판매 데이터를 불러오는 중 오류가 발생했어요.');
-          setIsLoading(false);
-        }
-      })
-      .catch(() => {
-        if (ignore) return;
-
-        setDataError('데이터베이스에 연결할 수 없어요. 데이터를 먼저 업로드해 주세요.');
-        setIsLoading(false);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
+    if (!defaultPeriod || defaultApplied.current) return;
+    defaultApplied.current = true;
+    setYear(defaultPeriod.year);
+    setMonth(defaultPeriod.month);
+    setCmpYear(defaultPeriod.cmpYear);
+    setCmpMonth(defaultPeriod.cmpMonth);
+  }, [defaultPeriod]);
 
   const safePeriodMode = normalizePeriodMode(periodMode);
   const safeYearValue = safeYear(year);
@@ -162,7 +87,7 @@ export default function Page() {
     ? excludedList.map(item => asDisplayText(item)).filter(Boolean)
     : [];
 
-  // Normalise raw rows once — shared by stats memo and compare effect
+  // Normalise raw rows once — shared by stats and compare
   const normRows = useMemo(
     () =>
       asObjectArray(salesRows).map(r => ({
@@ -174,38 +99,15 @@ export default function Page() {
     [salesRows]
   );
 
-  // Computed: stats derived from salesRows + filters
-  const { catShares, groupRanking, kpi } = useMemo(
-    () =>
-      buildSalesStats(normRows, { year: safeYearValue, month: safeMonthValue, scope: safeScope }),
-    [normRows, safeYearValue, safeMonthValue, safeScope]
-  );
-
-  // Clear loading once salesRows arrives (success path)
-  useEffect(() => {
-    if (normRows.length > 0) {
-      setDataError(null);
-      setIsLoading(false);
-    }
-  }, [normRows]);
-
-  // Effect 3: compare mode — deferred via setTimeout(0) to avoid blocking the event loop
-  useEffect(() => {
-    if (safeViewMode !== 'compare' || normRows.length === 0 || !safeCmpYear || !safeCmpMonth) {
-      setCompareData(null);
-      return;
-    }
-    const id = setTimeout(() => {
-      const result = buildPeriodCompare(
-        normRows,
-        { year: safeYearValue, month: safeMonthValue },
-        { year: safeCmpYear, month: safeCmpMonth },
-        { groupBy: 'group', category: safeScope === 'all' ? null : safeScope, topN: 5 }
-      );
-      setCompareData(result);
-    }, 0);
-    return () => clearTimeout(id);
-  }, [normRows, safeViewMode, safeYearValue, safeMonthValue, safeCmpYear, safeCmpMonth, safeScope]);
+  const { catShares, groupRanking, kpi, compareData } = useSalesReportComputed({
+    normRows,
+    safeViewMode,
+    safeYearValue,
+    safeMonthValue,
+    safeCmpYear,
+    safeCmpMonth,
+    safeScope,
+  });
 
   const safeOpts = opts && typeof opts === 'object' && !Array.isArray(opts) ? opts : {};
   const safeCatShares = asObjectArray(catShares);
