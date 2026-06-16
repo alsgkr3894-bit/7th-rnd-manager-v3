@@ -17,6 +17,7 @@ const restoreSrc = readFileSync(resolve('app/settings/restore/page.jsx'), 'utf8'
 const accountSrc = readFileSync(resolve('app/settings/account/page.jsx'), 'utf8');
 const menuMasterSrc = readFileSync(resolve('app/menu-master/page.jsx'), 'utf8');
 const nutritionMenuSrc = readFileSync(resolve('app/nutrition/menu/page.jsx'), 'utf8');
+const reportCostSrc = readFileSync(resolve('app/report/cost/page.jsx'), 'utf8');
 const menuMasterActionsSrc = readFileSync(resolve('app/menu-master/useMenuMasterActions.js'), 'utf8');
 const ingredientManageDataSrc = readFileSync(resolve('app/ingredient/manage/useIngredientManageData.js'), 'utf8');
 
@@ -171,6 +172,19 @@ describe('고위험 단계 4: nutrition/menu', () => {
     expect(nutritionMenuSrc).toContain('reload');
     expect(nutritionMenuSrc).toContain('duplicateDiagnostics');
     expect(nutritionMenuSrc).toContain('menuMasterDiagnostics');
+  });
+});
+
+describe('고위험 단계 5: report/cost', () => {
+  test('report/cost page가 useDBLoad를 사용하고 ignore·loadedCtxRef·initDB를 제거했다', () => {
+    expect(reportCostSrc).toContain('useDBLoad');
+    expect(reportCostSrc).not.toContain('import { initDB }');
+    expect(reportCostSrc).not.toContain('ignore');
+    expect(reportCostSrc).not.toContain('loadedCtxRef');
+    expect(reportCostSrc).toContain('keepDataOnReload');
+    expect(reportCostSrc).toContain('mapErrorMessage');
+    // includeEdge 재계산은 useMemo로
+    expect(reportCostSrc).toContain('opts.includeEdge');
   });
 });
 

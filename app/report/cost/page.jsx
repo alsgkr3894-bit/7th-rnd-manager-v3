@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import ReportBuilderShell from '@/components/report/ReportBuilderShell';
 import { CostReportOptions } from '@/components/report/cost/CostReportOptions';
 import { CostReportPreview } from '@/components/report/cost/CostReportPreview';
@@ -7,7 +7,7 @@ import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { withDownloadDateSuffix } from '@/lib/download';
 import { loadXlsx } from '@/lib/excel';
 import { showToast } from '@/components/Toast';
-import { initDB } from '@/lib/db/init';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import { getAllMenuPrices } from '@/lib/cost/menu-price/store';
 import { buildUnitPriceMap } from '@/lib/recipe';
 import { getAllIngredients } from '@/lib/ingredient';
@@ -196,99 +196,69 @@ export default function Page() {
     }
   );
   const [viewTab, setViewTab] = useState('report');
-  const [dataError, setDataError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [recipeRows, setRecipeRows] = useState([]);
   const strictPostingEnabled = useSettingValue('strictPosting') === 'on';
 
-  const [costByCategory, setCostByCategory] = useState(() =>
-    Object.fromEntries(
-      Object.entries(CAT_META).map(([, m]) => [m.id, { label: m.label, color: m.color, menus: [] }])
-    )
-  );
-  const loadedCtxRef = useRef(null); // { prices, ctx } — loaded once, reused for includeEdge toggle
+  const { data, loading: isLoading, errorMessage: dataError } = useDBLoad(
+    async () => {
+      const [prices, ingredients, recipeMaps, edges, latestPriceLookup, recipeGroups] =
+        await Promise.all([
+          getAllMenuPrices(),
+          getAllIngredients(),
+          loadMenuRecipeMaps(),
+          getAllEdges(),
+          buildLatestPriceLookup(),
+          getAllRecipeGroups(),
+        ]);
 
-  useEffect(() => {
-    let ignore = false;
+      if (prices.length === 0) {
+        throw new Error('메뉴 가격 데이터가 없어요. 원가계산 → 판매가를 먼저 등록해 주세요.');
+      }
 
-    setIsLoading(true);
-    initDB()
-      .then(async () => {
-        try {
-          const [prices, ingredients, recipeMaps, edges, latestPriceLookup, recipeGroups] =
-            await Promise.all([
-              getAllMenuPrices(),
-              getAllIngredients(),
-              loadMenuRecipeMaps(),
-              getAllEdges(),
-              buildLatestPriceLookup(),
-              getAllRecipeGroups(),
-            ]);
-          if (ignore) return;
-
-          if (prices.length === 0) {
-            setDataError('메뉴 가격 데이터가 없어요. 원가계산 → 판매가를 먼저 등록해 주세요.');
-            setIsLoading(false);
-            return;
-          }
-
-          const latestPriceRows = new Map(
-            [...latestPriceLookup.entries()].map(([productCode, priceWithTax]) => [
-              productCode,
-              { productCode, priceWithTax },
-            ])
-          );
-          const ctx = {
-            detailMaps: recipeMaps,
-            edges,
-            recipeGroups,
-            upm: buildUnitPriceMap(ingredients, latestPriceRows),
-          };
-          const nextRecipeRows = buildRecipePrintRows({
-            detailMaps: ctx.detailMaps,
-            unitPriceMap: ctx.upm,
-            recipeGroups: ctx.recipeGroups,
-          });
-          loadedCtxRef.current = { prices, ctx };
-          setRecipeRows(nextRecipeRows);
-          setCostByCategory(
-            buildCostReportData(
-              prices,
-              { ...ctx, includeEdge: opts.includeEdge },
-              CAT_KEYS,
-              CAT_META
-            )
-          );
-          setDataError(null);
-        } catch (err) {
-          if (ignore) return;
-
-          console.error('[cost report]', err);
-          setDataError('메뉴 가격 데이터를 불러오는 중 오류가 발생했어요.');
-        } finally {
-          if (!ignore) setIsLoading(false);
-        }
-      })
-      .catch(() => {
-        if (ignore) return;
-
-        setIsLoading(false);
-        setDataError('데이터베이스에 연결할 수 없어요. 데이터를 먼저 업로드해 주세요.');
+      const latestPriceRows = new Map(
+        [...latestPriceLookup.entries()].map(([productCode, priceWithTax]) => [
+          productCode,
+          { productCode, priceWithTax },
+        ])
+      );
+      const ctx = {
+        detailMaps: recipeMaps,
+        edges,
+        recipeGroups,
+        upm: buildUnitPriceMap(ingredients, latestPriceRows),
+      };
+      const recipeRows = buildRecipePrintRows({
+        detailMaps: ctx.detailMaps,
+        unitPriceMap: ctx.upm,
+        recipeGroups: ctx.recipeGroups,
       });
-    return () => {
-      ignore = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      return { prices, ctx, recipeRows };
+    },
+    {
+      initialData: null,
+      keepDataOnReload: false,
+      mapErrorMessage: err => {
+        console.error('[cost report]', err);
+        return err.message || '메뉴 가격 데이터를 불러오는 중 오류가 발생했어요.';
+      },
+    }
+  );
 
-  // 엣지 포함 옵션 변경 시 비용 재계산
-  useEffect(() => {
-    if (!loadedCtxRef.current) return;
-    const { prices, ctx } = loadedCtxRef.current;
-    setCostByCategory(
-      buildCostReportData(prices, { ...ctx, includeEdge: opts.includeEdge }, CAT_KEYS, CAT_META)
+  const recipeRows = useMemo(() => data?.recipeRows ?? [], [data?.recipeRows]);
+
+  // includeEdge 토글 시 재fetch 없이 재계산
+  const costByCategory = useMemo(() => {
+    if (!data?.prices || !data?.ctx) {
+      return Object.fromEntries(
+        Object.entries(CAT_META).map(([, m]) => [m.id, { label: m.label, color: m.color, menus: [] }])
+      );
+    }
+    return buildCostReportData(
+      data.prices,
+      { ...data.ctx, includeEdge: opts.includeEdge },
+      CAT_KEYS,
+      CAT_META
     );
-  }, [opts.includeEdge]);
+  }, [data?.prices, data?.ctx, opts.includeEdge]);
 
   const periodLabel = PERIOD_LABEL;
 
