@@ -16,6 +16,7 @@ const backupSrc = readFileSync(resolve('app/settings/backup/page.jsx'), 'utf8');
 const restoreSrc = readFileSync(resolve('app/settings/restore/page.jsx'), 'utf8');
 const accountSrc = readFileSync(resolve('app/settings/account/page.jsx'), 'utf8');
 const menuMasterSrc = readFileSync(resolve('app/menu-master/page.jsx'), 'utf8');
+const nutritionMenuSrc = readFileSync(resolve('app/nutrition/menu/page.jsx'), 'utf8');
 const menuMasterActionsSrc = readFileSync(resolve('app/menu-master/useMenuMasterActions.js'), 'utf8');
 const ingredientManageDataSrc = readFileSync(resolve('app/ingredient/manage/useIngredientManageData.js'), 'utf8');
 
@@ -158,6 +159,18 @@ describe('고위험 단계 3: menu-master + useIngredientManageData', () => {
     expect(ingredientManageDataSrc).not.toContain('useCallback');
     expect(ingredientManageDataSrc).toContain('setRows');
     expect(ingredientManageDataSrc).toContain('initialData: null');
+  });
+});
+
+describe('고위험 단계 4: nutrition/menu', () => {
+  test('nutrition/menu page가 useDBLoad 9개 쿼리 번들을 사용하고 mountedRef·initDB를 제거했다', () => {
+    expect(nutritionMenuSrc).toContain('useDBLoad');
+    expect(nutritionMenuSrc).not.toContain('useMounted');
+    expect(nutritionMenuSrc).not.toContain('import { initDB }');
+    expect(nutritionMenuSrc).not.toContain('useCallback');
+    expect(nutritionMenuSrc).toContain('reload');
+    expect(nutritionMenuSrc).toContain('duplicateDiagnostics');
+    expect(nutritionMenuSrc).toContain('menuMasterDiagnostics');
   });
 });
 
