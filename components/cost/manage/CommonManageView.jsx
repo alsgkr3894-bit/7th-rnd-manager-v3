@@ -112,6 +112,10 @@ export function CommonManageView({ tab = 'groups' }) {
       showToast('묶음 이름을 입력해주세요', 'error');
       return;
     }
+    if (!draft?.defaultCategories?.length) {
+      showToast('선택 가능 카테고리를 1개 이상 지정해주세요', 'error');
+      return;
+    }
     setSaving(true);
     try {
       const savedId = await saveRecipeGroup({ ...draft, id: isNew ? undefined : selectedId });

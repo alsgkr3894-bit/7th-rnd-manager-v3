@@ -36,7 +36,7 @@ export function MenuRecipeGroupSelector({ groups, selectedGroupIds, onToggle }) 
             padding: '8px 10px',
           }}
         >
-          선택 가능한 공통원가가 없습니다
+          이 메뉴 카테고리에 지정된 공통원가가 없습니다 (공통원가 관리에서 카테고리를 지정해주세요)
         </div>
       ) : (
         <div style={{ display: 'grid', gap: 6 }}>

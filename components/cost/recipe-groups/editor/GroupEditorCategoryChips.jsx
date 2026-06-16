@@ -8,8 +8,18 @@ export function GroupEditorCategoryChips({ selectedCategories, onToggle }) {
     <>
       <SectionLabel>
         선택 가능 카테고리
-        <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 400, color: 'var(--text-4)' }}>
-          {selectedCategories.length === 0 ? '(미선택 = 전체 메뉴에 적용)' : `${selectedCategories.length}개 선택`}
+        <span
+          style={{
+            marginLeft: 6,
+            fontSize: 11,
+            fontWeight: 400,
+            color:
+              selectedCategories.length === 0 ? 'var(--negative, #e03131)' : 'var(--text-4)',
+          }}
+        >
+          {selectedCategories.length === 0
+            ? '(최소 1개 선택 필요 · 미선택 시 메뉴에 표시 안 됨)'
+            : `${selectedCategories.length}개 선택`}
         </span>
       </SectionLabel>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
