@@ -4,13 +4,13 @@ import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import {
-  initDB,
   importAll,
   MODULE_KEYS,
   storesForScopes,
   collectStoreStats,
   exportAll,
 } from '@/lib/db';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import { downloadJson, makeFileName, readFileAsText } from '@/lib/download';
 import { addEntry } from '@/lib/backup-history';
 import { validateBackupPayload } from '@/lib/backup/validation';
@@ -38,12 +38,10 @@ import { RestoreExecutePanel } from '@/components/settings/restore/RestoreExecut
 export default function Page() {
   // SSR/클라이언트 불일치 방지 — 마운트 후 활성 브랜드 읽기
   const [activeBrand, setActiveBrand] = useState(null);
-  const [ready, setReady] = useState(false);
   const [parsed, setParsed] = useState(null); // 백업 파일 파싱 결과
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [autoBackup, setAutoBackup] = useState(true);
-  const [currentStats, setCurrentStats] = useState(null); // 현재 DB store 행수
   const [restoreProgress, setRestoreProgress] = useState(null); // { label, current, total }
   const [restoreDone, setRestoreDone] = useState(null); // 완료 결과: { imported, skipped, modules }
   const [backupFailed, setBackupFailed] = useState(false); // 자동백업 실패 후 재확인 대기
@@ -51,21 +49,18 @@ export default function Page() {
   const { scopes, toggleScope, setAllScopes } = useModuleScopes();
   const fileRef = useRef(null);
 
-  useEffect(() => {
-    setActiveBrand(getActiveBrand());
-  }, []);
+  // DB store 통계 로드 — ready와 currentStats 공동 원천
+  const { data: currentStats, reload: reloadStats } = useDBLoad(() => collectStoreStats(), {
+    initialData: null,
+    onError: err => {
+      console.error('[Restore] DB 초기화 실패:', err);
+      showToast('DB 초기화에 실패했습니다.', 'error');
+    },
+  });
+  const ready = currentStats !== null;
 
   useEffect(() => {
-    (async () => {
-      try {
-        await initDB();
-        setReady(true);
-        setCurrentStats(await collectStoreStats());
-      } catch (err) {
-        console.error('[Restore] DB 초기화 실패:', err);
-        showToast('DB 초기화에 실패했습니다.', 'error');
-      }
-    })();
+    setActiveBrand(getActiveBrand());
   }, []);
 
   async function handleFile(e) {
@@ -225,7 +220,7 @@ export default function Page() {
       setParsed(null);
       setConfirming(false);
       if (fileRef.current) fileRef.current.value = '';
-      setCurrentStats(await collectStoreStats());
+      reloadStats();
     } catch (err) {
       console.error('[Restore] 복원 실패:', err);
       const isSchemaIssue = String(err.message || '').includes('object stores was not found');

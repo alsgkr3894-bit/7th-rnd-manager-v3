@@ -13,6 +13,7 @@ const ingredientUsageSrc = readFileSync(resolve('app/ingredient/usage/page.jsx')
 const marginDataSrc = readFileSync(resolve('app/cost/margin/useMarginData.js'), 'utf8');
 const ingredientPriceSrc = readFileSync(resolve('hooks/useIngredientPriceData.js'), 'utf8');
 const backupSrc = readFileSync(resolve('app/settings/backup/page.jsx'), 'utf8');
+const restoreSrc = readFileSync(resolve('app/settings/restore/page.jsx'), 'utf8');
 
 describe('useDBLoad 옵션 API', () => {
   test('6가지 옵션이 모두 구현됐다', () => {
@@ -107,6 +108,17 @@ describe('저위험 기타 페이지 useDBLoad 적용', () => {
     expect(ingredientUsageSrc).toContain('typeMap');
     expect(ingredientUsageSrc).toContain('usageMap');
     expect(ingredientUsageSrc).toContain('initialData: null');
+  });
+});
+
+describe('고위험 단계 1: settings/restore', () => {
+  test('settings/restore가 useDBLoad로 store 통계를 로드하고 ready를 파생한다', () => {
+    expect(restoreSrc).toContain('useDBLoad');
+    expect(restoreSrc).not.toContain('initDB,');
+    expect(restoreSrc).not.toContain('setReady(');
+    expect(restoreSrc).not.toContain('setCurrentStats(');
+    expect(restoreSrc).toContain('ready = currentStats !== null');
+    expect(restoreSrc).toContain('reloadStats');
   });
 });
 
