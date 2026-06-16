@@ -118,6 +118,7 @@
   - `app/report/page.jsx` ✅ 2026-06-16 추가 보강 — 보고서 통계 카드 row와 count-up 표시를 `components/report/ReportStatsRow.jsx`로 분리. 676→637줄.
   - `app/report/page.jsx` ✅ 2026-06-16 추가 보강 — 보고서 종류 카드 grid와 최근 건수 표시를 `components/report/ReportKindGrid.jsx`로 분리. 637→610줄.
   - `app/report/page.jsx` ✅ 2026-06-16 추가 보강 — 검색/종류 필터와 즐겨찾기/표시 건수 툴바를 `components/report/ReportFilterToolbar.jsx`로 분리. 610→587줄.
+  - `app/report/page.jsx` ✅ 2026-06-16 추가 보강 — 보고서 목록 로딩 skeleton 렌더링을 `components/report/ReportListSkeleton.jsx`로 분리. 587→543줄.
   - `components/report/sales/SalesReportPreview.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 비중·피자 변동·순위표·비교표·제외 리스트 섹션 컴포넌트 분리. 587→94줄.
   - `components/report/sales/SalesRankTableSection.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 막대·순위표·사이즈 variant row 렌더링을 `SalesRankTableRows`로 분리. 197→52줄.
   - `components/report/sales/SalesRankTableRows.jsx` ✅ 2026-06-15 추가 보강 — 카테고리 막대와 순위표 테이블을 `SalesCategoryBarRows`·`SalesRankTable`로 분리하고 기존 묶음 파일 제거. 163→0줄.
@@ -176,6 +177,7 @@
   - `app/nutrition/allergen/useAllergenPageData.js` ✅ 2026-06-16 추가 보강 — 제외 메뉴 판정, 매트릭스, 상세/요약, 순서 편집 목록 파생 계산을 `useAllergenDerivedData`로 분리. 139→58줄.
   - `app/nutrition/allergen/useAllergenDerivedData.js` ✅ 2026-06-16 추가 보강 — 제외 메뉴 판정, 메뉴 매트릭스 생성, 매트릭스 검색, 알레르기 정렬을 `useAllergenMatrixData`로 분리. 118→81줄.
 - **잔여 대상** (우선순위 순):
+  - `app/report/page.jsx` (~543줄) — 보고서 table, 페이지네이션, 스냅샷 안내 card가 아직 inline. 다음 단계는 스냅샷 안내 card 또는 table panel 분리부터 재검토.
   1. `components/report/sales/SalesCategoryBarRow.jsx` (~83줄) — 현재 막대 row 렌더링 수준, 별도 분해 불필요
   2. `app/note/sample/useSamplePageFilterState.js` (~90줄) — 현재 검색 히스토리와 필터 상태 hook 수준, 별도 분해 불필요
   3. `app/note/sample/_SampleRecordsView.jsx` (~88줄) — 현재 조립 컴포넌트 수준, 별도 분해 불필요
