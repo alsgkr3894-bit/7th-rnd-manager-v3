@@ -5,12 +5,12 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { showToast } from '@/components/Toast';
 import {
-  initDB,
   storesForScopes,
   MODULE_GROUPS,
   MODULE_KEYS,
   collectStoreStats,
 } from '@/lib/db';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import { formatNumber, formatRelative } from '@/lib/format';
 import { getHistory, getLastBackupAt, togglePin, getBackupReminder } from '@/lib/backup-history';
 import { exportHistoryCsv } from './backupPageUtils';
@@ -40,15 +40,23 @@ const S_HISTORY_EMPTY = {
  */
 export default function Page() {
   const [activeBrand, setActiveBrand] = useState(null); // SSR 불일치 방지 — 마운트 후 교정
-  const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [stats, setStats] = useState(null);
   const { scopes, toggleScope, setAllScopes } = useModuleScopes();
   const [lastBackupAt, setLastBackupAt] = useState(null);
   const [history, setHistory] = useState([]);
   const [historyQuery, setHistoryQuery] = useState('');
   const [historyFilter, setHistoryFilter] = useState('all'); // all | pinned | week
   const [backupProgress, setBackupProgress] = useState(null);
+
+  // DB store 통계 로드 — ready와 stats 공동 원천
+  const { data: stats } = useDBLoad(() => collectStoreStats(), {
+    initialData: null,
+    onError: err => {
+      console.error('[Backup] DB 초기화 실패:', err);
+      showToast('DB 초기화에 실패했습니다.', 'error');
+    },
+  });
+  const ready = stats !== null;
   const { diagnostics, collectDiagnostics, collecting } = useDiagnostics();
   const [backupReminder, setBackupReminder] = useState(null);
   const backupProgressTimerRef = useRef(null);
@@ -58,16 +66,6 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    (async () => {
-      try {
-        await initDB();
-        setReady(true);
-        setStats(await collectStoreStats());
-      } catch (err) {
-        console.error('[Backup] DB 초기화 실패:', err);
-        showToast('DB 초기화에 실패했습니다.', 'error');
-      }
-    })();
     setHistory(getHistory());
     setLastBackupAt(getLastBackupAt());
     setBackupReminder(getBackupReminder());

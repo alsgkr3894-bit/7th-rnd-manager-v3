@@ -10,6 +10,9 @@ const jetteSrc = readFileSync(resolve('app/jette/page.jsx'), 'utf8');
 const journalSrc = readFileSync(resolve('app/note/journal/page.jsx'), 'utf8');
 const salesSettingsSrc = readFileSync(resolve('app/menu-sales/settings/page.jsx'), 'utf8');
 const ingredientUsageSrc = readFileSync(resolve('app/ingredient/usage/page.jsx'), 'utf8');
+const marginDataSrc = readFileSync(resolve('app/cost/margin/useMarginData.js'), 'utf8');
+const ingredientPriceSrc = readFileSync(resolve('hooks/useIngredientPriceData.js'), 'utf8');
+const backupSrc = readFileSync(resolve('app/settings/backup/page.jsx'), 'utf8');
 
 describe('useDBLoad 옵션 API', () => {
   test('6가지 옵션이 모두 구현됐다', () => {
@@ -104,5 +107,39 @@ describe('저위험 기타 페이지 useDBLoad 적용', () => {
     expect(ingredientUsageSrc).toContain('typeMap');
     expect(ingredientUsageSrc).toContain('usageMap');
     expect(ingredientUsageSrc).toContain('initialData: null');
+  });
+});
+
+describe('중위험 페이지·훅 useDBLoad 적용', () => {
+  test('useMarginData가 useDBLoad를 사용하고 platforms는 localStorage 직접 로드한다', () => {
+    expect(marginDataSrc).toContain('useDBLoad');
+    expect(marginDataSrc).not.toContain("import { initDB }");
+    expect(marginDataSrc).not.toContain("import { useMounted }");
+    expect(marginDataSrc).not.toContain('setLoading(');
+    expect(marginDataSrc).not.toContain('useCallback');
+    // platforms는 loadPlatforms()로 직접 초기화
+    expect(marginDataSrc).toContain('useState(loadPlatforms)');
+    expect(marginDataSrc).toContain('initialData: []');
+  });
+
+  test('useIngredientPriceData가 useDBLoad를 사용하고 mountedRef를 제거했다', () => {
+    expect(ingredientPriceSrc).toContain('useDBLoad');
+    expect(ingredientPriceSrc).not.toContain("import { initDB }");
+    expect(ingredientPriceSrc).not.toContain("import { useMounted }");
+    expect(ingredientPriceSrc).not.toContain('mountedRef');
+    expect(ingredientPriceSrc).not.toContain('setLoading(');
+    expect(ingredientPriceSrc).toContain('fileInfo');
+    expect(ingredientPriceSrc).toContain('initialData: null');
+  });
+
+  test('settings/backup가 useDBLoad로 store 통계를 로드하고 ready를 파생한다', () => {
+    expect(backupSrc).toContain('useDBLoad');
+    expect(backupSrc).not.toContain("import { initDB,");
+    expect(backupSrc).not.toContain("initDB,");
+    expect(backupSrc).not.toContain('setReady(');
+    expect(backupSrc).not.toContain('setStats(');
+    // ready는 stats !== null 파생
+    expect(backupSrc).toContain('ready = stats !== null');
+    expect(backupSrc).toContain('collectStoreStats');
   });
 });

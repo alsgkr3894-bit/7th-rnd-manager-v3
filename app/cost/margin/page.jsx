@@ -39,7 +39,7 @@ const MarginTrendModal = dynamic(
 );
 
 export default function Page() {
-  const { rows, setRows, platforms, setPlatforms, loading, dbError, load } = useMarginData();
+  const { rows, platforms, setPlatforms, loading, dbError, load } = useMarginData();
 
   const [catFilter, setCatFilter] = useLocalStorage(KEYS.MARGIN_CAT_FILTER, '전체');
   const [activePlatId, setActivePlatId] = useState('default');
