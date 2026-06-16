@@ -1,54 +1,19 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
-import { showToast } from '@/components/Toast';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SettingTile } from '@/components/ui/SettingTile';
-import {
-  getBrands,
-  normalizeBrandId,
-  setBrandHidden,
-  setDefaultBrandId,
-  upsertBrand,
-} from '@/lib/brand-master';
-import { getActiveBrandId, setActiveBrandId } from '@/lib/active-brand';
-import { exportAllForBrand, importAllToBrand, MODULE_KEYS } from '@/lib/db';
-import { validateBackupPayload } from '@/lib/backup/validation';
-import { backupSourceMetadataOf, isBackupSourceMismatch } from '@/lib/backup/brand-source';
-import { addEntry } from '@/lib/backup-history';
-import { downloadJson, makeFileName, readFileAsText } from '@/lib/download';
-import { formatNumber } from '@/lib/format';
+import { normalizeBrandId } from '@/lib/brand-master';
+import { getActiveBrandId } from '@/lib/active-brand';
+import { getBrands } from '@/lib/brand-master';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import { EMPTY_FORM, brandFormOf } from './brandUtils';
+import { useBrandActions } from './useBrandActions';
 
 const S_GUARD_CARD = { marginTop: 16, padding: 24 };
 const S_CARD_MT = { marginTop: 16 };
 const S_SECTION_TITLE = { fontSize: 15, fontWeight: 700, marginBottom: 12 };
-
-const EMPTY_FORM = {
-  id: '',
-  name: '',
-  sub: '',
-  logo: '',
-  color: '#E1101F',
-};
-
-function brandFormOf(brand = EMPTY_FORM) {
-  return {
-    id: brand.id || '',
-    name: brand.name || '',
-    sub: brand.sub || '',
-    logo: brand.logo || '',
-    color: brand.color || '#E1101F',
-  };
-}
-
-function countRows(stores) {
-  return Object.values(stores || {}).reduce(
-    (sum, rows) => sum + (Array.isArray(rows) ? rows.length : 0),
-    0
-  );
-}
 
 export default function BrandMasterPage() {
   const [brands, setBrands] = useState([]);
@@ -91,223 +56,20 @@ export default function BrandMasterPage() {
     }));
   }
 
-  function handleSave(e) {
-    e.preventDefault();
-    if (!isAdmin) return;
-    try {
-      const next = {
-        ...form,
-        id: normalizeBrandId(form.id),
-        name: form.name.trim(),
-        sub: form.sub.trim() || '브랜드',
-      };
-      if (!next.id || !next.name) {
-        showToast('브랜드 ID와 브랜드명을 입력하세요.', 'warn');
-        return;
-      }
-      upsertBrand(next);
-      reloadBrands();
-      resetForm();
-      showToast('브랜드 정보를 저장했습니다.', 'ok');
-    } catch (err) {
-      showToast(err.message || '브랜드 저장에 실패했습니다.', 'error');
-    }
-  }
-
-  function handleHide(brand, hidden) {
-    if (!isAdmin) return;
-    try {
-      setBrandHidden(brand.id, hidden);
-      if (hidden && brand.id === activeId) {
-        const next = getBrands().find(item => item.isDefault && !item.hidden);
-        if (next && setActiveBrandId(next.id)) {
-          showToast('활성 브랜드가 숨김 처리되어 기본 브랜드로 전환합니다.', 'warn');
-          window.location.reload();
-          return;
-        }
-      }
-      reloadBrands();
-      showToast(hidden ? '브랜드를 숨김 처리했습니다.' : '브랜드 숨김을 해제했습니다.', 'ok');
-    } catch (err) {
-      showToast(err.message || '브랜드 상태 변경에 실패했습니다.', 'error');
-    }
-  }
-
-  function handleDefault(brand) {
-    if (!isAdmin) return;
-    try {
-      setDefaultBrandId(brand.id);
-      reloadBrands();
-      showToast('기본 브랜드를 변경했습니다.', 'ok');
-    } catch (err) {
-      showToast(err.message || '기본 브랜드 변경에 실패했습니다.', 'error');
-    }
-  }
-
-  function handleSwitch(brand) {
-    if (brand.hidden) {
-      showToast('숨김 브랜드는 상단 전환 대상이 아닙니다.', 'warn');
-      return;
-    }
-    if (brand.id === activeId) return;
-    if (setActiveBrandId(brand.id)) window.location.reload();
-  }
-
-  async function handleBackup(brand) {
-    if (!isAdmin || busyBrandId) return;
-    setBusyBrandId(brand.id);
-    try {
-      const data = await exportAllForBrand(
-        brand.id,
-        {
-          brandId: brand.id,
-          brandName: brand.name,
-          backupScope: 'brand',
-        },
-        { includeLocalStorage: false }
-      );
-      const fileName = makeFileName(`${brand.name}_브랜드백업`, 'json');
-      downloadJson(data, fileName);
-      addEntry({
-        scopes: MODULE_KEYS,
-        totalRows: countRows(data.stores),
-        fileName,
-      });
-      showToast(`${brand.name} 백업 파일을 다운로드했습니다.`, 'ok');
-    } catch (err) {
-      console.error('[BrandMaster] 브랜드 백업 실패:', err);
-      showToast('브랜드 백업에 실패했습니다.', 'error');
-    } finally {
-      setBusyBrandId(null);
-    }
-  }
-
-  function openRestore(brand) {
-    if (!isAdmin || busyBrandId) return;
-    setRestoreTarget(brand);
-    requestAnimationFrame(() => restoreInputRef.current?.click());
-  }
-
-  async function handleRestoreFile(e) {
-    const file = e.target.files?.[0];
-    const target = restoreTarget;
-    e.target.value = '';
-    setRestoreTarget(null);
-    if (!file || !target || busyBrandId) return;
-
-    setBusyBrandId(target.id);
-    try {
-      const text = await readFileAsText(file, ['.json']);
-      const raw = JSON.parse(text);
-      const { backup, summary } = validateBackupPayload(raw);
-      const source = backupSourceMetadataOf(backup);
-      const sourceMismatch = isBackupSourceMismatch(backup, target.id);
-      const failedStores = summary.failedStores;
-      const restoreOk = await showConfirm({
-        title: `${target.name} 브랜드 복원`,
-        message: (
-          <div>
-            <div>
-              <b>파일:</b> {file.name}
-            </div>
-            <div>
-              <b>백업 브랜드:</b>{' '}
-              {source.hasSourceBrand
-                ? `${source.sourceBrandName || source.sourceBrandId} (${source.sourceBrandId})`
-                : '출처 정보 없음'}
-            </div>
-            <div>
-              <b>복원 대상:</b> {target.name} ({target.id})
-            </div>
-            <div>
-              <b>복원 행수:</b> {formatNumber(summary.totalRows)}건 · store{' '}
-              {formatNumber(summary.knownStores.length)}개
-            </div>
-            {sourceMismatch && (
-              <div style={{ color: 'var(--warn)', fontWeight: 700 }}>
-                백업 브랜드와 복원 대상 브랜드가 다릅니다. 덮어쓰기 전 파일을 다시 확인하세요.
-              </div>
-            )}
-            {failedStores.length > 0 && (
-              <div style={{ color: 'var(--warn)', fontWeight: 700 }}>
-                백업 생성 당시 읽기 실패 store {failedStores.length}개가 있어 해당 store는 복원되지
-                않습니다. 별도 위험 승인 전까지 복원을 진행하지 않습니다.
-              </div>
-            )}
-            <div style={{ marginTop: 8 }}>
-              복원 전 자동 백업 파일을 만든 뒤, 선택 브랜드 데이터를 이 파일 내용으로 덮어씁니다.
-            </div>
-          </div>
-        ),
-        confirmLabel: '덮어쓰기 복원',
-        danger: true,
-      });
-      if (!restoreOk) return;
-
-      if (failedStores.length > 0) {
-        const riskOk = await showConfirm({
-          title: '불완전 백업 위험 승인',
-          message: (
-            <div>
-              <div style={{ color: 'var(--warn)', fontWeight: 700, marginBottom: 8 }}>
-                이 백업은 생성 당시 store {failedStores.length}개 읽기에 실패했습니다.
-              </div>
-              <div>
-                누락 store:{' '}
-                {failedStores
-                  .map(item => item.store)
-                  .slice(0, 5)
-                  .join(', ')}
-                {failedStores.length > 5 ? ` 외 ${failedStores.length - 5}개` : ''}
-              </div>
-              <div style={{ marginTop: 8 }}>
-                누락된 store는 현재 브랜드 데이터가 유지됩니다. 완전한 시점 복원이 아니라는 점을
-                확인한 경우에만 진행하세요.
-              </div>
-            </div>
-          ),
-          confirmLabel: '누락 감수하고 복원',
-          danger: true,
-        });
-        if (!riskOk) return;
-      }
-
-      const before = await exportAllForBrand(
-        target.id,
-        {
-          brandId: target.id,
-          brandName: target.name,
-          backupScope: 'brand-before-restore',
-        },
-        { includeLocalStorage: false }
-      );
-      const beforeFileName = makeFileName(`${target.name}_복원전자동백업`, 'json');
-      downloadJson(before, beforeFileName);
-
-      const result = await importAllToBrand(backup, target.id);
-      if (result.errors?.length > 0) {
-        showToast(
-          `${target.name} 복원 일부 완료 — 성공 ${result.imported}개 / 오류 ${result.errors.length}개`,
-          'warn',
-          7000
-        );
-        console.warn('[BrandMaster] 브랜드 복원 일부 실패:', result.errors);
-      } else {
-        showToast(
-          `${target.name} 복원 완료 — ${result.imported}개 store, ${formatNumber(summary.totalRows)}건`,
-          'ok'
-        );
-      }
-      if (target.id === activeId) {
-        setTimeout(() => window.location.reload(), 800);
-      }
-    } catch (err) {
-      console.error('[BrandMaster] 브랜드 복원 실패:', err);
-      showToast(err.message || '브랜드 복원에 실패했습니다.', 'error');
-    } finally {
-      setBusyBrandId(null);
-    }
-  }
+  const { handleSave, handleHide, handleDefault, handleSwitch, handleBackup, openRestore, handleRestoreFile } =
+    useBrandActions({
+      isAdmin,
+      form,
+      activeId,
+      busyBrandId,
+      setBusyBrandId,
+      restoreTarget,
+      setRestoreTarget,
+      restoreInputRef,
+      reloadBrands,
+      resetForm,
+      showConfirm,
+    });
 
   if (!roleReady) {
     return (
