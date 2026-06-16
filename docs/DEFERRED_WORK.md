@@ -231,8 +231,8 @@
   - `app/report/cost/page.jsx` — 이미 여러 하위 컴포넌트와 연결된 page 조립부라, 다음 기능 변경 때 함께 정리.
   - `components/TopBar.jsx`, `app/login/page.jsx` — 전역 레이아웃/인증 경계이므로 단순 줄 수 기준으로 먼저 건드리지 않음.
 - **중복 정리 후보**:
-  - `components/cost/ingredient-price/BulkPriceModal.jsx` — 현재 실제 화면 import 진입점이 없음. 식자재 단가 일괄 업로드 기능으로 살릴지, 보류 코드로 유지할지, 제거할지 별도 결정 필요.
-  - `components/cost/ingredient-price/UsageView.jsx` — 현재 실제 화면 import 진입점이 없음. 기존 식자재 단가 뷰와 다시 연결할지, 보류 코드로 유지할지, 제거할지 별도 결정 필요.
+  - `components/cost/ingredient-price/BulkPriceModal.jsx` ✅ 2026-06-16 삭제 — 외부 import 없는 dead code 확인 후 제거. 관련 구조 테스트도 삭제된 파일 참조 제거.
+  - `components/cost/ingredient-price/UsageView.jsx` ✅ 2026-06-16 삭제 — 외부 import 없는 dead code 확인 후 제거. 관련 구조 테스트도 삭제된 파일 참조 제거.
   - `ModalFrame` 하단 버튼 영역(`취소`/`저장`/`다시 선택`) 반복 → `ModalActions` 또는 작은 modal footer primitive 후보.
   - `data-table`의 로딩/빈상태/가로 스크롤 wrapper 반복 → 기능별 분리 후 공통화 여부 재평가.
   - `formatNumber`와 직접 `toLocaleString()` 혼용 → 금액/개수/kcal 포맷 helper를 점진 통일.
@@ -400,6 +400,18 @@
 
 ---
 
+### 성능·정리 최적화 배치 — ✅ 2026-06-16
+
+> Dead code 제거 2개, 배지 조회 최적화, AppShell 번들 축소.  
+> 작업자: Claude Code (claude-sonnet-4-6). 커밋: `1eb88849`(최적화), `deeda440`(dynamic import).
+
+- **Dead code 삭제**: `BulkPriceModal.jsx`(135줄) · `UsageView.jsx`(56줄) — B-6 리팩토링 후 외부 import가 없어진 파일. 관련 구조 테스트(`bulk-price-modal-structure.test.mjs`, `usage-view-structure.test.mjs`)에서 삭제된 파일 참조 및 구조 검사 블록 제거, 유틸 helper 테스트만 유지.
+- **배지 조회 최적화**: `usePageStats`가 `getAllNotes()`(전체 로드) 대신 `getReportingNoteCount()`(status 인덱스만 조회)를 사용하도록 교체. `lib/note/store.js`에 `sharedGetByIndex` 기반 함수 추가, `lib/note/index.js` export 추가.
+- **AppShell 번들 축소**: `CommandPalette`·`ShortcutsHelp`를 정적 import → `next/dynamic` lazy import(ssr:false)로 전환. 초기 번들에서 두 컴포넌트 분리.
+- **검증**: `test:ci` 247 suites / 1170 tests 통과.
+
+---
+
 ### SITE_IMPROVEMENT_BACKLOG.md 흡수 — ✅ 2026-06-16
 
 > 제품·UX·성능·안정성 개선 백로그(기준일 2026-06-14, 659줄). P0~P3 우선순위 후보 항목 목록.  
@@ -416,7 +428,9 @@
 - N-43 과거 단가 가져오기: 보류 게이트 대기 중
 
 **미착수 UX/성능 후보 (product backlog 수준, 사용자 승인 후 B섹션 이동 예정)**
-- 홈 판매 통계 단일 집계(`sales_rows` 1회 조회), sidebar 배지 count 전용 조회, CommandPalette dynamic import
+- 홈 판매 통계 단일 집계(`sales_rows` 1회 조회) — 미착수
+- sidebar 배지 count 전용 조회 ✅ 2026-06-16 — `getReportingNoteCount()` status 인덱스 쿼리로 교체, `usePageStats` 최적화
+- CommandPalette + ShortcutsHelp dynamic import ✅ 2026-06-16 — `AppShell.jsx` `next/dynamic` lazy import 전환
 - 대형 표 페이지네이션/windowing (사용현황·알레르기·원산지·판매보고서)
 - 검색/필터 프리셋 확산 (식자재·원가·영양성분·보고서)
 - 삭제·수정 UX 통일: 영양성분 삭제 ConfirmDialog, 샘플 단건 삭제 확인, 노트 일괄 삭제 문구, 로드 실패 vs 빈 상태 구분
