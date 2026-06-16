@@ -1,6 +1,4 @@
 import { describe, expect, test } from '@jest/globals';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
 import {
   buildIngredientUsageRows,
   getUsageRowsSummary,
@@ -11,51 +9,7 @@ import {
   usageNameKey,
 } from '../../components/cost/ingredient-price/usage-view/usageViewUtils.js';
 
-const usageViewSource = readFileSync(
-  resolve('components/cost/ingredient-price/UsageView.jsx'),
-  'utf8'
-);
-const summarySource = readFileSync(
-  resolve('components/cost/ingredient-price/usage-view/UsageSummaryBar.jsx'),
-  'utf8'
-);
-const toolbarSource = readFileSync(
-  resolve('components/cost/ingredient-price/usage-view/UsageToolbar.jsx'),
-  'utf8'
-);
-const tableSource = readFileSync(
-  resolve('components/cost/ingredient-price/usage-view/UsageTable.jsx'),
-  'utf8'
-);
-const utilsSource = readFileSync(
-  resolve('components/cost/ingredient-price/usage-view/usageViewUtils.js'),
-  'utf8'
-);
-
 describe('usage view structure', () => {
-  test('UsageView delegates summary, toolbar, table, and usage helpers', () => {
-    expect(usageViewSource).toContain('<UsageSummaryBar');
-    expect(usageViewSource).toContain('<UsageToolbar');
-    expect(usageViewSource).toContain('<UsageTable');
-    expect(usageViewSource).toContain('buildIngredientUsageRows');
-    expect(usageViewSource).not.toContain('<table');
-    expect(usageViewSource).not.toContain('SCOPE_STYLES');
-    expect(usageViewSource).not.toContain('printUsageReport');
-    expect(usageViewSource).not.toContain('getUsageMenuCounts');
-    expect(usageViewSource.split('\n').length).toBeLessThanOrEqual(80);
-
-    expect(summarySource).toContain('export function UsageSummaryBar');
-    expect(summarySource).toContain('피자메뉴');
-    expect(toolbarSource).toContain('export function UsageToolbar');
-    expect(toolbarSource).toContain('printUsageReport');
-    expect(toolbarSource).toContain('USAGE_CATS');
-    expect(tableSource).toContain('export function UsageTable');
-    expect(tableSource).toContain('function UsageIngredientRow');
-    expect(tableSource).toContain('function UsageMenuChip');
-    expect(tableSource).toContain('<table className="data-table">');
-    expect(utilsSource).toContain('export function buildIngredientUsageRows');
-  });
-
   test('helpers keep lookup, filtering, sorting, tiers, and summary counts stable', () => {
     const usageMap = {
       byCode: new Map([

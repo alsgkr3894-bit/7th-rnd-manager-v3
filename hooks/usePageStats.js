@@ -35,15 +35,18 @@ export function usePageStats(pathname) {
       try {
         const { initDB } = await import('@/lib/db');
         await initDB();
-        const [{ getIssues }, { getAllNotes }] = await Promise.all([
+        const [{ getIssues }, { getReportingNoteCount }] = await Promise.all([
           import('@/lib/sales'),
           import('@/lib/note'),
         ]);
-        const [issues, notes] = await Promise.all([getIssues({ status: 'open' }), getAllNotes()]);
+        const [issues, count] = await Promise.all([
+          getIssues({ status: 'open' }),
+          getReportingNoteCount(),
+        ]);
         if (!alive) return;
         const issueList = Array.isArray(issues) ? issues : [];
         setUnmatchedCount(issueList.length);
-        setReportingCount(countReportingNotes(notes));
+        setReportingCount(typeof count === 'number' ? count : 0);
       } catch (e) {
         if (alive) console.warn('[usePageStats] 배지 로드 실패', e);
       }
