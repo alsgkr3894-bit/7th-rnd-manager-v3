@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -12,7 +12,7 @@ import { formatRelative } from '@/lib/format';
 import { SettingTile } from '@/components/ui/SettingTile';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useSettingsAuth } from '@/hooks/useSettingsAuth';
-import { initDB } from '@/lib/db';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import {
   getAllAccounts,
   addAccount,
@@ -84,29 +84,34 @@ export default function Page() {
   const [form, setForm] = useState({ name: '', email: '', team: '', role: '' });
   const { role: currentRole, isAdmin } = useCurrentRole();
 
-  // 로컬 계정 목록
-  const [accounts, setAccounts] = useState([]);
-  const [activeId, setActiveId] = useState(null);
+  // 계정 목록 — useDBLoad로 로드, reload는 add/delete 후 재조회에 사용
+  const [activeId, setActiveId] = useState(null); // "전환" 버튼 즉시 반영용 로컬 상태
+  const { data: accountData, reload: reloadAccounts } = useDBLoad(
+    async () => {
+      await seedDefaultAdminIfEmpty();
+      const list = await getAllAccounts();
+      const storedActiveId = getActiveAccountId();
+      const validActiveId = list.some(account => account.id === storedActiveId)
+        ? storedActiveId
+        : (list[0]?.id ?? null);
+      if (validActiveId != null && validActiveId !== storedActiveId) {
+        setActiveAccountId(validActiveId);
+      }
+      return { accounts: list, activeId: validActiveId };
+    },
+    { initialData: null, onError: err => console.error('[account] 계정 로드 실패', err) }
+  );
+  const accounts = accountData?.accounts ?? [];
+  // data가 갱신되면 activeId 동기화 (전환 버튼의 로컬 덮어쓰기보다 DB 값 우선)
+  useEffect(() => {
+    if (accountData?.activeId !== undefined) setActiveId(accountData.activeId);
+  }, [accountData?.activeId]);
+
   const [newAccForm, setNewAccForm] = useState({ name: '', email: '', role: 'viewer' });
   const [addingAccount, setAddingAccount] = useState(false);
   const [addingBusy, setAddingBusy] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [confirmClearPin, setConfirmClearPin] = useState(false);
-
-  const loadAccounts = useCallback(async () => {
-    await initDB();
-    await seedDefaultAdminIfEmpty();
-    const list = await getAllAccounts();
-    const storedActiveId = getActiveAccountId();
-    const validActiveId = list.some(account => account.id === storedActiveId)
-      ? storedActiveId
-      : (list[0]?.id ?? null);
-    if (validActiveId != null && validActiveId !== storedActiveId) {
-      setActiveAccountId(validActiveId);
-    }
-    setAccounts(list);
-    setActiveId(validActiveId);
-  }, []);
 
   // PIN 관리
   const { hasPin, setPin: savePin } = useSettingsAuth();
@@ -126,8 +131,7 @@ export default function Page() {
     setLastLogin(getLastLogin());
     const cached = getCachedIP();
     if (cached) setIpEntry(cached);
-    loadAccounts();
-  }, [loadAccounts]);
+  }, []);
 
   async function handleRefreshIP() {
     setIpLoading(true);
@@ -497,7 +501,7 @@ export default function Page() {
                 setAddingBusy(true);
                 try {
                   await addAccount(newAccForm);
-                  await loadAccounts();
+                  reloadAccounts();
                   setNewAccForm({ name: '', email: '', role: 'viewer' });
                   setAddingAccount(false);
                   showToast('계정 추가됨', 'ok');
@@ -657,7 +661,7 @@ export default function Page() {
                     const remaining = accounts.filter(a => a.id !== deleteConfirmId);
                     setActiveAccountId(remaining[0]?.id ?? null);
                   }
-                  await loadAccounts();
+                  reloadAccounts();
                   showToast('계정 삭제됨', 'ok');
                 } catch (err) {
                   showToast('실패: ' + err.message, 'error');

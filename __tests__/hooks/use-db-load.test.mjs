@@ -14,6 +14,7 @@ const marginDataSrc = readFileSync(resolve('app/cost/margin/useMarginData.js'), 
 const ingredientPriceSrc = readFileSync(resolve('hooks/useIngredientPriceData.js'), 'utf8');
 const backupSrc = readFileSync(resolve('app/settings/backup/page.jsx'), 'utf8');
 const restoreSrc = readFileSync(resolve('app/settings/restore/page.jsx'), 'utf8');
+const accountSrc = readFileSync(resolve('app/settings/account/page.jsx'), 'utf8');
 
 describe('useDBLoad 옵션 API', () => {
   test('6가지 옵션이 모두 구현됐다', () => {
@@ -119,6 +120,17 @@ describe('고위험 단계 1: settings/restore', () => {
     expect(restoreSrc).not.toContain('setCurrentStats(');
     expect(restoreSrc).toContain('ready = currentStats !== null');
     expect(restoreSrc).toContain('reloadStats');
+  });
+});
+
+describe('고위험 단계 2: settings/account', () => {
+  test('settings/account가 useDBLoad로 계정 목록을 로드하고 reload로 갱신한다', () => {
+    expect(accountSrc).toContain('useDBLoad');
+    expect(accountSrc).not.toContain('useCallback');
+    expect(accountSrc).not.toContain('import { initDB }');
+    expect(accountSrc).not.toContain('await loadAccounts');
+    expect(accountSrc).toContain('reloadAccounts');
+    expect(accountSrc).toContain('accountData');
   });
 });
 
