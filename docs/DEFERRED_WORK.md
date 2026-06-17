@@ -292,8 +292,9 @@
   - `ingredient/manage/page.jsx`: 761→684줄. `IngredientJetteIssuesPanel` (newJette/jetteRemoved 테이블) 추출.
   - `cost/margin/page.jsx`: 723→594줄. `MarginCostThresholdBar`, `MarginTableHeader` 추출.
   - `settings/system/page.jsx` ✅ 2026-06-17 추가 완료 — 697→441줄. 8개 하위 컴포넌트를 `_SystemSettingsUI.jsx`(231줄)로 추출. `useMounted`·`initDB`·수동 useEffect → `useDBLoad`. `refreshStats()` → `reloadStats` 위임.
-- **신규 파일**: `components/report/shipment/` 3개, `hooks/useShipmentReportData.js`, `components/ingredient/IngredientJetteIssuesPanel.jsx`, `components/cost/margin/MarginCostThresholdBar.jsx`, `components/cost/margin/MarginTableHeader.jsx`, `app/settings/system/_SystemSettingsUI.jsx`
-- **검증**: `npm run lint` + `npm run test:ci` 248 suites / 1196 tests 통과.
+  - `settings/account/page.jsx` ✅ 2026-06-17 추가 완료 — 685→307줄. 4개 하위 컴포넌트(AccountProfileCard·AccountSessionCard·AccountMembersCard·AccountPermissionsMatrix)를 `_AccountSettingsUI.jsx`(410줄)로 추출. 인라인 핸들러를 named 함수로 정리.
+- **신규 파일**: `components/report/shipment/` 3개, `hooks/useShipmentReportData.js`, `components/ingredient/IngredientJetteIssuesPanel.jsx`, `components/cost/margin/MarginCostThresholdBar.jsx`, `components/cost/margin/MarginTableHeader.jsx`, `app/settings/system/_SystemSettingsUI.jsx`, `app/settings/account/_AccountSettingsUI.jsx`
+- **검증**: `npm run lint` + `npm run test:ci` 249 suites / 1205 tests 통과.
 
 ---
 
