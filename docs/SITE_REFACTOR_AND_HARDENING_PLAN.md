@@ -169,11 +169,13 @@
   - `setEdges(...)` 직접 변경 → `load()` (reload) 로 통일
 - 커밋: `refactor: migrate CommonManageView and SuppliersView to useDBLoad`
 
-### 7단계. 보안 점검
+### 7단계. 보안 점검 ✅ 완료 (2026-06-17)
 
-- 현재 로컬 인증 정책을 문서화한다.
-- 외부 배포가 필요한 경우 서버 guard 설계를 별도 계획으로 만든다.
-- 관리자 전용 실행 함수가 UI 외부 경로에서도 보호되는지 점검한다.
+- ✅ `docs/SECURITY_POLICY.md` 작성
+  - 현재 인증 구조: SHA-256 해시(솔트 없음), v3:auth 쿠키(SameSite=Strict), middleware route guard
+  - admin 전용 실행 함수(`useBrandActions` 등)는 `if (!isAdmin) return` 코드 가드 확인
+  - LAN HTTP 허용 목록 및 외부 배포 전 필요 변경사항(Secure/HttpOnly 쿠키, 서버 측 토큰, API 인증 등) 문서화
+- 커밋: `docs: document local-tool auth policy and external deployment risks`
 
 ## 4. 테스트 계획
 
