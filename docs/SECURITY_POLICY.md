@@ -46,6 +46,25 @@
 `isAdminProfile(profile)` → `lib/profile.js:47` 에서 role 확인.
 admin 전용 액션은 실행 함수(`useBrandActions`, `useCurrentRole` 등)에서 `if (!isAdmin) return` 조기 반환으로 차단됨. UI disabled와 실행 함수 양쪽에서 보호함.
 
+#### 2-4-1. 실행함수 레이어 권한 가드 (defense-in-depth)
+
+UI disabled 우회(프로그램적 직접 호출)에 대비해, 파괴적 **실행 함수 내부**에서도 viewer를 차단한다. `lib/auth/guard.js`의 `assertActiveAdmin(label)`(async, canonical `getActiveRole()` 재사용, 비-admin이면 `PermissionDeniedError` throw)을 다음 함수 진입부에서 호출한다:
+
+| 영역 | 가드된 함수 |
+|---|---|
+| 계정 | `addAccount` / `updateAccount` / `deleteAccount` (`lib/auth/accounts.js`) |
+| 메뉴마스터 | `deleteMenuMaster` / `resetAllMenuMaster` (`lib/menu-master/store.js`), `seedMenuMaster` (`seed.js`) |
+| 식자재 | `deleteIngredient` / `bulkDeleteIngredients` (`lib/ingredient/store.js`) |
+| 복원 | `importAllToBrand` (`lib/db/backup.js`) |
+| 시스템 | `handleReset` / `handleRecreate` (`app/settings/system/page.jsx`) |
+
+원칙:
+- 저수준 DB 프리미티브(`clearStore`/`deleteDatabase`, `lib/db/crud.js`)에는 가드를 넣지 않는다 — 복원 등 정상 경로에서 공유되므로 핸들러/도메인 레이어에서 처리.
+- `getActiveRole`은 계정 0개(신규 설치) 시 `'admin'`을 반환 → 초기 설정 흐름 무손상. DB 오류 시 `'viewer'`(fail-closed).
+- `guard.js`는 `accounts.js`를 **동적 import**해 순환 import를 회피한다.
+
+**보류 (의도적)**: 브랜드 메타 함수 `upsertBrand`/`setBrandHidden`/`setDefaultBrandId`(`lib/brand-master.js`)는 **sync**·localStorage만 수정·**비파괴**라 실행함수 가드를 적용하지 않았다. async 전환은 광범위 회귀, sync 가드는 새 캐시 인프라가 필요해 비용 대비 효과가 낮다. UI 가드(`app/settings/brands/page.jsx`의 `useCurrentRole`, `role-gating-source.test.mjs`가 강제)로 커버한다. 향후 이 함수들이 데이터 파괴 작업으로 승격되면 재검토한다.
+
 ### 2-5. 설정 PIN
 
 `app/settings/system/` 등 위험 영역(DB 재생성, 초기화)은 PIN 입력 후 진행한다. PIN은 localStorage에 해시로 저장되며 admin 권한과 분리된 별도 방어선이다.

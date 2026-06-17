@@ -203,7 +203,7 @@ dbNameFor(brandId): main → 'rnd_manager_v3', 기타 → 'rnd_manager_v3__<bran
 ### `hooks/ 디렉터리 전체 현황`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/`
 
-총 59개 파일(58 .js + 1 .jsx), 4,455줄. 도메인별로 DB로드·로컬스토리지·브랜드·노트·리포트·홈대시보드·UI(배치·페이지네이션·스크롤·단축키·모달) 등으로 분류됨.
+총 59개 파일(58 .js + 1 .jsx), 4,480줄. 도메인별로 DB로드·로컬스토리지·브랜드·노트·리포트·홈대시보드·UI(배치·페이지네이션·스크롤·단축키·모달) 등으로 분류됨.
 
 ### `useDBLoad — IndexedDB 데이터 로드 패턴`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/useDBLoad.js`
