@@ -160,6 +160,9 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
 
   const pickSuggestion = useCallback(
     (idx, ing) => {
+      // productCode 없는 수동 식자재는 unitPriceMap이 String(id)를 키로 사용
+      const upmKey = ing.productCode || (ing.id != null ? String(ing.id) : null);
+      const priceInfo = upmKey ? unitPriceMap.get(upmKey) : null;
       setComponents(prev =>
         prev.map((c, i) =>
           i === idx
@@ -167,10 +170,8 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
                 ...c,
                 ingredientName: ing.ingredientName || '',
                 productCode: ing.productCode || '',
-                unit: normalizeCostBaseUnit(
-                  unitPriceMap.get(ing.productCode)?.baseUnitType || ing.baseUnitType
-                ),
-                unitPrice: unitPriceMap.get(ing.productCode)?.unitPrice ?? null,
+                unit: normalizeCostBaseUnit(priceInfo?.baseUnitType || ing.baseUnitType),
+                unitPrice: priceInfo?.unitPrice ?? null,
               }
             : c
         )

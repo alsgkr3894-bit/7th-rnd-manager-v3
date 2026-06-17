@@ -229,7 +229,9 @@ export function MenuRecipeComponentsTable({
 }
 
 function SuggestionItem({ ingredient, unitPriceMap, isActive, onPick }) {
-  const info = ingredient.productCode ? unitPriceMap.get(ingredient.productCode) : null;
+  // productCode 없는 수동 식자재는 unitPriceMap이 String(id)를 키로 사용
+  const upmKey = ingredient.productCode || (ingredient.id != null ? String(ingredient.id) : null);
+  const info = upmKey ? unitPriceMap.get(upmKey) : null;
   return (
     <div
       role="option"
