@@ -340,6 +340,8 @@ export default function Page() {
           categoryCounts={categoryCounts}
           hashTags={hashTags}
           tagCounts={tagCounts}
+          uncategorized={uncategorized}
+          discontinuedCount={discontinuedCount}
           onRemoveRequest={setConfirmRemove}
         />
       )}
