@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SearchBox } from '@/components/ui/SearchBox';
@@ -12,9 +12,10 @@ import {
 } from '@/lib/db';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { formatNumber, formatRelative } from '@/lib/format';
-import { getHistory, getLastBackupAt, togglePin, getBackupReminder } from '@/lib/backup-history';
+import { togglePin } from '@/lib/backup-history';
 import { exportHistoryCsv } from './backupPageUtils';
 import { useBackupActions } from './useBackupActions';
+import { useBackupHistory } from './useBackupHistory';
 import { SettingTile } from '@/components/ui/SettingTile';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
@@ -42,10 +43,6 @@ export default function Page() {
   const [activeBrand, setActiveBrand] = useState(null); // SSR 불일치 방지 — 마운트 후 교정
   const [busy, setBusy] = useState(false);
   const { scopes, toggleScope, setAllScopes } = useModuleScopes();
-  const [lastBackupAt, setLastBackupAt] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [historyQuery, setHistoryQuery] = useState('');
-  const [historyFilter, setHistoryFilter] = useState('all'); // all | pinned | week
   const [backupProgress, setBackupProgress] = useState(null);
 
   // DB store 통계 로드 — ready와 stats 공동 원천
@@ -58,17 +55,20 @@ export default function Page() {
   });
   const ready = stats !== null;
   const { diagnostics, collectDiagnostics, collecting } = useDiagnostics();
-  const [backupReminder, setBackupReminder] = useState(null);
   const backupProgressTimerRef = useRef(null);
+
+  const {
+    history, setHistory,
+    historyQuery, setHistoryQuery,
+    historyFilter, setHistoryFilter,
+    filteredHistory,
+    backupReminder,
+    lastBackupAt, setLastBackupAt,
+    refreshHistory,
+  } = useBackupHistory();
 
   useEffect(() => {
     setActiveBrand(getActiveBrand());
-  }, []);
-
-  useEffect(() => {
-    setHistory(getHistory());
-    setLastBackupAt(getLastBackupAt());
-    setBackupReminder(getBackupReminder());
   }, []);
 
   // 선택된 모듈 키
@@ -79,35 +79,6 @@ export default function Page() {
   const selectedRows = stats
     ? selectedStores.reduce((sum, name) => sum + (stats[name] || 0), 0)
     : 0;
-
-  const sortedHistory = useMemo(
-    () =>
-      [...history].sort((a, b) => {
-        if (!a.pinned !== !b.pinned) return a.pinned ? -1 : 1;
-        return (b.at || '').localeCompare(a.at || '');
-      }),
-    [history]
-  );
-
-  const filteredHistory = useMemo(() => {
-    const q = historyQuery.trim().toLowerCase();
-    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    return sortedHistory.filter(h => {
-      if (historyFilter === 'pinned' && !h.pinned) return false;
-      if (historyFilter === 'week' && new Date(h.at).getTime() < weekAgo) return false;
-      if (!q) return true;
-      const scopeText = (h.scopes || []).map(k => MODULE_GROUPS[k]?.label || k).join(' ');
-      return (
-        String(h.id || '')
-          .toLowerCase()
-          .includes(q) ||
-        String(h.fileName || '')
-          .toLowerCase()
-          .includes(q) ||
-        scopeText.toLowerCase().includes(q)
-      );
-    });
-  }, [historyFilter, historyQuery, sortedHistory]);
 
   const { handleBackup } = useBackupActions({
     busy,
@@ -386,7 +357,7 @@ export default function Page() {
                             aria-pressed={h.pinned}
                             onClick={() => {
                               togglePin(h.id);
-                              setHistory(getHistory());
+                              refreshHistory();
                             }}
                             style={{
                               padding: '2px 6px',

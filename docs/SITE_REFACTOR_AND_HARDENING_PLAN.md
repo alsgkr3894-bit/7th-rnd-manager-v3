@@ -124,12 +124,14 @@
   - 단건/일괄 삭제 후 cascade 경고 호출 경로 고정
 - 커밋: `fix: guard cascade/undo failure surfacing with tests`
 
-### 2단계. 백업/복원 분리
+### 2단계. 백업/복원 분리 ✅ 완료 (2026-06-17)
 
-- 백업 page에서 상태/액션을 controller hook으로 분리한다.
-- 이력 패널, 요약 카드, 모듈 선택 영역을 컴포넌트로 분리한다.
-- 복원 page에서 파일 파싱, 위험 승인, 자동 백업, 실행 흐름을 `useRestoreFlow`로 분리한다.
-- 기능 동작은 기존과 동일하게 유지한다.
+- ✅ `app/settings/backup/useBackupHistory.js` 신규: history/lastBackupAt/backupReminder state + sortedHistory/filteredHistory useMemo + refreshHistory
+- ✅ `backup/page.jsx` 461→431줄: useBackupHistory 적용, sortedHistory/filteredHistory useMemo 제거
+- ✅ `hooks/useRestoreFile.js` 신규: handleFile(파일 읽기·JSON 파싱·validateBackupPayload·toast) + parsed state
+- ✅ `restore/page.jsx` 375→333줄: useRestoreFile 적용, handleFile 인라인 제거
+- ✅ `restore-failed-stores-guard.test.mjs` 업데이트: failedStores 검사 위치 → useRestoreFile 훅
+- 커밋: `refactor: extract useBackupHistory and useRestoreFile hooks`
 
 ### 3단계. 영양성분 label builder 분리 ✅ 완료 (2026-06-17)
 

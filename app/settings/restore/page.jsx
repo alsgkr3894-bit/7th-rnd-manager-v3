@@ -11,13 +11,13 @@ import {
   exportAll,
 } from '@/lib/db';
 import { useDBLoad } from '@/hooks/useDBLoad';
-import { downloadJson, makeFileName, readFileAsText } from '@/lib/download';
+import { downloadJson, makeFileName } from '@/lib/download';
 import { addEntry } from '@/lib/backup-history';
-import { validateBackupPayload } from '@/lib/backup/validation';
 import { pickRestoreStores } from '@/lib/backup/restore-impact';
 import { formatNumber } from '@/lib/format';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { useRestoreImpact } from '@/hooks/useRestoreImpact';
+import { useRestoreFile } from '@/hooks/useRestoreFile';
 import { getActiveBrand } from '@/lib/active-brand';
 import { pickLocalStorageForScopes } from '@/lib/backup/local-storage-keys';
 import { RestoreDoneCard } from '@/components/settings/restore/RestoreDoneCard';
@@ -38,7 +38,6 @@ import { RestoreExecutePanel } from '@/components/settings/restore/RestoreExecut
 export default function Page() {
   // SSR/클라이언트 불일치 방지 — 마운트 후 활성 브랜드 읽기
   const [activeBrand, setActiveBrand] = useState(null);
-  const [parsed, setParsed] = useState(null); // 백업 파일 파싱 결과
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [autoBackup, setAutoBackup] = useState(true);
@@ -48,6 +47,14 @@ export default function Page() {
   const [allowFailedStoreRestore, setAllowFailedStoreRestore] = useState(false);
   const { scopes, toggleScope, setAllScopes } = useModuleScopes();
   const fileRef = useRef(null);
+
+  const { parsed, setParsed, handleFile } = useRestoreFile({
+    onReset: () => {
+      setConfirming(false);
+      setRestoreDone(null);
+      setAllowFailedStoreRestore(false);
+    },
+  });
 
   // DB store 통계 로드 — ready와 currentStats 공동 원천
   const { data: currentStats, reload: reloadStats } = useDBLoad(() => collectStoreStats(), {
@@ -62,55 +69,6 @@ export default function Page() {
   useEffect(() => {
     setActiveBrand(getActiveBrand());
   }, []);
-
-  async function handleFile(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 500 * 1024 * 1024) {
-      showToast('파일이 너무 큽니다 (최대 500MB)', 'error');
-      return;
-    }
-    setParsed(null);
-    setConfirming(false);
-    setRestoreDone(null);
-    setAllowFailedStoreRestore(false);
-    try {
-      const text = await readFileAsText(file);
-      const data = JSON.parse(text);
-      const { backup, summary } = validateBackupPayload(data);
-      if (summary.versionMismatch) {
-        showToast(
-          `백업 파일 버전(${summary.version})이 현재(v3)와 다릅니다. 일부 데이터가 올바르게 복원되지 않을 수 있습니다.`,
-          'warn',
-          6000
-        );
-      }
-      if (summary.unknownStores.length > 0) {
-        showToast(
-          `알 수 없는 store ${summary.unknownStores.length}개는 복원에서 건너뜁니다.`,
-          'warn',
-          6000
-        );
-      }
-      const failedStores = summary.failedStores;
-      if (failedStores.length > 0) {
-        showToast(
-          `백업 생성 시 ${failedStores.length}개 store 오류 — 위험 승인 전까지 복원을 실행할 수 없습니다.`,
-          'warn',
-          8000
-        );
-      }
-      setParsed({
-        ...backup,
-        _fileName: file.name,
-        _summary: summary,
-        _failedStores: failedStores,
-      });
-    } catch (err) {
-      console.error('[Restore] 파일 파싱 실패:', err);
-      showToast('백업 파일을 읽을 수 없습니다: ' + err.message, 'error');
-    }
-  }
 
   const selectedKeys = MODULE_KEYS.filter(k => scopes[k]);
   const selectedStores = storesForScopes(selectedKeys);

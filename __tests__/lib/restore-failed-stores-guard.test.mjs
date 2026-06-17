@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, test } from '@jest/globals';
 
 const restorePage = readFileSync(resolve('app/settings/restore/page.jsx'), 'utf8');
+const restoreFileHook = readFileSync(resolve('hooks/useRestoreFile.js'), 'utf8');
 const executePanel = readFileSync(
   resolve('components/settings/restore/RestoreExecutePanel.jsx'),
   'utf8'
@@ -18,7 +19,8 @@ const scopePanel = readFileSync(
 
 describe('restore failedStores guard', () => {
   test('전체 복원은 failedStores 백업을 별도 위험 승인 전까지 차단한다', () => {
-    expect(restorePage).toContain('summary.failedStores');
+    // failedStores 파싱·toast 노출은 useRestoreFile 훅에서 처리
+    expect(restoreFileHook).toContain('summary.failedStores');
     expect(restorePage).toContain('allowFailedStoreRestore');
     expect(restorePage).toContain('위험 승인 체크가 필요합니다');
     expect(executePanel).toContain('restoreBlockedByFailedStores');
