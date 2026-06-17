@@ -16,6 +16,8 @@ import { formatNumber } from '@/lib/format';
 import { getSetting, setSetting } from '@/lib/settings';
 import { Toggle } from '@/components/ui/Toggle';
 import { useDBLoad } from '@/hooks/useDBLoad';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
+import { assertActiveAdmin } from '@/lib/auth/guard';
 import {
   SettingsGroup,
   SettingsRow,
@@ -59,6 +61,7 @@ const SETTING_KEYS = [
 ];
 
 export default function Page() {
+  const { isAdmin, ready: roleReady } = useCurrentRole();
   const [busy, setBusy] = useState(false);
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [confirmingRecreate, setConfirmingRecreate] = useState(false);
@@ -96,6 +99,13 @@ export default function Page() {
 
   async function handleRecreate() {
     if (busy) return;
+    try {
+      await assertActiveAdmin('DB 재생성');
+    } catch (err) {
+      showToast(err.message, 'error');
+      setConfirmingRecreate(false);
+      return;
+    }
     setBusy(true);
     try {
       await deleteDatabase(dbNameFor(getActiveBrandId()));
@@ -112,6 +122,13 @@ export default function Page() {
 
   async function handleReset() {
     if (busy) return;
+    try {
+      await assertActiveAdmin('전체 초기화');
+    } catch (err) {
+      showToast(err.message, 'error');
+      setConfirmingReset(false);
+      return;
+    }
     setBusy(true);
     try {
       for (const name of ALL_STORES) {
@@ -407,7 +424,7 @@ export default function Page() {
             onOpen={() => setConfirmingReset(true)}
             onClose={() => setConfirmingReset(false)}
             onConfirm={handleReset}
-            disabled={!ready || busy || totalRows === 0}
+            disabled={!ready || busy || totalRows === 0 || !roleReady || !isAdmin}
             busy={busy}
           />
         </div>
@@ -430,7 +447,7 @@ export default function Page() {
             onOpen={() => setConfirmingRecreate(true)}
             onClose={() => setConfirmingRecreate(false)}
             onConfirm={handleRecreate}
-            disabled={!ready || busy}
+            disabled={!ready || busy || !roleReady || !isAdmin}
             busy={busy}
           />
         </div>

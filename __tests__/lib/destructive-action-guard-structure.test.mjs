@@ -58,6 +58,17 @@ describe('파괴적 액션 권한 가드', () => {
     expect(functionBody(s, 'seedDefaultAdminIfEmpty')).not.toContain('assertActiveAdmin');
   });
 
+  test('시스템 페이지가 useCurrentRole + 핸들러 가드를 쓴다', () => {
+    const s = src('app/settings/system/page.jsx');
+    expect(s).toContain("from '@/hooks/useCurrentRole'");
+    expect(s).toContain("from '@/lib/auth/guard'");
+    // 두 위험 핸들러 모두 가드 호출
+    expect(s).toMatch(/handleRecreate[\s\S]*?assertActiveAdmin/);
+    expect(s).toMatch(/handleReset[\s\S]*?assertActiveAdmin/);
+    // 위험영역 트리거는 비-admin이면 disabled
+    expect(s).toContain('!isAdmin');
+  });
+
   test('저수준 DB 프리미티브(crud.js)에는 가드가 없다', () => {
     expect(src('lib/db/crud.js')).not.toContain('assertActiveAdmin');
   });
