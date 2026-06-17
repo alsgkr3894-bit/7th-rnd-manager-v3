@@ -316,6 +316,10 @@ export default function Page() {
           <InfoCell label="DB 이름" value={dbNameFor(getActiveBrandId())} mono />
           <InfoCell label="DB 버전" value={String(DB_VERSION)} />
           <InfoCell label="환경" value="개발 (localhost)" />
+          <InfoCell
+            label="현재 권한"
+            value={!roleReady ? '확인 중…' : isAdmin ? '관리자 (admin)' : '조회자 (viewer)'}
+          />
         </div>
       </div>
 
