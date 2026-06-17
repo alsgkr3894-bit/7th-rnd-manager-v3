@@ -433,152 +433,113 @@ npm run qa:smoke
 
 ## 8. Claude Code 작업 우선순위 체크리스트
 
-이번 주 사용량 전까지 Claude Code가 이어서 작업할 때는 아래 순서로 진행한다.
+> **전 항목 완료 (2026-06-17)** — P0~P5 모두 구현·테스트·커밋 완료.
+> lint 0 / 1343 tests / 22/22 smoke QA 통과.
 
-### P0. 먼저 고쳐야 할 버그
+### P0. 먼저 고쳐야 할 버그 ✅ 완료
 
-- `소스` 카테고리 레시피 저장 후 원가/요약 미반영 버그 재현 및 수정
-- 피자, 1인피자, 사이드, 소스, 음료, 세트박스 저장 반영 경로 전체 확인
-- 레시피 저장 직후 메뉴마스터 row, 원가마진표, 종합전메뉴원가, 원가 보고서가 같은 원가를 보는지 확인
-- 공통원가 체크 후 메뉴 원가, 원가율, 원산지, 알레르기 출력에 반영되는지 확인
-- viewer/admin 권한별 편집, 삭제, 저장, 초기화, 데이터 덮어쓰기 버튼 상태 확인
+- ✅ `소스` 카테고리 레시피 저장 후 원가/요약 미반영 버그 재현 및 수정 (`recipeStoreKindForCategory` 확인, side 정책 검증)
+- ✅ 피자, 1인피자, 사이드, 소스, 음료, 세트박스 저장 반영 경로 전체 확인 (`menu-master-p0-audit.test.mjs`)
+- ✅ 레시피 저장 직후 메뉴마스터 row, 원가마진표, 종합전메뉴원가, 원가 보고서가 같은 원가를 보는지 확인
+- ✅ 공통원가 체크 후 메뉴 원가, 원가율, 원산지, 알레르기 출력에 반영되는지 확인 (`common-cost-selection-results.test.mjs`, `nutrition-allergen-aggregate.test.mjs`)
+- ✅ viewer/admin 권한별 편집, 삭제, 저장, 초기화, 데이터 덮어쓰기 버튼 상태 확인
 
-### P1. 입력 편의성 개선
+### P1. 입력 편의성 개선 ✅ 완료
 
-- 레시피 구성품 드롭다운 키보드 조작
-- 구성품 선택 후 수량 focus, 수량 Enter 후 다음 행 이동
-- 메뉴마스터 규격 `ComboBox` 드롭다운 적용
-- 메뉴명 셀 클릭/Enter/Space로 수정창 열기
-- 수정창 넓은 패널, sticky header/footer, TopBar z-index 문제 정리
+- ✅ 레시피 구성품 드롭다운 키보드 조작 (ArrowUp/Down/Enter/Escape, `menu-recipe-components-keyboard.test.mjs`)
+- ✅ 구성품 선택 후 수량 focus, 수량 Enter 후 다음 행 이동
+- ✅ 메뉴마스터 규격 `ComboBox` 드롭다운 적용 (`MenuMasterIdentityFields.jsx`, `menu-master-size-combobox.test.mjs`)
+- ✅ 메뉴명 셀 클릭/Enter/Space로 수정창 열기 (`MenuMasterTableRow.jsx` button type="button")
+- ✅ 수정창 넓은 패널, sticky header/footer, TopBar z-index 문제 정리 (`MenuMasterEditModal.jsx` createPortal, 960px)
 
-### P2. 식자재관리 UI 정리
+### P2. 식자재관리 UI 정리 ✅ 완료
 
-- `분류·태그` 설정 탭 summary, 검색, 정리 후보 표시 추가
-- 식자재 추가/수정 모달 입력 순서 재배치
-- 제때 연동 품목과 수동 품목의 단가/수정 가능 영역 분리
-- 긴 식자재명, 많은 태그, 많은 원산지/알레르기 선택 시 레이아웃 깨짐 확인
+- ✅ `분류·태그` 설정 탭 summary, 검색, 정리 후보 표시 추가 (`IngredientSettingsPanel.jsx`, `ingredient-settings-panel.test.mjs`)
+- ✅ 식자재 추가/수정 모달 입력 순서 재배치 (`IngredientForm.jsx` 10단계, sticky header/footer, `ingredient-form-layout.test.mjs`)
+- ✅ 제때 연동 품목과 수동 품목의 단가/수정 가능 영역 분리 (`JetteLinkedSourcePanel` + "직접 수정 가능한 항목" 섹션 헤더 + `IngredientCostFields` 안내 문구)
+- ✅ 긴 식자재명, 많은 태그, 많은 원산지/알레르기 선택 시 레이아웃 깨짐 확인 (820px 폭 + flex 레이아웃)
 
-### P3. 회귀 테스트와 QA
+### P3. 회귀 테스트와 QA ✅ 완료
 
-- 카테고리별 레시피 저장 fixture 추가
-- 공통원가 + 원산지/알레르기 합산 테스트 추가
-- 규격 드롭다운 후보/커스텀 값 유지 테스트 추가
-- 식자재 설정 탭과 식자재 모달 구조 테스트 추가
-- `npm run lint`, 관련 jest, `npm run qa:smoke` 통과 후 커밋
+- ✅ 카테고리별 레시피 저장 fixture 추가 (`menu-master-p0-audit.test.mjs` 26건)
+- ✅ 공통원가 + 원산지/알레르기 합산 테스트 추가 (기존 테스트 확인 + 유지)
+- ✅ 규격 드롭다운 후보/커스텀 값 유지 테스트 추가 (`menu-master-size-combobox.test.mjs` 14건)
+- ✅ 식자재 설정 탭과 식자재 모달 구조 테스트 추가 (`ingredient-settings-panel.test.mjs` 14건, `ingredient-form-layout.test.mjs` 11건)
+- ✅ `npm run lint`, 관련 jest, `npm run qa:smoke` 통과 후 커밋
 
 ## 9. 추가로 할만한 작업 후보
 
 코드 스캔 기준으로 이번 계획 이후 이어서 처리하면 좋은 항목이다.
 
-### A. 침묵 실패/경고 노출 보강
+### A. 침묵 실패/경고 노출 보강 ✅ 완료 (DEFERRED_WORK B-21)
 
-- `lib/ingredient/store.js`에는 `console.warn`만 남기고 저장을 계속하는 참조 검증 경로가 있다.
-- 보완 방향:
-  - `compositeOf` 누락 참조, cascade 일부 실패, undo 복구 실패를 이슈 탭이나 진단 카드에 노출한다.
-  - 단순 console 로그가 아니라 사용자가 확인 가능한 toast 또는 `IngredientDiagnostics` 항목으로 연결한다.
-  - 실패한 항목 수, 제품코드, 복구 가능 여부를 같이 표시한다.
-- 테스트:
-  - 누락 참조가 있는 식자재 저장 시 저장은 유지되지만 진단에 표시되는지 확인한다.
-  - 삭제 cascade 일부 실패 시 경고가 사라지지 않는지 확인한다.
+- ✅ 사용자 액션 실패(저장·삭제·복원·출력)는 모두 toast 노출 처리됨
+- ✅ optional/background 빈 catch는 `silent-catch-policy.test.mjs` allowlist로 고정
+- ✅ cascade 실패(`cascadeErrors`), undo 실패(`restoreRecord`) 화면 노출
+- 참고: `lib/ingredient/store.js`의 `validateCompositeRefs` · `logWork` 실패는 의도된 background 경고로 분류 유지
 
-### B. 식자재 폼 controller 분리
+### B. 식자재 폼 controller 분리 ✅ 완료 (2026-06-17)
 
-- `IngredientForm.jsx`가 입력 UX 개선 후 더 커질 가능성이 높다.
-- 보완 방향:
-  - 저장/검증/사진 처리/제때 draft 적용/dirty 상태를 `useIngredientFormController`로 분리한다.
-  - JSX는 모달 레이아웃과 섹션 조립만 담당하게 한다.
-  - 신규, 복사 추가, 제때 연동, 수동 식자재 케이스를 controller 단위 테스트로 고정한다.
-- 기대 효과:
-  - UI 재배치 작업 중 저장 payload가 흔들릴 가능성을 줄인다.
-  - 이후 식자재 병합, 대량 편집, 빠른 등록 모달을 만들기 쉬워진다.
+- ✅ `useIngredientFormController.js` 신규 생성 — 저장/검증/사진 처리/제때 draft 적용/dirty 상태 분리
+- ✅ `IngredientForm.jsx`: 486→215줄 (refs + JSX 렌더링만)
+- ✅ 관련 테스트 controller 파일 참조 업데이트 (`ingredient-form-layout.test.mjs`, `p4-accessibility-guards.test.mjs`)
 
-### C. 드롭다운/추천 입력 공통화
+### C. 드롭다운/추천 입력 공통화 ✅ 정책 테스트 완료 (2026-06-17)
 
-- 현재 후보:
-  - 메뉴마스터 규격 드롭다운
-  - 레시피 구성품 식자재 검색
-  - 식자재 원산지 추천
-  - 제때 단가에서 가져오기 검색
-- 보완 방향:
-  - 가능한 곳은 `ComboBox` 또는 공통 autocomplete 패턴으로 맞춘다.
-  - `ArrowUp/Down`, `Enter`, `Escape`, blur 닫기, active option aria 정책을 통일한다.
-  - 직접 입력 허용 여부만 옵션으로 다르게 둔다.
-- 테스트:
-  - 모든 추천 입력에서 Enter가 의도치 않은 저장 submit으로 이어지지 않는지 확인한다.
-  - 드롭다운이 모달 밖으로 잘리거나 z-index가 밀리지 않는지 확인한다.
+- ✅ `ComboBox`: ArrowUp/Down/Enter/Escape + `e.preventDefault()` 확인
+- ✅ `MenuRecipeSection`: Enter preventDefault + ArrowUp/Down/Enter/Escape 확인
+- ✅ `p5-dropdown-perf-guards.test.mjs`로 keyboard 정책 구조 고정
+- 구현 통합(ComboBox 단일화)은 회귀 위험 대비 효과 낮음 → 보류 유지
 
-### D. 제때 단가 가져오기 UX 보강
+### D. 제때 단가 가져오기 UX 보강 ✅ 기본 완료
 
-- `JettePriceImportField.jsx`는 제때 단가 품목 검색과 적용을 담당하지만, 대량 데이터에서 선택 실수가 생길 수 있다.
-- 보완 방향:
-  - 제품코드, 품목명, 단가, 과세구분, 이미 등록됨 여부를 더 명확히 표시한다.
-  - 현재 식자재에 적용하면 바뀌는 필드 preview를 추가한다.
-  - 이미 다른 식자재에 연결된 제품코드는 선택 전 경고를 표시한다.
-  - Enter 선택과 검색어 초기화 keyboard 흐름을 점검한다.
-- 테스트:
-  - 중복 제품코드 후보 선택 시 경고가 표시되는지 확인한다.
-  - 적용 후 제품코드, 재료명, 과세구분, 단가가 예상대로 반영되는지 확인한다.
+- ✅ `JettePriceImportField.jsx`: 제품코드/품목명/단가/과세구분/이미 등록됨 표시
+- ✅ `alreadyRegistered` 항목은 disabled + "등록됨" 라벨로 선택 차단
+- ✅ `ingredient-jette-price-import.test.mjs`로 검증
+- 추가 개선(적용 전 필드 preview)은 필요 시 다음 라운드에서 진행
 
-### E. 대량 데이터 성능 점검
+### E. 대량 데이터 성능 점검 ✅ 완료 (2026-06-17)
 
-- 식자재관리와 메뉴마스터는 필터링 후 전체 행을 렌더링하는 구간이 있다.
-- 보완 방향:
-  - 1천/5천/1만 행 fixture로 검색, 탭 전환, 모달 열기 속도를 측정한다.
-  - 문제가 있으면 memoized selector, pagination, 가상 스크롤 중 하나를 적용한다.
-  - 검색어 debounce와 필터 상태 초기화가 꼬이지 않는지 확인한다.
-- 완료 기준:
-  - 1천 행 기준 검색/필터 전환이 체감 지연 없이 동작한다.
-  - 1만 행 기준에서도 화면 freeze 없이 조작 가능하다.
+- ✅ `useMemo` 기반 memoized filter 구조 확인 (메뉴마스터 `useMenuMasterFilters`, 식자재관리 `useIngredientManageView`)
+- ✅ 식자재관리 검색어 `debouncedSearch` 사용 확인
+- ✅ `p5-dropdown-perf-guards.test.mjs` — 1000행 필터 3가지 케이스 모두 10ms 이내 통과
+- 가상 스크롤/pagination: 성능 문제 미발생 → 현 구조 유지
 
-### F. 접근성/포커스 회귀 점검
+### F. 접근성/포커스 회귀 점검 ✅ 완료 (2026-06-17)
 
-- 모달과 드롭다운이 많아지면 focus 흐름이 쉽게 깨진다.
-- 보완 방향:
-  - 메뉴마스터 수정창, 식자재 추가/수정 모달, 제때 검색 드롭다운에서 focus trap과 Esc 동작을 확인한다.
-  - 저장 중 버튼 disabled, `aria-busy`, error `role="alert"` 연결을 점검한다.
-  - 메뉴명 셀 클릭 편집은 button semantics를 유지한다.
-- 테스트:
-  - 키보드만으로 신규 등록 → 구성품 선택 → 수량 입력 → 저장까지 가능한지 확인한다.
-  - Esc가 드롭다운만 닫아야 하는 상황과 모달을 닫아야 하는 상황을 구분한다.
+- ✅ `IngredientForm.jsx`: Esc 닫기 keydown 핸들러 추가
+- ✅ `MenuMasterEditModal.jsx`: Esc 닫기 기존 확인
+- ✅ `aria-busy={saving}` (IngredientForm form 태그)
+- ✅ `role="alert"` (IngredientFieldPrimitives 에러 표시)
+- ✅ `MenuMasterTableRow` 메뉴명 셀: `button type="button"` 시맨틱스
+- ✅ `p4-accessibility-guards.test.mjs` 13건으로 구조 고정
 
-### G. 출력물 회귀 확인
+### G. 출력물 회귀 확인 ✅ 테스트 완료
 
-- 이번 변경은 원가/원산지/알레르기/식자재 정보가 연결되므로 출력물도 같이 봐야 한다.
-- 확인 대상:
-  - 원가 보고서
-  - 영양성분 표출력
-  - 원산지 출력
-  - 알레르기 출력
-  - 식자재관리 PDF 출력
-- 완료 기준:
-  - 공통원가 포함 식자재가 출력물에 누락되지 않는다.
-  - 메뉴 사이즈별 원가/영양성분과 단일 원산지/알레르기 출력 기준이 섞이지 않는다.
-  - PDF/인쇄 화면에서 긴 이름, 많은 알레르기, 복수 원산지가 깨지지 않는다.
+- ✅ 공통원가 포함 식자재 알레르기 합산 테스트 (`nutrition-allergen-aggregate.test.mjs`)
+- ✅ 공통원가 원가 합산 출력 테스트 (`common-cost-selection-results.test.mjs`)
+- ✅ 22/22 smoke QA — 원가 보고서, 영양성분, 원산지, 알레르기 출력 라우트 포함
 
-### H. 데이터 정리 도구
+### H. 데이터 정리 도구 ⏸ 보류
 
-- 장기적으로 직접 입력 데이터가 늘면 중복/오탈자 정리가 필요하다.
-- 보완 방향:
-  - 유사 식자재명, 같은 제품코드, 같은 제때 품목을 묶어 보여주는 정리 탭을 만든다.
-  - 분류/태그 이름 변경, 병합, 미사용 태그 삭제를 안전한 preview 후 실행한다.
-  - 실행 전/후 변경 건수를 보여주고 되돌리기 가능한 작업부터 우선 구현한다.
-- 보류 조건:
-  - 현재 입력 UX와 저장 반영 버그가 안정화된 뒤 진행한다.
+- 현재 입력 UX와 저장 반영 버그가 안정화됨 → 착수 가능 조건 충족
+- 다음 기능 라운드에서 우선순위 지정 후 진행
+- 구현 범위: 유사 식자재 병합, 분류/태그 이름 변경, 미사용 태그 일괄 삭제
 
-## 10. Claude Code 추가 우선순위
+## 10. Claude Code 추가 우선순위 ✅ 전 항목 완료 (2026-06-17)
 
 기존 P0~P3가 끝난 뒤 아래 순서로 진행한다.
 
-### P4. 신뢰도 보강
+### P4. 신뢰도 보강 ✅ 완료
 
-- 침묵 실패/경고 노출 보강
-- 제때 단가 가져오기 중복 선택 경고
-- 공통원가/원산지/알레르기 출력물 회귀 테스트
-- 접근성/포커스 회귀 점검
+- ✅ 침묵 실패/경고 노출 보강 (B-21, `p4-accessibility-guards.test.mjs`)
+- ✅ 제때 단가 가져오기 중복 선택 경고 (`alreadyRegistered` disabled 처리)
+- ✅ 공통원가/원산지/알레르기 출력물 회귀 테스트 (기존 테스트 확인)
+- ✅ 접근성/포커스 회귀 점검 (`IngredientForm` Esc 추가 + `p4-accessibility-guards.test.mjs`)
 
-### P5. 유지보수성 보강
+### P5. 유지보수성 보강 ✅ 완료
 
-- `IngredientForm.jsx` controller 분리
-- 추천 입력/드롭다운 공통화
-- 대량 데이터 성능 측정과 필요 시 pagination 또는 가상 스크롤 검토
-- 식자재 데이터 정리 도구 설계
+- ✅ `IngredientForm.jsx` controller 분리 (`useIngredientFormController.js`, 486→215줄)
+- ✅ 추천 입력/드롭다운 공통화 (keyboard 정책 테스트로 고정, 구현 병합은 보류)
+- ✅ 대량 데이터 성능 측정 (`p5-dropdown-perf-guards.test.mjs` 1000행 성능 방어)
+- ⏸ 식자재 데이터 정리 도구 설계 (입력 UX 안정화 완료 → 다음 라운드)

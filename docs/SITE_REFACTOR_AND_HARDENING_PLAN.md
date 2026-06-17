@@ -131,24 +131,32 @@
 - 복원 page에서 파일 파싱, 위험 승인, 자동 백업, 실행 흐름을 `useRestoreFlow`로 분리한다.
 - 기능 동작은 기존과 동일하게 유지한다.
 
-### 3단계. 영양성분 label builder 분리
+### 3단계. 영양성분 label builder 분리 ✅ 완료 (2026-06-17)
 
-- `lib/nutrition/label/build.js`의 공통 helper와 시트별 builder를 분리한다.
-- public export는 기존 import 경로가 깨지지 않게 유지한다.
-- 시트별 fixture 테스트를 유지하거나 추가한다.
-- 특히 피자/조각/세트/음료의 정렬과 알레르기 합산 결과가 바뀌지 않아야 한다.
+- ✅ `lib/nutrition/label/build.js` 560줄 → barrel re-export 22줄
+- ✅ 공통 유틸 `_utils.js` (LABEL_COLS, scaleVal, roundLabelValue, parseVolumeMl, sortNutritionLabelMenus, augmentWithDerived 등)
+- ✅ 시트별 분리: `sheets/pizza.js`, `sheets/topping.js`, `sheets/side.js`, `sheets/set-half.js`, `sheets/beverage.js`
+- ✅ 외부 import 경로 `@/lib/nutrition/label/build` 변경 없음 (barrel 유지)
+- 커밋: `refactor: split nutrition label build.js into per-sheet files`
 
-### 4단계. 원가마진/원가보고서 분리
+### 4단계. 원가마진/원가보고서 분리 ✅ 완료 (2026-06-17)
 
-- 원가마진 page의 필터/정렬/통계/액션을 hook 또는 helper로 분리한다.
-- 원가 보고서 엑셀 export builder를 `lib/report` 아래로 이동한다.
-- page 컴포넌트는 데이터 로드, 옵션 상태, preview 조립만 담당하게 한다.
+- ✅ `app/report/cost/page.jsx` 384→255줄: exportCostXlsx → `lib/report/export-cost-xlsx.js` 분리
+  - guard 테스트: `export-cost-xlsx-structure.test.mjs` (+6건)
+  - 커밋: `refactor: extract exportCostXlsx to lib/report/export-cost-xlsx.js`
+- ✅ `app/cost/margin/page.jsx` 487→297줄: `useMarginFilters`, `useMarginActions` 분리
+  - `useMarginFilters`: catFilter/sortKey/sortDir/search/showHidden/edgeFilter + cats/filtered/edgeFiltered/sizeLabels/stats/handleSort/sortedFiltered/hiddenCount
+  - `useMarginActions`: handleSaveSnapshot/handleSavePlatforms/handleToggleHide
+  - guard 테스트: `margin-filter-state.test.mjs` (+7건)
+  - 커밋: `refactor: extract useMarginFilters and useMarginActions from margin page`
 
-### 5단계. 전역 UI 분리
+### 5단계. 전역 UI 분리 ✅ 완료 (2026-06-17)
 
-- `TopBar.jsx`를 기능별 컴포넌트로 분리한다.
-- 브랜드 전환, 알림, 프로필, 테마 toggle의 기존 동작을 유지한다.
-- 모바일/데스크톱에서 상단바 높이, dropdown z-index, outside click 동작을 확인한다.
+- ✅ `components/TopBar.jsx` 418→124줄
+- ✅ `components/topbar/CompanyPicker.jsx`, `ThemeToggle.jsx`, `NotificationPopover.jsx`, `ProfileMenu.jsx` 신규
+- ✅ clearAuthCookie/handleLogout → ProfileMenu, meta 객체 → NotificationPopover
+- ✅ guard 테스트: `topbar-structure.test.mjs` (+8건)
+- 커밋: `refactor: split TopBar into CompanyPicker/NotificationPopover/ProfileMenu/ThemeToggle`
 
 ### 6단계. 로딩 패턴 및 성능 점검
 

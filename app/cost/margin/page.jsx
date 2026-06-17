@@ -1,15 +1,11 @@
 'use client';
 import dynamic from 'next/dynamic';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
-import { getMenuPriceCategories } from '@/lib/cost/menu-price';
-import { getMenuCodeRank } from '@/lib/menu-categories';
-import { getMenuMasterMap, upsertMenuMaster } from '@/lib/menu-master';
 import {
-  savePlatforms,
   applyDiscount,
   calcNetRevenue,
   calcPlatformMargin,
@@ -18,7 +14,6 @@ import { MarginFilterBar } from '@/components/cost/margin/MarginFilterBar';
 import { MarginSummaryCards } from '@/components/cost/margin/MarginSummaryCards';
 import { MarginCostThresholdBar } from '@/components/cost/margin/MarginCostThresholdBar';
 import { MarginTableHeader } from '@/components/cost/margin/MarginTableHeader';
-import { saveSnapshot } from '@/lib/cost/margin/snapshots';
 import { showToast } from '@/components/Toast';
 import { MarginRow } from '@/components/cost/margin/MarginRow';
 import { exportMarginExcel } from '@/lib/cost/margin/export';
@@ -28,6 +23,8 @@ import {
   normalizeWarnPercentSetting,
   normalizeCritPercentSetting,
 } from './marginPageUtils';
+import { useMarginFilters } from './useMarginFilters';
+import { useMarginActions } from './useMarginActions';
 
 const PlatformSettingsModal = dynamic(
   () => import('@/components/cost/margin/PlatformSettingsModal').then(m => m.PlatformSettingsModal),
@@ -41,7 +38,6 @@ const MarginTrendModal = dynamic(
 export default function Page() {
   const { rows, platforms, setPlatforms, loading, dbError, load } = useMarginData();
 
-  const [catFilter, setCatFilter] = useLocalStorage(KEYS.MARGIN_CAT_FILTER, '전체');
   const [activePlatId, setActivePlatId] = useState('default');
   const [showSettings, setShowSettings] = useState(false);
   const [showTrend, setShowTrend] = useState(false);
@@ -49,23 +45,8 @@ export default function Page() {
   const [discType, setDiscType] = useState('pct');
   const [discVal, setDiscVal] = useState('');
   const [viewMode, setViewMode] = useState('cost');
-  const [sortKey, setSortKey] = useState('code');
-  const [sortDir, setSortDir] = useState('asc');
-  const [search, setSearch] = useState('');
   const [warnPct, setWarnPct] = useLocalStorage(KEYS.MARGIN_COST_WARN, 30, normalizeWarnPercentSetting);
   const [critPct, setCritPct] = useLocalStorage(KEYS.MARGIN_COST_CRIT, 40, normalizeCritPercentSetting);
-  const [showHidden, setShowHidden] = useState(false);
-  const [edgeFilter, setEdgeFilter] = useState(null);
-
-  // 저장된 필터가 현재 행에 없는 카테고리면 '전체'로 되돌림
-  useEffect(() => {
-    if (catFilter === '전체' || !rows.length) return;
-    const has = rows.some(r => {
-      const cat = r.menuCategory || '기타';
-      return cat === catFilter || (catFilter === '피자' && cat.startsWith('피자/'));
-    });
-    if (!has) setCatFilter('전체');
-  }, [catFilter, rows, setCatFilter]);
 
   const activePlatform = useMemo(
     () =>
@@ -83,196 +64,25 @@ export default function Page() {
 
   const hasAdjustment = !!(discount || activePlatform.fees?.length);
 
-  const cats = useMemo(() => {
-    const set = new Set(rows.map(r => r.menuCategory || '기타'));
-    const order = [...getMenuPriceCategories(), '기타'];
-    return [
-      '전체',
-      ...[...set].sort((a, b) => {
-        const ia = order.indexOf(a),
-          ib = order.indexOf(b);
-        return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-      }),
-    ];
-  }, [rows]);
+  const {
+    catFilter, setCatFilter,
+    sortKey, sortDir,
+    search, setSearch,
+    showHidden, setShowHidden,
+    edgeFilter, setEdgeFilter,
+    cats, edgeFiltered, sizeLabels, stats, handleSort, sortedFiltered, hiddenCount,
+  } = useMarginFilters({ rows, activePlatform, discount, warnPct, critPct, viewMode });
 
-  const filtered = useMemo(() => {
-    let result = showHidden ? rows : rows.filter(r => !r.hidden);
-    if (catFilter !== '전체') {
-      result = result.filter(r => {
-        const cat = r.menuCategory || '기타';
-        if (cat === catFilter) return true;
-        if (catFilter === '피자' && cat.startsWith('피자/')) return true;
-        return false;
-      });
-    }
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      result = result.filter(
-        r =>
-          (r.menuName || '').toLowerCase().includes(q) ||
-          (r.menuCategory || '').toLowerCase().includes(q)
-      );
-    }
-    return result;
-  }, [rows, catFilter, search, showHidden]);
-
-  const edgeFiltered = useMemo(() => {
-    if (!edgeFilter) return filtered;
-    const isDerived = r => String(r.id ?? '').startsWith('derived||');
-    if (edgeFilter === 'base') return filtered.filter(r => !isDerived(r));
-    return filtered.filter(r => isDerived(r) && String(r.id).split('||').pop() === edgeFilter);
-  }, [filtered, edgeFilter]);
-
-  const sizeLabels = useMemo(() => {
-    const set = new Set();
-    edgeFiltered.forEach(r =>
-      r.sizes?.forEach(s => {
-        if (s.label) set.add(s.label);
-      })
-    );
-    const order = ['L', 'R', '단일', '단품', '세트'];
-    return [...set].sort((a, b) => {
-      const ia = order.indexOf(a),
-        ib = order.indexOf(b);
-      if (ia !== -1 && ib !== -1) return ia - ib;
-      return ia !== -1 ? -1 : ib !== -1 ? 1 : a.localeCompare(b, 'ko');
-    });
-  }, [edgeFiltered]);
-
-  const stats = useMemo(() => {
-    if (!edgeFiltered.length) return null;
-    let sum = 0,
-      count = 0;
-    let lowCostCount = 0,
-      highCostCount = 0,
-      goodMarginCount = 0,
-      badMarginCount = 0;
-    for (const r of edgeFiltered) {
-      for (const s of r.sizes || []) {
-        const cost = r.costMap?.[s.label] || 0;
-        const eff = applyDiscount(s.sellingPrice, discount);
-        const net = calcNetRevenue(eff, activePlatform.fees, s.label);
-        const m = calcPlatformMargin(cost, net);
-        if (m == null) continue;
-        sum += m;
-        count++;
-        if (m < warnPct) lowCostCount++;
-        if (m >= critPct) highCostCount++;
-        const margin = 100 - m;
-        if (margin >= 100 - warnPct) goodMarginCount++;
-        if (margin < 100 - critPct) badMarginCount++;
-      }
-    }
-    if (!count) return null;
-    return { avg: sum / count, lowCostCount, highCostCount, goodMarginCount, badMarginCount };
-  }, [edgeFiltered, activePlatform, discount, warnPct, critPct]);
-
-  function handleSort(key) {
-    if (sortKey === key) {
-      setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortKey(key);
-      setSortDir('asc');
-    }
-  }
-
-  const sortedFiltered = useMemo(() => {
-    if (!sortKey) return edgeFiltered;
-
-    if (sortKey === 'code') {
-      return [...edgeFiltered].sort((a, b) => {
-        const ra = getMenuCodeRank(a.menuCode);
-        const rb = getMenuCodeRank(b.menuCode);
-        if (ra !== rb) return sortDir === 'asc' ? ra - rb : rb - ra;
-        const ca = (a.menuCode || '~~~').toLowerCase();
-        const cb = (b.menuCode || '~~~').toLowerCase();
-        const c = ca.localeCompare(cb, 'ko');
-        return sortDir === 'asc' ? c : -c;
-      });
-    }
-
-    function getVal(r) {
-      if (sortKey === 'name') return (r.menuName || '').toLowerCase();
-      if (sortKey === 'cat') return (r.menuCategory || '기타').toLowerCase();
-      const ul = sortKey.lastIndexOf('_');
-      if (ul === -1) return 0;
-      const type = sortKey.slice(0, ul);
-      const size = sortKey.slice(ul + 1);
-      if (type === 'cost') return r.costMap?.[size] ?? Infinity;
-      const sv = r.sizes?.find(s => s.label === size);
-      if (type === 'price') return sv?.sellingPrice ?? Infinity;
-      const eff = applyDiscount(sv?.sellingPrice, discount);
-      const net = calcNetRevenue(eff, activePlatform.fees, size);
-      if (type === 'net') return net ?? Infinity;
-      if (type === 'rate') {
-        const cr = calcPlatformMargin(r.costMap?.[size] ?? 0, net);
-        if (cr == null) return Infinity;
-        return viewMode === 'margin' ? 100 - cr : cr;
-      }
-      return 0;
-    }
-
-    return [...edgeFiltered].sort((a, b) => {
-      const va = getVal(a);
-      const vb = getVal(b);
-      if (va === Infinity && vb === Infinity) return 0;
-      if (va === Infinity) return 1;
-      if (vb === Infinity) return -1;
-      if (typeof va === 'string') {
-        const c = va.localeCompare(vb, 'ko');
-        return sortDir === 'asc' ? c : -c;
-      }
-      return sortDir === 'asc' ? va - vb : vb - va;
-    });
-  }, [edgeFiltered, sortKey, sortDir, discount, activePlatform, viewMode]);
-
-  async function handleSaveSnapshot() {
-    if (!stats) {
-      showToast('집계할 메뉴 데이터가 없어요', 'error');
-      return;
-    }
-    const avgCostRate = stats.avg;
-    const avgMargin = 100 - avgCostRate;
-    const menuCount = edgeFiltered.length;
-    const label = catFilter !== '전체' ? catFilter : '전체 메뉴';
-    try {
-      await saveSnapshot({ avgCostRate, avgMargin, menuCount, label });
-      showToast('추이 스냅샷 저장 완료', 'ok');
-    } catch (e) {
-      console.error('[CostMargin] save snapshot failed', e);
-      showToast('스냅샷 저장 실패: ' + e.message, 'error');
-    }
-  }
-
-  function handleSavePlatforms(newPlats) {
-    savePlatforms(newPlats);
-    setPlatforms(newPlats);
-    if (!newPlats.find(p => p.id === activePlatId)) setActivePlatId('default');
-    setShowSettings(false);
-    showToast('플랫폼 설정 저장됨', 'ok');
-  }
-
-  const handleToggleHide = useCallback(
-    async r => {
-      if (!r.menuCode) return;
-      try {
-        const map = await getMenuMasterMap();
-        const existing = map.get(r.menuCode);
-        if (!existing) {
-          showToast('마스터에 없는 메뉴라 숨길 수 없어요', 'error');
-          return;
-        }
-        await upsertMenuMaster({ ...existing, hidden: !r.hidden });
-        await load();
-      } catch (e) {
-        showToast('숨김 처리 실패: ' + e.message, 'error');
-      }
-    },
-    [load]
-  );
-
-  const hiddenCount = useMemo(() => rows.filter(r => r.hidden).length, [rows]);
+  const { handleSaveSnapshot, handleSavePlatforms, handleToggleHide } = useMarginActions({
+    stats,
+    edgeFiltered,
+    catFilter,
+    load,
+    setPlatforms,
+    activePlatId,
+    setActivePlatId,
+    setShowSettings,
+  });
 
   if (loading)
     return (
