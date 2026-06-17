@@ -40,4 +40,20 @@ describe('ingredient manage undo guards', () => {
     expect(actionsSource).toContain('buildBulkDeleteToast');
     expect(utilsSource).toContain('${removed.length}개 삭제됨 · ${failures.length}개 실패');
   });
+
+  test('warnIngredientCascadeFailures는 cascade 실패 건수를 toast로 노출한다', () => {
+    expect(utilsSource).toContain('warnIngredientCascadeFailures');
+    expect(utilsSource).toContain('cascadeErrors');
+    expect(utilsSource).toContain('showToast');
+    // 건수 계산: records[].cascadeErrors.length 합산
+    expect(utilsSource).toContain('cascadeErrors?.length');
+  });
+
+  test('단건 삭제 후 warnIngredientCascadeFailures가 호출된다', () => {
+    expect(actionsSource).toContain('warnIngredientCascadeFailures([backup])');
+  });
+
+  test('일괄 삭제 후 warnIngredientCascadeFailures가 호출된다', () => {
+    expect(actionsSource).toContain('warnIngredientCascadeFailures(removed)');
+  });
 });
