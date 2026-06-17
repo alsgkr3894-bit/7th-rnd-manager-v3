@@ -21,8 +21,9 @@ import { asDisplayText, asObjectArray, asRecord } from '@/lib/ui/prop-guards';
 import { getMenuCodeRank } from '@/lib/menu-categories';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { buildNutritionMenuMasterDiagnostics } from '@/lib/nutrition/menu-master-diagnostics';
+import { buildNutritionMissingValueDiagnostics } from '@/lib/nutrition/missing-values';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
-import { DuplicateNotice, MissingMasterNotice } from './NutritionMenuNotices';
+import { DuplicateNotice, MissingMasterNotice, MissingValueNotice } from './NutritionMenuNotices';
 import { NutritionMenuSkeleton } from './NutritionMenuSkeleton';
 import { NutritionMenuWorkspace } from './NutritionMenuWorkspace';
 
@@ -83,6 +84,10 @@ export default function Page() {
           menuRefs,
           menuMasters: masters,
         }),
+        missingValueDiagnostics: buildNutritionMissingValueDiagnostics({
+          menus: menuRefs,
+          rawMap: rawValues,
+        }),
       };
     },
     { initialData: null, onError: err => console.error('[NutritionMenu] load failed', err) }
@@ -98,6 +103,7 @@ export default function Page() {
   const setComps = data?.setComps ?? [];
   const duplicateDiagnostics = data?.duplicateDiagnostics ?? null;
   const menuMasterDiagnostics = data?.menuMasterDiagnostics ?? null;
+  const missingValueDiagnostics = data?.missingValueDiagnostics ?? null;
   useVisibilityRefresh(reload);
 
   const filteredMenus = useMemo(() => {
@@ -178,6 +184,7 @@ export default function Page() {
         onRepair={handleRepairOrphanMenus}
         isAdmin={isAdmin}
       />
+      <MissingValueNotice diagnostics={missingValueDiagnostics} />
 
       {loading ? (
         <NutritionMenuSkeleton />
