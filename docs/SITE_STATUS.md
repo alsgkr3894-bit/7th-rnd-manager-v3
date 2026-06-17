@@ -444,7 +444,7 @@ openNamed(name)이 이름별로 IDBDatabase 핸들을 Map에 캐싱(싱글톤/�
 ### lib/db/constants.js — DB 격리 방식
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/lib/db/constants.js`
 
-dbNameFor(brandId): main → 'rnd_manager_v3'(하위호환), 非main → 'rnd_manager_v3__<brandId>'. ALL_STORES에 42개 store 정의(DB_VERSION=23). 비-main 브랜드는 처음 접근 시 빈 DB로 자동 생성됨.
+dbNameFor(brandId): main → 'rnd_manager_v3'(하위호환), 非main → 'rnd_manager_v3__<brandId>'. ALL_STORES에 43개 store 정의(DB_VERSION=23). 비-main 브랜드는 처음 접근 시 빈 DB로 자동 생성됨.
 
 ### lib/db/shared.js — 노트 패밀리 공유 DB
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/lib/db/shared.js`
@@ -490,7 +490,7 @@ isAdmin 아닌 경우 편집 불가(권한 가드). 브랜드 추가/수정 폼(
 
 ## 8. 테스트 및 QA 현황
 
-Jest 단위 테스트 261개 파일(lib 237, hooks 20, scripts 4), QA 명령 3종(qa:smoke 22라우트, qa:runtime 전라우트 65개, qa:prod 프로덕션빌드). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
+Jest 단위 테스트 265개 파일(lib 240, hooks 20, scripts 5), QA 명령 3종(qa:smoke 22라우트, qa:runtime 전라우트 65개, qa:prod 프로덕션빌드) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
 
 ### Jest 단위 테스트 — lib
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/lib/`
