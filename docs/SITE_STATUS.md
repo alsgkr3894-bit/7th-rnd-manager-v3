@@ -132,7 +132,7 @@
 | `/note/sample/write` | 시제품 작성 — 새 시제품 폼(메뉴명·날짜·평점·태그·사진), 노트에서 정보 연동, Cmd+S 저장 | `app/note/sample/write/page.jsx` |
 | `/note/sample/[id]` | 시제품 상세/편집 — 기존 시제품 수정·평점·태그, CSV/인쇄 내보내기, 텍스트 복사 | `app/note/sample/[id]/page.jsx` |
 
-### 레거시 리다이렉트 (15개)
+### 레거시 리다이렉트 (12개)
 
 | 구 경로 | 신 경로 |
 |---|---|
@@ -413,7 +413,7 @@ open prop으로 조건부 렌더링(null 반환). danger prop으로 --negative �
 ### `컴포넌트 설계 패턴`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/components/ui/`
 
-모든 공통 UI 컴포넌트가 normalize*/get*Style 순수함수를 /lib/ui/<name>.js에 분리(로직·스타일 계산 함수). 컴포넌트는 JSX만 담당. lib/ui/prop-guards.ts에서 noop/asDisplayText/asObjectArray 등 공통 방어 함수 제공. 다크모드는 CSS 토큰 오버라이드만으로 처리(JS 없음)
+모든 공통 UI 컴포넌트가 normalize*/get*Style 순수함수를 /lib/ui/<name>.js에 분리(로직·스타일 계산 함수). 컴포넌트는 JSX만 담당. lib/ui/prop-guards.js에서 noop/asDisplayText/asObjectArray 등 공통 방어 함수 제공. 다크모드는 CSS 토큰 오버라이드만으로 처리(JS 없음)
 
 ---
 
@@ -470,6 +470,11 @@ MODULE_GROUPS: sales/jette/cost/notes/nutrition 5개 모듈에 store를 분류. 
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/lib/auth/accounts.js`
 
 역할: 'admin'(관리자)·'viewer'(조회자) 2종. 계정은 ref_accounts store(브랜드별 분리 DB)에 저장. 활성 계정 id는 브랜드별 localStorage key('rnd_active_account_id:<brandId>')로 관리. getActiveRole()은 DB가 비어있으면 'admin' 폴백. seedDefaultAdminIfEmpty()로 첫 실행 시 기본 관리자 자동 생성.
+
+### lib/auth/guard.js — 파괴적 액션 실행함수 권한 가드
+`/Users/lmh/Documents/Codex/7th-rnd-manager-v3/lib/auth/guard.js`
+
+`assertActiveAdmin(actionLabel)` — async, viewer면 `PermissionDeniedError`(code: `PERMISSION_DENIED`) throw. `getActiveRole`은 순환 import 회피 목적으로 동적 import. 가드 적용 대상: 계정 add/update/delete, 메뉴마스터 delete/reset/seed, 식자재 delete/bulkDelete, 복원 `importAllToBrand`, 시스템 handleReset/handleRecreate. 저수준 DB 프리미티브(`clearStore`/`deleteDatabase`)와 sync 브랜드 메타(`upsertBrand` 등)는 의도적으로 가드 제외.
 
 ### app/settings/brands/page.jsx — 브랜드 설정 화면
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/app/settings/brands/page.jsx`
