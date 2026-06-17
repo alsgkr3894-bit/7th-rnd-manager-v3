@@ -45,6 +45,19 @@ describe('파괴적 액션 권한 가드', () => {
     expect(functionBody(s, 'exportAllForBrand')).not.toContain('assertActiveAdmin');
   });
 
+  test('계정 add/update/delete가 assertActiveAdmin을 호출한다', () => {
+    const s = src('lib/auth/accounts.js');
+    expect(s).toContain("from '@/lib/auth/guard'");
+    expect(functionBody(s, 'addAccount')).toContain('assertActiveAdmin');
+    expect(functionBody(s, 'updateAccount')).toContain('assertActiveAdmin');
+    expect(functionBody(s, 'deleteAccount')).toContain('assertActiveAdmin');
+  });
+
+  test('계정 초기 시드(seedDefaultAdminIfEmpty)에는 가드가 없다', () => {
+    const s = src('lib/auth/accounts.js');
+    expect(functionBody(s, 'seedDefaultAdminIfEmpty')).not.toContain('assertActiveAdmin');
+  });
+
   test('저수준 DB 프리미티브(crud.js)에는 가드가 없다', () => {
     expect(src('lib/db/crud.js')).not.toContain('assertActiveAdmin');
   });
