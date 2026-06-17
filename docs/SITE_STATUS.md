@@ -198,7 +198,7 @@ dbNameFor(brandId): main → 'rnd_manager_v3', 기타 → 'rnd_manager_v3__<bran
 
 ## 4. 상태 관리 및 훅 패턴
 
-총 59개 커스텀 훅(4,455줄). 핵심 패턴은 useDBLoad(IndexedDB 비동기 로드 + cancelled 가드 + reload), useLocalStorage(SSR 하이드레이션 안전 3단계 패턴), 전역 Toast(모듈-레벨 싱글턴 setToasts 레퍼런스). 컨텍스트 없이 CustomEvent + localStorage + window.addEventListener 조합으로 브랜드·설정·역할 상태를 전파.
+총 59개 커스텀 훅(4,480줄). 핵심 패턴은 useDBLoad(IndexedDB 비동기 로드 + cancelled 가드 + reload), useLocalStorage(SSR 하이드레이션 안전 3단계 패턴), 전역 Toast(모듈-레벨 싱글턴 setToasts 레퍼런스). 컨텍스트 없이 CustomEvent + localStorage + window.addEventListener 조합으로 브랜드·설정·역할 상태를 전파.
 
 ### `hooks/ 디렉터리 전체 현황`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/`
@@ -490,12 +490,12 @@ isAdmin 아닌 경우 편집 불가(권한 가드). 브랜드 추가/수정 폼(
 
 ## 8. 테스트 및 QA 현황
 
-Jest 단위 테스트 268개 파일(lib 242, hooks 20, scripts 6), QA 명령 4종(qa:smoke 22라우트, qa:runtime 전라우트 65개, qa:prod 프로덕션빌드, qa:workflow 업무흐름 E2E 3시나리오) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
+Jest 단위 테스트 268개 파일(lib 242, hooks 20, scripts 6), QA 명령 4종(qa:smoke 22라우트, qa:runtime 전라우트 65개, qa:prod 프로덕션빌드, qa:workflow 업무흐름 E2E 6시나리오) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
 
 ### Jest 단위 테스트 — lib
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/lib/`
 
-__tests__/lib/ 하위 237개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
+__tests__/lib/ 하위 242개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
 
 ### Jest 단위 테스트 — hooks
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/hooks/`
@@ -505,7 +505,7 @@ __tests__/hooks/ 하위 20개 .test.mjs 파일. use-db-load, use-pagination, use
 ### Jest 단위 테스트 — scripts
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/scripts/`
 
-__tests__/scripts/ 하위 4개 파일(clean-build-script, full-rt-script, qa-browser-utils, smoke-qa-utils). QA 스크립트 내부 유틸 로직 단위 검증
+__tests__/scripts/ 하위 6개 파일(clean-build-script, full-rt-script, qa-browser-utils, smoke-qa-utils, workflow-qa-utils, site-status-audit). QA 스크립트 내부 유틸 로직 단위 검증
 
 ### 테스트 픽스처
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/fixtures/business/`
