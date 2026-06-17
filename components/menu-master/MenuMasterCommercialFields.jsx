@@ -72,7 +72,7 @@ export function NoteField({ value, setField }) {
 
 export function OriginAllergenExcludeField({ value, setField }) {
   return (
-    <div style={{ borderTop: '1px solid var(--divider)', paddingTop: 12 }}>
+    <div>
       <label
         style={{
           display: 'inline-flex',

@@ -74,8 +74,12 @@ export function MenuMasterEditModal({
         position: 'fixed',
         inset: 0,
         background: OVERLAY_COLOR,
-        display: 'grid',
-        placeItems: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        overflowY: 'auto',
+        padding: '32px 16px',
         zIndex: 400,
       }}
       onClick={e => {
@@ -86,11 +90,12 @@ export function MenuMasterEditModal({
         className="card"
         style={{
           width: 'min(960px, 96vw)',
-          maxHeight: '92vh',
+          maxHeight: 'calc(100vh - 64px)',
           display: 'flex',
           flexDirection: 'column',
           padding: 0,
           overflow: 'hidden',
+          flexShrink: 0,
         }}
       >
         {/* sticky 헤더 */}
