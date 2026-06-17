@@ -34,6 +34,17 @@ describe('파괴적 액션 권한 가드', () => {
     expect(functionBody(seed, 'seedMenuMaster')).toContain('assertActiveAdmin');
   });
 
+  test('복원 실행함수(importAllToBrand)가 assertActiveAdmin을 호출한다', () => {
+    const s = src('lib/db/backup.js');
+    expect(s).toContain("from '@/lib/auth/guard'");
+    expect(functionBody(s, 'importAllToBrand')).toContain('assertActiveAdmin');
+  });
+
+  test('백업 export 함수에는 가드가 없다(비파괴)', () => {
+    const s = src('lib/db/backup.js');
+    expect(functionBody(s, 'exportAllForBrand')).not.toContain('assertActiveAdmin');
+  });
+
   test('저수준 DB 프리미티브(crud.js)에는 가드가 없다', () => {
     expect(src('lib/db/crud.js')).not.toContain('assertActiveAdmin');
   });
