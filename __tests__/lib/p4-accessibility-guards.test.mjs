@@ -9,6 +9,10 @@ const ingredientFormSrc = readFileSync(
   resolve(process.cwd(), 'app/ingredient/manage/IngredientForm.jsx'),
   'utf-8'
 );
+const ingredientFormCtrlSrc = readFileSync(
+  resolve(process.cwd(), 'app/ingredient/manage/useIngredientFormController.js'),
+  'utf-8'
+);
 const menuModalSrc = readFileSync(
   resolve(process.cwd(), 'components/menu-master/MenuMasterEditModal.jsx'),
   'utf-8'
@@ -23,17 +27,17 @@ const fieldPrimSrc = readFileSync(
 );
 
 describe('IngredientForm 접근성', () => {
-  test('Esc 키로 모달을 닫는 keydown 핸들러가 있다', () => {
-    expect(ingredientFormSrc).toContain('Escape');
-    expect(ingredientFormSrc).toContain('keydown');
+  test('Esc 키로 모달을 닫는 keydown 핸들러가 컨트롤러에 있다', () => {
+    expect(ingredientFormCtrlSrc).toContain('Escape');
+    expect(ingredientFormCtrlSrc).toContain('keydown');
   });
 
   test('저장 중 aria-busy 속성이 있다', () => {
     expect(ingredientFormSrc).toContain('aria-busy={saving}');
   });
 
-  test('Cmd+S 저장 단축키(useKeyboardSave)가 연결되어 있다', () => {
-    expect(ingredientFormSrc).toContain('useKeyboardSave');
+  test('Cmd+S 저장 단축키(useKeyboardSave)가 컨트롤러에 연결되어 있다', () => {
+    expect(ingredientFormCtrlSrc).toContain('useKeyboardSave');
   });
 
   test('createPortal로 body에 렌더링된다', () => {

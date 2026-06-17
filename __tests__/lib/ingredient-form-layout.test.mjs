@@ -5,6 +5,10 @@ const src = readFileSync(
   resolve(process.cwd(), 'app/ingredient/manage/IngredientForm.jsx'),
   'utf-8'
 );
+const ctrlSrc = readFileSync(
+  resolve(process.cwd(), 'app/ingredient/manage/useIngredientFormController.js'),
+  'utf-8'
+);
 
 describe('IngredientForm 레이아웃 구조', () => {
   test('createPortal을 사용한다', () => {
@@ -53,11 +57,11 @@ describe('IngredientForm 레이아웃 구조', () => {
     expect(basicIdx).toBeGreaterThan(nameIdx);
   });
 
-  test('저장 payload 로직(handleSubmit)은 변경되지 않았다', () => {
-    expect(src).toContain('normalizeIngredientPhotos');
-    expect(src).toContain('getPrimaryIngredientPhoto');
-    expect(src).toContain('await onSave(data)');
-    expect(src).toContain('setLastUnitType');
+  test('저장 payload 로직(handleSubmit)은 컨트롤러에 있다', () => {
+    expect(ctrlSrc).toContain('normalizeIngredientPhotos');
+    expect(ctrlSrc).toContain('getPrimaryIngredientPhoto');
+    expect(ctrlSrc).toContain('await onSave(data)');
+    expect(ctrlSrc).toContain('setLastUnitType');
   });
 
   test('배경 클릭 시 닫기 핸들러가 있다', () => {
