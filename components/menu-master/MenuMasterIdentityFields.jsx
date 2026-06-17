@@ -1,7 +1,14 @@
 'use client';
 
+import { ComboBox } from '@/components/ui/ComboBox';
 import { CategoryTags } from '@/components/menu-master/MenuCategoryTags';
 import { FieldError, FieldLabel } from '@/components/menu-master/MenuMasterFieldPrimitives';
+import { isPizzaCategory, isSetCategory } from '@/lib/menu-master/category-policy';
+
+function defaultSizesFor(category) {
+  if (isPizzaCategory(category) || isSetCategory(category)) return ['L', 'R'];
+  return ['단일'];
+}
 
 export function MenuCodeField({ row, isNew, value, error, setField, setErrors, autoFocus }) {
   return (
@@ -68,6 +75,20 @@ export function MenuNameField({ value, error, setField, setErrors, autoFocus }) 
 }
 
 export function CategoryAndSizeFields({ form, presetCategories, setField }) {
+  const sizeDefaults = defaultSizesFor(form.category);
+  const sizeOptions =
+    form.size && !sizeDefaults.includes(form.size)
+      ? [...sizeDefaults, form.size]
+      : sizeDefaults;
+
+  function onCategoryChange(newCategory) {
+    setField('category', newCategory);
+    if (!form.size) {
+      const newDefaults = defaultSizesFor(newCategory);
+      if (newDefaults[0]) setField('size', newDefaults[0]);
+    }
+  }
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
       <div>
@@ -76,7 +97,7 @@ export function CategoryAndSizeFields({ form, presetCategories, setField }) {
           <select
             className="input"
             value={form.category}
-            onChange={e => setField('category', e.target.value)}
+            onChange={e => onCategoryChange(e.target.value)}
           >
             {presetCategories.map(category => (
               <option key={category} value={category}>
@@ -88,18 +109,19 @@ export function CategoryAndSizeFields({ form, presetCategories, setField }) {
           <input
             className="input"
             value={form.category}
-            onChange={e => setField('category', e.target.value)}
+            onChange={e => onCategoryChange(e.target.value)}
             placeholder="예) 탕수육 / 짜장 / 세트"
           />
         )}
       </div>
       <div>
         <FieldLabel>규격(사이즈)</FieldLabel>
-        <input
-          className="input"
+        <ComboBox
           value={form.size}
-          onChange={e => setField('size', e.target.value)}
+          onChange={v => setField('size', v)}
+          options={sizeOptions}
           placeholder="L / R / 단일"
+          inputClassName="input"
         />
       </div>
     </div>
