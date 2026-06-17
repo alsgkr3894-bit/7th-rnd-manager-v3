@@ -382,6 +382,106 @@ async function scenarioViewerBlocking(page, tmpDir) {
   return { name: 'viewer 권한 → 파괴적 액션 차단', steps };
 }
 
+// ── 시나리오 5: 잘못된 백업 파일 업로드 → 오류 안내 ──
+async function scenarioInvalidBackup(page, tmpDir) {
+  const steps = [];
+
+  // 케이스 1: 완전히 깨진 JSON (파싱 실패)
+  await step(steps, '손상된 JSON 파일 업로드 → 파싱 오류 토스트', async () => {
+    const badPath = join(tmpDir, 'bad-json.json');
+    writeFileSync(badPath, 'THIS IS NOT JSON {{{{');
+
+    await goto(page, '/settings/restore');
+    await page.waitForSelector('input[type="file"]', { state: 'visible', timeout: 15000 });
+    await page.setInputFiles('input[type="file"]', badPath);
+
+    await page.waitForFunction(
+      () =>
+        [...document.querySelectorAll('.toast')].some(t =>
+          t.textContent.includes('백업 파일을 읽을 수 없습니다')
+        ),
+      { timeout: 10000 }
+    );
+  });
+
+  // 케이스 2: 유효한 JSON이지만 stores 필드 누락
+  await step(steps, 'stores 누락 JSON 업로드 → 구조 오류 토스트', async () => {
+    const noStorePath = join(tmpDir, 'no-stores.json');
+    writeFileSync(noStorePath, JSON.stringify({ version: 'v3', brand: null }));
+
+    await goto(page, '/settings/restore');
+    await page.waitForSelector('input[type="file"]', { state: 'visible', timeout: 15000 });
+    await page.setInputFiles('input[type="file"]', noStorePath);
+
+    await page.waitForFunction(
+      () =>
+        [...document.querySelectorAll('.toast')].some(t =>
+          t.textContent.includes('잘못된 백업 파일 형식')
+        ),
+      { timeout: 10000 }
+    );
+  });
+
+  return { name: '잘못된 백업 파일 → 오류 안내', steps };
+}
+
+// ── 시나리오 6: 메뉴 필수항목 미입력 저장 차단 + 중복 코드 갱신 경고 ──
+async function scenarioMenuFormValidation(page, runId) {
+  const steps = [];
+  const code = `ZZ-E2E-S6-${runId}`.toUpperCase();
+  const name = `E2E폼검증-${runId}`;
+
+  // 1단계: 저장 버튼이 빈 폼에서 비활성화
+  await step(steps, '빈 폼에서 "저장" 버튼 비활성화', async () => {
+    await goto(page, '/menu-master');
+    await page.getByRole('button', { name: '메뉴 추가' }).click();
+    await page.getByPlaceholder('예) P-OR-005-L').waitFor({ state: 'visible', timeout: 15000 });
+
+    const saveBtn = page.getByRole('dialog').getByRole('button', { name: '저장' });
+    await saveBtn.waitFor({ state: 'visible', timeout: 5000 });
+    const disabled = await saveBtn.evaluate(el => el.disabled);
+    if (!disabled) throw new Error('빈 폼에서 저장 버튼이 활성화됨 — 필수 항목 가드 누락');
+  });
+
+  // 2단계: 코드만 입력해도 비활성화 유지 (메뉴명 필수)
+  await step(steps, '코드만 입력 시 "저장" 버튼 비활성화 유지', async () => {
+    await page.getByPlaceholder('예) P-OR-005-L').fill(code);
+    const saveBtn = page.getByRole('dialog').getByRole('button', { name: '저장' });
+    const disabled = await saveBtn.evaluate(el => el.disabled);
+    if (!disabled) throw new Error('메뉴명 없이 저장 버튼 활성화됨');
+  });
+
+  // 3단계: 메뉴명까지 입력 → 저장 성공
+  await step(steps, '코드+메뉴명 입력 후 저장 완료', async () => {
+    await page.getByPlaceholder('예) 슈퍼콤비네이션').fill(name);
+    await page.getByRole('dialog').getByRole('button', { name: '저장' }).click();
+    await page.getByRole('dialog').waitFor({ state: 'detached', timeout: 15000 });
+    await page.getByText(name, { exact: false }).first().waitFor({ state: 'visible', timeout: 15000 });
+  });
+
+  // 4단계: 동일 코드로 다시 추가 시도 → "기존 항목 갱신됨" 경고
+  await step(steps, '중복 코드 추가 시 갱신 경고 토스트', async () => {
+    await page.getByRole('button', { name: '메뉴 추가' }).click();
+    await page.getByPlaceholder('예) P-OR-005-L').waitFor({ state: 'visible', timeout: 15000 });
+    await page.getByPlaceholder('예) P-OR-005-L').fill(code);
+    await page.getByPlaceholder('예) 슈퍼콤비네이션').fill(`${name}-복사`);
+    await page.getByRole('dialog').getByRole('button', { name: '저장' }).click();
+
+    await page.waitForFunction(
+      () =>
+        [...document.querySelectorAll('.toast')].some(t => t.textContent.includes('갱신됨')),
+      { timeout: 10000 }
+    );
+  });
+
+  // 정리
+  await step(steps, '테스트 메뉴 정리', async () => {
+    await deleteRecordsByField(page, MAIN_DB, 'menu_master', 'menuCode', code);
+  });
+
+  return { name: '메뉴 폼 유효성 → 저장 차단 + 중복 코드 경고', steps };
+}
+
 async function main() {
   const browser = await chromium.launch();
   const ctx = await newAuthedContext(browser, { acceptDownloads: true }, BASE);
@@ -395,6 +495,8 @@ async function main() {
     scenarios.push(await scenarioNoteCreate(page, runId));
     scenarios.push(await scenarioMenuMasterCreate(page, runId));
     scenarios.push(await scenarioViewerBlocking(page, tmpDir));
+    scenarios.push(await scenarioInvalidBackup(page, tmpDir));
+    scenarios.push(await scenarioMenuFormValidation(page, runId));
   } finally {
     await page.close();
     await ctx.close();
