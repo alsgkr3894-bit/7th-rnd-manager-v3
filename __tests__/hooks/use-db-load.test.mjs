@@ -4,6 +4,8 @@ import { resolve } from 'path';
 
 const systemSrc = readFileSync(resolve('app/settings/system/page.jsx'), 'utf8');
 const systemUISrc = readFileSync(resolve('app/settings/system/_SystemSettingsUI.jsx'), 'utf8');
+const accountSrc = readFileSync(resolve('app/settings/account/page.jsx'), 'utf8');
+const accountUISrc = readFileSync(resolve('app/settings/account/_AccountSettingsUI.jsx'), 'utf8');
 
 const src = readFileSync(resolve('hooks/useDBLoad.js'), 'utf8');
 const menuSalesSrc = readFileSync(resolve('app/menu-sales/page.jsx'), 'utf8');
@@ -17,7 +19,6 @@ const marginDataSrc = readFileSync(resolve('app/cost/margin/useMarginData.js'), 
 const ingredientPriceSrc = readFileSync(resolve('hooks/useIngredientPriceData.js'), 'utf8');
 const backupSrc = readFileSync(resolve('app/settings/backup/page.jsx'), 'utf8');
 const restoreSrc = readFileSync(resolve('app/settings/restore/page.jsx'), 'utf8');
-const accountSrc = readFileSync(resolve('app/settings/account/page.jsx'), 'utf8');
 const menuMasterSrc = readFileSync(resolve('app/menu-master/page.jsx'), 'utf8');
 const nutritionMenuSrc = readFileSync(resolve('app/nutrition/menu/page.jsx'), 'utf8');
 const reportCostSrc = readFileSync(resolve('app/report/cost/page.jsx'), 'utf8');
@@ -248,5 +249,25 @@ describe('중위험 페이지·훅 useDBLoad 적용', () => {
     expect(systemUISrc).toContain('export function DangerConfirm');
     expect(systemUISrc).toContain('export function InfoCell');
     expect(systemUISrc).toContain('export function StorageUsageBar');
+  });
+
+  test('settings/account page가 _AccountSettingsUI에서 4개 컴포넌트를 import하고 인라인 JSX를 제거했다', () => {
+    expect(accountSrc).toContain('_AccountSettingsUI');
+    expect(accountSrc).toContain('AccountProfileCard');
+    expect(accountSrc).toContain('AccountSessionCard');
+    expect(accountSrc).toContain('AccountMembersCard');
+    expect(accountSrc).toContain('AccountPermissionsMatrix');
+    // 권한 매트릭스 상수는 UI 파일로 이동됨
+    expect(accountSrc).not.toContain("'관리자', '에디터', '조회자', 'API'");
+    expect(accountSrc).not.toContain('PERMISSIONS');
+    // ROLE_COLORS는 UI 파일로 이동됨
+    expect(accountSrc).not.toContain('ROLE_COLORS');
+  });
+
+  test('settings/account _AccountSettingsUI가 4개 컴포넌트를 모두 export한다', () => {
+    expect(accountUISrc).toContain('export function AccountProfileCard');
+    expect(accountUISrc).toContain('export function AccountSessionCard');
+    expect(accountUISrc).toContain('export function AccountMembersCard');
+    expect(accountUISrc).toContain('export function AccountPermissionsMatrix');
   });
 });

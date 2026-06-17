@@ -1,15 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
-import { getProfile, setProfile, getInitial } from '@/lib/profile';
+import { getProfile, setProfile } from '@/lib/profile';
 import { PinSection } from '@/components/settings/PinSection';
 import { PasswordChangeCard } from '@/components/settings/PasswordChangeCard';
-import { FormField } from '@/components/settings/FormField';
 import { getLastLogin, getCachedIP, fetchClientIP } from '@/lib/session';
-import { formatRelative } from '@/lib/format';
-import { SettingTile } from '@/components/ui/SettingTile';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useSettingsAuth } from '@/hooks/useSettingsAuth';
 import { useDBLoad } from '@/hooks/useDBLoad';
@@ -23,60 +19,14 @@ import {
   ROLE_LABELS,
 } from '@/lib/auth/accounts';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
-
-/**
- * 계정 관리 페이지
- *
- * v3는 단일 사용자 / 로컬 환경 — 인증·멀티 사용자 시스템 없음.
- * 디자인 기준이지만 다음 항목은 제외:
- *   - 마지막 로그인 / 접속 IP (인증 없음)
- *   - 비밀번호 변경 / 2FA (로그인 없음)
- *   - 구성원 목록 / 초대 / 역할 변경 (멀티 사용자 없음)
- *
- * 포함:
- *   - 내 프로필 카드 (편집 가능, localStorage 저장)
- *   - 단일 사용자 환경 안내
- *   - 역할별 권한 매트릭스 (정보 표시 / 향후 멀티 사용자 도입 시 기준)
- */
-
-const ROLES = ['관리자', '에디터', '조회자', 'API'];
+import {
+  AccountProfileCard,
+  AccountSessionCard,
+  AccountMembersCard,
+  AccountPermissionsMatrix,
+} from './_AccountSettingsUI';
 
 const PROFILE_FORM_DEFAULT = { name: '', email: '', team: '', role: '관리자' };
-
-const ROLE_COLORS = {
-  관리자: { bg: 'var(--accent-soft)', color: 'var(--accent-text)' },
-  에디터: { bg: 'var(--positive-soft)', color: 'var(--positive)' },
-  조회자: { bg: 'var(--surface-2)', color: 'var(--text-2)' },
-  API: { bg: '#F0EBFF', color: '#6B3FCB' },
-};
-
-const S_CARD_MT = { marginTop: 16 };
-const S_SECTION_TITLE = { fontSize: 15, fontWeight: 700, marginBottom: 4 };
-const S_SECTION_DESC = { fontSize: 13, color: 'var(--text-3)', marginBottom: 16 };
-const S_MUTED_DOT = { color: 'var(--text-4)' };
-const S_PERM_CHECK = {
-  display: 'inline-flex',
-  width: 24,
-  height: 24,
-  borderRadius: 6,
-  background: 'var(--positive-soft)',
-  color: 'var(--positive)',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontWeight: 800,
-};
-
-// 권한 매트릭스 (정보용)
-const PERMISSIONS = [
-  { name: '판매량 업로드', r: ['✓', '✓', '', '✓'] },
-  { name: '단가 업로드·수정', r: ['✓', '✓', '', ''] },
-  { name: '원가표·메뉴 편집', r: ['✓', '✓', '', ''] },
-  { name: '보고서 생성', r: ['✓', '✓', '', ''] },
-  { name: '보고서 조회', r: ['✓', '✓', '✓', '✓'] },
-  { name: '메뉴개발노트 작성', r: ['✓', '✓', '', ''] },
-  { name: '백업·복원 실행', r: ['✓', '', '', ''] },
-  { name: '구성원 관리', r: ['✓', '', '', ''] },
-];
 
 export default function Page() {
   const [profile, setProfileState] = useState(null);
@@ -84,8 +34,7 @@ export default function Page() {
   const [form, setForm] = useState({ name: '', email: '', team: '', role: '' });
   const { role: currentRole, isAdmin } = useCurrentRole();
 
-  // 계정 목록 — useDBLoad로 로드, reload는 add/delete 후 재조회에 사용
-  const [activeId, setActiveId] = useState(null); // "전환" 버튼 즉시 반영용 로컬 상태
+  const [activeId, setActiveId] = useState(null);
   const { data: accountData, reload: reloadAccounts } = useDBLoad(
     async () => {
       await seedDefaultAdminIfEmpty();
@@ -102,7 +51,6 @@ export default function Page() {
     { initialData: null, onError: err => console.error('[account] 계정 로드 실패', err) }
   );
   const accounts = accountData?.accounts ?? [];
-  // data가 갱신되면 activeId 동기화 (전환 버튼의 로컬 덮어쓰기보다 DB 값 우선)
   useEffect(() => {
     if (accountData?.activeId !== undefined) setActiveId(accountData.activeId);
   }, [accountData?.activeId]);
@@ -113,15 +61,13 @@ export default function Page() {
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [confirmClearPin, setConfirmClearPin] = useState(false);
 
-  // PIN 관리
   const { hasPin, setPin: savePin } = useSettingsAuth();
   const [pinInput, setPinInput] = useState('');
   const [pinConfirm, setPinConfirm] = useState('');
   const [pinError, setPinError] = useState('');
 
-  // 세션 정보
   const [lastLogin, setLastLogin] = useState(null);
-  const [ipEntry, setIpEntry] = useState(null); // { ip, at } | null
+  const [ipEntry, setIpEntry] = useState(null);
   const [ipLoading, setIpLoading] = useState(false);
 
   useEffect(() => {
@@ -141,6 +87,10 @@ export default function Page() {
     } finally {
       setIpLoading(false);
     }
+  }
+
+  function handleProfileFormChange(key, val) {
+    setForm(f => ({ ...f, [key]: val }));
   }
 
   function startEdit() {
@@ -204,6 +154,35 @@ export default function Page() {
     import('@/lib/work-log').then(m => m.logWork('SECURITY', '설정 PIN 해제')).catch(() => {});
   }
 
+  function handleNewAccFormChange(key, val) {
+    setNewAccForm(f => ({ ...f, [key]: val }));
+  }
+
+  async function handleAddAccount() {
+    if (!newAccForm.name.trim()) {
+      showToast('이름을 입력하세요', 'error');
+      return;
+    }
+    setAddingBusy(true);
+    try {
+      await addAccount(newAccForm);
+      reloadAccounts();
+      setNewAccForm({ name: '', email: '', role: 'viewer' });
+      setAddingAccount(false);
+      showToast('계정 추가됨', 'ok');
+    } catch (err) {
+      showToast('실패: ' + err.message, 'error');
+    } finally {
+      setAddingBusy(false);
+    }
+  }
+
+  function handleSwitchAccount(acc) {
+    setActiveAccountId(acc.id);
+    setActiveId(acc.id);
+    showToast(`${acc.name}(${ROLE_LABELS[acc.role]}) 계정으로 전환됨`, 'ok');
+  }
+
   if (!profile) {
     return (
       <main className="main page-enter">
@@ -246,431 +225,74 @@ export default function Page() {
         sub="내 프로필 정보와 역할별 권한 기준을 확인하세요"
       />
 
-      {/* 비밀번호 변경 */}
       <PasswordChangeCard />
 
-      {/* 내 프로필 */}
-      <div
-        className="card"
-        style={{ marginTop: 16, padding: 24, display: 'flex', gap: 24, alignItems: 'flex-start' }}
-      >
-        {/* 아바타 */}
-        <div
-          style={{
-            width: 72,
-            height: 72,
-            borderRadius: '50%',
-            background: 'var(--accent)',
-            color: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 800,
-            fontSize: 28,
-            flex: '0 0 72px',
-          }}
-        >
-          {getInitial(profile.name)}
-        </div>
+      <AccountProfileCard
+        profile={profile}
+        editing={editing}
+        form={form}
+        onStartEdit={startEdit}
+        onCancelEdit={cancelEdit}
+        onSaveEdit={saveEdit}
+        onFormChange={handleProfileFormChange}
+      />
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {!editing ? (
-            <>
-              <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>{profile.name}</div>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  fontSize: 13,
-                  color: 'var(--text-2)',
-                  flexWrap: 'wrap',
-                }}
-              >
-                {profile.team && <span>{profile.team}</span>}
-                {profile.team && profile.email && <span style={S_MUTED_DOT}>·</span>}
-                {profile.email && <span style={{ fontFamily: 'monospace' }}>{profile.email}</span>}
-                <span
-                  className="chip"
-                  style={{
-                    background: ROLE_COLORS[profile.role]?.bg || 'var(--surface-2)',
-                    color: ROLE_COLORS[profile.role]?.color || 'var(--text-2)',
-                    marginLeft: 6,
-                  }}
-                >
-                  {profile.role}
-                </span>
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                <button className="btn sm" onClick={startEdit}>
-                  <Icon.note style={{ width: 12, height: 12 }} />
-                  프로필 수정
-                </button>
-              </div>
-            </>
-          ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))',
-                gap: 12,
-              }}
-            >
-              <FormField label="이름" required>
-                <input
-                  className="input"
-                  value={form.name}
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="예: 이민학 주임"
-                />
-              </FormField>
-              <FormField label="이메일">
-                <input
-                  className="input"
-                  type="email"
-                  value={form.email}
-                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                  placeholder="예: rnd@7thpizza.com"
-                />
-              </FormField>
-              <FormField label="팀">
-                <input
-                  className="input"
-                  value={form.team}
-                  onChange={e => setForm(f => ({ ...f, team: e.target.value }))}
-                  placeholder="예: R&D팀"
-                />
-              </FormField>
-              <FormField label="역할">
-                <select
-                  className="period-select"
-                  value={form.role}
-                  onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
-                  style={{ width: '100%' }}
-                >
-                  {ROLES.map(r => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-              <div
-                style={{
-                  gridColumn: '1 / -1',
-                  display: 'flex',
-                  gap: 8,
-                  justifyContent: 'flex-end',
-                  marginTop: 8,
-                }}
-              >
-                <button className="btn" onClick={cancelEdit}>
-                  취소
-                </button>
-                <button className="btn primary" onClick={saveEdit}>
-                  저장
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      <AccountSessionCard
+        lastLogin={lastLogin}
+        ipEntry={ipEntry}
+        ipLoading={ipLoading}
+        onRefreshIP={handleRefreshIP}
+      />
 
-      {/* 세션 정보 — 마지막 로그인 / 접속 IP */}
-      <div className="card" style={S_CARD_MT}>
-        <h2 style={S_SECTION_TITLE}>세션 정보</h2>
-        <p style={S_SECTION_DESC}>
-          현재 브라우저 세션 기준 마지막 로그인 시각과 접속 IP입니다. IP는 외부 공개 API(
-          <span style={{ fontFamily: 'monospace' }}>api.ipify.org</span>)로 조회합니다.
-        </p>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))',
-            gap: 16,
-          }}
-        >
-          <SettingTile
-            variant="tile"
-            label="마지막 로그인"
-            value={lastLogin ? new Date(lastLogin).toLocaleString('ko-KR') : '기록 없음'}
-            sub={lastLogin ? formatRelative(lastLogin) : '새 브라우저 세션이 시작되면 기록됩니다'}
-          />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <SettingTile
-              variant="tile"
-              label="접속 IP"
-              value={ipEntry ? ipEntry.ip : ipLoading ? '조회 중…' : '—'}
-              sub={
-                ipEntry
-                  ? `갱신: ${new Date(ipEntry.at).toLocaleString('ko-KR')}`
-                  : ipLoading
-                    ? '잠시만 기다려 주세요'
-                    : 'api.ipify.org 조회 — 버튼을 눌러 실행'
-              }
-              mono
-            />
-            {!ipLoading && (
-              <button
-                className="btn sm ghost"
-                onClick={handleRefreshIP}
-                style={{ fontSize: 11, alignSelf: 'flex-start' }}
-              >
-                IP 조회
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 설정 PIN 관리 */}
       <PinSection
         hasPin={hasPin}
         pinInput={pinInput}
-        setPinInput={v => {
-          setPinError('');
-          setPinInput(v);
-        }}
+        setPinInput={v => { setPinError(''); setPinInput(v); }}
         pinConfirm={pinConfirm}
-        setPinConfirm={v => {
-          setPinError('');
-          setPinConfirm(v);
-        }}
+        setPinConfirm={v => { setPinError(''); setPinConfirm(v); }}
         pinError={pinError}
         onSetPin={handleSetPin}
         onClearPin={handleClearPin}
       />
 
-      {/* ── 로컬 계정 관리 ── */}
-      <div className="card" style={S_CARD_MT}>
-        <div className="card-header">
-          <div>
-            <div className="card-title">구성원 계정</div>
-            <div className="card-sub">활성 계정의 역할이 앱 내 수정 권한을 제어합니다</div>
-          </div>
-          {isAdmin && (
-            <button className="btn sm" onClick={() => setAddingAccount(v => !v)}>
-              {addingAccount ? '취소' : '+ 계정 추가'}
-            </button>
-          )}
-        </div>
+      <AccountMembersCard
+        accounts={accounts}
+        activeId={activeId}
+        addingAccount={addingAccount}
+        newAccForm={newAccForm}
+        addingBusy={addingBusy}
+        isAdmin={isAdmin}
+        onToggleAdding={() => setAddingAccount(v => !v)}
+        onNewAccFormChange={handleNewAccFormChange}
+        onAddAccount={handleAddAccount}
+        onSwitchAccount={handleSwitchAccount}
+        onDeleteConfirm={setDeleteConfirmId}
+      />
 
-        {addingAccount && isAdmin && (
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              flexWrap: 'wrap',
-              alignItems: 'flex-end',
-              padding: '12px 0 8px',
-              borderBottom: '1px solid var(--divider)',
-              marginBottom: 8,
-            }}
-          >
-            <input
-              className="input"
-              style={{ flex: 1, minWidth: 120 }}
-              placeholder="이름"
-              value={newAccForm.name}
-              onChange={e => setNewAccForm(f => ({ ...f, name: e.target.value }))}
-            />
-            <input
-              className="input"
-              style={{ flex: 1, minWidth: 140 }}
-              placeholder="이메일 (선택)"
-              value={newAccForm.email}
-              onChange={e => setNewAccForm(f => ({ ...f, email: e.target.value }))}
-            />
-            <select
-              className="input"
-              style={{ width: 100 }}
-              value={newAccForm.role}
-              onChange={e => setNewAccForm(f => ({ ...f, role: e.target.value }))}
-            >
-              <option value="admin">관리자</option>
-              <option value="viewer">조회자</option>
-            </select>
-            <button
-              className="btn primary sm"
-              disabled={addingBusy}
-              onClick={async () => {
-                if (!newAccForm.name.trim()) {
-                  showToast('이름을 입력하세요', 'error');
-                  return;
-                }
-                setAddingBusy(true);
-                try {
-                  await addAccount(newAccForm);
-                  reloadAccounts();
-                  setNewAccForm({ name: '', email: '', role: 'viewer' });
-                  setAddingAccount(false);
-                  showToast('계정 추가됨', 'ok');
-                } catch (err) {
-                  showToast('실패: ' + err.message, 'error');
-                } finally {
-                  setAddingBusy(false);
-                }
-              }}
-            >
-              {addingBusy ? '추가 중…' : '추가'}
-            </button>
-          </div>
-        )}
+      <AccountPermissionsMatrix />
 
-        {accounts.length === 0 ? (
-          <div style={{ color: 'var(--text-4)', fontSize: 13, padding: '12px 0' }}>
-            계정 없음 — 자동 관리자 계정이 생성됩니다
-          </div>
-        ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>이름</th>
-                <th>이메일</th>
-                <th style={{ width: 80 }}>역할</th>
-                <th style={{ width: 100 }}>상태</th>
-                {isAdmin && <th style={{ width: 60 }} />}
-              </tr>
-            </thead>
-            <tbody>
-              {accounts.map(acc => {
-                const isActive = acc.id === activeId;
-                return (
-                  <tr
-                    key={acc.id}
-                    style={isActive ? { background: 'var(--accent-soft)' } : undefined}
-                  >
-                    <td style={{ fontWeight: isActive ? 700 : 500 }}>{acc.name}</td>
-                    <td className="muted" style={{ fontSize: 12 }}>
-                      {acc.email || '—'}
-                    </td>
-                    <td>
-                      <span
-                        className="chip"
-                        style={{
-                          background:
-                            acc.role === 'admin' ? 'var(--accent-soft)' : 'var(--surface-2)',
-                          color: acc.role === 'admin' ? 'var(--accent-text)' : 'var(--text-2)',
-                        }}
-                      >
-                        {ROLE_LABELS[acc.role] || acc.role}
-                      </span>
-                    </td>
-                    <td>
-                      {isActive ? (
-                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)' }}>
-                          활성
-                        </span>
-                      ) : (
-                        <button
-                          className="btn sm"
-                          style={{ fontSize: 11 }}
-                          onClick={() => {
-                            setActiveAccountId(acc.id);
-                            setActiveId(acc.id);
-                            showToast(
-                              `${acc.name}(${ROLE_LABELS[acc.role]}) 계정으로 전환됨`,
-                              'ok'
-                            );
-                          }}
-                        >
-                          전환
-                        </button>
-                      )}
-                    </td>
-                    {isAdmin && (
-                      <td>
-                        {accounts.length > 1 && (
-                          <button
-                            className="btn sm"
-                            style={{ color: 'var(--negative)', fontSize: 11 }}
-                            onClick={() => setDeleteConfirmId(acc.id)}
-                          >
-                            삭제
-                          </button>
-                        )}
-                      </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* 역할별 권한 매트릭스 (정보 표시) */}
-      <div className="card" style={S_CARD_MT}>
-        <h2 style={S_SECTION_TITLE}>역할별 권한 (정보)</h2>
-        <p style={S_SECTION_DESC}>
-          향후 멀티 사용자 환경 도입 시 기준이 되는 역할·권한 표입니다. 현재는 표시용입니다.
-        </p>
-        <div style={{ overflowX: 'auto' }}>
-          <table className="data-table" style={{ width: '100%' }}>
-            <thead>
-              <tr>
-                <th style={{ width: 180 }}>권한</th>
-                {ROLES.map(r => (
-                  <th key={r} style={{ textAlign: 'center', width: 110 }}>
-                    <span
-                      className="chip"
-                      style={{
-                        background: ROLE_COLORS[r].bg,
-                        color: ROLE_COLORS[r].color,
-                        fontSize: 11,
-                      }}
-                    >
-                      {r}
-                    </span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {PERMISSIONS.map(row => (
-                <tr key={row.name}>
-                  <td style={{ fontWeight: 600 }}>{row.name}</td>
-                  {row.r.map((v, i) => (
-                    <td key={i} style={{ textAlign: 'center' }}>
-                      {v ? (
-                        <span style={S_PERM_CHECK}>{v}</span>
-                      ) : (
-                        <span style={S_MUTED_DOT}>—</span>
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      {deleteConfirmId != null &&
-        (() => {
-          const target = accounts.find(a => a.id === deleteConfirmId);
-          return (
-            <ConfirmDialog
-              open
-              message={`"${target?.name}" 계정을 삭제합니다. 되돌릴 수 없습니다.`}
-              danger
-              onConfirm={async () => {
-                setDeleteConfirmId(null);
-                try {
-                  await deleteAccount(deleteConfirmId);
-                  if (deleteConfirmId === activeId) {
-                    const remaining = accounts.filter(a => a.id !== deleteConfirmId);
-                    setActiveAccountId(remaining[0]?.id ?? null);
-                  }
-                  reloadAccounts();
-                  showToast('계정 삭제됨', 'ok');
-                } catch (err) {
-                  showToast('실패: ' + err.message, 'error');
-                }
-              }}
-              onCancel={() => setDeleteConfirmId(null)}
-            />
-          );
-        })()}
+      {deleteConfirmId != null && (
+        <ConfirmDialog
+          open
+          message={`"${accounts.find(a => a.id === deleteConfirmId)?.name}" 계정을 삭제합니다. 되돌릴 수 없습니다.`}
+          danger
+          onConfirm={async () => {
+            setDeleteConfirmId(null);
+            try {
+              await deleteAccount(deleteConfirmId);
+              if (deleteConfirmId === activeId) {
+                const remaining = accounts.filter(a => a.id !== deleteConfirmId);
+                setActiveAccountId(remaining[0]?.id ?? null);
+              }
+              reloadAccounts();
+              showToast('계정 삭제됨', 'ok');
+            } catch (err) {
+              showToast('실패: ' + err.message, 'error');
+            }
+          }}
+          onCancel={() => setDeleteConfirmId(null)}
+        />
+      )}
       {confirmClearPin && (
         <ConfirmDialog
           open
