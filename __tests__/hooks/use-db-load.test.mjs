@@ -2,6 +2,9 @@ import { describe, expect, test } from '@jest/globals';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
+const systemSrc = readFileSync(resolve('app/settings/system/page.jsx'), 'utf8');
+const systemUISrc = readFileSync(resolve('app/settings/system/_SystemSettingsUI.jsx'), 'utf8');
+
 const src = readFileSync(resolve('hooks/useDBLoad.js'), 'utf8');
 const menuSalesSrc = readFileSync(resolve('app/menu-sales/page.jsx'), 'utf8');
 const nutritionSrc = readFileSync(resolve('app/nutrition/page.jsx'), 'utf8');
@@ -219,5 +222,31 @@ describe('중위험 페이지·훅 useDBLoad 적용', () => {
     // ready는 stats !== null 파생
     expect(backupSrc).toContain('ready = stats !== null');
     expect(backupSrc).toContain('collectStoreStats');
+  });
+
+  test('settings/system page가 useDBLoad를 사용하고 useMounted·initDB·useEffect를 제거했다', () => {
+    expect(systemSrc).toContain('useDBLoad');
+    expect(systemSrc).not.toContain("import { initDB");
+    expect(systemSrc).not.toContain("useMounted");
+    expect(systemSrc).not.toContain('mountedRef');
+    expect(systemSrc).not.toContain('setReady(');
+    expect(systemSrc).not.toContain('setStats(');
+    expect(systemSrc).not.toContain('setStorageEst(');
+    expect(systemSrc).not.toContain('refreshStats');
+    // reload alias 사용
+    expect(systemSrc).toContain('reloadStats');
+    // ready는 statsData 파생
+    expect(systemSrc).toContain('ready = statsData !== null');
+  });
+
+  test('settings/system _SystemSettingsUI가 8개 컴포넌트를 모두 export한다', () => {
+    expect(systemUISrc).toContain('export function SettingsGroup');
+    expect(systemUISrc).toContain('export function SettingsRow');
+    expect(systemUISrc).toContain('export function Segmented');
+    expect(systemUISrc).toContain('export function StaticValue');
+    expect(systemUISrc).toContain('export function StatusValue');
+    expect(systemUISrc).toContain('export function DangerConfirm');
+    expect(systemUISrc).toContain('export function InfoCell');
+    expect(systemUISrc).toContain('export function StorageUsageBar');
   });
 });
