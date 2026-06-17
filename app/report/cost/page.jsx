@@ -236,9 +236,12 @@ export default function Page() {
     {
       initialData: null,
       keepDataOnReload: false,
-      mapErrorMessage: err => {
-        console.error('[cost report]', err);
-        return err.message || '메뉴 가격 데이터를 불러오는 중 오류가 발생했어요.';
+      mapErrorMessage: err => err.message || '메뉴 가격 데이터를 불러오는 중 오류가 발생했어요.',
+      onError: err => {
+        // "메뉴 가격 없음"은 빈 DB 안내 메시지이므로 콘솔 에러 제외
+        if (!err.message?.includes('메뉴 가격 데이터가 없어요')) {
+          console.error('[cost report]', err);
+        }
       },
     }
   );
