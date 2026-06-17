@@ -160,11 +160,14 @@
 - ✅ guard 테스트: `topbar-structure.test.mjs` (+8건)
 - 커밋: `refactor: split TopBar into CompanyPicker/NotificationPopover/ProfileMenu/ThemeToggle`
 
-### 6단계. 로딩 패턴 및 성능 점검
+### 6단계. 로딩 패턴 정리 ✅ 완료 (2026-06-17)
 
-- 수동 DB load 패턴을 `useDBLoad`로 전환할 수 있는 화면을 처리한다.
-- 대량 fixture로 주요 테이블 검색/필터 성능을 측정한다.
-- 문제가 확인된 화면부터 pagination 또는 가상 스크롤을 적용한다.
+- ✅ `components/cost/ingredient-price/SuppliersView.jsx`: `useEffect+initDB+mountedRef` → `useDBLoad(getAllSuppliers)`
+  - suppliers/loading/dbError 상태·useRef·useCallback 제거, `load()` → `reload()`
+- ✅ `components/cost/manage/CommonManageView.jsx`: 동일 패턴 → `useDBLoad(async () => { ... })`
+  - fetchFn이 `{ allMeta, unitPriceMap, groups, edges }` 반환, `data?.X ?? []` 로 구조 분해
+  - `setEdges(...)` 직접 변경 → `load()` (reload) 로 통일
+- 커밋: `refactor: migrate CommonManageView and SuppliersView to useDBLoad`
 
 ### 7단계. 보안 점검
 

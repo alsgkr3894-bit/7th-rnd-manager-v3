@@ -1,14 +1,14 @@
 'use client';
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { initDB } from '@/lib/db';
 import {
   getAllSuppliers,
   addSupplier,
   updateSupplier,
   deleteSupplier,
 } from '@/lib/cost/suppliers/store';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import { SupplierModal } from './suppliers/SupplierModal';
 import { SuppliersListPanel } from './suppliers/SuppliersListPanel';
 import { SuppliersToolbar } from './suppliers/SuppliersToolbar';
@@ -16,36 +16,19 @@ import { filterSuppliers } from './suppliers/supplierViewUtils';
 
 // ── 공급업체 뷰 (식자재 단가 마스터 탭) ────────────────────────
 export function SuppliersView() {
-  const [suppliers, setSuppliers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [dbError, setDbError] = useState(null);
   const [search, setSearch] = useState('');
   const [modalTarget, setModalTarget] = useState(null); // null | 'new' | supplierRecord
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
-  const mountedRef = useRef(true);
 
-  const load = useCallback(async () => {
-    await initDB();
-    const rows = await getAllSuppliers();
-    if (mountedRef.current) setSuppliers(rows);
-  }, []);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    load()
-      .catch(err => {
-        if (!mountedRef.current) return;
-        console.error('[SuppliersView] load failed', err);
-        setDbError(err.message || '데이터 로드 실패');
-      })
-      .finally(() => {
-        if (mountedRef.current) setLoading(false);
-      });
-
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [load]);
+  const {
+    data: suppliers,
+    loading,
+    errorMessage: dbError,
+    reload,
+  } = useDBLoad(getAllSuppliers, {
+    initialData: [],
+    onError: err => console.error('[SuppliersView] load failed', err),
+  });
 
   async function handleSave(form) {
     try {
@@ -57,7 +40,7 @@ export function SuppliersView() {
         showToast('공급업체 수정 완료', 'ok');
       }
       setModalTarget(null);
-      await load();
+      reload();
     } catch (e) {
       showToast('저장 실패: ' + e.message, 'error');
       throw e;
@@ -68,7 +51,7 @@ export function SuppliersView() {
     try {
       await deleteSupplier(id);
       showToast('삭제 완료', 'ok');
-      await load();
+      reload();
     } catch (e) {
       showToast('삭제 실패: ' + e.message, 'error');
     }

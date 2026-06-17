@@ -1,8 +1,8 @@
 'use client';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { initDB } from '@/lib/db';
+import { useDBLoad } from '@/hooks/useDBLoad';
 import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { getAllIngredients } from '@/lib/ingredient';
 import { buildUnitPriceMap } from '@/lib/recipe';
@@ -31,13 +31,37 @@ import { CommonEdgesView } from '@/components/cost/manage/CommonEdgesView';
  */
 export function CommonManageView({ tab = 'groups' }) {
   const isMain = useIsMainBrand(); // 마스터 시드는 7번가 전용
-  const [allMeta, setAllMeta] = useState([]);
-  const [unitPriceMap, setUnitPriceMap] = useState(new Map());
-  const [loading, setLoading] = useState(true);
-  const [dbError, setDbError] = useState(null);
+
+  const { data, loading, errorMessage: dbError, reload: load } = useDBLoad(
+    async () => {
+      const [files, meta, gs, edgeList] = await Promise.all([
+        getPriceFiles(),
+        getAllIngredients(),
+        getAllRecipeGroups(),
+        getAllEdges(),
+      ]);
+      const latest = files[0] || null;
+      let priceRowMap = new Map();
+      if (latest) {
+        const rows = await getPriceRowsByFileId(latest.id);
+        priceRowMap = buildPriceRowMap(rows).map;
+      }
+      return {
+        allMeta: meta,
+        unitPriceMap: buildUnitPriceMap(meta, priceRowMap),
+        groups: gs,
+        edges: edgeList,
+      };
+    },
+    { initialData: null, onError: err => console.error('[CommonManageView] load failed', err) }
+  );
+
+  const allMeta = data?.allMeta ?? [];
+  const unitPriceMap = data?.unitPriceMap ?? new Map();
+  const groups = data?.groups ?? [];
+  const edges = data?.edges ?? [];
 
   // Groups state
-  const [groups, setGroups] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [isNew, setIsNew] = useState(false);
   const [draft, setDraft] = useState(null);
@@ -48,52 +72,12 @@ export function CommonManageView({ tab = 'groups' }) {
   const [edgeSearch, setEdgeSearch] = useState('');
 
   // Edges state
-  const [edges, setEdges] = useState([]);
   const [edgeTarget, setEdgeTarget] = useState(null);
   const [deletePending, setDeletePending] = useState(null);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [seeding, setSeeding] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const mountedRef = useRef(true);
-
-  const load = useCallback(async () => {
-    await initDB();
-    const [files, meta, gs, edgeList] = await Promise.all([
-      getPriceFiles(),
-      getAllIngredients(),
-      getAllRecipeGroups(),
-      getAllEdges(),
-    ]);
-    const latest = files[0] || null;
-    let priceRowMap = new Map();
-    if (latest) {
-      const rows = await getPriceRowsByFileId(latest.id);
-      priceRowMap = buildPriceRowMap(rows).map;
-    }
-    if (!mountedRef.current) return;
-    setAllMeta(meta);
-    setUnitPriceMap(buildUnitPriceMap(meta, priceRowMap));
-    setGroups(gs);
-    setEdges(edgeList);
-  }, []);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    load()
-      .catch(err => {
-        if (!mountedRef.current) return;
-        console.error('[CommonManageView] load failed', err);
-        setDbError(err.message || '데이터 로드 실패');
-      })
-      .finally(() => {
-        if (mountedRef.current) setLoading(false);
-      });
-
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [load]);
 
   // ── Groups handlers ─────────────────────────────────────────
   function handleSelectGroup(id) {
@@ -120,7 +104,7 @@ export function CommonManageView({ tab = 'groups' }) {
     try {
       const savedId = await saveRecipeGroup({ ...draft, id: isNew ? undefined : selectedId });
       showToast(isNew ? '묶음 등록 완료' : '묶음 수정 완료');
-      await load();
+      load();
       setIsNew(false);
       setSelectedId(isNew ? savedId : selectedId);
     } catch (e) {
@@ -141,7 +125,7 @@ export function CommonManageView({ tab = 'groups' }) {
     setSelectedId(null);
     setIsNew(false);
     setDraft(null);
-    await load();
+    load();
   }
 
   // ── Edges handlers ──────────────────────────────────────────
@@ -150,7 +134,7 @@ export function CommonManageView({ tab = 'groups' }) {
       await upsertEdge(data);
       showToast('저장 완료', 'ok');
       setEdgeTarget(null);
-      setEdges(await getAllEdges());
+      load();
     } catch (err) {
       showToast('저장 실패: ' + err.message, 'error');
       throw err;
@@ -159,8 +143,8 @@ export function CommonManageView({ tab = 'groups' }) {
   async function handleDeleteEdge(id) {
     try {
       await deleteEdge(id);
-      setEdges(prev => prev.filter(e => e.id !== id));
       setDeletePending(null);
+      load();
       showToast('삭제 완료', 'ok');
     } catch (err) {
       showToast('삭제 실패: ' + err.message, 'error');
@@ -169,8 +153,8 @@ export function CommonManageView({ tab = 'groups' }) {
   async function handleBatchDeleteEdges(ids) {
     try {
       await Promise.all(ids.map(id => deleteEdge(id)));
-      setEdges(prev => prev.filter(e => !ids.includes(e.id)));
       showToast(`${ids.length}개 삭제 완료`, 'ok');
+      load();
       return true;
     } catch (err) {
       showToast('삭제 실패: ' + err.message, 'error');
@@ -183,7 +167,7 @@ export function CommonManageView({ tab = 'groups' }) {
     try {
       const result = await seedEdges();
       showToast(`시드 완료 — 신규 ${result.inserted}개`, 'ok');
-      setEdges(await getAllEdges());
+      load();
     } catch (err) {
       showToast('시드 실패: ' + err.message, 'error');
     } finally {
@@ -197,7 +181,7 @@ export function CommonManageView({ tab = 'groups' }) {
       const result = await resetAllEdges();
       showToast(`초기화 완료 — ${result.deleted}개 삭제`, 'ok');
       setResetConfirm(false);
-      setEdges([]);
+      load();
     } catch (err) {
       showToast('초기화 실패: ' + err.message, 'error');
     } finally {
