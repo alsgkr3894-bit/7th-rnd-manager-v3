@@ -101,7 +101,7 @@
 - **완료(Phase 1, 2026-06-13)**: `lib/nutrition/allergen/store.js` dead code 6종 제거.
 - **완료(Phase 2, 2026-06-15)**: DB v20 — `nutrition_allergy_links` store 정의 제거(constants·module-stores·schema), v20 마이그레이션에서 기존 DB의 store를 `deleteObjectStore`로 삭제. `migrate-to-ingredient.js` allergen 파트 제거(origin 파트 유지). 7번가 DB 0/0 확인 후 착수.
 
-#### B-5. useDBLoad 전면 확산  🟡 ✅ 완료(2026-06-17)
+#### B-5. useDBLoad 전면 확산  🟡 ✅ 완료(2026-06-17) · qa:smoke 22/22
 
 - **Phase 1 완료 (2026-06-16)**: `useDBLoad` 옵션 강화(`initialData`·`deps`·`enabled`·`onError`·`mapErrorMessage`·`keepDataOnReload`·`reload`) + 저위험 hub 5개 및 보고서 2개 적용.
   - hub: `menu-sales`, `nutrition`, `ingredient`, `jette`, `note/journal`
