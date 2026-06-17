@@ -114,7 +114,7 @@ export function useShipmentReportData(shipYear, shipMonth, setShipYear, setShipM
     return () => {
       ignore = true;
     };
-  }, [shipYear, shipMonth]);
+  }, [shipYear, shipMonth, setShipYear, setShipMonth]);
 
   return {
     aggRows,

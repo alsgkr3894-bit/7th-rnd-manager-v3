@@ -69,8 +69,12 @@ export function useKeyboardShortcuts({
         return;
       }
 
-      const tag = document.activeElement?.tagName;
+      const active = document.activeElement;
+      const tag = active?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      // 모달/다이얼로그 내부에 포커스가 있으면 전역 단축키(n/d/g 등) 비활성화
+      // — 편집 중 'n'으로 페이지 이탈해 미저장 폼이 소실되는 것 방지
+      if (active?.closest?.('[role="dialog"], [contenteditable="true"]')) return;
 
       if (gPressedRef.current) {
         const dest = G_NAV[e.key.toLowerCase()];

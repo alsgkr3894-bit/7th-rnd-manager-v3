@@ -57,9 +57,11 @@ export default function TopBar({
   }, []);
 
   const toggleDark = () => {
-    const next = !dark;
-    setDark(next);
-    setSetting('theme', next ? 'dark' : 'light');
+    setDark(prev => {
+      const next = !prev;
+      setSetting('theme', next ? 'dark' : 'light');
+      return next;
+    });
   };
 
   useOutsideClick({ refs: notifRef, enabled: notifOpen, onOutside: () => setNotifOpen(false) });

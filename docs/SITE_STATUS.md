@@ -36,7 +36,7 @@
 
 ## 2. 라우트 및 화면 목록
 
-총 55개 page 파일 (실제 화면 40개 + 리다이렉트 15개). 홈·메뉴마스터·원가계산(허브+공통원가+원가마진+전체원가)·보고서(허브+4종 빌더)·메뉴판매량(허브+분석+업로드+미매칭+설정)·제때(허브+출고+단가+설정)·식자재(허브+관리+사용량)·영양성분(허브+메뉴+알레르기+원산지+표출력)·설정(브랜드·계정·백업·복원·시스템)·노트(목록+작성+상세+캘린더+보드+일지+시제품) 총 10개 섹션 구성.
+총 56개 page 파일 (실제 화면 44개 + 리다이렉트 12개). 홈·메뉴마스터·원가계산(허브+공통원가+원가마진+전체원가)·보고서(허브+4종 빌더)·메뉴판매량(허브+분석+업로드+미매칭+설정)·제때(허브+출고+단가+설정)·식자재(허브+관리+사용량)·영양성분(허브+메뉴+알레르기+원산지+표출력)·설정(브랜드·계정·백업·복원·시스템)·노트(목록+작성+상세+캘린더+보드+일지+시제품) 총 10개 섹션 구성.
 
 ### 홈 / 인증
 
@@ -208,7 +208,7 @@ dbNameFor(brandId): main → 'rnd_manager_v3', 기타 → 'rnd_manager_v3__<bran
 ### `useDBLoad — IndexedDB 데이터 로드 패턴`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/useDBLoad.js`
 
-fetchFn + options(initialData, deps, enabled, onError, mapErrorMessage, keepDataOnReload) 를 받아 { data, loading, error, errorMessage, reload } 반환. 내부에서 initDB() → fetchFn() 순으로 실행, cancelled 플래그로 언마운트 race condition 방지, reload()는 tick 카운터 증가 방식. keepDataOnReload=true가 기본값(로딩 중에도 기존 데이터 유지). 25개 파일에서 직접 사용(app 페이지 20곳 + 훅 2곳 + 컴포넌트 2곳).
+fetchFn + options(initialData, deps, enabled, onError, mapErrorMessage, keepDataOnReload) 를 받아 { data, loading, error, errorMessage, reload } 반환. 내부에서 initDB() → fetchFn() 순으로 실행, cancelled 플래그로 언마운트 race condition 방지, reload()는 tick 카운터 증가 방식. keepDataOnReload=true가 기본값(로딩 중에도 기존 데이터 유지). 정의 파일 포함 25개 파일(소비 기준 24개): app 페이지 18곳 + app 내부 hook/controller 3곳 + hooks 1곳 + components 2곳.
 
 ### `useLocalStorage — SSR 안전 영속 상태`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/useLocalStorage.js`
@@ -262,7 +262,7 @@ document.visibilitychange 이벤트에서 visibilityState==='visible' 시 콜백
 
 ### `useDBLoad 적용 현황`
 
-총 25개 파일에서 사용. app/ 페이지 직접 사용 20곳(cost/margin, ingredient, menu-master, menu-sales, nutrition, report, settings/backup|restore|system 등), hooks/ 내 위임 훅 2곳(useIngredientPriceData, useMarginData), components/ 2곳(SuppliersView, CommonManageView). useIngredientPriceData는 useDBLoad + useVisibilityRefresh를 조합한 파생 데이터 훅 패턴의 대표 사례.
+소비 기준 24개 파일에서 사용. app/ 페이지 직접 사용 18곳(cost/margin, ingredient, menu-master, menu-sales, nutrition, report, settings/backup|restore|system 등), app 내부 hook/controller 3곳, hooks/ 위임 훅 1곳(useIngredientPriceData), components/ 2곳(SuppliersView, CommonManageView). useIngredientPriceData는 useDBLoad + useVisibilityRefresh를 조합한 파생 데이터 훅 패턴의 대표 사례.
 
 ### `useCurrentRole — 권한 상태 관리`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/useCurrentRole.js`

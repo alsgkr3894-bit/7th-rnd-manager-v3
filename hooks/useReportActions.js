@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { showToast } from '@/components/Toast';
 import {
   deleteReport,
@@ -18,6 +18,16 @@ export function useReportActions({ reload }) {
   const [editName, setEditName] = useState('');
   const editInputRef = useRef(null);
   const editFocusTimerRef = useRef(null);
+  const mountedRef = useRef(true);
+
+  // 언마운트 시 진행 중인 setState 가드 + 포커스 타이머 정리
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (editFocusTimerRef.current) clearTimeout(editFocusTimerRef.current);
+    };
+  }, []);
 
   const handleDelete = id => {
     setConfirmDeleteId(id);
@@ -28,14 +38,16 @@ export function useReportActions({ reload }) {
     setConfirmDeleteId(null);
     setDeletingId(id);
     await new Promise(r => setTimeout(r, 360));
+    if (!mountedRef.current) return;
     try {
       await deleteReport(id);
+      if (!mountedRef.current) return;
       showToast('보고서가 삭제됐어요.', 'ok');
       reload();
     } catch {
       showToast('삭제 중 오류가 발생했어요.', 'error');
     } finally {
-      setDeletingId(null);
+      if (mountedRef.current) setDeletingId(null);
     }
   };
 

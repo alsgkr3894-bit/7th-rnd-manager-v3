@@ -172,9 +172,11 @@ function PeriodInput({ period, onChange }) {
           min={MIN_PERIOD_YEAR}
           max={MAX_PERIOD_YEAR}
           value={period.year}
-          onChange={e =>
-            onChange({ ...period, year: normalizePeriodYear(e.target.value, period.year) })
-          }
+          onChange={e => {
+            const raw = normalizePeriodYear(e.target.value, period.year);
+            const clamped = Math.max(MIN_PERIOD_YEAR, Math.min(MAX_PERIOD_YEAR, raw));
+            onChange({ ...period, year: clamped });
+          }}
           style={{ ...numInputStyle, width: 84 }}
         />
         <span style={{ alignSelf: 'center', color: 'var(--text-3)' }}>년</span>

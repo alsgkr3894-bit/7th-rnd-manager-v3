@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { OVERLAY_COLOR } from '@/lib/ui/styles';
@@ -28,11 +28,15 @@ export function MenuMasterEditModal({
     excludeFromOrigin: row?.excludeFromOrigin === true,
   });
   const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const containerRef = useRef(null);
   const set = makeFieldUpdater(setForm);
   const defaultPrice = getDefaultPrice(form.menuCode);
   const canSave = form.menuCode.trim() && form.menuName.trim();
 
   function submit() {
+    if (savingRef.current) return; // 저장 진행 중 재진입(Ctrl+S 연타) 방지
     const errs = {};
     if (!form.menuCode.trim()) errs.menuCode = '메뉴코드를 입력하세요';
     if (!form.menuName.trim()) errs.menuName = '메뉴명을 입력하세요';
@@ -43,16 +47,23 @@ export function MenuMasterEditModal({
       return;
     }
     setErrors({});
-    onSave({
-      ...(row || {}),
-      menuCode: form.menuCode.trim(),
-      menuName: form.menuName.trim(),
-      category: form.category,
-      size: form.size.trim() || null,
-      price: price.value,
-      status: form.status,
-      note: form.note,
-      excludeFromOrigin: form.excludeFromOrigin,
+    savingRef.current = true;
+    setSaving(true);
+    Promise.resolve(
+      onSave({
+        ...(row || {}),
+        menuCode: form.menuCode.trim(),
+        menuName: form.menuName.trim(),
+        category: form.category,
+        size: form.size.trim() || null,
+        price: price.value,
+        status: form.status,
+        note: form.note,
+        excludeFromOrigin: form.excludeFromOrigin,
+      })
+    ).finally(() => {
+      savingRef.current = false;
+      setSaving(false);
     });
   }
 
@@ -60,7 +71,11 @@ export function MenuMasterEditModal({
 
   useEffect(() => {
     function onKey(e) {
-      if (e.key === 'Escape') onClose();
+      if (e.key !== 'Escape') return;
+      // 중첩 모달(ConfirmDialog 등)이 위에 떠 있으면 이 모달은 닫지 않음
+      const dialogs = document.querySelectorAll('[role="dialog"]');
+      if (dialogs.length && dialogs[dialogs.length - 1] !== containerRef.current) return;
+      onClose();
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
@@ -87,6 +102,9 @@ export function MenuMasterEditModal({
       }}
     >
         <div
+          ref={containerRef}
+          role="dialog"
+          aria-modal="true"
           className="card"
           style={{
             width: 'min(960px, 96vw)',
@@ -131,7 +149,9 @@ export function MenuMasterEditModal({
                 </span>
               )}
               <button className="btn" onClick={onClose}>취소</button>
-              <button className="btn primary" disabled={!canSave} onClick={submit}>저장</button>
+              <button className="btn primary" disabled={!canSave || saving} onClick={submit}>
+                {saving ? '저장 중…' : '저장'}
+              </button>
               <button
                 className="btn ghost"
                 style={{ padding: '4px 8px' }}

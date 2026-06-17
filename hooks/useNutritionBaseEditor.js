@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { showToast } from '@/components/Toast';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 import {
@@ -32,6 +32,14 @@ export function useNutritionBaseEditor({ safeRawMap, refresh }) {
   const key = selMenu ? `${selMenu.menuCode}__${selCrust}` : null;
   const existing = key ? safeRawMap[key] : null;
 
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   useEffect(() => {
     if (existing) setForm({ ...existing });
     else setForm({});
@@ -50,12 +58,13 @@ export function useNutritionBaseEditor({ safeRawMap, refresh }) {
         crustType: selCrust,
         ...form,
       });
+      if (!mountedRef.current) return;
       showToast('저장 완료', 'ok');
       refresh();
     } catch {
-      showToast('저장 실패', 'error');
+      if (mountedRef.current) showToast('저장 실패', 'error');
     }
-    setSaving(false);
+    if (mountedRef.current) setSaving(false);
   };
 
   const handleAddMenu = async () => {

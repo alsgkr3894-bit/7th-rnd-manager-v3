@@ -13,6 +13,7 @@ import { NoteDetailSkeleton } from '@/components/ui/Skeleton';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
 import { KEYS, setSampleFromNote } from '@/lib/note/keys';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
+import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { ChainTimeline } from './detail/ChainTimeline';
 import { NoteDetailActions } from './detail/NoteDetailActions';
 import { NoteDraftBanner } from './detail/NoteDraftBanner';
@@ -38,10 +39,19 @@ export default function Page() {
   const [showDraftBanner, setShowDraftBanner] = useState(false);
   const [costMenuOpen, setCostMenuOpen] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   const skipRef = useRef(true);
   const originalRef = useRef(null);
   const timerRef = useRef(null);
+
+  useBeforeUnload(isDirty);
+
+  // NoteFormBody의 사용자 편집만 dirty로 추적 (초기 로드 setForm은 제외)
+  function handleFormChange(updater) {
+    setForm(updater);
+    setIsDirty(true);
+  }
 
   useEffect(() => {
     if (!noteId) {
@@ -104,6 +114,7 @@ export default function Page() {
     try {
       await updateNote(noteId, form);
       clearDraft(KEYS.NOTE_DRAFT(noteId));
+      setIsDirty(false);
       showToast('노트가 수정됐어요', 'ok');
       router.push('/note');
     } catch {
@@ -155,6 +166,7 @@ export default function Page() {
     const draft = loadDraft(KEYS.NOTE_DRAFT(noteId));
     if (draft) {
       setForm(prev => mergeDraftWithCurrentPhotos(draft, prev));
+      setIsDirty(true);
       showToast('임시저장된 내용을 불러왔어요', 'ok');
     }
     setShowDraftBanner(false);
@@ -190,7 +202,7 @@ export default function Page() {
         }
       />
       {showDraftBanner && <NoteDraftBanner onRestore={restoreDraft} onIgnore={ignoreDraft} />}
-      <NoteFormBody form={form} setForm={setForm} />
+      <NoteFormBody form={form} setForm={handleFormChange} />
       <ChainTimeline
         chain={chain}
         currentId={noteId}

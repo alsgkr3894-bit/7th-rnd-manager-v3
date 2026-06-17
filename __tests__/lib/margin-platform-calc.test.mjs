@@ -27,6 +27,15 @@ describe('applyDiscount', () => {
     expect(applyDiscount(undefined, null)).toBe(0);
   });
 
+  test('판매가 NaN → 0 반환 (NaN 전파 차단)', () => {
+    expect(applyDiscount(NaN, { type: 'pct', value: 20 })).toBe(0);
+    expect(applyDiscount(NaN, null)).toBe(0);
+  });
+
+  test('판매가 null → 0 반환', () => {
+    expect(applyDiscount(null, { type: 'fixed', value: 100 })).toBe(0);
+  });
+
   test('pct 100% 할인 → 0 (음수 방지)', () => {
     expect(applyDiscount(10000, { type: 'pct', value: 100 })).toBe(0);
   });
