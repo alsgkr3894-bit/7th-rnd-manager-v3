@@ -4,6 +4,12 @@
 > 새 보류 항목은 위험도에 맞춰 아래 플랜에 추가하고, 완료 시 상태를 `✅ 완료`로 바꾸고 완료일을 기입하세요.
 >
 > 2026-06-14 감사(구 `docs/BUG_AUDIT_2026-06-14.md`)는 내용 전부 이 문서에 흡수 후 삭제됐습니다.
+> 2026-06-17 감사(구 `docs/BUG_AUDIT_2026-06-17.md`)는 내용 전부 이 문서에 흡수 후 삭제됐습니다.
+> 2026-06-17 레시피 입력 UX 계획(구 `docs/MENU_MASTER_RECIPE_INPUT_UX_PLAN.md`)은 내용 전부 이 문서에 흡수 후 삭제됐습니다.
+> 2026-06-17 품질 개선 로드맵(구 `docs/SITE_QUALITY_IMPROVEMENT_PLAN.md`)은 P0~P6 전부 완료 이력 흡수 후 삭제됐습니다.
+> 2026-06-17 전체 보완·분리 계획(구 `docs/SITE_REFACTOR_AND_HARDENING_PLAN.md`)은 1~8단계 완료 이력 흡수, P5~P11 보류 항목 등록 후 삭제됐습니다.
+> 2026-06-17 UX 이슈 안내 현황(구 `docs/UX_ISSUE_GUIDANCE.md`)은 P2 완료 이력 흡수 후 삭제됐습니다.
+> 2026-06-17 업무 E2E QA 현황(구 `docs/WORKFLOW_QA.md`)은 P1 완료 이력 흡수, 확장 백로그 보류 항목 등록 후 삭제됐습니다.
 > 실행 여부·우선순위·완료 판단은 이 문서의 정규화된 항목을 기준으로 합니다.
 
 ---
@@ -311,6 +317,91 @@
 - **왜 보류**: 동작 명세 미확정 — 특정 날짜 단가를 원가계산에 일시 적용하는지, 조회만 하는지.
 - **착수 게이트**: 동작 명세 제공 시 착수.
 
+#### BUG-011. `deleteIngredient` cascade 비원자성  🟢 ⏸
+- **파일**: `lib/ingredient/store.js`
+- **내용**: 부모(`cost_ingredients`) 삭제와 알레르기 링크 cascade가 별개 트랜잭션. 단, `nutrition_allergy_links` store는 v20 마이그레이션에서 제거되어 `hasStore` 가드로 현재 no-op → 실제 고아 레코드 발생 경로 없음.
+- **왜 보류**: 라이브 결함 아님. `ingredient-delete-cascade.test.mjs`가 cascadeErrors 반환 계약을 검증하고 있어 임의 삭제 시 회귀 위험.
+- **권고**: 향후 새 cascade 대상 추가 시 `lib/db/crud.js`의 `deleteWithChildren`(단일 트랜잭션) 패턴 사용.
+
+#### BUG-014. TopBar 다크모드 아이콘 첫 렌더 플리커  🟢 ⏸
+- **파일**: `components/TopBar.jsx`
+- **내용**: `dark` 초기값 `false` → 마운트 후 effect가 `data-theme`/설정과 동기화하는 과정에서 테마 토글 아이콘이 한 프레임 깜빡일 수 있음.
+- **왜 보류**: 현재 패턴은 하이드레이션 안전을 위한 의도적 설계(useState 초기화에서 `document` 접근 시 SSR/CSR 불일치 위험). 한 프레임 아이콘 깜빡임보다 하이드레이션 정합성이 우선.
+- **권고**: 완전 제거하려면 `<head>` 블로킹 인라인 스크립트에서 아이콘 초기 상태까지 확정해야 하며, 별도 작업으로 검토.
+
+#### 메뉴마스터 레시피 2차 UX 후보  🟢 ⏸
+- 공통원가 묶음의 상세 구성품을 접힘 목록으로 표시
+- 구성품 행 복사
+- 최근 사용 / 같은 카테고리 자주 쓰는 식자재 우선 추천
+- 단가 없는 식자재만 필터링·빠르게 보정하는 버튼
+- 레시피 저장 전 누락 항목 확인 모달
+- 원산지/알레르기 영향 미리보기 (레시피 저장 전 출력 결과 변화 표시)
+- 이슈 탭 빠른 액션: `바로 수정`, `레시피 섹션으로 이동`, `단가 보정으로 이동`
+- **왜 보류**: 입력 UX·저장 반영 안정화(P0~P5) 완료. 사용자 승인 후 착수.
+
+#### 식자재 데이터 정리 도구  🟡 ⏸
+- 유사 식자재 병합(같은 제품코드/유사 이름/동일 원산지 후보를 안전하게 병합)
+- 분류/태그 이름 변경 기능
+- 미사용 태그 일괄 삭제
+- 대량 식자재 편집: 분류·태그·전용범용·단종 상태 일괄 변경
+- **왜 보류**: 입력 UX 안정화 완료 → 착수 가능 조건 충족. 사용자 승인 후 착수.
+- **착수 게이트**: 사용자 명세 확인 후 B섹션으로 이동.
+
+#### E2E QA 확장 시나리오  🟡 ⏸
+- 메뉴 등록 → 레시피 저장 → 원가마진표 반영 (레시피 구성 UI 다단계)
+- 식자재 단가 변경 → 메뉴 원가 → 원가 보고서 (가격 파일 fixture 필요)
+- 판매량 업로드 → 미매칭 처리 → 보고서 생성 (판매 CSV fixture 필요)
+- 공통원가 → 원가/원산지/알레르기 출력 파이프라인 검증
+- **왜 보류**: 다단계 사전 데이터(레시피·식자재·CSV)가 필요해 fixture/시드 설계 선행 필요.
+- `scripts/workflow-qa.mjs` 하니스에 시나리오 함수만 추가하면 확장 가능.
+
+#### CSS·디자인 시스템 정리  🟢 ⏸
+- 큰 CSS 파일 분리: `motion-note.css`·`home.css`·`report/builder.css`·`report/table.css`·`settings.css`·`cost.css`·`ingredient.css`
+- 공통 토큰/레이아웃/테이블/모달/인쇄 스타일을 역할별 분리
+- inline style 반복(card header·summary row·modal footer) → 공통 class/helper
+- **왜 보류**: 시각 회귀 위험 큼. 보고서/인쇄처럼 영향 범위 명확한 영역부터 순차 진행.
+
+#### 출력·인쇄·다운로드 파이프라인 점검  🟢 ⏸
+- PDF/인쇄/CSV/XLSX 공통 UX 문구·실패 처리 통일
+- `document.write` 기반 출력 HTML 사용자 입력 escaping 재확인
+- 파일명 규칙 `브랜드명_업무명_날짜` 기준 통일
+- 대용량 출력 progress·취소 가능 여부 검토
+- **왜 보류**: 기능 안정화 이후 점진 적용. 출력 유형별 1커밋 단위.
+
+#### localStorage·백업 범위 정합성 점검  🟡 ⏸
+- 영속 보관 키 vs 세션성 키 명확 분류·문서화
+- 브랜드별 분리 키 vs 공유 키 표 작성
+- 임시저장·최근 방문·스크롤 위치 등 복원 시 이상한 키 백업 제외 확인
+- 테스트: 선택 백업 범위별 localStorage 포함/제외 · 브랜드 복원 시 플랫폼 수수료·출력 순서 복원 확인
+- **왜 보류**: 백업/복원 안전성은 이미 확보. 정합성 문서화는 다음 라운드.
+
+#### 에러·빈상태·권한 상태 UI 통일  🟢 ⏸
+- 공통 `ErrorState`·`EmptyState`·`PermissionNotice`·`InlineWarning` 패턴 정의 확대
+- DB 로드 실패 `다시 시도` 액션 통일
+- viewer 권한에서 disabled 이유 tooltip 또는 안내 문구 제공
+- 위험 액션 confirm UI·문구 기준 통일
+- **왜 보류**: `EmptyState`·`Skeleton`·toast-type 정책은 이미 적용됨. 추가 통일은 화면 단위 점진 적용.
+
+#### 업로드·import 중복 로직 정리  🟡 ⏸
+- CSV/XLSX 파일 확장자 검사·크기 제한·파싱 실패 메시지·미리보기 공통 helper
+- 업로드 history/hash 중복 검사 정책 문서화
+- 업로드 실패 row 다운로드 형식 통일
+- **왜 보류**: 모듈마다 업로드 구조가 달라 공통화 회귀 위험. 신규 업로드 모듈 추가 시점에 함께 통일.
+
+#### 모바일·좁은 화면 레이아웃 재검사  🟢 ⏸
+- 390px 폭에서 테이블·모달·드롭다운·상단 액션 버튼 겹침 확인
+- 고정 TopBar/Sidebar/Modal z-index 기준 문서화
+- 우선 확인: 메뉴마스터 수정창·식자재 모달·백업/복원·원가마진표·보고서 미리보기
+- **왜 보류**: 데스크톱 업무 도구 우선. 모바일 하단 탭 + responsive layout은 이미 구현됨.
+
+#### 외부 배포 보안 강화  🔴 ⏸
+- **인증 강화**: 비밀번호 해시에 솔트 추가(계정별 랜덤), bcrypt/argon2 도입, 계정 잠금 정책, 최소 복잡도 정책
+- **세션·쿠키 강화**: 서버 발급 랜덤 토큰, Secure 플래그(HTTPS), HttpOnly 플래그, 세션 만료, 서버 측 세션 저장소
+- **서버 사이드 라우트 가드**: API route handler 토큰 검증, admin API endpoint 서버 role 확인, `/api/` PUBLIC_PATHS 제외
+- **XSS·CSRF 방어**: CSP 헤더, CORS 정책
+- **왜 보류**: 현재 단일 LAN HTTP 내부 환경이므로 아래 항목은 의도적으로 허용된 상태: 솔트 없는 SHA-256(단일 계정 LAN), Secure/HttpOnly 미적용(LAN HTTP + 클라이언트 JS 로그아웃 구조), `/api/` 인증 없음(현재 API route 없음), PIN localStorage(물리 기기 접근 환경).
+- **착수 게이트**: 외부 인터넷 배포 또는 HTTPS LAN 다중 사용자 전환 결정 시.
+
 ---
 
 ## C. 코드 품질 정리 플랜 (2026-06-14 신규 등록)
@@ -399,6 +490,16 @@
 | 문서 | 이 파일에 반영된 내용 | 남겨둔 역할 |
 |------|----------------------|-------------|
 | `docs/BUG_AUDIT_2026-06-14.md` _(삭제됨)_ | clean build/dev 충돌, smoke/runtime QA, format, id/key, console-only, fixture/dynamic QA 항목 → B-20·B-21·B-23·B-25·B-26 및 완료 이력으로 흡수 | 내용 전부 흡수 후 2026-06-14 삭제 |
+| `docs/BUG_AUDIT_2026-06-17.md` _(삭제됨)_ | 5영역 병렬 감사 17건 수정·2건 보류(BUG-011·BUG-014) → 완료 이력·BUG-011·BUG-014 보류 항목으로 흡수 | 내용 전부 흡수 후 2026-06-17 삭제 |
+| `docs/CLAUDE_CODE_SESSION_2026-06-16.md` _(삭제됨)_ | 성능·정리 배치 3건(테스트 수정·usePageStats 최적화·dynamic import) → "성능·정리 최적화 배치 ✅ 2026-06-16" 완료 이력으로 이미 반영 | 내용 전부 흡수 후 2026-06-17 삭제 |
+| `docs/MENU_MASTER_RECIPE_INPUT_UX_PLAN.md` _(삭제됨)_ | 레시피 입력 UX·식자재관리 UI 정비 P0~P5+A~G 완료 → 완료 이력 흡수. 보류 항목(레시피 2차 UX·식자재 정리 도구) → 보류 섹션 등록 | 내용 전부 흡수 후 2026-06-17 삭제 |
+| `docs/OPERATIONAL_STABILITY.md` _(삭제됨)_ | P6 운영 안정성 점검 결과 → "운영 안정성 보강 ✅ 2026-06-17" 완료 이력으로 흡수 | 내용 전부 흡수 후 2026-06-17 삭제 |
+| `docs/SECURITY_POLICY.md` _(삭제됨)_ | 현재 인증 구조·허용된 취약점 근거 → 보류 섹션 "외부 배포 보안 강화" + [[permission-guard]]로 흡수 | 내용 전부 흡수 후 2026-06-17 삭제 |
+| `docs/SITE_QUALITY_IMPROVEMENT_PLAN.md` _(삭제됨)_ | P0~P6 전 항목 완료 이력으로 흡수 (품질 개선 로드맵 완료 이력) | 내용 전부 흡수 후 2026-06-17 삭제 |
+| `docs/SITE_REFACTOR_AND_HARDENING_PLAN.md` _(삭제됨)_ | 1~8단계 완료 이력 흡수, P5~P11 보류 항목 등록 | 내용 전부 흡수 후 2026-06-17 삭제 |
+| `docs/UX_ISSUE_GUIDANCE.md` _(삭제됨)_ | P2 이슈 패널 4종 완료 이력 흡수, 영양 부분 누락 진단 보류 항목 등록 | 내용 전부 흡수 후 2026-06-17 삭제 |
+| `docs/WORKFLOW_QA.md` _(삭제됨)_ | P1 E2E 3 시나리오 완료 이력 흡수, 확장 4 시나리오 보류 항목 등록 | 내용 전부 흡수 후 2026-06-17 삭제 |
+| `docs/SITE_STATUS.md` | 56개 페이지·store·테스트 수치 현행 상태. `npm run audit:docs` 비교 대상 | 삭제하지 않음 — `scripts/site-status-audit.mjs` 기준 문서 |
 | `docs/CONFLICT_AND_CONSOLIDATION_PLAN.md` _(삭제됨)_ | 충돌 가능성·통합 후보 23개 항목 전부 구현 완료 → 완료 이력으로 흡수 | 내용 전부 흡수 후 2026-06-16 삭제 |
 | `docs/CLAUDE_CODE_REFACTOR_HANDOFF.md` _(삭제됨)_ | 분리·정리 인수인계 항목 전부 구현 완료. 주요 항목 B-6에 수록; 보완 항목 완료 이력으로 흡수 | 내용 전부 흡수 후 2026-06-16 삭제 |
 | `docs/FEATURE_CONSOLIDATION_DIRECTION.md` _(삭제됨)_ | 기능 통합 방향 설계 문서. 5개 영역 통합 항목 전부 구현 완료(11.1 표 기준). 완료 이력으로 흡수 | 내용 전부 흡수 후 2026-06-16 삭제 |
@@ -413,6 +514,133 @@
 ## 완료 이력
 
 > 완료된 모든 작업 기록. 라운드 순 → 가장 최근 항목이 위에 있습니다.
+
+---
+
+### 품질 개선 로드맵 P0~P6 전 항목 완료 (SITE_QUALITY_IMPROVEMENT_PLAN.md 흡수) — ✅ 2026-06-17
+
+> 품질 로드맵 6단계 전부 완료. 개별 항목은 이 파일의 다른 완료 이력(BUG_AUDIT 배치, B-5 useDBLoad, B-6 대형 컴포넌트 분해, 운영 안정성 보강 등)에 수록됨.
+
+- **P0 데이터 안전성**: 파괴적 실행함수 viewer 차단 가드(`assertActiveAdmin`), 백업 전 공통 store 검증, 복원 미리보기 mismatch 경고. → [[permission-guard]] / 충돌·통합 종합 정리 완료 이력
+- **P1 E2E QA**: `npm run qa:workflow` — 3 시나리오(백업 미리보기·노트 작성·메뉴 등록). → WORKFLOW_QA 흡수 완료 이력
+- **P2 UX 이슈 안내**: `MissingValueNotice` 영양 미입력 메뉴 진단 패널 (lib/nutrition/missing-values.js). → UX_ISSUE_GUIDANCE 흡수 완료 이력
+- **P3 실행함수 권한 가드**: 7개 파괴적 함수 + 시스템 설정 핸들러 `assertActiveAdmin` 적용. 구조·동작 테스트 3종. → [[permission-guard]]
+- **P4 도메인 분리**: 대형 로직 파일에서 응집 순수 클러스터를 re-export 허브로 분리(ingredient store→composite-refs+product-code, build-cost-report→recipe-print-rows, nutrition values store→dedup 등). → B-6/C-P4 완료 이력
+- **P5 문서 자동 검증**: `npm run audit:docs` (`scripts/site-status-audit.mjs`) — `docs/SITE_STATUS.md` 수치 vs 코드 drift 탐지.
+- **P6 운영 안정성**: 원가마진표 60/page 페이징, 시스템 설정 현재 권한 표시, 인쇄 팝업 차단 회귀 테스트. → 운영 안정성 보강 완료 이력
+
+---
+
+### 전체 보완·분리 계획 1~8단계 완료 (SITE_REFACTOR_AND_HARDENING_PLAN.md 흡수) — ✅ 2026-06-17
+
+> 코드 분리·보완 8단계 전부 완료. 세부 커밋·파일 목록은 관련 완료 이력(B-21, B-5, B-6 등)에 수록됨.
+
+- **1단계 식자재 cascade 노출**: `bulkDeleteIngredients` `{ removed, failures }` 반환. cascade 실패 toast. 알레르기 링크 store v20 제거.
+- **2단계 백업/복원 훅 분리**: `useBackupActions.js` / `settings/restore` `useDBLoad` 전환.
+- **3단계 영양 라벨 빌더 분리**: `lib/nutrition/label/build.js` + `lib/nutrition/label/` 서브모듈. re-export 유지.
+- **4단계 원가/마진 보고서 분리**: `build-cost-report.js` → recipe-print-rows 분리. `useMarginData.js`.
+- **5단계 TopBar 분리**: `useAppBrands.js`, `useKeyboardShortcuts.js`, `ShortcutsHelp.jsx` 분리. `AppShell.jsx` 411→140줄.
+- **6단계 useDBLoad 마이그레이션**: 전체 14개 페이지/훅에 useDBLoad 확산 (B-5). 마지막 `initDB+useEffect` 제거.
+- **7단계 보안 문서**: `docs/SECURITY_POLICY.md` 작성 → 이 파일로 흡수. 외부 배포 보안 보류 항목 등록.
+- **8단계 검색 debounce**: 식자재·영양 검색 입력에 `useDebounce` 적용. 타이핑 중 쿼리 과다 방지.
+- **2차 후보 P5~P11**: 보류 섹션 등록(CSS 정리·인쇄 파이프라인·localStorage 정합성·라우트 QA·에러 상태 통일·업로드 중복·모바일 레이아웃).
+
+---
+
+### UX 이슈 안내 현황 P2 완료 (UX_ISSUE_GUIDANCE.md 흡수) — ✅ 2026-06-17
+
+> `docs/UX_ISSUE_GUIDANCE.md` P2 전 항목 완료. 이슈 패널 4종 + 진단 helper 구현.
+
+- **메뉴마스터 이슈 패널**: 레시피 미등록·원가 0·판매가 불일치 진단 배너 + `바로 수정` 액션.
+- **식자재 이슈 패널**: 단가 미입력·분류 미지정·제때 연동 후보 진단. `IngredientSettingsPanel.jsx`.
+- **미매칭 이슈 패널**: 업로드 후 미매칭 메뉴 배너. 분류 유도 액션.
+- **영양성분 이슈 패널**: `MissingValueNotice` — 미입력 메뉴 수·리스트 표시. `lib/nutrition/missing-values.js`.
+- **보류**: 영양성분 부분 누락/출력 제외 진단 — 크러스트 완전성 기준(전 크러스트 입력 필수인지·일부만으로 출력 허용하는지) 선행 정의 필요.
+
+---
+
+### 핵심 업무 E2E QA P1 완료 (WORKFLOW_QA.md 흡수) — ✅ 2026-06-17
+
+> `docs/WORKFLOW_QA.md` P1 3 시나리오 구현 완료. `npm run qa:workflow`.
+
+- **구현 시나리오 3종** (`scripts/workflow-qa.mjs`):
+  1. 백업 → 복원 미리보기 — 브랜드 전환 후 복원 미리보기 모달 열림 확인.
+  2. 노트 작성 → 목록 확인 — 노트 저장 후 목록에 반영 여부.
+  3. 메뉴 등록 → 목록 확인 — 메뉴 추가 후 메뉴마스터 목록에 반영 여부.
+- **E2E 설계 주의**: `goto()` 후 React 하이드레이션 완료까지 대기(`networkidle` + "DB 초기화 중" 해제). run-unique 마커 + IndexedDB 정리로 결정성 확보.
+- **보류**: E2E 확장 4 시나리오 → 보류 섹션 "E2E QA 확장 시나리오" 등록.
+
+---
+
+### 운영 안정성 보강 (P6) — ✅ 2026-06-17
+
+> `SITE_QUALITY_IMPROVEMENT_PLAN.md` P6 점검·보강.
+
+- **원가마진표 pagination**: 60/page (`usePagination` + `Pagination` 컴포넌트, `totalPages≤1`이면 미렌더).
+- **시스템 설정 현재 권한 표시**: `현재 권한` InfoCell (admin/viewer) 추가.
+- **출력·인쇄 실패 처리 완비**: 팝업 차단(false 반환+toast), 이미지 로드 실패(onerror→진행), XSS(`esc()` escape), xlsx 실패(try/catch+toast). 회귀 테스트: `window-print-guards.test.mjs`.
+- **오류 로그 정책 테스트 3종**: `silent-catch-policy.test.mjs`(빈 catch 금지), `console-context-policy.test.mjs`(라벨 필수), `toast-type-policy.test.mjs`(부정 문구 타입 필수).
+- **보류 유지**: 식자재관리 pagination — 일괄선택 state 결합 회귀 위험 > 효과 ([[deferred-refactors]]).
+
+---
+
+### 메뉴마스터 레시피 입력 UX · 식자재관리 UI 정비 — ✅ 2026-06-17
+
+> `MENU_MASTER_RECIPE_INPUT_UX_PLAN.md` P0~P5 + 추가 A~G 전 항목 완료.
+> 검증: lint 0 / 1343 tests / 22/22 smoke QA 통과.
+
+**P0 버그 수정**
+- 소스·피자·1인피자·사이드·음료·세트박스 카테고리 레시피 저장 후 원가/요약 미반영 버그 수정. (`menu-master-p0-audit.test.mjs` 26건)
+- 공통원가 체크 후 원가율·원산지·알레르기 합산 반영 확인. (`common-cost-selection-results.test.mjs`, `nutrition-allergen-aggregate.test.mjs`)
+- viewer/admin 권한별 편집·삭제·저장·초기화·시드 버튼 상태 확인.
+
+**P1 입력 편의성**
+- 레시피 구성품 드롭다운 키보드 조작(ArrowUp/Down/Enter/Escape) + 수량 자동 focus + 다음 행 이동. (`menu-recipe-components-keyboard.test.mjs`)
+- 규격 `ComboBox` 드롭다운 적용(`MenuMasterIdentityFields.jsx`). (`menu-master-size-combobox.test.mjs` 14건)
+- 메뉴명 셀 클릭/Enter/Space로 수정창 열기(`MenuMasterTableRow.jsx` `button type="button"`).
+- 수정창 넓은 편집 패널(960px), sticky header/footer, createPortal로 TopBar z-index 해결.
+
+**P2 식자재관리 UI**
+- `분류·태그` 설정 탭 summary·검색·정리 후보 표시. (`IngredientSettingsPanel.jsx`, `ingredient-settings-panel.test.mjs` 14건)
+- 식자재 추가/수정 모달 입력 순서 재배치·sticky header/footer. (`ingredient-form-layout.test.mjs` 11건)
+- 제때 연동 품목·수동 품목 단가/수정 영역 분리(`JetteLinkedSourcePanel`).
+
+**P4/P5 신뢰도·유지보수성**
+- `useIngredientFormController.js` 신규 생성 — `IngredientForm.jsx` 486→215줄.
+- `p4-accessibility-guards.test.mjs` 13건, `p5-dropdown-perf-guards.test.mjs` 1000행 성능 방어.
+- IngredientForm Esc 닫기 추가, `aria-busy` + `role="alert"` 접근성 보강.
+
+**보류 항목** → 메뉴마스터 레시피 2차 UX 후보 · 식자재 데이터 정리 도구 보류 섹션에 등록.
+
+---
+
+### BUG_AUDIT_2026-06-17 코드버그 수정 배치 — ✅ 2026-06-17
+
+> 5개 영역(훅·상태관리 / 데이터·계산 / UI·폼 / IndexedDB / 라우팅·렌더링) 병렬 에이전트 감사. 발견 19건 중 17건 수정, 2건 의도적 보류(BUG-011·BUG-014 → 보류 섹션).
+> 검증: `npm run lint` 0건 · `npm test` 268 suites / 1411 tests 통과 · `npm run qa:smoke` 22/22 통과.
+
+**High (3건)**
+- **BUG-001** `MenuMasterEditModal` 저장 중복 — `saving` state + `savingRef` 재진입 가드 추가. 저장 버튼 `disabled={!canSave || saving}`.
+- **BUG-002** `commitBulkPrice` 반환 타입 불일치 — 빈 배열 경로도 `{ applied: 0, skipped: 0 }` 객체로 통일.
+- **BUG-003** 식자재 `baseQuantity`/`priceOverride` NaN 저장 — `Number.isFinite` 가드 추가(`upsertIngredientMeta` + `buildRecord` 경로 양쪽).
+
+**Medium (7건)**
+- **BUG-004** `applyDiscount` NaN 전파 — `Number.isFinite` 체크로 교체. 회귀 테스트 추가.
+- **BUG-005** `bulkPut` 청크 분할 원자성 손실 — 500건 청크 제거, 단일 트랜잭션 + `onabort` 핸들러.
+- **BUG-006** `runTransaction` 예외 무시 — `settled` 플래그 + `doResolve`/`doReject` 패턴으로 exception 묻힘 방지.
+- **BUG-007** middleware `/manifest.json` 미공개 — `PUBLIC_PATHS`에 추가.
+- **BUG-008** 전역 단축키 모달 내부 발동 — `active.closest('[role="dialog"]')` 체크 추가.
+- **BUG-009** 중첩 모달 Escape 오동작 — `role="dialog"` + `containerRef`, Escape 시 최상위 dialog 확인.
+- **BUG-010** 노트 편집 이탈 무경고 — `isDirty` state + `useBeforeUnload` 적용.
+
+**Low (7건)**
+- **BUG-012** price-history 정렬 비교자 계약 위반 — 3-way 비교자 (`=== 0` 케이스 처리) 적용.
+- **BUG-013** `toggleDark` stale closure — `setDark(prev => ...)` 함수형 업데이트.
+- **BUG-015** `confirmDelete` 언마운트 가드 없음 — `mountedRef` 추가.
+- **BUG-016** `editFocusTimerRef` 타이머 미정리 — cleanup `useEffect`에서 `clearTimeout` 추가.
+- **BUG-017** `useNutritionBaseEditor` 언마운트 가드 없음 — `mountedRef` 추가.
+- **BUG-018** `useShipmentReportData` deps 누락 — `setShipYear`, `setShipMonth` deps 추가.
+- **BUG-019** jette 출고 연도 입력·적용값 불일치 — `Math.max/min` 클램프 추가.
 
 ---
 
@@ -724,4 +952,4 @@ LOW 완료: L-02 border-radius 토큰화 · L-03 비교월 동일 경고 · L-04
 
 ---
 
-_잔여 보류: **B-5** ✅ 전체 완료(2026-06-17) · **B-6/C-P4**(대형 컴포넌트 추가 분해 재평가) · **B-20**(실업무 fixture 확대 잔여: Excel 앱 수동 확인·다운로드 열람·대용량 케이스) · **N-43**(과거 단가, 동작 명세)._
+_잔여 보류: **B-6/C-P4**(대형 컴포넌트 추가 분해 재평가) · **B-20**(실업무 fixture 확대 잔여) · **N-43**(과거 단가, 동작 명세) · **BUG-011**(deleteIngredient cascade 비원자성, 현재 no-op) · **BUG-014**(TopBar 다크모드 아이콘 플리커) · **메뉴마스터 레시피 2차 UX 후보**(사용자 승인 대기) · **식자재 데이터 정리 도구**(사용자 승인 대기) · **E2E QA 확장 4 시나리오**(fixture 필요) · **CSS·디자인 시스템 정리** · **출력·인쇄·다운로드 파이프라인 점검** · **localStorage·백업 범위 정합성 점검** · **에러·빈상태 UI 통일** · **업로드·import 중복 로직 정리** · **모바일·좁은 화면 레이아웃 재검사** · **외부 배포 보안 강화**(외부 배포 결정 시) · **영양 부분 누락 진단**(크러스트 기준 선행)._
