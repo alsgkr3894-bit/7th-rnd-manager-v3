@@ -27,6 +27,7 @@ import { IngredientUsageSection } from './IngredientUsageSection';
 import { useIngredientUsageSummary } from './useIngredientUsageSummary';
 import { JetteLinkedSourcePanel } from './JetteLinkedSourcePanel';
 import { JettePriceImportField } from './JettePriceImportField';
+import { pickRememberedUnit } from './ingredientFormPrefill';
 
 function normalizeUnitType(value) {
   return normalizeCostBaseUnit(value);
@@ -110,14 +111,24 @@ export function IngredientForm({
   const isDirty = JSON.stringify(form) !== initialFormRef.current;
   useBeforeUnload(isDirty);
 
+  // 마지막 사용 단위 복원은 폼이 아직 손대지 않은 상태일 때만 1회 적용한다.
+  // (지연된 하이드레이션이 사용자가 먼저 입력한 포장수량/단위를 덮어쓰지 않도록)
+  const lastUnitAppliedRef = useRef(false);
   useEffect(() => {
-    if (!lastUnitHydrated || initial || copyFrom || lastUnitType === 'g') return;
+    if (lastUnitAppliedRef.current) return;
+    if (!lastUnitHydrated || initial || copyFrom) return;
+    lastUnitAppliedRef.current = true;
     setForm(f => {
-      if (f.baseUnitType !== 'g') return f;
-      const next = { ...f, baseUnitType: lastUnitType };
-      if (JSON.stringify(f) === initialFormRef.current) {
-        initialFormRef.current = JSON.stringify(next);
-      }
+      const unit = pickRememberedUnit({
+        isNew: true,
+        hydrated: lastUnitHydrated,
+        formJson: JSON.stringify(f),
+        pristineJson: initialFormRef.current,
+        lastUnitType,
+      });
+      if (!unit) return f;
+      const next = { ...f, baseUnitType: unit };
+      initialFormRef.current = JSON.stringify(next);
       return next;
     });
   }, [copyFrom, initial, lastUnitHydrated, lastUnitType]);
