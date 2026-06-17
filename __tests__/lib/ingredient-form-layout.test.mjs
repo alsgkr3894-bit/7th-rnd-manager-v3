@@ -63,4 +63,8 @@ describe('IngredientForm 레이아웃 구조', () => {
   test('배경 클릭 시 닫기 핸들러가 있다', () => {
     expect(src).toContain('e.target === e.currentTarget');
   });
+
+  test('제때 연동 항목용 직접 수정 가능 섹션 구분자가 있다', () => {
+    expect(src).toContain('직접 수정 가능한 항목');
+  });
 });

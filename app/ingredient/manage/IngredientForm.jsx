@@ -331,6 +331,12 @@ export function IngredientForm({
         <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '20px 24px' }}>
           {isJetteLinked && <JetteLinkedSourcePanel ingredient={initial} />}
 
+          {isJetteLinked && (
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              직접 수정 가능한 항목
+            </div>
+          )}
+
           <form
             onSubmit={handleSubmit}
             aria-busy={saving}
