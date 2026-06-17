@@ -10,6 +10,7 @@
 > 2026-06-17 전체 보완·분리 계획(구 `docs/SITE_REFACTOR_AND_HARDENING_PLAN.md`)은 1~8단계 완료 이력 흡수, P5~P11 보류 항목 등록 후 삭제됐습니다.
 > 2026-06-17 UX 이슈 안내 현황(구 `docs/UX_ISSUE_GUIDANCE.md`)은 P2 완료 이력 흡수 후 삭제됐습니다.
 > 2026-06-17 업무 E2E QA 현황(구 `docs/WORKFLOW_QA.md`)은 P1 완료 이력 흡수, 확장 백로그 보류 항목 등록 후 삭제됐습니다.
+> 2026-06-17 사이트 점수 개선 실행 계획(구 `docs/SITE_SCORE_IMPROVEMENT_ACTION_PLAN.md`)은 완료 항목 이력 흡수, 잔여 보류 항목 확인 후 삭제됐습니다.
 > 실행 여부·우선순위·완료 판단은 이 문서의 정규화된 항목을 기준으로 합니다.
 
 ---
@@ -499,6 +500,7 @@
 | `docs/SITE_REFACTOR_AND_HARDENING_PLAN.md` _(삭제됨)_ | 1~8단계 완료 이력 흡수, P5~P11 보류 항목 등록 | 내용 전부 흡수 후 2026-06-17 삭제 |
 | `docs/UX_ISSUE_GUIDANCE.md` _(삭제됨)_ | P2 이슈 패널 4종 완료 이력 흡수, 영양 부분 누락 진단 보류 항목 등록 | 내용 전부 흡수 후 2026-06-17 삭제 |
 | `docs/WORKFLOW_QA.md` _(삭제됨)_ | P1 E2E 3 시나리오 완료 이력 흡수, 확장 4 시나리오 보류 항목 등록 | 내용 전부 흡수 후 2026-06-17 삭제 |
+| `docs/SITE_SCORE_IMPROVEMENT_ACTION_PLAN.md` _(삭제됨)_ | P0~P2·P4·P5 완료 이력 흡수, 잔여 P1 fixture 시나리오→E2E QA 확장 보류·P3 운영 QA→D섹션 유지 | 내용 전부 흡수 후 2026-06-17 삭제 |
 | `docs/SITE_STATUS.md` | 56개 페이지·store·테스트 수치 현행 상태. `npm run audit:docs` 비교 대상 | 삭제하지 않음 — `scripts/site-status-audit.mjs` 기준 문서 |
 | `docs/CONFLICT_AND_CONSOLIDATION_PLAN.md` _(삭제됨)_ | 충돌 가능성·통합 후보 23개 항목 전부 구현 완료 → 완료 이력으로 흡수 | 내용 전부 흡수 후 2026-06-16 삭제 |
 | `docs/CLAUDE_CODE_REFACTOR_HANDOFF.md` _(삭제됨)_ | 분리·정리 인수인계 항목 전부 구현 완료. 주요 항목 B-6에 수록; 보완 항목 완료 이력으로 흡수 | 내용 전부 흡수 후 2026-06-16 삭제 |
@@ -514,6 +516,18 @@
 ## 완료 이력
 
 > 완료된 모든 작업 기록. 라운드 순 → 가장 최근 항목이 위에 있습니다.
+
+---
+
+### 사이트 점수 개선 실행 계획 P0~P2·P4·P5 완료 (SITE_SCORE_IMPROVEMENT_ACTION_PLAN.md 흡수) — ✅ 2026-06-17
+
+- **P0**: DEFERRED_WORK.md trailing whitespace 제거, BUG-003 NaN guard 커밋, 문서 통합 커밋 정리.
+- **P1**: viewer 차단 시나리오(`qa:workflow` 시나리오 4) 추가 — 복원 실행 시 `assertActiveAdmin` 거부 toast 검증.
+- **P2**: 잘못된 백업 파일 오류 안내(시나리오 5), 메뉴 폼 유효성 + 중복 경고(시나리오 6) 추가.
+- **P4**: assertActiveAdmin 전 파괴적 함수 적용 완료(이미 완료).
+- **P5**: `npm run audit:docs` 유지 (이미 완료).
+- 잔여: P1 fixture 시나리오(식자재 단가·판매량·공통원가) → E2E QA 확장 보류 등록. P3 운영 QA → D섹션 유지.
+- `qa:workflow` 6/6 통과.
 
 ---
 
