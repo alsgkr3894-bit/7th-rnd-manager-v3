@@ -12,6 +12,7 @@ import { buildUnitPriceMap } from '@/lib/recipe';
 import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { initDB } from '@/lib/db';
 import { ModalFrame } from '@/components/ui/ModalFrame';
+import { showToast } from '@/components/Toast';
 import { parseOptionalNumber, parseOptionalNonNegativeNumber } from '@/lib/parse';
 import { EdgeComponentsSection } from './EdgeComponentsSection';
 import { EdgeIdentityFields } from './EdgeIdentityFields';
@@ -58,7 +59,10 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
       }
       setAllMeta(meta);
       setUpm(buildUnitPriceMap(meta, priceRowMap));
-    })().catch(console.error);
+    })().catch(err => {
+      console.error('[EdgeEditModal] 단가 데이터 로드 실패', err);
+      showToast('단가 데이터를 불러오지 못했습니다.', 'error');
+    });
   }, []);
 
   function patch(i, p) {

@@ -80,7 +80,10 @@ export default function Page() {
           setIsDirty(true);
           isDirtyRef.current = true;
         })
-        .catch(console.error);
+        .catch(err => {
+          console.error('[note/write] 원본 노트 로드 실패', err);
+          showToast('원본 노트를 불러오지 못했습니다. 새 노트로 작성합니다.', 'warn');
+        });
     } else {
       if (homeDraft) {
         setForm(f => ({ ...f, title: homeDraft.slice(0, 30), testContent: homeDraft }));
