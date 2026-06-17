@@ -3,7 +3,7 @@
 import { CategoryTags } from '@/components/menu-master/MenuCategoryTags';
 import { FieldError, FieldLabel } from '@/components/menu-master/MenuMasterFieldPrimitives';
 
-export function MenuCodeField({ row, isNew, value, error, setField, setErrors }) {
+export function MenuCodeField({ row, isNew, value, error, setField, setErrors, autoFocus }) {
   return (
     <div>
       <FieldLabel>메뉴코드</FieldLabel>
@@ -19,6 +19,7 @@ export function MenuCodeField({ row, isNew, value, error, setField, setErrors })
             placeholder="예) P-OR-005-L"
             style={{ fontFamily: 'monospace' }}
             aria-describedby={error ? 'menu-master-code-error' : undefined}
+            autoFocus={autoFocus}
           />
           <FieldError id="menu-master-code-error">{error}</FieldError>
           <div style={{ marginTop: 6 }}>
@@ -46,7 +47,7 @@ export function MenuCodeField({ row, isNew, value, error, setField, setErrors })
   );
 }
 
-export function MenuNameField({ value, error, setField, setErrors }) {
+export function MenuNameField({ value, error, setField, setErrors, autoFocus }) {
   return (
     <div>
       <FieldLabel>메뉴명</FieldLabel>
@@ -59,6 +60,7 @@ export function MenuNameField({ value, error, setField, setErrors }) {
         }}
         placeholder="예) 슈퍼콤비네이션"
         aria-describedby={error ? 'menu-master-name-error' : undefined}
+        autoFocus={autoFocus}
       />
       <FieldError id="menu-master-name-error">{error}</FieldError>
     </div>

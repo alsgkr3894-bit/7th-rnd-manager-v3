@@ -64,6 +64,10 @@ export function MenuMasterEditModal({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  const missingFields = [];
+  if (!form.menuCode.trim()) missingFields.push('메뉴코드');
+  if (!form.menuName.trim()) missingFields.push('메뉴명');
+
   return (
     <div
       style={{
@@ -72,7 +76,7 @@ export function MenuMasterEditModal({
         background: OVERLAY_COLOR,
         display: 'grid',
         placeItems: 'center',
-        zIndex: 300,
+        zIndex: 400,
       }}
       onClick={e => {
         if (e.target === e.currentTarget) onClose();
@@ -81,45 +85,78 @@ export function MenuMasterEditModal({
       <div
         className="card"
         style={{
-          width: 'min(440px,95vw)',
-          padding: '24px 28px',
+          width: 'min(960px, 96vw)',
           maxHeight: '92vh',
-          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: 0,
+          overflow: 'hidden',
         }}
       >
+        {/* sticky 헤더 */}
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: 16,
+            justifyContent: 'space-between',
+            padding: '14px 24px',
+            borderBottom: '1px solid var(--divider)',
+            flexShrink: 0,
+            gap: 12,
           }}
         >
-          <div style={{ fontWeight: 700, fontSize: 15 }}>{isNew ? '메뉴 추가' : '메뉴 수정'}</div>
-          <button className="btn ghost" style={{ padding: '4px 8px' }} onClick={onClose}>
-            <Icon.close style={{ width: 16, height: 16 }} />
-          </button>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>
+              {isNew ? '메뉴 추가' : '메뉴 수정'}
+            </div>
+            {!isNew && (
+              <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2, fontFamily: 'monospace' }}>
+                {row?.menuCode}
+                {row?.menuName && (
+                  <span style={{ fontFamily: 'sans-serif', marginLeft: 8, color: 'var(--text-2)' }}>
+                    {row.menuName}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {missingFields.length > 0 && (
+              <span style={{ fontSize: 11, color: 'var(--warn)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Icon.alert style={{ width: 12, height: 12 }} />
+                {missingFields.join(', ')} 필수
+              </span>
+            )}
+            <button className="btn" onClick={onClose}>
+              취소
+            </button>
+            <button className="btn primary" disabled={!canSave} onClick={submit}>
+              저장
+            </button>
+            <button
+              className="btn ghost"
+              style={{ padding: '4px 8px' }}
+              onClick={onClose}
+              aria-label="닫기"
+            >
+              <Icon.close style={{ width: 16, height: 16 }} />
+            </button>
+          </div>
         </div>
 
-        <MenuMasterEditFields
-          row={row}
-          isNew={isNew}
-          form={form}
-          errors={errors}
-          setField={set}
-          setErrors={setErrors}
-          defaultPrice={defaultPrice}
-          presetCategories={presetCategories}
-          onRecipeSaved={onRecipeSaved}
-        />
-
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
-          <button className="btn" onClick={onClose}>
-            취소
-          </button>
-          <button className="btn primary" disabled={!canSave} onClick={submit}>
-            저장
-          </button>
+        {/* 스크롤 본문 */}
+        <div style={{ overflowY: 'auto', flex: 1, padding: '20px 24px' }}>
+          <MenuMasterEditFields
+            row={row}
+            isNew={isNew}
+            form={form}
+            errors={errors}
+            setField={set}
+            setErrors={setErrors}
+            defaultPrice={defaultPrice}
+            presetCategories={presetCategories}
+            onRecipeSaved={onRecipeSaved}
+          />
         </div>
       </div>
     </div>
