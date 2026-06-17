@@ -285,123 +285,147 @@ export function IngredientForm({
         display: 'grid',
         placeItems: 'center',
         zIndex: 200,
+        padding: '24px 16px',
+        boxSizing: 'border-box',
       }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         className="card"
         style={{
-          width: 'min(560px, 95vw)',
-          maxHeight: '92vh',
-          overflowY: 'auto',
-          padding: '24px 28px',
-          position: 'relative',
+          width: 'min(820px, 96vw)',
+          height: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: 0,
+          overflow: 'hidden',
         }}
       >
+        {/* sticky 헤더 */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: 20,
+            padding: '14px 24px',
+            borderBottom: '1px solid var(--divider)',
+            background: 'var(--surface)',
+            flexShrink: 0,
+            gap: 12,
           }}
         >
-          <div style={{ fontWeight: 700, fontSize: 16 }}>
-            {title}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>{title}</div>
             {copyFrom && (
-              <span
-                style={{ marginLeft: 8, fontSize: 12, fontWeight: 500, color: 'var(--text-3)' }}
-              >
-                (원본: {copyFrom.ingredientName || copyFrom.displayName || copyFrom.productName})
-              </span>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
+                원본: {copyFrom.ingredientName || copyFrom.displayName || copyFrom.productName}
+              </div>
             )}
           </div>
-          <button type="button" className="btn" style={{ padding: '4px 8px' }} onClick={onClose}>
+          <button type="button" className="btn ghost" style={{ padding: '4px 8px', flexShrink: 0 }} onClick={onClose}>
             <Icon.close style={{ width: 16, height: 16 }} />
           </button>
         </div>
 
-        {isJetteLinked && <JetteLinkedSourcePanel ingredient={initial} />}
+        {/* 스크롤 본문 */}
+        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '20px 24px' }}>
+          {isJetteLinked && <JetteLinkedSourcePanel ingredient={initial} />}
 
-        <form
-          onSubmit={handleSubmit}
-          aria-busy={saving}
-          style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
-        >
-          {!isJetteLinked && (
-            <JettePriceImportField
-              priceRows={jettePriceRows}
+          <form
+            onSubmit={handleSubmit}
+            aria-busy={saving}
+            style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+          >
+            {!isJetteLinked && (
+              <JettePriceImportField
+                priceRows={jettePriceRows}
+                form={form}
+                existingProductCodes={existingProductCodes}
+                onApply={applyJettePriceDraft}
+              />
+            )}
+
+            <IngredientNameField
               form={form}
-              existingProductCodes={existingProductCodes}
-              onApply={applyJettePriceDraft}
+              errors={errors}
+              isJetteLinked={isJetteLinked}
+              initial={initial}
+              onSet={set}
             />
-          )}
 
-          <IngredientNameField
-            form={form}
-            errors={errors}
-            isJetteLinked={isJetteLinked}
-            initial={initial}
-            onSet={set}
-          />
-
-          <PhotoSection
-            formPhotos={formPhotos}
-            photoInputRefs={photoInputRefs}
-            onPhotoFile={handlePhotoFile}
-            onRemovePhoto={removePhoto}
-          />
-
-          <BasicIngredientFields
-            form={form}
-            errors={errors}
-            isJetteLinked={isJetteLinked}
-            catOptions={catOptions}
-            customCat={customCat}
-            tagInput={tagInput}
-            datalistId={datalistId}
-            onSet={set}
-            onToggleCustomCat={() => {
-              setCustomCat(v => !v);
-              set('category', '');
-            }}
-            onTagInputChange={setTagInput}
-            onAddTag={addTag}
-            onRemoveTag={removeTag}
-          />
-
-          <IngredientCostFields
-            form={form}
-            errors={errors}
-            isJetteLinked={isJetteLinked}
-            onSet={set}
-          />
-
-          <OriginSection
-            origin={form.origin || []}
-            originHidden={form.originHidden}
-            originSuggestions={originSuggestions}
-            onSet={set}
-          />
-
-          <AllergenSection allergens={form.allergens || []} onSet={set} />
-
-          {initial && (
-            <IngredientUsageSection
-              loading={usageSummary.loading}
-              rows={usageSummary.rows}
-              error={usageSummary.error}
+            <BasicIngredientFields
+              form={form}
+              errors={errors}
+              isJetteLinked={isJetteLinked}
+              catOptions={catOptions}
+              customCat={customCat}
+              tagInput={tagInput}
+              datalistId={datalistId}
+              onSet={set}
+              onToggleCustomCat={() => {
+                setCustomCat(v => !v);
+                set('category', '');
+              }}
+              onTagInputChange={setTagInput}
+              onAddTag={addTag}
+              onRemoveTag={removeTag}
             />
-          )}
 
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
-            <button type="button" className="btn" onClick={onClose}>
-              취소
-            </button>
-            <button type="submit" className="btn primary" disabled={saving}>
-              {saving ? '저장 중…' : isNew ? '추가' : '저장'}
-            </button>
-          </div>
-        </form>
+            <IngredientCostFields
+              form={form}
+              errors={errors}
+              isJetteLinked={isJetteLinked}
+              onSet={set}
+            />
+
+            <OriginSection
+              origin={form.origin || []}
+              originHidden={form.originHidden}
+              originSuggestions={originSuggestions}
+              onSet={set}
+            />
+
+            <AllergenSection allergens={form.allergens || []} onSet={set} />
+
+            <PhotoSection
+              formPhotos={formPhotos}
+              photoInputRefs={photoInputRefs}
+              onPhotoFile={handlePhotoFile}
+              onRemovePhoto={removePhoto}
+            />
+
+            {initial && (
+              <IngredientUsageSection
+                loading={usageSummary.loading}
+                rows={usageSummary.rows}
+                error={usageSummary.error}
+              />
+            )}
+          </form>
+        </div>
+
+        {/* sticky 푸터 */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            justifyContent: 'flex-end',
+            padding: '12px 24px',
+            borderTop: '1px solid var(--divider)',
+            background: 'var(--surface)',
+            flexShrink: 0,
+          }}
+        >
+          <button type="button" className="btn" onClick={onClose}>취소</button>
+          <button
+            type="button"
+            className="btn primary"
+            disabled={saving}
+            onClick={() => handleSubmit({ preventDefault() {} })}
+          >
+            {saving ? '저장 중…' : isNew ? '추가' : '저장'}
+          </button>
+        </div>
       </div>
     </div>,
     document.body
