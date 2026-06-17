@@ -193,6 +193,14 @@ export function IngredientForm({
 
   useKeyboardSave(() => handleSubmit({ preventDefault() {} }));
 
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   async function handleSubmit(e) {
     e.preventDefault();
     const errs = validate();
