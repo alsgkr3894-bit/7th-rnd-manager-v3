@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useDebounce } from '@/hooks/useDebounce';
 import { getMenuPriceCategories } from '@/lib/cost/menu-price';
 import { getMenuCodeRank } from '@/lib/menu-categories';
 import {
@@ -15,6 +16,7 @@ export function useMarginFilters({ rows, activePlatform, discount, warnPct, crit
   const [sortKey, setSortKey] = useState('code');
   const [sortDir, setSortDir] = useState('asc');
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 200);
   const [showHidden, setShowHidden] = useState(false);
   const [edgeFilter, setEdgeFilter] = useState(null);
 
@@ -51,8 +53,8 @@ export function useMarginFilters({ rows, activePlatform, discount, warnPct, crit
         return false;
       });
     }
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.trim().toLowerCase();
       result = result.filter(
         r =>
           (r.menuName || '').toLowerCase().includes(q) ||
@@ -60,7 +62,7 @@ export function useMarginFilters({ rows, activePlatform, discount, warnPct, crit
       );
     }
     return result;
-  }, [rows, catFilter, search, showHidden]);
+  }, [rows, catFilter, debouncedSearch, showHidden]);
 
   const edgeFiltered = useMemo(() => {
     if (!edgeFilter) return filtered;

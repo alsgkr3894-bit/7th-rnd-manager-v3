@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Icon } from '@/components/icons';
 import { useUnmatchedIssues } from '@/lib/sales/use-unmatched-issues';
@@ -36,6 +37,7 @@ export default function Page() {
   const [statusFilter, setStatusFilter] = useState('open'); // open | resolved | all
   const [monthFilter, setMonthFilter] = useState('all'); // 'all' | 'YYYY-M'
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 200);
   const [pendingReclassify, setPendingReclassify] = useState(false);
   const [reclassifying, setReclassifying] = useState(false);
 
@@ -70,7 +72,7 @@ export default function Page() {
   }, [safeIssues]);
 
   const filtered = useMemo(() => {
-    const q = asDisplayText(search).trim().toLowerCase();
+    const q = asDisplayText(debouncedSearch).trim().toLowerCase();
     return safeIssues.filter(i => {
       if (selectedStatus !== 'all' && asDisplayText(i.status) !== selectedStatus) return false;
       if (selectedMonth !== 'all') {
@@ -85,7 +87,7 @@ export default function Page() {
       }
       return true;
     });
-  }, [safeIssues, selectedStatus, selectedMonth, search]);
+  }, [safeIssues, selectedStatus, selectedMonth, debouncedSearch]);
 
   const openCount = safeIssues.filter(i => asDisplayText(i.status) === 'open').length;
   const resolvedCount = safeIssues.filter(i => asDisplayText(i.status) === 'resolved').length;

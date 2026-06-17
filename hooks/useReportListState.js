@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 import { clampInteger, asFiniteNumber } from '@/lib/ui/prop-guards';
+import { useDebounce } from '@/hooks/useDebounce';
 
 const ITEMS_PER_PAGE = 10;
 const REPORT_SORT_KEYS = new Set(['id', 'name', 'kind', 'createdAt']);
@@ -20,6 +21,7 @@ function reportSearchText(report) {
 export function useReportListState(reports) {
   const [kindFilter, setKindFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 200);
   const [favOnly, setFavOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState('createdAt');
@@ -76,7 +78,7 @@ export function useReportListState(reports) {
         .filter(r => {
           if (kindFilter !== 'all' && safeReportKind(r.kind) !== kindFilter) return false;
           if (favOnly && !r.fav) return false;
-          const q = asDisplayText(search).trim().toLowerCase();
+          const q = asDisplayText(debouncedSearch).trim().toLowerCase();
           if (q && !reportSearchText(r).toLowerCase().includes(q)) return false;
           return true;
         })
@@ -96,7 +98,7 @@ export function useReportListState(reports) {
           const cmp = valA > valB ? 1 : valA < valB ? -1 : 0;
           return sortDir === 'asc' ? cmp : -cmp;
         }),
-    [reports, kindFilter, favOnly, search, sortKey, sortDir]
+    [reports, kindFilter, favOnly, debouncedSearch, sortKey, sortDir]
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));

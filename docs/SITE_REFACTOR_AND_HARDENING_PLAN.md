@@ -177,6 +177,16 @@
   - LAN HTTP 허용 목록 및 외부 배포 전 필요 변경사항(Secure/HttpOnly 쿠키, 서버 측 토큰, API 인증 등) 문서화
 - 커밋: `docs: document local-tool auth policy and external deployment risks`
 
+### 8단계. 성능 점검 ✅ 완료 (2026-06-17)
+
+- ✅ 점검 결과: useMemo selector·탭 lazy render·pagination(ShipmentTable 80행)은 이미 적용됨
+- ✅ 검색 debounce(200ms) 3곳 추가:
+  - `app/cost/margin/useMarginFilters.js` — filtered useMemo가 매 입력마다 재계산되던 문제
+  - `hooks/useReportListState.js` — filtered useMemo + URL 페이지 초기화 분리
+  - `app/menu-sales/unmatched/page.jsx` — 미매칭 filtered useMemo
+- ⏸ `IngredientManagePanel.jsx` 페이지네이션 — 배치 선택 상태와 상호작용 복잡, 실운영 규모 확인 후 별도 진행
+- 커밋: `perf: add search debounce to margin/report/unmatched filters`
+
 ## 4. 테스트 계획
 
 - 기본 검증:
