@@ -2,7 +2,9 @@
 import dynamic from 'next/dynamic';
 import { useState, useMemo } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { usePagination } from '@/hooks/usePagination';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Pagination } from '@/components/ui/Pagination';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import {
@@ -25,6 +27,8 @@ import {
 } from './marginPageUtils';
 import { useMarginFilters } from './useMarginFilters';
 import { useMarginActions } from './useMarginActions';
+
+const ROW_PAGE_SIZE = 60;
 
 const PlatformSettingsModal = dynamic(
   () => import('@/components/cost/margin/PlatformSettingsModal').then(m => m.PlatformSettingsModal),
@@ -83,6 +87,10 @@ export default function Page() {
     setActivePlatId,
     setShowSettings,
   });
+
+  // 대량 행(수백+) 렌더 비용을 줄이기 위해 표시만 페이지네이션한다.
+  // 내보내기(edgeFiltered)·통계(stats)는 전체 집합 기준이라 영향 없음.
+  const { page, goTo, totalPages, paged, total } = usePagination(sortedFiltered, ROW_PAGE_SIZE);
 
   if (loading)
     return (
@@ -239,7 +247,7 @@ export default function Page() {
                     </td>
                   </tr>
                 ) : (
-                  sortedFiltered.map(r => (
+                  paged.map(r => (
                     <MarginRow
                       key={r.id}
                       r={r}
@@ -257,6 +265,13 @@ export default function Page() {
               </tbody>
             </table>
           </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPage={goTo}
+            total={total}
+            pageSize={ROW_PAGE_SIZE}
+          />
           <div
             style={{
               padding: '8px 16px',
