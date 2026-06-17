@@ -25,6 +25,15 @@ describe('파괴적 액션 권한 가드', () => {
     expect(functionBody(s, 'bulkDeleteIngredients')).toContain('assertActiveAdmin');
   });
 
+  test('메뉴마스터 삭제/초기화/시드가 assertActiveAdmin을 호출한다', () => {
+    const store = src('lib/menu-master/store.js');
+    expect(store).toContain("from '@/lib/auth/guard'");
+    expect(functionBody(store, 'deleteMenuMaster')).toContain('assertActiveAdmin');
+    expect(functionBody(store, 'resetAllMenuMaster')).toContain('assertActiveAdmin');
+    const seed = src('lib/menu-master/seed.js');
+    expect(functionBody(seed, 'seedMenuMaster')).toContain('assertActiveAdmin');
+  });
+
   test('저수준 DB 프리미티브(crud.js)에는 가드가 없다', () => {
     expect(src('lib/db/crud.js')).not.toContain('assertActiveAdmin');
   });
