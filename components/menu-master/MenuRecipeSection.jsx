@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { initDB } from '@/lib/db';
 import { showToast } from '@/components/Toast';
 import { getAllIngredients } from '@/lib/ingredient';
@@ -72,6 +72,13 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
   const [unitPriceMap, setUnitPriceMap] = useState(new Map());
   const [searchIdx, setSearchIdx] = useState(null); // index of row being searched
   const [searchQ, setSearchQ] = useState('');
+  const [activeSuggestionIdx, setActiveSuggestionIdx] = useState(-1);
+
+  // ref maps: { [component._key]: HTMLInputElement }
+  const ingredientInputRefs = useRef({});
+  const quantityInputRefs = useRef({});
+  // pending focus after addRow
+  const pendingFocusNewRowRef = useRef(false);
 
   const recipeKind = recipeStoreKindForCategory(category);
   const supported = Boolean(recipeKind && menuCode);
@@ -124,6 +131,21 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
       .slice(0, 8);
   }, [searchQ, allIngs]);
 
+  // searchQ 변경 시 active index 초기화
+  useEffect(() => {
+    setActiveSuggestionIdx(-1);
+  }, [searchQ]);
+
+  // pendingFocusNewRowRef: addRow 후 새 행 식자재 input으로 focus
+  useEffect(() => {
+    if (!pendingFocusNewRowRef.current) return;
+    pendingFocusNewRowRef.current = false;
+    if (components.length > 0) {
+      const lastKey = components[components.length - 1]._key;
+      ingredientInputRefs.current[lastKey]?.focus();
+    }
+  }, [components]);
+
   const updateRow = useCallback((idx, field, val) => {
     setComponents(prev => prev.map((c, i) => (i === idx ? { ...c, [field]: val } : c)));
   }, []);
@@ -155,8 +177,59 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
       );
       setSearchIdx(null);
       setSearchQ('');
+      setActiveSuggestionIdx(-1);
+      // 선택 후 수량 input으로 focus — components 상태 반영은 비동기이므로 ref 기준으로 처리
+      // idx 기준으로 같은 행의 _key를 구해 focus. setTimeout으로 render 후 처리.
+      setComponents(prev => {
+        const component = prev[idx];
+        if (component) {
+          setTimeout(() => {
+            quantityInputRefs.current[component._key]?.focus();
+          }, 0);
+        }
+        return prev;
+      });
     },
     [unitPriceMap]
+  );
+
+  const handleIngredientKeyDown = useCallback(
+    (idx, e) => {
+      if (searchIdx !== idx || suggestions.length === 0) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActiveSuggestionIdx(i => Math.min(i + 1, suggestions.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActiveSuggestionIdx(i => Math.max(i - 1, 0));
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const target =
+          activeSuggestionIdx >= 0 ? suggestions[activeSuggestionIdx] : suggestions[0];
+        if (target) pickSuggestion(idx, target);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setSearchIdx(null);
+        setSearchQ('');
+        setActiveSuggestionIdx(-1);
+      }
+    },
+    [searchIdx, suggestions, activeSuggestionIdx, pickSuggestion]
+  );
+
+  const handleQuantityKeyDown = useCallback(
+    (idx, e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      if (idx < components.length - 1) {
+        const nextKey = components[idx + 1]._key;
+        ingredientInputRefs.current[nextKey]?.focus();
+      } else {
+        addRow();
+        pendingFocusNewRowRef.current = true;
+      }
+    },
+    [components, addRow]
   );
 
   const eligibleRecipeGroups = useMemo(
@@ -263,7 +336,10 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
         searchIdx={searchIdx}
         searchQ={searchQ}
         suggestions={suggestions}
+        activeSuggestionIdx={activeSuggestionIdx}
         unitPriceMap={unitPriceMap}
+        ingredientInputRefs={ingredientInputRefs}
+        quantityInputRefs={quantityInputRefs}
         onIngredientInputChange={(idx, value) => {
           setSearchIdx(idx);
           setSearchQ(value);
@@ -274,8 +350,10 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
           setSearchQ(value);
         }}
         onIngredientBlur={() => setTimeout(() => setSearchIdx(null), 150)}
+        onIngredientKeyDown={handleIngredientKeyDown}
         onPickSuggestion={pickSuggestion}
         onQuantityChange={(idx, value) => updateRow(idx, 'quantity', value)}
+        onQuantityKeyDown={handleQuantityKeyDown}
         onUnitChange={(idx, value) => updateRow(idx, 'unit', normalizeCostBaseUnit(value))}
         onRemoveRow={removeRow}
       />
@@ -284,7 +362,10 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
         type="button"
         className="btn sm"
         style={{ marginTop: 8, width: '100%', fontSize: 12 }}
-        onClick={addRow}
+        onClick={() => {
+          addRow();
+          pendingFocusNewRowRef.current = true;
+        }}
       >
         + 구성품 추가
       </button>

@@ -15,6 +15,9 @@ describe('menu master recipe summary', () => {
     expect(recipeKindForMenu({ category: '사이드' })).toBe('side');
     expect(recipeKindForMenu({ category: '음료' })).toBe('side');
     expect(recipeKindForMenu({ category: '엣지' })).toBeNull();
+    // 소스·파스타 카테고리도 side 계열로 라우팅된다
+    expect(recipeKindForMenu({ category: '소스' })).toBe('side');
+    expect(recipeKindForMenu({ category: '파스타' })).toBe('side');
   });
 
   test('제품코드가 있으면 저장된 단가보다 최신 단가 맵을 우선한다', () => {

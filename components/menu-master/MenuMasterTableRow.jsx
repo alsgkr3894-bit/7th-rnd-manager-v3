@@ -26,24 +26,60 @@ export function MenuMasterTableRow({ row, recipeSummary, isViewer, onEdit, onDel
         {row.menuCode}
       </td>
       <td className="cell-name">
-        <div className="menu-name">
-          {row.menuName}
-          {row.excludeFromOrigin && (
-            <span
-              style={{
-                marginLeft: 6,
-                fontSize: 10,
-                fontWeight: 700,
-                padding: '1px 5px',
-                borderRadius: 3,
-                background: 'var(--warn-soft)',
-                color: 'var(--warn)',
-              }}
-            >
-              원산지제외
-            </span>
-          )}
-        </div>
+        {isViewer ? (
+          <div className="menu-name">
+            {row.menuName}
+            {row.excludeFromOrigin && (
+              <span
+                style={{
+                  marginLeft: 6,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '1px 5px',
+                  borderRadius: 3,
+                  background: 'var(--warn-soft)',
+                  color: 'var(--warn)',
+                }}
+              >
+                원산지제외
+              </span>
+            )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="menu-name"
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              textAlign: 'left',
+              padding: 0,
+              width: '100%',
+              font: 'inherit',
+              color: 'inherit',
+            }}
+            onClick={() => onEdit(row)}
+            title="클릭하여 수정"
+          >
+            {row.menuName}
+            {row.excludeFromOrigin && (
+              <span
+                style={{
+                  marginLeft: 6,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '1px 5px',
+                  borderRadius: 3,
+                  background: 'var(--warn-soft)',
+                  color: 'var(--warn)',
+                }}
+              >
+                원산지제외
+              </span>
+            )}
+          </button>
+        )}
       </td>
       <td>
         <CategoryTags menuCode={row.menuCode} />

@@ -33,7 +33,15 @@ export function MenuRecipeSectionHeader({ hasComponents, recipeSummary, saving, 
   );
 }
 
+const COST_RATE_TONE_COLOR = {
+  danger: 'var(--negative)',
+  warn: 'var(--warn)',
+  ok: 'var(--positive)',
+};
+
 function RecipeSummaryLine({ recipeSummary }) {
+  const costRateColor = COST_RATE_TONE_COLOR[recipeSummary.costRateTone] || 'var(--text-2)';
+
   return (
     <div
       style={{
@@ -46,12 +54,39 @@ function RecipeSummaryLine({ recipeSummary }) {
         margin: '0 0 8px',
       }}
     >
-      <span>
-        예상 원가{' '}
-        <b style={{ color: 'var(--text-1)' }}>{formatNumber(recipeSummary.totalCost)}원</b>
-      </span>
+      {recipeSummary.commonGroupCount > 0 ? (
+        <span>
+          직접 원가{' '}
+          <b style={{ color: 'var(--text-1)' }}>{formatNumber(recipeSummary.directCost)}원</b>
+          {' + '}
+          공통원가{' '}
+          <b style={{ color: 'var(--text-1)' }}>{formatNumber(recipeSummary.commonGroupCost)}원</b>
+          {' = '}
+          총{' '}
+          <b style={{ color: 'var(--text-1)' }}>{formatNumber(recipeSummary.totalCost)}원</b>
+        </span>
+      ) : (
+        <span>
+          예상 원가{' '}
+          <b style={{ color: 'var(--text-1)' }}>{formatNumber(recipeSummary.totalCost)}원</b>
+        </span>
+      )}
       {recipeSummary.costRate != null && (
-        <span>원가율 {formatPercent(recipeSummary.costRate)}</span>
+        <span style={{ color: costRateColor, fontWeight: 600 }}>
+          원가율 {formatPercent(recipeSummary.costRate)}
+        </span>
+      )}
+      {recipeSummary.marginAmount != null && (
+        <span>
+          예상 마진{' '}
+          <b
+            style={{
+              color: recipeSummary.marginAmount >= 0 ? 'var(--positive)' : 'var(--negative)',
+            }}
+          >
+            {formatNumber(recipeSummary.marginAmount)}원
+          </b>
+        </span>
       )}
       {recipeSummary.missingQuantityCount > 0 && (
         <span style={{ color: 'var(--warn)' }}>수량 확인 {recipeSummary.missingQuantityCount}</span>

@@ -12,6 +12,7 @@ import { MenuMasterDialogs } from '@/components/menu-master/MenuMasterDialogs';
 import { MenuMasterEmptyState } from '@/components/menu-master/MenuMasterEmptyState';
 import { MenuMasterFilterPanel } from '@/components/menu-master/MenuMasterFilterPanel';
 import { MenuMasterHeaderActions } from '@/components/menu-master/MenuMasterHeaderActions';
+import { MenuMasterIssuesPanel } from '@/components/menu-master/MenuMasterIssuesPanel';
 import { MenuMasterLoadingTable } from '@/components/menu-master/MenuMasterLoadingTable';
 import { MenuMasterStatsRow } from '@/components/menu-master/MenuMasterStatsRow';
 import { MenuMasterTablePanel } from '@/components/menu-master/MenuMasterTablePanel';
@@ -44,6 +45,7 @@ const PIZZA_CATEGORIES = [
 export default function Page() {
   const isMain = useIsMainBrand();
   const { isViewer } = useCurrentRole();
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'issues'
   const [seeding, setSeeding] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [editRow, setEditRow] = useState(null);
@@ -172,36 +174,62 @@ export default function Page() {
 
       {rows.length > 0 && (
         <div className="content-enter">
-          <MenuMasterFilterPanel
-            rows={rows}
-            activeRows={active}
-            discontinuedRows={discontinued}
-            testRows={testRows}
-            statusFilter={statusFilter}
-            onStatusFilter={setStatusFilter}
-            catFilter={catFilter}
-            onCatFilter={setCatFilter}
-            subFilter={subFilter}
-            onSubFilter={setSubFilter}
-            search={search}
-            onSearch={setSearch}
-            displayCategories={displayCategories}
-            catCounts={catCounts}
-          />
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+            <button
+              className={'chip' + (viewMode === 'list' ? ' active' : '')}
+              onClick={() => setViewMode('list')}
+            >
+              목록
+            </button>
+            <button
+              className={'chip' + (viewMode === 'issues' ? ' active' : '')}
+              onClick={() => setViewMode('issues')}
+            >
+              이슈{recipeNeedsCheck > 0 && ` ${recipeNeedsCheck}`}
+            </button>
+          </div>
 
-          <MenuMasterTablePanel
-            filteredRows={filtered}
-            pagedRows={paged}
-            totalRows={rows}
-            recipeSummaryMap={recipeSummaryMap}
-            isViewer={isViewer}
-            onEdit={setEditRow}
-            onDelete={openDeleteDialog}
-            page={page}
-            totalPages={totalPages}
-            onPage={goTo}
-            total={total}
-          />
+          {viewMode === 'issues' ? (
+            <MenuMasterIssuesPanel
+              rows={rows}
+              recipeSummaryMap={recipeSummaryMap}
+              isViewer={isViewer}
+              onEdit={setEditRow}
+            />
+          ) : (
+            <>
+              <MenuMasterFilterPanel
+                rows={rows}
+                activeRows={active}
+                discontinuedRows={discontinued}
+                testRows={testRows}
+                statusFilter={statusFilter}
+                onStatusFilter={setStatusFilter}
+                catFilter={catFilter}
+                onCatFilter={setCatFilter}
+                subFilter={subFilter}
+                onSubFilter={setSubFilter}
+                search={search}
+                onSearch={setSearch}
+                displayCategories={displayCategories}
+                catCounts={catCounts}
+              />
+
+              <MenuMasterTablePanel
+                filteredRows={filtered}
+                pagedRows={paged}
+                totalRows={rows}
+                recipeSummaryMap={recipeSummaryMap}
+                isViewer={isViewer}
+                onEdit={setEditRow}
+                onDelete={openDeleteDialog}
+                page={page}
+                totalPages={totalPages}
+                onPage={goTo}
+                total={total}
+              />
+            </>
+          )}
         </div>
       )}
 

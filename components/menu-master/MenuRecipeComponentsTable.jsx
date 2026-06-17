@@ -9,12 +9,17 @@ export function MenuRecipeComponentsTable({
   searchIdx,
   searchQ,
   suggestions,
+  activeSuggestionIdx = -1,
   unitPriceMap,
+  ingredientInputRefs,
+  quantityInputRefs,
   onIngredientInputChange,
   onIngredientFocus,
   onIngredientBlur,
+  onIngredientKeyDown,
   onPickSuggestion,
   onQuantityChange,
+  onQuantityKeyDown,
   onUnitChange,
   onRemoveRow,
 }) {
@@ -28,7 +33,7 @@ export function MenuRecipeComponentsTable({
           padding: '10px 0',
         }}
       >
-        구성품이 없습니다
+        구성품이 없습니다. 구성품 추가 후 식자재를 검색해 입력하세요.
       </div>
     );
   }
@@ -80,115 +85,161 @@ export function MenuRecipeComponentsTable({
           >
             단가
           </th>
+          <th
+            style={{
+              width: 84,
+              textAlign: 'right',
+              padding: '4px 4px',
+              fontWeight: 600,
+              color: 'var(--text-3)',
+            }}
+          >
+            원가
+          </th>
           <th style={{ width: 24 }} />
         </tr>
       </thead>
       <tbody>
-        {components.map((component, idx) => (
-          <tr key={component._key} style={{ borderBottom: '1px solid var(--divider)' }}>
-            <td style={{ padding: '4px 4px', position: 'relative' }}>
-              <input
-                className="form-input"
-                style={{ width: '100%', fontSize: 12, padding: '4px 6px' }}
-                value={searchIdx === idx ? searchQ : component.ingredientName || ''}
-                onChange={e => onIngredientInputChange(idx, e.target.value)}
-                onFocus={() => onIngredientFocus(idx, component.ingredientName || '')}
-                onBlur={onIngredientBlur}
-                placeholder="식자재명"
-              />
-              {searchIdx === idx && suggestions.length > 0 && (
-                <div
+        {components.map((component, idx) => {
+          const subtotal =
+            component.unitPrice != null && Number(component.quantity) > 0
+              ? Math.round(component.unitPrice * Number(component.quantity))
+              : null;
+
+          return (
+            <tr key={component._key} style={{ borderBottom: '1px solid var(--divider)' }}>
+              <td style={{ padding: '4px 4px', position: 'relative' }}>
+                <input
+                  ref={el => {
+                    if (ingredientInputRefs) {
+                      if (el) ingredientInputRefs.current[component._key] = el;
+                      else delete ingredientInputRefs.current[component._key];
+                    }
+                  }}
+                  className="form-input"
+                  style={{ width: '100%', fontSize: 12, padding: '4px 6px' }}
+                  value={searchIdx === idx ? searchQ : component.ingredientName || ''}
+                  onChange={e => onIngredientInputChange(idx, e.target.value)}
+                  onFocus={() => onIngredientFocus(idx, component.ingredientName || '')}
+                  onBlur={onIngredientBlur}
+                  onKeyDown={e => onIngredientKeyDown?.(idx, e)}
+                  placeholder="식자재명 검색 (↑↓ 이동, Enter 선택)"
+                  aria-autocomplete="list"
+                />
+                {searchIdx === idx && suggestions.length > 0 && (
+                  <div
+                    role="listbox"
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 6,
+                      zIndex: 50,
+                      maxHeight: 160,
+                      overflowY: 'auto',
+                    }}
+                  >
+                    {suggestions.map((ingredient, suggestionIndex) => (
+                      <SuggestionItem
+                        key={ingredient.id || ingredient.productCode}
+                        ingredient={ingredient}
+                        unitPriceMap={unitPriceMap}
+                        isActive={activeSuggestionIdx === suggestionIndex}
+                        onPick={() => onPickSuggestion(idx, ingredient)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </td>
+              <td style={{ padding: '4px 4px' }}>
+                <input
+                  ref={el => {
+                    if (quantityInputRefs) {
+                      if (el) quantityInputRefs.current[component._key] = el;
+                      else delete quantityInputRefs.current[component._key];
+                    }
+                  }}
+                  className="form-input"
+                  type="number"
+                  min="0"
+                  style={{ width: '100%', fontSize: 12, padding: '4px 6px', textAlign: 'right' }}
+                  value={component.quantity ?? ''}
+                  onChange={e => onQuantityChange(idx, e.target.value)}
+                  onKeyDown={e => onQuantityKeyDown?.(idx, e)}
+                  placeholder="0"
+                  title="수량 입력 후 Enter로 다음 구성품"
+                />
+              </td>
+              <td style={{ padding: '4px 4px' }}>
+                <select
+                  className="form-input"
+                  style={{ width: '100%', fontSize: 12, padding: '4px 4px' }}
+                  value={normalizeCostBaseUnit(component.unit)}
+                  onChange={e => onUnitChange(idx, e.target.value)}
+                >
+                  {COST_BASE_UNITS.map(unit => (
+                    <option key={unit} value={unit}>
+                      {unit}
+                    </option>
+                  ))}
+                </select>
+              </td>
+              <td style={{ padding: '4px 4px', textAlign: 'right', fontSize: 11 }}>
+                <span
                   style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 6,
-                    zIndex: 50,
-                    maxHeight: 160,
-                    overflowY: 'auto',
+                    color: component.unitPrice != null ? 'var(--text-2)' : 'var(--warn)',
                   }}
                 >
-                  {suggestions.map(ingredient => (
-                    <SuggestionItem
-                      key={ingredient.id || ingredient.productCode}
-                      ingredient={ingredient}
-                      unitPriceMap={unitPriceMap}
-                      onPick={() => onPickSuggestion(idx, ingredient)}
-                    />
-                  ))}
-                </div>
-              )}
-            </td>
-            <td style={{ padding: '4px 4px' }}>
-              <input
-                className="form-input"
-                type="number"
-                min="0"
-                style={{ width: '100%', fontSize: 12, padding: '4px 6px', textAlign: 'right' }}
-                value={component.quantity ?? ''}
-                onChange={e => onQuantityChange(idx, e.target.value)}
-                placeholder="0"
-              />
-            </td>
-            <td style={{ padding: '4px 4px' }}>
-              <select
-                className="form-input"
-                style={{ width: '100%', fontSize: 12, padding: '4px 4px' }}
-                value={normalizeCostBaseUnit(component.unit)}
-                onChange={e => onUnitChange(idx, e.target.value)}
-              >
-                {COST_BASE_UNITS.map(unit => (
-                  <option key={unit} value={unit}>
-                    {unit}
-                  </option>
-                ))}
-              </select>
-            </td>
-            <td style={{ padding: '4px 4px', textAlign: 'right', fontSize: 11 }}>
-              <span
-                style={{
-                  color: component.unitPrice != null ? 'var(--text-2)' : 'var(--warn)',
-                }}
-              >
-                {formatUnitPrice(component.unitPrice, normalizeCostBaseUnit(component.unit)) ||
-                  '단가 없음'}
-              </span>
-            </td>
-            <td style={{ padding: '4px 2px', textAlign: 'center' }}>
-              <button
-                type="button"
-                onClick={() => onRemoveRow(idx)}
-                title="구성품 삭제"
-                style={{
-                  border: 0,
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  color: 'var(--text-4)',
-                  padding: 2,
-                }}
-              >
-                <Icon.close style={{ width: 10, height: 10 }} />
-              </button>
-            </td>
-          </tr>
-        ))}
+                  {formatUnitPrice(component.unitPrice, normalizeCostBaseUnit(component.unit)) ||
+                    '단가 없음'}
+                </span>
+              </td>
+              <td style={{ padding: '4px 4px', textAlign: 'right', fontSize: 11 }}>
+                {subtotal != null ? (
+                  <span style={{ color: 'var(--text-2)' }}>{subtotal.toLocaleString()}원</span>
+                ) : (
+                  <span style={{ color: 'var(--text-4)' }}>—</span>
+                )}
+              </td>
+              <td style={{ padding: '4px 2px', textAlign: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => onRemoveRow(idx)}
+                  title="구성품 삭제"
+                  style={{
+                    border: 0,
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    color: 'var(--text-4)',
+                    padding: 2,
+                  }}
+                >
+                  <Icon.close style={{ width: 10, height: 10 }} />
+                </button>
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );
 }
 
-function SuggestionItem({ ingredient, unitPriceMap, onPick }) {
+function SuggestionItem({ ingredient, unitPriceMap, isActive, onPick }) {
   const info = ingredient.productCode ? unitPriceMap.get(ingredient.productCode) : null;
   return (
     <div
+      role="option"
+      aria-selected={isActive}
       onMouseDown={onPick}
       style={{
         padding: '6px 10px',
         cursor: 'pointer',
         fontSize: 12,
+        background: isActive ? 'var(--accent-soft)' : undefined,
       }}
     >
       {ingredient.ingredientName}
