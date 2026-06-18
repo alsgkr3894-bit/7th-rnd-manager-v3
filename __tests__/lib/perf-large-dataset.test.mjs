@@ -150,7 +150,9 @@ describe('P5 대량 데이터 성능 스모크', () => {
 
     test(`5,000행 noPriceCount useMemo 패턴 < ${THRESHOLD_5K}ms`, () => {
       const t0 = performance.now();
-      const count = rows5k.filter(r => !r.discontinued && !r.excluded && r.unitPrice == null).length;
+      const count = rows5k.filter(
+        r => !r.discontinued && !r.excluded && r.unitPrice == null
+      ).length;
       const elapsed = performance.now() - t0;
       expect(count).toBeGreaterThan(0);
       expect(elapsed).toBeLessThan(THRESHOLD_5K);

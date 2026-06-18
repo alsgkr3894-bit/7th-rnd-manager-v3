@@ -1,7 +1,11 @@
 'use client';
 
 import { useMemo } from 'react';
-import { DISCONTINUED_FILTER, NO_PRICE_FILTER, UNCATEGORIZED_FILTER } from '@/lib/ingredient/constants';
+import {
+  DISCONTINUED_FILTER,
+  NO_PRICE_FILTER,
+  UNCATEGORIZED_FILTER,
+} from '@/lib/ingredient/constants';
 import { computeIngredientIssues, sortHashTags, sortMainCategories } from '@/lib/ingredient';
 import { buildDuplicateDiagnostics } from './_duplicate-diagnostics';
 

@@ -83,10 +83,7 @@ describe('page.jsx - IngredientSettingsPanel에 uncategorized/discontinuedCount 
 });
 
 describe('단가 없음 필터 (NO_PRICE_FILTER)', () => {
-  const constantsSrc = readFileSync(
-    resolve(process.cwd(), 'lib/ingredient/constants.js'),
-    'utf-8'
-  );
+  const constantsSrc = readFileSync(resolve(process.cwd(), 'lib/ingredient/constants.js'), 'utf-8');
   const manageViewSrc = readFileSync(
     resolve(process.cwd(), 'app/ingredient/manage/useIngredientManageView.js'),
     'utf-8'
