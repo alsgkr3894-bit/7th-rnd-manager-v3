@@ -133,7 +133,14 @@ export default function Page() {
             <button className="btn" onClick={handlePruneClick}>
               오래된 보고서 정리
             </button>
-            <button className="btn" onClick={() => exportReportListToExcel(reports)}>
+            <button
+              className="btn"
+              onClick={() =>
+                exportReportListToExcel(reports).catch(err =>
+                  showToast('엑셀 출력 실패: ' + (err?.message || '알 수 없는 오류'), 'error')
+                )
+              }
+            >
               <Icon.download style={{ width: 14, height: 14 }} />
               엑셀로 내보내기
             </button>

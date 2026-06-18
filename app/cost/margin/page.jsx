@@ -163,9 +163,13 @@ export default function Page() {
             </button>
             <button
               className="btn"
-              onClick={() =>
-                exportMarginExcel(edgeFiltered, sizeLabels, viewMode, activePlatform, discount)
-              }
+              onClick={() => {
+                try {
+                  exportMarginExcel(edgeFiltered, sizeLabels, viewMode, activePlatform, discount);
+                } catch (err) {
+                  showToast('CSV 출력 실패: ' + (err?.message || '알 수 없는 오류'), 'error');
+                }
+              }}
             >
               <Icon.download style={{ width: 13, height: 13 }} /> 엑셀로 내보내기
             </button>
