@@ -84,6 +84,7 @@ export default function HomePage() {
     weekSchedule,
     priceChanges,
     issues,
+    ingredientHealth,
     uploadFreshness,
     backupReminder,
     anchor,
@@ -298,6 +299,7 @@ export default function HomePage() {
         router={router}
         alertIssues={alertIssues}
         alertCostAlertData={alertCostAlertData}
+        ingredientHealth={ingredientHealth}
         todos={todos}
         pipeline={pipeline}
         weekSchedule={weekSchedule}

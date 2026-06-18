@@ -21,6 +21,7 @@ import {
   getRecentPriceChanges,
 } from '@/lib/stats';
 import { getIssues } from '@/lib/sales';
+import { getIngredientHealthSummary } from '@/lib/ingredient';
 import { getAllNotes } from '@/lib/note';
 import { getAllSamples } from '@/lib/sample';
 import { getActiveBrandId } from '@/lib/active-brand';
@@ -55,6 +56,7 @@ export function useHomeDashboardData({ chartTab }) {
   const [weekSchedule, setWeekSchedule] = useState(null);
   const [priceChanges, setPriceChanges] = useState([]);
   const [issues, setIssues] = useState([]);
+  const [ingredientHealth, setIngredientHealth] = useState(null);
   const [uploadFreshness, setUploadFreshness] = useState(null);
   const [backupReminder, setBackupReminder] = useState(null);
 
@@ -91,8 +93,9 @@ export function useHomeDashboardData({ chartTab }) {
           getCostRateKpi(),
           getNoteKpi(),
           getUploadFreshness(),
+          getIngredientHealthSummary(),
         ]);
-        const [an, sm, ca, tdo, pl, ws, pc, iss, ac, c, n, uf] = live.map(r =>
+        const [an, sm, ca, tdo, pl, ws, pc, iss, ac, c, n, uf, ih] = live.map(r =>
           r.status === 'fulfilled' ? r.value : null
         );
         if (!mountedRef.current) return;
@@ -108,6 +111,7 @@ export function useHomeDashboardData({ chartTab }) {
         if (ws) setWeekSchedule(ws);
         if (pc) setPriceChanges(pc);
         if (iss) setIssues(iss);
+        if (ih) setIngredientHealth(ih);
         if (ac) setActivities(ac);
         if (c) setCostKpi(c);
         if (n) setNoteKpi(n);
@@ -252,6 +256,7 @@ export function useHomeDashboardData({ chartTab }) {
     weekSchedule,
     priceChanges,
     issues,
+    ingredientHealth,
     uploadFreshness,
     backupReminder,
     anchor,

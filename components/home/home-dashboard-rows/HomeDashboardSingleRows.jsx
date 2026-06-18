@@ -72,6 +72,7 @@ export function renderHealthRow(context) {
           backupReminder={context.backupReminder}
           issues={context.alertIssues}
           costAlertData={context.alertCostAlertData}
+          ingredientHealth={context.ingredientHealth}
           todos={context.todos}
           pipeline={context.pipeline}
           isMain={context.isMain}
