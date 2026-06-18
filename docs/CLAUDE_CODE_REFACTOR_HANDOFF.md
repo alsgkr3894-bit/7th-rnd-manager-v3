@@ -98,7 +98,9 @@ dev 서버: `npm run dev:lan` (LAN 접근용, `0.0.0.0:3000`).
 | `079644c5` | workflow QA 구조 분리 (`workflow-qa.mjs` 진입점 + `scripts/workflow/*`) |
 | `d245173a` | workflow QA 9→12개 확장 (원가마진·판매량 업로드·영양성분 메뉴 흐름 추가) |
 | `16134781` | P3 출력 파일명 브랜드 접두 규칙 적용 |
-| 이번 단계 | 메뉴마스터 레시피 입력부 2차 분리 (`useMenuRecipeEditor`, `useRecipeIngredientSearch`, `recipeComponentRows`) |
+| `0127f3f5` | P3 비동기 XLSX/CSV 출력 실패 시 toast 에러 안내 추가 |
+| `6d32a456` | P3 CSV/XLSX 컬럼 순서 고정 테스트 추가 |
+| `c4414b70` | 메뉴마스터 레시피 입력부 2차 분리 (`useMenuRecipeEditor`, `useRecipeIngredientSearch`, `recipeComponentRows`) |
 
 ### IDB 수정 상세
 
