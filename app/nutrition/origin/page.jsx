@@ -4,7 +4,7 @@ import { useMounted } from '@/hooks/useMounted';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { initDB } from '@/lib/db';
-import { downloadCsv } from '@/lib/download';
+import { downloadCsv, makeFileNameWithBrand } from '@/lib/download';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
@@ -200,7 +200,7 @@ export default function Page() {
           menus.join(', '),
         ];
       });
-      downloadCsv([headers, ...rows], '원산지_식자재별.csv');
+      downloadCsv([headers, ...rows], makeFileNameWithBrand('원산지_식자재별', 'csv'));
       return;
     }
     const headers = ['메뉴명', '카테고리', '표시품목', '원산지'];
@@ -212,7 +212,7 @@ export default function Page() {
         asDisplayText(o.country),
       ])
     );
-    downloadCsv([headers, ...rows], '원산지_메뉴별.csv');
+    downloadCsv([headers, ...rows], makeFileNameWithBrand('원산지_메뉴별', 'csv'));
   }
 
   return (

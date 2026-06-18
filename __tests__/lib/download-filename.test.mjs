@@ -2,6 +2,7 @@ import { jest } from '@jest/globals';
 import {
   downloadDateStamp,
   makeFileName,
+  makeFileNameWithBrand,
   printCurrentPageWithDownloadDate,
   withDownloadDateSuffix,
 } from '../../lib/download.js';
@@ -45,6 +46,17 @@ describe('download filename date suffix', () => {
     expect(makeFileName('복원용임시백업파일', '.json', fixed)).toBe(
       '복원용임시백업파일_20260611.json'
     );
+  });
+
+  test('makeFileNameWithBrand는 브랜드명을 파일명 앞에 붙인다', () => {
+    // 테스트 환경(node)에서는 localStorage 없음 → 기본 브랜드 7번가피자 사용
+    const result = makeFileNameWithBrand('원가마진표', 'csv', fixed);
+    expect(result).toMatch(/^7번가피자_원가마진표_20260611\.csv$/);
+  });
+
+  test('makeFileNameWithBrand는 xlsx 확장자도 올바르게 처리한다', () => {
+    const result = makeFileNameWithBrand('보고서 목록', 'xlsx', fixed);
+    expect(result).toMatch(/^7번가피자_보고서 목록_20260611\.xlsx$/);
   });
 
   test('현재 페이지 PDF 인쇄 제목에 다운로드 날짜를 붙이고 인쇄 후 원복한다', async () => {

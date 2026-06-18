@@ -1,4 +1,4 @@
-import { downloadCsv } from '@/lib/download';
+import { downloadCsv, makeFileNameWithBrand } from '@/lib/download';
 import { CAT_ORDER } from '@/lib/cost/shared/buildSummaryRows';
 
 export function exportAllSummaryCsv(rows) {
@@ -10,7 +10,7 @@ export function exportAllSummaryCsv(rows) {
     row.sellingPrice != null ? row.sellingPrice : '',
     row.costRate != null ? row.costRate.toFixed(1) + '%' : '',
   ]);
-  downloadCsv([headers, ...body], '전메뉴원가종합.csv');
+  downloadCsv([headers, ...body], makeFileNameWithBrand('전메뉴원가종합', 'csv'));
 }
 
 export function buildAllSummaryStats(rows) {

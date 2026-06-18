@@ -1,6 +1,6 @@
 'use client';
 import { useState, useCallback } from 'react';
-import { downloadCsv } from '@/lib/download';
+import { downloadCsv, makeFileNameWithBrand } from '@/lib/download';
 import { buildAllergenCsvRows } from './allergenPageOutputUtils';
 import { useAllergenDerivedData } from './useAllergenDerivedData';
 import { useAllergenOrderState } from './useAllergenOrderState';
@@ -36,7 +36,7 @@ export function useAllergenPageData(search) {
   const exportCsv = useCallback(() => {
     downloadCsv(
       buildAllergenCsvRows(derivedData.menuMatrix, derivedData.orderedAllergens),
-      '알레르기매트릭스.csv'
+      makeFileNameWithBrand('알레르기매트릭스', 'csv')
     );
   }, [derivedData.menuMatrix, derivedData.orderedAllergens]);
 
