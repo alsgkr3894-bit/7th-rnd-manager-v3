@@ -153,3 +153,65 @@ export function attachWorkflowDiagnostics(page) {
     }
   });
 }
+
+/** IDB store에 레코드를 삽입하고 생성된 auto-increment id를 반환 */
+export async function dbInsertOne(page, dbName, storeName, record) {
+  return page.evaluate(
+    ({ dbName, storeName, record }) =>
+      new Promise((resolve, reject) => {
+        const req = indexedDB.open(dbName);
+        req.onsuccess = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(storeName)) {
+            db.close();
+            return reject(new Error(`${storeName} store 없음`));
+          }
+          const tx = db.transaction(storeName, 'readwrite');
+          let insertedId;
+          const addReq = tx.objectStore(storeName).add(record);
+          addReq.onsuccess = e => {
+            insertedId = e.target.result;
+          };
+          tx.oncomplete = () => {
+            db.close();
+            resolve(insertedId);
+          };
+          tx.onerror = () => {
+            db.close();
+            reject(new Error('삽입 실패: ' + tx.error));
+          };
+        };
+        req.onerror = () => reject(new Error('DB 열기 실패'));
+      }),
+    { dbName, storeName, record }
+  );
+}
+
+/** IDB store에서 numeric key로 레코드를 삭제 (best-effort, 테스트 정리용) */
+export async function dbDeleteById(page, dbName, storeName, id) {
+  await page.evaluate(
+    ({ dbName, storeName, id }) =>
+      new Promise(resolve => {
+        const req = indexedDB.open(dbName);
+        req.onsuccess = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(storeName)) {
+            db.close();
+            return resolve();
+          }
+          const tx = db.transaction(storeName, 'readwrite');
+          tx.objectStore(storeName).delete(id);
+          tx.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+          tx.onerror = () => {
+            db.close();
+            resolve();
+          };
+        };
+        req.onerror = () => resolve();
+      }),
+    { dbName, storeName, id }
+  );
+}
