@@ -29,7 +29,6 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     allMenuItems,
     unitPriceMap,
     loaded,
-    saving,
     supported,
     addRow,
     removeRow,
@@ -246,28 +245,17 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
         onRemoveRow={removeRow}
       />
 
-      <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-        <button
-          type="button"
-          className="btn sm"
-          style={{ flex: 1, fontSize: 12 }}
-          onClick={() => {
-            addRow();
-            pendingFocusNewRowRef.current = true;
-          }}
-        >
-          + 구성품 추가
-        </button>
-        <button
-          type="button"
-          className="btn sm primary"
-          style={{ fontSize: 12 }}
-          onClick={handleSave}
-          disabled={saving}
-        >
-          {saving ? '저장 중…' : '레시피 저장'}
-        </button>
-      </div>
+      <button
+        type="button"
+        className="btn sm"
+        style={{ marginTop: 8, width: '100%', fontSize: 12 }}
+        onClick={() => {
+          addRow();
+          pendingFocusNewRowRef.current = true;
+        }}
+      >
+        + 구성품 추가
+      </button>
     </div>
   );
 });

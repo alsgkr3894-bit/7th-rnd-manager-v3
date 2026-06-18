@@ -90,20 +90,27 @@ export function useMenuMasterActions({
     }
   }
 
-  async function handleSaveRow(data) {
+  async function handleSaveRow(data, options = {}) {
+    const { closeModal = true, reloadAfter = true, toast = true, throwOnError = false } = options;
     try {
       const result = await upsertMenuMaster(data);
       await syncMirror();
-      reload();
-      setEditRow(null);
-      setAddOpen(false);
+      if (reloadAfter) reload();
+      if (closeModal) {
+        setEditRow(null);
+        setAddOpen(false);
+      }
+      if (!toast) return result;
       if (result.mode === 'update' && !data.id) {
         showToast(`기존 항목(${data.menuCode}) 갱신됨 — 새 항목으로 추가되지 않았습니다`, 'warn');
       } else {
         showToast('저장 완료', 'ok');
       }
+      return result;
     } catch (err) {
-      showToast('저장 실패: ' + err.message, 'error');
+      if (toast) showToast('저장 실패: ' + err.message, 'error');
+      if (throwOnError) throw err;
+      return null;
     }
   }
 

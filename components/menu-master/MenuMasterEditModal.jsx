@@ -8,6 +8,7 @@ import { getDefaultPrice } from '@/lib/cost/menu-price';
 import { parseOptionalNonNegativeNumber } from '@/lib/parse';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { MenuMasterEditFields } from '@/components/menu-master/MenuMasterEditFields';
+import { showToast } from '@/components/Toast';
 
 export function MenuMasterEditModal({
   row,
@@ -31,11 +32,12 @@ export function MenuMasterEditModal({
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const containerRef = useRef(null);
+  const recipeSectionRef = useRef(null);
   const set = makeFieldUpdater(setForm);
   const defaultPrice = getDefaultPrice(form.menuCode);
   const canSave = form.menuCode.trim() && form.menuName.trim();
 
-  function submit() {
+  async function submit() {
     if (savingRef.current) return; // 저장 진행 중 재진입(Ctrl+S 연타) 방지
     const errs = {};
     if (!form.menuCode.trim()) errs.menuCode = '메뉴코드를 입력하세요';
@@ -49,22 +51,46 @@ export function MenuMasterEditModal({
     setErrors({});
     savingRef.current = true;
     setSaving(true);
-    Promise.resolve(
-      onSave({
-        ...(row || {}),
-        menuCode: form.menuCode.trim(),
-        menuName: form.menuName.trim(),
-        category: form.category,
-        size: form.size.trim() || null,
-        price: price.value,
-        status: form.status,
-        note: form.note,
-        excludeFromOrigin: form.excludeFromOrigin,
-      })
-    ).finally(() => {
+    const payload = {
+      ...(row || {}),
+      menuCode: form.menuCode.trim(),
+      menuName: form.menuName.trim(),
+      category: form.category,
+      size: form.size.trim() || null,
+      price: price.value,
+      status: form.status,
+      note: form.note,
+      excludeFromOrigin: form.excludeFromOrigin,
+    };
+    try {
+      const result = await onSave(payload, {
+        closeModal: false,
+        reloadAfter: false,
+        toast: false,
+        throwOnError: true,
+      });
+      await recipeSectionRef.current?.saveRecipe?.({
+        showSuccessToast: false,
+        showErrorToast: false,
+        runOnSaved: false,
+        throwOnError: true,
+      });
+      await onRecipeSaved?.();
+      onClose();
+      if (result?.mode === 'update' && !payload.id) {
+        showToast(
+          `기존 항목(${payload.menuCode}) 갱신됨 — 새 항목으로 추가되지 않았습니다`,
+          'warn'
+        );
+      } else {
+        showToast('저장 완료', 'ok');
+      }
+    } catch (err) {
+      showToast('저장 실패: ' + (err?.message || err), 'error');
+    } finally {
       savingRef.current = false;
       setSaving(false);
-    });
+    }
   }
 
   useKeyboardSave(submit);
@@ -183,6 +209,7 @@ export function MenuMasterEditModal({
             defaultPrice={defaultPrice}
             presetCategories={presetCategories}
             onRecipeSaved={onRecipeSaved}
+            recipeSectionRef={recipeSectionRef}
           />
         </div>
       </div>

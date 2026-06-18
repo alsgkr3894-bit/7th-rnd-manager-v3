@@ -9,7 +9,7 @@
 
 | 지표 | 값 |
 |---|---|
-| 테스트 | **269 suites / 1435 tests** (모두 통과) |
+| 테스트 | **269 suites / 1437 tests** (모두 통과) |
 | qa:smoke | **22/22 라우트** |
 | qa:workflow | **12/12 시나리오** (2026-06-18 workflow fixture 2차 확대 후 통과) |
 | qa:runtime | **63/63 라우트** |
@@ -70,7 +70,7 @@
 ```bash
 npm run lint          # ESLint 0 warnings 필수
 npm run format:check  # Prettier 포맷 확인
-npm run test:ci       # 269 suites / 1435 tests
+npm run test:ci       # 269 suites / 1437 tests
 npm run qa:smoke      # 22/22 라우트 (Playwright, dev 서버 필요)
 npm run qa:workflow   # 12/12 E2E 시나리오 (Playwright, dev 서버 필요)
 npm run qa:runtime    # 63/63 라우트 no-undef/hydration 검사
@@ -166,7 +166,7 @@ dev 서버: `npm run dev:lan` (LAN 접근용, `0.0.0.0:3000`).
   - 식자재 단가 변경 -> 메뉴 레시피 원가 -> 원가마진표 반영
   - 공통원가 체크 -> 메뉴 원가 -> 원산지/알레르기 출력 반영
 - 검증:
-  - `npm run test:ci` 269 suites / 1435 tests 통과
+  - `npm run test:ci` 269 suites / 1437 tests 통과
   - `npm run lint` 통과
   - `npm run audit:docs` 통과
   - `npm run qa:workflow` 12/12 통과

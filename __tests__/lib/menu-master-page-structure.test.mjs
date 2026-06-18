@@ -6,6 +6,22 @@ import { buildMenuMasterCsv } from '../../app/menu-master/menuMasterExport.js';
 const pageSource = readFileSync(resolve('app/menu-master/page.jsx'), 'utf8');
 const actionsSource = readFileSync(resolve('app/menu-master/useMenuMasterActions.js'), 'utf8');
 const exportSource = readFileSync(resolve('app/menu-master/menuMasterExport.js'), 'utf8');
+const editModalSource = readFileSync(
+  resolve('components/menu-master/MenuMasterEditModal.jsx'),
+  'utf8'
+);
+const editFieldsSource = readFileSync(
+  resolve('components/menu-master/MenuMasterEditFields.jsx'),
+  'utf8'
+);
+const recipeSectionSource = readFileSync(
+  resolve('components/menu-master/MenuRecipeSection.jsx'),
+  'utf8'
+);
+const recipeHeaderSource = readFileSync(
+  resolve('components/menu-master/MenuRecipeSectionHeader.jsx'),
+  'utf8'
+);
 
 describe('menu-master page structure', () => {
   test('page delegates CSV assembly to menuMasterExport', () => {
@@ -31,6 +47,22 @@ describe('menu-master page structure', () => {
     expect(actionsSource).toContain('handleSeed');
     expect(actionsSource).toContain('handleResetAndSeed');
     expect(actionsSource).toContain('openDeleteDialog');
+  });
+
+  test('수정 모달 상단 저장이 메뉴 기본정보와 레시피 저장을 함께 호출한다', () => {
+    expect(editModalSource).toContain('recipeSectionRef');
+    expect(editModalSource).toContain('recipeSectionRef.current?.saveRecipe');
+    expect(editModalSource).toContain('closeModal: false');
+    expect(editModalSource).toContain('reloadAfter: false');
+    expect(editModalSource).toContain('throwOnError: true');
+    expect(editFieldsSource).toContain('ref={recipeSectionRef}');
+    expect(recipeSectionSource).toContain('useImperativeHandle');
+    expect(recipeSectionSource).toContain('saveRecipe: handleSave');
+  });
+
+  test('레시피 섹션에는 별도 레시피 저장 버튼을 노출하지 않는다', () => {
+    expect(recipeHeaderSource).not.toContain('레시피 저장');
+    expect(recipeSectionSource).not.toContain('onSave={handleSave}');
   });
 
   test('buildMenuMasterCsv produces correct CSV', () => {
