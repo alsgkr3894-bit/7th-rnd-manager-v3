@@ -495,7 +495,7 @@ isAdmin 아닌 경우 편집 불가(권한 가드). 브랜드 추가/수정 폼(
 
 ## 8. 테스트 및 QA 현황
 
-Jest 단위 테스트 268개 파일(lib 242, hooks 20, scripts 6), QA 명령 4종(qa:smoke 22라우트, qa:runtime 전라우트 65개, qa:prod 프로덕션빌드, qa:workflow 업무흐름 E2E 6시나리오) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
+Jest 단위 테스트 268개 파일(lib 242, hooks 20, scripts 6), QA 명령 4종(qa:smoke 22라우트, qa:runtime 전라우트 65개, qa:prod 프로덕션빌드, qa:workflow 업무흐름 E2E 9시나리오) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
 
 ### Jest 단위 테스트 — lib
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/lib/`
