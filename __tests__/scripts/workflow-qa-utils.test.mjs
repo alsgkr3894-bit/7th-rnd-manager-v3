@@ -72,7 +72,7 @@ describe('formatStepLine', () => {
 });
 
 describe('workflowScenarios', () => {
-  test('기존 9개 업무 시나리오 순서를 유지한다', () => {
+  test('업무 시나리오 순서를 유지한다', () => {
     expect(workflowScenarios.map(fn => fn.name)).toEqual([
       'scenarioBackupRestorePreview',
       'scenarioNoteCreate',
@@ -83,6 +83,9 @@ describe('workflowScenarios', () => {
       'scenarioBrandIsolation',
       'scenarioCalendarSchedule',
       'scenarioIngredientCreate',
+      'scenarioCostMargin',
+      'scenarioSalesUpload',
+      'scenarioNutritionMenu',
     ]);
   });
 });

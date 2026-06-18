@@ -6,10 +6,12 @@ import { resolve } from 'path';
 import { describe, expect, test } from '@jest/globals';
 
 const comboBoxSrc = readFileSync(resolve(process.cwd(), 'components/ui/ComboBox.jsx'), 'utf-8');
-const menuRecipeSrc = readFileSync(
-  resolve(process.cwd(), 'components/menu-master/MenuRecipeSection.jsx'),
-  'utf-8'
-);
+const menuRecipeSrc =
+  readFileSync(resolve(process.cwd(), 'components/menu-master/MenuRecipeSection.jsx'), 'utf-8') +
+  readFileSync(
+    resolve(process.cwd(), 'components/menu-master/useRecipeIngredientSearch.js'),
+    'utf-8'
+  );
 const filtersSrc = readFileSync(resolve(process.cwd(), 'hooks/useMenuMasterFilters.js'), 'utf-8');
 const ingredientViewSrc = readFileSync(
   resolve(process.cwd(), 'app/ingredient/manage/useIngredientManageView.js'),

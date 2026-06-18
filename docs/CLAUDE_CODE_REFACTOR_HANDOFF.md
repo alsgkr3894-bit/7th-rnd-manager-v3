@@ -9,9 +9,9 @@
 
 | 지표 | 값 |
 |---|---|
-| 테스트 | **268 suites / 1412 tests** (모두 통과) |
+| 테스트 | **269 suites / 1428 tests** (모두 통과) |
 | qa:smoke | **22/22 라우트** |
-| qa:workflow | **9/9 시나리오** (2026-06-18 IDB 블로킹 수정 후 완성) |
+| qa:workflow | **12/12 시나리오** (2026-06-18 workflow fixture 2차 확대 후 통과) |
 | qa:runtime | **63/63 라우트** |
 | Next.js | 14.2.35 (Node 24 안정 빌드) |
 | IndexedDB | v23 스키마 (DB_VERSION) |
@@ -70,9 +70,9 @@
 ```bash
 npm run lint          # ESLint 0 warnings 필수
 npm run format:check  # Prettier 포맷 확인
-npm run test:ci       # 268 suites / 1412 tests
+npm run test:ci       # 269 suites / 1428 tests
 npm run qa:smoke      # 22/22 라우트 (Playwright, dev 서버 필요)
-npm run qa:workflow   # 9/9 E2E 시나리오 (Playwright, dev 서버 필요)
+npm run qa:workflow   # 12/12 E2E 시나리오 (Playwright, dev 서버 필요)
 npm run qa:runtime    # 63/63 라우트 no-undef/hydration 검사
 npm run build:clean   # .next 삭제 후 production 빌드
 npm run audit:docs    # docs/ 파일 stale 감사
@@ -95,7 +95,10 @@ dev 서버: `npm run dev:lan` (LAN 접근용, `0.0.0.0:3000`).
 | `225497b5` | BUG-003: 식자재 buildRecord NaN 저장 방어 |
 | `45618b4e` | 작업계획 파일 10개 DEFERRED_WORK 흡수 후 삭제 |
 | `2a82a4b5`, `71ce73c9` | P4 리팩토링 (nutrition dedup, recipe-print builders) |
-| 미커밋 | workflow QA 구조 분리 (`workflow-qa.mjs` 진입점 + `scripts/workflow/*`) |
+| `079644c5` | workflow QA 구조 분리 (`workflow-qa.mjs` 진입점 + `scripts/workflow/*`) |
+| `d245173a` | workflow QA 9→12개 확장 (원가마진·판매량 업로드·영양성분 메뉴 흐름 추가) |
+| `16134781` | P3 출력 파일명 브랜드 접두 규칙 적용 |
+| 이번 단계 | 메뉴마스터 레시피 입력부 2차 분리 (`useMenuRecipeEditor`, `useRecipeIngredientSearch`, `recipeComponentRows`) |
 
 ### IDB 수정 상세
 
@@ -111,9 +114,9 @@ dev 서버: `npm run dev:lan` (LAN 접근용, `0.0.0.0:3000`).
 `docs/DEFERRED_WORK.md` 참조. 주요 미완 항목:
 
 - **N-43** 재료단가표 과거 단가 조회 (명세 미확정)
-- **E2E QA 확장** 4개 시나리오 (레시피·판매량 fixture 설계 선행 필요)
+- **E2E QA 확장 잔여** (레시피 저장→원가마진, 식자재 단가 변경→원가 보고서, 공통원가→출력 파이프라인)
 - **외부 배포 보안 강화** (LAN HTTP 내부 환경 → 외부 배포 전환 시)
-- 메뉴마스터 레시피 2차 UX 후보
+- 메뉴마스터 레시피 UX 잔여 후보
 - CSS 디자인 시스템 정리
 - 식자재 데이터 정리 도구
 
@@ -139,17 +142,18 @@ dev 서버: `npm run dev:lan` (LAN 접근용, `0.0.0.0:3000`).
 
 ### 작업 전 필수 게이트
 
-1. 현재 구조 스캔 기준 `npm run lint`, `npm run test:ci`, `npm run audit:docs`, `git diff --check`는 통과했다.
-2. `npm run format:check`는 162개 파일에서 실패했다. 다음 기능/분리 작업 전에 Prettier 정리를 별도 커밋으로 먼저 처리하는 것을 권장한다.
-3. worktree에는 `docs/DEFERRED_WORK.md`, `docs/SITE_STATUS.md` 수정과 `docs/CLAUDE_CODE_REFACTOR_HANDOFF.md`, `docs/INTERNAL_TOOL_POLISH_PLAN.md` untracked가 있다. 문서 커밋 범위를 먼저 확정한다.
+1. 현재 구조 스캔 기준 `npm run lint`, `npm run test:ci`, `npm run audit:docs`, `git diff --check`는 통과 상태를 유지한다.
+2. `ca121908`에서 Prettier 전체 포맷 정규화가 완료됐다. 새 작업 전에는 변경 파일 기준 `prettier --check`와 `git diff --check`를 다시 확인한다.
+3. 동시 작업자가 있을 수 있으므로 `git status --short`로 본인 작업 파일만 stage한다.
 
 ### 완료 작업 A: workflow QA 구조 분리
 
 - 완료 내용:
   - `scripts/workflow-qa.mjs`는 `scripts/workflow/runner.mjs`를 호출하는 진입점으로 축소
   - 공통 helper는 `scripts/workflow/helpers.mjs`로 분리
-  - 9개 시나리오는 `scripts/workflow/scenarios/*.mjs`로 분리
+  - 12개 시나리오는 `scripts/workflow/scenarios/*.mjs`로 분리
   - `__tests__/scripts/workflow-qa-utils.test.mjs`에 시나리오 순서 registry 테스트 추가
+  - 이후 원가마진·판매량 업로드·영양성분 메뉴 흐름이 추가되어 12/12 기준으로 확장
 - 현재 구조:
   - `scripts/workflow/runner.mjs`
   - `scripts/workflow/scenarios/*.mjs`
@@ -160,32 +164,33 @@ dev 서버: `npm run dev:lan` (LAN 접근용, `0.0.0.0:3000`).
   - 식자재 단가 변경 -> 메뉴 레시피 원가 -> 원가마진표 반영
   - 공통원가 체크 -> 메뉴 원가 -> 원산지/알레르기 출력 반영
 - 검증:
-  - `npm run test:ci` 268 suites / 1412 tests 통과
+  - `npm run test:ci` 269 suites / 1428 tests 통과
   - `npm run lint` 통과
   - `npm run audit:docs` 통과
-  - `npm run qa:workflow` 9/9 통과
+  - `npm run qa:workflow` 12/12 통과
 
-### 추가 추천 작업 B: 메뉴마스터 레시피 입력부 2차 분리
+### 완료 작업 B: 메뉴마스터 레시피 입력부 2차 분리
 
-- 대상:
-  - `components/menu-master/MenuRecipeSection.jsx` (376줄)
-  - `components/menu-master/MenuRecipeComponentsTable.jsx` (261줄)
-- 현재 역할: DB load, 자동완성, 키보드 이동, 공통원가 선택, 저장, 원가 요약 계산이 한 컴포넌트에 모여 있다.
-- 권장 분리:
-  - `useMenuRecipeEditor`: 기존 레시피/식자재/단가/공통그룹 load, 저장, reload
-  - `useRecipeIngredientSearch`: 검색어, active suggestion, Enter/Arrow/Escape 처리
-  - `recipeComponentRows.js`: hydrate/buildSave/blank row/filter invalid row 순수 함수
-  - `MenuRecipeSummaryStrip`: 직접원가/공통원가/총원가/원가율 표시 전용 UI
-- 보완 포인트:
+- 완료 내용:
+  - `MenuRecipeSection.jsx`는 조립·focus 이동·행 추가 트리거만 담당하도록 137줄로 축소
+  - `useMenuRecipeEditor.js`: 기존 레시피/식자재/최신 단가/공통원가 그룹 load, 저장, 요약 계산 담당
+  - `useRecipeIngredientSearch.js`: 검색어, active suggestion, Enter/Arrow/Escape, 선택 후 수량칸 focus 담당
+  - `recipeComponentRows.js`: blank row, hydrate, save row build, 단가 key, 식자재 선택 반영 순수 helper 담당
+  - 기존 `MenuRecipeComponentsTable.jsx` 렌더링 역할과 키보드 자동완성 동작 유지
+- 검증:
+  - `__tests__/lib/menu-recipe-components-keyboard.test.mjs`
+  - `__tests__/lib/p5-dropdown-perf-guards.test.mjs`
+  - `__tests__/lib/menu-master-recipe-summary.test.mjs`
+  - `__tests__/lib/menu-recipes.test.mjs`
+  - `npm run test:ci`
+  - `npm run qa:workflow`
+- 남은 UX 보완 포인트:
   - 저장 전 빈 row 제거 또는 경고
   - 수량 0/음수/문자 입력 방어
   - productCode 없는 수동 식자재의 단가 key 정책 테스트
   - 저장 후 `onSaved` reload가 실제 목록 원가 셀까지 반영되는 E2E 추가
-- 테스트:
-  - `__tests__/lib/menu-recipe-components-keyboard.test.mjs`
-  - `__tests__/lib/menu-master-recipe-summary.test.mjs`
-  - 신규 순수 helper 테스트
-  - `npm run qa:workflow`
+  - 구성품 행 복사, 최근 사용 식자재 추천, 단가 없는 식자재 빠른 보정 이동
+  - 원산지/알레르기 영향 미리보기, 공통원가 상세 접힘 목록
 
 ### 추가 추천 작업 C: 식자재 store 레이어 분리
 
@@ -258,7 +263,7 @@ dev 서버: `npm run dev:lan` (LAN 접근용, `0.0.0.0:3000`).
 
 - 현재 `docs/DEFERRED_WORK.md`가 길어지고 있으나 단일 출처 역할은 유지한다.
 - `docs/SITE_STATUS.md`는 `npm run audit:docs` 수치 검증 대상이므로 구조 변경 후 반드시 업데이트한다.
-- `docs/INTERNAL_TOOL_POLISH_PLAN.md`는 현재 untracked다. 유지할 경우 이 handoff 문서와 역할을 나눈다:
+- `docs/INTERNAL_TOOL_POLISH_PLAN.md`는 별도 운영툴 완성도 계획 문서로 유지한다. 문서 역할은 다음처럼 나눈다:
   - `CLAUDE_CODE_REFACTOR_HANDOFF.md`: Claude 작업자가 바로 보는 실행 인수인계
   - `INTERNAL_TOOL_POLISH_PLAN.md`: 내부 운영툴 완성도 계획
   - `DEFERRED_WORK.md`: 완료/보류 이력 단일 출처
