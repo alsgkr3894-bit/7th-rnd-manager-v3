@@ -81,3 +81,48 @@ describe('page.jsx - IngredientSettingsPanel에 uncategorized/discontinuedCount 
     expect(getSettingsBlock()).toContain('discontinuedCount');
   });
 });
+
+describe('단가 없음 필터 (NO_PRICE_FILTER)', () => {
+  const constantsSrc = readFileSync(
+    resolve(process.cwd(), 'lib/ingredient/constants.js'),
+    'utf-8'
+  );
+  const manageViewSrc = readFileSync(
+    resolve(process.cwd(), 'app/ingredient/manage/useIngredientManageView.js'),
+    'utf-8'
+  );
+  const managePanelSrc = readFileSync(
+    resolve(process.cwd(), 'app/ingredient/manage/IngredientManagePanel.jsx'),
+    'utf-8'
+  );
+
+  test('constants.js에 NO_PRICE_FILTER sentinel이 정의되어 있다', () => {
+    expect(constantsSrc).toContain("NO_PRICE_FILTER = '__no_price__'");
+  });
+
+  test('useIngredientManageView가 NO_PRICE_FILTER를 import한다', () => {
+    expect(manageViewSrc).toContain('NO_PRICE_FILTER');
+  });
+
+  test('useIngredientManageView가 noPriceCount를 계산한다', () => {
+    expect(manageViewSrc).toContain('noPriceCount');
+    expect(manageViewSrc).toContain('unitPrice == null');
+  });
+
+  test('useIngredientManageView가 NO_PRICE_FILTER 케이스를 filtered에 처리한다', () => {
+    expect(manageViewSrc).toContain('NO_PRICE_FILTER');
+    // filter logic에서 unitPrice == null로 필터링
+    const idx1 = manageViewSrc.indexOf('NO_PRICE_FILTER');
+    const idx2 = manageViewSrc.indexOf('unitPrice == null', idx1);
+    expect(idx2).toBeGreaterThan(idx1);
+  });
+
+  test('IngredientManagePanel이 noPriceCount prop을 받는다', () => {
+    expect(managePanelSrc).toContain('noPriceCount');
+  });
+
+  test('IngredientManagePanel이 단가 없음 칩을 렌더한다', () => {
+    expect(managePanelSrc).toContain('단가 없음');
+    expect(managePanelSrc).toContain('NO_PRICE_FILTER');
+  });
+});

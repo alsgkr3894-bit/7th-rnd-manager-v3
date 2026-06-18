@@ -94,6 +94,7 @@ export default function Page() {
     hashTags,
     originSuggestions,
     uncategorized,
+    noPriceCount,
     issueRows,
     duplicateDiagnostics,
     duplicateGroupCount,
@@ -303,6 +304,7 @@ export default function Page() {
           hashTags={hashTags}
           tagCounts={tagCounts}
           uncategorized={uncategorized}
+          noPriceCount={noPriceCount}
           discontinuedCount={discontinuedCount}
           catFilter={catFilter}
           tagFilter={tagFilter}

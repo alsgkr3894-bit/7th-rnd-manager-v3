@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { DISCONTINUED_FILTER, UNCATEGORIZED_FILTER } from '@/lib/ingredient/constants';
+import { DISCONTINUED_FILTER, NO_PRICE_FILTER, UNCATEGORIZED_FILTER } from '@/lib/ingredient/constants';
 import { computeIngredientIssues, sortHashTags, sortMainCategories } from '@/lib/ingredient';
 import { buildDuplicateDiagnostics } from './_duplicate-diagnostics';
 
@@ -62,6 +62,11 @@ export function useIngredientManageView({
     [rows]
   );
 
+  const noPriceCount = useMemo(
+    () => rows.filter(row => !row.discontinued && !row.excluded && row.unitPrice == null).length,
+    [rows]
+  );
+
   const issueRows = useMemo(
     () => computeIngredientIssues(rows, prevPriceMap),
     [rows, prevPriceMap]
@@ -81,6 +86,8 @@ export function useIngredientManageView({
       list = rows.filter(row => !row.discontinued && !row.excluded);
       if (catFilter === UNCATEGORIZED_FILTER) {
         list = list.filter(row => !row.category);
+      } else if (catFilter === NO_PRICE_FILTER) {
+        list = list.filter(row => row.unitPrice == null);
       } else if (catFilter !== 'all') {
         list = list.filter(row => row.category === catFilter);
       }
@@ -122,6 +129,7 @@ export function useIngredientManageView({
     hashTags,
     originSuggestions,
     uncategorized,
+    noPriceCount,
     issueRows,
     duplicateDiagnostics,
     duplicateGroupCount,

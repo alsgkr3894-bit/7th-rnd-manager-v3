@@ -1,6 +1,6 @@
 import { FilterBar } from '@/components/ui/PageHeader';
 import { ManageRow } from '@/components/ingredient/ManageRow';
-import { DISCONTINUED_FILTER, UNCATEGORIZED_FILTER } from '@/lib/ingredient/constants';
+import { DISCONTINUED_FILTER, NO_PRICE_FILTER, UNCATEGORIZED_FILTER } from '@/lib/ingredient/constants';
 import { getCategoryStyle } from '@/lib/ingredient';
 
 export function IngredientManagePanel({
@@ -13,6 +13,7 @@ export function IngredientManagePanel({
   hashTags,
   tagCounts,
   uncategorized,
+  noPriceCount,
   discontinuedCount,
   catFilter,
   tagFilter,
@@ -63,6 +64,17 @@ export function IngredientManagePanel({
               }
             >
               미분류 {uncategorized}
+            </button>
+          )}
+          {noPriceCount > 0 && (
+            <button
+              className={'chip' + (catFilter === NO_PRICE_FILTER ? ' active' : '')}
+              style={catFilter !== NO_PRICE_FILTER ? { color: 'var(--warn)' } : undefined}
+              onClick={() =>
+                onCatFilter(catFilter === NO_PRICE_FILTER ? 'all' : NO_PRICE_FILTER)
+              }
+            >
+              단가 없음 {noPriceCount}
             </button>
           )}
           {discontinuedCount > 0 && (
