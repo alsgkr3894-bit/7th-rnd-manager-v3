@@ -20,6 +20,7 @@ import { useMarginData } from './useMarginData';
 import { normalizeWarnPercentSetting, normalizeCritPercentSetting } from './marginPageUtils';
 import { useMarginFilters } from './useMarginFilters';
 import { useMarginActions } from './useMarginActions';
+import { buildMarginTableSections } from './marginTableSections';
 
 const ROW_PAGE_SIZE = 60;
 
@@ -103,6 +104,7 @@ export default function Page() {
   // 대량 행(수백+) 렌더 비용을 줄이기 위해 표시만 페이지네이션한다.
   // 내보내기(edgeFiltered)·통계(stats)는 전체 집합 기준이라 영향 없음.
   const { page, goTo, totalPages, paged, total } = usePagination(sortedFiltered, ROW_PAGE_SIZE);
+  const tableSections = useMemo(() => buildMarginTableSections(paged), [paged]);
 
   if (loading)
     return (
@@ -235,20 +237,20 @@ export default function Page() {
         </div>
       ) : (
         <div className="card table-card">
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data-table stagger-rows margin-table">
-              <thead>
-                <MarginTableHeader
-                  sizeLabels={sizeLabels}
-                  sortKey={sortKey}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                  hasAdjustment={hasAdjustment}
-                  viewMode={viewMode}
-                />
-              </thead>
-              <tbody>
-                {sortedFiltered.length === 0 ? (
+          {sortedFiltered.length === 0 ? (
+            <div style={{ overflowX: 'auto' }}>
+              <table className="data-table stagger-rows margin-table">
+                <thead>
+                  <MarginTableHeader
+                    sizeLabels={sizeLabels}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={handleSort}
+                    hasAdjustment={hasAdjustment}
+                    viewMode={viewMode}
+                  />
+                </thead>
+                <tbody>
                   <tr>
                     <td
                       colSpan={99}
@@ -262,25 +264,66 @@ export default function Page() {
                       조건에 맞는 메뉴가 없습니다
                     </td>
                   </tr>
-                ) : (
-                  paged.map(r => (
-                    <MarginRow
-                      key={r.id}
-                      r={r}
-                      sizeLabels={sizeLabels}
-                      activePlatform={activePlatform}
-                      discount={discount}
-                      hasAdjustment={hasAdjustment}
-                      viewMode={viewMode}
-                      warnPct={warnPct}
-                      critPct={critPct}
-                      onToggleHide={handleToggleHide}
-                    />
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            tableSections.map((section, index) => (
+              <div
+                key={section.id}
+                style={{
+                  borderTop: index > 0 ? '1px solid var(--divider)' : undefined,
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 10,
+                    padding: '10px 16px',
+                    fontSize: 12,
+                    color: 'var(--text-3)',
+                  }}
+                >
+                  <strong style={{ fontSize: 13, color: 'var(--text-1)' }}>{section.title}</strong>
+                  <span>
+                    {section.rows.length}개 · {section.sizeLabels.join('/')}
+                  </span>
+                </div>
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="data-table stagger-rows margin-table">
+                    <thead>
+                      <MarginTableHeader
+                        sizeLabels={section.sizeLabels}
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        onSort={handleSort}
+                        hasAdjustment={hasAdjustment}
+                        viewMode={viewMode}
+                      />
+                    </thead>
+                    <tbody>
+                      {section.rows.map(r => (
+                        <MarginRow
+                          key={r.id}
+                          r={r}
+                          sizeLabels={section.sizeLabels}
+                          activePlatform={activePlatform}
+                          discount={discount}
+                          hasAdjustment={hasAdjustment}
+                          viewMode={viewMode}
+                          warnPct={warnPct}
+                          critPct={critPct}
+                          onToggleHide={handleToggleHide}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))
+          )}
           <Pagination
             page={page}
             totalPages={totalPages}
