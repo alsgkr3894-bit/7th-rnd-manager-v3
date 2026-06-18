@@ -22,8 +22,8 @@ describe('sales report page structure', () => {
   });
 
   test('page imports normalizeViewMode from salesReportPageUtils', () => {
-    expect(pageSource).not.toContain("function normalizeViewMode");
-    expect(pageSource).toContain("normalizeViewMode");
+    expect(pageSource).not.toContain('function normalizeViewMode');
+    expect(pageSource).toContain('normalizeViewMode');
   });
 
   test('salesReportPageUtils exports normalizeViewMode', () => {

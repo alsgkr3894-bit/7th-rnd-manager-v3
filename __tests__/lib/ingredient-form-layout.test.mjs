@@ -31,8 +31,8 @@ describe('IngredientForm 레이아웃 구조', () => {
 
   test('스크롤 본문에 overflowY auto와 flex 1이 있다', () => {
     expect(src).toContain("overflowY: 'auto'");
-    expect(src).toContain("flex: 1");
-    expect(src).toContain("minHeight: 0");
+    expect(src).toContain('flex: 1');
+    expect(src).toContain('minHeight: 0');
   });
 
   test('sticky 푸터에 취소/저장 버튼이 있다', () => {

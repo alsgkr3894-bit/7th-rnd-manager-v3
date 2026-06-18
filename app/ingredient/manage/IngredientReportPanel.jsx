@@ -2,7 +2,10 @@
 import { useState } from 'react';
 import { Icon } from '@/components/icons';
 import { getPrimaryIngredientPhoto } from '@/lib/ingredient/photos';
-import { printIngredientManageReport, printIngredientPhotoReport } from '@/lib/ingredient/manage-print';
+import {
+  printIngredientManageReport,
+  printIngredientPhotoReport,
+} from '@/lib/ingredient/manage-print';
 
 function ModeButton({ active, onClick, label, desc }) {
   return (
@@ -118,9 +121,7 @@ function PhotoCardPreview() {
                   justifyContent: 'center',
                 }}
               >
-                <div
-                  style={{ width: 14, height: 11, background: '#a0a0a0', borderRadius: 2 }}
-                />
+                <div style={{ width: 14, height: 11, background: '#a0a0a0', borderRadius: 2 }} />
               </div>
             ))}
           </div>
@@ -144,9 +145,7 @@ function PhotoCardPreview() {
                   alignItems: 'center',
                 }}
               >
-                <div
-                  style={{ background: '#d1d5db', height: 5, width: 28, borderRadius: 2 }}
-                />
+                <div style={{ background: '#d1d5db', height: 5, width: 28, borderRadius: 2 }} />
                 <div
                   style={{
                     background: '#e5e7eb',
@@ -193,7 +192,10 @@ export function IngredientReportPanel({
 
   return (
     <div style={{ maxWidth: 580 }}>
-      <div className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div
+        className="card"
+        style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}
+      >
         <div style={{ fontWeight: 700, fontSize: 15 }}>식자재 리스트 출력</div>
 
         {/* 출력 형식 선택 */}
@@ -235,14 +237,10 @@ export function IngredientReportPanel({
           }}
         >
           <div style={{ fontSize: 13, color: 'var(--text-2)' }}>
-            현재 필터 기준{' '}
-            <b style={{ color: 'var(--text-1)' }}>{filtered.length}개</b> / 전체 {rows.length}개
+            현재 필터 기준 <b style={{ color: 'var(--text-1)' }}>{filtered.length}개</b> / 전체{' '}
+            {rows.length}개
           </div>
-          <button
-            className="btn primary"
-            onClick={handlePrint}
-            disabled={filtered.length === 0}
-          >
+          <button className="btn primary" onClick={handlePrint} disabled={filtered.length === 0}>
             <Icon.doc style={{ width: 14, height: 14 }} /> PDF 출력
           </button>
         </div>

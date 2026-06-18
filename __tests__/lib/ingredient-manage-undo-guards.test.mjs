@@ -6,10 +6,7 @@ const actionsSource = readFileSync(
   resolve('app/ingredient/manage/useIngredientManageActions.js'),
   'utf8'
 );
-const utilsSource = readFileSync(
-  resolve('app/ingredient/manage/ingredientManageUtils.js'),
-  'utf8'
-);
+const utilsSource = readFileSync(resolve('app/ingredient/manage/ingredientManageUtils.js'), 'utf8');
 const pageSource = readFileSync(resolve('app/ingredient/manage/page.jsx'), 'utf8');
 
 describe('ingredient manage undo guards', () => {
@@ -28,9 +25,7 @@ describe('ingredient manage undo guards', () => {
 
   test('일괄 실행취소는 실패 개수를 사용자 메시지로 만든다', () => {
     expect(utilsSource).toContain('throw new Error(`${failures.length}개 항목 복구 실패`)');
-    expect(actionsSource).toContain(
-      "console.error('[IngredientManage] undo batch delete failed'"
-    );
+    expect(actionsSource).toContain("console.error('[IngredientManage] undo batch delete failed'");
   });
 
   test('일괄 삭제는 부분 실패를 사용자에게 노출한다', () => {

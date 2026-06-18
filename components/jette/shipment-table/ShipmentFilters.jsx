@@ -23,7 +23,12 @@ export function ShipmentFilters({
           alignItems: 'center',
         }}
       >
-        <Chip label="전체" count={counts.all} active={typeFilter === 'all'} onClick={() => onTypeFilter('all')} />
+        <Chip
+          label="전체"
+          count={counts.all}
+          active={typeFilter === 'all'}
+          onClick={() => onTypeFilter('all')}
+        />
         <Chip
           label="전용상품"
           count={counts.exclusive}
@@ -43,7 +48,12 @@ export function ShipmentFilters({
           onClick={() => onTypeFilter('generic-managed')}
         />
         <span style={{ width: 1, height: 18, background: 'var(--border)', margin: '0 4px' }} />
-        <Chip label="관리품목만" count={counts.managed} active={managedOnly} onClick={onManagedOnly} />
+        <Chip
+          label="관리품목만"
+          count={counts.managed}
+          active={managedOnly}
+          onClick={onManagedOnly}
+        />
       </div>
 
       <SearchBox value={search} onChange={onSearch} />

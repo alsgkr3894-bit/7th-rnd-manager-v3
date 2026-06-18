@@ -13,8 +13,7 @@ export function GroupEditorCategoryChips({ selectedCategories, onToggle }) {
             marginLeft: 6,
             fontSize: 11,
             fontWeight: 400,
-            color:
-              selectedCategories.length === 0 ? 'var(--negative, #e03131)' : 'var(--text-4)',
+            color: selectedCategories.length === 0 ? 'var(--negative, #e03131)' : 'var(--text-4)',
           }}
         >
           {selectedCategories.length === 0

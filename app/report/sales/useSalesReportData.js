@@ -98,5 +98,13 @@ export function useSalesReportData() {
     };
   }, []);
 
-  return { salesRows, excludedList, availYears, availMonthsByYear, defaultPeriod, dataError, isLoading };
+  return {
+    salesRows,
+    excludedList,
+    availYears,
+    availMonthsByYear,
+    defaultPeriod,
+    dataError,
+    isLoading,
+  };
 }

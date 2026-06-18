@@ -77,10 +77,12 @@ export function MissingValueNotice({ diagnostics }) {
           영양성분 미입력 메뉴 {missingCount}건
         </div>
         <div style={{ marginTop: 3, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-          아래 메뉴는 어떤 크러스트에도 영양값이 입력되지 않았습니다. 베이스/엣지 탭에서 값을 입력해야
-          표 출력 시 정상 표시됩니다.
+          아래 메뉴는 어떤 크러스트에도 영양값이 입력되지 않았습니다. 베이스/엣지 탭에서 값을
+          입력해야 표 출력 시 정상 표시됩니다.
           {samples.length > 0 && (
-            <span style={{ display: 'block', color: 'var(--text-3)' }}>예: {samples.join(', ')}</span>
+            <span style={{ display: 'block', color: 'var(--text-3)' }}>
+              예: {samples.join(', ')}
+            </span>
           )}
         </div>
       </div>

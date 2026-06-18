@@ -98,9 +98,7 @@ async function goto(page, path) {
 
   if (!hydratedFirst) {
     // 컴파일 완료 후 JS 청크가 사용 가능해졌을 것 — reload로 가져온다.
-    await page
-      .reload({ waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS })
-      .catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS }).catch(() => {});
     await page.waitForSelector('main', { timeout: 90000 }).catch(() => {});
     await page
       .waitForFunction(
@@ -122,10 +120,9 @@ async function goto(page, path) {
     .catch(() => {});
 }
 
-
 /** useCurrentRole의 fail-closed 초기값('viewer')이 해소될 때까지 '메뉴 추가' 버튼 enabled 대기 */
 async function waitForMenuAddButton(page, timeout = 60000) {
-  const check = async (t) =>
+  const check = async t =>
     page.waitForFunction(
       () => {
         const btn = [...document.querySelectorAll('button')].find(b =>
@@ -141,10 +138,7 @@ async function waitForMenuAddButton(page, timeout = 60000) {
     await check(timeout);
   } catch (err) {
     // HMR 리로드로 execution context가 파괴된 경우: 새 컨텍스트에서 재시도
-    if (
-      err.message?.includes('context') ||
-      err.message?.includes('Execution context')
-    ) {
+    if (err.message?.includes('context') || err.message?.includes('Execution context')) {
       await page.waitForSelector('main', { timeout: 30000 }).catch(() => {});
       await check(30000);
       return;
@@ -239,11 +233,9 @@ async function scenarioNoteCreate(page, runId) {
   await step(steps, '저장 → 목록으로 이동', async () => {
     await page.getByRole('button', { name: '저장하기' }).click();
     // router.replace('/note')는 history.replaceState — waitForFunction으로 pathname 직접 폴링
-    await page.waitForFunction(
-      () => window.location.pathname === '/note',
-      undefined,
-      { timeout: 30000 }
-    );
+    await page.waitForFunction(() => window.location.pathname === '/note', undefined, {
+      timeout: 30000,
+    });
   });
 
   await step(steps, '작성한 노트가 목록에 표시', async () => {

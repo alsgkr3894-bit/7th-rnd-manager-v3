@@ -65,22 +65,55 @@ export default function TopBar({
   };
 
   useOutsideClick({ refs: notifRef, enabled: notifOpen, onOutside: () => setNotifOpen(false) });
-  useOutsideClick({ refs: companyRef, enabled: companyOpen, onOutside: () => setCompanyOpen(false) });
-  useOutsideClick({ refs: profileRef, enabled: profileOpen, onOutside: () => setProfileOpen(false) });
+  useOutsideClick({
+    refs: companyRef,
+    enabled: companyOpen,
+    onOutside: () => setCompanyOpen(false),
+  });
+  useOutsideClick({
+    refs: profileRef,
+    enabled: profileOpen,
+    onOutside: () => setProfileOpen(false),
+  });
 
   const notifs = [
     ...(unmatchedCount > 0
-      ? [{ kind: 'alert', title: `미매칭 ${unmatchedCount}건 처리 필요`, time: '지금', desc: '메뉴 판매량 → 미매칭 관리에서 별칭/규칙/제외로 처리할 수 있어요', href: '/menu-sales/unmatched' }]
+      ? [
+          {
+            kind: 'alert',
+            title: `미매칭 ${unmatchedCount}건 처리 필요`,
+            time: '지금',
+            desc: '메뉴 판매량 → 미매칭 관리에서 별칭/규칙/제외로 처리할 수 있어요',
+            href: '/menu-sales/unmatched',
+          },
+        ]
       : []),
     ...(reportingCount > 0
-      ? [{ kind: 'note', title: `보고예정 노트 ${reportingCount}건`, time: '미보고', desc: '메뉴개발노트 → 보고예정 탭에서 확인하세요', href: '/note?status=보고예정' }]
+      ? [
+          {
+            kind: 'note',
+            title: `보고예정 노트 ${reportingCount}건`,
+            time: '미보고',
+            desc: '메뉴개발노트 → 보고예정 탭에서 확인하세요',
+            href: '/note?status=보고예정',
+          },
+        ]
       : []),
   ];
 
   return (
     <header className="topbar">
       <button className="icon-btn mobile-only" onClick={onToggleSidebar} aria-label="메뉴 열기">
-        <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        >
           <path d="M4 7h16M4 12h16M4 17h16" />
         </svg>
       </button>
@@ -96,12 +129,18 @@ export default function TopBar({
 
       <button className="search" onClick={onOpenPalette} aria-label="통합 검색 열기 (⌘K)">
         <Icon.search aria-hidden="true" style={{ width: 16, height: 16 }} />
-        <span className="search-placeholder" aria-hidden="true">메뉴, 재료, 보고서 검색</span>
+        <span className="search-placeholder" aria-hidden="true">
+          메뉴, 재료, 보고서 검색
+        </span>
         <kbd aria-hidden="true">⌘K</kbd>
       </button>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
-        <button className="icon-btn" aria-label="새 노트 작성" onClick={() => router.push('/note/write')}>
+        <button
+          className="icon-btn"
+          aria-label="새 노트 작성"
+          onClick={() => router.push('/note/write')}
+        >
           <Icon.plus aria-hidden="true" style={{ width: 18, height: 18 }} />
         </button>
 

@@ -247,9 +247,15 @@ export default function Page() {
       <PinSection
         hasPin={hasPin}
         pinInput={pinInput}
-        setPinInput={v => { setPinError(''); setPinInput(v); }}
+        setPinInput={v => {
+          setPinError('');
+          setPinInput(v);
+        }}
         pinConfirm={pinConfirm}
-        setPinConfirm={v => { setPinError(''); setPinConfirm(v); }}
+        setPinConfirm={v => {
+          setPinError('');
+          setPinConfirm(v);
+        }}
         pinError={pinError}
         onSetPin={handleSetPin}
         onClearPin={handleClearPin}

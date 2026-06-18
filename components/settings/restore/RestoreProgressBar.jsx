@@ -30,7 +30,8 @@ export function RestoreProgressBar({ progress }) {
       >
         <span style={{ fontWeight: 700 }}>{progress.label}</span>
         <span className="num">
-          {formatNumber(Math.min(progress.current, progress.total))} / {formatNumber(progress.total)}
+          {formatNumber(Math.min(progress.current, progress.total))} /{' '}
+          {formatNumber(progress.total)}
         </span>
       </div>
       <div

@@ -9,7 +9,10 @@ const modalSource = readFileSync(resolve('components/report/_ReportPreviewModal.
 const pagesSource = readFileSync(resolve('components/report/ReportPreviewPages.jsx'), 'utf8');
 const sidebarSource = readFileSync(resolve('components/report/ReportPreviewSidebar.jsx'), 'utf8');
 const bodySource = readFileSync(resolve('components/report/ReportPreviewBody.jsx'), 'utf8');
-const coverSource = readFileSync(resolve('components/report/preview-pages/ReportCover.jsx'), 'utf8');
+const coverSource = readFileSync(
+  resolve('components/report/preview-pages/ReportCover.jsx'),
+  'utf8'
+);
 const optionsSource = readFileSync(
   resolve('components/report/preview-pages/ReportOptionsPage.jsx'),
   'utf8'

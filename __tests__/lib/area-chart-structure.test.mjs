@@ -14,8 +14,14 @@ import {
 const chartSource = readFileSync(resolve('components/charts/AreaChart.jsx'), 'utf8');
 const svgSource = readFileSync(resolve('components/charts/area-chart/AreaChartSvg.jsx'), 'utf8');
 const tooltipSource = readFileSync(resolve('components/charts/area-chart/AreaTooltip.jsx'), 'utf8');
-const xAxisSource = readFileSync(resolve('components/charts/area-chart/AreaXAxisLabels.jsx'), 'utf8');
-const yAxisSource = readFileSync(resolve('components/charts/area-chart/AreaYAxisLabels.jsx'), 'utf8');
+const xAxisSource = readFileSync(
+  resolve('components/charts/area-chart/AreaXAxisLabels.jsx'),
+  'utf8'
+);
+const yAxisSource = readFileSync(
+  resolve('components/charts/area-chart/AreaYAxisLabels.jsx'),
+  'utf8'
+);
 const utilsSource = readFileSync(resolve('components/charts/area-chart/areaChartUtils.js'), 'utf8');
 
 describe('area chart helpers', () => {

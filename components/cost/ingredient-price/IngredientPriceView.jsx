@@ -187,11 +187,7 @@ export function IngredientPriceView({ embedded = false }) {
 
       {/* ── 이슈 탭 ── */}
       {!loading && viewTab === 'issues' && (
-        <IngredientPriceIssuesPanel
-          rows={issueRows}
-          onEdit={setRegTarget}
-          readOnly={isViewer}
-        />
+        <IngredientPriceIssuesPanel rows={issueRows} onEdit={setRegTarget} readOnly={isViewer} />
       )}
 
       {/* ── 단가 탭 (식자재 마스터 컨텍스트) ── */}

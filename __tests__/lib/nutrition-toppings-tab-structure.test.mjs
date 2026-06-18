@@ -123,6 +123,12 @@ describe('nutrition toppings tab structure', () => {
         form: { ...EMPTY_TOPPING_FORM, toppingCode: 'TOP-X', toppingName: 'X' },
         values: { weight: 30 },
       })
-    ).toMatchObject({ id: 7, toppingCode: 'TOP-X', toppingName: 'X', basis: 'serving', weight: 30 });
+    ).toMatchObject({
+      id: 7,
+      toppingCode: 'TOP-X',
+      toppingName: 'X',
+      basis: 'serving',
+      weight: 30,
+    });
   });
 });

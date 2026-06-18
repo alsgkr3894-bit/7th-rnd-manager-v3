@@ -10,12 +10,7 @@ import { HomeDashboardWidgetFrame } from './HomeDashboardRowShell';
 
 function framed(context, widgetKey, label, children) {
   return (
-    <HomeDashboardWidgetFrame
-      key={widgetKey}
-      context={context}
-      widgetKey={widgetKey}
-      label={label}
-    >
+    <HomeDashboardWidgetFrame key={widgetKey} context={context} widgetKey={widgetKey} label={label}>
       {children}
     </HomeDashboardWidgetFrame>
   );

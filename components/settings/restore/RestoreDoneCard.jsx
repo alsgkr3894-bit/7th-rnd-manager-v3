@@ -115,8 +115,9 @@ export function RestoreDoneCard({ restoreDone, onReset }) {
                 )}
               </div>
               <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-1)', lineHeight: 1.5 }}>
-                전체 복원이 필요하면 현재 상태를 백업한 뒤 <b>시스템 설정 → 위험 영역 → DB 완전 재생성</b>을
-                실행하고 같은 백업 파일을 다시 복원하세요.
+                전체 복원이 필요하면 현재 상태를 백업한 뒤{' '}
+                <b>시스템 설정 → 위험 영역 → DB 완전 재생성</b>을 실행하고 같은 백업 파일을 다시
+                복원하세요.
               </div>
             </div>
           )}

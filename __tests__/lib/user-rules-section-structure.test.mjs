@@ -66,19 +66,16 @@ describe('user rules section structure', () => {
       groupName: '클래식',
       detailName: '페퍼로니',
     });
-    expect(isValidUserRuleForm({ rawMenuName: '치즈', category: '사이드', groupName: '파스타' })).toBe(
-      true
-    );
+    expect(
+      isValidUserRuleForm({ rawMenuName: '치즈', category: '사이드', groupName: '파스타' })
+    ).toBe(true);
     expect(isValidUserRuleForm({ rawMenuName: '치즈', category: '', groupName: '파스타' })).toBe(
       false
     );
     expect(rules.filter(rule => filterUserRule(rule, '파스타')).map(rule => rule.id)).toEqual([
       'new',
     ]);
-    expect(sortUserRules(rules, 'createdAt', 'desc').map(rule => rule.id)).toEqual([
-      'new',
-      'old',
-    ]);
+    expect(sortUserRules(rules, 'createdAt', 'desc').map(rule => rule.id)).toEqual(['new', 'old']);
     expect(sortUserRules(rules, 'category', 'asc').map(rule => rule.id)).toEqual(['new', 'old']);
     expect(nextUserRuleSortState({ sortKey: 'category', sortDir: 'asc' }, 'category')).toEqual({
       sortKey: 'category',

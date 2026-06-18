@@ -163,10 +163,7 @@ async function seedDynamicRouteFixtures(page) {
         openReq.onsuccess = () => {
           const db = openReq.result;
           try {
-            for (const { store } of [
-              { store: 'menu_dev_notes' },
-              { store: 'sample_records' },
-            ]) {
+            for (const { store } of [{ store: 'menu_dev_notes' }, { store: 'sample_records' }]) {
               if (!db.objectStoreNames.contains(store)) {
                 throw new Error(`${store} store missing`);
               }

@@ -107,7 +107,10 @@ export function RestoreImpactPanel({ impact, dangerRows, wipeRows }) {
                       </span>
                     )}
                     {!isWipe && isDanger && (
-                      <span title="현재보다 데이터 감소" style={{ color: 'var(--warn)', fontSize: 12 }}>
+                      <span
+                        title="현재보다 데이터 감소"
+                        style={{ color: 'var(--warn)', fontSize: 12 }}
+                      >
                         ↓
                       </span>
                     )}

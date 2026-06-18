@@ -94,15 +94,20 @@ describe('group editor structure', () => {
 
     expect(buildIngredientQuantities(sizeLabels)).toEqual({ L: '', R: '' });
     expect(
-      createGroupIngredientLine({ productCode: 'A', ingredientName: '치즈' }, unitPriceMap, sizeLabels)
+      createGroupIngredientLine(
+        { productCode: 'A', ingredientName: '치즈' },
+        unitPriceMap,
+        sizeLabels
+      )
     ).toEqual({
       productCode: 'A',
       ingredientName: '치즈',
       quantities: { L: '', R: '' },
       unitType: 'g',
     });
-    expect(createGroupIngredientLine({ productCode: 'C', baseUnitType: '개' }, unitPriceMap, ['L']))
-      .toMatchObject({ productCode: 'C', quantities: { L: '' }, unitType: '개' });
+    expect(
+      createGroupIngredientLine({ productCode: 'C', baseUnitType: '개' }, unitPriceMap, ['L'])
+    ).toMatchObject({ productCode: 'C', quantities: { L: '' }, unitType: '개' });
     expect(computeGroupCostBySizes(ingredients, sizeLabels, unitPriceMap)).toEqual({
       L: 23.5,
       R: 12.5,

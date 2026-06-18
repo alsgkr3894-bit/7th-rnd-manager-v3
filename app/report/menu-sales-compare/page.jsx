@@ -43,13 +43,14 @@ export default function Page() {
   );
 
   // rows는 DB에서 1회 로드. 기간·범위 변경은 DB 재조회 없이 useMemo로 파생.
-  const { data: rows = [], loading: isLoading, error } = useDBLoad(
-    () => safeAll('sales_rows').then(asObjectArray),
-    {
-      initialData: [],
-      onError: err => console.error('[compare report]', err),
-    }
-  );
+  const {
+    data: rows = [],
+    loading: isLoading,
+    error,
+  } = useDBLoad(() => safeAll('sales_rows').then(asObjectArray), {
+    initialData: [],
+    onError: err => console.error('[compare report]', err),
+  });
 
   const safeMode = normalizeMode(mode);
   const safeScope = normalizeScope(scope);

@@ -37,7 +37,13 @@ export function countManagedProducts(list = []) {
 
 export function filterManagedProducts(
   list = [],
-  { filter = 'all', managedOnly = false, search = '', sortKey = 'productName', sortDir = 'asc' } = {}
+  {
+    filter = 'all',
+    managedOnly = false,
+    search = '',
+    sortKey = 'productName',
+    sortDir = 'asc',
+  } = {}
 ) {
   let rows = asObjectArray(list);
 

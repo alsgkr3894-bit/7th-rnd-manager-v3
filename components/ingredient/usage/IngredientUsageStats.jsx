@@ -69,7 +69,10 @@ export function IngredientUsageStats({
         onClick={() => hiddenCount && onShowHidden(value => !value)}
       >
         <div className="stat-label">숨김</div>
-        <div className="stat-value" style={{ color: hiddenCount > 0 ? 'var(--accent)' : undefined }}>
+        <div
+          className="stat-value"
+          style={{ color: hiddenCount > 0 ? 'var(--accent)' : undefined }}
+        >
           {hiddenCount}
           <span className="unit">개</span>
         </div>

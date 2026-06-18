@@ -3,13 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
-import {
-  importAll,
-  MODULE_KEYS,
-  storesForScopes,
-  collectStoreStats,
-  exportAll,
-} from '@/lib/db';
+import { importAll, MODULE_KEYS, storesForScopes, collectStoreStats, exportAll } from '@/lib/db';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { downloadJson, makeFileName } from '@/lib/download';
 import { addEntry } from '@/lib/backup-history';

@@ -18,9 +18,7 @@ export function MenuCodeSearchField({
         onChange={event => onQueryChange(event.target.value)}
         onFocus={onOpen}
         onKeyDown={onKeyDown}
-        placeholder={
-          disabled ? '메뉴 마스터가 없습니다 (메뉴 마스터 먼저 등록)' : placeholder
-        }
+        placeholder={disabled ? '메뉴 마스터가 없습니다 (메뉴 마스터 먼저 등록)' : placeholder}
         disabled={disabled}
         style={{
           background: 'transparent',

@@ -32,7 +32,12 @@ import { CommonEdgesView } from '@/components/cost/manage/CommonEdgesView';
 export function CommonManageView({ tab = 'groups' }) {
   const isMain = useIsMainBrand(); // 마스터 시드는 7번가 전용
 
-  const { data, loading, errorMessage: dbError, reload: load } = useDBLoad(
+  const {
+    data,
+    loading,
+    errorMessage: dbError,
+    reload: load,
+  } = useDBLoad(
     async () => {
       const [files, meta, gs, edgeList] = await Promise.all([
         getPriceFiles(),

@@ -33,11 +33,7 @@ export function ReportListTable({
     <div className="card table-card">
       <div style={{ overflowX: 'auto' }}>
         <table className="data-table stagger-rows">
-          <ReportListTableHeader
-            sortKey={sortKey}
-            sortDir={sortDir}
-            toggleSort={toggleSort}
-          />
+          <ReportListTableHeader sortKey={sortKey} sortDir={sortDir} toggleSort={toggleSort} />
           <tbody>
             {list.map(report => {
               const model = buildReportListRowModel(report, { deletingId, editingId, newIds });

@@ -6,10 +6,7 @@ const src = readFileSync(
   'utf-8'
 );
 
-const pageSrc = readFileSync(
-  resolve(process.cwd(), 'app/ingredient/manage/page.jsx'),
-  'utf-8'
-);
+const pageSrc = readFileSync(resolve(process.cwd(), 'app/ingredient/manage/page.jsx'), 'utf-8');
 
 describe('IngredientSettingsPanel 구조 검증', () => {
   test("'use client' 선언이 있다", () => {

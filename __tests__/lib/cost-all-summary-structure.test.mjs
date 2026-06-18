@@ -55,11 +55,7 @@ describe('cost all summary helpers', () => {
   });
 
   test('category and filter helpers keep display order and 전체 fallback', () => {
-    const rows = [
-      { category: '사이드' },
-      { category: '피자' },
-      { category: '미분류' },
-    ];
+    const rows = [{ category: '사이드' }, { category: '피자' }, { category: '미분류' }];
 
     expect(buildAllSummaryCategories(rows)).toEqual(['전체', '피자', '사이드', '기타']);
     expect(filterAllSummaryRows(rows, '전체')).toBe(rows);
@@ -104,7 +100,9 @@ describe('cost all summary structure', () => {
     expect(statsSource).toContain('export function AllSummaryStats');
     expect(statsSource).toContain('costRateColor');
     expect(filterSource).toContain('export function AllSummaryCategoryFilter');
-    expect(filterSource).toContain("className={'chip' + (activeCategory === category ? ' active' : '')}");
+    expect(filterSource).toContain(
+      "className={'chip' + (activeCategory === category ? ' active' : '')}"
+    );
     expect(tableSource).toContain('export function AllSummaryTable');
     expect(tableSource).toContain('function AllSummaryTableRow');
     expect(tableSource).toContain('<Pagination');

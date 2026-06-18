@@ -15,14 +15,7 @@ const GROUP_HEADER_STYLE = {
   textTransform: 'uppercase',
 };
 
-export function TabResults({
-  menus,
-  rawMap,
-  edgeMap,
-  compositions,
-  menuMasters,
-  menuSearch = '',
-}) {
+export function TabResults({ menus, rawMap, edgeMap, compositions, menuMasters, menuSearch = '' }) {
   const [filterMenu, setFilterMenu] = useState('전체');
   const [filterDerived, setFilterDerived] = useState('전체');
   const [missingOnly, setMissingOnly] = useState(false);

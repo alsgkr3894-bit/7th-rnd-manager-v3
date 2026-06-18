@@ -40,7 +40,11 @@ export default function Page() {
 
   // 파일 선택 로직이 periodMode·날짜에 따라 다른 파일 ID를 조회하므로 deps 사용.
   // keepDataOnReload:false — 기간 변경 시 이전 기간 데이터가 잠시라도 표시되지 않도록.
-  const { data, loading: isLoading, errorMessage: dataError } = useDBLoad(
+  const {
+    data,
+    loading: isLoading,
+    errorMessage: dataError,
+  } = useDBLoad(
     async () => {
       const files = asObjectArray(await getPriceFiles());
       if (files.length < 2) {

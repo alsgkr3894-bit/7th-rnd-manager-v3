@@ -55,7 +55,13 @@ describe('managed products card structure', () => {
     const products = [
       { id: 1, productCode: 'A', productName: '치즈', productType: 'exclusive', isManaged: true },
       { id: 2, productCode: 'B', productName: '소스', productType: 'generic', enable: false },
-      { id: 3, productCode: 'C', productName: '박스', productType: 'generic-managed', isManaged: true },
+      {
+        id: 3,
+        productCode: 'C',
+        productName: '박스',
+        productType: 'generic-managed',
+        isManaged: true,
+      },
       { id: 4, productCode: 'D', productName: '도우' },
     ];
 
@@ -67,12 +73,22 @@ describe('managed products card structure', () => {
       managed: 2,
       disabled: 1,
     });
-    expect(filterManagedProducts(products, { filter: 'exclusive' }).map(product => product.id)).toEqual([1]);
-    expect(filterManagedProducts(products, { filter: 'generic' }).map(product => product.id)).toEqual([4, 2]);
-    expect(filterManagedProducts(products, { managedOnly: true }).map(product => product.id)).toEqual([3, 1]);
-    expect(filterManagedProducts(products, { search: '소스' }).map(product => product.id)).toEqual([2]);
     expect(
-      filterManagedProducts(products, { sortKey: 'enable', sortDir: 'asc' }).map(product => product.id)
+      filterManagedProducts(products, { filter: 'exclusive' }).map(product => product.id)
+    ).toEqual([1]);
+    expect(
+      filterManagedProducts(products, { filter: 'generic' }).map(product => product.id)
+    ).toEqual([4, 2]);
+    expect(
+      filterManagedProducts(products, { managedOnly: true }).map(product => product.id)
+    ).toEqual([3, 1]);
+    expect(filterManagedProducts(products, { search: '소스' }).map(product => product.id)).toEqual([
+      2,
+    ]);
+    expect(
+      filterManagedProducts(products, { sortKey: 'enable', sortDir: 'asc' }).map(
+        product => product.id
+      )
     ).toEqual([2, 1, 3, 4]);
     expect(managedProductsSortDir('productCode')).toBe('asc');
     expect(managedProductsSortDir('enable')).toBe('desc');

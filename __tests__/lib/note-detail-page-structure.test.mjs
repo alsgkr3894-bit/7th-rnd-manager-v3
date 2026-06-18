@@ -38,11 +38,12 @@ describe('note detail page helpers', () => {
       )
     ).toBe(false);
     expect(isNoteFormChanged({ title: 'B', photos: [] }, { title: 'A', photos: [] })).toBe(true);
-    expect(mergeDraftWithCurrentPhotos({ title: 'Draft', photos: [] }, { photos: ['current'] }))
-      .toEqual({
-        title: 'Draft',
-        photos: ['current'],
-      });
+    expect(
+      mergeDraftWithCurrentPhotos({ title: 'Draft', photos: [] }, { photos: ['current'] })
+    ).toEqual({
+      title: 'Draft',
+      photos: ['current'],
+    });
   });
 
   test('related sample matching uses normalized sampleNames instead of joined menuName only', () => {
@@ -52,8 +53,9 @@ describe('note detail page helpers', () => {
       { id: 3, menuName: '콤비네이션 피자' },
     ];
 
-    expect(findRelatedSamplesForNote({ menuName: ' 콤비네이션 피자 ' }, samples).map(s => s.id))
-      .toEqual([1, 3]);
+    expect(
+      findRelatedSamplesForNote({ menuName: ' 콤비네이션 피자 ' }, samples).map(s => s.id)
+    ).toEqual([1, 3]);
     expect(findRelatedSamplesForNote({}, samples)).toEqual([]);
   });
 });

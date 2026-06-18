@@ -67,9 +67,7 @@ function PizzaMenuRows({ menuName, crustRows, groupIndex }) {
       key={`${displayMenuName}-${asDisplayText(row.crustLabel)}-${asDisplayText(row.side)}-${index}`}
     >
       {index === 0 && <GroupedMenuNameCell name={displayMenuName} rowSpan={safeCrustRows.length} />}
-      <td style={{ padding: '5px 8px', fontSize: 12 }}>
-        {asDisplayText(row.crustLabel, '—')}
-      </td>
+      <td style={{ padding: '5px 8px', fontSize: 12 }}>{asDisplayText(row.crustLabel, '—')}</td>
       <td style={{ padding: '5px 6px', fontSize: 11, textAlign: 'center', color: '#666' }}>
         {asDisplayText(row.side, '—')}
       </td>

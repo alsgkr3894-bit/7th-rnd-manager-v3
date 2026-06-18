@@ -131,8 +131,12 @@ describe('ingredient form structure', () => {
     expect(radioOptionSource).toContain('accentColor');
     expect(sectionSource).toContain("export { PhotoSection } from './IngredientPhotoSection'");
     expect(sectionSource).toContain("export { OriginSection } from './IngredientOriginSection'");
-    expect(sectionSource).toContain("export { AllergenSection } from './IngredientAllergenSection'");
-    expect(sectionSource).toContain("export { Field, SourceField } from './IngredientFieldPrimitives'");
+    expect(sectionSource).toContain(
+      "export { AllergenSection } from './IngredientAllergenSection'"
+    );
+    expect(sectionSource).toContain(
+      "export { Field, SourceField } from './IngredientFieldPrimitives'"
+    );
     expect(sectionSource).not.toContain('export function');
     expect(sectionSource).not.toContain('export function BasicIngredientFields');
     expect(photoSectionSource).toContain('export function PhotoSection');

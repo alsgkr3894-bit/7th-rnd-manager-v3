@@ -53,10 +53,7 @@ function CategorySectionTitle({ category }) {
       </span>
       <span className="muted" style={{ fontSize: 11, fontWeight: 600 }}>
         평균{' '}
-        <b
-          className="num"
-          style={{ color: category.avg > 0 ? 'var(--text-1)' : undefined }}
-        >
+        <b className="num" style={{ color: category.avg > 0 ? 'var(--text-1)' : undefined }}>
           {category.avg > 0 ? `${category.avg.toFixed(1)}%` : '—'}
         </b>
         {' · '}위험 {category.risk}개

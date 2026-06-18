@@ -88,9 +88,7 @@ describe('nutrition backup localStorage keys', () => {
         'rnd_active_account_id',
       ])
     );
-    expect(persistentLocalStorageKeysForScopes(['jette'])).not.toContain(
-      'v3:nutrition-menu-order'
-    );
+    expect(persistentLocalStorageKeysForScopes(['jette'])).not.toContain('v3:nutrition-menu-order');
 
     expect(
       pickLocalStorageForScopes(

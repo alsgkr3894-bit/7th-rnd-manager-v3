@@ -12,11 +12,17 @@ const REPORT_OPTION_RENDERERS = {
         label="집계 기간"
         value={opts.periodMode === 'year' ? '년 단위' : '월 단위'}
       />
-      <ReportPreviewOptionRow label="대상 범위" value={opts.scope === 'all' ? '전체 메뉴' : opts.scope} />
+      <ReportPreviewOptionRow
+        label="대상 범위"
+        value={opts.scope === 'all' ? '전체 메뉴' : opts.scope}
+      />
       <ReportPreviewOptionRow label="순위 깊이" value={topN} />
       {Object.keys(subOpts).length > 0 && (
         <>
-          <ReportPreviewOptionRow label="카테고리 비중" value={subOpts.catShare ? '포함' : '제외'} />
+          <ReportPreviewOptionRow
+            label="카테고리 비중"
+            value={subOpts.catShare ? '포함' : '제외'}
+          />
           <ReportPreviewOptionRow label="메뉴 순위표" value={subOpts.rankTable ? '포함' : '제외'} />
           <ReportPreviewOptionRow label="전월 대비" value={subOpts.prevComp ? '포함' : '제외'} />
         </>
@@ -25,7 +31,10 @@ const REPORT_OPTION_RENDERERS = {
   ),
   price: (opts, subOpts) => (
     <>
-      <ReportPreviewOptionRow label="변동률 임계값" value={`±${asDisplayText(opts.threshold, '3')}%`} />
+      <ReportPreviewOptionRow
+        label="변동률 임계값"
+        value={`±${asDisplayText(opts.threshold, '3')}%`}
+      />
       <ReportPreviewOptionRow
         label="기간 모드"
         value={
@@ -72,7 +81,9 @@ const REPORT_OPTION_RENDERERS = {
     <>
       <ReportPreviewOptionRow
         label="비교 모드"
-        value={opts.mode === 'mom' ? '전월 대비' : opts.mode === 'yoy' ? '전년 동월' : '사용자 지정'}
+        value={
+          opts.mode === 'mom' ? '전월 대비' : opts.mode === 'yoy' ? '전년 동월' : '사용자 지정'
+        }
       />
       <ReportPreviewOptionRow
         label="기간 A"
@@ -89,7 +100,10 @@ const REPORT_OPTION_RENDERERS = {
       {Object.keys(subOpts).length > 0 && (
         <>
           <ReportPreviewOptionRow label="순위 이동표" value={subOpts.rankShift ? '포함' : '제외'} />
-          <ReportPreviewOptionRow label="Winners/Losers" value={subOpts.winners ? '포함' : '제외'} />
+          <ReportPreviewOptionRow
+            label="Winners/Losers"
+            value={subOpts.winners ? '포함' : '제외'}
+          />
         </>
       )}
     </>
@@ -118,12 +132,23 @@ const REPORT_OPTION_RENDERERS = {
           label="집계 기간"
           value={opts.periodMode === 'year' ? '년 단위' : '월 단위'}
         />
-        <ReportPreviewOptionRow label="위험 기준" value={`${asDisplayText(opts.riskThreshold, '35')}%↑`} />
-        {Object.keys(cats).length > 0 && <ReportPreviewOptionRow label="포함 카테고리" value={catLabel} />}
+        <ReportPreviewOptionRow
+          label="위험 기준"
+          value={`${asDisplayText(opts.riskThreshold, '35')}%↑`}
+        />
+        {Object.keys(cats).length > 0 && (
+          <ReportPreviewOptionRow label="포함 카테고리" value={catLabel} />
+        )}
         {Object.keys(subOpts).length > 0 && (
           <>
-            <ReportPreviewOptionRow label="카테고리 비교표" value={subOpts.catTable ? '포함' : '제외'} />
-            <ReportPreviewOptionRow label="위험 메뉴 부록" value={subOpts.riskList ? '포함' : '제외'} />
+            <ReportPreviewOptionRow
+              label="카테고리 비교표"
+              value={subOpts.catTable ? '포함' : '제외'}
+            />
+            <ReportPreviewOptionRow
+              label="위험 메뉴 부록"
+              value={subOpts.riskList ? '포함' : '제외'}
+            />
           </>
         )}
       </>

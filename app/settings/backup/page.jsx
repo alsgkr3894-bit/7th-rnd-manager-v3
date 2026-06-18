@@ -4,12 +4,7 @@ import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { showToast } from '@/components/Toast';
-import {
-  storesForScopes,
-  MODULE_GROUPS,
-  MODULE_KEYS,
-  collectStoreStats,
-} from '@/lib/db';
+import { storesForScopes, MODULE_GROUPS, MODULE_KEYS, collectStoreStats } from '@/lib/db';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { formatNumber, formatRelative } from '@/lib/format';
 import { togglePin } from '@/lib/backup-history';
@@ -58,12 +53,16 @@ export default function Page() {
   const backupProgressTimerRef = useRef(null);
 
   const {
-    history, setHistory,
-    historyQuery, setHistoryQuery,
-    historyFilter, setHistoryFilter,
+    history,
+    setHistory,
+    historyQuery,
+    setHistoryQuery,
+    historyFilter,
+    setHistoryFilter,
     filteredHistory,
     backupReminder,
-    lastBackupAt, setLastBackupAt,
+    lastBackupAt,
+    setLastBackupAt,
     refreshHistory,
   } = useBackupHistory();
 

@@ -8,7 +8,9 @@ const ctx = await browser.newContext({ extraHTTPHeaders: { Cookie: AUTH } });
 const page = await ctx.newPage();
 
 const consoleErrors = [];
-page.on('console', msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
+page.on('console', msg => {
+  if (msg.type() === 'error') consoleErrors.push(msg.text());
+});
 
 await page.goto(BASE + '/nutrition/allergen', { waitUntil: 'networkidle', timeout: 20000 });
 
@@ -27,7 +29,11 @@ const stats = await page.evaluate(() => {
 const statValues = await page.evaluate(() => {
   const all = [...document.querySelectorAll('*')];
   return all
-    .filter(el => ['알레르기 등록 식자재', '전체 식자재', '알레르기 매칭 메뉴'].some(s => el.innerText?.includes(s)))
+    .filter(el =>
+      ['알레르기 등록 식자재', '전체 식자재', '알레르기 매칭 메뉴'].some(s =>
+        el.innerText?.includes(s)
+      )
+    )
     .map(el => el.innerText?.trim().slice(0, 100))
     .filter(Boolean)
     .slice(0, 6);

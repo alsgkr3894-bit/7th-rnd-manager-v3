@@ -88,7 +88,10 @@ export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
           onCategoryChange={onCategoryChange}
         />
         <NoteDetailFields form={form} allTags={allTags} updateField={updateField} />
-        <NotePhotoSection photos={form.photos || []} onChange={value => updateField('photos', value)} />
+        <NotePhotoSection
+          photos={form.photos || []}
+          onChange={value => updateField('photos', value)}
+        />
         <TempCostCalculator
           value={form.tempCostCalc}
           onChange={value => updateField('tempCostCalc', value)}

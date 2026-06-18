@@ -61,8 +61,7 @@ function RecipeSummaryLine({ recipeSummary }) {
           {' + '}
           공통원가{' '}
           <b style={{ color: 'var(--text-1)' }}>{formatNumber(recipeSummary.commonGroupCost)}원</b>
-          {' = '}
-          총{' '}
+          {' = '}총{' '}
           <b style={{ color: 'var(--text-1)' }}>{formatNumber(recipeSummary.totalCost)}원</b>
         </span>
       ) : (

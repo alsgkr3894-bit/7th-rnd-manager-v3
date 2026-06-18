@@ -9,7 +9,12 @@ export function escapeCalendarPrintValue(value) {
     .replace(/>/g, '&gt;');
 }
 
-export function buildCalendarMonthEventDates({ viewYear, viewMonth, notesByDate, schedulesByDate }) {
+export function buildCalendarMonthEventDates({
+  viewYear,
+  viewMonth,
+  notesByDate,
+  schedulesByDate,
+}) {
   const prefix = `${viewYear}-${pad(viewMonth)}`;
   const dateSet = new Set([
     ...Array.from((notesByDate || new Map()).keys()),

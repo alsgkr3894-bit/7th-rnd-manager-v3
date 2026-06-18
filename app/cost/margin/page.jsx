@@ -7,11 +7,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
-import {
-  applyDiscount,
-  calcNetRevenue,
-  calcPlatformMargin,
-} from '@/lib/cost/margin/platforms';
+import { applyDiscount, calcNetRevenue, calcPlatformMargin } from '@/lib/cost/margin/platforms';
 import { MarginFilterBar } from '@/components/cost/margin/MarginFilterBar';
 import { MarginSummaryCards } from '@/components/cost/margin/MarginSummaryCards';
 import { MarginCostThresholdBar } from '@/components/cost/margin/MarginCostThresholdBar';
@@ -21,10 +17,7 @@ import { MarginRow } from '@/components/cost/margin/MarginRow';
 import { exportMarginExcel } from '@/lib/cost/margin/export';
 import { KEYS } from '@/lib/note/keys';
 import { useMarginData } from './useMarginData';
-import {
-  normalizeWarnPercentSetting,
-  normalizeCritPercentSetting,
-} from './marginPageUtils';
+import { normalizeWarnPercentSetting, normalizeCritPercentSetting } from './marginPageUtils';
 import { useMarginFilters } from './useMarginFilters';
 import { useMarginActions } from './useMarginActions';
 
@@ -49,8 +42,16 @@ export default function Page() {
   const [discType, setDiscType] = useState('pct');
   const [discVal, setDiscVal] = useState('');
   const [viewMode, setViewMode] = useState('cost');
-  const [warnPct, setWarnPct] = useLocalStorage(KEYS.MARGIN_COST_WARN, 30, normalizeWarnPercentSetting);
-  const [critPct, setCritPct] = useLocalStorage(KEYS.MARGIN_COST_CRIT, 40, normalizeCritPercentSetting);
+  const [warnPct, setWarnPct] = useLocalStorage(
+    KEYS.MARGIN_COST_WARN,
+    30,
+    normalizeWarnPercentSetting
+  );
+  const [critPct, setCritPct] = useLocalStorage(
+    KEYS.MARGIN_COST_CRIT,
+    40,
+    normalizeCritPercentSetting
+  );
 
   const activePlatform = useMemo(
     () =>
@@ -69,12 +70,23 @@ export default function Page() {
   const hasAdjustment = !!(discount || activePlatform.fees?.length);
 
   const {
-    catFilter, setCatFilter,
-    sortKey, sortDir,
-    search, setSearch,
-    showHidden, setShowHidden,
-    edgeFilter, setEdgeFilter,
-    cats, edgeFiltered, sizeLabels, stats, handleSort, sortedFiltered, hiddenCount,
+    catFilter,
+    setCatFilter,
+    sortKey,
+    sortDir,
+    search,
+    setSearch,
+    showHidden,
+    setShowHidden,
+    edgeFilter,
+    setEdgeFilter,
+    cats,
+    edgeFiltered,
+    sizeLabels,
+    stats,
+    handleSort,
+    sortedFiltered,
+    hiddenCount,
   } = useMarginFilters({ rows, activePlatform, discount, warnPct, critPct, viewMode });
 
   const { handleSaveSnapshot, handleSavePlatforms, handleToggleHide } = useMarginActions({

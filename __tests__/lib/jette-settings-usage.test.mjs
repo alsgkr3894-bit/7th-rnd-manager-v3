@@ -21,9 +21,7 @@ describe('jette settings usage guards', () => {
 
   test('가격 임계값 설정은 요약 카드와 비교 테이블에 전달된다', () => {
     expect(pricePageSource).toContain('jetteSettings');
-    expect(pricePageSource).toContain(
-      'priceAlertThreshold={jetteSettings.priceAlertThreshold}'
-    );
+    expect(pricePageSource).toContain('priceAlertThreshold={jetteSettings.priceAlertThreshold}');
     expect(compareTableSource).toContain('priceAlertThreshold');
     expect(compareRowSource).toContain('isPriceChangeAlert');
     expect(summaryCardsSource).toContain('isPriceChangeAlert');

@@ -1,7 +1,14 @@
 'use client';
 import { Icon } from '@/components/icons';
 
-export function CompanyPicker({ companyRef, companyOpen, onToggle, activeCompany, companies, onCompanyChange }) {
+export function CompanyPicker({
+  companyRef,
+  companyOpen,
+  onToggle,
+  activeCompany,
+  companies,
+  onCompanyChange,
+}) {
   return (
     <div className="company-wrap" ref={companyRef}>
       <button

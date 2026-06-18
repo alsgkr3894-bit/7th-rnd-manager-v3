@@ -1,8 +1,5 @@
 import { describe, expect, test } from '@jest/globals';
-import {
-  buildStrictPostingMessage,
-  collectStrictPostingIssues,
-} from '@/lib/report/strict-posting';
+import { buildStrictPostingMessage, collectStrictPostingIssues } from '@/lib/report/strict-posting';
 
 describe('strict posting guards', () => {
   test('수량은 있는데 단가가 없는 구성품만 발행 차단 대상으로 수집한다', () => {

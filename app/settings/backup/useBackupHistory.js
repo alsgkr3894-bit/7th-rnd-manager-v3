@@ -34,8 +34,12 @@ export function useBackupHistory() {
       if (!q) return true;
       const scopeText = (h.scopes || []).map(k => MODULE_GROUPS[k]?.label || k).join(' ');
       return (
-        String(h.id || '').toLowerCase().includes(q) ||
-        String(h.fileName || '').toLowerCase().includes(q) ||
+        String(h.id || '')
+          .toLowerCase()
+          .includes(q) ||
+        String(h.fileName || '')
+          .toLowerCase()
+          .includes(q) ||
         scopeText.toLowerCase().includes(q)
       );
     });

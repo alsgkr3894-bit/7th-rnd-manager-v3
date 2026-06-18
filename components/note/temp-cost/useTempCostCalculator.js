@@ -75,7 +75,10 @@ export function useTempCostCalculator({ value, onChange }) {
   }
 
   function refreshLinkedCostRows() {
-    updateCost(refreshLinkedTempCostRows(parsedCostCalc.rows, ingredients), parsedCostCalc.sellingPrice);
+    updateCost(
+      refreshLinkedTempCostRows(parsedCostCalc.rows, ingredients),
+      parsedCostCalc.sellingPrice
+    );
     showToast('식자재 연동값을 갱신했습니다', 'ok');
   }
 

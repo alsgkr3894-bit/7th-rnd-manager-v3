@@ -19,7 +19,10 @@ const dayHeaderSource = readFileSync(
   resolve('app/note/calendar/calendar-grid/CalendarDayHeader.jsx'),
   'utf8'
 );
-const itemSource = readFileSync(resolve('app/note/calendar/calendar-grid/CalendarItem.jsx'), 'utf8');
+const itemSource = readFileSync(
+  resolve('app/note/calendar/calendar-grid/CalendarItem.jsx'),
+  'utf8'
+);
 const weekHeaderSource = readFileSync(
   resolve('app/note/calendar/calendar-grid/CalendarWeekHeader.jsx'),
   'utf8'

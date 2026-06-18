@@ -15,5 +15,7 @@ export function restoreModuleLabel(moduleKey) {
 }
 
 export function RestoreModuleChip({ moduleKey, active = true, children }) {
-  return <span style={restoreModuleChipStyle(active)}>{children ?? restoreModuleLabel(moduleKey)}</span>;
+  return (
+    <span style={restoreModuleChipStyle(active)}>{children ?? restoreModuleLabel(moduleKey)}</span>
+  );
 }

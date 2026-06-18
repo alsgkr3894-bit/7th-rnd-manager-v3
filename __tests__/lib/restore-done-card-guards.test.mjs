@@ -1,10 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const source = readFileSync(
-  resolve('components/settings/restore/RestoreDoneCard.jsx'),
-  'utf8'
-);
+const source = readFileSync(resolve('components/settings/restore/RestoreDoneCard.jsx'), 'utf8');
 
 describe('restore done card guards', () => {
   test('복원 실패 store와 복구 경로를 완료 카드에 노출한다', () => {

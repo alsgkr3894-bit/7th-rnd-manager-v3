@@ -35,9 +35,7 @@ export function PlatformSettingsModal({ platforms, onSave, onClose }) {
         onNameChange={name => dispatch({ type: 'SET_PLAT_NAME', name })}
         onAddFee={() => dispatch({ type: 'ADD_FEE' })}
         onPatchFee={(id, patch) => dispatch({ type: 'PATCH_FEE', id, patch })}
-        onSizeOverride={(id, key, val) =>
-          dispatch({ type: 'PATCH_SIZE_OVERRIDE', id, key, val })
-        }
+        onSizeOverride={(id, key, val) => dispatch({ type: 'PATCH_SIZE_OVERRIDE', id, key, val })}
         onDeleteFee={id => dispatch({ type: 'DELETE_FEE', id })}
         onDeletePlatform={id => dispatch({ type: 'DELETE_PLATFORM', id })}
       />

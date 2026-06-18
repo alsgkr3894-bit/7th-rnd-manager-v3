@@ -2,14 +2,7 @@
 
 import { priceFileLabel } from './syncBaseQtyModalUtils';
 
-export function SyncBaseQtyPickStep({
-  files,
-  fileId,
-  phase,
-  onFileId,
-  onPreview,
-  onClose,
-}) {
+export function SyncBaseQtyPickStep({ files, fileId, phase, onFileId, onPreview, onClose }) {
   const isComputing = phase === 'computing';
 
   return (

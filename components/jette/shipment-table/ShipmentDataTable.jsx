@@ -80,7 +80,13 @@ function ShipmentTableHeader({ sortKey, sortDir, onSort }) {
   return (
     <thead>
       <tr>
-        <SortableTh sortKey="productCode" active={sortKey} dir={sortDir} onClick={onSort} width={100}>
+        <SortableTh
+          sortKey="productCode"
+          active={sortKey}
+          dir={sortDir}
+          onClick={onSort}
+          width={100}
+        >
           제품코드
         </SortableTh>
         <SortableTh sortKey="productName" active={sortKey} dir={sortDir} onClick={onSort}>
@@ -89,7 +95,13 @@ function ShipmentTableHeader({ sortKey, sortDir, onSort }) {
         <SortableTh sortKey="unit" active={sortKey} dir={sortDir} onClick={onSort} width={90}>
           단위
         </SortableTh>
-        <SortableTh sortKey="temperature" active={sortKey} dir={sortDir} onClick={onSort} width={90}>
+        <SortableTh
+          sortKey="temperature"
+          active={sortKey}
+          dir={sortDir}
+          onClick={onSort}
+          width={90}
+        >
           온도
         </SortableTh>
         <SortableTh sortKey="taxType" active={sortKey} dir={sortDir} onClick={onSort} width={80}>
@@ -125,7 +137,13 @@ function ShipmentTableHeader({ sortKey, sortDir, onSort }) {
         >
           총 출고 금액
         </SortableTh>
-        <SortableTh sortKey="productType" active={sortKey} dir={sortDir} onClick={onSort} width={100}>
+        <SortableTh
+          sortKey="productType"
+          active={sortKey}
+          dir={sortDir}
+          onClick={onSort}
+          width={100}
+        >
           분류
         </SortableTh>
         <SortableTh sortKey="isManaged" active={sortKey} dir={sortDir} onClick={onSort} width={80}>

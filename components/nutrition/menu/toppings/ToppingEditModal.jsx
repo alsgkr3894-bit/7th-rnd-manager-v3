@@ -35,7 +35,9 @@ function LinkedIngredientPanel({ form, onClear }) {
       }}
     >
       <div>
-        <div style={{ fontSize: 13, fontWeight: 800 }}>{form.ingredientName || '식자재명 없음'}</div>
+        <div style={{ fontSize: 13, fontWeight: 800 }}>
+          {form.ingredientName || '식자재명 없음'}
+        </div>
         <div className="mono muted" style={{ fontSize: 12, marginTop: 2 }}>
           {form.productCode || '제품코드 없음'}
         </div>

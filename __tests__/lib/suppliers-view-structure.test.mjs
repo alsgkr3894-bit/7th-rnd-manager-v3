@@ -7,7 +7,10 @@ import {
   supplierFormFromInitial,
 } from '../../components/cost/ingredient-price/suppliers/supplierViewUtils.js';
 
-const viewSource = readFileSync(resolve('components/cost/ingredient-price/SuppliersView.jsx'), 'utf8');
+const viewSource = readFileSync(
+  resolve('components/cost/ingredient-price/SuppliersView.jsx'),
+  'utf8'
+);
 const modalSource = readFileSync(
   resolve('components/cost/ingredient-price/suppliers/SupplierModal.jsx'),
   'utf8'

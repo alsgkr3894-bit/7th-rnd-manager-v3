@@ -66,7 +66,11 @@ function UserRuleTableRow({
       <td>{groupName}</td>
       <td style={{ color: 'var(--text-3)', fontSize: 12 }}>{detailName}</td>
       <td style={{ textAlign: 'center' }}>
-        <Toggle value={rule.enable !== false} onChange={() => onToggle(rule)} disabled={!hasRuleId} />
+        <Toggle
+          value={rule.enable !== false}
+          onChange={() => onToggle(rule)}
+          disabled={!hasRuleId}
+        />
       </td>
       <td style={{ textAlign: 'right' }}>
         {pendingDeleteId === ruleId && hasRuleId ? (
@@ -127,7 +131,11 @@ export function UserRulesTable({
     <div style={{ overflowX: 'auto' }}>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
         <div style={{ flex: '1 1 260px' }}>
-          <SearchBox value={query} onChange={onQuery} placeholder="패턴·카테고리·중분류·상세 검색" />
+          <SearchBox
+            value={query}
+            onChange={onQuery}
+            placeholder="패턴·카테고리·중분류·상세 검색"
+          />
         </div>
         <span style={{ fontSize: 12, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
           {total} / {listLength}개

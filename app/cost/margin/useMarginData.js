@@ -23,7 +23,12 @@ export function useMarginData() {
   // platforms은 localStorage 동기 로드 — DB 의존 없음, 페이지에서 setPlatforms 직접 호출 가능
   const [platforms, setPlatforms] = useState(loadPlatforms);
 
-  const { data: rows = [], loading, error, reload } = useDBLoad(
+  const {
+    data: rows = [],
+    loading,
+    error,
+    reload,
+  } = useDBLoad(
     async () => {
       const [files, meta, allMenuPrices, recipeMaps, edges, masterByCode, recipeGroups] =
         await Promise.all([
@@ -82,7 +87,7 @@ export function useMarginData() {
     }
   );
 
-  const dbError = error ? (error.message || '데이터 로드 실패') : null;
+  const dbError = error ? error.message || '데이터 로드 실패' : null;
 
   useVisibilityRefresh(reload);
   // eslint-disable-next-line react-hooks/exhaustive-deps

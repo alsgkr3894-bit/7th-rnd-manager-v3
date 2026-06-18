@@ -255,26 +255,30 @@ export default function Page() {
         </div>
       )}
 
-      {!loading && rows.length === 0 && view !== 'price' && view !== 'suppliers' && view !== 'report' && (
-        <div className="card" style={{ minHeight: 180, display: 'grid', placeItems: 'center' }}>
-          <div style={{ textAlign: 'center', color: 'var(--text-3)' }}>
-            <Icon.box style={{ width: 32, height: 32, marginBottom: 12, opacity: 0.4 }} />
-            <div style={{ fontWeight: 600, marginBottom: 4 }}>아직 데이터가 없습니다</div>
-            <div style={{ fontSize: 13 }}>
-              {isMain ? (
-                <>
-                  상단의 <b>마스터 시드</b> 버튼으로 80개 마스터 품목을 일괄 등록하거나, 제때 가격
-                  파일을 업로드해주세요.
-                </>
-              ) : (
-                <>
-                  <b>식자재 추가</b> 버튼으로 직접 등록하거나, 제때 가격 파일을 업로드해주세요.
-                </>
-              )}
+      {!loading &&
+        rows.length === 0 &&
+        view !== 'price' &&
+        view !== 'suppliers' &&
+        view !== 'report' && (
+          <div className="card" style={{ minHeight: 180, display: 'grid', placeItems: 'center' }}>
+            <div style={{ textAlign: 'center', color: 'var(--text-3)' }}>
+              <Icon.box style={{ width: 32, height: 32, marginBottom: 12, opacity: 0.4 }} />
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>아직 데이터가 없습니다</div>
+              <div style={{ fontSize: 13 }}>
+                {isMain ? (
+                  <>
+                    상단의 <b>마스터 시드</b> 버튼으로 80개 마스터 품목을 일괄 등록하거나, 제때 가격
+                    파일을 업로드해주세요.
+                  </>
+                ) : (
+                  <>
+                    <b>식자재 추가</b> 버튼으로 직접 등록하거나, 제때 가격 파일을 업로드해주세요.
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       <IngredientDiagnostics
         brokenRefs={brokenRefs}

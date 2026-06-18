@@ -97,8 +97,8 @@ export function RestoreConfirmSummary({
                 style={{ marginTop: 2 }}
               />
               <span>
-                백업 생성 당시 읽기 실패 store {formatNumber(failedStoreCount)}개가 누락된
-                불완전 백업임을 확인했고, 누락 store는 현재 데이터가 유지되는 조건으로 복원합니다.
+                백업 생성 당시 읽기 실패 store {formatNumber(failedStoreCount)}개가 누락된 불완전
+                백업임을 확인했고, 누락 store는 현재 데이터가 유지되는 조건으로 복원합니다.
               </span>
             </label>
           </SummaryRow>

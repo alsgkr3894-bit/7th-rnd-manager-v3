@@ -93,7 +93,9 @@ function SampleDetailMeta({ model }) {
         gap: '2px 10px',
       }}
     >
-      {model.names && <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{model.names}</span>}
+      {model.names && (
+        <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{model.names}</span>
+      )}
       {model.testDate && <span>{model.testDate}</span>}
       {model.company && <span>{model.company}</span>}
       {model.tester && <span>담당: {model.tester}</span>}

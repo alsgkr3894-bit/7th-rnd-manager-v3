@@ -8,9 +8,9 @@ const quickReportSource = readFileSync(resolve('components/home/QuickReportWidge
 
 describe('home widgets structure', () => {
   test('HomeWidgets keeps shared exports and delegates heavier widgets', () => {
-    expect(widgetsSource).toContain("export { SampleStatsWidget }");
-    expect(widgetsSource).toContain("export { CostAlertWidget }");
-    expect(widgetsSource).toContain("export { QuickReportWidget }");
+    expect(widgetsSource).toContain('export { SampleStatsWidget }');
+    expect(widgetsSource).toContain('export { CostAlertWidget }');
+    expect(widgetsSource).toContain('export { QuickReportWidget }');
     expect(widgetsSource).toContain('export function RankCard');
     expect(widgetsSource).toContain('export function ReportingNotesWidget');
     expect(widgetsSource).toContain('export function SkeletonChart');

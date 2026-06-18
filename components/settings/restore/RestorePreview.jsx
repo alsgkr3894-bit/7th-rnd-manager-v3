@@ -49,7 +49,10 @@ export function RestorePreview({
   const backupTotalRows =
     parsed?._summary?.totalRows ??
     (parsed
-      ? Object.values(parsed.stores).reduce((sum, rows) => sum + (Array.isArray(rows) ? rows.length : 0), 0)
+      ? Object.values(parsed.stores).reduce(
+          (sum, rows) => sum + (Array.isArray(rows) ? rows.length : 0),
+          0
+        )
       : 0);
   const backupAgeDays = parsed?.exportedAt
     ? Math.floor((Date.now() - new Date(parsed.exportedAt).getTime()) / 86400000)

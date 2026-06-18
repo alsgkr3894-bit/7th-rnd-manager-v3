@@ -97,7 +97,9 @@ describe('menu code picker structure', () => {
     expect(pickerSource).toContain('<SelectedMenuCodePill');
     expect(pickerSource).toContain('<MenuCodeSearchField');
     expect(pickerSource).toContain('<MenuCodeDropdown');
-    expect(pickerSource).toContain("export { getBaseCode } from './menu-code-picker/menuCodePickerUtils'");
+    expect(pickerSource).toContain(
+      "export { getBaseCode } from './menu-code-picker/menuCodePickerUtils'"
+    );
     expect(pickerSource).not.toContain('normalizeMenuCodeForModule');
     expect(pickerSource).not.toContain('parseCategoryFromCode');
     expect(pickerSource).not.toContain('getMenuCodeRank');
@@ -121,7 +123,7 @@ describe('menu code picker structure', () => {
     expect(dropdownSource).toContain('export function MenuCodeDropdown');
     expect(dropdownSource).toContain('results.map');
     expect(optionSource).toContain('export function MenuCodeDropdownOption');
-    expect(optionSource).toContain("onMouseEnter={() => onHover(index)}");
+    expect(optionSource).toContain('onMouseEnter={() => onHover(index)}');
     expect(optionSource).toContain("join(' / ')");
   });
 });

@@ -22,8 +22,14 @@ const restoreSrc = readFileSync(resolve('app/settings/restore/page.jsx'), 'utf8'
 const menuMasterSrc = readFileSync(resolve('app/menu-master/page.jsx'), 'utf8');
 const nutritionMenuSrc = readFileSync(resolve('app/nutrition/menu/page.jsx'), 'utf8');
 const reportCostSrc = readFileSync(resolve('app/report/cost/page.jsx'), 'utf8');
-const menuMasterActionsSrc = readFileSync(resolve('app/menu-master/useMenuMasterActions.js'), 'utf8');
-const ingredientManageDataSrc = readFileSync(resolve('app/ingredient/manage/useIngredientManageData.js'), 'utf8');
+const menuMasterActionsSrc = readFileSync(
+  resolve('app/menu-master/useMenuMasterActions.js'),
+  'utf8'
+);
+const ingredientManageDataSrc = readFileSync(
+  resolve('app/ingredient/manage/useIngredientManageData.js'),
+  'utf8'
+);
 
 describe('useDBLoad 옵션 API', () => {
   test('6가지 옵션이 모두 구현됐다', () => {
@@ -69,31 +75,31 @@ describe('useDBLoad 옵션 API', () => {
 describe('저위험 hub 페이지 useDBLoad 적용', () => {
   test('menu-sales/page.jsx가 useDBLoad를 사용한다', () => {
     expect(menuSalesSrc).toContain('useDBLoad');
-    expect(menuSalesSrc).not.toContain("import { initDB }");
+    expect(menuSalesSrc).not.toContain('import { initDB }');
     expect(menuSalesSrc).not.toContain('setLoading(');
   });
 
   test('nutrition/page.jsx가 useDBLoad를 사용한다', () => {
     expect(nutritionSrc).toContain('useDBLoad');
-    expect(nutritionSrc).not.toContain("import { initDB }");
+    expect(nutritionSrc).not.toContain('import { initDB }');
     expect(nutritionSrc).not.toContain('setLoading(');
   });
 
   test('ingredient/page.jsx가 useDBLoad를 사용한다', () => {
     expect(ingredientSrc).toContain('useDBLoad');
-    expect(ingredientSrc).not.toContain("import { initDB }");
+    expect(ingredientSrc).not.toContain('import { initDB }');
     expect(ingredientSrc).not.toContain('setLoading(');
   });
 
   test('jette/page.jsx가 useDBLoad를 사용한다', () => {
     expect(jetteSrc).toContain('useDBLoad');
-    expect(jetteSrc).not.toContain("import { initDB }");
+    expect(jetteSrc).not.toContain('import { initDB }');
     expect(jetteSrc).not.toContain('setLoading(');
   });
 
   test('note/journal/page.jsx가 useDBLoad를 사용하고 date 변경은 re-fetch를 유발하지 않는다', () => {
     expect(journalSrc).toContain('useDBLoad');
-    expect(journalSrc).not.toContain("import { initDB }");
+    expect(journalSrc).not.toContain('import { initDB }');
     expect(journalSrc).not.toContain('setLoading(');
     // date는 deps에 넣지 않고 useMemo 필터로만 처리함
     expect(journalSrc).toContain('initialData: []');
@@ -103,7 +109,7 @@ describe('저위험 hub 페이지 useDBLoad 적용', () => {
 describe('저위험 기타 페이지 useDBLoad 적용', () => {
   test('menu-sales/settings/page.jsx가 useDBLoad로 제외 수를 조회한다', () => {
     expect(salesSettingsSrc).toContain('useDBLoad');
-    expect(salesSettingsSrc).not.toContain("import { initDB }");
+    expect(salesSettingsSrc).not.toContain('import { initDB }');
     expect(salesSettingsSrc).not.toContain('setLoading(');
     expect(salesSettingsSrc).toContain('excludeCount');
     expect(salesSettingsSrc).toContain('excludeLoadFailed');
@@ -111,8 +117,8 @@ describe('저위험 기타 페이지 useDBLoad 적용', () => {
 
   test('ingredient/usage/page.jsx가 useDBLoad로 7개 병렬 쿼리를 로드한다', () => {
     expect(ingredientUsageSrc).toContain('useDBLoad');
-    expect(ingredientUsageSrc).not.toContain("import { initDB }");
-    expect(ingredientUsageSrc).not.toContain("import { useMounted }");
+    expect(ingredientUsageSrc).not.toContain('import { initDB }');
+    expect(ingredientUsageSrc).not.toContain('import { useMounted }');
     expect(ingredientUsageSrc).not.toContain('setLoading(');
     expect(ingredientUsageSrc).toContain('allMeta');
     expect(ingredientUsageSrc).toContain('typeMap');
@@ -195,8 +201,8 @@ describe('고위험 단계 5: report/cost', () => {
 describe('중위험 페이지·훅 useDBLoad 적용', () => {
   test('useMarginData가 useDBLoad를 사용하고 platforms는 localStorage 직접 로드한다', () => {
     expect(marginDataSrc).toContain('useDBLoad');
-    expect(marginDataSrc).not.toContain("import { initDB }");
-    expect(marginDataSrc).not.toContain("import { useMounted }");
+    expect(marginDataSrc).not.toContain('import { initDB }');
+    expect(marginDataSrc).not.toContain('import { useMounted }');
     expect(marginDataSrc).not.toContain('setLoading(');
     expect(marginDataSrc).not.toContain('useCallback');
     // platforms는 loadPlatforms()로 직접 초기화
@@ -206,8 +212,8 @@ describe('중위험 페이지·훅 useDBLoad 적용', () => {
 
   test('useIngredientPriceData가 useDBLoad를 사용하고 mountedRef를 제거했다', () => {
     expect(ingredientPriceSrc).toContain('useDBLoad');
-    expect(ingredientPriceSrc).not.toContain("import { initDB }");
-    expect(ingredientPriceSrc).not.toContain("import { useMounted }");
+    expect(ingredientPriceSrc).not.toContain('import { initDB }');
+    expect(ingredientPriceSrc).not.toContain('import { useMounted }');
     expect(ingredientPriceSrc).not.toContain('mountedRef');
     expect(ingredientPriceSrc).not.toContain('setLoading(');
     expect(ingredientPriceSrc).toContain('fileInfo');
@@ -216,8 +222,8 @@ describe('중위험 페이지·훅 useDBLoad 적용', () => {
 
   test('settings/backup가 useDBLoad로 store 통계를 로드하고 ready를 파생한다', () => {
     expect(backupSrc).toContain('useDBLoad');
-    expect(backupSrc).not.toContain("import { initDB,");
-    expect(backupSrc).not.toContain("initDB,");
+    expect(backupSrc).not.toContain('import { initDB,');
+    expect(backupSrc).not.toContain('initDB,');
     expect(backupSrc).not.toContain('setReady(');
     expect(backupSrc).not.toContain('setStats(');
     // ready는 stats !== null 파생
@@ -227,8 +233,8 @@ describe('중위험 페이지·훅 useDBLoad 적용', () => {
 
   test('settings/system page가 useDBLoad를 사용하고 useMounted·initDB·useEffect를 제거했다', () => {
     expect(systemSrc).toContain('useDBLoad');
-    expect(systemSrc).not.toContain("import { initDB");
-    expect(systemSrc).not.toContain("useMounted");
+    expect(systemSrc).not.toContain('import { initDB');
+    expect(systemSrc).not.toContain('useMounted');
     expect(systemSrc).not.toContain('mountedRef');
     expect(systemSrc).not.toContain('setReady(');
     expect(systemSrc).not.toContain('setStats(');

@@ -6,10 +6,7 @@ import { GroupEditorCategoryChips } from './editor/GroupEditorCategoryChips';
 import { GroupEditorHeader } from './editor/GroupEditorHeader';
 import { GroupEditorSizeFields } from './editor/GroupEditorSizeFields';
 import { GroupIngredientsTable } from './editor/GroupIngredientsTable';
-import {
-  computeGroupCostBySizes,
-  createGroupIngredientLine,
-} from './editor/groupEditorUtils';
+import { computeGroupCostBySizes, createGroupIngredientLine } from './editor/groupEditorUtils';
 
 export function GroupEditor({
   draft,

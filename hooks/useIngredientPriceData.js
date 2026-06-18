@@ -46,7 +46,14 @@ export function useIngredientPriceData() {
 
       const priceRowMap = buildPriceRowMap(priceRows).map;
       return {
-        rows: buildIngredientPriceRows(allMeta, priceRowMap, prevPriceMap, prev, priceCodeSet, typeMap),
+        rows: buildIngredientPriceRows(
+          allMeta,
+          priceRowMap,
+          prevPriceMap,
+          prev,
+          priceCodeSet,
+          typeMap
+        ),
         fileInfo,
       };
     },
@@ -58,7 +65,7 @@ export function useIngredientPriceData() {
 
   const rows = data?.rows ?? [];
   const fileInfo = data?.fileInfo ?? null;
-  const dbError = error ? (error.message || '데이터 로드 실패') : null;
+  const dbError = error ? error.message || '데이터 로드 실패' : null;
 
   useVisibilityRefresh(reload);
 

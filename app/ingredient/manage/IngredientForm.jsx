@@ -45,11 +45,26 @@ export function IngredientForm({
   };
 
   const {
-    form, tagInput, setTagInput, customCat, setCustomCat,
-    saving, errors, isJetteLinked, catOptions,
-    isNew, title, formPhotos, datalistId,
-    set, addTag, removeTag, applyJettePriceDraft,
-    handleSubmit, handlePhotoFile, removePhoto,
+    form,
+    tagInput,
+    setTagInput,
+    customCat,
+    setCustomCat,
+    saving,
+    errors,
+    isJetteLinked,
+    catOptions,
+    isNew,
+    title,
+    formPhotos,
+    datalistId,
+    set,
+    addTag,
+    removeTag,
+    applyJettePriceDraft,
+    handleSubmit,
+    handlePhotoFile,
+    removePhoto,
   } = ctrl;
 
   return createPortal(
@@ -64,7 +79,9 @@ export function IngredientForm({
         padding: '24px 16px',
         boxSizing: 'border-box',
       }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={e => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         className="card"
@@ -98,7 +115,12 @@ export function IngredientForm({
               </div>
             )}
           </div>
-          <button type="button" className="btn ghost" style={{ padding: '4px 8px', flexShrink: 0 }} onClick={onClose}>
+          <button
+            type="button"
+            className="btn ghost"
+            style={{ padding: '4px 8px', flexShrink: 0 }}
+            onClick={onClose}
+          >
             <Icon.close style={{ width: 16, height: 16 }} />
           </button>
         </div>
@@ -108,7 +130,16 @@ export function IngredientForm({
           {isJetteLinked && <JetteLinkedSourcePanel ingredient={initial} />}
 
           {isJetteLinked && (
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--text-3)',
+                marginBottom: 16,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+              }}
+            >
               직접 수정 가능한 항목
             </div>
           )}
@@ -198,7 +229,9 @@ export function IngredientForm({
             flexShrink: 0,
           }}
         >
-          <button type="button" className="btn" onClick={onClose}>취소</button>
+          <button type="button" className="btn" onClick={onClose}>
+            취소
+          </button>
           <button
             type="button"
             className="btn primary"

@@ -4,14 +4,7 @@ import { KIND_COLOR, KIND_LABEL } from '@/lib/report/constants';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 import { formatReportDate, REPORT_PREVIEW_PAGES } from '@/components/report/ReportPreviewPages';
 
-export function ReportPreviewSidebar({
-  report,
-  currentPage,
-  onPage,
-  onClose,
-  onShare,
-  onPrint,
-}) {
+export function ReportPreviewSidebar({ report, currentPage, onPage, onClose, onShare, onPrint }) {
   const kind = asDisplayText(report.kind);
   const color = KIND_COLOR[kind] || '#888';
   const name = asDisplayText(report.name, '보고서');

@@ -29,7 +29,14 @@ export function getShipmentCounts(rows) {
   };
 }
 
-export function filterAndSortShipmentRows({ rows, search, typeFilter, managedOnly, sortKey, sortDir }) {
+export function filterAndSortShipmentRows({
+  rows,
+  search,
+  typeFilter,
+  managedOnly,
+  sortKey,
+  sortDir,
+}) {
   let list = asObjectArray(rows);
   if (typeFilter !== 'all') list = list.filter(row => row.productType === typeFilter);
   if (managedOnly) list = list.filter(row => row.isManaged);

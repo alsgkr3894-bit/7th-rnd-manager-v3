@@ -9,8 +9,7 @@ function SupplierField({ label, children, required = false }) {
   return (
     <div>
       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>
-        {label}{' '}
-        {required && <span style={{ color: 'var(--negative)', fontSize: 11 }}>*필수</span>}
+        {label} {required && <span style={{ color: 'var(--negative)', fontSize: 11 }}>*필수</span>}
       </div>
       {children}
     </div>

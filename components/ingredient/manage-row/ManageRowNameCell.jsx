@@ -1,10 +1,4 @@
-export function ManageRowNameCell({
-  name,
-  productName,
-  discontinued,
-  originCount,
-  allergenCount,
-}) {
+export function ManageRowNameCell({ name, productName, discontinued, originCount, allergenCount }) {
   return (
     <td style={{ fontWeight: 600, fontSize: 13 }}>
       <span title={productName && productName !== name ? `원본: ${productName}` : undefined}>

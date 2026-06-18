@@ -56,20 +56,27 @@ export default function BrandMasterPage() {
     }));
   }
 
-  const { handleSave, handleHide, handleDefault, handleSwitch, handleBackup, openRestore, handleRestoreFile } =
-    useBrandActions({
-      isAdmin,
-      form,
-      activeId,
-      busyBrandId,
-      setBusyBrandId,
-      restoreTarget,
-      setRestoreTarget,
-      restoreInputRef,
-      reloadBrands,
-      resetForm,
-      showConfirm,
-    });
+  const {
+    handleSave,
+    handleHide,
+    handleDefault,
+    handleSwitch,
+    handleBackup,
+    openRestore,
+    handleRestoreFile,
+  } = useBrandActions({
+    isAdmin,
+    form,
+    activeId,
+    busyBrandId,
+    setBusyBrandId,
+    restoreTarget,
+    setRestoreTarget,
+    restoreInputRef,
+    reloadBrands,
+    resetForm,
+    showConfirm,
+  });
 
   if (!roleReady) {
     return (

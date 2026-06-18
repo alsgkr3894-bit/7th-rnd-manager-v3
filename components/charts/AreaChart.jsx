@@ -47,10 +47,7 @@ export function AreaChart({
   const dataMax = getAreaDataMax(safeSeries);
   const ticks = useMemo(() => calcAreaTicks(dataMax, TICK_COUNT), [dataMax]);
   const niceMax = getAreaNiceMax(ticks);
-  const scale = useMemo(
-    () => createAreaScale({ pointCount, niceMax }),
-    [pointCount, niceMax]
-  );
+  const scale = useMemo(() => createAreaScale({ pointCount, niceMax }), [pointCount, niceMax]);
   const paths = useMemo(() => buildAreaPaths(safeSeries, scale), [safeSeries, scale]);
 
   function handleMouseMove(event) {

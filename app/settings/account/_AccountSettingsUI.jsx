@@ -40,7 +40,15 @@ const S_PERM_CHECK = {
   fontWeight: 800,
 };
 
-export function AccountProfileCard({ profile, editing, form, onStartEdit, onCancelEdit, onSaveEdit, onFormChange }) {
+export function AccountProfileCard({
+  profile,
+  editing,
+  form,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit,
+  onFormChange,
+}) {
   return (
     <div
       className="card"

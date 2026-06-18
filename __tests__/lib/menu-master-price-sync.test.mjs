@@ -58,9 +58,8 @@ jest.unstable_mockModule('@/lib/db', () => ({
   runTransaction,
 }));
 
-const { pushMasterToPrices, syncMenuMasterFromPrices } = await import(
-  '../../lib/menu-master/index.js'
-);
+const { pushMasterToPrices, syncMenuMasterFromPrices } =
+  await import('../../lib/menu-master/index.js');
 
 describe('menu master price sync policy', () => {
   beforeEach(() => {

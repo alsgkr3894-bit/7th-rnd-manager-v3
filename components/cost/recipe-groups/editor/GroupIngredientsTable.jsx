@@ -50,11 +50,7 @@ function IngredientSizeCells({ line, lineIndex, sizeLabels, unitPriceMap, onQty 
           textAlign: 'right',
           fontSize: 12,
           color:
-            subtotal == null
-              ? 'var(--text-4)'
-              : subtotal < 0
-                ? 'var(--negative)'
-                : 'var(--text-1)',
+            subtotal == null ? 'var(--text-4)' : subtotal < 0 ? 'var(--negative)' : 'var(--text-1)',
           fontWeight: subtotal != null ? 600 : undefined,
           width: 60,
         }}
@@ -94,9 +90,7 @@ function GroupIngredientRow({ line, lineIndex, sizeLabels, unitPriceMap, onQty, 
         unitPriceMap={unitPriceMap}
         onQty={onQty}
       />
-      <td style={{ padding: '6px 4px', fontSize: 12, color: 'var(--text-3)' }}>
-        {line.unitType}
-      </td>
+      <td style={{ padding: '6px 4px', fontSize: 12, color: 'var(--text-3)' }}>{line.unitType}</td>
       <td style={{ padding: '6px 2px', textAlign: 'center' }}>
         <button
           onClick={() => onRemove(lineIndex)}

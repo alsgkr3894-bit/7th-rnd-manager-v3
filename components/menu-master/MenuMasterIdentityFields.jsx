@@ -77,9 +77,7 @@ export function MenuNameField({ value, error, setField, setErrors, autoFocus }) 
 export function CategoryAndSizeFields({ form, presetCategories, setField }) {
   const sizeDefaults = defaultSizesFor(form.category);
   const sizeOptions =
-    form.size && !sizeDefaults.includes(form.size)
-      ? [...sizeDefaults, form.size]
-      : sizeDefaults;
+    form.size && !sizeDefaults.includes(form.size) ? [...sizeDefaults, form.size] : sizeDefaults;
 
   function onCategoryChange(newCategory) {
     setField('category', newCategory);

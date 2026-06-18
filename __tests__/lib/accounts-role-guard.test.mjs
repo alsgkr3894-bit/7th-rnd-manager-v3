@@ -19,9 +19,8 @@ const dbMock = {
 };
 jest.unstable_mockModule('@/lib/db', () => dbMock);
 
-const { addAccount, deleteAccount, updateAccount, activeAccountKeyForBrand } = await import(
-  '../../lib/auth/accounts.js'
-);
+const { addAccount, deleteAccount, updateAccount, activeAccountKeyForBrand } =
+  await import('../../lib/auth/accounts.js');
 
 const originalLocalStorage = globalThis.localStorage;
 const originalWindow = globalThis.window;

@@ -21,7 +21,10 @@ const dataTableSource = readFileSync(
   resolve('components/jette/price-compare/PriceCompareDataTable.jsx'),
   'utf8'
 );
-const rowSource = readFileSync(resolve('components/jette/price-compare/PriceCompareRow.jsx'), 'utf8');
+const rowSource = readFileSync(
+  resolve('components/jette/price-compare/PriceCompareRow.jsx'),
+  'utf8'
+);
 const statusSource = readFileSync(
   resolve('components/jette/price-compare/PriceCompareStatusChip.jsx'),
   'utf8'
@@ -52,8 +55,24 @@ describe('price compare table structure', () => {
 
   test('helpers keep counts, CSV rows, and display formatting stable', () => {
     const rows = [
-      { productCode: 'A', productName: '치즈', basePrice: 1000, latestPrice: 1200, changeAmount: 200, changeRate: 0.2, changeStatus: '인상' },
-      { productCode: 'B', productName: '소스', basePrice: 1000, latestPrice: 900, changeAmount: -100, changeRate: -0.1, changeStatus: '인하' },
+      {
+        productCode: 'A',
+        productName: '치즈',
+        basePrice: 1000,
+        latestPrice: 1200,
+        changeAmount: 200,
+        changeRate: 0.2,
+        changeStatus: '인상',
+      },
+      {
+        productCode: 'B',
+        productName: '소스',
+        basePrice: 1000,
+        latestPrice: 900,
+        changeAmount: -100,
+        changeRate: -0.1,
+        changeStatus: '인하',
+      },
       { productCode: 'C', productName: '토핑', changeStatus: '신규' },
       { productCode: 'D', productName: '도우', changeStatus: '삭제' },
       { productCode: 'E', productName: '박스', changeStatus: '변동없음' },

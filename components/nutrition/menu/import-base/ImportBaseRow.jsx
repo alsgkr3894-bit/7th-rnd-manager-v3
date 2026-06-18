@@ -1,10 +1,7 @@
 'use client';
 import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import { getMenuCodeBase } from '@/lib/menu-master/code-policy';
-import {
-  isPersonalPizzaMenu,
-  normalizeNutritionCategory,
-} from '@/lib/nutrition/menu-group';
+import { isPersonalPizzaMenu, normalizeNutritionCategory } from '@/lib/nutrition/menu-group';
 import { asObjectArray, asRecord, noop } from '@/lib/ui/prop-guards';
 import {
   CATEGORY_OPTIONS,

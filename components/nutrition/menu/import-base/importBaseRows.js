@@ -1,7 +1,4 @@
-import {
-  normalizeNutritionCategory,
-  NUTRITION_CATEGORY_OPTIONS,
-} from '@/lib/nutrition/menu-group';
+import { normalizeNutritionCategory, NUTRITION_CATEGORY_OPTIONS } from '@/lib/nutrition/menu-group';
 import { CRUST_TYPES } from '@/lib/nutrition/values/store';
 
 export const CRUST_OPTIONS = CRUST_TYPES;

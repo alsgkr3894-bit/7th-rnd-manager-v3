@@ -18,7 +18,14 @@ const menuMasterPageSrc = readFileSync(resolve('app/menu-master/page.jsx'), 'utf
 // ── 픽스처 헬퍼 ──────────────────────────────────────────────────────────────
 
 function makeMenu(overrides) {
-  return { menuCode: 'P001', menuName: '테스트메뉴', category: '피자', size: 'L', price: 18000, ...overrides };
+  return {
+    menuCode: 'P001',
+    menuName: '테스트메뉴',
+    category: '피자',
+    size: 'L',
+    price: 18000,
+    ...overrides,
+  };
 }
 
 function makeSummaryMap(entries) {
@@ -115,10 +122,7 @@ describe('buildRecipeIssues — 이슈 분류 로직', () => {
   });
 
   test('여러 메뉴의 이슈를 모두 수집한다', () => {
-    const menus = [
-      makeMenu({ menuCode: 'A001' }),
-      makeMenu({ menuCode: 'B001', price: 0 }),
-    ];
+    const menus = [makeMenu({ menuCode: 'A001' }), makeMenu({ menuCode: 'B001', price: 0 })];
     const map = makeSummaryMap([
       ['A001', { status: MENU_RECIPE_SUMMARY_STATUS.NEEDS_QUANTITY, hasRecipe: true }],
       ['B001', { status: MENU_RECIPE_SUMMARY_STATUS.READY, hasRecipe: true }],

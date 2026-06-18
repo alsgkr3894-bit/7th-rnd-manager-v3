@@ -19,7 +19,8 @@ export function useSalesReportComputed({
   const [compareData, setCompareData] = useState(null);
 
   const { catShares, groupRanking, kpi } = useMemo(
-    () => buildSalesStats(normRows, { year: safeYearValue, month: safeMonthValue, scope: safeScope }),
+    () =>
+      buildSalesStats(normRows, { year: safeYearValue, month: safeMonthValue, scope: safeScope }),
     [normRows, safeYearValue, safeMonthValue, safeScope]
   );
 

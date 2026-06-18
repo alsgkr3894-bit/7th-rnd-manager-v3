@@ -1,9 +1,5 @@
 import { describe, expect, test } from '@jest/globals';
-import {
-  toNumber,
-  parseExpected,
-  compareMetrics,
-} from '../../scripts/site-status-audit-utils.mjs';
+import { toNumber, parseExpected, compareMetrics } from '../../scripts/site-status-audit-utils.mjs';
 
 // 모든 METRICS 패턴을 담은 합성 문서 (실제 SITE_STATUS.md 문구 형식과 동일)
 const DOC = `

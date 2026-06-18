@@ -232,7 +232,9 @@ describe('buildPizzaSheet', () => {
       fat: 8,
       sodium: 450,
     });
-    expect(sheetRows.find(row => row.crustLabel === '치즈크러스트' && row.side === 'L')).toMatchObject({
+    expect(
+      sheetRows.find(row => row.crustLabel === '치즈크러스트' && row.side === 'L')
+    ).toMatchObject({
       weight: 150,
       kcal: 330,
       sugar: 18,

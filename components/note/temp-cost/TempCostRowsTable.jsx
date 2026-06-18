@@ -20,7 +20,9 @@ function TempCostRow({ row, onUpdateRow, onRemoveRow }) {
       <td style={{ padding: '6px 8px', color: 'var(--text-1)', minWidth: 120 }}>
         <div style={{ fontWeight: 600 }}>{row.name}</div>
         {row.productCode && (
-          <div style={{ fontSize: 10, color: 'var(--text-4)', marginTop: 1 }}>{row.productCode}</div>
+          <div style={{ fontSize: 10, color: 'var(--text-4)', marginTop: 1 }}>
+            {row.productCode}
+          </div>
         )}
       </td>
       <td style={{ padding: '6px 8px' }}>

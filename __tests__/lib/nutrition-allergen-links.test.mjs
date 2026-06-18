@@ -35,9 +35,8 @@ jest.unstable_mockModule('@/lib/db', () => ({
 }));
 
 const { deleteAllergenLinksByIngredient } = await import('../../lib/nutrition/allergen/store.js');
-const { deleteMenuRef, deleteMenuRefsByMenuCodes } = await import(
-  '../../lib/nutrition/values/store.js'
-);
+const { deleteMenuRef, deleteMenuRefsByMenuCodes } =
+  await import('../../lib/nutrition/values/store.js');
 
 beforeEach(() => {
   rowsByStore.nutrition_allergy_links = [];

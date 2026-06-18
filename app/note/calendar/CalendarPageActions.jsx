@@ -7,7 +7,10 @@ export function CalendarPageActions({ canExport, onExportMonth, onAddSchedule, o
       <button className="btn no-print" onClick={onExportMonth} disabled={!canExport}>
         <Icon.doc style={{ width: 14, height: 14 }} /> PDF
       </button>
-      <button className="btn no-print" onClick={() => printCurrentPageWithDownloadDate('일정 달력')}>
+      <button
+        className="btn no-print"
+        onClick={() => printCurrentPageWithDownloadDate('일정 달력')}
+      >
         인쇄
       </button>
       <button className="btn no-print" onClick={onAddSchedule}>

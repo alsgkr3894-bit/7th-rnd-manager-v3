@@ -124,9 +124,7 @@ export function SyncBaseQtyModal({ onDone, onClose }) {
         />
       )}
 
-      {phase === 'done' && (
-        <SyncBaseQtyDone count={plan?.changes.length ?? 0} onClose={onClose} />
-      )}
+      {phase === 'done' && <SyncBaseQtyDone count={plan?.changes.length ?? 0} onClose={onClose} />}
 
       <SyncBaseQtyError error={error} />
     </ModalFrame>

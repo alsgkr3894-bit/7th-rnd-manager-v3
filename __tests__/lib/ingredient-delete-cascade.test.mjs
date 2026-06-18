@@ -82,9 +82,8 @@ const { deleteMenuRefsByMenuCode } = await import('../../lib/nutrition/values/st
 const dbModule = await import('@/lib/db');
 
 const { deleteIngredient, bulkDeleteIngredients } = await import('../../lib/ingredient/store.js');
-const { deleteMenuMaster, getMenuDeletePlan, upsertMenuMaster } = await import(
-  '../../lib/menu-master/store.js'
-);
+const { deleteMenuMaster, getMenuDeletePlan, upsertMenuMaster } =
+  await import('../../lib/menu-master/store.js');
 
 // ── deleteIngredient — 식자재 스냅샷 ────────────────────
 

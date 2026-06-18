@@ -61,13 +61,12 @@ export async function computeActuals() {
   const defPath = r('hooks/useDBLoad.js');
   const useDbLoadConsumers = ['app', 'hooks', 'components', 'lib']
     .flatMap(d => walk(r(d), isJsFile))
-    .filter(f => f !== defPath && readFileSync(f, 'utf8').includes("from '@/hooks/useDBLoad'"))
-    .length;
+    .filter(
+      f => f !== defPath && readFileSync(f, 'utf8').includes("from '@/hooks/useDBLoad'")
+    ).length;
 
   // DB 버전 / store 수
-  const { DB_VERSION, ALL_STORES } = await import(
-    pathToFileURL(r('lib/db/constants.js')).href
-  );
+  const { DB_VERSION, ALL_STORES } = await import(pathToFileURL(r('lib/db/constants.js')).href);
   const dbVersion = DB_VERSION;
   const storeCount = ALL_STORES.length;
 

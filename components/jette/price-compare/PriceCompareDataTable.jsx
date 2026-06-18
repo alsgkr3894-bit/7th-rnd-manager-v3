@@ -21,9 +21,7 @@ export function PriceCompareDataTable({
 }) {
   if (total === 0) {
     return (
-      <div
-        style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}
-      >
+      <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
         조건에 맞는 항목이 없습니다
       </div>
     );

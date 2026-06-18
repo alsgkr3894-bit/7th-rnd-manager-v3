@@ -74,11 +74,7 @@ export function useDBLoad(fetchFn, options = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick, enabled, ...deps]);
 
-  const errorMessage = error
-    ? mapErrorMessage
-      ? mapErrorMessage(error)
-      : error.message
-    : null;
+  const errorMessage = error ? (mapErrorMessage ? mapErrorMessage(error) : error.message) : null;
 
   return { data, loading, error, errorMessage, reload };
 }

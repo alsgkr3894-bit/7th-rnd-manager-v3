@@ -145,5 +145,4 @@ describe('recipe master sync helpers', () => {
     expect(recipeSyncTargetLabel('pizza')).toBe('피자 원가');
     expect(recipeSyncTargetLabel(null)).toBe('미지원');
   });
-
 });

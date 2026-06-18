@@ -61,8 +61,8 @@ describe('CSS primitive ownership', () => {
   test('base.css is imported before feature-specific CSS', () => {
     const globals = read('app/globals.css');
 
-    assertImportOrder(globals, "./styles/base.css", "./styles/components/home-hero.css");
-    assertImportOrder(globals, "./styles/base.css", "./styles/features.css");
-    assertImportOrder(globals, "./styles/base.css", "./styles/features/motion.css");
+    assertImportOrder(globals, './styles/base.css', './styles/components/home-hero.css');
+    assertImportOrder(globals, './styles/base.css', './styles/features.css');
+    assertImportOrder(globals, './styles/base.css', './styles/features/motion.css');
   });
 });

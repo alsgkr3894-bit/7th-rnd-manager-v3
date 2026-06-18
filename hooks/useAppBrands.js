@@ -4,8 +4,7 @@ import { BRAND_MASTER_EVENT, BRAND_MASTER_KEY, getVisibleBrands } from '@/lib/br
 import { getActiveBrand, getActiveBrandId, setActiveBrandId } from '@/lib/active-brand';
 import { COMPANIES } from '@/lib/companies';
 
-const SSR_ACTIVE_COMPANY =
-  COMPANIES.find(company => company.id === 'main') ||
+const SSR_ACTIVE_COMPANY = COMPANIES.find(company => company.id === 'main') ||
   COMPANIES[0] || {
     id: 'main',
     name: '7번가피자',

@@ -72,11 +72,7 @@ export function SuppliersView() {
         식자재를 공급하는 업체를 등록하고 관리합니다.
       </div>
 
-      <SuppliersToolbar
-        search={search}
-        onSearch={setSearch}
-        onAdd={() => setModalTarget('new')}
-      />
+      <SuppliersToolbar search={search} onSearch={setSearch} onAdd={() => setModalTarget('new')} />
       <SuppliersListPanel
         loading={loading}
         suppliers={suppliers}

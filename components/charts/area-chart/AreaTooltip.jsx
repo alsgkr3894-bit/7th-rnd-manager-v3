@@ -10,9 +10,7 @@ export function AreaTooltip({ hover, pointCount, xPct, labels, series, colors, f
         position: 'absolute',
         top: 6,
         zIndex: 20,
-        ...(toRight
-          ? { left: `calc(${xp}% + 11px)` }
-          : { right: `calc(${100 - xp}% + 11px)` }),
+        ...(toRight ? { left: `calc(${xp}% + 11px)` } : { right: `calc(${100 - xp}% + 11px)` }),
         background: 'var(--surface)',
         border: '1px solid var(--border)',
         borderRadius: 10,

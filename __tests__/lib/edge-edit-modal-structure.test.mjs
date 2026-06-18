@@ -1,10 +1,7 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const modalSource = readFileSync(
-  resolve('components/cost/edge-dough/EdgeEditModal.jsx'),
-  'utf8'
-);
+const modalSource = readFileSync(resolve('components/cost/edge-dough/EdgeEditModal.jsx'), 'utf8');
 const identitySource = readFileSync(
   resolve('components/cost/edge-dough/EdgeIdentityFields.jsx'),
   'utf8'
@@ -49,7 +46,7 @@ describe('edge edit modal structure', () => {
   test('edge edit child components keep separate responsibilities', () => {
     expect(identitySource).toContain('export function EdgeIdentityFields');
     expect(identitySource).toContain('EDGE_TYPES.map');
-    expect(identitySource).toContain('edgeType === \'씬도우\'');
+    expect(identitySource).toContain("edgeType === '씬도우'");
     expect(componentsSectionSource).toContain('export function EdgeComponentsSection');
     expect(componentsSectionSource).toContain('<EdgeComponentRow');
     expect(componentsSectionSource).toContain('구성품을 추가해주세요');

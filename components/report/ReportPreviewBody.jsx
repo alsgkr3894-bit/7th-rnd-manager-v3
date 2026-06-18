@@ -2,7 +2,14 @@
 import { Icon } from '@/components/icons';
 import { ReportPaper, REPORT_PREVIEW_PAGES } from '@/components/report/ReportPreviewPages';
 
-export function ReportPreviewBody({ report, currentPage, totalPages, onPrev, onNext, printSourceRef }) {
+export function ReportPreviewBody({
+  report,
+  currentPage,
+  totalPages,
+  onPrev,
+  onNext,
+  printSourceRef,
+}) {
   return (
     <>
       <div className="preview-body">

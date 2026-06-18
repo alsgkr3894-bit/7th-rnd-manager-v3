@@ -7,7 +7,10 @@ import TopBar from './TopBar';
 import { ToastContainer } from './Toast';
 
 const CommandPalette = dynamic(() => import('./CommandPalette'), { ssr: false });
-const ShortcutsHelp = dynamic(() => import('./ShortcutsHelp').then(m => ({ default: m.ShortcutsHelp })), { ssr: false });
+const ShortcutsHelp = dynamic(
+  () => import('./ShortcutsHelp').then(m => ({ default: m.ShortcutsHelp })),
+  { ssr: false }
+);
 import { ScrollToTop } from './ui/ScrollToTop';
 import { applyAllSettings } from '@/lib/settings';
 import { KEYS } from '@/lib/note/keys';

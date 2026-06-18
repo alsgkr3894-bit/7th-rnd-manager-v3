@@ -80,7 +80,9 @@ describe('note calendar page structure', () => {
     expect(pageSource).toContain('<CalendarToolbar');
     expect(pageSource).toContain('<CalendarWorkspace');
     expect(pageSource).toContain('<CalendarPageDialogs');
-    expect(pageSource).toContain('printCalendarMonth({ viewYear, viewMonth, notesByDate, schedulesByDate })');
+    expect(pageSource).toContain(
+      'printCalendarMonth({ viewYear, viewMonth, notesByDate, schedulesByDate })'
+    );
 
     expect(pageSource).not.toContain('buildAutoPrintScript');
     expect(pageSource).not.toContain('openPrintWindow');

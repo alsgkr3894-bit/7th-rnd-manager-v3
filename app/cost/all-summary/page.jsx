@@ -36,13 +36,7 @@ export default function Page() {
   const filtered = useMemo(() => filterAllSummaryRows(rows, catFilter), [rows, catFilter]);
   const hasAnyData = rows.length > 0;
   const hasRecipeData = rows.some(row => row.hasCost);
-  const {
-    page,
-    goTo,
-    totalPages,
-    paged,
-    total,
-  } = usePagination(filtered, PAGE_SIZE);
+  const { page, goTo, totalPages, paged, total } = usePagination(filtered, PAGE_SIZE);
 
   if (dbError) return <AllSummaryError dbError={dbError} />;
 

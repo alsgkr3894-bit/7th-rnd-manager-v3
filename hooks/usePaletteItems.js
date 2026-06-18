@@ -1,10 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import {
-  COST_COMMON_GROUPS_ROUTE,
-  COST_MARGIN_ROUTE,
-  MENU_MASTER_ROUTE,
-} from '@/lib/cost/routes';
+import { COST_COMMON_GROUPS_ROUTE, COST_MARGIN_ROUTE, MENU_MASTER_ROUTE } from '@/lib/cost/routes';
 import { MENU_SALES_ANALYSIS_ROUTE } from '@/lib/sales/navigation';
 import { asDisplayText, asObjectArray, clampInteger } from '@/lib/ui/prop-guards';
 

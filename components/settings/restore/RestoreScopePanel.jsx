@@ -69,9 +69,7 @@ export function RestoreScopePanel({
             ⚠ 복원할 모듈을 선택해주세요
           </span>
         ) : (
-          selectedKeys.map(key => (
-            <RestoreModuleChip key={key} moduleKey={key} />
-          ))
+          selectedKeys.map(key => <RestoreModuleChip key={key} moduleKey={key} />)
         )}
       </div>
 
@@ -102,8 +100,8 @@ export function RestoreScopePanel({
             lineHeight: 1.5,
           }}
         >
-          <b>⚠ 백업 생성 오류:</b> 아래 store는 백업 당시 읽기에 실패하여 포함되지 않았습니다.
-          이 파일은 불완전 백업이므로 복원 실행 전 별도 위험 승인이 필요합니다.{' '}
+          <b>⚠ 백업 생성 오류:</b> 아래 store는 백업 당시 읽기에 실패하여 포함되지 않았습니다. 이
+          파일은 불완전 백업이므로 복원 실행 전 별도 위험 승인이 필요합니다.{' '}
           <span style={{ color: 'var(--text-3)' }}>
             {parsed._failedStores
               .map(failed => failed.store)

@@ -6,9 +6,15 @@ import { resolve } from 'path';
 import { describe, expect, test } from '@jest/globals';
 
 const comboBoxSrc = readFileSync(resolve(process.cwd(), 'components/ui/ComboBox.jsx'), 'utf-8');
-const menuRecipeSrc = readFileSync(resolve(process.cwd(), 'components/menu-master/MenuRecipeSection.jsx'), 'utf-8');
+const menuRecipeSrc = readFileSync(
+  resolve(process.cwd(), 'components/menu-master/MenuRecipeSection.jsx'),
+  'utf-8'
+);
 const filtersSrc = readFileSync(resolve(process.cwd(), 'hooks/useMenuMasterFilters.js'), 'utf-8');
-const ingredientViewSrc = readFileSync(resolve(process.cwd(), 'app/ingredient/manage/useIngredientManageView.js'), 'utf-8');
+const ingredientViewSrc = readFileSync(
+  resolve(process.cwd(), 'app/ingredient/manage/useIngredientManageView.js'),
+  'utf-8'
+);
 
 // ─── 드롭다운 keyboard 정책 ────────────────────────────────────────
 
@@ -100,7 +106,11 @@ describe('대량 데이터 필터 성능 (1000행 기준)', () => {
 
   test('1000행 카테고리 필터가 10ms 이내 완료된다', () => {
     const start = performance.now();
-    const result = applyMenuFilters(rows1000, { catFilter: '피자', statusFilter: 'all', search: '' });
+    const result = applyMenuFilters(rows1000, {
+      catFilter: '피자',
+      statusFilter: 'all',
+      search: '',
+    });
     const elapsed = performance.now() - start;
     expect(result.length).toBeGreaterThan(0);
     expect(elapsed).toBeLessThan(10);
@@ -108,7 +118,11 @@ describe('대량 데이터 필터 성능 (1000행 기준)', () => {
 
   test('1000행 텍스트 검색이 10ms 이내 완료된다', () => {
     const start = performance.now();
-    const result = applyMenuFilters(rows1000, { catFilter: 'all', statusFilter: 'all', search: '피자 5' });
+    const result = applyMenuFilters(rows1000, {
+      catFilter: 'all',
+      statusFilter: 'all',
+      search: '피자 5',
+    });
     const elapsed = performance.now() - start;
     expect(result.length).toBeGreaterThan(0);
     expect(elapsed).toBeLessThan(10);
@@ -116,7 +130,11 @@ describe('대량 데이터 필터 성능 (1000행 기준)', () => {
 
   test('1000행 복합 필터(상태+카테고리+검색)가 10ms 이내 완료된다', () => {
     const start = performance.now();
-    const result = applyMenuFilters(rows1000, { catFilter: '피자', statusFilter: 'active', search: '오리지널' });
+    const result = applyMenuFilters(rows1000, {
+      catFilter: '피자',
+      statusFilter: 'active',
+      search: '오리지널',
+    });
     const elapsed = performance.now() - start;
     expect(result).toBeDefined();
     expect(elapsed).toBeLessThan(10);

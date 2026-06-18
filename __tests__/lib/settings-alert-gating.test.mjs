@@ -11,9 +11,7 @@ describe('settings alert gating', () => {
       'const visibleUnmatchedCount = unmatchedAlertEnabled ? unmatchedCount : 0'
     );
     expect(appShellSource).toContain('unmatchedCount={visibleUnmatchedCount}');
-    expect(appShellSource).toContain(
-      "tab.badgeKey === 'unmatched' ? visibleUnmatchedCount : 0"
-    );
+    expect(appShellSource).toContain("tab.badgeKey === 'unmatched' ? visibleUnmatchedCount : 0");
   });
 
   test('홈 알림 위젯은 시스템 알림 설정을 따른다', () => {

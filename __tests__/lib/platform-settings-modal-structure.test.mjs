@@ -7,7 +7,10 @@ import {
   platformSettingsReducer,
 } from '../../components/cost/margin/platform-settings/platformSettingsState.js';
 
-const modalSource = readFileSync(resolve('components/cost/margin/PlatformSettingsModal.jsx'), 'utf8');
+const modalSource = readFileSync(
+  resolve('components/cost/margin/PlatformSettingsModal.jsx'),
+  'utf8'
+);
 const selectorSource = readFileSync(
   resolve('components/cost/margin/platform-settings/PlatformSelector.jsx'),
   'utf8'

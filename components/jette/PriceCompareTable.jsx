@@ -70,10 +70,7 @@ export function PriceCompareTable({
       );
     return sortByKey(list, sortKey, sortDir);
   }, [safeDiffRows, search, filter, typeFilter, sortKey, sortDir, safeProductTypeLookup]);
-  const { page, goTo, totalPages, paged, total } = usePagination(
-    filtered,
-    PRICE_COMPARE_PAGE_SIZE
-  );
+  const { page, goTo, totalPages, paged, total } = usePagination(filtered, PRICE_COMPARE_PAGE_SIZE);
 
   function exportCsv() {
     downloadCsv(buildPriceCompareCsvData(filtered, safeProductTypeLookup), '제때_가격비교.csv');

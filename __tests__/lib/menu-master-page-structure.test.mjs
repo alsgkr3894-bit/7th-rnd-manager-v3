@@ -35,8 +35,22 @@ describe('menu-master page structure', () => {
 
   test('buildMenuMasterCsv produces correct CSV', () => {
     const rows = [
-      { menuCode: 'M001', menuName: '마르게리타', size: 'L', price: 18000, status: 'active', category: '피자' },
-      { menuCode: 'M002', menuName: '콤비네이션, 특선', size: 'R', price: null, status: 'discontinued', category: '' },
+      {
+        menuCode: 'M001',
+        menuName: '마르게리타',
+        size: 'L',
+        price: 18000,
+        status: 'active',
+        category: '피자',
+      },
+      {
+        menuCode: 'M002',
+        menuName: '콤비네이션, 특선',
+        size: 'R',
+        price: null,
+        status: 'discontinued',
+        category: '',
+      },
     ];
     const csv = buildMenuMasterCsv(rows);
     const lines = csv.split('\n');

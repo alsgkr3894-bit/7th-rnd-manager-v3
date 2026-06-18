@@ -4,11 +4,7 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useDebounce } from '@/hooks/useDebounce';
 import { getMenuPriceCategories } from '@/lib/cost/menu-price';
 import { getMenuCodeRank } from '@/lib/menu-categories';
-import {
-  applyDiscount,
-  calcNetRevenue,
-  calcPlatformMargin,
-} from '@/lib/cost/margin/platforms';
+import { applyDiscount, calcNetRevenue, calcPlatformMargin } from '@/lib/cost/margin/platforms';
 import { KEYS } from '@/lib/note/keys';
 
 export function useMarginFilters({ rows, activePlatform, discount, warnPct, critPct, viewMode }) {
@@ -115,14 +111,17 @@ export function useMarginFilters({ rows, activePlatform, discount, warnPct, crit
     return { avg: sum / count, lowCostCount, highCostCount, goodMarginCount, badMarginCount };
   }, [edgeFiltered, activePlatform, discount, warnPct, critPct]);
 
-  const handleSort = useCallback(key => {
-    if (sortKey === key) {
-      setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortKey(key);
-      setSortDir('asc');
-    }
-  }, [sortKey]);
+  const handleSort = useCallback(
+    key => {
+      if (sortKey === key) {
+        setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+      } else {
+        setSortKey(key);
+        setSortDir('asc');
+      }
+    },
+    [sortKey]
+  );
 
   const sortedFiltered = useMemo(() => {
     if (!sortKey) return edgeFiltered;

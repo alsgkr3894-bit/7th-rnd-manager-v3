@@ -46,7 +46,13 @@ export function MenuMasterEditFields({
       {/* ── 기본 정보 ─────────────────────────── */}
       <div>
         <SectionDivider title="기본 정보" />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: 12,
+          }}
+        >
           <MenuCodeField
             row={row}
             isNew={isNew}
@@ -69,8 +75,18 @@ export function MenuMasterEditFields({
       {/* ── 분류 / 판매 ───────────────────────── */}
       <div style={{ borderTop: '1px solid var(--divider)', paddingTop: 20 }}>
         <SectionDivider title="분류 / 판매" />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-          <CategoryAndSizeFields form={form} presetCategories={presetCategories} setField={setField} />
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: 12,
+          }}
+        >
+          <CategoryAndSizeFields
+            form={form}
+            presetCategories={presetCategories}
+            setField={setField}
+          />
           <PriceField
             value={form.price}
             error={errors.price}

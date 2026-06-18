@@ -29,7 +29,10 @@ function formatSizeUsage(component, sizes) {
   const labels = Array.isArray(sizes) && sizes.length ? sizes : ['단일'];
   return labels
     .map(size => {
-      const entry = component.sizeQuantities?.[size] || { quantity: 0, unit: component.unit || 'g' };
+      const entry = component.sizeQuantities?.[size] || {
+        quantity: 0,
+        unit: component.unit || 'g',
+      };
       return `${size}:${formatQtyWithUnit(entry.quantity, entry.unit || component.unit || 'g')}`;
     })
     .join('/');
@@ -147,7 +150,9 @@ function RecipeMenuPage({ menu }) {
           ) : (
             components.map((component, index) => (
               <span className="recipe-usage-part" key={component.key || index}>
-                <span className="recipe-usage-token">{formatIngredientUsage(component, sizes)}</span>
+                <span className="recipe-usage-token">
+                  {formatIngredientUsage(component, sizes)}
+                </span>
                 {index < components.length - 1 && <span className="recipe-usage-arrow">→</span>}
               </span>
             ))

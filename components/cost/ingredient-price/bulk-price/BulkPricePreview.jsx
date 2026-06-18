@@ -32,7 +32,13 @@ function PriceDelta({ oldPrice, newPrice }) {
   const meta = getBulkPriceDeltaMeta({ oldPrice, newPrice });
 
   return (
-    <span style={{ color: meta.color, fontWeight: meta.strong ? 600 : 400, fontSize: meta.strong ? 12 : 11 }}>
+    <span
+      style={{
+        color: meta.color,
+        fontWeight: meta.strong ? 600 : 400,
+        fontSize: meta.strong ? 12 : 11,
+      }}
+    >
       {meta.label}
     </span>
   );

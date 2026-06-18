@@ -120,10 +120,22 @@ export function IngredientSettingsPanel({
     : hashTags;
 
   return (
-    <div className="card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div
+      className="card"
+      style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 20 }}
+    >
       {/* 요약 */}
       <div>
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: 'var(--text-3)',
+            marginBottom: 10,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          }}
+        >
           현황 요약
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -136,9 +148,20 @@ export function IngredientSettingsPanel({
 
       {/* 분류 섹션 */}
       <div style={{ borderTop: '1px solid var(--divider)', paddingTop: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 12 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 10,
+            gap: 12,
+          }}
+        >
           <div style={{ fontSize: 13, fontWeight: 700 }}>
-            분류 <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-3)' }}>({mainCats.length})</span>
+            분류{' '}
+            <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-3)' }}>
+              ({mainCats.length})
+            </span>
           </div>
           {mainCats.length > 6 && (
             <SearchInput value={catSearch} onChange={setCatSearch} placeholder="분류 검색" />
@@ -147,7 +170,9 @@ export function IngredientSettingsPanel({
         {mainCats.length === 0 ? (
           <div style={{ fontSize: 13, color: 'var(--text-3)' }}>등록된 분류가 없습니다</div>
         ) : filteredCats.length === 0 ? (
-          <div style={{ fontSize: 12, color: 'var(--text-4)' }}>&ldquo;{catSearch}&rdquo; 와 일치하는 분류가 없습니다</div>
+          <div style={{ fontSize: 12, color: 'var(--text-4)' }}>
+            &ldquo;{catSearch}&rdquo; 와 일치하는 분류가 없습니다
+          </div>
         ) : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {filteredCats.map(category => {
@@ -170,7 +195,10 @@ export function IngredientSettingsPanel({
                   {category}
                   <span style={{ fontSize: 11, opacity: 0.7 }}>{count}</span>
                   {count === 0 && <CleanupBadge />}
-                  <RemoveButton onClick={() => onRemoveRequest({ type: 'cat', value: category })} title="분류 삭제" />
+                  <RemoveButton
+                    onClick={() => onRemoveRequest({ type: 'cat', value: category })}
+                    title="분류 삭제"
+                  />
                 </span>
               );
             })}
@@ -180,9 +208,20 @@ export function IngredientSettingsPanel({
 
       {/* 태그 섹션 */}
       <div style={{ borderTop: '1px solid var(--divider)', paddingTop: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 12 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 10,
+            gap: 12,
+          }}
+        >
           <div style={{ fontSize: 13, fontWeight: 700 }}>
-            #태그 <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-3)' }}>({hashTags.length})</span>
+            #태그{' '}
+            <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-3)' }}>
+              ({hashTags.length})
+            </span>
           </div>
           {hashTags.length > 6 && (
             <SearchInput value={tagSearch} onChange={setTagSearch} placeholder="태그 검색" />
@@ -191,7 +230,9 @@ export function IngredientSettingsPanel({
         {hashTags.length === 0 ? (
           <div style={{ fontSize: 13, color: 'var(--text-3)' }}>등록된 태그가 없습니다</div>
         ) : filteredTags.length === 0 ? (
-          <div style={{ fontSize: 12, color: 'var(--text-4)' }}>&ldquo;{tagSearch}&rdquo; 와 일치하는 태그가 없습니다</div>
+          <div style={{ fontSize: 12, color: 'var(--text-4)' }}>
+            &ldquo;{tagSearch}&rdquo; 와 일치하는 태그가 없습니다
+          </div>
         ) : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {filteredTags.map(tag => {
@@ -214,7 +255,10 @@ export function IngredientSettingsPanel({
                   #{tag}
                   <span style={{ fontSize: 11, opacity: 0.7 }}>{count}</span>
                   {count === 0 && <CleanupBadge />}
-                  <RemoveButton onClick={() => onRemoveRequest({ type: 'tag', value: tag })} title="태그 삭제" />
+                  <RemoveButton
+                    onClick={() => onRemoveRequest({ type: 'tag', value: tag })}
+                    title="태그 삭제"
+                  />
                 </span>
               );
             })}
@@ -222,7 +266,14 @@ export function IngredientSettingsPanel({
         )}
       </div>
 
-      <div style={{ fontSize: 11, color: 'var(--text-4)', borderTop: '1px solid var(--divider)', paddingTop: 12 }}>
+      <div
+        style={{
+          fontSize: 11,
+          color: 'var(--text-4)',
+          borderTop: '1px solid var(--divider)',
+          paddingTop: 12,
+        }}
+      >
         ※ 삭제 시 해당 분류/태그가 모든 식자재에서 제거됩니다(식자재 자체는 유지).
       </div>
     </div>

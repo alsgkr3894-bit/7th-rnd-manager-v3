@@ -3,12 +3,15 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 const sectionSrc = readFileSync(resolve('components/menu-master/MenuRecipeSection.jsx'), 'utf8');
-const tableSrc = readFileSync(resolve('components/menu-master/MenuRecipeComponentsTable.jsx'), 'utf8');
+const tableSrc = readFileSync(
+  resolve('components/menu-master/MenuRecipeComponentsTable.jsx'),
+  'utf8'
+);
 
 describe('MenuRecipeSection — 키보드 드롭다운 상태/핸들러', () => {
   test('activeSuggestionIdx 상태가 있다', () => {
     expect(sectionSrc).toContain('activeSuggestionIdx');
-    expect(sectionSrc).toContain("useState(-1)");
+    expect(sectionSrc).toContain('useState(-1)');
   });
 
   test('handleIngredientKeyDown이 ArrowDown/ArrowUp/Enter/Escape를 처리한다', () => {

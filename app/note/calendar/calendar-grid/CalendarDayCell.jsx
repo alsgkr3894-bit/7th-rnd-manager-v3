@@ -29,11 +29,7 @@ export function CalendarDayCell({
         position: 'relative',
       }}
     >
-      <CalendarDayHeader
-        model={model}
-        onAddSchedule={onAddSchedule}
-        onSelectDay={onSelectDay}
-      />
+      <CalendarDayHeader model={model} onAddSchedule={onAddSchedule} onSelectDay={onSelectDay} />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {model.shown.map(item => (

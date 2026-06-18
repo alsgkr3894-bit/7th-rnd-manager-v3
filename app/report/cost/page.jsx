@@ -69,7 +69,11 @@ export default function Page() {
   const [viewTab, setViewTab] = useState('report');
   const strictPostingEnabled = useSettingValue('strictPosting') === 'on';
 
-  const { data, loading: isLoading, errorMessage: dataError } = useDBLoad(
+  const {
+    data,
+    loading: isLoading,
+    errorMessage: dataError,
+  } = useDBLoad(
     async () => {
       const [prices, ingredients, recipeMaps, edges, latestPriceLookup, recipeGroups] =
         await Promise.all([
@@ -123,7 +127,10 @@ export default function Page() {
   const costByCategory = useMemo(() => {
     if (!data?.prices || !data?.ctx) {
       return Object.fromEntries(
-        Object.entries(CAT_META).map(([, m]) => [m.id, { label: m.label, color: m.color, menus: [] }])
+        Object.entries(CAT_META).map(([, m]) => [
+          m.id,
+          { label: m.label, color: m.color, menus: [] },
+        ])
       );
     }
     return buildCostReportData(

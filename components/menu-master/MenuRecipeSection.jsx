@@ -205,8 +205,7 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
         setActiveSuggestionIdx(i => Math.max(i - 1, 0));
       } else if (e.key === 'Enter') {
         e.preventDefault();
-        const target =
-          activeSuggestionIdx >= 0 ? suggestions[activeSuggestionIdx] : suggestions[0];
+        const target = activeSuggestionIdx >= 0 ? suggestions[activeSuggestionIdx] : suggestions[0];
         if (target) pickSuggestion(idx, target);
       } else if (e.key === 'Escape') {
         e.preventDefault();

@@ -1,13 +1,7 @@
 import { COST_BASE_UNITS } from '@/lib/cost/unit-policy';
 import { FieldError, FormField } from './RegisterModalPrimitives';
 
-export function RegisterModalCostFields({
-  form,
-  suppliers,
-  errors,
-  setField,
-  onSupplierChange,
-}) {
+export function RegisterModalCostFields({ form, suppliers, errors, setField, onSupplierChange }) {
   return (
     <>
       <FormField label="포장수량" hint="g·개 단가 계산에 사용 (예: 1000 g, 20 개)">

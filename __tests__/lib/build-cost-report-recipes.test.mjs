@@ -80,7 +80,9 @@ describe('buildRecipePrintRows', () => {
             {
               menuCode: 'S-001',
               menuName: '감자튀김',
-              components: [{ productCode: 'POT', ingredientName: '감자', quantity: 25, unitPrice: 1 }],
+              components: [
+                { productCode: 'POT', ingredientName: '감자', quantity: 25, unitPrice: 1 },
+              ],
             },
           ],
         ]),

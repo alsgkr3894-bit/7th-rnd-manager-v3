@@ -33,7 +33,11 @@ describe('summarizeScenarios', () => {
 
 describe('firstFailedStep', () => {
   test('첫 실패 스텝 반환', () => {
-    const steps = [{ ok: true, label: 'a' }, { ok: false, label: 'b' }, { ok: false, label: 'c' }];
+    const steps = [
+      { ok: true, label: 'a' },
+      { ok: false, label: 'b' },
+      { ok: false, label: 'c' },
+    ];
     expect(firstFailedStep(steps)?.label).toBe('b');
   });
   test('전부 통과면 null', () => {

@@ -29,18 +29,14 @@ describe('소스 카테고리 레시피 저장 경로', () => {
   });
 
   test('mergeCanonicalRecipeMaps가 소스 레시피를 side 맵에 넣는다', () => {
-    const rows = [
-      { menuCode: 'S-SC-001', category: '소스', kind: 'side', components: [] },
-    ];
+    const rows = [{ menuCode: 'S-SC-001', category: '소스', kind: 'side', components: [] }];
     const maps = mergeCanonicalRecipeMaps(rows);
     expect(maps.side).toBeDefined();
     expect(maps.side.has('S-SC-001')).toBe(true);
   });
 
   test('kind가 없는 소스 레시피도 category로 side 맵에 들어간다', () => {
-    const rows = [
-      { menuCode: 'S-SC-002', category: '소스', kind: null, components: [] },
-    ];
+    const rows = [{ menuCode: 'S-SC-002', category: '소스', kind: null, components: [] }];
     const maps = mergeCanonicalRecipeMaps(rows);
     expect(maps.side.has('S-SC-002')).toBe(true);
   });
@@ -77,10 +73,7 @@ const issuesPanelSrc = readFileSync(
   resolve(process.cwd(), 'components/menu-master/MenuMasterIssuesPanel.jsx'),
   'utf-8'
 );
-const pageSrc = readFileSync(
-  resolve(process.cwd(), 'app/menu-master/page.jsx'),
-  'utf-8'
-);
+const pageSrc = readFileSync(resolve(process.cwd(), 'app/menu-master/page.jsx'), 'utf-8');
 
 describe('viewer 권한 - MenuMasterTableRow', () => {
   test('isViewer일 때 메뉴명이 div(클릭 불가)로 렌더된다', () => {

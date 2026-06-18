@@ -91,7 +91,11 @@ export function NoteDetailFields({ form, allTags, updateField }) {
       </Field>
 
       <Field label="태그" hint="입력 후 Enter 또는 콤마">
-        <TagInput value={form.tags} onChange={value => updateField('tags', value)} suggestions={allTags} />
+        <TagInput
+          value={form.tags}
+          onChange={value => updateField('tags', value)}
+          suggestions={allTags}
+        />
       </Field>
     </div>
   );

@@ -32,9 +32,7 @@ describe('defaultSizesFor – 규격 기본 후보 정책', () => {
 describe('sizeOptions 합산 – 커스텀 규격 유지', () => {
   function buildSizeOptions(category, currentSize) {
     const defaults = defaultSizesFor(category);
-    return currentSize && !defaults.includes(currentSize)
-      ? [...defaults, currentSize]
-      : defaults;
+    return currentSize && !defaults.includes(currentSize) ? [...defaults, currentSize] : defaults;
   }
 
   test('기존 커스텀 규격이 후보에 없으면 목록 끝에 추가한다', () => {

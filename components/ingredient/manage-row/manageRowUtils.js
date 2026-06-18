@@ -1,9 +1,5 @@
 import { formatNumber } from '@/lib/format';
-import {
-  countIngredientPhotos,
-  getPrimaryIngredientPhoto,
-  sortHashTags,
-} from '@/lib/ingredient';
+import { countIngredientPhotos, getPrimaryIngredientPhoto, sortHashTags } from '@/lib/ingredient';
 import { asDisplayText, asStringArray } from '@/lib/ui/prop-guards';
 
 export function buildManageRowModel(rawRow = {}) {

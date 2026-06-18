@@ -20,9 +20,7 @@ export function SampleStatsWidget({ samples, router }) {
     const withPhoto = list.filter(sample =>
       asObjectArray(sample.photos).some(photo => asDisplayText(photo.data))
     ).length;
-    const recent = [...list]
-      .sort((a, b) => toTime(b.createdAt) - toTime(a.createdAt))
-      .slice(0, 3);
+    const recent = [...list].sort((a, b) => toTime(b.createdAt) - toTime(a.createdAt)).slice(0, 3);
     const ratingDist = [1, 2, 3, 4, 5].map(rating => ({
       rating,
       count: list.filter(sample => asFiniteNumber(sample.rating, 0) === rating).length,

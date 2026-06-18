@@ -11,7 +11,9 @@ export function SampleDetailBody({ model }) {
       {model.description && (
         <SampleDetailSection title="테스트 내용 / 조건">{model.description}</SampleDetailSection>
       )}
-      {model.result && <SampleDetailSection title="평가 / 결과">{model.result}</SampleDetailSection>}
+      {model.result && (
+        <SampleDetailSection title="평가 / 결과">{model.result}</SampleDetailSection>
+      )}
       {model.improvements && (
         <SampleDetailSection title="개선사항">{model.improvements}</SampleDetailSection>
       )}
@@ -19,7 +21,9 @@ export function SampleDetailBody({ model }) {
         <SampleDetailSection title="다음 액션">{model.nextAction}</SampleDetailSection>
       )}
       {model.tags.length > 0 && <SampleDetailTags tags={model.tags} />}
-      {!hasDetail && <div style={{ color: 'var(--text-3)', fontSize: 13 }}>상세 내용이 없습니다.</div>}
+      {!hasDetail && (
+        <div style={{ color: 'var(--text-3)', fontSize: 13 }}>상세 내용이 없습니다.</div>
+      )}
     </div>
   );
 }

@@ -15,8 +15,8 @@ export function ImportBaseUploadStep({ onClose, onFile }) {
         연구기관 분석 엑셀 파일을 업로드하면 베이스 영양성분에 일괄 저장됩니다.
         <br />
         <span style={{ fontSize: 12, color: 'var(--text-4)' }}>
-          ※ 여러 시트(피자·사이드) 지원 | 피자=100g 기준, 사이드=1회분 기준 | 총중량 열 인식 |
-          지원 형식: .xlsx, .xls
+          ※ 여러 시트(피자·사이드) 지원 | 피자=100g 기준, 사이드=1회분 기준 | 총중량 열 인식 | 지원
+          형식: .xlsx, .xls
         </span>
       </div>
       <UploadDropzone

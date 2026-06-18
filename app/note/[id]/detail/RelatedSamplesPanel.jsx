@@ -54,9 +54,7 @@ function RelatedSampleButton({ sample, onOpenSample }) {
         <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
           {sample.testDate && <span>{sample.testDate}</span>}
           {sample.rating > 0 && (
-            <span style={{ marginLeft: 8, color: 'var(--star)' }}>
-              {'★'.repeat(sample.rating)}
-            </span>
+            <span style={{ marginLeft: 8, color: 'var(--star)' }}>{'★'.repeat(sample.rating)}</span>
           )}
         </div>
       </div>

@@ -9,7 +9,9 @@ const MAX_NOTE_PHOTOS = 8;
 /** 노트 사진 첨부 카드 (샘플기록과 동일한 base64 JPEG 방식) */
 export function NotePhotoSection({ photos = [], onChange }) {
   const fileRef = useRef(null);
-  const safePhotos = Array.isArray(photos) ? photos.filter(photo => photo && typeof photo === 'object') : [];
+  const safePhotos = Array.isArray(photos)
+    ? photos.filter(photo => photo && typeof photo === 'object')
+    : [];
   const change = typeof onChange === 'function' ? onChange : () => {};
 
   async function addFiles(files) {
@@ -40,7 +42,9 @@ export function NotePhotoSection({ photos = [], onChange }) {
     change(safePhotos.filter((_, index) => index !== idx));
   }
   function setCaption(idx, value) {
-    change(safePhotos.map((photo, index) => (index === idx ? { ...photo, caption: value } : photo)));
+    change(
+      safePhotos.map((photo, index) => (index === idx ? { ...photo, caption: value } : photo))
+    );
   }
 
   return (
