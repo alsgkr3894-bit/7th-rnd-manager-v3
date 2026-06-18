@@ -355,7 +355,7 @@
 - 공통원가 → 원가/원산지/알레르기 출력 파이프라인 검증
 - **2026-06-18 추가 완료**: 브랜드 전환→브랜드별 데이터 분리, 노트 일정 추가→캘린더 반영, 식자재 등록→관리 목록 반영 시나리오 추가. `qa:workflow` 9/9 통과.
 - **왜 보류**: 남은 4개는 다단계 사전 데이터(레시피·식자재·CSV)가 필요해 fixture/시드 설계 선행 필요.
-- `scripts/workflow-qa.mjs` 하니스는 준비되어 있으며, 남은 시나리오는 fixture 설계 후 추가한다.
+- `scripts/workflow-qa.mjs`는 runner 진입점으로 축소됐고, 하니스는 `scripts/workflow/runner.mjs`, 공통 helper는 `scripts/workflow/helpers.mjs`, 시나리오는 `scripts/workflow/scenarios/*.mjs`에 분리됐다. 남은 시나리오는 fixture 설계 후 추가한다.
 
 #### CSS·디자인 시스템 정리  🟢 ⏸
 - 큰 CSS 파일 분리: `motion-note.css`·`home.css`·`report/builder.css`·`report/table.css`·`settings.css`·`cost.css`·`ingredient.css`

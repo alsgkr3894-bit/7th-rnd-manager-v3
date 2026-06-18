@@ -9,7 +9,7 @@
 
 | 지표 | 값 |
 |---|---|
-| 테스트 | **268 suites / 1411 tests** (모두 통과) |
+| 테스트 | **268 suites / 1412 tests** (모두 통과) |
 | qa:smoke | **22/22 라우트** |
 | qa:workflow | **9/9 시나리오** (2026-06-18 IDB 블로킹 수정 후 완성) |
 | qa:runtime | **63/63 라우트** |
@@ -47,7 +47,7 @@
 ### IDB onblocked 블로킹
 - **증상**: `waitForDbStore` 같은 패턴이 버전 없이 `indexedDB.open(name)` 호출 → v1 stub DB 생성 → 이후 `initDB()`의 버전 업그레이드 차단 → `onblocked` → Promise 영원히 미결 → `useCurrentRole` 초기화 안 됨 → 버튼 disabled 유지.
 - **현재 상태**: `lib/db/init.js`의 `onblocked`는 즉시 `reject()`로 처리함. `waitForDbStore` 함수는 삭제됨.
-- **E2E 대기 패턴**: `scripts/workflow-qa.mjs`의 `goto()`는 `page.addInitScript`로 주입한 `IDBFactory.prototype.open` 인터셉터의 `window.__idbInitDone` 플래그를 `waitForFunction`으로 기다린다. 버전 있는 IDB open 성공 = `initDB()` 완료.
+- **E2E 대기 패턴**: `scripts/workflow/helpers.mjs`의 `goto()`는 `page.addInitScript`로 주입한 `IDBFactory.prototype.open` 인터셉터의 `window.__idbInitDone` 플래그를 `waitForFunction`으로 기다린다. 버전 있는 IDB open 성공 = `initDB()` 완료.
 
 ### no-undef 런타임 ReferenceError
 - 훅 추출 시 page 컴포넌트의 변수(`page`, `setPage` 등)를 훅 내에서 참조하면 lint/build 단계에서 못 잡히고 런타임에서 터진다.
@@ -70,7 +70,7 @@
 ```bash
 npm run lint          # ESLint 0 warnings 필수
 npm run format:check  # Prettier 포맷 확인
-npm run test:ci       # 268 suites / 1411 tests
+npm run test:ci       # 268 suites / 1412 tests
 npm run qa:smoke      # 22/22 라우트 (Playwright, dev 서버 필요)
 npm run qa:workflow   # 9/9 E2E 시나리오 (Playwright, dev 서버 필요)
 npm run qa:runtime    # 63/63 라우트 no-undef/hydration 검사
@@ -95,6 +95,7 @@ dev 서버: `npm run dev:lan` (LAN 접근용, `0.0.0.0:3000`).
 | `225497b5` | BUG-003: 식자재 buildRecord NaN 저장 방어 |
 | `45618b4e` | 작업계획 파일 10개 DEFERRED_WORK 흡수 후 삭제 |
 | `2a82a4b5`, `71ce73c9` | P4 리팩토링 (nutrition dedup, recipe-print builders) |
+| 미커밋 | workflow QA 구조 분리 (`workflow-qa.mjs` 진입점 + `scripts/workflow/*`) |
 
 ### IDB 수정 상세
 
@@ -142,24 +143,27 @@ dev 서버: `npm run dev:lan` (LAN 접근용, `0.0.0.0:3000`).
 2. `npm run format:check`는 162개 파일에서 실패했다. 다음 기능/분리 작업 전에 Prettier 정리를 별도 커밋으로 먼저 처리하는 것을 권장한다.
 3. worktree에는 `docs/DEFERRED_WORK.md`, `docs/SITE_STATUS.md` 수정과 `docs/CLAUDE_CODE_REFACTOR_HANDOFF.md`, `docs/INTERNAL_TOOL_POLISH_PLAN.md` untracked가 있다. 문서 커밋 범위를 먼저 확정한다.
 
-### 추가 추천 작업 A: workflow QA 구조 분리
+### 완료 작업 A: workflow QA 구조 분리
 
-- 대상: `scripts/workflow-qa.mjs` (882줄)
-- 이유: 9개 시나리오가 한 파일에 있어 다음 B-20 확장 시 충돌과 회귀 원인 추적 비용이 커진다.
-- 권장 구조:
+- 완료 내용:
+  - `scripts/workflow-qa.mjs`는 `scripts/workflow/runner.mjs`를 호출하는 진입점으로 축소
+  - 공통 helper는 `scripts/workflow/helpers.mjs`로 분리
+  - 9개 시나리오는 `scripts/workflow/scenarios/*.mjs`로 분리
+  - `__tests__/scripts/workflow-qa-utils.test.mjs`에 시나리오 순서 registry 테스트 추가
+- 현재 구조:
   - `scripts/workflow/runner.mjs`
   - `scripts/workflow/scenarios/*.mjs`
-  - `scripts/workflow/db-fixtures.mjs`
-  - `scripts/workflow/assertions.mjs`
-  - 기존 `scripts/workflow-qa.mjs`는 runner 진입점만 유지
-- 추가하면 좋은 시나리오:
+  - `scripts/workflow/helpers.mjs`
+  - `scripts/workflow-qa.mjs`
+- 다음에 추가하면 좋은 시나리오:
   - 메뉴마스터 레시피 저장 -> 닫기/재오픈 -> 원가 셀 반영 확인
   - 식자재 단가 변경 -> 메뉴 레시피 원가 -> 원가마진표 반영
   - 공통원가 체크 -> 메뉴 원가 -> 원산지/알레르기 출력 반영
-- 테스트:
-  - `npm run qa:workflow`
-  - `npm run test:ci`
-  - workflow helper를 분리하면 `__tests__/scripts/*` 단위 테스트 추가
+- 검증:
+  - `npm run test:ci` 268 suites / 1412 tests 통과
+  - `npm run lint` 통과
+  - `npm run audit:docs` 통과
+  - `npm run qa:workflow` 9/9 통과
 
 ### 추가 추천 작업 B: 메뉴마스터 레시피 입력부 2차 분리
 

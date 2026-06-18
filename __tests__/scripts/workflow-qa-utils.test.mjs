@@ -6,6 +6,7 @@ import {
   isValidBackupShape,
   formatStepLine,
 } from '../../scripts/workflow-qa-utils.mjs';
+import { workflowScenarios } from '../../scripts/workflow/scenarios/index.mjs';
 
 describe('scenarioPassed', () => {
   test('모든 스텝 ok면 true', () => {
@@ -67,5 +68,21 @@ describe('formatStepLine', () => {
     const line = formatStepLine({ ok: false, label: '저장', error: 'timeout' });
     expect(line).toContain('✗ 저장');
     expect(line).toContain('timeout');
+  });
+});
+
+describe('workflowScenarios', () => {
+  test('기존 9개 업무 시나리오 순서를 유지한다', () => {
+    expect(workflowScenarios.map(fn => fn.name)).toEqual([
+      'scenarioBackupRestorePreview',
+      'scenarioNoteCreate',
+      'scenarioMenuMasterCreate',
+      'scenarioViewerBlocking',
+      'scenarioInvalidBackup',
+      'scenarioMenuFormValidation',
+      'scenarioBrandIsolation',
+      'scenarioCalendarSchedule',
+      'scenarioIngredientCreate',
+    ]);
   });
 });

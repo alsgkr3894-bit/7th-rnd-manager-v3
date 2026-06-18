@@ -86,8 +86,9 @@
 
 #### 구현 방향
 
-- 기존 `scripts/workflow-qa.mjs`에 단계별 시나리오 함수를 추가한다.
-- 공통 대기/토스트/다운로드 helper는 `scripts/workflow-qa-utils.mjs`로 분리한다.
+- 기존 `scripts/workflow-qa.mjs`는 runner 진입점으로 유지하고, 새 단계별 시나리오는 `scripts/workflow/scenarios/*.mjs`에 추가한다.
+- 공통 대기/DB 정리/브라우저 진단 helper는 `scripts/workflow/helpers.mjs`에 둔다.
+- 순수 집계/출력 helper는 기존 `scripts/workflow-qa-utils.mjs`에 둔다.
 - 테스트 데이터는 run-unique marker로 생성하고 마지막에 정리한다.
 - 실제 운영 DB를 직접 오염시키지 않는 방식으로 진행한다.
 - 시나리오 실패 시 단계명이 로그에 남아야 한다.
@@ -95,6 +96,9 @@
 #### 확인 대상 파일
 
 - `scripts/workflow-qa.mjs`
+- `scripts/workflow/runner.mjs`
+- `scripts/workflow/helpers.mjs`
+- `scripts/workflow/scenarios/*.mjs`
 - `scripts/workflow-qa-utils.mjs`
 - `__tests__/scripts/workflow-qa-utils.test.mjs`
 - `docs/DEFERRED_WORK.md`
