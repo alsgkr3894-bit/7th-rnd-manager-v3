@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
 import { MenuRecipeComponentsTable } from '@/components/menu-master/MenuRecipeComponentsTable';
 import { MenuRecipeGroupSelector } from '@/components/menu-master/MenuRecipeGroupSelector';
@@ -8,10 +8,14 @@ import { useMenuRecipeEditor } from '@/components/menu-master/useMenuRecipeEdito
 import { useRecipeIngredientSearch } from '@/components/menu-master/useRecipeIngredientSearch';
 
 export function MenuRecipeSection({ menuCode, menuName, category, size, sellingPrice, onSaved }) {
+  const [copyOpen, setCopyOpen] = useState(false);
+  const [copySearch, setCopySearch] = useState('');
+
   const {
     components,
     setComponents,
     allIngredients,
+    allMenuItems,
     unitPriceMap,
     loaded,
     saving,
@@ -24,6 +28,7 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
     toggleRecipeGroup,
     recipeSummary,
     handleSave,
+    copyFromMenu,
   } = useMenuRecipeEditor({
     menuCode,
     menuName,
@@ -32,6 +37,20 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
     sellingPrice,
     onSaved,
   });
+
+  const copyMenus = useMemo(() => {
+    const q = copySearch.trim().toLowerCase();
+    const self = String(menuCode || '').trim();
+    const list = allMenuItems.filter(m => String(m.menuCode || '').trim() !== self);
+    if (!q) return list.slice(0, 40);
+    return list
+      .filter(
+        m =>
+          (m.menuName || '').toLowerCase().includes(q) ||
+          (m.menuCode || '').toLowerCase().includes(q)
+      )
+      .slice(0, 40);
+  }, [allMenuItems, copySearch, menuCode]);
 
   const ingredientInputRefs = useRef({});
   const quantityInputRefs = useRef({});
@@ -93,7 +112,67 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
         recipeSummary={recipeSummary}
         saving={saving}
         onSave={handleSave}
+        copyOpen={copyOpen}
+        onToggleCopy={() => {
+          setCopyOpen(v => !v);
+          setCopySearch('');
+        }}
       />
+
+      {copyOpen && (
+        <div
+          style={{
+            border: '1px solid var(--divider)',
+            borderRadius: 6,
+            background: 'var(--surface)',
+            marginBottom: 8,
+            padding: '8px 10px',
+          }}
+        >
+          <input
+            autoFocus
+            type="text"
+            className="input sm"
+            placeholder="메뉴명 / 코드 검색…"
+            value={copySearch}
+            onChange={e => setCopySearch(e.target.value)}
+            style={{ width: '100%', marginBottom: 6, fontSize: 12 }}
+          />
+          <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {copyMenus.length === 0 ? (
+              <div style={{ fontSize: 12, color: 'var(--text-3)', padding: '4px 0' }}>
+                검색 결과 없음
+              </div>
+            ) : (
+              copyMenus.map(m => (
+                <button
+                  key={m.menuCode}
+                  type="button"
+                  className="btn ghost"
+                  style={{ textAlign: 'left', fontSize: 12, padding: '4px 8px', justifyContent: 'flex-start' }}
+                  onClick={() => {
+                    copyFromMenu(m);
+                    setCopyOpen(false);
+                    setCopySearch('');
+                  }}
+                >
+                  <span style={{ fontFamily: 'monospace', color: 'var(--text-3)', marginRight: 6, fontSize: 11 }}>{m.menuCode}</span>
+                  {m.menuName}
+                  {m.size ? <span style={{ color: 'var(--text-4)', marginLeft: 4, fontSize: 11 }}>{m.size}</span> : null}
+                </button>
+              ))
+            )}
+          </div>
+          <button
+            type="button"
+            className="btn ghost"
+            style={{ marginTop: 6, fontSize: 11, color: 'var(--text-3)' }}
+            onClick={() => { setCopyOpen(false); setCopySearch(''); }}
+          >
+            취소
+          </button>
+        </div>
+      )}
 
       <MenuRecipeGroupSelector
         groups={eligibleRecipeGroups}

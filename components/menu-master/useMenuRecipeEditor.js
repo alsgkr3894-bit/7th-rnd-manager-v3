@@ -7,6 +7,7 @@ import { eligibleRecipeGroupsForMenu } from '@/lib/cost/recipe-groups/effective'
 import { initDB } from '@/lib/db';
 import { getAllIngredients } from '@/lib/ingredient';
 import { loadLatestUnitPriceMap, summarizeMenuRecipe } from '@/lib/menu-master/recipe-summary';
+import { getAllMenuMaster } from '@/lib/menu-master/store';
 import {
   getMenuRecipeForMenu,
   normalizeSelectedRecipeGroupIds,
@@ -25,6 +26,7 @@ export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellin
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [allIngredients, setAllIngredients] = useState([]);
+  const [allMenuItems, setAllMenuItems] = useState([]);
   const [recipeGroups, setRecipeGroups] = useState([]);
   const [unitPriceMap, setUnitPriceMap] = useState(new Map());
 
@@ -36,16 +38,18 @@ export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellin
     setComponents([]);
     setSelectedRecipeGroupIds([]);
     setAllIngredients([]);
+    setAllMenuItems([]);
     setRecipeGroups([]);
     setUnitPriceMap(new Map());
     if (!supported) return;
     let ignore = false;
     initDB().then(async () => {
-      const [existing, ingredients, latestUnitPriceMap, groups] = await Promise.all([
+      const [existing, ingredients, latestUnitPriceMap, groups, menuItems] = await Promise.all([
         getMenuRecipeForMenu({ menuCode, menuName, category, size }),
         getAllIngredients(),
         loadLatestUnitPriceMap(),
         getAllRecipeGroups(),
+        getAllMenuMaster(),
       ]);
       if (ignore) return;
       setComponents(
@@ -55,6 +59,7 @@ export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellin
       );
       setSelectedRecipeGroupIds(normalizeSelectedRecipeGroupIds(existing?.selectedRecipeGroupIds));
       setAllIngredients(ingredients);
+      setAllMenuItems(menuItems.filter(m => m.status !== 'discontinued'));
       setRecipeGroups(groups);
       setUnitPriceMap(latestUnitPriceMap);
       setLoaded(true);
@@ -121,6 +126,19 @@ export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellin
     ]
   );
 
+  const copyFromMenu = useCallback(
+    async sourceMenu => {
+      const source = await getMenuRecipeForMenu({ menuCode: sourceMenu.menuCode });
+      if (!source?.components?.length) {
+        showToast('복사할 구성품이 없습니다', 'warn');
+        return;
+      }
+      setComponents(source.components.map(c => hydrateRecipeComponent(c, unitPriceMap)));
+      showToast(`'${sourceMenu.menuName || sourceMenu.menuCode}' 구성품 복사됨 (저장 전)`, 'ok');
+    },
+    [unitPriceMap]
+  );
+
   const handleSave = useCallback(async () => {
     if (!supported) return;
     setSaving(true);
@@ -158,6 +176,7 @@ export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellin
     components,
     setComponents,
     allIngredients,
+    allMenuItems,
     unitPriceMap,
     loaded,
     saving,
@@ -170,5 +189,6 @@ export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellin
     toggleRecipeGroup,
     recipeSummary,
     handleSave,
+    copyFromMenu,
   };
 }
