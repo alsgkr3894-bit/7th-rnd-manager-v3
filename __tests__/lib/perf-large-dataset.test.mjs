@@ -3,6 +3,8 @@
  * 측정 환경(Jest Node.js)이므로 React렌더 비용은 포함되지 않으나,
  * 순수 연산 비용이 큰 경우를 조기에 탐지한다.
  */
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
 // ── 픽스처 생성 헬퍼 ──────────────────────────────────────────
 
@@ -154,4 +156,22 @@ describe('P5 대량 데이터 성능 스모크', () => {
       expect(elapsed).toBeLessThan(THRESHOLD_5K);
     });
   });
+});
+
+describe('P5 핵심 selector memoization 구조 검증', () => {
+  const MEMO_HOOKS = [
+    ['useIngredientManageView', 'app/ingredient/manage/useIngredientManageView.js'],
+    ['useMenuMasterFilters', 'hooks/useMenuMasterFilters.js'],
+    ['useReportListState', 'hooks/useReportListState.js'],
+    ['useIngredientPriceFilters', 'hooks/useIngredientPriceFilters.js'],
+    ['useNoteFilter', 'hooks/useNoteFilter.js'],
+  ];
+
+  for (const [name, path] of MEMO_HOOKS) {
+    test(`${name}: filtered가 useMemo로 계산된다`, () => {
+      const src = readFileSync(resolve(process.cwd(), path), 'utf-8');
+      expect(src).toContain('useMemo');
+      expect(src).toContain('filtered');
+    });
+  }
 });
