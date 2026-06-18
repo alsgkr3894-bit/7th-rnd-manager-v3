@@ -76,15 +76,97 @@ async function deleteRecordsByField(page, dbName, store, field, value) {
 
 async function goto(page, path) {
   await page.goto(routeUrl(BASE, path), { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
-  await page.waitForSelector('main', { timeout: 15000 });
-  // React 하이드레이션(onChange 등 핸들러 부착) + DB 초기화가 끝나길 기다린다.
-  // 이게 없으면 직후의 입력/클릭이 핸들러 부착 전에 실행돼 누락될 수 있다.
+  // loading.jsx 스피너→<main> 전환 + cold 번들 컴파일 대기. 90s로 여유있게 설정.
+  await page.waitForSelector('main', { timeout: 90000 });
+  // HMR 웹소켓 때문에 networkidle은 항상 타임아웃 — 무시
   await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+
+  // React 하이드레이션 완료 대기.
+  // Cold dev 루트: 첫 접근 시 JS 청크가 404(미컴파일) → HMR 자동 리로드 or 60s 타임아웃.
+  // 하이드레이션 실패 시 reload 1회로 컴파일된 JS를 강제 로드한다.
+  const hydratedFirst = await page
+    .waitForFunction(
+      () => {
+        const el = document.querySelector('button, input, textarea');
+        return el ? Object.keys(el).some(k => k.startsWith('__react')) : false;
+      },
+      undefined,
+      { timeout: 60000 }
+    )
+    .then(() => true)
+    .catch(() => false);
+
+  if (!hydratedFirst) {
+    // 컴파일 완료 후 JS 청크가 사용 가능해졌을 것 — reload로 가져온다.
+    await page
+      .reload({ waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS })
+      .catch(() => {});
+    await page.waitForSelector('main', { timeout: 90000 }).catch(() => {});
+    await page
+      .waitForFunction(
+        () => {
+          const el = document.querySelector('button, input, textarea');
+          return el ? Object.keys(el).some(k => k.startsWith('__react')) : false;
+        },
+        undefined,
+        { timeout: 90000 }
+      )
+      .catch(() => {});
+  }
+
+  // initDB() 완료 대기: addInitScript로 주입한 인터셉터가 버전 지정 IDB open 성공 시 플래그 세팅.
+  // waitForDbStore(indexedDB.open 폴링) 방식은 버전 없는 open이 initDB()의 버전 업그레이드를
+  // 블로킹(onblocked)할 수 있어 제거했다. 인터셉터는 IDB 동작에 영향을 주지 않는다.
   await page
-    .waitForFunction(() => !(document.body.innerText || '').includes('DB 초기화 중'), {
-      timeout: 10000,
-    })
+    .waitForFunction(() => window.__idbInitDone === true, undefined, { timeout: 30000 })
     .catch(() => {});
+}
+
+
+/** useCurrentRole의 fail-closed 초기값('viewer')이 해소될 때까지 '메뉴 추가' 버튼 enabled 대기 */
+async function waitForMenuAddButton(page, timeout = 60000) {
+  const check = async (t) =>
+    page.waitForFunction(
+      () => {
+        const btn = [...document.querySelectorAll('button')].find(b =>
+          (b.textContent || '').trim().includes('메뉴 추가')
+        );
+        return btn && !btn.disabled;
+      },
+      undefined,
+      { timeout: t }
+    );
+
+  try {
+    await check(timeout);
+  } catch (err) {
+    // HMR 리로드로 execution context가 파괴된 경우: 새 컨텍스트에서 재시도
+    if (
+      err.message?.includes('context') ||
+      err.message?.includes('Execution context')
+    ) {
+      await page.waitForSelector('main', { timeout: 30000 }).catch(() => {});
+      await check(30000);
+      return;
+    }
+    // 타임아웃 시 버튼 상태 덤프 (진단용)
+    const diag = await page
+      .evaluate(() => {
+        const btn = [...document.querySelectorAll('button')].find(b =>
+          (b.textContent || '').trim().includes('메뉴 추가')
+        );
+        return {
+          found: !!btn,
+          disabled: btn ? btn.disabled : null,
+          hasReact: btn ? Object.keys(btn).some(k => k.startsWith('__react')) : null,
+          url: window.location.href,
+          bodyHead: document.body.innerText.slice(0, 150),
+        };
+      })
+      .catch(() => null);
+    process.stderr.write(`[waitForMenuAddButton:timeout] ${JSON.stringify(diag)}\n`);
+    throw err;
+  }
 }
 
 // ── 시나리오 1: 백업 생성 → 복원 미리보기 (크로스페이지 파이프라인, 부작용 없음) ──
@@ -94,14 +176,15 @@ async function scenarioBackupRestorePreview(page, tmpDir) {
 
   await step(steps, '백업 페이지 진입 + 다운로드 버튼 활성화', async () => {
     await goto(page, '/settings/backup');
-    await page.getByRole('button', { name: '백업 파일 다운로드' }).waitFor({ state: 'visible', timeout: 15000 });
+    // disabled={!ready || busy || selectedKeys.length === 0} — ready는 collectStoreStats 완료 후 true
     await page.waitForFunction(
       () => {
         const btns = [...document.querySelectorAll('button')];
         const b = btns.find(x => (x.textContent || '').includes('백업 파일 다운로드'));
         return b && !b.disabled;
       },
-      { timeout: 15000 }
+      undefined, // arg (없음)
+      { timeout: 45000 } // 첫 DB 초기화 + collectStoreStats 완료 대기
     );
   });
 
@@ -128,7 +211,9 @@ async function scenarioBackupRestorePreview(page, tmpDir) {
   await step(steps, '복원 미리보기 렌더(복원 실행 단계 표시)', async () => {
     // 파일 파싱 성공 시 RestorePreview + RestoreExecutePanel(헤딩 "5. 복원 실행")이 렌더된다.
     // 예상 변경 사항 패널은 데이터가 있을 때만 보이므로, 데이터 무관하게 항상 뜨는 실행 단계를 검증.
-    await page.getByRole('heading', { name: '5. 복원 실행' }).waitFor({ state: 'visible', timeout: 15000 });
+    await page
+      .getByRole('heading', { name: '5. 복원 실행' })
+      .waitFor({ state: 'visible', timeout: 15000 });
   });
 
   return { name: '백업 → 복원 미리보기', steps };
@@ -152,14 +237,20 @@ async function scenarioNoteCreate(page, runId) {
   });
 
   await step(steps, '저장 → 목록으로 이동', async () => {
-    await Promise.all([
-      page.waitForURL(/\/note(\?|$)/, { timeout: 15000 }),
-      page.getByRole('button', { name: '저장하기' }).click(),
-    ]);
+    await page.getByRole('button', { name: '저장하기' }).click();
+    // router.replace('/note')는 history.replaceState — waitForFunction으로 pathname 직접 폴링
+    await page.waitForFunction(
+      () => window.location.pathname === '/note',
+      undefined,
+      { timeout: 30000 }
+    );
   });
 
   await step(steps, '작성한 노트가 목록에 표시', async () => {
-    await page.getByText(title, { exact: false }).first().waitFor({ state: 'visible', timeout: 15000 });
+    await page
+      .getByText(title, { exact: false })
+      .first()
+      .waitFor({ state: 'visible', timeout: 15000 });
   });
 
   // 정리: 생성한 노트 삭제 (best-effort — 실패해도 시나리오 실패로 보지 않음)
@@ -178,6 +269,8 @@ async function scenarioMenuMasterCreate(page, runId) {
 
   await step(steps, '메뉴 마스터 진입 + 메뉴 추가 모달 열기', async () => {
     await goto(page, '/menu-master');
+    // useCurrentRole이 viewer(fail-closed)로 초기화 → admin 확인 후 버튼 enabled
+    await waitForMenuAddButton(page);
     await page.getByRole('button', { name: '메뉴 추가' }).click();
     await page.getByPlaceholder('예) P-OR-005-L').waitFor({ state: 'visible', timeout: 15000 });
   });
@@ -193,7 +286,10 @@ async function scenarioMenuMasterCreate(page, runId) {
   });
 
   await step(steps, '등록한 메뉴가 목록에 표시', async () => {
-    await page.getByText(name, { exact: false }).first().waitFor({ state: 'visible', timeout: 15000 });
+    await page
+      .getByText(name, { exact: false })
+      .first()
+      .waitFor({ state: 'visible', timeout: 15000 });
   });
 
   await step(steps, '테스트 메뉴 정리', async () => {
@@ -211,6 +307,9 @@ async function scenarioViewerBlocking(page, tmpDir) {
   // DB가 초기화된 상태에서 viewer 계정 삽입
   await step(steps, '페이지 진입 후 viewer 계정 IndexedDB 생성', async () => {
     await goto(page, '/menu-master');
+    // waitForMenuAddButton으로 useCurrentRole → initDB() 완료를 간접 확인
+    // ref_accounts는 initDB()가 생성 — 버튼 활성화 = DB init 완료 보장
+    await waitForMenuAddButton(page);
     viewerAccountId = await page.evaluate(
       () =>
         new Promise((resolve, reject) => {
@@ -256,6 +355,7 @@ async function scenarioViewerBlocking(page, tmpDir) {
     await goto(page, '/menu-master');
     await page.waitForFunction(
       () => document.querySelectorAll('button[disabled]').length > 0,
+      undefined,
       { timeout: 15000 }
     );
   });
@@ -280,7 +380,11 @@ async function scenarioViewerBlocking(page, tmpDir) {
   await step(steps, '시스템 설정: "모든 데이터 초기화" 비활성화(UI 가드)', async () => {
     await goto(page, '/settings/system');
     await page.waitForFunction(
-      () => [...document.querySelectorAll('button')].some(b => b.textContent.includes('모든 데이터 초기화')),
+      () =>
+        [...document.querySelectorAll('button')].some(b =>
+          b.textContent.includes('모든 데이터 초기화')
+        ),
+      undefined,
       { timeout: 15000 }
     );
     const btn = page.getByRole('button', { name: /모든 데이터 초기화/ });
@@ -313,7 +417,9 @@ async function scenarioViewerBlocking(page, tmpDir) {
     await goto(page, '/settings/restore');
     await page.waitForSelector('input[type="file"]', { state: 'visible', timeout: 15000 });
     await page.setInputFiles('input[type="file"]', backupPath);
-    await page.getByRole('heading', { name: '5. 복원 실행' }).waitFor({ state: 'visible', timeout: 15000 });
+    await page
+      .getByRole('heading', { name: '5. 복원 실행' })
+      .waitFor({ state: 'visible', timeout: 15000 });
 
     // 1단계 "복원 실행" 버튼이 활성화될 때까지 대기 (selectedRestoreStoreCount > 0)
     await page.waitForFunction(
@@ -323,13 +429,18 @@ async function scenarioViewerBlocking(page, tmpDir) {
         );
         return b && !b.disabled;
       },
+      undefined,
       { timeout: 10000 }
     );
     await page.getByRole('button', { name: '복원 실행' }).click();
 
     // 2단계 확인 버튼("N개 모듈 교체 복원") 등장 후 클릭 → assertActiveAdmin 거부
     await page.waitForFunction(
-      () => [...document.querySelectorAll('button')].some(b => b.textContent.includes('모듈 교체 복원')),
+      () =>
+        [...document.querySelectorAll('button')].some(b =>
+          b.textContent.includes('모듈 교체 복원')
+        ),
+      undefined,
       { timeout: 10000 }
     );
     await page.locator('button').filter({ hasText: '모듈 교체 복원' }).click();
@@ -340,6 +451,7 @@ async function scenarioViewerBlocking(page, tmpDir) {
         const toasts = document.querySelectorAll('.toast');
         return [...toasts].some(t => t.textContent.includes('권한이 없습니다'));
       },
+      undefined,
       { timeout: 10000 }
     );
   });
@@ -400,6 +512,7 @@ async function scenarioInvalidBackup(page, tmpDir) {
         [...document.querySelectorAll('.toast')].some(t =>
           t.textContent.includes('백업 파일을 읽을 수 없습니다')
         ),
+      undefined,
       { timeout: 10000 }
     );
   });
@@ -418,6 +531,7 @@ async function scenarioInvalidBackup(page, tmpDir) {
         [...document.querySelectorAll('.toast')].some(t =>
           t.textContent.includes('잘못된 백업 파일 형식')
         ),
+      undefined,
       { timeout: 10000 }
     );
   });
@@ -434,6 +548,7 @@ async function scenarioMenuFormValidation(page, runId) {
   // 1단계: 저장 버튼이 빈 폼에서 비활성화
   await step(steps, '빈 폼에서 "저장" 버튼 비활성화', async () => {
     await goto(page, '/menu-master');
+    await waitForMenuAddButton(page);
     await page.getByRole('button', { name: '메뉴 추가' }).click();
     await page.getByPlaceholder('예) P-OR-005-L').waitFor({ state: 'visible', timeout: 15000 });
 
@@ -456,7 +571,10 @@ async function scenarioMenuFormValidation(page, runId) {
     await page.getByPlaceholder('예) 슈퍼콤비네이션').fill(name);
     await page.getByRole('dialog').getByRole('button', { name: '저장' }).click();
     await page.getByRole('dialog').waitFor({ state: 'detached', timeout: 15000 });
-    await page.getByText(name, { exact: false }).first().waitFor({ state: 'visible', timeout: 15000 });
+    await page
+      .getByText(name, { exact: false })
+      .first()
+      .waitFor({ state: 'visible', timeout: 15000 });
   });
 
   // 4단계: 동일 코드로 다시 추가 시도 → "기존 항목 갱신됨" 경고
@@ -468,8 +586,8 @@ async function scenarioMenuFormValidation(page, runId) {
     await page.getByRole('dialog').getByRole('button', { name: '저장' }).click();
 
     await page.waitForFunction(
-      () =>
-        [...document.querySelectorAll('.toast')].some(t => t.textContent.includes('갱신됨')),
+      () => [...document.querySelectorAll('.toast')].some(t => t.textContent.includes('갱신됨')),
+      undefined,
       { timeout: 10000 }
     );
   });
@@ -482,10 +600,243 @@ async function scenarioMenuFormValidation(page, runId) {
   return { name: '메뉴 폼 유효성 → 저장 차단 + 중복 코드 경고', steps };
 }
 
+// ── 시나리오 7: 브랜드 전환 → 브랜드별 데이터 분리 확인 ──
+async function scenarioBrandIsolation(page, runId) {
+  const steps = [];
+  const code = `ZZ-E2E-S7-${runId}`.toUpperCase();
+  const menuName = `E2E브랜드분리-${runId}`;
+  const CHINA4_DB = 'rnd_manager_v3__china4';
+
+  // 1단계: china4 브랜드로 전환 + 페이지 진입 (이때 initDB()가 china4 DB 스키마 생성)
+  await step(steps, 'china4 브랜드로 전환 및 메뉴마스터 페이지 진입', async () => {
+    await page.evaluate(() => localStorage.setItem('v3:active-brand', 'china4'));
+    await goto(page, '/menu-master');
+  });
+
+  // 2단계: china4 DB에 테스트 메뉴 삽입 (initDB() stores 생성 완료 후)
+  await step(steps, 'china4 DB에 테스트 메뉴 삽입', async () => {
+    // waitForMenuAddButton으로 useCurrentRole → china4 initDB() 완료를 간접 확인
+    await waitForMenuAddButton(page);
+    await page.evaluate(
+      ({ dbName, record }) =>
+        new Promise((resolve, reject) => {
+          // 버전 없이 열면 현재 버전으로 열림 (initDB()가 이미 스키마 생성 완료 상태)
+          const req = indexedDB.open(dbName);
+          req.onsuccess = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains('menu_master')) {
+              db.close();
+              return reject(new Error('menu_master store 없음 — initDB() 실행 여부 확인'));
+            }
+            const tx = db.transaction('menu_master', 'readwrite');
+            tx.objectStore('menu_master').add(record);
+            tx.oncomplete = () => {
+              db.close();
+              resolve();
+            };
+            tx.onerror = () => {
+              db.close();
+              reject(new Error('삽입 실패'));
+            };
+          };
+          req.onerror = () => reject(new Error('DB 열기 실패'));
+        }),
+      {
+        dbName: CHINA4_DB,
+        record: {
+          menuCode: code,
+          menuName,
+          category: '테스트',
+          status: 'active',
+          displayOrder: 9999,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      }
+    );
+    // 페이지 재진입해서 삽입한 메뉴가 china4 목록에 표시되는지 확인
+    await goto(page, '/menu-master');
+    await page
+      .getByText(menuName, { exact: false })
+      .first()
+      .waitFor({ state: 'visible', timeout: 15000 });
+  });
+
+  // 3단계: main 브랜드 전환 → 테스트 메뉴가 보이지 않아야 함
+  await step(steps, 'main 브랜드 전환 후 china4 메뉴 비표시 확인', async () => {
+    await page.evaluate(() => localStorage.setItem('v3:active-brand', 'main'));
+    await goto(page, '/menu-master');
+    const found = await page.evaluate(mn => document.body.innerText.includes(mn), menuName);
+    if (found)
+      throw new Error(`main 브랜드에서 china4 메뉴(${menuName})가 표시됨 — 브랜드 분리 실패`);
+  });
+
+  // 정리: china4 DB 테스트 레코드 삭제 후 main 복원 확인
+  await step(steps, '테스트 레코드 정리 및 main 브랜드 복원 확인', async () => {
+    await deleteRecordsByField(page, CHINA4_DB, 'menu_master', 'menuCode', code);
+    // main으로 복원 확인
+    const active = await page.evaluate(() => localStorage.getItem('v3:active-brand'));
+    if (active !== 'main' && active !== null)
+      await page.evaluate(() => localStorage.setItem('v3:active-brand', 'main'));
+  });
+
+  return { name: '브랜드 전환 → 브랜드별 데이터 분리 확인', steps };
+}
+
+// ── 시나리오 8: 노트 일정 추가 → 캘린더 반영 ──
+// '일정 추가' 버튼은 DayPanel(날짜 클릭 후) 안에 있으므로 IndexedDB 직접 삽입 후 표시 확인
+async function scenarioCalendarSchedule(page, runId) {
+  const steps = [];
+  const title = `E2E일정-${runId}`;
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+  // 1단계: note_schedules에 테스트 일정 직접 삽입
+  await step(steps, '캘린더 페이지 진입 및 일정 DB 직접 삽입', async () => {
+    await goto(page, '/note/calendar');
+    // goto() 내에서 window.__idbInitDone 대기로 initDB() 완료(note_schedules 포함) 보장
+    await page.evaluate(
+      ({ dbName, record }) =>
+        new Promise((resolve, reject) => {
+          const req = indexedDB.open(dbName);
+          req.onsuccess = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains('note_schedules')) {
+              db.close();
+              return reject(new Error('note_schedules store 없음'));
+            }
+            const tx = db.transaction('note_schedules', 'readwrite');
+            tx.objectStore('note_schedules').add(record);
+            tx.oncomplete = () => {
+              db.close();
+              resolve();
+            };
+            tx.onerror = e => {
+              db.close();
+              reject(new Error('삽입 실패: ' + e.target.error));
+            };
+          };
+          req.onerror = () => reject(new Error('DB 열기 실패'));
+        }),
+      {
+        dbName: MAIN_DB,
+        record: {
+          title,
+          date: today,
+          time: '',
+          type: '기타',
+          description: '',
+          linkedNoteId: null,
+          repeat: 'none',
+          repeatUntil: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      }
+    );
+  });
+
+  // 2단계: 캘린더 재진입 후 일정 제목 표시 확인
+  await step(steps, '캘린더 재진입 후 일정 표시 확인', async () => {
+    await goto(page, '/note/calendar');
+    await page
+      .getByText(title, { exact: false })
+      .first()
+      .waitFor({ state: 'visible', timeout: 15000 });
+  });
+
+  // 정리
+  await step(steps, '테스트 일정 정리', async () => {
+    await deleteRecordsByField(page, MAIN_DB, 'note_schedules', 'title', title);
+  });
+
+  return { name: '노트 일정 추가 → 캘린더 반영', steps };
+}
+
+// ── 시나리오 9: 식자재 등록 → 관리 목록 반영 ──
+async function scenarioIngredientCreate(page, runId) {
+  const steps = [];
+  const ingredientName = `E2E식자재-${runId}`;
+
+  // 1단계: 식자재 관리 페이지 진입 + 식자재 추가 버튼 로드 대기
+  await step(steps, '식자재 관리 페이지 진입', async () => {
+    await goto(page, '/ingredient/manage');
+    // DB 로딩 중에는 버튼이 disabled 상태이므로 enabled될 때까지 대기
+    await page.waitForFunction(
+      () => {
+        const btn = [...document.querySelectorAll('button')].find(b =>
+          (b.textContent || '').trim().includes('식자재 추가')
+        );
+        return btn && !btn.disabled;
+      },
+      undefined,
+      { timeout: 60000 }
+    );
+  });
+
+  // 2단계: 식자재 추가 모달 열기 + 재료명 입력
+  await step(steps, '식자재 추가 모달 오픈 및 재료명 입력', async () => {
+    await page.getByRole('button', { name: '식자재 추가' }).click();
+    await page.getByPlaceholder('예) 모짜렐라치즈').waitFor({ state: 'visible', timeout: 10000 });
+    await page.getByPlaceholder('예) 모짜렐라치즈').fill(ingredientName);
+  });
+
+  // 3단계: 저장 — 신규 추가 시 footer 버튼 레이블은 '추가' (기존 항목 수정 시만 '저장')
+  await step(steps, '추가 클릭 → 모달 닫힘', async () => {
+    await page
+      .locator('button.btn.primary')
+      .filter({ hasText: /^추가$/ })
+      .last()
+      .click();
+    await page.getByPlaceholder('예) 모짜렐라치즈').waitFor({ state: 'detached', timeout: 15000 });
+  });
+
+  // 4단계: 목록에서 재료명 확인
+  await step(steps, '식자재 목록에 재료명 표시 확인', async () => {
+    await page
+      .getByText(ingredientName, { exact: false })
+      .first()
+      .waitFor({ state: 'visible', timeout: 15000 });
+  });
+
+  // 정리
+  await step(steps, '테스트 식자재 정리', async () => {
+    await deleteRecordsByField(page, MAIN_DB, 'cost_ingredients', 'ingredientName', ingredientName);
+  });
+
+  return { name: '식자재 등록 → 관리 목록 반영', steps };
+}
+
 async function main() {
   const browser = await chromium.launch();
   const ctx = await newAuthedContext(browser, { acceptDownloads: true }, BASE);
   const page = await ctx.newPage();
+
+  page.on('pageerror', err => process.stderr.write(`[browser:pageerror] ${err.message}\n`));
+
+  // initDB() 완료 감지: 버전 지정 IDB open 성공 시 window.__idbInitDone = true 세팅.
+  // goto()에서 이 플래그가 true가 될 때까지 대기한다.
+  // page.goto()가 풀 페이지 로드를 트리거하므로 각 goto()마다 __idbInitDone이 false로 초기화된다.
+  await page.addInitScript(() => {
+    window.__idbInitDone = false;
+    const origOpen = IDBFactory.prototype.open;
+    IDBFactory.prototype.open = function (name, version) {
+      const req = origOpen.call(this, name, version);
+      if (version !== undefined) {
+        req.addEventListener('success', () => {
+          window.__idbInitDone = true;
+        });
+      }
+      return req;
+    };
+  });
+
+  // DB 초기화 오류 및 blocked 이벤트 캡처
+  page.on('console', msg => {
+    if (msg.type() === 'error' || msg.text().startsWith('[DB]')) {
+      process.stderr.write(`[browser:console:${msg.type()}] ${msg.text()}\n`);
+    }
+  });
+
   const tmpDir = mkdtempSync(join(tmpdir(), 'wf-qa-'));
 
   const runId = String(Date.now());
@@ -497,6 +848,9 @@ async function main() {
     scenarios.push(await scenarioViewerBlocking(page, tmpDir));
     scenarios.push(await scenarioInvalidBackup(page, tmpDir));
     scenarios.push(await scenarioMenuFormValidation(page, runId));
+    scenarios.push(await scenarioBrandIsolation(page, runId));
+    scenarios.push(await scenarioCalendarSchedule(page, runId));
+    scenarios.push(await scenarioIngredientCreate(page, runId));
   } finally {
     await page.close();
     await ctx.close();
