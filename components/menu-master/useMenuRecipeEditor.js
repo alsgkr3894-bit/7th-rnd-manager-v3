@@ -139,38 +139,51 @@ export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellin
     [unitPriceMap]
   );
 
-  const handleSave = useCallback(async () => {
-    if (!supported) return;
-    setSaving(true);
-    try {
-      await upsertMenuRecipeForMenu({
-        menuCode,
-        menuName: menuName || '',
-        category,
-        kind: recipeKind,
-        size: size || '단일',
-        components: components.map(c => buildRecipeComponentForSave(c, unitPriceMap)),
-        selectedRecipeGroupIds: savableRecipeGroupIds,
-      });
-      await onSaved?.();
-      showToast('레시피 저장됨', 'ok');
-    } catch (err) {
-      showToast('저장 실패: ' + err.message, 'error');
-    } finally {
-      setSaving(false);
-    }
-  }, [
-    supported,
-    menuCode,
-    menuName,
-    category,
-    recipeKind,
-    size,
-    components,
-    savableRecipeGroupIds,
-    unitPriceMap,
-    onSaved,
-  ]);
+  const handleSave = useCallback(
+    async (options = {}) => {
+      const {
+        showSuccessToast = true,
+        showErrorToast = true,
+        runOnSaved = true,
+        throwOnError = false,
+      } = options;
+      if (!supported || !loaded) return { skipped: true };
+      setSaving(true);
+      try {
+        await upsertMenuRecipeForMenu({
+          menuCode,
+          menuName: menuName || '',
+          category,
+          kind: recipeKind,
+          size: size || '단일',
+          components: components.map(c => buildRecipeComponentForSave(c, unitPriceMap)),
+          selectedRecipeGroupIds: savableRecipeGroupIds,
+        });
+        if (runOnSaved) await onSaved?.();
+        if (showSuccessToast) showToast('레시피 저장됨', 'ok');
+        return { saved: true };
+      } catch (err) {
+        if (showErrorToast) showToast('저장 실패: ' + err.message, 'error');
+        if (throwOnError) throw err;
+        return { saved: false, error: err };
+      } finally {
+        setSaving(false);
+      }
+    },
+    [
+      supported,
+      loaded,
+      menuCode,
+      menuName,
+      category,
+      recipeKind,
+      size,
+      components,
+      savableRecipeGroupIds,
+      unitPriceMap,
+      onSaved,
+    ]
+  );
 
   return {
     components,

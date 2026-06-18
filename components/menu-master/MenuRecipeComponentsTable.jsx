@@ -142,6 +142,20 @@ export function MenuRecipeComponentsTable({
                       overflowY: 'auto',
                     }}
                   >
+                    {!searchQ?.trim() && (
+                      <div
+                        style={{
+                          padding: '4px 10px',
+                          fontSize: 10,
+                          color: 'var(--text-4)',
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                        }}
+                      >
+                        최근 사용
+                      </div>
+                    )}
                     {suggestions.map((ingredient, suggestionIndex) => (
                       <SuggestionItem
                         key={ingredient.id || ingredient.productCode}

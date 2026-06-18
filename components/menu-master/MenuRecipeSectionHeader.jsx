@@ -2,14 +2,7 @@
 
 import { formatNumber, formatPercent } from '@/lib/format';
 
-export function MenuRecipeSectionHeader({
-  hasComponents,
-  recipeSummary,
-  saving,
-  onSave,
-  copyOpen,
-  onToggleCopy,
-}) {
+export function MenuRecipeSectionHeader({ hasComponents, recipeSummary, copyOpen, onToggleCopy }) {
   return (
     <>
       <div
@@ -33,15 +26,6 @@ export function MenuRecipeSectionHeader({
             style={{ fontSize: 11 }}
           >
             다른 메뉴에서 복사
-          </button>
-          <button
-            type="button"
-            className="btn sm"
-            onClick={onSave}
-            disabled={saving}
-            style={{ fontSize: 11 }}
-          >
-            {saving ? '저장 중…' : '레시피 저장'}
           </button>
         </div>
       </div>

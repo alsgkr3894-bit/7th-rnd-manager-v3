@@ -1,5 +1,13 @@
 'use client';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
 import { MenuRecipeComponentsTable } from '@/components/menu-master/MenuRecipeComponentsTable';
 import { MenuRecipeGroupSelector } from '@/components/menu-master/MenuRecipeGroupSelector';
@@ -7,7 +15,10 @@ import { MenuRecipeSectionHeader } from '@/components/menu-master/MenuRecipeSect
 import { useMenuRecipeEditor } from '@/components/menu-master/useMenuRecipeEditor';
 import { useRecipeIngredientSearch } from '@/components/menu-master/useRecipeIngredientSearch';
 
-export function MenuRecipeSection({ menuCode, menuName, category, size, sellingPrice, onSaved }) {
+export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
+  { menuCode, menuName, category, size, sellingPrice, onSaved },
+  ref
+) {
   const [copyOpen, setCopyOpen] = useState(false);
   const [copySearch, setCopySearch] = useState('');
 
@@ -37,6 +48,14 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
     sellingPrice,
     onSaved,
   });
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      saveRecipe: handleSave,
+    }),
+    [handleSave]
+  );
 
   const copyMenus = useMemo(() => {
     const q = copySearch.trim().toLowerCase();
@@ -110,8 +129,6 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
       <MenuRecipeSectionHeader
         hasComponents={recipeSummary.componentCount > 0}
         recipeSummary={recipeSummary}
-        saving={saving}
-        onSave={handleSave}
         copyOpen={copyOpen}
         onToggleCopy={() => {
           setCopyOpen(v => !v);
@@ -138,7 +155,15 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
             onChange={e => setCopySearch(e.target.value)}
             style={{ width: '100%', marginBottom: 6, fontSize: 12 }}
           />
-          <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <div
+            style={{
+              maxHeight: 180,
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+            }}
+          >
             {copyMenus.length === 0 ? (
               <div style={{ fontSize: 12, color: 'var(--text-3)', padding: '4px 0' }}>
                 검색 결과 없음
@@ -149,16 +174,34 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
                   key={m.menuCode}
                   type="button"
                   className="btn ghost"
-                  style={{ textAlign: 'left', fontSize: 12, padding: '4px 8px', justifyContent: 'flex-start' }}
+                  style={{
+                    textAlign: 'left',
+                    fontSize: 12,
+                    padding: '4px 8px',
+                    justifyContent: 'flex-start',
+                  }}
                   onClick={() => {
                     copyFromMenu(m);
                     setCopyOpen(false);
                     setCopySearch('');
                   }}
                 >
-                  <span style={{ fontFamily: 'monospace', color: 'var(--text-3)', marginRight: 6, fontSize: 11 }}>{m.menuCode}</span>
+                  <span
+                    style={{
+                      fontFamily: 'monospace',
+                      color: 'var(--text-3)',
+                      marginRight: 6,
+                      fontSize: 11,
+                    }}
+                  >
+                    {m.menuCode}
+                  </span>
                   {m.menuName}
-                  {m.size ? <span style={{ color: 'var(--text-4)', marginLeft: 4, fontSize: 11 }}>{m.size}</span> : null}
+                  {m.size ? (
+                    <span style={{ color: 'var(--text-4)', marginLeft: 4, fontSize: 11 }}>
+                      {m.size}
+                    </span>
+                  ) : null}
                 </button>
               ))
             )}
@@ -167,7 +210,10 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
             type="button"
             className="btn ghost"
             style={{ marginTop: 6, fontSize: 11, color: 'var(--text-3)' }}
-            onClick={() => { setCopyOpen(false); setCopySearch(''); }}
+            onClick={() => {
+              setCopyOpen(false);
+              setCopySearch('');
+            }}
           >
             취소
           </button>
@@ -200,17 +246,28 @@ export function MenuRecipeSection({ menuCode, menuName, category, size, sellingP
         onRemoveRow={removeRow}
       />
 
-      <button
-        type="button"
-        className="btn sm"
-        style={{ marginTop: 8, width: '100%', fontSize: 12 }}
-        onClick={() => {
-          addRow();
-          pendingFocusNewRowRef.current = true;
-        }}
-      >
-        + 구성품 추가
-      </button>
+      <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+        <button
+          type="button"
+          className="btn sm"
+          style={{ flex: 1, fontSize: 12 }}
+          onClick={() => {
+            addRow();
+            pendingFocusNewRowRef.current = true;
+          }}
+        >
+          + 구성품 추가
+        </button>
+        <button
+          type="button"
+          className="btn sm primary"
+          style={{ fontSize: 12 }}
+          onClick={handleSave}
+          disabled={saving}
+        >
+          {saving ? '저장 중…' : '레시피 저장'}
+        </button>
+      </div>
     </div>
   );
-}
+});

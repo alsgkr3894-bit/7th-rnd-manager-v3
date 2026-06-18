@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { applyIngredientSuggestionToComponent } from '@/components/menu-master/recipeComponentRows';
+import {
+  addRecentIngredientCode,
+  getRecentIngredientCodes,
+} from '@/lib/ingredient/recent-ingredients';
 
 export function useRecipeIngredientSearch({
   allIngredients,
@@ -14,17 +18,26 @@ export function useRecipeIngredientSearch({
   const [activeSuggestionIdx, setActiveSuggestionIdx] = useState(-1);
 
   const suggestions = useMemo(() => {
-    if (!searchQ.trim()) return [];
+    const active = allIngredients.filter(i => !i.discontinued && !i.excluded);
+    if (!searchQ.trim()) {
+      if (searchIdx === null) return [];
+      const recentCodes = getRecentIngredientCodes();
+      if (!recentCodes.length) return [];
+      const codeOrder = new Map(recentCodes.map((code, i) => [code, i]));
+      return active
+        .filter(i => i.productCode && codeOrder.has(i.productCode))
+        .sort((a, b) => codeOrder.get(a.productCode) - codeOrder.get(b.productCode))
+        .slice(0, 8);
+    }
     const q = searchQ.toLowerCase().replace(/\s/g, '');
-    return allIngredients
-      .filter(i => !i.discontinued && !i.excluded)
+    return active
       .filter(
         i =>
           (i.ingredientName || '').toLowerCase().replace(/\s/g, '').includes(q) ||
           (i.productCode || '').toLowerCase().replace(/\s/g, '').includes(q)
       )
       .slice(0, 8);
-  }, [searchQ, allIngredients]);
+  }, [searchQ, searchIdx, allIngredients]);
 
   useEffect(() => {
     setActiveSuggestionIdx(-1);
@@ -32,6 +45,7 @@ export function useRecipeIngredientSearch({
 
   const pickSuggestion = useCallback(
     (idx, ing) => {
+      if (ing?.productCode) addRecentIngredientCode(ing.productCode);
       setComponents(prev =>
         prev.map((c, i) =>
           i === idx ? applyIngredientSuggestionToComponent(c, ing, unitPriceMap) : c
