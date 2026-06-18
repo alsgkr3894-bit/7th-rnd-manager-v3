@@ -120,6 +120,12 @@ export function IngredientManagePanel({
         <FilterBar search={search} onSearch={onSearch} />
       </div>
 
+      {catFilter === NO_PRICE_FILTER && filtered.length > 0 && (
+        <div style={{ fontSize: 12, color: 'var(--warn)', marginBottom: -4 }}>
+          단가 없는 식자재 {filtered.length}개 — 행을 클릭해서 폼에서 단가를 입력하세요
+        </div>
+      )}
+
       <div className="card table-card">
         {filtered.length === 0 ? (
           <div
