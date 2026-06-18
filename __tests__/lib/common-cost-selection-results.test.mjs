@@ -63,6 +63,66 @@ describe('common cost selection results', () => {
     expect(rows[0].costMap.L).toBe(300);
   });
 
+  test('원가마진표 행은 L/R 사이즈 코드가 달라도 한 메뉴 행으로 합친다', () => {
+    const rows = buildDetailRows(
+      [
+        {
+          menuCode: 'P-OR-009-L',
+          menuName: '테스트 피자 L',
+          category: '피자/오리지널',
+          size: 'L',
+          price: 20000,
+        },
+        {
+          menuCode: 'P-OR-009-R',
+          menuName: '테스트 피자 R',
+          category: '피자/오리지널',
+          size: 'R',
+          price: 17000,
+        },
+      ],
+      {
+        pizzaMap: new Map([
+          [
+            'P-OR-009-L',
+            {
+              menuCode: 'P-OR-009-L',
+              menuName: '테스트 피자 L',
+              category: '피자/오리지널',
+              size: 'L',
+              components: [{ productCode: 'SAUCE', ingredientName: '소스', quantity: 30 }],
+            },
+          ],
+          [
+            'P-OR-009-R',
+            {
+              menuCode: 'P-OR-009-R',
+              menuName: '테스트 피자 R',
+              category: '피자/오리지널',
+              size: 'R',
+              components: [{ productCode: 'SAUCE', ingredientName: '소스', quantity: 20 }],
+            },
+          ],
+        ]),
+        personalMap: new Map(),
+        sideMap: new Map(),
+        setMap: new Map(),
+      },
+      UNIT_PRICE_MAP,
+      []
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].menuName).toBe('테스트 피자');
+    expect(rows[0].menuCodeBase).toBe('P-OR-009');
+    expect(rows[0].menuCodes).toEqual(['P-OR-009-L', 'P-OR-009-R']);
+    expect(rows[0].sizes).toEqual([
+      { label: 'L', sellingPrice: 20000 },
+      { label: 'R', sellingPrice: 17000 },
+    ]);
+    expect(rows[0].costMap).toEqual({ L: 300, R: 200 });
+  });
+
   test('전체요약 행은 체크한 공통원가를 합산한다', () => {
     const rows = buildRows([PRICE_ROW], RECIPE_MAPS, UNIT_PRICE_MAP, RECIPE_GROUPS);
 

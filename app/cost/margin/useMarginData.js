@@ -70,8 +70,14 @@ export function useMarginData() {
 
       const allRows = [...detailRows, ...derivedRows];
       for (const r of allRows) {
-        const m = r.menuCode ? masterByCode.get(r.menuCode) : null;
-        r.hidden = m?.hidden === true;
+        const codes =
+          Array.isArray(r.menuCodes) && r.menuCodes.length
+            ? r.menuCodes
+            : r.menuCode
+              ? [r.menuCode]
+              : [];
+        const masterRows = codes.map(code => masterByCode.get(code)).filter(Boolean);
+        r.hidden = masterRows.length > 0 && masterRows.every(m => m.hidden === true);
       }
       allRows.sort((a, b) => {
         const ra = getMenuCodeRank(a.menuCode);

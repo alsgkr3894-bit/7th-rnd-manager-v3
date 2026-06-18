@@ -43,15 +43,23 @@ export function useMarginActions({
 
   const handleToggleHide = useCallback(
     async r => {
-      if (!r.menuCode) return;
+      const codes =
+        Array.isArray(r.menuCodes) && r.menuCodes.length
+          ? r.menuCodes
+          : r.menuCode
+            ? [r.menuCode]
+            : [];
+      if (!codes.length) return;
       try {
         const map = await getMenuMasterMap();
-        const existing = map.get(r.menuCode);
-        if (!existing) {
+        const masterRows = codes.map(code => map.get(code)).filter(Boolean);
+        if (masterRows.length === 0) {
           showToast('마스터에 없는 메뉴라 숨길 수 없어요', 'error');
           return;
         }
-        await upsertMenuMaster({ ...existing, hidden: !r.hidden });
+        await Promise.all(
+          masterRows.map(existing => upsertMenuMaster({ ...existing, hidden: !r.hidden }))
+        );
         await load();
       } catch (e) {
         showToast('숨김 처리 실패: ' + e.message, 'error');
