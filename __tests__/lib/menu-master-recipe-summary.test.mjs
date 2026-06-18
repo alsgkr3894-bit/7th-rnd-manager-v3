@@ -130,6 +130,47 @@ describe('menu master recipe summary', () => {
     });
   });
 
+  test('직접 레시피가 완성되어도 공통묶음 해당 사이즈 수량이 없으면 공통 수량 누락으로 분리한다', () => {
+    const summary = summarizeMenuRecipe(
+      { menuCode: 'P-OR-001-L', category: '피자/오리지널', size: 'L', price: 10000 },
+      {
+        components: [{ productCode: 'CHZ', ingredientName: '치즈', quantity: 100 }],
+        selectedRecipeGroupIds: ['10'],
+      },
+      new Map([
+        ['CHZ', { unitPrice: 5, baseUnitType: 'g' }],
+        ['SAUCE', { unitPrice: 10, baseUnitType: 'g' }],
+      ]),
+      {
+        recipeGroups: [
+          {
+            id: 10,
+            name: '피자 공통',
+            sizes: ['L'],
+            defaultCategories: ['피자'],
+            ingredients: [
+              {
+                productCode: 'SAUCE',
+                ingredientName: '공통소스',
+                quantities: {},
+              },
+            ],
+          },
+        ],
+      }
+    );
+
+    expect(summary).toMatchObject({
+      status: MENU_RECIPE_SUMMARY_STATUS.NEEDS_QUANTITY,
+      missingQuantityCount: 1,
+      missingDirectQuantityCount: 0,
+      missingCommonQuantityCount: 1,
+      missingPriceCount: 0,
+      missingDirectPriceCount: 0,
+      missingCommonPriceCount: 0,
+    });
+  });
+
   test('직접 구성품이 없어도 체크한 공통묶음만으로 메뉴 원가를 표시한다', () => {
     const result = buildMenuRecipeSummaryMap(
       [{ menuCode: 'P-OR-002-R', category: '피자/오리지널', size: 'R', price: 12000 }],

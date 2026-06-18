@@ -59,6 +59,10 @@ const COST_RATE_TONE_COLOR = {
 
 function RecipeSummaryLine({ recipeSummary }) {
   const costRateColor = COST_RATE_TONE_COLOR[recipeSummary.costRateTone] || 'var(--text-2)';
+  const missingDirectQuantityCount = recipeSummary.missingDirectQuantityCount || 0;
+  const missingCommonQuantityCount = recipeSummary.missingCommonQuantityCount || 0;
+  const missingDirectPriceCount = recipeSummary.missingDirectPriceCount || 0;
+  const missingCommonPriceCount = recipeSummary.missingCommonPriceCount || 0;
 
   return (
     <div
@@ -105,11 +109,19 @@ function RecipeSummaryLine({ recipeSummary }) {
           </b>
         </span>
       )}
-      {recipeSummary.missingQuantityCount > 0 && (
-        <span style={{ color: 'var(--warn)' }}>수량 확인 {recipeSummary.missingQuantityCount}</span>
+      {missingDirectQuantityCount > 0 && (
+        <span style={{ color: 'var(--warn)' }}>레시피 수량 확인 {missingDirectQuantityCount}</span>
       )}
-      {recipeSummary.missingPriceCount > 0 && (
-        <span style={{ color: 'var(--warn)' }}>단가 확인 {recipeSummary.missingPriceCount}</span>
+      {missingCommonQuantityCount > 0 && (
+        <span style={{ color: 'var(--warn)' }}>
+          공통원가 수량 확인 {missingCommonQuantityCount}
+        </span>
+      )}
+      {missingDirectPriceCount > 0 && (
+        <span style={{ color: 'var(--warn)' }}>레시피 단가 확인 {missingDirectPriceCount}</span>
+      )}
+      {missingCommonPriceCount > 0 && (
+        <span style={{ color: 'var(--warn)' }}>공통원가 단가 확인 {missingCommonPriceCount}</span>
       )}
       {recipeSummary.commonGroupCount > 0 && (
         <span style={{ color: 'var(--text-4)' }}>

@@ -34,6 +34,22 @@ const RECIPE_STATUS_LABEL = {
   [MENU_RECIPE_SUMMARY_STATUS.UNSUPPORTED]: '미지원',
 };
 
+function recipeStatusLabel(summary) {
+  if (summary?.status === MENU_RECIPE_SUMMARY_STATUS.NEEDS_QUANTITY) {
+    const direct = summary.missingDirectQuantityCount || 0;
+    const common = summary.missingCommonQuantityCount || 0;
+    if (common > 0 && direct === 0) return '공통수량 확인';
+    if (common > 0 && direct > 0) return '수량/공통 확인';
+  }
+  if (summary?.status === MENU_RECIPE_SUMMARY_STATUS.NEEDS_PRICE) {
+    const direct = summary.missingDirectPriceCount || 0;
+    const common = summary.missingCommonPriceCount || 0;
+    if (common > 0 && direct === 0) return '공통단가 확인';
+    if (common > 0 && direct > 0) return '단가/공통 확인';
+  }
+  return RECIPE_STATUS_LABEL[summary?.status] || '확인';
+}
+
 export function MenuRecipeCostCell({ summary }) {
   if (!summary) {
     return <span style={{ fontSize: 11, color: 'var(--text-4)' }}>계산 중</span>;
@@ -41,7 +57,7 @@ export function MenuRecipeCostCell({ summary }) {
 
   const style =
     RECIPE_STATUS_STYLE[summary.status] || RECIPE_STATUS_STYLE[MENU_RECIPE_SUMMARY_STATUS.MISSING];
-  const label = RECIPE_STATUS_LABEL[summary.status] || '확인';
+  const label = recipeStatusLabel(summary);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
