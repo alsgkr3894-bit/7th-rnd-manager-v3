@@ -205,7 +205,7 @@ export default function Page() {
   }, [strictPostingEnabled, strictPostingIssues]);
 
   const handleExcelExport = () =>
-    exportCostXlsx(periodLabel, activeCats, recipeRows).catch(err =>
+    exportCostXlsx(periodLabel, activeCats, recipeRows, riskThreshold).catch(err =>
       showToast('엑셀 내보내기 실패: ' + err.message, 'error')
     );
 
