@@ -178,6 +178,9 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
                     fontSize: 12,
                     padding: '4px 8px',
                     justifyContent: 'flex-start',
+                    width: '100%',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
                   }}
                   onClick={() => {
                     copyFromMenu(m);
@@ -189,15 +192,25 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
                     style={{
                       fontFamily: 'monospace',
                       color: 'var(--text-3)',
-                      marginRight: 6,
                       fontSize: 11,
+                      flexShrink: 0,
+                      minWidth: 110,
                     }}
                   >
                     {m.menuCode}
                   </span>
-                  {m.menuName}
+                  <span
+                    style={{
+                      flex: 1,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      minWidth: 0,
+                    }}
+                  >
+                    {m.menuName}
+                  </span>
                   {m.size ? (
-                    <span style={{ color: 'var(--text-4)', marginLeft: 4, fontSize: 11 }}>
+                    <span style={{ color: 'var(--text-4)', marginLeft: 8, fontSize: 11, flexShrink: 0 }}>
                       {m.size}
                     </span>
                   ) : null}
