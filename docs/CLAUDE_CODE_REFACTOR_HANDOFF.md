@@ -11,7 +11,7 @@
 |---|---|
 | 테스트 | **275 suites / 1504 tests** (모두 통과) |
 | qa:smoke | **22/22 라우트** |
-| qa:workflow | **16/16 시나리오** (2026-06-19 레시피 UI 저장 시나리오 추가) |
+| qa:workflow | **16/16 시나리오** (2026-06-19 레시피 UI 저장·UX 보완 추가) |
 | qa:runtime | **63/63 라우트** |
 | Next.js | 14.2.35 (Node 24 안정 빌드) |
 | IndexedDB | v23 스키마 (DB_VERSION) |
