@@ -86,6 +86,9 @@ describe('workflowScenarios', () => {
       'scenarioCostMargin',
       'scenarioSalesUpload',
       'scenarioNutritionMenu',
+      'scenarioRecipeCostMargin',
+      'scenarioIngredientPriceReport',
+      'scenarioCommonCost',
     ]);
   });
 });
