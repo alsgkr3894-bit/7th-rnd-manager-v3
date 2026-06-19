@@ -1,4 +1,8 @@
-import { parseOptionalNonNegativeNumber, parseOptionalNumber } from '../../lib/parse.js';
+import {
+  parseOptionalNonNegativeNumber,
+  parseOptionalNumber,
+  parseExcelDate,
+} from '../../lib/parse.js';
 
 describe('parseOptionalNumber', () => {
   test('빈 값은 선택 입력으로 보고 null 처리한다', () => {
@@ -32,5 +36,37 @@ describe('parseOptionalNonNegativeNumber', () => {
   test('음수와 잘못된 숫자는 실패로 표시한다', () => {
     expect(parseOptionalNonNegativeNumber('-1')).toEqual({ ok: false, value: null });
     expect(parseOptionalNonNegativeNumber('abc')).toEqual({ ok: false, value: null });
+  });
+});
+
+describe('parseExcelDate (R2-H1 회귀)', () => {
+  test('SheetJS Date 객체(cellDates:true)를 로컬 달력일자로 변환한다', () => {
+    // 월은 0-based: 5 → 6월
+    expect(parseExcelDate(new Date(2026, 5, 16))).toBe('2026-06-16');
+  });
+
+  test('잘못된 Date는 빈 문자열', () => {
+    expect(parseExcelDate(new Date('invalid'))).toBe('');
+  });
+
+  test('슬래시·점·하이픈 + 한자리 월/일을 정규화한다', () => {
+    expect(parseExcelDate('2026/6/1')).toBe('2026-06-01');
+    expect(parseExcelDate('2026-6-1')).toBe('2026-06-01');
+    expect(parseExcelDate('2026.6.1')).toBe('2026-06-01');
+    expect(parseExcelDate('2026/06/16')).toBe('2026-06-16');
+  });
+
+  test('이미 정규형이거나 한국어 표기는 정규형으로 반환한다', () => {
+    expect(parseExcelDate('2026-06-16')).toBe('2026-06-16');
+    expect(parseExcelDate('2026년 6월 1일')).toBe('2026-06-01');
+  });
+
+  test('엑셀 시리얼 번호는 종전대로 변환한다', () => {
+    expect(parseExcelDate(46189)).toBe('2026-06-16');
+  });
+
+  test('빈 값은 빈 문자열', () => {
+    expect(parseExcelDate('')).toBe('');
+    expect(parseExcelDate(null)).toBe('');
   });
 });
