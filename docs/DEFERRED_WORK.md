@@ -499,7 +499,7 @@
 | `docs/CLAUDE_CODE_SESSION_2026-06-16.md` _(삭제됨)_ | 성능·정리 배치 3건(테스트 수정·usePageStats 최적화·dynamic import) → "성능·정리 최적화 배치 ✅ 2026-06-16" 완료 이력으로 이미 반영 | 내용 전부 흡수 후 2026-06-17 삭제 |
 | `docs/MENU_MASTER_RECIPE_INPUT_UX_PLAN.md` _(삭제됨)_ | 레시피 입력 UX·식자재관리 UI 정비 P0~P5+A~G 완료 → 완료 이력 흡수. 보류 항목(레시피 2차 UX·식자재 정리 도구) → 보류 섹션 등록 | 내용 전부 흡수 후 2026-06-17 삭제 |
 | `docs/OPERATIONAL_STABILITY.md` _(삭제됨)_ | P6 운영 안정성 점검 결과 → "운영 안정성 보강 ✅ 2026-06-17" 완료 이력으로 흡수 | 내용 전부 흡수 후 2026-06-17 삭제 |
-| `docs/SECURITY_POLICY.md` _(삭제됨)_ | 현재 인증 구조·허용된 취약점 근거 → 보류 섹션 "외부 배포 보안 강화" + [[permission-guard]]로 흡수 | 내용 전부 흡수 후 2026-06-17 삭제 |
+| `docs/SECURITY_POLICY.md` | 인증 구조·권한 가드 정책·CSV 보안·외부 배포 시 제한 사항. §2-4-1에 sync 브랜드 메타 가드 보류 사유 기술. `brand-master.js:138`이 이 섹션을 직접 참조 | 삭제하지 않음 — 가드 정책 근거 문서 |
 | `docs/SITE_QUALITY_IMPROVEMENT_PLAN.md` _(삭제됨)_ | P0~P6 전 항목 완료 이력으로 흡수 (품질 개선 로드맵 완료 이력) | 내용 전부 흡수 후 2026-06-17 삭제 |
 | `docs/SITE_REFACTOR_AND_HARDENING_PLAN.md` _(삭제됨)_ | 1~8단계 완료 이력 흡수, P5~P11 보류 항목 등록 | 내용 전부 흡수 후 2026-06-17 삭제 |
 | `docs/UX_ISSUE_GUIDANCE.md` _(삭제됨)_ | P2 이슈 패널 4종 완료 이력 흡수, 영양 부분 누락 진단 보류 항목 등록 | 내용 전부 흡수 후 2026-06-17 삭제 |
