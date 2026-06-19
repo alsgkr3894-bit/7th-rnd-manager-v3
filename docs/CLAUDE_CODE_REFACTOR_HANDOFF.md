@@ -1,6 +1,6 @@
 # Claude Code Refactor Handoff
 
-> 최종 갱신: 2026-06-18  
+> 최종 갱신: 2026-06-19  
 > 이전 버전은 `9a6ad28f` 커밋에서 dead code로 삭제됐으며, 이 문서가 후속 출처입니다.
 
 ---
@@ -9,9 +9,9 @@
 
 | 지표 | 값 |
 |---|---|
-| 테스트 | **269 suites / 1438 tests** (모두 통과) |
+| 테스트 | **275 suites / 1504 tests** (모두 통과) |
 | qa:smoke | **22/22 라우트** |
-| qa:workflow | **12/12 시나리오** (2026-06-18 workflow fixture 2차 확대 후 통과) |
+| qa:workflow | **16/16 시나리오** (2026-06-19 레시피 UI 저장 시나리오 추가) |
 | qa:runtime | **63/63 라우트** |
 | Next.js | 14.2.35 (Node 24 안정 빌드) |
 | IndexedDB | v23 스키마 (DB_VERSION) |
@@ -30,7 +30,7 @@
 
 ### 권한 레이어
 - **`assertActiveAdmin(actionLabel)`** (`lib/auth/guard.js`): 파괴적 async 함수 최상단 가드. viewer이면 `PermissionDeniedError` throw.
-- 대상 함수: `addAccount`, `updateAccount`, `deleteAccount`, `deleteMenuMaster`, `resetAllMenuMaster`, `seedMenuMaster`, `deleteIngredient`, `bulkDeleteIngredients`, `importAllToBrand`.
+- 대상 함수: `addAccount`, `updateAccount`, `deleteAccount`, `deleteMenuMaster`, `resetAllMenuMaster`, `seedMenuMaster`, `deleteIngredient`, `bulkDeleteIngredients`, `importAllToBrand`, `renameCategoryInAll`, `renameTagInAll`, `bulkSetDiscontinued`, `bulkSetCategory`.
 - **`useCurrentRole()`**: React 훅. `{ role, isAdmin, ready }` 반환. fail-closed(초기값 `'viewer'`).
 - sync 브랜드 메타(`upsertBrand` 등)는 비파괴 localStorage 조작이라 가드 제외(DEFERRED_WORK 참조).
 
@@ -70,9 +70,9 @@
 ```bash
 npm run lint          # ESLint 0 warnings 필수
 npm run format:check  # Prettier 포맷 확인
-npm run test:ci       # 269 suites / 1438 tests
+npm run test:ci       # 274 suites / 1486 tests
 npm run qa:smoke      # 22/22 라우트 (Playwright, dev 서버 필요)
-npm run qa:workflow   # 12/12 E2E 시나리오 (Playwright, dev 서버 필요)
+npm run qa:workflow   # 15/15 E2E 시나리오 (Playwright, dev 서버 필요)
 npm run qa:runtime    # 63/63 라우트 no-undef/hydration 검사
 npm run build:clean   # .next 삭제 후 production 빌드
 npm run audit:docs    # docs/ 파일 stale 감사
