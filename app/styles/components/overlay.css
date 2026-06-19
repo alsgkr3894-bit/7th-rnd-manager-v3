@@ -407,3 +407,14 @@
   border-top: 1px solid var(--divider);
   text-align: right;
 }
+
+@media (max-width: 540px) {
+  .modal {
+    width: calc(100vw - 24px);
+    padding: 24px 16px;
+    border-radius: 16px;
+  }
+  .status-row {
+    grid-template-columns: 1fr;
+  }
+}

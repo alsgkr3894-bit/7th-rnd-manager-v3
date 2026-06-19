@@ -510,6 +510,17 @@
   }
 }
 
+@media (max-width: 480px) {
+  /* 390px 기준: stat-value 폰트를 약간 줄여 2열 레이아웃에서 긴 숫자 잘림 방지 */
+  .stat-value {
+    font-size: 18px;
+  }
+  /* filter-search는 768px 쿼리에서 이미 width:100% — 여기서는 gap만 줄임 */
+  .filter-bar {
+    gap: 6px;
+  }
+}
+
 /* Density tweaks for compact */
 [data-density='compact'] .balance-card .amount {
   font-size: 38px;

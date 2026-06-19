@@ -248,6 +248,7 @@ export default function Page() {
             gap: 2,
             borderBottom: '1px solid var(--divider)',
             marginBottom: -12,
+            overflowX: 'auto',
           }}
         >
           <TabButton active={view === 'manage'} onClick={() => setView('manage')}>

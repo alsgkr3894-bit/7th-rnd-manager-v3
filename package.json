@@ -15,6 +15,7 @@
     "demo": "rm -rf .next && next build && next start -H 0.0.0.0 -p 3000",
     "lint": "next lint",
     "qa:smoke": "node scripts/smoke-qa.mjs",
+    "qa:mobile": "node scripts/mobile-qa.mjs",
     "qa:runtime": "node scripts/full-rt.mjs",
     "qa:prod": "node scripts/qa-prod.mjs",
     "qa:workflow": "node scripts/workflow-qa.mjs",
