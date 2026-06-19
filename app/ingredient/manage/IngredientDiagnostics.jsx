@@ -88,7 +88,13 @@ function CleanupChip({ label, prefix = '', onRemove, onRename, isAdmin }) {
         </span>
         <button
           className="btn sm"
-          style={{ padding: '1px 6px', fontSize: 11, background: 'var(--negative)', color: '#fff', border: 0 }}
+          style={{
+            padding: '1px 6px',
+            fontSize: 11,
+            background: 'var(--negative)',
+            color: '#fff',
+            border: 0,
+          }}
           onClick={() => {
             setConfirmRemove(false);
             onRemove(label);
@@ -110,7 +116,13 @@ function CleanupChip({ label, prefix = '', onRemove, onRename, isAdmin }) {
   return (
     <span
       className="chip"
-      style={{ fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 3, paddingRight: 4 }}
+      style={{
+        fontSize: 11,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 3,
+        paddingRight: 4,
+      }}
     >
       {prefix}
       {label}

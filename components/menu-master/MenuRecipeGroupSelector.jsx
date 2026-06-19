@@ -151,7 +151,8 @@ export function MenuRecipeGroupSelector({ groups, selectedGroupIds, onToggle }) 
                         {ing.ingredientName || ing.name || String(ing)}
                         {ing.quantity != null && (
                           <span style={{ color: 'var(--text-4)', marginLeft: 3 }}>
-                            {ing.quantity}{ing.unit || 'g'}
+                            {ing.quantity}
+                            {ing.unit || 'g'}
                           </span>
                         )}
                       </span>

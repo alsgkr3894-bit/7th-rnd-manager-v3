@@ -56,8 +56,10 @@ export function MenuMasterEditModal({
     if (!skipMissingCheckRef.current) {
       const summary = recipeSectionRef.current?.getRecipeSummary?.();
       if (summary) {
-        const missingQ = (summary.missingDirectQuantityCount || 0) + (summary.missingCommonQuantityCount || 0);
-        const missingP = (summary.missingDirectPriceCount || 0) + (summary.missingCommonPriceCount || 0);
+        const missingQ =
+          (summary.missingDirectQuantityCount || 0) + (summary.missingCommonQuantityCount || 0);
+        const missingP =
+          (summary.missingDirectPriceCount || 0) + (summary.missingCommonPriceCount || 0);
         if (missingQ > 0 || missingP > 0) {
           setMissingConfirm({ missingQ, missingP });
           return;
@@ -240,12 +242,14 @@ export function MenuMasterEditModal({
       {missingConfirm && (
         <ConfirmDialog
           open
-          message={[
-            missingConfirm.missingQ > 0 && `수량 미입력 ${missingConfirm.missingQ}개`,
-            missingConfirm.missingP > 0 && `단가 없음 ${missingConfirm.missingP}개`,
-          ]
-            .filter(Boolean)
-            .join(' · ') + ' — 누락된 상태로 저장하시겠습니까?'}
+          message={
+            [
+              missingConfirm.missingQ > 0 && `수량 미입력 ${missingConfirm.missingQ}개`,
+              missingConfirm.missingP > 0 && `단가 없음 ${missingConfirm.missingP}개`,
+            ]
+              .filter(Boolean)
+              .join(' · ') + ' — 누락된 상태로 저장하시겠습니까?'
+          }
           confirmLabel="저장"
           cancelLabel="취소하고 수정"
           onConfirm={() => {

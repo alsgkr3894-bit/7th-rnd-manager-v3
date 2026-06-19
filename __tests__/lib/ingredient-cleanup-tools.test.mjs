@@ -26,8 +26,12 @@ jest.unstable_mockModule('@/lib/db', () => ({
       objectStore(storeName) {
         if (storeName !== 'cost_ingredients') throw new Error(`unexpected store: ${storeName}`);
         return {
-          put(record) { upsertRow(record); },
-          delete(id) { ingredientRows = ingredientRows.filter(r => r.id !== id); },
+          put(record) {
+            upsertRow(record);
+          },
+          delete(id) {
+            ingredientRows = ingredientRows.filter(r => r.id !== id);
+          },
         };
       },
     };
@@ -48,12 +52,8 @@ jest.unstable_mockModule('@/lib/auth/guard', () => ({
   assertActiveAdmin: jest.fn().mockResolvedValue(undefined),
 }));
 
-const {
-  renameCategoryInAll,
-  renameTagInAll,
-  bulkSetDiscontinued,
-  bulkSetCategory,
-} = await import('../../lib/ingredient/store.js');
+const { renameCategoryInAll, renameTagInAll, bulkSetDiscontinued, bulkSetCategory } =
+  await import('../../lib/ingredient/store.js');
 
 beforeEach(() => {
   ingredientRows = [];
@@ -131,6 +131,14 @@ describe('renameTagInAll', () => {
     ingredientRows = [{ id: 1, ingredientName: 'A' }];
     const result = await renameTagInAll('냉동', '냉동품');
     expect(result).toEqual({ updated: 0 });
+  });
+
+  test('이미 새 이름 태그가 있으면 중복 제거한다', async () => {
+    // ['냉동', '냉동품'] → 냉동을 냉동품으로 바꾸면 중복 → ['냉동품']
+    ingredientRows = [{ id: 1, tags: ['냉동', '냉동품'], ingredientName: 'A' }];
+    const result = await renameTagInAll('냉동', '냉동품');
+    expect(result).toEqual({ updated: 1 });
+    expect(ingredientRows[0].tags).toEqual(['냉동품']);
   });
 
   test('assertActiveAdmin을 호출한다', async () => {

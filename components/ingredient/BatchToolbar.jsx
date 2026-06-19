@@ -15,6 +15,41 @@ export function IngredientBatchToolbar({
 }) {
   const selectedCount = selected instanceof Set ? selected.size : 0;
   const [showCatPicker, setShowCatPicker] = useState(false);
+  // confirm 상태: null | { type: 'discontinue', discontinued: boolean } | { type: 'category', newCategory: string }
+  const [confirm, setConfirm] = useState(null);
+
+  function handleConfirm() {
+    if (!confirm) return;
+    if (confirm.type === 'discontinue') {
+      onBulkDiscontinue(confirm.discontinued);
+    } else if (confirm.type === 'category') {
+      onBulkSetCategory(confirm.newCategory);
+    }
+    setConfirm(null);
+  }
+
+  // confirm 모드일 때는 확인/취소만 표시
+  if (confirm) {
+    const msg =
+      confirm.type === 'discontinue'
+        ? `${selectedCount}개를 ${confirm.discontinued ? '단종' : '단종 복구'} 처리할까요?`
+        : `${selectedCount}개의 분류를 '${confirm.newCategory || '(없음)'}' 으로 변경할까요?`;
+    return (
+      <>
+        <span style={{ fontSize: 12, color: 'var(--text-2)', marginRight: 4 }}>{msg}</span>
+        <button
+          className="btn sm"
+          style={{ background: 'var(--primary)', color: '#fff', border: 0 }}
+          onClick={handleConfirm}
+        >
+          확인
+        </button>
+        <button className="btn sm" onClick={() => setConfirm(null)}>
+          취소
+        </button>
+      </>
+    );
+  }
 
   return (
     <>
@@ -28,7 +63,7 @@ export function IngredientBatchToolbar({
           <button
             className="btn sm"
             disabled={selectedCount === 0}
-            onClick={() => onBulkDiscontinue(true)}
+            onClick={() => setConfirm({ type: 'discontinue', discontinued: true })}
             title="선택 항목을 단종 처리"
           >
             단종
@@ -36,7 +71,7 @@ export function IngredientBatchToolbar({
           <button
             className="btn sm"
             disabled={selectedCount === 0}
-            onClick={() => onBulkDiscontinue(false)}
+            onClick={() => setConfirm({ type: 'discontinue', discontinued: false })}
             title="선택 항목 단종 복구"
           >
             단종 복구
@@ -71,10 +106,15 @@ export function IngredientBatchToolbar({
             >
               <button
                 className="btn sm ghost"
-                style={{ width: '100%', textAlign: 'left', color: 'var(--text-3)', fontStyle: 'italic' }}
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  color: 'var(--text-3)',
+                  fontStyle: 'italic',
+                }}
                 onClick={() => {
                   setShowCatPicker(false);
-                  onBulkSetCategory('');
+                  setConfirm({ type: 'category', newCategory: '' });
                 }}
               >
                 (분류 없음)
@@ -86,7 +126,7 @@ export function IngredientBatchToolbar({
                   style={{ width: '100%', textAlign: 'left' }}
                   onClick={() => {
                     setShowCatPicker(false);
-                    onBulkSetCategory(cat);
+                    setConfirm({ type: 'category', newCategory: cat });
                   }}
                 >
                   {cat}

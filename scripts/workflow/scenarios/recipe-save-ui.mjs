@@ -1,4 +1,12 @@
-import { dbDeleteById, dbInsertOne, goto, MAIN_DB, step, waitForMenuAddButton } from '../helpers.mjs';
+import {
+  dbDeleteById,
+  dbInsertOne,
+  deleteRecordsByField,
+  goto,
+  MAIN_DB,
+  step,
+  waitForMenuAddButton,
+} from '../helpers.mjs';
 
 /**
  * 레시피 구성품 UI 저장 시나리오.
@@ -40,9 +48,9 @@ export async function scenarioRecipeSaveUI({ page, base, runId }) {
     await waitForMenuAddButton(page);
   });
 
-  await step(steps, '메뉴를 클릭하여 편집 모달 열기', async () => {
-    await page.getByText(menuName, { exact: false }).first().click();
-    // 편집 모달이 열릴 때까지 대기 (저장 버튼 또는 모달 역할)
+  await step(steps, '메뉴명 클릭하여 편집 모달 열기', async () => {
+    // 메뉴명은 button 요소 — 클릭하면 편집 모달 오픈
+    await page.getByRole('button', { name: menuName, exact: false }).first().click();
     await page.getByRole('dialog').waitFor({ state: 'visible', timeout: 15_000 });
   });
 
@@ -57,6 +65,7 @@ export async function scenarioRecipeSaveUI({ page, base, runId }) {
     const dialog = page.getByRole('dialog');
     const searchInput = dialog.getByPlaceholder('식자재명 검색 (↑↓ 이동, Enter 선택)').last();
     await searchInput.waitFor({ state: 'visible', timeout: 10_000 });
+    // 검색어 입력 (앞 6자 — 충분히 고유함)
     await searchInput.fill(ingName.slice(0, 6));
 
     // 제안 리스트 표시 대기
@@ -67,11 +76,24 @@ export async function scenarioRecipeSaveUI({ page, base, runId }) {
       .first();
     await suggestion.waitFor({ state: 'visible', timeout: 10_000 });
     await suggestion.click();
+
+    // 식자재명이 input에 반영됐는지 확인
+    await page.waitForFunction(
+      name => {
+        const inputs = [
+          ...document.querySelectorAll(
+            '[role="dialog"] input[placeholder="식자재명 검색 (↑↓ 이동, Enter 선택)"]'
+          ),
+        ];
+        return inputs.some(inp => inp.value.includes(name));
+      },
+      ingName,
+      { timeout: 8_000 }
+    );
   });
 
   await step(steps, '수량 입력', async () => {
     const dialog = page.getByRole('dialog');
-    // 방금 추가된 행의 수량 입력 (마지막 number input)
     const qtyInput = dialog.locator('input[type="number"]').last();
     await qtyInput.waitFor({ state: 'visible', timeout: 5_000 });
     await qtyInput.fill('50');
@@ -86,26 +108,39 @@ export async function scenarioRecipeSaveUI({ page, base, runId }) {
   });
 
   await step(steps, '메뉴 재진입 후 레시피 구성품 저장 확인', async () => {
-    await page.getByText(menuName, { exact: false }).first().click();
+    // 저장 후 목록 갱신 대기
+    await waitForMenuAddButton(page);
+
+    await page.getByRole('button', { name: menuName, exact: false }).first().click();
     const dialog = page.getByRole('dialog');
     await dialog.waitFor({ state: 'visible', timeout: 15_000 });
 
-    // 레시피 섹션에 저장한 식자재명이 표시되는지 확인
-    await dialog
-      .getByText(ingName, { exact: false })
-      .first()
-      .waitFor({ state: 'visible', timeout: 10_000 });
+    // 레시피 로딩 완료 대기
+    await page.waitForFunction(
+      () => !document.querySelector('[role="dialog"]')?.textContent?.includes('레시피 로딩 중'),
+      { timeout: 15_000 }
+    );
+
+    // 저장된 식자재명이 recipe input value에 있는지 확인
+    await page.waitForFunction(
+      name => {
+        const inputs = [
+          ...document.querySelectorAll(
+            '[role="dialog"] input[placeholder="식자재명 검색 (↑↓ 이동, Enter 선택)"]'
+          ),
+        ];
+        return inputs.some(inp => inp.value.includes(name));
+      },
+      ingName,
+      { timeout: 10_000 }
+    );
 
     // 모달 닫기
-    const closeBtn = dialog.getByRole('button', { name: /닫기|취소|×/ }).first();
-    if (await closeBtn.isVisible()) await closeBtn.click();
-    else await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
     await dialog.waitFor({ state: 'detached', timeout: 10_000 });
   });
 
   await step(steps, '테스트 레코드 정리', async () => {
-    // menu_recipes는 menuCode 기반으로 정리
-    const { deleteRecordsByField } = await import('../helpers.mjs');
     await deleteRecordsByField(page, MAIN_DB, 'menu_recipes', 'menuCode', menuCode);
     if (menuId != null) await dbDeleteById(page, MAIN_DB, 'menu_master', menuId);
     if (ingId != null) await dbDeleteById(page, MAIN_DB, 'cost_ingredients', ingId);

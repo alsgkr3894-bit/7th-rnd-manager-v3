@@ -213,7 +213,9 @@ export function MenuRecipeComponentsTable({
                   <UnitPriceCell
                     idx={idx}
                     component={component}
-                    onOverride={typeof onUnitPriceOverride === 'function' ? onUnitPriceOverride : null}
+                    onOverride={
+                      typeof onUnitPriceOverride === 'function' ? onUnitPriceOverride : null
+                    }
                   />
                 )}
               </td>
@@ -331,7 +333,13 @@ function UnitPriceCell({ idx, component, onOverride }) {
       />
       <button
         type="button"
-        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-4)' }}
+        style={{
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: 0,
+          color: 'var(--text-4)',
+        }}
         onClick={() => setEditing(false)}
       >
         <Icon.close style={{ width: 9, height: 9 }} />

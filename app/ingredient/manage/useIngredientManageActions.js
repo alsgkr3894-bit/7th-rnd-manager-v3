@@ -291,10 +291,7 @@ export function useIngredientManageActions({
         const ids = [...selected];
         if (!ids.length) return;
         const { updated } = await bulkSetDiscontinued(ids, discontinued);
-        showToast(
-          `${updated}개 식자재 ${discontinued ? '단종' : '단종 복구'} 처리됨`,
-          'ok'
-        );
+        showToast(`${updated}개 식자재 ${discontinued ? '단종' : '단종 복구'} 처리됨`, 'ok');
         await load();
         exitBatch();
         clearSelection();
@@ -311,10 +308,7 @@ export function useIngredientManageActions({
         const ids = [...selected];
         if (!ids.length) return;
         const { updated } = await bulkSetCategory(ids, newCategory);
-        showToast(
-          `${updated}개 식자재 분류 → '${newCategory || '(없음)'}' 변경됨`,
-          'ok'
-        );
+        showToast(`${updated}개 식자재 분류 → '${newCategory || '(없음)'}' 변경됨`, 'ok');
         await load();
         exitBatch();
         clearSelection();
