@@ -9,7 +9,7 @@
 
 | 지표 | 값 |
 |---|---|
-| 테스트 | **278 suites / 1546 tests** (모두 통과) |
+| 테스트 | **275 suites / 1521 tests** (모두 통과) |
 | qa:smoke | **22/22 라우트** |
 | qa:mobile | **22라우트 390px** (Playwright, dev 서버 필요) |
 | qa:workflow | **16/16 시나리오** (2026-06-19 레시피 UI 저장·UX 보완 추가) |
@@ -71,7 +71,7 @@
 ```bash
 npm run lint          # ESLint 0 warnings 필수
 npm run format:check  # Prettier 포맷 확인
-npm run test:ci       # 278 suites / 1546 tests
+npm run test:ci       # 275 suites / 1521 tests
 npm run qa:smoke      # 22/22 라우트 702px (Playwright, dev 서버 필요)
 npm run qa:mobile     # 22라우트 390px (Playwright, dev 서버 필요)
 npm run qa:workflow   # 16/16 E2E 시나리오 (Playwright, dev 서버 필요)

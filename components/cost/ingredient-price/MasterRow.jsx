@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { Icon } from '@/components/icons';
 import { formatNumber, formatUnitPrice } from '@/lib/format';
-import { PriceHistoryModal } from '@/components/cost/ingredient-price/PriceHistoryModal';
 import { InlineEditCell } from '@/components/cost/manage/table-utils';
 
 export function MasterRow({
@@ -14,7 +13,6 @@ export function MasterRow({
   readOnly = false,
 }) {
   const [showNote, setShowNote] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
   const note = r.meta?.note || '';
 
   const packLabel = r.baseQuantity
@@ -194,15 +192,6 @@ export function MasterRow({
         </td>
         <td>
           <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-            {r.meta?.id != null && (
-              <button
-                className="btn xs"
-                onClick={() => setShowHistory(true)}
-                title="단가 변경 이력"
-              >
-                이력
-              </button>
-            )}
             <button
               className="btn xs"
               onClick={onRegClick}
@@ -214,13 +203,6 @@ export function MasterRow({
           </div>
         </td>
       </tr>
-      {showHistory && r.meta?.id != null && (
-        <PriceHistoryModal
-          ingredientId={r.meta.id}
-          ingredientName={r.masterName || r.productName || r.productCode}
-          onClose={() => setShowHistory(false)}
-        />
-      )}
       {showNote && note && (
         <tr>
           <td

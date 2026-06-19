@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getAllSuppliers } from '@/lib/cost/suppliers/store';
-import { recordPriceChange } from '@/lib/cost/price-history';
 import {
   buildInitialRegisterForm,
   buildRegisterCategoryOptions,
   buildRegisterPayload,
-  buildRegisterPriceChangePayload,
   validateRegisterForm,
 } from './registerModalUtils';
 
@@ -77,24 +75,11 @@ export function useRegisterModalController({ row, onSave, extraCategories }) {
       try {
         const payload = buildRegisterPayload({ row, form, validated });
         await onSave(payload);
-
-        if (existing) {
-          recordPriceChange(
-            buildRegisterPriceChangePayload({
-              existing,
-              row,
-              form,
-              newPriceOverride: payload.priceOverride,
-            })
-          ).catch(err => {
-            console.warn('[RegisterModal] 단가 변경 이력 기록 실패:', err);
-          });
-        }
       } finally {
         setSaving(false);
       }
     },
-    [existing, form, onSave, row]
+    [form, onSave, row]
   );
 
   return {

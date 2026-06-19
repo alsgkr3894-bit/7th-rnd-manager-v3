@@ -144,9 +144,8 @@ describe('register modal structure', () => {
   test('extracted files own controller and presentation responsibilities', () => {
     expect(controllerSource).toContain('export function useRegisterModalController');
     expect(controllerSource).toContain('getAllSuppliers()');
-    expect(controllerSource).toContain('recordPriceChange');
+    expect(controllerSource).not.toContain('recordPriceChange');
     expect(controllerSource).toContain("console.warn('[RegisterModal] 공급업체 목록 로드 실패:'");
-    expect(controllerSource).toContain("console.warn('[RegisterModal] 단가 변경 이력 기록 실패:'");
     expect(utilsSource).toContain('export function buildRegisterCategoryOptions');
     expect(utilsSource).toContain('export function validateRegisterForm');
     expect(utilsSource).toContain('export function buildRegisterPayload');

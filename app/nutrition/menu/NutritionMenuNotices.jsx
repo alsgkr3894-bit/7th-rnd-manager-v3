@@ -50,46 +50,6 @@ export function DuplicateNotice({ diagnostics, repairing, onRepair }) {
   );
 }
 
-export function MissingValueNotice({ diagnostics }) {
-  const missingCount = Number(diagnostics?.missingCount) || 0;
-  if (!missingCount) return null;
-  const samples = asObjectArray(diagnostics?.missingMenus)
-    .slice(0, 3)
-    .map(row => `${asDisplayText(row.menuName, '메뉴')} (${asDisplayText(row.menuCode)})`);
-
-  return (
-    <div
-      style={{
-        marginTop: 14,
-        padding: '12px 14px',
-        border: '1px solid var(--accent)',
-        borderRadius: 8,
-        background: 'var(--accent-soft)',
-        color: 'var(--text-1)',
-        display: 'flex',
-        gap: 12,
-        alignItems: 'center',
-        flexWrap: 'wrap',
-      }}
-    >
-      <div style={{ minWidth: 260, flex: '1 1 420px' }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)' }}>
-          영양성분 미입력 메뉴 {missingCount}건
-        </div>
-        <div style={{ marginTop: 3, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-          아래 메뉴는 어떤 크러스트에도 영양값이 입력되지 않았습니다. 베이스/엣지 탭에서 값을
-          입력해야 표 출력 시 정상 표시됩니다.
-          {samples.length > 0 && (
-            <span style={{ display: 'block', color: 'var(--text-3)' }}>
-              예: {samples.join(', ')}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function MissingMasterNotice({ diagnostics, repairing, onRepair, isAdmin }) {
   const orphanCount = Number(diagnostics?.orphanCount) || 0;
   if (!orphanCount) return null;
