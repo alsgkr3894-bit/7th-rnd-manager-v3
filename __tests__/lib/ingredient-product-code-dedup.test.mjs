@@ -51,6 +51,10 @@ jest.unstable_mockModule('@/lib/active-brand', () => ({
   getActiveBrandId: () => 'main',
 }));
 
+jest.unstable_mockModule('@/lib/auth/guard', () => ({
+  assertActiveAdmin: jest.fn().mockResolvedValue(undefined),
+}));
+
 const {
   addIngredient,
   updateIngredient,

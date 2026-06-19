@@ -61,18 +61,35 @@ function collectSizeLabels(rows, predicate = () => true) {
   return sortSizeLabels(labels);
 }
 
-function normalizeSingleSizeRow(row) {
+// 단일 컬럼('단일')으로 표시할 행을 만든다. 한 그룹 행에 사이즈가 여러 개면
+// (예: 같은 음료 menuCode의 소/대 가격) 사이즈별로 행을 분리해 모두 보존한다.
+// 단순 단일 사이즈 행은 종전대로 행 하나만 반환한다.
+function normalizeSingleSizeRows(row) {
   const sizes = Array.isArray(row?.sizes) ? row.sizes : [];
-  const picked = sizes.find(size => !isLrSizeLabel(size?.label)) || sizes[0] || null;
-  const pickedLabel = normalizeSizeLabel(picked?.label);
-  return {
-    ...row,
-    sizes: picked ? [{ ...picked, label: SINGLE_SIZE_LABEL }] : [],
-    costMap: {
-      ...(row?.costMap || {}),
-      [SINGLE_SIZE_LABEL]: row?.costMap?.[pickedLabel] || 0,
-    },
-  };
+  if (sizes.length === 0) {
+    return [{ ...row, sizes: [], costMap: { ...(row?.costMap || {}), [SINGLE_SIZE_LABEL]: 0 } }];
+  }
+
+  // 비-L/R 사이즈를 우선하되, 모두 L/R뿐이면(예: 사이드에 L/R 코드 변형) 그대로 보존.
+  const preferred = sizes.filter(size => !isLrSizeLabel(size?.label));
+  const picked = preferred.length ? preferred : sizes;
+  const multi = picked.length > 1;
+
+  return picked.map((size, idx) => {
+    const origLabel = normalizeSizeLabel(size?.label);
+    // 여러 사이즈를 분리할 때만 메뉴명에 원 사이즈 라벨을 덧붙여 구분 가능하게 한다.
+    const menuName = multi ? `${row?.menuName ?? ''} (${origLabel})` : row?.menuName;
+    return {
+      ...row,
+      id: multi ? `${row?.id ?? ''}::${origLabel || idx}` : row?.id,
+      menuName,
+      sizes: [{ ...size, label: SINGLE_SIZE_LABEL }],
+      costMap: {
+        ...(row?.costMap || {}),
+        [SINGLE_SIZE_LABEL]: row?.costMap?.[origLabel] || 0,
+      },
+    };
+  });
 }
 
 export function buildMarginTableSections(rows = []) {
@@ -83,8 +100,11 @@ export function buildMarginTableSections(rows = []) {
   for (const row of rows || []) {
     const cat = normalizeCategory(row?.menuCategory);
     const section = CATEGORY_SECTIONS.find(entry => entry.matches(cat)) || OTHER_SECTION;
-    const nextRow = section.sizeMode === 'single' ? normalizeSingleSizeRow(row) : row;
-    buckets.get(section.id).rows.push(nextRow);
+    if (section.sizeMode === 'single') {
+      buckets.get(section.id).rows.push(...normalizeSingleSizeRows(row));
+    } else {
+      buckets.get(section.id).rows.push(row);
+    }
   }
 
   return [...buckets.values()]

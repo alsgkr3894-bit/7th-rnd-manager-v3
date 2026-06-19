@@ -72,4 +72,42 @@ describe('파괴적 액션 권한 가드', () => {
   test('저수준 DB 프리미티브(crud.js)에는 가드가 없다', () => {
     expect(src('lib/db/crud.js')).not.toContain('assertActiveAdmin');
   });
+
+  // 2026-06-19 확대: reset*/clear*/replaceAll*/bulkImport* 군 defense-in-depth 가드
+  test('식자재 대량 변경/초기화 함수가 assertActiveAdmin을 호출한다', () => {
+    const s = src('lib/ingredient/store.js');
+    for (const fn of [
+      'resetAllIngredients',
+      'bulkImportIngredients',
+      'repairIngredientProductCodeDuplicates',
+      'removeCategoryFromAll',
+      'removeTagFromAll',
+      'excludeIngredientByCode',
+      'restoreIngredientByCode',
+    ]) {
+      expect(functionBody(s, fn)).toContain('assertActiveAdmin');
+    }
+  });
+
+  test('판매가 초기화/일괄교체가 assertActiveAdmin을 호출한다', () => {
+    const s = src('lib/cost/menu-price/store.js');
+    expect(s).toContain("from '@/lib/auth/guard'");
+    expect(functionBody(s, 'resetAllMenuPrices')).toContain('assertActiveAdmin');
+    expect(functionBody(s, 'replaceAllMenuPrices')).toContain('assertActiveAdmin');
+  });
+
+  test('엣지/도우·레시피·영양 기준데이터·원산지 전체삭제가 가드를 호출한다', () => {
+    expect(functionBody(src('lib/cost/edge-dough/store.js'), 'resetAllEdges')).toContain(
+      'assertActiveAdmin'
+    );
+    expect(functionBody(src('lib/menu-recipes/store.js'), 'resetAllMenuRecipes')).toContain(
+      'assertActiveAdmin'
+    );
+    expect(functionBody(src('lib/nutrition/values/store.js'), 'clearAllBaseData')).toContain(
+      'assertActiveAdmin'
+    );
+    expect(functionBody(src('lib/nutrition/origin/store.js'), 'clearAllOrigins')).toContain(
+      'assertActiveAdmin'
+    );
+  });
 });
