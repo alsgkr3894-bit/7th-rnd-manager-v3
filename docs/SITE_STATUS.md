@@ -27,7 +27,7 @@
 | 언어 | JavaScript (TypeScript 미사용) |
 | 스타일 | CSS custom properties (`tokens.css`), 외부 CSS 프레임워크 없음 |
 | 데이터 저장 | IndexedDB (클라이언트 전용, 서버 DB 없음) |
-| 아이콘 | 자체 SVG 세트 (`components/icons.jsx`, 33종) |
+| 아이콘 | 자체 SVG 세트 (`components/icons.jsx`, 32종) |
 | 엑셀 출력 | xlsx.js (동적 import) |
 | 테스트 | Jest (단위·구조 가드), Playwright (브라우저 QA smoke) |
 | 배포 환경 | 로컬 LAN HTTP, `next dev` or `next start` |
@@ -42,7 +42,7 @@
 
 | 경로 | 설명 | 파일 |
 |---|---|---|
-| `/` | 홈 대시보드 — 시간대별 인사말, 월별 KPI 위젯(판매량·원가율·미매칭 알림), 빠른 메모, 최근 활동, 위젯 설정 모달 | `app/page.jsx` |
+| `/` | 홈 대시보드 — 시간대별 인사말(할 일·원가율경보·미매칭·단가없음 이슈 요약), 월별 KPI 위젯(판매량·원가율·미매칭 알림), 빠른 메모, 최근 활동, 위젯 설정 모달 | `app/page.jsx` |
 | `/login` | 로그인 / 초기 설정 — 비밀번호 인증·최초 비밀번호 설정(setup=1), 자동 로그인(remember) 지원 | `app/login/page.jsx` |
 
 ### 메뉴 마스터
@@ -95,7 +95,7 @@
 | 경로 | 설명 | 파일 |
 |---|---|---|
 | `/ingredient` | 식자재 허브 — 식자재 관리·사용량 분석 진입점, 대시보드 KPI 표시 | `app/ingredient/page.jsx` |
-| `/ingredient/manage` | 식자재 관리 — 기본정보·단가·원산지·알레르기 탭별 관리, 공급업체 뷰, 이슈 패널, 일괄 선택, 제때 연동 이슈 | `app/ingredient/manage/page.jsx` |
+| `/ingredient/manage` | 식자재 관리 — 기본정보·단가·원산지·알레르기 탭별 관리, 공급업체 뷰, 이슈 패널, 일괄 선택, 제때 연동 이슈, 미사용 분류/태그 정리 후보 진단, URL catFilter 파라미터 반영(홈 단가없음 링크 연동) | `app/ingredient/manage/page.jsx` |
 | `/ingredient/usage` | 사용량 분석 — 레시피별 식자재 사용 현황 대시보드, CSV 내보내기 | `app/ingredient/usage/page.jsx` |
 
 ### 영양성분
@@ -353,7 +353,7 @@ active-brand.js: 현재 활성 브랜드 관리. brand-master.js: 브랜드 마�
 
 ## 6. 공통 컴포넌트 및 UI 시스템
 
-ui/ 폴더에 22개 공통 컴포넌트, icons.jsx에 자체 SVG 아이콘 33개, CSS custom properties 기반 라이트/다크 테마(tokens.css), TopBar는 4개 서브컴포넌트로 분리, ModalFrame은 createPortal+포커스트랩 완비
+ui/ 폴더에 22개 공통 컴포넌트, icons.jsx에 자체 SVG 아이콘 32개, CSS custom properties 기반 라이트/다크 테마(tokens.css), TopBar는 4개 서브컴포넌트로 분리, ModalFrame은 createPortal+포커스트랩 완비
 
 ### `components/ui/ — 공통 UI 컴포넌트 목록`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/components/ui/`
@@ -363,7 +363,7 @@ ui/ 폴더에 22개 공통 컴포넌트, icons.jsx에 자체 SVG 아이콘 33개
 ### `components/icons.jsx — 자체 SVG 아이콘 시스템`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/components/icons.jsx`
 
-33개 아이콘: home, chart, box, calc, doc, note, gear, search, bell, chevDown/Right/Left, plus, arrowUp/Down, upload, download, pizza, beaker, tag, alert, check, more, edit, trash, close, x, copy, moon, sun, star, starFill. stroke 1.6px, currentColor 기반, 라이브러리 의존 없이 자체 SVG 객체(Icon.*)로 제공
+32개 아이콘: home, chart, box, calc, doc, note, gear, search, bell, chevDown/Right/Left, plus, arrowUp/Down, upload, download, pizza, beaker, tag, alert, check, more, edit, trash, close, x, copy, moon, sun, star, starFill. stroke 1.6px, currentColor 기반, 라이브러리 의존 없이 자체 SVG 객체(Icon.*)로 제공
 
 ### `components/Toast.jsx — 토스트 알림`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/components/Toast.jsx`
