@@ -5,6 +5,7 @@ import {
   makeFileNameWithBrand,
   printCurrentPageWithDownloadDate,
   withDownloadDateSuffix,
+  rowsToCsv,
 } from '../../lib/download.js';
 
 describe('download filename date suffix', () => {
@@ -85,5 +86,28 @@ describe('download filename date suffix', () => {
       global.document = previousDocument;
       global.window = previousWindow;
     }
+  });
+});
+
+describe('rowsToCsv 수식 인젝션 방지 (R4-M1 회귀)', () => {
+  const dataLine = csv => csv.replace(/^﻿/, '').split('\r\n')[1];
+
+  test('수식 트리거 문자로 시작하는 문자열 셀에 작은따옴표를 접두한다', () => {
+    expect(dataLine(rowsToCsv([['h'], ['=SUM(A1)']]))).toBe(`'=SUM(A1)`);
+    expect(dataLine(rowsToCsv([['h'], ['@cmd']]))).toBe(`'@cmd`);
+    expect(dataLine(rowsToCsv([['h'], ['+1+1']]))).toBe(`'+1+1`);
+    // 콤마가 포함되면 따옴표로 감싸지며 작은따옴표 접두도 유지된다
+    expect(dataLine(rowsToCsv([['h'], ['=HYPERLINK(1,2)']]))).toBe(`"'=HYPERLINK(1,2)"`);
+  });
+
+  test('숫자 셀과 숫자 리터럴 문자열은 그대로 둔다(접두 안 함)', () => {
+    expect(dataLine(rowsToCsv([['h'], [-5]]))).toBe('-5');
+    expect(dataLine(rowsToCsv([['h'], ['-5']]))).toBe('-5');
+    expect(dataLine(rowsToCsv([['h'], ['+3.5']]))).toBe('+3.5');
+    expect(dataLine(rowsToCsv([['h'], [1000]]))).toBe('1000');
+  });
+
+  test('일반 한글/영문 텍스트는 변형하지 않는다', () => {
+    expect(dataLine(rowsToCsv([['h'], ['페퍼로니피자']]))).toBe('페퍼로니피자');
   });
 });
