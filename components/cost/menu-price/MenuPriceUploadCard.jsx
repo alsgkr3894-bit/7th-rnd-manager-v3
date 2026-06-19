@@ -3,6 +3,7 @@ import { useState, useRef } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { downloadCsv, readFileAsText, readFileAsArrayBuffer } from '@/lib/download';
+import { UPLOAD_MAX_MB } from '@/lib/upload-policy';
 import { readCsvFile, readExcelFile } from '@/lib/excel';
 import { formatNumber } from '@/lib/format';
 import { buildTemplateRows, parseMenuPriceRows, replaceAllMenuPrices } from '@/lib/cost/menu-price';
@@ -36,8 +37,8 @@ export function MenuPriceUploadCard({ onReplaced }) {
       showToast('파일이 비어 있습니다', 'error');
       return;
     }
-    if (file.size > 20 * 1024 * 1024) {
-      showToast('파일 크기가 너무 큽니다 (최대 20MB)', 'error');
+    if (file.size > UPLOAD_MAX_MB.excel * 1024 * 1024) {
+      showToast(`파일이 너무 큽니다 (최대 ${UPLOAD_MAX_MB.excel}MB)`, 'error');
       return;
     }
     try {
