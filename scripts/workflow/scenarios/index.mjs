@@ -9,6 +9,7 @@ import { scenarioCalendarSchedule, scenarioNoteCreate } from './notes.mjs';
 import { scenarioNutritionMenu } from './nutrition-menu.mjs';
 import { scenarioViewerBlocking } from './permissions.mjs';
 import { scenarioRecipeCostMargin } from './recipe-cost-margin.mjs';
+import { scenarioRecipeSaveUI } from './recipe-save-ui.mjs';
 import { scenarioSalesUpload } from './sales-upload.mjs';
 
 export const workflowScenarios = [
@@ -28,4 +29,5 @@ export const workflowScenarios = [
   scenarioRecipeCostMargin,
   scenarioIngredientPriceReport,
   scenarioCommonCost,
+  scenarioRecipeSaveUI,
 ];
