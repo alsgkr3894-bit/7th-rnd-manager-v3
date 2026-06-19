@@ -56,10 +56,13 @@ export async function scenarioIngredientPriceReport({ page, base, runId }) {
     });
   });
 
-  await step(steps, '원가 보고서 빌더 재진입 후 로드 확인', async () => {
-    await goto(page, base, '/report/cost');
-    // 빌더 화면에 h1 또는 보고서 섹션이 표시되어야 함
-    await page.waitForSelector('h1', { timeout: 15_000 });
+  await step(steps, '원가마진표에서 테스트 메뉴 원가 반영 확인', async () => {
+    await goto(page, base, '/cost/margin');
+    // 레시피·판매가·식자재가 모두 삽입됐으므로 원가마진표에 메뉴명이 표시돼야 함
+    await page
+      .getByText(menuName, { exact: false })
+      .first()
+      .waitFor({ state: 'visible', timeout: 15_000 });
   });
 
   await step(steps, '테스트 레코드 정리', async () => {

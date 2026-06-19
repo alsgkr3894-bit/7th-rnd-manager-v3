@@ -179,6 +179,7 @@ export default function HomePage() {
     : { ...(costAlertData || {}), items: [] };
   const alertCount = alertCostAlertData?.items?.filter(i => i.costRate > 40).length ?? 0;
   const noPriceCount = ingredientHealth?.noPriceCount ?? 0;
+  const openIssueCount = alertIssues.filter(i => i.status === 'open').length;
   const staleModules = [
     uploadFreshness?.sales?.stale && '판매량',
     isMain && uploadFreshness?.shipment?.stale && '출고량',
@@ -194,11 +195,36 @@ export default function HomePage() {
     if (!hasTodos && !hasAlert && !hasUnmatched && !hasNoPrice && !hasStale && !hasBackup)
       return '오늘도 좋은 하루 보내세요.';
     const parts = [];
-    if (hasTodos) parts.push(<>오늘 할 일 <b>{todos.length}건</b></>);
-    if (hasAlert) parts.push(<>원가율 경보 <b>{alertCount}건</b></>);
-    if (hasUnmatched) parts.push(<>미매칭 <b>{openIssueCount}건</b></>);
-    if (hasNoPrice) parts.push(<>단가없음 <b>{noPriceCount}개</b></>);
-    if (hasStale) parts.push(<><b>{staleModules.join('·')}</b> 미업로드</>);
+    if (hasTodos)
+      parts.push(
+        <>
+          오늘 할 일 <b>{todos.length}건</b>
+        </>
+      );
+    if (hasAlert)
+      parts.push(
+        <>
+          원가율 경보 <b>{alertCount}건</b>
+        </>
+      );
+    if (hasUnmatched)
+      parts.push(
+        <>
+          미매칭 <b>{openIssueCount}건</b>
+        </>
+      );
+    if (hasNoPrice)
+      parts.push(
+        <>
+          단가없음 <b>{noPriceCount}개</b>
+        </>
+      );
+    if (hasStale)
+      parts.push(
+        <>
+          <b>{staleModules.join('·')}</b> 미업로드
+        </>
+      );
     if (hasBackup)
       parts.push(
         <>{backupReminder.never ? '백업 이력 없음' : `${backupReminder.daysSince}일 전 백업`}</>
@@ -218,7 +244,6 @@ export default function HomePage() {
   })();
 
   // 표시 여부 (데이터 없으면 null 반환하는 위젯은 미리 거른다)
-  const openIssueCount = alertIssues.filter(i => i.status === 'open').length;
   const showUnmatched = unmatchedAlertEnabled && isVisible('unmatched') && openIssueCount > 0;
   const showPipeline = isVisible('pipeline') && pipeline?.columns?.some(c => c.count > 0);
   const showCostAlert =

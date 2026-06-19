@@ -5,7 +5,6 @@ import { usePagination } from '@/hooks/usePagination';
 import { showToast } from '@/components/Toast';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useDBLoad } from '@/hooks/useDBLoad';
-import { downloadCsvText } from '@/lib/download';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { MenuPriceUploadCard } from '@/components/cost/menu-price/MenuPriceUploadCard';
 import { MenuMasterDialogs } from '@/components/menu-master/MenuMasterDialogs';
@@ -27,7 +26,7 @@ import {
 } from '@/lib/menu-master/recipe-summary';
 import { normalizePersonalPizzaCodes } from '@/lib/menu-master/normalize';
 import { useMenuMasterActions } from './useMenuMasterActions';
-import { buildMenuMasterCsv } from './menuMasterExport';
+import { exportMenuMasterCsv } from './menuMasterExport';
 
 // 7번가(main) 전용 피자 카테고리 프리셋. 다른 브랜드는 빈 프리셋 → 자유 입력,
 // 칩·통계는 실제 데이터에 존재하는 카테고리에서 동적으로 도출한다.
@@ -111,9 +110,8 @@ export default function Page() {
     });
 
   function handleExportCsv() {
-    const csv = buildMenuMasterCsv(filtered);
-    downloadCsvText(csv, '메뉴마스터.csv');
-    showToast(`엑셀 ${filtered.length}개 내보내기 완료`, 'ok');
+    exportMenuMasterCsv(filtered);
+    showToast(`CSV ${filtered.length}개 내보내기 완료`, 'ok');
   }
 
   const active = rows.filter(r => r.status === 'active');

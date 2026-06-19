@@ -1,7 +1,7 @@
 import { describe, expect, test } from '@jest/globals';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { buildMenuMasterCsv } from '../../app/menu-master/menuMasterExport.js';
+import { buildMenuMasterCsvRows } from '../../app/menu-master/menuMasterExport.js';
 
 const pageSource = readFileSync(resolve('app/menu-master/page.jsx'), 'utf8');
 const actionsSource = readFileSync(resolve('app/menu-master/useMenuMasterActions.js'), 'utf8');
@@ -26,9 +26,9 @@ const recipeHeaderSource = readFileSync(
 describe('menu-master page structure', () => {
   test('page delegates CSV assembly to menuMasterExport', () => {
     expect(pageSource).not.toMatch(/headers.*메뉴코드/s);
-    expect(pageSource).toContain('buildMenuMasterCsv');
+    expect(pageSource).toContain('exportMenuMasterCsv');
     expect(exportSource).toContain('메뉴코드');
-    expect(exportSource).toContain('export function buildMenuMasterCsv');
+    expect(exportSource).toContain('export function exportMenuMasterCsv');
   });
 
   test('page delegates actions to useMenuMasterActions', () => {
@@ -65,7 +65,7 @@ describe('menu-master page structure', () => {
     expect(recipeSectionSource).not.toContain('onSave={handleSave}');
   });
 
-  test('buildMenuMasterCsv produces correct CSV', () => {
+  test('buildMenuMasterCsvRows produces correct 2D array', () => {
     const rows = [
       {
         menuCode: 'M001',
@@ -84,13 +84,12 @@ describe('menu-master page structure', () => {
         category: '',
       },
     ];
-    const csv = buildMenuMasterCsv(rows);
-    const lines = csv.split('\n');
-    expect(lines[0]).toBe('"메뉴코드","메뉴명","규격","판매가","상태","카테고리"');
-    expect(lines[1]).toBe('"M001","마르게리타","L","18000","active","피자"');
-    // 쉼표 포함 이름은 따옴표로 감싸져야 함
-    expect(lines[2]).toContain('"콤비네이션, 특선"');
+    const result = buildMenuMasterCsvRows(rows);
+    expect(result[0]).toEqual(['메뉴코드', '메뉴명', '규격', '판매가', '상태', '카테고리']);
+    expect(result[1]).toEqual(['M001', '마르게리타', 'L', 18000, 'active', '피자']);
+    // 쉼표 포함 이름이 그대로 유지돼야 함 (rowsToCsv에서 이스케이프)
+    expect(result[2][1]).toBe('콤비네이션, 특선');
     // null 가격은 빈 문자열
-    expect(lines[2]).toContain('""');
+    expect(result[2][3]).toBe('');
   });
 });

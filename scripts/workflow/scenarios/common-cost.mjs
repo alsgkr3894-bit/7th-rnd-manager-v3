@@ -22,12 +22,14 @@ export async function scenarioCommonCost({ page, base, runId }) {
     });
   });
 
-  await step(steps, '공통원가 탭 재진입 후 그룹명 표시 확인', async () => {
+  await step(steps, '공통원가 탭 재진입 후 그룹명·그룹 카드 표시 확인', async () => {
     await goto(page, base, '/cost/recipe');
-    await page
-      .getByText(groupName, { exact: false })
-      .first()
-      .waitFor({ state: 'visible', timeout: 15_000 });
+    // 그룹명이 공통원가 탭 카드에 표시돼야 함
+    const el = page.getByText(groupName, { exact: false }).first();
+    await el.waitFor({ state: 'visible', timeout: 15_000 });
+    // 페이지 어디에도 HTTP 오류가 없어야 함
+    const errorText = await page.$('text=/500|Server Error/');
+    if (errorText) throw new Error('페이지에서 서버 오류 감지');
   });
 
   await step(steps, '테스트 레코드 정리', async () => {

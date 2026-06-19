@@ -202,8 +202,11 @@ export function IngredientForm({
                   marginBottom: -4,
                 }}
               >
-                <Icon.alert style={{ width: 11, height: 11, verticalAlign: 'middle', marginRight: 4 }} />
-                원산지·알레르기 변경 시 <b>{usageSummary.rows.length}개 메뉴</b> 출력물에 즉시 반영됩니다.
+                <Icon.alert
+                  style={{ width: 11, height: 11, verticalAlign: 'middle', marginRight: 4 }}
+                />
+                원산지·알레르기 변경 시 <b>{usageSummary.rows.length}개 메뉴</b> 출력물에 즉시
+                반영됩니다.
               </div>
             )}
 

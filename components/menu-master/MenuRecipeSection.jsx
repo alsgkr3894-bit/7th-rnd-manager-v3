@@ -210,7 +210,9 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
                     {m.menuName}
                   </span>
                   {m.size ? (
-                    <span style={{ color: 'var(--text-4)', marginLeft: 8, fontSize: 11, flexShrink: 0 }}>
+                    <span
+                      style={{ color: 'var(--text-4)', marginLeft: 8, fontSize: 11, flexShrink: 0 }}
+                    >
                       {m.size}
                     </span>
                   ) : null}
