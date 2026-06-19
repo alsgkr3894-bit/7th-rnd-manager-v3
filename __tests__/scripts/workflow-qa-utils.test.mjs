@@ -89,6 +89,7 @@ describe('workflowScenarios', () => {
       'scenarioRecipeCostMargin',
       'scenarioIngredientPriceReport',
       'scenarioCommonCost',
+      'scenarioRecipeSaveUI',
     ]);
   });
 });

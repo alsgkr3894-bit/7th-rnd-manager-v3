@@ -16,6 +16,13 @@ const ISSUE_TABS = [
   { id: ISSUE_KINDS.NO_PRICE, label: ISSUE_LABELS[ISSUE_KINDS.NO_PRICE] },
 ];
 
+const ISSUE_QUICK_LABEL = {
+  [ISSUE_KINDS.NO_RECIPE]: '레시피 작성',
+  [ISSUE_KINDS.NEEDS_QUANTITY]: '수량 입력',
+  [ISSUE_KINDS.NEEDS_PRICE]: '단가 확인',
+  [ISSUE_KINDS.NO_PRICE]: '판매가 입력',
+};
+
 const ISSUE_TONE = {
   [ISSUE_KINDS.NO_RECIPE]: { background: 'var(--surface-2)', color: 'var(--text-3)' },
   [ISSUE_KINDS.NEEDS_QUANTITY]: { background: 'var(--warn-soft)', color: 'var(--warn)' },
@@ -132,7 +139,7 @@ export function MenuMasterIssuesPanel({ rows, recipeSummaryMap, isViewer, onEdit
                             className="btn sm ghost"
                             onClick={() => onEdit(menu)}
                           >
-                            수정
+                            {ISSUE_QUICK_LABEL[kind] || '수정'}
                           </button>
                         </td>
                       )}

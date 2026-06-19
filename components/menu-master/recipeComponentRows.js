@@ -13,6 +13,10 @@ export function createBlankRecipeComponentRow() {
   };
 }
 
+export function copyRecipeComponentRow(component) {
+  return { ...component, _key: ++rowKey };
+}
+
 export function recipeComponentProductCode(component) {
   return String(component?.productCode || '').trim();
 }

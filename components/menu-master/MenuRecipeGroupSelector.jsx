@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 function groupIdText(group) {
   return String(group?.id ?? '').trim();
 }
@@ -12,7 +14,17 @@ function groupMetaText(group) {
 }
 
 export function MenuRecipeGroupSelector({ groups, selectedGroupIds, onToggle }) {
+  const [expandedIds, setExpandedIds] = useState(new Set());
   const selected = new Set(Array.isArray(selectedGroupIds) ? selectedGroupIds : []);
+
+  function toggleExpand(id) {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   return (
     <div style={{ margin: '10px 0 12px' }}>
@@ -43,43 +55,110 @@ export function MenuRecipeGroupSelector({ groups, selectedGroupIds, onToggle }) 
           {groups.map(group => {
             const id = groupIdText(group);
             const checked = selected.has(id);
+            const expanded = expandedIds.has(id);
+            const ingredients = Array.isArray(group?.ingredients) ? group.ingredients : [];
+
             return (
-              <label
+              <div
                 key={id}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
                   border: '1px solid',
                   borderColor: checked ? 'var(--accent)' : 'var(--border)',
                   borderRadius: 6,
-                  padding: '7px 9px',
-                  cursor: 'pointer',
+                  overflow: 'hidden',
                   background: checked ? 'var(--accent-soft)' : 'var(--surface)',
                 }}
               >
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={() => onToggle(id)}
-                  style={{ width: 14, height: 14, margin: 0 }}
-                />
-                <span style={{ minWidth: 0 }}>
-                  <span
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <label
                     style={{
-                      display: 'block',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: checked ? 'var(--accent-text)' : 'var(--text-2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '7px 9px',
+                      cursor: 'pointer',
+                      flex: 1,
+                      minWidth: 0,
                     }}
                   >
-                    {group.name || '이름 없는 공통원가'}
-                  </span>
-                  <span style={{ display: 'block', fontSize: 11, color: 'var(--text-4)' }}>
-                    {groupMetaText(group)}
-                  </span>
-                </span>
-              </label>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => onToggle(id)}
+                      style={{ width: 14, height: 14, margin: 0 }}
+                    />
+                    <span style={{ minWidth: 0 }}>
+                      <span
+                        style={{
+                          display: 'block',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: checked ? 'var(--accent-text)' : 'var(--text-2)',
+                        }}
+                      >
+                        {group.name || '이름 없는 공통원가'}
+                      </span>
+                      <span style={{ display: 'block', fontSize: 11, color: 'var(--text-4)' }}>
+                        {groupMetaText(group)}
+                      </span>
+                    </span>
+                  </label>
+                  {ingredients.length > 0 && (
+                    <button
+                      type="button"
+                      title={expanded ? '구성품 숨기기' : '구성품 보기'}
+                      onClick={() => toggleExpand(id)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px 10px',
+                        fontSize: 11,
+                        color: 'var(--text-3)',
+                        flexShrink: 0,
+                        alignSelf: 'stretch',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 3,
+                      }}
+                    >
+                      {expanded ? '▲' : '▼'}
+                    </button>
+                  )}
+                </div>
+
+                {expanded && ingredients.length > 0 && (
+                  <div
+                    style={{
+                      borderTop: '1px solid var(--divider)',
+                      padding: '6px 10px 8px',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '4px 8px',
+                    }}
+                  >
+                    {ingredients.map((ing, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          fontSize: 11,
+                          color: 'var(--text-3)',
+                          background: 'var(--surface-2)',
+                          borderRadius: 4,
+                          padding: '1px 6px',
+                        }}
+                      >
+                        {ing.ingredientName || ing.name || String(ing)}
+                        {ing.quantity != null && (
+                          <span style={{ color: 'var(--text-4)', marginLeft: 3 }}>
+                            {ing.quantity}{ing.unit || 'g'}
+                          </span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>

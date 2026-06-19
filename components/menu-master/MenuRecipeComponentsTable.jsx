@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Icon } from '@/components/icons';
 import { formatUnitPrice } from '@/lib/format';
 import { COST_BASE_UNITS, normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
@@ -22,6 +23,8 @@ export function MenuRecipeComponentsTable({
   onQuantityKeyDown,
   onUnitChange,
   onRemoveRow,
+  onCopyRow,
+  onUnitPriceOverride,
 }) {
   if (components.length === 0) {
     return (
@@ -96,7 +99,7 @@ export function MenuRecipeComponentsTable({
           >
             원가
           </th>
-          <th style={{ width: 24 }} />
+          <th style={{ width: 44 }} />
         </tr>
       </thead>
       <tbody>
@@ -202,14 +205,17 @@ export function MenuRecipeComponentsTable({
                 </select>
               </td>
               <td style={{ padding: '4px 4px', textAlign: 'right', fontSize: 11 }}>
-                <span
-                  style={{
-                    color: component.unitPrice != null ? 'var(--text-2)' : 'var(--warn)',
-                  }}
-                >
-                  {formatUnitPrice(component.unitPrice, normalizeCostBaseUnit(component.unit)) ||
-                    '단가 없음'}
-                </span>
+                {component.unitPrice != null ? (
+                  <span style={{ color: 'var(--text-2)' }}>
+                    {formatUnitPrice(component.unitPrice, normalizeCostBaseUnit(component.unit))}
+                  </span>
+                ) : (
+                  <UnitPriceCell
+                    idx={idx}
+                    component={component}
+                    onOverride={typeof onUnitPriceOverride === 'function' ? onUnitPriceOverride : null}
+                  />
+                )}
               </td>
               <td style={{ padding: '4px 4px', textAlign: 'right', fontSize: 11 }}>
                 {subtotal != null ? (
@@ -219,26 +225,118 @@ export function MenuRecipeComponentsTable({
                 )}
               </td>
               <td style={{ padding: '4px 2px', textAlign: 'center' }}>
-                <button
-                  type="button"
-                  onClick={() => onRemoveRow(idx)}
-                  title="구성품 삭제"
-                  style={{
-                    border: 0,
-                    background: 'transparent',
-                    cursor: 'pointer',
-                    color: 'var(--text-4)',
-                    padding: 2,
-                  }}
-                >
-                  <Icon.close style={{ width: 10, height: 10 }} />
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {typeof onCopyRow === 'function' && (
+                    <button
+                      type="button"
+                      onClick={() => onCopyRow(idx)}
+                      title="행 복사"
+                      style={{
+                        border: 0,
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        color: 'var(--text-4)',
+                        padding: 2,
+                      }}
+                    >
+                      <Icon.copy style={{ width: 10, height: 10 }} />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onRemoveRow(idx)}
+                    title="구성품 삭제"
+                    style={{
+                      border: 0,
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      color: 'var(--text-4)',
+                      padding: 2,
+                    }}
+                  >
+                    <Icon.close style={{ width: 10, height: 10 }} />
+                  </button>
+                </div>
               </td>
             </tr>
           );
         })}
       </tbody>
     </table>
+  );
+}
+
+/** 단가 없음 셀 — 인라인 수동 입력 허용 */
+function UnitPriceCell({ idx, component, onOverride }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState('');
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        title={
+          onOverride
+            ? '클릭하여 단가 직접 입력 (식자재 단가 설정 권장)'
+            : '식자재 관리에서 단가를 설정하세요'
+        }
+        style={{
+          background: 'none',
+          border: 'none',
+          cursor: onOverride ? 'pointer' : 'default',
+          color: 'var(--warn)',
+          fontSize: 11,
+          padding: 0,
+          textDecoration: onOverride ? 'underline dotted' : 'none',
+        }}
+        onClick={() => {
+          if (!onOverride) return;
+          setValue('');
+          setEditing(true);
+        }}
+      >
+        단가 없음
+      </button>
+    );
+  }
+
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+      <input
+        autoFocus
+        type="number"
+        min="0"
+        step="1"
+        placeholder="단가/g"
+        value={value}
+        onChange={e => setValue(e.target.value)}
+        onKeyDown={e => {
+          if (e.key === 'Enter') {
+            const n = Number(value);
+            if (value !== '' && n >= 0) {
+              onOverride(idx, n);
+            }
+            setEditing(false);
+          }
+          if (e.key === 'Escape') setEditing(false);
+        }}
+        style={{
+          width: 64,
+          fontSize: 11,
+          padding: '2px 4px',
+          border: '1px solid var(--primary)',
+          borderRadius: 3,
+          textAlign: 'right',
+        }}
+      />
+      <button
+        type="button"
+        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-4)' }}
+        onClick={() => setEditing(false)}
+      >
+        <Icon.close style={{ width: 9, height: 9 }} />
+      </button>
+    </span>
   );
 }
 

@@ -16,6 +16,7 @@ import {
 import { recipeStoreKindForCategory } from '@/lib/recipe-master/sync';
 import {
   buildRecipeComponentForSave,
+  copyRecipeComponentRow,
   createBlankRecipeComponentRow,
   hydrateRecipeComponent,
 } from '@/components/menu-master/recipeComponentRows';
@@ -81,6 +82,16 @@ export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellin
 
   const addRow = useCallback(() => {
     setComponents(prev => [...prev, createBlankRecipeComponentRow()]);
+  }, []);
+
+  const copyRow = useCallback(idx => {
+    setComponents(prev => {
+      const row = prev[idx];
+      if (!row) return prev;
+      const next = [...prev];
+      next.splice(idx + 1, 0, copyRecipeComponentRow(row));
+      return next;
+    });
   }, []);
 
   const eligibleRecipeGroups = useMemo(
@@ -195,6 +206,7 @@ export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellin
     saving,
     supported,
     addRow,
+    copyRow,
     removeRow,
     updateRow,
     eligibleRecipeGroups,

@@ -31,6 +31,7 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     loaded,
     supported,
     addRow,
+    copyRow,
     removeRow,
     updateRow,
     eligibleRecipeGroups,
@@ -52,8 +53,9 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     ref,
     () => ({
       saveRecipe: handleSave,
+      getRecipeSummary: () => recipeSummary,
     }),
-    [handleSave]
+    [handleSave, recipeSummary]
   );
 
   const copyMenus = useMemo(() => {
@@ -258,6 +260,8 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
         onQuantityKeyDown={handleQuantityKeyDown}
         onUnitChange={(idx, value) => updateRow(idx, 'unit', normalizeCostBaseUnit(value))}
         onRemoveRow={removeRow}
+        onCopyRow={copyRow}
+        onUnitPriceOverride={(idx, price) => updateRow(idx, 'unitPrice', price)}
       />
 
       <button
