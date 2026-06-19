@@ -500,7 +500,7 @@ Jest 단위 테스트 276개 파일(lib 250, hooks 20, scripts 6), QA 명령 4�
 ### Jest 단위 테스트 — lib
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/lib/`
 
-__tests__/lib/ 하위 248개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
+__tests__/lib/ 하위 250개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
 
 ### Jest 단위 테스트 — hooks
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/hooks/`
