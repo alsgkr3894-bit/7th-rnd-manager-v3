@@ -49,14 +49,17 @@ describe('margin 훅 분리 구조', () => {
     expect(pageSrc).not.toContain('function handleSort(');
   });
 
-  test('원가마진표는 L/R 메뉴와 단일 메뉴를 별도 표 섹션으로 나눈다', () => {
+  test('원가마진표는 카테고리별 표 섹션으로 나눈다', () => {
     expect(pageSrc).toContain('buildMarginTableSections(paged)');
     expect(pageSrc).toContain('section.sizeLabels');
-    expect(tableSectionsSrc).toContain('피자 · 세트박스');
-    expect(tableSectionsSrc).toContain('단일 메뉴');
+    expect(pageSrc).toContain('margin-section-header');
+    expect(pageSrc).toContain('margin-section-marker');
+    expect(tableSectionsSrc).toContain("title: '피자'");
+    expect(tableSectionsSrc).toContain("title: '세트박스'");
+    expect(tableSectionsSrc).toContain("title: '사이드'");
   });
 
-  test('buildMarginTableSections는 피자 표에서 단일 컬럼을 제외한다', () => {
+  test('buildMarginTableSections는 카테고리별로 나누고 피자 표에서 단일 컬럼을 제외한다', () => {
     const sections = buildMarginTableSections([
       {
         id: 'pizza',
@@ -84,18 +87,26 @@ describe('margin 훅 분리 구조', () => {
       },
     ]);
 
-    expect(sections).toHaveLength(2);
+    expect(sections).toHaveLength(3);
     expect(sections[0]).toMatchObject({
-      id: 'lr',
+      id: 'pizza',
+      title: '피자',
       sizeLabels: ['L', 'R'],
     });
-    expect(sections[0].rows.map(row => row.menuName)).toEqual(['피자', '세트박스']);
+    expect(sections[0].rows.map(row => row.menuName)).toEqual(['피자']);
     expect(sections[0].sizeLabels).not.toContain('단일');
     expect(sections[1]).toMatchObject({
-      id: 'single',
+      id: 'set',
+      title: '세트박스',
+      sizeLabels: ['L'],
+    });
+    expect(sections[1].rows.map(row => row.menuName)).toEqual(['세트박스']);
+    expect(sections[2]).toMatchObject({
+      id: 'side',
+      title: '사이드',
       sizeLabels: ['단일'],
     });
-    expect(sections[1].rows[0].sizes).toEqual([{ label: '단일', sellingPrice: 5000 }]);
-    expect(sections[1].rows[0].costMap.단일).toBe(1500);
+    expect(sections[2].rows[0].sizes).toEqual([{ label: '단일', sellingPrice: 5000 }]);
+    expect(sections[2].rows[0].costMap.단일).toBe(1500);
   });
 });

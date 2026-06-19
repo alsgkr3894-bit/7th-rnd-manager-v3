@@ -16,6 +16,7 @@ const origins = [
     ],
     menuCodes: [
       { menuCode: 'P-OR-001-L', menuName: '포크 피자 L', category: '피자/오리지널' },
+      { menuCode: 'P-OR-001-R', menuName: '포크 피자 R', category: '피자/오리지널' },
       { menuCode: 'S-SD-001', menuName: '포크 사이드', category: '사이드' },
     ],
   },
@@ -25,7 +26,10 @@ const origins = [
       { displayName: '치즈', country: '미국산' },
       { displayName: '치즈', country: '뉴질랜드산' },
     ],
-    menuCodes: [{ menuCode: 'P-OR-001-L', menuName: '포크 피자 L', category: '피자/오리지널' }],
+    menuCodes: [
+      { menuCode: 'P-OR-001-L', menuName: '포크 피자 L', category: '피자/오리지널' },
+      { menuCode: 'P-OR-001-R', menuName: '포크 피자 R', category: '피자/오리지널' },
+    ],
   },
 ];
 
@@ -59,7 +63,7 @@ describe('nutrition origin output sheets', () => {
     expect(storeSheet[0]).toMatchObject({
       displayName: '돼지고기(양념 돼지고기)',
       originCountry: '돼지고기(국내산)',
-      menus: ['포크 피자 L', '포크 사이드'],
+      menus: ['포크 피자', '포크 사이드'],
     });
     expect(fridgeSheet[0]).toMatchObject({
       ingredientName: '양념 돼지고기',
@@ -67,8 +71,8 @@ describe('nutrition origin output sheets', () => {
       originText: '국내산',
     });
     expect(deliverySheet[0]).toMatchObject({
-      menuCode: 'P-OR-001-L',
-      menuName: '포크 피자 L',
+      menuCode: 'P-OR-001',
+      menuName: '포크 피자',
       parts: ['양념 돼지고기(국내산)', '치즈(치즈:미국산, 치즈:뉴질랜드산)'],
     });
     expect(statementSheet).toEqual(

@@ -271,25 +271,18 @@ export default function Page() {
             tableSections.map((section, index) => (
               <div
                 key={section.id}
-                style={{
-                  borderTop: index > 0 ? '1px solid var(--divider)' : undefined,
-                }}
+                className={`margin-section margin-section-${section.id}`}
+                data-first={index === 0 ? 'true' : undefined}
               >
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 10,
-                    padding: '10px 16px',
-                    fontSize: 12,
-                    color: 'var(--text-3)',
-                  }}
-                >
-                  <strong style={{ fontSize: 13, color: 'var(--text-1)' }}>{section.title}</strong>
-                  <span>
-                    {section.rows.length}개 · {section.sizeLabels.join('/')}
-                  </span>
+                <div className="margin-section-header">
+                  <div className="margin-section-title">
+                    <span className="margin-section-marker" aria-hidden="true" />
+                    <strong>{section.title}</strong>
+                  </div>
+                  <div className="margin-section-meta">
+                    <span>{section.rows.length}개</span>
+                    <span>{section.sizeLabels.join(' / ')}</span>
+                  </div>
                 </div>
                 <div style={{ overflowX: 'auto' }}>
                   <table className="data-table stagger-rows margin-table">

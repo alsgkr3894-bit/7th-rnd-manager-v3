@@ -58,7 +58,7 @@ jest.unstable_mockModule('@/lib/db', () => ({
   runTransaction,
 }));
 
-const { pushMasterToPrices, syncMenuMasterFromPrices } =
+const { getAllMenuMaster, pushMasterToPrices, syncMenuMasterFromPrices } =
   await import('../../lib/menu-master/index.js');
 
 describe('menu master price sync policy', () => {
@@ -124,6 +124,50 @@ describe('menu master price sync policy', () => {
       hidden: true,
       excludeFromOrigin: true,
     });
+  });
+
+  test('메뉴마스터 조회는 같은 메뉴의 규격을 L 다음 R 순서로 정렬한다', async () => {
+    stores.menu_master = [
+      {
+        id: 1,
+        menuCode: 'P-OR-001-R',
+        menuName: '정렬 피자',
+        category: '피자',
+        size: 'R',
+        displayOrder: 3010,
+      },
+      {
+        id: 2,
+        menuCode: 'P-OR-001-L',
+        menuName: '정렬 피자',
+        category: '피자',
+        size: 'L',
+        displayOrder: 3011,
+      },
+      {
+        id: 3,
+        menuCode: 'P-OR-002-R',
+        menuName: '다음 피자',
+        category: '피자',
+        size: 'R',
+        displayOrder: 3020,
+      },
+      {
+        id: 4,
+        menuCode: 'P-OR-002-L',
+        menuName: '다음 피자',
+        category: '피자',
+        size: 'L',
+        displayOrder: 3021,
+      },
+    ];
+
+    await expect(getAllMenuMaster()).resolves.toEqual([
+      expect.objectContaining({ menuCode: 'P-OR-001-L', size: 'L' }),
+      expect.objectContaining({ menuCode: 'P-OR-001-R', size: 'R' }),
+      expect.objectContaining({ menuCode: 'P-OR-002-L', size: 'L' }),
+      expect.objectContaining({ menuCode: 'P-OR-002-R', size: 'R' }),
+    ]);
   });
 
   test('신규 판매가 코드는 메뉴마스터에 price-sync 출처로 생성한다', async () => {

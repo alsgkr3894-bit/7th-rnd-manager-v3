@@ -2,6 +2,21 @@ const LR_SIZE_LABELS = ['L', 'R'];
 const SINGLE_SIZE_LABEL = '단일';
 const SINGLE_SIZE_CATEGORIES = new Set(['1인피자', '사이드', '소스', '음료', '엣지']);
 const SIZE_ORDER = ['L', 'R', '단일', '단품', '세트'];
+const CATEGORY_SECTIONS = [
+  {
+    id: 'pizza',
+    title: '피자',
+    sizeMode: 'lr',
+    matches: cat => cat === '피자' || cat.startsWith('피자/'),
+  },
+  { id: 'set', title: '세트박스', sizeMode: 'lr', matches: cat => cat === '세트박스' },
+  { id: 'personal', title: '1인피자', sizeMode: 'single', matches: cat => cat === '1인피자' },
+  { id: 'side', title: '사이드', sizeMode: 'single', matches: cat => cat === '사이드' },
+  { id: 'sauce', title: '소스', sizeMode: 'single', matches: cat => cat === '소스' },
+  { id: 'drink', title: '음료', sizeMode: 'single', matches: cat => cat === '음료' },
+  { id: 'edge', title: '엣지', sizeMode: 'single', matches: cat => cat === '엣지' },
+];
+const OTHER_SECTION = { id: 'other', title: '기타', sizeMode: 'mixed' };
 
 function normalizeCategory(value) {
   return String(value || '').trim();
@@ -61,42 +76,33 @@ function normalizeSingleSizeRow(row) {
 }
 
 export function buildMarginTableSections(rows = []) {
-  const lrRows = [];
-  const singleRows = [];
-  const otherRows = [];
+  const buckets = new Map(
+    [...CATEGORY_SECTIONS, OTHER_SECTION].map(section => [section.id, { ...section, rows: [] }])
+  );
 
   for (const row of rows || []) {
-    const cat = row?.menuCategory;
-    if (isLrMarginCategory(cat)) lrRows.push(row);
-    else if (isSingleMarginCategory(cat)) singleRows.push(normalizeSingleSizeRow(row));
-    else otherRows.push(row);
+    const cat = normalizeCategory(row?.menuCategory);
+    const section = CATEGORY_SECTIONS.find(entry => entry.matches(cat)) || OTHER_SECTION;
+    const nextRow = section.sizeMode === 'single' ? normalizeSingleSizeRow(row) : row;
+    buckets.get(section.id).rows.push(nextRow);
   }
 
-  const sections = [];
-  if (lrRows.length > 0) {
-    const lrSizeLabels = collectSizeLabels(lrRows, isLrSizeLabel);
-    sections.push({
-      id: 'lr',
-      title: '피자 · 세트박스',
-      sizeLabels: lrSizeLabels.length ? lrSizeLabels : collectSizeLabels(lrRows),
-      rows: lrRows,
-    });
+  return [...buckets.values()]
+    .filter(section => section.rows.length > 0)
+    .map(section => ({
+      id: section.id,
+      title: section.title,
+      sizeLabels: getSectionSizeLabels(section),
+      rows: section.rows,
+    }))
+    .filter(section => section.sizeLabels.length > 0);
+}
+
+function getSectionSizeLabels(section) {
+  if (section.sizeMode === 'single') return [SINGLE_SIZE_LABEL];
+  if (section.sizeMode === 'lr') {
+    const lrSizeLabels = collectSizeLabels(section.rows, isLrSizeLabel);
+    return lrSizeLabels.length ? lrSizeLabels : collectSizeLabels(section.rows);
   }
-  if (singleRows.length > 0) {
-    sections.push({
-      id: 'single',
-      title: '단일 메뉴',
-      sizeLabels: [SINGLE_SIZE_LABEL],
-      rows: singleRows,
-    });
-  }
-  if (otherRows.length > 0) {
-    sections.push({
-      id: 'other',
-      title: '기타',
-      sizeLabels: collectSizeLabels(otherRows),
-      rows: otherRows,
-    });
-  }
-  return sections.filter(section => section.sizeLabels.length > 0);
+  return collectSizeLabels(section.rows);
 }
