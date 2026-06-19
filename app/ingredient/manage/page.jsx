@@ -72,7 +72,17 @@ export default function Page() {
 
   useEffect(() => {
     setView(readInitialManageView());
-  }, [setView]);
+    // URL에 catFilter 파라미터가 있으면 한 번만 반영 (홈 단가없음 링크 등)
+    if (typeof window !== 'undefined') {
+      const param = new URLSearchParams(window.location.search).get('catFilter');
+      if (param) {
+        setCatFilter(param);
+        const url = new URL(window.location.href);
+        url.searchParams.delete('catFilter');
+        window.history.replaceState(null, '', url);
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [formTarget, setFormTarget] = useState(null);
   const [deletePending, setDeletePending] = useState(null);
@@ -98,6 +108,8 @@ export default function Page() {
     issueRows,
     duplicateDiagnostics,
     duplicateGroupCount,
+    unusedCategories,
+    unusedTags,
     filtered,
     sub,
   } = useIngredientManageView({
@@ -286,6 +298,8 @@ export default function Page() {
         productCodeDupes={productCodeDupes}
         duplicateGroupCount={duplicateGroupCount}
         duplicateDiagnostics={duplicateDiagnostics}
+        unusedCategories={unusedCategories}
+        unusedTags={unusedTags}
         dedupeConfirm={dedupeConfirm}
         dedupeBusy={dedupeBusy}
         onDedupeConfirm={() => setDedupeConfirm(true)}

@@ -82,6 +82,21 @@ export function useIngredientManageView({
     [duplicateDiagnostics]
   );
 
+  // 단종된 식자재에만 남아 있고 활성 식자재에 없는 분류/태그 → 정리 후보
+  const unusedCategories = useMemo(() => {
+    const activeCats = new Set(activeRows.map(r => r.category).filter(Boolean));
+    const discontinued = rows.filter(r => r.discontinued);
+    const stale = new Set(discontinued.map(r => r.category).filter(Boolean));
+    return [...stale].filter(c => !activeCats.has(c)).sort();
+  }, [rows, activeRows]);
+
+  const unusedTags = useMemo(() => {
+    const activeTags = new Set(activeRows.flatMap(r => r.tags || []).filter(Boolean));
+    const discontinued = rows.filter(r => r.discontinued);
+    const stale = new Set(discontinued.flatMap(r => r.tags || []).filter(Boolean));
+    return [...stale].filter(t => !activeTags.has(t)).sort();
+  }, [rows, activeRows]);
+
   const filtered = useMemo(() => {
     let list;
     if (catFilter === DISCONTINUED_FILTER) {
@@ -137,6 +152,8 @@ export function useIngredientManageView({
     issueRows,
     duplicateDiagnostics,
     duplicateGroupCount,
+    unusedCategories,
+    unusedTags,
     filtered,
     sub,
   };

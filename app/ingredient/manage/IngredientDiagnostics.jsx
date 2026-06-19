@@ -6,6 +6,8 @@ export function IngredientDiagnostics({
   productCodeDupes,
   duplicateGroupCount,
   duplicateDiagnostics,
+  unusedCategories = [],
+  unusedTags = [],
   dedupeConfirm,
   dedupeBusy,
   onDedupeConfirm,
@@ -91,6 +93,46 @@ export function IngredientDiagnostics({
               제품코드 중복 정리
             </button>
           )}
+        </div>
+      )}
+
+      {(unusedCategories.length > 0 || unusedTags.length > 0) && (
+        <div
+          className="info-banner"
+          style={{
+            marginBottom: 8,
+            background: 'var(--surface-2)',
+            borderColor: 'var(--border)',
+          }}
+        >
+          <div className="info-banner-ico" style={{ background: 'var(--text-3)', color: '#fff' }}>
+            <Icon.tag style={{ width: 16, height: 16 }} />
+          </div>
+          <div style={{ fontSize: 13, display: 'grid', gap: 4, flex: 1 }}>
+            <div style={{ color: 'var(--text-2)' }}>
+              <b>단종 전용 분류/태그</b> — 단종 식자재에만 남아있어 정리 후보입니다.
+            </div>
+            {unusedCategories.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                <span style={{ fontSize: 11, color: 'var(--text-3)', marginRight: 2 }}>분류</span>
+                {unusedCategories.map(c => (
+                  <span key={c} className="chip" style={{ fontSize: 11 }}>
+                    {c}
+                  </span>
+                ))}
+              </div>
+            )}
+            {unusedTags.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                <span style={{ fontSize: 11, color: 'var(--text-3)', marginRight: 2 }}>태그</span>
+                {unusedTags.map(t => (
+                  <span key={t} className="chip" style={{ fontSize: 11 }}>
+                    #{t}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
