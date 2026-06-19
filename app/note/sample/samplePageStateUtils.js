@@ -36,7 +36,8 @@ export function filterSortSamples(samples, { catFilter, ratingMin, search, sortB
   return [...list].sort((a, b) => {
     if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
     if (sortBy === 'testDate') return (b.testDate || '').localeCompare(a.testDate || '');
-    return new Date(b.createdAt) - new Date(a.createdAt);
+    // createdAt은 ISO 문자열 → 문자열 비교로 안정 정렬(누락 시 NaN으로 정렬 깨지던 문제 방지)
+    return (b.createdAt || '').localeCompare(a.createdAt || '');
   });
 }
 

@@ -108,4 +108,21 @@ describe('sample page state utils', () => {
     expect(buildSampleRatingDist(null).none).toBe(0);
     expect(buildSamplesByDate(null)).toEqual({});
   });
+
+  // R4-M4 회귀: createdAt 누락 시 new Date()-new Date()=NaN으로 정렬이 깨지지 않아야 한다
+  test('createdAt 정렬은 누락 값이 있어도 안정적으로 동작한다', () => {
+    const withMissing = [
+      { id: 'x', createdAt: '2026-06-12T00:00:00.000Z' },
+      { id: 'y' }, // createdAt 없음
+      { id: 'z', createdAt: '2026-06-15T00:00:00.000Z' },
+    ];
+    const sorted = filterSortSamples(withMissing, {
+      catFilter: 'all',
+      ratingMin: 0,
+      search: '',
+      sortBy: 'createdAt',
+    });
+    // 최신순: z(15) → x(12) → y(없음) 순으로 결정적 정렬
+    expect(sorted.map(s => s.id)).toEqual(['z', 'x', 'y']);
+  });
 });

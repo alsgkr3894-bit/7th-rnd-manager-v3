@@ -9,9 +9,11 @@ function compareValues(a, b, dir) {
   if (a == null) return 1;
   if (b == null) return -1;
 
-  if (typeof a === 'number' || typeof b === 'number') {
-    const na = asFiniteNumber(a, 0);
-    const nb = asFiniteNumber(b, 0);
+  // 양쪽이 모두 유효 숫자일 때만 숫자 비교. 한쪽이 문자열 표기("미정","-")면
+  // 0으로 강제돼 실수치 사이에 끼던 문제를 막기 위해 문자열 비교로 폴백한다.
+  const na = Number(a);
+  const nb = Number(b);
+  if (a !== '' && b !== '' && Number.isFinite(na) && Number.isFinite(nb)) {
     return na > nb ? dir : na < nb ? -dir : 0;
   }
 

@@ -8,7 +8,14 @@ import { getAllNotes } from '@/lib/note';
 import { buildJournalPrintHtml } from '@/lib/note/journal-print';
 import { openPrintWindow } from '@/lib/print/window-print';
 import { WebJournalCard } from '@/components/note/WebJournalCard';
-import { todayLocalDate } from '@/lib/date/local-date';
+import { todayLocalDate, formatLocalDateInput } from '@/lib/date/local-date';
+
+// 노트의 표시용 날짜 키. testDate는 이미 YYYY-MM-DD(정규형)이라 그대로 쓰고,
+// createdAt 폴백만 로컬 달력일자로 변환한다(UTC slice 시 자정 부근 전날로 새던 문제 방지).
+function noteDayKey(n) {
+  if (n?.testDate) return String(n.testDate).slice(0, 10);
+  return n?.createdAt ? formatLocalDateInput(new Date(n.createdAt)) : '';
+}
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -31,7 +38,7 @@ export default function Page() {
   const dayNotes = useMemo(
     () =>
       notes
-        .filter(n => (n.testDate || n.createdAt || '').slice(0, 10) === date)
+        .filter(n => noteDayKey(n) === date)
         .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')),
     [notes, date]
   );
@@ -39,7 +46,7 @@ export default function Page() {
   const datesWithNotes = useMemo(() => {
     const s = new Set();
     notes.forEach(n => {
-      const d = (n.testDate || n.createdAt || '').slice(0, 10);
+      const d = noteDayKey(n);
       if (d) s.add(d);
     });
     return [...s].sort().reverse();
