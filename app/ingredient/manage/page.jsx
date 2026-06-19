@@ -131,12 +131,16 @@ export default function Page() {
     handleReset,
     handleRemoveCategory,
     handleRemoveTag,
+    handleRenameCategory,
+    handleRenameTag,
     handleRepairProductCodeDuplicates,
     handleSave,
     handleExclude,
     handleRestore,
     handleAutoRegister,
     handleBatchDelete,
+    handleBulkDiscontinue,
+    handleBulkSetCategory,
     handleSetCatFilter,
     handleSetTagFilter,
     handleDeleteCancel,
@@ -172,7 +176,10 @@ export default function Page() {
             {batchMode ? (
               <IngredientBatchToolbar
                 selected={selected}
+                mainCats={mainCats}
                 onDelete={handleBatchDelete}
+                onBulkDiscontinue={handleBulkDiscontinue}
+                onBulkSetCategory={handleBulkSetCategory}
                 onExit={exitBatch}
               />
             ) : (
@@ -305,6 +312,11 @@ export default function Page() {
         onDedupeConfirm={() => setDedupeConfirm(true)}
         onDedupeCancel={() => setDedupeConfirm(false)}
         onRepairProductCodeDuplicates={handleRepairProductCodeDuplicates}
+        onRemoveCategory={handleRemoveCategory}
+        onRemoveTag={handleRemoveTag}
+        onRenameCategory={handleRenameCategory}
+        onRenameTag={handleRenameTag}
+        isAdmin={!isViewer}
       />
 
       {rows.length > 0 && view === 'manage' && (

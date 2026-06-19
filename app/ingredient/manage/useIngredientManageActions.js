@@ -14,6 +14,10 @@ import {
   repairIngredientProductCodeDuplicates,
   removeCategoryFromAll,
   removeTagFromAll,
+  renameCategoryInAll,
+  renameTagInAll,
+  bulkSetDiscontinued,
+  bulkSetCategory,
   bulkDeleteIngredients,
 } from '@/lib/ingredient';
 import {
@@ -261,17 +265,81 @@ export function useIngredientManageActions({
 
   const handleDeleteCancel = useCallback(() => setDeletePending(null), [setDeletePending]);
 
+  async function handleRenameCategory(oldName, newName) {
+    try {
+      const { updated } = await renameCategoryInAll(oldName, newName);
+      showToast(`'${oldName}' → '${newName}' 분류 이름 변경 — ${updated}개 갱신`, 'ok');
+      await load();
+    } catch (e) {
+      showToast('이름 변경 실패: ' + e.message, 'error');
+    }
+  }
+
+  async function handleRenameTag(oldName, newName) {
+    try {
+      const { updated } = await renameTagInAll(oldName, newName);
+      showToast(`'#${oldName}' → '#${newName}' 태그 이름 변경 — ${updated}개 갱신`, 'ok');
+      await load();
+    } catch (e) {
+      showToast('이름 변경 실패: ' + e.message, 'error');
+    }
+  }
+
+  const handleBulkDiscontinue = useCallback(
+    async discontinued => {
+      try {
+        const ids = [...selected];
+        if (!ids.length) return;
+        const { updated } = await bulkSetDiscontinued(ids, discontinued);
+        showToast(
+          `${updated}개 식자재 ${discontinued ? '단종' : '단종 복구'} 처리됨`,
+          'ok'
+        );
+        await load();
+        exitBatch();
+        clearSelection();
+      } catch (err) {
+        showToast('실패: ' + err.message, 'error');
+      }
+    },
+    [selected, load, exitBatch, clearSelection]
+  );
+
+  const handleBulkSetCategory = useCallback(
+    async newCategory => {
+      try {
+        const ids = [...selected];
+        if (!ids.length) return;
+        const { updated } = await bulkSetCategory(ids, newCategory);
+        showToast(
+          `${updated}개 식자재 분류 → '${newCategory || '(없음)'}' 변경됨`,
+          'ok'
+        );
+        await load();
+        exitBatch();
+        clearSelection();
+      } catch (err) {
+        showToast('실패: ' + err.message, 'error');
+      }
+    },
+    [selected, load, exitBatch, clearSelection]
+  );
+
   return {
     handleSeed,
     handleReset,
     handleRemoveCategory,
     handleRemoveTag,
+    handleRenameCategory,
+    handleRenameTag,
     handleRepairProductCodeDuplicates,
     handleSave,
     handleExclude,
     handleRestore,
     handleAutoRegister,
     handleBatchDelete,
+    handleBulkDiscontinue,
+    handleBulkSetCategory,
     handleSetCatFilter,
     handleSetTagFilter,
     handleDeleteCancel,

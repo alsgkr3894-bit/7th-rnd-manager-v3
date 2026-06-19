@@ -82,6 +82,10 @@ describe('파괴적 액션 권한 가드', () => {
       'repairIngredientProductCodeDuplicates',
       'removeCategoryFromAll',
       'removeTagFromAll',
+      'renameCategoryInAll',
+      'renameTagInAll',
+      'bulkSetDiscontinued',
+      'bulkSetCategory',
       'excludeIngredientByCode',
       'restoreIngredientByCode',
     ]) {
