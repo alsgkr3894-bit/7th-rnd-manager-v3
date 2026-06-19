@@ -28,7 +28,7 @@ export function ReportPreviewModal({ report, onClose, onShare, printOnOpen = fal
       printReportElements(papers, safeReport);
       showToast('PDF 출력 창을 열었어요', 'ok', 1600);
     } catch (err) {
-      showToast(err?.message || 'PDF 출력 실패', 'error');
+      showToast('PDF 출력 실패: ' + (err?.message || '알 수 없는 오류'), 'error');
     }
   }, [safeReport]);
 
