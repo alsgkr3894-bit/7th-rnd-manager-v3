@@ -191,6 +191,22 @@ export function IngredientForm({
               onSet={set}
             />
 
+            {initial && !usageSummary.loading && usageSummary.rows.length > 0 && (
+              <div
+                style={{
+                  fontSize: 11,
+                  color: 'var(--text-3)',
+                  background: 'var(--surface-2)',
+                  borderRadius: 6,
+                  padding: '6px 10px',
+                  marginBottom: -4,
+                }}
+              >
+                <Icon.alert style={{ width: 11, height: 11, verticalAlign: 'middle', marginRight: 4 }} />
+                원산지·알레르기 변경 시 <b>{usageSummary.rows.length}개 메뉴</b> 출력물에 즉시 반영됩니다.
+              </div>
+            )}
+
             <OriginSection
               origin={form.origin || []}
               originHidden={form.originHidden}

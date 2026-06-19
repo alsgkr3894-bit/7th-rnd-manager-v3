@@ -178,6 +178,7 @@ export default function HomePage() {
     ? costAlertData
     : { ...(costAlertData || {}), items: [] };
   const alertCount = alertCostAlertData?.items?.filter(i => i.costRate > 40).length ?? 0;
+  const noPriceCount = ingredientHealth?.noPriceCount ?? 0;
   const staleModules = [
     uploadFreshness?.sales?.stale && '판매량',
     isMain && uploadFreshness?.shipment?.stale && '출고량',
@@ -186,36 +187,32 @@ export default function HomePage() {
   const greetSub = (() => {
     const hasTodos = todos.length > 0;
     const hasAlert = alertCount > 0;
+    const hasUnmatched = openIssueCount > 0;
+    const hasNoPrice = noPriceCount > 0;
     const hasStale = staleModules.length > 0;
     const hasBackup = backupReminder?.stale;
-    if (!hasTodos && !hasAlert && !hasStale && !hasBackup) return '오늘도 좋은 하루 보내세요.';
+    if (!hasTodos && !hasAlert && !hasUnmatched && !hasNoPrice && !hasStale && !hasBackup)
+      return '오늘도 좋은 하루 보내세요.';
+    const parts = [];
+    if (hasTodos) parts.push(<>오늘 할 일 <b>{todos.length}건</b></>);
+    if (hasAlert) parts.push(<>원가율 경보 <b>{alertCount}건</b></>);
+    if (hasUnmatched) parts.push(<>미매칭 <b>{openIssueCount}건</b></>);
+    if (hasNoPrice) parts.push(<>단가없음 <b>{noPriceCount}개</b></>);
+    if (hasStale) parts.push(<><b>{staleModules.join('·')}</b> 미업로드</>);
+    if (hasBackup)
+      parts.push(
+        <>{backupReminder.never ? '백업 이력 없음' : `${backupReminder.daysSince}일 전 백업`}</>
+      );
+    const hasActionable = hasTodos || hasAlert || hasUnmatched;
     return (
       <>
-        {hasTodos && (
-          <>
-            오늘 할 일 <b>{todos.length}건</b>
-          </>
-        )}
-        {hasAlert && (
-          <>
-            {hasTodos ? ', ' : ''}원가율 경보 <b>{alertCount}건</b>
-          </>
-        )}
-        {hasStale && (
-          <>
-            {hasTodos || hasAlert ? ' · ' : ''}
-            <b>{staleModules.join('·')}</b> 지난달 미업로드
-          </>
-        )}
-        {hasBackup && (
-          <>
-            {hasTodos || hasAlert || hasStale ? ' · ' : ''}
-            {backupReminder.never
-              ? '백업 이력 없음'
-              : `${backupReminder.daysSince}일 전 마지막 백업`}
-          </>
-        )}
-        {hasTodos || hasAlert ? '이 있어요.' : '.'}
+        {parts.map((part, i) => (
+          <span key={i}>
+            {i > 0 ? ' · ' : ''}
+            {part}
+          </span>
+        ))}
+        {hasActionable ? '이 있어요.' : '.'}
       </>
     );
   })();
