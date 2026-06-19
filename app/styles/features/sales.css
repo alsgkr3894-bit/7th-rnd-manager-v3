@@ -1,0 +1,60 @@
+/* ============================================================
+   Sales rank row
+============================================================ */
+.sales-rank-row-button,
+.sales-rank-name,
+.sales-rank-share {
+  min-width: 0;
+}
+.sales-rank-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .sales-rank-row-button {
+    grid-template-columns: 32px minmax(0, 1fr) 24px !important;
+    gap: 8px !important;
+    padding: 12px !important;
+  }
+  .sales-rank-pos {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .sales-rank-name {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .sales-rank-category {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+  }
+  .sales-rank-quantity {
+    grid-column: 1 / 3;
+    grid-row: 3;
+    text-align: left !important;
+  }
+  .sales-rank-share {
+    grid-column: 1 / 4;
+    grid-row: 4;
+  }
+  .sales-rank-spacer {
+    display: none;
+  }
+  .sales-rank-chevron {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+  }
+  .sales-rank-size-detail {
+    padding-left: 12px !important;
+  }
+  .sales-rank-size-row {
+    grid-template-columns: minmax(0, 1fr) 72px 52px !important;
+    gap: 8px !important;
+  }
+  .sales-rank-size-row > :nth-child(2) {
+    display: none;
+  }
+}

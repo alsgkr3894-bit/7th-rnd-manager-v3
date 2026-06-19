@@ -378,7 +378,7 @@ ui/ 폴더에 22개 공통 컴포넌트, icons.jsx에 자체 SVG 아이콘 32개
 ### `app/globals.css — CSS 임포트 허브`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/app/globals.css`
 
-tokens.css + base + layout + overlay + palette + chrome + features(ingredient/cost/note/nutrition/settings/report 3종) + motion 4종 + home 관련 2종 등 총 22개 CSS 파일을 @import로 조합. 직접 스타일 없이 임포트 진입점 역할
+tokens.css + base + layout + overlay + palette + chrome + features(upload/sales/ingredient/cost/note/nutrition/settings/report 3종) + motion 4종 + home 관련 2종 등 총 24개 CSS 파일을 @import로 조합. 직접 스타일 없이 임포트 진입점 역할
 
 ### `components/TopBar.jsx + components/topbar/ — 상단바`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/components/TopBar.jsx`

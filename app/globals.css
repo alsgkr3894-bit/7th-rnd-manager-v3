@@ -7,6 +7,8 @@
 @import './styles/components/palette.css';
 @import './styles/components/chrome.css';
 @import './styles/features.css';
+@import './styles/features/upload.css';
+@import './styles/features/sales.css';
 @import './styles/features/ingredient.css';
 @import './styles/features/cost.css';
 @import './styles/features/note.css';
