@@ -2,6 +2,7 @@ import {
   parseOptionalNonNegativeNumber,
   parseOptionalNumber,
   parseExcelDate,
+  tryParsePrice,
 } from '../../lib/parse.js';
 
 describe('parseOptionalNumber', () => {
@@ -68,5 +69,21 @@ describe('parseExcelDate (R2-H1 회귀)', () => {
   test('빈 값은 빈 문자열', () => {
     expect(parseExcelDate('')).toBe('');
     expect(parseExcelDate(null)).toBe('');
+  });
+});
+
+describe('tryParsePrice (R2-M1 회귀)', () => {
+  test('통화기호(₩ ￦)·콤마·원·공백을 제거하고 숫자로 파싱한다', () => {
+    expect(tryParsePrice('₩1,000')).toBe(1000);
+    expect(tryParsePrice('￦2,500')).toBe(2500);
+    expect(tryParsePrice('1,000원')).toBe(1000);
+    expect(tryParsePrice(' 3000 ')).toBe(3000);
+  });
+
+  test('숫자/빈값/비숫자를 기존대로 처리한다', () => {
+    expect(tryParsePrice(1500)).toBe(1500);
+    expect(tryParsePrice('')).toBeNull();
+    expect(tryParsePrice(null)).toBeNull();
+    expect(tryParsePrice('미정')).toBeNull();
   });
 });
