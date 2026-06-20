@@ -14,6 +14,7 @@ import {
   repairIngredientProductCodeDuplicates,
   removeCategoryFromAll,
   removeTagFromAll,
+  removeManyTagsFromAll,
   renameCategoryInAll,
   renameTagInAll,
   bulkSetDiscontinued,
@@ -98,6 +99,16 @@ export function useIngredientManageActions({
       await load();
     } catch (e) {
       showToast('삭제 실패: ' + e.message, 'error');
+    }
+  }
+
+  async function handleRemoveAllUnusedTags(tags) {
+    try {
+      const { updated } = await removeManyTagsFromAll(tags);
+      showToast(`미사용 태그 ${tags.length}개 일괄 삭제 — ${updated}개 식자재 갱신`, 'ok');
+      await load();
+    } catch (e) {
+      showToast('일괄 삭제 실패: ' + e.message, 'error');
     }
   }
 
@@ -324,6 +335,7 @@ export function useIngredientManageActions({
     handleReset,
     handleRemoveCategory,
     handleRemoveTag,
+    handleRemoveAllUnusedTags,
     handleRenameCategory,
     handleRenameTag,
     handleRepairProductCodeDuplicates,

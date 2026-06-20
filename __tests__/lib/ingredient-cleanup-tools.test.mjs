@@ -55,8 +55,13 @@ jest.unstable_mockModule('@/lib/auth/guard', () => ({
 // @/lib/auth/guard must be imported FIRST so the mock instance is established before
 // store.js loads destructive.js (which also imports @/lib/auth/guard).
 const { assertActiveAdmin } = await import('@/lib/auth/guard');
-const { renameCategoryInAll, renameTagInAll, bulkSetDiscontinued, bulkSetCategory } =
-  await import('../../lib/ingredient/store.js');
+const {
+  renameCategoryInAll,
+  renameTagInAll,
+  bulkSetDiscontinued,
+  bulkSetCategory,
+  removeManyTagsFromAll,
+} = await import('../../lib/ingredient/store.js');
 
 beforeEach(() => {
   ingredientRows = [];
@@ -231,5 +236,49 @@ describe('bulkSetCategory', () => {
     ingredientRows = [{ id: 1, ingredientName: 'A', category: '' }];
     await bulkSetCategory([1], '소스류');
     expect(assertActiveAdmin).toHaveBeenCalledWith('식자재 일괄 분류 변경');
+  });
+});
+
+// ── removeManyTagsFromAll ────────────────────────────────────────────────────
+
+describe('removeManyTagsFromAll', () => {
+  test('여러 태그를 한 번의 스캔으로 제거한다', async () => {
+    ingredientRows = [
+      { id: 1, tags: ['냉동', '주재료'], ingredientName: 'A' },
+      { id: 2, tags: ['냉동'], ingredientName: 'B' },
+      { id: 3, tags: ['상온', '주재료'], ingredientName: 'C' },
+      { id: 4, tags: ['상온'], ingredientName: 'D' },
+    ];
+
+    const result = await removeManyTagsFromAll(['냉동', '주재료']);
+    expect(result).toEqual({ updated: 3 });
+    expect(ingredientRows.find(r => r.id === 1).tags).toEqual([]);
+    expect(ingredientRows.find(r => r.id === 2).tags).toEqual([]);
+    expect(ingredientRows.find(r => r.id === 3).tags).toEqual(['상온']);
+    expect(ingredientRows.find(r => r.id === 4).tags).toEqual(['상온']);
+  });
+
+  test('빈 배열이면 updated:0 반환', async () => {
+    ingredientRows = [{ id: 1, tags: ['냉동'], ingredientName: 'A' }];
+    const result = await removeManyTagsFromAll([]);
+    expect(result).toEqual({ updated: 0 });
+  });
+
+  test('일치하는 태그가 없으면 updated:0 반환', async () => {
+    ingredientRows = [{ id: 1, tags: ['상온'], ingredientName: 'A' }];
+    const result = await removeManyTagsFromAll(['없는태그']);
+    expect(result).toEqual({ updated: 0 });
+  });
+
+  test('tags 필드가 없는 행은 건너뛴다', async () => {
+    ingredientRows = [{ id: 1, ingredientName: 'A' }];
+    const result = await removeManyTagsFromAll(['냉동']);
+    expect(result).toEqual({ updated: 0 });
+  });
+
+  test('assertActiveAdmin을 호출한다', async () => {
+    ingredientRows = [{ id: 1, tags: ['냉동'], ingredientName: 'A' }];
+    await removeManyTagsFromAll(['냉동']);
+    expect(assertActiveAdmin).toHaveBeenCalledWith('미사용 태그 일괄 제거');
   });
 });

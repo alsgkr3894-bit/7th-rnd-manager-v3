@@ -1,6 +1,6 @@
 import { PageHeader } from '@/components/ui/PageHeader';
 
-export function AllSummaryError({ dbError }) {
+export function AllSummaryError({ dbError, onRetry }) {
   return (
     <main className="main page-enter">
       <PageHeader
@@ -9,7 +9,12 @@ export function AllSummaryError({ dbError }) {
         sub="로드 실패"
       />
       <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--negative)' }}>
-        데이터베이스 오류: {dbError}
+        <div>데이터베이스 오류: {dbError}</div>
+        {onRetry && (
+          <button className="btn primary" style={{ marginTop: 12 }} onClick={onRetry}>
+            다시 시도
+          </button>
+        )}
       </div>
     </main>
   );

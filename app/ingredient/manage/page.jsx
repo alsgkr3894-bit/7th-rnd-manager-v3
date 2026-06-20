@@ -131,6 +131,7 @@ export default function Page() {
     handleReset,
     handleRemoveCategory,
     handleRemoveTag,
+    handleRemoveAllUnusedTags,
     handleRenameCategory,
     handleRenameTag,
     handleRepairProductCodeDuplicates,
@@ -315,6 +316,7 @@ export default function Page() {
         onRepairProductCodeDuplicates={handleRepairProductCodeDuplicates}
         onRemoveCategory={handleRemoveCategory}
         onRemoveTag={handleRemoveTag}
+        onRemoveAllUnusedTags={handleRemoveAllUnusedTags}
         onRenameCategory={handleRenameCategory}
         onRenameTag={handleRenameTag}
         isAdmin={!isViewer}

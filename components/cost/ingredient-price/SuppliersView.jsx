@@ -62,7 +62,10 @@ export function SuppliersView() {
   if (dbError)
     return (
       <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--negative)' }}>
-        데이터베이스 오류: {dbError}
+        <div>데이터베이스 오류: {dbError}</div>
+        <button className="btn primary" style={{ marginTop: 12 }} onClick={reload}>
+          다시 시도
+        </button>
       </div>
     );
 

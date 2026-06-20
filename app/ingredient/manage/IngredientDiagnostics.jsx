@@ -3,6 +3,51 @@ import { useState } from 'react';
 import { Icon } from '@/components/icons';
 import { rowLabel } from './_duplicate-diagnostics';
 
+function BulkTagDeleteButton({ count, onConfirm }) {
+  const [confirming, setConfirming] = useState(false);
+  if (confirming) {
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <span style={{ fontSize: 11, color: 'var(--negative)', fontWeight: 700 }}>
+          태그 {count}개 전체 삭제?
+        </span>
+        <button
+          className="btn sm"
+          style={{
+            background: 'var(--negative)',
+            color: '#fff',
+            border: 0,
+            padding: '1px 6px',
+            fontSize: 11,
+          }}
+          onClick={() => {
+            setConfirming(false);
+            onConfirm();
+          }}
+        >
+          삭제
+        </button>
+        <button
+          className="btn sm ghost"
+          style={{ padding: '1px 4px', fontSize: 11 }}
+          onClick={() => setConfirming(false)}
+        >
+          취소
+        </button>
+      </span>
+    );
+  }
+  return (
+    <button
+      className="btn sm"
+      style={{ marginLeft: 4, fontSize: 11 }}
+      onClick={() => setConfirming(true)}
+    >
+      전체 삭제
+    </button>
+  );
+}
+
 /** 단종 전용 분류/태그 칩 — 삭제·이름변경 인라인 액션 포함 */
 function CleanupChip({ label, prefix = '', onRemove, onRename, isAdmin }) {
   const [renaming, setRenaming] = useState(false);
@@ -176,6 +221,7 @@ export function IngredientDiagnostics({
   onRepairProductCodeDuplicates,
   onRemoveCategory,
   onRemoveTag,
+  onRemoveAllUnusedTags,
   onRenameCategory,
   onRenameTag,
   isAdmin = false,
@@ -310,6 +356,12 @@ export function IngredientDiagnostics({
                     onRename={onRenameTag}
                   />
                 ))}
+                {isAdmin && unusedTags.length > 1 && onRemoveAllUnusedTags && (
+                  <BulkTagDeleteButton
+                    count={unusedTags.length}
+                    onConfirm={() => onRemoveAllUnusedTags(unusedTags)}
+                  />
+                )}
               </div>
             )}
           </div>

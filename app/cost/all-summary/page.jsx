@@ -38,7 +38,7 @@ export default function Page() {
   const hasRecipeData = rows.some(row => row.hasCost);
   const { page, goTo, totalPages, paged, total } = usePagination(filtered, PAGE_SIZE);
 
-  if (dbError) return <AllSummaryError dbError={dbError} />;
+  if (dbError) return <AllSummaryError dbError={dbError} onRetry={reload} />;
 
   return (
     <main className="main page-enter">
