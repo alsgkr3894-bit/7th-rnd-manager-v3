@@ -73,9 +73,21 @@ export async function runViewportQa({ viewport, title, errorLabel }) {
     page.on('pageerror', onPageError);
     page.on('response', onResponse);
 
-    const row = { name, path, h1: false, main: false, overflow: false, loading: false, errText: false, errs: 0 };
+    const row = {
+      name,
+      path,
+      h1: false,
+      main: false,
+      overflow: false,
+      loading: false,
+      errText: false,
+      errs: 0,
+    };
     try {
-      await page.goto(routeUrl(BASE, path), { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
+      await page.goto(routeUrl(BASE, path), {
+        waitUntil: 'domcontentloaded',
+        timeout: NAV_TIMEOUT_MS,
+      });
       await Promise.race([
         page.waitForSelector('h1, main', { timeout: 15000 }).catch(() => {}),
         page.waitForTimeout(3000),
@@ -136,10 +148,13 @@ export async function runViewportQa({ viewport, title, errorLabel }) {
       `  ${mark}  ${nm}  ${cell(r.h1)}   ${cell(r.main)}   ${r.overflow ? '⚠' : '·'}    ${r.loading ? '⚠' : '·'}    ${r.errText ? '⚠' : '·'}   ${String(r.errs).padStart(2)}   ${r.path}`
     );
     if (r.fatal) console.log(`         └ 치명: ${r.fatal}`);
-    if (r.overflow) console.log(`         └ 가로스크롤: scrollWidth ${r.scrollW} > innerWidth ${r.innerW}`);
+    if (r.overflow)
+      console.log(`         └ 가로스크롤: scrollWidth ${r.scrollW} > innerWidth ${r.innerW}`);
     if (r.errs > 0) console.log(`         └ 콘솔: ${JSON.stringify(r.errSamples)}`);
     if (r.ignoredErrs > 0)
-      console.log(`         └ 무시: Next dev 정적 리소스 404 ${r.ignoredErrs}건 ${JSON.stringify(r.ignoredSamples)}`);
+      console.log(
+        `         └ 무시: Next dev 정적 리소스 404 ${r.ignoredErrs}건 ${JSON.stringify(r.ignoredSamples)}`
+      );
   }
   console.log('  ' + '─'.repeat(78));
   const passed = results.filter(isSmokePass).length;

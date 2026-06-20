@@ -11,9 +11,11 @@ import { runViewportQa } from './qa-viewport-runner.mjs';
 
 const VIEWPORT = { width: 702, height: 900 };
 
-runViewportQa({ viewport: VIEWPORT, title: '스모크 QA 결과', errorLabel: 'smoke-qa 실행 실패' }).catch(
-  e => {
-    console.error('smoke-qa 실행 실패:', e);
-    process.exit(2);
-  }
-);
+runViewportQa({
+  viewport: VIEWPORT,
+  title: '스모크 QA 결과',
+  errorLabel: 'smoke-qa 실행 실패',
+}).catch(e => {
+  console.error('smoke-qa 실행 실패:', e);
+  process.exit(2);
+});

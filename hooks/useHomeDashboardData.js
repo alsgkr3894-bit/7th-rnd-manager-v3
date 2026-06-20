@@ -18,7 +18,6 @@ import {
   getTodayTodos,
   getPipelineStats,
   getWeekSchedule,
-  getRecentPriceChanges,
 } from '@/lib/stats';
 import { getIssues } from '@/lib/sales';
 import { getIngredientHealthSummary } from '@/lib/ingredient';
@@ -54,7 +53,6 @@ export function useHomeDashboardData({ chartTab }) {
   const [todos, setTodos] = useState([]);
   const [pipeline, setPipeline] = useState(null);
   const [weekSchedule, setWeekSchedule] = useState(null);
-  const [priceChanges, setPriceChanges] = useState([]);
   const [issues, setIssues] = useState([]);
   const [ingredientHealth, setIngredientHealth] = useState(null);
   const [uploadFreshness, setUploadFreshness] = useState(null);
@@ -87,7 +85,6 @@ export function useHomeDashboardData({ chartTab }) {
           getTodayTodos(),
           getPipelineStats(),
           getWeekSchedule(),
-          getRecentPriceChanges(6),
           getIssues(),
           getRecentActivities(8),
           getCostRateKpi(),
@@ -95,7 +92,7 @@ export function useHomeDashboardData({ chartTab }) {
           getUploadFreshness(),
           getIngredientHealthSummary(),
         ]);
-        const [an, sm, ca, tdo, pl, ws, pc, iss, ac, c, n, uf, ih] = live.map(r =>
+        const [an, sm, ca, tdo, pl, ws, iss, ac, c, n, uf, ih] = live.map(r =>
           r.status === 'fulfilled' ? r.value : null
         );
         if (!mountedRef.current) return;
@@ -109,7 +106,6 @@ export function useHomeDashboardData({ chartTab }) {
         if (tdo) setTodos(tdo);
         if (pl) setPipeline(pl);
         if (ws) setWeekSchedule(ws);
-        if (pc) setPriceChanges(pc);
         if (iss) setIssues(iss);
         if (ih) setIngredientHealth(ih);
         if (ac) setActivities(ac);
@@ -254,7 +250,7 @@ export function useHomeDashboardData({ chartTab }) {
     todos,
     pipeline,
     weekSchedule,
-    priceChanges,
+    priceChanges: [],
     issues,
     ingredientHealth,
     uploadFreshness,

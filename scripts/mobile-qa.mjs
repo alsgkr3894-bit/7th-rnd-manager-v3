@@ -12,9 +12,11 @@ import { runViewportQa } from './qa-viewport-runner.mjs';
 
 const VIEWPORT = { width: 390, height: 844 }; // iPhone 14 기준 모바일 뷰포트
 
-runViewportQa({ viewport: VIEWPORT, title: '모바일 QA 결과', errorLabel: 'mobile-qa 실행 실패' }).catch(
-  e => {
-    console.error('mobile-qa 실행 실패:', e);
-    process.exit(2);
-  }
-);
+runViewportQa({
+  viewport: VIEWPORT,
+  title: '모바일 QA 결과',
+  errorLabel: 'mobile-qa 실행 실패',
+}).catch(e => {
+  console.error('mobile-qa 실행 실패:', e);
+  process.exit(2);
+});

@@ -92,9 +92,13 @@ describe('파괴적 액션 권한 가드', () => {
       expect(functionBody(destructive, fn)).toContain('assertActiveAdmin');
     }
     // bulkImportIngredients는 import.js에 위치
-    expect(functionBody(src('lib/ingredient/import.js'), 'bulkImportIngredients')).toContain('assertActiveAdmin');
+    expect(functionBody(src('lib/ingredient/import.js'), 'bulkImportIngredients')).toContain(
+      'assertActiveAdmin'
+    );
     // repairIngredientProductCodeDuplicates는 dedupe-repair.js에 위치
-    expect(functionBody(src('lib/ingredient/dedupe-repair.js'), 'repairIngredientProductCodeDuplicates')).toContain('assertActiveAdmin');
+    expect(
+      functionBody(src('lib/ingredient/dedupe-repair.js'), 'repairIngredientProductCodeDuplicates')
+    ).toContain('assertActiveAdmin');
   });
 
   test('판매가 초기화/일괄교체가 assertActiveAdmin을 호출한다', () => {
