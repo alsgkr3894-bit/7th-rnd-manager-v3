@@ -19,6 +19,7 @@ export function useShipmentReportData(shipYear, shipMonth, setShipYear, setShipM
   const [availPeriods, setAvailPeriods] = useState([]);
   const [dataError, setDataError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [reloadCount, setReloadCount] = useState(0);
 
   useEffect(() => {
     // StrictMode 이중 마운트·빠른 월 변경 시 무거운 로드가 겹쳐 DB 조회가 느려지지 않도록
@@ -114,7 +115,7 @@ export function useShipmentReportData(shipYear, shipMonth, setShipYear, setShipM
     return () => {
       ignore = true;
     };
-  }, [shipYear, shipMonth, setShipYear, setShipMonth]);
+  }, [shipYear, shipMonth, setShipYear, setShipMonth, reloadCount]);
 
   return {
     aggRows,
@@ -125,5 +126,6 @@ export function useShipmentReportData(shipYear, shipMonth, setShipYear, setShipM
     availPeriods,
     dataError,
     isLoading,
+    reload: () => setReloadCount(c => c + 1),
   };
 }

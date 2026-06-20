@@ -109,6 +109,7 @@ export default function ReportBuilderShell({
   docFormat = { pdf: true, excel: false },
   onExcelExport,
   onBeforeGenerate,
+  onRetry,
 }) {
   const [generating, setGenerating] = useState(false);
   const generatingTimer = useRef(null);
@@ -198,12 +199,24 @@ export default function ReportBuilderShell({
               <span style={{ fontSize: 13, color: 'var(--text-3)' }}>데이터 불러오는 중…</span>
             </div>
           ) : safeDataError ? (
-            <div className="report-empty-banner">
-              <Icon.alert style={{ width: 18, height: 18, flexShrink: 0, color: 'var(--warn)' }} />
-              <div>
-                <div style={{ fontWeight: 600, marginBottom: 3 }}>데이터를 불러올 수 없어요</div>
-                <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{safeDataError}</div>
+            <div
+              className="report-empty-banner"
+              style={{ flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}
+            >
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <Icon.alert
+                  style={{ width: 18, height: 18, flexShrink: 0, color: 'var(--warn)' }}
+                />
+                <div>
+                  <div style={{ fontWeight: 600, marginBottom: 3 }}>데이터를 불러올 수 없어요</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{safeDataError}</div>
+                </div>
               </div>
+              {typeof onRetry === 'function' && (
+                <button className="btn primary" style={{ marginLeft: 26 }} onClick={onRetry}>
+                  다시 시도
+                </button>
+              )}
             </div>
           ) : (
             <div className="report-paper">{preview}</div>

@@ -45,6 +45,7 @@ export default function Page() {
     availPeriods,
     dataError,
     isLoading,
+    reload,
   } = useShipmentReportData(shipYear, shipMonth, setShipYear, setShipMonth);
 
   const safeAggRows = asObjectArray(aggRows);
@@ -165,6 +166,7 @@ export default function Page() {
       reportMeta={reportMeta}
       dataError={dataError}
       isLoading={isLoading}
+      onRetry={reload}
       docFormat={docFormat}
       options={
         <ShipmentReportOptions

@@ -47,6 +47,7 @@ export default function Page() {
     data: rows = [],
     loading: isLoading,
     error,
+    reload,
   } = useDBLoad(() => safeAll('sales_rows').then(asObjectArray), {
     initialData: [],
     onError: err => console.error('[compare report]', err),
@@ -123,6 +124,7 @@ export default function Page() {
       reportMeta={reportMeta}
       dataError={dataError}
       isLoading={isLoading}
+      onRetry={error ? reload : undefined}
       options={
         <MenuSalesCompareOptions
           mode={safeMode}

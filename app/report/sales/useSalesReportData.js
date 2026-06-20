@@ -19,9 +19,12 @@ export function useSalesReportData() {
   const [defaultPeriod, setDefaultPeriod] = useState(null);
   const [dataError, setDataError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [reloadCount, setReloadCount] = useState(0);
 
   useEffect(() => {
     let ignore = false;
+    setIsLoading(true);
+    setDataError(null);
 
     initDB()
       .then(async () => {
@@ -96,7 +99,7 @@ export function useSalesReportData() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [reloadCount]);
 
   return {
     salesRows,
@@ -106,5 +109,6 @@ export function useSalesReportData() {
     defaultPeriod,
     dataError,
     isLoading,
+    reload: () => setReloadCount(c => c + 1),
   };
 }

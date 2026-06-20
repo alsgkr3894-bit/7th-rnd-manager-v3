@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, test } from '@jest/globals';
 import {
+  COMMON_LS_KEYS,
+  LOCAL_STORAGE_KEYS_BY_SCOPE,
+  PERSISTENT_LS_KEYS,
   collectLocalStorage,
   persistentLocalStorageKeysForScopes,
   pickLocalStorageForScopes,
@@ -164,5 +167,90 @@ describe('nutrition backup localStorage keys', () => {
   test('선택된 모듈이 없으면 localStorage 복원 대상을 만들지 않는다', () => {
     expect(persistentLocalStorageKeysForScopes([])).toEqual([]);
     expect(pickLocalStorageForScopes({ 'v3:profile': 'profile' }, [])).toBeUndefined();
+  });
+});
+
+describe('스코프별 복원 범위 정합성', () => {
+  test('cost 스코프 — 원가 관련 키 포함, 제때·영양 키 제외', () => {
+    const keys = persistentLocalStorageKeysForScopes(['cost']);
+    expect(keys).toEqual(
+      expect.arrayContaining([
+        'v3:cost-platforms',
+        'v3:margin-cost-warn',
+        'v3:margin-cost-crit',
+        'v3:recipe-sort',
+      ])
+    );
+    expect(keys).not.toContain('v3:note-pins');
+    expect(keys).not.toContain('v3:jette-settings');
+    expect(keys).not.toContain('v3:nutrition-menu-order');
+  });
+
+  test('notes 스코프 — 노트·샘플 키 포함, 원가·제때 키 제외', () => {
+    const keys = persistentLocalStorageKeysForScopes(['notes']);
+    expect(keys).toEqual(
+      expect.arrayContaining([
+        'v3:note-sort',
+        'v3:note-view',
+        'v3:note-pins',
+        'v3:note-presets',
+        'v3:note-calendar-checklist',
+        'v3:sample-sort',
+        'v3:sample-view',
+      ])
+    );
+    expect(keys).not.toContain('v3:cost-platforms');
+    expect(keys).not.toContain('v3:jette-settings');
+  });
+
+  test('모든 스코프 합집합이 PERSISTENT_LS_KEYS 전체를 커버한다', () => {
+    const allScopes = Object.keys(LOCAL_STORAGE_KEYS_BY_SCOPE);
+    const combined = new Set(persistentLocalStorageKeysForScopes(allScopes));
+    for (const key of PERSISTENT_LS_KEYS) {
+      expect(combined.has(key)).toBe(true);
+    }
+  });
+
+  test('LOCAL_STORAGE_KEYS_BY_SCOPE의 모든 키는 PERSISTENT_LS_KEYS에 존재한다', () => {
+    const persistentSet = new Set(PERSISTENT_LS_KEYS);
+    for (const [scope, keys] of Object.entries(LOCAL_STORAGE_KEYS_BY_SCOPE)) {
+      for (const key of keys) {
+        expect(persistentSet.has(key)).toBe(true);
+      }
+    }
+  });
+
+  test('COMMON_LS_KEYS의 모든 키는 PERSISTENT_LS_KEYS에 존재한다', () => {
+    const persistentSet = new Set(PERSISTENT_LS_KEYS);
+    for (const key of COMMON_LS_KEYS) {
+      expect(persistentSet.has(key)).toBe(true);
+    }
+  });
+
+  test('cost 스코프 pickLocalStorageForScopes — cost 키 포함, jette 키 제외', () => {
+    const backup = {
+      'v3:cost-platforms': 'A',
+      'v3:jette-settings': 'B',
+      'v3:profile': 'profile',
+      'v3:unknown-key': 'skip',
+    };
+    const result = pickLocalStorageForScopes(backup, ['cost']);
+    expect(result['v3:cost-platforms']).toBe('A');
+    expect(result['v3:profile']).toBe('profile');
+    expect(result['v3:jette-settings']).toBeUndefined();
+    expect(result['v3:unknown-key']).toBeUndefined();
+  });
+
+  test('알 수 없는 스코프는 COMMON_LS_KEYS만 반환하고 오류 없이 동작한다', () => {
+    const keys = persistentLocalStorageKeysForScopes(['unknown-scope']);
+    const commonSet = new Set(COMMON_LS_KEYS);
+    for (const key of keys) {
+      expect(commonSet.has(key)).toBe(true);
+    }
+
+    const backup = { 'v3:profile': 'profile', 'v3:cost-platforms': 'skip' };
+    const result = pickLocalStorageForScopes(backup, ['unknown-scope']);
+    expect(result?.['v3:profile']).toBe('profile');
+    expect(result?.['v3:cost-platforms']).toBeUndefined();
   });
 });

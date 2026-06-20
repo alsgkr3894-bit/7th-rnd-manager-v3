@@ -63,6 +63,7 @@ export default function Page() {
     defaultPeriod,
     dataError,
     isLoading,
+    reload,
   } = useSalesReportData();
 
   // Apply defaultPeriod once when data first arrives
@@ -158,6 +159,7 @@ export default function Page() {
       reportMeta={reportMeta}
       dataError={dataError}
       isLoading={isLoading}
+      onRetry={reload}
       docFormat={docFormat}
       onExcelExport={handleExcelExport}
       options={

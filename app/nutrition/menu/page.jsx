@@ -34,7 +34,7 @@ export default function Page() {
   const { showConfirm, confirmElement } = useConfirmDialog();
   const { isAdmin } = useCurrentRole();
 
-  const { data, loading, reload } = useDBLoad(
+  const { data, loading, error, reload } = useDBLoad(
     async () => {
       const [
         menuRefs,
@@ -181,6 +181,16 @@ export default function Page() {
 
       {loading ? (
         <NutritionMenuSkeleton />
+      ) : error ? (
+        <div
+          className="card"
+          style={{ padding: 32, textAlign: 'center', color: 'var(--negative)' }}
+        >
+          <div>데이터를 불러오지 못했습니다: {error.message}</div>
+          <button className="btn primary" style={{ marginTop: 12 }} onClick={reload}>
+            다시 시도
+          </button>
+        </div>
       ) : (
         <NutritionMenuWorkspace
           tab={tab}

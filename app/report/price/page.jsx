@@ -44,6 +44,7 @@ export default function Page() {
     data,
     loading: isLoading,
     errorMessage: dataError,
+    reload,
   } = useDBLoad(
     async () => {
       const files = asObjectArray(await getPriceFiles());
@@ -104,6 +105,7 @@ export default function Page() {
       reportMeta={reportMeta}
       dataError={dataError}
       isLoading={isLoading}
+      onRetry={reload}
       docFormat={docFormat}
       options={
         <PriceReportOptions

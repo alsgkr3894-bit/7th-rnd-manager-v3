@@ -73,6 +73,7 @@ export default function Page() {
     data,
     loading: isLoading,
     errorMessage: dataError,
+    reload,
   } = useDBLoad(
     async () => {
       const [prices, ingredients, recipeMaps, edges, latestPriceLookup, recipeGroups] =
@@ -223,6 +224,7 @@ export default function Page() {
       reportMeta={reportMeta}
       dataError={dataError}
       isLoading={isLoading}
+      onRetry={reload}
       docFormat={docFormat}
       onExcelExport={handleExcelExport}
       onBeforeGenerate={guardStrictPosting}

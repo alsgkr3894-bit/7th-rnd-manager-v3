@@ -346,7 +346,7 @@
 #### 식자재 데이터 정리 도구  🟡 ⏸
 - 유사 식자재 병합(같은 제품코드/유사 이름/동일 원산지 후보를 안전하게 병합)
 - 분류/태그 이름 변경 기능
-- 미사용 태그 일괄 삭제
+- ~~미사용 태그 일괄 삭제~~ ✅ 2026-06-21 완료 — `removeManyTagsFromAll` + `IngredientDiagnostics` 전체 삭제 버튼
 - 대량 식자재 편집: 분류·태그·전용범용·단종 상태 일괄 변경
 - **왜 보류**: 입력 UX 안정화 완료 → 착수 가능 조건 충족. 사용자 승인 후 착수.
 - **착수 게이트**: 사용자 명세 확인 후 B섹션으로 이동.
@@ -369,7 +369,7 @@
 
 #### 출력·인쇄·다운로드 파이프라인 점검  🟢 ⏸
 - PDF/인쇄/CSV/XLSX 공통 UX 문구·실패 처리 통일
-- `document.write` 기반 출력 HTML 사용자 입력 escaping 재확인
+- ~~`document.write` 기반 출력 HTML 사용자 입력 escaping 재확인~~ ✅ 2026-06-21 완료 — 8개 출력 파일 전수 점검, `lib/note/journal-print.js` 2곳 `esc()` 누락 수정
 - 파일명 규칙 `브랜드명_업무명_날짜` 기준 통일
 - 대용량 출력 progress·취소 가능 여부 검토
 - **왜 보류**: 기능 안정화 이후 점진 적용. 출력 유형별 1커밋 단위.
@@ -378,12 +378,12 @@
 - 영속 보관 키 vs 세션성 키 명확 분류·문서화
 - 브랜드별 분리 키 vs 공유 키 표 작성
 - 임시저장·최근 방문·스크롤 위치 등 복원 시 이상한 키 백업 제외 확인
-- 테스트: 선택 백업 범위별 localStorage 포함/제외 · 브랜드 복원 시 플랫폼 수수료·출력 순서 복원 확인
+- ~~테스트: 선택 백업 범위별 localStorage 포함/제외 · 브랜드 복원 시 플랫폼 수수료·출력 순서 복원 확인~~ ✅ 2026-06-21 완료 — cost/notes 스코프 키 포함/제외, 전체 스코프 합집합=PERSISTENT_LS_KEYS, 역방향 정합성, pickLocalStorageForScopes 필터링, 알 수 없는 스코프 방어 테스트 6종 추가
 - **왜 보류**: 백업/복원 안전성은 이미 확보. 정합성 문서화는 다음 라운드.
 
 #### 에러·빈상태·권한 상태 UI 통일  🟢 ⏸
 - 공통 `ErrorState`·`EmptyState`·`PermissionNotice`·`InlineWarning` 패턴 정의 확대
-- DB 로드 실패 `다시 시도` 액션 통일
+- ~~DB 로드 실패 `다시 시도` 액션 통일~~ ✅ 2026-06-21 완료 — P0 페이지(AllSummary, Suppliers, IngredientPrice, CommonManage) + ReportBuilderShell(6개 보고서 페이지) + menu-master/nutrition-menu/ingredient-usage 에러 시 재시도 버튼 추가
 - viewer 권한에서 disabled 이유 tooltip 또는 안내 문구 제공
 - 위험 액션 confirm UI·문구 기준 통일
 - **왜 보류**: `EmptyState`·`Skeleton`·toast-type 정책은 이미 적용됨. 추가 통일은 화면 단위 점진 적용.

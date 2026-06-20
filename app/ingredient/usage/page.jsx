@@ -49,7 +49,7 @@ export default function Page() {
   );
   const excludedMenus = useMemo(() => toStringSet(excludedMenuList), [excludedMenuList]);
 
-  const { data, loading } = useDBLoad(
+  const { data, loading, error, reload } = useDBLoad(
     async () => {
       const [meta, menuMasters, recipes, groups, edges, compositions, managed] = await Promise.all([
         getAllIngredients(),
@@ -186,6 +186,16 @@ export default function Page() {
               }}
             />
           ))}
+        </div>
+      ) : error ? (
+        <div
+          className="card"
+          style={{ padding: 32, textAlign: 'center', color: 'var(--negative)' }}
+        >
+          <div>데이터를 불러오지 못했습니다: {error.message}</div>
+          <button className="btn primary" style={{ marginTop: 12 }} onClick={reload}>
+            다시 시도
+          </button>
         </div>
       ) : allMeta.length === 0 ? (
         <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>

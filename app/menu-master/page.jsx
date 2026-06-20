@@ -62,7 +62,7 @@ export default function Page() {
     setBrandCats(getActiveBrandId() === 'main' ? PIZZA_CATEGORIES : []);
   }, []);
 
-  const { data, loading, reload } = useDBLoad(
+  const { data, loading, error, reload } = useDBLoad(
     async () => {
       await normalizePersonalPizzaCodes().catch(e =>
         console.warn('[menu-master] 코드 정규화 실패', e)
@@ -165,6 +165,18 @@ export default function Page() {
       />
 
       {loading && <MenuMasterLoadingTable />}
+
+      {!loading && error && (
+        <div
+          className="card"
+          style={{ padding: 32, textAlign: 'center', color: 'var(--negative)' }}
+        >
+          <div>데이터를 불러오지 못했습니다: {error.message}</div>
+          <button className="btn primary" style={{ marginTop: 12 }} onClick={reload}>
+            다시 시도
+          </button>
+        </div>
+      )}
 
       {!loading && rows.length === 0 && (
         <MenuMasterEmptyState isMain={isMain} seeding={seeding} onSeed={handleSeed} />
