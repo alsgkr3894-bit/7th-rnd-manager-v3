@@ -8,6 +8,7 @@
 > 2026-06-17 레시피 입력 UX 계획(구 `docs/MENU_MASTER_RECIPE_INPUT_UX_PLAN.md`)은 내용 전부 이 문서에 흡수 후 삭제됐습니다.
 > 2026-06-17 품질 개선 로드맵(구 `docs/SITE_QUALITY_IMPROVEMENT_PLAN.md`)은 P0~P6 전부 완료 이력 흡수 후 삭제됐습니다.
 > 2026-06-17 전체 보완·분리 계획(구 `docs/SITE_REFACTOR_AND_HARDENING_PLAN.md`)은 1~8단계 완료 이력 흡수, P5~P11 보류 항목 등록 후 삭제됐습니다.
+> 2026-06-20 코드 청결도 재점검 보고서(구 `docs/CODE_CLEANLINESS_AUDIT_2026-06-20.md`)는 권고 항목 전부 구현 완료 이력으로 흡수 후 삭제됐습니다.
 > 2026-06-17 UX 이슈 안내 현황(구 `docs/UX_ISSUE_GUIDANCE.md`)은 P2 완료 이력 흡수 후 삭제됐습니다.
 > 2026-06-17 업무 E2E QA 현황(구 `docs/WORKFLOW_QA.md`)은 P1 완료 이력 흡수, 확장 백로그 보류 항목 등록 후 삭제됐습니다.
 > 2026-06-17 사이트 점수 개선 실행 계획(구 `docs/SITE_SCORE_IMPROVEMENT_ACTION_PLAN.md`)은 완료 항목 이력 흡수, 잔여 보류 항목 확인 후 삭제됐습니다.
@@ -513,6 +514,7 @@
 | `docs/PROJECT_CODEBASE_AUDIT.md` _(삭제됨)_ | 코드 구조, store/route/QA 체계, 책임 큰 파일, 운영 주의점을 B/D 섹션으로 흡수 | 내용 전부 흡수 후 2026-06-16 삭제 |
 | `docs/PROJECT_STRUCTURE_AUDIT_2026-06-14.md` _(삭제됨)_ | 문서 정합성, route drift, README/ARCHITECTURE 최신화, 삭제 문구 불일치 항목을 B-23/B-24/B-25로 흡수 | 내용 전부 흡수 후 2026-06-16 삭제 |
 | `docs/MENU_MASTER_UNIFICATION_PLAN.md` _(삭제됨)_ | 메뉴마스터 통합 계획(Phase 1~5) 전부 구현 완료 → 완료 이력으로 흡수 | 내용 전부 흡수 후 2026-06-16 삭제 |
+| `docs/CODE_CLEANLINESS_AUDIT_2026-06-20.md` _(삭제됨)_ | 권고 항목 4종(식자재 store 분리, nutrition values side effect 제거, QA 스크립트 공통화, 루트 임시파일 삭제) 전부 구현 완료 → 완료 이력으로 흡수 | 내용 전부 흡수 후 2026-06-20 삭제 |
 | `docs/DEFERRED_WORK.md` | 보류 항목, 진행 중 항목, 완료 이력, 운영 QA 구분 | 실행 우선순위와 완료 판단의 단일 기준 |
 
 ---
@@ -520,6 +522,26 @@
 ## 완료 이력
 
 > 완료된 모든 작업 기록. 라운드 순 → 가장 최근 항목이 위에 있습니다.
+
+---
+
+### 코드 청결도 재점검 권고 항목 전 구현 (CODE_CLEANLINESS_AUDIT_2026-06-20.md 흡수) — ✅ 2026-06-20
+
+> 검증: lint 0 / 275 suites / 1521 tests / qa:smoke 22/22 통과.
+
+- **루트 임시 파일 삭제**: `test-allergen.mjs`, `verify-4th.mjs`, `verify-dashboard.mjs`, `verify-data-path.mjs` 삭제. `SITE_STATUS.md` 참조 제거.
+- **QA 스크립트 공통화**: `scripts/qa-viewport-runner.mjs` 추출 — `ROUTES` 22개·`runViewportQa()` 공용 runner. `smoke-qa.mjs`·`mobile-qa.mjs`는 viewport만 다른 thin wrapper로 축소. `mobile-viewport.test.mjs` 계속 통과.
+- **식자재 store 분리 (`lib/ingredient/`)**: 782줄 모놀리스를 6개 파일로 분리.
+  - `normalize.js` — `normalizeOrigin·normalizeTags·buildRecord` 등 순수 정규화 함수
+  - `crud.js` — `getAllIngredients·addIngredient·updateIngredient·upsertIngredientMeta`
+  - `destructive.js` — 숨김·복원·삭제·초기화·일괄변경 (전 함수 `assertActiveAdmin` 가드)
+  - `import.js` — `bulkImportIngredients` (`assertActiveAdmin` 가드)
+  - `seed.js` — `seedMasterIngredients` (비파괴, 가드 없음)
+  - `dedupe-repair.js` — `repairIngredientProductCodeDuplicates` (`assertActiveAdmin` 가드)
+  - `store.js` → 외부 import 경로 유지하는 순수 facade로 전환.
+  - `destructive-action-guard-structure.test.mjs` 대상 파일 업데이트.
+- **nutrition values side effect 제거 (`lib/nutrition/values/store.js`)**: `getAllSetCompositions()`에서 잘못된 행 삭제 side effect 제거 → 순수 필터 반환. 삭제 로직은 `repairSetCompositions()` 별도 함수로 분리.
+- **테스트 픽스**: `ingredient-cleanup-tools.test.mjs` · `ingredient-composite.test.mjs` — `jest.unstable_mockModule` ESM mock 인스턴스 중복 방지를 위해 mock 모듈을 `store.js`보다 먼저 import하도록 순서 교정.
 
 ---
 

@@ -52,6 +52,9 @@ jest.unstable_mockModule('@/lib/auth/guard', () => ({
   assertActiveAdmin: jest.fn().mockResolvedValue(undefined),
 }));
 
+// @/lib/auth/guard must be imported FIRST so the mock instance is established before
+// store.js loads destructive.js (which also imports @/lib/auth/guard).
+const { assertActiveAdmin } = await import('@/lib/auth/guard');
 const { renameCategoryInAll, renameTagInAll, bulkSetDiscontinued, bulkSetCategory } =
   await import('../../lib/ingredient/store.js');
 
@@ -97,7 +100,6 @@ describe('renameCategoryInAll', () => {
   });
 
   test('assertActiveAdmin을 호출한다', async () => {
-    const { assertActiveAdmin } = await import('@/lib/auth/guard');
     await renameCategoryInAll('토핑재료', '신토핑');
     expect(assertActiveAdmin).toHaveBeenCalledWith('분류 이름 변경');
   });
@@ -142,7 +144,6 @@ describe('renameTagInAll', () => {
   });
 
   test('assertActiveAdmin을 호출한다', async () => {
-    const { assertActiveAdmin } = await import('@/lib/auth/guard');
     await renameTagInAll('냉동', '냉동품');
     expect(assertActiveAdmin).toHaveBeenCalledWith('태그 이름 변경');
   });
@@ -190,7 +191,6 @@ describe('bulkSetDiscontinued', () => {
   });
 
   test('assertActiveAdmin을 호출한다', async () => {
-    const { assertActiveAdmin } = await import('@/lib/auth/guard');
     ingredientRows = [{ id: 1, ingredientName: 'A' }];
     await bulkSetDiscontinued([1], true);
     expect(assertActiveAdmin).toHaveBeenCalledWith('식자재 일괄 단종 변경');
@@ -228,7 +228,6 @@ describe('bulkSetCategory', () => {
   });
 
   test('assertActiveAdmin을 호출한다', async () => {
-    const { assertActiveAdmin } = await import('@/lib/auth/guard');
     ingredientRows = [{ id: 1, ingredientName: 'A', category: '' }];
     await bulkSetCategory([1], '소스류');
     expect(assertActiveAdmin).toHaveBeenCalledWith('식자재 일괄 분류 변경');

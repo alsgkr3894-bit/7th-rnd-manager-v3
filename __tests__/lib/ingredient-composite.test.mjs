@@ -21,9 +21,12 @@ jest.unstable_mockModule('@/lib/work-log', () => ({
   logWork: jest.fn().mockResolvedValue(undefined),
 }));
 
-// Dynamic imports resolved after mocks are registered
-const { findMissingRefs, validateCompositeRefs } = await import('../../lib/ingredient/store.js');
+// Dynamic imports resolved after mocks are registered.
+// @/lib/db must be imported FIRST so the mock instance is established before
+// store.js loads composite-refs.js (which also imports @/lib/db). Swapping the
+// order would cause composite-refs.js to see a different jest.fn() instance.
 const { hasStore: mockHasStore, getAll: mockGetAll } = await import('@/lib/db');
+const { findMissingRefs, validateCompositeRefs } = await import('../../lib/ingredient/store.js');
 
 // ── findMissingRefs (pure) ────────────────────────────────────
 

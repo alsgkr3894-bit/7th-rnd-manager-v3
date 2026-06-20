@@ -542,12 +542,6 @@ scripts/qa-prod.mjs — next build 후 next start 기동, Playwright로 프로�
 
 jest.config.mjs에 collectCoverage, coverageThreshold 설정 없음. 모든 test 스크립트에 --no-coverage 명시. 커버리지 리포트 및 임계값 강제는 미도입 상태
 
-### 독립 실행 스크립트 (test-allergen.mjs)
-`/Users/lmh/Documents/Codex/7th-rnd-manager-v3/test-allergen.mjs`
-
-프로젝트 루트의 test-allergen.mjs — Jest 밖의 독립 Playwright 스크립트. /nutrition/allergen 페이지 스탯 카드 수동 검증용. package.json scripts에 미등록, 일회성 디버깅 도구로 추정
-
-
 ---
 
 _문서 생성: 2026-06-17, 7-에이전트 병렬 탐색_

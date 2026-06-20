@@ -19,7 +19,8 @@ function functionBody(source, fnName) {
 
 describe('파괴적 액션 권한 가드', () => {
   test('식자재 삭제 함수가 assertActiveAdmin을 호출한다', () => {
-    const s = src('lib/ingredient/store.js');
+    // store.js는 facade — 실제 구현은 destructive.js
+    const s = src('lib/ingredient/destructive.js');
     expect(s).toContain("from '@/lib/auth/guard'");
     expect(functionBody(s, 'deleteIngredient')).toContain('assertActiveAdmin');
     expect(functionBody(s, 'bulkDeleteIngredients')).toContain('assertActiveAdmin');
@@ -74,12 +75,11 @@ describe('파괴적 액션 권한 가드', () => {
   });
 
   // 2026-06-19 확대: reset*/clear*/replaceAll*/bulkImport* 군 defense-in-depth 가드
+  // store.js는 facade — 각 구현 파일에서 가드 존재 여부를 검증한다
   test('식자재 대량 변경/초기화 함수가 assertActiveAdmin을 호출한다', () => {
-    const s = src('lib/ingredient/store.js');
+    const destructive = src('lib/ingredient/destructive.js');
     for (const fn of [
       'resetAllIngredients',
-      'bulkImportIngredients',
-      'repairIngredientProductCodeDuplicates',
       'removeCategoryFromAll',
       'removeTagFromAll',
       'renameCategoryInAll',
@@ -89,8 +89,12 @@ describe('파괴적 액션 권한 가드', () => {
       'excludeIngredientByCode',
       'restoreIngredientByCode',
     ]) {
-      expect(functionBody(s, fn)).toContain('assertActiveAdmin');
+      expect(functionBody(destructive, fn)).toContain('assertActiveAdmin');
     }
+    // bulkImportIngredients는 import.js에 위치
+    expect(functionBody(src('lib/ingredient/import.js'), 'bulkImportIngredients')).toContain('assertActiveAdmin');
+    // repairIngredientProductCodeDuplicates는 dedupe-repair.js에 위치
+    expect(functionBody(src('lib/ingredient/dedupe-repair.js'), 'repairIngredientProductCodeDuplicates')).toContain('assertActiveAdmin');
   });
 
   test('판매가 초기화/일괄교체가 assertActiveAdmin을 호출한다', () => {

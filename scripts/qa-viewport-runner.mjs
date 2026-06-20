@@ -1,0 +1,148 @@
+/**
+ * scripts/qa-viewport-runner.mjs — smoke·mobile QA 공통 실행 코어
+ *
+ * smoke-qa.mjs / mobile-qa.mjs는 viewport와 레이블만 다르고 실행 로직이 동일하다.
+ * 이 모듈이 공통 ROUTES·마커·루프를 소유하고,
+ * 각 진입점은 runViewportQa({ viewport, title, errorLabel })만 호출한다.
+ */
+import { chromium, getQaBase, newAuthedContext, routeUrl } from './qa-browser-utils.mjs';
+import {
+  cell,
+  isNextStaticAsset404,
+  isSmokePass,
+  resourcePathOf,
+  splitConsoleErrors,
+} from './smoke-qa-utils.mjs';
+
+export const ROUTES = [
+  ['홈', '/'],
+  ['메뉴 판매량', '/menu-sales/rank-compare'],
+  ['판매 설정', '/menu-sales/settings'],
+  ['제때상품관리', '/jette/price-compare'],
+  ['식자재 관리', '/ingredient/manage'],
+  ['식자재 사용현황', '/ingredient/usage'],
+  ['메뉴 마스터', '/menu-master'],
+  ['원가 마진표', '/cost/margin'],
+  ['종합 원가', '/cost/all-summary'],
+  ['사이드 원가', '/cost/side'],
+  ['엣지·도우', '/cost/edge-dough'],
+  ['원산지', '/nutrition/origin'],
+  ['알레르기', '/nutrition/allergen'],
+  ['노트 목록', '/note'],
+  ['노트 작성', '/note/write'],
+  ['칸반 보드', '/note/board'],
+  ['일정 달력', '/note/calendar'],
+  ['샘플 기록', '/note/sample'],
+  ['보고서센터', '/report'],
+  ['원가 보고서', '/report/cost'],
+  ['설정/백업', '/settings/backup'],
+  ['데이터 복원', '/settings/restore'],
+];
+
+const LOADING_MARKERS = ['로딩 중', '불러오는 중'];
+const ERROR_MARKERS = ['Application error', 'Unhandled Runtime', 'client-side exception'];
+
+const NAV_TIMEOUT_MS = Number.parseInt(process.env.QA_NAV_TIMEOUT_MS || '', 10) || 90_000;
+
+/**
+ * @param {{ viewport: {width:number, height:number}, title: string, errorLabel: string }} opts
+ */
+export async function runViewportQa({ viewport, title, errorLabel }) {
+  const BASE = getQaBase();
+  const browser = await chromium.launch();
+  const ctx = await newAuthedContext(browser, { viewport }, BASE);
+  const page = await ctx.newPage();
+  const results = [];
+
+  for (const [name, path] of ROUTES) {
+    const consoleErrors = [];
+    const nextStatic404Urls = [];
+    const onConsole = m => {
+      if (m.type() === 'error') consoleErrors.push(m.text());
+    };
+    const onPageError = e => consoleErrors.push('PAGEERROR: ' + e.message);
+    const onResponse = r => {
+      if (isNextStaticAsset404(r.url(), r.status())) {
+        nextStatic404Urls.push(r.url());
+        return;
+      }
+      if (r.status() >= 500)
+        consoleErrors.push(`HTTP${r.status()} ${resourcePathOf(r.url()).slice(0, 40)}`);
+    };
+    page.on('console', onConsole);
+    page.on('pageerror', onPageError);
+    page.on('response', onResponse);
+
+    const row = { name, path, h1: false, main: false, overflow: false, loading: false, errText: false, errs: 0 };
+    try {
+      await page.goto(routeUrl(BASE, path), { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
+      await Promise.race([
+        page.waitForSelector('h1, main', { timeout: 15000 }).catch(() => {}),
+        page.waitForTimeout(3000),
+      ]);
+      await page
+        .waitForFunction(
+          markers => !markers.some(m => (document.body.innerText || '').includes(m)),
+          LOADING_MARKERS,
+          { timeout: 10000 }
+        )
+        .catch(() => {});
+
+      const probe = await page.evaluate(
+        markers => {
+          const { loadingMarkers, errorMarkers } = markers;
+          const bodyText = document.body.innerText || '';
+          return {
+            h1: !!document.querySelector('h1'),
+            main: !!document.querySelector('main'),
+            overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
+            scrollW: document.documentElement.scrollWidth,
+            innerW: window.innerWidth,
+            loading: loadingMarkers.some(m => bodyText.includes(m)),
+            errText: errorMarkers.some(m => bodyText.includes(m)),
+          };
+        },
+        { loadingMarkers: LOADING_MARKERS, errorMarkers: ERROR_MARKERS }
+      );
+
+      Object.assign(row, probe);
+      await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
+      const splitErrors = splitConsoleErrors(consoleErrors, {
+        ignorableNextStatic404Count: nextStatic404Urls.length,
+      });
+      row.errs = splitErrors.relevant.length;
+      row.errSamples = splitErrors.relevant.slice(0, 2);
+      row.ignoredErrs = splitErrors.ignored.length;
+      row.ignoredSamples = nextStatic404Urls.slice(0, 2).map(resourcePathOf);
+    } catch (e) {
+      row.fatal = e.message;
+    }
+    page.off('console', onConsole);
+    page.off('pageerror', onPageError);
+    page.off('response', onResponse);
+    results.push(row);
+  }
+  await page.close();
+  await browser.close();
+
+  console.log(`\n  ${title} (viewport ${viewport.width}px)\n`);
+  console.log('  결과  라우트              h1 main 가로 로딩 에러 콘솔  경로');
+  console.log('  ' + '─'.repeat(78));
+  for (const r of results) {
+    const ok = isSmokePass(r);
+    const mark = r.fatal ? '💥FAIL' : ok ? '✅PASS' : '❌FAIL';
+    const nm = r.name.padEnd(14, ' ');
+    console.log(
+      `  ${mark}  ${nm}  ${cell(r.h1)}   ${cell(r.main)}   ${r.overflow ? '⚠' : '·'}    ${r.loading ? '⚠' : '·'}    ${r.errText ? '⚠' : '·'}   ${String(r.errs).padStart(2)}   ${r.path}`
+    );
+    if (r.fatal) console.log(`         └ 치명: ${r.fatal}`);
+    if (r.overflow) console.log(`         └ 가로스크롤: scrollWidth ${r.scrollW} > innerWidth ${r.innerW}`);
+    if (r.errs > 0) console.log(`         └ 콘솔: ${JSON.stringify(r.errSamples)}`);
+    if (r.ignoredErrs > 0)
+      console.log(`         └ 무시: Next dev 정적 리소스 404 ${r.ignoredErrs}건 ${JSON.stringify(r.ignoredSamples)}`);
+  }
+  console.log('  ' + '─'.repeat(78));
+  const passed = results.filter(isSmokePass).length;
+  console.log(`\n  ${passed}/${results.length} 통과\n`);
+  process.exit(passed === results.length ? 0 : 1);
+}
