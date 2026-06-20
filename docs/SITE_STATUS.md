@@ -198,12 +198,12 @@ dbNameFor(brandId): main → 'rnd_manager_v3', 기타 → 'rnd_manager_v3__<bran
 
 ## 4. 상태 관리 및 훅 패턴
 
-총 59개 커스텀 훅(4,483줄). 핵심 패턴은 useDBLoad(IndexedDB 비동기 로드 + cancelled 가드 + reload), useLocalStorage(SSR 하이드레이션 안전 3단계 패턴), 전역 Toast(모듈-레벨 싱글턴 setToasts 레퍼런스). 컨텍스트 없이 CustomEvent + localStorage + window.addEventListener 조합으로 브랜드·설정·역할 상태를 전파.
+총 59개 커스텀 훅(4,479줄). 핵심 패턴은 useDBLoad(IndexedDB 비동기 로드 + cancelled 가드 + reload), useLocalStorage(SSR 하이드레이션 안전 3단계 패턴), 전역 Toast(모듈-레벨 싱글턴 setToasts 레퍼런스). 컨텍스트 없이 CustomEvent + localStorage + window.addEventListener 조합으로 브랜드·설정·역할 상태를 전파.
 
 ### `hooks/ 디렉터리 전체 현황`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/`
 
-총 59개 파일(58 .js + 1 .jsx), 4,483줄. 도메인별로 DB로드·로컬스토리지·브랜드·노트·리포트·홈대시보드·UI(배치·페이지네이션·스크롤·단축키·모달) 등으로 분류됨.
+총 59개 파일(58 .js + 1 .jsx), 4,479줄. 도메인별로 DB로드·로컬스토리지·브랜드·노트·리포트·홈대시보드·UI(배치·페이지네이션·스크롤·단축키·모달) 등으로 분류됨.
 
 ### `useDBLoad — IndexedDB 데이터 로드 패턴`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/useDBLoad.js`
