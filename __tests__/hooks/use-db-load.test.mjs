@@ -271,9 +271,10 @@ describe('중위험 페이지·훅 useDBLoad 적용', () => {
   });
 
   test('settings/account _AccountSettingsUI가 4개 컴포넌트를 모두 export한다', () => {
-    expect(accountUISrc).toContain('export function AccountProfileCard');
-    expect(accountUISrc).toContain('export function AccountSessionCard');
-    expect(accountUISrc).toContain('export function AccountMembersCard');
-    expect(accountUISrc).toContain('export function AccountPermissionsMatrix');
+    // barrel 또는 직접 정의 형태 둘 다 허용
+    expect(accountUISrc).toContain('AccountProfileCard');
+    expect(accountUISrc).toContain('AccountSessionCard');
+    expect(accountUISrc).toContain('AccountMembersCard');
+    expect(accountUISrc).toContain('AccountPermissionsMatrix');
   });
 });

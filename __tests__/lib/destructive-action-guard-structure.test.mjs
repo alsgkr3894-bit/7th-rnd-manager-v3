@@ -66,8 +66,9 @@ describe('파괴적 액션 권한 가드', () => {
     // 두 위험 핸들러 모두 가드 호출
     expect(s).toMatch(/handleRecreate[\s\S]*?assertActiveAdmin/);
     expect(s).toMatch(/handleReset[\s\S]*?assertActiveAdmin/);
-    // 위험영역 트리거는 비-admin이면 disabled
-    expect(s).toContain('!isAdmin');
+    // 위험영역 disabled 가드는 UI 컴포넌트(SystemDangerZoneCard)로 이동
+    const uiSrc = src('app/settings/system/_SystemSettingsUI.jsx');
+    expect(uiSrc).toContain('!isAdmin');
   });
 
   test('저수준 DB 프리미티브(crud.js)에는 가드가 없다', () => {
@@ -116,7 +117,7 @@ describe('파괴적 액션 권한 가드', () => {
     expect(functionBody(src('lib/menu-recipes/store.js'), 'resetAllMenuRecipes')).toContain(
       'assertActiveAdmin'
     );
-    expect(functionBody(src('lib/nutrition/values/store.js'), 'clearAllBaseData')).toContain(
+    expect(functionBody(src('lib/nutrition/values/raw-values.js'), 'clearAllBaseData')).toContain(
       'assertActiveAdmin'
     );
     expect(functionBody(src('lib/nutrition/origin/store.js'), 'clearAllOrigins')).toContain(

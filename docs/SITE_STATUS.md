@@ -203,7 +203,7 @@ dbNameFor(brandId): main → 'rnd_manager_v3', 기타 → 'rnd_manager_v3__<bran
 ### `hooks/ 디렉터리 전체 현황`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/`
 
-총 59개 파일(58 .js + 1 .jsx), 4,481줄. 도메인별로 DB로드·로컬스토리지·브랜드·노트·리포트·홈대시보드·UI(배치·페이지네이션·스크롤·단축키·모달) 등으로 분류됨.
+총 59개 파일(58 .js + 1 .jsx), 4,484줄. 도메인별로 DB로드·로컬스토리지·브랜드·노트·리포트·홈대시보드·UI(배치·페이지네이션·스크롤·단축키·모달) 등으로 분류됨.
 
 ### `useDBLoad — IndexedDB 데이터 로드 패턴`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/useDBLoad.js`
@@ -495,12 +495,12 @@ isAdmin 아닌 경우 편집 불가(권한 가드). 브랜드 추가/수정 폼(
 
 ## 8. 테스트 및 QA 현황
 
-Jest 단위 테스트 275개 파일(lib 249, hooks 20, scripts 6), QA 명령 5종(qa:smoke 22라우트 702px, qa:mobile 22라우트 390px, qa:runtime 전라우트 65개, qa:prod 프로덕션빌드, qa:workflow 업무흐름 E2E 16시나리오) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
+Jest 단위 테스트 277개 파일(lib 250, hooks 20, scripts 7), QA 명령 6종(qa:smoke 22라우트 702px, qa:mobile 22라우트 390px, qa:runtime 전라우트 65개, qa:workflow 업무흐름 E2E 16시나리오, qa:full dev 전체 QA, qa:prod 프로덕션 전체 QA) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
 
 ### Jest 단위 테스트 — lib
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/lib/`
 
-__tests__/lib/ 하위 249개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
+__tests__/lib/ 하위 250개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
 
 ### Jest 단위 테스트 — hooks
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/hooks/`
@@ -510,7 +510,7 @@ __tests__/hooks/ 하위 20개 .test.mjs 파일. use-db-load, use-pagination, use
 ### Jest 단위 테스트 — scripts
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/scripts/`
 
-__tests__/scripts/ 하위 6개 파일(clean-build-script, full-rt-script, qa-browser-utils, smoke-qa-utils, workflow-qa-utils, site-status-audit). QA 스크립트 내부 유틸 로직 단위 검증
+__tests__/scripts/ 하위 7개 파일(clean-build-script, full-rt-script, qa-browser-utils, qa-orchestration, smoke-qa-utils, workflow-qa-utils, site-status-audit). QA 스크립트 내부 유틸과 전체 QA 오케스트레이션 구조 검증
 
 ### 테스트 픽스처
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/fixtures/business/`
@@ -527,15 +527,30 @@ test: jest --no-coverage (병렬), test:ci: jest --no-coverage --runInBand (직�
 
 scripts/smoke-qa.mjs — Playwright Chromium으로 22개 대표 라우트 순회(홈~설정/복원). 검사 항목: h1/main 존재, console.error 없음, 가로 스크롤 없음, 영구 로딩 없음. 읽기 전용, IndexedDB 빈 상태 통과 목표
 
+### qa:mobile (npm run qa:mobile)
+`/Users/lmh/Documents/Codex/7th-rnd-manager-v3/scripts/mobile-qa.mjs`
+
+scripts/mobile-qa.mjs — smoke와 같은 대표 라우트 목록을 390px viewport로 순회한다. route/probe/출력 판정은 qa-viewport-runner.mjs 공통 runner를 사용하며, 좁은 화면 가로 스크롤과 모바일 레이아웃 회귀를 잡는다.
+
 ### qa:runtime (npm run qa:runtime)
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/scripts/full-rt.mjs`
 
 scripts/full-rt.mjs — route-classification.js 기반 전 라우트 런타임 회귀 검사. MAIN 53개 + CHINA4 8개 + CHINA4_DIRECT 4개 = 65개 라우트. JS pageerror, hydration 오류, HTTP 500, h1/main 검사. 비-main 브랜드 직접진입 공유DB 초기화 버그 검증 포함
 
+### qa:workflow (npm run qa:workflow)
+`/Users/lmh/Documents/Codex/7th-rnd-manager-v3/scripts/workflow-qa.mjs`
+
+scripts/workflow-qa.mjs — Playwright 기반 업무 흐름 E2E. 백업/복원 preview, 노트 생성, 메뉴마스터 생성, viewer 차단, 잘못된 백업 방어, 폼 검증, 브랜드 분리, 캘린더, 식자재 생성, 원가마진, 판매량 업로드, 영양성분 메뉴, 레시피 원가, 식자재 가격 보고서, 공통원가, 레시피 저장 UI 등 16개 시나리오를 runner/scenarios 구조로 실행한다.
+
+### qa:full (npm run qa:full)
+`/Users/lmh/Documents/Codex/7th-rnd-manager-v3/scripts/qa-full.mjs`
+
+scripts/qa-full.mjs — dev 서버가 떠 있는 상태에서 `qa:smoke → qa:mobile → qa:runtime → qa:workflow`를 순차 실행한다. 하나라도 실패하면 즉시 exit 1로 종료한다.
+
 ### qa:prod (npm run qa:prod)
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/scripts/qa-prod.mjs`
 
-scripts/qa-prod.mjs — next build 후 next start 기동, Playwright로 프로덕션 빌드 smoke 검사 자동화. .next 삭제 후 빌드-기동-QA 파이프라인 일괄 실행
+scripts/qa-prod.mjs — `.next` 삭제 후 `next build`, `next start` 기동, 서버 대기, `qa:smoke → qa:mobile → qa:runtime → qa:workflow`를 프로덕션 빌드 기준으로 순차 실행한다. 하나라도 실패하면 실패 코드로 종료하고 finally에서 prod 서버를 중지한다.
 
 ### 커버리지 설정
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/jest.config.mjs`

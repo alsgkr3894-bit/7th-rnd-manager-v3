@@ -4,6 +4,7 @@ import { showToast } from '@/components/Toast';
 import { SAMPLE_CATEGORIES, getAllSamples } from '@/lib/sample';
 import { initDB } from '@/lib/db';
 import { isSupportedImageFile, resizePhoto } from '@/lib/image/resize';
+import { UPLOAD_MAX_MB, checkFileSize } from '@/lib/upload-policy';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { SampleBasicInfoCard } from './_SampleBasicInfoCard';
@@ -133,8 +134,9 @@ export function SampleFormBody({ form, setForm }) {
     if (candidates.length === 0) return;
     const toAdd = [];
     for (const file of candidates) {
-      if (file.size > 5 * 1024 * 1024) {
-        showToast('파일 크기 초과: ' + file.name + ' (최대 5MB)', 'warn');
+      const sizeErr = checkFileSize(file, UPLOAD_MAX_MB.photo);
+      if (sizeErr) {
+        showToast(sizeErr, 'warn');
         continue;
       }
       toAdd.push(file);

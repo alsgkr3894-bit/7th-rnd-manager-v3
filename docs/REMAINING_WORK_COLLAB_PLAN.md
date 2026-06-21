@@ -1,8 +1,124 @@
 # 남은 작업 통합본 및 협업 실행 계획
 
-기준일: 2026-06-20
+기준일: 2026-06-21
 
-이 문서는 `DEFERRED_WORK.md`, `INTERNAL_TOOL_POLISH_PLAN.md`, `SITE_STATUS.md`, `CLAUDE_CODE_REFACTOR_HANDOFF.md`, `SECURITY_POLICY.md`와 2026-06-20 코드 청결도 재점검 결과를 합쳐 남은 작업을 실제 실행 순서로 재정리한 클로드 코드 작업용 통합본이다.
+이 문서는 `DEFERRED_WORK.md`, `INTERNAL_TOOL_POLISH_PLAN.md`, `SITE_STATUS.md`, `CLAUDE_CODE_REFACTOR_HANDOFF.md`, `SECURITY_POLICY.md`와 2026-06-21 코드 청결도 재점검 결과를 합쳐 남은 작업을 실제 실행 순서로 재정리한 클로드 코드 작업용 통합본이다.
+
+---
+
+## 실행 기록 (2026-06-21)
+
+### ✅ 완료 — 기준선 재확인 (0단계)
+
+| 항목 | 결과 |
+|---|---|
+| `npm run format:check` | ✅ 통과 |
+| `npm run lint` | ✅ 통과 (`No ESLint warnings or errors`) |
+| `npm run audit:docs` | ✅ 통과 (SITE_STATUS.md 수치 277/250 갱신 포함) |
+| `npm run test:ci` | ✅ **277 suites / 1571 tests** all-pass |
+
+SITE_STATUS.md `testTotal` 276→277, `testLib` 249→250으로 갱신 (백업/복원 리허설 테스트 파일 추가 반영).
+
+---
+
+### ✅ 완료 — 백업/복원 실데이터 리허설 (4단계 전처리)
+
+`__tests__/lib/backup-restore-rehearsal.test.mjs` 신규 작성. 27개 케이스 전부 green.
+
+| 시나리오 | 내용 | 결과 |
+|---|---|---|
+| 브랜드별 백업/복원 검증 | main/china4/icheon 메타데이터 정확성, sharedDbName 일치, 교차 복원 mismatch 6종, summary 라운드트립, 구형 brandId 호환 | ✅ 7케이스 |
+| localStorage 포함 범위 확인 | 전 스코프 = PERSISTENT_LS_KEYS 완전 커버, COMMON_LS_KEYS 항상 포함, round-trip (write→collect→restore), 미등록 키 필터링, sales 빈 스코프 안전, 중복 키 없음 회귀 | ✅ 6케이스 |
+| 대용량 복원 테스트 | 1000행×5(5000행) 통과, 단일 10000행 집계, 30 store×100행, 9999번째 손상 행 감지, 대형 store 손상 예외, 빈 store 혼재 허용 | ✅ 6케이스 |
+| 실패 store 복구 시나리오 | IDB timeout 실패 정규화, 유효 3+실패 2 부분 백업 통과, failedStores-only store 제외 확인, malformed 항목 무시, failedStoreCount=0 회귀, UI 차단 가드 코드 확인, 긴 에러 메시지 보존 | ✅ 7케이스 |
+| 브라우저 수동 QA | 실제 IndexedDB 데이터로 복원 preview/restore/rollback 확인 | ⏳ 수동 미완료 |
+
+브라우저 수동 QA(실제 IndexedDB 데이터 흐름 확인)는 dev 서버 기동 후 별도 진행 필요.
+
+---
+
+### ✅ 완료 — 7단계 코드 잔여 정리
+
+#### react-hooks/exhaustive-deps 예외 전수 감사
+
+프로젝트 내 모든 `eslint-disable.*exhaustive-deps` 주석 7건을 검토했다. **전부 의도적이고 안전한 예외**로 판정. 수정 불필요.
+
+| 파일 | deps | 판정 | 사유 |
+|---|---|---|---|
+| `app/ingredient/manage/page.jsx:85` | `[]` | ✅ 안전 | URL param `catFilter` 마운트 1회 읽기·제거. `setCatFilter`는 stable dispatch. |
+| `components/sales/UserExcludedSection.jsx:60` | `[query]` | ✅ 안전 | `cancelEdit`은 useCallback 안정 참조. query 변경 시 편집 취소가 목적. |
+| `components/sales/UserRulesSection.jsx:94` | `[query]` | ✅ 안전 | 동일 패턴. cancelEdit dep 추가 시 재렌더 루프 위험 있어 의도적 제외. |
+| `components/sales/UserAliasesSection.jsx:68` | `[query]` | ✅ 안전 | 동일 패턴. |
+| `components/sales/user-rules/UserRuleForm.jsx:39` | `[isMain]` | ✅ 안전 | isMain 변경 시 category 초기화 1회. category를 dep에 추가하면 초기화 루프 발생. |
+| `hooks/useSettingsSection.js:49` | `[]` | ✅ 안전 | "마운트 1회 fetch" 표준 패턴. refresh 자체가 안정 함수지만 재렌더마다 새 참조 생성. |
+| `components/cost/manage/CommonEdgesView.jsx:77` | `[search]` | ✅ 안전 | search 변경 시 선택 초기화. edgeTable 참조가 안정적이지 않아 dep 추가 시 과도 실행 위험. |
+
+#### XLSX formula injection 방어 검토
+
+`lib/sales/export-xlsx.js`, `lib/report/export-cost-xlsx.js`, `lib/nutrition/origin/export.js`, `lib/nutrition/label/export.js`, `lib/report/sales-export.js` 등 5개 XLSX 출력 경로 전체 검토.
+
+**판정: 방어 불필요 (현재 안전).**
+
+- 모든 경로가 `XLSX.utils.aoa_to_sheet()` 사용
+- xlsx@0.18.5에서 문자열 값은 셀 타입 `t: 's'`로 저장됨
+- Excel은 `t: 's'` 셀을 formula가 아닌 텍스트로 처리 — `=SUM(...)` 같은 내용도 수식으로 실행되지 않음
+- CSV는 타입 정보 없어 `esc()` 방어 필요하고 `rowsToCsv()`에 이미 적용됨 (`lib/download.js`)
+- XLSX 셀 직접 조작(`ws['A1'] = {t:'f', ...}`)은 어떤 경로에도 없음
+
+**향후 주의사항**: 수동으로 formula 셀(`t: 'f'`)을 생성하거나 `sheet_from_json`에 `raw: true` 옵션을 쓰는 경우는 injection 검토 필요.
+
+---
+
+### ✅ 완료 — 더 확인 심층 감사
+
+#### 인쇄 모듈 HTML 이스케이프 전수 확인
+
+`lib/print/window-print.js`의 `openPrintWindow(html)` 호출 경로 7개 전부 검토.
+
+| 모듈 | 이스케이프 | 판정 |
+|---|---|---|
+| `lib/note/journal-print.js` | `esc()` — `&amp;`, `&lt;`, `&gt;`, `&quot;` | ✅ 안전 |
+| `app/note/calendar/calendar-print.js` | `escapeCalendarPrintValue()` — `&amp;`, `&lt;`, `&gt;` | ✅ 안전 |
+| `lib/nutrition/label/print.js` | `esc()` | ✅ 안전 |
+| `lib/cost/usage-print.js` | `esc()` — `&amp;`, `&lt;`, `&gt;`, `&quot;` | ✅ 안전 |
+| `lib/nutrition/origin/print.js` | `esc()` | ✅ 안전 |
+| `lib/ingredient/manage-print/table-report.js` | 공유 `esc` import | ✅ 안전 |
+| `app/note/sample/photo-report.js` | (호출 경로 포함) | ✅ 안전 |
+
+**결론**: 모든 `document.write` 경로에서 사용자 데이터가 `esc()` / `escapeCalendarPrintValue()`를 통과하므로 XSS 위험 없음.
+
+#### dangerouslySetInnerHTML 검토
+
+- `app/layout.jsx:36` — 하드코딩된 다크모드 스크립트 (`try{var t=localStorage...}` 리터럴). 사용자 데이터 포함 없음 → ✅ 안전.
+- `app/not-found.jsx` — 내용 초기화 목적, 사용자 데이터 없음 → ✅ 안전.
+
+#### 잔여 인라인 파일 크기 검사 수정 (업로드 정책 완전 통일)
+
+이전 세션에서 발견한 2건의 인라인 검사를 `checkFileSize` / `UPLOAD_MAX_MB`로 교체 완료.
+
+| 파일 | 이전 코드 | 이후 |
+|---|---|---|
+| `app/note/sample/_SampleFormBody.jsx` | `file.size > 5 * 1024 * 1024` | `checkFileSize(file, UPLOAD_MAX_MB.photo)` |
+| `hooks/useRestoreFile.js` | `file.size > 500 * 1024 * 1024` | `checkFileSize(file, UPLOAD_MAX_MB.backup)` |
+
+수정 후 `lint` 통과, `test:ci` **277 suites / 1571 tests** all-pass 확인.
+
+---
+
+### ⏳ 남은 항목 (수동 / 사용자 결정)
+
+| 항목 | 상태 | 비고 |
+|---|---|---|
+| `npm run qa:prod` 실행 및 결과 기록 | ⏳ 수동 | dev 서버 중지 후 실행 필요 |
+| 실제 출력물 열람 (CSV/XLSX/PDF/인쇄) | ⏳ 수동 | 브라우저에서 파일명·컬럼·브랜드명·날짜suffix 확인 |
+| 백업/복원 브라우저 수동 QA | ⏳ 수동 | 실제 IndexedDB 데이터로 preview→restore→rollback 확인 |
+| upload/import fixture QA | ⏳ 수동 | 빈파일·대용량·확장자오류·컬럼누락·실패행CSV·중복업로드 UX |
+| N-43 과거 단가 정책 결정 | ⏳ 사용자 결정 | 조회전용 vs 계산적용 vs 저장형 중 선택 필요 |
+| 영양성분 부분 누락 기준 결정 | ⏳ 사용자 결정 | 경고 vs 출력 차단 기준 선택 필요 |
+| CSS 반복 패턴 추가 분리 | ⏳ 낮은우선순위 | 실제 화면 문제 없으면 보류 |
+| 외부 배포 보안 강화 | ⏳ 보류 | 내부 LAN 유지 결정 유지 |
+
+---
 
 ## 0. 최신 통합 판정
 
@@ -12,11 +128,12 @@
 
 | 구분 | 현재 판정 | 메모 |
 |---|---|---|
-| 즉시 차단 버그 | 없음 | lint, format, test, 대표 QA 기준선은 통과 상태 |
-| 완료된 큰 단계 | 2, 3, 6, 7, 8, 9, 10단계 | E2E 16시나리오, 식자재 정리 도구 1차, 메뉴 UX, 출력 안전, CSS 분리, 업로드 정책, 모바일 QA 완료 |
-| 실제 운영 검수 | 남음 | `build:clean`, `qa:prod`, 실제 CSV/XLSX/PDF/인쇄 파일 열람 확인 |
+| 즉시 차단 버그 | 없음 | lint, format, 문서 감사, 관련 targeted tests 기준 통과 |
+| 현재 점수 | 93/100 | 내부 LAN 운영툴 기준. 구조 분리, QA 오케스트레이션, upload/import 1차 공통화는 강해졌고 실제 운영 데이터 리허설은 남음 |
+| 완료된 큰 단계 | 2, 3, 6, 7, 8, 9, 10단계 + 코드 청결도 1차 | E2E 16시나리오, 식자재 정리 도구 1차, 메뉴 UX, 출력 안전, CSS 분리, 업로드 정책, 모바일 QA, 식자재/영양값 store 분리, smoke/mobile runner 공통화, `qa:full`/`qa:prod` 전체 QA 오케스트레이션 완료 |
+| 실제 운영 검수 | 일부 남음 | `build:clean` green 보고 완료. `qa:prod` 최신 전체 실행 기록과 실제 CSV/XLSX/PDF/인쇄 파일 열람 확인은 남음 |
 | 사용자 결정 필요 | 남음 | N-43 과거 단가, 영양성분 부분 누락 기준 |
-| 장기 코드 정리 | 남음 | 식자재 store, 영양값 store, QA 스크립트 공통화, hook dependency 예외 재검토 |
+| 장기 코드 정리 | 남음 | 백업/복원 리허설, hook dependency 예외 재검토, CSS/design system 잔여 정리, upload/import 실제 fixture QA |
 | 외부 배포 보안 | 보류 | 내부 LAN 단일 도구 유지 결정. 외부 배포 전환 시 재착수 |
 
 ### 최신 검증 기준선
@@ -26,12 +143,70 @@
 - `npm run format:check` 통과
 - `npm run lint` 통과
 - `npm run audit:docs` 통과
-- `npm run test:ci` 통과: **278 suites / 1546 tests**
+- `npm run test:ci` 최근 전체 기준선 통과: **277 suites / 1571 tests**
 - `npm run qa:smoke` 통과: 22/22
 - `npm run qa:mobile` 통과: 22/22, 390px viewport
 - `npm run qa:workflow` 기준: 16시나리오
+- `npm run qa:full` 추가: dev 서버 기준 `smoke → mobile → runtime → workflow`
+- `npm run qa:prod` 확장: prod build 기준 `smoke → mobile → runtime → workflow`
 
 `npm run build:clean`은 dev 서버가 떠 있으면 의도적으로 중단될 수 있으므로, 운영 QA 단계에서 서버 상태를 정리한 뒤 별도로 확인한다.
+
+### 남은 작업 실행 플랜
+
+현재 점수 93/100에서 94~95점으로 올리기 위한 실제 실행 순서다. 새 기능보다 **운영 검증 기록, 실제 파일 확인, 백업/복원 리허설**을 먼저 한다.
+
+| 순서 | 단계 | 할 일 | 확인 명령/방법 | 완료 기준 | 점수 영향 |
+|---:|---|---|---|---|---|
+| 1 | 운영 QA 최신화 | dev 서버 기준 전체 QA 실행 | `npm run qa:full` | smoke/mobile/runtime/workflow 모두 green | 94점 진입 준비 |
+| 2 | 프로덕션 QA | clean build 후 prod 전체 QA 실행 | `npm run qa:prod` | build/start/smoke/mobile/runtime/workflow 모두 green | 94점 핵심 |
+| 3 | 실제 출력물 열람 | CSV/XLSX/PDF/인쇄 파일을 실제로 열어 확인 | 메뉴마스터 CSV, 원가마진 CSV, 영양성분/원산지/알레르기 엑셀, 식자재 인쇄/PDF | 파일명, 브랜드명, 날짜 suffix, 컬럼, 시트명, 한글, 수식 인젝션 방어 확인 | 94점 핵심 |
+| 4 | 백업/복원 리허설 | 샘플 데이터로 백업 생성, 별도 context에서 복원 preview/restore 확인 | 브라우저 수동 QA + 결과 문서 기록 | 복원 범위, 실패 안내, rollback 안내가 확인됨 | 94점 안정화 |
+| 5 | upload/import fixture QA | 실제/샘플 CSV·XLSX로 실패 케이스 확인 | 빈 파일, 대용량, 확장자 오류, 컬럼 누락, 실패행 CSV, 중복 업로드 | 공통 정책 메시지와 실패행 다운로드가 화면에서 확인됨 | 94점 마감 |
+| 6 | 사용자 결정 2건 | 과거 단가와 영양성분 부분 누락 기준 확정 | 사용자 결정 후 명세 업데이트 | 조회 전용/계산 적용 여부, 경고/차단 기준 확정 | 95점 후보 |
+| 7 | 코드 잔여 정리 | hook dependency 예외, CSS 반복 패턴, XLSX formula injection 검토 | `rg`, targeted tests, 필요 시 구조 테스트 | 새 대형 리팩토링 없이 위험 지점만 좁게 정리 | 95점 후보 |
+| 8 | 외부 배포 보안 | 내부 LAN 밖으로 배포할 때만 착수 | 별도 threat model | 서버 인증, 세션, API 권한 검증 설계 | 별도 프로젝트 |
+
+#### 이번 주 추천 체크리스트
+
+- [ ] `npm run qa:full` 실행 결과 기록.
+- [ ] `npm run qa:prod` 실행 결과 기록.
+- [ ] 실제 출력물 5종 열람 결과를 `docs/DEFERRED_WORK.md` 또는 이 문서에 날짜별로 기록.
+- [ ] 백업/복원 샘플 리허설 1회 기록.
+- [ ] upload/import fixture QA 1회 기록.
+- [ ] N-43 과거 단가 정책 결정.
+- [ ] 영양성분 부분 누락 정책 결정.
+
+#### 지금 하지 않아도 되는 일
+
+- 외부 배포 보안 전환: 내부 LAN 운영 유지라면 보류.
+- 대형 CSS 재분리: 실제 화면 문제나 반복 패턴이 확인된 경우만 좁게 진행.
+- 식자재 실제 병합/대량 변경: 운영 데이터 백업과 사용자 승인 전까지 보류.
+
+### 서버 DB 구축 전 사전 체크리스트
+
+현재 앱은 IndexedDB + 일부 localStorage가 source of truth다. 서버 DB를 붙이기 전에 아래 항목을 먼저 확정해야 마이그레이션이 깔끔하다.
+
+| 순서 | 항목 | 현재 상태 | DB 구축 전 결정/작업 |
+|---:|---|---|---|
+| 1 | DB 대상 | 미정 | PostgreSQL/Supabase/SQLite/자체 API 중 선택. 파일·사진 저장 위치도 같이 결정 |
+| 2 | 스키마 기준 | `DB_VERSION=23`, `ALL_STORES=43` | IndexedDB store → 서버 table 매핑표 작성. 복합 index와 unique key를 명시 |
+| 3 | 브랜드 스코프 | main DB + 브랜드별 DB + 노트 계열 shared DB | `brandId` 컬럼 전략과 shared note 데이터 범위를 먼저 고정 |
+| 4 | localStorage 데이터 | 설정, 프로필, 플랫폼 수수료, 백업 이력 등 일부가 LS 기반 | 서버 테이블로 옮길 키와 브라우저 전용으로 남길 키를 분리 |
+| 5 | 권한 모델 | 클라이언트 role/admin guard 중심 | 서버 API에서 admin/viewer 권한을 다시 검증하도록 설계 |
+| 6 | 백업 JSON | 현재 가장 좋은 마이그레이션 원본 | 백업 JSON → 서버 DB import 스크립트를 먼저 만든 뒤 실데이터로 리허설 |
+| 7 | Repository 경계 | 도메인 store가 `lib/db` facade를 통해 IndexedDB 접근 | 기존 `lib/*/store.js` public API를 유지하고 내부 adapter만 교체하는 전략 권장 |
+| 8 | 동기화 방식 | 로컬 단일 source | 한 번에 서버 전환할지, 읽기 서버/쓰기 로컬 병행 기간을 둘지 결정 |
+| 9 | QA 기준 | Jest/qa:full/qa:prod 보유 | DB 전환 후 같은 277 suites + workflow QA + backup/restore QA가 통과해야 함 |
+
+#### DB 구축 착수 전 완료 조건
+
+- [ ] `qa:prod` 최신 green 기록.
+- [ ] 실제 출력물 열람 기록.
+- [ ] 실제 브라우저 백업/복원 수동 QA 기록.
+- [ ] 백업 JSON 샘플 1개를 서버 DB 스키마 초안에 매핑.
+- [ ] localStorage 키를 “서버 이동 / 브라우저 유지 / 폐기” 3그룹으로 분류.
+- [ ] 서버 권한 모델(admin/viewer)과 브랜드 스코프 정책 확정.
 
 ### 현재 남은 작업 우선순위
 
@@ -48,14 +223,15 @@
    - 영양성분 부분 누락 기준: 일부 크러스트/엣지 누락 시 경고만 할지, 출력 차단할지 결정 필요.
 
 4. **코드 청결도 후속 정리**
-   - `lib/ingredient/store.js`: 조회/CRUD/파괴적 작업/import/seed/dedupe-repair 역할 분리.
-   - `lib/nutrition/values/store.js`: raw value, menu ref, edge, topping, composition, set composition 분리. 읽기 함수의 cleanup side effect 분리 검토.
-   - `scripts/smoke-qa.mjs`와 `scripts/mobile-qa.mjs`: route 목록, probe, 결과 출력 runner 공통화.
+   - 업로드/import 공통화는 1차 완료 상태다. 남은 것은 실제 fixture로 실패행 CSV, 대용량, 컬럼 누락, 중복 업로드 UX를 확인하는 것이다.
+   - 백업/복원은 구조/대용량/실패 store 리허설 테스트가 완료됐다. 남은 것은 실제 브라우저 IndexedDB 데이터로 preview, restore, rollback 안내를 확인하는 수동 QA다.
+   - `react-hooks/exhaustive-deps` 예외가 남은 파일만 소규모 감사한다.
+   - CSS/design system은 큰 파일의 추가 분리보다 실제 반복 패턴과 접근성 상태 정리에 집중한다.
 
 5. **안전성·일관성 후속 점검**
    - `localStorage`와 백업/복원 범위 정합성 문서화.
    - `react-hooks/exhaustive-deps` 예외가 남은 파일만 소규모 감사.
-   - 업로드 공통 정책의 `checkFileExt` 전면 적용 여부 재검토.
+   - 업로드 공통 정책의 `checkFileExt`/`checkFileSize` 적용은 대표 업로드에 반영됐다. 새 업로드 화면 추가 시 같은 정책을 유지한다.
    - XLSX 출력 셀도 CSV와 같은 수준의 formula injection 방어가 필요한지 검토.
 
 ## 1. 협업 방식
@@ -100,7 +276,7 @@
 
 ## 3. 작업 순서
 
-아래 0~11단계는 최초 계획의 상세 실행 항목이다. 2026-06-20 현재 상태 판단은 위 "최신 통합 판정"을 우선한다.
+아래 0~11단계는 최초 계획의 상세 실행 항목이다. 2026-06-21 현재 상태 판단은 위 "최신 통합 판정"을 우선한다.
 
 ### 0단계. 기준선 재확인 _(완료 — 최신 기준선은 0장 참고)_
 
@@ -328,17 +504,17 @@ Codex 검토:
 - `format:check`, `lint`, 주요 화면 smoke 통과.
 - 변경 화면 스크린샷 또는 수동 확인 기록.
 
-### 9단계. 업로드/import 공통화 _(1차 완료 — 전면 적용 여부는 후속 점검)_
+### 9단계. 업로드/import 공통화 _(1차 완료 — 실제 fixture QA는 후속 점검)_
 
 목표: CSV/XLSX 업로드 실패 처리와 검증을 일관되게 만든다.
 
 Claude 작업:
 
-- 파일 확장자 검사 공통 helper.
-- 파일 크기 제한 정책.
-- 파싱 실패 메시지 통일.
-- 업로드 실패 row 다운로드 형식 통일.
-- 업로드 history/hash 중복 검사 정책 문서화.
+- 파일 확장자 검사 공통 helper. ✅
+- 파일 크기 제한 정책. ✅
+- 파싱 실패 메시지 통일. ✅
+- 업로드 실패 row 다운로드 형식 통일. ✅
+- 업로드 history/hash 중복 검사 정책 문서화. ✅
 
 Codex 검토:
 
@@ -347,8 +523,9 @@ Codex 검토:
 
 완료 기준:
 
-- 대표 업로드 3개 이상에 공통 helper 적용.
-- 실패 메시지가 사용자 기준으로 이해 가능.
+- 대표 업로드 3개 이상에 공통 helper 적용. ✅
+- 실패 메시지가 사용자 기준으로 이해 가능. ✅
+- 후속 확인: 실제 CSV/XLSX fixture로 실패행 다운로드와 대용량/컬럼 누락 UX를 운영 QA에 기록.
 
 ### 10단계. 모바일·좁은 화면 재검사 _(완료)_
 
@@ -405,6 +582,59 @@ Codex 검토:
 - 서버 권한 테스트 추가.
 - 외부 배포 threat model 작성.
 
+## 3-A. 추가 병렬 탐색 결과 (2026-06-21)
+
+검증 결과:
+
+- `npm run format:check` ✅
+- `npx next lint --quiet` ✅
+- `npm run audit:docs` ✅
+- `npm run test:ci` ✅ 277 suites / 1571 tests
+- import cycle 간이 탐색: 실제 상호참조 cycle 없음. barrel/index 자기 참조성 노이즈만 탐지.
+
+### P0. 즉시 막아야 할 항목
+
+현재 기준 P0는 없음. 빌드/포맷/린트/문서 감사/전체 Jest가 모두 green이고, `dangerouslySetInnerHTML`/`document.write` 사용도 기존 정책 범위 안에 있다.
+
+### P1. DB 구축 전 반드시 확정할 항목
+
+| 항목 | 발견 내용 | 해야 할 일 |
+| --- | --- | --- |
+| localStorage 키 분류 | `v3:brand-master`, `v3:active-brand`, `v3:backup-history`, `v3:last-ip`, 검색/필터/draft/session 키가 혼재 | 서버 DB로 옮길 키, 백업만 유지할 키, 버릴 키를 표로 확정 |
+| 브랜드 마스터 | 브랜드 CRUD는 `localStorage('v3:brand-master')` 기반이고 백업 영속 키에는 포함되지 않음 | 서버 DB 구축 시 `brands`/`brand_settings` 테이블로 승격할지 결정 |
+| 권한 모델 | 현재 내부 LAN 단일 도구 기준으로 일부 sync 메타는 UI 가드 중심 | 서버 전환 시 모든 write/delete/restore API에 서버 권한 검증 필요 |
+| 복원 리허설 | 구조 테스트는 충분하나 실제 브라우저 IndexedDB 백업/복원 QA 기록은 별도 필요 | 백업 파일 생성 -> 전체 삭제/복원 -> 주요 화면 데이터 확인 리허설 |
+| 실제 출력 QA | 보고서/CSV/XLSX/print 구조 테스트는 있으나 운영 파일 열람 기록 필요 | 대표 출력물을 실제 앱에서 생성 후 Excel/PDF/print 미리보기 확인 |
+| 업로드 fixture QA | 공통 helper는 적용됐지만 실제 실패행 다운로드/대용량/컬럼 누락 UX 기록 필요 | 가격/판매량/영양 베이스 업로드 fixture로 수동 QA 기록 |
+
+### P2. 안정화/충돌 가능성 보완
+
+| 항목 | 발견 내용 | 추천 조치 |
+| --- | --- | --- |
+| hook dependency 예외 | `react-hooks/exhaustive-deps` 예외 11건 존재 | 기존 의도가 맞는지 1회 재감사하고 allowlist/테스트로 고정 |
+| 외부 IP 조회 | `lib/session.js`가 버튼 실행 시 `api.ipify.org`를 호출 | 서버 DB 이후에는 서버 세션 IP로 대체하거나 기능 제거/옵션화 |
+| fetch timeout 정리 | `fetchClientIP()`는 성공 경로에서만 timeout을 clear함 | `finally`에서 `clearTimeout(timer)` 처리로 미세 누수 제거 |
+| silent catch | 빈 catch 42건은 대부분 allowlist 정책 안에 있음 | 신규 빈 catch가 늘지 않도록 `silent-catch-policy.test.mjs` 유지 |
+| 파일 업로드 정책 | 사진/브랜드 JSON 일부는 공통 dropzone보다 자체 처리 비중이 큼 | `upload-policy` 적용 범위를 사진/브랜드 import까지 확대 검토 |
+
+### P3. 분리작업 후보
+
+| 파일 | 현재 성격 | 판단 |
+| --- | --- | --- |
+| `app/ingredient/manage/page.jsx` | 상태 12개, effect 3개, 460줄 | 기능은 안정적이나 view state/hook 추가 분리 여지 있음 |
+| `hooks/useHomeDashboardData.js` | 홈 대시보드 데이터 fan-out, 267줄이나 상태 많음 | 서버 DB 이후 query 단위로 자연 분리 추천 |
+| `app/nutrition/export/NutritionLabelResult.jsx` | 출력 UI와 데이터 조립이 함께 있음 | 출력 QA 후 표/출력 액션 단위로 선택 분리 |
+| `app/nutrition/origin/page.jsx` | 원산지 화면 데이터 조립+UI | DB 전환 후 adapter 기준으로 분리 |
+| `app/settings/restore/page.jsx` | 복원 흐름 orchestration | 백업/복원 리허설 후 단계 hook으로 분리 가능 |
+| `app/login/page.jsx` | 로컬 인증 UX 중심 401줄 | 서버 인증 전환 시 전면 교체 예정이라 지금 분리 우선순위 낮음 |
+| `IngredientDiagnostics.jsx`, `MenuRecipeComponentsTable.jsx`, `_SystemSettingsUI.jsx`, `_BackupPagePanels.jsx` | 최근 분리 후 400줄대 유지 | 당장 버그 위험보다는 가독성 개선 후보 |
+
+### 반응속도 후보
+
+- 큰 데이터에서 반복 계산이 생길 수 있는 후보는 식자재 관리의 `existingProductCodes={rows.filter(...).map(...)}`와 진단/레시피 테이블의 렌더 중 `map/filter/sort`이다.
+- 이미 `perf-large-dataset`, 드롭다운 성능, QA 스크립트가 존재하므로 급한 병목은 없다.
+- 서버 DB 전환 후에는 `getAll()` 전체 로드 페이지를 우선적으로 pagination/query 방식으로 바꾸는 것이 가장 효과가 크다.
+
 ## 4. 권장 커밋 단위
 
 - 한 단계당 최소 1커밋, 위험한 단계는 세부 기능별 커밋.
@@ -414,10 +644,10 @@ Codex 검토:
 
 ## 5. 현재 즉시 추천 순서
 
-1. `docs/CODE_CLEANLINESS_AUDIT_2026-06-20.md` 처리 방향 결정: 추적할지, 이 문서에 흡수 후 정리할지 선택.
-2. 1단계 운영 QA 실제 실행: `build:clean`, `qa:prod`, 실제 출력물 열람.
+1. 1단계 운영 QA 실제 실행 기록: `qa:full`, `qa:prod`, 실제 출력물 열람.
+2. `docs/CODE_CLEANLINESS_AUDIT_2026-06-20.md`가 다시 생기면 이 문서에 흡수 후 중복 문서로 남기지 않는다.
 3. 4단계 N-43 과거 단가 명세 결정 후 구현 여부 선택.
 4. 5단계 영양성분 부분 누락 기준 결정 후 구현 여부 선택.
-5. 코드 청결도 후속 정리: 식자재 store, 영양값 store, smoke/mobile QA runner 공통화.
-6. 안전성·일관성 후속 점검: 백업 범위, hook dependency 예외, 업로드 확장자 검사 전면 적용, XLSX formula injection 방어 검토.
+5. 코드 청결도 후속 정리: 백업/복원 리허설, CSS/design system 반복 패턴 정리, upload/import fixture QA.
+6. 안전성·일관성 후속 점검: 백업 범위, hook dependency 예외, 신규 업로드 화면 정책 유지, XLSX formula injection 방어 검토.
 7. 11단계 외부 배포 보안은 외부 배포 결정 전까지 보류.

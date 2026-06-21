@@ -12,7 +12,6 @@ import {
 } from '@/lib/db';
 import { dbNameFor } from '@/lib/db/constants';
 import { getActiveBrandId } from '@/lib/active-brand';
-import { formatNumber } from '@/lib/format';
 import { getSetting, setSetting } from '@/lib/settings';
 import { Toggle } from '@/components/ui/Toggle';
 import { useDBLoad } from '@/hooks/useDBLoad';
@@ -24,30 +23,12 @@ import {
   Segmented,
   StaticValue,
   StatusValue,
-  DangerConfirm,
-  InfoCell,
-  StorageUsageBar,
+  SystemAppInfoCard,
+  SystemStorageStatusCard,
+  SystemDangerZoneCard,
 } from './_SystemSettingsUI';
 
-/**
- * 시스템 설정 페이지
- *
- * 구성:
- *   1. 환경 설정 (다크 모드, 화면 밀도)
- *   2. 원가 계산 정책 (자동 반영 상태 / 미연동 차단 준비 상태 / 단가 1자리 정책)
- *   3. 알림 (미매칭 / 원가율 35% 초과)
- *   4. 지역 / 언어 (정보 표시, read-only)
- *   5. 앱 정보
- *   6. 저장소 상태
- *   7. 위험 영역 (모든 데이터 초기화)
- */
-
 const APP_VERSION = '0.1.0';
-
-const S_CARD_MT = { marginTop: 16 };
-const S_CARD_TITLE = { fontSize: 15, fontWeight: 700, marginBottom: 16 };
-const S_DANGER_ITEM_TITLE = { fontWeight: 700, fontSize: 14, marginBottom: 4 };
-const S_DANGER_ITEM_DESC = { fontSize: 13, color: 'var(--text-2)', marginBottom: 12 };
 
 const SETTING_KEYS = [
   'theme',
@@ -63,8 +44,6 @@ const SETTING_KEYS = [
 export default function Page() {
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const [busy, setBusy] = useState(false);
-  const [confirmingReset, setConfirmingReset] = useState(false);
-  const [confirmingRecreate, setConfirmingRecreate] = useState(false);
   const [settings, setSettings] = useState(() =>
     Object.fromEntries(SETTING_KEYS.map(k => [k, getSetting(k)]))
   );
@@ -90,6 +69,7 @@ export default function Page() {
   const stats = statsData?.stats ?? null;
   const storageEst = statsData?.storageEst ?? null;
   const ready = statsData !== null;
+  const totalRows = stats ? Object.values(stats).reduce((s, n) => s + n, 0) : 0;
 
   function updateSetting(key, value, message) {
     setSetting(key, value);
@@ -103,15 +83,12 @@ export default function Page() {
       await assertActiveAdmin('DB 재생성');
     } catch (err) {
       showToast(err.message, 'error');
-      setConfirmingRecreate(false);
       return;
     }
     setBusy(true);
     try {
       await deleteDatabase(dbNameFor(getActiveBrandId()));
       showToast('DB 삭제 완료. 새로고침합니다…', 'ok');
-      setConfirmingRecreate(false);
-      // 1초 후 자동 새로고침 — 새 페이지 로드 시 최신 schema로 DB 자동 생성
       setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
       console.error('[Recreate] 실패:', err);
@@ -126,7 +103,6 @@ export default function Page() {
       await assertActiveAdmin('전체 초기화');
     } catch (err) {
       showToast(err.message, 'error');
-      setConfirmingReset(false);
       return;
     }
     setBusy(true);
@@ -140,7 +116,6 @@ export default function Page() {
         }
       }
       reloadStats();
-      setConfirmingReset(false);
       showToast('모든 데이터가 초기화되었습니다.', 'ok');
     } catch (err) {
       console.error('[Reset] 실패:', err);
@@ -149,8 +124,6 @@ export default function Page() {
       setBusy(false);
     }
   }
-
-  const totalRows = stats ? Object.values(stats).reduce((s, n) => s + n, 0) : 0;
 
   return (
     <main className="main page-enter">
@@ -214,7 +187,7 @@ export default function Page() {
         />
       </SettingsGroup>
 
-      {/* 2. 알림 (자주 ON/OFF — 환경 다음으로 자주 변경) */}
+      {/* 2. 알림 */}
       <SettingsGroup title="알림">
         <SettingsRow
           name="미매칭 메뉴 알림"
@@ -251,7 +224,7 @@ export default function Page() {
         />
       </SettingsGroup>
 
-      {/* 3. 원가 계산 정책 (한 번 설정 후 거의 변경 없음 — 사업 정책) */}
+      {/* 3. 원가 계산 정책 */}
       <SettingsGroup title="원가 계산 정책">
         <SettingsRow
           name="단가 변경 시 원가 화면 자동 반영"
@@ -282,7 +255,7 @@ export default function Page() {
         />
       </SettingsGroup>
 
-      {/* 4. 지역 / 언어 (read-only 정보 표시) */}
+      {/* 4. 지역 / 언어 */}
       <SettingsGroup title="지역 / 언어">
         <SettingsRow
           name="언어"
@@ -302,160 +275,33 @@ export default function Page() {
         />
       </SettingsGroup>
 
-      {/* 5. 앱 정보 */}
-      <div className="card" style={S_CARD_MT}>
-        <h2 style={S_CARD_TITLE}>앱 정보</h2>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))',
-            gap: 24,
-          }}
-        >
-          <InfoCell label="앱 버전" value={APP_VERSION} />
-          <InfoCell label="DB 이름" value={dbNameFor(getActiveBrandId())} mono />
-          <InfoCell label="DB 버전" value={String(DB_VERSION)} />
-          <InfoCell label="환경" value="개발 (localhost)" />
-          <InfoCell
-            label="현재 권한"
-            value={!roleReady ? '확인 중…' : isAdmin ? '관리자 (admin)' : '조회자 (viewer)'}
-          />
-        </div>
-      </div>
+      <SystemAppInfoCard
+        appVersion={APP_VERSION}
+        dbName={dbNameFor(getActiveBrandId())}
+        dbVersion={String(DB_VERSION)}
+        roleReady={roleReady}
+        isAdmin={isAdmin}
+      />
 
-      {/* 6. 저장소 상태 */}
-      <div className="card" style={S_CARD_MT}>
-        <h2 style={S_CARD_TITLE}>저장소 상태</h2>
-        {!ready ? (
-          <div style={{ color: 'var(--text-3)' }}>DB 초기화 중…</div>
-        ) : (
-          <>
-            {/* 브라우저 용량 감지 */}
-            {storageEst && <StorageUsageBar usage={storageEst.usage} quota={storageEst.quota} />}
+      <SystemStorageStatusCard
+        ready={ready}
+        stats={stats}
+        storageEst={storageEst}
+        totalStoreCount={ALL_STORES.length}
+        totalRows={totalRows}
+        busy={busy}
+        onReload={reloadStats}
+      />
 
-            <div
-              style={{
-                display: 'flex',
-                gap: 32,
-                marginBottom: 20,
-                padding: '12px 0',
-                borderBottom: '1px solid var(--border)',
-                marginTop: storageEst ? 16 : 0,
-              }}
-            >
-              <InfoCell label="전체 저장 행" value={`${formatNumber(totalRows)}건`} big />
-              <InfoCell label="정의된 store 수" value={`${ALL_STORES.length}개`} big />
-              <InfoCell
-                label="데이터 있는 store"
-                value={`${stats ? Object.values(stats).filter(n => n > 0).length : 0}개`}
-                big
-              />
-            </div>
-
-            {stats && Object.values(stats).some(n => n > 0) ? (
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))',
-                  gap: 12,
-                }}
-              >
-                {Object.entries(stats)
-                  .filter(([, n]) => n > 0)
-                  .map(([name, count]) => (
-                    <div
-                      key={name}
-                      style={{
-                        padding: 12,
-                        border: '1px solid var(--border)',
-                        borderRadius: 8,
-                        background: 'var(--surface-2)',
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: 'var(--text-3)',
-                          fontFamily: 'monospace',
-                          marginBottom: 4,
-                        }}
-                      >
-                        {name}
-                      </div>
-                      <div className="num" style={{ fontSize: 16, fontWeight: 600 }}>
-                        {formatNumber(count)}건
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            ) : (
-              <div style={{ color: 'var(--text-3)', padding: '8px 0' }}>
-                저장된 데이터가 없습니다.
-              </div>
-            )}
-
-            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
-              <button className="btn" onClick={reloadStats} disabled={busy}>
-                새로고침
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* 7. 위험 영역 */}
-      <div className="card" style={{ marginTop: 16, borderColor: 'var(--negative-soft)' }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, color: 'var(--negative)' }}>
-          위험 영역
-        </h2>
-
-        {/* 모든 데이터 초기화 */}
-        <div style={{ paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
-          <div style={S_DANGER_ITEM_TITLE}>모든 데이터 초기화</div>
-          <p style={S_DANGER_ITEM_DESC}>
-            모든 store의 데이터를 삭제합니다. schema는 유지되며 빈 store로 남습니다.
-            <br />
-            백업이 필요한 경우 먼저 <b>데이터 백업</b> 메뉴에서 다운로드하세요.
-            <br />
-            초기화 후 기본 메뉴 코드를 다시 등록하려면 <b>메뉴 마스터 → 기본 코드 등록</b>을
-            실행하세요.
-          </p>
-          <DangerConfirm
-            label="모든 데이터 초기화"
-            confirmMsg={`정말 모든 데이터를 삭제할까요? (${formatNumber(totalRows)}건)`}
-            confirmLabel={busy ? '삭제 중…' : '정말 삭제'}
-            isOpen={confirmingReset}
-            onOpen={() => setConfirmingReset(true)}
-            onClose={() => setConfirmingReset(false)}
-            onConfirm={handleReset}
-            disabled={!ready || busy || totalRows === 0 || !roleReady || !isAdmin}
-            busy={busy}
-          />
-        </div>
-
-        {/* DB 완전 재생성 */}
-        <div style={{ paddingTop: 16 }}>
-          <div style={S_DANGER_ITEM_TITLE}>DB 완전 재생성</div>
-          <p style={S_DANGER_ITEM_DESC}>
-            DB 자체를 삭제하고 최신 schema로 새로 생성합니다.
-            <br />
-            schema 업그레이드가 누락된 경우(<code>NotFoundError</code>) 해결 가능.
-            <br />
-            실행 후 페이지가 자동 새로고침되며 모든 데이터는 사라집니다.
-          </p>
-          <DangerConfirm
-            label="DB 완전 재생성"
-            confirmMsg="DB를 삭제하고 새로 만들까요? (모든 데이터 사라짐)"
-            confirmLabel={busy ? '재생성 중…' : '정말 재생성'}
-            isOpen={confirmingRecreate}
-            onOpen={() => setConfirmingRecreate(true)}
-            onClose={() => setConfirmingRecreate(false)}
-            onConfirm={handleRecreate}
-            disabled={!ready || busy || !roleReady || !isAdmin}
-            busy={busy}
-          />
-        </div>
-      </div>
+      <SystemDangerZoneCard
+        ready={ready}
+        busy={busy}
+        roleReady={roleReady}
+        isAdmin={isAdmin}
+        totalRows={totalRows}
+        onReset={handleReset}
+        onRecreate={handleRecreate}
+      />
     </main>
   );
 }

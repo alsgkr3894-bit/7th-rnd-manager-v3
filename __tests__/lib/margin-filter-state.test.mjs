@@ -5,6 +5,7 @@ import { buildMarginTableSections } from '../../app/cost/margin/marginTableSecti
 const filtersSrc = readFileSync(resolve('app/cost/margin/useMarginFilters.js'), 'utf-8');
 const actionsSrc = readFileSync(resolve('app/cost/margin/useMarginActions.js'), 'utf-8');
 const pageSrc = readFileSync(resolve('app/cost/margin/page.jsx'), 'utf-8');
+const tableCardSrc = readFileSync(resolve('app/cost/margin/_MarginTableCard.jsx'), 'utf-8');
 const tableSectionsSrc = readFileSync(resolve('app/cost/margin/marginTableSections.js'), 'utf-8');
 
 describe('margin 훅 분리 구조', () => {
@@ -51,9 +52,10 @@ describe('margin 훅 분리 구조', () => {
 
   test('원가마진표는 카테고리별 표 섹션으로 나눈다', () => {
     expect(pageSrc).toContain('buildMarginTableSections(paged)');
-    expect(pageSrc).toContain('section.sizeLabels');
-    expect(pageSrc).toContain('margin-section-header');
-    expect(pageSrc).toContain('margin-section-marker');
+    // 섹션 렌더링은 _MarginTableCard로 이동
+    expect(tableCardSrc).toContain('section.sizeLabels');
+    expect(tableCardSrc).toContain('margin-section-header');
+    expect(tableCardSrc).toContain('margin-section-marker');
     expect(tableSectionsSrc).toContain("title: '피자'");
     expect(tableSectionsSrc).toContain("title: '세트박스'");
     expect(tableSectionsSrc).toContain("title: '사이드'");
