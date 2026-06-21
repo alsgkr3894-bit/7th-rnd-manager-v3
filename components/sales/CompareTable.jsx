@@ -1,8 +1,12 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { SortableTh } from '@/components/ui/SortableTh';
+import { Pagination } from '@/components/ui/Pagination';
+import { usePagination } from '@/hooks/usePagination';
 import { formatNumber } from '@/lib/format';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
+
+const PAGE_SIZE = 50;
 
 function compareValues(a, b, dir) {
   if (a == null && b == null) return 0;
@@ -38,6 +42,9 @@ export function CompareTable({ rows }) {
       return compareValues(va, vb, dir);
     });
   }, [safeRows, sortKey, sortDir]);
+
+  const { page, goTo, totalPages, paged, total } = usePagination(sorted, PAGE_SIZE);
+  const startIndex = (page - 1) * PAGE_SIZE;
 
   function toggleSort(key) {
     if (sortKey === key) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
@@ -120,11 +127,24 @@ export function CompareTable({ rows }) {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((r, i) => (
-                <Row key={`${asDisplayText(r.name, 'menu')}-${i}`} r={r} rank={i + 1} />
+              {paged.map((r, i) => (
+                <Row
+                  key={`${asDisplayText(r.name, 'menu')}-${startIndex + i}`}
+                  r={r}
+                  rank={startIndex + i + 1}
+                />
               ))}
             </tbody>
           </table>
+          <div style={{ borderTop: '1px solid var(--divider)' }}>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPage={goTo}
+              total={total}
+              pageSize={PAGE_SIZE}
+            />
+          </div>
         </div>
       )}
     </div>

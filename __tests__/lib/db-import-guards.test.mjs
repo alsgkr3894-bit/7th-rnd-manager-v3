@@ -154,15 +154,18 @@ function makeFakeDb(state, options = {}) {
           tx.error = tx.error || new Error('transaction aborted');
         },
         objectStore(storeName) {
+          // 실제 IDB의 clear()/put()은 IDBRequest를 반환한다(onerror 설정 가능).
           return {
             clear() {
               draft[storeName] = [];
+              return { onerror: null };
             },
             put(record) {
               if (options.failOnStore === storeName) {
                 throw new Error(`put failed: ${storeName}`);
               }
               draft[storeName].push(clone(record));
+              return { onerror: null };
             },
           };
         },

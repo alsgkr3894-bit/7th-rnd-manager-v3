@@ -5,6 +5,7 @@ import { showToast } from '@/components/Toast';
 import { parseLabExcel, buildImportRows, toRawValueRecord } from '@/lib/nutrition/values/import';
 import { upsertMenuRef, upsertRawValue } from '@/lib/nutrition/values/store';
 import { asObjectArray, asRecord, noop } from '@/lib/ui/prop-guards';
+import { parseErrorMsg } from '@/lib/upload-policy';
 import { ImportBasePreviewTable } from './import-base/ImportBasePreviewTable';
 import { ImportBaseSummaryBar } from './import-base/ImportBaseSummaryBar';
 import { ImportBaseUploadStep } from './import-base/ImportBaseUploadStep';
@@ -21,11 +22,11 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
   const [saving, setSaving] = useState(false);
 
   const handleFile = async (file, err) => {
-    if (!file) return;
     if (err) {
       showToast(err, 'error');
       return;
     }
+    if (!file) return;
     try {
       const buf = await file.arrayBuffer();
       const rawRows = await parseLabExcel(buf);
@@ -33,7 +34,7 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
       setRows(buildImportRows({ rawRows, menuMasters: safeMenuMasters, existingKeys }));
       setStep('preview');
     } catch (e) {
-      showToast(`파싱 실패: ${e?.message || e}`, 'error');
+      showToast(parseErrorMsg(e), 'error');
     }
   };
 
@@ -77,7 +78,14 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
       refresh();
       close();
     } catch (e) {
-      showToast(`저장 실패: ${e?.message || e}`, 'error');
+      // 행별 개별 트랜잭션이라 saved건은 이미 커밋된 상태 — 부분 저장 사실을 알리고
+      // 화면을 갱신해 stale 미리보기에 머물지 않도록 한다.
+      if (saved > 0) {
+        showToast(`${saved}건 저장 후 ${toSave.length - saved}건 실패 — 부분 저장됨`, 'warn');
+        refresh();
+      } else {
+        showToast(`저장 실패: ${e?.message || e}`, 'error');
+      }
     }
     setSaving(false);
   };

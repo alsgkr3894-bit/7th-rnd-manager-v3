@@ -2,14 +2,19 @@
 import { Icon } from '@/components/icons';
 import { RestoreModuleChip } from './RestoreModuleChip';
 
+const SHARED_SKIP_STORE = '__shared_skipped__';
+
 /**
  * 복원 완료 결과 카드.
  *
  * @param {{ restoreDone: object, onReset: () => void }} props
  */
 export function RestoreDoneCard({ restoreDone, onReset }) {
-  const errors = Array.isArray(restoreDone.errors) ? restoreDone.errors : [];
+  const restoreMessages = Array.isArray(restoreDone.errors) ? restoreDone.errors : [];
+  const infoMessages = restoreMessages.filter(item => item?.store === SHARED_SKIP_STORE);
+  const errors = restoreMessages.filter(item => item?.store !== SHARED_SKIP_STORE);
   const hasErrors = errors.length > 0;
+  const hasInfo = infoMessages.length > 0;
   const visibleErrors = errors.slice(0, 6);
   const hiddenErrorCount = Math.max(0, errors.length - visibleErrors.length);
 
@@ -57,6 +62,7 @@ export function RestoreDoneCard({ restoreDone, onReset }) {
             {restoreDone.imported}개 store 복원됨
             {restoreDone.skipped > 0 && ` · ${restoreDone.skipped}개 건너뜀`}
             {hasErrors && ` · ${errors.length}개 확인 필요`}
+            {!hasErrors && hasInfo && ` · 보호 skip ${infoMessages.length}개`}
           </div>
           <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {restoreDone.modules.map(k => (
@@ -118,6 +124,49 @@ export function RestoreDoneCard({ restoreDone, onReset }) {
                 전체 복원이 필요하면 현재 상태를 백업한 뒤{' '}
                 <b>시스템 설정 → 위험 영역 → DB 완전 재생성</b>을 실행하고 같은 백업 파일을 다시
                 복원하세요.
+              </div>
+            </div>
+          )}
+          {!hasErrors && hasInfo && (
+            <div
+              style={{
+                marginTop: 12,
+                padding: '12px 14px',
+                borderRadius: 8,
+                background: 'color-mix(in oklab, var(--positive) 10%, var(--surface))',
+                border: '1px solid color-mix(in oklab, var(--positive) 22%, transparent)',
+              }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--positive)' }}>
+                보호를 위해 건너뛴 항목
+              </div>
+              <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
+                {infoMessages.map((item, index) => (
+                  <div
+                    key={`${item.store || 'shared'}-${index}`}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'minmax(120px, 180px) 1fr',
+                      gap: 8,
+                      alignItems: 'start',
+                      fontSize: 12,
+                    }}
+                  >
+                    <code
+                      style={{
+                        fontFamily: 'monospace',
+                        color: 'var(--positive)',
+                        fontWeight: 800,
+                        wordBreak: 'break-all',
+                      }}
+                    >
+                      {item.store || 'shared'}
+                    </code>
+                    <span style={{ color: 'var(--text-2)', wordBreak: 'break-word' }}>
+                      {item.error || item.message || '공유 store 보호로 복원을 건너뛰었습니다.'}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           )}

@@ -51,4 +51,10 @@ describe('ingredient manage undo guards', () => {
   test('일괄 삭제 후 warnIngredientCascadeFailures가 호출된다', () => {
     expect(actionsSource).toContain('warnIngredientCascadeFailures(removed)');
   });
+
+  test('삭제 preview는 최신 삭제 대상 요청만 반영한다', () => {
+    expect(pageSource).toContain('deletePreviewRequestRef');
+    expect(pageSource).toContain('deletePreviewRequestRef.current === requestId');
+    expect(pageSource).toContain('preview?.ingredient?.id === row.id');
+  });
 });

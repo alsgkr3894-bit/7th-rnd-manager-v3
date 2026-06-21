@@ -7,7 +7,13 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, test } from '@jest/globals';
-import { UPLOAD_MAX_MB, UPLOAD_EXT, checkFileSize, checkFileExt } from '../../lib/upload-policy.js';
+import {
+  UPLOAD_MAX_MB,
+  UPLOAD_EXT,
+  checkFileSize,
+  checkFileExt,
+  parseErrorMsg,
+} from '../../lib/upload-policy.js';
 
 function src(path) {
   return readFileSync(resolve(path), 'utf-8');
@@ -94,6 +100,26 @@ describe('checkFileExt', () => {
   });
 });
 
+// ── parseErrorMsg ────────────────────────────────────────────────────────────
+
+describe('parseErrorMsg', () => {
+  test('Error 객체의 메시지를 사용자 안내 문구로 감싼다', () => {
+    expect(parseErrorMsg(new Error('시트가 없습니다'))).toBe(
+      '파일을 읽을 수 없습니다: 시트가 없습니다'
+    );
+  });
+
+  test('문자열과 빈 값을 안전하게 처리한다', () => {
+    expect(parseErrorMsg('깨진 파일')).toBe('파일을 읽을 수 없습니다: 깨진 파일');
+    expect(parseErrorMsg(null)).toBe('파일을 읽을 수 없습니다');
+  });
+
+  test('긴 내부 에러 메시지는 100자로 잘라 화면 노이즈를 줄인다', () => {
+    const msg = parseErrorMsg(new Error('x'.repeat(120)));
+    expect(msg).toHaveLength('파일을 읽을 수 없습니다: '.length + 100);
+  });
+});
+
 // ── 업로드 모듈 구조 확인 ──────────────────────────────────────────────────────
 
 describe('주요 업로드 모듈 — upload-policy import 여부', () => {
@@ -109,10 +135,29 @@ describe('주요 업로드 모듈 — upload-policy import 여부', () => {
     expect(s).toContain('upload-policy');
   });
 
-  test('MenuPriceUploadCard.jsx가 UPLOAD_MAX_MB를 import한다', () => {
+  test('MenuPriceUploadCard.jsx가 공통 크기/확장자 정책과 실패행 다운로드를 사용한다', () => {
     const s = src('components/cost/menu-price/MenuPriceUploadCard.jsx');
     expect(s).toContain('UPLOAD_MAX_MB');
+    expect(s).toContain('UPLOAD_EXT');
+    expect(s).toContain('checkFileSize');
+    expect(s).toContain('checkFileExt');
+    expect(s).toContain('downloadFailedRows');
     expect(s).toContain('upload-policy');
+  });
+
+  test('UploadDropzone은 공통 확장자/크기 검사를 사용한다', () => {
+    const s = src('components/ui/UploadDropzone.jsx');
+    expect(s).toContain('checkFileExt');
+    expect(s).toContain('checkFileSize');
+    expect(s).toContain('upload-policy');
+  });
+
+  test('영양성분 베이스 import는 dropzone 오류를 파일 존재 검사보다 먼저 처리한다', () => {
+    const s = src('components/nutrition/menu/ImportBaseModal.jsx');
+    expect(s.indexOf('if (err)')).toBeGreaterThan(-1);
+    expect(s.indexOf('if (!file) return')).toBeGreaterThan(-1);
+    expect(s.indexOf('if (err)')).toBeLessThan(s.indexOf('if (!file) return'));
+    expect(s).toContain('parseErrorMsg');
   });
 
   test('파싱 실패 폴백이 "파싱 실패" 두 글자로 끝나지 않는다', () => {

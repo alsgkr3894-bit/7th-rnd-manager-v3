@@ -3,6 +3,7 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getProfile } from '@/lib/profile';
 import { isAuthSetup, verifyPassword, savePassword, setAuthCookie } from '@/lib/auth';
+import { PasswordField } from './PasswordField';
 
 // useSearchParams()는 Suspense 경계 안에서만 사용 가능 (Next.js 14 빌드 요구사항)
 export default function LoginPage() {
@@ -173,118 +174,36 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {/* 비밀번호 */}
-          <div>
-            <label
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: 'var(--text-2)',
-                display: 'block',
-                marginBottom: 6,
-              }}
-            >
-              {mode === 'setup' ? '새 비밀번호' : '비밀번호'}
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                ref={pwRef}
-                type={showPw ? 'text' : 'password'}
-                value={password}
-                onChange={e => {
-                  setPassword(e.target.value);
-                  setError('');
-                }}
-                placeholder={mode === 'setup' ? '4자 이상 입력' : '비밀번호 입력'}
-                autoComplete={mode === 'setup' ? 'new-password' : 'current-password'}
-                style={{
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  padding: '10px 40px 10px 12px',
-                  border: `1px solid ${error ? 'var(--negative)' : 'var(--border)'}`,
-                  borderRadius: 8,
-                  fontSize: 14,
-                  background: 'var(--bg)',
-                  color: 'var(--text-1)',
-                  outline: 'none',
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw(v => !v)}
-                style={{
-                  position: 'absolute',
-                  right: 10,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  border: 'none',
-                  background: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--text-3)',
-                  display: 'flex',
-                  padding: 2,
-                }}
-              >
-                <EyeIcon open={showPw} />
-              </button>
-            </div>
-          </div>
+          <PasswordField
+            label={mode === 'setup' ? '새 비밀번호' : '비밀번호'}
+            value={password}
+            onChange={e => {
+              setPassword(e.target.value);
+              setError('');
+            }}
+            show={showPw}
+            onToggleShow={() => setShowPw(v => !v)}
+            placeholder={mode === 'setup' ? '4자 이상 입력' : '비밀번호 입력'}
+            autoComplete={mode === 'setup' ? 'new-password' : 'current-password'}
+            error={error}
+            inputRef={pwRef}
+          />
 
           {/* 확인 입력 (설정 모드) */}
           {mode === 'setup' && (
-            <div>
-              <label
-                style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: 'var(--text-2)',
-                  display: 'block',
-                  marginBottom: 6,
-                }}
-              >
-                비밀번호 확인
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showCf ? 'text' : 'password'}
-                  value={confirm}
-                  onChange={e => {
-                    setConfirm(e.target.value);
-                    setError('');
-                  }}
-                  placeholder="동일하게 입력"
-                  autoComplete="new-password"
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '10px 40px 10px 12px',
-                    border: `1px solid ${error ? 'var(--negative)' : 'var(--border)'}`,
-                    borderRadius: 8,
-                    fontSize: 14,
-                    background: 'var(--bg)',
-                    color: 'var(--text-1)',
-                    outline: 'none',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCf(v => !v)}
-                  style={{
-                    position: 'absolute',
-                    right: 10,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    border: 'none',
-                    background: 'none',
-                    cursor: 'pointer',
-                    color: 'var(--text-3)',
-                    display: 'flex',
-                    padding: 2,
-                  }}
-                >
-                  <EyeIcon open={showCf} />
-                </button>
-              </div>
-            </div>
+            <PasswordField
+              label="비밀번호 확인"
+              value={confirm}
+              onChange={e => {
+                setConfirm(e.target.value);
+                setError('');
+              }}
+              show={showCf}
+              onToggleShow={() => setShowCf(v => !v)}
+              placeholder="동일하게 입력"
+              autoComplete="new-password"
+              error={error}
+            />
           )}
 
           {/* 에러 */}
@@ -363,38 +282,5 @@ function LoginForm() {
         )}
       </div>
     </div>
-  );
-}
-
-function EyeIcon({ open }) {
-  return open ? (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-      <circle cx="12" cy="12" r="3" />
-      <path d="M3 3l18 18" strokeWidth="2.5" />
-    </svg>
-  ) : (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
   );
 }

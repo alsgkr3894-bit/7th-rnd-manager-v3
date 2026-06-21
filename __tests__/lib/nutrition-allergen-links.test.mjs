@@ -64,14 +64,16 @@ describe('nutrition_allergy_links linkage basis', () => {
       productCode: 'P-001',
     });
 
-    expect(deleted).toBe(2);
+    // 실행취소 복원을 위해 삭제한 링크 레코드 배열을 반환한다.
+    expect(deleted.map(d => d.id)).toEqual([1, 2]);
     expect(deleteCalls).toEqual([
       ['nutrition_allergy_links', 1],
       ['nutrition_allergy_links', 2],
     ]);
   });
 
-  test('deleteMenuRef는 영양 원시값만 삭제하고 알레르기 링크를 건드리지 않는다', async () => {
+  test('deleteMenuRef는 menu_ref+원시값을 단일 트랜잭션으로 삭제하고 알레르기 링크를 건드리지 않는다', async () => {
+    rowsByStore.nutrition_menu_ref = [{ id: 7, menuCode: 'MENU-1', menuName: '메뉴1' }];
     rowsByStore.nutrition_raw_values = [
       { id: 11, menuCode: 'MENU-1', crustType: '석쇠L' },
       { id: 12, menuCode: 'MENU-2', crustType: '석쇠L' },
@@ -79,8 +81,17 @@ describe('nutrition_allergy_links linkage basis', () => {
 
     await deleteMenuRef(7, 'MENU-1');
 
-    expect(mockDeleteById).toHaveBeenCalledWith('nutrition_menu_ref', 7);
-    expect(deleteCalls).toEqual([['nutrition_raw_values', 11]]);
+    // 원자성을 위해 deleteById가 아니라 단일 다중스토어 트랜잭션을 사용한다.
+    expect(mockDeleteById).not.toHaveBeenCalled();
+    expect(mockRunTransaction).toHaveBeenCalledWith(
+      ['nutrition_menu_ref', 'nutrition_raw_values'],
+      'readwrite',
+      expect.any(Function)
+    );
+    expect(deleteCalls).toEqual([
+      ['nutrition_menu_ref', 7],
+      ['nutrition_raw_values', 11],
+    ]);
     expect(mockGetByIndex).not.toHaveBeenCalledWith(
       'nutrition_allergy_links',
       'menuCode',

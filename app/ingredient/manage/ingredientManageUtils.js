@@ -1,5 +1,5 @@
 import { showToast } from '@/components/Toast';
-import { restoreRecord } from '@/lib/db';
+import { restoreRecord, hasStore } from '@/lib/db';
 import { getManagedProducts, addManagedProduct, updateManagedProduct } from '@/lib/shipment';
 import { TYPE_LABEL } from '@/components/jette/managed-products-constants';
 
@@ -44,8 +44,16 @@ export async function syncManagedScope(target, scopeLabel) {
 }
 
 export async function restoreDeletedIngredientBackup(backup) {
-  if (!backup?.ingredient) return;
+  // id 없는 레코드를 put하면 autoIncrement가 새 id를 할당해 원본을 잃는다.
+  if (!backup?.ingredient?.id) return;
   await restoreRecord('cost_ingredients', backup.ingredient);
+  // cascade로 삭제됐던 legacy 알레르기 링크도 함께 복원(있고 store가 존재할 때만).
+  const links = Array.isArray(backup.deletedAllergenLinks) ? backup.deletedAllergenLinks : [];
+  if (links.length > 0 && hasStore('nutrition_allergy_links')) {
+    for (const link of links) {
+      if (link?.id != null) await restoreRecord('nutrition_allergy_links', link);
+    }
+  }
 }
 
 export async function restoreDeletedIngredientBackups(backups) {

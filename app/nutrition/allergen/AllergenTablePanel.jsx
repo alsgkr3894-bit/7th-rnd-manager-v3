@@ -1,6 +1,10 @@
 'use client';
+import { Pagination } from '@/components/ui/Pagination';
+import { usePagination } from '@/hooks/usePagination';
 import { AllergenIngredientTable } from './AllergenIngredientTable';
 import { AllergenMenuMatrixTable } from './AllergenMenuMatrixTable';
+
+const PAGE_SIZE = 80;
 
 export function AllergenTablePanel({
   loading,
@@ -12,6 +16,8 @@ export function AllergenTablePanel({
   orderedAllergens,
   onDetailRow,
 }) {
+  const activeRows = viewMode === 'ingredient' ? ingredientRows : menuMatrix;
+  const { page, goTo, totalPages, paged, total } = usePagination(activeRows, PAGE_SIZE);
   return (
     <>
       <div className="card table-card" style={{ marginTop: 12 }}>
@@ -21,16 +27,27 @@ export function AllergenTablePanel({
           </div>
         ) : viewMode === 'ingredient' ? (
           <AllergenIngredientTable
-            ingredientRows={ingredientRows}
+            ingredientRows={paged}
             mapData={mapData}
             isExcludedMenu={isExcludedMenu}
           />
         ) : (
           <AllergenMenuMatrixTable
-            menuMatrix={menuMatrix}
+            menuMatrix={paged}
             orderedAllergens={orderedAllergens}
             onDetailRow={onDetailRow}
           />
+        )}
+        {!loading && (
+          <div style={{ borderTop: '1px solid var(--divider)' }}>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPage={goTo}
+              total={total}
+              pageSize={PAGE_SIZE}
+            />
+          </div>
         )}
       </div>
       <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-4)' }}>

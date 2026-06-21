@@ -5,6 +5,7 @@ import {
   makeFileNameWithBrand,
   printCurrentPageWithDownloadDate,
   withDownloadDateSuffix,
+  downloadFailedRows,
   rowsToCsv,
 } from '../../lib/download.js';
 
@@ -109,5 +110,72 @@ describe('rowsToCsv 수식 인젝션 방지 (R4-M1 회귀)', () => {
 
   test('일반 한글/영문 텍스트는 변형하지 않는다', () => {
     expect(dataLine(rowsToCsv([['h'], ['페퍼로니피자']]))).toBe('페퍼로니피자');
+  });
+});
+
+describe('downloadFailedRows', () => {
+  test('업로드 실패 행을 CSV 다운로드하고 셀 살균 경로를 공유한다', async () => {
+    jest.useFakeTimers();
+    const previousDocument = global.document;
+    const previousURL = global.URL;
+    const anchor = { click: jest.fn() };
+    const observed = {};
+
+    try {
+      global.document = {
+        createElement: jest.fn(() => anchor),
+        body: {
+          appendChild: jest.fn(),
+          removeChild: jest.fn(),
+        },
+      };
+      global.URL = {
+        createObjectURL: jest.fn(blob => {
+          observed.blob = blob;
+          return 'blob:failed-rows';
+        }),
+        revokeObjectURL: jest.fn(),
+      };
+
+      downloadFailedRows(
+        [
+          { 행번호: 3, 사유: '=BROKEN()', 메뉴명: '테스트' },
+          { 행번호: 4, 추가정보: '뒤쪽 행 전용 필드' },
+        ],
+        '오류행.csv'
+      );
+
+      expect(anchor.download).toMatch(/^오류행_\d{8}\.csv$/);
+      expect(anchor.href).toBe('blob:failed-rows');
+      expect(anchor.click).toHaveBeenCalledTimes(1);
+      const text = await observed.blob.text();
+      expect(text.replace(/^﻿/, '')).toContain('행번호,사유,메뉴명,추가정보');
+      expect(text).toContain(`'=BROKEN()`);
+      expect(text).toContain('뒤쪽 행 전용 필드');
+
+      jest.runOnlyPendingTimers();
+      expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:failed-rows');
+    } finally {
+      global.document = previousDocument;
+      global.URL = previousURL;
+      jest.useRealTimers();
+    }
+  });
+
+  test('실패 행이 없으면 다운로드를 만들지 않는다', () => {
+    const previousURL = global.URL;
+
+    try {
+      global.URL = {
+        createObjectURL: jest.fn(),
+        revokeObjectURL: jest.fn(),
+      };
+
+      downloadFailedRows([], '오류행.csv');
+
+      expect(global.URL.createObjectURL).not.toHaveBeenCalled();
+    } finally {
+      global.URL = previousURL;
+    }
   });
 });

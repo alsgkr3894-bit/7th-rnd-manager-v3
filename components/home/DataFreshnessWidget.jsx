@@ -84,6 +84,75 @@ function targetText(target) {
   return `${year}.${String(month).padStart(2, '0')} 기준`;
 }
 
+/** 업로드/백업 공용 행 — 아이콘 박스 + 라벨/설명 + 상태 pill (스타일 단일 출처). */
+function FreshnessRow({ icon, label, desc, statusLabel, meta, onClick }) {
+  return (
+    <button
+      className="widget-row"
+      onClick={onClick}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '32px minmax(0, 1fr) auto',
+        alignItems: 'center',
+        gap: 10,
+        width: '100%',
+        padding: '10px 12px',
+        border: '1px solid var(--border)',
+        borderRadius: 8,
+        background: 'var(--surface)',
+        textAlign: 'left',
+        cursor: 'pointer',
+        font: 'inherit',
+      }}
+    >
+      <span
+        style={{
+          width: 32,
+          height: 32,
+          display: 'grid',
+          placeItems: 'center',
+          borderRadius: 8,
+          background: meta.bg,
+          color: meta.color,
+          border: `1px solid ${meta.border}`,
+        }}
+      >
+        {icon}
+      </span>
+      <span style={{ minWidth: 0 }}>
+        <span style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>
+          {label}
+        </span>
+        <span
+          style={{
+            display: 'block',
+            fontSize: 11,
+            color: 'var(--text-3)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {desc}
+        </span>
+      </span>
+      <span
+        style={{
+          padding: '4px 8px',
+          borderRadius: 999,
+          fontSize: 11,
+          fontWeight: 800,
+          color: meta.color,
+          background: meta.bg,
+          border: `1px solid ${meta.border}`,
+        }}
+      >
+        {statusLabel}
+      </span>
+    </button>
+  );
+}
+
 export function DataFreshnessWidget({ freshness, backupReminder, isMain, router }) {
   const uploadRows = [
     {
@@ -136,144 +205,38 @@ export function DataFreshnessWidget({ freshness, backupReminder, isMain, router 
         {uploadRows.map(row => {
           const meta = statusMeta(row.status);
           return (
-            <button
+            <FreshnessRow
               key={row.key}
-              className="widget-row"
-              onClick={() => router?.push?.(row.href)}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '32px minmax(0, 1fr) auto',
-                alignItems: 'center',
-                gap: 10,
-                width: '100%',
-                padding: '10px 12px',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                background: 'var(--surface)',
-                textAlign: 'left',
-                cursor: 'pointer',
-                font: 'inherit',
-              }}
-            >
-              <span
-                style={{
-                  width: 32,
-                  height: 32,
-                  display: 'grid',
-                  placeItems: 'center',
-                  borderRadius: 8,
-                  background: meta.bg,
-                  color: meta.color,
-                  border: `1px solid ${meta.border}`,
-                }}
-              >
-                {row.status?.stale ? (
+              icon={
+                row.status?.stale ? (
                   <Icon.alert style={{ width: 16, height: 16 }} />
                 ) : (
                   <Icon.check style={{ width: 16, height: 16 }} />
-                )}
-              </span>
-              <span style={{ minWidth: 0 }}>
-                <span
-                  style={{
-                    display: 'block',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: 'var(--text-1)',
-                  }}
-                >
-                  {row.label}
-                </span>
-                <span
-                  style={{
-                    display: 'block',
-                    fontSize: 11,
-                    color: 'var(--text-3)',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {row.desc} · 마지막 {ymText(row.status)}
-                </span>
-              </span>
-              <span
-                style={{
-                  padding: '4px 8px',
-                  borderRadius: 999,
-                  fontSize: 11,
-                  fontWeight: 800,
-                  color: meta.color,
-                  background: meta.bg,
-                  border: `1px solid ${meta.border}`,
-                }}
-              >
-                {meta.label}
-              </span>
-            </button>
+                )
+              }
+              label={row.label}
+              desc={`${row.desc} · 마지막 ${ymText(row.status)}`}
+              statusLabel={meta.label}
+              meta={meta}
+              onClick={() => router?.push?.(row.href)}
+            />
           );
         })}
 
-        <button
-          className="widget-row"
-          onClick={() => router?.push?.('/settings/backup')}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '32px minmax(0, 1fr) auto',
-            alignItems: 'center',
-            gap: 10,
-            width: '100%',
-            padding: '10px 12px',
-            border: '1px solid var(--border)',
-            borderRadius: 8,
-            background: 'var(--surface)',
-            textAlign: 'left',
-            cursor: 'pointer',
-            font: 'inherit',
-          }}
-        >
-          <span
-            style={{
-              width: 32,
-              height: 32,
-              display: 'grid',
-              placeItems: 'center',
-              borderRadius: 8,
-              background: backup.bg,
-              color: backup.color,
-              border: `1px solid ${backup.border}`,
-            }}
-          >
-            {backupReminder?.stale ? (
+        <FreshnessRow
+          icon={
+            backupReminder?.stale ? (
               <Icon.alert style={{ width: 16, height: 16 }} />
             ) : (
               <Icon.download style={{ width: 16, height: 16 }} />
-            )}
-          </span>
-          <span style={{ minWidth: 0 }}>
-            <span
-              style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}
-            >
-              백업
-            </span>
-            <span style={{ display: 'block', fontSize: 11, color: 'var(--text-3)' }}>
-              마지막 백업 · {backup.detail}
-            </span>
-          </span>
-          <span
-            style={{
-              padding: '4px 8px',
-              borderRadius: 999,
-              fontSize: 11,
-              fontWeight: 800,
-              color: backup.color,
-              background: backup.bg,
-              border: `1px solid ${backup.border}`,
-            }}
-          >
-            {backup.label}
-          </span>
-        </button>
+            )
+          }
+          label="백업"
+          desc={`마지막 백업 · ${backup.detail}`}
+          statusLabel={backup.label}
+          meta={backup}
+          onClick={() => router?.push?.('/settings/backup')}
+        />
       </div>
     </div>
   );

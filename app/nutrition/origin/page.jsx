@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useMounted } from '@/hooks/useMounted';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -25,6 +25,7 @@ import { OriginTablePanel } from './OriginTablePanel';
 
 const EMPTY_MENU_MAP = new Map();
 const asMenuMap = value => (value instanceof Map ? value : EMPTY_MENU_MAP);
+const VISIBILITY_REFRESH_MIN_MS = 60 * 1000;
 
 /**
  * 원산지 정보 페이지 — 자동 집계 뷰
@@ -48,42 +49,57 @@ export default function Page() {
   const [menuNameEditOpen, setMenuNameEditOpen] = useState(false);
   const [menuNameOverrides, setMenuNameOverrides] = useState(() => loadMenuNames());
   const mountedRef = useMounted();
+  const lastLoadedAtRef = useRef(0);
+  const loadingRef = useRef(false);
 
   useEffect(() => {
     setMenuOrder(loadOrder(MENU_ORDER_KEY));
   }, []);
 
-  const load = useCallback(async () => {
-    await initDB();
-    const [ings, masters, groups, edges, recipeArrays] = await Promise.all([
-      getAllIngredients(),
-      getAllMenuMaster(),
-      getAllRecipeGroups(),
-      getAllEdges(),
-      loadMenuRecipeArrays(),
-    ]);
-    if (!mountedRef.current) return;
-    const safeIngredients = asObjectArray(ings);
-    const safeMenuMasters = asObjectArray(masters);
-    const safeGroups = asObjectArray(groups);
-    const safeEdges = asObjectArray(edges);
-    const detailRecipes = tagDetailRecipes(
-      asObjectArray(recipeArrays.pizza),
-      asObjectArray(recipeArrays.personal),
-      asObjectArray(recipeArrays.side),
-      asObjectArray(recipeArrays.set)
-    );
-    setIngredients(safeIngredients);
-    setMenuMasters(safeMenuMasters);
-    setMapData(
-      buildIngredientMenuMap({
-        menuMasters: safeMenuMasters,
-        detailRecipes,
-        groups: safeGroups,
-        edges: safeEdges,
-      })
-    );
-  }, [mountedRef]);
+  const load = useCallback(
+    async ({ skipIfFresh = false } = {}) => {
+      if (loadingRef.current) return;
+      const now = Date.now();
+      if (skipIfFresh && now - lastLoadedAtRef.current < VISIBILITY_REFRESH_MIN_MS) return;
+
+      loadingRef.current = true;
+      try {
+        await initDB();
+        const [ings, masters, groups, edges, recipeArrays] = await Promise.all([
+          getAllIngredients(),
+          getAllMenuMaster(),
+          getAllRecipeGroups(),
+          getAllEdges(),
+          loadMenuRecipeArrays(),
+        ]);
+        if (!mountedRef.current) return;
+        const safeIngredients = asObjectArray(ings);
+        const safeMenuMasters = asObjectArray(masters);
+        const safeGroups = asObjectArray(groups);
+        const safeEdges = asObjectArray(edges);
+        const detailRecipes = tagDetailRecipes(
+          asObjectArray(recipeArrays.pizza),
+          asObjectArray(recipeArrays.personal),
+          asObjectArray(recipeArrays.side),
+          asObjectArray(recipeArrays.set)
+        );
+        setIngredients(safeIngredients);
+        setMenuMasters(safeMenuMasters);
+        setMapData(
+          buildIngredientMenuMap({
+            menuMasters: safeMenuMasters,
+            detailRecipes,
+            groups: safeGroups,
+            edges: safeEdges,
+          })
+        );
+        lastLoadedAtRef.current = Date.now();
+      } finally {
+        loadingRef.current = false;
+      }
+    },
+    [mountedRef]
+  );
 
   useEffect(() => {
     load()
@@ -94,7 +110,7 @@ export default function Page() {
         if (mountedRef.current) setLoading(false);
       });
   }, [load, mountedRef]);
-  useVisibilityRefresh(load);
+  useVisibilityRefresh(() => load({ skipIfFresh: true }));
 
   // 원산지 있는 식자재만 (미표시대상은 토글에 따라 포함/제외)
   const originIngredients = useMemo(

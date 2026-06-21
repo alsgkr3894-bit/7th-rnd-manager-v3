@@ -4,6 +4,10 @@ import { resolve } from 'path';
 
 const systemSrc = readFileSync(resolve('app/settings/system/page.jsx'), 'utf8');
 const systemUISrc = readFileSync(resolve('app/settings/system/_SystemSettingsUI.jsx'), 'utf8');
+const systemPrimitivesSrc = readFileSync(
+  resolve('app/settings/system/_system-settings/primitives.jsx'),
+  'utf8'
+);
 const accountSrc = readFileSync(resolve('app/settings/account/page.jsx'), 'utf8');
 const accountUISrc = readFileSync(resolve('app/settings/account/_AccountSettingsUI.jsx'), 'utf8');
 
@@ -247,14 +251,15 @@ describe('중위험 페이지·훅 useDBLoad 적용', () => {
   });
 
   test('settings/system _SystemSettingsUI가 8개 컴포넌트를 모두 export한다', () => {
-    expect(systemUISrc).toContain('export function SettingsGroup');
-    expect(systemUISrc).toContain('export function SettingsRow');
-    expect(systemUISrc).toContain('export function Segmented');
-    expect(systemUISrc).toContain('export function StaticValue');
-    expect(systemUISrc).toContain('export function StatusValue');
-    expect(systemUISrc).toContain('export function DangerConfirm');
-    expect(systemUISrc).toContain('export function InfoCell');
-    expect(systemUISrc).toContain('export function StorageUsageBar');
+    expect(systemUISrc).toContain("from './_system-settings/primitives'");
+    expect(systemPrimitivesSrc).toContain('export function SettingsGroup');
+    expect(systemPrimitivesSrc).toContain('export function SettingsRow');
+    expect(systemPrimitivesSrc).toContain('export function Segmented');
+    expect(systemPrimitivesSrc).toContain('export function StaticValue');
+    expect(systemPrimitivesSrc).toContain('export function StatusValue');
+    expect(systemPrimitivesSrc).toContain('export function DangerConfirm');
+    expect(systemPrimitivesSrc).toContain('export function InfoCell');
+    expect(systemPrimitivesSrc).toContain('export function StorageUsageBar');
   });
 
   test('settings/account page가 _AccountSettingsUI에서 4개 컴포넌트를 import하고 인라인 JSX를 제거했다', () => {
@@ -268,6 +273,13 @@ describe('중위험 페이지·훅 useDBLoad 적용', () => {
     expect(accountSrc).not.toContain('PERMISSIONS');
     // ROLE_COLORS는 UI 파일로 이동됨
     expect(accountSrc).not.toContain('ROLE_COLORS');
+  });
+
+  test('settings/account 삭제 확인 대상이 사라지면 confirm 상태를 닫는다', () => {
+    expect(accountSrc).toContain('deleteConfirmId == null');
+    expect(accountSrc).toContain('!accounts.some(account => account.id === deleteConfirmId)');
+    expect(accountSrc).toContain('setDeleteConfirmId(null)');
+    expect(accountSrc).toContain('"undefined 계정 삭제" 표시를 막고 닫는다');
   });
 
   test('settings/account _AccountSettingsUI가 4개 컴포넌트를 모두 export한다', () => {

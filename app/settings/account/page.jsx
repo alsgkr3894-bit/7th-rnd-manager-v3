@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { getProfile, setProfile } from '@/lib/profile';
@@ -50,16 +50,21 @@ export default function Page() {
     },
     { initialData: null, onError: err => console.error('[account] 계정 로드 실패', err) }
   );
-  const accounts = accountData?.accounts ?? [];
-  useEffect(() => {
-    if (accountData?.activeId !== undefined) setActiveId(accountData.activeId);
-  }, [accountData?.activeId]);
-
   const [newAccForm, setNewAccForm] = useState({ name: '', email: '', role: 'viewer' });
   const [addingAccount, setAddingAccount] = useState(false);
   const [addingBusy, setAddingBusy] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [confirmClearPin, setConfirmClearPin] = useState(false);
+  const accounts = useMemo(() => accountData?.accounts ?? [], [accountData]);
+  useEffect(() => {
+    if (accountData?.activeId !== undefined) setActiveId(accountData.activeId);
+  }, [accountData?.activeId]);
+  useEffect(() => {
+    if (deleteConfirmId == null) return;
+    if (!accounts.some(account => account.id === deleteConfirmId)) {
+      setDeleteConfirmId(null);
+    }
+  }, [accounts, deleteConfirmId]);
 
   const { hasPin, setPin: savePin } = useSettingsAuth();
   const [pinInput, setPinInput] = useState('');
@@ -277,28 +282,34 @@ export default function Page() {
 
       <AccountPermissionsMatrix />
 
-      {deleteConfirmId != null && (
-        <ConfirmDialog
-          open
-          message={`"${accounts.find(a => a.id === deleteConfirmId)?.name}" 계정을 삭제합니다. 되돌릴 수 없습니다.`}
-          danger
-          onConfirm={async () => {
-            setDeleteConfirmId(null);
-            try {
-              await deleteAccount(deleteConfirmId);
-              if (deleteConfirmId === activeId) {
-                const remaining = accounts.filter(a => a.id !== deleteConfirmId);
-                setActiveAccountId(remaining[0]?.id ?? null);
+      {(() => {
+        if (deleteConfirmId == null) return null;
+        // 대상 계정이 (다른 탭/경합으로) 사라졌으면 "undefined 계정 삭제" 표시를 막고 닫는다.
+        const target = accounts.find(a => a.id === deleteConfirmId);
+        if (!target) return null;
+        return (
+          <ConfirmDialog
+            open
+            message={`"${target.name}" 계정을 삭제합니다. 되돌릴 수 없습니다.`}
+            danger
+            onConfirm={async () => {
+              setDeleteConfirmId(null);
+              try {
+                await deleteAccount(deleteConfirmId);
+                if (deleteConfirmId === activeId) {
+                  const remaining = accounts.filter(a => a.id !== deleteConfirmId);
+                  setActiveAccountId(remaining[0]?.id ?? null);
+                }
+                reloadAccounts();
+                showToast('계정 삭제됨', 'ok');
+              } catch (err) {
+                showToast('실패: ' + err.message, 'error');
               }
-              reloadAccounts();
-              showToast('계정 삭제됨', 'ok');
-            } catch (err) {
-              showToast('실패: ' + err.message, 'error');
-            }
-          }}
-          onCancel={() => setDeleteConfirmId(null)}
-        />
-      )}
+            }}
+            onCancel={() => setDeleteConfirmId(null)}
+          />
+        );
+      })()}
       {confirmClearPin && (
         <ConfirmDialog
           open

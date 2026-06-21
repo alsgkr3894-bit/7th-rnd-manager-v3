@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { getAllNotes } from '@/lib/note';
+import { getAllNotesCached } from '@/lib/note';
 import { getNoteDetailStats } from '@/lib/stats/note-stats';
 import { useMounted } from '@/hooks/useMounted';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
@@ -15,7 +15,7 @@ export function useNoteListData() {
 
   const load = useCallback(async () => {
     await initDB();
-    const [data, nextStats] = await Promise.all([getAllNotes(), getNoteDetailStats()]);
+    const [data, nextStats] = await Promise.all([getAllNotesCached(), getNoteDetailStats()]);
     if (!mountedRef.current) return;
     setNotes(data);
     setStats(nextStats);

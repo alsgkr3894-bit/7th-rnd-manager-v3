@@ -1,10 +1,10 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { INGREDIENT_MASTER_SEED } from '@/lib/ingredient';
+import { INGREDIENT_MASTER_SEED, previewIngredientDelete } from '@/lib/ingredient';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 import { useBatchSelection } from '@/hooks/useBatchSelection';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -82,10 +82,13 @@ export default function Page() {
         window.history.replaceState(null, '', url);
       }
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // setView(useCallback)·setCatFilter(useState setter) 모두 안정적 참조 → 사실상 mount 1회 실행.
+  }, [setView, setCatFilter]);
 
   const [formTarget, setFormTarget] = useState(null);
   const [deletePending, setDeletePending] = useState(null);
+  const [deletePreview, setDeletePreview] = useState(null);
+  const deletePreviewRequestRef = useRef(0);
   const [seeding, setSeeding] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -125,6 +128,30 @@ export default function Page() {
   useEffect(() => {
     clearSelection();
   }, [debouncedSearch, clearSelection]);
+
+  useEffect(() => {
+    if (!deletePending) {
+      deletePreviewRequestRef.current += 1;
+      setDeletePreview(null);
+    }
+  }, [deletePending]);
+
+  const handleDeleteStart = useCallback(async row => {
+    const requestId = deletePreviewRequestRef.current + 1;
+    deletePreviewRequestRef.current = requestId;
+    setDeletePending(row);
+    setDeletePreview(null);
+    if (row?.id && row?.isManual && !row?.productCode) {
+      try {
+        const preview = await previewIngredientDelete(row.id);
+        if (deletePreviewRequestRef.current === requestId) {
+          setDeletePreview(preview?.ingredient?.id === row.id ? preview : null);
+        }
+      } catch {
+        // preview 실패는 삭제 흐름에 영향 없음
+      }
+    }
+  }, []);
 
   const {
     handleSeed,
@@ -345,9 +372,10 @@ export default function Page() {
           selected={selected}
           toggleSelect={toggleSelect}
           deletePending={deletePending}
+          deletePreview={deletePreview}
           onEdit={setFormTarget}
           onCopy={row => setFormTarget({ __copyFrom: row })}
-          onDeleteStart={setDeletePending}
+          onDeleteStart={handleDeleteStart}
           onDeleteCancel={handleDeleteCancel}
           onDeleteConfirm={handleExclude}
           onRestore={handleRestore}

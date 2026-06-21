@@ -1,4 +1,8 @@
+'use client';
+
 import { FilterBar } from '@/components/ui/PageHeader';
+import { Pagination } from '@/components/ui/Pagination';
+import { usePagination } from '@/hooks/usePagination';
 import { ManageRow } from '@/components/ingredient/ManageRow';
 import {
   DISCONTINUED_FILTER,
@@ -6,6 +10,8 @@ import {
   UNCATEGORIZED_FILTER,
 } from '@/lib/ingredient/constants';
 import { getCategoryStyle } from '@/lib/ingredient';
+
+const PAGE_SIZE = 60;
 
 export function IngredientManagePanel({
   rows,
@@ -29,6 +35,7 @@ export function IngredientManagePanel({
   selected,
   toggleSelect,
   deletePending,
+  deletePreview,
   onEdit,
   onCopy,
   onDeleteStart,
@@ -36,6 +43,7 @@ export function IngredientManagePanel({
   onDeleteConfirm,
   onRestore,
 }) {
+  const { page, goTo, totalPages, paged, total } = usePagination(filtered, PAGE_SIZE);
   return (
     <>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -160,7 +168,7 @@ export function IngredientManagePanel({
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((row, index) => {
+                {paged.map((row, index) => {
                   const rowKey = `${row.productCode ?? row.id ?? 'm'}-${index}`;
                   const isPending = row.isManual
                     ? deletePending?.isManual && deletePending?.id === row.id
@@ -170,6 +178,7 @@ export function IngredientManagePanel({
                       key={rowKey}
                       r={row}
                       deletePending={isPending}
+                      deletePreview={isPending ? deletePreview : null}
                       onEdit={() => onEdit(row)}
                       onCopy={() => onCopy(row)}
                       onDeleteStart={() => onDeleteStart(row)}
@@ -186,15 +195,23 @@ export function IngredientManagePanel({
             </table>
           </div>
         )}
-        <div
-          style={{
-            padding: '8px 16px',
-            fontSize: 11,
-            color: 'var(--text-3)',
-            borderTop: '1px solid var(--divider)',
-          }}
-        >
-          {filtered.length}개 표시 / 전체 {rows.length}개 · 관리 중 {managedCount}개
+        <div style={{ borderTop: '1px solid var(--divider)' }}>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPage={goTo}
+            total={total}
+            pageSize={PAGE_SIZE}
+          />
+          <div
+            style={{
+              padding: '8px 16px',
+              fontSize: 11,
+              color: 'var(--text-3)',
+            }}
+          >
+            {filtered.length}개 표시 / 전체 {rows.length}개 · 관리 중 {managedCount}개
+          </div>
         </div>
       </div>
     </>

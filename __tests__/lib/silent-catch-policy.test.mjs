@@ -342,8 +342,8 @@ describe('silent catch policy', () => {
       "showToast('실행취소 실패: ' + err.message, 'error')"
     );
 
-    expect(restoreSource).toContain('errors?.length > 0');
-    expect(restoreSource).toContain("console.warn('[Restore] 일부 실패:', errors)");
+    expect(restoreSource).toContain('realErrors.length > 0');
+    expect(restoreSource).toContain("console.warn('[Restore] 일부 실패:', restoreErrors)");
 
     expect(backupSource).toContain('localStorageErrors');
     expect(backupSource).toContain("store: 'localStorage'");

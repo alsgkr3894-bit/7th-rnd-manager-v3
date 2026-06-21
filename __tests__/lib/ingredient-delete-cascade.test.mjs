@@ -20,6 +20,9 @@ function dbHasStore(name) {
   return name in stores;
 }
 
+// 트랜잭션 내 getAll() 요청 큐 — work() 종료 후 onsuccess를 flush해 IDB 요청 수명을 흉내낸다.
+let pendingGetAll = [];
+
 function makeObjectStore(storeName) {
   return {
     delete(id) {
@@ -33,11 +36,18 @@ function makeObjectStore(storeName) {
     add(record) {
       stores[storeName].push(record);
     },
+    getAll() {
+      // 실제 IDB처럼 호출 시점 스냅샷을 담은 요청 객체를 반환한다.
+      const req = { result: [...storeRows(storeName)], onsuccess: null, onerror: null };
+      pendingGetAll.push(req);
+      return req;
+    },
   };
 }
 
 function dbRunTransaction(storeNames, mode, work) {
   const nameList = Array.isArray(storeNames) ? storeNames : [storeNames];
+  pendingGetAll = [];
   const tx = {
     objectStore(name) {
       if (!nameList.includes(name)) throw new Error(`unexpected store: ${name}`);
@@ -45,6 +55,11 @@ function dbRunTransaction(storeNames, mode, work) {
     },
   };
   work(tx);
+  // work()가 등록한 getAll 요청의 onsuccess를 순서대로 실행(트랜잭션 완료 전 단계).
+  while (pendingGetAll.length) {
+    const req = pendingGetAll.shift();
+    req.onsuccess?.();
+  }
   return Promise.resolve();
 }
 

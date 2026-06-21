@@ -14,5 +14,13 @@ describe('brand restore preview guards', () => {
     expect(source).toContain('summary.failedStores');
     expect(source).toContain('불완전 백업 위험 승인');
     expect(source).toContain('누락 감수하고 복원');
+    expect(source).toContain('checkFileSize(file, UPLOAD_MAX_MB.backup)');
+  });
+
+  test('브랜드 복원은 공유 store 보호 skip을 실제 오류와 분리한다', () => {
+    expect(source).toContain("const SHARED_SKIP_STORE = '__shared_skipped__'");
+    expect(source).toContain('realErrors');
+    expect(source).toContain('sharedSkip');
+    expect(source).toContain('공유 store는 7번가 보호로 건너뜀');
   });
 });

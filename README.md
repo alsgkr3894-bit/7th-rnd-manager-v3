@@ -43,12 +43,22 @@ npm run build:clean
 # 스모크 QA — dev 서버(localhost:3000)가 떠 있는 상태에서 실행
 npm run qa:smoke
 
-# 전체 라우트 런타임 QA (63개 정적 라우트)
+# 모바일 QA — 390px viewport 가로 스크롤/레이아웃 검사
+npm run qa:mobile
+
+# 전체 라우트 런타임 QA (67개 라우트)
 npm run qa:runtime
+
+# dev 서버 전체 QA — smoke → mobile → runtime → workflow
+npm run qa:full
+
+# 프로덕션 빌드 전체 QA — build → start → smoke → mobile → runtime → workflow
+npm run qa:prod
 ```
 
 `qa:smoke`는 대표 라우트를 순회하며 제목(h1)·`main`·콘솔 에러·가로 스크롤·에러 문구를 검사합니다.
 데이터 변경(업로드·저장·복원·초기화)은 실행하지 않습니다.
+`qa:full`은 dev 서버가 이미 떠 있는 상태에서 전체 QA를 묶어 실행하고, `qa:prod`는 clean build 후 production 서버를 띄워 같은 QA 매트릭스를 실행합니다.
 
 ---
 

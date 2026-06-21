@@ -2,8 +2,19 @@
 import { useState, useRef } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
-import { downloadCsv, readFileAsText, readFileAsArrayBuffer } from '@/lib/download';
-import { UPLOAD_MAX_MB } from '@/lib/upload-policy';
+import {
+  downloadCsv,
+  downloadFailedRows,
+  readFileAsText,
+  readFileAsArrayBuffer,
+} from '@/lib/download';
+import {
+  UPLOAD_EXT,
+  UPLOAD_MAX_MB,
+  checkFileExt,
+  checkFileSize,
+  parseErrorMsg,
+} from '@/lib/upload-policy';
 import { readCsvFile, readExcelFile } from '@/lib/excel';
 import { formatNumber } from '@/lib/format';
 import { buildTemplateRows, parseMenuPriceRows, replaceAllMenuPrices } from '@/lib/cost/menu-price';
@@ -33,12 +44,14 @@ export function MenuPriceUploadCard({ onReplaced }) {
     const file = e.target.files?.[0];
     e.target.value = ''; // 같은 파일 재선택 가능하게
     if (!file) return;
-    if (file.size === 0) {
-      showToast('파일이 비어 있습니다', 'error');
+    const sizeErr = checkFileSize(file, UPLOAD_MAX_MB.excel);
+    if (sizeErr) {
+      showToast(sizeErr, 'error');
       return;
     }
-    if (file.size > UPLOAD_MAX_MB.excel * 1024 * 1024) {
-      showToast(`파일이 너무 큽니다 (최대 ${UPLOAD_MAX_MB.excel}MB)`, 'error');
+    const extErr = checkFileExt(file, UPLOAD_EXT.excelOrCsv);
+    if (extErr) {
+      showToast(extErr, 'error');
       return;
     }
     try {
@@ -51,7 +64,7 @@ export function MenuPriceUploadCard({ onReplaced }) {
         const buf = await readFileAsArrayBuffer(file, ['.xlsx', '.xls']);
         parsed = await readExcelFile(buf);
       } else {
-        showToast('CSV 또는 엑셀(.xlsx, .xls) 파일만 지원합니다', 'error');
+        showToast(checkFileExt(file, UPLOAD_EXT.excelOrCsv) || '파일 형식 오류', 'error');
         return;
       }
       const { headers, rows } = parsed;
@@ -62,7 +75,7 @@ export function MenuPriceUploadCard({ onReplaced }) {
       }
       setPreview({ ...result, fileName: file.name });
     } catch (err) {
-      showToast('파일 읽기 실패: ' + (err?.message || err), 'error');
+      showToast(parseErrorMsg(err), 'error');
     }
   }
 
@@ -214,7 +227,33 @@ export function MenuPriceUploadCard({ onReplaced }) {
 
           {preview.failed.length > 0 && (
             <div style={{ marginTop: 10, fontSize: 12, color: 'var(--warn)' }}>
-              <div style={{ fontWeight: 600, marginBottom: 4 }}>오류 행 (반영 제외):</div>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontWeight: 600,
+                  marginBottom: 4,
+                }}
+              >
+                <span>오류 행 (반영 제외):</span>
+                <button
+                  className="btn xs"
+                  style={{ fontWeight: 400 }}
+                  onClick={() =>
+                    downloadFailedRows(
+                      preview.failed.map(f => ({
+                        행번호: f.rowIndex,
+                        사유: f.reason,
+                        메뉴명: f.menuName || '',
+                      })),
+                      '메뉴판매가_오류행.csv'
+                    )
+                  }
+                >
+                  <Icon.download style={{ width: 11, height: 11 }} /> CSV
+                </button>
+              </div>
               {preview.failed.slice(0, 5).map((f, i) => (
                 <div key={i}>
                   · {f.rowIndex}행 — {f.reason}

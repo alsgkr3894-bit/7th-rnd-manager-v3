@@ -3,6 +3,7 @@ import { Icon } from '@/components/icons';
 export function ManageRowActionCell({
   excluded,
   deletePending,
+  deletePreview,
   isManual,
   productCode,
   onCopy,
@@ -18,17 +19,24 @@ export function ManageRowActionCell({
           복원
         </button>
       ) : deletePending ? (
-        <span style={{ display: 'flex', gap: 3 }}>
-          <button
-            className="btn sm"
-            style={{ background: 'var(--negative)', color: '#fff', border: 'none', fontSize: 11 }}
-            onClick={onDeleteConfirm}
-          >
-            {isManual && !productCode ? '삭제' : '숨김'}
-          </button>
-          <button className="btn sm" style={{ fontSize: 11 }} onClick={onDeleteCancel}>
-            취소
-          </button>
+        <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <span style={{ display: 'flex', gap: 3 }}>
+            <button
+              className="btn sm"
+              style={{ background: 'var(--negative)', color: '#fff', border: 'none', fontSize: 11 }}
+              onClick={onDeleteConfirm}
+            >
+              {isManual && !productCode ? '삭제' : '숨김'}
+            </button>
+            <button className="btn sm" style={{ fontSize: 11 }} onClick={onDeleteCancel}>
+              취소
+            </button>
+          </span>
+          {deletePreview?.allergenLinkCount > 0 && (
+            <span style={{ fontSize: 10, color: 'var(--negative)' }}>
+              알레르기 링크 {deletePreview.allergenLinkCount}건도 삭제됩니다
+            </span>
+          )}
         </span>
       ) : (
         <span style={{ display: 'inline-flex', gap: 3 }}>

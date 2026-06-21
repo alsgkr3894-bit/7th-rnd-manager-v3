@@ -14,10 +14,10 @@
 |---|---|
 | `npm run format:check` | ✅ 통과 |
 | `npm run lint` | ✅ 통과 (`No ESLint warnings or errors`) |
-| `npm run audit:docs` | ✅ 통과 (SITE_STATUS.md 수치 277/250 갱신 포함) |
-| `npm run test:ci` | ✅ **277 suites / 1571 tests** all-pass |
+| `npm run audit:docs` | ✅ 통과 (SITE_STATUS.md 수치 278/251 갱신 포함) |
+| `npm run test:ci` | ✅ **278 suites / 1582 tests** all-pass |
 
-SITE_STATUS.md `testTotal` 276→277, `testLib` 249→250으로 갱신 (백업/복원 리허설 테스트 파일 추가 반영).
+SITE_STATUS.md `testTotal` 276→278, `testLib` 249→251으로 갱신 (백업/복원 리허설·노트 캐시 테스트 파일 추가 반영).
 
 ---
 
@@ -101,7 +101,7 @@ SITE_STATUS.md `testTotal` 276→277, `testLib` 249→250으로 갱신 (백업/�
 | `app/note/sample/_SampleFormBody.jsx` | `file.size > 5 * 1024 * 1024` | `checkFileSize(file, UPLOAD_MAX_MB.photo)` |
 | `hooks/useRestoreFile.js` | `file.size > 500 * 1024 * 1024` | `checkFileSize(file, UPLOAD_MAX_MB.backup)` |
 
-수정 후 `lint` 통과, `test:ci` **277 suites / 1571 tests** all-pass 확인.
+수정 후 `lint` 통과, `test:ci` **278 suites / 1582 tests** all-pass 확인.
 
 ---
 
@@ -143,7 +143,7 @@ SITE_STATUS.md `testTotal` 276→277, `testLib` 249→250으로 갱신 (백업/�
 - `npm run format:check` 통과
 - `npm run lint` 통과
 - `npm run audit:docs` 통과
-- `npm run test:ci` 최근 전체 기준선 통과: **277 suites / 1571 tests**
+- `npm run test:ci` 최근 전체 기준선 통과: **278 suites / 1582 tests**
 - `npm run qa:smoke` 통과: 22/22
 - `npm run qa:mobile` 통과: 22/22, 390px viewport
 - `npm run qa:workflow` 기준: 16시나리오
@@ -197,7 +197,7 @@ SITE_STATUS.md `testTotal` 276→277, `testLib` 249→250으로 갱신 (백업/�
 | 6 | 백업 JSON | 현재 가장 좋은 마이그레이션 원본 | 백업 JSON → 서버 DB import 스크립트를 먼저 만든 뒤 실데이터로 리허설 |
 | 7 | Repository 경계 | 도메인 store가 `lib/db` facade를 통해 IndexedDB 접근 | 기존 `lib/*/store.js` public API를 유지하고 내부 adapter만 교체하는 전략 권장 |
 | 8 | 동기화 방식 | 로컬 단일 source | 한 번에 서버 전환할지, 읽기 서버/쓰기 로컬 병행 기간을 둘지 결정 |
-| 9 | QA 기준 | Jest/qa:full/qa:prod 보유 | DB 전환 후 같은 277 suites + workflow QA + backup/restore QA가 통과해야 함 |
+| 9 | QA 기준 | Jest/qa:full/qa:prod 보유 | DB 전환 후 같은 278 suites + workflow QA + backup/restore QA가 통과해야 함 |
 
 #### DB 구축 착수 전 완료 조건
 
@@ -589,7 +589,7 @@ Codex 검토:
 - `npm run format:check` ✅
 - `npx next lint --quiet` ✅
 - `npm run audit:docs` ✅
-- `npm run test:ci` ✅ 277 suites / 1571 tests
+- `npm run test:ci` ✅ 278 suites / 1582 tests
 - import cycle 간이 탐색: 실제 상호참조 cycle 없음. barrel/index 자기 참조성 노이즈만 탐지.
 
 ### P0. 즉시 막아야 할 항목
@@ -613,9 +613,9 @@ Codex 검토:
 | --- | --- | --- |
 | hook dependency 예외 | `react-hooks/exhaustive-deps` 예외 11건 존재 | 기존 의도가 맞는지 1회 재감사하고 allowlist/테스트로 고정 |
 | 외부 IP 조회 | `lib/session.js`가 버튼 실행 시 `api.ipify.org`를 호출 | 서버 DB 이후에는 서버 세션 IP로 대체하거나 기능 제거/옵션화 |
-| fetch timeout 정리 | `fetchClientIP()`는 성공 경로에서만 timeout을 clear함 | `finally`에서 `clearTimeout(timer)` 처리로 미세 누수 제거 |
+| fetch timeout 정리 | 재확인 결과 `fetchClientIP()`는 `finally`에서 `clearTimeout(timer)` 처리됨 | 추가 작업 없음 |
 | silent catch | 빈 catch 42건은 대부분 allowlist 정책 안에 있음 | 신규 빈 catch가 늘지 않도록 `silent-catch-policy.test.mjs` 유지 |
-| 파일 업로드 정책 | 사진/브랜드 JSON 일부는 공통 dropzone보다 자체 처리 비중이 큼 | `upload-policy` 적용 범위를 사진/브랜드 import까지 확대 검토 |
+| 파일 업로드 정책 | 브랜드 복원 JSON 크기 제한이 빠져 있었음 | `checkFileSize(file, UPLOAD_MAX_MB.backup)` 추가 완료. 사진은 `resizePhoto()`의 5MB 가드 유지 |
 
 ### P3. 분리작업 후보
 
@@ -634,6 +634,52 @@ Codex 검토:
 - 큰 데이터에서 반복 계산이 생길 수 있는 후보는 식자재 관리의 `existingProductCodes={rows.filter(...).map(...)}`와 진단/레시피 테이블의 렌더 중 `map/filter/sort`이다.
 - 이미 `perf-large-dataset`, 드롭다운 성능, QA 스크립트가 존재하므로 급한 병목은 없다.
 - 서버 DB 전환 후에는 `getAll()` 전체 로드 페이지를 우선적으로 pagination/query 방식으로 바꾸는 것이 가장 효과가 크다.
+
+## 3-B. 첨부 P0/P1/P2 백로그 재검증 (2026-06-22)
+
+첨부 백로그 기준으로 다시 코드 확인했다. 대부분 이미 구현되어 있었고, 남은 저위험 성능 보완 1건만 추가 적용했다.
+
+### P0 데이터 손상/충돌
+
+| 항목 | 상태 | 확인 내용 |
+| --- | --- | --- |
+| P0-1 업로드 중복 TOCTOU | ✅ 완료 | `savePriceUpload`, `saveShipmentUpload`가 트랜잭션 내부에서 날짜/해시 중복 재확인 후 중복이면 abort |
+| P0-2 replaceStores put 실패 롤백 | ✅ 완료 | `replaceStoresInDbTransaction`의 `clear()`/`put()` 요청에 `onerror -> tx.abort()` 연결 |
+| P0-3 복원 부분 실패 | ✅ 완료 | 그룹 실패 시 이후 그룹 중단, `__partial__` 오류 반환, restore UI에서 강한 경고 toast 노출 |
+| P0-4 식자재 일괄 삭제 부분 실패 | ✅ 완료 | `{ removed, failures }` 반환, `buildBulkDeleteToast`로 실패 건수 노출 |
+| P0-5 메뉴마스터 삭제 cascade gap | ✅ 완료 | cascade 대상 store를 같은 transaction에 포함하고 transaction 내부에서 menuCode 재조회/삭제 |
+| P0-6 마진 edge 필터 | ✅ 완료 | `derived||` id prefix 가드 후 edge id 비교 |
+| P0-7 브랜드 복원 JSON 에러 | ✅ 완료 | `JSON.parse` 별도 try/catch와 브랜드 복원 JSON 크기 제한 적용 |
+
+### P1 반응속도
+
+| 항목 | 상태 | 확인 내용 |
+| --- | --- | --- |
+| P1-1 식자재 관리 페이지네이션 | ✅ 완료 | `IngredientManagePanel`에 `usePagination`, `PAGE_SIZE=60`, `Pagination` 적용 |
+| P1-2 영양 결과 페이지네이션 | ✅ 완료 | `TabResults`에 `usePagination`, `PAGE_SIZE=100`, 페이지 단위 그룹 헤더 적용 |
+| P1-3 원산지 페이지 | ✅ 추가 보완 | `OriginTablePanel` 페이지네이션 완료 상태 확인. 추가로 visibility 복귀 시 60초 이내 중복 reload를 스킵하는 freshness 가드 적용 |
+| P1-4 note 전체 스캔 중복 | ⏳ 보류 | 전역 캐시/무효화 복잡도가 있어 서버 DB query 전환 시 재검토 |
+
+### P2 분리
+
+| 항목 | 상태 | 확인 내용 |
+| --- | --- | --- |
+| P2-1 IngredientDiagnostics 배너 분리 | ✅ 완료 | `app/ingredient/manage/diagnostics/*`로 배너와 `CleanupChip` 분리 |
+| P2-2 MenuRecipeComponentsTable 행/셀 분리 | ✅ 완료 | `components/menu-master/recipe/*`로 row/suggestion/unit price cell 분리 |
+| P2-3 그 외 400줄+ 파일 | ⏳ 보류 | 서버 DB 전환/인증 전환 뒤 query·adapter 기준으로 자연 분리 권장 |
+
+### 이번 재검증 결과
+
+| 검사 | 결과 | 메모 |
+| --- | --- | --- |
+| `npm run format:check` | ✅ 통과 | 전체 Prettier 스타일 일치 |
+| `npx next lint --quiet` | ✅ 통과 | ESLint warning/error 없음 |
+| `npm run audit:docs` | ✅ 통과 | `SITE_STATUS.md` 수치와 코드 수치 일치 |
+| `git diff --check` | ✅ 통과 | whitespace error 없음 |
+| targeted Jest | ✅ 통과 | origin/visibility/restore/brand restore 관련 5 suites, 22 tests |
+| `npm run test:ci` | ✅ 통과 | 278 suites / 1582 tests |
+| `npm run qa:full` | ✅ 통과 | smoke 22/22, mobile 22/22, runtime 67/67, workflow 16/16 |
+| `npm run build:clean` | ⏸ 보류 | 포트 3000 dev 서버 실행 중이라 스크립트 안전장치가 빌드를 중단. 서버 종료 후 재실행 필요 |
 
 ## 4. 권장 커밋 단위
 

@@ -13,6 +13,7 @@ import { HomeGreetingBar } from '@/components/home/HomeGreetingBar';
 import { HomePeriodNav } from '@/components/home/HomePeriodNav';
 import { HomeDashboardRows } from '@/components/home/HomeDashboardRows';
 import { WidgetConfigModal } from '@/components/home/WidgetConfigModal';
+import { buildGreetingSubline } from '@/components/home/buildGreetingSubline';
 import { useWidgetConfig } from '@/hooks/useWidgetConfig';
 import { useSettingValue } from '@/hooks/useSettingValue';
 import { addNote } from '@/lib/note';
@@ -185,63 +186,14 @@ export default function HomePage() {
     isMain && uploadFreshness?.shipment?.stale && '출고량',
     isMain && uploadFreshness?.price?.stale && '단가',
   ].filter(Boolean);
-  const greetSub = (() => {
-    const hasTodos = todos.length > 0;
-    const hasAlert = alertCount > 0;
-    const hasUnmatched = openIssueCount > 0;
-    const hasNoPrice = noPriceCount > 0;
-    const hasStale = staleModules.length > 0;
-    const hasBackup = backupReminder?.stale;
-    if (!hasTodos && !hasAlert && !hasUnmatched && !hasNoPrice && !hasStale && !hasBackup)
-      return '오늘도 좋은 하루 보내세요.';
-    const parts = [];
-    if (hasTodos)
-      parts.push(
-        <>
-          오늘 할 일 <b>{todos.length}건</b>
-        </>
-      );
-    if (hasAlert)
-      parts.push(
-        <>
-          원가율 경보 <b>{alertCount}건</b>
-        </>
-      );
-    if (hasUnmatched)
-      parts.push(
-        <>
-          미매칭 <b>{openIssueCount}건</b>
-        </>
-      );
-    if (hasNoPrice)
-      parts.push(
-        <>
-          단가없음 <b>{noPriceCount}개</b>
-        </>
-      );
-    if (hasStale)
-      parts.push(
-        <>
-          <b>{staleModules.join('·')}</b> 미업로드
-        </>
-      );
-    if (hasBackup)
-      parts.push(
-        <>{backupReminder.never ? '백업 이력 없음' : `${backupReminder.daysSince}일 전 백업`}</>
-      );
-    const hasActionable = hasTodos || hasAlert || hasUnmatched;
-    return (
-      <>
-        {parts.map((part, i) => (
-          <span key={i}>
-            {i > 0 ? ' · ' : ''}
-            {part}
-          </span>
-        ))}
-        {hasActionable ? '이 있어요.' : '.'}
-      </>
-    );
-  })();
+  const greetSub = buildGreetingSubline({
+    todosCount: todos.length,
+    alertCount,
+    openIssueCount,
+    noPriceCount,
+    staleModules,
+    backupReminder,
+  });
 
   // 표시 여부 (데이터 없으면 null 반환하는 위젯은 미리 거른다)
   const showUnmatched = unmatchedAlertEnabled && isVisible('unmatched') && openIssueCount > 0;

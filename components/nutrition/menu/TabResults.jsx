@@ -1,10 +1,16 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { Icon } from '@/components/icons';
+import { Pagination } from '@/components/ui/Pagination';
+import { usePagination } from '@/hooks/usePagination';
+import { NutritionResultRow } from './NutritionResultRow';
+import { ResultsToolbar } from './ResultsToolbar';
 import { NUTRITION_FIELDS, calcAllResults } from '@/lib/nutrition/values/store';
 import { downloadCsv } from '@/lib/download';
 import { resolveNutritionGroup, NUTRITION_GROUP_ORDER } from '@/lib/nutrition/menu-group';
 import { asDisplayText, asObjectArray, asRecord } from '@/lib/ui/prop-guards';
+
+const PAGE_SIZE = 100;
 
 const GROUP_HEADER_STYLE = {
   fontWeight: 800,
@@ -84,6 +90,8 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, menuMasters, 
     return map;
   }, [allMenusForGroup, masterByCode]);
 
+  const { page, goTo, totalPages, paged, total } = usePagination(filtered, PAGE_SIZE);
+
   const hasData = filtered.some(r => r.kcal);
   const hasRows = filtered.length > 0;
 
@@ -108,12 +116,12 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, menuMasters, 
     );
   }
 
-  // filtered 행들에 그룹 헤더 삽입
+  // 현재 페이지 행들에 그룹 헤더 삽입 (그룹 헤더는 페이지 단위로 다시 시작)
   const tableRows = useMemo(() => {
-    if (filterMenu !== '전체') return filtered.map(r => ({ type: 'data', row: r }));
+    if (filterMenu !== '전체') return paged.map(r => ({ type: 'data', row: r }));
     const result = [];
     let lastGroup = null;
-    filtered.forEach(r => {
+    paged.forEach(r => {
       const g = menuGroupMap[r.menuCode] || '기타';
       if (g !== lastGroup) {
         result.push({ type: 'group', label: g });
@@ -122,56 +130,21 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, menuMasters, 
       result.push({ type: 'data', row: r });
     });
     return result;
-  }, [filtered, filterMenu, menuGroupMap]);
+  }, [paged, filterMenu, menuGroupMap]);
 
   return (
     <div style={{ marginTop: 20 }}>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        <select
-          className="input"
-          style={{ width: 160 }}
-          value={filterMenu}
-          onChange={e => setFilterMenu(e.target.value)}
-        >
-          {menuNames.map((n, index) => (
-            <option key={`${n || 'menu'}-${index}`} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
-        {['전체', '기본', '파생'].map(v => (
-          <button
-            key={v}
-            className={'chip ' + (filterDerived === v ? 'active' : '')}
-            onClick={() => setFilterDerived(v)}
-          >
-            {v}
-          </button>
-        ))}
-        <button
-          className={'chip ' + (missingOnly ? 'active' : '')}
-          onClick={() => setMissingOnly(v => !v)}
-        >
-          입력 누락만
-        </button>
-        <button className="btn sm" onClick={exportCsv} disabled={filtered.length === 0}>
-          엑셀로 내보내기
-        </button>
-        <span
-          style={{
-            marginLeft: 'auto',
-            alignSelf: 'center',
-            fontSize: 11,
-            fontWeight: 700,
-            color: 'var(--accent-text)',
-            background: 'var(--accent-soft)',
-            padding: '3px 10px',
-            borderRadius: 12,
-          }}
-        >
-          100g 기준
-        </span>
-      </div>
+      <ResultsToolbar
+        filterMenu={filterMenu}
+        onFilterMenu={setFilterMenu}
+        menuNames={menuNames}
+        filterDerived={filterDerived}
+        onFilterDerived={setFilterDerived}
+        missingOnly={missingOnly}
+        onToggleMissingOnly={() => setMissingOnly(v => !v)}
+        onExportCsv={exportCsv}
+        exportDisabled={filtered.length === 0}
+      />
 
       {!hasRows || (!hasData && !missingOnly) ? (
         <div className="card" style={{ display: 'grid', placeItems: 'center', minHeight: 180 }}>
@@ -217,54 +190,25 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, menuMasters, 
                     );
                   }
                   const r = item.row;
-                  const isEmpty = isMissingResult(r);
-                  const crustType = asDisplayText(r.crustType, '—');
-                  const isCheeseCrust = crustType.includes('치즈');
-                  const isGoldCrust = crustType.includes('골드');
                   return (
-                    <tr
-                      key={`${r.menuCode || r.menuName || 'row'}-${crustType}-${i}`}
-                      style={{ opacity: isEmpty ? 0.35 : 1 }}
-                    >
-                      <td>
-                        <div style={{ fontWeight: 600 }}>{r.menuName}</div>
-                        {r.isDerived && (
-                          <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
-                            ↳ {r.baseMenuName}
-                          </div>
-                        )}
-                      </td>
-                      <td>
-                        <span
-                          style={{
-                            fontSize: 12,
-                            padding: '2px 8px',
-                            borderRadius: 20,
-                            background: isCheeseCrust
-                              ? '#fff4e0'
-                              : isGoldCrust
-                                ? '#fff9e0'
-                                : 'var(--surface-2)',
-                            color: isCheeseCrust
-                              ? '#b06800'
-                              : isGoldCrust
-                                ? '#8a7000'
-                                : 'var(--text-2)',
-                          }}
-                        >
-                          {crustType}
-                        </span>
-                      </td>
-                      {NUTRITION_FIELDS.map(f => (
-                        <td key={f.key} className="right">
-                          {isEmpty ? '—' : (r[f.key] ?? '—')}
-                        </td>
-                      ))}
-                    </tr>
+                    <NutritionResultRow
+                      key={`${r.menuCode || r.menuName || 'row'}-${asDisplayText(r.crustType, '—')}-${i}`}
+                      row={r}
+                      isEmpty={isMissingResult(r)}
+                    />
                   );
                 })}
               </tbody>
             </table>
+          </div>
+          <div style={{ borderTop: '1px solid var(--divider)' }}>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPage={goTo}
+              total={total}
+              pageSize={PAGE_SIZE}
+            />
           </div>
         </div>
       )}

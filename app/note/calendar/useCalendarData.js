@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { initDB } from '@/lib/db';
-import { getAllNotes } from '@/lib/note';
+import { getAllNotesCached } from '@/lib/note';
 import { getAllSamples } from '@/lib/sample';
 import { getAllSchedules } from '@/lib/note/schedules';
 import { getAllWorkLogs, pruneOldWorkLogs, WORK_LOG_RETENTION_DAYS } from '@/lib/work-log';
@@ -18,7 +18,7 @@ export function useCalendarData() {
     await initDB();
     await pruneOldWorkLogs(WORK_LOG_RETENTION_DAYS);
     const [nextNotes, nextSchedules, nextWorkLogs, nextSamples] = await Promise.all([
-      getAllNotes(),
+      getAllNotesCached(),
       getAllSchedules(),
       getAllWorkLogs(),
       getAllSamples(),

@@ -14,7 +14,10 @@ import { backupSourceMetadataOf, isBackupSourceMismatch } from '@/lib/backup/bra
 import { addEntry } from '@/lib/backup-history';
 import { downloadJson, makeFileName, readFileAsText } from '@/lib/download';
 import { formatNumber } from '@/lib/format';
+import { UPLOAD_MAX_MB, checkFileSize } from '@/lib/upload-policy';
 import { countRows } from './brandUtils';
+
+const SHARED_SKIP_STORE = '__shared_skipped__';
 
 /**
  * 브랜드마스터 액션 훅.
@@ -139,8 +142,22 @@ export function useBrandActions({
 
     setBusyBrandId(target.id);
     try {
+      const sizeErr = checkFileSize(file, UPLOAD_MAX_MB.backup);
+      if (sizeErr) {
+        showToast(sizeErr, 'error');
+        return;
+      }
       const text = await readFileAsText(file, ['.json']);
-      const raw = JSON.parse(text);
+      let raw;
+      try {
+        raw = JSON.parse(text);
+      } catch {
+        showToast(
+          '잘못된 JSON 형식입니다 — 백업 파일이 손상되었거나 완전히 다운로드되지 않았습니다.',
+          'error'
+        );
+        return;
+      }
       const { backup, summary } = validateBackupPayload(raw);
       const source = backupSourceMetadataOf(backup);
       const sourceMismatch = isBackupSourceMismatch(backup, target.id);
@@ -227,13 +244,22 @@ export function useBrandActions({
       downloadJson(before, beforeFileName);
 
       const result = await importAllToBrand(backup, target.id);
-      if (result.errors?.length > 0) {
+      const restoreErrors = Array.isArray(result.errors) ? result.errors : [];
+      const realErrors = restoreErrors.filter(e => e?.store !== SHARED_SKIP_STORE);
+      const sharedSkip = restoreErrors.find(e => e?.store === SHARED_SKIP_STORE);
+      if (realErrors.length > 0) {
         showToast(
-          `${target.name} 복원 일부 완료 — 성공 ${result.imported}개 / 오류 ${result.errors.length}개`,
+          `${target.name} 복원 일부 완료 — 성공 ${result.imported}개 / 오류 ${realErrors.length}개`,
           'warn',
           7000
         );
-        console.warn('[BrandMaster] 브랜드 복원 일부 실패:', result.errors);
+        console.warn('[BrandMaster] 브랜드 복원 일부 실패:', restoreErrors);
+      } else if (sharedSkip) {
+        showToast(
+          `${target.name} 복원 완료 — ${result.imported}개 store, 공유 store는 7번가 보호로 건너뜀`,
+          'ok',
+          7000
+        );
       } else {
         showToast(
           `${target.name} 복원 완료 — ${result.imported}개 store, ${formatNumber(summary.totalRows)}건`,

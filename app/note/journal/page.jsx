@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { useDBLoad } from '@/hooks/useDBLoad';
-import { getAllNotes } from '@/lib/note';
+import { getAllNotesCached } from '@/lib/note';
 import { buildJournalPrintHtml } from '@/lib/note/journal-print';
 import { openPrintWindow } from '@/lib/print/window-print';
 import { WebJournalCard } from '@/components/note/WebJournalCard';
@@ -30,7 +30,7 @@ export default function Page() {
   const [date, setDate] = useState(() => todayLocalDate());
 
   // date 변경은 re-fetch 없이 JS 필터만 하므로 deps 불필요
-  const { data: notes = [], loading } = useDBLoad(() => getAllNotes(), {
+  const { data: notes = [], loading } = useDBLoad(() => getAllNotesCached(), {
     initialData: [],
     onError: console.error,
   });

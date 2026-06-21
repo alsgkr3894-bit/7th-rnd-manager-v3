@@ -198,12 +198,12 @@ dbNameFor(brandId): main → 'rnd_manager_v3', 기타 → 'rnd_manager_v3__<bran
 
 ## 4. 상태 관리 및 훅 패턴
 
-총 59개 커스텀 훅(4,479줄). 핵심 패턴은 useDBLoad(IndexedDB 비동기 로드 + cancelled 가드 + reload), useLocalStorage(SSR 하이드레이션 안전 3단계 패턴), 전역 Toast(모듈-레벨 싱글턴 setToasts 레퍼런스). 컨텍스트 없이 CustomEvent + localStorage + window.addEventListener 조합으로 브랜드·설정·역할 상태를 전파.
+총 59개 커스텀 훅(4,511줄). 핵심 패턴은 useDBLoad(IndexedDB 비동기 로드 + cancelled 가드 + reload), useLocalStorage(SSR 하이드레이션 안전 3단계 패턴), 전역 Toast(모듈-레벨 싱글턴 setToasts 레퍼런스). 컨텍스트 없이 CustomEvent + localStorage + window.addEventListener 조합으로 브랜드·설정·역할 상태를 전파.
 
 ### `hooks/ 디렉터리 전체 현황`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/`
 
-총 59개 파일(58 .js + 1 .jsx), 4,484줄. 도메인별로 DB로드·로컬스토리지·브랜드·노트·리포트·홈대시보드·UI(배치·페이지네이션·스크롤·단축키·모달) 등으로 분류됨.
+총 59개 파일(58 .js + 1 .jsx), 4,511줄. 도메인별로 DB로드·로컬스토리지·브랜드·노트·리포트·홈대시보드·UI(배치·페이지네이션·스크롤·단축키·모달) 등으로 분류됨.
 
 ### `useDBLoad — IndexedDB 데이터 로드 패턴`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/useDBLoad.js`
@@ -495,12 +495,12 @@ isAdmin 아닌 경우 편집 불가(권한 가드). 브랜드 추가/수정 폼(
 
 ## 8. 테스트 및 QA 현황
 
-Jest 단위 테스트 277개 파일(lib 250, hooks 20, scripts 7), QA 명령 6종(qa:smoke 22라우트 702px, qa:mobile 22라우트 390px, qa:runtime 전라우트 65개, qa:workflow 업무흐름 E2E 16시나리오, qa:full dev 전체 QA, qa:prod 프로덕션 전체 QA) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
+Jest 단위 테스트 278개 파일(lib 251, hooks 20, scripts 7), QA 명령 6종(qa:smoke 22라우트 702px, qa:mobile 22라우트 390px, qa:runtime 전라우트 67개, qa:workflow 업무흐름 E2E 16시나리오, qa:full dev 전체 QA, qa:prod 프로덕션 전체 QA) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
 
 ### Jest 단위 테스트 — lib
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/lib/`
 
-__tests__/lib/ 하위 250개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
+__tests__/lib/ 하위 251개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
 
 ### Jest 단위 테스트 — hooks
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/hooks/`
@@ -535,7 +535,7 @@ scripts/mobile-qa.mjs — smoke와 같은 대표 라우트 목록을 390px viewp
 ### qa:runtime (npm run qa:runtime)
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/scripts/full-rt.mjs`
 
-scripts/full-rt.mjs — route-classification.js 기반 전 라우트 런타임 회귀 검사. MAIN 53개 + CHINA4 8개 + CHINA4_DIRECT 4개 = 65개 라우트. JS pageerror, hydration 오류, HTTP 500, h1/main 검사. 비-main 브랜드 직접진입 공유DB 초기화 버그 검증 포함
+scripts/full-rt.mjs — route-classification.js 기반 전 라우트 런타임 회귀 검사. MAIN 53개 + CHINA4 8개 + CHINA4_DIRECT 4개 + fixture 2개 = 67개 라우트. JS pageerror, hydration 오류, HTTP 500, h1/main 검사. 비-main 브랜드 직접진입 공유DB 초기화 버그 검증 포함
 
 ### qa:workflow (npm run qa:workflow)
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/scripts/workflow-qa.mjs`

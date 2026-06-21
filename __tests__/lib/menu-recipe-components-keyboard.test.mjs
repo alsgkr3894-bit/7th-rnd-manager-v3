@@ -17,10 +17,13 @@ const editorHookSrc = readFileSync(
   resolve('components/menu-master/useMenuRecipeEditor.js'),
   'utf8'
 );
-const tableSrc = readFileSync(
-  resolve('components/menu-master/MenuRecipeComponentsTable.jsx'),
-  'utf8'
-);
+// 테이블은 행/셀 컴포넌트(recipe/*)로 분리됨 — 배선 문구는 모듈 그룹 전체에서 검사한다.
+const tableSrc = [
+  readFileSync(resolve('components/menu-master/MenuRecipeComponentsTable.jsx'), 'utf8'),
+  readFileSync(resolve('components/menu-master/recipe/MenuRecipeTableRow.jsx'), 'utf8'),
+  readFileSync(resolve('components/menu-master/recipe/SuggestionItem.jsx'), 'utf8'),
+  readFileSync(resolve('components/menu-master/recipe/UnitPriceCell.jsx'), 'utf8'),
+].join('\n');
 
 describe('MenuRecipeSection — 키보드 드롭다운 상태/핸들러', () => {
   test('activeSuggestionIdx 상태가 있다', () => {

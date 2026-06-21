@@ -13,6 +13,7 @@ import { buildManageRowModel } from './manage-row/manageRowUtils';
 export const ManageRow = memo(function ManageRow({
   r: rawRow = {},
   deletePending,
+  deletePreview,
   onEdit,
   onCopy,
   onDeleteStart,
@@ -92,6 +93,7 @@ export const ManageRow = memo(function ManageRow({
       <ManageRowActionCell
         excluded={r.excluded}
         deletePending={deletePending}
+        deletePreview={deletePreview}
         isManual={r.isManual}
         productCode={productCode}
         onCopy={handleCopy}

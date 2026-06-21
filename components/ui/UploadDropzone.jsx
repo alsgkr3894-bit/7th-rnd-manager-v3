@@ -2,6 +2,7 @@
 import { useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
+import { checkFileExt, checkFileSize } from '@/lib/upload-policy';
 
 const DEFAULT_ACCEPT = ['.xlsx', '.xls', '.csv'];
 
@@ -32,7 +33,6 @@ export function UploadDropzone({
   const [drag, setDrag] = useState(false);
   const inputRef = useRef(null);
   const safeAccept = Array.isArray(accept) ? asStringArray(accept) : DEFAULT_ACCEPT;
-  const acceptedExts = safeAccept.map(ext => ext.trim().toLowerCase()).filter(Boolean);
   const maxSize =
     Number.isFinite(Number(maxSizeMB)) && Number(maxSizeMB) > 0 ? Number(maxSizeMB) : 20;
   const safeTitle = asDisplayText(title, '파일을 끌어다 놓으세요');
@@ -44,15 +44,14 @@ export function UploadDropzone({
 
   function pickFile(file) {
     if (!file) return;
-    const fileName = asDisplayText(file.name);
-    const dotIndex = fileName.lastIndexOf('.');
-    const ext = dotIndex >= 0 ? fileName.slice(dotIndex).toLowerCase() : '';
-    if (!acceptedExts.includes(ext)) {
-      handleFile(null, `지원하지 않는 파일 형식입니다. (${safeAccept.join(' / ')} 만 허용)`);
+    const extErr = checkFileExt(file, safeAccept);
+    if (extErr) {
+      handleFile(null, extErr);
       return;
     }
-    if (file.size > maxSize * 1024 * 1024) {
-      handleFile(null, `파일 크기는 ${maxSize}MB 이하여야 합니다.`);
+    const sizeErr = checkFileSize(file, maxSize);
+    if (sizeErr) {
+      handleFile(null, sizeErr);
       return;
     }
     handleFile(file);

@@ -67,7 +67,7 @@ describe('파괴적 액션 권한 가드', () => {
     expect(s).toMatch(/handleRecreate[\s\S]*?assertActiveAdmin/);
     expect(s).toMatch(/handleReset[\s\S]*?assertActiveAdmin/);
     // 위험영역 disabled 가드는 UI 컴포넌트(SystemDangerZoneCard)로 이동
-    const uiSrc = src('app/settings/system/_SystemSettingsUI.jsx');
+    const uiSrc = src('app/settings/system/_system-settings/SystemDangerZoneCard.jsx');
     expect(uiSrc).toContain('!isAdmin');
   });
 

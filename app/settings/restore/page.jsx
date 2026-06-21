@@ -18,6 +18,8 @@ import { RestoreDoneCard } from '@/components/settings/restore/RestoreDoneCard';
 import { RestorePreview } from '@/components/settings/restore/RestorePreview';
 import { RestoreExecutePanel } from '@/components/settings/restore/RestoreExecutePanel';
 
+const SHARED_SKIP_STORE = '__shared_skipped__';
+
 /**
  * 데이터 복원 페이지
  *
@@ -139,14 +141,29 @@ export default function Page() {
         },
       });
       const { imported, skipped, errors } = result || {};
+      const restoreErrors = Array.isArray(errors) ? errors : [];
+      const realErrors = restoreErrors.filter(e => e?.store !== SHARED_SKIP_STORE);
+      const sharedSkip = restoreErrors.find(e => e?.store === SHARED_SKIP_STORE);
 
-      if (errors?.length > 0) {
-        showToast(
-          `복원 일부 완료 — 성공 ${imported}개 / 건너뜀 ${skipped}개. ` +
-            `'시스템 설정 → DB 완전 재생성' 후 다시 시도하면 전체 복원됩니다.`,
-          'warn'
-        );
-        console.warn('[Restore] 일부 실패:', errors);
+      if (realErrors.length > 0) {
+        const partial = realErrors.find(e => e?.store === '__partial__');
+        if (partial) {
+          showToast(
+            `⚠ 복원이 중단되었습니다 — DB가 불일치 상태일 수 있습니다. ` +
+              `'시스템 설정 → DB 완전 재생성' 후 백업을 다시 복원하세요. (${partial.error})`,
+            'warn',
+            9000
+          );
+        } else {
+          showToast(
+            `복원 일부 완료 — 성공 ${imported}개 / 건너뜀 ${skipped}개. ` +
+              `'시스템 설정 → DB 완전 재생성' 후 다시 시도하면 전체 복원됩니다.`,
+            'warn'
+          );
+        }
+        console.warn('[Restore] 일부 실패:', restoreErrors);
+      } else if (sharedSkip) {
+        showToast(sharedSkip.error, 'ok', 7000);
       }
 
       // 작업 로그 — 복원 이벤트
@@ -165,7 +182,7 @@ export default function Page() {
       setRestoreDone({
         imported,
         skipped: skipped ?? 0,
-        errors: errors ?? [],
+        errors: restoreErrors,
         modules: selectedKeys,
         backupSkipped: skipBackupCheck,
       });

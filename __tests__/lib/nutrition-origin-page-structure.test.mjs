@@ -18,6 +18,8 @@ describe('nutrition origin page structure', () => {
     expect(pageSource).toContain('<OriginTablePanel');
     expect(pageSource).toContain('buildOriginIngredientRows');
     expect(pageSource).toContain('downloadCsv');
+    expect(pageSource).toContain('VISIBILITY_REFRESH_MIN_MS');
+    expect(pageSource).toContain('useVisibilityRefresh(() => load({ skipIfFresh: true }))');
     expect(pageSource).not.toContain('<SmallStatCard');
     expect(pageSource).not.toContain('<SearchBox');
     expect(pageSource).not.toContain('<table className="data-table">');

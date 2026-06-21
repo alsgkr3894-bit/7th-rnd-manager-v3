@@ -96,7 +96,9 @@ try {
 
   await waitForServer(BASE);
   await run(npm, ['run', 'qa:smoke'], { BASE, QA_BASE: BASE });
+  await run(npm, ['run', 'qa:mobile'], { BASE, QA_BASE: BASE });
   await run(npm, ['run', 'qa:runtime'], { BASE, QA_BASE: BASE });
+  await run(npm, ['run', 'qa:workflow'], { BASE, QA_BASE: BASE });
 } finally {
   await stopServer(server);
 }

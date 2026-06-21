@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { STATUSES, getAllNotes, updateNote, bulkUpdateBoardOrder } from '@/lib/note';
+import { STATUSES, getAllNotesCached, updateNote, bulkUpdateBoardOrder } from '@/lib/note';
 
 export function useKanbanBoard() {
   const [notes, setNotes] = useState([]);
@@ -18,7 +18,7 @@ export function useKanbanBoard() {
 
   const load = useCallback(async () => {
     await initDB();
-    setNotes(await getAllNotes());
+    setNotes(await getAllNotesCached());
     setLoadError(null);
   }, []);
 
