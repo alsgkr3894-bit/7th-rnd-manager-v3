@@ -102,6 +102,9 @@ export function MonthlyClosePackageModal({ open, onClose }) {
       onClick={e => e.target === e.currentTarget && onClose?.()}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="monthly-close-modal-title"
         style={{
           background: 'var(--surface)',
           borderRadius: 12,
@@ -126,7 +129,7 @@ export function MonthlyClosePackageModal({ open, onClose }) {
         >
           <span style={{ fontSize: 20 }}>📦</span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>월마감 패키지 생성</div>
+            <div id="monthly-close-modal-title" style={{ fontWeight: 700, fontSize: 15 }}>월마감 패키지 생성</div>
             <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
               기준 월의 출력물을 한 번에 준비합니다
             </div>

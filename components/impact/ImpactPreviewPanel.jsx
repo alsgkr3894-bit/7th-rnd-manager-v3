@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { computeIngredientPriceImpact } from '@/lib/impact/ingredient-impact';
+import { useDebounce } from '@/hooks/useDebounce';
 
 function toFiniteNumber(value) {
   if (value == null || value === '') return null;
@@ -29,6 +30,7 @@ export function ImpactPreviewPanel({
 }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
   const [open, setOpen] = useState(true);
 
   const oldNum = toFiniteNumber(oldPrice);
@@ -45,25 +47,43 @@ export function ImpactPreviewPanel({
     newBaseNum > 0 &&
     (oldNum !== newNum || oldBaseNum !== newBaseNum);
 
+  // 입력 디바운스 — 키 입력마다 DB 쿼리를 방지
+  const debouncedOldNum = useDebounce(oldNum, 300);
+  const debouncedNewNum = useDebounce(newNum, 300);
+  const debouncedOldBaseNum = useDebounce(oldBaseNum, 300);
+  const debouncedNewBaseNum = useDebounce(newBaseNum, 300);
+  const debouncedProductCode = useDebounce(productCode, 300);
+
+  const debouncedHasDelta =
+    debouncedOldNum != null &&
+    debouncedNewNum != null &&
+    debouncedOldBaseNum != null &&
+    debouncedOldBaseNum > 0 &&
+    debouncedNewBaseNum != null &&
+    debouncedNewBaseNum > 0 &&
+    (debouncedOldNum !== debouncedNewNum || debouncedOldBaseNum !== debouncedNewBaseNum);
+
   useEffect(() => {
-    if (!productCode || !hasDelta) {
+    if (!debouncedProductCode || !debouncedHasDelta) {
       setResult(null);
+      setError(false);
       return;
     }
 
     let aborted = false;
     setLoading(true);
     setResult(null);
+    setError(false);
 
-    computeIngredientPriceImpact(productCode, oldNum, newNum, {
-      oldBaseQuantity: oldBaseNum,
-      newBaseQuantity: newBaseNum,
+    computeIngredientPriceImpact(debouncedProductCode, debouncedOldNum, debouncedNewNum, {
+      oldBaseQuantity: debouncedOldBaseNum,
+      newBaseQuantity: debouncedNewBaseNum,
     })
       .then(r => {
         if (!aborted) setResult(r);
       })
       .catch(() => {
-        if (!aborted) setResult(null);
+        if (!aborted) setError(true);
       })
       .finally(() => {
         if (!aborted) setLoading(false);
@@ -72,9 +92,27 @@ export function ImpactPreviewPanel({
     return () => {
       aborted = true;
     };
-  }, [productCode, hasDelta, oldNum, newNum, oldBaseNum, newBaseNum]);
+  }, [debouncedProductCode, debouncedHasDelta, debouncedOldNum, debouncedNewNum, debouncedOldBaseNum, debouncedNewBaseNum]);
 
-  if (!hasDelta || (!loading && (!result || result.totalAffected === 0))) return null;
+  if (!hasDelta) return null;
+
+  if (error) {
+    return (
+      <div
+        style={{
+          padding: '8px 12px',
+          border: '1px solid var(--divider)',
+          borderRadius: 8,
+          fontSize: 12,
+          color: 'var(--text-3)',
+        }}
+      >
+        영향 메뉴 계산 실패 — DB 접근 오류
+      </div>
+    );
+  }
+
+  if (!loading && (!result || result.totalAffected === 0)) return null;
 
   const unitDeltaSign = (result?.unitPriceDelta ?? 0) > 0 ? '+' : '';
   const affectedCount = result?.totalAffected ?? 0;
@@ -126,7 +164,7 @@ export function ImpactPreviewPanel({
         </span>
       </button>
 
-      {open && !loading && result && result.affectedMenus.length > 0 && (
+      {open && !loading && result && (result.affectedMenus?.length ?? 0) > 0 && (
         <div style={{ maxHeight: 240, overflowY: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>

@@ -1,7 +1,7 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { buildAllActions } from '@/lib/action-center/build';
-import { filterByState, getHiddenItems } from '@/lib/action-center/state';
+import { partitionByState } from '@/lib/action-center/state';
 import { ActionCenterPanel } from '@/components/action-center/ActionCenterPanel';
 
 /**
@@ -22,18 +22,26 @@ export function ActionCenterWidget({
   const [rev, setRev] = useState(0);
   const refresh = useCallback(() => setRev(v => v + 1), []);
 
-  const allItems = buildAllActions({
-    unmatchedCount,
-    reportingCount,
-    uploadFreshness: isMain ? uploadFreshness : { ...uploadFreshness, shipment: null },
-    backupReminder,
-    ingredientHealth,
-    costAlertData,
-    canEdit,
-  });
+  const allItems = useMemo(
+    () =>
+      buildAllActions({
+        unmatchedCount,
+        reportingCount,
+        uploadFreshness: isMain ? uploadFreshness : { ...uploadFreshness, shipment: null },
+        backupReminder,
+        ingredientHealth,
+        costAlertData,
+        canEdit,
+      }),
+    [unmatchedCount, reportingCount, uploadFreshness, backupReminder, ingredientHealth, costAlertData, canEdit, isMain]
+  );
 
-  const visibleItems = filterByState(allItems);
-  const hiddenItems = getHiddenItems(allItems);
+  // rev가 변경될 때(dismiss/snooze 후 refresh) localStorage 상태를 재읽음
+  const { visible: visibleItems, hidden: hiddenItems } = useMemo(
+    () => partitionByState(allItems),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allItems, rev]
+  );
 
   // 처리할 항목이 없고, 숨긴 항목도 없으면 위젯 자체를 숨긴다
   if (allItems.length === 0) return null;

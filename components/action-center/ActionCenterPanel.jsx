@@ -62,18 +62,26 @@ export function ActionCenterPanel({ items = [], allItems = [], onRefresh, compac
         return (
           <div
             key={item.id}
+            role={item.href ? 'button' : undefined}
+            tabIndex={item.href ? 0 : undefined}
             style={{
               background: style.bg,
               borderLeft: `3px solid ${style.border}`,
               borderRadius: compact ? 6 : 8,
               padding: compact ? '8px 10px' : '12px 14px',
-              cursor: 'pointer',
+              cursor: item.href ? 'pointer' : 'default',
               display: 'flex',
               flexDirection: 'column',
               gap: 4,
             }}
             onClick={() => {
               if (item.href) router.push(item.href);
+            }}
+            onKeyDown={e => {
+              if (item.href && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                router.push(item.href);
+              }
             }}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
@@ -122,15 +130,9 @@ export function ActionCenterPanel({ items = [], allItems = [], onRefresh, compac
       {hiddenItems.length > 0 && (
         <div style={{ marginTop: 4 }}>
           <button
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: 11,
-              color: 'var(--text-3)',
-              cursor: 'pointer',
-              padding: '4px 0',
-              textDecoration: 'underline',
-            }}
+            type="button"
+            className="btn ghost"
+            style={{ fontSize: 11, padding: '4px 0', color: 'var(--text-3)', textDecoration: 'underline', background: 'none', border: 'none' }}
             onClick={() => setShowHidden(v => !v)}
           >
             숨겨진 항목 {hiddenItems.length}개 {showHidden ? '접기' : '펼치기'}

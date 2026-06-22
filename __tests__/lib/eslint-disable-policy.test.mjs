@@ -90,6 +90,12 @@ const ALLOWED_DISABLES = [
     reason: 'change log reload is tied to brand and brand filter changes',
   },
   {
+    file: 'components/home/ActionCenterWidget.jsx',
+    rule: 'react-hooks/exhaustive-deps',
+    count: 1,
+    reason: 'partitionByState reads localStorage; rev triggers re-read after dismiss/snooze without being a build-allItems dep',
+  },
+  {
     file: 'components/cost/manage/CommonEdgesView.jsx',
     rule: 'react-hooks/exhaustive-deps',
     count: 1,

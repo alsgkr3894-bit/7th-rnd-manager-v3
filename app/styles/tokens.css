@@ -7,6 +7,7 @@
   --surface-2: #f7f8fa;
   --surface-3: #f1f3f5;
   --surface-4: #e9ecef;
+  --text: var(--text-1);
   --text-1: #191f28;
   --text-2: #4e5968;
   --text-3: #5c6472; /* #F7F8FA 배경 기준 5.1:1 — WCAG AA ✓ */
