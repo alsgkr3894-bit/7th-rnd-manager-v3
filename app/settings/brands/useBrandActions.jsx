@@ -156,7 +156,7 @@ export function useBrandActions({
     const target = restoreTarget;
     e.target.value = '';
     setRestoreTarget(null);
-    if (!file || !target || busyBrandId) return;
+    if (!isAdmin || !file || !target || busyBrandId) return;
 
     setBusyBrandId(target.id);
     try {

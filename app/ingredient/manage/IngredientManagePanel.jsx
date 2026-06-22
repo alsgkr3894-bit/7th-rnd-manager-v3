@@ -191,6 +191,11 @@ export function IngredientManagePanel({
               if (filters.tagFilter != null) onTagFilter(filters.tagFilter);
               if (filters.search != null) onSearch(filters.search);
             }}
+            onLoad={filters => {
+              if (filters.catFilter != null) onCatFilter(filters.catFilter);
+              if (filters.tagFilter != null) onTagFilter(filters.tagFilter);
+              if (filters.search != null) onSearch(filters.search);
+            }}
           />
         </div>
       </div>

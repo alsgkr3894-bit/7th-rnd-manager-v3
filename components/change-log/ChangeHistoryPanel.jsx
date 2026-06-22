@@ -48,11 +48,13 @@ function formatRelative(iso) {
  *   brandFilter: boolean — 현재 브랜드만 표시 (기본: true)
  */
 export function ChangeHistoryPanel({ compact = false, brandFilter = true }) {
-  const [entries, setEntries] = useState([]);
+  const brand = getActiveBrandId();
+  const [entries, setEntries] = useState(() =>
+    brandFilter ? filterChangeLogs({ brand }) : getChangeLogs()
+  );
   const [group, setGroup] = useState('all');
   const [clearConfirm, setClearConfirm] = useState(false);
   const clearTimerRef = useRef(null);
-  const brand = getActiveBrandId();
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const canClear = roleReady && isAdmin;
 
