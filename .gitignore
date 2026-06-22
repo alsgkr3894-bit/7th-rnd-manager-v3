@@ -40,6 +40,7 @@ yarn-error.log*
 /.postgresql/
 /.pgdata/
 /.pglog/
+/.db-backups/
 /.pgpass-*
 
 # vercel

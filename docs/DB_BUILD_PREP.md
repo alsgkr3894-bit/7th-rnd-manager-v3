@@ -183,10 +183,27 @@ npm run db:pg:stop
 npm run db:import:backup:dry-run -- prisma/fixtures/sample-backup.json --brand china4
 ```
 
+로컬 개발 PC에서는 DB 연결 상태를 앱에서도 확인할 수 있다.
+
+```text
+http://localhost:3000/api/db/health
+```
+
+로컬 PostgreSQL dump 백업은 `.db-backups/`에 저장한다. 이 폴더는 Git에 넣지 않는다.
+
+```bash
+npm run db:backup
+npm run db:backup:list
+npm run db:backup:prune
+npm run db:backup:autostart
+```
+
+`db:backup:autostart`는 Windows 현재 사용자 시작프로그램에 자동 백업 명령을 등록한다. 기본값은 마지막 백업이 20시간보다 오래된 경우에만 새 dump를 생성하는 방식이다.
+
 ## 7. 아직 하지 말아야 할 것
 
 - 실제 운영 데이터를 Git에 넣지 않는다.
-- `.env.production`, DB dump, 백업 JSON을 Git에 넣지 않는다.
+- `.env.production`, DB dump, `.db-backups/`, 백업 JSON을 Git에 넣지 않는다.
 - IndexedDB 호출부를 한 번에 전부 API로 바꾸지 않는다.
 - 판매량/원가/영양 계산 로직을 DB 이관과 동시에 리팩토링하지 않는다.
 - PostgreSQL 포트를 외부 인터넷에 직접 공개하지 않는다.
@@ -211,6 +228,8 @@ DB 구축 완료는 아래가 모두 만족될 때로 본다.
 - 백업 JSON import dry-run 가능
 - 실제 PostgreSQL DB에 `npm run db:migrate`, `npm run db:seed` 성공
 - `npm run db:check`에서 `brands=3`, `storeCatalog=43` 이상 확인
+- `GET /api/db/health`에서 DB 상태 확인 가능
+- `npm run db:backup`으로 로컬 dump 생성 가능
 - import 후 store별 row count 비교 가능
 - `npm run test:ci`, `npm run build:clean` green
 - 운영 PC의 `.env.production`과 DB 계정 정보가 Git 밖에 존재
