@@ -22,4 +22,11 @@ describe('kanban board error visibility guards', () => {
     expect(pageSource).toContain('칸반 데이터를 불러오지 못했습니다');
     expect(pageSource).toContain('retryLoad');
   });
+
+  test('칸반 빈 상태 작성 버튼도 viewer에서 비활성화된다', () => {
+    expect(pageSource).toContain("from '@/hooks/useCurrentRole'");
+    expect(pageSource).toContain('const canEdit = roleReady && isAdmin');
+    expect(pageSource).toContain("if (canEdit) router.push('/note/write')");
+    expect(pageSource).toContain('disabled={!canEdit}');
+  });
 });

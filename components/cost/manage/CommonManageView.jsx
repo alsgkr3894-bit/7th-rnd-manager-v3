@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useDBLoad } from '@/hooks/useDBLoad';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { getAllIngredients } from '@/lib/ingredient';
 import { buildUnitPriceMap } from '@/lib/recipe';
@@ -31,6 +32,8 @@ import { CommonEdgesView } from '@/components/cost/manage/CommonEdgesView';
  */
 export function CommonManageView({ tab = 'groups' }) {
   const isMain = useIsMainBrand(); // 마스터 시드는 7번가 전용
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
 
   const {
     data,
@@ -84,6 +87,12 @@ export function CommonManageView({ tab = 'groups' }) {
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
 
+  function ensureCanEdit() {
+    if (canEdit) return true;
+    showToast(roleReady ? '관리자 권한이 필요합니다' : '권한 확인 중입니다', 'error');
+    return false;
+  }
+
   // ── Groups handlers ─────────────────────────────────────────
   function handleSelectGroup(id) {
     setSelectedId(id);
@@ -92,11 +101,13 @@ export function CommonManageView({ tab = 'groups' }) {
     if (g) setDraft(groupToDraft(g));
   }
   function handleNewGroup() {
+    if (!ensureCanEdit()) return;
     setSelectedId(null);
     setIsNew(true);
     setDraft(emptyGroup());
   }
   async function handleSaveGroup() {
+    if (!ensureCanEdit()) return;
     if (!draft?.name?.trim()) {
       showToast('묶음 이름을 입력해주세요', 'error');
       return;
@@ -120,6 +131,7 @@ export function CommonManageView({ tab = 'groups' }) {
   }
   async function handleDeleteGroup(id) {
     if (!id) return;
+    if (!ensureCanEdit()) return;
     try {
       await deleteRecipeGroup(id);
     } catch (e) {
@@ -135,6 +147,7 @@ export function CommonManageView({ tab = 'groups' }) {
 
   // ── Edges handlers ──────────────────────────────────────────
   async function handleSaveEdge(data) {
+    if (!ensureCanEdit()) return;
     try {
       await upsertEdge(data);
       showToast('저장 완료', 'ok');
@@ -146,6 +159,7 @@ export function CommonManageView({ tab = 'groups' }) {
     }
   }
   async function handleDeleteEdge(id) {
+    if (!ensureCanEdit()) return;
     try {
       await deleteEdge(id);
       setDeletePending(null);
@@ -156,6 +170,7 @@ export function CommonManageView({ tab = 'groups' }) {
     }
   }
   async function handleBatchDeleteEdges(ids) {
+    if (!ensureCanEdit()) return false;
     try {
       await Promise.all(ids.map(id => deleteEdge(id)));
       showToast(`${ids.length}개 삭제 완료`, 'ok');
@@ -168,6 +183,7 @@ export function CommonManageView({ tab = 'groups' }) {
   }
   async function handleSeedEdges() {
     if (seeding) return;
+    if (!ensureCanEdit()) return;
     setSeeding(true);
     try {
       const result = await seedEdges();
@@ -181,6 +197,7 @@ export function CommonManageView({ tab = 'groups' }) {
   }
   async function handleResetEdges() {
     if (resetting) return;
+    if (!ensureCanEdit()) return;
     setResetting(true);
     try {
       const result = await resetAllEdges();
@@ -219,6 +236,7 @@ export function CommonManageView({ tab = 'groups' }) {
           allMeta={allMeta}
           unitPriceMap={unitPriceMap}
           saving={saving}
+          canEdit={canEdit}
           onNew={handleNewGroup}
           onSelect={handleSelectGroup}
           onSave={handleSaveGroup}
@@ -238,20 +256,29 @@ export function CommonManageView({ tab = 'groups' }) {
           search={edgeSearch}
           onSearch={setEdgeSearch}
           isMain={isMain}
+          canEdit={canEdit}
           resetConfirm={resetConfirm}
           resetting={resetting}
-          onResetAsk={() => setResetConfirm(true)}
+          onResetAsk={() => {
+            if (ensureCanEdit()) setResetConfirm(true);
+          }}
           onResetCancel={() => setResetConfirm(false)}
           onReset={handleResetEdges}
           seeding={seeding}
           onSeed={handleSeedEdges}
-          onAdd={() => setEdgeTarget('new')}
-          onEdit={setEdgeTarget}
+          onAdd={() => {
+            if (ensureCanEdit()) setEdgeTarget('new');
+          }}
+          onEdit={edge => {
+            if (ensureCanEdit()) setEdgeTarget(edge);
+          }}
           onSave={handleSaveEdge}
           edgeTarget={edgeTarget}
           onCloseEdit={() => setEdgeTarget(null)}
           deletePending={deletePending}
-          onDeleteStart={setDeletePending}
+          onDeleteStart={id => {
+            if (ensureCanEdit()) setDeletePending(id);
+          }}
           onDeleteConfirm={handleDeleteEdge}
           onDeleteCancel={() => setDeletePending(null)}
           onBatchDelete={handleBatchDeleteEdges}

@@ -1,4 +1,6 @@
 import { jest } from '@jest/globals';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   downloadDateStamp,
   makeFileName,
@@ -8,6 +10,10 @@ import {
   downloadFailedRows,
   rowsToCsv,
 } from '../../lib/download.js';
+
+function source(path) {
+  return readFileSync(resolve(path), 'utf8');
+}
 
 describe('download filename date suffix', () => {
   const fixed = new Date(2026, 5, 11, 9, 30, 0);
@@ -41,6 +47,16 @@ describe('download filename date suffix', () => {
     expect(withDownloadDateSuffix('rnd-manager-backup_20260611_143022.json', fixed)).toBe(
       'rnd-manager-backup_20260611.json'
     );
+  });
+
+  test('파일명 위험 문자와 경로 구분자를 안전하게 치환한다', () => {
+    expect(withDownloadDateSuffix('보고서/목록:전체?.csv', fixed)).toBe(
+      '보고서_목록_전체_20260611.csv'
+    );
+    expect(makeFileName('브랜드/복원:백업*파일', '.json', fixed)).toBe(
+      '브랜드_복원_백업_파일_20260611.json'
+    );
+    expect(makeFileName('  <>  ', 'j/son', fixed)).toBe('내보내기_20260611.json');
   });
 
   test('makeFileName은 한글 업무명과 날짜만 포함한다', () => {
@@ -176,6 +192,22 @@ describe('downloadFailedRows', () => {
       expect(global.URL.createObjectURL).not.toHaveBeenCalled();
     } finally {
       global.URL = previousURL;
+    }
+  });
+});
+
+describe('브랜드별 업무 CSV 파일명 회귀', () => {
+  test('브랜드별 업무 데이터 CSV export는 makeFileNameWithBrand를 사용한다', () => {
+    const files = [
+      'app/ingredient/usage/page.jsx',
+      'components/sales/UploadErrorBanner.jsx',
+      'components/jette/ManagedProductsCard.jsx',
+      'components/jette/PriceLatestView.jsx',
+      'components/jette/PriceCompareTable.jsx',
+    ];
+
+    for (const file of files) {
+      expect(source(file)).toContain('makeFileNameWithBrand');
     }
   });
 });

@@ -51,4 +51,11 @@ describe('QA orchestration scripts', () => {
     expect(script).toContain('finally {');
     expect(script).toContain('await stopServer(server)');
   });
+
+  test('production start 오류 fallback을 위한 pages/_error.js가 있다', () => {
+    const errorPage = src('pages/_error.js');
+
+    expect(errorPage).toContain('ErrorPage.getInitialProps');
+    expect(errorPage).toContain('statusCode');
+  });
 });

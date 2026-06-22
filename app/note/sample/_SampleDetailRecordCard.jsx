@@ -1,7 +1,7 @@
 import { TagInput } from '@/components/ui/TagInput';
 import { Field } from '@/components/note/FormFields';
 
-export function SampleDetailRecordCard({ form, allTags, onUpdate }) {
+export function SampleDetailRecordCard({ form, allTags, onUpdate, readOnly = false }) {
   return (
     <div className="card">
       <div className="card-title" style={{ marginBottom: 16 }}>
@@ -16,6 +16,7 @@ export function SampleDetailRecordCard({ form, allTags, onUpdate }) {
           value={form.description}
           onChange={event => onUpdate('description', event.target.value)}
           placeholder="재료 비율, 조리 시간, 온도, 변경 사항 등"
+          disabled={readOnly}
         />
       </Field>
 
@@ -26,6 +27,7 @@ export function SampleDetailRecordCard({ form, allTags, onUpdate }) {
           value={form.result}
           onChange={event => onUpdate('result', event.target.value)}
           placeholder="맛, 식감, 외관, 고객 반응 등"
+          disabled={readOnly}
         />
       </Field>
 
@@ -37,6 +39,7 @@ export function SampleDetailRecordCard({ form, allTags, onUpdate }) {
             value={form.improvements}
             onChange={event => onUpdate('improvements', event.target.value)}
             placeholder="보완할 부분"
+            disabled={readOnly}
           />
         </Field>
         <Field label="다음 액션">
@@ -46,6 +49,7 @@ export function SampleDetailRecordCard({ form, allTags, onUpdate }) {
             value={form.nextAction}
             onChange={event => onUpdate('nextAction', event.target.value)}
             placeholder="재테스트 방향, 일정 등"
+            disabled={readOnly}
           />
         </Field>
       </div>
@@ -55,6 +59,7 @@ export function SampleDetailRecordCard({ form, allTags, onUpdate }) {
           value={form.tags}
           onChange={value => onUpdate('tags', value)}
           suggestions={allTags}
+          disabled={readOnly}
         />
       </Field>
     </div>

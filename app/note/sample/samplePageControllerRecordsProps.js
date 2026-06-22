@@ -1,4 +1,11 @@
-export function buildSampleRecordsProps({ pageState, batch, compare, recordActions, navigation }) {
+export function buildSampleRecordsProps({
+  pageState,
+  batch,
+  compare,
+  recordActions,
+  navigation,
+  canEdit = false,
+}) {
   const { openWrite, openSampleEditor } = navigation;
   const { loading, viewMode, filtered, catFilter, ratingMin, sortBy, search, setDetailRec } =
     pageState;
@@ -13,15 +20,20 @@ export function buildSampleRecordsProps({ pageState, batch, compare, recordActio
     search,
     batchMode: batch.batchMode,
     selected: batch.selected,
+    canEdit,
     toggleSelect: batch.toggleSelect,
     compareMode: compare.compareMode,
     toggleCompare: compare.toggleCompare,
     compareIdxMap: compare.compareIdxMap,
     onOpenSample: setDetailRec,
-    onEditSample: openSampleEditor,
+    onEditSample: sample => {
+      if (canEdit) openSampleEditor(sample);
+    },
     onCopySample: recordActions.handleCopy,
     onDeleteSample: recordActions.handleDelete,
     onRatingChange: recordActions.handleRatingChange,
-    onCreateSample: openWrite,
+    onCreateSample: () => {
+      if (canEdit) openWrite();
+    },
   };
 }

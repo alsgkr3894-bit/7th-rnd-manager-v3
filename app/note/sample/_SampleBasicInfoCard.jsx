@@ -13,6 +13,7 @@ export function SampleBasicInfoCard({
   onSampleName,
   onAddSampleName,
   onRemoveSampleName,
+  readOnly = false,
 }) {
   return (
     <div className="card">
@@ -26,6 +27,7 @@ export function SampleBasicInfoCard({
           value={form.title}
           onChange={event => onUpdate('title', event.target.value)}
           placeholder="예) ○○ 0차 샘플"
+          disabled={readOnly}
         />
       </Field>
 
@@ -38,6 +40,7 @@ export function SampleBasicInfoCard({
                 value={name}
                 onChange={event => onSampleName(index, event.target.value)}
                 placeholder="식자재명"
+                disabled={readOnly}
               />
               {(form.sampleNames || ['']).length > 1 && (
                 <button
@@ -46,6 +49,7 @@ export function SampleBasicInfoCard({
                   style={{ padding: '6px 8px', flexShrink: 0 }}
                   onClick={() => onRemoveSampleName(index)}
                   aria-label={`샘플명 ${index + 1} 삭제`}
+                  disabled={readOnly}
                 >
                   <Icon.close style={{ width: 12, height: 12 }} />
                 </button>
@@ -57,6 +61,7 @@ export function SampleBasicInfoCard({
             className="btn sm"
             style={{ alignSelf: 'flex-start' }}
             onClick={onAddSampleName}
+            disabled={readOnly}
           >
             <Icon.plus style={{ width: 12, height: 12 }} /> 샘플명 추가
           </button>
@@ -70,6 +75,7 @@ export function SampleBasicInfoCard({
             type="date"
             value={form.testDate}
             onChange={event => onUpdate('testDate', event.target.value)}
+            disabled={readOnly}
           />
         </Field>
         <Field label="카테고리" hint="입력·선택 모두 가능">
@@ -79,6 +85,7 @@ export function SampleBasicInfoCard({
             options={catOptions}
             placeholder="예) 피자"
             inputClassName="form-input"
+            disabled={readOnly}
           />
         </Field>
       </div>
@@ -91,6 +98,7 @@ export function SampleBasicInfoCard({
             options={companyOptions}
             placeholder="예) 대림수산"
             inputClassName="form-input"
+            disabled={readOnly}
           />
         </Field>
         <Field label="담당자">
@@ -99,13 +107,18 @@ export function SampleBasicInfoCard({
             value={form.tester}
             onChange={event => onUpdate('tester', event.target.value)}
             placeholder="예) 김민지"
+            disabled={readOnly}
           />
         </Field>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <Field label="평점">
-          <StarPicker value={form.rating} onChange={value => onUpdate('rating', value)} />
+          <StarPicker
+            value={form.rating}
+            onChange={value => onUpdate('rating', value)}
+            disabled={readOnly}
+          />
         </Field>
         <Field label="단가">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -117,6 +130,7 @@ export function SampleBasicInfoCard({
                 value={form.price}
                 onChange={event => onUpdate('price', event.target.value)}
                 placeholder="예) 12000"
+                disabled={readOnly}
               />
               <span style={{ fontSize: 13, color: 'var(--text-3)', flexShrink: 0 }}>원</span>
             </div>
@@ -124,6 +138,7 @@ export function SampleBasicInfoCard({
               options={['부가세포함', '별도']}
               value={form.priceTaxType === 'excl' ? '별도' : '부가세포함'}
               onChange={value => onUpdate('priceTaxType', value === '별도' ? 'excl' : 'incl')}
+              disabled={readOnly}
             />
           </div>
         </Field>
@@ -132,12 +147,13 @@ export function SampleBasicInfoCard({
   );
 }
 
-function StarPicker({ value, onChange }) {
+function StarPicker({ value, onChange, disabled = false }) {
   const [hovered, setHovered] = useState(0);
   const rating = clampInteger(value, { min: 0, max: 5, fallback: 0 });
   const change = typeof onChange === 'function' ? onChange : noop;
 
   function handleClick(event, nextRating) {
+    if (disabled) return;
     const btn = event.currentTarget;
     btn.classList.remove('star-pop');
     void btn.offsetWidth;
@@ -152,9 +168,13 @@ function StarPicker({ value, onChange }) {
         <button
           key={nextRating}
           className={'star-rate-btn' + (nextRating <= lit ? ' lit' : '')}
-          style={{ fontSize: 22 }}
+          type="button"
+          disabled={disabled}
+          style={{ fontSize: 22, cursor: disabled ? 'not-allowed' : 'pointer' }}
           onClick={event => handleClick(event, nextRating)}
-          onMouseEnter={() => setHovered(nextRating)}
+          onMouseEnter={() => {
+            if (!disabled) setHovered(nextRating);
+          }}
           onMouseLeave={() => setHovered(0)}
         >
           ★

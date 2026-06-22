@@ -14,7 +14,7 @@ function PriceLatestNoResults() {
   );
 }
 
-function PriceLatestRow({ row, productTypeLookup, onTypeChange }) {
+function PriceLatestRow({ row, productTypeLookup, canEdit = false, onTypeChange }) {
   return (
     <tr>
       <td className="num" style={{ color: 'var(--text-3)', fontSize: 12 }}>
@@ -28,6 +28,7 @@ function PriceLatestRow({ row, productTypeLookup, onTypeChange }) {
           productCode={row.productCode}
           productName={row.productName}
           productTypeLookup={productTypeLookup}
+          disabled={!canEdit}
           onTypeChange={onTypeChange}
         />
       </td>
@@ -61,6 +62,7 @@ export function PriceLatestTable({
   sortDir,
   onSort,
   productTypeLookup,
+  canEdit = false,
   onTypeChange,
 }) {
   if (filteredCount === 0) return <PriceLatestNoResults />;
@@ -138,6 +140,7 @@ export function PriceLatestTable({
               key={`${row.productCode || row.productName}-${index}`}
               row={row}
               productTypeLookup={productTypeLookup}
+              canEdit={canEdit}
               onTypeChange={onTypeChange}
             />
           ))}

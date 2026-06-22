@@ -1,6 +1,6 @@
 import { SampleRatingStars } from './SampleRatingStars';
 
-export function SampleCardHeader({ title, sampleId, rating, onRatingChange }) {
+export function SampleCardHeader({ title, sampleId, rating, onRatingChange, canEdit = false }) {
   return (
     <div
       style={{
@@ -24,7 +24,12 @@ export function SampleCardHeader({ title, sampleId, rating, onRatingChange }) {
         {title}
       </div>
 
-      <SampleRatingStars sampleId={sampleId} rating={rating} onRatingChange={onRatingChange} />
+      <SampleRatingStars
+        sampleId={sampleId}
+        rating={rating}
+        onRatingChange={onRatingChange}
+        canEdit={canEdit}
+      />
     </div>
   );
 }

@@ -16,8 +16,9 @@ import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
  * @param {(actionType, actionData) => Promise<void>} onSubmit
  * @param {() => void} onCancel
  * @param {boolean} busy
+ * @param {boolean} canEdit
  */
-export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
+export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy, canEdit = false }) {
   const safeIssue = issue && typeof issue === 'object' ? issue : {};
   const normalizedMenuName = asDisplayText(safeIssue.normalizedMenuName, '-');
   const handleSubmitAction = typeof onSubmit === 'function' ? onSubmit : () => {};
@@ -56,6 +57,7 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
   }, []);
 
   function applySuggestion(rule) {
+    if (!canEdit) return;
     const safeRule = rule && typeof rule === 'object' ? rule : {};
     if (actionType === 'alias') {
       setOutputName(asDisplayText(safeRule.pattern || safeRule.detailName || safeRule.groupName));
@@ -67,6 +69,7 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
   }
 
   function handleSubmit() {
+    if (!canEdit) return;
     if (actionType === 'alias') {
       if (!outputName.trim()) return;
       handleSubmitAction('alias', { outputName: outputName.trim() });
@@ -98,6 +101,7 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
         cancelLabel="취소"
         danger
         onConfirm={() => {
+          if (!canEdit) return;
           setConfirmExclude(false);
           handleSubmitAction('exclude', {});
         }}
@@ -108,16 +112,19 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
           label="별칭 등록"
           active={actionType === 'alias'}
           onClick={() => setActionType('alias')}
+          disabled={!canEdit}
         />
         <ActionTab
           label="규칙 등록"
           active={actionType === 'rule'}
           onClick={() => setActionType('rule')}
+          disabled={!canEdit}
         />
         <ActionTab
           label="제외 처리"
           active={actionType === 'exclude'}
           onClick={() => setActionType('exclude')}
+          disabled={!canEdit}
         />
       </div>
 
@@ -146,9 +153,10 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
                 <button
                   key={ruleId}
                   onClick={() => applySuggestion(rule)}
+                  disabled={!canEdit}
                   className="chip"
                   style={{
-                    cursor: 'pointer',
+                    cursor: canEdit ? 'pointer' : 'default',
                     border: '1px solid var(--border)',
                     background: 'var(--surface-2)',
                     color: 'var(--text-2)',
@@ -180,6 +188,7 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
             onChange={e => setOutputName(e.target.value)}
             placeholder="예: 슈퍼콤비네이션 L"
             style={inputStyle}
+            disabled={!canEdit}
           />
         </div>
       )}
@@ -190,6 +199,7 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
             value={ruleCategory}
             onChange={e => setRuleCategory(e.target.value)}
             style={inputStyle}
+            disabled={!canEdit}
           >
             {CATEGORY_OPTIONS.map(c => (
               <option key={c} value={c}>
@@ -203,6 +213,7 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
             options={catOpts.groupNames}
             placeholder="중분류명 (groupName)"
             inputStyle={inputStyle}
+            disabled={!canEdit}
           />
           <ComboBox
             value={ruleDetail}
@@ -210,6 +221,7 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
             options={catOpts.detailNames}
             placeholder="상세 (비우면 중분류와 동일)"
             inputStyle={inputStyle}
+            disabled={!canEdit}
           />
         </div>
       )}
@@ -229,6 +241,7 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
           onClick={handleSubmit}
           disabled={
             busy ||
+            !canEdit ||
             (actionType === 'alias' && !outputName.trim()) ||
             (actionType === 'rule' && (!ruleCategory || !ruleGroup.trim()))
           }
@@ -240,10 +253,11 @@ export function UnmatchedResolveForm({ issue, onSubmit, onCancel, busy }) {
   );
 }
 
-function ActionTab({ label, active, onClick }) {
+function ActionTab({ label, active, disabled = false, onClick }) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       style={{
         padding: '6px 12px',
         borderRadius: 6,
@@ -252,7 +266,7 @@ function ActionTab({ label, active, onClick }) {
         background: active ? 'var(--accent)' : 'var(--surface)',
         color: active ? '#fff' : 'var(--text-2)',
         border: '1px solid ' + (active ? 'var(--accent)' : 'var(--border)'),
-        cursor: 'pointer',
+        cursor: disabled ? 'default' : 'pointer',
       }}
     >
       {label}

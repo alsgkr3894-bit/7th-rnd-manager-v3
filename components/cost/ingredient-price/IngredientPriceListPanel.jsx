@@ -32,6 +32,7 @@ export function IngredientPriceListPanel({
             taxFilter={taxFilter}
             search={search}
             priceTable={priceTable}
+            readOnly={readOnly}
             onTaxFilter={onTaxFilter}
             onSearch={onSearch}
             onSelectedDelete={onSelectedDelete}

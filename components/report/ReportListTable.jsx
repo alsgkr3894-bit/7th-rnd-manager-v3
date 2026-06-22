@@ -25,6 +25,7 @@ export function ReportListTable({
   setNewReportOpen,
   handleToggleFav,
   handleDelete,
+  canEdit = false,
   setPreviewTarget,
   setPreviewPrintOnOpen,
   setShareTarget,
@@ -50,6 +51,7 @@ export function ReportListTable({
                   startEdit={startEdit}
                   handleToggleFav={handleToggleFav}
                   handleDelete={handleDelete}
+                  canEdit={canEdit}
                   setPreviewTarget={setPreviewTarget}
                   setPreviewPrintOnOpen={setPreviewPrintOnOpen}
                   setShareTarget={setShareTarget}

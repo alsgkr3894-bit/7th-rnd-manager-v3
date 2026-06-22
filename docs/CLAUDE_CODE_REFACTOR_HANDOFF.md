@@ -1,6 +1,6 @@
 # Claude Code Refactor Handoff
 
-> 최종 갱신: 2026-06-19  
+> 최종 갱신: 2026-06-22
 > 이전 버전은 `9a6ad28f` 커밋에서 dead code로 삭제됐으며, 이 문서가 후속 출처입니다.
 
 ---
@@ -9,12 +9,12 @@
 
 | 지표 | 값 |
 |---|---|
-| 테스트 | **275 suites / 1521 tests** (모두 통과) |
+| 테스트 | **295 suites / 1771 tests** (모두 통과) |
 | qa:smoke | **22/22 라우트** |
 | qa:mobile | **22라우트 390px** (Playwright, dev 서버 필요) |
-| qa:workflow | **16/16 시나리오** (2026-06-19 레시피 UI 저장·UX 보완 추가) |
-| qa:runtime | **63/63 라우트** |
-| Next.js | 14.2.35 (Node 24 안정 빌드) |
+| qa:workflow | **21/21 시나리오** (2026-06-22 백업 실제 복원 실행 + 메뉴마스터 CSV 다운로드 파일 검증 + 판매량 잘못된 확장자 UX + 출고량 CSV 실제 업로드 UX + 메뉴판매가 실패행 CSV 다운로드 추가) |
+| qa:runtime | **67/67 라우트** |
+| Next.js | 14.2.35 (`build:clean` 기준 static pages 57/57) |
 | IndexedDB | v23 스키마 (DB_VERSION) |
 | 브랜드 | 7번가(main) / 차이나X4(china4) / 이천밥썜(ysb) |
 
@@ -31,7 +31,7 @@
 
 ### 권한 레이어
 - **`assertActiveAdmin(actionLabel)`** (`lib/auth/guard.js`): 파괴적 async 함수 최상단 가드. viewer이면 `PermissionDeniedError` throw.
-- 대상 함수: `addAccount`, `updateAccount`, `deleteAccount`, `deleteMenuMaster`, `resetAllMenuMaster`, `seedMenuMaster`, `deleteIngredient`, `bulkDeleteIngredients`, `importAllToBrand`, `renameCategoryInAll`, `renameTagInAll`, `bulkSetDiscontinued`, `bulkSetCategory`.
+- 대상 함수: 계정, 메뉴마스터, 식자재, 메뉴판매가, 영양 values/origin, 판매량 사용자 규칙/미매칭, 원가 보조 마스터, 노트/일정/샘플, 보고서 저장, 복원/초기화/자동 보존기간 정리 계열의 write/delete/restore 실행 함수 전반.
 - **`useCurrentRole()`**: React 훅. `{ role, isAdmin, ready }` 반환. fail-closed(초기값 `'viewer'`).
 - sync 브랜드 메타(`upsertBrand` 등)는 비파괴 localStorage 조작이라 가드 제외(DEFERRED_WORK 참조).
 
@@ -61,8 +61,8 @@
 ### 모듈 간 cascade
 - 모듈 간 cascade 호출(`ingredient` → `nutrition`, `menu-master` → `nutrition` 등)은 circular import 방지를 위해 **동적 import** 사용.
 
-### Next.js build (Node 24)
-- `npm run build` 가 Node 24에서 `_document` 모듈 오류로 실패하는 경우가 있음 — 환경 문제, 코드 이상 아님. 컴파일 단계(`Compiled successfully`) 통과 시 코드 검증은 유효.
+### Next.js build
+- 최신 기준은 `npm run build:clean` 통과다. dev 서버가 떠 있으면 `.next` 산출물 충돌로 stale 오류가 날 수 있으므로, production build 검증 전에는 dev 서버를 중지한다.
 
 ---
 
@@ -71,11 +71,11 @@
 ```bash
 npm run lint          # ESLint 0 warnings 필수
 npm run format:check  # Prettier 포맷 확인
-npm run test:ci       # 275 suites / 1521 tests
+npm run test:ci       # 295 suites / 1771 tests
 npm run qa:smoke      # 22/22 라우트 702px (Playwright, dev 서버 필요)
 npm run qa:mobile     # 22라우트 390px (Playwright, dev 서버 필요)
-npm run qa:workflow   # 16/16 E2E 시나리오 (Playwright, dev 서버 필요)
-npm run qa:runtime    # 63/63 라우트 no-undef/hydration 검사
+npm run qa:workflow   # 21/21 E2E 시나리오 (Playwright, dev 서버 필요)
+npm run qa:runtime    # 67/67 라우트 no-undef/hydration 검사
 npm run build:clean   # .next 삭제 후 production 빌드
 npm run audit:docs    # docs/ 파일 stale 감사
 ```

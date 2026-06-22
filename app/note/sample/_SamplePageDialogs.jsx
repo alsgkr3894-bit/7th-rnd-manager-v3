@@ -11,6 +11,7 @@ export function SamplePageDialogs({
   confirmOpen,
   selectedCount,
   confirmElement,
+  canEdit = false,
   onCloseDetail,
   onEditDetail,
   onDeleteDetail,
@@ -26,6 +27,7 @@ export function SamplePageDialogs({
           onClose={onCloseDetail}
           onEdit={onEditDetail}
           onDelete={onDeleteDetail}
+          canEdit={canEdit}
         />
       )}
 
@@ -41,6 +43,7 @@ export function SamplePageDialogs({
         danger
         onConfirm={onConfirmBatchDelete}
         onCancel={onCancelBatchDelete}
+        disabled={!canEdit}
       />
       {confirmElement}
     </>

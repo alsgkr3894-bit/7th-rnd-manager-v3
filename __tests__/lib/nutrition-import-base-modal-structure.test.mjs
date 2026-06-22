@@ -28,7 +28,10 @@ describe('nutrition import base modal structure', () => {
     expect(modalSource).toContain('export function ImportBaseModal');
     expect(modalSource).toContain('parseLabExcel');
     expect(modalSource).toContain('buildImportRows');
-    expect(modalSource).toContain('upsertRawValue');
+    expect(modalSource).toContain('bulkUpsertBaseData');
+    expect(modalSource).toContain('bulkUpsertBaseData(payload)');
+    expect(modalSource).not.toContain('for (const row of toSave)');
+    expect(modalSource).not.toContain('부분 저장됨');
     expect(modalSource).toContain('<ImportBaseUploadStep');
     expect(modalSource).toContain('<ImportBaseSummaryBar');
     expect(modalSource).toContain('<ImportBasePreviewTable');

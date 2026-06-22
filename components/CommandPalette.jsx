@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from './icons';
-import { usePaletteItems, STATUS_ICON } from '@/hooks/usePaletteItems';
+import { usePaletteItems, STATUS_ICON, isPaletteItemVisibleForRole } from '@/hooks/usePaletteItems';
 import { getRecentPaletteItems, saveRecentPaletteItem } from '@/lib/palette-recent';
 import { useDebounce } from '@/hooks/useDebounce';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
@@ -14,14 +14,14 @@ function saveRecent(item) {
   saveRecentPaletteItem(item);
 }
 
-export default function CommandPalette({ open, onClose }) {
+export default function CommandPalette({ open, onClose, canEdit = false }) {
   const [q, setQ] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
   const [recent, setRecent] = useState([]);
   const inputRef = useRef(null);
   const focusTimerRef = useRef(null);
   const router = useRouter();
-  const allItems = usePaletteItems(open);
+  const allItems = usePaletteItems(open, { canEdit });
   const debouncedQ = useDebounce(q, 150);
 
   useEffect(() => {
@@ -57,7 +57,10 @@ export default function CommandPalette({ open, onClose }) {
     item => asDisplayText(item.href) && asDisplayText(item.label)
   );
   const safeRecent = asObjectArray(recent).filter(
-    item => asDisplayText(item.href) && asDisplayText(item.label)
+    item =>
+      asDisplayText(item.href) &&
+      asDisplayText(item.label) &&
+      isPaletteItemVisibleForRole(item, canEdit)
   );
   const norm = s => asDisplayText(s).toLowerCase().replace(/\s+/g, '');
   const isSearching = debouncedQ.trim().length > 0;

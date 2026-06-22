@@ -12,7 +12,7 @@ import {
   normalizeChecklistMap,
 } from './_calendar-utils';
 
-export function useTodayChecklist({ today, notes, load }) {
+export function useTodayChecklist({ today, notes, load, canEdit = false }) {
   const [checklistMap, setChecklistMap] = useState({});
   const [checkInput, setCheckInput] = useState('');
   const todayChecklist = useMemo(() => checklistMap[today] || [], [checklistMap, today]);
@@ -35,14 +35,16 @@ export function useTodayChecklist({ today, notes, load }) {
   );
 
   const addChecklistItem = useCallback(() => {
+    if (!canEdit) return;
     const text = checkInput.trim();
     if (!text) return;
     saveTodayChecklist([...todayChecklist, { id: `${today}-${Date.now()}`, text, done: false }]);
     setCheckInput('');
-  }, [checkInput, saveTodayChecklist, today, todayChecklist]);
+  }, [canEdit, checkInput, saveTodayChecklist, today, todayChecklist]);
 
   const syncChecklistJournal = useCallback(
     async items => {
+      if (!canEdit) return;
       const doneItems = (Array.isArray(items) ? items : []).filter(item => item.done && item.text);
       const title = checklistJournalTitle(today);
       const existing = notes.find(
@@ -71,11 +73,12 @@ export function useTodayChecklist({ today, notes, load }) {
       else await addNote(data);
       await load();
     },
-    [load, notes, today]
+    [canEdit, load, notes, today]
   );
 
   const toggleChecklistItem = useCallback(
     async id => {
+      if (!canEdit) return;
       const nextItems = saveTodayChecklist(
         todayChecklist.map(item => (item.id === id ? { ...item, done: !item.done } : item))
       );
@@ -89,11 +92,12 @@ export function useTodayChecklist({ today, notes, load }) {
         );
       }
     },
-    [saveTodayChecklist, syncChecklistJournal, todayChecklist]
+    [canEdit, saveTodayChecklist, syncChecklistJournal, todayChecklist]
   );
 
   const removeChecklistItem = useCallback(
     async id => {
+      if (!canEdit) return;
       const nextItems = saveTodayChecklist(todayChecklist.filter(item => item.id !== id));
       try {
         await syncChecklistJournal(nextItems);
@@ -104,7 +108,7 @@ export function useTodayChecklist({ today, notes, load }) {
         );
       }
     },
-    [saveTodayChecklist, syncChecklistJournal, todayChecklist]
+    [canEdit, saveTodayChecklist, syncChecklistJournal, todayChecklist]
   );
 
   return {

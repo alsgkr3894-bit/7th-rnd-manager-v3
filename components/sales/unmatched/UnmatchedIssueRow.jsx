@@ -3,7 +3,16 @@ import { formatNumber } from '@/lib/format';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 import { UnmatchedResolveForm } from '../UnmatchedResolveForm';
 
-export function UnmatchedIssueRow({ issue, expanded, busy, checked, onCheck, onToggle, onSubmit }) {
+export function UnmatchedIssueRow({
+  issue,
+  expanded,
+  busy,
+  checked,
+  canEdit = false,
+  onCheck,
+  onToggle,
+  onSubmit,
+}) {
   const safeIssue = issue && typeof issue === 'object' ? issue : {};
   const issueId = safeIssue.id;
   const canResolve = safeIssue.status === 'open' && issueId != null;
@@ -26,7 +35,12 @@ export function UnmatchedIssueRow({ issue, expanded, busy, checked, onCheck, onT
       <tr>
         <td>
           {canResolve && (
-            <input type="checkbox" checked={Boolean(checked)} onChange={handleCheck} />
+            <input
+              type="checkbox"
+              checked={Boolean(checked)}
+              onChange={handleCheck}
+              disabled={!canEdit}
+            />
           )}
         </td>
         <td>
@@ -64,7 +78,11 @@ export function UnmatchedIssueRow({ issue, expanded, busy, checked, onCheck, onT
         </td>
         <td style={{ textAlign: 'right' }}>
           {canResolve && (
-            <button className="btn sm primary" onClick={handleToggle} disabled={busy}>
+            <button
+              className="btn sm primary"
+              onClick={handleToggle}
+              disabled={busy || (!canEdit && !expanded)}
+            >
               {expanded ? '닫기' : '해결'}
             </button>
           )}
@@ -78,6 +96,7 @@ export function UnmatchedIssueRow({ issue, expanded, busy, checked, onCheck, onT
               onSubmit={onSubmit}
               onCancel={handleToggle}
               busy={busy}
+              canEdit={canEdit}
             />
           </td>
         </tr>

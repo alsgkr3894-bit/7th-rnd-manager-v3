@@ -4,7 +4,7 @@ import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { STATUSES, getAllNotesCached, updateNote, bulkUpdateBoardOrder } from '@/lib/note';
 
-export function useKanbanBoard() {
+export function useKanbanBoard({ canEdit = false } = {}) {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dragId, setDragId] = useState(null);
@@ -74,6 +74,7 @@ export function useKanbanBoard() {
 
   const applyStatusChange = useCallback(
     async (note, newStatus, { bounce = true } = {}) => {
+      if (!canEdit) return;
       setNotes(prev => prev.map(n => (n.id === note.id ? { ...n, status: newStatus } : n)));
       try {
         await updateNote(note.id, { status: newStatus });
@@ -85,7 +86,7 @@ export function useKanbanBoard() {
         await refreshNotes();
       }
     },
-    [pulseNote, refreshNotes]
+    [canEdit, pulseNote, refreshNotes]
   );
 
   const moveStatus = useCallback(
@@ -140,6 +141,11 @@ export function useKanbanBoard() {
   async function handleDrop(e, status) {
     e.preventDefault();
     setDragOverStatus(null);
+    if (!canEdit) {
+      setDragId(null);
+      setDropTarget(null);
+      return;
+    }
     if (searchActive) {
       setDragId(null);
       setDropTarget(null);

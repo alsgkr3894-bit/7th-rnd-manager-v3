@@ -11,6 +11,7 @@ describe('note delete undo guards', () => {
     );
     expect(actionHookSource).not.toContain("restoreRecord('menu_dev_notes', rec).catch(() => {})");
     expect(actionHookSource).toContain('restoreDeletedNotes');
+    expect(actionHookSource).toContain('invalidateNotesCache();');
     expect(actionHookSource).toContain("console.error('[useNoteItemActions] undo delete failed'");
     expect(actionHookSource).toContain("showToast('실행취소 실패: ' + err.message, 'error')");
   });

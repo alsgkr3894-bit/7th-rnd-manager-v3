@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, jest, test } from '@jest/globals';
-import { ensureSession, getCachedIP, getLastLogin } from '../../lib/session.js';
+import { ensureSession, fetchClientIP, getCachedIP, getLastLogin } from '../../lib/session.js';
 
 const LAST_LOGIN_KEY = 'v3:last-login';
 const LAST_IP_KEY = 'v3:last-ip';
@@ -7,6 +7,10 @@ const SESSION_FLAG = 'v3:session-active';
 
 let localData;
 let sessionData;
+const originalFetch = globalThis.fetch;
+const originalWindow = globalThis.window;
+const originalLocalStorage = globalThis.localStorage;
+const originalSessionStorage = globalThis.sessionStorage;
 
 function makeStorage(data) {
   return {
@@ -40,6 +44,14 @@ beforeEach(() => {
   globalThis.window = {};
   globalThis.localStorage = makeStorage(localData);
   globalThis.sessionStorage = makeStorage(sessionData);
+  globalThis.fetch = undefined;
+});
+
+afterEach(() => {
+  globalThis.fetch = originalFetch;
+  globalThis.window = originalWindow;
+  globalThis.localStorage = originalLocalStorage;
+  globalThis.sessionStorage = originalSessionStorage;
 });
 
 describe('session storage guards', () => {
@@ -85,5 +97,33 @@ describe('session storage guards', () => {
 
     localData[LAST_IP_KEY] = JSON.stringify({ ip: '127.0.0.1', at: { bad: true } });
     expect(getCachedIP()).toEqual({ ip: '127.0.0.1', at: '' });
+  });
+
+  test('공인 IP 조회 성공 시 공백을 정리해 캐시에 저장한다', async () => {
+    globalThis.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ip: ' 127.0.0.1 ' }),
+    });
+
+    const result = await fetchClientIP();
+
+    expect(result.ip).toBe('127.0.0.1');
+    expect(getCachedIP().ip).toBe('127.0.0.1');
+  });
+
+  test('공인 IP 응답이 비었거나 네트워크 실패면 캐시를 남기지 않고 null을 반환한다', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    globalThis.fetch = jest.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ip: '   ' }),
+    });
+
+    await expect(fetchClientIP()).resolves.toBeNull();
+    expect(getCachedIP()).toBeNull();
+
+    globalThis.fetch = jest.fn().mockRejectedValueOnce('network down');
+    await expect(fetchClientIP()).resolves.toBeNull();
+    expect(getCachedIP()).toBeNull();
+    warnSpy.mockRestore();
   });
 });

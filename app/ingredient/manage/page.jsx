@@ -69,21 +69,35 @@ export default function Page() {
     else url.searchParams.set('view', normalized);
     window.history.replaceState(null, '', url);
   }, []);
+  const [highlightId, setHighlightId] = useState(null);
+  const [highlightProductCode, setHighlightProductCode] = useState(null);
 
   useEffect(() => {
     setView(readInitialManageView());
-    // URL에 catFilter 파라미터가 있으면 한 번만 반영 (홈 단가없음 링크 등)
+    // URL 파라미터 일괄 처리(한 번만): catFilter, query(검색어), highlight/productCode(행 강조)
     if (typeof window !== 'undefined') {
-      const param = new URLSearchParams(window.location.search).get('catFilter');
-      if (param) {
-        setCatFilter(param);
+      const params = new URLSearchParams(window.location.search);
+      const catParam = params.get('catFilter');
+      const queryParam = params.get('query');
+      const highlightParam = params.get('highlight');
+      const productCodeParam = params.get('productCode');
+      if (catParam) setCatFilter(catParam);
+      if (queryParam) setSearch(queryParam);
+      if (highlightParam) setHighlightId(highlightParam);
+      if (productCodeParam) setHighlightProductCode(productCodeParam);
+      if (catParam || queryParam || highlightParam || productCodeParam) {
         const url = new URL(window.location.href);
         url.searchParams.delete('catFilter');
+        url.searchParams.delete('query');
+        url.searchParams.delete('highlight');
+        url.searchParams.delete('productCode');
         window.history.replaceState(null, '', url);
       }
     }
     // setView(useCallback)·setCatFilter(useState setter) 모두 안정적 참조 → 사실상 mount 1회 실행.
   }, [setView, setCatFilter]);
+
+  // highlightId 자동 해제는 IngredientManagePanel에서 rows 로드 후 처리 (onHighlightClear)
 
   const [formTarget, setFormTarget] = useState(null);
   const [deletePending, setDeletePending] = useState(null);
@@ -191,6 +205,7 @@ export default function Page() {
     clearSelection,
     setCatFilter,
     setTagFilter,
+    canEdit: !isViewer,
   });
 
   return (
@@ -353,6 +368,8 @@ export default function Page() {
         <IngredientManagePanel
           rows={rows}
           filtered={filtered}
+          highlightId={highlightId}
+          highlightProductCode={highlightProductCode}
           activeCount={activeCount}
           managedCount={managedCount}
           mainCats={mainCats}
@@ -379,6 +396,11 @@ export default function Page() {
           onDeleteCancel={handleDeleteCancel}
           onDeleteConfirm={handleExclude}
           onRestore={handleRestore}
+          onHighlightClear={() => {
+            setHighlightId(null);
+            setHighlightProductCode(null);
+          }}
+          isViewer={isViewer}
         />
       )}
 
@@ -393,7 +415,9 @@ export default function Page() {
             onExclude={handleExclude}
             isViewer={isViewer}
           />
-          {rows.length > 0 && <IssuesView issueRows={issueRows} onEdit={setFormTarget} />}
+          {rows.length > 0 && (
+            <IssuesView issueRows={issueRows} onEdit={setFormTarget} isViewer={isViewer} />
+          )}
         </>
       )}
 
@@ -406,6 +430,7 @@ export default function Page() {
           uncategorized={uncategorized}
           discontinuedCount={discontinuedCount}
           onRemoveRequest={setConfirmRemove}
+          canEdit={!isViewer}
         />
       )}
 
@@ -423,7 +448,7 @@ export default function Page() {
         />
       )}
 
-      {confirmRemove && (
+      {!isViewer && confirmRemove && (
         <ConfirmDialog
           open
           danger
@@ -436,6 +461,7 @@ export default function Page() {
           onConfirm={() => {
             const { type, value } = confirmRemove;
             setConfirmRemove(null);
+            if (isViewer) return;
             if (type === 'cat') handleRemoveCategory(value);
             else handleRemoveTag(value);
           }}
@@ -443,7 +469,7 @@ export default function Page() {
         />
       )}
 
-      {formTarget !== null && (
+      {!isViewer && formTarget !== null && (
         <IngredientForm
           initial={formTarget === 'new' || formTarget?.__copyFrom ? null : formTarget}
           copyFrom={formTarget?.__copyFrom || null}

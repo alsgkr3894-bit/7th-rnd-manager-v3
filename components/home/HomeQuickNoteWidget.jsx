@@ -6,6 +6,7 @@ export function HomeQuickNoteWidget({
   onQuickNoteChange,
   onSave,
   onOpenDraft,
+  canEdit = false,
 }) {
   return (
     <div className="card quick-note">
@@ -17,9 +18,10 @@ export function HomeQuickNoteWidget({
         placeholder="끝난 테스트 한 줄 메모를 입력하세요"
         value={quickNote}
         maxLength={200}
+        disabled={!canEdit}
         onChange={event => onQuickNoteChange(event.target.value)}
         onKeyDown={event => {
-          if (event.key === 'Enter') onSave();
+          if (canEdit && event.key === 'Enter') onSave();
         }}
       />
       <div className="quick-note-hint">
@@ -29,14 +31,20 @@ export function HomeQuickNoteWidget({
           </span>
         ) : (
           <span>
-            <kbd>Enter</kbd>로 저장
+            {canEdit ? (
+              <>
+                <kbd>Enter</kbd>로 저장
+              </>
+            ) : (
+              '관리자 전용'
+            )}
           </span>
         )}
       </div>
       <button
         type="button"
         className="btn primary sm"
-        disabled={!quickNote.trim()}
+        disabled={!canEdit || !quickNote.trim()}
         onClick={onOpenDraft}
       >
         자세히

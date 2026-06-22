@@ -9,6 +9,7 @@ export function SamplePageActions({
   batchMode,
   compareMode,
   selected,
+  canEdit = false,
   onBatchDelete,
   onExitBatchMode,
   onExitCompareMode,
@@ -64,6 +65,7 @@ export function SamplePageActions({
             className="btn sm"
             style={{ color: 'var(--negative)', fontWeight: 700 }}
             onClick={onBatchDelete}
+            disabled={!canEdit}
           >
             선택 삭제 ({selectedCount})
           </button>
@@ -79,13 +81,13 @@ export function SamplePageActions({
         </>
       ) : (
         <>
-          <button className="btn sm" onClick={onStartBatchMode}>
+          <button className="btn sm" onClick={onStartBatchMode} disabled={!canEdit}>
             선택
           </button>
           <button className="btn sm" onClick={onStartCompareMode}>
             비교
           </button>
-          <button className="btn primary" onClick={onCreateSample}>
+          <button className="btn primary" onClick={onCreateSample} disabled={!canEdit}>
             <Icon.plus style={{ width: 14, height: 14 }} /> 새 샘플 작성
           </button>
         </>

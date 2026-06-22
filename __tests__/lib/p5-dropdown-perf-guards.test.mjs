@@ -38,6 +38,8 @@ describe('ComboBox keyboard 정책', () => {
     // open/active 상태로 접근성 관련 UI 조건이 있어야 함
     expect(comboBoxSrc).toContain('open');
     expect(comboBoxSrc).toContain('active');
+    expect(comboBoxSrc).toContain('disabled = false');
+    expect(comboBoxSrc).toContain('disabled={disabled}');
   });
 });
 

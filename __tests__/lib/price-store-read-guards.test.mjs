@@ -6,6 +6,7 @@ const getByIndex = jest.fn();
 const runTransaction = jest.fn();
 const deleteFileWithLog = jest.fn();
 const emitPriceUpload = jest.fn();
+const assertActiveAdmin = jest.fn();
 
 jest.unstable_mockModule('../../lib/db/index.js', () => ({
   hasStore: (...args) => hasStore(...args),
@@ -19,13 +20,20 @@ jest.unstable_mockModule('../../lib/price/price-events.js', () => ({
   emitPriceUpload: (...args) => emitPriceUpload(...args),
 }));
 
-const { getPriceFiles, getPriceRowsByFileId } = await import('../../lib/price/store.js');
+jest.unstable_mockModule('@/lib/auth/guard', () => ({
+  assertActiveAdmin: (...args) => assertActiveAdmin(...args),
+}));
+
+const { deletePriceFile, getPriceFiles, getPriceRowsByFileId, savePriceUpload } =
+  await import('../../lib/price/store.js');
 
 beforeEach(() => {
   jest.clearAllMocks();
   hasStore.mockReturnValue(true);
   getAll.mockResolvedValue([]);
   getByIndex.mockResolvedValue([]);
+  deleteFileWithLog.mockResolvedValue({ deletedRows: 0, deletedLogs: 0 });
+  assertActiveAdmin.mockResolvedValue();
 });
 
 describe('price store read guards', () => {
@@ -77,5 +85,28 @@ describe('price store read guards', () => {
       { productCode: 'B', priceWithTax: '3000' },
     ]);
     expect(getByIndex).toHaveBeenCalledWith('price_rows', 'fileId', 7);
+  });
+
+  test('savePriceUpload는 관리자 가드 실패 시 DB 조회 전에 중단한다', async () => {
+    assertActiveAdmin.mockRejectedValueOnce(new Error('PERMISSION_DENIED'));
+
+    await expect(
+      savePriceUpload({
+        meta: { updateDate: '2026-06-01' },
+        rows: [],
+        log: {},
+      })
+    ).rejects.toThrow('PERMISSION_DENIED');
+    expect(assertActiveAdmin).toHaveBeenCalledWith('제때 단가 업로드 저장');
+    expect(getAll).not.toHaveBeenCalled();
+    expect(runTransaction).not.toHaveBeenCalled();
+  });
+
+  test('deletePriceFile은 관리자 가드를 거친 뒤 삭제한다', async () => {
+    await deletePriceFile(9);
+
+    expect(assertActiveAdmin).toHaveBeenCalledWith('제때 단가 업로드 삭제');
+    expect(deleteFileWithLog).toHaveBeenCalledWith('price_files', 'price_rows', 9, 'price');
+    expect(emitPriceUpload).toHaveBeenCalledTimes(1);
   });
 });

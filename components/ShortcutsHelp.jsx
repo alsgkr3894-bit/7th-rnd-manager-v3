@@ -5,7 +5,7 @@ import { OVERLAY_COLOR } from '@/lib/ui/styles';
 import { useModalOrigin } from '@/hooks/useModalOrigin';
 
 const SHORTCUTS = [
-  { key: 'N', desc: '새 테스트 노트 작성' },
+  { key: 'N', desc: '새 테스트 노트 작성', requiresEdit: true },
   { key: '⌘K', desc: '커맨드 팔레트 열기' },
   { key: '/', desc: '페이지 내 검색창 포커스' },
   { key: 'D', desc: '다크모드 토글' },
@@ -22,8 +22,9 @@ const SHORTCUTS = [
   { key: 'G J', desc: '제때로 이동' },
 ];
 
-export function ShortcutsHelp({ onClose }) {
+export function ShortcutsHelp({ onClose, canEdit = false }) {
   const cardRef = useRef(null);
+  const visibleShortcuts = SHORTCUTS.filter(shortcut => canEdit || !shortcut.requiresEdit);
   useModalOrigin(cardRef);
 
   return (
@@ -64,7 +65,7 @@ export function ShortcutsHelp({ onClose }) {
           </button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {SHORTCUTS.map(s => (
+          {visibleShortcuts.map(s => (
             <div
               key={s.key}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}

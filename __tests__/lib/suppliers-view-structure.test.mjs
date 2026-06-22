@@ -51,6 +51,19 @@ describe('suppliers view structure', () => {
     expect(utilsSource).toContain('export function filterSuppliers');
   });
 
+  test('suppliers write controls follow current role', () => {
+    expect(viewSource).toContain("from '@/hooks/useCurrentRole'");
+    expect(viewSource).toContain('const canEdit = roleReady && isAdmin');
+    expect(viewSource).toContain('if (!canEdit) return');
+    expect(viewSource).toContain('canEdit={canEdit}');
+    expect(viewSource).toContain('canEdit && modalTarget !== null');
+    expect(viewSource).toContain('canEdit && pendingDeleteId');
+    expect(toolbarSource).toContain('canEdit = false');
+    expect(toolbarSource).toContain('disabled={!canEdit}');
+    expect(listSource).toContain('canEdit = false');
+    expect(listSource).toContain('disabled={!canEdit}');
+  });
+
   test('supplier helpers keep empty form, edit form, and search behavior stable', () => {
     expect(emptySupplierForm()).toEqual({ name: '', contact: '', phone: '', memo: '' });
     expect(

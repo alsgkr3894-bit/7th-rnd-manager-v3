@@ -23,6 +23,12 @@ describe('TopBar 서브컴포넌트 분리 구조', () => {
     expect(topBarSrc).not.toContain('getInitial');
   });
 
+  test('TopBar.jsx 새 노트 버튼은 viewer에서 비활성화된다', () => {
+    expect(topBarSrc).toContain('canEdit = false');
+    expect(topBarSrc).toContain("if (canEdit) router.push('/note/write')");
+    expect(topBarSrc).toContain('disabled={!canEdit}');
+  });
+
   test('ProfileMenu.jsx가 clearAuthCookie를 import한다', () => {
     expect(profileMenuSrc).toContain('clearAuthCookie');
     expect(profileMenuSrc).toContain('handleLogout');

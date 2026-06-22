@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { initDB } from '@/lib/db';
 import { ACTIVE_ACCOUNT_KEY, getActiveRole, isActiveAccountStorageKey } from '@/lib/auth/accounts';
 
@@ -12,22 +12,28 @@ import { ACTIVE_ACCOUNT_KEY, getActiveRole, isActiveAccountStorageKey } from '@/
 export function useCurrentRole() {
   const [role, setRole] = useState('viewer');
   const [ready, setReady] = useState(false);
+  const mountedRef = useRef(true);
+  const refreshSeqRef = useRef(0);
 
   const refresh = useCallback(() => {
+    const seq = ++refreshSeqRef.current;
     setReady(false);
     initDB()
       .then(() => getActiveRole())
       .then(r => {
+        if (!mountedRef.current || seq !== refreshSeqRef.current) return;
         setRole(r);
         setReady(true);
       })
       .catch(() => {
+        if (!mountedRef.current || seq !== refreshSeqRef.current) return;
         setRole('viewer');
         setReady(true);
       });
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     refresh();
     // storage: 다른 탭에서 전환 시 / rnd:account-changed: 같은 탭에서 전환 시
     function onStorage(e) {
@@ -36,6 +42,8 @@ export function useCurrentRole() {
     window.addEventListener('storage', onStorage);
     window.addEventListener('rnd:account-changed', refresh);
     return () => {
+      mountedRef.current = false;
+      refreshSeqRef.current += 1;
       window.removeEventListener('storage', onStorage);
       window.removeEventListener('rnd:account-changed', refresh);
     };

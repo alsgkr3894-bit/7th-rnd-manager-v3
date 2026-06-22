@@ -3,6 +3,41 @@ import { formatNumber } from '@/lib/format';
 
 const FIELD_LABEL_STYLE = { fontSize: 12, color: 'var(--text-3)' };
 
+function localStorageNoticeOf(summary) {
+  if (!summary) return null;
+  if (summary.invalidShape) {
+    return {
+      tone: 'warn',
+      title: '설정값 섹션 형식이 맞지 않습니다.',
+      body: 'IndexedDB store는 계속 확인할 수 있지만, localStorage 설정값은 복원하지 않습니다.',
+    };
+  }
+  if (!summary.hasLocalStorage) return null;
+
+  const parts = [`복원 대상 ${formatNumber(summary.restorableKeyCount)}개`];
+  if (summary.ignoredKeyCount > 0) {
+    const ignored = [
+      summary.unknownKeyCount > 0 ? `알 수 없는 키 ${formatNumber(summary.unknownKeyCount)}개` : '',
+      summary.nonStringValueCount > 0
+        ? `문자열이 아닌 값 ${formatNumber(summary.nonStringValueCount)}개`
+        : '',
+      summary.unreadableValueCount > 0
+        ? `읽을 수 없는 값 ${formatNumber(summary.unreadableValueCount)}개`
+        : '',
+    ].filter(Boolean);
+    parts.push(
+      `무시 ${formatNumber(summary.ignoredKeyCount)}개${ignored.length ? ` (${ignored.join(', ')})` : ''}`
+    );
+  }
+  if (summary.truncated) parts.push('일부 키만 미리 검사');
+
+  return {
+    tone: summary.ignoredKeyCount > 0 || summary.truncated ? 'warn' : 'info',
+    title: '설정값(localStorage) 섹션',
+    body: parts.join(' · '),
+  };
+}
+
 export function RestorePreviewSummary({
   parsed,
   missingStores,
@@ -13,7 +48,10 @@ export function RestorePreviewSummary({
   sourceMismatch,
   targetBrand,
   storeSplit,
+  localStorageSummary,
 }) {
+  const localStorageNotice = localStorageNoticeOf(localStorageSummary);
+
   return (
     <div className="card" style={{ marginTop: 16 }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>2. 백업 파일 미리보기</h2>
@@ -120,6 +158,32 @@ export function RestorePreviewSummary({
         현재 선택 브랜드 DB에 들어가고, 개발노트/샘플/일정/작업일지 store{' '}
         {formatNumber(storeSplit.shared.length)}개는 공유 DB에 들어갑니다.
       </div>
+
+      {localStorageNotice && (
+        <div
+          style={{
+            marginBottom: 10,
+            padding: '10px 12px',
+            borderRadius: 8,
+            background:
+              localStorageNotice.tone === 'warn' ? 'var(--warn-soft)' : 'var(--surface-2)',
+            border:
+              localStorageNotice.tone === 'warn'
+                ? '1px solid color-mix(in oklab, var(--warn) 28%, transparent)'
+                : '1px solid var(--border)',
+            fontSize: 12,
+            color: 'var(--text-2)',
+            lineHeight: 1.5,
+          }}
+        >
+          <b
+            style={{ color: localStorageNotice.tone === 'warn' ? 'var(--warn)' : 'var(--text-1)' }}
+          >
+            {localStorageNotice.title}
+          </b>{' '}
+          {localStorageNotice.body}
+        </div>
+      )}
 
       {missingStores.length > 0 && (
         <div

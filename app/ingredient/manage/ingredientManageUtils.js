@@ -2,6 +2,7 @@ import { showToast } from '@/components/Toast';
 import { restoreRecord, hasStore } from '@/lib/db';
 import { getManagedProducts, addManagedProduct, updateManagedProduct } from '@/lib/shipment';
 import { TYPE_LABEL } from '@/components/jette/managed-products-constants';
+import { assertActiveAdmin } from '@/lib/auth/guard';
 
 export const MANAGE_VIEW_KEYS = new Set([
   'manage',
@@ -29,6 +30,7 @@ const scopeToType = label =>
 export async function syncManagedScope(target, scopeLabel) {
   const productType = scopeToType(scopeLabel);
   if (!target.productCode || !productType) return;
+  await assertActiveAdmin('식자재 제때 범위 동기화');
   const managed = await getManagedProducts();
   const existing = managed.find(p => p.productCode === target.productCode);
   if (existing) {
@@ -46,6 +48,7 @@ export async function syncManagedScope(target, scopeLabel) {
 export async function restoreDeletedIngredientBackup(backup) {
   // id 없는 레코드를 put하면 autoIncrement가 새 id를 할당해 원본을 잃는다.
   if (!backup?.ingredient?.id) return;
+  await assertActiveAdmin('식자재 삭제 실행취소');
   await restoreRecord('cost_ingredients', backup.ingredient);
   // cascade로 삭제됐던 legacy 알레르기 링크도 함께 복원(있고 store가 존재할 때만).
   const links = Array.isArray(backup.deletedAllergenLinks) ? backup.deletedAllergenLinks : [];

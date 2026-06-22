@@ -58,6 +58,7 @@ export function NutritionMenuWorkspace({
   setComps,
   menuSearch,
   onMenuSearch,
+  canEdit = false,
 }) {
   return (
     <div className="content-enter">
@@ -94,6 +95,7 @@ export function NutritionMenuWorkspace({
           rawMap={rawMap}
           onRefresh={onRefresh}
           menuMasters={menuMasters}
+          canEdit={canEdit}
         />
       )}
       {tab === 1 && (
@@ -107,7 +109,12 @@ export function NutritionMenuWorkspace({
         />
       )}
       {tab === 2 && (
-        <TabToppings toppings={toppings} ingredients={ingredients} onRefresh={onRefresh} />
+        <TabToppings
+          toppings={toppings}
+          ingredients={ingredients}
+          onRefresh={onRefresh}
+          canEdit={canEdit}
+        />
       )}
       {tab === 3 && (
         <TabDerived
@@ -118,6 +125,7 @@ export function NutritionMenuWorkspace({
           menuMasters={menuMasters}
           menuSearch={menuSearch}
           onOpenBase={() => onTab(0)}
+          canEdit={canEdit}
         />
       )}
       {tab === 4 && (
@@ -139,6 +147,7 @@ export function NutritionMenuWorkspace({
           setComps={setComps}
           menuMasters={menuMasters}
           onRefresh={onRefresh}
+          canEdit={canEdit}
         />
       )}
     </div>

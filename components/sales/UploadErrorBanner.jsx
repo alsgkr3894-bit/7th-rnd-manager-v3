@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Icon } from '@/components/icons';
-import { downloadCsv } from '@/lib/download';
+import { downloadCsv, makeFileNameWithBrand } from '@/lib/download';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
@@ -31,7 +31,7 @@ export function UploadErrorBanner({ error }) {
       asDisplayText(r.rawMenuName),
       asDisplayText(r.quantity),
     ]);
-    downloadCsv([headers, ...data], '업로드오류목록.csv');
+    downloadCsv([headers, ...data], makeFileNameWithBrand('업로드오류목록', 'csv'));
   }
 
   return (

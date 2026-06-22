@@ -8,6 +8,7 @@ export function SampleListView({
   ratingMin,
   sortBy,
   batchMode,
+  canEdit = false,
   toggleSelect,
   compareMode,
   toggleCompare,
@@ -56,6 +57,7 @@ export function SampleListView({
                 sample={sample}
                 onClick={() => {
                   if (batchMode) {
+                    if (!canEdit) return;
                     toggleSelect(sample.id);
                     return;
                   }
@@ -68,6 +70,7 @@ export function SampleListView({
                 onEdit={() => onEditSample(sample)}
                 onCopy={event => onCopySample(sample, event)}
                 onDelete={() => onDeleteSample(sample)}
+                canEdit={canEdit}
               />
             ))}
           </tbody>

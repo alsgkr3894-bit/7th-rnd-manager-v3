@@ -9,6 +9,7 @@ export function UnmatchedBulkRulePanel({
   categoryOptions,
   busy,
   selectedCount,
+  canEdit = false,
   onCategoryChange,
   onGroupChange,
   onDetailChange,
@@ -38,6 +39,7 @@ export function UnmatchedBulkRulePanel({
           style={{ fontSize: 12 }}
           value={category}
           onChange={event => onCategoryChange(event.target.value)}
+          disabled={!canEdit}
         >
           {CATEGORY_ORDER.map(option => (
             <option key={option} value={option}>
@@ -54,6 +56,7 @@ export function UnmatchedBulkRulePanel({
           options={catOpts.groupNames || []}
           placeholder="그룹명"
           inputClassName="form-input"
+          disabled={!canEdit}
         />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 140 }}>
@@ -64,13 +67,18 @@ export function UnmatchedBulkRulePanel({
           options={catOpts.detailNames || []}
           placeholder="상세명"
           inputClassName="form-input"
+          disabled={!canEdit}
         />
       </div>
       <div style={{ display: 'flex', gap: 6 }}>
         <button className="btn sm" onClick={onCancel} disabled={busy}>
           취소
         </button>
-        <button className="btn sm primary" onClick={onApply} disabled={busy || !category}>
+        <button
+          className="btn sm primary"
+          onClick={onApply}
+          disabled={busy || !canEdit || !category}
+        >
           {busy ? '적용 중...' : `${selectedCount}건 분류 적용`}
         </button>
       </div>

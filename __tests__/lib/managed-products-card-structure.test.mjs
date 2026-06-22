@@ -22,6 +22,8 @@ const tableSource = readFileSync(
   resolve('components/jette/managed-products/ManagedProductsTable.jsx'),
   'utf8'
 );
+const formSource = readFileSync(resolve('components/jette/ManagedProductsForm.jsx'), 'utf8');
+const rowSource = readFileSync(resolve('components/jette/ManagedProductsRow.jsx'), 'utf8');
 const utilsSource = readFileSync(
   resolve('components/jette/managed-products/managedProductsCardUtils.js'),
   'utf8'
@@ -49,6 +51,22 @@ describe('managed products card structure', () => {
     expect(tableSource).toContain('<SortableTh');
     expect(tableSource).toContain('MANAGED_PRODUCTS_PAGE_SIZE');
     expect(utilsSource).toContain('export function filterManagedProducts');
+  });
+
+  test('managed product write controls follow current role', () => {
+    expect(cardSource).toContain("from '@/hooks/useCurrentRole'");
+    expect(cardSource).toContain('const canEdit = roleReady && isAdmin');
+    expect(cardSource).toContain('if (!canEdit) return');
+    expect(cardSource).toContain('canEdit={canEdit}');
+    expect(headerSource).toContain('canEdit = false');
+    expect(headerSource).toContain('disabled={!canEdit');
+    expect(formSource).toContain('canEdit = false');
+    expect(formSource).toContain('disabled={!canEdit}');
+    expect(tableSource).toContain('canEdit = false');
+    expect(tableSource).toContain('canEdit={canEdit}');
+    expect(rowSource).toContain('canEdit = false');
+    expect(rowSource).toContain('disabled={!canEdit}');
+    expect(rowSource).toContain('canEdit && pendingDelete');
   });
 
   test('helpers keep counts, filters, CSV rows, and migration rows stable', () => {

@@ -40,6 +40,7 @@ export const SampleCard = React.memo(function SampleCard({
   onEdit,
   onCopy,
   onDelete,
+  canEdit = false,
 }) {
   const model = buildSampleCardViewModel(sample);
   const rec = model.rec;
@@ -88,6 +89,7 @@ export const SampleCard = React.memo(function SampleCard({
           onEdit={edit}
           onCopy={copy}
           onDelete={remove}
+          canEdit={canEdit}
         />
       </div>
     </div>

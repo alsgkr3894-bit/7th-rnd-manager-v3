@@ -9,7 +9,15 @@ import { HalfAndHalfCard } from './set-calc/HalfAndHalfCard';
 import { SetCompositionList } from './set-calc/SetCompositionList';
 import { SetCompositionModal } from './set-calc/SetCompositionModal';
 
-export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRefresh }) {
+export function TabSetCalc({
+  menus,
+  rawMap,
+  edgeMap,
+  setComps,
+  menuMasters,
+  onRefresh,
+  canEdit = false,
+}) {
   const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
   const safeSetComps = useMemo(() => asObjectArray(setComps), [setComps]);
   const safeMenuMasters = useMemo(() => asObjectArray(menuMasters), [menuMasters]);
@@ -31,7 +39,7 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
     handleSave,
     handleDelete,
     confirmElement,
-  } = useSetCompositionForm({ onRefresh: refresh });
+  } = useSetCompositionForm({ onRefresh: refresh, canEdit });
 
   const masterByCode = useMemo(
     () => Object.fromEntries(safeMenuMasters.map(m => [m.menuCode, m])),
@@ -85,9 +93,10 @@ export function TabSetCalc({ menus, rawMap, edgeMap, setComps, menuMasters, onRe
         onAdd={openAdd}
         onEdit={openEdit}
         onDelete={handleDelete}
+        canEdit={canEdit}
       />
 
-      {modal && (
+      {canEdit && modal && (
         <SetCompositionModal
           mode={modal}
           form={form}

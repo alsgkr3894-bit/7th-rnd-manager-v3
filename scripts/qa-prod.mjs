@@ -1,4 +1,4 @@
-import { rmSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import net from 'node:net';
 
@@ -24,6 +24,7 @@ function run(command, args, env = {}) {
     const child = spawn(command, args, {
       stdio: 'inherit',
       shell: false,
+      cwd: process.cwd(),
       env: { ...process.env, ...env },
     });
     child.on('error', reject);
@@ -37,12 +38,22 @@ function run(command, args, env = {}) {
 function spawnServer() {
   const child = spawn(npx, ['next', 'start', '-H', HOST, '-p', PORT], {
     shell: false,
+    cwd: process.cwd(),
     env: process.env,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   child.stdout.on('data', data => process.stdout.write(data));
   child.stderr.on('data', data => process.stderr.write(data));
   return child;
+}
+
+async function waitForBuildId(timeoutMs = 10_000) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    if (existsSync('.next/BUILD_ID')) return;
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  throw new Error('next build completed but .next/BUILD_ID was not created');
 }
 
 async function waitForServer(url, timeoutMs = 30_000) {
@@ -86,6 +97,7 @@ try {
 
   rmSync('.next', { recursive: true, force: true });
   await run(npm, ['run', 'build']);
+  await waitForBuildId();
 
   server = spawnServer();
   server.on('exit', code => {

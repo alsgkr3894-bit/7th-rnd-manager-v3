@@ -1,9 +1,11 @@
-export function SegGroup({ options, value, onChange }) {
+export function SegGroup({ options, value, onChange, disabled = false }) {
   return (
     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
       {options.map(o => (
         <button
           key={o}
+          type="button"
+          disabled={disabled}
           style={{
             padding: '5px 12px',
             borderRadius: 8,
@@ -14,9 +16,12 @@ export function SegGroup({ options, value, onChange }) {
             fontFamily: 'inherit',
             fontSize: 13,
             fontWeight: value === o ? 700 : 400,
-            cursor: 'pointer',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            opacity: disabled ? 0.65 : 1,
           }}
-          onClick={() => onChange(o)}
+          onClick={() => {
+            if (!disabled) onChange(o);
+          }}
         >
           {o}
         </button>

@@ -22,6 +22,8 @@ import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 import { getRecentPaletteItems } from '@/lib/palette-recent';
 import { getNoteKpi, getRecentActivities } from '@/lib/stats';
 import { useHomeDashboardData } from '@/hooks/useHomeDashboardData';
+import { ActionCenterWidget } from '@/components/home/ActionCenterWidget';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 /** 시간대별 인사말 */
 function greetingByHour() {
@@ -35,6 +37,8 @@ function greetingByHour() {
 export default function HomePage() {
   const router = useRouter();
   const isMain = useIsMainBrand();
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
   const unmatchedAlertEnabled = useSettingValue('unmatchedAlert') !== 'off';
   const costRateAlertEnabled = useSettingValue('costRateAlert') !== 'off';
 
@@ -108,6 +112,10 @@ export default function HomePage() {
   }, []);
 
   function openDraftInNoteWrite() {
+    if (!canEdit) {
+      showToast('노트 작성은 관리자만 가능합니다', 'warn');
+      return;
+    }
     const text = quickNote.trim();
     if (!text) return;
     setHomeNoteDraft(text);
@@ -115,6 +123,10 @@ export default function HomePage() {
   }
 
   async function saveQuickNote() {
+    if (!canEdit) {
+      showToast('노트 작성은 관리자만 가능합니다', 'warn');
+      return;
+    }
     const text = quickNote.trim();
     if (!text) return;
     if (text.length > 200) {
@@ -244,8 +256,13 @@ export default function HomePage() {
           }
         }}
         onOpenWidgetConfig={() => setWidgetConfigOpen(true)}
-        onUploadSales={() => router.push('/menu-sales/upload')}
-        onNewNote={() => router.push('/note/write')}
+        onUploadSales={() => {
+          if (canEdit) router.push('/menu-sales/upload');
+        }}
+        onNewNote={() => {
+          if (canEdit) router.push('/note/write');
+        }}
+        canEdit={canEdit}
       />
 
       <HomePeriodNav
@@ -253,6 +270,17 @@ export default function HomePage() {
         anchor={anchor}
         onShiftAnchor={shiftAnchor}
         onResetAnchor={() => setAnchor(null)}
+      />
+
+      <ActionCenterWidget
+        unmatchedCount={unmatchedAlertEnabled ? openIssueCount : 0}
+        reportingCount={reportingNotes.length}
+        uploadFreshness={uploadFreshness}
+        backupReminder={backupReminder}
+        ingredientHealth={ingredientHealth}
+        costAlertData={costRateAlertEnabled ? costAlertData : null}
+        isMain={isMain}
+        canEdit={canEdit}
       />
 
       <HomeDashboardRows
@@ -294,6 +322,7 @@ export default function HomePage() {
         showCostAlert={showCostAlert}
         quickNote={quickNote}
         quickSaved={quickSaved}
+        canEdit={canEdit}
         onQuickNoteChange={value => {
           setQuickNote(value);
           setQuickSaved(false);

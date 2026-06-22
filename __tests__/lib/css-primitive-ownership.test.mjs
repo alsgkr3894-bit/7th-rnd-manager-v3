@@ -58,6 +58,42 @@ describe('CSS primitive ownership', () => {
     }
   });
 
+  test('report preview layout is owned by report modal CSS, not motion CSS', () => {
+    const reportModal = read('app/styles/features/report/modal.css');
+    const motionReport = read('app/styles/features/motion-report.css');
+
+    expect(reportModal).toMatch(/^\.preview-shell\s*\{/m);
+    expect(reportModal).toMatch(/^\.preview-body\s*\{/m);
+    expect(reportModal).toMatch(/^\.preview-pager\s*\{/m);
+    expect(reportModal).toMatch(/^\.pager-btn\s*\{/m);
+    expect(reportModal).toMatch(/^\.pager-info\s*\{/m);
+
+    for (const block of blocksFor(motionReport, '.preview-shell')) {
+      expect(block).not.toMatch(/\bdisplay\s*:/);
+      expect(block).not.toMatch(/\bwidth\s*:/);
+      expect(block).not.toMatch(/\bheight\s*:/);
+      expect(block).not.toMatch(/\bbackground\s*:/);
+      expect(block).not.toMatch(/\boverflow\s*:/);
+    }
+    expect(motionReport).not.toMatch(/^\.preview-meta\s*\{/m);
+    expect(motionReport).not.toMatch(/^\.preview-body\s*\{/m);
+    expect(motionReport).not.toMatch(/^\.preview-pager\s*\{/m);
+    expect(motionReport).not.toMatch(/^\.pager-btn\s*\{/m);
+  });
+
+  test('CSS uses defined surface tokens', () => {
+    const styles = [
+      read('app/styles/base.css'),
+      read('app/styles/layout.css'),
+      read('app/styles/features/report/modal.css'),
+      read('app/styles/features/motion-report.css'),
+      read('app/styles/features/motion-note.css'),
+      read('app/styles/features/motion-enhanced.css'),
+    ].join('\n');
+
+    expect(styles).not.toContain('var(--surface-1)');
+  });
+
   test('base.css is imported before feature-specific CSS', () => {
     const globals = read('app/globals.css');
 

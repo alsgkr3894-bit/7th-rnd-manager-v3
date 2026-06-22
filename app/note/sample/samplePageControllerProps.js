@@ -20,13 +20,20 @@ export function buildSamplePageControllerProps({
   compare,
   recordActions,
   confirmElement,
+  canEdit = false,
 }) {
   const { detailRec, setDetailRec, loading, viewMode } = pageState;
 
-  const openWrite = () => router.push('/note/sample/write');
-  const openSampleEditor = sample => router.push(`/note/sample/${sample.id}`);
+  const openWrite = () => {
+    if (!canEdit) return;
+    router.push('/note/sample/write');
+  };
+  const openSampleEditor = sample => {
+    if (!canEdit || sample?.id == null) return;
+    router.push(`/note/sample/${sample.id}`);
+  };
   const editDetail = () => {
-    if (!detailRec) return;
+    if (!canEdit || !detailRec) return;
     setDetailRec(null);
     router.push(`/note/sample/${detailRec.id}`);
   };
@@ -38,6 +45,7 @@ export function buildSamplePageControllerProps({
     recordActions,
     confirmElement,
     navigation,
+    canEdit,
   };
 
   return {

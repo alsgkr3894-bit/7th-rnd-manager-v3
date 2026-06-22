@@ -18,7 +18,7 @@ import {
   toppingValuesFromRecord,
 } from './toppings/toppingUtils';
 
-export function TabToppings({ toppings, ingredients, onRefresh }) {
+export function TabToppings({ toppings, ingredients, onRefresh, canEdit = false }) {
   const { showConfirm, confirmElement } = useConfirmDialog();
   const safeToppings = useMemo(() => asObjectArray(toppings), [toppings]);
   const safeIngredients = useMemo(() => normalizeToppingIngredients(ingredients), [ingredients]);
@@ -34,12 +34,14 @@ export function TabToppings({ toppings, ingredients, onRefresh }) {
   );
 
   const openAdd = () => {
+    if (!canEdit) return;
     setForm(EMPTY_TOPPING_FORM);
     setValues({});
     setModal('add');
   };
 
   const openEdit = topping => {
+    if (!canEdit) return;
     setForm(toppingFormFromRecord(topping));
     setValues(toppingValuesFromRecord(topping));
     setModal(topping);
@@ -60,6 +62,7 @@ export function TabToppings({ toppings, ingredients, onRefresh }) {
   };
 
   const save = async () => {
+    if (!canEdit) return;
     const toppingName = asDisplayText(form.toppingName).trim();
     if (!toppingName) {
       showToast('추가토핑명을 입력해주세요', 'error');
@@ -79,6 +82,7 @@ export function TabToppings({ toppings, ingredients, onRefresh }) {
   };
 
   const remove = async topping => {
+    if (!canEdit) return;
     const name = asDisplayText(topping.toppingName, '추가토핑');
     const ok = await showConfirm({ message: `'${name}' 추가토핑을 삭제할까요?`, danger: true });
     if (!ok) return;
@@ -89,7 +93,7 @@ export function TabToppings({ toppings, ingredients, onRefresh }) {
 
   return (
     <div style={{ marginTop: 20 }}>
-      <ToppingsHeader onAdd={openAdd} />
+      <ToppingsHeader onAdd={openAdd} canEdit={canEdit} />
 
       {safeToppings.length === 0 ? (
         <ToppingsEmptyState />
@@ -99,10 +103,11 @@ export function TabToppings({ toppings, ingredients, onRefresh }) {
           lookups={ingredientLookups}
           onEdit={openEdit}
           onRemove={remove}
+          canEdit={canEdit}
         />
       )}
 
-      {modal && (
+      {canEdit && modal && (
         <ToppingEditModal
           modal={modal}
           form={form}

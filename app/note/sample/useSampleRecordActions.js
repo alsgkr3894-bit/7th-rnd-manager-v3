@@ -5,9 +5,16 @@ import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { addSample, updateSample, deleteSample } from '@/lib/sample';
 
-export function useSampleRecordActions({ setSamples, setDetailRec, reload, showConfirm }) {
+export function useSampleRecordActions({
+  setSamples,
+  setDetailRec,
+  reload,
+  showConfirm,
+  canEdit = false,
+}) {
   const handleDelete = useCallback(
     async sample => {
+      if (!canEdit) return;
       const name = sample.title?.trim() || '샘플';
       const ok = await showConfirm({
         message: `'${name}' 기록이 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`,
@@ -24,12 +31,13 @@ export function useSampleRecordActions({ setSamples, setDetailRec, reload, showC
         showToast('삭제 실패', 'error');
       }
     },
-    [setDetailRec, setSamples, showConfirm]
+    [canEdit, setDetailRec, setSamples, showConfirm]
   );
 
   const handleCopy = useCallback(
     async (sample, event) => {
       event?.stopPropagation();
+      if (!canEdit) return;
       try {
         await initDB();
         await addSample({ ...sample, title: `${sample.title} (복사)` });
@@ -39,12 +47,13 @@ export function useSampleRecordActions({ setSamples, setDetailRec, reload, showC
         showToast('복사 실패', 'error');
       }
     },
-    [reload]
+    [canEdit, reload]
   );
 
   const handleRatingChange = useCallback(
     async (sampleId, newRating, event) => {
       event?.stopPropagation();
+      if (!canEdit) return;
       try {
         await initDB();
         await updateSample(sampleId, { rating: newRating });
@@ -56,7 +65,7 @@ export function useSampleRecordActions({ setSamples, setDetailRec, reload, showC
         showToast('별점 변경 실패', 'error');
       }
     },
-    [setSamples]
+    [canEdit, setSamples]
   );
 
   return {

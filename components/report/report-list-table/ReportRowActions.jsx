@@ -4,6 +4,7 @@ export function ReportRowActions({
   report,
   isDeleting,
   handleDelete,
+  canEdit = false,
   setPreviewTarget,
   setPreviewPrintOnOpen,
   setShareTarget,
@@ -37,7 +38,7 @@ export function ReportRowActions({
         <button
           className="btn sm"
           style={{ color: 'var(--negative)' }}
-          disabled={isDeleting}
+          disabled={isDeleting || !canEdit}
           onClick={() => handleDelete(report.id)}
         >
           <Icon.x style={{ width: 12, height: 12 }} />

@@ -64,6 +64,7 @@ describe('importAll 구조 방어', () => {
   });
 
   test('localStorage 복원 실패는 결과 errors에 보고한다', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
     Object.defineProperty(globalThis, 'localStorage', {
       configurable: true,
       value: {
@@ -73,23 +74,27 @@ describe('importAll 구조 방어', () => {
       },
     });
 
-    const result = await importAll({
-      stores: {},
-      localStorage: {
-        'v3:profile': 'profile',
-      },
-    });
-
-    expect(result).toEqual({
-      imported: 0,
-      skipped: 0,
-      errors: [
-        {
-          store: 'localStorage',
-          error: 'localStorage 복원 실패 1건: v3:profile',
+    try {
+      const result = await importAll({
+        stores: {},
+        localStorage: {
+          'v3:profile': 'profile',
         },
-      ],
-    });
+      });
+
+      expect(result).toEqual({
+        imported: 0,
+        skipped: 0,
+        errors: [
+          {
+            store: 'localStorage',
+            error: 'localStorage 복원 실패 1건: v3:profile',
+          },
+        ],
+      });
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 
   test('같은 DB의 여러 store는 하나의 교체 트랜잭션으로 묶는다', async () => {

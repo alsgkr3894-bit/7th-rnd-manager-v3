@@ -20,6 +20,7 @@ const TYPE_VALUES = new Set(TYPE_OPTIONS.map(option => option.value));
  */
 export function ManagedProductsRow({
   product = {},
+  canEdit = false,
   onToggleEnable = noop,
   onChangeType = noop,
   onToggleManaged = noop,
@@ -52,12 +53,14 @@ export function ManagedProductsRow({
         <Toggle
           value={safeProduct.enable !== false}
           onChange={() => handleToggleEnable(safeProduct)}
+          disabled={!canEdit}
         />
       </td>
       <td>
         <select
           value={productType}
           onChange={e => handleChangeType(safeProduct, e.target.value)}
+          disabled={!canEdit}
           style={{ ...inputStyle, width: '100%' }}
         >
           {TYPE_OPTIONS.map(o => (
@@ -72,18 +75,24 @@ export function ManagedProductsRow({
           type="checkbox"
           checked={Boolean(safeProduct.isManaged)}
           onChange={() => handleToggleManaged(safeProduct)}
+          disabled={!canEdit}
           style={{ cursor: 'pointer', width: 16, height: 16 }}
         />
       </td>
       <td style={{ textAlign: 'right' }}>
-        {pendingDelete ? (
+        {canEdit && pendingDelete ? (
           <InlineConfirmButtons
             message="제품을 삭제할까요?"
             onCancel={handleCancelDelete}
             onConfirm={handleConfirmDelete}
           />
         ) : (
-          <button className="btn sm" style={{ color: 'var(--negative)' }} onClick={handleAskDelete}>
+          <button
+            className="btn sm"
+            style={{ color: 'var(--negative)' }}
+            onClick={handleAskDelete}
+            disabled={!canEdit}
+          >
             삭제
           </button>
         )}

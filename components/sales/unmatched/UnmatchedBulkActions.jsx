@@ -11,6 +11,7 @@ export function UnmatchedBulkActions({
   bulkRuleGroup,
   bulkRuleDetail,
   categoryOptions,
+  canEdit = false,
   onClearSelection,
   onCancelBulkConfirm,
   onConfirmBulkExclude,
@@ -50,7 +51,7 @@ export function UnmatchedBulkActions({
             <button
               className="btn sm"
               onClick={onConfirmBulkExclude}
-              disabled={bulkBusy}
+              disabled={bulkBusy || !canEdit}
               style={{
                 background: 'var(--negative)',
                 color: '#fff',
@@ -65,12 +66,13 @@ export function UnmatchedBulkActions({
             <button className="btn sm" onClick={onClearSelection}>
               선택 해제
             </button>
-            <button className="btn sm" onClick={onToggleBulkRule}>
+            <button className="btn sm" onClick={onToggleBulkRule} disabled={!canEdit}>
               {showBulkRule ? '분류 적용 닫기' : '분류 일괄 적용'}
             </button>
             <button
               className="btn sm"
               onClick={onAskBulkExclude}
+              disabled={!canEdit}
               style={{ color: 'var(--negative)' }}
             >
               선택 일괄 제외
@@ -87,6 +89,7 @@ export function UnmatchedBulkActions({
           categoryOptions={categoryOptions}
           busy={bulkRuleBusy}
           selectedCount={selectedCount}
+          canEdit={canEdit}
           onCategoryChange={onBulkRuleCatChange}
           onGroupChange={onBulkRuleGroupChange}
           onDetailChange={onBulkRuleDetailChange}

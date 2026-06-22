@@ -4,6 +4,7 @@ import { NoteCard } from './_NoteCard';
 export function NoteCardGrid({
   visible,
   filteredCount,
+  canEdit = false,
   batchMode,
   selected,
   pinnedIds,
@@ -41,7 +42,7 @@ export function NoteCardGrid({
             {note.testContent && note.testContent.length > 80 && (
               <div className="note-hover-preview">{note.testContent}</div>
             )}
-            {batchMode && (
+            {canEdit && batchMode && (
               <div
                 className={'batch-checkbox-wrap' + (selected.has(note.id) ? ' checked' : '')}
                 onClick={e => {
@@ -59,7 +60,7 @@ export function NoteCardGrid({
               onCopy={e => onCopy(note, e)}
               onStatusChange={(status, e) => onStatusChange(note.id, status, e)}
               onNewVersion={e => onNewVersion(note, e)}
-              onClick={() => (batchMode ? onToggleSelect(note.id) : onOpen(note))}
+              onClick={() => (canEdit && batchMode ? onToggleSelect(note.id) : onOpen(note))}
               hlRe={hlRe}
               statusPop={popIds.has(note.id)}
               batchMode={batchMode}
@@ -67,6 +68,7 @@ export function NoteCardGrid({
               pinned={pinnedIds.has(note.id)}
               onPin={e => onPin(note.id, e)}
               onTagClick={onTagClick}
+              canEdit={canEdit}
             />
           </div>
         ))}

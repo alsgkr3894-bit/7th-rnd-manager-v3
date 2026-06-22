@@ -11,6 +11,7 @@ export function ReportNameCell({
   commitEdit,
   startEdit,
   setPreviewTarget,
+  canEdit = false,
 }) {
   return (
     <td className="cell-name">
@@ -20,6 +21,7 @@ export function ReportNameCell({
           className="input"
           style={{ fontSize: 13, padding: '4px 8px', width: '100%' }}
           value={editName}
+          disabled={!canEdit}
           onChange={event => setEditName(event.target.value)}
           onBlur={() => commitEdit(report)}
           onKeyDown={event => {
@@ -39,8 +41,10 @@ export function ReportNameCell({
         <button
           className="report-name-btn"
           onClick={() => setPreviewTarget(report)}
-          onDoubleClick={() => startEdit(report)}
-          title="더블클릭으로 이름 편집"
+          onDoubleClick={() => {
+            if (canEdit) startEdit(report);
+          }}
+          title={canEdit ? '더블클릭으로 이름 편집' : '미리보기'}
         >
           {model.reportName}
         </button>

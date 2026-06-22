@@ -4,6 +4,7 @@ export function RestoreExecuteActions({
   selectedKeys,
   selectedRestoreStoreCount,
   ready,
+  canRestore = false,
   restoreBlockedByFailedStores,
   onStartConfirm,
   onCancelConfirm,
@@ -14,7 +15,9 @@ export function RestoreExecuteActions({
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <button
           className="btn"
-          disabled={busy || selectedKeys.length === 0 || selectedRestoreStoreCount === 0}
+          disabled={
+            busy || !canRestore || selectedKeys.length === 0 || selectedRestoreStoreCount === 0
+          }
           onClick={onStartConfirm}
           style={{ color: 'var(--negative)', borderColor: 'var(--negative)' }}
         >
@@ -31,7 +34,13 @@ export function RestoreExecuteActions({
       </button>
       <button
         className="btn"
-        disabled={busy || !ready || selectedRestoreStoreCount === 0 || restoreBlockedByFailedStores}
+        disabled={
+          busy ||
+          !ready ||
+          !canRestore ||
+          selectedRestoreStoreCount === 0 ||
+          restoreBlockedByFailedStores
+        }
         onClick={onRestore}
         style={{
           background: 'var(--negative)',

@@ -3,7 +3,7 @@ import { formatNumber, formatRelative } from '@/lib/format';
 import { ConfirmDeleteButton } from './_ConfirmDeleteButton';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
-export function ShipmentHistory({ files, selectedYM, onSelectYM, onDelete }) {
+export function ShipmentHistory({ files, selectedYM, canEdit = false, onSelectYM, onDelete }) {
   const safeFiles = asObjectArray(files);
   const safeSelectedYM = selectedYM && typeof selectedYM === 'object' ? selectedYM : null;
   const handleSelectYM = typeof onSelectYM === 'function' ? onSelectYM : null;
@@ -62,7 +62,7 @@ export function ShipmentHistory({ files, selectedYM, onSelectYM, onDelete }) {
                 ? Number(f.sourceTotalRows)
                 : null;
               const canSelect = handleSelectYM && year != null && month != null;
-              const canDelete = handleDelete && fileId != null;
+              const canDelete = canEdit && handleDelete && fileId != null;
               const isSelected =
                 safeSelectedYM &&
                 Number(safeSelectedYM.year) === year &&

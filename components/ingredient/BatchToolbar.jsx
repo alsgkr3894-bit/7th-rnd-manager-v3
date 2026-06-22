@@ -15,12 +15,14 @@ export function IngredientBatchToolbar({
 }) {
   const selectedCount = selected instanceof Set ? selected.size : 0;
   const [showCatPicker, setShowCatPicker] = useState(false);
-  // confirm 상태: null | { type: 'discontinue', discontinued: boolean } | { type: 'category', newCategory: string }
+  // confirm 상태: null | { type: 'delete' } | { type: 'discontinue', discontinued: boolean } | { type: 'category', newCategory: string }
   const [confirm, setConfirm] = useState(null);
 
   function handleConfirm() {
     if (!confirm) return;
-    if (confirm.type === 'discontinue') {
+    if (confirm.type === 'delete') {
+      onDelete();
+    } else if (confirm.type === 'discontinue') {
       onBulkDiscontinue(confirm.discontinued);
     } else if (confirm.type === 'category') {
       onBulkSetCategory(confirm.newCategory);
@@ -31,18 +33,26 @@ export function IngredientBatchToolbar({
   // confirm 모드일 때는 확인/취소만 표시
   if (confirm) {
     const msg =
-      confirm.type === 'discontinue'
-        ? `${selectedCount}개를 ${confirm.discontinued ? '단종' : '단종 복구'} 처리할까요?`
-        : `${selectedCount}개의 분류를 '${confirm.newCategory || '(없음)'}' 으로 변경할까요?`;
+      confirm.type === 'delete'
+        ? `${selectedCount}개를 삭제할까요? 삭제 후 토스트에서 실행취소할 수 있습니다.`
+        : confirm.type === 'discontinue'
+          ? `${selectedCount}개를 ${confirm.discontinued ? '단종' : '단종 복구'} 처리할까요?`
+          : `${selectedCount}개의 분류를 '${confirm.newCategory || '(없음)'}' 으로 변경할까요?`;
+    const isDelete = confirm.type === 'delete';
     return (
       <>
         <span style={{ fontSize: 12, color: 'var(--text-2)', marginRight: 4 }}>{msg}</span>
         <button
           className="btn sm"
-          style={{ background: 'var(--primary)', color: '#fff', border: 0 }}
+          style={{
+            background: isDelete ? 'var(--negative)' : 'var(--primary)',
+            color: '#fff',
+            border: 0,
+          }}
           onClick={handleConfirm}
+          disabled={selectedCount === 0}
         >
-          확인
+          {isDelete ? '삭제' : '확인'}
         </button>
         <button className="btn sm" onClick={() => setConfirm(null)}>
           취소
@@ -140,7 +150,7 @@ export function IngredientBatchToolbar({
       <button
         className="btn sm"
         style={{ color: 'var(--negative)' }}
-        onClick={typeof onDelete === 'function' ? onDelete : undefined}
+        onClick={typeof onDelete === 'function' ? () => setConfirm({ type: 'delete' }) : undefined}
         disabled={selectedCount === 0}
       >
         선택 삭제 {selectedCount > 0 && `(${selectedCount})`}

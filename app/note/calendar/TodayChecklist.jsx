@@ -1,6 +1,15 @@
 import { Icon } from '@/components/icons';
 
-export function TodayChecklist({ dateKey, items, input, onInput, onAdd, onToggle, onRemove }) {
+export function TodayChecklist({
+  dateKey,
+  items,
+  input,
+  canEdit = false,
+  onInput,
+  onAdd,
+  onToggle,
+  onRemove,
+}) {
   const doneCount = items.filter(item => item.done).length;
   return (
     <div className="card" style={{ padding: '14px 16px', marginBottom: 14 }}>
@@ -32,9 +41,10 @@ export function TodayChecklist({ dateKey, items, input, onInput, onAdd, onToggle
             value={input}
             onChange={event => onInput(event.target.value)}
             placeholder="오늘 할 일 입력"
+            disabled={!canEdit}
             style={{ height: 34, fontSize: 12 }}
           />
-          <button className="btn sm primary" type="submit" disabled={!input.trim()}>
+          <button className="btn sm primary" type="submit" disabled={!canEdit || !input.trim()}>
             <Icon.plus style={{ width: 13, height: 13 }} />
             추가
           </button>
@@ -65,6 +75,7 @@ export function TodayChecklist({ dateKey, items, input, onInput, onAdd, onToggle
                 type="checkbox"
                 checked={item.done}
                 onChange={() => onToggle(item.id)}
+                disabled={!canEdit}
                 style={{ accentColor: 'var(--positive)' }}
               />
               <span style={{ textDecoration: item.done ? 'line-through' : 'none' }}>
@@ -74,11 +85,12 @@ export function TodayChecklist({ dateKey, items, input, onInput, onAdd, onToggle
                 type="button"
                 onClick={() => onRemove(item.id)}
                 aria-label="체크 항목 삭제"
+                disabled={!canEdit}
                 style={{
                   border: 0,
                   background: 'transparent',
                   color: 'inherit',
-                  cursor: 'pointer',
+                  cursor: canEdit ? 'pointer' : 'not-allowed',
                   display: 'inline-flex',
                   padding: 0,
                   opacity: 0.65,

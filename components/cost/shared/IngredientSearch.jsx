@@ -5,7 +5,14 @@ import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { useOutsideClick } from '@/hooks/useOutsideClick';
 
-export function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded, style }) {
+export function IngredientSearch({
+  allMeta,
+  unitPriceMap,
+  onSelect,
+  alreadyAdded,
+  style,
+  disabled = false,
+}) {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(-1);
@@ -66,6 +73,7 @@ export function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded
   }, [activeIdx]);
 
   function select(m) {
+    if (disabled) return;
     onSelect(m);
     setQ('');
     setOpen(false);
@@ -73,6 +81,7 @@ export function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded
   }
 
   function handleKeyDown(e) {
+    if (disabled) return;
     if (!open || results.length === 0) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -179,15 +188,20 @@ export function IngredientSearch({ allMeta, unitPriceMap, onSelect, alreadyAdded
           value={q}
           type="search"
           aria-label="식자재 검색"
+          disabled={disabled}
           onChange={e => {
+            if (disabled) return;
             setQ(e.target.value);
             setOpen(!!e.target.value.trim());
           }}
           onFocus={() => {
+            if (disabled) return;
             if (q.trim()) setOpen(true);
           }}
           onKeyDown={handleKeyDown}
-          placeholder="식자재 검색하여 추가… (↑↓ 방향키, Enter 선택)"
+          placeholder={
+            disabled ? '관리자 권한이 필요합니다' : '식자재 검색하여 추가… (↑↓ 방향키, Enter 선택)'
+          }
         />
         {q && (
           <button

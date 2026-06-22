@@ -14,7 +14,7 @@ import {
   normalizeSampleDetailActions,
 } from './detail-modal/sampleDetailModalUtils';
 
-export function SampleDetailModal({ sample = {}, onClose, onEdit, onDelete }) {
+export function SampleDetailModal({ sample = {}, onClose, onEdit, onDelete, canEdit = false }) {
   const router = useRouter();
   const [photoIdx, setPhotoIdx] = useState(0);
   const model = buildSampleDetailModel(sample);
@@ -45,6 +45,7 @@ export function SampleDetailModal({ sample = {}, onClose, onEdit, onDelete }) {
         onEdit={edit}
         onDelete={remove}
         onClose={close}
+        canEdit={canEdit}
       />
       <div
         style={{

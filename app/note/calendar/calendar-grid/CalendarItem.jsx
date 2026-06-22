@@ -2,9 +2,16 @@ import { sampleNamesText } from '@/lib/sample';
 import { STATUS_BORDER, STATUS_COLORS } from '@/lib/note/constants';
 import { SCHEDULE_COLORS } from '@/lib/note/schedules';
 
-export function CalendarItem({ item, past, onEditSchedule, onOpenNote, onOpenSample }) {
+export function CalendarItem({
+  item,
+  past,
+  canEdit = false,
+  onEditSchedule,
+  onOpenNote,
+  onOpenSample,
+}) {
   if (item._kind === 'schedule') {
-    return <ScheduleCalendarItem item={item} onEditSchedule={onEditSchedule} />;
+    return <ScheduleCalendarItem item={item} canEdit={canEdit} onEditSchedule={onEditSchedule} />;
   }
 
   if (item._kind === 'sample') {
@@ -14,13 +21,15 @@ export function CalendarItem({ item, past, onEditSchedule, onOpenNote, onOpenSam
   return <NoteCalendarItem item={item} past={past} onOpenNote={onOpenNote} />;
 }
 
-function ScheduleCalendarItem({ item, onEditSchedule }) {
+function ScheduleCalendarItem({ item, canEdit = false, onEditSchedule }) {
   const color = SCHEDULE_COLORS[item.type] || SCHEDULE_COLORS['기타'];
 
   return (
     <button
+      disabled={!canEdit}
       onClick={event => {
         event.stopPropagation();
+        if (!canEdit) return;
         onEditSchedule(item);
       }}
       title={`[${item.type}] ${item.title}${item.time ? ' ' + item.time : ''}${item._isRecurring ? ' (반복)' : ''}`}
@@ -38,7 +47,7 @@ function ScheduleCalendarItem({ item, onEditSchedule }) {
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
-        cursor: 'pointer',
+        cursor: canEdit ? 'pointer' : 'not-allowed',
         textAlign: 'left',
         width: '100%',
       }}

@@ -26,6 +26,7 @@ export function CommonEdgesView({
   search = '',
   onSearch,
   isMain = false,
+  canEdit = false,
   resetConfirm = false,
   resetting = false,
   onResetAsk,
@@ -77,6 +78,7 @@ export function CommonEdgesView({
   }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleBatchDelete() {
+    if (!canEdit) return;
     const ok = await onBatchDelete(Array.from(edgeTable.selected));
     if (ok) edgeTable.clearSelection();
   }
@@ -106,7 +108,7 @@ export function CommonEdgesView({
                 className="btn"
                 style={{ background: 'var(--negative)', color: '#fff', border: 'none' }}
                 onClick={onReset}
-                disabled={resetting}
+                disabled={resetting || !canEdit}
               >
                 {resetting ? '삭제 중…' : '삭제'}
               </button>
@@ -119,18 +121,18 @@ export function CommonEdgesView({
               className="btn"
               onClick={onResetAsk}
               style={{ color: 'var(--text-3)' }}
-              disabled={edges.length === 0}
+              disabled={edges.length === 0 || !canEdit}
             >
               <Icon.trash style={{ width: 14, height: 14 }} /> 초기화
             </button>
           )}
           {isMain && (
-            <button className="btn" onClick={onSeed} disabled={seeding}>
+            <button className="btn" onClick={onSeed} disabled={seeding || !canEdit}>
               <Icon.download style={{ width: 14, height: 14 }} />
               {seeding ? '시드 중…' : '마스터 시드 (5종)'}
             </button>
           )}
-          <button className="btn primary" onClick={onAdd}>
+          <button className="btn primary" onClick={onAdd} disabled={!canEdit}>
             <Icon.plus style={{ width: 14, height: 14 }} /> 추가
           </button>
         </div>
@@ -199,6 +201,7 @@ export function CommonEdgesView({
               onAskDelete={() => edgeTable.setConfirmingDelete(true)}
               onConfirmDelete={handleBatchDelete}
               onCancel={edgeTable.clearSelection}
+              canEdit={canEdit}
             />
           </div>
           <label
@@ -215,6 +218,7 @@ export function CommonEdgesView({
               type="checkbox"
               checked={edgeTable.allPageSelected}
               onChange={edgeTable.togglePage}
+              disabled={!canEdit}
               style={{ width: 15, height: 15, accentColor: 'var(--accent)' }}
             />
             현재 페이지 선택
@@ -233,10 +237,12 @@ export function CommonEdgesView({
                 type="checkbox"
                 checked={edgeTable.selected.has(edge.id)}
                 onChange={() => edgeTable.toggle(edge.id)}
+                disabled={!canEdit}
                 style={{ width: 16, height: 16, accentColor: 'var(--accent)' }}
               />
               <EdgeCard
                 edge={edge}
+                canEdit={canEdit}
                 onEdit={() => onEdit(edge)}
                 onDelete={deletePending === edge.id ? null : () => onDeleteStart(edge.id)}
               />
@@ -252,7 +258,7 @@ export function CommonEdgesView({
         </div>
       )}
 
-      {deletePending && (
+      {canEdit && deletePending && (
         <div
           style={{
             position: 'fixed',
@@ -284,7 +290,7 @@ export function CommonEdgesView({
         </div>
       )}
 
-      {edgeTarget !== null && (
+      {canEdit && edgeTarget !== null && (
         <EdgeEditModal
           initial={edgeTarget === 'new' ? null : edgeTarget}
           onSave={onSave}

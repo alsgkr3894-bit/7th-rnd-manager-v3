@@ -2,16 +2,30 @@ import { routeUrl } from '../qa-browser-utils.mjs';
 
 export const MAIN_DB = 'rnd_manager_v3';
 export const NAV_TIMEOUT_MS = Number.parseInt(process.env.QA_NAV_TIMEOUT_MS || '', 10) || 90_000;
+export const STEP_TIMEOUT_MS = Number.parseInt(process.env.QA_STEP_TIMEOUT_MS || '', 10) || 120_000;
 
 /** 스텝 실행 — 성공/실패와 메시지를 기록 (throw 안 함) */
-export async function step(steps, label, fn) {
+export async function step(steps, label, fn, { timeoutMs = STEP_TIMEOUT_MS } = {}) {
+  let timer = null;
   try {
-    await fn();
+    await Promise.race([
+      fn(),
+      new Promise((_, reject) => {
+        if (timeoutMs > 0) {
+          timer = setTimeout(
+            () => reject(new Error(`스텝 타임아웃: ${Math.round(timeoutMs / 1000)}초`)),
+            timeoutMs
+          );
+        }
+      }),
+    ]);
     steps.push({ label, ok: true });
     return true;
   } catch (err) {
     steps.push({ label, ok: false, error: err?.message || String(err) });
     return false;
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 

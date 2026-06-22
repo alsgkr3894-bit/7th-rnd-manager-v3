@@ -12,6 +12,7 @@ import { formatNumber } from '@/lib/format';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { useRestoreImpact } from '@/hooks/useRestoreImpact';
 import { useRestoreFile } from '@/hooks/useRestoreFile';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { getActiveBrand } from '@/lib/active-brand';
 import { pickLocalStorageForScopes } from '@/lib/backup/local-storage-keys';
 import { RestoreDoneCard } from '@/components/settings/restore/RestoreDoneCard';
@@ -32,6 +33,8 @@ const SHARED_SKIP_STORE = '__shared_skipped__';
  *   6. 완료 상태 카드 (alert 없이 인라인)
  */
 export default function Page() {
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canRestore = roleReady && isAdmin;
   // SSR/클라이언트 불일치 방지 — 마운트 후 활성 브랜드 읽기
   const [activeBrand, setActiveBrand] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -48,6 +51,7 @@ export default function Page() {
     onReset: () => {
       setConfirming(false);
       setRestoreDone(null);
+      setBackupFailed(false);
       setAllowFailedStoreRestore(false);
     },
   });
@@ -81,6 +85,10 @@ export default function Page() {
 
   async function handleRestore(skipBackupCheck = false) {
     if (!parsed || busy) return;
+    if (!canRestore) {
+      showToast(roleReady ? '관리자 권한이 필요합니다' : '권한 확인 중입니다', 'error');
+      return;
+    }
     if (hasFailedStores && !allowFailedStoreRestore) {
       setConfirming(true);
       showToast('백업 생성 실패 store가 있어 위험 승인 체크가 필요합니다.', 'warn', 7000);
@@ -293,7 +301,7 @@ export default function Page() {
             type="file"
             accept=".json,application/json"
             onChange={handleFile}
-            disabled={busy}
+            disabled={busy || !canRestore}
             style={{ fontSize: 13 }}
           />
           <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 8 }}>
@@ -329,6 +337,7 @@ export default function Page() {
             selectedKeys={selectedKeys}
             selectedRestoreStoreCount={selectedRestoreStoreCount}
             ready={ready}
+            canRestore={canRestore}
             handleRestore={handleRestore}
             impact={impact}
             dangerRows={dangerRows}

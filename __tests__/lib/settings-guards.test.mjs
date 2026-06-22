@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, test } from '@jest/globals';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import {
   getSetting,
   setSetting,
@@ -8,6 +10,8 @@ import {
 } from '../../lib/settings.js';
 
 const originalLocalStorage = globalThis.localStorage;
+const settingsAuthSrc = readFileSync(resolve('hooks/useSettingsAuth.js'), 'utf8');
+const systemPageSrc = readFileSync(resolve('app/settings/system/page.jsx'), 'utf8');
 
 afterEach(() => {
   Object.defineProperty(globalThis, 'localStorage', {
@@ -58,5 +62,34 @@ describe('settings guards', () => {
     expect(SETTING_LS_KEYS).toEqual(
       expect.arrayContaining(['v3:density', 'v3:fontScale', 'v3:roundMode'])
     );
+  });
+
+  test('saved-views는 active-brand의 실제 공개 API를 import한다', () => {
+    const source = readFileSync(resolve('lib/saved-views.js'), 'utf8');
+
+    expect(source).toContain("import { getActiveBrandId } from '@/lib/active-brand'");
+    expect(source).not.toContain('import { activeBrandId }');
+  });
+
+  test('계정 전환은 active account 저장 실패를 성공처럼 표시하지 않는다', () => {
+    const source = readFileSync(resolve('app/settings/account/page.jsx'), 'utf8');
+
+    expect(source).toContain('const saved = setActiveAccountId(acc.id)');
+    expect(source).toContain('계정 전환 실패');
+    expect(source).not.toContain('setActiveAccountId(acc.id);\\n    setActiveId(acc.id);');
+  });
+
+  test('설정 PIN 세션 저장소가 막히면 인증 성공처럼 처리하지 않는다', () => {
+    expect(settingsAuthSrc).toMatch(/function readAuth\(\) \{[\s\S]*catch \{\s*return false;/);
+    expect(settingsAuthSrc).toContain('if (!readAuth()) return false;');
+  });
+
+  test('시스템 DB 재생성 reload 타이머는 unmount 시 정리한다', () => {
+    expect(systemPageSrc).toContain('reloadTimerRef');
+    expect(systemPageSrc).toContain(
+      'useEffect(() => () => clearTimeout(reloadTimerRef.current), [])'
+    );
+    expect(systemPageSrc).toContain('function scheduleReload(delayMs)');
+    expect(systemPageSrc).toContain('scheduleReload(1000)');
   });
 });

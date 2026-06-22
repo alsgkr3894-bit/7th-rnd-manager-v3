@@ -6,9 +6,12 @@ import { SearchBox } from '@/components/ui/SearchBox';
 import { STATUSES, STATUS_COLORS, STATUS_BORDER } from '@/lib/note';
 import { KanbanCard } from '@/components/note/KanbanCard';
 import { useKanbanBoard } from '@/hooks/useKanbanBoard';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 export default function Page() {
   const router = useRouter();
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
   const {
     notes,
     loading,
@@ -29,7 +32,7 @@ export default function Page() {
     handleDrop,
     moveStatus,
     changeStatus,
-  } = useKanbanBoard();
+  } = useKanbanBoard({ canEdit });
 
   return (
     <main className="main page-enter">
@@ -46,7 +49,13 @@ export default function Page() {
             <button className="btn no-print" onClick={() => router.push('/note')}>
               목록 뷰
             </button>
-            <button className="btn primary no-print" onClick={() => router.push('/note/write')}>
+            <button
+              className="btn primary no-print"
+              onClick={() => {
+                if (canEdit) router.push('/note/write');
+              }}
+              disabled={!canEdit}
+            >
               <Icon.plus style={{ width: 14, height: 14 }} /> 노트 작성
             </button>
           </div>
@@ -107,7 +116,7 @@ export default function Page() {
                 style={{ minWidth: 180 }}
                 className={isOver ? 'kanban-col-over' : undefined}
                 onDragOver={e => {
-                  if (searchActive) return;
+                  if (searchActive || !canEdit) return;
                   e.preventDefault();
                   setDragOverStatus(status);
                 }}
@@ -177,7 +186,7 @@ export default function Page() {
                     <div
                       key={note.id}
                       onDragOver={e => {
-                        if (searchActive) return;
+                        if (searchActive || !canEdit) return;
                         e.preventDefault();
                         e.stopPropagation();
                         const rect = e.currentTarget.getBoundingClientRect();
@@ -196,11 +205,12 @@ export default function Page() {
                         onMove={moveStatus}
                         onStatusChange={changeStatus}
                         onEdit={router.push}
+                        canEdit={canEdit}
                         isDragging={dragId === note.id}
                         bouncing={bouncingIds.has(note.id)}
-                        draggable={!searchActive}
+                        draggable={canEdit && !searchActive}
                         onDragStart={e => {
-                          if (searchActive) return;
+                          if (searchActive || !canEdit) return;
                           e.dataTransfer.setData('noteId', note.id);
                           setDragId(note.id);
                         }}
@@ -239,7 +249,10 @@ export default function Page() {
           <button
             className="btn primary"
             style={{ marginTop: 12 }}
-            onClick={() => router.push('/note/write')}
+            onClick={() => {
+              if (canEdit) router.push('/note/write');
+            }}
+            disabled={!canEdit}
           >
             <Icon.plus style={{ width: 13, height: 13 }} /> 노트 작성
           </button>

@@ -47,6 +47,9 @@ jest.unstable_mockModule('@/lib/db/shared', () => ({
   sharedDeleteById,
   sharedRunTransaction,
 }));
+jest.unstable_mockModule('@/lib/auth/guard', () => ({
+  assertActiveAdmin: jest.fn(async () => {}),
+}));
 
 const schedules = await import('@/lib/note/schedules');
 const workLog = await import('@/lib/work-log');

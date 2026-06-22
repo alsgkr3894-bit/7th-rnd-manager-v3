@@ -42,6 +42,11 @@ describe('menu-master page structure', () => {
 
   test('useMenuMasterActions exports key handlers', () => {
     expect(actionsSource).toContain('export function useMenuMasterActions');
+    expect(pageSource).toContain('canEdit: !isViewer');
+    expect(actionsSource).toContain('canEdit = false');
+    expect(actionsSource).toContain('function requireEdit()');
+    expect(actionsSource).toContain("showToast('관리자 권한이 필요합니다', 'error')");
+    expect(actionsSource).toContain('if (!requireEdit()) return');
     expect(actionsSource).toContain('handleDeleteRow');
     expect(actionsSource).toContain('handleSaveRow');
     expect(actionsSource).toContain('handleSeed');

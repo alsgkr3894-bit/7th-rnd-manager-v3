@@ -39,10 +39,11 @@ describe('UPLOAD_MAX_MB 상수', () => {
 });
 
 describe('UPLOAD_EXT 상수', () => {
-  test('excelOrCsv에 xlsx, xls, csv가 포함된다', () => {
+  test('excelOrCsv에 xlsx, xls, csv, tsv가 포함된다', () => {
     expect(UPLOAD_EXT.excelOrCsv).toContain('.xlsx');
     expect(UPLOAD_EXT.excelOrCsv).toContain('.xls');
     expect(UPLOAD_EXT.excelOrCsv).toContain('.csv');
+    expect(UPLOAD_EXT.excelOrCsv).toContain('.tsv');
   });
 
   test('json에 .json이 포함된다', () => {
@@ -86,6 +87,7 @@ describe('checkFileExt', () => {
   test('허용 확장자 파일은 null을 반환한다', () => {
     expect(checkFileExt(makeFile('data.xlsx'), UPLOAD_EXT.excelOrCsv)).toBeNull();
     expect(checkFileExt(makeFile('DATA.CSV'), UPLOAD_EXT.excelOrCsv)).toBeNull();
+    expect(checkFileExt(makeFile('DATA.TSV'), UPLOAD_EXT.excelOrCsv)).toBeNull();
     expect(checkFileExt(makeFile('backup.json'), UPLOAD_EXT.json)).toBeNull();
   });
 
@@ -123,16 +125,52 @@ describe('parseErrorMsg', () => {
 // ── 업로드 모듈 구조 확인 ──────────────────────────────────────────────────────
 
 describe('주요 업로드 모듈 — upload-policy import 여부', () => {
-  test('use-shipment.js가 UPLOAD_MAX_MB를 import한다', () => {
+  test('use-shipment.js가 공통 크기/확장자 정책을 hook 레벨에서도 적용한다', () => {
     const s = src('lib/shipment/use-shipment.js');
+    expect(s).toContain('UPLOAD_EXT');
     expect(s).toContain('UPLOAD_MAX_MB');
+    expect(s).toContain('checkFileExt');
     expect(s).toContain('upload-policy');
+    expect(s).toContain('checkFileExt(file, UPLOAD_EXT.excelOrCsv)');
+    expect(s.indexOf('checkFileExt(file, UPLOAD_EXT.excelOrCsv)')).toBeLessThan(
+      s.indexOf('checkFileSize(file, UPLOAD_MAX_MB.jette)')
+    );
   });
 
-  test('use-price-upload.js가 UPLOAD_MAX_MB를 import한다', () => {
+  test('use-shipment.js는 공유 버퍼 파서를 await해 xlsx 업로드를 처리한다', () => {
+    const s = src('lib/shipment/use-shipment.js');
+    expect(s).toContain('await readSpreadsheetFromBuffer(buffer, file.name)');
+  });
+
+  test('use-price-upload.js가 공통 크기/확장자 정책을 hook 레벨에서도 적용한다', () => {
     const s = src('lib/price/use-price-upload.js');
+    expect(s).toContain('UPLOAD_EXT');
     expect(s).toContain('UPLOAD_MAX_MB');
+    expect(s).toContain('checkFileExt');
     expect(s).toContain('upload-policy');
+    expect(s).toContain('checkFileExt(file, UPLOAD_EXT.excelOrCsv)');
+    expect(s.indexOf('checkFileExt(file, UPLOAD_EXT.excelOrCsv)')).toBeLessThan(
+      s.indexOf('checkFileSize(file, UPLOAD_MAX_MB.jette)')
+    );
+  });
+
+  test('판매량 업로드는 CSV를 file.text()로 직접 읽지 않고 공통 스프레드시트 파서를 쓴다', () => {
+    const s = src('lib/sales/use-sales-upload.js');
+    expect(s).toContain('UPLOAD_EXT');
+    expect(s).toContain('UPLOAD_MAX_MB');
+    expect(s).toContain('checkFileExt(file, UPLOAD_EXT.excelOrCsv)');
+    expect(s).toContain('checkFileSize(file, UPLOAD_MAX_MB.excel)');
+    expect(s).toContain('readSpreadsheetFile');
+    expect(s).toContain('await readSpreadsheetFile(file)');
+    expect(s).not.toContain('file.text()');
+  });
+
+  test('판매량 업로드 Dropzone도 공통 업로드 정책 상수를 사용한다', () => {
+    const s = src('components/sales/UploadDropzone.jsx');
+    expect(s).toContain('UPLOAD_EXT');
+    expect(s).toContain('UPLOAD_MAX_MB');
+    expect(s).toContain('accept={UPLOAD_EXT.excelOrCsv}');
+    expect(s).toContain('maxSizeMB={UPLOAD_MAX_MB.excel}');
   });
 
   test('MenuPriceUploadCard.jsx가 공통 크기/확장자 정책과 실패행 다운로드를 사용한다', () => {
@@ -142,6 +180,15 @@ describe('주요 업로드 모듈 — upload-policy import 여부', () => {
     expect(s).toContain('checkFileSize');
     expect(s).toContain('checkFileExt');
     expect(s).toContain('downloadFailedRows');
+    expect(s).toContain('isViewer = false');
+    expect(s).toContain('disabled={isViewer}');
+    expect(s).toContain('저장할 행이 없습니다');
+    expect(s).toContain('preview.failed.length > 0');
+    expect(s).toContain('오류 행을 먼저 수정한 뒤 다시 업로드해주세요.');
+    expect(s).toContain('오류 행이 있으면 기존 판매가 전체 교체를 진행하지 않습니다.');
+    expect(s).toContain('readSpreadsheetFile');
+    expect(s).not.toContain('readFileAsText');
+    expect(s).toContain('accept=".csv,.tsv,.xlsx,.xls"');
     expect(s).toContain('upload-policy');
   });
 
@@ -149,7 +196,16 @@ describe('주요 업로드 모듈 — upload-policy import 여부', () => {
     const s = src('components/ui/UploadDropzone.jsx');
     expect(s).toContain('checkFileExt');
     expect(s).toContain('checkFileSize');
+    expect(s).toContain('disabled={disabled}');
+    expect(s).toContain('if (disabled) {');
     expect(s).toContain('upload-policy');
+  });
+
+  test('제때 단가/출고량 화면은 30MB 업로드 제한을 dropzone에 전달한다', () => {
+    const pricePage = src('app/jette/price-compare/page.jsx');
+    const shipmentPage = src('app/jette/shipment/page.jsx');
+    expect(pricePage).toContain('maxSizeMB={30}');
+    expect(shipmentPage).toContain('maxSizeMB={30}');
   });
 
   test('영양성분 베이스 import는 dropzone 오류를 파일 존재 검사보다 먼저 처리한다', () => {
@@ -158,6 +214,14 @@ describe('주요 업로드 모듈 — upload-policy import 여부', () => {
     expect(s.indexOf('if (!file) return')).toBeGreaterThan(-1);
     expect(s.indexOf('if (err)')).toBeLessThan(s.indexOf('if (!file) return'));
     expect(s).toContain('parseErrorMsg');
+  });
+
+  test('영양성분 베이스 import 업로드 step은 Excel 정책 상수를 명시적으로 전달한다', () => {
+    const s = src('components/nutrition/menu/import-base/ImportBaseUploadStep.jsx');
+    expect(s).toContain('UPLOAD_EXT');
+    expect(s).toContain('UPLOAD_MAX_MB');
+    expect(s).toContain('accept={UPLOAD_EXT.excel}');
+    expect(s).toContain('maxSizeMB={UPLOAD_MAX_MB.excel}');
   });
 
   test('파싱 실패 폴백이 "파싱 실패" 두 글자로 끝나지 않는다', () => {

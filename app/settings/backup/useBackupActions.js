@@ -1,6 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { showToast } from '@/components/Toast';
+import { logBackupCreate } from '@/lib/change-log';
 import { exportSelected } from '@/lib/db';
 import { downloadJson, makeFileName } from '@/lib/download';
 import { getHistory, addEntry, getLastBackupAt } from '@/lib/backup-history';
@@ -59,6 +60,7 @@ export function useBackupActions({
       });
       setHistory(getHistory());
       setLastBackupAt(getLastBackupAt());
+      logBackupCreate(fileName);
       showToast(`백업 완료 — ${fileName}`, 'ok');
       if (!recorded) {
         showToast(

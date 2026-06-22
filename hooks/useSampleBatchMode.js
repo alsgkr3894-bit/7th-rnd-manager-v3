@@ -10,12 +10,13 @@ import { toSampleSelectionIds, toggleSampleSelection } from '@/lib/sample/select
  * @param {Function} onDeletedOptimistic - 낙관적 업데이트용 콜백 (ids => void)
  * @param {Function} onRefresh           - 삭제 실패 시 데이터 재로드 콜백
  */
-export function useSampleBatchMode(onDeletedOptimistic, onRefresh) {
+export function useSampleBatchMode(onDeletedOptimistic, onRefresh, canEdit = false) {
   const [batchMode, setBatchMode] = useState(false);
   const [selected, setSelected] = useState(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   function toggleSelect(id) {
+    if (!canEdit) return;
     setSelected(prev => toggleSampleSelection(prev, id));
   }
 
@@ -26,12 +27,17 @@ export function useSampleBatchMode(onDeletedOptimistic, onRefresh) {
   }
 
   function handleBatchDelete() {
+    if (!canEdit) return;
     if (toSampleSelectionIds(selected).length === 0) return;
     setConfirmOpen(true);
   }
 
   async function confirmBatchDelete() {
     const ids = toSampleSelectionIds(selected);
+    if (!canEdit) {
+      setConfirmOpen(false);
+      return;
+    }
     if (ids.length === 0) {
       setConfirmOpen(false);
       return;

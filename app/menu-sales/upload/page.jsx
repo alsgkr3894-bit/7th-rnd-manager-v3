@@ -6,8 +6,11 @@ import { UploadDropzone } from '@/components/sales/UploadDropzone';
 import { UploadPreview } from '@/components/sales/UploadPreview';
 import { UploadHistory } from '@/components/sales/UploadHistory';
 import { UploadErrorBanner } from '@/components/sales/UploadErrorBanner';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 export default function Page() {
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
   const {
     ready,
     stage,
@@ -18,11 +21,12 @@ export default function Page() {
     handleConfirm,
     handleCancel,
     handleDeleteFile,
-  } = useSalesUpload();
+  } = useSalesUpload({ canEdit });
   const safePreview =
     preview && typeof preview === 'object' && !Array.isArray(preview) ? preview : null;
   const isPreviewStage = stage === 'preview' || stage === 'saving';
-  const isDropzoneDisabled = !ready || stage === 'parsing' || (isPreviewStage && !safePreview);
+  const isDropzoneDisabled =
+    !canEdit || !ready || stage === 'parsing' || (isPreviewStage && !safePreview);
   const busyText =
     stage === 'parsing'
       ? '검증 중...'
@@ -52,10 +56,11 @@ export default function Page() {
           onCancel={handleCancel}
           onConfirm={handleConfirm}
           saving={stage === 'saving'}
+          canEdit={canEdit}
         />
       )}
 
-      <UploadHistory files={history} onDelete={handleDeleteFile} />
+      <UploadHistory files={history} onDelete={handleDeleteFile} canEdit={canEdit} />
     </main>
   );
 }

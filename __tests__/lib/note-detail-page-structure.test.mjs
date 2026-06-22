@@ -70,6 +70,8 @@ describe('note detail page structure', () => {
     expect(pageSource).toContain('mergeDraftWithCurrentPhotos(draft, prev)');
     expect(pageSource).toContain('<NoteDetailActions');
     expect(pageSource).toContain('<NoteDraftBanner');
+    expect(pageSource).toContain('if (canEdit) clearDraft(KEYS.NOTE_DRAFT(noteId));');
+    expect(pageSource).toContain('{canEdit && showDraftBanner && (');
     expect(pageSource).toContain('<NoteFormBody');
     expect(pageSource).toContain('<ChainTimeline');
     expect(pageSource).toContain('<RelatedSamplesPanel');

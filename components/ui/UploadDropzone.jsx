@@ -4,7 +4,7 @@ import { Icon } from '@/components/icons';
 import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
 import { checkFileExt, checkFileSize } from '@/lib/upload-policy';
 
-const DEFAULT_ACCEPT = ['.xlsx', '.xls', '.csv'];
+const DEFAULT_ACCEPT = ['.xlsx', '.xls', '.csv', '.tsv'];
 
 /**
  * UploadDropzone — 범용 파일 드롭존 (드래그 + 클릭)
@@ -93,8 +93,13 @@ export function UploadDropzone({
         ref={inputRef}
         type="file"
         accept={safeAccept.join(',')}
+        disabled={disabled}
         style={{ display: 'none' }}
         onChange={e => {
+          if (disabled) {
+            e.target.value = '';
+            return;
+          }
           pickFile(e.target.files?.[0]);
           e.target.value = '';
         }}

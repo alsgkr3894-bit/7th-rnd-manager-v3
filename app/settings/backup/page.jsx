@@ -21,6 +21,7 @@ import {
   BackupHistoryCard,
   BackupDiagnosticsCard,
 } from './_BackupPagePanels';
+import { ChangeHistoryPanel } from '@/components/change-log/ChangeHistoryPanel';
 
 export default function Page() {
   const [activeBrand, setActiveBrand] = useState(null);
@@ -141,6 +142,11 @@ export default function Page() {
         collecting={collecting}
         onCollect={collectDiagnostics}
       />
+
+      <div className="card" style={{ padding: '16px 20px' }}>
+        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>변경 이력</div>
+        <ChangeHistoryPanel />
+      </div>
     </main>
   );
 }

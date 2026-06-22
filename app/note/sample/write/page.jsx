@@ -8,11 +8,14 @@ import { addSample } from '@/lib/sample';
 import { SampleFormBody, SAMPLE_INIT } from '../_SampleFormBody';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { consumeSampleFromNote } from '@/lib/note/keys';
 import { todayLocalDate } from '@/lib/date/local-date';
 
 export default function Page() {
   const router = useRouter();
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
   const [form, setForm] = useState(() => ({
     ...SAMPLE_INIT,
     testDate: todayLocalDate(),
@@ -23,6 +26,8 @@ export default function Page() {
   useBeforeUnload(isDirty);
 
   useEffect(() => {
+    if (!roleReady) return;
+    if (!canEdit) return;
     const d = consumeSampleFromNote();
     if (!d || typeof d !== 'object' || Array.isArray(d)) return;
     const menuName = typeof d.menuName === 'string' ? d.menuName : '';
@@ -36,9 +41,10 @@ export default function Page() {
       tags: tags || f.tags,
       ...(linkedNoteId != null && { linkedNoteId }),
     }));
-  }, []);
+  }, [canEdit, roleReady]);
 
   function handleFormChange(updater) {
+    if (!canEdit) return;
     setForm(updater);
     setIsDirty(true);
   }
@@ -46,6 +52,7 @@ export default function Page() {
   useKeyboardSave(handleSave);
 
   async function handleSave() {
+    if (!canEdit) return;
     if (saving) return; // Ctrl+S 연타 시 중복 저장 방지
     const names = (form.sampleNames || []).map(s => (s || '').trim()).filter(Boolean);
     if (!form.title.trim() || !names.length) {
@@ -76,13 +83,13 @@ export default function Page() {
             <button className="btn" onClick={() => router.push('/note/sample')}>
               취소
             </button>
-            <button className="btn primary" onClick={handleSave} disabled={saving}>
+            <button className="btn primary" onClick={handleSave} disabled={saving || !canEdit}>
               {saving ? '저장 중…' : '저장하기'}
             </button>
           </>
         }
       />
-      <SampleFormBody form={form} setForm={handleFormChange} />
+      <SampleFormBody form={form} setForm={handleFormChange} readOnly={!canEdit} />
     </main>
   );
 }

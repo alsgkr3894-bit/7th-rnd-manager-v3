@@ -122,6 +122,9 @@ describe('ingredient form structure', () => {
     expect(jettePriceImportFieldSource).toContain('filterJettePriceRows');
     expect(jettePriceImportFieldSource).toContain('buildIngredientDraftFromJettePrice');
     expect(jettePriceImportFieldSource).toContain('label="제때 단가에서 가져오기"');
+    expect(jettePriceImportFieldSource).toContain('blurTimerRef');
+    expect(jettePriceImportFieldSource).toContain('clearTimeout(blurTimerRef.current)');
+    expect(jettePriceImportFieldSource).toContain('useEffect(() => () => clearTimeout');
     expect(jetteLinkedSourcePanelSource).toContain('export function JetteLinkedSourcePanel');
     expect(jetteLinkedSourcePanelSource).toContain('label="부가세포함단가"');
     expect(jetteLinkedSourcePanelSource).toContain('formatNumber');

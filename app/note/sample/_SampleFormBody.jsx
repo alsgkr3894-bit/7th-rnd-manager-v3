@@ -34,7 +34,7 @@ export const SAMPLE_INIT = {
 
 const MAX_PHOTOS = 8;
 
-export function SampleFormBody({ form, setForm }) {
+export function SampleFormBody({ form, setForm, readOnly = false }) {
   const fileInputRef = useRef(null);
   const productSearchTimerRef = useRef(null);
   const [allTags, setAllTags] = useState([]);
@@ -43,11 +43,13 @@ export function SampleFormBody({ form, setForm }) {
   const [productOptions, setProductOptions] = useState([]); // [{kind, code, name, label}]
   const [productSearch, setProductSearch] = useState('');
   function upd(k, v) {
+    if (readOnly) return;
     setForm(f => ({ ...f, [k]: v }));
   }
 
   // 샘플명(복수) 핸들러
   function setSampleName(i, v) {
+    if (readOnly) return;
     setForm(f => {
       const a = [...(f.sampleNames || [''])];
       a[i] = v;
@@ -55,9 +57,11 @@ export function SampleFormBody({ form, setForm }) {
     });
   }
   function addSampleName() {
+    if (readOnly) return;
     setForm(f => ({ ...f, sampleNames: [...(f.sampleNames || ['']), ''] }));
   }
   function removeSampleName(i) {
+    if (readOnly) return;
     setForm(f => {
       const a = (f.sampleNames || ['']).filter((_, idx) => idx !== i);
       return { ...f, sampleNames: a.length ? a : [''] };
@@ -117,6 +121,7 @@ export function SampleFormBody({ form, setForm }) {
   }
 
   async function handleFiles(files) {
+    if (readOnly) return;
     const current = Array.isArray(form.photos)
       ? form.photos.filter(p => p && typeof p === 'object')
       : [];
@@ -153,6 +158,7 @@ export function SampleFormBody({ form, setForm }) {
   }
 
   function removePhoto(i) {
+    if (readOnly) return;
     const current = Array.isArray(form.photos)
       ? form.photos.filter(p => p && typeof p === 'object')
       : [];
@@ -164,6 +170,7 @@ export function SampleFormBody({ form, setForm }) {
 
   function handleDrop(e) {
     e.preventDefault();
+    if (readOnly) return;
     handleFiles(e.dataTransfer.files);
   }
 
@@ -191,8 +198,9 @@ export function SampleFormBody({ form, setForm }) {
           onSampleName={setSampleName}
           onAddSampleName={addSampleName}
           onRemoveSampleName={removeSampleName}
+          readOnly={readOnly}
         />
-        <SampleDetailRecordCard form={form} allTags={allTags} onUpdate={upd} />
+        <SampleDetailRecordCard form={form} allTags={allTags} onUpdate={upd} readOnly={readOnly} />
       </div>
 
       <div className="form-sticky-right" style={{ position: 'sticky', top: 80 }}>
@@ -203,6 +211,7 @@ export function SampleFormBody({ form, setForm }) {
           onSearchChange={setProductSearch}
           onBlurSearch={clearProductSearchSoon}
           onAdd={item => {
+            if (readOnly) return;
             const already = (form.linkedProducts || []).some(
               p => p.kind === item.kind && p.code === item.code
             );
@@ -215,6 +224,7 @@ export function SampleFormBody({ form, setForm }) {
               (form.linkedProducts || []).filter((_, i) => i !== idx)
             )
           }
+          readOnly={readOnly}
         />
 
         <SamplePhotoCard
@@ -225,10 +235,12 @@ export function SampleFormBody({ form, setForm }) {
           onFiles={handleFiles}
           onRemovePhoto={removePhoto}
           onCaptionChange={(index, caption) => {
+            if (readOnly) return;
             const updated = [...photos];
             updated[index] = { ...updated[index], caption };
             upd('photos', updated);
           }}
+          readOnly={readOnly}
         />
       </div>
     </div>

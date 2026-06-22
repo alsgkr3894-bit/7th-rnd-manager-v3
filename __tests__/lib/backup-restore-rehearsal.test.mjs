@@ -35,6 +35,13 @@ import {
   collectLocalStorage,
   restoreLocalStorage,
 } from '../../lib/backup/local-storage-keys.js';
+import {
+  RESTORE_JOURNAL_KEY,
+  clearRestoreJournal,
+  createRestoreJournal,
+  readRestoreJournal,
+  updateRestoreJournal,
+} from '../../lib/backup/restore-journal.js';
 import { dbNameFor, ALL_STORES } from '../../lib/db/constants.js';
 
 // ── localStorage mock helper ────────────────────────────────────────────────
@@ -64,6 +71,9 @@ function installMapStorage(initial = {}) {
       },
       setItem(key, value) {
         store[key] = value;
+      },
+      removeItem(key) {
+        delete store[key];
       },
     },
   });
@@ -212,6 +222,27 @@ describe('2. localStorage 포함 범위 확인', () => {
     }
   });
 
+  test('round-trip: 동적 saved views 키도 백업/복원된다', () => {
+    const original = {
+      saved_views_v1__main__ingredient: '[{"name":"필터A"}]',
+      saved_views_v1_default__main__ingredient: '필터A',
+      'saved_views_v1__main__bad/path': 'skip',
+      'v3:note-draft-write': 'draft',
+    };
+    installMapStorage(original);
+
+    const collected = collectLocalStorage(PERSISTENT_LS_KEYS);
+    expect(collected).toEqual({
+      saved_views_v1__main__ingredient: '[{"name":"필터A"}]',
+      saved_views_v1_default__main__ingredient: '필터A',
+    });
+
+    const storeB = installMapStorage({});
+    expect(restoreLocalStorage(collected, PERSISTENT_LS_KEYS)).toBe(2);
+    expect(storeB.saved_views_v1__main__ingredient).toBe('[{"name":"필터A"}]');
+    expect(storeB.saved_views_v1_default__main__ingredient).toBe('필터A');
+  });
+
   test('알 수 없는 키는 pickLocalStorageForScopes가 필터링한다', () => {
     const backupMap = {
       'v3:recipe-sort': 'asc',
@@ -238,6 +269,45 @@ describe('2. localStorage 포함 범위 확인', () => {
   test('PERSISTENT_LS_KEYS에 중복 키가 없다', () => {
     const set = new Set(PERSISTENT_LS_KEYS);
     expect(set.size).toBe(PERSISTENT_LS_KEYS.length);
+  });
+
+  test('복원 저널은 마지막 복원 시도 상태를 안전하게 보존한다', () => {
+    const store = installMapStorage({});
+    let journal = createRestoreJournal({
+      brandId: 'china4',
+      sourceBrandId: 'main',
+      requestedStores: ['settings', 'sales_rows', 'settings'],
+      restoreLocalStorage: true,
+    });
+
+    journal = updateRestoreJournal(journal, {
+      status: 'failed_partial',
+      failedGroup: 'sharedStores',
+      imported: 1,
+      skipped: 2,
+      errors: Array.from({ length: 25 }, (_, index) => ({
+        store: `store_${index}`,
+        error: `error_${index}`,
+      })),
+    });
+
+    expect(store[RESTORE_JOURNAL_KEY]).toBeTruthy();
+    expect(readRestoreJournal()).toMatchObject({
+      status: 'failed_partial',
+      brandId: 'china4',
+      sourceBrandId: 'main',
+      requestedStoreCount: 2,
+      requestedStores: ['settings', 'sales_rows'],
+      restoreLocalStorage: true,
+      imported: 1,
+      skipped: 2,
+      failedGroup: 'sharedStores',
+    });
+    expect(readRestoreJournal().errors).toHaveLength(20);
+    expect(journal.errors).toHaveLength(20);
+
+    expect(clearRestoreJournal()).toBe(true);
+    expect(store[RESTORE_JOURNAL_KEY]).toBeUndefined();
   });
 });
 

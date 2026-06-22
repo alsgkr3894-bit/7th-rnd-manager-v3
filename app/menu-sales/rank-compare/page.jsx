@@ -32,6 +32,7 @@ import { useAvgCostRate } from '@/lib/sales/use-avg-cost-rate';
 import { formatShareText } from '@/lib/sales/share-formatter';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 import { copyText } from '@/lib/ui/clipboard';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 const VALID_MODES = new Set(['single', 'mom', 'yoy', 'custom']);
 
@@ -54,6 +55,8 @@ function normalizePeriod(value) {
 
 export default function Page() {
   const router = useRouter();
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
   const { ready, rows, available } = useRankCompareData();
   const avgCostRate = useAvgCostRate();
 
@@ -186,7 +189,7 @@ export default function Page() {
       {!ready ? (
         <div className="skeleton" style={{ height: 240, borderRadius: 12, marginTop: 16 }} />
       ) : safeAvailable.length === 0 ? (
-        <RankCompareEmpty />
+        <RankCompareEmpty canEdit={canEdit} />
       ) : (
         <>
           {safePeriodA && safePeriodB && (

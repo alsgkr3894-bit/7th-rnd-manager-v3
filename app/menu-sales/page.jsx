@@ -7,12 +7,17 @@ import { useDBLoad } from '@/hooks/useDBLoad';
 import { getMenuSalesDashboard } from '@/lib/sales/dashboard';
 import { formatNumber } from '@/lib/format';
 import { MENU_SALES_HUB_GROUPS } from '@/lib/sales/navigation';
+import { filterRoleVisibleGroups } from '@/lib/navigation/role-visibility';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 export default function Page() {
   const router = useRouter();
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
   const { data, loading } = useDBLoad(() => getMenuSalesDashboard(), {
     onError: err => console.warn('[menu-sales hub] dashboard load failed:', err),
   });
+  const visibleHubGroups = filterRoleVisibleGroups(MENU_SALES_HUB_GROUPS, canEdit);
 
   const kpi = data?.kpi;
   const cards = data
@@ -48,7 +53,7 @@ export default function Page() {
       breadcrumb={['메뉴 판매량']}
       title="메뉴 판매량"
       sub="판매 데이터를 업로드하고 메뉴별 순위·비교·미매칭 관리를 수행하세요."
-      groups={MENU_SALES_HUB_GROUPS}
+      groups={visibleHubGroups}
     >
       <SectionDashboard
         loading={loading}

@@ -46,6 +46,7 @@ export function RestorePreview({
       ? Object.keys(parsed.stores).filter(name => ALL_STORES.includes(name) && !hasStore(name))
       : [];
   const unknownStores = parsed?._summary?.unknownStores || [];
+  const localStorageSummary = parsed?._summary?.localStorageSummary || null;
   const backupTotalRows =
     parsed?._summary?.totalRows ??
     (parsed
@@ -79,6 +80,7 @@ export function RestorePreview({
         sourceMismatch={sourceMismatch}
         targetBrand={targetBrand}
         storeSplit={storeSplit}
+        localStorageSummary={localStorageSummary}
       />
       <RestoreScopePanel
         parsed={parsed}

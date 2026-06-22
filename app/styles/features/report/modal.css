@@ -524,6 +524,32 @@
   background: var(--surface);
   border-bottom: 1px solid var(--divider);
 }
+.pager-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  display: grid;
+  place-items: center;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pager-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.pager-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.pager-info {
+  min-width: 60px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-2);
+}
 .preview-page-indicator {
   display: inline-flex;
   align-items: center;

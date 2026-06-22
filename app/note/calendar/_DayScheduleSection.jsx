@@ -3,7 +3,7 @@ import { Icon } from '@/components/icons';
 import { SCHEDULE_COLORS } from '@/lib/note/schedules';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 
-export function DayScheduleSection({ schedules, onAdd, onEdit }) {
+export function DayScheduleSection({ schedules, canEdit = false, onAdd, onEdit }) {
   const sortedSchedules = [...schedules].sort((a, b) =>
     asDisplayText(a.time, '99:99').localeCompare(asDisplayText(b.time, '99:99'))
   );
@@ -29,7 +29,7 @@ export function DayScheduleSection({ schedules, onAdd, onEdit }) {
         >
           일정 {schedules.length > 0 ? `· ${schedules.length}` : ''}
         </span>
-        <button className="btn sm ghost xs" onClick={onAdd}>
+        <button className="btn sm ghost xs" onClick={onAdd} disabled={!canEdit}>
           + 추가
         </button>
       </div>
@@ -39,6 +39,7 @@ export function DayScheduleSection({ schedules, onAdd, onEdit }) {
             <ScheduleItem
               key={asDisplayText(schedule.id, `schedule-${i}`)}
               schedule={schedule}
+              canEdit={canEdit}
               onEdit={onEdit}
             />
           ))}
@@ -54,6 +55,7 @@ export function DayScheduleSection({ schedules, onAdd, onEdit }) {
             justifyContent: 'flex-start',
           }}
           onClick={onAdd}
+          disabled={!canEdit}
         >
           + 일정 추가하기
         </button>
@@ -62,7 +64,7 @@ export function DayScheduleSection({ schedules, onAdd, onEdit }) {
   );
 }
 
-function ScheduleItem({ schedule, onEdit }) {
+function ScheduleItem({ schedule, canEdit = false, onEdit }) {
   const type = asDisplayText(schedule.type, '기타');
   const time = asDisplayText(schedule.time);
   const title = asDisplayText(schedule.title, '(제목 없음)');
@@ -71,6 +73,7 @@ function ScheduleItem({ schedule, onEdit }) {
 
   return (
     <button
+      disabled={!canEdit}
       onClick={() => onEdit(schedule)}
       style={{
         display: 'flex',
@@ -79,7 +82,7 @@ function ScheduleItem({ schedule, onEdit }) {
         padding: '9px 11px',
         borderRadius: 10,
         border: 'none',
-        cursor: 'pointer',
+        cursor: canEdit ? 'pointer' : 'not-allowed',
         font: 'inherit',
         background: 'var(--surface-2)',
         textAlign: 'left',

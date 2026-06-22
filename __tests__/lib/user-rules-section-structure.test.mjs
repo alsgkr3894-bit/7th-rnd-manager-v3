@@ -18,6 +18,9 @@ describe('user rules section structure', () => {
   test('UserRulesSection delegates form, table, and pure sorting/filter helpers', () => {
     expect(sectionSource).toContain('<UserRuleForm');
     expect(sectionSource).toContain('<UserRulesTable');
+    expect(sectionSource).toContain('canEdit = false');
+    expect(sectionSource).toContain('disabled={!canEdit}');
+    expect(sectionSource).toContain('canEdit={canEdit}');
     expect(sectionSource).toContain('sortUserRules');
     expect(sectionSource).toContain('filterUserRule');
     expect(sectionSource).not.toContain('<Toggle');
@@ -29,11 +32,13 @@ describe('user rules section structure', () => {
 
     expect(formSource).toContain('export function UserRuleForm');
     expect(formSource).toContain('<ComboBox');
+    expect(formSource).toContain('disabled={!canEdit}');
     expect(formSource).toContain('CATEGORY_OPTIONS');
     expect(formSource).toContain('패턴 (정규화 후)');
     expect(tableSource).toContain('export function UserRulesTable');
     expect(tableSource).toContain('function UserRuleTableRow');
     expect(tableSource).toContain('<Toggle');
+    expect(tableSource).toContain('disabled={!canEdit');
     expect(tableSource).toContain('<InlineConfirmButtons');
     expect(tableSource).toContain('<Pagination');
     expect(utilsSource).toContain('export function sortUserRules');

@@ -14,6 +14,7 @@ export function UnmatchedIssueTable({
   totalPages,
   total,
   onPage,
+  canEdit = false,
   onToggleAll,
   onToggleSelected,
   onToggleRow,
@@ -30,6 +31,7 @@ export function UnmatchedIssueTable({
                   type="checkbox"
                   checked={openIssuesCount > 0 && allOpenSelected}
                   onChange={onToggleAll}
+                  disabled={!canEdit}
                 />
               </th>
               <th style={{ width: 110 }}>월</th>
@@ -54,6 +56,7 @@ export function UnmatchedIssueTable({
                   expanded={hasIssueId && openId === issueId}
                   busy={hasIssueId && busyId === issueId}
                   checked={hasIssueId && selected.has(issueId)}
+                  canEdit={canEdit}
                   onCheck={() => onToggleSelected(issueId)}
                   onToggle={() => onToggleRow(issueId)}
                   onSubmit={(actionType, actionData) =>

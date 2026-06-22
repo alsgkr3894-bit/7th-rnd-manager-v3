@@ -56,6 +56,9 @@ jest.unstable_mockModule('@/lib/work-log', () => ({ logWork: jest.fn(async () =>
 jest.unstable_mockModule('@/lib/active-brand', () => ({
   getActiveBrandId: jest.fn(() => activeBrandId),
 }));
+jest.unstable_mockModule('@/lib/auth/guard', () => ({
+  assertActiveAdmin: jest.fn(async () => {}),
+}));
 
 const noteStore = await import('@/lib/note/store');
 

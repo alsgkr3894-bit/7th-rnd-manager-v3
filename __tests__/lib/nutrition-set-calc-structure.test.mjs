@@ -19,6 +19,7 @@ const slotSource = readFileSync(
   'utf8'
 );
 const formatSource = readFileSync(resolve('components/nutrition/menu/set-calc/format.js'), 'utf8');
+const hookSource = readFileSync(resolve('hooks/useSetCompositionForm.js'), 'utf8');
 
 describe('nutrition set calc structure', () => {
   test('TabSetCalc keeps calculation wiring and delegates focused UI sections', () => {
@@ -51,5 +52,15 @@ describe('nutrition set calc structure', () => {
     expect(slotSource).toContain('검색 결과 없음');
     expect(formatSource).toContain('export const formatKcal');
     expect(formatSource).toContain('export const formatKcalRange');
+  });
+
+  test('set composition write controls follow canEdit role state', () => {
+    expect(tabSource).toContain('canEdit = false');
+    expect(tabSource).toContain('useSetCompositionForm({ onRefresh: refresh, canEdit })');
+    expect(tabSource).toContain('canEdit && modal');
+    expect(listSource).toContain('canEdit = false');
+    expect(listSource).toContain('disabled={!canEdit}');
+    expect(hookSource).toContain('canEdit = false');
+    expect(hookSource).toContain('if (!canEdit) return');
   });
 });

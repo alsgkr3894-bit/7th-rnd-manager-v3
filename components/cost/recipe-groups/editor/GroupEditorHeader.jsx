@@ -1,6 +1,14 @@
 'use client';
 
-export function GroupEditorHeader({ draft, isNew, saving, onSave, onDelete, onCancel }) {
+export function GroupEditorHeader({
+  draft,
+  isNew,
+  saving,
+  readOnly = false,
+  onSave,
+  onDelete,
+  onCancel,
+}) {
   return (
     <div
       style={{
@@ -15,14 +23,19 @@ export function GroupEditorHeader({ draft, isNew, saving, onSave, onDelete, onCa
       </div>
       <div style={{ display: 'flex', gap: 6 }}>
         {onDelete && (
-          <button className="btn" style={{ color: 'var(--negative)' }} onClick={onDelete}>
+          <button
+            className="btn"
+            style={{ color: 'var(--negative)' }}
+            onClick={onDelete}
+            disabled={readOnly}
+          >
             삭제
           </button>
         )}
         <button className="btn" onClick={onCancel}>
           취소
         </button>
-        <button className="btn primary" onClick={onSave} disabled={saving}>
+        <button className="btn primary" onClick={onSave} disabled={saving || readOnly}>
           {saving ? '저장 중…' : isNew ? '등록' : '수정'}
         </button>
       </div>

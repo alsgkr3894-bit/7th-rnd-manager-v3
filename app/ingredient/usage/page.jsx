@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { downloadCsv } from '@/lib/download';
+import { downloadCsv, makeFileNameWithBrand } from '@/lib/download';
 import { showToast } from '@/components/Toast';
 import { getAllIngredients, buildProductTypeMap } from '@/lib/ingredient';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
@@ -161,7 +161,10 @@ export default function Page() {
       r.sideCount || 0,
       (r.menus || []).map(m => `${m.menuName}(${m.cat})`).join(', '),
     ]);
-    downloadCsv([headers, ...rows], showUnused ? '미사용식자재.csv' : '식자재사용현황.csv');
+    downloadCsv(
+      [headers, ...rows],
+      makeFileNameWithBrand(showUnused ? '미사용식자재' : '식자재사용현황', 'csv')
+    );
   }
 
   return (

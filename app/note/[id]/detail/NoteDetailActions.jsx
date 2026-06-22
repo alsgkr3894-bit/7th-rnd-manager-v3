@@ -7,6 +7,7 @@ const COST_LINKS = [
 ];
 
 export function NoteDetailActions({
+  canEdit = false,
   saving,
   duplicating,
   costMenuOpen,
@@ -27,7 +28,7 @@ export function NoteDetailActions({
       <button
         className="btn no-print"
         onClick={onDuplicate}
-        disabled={duplicating}
+        disabled={duplicating || !canEdit}
         title="이 노트 복사"
       >
         {duplicating ? '복사 중…' : '복사'}
@@ -38,13 +39,13 @@ export function NoteDetailActions({
         onClose={onCloseCostMenu}
         onNavigate={onNavigateCostLink}
       />
-      <button className="btn no-print" onClick={onCreateSample}>
+      <button className="btn no-print" onClick={onCreateSample} disabled={!canEdit}>
         📷 샘플 작성
       </button>
       <button className="btn no-print" onClick={onCancel}>
         취소
       </button>
-      <button className="btn primary no-print" onClick={onSave} disabled={saving}>
+      <button className="btn primary no-print" onClick={onSave} disabled={saving || !canEdit}>
         {saving ? '저장 중…' : '저장하기'}
       </button>
     </>

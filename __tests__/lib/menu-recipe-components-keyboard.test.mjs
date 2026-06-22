@@ -48,6 +48,14 @@ describe('MenuRecipeSection — 키보드 드롭다운 상태/핸들러', () => 
     expect(searchHookSrc).toContain('quantityInputRefs.current');
     expect(searchHookSrc).toContain('.focus()');
   });
+
+  test('blur/focus 지연 타이머를 unmount 시 정리한다', () => {
+    expect(searchHookSrc).toContain('blurTimerRef');
+    expect(searchHookSrc).toContain('focusTimerRef');
+    expect(searchHookSrc).toContain('clearTimeout(blurTimerRef.current)');
+    expect(searchHookSrc).toContain('clearTimeout(focusTimerRef.current)');
+    expect(searchHookSrc).toContain('() => () => {');
+  });
 });
 
 describe('MenuRecipeSection — 수량 Enter 연속 입력', () => {
@@ -149,6 +157,22 @@ describe('recipeComponentRows — 저장/추천 행 변환', () => {
       quantity: 10,
       unit: 'g',
       unitPrice: 4.5,
+    });
+  });
+
+  test('저장 row는 잘못된 수량/단가를 NaN 대신 null로 정규화한다', () => {
+    const map = new Map([['ING-1', { baseUnitType: 'g', unitPrice: 'Infinity' }]]);
+    expect(
+      buildRecipeComponentForSave(
+        { productCode: 'ING-1', ingredientName: '치즈', quantity: 'abc', unitPrice: '-1' },
+        map
+      )
+    ).toEqual({
+      productCode: 'ING-1',
+      ingredientName: '치즈',
+      quantity: null,
+      unit: 'g',
+      unitPrice: null,
     });
   });
 

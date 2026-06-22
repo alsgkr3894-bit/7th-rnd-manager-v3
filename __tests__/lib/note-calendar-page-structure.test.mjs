@@ -13,6 +13,7 @@ const workspaceSource = readFileSync(resolve('app/note/calendar/CalendarWorkspac
 const dialogsSource = readFileSync(resolve('app/note/calendar/CalendarPageDialogs.jsx'), 'utf8');
 const printSource = readFileSync(resolve('app/note/calendar/calendar-print.js'), 'utf8');
 const panelSource = readFileSync(resolve('app/note/calendar/_DayPanel.jsx'), 'utf8');
+const dataHookSource = readFileSync(resolve('app/note/calendar/useCalendarData.js'), 'utf8');
 
 describe('note calendar month print helpers', () => {
   test('month event dates are scoped to the current month and sorted', () => {
@@ -76,6 +77,7 @@ describe('note calendar month print helpers', () => {
 
 describe('note calendar page structure', () => {
   test('page delegates print, header actions, toolbar, workspace, and dialogs', () => {
+    expect(pageSource).toContain('useCalendarData({ canEdit })');
     expect(pageSource).toContain('<CalendarPageActions');
     expect(pageSource).toContain('<CalendarToolbar');
     expect(pageSource).toContain('<CalendarWorkspace');
@@ -88,6 +90,14 @@ describe('note calendar page structure', () => {
     expect(pageSource).not.toContain('openPrintWindow');
     expect(pageSource).not.toContain('gridTemplateColumns: selectedDay');
     expect(pageSource).not.toContain('CALENDAR_VIEW_MODES.map');
+  });
+
+  test('calendar work-log prune is gated behind edit permission', () => {
+    expect(dataHookSource).toContain('export function useCalendarData({ canEdit = false } = {})');
+    expect(dataHookSource).toContain(
+      'if (canEdit) await pruneOldWorkLogs(WORK_LOG_RETENTION_DAYS);'
+    );
+    expect(dataHookSource).toContain('}, [canEdit]);');
   });
 
   test('split files own focused calendar page responsibilities', () => {

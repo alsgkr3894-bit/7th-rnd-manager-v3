@@ -20,6 +20,7 @@ export function NutritionInputPanel({
   saving,
   onSave,
   onDeleteMenu,
+  readOnly = false,
 }) {
   if (!selMenu) {
     return (
@@ -54,6 +55,7 @@ export function NutritionInputPanel({
           className="btn sm ghost"
           style={{ color: 'var(--danger)' }}
           onClick={() => onDeleteMenu(selMenu)}
+          disabled={readOnly}
         >
           <Icon.trash style={{ width: 13, height: 13 }} />
           메뉴 삭제
@@ -137,7 +139,7 @@ export function NutritionInputPanel({
         )}
       </div>
 
-      <NutritionGrid values={form} onChange={setField} />
+      <NutritionGrid values={form} onChange={setField} disabled={readOnly} />
 
       <label
         style={{
@@ -154,6 +156,7 @@ export function NutritionInputPanel({
           type="checkbox"
           checked={!!form.certLinked}
           onChange={e => setField('certLinked', e.target.checked)}
+          disabled={readOnly}
         />
         시험성적서 기반 입력
       </label>
@@ -168,7 +171,7 @@ export function NutritionInputPanel({
           flexWrap: 'wrap',
         }}
       >
-        <button className="btn primary" onClick={onSave} disabled={saving}>
+        <button className="btn primary" onClick={onSave} disabled={saving || readOnly}>
           {saving ? '저장 중…' : `${selectedMenuName} ${selCrust} 저장`}
         </button>
       </div>

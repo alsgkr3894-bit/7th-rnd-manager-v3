@@ -9,6 +9,7 @@ export function SampleGridView({
   sortBy,
   batchMode,
   selected,
+  canEdit = false,
   toggleSelect,
   compareMode,
   toggleCompare,
@@ -44,6 +45,7 @@ export function SampleGridView({
             animDelay={Math.min(index, 8) * 40}
             onCardClick={() => {
               if (batchMode) {
+                if (!canEdit) return;
                 toggleSelect(sample.id);
                 return;
               }
@@ -57,6 +59,7 @@ export function SampleGridView({
             onEdit={() => onEditSample(sample)}
             onCopy={event => onCopySample(sample, event)}
             onDelete={() => onDeleteSample(sample)}
+            canEdit={canEdit}
           />
         );
       })}

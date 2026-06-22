@@ -1,6 +1,7 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { noop } from '@/lib/ui/prop-guards';
+import { inlineEditErrorMessage, normalizeInlineEditDraft } from './inline-edit-utils';
 
 export const DEFAULT_PAGE_SIZE = 60;
 
@@ -179,20 +180,33 @@ export function InlineEditCell({
   required = false,
   formatter,
   readOnly = false,
+  nonNegative = false,
 }) {
+  const errorId = useId();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? '');
+  const [error, setError] = useState('');
   const display = formatter ? formatter(value) : (value ?? '');
   const save = typeof onSave === 'function' ? onSave : noop;
 
   async function commit() {
-    const next = type === 'number' ? (draft === '' ? null : Number(draft)) : String(draft).trim();
-    if (required && (next == null || next === '')) return;
+    const parsed = normalizeInlineEditDraft(draft, type, { nonNegative });
+    if (!parsed.ok) {
+      setError(inlineEditErrorMessage({ type, nonNegative }));
+      return;
+    }
+    const next = parsed.value;
+    if (required && (next == null || next === '')) {
+      setError(inlineEditErrorMessage({ required: true }));
+      return;
+    }
     if (next === value || String(next ?? '') === String(value ?? '')) {
+      setError('');
       setEditing(false);
       return;
     }
     await save(next);
+    setError('');
     setEditing(false);
   }
 
@@ -202,19 +216,49 @@ export function InlineEditCell({
         <input
           className="form-input"
           type={type}
+          min={type === 'number' && nonNegative ? 0 : undefined}
           value={draft ?? ''}
           autoFocus
-          onChange={e => setDraft(e.target.value)}
+          aria-invalid={error ? 'true' : undefined}
+          aria-describedby={error ? errorId : undefined}
+          onChange={e => {
+            setDraft(e.target.value);
+            if (error) setError('');
+          }}
           onBlur={commit}
           onKeyDown={e => {
-            if (e.key === 'Enter') commit();
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              commit();
+            }
             if (e.key === 'Escape') {
               setDraft(value ?? '');
+              setError('');
               setEditing(false);
             }
           }}
-          style={{ height: 28, minWidth: 70, textAlign: align }}
+          style={{
+            height: 28,
+            minWidth: 70,
+            textAlign: align,
+            borderColor: error ? 'var(--negative)' : undefined,
+          }}
         />
+        {error && (
+          <div
+            id={errorId}
+            style={{
+              marginTop: 3,
+              fontSize: 11,
+              lineHeight: 1.25,
+              color: 'var(--negative)',
+              textAlign: align,
+              maxWidth: 160,
+            }}
+          >
+            {error}
+          </div>
+        )}
       </td>
     );
   }
@@ -226,6 +270,7 @@ export function InlineEditCell({
           ? undefined
           : () => {
               setDraft(value ?? '');
+              setError('');
               setEditing(true);
             }
       }
@@ -240,6 +285,7 @@ export function InlineEditCell({
 export function SelectionToolbar({
   selectedCount,
   confirming,
+  canEdit = true,
   onAskDelete,
   onConfirmDelete,
   onCancel,
@@ -273,6 +319,7 @@ export function SelectionToolbar({
             className="btn sm"
             style={{ background: 'var(--negative)', color: '#fff', border: 'none' }}
             onClick={confirmDelete}
+            disabled={!canEdit}
           >
             삭제
           </button>
@@ -282,7 +329,12 @@ export function SelectionToolbar({
         </>
       ) : (
         <>
-          <button className="btn sm" style={{ color: 'var(--negative)' }} onClick={askDelete}>
+          <button
+            className="btn sm"
+            style={{ color: 'var(--negative)' }}
+            onClick={askDelete}
+            disabled={!canEdit}
+          >
             선택 삭제
           </button>
           <button className="btn sm" onClick={cancel}>

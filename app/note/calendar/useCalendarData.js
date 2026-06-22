@@ -7,7 +7,7 @@ import { getAllSamples } from '@/lib/sample';
 import { getAllSchedules } from '@/lib/note/schedules';
 import { getAllWorkLogs, pruneOldWorkLogs, WORK_LOG_RETENTION_DAYS } from '@/lib/work-log';
 
-export function useCalendarData() {
+export function useCalendarData({ canEdit = false } = {}) {
   const [notes, setNotes] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [workLogs, setWorkLogs] = useState([]);
@@ -16,7 +16,7 @@ export function useCalendarData() {
 
   const load = useCallback(async () => {
     await initDB();
-    await pruneOldWorkLogs(WORK_LOG_RETENTION_DAYS);
+    if (canEdit) await pruneOldWorkLogs(WORK_LOG_RETENTION_DAYS);
     const [nextNotes, nextSchedules, nextWorkLogs, nextSamples] = await Promise.all([
       getAllNotesCached(),
       getAllSchedules(),
@@ -28,7 +28,7 @@ export function useCalendarData() {
     setWorkLogs(nextWorkLogs);
     setSamples(nextSamples);
     setLoading(false);
-  }, []);
+  }, [canEdit]);
 
   useEffect(() => {
     load().catch(error => {

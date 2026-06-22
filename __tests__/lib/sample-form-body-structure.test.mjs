@@ -9,6 +9,9 @@ const photoSource = readFileSync(resolve('app/note/sample/_SamplePhotoCard.jsx')
 
 describe('sample form body structure', () => {
   test('form body keeps data wiring while delegating card rendering', () => {
+    expect(formSource).toContain('readOnly = false');
+    expect(formSource).toContain('if (readOnly) return');
+    expect(formSource).toContain('readOnly={readOnly}');
     expect(formSource).toContain('<SampleBasicInfoCard');
     expect(formSource).toContain('<SampleDetailRecordCard');
     expect(formSource).toContain('<SampleLinkedProductsCard');
@@ -27,12 +30,32 @@ describe('sample form body structure', () => {
     expect(basicSource).toContain('function StarPicker');
     expect(basicSource).toContain('<ComboBox');
     expect(basicSource).toContain('<SegGroup');
+    expect(basicSource).toContain('disabled={readOnly}');
     expect(detailSource).toContain('export function SampleDetailRecordCard');
     expect(detailSource).toContain('<TagInput');
+    expect(detailSource).toContain('disabled={readOnly}');
     expect(linkedSource).toContain('export function SampleLinkedProductsCard');
     expect(linkedSource).toContain('식자재명 또는 메뉴명 검색');
+    expect(linkedSource).toContain('disabled={readOnly}');
     expect(photoSource).toContain('export function SamplePhotoCard');
     expect(photoSource).toContain('onCaptionChange');
     expect(photoSource).toContain('fileInputRef.current?.click()');
+    expect(photoSource).toContain('!readOnly && photos.length < maxPhotos');
+  });
+
+  test('sample photo upload keeps read-only, type, and size guards before resize', () => {
+    expect(formSource).toContain('if (readOnly) return;');
+    expect(formSource).toContain('allFiles.filter(isSupportedImageFile)');
+    expect(formSource).toContain('checkFileSize(file, UPLOAD_MAX_MB.photo)');
+    expect(formSource.indexOf('allFiles.filter(isSupportedImageFile)')).toBeLessThan(
+      formSource.indexOf('checkFileSize(file, UPLOAD_MAX_MB.photo)')
+    );
+    expect(formSource.indexOf('checkFileSize(file, UPLOAD_MAX_MB.photo)')).toBeLessThan(
+      formSource.indexOf('toAdd.push(file)')
+    );
+    expect(formSource).toContain('Promise.allSettled(toAdd.map(resizePhoto))');
+    expect(photoSource).toContain('disabled={readOnly}');
+    expect(photoSource).toContain('if (readOnly) return;');
+    expect(photoSource).toContain("event.target.value = '';");
   });
 });

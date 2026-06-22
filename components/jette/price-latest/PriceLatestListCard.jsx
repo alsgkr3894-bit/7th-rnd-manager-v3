@@ -22,6 +22,7 @@ export function PriceLatestListCard({
   sortDir,
   onSort,
   productTypeLookup,
+  canEdit = false,
   onTypeChange,
 }) {
   return (
@@ -62,6 +63,7 @@ export function PriceLatestListCard({
         sortDir={sortDir}
         onSort={onSort}
         productTypeLookup={productTypeLookup}
+        canEdit={canEdit}
         onTypeChange={onTypeChange}
       />
     </div>

@@ -50,18 +50,19 @@ function CleanupBadge() {
   );
 }
 
-function RemoveButton({ onClick, title }) {
+function RemoveButton({ onClick, title, disabled = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
       title={title}
+      disabled={disabled}
       style={{
         border: 0,
         background: 'transparent',
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
         color: 'inherit',
-        opacity: 0.5,
+        opacity: disabled ? 0.25 : 0.5,
         display: 'inline-flex',
         padding: 2,
         borderRadius: 4,
@@ -107,6 +108,7 @@ export function IngredientSettingsPanel({
   uncategorized = 0,
   discontinuedCount = 0,
   onRemoveRequest,
+  canEdit = false,
 }) {
   const [catSearch, setCatSearch] = useState('');
   const [tagSearch, setTagSearch] = useState('');
@@ -198,6 +200,7 @@ export function IngredientSettingsPanel({
                   <RemoveButton
                     onClick={() => onRemoveRequest({ type: 'cat', value: category })}
                     title="분류 삭제"
+                    disabled={!canEdit}
                   />
                 </span>
               );
@@ -258,6 +261,7 @@ export function IngredientSettingsPanel({
                   <RemoveButton
                     onClick={() => onRemoveRequest({ type: 'tag', value: tag })}
                     title="태그 삭제"
+                    disabled={!canEdit}
                   />
                 </span>
               );

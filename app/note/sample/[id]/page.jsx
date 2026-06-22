@@ -9,10 +9,13 @@ import { downloadCsv, printCurrentPageWithDownloadDate } from '@/lib/download';
 import { getSampleById, updateSample, sampleNamesOf, RATING_LABELS } from '@/lib/sample';
 import { SampleFormBody, SAMPLE_INIT } from '../_SampleFormBody';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { copyText } from '@/lib/ui/clipboard';
 
 export default function Page() {
   const router = useRouter();
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
   const { id } = useParams();
   const parsedSampleId = Number(id);
   const sampleId =
@@ -54,6 +57,7 @@ export default function Page() {
   useKeyboardSave(handleSave);
 
   async function handleSave() {
+    if (!canEdit) return;
     if (saving) return;
     const names = (form.sampleNames || []).map(s => (s || '').trim()).filter(Boolean);
     if (!form.title.trim() || !names.length) {
@@ -178,13 +182,17 @@ export default function Page() {
             <button className="btn no-print" onClick={() => router.push('/note/sample')}>
               취소
             </button>
-            <button className="btn primary no-print" onClick={handleSave} disabled={saving}>
+            <button
+              className="btn primary no-print"
+              onClick={handleSave}
+              disabled={saving || !canEdit}
+            >
               {saving ? '저장 중…' : '저장하기'}
             </button>
           </div>
         }
       />
-      <SampleFormBody form={form} setForm={setForm} />
+      <SampleFormBody form={form} setForm={setForm} readOnly={!canEdit} />
     </main>
   );
 }

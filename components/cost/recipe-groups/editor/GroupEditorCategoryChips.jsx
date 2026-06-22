@@ -3,7 +3,7 @@
 import { SectionLabel } from '@/components/cost/shared/FormLabels';
 import { GROUP_EDITOR_CATEGORIES } from './groupEditorUtils';
 
-export function GroupEditorCategoryChips({ selectedCategories, onToggle }) {
+export function GroupEditorCategoryChips({ selectedCategories, readOnly = false, onToggle }) {
   return (
     <>
       <SectionLabel>
@@ -29,12 +29,13 @@ export function GroupEditorCategoryChips({ selectedCategories, onToggle }) {
               key={category}
               type="button"
               onClick={() => onToggle(category)}
+              disabled={readOnly}
               style={{
                 padding: '4px 10px',
                 borderRadius: 999,
                 fontSize: 12,
                 fontWeight: 600,
-                cursor: 'pointer',
+                cursor: readOnly ? 'default' : 'pointer',
                 border: '1px solid',
                 borderColor: selected ? 'var(--accent)' : 'var(--border)',
                 background: selected ? 'var(--accent-soft)' : 'var(--surface)',

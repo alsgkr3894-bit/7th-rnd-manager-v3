@@ -18,6 +18,7 @@ export function ManagedProductsForm({
   form = EMPTY_FORM,
   setForm = noop,
   busy,
+  canEdit = false,
   onSubmit = noop,
   onCancel = noop,
 }) {
@@ -49,17 +50,20 @@ export function ManagedProductsForm({
         onChange={e => updateForm({ ...safeForm, productCode: e.target.value })}
         placeholder="제품코드 (필수)"
         style={inputStyle}
+        disabled={!canEdit}
       />
       <input
         value={safeForm.productName}
         onChange={e => updateForm({ ...safeForm, productName: e.target.value })}
         placeholder="제품명 (필수)"
         style={inputStyle}
+        disabled={!canEdit}
       />
       <select
         value={safeForm.productType}
         onChange={e => updateForm({ ...safeForm, productType: e.target.value })}
         style={inputStyle}
+        disabled={!canEdit}
       >
         {TYPE_OPTIONS.map(o => (
           <option key={o.value} value={o.value}>
@@ -80,13 +84,18 @@ export function ManagedProductsForm({
           type="checkbox"
           checked={safeForm.isManaged}
           onChange={e => updateForm({ ...safeForm, isManaged: e.target.checked })}
+          disabled={!canEdit}
         />
         관리품목
       </label>
       <button className="btn sm" onClick={handleCancel} disabled={busy}>
         취소
       </button>
-      <button className="btn sm primary" onClick={handleSubmit} disabled={busy || !canSubmit}>
+      <button
+        className="btn sm primary"
+        onClick={handleSubmit}
+        disabled={busy || !canEdit || !canSubmit}
+      >
         {busy ? '추가 중...' : '추가'}
       </button>
     </div>

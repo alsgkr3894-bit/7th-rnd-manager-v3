@@ -13,7 +13,7 @@ import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
  * SALES_ALIASES: '{입력 메뉴명} → {표준 메뉴명}' 매핑
  * 분류 매칭 전에 정규화된 메뉴명을 표준 메뉴명으로 치환.
  */
-export function SettingsAliasCard() {
+export function SettingsAliasCard({ canEdit = false }) {
   const [query, setQuery] = useState('');
   // 기본 별칭은 7번가(main) 전용. 다른 브랜드는 빈 목록(DB 사용자 별칭만).
   const [aliases, setAliases] = useState(SALES_ALIASES);
@@ -35,7 +35,7 @@ export function SettingsAliasCard() {
 
   return (
     <div className="card" style={{ marginTop: 16 }}>
-      <UserAliasesSection />
+      <UserAliasesSection canEdit={canEdit} />
       <div style={{ height: 1, background: 'var(--border)', margin: '16px 0' }} />
       <div className="card-header">
         <div>

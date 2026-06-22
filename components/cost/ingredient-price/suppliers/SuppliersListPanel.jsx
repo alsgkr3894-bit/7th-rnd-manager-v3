@@ -46,7 +46,7 @@ function EmptySearchState({ search }) {
   );
 }
 
-function SupplierTableRow({ supplier, isLast, onEdit, onDelete }) {
+function SupplierTableRow({ supplier, isLast, canEdit = false, onEdit, onDelete }) {
   return (
     <tr style={{ borderBottom: !isLast ? '1px solid var(--divider)' : undefined }}>
       <td style={{ padding: '10px 14px', fontWeight: 600, fontSize: 13 }}>{supplier.name}</td>
@@ -84,7 +84,12 @@ function SupplierTableRow({ supplier, isLast, onEdit, onDelete }) {
       </td>
       <td style={{ padding: '10px 14px', textAlign: 'right' }}>
         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-          <button type="button" className="btn xs" onClick={() => onEdit(supplier)}>
+          <button
+            type="button"
+            className="btn xs"
+            onClick={() => onEdit(supplier)}
+            disabled={!canEdit}
+          >
             수정
           </button>
           <button
@@ -92,6 +97,7 @@ function SupplierTableRow({ supplier, isLast, onEdit, onDelete }) {
             className="btn xs"
             style={{ color: 'var(--negative)' }}
             onClick={() => onDelete(supplier.id)}
+            disabled={!canEdit}
           >
             삭제
           </button>
@@ -101,7 +107,7 @@ function SupplierTableRow({ supplier, isLast, onEdit, onDelete }) {
   );
 }
 
-function SuppliersTable({ suppliers, onEdit, onDelete }) {
+function SuppliersTable({ suppliers, canEdit = false, onEdit, onDelete }) {
   return (
     <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -120,6 +126,7 @@ function SuppliersTable({ suppliers, onEdit, onDelete }) {
               key={supplier.id}
               supplier={supplier}
               isLast={index >= suppliers.length - 1}
+              canEdit={canEdit}
               onEdit={onEdit}
               onDelete={onDelete}
             />
@@ -135,11 +142,19 @@ export function SuppliersListPanel({
   suppliers,
   filteredSuppliers,
   search,
+  canEdit = false,
   onEdit,
   onDelete,
 }) {
   if (loading) return <LoadingState />;
   if (suppliers.length === 0) return <EmptySuppliersState />;
   if (filteredSuppliers.length === 0) return <EmptySearchState search={search} />;
-  return <SuppliersTable suppliers={filteredSuppliers} onEdit={onEdit} onDelete={onDelete} />;
+  return (
+    <SuppliersTable
+      suppliers={filteredSuppliers}
+      canEdit={canEdit}
+      onEdit={onEdit}
+      onDelete={onDelete}
+    />
+  );
 }

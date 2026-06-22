@@ -12,6 +12,7 @@ export function PriceCompareDataTable({
   sortDir,
   onSort,
   productTypeLookup,
+  canEdit = false,
   onTypeChange,
   priceAlertThreshold,
   page,
@@ -94,6 +95,7 @@ export function PriceCompareDataTable({
               key={`${asDisplayText(row.productCode || row.productName, 'product')}-${index}`}
               row={row}
               productTypeLookup={productTypeLookup}
+              canEdit={canEdit}
               onTypeChange={onTypeChange}
               priceAlertThreshold={priceAlertThreshold}
             />

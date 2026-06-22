@@ -358,8 +358,13 @@
 - **2026-06-18 추가 완료**: 브랜드 전환→브랜드별 데이터 분리, 노트 일정 추가→캘린더 반영, 식자재 등록→관리 목록 반영 시나리오 추가. `qa:workflow` 9/9 통과.
 - **2026-06-18 추가 완료**: 원가마진표, 판매량 업로드 이력, 영양성분 메뉴 목록 흐름 추가. `qa:workflow` 12/12 통과.
 - **2026-06-19 추가 완료**: 레시피 저장→원가마진표 반영, 식자재 단가보고서, 공통원가 체크 시나리오 추가. `qa:workflow` 15/15 통과.
-- **왜 보류**: 남은 항목은 레시피 구성 UI, 식자재 단가 파일, 공통원가 출력 파이프라인처럼 다단계 사전 데이터가 필요해 fixture/시드 설계 선행 필요.
-- `scripts/workflow-qa.mjs`는 runner 진입점으로 축소됐고, 하니스는 `scripts/workflow/runner.mjs`, 공통 helper는 `scripts/workflow/helpers.mjs`, 시나리오는 `scripts/workflow/scenarios/*.mjs`에 분리됐다. 남은 시나리오는 fixture 설계 후 추가한다.
+- **2026-06-21 추가 완료**: 레시피 UI 저장→재진입 구성품 확인 시나리오 추가. `qa:workflow` 16/16 통과.
+- **2026-06-22 추가 완료**: 출고량 CSV 실제 업로드 오류/저장 UX 시나리오 추가. `qa:workflow` 17/17 통과.
+- **2026-06-22 추가 완료**: 백업 생성→테스트 메뉴 삭제→실제 복원 실행→복구 확인 시나리오 추가. workflow step timeout을 도입해 장시간 hang을 실패로 기록.
+- **2026-06-22 추가 완료**: 메뉴판매가 업로드에서 정상 1건+오류 1건 CSV를 실제 업로드하고, 실패행 CSV 다운로드 파일명·헤더·오류 사유·메뉴명을 검증하는 시나리오 추가. dev/prod `qa:workflow` 19/19 통과.
+- **2026-06-22 추가 완료**: 메뉴마스터 CSV 내보내기를 실제 브라우저 다운로드로 캡처하고, 파일명·헤더·테스트 메뉴 행·수식 인젝션 방어 접두어를 검증하는 시나리오 추가. 최신 dev/prod `qa:workflow` 기준 21/21 통과. prod `qa:prod`는 3000번 dev 서버 재기동과 충돌한 1차 실패 후 3101번 격리 포트에서 smoke 22/22, mobile 22/22, runtime 67/67, workflow 21/21 통과.
+- **현재 보류**: 남은 것은 실제 출력물 중 XLSX/PDF/인쇄 열람, 대용량 복원 운영 리허설, 업로드 대용량/확장자오류/중복 업로드 같은 실제 화면 fixture 심화 QA다. 빈 CSV·헤더-only·대표 필수 컬럼 누락, 메뉴판매가 실패행 CSV 다운로드, 메뉴마스터 CSV 브라우저 다운로드는 자동 테스트/워크플로로 보강 완료.
+- `scripts/workflow-qa.mjs`는 runner 진입점으로 축소됐고, 하니스는 `scripts/workflow/runner.mjs`, 공통 helper는 `scripts/workflow/helpers.mjs`, 시나리오는 `scripts/workflow/scenarios/*.mjs`에 분리됐다. 신규 시나리오는 fixture 설계 후 작은 단위로 추가한다.
 
 #### CSS·디자인 시스템 정리  🟢 ⏸
 - 큰 CSS 파일 분리: `motion-note.css`·`home.css`·`report/builder.css`·`report/table.css`·`settings.css`·`cost.css`·`ingredient.css`
@@ -485,7 +490,7 @@
 
 > production 코드를 바꾸지 않는 QA·검증 가이드. 별도 `docs/RELEASE_CHECKLIST.md`·`docs/QA_CHECKLIST.md`는 아직 없으므로, 필요 시 이 섹션을 기준으로 생성한다.
 
-**운영 QA로만 분류(코드 보류 아님)**: 원가/판매가/원가율 기준표 대조, 엑셀 입출력 Excel 앱 확인, 코드 매칭 원장 대조, 대용량(500MB) 복원 freeze·진행률, 공유 DB+브랜드 DB 동시 복원 복구 절차 리허설, usage-counts `menuName` dedupe 규격 누락, 다운로드 파일명/출력 컬럼 정책, 인증·설정 PIN 보안경계 문서화, 성능(1천/1만 행) 측정.
+**운영 QA로만 분류(코드 보류 아님)**: 원가/판매가/원가율 기준표 대조, 엑셀 입출력 Excel 앱 확인(대표 XLSX 4종의 실제 `.xlsx` write/read 자동 검증은 완료), 코드 매칭 원장 대조, 대용량(500MB) 복원 freeze·진행률, 공유 DB+브랜드 DB 동시 복원 복구 절차 리허설, usage-counts `menuName` dedupe 규격 누락, 다운로드 파일명/출력 컬럼 정책, 인증·설정 PIN 보안경계 문서화, 성능(1천/1만 행) 측정.
 
 ---
 
@@ -527,7 +532,7 @@
 
 ### 코드 청결도 재점검 권고 항목 전 구현 (CODE_CLEANLINESS_AUDIT_2026-06-20.md 흡수) — ✅ 2026-06-20
 
-> 검증: lint 0 / 275 suites / 1521 tests / qa:smoke 22/22 통과.
+> 당시 검증: lint 0 / 275 suites / 1521 tests / qa:smoke 22/22 통과.
 
 - **루트 임시 파일 삭제**: `test-allergen.mjs`, `verify-4th.mjs`, `verify-dashboard.mjs`, `verify-data-path.mjs` 삭제. `SITE_STATUS.md` 참조 제거.
 - **QA 스크립트 공통화**: `scripts/qa-viewport-runner.mjs` 추출 — `ROUTES` 22개·`runViewportQa()` 공용 runner. `smoke-qa.mjs`·`mobile-qa.mjs`는 viewport만 다른 thin wrapper로 축소. `mobile-viewport.test.mjs` 계속 통과.
@@ -548,18 +553,18 @@
 ### 사이트 점수 개선 실행 계획 P0~P2·P4·P5 완료 (SITE_SCORE_IMPROVEMENT_ACTION_PLAN.md 흡수) — ✅ 2026-06-17
 
 - **P0**: DEFERRED_WORK.md trailing whitespace 제거, BUG-003 NaN guard 커밋, 문서 통합 커밋 정리.
-- **P1**: viewer 차단 시나리오(`qa:workflow` 시나리오 4) 추가 — 복원 실행 시 `assertActiveAdmin` 거부 toast 검증.
+- **P1**: viewer 차단 시나리오(`qa:workflow` 시나리오 4) 추가 — 메뉴마스터·시스템 설정·데이터 복원 UI 차단을 실제 브라우저에서 검증하고, 실행 함수 레벨 `assertActiveAdmin`은 구조 테스트로 고정.
 - **P2**: 잘못된 백업 파일 오류 안내(시나리오 5), 메뉴 폼 유효성 + 중복 경고(시나리오 6) 추가.
 - **P4**: assertActiveAdmin 전 파괴적 함수 적용 완료(이미 완료).
 - **P5**: `npm run audit:docs` 유지 (이미 완료).
 - 잔여: P1 fixture 시나리오(식자재 단가·판매량·공통원가·레시피 저장) → E2E QA 확장 보류 등록. P3 운영 QA → D섹션 유지.
-- `qa:workflow` 6/6 통과. 2026-06-18에 브랜드 분리·캘린더 일정·식자재 등록 시나리오를 추가해 9/9 통과했고, 이후 원가마진·판매량 업로드·영양성분 메뉴 흐름을 추가해 12/12 통과. 2026-06-19에 레시피원가·단가보고서·공통원가 흐름 추가해 15/15 통과.
+- `qa:workflow` 6/6 통과. 2026-06-18에 브랜드 분리·캘린더 일정·식자재 등록 시나리오를 추가해 9/9 통과했고, 이후 원가마진·판매량 업로드·영양성분 메뉴 흐름을 추가해 12/12 통과. 2026-06-19에 레시피원가·단가보고서·공통원가 흐름을 추가해 15/15 통과. 2026-06-21~22에 레시피 UI 저장, 출고량 CSV 실제 업로드, 백업 실제 복원 실행, 메뉴판매가 실패행 CSV 다운로드, 메뉴마스터 CSV 다운로드 파일 검증, 판매량 업로드 잘못된 확장자 UX를 추가해 최신 dev 21/21 통과.
 
 ---
 
 ### 내부 운영툴 추가 보완 계획 P0~P5 주요 항목 완료 (INTERNAL_TOOL_POLISH_PLAN.md) — ✅ 2026-06-19
 
-- **P0 workflow QA 확대**: 레시피 저장→원가마진표, 식자재 단가보고서, 공통원가 시나리오 3개 추가. `qa:workflow` 15/15 통과.
+- **P0 workflow QA 확대**: 레시피 저장→원가마진표, 식자재 단가보고서, 공통원가 시나리오 3개 추가. 이후 레시피 UI 저장, 출고량 CSV 실제 업로드, 백업 실제 복원 실행, 메뉴판매가 실패행 CSV 다운로드, 메뉴마스터 CSV 다운로드 파일 검증, 판매량 업로드 잘못된 확장자 UX까지 확대되어 최신 dev `qa:workflow` 21/21 통과.
 - **P2 식자재 데이터 정리 도구**: 미사용 분류/태그 정리 후보 표시(`unusedCategories`/`unusedTags`) `IngredientDiagnostics`에 추가.
 - **P3 출력/다운로드 품질 보강**: `export-margin-structure.test.mjs` — 원가마진표 컬럼 순서 고정·파일명 규칙·팝업 차단 안내 구조 검증.
 - **P4 UX 세부 보완**: 홈 대시보드 인사 서브라인에 미매칭 이슈 수·단가없음 식자재 수 추가; 식자재 폼 원산지/알레르기 섹션 위에 영향 메뉴 수 안내; `catFilter` URL 파라미터를 localStorage에 반영해 홈→식자재 관리 단가없음 링크 동작.
@@ -612,14 +617,14 @@
 
 ### 핵심 업무 E2E QA P1 완료 (WORKFLOW_QA.md 흡수) — ✅ 2026-06-17
 
-> `docs/WORKFLOW_QA.md` P1 3 시나리오 구현 완료. `npm run qa:workflow`.
+> `docs/WORKFLOW_QA.md` P1 3 시나리오 구현 완료 후, 2026-06-22 기준 21시나리오까지 확장 완료. `npm run qa:workflow`.
 
 - **구현 시나리오 3종** (`scripts/workflow-qa.mjs`):
   1. 백업 → 복원 미리보기 — 브랜드 전환 후 복원 미리보기 모달 열림 확인.
   2. 노트 작성 → 목록 확인 — 노트 저장 후 목록에 반영 여부.
   3. 메뉴 등록 → 목록 확인 — 메뉴 추가 후 메뉴마스터 목록에 반영 여부.
 - **E2E 설계 주의**: `goto()` 후 React 하이드레이션 완료까지 대기(`networkidle` + "DB 초기화 중" 해제). run-unique 마커 + IndexedDB 정리로 결정성 확보.
-- **보류**: E2E 확장 4 시나리오 → 보류 섹션 "E2E QA 확장 시나리오" 등록.
+- **추가 완료**: 이후 백업 실제 복원 실행, 메뉴마스터 CSV 다운로드 파일 검증, 판매량 업로드 잘못된 확장자 UX, 출고량 CSV 실제 업로드, 메뉴판매가 실패행 CSV 다운로드 등으로 확장되어 최신 workflow는 21/21 기준.
 
 ---
 
@@ -631,7 +636,7 @@
 - **시스템 설정 현재 권한 표시**: `현재 권한` InfoCell (admin/viewer) 추가.
 - **출력·인쇄 실패 처리 완비**: 팝업 차단(false 반환+toast), 이미지 로드 실패(onerror→진행), XSS(`esc()` escape), xlsx 실패(try/catch+toast). 회귀 테스트: `window-print-guards.test.mjs`.
 - **오류 로그 정책 테스트 3종**: `silent-catch-policy.test.mjs`(빈 catch 금지), `console-context-policy.test.mjs`(라벨 필수), `toast-type-policy.test.mjs`(부정 문구 타입 필수).
-- **보류 유지**: 식자재관리 pagination — 일괄선택 state 결합 회귀 위험 > 효과 ([[deferred-refactors]]).
+- **추가 완료**: 식자재관리 pagination은 이후 `IngredientManagePanel`에 `usePagination` + `PAGE_SIZE=60`으로 적용 완료.
 
 ---
 
@@ -1003,4 +1008,4 @@ LOW 완료: L-02 border-radius 토큰화 · L-03 비교월 동일 경고 · L-04
 
 ---
 
-_잔여 보류: **B-6/C-P4**(대형 컴포넌트 추가 분해 재평가) · **B-20**(실업무 fixture 확대 잔여) · **N-43**(과거 단가, 동작 명세) · **BUG-011**(deleteIngredient cascade 비원자성, 현재 no-op) · **BUG-014**(TopBar 다크모드 아이콘 플리커) · **메뉴마스터 레시피 UX 잔여 후보**(사용자 승인 대기) · **식자재 데이터 정리 도구**(사용자 승인 대기) · **E2E QA 확장 잔여 시나리오**(fixture 필요) · **CSS·디자인 시스템 정리** · **출력·인쇄·다운로드 파이프라인 점검** · **localStorage·백업 범위 정합성 점검** · **에러·빈상태 UI 통일** · **업로드·import 중복 로직 정리** · **모바일·좁은 화면 레이아웃 재검사** · **외부 배포 보안 강화**(외부 배포 결정 시) · **영양 부분 누락 진단**(크러스트 기준 선행)._
+_잔여 보류: **B-6/C-P4**(대형 컴포넌트 추가 분해 재평가) · **B-20**(실업무 fixture 확대 잔여) · **N-43**(과거 단가, 동작 명세) · **BUG-011**(deleteIngredient cascade 비원자성, 현재 no-op) · **BUG-014**(TopBar 다크모드 아이콘 플리커) · **메뉴마스터 레시피 UX 잔여 후보**(사용자 승인 대기) · **식자재 데이터 정리 도구**(사용자 승인 대기) · **CSS·디자인 시스템 정리** · **출력·인쇄·다운로드 파이프라인 점검** · **localStorage·백업 범위 정합성 점검** · **에러·빈상태 UI 통일** · **업로드·import 중복 로직 정리** · **외부 배포 보안 강화**(외부 배포 결정 시) · **영양 부분 누락 진단**(크러스트 기준 선행)._

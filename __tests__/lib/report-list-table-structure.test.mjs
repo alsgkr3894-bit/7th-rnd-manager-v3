@@ -6,6 +6,8 @@ import {
 } from '../../components/report/report-list-table/reportListTableUtils.js';
 
 const tableSource = readFileSync(resolve('components/report/ReportListTable.jsx'), 'utf8');
+const pageSource = readFileSync(resolve('app/report/page.jsx'), 'utf8');
+const reportActionsHookSource = readFileSync(resolve('hooks/useReportActions.js'), 'utf8');
 const headerSource = readFileSync(
   resolve('components/report/report-list-table/ReportListTableHeader.jsx'),
   'utf8'
@@ -106,7 +108,10 @@ describe('report list table structure', () => {
     expect(rowSource).toContain('<ReportActivityCell');
     expect(rowSource).toContain('<ReportRowActions');
     expect(rowSource).toContain('즐겨찾기 해제');
+    expect(rowSource).toContain('disabled={!canEdit}');
     expect(nameCellSource).toContain('export function ReportNameCell');
+    expect(nameCellSource).toContain('canEdit = false');
+    expect(nameCellSource).toContain('disabled={!canEdit}');
     expect(nameCellSource).toContain('showToast');
     expect(nameCellSource).toContain('commitEdit(report)');
     expect(nameCellSource).toContain('report-name-btn');
@@ -125,5 +130,22 @@ describe('report list table structure', () => {
     expect(utilsSource).toContain('export function buildReportListRowModel');
     expect(utilsSource).toContain('export function buildReportPaginationItems');
     expect(utilsSource).toContain('KIND_CHIP[kind] || KIND_CHIP.sales');
+  });
+
+  test('destructive report controls follow current role state', () => {
+    expect(pageSource).toContain("from '@/hooks/useCurrentRole'");
+    expect(pageSource).toContain('const canEdit = roleReady && isAdmin');
+    expect(pageSource).toContain('useReportActions({ reload, canEdit })');
+    expect(pageSource).toContain('disabled={!canEdit}');
+    expect(tableSource).toContain('canEdit = false');
+    expect(tableSource).toContain('canEdit={canEdit}');
+    expect(rowSource).toContain('canEdit = false');
+    expect(rowSource).toContain('canEdit={canEdit}');
+    expect(rowSource).toContain('if (canEdit) handleToggleFav');
+    expect(nameCellSource).toContain('if (canEdit) startEdit(report)');
+    expect(actionsSource).toContain('canEdit = false');
+    expect(actionsSource).toContain('disabled={isDeleting || !canEdit}');
+    expect(reportActionsHookSource).toContain('canEdit = false');
+    expect(reportActionsHookSource).toContain('if (!canEdit) return');
   });
 });

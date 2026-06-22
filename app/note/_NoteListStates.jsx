@@ -9,7 +9,14 @@ const SKELETON_GRID_STYLE = {
   marginTop: 24,
 };
 
-export function NoteListStates({ loading, notesCount, filteredCount, search, onCreate }) {
+export function NoteListStates({
+  loading,
+  notesCount,
+  filteredCount,
+  search,
+  canEdit = false,
+  onCreate,
+}) {
   if (loading) {
     return (
       <div style={SKELETON_GRID_STYLE}>
@@ -28,7 +35,12 @@ export function NoteListStates({ loading, notesCount, filteredCount, search, onC
         </div>
         <div className="empty-title">아직 노트가 없어요</div>
         <div className="empty-sub">메뉴 테스트 결과나 아이디어를 기록해보세요.</div>
-        <button className="btn primary" style={{ marginTop: 8 }} onClick={onCreate}>
+        <button
+          className="btn primary"
+          style={{ marginTop: 8 }}
+          onClick={onCreate}
+          disabled={!canEdit}
+        >
           <Icon.plus style={{ width: 13, height: 13 }} /> 첫 노트 작성
         </button>
       </div>

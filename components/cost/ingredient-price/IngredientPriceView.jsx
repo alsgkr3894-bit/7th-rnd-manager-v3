@@ -44,6 +44,7 @@ export function IngredientPriceView({ embedded = false }) {
   const shellClassName = embedded ? 'content-enter' : 'main';
 
   const handleReset = useCallback(async () => {
+    if (isViewer) return;
     setResetting(true);
     try {
       const { deleted } = await resetAllIngredients();
@@ -54,7 +55,7 @@ export function IngredientPriceView({ embedded = false }) {
     } finally {
       setResetting(false);
     }
-  }, [load]);
+  }, [isViewer, load]);
 
   // ── 통계 ─────────────────────────────────────────────────────
   const stats = useMemo(() => {
@@ -88,6 +89,7 @@ export function IngredientPriceView({ embedded = false }) {
   });
 
   async function handleInlineSave(row, patch) {
+    if (isViewer) return;
     try {
       if (!row.meta) throw new Error('마스터 항목을 찾을 수 없습니다');
       await upsertIngredientMeta({
@@ -104,6 +106,7 @@ export function IngredientPriceView({ embedded = false }) {
   }
 
   async function handleSelectedDelete() {
+    if (isViewer) return;
     const ids = Array.from(priceTable.selected);
     if (ids.length === 0) return;
     try {
@@ -214,11 +217,12 @@ export function IngredientPriceView({ embedded = false }) {
       )}
 
       {/* 마스터 등록 모달 */}
-      {regTarget && (
+      {!isViewer && regTarget && (
         <RegisterModal
           row={regTarget}
           extraCategories={[...new Set(rows.map(r => r.category).filter(Boolean))]}
           onSave={async data => {
+            if (isViewer) return;
             await upsertIngredientMeta({ productCode: regTarget.productCode, ...data });
             showToast('마스터 등록 완료');
             setRegTarget(null);
@@ -229,7 +233,7 @@ export function IngredientPriceView({ embedded = false }) {
       )}
 
       {/* 제때 수량 동기화 모달 */}
-      {syncQtyOpen && (
+      {!isViewer && syncQtyOpen && (
         <SyncBaseQtyModal
           onDone={async count => {
             showToast(`${count}개 기준수량 동기화 완료`);

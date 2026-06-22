@@ -7,6 +7,7 @@ import { SettingsExcludeCard } from '@/components/sales/SettingsExcludeCard';
 import { SettingsRuleCard } from '@/components/sales/SettingsRuleCard';
 import { formatNumber } from '@/lib/format';
 import { useDBLoad } from '@/hooks/useDBLoad';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { getActiveBrandId } from '@/lib/active-brand';
 
 const TABS = [
@@ -17,6 +18,8 @@ const TABS = [
 
 export default function Page() {
   const [tab, setTab] = useState('rule');
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
 
   // 기본 규칙·별칭 수는 7번가(main) 전용. 다른 브랜드는 0.
   // 초기값 0: SSR/클라이언트 모두 동일 → hydration 불일치 없음. 마운트 후 main이면 실제 수로 교정.
@@ -91,9 +94,9 @@ export default function Page() {
         ))}
       </div>
 
-      {tab === 'rule' && <SettingsRuleCard />}
-      {tab === 'alias' && <SettingsAliasCard />}
-      {tab === 'exclude' && <SettingsExcludeCard />}
+      {tab === 'rule' && <SettingsRuleCard canEdit={canEdit} />}
+      {tab === 'alias' && <SettingsAliasCard canEdit={canEdit} />}
+      {tab === 'exclude' && <SettingsExcludeCard canEdit={canEdit} />}
     </main>
   );
 }

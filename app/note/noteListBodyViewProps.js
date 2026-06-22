@@ -1,6 +1,7 @@
 export function buildNoteCardGridProps({
   visible,
   filtered,
+  canEdit = false,
   batchMode,
   selected,
   pinnedIds,
@@ -21,6 +22,7 @@ export function buildNoteCardGridProps({
   return {
     visible,
     filteredCount: filtered.length,
+    canEdit,
     batchMode,
     selected,
     pinnedIds,
@@ -31,7 +33,7 @@ export function buildNoteCardGridProps({
     onOpen: onOpenDetail,
     onEdit: (note, event) => {
       event?.stopPropagation();
-      onEditNote(note);
+      if (canEdit) onEditNote(note);
     },
     onDelete,
     onCopy,
@@ -46,6 +48,7 @@ export function buildNoteCardGridProps({
 export function buildNoteTableViewProps({
   visible,
   filtered,
+  canEdit = false,
   focusedRow,
   setFocusedRow,
   onOpenDetail,
@@ -57,6 +60,7 @@ export function buildNoteTableViewProps({
   return {
     visible,
     filtered,
+    canEdit,
     focusedRow,
     onFocusRow: setFocusedRow,
     onOpen: onOpenDetail,

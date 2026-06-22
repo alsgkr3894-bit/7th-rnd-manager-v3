@@ -27,7 +27,14 @@ function SizeHeaderBadge({ sizeLabel }) {
   );
 }
 
-function IngredientSizeCells({ line, lineIndex, sizeLabels, unitPriceMap, onQty }) {
+function IngredientSizeCells({
+  line,
+  lineIndex,
+  sizeLabels,
+  unitPriceMap,
+  readOnly = false,
+  onQty,
+}) {
   return sizeLabels.map(sizeLabel => {
     const qty = line.quantities?.[sizeLabel] ?? '';
     const subtotal = getLineSubtotal(line, sizeLabel, unitPriceMap);
@@ -41,6 +48,7 @@ function IngredientSizeCells({ line, lineIndex, sizeLabels, unitPriceMap, onQty 
           onChange={event => onQty(lineIndex, sizeLabel, event.target.value)}
           placeholder="0"
           style={{ width: '100%', padding: '3px 5px', textAlign: 'right' }}
+          disabled={readOnly}
         />
       </td>,
       <td
@@ -61,7 +69,15 @@ function IngredientSizeCells({ line, lineIndex, sizeLabels, unitPriceMap, onQty 
   });
 }
 
-function GroupIngredientRow({ line, lineIndex, sizeLabels, unitPriceMap, onQty, onRemove }) {
+function GroupIngredientRow({
+  line,
+  lineIndex,
+  sizeLabels,
+  unitPriceMap,
+  readOnly = false,
+  onQty,
+  onRemove,
+}) {
   const info = unitPriceMap.get(line.productCode);
   const hasPrice = info?.unitPrice != null;
 
@@ -88,16 +104,18 @@ function GroupIngredientRow({ line, lineIndex, sizeLabels, unitPriceMap, onQty, 
         lineIndex={lineIndex}
         sizeLabels={sizeLabels}
         unitPriceMap={unitPriceMap}
+        readOnly={readOnly}
         onQty={onQty}
       />
       <td style={{ padding: '6px 4px', fontSize: 12, color: 'var(--text-3)' }}>{line.unitType}</td>
       <td style={{ padding: '6px 2px', textAlign: 'center' }}>
         <button
           onClick={() => onRemove(lineIndex)}
+          disabled={readOnly}
           style={{
             border: 0,
             background: 'transparent',
-            cursor: 'pointer',
+            cursor: readOnly ? 'default' : 'pointer',
             color: 'var(--text-4)',
             padding: '2px',
           }}
@@ -147,6 +165,7 @@ export function GroupIngredientsTable({
   sizeLabels,
   unitPriceMap,
   costBySizes,
+  readOnly = false,
   onQty,
   onRemove,
 }) {
@@ -183,6 +202,7 @@ export function GroupIngredientsTable({
                   lineIndex={index}
                   sizeLabels={sizeLabels}
                   unitPriceMap={unitPriceMap}
+                  readOnly={readOnly}
                   onQty={onQty}
                   onRemove={onRemove}
                 />

@@ -2,7 +2,7 @@
 
 import { FieldLabel } from '@/components/cost/shared/FormLabels';
 
-export function GroupEditorBasicFields({ draft, onField }) {
+export function GroupEditorBasicFields({ draft, readOnly = false, onField }) {
   return (
     <div
       style={{
@@ -19,6 +19,7 @@ export function GroupEditorBasicFields({ draft, onField }) {
           value={draft.name}
           onChange={event => onField('name', event.target.value)}
           placeholder="예) 피자L 공통, 피자LR 공통"
+          disabled={readOnly}
         />
       </div>
       <div>
@@ -28,6 +29,7 @@ export function GroupEditorBasicFields({ draft, onField }) {
           value={draft.description || ''}
           onChange={event => onField('description', event.target.value)}
           placeholder="묶음 설명"
+          disabled={readOnly}
         />
       </div>
     </div>

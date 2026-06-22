@@ -244,39 +244,43 @@ docker compose up -d --build
 | 권한 | admin/viewer를 서버 API에서 검증 |
 | 백업 | 매일 자동 백업 + 수동 복구 테스트 |
 | import | 백업 JSON -> PostgreSQL import 스크립트 작성 |
-| QA | `test:ci`, `qa:full`, `qa:prod`, 백업/복원 리허설 |
+| QA | `test:ci`, `qa:full`, `qa:prod`, 백업/복원 리허설, `v3:restore-journal:last` 확인 |
 
 ## 9. localStorage 분류 초안
 
-서버 이동 후보:
+2026-06-22 현재 실제 코드 기준으로 다시 분류했다. DB 구축 전에는 이 표를 기준으로 서버 table, 브라우저 유지 설정, 폐기/세션 키를 나눈다.
 
-- `v3:brand-master`
-- `v3:profile`
-- `rnd_active_account_id:*`
-- 계정/권한 관련 설정
-- 업무 설정 중 여러 사용자에게 공유되어야 하는 값
-
-브라우저 유지 후보:
-
-- `v3:theme`
-- 화면 밀도/폰트 크기
-- 최근 검색어
-- 사이드바 열림 상태
-- 스크롤 위치
-- 임시 draft
-
-폐기 또는 세션 전용 후보:
-
-- `v3:session-active`
-- `v3:last-ip`
-- `v3:last-login`
-- `v3:settings-auth-session`
-- 일시적인 handoff 키
+| 그룹 | 키/패턴 | 현재 백업 포함 | DB 구축 전 결정 |
+| --- | --- | --- | --- |
+| 서버 이동 후보 | `v3:brand-master` | ✅ 포함 | `brands` 또는 `brand_settings` table로 승격. 브랜드명/색/숨김/default를 서버 source of truth로 옮김 |
+| 서버 이동 후보 | `v3:profile` | ✅ 포함 | 단일 운영자 프로필이면 서버 `app_profile`; 개인별이면 `users.profile`로 분리 |
+| 서버 이동 후보 | `rnd_active_account_id`, `rnd_active_account_id:*` | ✅ 포함 | 서버 세션/사용자 테이블 도입 시 브라우저 키는 제거하고 서버 로그인 상태로 대체 |
+| 서버 이동 후보 | `monthly_close_log_v1` | ✅ 포함 | 월마감 완료 이력. 여러 PC에서 공유해야 하면 `monthly_close_runs` 또는 `report_jobs` table로 승격하고, 체크리스트 전용이면 폐기 정책 확정 |
+| 서버 이동 후보 | `change_log_v1` | ❌ 미포함 | 최근 200건 변경 이력. 현재는 기록 전용 localStorage라 백업 원본에는 넣지 않음. 진짜 감사 로그가 필요하면 서버 `change_logs` table로 승격 |
+| 브라우저 유지 후보 | `v3:theme`, `v3:density`, `v3:fontScale`, `v3:roundMode`, `v3:autoRecalc`, `v3:strictPosting`, `v3:unmatchedAlert`, `v3:costRateAlert` | ✅ 포함 | 사용자 표시/계산 선호값. 여러 PC 공유가 필요하면 `user_preferences` table로 이동 |
+| 브라우저 유지 후보 | `v3:sidebar-open`, `v3:palette-recent`, `v3:home-widgets`, `v3:home-widget-*`, `v3:home-todo-done` | ✅ 포함 | 개인 UI 상태와 홈 할 일 완료 상태. 서버 DB의 핵심 업무 데이터로 보지 않음 |
+| 브라우저 유지 후보 | `v3:nutrition-*`, `v3:note-sort`, `v3:note-view`, `v3:note-pins`, `v3:note-presets`, `v3:note-calendar-checklist`, `v3:note_lastCategory`, `v3:sample-*`, `v3:recipe-sort`, `v3:cost-platforms`, `v3:margin-*`, `v3:ingredient-*`, `v3:jette-settings` | ✅ 포함 | 업무 설정 성격. 서버 전환 후에도 백업 import 대상이며, 공유 설정이면 table화 |
+| 브라우저 유지 후보 | `saved_views_v1__{brand}__{screen}`, `saved_views_v1_default__{brand}__{screen}` | ✅ 동적 키 포함 | 개인 필터 프리셋. 현재는 백업/복원 대상이며, 여러 PC에서 공유하려면 `saved_views` table 추가 |
+| 브라우저 유지 후보 | `action_center_state_v1`, `recipe_recent_ingredients` | ❌ 미포함 | 액션센터 숨김/나중에 보기, 레시피 최근 재료. 개인 편의 캐시라 백업/DB 원본에서 제외 |
+| 브라우저 유지 후보 | `v3:*search-history`, `v3:*search`, `v3:*filter` | ❌ 미포함 | 검색/필터 상태. 서버 DB로 옮기지 않음 |
+| 브라우저 유지 후보 | `v3:note-draft-*`, `v3:note-draft-write`, `v3:home-quick-note-draft`, `report_draft_*` | ❌ 미포함 | 노트/보고서 임시 작성 상태. 백업/마이그레이션 원본에서 제외 |
+| 폐기 또는 세션 전용 | `v3:active-brand` | ❌ 미포함 | 현재 브라우저에서 보고 있는 브랜드 선택값. 서버 DB 데이터가 아니라 세션/UI 상태 |
+| 폐기 또는 세션 전용 | `v3:backup-history` | ❌ 미포함 | 백업 이력 표시용 로컬 메타. 서버 백업 시스템 도입 후 서버 작업 로그로 대체 |
+| 폐기 또는 세션 전용 | `v3:restore-journal:last` | ❌ 미포함 | 마지막 복원 시도 추적용 로컬 저널. 서버 import 원본이 아니라 리허설/운영 확인 로그로만 사용 |
+| 폐기 또는 세션 전용 | `v3:auth-hash`, `v3:settings-pin`, `v3:auth` cookie | ❌ 미포함 | 로컬 인증/설정 잠금 값. 서버 전환 시 서버 auth/session으로 대체하고 백업 JSON에 넣지 않음 |
+| 폐기 또는 세션 전용 | `v3:last-ip`, `v3:last-login`, `v3:settings-auth-session`, `v3:session-active`, `v3:sales-pending-reclassify`, note handoff session keys | ❌ 미포함 | 운영 감사/세션/일시 작업 플래그는 서버 로그, 재계산 또는 세션으로 대체 |
 
 주의:
 
-- 이 분류는 초안이다.
-- DB 구축 전에 실제 키 목록을 기준으로 최종 표를 작성해야 한다.
+- `v3:brand-master`는 이번 점검에서 백업 영속 키에 추가했다. 서버 DB import 원본에서 브랜드 정의가 빠지는 문제를 막기 위한 조치다.
+- `saved_views_v1__*`는 안전한 키 패턴만 백업/복원에 동적 포함한다. 개인화 기능으로 유지할지, 서버 `saved_views` table로 승격할지는 DB 스키마 설계 때 결정한다.
+- `monthly_close_log_v1`은 1~12월 기간과 알려진 완료 항목만 보존하도록 정규화한다. 서버 전환 시 운영 이력으로 볼지, 로컬 체크리스트로 폐기할지 결정한다.
+- `change_log_v1`은 사용자가 지울 수 있는 보조 이력이다. 서버 감사 로그로 승격하기 전까지는 백업/복원 대상에서 제외해 복원 작업이 감사 이력을 덮어쓰지 않게 한다.
+- `v3:home-todo-done`은 홈 위젯 설정과 같은 공통 백업 범위에 포함한다. 노트/일정 데이터와 함께 복원될 때 사용자의 완료 체크 상태가 유지된다.
+- `v3:note_lastCategory`는 단순 필터가 아니라 새 노트 작성 기본 카테고리 선호값이므로 notes 스코프 백업에 포함한다.
+- `report_draft_sales`, `report_draft_cost`, `report_draft_price`, `report_draft_shipment`, `report_draft_compare`는 보고서 빌더 임시 복원용 draft라 백업 JSON과 서버 import 원본에서 제외한다.
+- `v3:restore-journal:last`는 복원 시작/완료/부분 실패를 확인하는 마지막 시도 저널이다. 대상 PC import 리허설 후 이 값을 보고 실패 그룹과 적용 수를 확인하되, 서버 DB로 승격할 업무 데이터는 아니다.
+- 복원 미리보기는 백업 JSON의 `localStorage` 섹션을 복원 가능 키/무시 키/형식 오류/과대 입력으로 요약한다. 서버 import 스크립트도 같은 allowlist 기준을 재사용한다.
 
 ## 10. 백업 정책
 

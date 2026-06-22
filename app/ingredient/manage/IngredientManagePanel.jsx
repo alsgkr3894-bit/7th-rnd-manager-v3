@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useEffect, useRef } from 'react';
 import { FilterBar } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
 import { usePagination } from '@/hooks/usePagination';
@@ -10,6 +11,7 @@ import {
   UNCATEGORIZED_FILTER,
 } from '@/lib/ingredient/constants';
 import { getCategoryStyle } from '@/lib/ingredient';
+import { SavedViewSelector } from '@/components/ui/SavedViewSelector';
 
 const PAGE_SIZE = 60;
 
@@ -42,8 +44,60 @@ export function IngredientManagePanel({
   onDeleteCancel,
   onDeleteConfirm,
   onRestore,
+  highlightId,
+  highlightProductCode,
+  onHighlightClear,
+  isViewer = false,
 }) {
   const { page, goTo, totalPages, paged, total } = usePagination(filtered, PAGE_SIZE);
+  const highlightIdKey = highlightId != null ? String(highlightId) : '';
+  const highlightProductCodeKey =
+    highlightProductCode != null ? String(highlightProductCode).trim().toLowerCase() : '';
+  const isHighlightedRow = useCallback(
+    row =>
+      (highlightIdKey && String(row?.id) === highlightIdKey) ||
+      (highlightProductCodeKey &&
+        String(row?.productCode ?? '')
+          .trim()
+          .toLowerCase() === highlightProductCodeKey),
+    [highlightIdKey, highlightProductCodeKey]
+  );
+
+  // highlight 대상이 다른 페이지에 있으면 해당 페이지로 이동한다.
+  useEffect(() => {
+    if (!highlightIdKey && !highlightProductCodeKey) return;
+    const index = filtered.findIndex(row => isHighlightedRow(row));
+    if (index < 0) return;
+    const targetPage = Math.floor(index / PAGE_SIZE) + 1;
+    if (targetPage !== page) goTo(targetPage);
+  }, [filtered, highlightIdKey, highlightProductCodeKey, isHighlightedRow, page, goTo]);
+
+  // 대상 행 렌더 후 화면 중앙으로 이동한다.
+  useEffect(() => {
+    if (!highlightIdKey && !highlightProductCodeKey) return;
+    if (!paged.some(row => isHighlightedRow(row))) return;
+    const frame = window.requestAnimationFrame(() => {
+      document
+        .querySelector('[data-ingredient-highlighted="true"]')
+        ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [paged, highlightIdKey, highlightProductCodeKey, isHighlightedRow]);
+
+  // rows 로드 완료 후 2.5초 뒤 하이라이트 해제
+  const clearTimerRef = useRef(null);
+  useEffect(() => {
+    if ((!highlightIdKey && !highlightProductCodeKey) || rows.length === 0) return;
+    if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+    clearTimerRef.current = setTimeout(() => {
+      onHighlightClear?.();
+      clearTimerRef.current = null;
+    }, 2500);
+    return () => {
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlightIdKey, highlightProductCodeKey, rows.length]);
   return (
     <>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -127,7 +181,18 @@ export function IngredientManagePanel({
           </div>
         )}
 
-        <FilterBar search={search} onSearch={onSearch} />
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <FilterBar search={search} onSearch={onSearch} />
+          <SavedViewSelector
+            screen="ingredient-manage"
+            currentFilters={{ catFilter, tagFilter, search }}
+            onApply={filters => {
+              if (filters.catFilter != null) onCatFilter(filters.catFilter);
+              if (filters.tagFilter != null) onTagFilter(filters.tagFilter);
+              if (filters.search != null) onSearch(filters.search);
+            }}
+          />
+        </div>
       </div>
 
       {catFilter === NO_PRICE_FILTER && filtered.length > 0 && (
@@ -185,9 +250,11 @@ export function IngredientManagePanel({
                       onDeleteCancel={onDeleteCancel}
                       onDeleteConfirm={() => onDeleteConfirm(row)}
                       onRestore={() => onRestore(row.productCode)}
+                      isViewer={isViewer}
                       batchMode={batchMode}
                       isSelected={selected.has(row.id)}
                       onToggleSelect={toggleSelect}
+                      isHighlighted={isHighlightedRow(row)}
                     />
                   );
                 })}

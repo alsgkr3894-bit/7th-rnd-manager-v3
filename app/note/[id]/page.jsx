@@ -14,6 +14,7 @@ import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
 import { KEYS, setSampleFromNote } from '@/lib/note/keys';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { ChainTimeline } from './detail/ChainTimeline';
 import { NoteDetailActions } from './detail/NoteDetailActions';
 import { NoteDraftBanner } from './detail/NoteDraftBanner';
@@ -30,6 +31,8 @@ export default function Page() {
   const router = useRouter();
   const { id } = useParams();
   const noteId = normalizeNoteRouteId(id);
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
 
   const [form, setForm] = useState(INIT);
   const [saving, setSaving] = useState(false);
@@ -49,6 +52,7 @@ export default function Page() {
 
   // NoteFormBody의 사용자 편집만 dirty로 추적 (초기 로드 setForm은 제외)
   function handleFormChange(updater) {
+    if (!canEdit) return;
     setForm(updater);
     setIsDirty(true);
   }
@@ -88,6 +92,7 @@ export default function Page() {
   }, [noteId, router]);
 
   useEffect(() => {
+    if (!canEdit) return;
     if (skipRef.current) {
       skipRef.current = false;
       return;
@@ -100,11 +105,15 @@ export default function Page() {
       800
     );
     return () => clearTimeout(timerRef.current);
-  }, [form, noteId]);
+  }, [canEdit, form, noteId]);
 
   useKeyboardSave(handleSave);
 
   async function handleSave() {
+    if (!canEdit) {
+      showToast('노트 수정은 관리자만 가능합니다', 'warn');
+      return;
+    }
     if (saving) return;
     if (!form.title.trim() || !form.testContent.trim()) {
       showToast('제목과 테스트 내용은 필수입니다', 'warn');
@@ -125,11 +134,12 @@ export default function Page() {
 
   function handleCancel() {
     clearTimeout(timerRef.current);
-    clearDraft(KEYS.NOTE_DRAFT(noteId));
+    if (canEdit) clearDraft(KEYS.NOTE_DRAFT(noteId));
     router.push('/note');
   }
 
   function handleCreateSample() {
+    if (!canEdit) return;
     setSampleFromNote({
       menuName: form.menuName,
       category: form.category,
@@ -149,6 +159,7 @@ export default function Page() {
   }
 
   async function handleDuplicate() {
+    if (!canEdit) return;
     setDuplicating(true);
     try {
       const newId = await duplicateNote(noteId);
@@ -163,6 +174,7 @@ export default function Page() {
   }
 
   function restoreDraft() {
+    if (!canEdit) return;
     const draft = loadDraft(KEYS.NOTE_DRAFT(noteId));
     if (draft) {
       setForm(prev => mergeDraftWithCurrentPhotos(draft, prev));
@@ -173,7 +185,7 @@ export default function Page() {
   }
 
   function ignoreDraft() {
-    clearDraft(KEYS.NOTE_DRAFT(noteId));
+    if (canEdit) clearDraft(KEYS.NOTE_DRAFT(noteId));
     setShowDraftBanner(false);
   }
 
@@ -198,10 +210,13 @@ export default function Page() {
             onCreateSample={handleCreateSample}
             onCancel={handleCancel}
             onSave={handleSave}
+            canEdit={canEdit}
           />
         }
       />
-      {showDraftBanner && <NoteDraftBanner onRestore={restoreDraft} onIgnore={ignoreDraft} />}
+      {canEdit && showDraftBanner && (
+        <NoteDraftBanner onRestore={restoreDraft} onIgnore={ignoreDraft} />
+      )}
       <NoteFormBody form={form} setForm={handleFormChange} />
       <ChainTimeline
         chain={chain}

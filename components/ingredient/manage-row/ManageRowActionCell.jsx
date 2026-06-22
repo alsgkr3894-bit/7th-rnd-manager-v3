@@ -11,11 +11,12 @@ export function ManageRowActionCell({
   onDeleteCancel,
   onDeleteConfirm,
   onRestore,
+  isViewer = false,
 }) {
   return (
     <td style={{ textAlign: 'center' }} onClick={event => event.stopPropagation()}>
       {excluded ? (
-        <button className="btn sm" style={{ fontSize: 11 }} onClick={onRestore}>
+        <button className="btn sm" style={{ fontSize: 11 }} onClick={onRestore} disabled={isViewer}>
           복원
         </button>
       ) : deletePending ? (
@@ -25,6 +26,7 @@ export function ManageRowActionCell({
               className="btn sm"
               style={{ background: 'var(--negative)', color: '#fff', border: 'none', fontSize: 11 }}
               onClick={onDeleteConfirm}
+              disabled={isViewer}
             >
               {isManual && !productCode ? '삭제' : '숨김'}
             </button>
@@ -46,6 +48,7 @@ export function ManageRowActionCell({
               aria-label="복사해서 추가"
               title="이 항목을 복사해 새 식자재 추가"
               onClick={onCopy}
+              disabled={isViewer}
               style={{ color: 'var(--text-3)' }}
             >
               <Icon.copy style={{ width: 13, height: 13 }} />
@@ -55,6 +58,7 @@ export function ManageRowActionCell({
             className="btn sm"
             aria-label="삭제"
             onClick={onDeleteStart}
+            disabled={isViewer}
             style={{ color: 'var(--text-3)' }}
           >
             <Icon.trash style={{ width: 13, height: 13 }} />

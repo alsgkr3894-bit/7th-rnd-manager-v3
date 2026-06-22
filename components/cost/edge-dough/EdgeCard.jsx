@@ -3,7 +3,7 @@ import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { edgeTotalCost, edgeIssues } from '@/lib/cost/edge-dough';
 
-export function EdgeCard({ edge, onEdit, onDelete }) {
+export function EdgeCard({ edge, canEdit = true, onEdit, onDelete }) {
   const total = edgeTotalCost(edge);
   const issues = edgeIssues(edge);
   const compCount = edge.components?.length || 0;
@@ -90,11 +90,16 @@ export function EdgeCard({ edge, onEdit, onDelete }) {
       </div>
 
       <div style={{ display: 'flex', gap: 4 }}>
-        <button className="btn sm" onClick={onEdit}>
+        <button className="btn sm" onClick={onEdit} disabled={!canEdit}>
           <Icon.edit style={{ width: 13, height: 13 }} /> 편집
         </button>
         {onDelete && (
-          <button className="btn sm" onClick={onDelete} style={{ color: 'var(--text-3)' }}>
+          <button
+            className="btn sm"
+            onClick={onDelete}
+            disabled={!canEdit}
+            style={{ color: 'var(--text-3)' }}
+          >
             <Icon.trash style={{ width: 13, height: 13 }} />
           </button>
         )}

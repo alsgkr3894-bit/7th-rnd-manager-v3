@@ -2,12 +2,7 @@
 import { useState, useRef } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
-import {
-  downloadCsv,
-  downloadFailedRows,
-  readFileAsText,
-  readFileAsArrayBuffer,
-} from '@/lib/download';
+import { downloadCsv, downloadFailedRows } from '@/lib/download';
 import {
   UPLOAD_EXT,
   UPLOAD_MAX_MB,
@@ -15,9 +10,14 @@ import {
   checkFileSize,
   parseErrorMsg,
 } from '@/lib/upload-policy';
-import { readCsvFile, readExcelFile } from '@/lib/excel';
+import { readSpreadsheetFile } from '@/lib/excel';
 import { formatNumber } from '@/lib/format';
-import { buildTemplateRows, parseMenuPriceRows, replaceAllMenuPrices } from '@/lib/cost/menu-price';
+import {
+  buildTemplateRows,
+  parseMenuPriceRows,
+  previewMenuPriceReplacement,
+  replaceAllMenuPrices,
+} from '@/lib/cost/menu-price';
 
 /**
  * MenuPriceUploadCard
@@ -25,9 +25,9 @@ import { buildTemplateRows, parseMenuPriceRows, replaceAllMenuPrices } from '@/l
  * - 파일 업로드 → 미리보기 (성공/실패 카운트, 행 일부)
  * - "최신본으로 반영" 클릭 시 기존 데이터 일괄 교체
  */
-export function MenuPriceUploadCard({ onReplaced }) {
+export function MenuPriceUploadCard({ onReplaced, isViewer = false }) {
   const fileInputRef = useRef(null);
-  const [preview, setPreview] = useState(null); // { success, failed, fileName }
+  const [preview, setPreview] = useState(null); // { success, failed, fileName, replacementImpact? }
   const [committing, setCommitting] = useState(false);
   const notifyReplaced = typeof onReplaced === 'function' ? onReplaced : null;
 
@@ -37,10 +37,19 @@ export function MenuPriceUploadCard({ onReplaced }) {
   }
 
   function pickFile() {
+    if (isViewer) {
+      showToast('관리자 권한이 필요합니다', 'error');
+      return;
+    }
     fileInputRef.current?.click();
   }
 
   async function handleFile(e) {
+    if (isViewer) {
+      e.target.value = '';
+      showToast('관리자 권한이 필요합니다', 'error');
+      return;
+    }
     const file = e.target.files?.[0];
     e.target.value = ''; // 같은 파일 재선택 가능하게
     if (!file) return;
@@ -55,25 +64,26 @@ export function MenuPriceUploadCard({ onReplaced }) {
       return;
     }
     try {
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      let parsed;
-      if (ext === 'csv') {
-        const text = await readFileAsText(file, ['.csv']);
-        parsed = readCsvFile(text);
-      } else if (ext === 'xlsx' || ext === 'xls') {
-        const buf = await readFileAsArrayBuffer(file, ['.xlsx', '.xls']);
-        parsed = await readExcelFile(buf);
-      } else {
-        showToast(checkFileExt(file, UPLOAD_EXT.excelOrCsv) || '파일 형식 오류', 'error');
-        return;
-      }
+      const parsed = await readSpreadsheetFile(file);
       const { headers, rows } = parsed;
       const result = parseMenuPriceRows(headers, rows);
       if (!result.ok) {
         showToast(result.error || '파일 형식 오류', 'error');
         return;
       }
-      setPreview({ ...result, fileName: file.name });
+      if (result.success.length === 0 && result.failed.length === 0) {
+        showToast('저장할 행이 없습니다', 'error');
+        return;
+      }
+      let replacementImpact = null;
+      if (result.success.length > 0) {
+        try {
+          replacementImpact = await previewMenuPriceReplacement(result.success);
+        } catch (previewErr) {
+          console.warn('[MenuPriceUpload] replacement preview failed:', previewErr);
+        }
+      }
+      setPreview({ ...result, fileName: file.name, replacementImpact });
     } catch (err) {
       showToast(parseErrorMsg(err), 'error');
     }
@@ -81,10 +91,22 @@ export function MenuPriceUploadCard({ onReplaced }) {
 
   async function handleCommit() {
     if (!preview || preview.success.length === 0) return;
+    if (preview.failed.length > 0) {
+      showToast('오류 행을 먼저 수정한 뒤 다시 업로드해주세요.', 'error');
+      return;
+    }
+    if (isViewer) {
+      showToast('관리자 권한이 필요합니다', 'error');
+      return;
+    }
     setCommitting(true);
     try {
-      const { replaced } = await replaceAllMenuPrices(preview.success);
-      showToast(`반영 완료 — ${replaced}개`, 'ok');
+      const { replaced, sync } = await replaceAllMenuPrices(preview.success);
+      if (sync?.error) {
+        showToast(`판매가 ${replaced}개 반영 · ${sync.error}`, 'warn', 8000);
+      } else {
+        showToast(`반영 완료 — ${replaced}개`, 'ok');
+      }
       setPreview(null);
       notifyReplaced?.();
     } catch (err) {
@@ -108,21 +130,23 @@ export function MenuPriceUploadCard({ onReplaced }) {
         <div>
           <div style={{ fontWeight: 700, fontSize: 14 }}>양식 업로드</div>
           <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
-            CSV 또는 엑셀(xlsx) 양식을 업로드하면 기존 메뉴 판매가가 새 데이터로 교체됩니다.
+            CSV, TSV 또는 엑셀(xlsx) 양식을 업로드하면 기존 메뉴 판매가가 새 데이터로 교체됩니다.
           </div>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
           <button className="btn sm" onClick={handleDownloadTemplate}>
             <Icon.download style={{ width: 13, height: 13 }} /> 양식 다운로드
           </button>
-          <button className="btn sm primary" onClick={pickFile}>
+          <button className="btn sm primary" onClick={pickFile} disabled={isViewer}>
             <Icon.upload style={{ width: 13, height: 13 }} /> 파일 선택
           </button>
           <input
             ref={fileInputRef}
+            data-testid="menu-price-upload-input"
             type="file"
-            accept=".csv,.xlsx,.xls"
+            accept=".csv,.tsv,.xlsx,.xls"
             onChange={handleFile}
+            disabled={isViewer}
             style={{ display: 'none' }}
           />
         </div>
@@ -162,7 +186,12 @@ export function MenuPriceUploadCard({ onReplaced }) {
               <button
                 className="btn sm primary"
                 onClick={handleCommit}
-                disabled={committing || preview.success.length === 0}
+                disabled={
+                  committing ||
+                  isViewer ||
+                  preview.success.length === 0 ||
+                  preview.failed.length > 0
+                }
               >
                 {committing ? '반영 중…' : '최신본으로 반영'}
               </button>
@@ -189,6 +218,28 @@ export function MenuPriceUploadCard({ onReplaced }) {
               >
                 메뉴코드 비어있는 행은 저장 시 자동 발급됩니다 (분류별 시퀀스)
               </div>
+              {preview.replacementImpact && (
+                <div
+                  style={{
+                    marginBottom: 8,
+                    padding: '7px 9px',
+                    borderRadius: 8,
+                    background:
+                      preview.replacementImpact.removed > 0
+                        ? 'var(--warn-soft)'
+                        : 'var(--positive-soft)',
+                    color:
+                      preview.replacementImpact.removed > 0 ? 'var(--warn)' : 'var(--positive)',
+                    fontWeight: 700,
+                  }}
+                >
+                  기존 {formatNumber(preview.replacementImpact.existing)}건 → 반영{' '}
+                  {formatNumber(preview.replacementImpact.replacement)}건 · 유지/갱신{' '}
+                  {formatNumber(preview.replacementImpact.retained)}건 · 신규{' '}
+                  {formatNumber(preview.replacementImpact.created)}건 · 삭제 예정{' '}
+                  {formatNumber(preview.replacementImpact.removed)}건
+                </div>
+              )}
               {preview.success.slice(0, 8).map((r, i) => (
                 <div
                   key={i}
@@ -227,6 +278,9 @@ export function MenuPriceUploadCard({ onReplaced }) {
 
           {preview.failed.length > 0 && (
             <div style={{ marginTop: 10, fontSize: 12, color: 'var(--warn)' }}>
+              <div style={{ marginBottom: 6, fontWeight: 700 }}>
+                오류 행이 있으면 기존 판매가 전체 교체를 진행하지 않습니다.
+              </div>
               <div
                 style={{
                   display: 'flex',

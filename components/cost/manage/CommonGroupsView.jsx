@@ -23,6 +23,7 @@ export function CommonGroupsView({
   allMeta = [],
   unitPriceMap,
   saving = false,
+  canEdit = false,
   onNew,
   onSelect,
   onSave,
@@ -52,6 +53,7 @@ export function CommonGroupsView({
             className="btn primary"
             style={{ width: '100%', justifyContent: 'center', marginBottom: 8 }}
             onClick={onNew}
+            disabled={!canEdit}
           >
             <Icon.plus style={{ width: 13, height: 13 }} /> 새 묶음 추가
           </button>
@@ -117,7 +119,8 @@ export function CommonGroupsView({
           isNew={isNew}
           saving={saving}
           onSave={onSave}
-          onDelete={!isNew ? () => onAskDelete(selectedId) : null}
+          readOnly={!canEdit}
+          onDelete={!isNew && canEdit ? () => onAskDelete(selectedId) : null}
           onCancel={onCancel}
         />
       ) : (

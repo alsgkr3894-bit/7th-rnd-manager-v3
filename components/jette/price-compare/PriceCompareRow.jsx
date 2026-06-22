@@ -12,7 +12,13 @@ import {
 } from './priceCompareTableUtils';
 import { PriceCompareStatusChip } from './PriceCompareStatusChip';
 
-export function PriceCompareRow({ row, productTypeLookup, onTypeChange, priceAlertThreshold }) {
+export function PriceCompareRow({
+  row,
+  productTypeLookup,
+  canEdit = false,
+  onTypeChange,
+  priceAlertThreshold,
+}) {
   const values = getPriceCompareRowValues(row);
   const color = priceChangeColor(values.changeStatus);
   const alert = isPriceChangeAlert(row, priceAlertThreshold);
@@ -32,6 +38,7 @@ export function PriceCompareRow({ row, productTypeLookup, onTypeChange, priceAle
           productCode={values.productCode}
           productName={values.productName}
           productTypeLookup={productTypeLookup}
+          disabled={!canEdit}
           onTypeChange={onTypeChange}
         />
       </td>

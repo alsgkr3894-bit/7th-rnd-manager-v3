@@ -17,7 +17,7 @@ export function BulkPriceFormatHint() {
       <b>단가</b> (또는 가격·부가세포함가·price)
       <br />
       <b>선택 컬럼:</b> 재료명 (또는 품목명·제품명)&emsp;
-      <span style={{ color: 'var(--text-3)' }}>지원 형식: .csv, .xlsx, .xls</span>
+      <span style={{ color: 'var(--text-3)' }}>지원 형식: .csv, .tsv, .xlsx, .xls</span>
     </div>
   );
 }

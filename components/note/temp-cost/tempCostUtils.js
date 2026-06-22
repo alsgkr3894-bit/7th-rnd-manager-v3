@@ -2,6 +2,7 @@ import { calcUnitPrice } from '@/lib/cost/calc-unit-price';
 import { calcCostRate } from '@/lib/cost/rate-color';
 
 const EMPTY_TEMP_COST = { rows: [], sellingPrice: '' };
+let tempCostRowSeq = 0;
 
 export function parseTempCost(value) {
   try {
@@ -51,8 +52,9 @@ export function unitPriceFromIngredient(ingredient) {
 }
 
 export function createTempCostRow(ingredient) {
+  tempCostRowSeq = (tempCostRowSeq + 1) % 100000;
   return {
-    id: Date.now(),
+    id: `${Date.now()}-${tempCostRowSeq}`,
     ingredientId: ingredient?.id ?? null,
     productCode: ingredient?.productCode || '',
     name: ingredientName(ingredient),

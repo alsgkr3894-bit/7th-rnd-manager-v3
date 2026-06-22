@@ -12,7 +12,7 @@ import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
  * SALES_RULES 중 category === '품목제외' 인 규칙들.
  * 이 메뉴들은 집계/순위/매출 계산에서 자동 제외됩니다.
  */
-export function SettingsExcludeCard() {
+export function SettingsExcludeCard({ canEdit = false }) {
   const [query, setQuery] = useState('');
   // 기본 제외 목록은 7번가(main) 전용. 다른 브랜드는 빈 목록(DB 사용자 제외만).
   const [rules, setRules] = useState(SALES_RULES);
@@ -37,7 +37,7 @@ export function SettingsExcludeCard() {
 
   return (
     <div className="card" style={{ marginTop: 16 }}>
-      <UserExcludedSection />
+      <UserExcludedSection canEdit={canEdit} />
       <div style={{ height: 1, background: 'var(--border)', margin: '16px 0' }} />
       <div className="card-header">
         <div>

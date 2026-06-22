@@ -20,6 +20,7 @@ import { RestoreProgressBar } from './RestoreProgressBar';
  *   selectedKeys: string[],
  *   selectedRestoreStoreCount: number,
  *   ready: boolean,
+ *   canRestore: boolean,
  *   handleRestore: (skipBackupCheck: boolean) => Promise<void>,
  *   impact: object | null,
  *   dangerRows: object[],
@@ -41,6 +42,7 @@ export function RestoreExecutePanel({
   selectedKeys,
   selectedRestoreStoreCount,
   ready,
+  canRestore = false,
   handleRestore,
   impact,
   dangerRows,
@@ -93,6 +95,7 @@ export function RestoreExecutePanel({
         selectedKeys={selectedKeys}
         selectedRestoreStoreCount={selectedRestoreStoreCount}
         ready={ready}
+        canRestore={canRestore}
         restoreBlockedByFailedStores={restoreBlockedByFailedStores}
         onStartConfirm={() => setConfirming(true)}
         onCancelConfirm={() => setConfirming(false)}

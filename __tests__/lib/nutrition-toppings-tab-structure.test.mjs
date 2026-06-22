@@ -63,6 +63,17 @@ describe('nutrition toppings tab structure', () => {
     expect(utilsSource).toContain('export function buildToppingSavePayload');
   });
 
+  test('toppings write controls follow canEdit role state', () => {
+    expect(tabSource).toContain('canEdit = false');
+    expect(tabSource).toContain('if (!canEdit) return');
+    expect(tabSource).toContain('canEdit={canEdit}');
+    expect(tabSource).toContain('canEdit && modal');
+    expect(headerSource).toContain('canEdit = false');
+    expect(headerSource).toContain('disabled={!canEdit}');
+    expect(tableSource).toContain('canEdit = false');
+    expect(tableSource).toContain('disabled={!canEdit}');
+  });
+
   test('helpers keep ingredient lookup, allergen display, formatting, and save payload stable', () => {
     const ingredients = [
       { productCode: 'ING-1', ingredientName: '체다 치즈', allergens: ['AL02', 'AL99'] },

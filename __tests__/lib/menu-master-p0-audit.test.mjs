@@ -73,6 +73,14 @@ const issuesPanelSrc = readFileSync(
   resolve(process.cwd(), 'components/menu-master/MenuMasterIssuesPanel.jsx'),
   'utf-8'
 );
+const readinessPanelSrc = readFileSync(
+  resolve(process.cwd(), 'components/menu-master/MenuReadinessPanel.jsx'),
+  'utf-8'
+);
+const uploadCardSrc = readFileSync(
+  resolve(process.cwd(), 'components/cost/menu-price/MenuPriceUploadCard.jsx'),
+  'utf-8'
+);
 const pageSrc = readFileSync(resolve(process.cwd(), 'app/menu-master/page.jsx'), 'utf-8');
 
 describe('viewer 권한 - MenuMasterTableRow', () => {
@@ -106,6 +114,11 @@ describe('메뉴마스터 page - isViewer 전달', () => {
 
   test('MenuMasterTableRow에 isViewer를 전달한다', () => {
     expect(pageSrc).toContain('isViewer={isViewer}');
+    expect(readinessPanelSrc).toContain('disabled={isViewer}');
+    expect(uploadCardSrc).toContain('isViewer = false');
+    expect(uploadCardSrc).toContain('disabled={isViewer}');
+    expect(uploadCardSrc).toContain('data-testid="menu-price-upload-input"');
+    expect(pageSrc).toContain('<MenuPriceUploadCard onReplaced={reload} isViewer={isViewer}');
   });
 });
 

@@ -1,6 +1,7 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { clampInteger } from '@/lib/ui/prop-guards';
+import { getRoleSafeHref } from '@/lib/navigation/role-visibility';
 
 function ymText(status) {
   if (!status) return '확인 중';
@@ -86,10 +87,12 @@ function targetText(target) {
 
 /** 업로드/백업 공용 행 — 아이콘 박스 + 라벨/설명 + 상태 pill (스타일 단일 출처). */
 function FreshnessRow({ icon, label, desc, statusLabel, meta, onClick }) {
+  const clickable = typeof onClick === 'function';
   return (
     <button
       className="widget-row"
       onClick={onClick}
+      disabled={!clickable}
       style={{
         display: 'grid',
         gridTemplateColumns: '32px minmax(0, 1fr) auto',
@@ -101,7 +104,7 @@ function FreshnessRow({ icon, label, desc, statusLabel, meta, onClick }) {
         borderRadius: 8,
         background: 'var(--surface)',
         textAlign: 'left',
-        cursor: 'pointer',
+        cursor: clickable ? 'pointer' : 'default',
         font: 'inherit',
       }}
     >
@@ -153,7 +156,13 @@ function FreshnessRow({ icon, label, desc, statusLabel, meta, onClick }) {
   );
 }
 
-export function DataFreshnessWidget({ freshness, backupReminder, isMain, router }) {
+export function DataFreshnessWidget({
+  freshness,
+  backupReminder,
+  isMain,
+  router,
+  canEdit = false,
+}) {
   const uploadRows = [
     {
       key: 'sales',
@@ -218,7 +227,10 @@ export function DataFreshnessWidget({ freshness, backupReminder, isMain, router 
               desc={`${row.desc} · 마지막 ${ymText(row.status)}`}
               statusLabel={meta.label}
               meta={meta}
-              onClick={() => router?.push?.(row.href)}
+              onClick={() => {
+                const href = getRoleSafeHref(row.href, canEdit);
+                if (href) router?.push?.(href);
+              }}
             />
           );
         })}

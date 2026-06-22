@@ -13,6 +13,7 @@ export function ReportListRow({
   startEdit,
   handleToggleFav,
   handleDelete,
+  canEdit = false,
   setPreviewTarget,
   setPreviewPrintOnOpen,
   setShareTarget,
@@ -29,7 +30,10 @@ export function ReportListRow({
       <td>
         <button
           className={'fav-btn ' + (report.fav ? 'on' : '')}
-          onClick={() => handleToggleFav(report.id, report.fav)}
+          disabled={!canEdit}
+          onClick={() => {
+            if (canEdit) handleToggleFav(report.id, report.fav);
+          }}
           aria-label={report.fav ? '즐겨찾기 해제' : '즐겨찾기 추가'}
           title={report.fav ? '즐겨찾기 해제' : '즐겨찾기 추가'}
         >
@@ -49,6 +53,7 @@ export function ReportListRow({
         commitEdit={commitEdit}
         startEdit={startEdit}
         setPreviewTarget={setPreviewTarget}
+        canEdit={canEdit}
       />
       <td>
         <span className="chip" style={{ background: model.chip.bg, color: model.chip.color }}>
@@ -67,6 +72,7 @@ export function ReportListRow({
         report={report}
         isDeleting={model.isDeleting}
         handleDelete={handleDelete}
+        canEdit={canEdit}
         setPreviewTarget={setPreviewTarget}
         setPreviewPrintOnOpen={setPreviewPrintOnOpen}
         setShareTarget={setShareTarget}

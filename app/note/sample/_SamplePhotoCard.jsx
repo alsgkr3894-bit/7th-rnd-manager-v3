@@ -8,6 +8,7 @@ export function SamplePhotoCard({
   onFiles,
   onRemovePhoto,
   onCaptionChange,
+  readOnly = false,
 }) {
   return (
     <div className="card">
@@ -25,7 +26,7 @@ export function SamplePhotoCard({
         </span>
       </div>
 
-      {photos.length < maxPhotos && (
+      {!readOnly && photos.length < maxPhotos && (
         <div
           onDrop={onDrop}
           onDragOver={event => event.preventDefault()}
@@ -54,8 +55,10 @@ export function SamplePhotoCard({
         type="file"
         accept="image/*"
         multiple
+        disabled={readOnly}
         style={{ display: 'none' }}
         onChange={event => {
+          if (readOnly) return;
           onFiles(event.target.files);
           event.target.value = '';
         }}
@@ -84,6 +87,7 @@ export function SamplePhotoCard({
                 />
                 <button
                   onClick={() => onRemovePhoto(index)}
+                  disabled={readOnly}
                   style={{
                     position: 'absolute',
                     top: 4,
@@ -93,7 +97,7 @@ export function SamplePhotoCard({
                     borderRadius: '50%',
                     width: 22,
                     height: 22,
-                    cursor: 'pointer',
+                    cursor: readOnly ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -126,10 +130,11 @@ export function SamplePhotoCard({
                 value={photo.caption || ''}
                 onChange={event => onCaptionChange(index, event.target.value)}
                 placeholder="캡션 (선택)"
+                disabled={readOnly}
               />
             </div>
           ))}
-          {photos.length < maxPhotos && (
+          {!readOnly && photos.length < maxPhotos && (
             <button
               onClick={() => fileInputRef.current?.click()}
               style={{

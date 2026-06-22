@@ -14,7 +14,7 @@ const FILTER_CATEGORIES = ['전체', ...CATEGORY_INPUT_OPTIONS];
  * BASIC + MS9 + EXTRA 룰 모두 표시.
  * 정규화된 메뉴명을 (category, groupName, detailName)으로 매핑.
  */
-export function SettingsRuleCard() {
+export function SettingsRuleCard({ canEdit = false }) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('전체');
   // 기본 분류 규칙은 7번가(main) 전용. 다른 브랜드는 빈 목록(DB 사용자 규칙만 사용).
@@ -49,7 +49,7 @@ export function SettingsRuleCard() {
 
   return (
     <div className="card" style={{ marginTop: 16 }}>
-      <UserRulesSection />
+      <UserRulesSection canEdit={canEdit} />
       <div style={{ height: 1, background: 'var(--border)', margin: '16px 0' }} />
       <div className="card-header">
         <div>

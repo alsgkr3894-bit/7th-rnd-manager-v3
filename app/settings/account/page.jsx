@@ -183,7 +183,11 @@ export default function Page() {
   }
 
   function handleSwitchAccount(acc) {
-    setActiveAccountId(acc.id);
+    const saved = setActiveAccountId(acc.id);
+    if (!saved) {
+      showToast('계정 전환 실패: 브라우저 저장소를 사용할 수 없습니다.', 'error');
+      return;
+    }
     setActiveId(acc.id);
     showToast(`${acc.name}(${ROLE_LABELS[acc.role]}) 계정으로 전환됨`, 'ok');
   }
@@ -298,7 +302,13 @@ export default function Page() {
                 await deleteAccount(deleteConfirmId);
                 if (deleteConfirmId === activeId) {
                   const remaining = accounts.filter(a => a.id !== deleteConfirmId);
-                  setActiveAccountId(remaining[0]?.id ?? null);
+                  const saved = setActiveAccountId(remaining[0]?.id ?? null);
+                  if (!saved) {
+                    showToast(
+                      '활성 계정 갱신 실패: 브라우저 저장소를 사용할 수 없습니다.',
+                      'error'
+                    );
+                  }
                 }
                 reloadAccounts();
                 showToast('계정 삭제됨', 'ok');

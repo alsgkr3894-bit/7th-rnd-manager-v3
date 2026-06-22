@@ -19,6 +19,7 @@ const modalSource = readFileSync(
   resolve('components/nutrition/menu/derived/DerivedCompositionModal.jsx'),
   'utf8'
 );
+const hookSource = readFileSync(resolve('hooks/useDerivedCompositionForm.js'), 'utf8');
 const amountRowsSource = readFileSync(
   resolve('components/nutrition/menu/derived/DerivedIngredientAmountRows.jsx'),
   'utf8'
@@ -52,6 +53,16 @@ describe('nutrition derived tab structure', () => {
     expect(amountRowsSource).toContain('L/R 식자재 사용량');
     expect(utilsSource).toContain('export function filterDerivedCompositions');
     expect(utilsSource).toContain('export function groupDerivedCompositions');
+  });
+
+  test('derived composition write controls follow canEdit role state', () => {
+    expect(tabSource).toContain('canEdit = false');
+    expect(tabSource).toContain('useDerivedCompositionForm({ onRefresh: refresh, canEdit })');
+    expect(tabSource).toContain('canEdit && (');
+    expect(listSource).toContain('canEdit = false');
+    expect(listSource).toContain('disabled={!canEdit}');
+    expect(hookSource).toContain('canEdit = false');
+    expect(hookSource).toContain('if (!canEdit) return');
   });
 
   test('derived helpers keep search, ingredient labels, and grouping behavior stable', () => {

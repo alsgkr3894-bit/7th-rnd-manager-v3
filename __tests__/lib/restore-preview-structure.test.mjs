@@ -25,6 +25,7 @@ describe('restore preview structure', () => {
     expect(previewSource).toContain('<RestoreImpactPanel');
     expect(previewSource).toContain('backupSourceMetadataOf(parsed)');
     expect(previewSource).toContain('isBackupSourceMismatch(parsed');
+    expect(previewSource).toContain('localStorageSummary');
     expect(previewSource).not.toContain('백업 파일 미리보기</h2>');
     expect(previewSource).not.toContain('<ModuleScopeList');
     expect(previewSource).not.toContain('선택한 모듈의 현재 상태와 백업 시점 비교');
@@ -34,6 +35,7 @@ describe('restore preview structure', () => {
     expect(summarySource).toContain('export function RestorePreviewSummary');
     expect(summarySource).toContain('백업 파일 미리보기');
     expect(summarySource).toContain('복원 저장 위치');
+    expect(summarySource).toContain('설정값(localStorage) 섹션');
     expect(scopeSource).toContain('export function RestoreScopePanel');
     expect(scopeSource).toContain('<ModuleScopeList');
     expect(scopeSource).toContain('별도 위험 승인이 필요합니다');

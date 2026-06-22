@@ -85,14 +85,17 @@ describe('temp cost calculator structure', () => {
     expect(unitPriceFromIngredient(ingredients[0])).toBe('12.5');
 
     jest.spyOn(Date, 'now').mockReturnValue(123456);
-    expect(createTempCostRow(ingredients[0])).toMatchObject({
-      id: 123456,
+    const firstRow = createTempCostRow(ingredients[0]);
+    const secondRow = createTempCostRow(ingredients[0]);
+    expect(firstRow).toMatchObject({
       ingredientId: 'ing-cheese',
       productCode: 'ING-001',
       name: '모짜렐라 치즈',
       unit: 'g',
       unitPrice: '12.5',
     });
+    expect(String(firstRow.id)).toMatch(/^123456-\d+$/);
+    expect(secondRow.id).not.toBe(firstRow.id);
     Date.now.mockRestore();
 
     const refreshed = refreshLinkedTempCostRows(

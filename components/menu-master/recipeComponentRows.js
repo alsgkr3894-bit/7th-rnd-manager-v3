@@ -1,6 +1,12 @@
 import { normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
+import { parseOptionalNonNegativeNumber } from '@/lib/parse';
 
 let rowKey = 0;
+
+function optionalNonNegativeNumber(value) {
+  const parsed = parseOptionalNonNegativeNumber(value);
+  return parsed.ok ? parsed.value : null;
+}
 
 export function createBlankRecipeComponentRow() {
   return {
@@ -39,14 +45,14 @@ export function hydrateRecipeComponent(component, unitPriceMap) {
 export function buildRecipeComponentForSave(component, unitPriceMap) {
   const productCode = recipeComponentProductCode(component);
   const info = productCode ? unitPriceMap.get(productCode) : null;
-  const quantity = component.quantity !== '' ? Number(component.quantity) : null;
+  const quantity = optionalNonNegativeNumber(component.quantity);
+  const latestUnitPrice = optionalNonNegativeNumber(info?.unitPrice);
   return {
     ingredientName: component.ingredientName || '',
     productCode: productCode || null,
     quantity,
     unit: normalizeCostBaseUnit(info?.baseUnitType || component.unit),
-    unitPrice:
-      info?.unitPrice ?? (component.unitPrice != null ? Number(component.unitPrice) : null),
+    unitPrice: latestUnitPrice ?? optionalNonNegativeNumber(component.unitPrice),
   };
 }
 

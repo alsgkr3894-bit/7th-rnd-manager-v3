@@ -2,7 +2,7 @@
 
 import { Icon } from '@/components/icons';
 
-export function MenuMasterEmptyState({ isMain, seeding, onSeed }) {
+export function MenuMasterEmptyState({ isMain, isViewer = false, seeding, onSeed }) {
   return (
     <div className="empty-state" style={{ padding: '60px 20px' }}>
       <div
@@ -29,7 +29,7 @@ export function MenuMasterEmptyState({ isMain, seeding, onSeed }) {
         <button
           className="btn primary"
           onClick={onSeed}
-          disabled={seeding}
+          disabled={seeding || isViewer}
           style={{ marginTop: 4 }}
         >
           <Icon.plus style={{ width: 14, height: 14 }} />

@@ -1,4 +1,5 @@
 import { buildModuleHealth, countModuleHealth } from '../../lib/stats/module-health.js';
+import { MENU_SALES_ANALYSIS_ROUTE } from '../../lib/sales/navigation.js';
 
 const freshStatus = { year: 2026, month: 5, stale: false, never: false };
 const staleStatus = { year: 2026, month: 4, stale: true, never: false };
@@ -44,6 +45,20 @@ describe('module-health', () => {
     expect(unmatchedSales.status).toBe('warn');
     expect(unmatchedSales.href).toBe('/menu-sales/unmatched');
     expect(unmatchedSales.metric).toBe('미매칭 1건');
+  });
+
+  test('viewer 헬스체크는 판매량 업로드 대신 분석 화면으로 이동한다', () => {
+    const viewerSales = buildModuleHealth({
+      freshness: { sales: neverStatus, price: freshStatus, shipment: freshStatus },
+      backupReminder: { stale: false, daysSince: 3, never: false },
+      issues: [],
+      costAlertData: { items: [] },
+      todos: [],
+      isMain: true,
+      canEdit: false,
+    }).find(item => item.id === 'sales');
+
+    expect(viewerSales.href).toBe(MENU_SALES_ANALYSIS_ROUTE);
   });
 
   test('제때 상품은 단가와 출고 중 더 나쁜 상태를 따른다', () => {

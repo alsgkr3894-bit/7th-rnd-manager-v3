@@ -5,7 +5,7 @@ import { upsertSetComposition, deleteSetComposition } from '@/lib/nutrition/valu
 import { showToast } from '@/components/Toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
-export function useSetCompositionForm({ onRefresh = noop } = {}) {
+export function useSetCompositionForm({ onRefresh = noop, canEdit = false } = {}) {
   const { showConfirm, confirmElement } = useConfirmDialog();
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({
@@ -18,11 +18,13 @@ export function useSetCompositionForm({ onRefresh = noop } = {}) {
   const [saving, setSaving] = useState(false);
 
   const openAdd = () => {
+    if (!canEdit) return;
     setForm({ setCode: '', setName: '', kind: 'set', setSide: 'L', slots: [] });
     setModal('add');
   };
 
   const openEdit = comp => {
+    if (!canEdit) return;
     setForm({
       ...comp,
       setSide: asDisplayText(comp.setSide, 'L') === 'R' ? 'R' : 'L',
@@ -52,6 +54,7 @@ export function useSetCompositionForm({ onRefresh = noop } = {}) {
     }));
 
   const handleSave = async () => {
+    if (!canEdit) return;
     if (!String(form.setName || '').trim()) {
       showToast('세트명 입력 필요', 'error');
       return;
@@ -78,6 +81,7 @@ export function useSetCompositionForm({ onRefresh = noop } = {}) {
   };
 
   const handleDelete = async comp => {
+    if (!canEdit) return;
     const ok = await showConfirm({
       message: `'${comp.setName || '세트'}' 세트가 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`,
       danger: true,

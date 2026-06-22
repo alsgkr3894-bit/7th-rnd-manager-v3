@@ -9,15 +9,16 @@ import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
  *
  * @param {Array} files
  * @param {(fileId, year, month) => Promise<void>} onDelete
+ * @param {boolean} canEdit
  */
-export function UploadHistory({ files, onDelete }) {
+export function UploadHistory({ files, onDelete, canEdit = false }) {
   const [confirmId, setConfirmId] = useState(null);
   const [busyId, setBusyId] = useState(null);
   const safeFiles = asObjectArray(files);
   const handleDeleteFile = typeof onDelete === 'function' ? onDelete : null;
 
   async function handleDelete(file, rowKey) {
-    if (!handleDeleteFile) return;
+    if (!canEdit || !handleDeleteFile) return;
     const fileId = file?.id;
     setBusyId(rowKey);
     try {
@@ -67,7 +68,7 @@ export function UploadHistory({ files, onDelete }) {
           <tbody>
             {safeFiles.map((f, index) => {
               const rowKey = asDisplayText(f.id, `file-${index}`);
-              const canDelete = handleDeleteFile && f.id != null;
+              const canDelete = canEdit && handleDeleteFile && f.id != null;
               const year = asDisplayText(f.year, '-');
               const month = asDisplayText(f.month);
               const monthLabel = month ? month.padStart(2, '0') : '--';

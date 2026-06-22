@@ -1,5 +1,6 @@
 'use client';
 import { showToast } from '@/components/Toast';
+import { logMenuMasterSave, logMenuMasterDelete } from '@/lib/change-log';
 import {
   deleteMenuMaster,
   getMenuDeletePlan,
@@ -19,16 +20,24 @@ export function useMenuMasterActions({
   setResetting,
   setEditRow,
   setAddOpen,
+  canEdit = false,
 }) {
+  function requireEdit() {
+    if (canEdit) return true;
+    showToast('관리자 권한이 필요합니다', 'error');
+    return false;
+  }
+
   async function syncMirror() {
     try {
-      await pushMasterToPrices();
+      await pushMasterToPrices({ skipAdminGuard: true });
     } catch (err) {
       console.warn('판매가 미러 동기화 실패:', err);
     }
   }
 
   async function handleDeleteRow(row) {
+    if (!requireEdit()) return;
     try {
       const result = await deleteMenuMaster(row.id);
       if (result?.cascadeErrors?.length) {
@@ -39,6 +48,7 @@ export function useMenuMasterActions({
       } else {
         showToast(`"${row.menuName}" 삭제됨`, 'ok');
       }
+      logMenuMasterDelete(row.menuName || row.menuCode || '메뉴');
       setDeleteTarget(null);
       await syncMirror();
       reload();
@@ -48,6 +58,7 @@ export function useMenuMasterActions({
   }
 
   async function openDeleteDialog(row) {
+    if (!requireEdit()) return;
     setDeleteTarget(row);
     setDeletePlan(null);
     setDeletePlanLoading(true);
@@ -63,6 +74,7 @@ export function useMenuMasterActions({
   }
 
   async function handleResetAndSeed() {
+    if (!requireEdit()) return;
     setResetting(true);
     try {
       await resetAllMenuMaster();
@@ -77,6 +89,7 @@ export function useMenuMasterActions({
   }
 
   async function handleSeed() {
+    if (!requireEdit()) return;
     setSeeding(true);
     try {
       const { inserted } = await seedMenuMaster();
@@ -91,6 +104,7 @@ export function useMenuMasterActions({
   }
 
   async function handleSaveRow(data, options = {}) {
+    if (!requireEdit()) return null;
     const { closeModal = true, reloadAfter = true, toast = true, throwOnError = false } = options;
     try {
       const result = await upsertMenuMaster(data);
@@ -106,6 +120,7 @@ export function useMenuMasterActions({
       } else {
         showToast('저장 완료', 'ok');
       }
+      logMenuMasterSave(data.menuName || data.menuCode || '메뉴', result.mode === 'insert');
       return result;
     } catch (err) {
       if (toast) showToast('저장 실패: ' + err.message, 'error');

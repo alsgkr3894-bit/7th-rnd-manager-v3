@@ -19,6 +19,7 @@ export const SampleListRow = React.memo(function SampleListRow({
   onEdit,
   onCopy,
   onDelete,
+  canEdit = false,
 }) {
   const rec = sample && typeof sample === 'object' ? sample : {};
   const photos = asObjectArray(rec.photos).filter(p => asDisplayText(p.data));
@@ -91,13 +92,18 @@ export const SampleListRow = React.memo(function SampleListRow({
       </td>
       <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-          <button className="btn sm" onClick={edit}>
+          <button className="btn sm" onClick={edit} disabled={!canEdit}>
             수정
           </button>
-          <button className="btn sm" onClick={copy}>
+          <button className="btn sm" onClick={copy} disabled={!canEdit}>
             복사
           </button>
-          <button className="btn sm" style={{ color: 'var(--negative)' }} onClick={remove}>
+          <button
+            className="btn sm"
+            style={{ color: 'var(--negative)' }}
+            onClick={remove}
+            disabled={!canEdit}
+          >
             삭제
           </button>
         </div>

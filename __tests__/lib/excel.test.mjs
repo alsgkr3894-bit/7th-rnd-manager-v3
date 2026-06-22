@@ -1,5 +1,12 @@
 import XLSX from 'xlsx';
-import { readCsvFile, readSpreadsheetFile, detectHeaderRow, matchColumn } from '../../lib/excel.js';
+import {
+  decodeCsvText,
+  readCsvFile,
+  readSpreadsheetFile,
+  readSpreadsheetFromBuffer,
+  detectHeaderRow,
+  matchColumn,
+} from '../../lib/excel.js';
 
 // ─── readCsvFile ──────────────────────────────────────────────────────────────
 
@@ -39,6 +46,34 @@ describe('readCsvFile', () => {
     expect(rows[0].desc).toBe('쉼표, 포함 설명');
   });
 
+  test('큰따옴표 안 줄바꿈은 같은 필드로 유지한다', () => {
+    const text = 'name,desc,qty\r\n"홍길동","첫 줄\r\n둘째 줄",2\r\n"김철수","쉼표, 포함",3';
+    const { rawRows, rows } = readCsvFile(text);
+
+    expect(rawRows).toHaveLength(3);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toEqual({ name: '홍길동', desc: '첫 줄\r\n둘째 줄', qty: '2' });
+    expect(rows[1].desc).toBe('쉼표, 포함');
+  });
+
+  test('탭과 세미콜론 구분 CSV도 자동 감지한다', () => {
+    const tab = readCsvFile('name\tqty\tmemo\n사과\t2\t탭 구분');
+    expect(tab.headers).toEqual(['name', 'qty', 'memo']);
+    expect(tab.rows[0]).toEqual({ name: '사과', qty: '2', memo: '탭 구분' });
+
+    const semicolon = readCsvFile('name;qty;memo\n배;3;"세미콜론; 포함"');
+    expect(semicolon.headers).toEqual(['name', 'qty', 'memo']);
+    expect(semicolon.rows[0]).toEqual({ name: '배', qty: '3', memo: '세미콜론; 포함' });
+  });
+
+  test('쉼표가 따옴표 안에만 많은 경우에도 실제 구분자를 감지한다', () => {
+    const text = 'name\tmemo\tqty\n사과\t"쉼표, 쉼표, 설명"\t2';
+    const { headers, rows } = readCsvFile(text);
+
+    expect(headers).toEqual(['name', 'memo', 'qty']);
+    expect(rows[0]).toEqual({ name: '사과', memo: '쉼표, 쉼표, 설명', qty: '2' });
+  });
+
   test('따옴표 이스케이프 ("" → ")', () => {
     const text = 'name\n"큰""따옴표"';
     const { rows } = readCsvFile(text);
@@ -67,6 +102,22 @@ describe('readCsvFile', () => {
 // ─── readSpreadsheetFile ────────────────────────────────────────────────────
 
 describe('readSpreadsheetFile', () => {
+  test('csv 파일은 arrayBuffer 기반 디코더를 사용해 EUC-KR 한글 CSV도 읽는다', async () => {
+    const cp949Csv = cp949Bytes('제품명,수량\n사과,2');
+    const file = {
+      name: 'items.csv',
+      arrayBuffer: async () => cp949Csv.buffer,
+      text: async () => {
+        throw new Error('file.text() should not be used for csv');
+      },
+    };
+
+    const result = await readSpreadsheetFile(file);
+
+    expect(result.headers).toEqual(['제품명', '수량']);
+    expect(result.rows).toEqual([{ 제품명: '사과', 수량: '2' }]);
+  });
+
   test('xlsx 파일 객체는 실제 workbook 바이너리에서 첫 시트를 읽는다', async () => {
     const buffer = workbookBuffer([
       ['name', 'price', 'qty'],
@@ -97,6 +148,45 @@ describe('readSpreadsheetFile', () => {
     };
 
     await expect(readSpreadsheetFile(file)).rejects.toThrow('지원하지 않는 파일 형식');
+  });
+});
+
+// ─── readSpreadsheetFromBuffer ──────────────────────────────────────────────
+
+describe('readSpreadsheetFromBuffer', () => {
+  test('csv/xlsx 버퍼를 같은 계약으로 읽는다', async () => {
+    const csvBuffer = new TextEncoder().encode('name,qty\n사과,2').buffer;
+    const csv = await readSpreadsheetFromBuffer(csvBuffer, 'items.csv');
+    expect(csv.headers).toEqual(['name', 'qty']);
+    expect(csv.rows).toEqual([{ name: '사과', qty: '2' }]);
+
+    const xlsx = await readSpreadsheetFromBuffer(
+      workbookBuffer([
+        ['name', 'qty', 'price'],
+        ['배', 3, 2000],
+      ]),
+      'items.xlsx'
+    );
+    expect(xlsx.headers).toEqual(['name', 'qty', 'price']);
+    expect(xlsx.rows).toEqual([{ name: '배', qty: 3, price: 2000 }]);
+  });
+
+  test('CP949/EUC-KR CSV 버퍼를 한글로 복원한다', async () => {
+    const result = await readSpreadsheetFromBuffer(cp949Bytes('제품명,수량\n사과,2'), 'items.csv');
+
+    expect(decodeCsvText(cp949Bytes('제품명,수량\n사과,2'))).toBe('제품명,수량\n사과,2');
+    expect(result.headers).toEqual(['제품명', '수량']);
+    expect(result.rows[0].제품명).toBe('사과');
+  });
+
+  test('tsv 확장자도 CSV 계열 파서로 읽는다', async () => {
+    const result = await readSpreadsheetFromBuffer(
+      new TextEncoder().encode('name\tqty\n사과\t2').buffer,
+      'items.tsv'
+    );
+
+    expect(result.headers).toEqual(['name', 'qty']);
+    expect(result.rows).toEqual([{ name: '사과', qty: '2' }]);
   });
 });
 
@@ -174,4 +264,12 @@ function workbookBuffer(rows) {
   const ws = XLSX.utils.aoa_to_sheet(rows);
   XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
   return XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+}
+
+function cp949Bytes(text) {
+  if (text !== '제품명,수량\n사과,2') throw new Error(`unexpected fixture text: ${text}`);
+  return Uint8Array.from([
+    0xc1, 0xa6, 0xc7, 0xb0, 0xb8, 0xed, 0x2c, 0xbc, 0xf6, 0xb7, 0xae, 0x0a, 0xbb, 0xe7, 0xb0, 0xfa,
+    0x2c, 0x32,
+  ]);
 }

@@ -3,7 +3,7 @@
 import { Icon } from '@/components/icons';
 import { SectionLabel } from '@/components/cost/shared/FormLabels';
 
-export function GroupEditorSizeFields({ sizes, onSize, onAdd, onRemove }) {
+export function GroupEditorSizeFields({ sizes, readOnly = false, onSize, onAdd, onRemove }) {
   return (
     <>
       <SectionLabel>사이즈 레이블</SectionLabel>
@@ -17,19 +17,21 @@ export function GroupEditorSizeFields({ sizes, onSize, onAdd, onRemove }) {
                 onChange={event => onSize(index, event.target.value)}
                 placeholder="L"
                 style={{ width: 60 }}
+                disabled={readOnly}
               />
               {sizes.length > 1 && (
                 <button
                   className="btn"
                   style={{ padding: '3px 6px' }}
                   onClick={() => onRemove(index)}
+                  disabled={readOnly}
                 >
                   <Icon.close style={{ width: 11, height: 11 }} />
                 </button>
               )}
             </div>
           ))}
-          <button className="btn" style={{ fontSize: 12 }} onClick={onAdd}>
+          <button className="btn" style={{ fontSize: 12 }} onClick={onAdd} disabled={readOnly}>
             <Icon.plus style={{ width: 12, height: 12 }} /> 추가
           </button>
         </div>

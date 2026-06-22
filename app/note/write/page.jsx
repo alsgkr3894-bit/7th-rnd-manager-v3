@@ -14,6 +14,7 @@ import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { todayLocalDate } from '@/lib/date/local-date';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 function normalizeNoteCategory(value) {
   return CATEGORIES.includes(value) ? value : CATEGORIES[0];
@@ -21,6 +22,8 @@ function normalizeNoteCategory(value) {
 
 export default function Page() {
   const router = useRouter();
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
   const [form, setForm] = useState(() => ({
     ...INIT,
     testDate: todayLocalDate(),
@@ -42,6 +45,7 @@ export default function Page() {
   useBeforeUnload(isDirty);
 
   function handleFormChange(updater) {
+    if (!canEdit) return;
     setForm(updater);
     setIsDirty(true);
     isDirtyRef.current = true;
@@ -58,6 +62,8 @@ export default function Page() {
   }, [lastCategory, lastCategoryHydrated]);
 
   useEffect(() => {
+    if (!roleReady) return;
+    if (!canEdit) return;
     let alive = true;
     const fromId = consumeNoteFrom();
     const homeDraft = consumeHomeNoteDraft(); // note-from-note 분기 시에도 항상 소비 (stale key 방지)
@@ -99,9 +105,10 @@ export default function Page() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [canEdit, roleReady]);
 
   useEffect(() => {
+    if (!canEdit) return;
     if (!isDirtyRef.current) return;
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
@@ -117,11 +124,15 @@ export default function Page() {
       clearTimeout(timerRef.current);
       clearTimeout(draftTimer.current);
     };
-  }, [form]);
+  }, [canEdit, form]);
 
   useKeyboardSave(handleSave);
 
   async function handleSave() {
+    if (!canEdit) {
+      showToast('노트 작성은 관리자만 가능합니다', 'warn');
+      return;
+    }
     if (saving) return; // Ctrl+S 연타 시 중복 저장(레코드 중복 생성) 방지
     if (!form.title.trim() || !form.testContent.trim()) {
       showToast('제목과 테스트 내용은 필수입니다', 'warn');
@@ -147,12 +158,13 @@ export default function Page() {
     clearTimeout(timerRef.current);
     clearTimeout(draftTimer.current);
     isDirtyRef.current = false;
-    clearDraft(KEYS.NOTE_DRAFT_WRITE);
+    if (canEdit) clearDraft(KEYS.NOTE_DRAFT_WRITE);
     setIsDirty(false);
     router.push('/note');
   }
 
   function restoreDraft() {
+    if (!canEdit) return;
     const draft = loadDraft(KEYS.NOTE_DRAFT_WRITE);
     if (draft) {
       setForm(f => ({ ...f, ...draft, photos: [] }));
@@ -186,7 +198,7 @@ export default function Page() {
             <button className="btn" onClick={handleCancel}>
               취소
             </button>
-            <button className="btn primary" onClick={handleSave} disabled={saving}>
+            <button className="btn primary" onClick={handleSave} disabled={saving || !canEdit}>
               {saving ? '저장 중…' : '저장하기'}
             </button>
           </div>
@@ -206,7 +218,7 @@ export default function Page() {
           이전 노트 "<b>{fromTitle}</b>"을 기반으로 새 버전을 작성하고 있습니다.
         </div>
       )}
-      {showDraftBanner && !fromTitle && (
+      {canEdit && showDraftBanner && !fromTitle && (
         <div
           style={{
             background: 'var(--warn-soft)',
@@ -228,7 +240,7 @@ export default function Page() {
             <button
               className="btn sm"
               onClick={() => {
-                clearDraft(KEYS.NOTE_DRAFT_WRITE);
+                if (canEdit) clearDraft(KEYS.NOTE_DRAFT_WRITE);
                 setShowDraftBanner(false);
               }}
             >

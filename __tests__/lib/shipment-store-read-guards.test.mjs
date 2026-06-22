@@ -6,6 +6,7 @@ const getByIndex = jest.fn();
 const runTransaction = jest.fn();
 const checkUploadHash = jest.fn();
 const deleteFileWithLog = jest.fn();
+const assertActiveAdmin = jest.fn();
 
 jest.unstable_mockModule('../../lib/db/index.js', () => ({
   hasStore: (...args) => hasStore(...args),
@@ -16,7 +17,11 @@ jest.unstable_mockModule('../../lib/db/index.js', () => ({
   deleteFileWithLog: (...args) => deleteFileWithLog(...args),
 }));
 
-const { getShipmentFiles, getShipmentRowsByFileId } =
+jest.unstable_mockModule('@/lib/auth/guard', () => ({
+  assertActiveAdmin: (...args) => assertActiveAdmin(...args),
+}));
+
+const { deleteShipmentFile, getShipmentFiles, getShipmentRowsByFileId, saveShipmentUpload } =
   await import('../../lib/shipment/store-files.js');
 
 beforeEach(() => {
@@ -24,6 +29,9 @@ beforeEach(() => {
   hasStore.mockReturnValue(true);
   getAll.mockResolvedValue([]);
   getByIndex.mockResolvedValue([]);
+  checkUploadHash.mockResolvedValue(false);
+  deleteFileWithLog.mockResolvedValue({ deletedRows: 0, deletedLogs: 0 });
+  assertActiveAdmin.mockResolvedValue();
 });
 
 describe('shipment store read guards', () => {
@@ -71,5 +79,102 @@ describe('shipment store read guards', () => {
       { productCode: 'B', quantity: '3' },
     ]);
     expect(getByIndex).toHaveBeenCalledWith('shipment_rows', 'fileId', 7);
+  });
+
+  test('saveShipmentUpload는 관리자 가드 실패 시 중복 검사 전에 중단한다', async () => {
+    assertActiveAdmin.mockRejectedValueOnce(new Error('PERMISSION_DENIED'));
+
+    await expect(
+      saveShipmentUpload({
+        meta: { year: 2026, month: 6 },
+        rows: [],
+        log: { fileHash: 'hash-1' },
+      })
+    ).rejects.toThrow('PERMISSION_DENIED');
+    expect(assertActiveAdmin).toHaveBeenCalledWith('제때 출고량 업로드 저장');
+    expect(checkUploadHash).not.toHaveBeenCalled();
+    expect(runTransaction).not.toHaveBeenCalled();
+  });
+
+  test('saveShipmentUpload는 같은 파일 해시 중복을 저장 전에 차단한다', async () => {
+    checkUploadHash.mockResolvedValueOnce(true);
+
+    await expect(
+      saveShipmentUpload({
+        meta: { year: 2026, month: 6 },
+        rows: [{ productCode: 'A', quantity: 1 }],
+        log: { module: 'shipment', fileHash: 'hash-dup' },
+      })
+    ).rejects.toThrow('DUPLICATE_HASH');
+
+    expect(assertActiveAdmin).toHaveBeenCalledWith('제때 출고량 업로드 저장');
+    expect(checkUploadHash).toHaveBeenCalledWith('hash-dup', 'shipment');
+    expect(runTransaction).not.toHaveBeenCalled();
+  });
+
+  test('saveShipmentUpload는 저장 트랜잭션 안에서도 같은 파일 해시 중복을 다시 차단한다', async () => {
+    checkUploadHash.mockResolvedValueOnce(false);
+    runTransaction.mockImplementation(async (storeNames, mode, work) => {
+      const requests = [];
+      let aborted = false;
+      const tx = {
+        abort: jest.fn(() => {
+          aborted = true;
+        }),
+        objectStore(storeName) {
+          if (storeName === 'upload_log') {
+            return {
+              index(indexName) {
+                expect(indexName).toBe('fileHash');
+                return {
+                  getAll(fileHash) {
+                    const req = {
+                      result: [{ module: 'shipment', fileHash }],
+                      onsuccess: null,
+                    };
+                    requests.push(req);
+                    return req;
+                  },
+                };
+              },
+              add: jest.fn(),
+            };
+          }
+          return {
+            add: jest.fn(() => ({ onsuccess: null, onerror: null, result: 1 })),
+          };
+        },
+      };
+
+      work(tx);
+      for (const req of requests) req.onsuccess?.();
+      if (aborted) throw new Error('transaction aborted');
+    });
+
+    await expect(
+      saveShipmentUpload({
+        meta: { year: 2026, month: 6 },
+        rows: [{ productCode: 'A', quantity: 1 }],
+        log: { module: 'shipment', fileHash: 'hash-race' },
+      })
+    ).rejects.toThrow('DUPLICATE_HASH');
+
+    expect(runTransaction).toHaveBeenCalledWith(
+      ['shipment_files', 'shipment_rows', 'upload_log'],
+      'readwrite',
+      expect.any(Function)
+    );
+  });
+
+  test('deleteShipmentFile은 관리자 가드를 거친 뒤 삭제한다', async () => {
+    await deleteShipmentFile(9);
+
+    expect(assertActiveAdmin).toHaveBeenCalledWith('제때 출고량 업로드 삭제');
+    expect(deleteFileWithLog).toHaveBeenCalledWith(
+      'shipment_files',
+      'shipment_rows',
+      9,
+      'shipment'
+    );
   });
 });

@@ -13,6 +13,7 @@ export function buildSampleDialogsProps({
   recordActions,
   confirmElement,
   navigation,
+  canEdit = false,
 }) {
   const { detailRec, setDetailRec } = pageState;
   const { editDetail } = navigation;
@@ -24,9 +25,12 @@ export function buildSampleDialogsProps({
     confirmOpen: batch.confirmOpen,
     selectedCount: batch.selected.size,
     confirmElement,
+    canEdit,
     onCloseDetail: () => setDetailRec(null),
-    onEditDetail: editDetail,
-    onDeleteDetail: () => detailRec && recordActions.handleDelete(detailRec),
+    onEditDetail: () => {
+      if (canEdit) editDetail();
+    },
+    onDeleteDetail: () => canEdit && detailRec && recordActions.handleDelete(detailRec),
     onCloseCompare: () => compare.setShowCompare(false),
     onConfirmBatchDelete: batch.confirmBatchDelete,
     onCancelBatchDelete: () => batch.setConfirmOpen(false),

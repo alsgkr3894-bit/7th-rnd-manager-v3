@@ -12,6 +12,7 @@ export function CalendarMonthGrid({
   today,
   animClass,
   calKey,
+  canEdit = false,
   onSelectDay,
   onClosePanel,
   onAddSchedule,
@@ -43,6 +44,7 @@ export function CalendarMonthGrid({
           <CalendarDayCell
             key={model.key}
             model={model}
+            canEdit={canEdit}
             onSelectDay={onSelectDay}
             onClosePanel={onClosePanel}
             onAddSchedule={onAddSchedule}

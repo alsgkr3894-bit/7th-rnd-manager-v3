@@ -59,6 +59,15 @@ describe('price latest view structure', () => {
     expect(utilsSource).toContain('export function buildLatestPriceCsvRows');
   });
 
+  test('latest price type selector is read-only for viewer role', () => {
+    expect(viewSource).toContain('canEdit = false');
+    expect(viewSource).toContain('canEdit={canEdit}');
+    expect(listCardSource).toContain('canEdit = false');
+    expect(listCardSource).toContain('canEdit={canEdit}');
+    expect(tableSource).toContain('canEdit = false');
+    expect(tableSource).toContain('disabled={!canEdit}');
+  });
+
   test('helpers keep type/tax filters, sorting, CSV rows, and chip style stable', () => {
     const rows = [
       {

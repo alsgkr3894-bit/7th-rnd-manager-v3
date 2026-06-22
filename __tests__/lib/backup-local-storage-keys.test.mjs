@@ -4,6 +4,7 @@ import {
   LOCAL_STORAGE_KEYS_BY_SCOPE,
   PERSISTENT_LS_KEYS,
   collectLocalStorage,
+  isSavedViewStorageKey,
   persistentLocalStorageKeysForScopes,
   pickLocalStorageForScopes,
   restoreLocalStorage,
@@ -84,7 +85,9 @@ describe('nutrition backup localStorage keys', () => {
       expect.arrayContaining([
         'v3:jette-settings',
         'v3:home-widgets',
+        'v3:home-todo-done',
         'v3:profile',
+        'v3:brand-master',
         'v3:density',
         'v3:roundMode',
         'v3:costRateAlert',
@@ -98,7 +101,9 @@ describe('nutrition backup localStorage keys', () => {
         {
           'v3:jette-settings': 'jette',
           'v3:home-widgets': 'home',
+          'v3:home-todo-done': '["todo-1"]',
           'v3:profile': 'profile',
+          'v3:brand-master': 'brands',
           'v3:density': 'compact',
           'v3:roundMode': 'floor',
           rnd_active_account_id: '42',
@@ -111,7 +116,9 @@ describe('nutrition backup localStorage keys', () => {
     ).toEqual({
       'v3:jette-settings': 'jette',
       'v3:home-widgets': 'home',
+      'v3:home-todo-done': '["todo-1"]',
       'v3:profile': 'profile',
+      'v3:brand-master': 'brands',
       'v3:density': 'compact',
       'v3:roundMode': 'floor',
       rnd_active_account_id: '42',
@@ -146,6 +153,214 @@ describe('nutrition backup localStorage keys', () => {
     ).toBe(1);
     expect(store['rnd_active_account_id:brand-c']).toBe('9');
     expect(store.unknown).toBeUndefined();
+  });
+
+  test('저장뷰 키는 허용된 saved_views 패턴만 백업/복원 대상으로 본다', () => {
+    expect(isSavedViewStorageKey('saved_views_v1__main__ingredient-manage')).toBe(true);
+    expect(isSavedViewStorageKey('saved_views_v1_default__china4__ingredient-manage')).toBe(true);
+    expect(isSavedViewStorageKey('saved_views_v1__main__')).toBe(false);
+    expect(isSavedViewStorageKey('saved_views_v1__main__../secret')).toBe(false);
+    expect(isSavedViewStorageKey('saved_views_v1__main__ingredient manage')).toBe(false);
+    expect(isSavedViewStorageKey('saved_views_v2__main__ingredient-manage')).toBe(false);
+  });
+
+  test('collectLocalStorage는 동적 saved views 키를 포함하고 검색/draft 키는 제외한다', () => {
+    installMapStorage({
+      'v3:profile': 'profile',
+      saved_views_v1__main__ingredient: '[{"name":"기본"}]',
+      saved_views_v1_default__main__ingredient: '기본',
+      saved_views_v1__main__bad_slash: 'ok',
+      'v3:note-search': 'search',
+      'v3:note-draft-write': 'draft',
+      report_draft_sales: 'report-draft',
+    });
+
+    expect(collectLocalStorage()).toEqual({
+      'v3:profile': 'profile',
+      saved_views_v1__main__ingredient: '[{"name":"기본"}]',
+      saved_views_v1_default__main__ingredient: '기본',
+      saved_views_v1__main__bad_slash: 'ok',
+    });
+  });
+
+  test('보고서 draft와 운영 임시 키는 백업/복원 원본에서 제외한다', () => {
+    const store = installMapStorage({
+      'v3:profile': 'profile',
+      report_draft_sales: 'sales',
+      report_draft_cost: 'cost',
+      report_draft_price: 'price',
+      report_draft_shipment: 'shipment',
+      report_draft_compare: 'compare',
+      'v3:active-brand': 'main',
+      'v3:backup-history': 'history',
+      'v3:restore-journal:last': 'journal',
+      'v3:auth-hash': 'hash',
+      'v3:settings-pin': 'pin',
+      'v3:last-ip': 'ip',
+      'v3:last-login': 'login',
+      action_center_state_v1: 'action',
+      recipe_recent_ingredients: 'recent',
+      'v3:sales-pending-reclassify': 'pending',
+    });
+
+    expect(collectLocalStorage()).toEqual({ 'v3:profile': 'profile' });
+
+    expect(
+      restoreLocalStorage({
+        report_draft_sales: 'restore-sales',
+        'v3:backup-history': 'restore-history',
+        action_center_state_v1: 'restore-action',
+        'v3:profile': 'restore-profile',
+      })
+    ).toBe(1);
+    expect(store['v3:profile']).toBe('restore-profile');
+    expect(store.report_draft_sales).toBe('sales');
+    expect(store['v3:backup-history']).toBe('history');
+    expect(store.action_center_state_v1).toBe('action');
+  });
+
+  test('동적 키 순회가 막혀도 정적 localStorage 백업은 계속된다', () => {
+    installStorage({
+      get length() {
+        throw new Error('length blocked');
+      },
+      key() {
+        throw new Error('key blocked');
+      },
+      getItem(key) {
+        return key === 'v3:profile' ? 'profile' : null;
+      },
+    });
+
+    expect(collectLocalStorage()).toEqual({ 'v3:profile': 'profile' });
+  });
+
+  test('일부 localStorage.key(index)가 실패해도 다음 동적 키를 계속 수집한다', () => {
+    installStorage({
+      get length() {
+        return 3;
+      },
+      key(index) {
+        if (index === 1) throw new Error('broken key');
+        return [
+          'saved_views_v1__main__ingredient',
+          'saved_views_v1__main__skip',
+          'rnd_active_account_id:brand-b',
+        ][index];
+      },
+      getItem(key) {
+        return `value:${key}`;
+      },
+    });
+
+    expect(collectLocalStorage()).toMatchObject({
+      saved_views_v1__main__ingredient: 'value:saved_views_v1__main__ingredient',
+      'rnd_active_account_id:brand-b': 'value:rnd_active_account_id:brand-b',
+    });
+  });
+
+  test('스코프 선택 복원도 동적 saved views 키를 허용한다', () => {
+    expect(
+      pickLocalStorageForScopes(
+        {
+          'v3:profile': 'profile',
+          saved_views_v1__main__ingredient: '[{"name":"기본"}]',
+          saved_views_v1_default__main__ingredient: '기본',
+          saved_views_v1__main__bad_path: 'ok',
+          'saved_views_v1__main__bad/path': 'skip',
+          'v3:note-draft-write': 'draft',
+        },
+        ['cost']
+      )
+    ).toEqual({
+      'v3:profile': 'profile',
+      saved_views_v1__main__ingredient: '[{"name":"기본"}]',
+      saved_views_v1_default__main__ingredient: '기본',
+      saved_views_v1__main__bad_path: 'ok',
+    });
+  });
+
+  test('pickLocalStorageForScopes는 큰 맵에서도 정적 허용 키를 순서와 무관하게 고른다', () => {
+    const huge = {};
+    for (let i = 0; i < 2100; i += 1) {
+      huge[`v3:unknown-${i}`] = 'skip';
+    }
+    huge['v3:profile'] = 'too-late';
+
+    expect(pickLocalStorageForScopes(huge, ['cost'])).toEqual({ 'v3:profile': 'too-late' });
+  });
+
+  test('restoreLocalStorage는 동적 saved views 키를 복원하고 위험 패턴은 제외한다', () => {
+    const store = installMapStorage({});
+
+    expect(
+      restoreLocalStorage({
+        saved_views_v1__main__ingredient: '[{"name":"기본"}]',
+        saved_views_v1_default__main__ingredient: '기본',
+        'saved_views_v1__main__bad/path': 'skip',
+        'v3:note-draft-write': 'draft',
+      })
+    ).toBe(2);
+    expect(store.saved_views_v1__main__ingredient).toBe('[{"name":"기본"}]');
+    expect(store.saved_views_v1_default__main__ingredient).toBe('기본');
+    expect(store['saved_views_v1__main__bad/path']).toBeUndefined();
+    expect(store['v3:note-draft-write']).toBeUndefined();
+  });
+
+  test('restoreLocalStorage는 과도하게 큰 입력을 제한하고 오류로 보고한다', () => {
+    const store = installMapStorage({});
+    const backup = { 'v3:profile': 'profile' };
+    for (let i = 0; i < 2100; i += 1) {
+      backup[`v3:unknown-${i}`] = 'skip';
+    }
+    const errors = [];
+
+    expect(restoreLocalStorage(backup, undefined, { onError: error => errors.push(error) })).toBe(
+      1
+    );
+    expect(store['v3:profile']).toBe('profile');
+    expect(errors).toEqual([
+      {
+        key: '*',
+        error: 'localStorage 복원 입력이 너무 커서 2000개까지만 확인했습니다',
+      },
+    ]);
+  });
+
+  test('restoreLocalStorage는 큰 입력 뒤쪽의 정적 허용 키도 놓치지 않는다', () => {
+    const store = installMapStorage({});
+    const backup = {};
+    for (let i = 0; i < 2100; i += 1) {
+      backup[`v3:unknown-${i}`] = 'skip';
+    }
+    backup['v3:profile'] = 'late-profile';
+    const errors = [];
+
+    expect(restoreLocalStorage(backup, undefined, { onError: error => errors.push(error) })).toBe(
+      1
+    );
+    expect(store['v3:profile']).toBe('late-profile');
+    expect(errors).toEqual([
+      {
+        key: '*',
+        error: 'localStorage 복원 입력이 너무 커서 2000개까지만 확인했습니다',
+      },
+    ]);
+  });
+
+  test('restoreLocalStorage는 값 getter가 실패한 키만 건너뛴다', () => {
+    const store = installMapStorage({});
+    const backup = { 'v3:profile': 'profile' };
+    Object.defineProperty(backup, 'v3:brand-master', {
+      enumerable: true,
+      get() {
+        throw new Error('broken getter');
+      },
+    });
+
+    expect(restoreLocalStorage(backup)).toBe(1);
+    expect(store['v3:profile']).toBe('profile');
+    expect(store['v3:brand-master']).toBeUndefined();
   });
 
   test('nutrition 선택은 nutrition key와 공통 key를 복원 대상으로 고른다', () => {
@@ -195,6 +410,7 @@ describe('스코프별 복원 범위 정합성', () => {
         'v3:note-pins',
         'v3:note-presets',
         'v3:note-calendar-checklist',
+        'v3:note_lastCategory',
         'v3:sample-sort',
         'v3:sample-view',
       ])

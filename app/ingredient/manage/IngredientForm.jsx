@@ -13,6 +13,7 @@ import { useIngredientUsageSummary } from './useIngredientUsageSummary';
 import { JetteLinkedSourcePanel } from './JetteLinkedSourcePanel';
 import { JettePriceImportField } from './JettePriceImportField';
 import { useIngredientFormController } from './useIngredientFormController';
+import { ImpactPreviewPanel } from '@/components/impact/ImpactPreviewPanel';
 
 export function IngredientForm({
   initial,
@@ -190,6 +191,20 @@ export function IngredientForm({
               isJetteLinked={isJetteLinked}
               onSet={set}
             />
+
+            {initial && initial.productCode && (
+              <ImpactPreviewPanel
+                productCode={initial.productCode}
+                oldPrice={initial.priceOverride ?? initial.priceWithTax ?? null}
+                newPrice={form.priceOverride !== '' ? Number(form.priceOverride) : null}
+                oldBaseQuantity={initial.baseQuantity ?? null}
+                newBaseQuantity={
+                  form.baseQuantity !== ''
+                    ? Number(form.baseQuantity)
+                    : (initial.baseQuantity ?? null)
+                }
+              />
+            )}
 
             {initial && !usageSummary.loading && usageSummary.rows.length > 0 && (
               <div

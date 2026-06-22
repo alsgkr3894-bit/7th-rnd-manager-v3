@@ -25,8 +25,13 @@ UI `disabled`에만 의존하지 않고 **실행함수 레이어에도 viewer �
 | 영역 | 함수 |
 |------|------|
 | 계정 | `addAccount` / `updateAccount` / `deleteAccount` |
-| 메뉴마스터 | `deleteMenuMaster` / `resetAllMenuMaster` / `seedMenuMaster` |
-| 식자재 | `deleteIngredient` / `bulkDeleteIngredients` / `discontinueIngredient` / `undiscontinueIngredient` / `bulkRemoveCategory` / `bulkRemoveTag` / `resetAllIngredients` / `deduplicateIngredientCodes` / `bulkImportIngredients` |
+| 메뉴마스터 | `upsertMenuMaster` / `deleteMenuMaster` / `resetAllMenuMaster` / `seedMenuMaster` / `syncMenuMasterFromPrices` / `pushMasterToPrices` / `importPricesToMaster` |
+| 식자재 | `addIngredient` / `updateIngredient` / `upsertIngredientMeta` / `seedMasterIngredients` / `deleteIngredient` / `bulkDeleteIngredients` / `excludeIngredientByCode` / `restoreIngredientByCode` / `bulkSetDiscontinued` / `bulkSetCategory` / `removeCategoryFromAll` / `removeTagFromAll` / `removeManyTagsFromAll` / `renameCategoryInAll` / `renameTagInAll` / `resetAllIngredients` / `repairIngredientProductCodeDuplicates` / `bulkImportIngredients` |
+| 원가/판매가 | `addMenuPrice` / `updateMenuPrice` / `deleteMenuPrice` / `resetAllMenuPrices` / `replaceAllMenuPrices` / `saveRecipeGroup` / `deleteRecipeGroup` / `addSupplier` / `updateSupplier` / `deleteSupplier` / `saveSnapshot` / `deleteSnapshot` |
+| 엣지/도우 | `upsertEdge` / `deleteEdge` / `seedEdges` / `resetAllEdges` |
+| 판매량 | 사용자 alias/rule/excluded CRUD / 판매량 업로드 저장·삭제·재분류 / 미매칭 issue resolve·bulk resolve |
+| 영양/원산지 | 영양 values 저장·삭제·수리 / `upsertOrigin` / `deleteOrigin` / `clearAllOrigins` |
+| 메뉴 레시피/샘플 | `upsertMenuRecipe` / `deleteMenuRecipe` / `resetAllMenuRecipes` / `addSample` / `updateSample` / `deleteSample` |
 | 복원 | `importAllToBrand` |
 | 시스템 | `handleReset` / `handleRecreate` (시스템 설정 핸들러) |
 

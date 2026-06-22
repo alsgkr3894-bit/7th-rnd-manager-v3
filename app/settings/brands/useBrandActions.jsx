@@ -1,5 +1,7 @@
 'use client';
+import { useEffect, useRef } from 'react';
 import { showToast } from '@/components/Toast';
+import { logBackupCreate, logBackupRestore } from '@/lib/change-log';
 import {
   getBrands,
   normalizeBrandId,
@@ -14,7 +16,7 @@ import { backupSourceMetadataOf, isBackupSourceMismatch } from '@/lib/backup/bra
 import { addEntry } from '@/lib/backup-history';
 import { downloadJson, makeFileName, readFileAsText } from '@/lib/download';
 import { formatNumber } from '@/lib/format';
-import { UPLOAD_MAX_MB, checkFileSize } from '@/lib/upload-policy';
+import { UPLOAD_EXT, UPLOAD_MAX_MB, checkFileExt, checkFileSize } from '@/lib/upload-policy';
 import { countRows } from './brandUtils';
 
 const SHARED_SKIP_STORE = '__shared_skipped__';
@@ -36,6 +38,17 @@ export function useBrandActions({
   resetForm,
   showConfirm,
 }) {
+  const restoreFrameRef = useRef(null);
+  const reloadTimerRef = useRef(null);
+
+  useEffect(
+    () => () => {
+      if (restoreFrameRef.current) cancelAnimationFrame(restoreFrameRef.current);
+      clearTimeout(reloadTimerRef.current);
+    },
+    []
+  );
+
   function handleSave(e) {
     e.preventDefault();
     if (!isAdmin) return;
@@ -118,6 +131,7 @@ export function useBrandActions({
         totalRows: countRows(data.stores),
         fileName,
       });
+      logBackupCreate(fileName);
       showToast(`${brand.name} 백업 파일을 다운로드했습니다.`, 'ok');
     } catch (err) {
       console.error('[BrandMaster] 브랜드 백업 실패:', err);
@@ -130,7 +144,11 @@ export function useBrandActions({
   function openRestore(brand) {
     if (!isAdmin || busyBrandId) return;
     setRestoreTarget(brand);
-    requestAnimationFrame(() => restoreInputRef.current?.click());
+    if (restoreFrameRef.current) cancelAnimationFrame(restoreFrameRef.current);
+    restoreFrameRef.current = requestAnimationFrame(() => {
+      restoreFrameRef.current = null;
+      restoreInputRef.current?.click();
+    });
   }
 
   async function handleRestoreFile(e) {
@@ -142,12 +160,17 @@ export function useBrandActions({
 
     setBusyBrandId(target.id);
     try {
+      const extErr = checkFileExt(file, UPLOAD_EXT.json);
+      if (extErr) {
+        showToast(extErr, 'error');
+        return;
+      }
       const sizeErr = checkFileSize(file, UPLOAD_MAX_MB.backup);
       if (sizeErr) {
         showToast(sizeErr, 'error');
         return;
       }
-      const text = await readFileAsText(file, ['.json']);
+      const text = await readFileAsText(file, UPLOAD_EXT.json);
       let raw;
       try {
         raw = JSON.parse(text);
@@ -162,6 +185,7 @@ export function useBrandActions({
       const source = backupSourceMetadataOf(backup);
       const sourceMismatch = isBackupSourceMismatch(backup, target.id);
       const failedStores = summary.failedStores;
+      const localStorageSummary = summary.localStorageSummary;
       const restoreOk = await showConfirm({
         title: `${target.name} 브랜드 복원`,
         message: (
@@ -191,6 +215,17 @@ export function useBrandActions({
               <div style={{ color: 'var(--warn)', fontWeight: 700 }}>
                 백업 생성 당시 읽기 실패 store {failedStores.length}개가 있어 해당 store는 복원되지
                 않습니다. 별도 위험 승인 전까지 복원을 진행하지 않습니다.
+              </div>
+            )}
+            {localStorageSummary?.invalidShape && (
+              <div style={{ color: 'var(--warn)', fontWeight: 700 }}>
+                백업 설정값(localStorage) 섹션 형식이 맞지 않습니다.
+              </div>
+            )}
+            {localStorageSummary?.hasLocalStorage && (
+              <div style={{ color: 'var(--text-2)' }}>
+                설정값(localStorage) {formatNumber(localStorageSummary.restorableKeyCount)}개가
+                감지됐지만, 브랜드 복원에서는 브라우저 설정값을 적용하지 않습니다.
               </div>
             )}
             <div style={{ marginTop: 8 }}>
@@ -266,8 +301,13 @@ export function useBrandActions({
           'ok'
         );
       }
+      logBackupRestore(`${target.name} 브랜드 복원`);
       if (target.id === activeId) {
-        setTimeout(() => window.location.reload(), 800);
+        clearTimeout(reloadTimerRef.current);
+        reloadTimerRef.current = setTimeout(() => {
+          reloadTimerRef.current = null;
+          window.location.reload();
+        }, 800);
       }
     } catch (err) {
       console.error('[BrandMaster] 브랜드 복원 실패:', err);

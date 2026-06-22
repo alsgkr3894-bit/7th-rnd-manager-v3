@@ -54,6 +54,50 @@ describe('menu recipes canonical store helpers', () => {
     ]);
   });
 
+  test('레시피 구성품의 잘못된 숫자는 NaN 대신 null로 저장한다', () => {
+    expect(
+      normalizeMenuRecipeComponents([
+        {
+          productCode: 'ING-BAD',
+          ingredientName: '잘못된 숫자',
+          quantity: 'abc',
+          unitPrice: '12x',
+        },
+      ])
+    ).toEqual([
+      {
+        productCode: 'ING-BAD',
+        ingredientName: '잘못된 숫자',
+        quantity: null,
+        unit: 'g',
+        unitPrice: null,
+        note: '',
+      },
+    ]);
+  });
+
+  test('레시피 구성품의 음수 수량/단가는 null로 저장한다', () => {
+    expect(
+      normalizeMenuRecipeComponents([
+        {
+          productCode: 'ING-NEG',
+          ingredientName: '음수 방어',
+          quantity: '-1',
+          unitPrice: '-20',
+        },
+      ])
+    ).toEqual([
+      {
+        productCode: 'ING-NEG',
+        ingredientName: '음수 방어',
+        quantity: null,
+        unit: 'g',
+        unitPrice: null,
+        note: '',
+      },
+    ]);
+  });
+
   test('메뉴 레시피 레코드는 menuCode 기준 displayGroupKey와 카테고리 kind를 만든다', () => {
     const record = buildMenuRecipeRecord({
       menuCode: ' P-OR-001-L ',

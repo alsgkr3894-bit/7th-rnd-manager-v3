@@ -1,4 +1,10 @@
-export function ManageRowSelectionCell({ deletable, isSelected, rowId, onToggleSelect }) {
+export function ManageRowSelectionCell({
+  deletable,
+  isSelected,
+  rowId,
+  onToggleSelect,
+  disabled = false,
+}) {
   return (
     <td style={{ width: 36, textAlign: 'center' }} onClick={event => event.stopPropagation()}>
       {deletable ? (
@@ -6,7 +12,8 @@ export function ManageRowSelectionCell({ deletable, isSelected, rowId, onToggleS
           type="checkbox"
           checked={Boolean(isSelected)}
           onChange={() => onToggleSelect?.(rowId)}
-          style={{ cursor: 'pointer', width: 15, height: 15 }}
+          disabled={disabled}
+          style={{ cursor: disabled ? 'not-allowed' : 'pointer', width: 15, height: 15 }}
         />
       ) : (
         <span

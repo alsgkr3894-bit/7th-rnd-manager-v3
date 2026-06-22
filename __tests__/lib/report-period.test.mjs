@@ -1,5 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
 import {
+  normalizeYearMonth,
   normalizePeriodMode,
   normalizeScope,
   safeMonth,
@@ -14,6 +15,13 @@ describe('report period helpers', () => {
     expect(safeYear('1800', 2025)).toBe(2025);
     expect(safeMonth('6')).toBe(6);
     expect(safeMonth('13', 12)).toBe(12);
+  });
+
+  test('strict 기간 정규화는 유효한 연/월만 반환한다', () => {
+    expect(normalizeYearMonth({ year: '2026', month: '06' })).toEqual({ year: 2026, month: 6 });
+    expect(normalizeYearMonth({ year: 1899, month: 6 })).toBeNull();
+    expect(normalizeYearMonth({ year: 2026, month: 13 })).toBeNull();
+    expect(normalizeYearMonth(null)).toBeNull();
   });
 
   test('수량과 비율 폭은 숫자 방어를 공유한다', () => {

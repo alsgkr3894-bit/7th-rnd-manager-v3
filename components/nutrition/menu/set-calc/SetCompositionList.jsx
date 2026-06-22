@@ -4,7 +4,7 @@ import { formatKcalRange } from './format';
 
 const CARD_TITLE_STYLE = { fontSize: 14, fontWeight: 700 };
 
-export function SetCompositionList({ setsWithCalc, onAdd, onEdit, onDelete }) {
+export function SetCompositionList({ setsWithCalc, onAdd, onEdit, onDelete, canEdit = false }) {
   return (
     <div>
       <div
@@ -21,7 +21,7 @@ export function SetCompositionList({ setsWithCalc, onAdd, onEdit, onDelete }) {
             피자(자동) + 추가 구성품으로 최소/최대 열량을 산출해요
           </div>
         </div>
-        <button type="button" className="btn sm primary" onClick={onAdd}>
+        <button type="button" className="btn sm primary" onClick={onAdd} disabled={!canEdit}>
           <Icon.plus style={{ width: 13, height: 13 }} />
           세트 추가
         </button>
@@ -73,7 +73,12 @@ export function SetCompositionList({ setsWithCalc, onAdd, onEdit, onDelete }) {
                         선택 사이즈와 전체 엣지 기준
                       </div>
                     </div>
-                    <button type="button" className="btn sm ghost" onClick={() => onEdit(comp)}>
+                    <button
+                      type="button"
+                      className="btn sm ghost"
+                      onClick={() => onEdit(comp)}
+                      disabled={!canEdit}
+                    >
                       <Icon.edit style={{ width: 13, height: 13 }} />
                     </button>
                     <button
@@ -81,6 +86,7 @@ export function SetCompositionList({ setsWithCalc, onAdd, onEdit, onDelete }) {
                       className="btn sm ghost"
                       style={{ color: 'var(--danger)' }}
                       onClick={() => onDelete(comp)}
+                      disabled={!canEdit}
                     >
                       <Icon.trash style={{ width: 13, height: 13 }} />
                     </button>

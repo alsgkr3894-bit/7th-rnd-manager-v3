@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { deleteNote, updateNote } from '@/lib/note';
 
-export function useNoteBatchActions({ setNotes, load }) {
+export function useNoteBatchActions({ setNotes, load, canEdit = false }) {
   const [batchMode, setBatchMode] = useState(false);
   const [selected, setSelected] = useState(new Set());
   const [confirmBatch, setConfirmBatch] = useState(false);
 
   function toggleSelect(id) {
+    if (!canEdit) return;
     setSelected(s => {
       const n = new Set(s);
       n.has(id) ? n.delete(id) : n.add(id);
@@ -21,12 +22,12 @@ export function useNoteBatchActions({ setNotes, load }) {
   }
 
   function handleBatchDelete() {
-    if (selected.size === 0) return;
+    if (!canEdit || selected.size === 0) return;
     setConfirmBatch(true);
   }
 
   async function handleBatchStatusChange(newStatus) {
-    if (selected.size === 0) return;
+    if (!canEdit || selected.size === 0) return;
     const ids = [...selected];
     try {
       await Promise.all(ids.map(id => updateNote(id, { status: newStatus })));
@@ -42,6 +43,7 @@ export function useNoteBatchActions({ setNotes, load }) {
 
   async function confirmBatchDelete() {
     setConfirmBatch(false);
+    if (!canEdit) return;
     const ids = [...selected];
     setSelected(new Set());
     setBatchMode(false);

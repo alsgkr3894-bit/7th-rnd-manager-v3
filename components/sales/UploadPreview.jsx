@@ -13,6 +13,7 @@ import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
  * @param {Function} props.onCancel
  * @param {Function} props.onConfirm
  * @param {boolean}  props.saving
+ * @param {boolean}  props.canEdit
  */
 export function UploadPreview({
   period,
@@ -21,6 +22,7 @@ export function UploadPreview({
   onCancel,
   onConfirm,
   saving,
+  canEdit = false,
 }) {
   const safeRows = asObjectArray(classifiedRows);
   const safeIssues = asObjectArray(groupedIssues);
@@ -119,7 +121,7 @@ export function UploadPreview({
         <button className="btn" onClick={handleCancel} disabled={saving}>
           취소
         </button>
-        <button className="btn primary" onClick={handleConfirm} disabled={saving}>
+        <button className="btn primary" onClick={handleConfirm} disabled={saving || !canEdit}>
           <Icon.check style={{ width: 14, height: 14 }} />
           {saving ? '저장 중...' : '최신본으로 반영'}
         </button>

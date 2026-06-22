@@ -4,6 +4,7 @@ import { WorkLogDots } from './WorkLogDots';
 
 export function CalendarDayCell({
   model,
+  canEdit = false,
   onSelectDay,
   onClosePanel,
   onAddSchedule,
@@ -29,7 +30,12 @@ export function CalendarDayCell({
         position: 'relative',
       }}
     >
-      <CalendarDayHeader model={model} onAddSchedule={onAddSchedule} onSelectDay={onSelectDay} />
+      <CalendarDayHeader
+        model={model}
+        canEdit={canEdit}
+        onAddSchedule={onAddSchedule}
+        onSelectDay={onSelectDay}
+      />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {model.shown.map(item => (
@@ -37,6 +43,7 @@ export function CalendarDayCell({
             key={`${item._kind}${item.id}_${item._occurrenceDate || item.date || ''}`}
             item={item}
             past={model.past}
+            canEdit={canEdit}
             onEditSchedule={onEditSchedule}
             onOpenNote={onOpenNote}
             onOpenSample={onOpenSample}

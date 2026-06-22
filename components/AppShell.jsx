@@ -29,6 +29,7 @@ import { usePageStats } from '@/hooks/usePageStats';
 import { useSettingValue } from '@/hooks/useSettingValue';
 import { useAppBrands } from '@/hooks/useAppBrands';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 export default function AppShell({ children }) {
   const [mobileNav, setMobileNav] = useState(false);
@@ -39,6 +40,8 @@ export default function AppShell({ children }) {
 
   const { brandOptions, activeCompany, handleCompanyChange } = useAppBrands();
   const { unmatchedCount, reportingCount } = usePageStats(pathname);
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
   const unmatchedAlertEnabled = useSettingValue('unmatchedAlert') !== 'off';
   const visibleUnmatchedCount = unmatchedAlertEnabled ? unmatchedCount : 0;
 
@@ -48,6 +51,7 @@ export default function AppShell({ children }) {
     onToggleShortcuts: () => setShortcutsOpen(v => !v),
     onClosePalette: () => setPaletteOpen(false),
     onCloseShortcuts: () => setShortcutsOpen(false),
+    canEdit,
   });
 
   useEffect(() => {
@@ -63,6 +67,7 @@ export default function AppShell({ children }) {
   }, []);
 
   useEffect(() => {
+    if (!canEdit) return;
     const PRUNE_KEY = KEYS.LAST_WL_PRUNE;
     const hasPruned = (() => {
       try {
@@ -77,7 +82,7 @@ export default function AppShell({ children }) {
         sessionStorage.setItem(PRUNE_KEY, '1');
       } catch {}
     }
-  }, []);
+  }, [canEdit]);
 
   useEffect(() => {
     hydratePlatformsFromDB().catch(() => {});
@@ -105,6 +110,7 @@ export default function AppShell({ children }) {
         activeCompany={activeCompany}
         unmatchedCount={visibleUnmatchedCount}
         reportingCount={reportingCount}
+        canEdit={canEdit}
       />
       {mobileNav && <div className="nav-scrim" onClick={() => setMobileNav(false)}></div>}
 
@@ -117,6 +123,7 @@ export default function AppShell({ children }) {
           onCompanyChange={handleCompanyChange}
           unmatchedCount={visibleUnmatchedCount}
           reportingCount={reportingCount}
+          canEdit={canEdit}
         />
         <ErrorBoundary key={pathname}>
           <div id="main-content" style={{ animation: 'fade-in 180ms ease both' }}>
@@ -128,8 +135,8 @@ export default function AppShell({ children }) {
       <ProgressBar />
       <OfflineIndicator />
       <DbVersionNotice />
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
-      {shortcutsOpen && <ShortcutsHelp onClose={() => setShortcutsOpen(false)} />}
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} canEdit={canEdit} />
+      {shortcutsOpen && <ShortcutsHelp onClose={() => setShortcutsOpen(false)} canEdit={canEdit} />}
 
       <div className="bottom-tab-bar">
         <div className="tabs-inner">

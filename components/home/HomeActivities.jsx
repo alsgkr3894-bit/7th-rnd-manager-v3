@@ -2,6 +2,7 @@
 import { Icon } from '@/components/icons';
 import { formatRelative } from '@/lib/format';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { getRoleSafeHref } from '@/lib/navigation/role-visibility';
 import { EmptyState, rowButtonStyle } from './HomeWidgets';
 
 const ACT_META = {
@@ -40,7 +41,7 @@ function activityHref(type) {
   }
 }
 
-export function HomeActivities({ activities, router }) {
+export function HomeActivities({ activities, router, canEdit = false }) {
   const safeActivities = asObjectArray(activities);
 
   return (
@@ -66,7 +67,7 @@ export function HomeActivities({ activities, router }) {
               const title = asDisplayText(a.title);
               const sub = asDisplayText(a.sub);
               const m = ACT_META[type] || ACT_META['upload'];
-              const href = activityHref(type);
+              const href = getRoleSafeHref(activityHref(type), canEdit);
               return (
                 <button
                   key={i}

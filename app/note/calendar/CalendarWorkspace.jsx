@@ -15,6 +15,7 @@ export function CalendarWorkspace({
   selectedSchedules,
   selectedWorkLogs,
   selectedSamples,
+  canEdit = false,
   onSelectDay,
   onClosePanel,
   onAddSchedule,
@@ -41,6 +42,7 @@ export function CalendarWorkspace({
         today={today}
         animClass={animClass}
         calKey={calKey}
+        canEdit={canEdit}
         onSelectDay={onSelectDay}
         onClosePanel={onClosePanel}
         onAddSchedule={onAddSchedule}
@@ -62,6 +64,7 @@ export function CalendarWorkspace({
             workLogs={selectedWorkLogs}
             samples={selectedSamples}
             viewMode={viewMode}
+            canEdit={canEdit}
             onClose={onClosePanel}
             onAddSchedule={() => onAddSchedule(selectedDay)}
             onEditSchedule={onEditSchedule}

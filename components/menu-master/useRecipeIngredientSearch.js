@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { applyIngredientSuggestionToComponent } from '@/components/menu-master/recipeComponentRows';
 import {
   addRecentIngredientCode,
@@ -16,6 +16,16 @@ export function useRecipeIngredientSearch({
   const [searchIdx, setSearchIdx] = useState(null);
   const [searchQ, setSearchQ] = useState('');
   const [activeSuggestionIdx, setActiveSuggestionIdx] = useState(-1);
+  const blurTimerRef = useRef(null);
+  const focusTimerRef = useRef(null);
+
+  useEffect(
+    () => () => {
+      clearTimeout(blurTimerRef.current);
+      clearTimeout(focusTimerRef.current);
+    },
+    []
+  );
 
   const suggestions = useMemo(() => {
     const active = allIngredients.filter(i => !i.discontinued && !i.excluded);
@@ -57,8 +67,10 @@ export function useRecipeIngredientSearch({
       setComponents(prev => {
         const component = prev[idx];
         if (component) {
-          setTimeout(() => {
+          clearTimeout(focusTimerRef.current);
+          focusTimerRef.current = setTimeout(() => {
             quantityInputRefs.current[component._key]?.focus();
+            focusTimerRef.current = null;
           }, 0);
         }
         return prev;
@@ -102,7 +114,11 @@ export function useRecipeIngredientSearch({
   }, []);
 
   const handleIngredientBlur = useCallback(() => {
-    setTimeout(() => setSearchIdx(null), 150);
+    clearTimeout(blurTimerRef.current);
+    blurTimerRef.current = setTimeout(() => {
+      setSearchIdx(null);
+      blurTimerRef.current = null;
+    }, 150);
   }, []);
 
   return {

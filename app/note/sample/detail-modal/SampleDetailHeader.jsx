@@ -1,7 +1,14 @@
 import { Icon } from '@/components/icons';
 import { Stars } from '../_Stars';
 
-export function SampleDetailHeader({ model, onOpenMenuMaster, onEdit, onDelete, onClose }) {
+export function SampleDetailHeader({
+  model,
+  onOpenMenuMaster,
+  onEdit,
+  onDelete,
+  onClose,
+  canEdit = false,
+}) {
   return (
     <div
       style={{
@@ -27,10 +34,15 @@ export function SampleDetailHeader({ model, onOpenMenuMaster, onEdit, onDelete, 
         >
           <Icon.plus style={{ width: 11, height: 11 }} /> 메뉴 마스터
         </button>
-        <button className="btn sm" onClick={onEdit}>
+        <button className="btn sm" onClick={onEdit} disabled={!canEdit}>
           수정
         </button>
-        <button className="btn sm" style={{ color: 'var(--negative)' }} onClick={onDelete}>
+        <button
+          className="btn sm"
+          style={{ color: 'var(--negative)' }}
+          onClick={onDelete}
+          disabled={!canEdit}
+        >
           삭제
         </button>
         <button

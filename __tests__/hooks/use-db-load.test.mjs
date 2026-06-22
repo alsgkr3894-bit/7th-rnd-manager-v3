@@ -107,6 +107,15 @@ describe('저위험 hub 페이지 useDBLoad 적용', () => {
     expect(journalSrc).not.toContain('setLoading(');
     // date는 deps에 넣지 않고 useMemo 필터로만 처리함
     expect(journalSrc).toContain('initialData: []');
+    expect(journalSrc).not.toContain('onError: console.error');
+    expect(journalSrc).toContain("console.error('[note/journal] load failed'");
+  });
+
+  test('note/journal/page.jsx 빈 상태 작성 버튼은 viewer에서 비활성화된다', () => {
+    expect(journalSrc).toContain("from '@/hooks/useCurrentRole'");
+    expect(journalSrc).toContain('const canEdit = roleReady && isAdmin');
+    expect(journalSrc).toContain("if (canEdit) router.push('/note/write')");
+    expect(journalSrc).toContain('disabled={!canEdit}');
   });
 });
 

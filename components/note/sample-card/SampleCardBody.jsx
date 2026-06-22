@@ -12,6 +12,7 @@ export function SampleCardBody({
   onEdit,
   onCopy,
   onDelete,
+  canEdit = false,
 }) {
   const { rec, title, names, testDate, company, price, description, tags } = model;
 
@@ -22,6 +23,7 @@ export function SampleCardBody({
         sampleId={rec.id}
         rating={rating}
         onRatingChange={onRatingChange}
+        canEdit={canEdit}
       />
       <SampleCardMeta
         names={names}
@@ -33,7 +35,7 @@ export function SampleCardBody({
       {description && <SampleCardDescription description={description} />}
       <SampleCardTags tags={tags} />
       {!batchMode && !compareMode && (
-        <SampleCardActions onEdit={onEdit} onCopy={onCopy} onDelete={onDelete} />
+        <SampleCardActions onEdit={onEdit} onCopy={onCopy} onDelete={onDelete} canEdit={canEdit} />
       )}
     </div>
   );

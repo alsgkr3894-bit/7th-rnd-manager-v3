@@ -72,6 +72,7 @@ function createInputs(overrides = {}) {
     compare,
     recordActions,
     confirmElement: 'confirm-element',
+    canEdit: true,
     ...overrides,
   };
 }
@@ -95,11 +96,13 @@ describe('buildSamplePageControllerProps', () => {
     props.recordsProps.onCreateSample();
     props.recordsProps.onEditSample({ id: 's-1' });
     props.dialogsProps.onEditDetail();
+    props.recordsProps.onEditSample({});
 
     expect(inputs.router.push).toHaveBeenNthCalledWith(1, '/note/sample/write');
     expect(inputs.router.push).toHaveBeenNthCalledWith(2, '/note/sample/write');
     expect(inputs.router.push).toHaveBeenNthCalledWith(3, '/note/sample/s-1');
     expect(inputs.router.push).toHaveBeenNthCalledWith(4, '/note/sample/s-2');
+    expect(inputs.router.push).toHaveBeenCalledTimes(4);
     expect(inputs.pageState.setDetailRec).toHaveBeenCalledWith(null);
   });
 
@@ -138,5 +141,23 @@ describe('buildSamplePageControllerProps', () => {
         createInputs({ pageState: { ...createInputs().pageState, viewMode: 'list' } })
       ).calendarVisible
     ).toBe(false);
+  });
+
+  test('viewer 모드에서는 쓰기성 route/action callback을 막는다', () => {
+    const inputs = createInputs({ canEdit: false });
+
+    const props = buildSamplePageControllerProps(inputs);
+
+    props.actionsProps.onCreateSample();
+    props.recordsProps.onCreateSample();
+    props.recordsProps.onEditSample({ id: 's-1' });
+    props.dialogsProps.onEditDetail();
+    props.actionsProps.onStartBatchMode();
+    props.dialogsProps.onDeleteDetail();
+
+    expect(inputs.router.push).not.toHaveBeenCalled();
+    expect(inputs.pageState.setDetailRec).not.toHaveBeenCalledWith(null);
+    expect(inputs.batch.setBatchMode).not.toHaveBeenCalled();
+    expect(inputs.recordActions.handleDelete).not.toHaveBeenCalled();
   });
 });

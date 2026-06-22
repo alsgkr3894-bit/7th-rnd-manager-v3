@@ -22,6 +22,7 @@ import {
  * @param {object}   [style]      - 래퍼 div 스타일
  * @param {object}   [inputStyle] - input 스타일
  * @param {number}   [maxItems=30]
+ * @param {boolean}  [disabled=false]
  */
 export function ComboBox({
   value,
@@ -32,6 +33,7 @@ export function ComboBox({
   inputStyle,
   inputClassName,
   maxItems = 30,
+  disabled = false,
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
@@ -51,12 +53,14 @@ export function ComboBox({
   const filtered = filterComboBoxOptions(options, safeValue, itemLimit);
 
   function pick(opt) {
+    if (disabled) return;
     notifyChange(opt);
     setOpen(false);
     setActive(-1);
   }
 
   function onKeyDown(e) {
+    if (disabled) return;
     if (!open && e.key === 'ArrowDown') {
       setOpen(true);
       return;
@@ -90,19 +94,23 @@ export function ComboBox({
           active >= 0 && filtered[active] ? `${listboxId}-option-${active}` : undefined
         }
         onChange={e => {
+          if (disabled) return;
           notifyChange(e.target.value);
           setOpen(true);
           setActive(-1);
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={() => {
+          if (!disabled) setOpen(true);
+        }}
         onBlur={() => {
           blurTimer.current = setTimeout(() => setOpen(false), 120);
         }}
         onKeyDown={onKeyDown}
+        disabled={disabled}
         className={safeClassName}
         style={{ width: '100%', ...safeInputStyle }}
       />
-      {open && filtered.length > 0 && (
+      {!disabled && open && filtered.length > 0 && (
         <div
           id={listboxId}
           role="listbox"

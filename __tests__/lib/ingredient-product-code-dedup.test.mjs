@@ -105,6 +105,26 @@ describe('ingredient productCode duplicate guards', () => {
     });
   });
 
+  test('bulkImportIngredients는 잘못된 숫자 값을 NaN 대신 null로 저장한다', async () => {
+    await bulkImportIngredients([
+      {
+        productCode: 'PC-BAD-NUM',
+        productName: '숫자오염 방어',
+        baseQuantity: 'abc',
+        priceOverride: 'Infinity',
+      },
+    ]);
+
+    expect(ingredientRows).toHaveLength(1);
+    expect(ingredientRows[0]).toMatchObject({
+      productCode: 'PC-BAD-NUM',
+      baseQuantity: null,
+      priceOverride: null,
+    });
+    expect(Number.isNaN(ingredientRows[0].baseQuantity)).toBe(false);
+    expect(Number.isNaN(ingredientRows[0].priceOverride)).toBe(false);
+  });
+
   test('getIngredientMetaMap은 대소문자 변형 중복도 대표행으로 조회한다', async () => {
     ingredientRows = [
       {

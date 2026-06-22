@@ -44,6 +44,9 @@ jest.unstable_mockModule('@/lib/work-log', () => ({
 jest.unstable_mockModule('@/lib/active-brand', () => ({
   getActiveBrandId,
 }));
+jest.unstable_mockModule('@/lib/auth/guard', () => ({
+  assertActiveAdmin: jest.fn(async () => {}),
+}));
 
 const noteStore = await import('@/lib/note/store');
 const sampleStore = await import('@/lib/sample/store');
@@ -88,6 +91,27 @@ describe('노트/샘플 store 읽기 가드', () => {
     const rows = await noteStore.getNotesInChain(1);
 
     expect(rows.map(row => row.id)).toEqual([1, 2, 3]);
+  });
+
+  test('노트 체인 조회는 현재 브랜드 노트만 반환한다', async () => {
+    getActiveBrandId.mockReturnValue('brand-b');
+    sharedGetAll.mockResolvedValueOnce([
+      { id: 1, title: '다른 브랜드 루트', parentId: null, brand: 'brand-a' },
+      { id: 2, title: '다른 브랜드 자식', parentId: 1, brand: 'brand-a' },
+      { id: 3, title: '현재 브랜드 루트', parentId: null, brand: 'brand-b' },
+      { id: 4, title: '현재 브랜드 자식', parentId: 3, brand: 'brand-b' },
+    ]);
+
+    await expect(noteStore.getNotesInChain(1)).resolves.toEqual([]);
+
+    sharedGetAll.mockResolvedValueOnce([
+      { id: 1, title: '다른 브랜드 루트', parentId: null, brand: 'brand-a' },
+      { id: 2, title: '다른 브랜드 자식', parentId: 1, brand: 'brand-a' },
+      { id: 3, title: '현재 브랜드 루트', parentId: null, brand: 'brand-b' },
+      { id: 4, title: '현재 브랜드 자식', parentId: 3, brand: 'brand-b' },
+    ]);
+
+    await expect(noteStore.getNotesInChain(3)).resolves.toMatchObject([{ id: 3 }, { id: 4 }]);
   });
 
   test('샘플 목록은 객체 행만 보존하고 안전한 createdAt 내림차순으로 정렬한다', async () => {

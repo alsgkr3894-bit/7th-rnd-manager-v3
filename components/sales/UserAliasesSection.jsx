@@ -22,7 +22,7 @@ import { asDisplayText } from '@/lib/ui/prop-guards';
 const INITIAL_FORM = { rawName: '', mappedName: '' };
 const PAGE_SIZE = 20;
 
-export function UserAliasesSection() {
+export function UserAliasesSection({ canEdit = false }) {
   const {
     list,
     adding,
@@ -71,6 +71,7 @@ export function UserAliasesSection() {
   const { showConfirm, confirmElement } = useConfirmDialog();
 
   async function handleToggle(a) {
+    if (!canEdit) return;
     if (!a || a.id == null) return;
 
     try {
@@ -92,11 +93,12 @@ export function UserAliasesSection() {
       <SectionHeader
         title="사용자 추가 별칭"
         count={list.length}
-        adding={adding}
+        adding={canEdit && adding}
+        disabled={!canEdit}
         onAdd={resetAdding}
       />
 
-      {adding && (
+      {canEdit && adding && (
         <RowForm
           form={form}
           setForm={setForm}
@@ -106,7 +108,7 @@ export function UserAliasesSection() {
         />
       )}
 
-      {list.length === 0 && !adding ? (
+      {list.length === 0 && !(canEdit && adding) ? (
         <SectionEmpty>사용자 추가 별칭이 아직 없습니다</SectionEmpty>
       ) : (
         list.length > 0 && (
@@ -142,7 +144,7 @@ export function UserAliasesSection() {
                       const rawName = asDisplayText(a.rawName, '-');
                       const mappedName = asDisplayText(a.mappedName, '-');
 
-                      return editingId === aliasId && hasAliasId ? (
+                      return canEdit && editingId === aliasId && hasAliasId ? (
                         <tr key={key}>
                           <td colSpan={4} style={{ padding: 8 }}>
                             <RowForm
@@ -167,11 +169,11 @@ export function UserAliasesSection() {
                             <Toggle
                               value={a.enable !== false}
                               onChange={() => handleToggle(a)}
-                              disabled={!hasAliasId}
+                              disabled={!canEdit || !hasAliasId}
                             />
                           </td>
                           <td style={{ textAlign: 'right' }}>
-                            {pendingDeleteId === aliasId && hasAliasId ? (
+                            {canEdit && pendingDeleteId === aliasId && hasAliasId ? (
                               <InlineConfirmButtons
                                 message="별칭을 삭제할까요?"
                                 busy={busy}
@@ -180,13 +182,18 @@ export function UserAliasesSection() {
                               />
                             ) : hasAliasId ? (
                               <>
-                                <button className="btn sm" onClick={() => startEdit(a)}>
+                                <button
+                                  className="btn sm"
+                                  onClick={() => startEdit(a)}
+                                  disabled={!canEdit}
+                                >
                                   수정
                                 </button>{' '}
                                 <button
                                   className="btn sm"
                                   style={{ color: 'var(--negative)' }}
                                   onClick={() => requestDelete(aliasId)}
+                                  disabled={!canEdit}
                                 >
                                   삭제
                                 </button>

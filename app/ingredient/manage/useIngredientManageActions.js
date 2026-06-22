@@ -1,6 +1,7 @@
 'use client';
 import { useCallback } from 'react';
 import { showToast } from '@/components/Toast';
+import { logIngredientSave, logIngredientDelete, logIngredientBulkDelete } from '@/lib/change-log';
 import {
   addIngredient,
   updateIngredient,
@@ -52,8 +53,10 @@ export function useIngredientManageActions({
   clearSelection,
   setCatFilter,
   setTagFilter,
+  canEdit = false,
 }) {
   async function handleSeed() {
+    if (!canEdit) return;
     if (seeding) return;
     setSeeding(true);
     try {
@@ -68,6 +71,7 @@ export function useIngredientManageActions({
   }
 
   async function handleReset() {
+    if (!canEdit) return;
     if (resetting) return;
     setResetting(true);
     try {
@@ -83,6 +87,7 @@ export function useIngredientManageActions({
   }
 
   async function handleRemoveCategory(cat) {
+    if (!canEdit) return;
     try {
       const { updated } = await removeCategoryFromAll(cat);
       showToast(`'${cat}' 분류 삭제 — ${updated}개 항목 갱신`, 'ok');
@@ -93,6 +98,7 @@ export function useIngredientManageActions({
   }
 
   async function handleRemoveTag(tag) {
+    if (!canEdit) return;
     try {
       const { updated } = await removeTagFromAll(tag);
       showToast(`'#${tag}' 태그 삭제 — ${updated}개 항목 갱신`, 'ok');
@@ -103,6 +109,7 @@ export function useIngredientManageActions({
   }
 
   async function handleRemoveAllUnusedTags(tags) {
+    if (!canEdit) return;
     try {
       const { updated } = await removeManyTagsFromAll(tags);
       showToast(`미사용 태그 ${tags.length}개 일괄 삭제 — ${updated}개 식자재 갱신`, 'ok');
@@ -113,6 +120,7 @@ export function useIngredientManageActions({
   }
 
   async function handleRepairProductCodeDuplicates() {
+    if (!canEdit) return;
     if (dedupeBusy) return;
     setDedupeBusy(true);
     try {
@@ -129,18 +137,24 @@ export function useIngredientManageActions({
 
   const handleSave = useCallback(
     async formData => {
+      if (!canEdit) return;
       try {
+        const name =
+          formData.ingredientName || formData.displayName || formData.productCode || '식자재';
         if (formTarget === 'new' || formTarget?.__copyFrom) {
           await addIngredient(formData);
+          logIngredientSave(name, true);
           showToast('식자재 추가 완료', 'ok');
         } else if (formTarget.isManual && formTarget.id) {
           await updateIngredient(formTarget.id, formData);
+          logIngredientSave(name, false);
           showToast('저장 완료', 'ok');
         } else {
           if (!formTarget.productCode)
             throw new Error('제때 연동 항목에 productCode가 없습니다. 데이터를 확인해 주세요.');
           await upsertIngredientMeta({ productCode: formTarget.productCode, ...formData });
           await syncManagedScope(formTarget, formData.scope);
+          logIngredientSave(name, false);
           showToast('저장 완료', 'ok');
         }
         setFormTarget(null);
@@ -150,16 +164,18 @@ export function useIngredientManageActions({
         throw err;
       }
     },
-    [formTarget, load, setFormTarget]
+    [canEdit, formTarget, load, setFormTarget]
   );
 
   const handleExclude = useCallback(
     async row => {
+      if (!canEdit) return;
       try {
         if (row.isManual && row.id && !row.productCode) {
           const backup = await deleteIngredient(row.id);
           warnIngredientCascadeFailures([backup]);
           setRows(prev => prev.filter(r => !(r.isManual && r.id === row.id)));
+          logIngredientDelete(row.ingredientName || row.displayName || '식자재');
           showToast(`"${row.ingredientName || row.displayName || '식자재'}" 삭제됨`, 'ok', 5000, {
             label: '실행취소',
             onClick: async () => {
@@ -187,11 +203,12 @@ export function useIngredientManageActions({
         showToast('실패: ' + err.message, 'error');
       }
     },
-    [load, setRows, setDeletePending]
+    [canEdit, load, setRows, setDeletePending]
   );
 
   const handleRestore = useCallback(
     async productCode => {
+      if (!canEdit) return;
       try {
         await restoreIngredientByCode(productCode);
         setRows(prev =>
@@ -202,11 +219,12 @@ export function useIngredientManageActions({
         showToast('실패: ' + err.message, 'error');
       }
     },
-    [setRows]
+    [canEdit, setRows]
   );
 
   const handleAutoRegister = useCallback(
     async row => {
+      if (!canEdit) return;
       try {
         await addIngredient({
           ingredientName: row.displayName || row.productName || '',
@@ -221,10 +239,11 @@ export function useIngredientManageActions({
         showToast('등록 실패: ' + err.message, 'error');
       }
     },
-    [load]
+    [canEdit, load]
   );
 
   const handleBatchDelete = useCallback(async () => {
+    if (!canEdit) return;
     if (selected.size === 0) return;
     const ids = Array.from(selected);
     try {
@@ -235,6 +254,7 @@ export function useIngredientManageActions({
         setRows(prev => prev.filter(r => !removedIds.has(r.id)));
         exitBatch();
       }
+      if (removed.length > 0) logIngredientBulkDelete(removed.length);
       const toast = buildBulkDeleteToast(removed, failures);
       const undoAction =
         removed.length > 0
@@ -256,7 +276,7 @@ export function useIngredientManageActions({
     } catch (err) {
       showToast('삭제 실패: ' + err.message, 'error');
     }
-  }, [selected, load, exitBatch, setRows]);
+  }, [canEdit, selected, load, exitBatch, setRows]);
 
   const handleSetCatFilter = useCallback(
     val => {
@@ -277,6 +297,7 @@ export function useIngredientManageActions({
   const handleDeleteCancel = useCallback(() => setDeletePending(null), [setDeletePending]);
 
   async function handleRenameCategory(oldName, newName) {
+    if (!canEdit) return;
     try {
       const { updated } = await renameCategoryInAll(oldName, newName);
       showToast(`'${oldName}' → '${newName}' 분류 이름 변경 — ${updated}개 갱신`, 'ok');
@@ -287,6 +308,7 @@ export function useIngredientManageActions({
   }
 
   async function handleRenameTag(oldName, newName) {
+    if (!canEdit) return;
     try {
       const { updated } = await renameTagInAll(oldName, newName);
       showToast(`'#${oldName}' → '#${newName}' 태그 이름 변경 — ${updated}개 갱신`, 'ok');
@@ -298,6 +320,7 @@ export function useIngredientManageActions({
 
   const handleBulkDiscontinue = useCallback(
     async discontinued => {
+      if (!canEdit) return;
       try {
         const ids = [...selected];
         if (!ids.length) return;
@@ -310,11 +333,12 @@ export function useIngredientManageActions({
         showToast('실패: ' + err.message, 'error');
       }
     },
-    [selected, load, exitBatch, clearSelection]
+    [canEdit, selected, load, exitBatch, clearSelection]
   );
 
   const handleBulkSetCategory = useCallback(
     async newCategory => {
+      if (!canEdit) return;
       try {
         const ids = [...selected];
         if (!ids.length) return;
@@ -327,7 +351,7 @@ export function useIngredientManageActions({
         showToast('실패: ' + err.message, 'error');
       }
     },
-    [selected, load, exitBatch, clearSelection]
+    [canEdit, selected, load, exitBatch, clearSelection]
   );
 
   return {

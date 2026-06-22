@@ -4,6 +4,7 @@ function createStoppedEvent() {
 
 export function buildNoteContextMenuProps({
   ctxMenu,
+  canEdit = false,
   pinnedIds,
   closeContextMenu,
   onEditNote,
@@ -14,20 +15,37 @@ export function buildNoteContextMenuProps({
 }) {
   return {
     ctxMenu,
+    canEdit,
     pinnedIds,
     onClose: closeContextMenu,
-    onEdit: onEditNote,
+    onEdit: note => {
+      if (canEdit) onEditNote(note);
+    },
     onTogglePin,
-    onCopy: note => onCopy(note, createStoppedEvent()),
-    onStatusChange: (noteId, status) => onStatusChange(noteId, status, createStoppedEvent()),
-    onDelete,
+    onCopy: note => {
+      if (canEdit) onCopy(note, createStoppedEvent());
+    },
+    onStatusChange: (noteId, status) => {
+      if (canEdit) onStatusChange(noteId, status, createStoppedEvent());
+    },
+    onDelete: note => {
+      if (canEdit) onDelete(note);
+    },
   };
 }
 
-export function buildNoteDetailModalProps({ detailNote, onCloseDetail, onEditNote }) {
+export function buildNoteDetailModalProps({
+  canEdit = false,
+  detailNote,
+  onCloseDetail,
+  onEditNote,
+}) {
   return {
     note: detailNote,
+    canEdit,
     onClose: onCloseDetail,
-    onEdit: () => onEditNote(detailNote),
+    onEdit: () => {
+      if (canEdit) onEditNote(detailNote);
+    },
   };
 }

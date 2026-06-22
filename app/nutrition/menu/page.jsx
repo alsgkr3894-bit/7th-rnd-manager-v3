@@ -113,6 +113,10 @@ export default function Page() {
 
   async function handleRepairDuplicates() {
     if (repairingDuplicates) return;
+    if (!isAdmin) {
+      showToast('중복 영양성분 정리는 관리자만 가능합니다.', 'warn');
+      return;
+    }
     const ok = await showConfirm({
       message: '중복된 영양성분 데이터를 정리합니다. 최신 수정값 1건만 남길까요?',
     });
@@ -171,6 +175,7 @@ export default function Page() {
         diagnostics={duplicateDiagnostics}
         repairing={repairingDuplicates}
         onRepair={handleRepairDuplicates}
+        isAdmin={isAdmin}
       />
       <MissingMasterNotice
         diagnostics={menuMasterDiagnostics}
@@ -208,6 +213,7 @@ export default function Page() {
           setComps={setComps}
           menuSearch={menuSearch}
           onMenuSearch={setMenuSearch}
+          canEdit={isAdmin}
         />
       )}
       {confirmElement}

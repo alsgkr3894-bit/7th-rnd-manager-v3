@@ -14,4 +14,11 @@ describe('AppShell hydration guards', () => {
     expect(brandsHookSource).toContain('useState(SSR_ACTIVE_COMPANY)');
     expect(shellSource).toContain('useAppBrands');
   });
+
+  test('자동 작업일지 prune은 viewer mount에서 실행되지 않는다', () => {
+    expect(shellSource).toContain('const canEdit = roleReady && isAdmin');
+    expect(shellSource).toContain('if (!canEdit) return;');
+    expect(shellSource).toContain('pruneOldWorkLogs().catch(() => {});');
+    expect(shellSource).toContain('}, [canEdit]);');
+  });
 });

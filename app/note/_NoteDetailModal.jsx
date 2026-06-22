@@ -12,7 +12,7 @@ function asText(value) {
   return '';
 }
 
-export function NoteDetailModal({ note = {}, onClose, onEdit }) {
+export function NoteDetailModal({ note = {}, canEdit = false, onClose, onEdit }) {
   const close = typeof onClose === 'function' ? onClose : noop;
   const edit = typeof onEdit === 'function' ? onEdit : noop;
   const { containerRef, isClosing, close: handleClose } = useModalShell(close, { closeMs: 175 });
@@ -173,7 +173,7 @@ export function NoteDetailModal({ note = {}, onClose, onEdit }) {
           <button className="btn" onClick={handleClose}>
             닫기
           </button>
-          <button className="btn primary" onClick={edit}>
+          <button className="btn primary" onClick={edit} disabled={!canEdit}>
             <Icon.edit style={{ width: 13, height: 13 }} /> 수정하기
           </button>
         </div>

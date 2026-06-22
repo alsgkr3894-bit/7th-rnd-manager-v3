@@ -14,8 +14,10 @@ export function useMarginActions({
   activePlatId,
   setActivePlatId,
   setShowSettings,
+  canEdit = false,
 }) {
   async function handleSaveSnapshot() {
+    if (!canEdit) return;
     if (!stats) {
       showToast('집계할 메뉴 데이터가 없어요', 'error');
       return;
@@ -33,16 +35,22 @@ export function useMarginActions({
     }
   }
 
-  function handleSavePlatforms(newPlats) {
-    savePlatforms(newPlats);
-    setPlatforms(newPlats);
-    if (!newPlats.find(p => p.id === activePlatId)) setActivePlatId('default');
-    setShowSettings(false);
-    showToast('플랫폼 설정 저장됨', 'ok');
+  async function handleSavePlatforms(newPlats) {
+    if (!canEdit) return;
+    try {
+      await savePlatforms(newPlats);
+      setPlatforms(newPlats);
+      if (!newPlats.find(p => p.id === activePlatId)) setActivePlatId('default');
+      setShowSettings(false);
+      showToast('플랫폼 설정 저장됨', 'ok');
+    } catch (e) {
+      showToast('플랫폼 설정 저장 실패: ' + (e?.message || e), 'error');
+    }
   }
 
   const handleToggleHide = useCallback(
     async r => {
+      if (!canEdit) return;
       const codes =
         Array.isArray(r.menuCodes) && r.menuCodes.length
           ? r.menuCodes
@@ -65,7 +73,7 @@ export function useMarginActions({
         showToast('숨김 처리 실패: ' + e.message, 'error');
       }
     },
-    [load]
+    [canEdit, load]
   );
 
   return { handleSaveSnapshot, handleSavePlatforms, handleToggleHide };

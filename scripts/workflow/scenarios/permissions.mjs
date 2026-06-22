@@ -1,9 +1,7 @@
-import { writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { goto, step, waitForMenuAddButton } from '../helpers.mjs';
 
 // viewer 권한 → 파괴적 액션 차단 (UI 가드 + 실행함수 레이어)
-export async function scenarioViewerBlocking({ page, base, tmpDir }) {
+export async function scenarioViewerBlocking({ page, base }) {
   const steps = [];
   let viewerAccountId = null;
 
@@ -89,63 +87,24 @@ export async function scenarioViewerBlocking({ page, base, tmpDir }) {
     if (!disabled) throw new Error('"모든 데이터 초기화" 버튼이 viewer에서 활성화 — UI 가드 누락');
   });
 
-  await step(steps, '복원 실행: assertActiveAdmin viewer 거부 토스트 확인', async () => {
-    const backupPath = join(tmpDir, 'viewer-guard-test-backup.json');
-    writeFileSync(
-      backupPath,
-      JSON.stringify({
-        stores: {
-          menu_master: [
-            {
-              id: 99999901,
-              menuCode: 'ZZ-E2E-GUARD',
-              menuName: 'E2E가드테스트',
-              displayOrder: 99999,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            },
-          ],
-        },
-      })
-    );
-
+  await step(steps, '복원 페이지: 파일 선택과 실행 진입 차단(UI 가드)', async () => {
     await goto(page, base, '/settings/restore');
     await page.waitForSelector('input[type="file"]', { state: 'visible', timeout: 15_000 });
-    await page.setInputFiles('input[type="file"]', backupPath);
-    await page
-      .getByRole('heading', { name: '5. 복원 실행' })
-      .waitFor({ state: 'visible', timeout: 15_000 });
+    const fileInputDisabled = await page.locator('input[type="file"]').evaluate(el => el.disabled);
+    if (!fileInputDisabled) {
+      throw new Error('복원 파일 선택 input이 viewer에서 활성화 — UI 가드 누락');
+    }
 
-    await page.waitForFunction(
-      () => {
-        const b = [...document.querySelectorAll('button')].find(
-          el => el.textContent.trim() === '복원 실행'
-        );
-        return b && !b.disabled;
-      },
-      undefined,
-      { timeout: 10_000 }
-    );
-    await page.getByRole('button', { name: '복원 실행' }).click();
-
-    await page.waitForFunction(
-      () =>
-        [...document.querySelectorAll('button')].some(b =>
-          b.textContent.includes('모듈 교체 복원')
-        ),
-      undefined,
-      { timeout: 10_000 }
-    );
-    await page.locator('button').filter({ hasText: '모듈 교체 복원' }).click();
-
-    await page.waitForFunction(
-      () => {
-        const toasts = document.querySelectorAll('.toast');
-        return [...toasts].some(t => t.textContent.includes('권한이 없습니다'));
-      },
-      undefined,
-      { timeout: 10_000 }
-    );
+    const restoreButtons = await page
+      .locator('button')
+      .evaluateAll(buttons =>
+        buttons
+          .filter(button => (button.textContent || '').trim() === '복원 실행')
+          .map(button => ({ disabled: button.disabled }))
+      );
+    if (restoreButtons.some(button => !button.disabled)) {
+      throw new Error('복원 실행 버튼이 viewer에서 활성화 — UI 가드 누락');
+    }
   });
 
   await step(steps, 'viewer 계정 정리 및 활성 계정 초기화', async () => {

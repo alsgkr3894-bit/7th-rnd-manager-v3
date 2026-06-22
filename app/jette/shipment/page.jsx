@@ -4,6 +4,7 @@ import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { UploadDropzone } from '@/components/ui/UploadDropzone';
 import { showToast } from '@/components/Toast';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { useJetteShipment } from '@/lib/shipment/use-shipment';
 import { ShipmentSummary } from '@/components/jette/ShipmentSummary';
 import { ShipmentTable } from '@/components/jette/ShipmentTable';
@@ -31,6 +32,8 @@ function normalizeShipmentPeriod(period) {
 }
 
 export default function Page() {
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
   const {
     ready,
     busy,
@@ -76,10 +79,10 @@ export default function Page() {
       />
 
       <UploadDropzone
-        disabled={!ready || busy}
+        disabled={!ready || busy || !canEdit}
         busyText="업로드 중..."
         maxSizeMB={30}
-        title="출고량 엑셀(.xlsx) 또는 CSV 파일을 끌어다 놓으세요"
+        title="출고량 엑셀(.xlsx), CSV 또는 TSV 파일을 끌어다 놓으세요"
         onFile={(f, err) => {
           if (err) {
             showToast(err, 'error');
@@ -151,6 +154,7 @@ export default function Page() {
           <ShipmentHistory
             files={files}
             selectedYM={selectedYM}
+            canEdit={canEdit}
             onSelectYM={setSelectedYM}
             onDelete={handleDelete}
           />
@@ -223,7 +227,7 @@ function EmptyHero() {
       <Icon.box style={{ width: 48, height: 48, color: 'var(--text-4)' }} />
       <div style={{ fontSize: 15, fontWeight: 700 }}>아직 업로드된 출고량 파일이 없습니다</div>
       <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
-        엑셀(.xlsx) 또는 CSV 파일을 업로드하면 대상 제품의 출고량이 집계됩니다.
+        엑셀(.xlsx), CSV 또는 TSV 파일을 업로드하면 대상 제품의 출고량이 집계됩니다.
       </div>
     </div>
   );

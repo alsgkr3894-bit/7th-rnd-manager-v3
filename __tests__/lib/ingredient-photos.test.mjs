@@ -1,8 +1,19 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   countIngredientPhotos,
   getPrimaryIngredientPhoto,
   normalizeIngredientPhotos,
 } from '../../lib/ingredient/photos.js';
+
+const controllerSource = readFileSync(
+  resolve('app/ingredient/manage/useIngredientFormController.js'),
+  'utf8'
+);
+const photoSectionSource = readFileSync(
+  resolve('app/ingredient/manage/IngredientPhotoSection.jsx'),
+  'utf8'
+);
 
 describe('ingredient photo slots', () => {
   test('legacy photo is treated as packaging photo', () => {
@@ -32,5 +43,17 @@ describe('ingredient photo slots', () => {
         },
       })
     ).toBe(2);
+  });
+
+  test('ingredient photo upload validates before resize and resets the file input', () => {
+    expect(controllerSource).toContain('import { imageFileError, resizePhoto }');
+    expect(controllerSource).toContain('const error = imageFileError(file);');
+    expect(controllerSource.indexOf('const error = imageFileError(file);')).toBeLessThan(
+      controllerSource.indexOf('const photo = await resizePhoto(file);')
+    );
+    expect(controllerSource).toContain("showToast(error, 'warn')");
+    expect(photoSectionSource).toContain('accept="image/*"');
+    expect(photoSectionSource).toContain('onPhotoFile(slot.key, e.target.files?.[0]);');
+    expect(photoSectionSource).toContain("e.target.value = '';");
   });
 });

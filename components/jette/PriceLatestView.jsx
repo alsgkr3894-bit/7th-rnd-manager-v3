@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { usePagination } from '@/hooks/usePagination';
-import { downloadCsv } from '@/lib/download';
+import { downloadCsv, makeFileNameWithBrand } from '@/lib/download';
 import { getPriceRowsByFileId } from '@/lib/price';
 import { PriceLatestKpi } from './PriceLatestKpi';
 import { useTableSearchSort } from '@/hooks/useTableSearchSort';
@@ -21,6 +21,7 @@ export function PriceLatestView({
   latestFileId,
   onLatestChange,
   productTypeLookup = new Map(),
+  canEdit = false,
   onTypeChange,
 }) {
   const [rows, setRows] = useState([]);
@@ -82,7 +83,10 @@ export function PriceLatestView({
   const pagination = usePagination(filtered, 80);
 
   function exportCsv() {
-    downloadCsv(buildLatestPriceCsvRows(filtered, productTypeLookup), '제때_최신단가.csv');
+    downloadCsv(
+      buildLatestPriceCsvRows(filtered, productTypeLookup),
+      makeFileNameWithBrand('제때_최신단가', 'csv')
+    );
   }
 
   if (files.length === 0) {
@@ -117,6 +121,7 @@ export function PriceLatestView({
         sortDir={sortDir}
         onSort={toggleSort}
         productTypeLookup={productTypeLookup}
+        canEdit={canEdit}
         onTypeChange={onTypeChange}
       />
     </>

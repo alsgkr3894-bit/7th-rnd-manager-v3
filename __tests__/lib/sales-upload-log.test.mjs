@@ -81,6 +81,11 @@ const dbMock = {
 
 jest.unstable_mockModule('../../lib/db/index.js', () => dbMock);
 
+jest.unstable_mockModule('@/lib/auth/guard', () => ({
+  assertActiveAdmin: jest.fn().mockResolvedValue(undefined),
+}));
+
+const { assertActiveAdmin } = await import('@/lib/auth/guard');
 const { SALES_UPLOAD_MODULE, deleteSalesFile, saveSalesUpload } =
   await import('../../lib/sales/store-files.js');
 
@@ -118,6 +123,7 @@ describe('메뉴판매량 upload_log 정합성', () => {
     });
 
     expect(dbState.upload_log).toHaveLength(1);
+    expect(assertActiveAdmin).toHaveBeenCalledWith('판매량 업로드 저장');
     expect(dbState.upload_log[0]).toMatchObject({
       module: SALES_UPLOAD_MODULE,
       linkedFileId: 1,
@@ -222,6 +228,7 @@ describe('메뉴판매량 upload_log 정합성', () => {
 
     await deleteSalesFile(1);
 
+    expect(assertActiveAdmin).toHaveBeenCalledWith('판매량 업로드 삭제');
     expect(dbState.sales_files.map(record => record.id)).toEqual([2]);
     expect(dbState.sales_rows.map(record => record.id)).toEqual([11]);
     expect(dbState.menu_sales_issues).toEqual([]);

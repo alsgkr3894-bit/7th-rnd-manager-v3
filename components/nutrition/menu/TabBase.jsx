@@ -12,7 +12,7 @@ import { clearAllBaseData } from '@/lib/nutrition/values/store';
 import { useNutritionBaseEditor } from '@/hooks/useNutritionBaseEditor';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
-export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
+export function TabBase({ menus, rawMap, onRefresh, menuMasters, canEdit = false }) {
   const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
   const safeMenuMasters = useMemo(() => asObjectArray(menuMasters), [menuMasters]);
   const safeRawMap = asRecord(rawMap);
@@ -22,7 +22,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
     [safeMenuMasters]
   );
 
-  const editor = useNutritionBaseEditor({ safeRawMap, refresh });
+  const editor = useNutritionBaseEditor({ safeRawMap, refresh, canEdit });
   const {
     selMenu,
     setSelMenu,
@@ -78,11 +78,12 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
               className="btn sm ghost"
               title="엑셀 가져오기"
               onClick={() => setImportOpen(true)}
+              disabled={!canEdit}
               style={{ fontSize: 11, padding: '3px 7px' }}
             >
               엑셀
             </button>
-            <button className="btn sm ghost" onClick={() => setAddMenu(true)}>
+            <button className="btn sm ghost" onClick={() => setAddMenu(true)} disabled={!canEdit}>
               <Icon.plus style={{ width: 13, height: 13 }} />
             </button>
             <button
@@ -90,6 +91,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
               title="전체 삭제"
               style={{ fontSize: 11, padding: '3px 7px', color: 'var(--danger)' }}
               onClick={async () => {
+                if (!canEdit) return;
                 const ok = await showConfirm({
                   message: '베이스 영양성분 전체(메뉴 목록 + 값)를 삭제합니다. 계속할까요?',
                   danger: true,
@@ -100,6 +102,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
                 showToast('전체 삭제 완료', 'ok');
                 refresh();
               }}
+              disabled={!canEdit}
             >
               전체삭제
             </button>
@@ -140,10 +143,11 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
           saving={saving}
           onSave={handleSave}
           onDeleteMenu={handleDeleteMenu}
+          readOnly={!canEdit}
         />
       </div>
 
-      {importOpen && (
+      {canEdit && importOpen && (
         <ImportBaseModal
           menuMasters={menuMasters}
           menus={safeMenus}
@@ -153,7 +157,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters }) {
         />
       )}
 
-      {addMenu && (
+      {canEdit && addMenu && (
         <AddMenuModal
           newMenuForm={newMenuForm}
           setNewMenuForm={setNewMenuForm}

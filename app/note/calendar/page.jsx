@@ -13,6 +13,7 @@ import { CalendarToolbar } from './CalendarToolbar';
 import { CalendarWorkspace } from './CalendarWorkspace';
 import { TodayChecklist } from './TodayChecklist';
 import { printCalendarMonth } from './calendar-print';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { useCalendarData } from './useCalendarData';
 import { useCalendarMonth } from './useCalendarMonth';
 import { useCalendarNavigation } from './useCalendarNavigation';
@@ -21,8 +22,10 @@ import { useTodayChecklist } from './useTodayChecklist';
 /* ── 메인 페이지 ─────────────────────────────────────────── */
 export default function Page() {
   const router = useRouter();
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
 
-  const { notes, schedules, workLogs, samples, loading, load } = useCalendarData();
+  const { notes, schedules, workLogs, samples, loading, load } = useCalendarData({ canEdit });
   const {
     viewYear,
     viewMonth,
@@ -47,7 +50,7 @@ export default function Page() {
     addChecklistItem,
     toggleChecklistItem,
     removeChecklistItem,
-  } = useTodayChecklist({ today, notes, load });
+  } = useTodayChecklist({ today, notes, load, canEdit });
 
   /* 키보드: ← → 월 이동 / Escape 패널 닫기 */
   useEffect(() => {
@@ -87,6 +90,11 @@ export default function Page() {
 
   /* 일정 저장 */
   async function handleSaveSchedule(data) {
+    if (!canEdit) {
+      showToast('일정 저장은 관리자만 가능합니다', 'warn');
+      setModal(null);
+      return;
+    }
     try {
       if (modal?.mode === 'edit' && modal.schedule?.id) {
         await updateSchedule(modal.schedule.id, data);
@@ -104,12 +112,16 @@ export default function Page() {
   }
 
   function handleDeleteSchedule() {
-    if (!modal?.schedule?.id) return;
+    if (!canEdit || !modal?.schedule?.id) return;
     setConfirmDel(true);
   }
 
   async function confirmDeleteSchedule() {
     setConfirmDel(false);
+    if (!canEdit) {
+      setModal(null);
+      return;
+    }
     try {
       await deleteSchedule(modal.schedule.id);
       showToast('삭제됐습니다', 'ok');
@@ -144,8 +156,13 @@ export default function Page() {
           <CalendarPageActions
             canExport={monthEventRows.length > 0}
             onExportMonth={exportMonthPdf}
-            onAddSchedule={() => setModal({ mode: 'add', date: selectedDay || today })}
-            onAddNote={() => router.push('/note/write')}
+            canEdit={canEdit}
+            onAddSchedule={() => {
+              if (canEdit) setModal({ mode: 'add', date: selectedDay || today });
+            }}
+            onAddNote={() => {
+              if (canEdit) router.push('/note/write');
+            }}
           />
         }
       />
@@ -164,6 +181,7 @@ export default function Page() {
         dateKey={today}
         items={todayChecklist}
         input={checkInput}
+        canEdit={canEdit}
         onInput={setCheckInput}
         onAdd={addChecklistItem}
         onToggle={toggleChecklistItem}
@@ -184,13 +202,20 @@ export default function Page() {
         selectedSchedules={selectedSchedules}
         selectedWorkLogs={selectedWorkLogs}
         selectedSamples={selectedSamples}
+        canEdit={canEdit}
         onSelectDay={setSelectedDay}
         onClosePanel={closePanel}
-        onAddSchedule={date => setModal({ mode: 'add', date })}
-        onEditSchedule={schedule => setModal({ mode: 'edit', schedule })}
+        onAddSchedule={date => {
+          if (canEdit) setModal({ mode: 'add', date });
+        }}
+        onEditSchedule={schedule => {
+          if (canEdit) setModal({ mode: 'edit', schedule });
+        }}
         onOpenNote={id => router.push(`/note/${id}`)}
         onOpenSample={id => router.push(`/note/sample/${id}`)}
-        onAddNote={date => router.push(`/note/write?testDate=${date}`)}
+        onAddNote={date => {
+          if (canEdit) router.push(`/note/write?testDate=${date}`);
+        }}
       />
 
       <CalendarLegend />

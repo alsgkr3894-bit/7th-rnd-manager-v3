@@ -65,6 +65,29 @@ function installStorage(initial = {}) {
   return { store, events };
 }
 
+function installBlockedStorage() {
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: {
+      dispatchEvent: jest.fn(),
+    },
+  });
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: {
+      getItem: () => {
+        throw new Error('storage blocked');
+      },
+      setItem: () => {
+        throw new Error('storage blocked');
+      },
+      removeItem: () => {
+        throw new Error('storage blocked');
+      },
+    },
+  });
+}
+
 describe('active account brand-scoped storage', () => {
   beforeEach(() => {
     activeBrandId = 'brand-b';
@@ -115,6 +138,13 @@ describe('active account brand-scoped storage', () => {
 
     expect(store[ACTIVE_ACCOUNT_KEY]).toBe('2');
     expect(store[activeAccountKeyForBrand('main')]).toBe('2');
+  });
+
+  test('storage 접근이 막히면 active account read/write가 안전하게 실패한다', () => {
+    installBlockedStorage();
+
+    expect(getActiveAccountId()).toBeNull();
+    expect(setActiveAccountId(9)).toBe(false);
   });
 
   test('active role keeps first-use admin but fails closed to viewer on DB errors', async () => {

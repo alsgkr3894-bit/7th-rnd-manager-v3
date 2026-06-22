@@ -3,7 +3,7 @@ import { formatNumber, formatRelative } from '@/lib/format';
 import { ConfirmDeleteButton } from './_ConfirmDeleteButton';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
-export function PriceFileHistory({ files, onDelete }) {
+export function PriceFileHistory({ files, canEdit = false, onDelete }) {
   const safeFiles = asObjectArray(files);
   const handleDelete = typeof onDelete === 'function' ? onDelete : null;
   if (safeFiles.length === 0) {
@@ -50,7 +50,7 @@ export function PriceFileHistory({ files, onDelete }) {
               const fileName = asDisplayText(f.fileName, '(이름 없음)');
               const uploadedAt = asDisplayText(f.uploadedAt);
               const totalRows = Number.isFinite(Number(f.totalRows)) ? Number(f.totalRows) : 0;
-              const canDelete = handleDelete && fileId != null;
+              const canDelete = canEdit && handleDelete && fileId != null;
 
               return (
                 <tr key={rowKey}>

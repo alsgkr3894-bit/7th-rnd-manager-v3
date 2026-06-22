@@ -47,7 +47,7 @@ function hasIssue(row, issue) {
   return Array.isArray(row.issues) && row.issues.includes(issue);
 }
 
-function IssueCard({ r, onEdit }) {
+function IssueCard({ r, onEdit, isViewer = false }) {
   const row = r && typeof r === 'object' ? r : {};
   const issues = Array.isArray(row.issues) ? row.issues : [];
   const name = row.ingredientName || row.displayName || row.productName || '-';
@@ -97,14 +97,14 @@ function IssueCard({ r, onEdit }) {
           })}
         </div>
       </div>
-      <button className="btn sm" onClick={() => handleEdit(row)}>
+      <button className="btn sm" onClick={() => handleEdit(row)} disabled={isViewer}>
         <Icon.edit style={{ width: 13, height: 13 }} /> 수정
       </button>
     </div>
   );
 }
 
-export function IssuesView({ issueRows, onEdit }) {
+export function IssuesView({ issueRows, onEdit, isViewer = false }) {
   const [filter, setFilter] = useState('all');
   const safeIssueRows = useMemo(
     () => (Array.isArray(issueRows) ? issueRows.filter(r => r && typeof r === 'object') : []),
@@ -160,7 +160,12 @@ export function IssuesView({ issueRows, onEdit }) {
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {filtered.map((r, i) => (
-          <IssueCard key={`${r.productCode ?? r.id ?? 'm'}-${i}`} r={r} onEdit={onEdit} />
+          <IssueCard
+            key={`${r.productCode ?? r.id ?? 'm'}-${i}`}
+            r={r}
+            onEdit={onEdit}
+            isViewer={isViewer}
+          />
         ))}
       </div>
     </>

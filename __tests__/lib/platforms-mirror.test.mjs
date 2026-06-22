@@ -26,10 +26,12 @@ const dbStub = {
   },
   initDB: async () => {},
 };
+const assertActiveAdmin = jest.fn(async () => {});
 
 // Inject mocks before importing the module under test
 jest.unstable_mockModule('@/lib/note/keys', () => ({ KEYS }));
 jest.unstable_mockModule('@/lib/db', () => dbStub);
+jest.unstable_mockModule('@/lib/auth/guard', () => ({ assertActiveAdmin }));
 
 // localStorage stub
 const _ls = {};
@@ -108,21 +110,21 @@ describe('savePlatforms()', () => {
   beforeEach(() => {
     resetLS();
     resetPutLog();
+    assertActiveAdmin.mockClear();
     _hasStore = true;
   });
 
-  test('localStorage에 즉시 동기 기록', () => {
+  test('권한 확인 후 localStorage에 기록', async () => {
     const data = [{ id: 'x', name: 'X', fees: [] }];
-    savePlatforms(data);
+    await savePlatforms(data);
+    expect(assertActiveAdmin).toHaveBeenCalledWith('마진 플랫폼 수수료 설정 저장');
     expect(JSON.parse(_ls[KEYS.COST_PLATFORMS])).toEqual(data);
   });
 
   test('IndexedDB put 호출 (스토어 있을 때)', async () => {
     _hasStore = true;
     const data = [{ id: 'baemin', name: '배달의민족', fees: [] }];
-    savePlatforms(data);
-    // fire-and-forget — 약간 대기
-    await new Promise(r => setTimeout(r, 10));
+    await savePlatforms(data);
     expect(putCalls.length).toBe(1);
     expect(putCalls[0].store).toBe('cost_platform_fees');
     expect(putCalls[0].record.id).toBe('config');
@@ -132,8 +134,7 @@ describe('savePlatforms()', () => {
 
   test('스토어 없으면 IndexedDB put 호출 안 함', async () => {
     _hasStore = false;
-    savePlatforms([{ id: 'x', name: 'X', fees: [] }]);
-    await new Promise(r => setTimeout(r, 10));
+    await savePlatforms([{ id: 'x', name: 'X', fees: [] }]);
     expect(putCalls.length).toBe(0);
   });
 });

@@ -13,7 +13,7 @@ import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/pri
 import { initDB } from '@/lib/db';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
-import { parseOptionalNumber, parseOptionalNonNegativeNumber } from '@/lib/parse';
+import { parseOptionalNonNegativeNumber } from '@/lib/parse';
 import { EdgeComponentsSection } from './EdgeComponentsSection';
 import { EdgeIdentityFields } from './EdgeIdentityFields';
 import { EdgeMarginSettings } from './EdgeMarginSettings';
@@ -82,9 +82,9 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
   function normalizeComponents() {
     const nextErrors = [];
     const components = comps.map((c, idx) => {
-      const quantity = parseOptionalNumber(c.quantity);
+      const quantity = parseOptionalNonNegativeNumber(c.quantity);
       const unitPrice = parseOptionalNonNegativeNumber(c.unitPrice);
-      if (!quantity.ok) nextErrors.push(`${idx + 1}번째 구성품 수량은 숫자만 입력하세요`);
+      if (!quantity.ok) nextErrors.push(`${idx + 1}번째 구성품 수량은 0 이상의 숫자만 입력하세요`);
       if (!unitPrice.ok) nextErrors.push(`${idx + 1}번째 구성품 단가는 0 이상의 숫자만 입력하세요`);
       return {
         ...c,

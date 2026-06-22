@@ -1,9 +1,13 @@
 'use client';
 
+import { usePagination } from '@/hooks/usePagination';
+import { Pagination } from '@/components/ui/Pagination';
 import { SampleEmptyState } from './_SampleEmptyState';
 import { SampleGridView } from './_SampleGridView';
 import { SampleListView } from './_SampleListView';
 import { SampleLoadingGrid } from './_SampleLoadingGrid';
+
+const SAMPLE_PAGE_SIZE = 24;
 
 export function SampleRecordsView({
   loading,
@@ -15,6 +19,7 @@ export function SampleRecordsView({
   search,
   batchMode,
   selected,
+  canEdit = false,
   toggleSelect,
   compareMode,
   toggleCompare,
@@ -27,6 +32,7 @@ export function SampleRecordsView({
   onCreateSample,
 }) {
   const rows = Array.isArray(filtered) ? filtered : [];
+  const { page, goTo, totalPages, paged, total } = usePagination(rows, SAMPLE_PAGE_SIZE);
 
   if (loading) {
     return <SampleLoadingGrid />;
@@ -45,42 +51,62 @@ export function SampleRecordsView({
 
   if (viewMode === 'grid' && rows.length > 0) {
     return (
-      <SampleGridView
-        rows={rows}
-        catFilter={catFilter}
-        ratingMin={ratingMin}
-        sortBy={sortBy}
-        batchMode={batchMode}
-        selected={selected}
-        toggleSelect={toggleSelect}
-        compareMode={compareMode}
-        toggleCompare={toggleCompare}
-        compareIdxMap={compareIdxMap}
-        onOpenSample={onOpenSample}
-        onEditSample={onEditSample}
-        onCopySample={onCopySample}
-        onDeleteSample={onDeleteSample}
-        onRatingChange={onRatingChange}
-      />
+      <>
+        <SampleGridView
+          rows={paged}
+          catFilter={catFilter}
+          ratingMin={ratingMin}
+          sortBy={sortBy}
+          batchMode={batchMode}
+          selected={selected}
+          canEdit={canEdit}
+          toggleSelect={toggleSelect}
+          compareMode={compareMode}
+          toggleCompare={toggleCompare}
+          compareIdxMap={compareIdxMap}
+          onOpenSample={onOpenSample}
+          onEditSample={onEditSample}
+          onCopySample={onCopySample}
+          onDeleteSample={onDeleteSample}
+          onRatingChange={onRatingChange}
+        />
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPage={goTo}
+          total={total}
+          pageSize={SAMPLE_PAGE_SIZE}
+        />
+      </>
     );
   }
 
   if (viewMode === 'list' && rows.length > 0) {
     return (
-      <SampleListView
-        rows={rows}
-        catFilter={catFilter}
-        ratingMin={ratingMin}
-        sortBy={sortBy}
-        batchMode={batchMode}
-        toggleSelect={toggleSelect}
-        compareMode={compareMode}
-        toggleCompare={toggleCompare}
-        onOpenSample={onOpenSample}
-        onEditSample={onEditSample}
-        onCopySample={onCopySample}
-        onDeleteSample={onDeleteSample}
-      />
+      <>
+        <SampleListView
+          rows={paged}
+          catFilter={catFilter}
+          ratingMin={ratingMin}
+          sortBy={sortBy}
+          batchMode={batchMode}
+          canEdit={canEdit}
+          toggleSelect={toggleSelect}
+          compareMode={compareMode}
+          toggleCompare={toggleCompare}
+          onOpenSample={onOpenSample}
+          onEditSample={onEditSample}
+          onCopySample={onCopySample}
+          onDeleteSample={onDeleteSample}
+        />
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPage={goTo}
+          total={total}
+          pageSize={SAMPLE_PAGE_SIZE}
+        />
+      </>
     );
   }
 

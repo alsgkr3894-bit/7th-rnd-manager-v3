@@ -9,6 +9,7 @@ import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { useReportListState } from '@/hooks/useReportListState';
 import { useReportActions } from '@/hooks/useReportActions';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { formatLocalMonthInput } from '@/lib/date/local-date';
 import { asObjectArray } from '@/lib/ui/prop-guards';
 import { exportReportListToExcel } from '@/lib/report/report-list-utils';
@@ -19,16 +20,20 @@ import { ReportStatsRow } from '@/components/report/ReportStatsRow';
 import { ReportListTable } from '@/components/report/ReportListTable';
 import { ReportSnapshotCard } from '@/components/report/ReportSnapshotCard';
 import { ReportPageDialogs } from '@/components/report/ReportPageDialogs';
+import { MonthlyClosePackageModal } from '@/components/report/MonthlyClosePackageModal';
 
 const thisMonth = formatLocalMonthInput();
 
 export default function Page() {
   const router = useRouter();
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
   const [shareTarget, setShareTarget] = useState(null);
   const [previewTarget, setPreviewTarget] = useState(null);
   const [previewPrintOnOpen, setPreviewPrintOnOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [newReportOpen, setNewReportOpen] = useState(false);
+  const [closePackageOpen, setClosePackageOpen] = useState(false);
 
   const { data: reportsData, loading, error: loadError, reload } = useDBLoad(() => getReports());
   const reports = useMemo(() => asObjectArray(reportsData), [reportsData]);
@@ -73,7 +78,7 @@ export default function Page() {
     handleToggleFav,
     startEdit,
     commitEdit,
-  } = useReportActions({ reload });
+  } = useReportActions({ reload, canEdit });
 
   const stats = {
     total: reports.length,
@@ -103,6 +108,11 @@ export default function Page() {
 
   return (
     <main className="main">
+      <MonthlyClosePackageModal
+        open={closePackageOpen}
+        onClose={() => setClosePackageOpen(false)}
+      />
+
       <ReportPageDialogs
         confirmDeleteId={confirmDeleteId}
         setConfirmDeleteId={setConfirmDeleteId}
@@ -130,7 +140,7 @@ export default function Page() {
         sub="판매량·가격·출고량·비교·원가 보고서를 한 곳에서 생성하고 보관해요."
         actions={
           <>
-            <button className="btn" onClick={handlePruneClick}>
+            <button className="btn" onClick={handlePruneClick} disabled={!canEdit}>
               오래된 보고서 정리
             </button>
             <button
@@ -147,6 +157,10 @@ export default function Page() {
             <button className="btn" onClick={() => setScheduleOpen(true)}>
               <Icon.gear style={{ width: 14, height: 14 }} />
               예약 설정
+            </button>
+            <button className="btn" onClick={() => setClosePackageOpen(true)}>
+              <Icon.box style={{ width: 14, height: 14 }} />
+              월마감 패키지
             </button>
             <button className="btn primary" onClick={() => setNewReportOpen(true)}>
               <Icon.plus style={{ width: 14, height: 14 }} />새 보고서 생성
@@ -198,6 +212,7 @@ export default function Page() {
           setNewReportOpen={setNewReportOpen}
           handleToggleFav={handleToggleFav}
           handleDelete={handleDelete}
+          canEdit={canEdit}
           setPreviewTarget={setPreviewTarget}
           setPreviewPrintOnOpen={setPreviewPrintOnOpen}
           setShareTarget={setShareTarget}

@@ -18,6 +18,7 @@ export default function TopBar({
   onCompanyChange,
   unmatchedCount = 0,
   reportingCount = 0,
+  canEdit = false,
 }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(false);
@@ -139,7 +140,10 @@ export default function TopBar({
         <button
           className="icon-btn"
           aria-label="새 노트 작성"
-          onClick={() => router.push('/note/write')}
+          onClick={() => {
+            if (canEdit) router.push('/note/write');
+          }}
+          disabled={!canEdit}
         >
           <Icon.plus aria-hidden="true" style={{ width: 18, height: 18 }} />
         </button>

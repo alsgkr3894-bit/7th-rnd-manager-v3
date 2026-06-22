@@ -5,6 +5,7 @@ import { readCsvFile, readExcelFile } from '../../lib/excel.js';
 import { validateSalesFile } from '../../lib/sales/parse.js';
 import { classifyAndPrepare } from '../../lib/sales/classify.js';
 import { parsePriceRows } from '../../lib/price/parse.js';
+import { filterTargetRows, parseShipmentRows } from '../../lib/shipment/parse.js';
 import { parseMenuPriceRows } from '../../lib/cost/menu-price/parse.js';
 import { buildPizzaSummary } from '../../lib/cost/pizza-summary/calc.js';
 
@@ -51,6 +52,20 @@ describe('익명화 업무 fixture 회귀', () => {
 
     expect(result.success).toBe(false);
     expect(result.reason).toContain('필수 헤더');
+  });
+
+  test('판매량 빈 CSV와 헤더-only 파일은 저장 전에 실패한다', () => {
+    const empty = readCsvFile('');
+    const emptyResult = validateSalesFile(empty.rawRows);
+    expect(emptyResult.success).toBe(false);
+    expect(emptyResult.reason).toContain('비어');
+
+    const headerOnlyResult = validateSalesFile([
+      ['조회기간', '2026-05-01 ~ 2026-05-31'],
+      ['메뉴명', '판매량(개)'],
+    ]);
+    expect(headerOnlyResult.success).toBe(false);
+    expect(headerOnlyResult.reason).toContain('데이터 행');
   });
 
   test('판매량 fixture는 분류·제외·미매칭 이슈를 고정한다', () => {
@@ -133,6 +148,87 @@ describe('익명화 업무 fixture 회귀', () => {
     expect(result.error).toContain('taxType');
   });
 
+  test('제때 단가 필수 컬럼 누락과 헤더-only 파일은 저장 전에 차단된다', () => {
+    const missingColumn = parsePriceRows(['제품명', '단가'], [{ 제품명: '익명 치즈', 단가: 1000 }]);
+    expect(missingColumn.ok).toBe(false);
+    expect(missingColumn.error).toContain('taxType');
+
+    const headerOnly = parsePriceRows(['제품명', '과세구분', '단가'], []);
+    expect(headerOnly.ok).toBe(true);
+    expect(headerOnly.success).toHaveLength(0);
+  });
+
+  test('출고량 fixture는 대상 제품만 필터링하고 원본/대상 건수를 분리한다', () => {
+    const fixture = readFixture('shipment-valid.csv');
+    const result = parseShipmentRows(fixture.headers, fixture.rows);
+    const targets = filterTargetRows(result.success, [
+      { productCode: 'ING-001', productName: '익명 치즈' },
+    ]);
+
+    expect(result.ok).toBe(true);
+    expect(result.failed).toEqual([]);
+    expect(result.success).toHaveLength(2);
+    expect(targets).toEqual([
+      expect.objectContaining({
+        productCode: 'ING-001',
+        productName: '익명 치즈',
+        quantity: 3,
+        amount: 30000,
+      }),
+    ]);
+  });
+
+  test('출고량 fixture는 실제 xlsx workbook으로 읽어도 같은 검증을 통과한다', async () => {
+    const fixture = readFixture('shipment-valid.csv');
+    const parsed = await readExcelFile(workbookBuffer(fixture.rawRows));
+    const result = parseShipmentRows(parsed.headers, parsed.rows);
+
+    expect(parsed.sheetName).toBe('업무 fixture');
+    expect(result.ok).toBe(true);
+    expect(result.success).toHaveLength(2);
+    expect(result.success[0]).toMatchObject({
+      productCode: 'ING-001',
+      productName: '익명 치즈',
+      quantity: 3,
+      amount: 30000,
+    });
+  });
+
+  test('출고량 fixture의 숫자 오류는 실패행으로 분리한다', () => {
+    const fixture = readFixture('shipment-invalid.csv');
+    const result = parseShipmentRows(fixture.headers, fixture.rows);
+
+    expect(result.ok).toBe(true);
+    expect(result.success).toEqual([]);
+    expect(result.failed).toEqual([
+      expect.objectContaining({
+        rowIndex: 2,
+        productCode: 'ING-001',
+        reason: '배송수량 인식 실패',
+        raw: 'abc',
+      }),
+      expect.objectContaining({
+        rowIndex: 3,
+        productCode: 'ING-002',
+        reason: '합계 인식 실패',
+        raw: '금액오류',
+      }),
+    ]);
+  });
+
+  test('출고량 필수 컬럼 누락과 헤더-only 파일은 저장 전에 차단된다', () => {
+    const missingColumn = parseShipmentRows(
+      ['제품코드', '제품명', '배송수량'],
+      [{ 제품코드: 'ING-001', 제품명: '익명 치즈', 배송수량: 3 }]
+    );
+    expect(missingColumn.ok).toBe(false);
+    expect(missingColumn.error).toContain('합계');
+
+    const headerOnly = parseShipmentRows(['제품코드', '제품명', '배송수량', '합계'], []);
+    expect(headerOnly.ok).toBe(true);
+    expect(headerOnly.success).toHaveLength(0);
+  });
+
   test('메뉴 판매가 fixture는 메뉴코드와 가격을 보존한다', () => {
     const fixture = readFixture('menu-price-valid.csv');
     const result = parseMenuPriceRows(fixture.headers, fixture.rows);
@@ -149,6 +245,16 @@ describe('익명화 업무 fixture 회귀', () => {
         }),
       ])
     );
+  });
+
+  test('메뉴 판매가 필수 컬럼 누락과 헤더-only 파일은 저장 전에 차단된다', () => {
+    const missingColumn = parseMenuPriceRows(['메뉴명'], [{ 메뉴명: '익명 피자' }]);
+    expect(missingColumn.ok).toBe(false);
+    expect(missingColumn.error).toContain('판매가');
+
+    const headerOnly = parseMenuPriceRows(['메뉴명', '판매가'], []);
+    expect(headerOnly.ok).toBe(true);
+    expect(headerOnly.success).toHaveLength(0);
   });
 
   test('원가 기준표 fixture는 피자 기본/엣지 원가와 원가율을 고정한다', () => {

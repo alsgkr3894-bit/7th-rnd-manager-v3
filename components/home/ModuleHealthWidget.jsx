@@ -68,6 +68,7 @@ export function ModuleHealthWidget({
   pipeline,
   isMain,
   router,
+  canEdit = false,
 }) {
   const modules = buildModuleHealth({
     freshness,
@@ -78,6 +79,7 @@ export function ModuleHealthWidget({
     todos,
     pipeline,
     isMain,
+    canEdit,
   });
   const counts = countModuleHealth(modules);
 

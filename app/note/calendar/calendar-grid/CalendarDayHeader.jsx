@@ -1,6 +1,6 @@
 import { dayNumColor } from '../_calendar-utils';
 
-export function CalendarDayHeader({ model, onAddSchedule, onSelectDay }) {
+export function CalendarDayHeader({ model, canEdit = false, onAddSchedule, onSelectDay }) {
   return (
     <div
       style={{
@@ -27,8 +27,10 @@ export function CalendarDayHeader({ model, onAddSchedule, onSelectDay }) {
         {model.dayNum}
       </span>
       <button
+        disabled={!canEdit}
         onClick={event => {
           event.stopPropagation();
+          if (!canEdit) return;
           onSelectDay(model.key);
           onAddSchedule(model.key);
         }}
@@ -39,7 +41,7 @@ export function CalendarDayHeader({ model, onAddSchedule, onSelectDay }) {
           border: 'none',
           background: 'transparent',
           color: 'var(--text-4)',
-          cursor: 'pointer',
+          cursor: canEdit ? 'pointer' : 'not-allowed',
           fontSize: 14,
           lineHeight: 1,
           display: 'flex',

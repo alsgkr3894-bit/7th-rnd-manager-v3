@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
 import { parseLabExcel, buildImportRows, toRawValueRecord } from '@/lib/nutrition/values/import';
-import { upsertMenuRef, upsertRawValue } from '@/lib/nutrition/values/store';
+import { bulkUpsertBaseData } from '@/lib/nutrition/values/store';
 import { asObjectArray, asRecord, noop } from '@/lib/ui/prop-guards';
 import { parseErrorMsg } from '@/lib/upload-policy';
 import { ImportBasePreviewTable } from './import-base/ImportBasePreviewTable';
@@ -11,9 +11,8 @@ import { ImportBaseSummaryBar } from './import-base/ImportBaseSummaryBar';
 import { ImportBaseUploadStep } from './import-base/ImportBaseUploadStep';
 import { categoryForImportRow } from './import-base/importBaseRows';
 
-export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh }) {
+export function ImportBaseModal({ menuMasters, rawMap, onClose, onRefresh }) {
   const safeMenuMasters = asObjectArray(menuMasters);
-  const safeMenus = asObjectArray(menus);
   const safeRawMap = asRecord(rawMap);
   const close = typeof onClose === 'function' ? onClose : noop;
   const refresh = typeof onRefresh === 'function' ? onRefresh : noop;
@@ -53,39 +52,28 @@ export function ImportBaseModal({ menuMasters, menus, rawMap, onClose, onRefresh
       return;
     }
     setSaving(true);
-    let saved = 0;
-    const savedMenuCodes = new Set(safeMenus.map(m => m.menuCode));
     try {
-      for (const row of toSave) {
+      const payload = toSave.map(row => {
         const normalizedCategory = categoryForImportRow(row);
-        if (!savedMenuCodes.has(row.menuCode)) {
-          await upsertMenuRef({
-            menuCode: row.menuCode,
-            menuName: row.menuName,
-            category: normalizedCategory,
-          });
-          savedMenuCodes.add(row.menuCode);
-        }
         const existing = safeRawMap[`${row.menuCode}__${row.crustType}`];
-        await upsertRawValue({
-          ...(existing?.id ? { id: existing.id } : {}),
-          ...toRawValueRecord({ ...row, category: normalizedCategory }),
-        });
-        saved++;
-      }
+        return {
+          menuCode: row.menuCode,
+          menuName: row.menuName,
+          category: normalizedCategory,
+          crustType: row.crustType,
+          rawValue: {
+            ...(existing?.id ? { id: existing.id } : {}),
+            ...toRawValueRecord({ ...row, category: normalizedCategory }),
+          },
+        };
+      });
+      const { rawValues } = await bulkUpsertBaseData(payload);
       const skipped = rows.filter(r => !r.include).length;
-      showToast(`${saved}건 저장 완료 (${skipped}건 제외)`, 'ok');
+      showToast(`${rawValues}건 저장 완료 (${skipped}건 제외)`, 'ok');
       refresh();
       close();
     } catch (e) {
-      // 행별 개별 트랜잭션이라 saved건은 이미 커밋된 상태 — 부분 저장 사실을 알리고
-      // 화면을 갱신해 stale 미리보기에 머물지 않도록 한다.
-      if (saved > 0) {
-        showToast(`${saved}건 저장 후 ${toSave.length - saved}건 실패 — 부분 저장됨`, 'warn');
-        refresh();
-      } else {
-        showToast(`저장 실패: ${e?.message || e}`, 'error');
-      }
+      showToast(`저장 실패: ${parseErrorMsg(e)}`, 'error');
     }
     setSaving(false);
   };

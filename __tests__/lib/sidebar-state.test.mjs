@@ -1,6 +1,12 @@
 import { describe, expect, test } from '@jest/globals';
 import { normalizeSidebarOpenIds } from '../../lib/ui/sidebar-state.js';
-import { MOBILE_TAB_DEFS, NAV_HOME, NAV_SECTIONS } from '../../lib/menu.js';
+import {
+  MOBILE_TAB_DEFS,
+  NAV_HOME,
+  NAV_SECTIONS,
+  filterNavSectionsForRole,
+  isNavItemVisibleForRole,
+} from '../../lib/menu.js';
 import { KIND_META } from '../../lib/report/constants.js';
 import {
   COST_COMMON_EDGES_ROUTE,
@@ -124,5 +130,26 @@ describe('normalizeSidebarOpenIds', () => {
     const costTab = MOBILE_TAB_DEFS.find(item => item.label === '원가');
 
     expect(costTab?.href).toBe(COST_MARGIN_ROUTE);
+  });
+
+  test('사이드바 쓰기 전용 진입점은 viewer에게 숨긴다', () => {
+    const editOnlyHrefs = ['/note/write', '/menu-sales/upload', '/settings/restore'];
+    const adminHrefs = filterNavSectionsForRole(NAV_SECTIONS, true)
+      .flatMap(section => section.groups)
+      .flatMap(group => group.children || [group])
+      .map(item => item.href);
+    const viewerHrefs = filterNavSectionsForRole(NAV_SECTIONS, false)
+      .flatMap(section => section.groups)
+      .flatMap(group => group.children || [group])
+      .map(item => item.href);
+
+    for (const href of editOnlyHrefs) {
+      const item = navChildren.find(child => child.href === href);
+      expect(item?.requiresEdit).toBe(true);
+      expect(isNavItemVisibleForRole(item, false)).toBe(false);
+      expect(isNavItemVisibleForRole(item, true)).toBe(true);
+      expect(adminHrefs).toContain(href);
+      expect(viewerHrefs).not.toContain(href);
+    }
   });
 });

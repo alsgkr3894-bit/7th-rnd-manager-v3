@@ -13,7 +13,14 @@ const GROUP_HEADER_STYLE = {
   marginTop: 8,
 };
 
-function DerivedCompositionCard({ comp, menuByCode, ingredientMetaByCode, onEdit, onDelete }) {
+function DerivedCompositionCard({
+  comp,
+  menuByCode,
+  ingredientMetaByCode,
+  onEdit,
+  onDelete,
+  canEdit = false,
+}) {
   const base = menuByCode[asDisplayText(comp.baseMenuCode)];
   const menuName = asDisplayText(comp.menuName, '이름 없음');
   const baseName = asDisplayText(base?.menuName || comp.baseMenuCode, '베이스 미지정');
@@ -43,13 +50,14 @@ function DerivedCompositionCard({ comp, menuByCode, ingredientMetaByCode, onEdit
         </span>
       </div>
       <div style={{ display: 'flex', gap: 6 }}>
-        <button className="btn sm ghost" onClick={() => onEdit(comp)}>
+        <button className="btn sm ghost" onClick={() => onEdit(comp)} disabled={!canEdit}>
           <Icon.edit style={{ width: 13, height: 13 }} />
         </button>
         <button
           className="btn sm ghost"
           style={{ color: 'var(--danger)' }}
           onClick={() => onDelete(comp)}
+          disabled={!canEdit}
         >
           <Icon.trash style={{ width: 13, height: 13 }} />
         </button>
@@ -95,6 +103,7 @@ export function DerivedCompositionList({
   onAdd,
   onEdit,
   onDelete,
+  canEdit = false,
 }) {
   return (
     <>
@@ -107,7 +116,11 @@ export function DerivedCompositionList({
         }}
       >
         <div style={{ fontSize: 14, fontWeight: 700 }}>파생 메뉴</div>
-        <button className="btn sm primary" onClick={() => onAdd(defaultBaseMenuCode || '')}>
+        <button
+          className="btn sm primary"
+          onClick={() => onAdd(defaultBaseMenuCode || '')}
+          disabled={!canEdit}
+        >
           <Icon.plus style={{ width: 13, height: 13 }} />
           파생 메뉴 추가
         </button>
@@ -131,6 +144,7 @@ export function DerivedCompositionList({
                     ingredientMetaByCode={ingredientMetaByCode}
                     onEdit={onEdit}
                     onDelete={onDelete}
+                    canEdit={canEdit}
                   />
                 ))}
               </div>

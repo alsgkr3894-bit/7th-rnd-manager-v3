@@ -30,7 +30,7 @@ import {
   userRuleFormFromItem,
 } from './user-rules/userRulesUtils';
 
-export function UserRulesSection() {
+export function UserRulesSection({ canEdit = false }) {
   // 마운트 후 교정 — SSR 불일치 없음, 폼 카테고리 기본값도 안전
   const isMain = useIsMainBrand();
   const [nameOpts, setNameOpts] = useState({ groupNames: [], detailNames: [] });
@@ -96,6 +96,7 @@ export function UserRulesSection() {
   const { showConfirm, confirmElement } = useConfirmDialog();
 
   async function handleToggle(r) {
+    if (!canEdit) return;
     if (!r || r.id == null) return;
 
     try {
@@ -130,11 +131,12 @@ export function UserRulesSection() {
       <SectionHeader
         title="사용자 추가 규칙"
         count={list.length}
-        adding={adding}
+        adding={canEdit && adding}
+        disabled={!canEdit}
         onAdd={resetAdding}
       />
 
-      {adding && (
+      {canEdit && adding && (
         <UserRuleForm
           form={form}
           setForm={setForm}
@@ -143,10 +145,11 @@ export function UserRulesSection() {
           busy={busy}
           nameOpts={nameOpts}
           isMain={isMain}
+          canEdit={canEdit}
         />
       )}
 
-      {list.length === 0 && !adding ? (
+      {list.length === 0 && !(canEdit && adding) ? (
         <SectionEmpty>사용자 추가 규칙이 아직 없습니다</SectionEmpty>
       ) : (
         list.length > 0 && (
@@ -167,6 +170,7 @@ export function UserRulesSection() {
             form={form}
             setForm={setForm}
             busy={busy}
+            canEdit={canEdit}
             onUpdate={handleUpdate}
             nameOpts={nameOpts}
             isMain={isMain}

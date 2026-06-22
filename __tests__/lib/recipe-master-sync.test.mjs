@@ -58,6 +58,35 @@ describe('recipe master sync helpers', () => {
     ]);
   });
 
+  test('구성품 숫자는 유한한 0 이상 값만 유지한다', () => {
+    expect(
+      normalizeRecipeMasterComponents([
+        {
+          productCode: 'ING-BAD',
+          ingredientName: '오염 방어',
+          quantity: 'abc',
+          unitPrice: '-10',
+        },
+      ])
+    ).toEqual([
+      {
+        productCode: 'ING-BAD',
+        ingredientName: '오염 방어',
+        quantity: null,
+        unit: 'g',
+        unitPrice: null,
+        note: '',
+      },
+    ]);
+  });
+
+  test('메뉴마스터 가격은 잘못된 숫자를 NaN 대신 null로 정규화한다', () => {
+    expect(buildRecipeMasterMenuPayload({ price: 'Infinity' })).toMatchObject({
+      price: null,
+      source: 'recipe-master',
+    });
+  });
+
   test('메뉴 마스터 저장 페이로드를 만든다', () => {
     expect(
       buildRecipeMasterMenuPayload({

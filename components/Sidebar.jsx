@@ -1,8 +1,8 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Icon } from './icons';
-import { NAV_HOME, NAV_SECTIONS } from '@/lib/menu';
+import { NAV_HOME, NAV_SECTIONS, filterNavSectionsForRole } from '@/lib/menu';
 import { initDB } from '@/lib/db';
 import { getPriceFiles } from '@/lib/price';
 import { getJSONLS, setJSONLS } from '@/lib/note/storage';
@@ -18,11 +18,13 @@ export default function Sidebar({
   activeCompany,
   unmatchedCount = 0,
   reportingCount = 0,
+  canEdit = false,
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const sidebarRef = useRef(null);
   const [latestPrice, setLatestPrice] = useState(null);
+  const visibleSections = useMemo(() => filterNavSectionsForRole(NAV_SECTIONS, canEdit), [canEdit]);
 
   // 최신 제때 단가 조회 — 마운트 1회만
   useEffect(() => {
@@ -79,7 +81,7 @@ export default function Sidebar({
   useEffect(() => {
     setOpenIds(o => {
       const updates = {};
-      NAV_SECTIONS.forEach(section => {
+      visibleSections.forEach(section => {
         section.groups.forEach(g => {
           if (isGroupActive(g) && !o[g.id]) updates[g.id] = true;
         });
@@ -88,7 +90,7 @@ export default function Sidebar({
       return { ...o, ...updates };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+  }, [pathname, visibleSections, isGroupActive]);
 
   // 활성 항목이 보이는 영역 밖이면 스크롤로 노출 (active 표시는 CSS .active 배경·좌측바가 담당)
   useEffect(() => {
@@ -123,7 +125,7 @@ export default function Sidebar({
       setOpenIds(o => {
         const next = { ...o };
         let changed = false;
-        NAV_SECTIONS.forEach(section => {
+        visibleSections.forEach(section => {
           section.groups.forEach(g => {
             if (next[g.id] && !isGroupActive(g)) {
               next[g.id] = false;
@@ -138,7 +140,7 @@ export default function Sidebar({
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [isGroupActive]);
+  }, [isGroupActive, visibleSections]);
 
   const navigate = href => {
     router.push(href);
@@ -258,7 +260,7 @@ export default function Sidebar({
         </button>
 
         {/* 섹션별 렌더 */}
-        {NAV_SECTIONS.map(section => (
+        {visibleSections.map(section => (
           <div key={section.sectionLabel}>
             <div className="section-label">{section.sectionLabel}</div>
             {section.groups.map(renderGroup)}

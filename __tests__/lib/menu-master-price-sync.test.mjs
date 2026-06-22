@@ -36,6 +36,7 @@ const runTransaction = jest.fn((storeNames, mode, work) => {
   work(tx);
   return Promise.resolve();
 });
+const assertActiveAdmin = jest.fn();
 
 jest.unstable_mockModule('@/lib/db', () => ({
   hasStore: jest.fn(storeName => storeName in stores),
@@ -58,6 +59,10 @@ jest.unstable_mockModule('@/lib/db', () => ({
   runTransaction,
 }));
 
+jest.unstable_mockModule('@/lib/auth/guard', () => ({
+  assertActiveAdmin,
+}));
+
 const { getAllMenuMaster, pushMasterToPrices, syncMenuMasterFromPrices } =
   await import('../../lib/menu-master/index.js');
 
@@ -65,6 +70,8 @@ describe('menu master price sync policy', () => {
   beforeEach(() => {
     nextId = 100;
     runTransaction.mockClear();
+    assertActiveAdmin.mockReset();
+    assertActiveAdmin.mockResolvedValue();
     stores = {
       menu_master: [],
       cost_selling_prices: [],
@@ -226,6 +233,42 @@ describe('menu master price sync policy', () => {
       menuCode: 'PZ-003-L',
       menuName: '마지막 행',
       price: 19000,
+    });
+  });
+
+  test('판매가 동기화는 잘못된 가격 문자열을 NaN 대신 null로 저장한다', async () => {
+    const result = await syncMenuMasterFromPrices([
+      {
+        menuCode: 'PZ-009-L',
+        menuName: '가격 오류 피자',
+        category: '피자',
+        size: 'L',
+        price: 'bad',
+      },
+    ]);
+
+    expect(result).toMatchObject({ synced: 1, created: 1 });
+    expect(stores.menu_master[0]).toMatchObject({
+      menuCode: 'PZ-009-L',
+      price: null,
+    });
+  });
+
+  test('판매가 동기화는 음수 가격을 null로 저장한다', async () => {
+    const result = await syncMenuMasterFromPrices([
+      {
+        menuCode: 'PZ-010-L',
+        menuName: '음수 가격 피자',
+        category: '피자',
+        size: 'L',
+        price: -1000,
+      },
+    ]);
+
+    expect(result).toMatchObject({ synced: 1, created: 1 });
+    expect(stores.menu_master[0]).toMatchObject({
+      menuCode: 'PZ-010-L',
+      price: null,
     });
   });
 

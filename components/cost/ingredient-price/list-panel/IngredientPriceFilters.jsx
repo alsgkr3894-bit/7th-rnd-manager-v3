@@ -7,6 +7,7 @@ export function IngredientPriceFilters({
   taxFilter,
   search,
   priceTable,
+  readOnly = false,
   onTaxFilter,
   onSearch,
   onSelectedDelete,
@@ -56,6 +57,7 @@ export function IngredientPriceFilters({
           selectedCount={priceTable.selected.size}
           confirming={priceTable.confirmingDelete}
           noun="식자재"
+          canEdit={!readOnly}
           onAskDelete={() => priceTable.setConfirmingDelete(true)}
           onConfirmDelete={onSelectedDelete}
           onCancel={priceTable.clearSelection}

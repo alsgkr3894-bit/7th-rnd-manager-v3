@@ -152,10 +152,9 @@ describe('note list structure', () => {
     expect(controllerSource).toContain('useNoteListData()');
     expect(controllerSource).toContain('useNoteListState({ notes, pinnedIds, pathname })');
     expect(controllerSource).toContain('useNoteReportingCopy(notes)');
-    expect(controllerSource).toContain('useNoteBatchActions({ setNotes, load })');
-    expect(controllerSource).toContain(
-      'useNoteItemActions({ router, setNotes, load, detailNote, setDetailNote })'
-    );
+    expect(controllerSource).toContain('useNoteBatchActions({ setNotes, load, canEdit })');
+    expect(controllerSource).toContain('const itemActions = useNoteItemActions({');
+    expect(controllerSource).toContain('canEdit,');
     expect(controllerSource).toContain(
       "import { buildNoteContentProps } from '@/lib/note/content-props'"
     );
@@ -163,7 +162,7 @@ describe('note list structure', () => {
     expect(contentPropsSource).toContain('export function buildNoteContentProps');
     expect(contentPropsSource).toContain("from '@/lib/note/content-prop-builders'");
     expect(contentPropsSource).toContain(
-      'buildNoteDialogProps({ listState, batchActions, itemActions })'
+      'buildNoteDialogProps({ canEdit, listState, batchActions, itemActions })'
     );
     expect(contentPropsSource).toContain('buildNoteHeaderProps({');
     expect(contentPropsSource).toContain('buildNoteFilterProps({ listState })');

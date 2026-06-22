@@ -3,6 +3,7 @@ import dynamic from 'next/dynamic';
 import { useState, useMemo } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { usePagination } from '@/hooks/usePagination';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
@@ -32,6 +33,8 @@ const MarginTrendModal = dynamic(
 
 export default function Page() {
   const { rows, platforms, setPlatforms, loading, dbError, load } = useMarginData();
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
 
   const [activePlatId, setActivePlatId] = useState('default');
   const [showSettings, setShowSettings] = useState(false);
@@ -96,6 +99,7 @@ export default function Page() {
     activePlatId,
     setActivePlatId,
     setShowSettings,
+    canEdit,
   });
 
   const { page, goTo, totalPages, paged, total } = usePagination(sortedFiltered, ROW_PAGE_SIZE);
@@ -152,7 +156,7 @@ export default function Page() {
         sub="레시피 원가 기준 메뉴별 원가율 · 플랫폼·할인 시뮬레이션 지원"
         actions={
           <>
-            <button className="btn" onClick={handleSaveSnapshot} disabled={!stats}>
+            <button className="btn" onClick={handleSaveSnapshot} disabled={!stats || !canEdit}>
               <Icon.plus style={{ width: 13, height: 13 }} /> 추이 저장
             </button>
             <button className="btn" onClick={() => setShowTrend(true)}>
@@ -228,6 +232,7 @@ export default function Page() {
         discVal={discVal}
         onSort={handleSort}
         onToggleHide={handleToggleHide}
+        canEdit={canEdit}
         page={page}
         goTo={goTo}
         totalPages={totalPages}
@@ -243,7 +248,7 @@ export default function Page() {
         />
       )}
 
-      {showTrend && <MarginTrendModal onClose={() => setShowTrend(false)} />}
+      {showTrend && <MarginTrendModal onClose={() => setShowTrend(false)} canEdit={canEdit} />}
     </main>
   );
 }

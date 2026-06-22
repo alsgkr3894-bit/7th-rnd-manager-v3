@@ -31,6 +31,7 @@ export const KanbanCard = React.memo(function KanbanCard({
   onMove,
   onStatusChange,
   onEdit,
+  canEdit = false,
   isDragging,
   bouncing,
   draggable = true,
@@ -41,6 +42,10 @@ export const KanbanCard = React.memo(function KanbanCard({
   const sb = STATUS_BORDER[note.status] || 'var(--border)';
 
   function handleKeyDown(e) {
+    if (!canEdit && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      e.preventDefault();
+      return;
+    }
     if (e.key === 'ArrowLeft') {
       e.preventDefault();
       onMove(note, -1);
@@ -49,7 +54,7 @@ export const KanbanCard = React.memo(function KanbanCard({
       onMove(note, 1);
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onEdit(`/note/${note.id}`);
+      if (canEdit) onEdit(`/note/${note.id}`);
     }
   }
 
@@ -98,7 +103,7 @@ export const KanbanCard = React.memo(function KanbanCard({
         <button
           className="btn sm kanban-arrow-btn"
           style={{ padding: '2px 6px', fontSize: 11, opacity: colIdx === 0 ? 0.3 : 1 }}
-          disabled={colIdx === 0}
+          disabled={!canEdit || colIdx === 0}
           onClick={e => {
             e.stopPropagation();
             onMove(note, -1);
@@ -110,7 +115,7 @@ export const KanbanCard = React.memo(function KanbanCard({
         <button
           className="btn sm kanban-arrow-btn"
           style={{ padding: '2px 6px', fontSize: 11, opacity: colIdx === maxIdx ? 0.3 : 1 }}
-          disabled={colIdx === maxIdx}
+          disabled={!canEdit || colIdx === maxIdx}
           onClick={e => {
             e.stopPropagation();
             onMove(note, 1);
@@ -124,7 +129,9 @@ export const KanbanCard = React.memo(function KanbanCard({
         <select
           className="kanban-status-select"
           value={note.status}
+          disabled={!canEdit}
           onChange={e => {
+            if (!canEdit) return;
             e.stopPropagation();
             onStatusChange(note, e.target.value);
           }}
@@ -137,7 +144,7 @@ export const KanbanCard = React.memo(function KanbanCard({
             background: sc.bg,
             color: sc.color,
             border: `1px solid ${sc.color}40`,
-            cursor: 'pointer',
+            cursor: canEdit ? 'pointer' : 'default',
             fontFamily: 'inherit',
             outline: 'none',
             maxWidth: 90,
@@ -166,8 +173,10 @@ export const KanbanCard = React.memo(function KanbanCard({
           style={{ padding: '2px 6px' }}
           onClick={e => {
             e.stopPropagation();
+            if (!canEdit) return;
             onEdit(`/note/${note.id}`);
           }}
+          disabled={!canEdit}
           title="수정"
         >
           <Icon.edit style={{ width: 11, height: 11 }} />

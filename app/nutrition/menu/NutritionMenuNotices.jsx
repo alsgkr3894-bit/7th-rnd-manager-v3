@@ -1,6 +1,6 @@
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
-export function DuplicateNotice({ diagnostics, repairing, onRepair }) {
+export function DuplicateNotice({ diagnostics, repairing, onRepair, isAdmin = false }) {
   const duplicateRows = Number(diagnostics?.duplicateRows) || 0;
   if (!duplicateRows) return null;
   const menuSamples = asObjectArray(diagnostics?.menuGroups)
@@ -43,9 +43,14 @@ export function DuplicateNotice({ diagnostics, repairing, onRepair }) {
           )}
         </div>
       </div>
-      <button className="btn sm" type="button" onClick={onRepair} disabled={repairing}>
+      <button className="btn sm" type="button" onClick={onRepair} disabled={repairing || !isAdmin}>
         {repairing ? '정리 중…' : '중복 정리'}
       </button>
+      {!isAdmin && (
+        <div style={{ width: '100%', fontSize: 11, color: 'var(--text-3)' }}>
+          정리는 관리자만 실행할 수 있습니다.
+        </div>
+      )}
     </div>
   );
 }

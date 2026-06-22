@@ -10,6 +10,7 @@ export function ManagedProductsCardHeader({
   migrating,
   onMigrate,
   adding,
+  canEdit = false,
   onToggleAdding,
 }) {
   return (
@@ -25,11 +26,11 @@ export function ManagedProductsCardHeader({
         <button className="btn sm" onClick={onExport} disabled={filteredCount === 0}>
           엑셀로 내보내기
         </button>
-        <button className="btn sm" onClick={onMigrate} disabled={migrating}>
+        <button className="btn sm" onClick={onMigrate} disabled={migrating || !canEdit}>
           <Icon.download style={{ width: 12, height: 12 }} />
           {migrating ? '가져오는 중...' : '가격비교에서 전용상품 가져오기'}
         </button>
-        <button className="btn sm" onClick={onToggleAdding}>
+        <button className="btn sm" onClick={onToggleAdding} disabled={!canEdit}>
           {adding ? (
             '닫기'
           ) : (

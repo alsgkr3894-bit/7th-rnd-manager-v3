@@ -10,7 +10,7 @@ function asAmountMap(value) {
 }
 
 // firstMenuCode: 추가 모달 기본 baseMenuCode (호출 시 주입)
-export function useDerivedCompositionForm({ onRefresh = noop } = {}) {
+export function useDerivedCompositionForm({ onRefresh = noop, canEdit = false } = {}) {
   const { showConfirm, confirmElement } = useConfirmDialog();
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({
@@ -23,6 +23,7 @@ export function useDerivedCompositionForm({ onRefresh = noop } = {}) {
   const [saving, setSaving] = useState(false);
 
   const openAdd = (firstMenuCode = '') => {
+    if (!canEdit) return;
     setForm({
       menuCode: '',
       menuName: '',
@@ -34,6 +35,7 @@ export function useDerivedCompositionForm({ onRefresh = noop } = {}) {
   };
 
   const openEdit = comp => {
+    if (!canEdit) return;
     setForm({
       ...comp,
       ingredientCodes: asStringArray(comp.ingredientCodes),
@@ -86,6 +88,7 @@ export function useDerivedCompositionForm({ onRefresh = noop } = {}) {
   };
 
   const handleSaveComp = async () => {
+    if (!canEdit) return;
     if (!String(form.menuName || '').trim()) {
       showToast('파생 메뉴명 입력 필요', 'error');
       return;
@@ -125,6 +128,7 @@ export function useDerivedCompositionForm({ onRefresh = noop } = {}) {
   };
 
   const handleDeleteComp = async comp => {
+    if (!canEdit) return;
     const ok = await showConfirm({
       message: `'${asDisplayText(comp.menuName, '파생 메뉴')}' 및 연결된 영양정보가 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`,
       danger: true,

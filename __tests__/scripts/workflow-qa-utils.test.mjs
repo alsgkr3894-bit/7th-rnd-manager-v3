@@ -6,6 +6,7 @@ import {
   isValidBackupShape,
   formatStepLine,
 } from '../../scripts/workflow-qa-utils.mjs';
+import { step } from '../../scripts/workflow/helpers.mjs';
 import { workflowScenarios } from '../../scripts/workflow/scenarios/index.mjs';
 
 describe('scenarioPassed', () => {
@@ -75,8 +76,10 @@ describe('workflowScenarios', () => {
   test('업무 시나리오 순서를 유지한다', () => {
     expect(workflowScenarios.map(fn => fn.name)).toEqual([
       'scenarioBackupRestorePreview',
+      'scenarioBackupRestoreExecute',
       'scenarioNoteCreate',
       'scenarioMenuMasterCreate',
+      'scenarioMenuMasterCsvDownload',
       'scenarioViewerBlocking',
       'scenarioInvalidBackup',
       'scenarioMenuFormValidation',
@@ -85,11 +88,38 @@ describe('workflowScenarios', () => {
       'scenarioIngredientCreate',
       'scenarioCostMargin',
       'scenarioSalesUpload',
+      'scenarioSalesUploadInvalidExtension',
       'scenarioNutritionMenu',
       'scenarioRecipeCostMargin',
       'scenarioIngredientPriceReport',
       'scenarioCommonCost',
       'scenarioRecipeSaveUI',
+      'scenarioShipmentCsvUpload',
+      'scenarioMenuPriceFailedRowsDownload',
+    ]);
+  });
+});
+
+describe('workflow step timeout', () => {
+  test('성공한 스텝은 ok=true로 기록한다', async () => {
+    const steps = [];
+
+    await expect(step(steps, '즉시 성공', async () => {}, { timeoutMs: 50 })).resolves.toBe(true);
+    expect(steps).toEqual([{ label: '즉시 성공', ok: true }]);
+  });
+
+  test('끝나지 않는 스텝은 timeout 실패로 기록한다', async () => {
+    const steps = [];
+
+    await expect(
+      step(steps, '멈춘 스텝', () => new Promise(() => {}), { timeoutMs: 5 })
+    ).resolves.toBe(false);
+    expect(steps).toEqual([
+      expect.objectContaining({
+        label: '멈춘 스텝',
+        ok: false,
+        error: expect.stringContaining('스텝 타임아웃'),
+      }),
     ]);
   });
 });

@@ -21,6 +21,7 @@ export function TabDerived({
   menuMasters,
   menuSearch = '',
   onOpenBase,
+  canEdit = false,
 }) {
   const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
   const safeIngredients = useMemo(() => asObjectArray(ingredients), [ingredients]);
@@ -43,7 +44,7 @@ export function TabDerived({
     handleSaveComp,
     handleDeleteComp,
     confirmElement,
-  } = useDerivedCompositionForm({ onRefresh: refresh });
+  } = useDerivedCompositionForm({ onRefresh: refresh, canEdit });
 
   const masterByCode = useMemo(() => buildMasterByCode(safeMenuMasters), [safeMenuMasters]);
   const menuByCode = useMemo(() => buildMenuByCode(safeMenus), [safeMenus]);
@@ -85,22 +86,25 @@ export function TabDerived({
         onAdd={openAdd}
         onEdit={openEdit}
         onDelete={handleDeleteComp}
+        canEdit={canEdit}
       />
-      <DerivedCompositionModal
-        modal={modal}
-        form={form}
-        setForm={setForm}
-        safeMenus={safeMenus}
-        ingredientOptions={ingredientOptions}
-        ingredientMetaByCode={ingredientMetaByCode}
-        saving={saving}
-        onClose={() => setModal(null)}
-        onOpenBaseTab={openBaseTab}
-        onAddIngredient={addIngredient}
-        onRemoveIngredient={removeIngredient}
-        onUpdateIngredientAmount={updateIngredientAmount}
-        onSave={handleSaveComp}
-      />
+      {canEdit && (
+        <DerivedCompositionModal
+          modal={modal}
+          form={form}
+          setForm={setForm}
+          safeMenus={safeMenus}
+          ingredientOptions={ingredientOptions}
+          ingredientMetaByCode={ingredientMetaByCode}
+          saving={saving}
+          onClose={() => setModal(null)}
+          onOpenBaseTab={openBaseTab}
+          onAddIngredient={addIngredient}
+          onRemoveIngredient={removeIngredient}
+          onUpdateIngredientAmount={updateIngredientAmount}
+          onSave={handleSaveComp}
+        />
+      )}
       {confirmElement}
     </div>
   );

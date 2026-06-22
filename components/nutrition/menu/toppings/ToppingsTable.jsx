@@ -8,7 +8,7 @@ import {
   toppingAllergenText,
 } from './toppingUtils';
 
-function ToppingRow({ topping, index, lookups, onEdit, onRemove }) {
+function ToppingRow({ topping, index, lookups, onEdit, onRemove, canEdit = false }) {
   const linked = findLinkedToppingIngredient(topping, lookups);
   const toppingName = asDisplayText(topping.toppingName, `추가토핑 ${index + 1}`);
   const productCode = asDisplayText(topping.productCode);
@@ -32,7 +32,12 @@ function ToppingRow({ topping, index, lookups, onEdit, onRemove }) {
       <td style={{ fontSize: 12 }}>{toppingAllergenText(topping, lookups)}</td>
       <td>
         <div style={{ display: 'flex', gap: 4 }}>
-          <button className="btn sm ghost" type="button" onClick={() => onEdit(topping)}>
+          <button
+            className="btn sm ghost"
+            type="button"
+            onClick={() => onEdit(topping)}
+            disabled={!canEdit}
+          >
             <Icon.edit style={{ width: 13, height: 13 }} />
           </button>
           <button
@@ -40,6 +45,7 @@ function ToppingRow({ topping, index, lookups, onEdit, onRemove }) {
             type="button"
             onClick={() => onRemove(topping)}
             style={{ color: 'var(--danger)' }}
+            disabled={!canEdit}
           >
             <Icon.trash style={{ width: 13, height: 13 }} />
           </button>
@@ -49,7 +55,7 @@ function ToppingRow({ topping, index, lookups, onEdit, onRemove }) {
   );
 }
 
-export function ToppingsTable({ toppings, lookups, onEdit, onRemove }) {
+export function ToppingsTable({ toppings, lookups, onEdit, onRemove, canEdit = false }) {
   return (
     <div className="card table-card">
       <div style={{ overflowX: 'auto' }}>
@@ -74,6 +80,7 @@ export function ToppingsTable({ toppings, lookups, onEdit, onRemove }) {
                 lookups={lookups}
                 onEdit={onEdit}
                 onRemove={onRemove}
+                canEdit={canEdit}
               />
             ))}
           </tbody>

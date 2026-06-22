@@ -3,6 +3,7 @@ import { STATUSES } from '@/lib/note';
 
 export function NoteContextMenu({
   ctxMenu,
+  canEdit = false,
   pinnedIds,
   onClose,
   onEdit,
@@ -55,6 +56,7 @@ export function NoteContextMenu({
         ].map(item => (
           <button
             key={item.label}
+            disabled={item.label !== (pinnedIds.has(note.id) ? '핀 해제' : '핀 고정') && !canEdit}
             style={{
               display: 'block',
               width: '100%',
@@ -64,12 +66,19 @@ export function NoteContextMenu({
               color: 'var(--text-1)',
               background: 'none',
               border: 'none',
-              cursor: 'pointer',
+              cursor:
+                item.label !== (pinnedIds.has(note.id) ? '핀 해제' : '핀 고정') && !canEdit
+                  ? 'not-allowed'
+                  : 'pointer',
               fontFamily: 'inherit',
               borderBottom: '1px solid var(--border)',
             }}
             onMouseDown={e => {
               e.preventDefault();
+              if (item.label !== (pinnedIds.has(note.id) ? '핀 해제' : '핀 고정') && !canEdit) {
+                close();
+                return;
+              }
               item.action();
               close();
             }}
@@ -85,6 +94,7 @@ export function NoteContextMenu({
             {STATUSES.map(status => (
               <button
                 key={status}
+                disabled={!canEdit}
                 style={{
                   fontSize: 10,
                   padding: '2px 7px',
@@ -92,11 +102,15 @@ export function NoteContextMenu({
                   background: 'var(--surface-2)',
                   color: 'var(--text-2)',
                   border: '1px solid var(--border)',
-                  cursor: 'pointer',
+                  cursor: canEdit ? 'pointer' : 'not-allowed',
                   fontFamily: 'inherit',
                 }}
                 onMouseDown={e => {
                   e.preventDefault();
+                  if (!canEdit) {
+                    close();
+                    return;
+                  }
                   onStatusChange(note.id, status);
                   close();
                 }}
@@ -107,6 +121,7 @@ export function NoteContextMenu({
           </div>
         </div>
         <button
+          disabled={!canEdit}
           style={{
             display: 'block',
             width: '100%',
@@ -116,11 +131,15 @@ export function NoteContextMenu({
             color: 'var(--negative)',
             background: 'none',
             border: 'none',
-            cursor: 'pointer',
+            cursor: canEdit ? 'pointer' : 'not-allowed',
             fontFamily: 'inherit',
           }}
           onMouseDown={e => {
             e.preventDefault();
+            if (!canEdit) {
+              close();
+              return;
+            }
             onDelete(note);
             close();
           }}

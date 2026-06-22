@@ -40,6 +40,7 @@ export function MenuMasterDialogs({
   deletePlan,
   deletePlanLoading,
   confirmReset,
+  isViewer = false,
   brandCats,
   onSaveRow,
   onRecipeSaved,
@@ -53,7 +54,7 @@ export function MenuMasterDialogs({
 }) {
   return (
     <>
-      {editRow && (
+      {!isViewer && editRow && (
         <MenuMasterEditModal
           row={editRow}
           isNew={false}
@@ -64,7 +65,7 @@ export function MenuMasterDialogs({
         />
       )}
 
-      {addOpen && (
+      {!isViewer && addOpen && (
         <MenuMasterEditModal
           row={null}
           isNew
@@ -75,9 +76,9 @@ export function MenuMasterDialogs({
         />
       )}
 
-      {bulkOpen && <BulkPriceModal onClose={onCloseBulk} onDone={onRecipeSaved} />}
+      {!isViewer && bulkOpen && <BulkPriceModal onClose={onCloseBulk} onDone={onRecipeSaved} />}
 
-      {deleteTarget && (
+      {!isViewer && deleteTarget && (
         <ConfirmDialog
           open
           message={buildMenuDeleteMessage(deleteTarget, deletePlan, deletePlanLoading)}
@@ -87,7 +88,7 @@ export function MenuMasterDialogs({
         />
       )}
 
-      {confirmReset && (
+      {!isViewer && confirmReset && (
         <ConfirmDialog
           open
           message="메뉴 마스터 전체를 삭제합니다. 계속할까요?"

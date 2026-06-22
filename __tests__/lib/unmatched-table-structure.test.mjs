@@ -24,6 +24,8 @@ describe('unmatched table structure', () => {
   test('UnmatchedTable keeps state orchestration and delegates bulk/table UI sections', () => {
     expect(tableSource).toContain('<UnmatchedBulkActions');
     expect(tableSource).toContain('<UnmatchedIssueTable');
+    expect(tableSource).toContain('canEdit = false');
+    expect(tableSource).toContain('if (!canEdit)');
     expect(tableSource).toContain('useReducer');
     expect(tableSource).toContain('getClassificationNameOptions');
     expect(tableSource).toContain('setNameOpts(opts)');
@@ -38,15 +40,18 @@ describe('unmatched table structure', () => {
   test('child components own bulk action, rule panel, issue table, and issue row rendering', () => {
     expect(bulkActionsSource).toContain('export function UnmatchedBulkActions');
     expect(bulkActionsSource).toContain('<UnmatchedBulkRulePanel');
+    expect(bulkActionsSource).toContain('canEdit={canEdit}');
     expect(bulkActionsSource).toContain('선택 일괄 제외');
     expect(bulkRuleSource).toContain('export function UnmatchedBulkRulePanel');
     expect(bulkRuleSource).toContain('<ComboBox');
+    expect(bulkRuleSource).toContain('disabled={!canEdit}');
     expect(bulkRuleSource).toContain('CATEGORY_ORDER');
     expect(issueTableSource).toContain('export function UnmatchedIssueTable');
     expect(issueTableSource).toContain('<Pagination');
     expect(issueTableSource).toContain('<UnmatchedIssueRow');
     expect(issueRowSource).toContain('export function UnmatchedIssueRow');
     expect(issueRowSource).toContain('<UnmatchedResolveForm');
+    expect(issueRowSource).toContain('canEdit={canEdit}');
     expect(issueRowSource).toContain('formatNumber');
     expect(issueRowSource).toContain('미해결');
     expect(issueRowSource).toContain('해결됨');

@@ -44,7 +44,7 @@ function readAuth() {
   try {
     return sessionStorage.getItem(SESSION_KEY) === '1';
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -64,6 +64,7 @@ export function useSettingsAuth() {
       try {
         sessionStorage.setItem(SESSION_KEY, '1');
       } catch {}
+      if (!readAuth()) return false;
       emit();
       return true;
     }

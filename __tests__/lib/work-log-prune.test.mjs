@@ -15,6 +15,12 @@ describe('work-log pruning 순수 로직', () => {
     expect(workLogCutoffDate(0, now)).toBe('2026-06-05');
   });
 
+  test('workLogCutoffDate — 잘못된 keepDays는 기본 보관 기간으로 닫는다', () => {
+    const now = new Date('2026-06-05T12:00:00Z');
+    expect(workLogCutoffDate(-1, now)).toBe('2026-04-06');
+    expect(workLogCutoffDate('bad', now)).toBe('2026-04-06');
+  });
+
   test('filterOldWorkLogs — cutoff 미만 로그만 반환', () => {
     const all = [
       { id: 1, date: '2026-04-01' }, // old

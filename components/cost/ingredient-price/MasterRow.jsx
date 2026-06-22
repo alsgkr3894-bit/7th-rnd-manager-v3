@@ -61,7 +61,7 @@ export function MasterRow({
               type="checkbox"
               checked={selected}
               onChange={onToggleSelect}
-              disabled={r.meta?.id == null}
+              disabled={readOnly || r.meta?.id == null}
               style={{ width: 15, height: 15, accentColor: 'var(--accent)' }}
             />
           </td>
@@ -129,6 +129,7 @@ export function MasterRow({
           <InlineEditCell
             value={r.priceWithTax ?? ''}
             type="number"
+            nonNegative
             align="right"
             readOnly={readOnly}
             onSave={value => onInlineSave(r, { priceOverride: value })}

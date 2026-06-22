@@ -19,12 +19,14 @@ import {
  *   onChange   fn(newValue: string)
  *   suggestions  string[]  existing tags to suggest
  *   placeholder  string
+ *   disabled     boolean
  */
 export function TagInput({
   value = '',
   onChange,
   suggestions = [],
   placeholder = DEFAULT_TAG_INPUT_PLACEHOLDER,
+  disabled = false,
 }) {
   const tags = useMemo(() => parseTagInputValue(value), [value]);
   const safePlaceholder = useMemo(() => normalizeTagInputPlaceholder(placeholder), [placeholder]);
@@ -43,6 +45,7 @@ export function TagInput({
   }
 
   function add(tag) {
+    if (disabled) return;
     const t = normalizeTagText(tag);
     if (!t || tags.includes(t)) {
       setInput('');
@@ -55,10 +58,12 @@ export function TagInput({
   }
 
   function remove(tag) {
+    if (disabled) return;
     emit(tags.filter(t => t !== tag));
   }
 
   function handleKey(e) {
+    if (disabled) return;
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
       if (input.trim()) add(input);
@@ -82,9 +87,12 @@ export function TagInput({
           padding: '5px 8px',
           minHeight: 40,
           background: 'var(--surface)',
-          cursor: 'text',
+          cursor: disabled ? 'not-allowed' : 'text',
+          opacity: disabled ? 0.72 : 1,
         }}
-        onClick={() => inputRef.current?.focus()}
+        onClick={() => {
+          if (!disabled) inputRef.current?.focus();
+        }}
       >
         {tags.map(t => (
           <span
@@ -105,15 +113,16 @@ export function TagInput({
             {t}
             <button
               type="button"
+              disabled={disabled}
               onMouseDown={e => {
                 e.preventDefault();
                 e.stopPropagation();
-                remove(t);
+                if (!disabled) remove(t);
               }}
               style={{
                 background: 'none',
                 border: 'none',
-                cursor: 'pointer',
+                cursor: disabled ? 'not-allowed' : 'pointer',
                 padding: '0 0 0 2px',
                 lineHeight: 1,
                 color: 'inherit',
@@ -130,15 +139,19 @@ export function TagInput({
           ref={inputRef}
           value={input}
           onChange={e => {
+            if (disabled) return;
             setInput(e.target.value);
             setOpen(true);
           }}
           onKeyDown={handleKey}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            if (!disabled) setOpen(true);
+          }}
           /* 드롭다운 옵션·태그삭제 버튼이 모두 onMouseDown+preventDefault라
              클릭 시 blur가 발생하지 않음 → 고정 타임아웃 없이 즉시 닫아도 안전 */
           onBlur={() => setOpen(false)}
           placeholder={tags.length === 0 ? safePlaceholder : ''}
+          disabled={disabled}
           style={{
             border: 'none',
             outline: 'none',
@@ -152,7 +165,7 @@ export function TagInput({
           }}
         />
       </div>
-      {open && matches.length > 0 && (
+      {!disabled && open && matches.length > 0 && (
         <div
           style={{
             position: 'absolute',

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Icon } from '@/components/icons';
 import { useUnmatchedIssues } from '@/lib/sales/use-unmatched-issues';
@@ -34,6 +35,8 @@ function safePeriod(issue) {
 
 export default function Page() {
   const { ready, issues, resolve, bulkExclude, bulkRule } = useUnmatchedIssues();
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
   const [statusFilter, setStatusFilter] = useState('open'); // open | resolved | all
   const [monthFilter, setMonthFilter] = useState('all'); // 'all' | 'YYYY-M'
   const [search, setSearch] = useState('');
@@ -46,6 +49,7 @@ export default function Page() {
   }, []);
 
   async function handleReclassify() {
+    if (!canEdit) return;
     setReclassifying(true);
     try {
       await reapplyToUploadedData();
@@ -124,7 +128,7 @@ export default function Page() {
             className="btn sm"
             style={{ borderColor: 'var(--warn)', color: 'var(--warn)', flexShrink: 0 }}
             onClick={handleReclassify}
-            disabled={reclassifying}
+            disabled={reclassifying || !canEdit}
           >
             {reclassifying ? '반영 중…' : '지금 반영'}
           </button>
@@ -166,6 +170,7 @@ export default function Page() {
       ) : (
         <UnmatchedTable
           issues={filtered}
+          canEdit={canEdit}
           onResolve={resolve}
           onBulkExclude={bulkExclude}
           onBulkRule={bulkRule}

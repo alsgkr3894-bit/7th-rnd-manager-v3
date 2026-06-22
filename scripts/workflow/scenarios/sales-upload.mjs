@@ -1,3 +1,5 @@
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { dbDeleteById, dbInsertOne, goto, MAIN_DB, step } from '../helpers.mjs';
 
 // 판매량 파일 삽입 → 업로드 이력 반영
@@ -35,4 +37,39 @@ export async function scenarioSalesUpload({ page, base, runId }) {
   });
 
   return { name: '판매량 파일 삽입 → 업로드 이력 반영', steps };
+}
+
+export async function scenarioSalesUploadInvalidExtension({ page, base, tmpDir, runId }) {
+  const steps = [];
+  const invalidPath = join(tmpDir, `workflow-sales-invalid-${runId}.txt`);
+
+  await step(steps, '판매량 업로드 잘못된 확장자 fixture 생성', async () => {
+    writeFileSync(invalidPath, '메뉴명,판매량(개)\n테스트,1\n', 'utf8');
+  });
+
+  await step(steps, '판매량 업로드 페이지 진입 및 파일 입력 가능 대기', async () => {
+    await goto(page, base, '/menu-sales/upload');
+    await page.waitForFunction(
+      () => {
+        const input = document.querySelector('input[type="file"]');
+        return input && !input.disabled;
+      },
+      undefined,
+      { timeout: 30_000 }
+    );
+  });
+
+  await step(steps, '잘못된 확장자 판매량 파일 선택 → 오류 토스트', async () => {
+    await page.setInputFiles('input[type="file"]', invalidPath);
+    await page.waitForFunction(
+      () =>
+        [...document.querySelectorAll('.toast')].some(t =>
+          t.textContent.includes('지원하지 않는 파일 형식입니다')
+        ),
+      undefined,
+      { timeout: 15_000 }
+    );
+  });
+
+  return { name: '판매량 업로드 잘못된 확장자 UX', steps };
 }

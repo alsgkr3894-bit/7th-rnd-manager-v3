@@ -2,6 +2,8 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 const pageSource = readFileSync(resolve('app/note/sample/page.jsx'), 'utf8');
+const writePageSource = readFileSync(resolve('app/note/sample/write/page.jsx'), 'utf8');
+const detailPageSource = readFileSync(resolve('app/note/sample/[id]/page.jsx'), 'utf8');
 const actionsSource = readFileSync(resolve('app/note/sample/_SamplePageActions.jsx'), 'utf8');
 const filtersSource = readFileSync(resolve('app/note/sample/_SampleFilterControls.jsx'), 'utf8');
 const categoryFilterSource = readFileSync(
@@ -62,6 +64,15 @@ const sampleCardActionsSource = readFileSync(
   resolve('components/note/sample-card/SampleCardActions.jsx'),
   'utf8'
 );
+const sampleListRowSource = readFileSync(resolve('components/note/SampleListRow.jsx'), 'utf8');
+const sampleDetailModalSource = readFileSync(
+  resolve('app/note/sample/_SampleDetailModal.jsx'),
+  'utf8'
+);
+const sampleDetailHeaderSource = readFileSync(
+  resolve('app/note/sample/detail-modal/SampleDetailHeader.jsx'),
+  'utf8'
+);
 const sampleCardUtilsSource = readFileSync(
   resolve('components/note/sample-card/sampleCardUtils.js'),
   'utf8'
@@ -112,6 +123,7 @@ const actionsHookSource = readFileSync(
   resolve('app/note/sample/useSampleRecordActions.js'),
   'utf8'
 );
+const batchHookSource = readFileSync(resolve('hooks/useSampleBatchMode.js'), 'utf8');
 
 describe('sample page structure', () => {
   test('sample page delegates major rendering sections to focused components', () => {
@@ -215,6 +227,14 @@ describe('sample page structure', () => {
     expect(pageDialogsSource).toContain('<ConfirmDialog');
     expect(pageDialogsSource).toContain('샘플 ${selectedCount}개를 삭제할까요?');
     expect(recordsSource).toContain('export function SampleRecordsView');
+    expect(recordsSource).toContain("from '@/hooks/usePagination'");
+    expect(recordsSource).toContain("from '@/components/ui/Pagination'");
+    expect(recordsSource).toContain('const SAMPLE_PAGE_SIZE = 24');
+    expect(recordsSource).toContain(
+      'const { page, goTo, totalPages, paged, total } = usePagination'
+    );
+    expect(recordsSource).toContain('rows={paged}');
+    expect(recordsSource).toContain('<Pagination');
     expect(recordsSource).toContain('<SampleLoadingGrid');
     expect(recordsSource).toContain('<SampleEmptyState');
     expect(recordsSource).toContain('<SampleGridView');
@@ -296,13 +316,15 @@ describe('sample page structure', () => {
     expect(controllerPropsSource).toContain('buildSampleFilterProps(context)');
     expect(controllerPropsSource).toContain('buildSampleDialogsProps(context)');
     expect(controllerPropsSource).toContain("router.push('/note/sample/write')");
+    expect(controllerPropsSource).toContain('if (!canEdit) return');
+    expect(controllerPropsSource).toContain('if (!canEdit || sample?.id == null) return');
     expect(controllerPropsSource).toContain('router.push(`/note/sample/${sample.id}`)');
     expect(controllerPropsSource).not.toContain("from '@/lib/sample/constants'");
     expect(controllerPropsSource).not.toContain("from './samplePageStateUtils'");
     expect(controllerTopPropsSource).toContain('export function buildSampleLoadErrorProps');
     expect(controllerTopPropsSource).toContain('export function buildSampleHeaderProps');
     expect(controllerTopPropsSource).toContain('export function buildSampleActionsProps');
-    expect(controllerTopPropsSource).toContain('onStartBatchMode: () => batch.setBatchMode(true)');
+    expect(controllerTopPropsSource).toContain('if (canEdit) batch.setBatchMode(true)');
     expect(controllerViewPropsSource).toContain(
       "export { buildSampleFilterProps } from './samplePageControllerFilterProps'"
     );
@@ -322,11 +344,11 @@ describe('sample page structure', () => {
     expect(controllerCalendarPropsSource).toContain('export function buildSampleCalendarProps');
     expect(controllerCalendarPropsSource).toContain('onOpenSample: setDetailRec');
     expect(controllerRecordsPropsSource).toContain('export function buildSampleRecordsProps');
-    expect(controllerRecordsPropsSource).toContain('onCreateSample: openWrite');
+    expect(controllerRecordsPropsSource).toContain('if (canEdit) openWrite()');
     expect(controllerDialogPropsSource).toContain('export function buildSampleCompareBarProps');
     expect(controllerDialogPropsSource).toContain('export function buildSampleDialogsProps');
     expect(controllerDialogPropsSource).toContain(
-      'onDeleteDetail: () => detailRec && recordActions.handleDelete(detailRec)'
+      'onDeleteDetail: () => canEdit && detailRec && recordActions.handleDelete(detailRec)'
     );
     expect(stateHookSource).toContain('export function useSamplePageState');
     expect(stateHookSource).toContain('export { SAMPLE_SORT_OPTIONS }');
@@ -378,5 +400,44 @@ describe('sample page structure', () => {
     expect(actionsHookSource).toContain('await updateSample(sampleId');
     expect(actionsHookSource).toContain('await initDB()');
     expect(actionsHookSource).toContain("showToast('샘플을 복사했어요', 'ok')");
+  });
+
+  test('sample write controls follow current role state', () => {
+    expect(controllerSource).toContain("from '@/hooks/useCurrentRole'");
+    expect(controllerSource).toContain('const canEdit = roleReady && isAdmin');
+    expect(controllerSource).toContain('useSampleBatchMode(');
+    expect(controllerSource).toContain('canEdit');
+    expect(controllerPropsSource).toContain('canEdit = false');
+    expect(controllerTopPropsSource).toContain('canEdit = false');
+    expect(controllerRecordsPropsSource).toContain('canEdit = false');
+    expect(controllerDialogPropsSource).toContain('canEdit = false');
+    expect(batchHookSource).toContain('canEdit = false');
+    expect(batchHookSource).toContain('if (!canEdit)');
+    expect(actionsHookSource).toContain('canEdit = false');
+    expect(actionsHookSource).toContain('if (!canEdit) return');
+    expect(actionsSource).toContain('canEdit = false');
+    expect(actionsSource).toContain('disabled={!canEdit}');
+    expect(recordsSource).toContain('canEdit = false');
+    expect(gridViewSource).toContain('canEdit = false');
+    expect(listViewSource).toContain('canEdit = false');
+    expect(sampleCardSource).toContain('canEdit = false');
+    expect(sampleCardBodySource).toContain('canEdit={canEdit}');
+    expect(sampleCardHeaderSource).toContain('canEdit = false');
+    expect(sampleRatingStarsSource).toContain('disabled={!canEdit}');
+    expect(sampleCardActionsSource).toContain('disabled={!canEdit}');
+    expect(sampleListRowSource).toContain('disabled={!canEdit}');
+    expect(pageDialogsSource).toContain('canEdit = false');
+    expect(sampleDetailModalSource).toContain('canEdit = false');
+    expect(sampleDetailHeaderSource).toContain('disabled={!canEdit}');
+    expect(writePageSource).toContain("from '@/hooks/useCurrentRole'");
+    expect(writePageSource).toContain('if (!roleReady) return');
+    expect(writePageSource).toContain('}, [canEdit, roleReady]);');
+    expect(writePageSource).toContain('if (!canEdit) return');
+    expect(writePageSource).toContain('disabled={saving || !canEdit}');
+    expect(writePageSource).toContain('readOnly={!canEdit}');
+    expect(detailPageSource).toContain("from '@/hooks/useCurrentRole'");
+    expect(detailPageSource).toContain('if (!canEdit) return');
+    expect(detailPageSource).toContain('disabled={saving || !canEdit}');
+    expect(detailPageSource).toContain('readOnly={!canEdit}');
   });
 });

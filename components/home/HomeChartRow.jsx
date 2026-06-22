@@ -20,6 +20,7 @@ export function HomeChartRow({
   salesKpi,
   router,
   isTrendEmpty,
+  canEdit = false,
 }) {
   const donutItems = normalizeDonutItems(donut?.items);
   const safeDonutItems = donutItems.map((item, index) => ({
@@ -70,8 +71,8 @@ export function HomeChartRow({
             icon={<Icon.chart style={{ width: 32, height: 32 }} />}
             title="판매량 데이터가 없습니다"
             desc="메뉴 판매량을 업로드하면 추이가 표시됩니다"
-            action="판매량 업로드"
-            onAction={() => router?.push?.('/menu-sales/upload')}
+            action={canEdit ? '판매량 업로드' : undefined}
+            onAction={canEdit ? () => router?.push?.('/menu-sales/upload') : undefined}
           />
         ) : trend ? (
           <>

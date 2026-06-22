@@ -11,6 +11,7 @@ export const NoteTableRow = React.memo(function NoteTableRow({
   onEdit,
   onDelete,
   onStatusChange,
+  canEdit = false,
 }) {
   const sc = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
 
@@ -35,6 +36,7 @@ export const NoteTableRow = React.memo(function NoteTableRow({
           value={note.status}
           onChange={e => onStatusChange(note.id, e.target.value, e)}
           onClick={e => e.stopPropagation()}
+          disabled={!canEdit}
           style={{
             fontSize: 11,
             fontWeight: 700,
@@ -43,7 +45,7 @@ export const NoteTableRow = React.memo(function NoteTableRow({
             background: sc.bg,
             color: sc.color,
             border: `1px solid ${sc.color}40`,
-            cursor: 'pointer',
+            cursor: canEdit ? 'pointer' : 'default',
             fontFamily: 'inherit',
             outline: 'none',
           }}
@@ -61,6 +63,7 @@ export const NoteTableRow = React.memo(function NoteTableRow({
           <button
             className="btn sm"
             onClick={() => onEdit(note)}
+            disabled={!canEdit}
             aria-label={`${note.title || '노트'} 수정`}
           >
             <Icon.edit style={{ width: 12, height: 12 }} />
@@ -69,6 +72,7 @@ export const NoteTableRow = React.memo(function NoteTableRow({
             className="btn sm"
             style={{ color: 'var(--negative)' }}
             onClick={e => onDelete(note, e)}
+            disabled={!canEdit}
             aria-label={`${note.title || '노트'} 삭제`}
           >
             <Icon.trash style={{ width: 12, height: 12 }} />

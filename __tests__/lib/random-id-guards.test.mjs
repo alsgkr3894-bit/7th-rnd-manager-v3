@@ -22,4 +22,10 @@ describe('random id/key guards', () => {
     expect(read('components/ProgressBar.jsx')).toContain('저장 id/key에는 사용하지 않는다');
     expect(read('app/not-found.jsx')).toContain('저장 id/key에는 사용하지 않는다');
   });
+
+  test('404 장식 컨테이너 정리는 innerHTML 대신 replaceChildren을 사용한다', () => {
+    const source = read('app/not-found.jsx');
+    expect(source).toContain('wrap.replaceChildren()');
+    expect(source).not.toContain('innerHTML');
+  });
 });

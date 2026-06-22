@@ -56,10 +56,14 @@ const dbMock = {
 };
 
 jest.unstable_mockModule('@/lib/db', () => dbMock);
+jest.unstable_mockModule('@/lib/auth/guard', () => ({
+  assertActiveAdmin: jest.fn(async () => {}),
+}));
 
 // ── store import (mock 이후) ───────────────────────────────────
 const { getAllSuppliers, addSupplier, updateSupplier, deleteSupplier } =
   await import('@/lib/cost/suppliers/store');
+const { assertActiveAdmin } = await import('@/lib/auth/guard');
 
 // ── 각 테스트 전 초기화 ───────────────────────────────────────
 beforeEach(() => {
@@ -70,6 +74,7 @@ beforeEach(() => {
   dbMock.hasStore.mockReturnValue(true);
   // getAll은 현재 _store 반환
   dbMock.getAll.mockImplementation(async () => [..._store]);
+  assertActiveAdmin.mockClear();
 });
 
 // ── 테스트 ────────────────────────────────────────────────────

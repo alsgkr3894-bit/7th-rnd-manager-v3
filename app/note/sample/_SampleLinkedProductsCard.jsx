@@ -9,6 +9,7 @@ export function SampleLinkedProductsCard({
   onBlurSearch,
   onAdd,
   onRemove,
+  readOnly = false,
 }) {
   const linkedItems = Array.isArray(linked)
     ? linked
@@ -22,15 +23,16 @@ export function SampleLinkedProductsCard({
   const add = typeof onAdd === 'function' ? onAdd : noop;
   const remove = typeof onRemove === 'function' ? onRemove : noop;
   const query = safeSearch.trim().toLowerCase();
-  const filtered = query
-    ? safeOptions
-        .filter(
-          option =>
-            asDisplayText(option.name).toLowerCase().includes(query) ||
-            asDisplayText(option.code).toLowerCase().includes(query)
-        )
-        .slice(0, 12)
-    : [];
+  const filtered =
+    !readOnly && query
+      ? safeOptions
+          .filter(
+            option =>
+              asDisplayText(option.name).toLowerCase().includes(query) ||
+              asDisplayText(option.code).toLowerCase().includes(query)
+          )
+          .slice(0, 12)
+      : [];
 
   return (
     <div className="card" style={{ marginBottom: 12 }}>
@@ -45,6 +47,7 @@ export function SampleLinkedProductsCard({
           placeholder="식자재명 또는 메뉴명 검색"
           onChange={event => updateSearch(event.target.value)}
           onBlur={blurSearch}
+          disabled={readOnly}
         />
         {filtered.length > 0 && (
           <div
@@ -80,7 +83,7 @@ export function SampleLinkedProductsCard({
                   }}
                   onMouseDown={event => {
                     event.preventDefault();
-                    add(option);
+                    if (!readOnly) add(option);
                   }}
                 >
                   <span
@@ -133,11 +136,14 @@ export function SampleLinkedProductsCard({
                 {name}
                 <button
                   type="button"
-                  onClick={() => remove(sourceIndex)}
+                  onClick={() => {
+                    if (!readOnly) remove(sourceIndex);
+                  }}
+                  disabled={readOnly}
                   style={{
                     border: 0,
                     background: 'transparent',
-                    cursor: 'pointer',
+                    cursor: readOnly ? 'not-allowed' : 'pointer',
                     padding: 0,
                     display: 'flex',
                     color: 'inherit',

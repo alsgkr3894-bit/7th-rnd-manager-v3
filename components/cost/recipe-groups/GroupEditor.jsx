@@ -15,6 +15,7 @@ export function GroupEditor({
   unitPriceMap,
   isNew,
   saving,
+  readOnly = false,
   onSave,
   onDelete,
   onCancel,
@@ -22,10 +23,12 @@ export function GroupEditor({
   const sizeLabels = useMemo(() => draft.sizes.filter(Boolean), [draft.sizes]);
 
   function setField(key, val) {
+    if (readOnly) return;
     setDraft(d => ({ ...d, [key]: val }));
   }
 
   function setSize(idx, val) {
+    if (readOnly) return;
     setDraft(d => {
       const s = [...d.sizes];
       s[idx] = val;
@@ -33,13 +36,16 @@ export function GroupEditor({
     });
   }
   function addSize() {
+    if (readOnly) return;
     setDraft(d => ({ ...d, sizes: [...d.sizes, ''] }));
   }
   function removeSize(idx) {
+    if (readOnly) return;
     setDraft(d => ({ ...d, sizes: d.sizes.filter((_, i) => i !== idx) }));
   }
 
   function toggleCategory(cat) {
+    if (readOnly) return;
     setDraft(d => {
       const cats = d.defaultCategories || [];
       return {
@@ -50,6 +56,7 @@ export function GroupEditor({
   }
 
   function setIngredientQty(lineIdx, sizeLabel, val) {
+    if (readOnly) return;
     setDraft(d => ({
       ...d,
       ingredients: d.ingredients.map((line, i) =>
@@ -59,6 +66,7 @@ export function GroupEditor({
   }
 
   function addIngredient(meta) {
+    if (readOnly) return;
     setDraft(d => ({
       ...d,
       ingredients: [...d.ingredients, createGroupIngredientLine(meta, unitPriceMap, sizeLabels)],
@@ -66,6 +74,7 @@ export function GroupEditor({
   }
 
   function removeIngredient(idx) {
+    if (readOnly) return;
     setDraft(d => ({ ...d, ingredients: d.ingredients.filter((_, i) => i !== idx) }));
   }
 
@@ -79,15 +88,17 @@ export function GroupEditor({
         draft={draft}
         isNew={isNew}
         saving={saving}
+        readOnly={readOnly}
         onSave={onSave}
         onDelete={onDelete}
         onCancel={onCancel}
       />
 
-      <GroupEditorBasicFields draft={draft} onField={setField} />
+      <GroupEditorBasicFields draft={draft} readOnly={readOnly} onField={setField} />
 
       <GroupEditorSizeFields
         sizes={draft.sizes}
+        readOnly={readOnly}
         onSize={setSize}
         onAdd={addSize}
         onRemove={removeSize}
@@ -95,6 +106,7 @@ export function GroupEditor({
 
       <GroupEditorCategoryChips
         selectedCategories={draft.defaultCategories || []}
+        readOnly={readOnly}
         onToggle={toggleCategory}
       />
 
@@ -103,6 +115,7 @@ export function GroupEditor({
         sizeLabels={sizeLabels}
         unitPriceMap={unitPriceMap}
         costBySizes={costBySizes}
+        readOnly={readOnly}
         onQty={setIngredientQty}
         onRemove={removeIngredient}
       />
@@ -112,6 +125,7 @@ export function GroupEditor({
         unitPriceMap={unitPriceMap}
         onSelect={addIngredient}
         alreadyAdded={draft.ingredients.map(i => i.productCode)}
+        disabled={readOnly}
       />
     </div>
   );

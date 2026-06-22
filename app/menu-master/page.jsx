@@ -25,6 +25,8 @@ import {
   MENU_RECIPE_SUMMARY_STATUS,
 } from '@/lib/menu-master/recipe-summary';
 import { normalizePersonalPizzaCodes } from '@/lib/menu-master/normalize';
+import { buildMenuReadinessMap } from '@/lib/menu-master/readiness';
+import { MenuReadinessPanel } from '@/components/menu-master/MenuReadinessPanel';
 import { useMenuMasterActions } from './useMenuMasterActions';
 import { exportMenuMasterCsv } from './menuMasterExport';
 
@@ -40,11 +42,16 @@ const PIZZA_CATEGORIES = [
   MENU_CATEGORY.EDGE,
 ];
 
+const EMPTY_ROWS = [];
+const EMPTY_RECIPE_SUMMARY_MAP = new Map();
+
 /* ── 메인 페이지 ── */
 export default function Page() {
   const isMain = useIsMainBrand();
   const { isViewer } = useCurrentRole();
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'issues'
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'issues' | 'readiness'
+  const [readinessMap, setReadinessMap] = useState(new Map());
+  const [readinessLoading, setReadinessLoading] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [editRow, setEditRow] = useState(null);
@@ -78,8 +85,8 @@ export default function Page() {
     },
     { initialData: null, onError: err => console.error('[MenuMaster] load failed', err) }
   );
-  const rows = data?.rows ?? [];
-  const recipeSummaryMap = data?.recipeSummaryMap ?? new Map();
+  const rows = data?.rows ?? EMPTY_ROWS;
+  const recipeSummaryMap = data?.recipeSummaryMap ?? EMPTY_RECIPE_SUMMARY_MAP;
   useVisibilityRefresh(reload);
 
   const {
@@ -107,6 +114,7 @@ export default function Page() {
       setResetting,
       setEditRow,
       setAddOpen,
+      canEdit: !isViewer,
     });
 
   function handleExportCsv() {
@@ -126,6 +134,34 @@ export default function Page() {
   ).length;
 
   const { page, goTo, totalPages, paged, total } = usePagination(filtered, 60);
+
+  // '출시 준비' 탭 전환 시 readiness 계산
+  useEffect(() => {
+    if (viewMode !== 'readiness') return;
+    if (rows.length === 0) {
+      setReadinessMap(new Map());
+      setReadinessLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setReadinessLoading(true);
+    buildMenuReadinessMap(rows, recipeSummaryMap)
+      .then(map => {
+        if (!cancelled) setReadinessMap(map);
+      })
+      .catch(e => {
+        if (!cancelled) {
+          console.warn('[menu-master] readiness 계산 실패', e);
+          setReadinessMap(new Map());
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setReadinessLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [viewMode, rows, recipeSummaryMap]);
 
   return (
     <main className="main">
@@ -179,7 +215,12 @@ export default function Page() {
       )}
 
       {!loading && rows.length === 0 && (
-        <MenuMasterEmptyState isMain={isMain} seeding={seeding} onSeed={handleSeed} />
+        <MenuMasterEmptyState
+          isMain={isMain}
+          isViewer={isViewer}
+          seeding={seeding}
+          onSeed={handleSeed}
+        />
       )}
 
       {rows.length > 0 && (
@@ -197,9 +238,23 @@ export default function Page() {
             >
               이슈{recipeNeedsCheck > 0 && ` ${recipeNeedsCheck}`}
             </button>
+            <button
+              className={'chip' + (viewMode === 'readiness' ? ' active' : '')}
+              onClick={() => setViewMode('readiness')}
+            >
+              출시 준비
+            </button>
           </div>
 
-          {viewMode === 'issues' ? (
+          {viewMode === 'readiness' ? (
+            <MenuReadinessPanel
+              readinessMap={readinessMap}
+              loading={readinessLoading}
+              catFilter={catFilter}
+              isViewer={isViewer}
+              onEdit={setEditRow}
+            />
+          ) : viewMode === 'issues' ? (
             <MenuMasterIssuesPanel
               rows={rows}
               recipeSummaryMap={recipeSummaryMap}
@@ -243,7 +298,7 @@ export default function Page() {
         </div>
       )}
 
-      <MenuPriceUploadCard onReplaced={reload} />
+      <MenuPriceUploadCard onReplaced={reload} isViewer={isViewer} />
 
       <MenuMasterDialogs
         editRow={editRow}
@@ -253,6 +308,7 @@ export default function Page() {
         deletePlan={deletePlan}
         deletePlanLoading={deletePlanLoading}
         confirmReset={confirmReset}
+        isViewer={isViewer}
         brandCats={brandCats}
         onSaveRow={handleSaveRow}
         onRecipeSaved={reload}

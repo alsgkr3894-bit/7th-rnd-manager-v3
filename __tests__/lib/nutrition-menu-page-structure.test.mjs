@@ -11,6 +11,12 @@ const workspaceSource = readFileSync(
   resolve('app/nutrition/menu/NutritionMenuWorkspace.jsx'),
   'utf8'
 );
+const tabBaseSource = readFileSync(resolve('components/nutrition/menu/TabBase.jsx'), 'utf8');
+const baseEditorSource = readFileSync(resolve('hooks/useNutritionBaseEditor.js'), 'utf8');
+const inputPanelSource = readFileSync(
+  resolve('components/nutrition/menu/base/NutritionInputPanel.jsx'),
+  'utf8'
+);
 
 describe('nutrition menu page structure', () => {
   test('page delegates notices, loading skeleton, and tab workspace rendering', () => {
@@ -35,5 +41,24 @@ describe('nutrition menu page structure', () => {
     expect(workspaceSource).toContain('<SearchBox');
     expect(workspaceSource).toContain('<TabBase');
     expect(workspaceSource).toContain('<TabSetCalc');
+  });
+
+  test('nutrition menu write controls follow admin role state', () => {
+    expect(pageSource).toContain('canEdit={isAdmin}');
+    expect(pageSource).toContain('if (!isAdmin)');
+    expect(pageSource).toContain('isAdmin={isAdmin}');
+    expect(noticesSource).toContain('disabled={repairing || !isAdmin}');
+    expect(workspaceSource).toContain('canEdit = false');
+    expect(workspaceSource).toContain('canEdit={canEdit}');
+    expect(tabBaseSource).toContain('canEdit = false');
+    expect(tabBaseSource).toContain('useNutritionBaseEditor({ safeRawMap, refresh, canEdit })');
+    expect(tabBaseSource).toContain('disabled={!canEdit}');
+    expect(tabBaseSource).toContain('canEdit && importOpen');
+    expect(tabBaseSource).toContain('canEdit && addMenu');
+    expect(baseEditorSource).toContain('canEdit = false');
+    expect(baseEditorSource).toContain('if (!canEdit) return');
+    expect(inputPanelSource).toContain('readOnly = false');
+    expect(inputPanelSource).toContain('disabled={saving || readOnly}');
+    expect(inputPanelSource).toContain('disabled={readOnly}');
   });
 });

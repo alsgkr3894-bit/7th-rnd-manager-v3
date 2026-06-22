@@ -7,6 +7,8 @@ const actionsSrc = readFileSync(resolve('app/cost/margin/useMarginActions.js'), 
 const pageSrc = readFileSync(resolve('app/cost/margin/page.jsx'), 'utf-8');
 const tableCardSrc = readFileSync(resolve('app/cost/margin/_MarginTableCard.jsx'), 'utf-8');
 const tableSectionsSrc = readFileSync(resolve('app/cost/margin/marginTableSections.js'), 'utf-8');
+const rowSrc = readFileSync(resolve('components/cost/margin/MarginRow.jsx'), 'utf-8');
+const trendSrc = readFileSync(resolve('components/cost/margin/MarginTrendModal.jsx'), 'utf-8');
 
 describe('margin 훅 분리 구조', () => {
   test('useMarginFilters.js가 catFilter/search/sortKey/showHidden 상태를 관리한다', () => {
@@ -59,6 +61,19 @@ describe('margin 훅 분리 구조', () => {
     expect(tableSectionsSrc).toContain("title: '피자'");
     expect(tableSectionsSrc).toContain("title: '세트박스'");
     expect(tableSectionsSrc).toContain("title: '사이드'");
+  });
+
+  test('원가마진 쓰기 UI는 viewer에서 먼저 비활성화된다', () => {
+    expect(pageSrc).toContain("from '@/hooks/useCurrentRole'");
+    expect(pageSrc).toContain('const canEdit = roleReady && isAdmin');
+    expect(pageSrc).toContain('disabled={!stats || !canEdit}');
+    expect(pageSrc).toContain('canEdit={canEdit}');
+    expect(actionsSrc).toContain('if (!canEdit) return');
+    expect(tableCardSrc).toContain('canEdit={canEdit}');
+    expect(rowSrc).toContain('disabled={!canEdit}');
+    expect(trendSrc).toContain('canEdit = false');
+    expect(trendSrc).toContain('if (!canEdit) return');
+    expect(trendSrc).toContain('{canEdit && (');
   });
 
   test('buildMarginTableSections는 카테고리별로 나누고 피자 표에서 단일 컬럼을 제외한다', () => {

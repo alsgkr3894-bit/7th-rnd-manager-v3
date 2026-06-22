@@ -61,7 +61,7 @@ function reducer(state, action) {
   }
 }
 
-export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule }) {
+export function UnmatchedTable({ issues, canEdit = false, onResolve, onBulkExclude, onBulkRule }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { openId, busyId, selected, confirmBulk, bulkBusy, showBulkRule, bulkRuleBusy } = state;
   const safeIssues = useMemo(() => asObjectArray(issues), [issues]);
@@ -109,10 +109,12 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule })
   const allOpenSelected = selectedOpen.length === openIssues.length;
 
   function toggleSel(id) {
+    if (!canEdit) return;
     dispatch({ type: 'TOGGLE_SEL', id });
   }
 
   function toggleAll() {
+    if (!canEdit) return;
     dispatch(
       allOpenSelected
         ? { type: 'SEL_CLEAR' }
@@ -121,7 +123,7 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule })
   }
 
   async function handleResolveSingle(issue, actionType, actionData) {
-    if (!handleResolve || !issue || issue.id == null) return;
+    if (!canEdit || !handleResolve || !issue || issue.id == null) return;
     dispatch({ type: 'RESOLVE_START', id: issue.id });
     let succeeded = false;
     try {
@@ -133,7 +135,7 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule })
   }
 
   async function handleBulk() {
-    if (!handleBulkExclude || selectedOpen.length === 0) return;
+    if (!canEdit || !handleBulkExclude || selectedOpen.length === 0) return;
     dispatch({ type: 'BULK_START' });
     try {
       await handleBulkExclude(selectedOpen);
@@ -144,7 +146,7 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule })
   }
 
   async function handleBulkRuleApply() {
-    if (!handleBulkRule || selectedOpen.length === 0) return;
+    if (!canEdit || !handleBulkRule || selectedOpen.length === 0) return;
     dispatch({ type: 'BULK_RULE_START' });
     try {
       await handleBulkRule(selectedOpen, {
@@ -176,6 +178,7 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule })
         bulkRuleGroup={bulkRuleGroup}
         bulkRuleDetail={bulkRuleDetail}
         categoryOptions={catOpts}
+        canEdit={canEdit}
         onClearSelection={() => dispatch({ type: 'SEL_CLEAR' })}
         onCancelBulkConfirm={() => dispatch({ type: 'BULK_CANCEL' })}
         onConfirmBulkExclude={handleBulk}
@@ -204,6 +207,7 @@ export function UnmatchedTable({ issues, onResolve, onBulkExclude, onBulkRule })
         onToggleSelected={toggleSel}
         onToggleRow={id => dispatch({ type: 'TOGGLE_ROW', id })}
         onResolveSingle={handleResolveSingle}
+        canEdit={canEdit}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import {
   invalidStoreRowsByStore,
   invalidStoreRowsOf,
   failedBackupStoresOf,
+  summarizeBackupLocalStorage,
   summarizeBackupStores,
   validateBackupPayload,
 } from '../../lib/backup/validation.js';
@@ -73,6 +74,65 @@ describe('backup validation', () => {
       'sales_rows',
       'cost_ingredients',
     ]);
+  });
+
+  test('localStorage 섹션의 복원 가능 키와 무시 키를 요약한다', () => {
+    const { summary } = validateBackupPayload({
+      version: CURRENT_BACKUP_VERSION,
+      stores: { settings: [] },
+      localStorage: {
+        'v3:profile': 'profile',
+        saved_views_v1__main__ingredient: '[{"name":"기본"}]',
+        'rnd_active_account_id:brand-b': 'user-1',
+        'v3:unknown': 'skip',
+        'v3:brand-master': { brands: [] },
+      },
+    });
+
+    expect(summary.hasLocalStorage).toBe(true);
+    expect(summary.localStorageSummary).toMatchObject({
+      hasLocalStorage: true,
+      invalidShape: false,
+      restorableKeyCount: 3,
+      ignoredKeyCount: 2,
+      unknownKeyCount: 1,
+      nonStringValueCount: 1,
+      unreadableValueCount: 0,
+      truncated: false,
+    });
+    expect(summary.localStorageSummary.sampleIgnoredKeys).toEqual(
+      expect.arrayContaining(['v3:unknown', 'v3:brand-master'])
+    );
+  });
+
+  test('localStorage가 객체가 아니면 복원을 막지 않고 형식 오류로만 요약한다', () => {
+    const { summary } = validateBackupPayload({
+      version: CURRENT_BACKUP_VERSION,
+      stores: { settings: [] },
+      localStorage: [],
+    });
+
+    expect(summary.hasLocalStorage).toBe(false);
+    expect(summary.localStorageSummary).toMatchObject({
+      hasLocalStorage: false,
+      invalidShape: true,
+      restorableKeyCount: 0,
+    });
+  });
+
+  test('localStorage 요약은 큰 입력에서도 정적 허용 키를 순서와 무관하게 확인한다', () => {
+    const map = {};
+    for (let i = 0; i < 2105; i += 1) {
+      map[`v3:unknown-${i}`] = 'skip';
+    }
+    map['v3:profile'] = 'late-profile';
+
+    const summary = summarizeBackupLocalStorage(map);
+
+    expect(summary.restorableKeyCount).toBe(1);
+    expect(summary.truncated).toBe(true);
+    expect(summary.unknownKeyCount).toBe(2000);
+    expect(summary.ignoredKeyCount).toBe(2000);
   });
 
   test('알 수 없는 store는 요약에 남겨 UI가 경고할 수 있게 한다', () => {

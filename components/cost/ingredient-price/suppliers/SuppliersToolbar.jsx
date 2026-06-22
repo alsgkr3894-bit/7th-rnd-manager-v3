@@ -2,7 +2,7 @@
 
 import { Icon } from '@/components/icons';
 
-export function SuppliersToolbar({ search, onSearch, onAdd }) {
+export function SuppliersToolbar({ search, canEdit = false, onSearch, onAdd }) {
   return (
     <div
       style={{
@@ -21,7 +21,13 @@ export function SuppliersToolbar({ search, onSearch, onAdd }) {
           placeholder="업체명·담당자·연락처 검색"
         />
       </div>
-      <button type="button" className="btn primary" style={{ marginLeft: 'auto' }} onClick={onAdd}>
+      <button
+        type="button"
+        className="btn primary"
+        style={{ marginLeft: 'auto' }}
+        onClick={onAdd}
+        disabled={!canEdit}
+      >
         <Icon.plus style={{ width: 13, height: 13 }} /> 공급업체 추가
       </button>
     </div>

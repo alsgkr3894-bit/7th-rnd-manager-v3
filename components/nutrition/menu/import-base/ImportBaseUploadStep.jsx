@@ -1,6 +1,7 @@
 'use client';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { UploadDropzone } from '@/components/ui/UploadDropzone';
+import { UPLOAD_EXT, UPLOAD_MAX_MB } from '@/lib/upload-policy';
 
 export function ImportBaseUploadStep({ onClose, onFile }) {
   return (
@@ -20,7 +21,8 @@ export function ImportBaseUploadStep({ onClose, onFile }) {
         </span>
       </div>
       <UploadDropzone
-        accept={['.xlsx', '.xls']}
+        accept={UPLOAD_EXT.excel}
+        maxSizeMB={UPLOAD_MAX_MB.excel}
         title="엑셀 파일을 드래그하거나 클릭하여 선택"
         onFile={onFile}
       />

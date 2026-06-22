@@ -13,6 +13,9 @@ import {
 } from '../../components/jette/price-compare/priceCompareTableUtils.js';
 
 const tableSource = readFileSync(resolve('components/jette/PriceCompareTable.jsx'), 'utf8');
+const pageSource = readFileSync(resolve('app/jette/price-compare/page.jsx'), 'utf8');
+const typeSelectSource = readFileSync(resolve('components/jette/_TypeSelect.jsx'), 'utf8');
+const historySource = readFileSync(resolve('components/jette/PriceFileHistory.jsx'), 'utf8');
 const filtersSource = readFileSync(
   resolve('components/jette/price-compare/PriceCompareFilters.jsx'),
   'utf8'
@@ -51,6 +54,19 @@ describe('price compare table structure', () => {
     expect(rowSource).toContain('export function PriceCompareRow');
     expect(rowSource).toContain('isPriceChangeAlert');
     expect(statusSource).toContain('export function PriceCompareStatusChip');
+  });
+
+  test('price compare write controls follow current role', () => {
+    expect(pageSource).toContain("from '@/hooks/useCurrentRole'");
+    expect(pageSource).toContain('const canEdit = roleReady && isAdmin');
+    expect(pageSource).toContain('disabled={!ready || busy || !uploadDate || !canEdit}');
+    expect(pageSource).toContain('canEdit={canEdit}');
+    expect(tableSource).toContain('canEdit = false');
+    expect(dataTableSource).toContain('canEdit={canEdit}');
+    expect(rowSource).toContain('disabled={!canEdit}');
+    expect(typeSelectSource).toContain('disabled = false');
+    expect(typeSelectSource).toContain('if (disabled) return');
+    expect(historySource).toContain('const canDelete = canEdit && handleDelete && fileId != null');
   });
 
   test('helpers keep counts, CSV rows, and display formatting stable', () => {

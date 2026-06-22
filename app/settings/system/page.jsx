@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import {
@@ -44,9 +44,12 @@ const SETTING_KEYS = [
 export default function Page() {
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const [busy, setBusy] = useState(false);
+  const reloadTimerRef = useRef(null);
   const [settings, setSettings] = useState(() =>
     Object.fromEntries(SETTING_KEYS.map(k => [k, getSetting(k)]))
   );
+
+  useEffect(() => () => clearTimeout(reloadTimerRef.current), []);
 
   const { data: statsData, reload: reloadStats } = useDBLoad(
     async () => {
@@ -77,6 +80,14 @@ export default function Page() {
     showToast(message, 'ok');
   }
 
+  function scheduleReload(delayMs) {
+    clearTimeout(reloadTimerRef.current);
+    reloadTimerRef.current = setTimeout(() => {
+      reloadTimerRef.current = null;
+      window.location.reload();
+    }, delayMs);
+  }
+
   async function handleRecreate() {
     if (busy) return;
     try {
@@ -89,7 +100,7 @@ export default function Page() {
     try {
       await deleteDatabase(dbNameFor(getActiveBrandId()));
       showToast('DB 삭제 완료. 새로고침합니다…', 'ok');
-      setTimeout(() => window.location.reload(), 1000);
+      scheduleReload(1000);
     } catch (err) {
       console.error('[Recreate] 실패:', err);
       showToast('DB 재생성 실패: ' + err.message, 'error');

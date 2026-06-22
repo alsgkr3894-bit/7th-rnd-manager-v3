@@ -9,6 +9,7 @@ import { buildJournalPrintHtml } from '@/lib/note/journal-print';
 import { openPrintWindow } from '@/lib/print/window-print';
 import { WebJournalCard } from '@/components/note/WebJournalCard';
 import { todayLocalDate, formatLocalDateInput } from '@/lib/date/local-date';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 // 노트의 표시용 날짜 키. testDate는 이미 YYYY-MM-DD(정규형)이라 그대로 쓰고,
 // createdAt 폴백만 로컬 달력일자로 변환한다(UTC slice 시 자정 부근 전날로 새던 문제 방지).
@@ -27,12 +28,14 @@ function toDateLabel(dateStr) {
 // ── 메인 페이지 ─────────────────────────────────────────────
 export default function Page() {
   const router = useRouter();
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
   const [date, setDate] = useState(() => todayLocalDate());
 
   // date 변경은 re-fetch 없이 JS 필터만 하므로 deps 불필요
   const { data: notes = [], loading } = useDBLoad(() => getAllNotesCached(), {
     initialData: [],
-    onError: console.error,
+    onError: err => console.error('[note/journal] load failed', err),
   });
 
   const dayNotes = useMemo(
@@ -126,7 +129,13 @@ export default function Page() {
           <div style={{ fontSize: 14, color: 'var(--text-3)', marginBottom: 12 }}>
             {date}에 작성된 테스트 노트가 없습니다.
           </div>
-          <button className="btn primary" onClick={() => router.push('/note/write')}>
+          <button
+            className="btn primary"
+            onClick={() => {
+              if (canEdit) router.push('/note/write');
+            }}
+            disabled={!canEdit}
+          >
             <Icon.plus style={{ width: 14, height: 14 }} /> 노트 작성
           </button>
         </div>

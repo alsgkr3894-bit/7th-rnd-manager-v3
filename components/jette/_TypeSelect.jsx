@@ -12,6 +12,7 @@ export function TypeSelect({
   productCode,
   productName,
   productTypeLookup = new Map(),
+  disabled = false,
   onTypeChange,
 }) {
   const safeProductCode = asDisplayText(productCode);
@@ -27,9 +28,11 @@ export function TypeSelect({
     <select
       value={current}
       onChange={e => {
+        if (disabled) return;
         if (e.target.value && handleTypeChange)
           handleTypeChange(safeProductCode, safeProductName, e.target.value);
       }}
+      disabled={disabled}
       style={typeSelectStyle}
     >
       <option value="">미분류</option>

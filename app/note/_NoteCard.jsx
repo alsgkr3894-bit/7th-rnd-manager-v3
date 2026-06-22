@@ -40,6 +40,7 @@ export function NoteCard({
   pinned,
   onPin,
   onTagClick,
+  canEdit = false,
 }) {
   const edit = typeof onEdit === 'function' ? onEdit : noop;
   const remove = typeof onDelete === 'function' ? onDelete : noop;
@@ -76,6 +77,7 @@ export function NoteCard({
           value={status}
           onChange={e => statusChange(e.target.value, e)}
           onClick={e => e.stopPropagation()}
+          disabled={!canEdit}
           className={statusPop ? 'status-pop-anim' : ''}
           style={{
             fontSize: 11,
@@ -85,7 +87,7 @@ export function NoteCard({
             background: sc.bg,
             color: sc.color,
             border: `1px solid ${sc.color}40`,
-            cursor: 'pointer',
+            cursor: canEdit ? 'pointer' : 'default',
             fontFamily: 'inherit',
             outline: 'none',
           }}
@@ -157,16 +159,31 @@ export function NoteCard({
         ))}
         {!batchMode && (
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 5 }}>
-            <button className="btn sm xs" onClick={newVersion} style={{ color: 'var(--text-3)' }}>
+            <button
+              className="btn sm xs"
+              onClick={newVersion}
+              style={{ color: 'var(--text-3)' }}
+              disabled={!canEdit}
+            >
               + 버전
             </button>
-            <button className="btn sm xs" onClick={copy} style={{ color: 'var(--text-3)' }}>
+            <button
+              className="btn sm xs"
+              onClick={copy}
+              style={{ color: 'var(--text-3)' }}
+              disabled={!canEdit}
+            >
               복사
             </button>
-            <button className="btn sm" onClick={edit}>
+            <button className="btn sm" onClick={edit} disabled={!canEdit}>
               <Icon.edit style={{ width: 12, height: 12 }} />
             </button>
-            <button className="btn sm" onClick={remove} style={{ color: 'var(--negative)' }}>
+            <button
+              className="btn sm"
+              onClick={remove}
+              style={{ color: 'var(--negative)' }}
+              disabled={!canEdit}
+            >
               <Icon.trash style={{ width: 12, height: 12 }} />
             </button>
           </div>

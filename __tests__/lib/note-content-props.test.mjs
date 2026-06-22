@@ -71,6 +71,7 @@ function createInputs(overrides = {}) {
   };
 
   return {
+    canEdit: true,
     router,
     notesState: {
       notes: [{ id: 'n-1' }, { id: 'n-2' }],

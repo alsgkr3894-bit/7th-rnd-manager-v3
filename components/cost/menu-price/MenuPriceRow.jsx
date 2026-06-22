@@ -62,6 +62,7 @@ export function MenuPriceRow({
       <InlineEditCell
         value={r.price ?? ''}
         type="number"
+        nonNegative
         align="right"
         required
         onSave={value => inlineSave(r, { price: value })}

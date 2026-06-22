@@ -9,7 +9,7 @@ import {
 } from '@/lib/report';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 
-export function useReportActions({ reload }) {
+export function useReportActions({ reload, canEdit = false }) {
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [pruneConfirmOpen, setPruneConfirmOpen] = useState(false);
@@ -30,12 +30,14 @@ export function useReportActions({ reload }) {
   }, []);
 
   const handleDelete = id => {
+    if (!canEdit) return;
     setConfirmDeleteId(id);
   };
 
   const confirmDelete = async () => {
     const id = confirmDeleteId;
     setConfirmDeleteId(null);
+    if (!canEdit) return;
     setDeletingId(id);
     await new Promise(r => setTimeout(r, 360));
     if (!mountedRef.current) return;
@@ -52,6 +54,7 @@ export function useReportActions({ reload }) {
   };
 
   const handlePruneClick = async () => {
+    if (!canEdit) return;
     try {
       const list = await findPrunableReports(90);
       setPrunableCount(list.length);
@@ -67,6 +70,7 @@ export function useReportActions({ reload }) {
 
   const confirmPrune = async () => {
     setPruneConfirmOpen(false);
+    if (!canEdit) return;
     try {
       await pruneOldReports(90);
       showToast('오래된 보고서가 정리됐어요.', 'ok');
@@ -77,6 +81,7 @@ export function useReportActions({ reload }) {
   };
 
   const handleToggleFav = async (id, fav) => {
+    if (!canEdit) return;
     try {
       await toggleReportFav(id, fav);
       reload();
@@ -86,6 +91,7 @@ export function useReportActions({ reload }) {
   };
 
   const startEdit = r => {
+    if (!canEdit) return;
     setEditingId(r?.id);
     setEditName(asDisplayText(r?.name));
     if (editFocusTimerRef.current) clearTimeout(editFocusTimerRef.current);
@@ -96,6 +102,10 @@ export function useReportActions({ reload }) {
   };
 
   const commitEdit = async r => {
+    if (!canEdit) {
+      setEditingId(null);
+      return;
+    }
     const nextName = asDisplayText(editName).trim();
     const prevName = asDisplayText(r?.name);
     if (nextName && nextName !== prevName) {

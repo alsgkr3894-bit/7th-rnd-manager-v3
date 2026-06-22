@@ -15,6 +15,7 @@ function UserRuleTableRow({
   form,
   setForm,
   busy,
+  canEdit,
   nameOpts,
   isMain,
   pendingDeleteId,
@@ -34,7 +35,7 @@ function UserRuleTableRow({
   const groupName = asDisplayText(rule.groupName, '-');
   const detailName = asDisplayText(rule.detailName, '-');
 
-  if (editingId === ruleId && hasRuleId) {
+  if (canEdit && editingId === ruleId && hasRuleId) {
     return (
       <tr key={key}>
         <td colSpan={6} style={{ padding: 8 }}>
@@ -69,11 +70,11 @@ function UserRuleTableRow({
         <Toggle
           value={rule.enable !== false}
           onChange={() => onToggle(rule)}
-          disabled={!hasRuleId}
+          disabled={!canEdit || !hasRuleId}
         />
       </td>
       <td style={{ textAlign: 'right' }}>
-        {pendingDeleteId === ruleId && hasRuleId ? (
+        {canEdit && pendingDeleteId === ruleId && hasRuleId ? (
           <InlineConfirmButtons
             message="규칙을 삭제할까요?"
             busy={busy}
@@ -82,7 +83,12 @@ function UserRuleTableRow({
           />
         ) : hasRuleId ? (
           <>
-            <button type="button" className="btn sm" onClick={() => onEdit(rule)}>
+            <button
+              type="button"
+              className="btn sm"
+              onClick={() => onEdit(rule)}
+              disabled={!canEdit}
+            >
               수정
             </button>{' '}
             <button
@@ -90,6 +96,7 @@ function UserRuleTableRow({
               className="btn sm"
               style={{ color: 'var(--negative)' }}
               onClick={() => onRequestDelete(ruleId)}
+              disabled={!canEdit}
             >
               삭제
             </button>
@@ -117,6 +124,7 @@ export function UserRulesTable({
   form,
   setForm,
   busy,
+  canEdit = false,
   onUpdate,
   nameOpts,
   isMain,
@@ -188,6 +196,7 @@ export function UserRulesTable({
               form={form}
               setForm={setForm}
               busy={busy}
+              canEdit={canEdit}
               nameOpts={nameOpts}
               isMain={isMain}
               pendingDeleteId={pendingDeleteId}

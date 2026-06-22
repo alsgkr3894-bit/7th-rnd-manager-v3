@@ -4,6 +4,7 @@ import { NoteTableRow } from './_NoteTableRow';
 export function NoteTableView({
   visible,
   filtered,
+  canEdit = false,
   focusedRow,
   onFocusRow,
   onOpen,
@@ -69,6 +70,7 @@ export function NoteTableView({
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onStatusChange={onStatusChange}
+                canEdit={canEdit}
               />
             ))}
           </tbody>

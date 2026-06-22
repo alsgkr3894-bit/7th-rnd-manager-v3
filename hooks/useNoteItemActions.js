@@ -3,24 +3,34 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { sharedRestoreRecord as restoreRecord } from '@/lib/db/shared';
-import { addNote, deleteNote, updateNote } from '@/lib/note';
+import { addNote, deleteNote, updateNote, invalidateNotesCache } from '@/lib/note';
 import { setNoteFrom } from '@/lib/note/keys';
 
 async function restoreDeletedNotes(records = []) {
   const failures = [];
+  let restoredCount = 0;
   for (const rec of records) {
     try {
       await restoreRecord('menu_dev_notes', rec);
+      restoredCount++;
     } catch (err) {
       failures.push(err);
     }
   }
+  if (restoredCount > 0) invalidateNotesCache();
   if (failures.length > 0) {
     throw new Error(`${failures.length}개 노트 복구 실패`);
   }
 }
 
-export function useNoteItemActions({ router, setNotes, load, detailNote, setDetailNote }) {
+export function useNoteItemActions({
+  router,
+  setNotes,
+  load,
+  detailNote,
+  setDetailNote,
+  canEdit = false,
+}) {
   const [popIds, setPopIds] = useState(new Set());
   const [singleDeleteNote, setSingleDeleteNote] = useState(null);
   const popTimersRef = useRef(new Set());
@@ -33,14 +43,19 @@ export function useNoteItemActions({ router, setNotes, load, detailNote, setDeta
     []
   );
 
-  const handleDelete = useCallback(function handleDelete(note, e) {
-    e?.stopPropagation();
-    setSingleDeleteNote(note);
-  }, []);
+  const handleDelete = useCallback(
+    function handleDelete(note, e) {
+      e?.stopPropagation();
+      if (!canEdit) return;
+      setSingleDeleteNote(note);
+    },
+    [canEdit]
+  );
 
   const execDelete = useCallback(
     async function execDelete(note) {
       setSingleDeleteNote(null);
+      if (!canEdit) return;
       try {
         const removed = await deleteNote(note.id);
         const removedIds = new Set((removed || []).map(rec => rec.id));
@@ -68,12 +83,13 @@ export function useNoteItemActions({ router, setNotes, load, detailNote, setDeta
         showToast('삭제 실패', 'error');
       }
     },
-    [detailNote?.id, load, setDetailNote, setNotes]
+    [canEdit, detailNote?.id, load, setDetailNote, setNotes]
   );
 
   const handleCopy = useCallback(
     async function handleCopy(note, e) {
       e?.stopPropagation();
+      if (!canEdit) return;
       try {
         await initDB();
         await addNote({
@@ -89,12 +105,13 @@ export function useNoteItemActions({ router, setNotes, load, detailNote, setDeta
         showToast('복사 실패', 'error');
       }
     },
-    [load]
+    [canEdit, load]
   );
 
   const handleStatusChange = useCallback(
     async function handleStatusChange(noteId, newStatus, e) {
       e?.stopPropagation();
+      if (!canEdit) return;
       try {
         await updateNote(noteId, { status: newStatus });
         showToast(`상태 → ${newStatus}`, 'ok');
@@ -115,16 +132,17 @@ export function useNoteItemActions({ router, setNotes, load, detailNote, setDeta
         showToast('상태 변경 실패', 'error');
       }
     },
-    [setDetailNote, setNotes]
+    [canEdit, setDetailNote, setNotes]
   );
 
   const handleNewVersion = useCallback(
     function handleNewVersion(note, e) {
       e?.stopPropagation();
+      if (!canEdit) return;
       setNoteFrom(note.id);
       router.push('/note/write');
     },
-    [router]
+    [canEdit, router]
   );
 
   return {

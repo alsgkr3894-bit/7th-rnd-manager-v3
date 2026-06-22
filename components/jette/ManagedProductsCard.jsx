@@ -2,7 +2,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { usePagination } from '@/hooks/usePagination';
-import { downloadCsv } from '@/lib/download';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
+import { downloadCsv, makeFileNameWithBrand } from '@/lib/download';
 import {
   getAllManagedProducts,
   addManagedProduct,
@@ -27,16 +28,9 @@ import {
   managedProductsSortDir,
 } from './managed-products/managedProductsCardUtils';
 
-/**
- * ManagedProductsCard — 제때 출고량 대상 제품 관리
- *
- * 구성:
- *   - 추가 폼 (ManagedProductsForm)
- *   - 분류 chip 필터 (전체 / 전용 / 범용) + 관리품목만 토글
- *   - 테이블 (ManagedProductsRow)
- *   - 가격비교 productCode 자동 마이그레이션 ('exclusive' 일괄 추가)
- */
 export function ManagedProductsCard() {
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
   const [list, setList] = useState([]);
   const [filter, setFilter] = useState('all'); // all | exclusive | generic | disabled
   const [managedOnly, setManagedOnly] = useState(false);
@@ -74,6 +68,7 @@ export function ManagedProductsCard() {
   }
 
   async function handleAdd() {
+    if (!canEdit) return;
     if (!form.productCode.trim() || !form.productName.trim()) return;
     setBusy(true);
     try {
@@ -91,6 +86,7 @@ export function ManagedProductsCard() {
   }
 
   async function handleDelete(id) {
+    if (!canEdit) return;
     try {
       await deleteManagedProduct(id);
       showToast('삭제됐어요', 'ok');
@@ -102,6 +98,7 @@ export function ManagedProductsCard() {
   }
 
   async function handleToggleEnable(p) {
+    if (!canEdit) return;
     try {
       await updateManagedProduct({ id: p.id, enable: p.enable === false });
       refresh();
@@ -111,6 +108,7 @@ export function ManagedProductsCard() {
   }
 
   async function handleChangeType(p, productType) {
+    if (!canEdit) return;
     try {
       await updateManagedProduct({ id: p.id, productType });
       refresh();
@@ -120,6 +118,7 @@ export function ManagedProductsCard() {
   }
 
   async function handleToggleManaged(p) {
+    if (!canEdit) return;
     try {
       await updateManagedProduct({ id: p.id, isManaged: !p.isManaged });
       refresh();
@@ -130,6 +129,7 @@ export function ManagedProductsCard() {
 
   /** 가격비교 최신 파일의 productCode 중 ref에 없는 것을 'exclusive'로 일괄 추가 */
   async function handleMigrate() {
+    if (!canEdit) return;
     setMigrating(true);
     try {
       const files = await getPriceFiles();
@@ -167,7 +167,10 @@ export function ManagedProductsCard() {
   );
 
   function exportCsv() {
-    downloadCsv(buildManagedProductsCsvData(filtered), '제때_대상제품목록.csv');
+    downloadCsv(
+      buildManagedProductsCsvData(filtered),
+      makeFileNameWithBrand('제때_대상제품목록', 'csv')
+    );
   }
 
   return (
@@ -179,15 +182,19 @@ export function ManagedProductsCard() {
         onExport={exportCsv}
         migrating={migrating}
         onMigrate={handleMigrate}
-        adding={adding}
-        onToggleAdding={() => setAdding(value => !value)}
+        adding={canEdit && adding}
+        canEdit={canEdit}
+        onToggleAdding={() => {
+          if (canEdit) setAdding(value => !value);
+        }}
       />
 
-      {adding && (
+      {canEdit && adding && (
         <ManagedProductsForm
           form={form}
           setForm={setForm}
           busy={busy}
+          canEdit={canEdit}
           onSubmit={handleAdd}
           onCancel={() => setAdding(false)}
         />
@@ -213,6 +220,7 @@ export function ManagedProductsCard() {
         sortKey={sortKey}
         sortDir={sortDir}
         onSort={toggleSort}
+        canEdit={canEdit}
         pendingDeleteId={pendingDeleteId}
         onToggleEnable={handleToggleEnable}
         onChangeType={handleChangeType}

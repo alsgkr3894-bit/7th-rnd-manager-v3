@@ -10,7 +10,7 @@ import { getAllSnapshots, deleteSnapshot } from '@/lib/cost/margin/snapshots';
  * 원가 마진 추이 스냅샷 목록 모달.
  * props: onClose
  */
-export function MarginTrendModal({ onClose }) {
+export function MarginTrendModal({ onClose, canEdit = false }) {
   const [snapshots, setSnapshots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(null); // id being deleted
@@ -38,6 +38,7 @@ export function MarginTrendModal({ onClose }) {
   }, [load]);
 
   async function handleDelete(id) {
+    if (!canEdit) return;
     if (deleting != null) return;
     setDeleting(id);
     try {
@@ -126,15 +127,17 @@ export function MarginTrendModal({ onClose }) {
                   <span style={{ fontSize: 11, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
                     ({formatRelative(s.capturedAt)})
                   </span>
-                  <button
-                    className="btn"
-                    style={{ padding: '3px 6px', flexShrink: 0 }}
-                    onClick={() => handleDelete(s.id)}
-                    disabled={deleting === s.id}
-                    aria-label="스냅샷 삭제"
-                  >
-                    <Icon.trash style={{ width: 12, height: 12 }} />
-                  </button>
+                  {canEdit && (
+                    <button
+                      className="btn"
+                      style={{ padding: '3px 6px', flexShrink: 0 }}
+                      onClick={() => handleDelete(s.id)}
+                      disabled={deleting === s.id}
+                      aria-label="스냅샷 삭제"
+                    >
+                      <Icon.trash style={{ width: 12, height: 12 }} />
+                    </button>
+                  )}
                 </div>
 
                 {/* Stats row */}

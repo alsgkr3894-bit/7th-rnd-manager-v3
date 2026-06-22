@@ -198,12 +198,12 @@ dbNameFor(brandId): main → 'rnd_manager_v3', 기타 → 'rnd_manager_v3__<bran
 
 ## 4. 상태 관리 및 훅 패턴
 
-총 59개 커스텀 훅(4,511줄). 핵심 패턴은 useDBLoad(IndexedDB 비동기 로드 + cancelled 가드 + reload), useLocalStorage(SSR 하이드레이션 안전 3단계 패턴), 전역 Toast(모듈-레벨 싱글턴 setToasts 레퍼런스). 컨텍스트 없이 CustomEvent + localStorage + window.addEventListener 조합으로 브랜드·설정·역할 상태를 전파.
+총 59개 커스텀 훅(4,620줄). 핵심 패턴은 useDBLoad(IndexedDB 비동기 로드 + cancelled 가드 + reload), useLocalStorage(SSR 하이드레이션 안전 3단계 패턴), 전역 Toast(모듈-레벨 싱글턴 setToasts 레퍼런스). 컨텍스트 없이 CustomEvent + localStorage + window.addEventListener 조합으로 브랜드·설정·역할 상태를 전파.
 
 ### `hooks/ 디렉터리 전체 현황`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/`
 
-총 59개 파일(58 .js + 1 .jsx), 4,511줄. 도메인별로 DB로드·로컬스토리지·브랜드·노트·리포트·홈대시보드·UI(배치·페이지네이션·스크롤·단축키·모달) 등으로 분류됨.
+총 59개 파일(58 .js + 1 .jsx), 4,620줄. 도메인별로 DB로드·로컬스토리지·브랜드·노트·리포트·홈대시보드·UI(배치·페이지네이션·스크롤·단축키·모달) 등으로 분류됨.
 
 ### `useDBLoad — IndexedDB 데이터 로드 패턴`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/useDBLoad.js`
@@ -474,7 +474,7 @@ MODULE_GROUPS: sales/jette/cost/notes/nutrition 5개 모듈에 store를 분류. 
 ### lib/auth/guard.js — 파괴적 액션 실행함수 권한 가드
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/lib/auth/guard.js`
 
-`assertActiveAdmin(actionLabel)` — async, viewer면 `PermissionDeniedError`(code: `PERMISSION_DENIED`) throw. `getActiveRole`은 순환 import 회피 목적으로 동적 import. 가드 적용 대상: 계정 add/update/delete, 메뉴마스터 delete/reset/seed, 식자재 delete/bulkDelete/단종·복구/카테고리·태그 일괄 제거/reset/bulkImport/중복코드 정리, 판매가 reset/replaceAll, 엣지·도우 reset, 메뉴레시피 reset, 영양 기준데이터 clear, 원산지 clear, 복원 `importAllToBrand`, 시스템 handleReset/handleRecreate. 저수준 DB 프리미티브(`clearStore`/`deleteDatabase`)와 sync 브랜드 메타(`upsertBrand` 등)는 의도적으로 가드 제외.
+`assertActiveAdmin(actionLabel)` — async, viewer면 `PermissionDeniedError`(code: `PERMISSION_DENIED`) throw. `getActiveRole`은 순환 import 회피 목적으로 동적 import. 가드 적용 대상: 계정 add/update/delete, 메뉴마스터 저장/delete/reset/seed/판매가 동기화, 식자재 add/update/meta/seed/delete/bulk/delete·일괄변경·bulkImport·중복코드 정리, 판매가 add/update/delete/reset/replaceAll, 엣지·도우 CRUD/seed/reset, 메뉴레시피 저장/delete/reset, 영양 values와 원산지 CRUD, 판매량 업로드/사용자 규칙/미매칭 resolve, 원가 보조 마스터, 샘플 기록, 복원 `importAllToBrand`/`replaceStoreForBrand`, 업로드 파일+로그 삭제 `deleteFileWithLog`, 오래된 보고서/작업일지/원가 업로드 로그 정리, 시스템 handleReset/handleRecreate. 저수준 DB 프리미티브(`clearStore`/`deleteDatabase`)와 sync 브랜드 메타(`upsertBrand` 등)는 의도적으로 가드 제외.
 
 ### app/settings/brands/page.jsx — 브랜드 설정 화면
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/app/settings/brands/page.jsx`
@@ -495,12 +495,12 @@ isAdmin 아닌 경우 편집 불가(권한 가드). 브랜드 추가/수정 폼(
 
 ## 8. 테스트 및 QA 현황
 
-Jest 단위 테스트 278개 파일(lib 251, hooks 20, scripts 7), QA 명령 6종(qa:smoke 22라우트 702px, qa:mobile 22라우트 390px, qa:runtime 전라우트 67개, qa:workflow 업무흐름 E2E 16시나리오, qa:full dev 전체 QA, qa:prod 프로덕션 전체 QA) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
+Jest 단위 테스트 295개 파일(lib 268, hooks 20, scripts 7), QA 명령 6종(qa:smoke 22라우트 702px, qa:mobile 22라우트 390px, qa:runtime 전라우트 67개, qa:workflow 업무흐름 E2E 21시나리오, qa:full dev 전체 QA, qa:prod 프로덕션 전체 QA) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
 
 ### Jest 단위 테스트 — lib
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/lib/`
 
-__tests__/lib/ 하위 251개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
+__tests__/lib/ 하위 268개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
 
 ### Jest 단위 테스트 — hooks
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/hooks/`
@@ -515,7 +515,7 @@ __tests__/scripts/ 하위 7개 파일(clean-build-script, full-rt-script, qa-bro
 ### 테스트 픽스처
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/fixtures/business/`
 
-__tests__/fixtures/business/ 하위 CSV 6종(cost-basis, menu-price-valid, price-missing-tax, price-valid, sales-missing-quantity, sales-valid). 엑셀/가격/판매 파싱 테스트에서 참조
+__tests__/fixtures/business/ 하위 CSV 8종(cost-basis, menu-price-valid, price-missing-tax, price-valid, sales-missing-quantity, sales-valid, shipment-invalid, shipment-valid). 엑셀/가격/판매/출고량 파싱 테스트에서 참조
 
 ### npm run test / test:ci
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/package.json`
@@ -540,7 +540,7 @@ scripts/full-rt.mjs — route-classification.js 기반 전 라우트 런타임 �
 ### qa:workflow (npm run qa:workflow)
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/scripts/workflow-qa.mjs`
 
-scripts/workflow-qa.mjs — Playwright 기반 업무 흐름 E2E. 백업/복원 preview, 노트 생성, 메뉴마스터 생성, viewer 차단, 잘못된 백업 방어, 폼 검증, 브랜드 분리, 캘린더, 식자재 생성, 원가마진, 판매량 업로드, 영양성분 메뉴, 레시피 원가, 식자재 가격 보고서, 공통원가, 레시피 저장 UI 등 16개 시나리오를 runner/scenarios 구조로 실행한다.
+scripts/workflow-qa.mjs — Playwright 기반 업무 흐름 E2E. 백업/복원 preview, 백업→삭제→실제 복원 실행, 노트 생성, 메뉴마스터 생성, 메뉴마스터 CSV 다운로드 파일 검증, viewer 차단, 잘못된 백업 방어, 폼 검증, 브랜드 분리, 캘린더, 식자재 생성, 원가마진, 판매량 업로드, 판매량 업로드 잘못된 확장자 UX, 영양성분 메뉴, 레시피 원가, 식자재 가격 보고서, 공통원가, 레시피 저장 UI, 출고량 CSV 실제 업로드, 메뉴판매가 실패행 CSV 다운로드 등 21개 시나리오를 runner/scenarios 구조로 실행한다.
 
 ### qa:full (npm run qa:full)
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/scripts/qa-full.mjs`

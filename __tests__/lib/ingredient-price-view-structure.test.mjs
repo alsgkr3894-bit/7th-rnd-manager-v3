@@ -37,6 +37,10 @@ const listFileInfoSource = readFileSync(
   resolve('components/cost/ingredient-price/list-panel/IngredientPriceFileInfo.jsx'),
   'utf8'
 );
+const masterRowSource = readFileSync(
+  resolve('components/cost/ingredient-price/MasterRow.jsx'),
+  'utf8'
+);
 
 describe('ingredient price view structure', () => {
   test('IngredientPriceView keeps data and action orchestration while delegating panels', () => {
@@ -79,5 +83,20 @@ describe('ingredient price view structure', () => {
     expect(listTableSource).toContain('export function IngredientPriceTable');
     expect(listTableSource).toContain('<MasterRow');
     expect(listTableSource).toContain('<SortableHeader');
+  });
+
+  test('ingredient price write controls follow readOnly role state', () => {
+    expect(viewSource).toContain('if (isViewer) return');
+    expect(viewSource).toContain('!isViewer && regTarget');
+    expect(viewSource).toContain('!isViewer && syncQtyOpen');
+    expect(listSource).toContain('readOnly={readOnly}');
+    expect(listFiltersSource).toContain('readOnly = false');
+    expect(listFiltersSource).toContain('canEdit={!readOnly}');
+    expect(listTableSource).toContain('readOnly = false');
+    expect(listTableSource).toContain('disabled={readOnly}');
+    expect(listTableSource).toContain('readOnly ? undefined');
+    expect(masterRowSource).toContain('disabled={readOnly || r.meta?.id == null}');
+    expect(masterRowSource).toContain('disabled={readOnly}');
+    expect(issuesSource).toContain('disabled={readOnly}');
   });
 });

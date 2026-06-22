@@ -18,6 +18,7 @@ export function NoteListHeader({
   batchMode,
   selected,
   reportingCount,
+  canEdit = false,
   onBulkCopy,
   onEnterBatchMode,
   onCalendar,
@@ -55,7 +56,7 @@ export function NoteListHeader({
                   <Icon.doc style={{ width: 13, height: 13 }} /> 보고예정 일괄복사
                 </button>
               )}
-              <button className="btn" onClick={onEnterBatchMode}>
+              <button className="btn" onClick={onEnterBatchMode} disabled={!canEdit}>
                 선택
               </button>
               <button className="btn" onClick={onCalendar}>
@@ -64,7 +65,7 @@ export function NoteListHeader({
               <button className="btn" onClick={onBoard}>
                 칸반 보드
               </button>
-              <button className="btn primary" onClick={onWrite}>
+              <button className="btn primary" onClick={onWrite} disabled={!canEdit}>
                 <Icon.plus style={{ width: 14, height: 14 }} /> 노트 작성
               </button>
             </>

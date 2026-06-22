@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import {
@@ -24,6 +24,7 @@ export function JettePriceImportField({
   existingProductCodes = [],
   onApply,
 }) {
+  const blurTimerRef = useRef(null);
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -39,8 +40,11 @@ export function JettePriceImportField({
   const hasQuery = query.trim().length > 0;
   const open = focused && hasQuery;
 
+  useEffect(() => () => clearTimeout(blurTimerRef.current), []);
+
   function apply(row) {
     if (row.alreadyRegistered) return;
+    clearTimeout(blurTimerRef.current);
     const draft = buildIngredientDraftFromJettePrice(row);
     onApply(draft);
     setSelected(row);
@@ -78,9 +82,16 @@ export function JettePriceImportField({
                 setQuery(e.target.value);
                 setSelected(null);
               }}
-              onFocus={() => setFocused(true)}
+              onFocus={() => {
+                clearTimeout(blurTimerRef.current);
+                setFocused(true);
+              }}
               onBlur={() => {
-                window.setTimeout(() => setFocused(false), 120);
+                clearTimeout(blurTimerRef.current);
+                blurTimerRef.current = window.setTimeout(() => {
+                  setFocused(false);
+                  blurTimerRef.current = null;
+                }, 120);
               }}
               placeholder="제품명 또는 제품코드 검색"
             />

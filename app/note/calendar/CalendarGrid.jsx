@@ -10,6 +10,7 @@ export function CalendarGrid({
   today,
   animClass,
   calKey,
+  canEdit = false,
   onSelectDay,
   onClosePanel,
   onAddSchedule,
@@ -29,6 +30,7 @@ export function CalendarGrid({
         today={today}
         animClass={animClass}
         calKey={calKey}
+        canEdit={canEdit}
         onSelectDay={onSelectDay}
         onClosePanel={onClosePanel}
         onAddSchedule={onAddSchedule}

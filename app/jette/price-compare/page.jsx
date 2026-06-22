@@ -4,6 +4,7 @@ import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { UploadDropzone } from '@/components/ui/UploadDropzone';
 import { showToast } from '@/components/Toast';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { useJettePrice } from '@/lib/price/use-price-upload';
 import { PriceLatestView } from '@/components/jette/PriceLatestView';
 import { PriceSummaryCards } from '@/components/jette/PriceSummaryCards';
@@ -18,6 +19,8 @@ const TABS = [
 ];
 
 export default function Page() {
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
   const {
     ready,
     busy,
@@ -85,9 +88,9 @@ export default function Page() {
       />
 
       <UploadDropzone
-        disabled={!ready || busy || !uploadDate}
+        disabled={!ready || busy || !uploadDate || !canEdit}
         busyText="업로드 중..."
-        title="단가 엑셀(.xlsx) 또는 CSV 파일을 끌어다 놓으세요"
+        title="단가 엑셀(.xlsx), CSV 또는 TSV 파일을 끌어다 놓으세요"
         maxSizeMB={30}
         onFile={(f, err) => {
           if (err) {
@@ -121,6 +124,7 @@ export default function Page() {
               latestFileId={latestFileId}
               onLatestChange={setLatestFileId}
               productTypeLookup={productTypeLookup}
+              canEdit={canEdit}
               onTypeChange={handleTypeChange}
             />
           )}
@@ -143,6 +147,7 @@ export default function Page() {
               <PriceCompareTable
                 diffRows={diffRows}
                 productTypeLookup={productTypeLookup}
+                canEdit={canEdit}
                 onTypeChange={handleTypeChange}
                 externalFilter={cardFilter}
                 priceAlertThreshold={jetteSettings.priceAlertThreshold}
@@ -150,7 +155,9 @@ export default function Page() {
             </>
           )}
 
-          {tab === 'history' && <PriceFileHistory files={files} onDelete={handleDelete} />}
+          {tab === 'history' && (
+            <PriceFileHistory files={files} canEdit={canEdit} onDelete={handleDelete} />
+          )}
         </>
       )}
     </main>
@@ -174,7 +181,7 @@ function EmptyHero() {
       <Icon.box style={{ width: 48, height: 48, color: 'var(--text-4)' }} />
       <div style={{ fontSize: 15, fontWeight: 700 }}>아직 업로드된 가격 파일이 없습니다</div>
       <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
-        엑셀(.xlsx) 또는 CSV 파일을 업로드하면 단가 현황과 변동을 확인할 수 있어요.
+        엑셀(.xlsx), CSV 또는 TSV 파일을 업로드하면 단가 현황과 변동을 확인할 수 있어요.
       </div>
     </div>
   );

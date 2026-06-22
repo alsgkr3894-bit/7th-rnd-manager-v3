@@ -30,6 +30,7 @@ export function useKeyboardShortcuts({
   onToggleShortcuts,
   onClosePalette,
   onCloseShortcuts,
+  canEdit = false,
 }) {
   const gPressedRef = useRef(false);
   const gTimerRef = useRef(null);
@@ -47,7 +48,7 @@ export function useKeyboardShortcuts({
     const PLAIN_KEY_ACTIONS = {
       n: e => {
         e.preventDefault();
-        router.push('/note/write');
+        if (canEdit) router.push('/note/write');
       },
       '/': e => {
         e.preventDefault();
@@ -110,5 +111,5 @@ export function useKeyboardShortcuts({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [router, onOpenPalette, onToggleShortcuts, onClosePalette, onCloseShortcuts]);
+  }, [router, onOpenPalette, onToggleShortcuts, onClosePalette, onCloseShortcuts, canEdit]);
 }

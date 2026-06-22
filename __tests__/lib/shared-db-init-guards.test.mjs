@@ -106,6 +106,9 @@ const sharedMock = {
 };
 
 jest.unstable_mockModule('@/lib/db/shared', () => sharedMock);
+jest.unstable_mockModule('@/lib/auth/guard', () => ({
+  assertActiveAdmin: jest.fn(async () => {}),
+}));
 
 const noteStore = await import('@/lib/note/store');
 const sampleStore = await import('@/lib/sample/store');

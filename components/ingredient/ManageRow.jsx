@@ -23,6 +23,8 @@ export const ManageRow = memo(function ManageRow({
   batchMode,
   isSelected,
   onToggleSelect,
+  isHighlighted,
+  isViewer = false,
 }) {
   const model = buildManageRowModel(rawRow);
   const {
@@ -53,13 +55,28 @@ export const ManageRow = memo(function ManageRow({
 
   return (
     <tr
+      data-ingredient-highlighted={isHighlighted ? 'true' : undefined}
       style={{
         opacity: r.excluded ? 0.5 : 1,
-        background: isSelected ? 'var(--accent-soft)' : r.excluded ? 'var(--surface-2)' : undefined,
-        cursor: batchMode && !deletable ? 'default' : 'pointer',
+        background: isHighlighted
+          ? 'var(--positive-soft)'
+          : isSelected
+            ? 'var(--accent-soft)'
+            : r.excluded
+              ? 'var(--surface-2)'
+              : undefined,
+        outline: isHighlighted ? '2px solid var(--positive)' : undefined,
+        outlineOffset: isHighlighted ? '-1px' : undefined,
+        cursor: isViewer || (batchMode && !deletable) ? 'default' : 'pointer',
       }}
       onClick={
-        batchMode ? (deletable && toggleSelect ? () => toggleSelect(r.id) : undefined) : handleEdit
+        batchMode
+          ? !isViewer && deletable && toggleSelect
+            ? () => toggleSelect(r.id)
+            : undefined
+          : isViewer
+            ? undefined
+            : handleEdit
       }
     >
       {batchMode && (
@@ -68,6 +85,7 @@ export const ManageRow = memo(function ManageRow({
           isSelected={isSelected}
           rowId={r.id}
           onToggleSelect={toggleSelect}
+          disabled={isViewer}
         />
       )}
       <ManageRowCodeCell
@@ -101,6 +119,7 @@ export const ManageRow = memo(function ManageRow({
         onDeleteCancel={handleDeleteCancel}
         onDeleteConfirm={handleDeleteConfirm}
         onRestore={handleRestore}
+        isViewer={isViewer}
       />
     </tr>
   );

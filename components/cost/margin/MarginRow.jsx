@@ -36,6 +36,7 @@ export const MarginRow = memo(function MarginRow({
   warnPct = 30,
   critPct = 40,
   onToggleHide,
+  canEdit = false,
 }) {
   return (
     <tr style={r.hidden ? { opacity: 0.5 } : undefined}>
@@ -186,6 +187,7 @@ export const MarginRow = memo(function MarginRow({
               }}
               title={r.hidden ? '표시' : '숨김(표·통계 제외)'}
               onClick={() => onToggleHide(r)}
+              disabled={!canEdit}
             >
               {r.hidden ? '표시' : '숨김'}
             </button>

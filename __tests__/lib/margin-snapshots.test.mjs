@@ -40,6 +40,9 @@ jest.unstable_mockModule('@/lib/db', () => ({
     if (idx !== -1) state.store.splice(idx, 1);
   },
 }));
+jest.unstable_mockModule('@/lib/auth/guard', () => ({
+  assertActiveAdmin: jest.fn(async () => {}),
+}));
 
 // Dynamic import AFTER mock registration
 const { getAllSnapshots, saveSnapshot, deleteSnapshot } =

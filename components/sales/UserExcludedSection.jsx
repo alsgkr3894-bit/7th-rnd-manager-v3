@@ -18,7 +18,7 @@ import { asDisplayText } from '@/lib/ui/prop-guards';
 const INITIAL_FORM = { menuName: '' };
 const PAGE_SIZE = 20;
 
-export function UserExcludedSection() {
+export function UserExcludedSection({ canEdit = false }) {
   const {
     list,
     adding,
@@ -66,11 +66,12 @@ export function UserExcludedSection() {
       <SectionHeader
         title="사용자 추가 제외"
         count={list.length}
-        adding={adding}
+        adding={canEdit && adding}
+        disabled={!canEdit}
         onAdd={resetAdding}
       />
 
-      {adding && (
+      {canEdit && adding && (
         <RowForm
           form={form}
           setForm={setForm}
@@ -80,7 +81,7 @@ export function UserExcludedSection() {
         />
       )}
 
-      {list.length === 0 && !adding ? (
+      {list.length === 0 && !(canEdit && adding) ? (
         <SectionEmpty>사용자 추가 제외 메뉴가 아직 없습니다</SectionEmpty>
       ) : (
         list.length > 0 && (
@@ -113,7 +114,7 @@ export function UserExcludedSection() {
                       const key = asDisplayText(excludedId, `excluded-${index}`);
                       const menuName = asDisplayText(e.menuName, '-');
 
-                      return editingId === excludedId && hasExcludedId ? (
+                      return canEdit && editingId === excludedId && hasExcludedId ? (
                         <tr key={key}>
                           <td colSpan={2} style={{ padding: 8 }}>
                             <RowForm
@@ -132,7 +133,7 @@ export function UserExcludedSection() {
                             <div className="menu-name">{menuName}</div>
                           </td>
                           <td style={{ textAlign: 'right' }}>
-                            {pendingDeleteId === excludedId && hasExcludedId ? (
+                            {canEdit && pendingDeleteId === excludedId && hasExcludedId ? (
                               <InlineConfirmButtons
                                 message="제외 메뉴를 삭제할까요?"
                                 busy={busy}
@@ -141,13 +142,18 @@ export function UserExcludedSection() {
                               />
                             ) : hasExcludedId ? (
                               <>
-                                <button className="btn sm" onClick={() => startEdit(e)}>
+                                <button
+                                  className="btn sm"
+                                  onClick={() => startEdit(e)}
+                                  disabled={!canEdit}
+                                >
                                   수정
                                 </button>{' '}
                                 <button
                                   className="btn sm"
                                   style={{ color: 'var(--negative)' }}
                                   onClick={() => requestDelete(excludedId)}
+                                  disabled={!canEdit}
                                 >
                                   삭제
                                 </button>

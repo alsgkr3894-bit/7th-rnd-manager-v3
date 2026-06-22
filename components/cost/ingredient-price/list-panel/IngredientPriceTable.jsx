@@ -19,7 +19,7 @@ function IngredientPriceNoResults() {
   );
 }
 
-function IngredientPriceTableHeader({ priceTable }) {
+function IngredientPriceTableHeader({ priceTable, readOnly = false }) {
   return (
     <thead>
       <tr>
@@ -28,6 +28,7 @@ function IngredientPriceTableHeader({ priceTable }) {
             type="checkbox"
             checked={priceTable.allPageSelected}
             onChange={priceTable.togglePage}
+            disabled={readOnly}
             style={{ width: 15, height: 15, accentColor: 'var(--accent)' }}
           />
         </th>
@@ -90,7 +91,9 @@ function IngredientPriceTableRows({ priceTable, readOnly, onRegClick, onInlineSa
           r={row}
           onRegClick={() => onRegClick(row)}
           selected={row.meta?.id != null && priceTable.selected.has(row.meta.id)}
-          onToggleSelect={() => row.meta?.id != null && priceTable.toggle(row.meta.id)}
+          onToggleSelect={
+            readOnly ? undefined : () => row.meta?.id != null && priceTable.toggle(row.meta.id)
+          }
           onInlineSave={onInlineSave}
           readOnly={readOnly}
         />
@@ -140,7 +143,7 @@ export function IngredientPriceTable({
       ) : (
         <div className="table-wrap">
           <table className="data-table">
-            <IngredientPriceTableHeader priceTable={priceTable} />
+            <IngredientPriceTableHeader priceTable={priceTable} readOnly={readOnly} />
             <IngredientPriceTableRows
               priceTable={priceTable}
               readOnly={readOnly}

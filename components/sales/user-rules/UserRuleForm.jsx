@@ -18,6 +18,7 @@ export function UserRuleForm({
   submitLabel = '추가',
   nameOpts = EMPTY_NAME_OPTIONS,
   isMain = true,
+  canEdit = true,
 }) {
   const safeForm = form && typeof form === 'object' ? form : INITIAL_USER_RULE_FORM;
   const safeNameOpts = nameOpts && typeof nameOpts === 'object' ? nameOpts : EMPTY_NAME_OPTIONS;
@@ -54,12 +55,14 @@ export function UserRuleForm({
         onChange={event => updateForm({ ...safeForm, rawMenuName: event.target.value })}
         placeholder="패턴 (정규화 후)"
         style={inputStyle}
+        disabled={!canEdit}
       />
       {isMain ? (
         <select
           value={category}
           onChange={event => updateForm({ ...safeForm, category: event.target.value })}
           style={inputStyle}
+          disabled={!canEdit}
         >
           {CATEGORY_OPTIONS.map(option => (
             <option key={option} value={option}>
@@ -73,6 +76,7 @@ export function UserRuleForm({
           onChange={event => updateForm({ ...safeForm, category: event.target.value })}
           placeholder="카테고리"
           style={inputStyle}
+          disabled={!canEdit}
         />
       )}
       <ComboBox
@@ -81,6 +85,7 @@ export function UserRuleForm({
         options={catOpts.groupNames}
         placeholder="중분류"
         inputStyle={inputStyle}
+        disabled={!canEdit}
       />
       <ComboBox
         value={detailName}
@@ -88,6 +93,7 @@ export function UserRuleForm({
         options={catOpts.detailNames}
         placeholder="상세 (선택)"
         inputStyle={inputStyle}
+        disabled={!canEdit}
       />
       <button type="button" className="btn sm" onClick={handleCancel} disabled={busy}>
         취소
@@ -96,7 +102,7 @@ export function UserRuleForm({
         type="button"
         className="btn sm primary"
         onClick={handleSubmit}
-        disabled={busy || !rawMenuName.trim() || !category || !groupName.trim()}
+        disabled={busy || !canEdit || !rawMenuName.trim() || !category || !groupName.trim()}
       >
         {busy ? '...' : submitLabel}
       </button>

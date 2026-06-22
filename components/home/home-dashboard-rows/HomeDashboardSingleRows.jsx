@@ -56,6 +56,7 @@ export function renderFreshnessRow(context) {
           backupReminder={context.backupReminder}
           isMain={context.isMain}
           router={context.router}
+          canEdit={context.canEdit}
         />
       )
     : null;
@@ -77,6 +78,7 @@ export function renderHealthRow(context) {
           pipeline={context.pipeline}
           isMain={context.isMain}
           router={context.router}
+          canEdit={context.canEdit}
         />
       )
     : null;
@@ -99,6 +101,7 @@ export function renderChartsRow(context) {
           salesKpi={context.salesKpi}
           router={context.router}
           isTrendEmpty={context.isTrendEmpty}
+          canEdit={context.canEdit}
         />
       )
     : null;
@@ -110,6 +113,7 @@ export function renderQuickNoteRow(context) {
       key="quicknote"
       quickNote={context.quickNote}
       quickSaved={context.quickSaved}
+      canEdit={context.canEdit}
       onQuickNoteChange={context.onQuickNoteChange}
       onSave={context.onSaveQuickNote}
       onOpenDraft={context.onOpenQuickNoteDraft}
@@ -123,7 +127,11 @@ export function renderActivitiesRow(context) {
         context,
         'activities',
         '최근 활동',
-        <HomeActivities activities={context.activities} router={context.router} />
+        <HomeActivities
+          activities={context.activities}
+          router={context.router}
+          canEdit={context.canEdit}
+        />
       )
     : null;
 }

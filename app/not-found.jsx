@@ -10,7 +10,7 @@ export default function NotFound() {
   useEffect(() => {
     const wrap = particlesRef.current;
     if (!wrap) return;
-    wrap.innerHTML = '';
+    wrap.replaceChildren();
     for (let i = 0; i < 22; i++) {
       const p = document.createElement('div');
       p.className = styles.particle;
@@ -27,7 +27,7 @@ export default function NotFound() {
       wrap.appendChild(p);
     }
     return () => {
-      wrap.innerHTML = '';
+      wrap.replaceChildren();
     };
   }, []);
 

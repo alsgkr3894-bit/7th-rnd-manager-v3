@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { usePagination } from '@/hooks/usePagination';
-import { downloadCsv } from '@/lib/download';
+import { downloadCsv, makeFileNameWithBrand } from '@/lib/download';
 import { sortByKey, getProductTypeCounts } from '@/lib/jette/utils';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { useTableSearchSort } from '@/hooks/useTableSearchSort';
@@ -18,6 +18,7 @@ import {
 export function PriceCompareTable({
   diffRows,
   productTypeLookup = new Map(),
+  canEdit = false,
   onTypeChange,
   externalFilter,
   priceAlertThreshold,
@@ -73,7 +74,10 @@ export function PriceCompareTable({
   const { page, goTo, totalPages, paged, total } = usePagination(filtered, PRICE_COMPARE_PAGE_SIZE);
 
   function exportCsv() {
-    downloadCsv(buildPriceCompareCsvData(filtered, safeProductTypeLookup), '제때_가격비교.csv');
+    downloadCsv(
+      buildPriceCompareCsvData(filtered, safeProductTypeLookup),
+      makeFileNameWithBrand('제때_가격비교', 'csv')
+    );
   }
 
   return (
@@ -106,6 +110,7 @@ export function PriceCompareTable({
         sortDir={sortDir}
         onSort={toggleSort}
         productTypeLookup={safeProductTypeLookup}
+        canEdit={canEdit}
         onTypeChange={onTypeChange}
         priceAlertThreshold={alertThreshold}
         page={page}

@@ -10,6 +10,8 @@ import {
 } from '../../components/jette/shipment-table/shipmentTableUtils.js';
 
 const tableSource = readFileSync(resolve('components/jette/ShipmentTable.jsx'), 'utf8');
+const pageSource = readFileSync(resolve('app/jette/shipment/page.jsx'), 'utf8');
+const historySource = readFileSync(resolve('components/jette/ShipmentHistory.jsx'), 'utf8');
 const cardSource = readFileSync(
   resolve('components/jette/shipment-table/ShipmentTableCard.jsx'),
   'utf8'
@@ -51,6 +53,15 @@ describe('shipment table structure', () => {
     expect(dataTableSource).toContain('<SortableTh');
     expect(dataTableSource).toContain('<Pagination');
     expect(utilsSource).toContain('export function getShipmentRowValues');
+  });
+
+  test('shipment upload and delete controls follow current role', () => {
+    expect(pageSource).toContain("from '@/hooks/useCurrentRole'");
+    expect(pageSource).toContain('const canEdit = roleReady && isAdmin');
+    expect(pageSource).toContain('disabled={!ready || busy || !canEdit}');
+    expect(pageSource).toContain('canEdit={canEdit}');
+    expect(historySource).toContain('canEdit = false');
+    expect(historySource).toContain('const canDelete = canEdit && handleDelete && fileId != null');
   });
 
   test('helpers keep counts, filters, row values, type meta, sorting, and row keys stable', () => {

@@ -14,6 +14,7 @@ describe('note list body props', () => {
     const onStatusChange = fn();
     const props = buildNoteContextMenuProps({
       ctxMenu: { note: { id: 'n-1' } },
+      canEdit: true,
       pinnedIds: new Set(['n-1']),
       closeContextMenu: fn(),
       onEditNote: fn(),
@@ -38,6 +39,7 @@ describe('note list body props', () => {
     const props = buildNoteCardGridProps({
       visible: [{ id: 'n-1' }],
       filtered: [{ id: 'n-1' }, { id: 'n-2' }],
+      canEdit: true,
       batchMode: false,
       selected: new Set(),
       pinnedIds: new Set(),
@@ -69,6 +71,7 @@ describe('note list body props', () => {
     const tableProps = buildNoteTableViewProps({
       visible: [{ id: 'n-1' }],
       filtered: [{ id: 'n-1' }],
+      canEdit: true,
       focusedRow: 'n-1',
       setFocusedRow: fn(),
       onOpenDetail: fn(),
@@ -78,6 +81,7 @@ describe('note list body props', () => {
       onLoadMore: fn(),
     });
     const modalProps = buildNoteDetailModalProps({
+      canEdit: true,
       detailNote,
       onCloseDetail: fn(),
       onEditNote,

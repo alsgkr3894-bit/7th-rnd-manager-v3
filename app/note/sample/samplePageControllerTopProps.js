@@ -17,7 +17,13 @@ export function buildSampleHeaderProps({ pageState }) {
   };
 }
 
-export function buildSampleActionsProps({ pageState, batch, compare, navigation }) {
+export function buildSampleActionsProps({
+  pageState,
+  batch,
+  compare,
+  navigation,
+  canEdit = false,
+}) {
   const { filtered } = pageState;
   const { openWrite } = navigation;
 
@@ -26,11 +32,16 @@ export function buildSampleActionsProps({ pageState, batch, compare, navigation 
     batchMode: batch.batchMode,
     compareMode: compare.compareMode,
     selected: batch.selected,
+    canEdit,
     onBatchDelete: batch.handleBatchDelete,
     onExitBatchMode: batch.exitBatchMode,
     onExitCompareMode: compare.exitCompareMode,
-    onStartBatchMode: () => batch.setBatchMode(true),
+    onStartBatchMode: () => {
+      if (canEdit) batch.setBatchMode(true);
+    },
     onStartCompareMode: () => compare.setCompareMode(true),
-    onCreateSample: openWrite,
+    onCreateSample: () => {
+      if (canEdit) openWrite();
+    },
   };
 }

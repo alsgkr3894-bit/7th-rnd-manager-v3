@@ -2,7 +2,7 @@
 import { STATUS_BORDER, STATUS_COLORS } from '@/lib/note/constants';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 
-export function DayNoteSection({ notes, onAdd, onOpen }) {
+export function DayNoteSection({ notes, canEdit = false, onAdd, onOpen }) {
   return (
     <div>
       <div
@@ -24,7 +24,7 @@ export function DayNoteSection({ notes, onAdd, onOpen }) {
         >
           테스트 노트 {notes.length > 0 ? `· ${notes.length}` : ''}
         </span>
-        <button className="btn sm ghost xs" onClick={onAdd}>
+        <button className="btn sm ghost xs" onClick={onAdd} disabled={!canEdit}>
           + 추가
         </button>
       </div>
@@ -58,6 +58,7 @@ export function DayNoteSection({ notes, onAdd, onOpen }) {
             justifyContent: 'flex-start',
           }}
           onClick={onAdd}
+          disabled={!canEdit}
         >
           + 테스트 노트 작성하기
         </button>

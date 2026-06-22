@@ -59,7 +59,7 @@ export const inputStyle = {
   fontSize: 13,
 };
 
-export function SectionHeader({ title, count, adding, onAdd }) {
+export function SectionHeader({ title, count, adding, onAdd, disabled = false }) {
   const safeTitle = asDisplayText(title, '설정');
   const safeCount = clampInteger(count, { min: 0, fallback: 0 });
   const handleAdd = typeof onAdd === 'function' ? onAdd : null;
@@ -82,8 +82,8 @@ export function SectionHeader({ title, count, adding, onAdd }) {
       <button
         type="button"
         className="btn sm"
-        onClick={handleAdd || undefined}
-        disabled={!handleAdd}
+        onClick={disabled ? undefined : handleAdd || undefined}
+        disabled={disabled || !handleAdd}
       >
         {adding ? (
           '닫기'

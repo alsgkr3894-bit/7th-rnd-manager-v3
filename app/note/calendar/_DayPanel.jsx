@@ -15,6 +15,7 @@ export function DayPanel({
   workLogs,
   samples = [],
   viewMode,
+  canEdit = false,
   router,
   onClose,
   onAddSchedule,
@@ -51,7 +52,12 @@ export function DayPanel({
       />
 
       {safeViewMode !== 'notes' && (
-        <DayScheduleSection schedules={safeSchedules} onAdd={addSchedule} onEdit={editSchedule} />
+        <DayScheduleSection
+          schedules={safeSchedules}
+          canEdit={canEdit}
+          onAdd={addSchedule}
+          onEdit={editSchedule}
+        />
       )}
 
       {safeViewMode === 'all' && safeSchedules.length > 0 && safeNotes.length > 0 && (
@@ -59,7 +65,7 @@ export function DayPanel({
       )}
 
       {safeViewMode !== 'schedules' && (
-        <DayNoteSection notes={safeNotes} onAdd={addNote} onOpen={openNote} />
+        <DayNoteSection notes={safeNotes} canEdit={canEdit} onAdd={addNote} onOpen={openNote} />
       )}
 
       {(safeViewMode === 'all' || safeViewMode === 'samples') && safeSamples.length > 0 && (

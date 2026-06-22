@@ -1,5 +1,6 @@
 'use client';
 import { UploadDropzone as UiDropzone } from '@/components/ui/UploadDropzone';
+import { UPLOAD_EXT, UPLOAD_MAX_MB } from '@/lib/upload-policy';
 
 const SALES_RULES = [
   { type: 'ok', text: '필수 헤더: 메뉴명 / 판매량(개)' },
@@ -16,9 +17,9 @@ export function UploadDropzone({
   return (
     <UiDropzone
       onFile={onFile}
-      accept={['.xlsx', '.xls', '.csv']}
-      maxSizeMB={20}
-      title="엑셀(.xlsx) 또는 CSV 파일을 끌어다 놓으세요"
+      accept={UPLOAD_EXT.excelOrCsv}
+      maxSizeMB={UPLOAD_MAX_MB.excel}
+      title="엑셀(.xlsx), CSV 또는 TSV 파일을 끌어다 놓으세요"
       rules={SALES_RULES}
       disabled={disabled}
       busyText={busyText}

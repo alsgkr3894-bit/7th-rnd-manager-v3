@@ -4,7 +4,7 @@ import { Icon } from '@/components/icons';
 /**
  * RankCompareEmpty — rank-compare 페이지 빈 상태 (업로드된 판매량 없음)
  */
-export function RankCompareEmpty() {
+export function RankCompareEmpty({ canEdit = false }) {
   return (
     <div
       className="card"
@@ -23,9 +23,11 @@ export function RankCompareEmpty() {
       <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
         판매량을 업로드하면 두 기간을 비교할 수 있어요.
       </div>
-      <a className="btn primary sm" href="/menu-sales/upload" style={{ marginTop: 8 }}>
-        <Icon.upload style={{ width: 14, height: 14 }} /> 판매량 업로드
-      </a>
+      {canEdit && (
+        <a className="btn primary sm" href="/menu-sales/upload" style={{ marginTop: 8 }}>
+          <Icon.upload style={{ width: 14, height: 14 }} /> 판매량 업로드
+        </a>
+      )}
     </div>
   );
 }

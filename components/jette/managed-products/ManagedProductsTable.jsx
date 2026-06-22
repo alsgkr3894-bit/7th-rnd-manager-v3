@@ -17,6 +17,7 @@ export function ManagedProductsTable({
   sortKey,
   sortDir,
   onSort,
+  canEdit = false,
   pendingDeleteId,
   onToggleEnable,
   onChangeType,
@@ -90,6 +91,7 @@ export function ManagedProductsTable({
             <ManagedProductsRow
               key={product.id}
               product={product}
+              canEdit={canEdit}
               onToggleEnable={onToggleEnable}
               onChangeType={onChangeType}
               onToggleManaged={onToggleManaged}

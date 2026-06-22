@@ -23,6 +23,7 @@ export function MarginTableCard({
   discVal,
   onSort,
   onToggleHide,
+  canEdit = false,
   page,
   goTo,
   totalPages,
@@ -117,6 +118,7 @@ export function MarginTableCard({
                       warnPct={warnPct}
                       critPct={critPct}
                       onToggleHide={onToggleHide}
+                      canEdit={canEdit}
                     />
                   ))}
                 </tbody>
