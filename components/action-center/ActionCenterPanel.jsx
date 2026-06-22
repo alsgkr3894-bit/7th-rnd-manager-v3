@@ -132,7 +132,14 @@ export function ActionCenterPanel({ items = [], allItems = [], onRefresh, compac
           <button
             type="button"
             className="btn ghost"
-            style={{ fontSize: 11, padding: '4px 0', color: 'var(--text-3)', textDecoration: 'underline', background: 'none', border: 'none' }}
+            style={{
+              fontSize: 11,
+              padding: '4px 0',
+              color: 'var(--text-3)',
+              textDecoration: 'underline',
+              background: 'none',
+              border: 'none',
+            }}
             onClick={() => setShowHidden(v => !v)}
           >
             숨겨진 항목 {hiddenItems.length}개 {showHidden ? '접기' : '펼치기'}

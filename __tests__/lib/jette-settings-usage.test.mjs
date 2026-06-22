@@ -16,6 +16,8 @@ describe('jette settings usage guards', () => {
     expect(settingsPageSource).toContain('JETTE_SETTINGS_KEY');
     expect(settingsPageSource).toContain('normalizeJetteSettings');
     expect(settingsPageSource).toContain('normalizePriceAlertThreshold');
+    expect(settingsPageSource).toContain("from '@/hooks/useMounted'");
+    expect(settingsPageSource).toContain('if (mountedRef.current) setReady(true);');
     expect(settingsPageSource).toContain('항상 자동 반영');
   });
 

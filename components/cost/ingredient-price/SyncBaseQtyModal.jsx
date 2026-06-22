@@ -4,6 +4,7 @@ import { ModalFrame } from '@/components/ui/ModalFrame';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { getAllIngredients } from '@/lib/ingredient';
 import { buildSyncPlan, applySyncPlan } from '@/lib/cost/sync-base-quantity';
+import { useMounted } from '@/hooks/useMounted';
 import { SyncBaseQtyDone } from './sync-base-qty/SyncBaseQtyDone';
 import { SyncBaseQtyError } from './sync-base-qty/SyncBaseQtyError';
 import { SyncBaseQtyNotice } from './sync-base-qty/SyncBaseQtyNotice';
@@ -26,6 +27,7 @@ export function SyncBaseQtyModal({ onDone, onClose }) {
   const [plan, setPlan] = useState(null); // buildSyncPlan 결과
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState(null);
+  const mountedRef = useMounted();
 
   // ── 파일 목록 초기 로드 ───────────────────────────────────
   useEffect(() => {
@@ -58,13 +60,15 @@ export function SyncBaseQtyModal({ onDone, onClose }) {
         getAllIngredients(),
       ]);
       const result = buildSyncPlan(priceRows, allIngredients);
+      if (!mountedRef.current) return;
       setPlan(result);
       setPhase('preview');
     } catch (err) {
+      if (!mountedRef.current) return;
       setError(err.message || '프리뷰 계산 실패');
       setPhase('pick');
     }
-  }, [fileId]);
+  }, [fileId, mountedRef]);
 
   // ── 적용 ─────────────────────────────────────────────────
   const handleApply = useCallback(async () => {
@@ -73,14 +77,16 @@ export function SyncBaseQtyModal({ onDone, onClose }) {
     setError(null);
     try {
       const count = await applySyncPlan(plan.changes);
+      if (!mountedRef.current) return;
       setPhase('done');
       onDone?.(count);
     } catch (err) {
+      if (!mountedRef.current) return;
       setError(err.message || '저장 중 오류가 발생했습니다.');
     } finally {
-      setApplying(false);
+      if (mountedRef.current) setApplying(false);
     }
-  }, [plan, onDone]);
+  }, [plan, onDone, mountedRef]);
 
   // ── 다시 선택 ─────────────────────────────────────────────
   const handleReset = useCallback(() => {

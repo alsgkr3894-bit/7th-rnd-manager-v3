@@ -29,6 +29,9 @@ const optionRowSource = readFileSync(
 describe('report preview modal structure', () => {
   test('ReportPreviewModal keeps modal state and delegates preview rendering', () => {
     expect(modalSource).toContain('export function ReportPreviewModal');
+    expect(modalSource).toContain("import { createPortal } from 'react-dom'");
+    expect(modalSource).toContain("if (typeof document === 'undefined') return null");
+    expect(modalSource).toContain('document.body');
     expect(modalSource).toContain('<ReportPreviewSidebar');
     expect(modalSource).toContain('<ReportPreviewBody');
     expect(modalSource).toContain('printReportElements');
@@ -37,6 +40,17 @@ describe('report preview modal structure', () => {
     expect(modalSource).not.toContain('REPORT_OPTION_RENDERERS');
     expect(modalSource).not.toContain('className="preview-pager"');
     expect(modalSource).not.toContain('보고서 설정');
+  });
+
+  test('report modal shell uses a body portal above app chrome', () => {
+    const shellSource = readFileSync(resolve('components/report/_ReportModalShell.jsx'), 'utf8');
+
+    expect(shellSource).toContain("import { createPortal } from 'react-dom'");
+    expect(shellSource).toContain("if (typeof document === 'undefined') return null");
+    expect(shellSource).toContain('return createPortal(');
+    expect(shellSource).toContain('document.body');
+    expect(shellSource).toContain('className="modal-scrim"');
+    expect(shellSource).toContain('aria-label="닫기"');
   });
 
   test('split report preview components own page, sidebar, and pager UI', () => {

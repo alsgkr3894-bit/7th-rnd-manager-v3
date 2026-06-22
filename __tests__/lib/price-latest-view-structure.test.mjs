@@ -39,6 +39,9 @@ describe('price latest view structure', () => {
     expect(viewSource).toContain('<PriceLatestListCard');
     expect(viewSource).toContain('buildLatestPriceCsvRows');
     expect(viewSource).toContain('filterAndSortLatestRows');
+    expect(viewSource).toContain('let alive = true;');
+    expect(viewSource).toContain('if (!alive) return;');
+    expect(viewSource).toContain('alive = false;');
     expect(viewSource).not.toContain('<Chip');
     expect(viewSource).not.toContain('<SearchBox');
     expect(viewSource).not.toContain('<SortableTh');

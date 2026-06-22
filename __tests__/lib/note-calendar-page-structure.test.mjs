@@ -97,7 +97,18 @@ describe('note calendar page structure', () => {
     expect(dataHookSource).toContain(
       'if (canEdit) await pruneOldWorkLogs(WORK_LOG_RETENTION_DAYS);'
     );
-    expect(dataHookSource).toContain('}, [canEdit]);');
+    expect(dataHookSource).toContain('}, [canEdit, mountedRef]);');
+  });
+
+  test('calendar data load ignores unmounts and stale reloads', () => {
+    expect(dataHookSource).toContain("from '@/hooks/useMounted'");
+    expect(dataHookSource).toContain('const mountedRef = useMounted();');
+    expect(dataHookSource).toContain('const loadSeqRef = useRef(0);');
+    expect(dataHookSource).toContain('const seq = ++loadSeqRef.current;');
+    expect(dataHookSource).toContain('seq !== loadSeqRef.current');
+    expect(dataHookSource).toContain(
+      'if (mountedRef.current && seq === loadSeqRef.current) setLoading(false);'
+    );
   });
 
   test('split files own focused calendar page responsibilities', () => {

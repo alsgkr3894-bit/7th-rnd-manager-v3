@@ -42,6 +42,10 @@ describe('sync base quantity modal structure', () => {
     expect(modalSource).toContain('<SyncBaseQtyError');
     expect(modalSource).toContain('buildSyncPlan');
     expect(modalSource).toContain('applySyncPlan');
+    expect(modalSource).toContain("from '@/hooks/useMounted'");
+    expect(modalSource).toContain('const mountedRef = useMounted();');
+    expect(modalSource).toContain('if (!mountedRef.current) return;');
+    expect(modalSource).toContain('if (mountedRef.current) setApplying(false);');
     expect(modalSource).not.toContain('<Icon.check');
     expect(modalSource).not.toContain('formatNumber');
     expect(modalSource).not.toContain('업데이트 항목');

@@ -19,6 +19,7 @@ import {
   ROLE_LABELS,
 } from '@/lib/auth/accounts';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
+import { useMounted } from '@/hooks/useMounted';
 import {
   AccountProfileCard,
   AccountSessionCard,
@@ -33,6 +34,7 @@ export default function Page() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', team: '', role: '' });
   const { role: currentRole, isAdmin } = useCurrentRole();
+  const mountedRef = useMounted();
 
   const [activeId, setActiveId] = useState(null);
   const { data: accountData, reload: reloadAccounts } = useDBLoad(
@@ -88,9 +90,9 @@ export default function Page() {
     setIpLoading(true);
     try {
       const entry = await fetchClientIP();
-      if (entry) setIpEntry(entry);
+      if (mountedRef.current && entry) setIpEntry(entry);
     } finally {
-      setIpLoading(false);
+      if (mountedRef.current) setIpLoading(false);
     }
   }
 

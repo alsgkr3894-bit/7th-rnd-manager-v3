@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
+import { useMounted } from '@/hooks/useMounted';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { STATUSES, getAllNotesCached, updateNote, bulkUpdateBoardOrder } from '@/lib/note';
@@ -13,29 +14,45 @@ export function useKanbanBoard({ canEdit = false } = {}) {
   const [bouncingIds, setBouncingIds] = useState(new Set());
   const [search, setSearch] = useState('');
   const [loadError, setLoadError] = useState(null);
+  const mountedRef = useMounted();
+  const loadSeqRef = useRef(0);
   const bounceTimersRef = useRef(new Set());
   const searchActive = search.trim().length > 0;
 
   const load = useCallback(async () => {
-    await initDB();
-    setNotes(await getAllNotesCached());
-    setLoadError(null);
-  }, []);
+    const seq = ++loadSeqRef.current;
+    try {
+      await initDB();
+      const nextNotes = await getAllNotesCached();
+      if (!mountedRef.current || seq !== loadSeqRef.current) return false;
+      setNotes(nextNotes);
+      setLoadError(null);
+      return true;
+    } catch (err) {
+      if (!mountedRef.current || seq !== loadSeqRef.current) return false;
+      throw err;
+    }
+  }, [mountedRef]);
 
   const refreshNotes = useCallback(
     async ({ toast = false, finishLoading = false } = {}) => {
+      let shouldFinishLoading = false;
       try {
-        await load();
+        const applied = await load();
+        if (!applied) return;
+        shouldFinishLoading = true;
       } catch (err) {
+        if (!mountedRef.current) return;
+        shouldFinishLoading = true;
         console.error('[useKanbanBoard] load failed', err);
         const message = err?.message || '노트 데이터를 불러오지 못했습니다.';
         setLoadError(message);
         if (toast) showToast(`칸반 데이터 로드 실패: ${message}`, 'error');
       } finally {
-        if (finishLoading) setLoading(false);
+        if (finishLoading && shouldFinishLoading && mountedRef.current) setLoading(false);
       }
     },
-    [load]
+    [load, mountedRef]
   );
 
   useEffect(() => {
@@ -51,18 +68,23 @@ export function useKanbanBoard({ canEdit = false } = {}) {
     refreshNotes({ toast: true, finishLoading: true });
   }, [refreshNotes]);
 
-  const pulseNote = useCallback(noteId => {
-    setBouncingIds(s => new Set([...s, noteId]));
-    const timer = setTimeout(() => {
-      setBouncingIds(s => {
-        const n = new Set(s);
-        n.delete(noteId);
-        return n;
-      });
-      bounceTimersRef.current.delete(timer);
-    }, 400);
-    bounceTimersRef.current.add(timer);
-  }, []);
+  const pulseNote = useCallback(
+    noteId => {
+      if (!mountedRef.current) return;
+      setBouncingIds(s => new Set([...s, noteId]));
+      const timer = setTimeout(() => {
+        if (!mountedRef.current) return;
+        setBouncingIds(s => {
+          const n = new Set(s);
+          n.delete(noteId);
+          return n;
+        });
+        bounceTimersRef.current.delete(timer);
+      }, 400);
+      bounceTimersRef.current.add(timer);
+    },
+    [mountedRef]
+  );
 
   useEffect(
     () => () => {

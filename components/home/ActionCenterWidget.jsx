@@ -33,7 +33,16 @@ export function ActionCenterWidget({
         costAlertData,
         canEdit,
       }),
-    [unmatchedCount, reportingCount, uploadFreshness, backupReminder, ingredientHealth, costAlertData, canEdit, isMain]
+    [
+      unmatchedCount,
+      reportingCount,
+      uploadFreshness,
+      backupReminder,
+      ingredientHealth,
+      costAlertData,
+      canEdit,
+      isMain,
+    ]
   );
 
   // rev가 변경될 때(dismiss/snooze 후 refresh) localStorage 상태를 재읽음

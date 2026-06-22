@@ -7,6 +7,7 @@ import { initDB } from '@/lib/db';
 import { seedManagedProductsIfEmpty } from '@/lib/shipment';
 import { ManagedProductsCard } from '@/components/jette/ManagedProductsCard';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useMounted } from '@/hooks/useMounted';
 import {
   DEFAULT_JETTE_SETTINGS,
   JETTE_SETTINGS_KEY,
@@ -16,6 +17,7 @@ import {
 
 export default function Page() {
   const [ready, setReady] = useState(false);
+  const mountedRef = useMounted();
   const [settings, setSettings] = useLocalStorage(
     JETTE_SETTINGS_KEY,
     DEFAULT_JETTE_SETTINGS,
@@ -27,12 +29,12 @@ export default function Page() {
       try {
         await initDB();
         await seedManagedProductsIfEmpty();
-        setReady(true);
+        if (mountedRef.current) setReady(true);
       } catch (err) {
         console.error('[jette-settings] 초기화 실패:', err);
       }
     })();
-  }, []);
+  }, [mountedRef]);
 
   function update(key, value) {
     setSettings(prev => ({ ...prev, [key]: value }));

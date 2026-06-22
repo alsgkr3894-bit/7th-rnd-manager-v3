@@ -15,7 +15,7 @@
 | `npm run format:check` | ✅ 통과 |
 | `npm run lint` | ✅ 통과 (`No ESLint warnings or errors`) |
 | `npm run audit:docs` | ✅ 통과 (SITE_STATUS.md 수치 295/268 확인) |
-| `npm run test:ci` | ✅ **295 suites / 1771 tests** all-pass |
+| `npm run test:ci` | ✅ **295 suites / 1776 tests** all-pass |
 
 SITE_STATUS.md `testTotal` 295, `testLib` 268 기준으로 문서 수치와 코드 수치가 일치한다.
 
@@ -101,7 +101,7 @@ SITE_STATUS.md `testTotal` 295, `testLib` 268 기준으로 문서 수치와 코�
 | `app/note/sample/_SampleFormBody.jsx` | `file.size > 5 * 1024 * 1024` | `checkFileSize(file, UPLOAD_MAX_MB.photo)` |
 | `hooks/useRestoreFile.js` | `file.size > 500 * 1024 * 1024` | `checkFileSize(file, UPLOAD_MAX_MB.backup)` |
 
-수정 후 `lint` 통과, `test:ci` **295 suites / 1771 tests** all-pass 확인.
+수정 후 `lint` 통과, `test:ci` **295 suites / 1776 tests** all-pass 확인.
 
 ---
 
@@ -143,7 +143,7 @@ SITE_STATUS.md `testTotal` 295, `testLib` 268 기준으로 문서 수치와 코�
 - `npm run format:check` 통과
 - `npm run lint` 통과
 - `npm run audit:docs` 통과
-- `npm run test:ci` 최근 전체 기준선 통과: **295 suites / 1771 tests**
+- `npm run test:ci` 최근 전체 기준선 통과: **295 suites / 1776 tests**
 - `npm run qa:smoke` 통과: 22/22
 - `npm run qa:mobile` 통과: 22/22, 390px viewport
 - `npm run qa:workflow` 기준: 21시나리오
@@ -538,7 +538,7 @@ Claude 작업 (완료):
 - **`scripts/mobile-qa.mjs`**: 390px viewport Playwright 스모크 22라우트 — 가로 스크롤 자동 감지.
 - **`package.json`**: `qa:mobile` 명령어 추가.
 - **`__tests__/lib/mobile-viewport.test.mjs`**: 구조 테스트 11개 추가.
-- 당시 테스트: **278 suites / 1546 tests** all-pass. 현재 기준선은 295 suites / 1771 tests.
+- 당시 테스트: **278 suites / 1546 tests** all-pass. 현재 기준선은 295 suites / 1776 tests.
 
 Codex 검토:
 
@@ -587,7 +587,7 @@ Codex 검토:
 - `npm run format:check` ✅
 - `npx next lint --quiet` ✅
 - `npm run audit:docs` ✅
-- `npm run test:ci` ✅ 295 suites / 1771 tests
+- `npm run test:ci` ✅ 295 suites / 1776 tests
 - `output-artifact-builders.test.mjs` ✅ 원산지/영양성분/판매량/원가 보고서 XLSX workbook + 실제 `.xlsx` 파일 write/read 검증
 - import cycle 간이 탐색: 실제 상호참조 cycle 없음. barrel/index 자기 참조성 노이즈만 탐지.
 
@@ -678,7 +678,7 @@ Codex 검토:
 | `git diff --check` | ✅ 통과 | whitespace error 없음 |
 | targeted Jest | ✅ 통과 | origin/visibility/restore/brand restore 관련 5 suites, 22 tests |
 | output artifact Jest | ✅ 통과 | 원산지·영양성분·판매량·원가 보고서 XLSX workbook/파일명/시트와 실제 `.xlsx` 바이너리 write/read 검증 4 tests |
-| `npm run test:ci` | ✅ 통과 | 295 suites / 1771 tests |
+| `npm run test:ci` | ✅ 통과 | 295 suites / 1776 tests |
 | `npm run qa:full` | ⏳ 부분 확인 | 이번 재검증에서 dev smoke 22/22, mobile 22/22, runtime 67/67, workflow 21/21 개별 통과. prod 전체 QA는 별도 완료 |
 | `npm run build:clean` | ✅ 통과 | compiled successfully, static pages 57/57 |
 
@@ -697,7 +697,7 @@ Codex 검토:
 | 식자재 관리 highlight TDZ | `highlightId` state 선언을 참조 effect보다 위로 이동 | `ingredient-manage-undo-guards.test.mjs`, `/ingredient/manage` 200 |
 | 숫자 저장 경계 NaN/음수 방지 | 식자재 벌크 import, 레시피 구성품, 판매가, 메뉴마스터 price sync/레시피 편집/인라인 숫자 편집에서 잘못된 숫자를 `NaN` 대신 `null` 저장 또는 저장 차단. 판매가·메뉴마스터 price와 원가 레시피 수량/단가는 음수도 `null` 처리 | `ingredient-product-code-dedup`, `recipe-master-sync`, `menu-recipe-components-keyboard`, `cost-manage-table-utils`, `menu-recipes`, `menu-price-store-safety`, `menu-master-price-sync` 테스트 |
 | 제때 단가/출고량 write 권한 | 판매량 업로드와 동일하게 제때 단가 업로드/삭제, 출고량 업로드/삭제, 관리품목 추가/수정/삭제를 store 레벨 `assertActiveAdmin`으로 방어 | `destructive-action-guard-structure`, `price-store-read-guards`, `shipment-store-read-guards` 테스트 |
-| 출고량 중복 업로드 race 회귀 | `saveShipmentUpload()`가 사전 중복 해시 검사뿐 아니라 트랜잭션 내부 `upload_log.fileHash` 재검사에서도 `DUPLICATE_HASH`로 중단되는지 테스트 추가 | `shipment-store-read-guards.test.mjs` 8케이스, 전체 `test:ci` 295 suites / 1771 tests |
+| 출고량 중복 업로드 race 회귀 | `saveShipmentUpload()`가 사전 중복 해시 검사뿐 아니라 트랜잭션 내부 `upload_log.fileHash` 재검사에서도 `DUPLICATE_HASH`로 중단되는지 테스트 추가 | `shipment-store-read-guards.test.mjs` 8케이스, 전체 `test:ci` 295 suites / 1776 tests |
 | 노트 체인 브랜드 스코프 | 공유 DB의 `getNotesInChain()`도 `getAllNotes/getNoteById/deleteNote`와 동일하게 현재 브랜드 노트만 반환하도록 보강 | `note-sample-store-read-guards`, `note-shared-brand-scope`, `note-cache` 테스트 |
 | 대표 XLSX 출력 artifact 검증 | 원산지·영양성분·판매량·원가 보고서 XLSX를 workbook으로 캡처하고 실제 `.xlsx` 파일로 저장 후 다시 읽어 시트명, 헤더, 브랜드/날짜 파일명, formula 셀 미생성을 고정 | `output-artifact-builders.test.mjs` 4케이스 |
 
@@ -715,7 +715,7 @@ Codex 검토:
 
 | 우선순위 | 항목 | 현재 판단 | 다음 조치 |
 | --- | --- | --- | --- |
-| P0 | 문서 기준선 정합성 | 현재 진행 감사 문서의 최신 검증 기준은 295 suites / 1771 tests로 맞췄다 | 이후 테스트 수가 바뀌면 감사 문서와 함께 갱신 |
+| P0 | 문서 기준선 정합성 | 현재 진행 감사 문서의 최신 검증 기준은 295 suites / 1776 tests로 맞췄다 | 이후 테스트 수가 바뀌면 감사 문서와 함께 갱신 |
 | P0 | production build gate | `build:clean` 통과, 3101번 격리 포트 `qa:prod` 통과 | 3000번 dev 서버와 충돌하지 않게 prod QA는 별도 포트 사용 |
 | P0 | 외부 배포 인증 모델 | 현재 인증은 내부 LAN 클라이언트 쿠키/localStorage 전제 | 외부 접속 전 서버 세션, HttpOnly/Secure cookie, 서버 권한 체크로 전환 |
 | P0 | 판매가 전체 교체 정책 | `previewMenuPriceReplacement()`와 업로드 UI에 기존/반영/유지·갱신/신규/삭제 예정 수량을 추가했다 | 추후 필요 시 병합/전체교체 모드 분리 |
@@ -767,7 +767,7 @@ Codex 검토:
 | `components` 도메인 | 17 |
 | hooks 파일 | 59 |
 | Jest 테스트 파일 | 295 |
-| Jest 테스트 케이스 | 1,771 |
+| Jest 테스트 케이스 | 1,773 |
 | runtime QA route | 67 |
 | workflow QA 시나리오 | 21 |
 
@@ -871,7 +871,7 @@ Codex 검토:
 | 항목 | 조치 | 검증 |
 | --- | --- | --- |
 | 다운로드 파일명 위험 문자 | 브랜드명·업무명·직접 파일명에 `/`, `\\`, `:`, `*`, `?`, 제어문자 등이 들어가도 경로처럼 해석되거나 OS 예약 문자로 깨지지 않도록 `makeFileName`, `withDownloadDateSuffix`에서 안전 치환 | `download-filename`, `output-artifact-builders`, `print-export-safety` |
-| 브랜드별 업무 CSV 파일명 | 식자재 사용현황, 판매량 업로드 오류 목록, 제때 대상제품목록, 제때 최신단가, 제때 가격비교 CSV가 `makeFileNameWithBrand()`를 사용하도록 통일 | `download-filename`, `sales-upload-error-banner`, 전체 `test:ci` 295 suites / 1771 tests |
+| 브랜드별 업무 CSV 파일명 | 식자재 사용현황, 판매량 업로드 오류 목록, 제때 대상제품목록, 제때 최신단가, 제때 가격비교 CSV가 `makeFileNameWithBrand()`를 사용하도록 통일 | `download-filename`, `sales-upload-error-banner`, 전체 `test:ci` 295 suites / 1776 tests |
 
 ### 이번 스캔에서 확인한 남은 후보
 
@@ -935,6 +935,7 @@ Codex 검토:
 | 사진 업로드 정책 잠금 | 노트/샘플/식자재 사진 입력이 지원 이미지 필터, 5MB photo size guard, resize 전 검증, read-only/file input reset을 유지하도록 구조 테스트 보강 | `note-form-body-structure`, `sample-form-body-structure`, `ingredient-photos`, `image-resize-guards`, `upload-policy` |
 | 드롭다운 지연 타이머 cleanup | 메뉴 레시피 식자재 검색과 식자재 제때 단가 가져오기 필드의 blur/focus 지연 타이머를 unmount 시 정리하도록 보강 | `menu-recipe-components-keyboard`, `ingredient-form-structure` |
 | 설정 지연 작업 cleanup | 시스템 DB 재생성 reload 타이머와 브랜드 복원 file picker/reload 지연 작업을 unmount 시 정리하도록 보강. 남은 no-clear 타이머는 toast/download/print/reclassify 같은 전역 일회성 helper로 분류 | `settings-guards`, `brand-restore-preview` |
+| 비동기 hook unmount 가드 | 현재 역할 로드와 검색 팔레트 동적 로드가 unmount/닫힘/오래된 요청 뒤 state를 갱신하지 않도록 `mountedRef`/`refreshSeqRef`/`alive` 가드 추가 | `role-gating-source`, `sales-navigation` |
 
 ### 현재 남은 판단
 
@@ -967,7 +968,7 @@ Codex 검토:
 
 | 명령 | 결과 |
 | --- | --- |
-| `npm run test:ci` | ✅ 295 suites / 1771 tests |
+| `npm run test:ci` | ✅ 295 suites / 1776 tests |
 | `npm run lint` | ✅ No ESLint warnings or errors |
 | `npm run format:check` | ✅ All matched files use Prettier code style |
 | `npm run audit:docs` | ✅ SITE_STATUS.md 수치 일치 |
@@ -1001,7 +1002,7 @@ Codex 검토:
 | --- | --- |
 | `npm test -- --runTestsByPath __tests__/lib/sample-form-body-structure.test.mjs __tests__/lib/sample-page-structure.test.mjs __tests__/lib/sample-page-controller-props.test.mjs __tests__/lib/tag-input.test.mjs __tests__/lib/note-form-body-structure.test.mjs` | ✅ 5 suites / 19 tests |
 | `npx next lint --quiet` | ✅ No ESLint warnings or errors |
-| `npm run test:ci` | ✅ 295 suites / 1771 tests |
+| `npm run test:ci` | ✅ 295 suites / 1776 tests |
 | `npm run lint` | ✅ No ESLint warnings or errors |
 | `npm run format:check` | ✅ All matched files use Prettier code style |
 | `npm run audit:docs` | ✅ SITE_STATUS.md 수치 일치 |
@@ -1072,7 +1073,7 @@ Codex 검토:
 | 명령 | 결과 |
 | --- | --- |
 | `npm test -- --runTestsByPath __tests__/lib/random-id-guards.test.mjs --runInBand` | ✅ 1 suite / 3 tests |
-| `npm run test:ci` | ✅ 295 suites / 1771 tests |
+| `npm run test:ci` | ✅ 295 suites / 1776 tests |
 
 ### 3-M. 12차 재확인 — 권한 정책 잔재 제거
 
@@ -1089,7 +1090,7 @@ Codex 검토:
 | 명령 | 결과 |
 | --- | --- |
 | `npm test -- --runTestsByPath __tests__/lib/role-gating-source.test.mjs __tests__/lib/brand-master-storage-guards.test.mjs __tests__/lib/eslint-disable-policy.test.mjs __tests__/lib/destructive-action-guard-structure.test.mjs --runInBand` | ✅ 4 suites / 32 tests |
-| `npm run test:ci` | ✅ 295 suites / 1771 tests |
+| `npm run test:ci` | ✅ 295 suites / 1776 tests |
 
 ### 3-N. 13차 재확인 — 대형 seed/rule/CSS 파일군 검토
 
@@ -1117,6 +1118,76 @@ Codex 검토:
 | P1 | report preview 실제 화면 확인 | CSS ownership 충돌은 정적 테스트로 막았지만, 실제 보고서 preview modal을 390px/desktop에서 한 번 열어 스크린샷 확인 권장 |
 | P2 | 대형 seed/rule 데이터 파일 분리 | 현재 중복/필드 오류는 없지만 파일 크기는 큼. 서버 DB 전환 전 JSON/CSV artifact + loader 형태로 분리 후보 |
 | P2 | motion CSS 책임 축소 | `motion-report.css`, `motion-note.css`에는 아직 print/mobile/상태 스타일이 섞여 있다. 실제 화면 문제가 확인되는 구간만 좁게 분리 |
+
+### 3-O. 14차 재확인 — 보고서 preview 실제 브라우저 레이어 QA
+
+목표: 13차 CSS 정리 이후 보고서 preview modal이 실제 desktop/mobile 브라우저에서 AppShell chrome 위에 정상 표시되는지 확인한다.
+
+### 이번 스캔에서 직접 보완한 항목
+
+| 항목 | 조치 | 검증 |
+| --- | --- | --- |
+| stale 3000번 dev 서버 발견 | 기존 `http://localhost:3000`은 `_next/static/chunks/*`가 404라 클라이언트 JS가 실행되지 않는 상태였다. 기존 프로세스는 건드리지 않고 `http://127.0.0.1:3102`에 깨끗한 dev 서버를 띄워 재검증 | Playwright response 404 목록 확인 |
+| 보고서 modal stacking context | `ReportModalShell`, `ReportPreviewModal`을 `createPortal(..., document.body)`로 렌더링해 topbar/bottom tab보다 위에 뜨도록 수정. SSR 경계 안전을 위해 `document` guard도 추가 | desktop/mobile Playwright 실제 확인 |
+| report 공통 모달 접근성 | 닫기 아이콘 버튼에 `type="button"`과 `aria-label="닫기"` 추가 | `report-preview-modal-structure` |
+| portal 회귀 테스트 | report preview modal과 report modal shell이 body portal을 쓰는 구조 테스트 추가 | `report-preview-modal-structure` |
+
+### 실제 브라우저 검증
+
+| 환경 | 결과 |
+| --- | --- |
+| desktop 1440x1000 | ✅ console error 0, failed resource 0, `portalParent: BODY`, 가로 overflow 없음, 스크린샷 `/tmp/report-preview-portal-desktop.png` |
+| mobile 390x844 | ✅ console error 0, failed resource 0, `portalParent: BODY`, `topAt20: modal-scrim`, `bottomAtEnd: preview-pager`, 가로 overflow 없음, 스크린샷 `/tmp/report-preview-portal-mobile.png` |
+
+### 검증
+
+| 명령 | 결과 |
+| --- | --- |
+| `npm test -- --runTestsByPath __tests__/lib/report-preview-modal-structure.test.mjs __tests__/lib/css-primitive-ownership.test.mjs --runInBand` | ✅ 2 suites / 10 tests |
+
+### 3-P. 15차 재확인 — 전 파일 고위험 패턴 재스캔
+
+목표: "하나도 빠트리지 말고" 요청에 맞춰 전체 코드 파일을 다시 인벤토리화하고, 고위험 패턴을 자동 스캔한 뒤 실제 문제인지 수동 판정한다.
+
+### 이번 스캔 범위
+
+| 항목 | 결과 |
+| --- | --- |
+| `rg --files app components hooks lib scripts __tests__ docs` | 1,469개 |
+| JS/JSX/MJS/CSS/JSON 코드 파일 | 1,447개 |
+| JS/JSX/MJS/CSS 라인 수 | 약 153,992줄 |
+| 대형 파일 상위 | seed/rules CSS 중심. 즉시 오류는 13차에서 해소 |
+
+### 자동 스캔 결과
+
+| 스캔 | 판정 |
+| --- | --- |
+| `TODO/FIXME/HACK/XXX` | 실제 앱 코드 미해결 주석 없음. 문서/TODO 명칭/홈 Todo key만 탐지 |
+| 위험 HTML/API | `dangerouslySetInnerHTML`은 layout 다크모드 bootstrap, `window.open/document.write`는 인쇄 helper에만 존재 |
+| `eval/new Function/문자열 timer` | 앱 소스 탐지 없음 |
+| storage clear/delete | 파괴적 함수는 guard 구조 테스트로 방어. 저수준 DB primitive는 정책상 가드 제외 |
+| 네트워크 API | `fetch`는 `lib/session.js` 공인 IP 조회 1곳만 허용 |
+| ESLint 예외 | 기존 allowlist 정책 테스트로 고정 |
+| import 경로 | 정적/dynamic import 누락 없음 |
+| CSS token | `--font-pretendard`만 미정의처럼 잡힘. `next/font/local` 런타임 variable이라 정상 |
+| 개발 로그 | 앱 소스 `console.log/debug` 없음 |
+| 폼 버튼/img | `form-button-type-guard` 구조 테스트 통과 |
+
+### 직접 보완한 항목
+
+| 항목 | 조치 | 검증 |
+| --- | --- | --- |
+| report portal SSR 경계 | `document`가 없는 렌더 경계에서는 null 반환 | `report-preview-modal-structure` |
+| report modal 닫기 버튼 | `type="button"`, `aria-label="닫기"` 추가 | `report-preview-modal-structure` |
+| 비동기 unmount/stale 요청 안전장치 | `useCalendarData`, `useKanbanBoard`, `jette/settings`, `PriceLatestView`, `EdgeEditModal`, `SyncBaseQtyModal`, register modal controller, 노트/샘플 폼 제안 로드, 계정 IP refresh가 언마운트·빠른 전환·오래된 요청 뒤 state를 갱신하지 않도록 `useMounted`, `loadSeqRef`, `alive` guard 추가 | `note-calendar-page-structure`, `kanban-board-guards`, `jette-settings-usage`, `price-latest-view-structure`, `edge-edit-modal-structure`, `sync-base-qty-modal-structure`, `register-modal-structure`, `note-form-body-structure`, `sample-form-body-structure` |
+
+### 검증
+
+| 명령 | 결과 |
+| --- | --- |
+| `npm test -- --runTestsByPath __tests__/lib/note-calendar-page-structure.test.mjs __tests__/hooks/kanban-board-guards.test.mjs __tests__/lib/edge-edit-modal-structure.test.mjs __tests__/lib/price-latest-view-structure.test.mjs __tests__/lib/note-form-body-structure.test.mjs __tests__/lib/sample-form-body-structure.test.mjs __tests__/lib/jette-settings-usage.test.mjs __tests__/lib/sync-base-qty-modal-structure.test.mjs __tests__/lib/register-modal-structure.test.mjs` | ✅ 9 suites / 35 tests |
+| `npm test -- --runTestsByPath __tests__/lib/report-preview-modal-structure.test.mjs __tests__/lib/css-primitive-ownership.test.mjs __tests__/lib/browser-api-policy.test.mjs __tests__/lib/form-button-type-guard.test.mjs --runInBand` | ✅ 4 suites / 16 tests |
+| `npm run test:ci` | ✅ 295 suites / 1776 tests |
 
 ### 이번 재탐색에서 남긴 후속 후보
 
@@ -1156,7 +1227,7 @@ Codex 검토:
 | ESLint 예외 정책 타깃 테스트 | ✅ 1 suite / 2 tests |
 | IndexedDB 접근 정책 타깃 테스트 | ✅ 1 suite / 2 tests |
 | 위험 브라우저 API 정책 타깃 테스트 | ✅ 1 suite / 4 tests |
-| `npm run test:ci` | ✅ 295 suites / 1771 tests |
+| `npm run test:ci` | ✅ 295 suites / 1776 tests |
 | `npm run lint` | ✅ No ESLint warnings or errors |
 | `npm run format:check` | ✅ All matched files use Prettier code style |
 | `npm run audit:docs` | ✅ SITE_STATUS.md 수치 일치 |

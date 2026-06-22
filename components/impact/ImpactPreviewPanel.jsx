@@ -92,7 +92,14 @@ export function ImpactPreviewPanel({
     return () => {
       aborted = true;
     };
-  }, [debouncedProductCode, debouncedHasDelta, debouncedOldNum, debouncedNewNum, debouncedOldBaseNum, debouncedNewBaseNum]);
+  }, [
+    debouncedProductCode,
+    debouncedHasDelta,
+    debouncedOldNum,
+    debouncedNewNum,
+    debouncedOldBaseNum,
+    debouncedNewBaseNum,
+  ]);
 
   if (!hasDelta) return null;
 

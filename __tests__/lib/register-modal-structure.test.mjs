@@ -146,6 +146,8 @@ describe('register modal structure', () => {
     expect(controllerSource).toContain('getAllSuppliers()');
     expect(controllerSource).not.toContain('recordPriceChange');
     expect(controllerSource).toContain("console.warn('[RegisterModal] 공급업체 목록 로드 실패:'");
+    expect(controllerSource).toContain("from '@/hooks/useMounted'");
+    expect(controllerSource).toContain('if (mountedRef.current) setSaving(false);');
     expect(utilsSource).toContain('export function buildRegisterCategoryOptions');
     expect(utilsSource).toContain('export function validateRegisterForm');
     expect(utilsSource).toContain('export function buildRegisterPayload');

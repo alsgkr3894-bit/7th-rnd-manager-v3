@@ -11,9 +11,9 @@
 
 - 스캔 대상: `app`, `components`, `hooks`, `lib`, `scripts`, `__tests__`
 - 파일 수: 코드/CSS/JSON 기준 1,447개
-- 총 라인 수: JS/JSX/MJS/CSS 기준 약 153,756줄
+- 총 라인 수: JS/JSX/MJS/CSS 기준 약 153,992줄
 - 테스트 파일 수: 295개
-- Jest 테스트 수: 1,771개
+- Jest 테스트 수: 1,776개
 - 현재 브랜치: `master`
 
 현재 워크트리에는 Claude Code/사용자 작업으로 보이는 미커밋 수정과 신규 파일이 포함되어 있다. 본 검수에서는 확인된 실패 지점만 좁게 수정했고, 기존 미커밋 작업을 되돌리지 않았다.
@@ -35,7 +35,7 @@
 | `npm run format:check` | PASS | Prettier 위반 해소 |
 | `npm run lint` | PASS | React hook dependency 경고 해소 |
 | `npm test -- --runTestsByPath __tests__/lib/backup-restore-rehearsal.test.mjs __tests__/lib/db-import-guards.test.mjs __tests__/lib/destructive-action-guard-structure.test.mjs` | PASS | 복원 저널/복원 구조/권한 guard 3 suites, 58 tests |
-| `npm run test:ci` | PASS | 295 suites / 1771 tests |
+| `npm run test:ci` | PASS | 295 suites / 1776 tests |
 | `npm run audit:docs` | PASS | `SITE_STATUS.md` 수치와 코드 수치 일치 |
 | `npm run build:clean` | PASS | compiled successfully, static pages 57/57 |
 | `HOST=127.0.0.1 PORT=3101 BASE=http://127.0.0.1:3101 npm run qa:prod` | PASS | prod smoke 22/22, mobile 22/22, runtime 67/67, workflow 21/21 |
@@ -260,7 +260,7 @@
   - 구조 테스트에 권한 prop 전달과 disabled 조건을 추가했다.
 - 검증:
   - 관련 구조 테스트 7개 파일 PASS
-  - 전체 `npm run test:ci` PASS, 295 suites / 1771 tests
+  - 전체 `npm run test:ci` PASS, 295 suites / 1776 tests
 - 검증:
   - `__tests__/lib/destructive-action-guard-structure.test.mjs` PASS
   - `__tests__/lib/sales-upload-log.test.mjs` PASS
@@ -346,7 +346,7 @@
   - 샘플 페이지 props 테스트 fixture에 `canEdit: true`를 명시하고, viewer 모드에서 route/action callback이 실행되지 않는 회귀 테스트를 추가했다.
   - `SITE_STATUS.md`의 테스트 파일 수를 295개(lib 268) 기준으로 갱신했다.
 - 검증:
-  - `npm run test:ci` PASS — 295 suites / 1771 tests
+  - `npm run test:ci` PASS — 295 suites / 1776 tests
   - `npm run lint` PASS
   - `npm run format:check` PASS
   - `npm run audit:docs` PASS
@@ -433,7 +433,7 @@
 - 검증:
   - `random-id-guards.test.mjs` PASS — 1 suite / 3 tests
   - `browser-api-policy.test.mjs` PASS — fetch, eval/new Function, 문자열 timer, HTML 주입, object URL 허용 위치 고정
-  - 전체 `npm run test:ci` PASS — 295 suites / 1771 tests
+  - 전체 `npm run test:ci` PASS — 295 suites / 1776 tests
 
 ### 해결됨: 12차 재확인 권한 정책 잔재 제거
 
@@ -448,7 +448,7 @@
   - `role-gating-source.test.mjs`에 브랜드마스터 lib가 legacy profile 관리자 판정을 노출하지 않는다는 구조 테스트를 추가했다.
 - 검증:
   - `role-gating-source`, `brand-master-storage-guards`, `eslint-disable-policy`, `destructive-action-guard-structure` 타깃 테스트 PASS — 4 suites / 32 tests
-  - 전체 `npm run test:ci` PASS — 295 suites / 1771 tests
+  - 전체 `npm run test:ci` PASS — 295 suites / 1776 tests
 
 ### 해결됨: 13차 재확인 대형 seed/rule/CSS 파일군 검토
 
@@ -474,6 +474,60 @@
 - 검증:
   - `npm test -- --runTestsByPath __tests__/lib/css-primitive-ownership.test.mjs __tests__/lib/report-preview-modal-structure.test.mjs --runInBand` PASS — 2 suites / 9 tests
   - `npm test -- --runTestsByPath __tests__/lib/sales-seed-data.test.mjs --runInBand` PASS — 1 suite / 3 tests
+
+### 해결됨: 14차 재확인 보고서 preview 실제 브라우저 레이어 QA
+
+- 확인 배경:
+  - 3000번 기존 dev 서버는 `_next/static/chunks/*`가 404로 떨어지는 stale 상태라 클라이언트 JS가 실행되지 않았다.
+  - 기존 3000번을 건드리지 않고 `http://127.0.0.1:3102`에 깨끗한 dev 서버를 띄워 실제 브라우저 검증을 재시도했다.
+- 발견 문제:
+  - 보고서 preview modal은 `.modal-scrim`이 `position: fixed; z-index: 1000`이어도 페이지 내부에 렌더되어 모바일 AppShell chrome(topbar/bottom tab)보다 아래 stacking context에 놓일 수 있었다.
+  - Playwright 모바일 390px 검사에서 `elementFromPoint(20, 20)`이 `.modal-scrim`이 아니라 `.topbar` 버튼을 반환했다.
+- 조치:
+  - `components/report/_ReportModalShell.jsx`와 `components/report/_ReportPreviewModal.jsx`를 `createPortal(..., document.body)` 방식으로 변경했다.
+  - 공유/예약/preview 보고서 모달이 AppShell 내부가 아니라 body 레이어에서 렌더되어 topbar/bottom tab 위에 뜨도록 했다.
+  - SSR/프리렌더 경계 안전을 위해 `typeof document === 'undefined'` 방어를 추가했다.
+  - report 공통 모달 닫기 버튼에 `type="button"`과 `aria-label="닫기"`를 추가했다.
+  - `report-preview-modal-structure.test.mjs`에 report modal shell/preview modal portal 회귀 테스트를 추가했다.
+- 실제 브라우저 검증:
+  - Playwright 임시 브라우저 컨텍스트에서 임시 `generated_reports` row 1건을 만들고 preview를 연 뒤 즉시 삭제했다. 실제 사용자 브라우저/DB는 건드리지 않았다.
+  - desktop 1440x1000: console error 0, failed resource 0, `portalParent: BODY`, 가로 overflow 없음.
+  - mobile 390x844: console error 0, failed resource 0, `portalParent: BODY`, `topAt20: modal-scrim`, `bottomAtEnd: preview-pager`, 가로 overflow 없음.
+  - 스크린샷: `/tmp/report-preview-portal-desktop.png`, `/tmp/report-preview-portal-mobile.png`.
+- 검증:
+  - `npm test -- --runTestsByPath __tests__/lib/report-preview-modal-structure.test.mjs __tests__/lib/css-primitive-ownership.test.mjs --runInBand` PASS — 2 suites / 10 tests
+
+### 해결됨: 15차 재확인 전 파일 고위험 패턴 재스캔
+
+- 재확인 범위:
+  - `rg --files app components hooks lib scripts __tests__ docs`: 1,469개
+  - JS/JSX/MJS/CSS/JSON 코드 파일: 1,447개
+  - JS/JSX/MJS/CSS 라인 수: 약 153,992줄
+- 자동 스캔:
+  - `TODO/FIXME/HACK/XXX`
+  - `dangerouslySetInnerHTML`, `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `window.open`
+  - `eval`, `new Function`, 문자열 timer
+  - `localStorage.clear`, `sessionStorage.clear`, `indexedDB.deleteDatabase`, `.clear()`, `replaceStoreForBrand`
+  - `fetch`, `XMLHttpRequest`, `sendBeacon`
+  - `eslint-disable`, `@ts-ignore`
+  - 정적/dynamic import 경로 누락
+  - CSS custom property 미정의 사용
+  - 개발용 `console.log/debug`
+  - form 내부 button type, img alt 구조 테스트
+- 판정:
+  - `eval/new Function/문자열 timer`, 개발용 `console.log/debug`, 깨진 import 경로는 발견되지 않았다.
+  - `dangerouslySetInnerHTML`은 `app/layout.jsx`의 다크모드 FOUC 방지 bootstrap만 허용 위치로 남아 있고, 인쇄용 `window.open/document.write`는 `lib/print/window-print.js`로 집중되어 있다.
+  - 런타임 `fetch`는 `lib/session.js`의 공인 IP 조회 1곳만 남아 있으며, 실패 시 null 처리되는 기존 정책과 일치한다.
+  - CSS 미정의처럼 잡힌 `--font-pretendard`는 `next/font/local`이 `html` class로 주입하는 런타임 font variable이라 오류로 보지 않았다.
+  - 파괴적 clear/delete 계열은 기존 `destructive-action-guard-structure`와 관련 store guard 테스트가 계속 방어한다.
+- 추가 보완:
+  - 14차에서 추가한 report modal body portal에 SSR `document` guard를 추가했다.
+  - report 공통 모달 닫기 버튼 접근성을 보강했다.
+  - `useKanbanBoard`의 unmount/오래된 reload 방어 변경을 점검하고, 오래된 요청이 `finishLoading`을 실행하지 않도록 race를 보강했다.
+- 검증:
+  - `npm test -- --runTestsByPath __tests__/lib/report-preview-modal-structure.test.mjs __tests__/lib/css-primitive-ownership.test.mjs __tests__/lib/browser-api-policy.test.mjs __tests__/lib/form-button-type-guard.test.mjs --runInBand` PASS — 4 suites / 16 tests
+  - `npm test -- --runTestsByPath __tests__/hooks/kanban-board-guards.test.mjs --runInBand` PASS — 1 suite / 5 tests
+  - `npm run test:ci` PASS — 295 suites / 1776 tests
 
 ---
 
@@ -538,7 +592,7 @@
 - 샘플 작성/편집 read-only UX 구조 테스트 PASS
 - 대표 XLSX 출력 artifact workbook + 실제 `.xlsx` 바이너리 write/read 테스트 4개 PASS
 - CSV 출력 artifact 실행 테스트 3개 PASS
-- 전체 Jest: 295 suites / 1771 tests PASS
+- 전체 Jest: 295 suites / 1776 tests PASS
 - `npm run format:check` PASS
 - `npm run lint` PASS, warning 0개
 - `npm run audit:docs` PASS

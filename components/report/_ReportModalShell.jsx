@@ -1,11 +1,14 @@
 'use client';
+import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { noop } from '@/lib/ui/prop-guards';
 
 export function ReportModalShell({ className, title, titleId, onClose, children, footer }) {
   const handleClose = typeof onClose === 'function' ? onClose : noop;
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <div className="modal-scrim">
       <div
         className={className}
@@ -16,13 +19,14 @@ export function ReportModalShell({ className, title, titleId, onClose, children,
       >
         <div className="modal-head">
           <h3 id={titleId}>{title}</h3>
-          <button className="modal-close" onClick={handleClose}>
+          <button type="button" className="modal-close" onClick={handleClose} aria-label="닫기">
             <Icon.x style={{ width: 20, height: 20 }} />
           </button>
         </div>
         <div className="modal-body">{children}</div>
         {footer ? <div className="modal-foot">{footer}</div> : null}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

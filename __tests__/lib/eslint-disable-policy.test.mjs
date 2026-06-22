@@ -93,7 +93,8 @@ const ALLOWED_DISABLES = [
     file: 'components/home/ActionCenterWidget.jsx',
     rule: 'react-hooks/exhaustive-deps',
     count: 1,
-    reason: 'partitionByState reads localStorage; rev triggers re-read after dismiss/snooze without being a build-allItems dep',
+    reason:
+      'partitionByState reads localStorage; rev triggers re-read after dismiss/snooze without being a build-allItems dep',
   },
   {
     file: 'components/cost/manage/CommonEdgesView.jsx',

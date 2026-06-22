@@ -11,6 +11,19 @@ describe('kanban board error visibility guards', () => {
     expect(hookSource).toContain('showToast(`칸반 데이터 로드 실패: ${message}`');
   });
 
+  test('비동기 로드는 unmount와 오래된 reload 결과를 무시한다', () => {
+    expect(hookSource).toContain("from '@/hooks/useMounted'");
+    expect(hookSource).toContain('const mountedRef = useMounted();');
+    expect(hookSource).toContain('const loadSeqRef = useRef(0);');
+    expect(hookSource).toContain('const seq = ++loadSeqRef.current;');
+    expect(hookSource).toContain('seq !== loadSeqRef.current');
+    expect(hookSource).toContain('let shouldFinishLoading = false;');
+    expect(hookSource).toContain('shouldFinishLoading = true;');
+    expect(hookSource).toContain(
+      'if (finishLoading && shouldFinishLoading && mountedRef.current) setLoading(false);'
+    );
+  });
+
   test('드래그 저장 실패는 사용자에게 노출하고 재동기화한다', () => {
     expect(hookSource).toContain("console.error('[useKanbanBoard] handleDrop failed'");
     expect(hookSource).toContain("showToast('칸반 순서 저장 실패', 'error')");

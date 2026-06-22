@@ -9,7 +9,7 @@
   - `npm run lint` PASS
   - `npm run audit:docs` PASS
   - `node --experimental-vm-modules node_modules/jest/bin/jest.js __tests__/lib/output-artifact-builders.test.mjs --runInBand` PASS — 대표 XLSX 4종 workbook + 실제 `.xlsx` 바이너리 write/read 검증
-  - `npm run test:ci` PASS, 295 suites / 1771 tests
+  - `npm run test:ci` PASS, 295 suites / 1776 tests
   - `npm run build:clean` PASS — compiled successfully, static pages 57/57
 - 브라우저 QA:
   - `HOST=127.0.0.1 PORT=3101 BASE=http://127.0.0.1:3101 npm run qa:prod` PASS
@@ -464,7 +464,7 @@
 
 - 위치: `app/ingredient/usage/page.jsx`, `components/sales/UploadErrorBanner.jsx`, `components/jette/ManagedProductsCard.jsx`, `components/jette/PriceLatestView.jsx`, `components/jette/PriceCompareTable.jsx`
 - 조치 내용: 식자재 사용현황, 판매량 업로드 오류 목록, 제때 대상제품목록, 제때 최신단가, 제때 가격비교 CSV가 `makeFileNameWithBrand()`를 사용하도록 통일했다.
-- 검증: `download-filename.test.mjs`에 업무 CSV export 구조 테스트를 추가했고, `sales-upload-error-banner.test.mjs` 파일명 기대값을 갱신했다. 전체 `test:ci`는 295 suites / 1771 tests 통과.
+- 검증: `download-filename.test.mjs`에 업무 CSV export 구조 테스트를 추가했고, `sales-upload-error-banner.test.mjs` 파일명 기대값을 갱신했다. 전체 `test:ci`는 295 suites / 1776 tests 통과.
 - 남은 정책: 샘플기록은 공유 DB 성격이라 active brand prefix 적용 여부를 별도로 결정한다. 업로드 양식/백업 이력 CSV는 전역·템플릿 파일로 예외 유지 가능하다.
 
 ### 대형 도메인 seed/rule 파일

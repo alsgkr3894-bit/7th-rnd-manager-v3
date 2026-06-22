@@ -69,9 +69,11 @@ export function SampleFormBody({ form, setForm, readOnly = false }) {
   }
 
   useEffect(() => {
+    let alive = true;
     initDB()
       .then(() => Promise.all([getAllSamples(), getAllIngredients(), getAllMenuMaster()]))
       .then(([samples, ings, menus]) => {
+        if (!alive) return;
         const tags = new Set();
         const cats = new Set(SAMPLE_CATEGORIES);
         const comps = new Set();
@@ -103,6 +105,9 @@ export function SampleFormBody({ form, setForm, readOnly = false }) {
         setProductOptions(opts);
       })
       .catch(() => {});
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(

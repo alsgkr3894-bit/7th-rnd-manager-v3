@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { showToast } from '@/components/Toast';
 import { printReportElements } from '@/lib/report/print';
 import { ReportPreviewBody } from '@/components/report/ReportPreviewBody';
@@ -58,7 +59,9 @@ export function ReportPreviewModal({ report, onClose, onShare, printOnOpen = fal
     return () => clearTimeout(id);
   }, [handlePrint, printOnOpen]);
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <div className="modal-scrim">
       <div
         className="preview-shell"
@@ -84,6 +87,7 @@ export function ReportPreviewModal({ report, onClose, onShare, printOnOpen = fal
           printSourceRef={printSourceRef}
         />
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

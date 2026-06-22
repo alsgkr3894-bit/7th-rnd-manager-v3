@@ -9,7 +9,7 @@
 
 | 지표 | 값 |
 |---|---|
-| 테스트 | **295 suites / 1771 tests** (모두 통과) |
+| 테스트 | **295 suites / 1776 tests** (모두 통과) |
 | qa:smoke | **22/22 라우트** |
 | qa:mobile | **22라우트 390px** (Playwright, dev 서버 필요) |
 | qa:workflow | **21/21 시나리오** (2026-06-22 백업 실제 복원 실행 + 메뉴마스터 CSV 다운로드 파일 검증 + 판매량 잘못된 확장자 UX + 출고량 CSV 실제 업로드 UX + 메뉴판매가 실패행 CSV 다운로드 추가) |
@@ -71,7 +71,7 @@
 ```bash
 npm run lint          # ESLint 0 warnings 필수
 npm run format:check  # Prettier 포맷 확인
-npm run test:ci       # 295 suites / 1771 tests
+npm run test:ci       # 295 suites / 1776 tests
 npm run qa:smoke      # 22/22 라우트 702px (Playwright, dev 서버 필요)
 npm run qa:mobile     # 22라우트 390px (Playwright, dev 서버 필요)
 npm run qa:workflow   # 21/21 E2E 시나리오 (Playwright, dev 서버 필요)

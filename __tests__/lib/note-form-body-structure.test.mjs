@@ -17,6 +17,9 @@ describe('note form body structure', () => {
     expect(formSource).toContain('makeFieldUpdater(setForm)');
     expect(formSource).toContain('generateNoteReportText(form)');
     expect(formSource).toContain('getAllNotesCached');
+    expect(formSource).toContain('let alive = true;');
+    expect(formSource).toContain('if (!alive) return;');
+    expect(formSource).toContain('alive = false;');
     expect(formSource).not.toContain('getAllNotes }');
     expect(formSource).not.toContain('사진 첨부');
     expect(formSource).not.toContain('보고용 복사');

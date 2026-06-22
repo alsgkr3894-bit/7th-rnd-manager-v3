@@ -42,6 +42,7 @@ export function PriceLatestView({
   }, [latestFileId, setSearch]);
 
   useEffect(() => {
+    let alive = true;
     (async () => {
       if (!latestFileId) {
         setRows([]);
@@ -49,12 +50,17 @@ export function PriceLatestView({
       }
       try {
         const r = await getPriceRowsByFileId(latestFileId);
+        if (!alive) return;
         setRows(r);
       } catch (err) {
+        if (!alive) return;
         console.warn('[jette-price] rows 로드 실패:', err);
         setRows([]);
       }
     })();
+    return () => {
+      alive = false;
+    };
   }, [latestFileId]);
 
   const typeCounts = useMemo(

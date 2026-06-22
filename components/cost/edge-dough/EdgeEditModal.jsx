@@ -13,6 +13,7 @@ import { buildPriceRowMap, getPriceFiles, getPriceRowsByFileId } from '@/lib/pri
 import { initDB } from '@/lib/db';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
+import { useMounted } from '@/hooks/useMounted';
 import { parseOptionalNonNegativeNumber } from '@/lib/parse';
 import { EdgeComponentsSection } from './EdgeComponentsSection';
 import { EdgeIdentityFields } from './EdgeIdentityFields';
@@ -46,8 +47,10 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
   const [upm, setUpm] = useState(new Map());
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState([]);
+  const mountedRef = useMounted();
 
   useEffect(() => {
+    let alive = true;
     (async () => {
       await initDB();
       const [files, meta] = await Promise.all([getPriceFiles(), getAllIngredients()]);
@@ -57,12 +60,17 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
         const rows = await getPriceRowsByFileId(latest.id);
         priceRowMap = buildPriceRowMap(rows).map;
       }
+      if (!alive) return;
       setAllMeta(meta);
       setUpm(buildUnitPriceMap(meta, priceRowMap));
     })().catch(err => {
+      if (!alive) return;
       console.error('[EdgeEditModal] 단가 데이터 로드 실패', err);
       showToast('단가 데이터를 불러오지 못했습니다.', 'error');
     });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   function patch(i, p) {
@@ -116,7 +124,7 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
         marginSuffix: marginSuffix.trim() || defaultMarginSuffix(edgeType),
       });
     } finally {
-      setSaving(false);
+      if (mountedRef.current) setSaving(false);
     }
   }
 

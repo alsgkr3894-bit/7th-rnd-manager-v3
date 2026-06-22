@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 import { getAllSuppliers } from '@/lib/cost/suppliers/store';
 import {
   buildInitialRegisterForm,
@@ -17,6 +18,7 @@ export function useRegisterModalController({ row, onSave, extraCategories }) {
   const [suppliers, setSuppliers] = useState([]);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
+  const mountedRef = useMounted();
 
   useEffect(() => {
     let ignore = false;
@@ -76,10 +78,10 @@ export function useRegisterModalController({ row, onSave, extraCategories }) {
         const payload = buildRegisterPayload({ row, form, validated });
         await onSave(payload);
       } finally {
-        setSaving(false);
+        if (mountedRef.current) setSaving(false);
       }
     },
-    [form, onSave, row]
+    [form, mountedRef, onSave, row]
   );
 
   return {

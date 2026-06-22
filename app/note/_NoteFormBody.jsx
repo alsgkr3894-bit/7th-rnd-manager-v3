@@ -46,9 +46,11 @@ export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
   }
 
   useEffect(() => {
+    let alive = true;
     initDB()
       .then(() => getAllNotesCached())
       .then(notes => {
+        if (!alive) return;
         const tagSet = new Set();
         const nameSet = new Set();
         notes.forEach(note => {
@@ -62,7 +64,12 @@ export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
         setAllTags([...tagSet]);
         setMenuNames([...nameSet]);
       })
-      .catch(err => console.warn('[NoteFormBody]', err));
+      .catch(err => {
+        if (alive) console.warn('[NoteFormBody]', err);
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const reportText = useMemo(() => generateNoteReportText(form), [form]);

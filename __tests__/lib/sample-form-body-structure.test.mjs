@@ -16,6 +16,9 @@ describe('sample form body structure', () => {
     expect(formSource).toContain('<SampleDetailRecordCard');
     expect(formSource).toContain('<SampleLinkedProductsCard');
     expect(formSource).toContain('<SamplePhotoCard');
+    expect(formSource).toContain('let alive = true;');
+    expect(formSource).toContain('if (!alive) return;');
+    expect(formSource).toContain('alive = false;');
     expect(formSource).toContain('handleFiles');
     expect(formSource).toContain('clearProductSearchSoon');
     expect(formSource).not.toContain('function StarPicker');

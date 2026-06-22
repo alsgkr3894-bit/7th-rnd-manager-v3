@@ -35,6 +35,11 @@ describe('edge edit modal structure', () => {
     expect(modalSource).toContain('const quantity = parseOptionalNonNegativeNumber(c.quantity)');
     expect(modalSource).toContain('구성품 수량은 0 이상의 숫자만 입력하세요');
     expect(modalSource).toContain('edgeCodeOf(edgeType, size)');
+    expect(modalSource).toContain("from '@/hooks/useMounted'");
+    expect(modalSource).toContain('const mountedRef = useMounted();');
+    expect(modalSource).toContain('let alive = true;');
+    expect(modalSource).toContain('if (!alive) return;');
+    expect(modalSource).toContain('if (mountedRef.current) setSaving(false);');
     expect(modalSource).toContain('<EdgeIdentityFields');
     expect(modalSource).toContain('<EdgeComponentsSection');
     expect(modalSource).toContain('<EdgeNoteField');
