@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum StoreScope {
+  BRAND
+  SHARED
+}
+
+enum ImportJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  COMPLETED_WITH_WARNINGS
+  COMPLETED_WITH_ERRORS
+  FAILED
+}
+
+model Brand {
+  id        String   @id
+  name      String
+  code      String?  @unique
+  dbName    String?  @map("db_name")
+  color     String?
+  isDefault Boolean  @default(false) @map("is_default")
+  hidden    Boolean  @default(false)
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  storeRows           StoreRow[]
+  localStorageEntries LocalStorageEntry[]
+
+  @@map("brands")
+}
+
+model StoreCatalog {
+  name          String     @id
+  module        String
+  scope         StoreScope @default(BRAND)
+  keyPath       String?    @map("key_path")
+  autoIncrement Boolean    @default(false) @map("auto_increment")
+  description   String?
+  indexes       Json?
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  storeRows StoreRow[]
+
+  @@index([module])
+  @@index([scope])
+  @@map("store_catalog")
+}
+
+model StoreRow {
+  id              String     @id @default(cuid())
+  brandId         String     @map("brand_id")
+  storeName       String     @map("store_name")
+  scope           StoreScope @default(BRAND)
+  recordKey       String     @map("record_key")
+  legacyNumericId Int?       @map("legacy_numeric_id")
+  data            Json
+  dataHash        String?    @map("data_hash")
+  sourceBackupId  String?    @map("source_backup_id")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  brand   Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  catalog StoreCatalog @relation(fields: [storeName], references: [name], onDelete: Restrict)
+
+  @@unique([brandId, storeName, recordKey])
+  @@index([storeName])
+  @@index([scope, storeName])
+  @@index([brandId, storeName])
+  @@index([legacyNumericId])
+  @@map("store_rows")
+}
+
+model LocalStorageEntry {
+  id          String   @id @default(cuid())
+  brandId     String   @map("brand_id")
+  key         String
+  value       String   @db.Text
+  category    String?
+  migrateMode String?  @map("migrate_mode")
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, key])
+  @@index([key])
+  @@index([category])
+  @@map("local_storage_entries")
+}
+
+model DataImportJob {
+  id                String          @id @default(cuid())
+  status            ImportJobStatus @default(PENDING)
+  sourceKind        String?         @map("source_kind")
+  sourceBrandId     String?         @map("source_brand_id")
+  targetBrandId     String?         @map("target_brand_id")
+  backupVersion     String?         @map("backup_version")
+  backupExportedAt  DateTime?       @map("backup_exported_at")
+  storeCount        Int             @default(0) @map("store_count")
+  rowCount          Int             @default(0) @map("row_count")
+  localStorageCount Int             @default(0) @map("local_storage_count")
+  summary           Json?
+  startedAt         DateTime        @default(now()) @map("started_at")
+  finishedAt        DateTime?       @map("finished_at")
+
+  errors DataImportError[]
+
+  @@index([status])
+  @@index([targetBrandId])
+  @@index([startedAt])
+  @@map("data_import_jobs")
+}
+
+model DataImportError {
+  id        String   @id @default(cuid())
+  jobId     String   @map("job_id")
+  storeName String?  @map("store_name")
+  key       String?
+  message   String   @db.Text
+  details   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  job DataImportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([storeName])
+  @@map("data_import_errors")
+}
+
+model ServerSetting {
+  key       String   @id
+  value     Json
+  category  String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@map("server_settings")
+}

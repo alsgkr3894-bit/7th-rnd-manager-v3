@@ -21,7 +21,7 @@ function collectPageRoutes(dir = resolve('app')) {
         continue;
       }
       if (!/^page\.(js|jsx|ts|tsx)$/.test(entry.name)) continue;
-      const routeDir = relative(resolve('app'), current);
+      const routeDir = relative(resolve('app'), current).split('\\').join('/');
       routes.push(routeDir ? `/${routeDir}` : '/');
     }
   }

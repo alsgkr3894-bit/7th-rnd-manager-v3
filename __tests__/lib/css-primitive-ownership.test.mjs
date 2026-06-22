@@ -26,7 +26,7 @@ describe('CSS primitive ownership', () => {
     expect(base).toMatch(/^\.card\s*\{/m);
     expect(base).toMatch(/^\.btn\s*\{/m);
     expect(base).toMatch(/^\.input\s*\{/m);
-    expect(base).toMatch(/^\.chip,\n\.filter-chip\s*\{/m);
+    expect(base).toMatch(/^\.chip,\r?\n\.filter-chip\s*\{/m);
     expect(base).toMatch(/^\.chip\s*\{/m);
   });
 
@@ -37,7 +37,7 @@ describe('CSS primitive ownership', () => {
 
     expect(homeHero).not.toMatch(/^\.card\s*\{/m);
     expect(homeHero).not.toMatch(/^\.btn\s*\{/m);
-    expect(homeBody).not.toMatch(/^\.chip,\n\.filter-chip\s*\{/m);
+    expect(homeBody).not.toMatch(/^\.chip,\r?\n\.filter-chip\s*\{/m);
     expect(homeBody).not.toMatch(/^\.chip\s*\{/m);
     expect(features).not.toMatch(/^\.input\s*\{/m);
     expect(features).not.toContain('전역 .input 기본 스타일');

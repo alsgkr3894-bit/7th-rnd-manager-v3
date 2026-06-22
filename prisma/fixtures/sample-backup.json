@@ -1,0 +1,32 @@
+{
+  "version": "v3",
+  "exportedAt": "2026-06-22T06:00:00.000Z",
+  "sourceBrandId": "main",
+  "sourceBrandName": "Sample Main Brand",
+  "sourceDbName": "rnd_manager_v3",
+  "sharedDbName": "rnd_manager_v3",
+  "stores": {
+    "menu_master": [
+      {
+        "id": 1,
+        "menuCode": "SAMPLE-001",
+        "name": "Sample Menu",
+        "category": "sample",
+        "status": "active",
+        "displayOrder": 1
+      }
+    ],
+    "menu_dev_notes": [
+      {
+        "id": 1,
+        "title": "Sample note",
+        "status": "open",
+        "category": "sample",
+        "createdAt": "2026-06-22T06:00:00.000Z"
+      }
+    ]
+  },
+  "localStorage": {
+    "v3:profile": "{\"name\":\"Sample User\"}"
+  }
+}

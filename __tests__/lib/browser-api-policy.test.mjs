@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { extname, join, resolve } from 'node:path';
+import { extname, join, relative, resolve } from 'node:path';
 
 const SOURCE_ROOTS = ['app', 'components', 'hooks', 'lib'];
 const SOURCE_EXTENSIONS = new Set(['.js', '.jsx', '.mjs']);
@@ -19,6 +19,10 @@ function listSourceFiles(dir) {
     .sort();
 }
 
+function sourcePath(filePath) {
+  return relative(resolve('.'), filePath).split('\\').join('/');
+}
+
 function lineNumberAt(source, index) {
   return source.slice(0, index).split(/\r?\n/).length;
 }
@@ -28,7 +32,7 @@ function findMatches(regex) {
   const matches = [];
 
   for (const filePath of files) {
-    const file = filePath.replace(`${resolve('.')}/`, '');
+    const file = sourcePath(filePath);
     const source = readFileSync(filePath, 'utf8');
     regex.lastIndex = 0;
     let match;

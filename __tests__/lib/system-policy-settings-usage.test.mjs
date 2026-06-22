@@ -13,7 +13,7 @@ describe('system policy settings usage guards', () => {
     expect(systemSettingsSource).toContain('1자리 반올림');
     expect(systemSettingsSource).not.toContain("updateSetting('autoRecalc'");
     expect(systemSettingsSource).not.toContain("updateSetting('roundMode'");
-    expect(systemSettingsSource).toContain("updateSetting(\n                  'strictPosting'");
+    expect(systemSettingsSource).toMatch(/updateSetting\(\s*'strictPosting'/);
   });
 
   test('백업 호환용 원가 정책 key는 설정 registry에 남긴다', () => {

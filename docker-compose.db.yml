@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: rnd-manager-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-rnd_manager}
+      POSTGRES_USER: ${POSTGRES_USER:-rnd_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.db}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - rnd_manager_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-rnd_app} -d ${POSTGRES_DB:-rnd_manager}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  rnd_manager_pgdata:

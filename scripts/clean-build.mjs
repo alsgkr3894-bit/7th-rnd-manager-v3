@@ -29,7 +29,10 @@ function hasNextDevProcess() {
 
 function run(command, args) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { stdio: 'inherit', shell: false });
+    const child =
+      process.platform === 'win32'
+        ? spawn([command, ...args].join(' '), { stdio: 'inherit', shell: true })
+        : spawn(command, args, { stdio: 'inherit', shell: false });
     child.on('error', reject);
     child.on('exit', code => {
       if (code === 0) resolve();
