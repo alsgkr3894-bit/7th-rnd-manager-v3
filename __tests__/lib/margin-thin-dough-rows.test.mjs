@@ -1,11 +1,18 @@
 import { describe, expect, test } from '@jest/globals';
-import { defaultExpandInMargin, defaultMarginSuffix } from '../../lib/cost/edge-dough/template.js';
+import {
+  defaultExpandInMargin,
+  defaultMarginSuffix,
+  normalizeMarginSuffix,
+} from '../../lib/cost/edge-dough/template.js';
 import { buildDerivedRows, buildEdgeMetadata } from '../../lib/cost/margin/build-rows.js';
 
 describe('margin thin dough rows', () => {
   test('thin dough defaults to visible margin rows with a stable suffix', () => {
     expect(defaultExpandInMargin('씬도우')).toBe(true);
-    expect(defaultMarginSuffix('씬도우')).toBe('T');
+    expect(defaultMarginSuffix('씬도우')).toBe('s');
+    expect(normalizeMarginSuffix('씬도우', '씬')).toBe('s');
+    expect(normalizeMarginSuffix('씬도우', 'T')).toBe('s');
+    expect(normalizeMarginSuffix('씬도우', 'TH')).toBe('s');
   });
 
   test('legacy thin dough records saved as expandInMargin=false still appear in margin metadata', () => {
@@ -22,7 +29,7 @@ describe('margin thin dough rows', () => {
     );
 
     expect(meta.EXPAND_EDGES).toEqual(['씬도우']);
-    expect(meta.edgeSuffixByType).toEqual({ 씬도우: 'T' });
+    expect(meta.edgeSuffixByType).toEqual({ 씬도우: 's' });
     expect(meta.edgeCostByType).toEqual({ 씬도우: { L: 250 } });
     expect(meta.edgePriceByType).toEqual({ 씬도우: 1000 });
   });
@@ -58,7 +65,7 @@ describe('margin thin dough rows', () => {
 
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
-      menuCode: 'P-001-L-T',
+      menuCode: 'P-001-L-s',
       menuCodes: ['P-001-L', 'P-001-R'],
       sourceRowId: 'detail||P-001-L',
       sourceMenuCode: 'P-001-L',
@@ -68,5 +75,37 @@ describe('margin thin dough rows', () => {
       costMap: { L: 4800 },
       sizes: [{ label: 'L', sellingPrice: 18000 }],
     });
+  });
+
+  test('legacy thin dough margin suffix saved as Korean text still becomes -s', () => {
+    const meta = buildEdgeMetadata(
+      [
+        {
+          edgeType: '씬도우',
+          size: 'L',
+          marginSuffix: '씬',
+          components: [],
+        },
+      ],
+      []
+    );
+
+    const rows = buildDerivedRows(
+      [
+        {
+          id: 'detail||P-002-L',
+          menuCode: 'P-002-L',
+          menuName: '레거시피자',
+          menuCategory: '피자',
+          sizes: [{ label: 'L', sellingPrice: 18000 }],
+          costMap: { L: 5000 },
+        },
+      ],
+      meta,
+      new Set()
+    );
+
+    expect(meta.edgeSuffixByType).toEqual({ 씬도우: 's' });
+    expect(rows[0].menuCode).toBe('P-002-L-s');
   });
 });

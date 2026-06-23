@@ -33,6 +33,7 @@ describe('edge edit modal structure', () => {
     expect(modalSource).toContain('export function EdgeEditModal');
     expect(modalSource).toContain('getPriceRowsByFileId');
     expect(modalSource).toContain('normalizeComponents');
+    expect(modalSource).toContain('normalizeMarginSuffix');
     expect(modalSource).toContain("parseOptionalNonNegativeNumber, parseOptionalNumber");
     expect(modalSource).toContain('const quantity = parseOptionalNumber(c.quantity)');
     expect(modalSource).toContain('구성품 수량은 숫자만 입력하세요');
@@ -69,8 +70,10 @@ describe('edge edit modal structure', () => {
     expect(marginSettingsSource).toContain('export function EdgeMarginSettings');
     expect(marginSettingsSource).toContain('defaultMarginSuffix');
     expect(marginSettingsSource).toContain('원가마진표에 별도 행으로 표시');
+    expect(marginSettingsSource).not.toContain('textTransform');
     expect(totalSummarySource).toContain('export function EdgeTotalSummary');
     expect(totalSummarySource).toContain('formatNumber(total)');
     expect(edgeStoreSource).toContain('allowNegativeQuantity: true');
+    expect(edgeStoreSource).toContain('normalizeMarginSuffix');
   });
 });

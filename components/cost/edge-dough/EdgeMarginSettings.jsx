@@ -55,7 +55,7 @@ export function EdgeMarginSettings({
             value={marginSuffix}
             onChange={e => onSuffixChange(e.target.value)}
             placeholder={defaultMarginSuffix(edgeType)}
-            style={{ width: 64, textAlign: 'center', textTransform: 'uppercase' }}
+            style={{ width: 64, textAlign: 'center' }}
           />
         </label>
       )}

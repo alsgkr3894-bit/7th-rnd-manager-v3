@@ -6,6 +6,7 @@ import {
   edgeCodeOf,
   defaultExpandInMargin,
   defaultMarginSuffix,
+  normalizeMarginSuffix,
 } from '@/lib/cost/edge-dough';
 import { getAllIngredients } from '@/lib/ingredient';
 import { buildUnitPriceMap } from '@/lib/recipe';
@@ -42,7 +43,11 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
       ? !!initial.expandInMargin
       : defaultExpandInMargin(initial?.edgeType || EDGE_TYPES[0])
   );
-  const [marginSuffix, setMarginSuffix] = useState(initial?.marginSuffix || '');
+  const [marginSuffix, setMarginSuffix] = useState(() =>
+    initial?.marginSuffix
+      ? normalizeMarginSuffix(initial?.edgeType || EDGE_TYPES[0], initial.marginSuffix)
+      : ''
+  );
   const [allMeta, setAllMeta] = useState([]);
   const [upm, setUpm] = useState(new Map());
   const [saving, setSaving] = useState(false);
