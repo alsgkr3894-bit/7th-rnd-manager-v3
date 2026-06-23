@@ -3,6 +3,19 @@ import XLSX from 'xlsx';
 
 const csvDownloads = [];
 const excelWrites = [];
+const MOCK_DATE = new Date('2026-06-11T00:00:00');
+
+function mockDateStamp(date = MOCK_DATE) {
+  const safeDate = date instanceof Date && Number.isFinite(date.getTime()) ? date : MOCK_DATE;
+  const pad = value => String(value).padStart(2, '0');
+  return `${safeDate.getFullYear()}${pad(safeDate.getMonth() + 1)}${pad(safeDate.getDate())}`;
+}
+
+function mockDisplayDate(date = MOCK_DATE) {
+  const stamp = mockDateStamp(date);
+  return `${stamp.slice(0, 4)}-${stamp.slice(4, 6)}-${stamp.slice(6, 8)}`;
+}
+
 const xlsxMock = {
   ...XLSX,
   utils: XLSX.utils,
@@ -15,7 +28,9 @@ jest.unstable_mockModule('@/lib/download', () => ({
   downloadCsv: jest.fn((rows, fileName) => {
     csvDownloads.push({ rows, fileName });
   }),
-  makeFileNameWithBrand: jest.fn((prefix, ext) => `테스트브랜드_${prefix}.${ext}`),
+  makeFileNameWithBrand: jest.fn(
+    (prefix, ext, date = MOCK_DATE) => `테스트브랜드_${prefix}_${mockDateStamp(date)}.${ext}`
+  ),
 }));
 
 jest.unstable_mockModule('@/lib/excel', () => ({
@@ -39,6 +54,10 @@ function rowsOf(workbook, sheetName) {
   return XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
 }
 
+function headerIndex(rows) {
+  return rows.findIndex(row => row?.[0] === '메뉴명');
+}
+
 describe('출력 artifact 실행 검증', () => {
   beforeEach(() => {
     csvDownloads.length = 0;
@@ -59,7 +78,7 @@ describe('출력 artifact 실행 검증', () => {
     ]);
 
     const { rows, fileName } = lastDownload();
-    expect(fileName).toBe('테스트브랜드_메뉴마스터.csv');
+    expect(fileName).toBe('테스트브랜드_메뉴마스터_20260611.csv');
     expect(rows).toEqual([
       ['메뉴코드', '메뉴명', '규격', '판매가', '상태', '카테고리'],
       ['=P-001', '+테스트피자', 'L', 19900, '판매', '피자'],
@@ -88,14 +107,20 @@ describe('출력 artifact 실행 검증', () => {
       ['L', 'R'],
       'cost',
       { fees: [] },
-      0
+      0,
+      { now: MOCK_DATE }
     );
 
     const { workbook, fileName } = lastExcelWrite();
-    expect(fileName).toBe('테스트브랜드_원가마진표.xlsx');
+    expect(fileName).toBe('테스트브랜드_원가마진표_20260611.xlsx');
     expect(workbook.SheetNames).toEqual(['원가마진표', '피자', '사이드']);
     const rows = rowsOf(workbook, '원가마진표');
-    expect(rows[0]).toEqual([
+    expect(rows[0]).toEqual(['다운로드일', '2026-06-11']);
+    expect(rows[1]).toEqual(['플랫폼', '기본']);
+    expect(rows[2]).toEqual(['보기 기준', '원가율']);
+    expect(rows[3]).toEqual(['할인', '없음']);
+    const mainHeaderIndex = headerIndex(rows);
+    expect(rows[mainHeaderIndex]).toEqual([
       '메뉴명',
       '카테고리',
       'L 원가',
@@ -105,18 +130,7 @@ describe('출력 artifact 실행 검증', () => {
       'L 원가율',
       'R 원가율',
     ]);
-    expect(rows[1]).toEqual(['페퍼로니', '피자', 2500, 1800, 10000, 9000, '25.0%', '20.0%']);
-    expect(rowsOf(workbook, '피자')[0]).toEqual([
-      '메뉴명',
-      '카테고리',
-      'L 원가',
-      'R 원가',
-      'L 판매가',
-      'R 판매가',
-      'L 원가율',
-      'R 원가율',
-    ]);
-    expect(rowsOf(workbook, '피자')[1]).toEqual([
+    expect(rows[mainHeaderIndex + 1]).toEqual([
       '페퍼로니',
       '피자',
       2500,
@@ -126,14 +140,40 @@ describe('출력 artifact 실행 검증', () => {
       '25.0%',
       '20.0%',
     ]);
-    expect(rowsOf(workbook, '사이드')[0]).toEqual([
+    const pizzaRows = rowsOf(workbook, '피자');
+    const pizzaHeaderIndex = headerIndex(pizzaRows);
+    expect(pizzaRows[0]).toEqual(['다운로드일', '2026-06-11']);
+    expect(pizzaRows[pizzaHeaderIndex]).toEqual([
+      '메뉴명',
+      '카테고리',
+      'L 원가',
+      'R 원가',
+      'L 판매가',
+      'R 판매가',
+      'L 원가율',
+      'R 원가율',
+    ]);
+    expect(pizzaRows[pizzaHeaderIndex + 1]).toEqual([
+      '페퍼로니',
+      '피자',
+      2500,
+      1800,
+      10000,
+      9000,
+      '25.0%',
+      '20.0%',
+    ]);
+    const sideRows = rowsOf(workbook, '사이드');
+    const sideHeaderIndex = headerIndex(sideRows);
+    expect(sideRows[0]).toEqual(['다운로드일', '2026-06-11']);
+    expect(sideRows[sideHeaderIndex]).toEqual([
       '메뉴명',
       '카테고리',
       '단일 원가',
       '단일 판매가',
       '단일 원가율',
     ]);
-    expect(rowsOf(workbook, '사이드')[1]).toEqual([
+    expect(sideRows[sideHeaderIndex + 1]).toEqual([
       '치즈오븐스파게티',
       '사이드',
       1200,
@@ -164,11 +204,14 @@ describe('출력 artifact 실행 검증', () => {
       ['L', 'R'],
       'cost',
       { name: '배달앱', fees: [] },
-      null
+      null,
+      { now: MOCK_DATE }
     );
 
-    expect(html).toContain('<title>테스트브랜드_원가마진표</title>');
+    expect(html).toContain('<title>테스트브랜드_원가마진표_20260611</title>');
     expect(html).toContain('메뉴 원가마진표');
+    expect(html).toContain(`다운로드일: ${mockDisplayDate()}`);
+    expect(html).toContain(`<span>다운로드일</span><strong>${mockDisplayDate()}</strong>`);
     expect(html).toContain('플랫폼: 배달앱');
     expect(html).toContain('<h2>피자</h2>');
     expect(html).toContain('<h2>사이드</h2>');

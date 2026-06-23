@@ -55,6 +55,7 @@ describe('원가마진표 XLSX/PDF 내보내기 구조 (P3 컬럼 고정)', () =
     expect(marginExportSrc).toContain('makeFileNameWithBrand');
     expect(marginExportSrc).toContain("'원가마진표'");
     expect(marginExportSrc).toContain("'xlsx'");
+    expect(marginExportSrc).toContain("makeFileNameWithBrand('원가마진표', 'xlsx', exportedAt)");
   });
 
   test('PDF 출력 HTML과 인쇄 팝업 함수를 제공한다', () => {
@@ -62,8 +63,16 @@ describe('원가마진표 XLSX/PDF 내보내기 구조 (P3 컬럼 고정)', () =
     expect(marginExportSrc).toContain('export function printMarginPdf');
     expect(marginExportSrc).toContain('buildAutoPrintScript');
     expect(marginExportSrc).toContain('openPrintWindow');
-    expect(marginExportSrc).toContain("makeFileNameWithBrand('원가마진표', 'pdf')");
+    expect(marginExportSrc).toContain("makeFileNameWithBrand('원가마진표', 'pdf', exportedAt)");
     expect(marginExportSrc).toContain('@page { size: A4 landscape');
+  });
+
+  test('엑셀/PDF 출력물 안에 다운로드일을 표시한다', () => {
+    expect(marginExportSrc).toContain('export function formatMarginDownloadDate');
+    expect(marginExportSrc).toContain('buildMarginExcelMetaRows');
+    expect(marginExportSrc).toContain("'다운로드일'");
+    expect(marginExportSrc).toContain('formatMarginDownloadDate(exportedAt)');
+    expect(marginExportSrc).toContain('다운로드일: ${esc(downloadDate)}');
   });
 
   test('원가마진표 페이지 헤더에 PDF 출력 버튼을 연결한다', () => {
