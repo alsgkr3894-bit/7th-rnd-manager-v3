@@ -21,7 +21,19 @@ describe('원가마진표 XLSX 내보내기 구조 (P3 컬럼 고정)', () => {
     expect(marginExportSrc).toContain('groupRowsByCategory');
     expect(marginExportSrc).toContain('safeSheetName');
     expect(marginExportSrc).toContain('MAX_SHEET_NAME_LENGTH');
-    expect(marginExportSrc).toContain('for (const [category, categoryRows] of groupRowsByCategory(rows))');
+    expect(marginExportSrc).toContain(
+      'for (const [category, categoryRows] of groupRowsByCategory(rows))'
+    );
+  });
+
+  test('카테고리 시트는 피자 L/R, 사이드·1인피자 단일 규격만 출력한다', () => {
+    expect(marginExportSrc).toContain("const LR_SIZE_LABELS = ['L', 'R']");
+    expect(marginExportSrc).toContain("'1인피자'");
+    expect(marginExportSrc).toContain("'사이드'");
+    expect(marginExportSrc).toContain('buildCategorySheetModel');
+    expect(marginExportSrc).toContain('isLrCategory(category)');
+    expect(marginExportSrc).toContain('isSingleCategory(category)');
+    expect(marginExportSrc).toContain('normalizeSingleSizeRows');
   });
 
   test('필수 헤더 컬럼(메뉴명·카테고리)이 고정 순서로 포함된다', () => {
