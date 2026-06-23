@@ -55,7 +55,7 @@ function checklistJournalTitle(dateKey) {
 
 function checklistJournalContent(doneItems) {
   if (!doneItems.length) return '완료 항목 없음';
-  return ['완료 체크리스트', ...doneItems.map(item => `- ${item.text}`)].join('\n');
+  return ['오늘 한 일', ...doneItems.map(item => `- ${item.text}`)].join('\n');
 }
 
 describe('체크리스트↔연구일지 동기화 타이틀·콘텐츠', () => {
@@ -69,7 +69,7 @@ describe('체크리스트↔연구일지 동기화 타이틀·콘텐츠', () => 
       { id: '2', text: '원가 업데이트', done: true },
     ];
     const content = checklistJournalContent(items);
-    expect(content).toContain('완료 체크리스트');
+    expect(content).toContain('오늘 한 일');
     expect(content).toContain('- 피자 레시피 검토');
     expect(content).toContain('- 원가 업데이트');
   });

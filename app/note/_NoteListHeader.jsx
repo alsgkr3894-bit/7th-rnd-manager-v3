@@ -22,6 +22,7 @@ export function NoteListHeader({
   onBulkCopy,
   onEnterBatchMode,
   onCalendar,
+  onChecklist,
   onBoard,
   onWrite,
   onBatchStatusChange,
@@ -61,6 +62,9 @@ export function NoteListHeader({
               </button>
               <button className="btn" onClick={onCalendar}>
                 달력 뷰
+              </button>
+              <button className="btn" onClick={onChecklist}>
+                체크리스트 목록
               </button>
               <button className="btn" onClick={onBoard}>
                 칸반 보드

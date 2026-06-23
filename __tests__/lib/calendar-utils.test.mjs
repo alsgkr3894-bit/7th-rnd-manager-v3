@@ -97,6 +97,7 @@ describe('calendar utils', () => {
 
   test('체크리스트 연구일지 텍스트를 생성한다', () => {
     expect(checklistJournalTitle('2026-06-12')).toBe('2026-06-12 체크리스트 완료');
+    expect(checklistJournalContent([{ text: '샘플 확인' }])).toContain('오늘 한 일');
     expect(checklistJournalContent([{ text: '샘플 확인' }])).toContain('- 샘플 확인');
     expect(checklistJournalContent([])).toBe('완료 항목 없음');
   });

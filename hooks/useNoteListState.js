@@ -107,6 +107,12 @@ export function useNoteListState({ notes, pinnedIds, pathname }) {
     resetVisibleCount();
   }
 
+  function openChecklistList() {
+    setStatusFilter('all');
+    handleSearchChange('체크리스트');
+    saveSearchHistory('체크리스트');
+  }
+
   function handleTagSearch(tag) {
     setSearch(tag);
     setShowSearchHist(false);
@@ -144,6 +150,7 @@ export function useNoteListState({ notes, pinnedIds, pathname }) {
     changeView,
     changeBrandFilter,
     changeStatusFilter,
+    openChecklistList,
     handleTagSearch,
     loadMore,
     hasActiveFilter,

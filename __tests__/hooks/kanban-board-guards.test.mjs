@@ -30,6 +30,11 @@ describe('kanban board error visibility guards', () => {
     expect(hookSource).toContain('await refreshNotes()');
   });
 
+  test('체크리스트 연구일지 노트는 칸반 파이프라인에서 제외한다', () => {
+    expect(hookSource).toContain("from '@/lib/note/filter'");
+    expect(hookSource).toContain('filterKanbanNotes(await getAllNotesCached())');
+  });
+
   test('칸반 페이지는 로드 실패 카드와 재시도 액션을 렌더링한다', () => {
     expect(pageSource).toContain('loadError');
     expect(pageSource).toContain('칸반 데이터를 불러오지 못했습니다');

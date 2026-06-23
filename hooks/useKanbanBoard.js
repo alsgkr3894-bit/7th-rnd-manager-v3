@@ -4,6 +4,7 @@ import { useMounted } from '@/hooks/useMounted';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { STATUSES, getAllNotesCached, updateNote, bulkUpdateBoardOrder } from '@/lib/note';
+import { filterKanbanNotes } from '@/lib/note/filter';
 
 export function useKanbanBoard({ canEdit = false } = {}) {
   const [notes, setNotes] = useState([]);
@@ -23,7 +24,7 @@ export function useKanbanBoard({ canEdit = false } = {}) {
     const seq = ++loadSeqRef.current;
     try {
       await initDB();
-      const nextNotes = await getAllNotesCached();
+      const nextNotes = filterKanbanNotes(await getAllNotesCached());
       if (!mountedRef.current || seq !== loadSeqRef.current) return false;
       setNotes(nextNotes);
       setLoadError(null);

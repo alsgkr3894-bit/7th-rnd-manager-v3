@@ -1,7 +1,10 @@
 import {
+  CHECKLIST_NOTE_TYPE,
   buildNoteSearchIndex,
   countNotesByStatus,
+  filterKanbanNotes,
   filterSortNotes,
+  isChecklistNote,
 } from '../../lib/note/filter.js';
 
 const NOTES = [
@@ -163,5 +166,18 @@ describe('filterSortNotes', () => {
     expect(filterSortNotes(notes, { sortBy: 'menuName' }).map(n => n.id)).toEqual([1, 2]);
     expect(filterSortNotes(notes, { sortBy: 'testDate' }).map(n => n.id)).toEqual([2, 1]);
     expect(filterSortNotes(notes, { brandFilter: 'main' }).map(n => n.id)).toEqual([2, 1]);
+  });
+});
+
+describe('checklist note helpers', () => {
+  test('체크리스트 노트를 식별하고 칸반 목록에서 제외한다', () => {
+    const notes = [
+      { id: 1, title: '일반 노트', noteType: '메뉴테스트' },
+      { id: 2, title: '오늘 한 일', noteType: CHECKLIST_NOTE_TYPE },
+    ];
+
+    expect(isChecklistNote(notes[0])).toBe(false);
+    expect(isChecklistNote(notes[1])).toBe(true);
+    expect(filterKanbanNotes(notes).map(note => note.id)).toEqual([1]);
   });
 });

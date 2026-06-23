@@ -43,6 +43,7 @@ function createInputs(overrides = {}) {
     changeView: fn(),
     changeBrandFilter: fn(),
     changeStatusFilter: fn(),
+    openChecklistList: fn(),
     handleTagSearch: fn(),
     loadMore: fn(),
     hasActiveFilter: true,
@@ -106,12 +107,14 @@ describe('buildNoteContentProps', () => {
     expect(props.bodyProps.detailNote).toEqual({ id: 'detail-1' });
 
     props.headerProps.onCalendar();
+    props.headerProps.onChecklist();
     props.headerProps.onBoard();
     props.headerProps.onWrite();
     props.statesProps.onCreate();
     props.bodyProps.onEditNote({ id: 'n-1' });
 
     expect(inputs.router.push).toHaveBeenNthCalledWith(1, '/note/calendar');
+    expect(inputs.listState.openChecklistList).toHaveBeenCalled();
     expect(inputs.router.push).toHaveBeenNthCalledWith(2, '/note/board');
     expect(inputs.router.push).toHaveBeenNthCalledWith(3, '/note/write');
     expect(inputs.router.push).toHaveBeenNthCalledWith(4, '/note/write');

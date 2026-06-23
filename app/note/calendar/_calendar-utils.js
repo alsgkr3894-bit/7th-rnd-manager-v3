@@ -126,7 +126,7 @@ export function checklistJournalTitle(dateKey) {
 
 export function checklistJournalContent(doneItems) {
   if (!doneItems.length) return '완료 항목 없음';
-  return ['완료 체크리스트', ...doneItems.map(item => `- ${item.text}`)].join('\n');
+  return ['오늘 한 일', ...doneItems.map(item => `- ${item.text}`)].join('\n');
 }
 
 export function daysInMonth(y, m) {

@@ -139,6 +139,7 @@ describe('note list structure', () => {
     expect(headerSource).toContain('<PageHeader');
     expect(headerSource).toContain('<NoteBatchToolbar');
     expect(headerSource).toContain('보고예정 일괄복사');
+    expect(headerSource).toContain('체크리스트 목록');
     expect(statesSource).toContain('export function NoteListStates');
     expect(statesSource).toContain('<NoteCardSkeleton');
     expect(statesSource).toContain('아직 노트가 없어요');
@@ -182,6 +183,7 @@ describe('note list structure', () => {
     expect(contentPropHeaderBuildersSource).toContain('export function buildNoteStatesProps');
     expect(contentPropHeaderBuildersSource).toContain('NOTE_STATUS.REPORTING');
     expect(contentPropHeaderBuildersSource).toContain("router.push('/note/calendar')");
+    expect(contentPropHeaderBuildersSource).toContain('onChecklist: listState.openChecklistList');
     expect(contentPropHeaderBuildersSource).toContain("router.push('/note/write')");
     expect(contentPropFilterBuildersSource).toContain('export function buildNoteFilterProps');
     expect(contentPropFilterBuildersSource).toContain('saveSearchHistory(search)');
@@ -204,6 +206,8 @@ describe('note list structure', () => {
     expect(listStateSource).toContain('useSearchHistory(KEYS.NOTE_SEARCH_HISTORY)');
     expect(listStateSource).toContain('buildHighlightRegex(search.trim())');
     expect(listStateSource).toContain('setLS(KEYS.NOTE_VIEW, mode)');
+    expect(listStateSource).toContain('function openChecklistList()');
+    expect(listStateSource).toContain("handleSearchChange('체크리스트')");
     expect(reportingCopySource).toContain('export function useNoteReportingCopy');
     expect(reportingCopySource).toContain('NOTE_STATUS.REPORTING');
     expect(reportingCopySource).toContain('copyText(text)');
