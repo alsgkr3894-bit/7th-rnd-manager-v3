@@ -7,7 +7,7 @@ import { SearchBox } from '@/components/ui/SearchBox';
 import { Pagination } from '@/components/ui/Pagination';
 import { SortButton } from '@/components/ui/SortButton';
 import { EdgeCard } from '@/components/cost/edge-dough/EdgeCard';
-import { edgeTotalCost } from '@/lib/cost/edge-dough';
+import { edgeTotalCost, seedPlaceholderEdges } from '@/lib/cost/edge-dough';
 import {
   SelectionToolbar,
   sortButtonOptions,
@@ -45,17 +45,22 @@ export function CommonEdgesView({
   onDeleteCancel,
   onBatchDelete,
 }) {
-  const edgeFilled = edges.filter(edge => edge.components?.length > 0).length;
+  const displayEdges = useMemo(
+    () => (isMain ? [...edges, ...seedPlaceholderEdges(edges)] : edges),
+    [edges, isMain]
+  );
+  const missingSeedCount = displayEdges.filter(edge => edge.__seedPlaceholder).length;
+  const edgeFilled = displayEdges.filter(edge => edge.components?.length > 0).length;
   const filteredEdges = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return edges;
-    return edges.filter(
+    if (!q) return displayEdges;
+    return displayEdges.filter(
       edge =>
         edge.edgeType?.toLowerCase().includes(q) ||
         edge.edgeCode?.toLowerCase().includes(q) ||
         (edge.size || '').toLowerCase().includes(q)
     );
-  }, [edges, search]);
+  }, [displayEdges, search]);
 
   const edgeSortOptions = useMemo(
     () => [
@@ -70,8 +75,14 @@ export function CommonEdgesView({
   const edgeTable = useCostManageTable(filteredEdges, {
     sortOptions: edgeSortOptions,
     initialSort: { id: 'name', dir: 'asc' },
-    getRowId: row => row.id,
+    getRowId: row => (row.__seedPlaceholder ? null : row.id),
   });
+  const selectablePageEdges = edgeTable.paged.filter(
+    edge => !edge.__seedPlaceholder && edge.id != null
+  );
+  const allSelectablePageSelected =
+    selectablePageEdges.length > 0 &&
+    selectablePageEdges.every(edge => edgeTable.selected.has(edge.id));
 
   useEffect(() => {
     edgeTable.clearSelection();
@@ -96,7 +107,8 @@ export function CommonEdgesView({
       >
         <SearchBox value={search} onChange={onSearch} placeholder="엣지·도우 이름 검색" />
         <span style={{ fontSize: 13, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
-          {edgeFilled}/{edges.length}개 구성 완료
+          {edgeFilled}/{displayEdges.length}개 구성 완료
+          {missingSeedCount > 0 ? ` · 기본 ${missingSeedCount}개 미등록` : ''}
         </span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
           {resetConfirm ? (
@@ -153,7 +165,7 @@ export function CommonEdgesView({
             />
           ))}
         </div>
-      ) : edges.length === 0 ? (
+      ) : displayEdges.length === 0 ? (
         <div className="card" style={{ minHeight: 200, display: 'grid', placeItems: 'center' }}>
           <div style={{ textAlign: 'center', color: 'var(--text-3)' }}>
             <Icon.calc style={{ width: 32, height: 32, marginBottom: 12, opacity: 0.4 }} />
@@ -216,37 +228,27 @@ export function CommonEdgesView({
           >
             <input
               type="checkbox"
-              checked={edgeTable.allPageSelected}
+              checked={allSelectablePageSelected}
               onChange={edgeTable.togglePage}
-              disabled={!canEdit}
+              disabled={!canEdit || selectablePageEdges.length === 0}
               style={{ width: 15, height: 15, accentColor: 'var(--accent)' }}
             />
             현재 페이지 선택
           </label>
           {edgeTable.paged.map(edge => (
-            <div
-              key={edge.id}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '24px 1fr',
-                gap: 8,
-                alignItems: 'center',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={edgeTable.selected.has(edge.id)}
-                onChange={() => edgeTable.toggle(edge.id)}
-                disabled={!canEdit}
-                style={{ width: 16, height: 16, accentColor: 'var(--accent)' }}
-              />
-              <EdgeCard
-                edge={edge}
-                canEdit={canEdit}
-                onEdit={() => onEdit(edge)}
-                onDelete={deletePending === edge.id ? null : () => onDeleteStart(edge.id)}
-              />
-            </div>
+            <EdgeRow
+              key={edge.__key || edge.id}
+              edge={edge}
+              canEdit={canEdit}
+              selected={edge.id != null && edgeTable.selected.has(edge.id)}
+              onToggle={() => edgeTable.toggle(edge.id)}
+              onEdit={() => onEdit(edge)}
+              onDelete={
+                edge.__seedPlaceholder || deletePending === edge.id
+                  ? null
+                  : () => onDeleteStart(edge.id)
+              }
+            />
           ))}
           <Pagination
             page={edgeTable.page}
@@ -297,6 +299,30 @@ export function CommonEdgesView({
           onClose={onCloseEdit}
         />
       )}
+    </div>
+  );
+}
+
+function EdgeRow({ edge, canEdit, selected, onToggle, onEdit, onDelete }) {
+  const selectable = canEdit && !edge.__seedPlaceholder && edge.id != null;
+
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '24px 1fr',
+        gap: 8,
+        alignItems: 'center',
+      }}
+    >
+      <input
+        type="checkbox"
+        checked={!!selected}
+        onChange={onToggle}
+        disabled={!selectable}
+        style={{ width: 16, height: 16, accentColor: 'var(--accent)' }}
+      />
+      <EdgeCard edge={edge} canEdit={canEdit} onEdit={onEdit} onDelete={onDelete} />
     </div>
   );
 }

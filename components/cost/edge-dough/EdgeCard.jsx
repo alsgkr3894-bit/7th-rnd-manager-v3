@@ -8,6 +8,12 @@ export function EdgeCard({ edge, canEdit = true, onEdit, onDelete }) {
   const issues = edgeIssues(edge);
   const compCount = edge.components?.length || 0;
   const sizeLabel = edge.size ? ` ${edge.size}` : '';
+  const hasDisplayableTotal = compCount > 0 && Number.isFinite(total);
+  const totalColor = !hasDisplayableTotal
+    ? 'var(--text-4)'
+    : total < 0
+      ? 'var(--negative)'
+      : 'var(--text-1)';
 
   return (
     <div
@@ -43,6 +49,20 @@ export function EdgeCard({ edge, canEdit = true, onEdit, onDelete }) {
               비어있음
             </span>
           )}
+          {edge.__seedPlaceholder && (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                padding: '2px 7px',
+                borderRadius: 6,
+                background: 'var(--accent-soft)',
+                color: 'var(--accent)',
+              }}
+            >
+              미등록 시드
+            </span>
+          )}
           {compCount > 0 && issues.length > 0 && (
             <span
               style={{
@@ -74,11 +94,11 @@ export function EdgeCard({ edge, canEdit = true, onEdit, onDelete }) {
           style={{
             fontSize: 18,
             fontWeight: 800,
-            color: total > 0 ? 'var(--text-1)' : 'var(--text-4)',
+            color: totalColor,
             lineHeight: 1.2,
           }}
         >
-          {total > 0 ? (
+          {hasDisplayableTotal ? (
             <>
               {formatNumber(total)}
               <span style={{ fontSize: 12, fontWeight: 600, marginLeft: 2 }}>원</span>

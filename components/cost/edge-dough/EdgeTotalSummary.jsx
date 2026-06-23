@@ -2,6 +2,8 @@
 import { formatNumber } from '@/lib/format';
 
 export function EdgeTotalSummary({ total }) {
+  const color = Number(total) < 0 ? 'var(--negative)' : 'var(--accent)';
+
   return (
     <div
       style={{
@@ -14,7 +16,7 @@ export function EdgeTotalSummary({ total }) {
       }}
     >
       <span style={{ fontSize: 13, fontWeight: 600 }}>총 원가</span>
-      <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--accent)' }}>
+      <span style={{ fontSize: 20, fontWeight: 800, color }}>
         {formatNumber(total)}
         <span style={{ fontSize: 13, marginLeft: 2 }}>원</span>
       </span>

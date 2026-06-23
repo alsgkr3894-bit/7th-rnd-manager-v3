@@ -5,7 +5,16 @@ import { formatNumber } from '@/lib/format';
 import { UNIT_OPTIONS } from '@/lib/cost/shared/unit-options';
 
 export function EdgeComponentRow({ component, allMeta, unitPriceMap, onChange, onRemove }) {
-  const subtotal = (parseFloat(component.quantity) || 0) * (parseFloat(component.unitPrice) || 0);
+  const quantity = Number(component.quantity);
+  const unitPrice = Number(component.unitPrice);
+  const hasSubtotal =
+    component.quantity !== '' &&
+    component.quantity != null &&
+    component.unitPrice !== '' &&
+    component.unitPrice != null &&
+    Number.isFinite(quantity) &&
+    Number.isFinite(unitPrice);
+  const subtotal = hasSubtotal ? quantity * unitPrice : 0;
 
   return (
     <div
@@ -115,13 +124,10 @@ export function EdgeComponentRow({ component, allMeta, unitPriceMap, onChange, o
           textAlign: 'right',
           fontSize: 13,
           fontWeight: 600,
-          color:
-            subtotal < 0 ? 'var(--negative)' : subtotal > 0 ? 'var(--text-1)' : 'var(--text-4)',
+          color: subtotal < 0 ? 'var(--negative)' : hasSubtotal ? 'var(--text-1)' : 'var(--text-4)',
         }}
       >
-        {Number.isFinite(subtotal) && subtotal !== 0
-          ? `${formatNumber(Math.round(subtotal))}원`
-          : '—'}
+        {hasSubtotal ? `${formatNumber(Math.round(subtotal))}원` : '—'}
       </div>
 
       <button
