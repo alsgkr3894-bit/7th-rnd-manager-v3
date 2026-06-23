@@ -78,6 +78,12 @@ describe('출력 artifact 실행 검증', () => {
             { label: 'R', sellingPrice: 9000 },
           ],
         },
+        {
+          menuName: '치즈오븐스파게티',
+          menuCategory: '사이드',
+          costMap: { L: 1200 },
+          sizes: [{ label: 'L', sellingPrice: 6000 }],
+        },
       ],
       ['L', 'R'],
       'cost',
@@ -87,7 +93,7 @@ describe('출력 artifact 실행 검증', () => {
 
     const { workbook, fileName } = lastExcelWrite();
     expect(fileName).toBe('테스트브랜드_원가마진표.xlsx');
-    expect(workbook.SheetNames).toEqual(['원가마진표']);
+    expect(workbook.SheetNames).toEqual(['원가마진표', '피자', '사이드']);
     const rows = rowsOf(workbook, '원가마진표');
     expect(rows[0]).toEqual([
       '메뉴명',
@@ -100,6 +106,26 @@ describe('출력 artifact 실행 검증', () => {
       'R 원가율',
     ]);
     expect(rows[1]).toEqual(['페퍼로니', '피자', 2500, 1800, 10000, 9000, '25.0%', '20.0%']);
+    expect(rowsOf(workbook, '피자')[1]).toEqual([
+      '페퍼로니',
+      '피자',
+      2500,
+      1800,
+      10000,
+      9000,
+      '25.0%',
+      '20.0%',
+    ]);
+    expect(rowsOf(workbook, '사이드')[1]).toEqual([
+      '치즈오븐스파게티',
+      '사이드',
+      1200,
+      '',
+      6000,
+      '',
+      '20.0%',
+      '',
+    ]);
   });
 
   test('알레르기 CSV row builder는 메뉴·크러스트·알레르기 매트릭스를 보존한다', () => {

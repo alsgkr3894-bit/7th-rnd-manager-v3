@@ -13,8 +13,15 @@ describe('원가마진표 XLSX 내보내기 구조 (P3 컬럼 고정)', () => {
     expect(marginExportSrc).toContain('loadXlsx');
     expect(marginExportSrc).toContain('XLSX.utils.book_new');
     expect(marginExportSrc).toContain('XLSX.utils.aoa_to_sheet');
-    expect(marginExportSrc).toContain("XLSX.utils.book_append_sheet(wb, ws, '원가마진표')");
+    expect(marginExportSrc).toContain("appendMarginSheet(XLSX, wb, '원가마진표'");
     expect(marginExportSrc).toContain('XLSX.writeFile');
+  });
+
+  test('카테고리별 시트를 추가하고 엑셀 시트명 제한을 처리한다', () => {
+    expect(marginExportSrc).toContain('groupRowsByCategory');
+    expect(marginExportSrc).toContain('safeSheetName');
+    expect(marginExportSrc).toContain('MAX_SHEET_NAME_LENGTH');
+    expect(marginExportSrc).toContain('for (const [category, categoryRows] of groupRowsByCategory(rows))');
   });
 
   test('필수 헤더 컬럼(메뉴명·카테고리)이 고정 순서로 포함된다', () => {
