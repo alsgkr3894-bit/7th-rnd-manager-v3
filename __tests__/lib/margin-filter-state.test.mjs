@@ -9,6 +9,7 @@ const tableCardSrc = readFileSync(resolve('app/cost/margin/_MarginTableCard.jsx'
 const tableSectionsSrc = readFileSync(resolve('app/cost/margin/marginTableSections.js'), 'utf-8');
 const rowSrc = readFileSync(resolve('components/cost/margin/MarginRow.jsx'), 'utf-8');
 const trendSrc = readFileSync(resolve('components/cost/margin/MarginTrendModal.jsx'), 'utf-8');
+const exportSrc = readFileSync(resolve('lib/cost/margin/export.js'), 'utf-8');
 
 describe('margin 훅 분리 구조', () => {
   test('useMarginFilters.js가 catFilter/search/sortKey/showHidden 상태를 관리한다', () => {
@@ -74,6 +75,14 @@ describe('margin 훅 분리 구조', () => {
     expect(trendSrc).toContain('canEdit = false');
     expect(trendSrc).toContain('if (!canEdit) return');
     expect(trendSrc).toContain('{canEdit && (');
+  });
+
+  test('margin table treats negative costs as displayable values', () => {
+    expect(rowSrc).toContain('function getCostEntry');
+    expect(rowSrc).toContain('{hasCost ? (');
+    expect(rowSrc).not.toContain('{cost > 0 ? (');
+    expect(exportSrc).toContain('return hasCost ? Math.round(cost) :');
+    expect(exportSrc).not.toContain('return c > 0 ? Math.round(c) :');
   });
 
   test('buildMarginTableSections는 카테고리별로 나누고 피자 표에서 단일 컬럼을 제외한다', () => {
@@ -151,5 +160,20 @@ describe('margin 훅 분리 구조', () => {
     );
     expect(priceByName['콜라 (소)']).toEqual({ price: 2000, cost: 800 });
     expect(priceByName['콜라 (대)']).toEqual({ price: 3500, cost: 1400 });
+  });
+
+  test('single-size section conversion preserves negative cost values', () => {
+    const sections = buildMarginTableSections([
+      {
+        id: 'side-neg',
+        menuName: '차감 사이드',
+        menuCategory: '사이드',
+        sizes: [{ label: '단품', sellingPrice: 5000 }],
+        costMap: { 단품: -500 },
+      },
+    ]);
+
+    expect(sections).toHaveLength(1);
+    expect(sections[0].rows[0].costMap.단일).toBe(-500);
   });
 });

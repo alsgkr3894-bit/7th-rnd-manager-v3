@@ -26,6 +26,14 @@ export const MC = (pct, mode, warn, crit) =>
 
 const GRP_BORDER = { borderLeft: '2px solid var(--divider)' };
 
+function getCostEntry(costMap, label) {
+  if (!Object.prototype.hasOwnProperty.call(costMap || {}, label)) {
+    return { hasCost: false, cost: 0 };
+  }
+  const cost = Number(costMap[label]);
+  return Number.isFinite(cost) ? { hasCost: true, cost } : { hasCost: false, cost: 0 };
+}
+
 export const MarginRow = memo(function MarginRow({
   r,
   sizeLabels,
@@ -60,7 +68,7 @@ export const MarginRow = memo(function MarginRow({
       </td>
 
       {sizeLabels.map(l => {
-        const cost = r.costMap?.[l] || 0;
+        const { hasCost, cost } = getCostEntry(r.costMap, l);
         const s = r.sizes?.find(s => s.label === l);
 
         // 할인적용금액
@@ -96,10 +104,11 @@ export const MarginRow = memo(function MarginRow({
         // 원가율/마진율
         const eff = applyDiscount(s?.sellingPrice, discount);
         const net = calcNetRevenue(eff, activePlatform.fees, l);
-        const costRate = calcPlatformMargin(cost, net);
+        const costRate = hasCost ? calcPlatformMargin(cost, net) : null;
         const display =
           costRate != null ? (viewMode === 'margin' ? 100 - costRate : costRate) : null;
-        const baseCostRate = hasAdjustment ? calcPlatformMargin(cost, s?.sellingPrice || 0) : null;
+        const baseCostRate =
+          hasAdjustment && hasCost ? calcPlatformMargin(cost, s?.sellingPrice || 0) : null;
         const baseDisplay =
           baseCostRate != null ? (viewMode === 'margin' ? 100 - baseCostRate : baseCostRate) : null;
 
@@ -110,7 +119,7 @@ export const MarginRow = memo(function MarginRow({
               className="mt-num"
               style={{ ...GRP_BORDER, textAlign: 'right', color: 'var(--text-2)' }}
             >
-              {cost > 0 ? (
+              {hasCost ? (
                 <>
                   {formatNumber(Math.round(cost))}
                   <span className="mt-won">원</span>
@@ -163,10 +172,10 @@ export const MarginRow = memo(function MarginRow({
               const parts = [
                 r.menuName,
                 ...sizeLabels.map(l => {
-                  const cost = r.costMap?.[l] || 0;
+                  const { hasCost, cost } = getCostEntry(r.costMap, l);
                   const s = r.sizes?.find(s => s.label === l);
                   const p = s?.sellingPrice || 0;
-                  const rate = cost && p ? ((cost / p) * 100).toFixed(1) + '%' : '-';
+                  const rate = hasCost && p ? ((cost / p) * 100).toFixed(1) + '%' : '-';
                   return `${l}: ${p ? formatNumber(p) + '원' : '-'} / ${rate}`;
                 }),
               ];

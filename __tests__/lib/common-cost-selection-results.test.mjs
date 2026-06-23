@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@jest/globals';
-import { buildDetailRows } from '../../lib/cost/margin/build-rows.js';
+import { buildDerivedRows, buildDetailRows } from '../../lib/cost/margin/build-rows.js';
 import { buildRows } from '../../lib/cost/shared/buildSummaryRows.js';
 import { buildCostReportData, buildRecipePrintRows } from '../../lib/report/build-cost-report.js';
 
@@ -61,6 +61,62 @@ describe('common cost selection results', () => {
     );
 
     expect(rows[0].costMap.L).toBe(300);
+  });
+
+  test('원가마진표 행은 음수 공통원가를 차감값으로 보존한다', () => {
+    const rows = buildDetailRows(
+      [PRICE_ROW],
+      {
+        pizzaMap: RECIPE_MAPS.pizza,
+        personalMap: RECIPE_MAPS.personal,
+        sideMap: RECIPE_MAPS.side,
+        setMap: RECIPE_MAPS.set,
+      },
+      UNIT_PRICE_MAP,
+      [
+        {
+          ...RECIPE_GROUPS[0],
+          ingredients: [
+            {
+              productCode: 'SAUCE',
+              ingredientName: '차감소스',
+              quantities: { L: -30 },
+              unitType: 'g',
+            },
+          ],
+        },
+      ]
+    );
+
+    expect(rows[0].costMap.L).toBe(-300);
+  });
+
+  test('원가마진표 파생 엣지 행은 음수 엣지 원가를 기존 원가에서 차감한다', () => {
+    const rows = buildDerivedRows(
+      [
+        {
+          id: 'detail||base',
+          menuCode: 'P-001-L',
+          menuName: '테스트 피자',
+          menuCategory: '피자',
+          sizes: [{ label: 'L', sellingPrice: 10000 }],
+          costMap: { L: 500 },
+        },
+      ],
+      {
+        EXPAND_EDGES: ['엣지'],
+        edgeSuffixByType: { 엣지: 'ED' },
+        edgeCostByType: { 엣지: { L: -200 } },
+        edgePriceByType: { 엣지: 1000 },
+      },
+      new Set()
+    );
+
+    expect(rows[0]).toMatchObject({
+      menuName: '테스트 피자 엣지',
+      costMap: { L: 300 },
+      sizes: [{ label: 'L', sellingPrice: 11000 }],
+    });
   });
 
   test('원가마진표 행은 L/R 사이즈 코드가 달라도 한 메뉴 행으로 합친다', () => {

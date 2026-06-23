@@ -18,6 +18,10 @@ const CATEGORY_SECTIONS = [
 ];
 const OTHER_SECTION = { id: 'other', title: '기타', sizeMode: 'mixed' };
 
+function hasOwnCost(costMap, label) {
+  return Object.prototype.hasOwnProperty.call(costMap || {}, label);
+}
+
 function normalizeCategory(value) {
   return String(value || '').trim();
 }
@@ -86,7 +90,9 @@ function normalizeSingleSizeRows(row) {
       sizes: [{ ...size, label: SINGLE_SIZE_LABEL }],
       costMap: {
         ...(row?.costMap || {}),
-        [SINGLE_SIZE_LABEL]: row?.costMap?.[origLabel] || 0,
+        ...(hasOwnCost(row?.costMap, origLabel)
+          ? { [SINGLE_SIZE_LABEL]: row.costMap[origLabel] }
+          : {}),
       },
     };
   });
