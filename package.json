@@ -43,6 +43,8 @@
     "db:pg:status": "node prisma/local-postgres.mjs status",
     "db:pg:stop": "node prisma/local-postgres.mjs stop",
     "db:studio": "prisma studio",
+    "site:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-local-site.ps1 -OpenBrowser -ShowStatus",
+    "site:autostart": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/register-site-autostart.ps1",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=__tests__ --no-coverage",

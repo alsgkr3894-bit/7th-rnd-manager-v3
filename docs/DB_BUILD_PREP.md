@@ -200,6 +200,15 @@ npm run db:backup:autostart
 
 `db:backup:autostart`는 Windows 현재 사용자 시작프로그램에 자동 백업 명령을 등록한다. 기본값은 마지막 백업이 20시간보다 오래된 경우에만 새 dump를 생성하는 방식이다.
 
+로컬 앱 서버와 브라우저 창까지 자동화하려면 아래 명령을 사용한다.
+
+```bash
+npm run site:start
+npm run site:autostart
+```
+
+`site:start`는 로컬 PostgreSQL을 먼저 확인한 뒤 3000 포트에 사이트를 띄우고 `http://localhost:3000/login`을 연다. `site:autostart`는 Windows 현재 사용자 시작프로그램에 사이트 자동 실행을 등록하고, 바탕화면에 `7th RND Site Start.lnk` 바로가기를 만든다.
+
 ## 7. 아직 하지 말아야 할 것
 
 - 실제 운영 데이터를 Git에 넣지 않는다.

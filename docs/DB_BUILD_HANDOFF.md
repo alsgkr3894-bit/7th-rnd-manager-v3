@@ -51,6 +51,9 @@ seed, 검증, import 도구:
 - `scripts/start-local-postgres.cmd`
 - `scripts/register-db-autostart.ps1`
 - `scripts/register-db-backup-autostart.ps1`
+- `scripts/start-local-site.ps1`
+- `scripts/start-local-site.cmd`
+- `scripts/register-site-autostart.ps1`
 
 환경 예시와 문서:
 
@@ -135,6 +138,26 @@ DB 자동 백업 시작 항목:
 ```powershell
 npm.cmd run dev:clean
 ```
+
+로컬 DB 시작, 사이트 서버 시작, 브라우저 열기를 한 번에 하려면 아래 명령을 사용한다.
+
+```powershell
+npm.cmd run site:start
+```
+
+Windows 로그인 시 사이트 서버와 사이트 창까지 자동으로 열려면 아래 명령을 한 번 실행한다.
+
+```powershell
+npm.cmd run site:autostart
+```
+
+등록된 시작 항목:
+
+- `7thRNDManagerLocalSite`
+
+바탕화면 사이트 바로가기:
+
+- `C:\Users\user\Desktop\7th RND Site Start.lnk`
 
 브라우저 주소:
 
