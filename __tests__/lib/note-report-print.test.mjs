@@ -65,6 +65,8 @@ describe('menu development note PDF report', () => {
     expect(html).toContain('임시 원가 계산');
     expect(html).toContain('원가 1,000원');
     expect(html).toContain('시식 사진');
+    expect(html).toContain('grid-template-columns: repeat(2, 1fr)');
+    expect(html).toContain('max-height: 240px');
     expect(html).toContain('window.print');
   });
 });
