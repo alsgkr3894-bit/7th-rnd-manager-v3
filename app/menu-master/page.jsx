@@ -26,6 +26,7 @@ import {
 } from '@/lib/menu-master/recipe-summary';
 import { normalizePersonalPizzaCodes } from '@/lib/menu-master/normalize';
 import { buildMenuReadinessMap } from '@/lib/menu-master/readiness';
+import { MenuDataQualityPanel } from '@/components/menu-master/MenuDataQualityPanel';
 import { MenuReadinessPanel } from '@/components/menu-master/MenuReadinessPanel';
 import { useMenuMasterActions } from './useMenuMasterActions';
 import { exportMenuMasterCsv } from './menuMasterExport';
@@ -49,7 +50,7 @@ const EMPTY_RECIPE_SUMMARY_MAP = new Map();
 export default function Page() {
   const isMain = useIsMainBrand();
   const { isViewer } = useCurrentRole();
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'issues' | 'readiness'
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'issues' | 'readiness' | 'quality'
   const [readinessMap, setReadinessMap] = useState(new Map());
   const [readinessLoading, setReadinessLoading] = useState(false);
   const [seeding, setSeeding] = useState(false);
@@ -135,9 +136,9 @@ export default function Page() {
 
   const { page, goTo, totalPages, paged, total } = usePagination(filtered, 60);
 
-  // '출시 준비' 탭 전환 시 readiness 계산
+  // '출시 준비'와 '품질 점검' 탭 전환 시 readiness 기반 진단 계산
   useEffect(() => {
-    if (viewMode !== 'readiness') return;
+    if (viewMode !== 'readiness' && viewMode !== 'quality') return;
     if (rows.length === 0) {
       setReadinessMap(new Map());
       setReadinessLoading(false);
@@ -244,9 +245,24 @@ export default function Page() {
             >
               출시 준비
             </button>
+            <button
+              className={'chip' + (viewMode === 'quality' ? ' active' : '')}
+              onClick={() => setViewMode('quality')}
+            >
+              품질 점검
+            </button>
           </div>
 
-          {viewMode === 'readiness' ? (
+          {viewMode === 'quality' ? (
+            <MenuDataQualityPanel
+              rows={rows}
+              recipeSummaryMap={recipeSummaryMap}
+              readinessMap={readinessMap}
+              loading={readinessLoading}
+              isViewer={isViewer}
+              onEdit={setEditRow}
+            />
+          ) : viewMode === 'readiness' ? (
             <MenuReadinessPanel
               readinessMap={readinessMap}
               loading={readinessLoading}
