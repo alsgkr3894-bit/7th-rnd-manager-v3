@@ -1,12 +1,25 @@
 import { beforeEach, describe, expect, jest, test } from '@jest/globals';
+import XLSX from 'xlsx';
 
 const csvDownloads = [];
+const excelWrites = [];
+const xlsxMock = {
+  ...XLSX,
+  utils: XLSX.utils,
+  writeFile: jest.fn((workbook, fileName) => {
+    excelWrites.push({ workbook, fileName });
+  }),
+};
 
 jest.unstable_mockModule('@/lib/download', () => ({
   downloadCsv: jest.fn((rows, fileName) => {
     csvDownloads.push({ rows, fileName });
   }),
   makeFileNameWithBrand: jest.fn((prefix, ext) => `테스트브랜드_${prefix}.${ext}`),
+}));
+
+jest.unstable_mockModule('@/lib/excel', () => ({
+  loadXlsx: jest.fn(async () => xlsxMock),
 }));
 
 const { exportMenuMasterCsv } = await import('@/app/menu-master/menuMasterExport.js');
@@ -18,9 +31,19 @@ function lastDownload() {
   return csvDownloads[csvDownloads.length - 1];
 }
 
-describe('CSV 출력 artifact 실행 검증', () => {
+function lastExcelWrite() {
+  return excelWrites[excelWrites.length - 1];
+}
+
+function rowsOf(workbook, sheetName) {
+  return XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+}
+
+describe('출력 artifact 실행 검증', () => {
   beforeEach(() => {
     csvDownloads.length = 0;
+    excelWrites.length = 0;
+    xlsxMock.writeFile.mockClear();
   });
 
   test('메뉴마스터 CSV는 브랜드 파일명과 메뉴 기본 컬럼을 만든다', () => {
@@ -43,8 +66,8 @@ describe('CSV 출력 artifact 실행 검증', () => {
     ]);
   });
 
-  test('원가마진표 CSV는 사이즈별 원가·판매가·원가율 컬럼을 만든다', () => {
-    exportMarginExcel(
+  test('원가마진표 XLSX는 사이즈별 원가·판매가·원가율 컬럼을 만든다', async () => {
+    await exportMarginExcel(
       [
         {
           menuName: '페퍼로니',
@@ -62,8 +85,10 @@ describe('CSV 출력 artifact 실행 검증', () => {
       0
     );
 
-    const { rows, fileName } = lastDownload();
-    expect(fileName).toBe('테스트브랜드_원가마진표.csv');
+    const { workbook, fileName } = lastExcelWrite();
+    expect(fileName).toBe('테스트브랜드_원가마진표.xlsx');
+    expect(workbook.SheetNames).toEqual(['원가마진표']);
+    const rows = rowsOf(workbook, '원가마진표');
     expect(rows[0]).toEqual([
       '메뉴명',
       '카테고리',

@@ -98,7 +98,7 @@ describe('출력 실패 toast — 폴백 메시지 포함', () => {
 // ── 파일명 규칙 ──────────────────────────────────────────────────────────────
 
 describe('다운로드 파일명 — makeFileNameWithBrand 사용', () => {
-  test('원가마진표 CSV 파일명이 makeFileNameWithBrand로 생성된다', () => {
+  test('원가마진표 XLSX 파일명이 makeFileNameWithBrand로 생성된다', () => {
     const s = src('lib/cost/margin/export.js');
     expect(s).toContain('makeFileNameWithBrand');
   });

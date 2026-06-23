@@ -4,9 +4,17 @@ import { resolve } from 'node:path';
 const marginExportSrc = readFileSync(resolve('lib/cost/margin/export.js'), 'utf-8');
 const printWindowSrc = readFileSync(resolve('lib/print/window-print.js'), 'utf-8');
 
-describe('원가마진표 CSV 내보내기 구조 (P3 컬럼 고정)', () => {
+describe('원가마진표 XLSX 내보내기 구조 (P3 컬럼 고정)', () => {
   test('exportMarginExcel 함수가 존재한다', () => {
-    expect(marginExportSrc).toContain('export function exportMarginExcel');
+    expect(marginExportSrc).toContain('export async function exportMarginExcel');
+  });
+
+  test('워크북을 생성해 원가마진표 시트로 저장한다', () => {
+    expect(marginExportSrc).toContain('loadXlsx');
+    expect(marginExportSrc).toContain('XLSX.utils.book_new');
+    expect(marginExportSrc).toContain('XLSX.utils.aoa_to_sheet');
+    expect(marginExportSrc).toContain("XLSX.utils.book_append_sheet(wb, ws, '원가마진표')");
+    expect(marginExportSrc).toContain('XLSX.writeFile');
   });
 
   test('필수 헤더 컬럼(메뉴명·카테고리)이 고정 순서로 포함된다', () => {
@@ -26,7 +34,7 @@ describe('원가마진표 CSV 내보내기 구조 (P3 컬럼 고정)', () => {
   test('makeFileNameWithBrand를 사용해 브랜드명이 포함된 파일명을 생성한다', () => {
     expect(marginExportSrc).toContain('makeFileNameWithBrand');
     expect(marginExportSrc).toContain("'원가마진표'");
-    expect(marginExportSrc).toContain("'csv'");
+    expect(marginExportSrc).toContain("'xlsx'");
   });
 });
 

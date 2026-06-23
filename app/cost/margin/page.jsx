@@ -164,11 +164,11 @@ export default function Page() {
             </button>
             <button
               className="btn"
-              onClick={() => {
+              onClick={async () => {
                 try {
-                  exportMarginExcel(edgeFiltered, sizeLabels, viewMode, activePlatform, discount);
+                  await exportMarginExcel(edgeFiltered, sizeLabels, viewMode, activePlatform, discount);
                 } catch (err) {
-                  showToast('CSV 출력 실패: ' + (err?.message || '알 수 없는 오류'), 'error');
+                  showToast('엑셀 출력 실패: ' + (err?.message || '알 수 없는 오류'), 'error');
                 }
               }}
             >

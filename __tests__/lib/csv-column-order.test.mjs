@@ -20,11 +20,11 @@ describe('CSV/XLSX 컬럼 순서 고정', () => {
     expect(allSummarySrc).toContain("['메뉴명', '카테고리', '원가', '판매가', '원가율']");
   });
 
-  test('원가마진표 CSV: 메뉴명이 첫 번째 컬럼', () => {
+  test('원가마진표 XLSX: 메뉴명이 첫 번째 컬럼', () => {
     expect(marginSrc).toMatch(/headers\s*=\s*\[\s*['"]메뉴명['"]/);
   });
 
-  test('원가마진표 CSV: 카테고리가 두 번째 컬럼', () => {
+  test('원가마진표 XLSX: 카테고리가 두 번째 컬럼', () => {
     // 배열에서 메뉴명 다음에 카테고리가 위치함
     const menuIdx = marginSrc.indexOf("'메뉴명'");
     const catIdx = marginSrc.indexOf("'카테고리'");
