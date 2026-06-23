@@ -183,12 +183,17 @@
   border-radius: 10px;
   font-family: inherit;
   color: var(--text-1);
-  transition: background 120ms ease;
+  transition:
+    background 120ms ease,
+    transform 120ms ease;
 }
 .palette-row:hover,
 .palette-row:focus-visible {
   background: var(--accent-soft);
   outline: none;
+}
+.palette-row:hover {
+  transform: translateX(2px);
 }
 .palette-row-ico {
   width: 28px;
@@ -201,6 +206,33 @@
 .palette-row-label {
   font-size: 14px;
   font-weight: 600;
+}
+.palette-row-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+.palette-fav-toggle {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: var(--text-4);
+  flex-shrink: 0;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    transform 120ms ease;
+}
+.palette-fav-toggle:hover {
+  background: var(--surface);
+  color: var(--accent-text);
+  transform: scale(1.06);
 }
 .palette-row-hint {
   margin-left: auto;

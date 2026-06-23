@@ -3,8 +3,42 @@ import { formatNumber } from '@/lib/format';
 
 const FIELD_LABEL_STYLE = { fontSize: 12, color: 'var(--text-3)' };
 
-export function RestoreImpactPanel({ impact, dangerRows, wipeRows }) {
+function SummaryPill({ label, value, tone = 'neutral' }) {
+  const colors = {
+    neutral: ['var(--surface-2)', 'var(--text-2)'],
+    positive: ['var(--positive-soft)', 'var(--positive)'],
+    warn: ['var(--warn-soft)', 'var(--warn)'],
+    negative: ['var(--negative-soft)', 'var(--negative)'],
+  };
+  const [background, color] = colors[tone] || colors.neutral;
+  return (
+    <div
+      style={{
+        background,
+        color,
+        borderRadius: 8,
+        padding: '8px 10px',
+        minWidth: 110,
+      }}
+    >
+      <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.78 }}>{label}</div>
+      <div className="num" style={{ fontSize: 16, fontWeight: 800, marginTop: 2 }}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+export function RestoreImpactPanel({
+  impact,
+  dangerRows,
+  wipeRows,
+  unchangedSelectedStores = [],
+}) {
   if (!impact || impact.rows.length === 0) return null;
+  const increaseRows = impact.rows.filter(row => row.diff > 0);
+  const unchangedRows = impact.rows.filter(row => row.diff === 0);
+  const changedRows = impact.rows.filter(row => row.diff !== 0);
 
   return (
     <div className="card" style={{ marginTop: 16 }}>
@@ -28,6 +62,34 @@ export function RestoreImpactPanel({ impact, dangerRows, wipeRows }) {
       <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 12 }}>
         선택한 모듈의 현재 상태와 백업 시점 비교
       </p>
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+        <SummaryPill label="복원 store" value={`${formatNumber(impact.storeCount)}개`} />
+        <SummaryPill
+          label="변경"
+          value={`${formatNumber(changedRows.length)}개`}
+          tone={changedRows.length > 0 ? 'positive' : 'neutral'}
+        />
+        <SummaryPill
+          label="증가"
+          value={`${formatNumber(increaseRows.length)}개`}
+          tone={increaseRows.length > 0 ? 'positive' : 'neutral'}
+        />
+        <SummaryPill
+          label="감소"
+          value={`${formatNumber(dangerRows.length)}개`}
+          tone={dangerRows.length > 0 ? 'warn' : 'neutral'}
+        />
+        <SummaryPill
+          label="전체 삭제"
+          value={`${formatNumber(wipeRows.length)}개`}
+          tone={wipeRows.length > 0 ? 'negative' : 'neutral'}
+        />
+        <SummaryPill
+          label="유지"
+          value={`${formatNumber(unchangedRows.length + unchangedSelectedStores.length)}개`}
+        />
+      </div>
 
       <div
         style={{
@@ -194,6 +256,27 @@ export function RestoreImpactPanel({ impact, dangerRows, wipeRows }) {
               </span>
             </>
           )}
+        </div>
+      )}
+      {unchangedSelectedStores.length > 0 && (
+        <div
+          style={{
+            marginTop: 10,
+            padding: '10px 14px',
+            borderRadius: 8,
+            background: 'var(--surface-2)',
+            fontSize: 13,
+            lineHeight: 1.6,
+            color: 'var(--text-2)',
+          }}
+        >
+          <b>백업 파일에 없는 선택 store는 현재 데이터를 유지합니다.</b>{' '}
+          <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-3)' }}>
+            {unchangedSelectedStores.slice(0, 8).join(', ')}
+            {unchangedSelectedStores.length > 8
+              ? ` 외 ${unchangedSelectedStores.length - 8}개`
+              : ''}
+          </span>
         </div>
       )}
     </div>

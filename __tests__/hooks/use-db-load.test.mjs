@@ -242,6 +242,8 @@ describe('중위험 페이지·훅 useDBLoad 적용', () => {
     // ready는 stats !== null 파생
     expect(backupSrc).toContain('ready = stats !== null');
     expect(backupSrc).toContain('collectStoreStats');
+    expect(backupSrc).toContain('useServerBackupStatus');
+    expect(backupSrc).toContain('<ServerBackupStatusCard');
   });
 
   test('settings/system page가 useDBLoad를 사용하고 useMounted·initDB·useEffect를 제거했다', () => {

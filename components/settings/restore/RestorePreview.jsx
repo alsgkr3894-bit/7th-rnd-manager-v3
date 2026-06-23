@@ -91,7 +91,12 @@ export function RestorePreview({
         unchangedSelectedStores={unchangedSelectedStores}
         selectedRestoreStoreCount={selectedRestoreStoreCount}
       />
-      <RestoreImpactPanel impact={impact} dangerRows={dangerRows} wipeRows={wipeRows} />
+      <RestoreImpactPanel
+        impact={impact}
+        dangerRows={dangerRows}
+        wipeRows={wipeRows}
+        unchangedSelectedStores={unchangedSelectedStores}
+      />
     </>
   );
 }

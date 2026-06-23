@@ -12,10 +12,12 @@ import { useBackupHistory } from './useBackupHistory';
 import { useModuleScopes } from '@/hooks/useModuleScopes';
 import { useDiagnostics } from '@/hooks/useDiagnostics';
 import { getActiveBrand } from '@/lib/active-brand';
+import { useServerBackupStatus } from './useServerBackupStatus';
 import {
   BackupBrandBanner,
   BackupReminderBanner,
   BackupSummaryTiles,
+  ServerBackupStatusCard,
   BackupProgressBar,
   BackupScopeCard,
   BackupHistoryCard,
@@ -38,6 +40,7 @@ export default function Page() {
   });
   const ready = stats !== null;
   const { diagnostics, collectDiagnostics, collecting } = useDiagnostics();
+  const serverBackupStatus = useServerBackupStatus();
   const backupProgressTimerRef = useRef(null);
 
   const {
@@ -109,6 +112,16 @@ export default function Page() {
         selectedKeys={selectedKeys}
         selectedRows={selectedRows}
         ready={ready}
+      />
+
+      <ServerBackupStatusCard
+        dbStatus={serverBackupStatus.dbStatus}
+        backupStatus={serverBackupStatus.backupStatus}
+        loading={serverBackupStatus.loading}
+        creating={serverBackupStatus.creating}
+        error={serverBackupStatus.error}
+        onRefresh={serverBackupStatus.refresh}
+        onCreateBackup={serverBackupStatus.createManualBackup}
       />
 
       <BackupProgressBar backupProgress={backupProgress} />
