@@ -11,7 +11,7 @@ import { applyDiscount, calcNetRevenue, calcPlatformMargin } from '@/lib/cost/ma
 import { MarginFilterBar } from '@/components/cost/margin/MarginFilterBar';
 import { MarginSummaryCards } from '@/components/cost/margin/MarginSummaryCards';
 import { MarginCostThresholdBar } from '@/components/cost/margin/MarginCostThresholdBar';
-import { exportMarginExcel } from '@/lib/cost/margin/export';
+import { exportMarginExcel, printMarginPdf } from '@/lib/cost/margin/export';
 import { KEYS } from '@/lib/note/keys';
 import { useMarginData } from './useMarginData';
 import { normalizeWarnPercentSetting, normalizeCritPercentSetting } from './marginPageUtils';
@@ -161,6 +161,25 @@ export default function Page() {
             </button>
             <button className="btn" onClick={() => setShowTrend(true)}>
               <Icon.chart style={{ width: 13, height: 13 }} /> 추이 보기
+            </button>
+            <button
+              className="btn"
+              onClick={() => {
+                try {
+                  const opened = printMarginPdf(
+                    edgeFiltered,
+                    sizeLabels,
+                    viewMode,
+                    activePlatform,
+                    discount
+                  );
+                  if (opened) showToast('PDF 출력 창을 열었어요', 'ok', 1600);
+                } catch (err) {
+                  showToast('PDF 출력 실패: ' + (err?.message || '알 수 없는 오류'), 'error');
+                }
+              }}
+            >
+              <Icon.doc style={{ width: 13, height: 13 }} /> PDF 출력
             </button>
             <button
               className="btn"

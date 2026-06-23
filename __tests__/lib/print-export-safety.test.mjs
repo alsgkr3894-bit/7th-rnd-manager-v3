@@ -33,6 +33,13 @@ describe('인쇄 HTML 빌더 — esc() 적용 여부', () => {
     expect(s).toMatch(/\.replace\(\/<\/g,\s*'&lt;'\)/);
   });
 
+  test('원가마진표 PDF 빌더가 escaping 함수를 로컬에 정의한다', () => {
+    const s = src('lib/cost/margin/export.js');
+    expect(s).toMatch(/\.replace\(\/&\/g,\s*'&amp;'\)/);
+    expect(s).toMatch(/\.replace\(\/<\/g,\s*'&lt;'\)/);
+    expect(s).toContain('buildMarginPrintHtml');
+  });
+
   test('식자재 테이블 인쇄 빌더가 formatters의 esc()를 import해 사용한다', () => {
     const s = src('lib/ingredient/manage-print/table-report.js');
     expect(s).toContain('esc,');

@@ -23,7 +23,7 @@ jest.unstable_mockModule('@/lib/excel', () => ({
 }));
 
 const { exportMenuMasterCsv } = await import('@/app/menu-master/menuMasterExport.js');
-const { exportMarginExcel } = await import('@/lib/cost/margin/export.js');
+const { buildMarginPrintHtml, exportMarginExcel } = await import('@/lib/cost/margin/export.js');
 const { buildAllergenCsvRows } =
   await import('@/app/nutrition/allergen/allergenPageOutputUtils.js');
 
@@ -140,6 +140,44 @@ describe('출력 artifact 실행 검증', () => {
       6000,
       '20.0%',
     ]);
+  });
+
+  test('원가마진표 PDF HTML은 현재 행을 카테고리별로 출력하고 값을 escape한다', () => {
+    const html = buildMarginPrintHtml(
+      [
+        {
+          menuName: '<테스트피자>',
+          menuCategory: '피자',
+          costMap: { L: 2500, R: 1800 },
+          sizes: [
+            { label: 'L', sellingPrice: 10000 },
+            { label: 'R', sellingPrice: 9000 },
+          ],
+        },
+        {
+          menuName: '치즈오븐스파게티',
+          menuCategory: '사이드',
+          costMap: { L: 1200 },
+          sizes: [{ label: 'L', sellingPrice: 6000 }],
+        },
+      ],
+      ['L', 'R'],
+      'cost',
+      { name: '배달앱', fees: [] },
+      null
+    );
+
+    expect(html).toContain('<title>테스트브랜드_원가마진표</title>');
+    expect(html).toContain('메뉴 원가마진표');
+    expect(html).toContain('플랫폼: 배달앱');
+    expect(html).toContain('<h2>피자</h2>');
+    expect(html).toContain('<h2>사이드</h2>');
+    expect(html).toContain('L 원가');
+    expect(html).toContain('R 원가율');
+    expect(html).toContain('25.0%');
+    expect(html).toContain('&lt;테스트피자&gt;');
+    expect(html).not.toContain('<테스트피자>');
+    expect(html).toContain('치즈오븐스파게티');
   });
 
   test('알레르기 CSV row builder는 메뉴·크러스트·알레르기 매트릭스를 보존한다', () => {

@@ -2,9 +2,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const marginExportSrc = readFileSync(resolve('lib/cost/margin/export.js'), 'utf-8');
+const marginPageSrc = readFileSync(resolve('app/cost/margin/page.jsx'), 'utf-8');
 const printWindowSrc = readFileSync(resolve('lib/print/window-print.js'), 'utf-8');
 
-describe('원가마진표 XLSX 내보내기 구조 (P3 컬럼 고정)', () => {
+describe('원가마진표 XLSX/PDF 내보내기 구조 (P3 컬럼 고정)', () => {
   test('exportMarginExcel 함수가 존재한다', () => {
     expect(marginExportSrc).toContain('export async function exportMarginExcel');
   });
@@ -54,6 +55,22 @@ describe('원가마진표 XLSX 내보내기 구조 (P3 컬럼 고정)', () => {
     expect(marginExportSrc).toContain('makeFileNameWithBrand');
     expect(marginExportSrc).toContain("'원가마진표'");
     expect(marginExportSrc).toContain("'xlsx'");
+  });
+
+  test('PDF 출력 HTML과 인쇄 팝업 함수를 제공한다', () => {
+    expect(marginExportSrc).toContain('export function buildMarginPrintHtml');
+    expect(marginExportSrc).toContain('export function printMarginPdf');
+    expect(marginExportSrc).toContain('buildAutoPrintScript');
+    expect(marginExportSrc).toContain('openPrintWindow');
+    expect(marginExportSrc).toContain("makeFileNameWithBrand('원가마진표', 'pdf')");
+    expect(marginExportSrc).toContain('@page { size: A4 landscape');
+  });
+
+  test('원가마진표 페이지 헤더에 PDF 출력 버튼을 연결한다', () => {
+    expect(marginPageSrc).toContain('printMarginPdf');
+    expect(marginPageSrc).toContain('PDF 출력');
+    expect(marginPageSrc).toContain("'PDF 출력 실패: '");
+    expect(marginPageSrc).toContain("'알 수 없는 오류'");
   });
 });
 
