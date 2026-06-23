@@ -219,6 +219,44 @@ describe('menu master recipe summary', () => {
     });
   });
 
+  test('negative common group quantity is treated as a valid deduction', () => {
+    const summary = summarizeMenuRecipe(
+      { menuCode: 'P-OR-003-L', category: '피자/오리지널', size: 'L', price: 10000 },
+      {
+        components: [{ productCode: 'DOUGH', ingredientName: '도우', quantity: 100 }],
+        selectedRecipeGroupIds: ['12'],
+      },
+      new Map([
+        ['DOUGH', { unitPrice: 5, baseUnitType: 'g' }],
+        ['SAUCE', { unitPrice: 10, baseUnitType: 'g' }],
+      ]),
+      {
+        recipeGroups: [
+          {
+            id: 12,
+            name: '피자 차감 공통',
+            sizes: ['L'],
+            defaultCategories: ['피자'],
+            ingredients: [
+              {
+                productCode: 'SAUCE',
+                ingredientName: '차감소스',
+                quantities: { L: -20 },
+              },
+            ],
+          },
+        ],
+      }
+    );
+
+    expect(summary).toMatchObject({
+      status: MENU_RECIPE_SUMMARY_STATUS.READY,
+      totalCost: 300,
+      missingQuantityCount: 0,
+      missingCommonQuantityCount: 0,
+    });
+  });
+
   test('수량과 단가 누락을 요약 상태로 표시한다', () => {
     const summary = summarizeMenuRecipe(
       { menuCode: 'P-OR-002-L', category: '피자', price: 20000 },

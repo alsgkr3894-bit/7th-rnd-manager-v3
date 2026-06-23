@@ -62,6 +62,7 @@ describe('group editor structure', () => {
     expect(tableSource).toContain('export function GroupIngredientsTable');
     expect(tableSource).toContain('function GroupIngredientRow');
     expect(tableSource).toContain('합계');
+    expect(tableSource).not.toContain('min="0"');
     expect(utilsSource).toContain('export function computeGroupCostBySizes');
   });
 

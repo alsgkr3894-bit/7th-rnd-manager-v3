@@ -26,6 +26,7 @@ const totalSummarySource = readFileSync(
   resolve('components/cost/edge-dough/EdgeTotalSummary.jsx'),
   'utf8'
 );
+const edgeStoreSource = readFileSync(resolve('lib/cost/edge-dough/store.js'), 'utf8');
 
 describe('edge edit modal structure', () => {
   test('EdgeEditModal keeps load/save state and delegates visible form sections', () => {
@@ -70,5 +71,6 @@ describe('edge edit modal structure', () => {
     expect(marginSettingsSource).toContain('원가마진표에 별도 행으로 표시');
     expect(totalSummarySource).toContain('export function EdgeTotalSummary');
     expect(totalSummarySource).toContain('formatNumber(total)');
+    expect(edgeStoreSource).toContain('allowNegativeQuantity: true');
   });
 });

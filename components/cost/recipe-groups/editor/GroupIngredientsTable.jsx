@@ -43,7 +43,6 @@ function IngredientSizeCells({
         <input
           className="form-input"
           type="number"
-          min="0"
           value={qty}
           onChange={event => onQty(lineIndex, sizeLabel, event.target.value)}
           placeholder="0"

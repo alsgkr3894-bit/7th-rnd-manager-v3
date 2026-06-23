@@ -27,4 +27,16 @@ describe('cost shared calc guards', () => {
   test('정상 숫자 문자열은 기존처럼 합계 계산에 포함한다', () => {
     expect(componentSubtotal({ quantity: '12.5', unitPrice: '8' })).toBe(100);
   });
+
+  test('negative quantity subtracts from simple total cost', () => {
+    expect(componentSubtotal({ quantity: '-2', unitPrice: '8' })).toBe(-16);
+    expect(
+      simpleTotalCost({
+        components: [
+          { quantity: '12.5', unitPrice: '8' },
+          { quantity: '-2', unitPrice: '8' },
+        ],
+      })
+    ).toBe(84);
+  });
 });

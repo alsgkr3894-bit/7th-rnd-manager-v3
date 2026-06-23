@@ -23,6 +23,19 @@ describe('effective cost helpers', () => {
     expect(effectiveComponentsCost([{ quantity: 2.5, unitPrice: 10.2 }], new Map())).toBe(26);
   });
 
+  test('negative quantity subtracts from effective component cost', () => {
+    expect(effectiveComponentSubtotal({ quantity: -3, unitPrice: 7 }, new Map())).toBe(-21);
+    expect(
+      effectiveComponentsRawCost(
+        [
+          { quantity: 10, unitPrice: 7 },
+          { quantity: -3, unitPrice: 7 },
+        ],
+        new Map()
+      )
+    ).toBe(49);
+  });
+
   test('수량 또는 단가가 비정상이면 0으로 계산한다', () => {
     expect(effectiveComponentSubtotal({ quantity: '', unitPrice: 10 }, new Map())).toBe(0);
     expect(effectiveComponentSubtotal({ quantity: 1, unitPrice: 'bad' }, new Map())).toBe(0);
