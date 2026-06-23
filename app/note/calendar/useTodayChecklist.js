@@ -10,6 +10,7 @@ import {
   checklistJournalContent,
   checklistJournalTitle,
   normalizeChecklistMap,
+  rollOverChecklistMap,
 } from './_calendar-utils';
 
 export function useTodayChecklist({ today, notes, load, canEdit = false }) {
@@ -18,8 +19,13 @@ export function useTodayChecklist({ today, notes, load, canEdit = false }) {
   const todayChecklist = useMemo(() => checklistMap[today] || [], [checklistMap, today]);
 
   useEffect(() => {
-    setChecklistMap(normalizeChecklistMap(getJSONLS(KEYS.NOTE_CALENDAR_CHECKLIST)));
-  }, []);
+    const normalized = normalizeChecklistMap(getJSONLS(KEYS.NOTE_CALENDAR_CHECKLIST));
+    const rolled = rollOverChecklistMap(normalized, today);
+    setChecklistMap(rolled);
+    if (JSON.stringify(rolled) !== JSON.stringify(normalized)) {
+      setJSONLS(KEYS.NOTE_CALENDAR_CHECKLIST, rolled);
+    }
+  }, [today]);
 
   const saveTodayChecklist = useCallback(
     items => {

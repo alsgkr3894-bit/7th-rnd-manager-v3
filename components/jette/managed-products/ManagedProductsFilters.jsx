@@ -41,12 +41,6 @@ export function ManagedProductsFilters({
           active={filter === 'generic'}
           onClick={() => onFilter('generic')}
         />
-        <Chip
-          label="범용관리"
-          count={counts['generic-managed']}
-          active={filter === 'generic-managed'}
-          onClick={() => onFilter('generic-managed')}
-        />
         <span style={{ width: 1, height: 18, background: 'var(--border)', margin: '0 4px' }} />
         <Chip
           label="관리품목만"

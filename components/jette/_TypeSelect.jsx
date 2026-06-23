@@ -1,8 +1,11 @@
 'use client';
-import { TYPE_OPTIONS, TYPE_LABEL, typeSelectStyle } from './managed-products-constants';
+import {
+  normalizeProductType,
+  TYPE_LABEL,
+  TYPE_OPTIONS,
+  typeSelectStyle,
+} from './managed-products-constants';
 import { asDisplayText } from '@/lib/ui/prop-guards';
-
-const TYPE_VALUES = new Set(TYPE_OPTIONS.map(option => option.value));
 
 /**
  * 테이블 셀 내 제품 분류 선택 select.
@@ -21,7 +24,7 @@ export function TypeSelect({
     safeProductCode && typeof productTypeLookup?.get === 'function'
       ? asDisplayText(productTypeLookup.get(safeProductCode)?.productType)
       : '';
-  const current = TYPE_VALUES.has(rawCurrent) ? rawCurrent : '';
+  const current = rawCurrent ? normalizeProductType(rawCurrent) : '';
   const handleTypeChange = typeof onTypeChange === 'function' ? onTypeChange : null;
 
   return (

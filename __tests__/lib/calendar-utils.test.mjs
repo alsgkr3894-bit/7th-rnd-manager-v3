@@ -6,6 +6,7 @@ import {
   firstDow,
   groupByDate,
   normalizeChecklistMap,
+  rollOverChecklistMap,
   toKey,
 } from '../../app/note/calendar/_calendar-utils.js';
 
@@ -53,6 +54,45 @@ describe('calendar utils', () => {
       '2026-06-12-1-샘플-확인',
       '2026-06-12-2-메뉴-테스트',
     ]);
+  });
+
+  test('미완료 체크리스트는 오늘로 이월하고 완료/미래 항목은 보존한다', () => {
+    expect(
+      rollOverChecklistMap(
+        {
+          '2026-06-21': [
+            { id: 'old-done', text: '완료 보존', done: true },
+            { id: 'old-pending', text: '이월 대상', done: false },
+          ],
+          '2026-06-22': [{ id: 'yesterday', text: '어제 미완료', done: false }],
+          '2026-06-23': [{ id: 'today', text: '오늘 항목', done: false }],
+          '2026-06-24': [{ id: 'future', text: '내일 항목', done: false }],
+        },
+        '2026-06-23'
+      )
+    ).toEqual({
+      '2026-06-21': [{ id: 'old-done', text: '완료 보존', done: true }],
+      '2026-06-23': [
+        { id: 'old-pending', text: '이월 대상', done: false },
+        { id: 'yesterday', text: '어제 미완료', done: false },
+        { id: 'today', text: '오늘 항목', done: false },
+      ],
+      '2026-06-24': [{ id: 'future', text: '내일 항목', done: false }],
+    });
+  });
+
+  test('이월된 항목은 오늘에 같은 id가 있으면 중복 추가하지 않는다', () => {
+    expect(
+      rollOverChecklistMap(
+        {
+          '2026-06-22': [{ id: 'same', text: '반복 방지', done: false }],
+          '2026-06-23': [{ id: 'same', text: '반복 방지', done: false }],
+        },
+        '2026-06-23'
+      )
+    ).toEqual({
+      '2026-06-23': [{ id: 'same', text: '반복 방지', done: false }],
+    });
   });
 
   test('체크리스트 연구일지 텍스트를 생성한다', () => {

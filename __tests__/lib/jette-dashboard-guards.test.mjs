@@ -103,7 +103,7 @@ describe('jette dashboard guards', () => {
       rowCount: 2,
       managedCount: 1,
       totalAmount: 1700,
-      typeCounts: { exclusive: 1, generic: 1, 'generic-managed': 1 },
+      typeCounts: { exclusive: 1, generic: 3 },
     });
     expect(aggregateShipmentRows).toHaveBeenCalledWith(
       [{ productCode: 'A' }],

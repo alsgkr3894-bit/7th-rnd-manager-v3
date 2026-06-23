@@ -1,26 +1,39 @@
+import {
+  PRODUCT_TYPE_GENERIC,
+  PRODUCT_TYPE_LABEL,
+  PRODUCT_TYPE_OPTIONS,
+  PRODUCT_TYPE_SHORT_LABEL,
+} from '@/lib/jette/product-types';
+
+export {
+  canManageProductType,
+  getProductTypeLabel,
+  normalizeManagedFlag,
+  normalizeManagedProductDraft,
+  normalizeManagedProductRecord,
+  normalizeProductType,
+  PRODUCT_TYPE_EXCLUSIVE,
+  PRODUCT_TYPE_GENERIC,
+} from '@/lib/jette/product-types';
+
 /**
  * 제때상품관리 모듈 공통 상수
  */
 
-export const TYPE_OPTIONS = [
-  { value: 'exclusive', label: '전용상품' },
-  { value: 'generic', label: '범용상품' },
-  { value: 'generic-managed', label: '범용관리' },
-];
+export const TYPE_OPTIONS = PRODUCT_TYPE_OPTIONS;
 
-export const TYPE_LABEL = {
-  exclusive: '전용',
-  generic: '범용',
-  'generic-managed': '범용관리',
-};
+export const TYPE_LABEL = PRODUCT_TYPE_SHORT_LABEL;
 
 export const PRODUCT_TYPE_STYLE = {
-  exclusive: { label: '전용상품', bg: 'var(--accent-soft)', color: 'var(--accent-text)' },
-  generic: { label: '범용상품', bg: 'var(--scope-generic-soft)', color: 'var(--scope-generic)' },
-  'generic-managed': {
-    label: '범용관리',
-    bg: 'var(--scope-generic)',
-    color: 'var(--scope-generic-ink)',
+  exclusive: {
+    label: PRODUCT_TYPE_LABEL.exclusive,
+    bg: 'var(--accent-soft)',
+    color: 'var(--accent-text)',
+  },
+  [PRODUCT_TYPE_GENERIC]: {
+    label: PRODUCT_TYPE_LABEL[PRODUCT_TYPE_GENERIC],
+    bg: 'var(--scope-generic-soft)',
+    color: 'var(--scope-generic)',
   },
 };
 

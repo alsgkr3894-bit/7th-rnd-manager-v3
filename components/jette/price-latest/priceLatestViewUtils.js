@@ -1,4 +1,5 @@
 import { sortByKey, getProductTypeCounts } from '@/lib/jette/utils';
+import { normalizeProductType } from '@/lib/jette/product-types';
 
 export const PRODUCT_SORT_DIR = key =>
   key === 'productName' || key === 'productCode' ? 'asc' : 'desc';
@@ -20,7 +21,12 @@ export function getLatestTypeCounts(rows, productTypeLookup) {
 
 export function filterLatestRowsByType(rows, typeFilter, productTypeLookup) {
   if (typeFilter === 'all') return rows;
-  return rows.filter(row => productTypeLookup.get(row.productCode)?.productType === typeFilter);
+  return rows.filter(row => {
+    const product = productTypeLookup.get(row.productCode);
+    return (
+      product && normalizeProductType(product.productType) === normalizeProductType(typeFilter)
+    );
+  });
 }
 
 export function getLatestTaxCounts(rows) {
@@ -50,7 +56,9 @@ export function buildLatestPriceCsvRows(rows, productTypeLookup) {
   const body = rows.map(row => [
     row.productCode || '',
     row.productName || '',
-    productTypeLookup.get(row.productCode)?.productType || '',
+    productTypeLookup.get(row.productCode)
+      ? normalizeProductType(productTypeLookup.get(row.productCode)?.productType)
+      : '',
     row.taxType || '',
     row.salesUnit || '',
     row.temperature || '',

@@ -1,5 +1,6 @@
 'use client';
 import { formatNumber } from '@/lib/format';
+import { normalizeManagedProductRecord } from '@/lib/jette/product-types';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { safeQuantity } from '@/lib/report/period';
 
@@ -8,11 +9,12 @@ export function safeProductName(product) {
 }
 
 export function typeLabel(p) {
-  return p.productType === 'exclusive' ? '전용' : p.isManaged ? '관리품목' : '범용';
+  const product = normalizeManagedProductRecord(p);
+  return product.productType === 'exclusive' ? '전용' : product.isManaged ? '관리품목' : '범용';
 }
 
 export function ShipmentItemTable({ items, maxQty }) {
-  const safeItems = asObjectArray(items);
+  const safeItems = asObjectArray(items).map(normalizeManagedProductRecord);
   const safeMaxQty = Math.max(0, safeQuantity(maxQty));
 
   return (

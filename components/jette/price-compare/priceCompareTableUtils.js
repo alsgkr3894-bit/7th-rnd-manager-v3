@@ -1,5 +1,6 @@
 import { CHANGE_STATUS } from '../managed-products-constants';
 import { formatNumber } from '@/lib/format';
+import { normalizeProductType } from '@/lib/jette/product-types';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 
 export const PRICE_COMPARE_PAGE_SIZE = 80;
@@ -16,7 +17,6 @@ export const TYPE_FILTERS = [
   { key: 'all', label: '전체' },
   { key: 'exclusive', label: '전용', countKey: 'exclusive' },
   { key: 'generic', label: '범용', countKey: 'generic' },
-  { key: 'generic-managed', label: '범용관리', countKey: 'generic-managed' },
 ];
 
 export const CHANGE_FILTERS = [
@@ -57,7 +57,9 @@ export function buildPriceCompareCsvData(rows = [], productTypeLookup = new Map(
     return [
       productCode,
       asDisplayText(row.productName),
-      asDisplayText(productTypeLookup.get(productCode)?.productType),
+      productTypeLookup.get(productCode)
+        ? normalizeProductType(productTypeLookup.get(productCode)?.productType)
+        : '',
       row.basePrice ?? '',
       row.latestPrice ?? '',
       row.changeAmount ?? '',

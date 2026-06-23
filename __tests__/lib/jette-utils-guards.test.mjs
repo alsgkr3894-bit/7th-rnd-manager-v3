@@ -29,7 +29,6 @@ describe('jette utils guards', () => {
     expect(getProductTypeCounts(null, null)).toEqual({
       exclusive: 0,
       generic: 0,
-      'generic-managed': 0,
     });
 
     const lookup = new Map([
@@ -51,8 +50,7 @@ describe('jette utils guards', () => {
       )
     ).toEqual({
       exclusive: 1,
-      generic: 1,
-      'generic-managed': 1,
+      generic: 2,
     });
   });
 });

@@ -3,7 +3,6 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import {
   buildManagedProductsCsvData,
-  buildPriceProductsFromRows,
   countManagedProducts,
   filterManagedProducts,
   managedProductsSortDir,
@@ -43,7 +42,7 @@ describe('managed products card structure', () => {
     expect(cardSource.split('\n').length).toBeLessThanOrEqual(240);
 
     expect(headerSource).toContain('export function ManagedProductsCardHeader');
-    expect(headerSource).toContain('가격비교에서 전용상품 가져오기');
+    expect(headerSource).not.toContain('가격비교에서 전용상품 가져오기');
     expect(filtersSource).toContain('export function ManagedProductsFilters');
     expect(filtersSource).toContain('관리품목만');
     expect(tableSource).toContain('export function ManagedProductsTable');
@@ -69,7 +68,7 @@ describe('managed products card structure', () => {
     expect(rowSource).toContain('canEdit && pendingDelete');
   });
 
-  test('helpers keep counts, filters, CSV rows, and migration rows stable', () => {
+  test('helpers keep counts, filters, and CSV rows stable', () => {
     const products = [
       { id: 1, productCode: 'A', productName: '치즈', productType: 'exclusive', isManaged: true },
       { id: 2, productCode: 'B', productName: '소스', productType: 'generic', enable: false },
@@ -86,20 +85,23 @@ describe('managed products card structure', () => {
     expect(countManagedProducts(products)).toEqual({
       all: 4,
       exclusive: 1,
-      generic: 2,
-      'generic-managed': 1,
-      managed: 2,
+      generic: 3,
+      managed: 1,
       disabled: 1,
     });
     expect(
       filterManagedProducts(products, { filter: 'exclusive' }).map(product => product.id)
     ).toEqual([1]);
     expect(
-      filterManagedProducts(products, { filter: 'generic' }).map(product => product.id)
-    ).toEqual([4, 2]);
+      filterManagedProducts(products, {
+        filter: 'generic',
+        sortKey: 'productCode',
+        sortDir: 'asc',
+      }).map(product => product.id)
+    ).toEqual([2, 3, 4]);
     expect(
       filterManagedProducts(products, { managedOnly: true }).map(product => product.id)
-    ).toEqual([3, 1]);
+    ).toEqual([3]);
     expect(filterManagedProducts(products, { search: '소스' }).map(product => product.id)).toEqual([
       2,
     ]);
@@ -112,15 +114,15 @@ describe('managed products card structure', () => {
     expect(managedProductsSortDir('enable')).toBe('desc');
     expect(buildManagedProductsCsvData(products.slice(0, 2))).toEqual([
       ['제품코드', '제품명', '활성', '분류', '관리품목'],
-      ['A', '치즈', '활성', 'exclusive', 'Y'],
+      ['A', '치즈', '활성', 'exclusive', ''],
       ['B', '소스', '비활성', 'generic', ''],
     ]);
-    expect(
-      buildPriceProductsFromRows([
-        { productCode: 'A', productName: '치즈' },
-        { productCode: '', productName: '제외' },
-        { productCode: 'B' },
-      ])
-    ).toEqual([{ productCode: 'A', productName: '치즈' }]);
+    expect(buildManagedProductsCsvData(products.slice(2, 3))[1]).toEqual([
+      'C',
+      '박스',
+      '활성',
+      'generic',
+      'Y',
+    ]);
   });
 });

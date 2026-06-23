@@ -111,11 +111,11 @@ describe('price latest view structure', () => {
     expect(PRODUCT_SORT_DIR('price')).toBe('desc');
     expect(getLatestTypeCounts(rows, lookup)).toEqual({
       exclusive: 1,
-      generic: 1,
-      'generic-managed': 1,
+      generic: 2,
     });
     expect(filterLatestRowsByType(rows, 'generic', lookup).map(row => row.productCode)).toEqual([
       'B',
+      'C',
     ]);
     expect(getLatestTaxCounts(rows)).toEqual({ taxable: 2, exempt: 1 });
     expect(

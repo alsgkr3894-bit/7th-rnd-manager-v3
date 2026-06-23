@@ -98,9 +98,8 @@ describe('shipment table structure', () => {
     expect(getShipmentCounts(rows)).toEqual({
       all: 3,
       exclusive: 1,
-      generic: 1,
-      'generic-managed': 1,
-      managed: 2,
+      generic: 2,
+      managed: 1,
     });
     expect(
       filterAndSortShipmentRows({
@@ -121,14 +120,14 @@ describe('shipment table structure', () => {
         sortKey: 'productType',
         sortDir: 'asc',
       }).map(row => row.productCode)
-    ).toEqual(['A', 'C']);
+    ).toEqual(['C']);
     expect(getShipmentRowValues(rows[0])).toMatchObject({
       productCode: 'A',
       productName: '치즈',
       totalQuantity: 3,
       priceWithTax: 1000,
       totalAmount: 3000,
-      isManaged: true,
+      isManaged: false,
     });
     expect(getShipmentRowValues(null)).toMatchObject({
       productCode: '-',

@@ -17,6 +17,7 @@ export const NOTE_DOT = {
 
 let _todayCache = '';
 let _todayCacheNum = 0;
+const DATE_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export const toKey = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
 
@@ -78,6 +79,45 @@ export function normalizeChecklistMap(value) {
       ])
       .filter(([, items]) => items.length > 0)
   );
+}
+
+function checklistItemKey(item) {
+  return String(item?.id || item?.text || '');
+}
+
+export function rollOverChecklistMap(value, today) {
+  const normalized = normalizeChecklistMap(value);
+  const todayKeyText = String(today || '');
+  if (!DATE_KEY_RE.test(todayKeyText)) return normalized;
+
+  const next = {};
+  const carried = [];
+  const entries = Object.entries(normalized).sort(([a], [b]) => a.localeCompare(b));
+
+  for (const [date, items] of entries) {
+    if (date < todayKeyText) {
+      const doneItems = items.filter(item => item.done);
+      const pendingItems = items.filter(item => !item.done).map(item => ({ ...item, done: false }));
+      if (doneItems.length) next[date] = doneItems;
+      carried.push(...pendingItems);
+    } else {
+      next[date] = items;
+    }
+  }
+
+  if (carried.length) {
+    const todayItems = next[todayKeyText] || [];
+    const seen = new Set(todayItems.map(checklistItemKey));
+    const uniqueCarried = carried.filter(item => {
+      const key = checklistItemKey(item);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    next[todayKeyText] = [...uniqueCarried, ...todayItems];
+  }
+
+  return Object.fromEntries(Object.entries(next).filter(([, items]) => items.length > 0));
 }
 
 export function checklistJournalTitle(dateKey) {

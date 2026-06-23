@@ -36,12 +36,6 @@ export function PriceLatestFilters({
           active={typeFilter === 'generic'}
           onClick={() => onTypeFilter('generic')}
         />
-        <Chip
-          label="범용관리"
-          count={typeCounts['generic-managed']}
-          active={typeFilter === 'generic-managed'}
-          onClick={() => onTypeFilter('generic-managed')}
-        />
       </div>
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>

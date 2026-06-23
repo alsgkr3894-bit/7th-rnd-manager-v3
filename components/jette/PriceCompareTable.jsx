@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { usePagination } from '@/hooks/usePagination';
 import { downloadCsv, makeFileNameWithBrand } from '@/lib/download';
 import { sortByKey, getProductTypeCounts } from '@/lib/jette/utils';
+import { normalizeProductType } from '@/lib/jette/product-types';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { useTableSearchSort } from '@/hooks/useTableSearchSort';
 import { getPriceAlertThreshold } from '@/lib/jette/settings';
@@ -60,7 +61,12 @@ export function PriceCompareTable({
     let list = safeDiffRows;
     if (filter !== 'all') list = list.filter(r => r.changeStatus === FILTER_TO_STATUS[filter]);
     if (typeFilter !== 'all') {
-      list = list.filter(r => safeProductTypeLookup.get(r.productCode)?.productType === typeFilter);
+      list = list.filter(r => {
+        const product = safeProductTypeLookup.get(r.productCode);
+        return (
+          product && normalizeProductType(product.productType) === normalizeProductType(typeFilter)
+        );
+      });
     }
     const q = search.trim().toLowerCase();
     if (q)

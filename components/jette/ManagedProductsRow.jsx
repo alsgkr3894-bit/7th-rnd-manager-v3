@@ -1,10 +1,13 @@
 'use client';
 import { Toggle } from '@/components/ui/Toggle';
 import { InlineConfirmButtons } from '@/components/ui/InlineConfirmButtons';
-import { TYPE_OPTIONS, inputStyle } from './managed-products-constants';
+import {
+  canManageProductType,
+  inputStyle,
+  normalizeManagedProductRecord,
+  TYPE_OPTIONS,
+} from './managed-products-constants';
 import { asDisplayText, noop } from '@/lib/ui/prop-guards';
-
-const TYPE_VALUES = new Set(TYPE_OPTIONS.map(option => option.value));
 
 /**
  * ManagedProductsRow — 대상 제품 테이블 행
@@ -29,11 +32,11 @@ export function ManagedProductsRow({
   onCancelDelete = noop,
   onConfirmDelete = noop,
 }) {
-  const safeProduct = product && typeof product === 'object' ? product : {};
+  const safeProduct = normalizeManagedProductRecord(product);
   const productCode = asDisplayText(safeProduct.productCode, '-');
   const productName = asDisplayText(safeProduct.productName, '-');
-  const rawProductType = asDisplayText(safeProduct.productType, 'generic');
-  const productType = TYPE_VALUES.has(rawProductType) ? rawProductType : 'generic';
+  const productType = safeProduct.productType;
+  const canToggleManaged = canManageProductType(productType);
   const handleToggleEnable = typeof onToggleEnable === 'function' ? onToggleEnable : noop;
   const handleChangeType = typeof onChangeType === 'function' ? onChangeType : noop;
   const handleToggleManaged = typeof onToggleManaged === 'function' ? onToggleManaged : noop;
@@ -73,10 +76,14 @@ export function ManagedProductsRow({
       <td style={{ textAlign: 'center' }}>
         <input
           type="checkbox"
-          checked={Boolean(safeProduct.isManaged)}
+          checked={canToggleManaged && Boolean(safeProduct.isManaged)}
           onChange={() => handleToggleManaged(safeProduct)}
-          disabled={!canEdit}
-          style={{ cursor: 'pointer', width: 16, height: 16 }}
+          disabled={!canEdit || !canToggleManaged}
+          style={{
+            cursor: canEdit && canToggleManaged ? 'pointer' : 'not-allowed',
+            width: 16,
+            height: 16,
+          }}
         />
       </td>
       <td style={{ textAlign: 'right' }}>

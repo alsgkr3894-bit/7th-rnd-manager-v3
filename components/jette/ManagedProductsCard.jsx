@@ -9,18 +9,16 @@ import {
   addManagedProduct,
   deleteManagedProduct,
   updateManagedProduct,
-  migrateExclusiveFromPriceList,
   onManagedProductsChange,
 } from '@/lib/shipment';
-import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { ManagedProductsForm } from './ManagedProductsForm';
 import { useTableSearchSort } from '@/hooks/useTableSearchSort';
 import { ManagedProductsCardHeader } from './managed-products/ManagedProductsCardHeader';
 import { ManagedProductsFilters } from './managed-products/ManagedProductsFilters';
 import { ManagedProductsTable } from './managed-products/ManagedProductsTable';
+import * as productTypes from './managed-products-constants';
 import {
   buildManagedProductsCsvData,
-  buildPriceProductsFromRows,
   countManagedProducts,
   EMPTY_MANAGED_PRODUCT_FORM,
   filterManagedProducts,
@@ -37,7 +35,6 @@ export function ManagedProductsCard() {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState(EMPTY_MANAGED_PRODUCT_FORM);
   const [busy, setBusy] = useState(false);
-  const [migrating, setMigrating] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const { search, setSearch, sortKey, sortDir, toggleSort } = useTableSearchSort(
     'productName',
@@ -49,7 +46,6 @@ export function ManagedProductsCard() {
   useEffect(() => {
     mountedRef.current = true;
     refresh();
-
     return () => {
       mountedRef.current = false;
     };
@@ -72,7 +68,7 @@ export function ManagedProductsCard() {
     if (!form.productCode.trim() || !form.productName.trim()) return;
     setBusy(true);
     try {
-      await addManagedProduct(form);
+      await addManagedProduct(productTypes.normalizeManagedProductDraft(form));
       showToast('대상 제품이 추가됐어요', 'ok');
       setForm(EMPTY_MANAGED_PRODUCT_FORM);
       setAdding(false);
@@ -110,7 +106,12 @@ export function ManagedProductsCard() {
   async function handleChangeType(p, productType) {
     if (!canEdit) return;
     try {
-      await updateManagedProduct({ id: p.id, productType });
+      const nextType = productTypes.normalizeProductType(productType);
+      await updateManagedProduct({
+        id: p.id,
+        productType: nextType,
+        isManaged: productTypes.normalizeManagedFlag(nextType, p.isManaged),
+      });
       refresh();
     } catch {
       showToast('변경 실패', 'error');
@@ -118,39 +119,12 @@ export function ManagedProductsCard() {
   }
 
   async function handleToggleManaged(p) {
-    if (!canEdit) return;
+    if (!canEdit || !productTypes.canManageProductType(p.productType)) return;
     try {
       await updateManagedProduct({ id: p.id, isManaged: !p.isManaged });
       refresh();
     } catch {
       showToast('변경 실패', 'error');
-    }
-  }
-
-  /** 가격비교 최신 파일의 productCode 중 ref에 없는 것을 'exclusive'로 일괄 추가 */
-  async function handleMigrate() {
-    if (!canEdit) return;
-    setMigrating(true);
-    try {
-      const files = await getPriceFiles();
-      if (files.length === 0) {
-        showToast('가격비교 데이터가 없습니다', 'error');
-        return;
-      }
-      const rows = await getPriceRowsByFileId(files[0].id);
-      if (rows.length === 0) {
-        showToast('가격비교 행이 없습니다', 'error');
-        return;
-      }
-      const priceProducts = buildPriceProductsFromRows(rows);
-      const { added, skipped } = await migrateExclusiveFromPriceList(priceProducts);
-      showToast(`전용상품 ${added}개 추가 (기존 ${skipped}개 유지)`, added > 0 ? 'ok' : 'info');
-      refresh();
-    } catch (err) {
-      console.error('[ManagedProductsCard] migrate exclusive products failed', err);
-      showToast(err.message || '마이그레이션 실패', 'error');
-    } finally {
-      setMigrating(false);
     }
   }
 
@@ -180,8 +154,6 @@ export function ManagedProductsCard() {
         counts={counts}
         filteredCount={filtered.length}
         onExport={exportCsv}
-        migrating={migrating}
-        onMigrate={handleMigrate}
         adding={canEdit && adding}
         canEdit={canEdit}
         onToggleAdding={() => {

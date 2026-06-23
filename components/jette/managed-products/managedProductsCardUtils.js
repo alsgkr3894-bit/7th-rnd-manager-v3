@@ -1,5 +1,10 @@
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { sortByKey } from '@/lib/jette/utils';
+import {
+  normalizeManagedProductRecord,
+  normalizeProductType,
+  PRODUCT_TYPE_ORDER,
+} from '@/lib/jette/product-types';
 
 export const EMPTY_MANAGED_PRODUCT_FORM = {
   productCode: '',
@@ -10,10 +15,8 @@ export const EMPTY_MANAGED_PRODUCT_FORM = {
 
 export const MANAGED_PRODUCTS_PAGE_SIZE = 50;
 
-export const PRODUCT_TYPE_ORDER = { exclusive: 0, generic: 1, 'generic-managed': 2 };
-
 export const MANAGED_PRODUCTS_SORT_TRANSFORM = {
-  productType: value => PRODUCT_TYPE_ORDER[value] ?? 9,
+  productType: value => PRODUCT_TYPE_ORDER[normalizeProductType(value)] ?? 9,
   enable: value => (value === false ? 0 : 1),
   isManaged: value => (value ? 1 : 0),
 };
@@ -23,13 +26,11 @@ export function managedProductsSortDir(key) {
 }
 
 export function countManagedProducts(list = []) {
-  const rows = asObjectArray(list);
+  const rows = asObjectArray(list).map(normalizeManagedProductRecord);
   return {
     all: rows.length,
     exclusive: rows.filter(product => product.productType === 'exclusive').length,
-    generic: rows.filter(product => product.productType === 'generic' || !product.productType)
-      .length,
-    'generic-managed': rows.filter(product => product.productType === 'generic-managed').length,
+    generic: rows.filter(product => product.productType === 'generic').length,
     managed: rows.filter(product => product.isManaged).length,
     disabled: rows.filter(product => product.enable === false).length,
   };
@@ -45,11 +46,12 @@ export function filterManagedProducts(
     sortDir = 'asc',
   } = {}
 ) {
-  let rows = asObjectArray(list);
+  let rows = asObjectArray(list).map(normalizeManagedProductRecord);
 
   if (filter === 'disabled') rows = rows.filter(product => product.enable === false);
   else if (filter !== 'all') {
-    rows = rows.filter(product => (product.productType || 'generic') === filter);
+    const normalizedFilter = normalizeProductType(filter);
+    rows = rows.filter(product => product.productType === normalizedFilter);
   }
 
   if (managedOnly) rows = rows.filter(product => product.isManaged);
@@ -68,19 +70,16 @@ export function filterManagedProducts(
 
 export function buildManagedProductsCsvData(products = []) {
   const headers = ['제품코드', '제품명', '활성', '분류', '관리품목'];
-  const rows = asObjectArray(products).map(product => [
-    asDisplayText(product.productCode),
-    asDisplayText(product.productName),
-    product.enable === false ? '비활성' : '활성',
-    product.productType || 'generic',
-    product.isManaged ? 'Y' : '',
-  ]);
+  const rows = asObjectArray(products).map(product => {
+    const normalized = normalizeManagedProductRecord(product);
+    return [
+      asDisplayText(normalized.productCode),
+      asDisplayText(normalized.productName),
+      normalized.enable === false ? '비활성' : '활성',
+      normalized.productType,
+      normalized.isManaged ? 'Y' : '',
+    ];
+  });
 
   return [headers, ...rows];
-}
-
-export function buildPriceProductsFromRows(rows = []) {
-  return asObjectArray(rows)
-    .filter(row => row.productCode && row.productName)
-    .map(row => ({ productCode: row.productCode, productName: row.productName }));
 }

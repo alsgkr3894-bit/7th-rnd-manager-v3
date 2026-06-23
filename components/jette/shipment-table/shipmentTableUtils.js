@@ -1,30 +1,27 @@
 import { sortByKey } from '@/lib/jette/utils';
+import {
+  normalizeManagedProductRecord,
+  normalizeProductType,
+  PRODUCT_TYPE_ORDER,
+} from '@/lib/jette/product-types';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 
-export const PRODUCT_TYPE_ORDER = { exclusive: 0, generic: 1, 'generic-managed': 2 };
-
 export const SHIPMENT_KEY_TRANSFORM = {
-  productType: value => PRODUCT_TYPE_ORDER[value] ?? 9,
+  productType: value => PRODUCT_TYPE_ORDER[normalizeProductType(value)] ?? 9,
   isManaged: value => (value ? 1 : 0),
 };
 
 export const PRODUCT_TYPE_META = {
   exclusive: { label: '전용상품', bg: 'var(--accent-soft)', color: 'var(--accent-text)' },
   generic: { label: '범용상품', bg: 'var(--scope-generic-soft)', color: 'var(--scope-generic)' },
-  'generic-managed': {
-    label: '범용관리',
-    bg: 'var(--scope-generic)',
-    color: 'var(--scope-generic-ink)',
-  },
 };
 
 export function getShipmentCounts(rows) {
-  const safeRows = asObjectArray(rows);
+  const safeRows = asObjectArray(rows).map(normalizeManagedProductRecord);
   return {
     all: safeRows.length,
     exclusive: safeRows.filter(row => row.productType === 'exclusive').length,
     generic: safeRows.filter(row => row.productType === 'generic').length,
-    'generic-managed': safeRows.filter(row => row.productType === 'generic-managed').length,
     managed: safeRows.filter(row => row.isManaged).length,
   };
 }
@@ -37,8 +34,11 @@ export function filterAndSortShipmentRows({
   sortKey,
   sortDir,
 }) {
-  let list = asObjectArray(rows);
-  if (typeFilter !== 'all') list = list.filter(row => row.productType === typeFilter);
+  let list = asObjectArray(rows).map(normalizeManagedProductRecord);
+  if (typeFilter !== 'all') {
+    const normalizedFilter = normalizeProductType(typeFilter);
+    list = list.filter(row => row.productType === normalizedFilter);
+  }
   if (managedOnly) list = list.filter(row => row.isManaged);
 
   const query = search.trim().toLowerCase();
@@ -54,7 +54,7 @@ export function filterAndSortShipmentRows({
 }
 
 export function getShipmentRowValues(row) {
-  const safeRow = row && typeof row === 'object' ? row : {};
+  const safeRow = normalizeManagedProductRecord(row);
   const priceNumber = Number(safeRow.priceWithTax);
 
   return {
@@ -66,13 +66,13 @@ export function getShipmentRowValues(row) {
     totalQuantity: asFiniteNumber(safeRow.totalQuantity, 0),
     priceWithTax: Number.isFinite(priceNumber) ? priceNumber : null,
     totalAmount: asFiniteNumber(safeRow.totalAmount, 0),
-    productType: asDisplayText(safeRow.productType),
+    productType: safeRow.productType,
     isManaged: Boolean(safeRow.isManaged),
   };
 }
 
 export function getShipmentProductTypeMeta(type) {
-  return PRODUCT_TYPE_META[asDisplayText(type)] || PRODUCT_TYPE_META.generic;
+  return PRODUCT_TYPE_META[normalizeProductType(type)] || PRODUCT_TYPE_META.generic;
 }
 
 export function shipmentRowKey(row, page, index) {

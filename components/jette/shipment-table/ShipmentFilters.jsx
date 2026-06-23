@@ -41,12 +41,6 @@ export function ShipmentFilters({
           active={typeFilter === 'generic'}
           onClick={() => onTypeFilter('generic')}
         />
-        <Chip
-          label="범용관리"
-          count={counts['generic-managed']}
-          active={typeFilter === 'generic-managed'}
-          onClick={() => onTypeFilter('generic-managed')}
-        />
         <span style={{ width: 1, height: 18, background: 'var(--border)', margin: '0 4px' }} />
         <Chip
           label="관리품목만"

@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { Chip } from '@/components/ui/Chip';
 import { formatNumber } from '@/lib/format';
+import { normalizeManagedProductRecord } from '@/lib/jette/product-types';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
@@ -16,7 +17,10 @@ const ALL_TYPES = TYPE_OPTIONS.map(o => o.value);
 export function ShipmentSummary({ aggRows, managedCount }) {
   const [selectedTypes, setSelectedTypes] = useState(new Set(ALL_TYPES));
   const [managedOnly, setManagedOnly] = useState(false);
-  const safeAggRows = useMemo(() => asObjectArray(aggRows), [aggRows]);
+  const safeAggRows = useMemo(
+    () => asObjectArray(aggRows).map(normalizeManagedProductRecord),
+    [aggRows]
+  );
   const safeManagedCount = Number.isFinite(Number(managedCount)) ? Number(managedCount) : 0;
   const isAll = selectedTypes.size === ALL_TYPES.length;
 

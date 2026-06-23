@@ -1,9 +1,15 @@
 'use client';
-import { TYPE_OPTIONS, inputStyle } from './managed-products-constants';
+import {
+  canManageProductType,
+  inputStyle,
+  normalizeManagedFlag,
+  normalizeManagedProductDraft,
+  normalizeProductType,
+  TYPE_OPTIONS,
+} from './managed-products-constants';
 import { asDisplayText, noop } from '@/lib/ui/prop-guards';
 
 const EMPTY_FORM = { productCode: '', productName: '', productType: 'generic', isManaged: false };
-const TYPE_VALUES = new Set(TYPE_OPTIONS.map(option => option.value));
 
 /**
  * ManagedProductsForm — 대상 제품 추가 폼
@@ -23,17 +29,18 @@ export function ManagedProductsForm({
   onCancel = noop,
 }) {
   const rawForm = { ...EMPTY_FORM, ...(form && typeof form === 'object' ? form : {}) };
-  const rawProductType = asDisplayText(rawForm.productType, EMPTY_FORM.productType);
-  const safeForm = {
+  const safeForm = normalizeManagedProductDraft({
     productCode: asDisplayText(rawForm.productCode),
     productName: asDisplayText(rawForm.productName),
-    productType: TYPE_VALUES.has(rawProductType) ? rawProductType : EMPTY_FORM.productType,
+    productType: rawForm.productType,
     isManaged: Boolean(rawForm.isManaged),
-  };
+  });
   const updateForm = typeof setForm === 'function' ? setForm : noop;
   const handleSubmit = typeof onSubmit === 'function' ? onSubmit : noop;
   const handleCancel = typeof onCancel === 'function' ? onCancel : noop;
   const canSubmit = !!safeForm.productCode.trim() && !!safeForm.productName.trim();
+  const isManageableProduct = canManageProductType(safeForm.productType);
+  const canToggleManaged = canEdit && isManageableProduct;
 
   return (
     <div
@@ -61,7 +68,14 @@ export function ManagedProductsForm({
       />
       <select
         value={safeForm.productType}
-        onChange={e => updateForm({ ...safeForm, productType: e.target.value })}
+        onChange={e => {
+          const productType = normalizeProductType(e.target.value);
+          updateForm({
+            ...safeForm,
+            productType,
+            isManaged: normalizeManagedFlag(productType, safeForm.isManaged),
+          });
+        }}
         style={inputStyle}
         disabled={!canEdit}
       >
@@ -82,9 +96,9 @@ export function ManagedProductsForm({
       >
         <input
           type="checkbox"
-          checked={safeForm.isManaged}
+          checked={isManageableProduct && safeForm.isManaged}
           onChange={e => updateForm({ ...safeForm, isManaged: e.target.checked })}
-          disabled={!canEdit}
+          disabled={!canToggleManaged}
         />
         관리품목
       </label>

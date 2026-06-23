@@ -52,10 +52,22 @@ describe('shipment aggregate guards', () => {
     expect(result[0]).toMatchObject({
       productCode: 'A',
       productType: 'exclusive',
-      isManaged: true,
+      isManaged: false,
       priceWithTax: 1200,
       totalQuantity: 3,
       totalAmount: 5000,
+    });
+  });
+
+  test('구 범용관리 분류는 범용 관리품목으로 보정한다', () => {
+    const result = aggregateShipmentRows(
+      [{ productCode: 'A', productName: '치즈', quantity: 3, amount: 5000 }],
+      [{ productCode: 'A', productName: '치즈', productType: 'generic-managed' }]
+    );
+
+    expect(result[0]).toMatchObject({
+      productType: 'generic',
+      isManaged: true,
     });
   });
 });
