@@ -32,8 +32,10 @@ describe('edge edit modal structure', () => {
     expect(modalSource).toContain('export function EdgeEditModal');
     expect(modalSource).toContain('getPriceRowsByFileId');
     expect(modalSource).toContain('normalizeComponents');
-    expect(modalSource).toContain('const quantity = parseOptionalNonNegativeNumber(c.quantity)');
-    expect(modalSource).toContain('구성품 수량은 0 이상의 숫자만 입력하세요');
+    expect(modalSource).toContain("parseOptionalNonNegativeNumber, parseOptionalNumber");
+    expect(modalSource).toContain('const quantity = parseOptionalNumber(c.quantity)');
+    expect(modalSource).toContain('구성품 수량은 숫자만 입력하세요');
+    expect(modalSource).toContain('const unitPrice = parseOptionalNonNegativeNumber(c.unitPrice)');
     expect(modalSource).toContain('edgeCodeOf(edgeType, size)');
     expect(modalSource).toContain("from '@/hooks/useMounted'");
     expect(modalSource).toContain('const mountedRef = useMounted();');
