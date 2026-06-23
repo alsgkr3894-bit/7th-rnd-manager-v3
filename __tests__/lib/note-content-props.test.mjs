@@ -86,6 +86,7 @@ function createInputs(overrides = {}) {
     },
     listState,
     handleBulkCopy: fn(),
+    handleReportPdf: fn(),
     batchActions,
     itemActions,
     ...overrides,
@@ -100,6 +101,7 @@ describe('buildNoteContentProps', () => {
 
     expect(props.headerProps.notesCount).toBe(2);
     expect(props.headerProps.reportingCount).toBe(3);
+    expect(props.headerProps.reportExportCount).toBe(1);
     expect(props.statsProps.stats).toEqual({ total: 2 });
     expect(props.filterProps.search).toBe('트러플');
     expect(props.presetProps.hasActiveFilter).toBe(true);
@@ -109,6 +111,7 @@ describe('buildNoteContentProps', () => {
     props.headerProps.onCalendar();
     props.headerProps.onChecklist();
     props.headerProps.onBoard();
+    props.headerProps.onExportReportPdf();
     props.headerProps.onWrite();
     props.statesProps.onCreate();
     props.bodyProps.onEditNote({ id: 'n-1' });
@@ -116,6 +119,7 @@ describe('buildNoteContentProps', () => {
     expect(inputs.router.push).toHaveBeenNthCalledWith(1, '/note/calendar');
     expect(inputs.listState.openChecklistList).toHaveBeenCalled();
     expect(inputs.router.push).toHaveBeenNthCalledWith(2, '/note/board');
+    expect(inputs.handleReportPdf).toHaveBeenCalled();
     expect(inputs.router.push).toHaveBeenNthCalledWith(3, '/note/write');
     expect(inputs.router.push).toHaveBeenNthCalledWith(4, '/note/write');
     expect(inputs.router.push).toHaveBeenNthCalledWith(5, '/note/n-1');
@@ -152,16 +156,19 @@ describe('buildNoteContentProps', () => {
 
     expect(headerProps.notesCount).toBe(2);
     expect(headerProps.reportingCount).toBe(3);
+    expect(headerProps.reportExportCount).toBe(1);
     expect(filterProps.search).toBe('트러플');
     expect(filterProps.showSearchHistory).toBe(true);
     expect(dialogsProps.selectedCount).toBe(2);
     expect(dialogsProps.presetName).toBe('보고');
 
     headerProps.onEnterBatchMode();
+    headerProps.onExportReportPdf();
     filterProps.onSearchSubmit();
     dialogsProps.onConfirmPresetDelete();
 
     expect(inputs.batchActions.setBatchMode).toHaveBeenCalledWith(true);
+    expect(inputs.handleReportPdf).toHaveBeenCalled();
     expect(inputs.listState.saveSearchHistory).toHaveBeenCalledWith('트러플');
     expect(inputs.listState.deletePreset).toHaveBeenCalledWith(1);
     expect(inputs.listState.setConfirmDeletePreset).toHaveBeenCalledWith(null);

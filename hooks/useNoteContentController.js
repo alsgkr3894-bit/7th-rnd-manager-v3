@@ -8,6 +8,7 @@ import { useNoteItemActions } from '@/hooks/useNoteItemActions';
 import { useNoteListData } from '@/hooks/useNoteListData';
 import { useNoteListState } from '@/hooks/useNoteListState';
 import { useNoteReportingCopy } from '@/hooks/useNoteReportingCopy';
+import { useNoteReportPdf } from '@/hooks/useNoteReportPdf';
 import { buildNoteContentProps } from '@/lib/note/content-props';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 
@@ -25,6 +26,7 @@ export function useNoteContentController() {
   const listState = useNoteListState({ notes, pinnedIds, pathname });
 
   const handleBulkCopy = useNoteReportingCopy(notes);
+  const handleReportPdf = useNoteReportPdf(listState.filtered);
 
   const batchActions = useNoteBatchActions({ setNotes, load, canEdit });
 
@@ -45,6 +47,7 @@ export function useNoteContentController() {
     pins,
     listState,
     handleBulkCopy,
+    handleReportPdf,
     batchActions,
     itemActions,
   });

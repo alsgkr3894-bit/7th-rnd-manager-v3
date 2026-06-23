@@ -18,8 +18,10 @@ export function NoteListHeader({
   batchMode,
   selected,
   reportingCount,
+  reportExportCount = 0,
   canEdit = false,
   onBulkCopy,
+  onExportReportPdf,
   onEnterBatchMode,
   onCalendar,
   onChecklist,
@@ -45,6 +47,9 @@ export function NoteListHeader({
             />
           ) : (
             <>
+              <button className="btn" onClick={onExportReportPdf} disabled={reportExportCount === 0}>
+                <Icon.doc style={{ width: 13, height: 13 }} /> 전체 보고서 PDF
+              </button>
               {reportingCount > 0 && (
                 <button
                   className="btn"

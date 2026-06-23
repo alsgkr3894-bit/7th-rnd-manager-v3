@@ -138,6 +138,8 @@ describe('note list structure', () => {
     expect(headerSource).toContain('export function NoteListHeader');
     expect(headerSource).toContain('<PageHeader');
     expect(headerSource).toContain('<NoteBatchToolbar');
+    expect(headerSource).toContain('전체 보고서 PDF');
+    expect(headerSource).toContain('disabled={reportExportCount === 0}');
     expect(headerSource).toContain('보고예정 일괄복사');
     expect(headerSource).toContain('체크리스트 목록');
     expect(statesSource).toContain('export function NoteListStates');
@@ -153,12 +155,14 @@ describe('note list structure', () => {
     expect(controllerSource).toContain('useNoteListData()');
     expect(controllerSource).toContain('useNoteListState({ notes, pinnedIds, pathname })');
     expect(controllerSource).toContain('useNoteReportingCopy(notes)');
+    expect(controllerSource).toContain('useNoteReportPdf(listState.filtered)');
     expect(controllerSource).toContain('useNoteBatchActions({ setNotes, load, canEdit })');
     expect(controllerSource).toContain('const itemActions = useNoteItemActions({');
     expect(controllerSource).toContain('canEdit,');
     expect(controllerSource).toContain(
       "import { buildNoteContentProps } from '@/lib/note/content-props'"
     );
+    expect(controllerSource).toContain("import { useNoteReportPdf } from '@/hooks/useNoteReportPdf'");
     expect(controllerSource).toContain('return buildNoteContentProps({');
     expect(contentPropsSource).toContain('export function buildNoteContentProps');
     expect(contentPropsSource).toContain("from '@/lib/note/content-prop-builders'");
@@ -166,6 +170,7 @@ describe('note list structure', () => {
       'buildNoteDialogProps({ canEdit, listState, batchActions, itemActions })'
     );
     expect(contentPropsSource).toContain('buildNoteHeaderProps({');
+    expect(contentPropsSource).toContain('handleReportPdf,');
     expect(contentPropsSource).toContain('buildNoteFilterProps({ listState })');
     expect(contentPropsSource).toContain('buildNoteBodyProps({');
     expect(contentPropsSource).not.toContain('NOTE_STATUS.REPORTING');
@@ -182,6 +187,8 @@ describe('note list structure', () => {
     expect(contentPropHeaderBuildersSource).toContain('export function buildNoteStatsProps');
     expect(contentPropHeaderBuildersSource).toContain('export function buildNoteStatesProps');
     expect(contentPropHeaderBuildersSource).toContain('NOTE_STATUS.REPORTING');
+    expect(contentPropHeaderBuildersSource).toContain('reportExportCount');
+    expect(contentPropHeaderBuildersSource).toContain('onExportReportPdf: handleReportPdf');
     expect(contentPropHeaderBuildersSource).toContain("router.push('/note/calendar')");
     expect(contentPropHeaderBuildersSource).toContain('onChecklist: listState.openChecklistList');
     expect(contentPropHeaderBuildersSource).toContain("router.push('/note/write')");
