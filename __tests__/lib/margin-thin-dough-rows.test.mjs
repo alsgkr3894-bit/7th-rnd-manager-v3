@@ -45,6 +45,7 @@ describe('margin thin dough rows', () => {
         {
           id: 'detail||P-001-L',
           menuCode: 'P-001-L',
+          menuCodes: ['P-001-L', 'P-001-R'],
           menuName: '테스트피자',
           menuCategory: '피자',
           sizes: [{ label: 'L', sellingPrice: 18000 }],
@@ -58,6 +59,11 @@ describe('margin thin dough rows', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       menuCode: 'P-001-L-T',
+      menuCodes: ['P-001-L', 'P-001-R'],
+      sourceRowId: 'detail||P-001-L',
+      sourceMenuCode: 'P-001-L',
+      isDerivedEdge: true,
+      edgeType: '씬도우',
       menuName: '테스트피자 씬도우',
       costMap: { L: 4800 },
       sizes: [{ label: 'L', sellingPrice: 18000 }],
