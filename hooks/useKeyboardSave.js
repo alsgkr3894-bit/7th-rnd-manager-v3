@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useSettingValue } from '@/hooks/useSettingValue';
 
 export function isSaveShortcut(event) {
   if (!event || typeof event !== 'object') return false;
@@ -8,7 +9,10 @@ export function isSaveShortcut(event) {
 
 /** @param {Function} onSave - Ctrl+S / Cmd+S 시 호출 */
 export function useKeyboardSave(onSave) {
+  const shortcutsEnabled = useSettingValue('keyboardShortcuts') !== 'off';
+
   useEffect(() => {
+    if (!shortcutsEnabled) return undefined;
     if (typeof onSave !== 'function') return;
     const handler = e => {
       if (isSaveShortcut(e)) {
@@ -18,5 +22,5 @@ export function useKeyboardSave(onSave) {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [onSave]);
+  }, [onSave, shortcutsEnabled]);
 }

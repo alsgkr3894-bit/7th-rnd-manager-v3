@@ -1,5 +1,9 @@
 import { describe, expect, test } from '@jest/globals';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { isSaveShortcut } from '../../hooks/useKeyboardSave.js';
+
+const source = readFileSync(resolve('hooks/useKeyboardSave.js'), 'utf8');
 
 describe('isSaveShortcut', () => {
   test('Ctrl+S와 Cmd+S를 저장 단축키로 인식한다', () => {
@@ -20,5 +24,10 @@ describe('isSaveShortcut', () => {
     expect(isSaveShortcut(null)).toBe(false);
     expect(isSaveShortcut('bad')).toBe(false);
     expect(isSaveShortcut({ ctrlKey: true })).toBe(false);
+  });
+
+  test('저장 단축키도 시스템 설정 토글을 따른다', () => {
+    expect(source).toContain("useSettingValue('keyboardShortcuts')");
+    expect(source).toContain('if (!shortcutsEnabled) return undefined');
   });
 });

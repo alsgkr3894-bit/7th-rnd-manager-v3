@@ -60,8 +60,16 @@ describe('settings guards', () => {
   test('백업용 localStorage key 목록은 설정 key와 1:1로 맞는다', () => {
     expect(SETTING_LS_KEYS).toEqual(SETTING_KEYS.map(key => settingStorageKey(key)));
     expect(SETTING_LS_KEYS).toEqual(
-      expect.arrayContaining(['v3:density', 'v3:fontScale', 'v3:roundMode'])
+      expect.arrayContaining(['v3:density', 'v3:fontScale', 'v3:keyboardShortcuts', 'v3:roundMode'])
     );
+  });
+
+  test('시스템 설정에서 단축키 토글과 기능 목록을 보여준다', () => {
+    expect(getSetting('keyboardShortcuts')).toBe('on');
+    expect(systemPageSrc).toContain("'keyboardShortcuts'");
+    expect(systemPageSrc).toContain('키보드 단축키 사용');
+    expect(systemPageSrc).toContain('SHORTCUTS.map');
+    expect(systemPageSrc).toContain('관리자 권한 필요');
   });
 
   test('saved-views는 active-brand의 실제 공개 API를 import한다', () => {

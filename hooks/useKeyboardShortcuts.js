@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { applyAllSettings, getSetting, setSetting } from '@/lib/settings';
+import { useSettingValue } from '@/hooks/useSettingValue';
 
 const G_NAV = {
   h: '/',
@@ -34,6 +35,7 @@ export function useKeyboardShortcuts({
 }) {
   const gPressedRef = useRef(false);
   const gTimerRef = useRef(null);
+  const shortcutsEnabled = useSettingValue('keyboardShortcuts') !== 'off';
 
   useEffect(
     () => () => {
@@ -43,6 +45,8 @@ export function useKeyboardShortcuts({
   );
 
   useEffect(() => {
+    if (!shortcutsEnabled) return undefined;
+
     const unmodified = e => !e.metaKey && !e.ctrlKey && !e.altKey;
 
     const PLAIN_KEY_ACTIONS = {
@@ -111,5 +115,13 @@ export function useKeyboardShortcuts({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [router, onOpenPalette, onToggleShortcuts, onClosePalette, onCloseShortcuts, canEdit]);
+  }, [
+    router,
+    onOpenPalette,
+    onToggleShortcuts,
+    onClosePalette,
+    onCloseShortcuts,
+    canEdit,
+    shortcutsEnabled,
+  ]);
 }

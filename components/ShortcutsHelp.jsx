@@ -4,9 +4,10 @@ import { Icon } from './icons';
 import { OVERLAY_COLOR } from '@/lib/ui/styles';
 import { useModalOrigin } from '@/hooks/useModalOrigin';
 
-const SHORTCUTS = [
+export const SHORTCUTS = [
   { key: 'N', desc: '새 테스트 노트 작성', requiresEdit: true },
-  { key: '⌘K', desc: '커맨드 팔레트 열기' },
+  { key: 'Ctrl/⌘ K', desc: '커맨드 팔레트 열기' },
+  { key: 'Ctrl/⌘ S', desc: '작성·편집 화면 저장', requiresEdit: true },
   { key: '/', desc: '페이지 내 검색창 포커스' },
   { key: 'D', desc: '다크모드 토글' },
   { key: '?', desc: '단축키 도움말 토글' },

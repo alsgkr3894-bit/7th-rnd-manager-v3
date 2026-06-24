@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
+import { SHORTCUTS } from '@/components/ShortcutsHelp';
 import {
   clearStore,
   ALL_STORES,
@@ -34,6 +35,7 @@ const SETTING_KEYS = [
   'theme',
   'density',
   'fontScale',
+  'keyboardShortcuts',
   'autoRecalc',
   'strictPosting',
   'roundMode',
@@ -198,7 +200,77 @@ export default function Page() {
         />
       </SettingsGroup>
 
-      {/* 2. 알림 */}
+      {/* 2. 단축키 */}
+      <SettingsGroup title="단축키">
+        <SettingsRow
+          name="키보드 단축키 사용"
+          desc="전역 이동, 검색 포커스, 커맨드 팔레트, 작성 화면 저장 단축키를 켜거나 끕니다."
+          control={
+            <Toggle
+              value={settings.keyboardShortcuts === 'on'}
+              onChange={on =>
+                updateSetting(
+                  'keyboardShortcuts',
+                  on ? 'on' : 'off',
+                  '키보드 단축키 ' + (on ? 'ON' : 'OFF')
+                )
+              }
+            />
+          }
+        />
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: 8,
+            paddingTop: 12,
+          }}
+        >
+          {SHORTCUTS.map(shortcut => (
+            <div
+              key={shortcut.key}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 10,
+                padding: '9px 10px',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                background: 'var(--surface-2)',
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>
+                  {shortcut.desc}
+                </div>
+                {shortcut.requiresEdit && (
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
+                    관리자 권한 필요
+                  </div>
+                )}
+              </div>
+              <kbd
+                style={{
+                  flexShrink: 0,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  padding: '3px 8px',
+                  borderRadius: 7,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border-strong)',
+                  color: 'var(--text-1)',
+                  fontFamily: 'inherit',
+                }}
+              >
+                {shortcut.key}
+              </kbd>
+            </div>
+          ))}
+        </div>
+      </SettingsGroup>
+
+      {/* 3. 알림 */}
       <SettingsGroup title="알림">
         <SettingsRow
           name="미매칭 메뉴 알림"
@@ -235,7 +307,7 @@ export default function Page() {
         />
       </SettingsGroup>
 
-      {/* 3. 원가 계산 정책 */}
+      {/* 4. 원가 계산 정책 */}
       <SettingsGroup title="원가 계산 정책">
         <SettingsRow
           name="단가 변경 시 원가 화면 자동 반영"
@@ -266,7 +338,7 @@ export default function Page() {
         />
       </SettingsGroup>
 
-      {/* 4. 지역 / 언어 */}
+      {/* 5. 지역 / 언어 */}
       <SettingsGroup title="지역 / 언어">
         <SettingsRow
           name="언어"

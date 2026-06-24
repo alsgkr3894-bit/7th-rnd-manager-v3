@@ -96,6 +96,8 @@ describe('home page structure', () => {
     expect(paletteSource).toContain('isPaletteItemVisibleForRole(item, canEdit)');
 
     expect(keyboardShortcutsSource).toContain('canEdit = false');
+    expect(keyboardShortcutsSource).toContain("useSettingValue('keyboardShortcuts')");
+    expect(keyboardShortcutsSource).toContain('if (!shortcutsEnabled) return undefined');
     expect(keyboardShortcutsSource).toContain("if (canEdit) router.push('/note/write')");
 
     expect(appShellSource).toContain('<Sidebar');
@@ -103,6 +105,7 @@ describe('home page structure', () => {
     expect(sidebarSource).toContain('filterNavSectionsForRole(NAV_SECTIONS, canEdit)');
     expect(shortcutsHelpSource).toContain('visibleShortcuts');
     expect(shortcutsHelpSource).toContain('requiresEdit: true');
+    expect(shortcutsHelpSource).toContain('Ctrl/⌘ S');
   });
 
   test('home quick note and hero write buttons are disabled for viewer', () => {
