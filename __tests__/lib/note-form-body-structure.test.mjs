@@ -7,6 +7,8 @@ const requiredSource = readFileSync(resolve('app/note/_NoteRequiredFields.jsx'),
 const detailSource = readFileSync(resolve('app/note/_NoteDetailFields.jsx'), 'utf8');
 const photoSource = readFileSync(resolve('app/note/_NotePhotoSection.jsx'), 'utf8');
 const reportSource = readFileSync(resolve('app/note/_NoteReportSummaryCard.jsx'), 'utf8');
+const collapsibleSource = readFileSync(resolve('app/note/_CollapsibleCard.jsx'), 'utf8');
+const tempCostSource = readFileSync(resolve('components/note/TempCostCalculator.jsx'), 'utf8');
 
 describe('note form body structure', () => {
   test('NoteFormBody keeps form state orchestration and delegates sections', () => {
@@ -17,6 +19,8 @@ describe('note form body structure', () => {
     expect(formSource).toContain('makeFieldUpdater(setForm)');
     expect(formSource).toContain('generateNoteReportText(form)');
     expect(formSource).toContain('getAllNotesCached');
+    expect(formSource).toContain('EXCLUDED_MENU_NAME_OPTIONS');
+    expect(formSource).toContain('!EXCLUDED_MENU_NAME_OPTIONS.has(menuName)');
     expect(formSource).toContain('let alive = true;');
     expect(formSource).toContain('if (!alive) return;');
     expect(formSource).toContain('alive = false;');
@@ -28,17 +32,31 @@ describe('note form body structure', () => {
 
   test('note form section components own their presentation details', () => {
     expect(requiredSource).toContain('export function NoteRequiredFields');
+    expect(requiredSource).toContain("gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))'");
     expect(requiredSource).toContain('핵심 테스트 내용');
     expect(requiredSource).toContain('<ComboBox');
     expect(detailSource).toContain('export function NoteDetailFields');
+    expect(detailSource).toContain('<CollapsibleCard');
+    expect(detailSource).toContain('defaultOpen={false}');
     expect(detailSource).toContain('상세 기록');
     expect(detailSource).toContain('<TagInput');
     expect(photoSource).toContain('export function NotePhotoSection');
     expect(photoSource).toContain('MAX_NOTE_PHOTOS');
     expect(photoSource).toContain('resizePhoto');
     expect(reportSource).toContain('export function NoteReportSummaryCard');
+    expect(reportSource).toContain('<CollapsibleCard');
+    expect(reportSource).toContain('defaultOpen={false}');
     expect(reportSource).toContain('copyText(reportText)');
     expect(reportSource).toContain('보고용 복사');
+    expect(tempCostSource).toContain('<CollapsibleCard');
+    expect(tempCostSource).toContain('defaultOpen={false}');
+  });
+
+  test('optional note sections use closed collapsible cards by default', () => {
+    expect(collapsibleSource).toContain('defaultOpen = false');
+    expect(collapsibleSource).toContain('aria-expanded={open}');
+    expect(collapsibleSource).toContain('{open &&');
+    expect(collapsibleSource).toContain('setOpen(value => !value)');
   });
 
   test('note photo upload keeps unsupported files out before resize', () => {

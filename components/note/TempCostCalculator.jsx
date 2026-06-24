@@ -3,6 +3,7 @@ import { TempCostRowsTable } from './temp-cost/TempCostRowsTable';
 import { TempCostSummary } from './temp-cost/TempCostSummary';
 import { TempIngredientSearch } from './temp-cost/TempIngredientSearch';
 import { useTempCostCalculator } from './temp-cost/useTempCostCalculator';
+import { CollapsibleCard } from '@/app/note/_CollapsibleCard';
 
 export function TempCostCalculator({ value, onChange }) {
   const {
@@ -24,14 +25,11 @@ export function TempCostCalculator({ value, onChange }) {
   } = useTempCostCalculator({ value, onChange });
 
   return (
-    <div className="card">
-      <div className="card-title" style={{ marginBottom: 4 }}>
-        임시 원가 계산
-      </div>
-      <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 14 }}>
-        식자재를 검색해 대략적인 원가율을 계산합니다. 저장 시 함께 보관됩니다.
-      </div>
-
+    <CollapsibleCard
+      title="임시 원가 계산"
+      subtitle="식자재를 검색해 대략적인 원가율을 계산합니다 · 기본 접힘"
+      defaultOpen={false}
+    >
       <TempIngredientSearch
         search={ingredientSearch}
         searchRef={searchRef}
@@ -55,6 +53,6 @@ export function TempCostCalculator({ value, onChange }) {
         sellingPrice={parsedCostCalc.sellingPrice}
         onSellingPriceChange={updateSellingPrice}
       />
-    </div>
+    </CollapsibleCard>
   );
 }

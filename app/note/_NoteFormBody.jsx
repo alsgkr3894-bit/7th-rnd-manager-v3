@@ -11,6 +11,8 @@ import { NotePhotoSection } from '@/app/note/_NotePhotoSection';
 import { NoteReportSummaryCard } from '@/app/note/_NoteReportSummaryCard';
 import { NoteRequiredFields } from '@/app/note/_NoteRequiredFields';
 
+const EXCLUDED_MENU_NAME_OPTIONS = new Set(['전체']);
+
 // SSR 안전 초기값 — brand와 category는 SSR에서 항상 기본값으로 두고
 // 마운트 후 실제 브랜드/저장값으로 교정한다(hydration 불일치 방지).
 export const INIT = {
@@ -59,7 +61,8 @@ export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
             .map(tag => tag.trim())
             .filter(Boolean)
             .forEach(tag => tagSet.add(tag));
-          if (note.menuName?.trim()) nameSet.add(note.menuName.trim());
+          const menuName = note.menuName?.trim();
+          if (menuName && !EXCLUDED_MENU_NAME_OPTIONS.has(menuName)) nameSet.add(menuName);
         });
         setAllTags([...tagSet]);
         setMenuNames([...nameSet]);

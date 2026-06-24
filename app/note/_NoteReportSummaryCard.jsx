@@ -2,6 +2,7 @@
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { copyText } from '@/lib/ui/clipboard';
+import { CollapsibleCard } from '@/app/note/_CollapsibleCard';
 
 export function NoteReportSummaryCard({ reportText }) {
   async function copyReport() {
@@ -15,13 +16,11 @@ export function NoteReportSummaryCard({ reportText }) {
 
   return (
     <div className="form-sticky-right" style={{ position: 'sticky', top: 80 }}>
-      <div className="card">
-        <div className="card-title" style={{ marginBottom: 8 }}>
-          보고용 요약
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>
-          입력 내용이 자동으로 요약됩니다.
-        </div>
+      <CollapsibleCard
+        title="보고용 요약"
+        subtitle="입력 내용이 자동으로 요약됩니다 · 기본 접힘"
+        defaultOpen={false}
+      >
         <pre
           style={{
             background: 'var(--surface-2)',
@@ -40,7 +39,7 @@ export function NoteReportSummaryCard({ reportText }) {
         <button className="btn" style={{ width: '100%', marginTop: 12 }} onClick={copyReport}>
           <Icon.doc style={{ width: 13, height: 13 }} /> 보고용 복사
         </button>
-      </div>
+      </CollapsibleCard>
     </div>
   );
 }

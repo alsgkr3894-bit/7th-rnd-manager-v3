@@ -1,15 +1,11 @@
 'use client';
 import { TagInput } from '@/components/ui/TagInput';
 import { Field } from '@/components/note/FormFields';
+import { CollapsibleCard } from '@/app/note/_CollapsibleCard';
 
 export function NoteDetailFields({ form, allTags, updateField }) {
   return (
-    <div className="card">
-      <div className="card-title" style={{ marginBottom: 16 }}>
-        상세 기록{' '}
-        <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-3)' }}>선택</span>
-      </div>
-
+    <CollapsibleCard title="상세 기록" subtitle="선택 입력 항목 · 기본 접힘" defaultOpen={false}>
       <Field label="사용 재료">
         <textarea
           className="form-input"
@@ -97,6 +93,6 @@ export function NoteDetailFields({ form, allTags, updateField }) {
           suggestions={allTags}
         />
       </Field>
-    </div>
+    </CollapsibleCard>
   );
 }

@@ -35,6 +35,8 @@ describe('temp cost calculator structure', () => {
     expect(mainSource).toContain('<TempIngredientSearch');
     expect(mainSource).toContain('<TempCostRowsTable');
     expect(mainSource).toContain('<TempCostSummary');
+    expect(mainSource).toContain('<CollapsibleCard');
+    expect(mainSource).toContain('defaultOpen={false}');
     expect(mainSource).toContain('useTempCostCalculator');
     expect(mainSource).not.toContain('getAllIngredients');
     expect(mainSource).not.toContain('calcUnitPrice');

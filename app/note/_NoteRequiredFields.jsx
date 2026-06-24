@@ -17,17 +17,22 @@ export function NoteRequiredFields({
         필수 항목
       </div>
 
-      <Field label="제목" error={touched.title && !form.title.trim()}>
-        <input
-          className="form-input"
-          value={form.title}
-          onChange={event => updateField('title', event.target.value)}
-          onBlur={() => markTouched('title')}
-          placeholder="예) 횡성한우 와사비마요 조합 테스트"
-        />
-      </Field>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: 12,
+        }}
+      >
+        <Field label="제목" error={touched.title && !form.title.trim()}>
+          <input
+            className="form-input"
+            value={form.title}
+            onChange={event => updateField('title', event.target.value)}
+            onBlur={() => markTouched('title')}
+            placeholder="예) 횡성한우 와사비마요 조합 테스트"
+          />
+        </Field>
         <Field label={form.noteType === '샘플' ? '샘플명 / 메뉴명' : '메뉴명'}>
           <ComboBox
             value={form.menuName}
@@ -42,15 +47,16 @@ export function NoteRequiredFields({
             inputClassName="form-input"
           />
         </Field>
-        <Field label="테스트 날짜">
-          <input
-            className="form-input"
-            type="date"
-            value={form.testDate}
-            onChange={event => updateField('testDate', event.target.value)}
-          />
-        </Field>
       </div>
+
+      <Field label="테스트 날짜">
+        <input
+          className="form-input"
+          type="date"
+          value={form.testDate}
+          onChange={event => updateField('testDate', event.target.value)}
+        />
+      </Field>
 
       <Field label="브랜드" hint="이 노트가 속한 브랜드">
         <SegGroup
