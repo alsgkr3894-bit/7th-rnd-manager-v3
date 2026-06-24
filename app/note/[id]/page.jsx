@@ -8,7 +8,7 @@ import { initDB } from '@/lib/db';
 import { getNoteById, updateNote, getNotesInChain, duplicateNote } from '@/lib/note';
 import { getAllSamples } from '@/lib/sample';
 import { printCurrentPageWithDownloadDate } from '@/lib/download';
-import { NoteFormBody, INIT } from '@/app/note/_NoteFormBody';
+import { NoteFormBody, INIT, normalizeNoteFormForSave } from '@/app/note/_NoteFormBody';
 import { NoteDetailSkeleton } from '@/components/ui/Skeleton';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
 import { KEYS, setSampleFromNote } from '@/lib/note/keys';
@@ -115,13 +115,13 @@ export default function Page() {
       return;
     }
     if (saving) return;
-    if (!form.title.trim() || !form.testContent.trim()) {
+    if (!(form.title || form.menuName || '').trim() || !form.testContent.trim()) {
       showToast('제목과 테스트 내용은 필수입니다', 'warn');
       return;
     }
     setSaving(true);
     try {
-      await updateNote(noteId, form);
+      await updateNote(noteId, normalizeNoteFormForSave(form));
       clearDraft(KEYS.NOTE_DRAFT(noteId));
       setIsDirty(false);
       showToast('노트가 수정됐어요', 'ok');

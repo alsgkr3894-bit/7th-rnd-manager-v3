@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { addNote, getNoteById, CATEGORIES } from '@/lib/note';
-import { NoteFormBody, INIT } from '@/app/note/_NoteFormBody';
+import { NoteFormBody, INIT, normalizeNoteFormForSave } from '@/app/note/_NoteFormBody';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
 import { KEYS, consumeNoteFrom, consumeHomeNoteDraft } from '@/lib/note/keys';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
@@ -134,7 +134,7 @@ export default function Page() {
       return;
     }
     if (saving) return; // Ctrl+S 연타 시 중복 저장(레코드 중복 생성) 방지
-    if (!form.title.trim() || !form.testContent.trim()) {
+    if (!(form.title || form.menuName || '').trim() || !form.testContent.trim()) {
       showToast('제목과 테스트 내용은 필수입니다', 'warn');
       return;
     }
@@ -143,7 +143,7 @@ export default function Page() {
     clearTimeout(draftTimer.current);
     try {
       await initDB();
-      await addNote(form);
+      await addNote(normalizeNoteFormForSave(form));
       clearDraft(KEYS.NOTE_DRAFT_WRITE);
       setIsDirty(false);
       showToast('노트가 저장됐어요', 'ok');

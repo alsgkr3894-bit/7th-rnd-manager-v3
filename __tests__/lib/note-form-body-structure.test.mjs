@@ -17,10 +17,11 @@ describe('note form body structure', () => {
     expect(formSource).toContain('<NotePhotoSection');
     expect(formSource).toContain('<NoteReportSummaryCard');
     expect(formSource).toContain('makeFieldUpdater(setForm)');
+    expect(formSource).toContain('normalizeNoteFormForSave');
+    expect(formSource).toContain('menuName: title');
+    expect(formSource).toContain('function updateTitle(value)');
     expect(formSource).toContain('generateNoteReportText(form)');
     expect(formSource).toContain('getAllNotesCached');
-    expect(formSource).toContain('EXCLUDED_MENU_NAME_OPTIONS');
-    expect(formSource).toContain('!EXCLUDED_MENU_NAME_OPTIONS.has(menuName)');
     expect(formSource).toContain('let alive = true;');
     expect(formSource).toContain('if (!alive) return;');
     expect(formSource).toContain('alive = false;');
@@ -32,9 +33,12 @@ describe('note form body structure', () => {
 
   test('note form section components own their presentation details', () => {
     expect(requiredSource).toContain('export function NoteRequiredFields');
+    expect(requiredSource).toContain('const titleValue = form.title || form.menuName ||');
     expect(requiredSource).toContain("gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))'");
     expect(requiredSource).toContain('핵심 테스트 내용');
-    expect(requiredSource).toContain('<ComboBox');
+    expect(requiredSource).not.toContain('<ComboBox');
+    expect(requiredSource).not.toContain('menuNames');
+    expect(requiredSource).toContain('onChange={event => updateTitle(event.target.value)}');
     expect(detailSource).toContain('export function NoteDetailFields');
     expect(detailSource).toContain('<CollapsibleCard');
     expect(detailSource).toContain('defaultOpen={false}');
@@ -72,6 +76,7 @@ describe('note form body structure', () => {
     expect(writePageSource).toContain('if (!roleReady) return;');
     expect(writePageSource).toContain('if (!canEdit) return;');
     expect(writePageSource).toContain('}, [canEdit, roleReady]);');
+    expect(writePageSource).toContain('normalizeNoteFormForSave(form)');
     expect(writePageSource).toContain('if (canEdit) clearDraft(KEYS.NOTE_DRAFT_WRITE);');
     expect(writePageSource).toContain('{canEdit && showDraftBanner && !fromTitle && (');
   });

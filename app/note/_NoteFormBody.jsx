@@ -11,8 +11,6 @@ import { NotePhotoSection } from '@/app/note/_NotePhotoSection';
 import { NoteReportSummaryCard } from '@/app/note/_NoteReportSummaryCard';
 import { NoteRequiredFields } from '@/app/note/_NoteRequiredFields';
 
-const EXCLUDED_MENU_NAME_OPTIONS = new Set(['전체']);
-
 // SSR 안전 초기값 — brand와 category는 SSR에서 항상 기본값으로 두고
 // 마운트 후 실제 브랜드/저장값으로 교정한다(hydration 불일치 방지).
 export const INIT = {
@@ -37,14 +35,22 @@ export const INIT = {
   photos: [],
 };
 
+export function normalizeNoteFormForSave(form) {
+  const title = String(form?.title || form?.menuName || '').trim();
+  return { ...form, title, menuName: title };
+}
+
 export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
   const updateField = makeFieldUpdater(setForm);
   const [allTags, setAllTags] = useState([]);
-  const [menuNames, setMenuNames] = useState([]);
   const [touched, setTouched] = useState({});
 
   function markTouched(key) {
     setTouched(value => ({ ...value, [key]: true }));
+  }
+
+  function updateTitle(value) {
+    setForm(prev => ({ ...prev, title: value, menuName: value }));
   }
 
   useEffect(() => {
@@ -54,18 +60,14 @@ export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
       .then(notes => {
         if (!alive) return;
         const tagSet = new Set();
-        const nameSet = new Set();
         notes.forEach(note => {
           (note.tags || '')
             .split(',')
             .map(tag => tag.trim())
             .filter(Boolean)
             .forEach(tag => tagSet.add(tag));
-          const menuName = note.menuName?.trim();
-          if (menuName && !EXCLUDED_MENU_NAME_OPTIONS.has(menuName)) nameSet.add(menuName);
         });
         setAllTags([...tagSet]);
-        setMenuNames([...nameSet]);
       })
       .catch(err => {
         if (alive) console.warn('[NoteFormBody]', err);
@@ -91,8 +93,8 @@ export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <NoteRequiredFields
           form={form}
-          menuNames={menuNames}
           touched={touched}
+          updateTitle={updateTitle}
           updateField={updateField}
           markTouched={markTouched}
           onCategoryChange={onCategoryChange}

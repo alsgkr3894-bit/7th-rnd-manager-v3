@@ -1,16 +1,17 @@
 'use client';
-import { ComboBox } from '@/components/ui/ComboBox';
 import { SegGroup, Field } from '@/components/note/FormFields';
 import { CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS, NOTE_BRANDS } from '@/lib/note';
 
 export function NoteRequiredFields({
   form,
-  menuNames,
   touched,
+  updateTitle,
   updateField,
   markTouched,
   onCategoryChange,
 }) {
+  const titleValue = form.title || form.menuName || '';
+
   return (
     <div className="card">
       <div className="card-title" style={{ marginBottom: 16 }}>
@@ -24,27 +25,13 @@ export function NoteRequiredFields({
           gap: 12,
         }}
       >
-        <Field label="제목" error={touched.title && !form.title.trim()}>
+        <Field label="제목" error={touched.title && !titleValue.trim()}>
           <input
             className="form-input"
-            value={form.title}
-            onChange={event => updateField('title', event.target.value)}
+            value={titleValue}
+            onChange={event => updateTitle(event.target.value)}
             onBlur={() => markTouched('title')}
             placeholder="예) 횡성한우 와사비마요 조합 테스트"
-          />
-        </Field>
-        <Field label={form.noteType === '샘플' ? '샘플명 / 메뉴명' : '메뉴명'}>
-          <ComboBox
-            value={form.menuName}
-            onChange={value => {
-              updateField('menuName', value);
-              markTouched('menuName');
-            }}
-            options={menuNames}
-            placeholder={
-              form.noteType === '샘플' ? '예) 와규 패티 / 빅맥형 신메뉴' : '예) 횡성한우쉬림프'
-            }
-            inputClassName="form-input"
           />
         </Field>
       </div>
