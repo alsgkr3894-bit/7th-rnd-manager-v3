@@ -66,7 +66,10 @@ export function NoteFilterControls({
           className={'chip' + (statusFilter === 'all' ? ' active' : '')}
           onClick={() => onStatusFilter('all')}
         >
-          전체 <span style={{ fontSize: 11, opacity: 0.7 }}>{safeCounts.all}</span>
+          전체{' '}
+          {safeCounts.all > 0 && (
+            <span style={{ fontSize: 11, opacity: 0.7 }}>{safeCounts.all}</span>
+          )}
         </button>
         {STATUSES.map(status => (
           <button
@@ -79,7 +82,10 @@ export function NoteFilterControls({
                 : {}
             }
           >
-            {status} <span style={{ fontSize: 11, opacity: 0.7 }}>{safeCounts[status]}</span>
+            {status}{' '}
+            {safeCounts[status] > 0 && (
+              <span style={{ fontSize: 11, opacity: 0.7 }}>{safeCounts[status]}</span>
+            )}
           </button>
         ))}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>

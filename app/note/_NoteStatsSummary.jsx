@@ -1,6 +1,21 @@
 'use client';
 import { NOTE_STATUS } from '@/lib/note/constants';
 
+function statValue(value) {
+  const number = Number(value) || 0;
+  return number > 0 ? value : '-';
+}
+
+function StatValue({ value, unit }) {
+  const display = statValue(value);
+  return (
+    <>
+      {display}
+      {display !== '-' && <span className="unit">{unit}</span>}
+    </>
+  );
+}
+
 export function NoteStatsSummary({ stats, counts }) {
   if (!stats) return null;
 
@@ -11,29 +26,25 @@ export function NoteStatsSummary({ stats, counts }) {
       <div className="stat-card">
         <div className="stat-label">전체 노트</div>
         <div className="stat-value">
-          {stats.total}
-          <span className="unit">개</span>
+          <StatValue value={stats.total} unit="개" />
         </div>
       </div>
       <div className="stat-card">
         <div className="stat-label">이번 달 작성</div>
         <div className="stat-value">
-          {stats.thisMonth}
-          <span className="unit">개</span>
+          <StatValue value={stats.thisMonth} unit="개" />
         </div>
       </div>
       <div className="stat-card">
         <div className="stat-label">보고예정</div>
         <div className="stat-value" style={{ color: 'var(--color-reporting)' }}>
-          {safeCounts[NOTE_STATUS.REPORTING] || 0}
-          <span className="unit">개</span>
+          <StatValue value={safeCounts[NOTE_STATUS.REPORTING]} unit="개" />
         </div>
       </div>
       <div className="stat-card">
         <div className="stat-label">출시 전환율</div>
         <div className="stat-value" style={{ color: 'var(--positive)' }}>
-          {stats.releaseRate}
-          <span className="unit">%</span>
+          <StatValue value={stats.releaseRate} unit="%" />
         </div>
       </div>
       {stats.monthly && (

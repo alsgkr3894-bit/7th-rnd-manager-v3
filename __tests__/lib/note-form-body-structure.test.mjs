@@ -7,6 +7,7 @@ const requiredSource = readFileSync(resolve('app/note/_NoteRequiredFields.jsx'),
 const detailSource = readFileSync(resolve('app/note/_NoteDetailFields.jsx'), 'utf8');
 const photoSource = readFileSync(resolve('app/note/_NotePhotoSection.jsx'), 'utf8');
 const reportSource = readFileSync(resolve('app/note/_NoteReportSummaryCard.jsx'), 'utf8');
+const reportTextSource = readFileSync(resolve('lib/note/report.js'), 'utf8');
 const collapsibleSource = readFileSync(resolve('app/note/_CollapsibleCard.jsx'), 'utf8');
 const tempCostSource = readFileSync(resolve('components/note/TempCostCalculator.jsx'), 'utf8');
 
@@ -21,6 +22,9 @@ describe('note form body structure', () => {
     expect(formSource).toContain('menuName: title');
     expect(formSource).toContain('function updateTitle(value)');
     expect(formSource).toContain('generateNoteReportText(form)');
+    expect(reportTextSource).toContain("import { noteDisplayTitle } from './display'");
+    expect(reportTextSource).toContain("const title = noteDisplayTitle(form, '—')");
+    expect(reportTextSource).not.toContain("form.title || form.menuName || '—'");
     expect(formSource).toContain('getAllNotesCached');
     expect(formSource).toContain('let alive = true;');
     expect(formSource).toContain('if (!alive) return;');

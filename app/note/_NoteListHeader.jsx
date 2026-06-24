@@ -13,6 +13,11 @@ const ACTIONS_STYLE = {
   flex: '1 1 100%',
 };
 
+function noteListSubText(notesCount) {
+  const count = Number(notesCount) || 0;
+  return count > 0 ? `전체 ${count.toLocaleString('ko-KR')}개` : '노트 없음';
+}
+
 export function NoteListHeader({
   notesCount,
   batchMode,
@@ -35,7 +40,7 @@ export function NoteListHeader({
     <PageHeader
       breadcrumb={['메뉴개발노트', '노트 목록']}
       title="메뉴개발노트"
-      sub={`전체 ${notesCount}개`}
+      sub={noteListSubText(notesCount)}
       actions={
         <div style={ACTIONS_STYLE}>
           {batchMode ? (

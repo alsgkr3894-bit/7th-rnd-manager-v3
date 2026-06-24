@@ -1,4 +1,5 @@
 import { STATUS_COLORS } from '@/lib/note';
+import { noteDisplayTitle } from '@/lib/note/display';
 
 export function ChainTimeline({ chain, currentId, onNavigate }) {
   if (!chain || chain.length < 2) return null;
@@ -25,6 +26,7 @@ export function ChainTimeline({ chain, currentId, onNavigate }) {
 
 function TimelineItem({ note, isCurrent, showConnector, onNavigate }) {
   const statusColor = STATUS_COLORS[note.status] || {};
+  const title = noteDisplayTitle(note);
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
@@ -85,7 +87,7 @@ function TimelineItem({ note, isCurrent, showConnector, onNavigate }) {
             maxWidth: 150,
           }}
         >
-          {note.title}
+          {title}
         </div>
         <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 3 }}>
           {note.testDate || (note.createdAt ? note.createdAt.slice(0, 10) : '')}

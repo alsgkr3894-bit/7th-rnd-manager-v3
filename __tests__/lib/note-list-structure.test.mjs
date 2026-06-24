@@ -22,6 +22,11 @@ describe('note list structure', () => {
       'utf8'
     );
     const headerSource = readFileSync(resolve('app/note/_NoteListHeader.jsx'), 'utf8');
+    const detailPageSource = readFileSync(resolve('app/note/[id]/page.jsx'), 'utf8');
+    const chainTimelineSource = readFileSync(
+      resolve('app/note/[id]/detail/ChainTimeline.jsx'),
+      'utf8'
+    );
     const statesSource = readFileSync(resolve('app/note/_NoteListStates.jsx'), 'utf8');
     const dialogsSource = readFileSync(resolve('app/note/_NotePageDialogs.jsx'), 'utf8');
     const controllerSource = readFileSync(resolve('hooks/useNoteContentController.js'), 'utf8');
@@ -104,7 +109,12 @@ describe('note list structure', () => {
     expect(filterSource).toContain('const SORT_OPTIONS = [');
     expect(filterSource).toContain('제목, 테스트 내용, 태그 검색');
     expect(filterSource).toContain("label: '제목순'");
+    expect(filterSource).toContain('safeCounts.all > 0');
+    expect(filterSource).toContain('safeCounts[status] > 0');
     expect(statsSource).toContain('최근 6개월');
+    expect(statsSource).toContain('function StatValue');
+    expect(statsSource).toContain("display !== '-'");
+    expect(statsSource).not.toContain('safeCounts[NOTE_STATUS.REPORTING] || 0');
     expect(bodySource).toContain('export function NoteListBody');
     expect(bodySource).toContain('<NoteContextMenu');
     expect(bodySource).toContain('<NoteCardGrid');
@@ -145,11 +155,19 @@ describe('note list structure', () => {
     expect(tableRowSource).not.toContain('{note.menuName}</td>');
     expect(headerSource).toContain('export function NoteListHeader');
     expect(headerSource).toContain('<PageHeader');
+    expect(headerSource).toContain('function noteListSubText');
+    expect(headerSource).toContain('sub={noteListSubText(notesCount)}');
+    expect(headerSource).not.toContain('sub={`전체 ${notesCount}개`}');
     expect(headerSource).toContain('<NoteBatchToolbar');
     expect(headerSource).toContain('전체 보고서 PDF');
     expect(headerSource).toContain('disabled={reportExportCount === 0}');
     expect(headerSource).toContain('보고예정 일괄복사');
     expect(headerSource).toContain('체크리스트 목록');
+    expect(detailPageSource).toContain("import { noteDisplayTitle } from '@/lib/note/display'");
+    expect(detailPageSource).toContain("sub={noteDisplayTitle(form, '')}");
+    expect(chainTimelineSource).toContain("import { noteDisplayTitle } from '@/lib/note/display'");
+    expect(chainTimelineSource).toContain('const title = noteDisplayTitle(note)');
+    expect(chainTimelineSource).not.toContain('{note.title}');
     expect(statesSource).toContain('export function NoteListStates');
     expect(statesSource).toContain('<NoteCardSkeleton');
     expect(statesSource).toContain('아직 노트가 없어요');

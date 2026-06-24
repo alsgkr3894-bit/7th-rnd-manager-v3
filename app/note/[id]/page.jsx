@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getNoteById, updateNote, getNotesInChain, duplicateNote } from '@/lib/note';
+import { noteDisplayTitle } from '@/lib/note/display';
 import { getAllSamples } from '@/lib/sample';
 import { printCurrentPageWithDownloadDate } from '@/lib/download';
 import { NoteFormBody, INIT, normalizeNoteFormForSave } from '@/app/note/_NoteFormBody';
@@ -196,7 +197,7 @@ export default function Page() {
       <PageHeader
         breadcrumb={['메뉴개발노트', '노트 수정']}
         title="노트 수정"
-        sub={form.title || ''}
+        sub={noteDisplayTitle(form, '')}
         actions={
           <NoteDetailActions
             saving={saving}
