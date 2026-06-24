@@ -6,8 +6,14 @@ import { useModalOrigin } from '@/hooks/useModalOrigin';
 
 export const SHORTCUTS = [
   { key: 'N', desc: '새 테스트 노트 작성', requiresEdit: true },
-  { key: 'Ctrl/⌘ K', desc: '커맨드 팔레트 열기' },
-  { key: 'Ctrl/⌘ S', desc: '작성·편집 화면 저장', requiresEdit: true },
+  { key: 'command-palette', windowsKey: 'Ctrl+K', macKey: '⌘K', desc: '커맨드 팔레트 열기' },
+  {
+    key: 'save',
+    windowsKey: 'Ctrl+S',
+    macKey: '⌘S',
+    desc: '작성·편집 화면 저장',
+    requiresEdit: true,
+  },
   { key: '/', desc: '페이지 내 검색창 포커스' },
   { key: 'D', desc: '다크모드 토글' },
   { key: '?', desc: '단축키 도움말 토글' },
@@ -22,6 +28,14 @@ export const SHORTCUTS = [
   { key: 'G B', desc: '보고서로 이동' },
   { key: 'G J', desc: '제때로 이동' },
 ];
+
+export function shortcutWindowsKey(shortcut) {
+  return shortcut?.windowsKey || shortcut?.key || '';
+}
+
+export function shortcutMacKey(shortcut) {
+  return shortcut?.macKey || shortcutWindowsKey(shortcut);
+}
 
 export function ShortcutsHelp({ onClose, canEdit = false }) {
   const cardRef = useRef(null);
@@ -72,21 +86,30 @@ export function ShortcutsHelp({ onClose, canEdit = false }) {
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
             >
               <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{s.desc}</span>
-              <kbd
-                style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  padding: '3px 10px',
-                  borderRadius: 7,
-                  background: 'var(--surface-2)',
-                  border: '1px solid var(--border-strong)',
-                  color: 'var(--text-1)',
-                  fontFamily: 'inherit',
-                  flexShrink: 0,
-                }}
-              >
-                {s.key}
-              </kbd>
+              <div style={{ display: 'grid', justifyItems: 'end', gap: 2, flexShrink: 0 }}>
+                <span style={{ fontSize: 10, color: 'var(--text-4)', fontWeight: 700 }}>
+                  Windows
+                </span>
+                <kbd
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    padding: '3px 10px',
+                    borderRadius: 7,
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border-strong)',
+                    color: 'var(--text-1)',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {shortcutWindowsKey(s)}
+                </kbd>
+                {shortcutMacKey(s) !== shortcutWindowsKey(s) && (
+                  <span style={{ fontSize: 10, color: 'var(--text-4)' }}>
+                    Mac {shortcutMacKey(s)}
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>

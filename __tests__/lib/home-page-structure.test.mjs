@@ -105,7 +105,9 @@ describe('home page structure', () => {
     expect(sidebarSource).toContain('filterNavSectionsForRole(NAV_SECTIONS, canEdit)');
     expect(shortcutsHelpSource).toContain('visibleShortcuts');
     expect(shortcutsHelpSource).toContain('requiresEdit: true');
-    expect(shortcutsHelpSource).toContain('Ctrl/⌘ S');
+    expect(shortcutsHelpSource).toContain("windowsKey: 'Ctrl+S'");
+    expect(shortcutsHelpSource).toContain("macKey: '⌘S'");
+    expect(shortcutsHelpSource).toContain('shortcutWindowsKey');
   });
 
   test('home quick note and hero write buttons are disabled for viewer', () => {

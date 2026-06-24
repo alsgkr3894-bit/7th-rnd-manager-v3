@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
-import { SHORTCUTS } from '@/components/ShortcutsHelp';
+import { SHORTCUTS, shortcutMacKey, shortcutWindowsKey } from '@/components/ShortcutsHelp';
 import {
   clearStore,
   ALL_STORES,
@@ -250,21 +250,30 @@ export default function Page() {
                   </div>
                 )}
               </div>
-              <kbd
-                style={{
-                  flexShrink: 0,
-                  fontSize: 12,
-                  fontWeight: 800,
-                  padding: '3px 8px',
-                  borderRadius: 7,
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border-strong)',
-                  color: 'var(--text-1)',
-                  fontFamily: 'inherit',
-                }}
-              >
-                {shortcut.key}
-              </kbd>
+              <div style={{ display: 'grid', justifyItems: 'end', gap: 2, flexShrink: 0 }}>
+                <span style={{ fontSize: 10, color: 'var(--text-4)', fontWeight: 700 }}>
+                  Windows
+                </span>
+                <kbd
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 800,
+                    padding: '3px 8px',
+                    borderRadius: 7,
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border-strong)',
+                    color: 'var(--text-1)',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {shortcutWindowsKey(shortcut)}
+                </kbd>
+                {shortcutMacKey(shortcut) !== shortcutWindowsKey(shortcut) && (
+                  <span style={{ fontSize: 10, color: 'var(--text-4)' }}>
+                    Mac {shortcutMacKey(shortcut)}
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>

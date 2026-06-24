@@ -69,6 +69,8 @@ describe('settings guards', () => {
     expect(systemPageSrc).toContain("'keyboardShortcuts'");
     expect(systemPageSrc).toContain('키보드 단축키 사용');
     expect(systemPageSrc).toContain('SHORTCUTS.map');
+    expect(systemPageSrc).toContain('shortcutWindowsKey(shortcut)');
+    expect(systemPageSrc).toContain('Windows');
     expect(systemPageSrc).toContain('관리자 권한 필요');
   });
 
