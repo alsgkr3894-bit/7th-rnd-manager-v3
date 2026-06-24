@@ -42,9 +42,6 @@ export function NoteTableView({
           <thead style={{ position: 'sticky', top: 0, zIndex: 2, background: 'var(--surface)' }}>
             <tr>
               <th scope="col">제목</th>
-              <th scope="col" style={{ width: 100 }}>
-                메뉴명
-              </th>
               <th scope="col" style={{ width: 80 }}>
                 카테고리
               </th>

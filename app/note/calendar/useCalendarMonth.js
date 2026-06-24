@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { pad } from '@/lib/format';
+import { noteDisplayTitle } from '@/lib/note/display';
 import { sampleNamesText } from '@/lib/sample';
 import { WORK_LOG_TYPES } from '@/lib/work-log';
 import { daysInMonth, firstDow, groupByDate, isPast, toKey } from './_calendar-utils';
@@ -162,7 +163,7 @@ export function useCalendarMonth({
             date,
             '',
             '노트',
-            item.menuName || item.title || '',
+            noteDisplayTitle(item, ''),
             item.status || '',
             item.result || item.summary || '',
           ]);

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Icon } from '@/components/icons';
 import { STATUSES, STATUS_COLORS } from '@/lib/note';
+import { noteDisplayTitle } from '@/lib/note/display';
 import { formatFullDate } from '@/lib/note/utils';
 
 export const NoteTableRow = React.memo(function NoteTableRow({
@@ -14,6 +15,7 @@ export const NoteTableRow = React.memo(function NoteTableRow({
   canEdit = false,
 }) {
   const sc = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
+  const title = noteDisplayTitle(note);
 
   return (
     <tr
@@ -27,9 +29,8 @@ export const NoteTableRow = React.memo(function NoteTableRow({
         {note.parentId && (
           <span style={{ fontSize: 10, color: 'var(--accent)', marginLeft: 4 }}>🔗 체인</span>
         )}
-        {note.title}
+        {title}
       </td>
-      <td style={{ color: 'var(--text-2)' }}>{note.menuName}</td>
       <td style={{ color: 'var(--text-3)', fontSize: 12 }}>{note.category}</td>
       <td>
         <select
@@ -64,7 +65,7 @@ export const NoteTableRow = React.memo(function NoteTableRow({
             className="btn sm"
             onClick={() => onEdit(note)}
             disabled={!canEdit}
-            aria-label={`${note.title || '노트'} 수정`}
+            aria-label={`${title} 수정`}
           >
             <Icon.edit style={{ width: 12, height: 12 }} />
           </button>
@@ -73,7 +74,7 @@ export const NoteTableRow = React.memo(function NoteTableRow({
             style={{ color: 'var(--negative)' }}
             onClick={e => onDelete(note, e)}
             disabled={!canEdit}
-            aria-label={`${note.title || '노트'} 삭제`}
+            aria-label={`${title} 삭제`}
           >
             <Icon.trash style={{ width: 12, height: 12 }} />
           </button>

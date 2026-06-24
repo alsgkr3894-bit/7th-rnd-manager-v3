@@ -1,5 +1,6 @@
 import { sampleNamesText } from '@/lib/sample';
 import { STATUS_BORDER, STATUS_COLORS } from '@/lib/note/constants';
+import { noteDisplayTitle } from '@/lib/note/display';
 import { SCHEDULE_COLORS } from '@/lib/note/schedules';
 
 export function CalendarItem({
@@ -95,6 +96,7 @@ function SampleCalendarItem({ item, onOpenSample }) {
 function NoteCalendarItem({ item, past, onOpenNote }) {
   const statusColor = STATUS_COLORS[item.status] || STATUS_COLORS['아이디어'];
   const statusBorder = STATUS_BORDER[item.status] || 'var(--border)';
+  const label = noteDisplayTitle(item);
 
   return (
     <button
@@ -102,7 +104,7 @@ function NoteCalendarItem({ item, past, onOpenNote }) {
         event.stopPropagation();
         onOpenNote(item.id);
       }}
-      title={`[${item.status}] ${item.menuName || item.title}`}
+      title={`[${item.status}] ${label}`}
       style={{
         fontSize: 10,
         fontWeight: 600,
@@ -123,7 +125,7 @@ function NoteCalendarItem({ item, past, onOpenNote }) {
         width: '100%',
       }}
     >
-      {item.menuName || item.title}
+      {label}
     </button>
   );
 }

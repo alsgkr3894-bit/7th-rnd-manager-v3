@@ -1,6 +1,7 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { STATUSES, STATUS_COLORS, STATUS_BORDER } from '@/lib/note';
+import { noteDisplayTitle } from '@/lib/note/display';
 import { parseTagList, formatFullDate } from '@/lib/note/utils';
 import { noop } from '@/lib/ui/prop-guards';
 
@@ -54,8 +55,7 @@ export function NoteCard({
   const category = asText(note.category) || '—';
   const noteType = asText(note.noteType) || '—';
   const testDate = typeof note.testDate === 'string' ? note.testDate : '';
-  const title = asText(note.title);
-  const menuName = asText(note.menuName);
+  const title = noteDisplayTitle(note);
   const testContent = asText(note.testContent);
   const tags = parseTagList(note.tags);
   const sc = STATUS_COLORS[status] || STATUS_COLORS['아이디어'];
@@ -117,9 +117,6 @@ export function NoteCard({
       </div>
       <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 3, color: 'var(--text-1)' }}>
         {highlightText(title, hlRe)}
-      </div>
-      <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8 }}>
-        {highlightText(menuName, hlRe)}
       </div>
       {testContent && (
         <div

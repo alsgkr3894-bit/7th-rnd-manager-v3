@@ -7,7 +7,9 @@ describe('note list structure', () => {
     const filterSource = readFileSync(resolve('app/note/_NoteFilterControls.jsx'), 'utf8');
     const statsSource = readFileSync(resolve('app/note/_NoteStatsSummary.jsx'), 'utf8');
     const cardGridSource = readFileSync(resolve('app/note/_NoteCardGrid.jsx'), 'utf8');
+    const cardSource = readFileSync(resolve('app/note/_NoteCard.jsx'), 'utf8');
     const tableViewSource = readFileSync(resolve('app/note/_NoteTableView.jsx'), 'utf8');
+    const tableRowSource = readFileSync(resolve('app/note/_NoteTableRow.jsx'), 'utf8');
     const bodySource = readFileSync(resolve('app/note/_NoteListBody.jsx'), 'utf8');
     const bodyPropsSource = readFileSync(resolve('app/note/noteListBodyProps.js'), 'utf8');
     const bodyOverlayPropsSource = readFileSync(
@@ -100,7 +102,8 @@ describe('note list structure', () => {
     expect(source).not.toContain('copyText');
     expect(source).not.toContain('보고용 요약');
     expect(filterSource).toContain('const SORT_OPTIONS = [');
-    expect(filterSource).toContain('제목, 메뉴명, 테스트 내용, 태그 검색');
+    expect(filterSource).toContain('제목, 테스트 내용, 태그 검색');
+    expect(filterSource).toContain("label: '제목순'");
     expect(statsSource).toContain('최근 6개월');
     expect(bodySource).toContain('export function NoteListBody');
     expect(bodySource).toContain('<NoteContextMenu');
@@ -133,8 +136,13 @@ describe('note list structure', () => {
     expect(contextMenuStateSource).toContain('closeContextMenu');
     expect(cardGridSource).toContain('export function NoteCardGrid');
     expect(cardGridSource).toContain('className="stagger note-card-wrap"');
+    expect(cardSource).toContain('noteDisplayTitle(note)');
+    expect(cardSource).not.toContain('highlightText(menuName');
     expect(tableViewSource).toContain('export function NoteTableView');
     expect(tableViewSource).toContain('className="data-table stagger-rows"');
+    expect(tableViewSource).not.toContain('메뉴명');
+    expect(tableRowSource).toContain('noteDisplayTitle(note)');
+    expect(tableRowSource).not.toContain('{note.menuName}</td>');
     expect(headerSource).toContain('export function NoteListHeader');
     expect(headerSource).toContain('<PageHeader');
     expect(headerSource).toContain('<NoteBatchToolbar');

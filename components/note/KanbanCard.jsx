@@ -3,12 +3,12 @@ import React from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { STATUSES, STATUS_COLORS, STATUS_BORDER } from '@/lib/note';
+import { noteDisplayTitle } from '@/lib/note/display';
 import { formatShortDate } from '@/lib/note/utils';
 import { copyText } from '@/lib/ui/clipboard';
 
 function buildNoteCopyText(note) {
-  const lines = [`[${note.status}] ${note.title || '제목 없음'}`];
-  if (note.menuName) lines.push(`메뉴: ${note.menuName}`);
+  const lines = [`[${note.status}] ${noteDisplayTitle(note)}`];
   if (note.testDate) lines.push(`테스트일: ${note.testDate}`);
   if (note.reportSummary) lines.push(`결과: ${note.reportSummary}`);
   if (note.nextAction) lines.push(`다음 액션: ${note.nextAction}`);
@@ -40,6 +40,7 @@ export const KanbanCard = React.memo(function KanbanCard({
 }) {
   const sc = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
   const sb = STATUS_BORDER[note.status] || 'var(--border)';
+  const title = noteDisplayTitle(note);
 
   function handleKeyDown(e) {
     if (!canEdit && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
@@ -64,7 +65,7 @@ export const KanbanCard = React.memo(function KanbanCard({
       draggable={draggable}
       tabIndex={0}
       role="article"
-      aria-label={note.title}
+      aria-label={title}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onKeyDown={handleKeyDown}
@@ -92,12 +93,13 @@ export const KanbanCard = React.memo(function KanbanCard({
           overflow: 'hidden',
         }}
       >
-        {note.title}
+        {title}
       </div>
-      <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8 }}>
-        {note.menuName}
-        {note.testDate ? <span> · {formatShortDate(note.testDate)}</span> : ''}
-      </div>
+      {note.testDate && (
+        <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8 }}>
+          {formatShortDate(note.testDate)}
+        </div>
+      )}
       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
         {/* 데스크탑: ← → 버튼 */}
         <button

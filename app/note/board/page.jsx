@@ -63,7 +63,7 @@ export default function Page() {
       />
 
       <div style={{ marginTop: 16, maxWidth: 420 }} className="no-print">
-        <SearchBox value={search} onChange={setSearch} placeholder="제목·메뉴명·내용·태그 검색" />
+        <SearchBox value={search} onChange={setSearch} placeholder="제목·내용·태그 검색" />
       </div>
 
       {loading && (

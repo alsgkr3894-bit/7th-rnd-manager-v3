@@ -1,5 +1,6 @@
 'use client';
 import { STATUS_BORDER, STATUS_COLORS } from '@/lib/note/constants';
+import { noteDisplayTitle } from '@/lib/note/display';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 
 export function DayNoteSection({ notes, canEdit = false, onAdd, onOpen }) {
@@ -71,8 +72,7 @@ function NoteItem({ note, onOpen }) {
   const noteId = asDisplayText(note.id);
   const status = asDisplayText(note.status, '아이디어');
   const noteType = asDisplayText(note.noteType);
-  const title = asDisplayText(note.title, '(제목 없음)');
-  const menuName = asDisplayText(note.menuName);
+  const title = noteDisplayTitle(note, '(제목 없음)');
   const testContent = asDisplayText(note.testContent);
   const sc = STATUS_COLORS[status] || STATUS_COLORS['아이디어'];
   const sb = STATUS_BORDER[status] || 'var(--border)';
@@ -116,7 +116,6 @@ function NoteItem({ note, onOpen }) {
       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)', lineHeight: 1.35 }}>
         {title}
       </div>
-      {menuName && <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{menuName}</div>}
       {testContent && (
         <div
           style={{

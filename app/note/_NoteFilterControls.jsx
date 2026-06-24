@@ -6,7 +6,7 @@ import { NOTE_BRANDS } from '@/lib/note/constants';
 const SORT_OPTIONS = [
   { key: 'createdAt', label: '최신순' },
   { key: 'testDate', label: '날짜순' },
-  { key: 'menuName', label: '메뉴명순' },
+  { key: 'menuName', label: '제목순' },
 ];
 
 export function NoteFilterControls({
@@ -115,7 +115,7 @@ export function NoteFilterControls({
         <div className="filter-search">
           <Icon.search style={{ width: 15, height: 15, color: 'var(--text-3)' }} />
           <input
-            placeholder="제목, 메뉴명, 테스트 내용, 태그 검색"
+            placeholder="제목, 테스트 내용, 태그 검색"
             value={search}
             onChange={event => onSearchChange(event.target.value)}
             onKeyDown={event => {

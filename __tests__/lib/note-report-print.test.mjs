@@ -59,8 +59,9 @@ describe('menu development note PDF report', () => {
     expect(html).toContain('메뉴개발노트 전체 보고서_20260623');
     expect(html).toContain('다운로드일 2026-06-23');
     expect(html).toContain('현재 필터 결과');
-    expect(html).toContain('버섯 &amp; 치즈 피자');
+    expect(html).toContain('제목 수');
     expect(html).toContain('치즈 피자 테스트 &lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(html).not.toContain('버섯 &amp; 치즈 피자');
     expect(html).not.toContain('<script>alert(1)</script>');
     expect(html).toContain('임시 원가 계산');
     expect(html).toContain('원가 1,000원');

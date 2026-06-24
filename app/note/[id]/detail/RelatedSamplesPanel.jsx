@@ -9,7 +9,7 @@ export function RelatedSamplesPanel({ samples, menuName, onOpenSample }) {
       <div className="card-title" style={{ marginBottom: 12 }}>
         관련 샘플기록
         <span style={{ fontWeight: 400, fontSize: 12, color: 'var(--text-3)', marginLeft: 8 }}>
-          메뉴명 "{menuName}" 일치
+          제목 "{menuName}" 기준
         </span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

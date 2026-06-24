@@ -1,6 +1,7 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { STATUS_COLORS } from '@/lib/note/constants';
+import { noteDisplayTitle } from '@/lib/note/display';
 
 function TwoColFields({ pairs }) {
   const filled = pairs.filter(([, v]) => v);
@@ -39,6 +40,7 @@ function TwoColFields({ pairs }) {
 
 export function WebJournalCard({ note, index, onEdit }) {
   const statusStyle = STATUS_COLORS[note.status] || {};
+  const title = noteDisplayTitle(note, '(제목 없음)');
 
   return (
     <div className="card" style={{ overflow: 'hidden', padding: 0 }}>
@@ -64,7 +66,7 @@ export function WebJournalCard({ note, index, onEdit }) {
           No.{index}
         </span>
         <span style={{ fontWeight: 700, fontSize: 15, flex: 1 }}>
-          {note.title || '(제목 없음)'}
+          {title}
         </span>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {note.noteType && (
@@ -101,7 +103,7 @@ export function WebJournalCard({ note, index, onEdit }) {
       </div>
 
       {/* 메타 */}
-      {(note.menuName || note.category) && (
+      {note.category && (
         <div
           style={{
             padding: '6px 16px',
@@ -112,11 +114,6 @@ export function WebJournalCard({ note, index, onEdit }) {
             borderBottom: '1px solid var(--divider)',
           }}
         >
-          {note.menuName && (
-            <span>
-              <b>메뉴:</b> {note.menuName}
-            </span>
-          )}
           {note.category && (
             <span>
               <b>구분:</b> {note.category}

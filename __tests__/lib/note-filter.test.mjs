@@ -107,9 +107,8 @@ describe('filterSortNotes', () => {
     expect(filterSortNotes(NOTES, {}).map(n => n.id)).toEqual([2, 1, 3]);
   });
 
-  test('menuName 가나다순 정렬', () => {
-    // 감자튀김(ㄱ) < 트러플(ㅌ) < 한우쉬림프(ㅎ)
-    expect(filterSortNotes(NOTES, { sortBy: 'menuName' }).map(n => n.id)).toEqual([3, 2, 1]);
+  test('제목 가나다순 정렬', () => {
+    expect(filterSortNotes(NOTES, { sortBy: 'menuName' }).map(n => n.id)).toEqual([3, 1, 2]);
   });
 
   test('testDate 내림차순 정렬', () => {
@@ -163,7 +162,7 @@ describe('filterSortNotes', () => {
     expect(filterSortNotes(notes, { search: {}, statusFilter: '보고예정' }).map(n => n.id)).toEqual(
       [2, 1]
     );
-    expect(filterSortNotes(notes, { sortBy: 'menuName' }).map(n => n.id)).toEqual([1, 2]);
+    expect(filterSortNotes(notes, { sortBy: 'menuName' }).map(n => n.id)).toEqual([2, 1]);
     expect(filterSortNotes(notes, { sortBy: 'testDate' }).map(n => n.id)).toEqual([2, 1]);
     expect(filterSortNotes(notes, { brandFilter: 'main' }).map(n => n.id)).toEqual([2, 1]);
   });

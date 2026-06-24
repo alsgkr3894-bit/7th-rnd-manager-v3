@@ -1,5 +1,6 @@
 import { withDownloadDateSuffix } from '@/lib/download';
 import { pad } from '@/lib/format';
+import { noteDisplayTitle } from '@/lib/note/display';
 import { buildAutoPrintScript, openPrintWindow } from '@/lib/print/window-print';
 
 export function escapeCalendarPrintValue(value) {
@@ -33,7 +34,7 @@ function buildCalendarScheduleRow(schedule) {
 
 function buildCalendarNoteRow(note) {
   return `<tr><td class="type note">노트</td><td>—</td><td>${escapeCalendarPrintValue(
-    note.menuName || note.title || ''
+    noteDisplayTitle(note, '')
   )}</td><td>${escapeCalendarPrintValue(note.status || '')}</td><td>${escapeCalendarPrintValue(
     note.result || note.summary || ''
   )}</td></tr>`;
