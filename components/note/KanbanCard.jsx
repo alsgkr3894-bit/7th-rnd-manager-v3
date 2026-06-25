@@ -38,7 +38,7 @@ export const KanbanCard = React.memo(function KanbanCard({
   onDragStart,
   onDragEnd,
 }) {
-  const sc = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
+  const sc = STATUS_COLORS[note.status] || STATUS_COLORS['테스트'];
   const sb = STATUS_BORDER[note.status] || 'var(--border)';
   const title = noteDisplayTitle(note);
 

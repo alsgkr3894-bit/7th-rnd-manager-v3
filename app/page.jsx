@@ -138,7 +138,7 @@ export default function HomePage() {
         title: text.slice(0, 30),
         testContent: text,
         menuName: '',
-        status: '아이디어',
+        status: '테스트',
         category: '기타',
       });
       if (!mountedRef.current) return;

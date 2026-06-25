@@ -171,7 +171,7 @@ export default function Page() {
       testDate: date,
       category: '기타',
       noteType: JOURNAL_NOTE_TYPE,
-      status: journalEntry?.status || NOTE_STATUS.IDEA,
+      status: journalEntry?.status || NOTE_STATUS.TEST,
       testContent: journalForm.work.trim(),
       materials: journalForm.schedule.trim(),
       tasteEval: journalForm.tasting.trim(),

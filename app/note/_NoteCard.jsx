@@ -56,7 +56,7 @@ export function NoteCard({
   const cardClick = typeof onClick === 'function' ? onClick : noop;
   const pin = typeof onPin === 'function' ? onPin : noop;
   const tagClick = typeof onTagClick === 'function' ? onTagClick : noop;
-  const status = note.status || '아이디어';
+  const status = note.status || '테스트';
   const category = asText(note.category) || '—';
   const noteType = asText(note.noteType) || '—';
   const testDate = typeof note.testDate === 'string' ? note.testDate : '';
@@ -75,7 +75,7 @@ export function NoteCard({
   ]
     .filter(([, value]) => value)
     .slice(0, 2);
-  const sc = STATUS_COLORS[status] || STATUS_COLORS['아이디어'];
+  const sc = STATUS_COLORS[status] || STATUS_COLORS['테스트'];
   const sb = STATUS_BORDER[status] || 'var(--border)';
   return (
     <div

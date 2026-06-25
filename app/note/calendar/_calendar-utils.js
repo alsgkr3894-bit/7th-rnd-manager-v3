@@ -3,6 +3,7 @@ import { pad } from '@/lib/format';
 export const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 export const NOTE_DOT = {
+  테스트: '#4338CA',
   아이디어: '#9CA3AF',
   샘플테스트: '#D97706',
   메뉴테스트: '#4338CA',

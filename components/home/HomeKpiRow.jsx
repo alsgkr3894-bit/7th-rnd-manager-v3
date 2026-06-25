@@ -149,11 +149,11 @@ export const HomeKpiRow = memo(function HomeKpiRow({
           <div className="trend">
             {safeReportingCount > 0 ? (
               <>
-                <span style={{ color: 'var(--accent-text)' }}>+{safeReportingCount} 보고예정</span>
+                <span style={{ color: 'var(--accent-text)' }}>+{safeReportingCount} 출시예정</span>
                 <span style={{ color: 'var(--text-4)' }}>이번 주</span>
               </>
             ) : (
-              <span style={{ color: 'var(--text-4)' }}>아직 보고예정 없음</span>
+              <span style={{ color: 'var(--text-4)' }}>아직 출시예정 없음</span>
             )}
           </div>
         </div>

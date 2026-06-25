@@ -21,7 +21,7 @@ import {
 } from '@/lib/stats';
 import { getIssues } from '@/lib/sales';
 import { getIngredientHealthSummary } from '@/lib/ingredient';
-import { getAllNotesCached } from '@/lib/note';
+import { getAllNotesCached, normalizeNoteStatus } from '@/lib/note';
 import { getAllSamples } from '@/lib/sample';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { getUploadFreshness } from '@/lib/stats/upload-status';
@@ -99,7 +99,7 @@ export function useHomeDashboardData({ chartTab }) {
 
         if (an) {
           setAllNotes(an);
-          setReportingNotes(an.filter(x => x.status === '보고예정'));
+          setReportingNotes(an.filter(x => normalizeNoteStatus(x.status) === '출시예정'));
         }
         if (sm) setRecentSamples(sm);
         if (ca) setCostAlertData(ca);

@@ -34,7 +34,7 @@ export function NoteListStates({
           <Icon.note style={{ width: 32, height: 32 }} />
         </div>
         <div className="empty-title">아직 노트가 없어요</div>
-        <div className="empty-sub">메뉴 테스트 결과나 아이디어를 기록해보세요.</div>
+        <div className="empty-sub">메뉴 테스트 결과나 메뉴개발 내용을 기록해보세요.</div>
         <button
           className="btn primary"
           style={{ marginTop: 8 }}

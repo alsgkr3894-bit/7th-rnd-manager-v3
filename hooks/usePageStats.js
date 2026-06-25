@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
+import { normalizeNoteStatus } from '@/lib/note/constants';
 
 export function countReportingNotes(notes) {
   if (!Array.isArray(notes)) return 0;
-  return notes.filter(n => n && typeof n === 'object' && n.status === '보고예정').length;
+  return notes.filter(
+    n => n && typeof n === 'object' && normalizeNoteStatus(n.status) === '출시예정'
+  ).length;
 }
 
 /**

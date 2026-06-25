@@ -36,7 +36,7 @@ export function NoteStatsSummary({ stats, counts }) {
         </div>
       </div>
       <div className="stat-card">
-        <div className="stat-label">보고예정</div>
+        <div className="stat-label">출시예정</div>
         <div className="stat-value" style={{ color: 'var(--color-reporting)' }}>
           <StatValue value={safeCounts[NOTE_STATUS.REPORTING]} unit="개" />
         </div>

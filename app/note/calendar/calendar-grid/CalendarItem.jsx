@@ -94,7 +94,7 @@ function SampleCalendarItem({ item, onOpenSample }) {
 }
 
 function NoteCalendarItem({ item, past, onOpenNote }) {
-  const statusColor = STATUS_COLORS[item.status] || STATUS_COLORS['아이디어'];
+  const statusColor = STATUS_COLORS[item.status] || STATUS_COLORS['테스트'];
   const statusBorder = STATUS_BORDER[item.status] || 'var(--border)';
   const label = noteDisplayTitle(item);
 

@@ -101,13 +101,13 @@ export function RankCard({ title, sub, items, emptyTitle, accent, router }) {
 export function ReportingNotesWidget({ notes, router }) {
   const safeNotes = asObjectArray(notes);
   if (safeNotes.length === 0) return null;
-  const sc = STATUS_COLORS['보고예정'];
-  const sb = STATUS_BORDER['보고예정'];
+  const sc = STATUS_COLORS['출시예정'];
+  const sb = STATUS_BORDER['출시예정'];
   return (
     <div className="card">
       <div className="card-header">
         <div>
-          <div className="card-title">보고예정 노트</div>
+          <div className="card-title">출시예정 노트</div>
           <div className="card-sub">{safeNotes.length}개 대기 중</div>
         </div>
         <button className="link accent" onClick={() => router?.push?.('/note')}>
@@ -164,7 +164,7 @@ export function ReportingNotesWidget({ notes, router }) {
                   color: sc.color,
                 }}
               >
-                보고예정
+                출시예정
               </span>
             </div>
           );

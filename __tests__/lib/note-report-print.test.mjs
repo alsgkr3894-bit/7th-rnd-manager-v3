@@ -11,8 +11,8 @@ describe('menu development note PDF report', () => {
         title: '치즈 피자 테스트 <script>alert(1)</script>',
         menuName: '버섯 & 치즈 피자',
         category: '피자',
-        noteType: '메뉴테스트',
-        status: '보고예정',
+        noteType: '메뉴개발',
+        status: '출시예정',
         testDate: '2026-06-22',
         testContent: '도우 180g\n치즈 90g',
         materials: '치즈, 버섯',
@@ -34,7 +34,7 @@ describe('menu development note PDF report', () => {
         title: '소스 테스트',
         menuName: '소스',
         category: '소스',
-        noteType: '개선',
+        noteType: '메뉴개선',
         status: '보류',
         testDate: '2026-06-20',
       },
@@ -47,7 +47,7 @@ describe('menu development note PDF report', () => {
       photoCount: 1,
       tempCostCount: 1,
     });
-    expect(summary.statusCounts).toContainEqual(['보고예정', 1]);
+    expect(summary.statusCounts).toContainEqual(['출시예정', 1]);
     expect(summary.categoryCounts).toContainEqual(['피자', 1]);
 
     const html = buildMenuDevelopmentReportHtml(notes, {

@@ -31,7 +31,7 @@ describe('note evaluation helpers', () => {
         title: '치즈 테스트',
         brand: 'main',
         category: '피자',
-        noteType: '메뉴테스트',
+        noteType: '메뉴개발',
         testRound: '2차',
         testContent: '도우 변경',
         materials: '치즈 100g',
@@ -49,7 +49,7 @@ describe('note evaluation helpers', () => {
         appearanceRating: '2',
         photos: [{ data: 'old-photo' }],
       },
-      { testDate: '2026-06-24', status: '아이디어', photos: [{ data: 'current-photo' }] }
+      { testDate: '2026-06-24', status: '테스트', photos: [{ data: 'current-photo' }] }
     );
 
     expect(draft).toMatchObject({

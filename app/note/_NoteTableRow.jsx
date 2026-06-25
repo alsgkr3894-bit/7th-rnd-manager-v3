@@ -14,7 +14,7 @@ export const NoteTableRow = React.memo(function NoteTableRow({
   onStatusChange,
   canEdit = false,
 }) {
-  const sc = STATUS_COLORS[note.status] || STATUS_COLORS['아이디어'];
+  const sc = STATUS_COLORS[note.status] || STATUS_COLORS['테스트'];
   const title = noteDisplayTitle(note);
 
   return (

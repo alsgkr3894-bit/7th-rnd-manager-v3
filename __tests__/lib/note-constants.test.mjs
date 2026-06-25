@@ -8,7 +8,7 @@ import {
 
 describe('NOTE_STATUS', () => {
   test('필수 상태 키 존재', () => {
-    expect(NOTE_STATUS.IDEA).toBe('아이디어');
+    expect(NOTE_STATUS.TEST).toBe('테스트');
     expect(NOTE_STATUS.TESTING).toBe('테스트중');
     expect(NOTE_STATUS.REPORTING).toBe('보고예정');
   });
@@ -36,18 +36,21 @@ describe('CATEGORIES', () => {
 });
 
 describe('NOTE_TYPES', () => {
-  test('연구일지 전용 유형을 포함한다', () => {
+  test('노트 작성 유형은 새 메뉴개발 체계만 노출한다', () => {
     expect(JOURNAL_NOTE_TYPE).toBe('연구일지');
-    expect(NOTE_TYPES).toContain(JOURNAL_NOTE_TYPE);
-  });
-
-  test('노트 작성 유형에서 샘플테스트를 노출하지 않는다', () => {
+    expect(NOTE_TYPES).toEqual(['메뉴개발', '메뉴개선', '샘플', JOURNAL_NOTE_TYPE]);
+    expect(NOTE_TYPES).not.toContain('아이디어');
+    expect(NOTE_TYPES).not.toContain('메뉴테스트');
     expect(NOTE_TYPES).not.toContain('샘플테스트');
   });
 });
 
 describe('STATUSES', () => {
-  test('노트 작성 상태에서 샘플테스트와 테스트중을 노출하지 않는다', () => {
+  test('노트 작성 상태는 운영 상태만 노출한다', () => {
+    expect(STATUSES).toEqual(['테스트', '재테스트', '출시예정', '보류', '출시', '폐기']);
+    expect(STATUSES).not.toContain('아이디어');
+    expect(STATUSES).not.toContain('메뉴테스트');
+    expect(STATUSES).not.toContain('보고예정');
     expect(STATUSES).not.toContain('샘플테스트');
     expect(STATUSES).not.toContain('테스트중');
   });

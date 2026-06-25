@@ -107,7 +107,7 @@ export default function Page() {
           }}
         >
           {groupedNotes.map(({ status, notes: colNotes }, colIdx) => {
-            const sc = STATUS_COLORS[status] || STATUS_COLORS['아이디어'];
+            const sc = STATUS_COLORS[status] || STATUS_COLORS['테스트'];
             const sb = STATUS_BORDER[status] || 'var(--border)';
             const isOver = dragOverStatus === status;
             return (

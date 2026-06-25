@@ -165,7 +165,7 @@ describe('note list structure', () => {
     expect(headerSource).toContain('<NoteBatchToolbar');
     expect(headerSource).toContain('전체 보고서 PDF');
     expect(headerSource).toContain('disabled={reportExportCount === 0}');
-    expect(headerSource).toContain('보고예정 일괄복사');
+    expect(headerSource).toContain('출시예정 일괄복사');
     expect(headerSource).toContain('체크리스트 목록');
     expect(detailPageSource).toContain("import { noteDisplayTitle } from '@/lib/note/display'");
     expect(detailPageSource).toContain("sub={noteDisplayTitle(form, '')}");
@@ -216,7 +216,7 @@ describe('note list structure', () => {
     expect(contentPropHeaderBuildersSource).toContain('export function buildNoteHeaderProps');
     expect(contentPropHeaderBuildersSource).toContain('export function buildNoteStatsProps');
     expect(contentPropHeaderBuildersSource).toContain('export function buildNoteStatesProps');
-    expect(contentPropHeaderBuildersSource).toContain('NOTE_STATUS.REPORTING');
+    expect(contentPropHeaderBuildersSource).toContain('NOTE_STATUS.RELEASE_READY');
     expect(contentPropHeaderBuildersSource).toContain('reportExportCount');
     expect(contentPropHeaderBuildersSource).toContain('onExportReportPdf: handleReportPdf');
     expect(contentPropHeaderBuildersSource).toContain("router.push('/note/calendar')");
@@ -246,7 +246,7 @@ describe('note list structure', () => {
     expect(listStateSource).toContain('function openChecklistList()');
     expect(listStateSource).toContain("handleSearchChange('체크리스트')");
     expect(reportingCopySource).toContain('export function useNoteReportingCopy');
-    expect(reportingCopySource).toContain('NOTE_STATUS.REPORTING');
+    expect(reportingCopySource).toContain('NOTE_STATUS.RELEASE_READY');
     expect(reportingCopySource).toContain('copyText(text)');
     expect(reportingCopySource).toContain('보고용 요약');
   });

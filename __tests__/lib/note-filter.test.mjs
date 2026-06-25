@@ -73,10 +73,10 @@ describe('countNotesByStatus', () => {
   test('상태별 개수 + all, 미등장 상태는 0', () => {
     const c = countNotesByStatus(NOTES);
     expect(c.all).toBe(3);
-    expect(c['아이디어']).toBe(1);
+    expect(c['테스트']).toBe(1);
     expect(c['진행중']).toBe(1);
     expect(c['완료']).toBe(1);
-    expect(c['보고예정']).toBe(0); // 미등장 → 0으로 채움
+    expect(c['출시예정']).toBe(0); // 미등장 → 0으로 채움
   });
 
   test('비배열 입력과 깨진 상태값을 안전하게 처리한다', () => {
@@ -160,7 +160,7 @@ describe('filterSortNotes', () => {
       },
     ];
 
-    expect(filterSortNotes(notes, { search: {}, statusFilter: '보고예정' }).map(n => n.id)).toEqual(
+    expect(filterSortNotes(notes, { search: {}, statusFilter: '출시예정' }).map(n => n.id)).toEqual(
       [2, 1]
     );
     expect(filterSortNotes(notes, { sortBy: 'menuName' }).map(n => n.id)).toEqual([2, 1]);
@@ -172,7 +172,7 @@ describe('filterSortNotes', () => {
 describe('checklist note helpers', () => {
   test('체크리스트와 연구일지 노트를 식별하고 칸반 목록에서 제외한다', () => {
     const notes = [
-      { id: 1, title: '일반 노트', noteType: '메뉴테스트' },
+      { id: 1, title: '일반 노트', noteType: '메뉴개발' },
       { id: 2, title: '오늘 한 일', noteType: CHECKLIST_NOTE_TYPE },
       { id: 3, title: '2026-06-24 연구일지', noteType: '연구일지' },
     ];

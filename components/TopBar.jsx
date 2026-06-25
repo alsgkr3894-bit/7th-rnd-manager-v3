@@ -93,10 +93,10 @@ export default function TopBar({
       ? [
           {
             kind: 'note',
-            title: `보고예정 노트 ${reportingCount}건`,
+            title: `출시예정 노트 ${reportingCount}건`,
             time: '미보고',
-            desc: '메뉴개발노트 → 보고예정 탭에서 확인하세요',
-            href: '/note?status=보고예정',
+            desc: '메뉴개발노트 → 출시예정 탭에서 확인하세요',
+            href: '/note?status=출시예정',
           },
         ]
       : []),

@@ -70,11 +70,11 @@ export function DayNoteSection({ notes, canEdit = false, onAdd, onOpen }) {
 
 function NoteItem({ note, onOpen }) {
   const noteId = asDisplayText(note.id);
-  const status = asDisplayText(note.status, '아이디어');
+  const status = asDisplayText(note.status, '테스트');
   const noteType = asDisplayText(note.noteType);
   const title = noteDisplayTitle(note, '(제목 없음)');
   const testContent = asDisplayText(note.testContent);
-  const sc = STATUS_COLORS[status] || STATUS_COLORS['아이디어'];
+  const sc = STATUS_COLORS[status] || STATUS_COLORS['테스트'];
   const sb = STATUS_BORDER[status] || 'var(--border)';
 
   return (

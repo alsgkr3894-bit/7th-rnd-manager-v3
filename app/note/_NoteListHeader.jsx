@@ -64,7 +64,7 @@ export function NoteListHeader({
                     borderColor: 'var(--color-reporting-dim, #6B3FCB40)',
                   }}
                 >
-                  <Icon.doc style={{ width: 13, height: 13 }} /> 보고예정 일괄복사
+                  <Icon.doc style={{ width: 13, height: 13 }} /> 출시예정 일괄복사
                 </button>
               )}
               <button className="btn" onClick={onEnterBatchMode} disabled={!canEdit}>

@@ -1,14 +1,14 @@
 'use client';
 import { useCallback } from 'react';
 import { showToast } from '@/components/Toast';
-import { NOTE_STATUS } from '@/lib/note/constants';
+import { NOTE_STATUS, normalizeNoteStatus } from '@/lib/note/constants';
 import { copyText } from '@/lib/ui/clipboard';
 
 export function useNoteReportingCopy(notes) {
   return useCallback(async () => {
-    const targets = notes.filter(n => n.status === NOTE_STATUS.REPORTING);
+    const targets = notes.filter(n => normalizeNoteStatus(n.status) === NOTE_STATUS.RELEASE_READY);
     if (!targets.length) {
-      showToast('보고예정 노트가 없어요', 'warn');
+      showToast('출시예정 노트가 없어요', 'warn');
       return;
     }
 
@@ -25,7 +25,7 @@ export function useNoteReportingCopy(notes) {
 
     try {
       if (!(await copyText(text))) throw new Error('CLIPBOARD_UNAVAILABLE');
-      showToast(`보고예정 ${targets.length}개 복사 완료`, 'ok');
+      showToast(`출시예정 ${targets.length}개 복사 완료`, 'ok');
     } catch {
       showToast('복사 실패', 'warn');
     }

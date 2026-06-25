@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { tryLS, setLS } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
 import { buildNoteSearchIndex, countNotesByStatus, filterSortNotes } from '@/lib/note/filter';
-import { NOTE_BRANDS, STATUSES } from '@/lib/note/constants';
+import { NOTE_BRANDS, STATUSES, normalizeNoteStatus } from '@/lib/note/constants';
 import { getActiveBrandId } from '@/lib/active-brand';
 
 const NOTE_STATUS_KEYS = new Set(['all', ...STATUSES]);
@@ -25,7 +25,10 @@ function pickAllowed(value, allowed, fallback) {
 }
 
 export function normalizeNoteStatusFilter(value) {
-  return pickAllowed(value, NOTE_STATUS_KEYS, 'all');
+  const text = normalizeNoteFilterText(value).trim();
+  if (text === 'all') return 'all';
+  if (!text) return 'all';
+  return pickAllowed(normalizeNoteStatus(text), NOTE_STATUS_KEYS, 'all');
 }
 
 export function normalizeNoteSortKey(value) {

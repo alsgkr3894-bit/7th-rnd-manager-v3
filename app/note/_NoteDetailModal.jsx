@@ -18,13 +18,13 @@ export function NoteDetailModal({ note = {}, canEdit = false, onClose, onEdit })
   const close = typeof onClose === 'function' ? onClose : noop;
   const edit = typeof onEdit === 'function' ? onEdit : noop;
   const { containerRef, isClosing, close: handleClose } = useModalShell(close, { closeMs: 175 });
-  const status = note.status || '아이디어';
+  const status = note.status || '테스트';
   const category = asText(note.category) || '—';
   const noteType = asText(note.noteType) || '—';
   const testDate = typeof note.testDate === 'string' ? note.testDate : '';
   const title = noteDisplayTitle(note);
   const testContent = asText(note.testContent);
-  const sc = STATUS_COLORS[status] || STATUS_COLORS['아이디어'];
+  const sc = STATUS_COLORS[status] || STATUS_COLORS['테스트'];
   const sb = STATUS_BORDER[status] || 'var(--border)';
   const tags = parseTagList(note.tags);
 

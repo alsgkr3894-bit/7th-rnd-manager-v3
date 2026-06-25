@@ -2,7 +2,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { initDB } from '@/lib/db';
 import { TempCostCalculator } from '@/components/note/TempCostCalculator';
-import { CATEGORIES, NOTE_TYPES, STATUSES, getAllNotesCached } from '@/lib/note';
+import {
+  CATEGORIES,
+  NOTE_TYPES,
+  STATUSES,
+  getAllNotesCached,
+  normalizeNoteStatus,
+  normalizeNoteType,
+} from '@/lib/note';
 import { generateNoteReportText } from '@/lib/note/report';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { noop } from '@/lib/ui/prop-guards';
@@ -43,7 +50,13 @@ export const INIT = {
 
 export function normalizeNoteFormForSave(form) {
   const title = String(form?.title || form?.menuName || '').trim();
-  return { ...form, title, menuName: title };
+  return {
+    ...form,
+    title,
+    menuName: title,
+    noteType: normalizeNoteType(form?.noteType),
+    status: normalizeNoteStatus(form?.status),
+  };
 }
 
 export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
