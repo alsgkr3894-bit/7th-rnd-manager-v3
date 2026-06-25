@@ -1,6 +1,5 @@
 'use client';
 import { NoteFilterControls } from './_NoteFilterControls';
-import { NoteStatsSummary } from './_NoteStatsSummary';
 import { NotePresetBar } from './_NotePresetBar';
 import { NoteListHeader } from './_NoteListHeader';
 import { NoteListBody } from './_NoteListBody';
@@ -12,7 +11,6 @@ export function NoteContent() {
   const {
     dialogsProps,
     headerProps,
-    statsProps,
     filterProps,
     presetProps,
     statesProps,
@@ -23,8 +21,6 @@ export function NoteContent() {
     <main className="main page-enter">
       <NotePageDialogs {...dialogsProps} />
       <NoteListHeader {...headerProps} />
-
-      <NoteStatsSummary {...statsProps} />
 
       <NoteFilterControls {...filterProps} />
 

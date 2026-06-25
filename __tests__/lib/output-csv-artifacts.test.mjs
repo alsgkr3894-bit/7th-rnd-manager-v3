@@ -127,20 +127,20 @@ describe('출력 artifact 실행 검증', () => {
       '카테고리',
       '메뉴명',
       'L 판매가',
-      'R 판매가',
       'L 원가',
-      'R 원가',
       'L 원가율',
+      'R 판매가',
+      'R 원가',
       'R 원가율',
     ]);
     expect(rows[mainHeaderIndex + 1]).toEqual([
       '피자',
       '페퍼로니',
       10000,
-      9000,
       2500,
-      1800,
       '25.0%',
+      9000,
+      1800,
       '20.0%',
     ]);
     const pizzaRows = rowsOf(workbook, '피자');
@@ -150,20 +150,20 @@ describe('출력 artifact 실행 검증', () => {
       '카테고리',
       '메뉴명',
       'L 판매가',
-      'R 판매가',
       'L 원가',
-      'R 원가',
       'L 원가율',
+      'R 판매가',
+      'R 원가',
       'R 원가율',
     ]);
     expect(pizzaRows[pizzaHeaderIndex + 1]).toEqual([
       '피자',
       '페퍼로니',
       10000,
-      9000,
       2500,
-      1800,
       '25.0%',
+      9000,
+      1800,
       '20.0%',
     ]);
     const sideRows = rowsOf(workbook, '사이드');

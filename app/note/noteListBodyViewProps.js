@@ -21,6 +21,7 @@ export function buildNoteCardGridProps({
 }) {
   return {
     visible,
+    filtered,
     filteredCount: filtered.length,
     canEdit,
     batchMode,

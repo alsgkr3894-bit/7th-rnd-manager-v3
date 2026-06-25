@@ -5,6 +5,7 @@ import { noteDisplayTitle } from '@/lib/note/display';
 import { clampNoteRating, formatTestRound, NOTE_EVALUATION_FIELDS } from '@/lib/note/evaluation';
 import { parseTagList, formatFullDate } from '@/lib/note/utils';
 import { noop } from '@/lib/ui/prop-guards';
+import { collectRecentNotePhotos } from './noteIdeaGroups';
 
 /** 검색어 하이라이트 적용 (React 요소 배열 반환) */
 export function highlightText(text, regex) {
@@ -28,7 +29,7 @@ function asText(value) {
 }
 
 function firstPhoto(photos) {
-  return (Array.isArray(photos) ? photos : []).find(photo => photo?.data) || null;
+  return collectRecentNotePhotos([{ photos }], 1)[0] || null;
 }
 
 export function NoteCard({

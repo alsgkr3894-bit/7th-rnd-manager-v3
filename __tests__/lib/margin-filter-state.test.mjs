@@ -88,7 +88,8 @@ describe('margin 훅 분리 구조', () => {
     expect(rowSrc).toContain('function getCostEntry');
     expect(rowSrc).toContain('{hasCost ? (');
     expect(rowSrc).not.toContain('{cost > 0 ? (');
-    expect(exportSrc).toContain('return hasCost ? Math.round(cost) :');
+    expect(exportSrc).toContain("const costValue = hasCost ? Math.round(cost) : ''");
+    expect(exportSrc).toContain("return [sellingPrice, costValue, '']");
     expect(exportSrc).not.toContain('return c > 0 ? Math.round(c) :');
   });
 

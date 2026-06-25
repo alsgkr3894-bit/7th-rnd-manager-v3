@@ -25,6 +25,9 @@ import { useHomeDashboardData } from '@/hooks/useHomeDashboardData';
 import { ActionCenterWidget } from '@/components/home/ActionCenterWidget';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 
+const INITIAL_TODAY_LABEL = '오늘';
+const INITIAL_GREETING = '안녕하세요';
+
 /** 시간대별 인사말 */
 function greetingByHour() {
   const h = new Date().getHours();
@@ -32,6 +35,15 @@ function greetingByHour() {
   if (h < 12) return '좋은 아침이에요';
   if (h < 18) return '좋은 오후예요';
   return '좋은 저녁이에요';
+}
+
+function todayLabel() {
+  return new Date().toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  });
 }
 
 export default function HomePage() {
@@ -48,6 +60,8 @@ export default function HomePage() {
   const [quickSaved, setQuickSaved] = useState(false);
   const [hasRecentVisits, setHasRecentVisits] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [todayStr, setTodayStr] = useState(INITIAL_TODAY_LABEL);
+  const [greeting, setGreeting] = useState(INITIAL_GREETING);
   const quickResetTimer = useRef(null);
   const [widgetConfigOpen, setWidgetConfigOpen] = useState(false);
 
@@ -103,6 +117,11 @@ export default function HomePage() {
 
   const salesCount = useCountUp(salesKpi?.current ?? 0, { duration: 1400, delay: 250 });
   const noteCount = useCountUp(noteKpi?.total ?? 0, { duration: 900, delay: 460 });
+
+  useEffect(() => {
+    setTodayStr(todayLabel());
+    setGreeting(greetingByHour());
+  }, []);
 
   useEffect(() => {
     setHasRecentVisits(getRecentPaletteItems().length > 0);
@@ -178,13 +197,6 @@ export default function HomePage() {
         ? `${salesKpi.year}년 ${salesKpi.month}월${isMain ? ' · 피자 카테고리' : ''}`
         : '집계 중';
 
-  const todayStr = new Date().toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    weekday: 'short',
-  });
-
   // 인사말 서브라인
   const alertIssues = unmatchedAlertEnabled ? issues : [];
   const alertCostAlertData = costRateAlertEnabled
@@ -239,7 +251,7 @@ export default function HomePage() {
 
       <HomeGreetingBar
         todayStr={todayStr}
-        greeting={greetingByHour()}
+        greeting={greeting}
         userName={userName}
         greetSub={greetSub}
         favoritesCount={favorites.length}

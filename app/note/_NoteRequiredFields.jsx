@@ -1,4 +1,5 @@
 'use client';
+import { useEffect, useRef, useState } from 'react';
 import { SegGroup, Field } from '@/components/note/FormFields';
 import { CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS, NOTE_BRANDS } from '@/lib/note';
 
@@ -11,6 +12,31 @@ export function NoteRequiredFields({
   onCategoryChange,
 }) {
   const titleValue = form.title || form.menuName || '';
+  const [titleDraft, setTitleDraft] = useState(titleValue);
+  const titleFocusedRef = useRef(false);
+  const titleComposingRef = useRef(false);
+
+  useEffect(() => {
+    if (titleFocusedRef.current || titleComposingRef.current) return;
+    setTitleDraft(titleValue);
+  }, [titleValue]);
+
+  function commitTitle(value) {
+    updateTitle(value);
+  }
+
+  function handleTitleChange(event) {
+    const value = event.target.value;
+    setTitleDraft(value);
+    if (!titleComposingRef.current) commitTitle(value);
+  }
+
+  function handleTitleBlur() {
+    titleFocusedRef.current = false;
+    titleComposingRef.current = false;
+    commitTitle(titleDraft);
+    markTouched('title');
+  }
 
   return (
     <div className="card">
@@ -28,9 +54,21 @@ export function NoteRequiredFields({
         <Field label="제목" error={touched.title && !titleValue.trim()}>
           <input
             className="form-input"
-            value={titleValue}
-            onChange={event => updateTitle(event.target.value)}
-            onBlur={() => markTouched('title')}
+            value={titleDraft}
+            onFocus={() => {
+              titleFocusedRef.current = true;
+            }}
+            onCompositionStart={() => {
+              titleComposingRef.current = true;
+            }}
+            onCompositionEnd={event => {
+              titleComposingRef.current = false;
+              const value = event.currentTarget.value;
+              setTitleDraft(value);
+              commitTitle(value);
+            }}
+            onChange={handleTitleChange}
+            onBlur={handleTitleBlur}
             placeholder="예) 횡성한우 와사비마요 조합 테스트"
           />
         </Field>

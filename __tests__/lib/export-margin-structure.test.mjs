@@ -48,17 +48,11 @@ describe('원가마진표 XLSX/PDF 내보내기 구조 (P3 컬럼 고정)', () =
   });
 
   test('판매가·원가·원가율 컬럼이 sizeLabels 기반으로 동적 생성된다', () => {
-    const priceIdx = marginExportSrc.indexOf("sizeLabels.map(l => l + ' 판매가')");
-    const costIdx = marginExportSrc.indexOf("sizeLabels.map(l => l + ' 원가')");
-    const rateIdx = marginExportSrc.indexOf(
-      "sizeLabels.map(l => l + (viewMode === 'margin' ? ' 마진율' : ' 원가율'))"
+    expect(marginExportSrc).toContain(
+      "sizeLabels.flatMap(l => [l + ' 판매가', l + ' 원가', l + rateSuffix])"
     );
-
-    expect(priceIdx).toBeGreaterThan(-1);
-    expect(costIdx).toBeGreaterThan(-1);
-    expect(rateIdx).toBeGreaterThan(-1);
-    expect(priceIdx).toBeLessThan(costIdx);
-    expect(costIdx).toBeLessThan(rateIdx);
+    expect(marginExportSrc).toContain("const rateSuffix = viewMode === 'margin'");
+    expect(marginExportSrc).toContain('return [sellingPrice, costValue, rateValue]');
   });
 
   test('makeFileNameWithBrand를 사용해 브랜드명이 포함된 파일명을 생성한다', () => {

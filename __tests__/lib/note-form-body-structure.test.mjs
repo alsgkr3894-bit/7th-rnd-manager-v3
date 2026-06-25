@@ -48,7 +48,12 @@ describe('note form body structure', () => {
     expect(requiredSource).toContain('핵심 테스트 내용');
     expect(requiredSource).not.toContain('<ComboBox');
     expect(requiredSource).not.toContain('menuNames');
-    expect(requiredSource).toContain('onChange={event => updateTitle(event.target.value)}');
+    expect(requiredSource).toContain('const [titleDraft, setTitleDraft] = useState(titleValue)');
+    expect(requiredSource).toContain('titleComposingRef.current');
+    expect(requiredSource).toContain('onCompositionStart');
+    expect(requiredSource).toContain('onCompositionEnd');
+    expect(requiredSource).toContain('onChange={handleTitleChange}');
+    expect(requiredSource).toContain('commitTitle(titleDraft)');
     expect(detailSource).toContain('export function NoteDetailFields');
     expect(detailSource).toContain('<CollapsibleCard');
     expect(detailSource).toContain('defaultOpen={false}');
@@ -64,6 +69,10 @@ describe('note form body structure', () => {
     expect(photoSource).toContain('export function NotePhotoSection');
     expect(photoSource).toContain('MAX_NOTE_PHOTOS');
     expect(photoSource).toContain('resizePhoto');
+    expect(photoSource).toContain('clipboardImageFiles');
+    expect(photoSource).toContain('event.clipboardData');
+    expect(photoSource).toContain("document.addEventListener('paste'");
+    expect(photoSource).toContain('Ctrl+V 붙여넣기');
     expect(reportSource).toContain('export function NoteReportSummaryCard');
     expect(reportSource).toContain('<CollapsibleCard');
     expect(reportSource).toContain('defaultOpen={false}');
@@ -87,6 +96,8 @@ describe('note form body structure', () => {
     expect(photoSource).toContain("showToast('지원하지 않는 이미지 파일은 제외했어요', 'warn')");
     expect(photoSource).toContain('Promise.allSettled(targets.map(file => resizePhoto(file)))');
     expect(photoSource).toContain("event.target.value = '';");
+    expect(photoSource).toContain('item.getAsFile()');
+    expect(photoSource).toContain('new File([file]');
   });
 
   test('note write draft state is not consumed or cleared for viewer', () => {

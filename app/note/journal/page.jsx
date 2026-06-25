@@ -38,6 +38,32 @@ function toDateLabel(dateStr) {
   return `${dateStr} (${DAY_LABELS[d.getDay()]})`;
 }
 
+function safeMonth(value) {
+  const text = String(value || '');
+  return /^\d{4}-\d{2}$/.test(text) ? text : todayLocalDate().slice(0, 7);
+}
+
+function monthBounds(month) {
+  const safe = safeMonth(month);
+  const [year, monthNumber] = safe.split('-').map(Number);
+  return {
+    start: `${safe}-01`,
+    end: formatLocalDateInput(new Date(year, monthNumber, 0)),
+  };
+}
+
+function shiftMonth(month, delta) {
+  const safe = safeMonth(month);
+  const [year, monthNumber] = safe.split('-').map(Number);
+  return formatLocalDateInput(new Date(year, monthNumber - 1 + delta, 1)).slice(0, 7);
+}
+
+function monthLabel(month) {
+  const safe = safeMonth(month);
+  const [year, monthNumber] = safe.split('-').map(Number);
+  return `${year}년 ${monthNumber}월`;
+}
+
 function occursOnDate(schedule, date) {
   return expandOccurrences(schedule, date, date).includes(date);
 }
@@ -59,12 +85,139 @@ function hasJournalText(form) {
   );
 }
 
+function MonthEntrySummary({ entry }) {
+  const journalText = [
+    entry.journal?.testContent,
+    entry.journal?.tasteEval,
+    entry.journal?.nextAction,
+  ]
+    .map(value => String(value || '').trim())
+    .filter(Boolean)[0];
+  if (journalText) return <span>{journalText}</span>;
+  if (entry.schedules.length > 0) return <span>{entry.schedules[0].title}</span>;
+  return <span>{entry.notes[0]?.title || entry.notes[0]?.menuName || '기록 보기'}</span>;
+}
+
+function JournalMonthList({ month, entries, selectedDate, onMonthChange, onSelectDate }) {
+  return (
+    <section className="card" style={{ padding: 18, marginTop: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          flexWrap: 'wrap',
+          marginBottom: 12,
+        }}
+      >
+        <div>
+          <div className="card-title">월별 목록</div>
+          <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
+            {monthLabel(month)} · {entries.length}일 기록
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <button className="btn sm" type="button" onClick={() => onMonthChange(shiftMonth(month, -1))}>
+            이전 달
+          </button>
+          <input
+            className="form-input"
+            type="month"
+            value={safeMonth(month)}
+            onChange={event => {
+              if (event.target.value) onMonthChange(event.target.value);
+            }}
+            style={{ width: 132 }}
+          />
+          <button className="btn sm" type="button" onClick={() => onMonthChange(shiftMonth(month, 1))}>
+            다음 달
+          </button>
+        </div>
+      </div>
+
+      {entries.length === 0 ? (
+        <div
+          style={{
+            border: '1px dashed var(--border)',
+            borderRadius: 8,
+            padding: '18px 14px',
+            textAlign: 'center',
+            color: 'var(--text-3)',
+            fontSize: 13,
+          }}
+        >
+          이 달에 저장된 연구일지나 일정이 없습니다.
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: 8 }}>
+          {entries.map(entry => {
+            const selected = entry.date === selectedDate;
+            return (
+              <button
+                key={entry.date}
+                type="button"
+                onClick={() => onSelectDate(entry.date)}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '118px minmax(0, 1fr)',
+                  gap: 12,
+                  alignItems: 'center',
+                  textAlign: 'left',
+                  borderRadius: 8,
+                  border: `1px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
+                  background: selected ? 'var(--accent-soft)' : 'var(--surface)',
+                  padding: '10px 12px',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                <strong style={{ fontSize: 13, color: selected ? 'var(--accent-text)' : 'var(--text-1)' }}>
+                  {toDateLabel(entry.date)}
+                </strong>
+                <span style={{ minWidth: 0, display: 'grid', gap: 4 }}>
+                  <span
+                    style={{
+                      display: 'flex',
+                      gap: 6,
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      fontSize: 11,
+                      color: 'var(--text-3)',
+                    }}
+                  >
+                    {entry.journal && <span className="chip">연구일지</span>}
+                    {entry.notes.length > 0 && <span className="chip">노트 {entry.notes.length}</span>}
+                    {entry.schedules.length > 0 && <span className="chip">일정 {entry.schedules.length}</span>}
+                  </span>
+                  <span
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      color: 'var(--text-2)',
+                      fontSize: 13,
+                    }}
+                  >
+                    <MonthEntrySummary entry={entry} />
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ── 메인 페이지 ─────────────────────────────────────────────
 export default function Page() {
   const router = useRouter();
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const canEdit = roleReady && isAdmin;
   const [date, setDate] = useState(() => todayLocalDate());
+  const [month, setMonth] = useState(() => todayLocalDate().slice(0, 7));
   const [journalForm, setJournalForm] = useState(EMPTY_JOURNAL_FORM);
   const [saving, setSaving] = useState(false);
 
@@ -85,6 +238,10 @@ export default function Page() {
         .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')),
     [notes, date]
   );
+
+  useEffect(() => {
+    setMonth(date.slice(0, 7));
+  }, [date]);
 
   const datesWithNotes = useMemo(() => {
     const s = new Set();
@@ -110,6 +267,48 @@ export default function Page() {
         ),
     [schedules, date]
   );
+
+  const monthEntries = useMemo(() => {
+    const safe = safeMonth(month);
+    const { start, end } = monthBounds(safe);
+    const notesByDate = new Map();
+    const schedulesByDate = new Map();
+
+    notes.forEach(note => {
+      const day = noteDayKey(note);
+      if (!day.startsWith(safe)) return;
+      if (!notesByDate.has(day)) notesByDate.set(day, []);
+      notesByDate.get(day).push(note);
+    });
+
+    schedules.forEach(schedule => {
+      expandOccurrences(schedule, start, end).forEach(day => {
+        if (!day.startsWith(safe)) return;
+        if (!schedulesByDate.has(day)) schedulesByDate.set(day, []);
+        schedulesByDate.get(day).push({ ...schedule, _occurrenceDate: day });
+      });
+    });
+
+    const dates = new Set([...notesByDate.keys(), ...schedulesByDate.keys()]);
+    return [...dates]
+      .sort((a, b) => b.localeCompare(a))
+      .map(day => {
+        const entryNotes = (notesByDate.get(day) || []).sort((a, b) =>
+          (a.createdAt || '').localeCompare(b.createdAt || '')
+        );
+        const entrySchedules = (schedulesByDate.get(day) || []).sort(
+          (a, b) =>
+            String(a.time || '').localeCompare(String(b.time || '')) ||
+            String(a.title || '').localeCompare(String(b.title || ''), 'ko')
+        );
+        return {
+          date: day,
+          notes: entryNotes,
+          schedules: entrySchedules,
+          journal: entryNotes.find(note => note.noteType === JOURNAL_NOTE_TYPE) || null,
+        };
+      });
+  }, [notes, schedules, month]);
 
   const journalEntry = useMemo(
     () => dayNotes.find(note => note.noteType === JOURNAL_NOTE_TYPE) || null,
@@ -262,6 +461,14 @@ export default function Page() {
             canEdit={canEdit}
             existingEntry={journalEntry}
             daySchedules={daySchedules}
+          />
+
+          <JournalMonthList
+            month={month}
+            entries={monthEntries}
+            selectedDate={date}
+            onMonthChange={setMonth}
+            onSelectDate={setDate}
           />
 
           {dayNotes.length === 0 ? (

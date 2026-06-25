@@ -1,10 +1,28 @@
 'use client';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { isSupportedImageFile, resizePhoto } from '@/lib/image/resize';
 
 const MAX_NOTE_PHOTOS = 8;
+
+function clipboardImageFiles(clipboardData) {
+  const itemFiles = Array.from(clipboardData?.items || [])
+    .filter(item => item.kind === 'file' && String(item.type || '').startsWith('image/'))
+    .map((item, index) => {
+      const file = item.getAsFile();
+      if (!file) return null;
+      if (file.name) return file;
+      return new File([file], `pasted-note-photo-${Date.now()}-${index + 1}.png`, {
+        type: file.type || 'image/png',
+      });
+    })
+    .filter(Boolean);
+  if (itemFiles.length > 0) return itemFiles;
+  return Array.from(clipboardData?.files || []).filter(file =>
+    String(file?.type || '').startsWith('image/')
+  );
+}
 
 /** 노트 사진 첨부 카드 (샘플기록과 동일한 base64 JPEG 방식) */
 export function NotePhotoSection({ photos = [], onChange }) {
@@ -30,13 +48,30 @@ export function NotePhotoSection({ photos = [], onChange }) {
     const settled = await Promise.allSettled(targets.map(file => resizePhoto(file)));
     const resized = [];
     const failed = [];
+    const uploadedAt = new Date().toISOString();
     settled.forEach((result, index) => {
-      if (result.status === 'fulfilled') resized.push({ ...result.value, caption: '' });
+      if (result.status === 'fulfilled') resized.push({ ...result.value, caption: '', uploadedAt });
       else failed.push(targets[index].name);
     });
     if (resized.length) change([...safePhotos, ...resized]);
     if (failed.length) showToast(`사진 처리 실패: ${failed.join(', ')}`, 'warn');
   }
+
+  function handlePaste(event) {
+    const pastedFiles = clipboardImageFiles(event.clipboardData);
+    if (pastedFiles.length === 0) return;
+    event.preventDefault();
+    addFiles(pastedFiles);
+  }
+
+  useEffect(() => {
+    function handleDocumentPaste(event) {
+      if (event.defaultPrevented) return;
+      handlePaste(event);
+    }
+    document.addEventListener('paste', handleDocumentPaste);
+    return () => document.removeEventListener('paste', handleDocumentPaste);
+  });
 
   function removePhoto(idx) {
     change(safePhotos.filter((_, index) => index !== idx));
@@ -48,7 +83,7 @@ export function NotePhotoSection({ photos = [], onChange }) {
   }
 
   return (
-    <div className="card">
+    <div className="card" onPaste={handlePaste}>
       <div
         style={{
           display: 'flex',
@@ -102,7 +137,7 @@ export function NotePhotoSection({ photos = [], onChange }) {
           }}
           onDragOver={event => event.preventDefault()}
         >
-          드래그하거나 클릭해 사진 추가 · 최대 {MAX_NOTE_PHOTOS}장 · 5MB 이하
+          드래그하거나 클릭해 사진 추가 · Ctrl+V 붙여넣기 · 최대 {MAX_NOTE_PHOTOS}장 · 5MB 이하
         </div>
       )}
 

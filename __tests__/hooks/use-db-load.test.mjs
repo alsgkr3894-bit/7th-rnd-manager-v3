@@ -124,6 +124,17 @@ describe('저위험 hub 페이지 useDBLoad 적용', () => {
     expect(journalEditorSrc).toContain("import { NotePhotoSection } from '@/app/note/_NotePhotoSection'");
     expect(journalEditorSrc).toContain("onChange={value => onChange('photos', value)}");
   });
+
+  test('note/journal/page.jsx는 월별 목록으로 일지·노트·일정을 날짜별로 모아본다', () => {
+    expect(journalSrc).toContain('function JournalMonthList');
+    expect(journalSrc).toContain('type="month"');
+    expect(journalSrc).toContain('const [month, setMonth]');
+    expect(journalSrc).toContain('const monthEntries = useMemo');
+    expect(journalSrc).toContain('expandOccurrences(schedule, start, end)');
+    expect(journalSrc).toContain('<JournalMonthList');
+    expect(journalSrc).toContain('onSelectDate={setDate}');
+    expect(journalSrc).toContain('월별 목록');
+  });
 });
 
 describe('저위험 기타 페이지 useDBLoad 적용', () => {

@@ -3,7 +3,12 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { tryLS, setLS } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
-import { buildNoteSearchIndex, countNotesByStatus, filterSortNotes } from '@/lib/note/filter';
+import {
+  buildNoteSearchIndex,
+  countNotesByStatus,
+  filterNoteListNotes,
+  filterSortNotes,
+} from '@/lib/note/filter';
 import { NOTE_BRANDS, STATUSES, normalizeNoteStatus } from '@/lib/note/constants';
 import { getActiveBrandId } from '@/lib/active-brand';
 
@@ -116,16 +121,18 @@ export function useNoteFilter(notes, pinnedIds, { pathname } = {}) {
     window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
   }, [safeSearch, safeStatusFilter, pathname]);
 
+  const listNotes = useMemo(() => filterNoteListNotes(notes), [notes]);
+
   // 상태 칩 카운트는 브랜드 필터 적용 후 기준 — 칩 숫자와 실제 목록 불일치 방지
   const brandFiltered = useMemo(() => {
-    if (!brandReady || safeBrandFilter === 'all') return notes;
-    return notes.filter(n => (n.brand || 'main') === safeBrandFilter);
-  }, [notes, safeBrandFilter, brandReady]);
+    if (!brandReady || safeBrandFilter === 'all') return listNotes;
+    return listNotes.filter(n => (n.brand || 'main') === safeBrandFilter);
+  }, [listNotes, safeBrandFilter, brandReady]);
   const counts = useMemo(() => countNotesByStatus(brandFiltered), [brandFiltered]);
-  const searchIndex = useMemo(() => buildNoteSearchIndex(notes), [notes]);
+  const searchIndex = useMemo(() => buildNoteSearchIndex(listNotes), [listNotes]);
   const filtered = useMemo(
     () =>
-      filterSortNotes(notes, {
+      filterSortNotes(listNotes, {
         statusFilter: safeStatusFilter,
         brandFilter: safeBrandFilter,
         search: safeSearch,
@@ -133,7 +140,7 @@ export function useNoteFilter(notes, pinnedIds, { pathname } = {}) {
         pinnedIds,
         searchIndex,
       }),
-    [notes, safeStatusFilter, safeBrandFilter, safeSearch, safeSortBy, pinnedIds, searchIndex]
+    [listNotes, safeStatusFilter, safeBrandFilter, safeSearch, safeSortBy, pinnedIds, searchIndex]
   );
 
   return {

@@ -1,8 +1,10 @@
 'use client';
-import { NoteCard } from './_NoteCard';
+import { NoteIdeaGroupCard } from './_NoteIdeaGroupCard';
+import { buildNoteIdeaGroups } from './noteIdeaGroups';
 
 export function NoteCardGrid({
   visible,
+  filtered,
   filteredCount,
   canEdit = false,
   batchMode,
@@ -22,53 +24,42 @@ export function NoteCardGrid({
   onTagClick,
   onLoadMore,
 }) {
+  const groups = buildNoteIdeaGroups(filtered, visible);
+
   return (
     <>
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))',
+          gridTemplateColumns: 'repeat(auto-fill,minmax(380px,1fr))',
           gap: 16,
           marginTop: 16,
         }}
       >
-        {visible.map((note, i) => (
+        {groups.map((group, i) => (
           <div
-            key={note.id}
+            key={group.key}
             className="stagger note-card-wrap"
             style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
-            onContextMenu={e => onContextMenu(note, e)}
           >
-            {note.testContent && note.testContent.length > 80 && (
-              <div className="note-hover-preview">{note.testContent}</div>
-            )}
-            {canEdit && batchMode && (
-              <div
-                className={'batch-checkbox-wrap' + (selected.has(note.id) ? ' checked' : '')}
-                onClick={e => {
-                  e.stopPropagation();
-                  onToggleSelect(note.id);
-                }}
-              >
-                {selected.has(note.id) && <span style={{ fontSize: 12, fontWeight: 800 }}>✓</span>}
-              </div>
-            )}
-            <NoteCard
-              note={note}
-              onEdit={e => onEdit(note, e)}
-              onDelete={e => onDelete(note, e)}
-              onCopy={e => onCopy(note, e)}
-              onStatusChange={(status, e) => onStatusChange(note.id, status, e)}
-              onNewVersion={e => onNewVersion(note, e)}
-              onClick={() => (canEdit && batchMode ? onToggleSelect(note.id) : onOpen(note))}
-              hlRe={hlRe}
-              statusPop={popIds.has(note.id)}
-              batchMode={batchMode}
-              selected={selected.has(note.id)}
-              pinned={pinnedIds.has(note.id)}
-              onPin={e => onPin(note.id, e)}
-              onTagClick={onTagClick}
+            <NoteIdeaGroupCard
+              group={group}
               canEdit={canEdit}
+              batchMode={batchMode}
+              selected={selected}
+              pinnedIds={pinnedIds}
+              popIds={popIds}
+              hlRe={hlRe}
+              onContextMenu={onContextMenu}
+              onToggleSelect={onToggleSelect}
+              onOpen={onOpen}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onCopy={onCopy}
+              onStatusChange={onStatusChange}
+              onNewVersion={onNewVersion}
+              onPin={onPin}
+              onTagClick={onTagClick}
             />
           </div>
         ))}

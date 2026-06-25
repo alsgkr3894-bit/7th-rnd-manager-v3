@@ -3,6 +3,7 @@ import {
   buildNoteSearchIndex,
   countNotesByStatus,
   filterKanbanNotes,
+  filterNoteListNotes,
   filterSortNotes,
   isChecklistNote,
   isJournalNote,
@@ -180,6 +181,7 @@ describe('checklist note helpers', () => {
     expect(isChecklistNote(notes[0])).toBe(false);
     expect(isChecklistNote(notes[1])).toBe(true);
     expect(isJournalNote(notes[2])).toBe(true);
+    expect(filterNoteListNotes(notes).map(note => note.id)).toEqual([1, 2]);
     expect(filterKanbanNotes(notes).map(note => note.id)).toEqual([1]);
   });
 });

@@ -2,12 +2,13 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 describe('note list structure', () => {
-  test('노트 목록 page는 통계와 필터 렌더링을 전용 컴포넌트에 위임한다', () => {
+  test('노트 목록 page는 필터와 목록 렌더링을 전용 컴포넌트에 위임한다', () => {
     const source = readFileSync(resolve('app/note/_NoteContent.jsx'), 'utf8');
     const filterSource = readFileSync(resolve('app/note/_NoteFilterControls.jsx'), 'utf8');
-    const statsSource = readFileSync(resolve('app/note/_NoteStatsSummary.jsx'), 'utf8');
     const cardGridSource = readFileSync(resolve('app/note/_NoteCardGrid.jsx'), 'utf8');
     const cardSource = readFileSync(resolve('app/note/_NoteCard.jsx'), 'utf8');
+    const ideaGroupCardSource = readFileSync(resolve('app/note/_NoteIdeaGroupCard.jsx'), 'utf8');
+    const ideaGroupsSource = readFileSync(resolve('app/note/noteIdeaGroups.js'), 'utf8');
     const tableViewSource = readFileSync(resolve('app/note/_NoteTableView.jsx'), 'utf8');
     const tableRowSource = readFileSync(resolve('app/note/_NoteTableRow.jsx'), 'utf8');
     const bodySource = readFileSync(resolve('app/note/_NoteListBody.jsx'), 'utf8');
@@ -56,7 +57,6 @@ describe('note list structure', () => {
     const listStateSource = readFileSync(resolve('hooks/useNoteListState.js'), 'utf8');
     const reportingCopySource = readFileSync(resolve('hooks/useNoteReportingCopy.js'), 'utf8');
 
-    expect(source).toContain("import { NoteStatsSummary } from './_NoteStatsSummary'");
     expect(source).toContain("import { NoteFilterControls } from './_NoteFilterControls'");
     expect(source).toContain("import { NoteListBody } from './_NoteListBody'");
     expect(source).toContain("import { NoteListHeader } from './_NoteListHeader'");
@@ -65,12 +65,14 @@ describe('note list structure', () => {
     expect(source).toContain(
       "import { useNoteContentController } from '@/hooks/useNoteContentController'"
     );
-    expect(source).toContain('<NoteStatsSummary');
     expect(source).toContain('<NoteFilterControls');
     expect(source).toContain('<NoteListBody');
     expect(source).toContain('<NoteListHeader');
     expect(source).toContain('<NoteListStates');
     expect(source).toContain('<NotePageDialogs');
+    expect(source).not.toContain("import { NoteStatsSummary } from './_NoteStatsSummary'");
+    expect(source).not.toContain('<NoteStatsSummary');
+    expect(source).not.toContain('statsProps');
     expect(source).not.toContain("import { NoteCardGrid } from './_NoteCardGrid'");
     expect(source).not.toContain("import { NoteTableView } from './_NoteTableView'");
     expect(source).not.toContain("import { NoteContextMenu } from './_NoteContextMenu'");
@@ -111,10 +113,6 @@ describe('note list structure', () => {
     expect(filterSource).toContain("label: '제목순'");
     expect(filterSource).toContain('safeCounts.all > 0');
     expect(filterSource).toContain('safeCounts[status] > 0');
-    expect(statsSource).toContain('최근 6개월');
-    expect(statsSource).toContain('function StatValue');
-    expect(statsSource).toContain("display !== '-'");
-    expect(statsSource).not.toContain('safeCounts[NOTE_STATUS.REPORTING] || 0');
     expect(bodySource).toContain('export function NoteListBody');
     expect(bodySource).toContain('<NoteContextMenu');
     expect(bodySource).toContain('<NoteCardGrid');
@@ -146,8 +144,24 @@ describe('note list structure', () => {
     expect(contextMenuStateSource).toContain('closeContextMenu');
     expect(cardGridSource).toContain('export function NoteCardGrid');
     expect(cardGridSource).toContain('className="stagger note-card-wrap"');
+    expect(cardGridSource).toContain("import { NoteIdeaGroupCard } from './_NoteIdeaGroupCard'");
+    expect(cardGridSource).toContain("import { buildNoteIdeaGroups } from './noteIdeaGroups'");
+    expect(cardGridSource).toContain('const groups = buildNoteIdeaGroups(filtered, visible)');
+    expect(cardGridSource).not.toContain('메뉴개발 보드');
+    expect(cardGridSource).not.toContain('표시 기록');
+    expect(cardGridSource).not.toContain('전체 기록');
+    expect(cardGridSource).toContain('gridTemplateColumns:');
+    expect(ideaGroupCardSource).toContain('export function NoteIdeaGroupCard');
+    expect(ideaGroupCardSource).toContain('function MiniStat');
+    expect(ideaGroupCardSource).toContain('+ 다음 차수');
+    expect(ideaGroupCardSource).toContain('label="차수"');
+    expect(ideaGroupCardSource).toContain('collectRecentNotePhotos(notes, 3)');
+    expect(ideaGroupsSource).toContain('export function buildNoteIdeaGroups');
+    expect(ideaGroupsSource).toContain('export function noteIdeaTitle');
+    expect(ideaGroupsSource).toContain('export function collectRecentNotePhotos');
     expect(cardSource).toContain('noteDisplayTitle(note)');
     expect(cardSource).toContain('function firstPhoto');
+    expect(cardSource).toContain('collectRecentNotePhotos([{ photos }], 1)');
     expect(cardSource).toContain('const snippets = [');
     expect(cardSource).toContain('gridTemplateColumns: photo ?');
     expect(cardSource).toContain('photo.caption || photo.name || title');
@@ -192,7 +206,9 @@ describe('note list structure', () => {
     expect(controllerSource).toContain(
       "import { buildNoteContentProps } from '@/lib/note/content-props'"
     );
-    expect(controllerSource).toContain("import { useNoteReportPdf } from '@/hooks/useNoteReportPdf'");
+    expect(controllerSource).toContain(
+      "import { useNoteReportPdf } from '@/hooks/useNoteReportPdf'"
+    );
     expect(controllerSource).toContain('return buildNoteContentProps({');
     expect(contentPropsSource).toContain('export function buildNoteContentProps');
     expect(contentPropsSource).toContain("from '@/lib/note/content-prop-builders'");
