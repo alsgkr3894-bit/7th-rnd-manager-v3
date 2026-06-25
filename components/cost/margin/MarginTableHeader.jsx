@@ -12,8 +12,19 @@ export function MarginTableHeader({
 }) {
   return (
     <>
-      {/* 1행: 사이즈 그룹 헤더 — 사이즈마다 원가·판매가·(할인)·율을 한 묶음으로 */}
+      {/* 1행: 사이즈 그룹 헤더 — 사이즈마다 판매가·(할인)·원가·율을 한 묶음으로 */}
       <tr className="mt-group">
+        <SortableTh
+          sortKey="cat"
+          active={sortKey}
+          dir={sortDir}
+          onClick={onSort}
+          width={96}
+          rowSpan={2}
+          className="sticky-col"
+        >
+          카테고리
+        </SortableTh>
         <SortableTh
           sortKey="name"
           active={sortKey}
@@ -21,19 +32,8 @@ export function MarginTableHeader({
           onClick={onSort}
           width={160}
           rowSpan={2}
-          className="sticky-col"
         >
           메뉴명
-        </SortableTh>
-        <SortableTh
-          sortKey="cat"
-          active={sortKey}
-          dir={sortDir}
-          onClick={onSort}
-          width={90}
-          rowSpan={2}
-        >
-          카테고리
         </SortableTh>
         <SortableTh
           sortKey="sub"
@@ -63,23 +63,13 @@ export function MarginTableHeader({
         {sizeLabels.map(l => (
           <Fragment key={l + '_mh'}>
             <SortableTh
-              sortKey={`cost_${l}`}
-              active={sortKey}
-              dir={sortDir}
-              onClick={onSort}
-              width={92}
-              right
-              style={{ borderLeft: '2px solid var(--divider)' }}
-            >
-              원가
-            </SortableTh>
-            <SortableTh
               sortKey={`price_${l}`}
               active={sortKey}
               dir={sortDir}
               onClick={onSort}
               width={96}
               right
+              style={{ borderLeft: '2px solid var(--divider)' }}
             >
               판매가
             </SortableTh>
@@ -95,6 +85,16 @@ export function MarginTableHeader({
                 <span style={{ color: 'var(--accent)' }}>할인적용</span>
               </SortableTh>
             )}
+            <SortableTh
+              sortKey={`cost_${l}`}
+              active={sortKey}
+              dir={sortDir}
+              onClick={onSort}
+              width={92}
+              right
+            >
+              원가
+            </SortableTh>
             <SortableTh
               sortKey={`rate_${l}`}
               active={sortKey}

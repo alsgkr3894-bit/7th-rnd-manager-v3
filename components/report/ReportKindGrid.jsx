@@ -10,7 +10,7 @@ export function ReportKindGrid({ reports, onOpenKind }) {
   const rows = asObjectArray(reports);
 
   return (
-    <div className="report-kind-grid report-kind-grid-5 motion-stagger">
+    <div className="report-kind-grid report-kind-grid-auto motion-stagger">
       {REPORT_KINDS.map(kind => {
         const IconEl = Icon[kind.icon] || Icon.doc;
         const count = rows.filter(row => asDisplayText(row.kind) === kind.id).length;

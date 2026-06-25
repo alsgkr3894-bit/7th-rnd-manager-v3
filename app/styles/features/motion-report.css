@@ -208,7 +208,7 @@ input:checked + .toggle-box::after {
     position: static !important;
     max-height: none !important;
   }
-  .report-kind-grid-5 {
+  .report-kind-grid-auto {
     grid-template-columns: 1fr 1fr !important;
   }
   .stat-row {
@@ -217,7 +217,7 @@ input:checked + .toggle-box::after {
 }
 
 @media (max-width: 480px) {
-  .report-kind-grid-5 {
+  .report-kind-grid-auto {
     grid-template-columns: 1fr !important;
   }
   .stat-row {

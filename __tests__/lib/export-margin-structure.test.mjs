@@ -37,21 +37,28 @@ describe('원가마진표 XLSX/PDF 내보내기 구조 (P3 컬럼 고정)', () =
     expect(marginExportSrc).toContain('normalizeSingleSizeRows');
   });
 
-  test('필수 헤더 컬럼(메뉴명·카테고리·중분류)이 고정 순서로 포함된다', () => {
+  test('필수 헤더 컬럼(카테고리·메뉴명)이 고정 순서로 포함되고 중분류는 제외된다', () => {
     expect(marginExportSrc).toContain("'메뉴명'");
     expect(marginExportSrc).toContain("'카테고리'");
-    expect(marginExportSrc).toContain("'중분류'");
-    // 메뉴명이 카테고리보다 먼저 나와야 한다
+    expect(marginExportSrc).not.toContain("'중분류'");
+    // 카테고리가 메뉴명보다 먼저 나와야 한다
     const menuIdx = marginExportSrc.indexOf("'메뉴명'");
     const catIdx = marginExportSrc.indexOf("'카테고리'");
-    const subIdx = marginExportSrc.indexOf("'중분류'");
-    expect(menuIdx).toBeLessThan(catIdx);
-    expect(catIdx).toBeLessThan(subIdx);
+    expect(catIdx).toBeLessThan(menuIdx);
   });
 
-  test('원가·판매가·원가율 컬럼이 sizeLabels 기반으로 동적 생성된다', () => {
-    expect(marginExportSrc).toContain("sizeLabels.map(l => l + ' 원가')");
-    expect(marginExportSrc).toContain("sizeLabels.map(l => l + ' 판매가')");
+  test('판매가·원가·원가율 컬럼이 sizeLabels 기반으로 동적 생성된다', () => {
+    const priceIdx = marginExportSrc.indexOf("sizeLabels.map(l => l + ' 판매가')");
+    const costIdx = marginExportSrc.indexOf("sizeLabels.map(l => l + ' 원가')");
+    const rateIdx = marginExportSrc.indexOf(
+      "sizeLabels.map(l => l + (viewMode === 'margin' ? ' 마진율' : ' 원가율'))"
+    );
+
+    expect(priceIdx).toBeGreaterThan(-1);
+    expect(costIdx).toBeGreaterThan(-1);
+    expect(rateIdx).toBeGreaterThan(-1);
+    expect(priceIdx).toBeLessThan(costIdx);
+    expect(costIdx).toBeLessThan(rateIdx);
   });
 
   test('makeFileNameWithBrand를 사용해 브랜드명이 포함된 파일명을 생성한다', () => {
@@ -78,11 +85,9 @@ describe('원가마진표 XLSX/PDF 내보내기 구조 (P3 컬럼 고정)', () =
     expect(marginExportSrc).toContain('다운로드일: ${esc(downloadDate)}');
   });
 
-  test('원가마진표 페이지 헤더에 PDF 출력 버튼을 연결한다', () => {
-    expect(marginPageSrc).toContain('printMarginPdf');
-    expect(marginPageSrc).toContain('PDF 출력');
-    expect(marginPageSrc).toContain("'PDF 출력 실패: '");
-    expect(marginPageSrc).toContain("'알 수 없는 오류'");
+  test('원가마진표 페이지 직접 출력 버튼은 보고서센터로 이동한다', () => {
+    expect(marginPageSrc).not.toContain('printMarginPdf');
+    expect(marginPageSrc).not.toContain('exportMarginExcel');
   });
 });
 

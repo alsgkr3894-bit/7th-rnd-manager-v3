@@ -55,7 +55,7 @@ function rowsOf(workbook, sheetName) {
 }
 
 function headerIndex(rows) {
-  return rows.findIndex(row => row?.[0] === '메뉴명');
+  return rows.findIndex(row => row?.[0] === '카테고리');
 }
 
 describe('출력 artifact 실행 검증', () => {
@@ -86,7 +86,7 @@ describe('출력 artifact 실행 검증', () => {
     ]);
   });
 
-  test('원가마진표 XLSX는 사이즈별 원가·판매가·원가율 컬럼을 만든다', async () => {
+  test('원가마진표 XLSX는 사이즈별 판매가·원가·원가율 컬럼을 만든다', async () => {
     await exportMarginExcel(
       [
         {
@@ -124,24 +124,22 @@ describe('출력 artifact 실행 검증', () => {
     expect(rows[3]).toEqual(['할인', '없음']);
     const mainHeaderIndex = headerIndex(rows);
     expect(rows[mainHeaderIndex]).toEqual([
-      '메뉴명',
       '카테고리',
-      '중분류',
-      'L 원가',
-      'R 원가',
+      '메뉴명',
       'L 판매가',
       'R 판매가',
+      'L 원가',
+      'R 원가',
       'L 원가율',
       'R 원가율',
     ]);
     expect(rows[mainHeaderIndex + 1]).toEqual([
-      '페퍼로니',
       '피자',
-      'OR 오리지널',
-      2500,
-      1800,
+      '페퍼로니',
       10000,
       9000,
+      2500,
+      1800,
       '25.0%',
       '20.0%',
     ]);
@@ -149,24 +147,22 @@ describe('출력 artifact 실행 검증', () => {
     const pizzaHeaderIndex = headerIndex(pizzaRows);
     expect(pizzaRows[0]).toEqual(['다운로드일', '2026-06-11']);
     expect(pizzaRows[pizzaHeaderIndex]).toEqual([
-      '메뉴명',
       '카테고리',
-      '중분류',
-      'L 원가',
-      'R 원가',
+      '메뉴명',
       'L 판매가',
       'R 판매가',
+      'L 원가',
+      'R 원가',
       'L 원가율',
       'R 원가율',
     ]);
     expect(pizzaRows[pizzaHeaderIndex + 1]).toEqual([
-      '페퍼로니',
       '피자',
-      'OR 오리지널',
-      2500,
-      1800,
+      '페퍼로니',
       10000,
       9000,
+      2500,
+      1800,
       '25.0%',
       '20.0%',
     ]);
@@ -174,19 +170,17 @@ describe('출력 artifact 실행 검증', () => {
     const sideHeaderIndex = headerIndex(sideRows);
     expect(sideRows[0]).toEqual(['다운로드일', '2026-06-11']);
     expect(sideRows[sideHeaderIndex]).toEqual([
-      '메뉴명',
       '카테고리',
-      '중분류',
-      '단일 원가',
+      '메뉴명',
       '단일 판매가',
+      '단일 원가',
       '단일 원가율',
     ]);
     expect(sideRows[sideHeaderIndex + 1]).toEqual([
-      '치즈오븐스파게티',
       '사이드',
-      '',
-      1200,
+      '치즈오븐스파게티',
       6000,
+      1200,
       '20.0%',
     ]);
   });
@@ -227,8 +221,8 @@ describe('출력 artifact 실행 검증', () => {
     expect(html).toContain('<h2>피자</h2>');
     expect(html).toContain('<h2>사이드</h2>');
     expect(html).toContain('L 원가');
-    expect(html).toContain('OR 오리지널');
     expect(html).toContain('R 원가율');
+    expect(html).not.toContain('OR 오리지널');
     expect(html).toContain('25.0%');
     expect(html).toContain('&lt;테스트피자&gt;');
     expect(html).not.toContain('<테스트피자>');

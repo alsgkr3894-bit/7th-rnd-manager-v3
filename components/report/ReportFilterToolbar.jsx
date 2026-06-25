@@ -7,6 +7,7 @@ const REPORT_FILTER_CHIPS = [
   { id: 'all', label: '전체' },
   { id: 'sales', label: '판매량' },
   { id: 'cost', label: '원가' },
+  { id: 'margin', label: '마진표' },
   { id: 'price', label: '가격' },
   { id: 'shipment', label: '출고량' },
   { id: 'compare', label: '비교' },

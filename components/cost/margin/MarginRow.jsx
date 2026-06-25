@@ -52,7 +52,10 @@ export const MarginRow = memo(function MarginRow({
 
   return (
     <tr style={r.hidden ? { opacity: 0.5 } : undefined}>
-      <td className="sticky-col" style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>
+      <td className="sticky-col" style={{ whiteSpace: 'nowrap' }}>
+        <span className="chip">{r.menuCategory || '기타'}</span>
+      </td>
+      <td style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>
         {r.menuName}
         {r.menuCode && (
           <div
@@ -67,12 +70,7 @@ export const MarginRow = memo(function MarginRow({
           </div>
         )}
       </td>
-      <td style={{ whiteSpace: 'nowrap' }}>
-        <span className="chip">{r.menuCategory || '기타'}</span>
-      </td>
-      <td style={{ whiteSpace: 'nowrap', color: 'var(--text-2)', fontSize: 12 }}>
-        {subLabel}
-      </td>
+      <td style={{ whiteSpace: 'nowrap', color: 'var(--text-2)', fontSize: 12 }}>{subLabel}</td>
 
       {sizeLabels.map(l => {
         const { hasCost, cost } = getCostEntry(r.costMap, l);
@@ -126,16 +124,6 @@ export const MarginRow = memo(function MarginRow({
               className="mt-num"
               style={{ ...GRP_BORDER, textAlign: 'right', color: 'var(--text-2)' }}
             >
-              {hasCost ? (
-                <>
-                  {formatNumber(Math.round(cost))}
-                  <span className="mt-won">원</span>
-                </>
-              ) : (
-                '—'
-              )}
-            </td>
-            <td className="mt-num" style={{ textAlign: 'right', color: 'var(--text-2)' }}>
               {s?.sellingPrice != null ? (
                 <>
                   {formatNumber(s.sellingPrice)}
@@ -146,6 +134,16 @@ export const MarginRow = memo(function MarginRow({
               )}
             </td>
             {netCell}
+            <td className="mt-num" style={{ textAlign: 'right', color: 'var(--text-2)' }}>
+              {hasCost ? (
+                <>
+                  {formatNumber(Math.round(cost))}
+                  <span className="mt-won">원</span>
+                </>
+              ) : (
+                '—'
+              )}
+            </td>
             <td style={{ textAlign: 'right' }}>
               {display != null ? (
                 <span
@@ -183,7 +181,8 @@ export const MarginRow = memo(function MarginRow({
                   const s = r.sizes?.find(s => s.label === l);
                   const p = s?.sellingPrice || 0;
                   const rate = hasCost && p ? ((cost / p) * 100).toFixed(1) + '%' : '-';
-                  return `${l}: ${p ? formatNumber(p) + '원' : '-'} / ${rate}`;
+                  const costText = hasCost ? formatNumber(Math.round(cost)) + '원' : '-';
+                  return `${l}: 판매가 ${p ? formatNumber(p) + '원' : '-'} / 원가 ${costText} / ${rate}`;
                 }),
               ];
               try {

@@ -1,5 +1,5 @@
 /* ============================================================
-   보고서센터 — 4종 보고서 카드
+   보고서센터 — 보고서 카드
 ============================================================ */
 .report-kind-grid {
   display: grid;
@@ -499,23 +499,23 @@
 }
 
 /* ============================================================
-   보고서센터 — 추가 (즐겨찾기 · 활동 · 5종 카드 그리드)
+   보고서센터 — 추가 (즐겨찾기 · 활동 · 보고서 카드 그리드)
 ============================================================ */
-.report-kind-grid-5 {
-  grid-template-columns: repeat(5, 1fr);
+.report-kind-grid-auto {
+  grid-template-columns: repeat(auto-fit, minmax(188px, 1fr));
 }
 @media (max-width: 1400px) {
-  .report-kind-grid-5 {
+  .report-kind-grid-auto {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 @media (max-width: 900px) {
-  .report-kind-grid-5 {
+  .report-kind-grid-auto {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 @media (max-width: 600px) {
-  .report-kind-grid-5 {
+  .report-kind-grid-auto {
     grid-template-columns: 1fr;
   }
 }
