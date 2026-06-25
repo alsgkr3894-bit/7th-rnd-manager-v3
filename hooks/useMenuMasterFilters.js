@@ -1,4 +1,10 @@
 import { useState, useMemo } from 'react';
+import { parseCategoryFromCode } from '@/lib/cost/menu-price';
+import { MENU_CATEGORY } from '@/lib/menu-categories';
+
+function rowSubCategory(row) {
+  return row?.subCategory || parseCategoryFromCode(row?.menuCode).subCategory || '';
+}
 
 export function useMenuMasterFilters(rows, brandCats) {
   const [catFilter, setCatFilter] = useState('all');
@@ -29,15 +35,15 @@ export function useMenuMasterFilters(rows, brandCats) {
   const filtered = useMemo(() => {
     let list = statusFilter === 'all' ? rows : rows.filter(r => r.status === statusFilter);
     if (catFilter !== 'all') list = list.filter(r => (r.category || '').startsWith(catFilter));
-    if (catFilter === '피자' && subFilter !== 'all')
-      list = list.filter(r => r.subCategory === subFilter);
+    if (catFilter === MENU_CATEGORY.PIZZA && subFilter !== 'all')
+      list = list.filter(r => rowSubCategory(r) === subFilter);
     const q = search.trim().toLowerCase();
     if (q)
       list = list.filter(
         r =>
           (r.menuCode || '').toLowerCase().includes(q) ||
           (r.menuName || '').toLowerCase().includes(q) ||
-          (r.subCategory || '').toLowerCase().includes(q)
+          rowSubCategory(r).toLowerCase().includes(q)
       );
     return list;
   }, [rows, catFilter, subFilter, statusFilter, search]);

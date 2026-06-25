@@ -17,6 +17,7 @@ const nutritionSrc = readFileSync(resolve('app/nutrition/page.jsx'), 'utf8');
 const ingredientSrc = readFileSync(resolve('app/ingredient/page.jsx'), 'utf8');
 const jetteSrc = readFileSync(resolve('app/jette/page.jsx'), 'utf8');
 const journalSrc = readFileSync(resolve('app/note/journal/page.jsx'), 'utf8');
+const journalEditorSrc = readFileSync(resolve('app/note/journal/_JournalEntryEditor.jsx'), 'utf8');
 const salesSettingsSrc = readFileSync(resolve('app/menu-sales/settings/page.jsx'), 'utf8');
 const ingredientUsageSrc = readFileSync(resolve('app/ingredient/usage/page.jsx'), 'utf8');
 const marginDataSrc = readFileSync(resolve('app/cost/margin/useMarginData.js'), 'utf8');
@@ -111,11 +112,17 @@ describe('저위험 hub 페이지 useDBLoad 적용', () => {
     expect(journalSrc).toContain("console.error('[note/journal] load failed'");
   });
 
-  test('note/journal/page.jsx 빈 상태 작성 버튼은 viewer에서 비활성화된다', () => {
+  test('note/journal/page.jsx는 자체 연구일지 작성 폼을 사용하고 viewer 저장을 막는다', () => {
     expect(journalSrc).toContain("from '@/hooks/useCurrentRole'");
     expect(journalSrc).toContain('const canEdit = roleReady && isAdmin');
-    expect(journalSrc).toContain("if (canEdit) router.push('/note/write')");
-    expect(journalSrc).toContain('disabled={!canEdit}');
+    expect(journalSrc).toContain("import { JournalEntryEditor } from './_JournalEntryEditor'");
+    expect(journalSrc).toContain('if (!canEdit || saving) return;');
+    expect(journalSrc).toContain('await addNote(payload)');
+    expect(journalSrc).toContain('await updateNote(journalEntry.id, payload)');
+    expect(journalSrc).toContain('photos: Array.isArray(journalForm.photos) ? journalForm.photos : []');
+    expect(journalSrc).toContain('canEdit={canEdit}');
+    expect(journalEditorSrc).toContain("import { NotePhotoSection } from '@/app/note/_NotePhotoSection'");
+    expect(journalEditorSrc).toContain("onChange={value => onChange('photos', value)}");
   });
 });
 

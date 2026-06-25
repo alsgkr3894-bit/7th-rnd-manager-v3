@@ -74,14 +74,15 @@ describe('출력 artifact 실행 검증', () => {
         price: 19900,
         status: '판매',
         category: '피자',
+        subCategory: '오리지널',
       },
     ]);
 
     const { rows, fileName } = lastDownload();
     expect(fileName).toBe('테스트브랜드_메뉴마스터_20260611.csv');
     expect(rows).toEqual([
-      ['메뉴코드', '메뉴명', '규격', '판매가', '상태', '카테고리'],
-      ['=P-001', '+테스트피자', 'L', 19900, '판매', '피자'],
+      ['메뉴코드', '메뉴명', '규격', '판매가', '상태', '카테고리', '중분류'],
+      ['=P-001', '+테스트피자', 'L', 19900, '판매', '피자', '오리지널'],
     ]);
   });
 
@@ -91,6 +92,8 @@ describe('출력 artifact 실행 검증', () => {
         {
           menuName: '페퍼로니',
           menuCategory: '피자',
+          menuSubCategory: '오리지널',
+          menuSubCategoryCode: 'OR',
           costMap: { L: 2500, R: 1800 },
           sizes: [
             { label: 'L', sellingPrice: 10000 },
@@ -123,6 +126,7 @@ describe('출력 artifact 실행 검증', () => {
     expect(rows[mainHeaderIndex]).toEqual([
       '메뉴명',
       '카테고리',
+      '중분류',
       'L 원가',
       'R 원가',
       'L 판매가',
@@ -133,6 +137,7 @@ describe('출력 artifact 실행 검증', () => {
     expect(rows[mainHeaderIndex + 1]).toEqual([
       '페퍼로니',
       '피자',
+      'OR 오리지널',
       2500,
       1800,
       10000,
@@ -146,6 +151,7 @@ describe('출력 artifact 실행 검증', () => {
     expect(pizzaRows[pizzaHeaderIndex]).toEqual([
       '메뉴명',
       '카테고리',
+      '중분류',
       'L 원가',
       'R 원가',
       'L 판매가',
@@ -156,6 +162,7 @@ describe('출력 artifact 실행 검증', () => {
     expect(pizzaRows[pizzaHeaderIndex + 1]).toEqual([
       '페퍼로니',
       '피자',
+      'OR 오리지널',
       2500,
       1800,
       10000,
@@ -169,6 +176,7 @@ describe('출력 artifact 실행 검증', () => {
     expect(sideRows[sideHeaderIndex]).toEqual([
       '메뉴명',
       '카테고리',
+      '중분류',
       '단일 원가',
       '단일 판매가',
       '단일 원가율',
@@ -176,6 +184,7 @@ describe('출력 artifact 실행 검증', () => {
     expect(sideRows[sideHeaderIndex + 1]).toEqual([
       '치즈오븐스파게티',
       '사이드',
+      '',
       1200,
       6000,
       '20.0%',
@@ -188,6 +197,8 @@ describe('출력 artifact 실행 검증', () => {
         {
           menuName: '<테스트피자>',
           menuCategory: '피자',
+          menuSubCategory: '오리지널',
+          menuSubCategoryCode: 'OR',
           costMap: { L: 2500, R: 1800 },
           sizes: [
             { label: 'L', sellingPrice: 10000 },
@@ -216,6 +227,7 @@ describe('출력 artifact 실행 검증', () => {
     expect(html).toContain('<h2>피자</h2>');
     expect(html).toContain('<h2>사이드</h2>');
     expect(html).toContain('L 원가');
+    expect(html).toContain('OR 오리지널');
     expect(html).toContain('R 원가율');
     expect(html).toContain('25.0%');
     expect(html).toContain('&lt;테스트피자&gt;');

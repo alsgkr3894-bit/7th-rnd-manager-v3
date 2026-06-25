@@ -2,6 +2,14 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { READINESS_DIMS, OVERALL_LABEL, DIM_STATUS_LABEL } from '@/lib/menu-master/readiness';
+import { MENU_CATEGORY } from '@/lib/menu-categories';
+
+function matchesCategoryFilter(category, filter) {
+  const cat = String(category || '').trim();
+  if (!filter || filter === 'all') return true;
+  if (cat === filter) return true;
+  return filter === MENU_CATEGORY.PIZZA && cat.startsWith(`${MENU_CATEGORY.PIZZA}/`);
+}
 
 /**
  * MenuReadinessPanel — 메뉴별 출시 준비 상태 표
@@ -23,7 +31,7 @@ export function MenuReadinessPanel({
   const entries = useMemo(() => {
     let list = [...readinessMap.values()];
     if (catFilter && catFilter !== 'all') {
-      list = list.filter(e => e.menu?.category === catFilter);
+      list = list.filter(e => matchesCategoryFilter(e.menu?.category, catFilter));
     }
     if (filter !== 'all') {
       list = list.filter(e => e.overall === filter);

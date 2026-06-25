@@ -1,9 +1,8 @@
 'use client';
-import { TagInput } from '@/components/ui/TagInput';
 import { Field } from '@/components/note/FormFields';
 import { CollapsibleCard } from '@/app/note/_CollapsibleCard';
 
-export function NoteDetailFields({ form, allTags, updateField }) {
+export function NoteDetailFields({ form, updateField }) {
   return (
     <CollapsibleCard title="상세 기록" subtitle="선택 입력 항목 · 기본 접힘" defaultOpen={false}>
       <Field label="사용 재료">
@@ -86,13 +85,6 @@ export function NoteDetailFields({ form, allTags, updateField }) {
         />
       </Field>
 
-      <Field label="태그" hint="입력 후 Enter 또는 콤마">
-        <TagInput
-          value={form.tags}
-          onChange={value => updateField('tags', value)}
-          suggestions={allTags}
-        />
-      </Field>
     </CollapsibleCard>
   );
 }

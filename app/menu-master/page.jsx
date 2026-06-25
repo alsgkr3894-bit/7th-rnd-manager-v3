@@ -24,7 +24,10 @@ import {
   loadMenuRecipeSummaryMap,
   MENU_RECIPE_SUMMARY_STATUS,
 } from '@/lib/menu-master/recipe-summary';
-import { normalizePersonalPizzaCodes } from '@/lib/menu-master/normalize';
+import {
+  normalizeMenuCodeCategories,
+  normalizePersonalPizzaCodes,
+} from '@/lib/menu-master/normalize';
 import { buildMenuReadinessMap } from '@/lib/menu-master/readiness';
 import { MenuDataQualityPanel } from '@/components/menu-master/MenuDataQualityPanel';
 import { MenuReadinessPanel } from '@/components/menu-master/MenuReadinessPanel';
@@ -74,6 +77,9 @@ export default function Page() {
     async () => {
       await normalizePersonalPizzaCodes().catch(e =>
         console.warn('[menu-master] 코드 정규화 실패', e)
+      );
+      await normalizeMenuCodeCategories().catch(e =>
+        console.warn('[menu-master] 코드 분류 정규화 실패', e)
       );
       const nextRows = await getAllMenuMaster();
       let nextRecipeSummaryMap = new Map();

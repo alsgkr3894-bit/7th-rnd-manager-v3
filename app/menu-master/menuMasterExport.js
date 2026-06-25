@@ -2,7 +2,7 @@ import { downloadCsv, makeFileNameWithBrand } from '@/lib/download';
 
 /** 메뉴마스터 행 → CSV 2D 배열 (헤더 포함). 수식 인젝션 방지는 downloadCsv 내 rowsToCsv가 담당. */
 export function buildMenuMasterCsvRows(filteredRows) {
-  const headers = ['메뉴코드', '메뉴명', '규격', '판매가', '상태', '카테고리'];
+  const headers = ['메뉴코드', '메뉴명', '규격', '판매가', '상태', '카테고리', '중분류'];
   const dataRows = filteredRows.map(r => [
     r.menuCode || '',
     r.menuName || '',
@@ -10,6 +10,7 @@ export function buildMenuMasterCsvRows(filteredRows) {
     r.price != null ? r.price : '',
     r.status || '',
     r.category || '',
+    r.subCategory || '',
   ]);
   return [headers, ...dataRows];
 }

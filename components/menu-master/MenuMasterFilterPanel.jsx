@@ -1,8 +1,8 @@
 'use client';
 
 import { Icon } from '@/components/icons';
-
-const PIZZA_SUBS = ['프리미엄 스페셜', '프리미엄', '오리지널', '하프앤하프'];
+import { PIZZA_SUB_CATEGORY_OPTIONS } from '@/lib/cost/menu-price';
+import { MENU_CATEGORY } from '@/lib/menu-categories';
 
 export function MenuMasterFilterPanel({
   rows,
@@ -83,7 +83,7 @@ export function MenuMasterFilterPanel({
         )}
       </div>
 
-      {catFilter === '피자' && (
+      {catFilter === MENU_CATEGORY.PIZZA && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ fontSize: 12, color: 'var(--text-3)', marginRight: 4, fontWeight: 600 }}>
             중분류
@@ -94,13 +94,13 @@ export function MenuMasterFilterPanel({
           >
             전체
           </button>
-          {PIZZA_SUBS.map(s => (
+          {PIZZA_SUB_CATEGORY_OPTIONS.map(option => (
             <button
-              key={s}
-              className={'chip' + (subFilter === s ? ' active' : '')}
-              onClick={() => onSubFilter(s)}
+              key={option.code}
+              className={'chip' + (subFilter === option.label ? ' active' : '')}
+              onClick={() => onSubFilter(option.label)}
             >
-              {s}
+              {option.code} {option.label}
             </button>
           ))}
         </div>

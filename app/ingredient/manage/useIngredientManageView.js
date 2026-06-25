@@ -7,6 +7,7 @@ import {
   UNCATEGORIZED_FILTER,
 } from '@/lib/ingredient/constants';
 import { computeIngredientIssues, sortHashTags, sortMainCategories } from '@/lib/ingredient';
+import { isIngredientMissingPackagePrice } from '@/lib/ingredient/price-status';
 import { buildDuplicateDiagnostics } from './_duplicate-diagnostics';
 
 export function useIngredientManageView({
@@ -67,7 +68,7 @@ export function useIngredientManageView({
   );
 
   const noPriceCount = useMemo(
-    () => rows.filter(row => !row.discontinued && !row.excluded && row.unitPrice == null).length,
+    () => rows.filter(isIngredientMissingPackagePrice).length,
     [rows]
   );
 
@@ -106,7 +107,7 @@ export function useIngredientManageView({
       if (catFilter === UNCATEGORIZED_FILTER) {
         list = list.filter(row => !row.category);
       } else if (catFilter === NO_PRICE_FILTER) {
-        list = list.filter(row => row.unitPrice == null);
+        list = list.filter(isIngredientMissingPackagePrice);
       } else if (catFilter !== 'all') {
         list = list.filter(row => row.category === catFilter);
       }

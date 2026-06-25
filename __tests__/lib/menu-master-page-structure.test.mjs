@@ -79,6 +79,7 @@ describe('menu-master page structure', () => {
         price: 18000,
         status: 'active',
         category: '피자',
+        subCategory: '오리지널',
       },
       {
         menuCode: 'M002',
@@ -87,11 +88,20 @@ describe('menu-master page structure', () => {
         price: null,
         status: 'discontinued',
         category: '',
+        subCategory: '',
       },
     ];
     const result = buildMenuMasterCsvRows(rows);
-    expect(result[0]).toEqual(['메뉴코드', '메뉴명', '규격', '판매가', '상태', '카테고리']);
-    expect(result[1]).toEqual(['M001', '마르게리타', 'L', 18000, 'active', '피자']);
+    expect(result[0]).toEqual([
+      '메뉴코드',
+      '메뉴명',
+      '규격',
+      '판매가',
+      '상태',
+      '카테고리',
+      '중분류',
+    ]);
+    expect(result[1]).toEqual(['M001', '마르게리타', 'L', 18000, 'active', '피자', '오리지널']);
     // 쉼표 포함 이름이 그대로 유지돼야 함 (rowsToCsv에서 이스케이프)
     expect(result[2][1]).toBe('콤비네이션, 특선');
     // null 가격은 빈 문자열

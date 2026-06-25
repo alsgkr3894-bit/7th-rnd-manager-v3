@@ -37,13 +37,16 @@ describe('원가마진표 XLSX/PDF 내보내기 구조 (P3 컬럼 고정)', () =
     expect(marginExportSrc).toContain('normalizeSingleSizeRows');
   });
 
-  test('필수 헤더 컬럼(메뉴명·카테고리)이 고정 순서로 포함된다', () => {
+  test('필수 헤더 컬럼(메뉴명·카테고리·중분류)이 고정 순서로 포함된다', () => {
     expect(marginExportSrc).toContain("'메뉴명'");
     expect(marginExportSrc).toContain("'카테고리'");
+    expect(marginExportSrc).toContain("'중분류'");
     // 메뉴명이 카테고리보다 먼저 나와야 한다
     const menuIdx = marginExportSrc.indexOf("'메뉴명'");
     const catIdx = marginExportSrc.indexOf("'카테고리'");
+    const subIdx = marginExportSrc.indexOf("'중분류'");
     expect(menuIdx).toBeLessThan(catIdx);
+    expect(catIdx).toBeLessThan(subIdx);
   });
 
   test('원가·판매가·원가율 컬럼이 sizeLabels 기반으로 동적 생성된다', () => {

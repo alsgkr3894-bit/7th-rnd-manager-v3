@@ -3,6 +3,7 @@
 import { Icon } from '@/components/icons';
 import { CategoryTags } from '@/components/menu-master/MenuCategoryTags';
 import { MenuRecipeCostCell } from '@/components/menu-master/MenuRecipeCostCell';
+import { getMenuSubCategoryFromCode } from '@/lib/cost/menu-price';
 
 const STATUS_LABEL = { active: '활성', discontinued: '단종', test: '테스트' };
 const STATUS_STYLE = {
@@ -12,6 +13,11 @@ const STATUS_STYLE = {
 };
 
 export function MenuMasterTableRow({ row, recipeSummary, isViewer, onEdit, onDelete }) {
+  const subMeta = getMenuSubCategoryFromCode(row.menuCode);
+  const subLabel = subMeta
+    ? `${subMeta.code} ${subMeta.label}`
+    : row.subCategory || <span style={{ color: 'var(--text-4)' }}>-</span>;
+
   return (
     <tr style={{ opacity: row.status === 'discontinued' ? 0.5 : 1 }}>
       <td
@@ -84,6 +90,7 @@ export function MenuMasterTableRow({ row, recipeSummary, isViewer, onEdit, onDel
       <td>
         <CategoryTags menuCode={row.menuCode} />
       </td>
+      <td style={{ fontSize: 12, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>{subLabel}</td>
       <td style={{ fontSize: 12, color: 'var(--text-2)' }}>
         {row.size || <span style={{ color: 'var(--text-4)' }}>단일</span>}
       </td>

@@ -147,6 +147,10 @@ describe('note list structure', () => {
     expect(cardGridSource).toContain('export function NoteCardGrid');
     expect(cardGridSource).toContain('className="stagger note-card-wrap"');
     expect(cardSource).toContain('noteDisplayTitle(note)');
+    expect(cardSource).toContain('function firstPhoto');
+    expect(cardSource).toContain('const snippets = [');
+    expect(cardSource).toContain('gridTemplateColumns: photo ?');
+    expect(cardSource).toContain('photo.caption || photo.name || title');
     expect(cardSource).not.toContain('highlightText(menuName');
     expect(tableViewSource).toContain('export function NoteTableView');
     expect(tableViewSource).toContain('className="data-table stagger-rows"');

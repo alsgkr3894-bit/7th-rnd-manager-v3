@@ -54,7 +54,9 @@ export function useMarginFilters({ rows, activePlatform, discount, warnPct, crit
       result = result.filter(
         r =>
           (r.menuName || '').toLowerCase().includes(q) ||
-          (r.menuCategory || '').toLowerCase().includes(q)
+          (r.menuCategory || '').toLowerCase().includes(q) ||
+          (r.menuSubCategory || '').toLowerCase().includes(q) ||
+          (r.menuSubCategoryCode || '').toLowerCase().includes(q)
       );
     }
     return result;
@@ -141,6 +143,9 @@ export function useMarginFilters({ rows, activePlatform, discount, warnPct, crit
     function getVal(r) {
       if (sortKey === 'name') return (r.menuName || '').toLowerCase();
       if (sortKey === 'cat') return (r.menuCategory || '기타').toLowerCase();
+      if (sortKey === 'sub') {
+        return `${r.menuSubCategoryCode || ''} ${r.menuSubCategory || ''}`.trim().toLowerCase();
+      }
       const ul = sortKey.lastIndexOf('_');
       if (ul === -1) return 0;
       const type = sortKey.slice(0, ul);

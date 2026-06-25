@@ -39,6 +39,7 @@ export function MenuMasterTablePanel({
                 <th style={{ width: 145 }}>메뉴코드</th>
                 <th>메뉴명</th>
                 <th style={{ width: 200 }}>분류 태그</th>
+                <th style={{ width: 145 }}>중분류</th>
                 <th style={{ width: 60 }}>사이즈</th>
                 <th style={{ width: 100, textAlign: 'right' }}>판매가</th>
                 <th style={{ width: 120 }}>레시피/원가</th>

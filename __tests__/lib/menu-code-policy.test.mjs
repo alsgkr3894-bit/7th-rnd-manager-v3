@@ -4,6 +4,11 @@ import {
   normalizeMenuCodeForModule,
   stripMenuCodeSizeSuffix,
 } from '../../lib/menu-master/code-policy.js';
+import {
+  getMenuSubCategoryFromCode,
+  parseCategoryFromCode,
+  updateMenuCodeSubCategory,
+} from '../../lib/cost/menu-price/code.js';
 
 describe('menu code base/full policy', () => {
   test('base mode strips only the explicit menu size suffix', () => {
@@ -25,5 +30,17 @@ describe('menu code base/full policy', () => {
 
   test('base mode is case-insensitive for the size suffix', () => {
     expect(stripMenuCodeSizeSuffix('p-or-005-l', 'L')).toBe('p-or-005');
+  });
+
+  test('pizza sub category is derived from the second menu code segment', () => {
+    expect(parseCategoryFromCode('P-PS-001-L')).toEqual({
+      category: '피자/프리미엄 스페셜',
+      subCategory: '프리미엄 스페셜',
+    });
+    expect(getMenuSubCategoryFromCode('P-OR-005-R')).toMatchObject({
+      code: 'OR',
+      label: '오리지널',
+    });
+    expect(updateMenuCodeSubCategory('P-OR-005-L', 'PS')).toBe('P-PS-005-L');
   });
 });

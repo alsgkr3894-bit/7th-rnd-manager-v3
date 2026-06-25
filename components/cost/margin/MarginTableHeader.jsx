@@ -35,6 +35,16 @@ export function MarginTableHeader({
         >
           카테고리
         </SortableTh>
+        <SortableTh
+          sortKey="sub"
+          active={sortKey}
+          dir={sortDir}
+          onClick={onSort}
+          width={132}
+          rowSpan={2}
+        >
+          중분류
+        </SortableTh>
         {sizeLabels.map(l => (
           <th
             key={l + '_grp'}

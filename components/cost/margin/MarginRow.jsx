@@ -46,6 +46,10 @@ export const MarginRow = memo(function MarginRow({
   onToggleHide,
   canEdit = false,
 }) {
+  const subLabel = r.menuSubCategoryCode
+    ? `${r.menuSubCategoryCode} ${r.menuSubCategory || ''}`.trim()
+    : r.menuSubCategory || '-';
+
   return (
     <tr style={r.hidden ? { opacity: 0.5 } : undefined}>
       <td className="sticky-col" style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>
@@ -65,6 +69,9 @@ export const MarginRow = memo(function MarginRow({
       </td>
       <td style={{ whiteSpace: 'nowrap' }}>
         <span className="chip">{r.menuCategory || '기타'}</span>
+      </td>
+      <td style={{ whiteSpace: 'nowrap', color: 'var(--text-2)', fontSize: 12 }}>
+        {subLabel}
       </td>
 
       {sizeLabels.map(l => {

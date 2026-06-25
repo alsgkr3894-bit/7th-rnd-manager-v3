@@ -5,6 +5,7 @@
  */
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { isIngredientMissingPackagePrice } from '../../lib/ingredient/price-status.js';
 
 // ── 픽스처 생성 헬퍼 ──────────────────────────────────────────
 
@@ -18,6 +19,7 @@ function makeIngredientRow(i) {
     ingredientName: `식자재_${i}_${CATEGORIES[i % CATEGORIES.length]}`,
     category: CATEGORIES[i % CATEGORIES.length],
     tags: [TAGS[i % TAGS.length], TAGS[(i + 1) % TAGS.length]],
+    priceWithTax: i % 10 === 0 ? null : 1000 + (i % 500),
     unitPrice: i % 10 === 0 ? null : 1000 + (i % 500),
     discontinued: i % 20 === 0,
     excluded: i % 50 === 0,
@@ -49,7 +51,7 @@ function filterIngredients({ rows, catFilter, tagFilter, search }) {
   } else {
     list = rows.filter(r => !r.discontinued && !r.excluded);
     if (catFilter === '__none__') list = list.filter(r => !r.category);
-    else if (catFilter === '__no_price__') list = list.filter(r => r.unitPrice == null);
+    else if (catFilter === '__no_price__') list = list.filter(isIngredientMissingPackagePrice);
     else if (catFilter !== 'all') list = list.filter(r => r.category === catFilter);
     if (tagFilter !== 'all') list = list.filter(r => (r.tags || []).includes(tagFilter));
   }
@@ -150,9 +152,7 @@ describe('P5 대량 데이터 성능 스모크', () => {
 
     test(`5,000행 noPriceCount useMemo 패턴 < ${THRESHOLD_5K}ms`, () => {
       const t0 = performance.now();
-      const count = rows5k.filter(
-        r => !r.discontinued && !r.excluded && r.unitPrice == null
-      ).length;
+      const count = rows5k.filter(isIngredientMissingPackagePrice).length;
       const elapsed = performance.now() - t0;
       expect(count).toBeGreaterThan(0);
       expect(elapsed).toBeLessThan(THRESHOLD_5K);

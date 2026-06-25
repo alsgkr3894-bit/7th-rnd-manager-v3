@@ -41,4 +41,21 @@ describe('buildDetailRows 그룹핑 (H-2 회귀)', () => {
     expect(labels).toEqual(['L', 'R']);
     expect(rows[0].menuCodes.sort()).toEqual(['PZ-001-L', 'PZ-001-R']);
   });
+
+  test('피자 중분류는 판매가 분류보다 메뉴코드 값을 우선한다', () => {
+    const rows = buildDetailRows(
+      [
+        { menuCode: 'P-PS-001-L', menuName: '스페셜 L', category: '피자', size: 'L', price: 32000 },
+        { menuCode: 'P-PS-001-R', menuName: '스페셜 R', category: '피자', size: 'R', price: 25000 },
+      ],
+      emptyMaps
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      menuCategory: '피자/프리미엄 스페셜',
+      menuSubCategory: '프리미엄 스페셜',
+      menuSubCategoryCode: 'PS',
+    });
+  });
 });

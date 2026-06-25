@@ -36,14 +36,24 @@ export function NoteRequiredFields({
         </Field>
       </div>
 
-      <Field label="테스트 날짜">
-        <input
-          className="form-input"
-          type="date"
-          value={form.testDate}
-          onChange={event => updateField('testDate', event.target.value)}
-        />
-      </Field>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr minmax(120px, 0.45fr)', gap: 12 }}>
+        <Field label="테스트 날짜">
+          <input
+            className="form-input"
+            type="date"
+            value={form.testDate}
+            onChange={event => updateField('testDate', event.target.value)}
+          />
+        </Field>
+        <Field label="테스트 차수">
+          <input
+            className="form-input"
+            value={form.testRound || ''}
+            onChange={event => updateField('testRound', event.target.value)}
+            placeholder="예: 1, 2차"
+          />
+        </Field>
+      </div>
 
       <Field label="브랜드" hint="이 노트가 속한 브랜드">
         <SegGroup

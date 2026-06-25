@@ -2,6 +2,7 @@
 import { Icon } from '@/components/icons';
 import { STATUS_COLORS, STATUS_BORDER } from '@/lib/note';
 import { noteDisplayTitle } from '@/lib/note/display';
+import { formatNoteRating, formatTestRound, NOTE_EVALUATION_FIELDS } from '@/lib/note/evaluation';
 import { parseTagList, formatFullDate } from '@/lib/note/utils';
 import { useModalShell } from '@/hooks/useModalShell';
 import { OVERLAY_COLOR } from '@/lib/ui/styles';
@@ -29,6 +30,8 @@ export function NoteDetailModal({ note = {}, canEdit = false, onClose, onEdit })
 
   const rows = [
     ['테스트 날짜', testDate ? formatFullDate(testDate) : null],
+    ['테스트 차수', formatTestRound(note.testRound)],
+    ...NOTE_EVALUATION_FIELDS.map(item => [item.label, formatNoteRating(note[item.key])]),
     ['사용 재료', asText(note.materials)],
     ['맛 평가', asText(note.tasteEval)],
     ['상무님 평가', asText(note.managerEval)],

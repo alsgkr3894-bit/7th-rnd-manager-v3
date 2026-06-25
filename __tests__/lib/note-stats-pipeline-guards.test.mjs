@@ -22,7 +22,13 @@ jest.unstable_mockModule('@/lib/recipe', () => ({
   calcMarginRate: jest.fn(() => null),
 }));
 
-const { getNoteDetailStats, getPipelineStats } = await import('../../lib/stats/note-stats.js');
+const { getNoteDetailStats, getNoteKpi, getPipelineStats } = await import('../../lib/stats/note-stats.js');
+
+function toDateOnly(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+    date.getDate()
+  ).padStart(2, '0')}`;
+}
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -68,10 +74,12 @@ describe('note stats display guards', () => {
     const now = new Date();
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 5).toISOString();
     const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 5).toISOString();
+    const thisMonthInputDate = toDateOnly(new Date(now.getFullYear(), now.getMonth(), 7));
+    const previousMonthInputDate = toDateOnly(new Date(now.getFullYear(), now.getMonth() - 1, 7));
 
     getAll.mockResolvedValue([
-      { status: undefined, category: undefined, createdAt: thisMonth },
-      { status: '', category: '', createdAt: {} },
+      { status: undefined, category: undefined, createdAt: previousMonth, testDate: thisMonthInputDate },
+      { status: '', category: '', createdAt: thisMonth, testDate: previousMonthInputDate },
       { status: '출시', category: '피자', createdAt: previousMonth },
       { status: 7, category: 9, createdAt: 300 },
     ]);
@@ -85,5 +93,22 @@ describe('note stats display guards', () => {
     expect(result.byStatus).toMatchObject({ 미지정: 2, 출시: 1, 7: 1 });
     expect(result.byCategory).toMatchObject({ 미분류: 2, 피자: 1, 9: 1 });
     expect(result.monthly.reduce((sum, row) => sum + row.count, 0)).toBeGreaterThanOrEqual(2);
+  });
+
+  test('KPI sparkline uses entered test date before created date', async () => {
+    const now = new Date();
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 5).toISOString();
+    const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 5).toISOString();
+    const thisMonthInputDate = toDateOnly(new Date(now.getFullYear(), now.getMonth(), 8));
+    const previousMonthInputDate = toDateOnly(new Date(now.getFullYear(), now.getMonth() - 1, 8));
+
+    getAll.mockResolvedValue([
+      { createdAt: previousMonth, testDate: thisMonthInputDate },
+      { createdAt: thisMonth, testDate: previousMonthInputDate },
+    ]);
+
+    const result = await getNoteKpi();
+
+    expect(result.sparkline.at(-1)).toBe(1);
   });
 });

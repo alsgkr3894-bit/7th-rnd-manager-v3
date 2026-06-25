@@ -103,14 +103,14 @@ describe('단가 없음 필터 (NO_PRICE_FILTER)', () => {
 
   test('useIngredientManageView가 noPriceCount를 계산한다', () => {
     expect(manageViewSrc).toContain('noPriceCount');
-    expect(manageViewSrc).toContain('unitPrice == null');
+    expect(manageViewSrc).toContain('isIngredientMissingPackagePrice');
   });
 
   test('useIngredientManageView가 NO_PRICE_FILTER 케이스를 filtered에 처리한다', () => {
     expect(manageViewSrc).toContain('NO_PRICE_FILTER');
-    // filter logic에서 unitPrice == null로 필터링
+    // filter logic uses the shared package-price status helper.
     const idx1 = manageViewSrc.indexOf('NO_PRICE_FILTER');
-    const idx2 = manageViewSrc.indexOf('unitPrice == null', idx1);
+    const idx2 = manageViewSrc.indexOf('isIngredientMissingPackagePrice', idx1);
     expect(idx2).toBeGreaterThan(idx1);
   });
 

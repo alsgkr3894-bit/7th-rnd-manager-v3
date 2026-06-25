@@ -5,6 +5,7 @@ import {
   filterKanbanNotes,
   filterSortNotes,
   isChecklistNote,
+  isJournalNote,
 } from '../../lib/note/filter.js';
 
 const NOTES = [
@@ -169,14 +170,16 @@ describe('filterSortNotes', () => {
 });
 
 describe('checklist note helpers', () => {
-  test('체크리스트 노트를 식별하고 칸반 목록에서 제외한다', () => {
+  test('체크리스트와 연구일지 노트를 식별하고 칸반 목록에서 제외한다', () => {
     const notes = [
       { id: 1, title: '일반 노트', noteType: '메뉴테스트' },
       { id: 2, title: '오늘 한 일', noteType: CHECKLIST_NOTE_TYPE },
+      { id: 3, title: '2026-06-24 연구일지', noteType: '연구일지' },
     ];
 
     expect(isChecklistNote(notes[0])).toBe(false);
     expect(isChecklistNote(notes[1])).toBe(true);
+    expect(isJournalNote(notes[2])).toBe(true);
     expect(filterKanbanNotes(notes).map(note => note.id)).toEqual([1]);
   });
 });

@@ -19,6 +19,13 @@ describe('margin 훅 분리 구조', () => {
     expect(filtersSrc).toContain('showHidden');
   });
 
+  test('원가마진표 중분류 컬럼은 검색과 정렬 대상에 포함된다', () => {
+    expect(filtersSrc).toContain('menuSubCategory');
+    expect(filtersSrc).toContain('menuSubCategoryCode');
+    expect(filtersSrc).toContain("sortKey === 'sub'");
+    expect(rowSrc).toContain('subLabel');
+  });
+
   test('useMarginFilters.js가 stats/sortedFiltered/hiddenCount를 반환한다', () => {
     expect(filtersSrc).toContain('stats');
     expect(filtersSrc).toContain('sortedFiltered');

@@ -6,7 +6,9 @@ import { CATEGORIES, NOTE_TYPES, STATUSES, getAllNotesCached } from '@/lib/note'
 import { generateNoteReportText } from '@/lib/note/report';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { noop } from '@/lib/ui/prop-guards';
+import { NoteClonePreviousCard } from '@/app/note/_NoteClonePreviousCard';
 import { NoteDetailFields } from '@/app/note/_NoteDetailFields';
+import { NoteEvaluationFields } from '@/app/note/_NoteEvaluationFields';
 import { NotePhotoSection } from '@/app/note/_NotePhotoSection';
 import { NoteReportSummaryCard } from '@/app/note/_NoteReportSummaryCard';
 import { NoteRequiredFields } from '@/app/note/_NoteRequiredFields';
@@ -22,8 +24,12 @@ export const INIT = {
   status: STATUSES[0],
   testContent: '',
   testDate: '',
+  testRound: '',
   materials: '',
   tasteEval: '',
+  tasteRating: 0,
+  textureRating: 0,
+  appearanceRating: 0,
   managerEval: '',
   costNote: '',
   improvements: '',
@@ -43,6 +49,7 @@ export function normalizeNoteFormForSave(form) {
 export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
   const updateField = makeFieldUpdater(setForm);
   const [allTags, setAllTags] = useState([]);
+  const [sourceNotes, setSourceNotes] = useState([]);
   const [touched, setTouched] = useState({});
 
   function markTouched(key) {
@@ -59,6 +66,7 @@ export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
       .then(() => getAllNotesCached())
       .then(notes => {
         if (!alive) return;
+        setSourceNotes(notes);
         const tagSet = new Set();
         notes.forEach(note => {
           (note.tags || '')
@@ -99,7 +107,9 @@ export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
           markTouched={markTouched}
           onCategoryChange={onCategoryChange}
         />
-        <NoteDetailFields form={form} allTags={allTags} updateField={updateField} />
+        <NoteClonePreviousCard form={form} notes={sourceNotes} setForm={setForm} />
+        <NoteEvaluationFields form={form} allTags={allTags} updateField={updateField} />
+        <NoteDetailFields form={form} updateField={updateField} />
         <NotePhotoSection
           photos={form.photos || []}
           onChange={value => updateField('photos', value)}

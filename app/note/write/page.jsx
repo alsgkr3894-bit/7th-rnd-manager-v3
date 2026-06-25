@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { addNote, getNoteById, CATEGORIES } from '@/lib/note';
+import { buildPreviousRoundDraft } from '@/lib/note/evaluation';
 import { NoteFormBody, INIT, normalizeNoteFormForSave } from '@/app/note/_NoteFormBody';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
 import { KEYS, consumeNoteFrom, consumeHomeNoteDraft } from '@/lib/note/keys';
@@ -73,16 +74,8 @@ export default function Page() {
         .then(() => getNoteById(sourceNoteId))
         .then(note => {
           if (!alive || !note) return;
-          setFromTitle(note.title);
-          setForm(f => ({
-            ...f,
-            menuName: note.menuName || '',
-            category: note.category || f.category,
-            noteType: note.noteType || f.noteType,
-            tags: note.tags || '',
-            parentId: note.id,
-            brand: note.brand || f.brand, // 부모 brand 계승
-          }));
+          setFromTitle(note.title || note.menuName || '');
+          setForm(f => buildPreviousRoundDraft(note, f));
           setIsDirty(true);
           isDirtyRef.current = true;
         })

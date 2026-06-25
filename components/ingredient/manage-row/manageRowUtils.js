@@ -1,5 +1,6 @@
 import { formatNumber } from '@/lib/format';
 import { countIngredientPhotos, getPrimaryIngredientPhoto, sortHashTags } from '@/lib/ingredient';
+import { getIngredientPackagePrice } from '@/lib/ingredient/price-status';
 import { asDisplayText, asStringArray } from '@/lib/ui/prop-guards';
 
 export function buildManageRowModel(rawRow = {}) {
@@ -14,7 +15,7 @@ export function buildManageRowModel(rawRow = {}) {
     Number.isFinite(baseQuantity) && baseQuantity > 0 && baseUnitType
       ? `${formatNumber(baseQuantity)}${baseUnitType}`
       : salesUnit;
-  const priceWithTax = Number.isFinite(Number(r.priceWithTax)) ? Number(r.priceWithTax) : null;
+  const priceWithTax = getIngredientPackagePrice(r);
 
   return {
     r,
