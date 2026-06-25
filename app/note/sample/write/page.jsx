@@ -30,7 +30,6 @@ export default function Page() {
     if (!canEdit) return;
     let alive = true;
     const fromSampleId = Number(consumeSampleFrom());
-    const d = consumeSampleFromNote();
     if (Number.isSafeInteger(fromSampleId) && fromSampleId > 0) {
       initDB()
         .then(() => getSampleById(fromSampleId))
@@ -47,6 +46,7 @@ export default function Page() {
         alive = false;
       };
     }
+    const d = consumeSampleFromNote();
     if (!d || typeof d !== 'object' || Array.isArray(d)) return;
     const menuName = typeof d.menuName === 'string' ? d.menuName : '';
     const category = typeof d.category === 'string' ? d.category : '';

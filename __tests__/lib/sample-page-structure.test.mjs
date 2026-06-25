@@ -455,6 +455,14 @@ describe('sample page structure', () => {
     expect(writePageSource).toContain('consumeSampleFrom');
     expect(writePageSource).toContain('buildNextSampleRoundDraft');
     expect(writePageSource).toContain('getSampleById');
+    expect(writePageSource).toContain('const fromSampleId = Number(consumeSampleFrom())');
+    expect(writePageSource).toContain('const d = consumeSampleFromNote()');
+    expect(writePageSource.indexOf('const fromSampleId = Number(consumeSampleFrom())')).toBeLessThan(
+      writePageSource.indexOf('const d = consumeSampleFromNote()')
+    );
+    expect(writePageSource.indexOf('getSampleById(fromSampleId)')).toBeLessThan(
+      writePageSource.indexOf('const d = consumeSampleFromNote()')
+    );
     expect(writePageSource).toContain("from '@/hooks/useCurrentRole'");
     expect(writePageSource).toContain('if (!roleReady) return');
     expect(writePageSource).toContain('}, [canEdit, roleReady]);');
