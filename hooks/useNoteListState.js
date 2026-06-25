@@ -7,13 +7,11 @@ import { useScrollMemory } from '@/hooks/useScrollMemory';
 import { useNoteFilter } from '@/hooks/useNoteFilter';
 import { useNotePresets } from '@/hooks/useNotePresets';
 import { buildHighlightRegex } from '@/lib/note/utils';
+import { normalizeNoteView, shouldShowAllNoteRows } from '@/lib/note/list-state';
 
-const NOTE_VIEW_KEYS = new Set(['card', 'table']);
 const PAGE_SIZE = 20;
 
-export function normalizeNoteView(value) {
-  return NOTE_VIEW_KEYS.has(value) ? value : 'card';
-}
+export { normalizeNoteView, shouldShowAllNoteRows };
 
 export function useNoteListState({ notes, pinnedIds, pathname }) {
   const [viewMode, setViewMode] = useState(() => normalizeNoteView(tryLS(KEYS.NOTE_VIEW, 'card')));
@@ -61,7 +59,11 @@ export function useNoteListState({ notes, pinnedIds, pathname }) {
   );
 
   const hlRe = useMemo(() => buildHighlightRegex(search.trim()), [search]);
-  const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const showAllRows = shouldShowAllNoteRows(statusFilter);
+  const visible = useMemo(
+    () => (showAllRows ? filtered : filtered.slice(0, visibleCount)),
+    [filtered, visibleCount, showAllRows]
+  );
   const hasActiveFilter = statusFilter !== 'all' || search.trim() || sortBy !== 'createdAt';
 
   function resetVisibleCount() {

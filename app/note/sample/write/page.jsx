@@ -4,12 +4,12 @@ import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { addSample } from '@/lib/sample';
+import { addSample, buildNextSampleRoundDraft, getSampleById } from '@/lib/sample';
 import { SampleFormBody, SAMPLE_INIT } from '../_SampleFormBody';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
-import { consumeSampleFromNote } from '@/lib/note/keys';
+import { consumeSampleFrom, consumeSampleFromNote } from '@/lib/note/keys';
 import { todayLocalDate } from '@/lib/date/local-date';
 
 export default function Page() {
@@ -28,7 +28,25 @@ export default function Page() {
   useEffect(() => {
     if (!roleReady) return;
     if (!canEdit) return;
+    let alive = true;
+    const fromSampleId = Number(consumeSampleFrom());
     const d = consumeSampleFromNote();
+    if (Number.isSafeInteger(fromSampleId) && fromSampleId > 0) {
+      initDB()
+        .then(() => getSampleById(fromSampleId))
+        .then(sample => {
+          if (!alive || !sample) return;
+          setForm(f => buildNextSampleRoundDraft(sample, f));
+          setIsDirty(true);
+        })
+        .catch(err => {
+          console.error('[sample/write] 원본 샘플 로드 실패', err);
+          showToast('원본 샘플을 불러오지 못했습니다. 새 샘플로 작성합니다.', 'warn');
+        });
+      return () => {
+        alive = false;
+      };
+    }
     if (!d || typeof d !== 'object' || Array.isArray(d)) return;
     const menuName = typeof d.menuName === 'string' ? d.menuName : '';
     const category = typeof d.category === 'string' ? d.category : '';
@@ -41,6 +59,9 @@ export default function Page() {
       tags: tags || f.tags,
       ...(linkedNoteId != null && { linkedNoteId }),
     }));
+    return () => {
+      alive = false;
+    };
   }, [canEdit, roleReady]);
 
   function handleFormChange(updater) {

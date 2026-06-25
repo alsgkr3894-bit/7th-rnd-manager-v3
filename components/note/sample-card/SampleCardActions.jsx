@@ -1,4 +1,4 @@
-export function SampleCardActions({ onEdit, onCopy, onDelete, canEdit = false }) {
+export function SampleCardActions({ onEdit, onCopy, onNextRound, onDelete, canEdit = false }) {
   return (
     <div
       style={{ display: 'flex', gap: 6, marginTop: 4 }}
@@ -9,6 +9,9 @@ export function SampleCardActions({ onEdit, onCopy, onDelete, canEdit = false })
       </button>
       <button className="btn sm" onClick={onCopy} disabled={!canEdit}>
         복사
+      </button>
+      <button className="btn sm" onClick={onNextRound} disabled={!canEdit}>
+        다음 차수
       </button>
       <button
         className="btn sm"

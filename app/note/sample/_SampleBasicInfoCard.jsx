@@ -78,6 +78,18 @@ export function SampleBasicInfoCard({
             disabled={readOnly}
           />
         </Field>
+        <Field label="테스트 차수">
+          <input
+            className="form-input"
+            value={form.testRound || ''}
+            onChange={event => onUpdate('testRound', event.target.value)}
+            placeholder="예) 1"
+            disabled={readOnly}
+          />
+        </Field>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <Field label="카테고리" hint="입력·선택 모두 가능">
           <ComboBox
             value={form.category}

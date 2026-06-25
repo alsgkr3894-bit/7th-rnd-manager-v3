@@ -95,14 +95,18 @@ describe('buildSamplePageControllerProps', () => {
     props.actionsProps.onCreateSample();
     props.recordsProps.onCreateSample();
     props.recordsProps.onEditSample({ id: 's-1' });
+    props.recordsProps.onNextRoundSample({ id: 's-1' });
     props.dialogsProps.onEditDetail();
+    props.dialogsProps.onNextRoundDetail();
     props.recordsProps.onEditSample({});
 
     expect(inputs.router.push).toHaveBeenNthCalledWith(1, '/note/sample/write');
     expect(inputs.router.push).toHaveBeenNthCalledWith(2, '/note/sample/write');
     expect(inputs.router.push).toHaveBeenNthCalledWith(3, '/note/sample/s-1');
-    expect(inputs.router.push).toHaveBeenNthCalledWith(4, '/note/sample/s-2');
-    expect(inputs.router.push).toHaveBeenCalledTimes(4);
+    expect(inputs.router.push).toHaveBeenNthCalledWith(4, '/note/sample/write');
+    expect(inputs.router.push).toHaveBeenNthCalledWith(5, '/note/sample/s-2');
+    expect(inputs.router.push).toHaveBeenNthCalledWith(6, '/note/sample/write');
+    expect(inputs.router.push).toHaveBeenCalledTimes(6);
     expect(inputs.pageState.setDetailRec).toHaveBeenCalledWith(null);
   });
 
@@ -151,7 +155,9 @@ describe('buildSamplePageControllerProps', () => {
     props.actionsProps.onCreateSample();
     props.recordsProps.onCreateSample();
     props.recordsProps.onEditSample({ id: 's-1' });
+    props.recordsProps.onNextRoundSample({ id: 's-1' });
     props.dialogsProps.onEditDetail();
+    props.dialogsProps.onNextRoundDetail();
     props.actionsProps.onStartBatchMode();
     props.dialogsProps.onDeleteDetail();
 

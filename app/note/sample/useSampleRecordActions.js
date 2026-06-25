@@ -40,7 +40,7 @@ export function useSampleRecordActions({
       if (!canEdit) return;
       try {
         await initDB();
-        await addSample({ ...sample, title: `${sample.title} (복사)` });
+        await addSample({ ...sample, title: `${sample.title} (복사)`, parentId: null });
         showToast('샘플을 복사했어요', 'ok');
         reload();
       } catch {

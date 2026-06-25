@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import { sampleNamesText, RATING_COLOR } from '@/lib/sample';
+import { formatTestRound } from '@/lib/note/evaluation';
 import {
   asDisplayText,
   asFiniteNumber,
@@ -18,6 +19,7 @@ export const SampleListRow = React.memo(function SampleListRow({
   onClick,
   onEdit,
   onCopy,
+  onNextRound,
   onDelete,
   canEdit = false,
 }) {
@@ -33,10 +35,12 @@ export const SampleListRow = React.memo(function SampleListRow({
   const click = typeof onClick === 'function' ? onClick : noop;
   const edit = typeof onEdit === 'function' ? onEdit : noop;
   const copy = typeof onCopy === 'function' ? onCopy : noop;
+  const nextRound = typeof onNextRound === 'function' ? onNextRound : noop;
   const remove = typeof onDelete === 'function' ? onDelete : noop;
   const rating = clampInteger(rec.rating, { min: 0, max: 5, fallback: 0 });
   const price = asFiniteNumber(rec.price);
   const hasPrice = Number.isFinite(price) && price > 0;
+  const roundLabel = formatTestRound(rec.testRound);
   return (
     <tr onClick={click} style={{ cursor: 'pointer' }}>
       <td style={{ width: 48 }}>
@@ -63,7 +67,15 @@ export const SampleListRow = React.memo(function SampleListRow({
           )}
         </div>
       </td>
-      <td style={{ fontWeight: 700 }}>{title}</td>
+      <td>
+        <div style={{ fontWeight: 700 }}>{title}</div>
+        {(roundLabel || rec.parentId != null) && (
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+            {roundLabel && <span className="chip">{roundLabel}</span>}
+            {rec.parentId != null && <span className="chip">차수 연결</span>}
+          </div>
+        )}
+      </td>
       <td style={{ color: 'var(--text-2)' }}>{names || '—'}</td>
       <td>
         {category ? (
@@ -97,6 +109,9 @@ export const SampleListRow = React.memo(function SampleListRow({
           </button>
           <button className="btn sm" onClick={copy} disabled={!canEdit}>
             복사
+          </button>
+          <button className="btn sm" onClick={nextRound} disabled={!canEdit}>
+            다음 차수
           </button>
           <button
             className="btn sm"

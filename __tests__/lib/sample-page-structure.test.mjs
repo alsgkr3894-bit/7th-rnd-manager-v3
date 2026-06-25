@@ -23,6 +23,7 @@ const ratingFilterGroupSource = readFileSync(
   'utf8'
 );
 const searchFieldSource = readFileSync(resolve('app/note/sample/_SampleSearchField.jsx'), 'utf8');
+const basicInfoSource = readFileSync(resolve('app/note/sample/_SampleBasicInfoCard.jsx'), 'utf8');
 const calendarSource = readFileSync(resolve('app/note/sample/_SampleCalendarView.jsx'), 'utf8');
 const compareBarSource = readFileSync(resolve('app/note/sample/_SampleCompareBar.jsx'), 'utf8');
 const pageDialogsSource = readFileSync(resolve('app/note/sample/_SamplePageDialogs.jsx'), 'utf8');
@@ -279,12 +280,27 @@ describe('sample page structure', () => {
     expect(sampleRatingStarsSource).toContain('className="inline-stars"');
     expect(sampleCardMetaSource).toContain('export function SampleCardMeta');
     expect(sampleCardMetaSource).toContain('priceTaxType ===');
+    expect(sampleCardMetaSource).toContain('roundLabel');
+    expect(sampleCardMetaSource).toContain('isChained');
     expect(sampleCardTagsSource).toContain('export function SampleCardTags');
     expect(sampleCardTagsSource).toContain('tags.slice(0, 4)');
     expect(sampleCardActionsSource).toContain('export function SampleCardActions');
+    expect(sampleCardActionsSource).toContain('onNextRound');
+    expect(sampleCardActionsSource).toContain('다음 차수');
     expect(sampleCardActionsSource).toContain('event.stopPropagation()');
     expect(sampleCardUtilsSource).toContain('export function buildSampleCardViewModel');
     expect(sampleCardUtilsSource).toContain('sampleNamesText(rec)');
+    expect(sampleCardUtilsSource).toContain('formatTestRound(rec.testRound)');
+    expect(sampleCardUtilsSource).toContain('isChained: rec.parentId != null');
+    expect(basicInfoSource).toContain('테스트 차수');
+    expect(basicInfoSource).toContain("onUpdate('testRound'");
+    expect(sampleListRowSource).toContain('formatTestRound(rec.testRound)');
+    expect(sampleListRowSource).toContain('차수 연결');
+    expect(sampleListRowSource).toContain('onNextRound');
+    expect(sampleDetailHeaderSource).toContain('onNextRound');
+    expect(sampleDetailHeaderSource).toContain('다음 차수');
+    expect(sampleDetailHeaderSource).toContain('model.roundLabel');
+    expect(sampleDetailHeaderSource).toContain('model.isChained');
   });
 
   test('sample hooks own page data state and record mutations', () => {
@@ -304,6 +320,7 @@ describe('sample page structure', () => {
     expect(controllerSource).not.toContain('loadErrorProps');
     expect(controllerSource).not.toContain("router.push('/note/sample/write')");
     expect(controllerPropsSource).toContain('export function buildSamplePageControllerProps');
+    expect(controllerPropsSource).toContain("import { setSampleFrom } from '@/lib/note/keys'");
     expect(controllerPropsSource).toContain('loadErrorProps');
     expect(controllerPropsSource).toContain('actionsProps');
     expect(controllerPropsSource).toContain('filterProps');
@@ -319,6 +336,8 @@ describe('sample page structure', () => {
     expect(controllerPropsSource).toContain('if (!canEdit) return');
     expect(controllerPropsSource).toContain('if (!canEdit || sample?.id == null) return');
     expect(controllerPropsSource).toContain('router.push(`/note/sample/${sample.id}`)');
+    expect(controllerPropsSource).toContain('setSampleFrom(sample.id)');
+    expect(controllerPropsSource).toContain('openSampleNextRound');
     expect(controllerPropsSource).not.toContain("from '@/lib/sample/constants'");
     expect(controllerPropsSource).not.toContain("from './samplePageStateUtils'");
     expect(controllerTopPropsSource).toContain('export function buildSampleLoadErrorProps');
@@ -345,8 +364,10 @@ describe('sample page structure', () => {
     expect(controllerCalendarPropsSource).toContain('onOpenSample: setDetailRec');
     expect(controllerRecordsPropsSource).toContain('export function buildSampleRecordsProps');
     expect(controllerRecordsPropsSource).toContain('if (canEdit) openWrite()');
+    expect(controllerRecordsPropsSource).toContain('onNextRoundSample');
     expect(controllerDialogPropsSource).toContain('export function buildSampleCompareBarProps');
     expect(controllerDialogPropsSource).toContain('export function buildSampleDialogsProps');
+    expect(controllerDialogPropsSource).toContain('onNextRoundDetail');
     expect(controllerDialogPropsSource).toContain(
       'onDeleteDetail: () => canEdit && detailRec && recordActions.handleDelete(detailRec)'
     );
@@ -393,10 +414,12 @@ describe('sample page structure', () => {
     expect(stateUtilsSource).toContain('export function buildSamplesByDate');
     expect(stateUtilsSource).toContain('export const SAMPLE_SORT_OPTIONS');
     expect(stateUtilsSource).toContain('sampleNamesText(sample)');
+    expect(stateUtilsSource).toContain("(sample.testRound || '').toLowerCase().includes(query)");
     expect(stateUtilsSource).toContain('buildCalendarDays(calMonth, CALENDAR_CELLS)');
     expect(actionsHookSource).toContain('export function useSampleRecordActions');
     expect(actionsHookSource).toContain('await deleteSample(sample.id)');
     expect(actionsHookSource).toContain('await addSample({ ...sample');
+    expect(actionsHookSource).toContain('parentId: null');
     expect(actionsHookSource).toContain('await updateSample(sampleId');
     expect(actionsHookSource).toContain('await initDB()');
     expect(actionsHookSource).toContain("showToast('샘플을 복사했어요', 'ok')");
@@ -429,6 +452,9 @@ describe('sample page structure', () => {
     expect(pageDialogsSource).toContain('canEdit = false');
     expect(sampleDetailModalSource).toContain('canEdit = false');
     expect(sampleDetailHeaderSource).toContain('disabled={!canEdit}');
+    expect(writePageSource).toContain('consumeSampleFrom');
+    expect(writePageSource).toContain('buildNextSampleRoundDraft');
+    expect(writePageSource).toContain('getSampleById');
     expect(writePageSource).toContain("from '@/hooks/useCurrentRole'");
     expect(writePageSource).toContain('if (!roleReady) return');
     expect(writePageSource).toContain('}, [canEdit, roleReady]);');

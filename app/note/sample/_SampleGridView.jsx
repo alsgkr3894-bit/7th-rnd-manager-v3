@@ -17,6 +17,7 @@ export function SampleGridView({
   onOpenSample,
   onEditSample,
   onCopySample,
+  onNextRoundSample,
   onDeleteSample,
   onRatingChange,
 }) {
@@ -58,6 +59,7 @@ export function SampleGridView({
             onRatingChange={onRatingChange}
             onEdit={() => onEditSample(sample)}
             onCopy={event => onCopySample(sample, event)}
+            onNextRound={event => onNextRoundSample(sample, event)}
             onDelete={() => onDeleteSample(sample)}
             canEdit={canEdit}
           />

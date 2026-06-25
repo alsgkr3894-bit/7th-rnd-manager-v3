@@ -14,6 +14,7 @@ export function SamplePageDialogs({
   canEdit = false,
   onCloseDetail,
   onEditDetail,
+  onNextRoundDetail,
   onDeleteDetail,
   onCloseCompare,
   onConfirmBatchDelete,
@@ -26,6 +27,7 @@ export function SamplePageDialogs({
           sample={detailRec}
           onClose={onCloseDetail}
           onEdit={onEditDetail}
+          onNextRound={onNextRoundDetail}
           onDelete={onDeleteDetail}
           canEdit={canEdit}
         />

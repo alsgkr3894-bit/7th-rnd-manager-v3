@@ -53,7 +53,7 @@ export function NoteClonePreviousCard({ form, notes, setForm }) {
         <div>
           <div className="card-title">이전 차수 복제</div>
           <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 3 }}>
-            이전 노트의 내용과 평가를 가져와 새 차수로 이어 작성합니다.
+            이전 노트의 제목과 차수만 가져와 새 차수로 이어 작성합니다.
           </div>
         </div>
         <button className="btn sm" type="button" onClick={applyClone} disabled={!selected}>
@@ -99,8 +99,8 @@ export function NoteClonePreviousCard({ form, notes, setForm }) {
             padding: '8px 10px',
           }}
         >
-          적용 시 제목, 재료, 테스트 내용, 평가, 태그, 임시 원가가 복제되고 테스트 차수는 자동으로
-          증가합니다. 사진은 새 차수에서 다시 첨부하도록 제외됩니다.
+          적용 시 제목과 연결 정보만 가져오고 테스트 차수는 자동으로 증가합니다. 상세 내용,
+          평가, 태그, 원가, 사진은 새 차수에서 다시 작성합니다.
         </div>
       )}
     </div>

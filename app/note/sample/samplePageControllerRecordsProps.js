@@ -6,7 +6,7 @@ export function buildSampleRecordsProps({
   navigation,
   canEdit = false,
 }) {
-  const { openWrite, openSampleEditor } = navigation;
+  const { openWrite, openSampleEditor, openSampleNextRound } = navigation;
   const { loading, viewMode, filtered, catFilter, ratingMin, sortBy, search, setDetailRec } =
     pageState;
 
@@ -30,6 +30,9 @@ export function buildSampleRecordsProps({
       if (canEdit) openSampleEditor(sample);
     },
     onCopySample: recordActions.handleCopy,
+    onNextRoundSample: sample => {
+      if (canEdit) openSampleNextRound(sample);
+    },
     onDeleteSample: recordActions.handleDelete,
     onRatingChange: recordActions.handleRatingChange,
     onCreateSample: () => {

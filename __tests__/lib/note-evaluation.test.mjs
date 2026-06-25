@@ -24,7 +24,7 @@ describe('note evaluation helpers', () => {
     expect(formatTestRound('2차')).toBe('2차');
   });
 
-  test('previous round draft copies useful fields while preparing a fresh note', () => {
+  test('previous round draft only carries title and round linkage into a fresh note', () => {
     const draft = buildPreviousRoundDraft(
       {
         id: 7,
@@ -55,16 +55,18 @@ describe('note evaluation helpers', () => {
     expect(draft).toMatchObject({
       title: '치즈 테스트',
       menuName: '치즈 테스트',
-      category: '피자',
       testRound: '3차',
       testDate: '2026-06-24',
       parentId: 7,
-      tasteRating: 4,
-      textureRating: 5,
-      appearanceRating: 2,
-      tags: '치즈, 재테스트',
-      photos: [],
+      status: '테스트',
+      photos: [{ data: 'current-photo' }],
     });
-    expect(draft.tempCostCalc).toEqual({ rows: [{ name: '치즈' }] });
+    expect(draft.category).toBeUndefined();
+    expect(draft.testContent).toBeUndefined();
+    expect(draft.materials).toBeUndefined();
+    expect(draft.tasteEval).toBeUndefined();
+    expect(draft.tags).toBeUndefined();
+    expect(draft.tempCostCalc).toBeUndefined();
+    expect(draft.tasteRating).toBeUndefined();
   });
 });

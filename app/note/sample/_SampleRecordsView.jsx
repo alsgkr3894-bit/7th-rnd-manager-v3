@@ -27,6 +27,7 @@ export function SampleRecordsView({
   onOpenSample,
   onEditSample,
   onCopySample,
+  onNextRoundSample,
   onDeleteSample,
   onRatingChange,
   onCreateSample,
@@ -67,6 +68,7 @@ export function SampleRecordsView({
           onOpenSample={onOpenSample}
           onEditSample={onEditSample}
           onCopySample={onCopySample}
+          onNextRoundSample={onNextRoundSample}
           onDeleteSample={onDeleteSample}
           onRatingChange={onRatingChange}
         />
@@ -97,6 +99,7 @@ export function SampleRecordsView({
           onOpenSample={onOpenSample}
           onEditSample={onEditSample}
           onCopySample={onCopySample}
+          onNextRoundSample={onNextRoundSample}
           onDeleteSample={onDeleteSample}
         />
         <Pagination

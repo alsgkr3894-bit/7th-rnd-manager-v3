@@ -14,15 +14,23 @@ import {
   normalizeSampleDetailActions,
 } from './detail-modal/sampleDetailModalUtils';
 
-export function SampleDetailModal({ sample = {}, onClose, onEdit, onDelete, canEdit = false }) {
+export function SampleDetailModal({
+  sample = {},
+  onClose,
+  onEdit,
+  onNextRound,
+  onDelete,
+  canEdit = false,
+}) {
   const router = useRouter();
   const [photoIdx, setPhotoIdx] = useState(0);
   const model = buildSampleDetailModel(sample);
   const { currentPhotoIdx, currentPhoto } = getCurrentPhotoState(model.photos, photoIdx);
   const { imgRef, scale, resetScale } = usePinchZoom();
-  const { closeModal, edit, remove } = normalizeSampleDetailActions({
+  const { closeModal, edit, nextRound, remove } = normalizeSampleDetailActions({
     onClose,
     onEdit,
+    onNextRound,
     onDelete,
   });
   const { containerRef, isClosing, close } = useModalShell(closeModal);
@@ -43,6 +51,7 @@ export function SampleDetailModal({ sample = {}, onClose, onEdit, onDelete, canE
         model={model}
         onOpenMenuMaster={openMenuMaster}
         onEdit={edit}
+        onNextRound={nextRound}
         onDelete={remove}
         onClose={close}
         canEdit={canEdit}

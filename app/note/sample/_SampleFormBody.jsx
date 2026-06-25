@@ -17,6 +17,7 @@ export const SAMPLE_INIT = {
   sampleNames: [''],
   category: '',
   testDate: '',
+  testRound: '',
   company: '',
   tester: '',
   rating: 0,
@@ -28,6 +29,7 @@ export const SAMPLE_INIT = {
   nextAction: '',
   tags: '',
   photos: [],
+  parentId: null,
   linkedProducts: [], // [{kind:'ingredient'|'menu', code, name}]
   linkedNoteId: null,
 };

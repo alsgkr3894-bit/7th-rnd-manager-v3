@@ -1,4 +1,5 @@
 import { sampleNamesText } from '@/lib/sample';
+import { formatTestRound } from '@/lib/note/evaluation';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 export function buildSampleCardViewModel(sample = {}) {
@@ -22,6 +23,8 @@ export function buildSampleCardViewModel(sample = {}) {
     title: asDisplayText(rec.title),
     category: asDisplayText(rec.category),
     testDate: asDisplayText(rec.testDate),
+    roundLabel: formatTestRound(rec.testRound),
+    isChained: rec.parentId != null,
     company: asDisplayText(rec.company),
     description: asDisplayText(rec.description),
     price: asDisplayText(rec.price).trim(),

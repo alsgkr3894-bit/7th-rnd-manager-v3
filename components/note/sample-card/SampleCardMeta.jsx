@@ -1,4 +1,4 @@
-export function SampleCardMeta({ names, testDate, company, price, priceTaxType }) {
+export function SampleCardMeta({ names, testDate, roundLabel, isChained, company, price, priceTaxType }) {
   return (
     <div
       style={{
@@ -13,6 +13,8 @@ export function SampleCardMeta({ names, testDate, company, price, priceTaxType }
     >
       {names && <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{names}</span>}
       {testDate && <span>· {testDate}</span>}
+      {roundLabel && <span>· {roundLabel}</span>}
+      {isChained && <span>· 차수 연결</span>}
       {company && <span>· {company}</span>}
       {price && (
         <span>

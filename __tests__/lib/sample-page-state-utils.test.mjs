@@ -34,6 +34,7 @@ describe('sample page state utils', () => {
       description: '고소함',
       tags: '치즈',
       rating: 0,
+      testRound: '2차',
       testDate: '2026-06-12',
       createdAt: '2026-06-12T09:00:00.000Z',
     },
@@ -89,6 +90,14 @@ describe('sample page state utils', () => {
         ratingMin: 0,
         search: '치즈',
         sortBy: 'testDate',
+      }).map(sample => sample.id)
+    ).toEqual(['b']);
+    expect(
+      filterSortSamples(samples, {
+        catFilter: 'all',
+        ratingMin: 0,
+        search: '2차',
+        sortBy: 'createdAt',
       }).map(sample => sample.id)
     ).toEqual(['b']);
   });

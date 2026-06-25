@@ -1,4 +1,5 @@
 import { sampleNamesText } from '@/lib/sample';
+import { formatTestRound } from '@/lib/note/evaluation';
 import {
   asDisplayText,
   asFiniteNumber,
@@ -26,6 +27,8 @@ export function buildSampleDetailModel(sample = {}) {
     title,
     category: asDisplayText(safeSample.category),
     testDate: asDisplayText(safeSample.testDate),
+    roundLabel: formatTestRound(safeSample.testRound),
+    isChained: safeSample.parentId != null,
     company: asDisplayText(safeSample.company),
     tester: asDisplayText(safeSample.tester),
     description: asDisplayText(safeSample.description),
@@ -43,10 +46,11 @@ export function buildSampleDetailModel(sample = {}) {
   };
 }
 
-export function normalizeSampleDetailActions({ onClose, onEdit, onDelete }) {
+export function normalizeSampleDetailActions({ onClose, onEdit, onNextRound, onDelete }) {
   return {
     closeModal: typeof onClose === 'function' ? onClose : noop,
     edit: typeof onEdit === 'function' ? onEdit : noop,
+    nextRound: typeof onNextRound === 'function' ? onNextRound : noop,
     remove: typeof onDelete === 'function' ? onDelete : noop,
   };
 }

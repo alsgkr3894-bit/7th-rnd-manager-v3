@@ -6,12 +6,14 @@ const sharedGetAll = jest.fn(async () => []);
 const sharedGetById = jest.fn(async () => null);
 const sharedGetByIndex = jest.fn(async () => []);
 const sharedDeleteById = jest.fn(async () => {});
+const txAdds = [];
 const txDeletes = [];
 const sharedRunTransaction = jest.fn(async (_stores, _mode, work) => {
   work({
     objectStore() {
       return {
         add(record) {
+          txAdds.push(record);
           const req = { result: record?.id ?? 1, onsuccess: null };
           Promise.resolve().then(() => req.onsuccess?.());
           return req;
@@ -54,6 +56,7 @@ const sampleStore = await import('@/lib/sample/store');
 describe('노트/샘플 store 읽기 가드', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    txAdds.length = 0;
     txDeletes.length = 0;
     getActiveBrandId.mockReturnValue('main');
     sharedHasStore.mockReturnValue(true);
@@ -216,5 +219,20 @@ describe('노트/샘플 store 읽기 가드', () => {
         sampleNames: [' A ', 3, undefined, 'B'],
       })
     ).toBe('A, 3, B');
+  });
+
+  test('샘플 저장은 테스트 차수와 parentId 연결을 정규화해 보존한다', async () => {
+    await sampleStore.addSample({
+      title: '치즈 샘플',
+      sampleNames: ['치즈'],
+      testRound: ' 2차 ',
+      parentId: '12',
+    });
+
+    expect(txAdds[0]).toMatchObject({
+      title: '치즈 샘플',
+      testRound: '2차',
+      parentId: 12,
+    });
   });
 });

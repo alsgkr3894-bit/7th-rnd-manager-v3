@@ -3,6 +3,7 @@ import {
   buildSampleHeaderProps,
   buildSampleLoadErrorProps,
 } from './samplePageControllerTopProps';
+import { setSampleFrom } from '@/lib/note/keys';
 import {
   buildSampleCalendarProps,
   buildSampleFilterProps,
@@ -32,12 +33,17 @@ export function buildSamplePageControllerProps({
     if (!canEdit || sample?.id == null) return;
     router.push(`/note/sample/${sample.id}`);
   };
+  const openSampleNextRound = sample => {
+    if (!canEdit || sample?.id == null) return;
+    setSampleFrom(sample.id);
+    router.push('/note/sample/write');
+  };
   const editDetail = () => {
     if (!canEdit || !detailRec) return;
     setDetailRec(null);
     router.push(`/note/sample/${detailRec.id}`);
   };
-  const navigation = { openWrite, openSampleEditor, editDetail };
+  const navigation = { openWrite, openSampleEditor, openSampleNextRound, editDetail };
   const context = {
     pageState,
     batch,

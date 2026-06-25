@@ -5,6 +5,7 @@ export function SampleDetailHeader({
   model,
   onOpenMenuMaster,
   onEdit,
+  onNextRound,
   onDelete,
   onClose,
   canEdit = false,
@@ -36,6 +37,9 @@ export function SampleDetailHeader({
         </button>
         <button className="btn sm" onClick={onEdit} disabled={!canEdit}>
           수정
+        </button>
+        <button className="btn sm" onClick={onNextRound} disabled={!canEdit}>
+          다음 차수
         </button>
         <button
           className="btn sm"
@@ -109,6 +113,8 @@ function SampleDetailMeta({ model }) {
         <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{model.names}</span>
       )}
       {model.testDate && <span>{model.testDate}</span>}
+      {model.roundLabel && <span>{model.roundLabel}</span>}
+      {model.isChained && <span>차수 연결</span>}
       {model.company && <span>{model.company}</span>}
       {model.tester && <span>담당: {model.tester}</span>}
       {model.priceLabel && <span>{model.priceLabel}</span>}

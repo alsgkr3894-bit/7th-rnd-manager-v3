@@ -15,6 +15,7 @@ export function SampleListView({
   onOpenSample,
   onEditSample,
   onCopySample,
+  onNextRoundSample,
   onDeleteSample,
 }) {
   return (
@@ -47,7 +48,7 @@ export function SampleListView({
               <th scope="col" style={{ width: 110, textAlign: 'right' }}>
                 단가
               </th>
-              <th scope="col" style={{ width: 150 }} aria-label="액션"></th>
+              <th scope="col" style={{ width: 210 }} aria-label="액션"></th>
             </tr>
           </thead>
           <tbody>
@@ -69,6 +70,7 @@ export function SampleListView({
                 }}
                 onEdit={() => onEditSample(sample)}
                 onCopy={event => onCopySample(sample, event)}
+                onNextRound={event => onNextRoundSample(sample, event)}
                 onDelete={() => onDeleteSample(sample)}
                 canEdit={canEdit}
               />

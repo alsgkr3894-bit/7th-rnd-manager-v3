@@ -66,6 +66,7 @@ describe('note form body structure', () => {
     expect(cloneSource).toContain('export function NoteClonePreviousCard');
     expect(cloneSource).toContain('buildPreviousRoundDraft(selected, current)');
     expect(cloneSource).toContain('복제 적용');
+    expect(cloneSource).toContain('제목과 차수만');
     expect(photoSource).toContain('export function NotePhotoSection');
     expect(photoSource).toContain('MAX_NOTE_PHOTOS');
     expect(photoSource).toContain('resizePhoto');

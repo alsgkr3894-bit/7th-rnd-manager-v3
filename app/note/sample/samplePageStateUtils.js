@@ -29,6 +29,7 @@ export function filterSortSamples(samples, { catFilter, ratingMin, search, sortB
         (sample.title || '').toLowerCase().includes(query) ||
         sampleNamesText(sample).toLowerCase().includes(query) ||
         (sample.company || '').toLowerCase().includes(query) ||
+        (sample.testRound || '').toLowerCase().includes(query) ||
         (sample.description || '').toLowerCase().includes(query) ||
         (sample.tags || '').toLowerCase().includes(query)
     );

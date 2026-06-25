@@ -16,7 +16,7 @@ export function buildSampleDialogsProps({
   canEdit = false,
 }) {
   const { detailRec, setDetailRec } = pageState;
-  const { editDetail } = navigation;
+  const { editDetail, openSampleNextRound } = navigation;
 
   return {
     detailRec,
@@ -30,6 +30,7 @@ export function buildSampleDialogsProps({
     onEditDetail: () => {
       if (canEdit) editDetail();
     },
+    onNextRoundDetail: () => canEdit && detailRec && openSampleNextRound(detailRec),
     onDeleteDetail: () => canEdit && detailRec && recordActions.handleDelete(detailRec),
     onCloseCompare: () => compare.setShowCompare(false),
     onConfirmBatchDelete: batch.confirmBatchDelete,

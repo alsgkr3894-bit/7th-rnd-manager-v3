@@ -55,6 +55,7 @@ describe('note list structure', () => {
     const itemActionsSource = readFileSync(resolve('hooks/useNoteItemActions.js'), 'utf8');
     const listDataSource = readFileSync(resolve('hooks/useNoteListData.js'), 'utf8');
     const listStateSource = readFileSync(resolve('hooks/useNoteListState.js'), 'utf8');
+    const listStateHelperSource = readFileSync(resolve('lib/note/list-state.js'), 'utf8');
     const reportingCopySource = readFileSync(resolve('hooks/useNoteReportingCopy.js'), 'utf8');
 
     expect(source).toContain("import { NoteFilterControls } from './_NoteFilterControls'");
@@ -254,6 +255,11 @@ describe('note list structure', () => {
     expect(listDataSource).toContain('useVisibilityRefresh(load)');
     expect(listDataSource).toContain("showToast('노트 목록을 불러오지 못했어요', 'error')");
     expect(listStateSource).toContain('export function useNoteListState');
+    expect(listStateSource).toContain("from '@/lib/note/list-state'");
+    expect(listStateSource).toContain('shouldShowAllNoteRows(statusFilter)');
+    expect(listStateSource).toContain(
+      'showAllRows ? filtered : filtered.slice(0, visibleCount)'
+    );
     expect(listStateSource).toContain('useNoteFilter(notes, pinnedIds, { pathname })');
     expect(listStateSource).toContain('useNotePresets');
     expect(listStateSource).toContain('useSearchHistory(KEYS.NOTE_SEARCH_HISTORY)');
@@ -261,6 +267,9 @@ describe('note list structure', () => {
     expect(listStateSource).toContain('setLS(KEYS.NOTE_VIEW, mode)');
     expect(listStateSource).toContain('function openChecklistList()');
     expect(listStateSource).toContain("handleSearchChange('체크리스트')");
+    expect(listStateHelperSource).toContain('export function normalizeNoteView');
+    expect(listStateHelperSource).toContain('export function shouldShowAllNoteRows');
+    expect(listStateHelperSource).toContain("return statusFilter === 'all'");
     expect(reportingCopySource).toContain('export function useNoteReportingCopy');
     expect(reportingCopySource).toContain('NOTE_STATUS.RELEASE_READY');
     expect(reportingCopySource).toContain('copyText(text)');

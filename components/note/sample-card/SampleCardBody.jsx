@@ -11,10 +11,12 @@ export function SampleCardBody({
   onRatingChange,
   onEdit,
   onCopy,
+  onNextRound,
   onDelete,
   canEdit = false,
 }) {
-  const { rec, title, names, testDate, company, price, description, tags } = model;
+  const { rec, title, names, testDate, roundLabel, isChained, company, price, description, tags } =
+    model;
 
   return (
     <div style={{ padding: '12px 14px 14px' }}>
@@ -28,6 +30,8 @@ export function SampleCardBody({
       <SampleCardMeta
         names={names}
         testDate={testDate}
+        roundLabel={roundLabel}
+        isChained={isChained}
         company={company}
         price={price}
         priceTaxType={rec.priceTaxType}
@@ -35,7 +39,13 @@ export function SampleCardBody({
       {description && <SampleCardDescription description={description} />}
       <SampleCardTags tags={tags} />
       {!batchMode && !compareMode && (
-        <SampleCardActions onEdit={onEdit} onCopy={onCopy} onDelete={onDelete} canEdit={canEdit} />
+        <SampleCardActions
+          onEdit={onEdit}
+          onCopy={onCopy}
+          onNextRound={onNextRound}
+          onDelete={onDelete}
+          canEdit={canEdit}
+        />
       )}
     </div>
   );

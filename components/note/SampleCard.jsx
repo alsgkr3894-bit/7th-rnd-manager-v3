@@ -26,6 +26,7 @@ const S_CARD = {
  * @param {function} props.onRatingChange  - 별점 변경 핸들러 (sampleId, newRating, e)
  * @param {function} props.onEdit          - 수정 버튼 클릭
  * @param {function} props.onCopy          - 복사 버튼 클릭 (e)
+ * @param {function} props.onNextRound     - 다음 차수 작성 버튼 클릭 (e)
  * @param {function} props.onDelete        - 삭제 버튼 클릭
  */
 export const SampleCard = React.memo(function SampleCard({
@@ -39,6 +40,7 @@ export const SampleCard = React.memo(function SampleCard({
   onRatingChange,
   onEdit,
   onCopy,
+  onNextRound,
   onDelete,
   canEdit = false,
 }) {
@@ -49,6 +51,7 @@ export const SampleCard = React.memo(function SampleCard({
   const ratingChange = typeof onRatingChange === 'function' ? onRatingChange : noop;
   const edit = typeof onEdit === 'function' ? onEdit : noop;
   const copy = typeof onCopy === 'function' ? onCopy : noop;
+  const nextRound = typeof onNextRound === 'function' ? onNextRound : noop;
   const remove = typeof onDelete === 'function' ? onDelete : noop;
 
   return (
@@ -88,6 +91,7 @@ export const SampleCard = React.memo(function SampleCard({
           onRatingChange={ratingChange}
           onEdit={edit}
           onCopy={copy}
+          onNextRound={nextRound}
           onDelete={remove}
           canEdit={canEdit}
         />
