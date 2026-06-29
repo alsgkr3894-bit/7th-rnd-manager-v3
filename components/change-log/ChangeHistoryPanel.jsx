@@ -48,25 +48,20 @@ function formatRelative(iso) {
  *   brandFilter: boolean — 현재 브랜드만 표시 (기본: true)
  */
 export function ChangeHistoryPanel({ compact = false, brandFilter = true }) {
-  const brand = getActiveBrandId();
-  const [entries, setEntries] = useState(() =>
-    brandFilter ? filterChangeLogs({ brand }) : getChangeLogs()
-  );
+  const [brand, setBrand] = useState('main');
+  const [entries, setEntries] = useState([]);
   const [group, setGroup] = useState('all');
   const [clearConfirm, setClearConfirm] = useState(false);
   const clearTimerRef = useRef(null);
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const canClear = roleReady && isAdmin;
 
-  function load() {
-    const all = brandFilter ? filterChangeLogs({ brand }) : getChangeLogs();
-    setEntries(all);
-  }
-
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [brand, brandFilter]);
+    const activeBrand = getActiveBrandId();
+    const nextBrand = activeBrand || 'main';
+    setBrand(nextBrand);
+    setEntries(brandFilter ? filterChangeLogs({ brand: nextBrand }) : getChangeLogs());
+  }, [brandFilter]);
 
   useEffect(() => {
     return () => {

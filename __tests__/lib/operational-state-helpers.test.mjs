@@ -308,6 +308,9 @@ describe('change log state helpers', () => {
     );
 
     expect(source).toContain("import { useCurrentRole } from '@/hooks/useCurrentRole'");
+    expect(source).toContain("const [brand, setBrand] = useState('main')");
+    expect(source).toContain('const [entries, setEntries] = useState([])');
+    expect(source).toContain('setEntries(brandFilter ? filterChangeLogs({ brand: nextBrand }) : getChangeLogs())');
     expect(source).toContain('const canClear = roleReady && isAdmin');
     expect(source).toContain('if (!canClear) return;');
     expect(source).toContain('disabled={!canClear}');
