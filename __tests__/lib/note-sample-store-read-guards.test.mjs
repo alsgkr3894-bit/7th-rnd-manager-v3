@@ -7,6 +7,7 @@ const sharedGetById = jest.fn(async () => null);
 const sharedGetByIndex = jest.fn(async () => []);
 const sharedDeleteById = jest.fn(async () => {});
 const txAdds = [];
+const txPuts = [];
 const txDeletes = [];
 const sharedRunTransaction = jest.fn(async (_stores, _mode, work) => {
   work({
@@ -18,7 +19,9 @@ const sharedRunTransaction = jest.fn(async (_stores, _mode, work) => {
           Promise.resolve().then(() => req.onsuccess?.());
           return req;
         },
-        put() {},
+        put(record) {
+          txPuts.push(record);
+        },
         delete(id) {
           txDeletes.push(id);
         },
@@ -57,6 +60,7 @@ describe('노트/샘플 store 읽기 가드', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     txAdds.length = 0;
+    txPuts.length = 0;
     txDeletes.length = 0;
     getActiveBrandId.mockReturnValue('main');
     sharedHasStore.mockReturnValue(true);
@@ -233,6 +237,62 @@ describe('노트/샘플 store 읽기 가드', () => {
       title: '치즈 샘플',
       testRound: '2차',
       parentId: 12,
+    });
+  });
+
+  test('sample partial updates keep existing record fields', async () => {
+    sharedGetById.mockResolvedValueOnce({
+      id: 7,
+      brand: 'main',
+      title: 'Cheese sample',
+      sampleNames: ['Cheese'],
+      menuName: 'Cheese',
+      category: 'Pizza',
+      testDate: '2026-06-29',
+      testRound: '2',
+      company: 'Kitchen',
+      tester: 'RND',
+      rating: 2,
+      price: '12000',
+      priceTaxType: 'excl',
+      description: 'memo',
+      result: 'ok',
+      improvements: 'more sauce',
+      nextAction: 'retry',
+      tags: 'cheese',
+      photos: [{ data: 'data:image/png;base64,old' }],
+      parentId: 3,
+      linkedNoteId: 9,
+      linkedProducts: [{ kind: 'menu', code: 'P001', name: 'Pizza' }],
+      createdAt: '2026-06-28T00:00:00.000Z',
+    });
+
+    await sampleStore.updateSample(7, { rating: 5 });
+
+    expect(txPuts[0]).toMatchObject({
+      id: 7,
+      brand: 'main',
+      title: 'Cheese sample',
+      sampleNames: ['Cheese'],
+      menuName: 'Cheese',
+      category: 'Pizza',
+      testDate: '2026-06-29',
+      testRound: '2',
+      company: 'Kitchen',
+      tester: 'RND',
+      rating: 5,
+      price: '12000',
+      priceTaxType: 'excl',
+      description: 'memo',
+      result: 'ok',
+      improvements: 'more sauce',
+      nextAction: 'retry',
+      tags: 'cheese',
+      photos: [{ data: 'data:image/png;base64,old' }],
+      parentId: 3,
+      linkedNoteId: 9,
+      linkedProducts: [{ kind: 'menu', code: 'P001', name: 'Pizza' }],
+      createdAt: '2026-06-28T00:00:00.000Z',
     });
   });
 });
