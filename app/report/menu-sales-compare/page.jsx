@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ReportBuilderShell from '@/components/report/ReportBuilderShell';
 import { MenuSalesCompareOptions } from '@/components/report/compare/MenuSalesCompareOptions';
 import { MenuSalesComparePreview } from '@/components/report/compare/MenuSalesComparePreview';
@@ -17,6 +17,21 @@ function normalizeMode(value) {
   return ['mom', 'yoy', 'custom'].includes(value) ? value : 'mom';
 }
 
+function safePeriodFromRow(row) {
+  const year = safeYear(row?.year, 0);
+  const month = safeMonth(row?.month, 0);
+  if (year < 1900 || month < 1) return null;
+  return { year, month };
+}
+
+function periodKey(period) {
+  return `${period.year}-${String(period.month).padStart(2, '0')}`;
+}
+
+function periodExists(periods, period) {
+  return periods.some(item => item.year === period.year && item.month === period.month);
+}
+
 export default function Page() {
   const [mode, setMode] = useState('mom');
   const [scope, setScope] = useState('all');
@@ -24,6 +39,9 @@ export default function Page() {
   const [monthA, setMonthA] = useState(3);
   const [yearB, setYearB] = useState(2026);
   const [monthB, setMonthB] = useState(4);
+  const restoredPeriodRef = useRef(false);
+  const autoPeriodReadyRef = useRef(false);
+  const periodManuallyEditedRef = useRef(false);
 
   const {
     opts,
@@ -35,6 +53,9 @@ export default function Page() {
     draft => {
       if (draft.mode) setMode(normalizeMode(draft.mode));
       if (draft.scope) setScope(normalizeScope(draft.scope));
+      if (draft.yearA || draft.monthA || draft.yearB || draft.monthB) {
+        restoredPeriodRef.current = true;
+      }
       if (draft.yearA) setYearA(safeYear(draft.yearA));
       if (draft.monthA) setMonthA(safeMonth(draft.monthA));
       if (draft.yearB) setYearB(safeYear(draft.yearB));
@@ -61,16 +82,82 @@ export default function Page() {
   const safeMonthB = safeMonth(monthB);
   const safeOpts = opts && typeof opts === 'object' && !Array.isArray(opts) ? opts : {};
 
-  const periodA = { year: safeYearA, month: safeMonthA };
-  const periodB =
-    safeMode === 'custom'
-      ? { year: safeYearB, month: safeMonthB }
-      : deriveCompareB(periodA, safeMode);
+  const periodA = useMemo(
+    () => ({ year: safeYearA, month: safeMonthA }),
+    [safeYearA, safeMonthA]
+  );
+  const periodB = useMemo(
+    () =>
+      safeMode === 'custom'
+        ? { year: safeYearB, month: safeMonthB }
+        : deriveCompareB(periodA, safeMode),
+    [periodA, safeMode, safeYearB, safeMonthB]
+  );
+
+  const availablePeriods = useMemo(() => {
+    const map = new Map();
+    for (const row of rows) {
+      const period = safePeriodFromRow(row);
+      if (!period) continue;
+      map.set(periodKey(period), period);
+    }
+    return Array.from(map.values()).sort((a, b) => b.year - a.year || b.month - a.month);
+  }, [rows]);
 
   const availYears = useMemo(() => {
-    const years = [...new Set(rows.map(r => r.year).filter(y => Number.isFinite(y)))].sort();
+    const years = [...new Set(availablePeriods.map(period => period.year))].sort();
     return years.length > 0 ? years : [2024, 2025, 2026];
-  }, [rows]);
+  }, [availablePeriods]);
+
+  useEffect(() => {
+    if (
+      isLoading ||
+      autoPeriodReadyRef.current ||
+      periodManuallyEditedRef.current ||
+      availablePeriods.length === 0
+    ) {
+      return;
+    }
+
+    const latest = availablePeriods[0];
+    const currentExists = periodExists(availablePeriods, periodA);
+    if (!restoredPeriodRef.current || !currentExists) {
+      setYearA(latest.year);
+      setMonthA(latest.month);
+
+      const fallbackB = availablePeriods[1] || deriveCompareB(latest, safeMode);
+      setYearB(fallbackB.year);
+      setMonthB(fallbackB.month);
+    }
+    autoPeriodReadyRef.current = true;
+  }, [availablePeriods, isLoading, periodA, safeMode]);
+
+  const updateMode = value => {
+    const nextMode = normalizeMode(value);
+    setMode(nextMode);
+    if (nextMode !== 'custom') {
+      const nextPeriodB = deriveCompareB(periodA, nextMode);
+      setYearB(nextPeriodB.year);
+      setMonthB(nextPeriodB.month);
+    }
+  };
+  const updateScope = value => setScope(normalizeScope(value));
+  const updateYearA = value => {
+    periodManuallyEditedRef.current = true;
+    setYearA(safeYear(value, safeYearA));
+  };
+  const updateMonthA = value => {
+    periodManuallyEditedRef.current = true;
+    setMonthA(safeMonth(value, safeMonthA));
+  };
+  const updateYearB = value => {
+    periodManuallyEditedRef.current = true;
+    setYearB(safeYear(value, safeYearB));
+  };
+  const updateMonthB = value => {
+    periodManuallyEditedRef.current = true;
+    setMonthB(safeMonth(value, safeMonthB));
+  };
 
   const { compareResult, series } = useMemo(() => {
     if (rows.length === 0) return { compareResult: null, series: [] };
@@ -87,9 +174,7 @@ export default function Page() {
       console.error('[compare report] 집계 실패', err);
       return { compareResult: null, series: [] };
     }
-    // periodA/B는 객체라 직접 나열
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, safeMode, safeScope, safeYearA, safeMonthA, safeYearB, safeMonthB]);
+  }, [periodA, periodB, rows, safeMonthA, safeScope]);
 
   const dataError = error
     ? '데이터베이스에 연결할 수 없어요. 판매 데이터를 먼저 업로드해 주세요.'
@@ -128,17 +213,17 @@ export default function Page() {
       options={
         <MenuSalesCompareOptions
           mode={safeMode}
-          onMode={value => setMode(normalizeMode(value))}
+          onMode={updateMode}
           scope={safeScope}
-          onScope={value => setScope(normalizeScope(value))}
+          onScope={updateScope}
           yearA={safeYearA}
           monthA={safeMonthA}
           yearB={safeYearB}
           monthB={safeMonthB}
-          onYearA={value => setYearA(safeYear(value, safeYearA))}
-          onMonthA={value => setMonthA(safeMonth(value, safeMonthA))}
-          onYearB={value => setYearB(safeYear(value, safeYearB))}
-          onMonthB={value => setMonthB(safeMonth(value, safeMonthB))}
+          onYearA={updateYearA}
+          onMonthA={updateMonthA}
+          onYearB={updateYearB}
+          onMonthB={updateMonthB}
           availableYears={availYears}
           opts={safeOpts}
           onOptionChange={upd}

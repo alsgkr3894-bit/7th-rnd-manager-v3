@@ -1,8 +1,10 @@
 'use client';
 
 import { Icon } from '@/components/icons';
-import { downloadCsv, printCurrentPageWithDownloadDate } from '@/lib/download';
+import { showToast } from '@/components/Toast';
+import { downloadCsv } from '@/lib/download';
 import { sampleNamesText } from '@/lib/sample';
+import { printSampleRecordsReport } from '@/lib/sample/report-print';
 
 export function SamplePageActions({
   filtered,
@@ -35,6 +37,18 @@ export function SamplePageActions({
     downloadCsv([headers, ...csvRows], '샘플기록.csv');
   }
 
+  function handlePrintPdf() {
+    if (rows.length === 0) {
+      showToast('PDF로 출력할 샘플기록이 없어요', 'warn');
+      return;
+    }
+    const opened = printSampleRecordsReport(rows, {
+      title: '샘플기록 PDF 보고서',
+      scopeLabel: '현재 필터 결과',
+    });
+    if (opened) showToast(`샘플기록 ${rows.length}건 PDF 출력 창을 열었어요`, 'ok', 1800);
+  }
+
   return (
     <div className="sample-actions">
       {!batchMode && !compareMode && (
@@ -42,20 +56,8 @@ export function SamplePageActions({
           <button className="btn" onClick={handleExport} disabled={rows.length === 0}>
             <Icon.download style={{ width: 14, height: 14 }} /> 엑셀로 내보내기
           </button>
-          <button
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: 17,
-              padding: '4px 6px',
-              borderRadius: 8,
-              color: 'var(--text-2)',
-            }}
-            onClick={() => printCurrentPageWithDownloadDate('샘플기록')}
-            title="인쇄"
-          >
-            🖨
+          <button className="btn" onClick={handlePrintPdf} disabled={rows.length === 0}>
+            <Icon.doc style={{ width: 14, height: 14 }} /> PDF 출력
           </button>
         </>
       )}

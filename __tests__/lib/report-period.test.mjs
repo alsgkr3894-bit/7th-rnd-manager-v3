@@ -35,6 +35,8 @@ describe('report period helpers', () => {
   test('보고서 옵션 값은 지원 목록으로 정규화한다', () => {
     expect(normalizeScope('피자')).toBe('피자');
     expect(normalizeScope('1인피자')).toBe('1인피자');
+    expect(normalizeScope('pizza')).toBe('피자');
+    expect(normalizeScope('side')).toBe('사이드');
     expect(normalizeScope('unknown')).toBe('all');
     expect(normalizePeriodMode('year')).toBe('year');
     expect(normalizePeriodMode('quarter')).toBe('month');

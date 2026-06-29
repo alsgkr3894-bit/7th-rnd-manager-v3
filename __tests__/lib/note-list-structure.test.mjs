@@ -178,6 +178,7 @@ describe('note list structure', () => {
     expect(headerSource).toContain('sub={noteListSubText(notesCount)}');
     expect(headerSource).not.toContain('sub={`전체 ${notesCount}개`}');
     expect(headerSource).toContain('<NoteBatchToolbar');
+    expect(headerSource).toContain('onMerge={onBatchMerge}');
     expect(headerSource).toContain('전체 보고서 PDF');
     expect(headerSource).toContain('disabled={reportExportCount === 0}');
     expect(headerSource).toContain('출시예정 일괄복사');
@@ -193,6 +194,8 @@ describe('note list structure', () => {
     expect(statesSource).toContain('조건에 맞는 노트가 없어요');
     expect(dialogsSource).toContain('export function NotePageDialogs');
     expect(dialogsSource).toContain('<ConfirmDialog');
+    expect(dialogsSource).toContain('차수로 묶을까요?');
+    expect(dialogsSource).toContain('confirmLabel="차수로 묶기"');
     expect(dialogsSource).toContain('프리셋을 삭제할까요?');
     expect(controllerSource).toContain('export function useNoteContentController');
     expect(controllerSource).toContain('useRouter()');
@@ -201,7 +204,7 @@ describe('note list structure', () => {
     expect(controllerSource).toContain('useNoteListState({ notes, pinnedIds, pathname })');
     expect(controllerSource).toContain('useNoteReportingCopy(notes)');
     expect(controllerSource).toContain('useNoteReportPdf(listState.filtered)');
-    expect(controllerSource).toContain('useNoteBatchActions({ setNotes, load, canEdit })');
+    expect(controllerSource).toContain('useNoteBatchActions({ notes, setNotes, load, canEdit })');
     expect(controllerSource).toContain('const itemActions = useNoteItemActions({');
     expect(controllerSource).toContain('canEdit,');
     expect(controllerSource).toContain(
@@ -236,6 +239,7 @@ describe('note list structure', () => {
     expect(contentPropHeaderBuildersSource).toContain('NOTE_STATUS.RELEASE_READY');
     expect(contentPropHeaderBuildersSource).toContain('reportExportCount');
     expect(contentPropHeaderBuildersSource).toContain('onExportReportPdf: handleReportPdf');
+    expect(contentPropHeaderBuildersSource).toContain('onBatchMerge: handleBatchMerge');
     expect(contentPropHeaderBuildersSource).toContain("router.push('/note/calendar')");
     expect(contentPropHeaderBuildersSource).toContain('onChecklist: listState.openChecklistList');
     expect(contentPropHeaderBuildersSource).toContain("router.push('/note/write')");
@@ -243,6 +247,11 @@ describe('note list structure', () => {
     expect(contentPropFilterBuildersSource).toContain('saveSearchHistory(search)');
     expect(contentPropBodyBuildersSource).toContain('export function buildNoteBodyProps');
     expect(contentPropBodyBuildersSource).toContain('router.push(`/note/${note.id}`)');
+    expect(bodyViewPropsSource).toContain('batchMode');
+    expect(bodyViewPropsSource).toContain('onToggleSelect');
+    expect(tableViewSource).toContain('aria-label="선택"');
+    expect(tableRowSource).toContain('type="checkbox"');
+    expect(tableRowSource).toContain('onToggleSelect(note.id)');
     expect(itemActionsSource).toContain('export function useNoteItemActions');
     expect(itemActionsSource).toContain('async function restoreDeletedNotes');
     expect(itemActionsSource).toContain('await deleteNote(note.id)');

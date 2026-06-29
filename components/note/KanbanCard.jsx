@@ -41,6 +41,7 @@ export const KanbanCard = React.memo(function KanbanCard({
   const sc = STATUS_COLORS[note.status] || STATUS_COLORS['테스트'];
   const sb = STATUS_BORDER[note.status] || 'var(--border)';
   const title = noteDisplayTitle(note);
+  const roundCount = Number(note._kanbanGroupCount) || 1;
 
   function handleKeyDown(e) {
     if (!canEdit && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
@@ -95,9 +96,32 @@ export const KanbanCard = React.memo(function KanbanCard({
       >
         {title}
       </div>
-      {note.testDate && (
-        <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8 }}>
-          {formatShortDate(note.testDate)}
+      {(note.testDate || roundCount > 1) && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            flexWrap: 'wrap',
+            fontSize: 11,
+            color: 'var(--text-3)',
+            marginBottom: 8,
+          }}
+        >
+          {note.testDate && <span>{formatShortDate(note.testDate)}</span>}
+          {roundCount > 1 && (
+            <span
+              style={{
+                fontWeight: 800,
+                color: 'var(--accent-text)',
+                background: 'var(--accent-soft)',
+                borderRadius: 999,
+                padding: '1px 6px',
+              }}
+            >
+              차수 {roundCount}
+            </span>
+          )}
         </div>
       )}
       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>

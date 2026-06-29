@@ -87,8 +87,8 @@ export function MenuSalesCompareOptions({
           onChange={onScope}
           options={[
             { value: 'all', label: '전체' },
-            { value: 'pizza', label: '피자' },
-            { value: 'side', label: '사이드' },
+            { value: '피자', label: '피자' },
+            { value: '사이드', label: '사이드' },
           ]}
         />
       </OptGroup>

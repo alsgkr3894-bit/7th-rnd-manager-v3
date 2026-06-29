@@ -28,7 +28,7 @@ export function useNoteContentController() {
   const handleBulkCopy = useNoteReportingCopy(notes);
   const handleReportPdf = useNoteReportPdf(listState.filtered);
 
-  const batchActions = useNoteBatchActions({ setNotes, load, canEdit });
+  const batchActions = useNoteBatchActions({ notes, setNotes, load, canEdit });
 
   const itemActions = useNoteItemActions({
     router,

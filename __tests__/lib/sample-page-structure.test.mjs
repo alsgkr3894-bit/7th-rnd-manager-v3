@@ -186,7 +186,8 @@ describe('sample page structure', () => {
   test('extracted components own their sample page rendering responsibilities', () => {
     expect(actionsSource).toContain('export function SamplePageActions');
     expect(actionsSource).toContain('downloadCsv');
-    expect(actionsSource).toContain('printCurrentPageWithDownloadDate');
+    expect(actionsSource).toContain('printSampleRecordsReport');
+    expect(actionsSource).toContain('PDF 출력');
     expect(actionsSource).toContain('엑셀로 내보내기');
     expect(filtersSource).toContain('export function SampleFilterControls');
     expect(filtersSource).toContain('<SampleCategoryFilter');

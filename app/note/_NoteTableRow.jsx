@@ -8,23 +8,46 @@ import { formatFullDate } from '@/lib/note/utils';
 export const NoteTableRow = React.memo(function NoteTableRow({
   note,
   focused,
+  batchMode,
+  selected,
   onOpen,
   onEdit,
+  onToggleSelect,
   onDelete,
   onStatusChange,
   canEdit = false,
 }) {
   const sc = STATUS_COLORS[note.status] || STATUS_COLORS['테스트'];
   const title = noteDisplayTitle(note);
+  const checked = selected?.has(note.id) || false;
+  const handleOpen = () => {
+    if (canEdit && batchMode) onToggleSelect(note.id);
+    else onOpen(note);
+  };
 
   return (
     <tr
       style={{
         cursor: 'pointer',
-        background: focused ? 'var(--accent-soft, rgba(99,102,241,.08))' : undefined,
+        background: checked
+          ? 'var(--accent-soft)'
+          : focused
+            ? 'var(--accent-soft, rgba(99,102,241,.08))'
+            : undefined,
       }}
-      onClick={() => onOpen(note)}
+      onClick={handleOpen}
     >
+      {batchMode && (
+        <td onClick={e => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={() => onToggleSelect(note.id)}
+            disabled={!canEdit}
+            aria-label={`${title} 선택`}
+          />
+        </td>
+      )}
       <td style={{ fontWeight: 600 }}>
         {note.parentId && (
           <span style={{ fontSize: 10, color: 'var(--accent)', marginLeft: 4 }}>🔗 체인</span>

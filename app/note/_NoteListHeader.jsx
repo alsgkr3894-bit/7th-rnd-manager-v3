@@ -33,6 +33,7 @@ export function NoteListHeader({
   onBoard,
   onWrite,
   onBatchStatusChange,
+  onBatchMerge,
   onBatchDelete,
   onBatchExit,
 }) {
@@ -47,6 +48,7 @@ export function NoteListHeader({
             <NoteBatchToolbar
               selected={selected}
               onStatusChange={onBatchStatusChange}
+              onMerge={onBatchMerge}
               onDelete={onBatchDelete}
               onExit={onBatchExit}
             />

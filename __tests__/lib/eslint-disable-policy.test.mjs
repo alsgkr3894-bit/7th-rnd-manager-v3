@@ -72,12 +72,6 @@ const ALLOWED_DISABLES = [
     reason: 'nutrition table text intentionally contains apostrophe-like punctuation',
   },
   {
-    file: 'app/report/menu-sales-compare/page.jsx',
-    rule: 'react-hooks/exhaustive-deps',
-    count: 1,
-    reason: 'period objects are represented by primitive safeYear/safeMonth deps',
-  },
-  {
     file: 'components/Sidebar.jsx',
     rule: 'react-hooks/exhaustive-deps',
     count: 2,

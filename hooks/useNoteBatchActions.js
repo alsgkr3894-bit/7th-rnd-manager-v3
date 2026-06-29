@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { deleteNote, updateNote } from '@/lib/note';
+import { buildNoteMergePlan } from '@/lib/note/merge';
 
-export function useNoteBatchActions({ setNotes, load, canEdit = false }) {
+export function useNoteBatchActions({ notes = [], setNotes, load, canEdit = false }) {
   const [batchMode, setBatchMode] = useState(false);
   const [selected, setSelected] = useState(new Set());
   const [confirmBatch, setConfirmBatch] = useState(false);
+  const [confirmMerge, setConfirmMerge] = useState(false);
 
   function toggleSelect(id) {
     if (!canEdit) return;
@@ -24,6 +26,15 @@ export function useNoteBatchActions({ setNotes, load, canEdit = false }) {
   function handleBatchDelete() {
     if (!canEdit || selected.size === 0) return;
     setConfirmBatch(true);
+  }
+
+  function handleBatchMerge() {
+    if (!canEdit) return;
+    if (selected.size < 2) {
+      showToast('차수로 묶을 노트를 2개 이상 선택해주세요', 'warn');
+      return;
+    }
+    setConfirmMerge(true);
   }
 
   async function handleBatchStatusChange(newStatus) {
@@ -79,6 +90,33 @@ export function useNoteBatchActions({ setNotes, load, canEdit = false }) {
     }
   }
 
+  async function confirmBatchMerge() {
+    setConfirmMerge(false);
+    if (!canEdit) return;
+    const plan = buildNoteMergePlan(notes, selected);
+    if (!plan.canMerge) {
+      showToast(plan.reason || '차수로 묶을 노트를 다시 선택해주세요', 'warn');
+      return;
+    }
+    try {
+      for (const change of plan.changes) {
+        await updateNote(change.id, change.patch);
+      }
+      const byId = new Map(plan.changes.map(change => [change.id, change.patch]));
+      setNotes(prev =>
+        prev.map(note => (byId.has(note.id) ? { ...note, ...byId.get(note.id) } : note))
+      );
+      showToast(`${plan.selectedCount}개 노트를 "${plan.title}" 차수로 묶었어요`, 'ok');
+      setSelected(new Set());
+      setBatchMode(false);
+      load();
+    } catch (err) {
+      console.error('[useNoteBatchActions] confirmBatchMerge', err);
+      showToast('차수 묶기 실패', 'error');
+      load();
+    }
+  }
+
   return {
     batchMode,
     setBatchMode,
@@ -86,10 +124,14 @@ export function useNoteBatchActions({ setNotes, load, canEdit = false }) {
     setSelected,
     confirmBatch,
     setConfirmBatch,
+    confirmMerge,
+    setConfirmMerge,
     toggleSelect,
     exitBatch,
     handleBatchDelete,
+    handleBatchMerge,
     handleBatchStatusChange,
     confirmBatchDelete,
+    confirmBatchMerge,
   };
 }

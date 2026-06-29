@@ -54,11 +54,15 @@ function createInputs(overrides = {}) {
     selected: new Set(['n-1', 'n-2']),
     confirmBatch: true,
     setConfirmBatch: fn(),
+    confirmMerge: true,
+    setConfirmMerge: fn(),
     toggleSelect: fn(),
     exitBatch: fn(),
     handleBatchDelete: fn(),
+    handleBatchMerge: fn(),
     handleBatchStatusChange: fn(),
     confirmBatchDelete: fn(),
+    confirmBatchMerge: fn(),
   };
   const itemActions = {
     popIds: new Set(['n-1']),
@@ -131,6 +135,7 @@ describe('buildNoteContentProps', () => {
     const props = buildNoteContentProps(inputs);
 
     props.dialogsProps.onCancelBatchDelete();
+    props.dialogsProps.onCancelBatchMerge();
     props.dialogsProps.onConfirmPresetDelete();
     props.dialogsProps.onCancelSingleDelete();
     props.filterProps.onSearchSubmit();
@@ -138,6 +143,7 @@ describe('buildNoteContentProps', () => {
     props.filterProps.onSearchBlur();
 
     expect(inputs.batchActions.setConfirmBatch).toHaveBeenCalledWith(false);
+    expect(inputs.batchActions.setConfirmMerge).toHaveBeenCalledWith(false);
     expect(inputs.listState.deletePreset).toHaveBeenCalledWith(1);
     expect(inputs.listState.setConfirmDeletePreset).toHaveBeenCalledWith(null);
     expect(inputs.itemActions.setSingleDeleteNote).toHaveBeenCalledWith(null);
@@ -160,14 +166,17 @@ describe('buildNoteContentProps', () => {
     expect(filterProps.search).toBe('트러플');
     expect(filterProps.showSearchHistory).toBe(true);
     expect(dialogsProps.selectedCount).toBe(2);
+    expect(dialogsProps.confirmMerge).toBe(true);
     expect(dialogsProps.presetName).toBe('보고');
 
     headerProps.onEnterBatchMode();
+    headerProps.onBatchMerge();
     headerProps.onExportReportPdf();
     filterProps.onSearchSubmit();
     dialogsProps.onConfirmPresetDelete();
 
     expect(inputs.batchActions.setBatchMode).toHaveBeenCalledWith(true);
+    expect(inputs.batchActions.handleBatchMerge).toHaveBeenCalled();
     expect(inputs.handleReportPdf).toHaveBeenCalled();
     expect(inputs.listState.saveSearchHistory).toHaveBeenCalledWith('트러플');
     expect(inputs.listState.deletePreset).toHaveBeenCalledWith(1);

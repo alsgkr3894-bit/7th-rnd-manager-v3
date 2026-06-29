@@ -32,7 +32,15 @@ describe('kanban board error visibility guards', () => {
 
   test('체크리스트 연구일지 노트는 칸반 파이프라인에서 제외한다', () => {
     expect(hookSource).toContain("from '@/lib/note/filter'");
+    expect(hookSource).toContain("from '@/lib/note/kanban'");
     expect(hookSource).toContain('filterKanbanNotes(await getAllNotesCached())');
+    expect(hookSource).toContain('buildKanbanBoardCards(notes, search)');
+  });
+
+  test('칸반 페이지는 대표 카드 기준 전체 개수를 표시한다', () => {
+    expect(pageSource).toContain('totalBoardCount');
+    expect(pageSource).toContain('검색 ${filteredNotes.length}개 / 전체 ${totalBoardCount}개');
+    expect(pageSource).toContain('전체 ${totalBoardCount}개');
   });
 
   test('칸반 페이지는 로드 실패 카드와 재시도 액션을 렌더링한다', () => {

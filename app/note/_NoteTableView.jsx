@@ -5,10 +5,13 @@ export function NoteTableView({
   visible,
   filtered,
   canEdit = false,
+  batchMode,
+  selected,
   focusedRow,
   onFocusRow,
   onOpen,
   onEdit,
+  onToggleSelect,
   onDelete,
   onStatusChange,
   onLoadMore,
@@ -41,6 +44,7 @@ export function NoteTableView({
         <table className="data-table stagger-rows" tabIndex={0} onKeyDown={handleKeyDown}>
           <thead style={{ position: 'sticky', top: 0, zIndex: 2, background: 'var(--surface)' }}>
             <tr>
+              {batchMode && <th scope="col" style={{ width: 44 }} aria-label="선택" />}
               <th scope="col">제목</th>
               <th scope="col" style={{ width: 80 }}>
                 카테고리
@@ -65,6 +69,9 @@ export function NoteTableView({
                   onOpen(target);
                 }}
                 onEdit={onEdit}
+                batchMode={batchMode}
+                selected={selected}
+                onToggleSelect={onToggleSelect}
                 onDelete={onDelete}
                 onStatusChange={onStatusChange}
                 canEdit={canEdit}

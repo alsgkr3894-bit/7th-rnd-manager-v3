@@ -6,10 +6,11 @@ import { STATUSES } from '@/lib/note';
  * Props:
  *   selected   — Set of selected note IDs
  *   onStatusChange(newStatus) — called when status dropdown changes
+ *   onMerge()  — called when selected notes should be merged into one round chain
  *   onDelete() — called when "선택 삭제" is clicked
  *   onExit()   — called when "취소" is clicked
  */
-export function NoteBatchToolbar({ selected, onStatusChange, onDelete, onExit }) {
+export function NoteBatchToolbar({ selected, onStatusChange, onMerge, onDelete, onExit }) {
   return (
     <>
       <select
@@ -29,6 +30,9 @@ export function NoteBatchToolbar({ selected, onStatusChange, onDelete, onExit })
           </option>
         ))}
       </select>
+      <button className="btn" onClick={onMerge} disabled={selected.size < 2}>
+        차수로 묶기 {selected.size > 1 && `(${selected.size})`}
+      </button>
       <button
         className="btn"
         style={{ color: 'var(--negative)' }}

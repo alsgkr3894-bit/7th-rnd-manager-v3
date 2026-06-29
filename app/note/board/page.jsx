@@ -21,6 +21,7 @@ export default function Page() {
     setSearch,
     searchActive,
     filteredNotes,
+    totalBoardCount,
     groupedNotes,
     dragId,
     setDragId,
@@ -41,8 +42,8 @@ export default function Page() {
         title="칸반 보드"
         sub={
           search
-            ? `검색 ${filteredNotes.length}개 / 전체 ${notes.length}개`
-            : `전체 ${notes.length}개`
+            ? `검색 ${filteredNotes.length}개 / 전체 ${totalBoardCount}개`
+            : `전체 ${totalBoardCount}개`
         }
         actions={
           <div style={{ display: 'flex', gap: 8 }}>

@@ -5,6 +5,7 @@ import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { STATUSES, getAllNotesCached, updateNote, bulkUpdateBoardOrder } from '@/lib/note';
 import { filterKanbanNotes } from '@/lib/note/filter';
+import { buildKanbanBoardCards } from '@/lib/note/kanban';
 
 export function useKanbanBoard({ canEdit = false } = {}) {
   const [notes, setNotes] = useState([]);
@@ -129,18 +130,8 @@ export function useKanbanBoard({ canEdit = false } = {}) {
     [applyStatusChange]
   );
 
-  const filteredNotes = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return notes;
-    return notes.filter(
-      n =>
-        (n.title || '').toLowerCase().includes(q) ||
-        (n.menuName || '').toLowerCase().includes(q) ||
-        (n.testContent || '').toLowerCase().includes(q) ||
-        (n.reportSummary || '').toLowerCase().includes(q) ||
-        (n.tags || '').toLowerCase().includes(q)
-    );
-  }, [notes, search]);
+  const boardNotes = useMemo(() => buildKanbanBoardCards(notes), [notes]);
+  const filteredNotes = useMemo(() => buildKanbanBoardCards(notes, search), [notes, search]);
 
   const groupedNotes = useMemo(
     () =>
@@ -232,6 +223,7 @@ export function useKanbanBoard({ canEdit = false } = {}) {
     setSearch,
     searchActive,
     filteredNotes,
+    totalBoardCount: boardNotes.length,
     groupedNotes,
     dragId,
     setDragId,

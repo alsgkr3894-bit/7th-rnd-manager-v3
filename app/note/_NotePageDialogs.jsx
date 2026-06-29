@@ -3,9 +3,12 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 export function NotePageDialogs({
   confirmBatch,
+  confirmMerge,
   selectedCount,
   onConfirmBatchDelete,
   onCancelBatchDelete,
+  onConfirmBatchMerge,
+  onCancelBatchMerge,
   confirmDeletePreset,
   presetName,
   onConfirmPresetDelete,
@@ -25,6 +28,15 @@ export function NotePageDialogs({
         danger
         onConfirm={onConfirmBatchDelete}
         onCancel={onCancelBatchDelete}
+      />
+      <ConfirmDialog
+        open={confirmMerge}
+        title={`노트 ${selectedCount}개를 차수로 묶을까요?`}
+        message="가장 오래된 기록이 1차가 되고, 나머지는 날짜순으로 2차·3차로 연결됩니다. 사진과 상세 내용은 그대로 유지됩니다."
+        confirmLabel="차수로 묶기"
+        cancelLabel="취소"
+        onConfirm={onConfirmBatchMerge}
+        onCancel={onCancelBatchMerge}
       />
       <ConfirmDialog
         open={confirmDeletePreset !== null}

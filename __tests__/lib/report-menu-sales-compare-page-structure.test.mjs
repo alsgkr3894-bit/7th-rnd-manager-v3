@@ -17,6 +17,8 @@ describe('menu sales compare report page structure', () => {
     expect(pageSource).toContain('<MenuSalesComparePreview');
     expect(pageSource).toContain('buildPeriodCompare');
     expect(pageSource).toContain('buildCompareSeries');
+    expect(pageSource).toContain('availablePeriods');
+    expect(pageSource).toContain('autoPeriodReadyRef');
     expect(pageSource).not.toContain('<OptGroup');
     expect(pageSource).not.toContain('<Seg');
     expect(pageSource).not.toContain('<Check');
@@ -27,6 +29,8 @@ describe('menu sales compare report page structure', () => {
     expect(optionsSource).toContain('<OptGroup');
     expect(optionsSource).toContain('<Seg');
     expect(optionsSource).toContain('<Check');
+    expect(optionsSource).toContain("value: '피자'");
+    expect(optionsSource).toContain("value: '사이드'");
     expect(optionsSource).toContain('Winners & Losers 부록');
 
     expect(previewSource).toContain('export function MenuSalesComparePreview');
