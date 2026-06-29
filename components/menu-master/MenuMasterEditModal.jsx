@@ -11,6 +11,38 @@ import { MenuMasterEditFields } from '@/components/menu-master/MenuMasterEditFie
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showToast } from '@/components/Toast';
 
+function summarizeMissingNames(names = []) {
+  const list = names.filter(Boolean);
+  if (!list.length) return '';
+  const shown = list.slice(0, 4).join(', ');
+  return list.length > 4 ? `${shown} 외 ${list.length - 4}개` : shown;
+}
+
+function formatMissingConfirmPart(label, count, names) {
+  if (!count) return null;
+  const nameSummary = summarizeMissingNames(names);
+  return nameSummary ? `${label} ${count}개: ${nameSummary}` : `${label} ${count}개`;
+}
+
+function formatMissingConfirmMessage(missingConfirm) {
+  return (
+    [
+      formatMissingConfirmPart(
+        '수량 미입력',
+        missingConfirm?.missingQ,
+        missingConfirm?.missingQuantityNames
+      ),
+      formatMissingConfirmPart(
+        '단가 없음',
+        missingConfirm?.missingP,
+        missingConfirm?.missingPriceNames
+      ),
+    ]
+      .filter(Boolean)
+      .join(' · ') + ' — 누락된 상태로 저장하시겠습니까?'
+  );
+}
+
 export function MenuMasterEditModal({
   row,
   isNew,
@@ -56,13 +88,19 @@ export function MenuMasterEditModal({
     // 레시피 누락 항목 확인 (한 번만)
     if (!skipMissingCheckRef.current) {
       const summary = recipeSectionRef.current?.getRecipeSummary?.();
+      const validation = recipeSectionRef.current?.getRecipeValidation?.();
       if (summary) {
         const missingQ =
           (summary.missingDirectQuantityCount || 0) + (summary.missingCommonQuantityCount || 0);
         const missingP =
           (summary.missingDirectPriceCount || 0) + (summary.missingCommonPriceCount || 0);
         if (missingQ > 0 || missingP > 0) {
-          setMissingConfirm({ missingQ, missingP });
+          setMissingConfirm({
+            missingQ,
+            missingP,
+            missingQuantityNames: validation?.missingQuantityNames || [],
+            missingPriceNames: validation?.missingPriceNames || [],
+          });
           return;
         }
       }
@@ -244,14 +282,8 @@ export function MenuMasterEditModal({
       {missingConfirm && (
         <ConfirmDialog
           open
-          message={
-            [
-              missingConfirm.missingQ > 0 && `수량 미입력 ${missingConfirm.missingQ}개`,
-              missingConfirm.missingP > 0 && `단가 없음 ${missingConfirm.missingP}개`,
-            ]
-              .filter(Boolean)
-              .join(' · ') + ' — 누락된 상태로 저장하시겠습니까?'
-          }
+          title="레시피 누락 확인"
+          message={formatMissingConfirmMessage(missingConfirm)}
           confirmLabel="저장"
           cancelLabel="취소하고 수정"
           onConfirm={() => {

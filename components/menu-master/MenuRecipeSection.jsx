@@ -9,8 +9,13 @@ import {
   useState,
 } from 'react';
 import { normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
+import {
+  buildRecipeValidationDetails,
+  isRecipeComponentMissingUnitPrice,
+} from '@/components/menu-master/recipeComponentRows';
 import { MenuRecipeComponentsTable } from '@/components/menu-master/MenuRecipeComponentsTable';
 import { MenuRecipeGroupSelector } from '@/components/menu-master/MenuRecipeGroupSelector';
+import { MenuRecipeImpactPreview } from '@/components/menu-master/MenuRecipeImpactPreview';
 import { MenuRecipeSectionHeader } from '@/components/menu-master/MenuRecipeSectionHeader';
 import { useMenuRecipeEditor } from '@/components/menu-master/useMenuRecipeEditor';
 import { useRecipeIngredientSearch } from '@/components/menu-master/useRecipeIngredientSearch';
@@ -21,6 +26,7 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
 ) {
   const [copyOpen, setCopyOpen] = useState(false);
   const [copySearch, setCopySearch] = useState('');
+  const [onlyMissingPrice, setOnlyMissingPrice] = useState(false);
 
   const {
     components,
@@ -48,15 +54,6 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     sellingPrice,
     onSaved,
   });
-
-  useImperativeHandle(
-    ref,
-    () => ({
-      saveRecipe: handleSave,
-      getRecipeSummary: () => recipeSummary,
-    }),
-    [handleSave, recipeSummary]
-  );
 
   const copyMenus = useMemo(() => {
     const q = copySearch.trim().toLowerCase();
@@ -92,6 +89,43 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     quantityInputRefs,
   });
 
+  const missingPriceComponents = useMemo(
+    () =>
+      components.filter(component => isRecipeComponentMissingUnitPrice(component, unitPriceMap)),
+    [components, unitPriceMap]
+  );
+
+  const displayedComponents = useMemo(() => {
+    const rows = components.map((component, sourceIdx) => ({
+      ...component,
+      _sourceIdx: sourceIdx,
+    }));
+    return onlyMissingPrice
+      ? rows.filter(component => isRecipeComponentMissingUnitPrice(component, unitPriceMap))
+      : rows;
+  }, [components, onlyMissingPrice, unitPriceMap]);
+
+  const recipeValidation = useMemo(
+    () => buildRecipeValidationDetails(components, unitPriceMap),
+    [components, unitPriceMap]
+  );
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      saveRecipe: handleSave,
+      getRecipeSummary: () => recipeSummary,
+      getRecipeValidation: () => recipeValidation,
+    }),
+    [handleSave, recipeSummary, recipeValidation]
+  );
+
+  useEffect(() => {
+    if (onlyMissingPrice && missingPriceComponents.length === 0) {
+      setOnlyMissingPrice(false);
+    }
+  }, [missingPriceComponents.length, onlyMissingPrice]);
+
   // pendingFocusNewRowRef: addRow 후 새 행 식자재 input으로 focus
   useEffect(() => {
     if (!pendingFocusNewRowRef.current) return;
@@ -106,15 +140,21 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     (idx, e) => {
       if (e.key !== 'Enter') return;
       e.preventDefault();
-      if (idx < components.length - 1) {
-        const nextKey = components[idx + 1]._key;
+      const visibleRows = onlyMissingPrice
+        ? displayedComponents
+        : components.map((component, sourceIdx) => ({ ...component, _sourceIdx: sourceIdx }));
+      const position = visibleRows.findIndex(component => component._sourceIdx === idx);
+      const nextSourceIdx = visibleRows[position + 1]?._sourceIdx;
+      if (nextSourceIdx != null && components[nextSourceIdx]) {
+        const nextKey = components[nextSourceIdx]._key;
         ingredientInputRefs.current[nextKey]?.focus();
       } else {
+        if (onlyMissingPrice) setOnlyMissingPrice(false);
         addRow();
         pendingFocusNewRowRef.current = true;
       }
     },
-    [components, addRow]
+    [addRow, components, displayedComponents, onlyMissingPrice]
   );
 
   if (!supported) return null;
@@ -131,6 +171,9 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
         hasComponents={recipeSummary.componentCount > 0}
         recipeSummary={recipeSummary}
         copyOpen={copyOpen}
+        onlyMissingPrice={onlyMissingPrice}
+        missingPriceFilterCount={missingPriceComponents.length}
+        onToggleMissingPrice={() => setOnlyMissingPrice(value => !value)}
         onToggleCopy={() => {
           setCopyOpen(v => !v);
           setCopySearch('');
@@ -242,8 +285,10 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
         onToggle={toggleRecipeGroup}
       />
 
+      <MenuRecipeImpactPreview components={components} allIngredients={allIngredients} />
+
       <MenuRecipeComponentsTable
-        components={components}
+        components={displayedComponents}
         searchIdx={searchIdx}
         searchQ={searchQ}
         suggestions={suggestions}
@@ -262,6 +307,9 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
         onRemoveRow={removeRow}
         onCopyRow={copyRow}
         onUnitPriceOverride={(idx, price) => updateRow(idx, 'unitPrice', price)}
+        emptyMessage={
+          onlyMissingPrice ? '단가 없는 구성품이 없습니다. 전체 보기로 돌아가세요.' : undefined
+        }
       />
 
       <button
@@ -269,6 +317,7 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
         className="btn sm"
         style={{ marginTop: 8, width: '100%', fontSize: 12 }}
         onClick={() => {
+          if (onlyMissingPrice) setOnlyMissingPrice(false);
           addRow();
           pendingFocusNewRowRef.current = true;
         }}

@@ -1,5 +1,6 @@
 import { normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
 import { parseOptionalNonNegativeNumber } from '@/lib/parse';
+import { asDisplayText, asFiniteNumber } from '@/lib/ui/prop-guards';
 
 let rowKey = 0;
 
@@ -30,6 +31,49 @@ export function recipeComponentProductCode(component) {
 export function unitPriceInfoForComponent(component, unitPriceMap) {
   const productCode = recipeComponentProductCode(component);
   return productCode ? unitPriceMap.get(productCode) || null : null;
+}
+
+export function hasRecipeComponentIdentity(component) {
+  return Boolean(
+    asDisplayText(component?.ingredientName).trim() || recipeComponentProductCode(component)
+  );
+}
+
+export function isRecipeComponentMissingUnitPrice(component, unitPriceMap = new Map()) {
+  if (!hasRecipeComponentIdentity(component)) return false;
+  const info = unitPriceInfoForComponent(component, unitPriceMap);
+  const unitPrice = asFiniteNumber(info?.unitPrice, asFiniteNumber(component?.unitPrice, null));
+  return unitPrice == null;
+}
+
+export function isRecipeComponentMissingQuantity(component) {
+  if (!hasRecipeComponentIdentity(component)) return false;
+  return asFiniteNumber(component?.quantity, null) == null;
+}
+
+function componentDisplayName(component) {
+  return (
+    asDisplayText(component?.ingredientName).trim() ||
+    recipeComponentProductCode(component) ||
+    '이름 없는 구성품'
+  );
+}
+
+export function buildRecipeValidationDetails(components = [], unitPriceMap = new Map()) {
+  const missingQuantityNames = [];
+  const missingPriceNames = [];
+
+  for (const component of components) {
+    if (!hasRecipeComponentIdentity(component)) continue;
+    const name = componentDisplayName(component);
+    if (isRecipeComponentMissingQuantity(component)) missingQuantityNames.push(name);
+    if (isRecipeComponentMissingUnitPrice(component, unitPriceMap)) missingPriceNames.push(name);
+  }
+
+  return {
+    missingQuantityNames,
+    missingPriceNames,
+  };
 }
 
 export function hydrateRecipeComponent(component, unitPriceMap) {

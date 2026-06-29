@@ -1,8 +1,17 @@
 'use client';
 
+import { Icon } from '@/components/icons';
 import { formatNumber, formatPercent } from '@/lib/format';
 
-export function MenuRecipeSectionHeader({ hasComponents, recipeSummary, copyOpen, onToggleCopy }) {
+export function MenuRecipeSectionHeader({
+  hasComponents,
+  recipeSummary,
+  copyOpen,
+  onToggleCopy,
+  onlyMissingPrice = false,
+  missingPriceFilterCount = 0,
+  onToggleMissingPrice,
+}) {
   return (
     <>
       <div
@@ -19,6 +28,19 @@ export function MenuRecipeSectionHeader({ hasComponents, recipeSummary, copyOpen
       >
         <span>레시피 구성품</span>
         <div style={{ display: 'flex', gap: 4 }}>
+          {hasComponents && typeof onToggleMissingPrice === 'function' && (
+            <button
+              type="button"
+              className={'btn sm' + (onlyMissingPrice ? ' active' : '')}
+              onClick={onToggleMissingPrice}
+              disabled={!onlyMissingPrice && missingPriceFilterCount <= 0}
+              title={onlyMissingPrice ? '전체 구성품 보기' : '단가가 없는 구성품만 빠르게 확인'}
+              style={{ fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+            >
+              <Icon.alert style={{ width: 12, height: 12 }} />
+              {onlyMissingPrice ? '전체 보기' : `단가 없음 ${missingPriceFilterCount}`}
+            </button>
+          )}
           <button
             type="button"
             className={'btn sm' + (copyOpen ? ' active' : '')}

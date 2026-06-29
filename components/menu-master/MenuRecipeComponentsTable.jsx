@@ -22,6 +22,7 @@ export function MenuRecipeComponentsTable({
   onRemoveRow,
   onCopyRow,
   onUnitPriceOverride,
+  emptyMessage = '구성품이 없습니다. 구성품 추가 후 식자재를 검색해 입력하세요.',
 }) {
   if (components.length === 0) {
     return (
@@ -33,7 +34,7 @@ export function MenuRecipeComponentsTable({
           padding: '10px 0',
         }}
       >
-        구성품이 없습니다. 구성품 추가 후 식자재를 검색해 입력하세요.
+        {emptyMessage}
       </div>
     );
   }
@@ -100,31 +101,34 @@ export function MenuRecipeComponentsTable({
         </tr>
       </thead>
       <tbody>
-        {components.map((component, idx) => (
-          <MenuRecipeTableRow
-            key={component._key}
-            component={component}
-            idx={idx}
-            searchIdx={searchIdx}
-            searchQ={searchQ}
-            suggestions={suggestions}
-            activeSuggestionIdx={activeSuggestionIdx}
-            unitPriceMap={unitPriceMap}
-            ingredientInputRefs={ingredientInputRefs}
-            quantityInputRefs={quantityInputRefs}
-            onIngredientInputChange={onIngredientInputChange}
-            onIngredientFocus={onIngredientFocus}
-            onIngredientBlur={onIngredientBlur}
-            onIngredientKeyDown={onIngredientKeyDown}
-            onPickSuggestion={onPickSuggestion}
-            onQuantityChange={onQuantityChange}
-            onQuantityKeyDown={onQuantityKeyDown}
-            onUnitChange={onUnitChange}
-            onRemoveRow={onRemoveRow}
-            onCopyRow={onCopyRow}
-            onUnitPriceOverride={onUnitPriceOverride}
-          />
-        ))}
+        {components.map((component, idx) => {
+          const sourceIdx = Number.isInteger(component._sourceIdx) ? component._sourceIdx : idx;
+          return (
+            <MenuRecipeTableRow
+              key={component._key}
+              component={component}
+              idx={sourceIdx}
+              searchIdx={searchIdx}
+              searchQ={searchQ}
+              suggestions={suggestions}
+              activeSuggestionIdx={activeSuggestionIdx}
+              unitPriceMap={unitPriceMap}
+              ingredientInputRefs={ingredientInputRefs}
+              quantityInputRefs={quantityInputRefs}
+              onIngredientInputChange={onIngredientInputChange}
+              onIngredientFocus={onIngredientFocus}
+              onIngredientBlur={onIngredientBlur}
+              onIngredientKeyDown={onIngredientKeyDown}
+              onPickSuggestion={onPickSuggestion}
+              onQuantityChange={onQuantityChange}
+              onQuantityKeyDown={onQuantityKeyDown}
+              onUnitChange={onUnitChange}
+              onRemoveRow={onRemoveRow}
+              onCopyRow={onCopyRow}
+              onUnitPriceOverride={onUnitPriceOverride}
+            />
+          );
+        })}
       </tbody>
     </table>
   );

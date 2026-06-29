@@ -4,9 +4,12 @@ import { resolve } from 'path';
 import {
   applyIngredientSuggestionToComponent,
   buildRecipeComponentForSave,
+  buildRecipeValidationDetails,
   createBlankRecipeComponentRow,
   hydrateRecipeComponent,
+  isRecipeComponentMissingUnitPrice,
 } from '../../components/menu-master/recipeComponentRows.js';
+import { buildRecipeImpactPreview } from '../../lib/menu-master/recipe-impact-preview.js';
 
 const sectionSrc = readFileSync(resolve('components/menu-master/MenuRecipeSection.jsx'), 'utf8');
 const searchHookSrc = readFileSync(
@@ -24,6 +27,10 @@ const tableSrc = [
   readFileSync(resolve('components/menu-master/recipe/SuggestionItem.jsx'), 'utf8'),
   readFileSync(resolve('components/menu-master/recipe/UnitPriceCell.jsx'), 'utf8'),
 ].join('\n');
+const impactPreviewSrc = readFileSync(
+  resolve('components/menu-master/MenuRecipeImpactPreview.jsx'),
+  'utf8'
+);
 
 describe('MenuRecipeSection — 키보드 드롭다운 상태/핸들러', () => {
   test('activeSuggestionIdx 상태가 있다', () => {
@@ -79,6 +86,20 @@ describe('MenuRecipeSection — 수량 Enter 연속 입력', () => {
   });
 });
 
+describe('MenuRecipeSection — 단가 없음 필터와 영향 미리보기', () => {
+  test('단가 없음만 보기 상태와 토글 버튼을 연결한다', () => {
+    expect(sectionSrc).toContain('onlyMissingPrice');
+    expect(sectionSrc).toContain('missingPriceFilterCount');
+    expect(sectionSrc).toContain('isRecipeComponentMissingUnitPrice');
+  });
+
+  test('원산지/알레르기 영향 미리보기와 저장 전 상세 검증을 노출한다', () => {
+    expect(sectionSrc).toContain('MenuRecipeImpactPreview');
+    expect(sectionSrc).toContain('getRecipeValidation');
+    expect(impactPreviewSrc).toContain('원산지/알레르기 영향 미리보기');
+  });
+});
+
 describe('MenuRecipeComponentsTable — props 연결', () => {
   test('onIngredientKeyDown prop을 식자재 input에 연결한다', () => {
     expect(tableSrc).toContain('onIngredientKeyDown');
@@ -104,6 +125,11 @@ describe('MenuRecipeComponentsTable — props 연결', () => {
   test('추천 항목에 isActive 배경색이 있다', () => {
     expect(tableSrc).toContain("isActive ? 'var(--accent-soft)'");
   });
+
+  test('필터링된 행도 원본 인덱스로 수정/삭제/복사한다', () => {
+    expect(tableSrc).toContain('sourceIdx');
+    expect(tableSrc).toContain('idx={sourceIdx}');
+  });
 });
 
 describe('MenuRecipeComponentsTable — 안내 문구', () => {
@@ -117,6 +143,12 @@ describe('MenuRecipeComponentsTable — 안내 문구', () => {
 
   test('빈 상태 문구가 있다', () => {
     expect(tableSrc).toContain('구성품이 없습니다. 구성품 추가 후 식자재를 검색해 입력하세요.');
+  });
+
+  test('최근 사용 식자재 추천 문구는 노출하지 않는다', () => {
+    expect(searchHookSrc).not.toContain('recent-ingredients');
+    expect(searchHookSrc).not.toContain('getRecentIngredientCodes');
+    expect(tableSrc).not.toContain('최근 사용');
   });
 });
 
@@ -190,6 +222,71 @@ describe('recipeComponentRows — 저장/추천 행 변환', () => {
       unit: '개',
       unitPrice: 300,
     });
+  });
+
+  test('단가 없음 판정은 빈 행을 제외하고 최신 단가와 직접 단가를 모두 본다', () => {
+    const map = new Map([['ING-1', { unitPrice: 3.2 }]]);
+    expect(isRecipeComponentMissingUnitPrice({ ingredientName: '', productCode: '' }, map)).toBe(
+      false
+    );
+    expect(
+      isRecipeComponentMissingUnitPrice({ ingredientName: '치즈', productCode: '' }, map)
+    ).toBe(true);
+    expect(
+      isRecipeComponentMissingUnitPrice({ ingredientName: '치즈', productCode: 'ING-1' }, map)
+    ).toBe(false);
+    expect(
+      isRecipeComponentMissingUnitPrice(
+        { ingredientName: '치즈', productCode: '', unitPrice: 1 },
+        map
+      )
+    ).toBe(false);
+  });
+
+  test('저장 전 검증 상세는 누락된 구성품명을 분리한다', () => {
+    const map = new Map([['ING-1', { unitPrice: 3.2 }]]);
+    expect(
+      buildRecipeValidationDetails(
+        [
+          { ingredientName: '치즈', productCode: 'ING-1', quantity: '' },
+          { ingredientName: '소스', productCode: '', quantity: '10' },
+          { ingredientName: '', productCode: '', quantity: '' },
+        ],
+        map
+      )
+    ).toEqual({
+      missingQuantityNames: ['치즈'],
+      missingPriceNames: ['소스'],
+    });
+  });
+
+  test('원산지/알레르기 영향 미리보기는 연결·누락·출력값을 계산한다', () => {
+    const preview = buildRecipeImpactPreview(
+      [
+        { ingredientName: '치즈', productCode: 'ING-1' },
+        { ingredientName: '소스', productCode: 'ING-2' },
+        { ingredientName: '미연결', productCode: 'ING-X' },
+      ],
+      [
+        {
+          ingredientName: '치즈',
+          productCode: 'ING-1',
+          origin: [{ displayName: '치즈', country: '미국산' }],
+          allergens: ['TEST_AL'],
+        },
+        { ingredientName: '소스', productCode: 'ING-2', origin: [], allergens: [] },
+      ]
+    );
+
+    expect(preview.componentCount).toBe(3);
+    expect(preview.linkedIngredientCount).toBe(2);
+    expect(preview.originRegisteredCount).toBe(1);
+    expect(preview.allergenRegisteredCount).toBe(1);
+    expect(preview.originOutputLabels).toEqual(['치즈 미국산']);
+    expect(preview.allergenOutputLabels).toEqual(['TEST_AL']);
+    expect(preview.missingOriginNames).toEqual(['소스', '미연결']);
+    expect(preview.missingAllergenNames).toEqual(['소스', '미연결']);
+    expect(preview.unmatchedNames).toEqual(['미연결']);
   });
 
   test('저장/로드 로직은 useMenuRecipeEditor에 위치한다', () => {

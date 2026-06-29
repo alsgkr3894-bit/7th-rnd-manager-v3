@@ -84,12 +84,6 @@ const ALLOWED_DISABLES = [
     reason: 'sidebar storage restore and active-group sync intentionally use narrow triggers',
   },
   {
-    file: 'components/change-log/ChangeHistoryPanel.jsx',
-    rule: 'react-hooks/exhaustive-deps',
-    count: 1,
-    reason: 'change log reload is tied to brand and brand filter changes',
-  },
-  {
     file: 'components/home/ActionCenterWidget.jsx',
     rule: 'react-hooks/exhaustive-deps',
     count: 1,
