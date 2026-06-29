@@ -34,6 +34,7 @@ function buildMenuDeleteMessage(row, plan, loading) {
 
 export function MenuMasterDialogs({
   editRow,
+  editIntent = null,
   addOpen,
   bulkOpen,
   deleteTarget,
@@ -62,6 +63,7 @@ export function MenuMasterDialogs({
           onClose={onCloseEdit}
           presetCategories={brandCats}
           onRecipeSaved={onRecipeSaved}
+          initialFocus={editIntent}
         />
       )}
 

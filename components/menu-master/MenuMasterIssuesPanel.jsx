@@ -16,11 +16,11 @@ const ISSUE_TABS = [
   { id: ISSUE_KINDS.NO_PRICE, label: ISSUE_LABELS[ISSUE_KINDS.NO_PRICE] },
 ];
 
-const ISSUE_QUICK_LABEL = {
-  [ISSUE_KINDS.NO_RECIPE]: '레시피 작성',
-  [ISSUE_KINDS.NEEDS_QUANTITY]: '수량 입력',
-  [ISSUE_KINDS.NEEDS_PRICE]: '단가 확인',
-  [ISSUE_KINDS.NO_PRICE]: '판매가 입력',
+const ISSUE_QUICK_ACTION = {
+  [ISSUE_KINDS.NO_RECIPE]: { label: '바로 수정', focus: 'recipe' },
+  [ISSUE_KINDS.NEEDS_QUANTITY]: { label: '레시피 섹션으로 이동', focus: 'missing-quantity' },
+  [ISSUE_KINDS.NEEDS_PRICE]: { label: '단가 보정으로 이동', focus: 'missing-price' },
+  [ISSUE_KINDS.NO_PRICE]: { label: '판매가 입력', focus: 'price' },
 };
 
 const ISSUE_TONE = {
@@ -102,6 +102,10 @@ export function MenuMasterIssuesPanel({ rows, recipeSummaryMap, isViewer, onEdit
               <tbody>
                 {filtered.map(({ menu, kind }, i) => {
                   const tone = ISSUE_TONE[kind] || {};
+                  const quickAction = ISSUE_QUICK_ACTION[kind] || {
+                    label: '바로 수정',
+                    focus: null,
+                  };
                   return (
                     <tr key={`${menu.menuCode}-${kind}-${i}`}>
                       <td
@@ -137,9 +141,10 @@ export function MenuMasterIssuesPanel({ rows, recipeSummaryMap, isViewer, onEdit
                           <button
                             type="button"
                             className="btn sm ghost"
-                            onClick={() => onEdit(menu)}
+                            title={quickAction.label}
+                            onClick={() => onEdit(menu, quickAction.focus)}
                           >
-                            {ISSUE_QUICK_LABEL[kind] || '수정'}
+                            {quickAction.label}
                           </button>
                         </td>
                       )}

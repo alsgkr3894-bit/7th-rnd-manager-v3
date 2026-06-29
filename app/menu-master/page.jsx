@@ -59,6 +59,7 @@ export default function Page() {
   const [seeding, setSeeding] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [editRow, setEditRow] = useState(null);
+  const [editIntent, setEditIntent] = useState(null);
   const [addOpen, setAddOpen] = useState(false);
   const [bulkModal, setBulkModal] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -127,6 +128,11 @@ export default function Page() {
   function handleExportCsv() {
     exportMenuMasterCsv(filtered);
     showToast(`CSV ${filtered.length}개 내보내기 완료`, 'ok');
+  }
+
+  function openEdit(row, intent = null) {
+    setEditIntent(intent);
+    setEditRow(row);
   }
 
   const active = rows.filter(r => r.status === 'active');
@@ -266,7 +272,7 @@ export default function Page() {
               readinessMap={readinessMap}
               loading={readinessLoading}
               isViewer={isViewer}
-              onEdit={setEditRow}
+              onEdit={openEdit}
             />
           ) : viewMode === 'readiness' ? (
             <MenuReadinessPanel
@@ -274,14 +280,14 @@ export default function Page() {
               loading={readinessLoading}
               catFilter={catFilter}
               isViewer={isViewer}
-              onEdit={setEditRow}
+              onEdit={openEdit}
             />
           ) : viewMode === 'issues' ? (
             <MenuMasterIssuesPanel
               rows={rows}
               recipeSummaryMap={recipeSummaryMap}
               isViewer={isViewer}
-              onEdit={setEditRow}
+              onEdit={openEdit}
             />
           ) : (
             <>
@@ -308,7 +314,7 @@ export default function Page() {
                 totalRows={rows}
                 recipeSummaryMap={recipeSummaryMap}
                 isViewer={isViewer}
-                onEdit={setEditRow}
+                onEdit={openEdit}
                 onDelete={openDeleteDialog}
                 page={page}
                 totalPages={totalPages}
@@ -324,6 +330,7 @@ export default function Page() {
 
       <MenuMasterDialogs
         editRow={editRow}
+        editIntent={editIntent}
         addOpen={addOpen}
         bulkOpen={bulkModal}
         deleteTarget={deleteTarget}
@@ -334,7 +341,10 @@ export default function Page() {
         brandCats={brandCats}
         onSaveRow={handleSaveRow}
         onRecipeSaved={reload}
-        onCloseEdit={() => setEditRow(null)}
+        onCloseEdit={() => {
+          setEditRow(null);
+          setEditIntent(null);
+        }}
         onCloseAdd={() => setAddOpen(false)}
         onCloseBulk={() => setBulkModal(false)}
         onConfirmDelete={handleDeleteRow}

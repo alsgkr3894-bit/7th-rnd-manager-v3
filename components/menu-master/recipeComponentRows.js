@@ -9,6 +9,12 @@ function optionalNonNegativeNumber(value) {
   return parsed.ok ? parsed.value : null;
 }
 
+function optionalPositiveNumber(value) {
+  const parsed = parseOptionalNonNegativeNumber(value);
+  if (!parsed.ok) return null;
+  return parsed.value == null || parsed.value > 0 ? parsed.value : null;
+}
+
 export function createBlankRecipeComponentRow() {
   return {
     _key: ++rowKey,
@@ -48,7 +54,8 @@ export function isRecipeComponentMissingUnitPrice(component, unitPriceMap = new 
 
 export function isRecipeComponentMissingQuantity(component) {
   if (!hasRecipeComponentIdentity(component)) return false;
-  return asFiniteNumber(component?.quantity, null) == null;
+  const quantity = asFiniteNumber(component?.quantity, null);
+  return quantity == null || quantity <= 0;
 }
 
 function componentDisplayName(component) {
@@ -89,7 +96,7 @@ export function hydrateRecipeComponent(component, unitPriceMap) {
 export function buildRecipeComponentForSave(component, unitPriceMap) {
   const productCode = recipeComponentProductCode(component);
   const info = productCode ? unitPriceMap.get(productCode) : null;
-  const quantity = optionalNonNegativeNumber(component.quantity);
+  const quantity = optionalPositiveNumber(component.quantity);
   const latestUnitPrice = optionalNonNegativeNumber(info?.unitPrice);
   return {
     ingredientName: component.ingredientName || '',
@@ -98,6 +105,12 @@ export function buildRecipeComponentForSave(component, unitPriceMap) {
     unit: normalizeCostBaseUnit(info?.baseUnitType || component.unit),
     unitPrice: latestUnitPrice ?? optionalNonNegativeNumber(component.unitPrice),
   };
+}
+
+export function buildSavableRecipeComponents(components = [], unitPriceMap = new Map()) {
+  return components
+    .filter(hasRecipeComponentIdentity)
+    .map(component => buildRecipeComponentForSave(component, unitPriceMap));
 }
 
 export function unitPriceKeyForIngredient(ingredient) {

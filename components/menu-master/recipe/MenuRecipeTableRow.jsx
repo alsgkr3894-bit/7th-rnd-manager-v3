@@ -3,6 +3,10 @@
 import { Icon } from '@/components/icons';
 import { formatUnitPrice } from '@/lib/format';
 import { COST_BASE_UNITS, normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
+import {
+  hasRecipeComponentIdentity,
+  isRecipeComponentMissingQuantity,
+} from '@/components/menu-master/recipeComponentRows';
 import { SuggestionItem } from './SuggestionItem';
 import { UnitPriceCell } from './UnitPriceCell';
 
@@ -32,6 +36,8 @@ export function MenuRecipeTableRow({
     component.unitPrice != null && Number(component.quantity) > 0
       ? Math.round(component.unitPrice * Number(component.quantity))
       : null;
+  const quantityNeedsCheck =
+    hasRecipeComponentIdentity(component) && isRecipeComponentMissingQuantity(component);
 
   return (
     <tr style={{ borderBottom: '1px solid var(--divider)' }}>
@@ -91,13 +97,24 @@ export function MenuRecipeTableRow({
           }}
           className="form-input"
           type="number"
-          min="0"
-          style={{ width: '100%', fontSize: 12, padding: '4px 6px', textAlign: 'right' }}
+          min="0.000001"
+          step="any"
+          style={{
+            width: '100%',
+            fontSize: 12,
+            padding: '4px 6px',
+            textAlign: 'right',
+            borderColor: quantityNeedsCheck ? 'var(--warn)' : undefined,
+          }}
           value={component.quantity ?? ''}
           onChange={e => onQuantityChange(idx, e.target.value)}
           onKeyDown={e => onQuantityKeyDown?.(idx, e)}
           placeholder="0"
-          title="수량 입력 후 Enter로 다음 구성품"
+          title={
+            quantityNeedsCheck
+              ? '수량은 0보다 큰 숫자로 입력하세요'
+              : '수량 입력 후 Enter로 다음 구성품'
+          }
         />
       </td>
       <td style={{ padding: '4px 4px' }}>

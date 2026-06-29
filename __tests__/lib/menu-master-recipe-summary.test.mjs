@@ -257,6 +257,30 @@ describe('menu master recipe summary', () => {
     });
   });
 
+  test('직접 레시피 수량 0 또는 음수는 수량 누락으로 보고 원가에서 제외한다', () => {
+    const summary = summarizeMenuRecipe(
+      { menuCode: 'P-OR-004-L', category: '피자', price: 10000 },
+      {
+        components: [
+          { productCode: 'DOUGH', ingredientName: '도우', quantity: 0 },
+          { productCode: 'SAUCE', ingredientName: '차감소스', quantity: -20 },
+        ],
+      },
+      new Map([
+        ['DOUGH', { unitPrice: 5, baseUnitType: 'g' }],
+        ['SAUCE', { unitPrice: 10, baseUnitType: 'g' }],
+      ])
+    );
+
+    expect(summary).toMatchObject({
+      status: MENU_RECIPE_SUMMARY_STATUS.NEEDS_QUANTITY,
+      totalCost: 0,
+      missingQuantityCount: 2,
+      missingDirectQuantityCount: 2,
+      missingCommonQuantityCount: 0,
+    });
+  });
+
   test('수량과 단가 누락을 요약 상태로 표시한다', () => {
     const summary = summarizeMenuRecipe(
       { menuCode: 'P-OR-002-L', category: '피자', price: 20000 },

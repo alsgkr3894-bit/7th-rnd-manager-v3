@@ -3,36 +3,66 @@
 import { useState } from 'react';
 import { Icon } from '@/components/icons';
 
+function ingredientManageHref(component) {
+  const params = new URLSearchParams();
+  const name = String(component?.ingredientName || '').trim();
+  const productCode = String(component?.productCode || '').trim();
+  if (name) params.set('query', name);
+  if (productCode) params.set('productCode', productCode);
+  const query = params.toString();
+  return query ? `/ingredient/manage?${query}` : '/ingredient/manage';
+}
+
 export function UnitPriceCell({ idx, component, onOverride }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState('');
 
   if (!editing) {
     return (
-      <button
-        type="button"
-        title={
-          onOverride
-            ? '클릭하여 단가 직접 입력 (식자재 단가 설정 권장)'
-            : '식자재 관리에서 단가를 설정하세요'
-        }
+      <span
         style={{
-          background: 'none',
-          border: 'none',
-          cursor: onOverride ? 'pointer' : 'default',
-          color: 'var(--warn)',
-          fontSize: 11,
-          padding: 0,
-          textDecoration: onOverride ? 'underline dotted' : 'none',
-        }}
-        onClick={() => {
-          if (!onOverride) return;
-          setValue('');
-          setEditing(true);
+          display: 'inline-flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: 2,
+          lineHeight: 1.1,
         }}
       >
-        단가 없음
-      </button>
+        <button
+          type="button"
+          title={
+            onOverride ? '클릭하여 레시피 임시 단가 직접 입력' : '식자재 관리에서 단가를 설정하세요'
+          }
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: onOverride ? 'pointer' : 'default',
+            color: 'var(--warn)',
+            fontSize: 11,
+            padding: 0,
+            textDecoration: onOverride ? 'underline dotted' : 'none',
+          }}
+          onClick={() => {
+            if (!onOverride) return;
+            setValue('');
+            setEditing(true);
+          }}
+        >
+          단가 없음
+        </button>
+        <a
+          href={ingredientManageHref(component)}
+          title="식자재 관리에서 원본 단가 보정"
+          style={{
+            color: 'var(--accent-text)',
+            fontSize: 10,
+            textDecoration: 'underline',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          단가 보정
+        </a>
+      </span>
     );
   }
 

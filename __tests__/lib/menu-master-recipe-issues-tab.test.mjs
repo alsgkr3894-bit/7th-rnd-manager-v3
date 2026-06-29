@@ -196,7 +196,17 @@ describe('MenuMasterIssuesPanel — UI 구조', () => {
 
   test('viewer가 아닐 때 수정 버튼이 있다', () => {
     expect(issuesPanelSrc).toContain('isViewer');
-    expect(issuesPanelSrc).toContain('onEdit(menu)');
+    expect(issuesPanelSrc).toContain('onEdit(menu, quickAction.focus)');
+  });
+
+  test('이슈별 빠른 액션이 목적지 intent를 넘긴다', () => {
+    expect(issuesPanelSrc).toContain('바로 수정');
+    expect(issuesPanelSrc).toContain('레시피 섹션으로 이동');
+    expect(issuesPanelSrc).toContain('단가 보정으로 이동');
+    expect(issuesPanelSrc).toContain('판매가 입력');
+    expect(issuesPanelSrc).toContain("focus: 'missing-price'");
+    expect(issuesPanelSrc).toContain("focus: 'missing-quantity'");
+    expect(issuesPanelSrc).toContain("focus: 'price'");
   });
 });
 
@@ -207,5 +217,10 @@ describe('app/menu-master/page — 이슈 탭 진입점', () => {
 
   test('이슈 탭 viewMode 또는 이슈 토글이 있다', () => {
     expect(menuMasterPageSrc).toMatch(/viewMode|issueTab|이슈/);
+  });
+
+  test('빠른 액션 intent를 편집 모달로 전달한다', () => {
+    expect(menuMasterPageSrc).toContain('editIntent');
+    expect(menuMasterPageSrc).toContain('function openEdit(row, intent = null)');
   });
 });

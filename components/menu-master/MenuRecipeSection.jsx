@@ -12,6 +12,7 @@ import { normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
 import {
   buildRecipeValidationDetails,
   isRecipeComponentMissingUnitPrice,
+  isRecipeComponentMissingQuantity,
 } from '@/components/menu-master/recipeComponentRows';
 import { MenuRecipeComponentsTable } from '@/components/menu-master/MenuRecipeComponentsTable';
 import { MenuRecipeGroupSelector } from '@/components/menu-master/MenuRecipeGroupSelector';
@@ -21,12 +22,13 @@ import { useMenuRecipeEditor } from '@/components/menu-master/useMenuRecipeEdito
 import { useRecipeIngredientSearch } from '@/components/menu-master/useRecipeIngredientSearch';
 
 export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
-  { menuCode, menuName, category, size, sellingPrice, onSaved },
+  { menuCode, menuName, category, size, sellingPrice, onSaved, initialFocus = null },
   ref
 ) {
   const [copyOpen, setCopyOpen] = useState(false);
   const [copySearch, setCopySearch] = useState('');
   const [onlyMissingPrice, setOnlyMissingPrice] = useState(false);
+  const initialFocusConsumedRef = useRef(false);
 
   const {
     components,
@@ -110,15 +112,57 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     [components, unitPriceMap]
   );
 
+  const focusRecipeIssue = useCallback(
+    target => {
+      if (target === 'missing-price') {
+        setOnlyMissingPrice(true);
+      }
+
+      setTimeout(() => {
+        if (target === 'missing-quantity') {
+          const row = components.find(component => isRecipeComponentMissingQuantity(component));
+          if (row?._key) {
+            quantityInputRefs.current[row._key]?.focus();
+          }
+          return;
+        }
+
+        if (target === 'missing-price') {
+          const row = components.find(component =>
+            isRecipeComponentMissingUnitPrice(component, unitPriceMap)
+          );
+          if (row?._key) {
+            ingredientInputRefs.current[row._key]?.focus();
+          }
+          return;
+        }
+
+        const firstKey = components[0]?._key;
+        if (firstKey) {
+          ingredientInputRefs.current[firstKey]?.focus();
+        }
+      }, 80);
+    },
+    [components, unitPriceMap]
+  );
+
   useImperativeHandle(
     ref,
     () => ({
       saveRecipe: handleSave,
       getRecipeSummary: () => recipeSummary,
       getRecipeValidation: () => recipeValidation,
+      focusRecipeIssue,
     }),
-    [handleSave, recipeSummary, recipeValidation]
+    [focusRecipeIssue, handleSave, recipeSummary, recipeValidation]
   );
+
+  useEffect(() => {
+    if (!loaded || !initialFocus || initialFocusConsumedRef.current) return;
+    if (!['recipe', 'missing-price', 'missing-quantity'].includes(initialFocus)) return;
+    initialFocusConsumedRef.current = true;
+    focusRecipeIssue(initialFocus);
+  }, [focusRecipeIssue, initialFocus, loaded]);
 
   useEffect(() => {
     if (onlyMissingPrice && missingPriceComponents.length === 0) {

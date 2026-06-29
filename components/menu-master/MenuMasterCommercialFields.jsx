@@ -18,6 +18,7 @@ export function PriceField({ value, error, defaultPrice, setField }) {
           className="input"
           type="number"
           min="0"
+          data-menu-master-field="price"
           value={value}
           aria-describedby={error ? 'menu-master-price-error' : undefined}
           onChange={e => setField('price', e.target.value)}

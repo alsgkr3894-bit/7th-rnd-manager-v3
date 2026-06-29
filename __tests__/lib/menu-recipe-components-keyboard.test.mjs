@@ -4,6 +4,7 @@ import { resolve } from 'path';
 import {
   applyIngredientSuggestionToComponent,
   buildRecipeComponentForSave,
+  buildSavableRecipeComponents,
   buildRecipeValidationDetails,
   createBlankRecipeComponentRow,
   hydrateRecipeComponent,
@@ -141,6 +142,12 @@ describe('MenuRecipeComponentsTable — 안내 문구', () => {
     expect(tableSrc).toContain('수량 입력 후 Enter로 다음 구성품');
   });
 
+  test('수량 input은 0보다 큰 숫자만 정상 수량으로 안내한다', () => {
+    expect(tableSrc).toContain('min="0.000001"');
+    expect(tableSrc).toContain('step="any"');
+    expect(tableSrc).toContain('수량은 0보다 큰 숫자로 입력하세요');
+  });
+
   test('빈 상태 문구가 있다', () => {
     expect(tableSrc).toContain('구성품이 없습니다. 구성품 추가 후 식자재를 검색해 입력하세요.');
   });
@@ -196,7 +203,7 @@ describe('recipeComponentRows — 저장/추천 행 변환', () => {
     const map = new Map([['ING-1', { baseUnitType: 'g', unitPrice: 'Infinity' }]]);
     expect(
       buildRecipeComponentForSave(
-        { productCode: 'ING-1', ingredientName: '치즈', quantity: 'abc', unitPrice: '-1' },
+        { productCode: 'ING-1', ingredientName: '치즈', quantity: '0', unitPrice: '-1' },
         map
       )
     ).toEqual({
@@ -206,6 +213,27 @@ describe('recipeComponentRows — 저장/추천 행 변환', () => {
       unit: 'g',
       unitPrice: null,
     });
+  });
+
+  test('저장 전 빈 구성품 row는 제외한다', () => {
+    const map = new Map([['ING-1', { baseUnitType: 'g', unitPrice: 4.5 }]]);
+    expect(
+      buildSavableRecipeComponents(
+        [
+          { productCode: '', ingredientName: '', quantity: '' },
+          { productCode: 'ING-1', ingredientName: '치즈', quantity: '10' },
+        ],
+        map
+      )
+    ).toEqual([
+      {
+        productCode: 'ING-1',
+        ingredientName: '치즈',
+        quantity: 10,
+        unit: 'g',
+        unitPrice: 4.5,
+      },
+    ]);
   });
 
   test('productCode 없는 수동 식자재는 id 기준 단가를 적용한다', () => {
@@ -248,7 +276,7 @@ describe('recipeComponentRows — 저장/추천 행 변환', () => {
     expect(
       buildRecipeValidationDetails(
         [
-          { ingredientName: '치즈', productCode: 'ING-1', quantity: '' },
+          { ingredientName: '치즈', productCode: 'ING-1', quantity: '0' },
           { ingredientName: '소스', productCode: '', quantity: '10' },
           { ingredientName: '', productCode: '', quantity: '' },
         ],
@@ -258,6 +286,12 @@ describe('recipeComponentRows — 저장/추천 행 변환', () => {
       missingQuantityNames: ['치즈'],
       missingPriceNames: ['소스'],
     });
+  });
+
+  test('단가 없음 행은 식자재 관리 단가 보정 이동을 제공한다', () => {
+    expect(tableSrc).toContain('식자재 관리에서 원본 단가 보정');
+    expect(tableSrc).toContain('/ingredient/manage?');
+    expect(tableSrc).toContain('단가 보정');
   });
 
   test('원산지/알레르기 영향 미리보기는 연결·누락·출력값을 계산한다', () => {

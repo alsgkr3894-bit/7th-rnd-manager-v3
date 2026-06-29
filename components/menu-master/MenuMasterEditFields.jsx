@@ -41,6 +41,7 @@ export function MenuMasterEditFields({
   presetCategories,
   onRecipeSaved,
   recipeSectionRef,
+  initialFocus,
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -103,10 +104,14 @@ export function MenuMasterEditFields({
 
       {/* ── 레시피 / 원가 ─────────────────────── */}
       {!isNew && form.menuCode && form.category && (
-        <div style={{ borderTop: '1px solid var(--divider)', paddingTop: 20 }}>
+        <div
+          data-menu-master-section="recipe"
+          style={{ borderTop: '1px solid var(--divider)', paddingTop: 20 }}
+        >
           <SectionDivider title="레시피 / 원가" />
           <MenuRecipeSection
             ref={recipeSectionRef}
+            initialFocus={initialFocus}
             menuCode={form.menuCode}
             menuName={form.menuName}
             category={form.category}

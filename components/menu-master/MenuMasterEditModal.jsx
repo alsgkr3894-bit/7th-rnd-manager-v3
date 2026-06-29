@@ -50,6 +50,7 @@ export function MenuMasterEditModal({
   onClose,
   presetCategories = [],
   onRecipeSaved,
+  initialFocus = null,
 }) {
   const [form, setForm] = useState({
     menuCode: row?.menuCode || '',
@@ -154,6 +155,25 @@ export function MenuMasterEditModal({
   }
 
   useKeyboardSave(submit);
+
+  useEffect(() => {
+    if (!initialFocus) return undefined;
+    const timer = setTimeout(() => {
+      const root = containerRef.current;
+      if (!root) return;
+      if (initialFocus === 'price') {
+        const priceInput = root.querySelector('[data-menu-master-field="price"]');
+        priceInput?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+        priceInput?.focus?.();
+        priceInput?.select?.();
+        return;
+      }
+      const recipeSection = root.querySelector('[data-menu-master-section="recipe"]');
+      recipeSection?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+      recipeSectionRef.current?.focusRecipeIssue?.(initialFocus);
+    }, 160);
+    return () => clearTimeout(timer);
+  }, [initialFocus]);
 
   useEffect(() => {
     function onKey(e) {
@@ -270,6 +290,7 @@ export function MenuMasterEditModal({
             presetCategories={presetCategories}
             onRecipeSaved={onRecipeSaved}
             recipeSectionRef={recipeSectionRef}
+            initialFocus={initialFocus}
           />
         </div>
       </div>

@@ -15,7 +15,7 @@ import {
 } from '@/lib/menu-recipes';
 import { recipeStoreKindForCategory } from '@/lib/recipe-master/sync';
 import {
-  buildRecipeComponentForSave,
+  buildSavableRecipeComponents,
   copyRecipeComponentRow,
   createBlankRecipeComponentRow,
   hydrateRecipeComponent,
@@ -167,7 +167,7 @@ export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellin
           category,
           kind: recipeKind,
           size: size || '단일',
-          components: components.map(c => buildRecipeComponentForSave(c, unitPriceMap)),
+          components: buildSavableRecipeComponents(components, unitPriceMap),
           selectedRecipeGroupIds: savableRecipeGroupIds,
         });
         if (runOnSaved) await onSaved?.();
