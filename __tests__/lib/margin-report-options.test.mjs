@@ -1,5 +1,6 @@
 import {
   BASE_EDGE_KEY,
+  buildMarginPizzaCostRateSummary,
   collectMarginReportCategories,
   collectMarginReportEdgeOptions,
   collectMarginReportSizeOptions,
@@ -74,5 +75,32 @@ describe('margin report options helpers', () => {
         costMap: { 단일: 1200 },
       }),
     ]);
+  });
+
+  test('피자 전체·카테고리별·L/R 사이즈별 평균 원가율을 계산한다', () => {
+    const rows = [
+      ...ROWS,
+      {
+        id: 'detail||premium-001',
+        menuName: '프리미엄 피자',
+        menuCategory: '피자/프리미엄',
+        sizes: [
+          { label: 'L', sellingPrice: 24000 },
+          { label: 'R', sellingPrice: 20000 },
+        ],
+        costMap: { L: 9600, R: 7000 },
+      },
+    ];
+    const summary = buildMarginPizzaCostRateSummary(rows, { fees: [] }, null);
+
+    expect(summary.total.count).toBe(5);
+    expect(summary.total.avg).toBeCloseTo((35 + 5500 / 170 + 7600 / 210 + 40 + 35) / 5, 4);
+    expect(summary.sizes.L.count).toBe(3);
+    expect(summary.sizes.L.avg).toBeCloseTo((35 + 7600 / 210 + 40) / 3, 4);
+    expect(summary.sizes.R.count).toBe(2);
+    expect(summary.sizes.R.avg).toBeCloseTo((5500 / 170 + 35) / 2, 4);
+    expect(summary.categories.map(row => row.category)).toEqual(['피자', '피자/프리미엄']);
+    expect(summary.categories[0].sizes.L.count).toBe(2);
+    expect(summary.categories[1].total.avg).toBeCloseTo(37.5, 4);
   });
 });

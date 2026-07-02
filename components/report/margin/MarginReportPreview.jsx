@@ -1,7 +1,12 @@
-import { getProfile } from '@/lib/profile';
+'use client';
+
 import { formatNumber } from '@/lib/format';
-import { buildMarginExcelRows, formatMarginDownloadDate } from '@/lib/cost/margin/export';
-import { buildMarginReportSummary } from '@/lib/cost/margin/report-options';
+import { buildMarginExcelRows } from '@/lib/cost/margin/export';
+import {
+  buildMarginPizzaCostRateSummary,
+  buildMarginReportSummary,
+} from '@/lib/cost/margin/report-options';
+import { useReportGeneratedMeta } from '@/hooks/useReportGeneratedMeta';
 
 function displayCell(value) {
   if (value === '' || value == null) return '—';
@@ -58,6 +63,79 @@ function SummaryCard({ label, value, sub }) {
   );
 }
 
+function formatRateMetric(metric) {
+  return metric?.count ? `${metric.avg.toFixed(1)}%` : '—';
+}
+
+function metricSub(metric) {
+  return metric?.count ? `${formatNumber(metric.count)}개 가격 기준` : '';
+}
+
+function PizzaCostRateSummary({ summary }) {
+  if (!summary?.total?.count) return null;
+  const categoryRows = Array.isArray(summary.categories) ? summary.categories : [];
+
+  return (
+    <section className="paper-cat-section">
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 12,
+          marginBottom: 8,
+        }}
+      >
+        <h3>피자 원가율 요약</h3>
+        <span className="muted" style={{ fontSize: 11 }}>
+          전체 · L 사이즈 · R 사이즈 평균
+        </span>
+      </div>
+
+      <div className="paper-stat-row" style={{ marginBottom: 10 }}>
+        <SummaryCard
+          label="전체 피자 평균원가율"
+          value={formatRateMetric(summary.total)}
+          sub={metricSub(summary.total)}
+        />
+        <SummaryCard
+          label="L 사이즈 평균원가율"
+          value={formatRateMetric(summary.sizes?.L)}
+          sub={metricSub(summary.sizes?.L)}
+        />
+        <SummaryCard
+          label="R 사이즈 평균원가율"
+          value={formatRateMetric(summary.sizes?.R)}
+          sub={metricSub(summary.sizes?.R)}
+        />
+      </div>
+
+      <table className="paper-table" style={{ tableLayout: 'fixed' }}>
+        <thead>
+          <tr>
+            <th>피자 카테고리</th>
+            <th style={{ textAlign: 'right' }}>전체 평균원가율</th>
+            <th style={{ textAlign: 'right' }}>L 평균원가율</th>
+            <th style={{ textAlign: 'right' }}>R 평균원가율</th>
+            <th style={{ textAlign: 'right' }}>기준 가격 수</th>
+          </tr>
+        </thead>
+        <tbody>
+          {categoryRows.map(row => (
+            <tr key={row.category}>
+              <td>{row.category}</td>
+              <td style={{ textAlign: 'right' }}>{formatRateMetric(row.total)}</td>
+              <td style={{ textAlign: 'right' }}>{formatRateMetric(row.sizes?.L)}</td>
+              <td style={{ textAlign: 'right' }}>{formatRateMetric(row.sizes?.R)}</td>
+              <td style={{ textAlign: 'right' }}>{formatNumber(row.total?.count || 0)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
 export function MarginReportPreview({
   rows,
   sections,
@@ -69,8 +147,9 @@ export function MarginReportPreview({
   selectedSizeCount,
 }) {
   const summary = buildMarginReportSummary(rows, activePlatform, discount, viewMode);
+  const pizzaCostRateSummary = buildMarginPizzaCostRateSummary(rows, activePlatform, discount);
   const modeLabel = viewMode === 'margin' ? '마진율' : '원가율';
-  const downloadDate = formatMarginDownloadDate();
+  const { isoDateLabel, profileName } = useReportGeneratedMeta();
 
   return (
     <>
@@ -87,7 +166,7 @@ export function MarginReportPreview({
           <span>{selectedSizeCount}개 사이즈</span>
           <span>·</span>
           <span className="mono">
-            출력일 {downloadDate} · {getProfile().name}
+            출력일 {isoDateLabel} · {profileName}
           </span>
         </div>
       </div>
@@ -102,6 +181,8 @@ export function MarginReportPreview({
           sub={`${formatNumber(summary.metricCount)}개 가격 기준`}
         />
       </div>
+
+      <PizzaCostRateSummary summary={pizzaCostRateSummary} />
 
       {sections.length ? (
         sections.map(section => (
