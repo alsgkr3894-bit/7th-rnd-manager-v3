@@ -32,6 +32,10 @@ const modalSource = readFileSync(
   resolve('components/nutrition/menu/toppings/ToppingEditModal.jsx'),
   'utf8'
 );
+const importModalSource = readFileSync(
+  resolve('components/nutrition/menu/toppings/ToppingImportModal.jsx'),
+  'utf8'
+);
 const utilsSource = readFileSync(
   resolve('components/nutrition/menu/toppings/toppingUtils.js'),
   'utf8'
@@ -43,6 +47,8 @@ describe('nutrition toppings tab structure', () => {
     expect(tabSource).toContain('<ToppingsEmptyState');
     expect(tabSource).toContain('<ToppingsTable');
     expect(tabSource).toContain('<ToppingEditModal');
+    expect(tabSource).toContain('<ToppingImportModal');
+    expect(tabSource).toContain('downloadToppingImportTemplate');
     expect(tabSource).toContain('buildToppingSavePayload');
     expect(tabSource).not.toContain('<ModalFrame');
     expect(tabSource).not.toContain('<NutritionGrid');
@@ -52,6 +58,8 @@ describe('nutrition toppings tab structure', () => {
 
     expect(headerSource).toContain('export function ToppingsHeader');
     expect(headerSource).toContain('추가토핑 영양성분');
+    expect(headerSource).toContain('양식 다운로드');
+    expect(headerSource).toContain('엑셀 가져오기');
     expect(emptySource).toContain('export function ToppingsEmptyState');
     expect(emptySource).toContain('등록된 추가토핑이 없어요');
     expect(tableSource).toContain('export function ToppingsTable');
@@ -60,6 +68,17 @@ describe('nutrition toppings tab structure', () => {
     expect(modalSource).toContain('export function ToppingEditModal');
     expect(modalSource).toContain('<ModalFrame');
     expect(modalSource).toContain('<NutritionGrid');
+    expect(importModalSource).toContain('export function ToppingImportModal');
+    expect(importModalSource).toContain('parseToppingExcel');
+    expect(importModalSource).toContain('downloadToppingImportTemplate');
+    expect(importModalSource).toContain('UploadDropzone');
+    expect(importModalSource).toContain('onPatchRow');
+    expect(importModalSource).toContain('onIngredientInput');
+    expect(importModalSource).toContain('ingredientAllergenText');
+    expect(importModalSource).toContain('searchIngredientOptions');
+    expect(importModalSource).toContain('onCompositionStart');
+    expect(importModalSource).toContain('role="listbox"');
+    expect(importModalSource).toContain('type="number"');
     expect(utilsSource).toContain('export function buildToppingSavePayload');
   });
 
@@ -68,6 +87,7 @@ describe('nutrition toppings tab structure', () => {
     expect(tabSource).toContain('if (!canEdit) return');
     expect(tabSource).toContain('canEdit={canEdit}');
     expect(tabSource).toContain('canEdit && modal');
+    expect(tabSource).toContain('canEdit && importOpen');
     expect(headerSource).toContain('canEdit = false');
     expect(headerSource).toContain('disabled={!canEdit}');
     expect(tableSource).toContain('canEdit = false');

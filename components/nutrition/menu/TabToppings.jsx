@@ -2,9 +2,11 @@
 import { useMemo, useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { deleteTopping, upsertTopping } from '@/lib/nutrition/values/store';
+import { downloadToppingImportTemplate } from '@/lib/nutrition/values/topping-import';
 import { asDisplayText, asObjectArray, noop } from '@/lib/ui/prop-guards';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { ToppingEditModal } from './toppings/ToppingEditModal';
+import { ToppingImportModal } from './toppings/ToppingImportModal';
 import { ToppingsEmptyState } from './toppings/ToppingsEmptyState';
 import { ToppingsHeader } from './toppings/ToppingsHeader';
 import { ToppingsTable } from './toppings/ToppingsTable';
@@ -27,6 +29,7 @@ export function TabToppings({ toppings, ingredients, onRefresh, canEdit = false 
   const [form, setForm] = useState(EMPTY_TOPPING_FORM);
   const [values, setValues] = useState({});
   const [saving, setSaving] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const ingredientLookups = useMemo(
     () => buildToppingIngredientLookups(safeIngredients),
@@ -39,6 +42,16 @@ export function TabToppings({ toppings, ingredients, onRefresh, canEdit = false 
     setValues({});
     setModal('add');
   };
+
+  const openImport = () => {
+    if (!canEdit) return;
+    setImportOpen(true);
+  };
+
+  const downloadTemplate = () =>
+    downloadToppingImportTemplate(safeIngredients).catch(err =>
+      showToast(`양식 다운로드 실패: ${err?.message || err}`, 'error')
+    );
 
   const openEdit = topping => {
     if (!canEdit) return;
@@ -93,7 +106,7 @@ export function TabToppings({ toppings, ingredients, onRefresh, canEdit = false 
 
   return (
     <div style={{ marginTop: 20 }}>
-      <ToppingsHeader onAdd={openAdd} canEdit={canEdit} />
+      <ToppingsHeader onAdd={openAdd} onImport={openImport} onTemplate={downloadTemplate} canEdit={canEdit} />
 
       {safeToppings.length === 0 ? (
         <ToppingsEmptyState />
@@ -120,6 +133,14 @@ export function TabToppings({ toppings, ingredients, onRefresh, canEdit = false 
           saving={saving}
           onSave={save}
           onClose={() => setModal(null)}
+        />
+      )}
+      {canEdit && importOpen && (
+        <ToppingImportModal
+          toppings={safeToppings}
+          ingredients={safeIngredients}
+          onRefresh={refresh}
+          onClose={() => setImportOpen(false)}
         />
       )}
       {confirmElement}

@@ -95,6 +95,42 @@ describe('buildMenuAllergenMap', () => {
     expect(matrixRows[0].crust).toBe('씬바샤삭');
   });
 
+  test('알레르기 매칭이 없어도 메뉴마스터 전체 메뉴를 매트릭스에 표시한다', () => {
+    const matrixRows = buildMenuMatrix(
+      [],
+      buildIngredientMenuMap({
+        menuMasters: [
+          { menuCode: 'P-PS-001-L', menuName: '샘스테이크 피자 L', category: '피자', size: 'L' },
+          { menuCode: 'P-PS-001-R', menuName: '샘스테이크 피자 R', category: '피자', size: 'R' },
+          { menuCode: 'S-CHK-001', menuName: '치킨텐더', category: '사이드' },
+        ],
+        detailRecipes: [],
+      }),
+      [],
+      () => false,
+      [],
+      {},
+      [],
+      [
+        { menuCode: 'P-PS-001-L', menuName: '샘스테이크 피자 L', category: '피자', size: 'L' },
+        { menuCode: 'P-PS-001-R', menuName: '샘스테이크 피자 R', category: '피자', size: 'R' },
+        { menuCode: 'S-CHK-001', menuName: '치킨텐더', category: '사이드' },
+      ]
+    );
+
+    const pizzaRows = matrixRows.filter(row => row.menuCode === 'P-PS-001');
+    expect(pizzaRows).toHaveLength(4);
+    expect(pizzaRows[0].sourceMenuCodes.sort()).toEqual(['P-PS-001-L', 'P-PS-001-R']);
+    expect(pizzaRows.find(row => row.crust === '석쇠').allergenCodes.size).toBe(0);
+    expect([...(pizzaRows.find(row => row.crust === '치즈크러스트').allergenCodes || [])]).toEqual(
+      ['AL02']
+    );
+    expect(matrixRows.find(row => row.menuCode === 'S-CHK-001')).toMatchObject({
+      menuName: '치킨텐더',
+      category: '사이드',
+    });
+  });
+
   test('원가레시피 productCode가 달라도 식자재명으로 알레르기 정보까지 집계된다', () => {
     const ingredientRows = [
       { productCode: 'REAL-CHZ', ingredientName: '체다 치즈', allergens: ['AL02'] },
@@ -120,6 +156,77 @@ describe('buildMenuAllergenMap', () => {
     const matrixRows = buildMenuMatrix(ingredientRows, mapData, [], () => false, [], {}, []);
     expect(matrixRows).toHaveLength(1);
     expect([...matrixRows[0].allergenCodes]).toEqual(['AL02']);
+  });
+
+  test('식자재명이 비어 있어도 표시명으로 레시피 알레르기를 집계한다', () => {
+    const ingredientRows = [
+      {
+        productCode: 'REAL-SAUCE',
+        ingredientName: '',
+        displayName: '토마토 소스',
+        productName: '토마토소스 2kg',
+        allergens: ['AL05'],
+      },
+    ];
+    const mapData = buildIngredientMenuMap({
+      menuMasters: [{ menuCode: 'S-SAUCE-001', menuName: '소스 테스트', category: '사이드' }],
+      detailRecipes: [
+        {
+          menuCode: 'S-SAUCE-001',
+          menuName: '소스 테스트',
+          category: '사이드',
+          components: [{ productCode: 'OLD-SAUCE', ingredientName: '토마토소스' }],
+        },
+      ],
+    });
+
+    const allergenMap = buildMenuAllergenMap({
+      ingredients: ingredientRows,
+      ingredientToMenus: mapData.ingredientToMenus,
+    });
+    expect([...(allergenMap.get('S-SAUCE-001') || [])]).toEqual(['AL05']);
+
+    const matrixRows = buildMenuMatrix(ingredientRows, mapData, [], () => false, [], {}, []);
+    expect(matrixRows).toHaveLength(1);
+    expect([...matrixRows[0].allergenCodes]).toEqual(['AL05']);
+  });
+
+  test('L/R 레시피 알레르기는 영양성분 base menuCode에도 합쳐진다', () => {
+    const ingredientRows = [
+      { productCode: 'CHZ-L', ingredientName: 'L 치즈', allergens: ['AL02'] },
+      { productCode: 'WHT-R', ingredientName: 'R 도우', allergens: ['AL06'] },
+    ];
+    const mapData = buildIngredientMenuMap({
+      menuMasters: [
+        { menuCode: 'P-PS-001-L', menuName: '샘스테이크 피자 L', category: '피자', size: 'L' },
+        { menuCode: 'P-PS-001-R', menuName: '샘스테이크 피자 R', category: '피자', size: 'R' },
+      ],
+      detailRecipes: [
+        {
+          menuCode: 'P-PS-001-L',
+          menuName: '샘스테이크 피자 L',
+          category: '피자',
+          size: 'L',
+          components: [{ productCode: 'CHZ-L', ingredientName: 'L 치즈' }],
+        },
+        {
+          menuCode: 'P-PS-001-R',
+          menuName: '샘스테이크 피자 R',
+          category: '피자',
+          size: 'R',
+          components: [{ productCode: 'WHT-R', ingredientName: 'R 도우' }],
+        },
+      ],
+    });
+
+    const allergenMap = buildMenuAllergenMap({
+      ingredients: ingredientRows,
+      ingredientToMenus: mapData.ingredientToMenus,
+    });
+
+    expect([...(allergenMap.get('P-PS-001') || [])].sort()).toEqual(['AL02', 'AL06']);
+    expect([...(allergenMap.get('P-PS-001-L') || [])]).toEqual(['AL02']);
+    expect([...(allergenMap.get('P-PS-001-R') || [])]).toEqual(['AL06']);
   });
 
   test('체크한 공통묶음 재료의 알레르기도 해당 메뉴에 집계된다', () => {
@@ -201,6 +308,21 @@ describe('buildEdgeAllergenMap', () => {
     });
 
     expect([...(map.get('치즈크러스트L') || [])].sort()).toEqual(['AL01', 'AL02']);
+  });
+
+  test('엣지 구성품 productCode가 달라도 식자재명으로 알레르기를 집계한다', () => {
+    const map = buildEdgeAllergenMap({
+      ingredients: [{ productCode: 'REAL-EGG', displayName: '계란액', allergens: ['AL01'] }],
+      edges: [
+        {
+          edgeType: '치즈크러스트',
+          size: 'L',
+          components: [{ productCode: 'OLD-EGG', ingredientName: '계란액' }],
+        },
+      ],
+    });
+
+    expect([...(map.get('치즈크러스트L') || [])]).toEqual(['AL01', 'AL02']);
   });
 
   test('씬바샤삭은 L 엣지 알레르기를 밀만 남기고 대두를 제거한다', () => {
@@ -288,6 +410,23 @@ describe('buildEdgeAllergenMap', () => {
 });
 
 describe('buildToppingAllergenMap', () => {
+  test('추가토핑 알레르기는 토핑 입력값이 아니라 연결된 식자재 알레르기를 사용한다', () => {
+    const map = buildToppingAllergenMap({
+      ingredients: [{ productCode: 'ING-CHEESE', ingredientName: '치즈', allergens: ['AL02'] }],
+      toppings: [
+        {
+          toppingCode: 'TOP-CHEESE',
+          toppingName: '치즈 80g',
+          productCode: 'ING-CHEESE',
+          ingredientName: '치즈',
+          allergens: ['AL99'],
+        },
+      ],
+    });
+
+    expect([...(map.get('TOP-CHEESE') || [])]).toEqual(['AL02']);
+  });
+
   test('추가토핑 식자재코드로 알레르기를 집계한다', () => {
     const map = buildToppingAllergenMap({
       ingredients: [
