@@ -1,5 +1,4 @@
 import { jest } from '@jest/globals';
-import { NOTE_STATUS } from '@/lib/note/constants';
 import { buildNoteContentProps } from '@/lib/note/content-props';
 import {
   buildNoteDialogProps,
@@ -20,7 +19,7 @@ function createInputs(overrides = {}) {
     statusFilter: 'all',
     sortBy: 'updatedAt',
     brandFilter: 'all',
-    counts: { [NOTE_STATUS.REPORTING]: 3 },
+    counts: {},
     filtered: [{ id: 'n-1' }],
     visible: [{ id: 'n-1' }],
     hlRe: /트러플/u,
@@ -56,6 +55,17 @@ function createInputs(overrides = {}) {
     setConfirmBatch: fn(),
     confirmMerge: true,
     setConfirmMerge: fn(),
+    pendingDropMerge: {
+      title: '타깃 메뉴',
+      sourceCount: 2,
+      mergedCount: 4,
+    },
+    setPendingDropMerge: fn(),
+    pendingUnmerge: {
+      title: '타깃 메뉴',
+      unmergedCount: 4,
+    },
+    setPendingUnmerge: fn(),
     toggleSelect: fn(),
     exitBatch: fn(),
     handleBatchDelete: fn(),
@@ -63,6 +73,10 @@ function createInputs(overrides = {}) {
     handleBatchStatusChange: fn(),
     confirmBatchDelete: fn(),
     confirmBatchMerge: fn(),
+    confirmDropMerge: fn(),
+    handleDropMerge: fn(),
+    handleUnmergeGroup: fn(),
+    confirmUnmergeGroup: fn(),
   };
   const itemActions = {
     popIds: new Set(['n-1']),
@@ -89,7 +103,6 @@ function createInputs(overrides = {}) {
       togglePin: fn(),
     },
     listState,
-    handleBulkCopy: fn(),
     handleReportPdf: fn(),
     batchActions,
     itemActions,
@@ -104,13 +117,14 @@ describe('buildNoteContentProps', () => {
     const props = buildNoteContentProps(inputs);
 
     expect(props.headerProps.notesCount).toBe(2);
-    expect(props.headerProps.reportingCount).toBe(3);
+    expect(props.headerProps.reportingCount).toBeUndefined();
     expect(props.headerProps.reportExportCount).toBe(1);
     expect(props.statsProps.stats).toEqual({ total: 2 });
     expect(props.filterProps.search).toBe('트러플');
     expect(props.presetProps.hasActiveFilter).toBe(true);
     expect(props.statesProps.filteredCount).toBe(1);
     expect(props.bodyProps.detailNote).toEqual({ id: 'detail-1' });
+    expect(props.bodyProps.onUnmergeGroup).toBe(inputs.batchActions.handleUnmergeGroup);
 
     props.headerProps.onCalendar();
     props.headerProps.onChecklist();
@@ -136,6 +150,8 @@ describe('buildNoteContentProps', () => {
 
     props.dialogsProps.onCancelBatchDelete();
     props.dialogsProps.onCancelBatchMerge();
+    props.dialogsProps.onCancelDropMerge();
+    props.dialogsProps.onCancelUnmerge();
     props.dialogsProps.onConfirmPresetDelete();
     props.dialogsProps.onCancelSingleDelete();
     props.filterProps.onSearchSubmit();
@@ -144,6 +160,8 @@ describe('buildNoteContentProps', () => {
 
     expect(inputs.batchActions.setConfirmBatch).toHaveBeenCalledWith(false);
     expect(inputs.batchActions.setConfirmMerge).toHaveBeenCalledWith(false);
+    expect(inputs.batchActions.setPendingDropMerge).toHaveBeenCalledWith(null);
+    expect(inputs.batchActions.setPendingUnmerge).toHaveBeenCalledWith(null);
     expect(inputs.listState.deletePreset).toHaveBeenCalledWith(1);
     expect(inputs.listState.setConfirmDeletePreset).toHaveBeenCalledWith(null);
     expect(inputs.itemActions.setSingleDeleteNote).toHaveBeenCalledWith(null);
@@ -161,24 +179,33 @@ describe('buildNoteContentProps', () => {
     const dialogsProps = buildNoteDialogProps(inputs);
 
     expect(headerProps.notesCount).toBe(2);
-    expect(headerProps.reportingCount).toBe(3);
+    expect(headerProps.reportingCount).toBeUndefined();
     expect(headerProps.reportExportCount).toBe(1);
     expect(filterProps.search).toBe('트러플');
     expect(filterProps.showSearchHistory).toBe(true);
     expect(dialogsProps.selectedCount).toBe(2);
     expect(dialogsProps.confirmMerge).toBe(true);
+    expect(dialogsProps.dropMergeOpen).toBe(true);
+    expect(dialogsProps.dropMergeSourceCount).toBe(2);
+    expect(dialogsProps.dropMergeMergedCount).toBe(4);
+    expect(dialogsProps.unmergeOpen).toBe(true);
+    expect(dialogsProps.unmergeCount).toBe(4);
     expect(dialogsProps.presetName).toBe('보고');
 
     headerProps.onEnterBatchMode();
     headerProps.onBatchMerge();
     headerProps.onExportReportPdf();
     filterProps.onSearchSubmit();
+    dialogsProps.onConfirmDropMerge();
+    dialogsProps.onConfirmUnmerge();
     dialogsProps.onConfirmPresetDelete();
 
     expect(inputs.batchActions.setBatchMode).toHaveBeenCalledWith(true);
     expect(inputs.batchActions.handleBatchMerge).toHaveBeenCalled();
     expect(inputs.handleReportPdf).toHaveBeenCalled();
     expect(inputs.listState.saveSearchHistory).toHaveBeenCalledWith('트러플');
+    expect(inputs.batchActions.confirmDropMerge).toHaveBeenCalled();
+    expect(inputs.batchActions.confirmUnmergeGroup).toHaveBeenCalled();
     expect(inputs.listState.deletePreset).toHaveBeenCalledWith(1);
     expect(inputs.listState.setConfirmDeletePreset).toHaveBeenCalledWith(null);
   });

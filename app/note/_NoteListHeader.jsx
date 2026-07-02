@@ -22,10 +22,8 @@ export function NoteListHeader({
   notesCount,
   batchMode,
   selected,
-  reportingCount,
   reportExportCount = 0,
   canEdit = false,
-  onBulkCopy,
   onExportReportPdf,
   onEnterBatchMode,
   onCalendar,
@@ -54,21 +52,13 @@ export function NoteListHeader({
             />
           ) : (
             <>
-              <button className="btn" onClick={onExportReportPdf} disabled={reportExportCount === 0}>
+              <button
+                className="btn"
+                onClick={onExportReportPdf}
+                disabled={reportExportCount === 0}
+              >
                 <Icon.doc style={{ width: 13, height: 13 }} /> 전체 보고서 PDF
               </button>
-              {reportingCount > 0 && (
-                <button
-                  className="btn"
-                  onClick={onBulkCopy}
-                  style={{
-                    color: 'var(--color-reporting)',
-                    borderColor: 'var(--color-reporting-dim, #6B3FCB40)',
-                  }}
-                >
-                  <Icon.doc style={{ width: 13, height: 13 }} /> 출시예정 일괄복사
-                </button>
-              )}
               <button className="btn" onClick={onEnterBatchMode} disabled={!canEdit}>
                 선택
               </button>

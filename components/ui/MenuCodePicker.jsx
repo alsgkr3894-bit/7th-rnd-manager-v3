@@ -20,6 +20,8 @@ export default function MenuCodePicker({
   dedup = true,
   mode = null,
   placeholder = '코드·메뉴명·중분류로 검색…',
+  dropdownMinWidth = 380,
+  dropdownMaxHeight = 340,
   style,
 }) {
   const [q, setQ] = useState('');
@@ -81,7 +83,14 @@ export default function MenuCodePicker({
   };
 
   return (
-    <div ref={ref} style={{ position: 'relative', ...style }}>
+    <div
+      ref={ref}
+      style={{
+        position: 'relative',
+        zIndex: open ? 900 : undefined,
+        ...style,
+      }}
+    >
       {selected ? (
         <SelectedMenuCodePill selected={selected} onClear={handleClear} />
       ) : (
@@ -99,11 +108,13 @@ export default function MenuCodePicker({
         />
       )}
 
-      {open && !selected && results.length > 0 && (
+      {open && !selected && (
         <MenuCodeDropdown
           results={results}
           activeIdx={activeIdx}
           listRef={listRef}
+          minWidth={dropdownMinWidth}
+          maxHeight={dropdownMaxHeight}
           onSelect={handleSelect}
           onHover={setActiveIdx}
         />

@@ -7,6 +7,7 @@ import { formatFullDate } from '@/lib/note/utils';
 
 export const NoteTableRow = React.memo(function NoteTableRow({
   note,
+  roundLabel,
   focused,
   batchMode,
   selected,
@@ -19,6 +20,7 @@ export const NoteTableRow = React.memo(function NoteTableRow({
 }) {
   const sc = STATUS_COLORS[note.status] || STATUS_COLORS['테스트'];
   const title = noteDisplayTitle(note);
+  const menuCode = typeof note.menuCode === 'string' ? note.menuCode.trim() : '';
   const checked = selected?.has(note.id) || false;
   const handleOpen = () => {
     if (canEdit && batchMode) onToggleSelect(note.id);
@@ -49,10 +51,29 @@ export const NoteTableRow = React.memo(function NoteTableRow({
         </td>
       )}
       <td style={{ fontWeight: 600 }}>
+        {roundLabel && (
+          <span
+            style={{
+              display: 'inline-flex',
+              minWidth: 42,
+              marginRight: 8,
+              color: 'var(--accent)',
+              fontSize: 12,
+              fontWeight: 900,
+            }}
+          >
+            {roundLabel}
+          </span>
+        )}
         {note.parentId && (
           <span style={{ fontSize: 10, color: 'var(--accent)', marginLeft: 4 }}>🔗 체인</span>
         )}
         {title}
+        {menuCode && (
+          <div style={{ marginTop: 2, fontSize: 11, color: 'var(--text-4)', fontWeight: 500 }}>
+            {menuCode}
+          </div>
+        )}
       </td>
       <td style={{ color: 'var(--text-3)', fontSize: 12 }}>{note.category}</td>
       <td>

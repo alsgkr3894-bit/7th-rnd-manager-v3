@@ -35,10 +35,13 @@ describe('note list body props', () => {
 
   test('카드 그리드 props는 편집 클릭 전파를 막고 원래 note를 넘긴다', () => {
     const onEditNote = fn();
+    const onDropMerge = fn();
+    const onUnmergeGroup = fn();
     const stopPropagation = fn();
     const props = buildNoteCardGridProps({
       visible: [{ id: 'n-1' }],
       filtered: [{ id: 'n-1' }, { id: 'n-2' }],
+      sortBy: 'testDate',
       canEdit: true,
       batchMode: false,
       selected: new Set(),
@@ -55,12 +58,17 @@ describe('note list body props', () => {
       onStatusChange: fn(),
       onNewVersion: fn(),
       onTagClick: fn(),
+      onDropMerge,
+      onUnmergeGroup,
       onLoadMore: fn(),
     });
 
     props.onEdit({ id: 'n-2' }, { stopPropagation });
 
     expect(props.filteredCount).toBe(2);
+    expect(props.sortBy).toBe('testDate');
+    expect(props.onDropMerge).toBe(onDropMerge);
+    expect(props.onUnmergeGroup).toBe(onUnmergeGroup);
     expect(stopPropagation).toHaveBeenCalled();
     expect(onEditNote).toHaveBeenCalledWith({ id: 'n-2' });
   });
@@ -78,6 +86,7 @@ describe('note list body props', () => {
       onEditNote,
       onDelete: fn(),
       onStatusChange: fn(),
+      onUnmergeGroup: fn(),
       onLoadMore: fn(),
     });
     const modalProps = buildNoteDetailModalProps({
@@ -91,6 +100,7 @@ describe('note list body props', () => {
 
     expect(tableProps.focusedRow).toBe('n-1');
     expect(tableProps.onEdit).toBe(onEditNote);
+    expect(tableProps.onUnmergeGroup).toEqual(expect.any(Function));
     expect(modalProps.note).toBe(detailNote);
     expect(onEditNote).toHaveBeenCalledWith(detailNote);
   });

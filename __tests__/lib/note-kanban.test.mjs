@@ -17,7 +17,7 @@ describe('note kanban board cards', () => {
         title: '트러플 피자',
         testRound: '2',
         parentId: 1,
-        status: '재테스트',
+        status: '테스트',
         testDate: '2026-01-02',
       },
       {
@@ -25,7 +25,7 @@ describe('note kanban board cards', () => {
         title: '트러플 피자',
         testRound: '3',
         parentId: 2,
-        status: '출시예정',
+        status: '출시',
         testDate: '2026-01-03',
       },
     ]);
@@ -33,7 +33,43 @@ describe('note kanban board cards', () => {
     expect(cards).toHaveLength(1);
     expect(cards[0]).toMatchObject({
       id: 3,
-      status: '출시예정',
+      status: '출시',
+      _kanbanGroupCount: 3,
+      _kanbanGroupIds: [1, 2, 3],
+    });
+  });
+
+  test('출시 차수는 이후 테스트 차수보다 칸반 대표 카드가 된다', () => {
+    const cards = buildKanbanBoardCards([
+      {
+        id: 1,
+        title: '치즈 피자',
+        testRound: '1',
+        status: '테스트',
+        testDate: '2026-01-01',
+      },
+      {
+        id: 2,
+        title: '치즈 피자',
+        testRound: '2',
+        parentId: 1,
+        status: '출시',
+        testDate: '2026-01-02',
+      },
+      {
+        id: 3,
+        title: '치즈 피자',
+        testRound: '3',
+        parentId: 2,
+        status: '테스트',
+        testDate: '2026-01-03',
+      },
+    ]);
+
+    expect(cards).toHaveLength(1);
+    expect(cards[0]).toMatchObject({
+      id: 2,
+      status: '출시',
       _kanbanGroupCount: 3,
       _kanbanGroupIds: [1, 2, 3],
     });

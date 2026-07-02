@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+const INITIAL_YEAR = 2026;
+const INITIAL_MONTH = 1;
+
 export function useCalendarNavigation() {
-  const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
-  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth() + 1);
+  const [viewYear, setViewYear] = useState(INITIAL_YEAR);
+  const [viewMonth, setViewMonth] = useState(INITIAL_MONTH);
   const [selectedDay, setSelectedDay] = useState(null);
   const [panelClosing, setPanelClosing] = useState(false);
   const [monthDir, setMonthDir] = useState(0);
@@ -20,6 +23,12 @@ export function useCalendarNavigation() {
     },
     []
   );
+
+  useEffect(() => {
+    const now = new Date();
+    setViewYear(now.getFullYear());
+    setViewMonth(now.getMonth() + 1);
+  }, []);
 
   const shiftMonth = useCallback(delta => {
     if (isAnimating.current) return;

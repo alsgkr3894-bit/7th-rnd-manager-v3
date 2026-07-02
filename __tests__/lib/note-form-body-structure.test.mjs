@@ -12,6 +12,7 @@ const reportSource = readFileSync(resolve('app/note/_NoteReportSummaryCard.jsx')
 const reportTextSource = readFileSync(resolve('lib/note/report.js'), 'utf8');
 const collapsibleSource = readFileSync(resolve('app/note/_CollapsibleCard.jsx'), 'utf8');
 const tempCostSource = readFileSync(resolve('components/note/TempCostCalculator.jsx'), 'utf8');
+const fieldSource = readFileSync(resolve('components/note/FormFields.jsx'), 'utf8');
 
 describe('note form body structure', () => {
   test('NoteFormBody keeps form state orchestration and delegates sections', () => {
@@ -21,6 +22,9 @@ describe('note form body structure', () => {
     expect(formSource).toContain('<NoteDetailFields');
     expect(formSource).toContain('<NotePhotoSection');
     expect(formSource).toContain('<NoteReportSummaryCard');
+    expect(formSource).toContain('function NoteWriteProgressCard');
+    expect(formSource).toContain('<NoteWriteProgressCard form={form} />');
+    expect(formSource).toContain("gridTemplateColumns: 'minmax(0, 1fr) clamp(320px, 27vw, 390px)'");
     expect(formSource).toContain('makeFieldUpdater(setForm)');
     expect(formSource).toContain('normalizeNoteFormForSave');
     expect(formSource).toContain('menuName: title');
@@ -42,10 +46,18 @@ describe('note form body structure', () => {
 
   test('note form section components own their presentation details', () => {
     expect(requiredSource).toContain('export function NoteRequiredFields');
+    expect(requiredSource).toContain('function NoteFormSection');
+    expect(requiredSource).toContain('title="메뉴 정보"');
+    expect(requiredSource).toContain('title="테스트 기본값"');
+    expect(requiredSource).toContain('title="분류와 상태"');
+    expect(requiredSource).toContain('title="테스트 내용"');
     expect(requiredSource).toContain('const titleValue = form.title || form.menuName ||');
     expect(requiredSource).toContain("gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))'");
+    expect(requiredSource).toContain('placeholder="예: RND-260702-1"');
+    expect(requiredSource).toContain("gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))'");
+    expect(requiredSource).toContain('minHeight: 180');
     expect(requiredSource).toContain('testRound');
-    expect(requiredSource).toContain('핵심 테스트 내용');
+    expect(requiredSource).toContain('시식 테스트 내용');
     expect(requiredSource).not.toContain('<ComboBox');
     expect(requiredSource).not.toContain('menuNames');
     expect(requiredSource).toContain('const [titleDraft, setTitleDraft] = useState(titleValue)');
@@ -54,6 +66,10 @@ describe('note form body structure', () => {
     expect(requiredSource).toContain('onCompositionEnd');
     expect(requiredSource).toContain('onChange={handleTitleChange}');
     expect(requiredSource).toContain('commitTitle(titleDraft)');
+    expect(requiredSource).toContain('function handleBrandChange');
+    expect(requiredSource).toContain('function handleCategoryChange');
+    expect(requiredSource).toContain('function handleNoteTypeChange');
+    expect(requiredSource).not.toContain("updateField('brand', found ? found.id : 'main')");
     expect(detailSource).toContain('export function NoteDetailFields');
     expect(detailSource).toContain('<CollapsibleCard');
     expect(detailSource).toContain('defaultOpen={false}');
@@ -83,6 +99,25 @@ describe('note form body structure', () => {
     expect(tempCostSource).toContain('defaultOpen={false}');
   });
 
+  test('note field wrapper does not turn segment whitespace clicks into first option clicks', () => {
+    expect(fieldSource).toContain('export function Field');
+    expect(fieldSource).toContain('<div style={{ display:');
+    expect(fieldSource).not.toContain('<label style={{ display:');
+    expect(fieldSource).toContain('type="button"');
+    expect(fieldSource).toContain('aria-pressed={value === o}');
+    expect(fieldSource).toContain('event.stopPropagation()');
+    expect(fieldSource).toContain('!disabled && value !== o');
+  });
+
+  test('note write page defaults a fresh note to first test round', () => {
+    expect(writePageSource).toContain("const DEFAULT_FIRST_TEST_ROUND = '1';");
+    expect(writePageSource).toContain('function withDefaultFirstTestRound');
+    expect(writePageSource).toContain(
+      "String(value.testRound || '').trim() || DEFAULT_FIRST_TEST_ROUND"
+    );
+    expect(writePageSource).toContain('withDefaultFirstTestRound({');
+  });
+
   test('optional note sections use closed collapsible cards by default', () => {
     expect(collapsibleSource).toContain('defaultOpen = false');
     expect(collapsibleSource).toContain('aria-expanded={open}');
@@ -107,6 +142,7 @@ describe('note form body structure', () => {
     expect(writePageSource).toContain('}, [canEdit, roleReady]);');
     expect(writePageSource).toContain('normalizeNoteFormForSave(form)');
     expect(writePageSource).toContain('if (canEdit) clearDraft(KEYS.NOTE_DRAFT_WRITE);');
+    expect(writePageSource).toContain("window.location.replace('/note')");
     expect(writePageSource).toContain('{canEdit && showDraftBanner && !fromTitle && (');
   });
 });

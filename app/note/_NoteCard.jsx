@@ -62,6 +62,7 @@ export function NoteCard({
   const noteType = asText(note.noteType) || '—';
   const testDate = typeof note.testDate === 'string' ? note.testDate : '';
   const title = noteDisplayTitle(note);
+  const menuCode = asText(note.menuCode);
   const testContent = asText(note.testContent);
   const photo = firstPhoto(note.photos);
   const tags = parseTagList(note.tags);
@@ -129,6 +130,9 @@ export function NoteCard({
         <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
           {category} · {noteType}
         </span>
+        {menuCode && (
+          <span style={{ fontSize: 10, color: 'var(--text-3)', marginLeft: 4 }}>{menuCode}</span>
+        )}
         {note.testRound && (
           <span style={{ fontSize: 10, color: 'var(--text-3)', marginLeft: 4 }}>
             {formatTestRound(note.testRound)}

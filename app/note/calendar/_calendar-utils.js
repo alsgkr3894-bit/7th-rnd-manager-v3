@@ -8,9 +8,6 @@ export const NOTE_DOT = {
   샘플테스트: '#D97706',
   메뉴테스트: '#4338CA',
   테스트중: 'var(--accent)', // 레거시
-  재테스트: 'var(--warn)',
-  보고예정: '#7C3AED',
-  출시예정: '#0284C7',
   보류: '#9CA3AF',
   출시: 'var(--positive)',
   폐기: 'var(--negative)',

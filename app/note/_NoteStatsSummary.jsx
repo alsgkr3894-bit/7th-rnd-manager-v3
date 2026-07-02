@@ -1,6 +1,4 @@
 'use client';
-import { NOTE_STATUS } from '@/lib/note/constants';
-
 function statValue(value) {
   const number = Number(value) || 0;
   return number > 0 ? value : '-';
@@ -19,8 +17,6 @@ function StatValue({ value, unit }) {
 export function NoteStatsSummary({ stats, counts }) {
   if (!stats) return null;
 
-  const safeCounts = counts && typeof counts === 'object' ? counts : {};
-
   return (
     <div className="stat-row" style={{ marginTop: 8 }}>
       <div className="stat-card">
@@ -33,12 +29,6 @@ export function NoteStatsSummary({ stats, counts }) {
         <div className="stat-label">이번 달 작성</div>
         <div className="stat-value">
           <StatValue value={stats.thisMonth} unit="개" />
-        </div>
-      </div>
-      <div className="stat-card">
-        <div className="stat-label">출시예정</div>
-        <div className="stat-value" style={{ color: 'var(--color-reporting)' }}>
-          <StatValue value={safeCounts[NOTE_STATUS.REPORTING]} unit="개" />
         </div>
       </div>
       <div className="stat-card">

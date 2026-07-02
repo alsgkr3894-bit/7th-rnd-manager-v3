@@ -5,7 +5,13 @@ import { useRouter, useParams } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { getNoteById, updateNote, getNotesInChain, duplicateNote } from '@/lib/note';
+import {
+  getNoteById,
+  updateNote,
+  updateNoteChainStatus,
+  getNotesInChain,
+  duplicateNote,
+} from '@/lib/note';
 import { noteDisplayTitle } from '@/lib/note/display';
 import { getAllSamples } from '@/lib/sample';
 import { printCurrentPageWithDownloadDate } from '@/lib/download';
@@ -116,13 +122,15 @@ export default function Page() {
       return;
     }
     if (saving) return;
-    if (!(form.title || form.menuName || '').trim() || !form.testContent.trim()) {
+    if (!(form.title || form.menuName || form.menuCode || '').trim() || !form.testContent.trim()) {
       showToast('제목과 테스트 내용은 필수입니다', 'warn');
       return;
     }
     setSaving(true);
     try {
-      await updateNote(noteId, normalizeNoteFormForSave(form));
+      const payload = normalizeNoteFormForSave(form);
+      await updateNote(noteId, payload);
+      await updateNoteChainStatus(noteId, payload.status);
       clearDraft(KEYS.NOTE_DRAFT(noteId));
       setIsDirty(false);
       showToast('노트가 수정됐어요', 'ok');
@@ -142,6 +150,7 @@ export default function Page() {
   function handleCreateSample() {
     if (!canEdit) return;
     setSampleFromNote({
+      menuCode: form.menuCode,
       menuName: form.menuName,
       category: form.category,
       tags: form.tags,

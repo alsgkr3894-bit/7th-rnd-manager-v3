@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { sharedRestoreRecord as restoreRecord } from '@/lib/db/shared';
-import { addNote, deleteNote, updateNote, invalidateNotesCache } from '@/lib/note';
+import { addNote, deleteNote, updateNoteChainStatus, invalidateNotesCache } from '@/lib/note';
 import { setNoteFrom } from '@/lib/note/keys';
 
 async function restoreDeletedNotes(records = []) {
@@ -113,20 +113,23 @@ export function useNoteItemActions({
       e?.stopPropagation();
       if (!canEdit) return;
       try {
-        await updateNote(noteId, { status: newStatus });
-        showToast(`상태 → ${newStatus}`, 'ok');
-        setNotes(prev => prev.map(n => (n.id === noteId ? { ...n, status: newStatus } : n)));
-        setPopIds(s => new Set([...s, noteId]));
+        const changedIds = await updateNoteChainStatus(noteId, newStatus);
+        const changedSet = new Set(changedIds);
+        showToast(`메뉴 상태 → ${newStatus}`, 'ok');
+        setNotes(prev =>
+          prev.map(n => (changedSet.has(n.id) ? { ...n, status: newStatus } : n))
+        );
+        setPopIds(s => new Set([...s, ...changedIds]));
         const timer = setTimeout(() => {
           setPopIds(s => {
             const n = new Set(s);
-            n.delete(noteId);
+            changedIds.forEach(id => n.delete(id));
             return n;
           });
           popTimersRef.current.delete(timer);
         }, 400);
         popTimersRef.current.add(timer);
-        setDetailNote(n => (n?.id === noteId ? { ...n, status: newStatus } : n));
+        setDetailNote(n => (n && changedSet.has(n.id) ? { ...n, status: newStatus } : n));
       } catch (err) {
         console.error('[useNoteItemActions] handleStatusChange', err);
         showToast('상태 변경 실패', 'error');

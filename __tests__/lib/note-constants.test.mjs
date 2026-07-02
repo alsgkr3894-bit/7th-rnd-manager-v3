@@ -10,11 +10,11 @@ describe('NOTE_STATUS', () => {
   test('필수 상태 키 존재', () => {
     expect(NOTE_STATUS.TEST).toBe('테스트');
     expect(NOTE_STATUS.TESTING).toBe('테스트중');
-    expect(NOTE_STATUS.REPORTING).toBe('보고예정');
+    expect(NOTE_STATUS.REPORTING).toBeUndefined();
   });
   test('추가 상태 키 검증', () => {
-    expect(NOTE_STATUS.RETEST).toBe('재테스트');
-    expect(NOTE_STATUS.RELEASE_READY).toBe('출시예정');
+    expect(NOTE_STATUS.RETEST).toBeUndefined();
+    expect(NOTE_STATUS.RELEASE_READY).toBeUndefined();
     expect(NOTE_STATUS.RELEASE).toBe('출시');
     expect(NOTE_STATUS.ABANDON).toBe('폐기');
   });
@@ -47,10 +47,12 @@ describe('NOTE_TYPES', () => {
 
 describe('STATUSES', () => {
   test('노트 작성 상태는 운영 상태만 노출한다', () => {
-    expect(STATUSES).toEqual(['테스트', '재테스트', '출시예정', '보류', '출시', '폐기']);
+    expect(STATUSES).toEqual(['테스트', '보류', '출시', '폐기']);
     expect(STATUSES).not.toContain('아이디어');
     expect(STATUSES).not.toContain('메뉴테스트');
     expect(STATUSES).not.toContain('보고예정');
+    expect(STATUSES).not.toContain('재테스트');
+    expect(STATUSES).not.toContain('출시예정');
     expect(STATUSES).not.toContain('샘플테스트');
     expect(STATUSES).not.toContain('테스트중');
   });

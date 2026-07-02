@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { addNote, getNoteById, CATEGORIES } from '@/lib/note';
+import { addNote, getNoteById, updateNoteChainStatus, CATEGORIES } from '@/lib/note';
 import { buildPreviousRoundDraft } from '@/lib/note/evaluation';
 import { NoteFormBody, INIT, normalizeNoteFormForSave } from '@/app/note/_NoteFormBody';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
@@ -21,14 +21,23 @@ function normalizeNoteCategory(value) {
   return CATEGORIES.includes(value) ? value : CATEGORIES[0];
 }
 
+const DEFAULT_FIRST_TEST_ROUND = '1';
+
+function withDefaultFirstTestRound(value = {}) {
+  const testRound = String(value.testRound || '').trim() || DEFAULT_FIRST_TEST_ROUND;
+  return { ...value, testRound };
+}
+
 export default function Page() {
   const router = useRouter();
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const canEdit = roleReady && isAdmin;
-  const [form, setForm] = useState(() => ({
-    ...INIT,
-    testDate: todayLocalDate(),
-  }));
+  const [form, setForm] = useState(() =>
+    withDefaultFirstTestRound({
+      ...INIT,
+      testDate: todayLocalDate(),
+    })
+  );
   const [saving, setSaving] = useState(false);
   const [fromTitle, setFromTitle] = useState('');
   const [showDraftBanner, setShowDraftBanner] = useState(false);
@@ -37,6 +46,7 @@ export default function Page() {
   const isDirtyRef = useRef(false);
   const timerRef = useRef(null);
   const draftTimer = useRef(null);
+  const initialContextAppliedRef = useRef(false);
   const [lastCategory, setLastCategory, lastCategoryHydrated] = useLocalStorage(
     KEYS.NOTE_LAST_CATEGORY,
     CATEGORIES[0],
@@ -55,10 +65,12 @@ export default function Page() {
   // 마운트 후 brand·category를 실제 브랜드/저장값으로 교정 (SSR 초기값 'main' 덮기)
   useEffect(() => {
     if (!lastCategoryHydrated) return;
+    if (initialContextAppliedRef.current) return;
+    initialContextAppliedRef.current = true;
     setForm(f => ({
       ...f,
       brand: getActiveBrandId() || 'main',
-      category: lastCategory || f.category,
+      category: isDirtyRef.current ? f.category : lastCategory || f.category,
     }));
   }, [lastCategory, lastCategoryHydrated]);
 
@@ -85,7 +97,9 @@ export default function Page() {
         });
     } else {
       if (homeDraft) {
-        setForm(f => ({ ...f, title: homeDraft.slice(0, 30), testContent: homeDraft }));
+        setForm(f =>
+          withDefaultFirstTestRound({ ...f, title: homeDraft.slice(0, 30), testContent: homeDraft })
+        );
         setIsDirty(true);
         isDirtyRef.current = true;
       } else {
@@ -127,7 +141,7 @@ export default function Page() {
       return;
     }
     if (saving) return; // Ctrl+S 연타 시 중복 저장(레코드 중복 생성) 방지
-    if (!(form.title || form.menuName || '').trim() || !form.testContent.trim()) {
+    if (!(form.title || form.menuName || form.menuCode || '').trim() || !form.testContent.trim()) {
       showToast('제목과 테스트 내용은 필수입니다', 'warn');
       return;
     }
@@ -136,11 +150,13 @@ export default function Page() {
     clearTimeout(draftTimer.current);
     try {
       await initDB();
-      await addNote(normalizeNoteFormForSave(form));
+      const payload = normalizeNoteFormForSave(form);
+      const noteId = await addNote(payload);
+      await updateNoteChainStatus(noteId, payload.status);
       clearDraft(KEYS.NOTE_DRAFT_WRITE);
       setIsDirty(false);
       showToast('노트가 저장됐어요', 'ok');
-      router.replace('/note');
+      window.location.replace('/note');
     } catch {
       showToast('저장 중 오류가 발생했어요', 'error');
       setSaving(false);
@@ -160,7 +176,7 @@ export default function Page() {
     if (!canEdit) return;
     const draft = loadDraft(KEYS.NOTE_DRAFT_WRITE);
     if (draft) {
-      setForm(f => ({ ...f, ...draft, photos: [] }));
+      setForm(f => withDefaultFirstTestRound({ ...f, ...draft, photos: [] }));
       setIsDirty(true);
       isDirtyRef.current = true;
       showToast('임시저장된 내용을 불러왔어요', 'ok');

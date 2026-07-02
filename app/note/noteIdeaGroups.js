@@ -1,6 +1,11 @@
 import { noteDisplayTitle } from '@/lib/note/display';
+import { isReleasedNote, selectRepresentativeNote } from '@/lib/note/representative';
 
 function asText(value) {
+  return value == null ? '' : String(value).trim();
+}
+
+function keyText(value) {
   return value == null ? '' : String(value).trim();
 }
 
@@ -39,23 +44,122 @@ function compareIdeaNotes(a, b) {
   return noteDateValue(a) - noteDateValue(b);
 }
 
-function groupKey(note = {}) {
-  return noteIdeaTitle(note).toLowerCase();
+function compareText(a, b) {
+  return String(a || '').localeCompare(String(b || ''), 'ko', { numeric: true });
 }
 
-export function buildNoteIdeaGroups(filtered = [], visible = []) {
-  const visibleSource = visible.length ? visible : filtered;
+function buildNoteLookup(notes = []) {
+  const byId = new Map();
+  const parentIds = new Set();
+
+  for (const note of notes) {
+    const id = keyText(note?.id);
+    const parentId = keyText(note?.parentId);
+    if (id) byId.set(id, note);
+    if (parentId) parentIds.add(parentId);
+  }
+
+  return { byId, parentIds };
+}
+
+function findChainRoot(note = {}, byId = new Map()) {
+  let current = note;
+  const seen = new Set();
+
+  while (current) {
+    const currentId = keyText(current.id);
+    const parentId = keyText(current.parentId);
+    if (!parentId || seen.has(parentId)) break;
+    if (currentId) seen.add(currentId);
+
+    const parent = byId.get(parentId);
+    if (!parent) break;
+    current = parent;
+  }
+
+  return current || note;
+}
+
+function groupIdentity(note = {}, lookup, index = 0) {
+  const root = findChainRoot(note, lookup.byId);
+  const noteId = keyText(note.id);
+  const parentId = keyText(note.parentId);
+  const rootId = keyText(root?.id);
+  const hasChain = Boolean(
+    parentId || lookup.parentIds.has(noteId) || (rootId && rootId !== noteId)
+  );
+  const menuCode = asText(root?.menuCode || note.menuCode);
+
+  if (hasChain) {
+    const keyId =
+      rootId && (rootId !== noteId || lookup.parentIds.has(rootId))
+        ? rootId
+        : parentId || rootId || noteId;
+    return {
+      key: keyId ? `chain:${keyId}` : '',
+      title: noteIdeaTitle(root || note),
+      category: root?.category || note.category || '미분류',
+      menuCode,
+    };
+  }
+
+  const title = noteIdeaTitle(note);
+  return {
+    key: `note:${noteId || index}`,
+    title,
+    category: note.category || '미분류',
+    menuCode: asText(note.menuCode),
+  };
+}
+
+function noteCreatedValue(note = {}) {
+  return timeValue(note.createdAt || note.updatedAt || note.testDate);
+}
+
+function isPinnedGroup(group, pinnedIds) {
+  if (!(pinnedIds instanceof Set) || pinnedIds.size === 0) return false;
+  return (group.notes || []).some(note => pinnedIds.has(note.id));
+}
+
+function sortNoteIdeaGroups(groups, { sortBy, pinnedIds } = {}) {
+  if (!sortBy) return groups;
+
+  return [...groups].sort((a, b) => {
+    if (sortBy === 'menuName') {
+      return compareText(a.title, b.title);
+    }
+
+    if (sortBy === 'testDate') {
+      const dateDiff = noteDateValue(b.latestNote) - noteDateValue(a.latestNote);
+      return dateDiff || compareText(a.title, b.title);
+    }
+
+    const ap = isPinnedGroup(a, pinnedIds) ? 0 : 1;
+    const bp = isPinnedGroup(b, pinnedIds) ? 0 : 1;
+    if (ap !== bp) return ap - bp;
+    const createdDiff = noteCreatedValue(b.latestNote) - noteCreatedValue(a.latestNote);
+    return createdDiff || compareText(a.title, b.title);
+  });
+}
+
+export function buildNoteIdeaGroups(filtered = [], visible = [], options = {}) {
+  const filteredSource = Array.isArray(filtered) ? filtered : [];
+  const visibleArray = Array.isArray(visible) ? visible : [];
+  const visibleSource = visibleArray.length ? visibleArray : filteredSource;
   const visibleIds = new Set(visibleSource.map(note => note?.id));
+  const lookup = buildNoteLookup(filteredSource);
   const map = new Map();
 
-  for (const note of filtered) {
-    const key = groupKey(note);
+  for (const [index, note] of filteredSource.entries()) {
+    const identity = groupIdentity(note, lookup, index);
+    const key = identity.key;
     if (!key) continue;
     if (!map.has(key)) {
       map.set(key, {
         key,
-        title: noteIdeaTitle(note),
-        category: note.category || '미분류',
+        title: identity.title,
+        category: identity.category,
+        menuCode: identity.menuCode,
         notes: [],
         isVisible: false,
       });
@@ -65,16 +169,18 @@ export function buildNoteIdeaGroups(filtered = [], visible = []) {
     if (visibleIds.has(note?.id)) group.isVisible = true;
   }
 
-  return [...map.values()]
+  const groups = [...map.values()]
     .filter(group => group.isVisible)
     .map(group => {
       const notes = [...group.notes].sort(compareIdeaNotes);
       return {
         ...group,
         notes,
-        latestNote: notes[notes.length - 1] || null,
+        latestNote: selectRepresentativeNote(notes),
       };
     });
+
+  return sortNoteIdeaGroups(groups, options);
 }
 
 function photoSortValue(photo, note, photoIndex) {
@@ -83,21 +189,24 @@ function photoSortValue(photo, note, photoIndex) {
   return timeValue(note?.updatedAt || note?.createdAt || note?.testDate) + photoIndex;
 }
 
+function photosFromNote(note, noteIndex) {
+  const notePhotos = Array.isArray(note?.photos) ? note.photos : [];
+  return notePhotos
+    .map((photo, photoIndex) => ({
+      photo,
+      noteIndex,
+      photoIndex,
+      sortValue: photoSortValue(photo, note, photoIndex),
+    }))
+    .filter(item => item.photo?.data);
+}
+
 export function collectRecentNotePhotos(notes = [], limit = 3) {
   const source = Array.isArray(notes) ? notes : [];
   const photos = [];
 
   source.forEach((note, noteIndex) => {
-    const notePhotos = Array.isArray(note?.photos) ? note.photos : [];
-    notePhotos.forEach((photo, photoIndex) => {
-      if (!photo?.data) return;
-      photos.push({
-        photo,
-        noteIndex,
-        photoIndex,
-        sortValue: photoSortValue(photo, note, photoIndex),
-      });
-    });
+    photos.push(...photosFromNote(note, noteIndex));
   });
 
   return photos
@@ -108,4 +217,35 @@ export function collectRecentNotePhotos(notes = [], limit = 3) {
     })
     .slice(0, limit)
     .map(item => item.photo);
+}
+
+export function collectLatestRoundNotePhotos(notes = [], limit = 3) {
+  const source = Array.isArray(notes) ? notes : [];
+  const releasedNote = [...source].reverse().find(isReleasedNote);
+
+  if (releasedNote) {
+    const photos = photosFromNote(releasedNote, source.indexOf(releasedNote))
+      .sort((a, b) => {
+        if (a.sortValue !== b.sortValue) return b.sortValue - a.sortValue;
+        return b.photoIndex - a.photoIndex;
+      })
+      .slice(0, limit)
+      .map(item => item.photo);
+
+    if (photos.length) return photos;
+  }
+
+  for (let noteIndex = source.length - 1; noteIndex >= 0; noteIndex -= 1) {
+    const photos = photosFromNote(source[noteIndex], noteIndex)
+      .sort((a, b) => {
+        if (a.sortValue !== b.sortValue) return b.sortValue - a.sortValue;
+        return b.photoIndex - a.photoIndex;
+      })
+      .slice(0, limit)
+      .map(item => item.photo);
+
+    if (photos.length) return photos;
+  }
+
+  return [];
 }

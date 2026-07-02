@@ -14,11 +14,15 @@ const PAGE_SIZE = 20;
 export { normalizeNoteView, shouldShowAllNoteRows };
 
 export function useNoteListState({ notes, pinnedIds, pathname }) {
-  const [viewMode, setViewMode] = useState(() => normalizeNoteView(tryLS(KEYS.NOTE_VIEW, 'card')));
+  const [viewMode, setViewMode] = useState('card');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const searchBlurTimerRef = useRef(null);
 
   useScrollMemory(pathname);
+
+  useEffect(() => {
+    setViewMode(normalizeNoteView(tryLS(KEYS.NOTE_VIEW, 'card')));
+  }, []);
 
   const {
     search,

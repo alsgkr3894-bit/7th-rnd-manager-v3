@@ -23,12 +23,14 @@ export function NoteDetailModal({ note = {}, canEdit = false, onClose, onEdit })
   const noteType = asText(note.noteType) || '—';
   const testDate = typeof note.testDate === 'string' ? note.testDate : '';
   const title = noteDisplayTitle(note);
+  const menuCode = asText(note.menuCode);
   const testContent = asText(note.testContent);
   const sc = STATUS_COLORS[status] || STATUS_COLORS['테스트'];
   const sb = STATUS_BORDER[status] || 'var(--border)';
   const tags = parseTagList(note.tags);
 
   const rows = [
+    ['메뉴 코드', menuCode],
     ['테스트 날짜', testDate ? formatFullDate(testDate) : null],
     ['테스트 차수', formatTestRound(note.testRound)],
     ...NOTE_EVALUATION_FIELDS.map(item => [item.label, formatNoteRating(note[item.key])]),

@@ -17,12 +17,16 @@ import { useSamplePageFilterState } from './useSamplePageFilterState';
 
 export { SAMPLE_SORT_OPTIONS };
 
+const INITIAL_CALENDAR_MONTH = new Date(2026, 0, 1);
+const INITIAL_TODAY = '2026-01-01';
+
 export function useSamplePageState({ searchParams, pathname }) {
   const [samples, setSamples] = useState([]);
   const filterState = useSamplePageFilterState({ searchParams, pathname });
   const { catFilter, ratingMin, search, sortBy } = filterState;
   const [detailRec, setDetailRec] = useState(null);
-  const [calMonth, setCalMonth] = useState(() => new Date());
+  const [calMonth, setCalMonth] = useState(INITIAL_CALENDAR_MONTH);
+  const [today, setToday] = useState(INITIAL_TODAY);
 
   const {
     data: loadedSamples,
@@ -34,6 +38,12 @@ export function useSamplePageState({ searchParams, pathname }) {
   useEffect(() => {
     if (loadedSamples) setSamples(loadedSamples);
   }, [loadedSamples]);
+
+  useEffect(() => {
+    const now = new Date();
+    setCalMonth(new Date(now.getFullYear(), now.getMonth(), 1));
+    setToday(formatDate(now));
+  }, []);
 
   useVisibilityRefresh(reload);
 
@@ -75,6 +85,6 @@ export function useSamplePageState({ searchParams, pathname }) {
     ratingDist,
     calDays,
     samplesByDate,
-    today: formatDate(new Date()),
+    today,
   };
 }

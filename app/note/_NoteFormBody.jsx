@@ -10,6 +10,7 @@ import {
   normalizeNoteStatus,
   normalizeNoteType,
 } from '@/lib/note';
+import { generateNextNoteMenuCode, normalizeNoteMenuCode } from '@/lib/note/evaluation';
 import { generateNoteReportText } from '@/lib/note/report';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { noop } from '@/lib/ui/prop-guards';
@@ -24,6 +25,8 @@ import { NoteRequiredFields } from '@/app/note/_NoteRequiredFields';
 // 마운트 후 실제 브랜드/저장값으로 교정한다(hydration 불일치 방지).
 export const INIT = {
   brand: 'main',
+  menuTestMode: 'new',
+  menuCode: '',
   title: '',
   menuName: '',
   category: CATEGORIES[0],
@@ -49,14 +52,81 @@ export const INIT = {
 };
 
 export function normalizeNoteFormForSave(form) {
-  const title = String(form?.title || form?.menuName || '').trim();
+  const menuCode = normalizeNoteMenuCode(form?.menuCode);
+  const title = String(form?.title || form?.menuName || menuCode || '').trim();
   return {
     ...form,
+    menuCode,
     title,
     menuName: title,
     noteType: normalizeNoteType(form?.noteType),
     status: normalizeNoteStatus(form?.status),
   };
+}
+
+function hasText(value) {
+  return String(value || '').trim().length > 0;
+}
+
+function NoteWriteProgressCard({ form }) {
+  const testContent = String(form?.testContent || '').trim();
+  const words = testContent ? testContent.split(/\s+/).filter(Boolean).length : 0;
+  const items = [
+    {
+      label: '메뉴',
+      done: hasText(form?.title) || hasText(form?.menuName) || hasText(form?.menuCode),
+    },
+    { label: '테스트 내용', done: hasText(form?.testContent) },
+    { label: '일자', done: hasText(form?.testDate) },
+    { label: '차수', done: hasText(form?.testRound) },
+  ];
+  const doneCount = items.filter(item => item.done).length;
+
+  return (
+    <div className="card" style={{ padding: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        <div style={{ minWidth: 0 }}>
+          <div className="card-title" style={{ marginBottom: 2 }}>
+            작성 진행
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+            {doneCount}/{items.length} 완료 · {testContent.length}자 · {words}단어
+          </div>
+        </div>
+        <strong
+          style={{
+            marginLeft: 'auto',
+            color: doneCount === items.length ? 'var(--positive)' : 'var(--accent)',
+            fontSize: 18,
+          }}
+        >
+          {Math.round((doneCount / items.length) * 100)}%
+        </strong>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        {items.map(item => (
+          <span
+            key={item.label}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+              padding: '7px 9px',
+              borderRadius: 8,
+              background: item.done ? 'var(--positive-soft)' : 'var(--surface-2)',
+              color: item.done ? 'var(--positive)' : 'var(--text-3)',
+              fontSize: 12,
+              fontWeight: 800,
+            }}
+          >
+            {item.label}
+            <span>{item.done ? '완료' : '필요'}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
@@ -71,6 +141,14 @@ export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
 
   function updateTitle(value) {
     setForm(prev => ({ ...prev, title: value, menuName: value }));
+  }
+
+  function generateMenuCode() {
+    setForm(prev => ({
+      ...prev,
+      menuTestMode: 'new',
+      menuCode: generateNextNoteMenuCode([...sourceNotes, prev], { date: prev.testDate }),
+    }));
   }
 
   useEffect(() => {
@@ -105,13 +183,13 @@ export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
       className="form-layout"
       style={{
         display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1fr) min(360px, 100%)',
-        gap: 24,
+        gridTemplateColumns: 'minmax(0, 1fr) clamp(320px, 27vw, 390px)',
+        gap: 20,
         marginTop: 24,
         alignItems: 'start',
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
         <NoteRequiredFields
           form={form}
           touched={touched}
@@ -119,20 +197,27 @@ export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
           updateField={updateField}
           markTouched={markTouched}
           onCategoryChange={onCategoryChange}
+          onGenerateMenuCode={generateMenuCode}
         />
         <NoteClonePreviousCard form={form} notes={sourceNotes} setForm={setForm} />
         <NoteEvaluationFields form={form} allTags={allTags} updateField={updateField} />
         <NoteDetailFields form={form} updateField={updateField} />
-        <NotePhotoSection
-          photos={form.photos || []}
-          onChange={value => updateField('photos', value)}
-        />
         <TempCostCalculator
           value={form.tempCostCalc}
           onChange={value => updateField('tempCostCalc', value)}
         />
       </div>
-      <NoteReportSummaryCard reportText={reportText} />
+      <div
+        className="form-sticky-right"
+        style={{ position: 'sticky', top: 72, display: 'flex', flexDirection: 'column', gap: 12 }}
+      >
+        <NoteWriteProgressCard form={form} />
+        <NoteReportSummaryCard reportText={reportText} />
+        <NotePhotoSection
+          photos={form.photos || []}
+          onChange={value => updateField('photos', value)}
+        />
+      </div>
     </div>
   );
 }

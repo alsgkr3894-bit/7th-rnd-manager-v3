@@ -70,7 +70,7 @@ export function NoteDetailFields({ form, updateField }) {
             style={{ minHeight: 72, resize: 'vertical' }}
             value={form.nextAction}
             onChange={event => updateField('nextAction', event.target.value)}
-            placeholder="재테스트 방향, 일정 등"
+            placeholder="개선 방향, 일정 등"
           />
         </Field>
       </div>
@@ -84,7 +84,6 @@ export function NoteDetailFields({ form, updateField }) {
           placeholder="보고 시 사용할 요약 문구를 입력하세요."
         />
       </Field>
-
     </CollapsibleCard>
   );
 }

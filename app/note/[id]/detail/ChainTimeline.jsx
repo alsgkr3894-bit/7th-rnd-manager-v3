@@ -3,6 +3,7 @@ import { noteDisplayTitle } from '@/lib/note/display';
 
 export function ChainTimeline({ chain, currentId, onNavigate }) {
   if (!chain || chain.length < 2) return null;
+  const menuStatus = chain[chain.length - 1]?.status || '테스트';
 
   return (
     <div className="card" style={{ marginTop: 24 }}>
@@ -14,6 +15,7 @@ export function ChainTimeline({ chain, currentId, onNavigate }) {
           <TimelineItem
             key={note.id}
             note={note}
+            menuStatus={menuStatus}
             isCurrent={note.id === currentId}
             showConnector={index > 0}
             onNavigate={onNavigate}
@@ -24,8 +26,8 @@ export function ChainTimeline({ chain, currentId, onNavigate }) {
   );
 }
 
-function TimelineItem({ note, isCurrent, showConnector, onNavigate }) {
-  const statusColor = STATUS_COLORS[note.status] || {};
+function TimelineItem({ note, menuStatus, isCurrent, showConnector, onNavigate }) {
+  const statusColor = STATUS_COLORS[menuStatus] || {};
   const title = noteDisplayTitle(note);
 
   return (
@@ -61,7 +63,7 @@ function TimelineItem({ note, isCurrent, showConnector, onNavigate }) {
             gap: 4,
           }}
         >
-          {note.status}
+          {menuStatus}
           {isCurrent && (
             <span
               style={{

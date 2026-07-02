@@ -6,12 +6,15 @@ export function SelectedMenuCodePill({ selected, onClear }) {
       style={{
         display: 'flex',
         alignItems: 'center',
+        flexWrap: 'wrap',
         gap: 8,
-        padding: '7px 10px',
-        background: 'var(--accent-soft)',
+        padding: '8px 10px',
+        background: 'var(--surface)',
         border: '1.5px solid var(--accent)',
         borderRadius: 8,
         fontSize: 13,
+        minHeight: 38,
+        boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
       }}
     >
       <span
@@ -20,16 +23,19 @@ export function SelectedMenuCodePill({ selected, onClear }) {
           fontWeight: 700,
           color: 'var(--accent-text)',
           flexShrink: 0,
+          minWidth: 82,
         }}
       >
         {selected.code}
       </span>
-      <span style={{ color: 'var(--text-2)' }}>{selected.menuName}</span>
+      <span style={{ color: 'var(--text-1)', fontWeight: 700, lineHeight: 1.25 }}>
+        {selected.menuName}
+      </span>
       {selected.subCategory && (
         <span
           style={{
             fontSize: 11,
-            color: 'var(--text-4)',
+            color: 'var(--text-2)',
             background: 'var(--surface-2)',
             padding: '1px 6px',
             borderRadius: 4,
@@ -40,7 +46,7 @@ export function SelectedMenuCodePill({ selected, onClear }) {
         </span>
       )}
       {selected.sizes.length > 0 && (
-        <span style={{ fontSize: 11, color: 'var(--text-4)', flexShrink: 0 }}>
+        <span style={{ fontSize: 11, color: 'var(--text-3)', flexShrink: 0 }}>
           ({[...selected.sizes].sort().join(' · ')})
         </span>
       )}

@@ -88,7 +88,7 @@ export function NoteContextMenu({
         ))}
         <div style={{ padding: '6px 10px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ fontSize: 10, color: 'var(--text-4)', marginBottom: 4, paddingLeft: 4 }}>
-            상태 변경
+            메뉴 상태 변경
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {STATUSES.map(status => (

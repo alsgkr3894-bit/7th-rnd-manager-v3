@@ -56,7 +56,6 @@ describe('note list structure', () => {
     const listDataSource = readFileSync(resolve('hooks/useNoteListData.js'), 'utf8');
     const listStateSource = readFileSync(resolve('hooks/useNoteListState.js'), 'utf8');
     const listStateHelperSource = readFileSync(resolve('lib/note/list-state.js'), 'utf8');
-    const reportingCopySource = readFileSync(resolve('hooks/useNoteReportingCopy.js'), 'utf8');
 
     expect(source).toContain("import { NoteFilterControls } from './_NoteFilterControls'");
     expect(source).toContain("import { NoteListBody } from './_NoteListBody'");
@@ -147,7 +146,10 @@ describe('note list structure', () => {
     expect(cardGridSource).toContain('className="stagger note-card-wrap"');
     expect(cardGridSource).toContain("import { NoteIdeaGroupCard } from './_NoteIdeaGroupCard'");
     expect(cardGridSource).toContain("import { buildNoteIdeaGroups } from './noteIdeaGroups'");
-    expect(cardGridSource).toContain('const groups = buildNoteIdeaGroups(filtered, visible)');
+    expect(cardGridSource).toContain(
+      'const allGroups = buildNoteIdeaGroups(filtered, filtered, { sortBy, pinnedIds })'
+    );
+    expect(cardGridSource).toContain('const groups = allGroups.slice(0, visibleLimit)');
     expect(cardGridSource).not.toContain('메뉴개발 보드');
     expect(cardGridSource).not.toContain('표시 기록');
     expect(cardGridSource).not.toContain('전체 기록');
@@ -156,10 +158,22 @@ describe('note list structure', () => {
     expect(ideaGroupCardSource).toContain('function MiniStat');
     expect(ideaGroupCardSource).toContain('+ 다음 차수');
     expect(ideaGroupCardSource).toContain('label="차수"');
-    expect(ideaGroupCardSource).toContain('collectRecentNotePhotos(notes, 3)');
+    expect(ideaGroupCardSource).toContain('collectLatestRoundNotePhotos(notes, 3)');
+    expect(ideaGroupCardSource).toContain('STATUSES.map(status');
+    expect(ideaGroupCardSource).toContain('onStatusChange');
+    expect(ideaGroupCardSource).toContain('statusChange(latest.id, event.target.value, event)');
+    expect(ideaGroupCardSource).toContain('onMouseDown={event => event.stopPropagation()}');
+    expect(ideaGroupCardSource).toContain("import { useState } from 'react'");
+    expect(ideaGroupCardSource).toContain('const [expanded, setExpanded] = useState(false)');
+    expect(ideaGroupCardSource).toContain('function openRound(note, event)');
+    expect(ideaGroupCardSource).toContain('aria-expanded={expanded}');
+    expect(ideaGroupCardSource).toContain('{expanded && (');
+    expect(ideaGroupCardSource).toContain('latestPreviewRows.map');
+    expect(ideaGroupCardSource).toContain('onClick={event => openRound(note, event)}');
     expect(ideaGroupsSource).toContain('export function buildNoteIdeaGroups');
     expect(ideaGroupsSource).toContain('export function noteIdeaTitle');
     expect(ideaGroupsSource).toContain('export function collectRecentNotePhotos');
+    expect(ideaGroupsSource).toContain('export function collectLatestRoundNotePhotos');
     expect(cardSource).toContain('noteDisplayTitle(note)');
     expect(cardSource).toContain('function firstPhoto');
     expect(cardSource).toContain('collectRecentNotePhotos([{ photos }], 1)');
@@ -169,8 +183,17 @@ describe('note list structure', () => {
     expect(cardSource).not.toContain('highlightText(menuName');
     expect(tableViewSource).toContain('export function NoteTableView');
     expect(tableViewSource).toContain('className="data-table stagger-rows"');
+    expect(tableViewSource).toContain('import { buildNoteIdeaGroups');
+    expect(tableViewSource).toContain(
+      'const [expandedGroups, setExpandedGroups] = useState(new Set())'
+    );
+    expect(tableViewSource).toContain('const groups = allGroups.slice(0, visibleLimit)');
+    expect(tableViewSource).toContain('toggleGroup(group.key)');
+    expect(tableViewSource).toContain('group.notes.map((note, index)');
+    expect(tableViewSource).toContain('roundLabel={roundLabel(note, index)}');
     expect(tableViewSource).not.toContain('메뉴명');
     expect(tableRowSource).toContain('noteDisplayTitle(note)');
+    expect(tableRowSource).toContain('roundLabel');
     expect(tableRowSource).not.toContain('{note.menuName}</td>');
     expect(headerSource).toContain('export function NoteListHeader');
     expect(headerSource).toContain('<PageHeader');
@@ -181,7 +204,7 @@ describe('note list structure', () => {
     expect(headerSource).toContain('onMerge={onBatchMerge}');
     expect(headerSource).toContain('전체 보고서 PDF');
     expect(headerSource).toContain('disabled={reportExportCount === 0}');
-    expect(headerSource).toContain('출시예정 일괄복사');
+    expect(headerSource).not.toContain('출시예정 일괄복사');
     expect(headerSource).toContain('체크리스트 목록');
     expect(detailPageSource).toContain("import { noteDisplayTitle } from '@/lib/note/display'");
     expect(detailPageSource).toContain("sub={noteDisplayTitle(form, '')}");
@@ -202,7 +225,7 @@ describe('note list structure', () => {
     expect(controllerSource).toContain('usePathname()');
     expect(controllerSource).toContain('useNoteListData()');
     expect(controllerSource).toContain('useNoteListState({ notes, pinnedIds, pathname })');
-    expect(controllerSource).toContain('useNoteReportingCopy(notes)');
+    expect(controllerSource).not.toContain('useNoteReportingCopy(notes)');
     expect(controllerSource).toContain('useNoteReportPdf(listState.filtered)');
     expect(controllerSource).toContain('useNoteBatchActions({ notes, setNotes, load, canEdit })');
     expect(controllerSource).toContain('const itemActions = useNoteItemActions({');
@@ -236,7 +259,7 @@ describe('note list structure', () => {
     expect(contentPropHeaderBuildersSource).toContain('export function buildNoteHeaderProps');
     expect(contentPropHeaderBuildersSource).toContain('export function buildNoteStatsProps');
     expect(contentPropHeaderBuildersSource).toContain('export function buildNoteStatesProps');
-    expect(contentPropHeaderBuildersSource).toContain('NOTE_STATUS.RELEASE_READY');
+    expect(contentPropHeaderBuildersSource).not.toContain('NOTE_STATUS.RELEASE_READY');
     expect(contentPropHeaderBuildersSource).toContain('reportExportCount');
     expect(contentPropHeaderBuildersSource).toContain('onExportReportPdf: handleReportPdf');
     expect(contentPropHeaderBuildersSource).toContain('onBatchMerge: handleBatchMerge');
@@ -256,19 +279,18 @@ describe('note list structure', () => {
     expect(itemActionsSource).toContain('async function restoreDeletedNotes');
     expect(itemActionsSource).toContain('await deleteNote(note.id)');
     expect(itemActionsSource).toContain('await addNote({');
-    expect(itemActionsSource).toContain('await updateNote(noteId');
+    expect(itemActionsSource).toContain('await updateNoteChainStatus(noteId');
     expect(itemActionsSource).toContain('setNoteFrom(note.id)');
     expect(listDataSource).toContain('export function useNoteListData');
     expect(listDataSource).toContain('getAllNotes');
+    expect(listDataSource).not.toContain('getAllNotesCached');
     expect(listDataSource).toContain('getNoteDetailStats');
     expect(listDataSource).toContain('useVisibilityRefresh(load)');
     expect(listDataSource).toContain("showToast('노트 목록을 불러오지 못했어요', 'error')");
     expect(listStateSource).toContain('export function useNoteListState');
     expect(listStateSource).toContain("from '@/lib/note/list-state'");
     expect(listStateSource).toContain('shouldShowAllNoteRows(statusFilter)');
-    expect(listStateSource).toContain(
-      'showAllRows ? filtered : filtered.slice(0, visibleCount)'
-    );
+    expect(listStateSource).toContain('showAllRows ? filtered : filtered.slice(0, visibleCount)');
     expect(listStateSource).toContain('useNoteFilter(notes, pinnedIds, { pathname })');
     expect(listStateSource).toContain('useNotePresets');
     expect(listStateSource).toContain('useSearchHistory(KEYS.NOTE_SEARCH_HISTORY)');
@@ -279,9 +301,5 @@ describe('note list structure', () => {
     expect(listStateHelperSource).toContain('export function normalizeNoteView');
     expect(listStateHelperSource).toContain('export function shouldShowAllNoteRows');
     expect(listStateHelperSource).toContain("return statusFilter === 'all'");
-    expect(reportingCopySource).toContain('export function useNoteReportingCopy');
-    expect(reportingCopySource).toContain('NOTE_STATUS.RELEASE_READY');
-    expect(reportingCopySource).toContain('copyText(text)');
-    expect(reportingCopySource).toContain('보고용 요약');
   });
 });

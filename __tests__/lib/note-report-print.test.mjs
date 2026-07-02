@@ -12,12 +12,12 @@ describe('menu development note PDF report', () => {
         menuName: '버섯 & 치즈 피자',
         category: '피자',
         noteType: '메뉴개발',
-        status: '출시예정',
+        status: '보류',
         testDate: '2026-06-22',
         testContent: '도우 180g\n치즈 90g',
         materials: '치즈, 버섯',
         tasteEval: '고소함',
-        managerEval: '재테스트',
+        managerEval: '개선 검토',
         costNote: '원가 확인 필요',
         issues: '가장자리 수분',
         improvements: '굽기 시간 조정',
@@ -47,7 +47,7 @@ describe('menu development note PDF report', () => {
       photoCount: 1,
       tempCostCount: 1,
     });
-    expect(summary.statusCounts).toContainEqual(['출시예정', 1]);
+    expect(summary.statusCounts).toContainEqual(['보류', 2]);
     expect(summary.categoryCounts).toContainEqual(['피자', 1]);
 
     const html = buildMenuDevelopmentReportHtml(notes, {
@@ -69,5 +69,36 @@ describe('menu development note PDF report', () => {
     expect(html).toContain('grid-template-columns: repeat(2, 1fr)');
     expect(html).toContain('max-height: 240px');
     expect(html).toContain('window.print');
+  });
+
+  test('상태 요약과 노트 카드 상태는 마지막 차수의 메뉴 상태를 사용한다', () => {
+    const notes = [
+      {
+        id: 1,
+        title: '불고기 피자',
+        category: '피자',
+        noteType: '메뉴개발',
+        testRound: '1',
+        status: '폐기',
+      },
+      {
+        id: 2,
+        parentId: 1,
+        title: '불고기 피자',
+        category: '피자',
+        noteType: '메뉴개발',
+        testRound: '2',
+        status: '보류',
+      },
+    ];
+
+    const summary = buildMenuDevelopmentReportSummary(notes);
+    expect(summary.statusCounts).toEqual([['보류', 1]]);
+
+    const html = buildMenuDevelopmentReportHtml(notes, {
+      now: new Date('2026-06-23T09:00:00'),
+    });
+    expect(html).toContain('보류');
+    expect(html).not.toContain('폐기</span>');
   });
 });

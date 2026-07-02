@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { tryLS, setLS } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
@@ -58,16 +58,12 @@ export function normalizeNoteBrandFilter(value, fallback = 'all') {
  */
 export function useNoteFilter(notes, pinnedIds, { pathname } = {}) {
   const searchParams = useSearchParams();
+  const initialQueryRef = useRef(searchParams.toString());
 
-  const [search, setRawSearch] = useState(() =>
-    normalizeNoteFilterText(searchParams.get('q') || tryLS(KEYS.NOTE_SEARCH, ''))
-  );
-  const [statusFilter, setRawStatusFilter] = useState(() =>
-    normalizeNoteStatusFilter(searchParams.get('status') || tryLS(KEYS.NOTE_STATUS, 'all'))
-  );
-  const [sortBy, setRawSortBy] = useState(() =>
-    normalizeNoteSortKey(tryLS(KEYS.NOTE_SORT, 'createdAt'))
-  );
+  const [search, setRawSearch] = useState('');
+  const [statusFilter, setRawStatusFilter] = useState('all');
+  const [sortBy, setRawSortBy] = useState('createdAt');
+  const [filtersReady, setFiltersReady] = useState(false);
   // 브랜드 필터: 기본값은 현재 활성 브랜드(다른 브랜드 노트와 섞이지 않게). 'all'이면 전체.
   // 초기값은 SSR/첫 렌더에서 서버와 동일하게 'all'로 두고(활성 브랜드는 localStorage라
   // 서버에서 알 수 없음 → 칩 active 클래스 불일치 방지), 마운트 후 실제 값으로 교정한다.
@@ -89,6 +85,16 @@ export function useNoteFilter(notes, pinnedIds, { pathname } = {}) {
   const safeBrandFilter = normalizeNoteBrandFilter(brandFilter);
 
   useEffect(() => {
+    const initialParams = new URLSearchParams(initialQueryRef.current);
+    setRawSearch(normalizeNoteFilterText(initialParams.get('q') || tryLS(KEYS.NOTE_SEARCH, '')));
+    setRawStatusFilter(
+      normalizeNoteStatusFilter(initialParams.get('status') || tryLS(KEYS.NOTE_STATUS, 'all'))
+    );
+    setRawSortBy(normalizeNoteSortKey(tryLS(KEYS.NOTE_SORT, 'createdAt')));
+    setFiltersReady(true);
+  }, []);
+
+  useEffect(() => {
     const activeBrand = normalizeNoteBrandFilter(getActiveBrandId(), 'main');
     setRawBrandFilter(
       normalizeNoteBrandFilter(tryLS(KEYS.NOTE_BRAND_FILTER, activeBrand), activeBrand)
@@ -98,14 +104,17 @@ export function useNoteFilter(notes, pinnedIds, { pathname } = {}) {
 
   // 영속화 (기존 동작과 동일한 키)
   useEffect(() => {
+    if (!filtersReady) return;
     setLS(KEYS.NOTE_SEARCH, safeSearch);
-  }, [safeSearch]);
+  }, [safeSearch, filtersReady]);
   useEffect(() => {
+    if (!filtersReady) return;
     setLS(KEYS.NOTE_STATUS, safeStatusFilter);
-  }, [safeStatusFilter]);
+  }, [safeStatusFilter, filtersReady]);
   useEffect(() => {
+    if (!filtersReady) return;
     setLS(KEYS.NOTE_SORT, safeSortBy);
-  }, [safeSortBy]);
+  }, [safeSortBy, filtersReady]);
   // 첫 마운트 교정 전에는 영속화하지 않는다(임시 'all'로 덮어쓰기 방지).
   useEffect(() => {
     if (brandReady) setLS(KEYS.NOTE_BRAND_FILTER, safeBrandFilter);
@@ -113,13 +122,14 @@ export function useNoteFilter(notes, pinnedIds, { pathname } = {}) {
 
   // URL 동기화 (검색/상태만)
   useEffect(() => {
+    if (!filtersReady) return;
     if (!pathname) return;
     const p = new URLSearchParams();
     if (safeSearch) p.set('q', safeSearch);
     if (safeStatusFilter !== 'all') p.set('status', safeStatusFilter);
     const qs = p.toString();
     window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
-  }, [safeSearch, safeStatusFilter, pathname]);
+  }, [safeSearch, safeStatusFilter, pathname, filtersReady]);
 
   const listNotes = useMemo(() => filterNoteListNotes(notes), [notes]);
 

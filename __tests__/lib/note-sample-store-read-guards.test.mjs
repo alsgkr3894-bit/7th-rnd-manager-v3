@@ -100,6 +100,17 @@ describe('노트/샘플 store 읽기 가드', () => {
     expect(rows.map(row => row.id)).toEqual([1, 2, 3]);
   });
 
+  test('노트 체인 조회는 같은 메뉴코드만으로 노트를 자동 병합하지 않는다', async () => {
+    sharedGetAll.mockResolvedValueOnce([
+      { id: 1, title: '로제 피자 1차', menuCode: 'MENU-200', parentId: null },
+      { id: 2, title: '로제 피자 2차', menuCode: 'MENU-200', parentId: null },
+    ]);
+
+    const rows = await noteStore.getNotesInChain(1);
+
+    expect(rows.map(row => row.id)).toEqual([1]);
+  });
+
   test('노트 체인 조회는 현재 브랜드 노트만 반환한다', async () => {
     getActiveBrandId.mockReturnValue('brand-b');
     sharedGetAll.mockResolvedValueOnce([
@@ -169,6 +180,26 @@ describe('노트/샘플 store 읽기 가드', () => {
 
     sharedGetById.mockResolvedValueOnce({ id: 2, brand: 'brand-b' });
     await expect(sampleStore.getSampleById(2)).resolves.toMatchObject({ id: 2 });
+  });
+
+  test('노트 분리처럼 parentId만 수정해도 저장된 사진은 보존한다', async () => {
+    sharedGetById.mockResolvedValueOnce({
+      id: 2,
+      title: '로제 피자',
+      menuName: '로제 피자',
+      status: '테스트',
+      parentId: 1,
+      photos: [{ data: 'data:image/png;base64,old' }],
+      brand: 'main',
+    });
+
+    await noteStore.updateNote(2, { parentId: null });
+
+    expect(txPuts[0]).toMatchObject({
+      id: 2,
+      parentId: null,
+      photos: [{ data: 'data:image/png;base64,old' }],
+    });
   });
 
   test('노트 삭제는 parentId 하위 체인 전체를 같은 트랜잭션에서 삭제한다', async () => {

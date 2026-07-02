@@ -15,31 +15,29 @@ export function NoteReportSummaryCard({ reportText }) {
   }
 
   return (
-    <div className="form-sticky-right" style={{ position: 'sticky', top: 80 }}>
-      <CollapsibleCard
-        title="보고용 요약"
-        subtitle="입력 내용이 자동으로 요약됩니다 · 기본 접힘"
-        defaultOpen={false}
+    <CollapsibleCard
+      title="보고용 요약"
+      subtitle="입력 내용이 자동으로 요약됩니다 · 기본 접힘"
+      defaultOpen={false}
+    >
+      <pre
+        style={{
+          background: 'var(--surface-2)',
+          borderRadius: 10,
+          padding: '12px 14px',
+          fontSize: 12,
+          lineHeight: 1.8,
+          color: 'var(--text-2)',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          margin: 0,
+        }}
       >
-        <pre
-          style={{
-            background: 'var(--surface-2)',
-            borderRadius: 10,
-            padding: '12px 14px',
-            fontSize: 12,
-            lineHeight: 1.8,
-            color: 'var(--text-2)',
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word',
-            margin: 0,
-          }}
-        >
-          {reportText}
-        </pre>
-        <button className="btn" style={{ width: '100%', marginTop: 12 }} onClick={copyReport}>
-          <Icon.doc style={{ width: 13, height: 13 }} /> 보고용 복사
-        </button>
-      </CollapsibleCard>
-    </div>
+        {reportText}
+      </pre>
+      <button className="btn" style={{ width: '100%', marginTop: 12 }} onClick={copyReport}>
+        <Icon.doc style={{ width: 13, height: 13 }} /> 보고용 복사
+      </button>
+    </CollapsibleCard>
   );
 }

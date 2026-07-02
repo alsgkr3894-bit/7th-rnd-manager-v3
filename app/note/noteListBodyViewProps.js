@@ -1,6 +1,7 @@
 export function buildNoteCardGridProps({
   visible,
   filtered,
+  sortBy,
   canEdit = false,
   batchMode,
   selected,
@@ -17,11 +18,14 @@ export function buildNoteCardGridProps({
   onStatusChange,
   onNewVersion,
   onTagClick,
+  onDropMerge,
+  onUnmergeGroup,
   onLoadMore,
 }) {
   return {
     visible,
     filtered,
+    sortBy,
     filteredCount: filtered.length,
     canEdit,
     batchMode,
@@ -42,6 +46,8 @@ export function buildNoteCardGridProps({
     onNewVersion,
     onPin: onTogglePin,
     onTagClick,
+    onDropMerge,
+    onUnmergeGroup,
     onLoadMore,
   };
 }
@@ -49,6 +55,8 @@ export function buildNoteCardGridProps({
 export function buildNoteTableViewProps({
   visible,
   filtered,
+  sortBy,
+  pinnedIds,
   canEdit = false,
   batchMode,
   selected,
@@ -59,11 +67,14 @@ export function buildNoteTableViewProps({
   onToggleSelect,
   onDelete,
   onStatusChange,
+  onUnmergeGroup,
   onLoadMore,
 }) {
   return {
     visible,
     filtered,
+    sortBy,
+    pinnedIds,
     canEdit,
     batchMode,
     selected,
@@ -74,6 +85,7 @@ export function buildNoteTableViewProps({
     onToggleSelect,
     onDelete,
     onStatusChange,
+    onUnmergeGroup,
     onLoadMore,
   };
 }

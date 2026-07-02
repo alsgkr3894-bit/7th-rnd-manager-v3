@@ -629,7 +629,7 @@ kbd {
   outline-offset: -2px;
 }
 
-/* ── 사이드바 보고예정 뱃지 ── */
+/* ── 사이드바 배지 ── */
 .badge.badge-reporting {
   background: color-mix(in oklab, #6b3fcb 15%, transparent);
   color: #6b3fcb;

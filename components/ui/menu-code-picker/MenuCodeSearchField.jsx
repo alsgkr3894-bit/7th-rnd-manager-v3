@@ -11,8 +11,20 @@ export function MenuCodeSearchField({
   const disabled = displayListLength === 0;
 
   return (
-    <div className="filter-search" style={{ gap: 6 }} onClick={onOpen}>
-      <Icon.search style={{ width: 14, height: 14, color: 'var(--text-3)', flexShrink: 0 }} />
+    <div
+      className="filter-search"
+      style={{
+        gap: 8,
+        width: '100%',
+        minHeight: 40,
+        padding: '8px 11px',
+        background: 'var(--surface)',
+        border: '1.5px solid var(--border-strong)',
+        boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
+      }}
+      onClick={onOpen}
+    >
+      <Icon.search style={{ width: 15, height: 15, color: 'var(--text-2)', flexShrink: 0 }} />
       <input
         value={query}
         onChange={event => onQueryChange(event.target.value)}
@@ -25,9 +37,11 @@ export function MenuCodeSearchField({
           border: 0,
           outline: 0,
           flex: 1,
-          fontSize: 13,
+          minWidth: 0,
+          fontSize: 14,
           fontFamily: 'inherit',
           color: 'var(--text-1)',
+          fontWeight: 650,
         }}
       />
     </div>

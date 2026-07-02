@@ -1,10 +1,13 @@
+'use client';
+
+import { useState } from 'react';
 import { Icon } from '@/components/icons';
-import { STATUS_COLORS } from '@/lib/note';
+import { STATUSES, STATUS_COLORS } from '@/lib/note';
 import { formatFullDate, parseTagList } from '@/lib/note/utils';
 import { clampNoteRating, formatTestRound, NOTE_EVALUATION_FIELDS } from '@/lib/note/evaluation';
 import { noop } from '@/lib/ui/prop-guards';
 import { highlightText } from './_NoteCard';
-import { collectRecentNotePhotos, noteRoundNumber } from './noteIdeaGroups';
+import { collectLatestRoundNotePhotos, noteRoundNumber } from './noteIdeaGroups';
 
 function asText(value) {
   if (value == null) return '';
@@ -23,15 +26,6 @@ function ratingSummary(note) {
   if (!ratings.length) return '';
   const avg = ratings.reduce((sum, value) => sum + value, 0) / ratings.length;
   return `평균 ${avg.toFixed(1)}/5`;
-}
-
-function statusCounts(notes) {
-  const map = new Map();
-  for (const note of notes) {
-    const status = note.status || '테스트';
-    map.set(status, (map.get(status) || 0) + 1);
-  }
-  return [...map.entries()];
 }
 
 function MiniStat({ label, value }) {
@@ -82,8 +76,22 @@ function latestSummary(note, hlRe) {
   return value ? highlightText(value, hlRe) : '최근 테스트 기록이 정리되어 있습니다';
 }
 
+function previewRows(note = {}) {
+  return [
+    ['테스트 내용', asText(note.testContent)],
+    ['맛 평가', asText(note.tasteEval)],
+    ['보고용 요약', asText(note.reportSummary)],
+    ['다음 액션', asText(note.nextAction)],
+  ]
+    .filter(([, value]) => value)
+    .slice(0, 4);
+}
+
 export function NoteIdeaGroupCard({
   group,
+  draggable = false,
+  isDragging = false,
+  isDropTarget = false,
   canEdit = false,
   batchMode,
   selected,
@@ -95,41 +103,88 @@ export function NoteIdeaGroupCard({
   onEdit,
   onDelete,
   onCopy,
+  onStatusChange,
   onNewVersion,
   onPin,
   onTagClick,
+  onUnmergeGroup,
+  onDragStartGroup,
+  onDragOverGroup,
+  onDragLeaveGroup,
+  onDropGroup,
+  onDragEndGroup,
 }) {
   const notes = group.notes || [];
   const latest = group.latestNote || notes[notes.length - 1] || {};
   const latestStatus = latest.status || '테스트';
+  const representativeLabel = latestStatus === '출시' ? '완성본' : '최신 차수';
+  const representativeInlineLabel = latestStatus === '출시' ? '완성본' : '최신';
   const statusColor = STATUS_COLORS[latestStatus] || STATUS_COLORS['테스트'];
-  const photos = collectRecentNotePhotos(notes, 3);
+  const photos = collectLatestRoundNotePhotos(notes, 3);
   const tags = parseTagList(latest.tags);
-  const statusItems = statusCounts(notes);
   const open = typeof onOpen === 'function' ? onOpen : noop;
   const contextMenu = typeof onContextMenu === 'function' ? onContextMenu : noop;
   const toggleSelect = typeof onToggleSelect === 'function' ? onToggleSelect : noop;
   const edit = typeof onEdit === 'function' ? onEdit : noop;
   const remove = typeof onDelete === 'function' ? onDelete : noop;
   const copy = typeof onCopy === 'function' ? onCopy : noop;
+  const statusChange = typeof onStatusChange === 'function' ? onStatusChange : noop;
   const newVersion = typeof onNewVersion === 'function' ? onNewVersion : noop;
   const pin = typeof onPin === 'function' ? onPin : noop;
   const tagClick = typeof onTagClick === 'function' ? onTagClick : noop;
+  const unmergeGroup = typeof onUnmergeGroup === 'function' ? onUnmergeGroup : noop;
   const isPinned = pinnedIds.has(latest.id);
+  const [expanded, setExpanded] = useState(false);
+  const latestRoundLabel = roundLabel(latest, Math.max(notes.length - 1, 0));
+  const latestPreviewRows = previewRows(latest);
+  const canUnmergeGroup = canEdit && !batchMode && notes.some(note => note?.parentId != null);
+
+  function toggleExpanded(event) {
+    if (batchMode || event.defaultPrevented) return;
+    setExpanded(value => !value);
+  }
+
+  function openRound(note, event) {
+    event?.stopPropagation();
+    if (!note?.id) return;
+    if (canEdit && batchMode) toggleSelect(note.id);
+    else open(note);
+  }
+
+  function handleRoundKeyDown(note, event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openRound(note, event);
+  }
 
   return (
     <div
       className="card card-lift"
+      draggable={draggable}
       style={{
         padding: 0,
         overflow: 'hidden',
-        border: `1px solid ${statusColor.color}33`,
+        border: `1px solid ${isDropTarget ? 'var(--accent)' : `${statusColor.color}33`}`,
         borderTop: `4px solid ${statusColor.color}`,
-        minHeight: 420,
+        minHeight: expanded ? 420 : 280,
         display: 'flex',
         flexDirection: 'column',
+        cursor: draggable ? 'grab' : batchMode ? undefined : 'pointer',
+        opacity: isDragging ? 0.58 : 1,
+        outline: isDropTarget ? '2px solid var(--accent)' : 'none',
+        outlineOffset: isDropTarget ? 3 : 0,
+        boxShadow: isDropTarget
+          ? '0 18px 46px color-mix(in srgb, var(--accent) 22%, transparent)'
+          : undefined,
+        transition: 'opacity 140ms ease, outline-color 140ms ease, box-shadow 140ms ease',
       }}
+      onClick={toggleExpanded}
       onContextMenu={event => contextMenu(latest, event)}
+      onDragStart={onDragStartGroup}
+      onDragOver={onDragOverGroup}
+      onDragLeave={onDragLeaveGroup}
+      onDrop={onDropGroup}
+      onDragEnd={onDragEndGroup}
     >
       <div
         style={{
@@ -139,18 +194,33 @@ export function NoteIdeaGroupCard({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-          <span
+          <select
+            value={latestStatus}
+            disabled={!canEdit || latest.id == null}
+            aria-label={`${group.title} 상태 변경`}
+            onMouseDown={event => event.stopPropagation()}
+            onClick={event => event.stopPropagation()}
+            onChange={event => statusChange(latest.id, event.target.value, event)}
             style={{
               fontSize: 11,
               fontWeight: 900,
-              padding: '3px 9px',
+              padding: '3px 24px 3px 9px',
               borderRadius: 999,
               background: statusColor.bg,
               color: statusColor.color,
+              border: `1px solid ${statusColor.color}40`,
+              cursor: canEdit && latest.id != null ? 'pointer' : 'default',
+              fontFamily: 'inherit',
+              outline: 'none',
+              maxWidth: 108,
             }}
           >
-            {latestStatus}
-          </span>
+            {STATUSES.map(status => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
           <span
             style={{
               fontSize: 11,
@@ -164,14 +234,45 @@ export function NoteIdeaGroupCard({
           >
             {group.category || '미분류'}
           </span>
+          {group.menuCode && (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 800,
+                color: 'var(--text-3)',
+                padding: '3px 8px',
+                borderRadius: 999,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              {group.menuCode}
+            </span>
+          )}
           <span style={{ fontSize: 11, color: 'var(--text-4)' }}>
             {formatFullDate(latest.testDate)}
           </span>
           <button
+            className="btn sm"
+            type="button"
+            aria-expanded={expanded}
+            aria-label={expanded ? '차수 접기' : '차수 펼치기'}
+            onClick={event => {
+              event.stopPropagation();
+              setExpanded(value => !value);
+            }}
+            style={{ marginLeft: 'auto', padding: '4px 6px' }}
+          >
+            {expanded ? (
+              <Icon.chevDown style={{ width: 14, height: 14 }} />
+            ) : (
+              <Icon.chevRight style={{ width: 14, height: 14 }} />
+            )}
+          </button>
+          <button
             className={'pin-btn' + (isPinned ? ' pinned' : '')}
             onClick={event => pin(latest.id, event)}
             title={isPinned ? '핀 해제' : '핀 고정'}
-            style={{ marginLeft: 'auto' }}
           >
             {isPinned ? '★' : '☆'}
           </button>
@@ -254,115 +355,161 @@ export function NoteIdeaGroupCard({
         >
           <MiniStat label="차수" value={notes.length} />
           <MiniStat label="사진" value={photos.length} />
-          <MiniStat label="최근" value={roundLabel(latest, Math.max(notes.length - 1, 0))} />
+          <MiniStat label="대표" value={roundLabel(latest, Math.max(notes.length - 1, 0))} />
         </div>
-
-        {statusItems.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 9 }}>
-            {statusItems.map(([status, count]) => {
-              const colors = STATUS_COLORS[status] || STATUS_COLORS['테스트'];
-              return (
-                <span
-                  key={status}
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 800,
-                    padding: '2px 7px',
-                    borderRadius: 999,
-                    color: colors.color,
-                    background: colors.bg,
-                  }}
-                >
-                  {status} {count}
-                </span>
-              );
-            })}
-          </div>
-        )}
       </div>
 
-      <div style={{ padding: '12px 14px 14px', display: 'grid', gap: 8, flex: 1 }}>
-        {notes.map((note, index) => {
-          const status = note.status || '테스트';
-          const colors = STATUS_COLORS[status] || STATUS_COLORS['테스트'];
-          const checked = selected.has(note.id);
-          return (
-            <div
-              key={note.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => (canEdit && batchMode ? toggleSelect(note.id) : open(note))}
-              onContextMenu={event => contextMenu(note, event)}
-              onKeyDown={event => {
-                if (event.key === 'Enter') open(note);
-              }}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: batchMode ? '24px 58px minmax(0,1fr)' : '58px minmax(0,1fr)',
-                gap: 9,
-                alignItems: 'center',
-                minHeight: 48,
-                padding: '9px 10px',
-                borderRadius: 8,
-                border: `1px solid ${checked ? 'var(--accent)' : 'var(--border)'}`,
-                background: checked ? 'var(--accent-soft)' : 'var(--surface)',
-                cursor: 'pointer',
-              }}
-            >
-              {batchMode && (
-                <span
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 5,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: `1px solid ${checked ? 'var(--accent)' : 'var(--border-strong)'}`,
-                    fontSize: 12,
-                    fontWeight: 900,
-                    color: 'var(--accent)',
-                  }}
-                >
-                  {checked ? '✓' : ''}
-                </span>
-              )}
-              <span
+      {expanded && (
+        <div
+          style={{ padding: '12px 14px 14px', display: 'grid', gap: 10, flex: 1 }}
+          onClick={event => event.stopPropagation()}
+        >
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={event => openRound(latest, event)}
+            onKeyDown={event => handleRoundKeyDown(latest, event)}
+            style={{
+              display: 'grid',
+              gap: 8,
+              padding: '12px 13px',
+              borderRadius: 8,
+              background: statusColor.bg,
+              border: `1px solid ${statusColor.color}40`,
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <strong style={{ fontSize: 12, color: statusColor.color }}>{latestRoundLabel}</strong>
+              <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 800 }}>
+                {representativeLabel}
+              </span>
+              <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-4)' }}>
+                {formatFullDate(latest.testDate)}
+              </span>
+            </div>
+            {latestPreviewRows.length > 0 ? (
+              <div style={{ display: 'grid', gap: 6 }}>
+                {latestPreviewRows.map(([label, value]) => (
+                  <div
+                    key={label}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '72px minmax(0,1fr)',
+                      gap: 8,
+                      fontSize: 12,
+                      lineHeight: 1.55,
+                      color: 'var(--text-2)',
+                    }}
+                  >
+                    <span style={{ color: 'var(--text-3)', fontWeight: 800 }}>{label}</span>
+                    <span
+                      style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {highlightText(value, hlRe)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <span style={{ fontSize: 12, color: 'var(--text-3)' }}>상세 기록 없음</span>
+            )}
+          </div>
+
+          {notes.map((note, index) => {
+            const checked = selected.has(note.id);
+            const isLatest = note.id === latest.id;
+            return (
+              <div
+                key={note.id}
+                role="button"
+                tabIndex={0}
+                onClick={event => openRound(note, event)}
+                onContextMenu={event => contextMenu(note, event)}
+                onKeyDown={event => handleRoundKeyDown(note, event)}
                 style={{
-                  justifySelf: 'start',
-                  fontSize: 12,
-                  fontWeight: 900,
-                  color: 'var(--accent)',
+                  display: 'grid',
+                  gridTemplateColumns: batchMode ? '24px 64px minmax(0,1fr)' : '64px minmax(0,1fr)',
+                  gap: 9,
+                  alignItems: 'center',
+                  minHeight: 50,
+                  padding: '9px 10px',
+                  borderRadius: 8,
+                  border: `1px solid ${checked || isLatest ? statusColor.color : 'var(--border)'}`,
+                  background: checked
+                    ? 'var(--accent-soft)'
+                    : isLatest
+                      ? statusColor.bg
+                      : 'var(--surface)',
+                  cursor: 'pointer',
                 }}
               >
-                {roundLabel(note, index)}
-              </span>
-              <span style={{ minWidth: 0, color: 'var(--text-2)', fontSize: 12 }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                  <strong style={{ color: colors.color }}>{status}</strong>
-                  <span style={{ color: 'var(--text-4)' }}>{formatFullDate(note.testDate)}</span>
-                  {ratingSummary(note) && (
-                    <span style={{ color: 'var(--accent)', fontWeight: 800 }}>
-                      {ratingSummary(note)}
+                {batchMode && (
+                  <span
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: 5,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: `1px solid ${checked ? 'var(--accent)' : 'var(--border-strong)'}`,
+                      fontSize: 12,
+                      fontWeight: 900,
+                      color: 'var(--accent)',
+                    }}
+                  >
+                    {checked ? '✓' : ''}
+                  </span>
+                )}
+                <span
+                  style={{
+                    justifySelf: 'start',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    fontSize: 12,
+                    fontWeight: 900,
+                    color: isLatest ? statusColor.color : 'var(--accent)',
+                  }}
+                >
+                  {roundLabel(note, index)}
+                  {isLatest && (
+                    <span style={{ fontSize: 10, color: 'var(--text-4)' }}>
+                      {representativeInlineLabel}
                     </span>
                   )}
                 </span>
-                <span
-                  style={{
-                    display: 'block',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {highlightText(asText(note.nextAction) || asText(note.testContent), hlRe) ||
-                    '기록 보기'}
+                <span style={{ minWidth: 0, color: 'var(--text-2)', fontSize: 12 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                    <span style={{ color: 'var(--text-4)' }}>{formatFullDate(note.testDate)}</span>
+                    {ratingSummary(note) && (
+                      <span style={{ color: 'var(--accent)', fontWeight: 800 }}>
+                        {ratingSummary(note)}
+                      </span>
+                    )}
+                  </span>
+                  <span
+                    style={{
+                      display: 'block',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {highlightText(asText(note.nextAction) || asText(note.testContent), hlRe) ||
+                      '기록 보기'}
+                  </span>
                 </span>
-              </span>
-            </div>
-          );
-        })}
-      </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <div
         style={{
@@ -395,6 +542,19 @@ export function NoteIdeaGroupCard({
 
         {!batchMode && (
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+            {canUnmergeGroup && (
+              <button
+                className="btn sm xs"
+                type="button"
+                onMouseDown={event => event.stopPropagation()}
+                onClick={event => {
+                  event.stopPropagation();
+                  unmergeGroup(notes.map(note => note.id).filter(id => id != null));
+                }}
+              >
+                묶음 분리
+              </button>
+            )}
             <button
               className="btn sm xs"
               onClick={event => newVersion(latest, event)}

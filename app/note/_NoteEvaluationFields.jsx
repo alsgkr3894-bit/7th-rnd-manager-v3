@@ -30,7 +30,7 @@ export function NoteEvaluationFields({ form, allTags, updateField }) {
           value={form.tags}
           onChange={value => updateField('tags', value)}
           suggestions={allTags}
-          placeholder="예: 소스개선, 재테스트, 시식완료"
+          placeholder="예: 소스개선, 시식완료"
         />
       </Field>
     </div>

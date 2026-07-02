@@ -69,7 +69,7 @@ export function useTodayChecklist({ today, notes, load, canEdit = false }) {
         menuName: '체크리스트',
         category: '기타',
         noteType: '체크리스트',
-        status: '출시예정',
+        status: '보류',
         testDate: today,
         testContent: checklistJournalContent(doneItems),
         reportSummary: `${doneItems.length}개 완료`,

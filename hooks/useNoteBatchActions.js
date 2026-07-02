@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { showToast } from '@/components/Toast';
-import { deleteNote, updateNote } from '@/lib/note';
-import { buildNoteMergePlan } from '@/lib/note/merge';
+import { deleteNote, updateNote, updateNoteChainStatus } from '@/lib/note';
+import { buildNoteDropMergePlan, buildNoteMergePlan, buildNoteUnmergePlan } from '@/lib/note/merge';
 
 export function useNoteBatchActions({ notes = [], setNotes, load, canEdit = false }) {
   const [batchMode, setBatchMode] = useState(false);
   const [selected, setSelected] = useState(new Set());
   const [confirmBatch, setConfirmBatch] = useState(false);
   const [confirmMerge, setConfirmMerge] = useState(false);
+  const [pendingDropMerge, setPendingDropMerge] = useState(null);
+  const [pendingUnmerge, setPendingUnmerge] = useState(null);
 
   function toggleSelect(id) {
     if (!canEdit) return;
@@ -41,9 +43,12 @@ export function useNoteBatchActions({ notes = [], setNotes, load, canEdit = fals
     if (!canEdit || selected.size === 0) return;
     const ids = [...selected];
     try {
-      await Promise.all(ids.map(id => updateNote(id, { status: newStatus })));
-      setNotes(prev => prev.map(n => (ids.includes(n.id) ? { ...n, status: newStatus } : n)));
-      showToast(`${ids.length}개 → ${newStatus}`, 'ok');
+      const changedIds = await Promise.all(ids.map(id => updateNoteChainStatus(id, newStatus)));
+      const changedSet = new Set(changedIds.flat());
+      setNotes(prev =>
+        prev.map(n => (changedSet.has(n.id) ? { ...n, status: newStatus } : n))
+      );
+      showToast(`${changedSet.size}개 차수의 메뉴 상태 → ${newStatus}`, 'ok');
       setSelected(new Set());
       setBatchMode(false);
     } catch (err) {
@@ -106,13 +111,79 @@ export function useNoteBatchActions({ notes = [], setNotes, load, canEdit = fals
       setNotes(prev =>
         prev.map(note => (byId.has(note.id) ? { ...note, ...byId.get(note.id) } : note))
       );
-      showToast(`${plan.selectedCount}개 노트를 "${plan.title}" 차수로 묶었어요`, 'ok');
+      showToast(`${plan.mergedCount || plan.selectedCount}개 노트를 "${plan.title}" 차수로 묶었어요`, 'ok');
       setSelected(new Set());
       setBatchMode(false);
       load();
     } catch (err) {
       console.error('[useNoteBatchActions] confirmBatchMerge', err);
       showToast('차수 묶기 실패', 'error');
+      load();
+    }
+  }
+
+  async function handleDropMerge(sourceIds, targetIds) {
+    if (!canEdit) return;
+    const plan = buildNoteDropMergePlan(notes, sourceIds, targetIds);
+    if (!plan.canMerge) {
+      showToast(plan.reason || '카드를 다시 끌어 넣어주세요', 'warn');
+      return;
+    }
+    setPendingDropMerge(plan);
+  }
+
+  async function confirmDropMerge() {
+    const plan = pendingDropMerge;
+    setPendingDropMerge(null);
+    if (!canEdit || !plan?.canMerge) return;
+    try {
+      for (const change of plan.changes) {
+        await updateNote(change.id, change.patch);
+      }
+      const byId = new Map(plan.changes.map(change => [change.id, change.patch]));
+      setNotes(prev =>
+        prev.map(note => (byId.has(note.id) ? { ...note, ...byId.get(note.id) } : note))
+      );
+      showToast(`${plan.sourceCount}개 차수를 "${plan.title}" 뒤에 넣었어요`, 'ok');
+      setSelected(new Set());
+      setBatchMode(false);
+      load();
+    } catch (err) {
+      console.error('[useNoteBatchActions] handleDropMerge', err);
+      showToast('카드 차수 넣기 실패', 'error');
+      load();
+    }
+  }
+
+  function handleUnmergeGroup(noteIds) {
+    if (!canEdit) return;
+    const plan = buildNoteUnmergePlan(notes, noteIds);
+    if (!plan.canUnmerge) {
+      showToast(plan.reason || '분리할 차수 묶음이 없습니다', 'warn');
+      return;
+    }
+    setPendingUnmerge(plan);
+  }
+
+  async function confirmUnmergeGroup() {
+    const plan = pendingUnmerge;
+    setPendingUnmerge(null);
+    if (!canEdit || !plan?.canUnmerge) return;
+    try {
+      for (const change of plan.changes) {
+        await updateNote(change.id, change.patch);
+      }
+      const byId = new Map(plan.changes.map(change => [change.id, change.patch]));
+      setNotes(prev =>
+        prev.map(note => (byId.has(note.id) ? { ...note, ...byId.get(note.id) } : note))
+      );
+      showToast(`${plan.unmergedCount}개 차수 묶음을 분리했어요`, 'ok');
+      setSelected(new Set());
+      setBatchMode(false);
+      load();
+    } catch (err) {
+      console.error('[useNoteBatchActions] confirmUnmergeGroup', err);
+      showToast('차수 묶음 분리 실패', 'error');
       load();
     }
   }
@@ -126,6 +197,10 @@ export function useNoteBatchActions({ notes = [], setNotes, load, canEdit = fals
     setConfirmBatch,
     confirmMerge,
     setConfirmMerge,
+    pendingDropMerge,
+    setPendingDropMerge,
+    pendingUnmerge,
+    setPendingUnmerge,
     toggleSelect,
     exitBatch,
     handleBatchDelete,
@@ -133,5 +208,9 @@ export function useNoteBatchActions({ notes = [], setNotes, load, canEdit = fals
     handleBatchStatusChange,
     confirmBatchDelete,
     confirmBatchMerge,
+    handleDropMerge,
+    confirmDropMerge,
+    handleUnmergeGroup,
+    confirmUnmergeGroup,
   };
 }

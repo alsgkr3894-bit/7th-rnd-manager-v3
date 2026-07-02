@@ -42,7 +42,7 @@ describe('note evaluation helpers', () => {
         issues: '수분 많음',
         nextAction: '재시식',
         reportSummary: '개선 필요',
-        tags: '치즈, 재테스트',
+        tags: '치즈, 시식완료',
         tempCostCalc: { rows: [{ name: '치즈' }] },
         tasteRating: 4,
         textureRating: 6,
@@ -68,5 +68,28 @@ describe('note evaluation helpers', () => {
     expect(draft.tags).toBeUndefined();
     expect(draft.tempCostCalc).toBeUndefined();
     expect(draft.tasteRating).toBeUndefined();
+  });
+
+  test('previous round draft starts at first round when source has no round', () => {
+    const draft = buildPreviousRoundDraft(
+      { id: 8, title: 'New menu' },
+      { testRound: '1', testDate: '2026-07-02' }
+    );
+
+    expect(draft).toMatchObject({
+      title: 'New menu',
+      testRound: '1',
+      testDate: '2026-07-02',
+      parentId: 8,
+    });
+  });
+
+  test('generated note menu code does not pad sequence with leading zeros', async () => {
+    const { generateNextNoteMenuCode } = await import('../../lib/note/evaluation.js');
+
+    expect(generateNextNoteMenuCode([], { date: '2026-07-02' })).toBe('RND-260702-1');
+    expect(generateNextNoteMenuCode([{ menuCode: 'RND-260702-1' }], { date: '2026-07-02' })).toBe(
+      'RND-260702-2'
+    );
   });
 });

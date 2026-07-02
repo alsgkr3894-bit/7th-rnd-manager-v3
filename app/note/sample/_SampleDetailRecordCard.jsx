@@ -48,7 +48,7 @@ export function SampleDetailRecordCard({ form, allTags, onUpdate, readOnly = fal
             style={{ minHeight: 72, resize: 'vertical' }}
             value={form.nextAction}
             onChange={event => onUpdate('nextAction', event.target.value)}
-            placeholder="재테스트 방향, 일정 등"
+            placeholder="개선 방향, 일정 등"
             disabled={readOnly}
           />
         </Field>

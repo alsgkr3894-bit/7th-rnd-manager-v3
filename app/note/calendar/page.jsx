@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -20,6 +20,8 @@ import { useCalendarNavigation } from './useCalendarNavigation';
 import { useTodayChecklist } from './useTodayChecklist';
 
 /* ── 메인 페이지 ─────────────────────────────────────────── */
+const INITIAL_TODAY_KEY = '2026-01-01';
+
 export default function Page() {
   const router = useRouter();
   const { isAdmin, ready: roleReady } = useCurrentRole();
@@ -42,7 +44,11 @@ export default function Page() {
   const [modal, setModal] = useState(null); // null | { mode: 'add'|'edit', schedule?, date? }
   const [confirmDel, setConfirmDel] = useState(false);
 
-  const today = useMemo(() => todayKey(), []); // 마운트 시 1회 계산 (캐시 함수가 자정에도 갱신)
+  const [today, setToday] = useState(INITIAL_TODAY_KEY);
+
+  useEffect(() => {
+    setToday(todayKey());
+  }, []);
   const {
     todayChecklist,
     checkInput,

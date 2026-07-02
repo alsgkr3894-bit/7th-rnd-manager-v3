@@ -6,6 +6,7 @@ export function SegGroup({ options, value, onChange, disabled = false }) {
           key={o}
           type="button"
           disabled={disabled}
+          aria-pressed={value === o}
           style={{
             padding: '5px 12px',
             borderRadius: 8,
@@ -19,8 +20,12 @@ export function SegGroup({ options, value, onChange, disabled = false }) {
             cursor: disabled ? 'not-allowed' : 'pointer',
             opacity: disabled ? 0.65 : 1,
           }}
-          onClick={() => {
-            if (!disabled) onChange(o);
+          onMouseDown={event => {
+            event.stopPropagation();
+          }}
+          onClick={event => {
+            event.stopPropagation();
+            if (!disabled && value !== o) onChange(o);
           }}
         >
           {o}
@@ -31,9 +36,9 @@ export function SegGroup({ options, value, onChange, disabled = false }) {
 }
 
 export function Field({ label, required, hint, error, children }) {
-  // <label>로 감싸 라벨 텍스트와 내부 입력을 암묵적으로 연결 (스크린리더 접근성)
+  // Segmented buttons live inside Field too, so keep this as a neutral container.
   return (
-    <label style={{ display: 'block', marginBottom: 14 }}>
+    <div style={{ display: 'block', marginBottom: 14 }}>
       <div
         style={{
           fontSize: 12,
@@ -58,6 +63,6 @@ export function Field({ label, required, hint, error, children }) {
       ) : (
         children
       )}
-    </label>
+    </div>
   );
 }
