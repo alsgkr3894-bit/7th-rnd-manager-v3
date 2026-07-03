@@ -36,7 +36,7 @@ beforeEach(() => {
     deltaPct: null,
     sparkline: [],
   });
-  getNoteKpi.mockResolvedValue({ total: 0, reporting: 0 });
+  getNoteKpi.mockResolvedValue({ total: 0 });
   getCostAlertData.mockResolvedValue(null);
 });
 
@@ -59,7 +59,6 @@ describe('briefing stats guards', () => {
     expect(result.chips).toEqual([
       expect.objectContaining({ label: '이번 달 판매량', value: 0, tone: 'muted' }),
       expect.objectContaining({ label: '신규 노트', value: 1, deltaText: '누적 0건' }),
-      expect.objectContaining({ label: '출시예정', value: 0, deltaText: '대기 없음' }),
       expect.objectContaining({ label: '원가율 경보', value: 1, tone: 'down' }),
     ]);
     expect(result.spark).toEqual([]);
@@ -73,7 +72,7 @@ describe('briefing stats guards', () => {
       deltaPct: '5.5',
       sparkline: ['1', 'bad', 2, null],
     });
-    getNoteKpi.mockResolvedValue({ total: '3', reporting: '2' });
+    getNoteKpi.mockResolvedValue({ total: '3' });
     getCostAlertData.mockResolvedValue({
       items: [{ costRate: 41 }, { costRate: '40' }, { costRate: 'bad' }],
     });
@@ -85,7 +84,6 @@ describe('briefing stats guards', () => {
     expect(result.chips).toEqual([
       expect.objectContaining({ label: '이번 달 판매량', value: 120, tone: 'up' }),
       expect.objectContaining({ label: '신규 노트', value: 1, deltaText: '누적 3건' }),
-      expect.objectContaining({ label: '출시예정', value: 2, deltaText: '확인 대기' }),
       expect.objectContaining({ label: '원가율 경보', value: 1, tone: 'down' }),
     ]);
     expect(result.spark).toEqual([1, 0, 2, 0]);

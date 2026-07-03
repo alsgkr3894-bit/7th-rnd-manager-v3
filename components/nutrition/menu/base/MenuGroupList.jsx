@@ -1,7 +1,12 @@
 'use client';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { CRUST_TYPES } from '@/lib/nutrition/values/store';
-import { groupMenusOrdered, normalizeNutritionCategory } from '@/lib/nutrition/menu-group';
+import { SERVING_CRUST_TYPE } from '@/lib/nutrition/crust-config';
+import {
+  groupMenusOrdered,
+  normalizeNutritionCategory,
+  resolveNutritionGroup,
+} from '@/lib/nutrition/menu-group';
 import { asRecord, noop } from '@/lib/nutrition/values/base-helpers';
 
 const GROUP_HEADER_STYLE = {
@@ -33,6 +38,8 @@ export function MenuGroupList({ menus, rawMap, menuMasters, selMenu, onSelect })
             const menuCode = asDisplayText(m.menuCode);
             const menuName = asDisplayText(m.menuName, menuCode || `메뉴 ${index + 1}`);
             const category = normalizeNutritionCategory(asDisplayText(m.category), '피자');
+            const isPizza = resolveNutritionGroup(m, masterByCode) === '피자';
+            const crustSlots = isPizza ? CRUST_TYPES : [SERVING_CRUST_TYPE];
             const selected = selMenu?.id === m.id || (menuCode && selMenu?.menuCode === menuCode);
             return (
               <div
@@ -75,8 +82,10 @@ export function MenuGroupList({ menus, rawMap, menuMasters, selMenu, onSelect })
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 2 }}>
-                  {CRUST_TYPES.map(ct => {
-                    const done = !!safeRawMap[`${menuCode}__${ct}`]?.kcal;
+                  {crustSlots.map(ct => {
+                    const done =
+                      !!safeRawMap[`${menuCode}__${ct}`]?.kcal ||
+                      (ct === SERVING_CRUST_TYPE && !!safeRawMap[`${menuCode}__석쇠L`]?.kcal);
                     return (
                       <span
                         key={ct}

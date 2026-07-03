@@ -49,6 +49,18 @@ describe('nutrition label result structure', () => {
     expect(resultSource).not.toContain('const BEVERAGE_COLS');
   });
 
+  test('nutrition label allergen and origin mapping include derived menu compositions', () => {
+    const mapCalls = [...resultSource.matchAll(/buildIngredientMenuMap\(\{[\s\S]*?\}\)/g)].map(
+      match => match[0]
+    );
+
+    expect(mapCalls.length).toBeGreaterThanOrEqual(2);
+    expect(mapCalls[0]).toContain('edges: []');
+    expect(mapCalls[0]).toContain('compositions');
+    expect(mapCalls[1]).toContain('edges: costEdges');
+    expect(mapCalls[1]).toContain('compositions');
+  });
+
   test('nutrition label controls and tables own presentation details', () => {
     expect(controlsSource).toContain('export const NUTRITION_LABEL_TABS');
     expect(controlsSource).toContain('export function NutritionLabelTabs');
@@ -83,6 +95,8 @@ describe('nutrition label result structure', () => {
     expect(simpleTableSource).toContain('NutritionLabelColumnHeader');
     expect(setHalfTableSource).toContain('export function SetHalfNutritionTable');
     expect(setHalfTableSource).toContain('영양성분표 (세트박스·하프앤하프)');
+    expect(setHalfTableSource).toContain('입력 총중량 기준');
+    expect(setHalfTableSource).not.toContain('150g 기준');
     expect(tablePrimitivesSource).toContain('export function NutritionValueText');
     expect(tablePrimitivesSource).toContain('export function NutritionLabelEmpty');
     expect(tablePrimitivesSource).toContain('export function GroupedMenuNameCell');

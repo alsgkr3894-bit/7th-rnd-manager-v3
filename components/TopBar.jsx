@@ -17,7 +17,6 @@ export default function TopBar({
   companies = [],
   onCompanyChange,
   unmatchedCount = 0,
-  reportingCount = 0,
   canEdit = false,
 }) {
   const [notifOpen, setNotifOpen] = useState(false);
@@ -86,17 +85,6 @@ export default function TopBar({
             time: '지금',
             desc: '메뉴 판매량 → 미매칭 관리에서 별칭/규칙/제외로 처리할 수 있어요',
             href: '/menu-sales/unmatched',
-          },
-        ]
-      : []),
-    ...(reportingCount > 0
-      ? [
-          {
-            kind: 'note',
-            title: `출시예정 노트 ${reportingCount}건`,
-            time: '미보고',
-            desc: '메뉴개발노트 → 출시예정 탭에서 확인하세요',
-            href: '/note?status=출시예정',
           },
         ]
       : []),

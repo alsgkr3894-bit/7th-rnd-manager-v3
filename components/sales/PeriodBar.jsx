@@ -1,5 +1,4 @@
 'use client';
-import { formatPeriodKor } from '@/lib/format';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 const MODE_TABS = [
@@ -25,6 +24,7 @@ export function PeriodBar({
   const safePeriods = asObjectArray(availablePeriods).filter(isValidPeriod);
   const handleModeChange = typeof onModeChange === 'function' ? onModeChange : () => {};
   const handleCustomChange = typeof onCustomChange === 'function' ? onCustomChange : () => {};
+  const selectedMonthLabel = formatPeriodCompact(periodA);
 
   return (
     <div className="period-bar">
@@ -39,6 +39,11 @@ export function PeriodBar({
             {t.label}
           </button>
         ))}
+      </div>
+
+      <div className="period-selected-month">
+        <span>선택한 월</span>
+        <strong>{selectedMonthLabel}</strong>
       </div>
 
       {/* 기간 표시 */}
@@ -94,7 +99,7 @@ function PeriodSlot({ badge, badgeColor, label, period, editable, options, onCha
         <PeriodSelect value={period} options={options} onChange={onChange} />
       ) : (
         <div className="period-slot-val">
-          {formatPeriodKor(period)}
+          {formatPeriodCompact(period)}
           {safeHint && <span className="period-slot-hint">{safeHint}</span>}
         </div>
       )}
@@ -122,12 +127,12 @@ function PeriodSelect({ value, options, onChange }) {
         <option value="">-</option>
       ) : (
         !safeOptions.find(o => periodKey(o) === key) && (
-          <option value={key}>{formatPeriodKor(value)}</option>
+          <option value={key}>{formatPeriodCompact(value)}</option>
         )
       )}
       {safeOptions.map(o => (
         <option key={periodKey(o)} value={periodKey(o)}>
-          {formatPeriodKor(o)}
+          {formatPeriodCompact(o)}
         </option>
       ))}
     </select>
@@ -152,4 +157,9 @@ function isValidPeriod(period) {
 
 function periodKey(period) {
   return `${Number(period.year)}-${Number(period.month)}`;
+}
+
+function formatPeriodCompact(period) {
+  if (!isValidPeriod(period)) return '-';
+  return `${Number(period.year)}년${String(Number(period.month)).padStart(2, '0')}월`;
 }

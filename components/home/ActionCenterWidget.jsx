@@ -11,7 +11,6 @@ import { ActionCenterPanel } from '@/components/action-center/ActionCenterPanel'
  */
 export function ActionCenterWidget({
   unmatchedCount = 0,
-  reportingCount = 0,
   uploadFreshness,
   backupReminder,
   ingredientHealth,
@@ -26,7 +25,6 @@ export function ActionCenterWidget({
     () =>
       buildAllActions({
         unmatchedCount,
-        reportingCount,
         uploadFreshness: isMain ? uploadFreshness : { ...uploadFreshness, shipment: null },
         backupReminder,
         ingredientHealth,
@@ -35,7 +33,6 @@ export function ActionCenterWidget({
       }),
     [
       unmatchedCount,
-      reportingCount,
       uploadFreshness,
       backupReminder,
       ingredientHealth,

@@ -1,0 +1,158 @@
+{
+  "generatedAt": "2026-07-02T03:41:47.155Z",
+  "base": "http://127.0.0.1:3000",
+  "counts": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0
+  },
+  "scenarios": [
+    {
+      "name": "노트 UI 입력 -> 저장 -> 목록/상세 재표시",
+      "steps": [
+        {
+          "label": "노트 작성 화면에 입력값 저장",
+          "ok": true
+        },
+        {
+          "label": "목록에서 방금 저장한 제목 표시",
+          "ok": true
+        },
+        {
+          "label": "IndexedDB에 제목/본문 값 저장 확인",
+          "ok": true
+        },
+        {
+          "label": "상세 페이지 재진입 후 제목/본문 표시",
+          "ok": true
+        },
+        {
+          "label": "노트 테스트 데이터 정리",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "name": "일정 UI 입력 -> 저장 -> 캘린더/DB 재표시",
+      "steps": [
+        {
+          "label": "일정 추가 모달에서 제목/메모 저장",
+          "ok": true
+        },
+        {
+          "label": "캘린더 화면에 저장한 일정 제목 표시",
+          "ok": true
+        },
+        {
+          "label": "IndexedDB에 일정 제목/메모 저장 확인",
+          "ok": true
+        },
+        {
+          "label": "일정 테스트 데이터 정리",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "name": "메뉴마스터 UI 입력 -> 저장 -> 목록/DB 재표시",
+      "steps": [
+        {
+          "label": "메뉴마스터 모달에서 코드/메뉴명 저장",
+          "ok": true
+        },
+        {
+          "label": "목록에 저장한 메뉴명 표시",
+          "ok": true
+        },
+        {
+          "label": "IndexedDB menu_master 값 확인",
+          "ok": true
+        },
+        {
+          "label": "메뉴마스터 테스트 데이터 정리",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "name": "식자재 UI 입력 -> 저장 -> 목록/DB 재표시",
+      "steps": [
+        {
+          "label": "식자재 추가 모달에서 재료명 저장",
+          "ok": true
+        },
+        {
+          "label": "식자재 목록에 저장한 재료명 표시",
+          "ok": true
+        },
+        {
+          "label": "IndexedDB cost_ingredients 값 확인",
+          "ok": true
+        },
+        {
+          "label": "식자재 테스트 데이터 정리",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "name": "레시피 구성품 UI 저장 -> 재진입/DB 재표시",
+      "steps": [
+        {
+          "label": "레시피용 메뉴/식자재 시드 삽입",
+          "ok": true
+        },
+        {
+          "label": "메뉴 편집 모달에서 구성품 추가/수량 저장",
+          "ok": true
+        },
+        {
+          "label": "메뉴 재진입 후 구성품 이름/수량 표시",
+          "ok": true
+        },
+        {
+          "label": "IndexedDB menu_recipes 구성품 저장 확인",
+          "ok": true
+        },
+        {
+          "label": "레시피 테스트 데이터 정리",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "name": "영양성분 UI 입력 -> 저장 -> 재진입/DB 재표시",
+      "steps": [
+        {
+          "label": "영양성분용 메뉴마스터 시드 삽입",
+          "ok": true
+        },
+        {
+          "label": "영양성분 메뉴 목록에 메뉴 추가",
+          "ok": true
+        },
+        {
+          "label": "영양 수치 입력 후 저장",
+          "ok": true
+        },
+        {
+          "label": "재진입 후 입력한 영양 수치 표시",
+          "ok": true
+        },
+        {
+          "label": "IndexedDB nutrition_raw_values/menu_ref 값 확인",
+          "ok": true
+        },
+        {
+          "label": "영양성분 테스트 데이터 정리",
+          "ok": true
+        }
+      ]
+    }
+  ],
+  "browserIssues": {
+    "pageErrors": [],
+    "consoleErrors": [],
+    "httpErrors": []
+  }
+}

@@ -188,7 +188,7 @@ describe('nutrition allergen page structure', () => {
     expect(detailUtilsSource).toContain('export function buildAllergenDetailRows');
     expect(detailUtilsSource).toContain('export function buildAllergenSummaryCounts');
     expect(detailUtilsSource).toContain('buildDetailRows(');
-    expect(detailUtilsSource).toContain('normStr');
+    expect(detailUtilsSource).toContain('buildIngredientLookup');
     expect(detailUtilsSource).toContain('asObjectArray(ingredients)');
   });
 
@@ -219,6 +219,8 @@ describe('nutrition allergen page structure', () => {
     expect(sourceHookSource).toContain('export function useAllergenSourceData');
     expect(sourceHookSource).toContain('getAllIngredients');
     expect(sourceHookSource).toContain('getAllMenuMaster');
+    expect(sourceHookSource).toContain('getAllMenuRefs');
+    expect(sourceHookSource).toContain('combineAllergenMenuSources');
     expect(sourceHookSource).toContain('loadMenuRecipeArrays');
     expect(sourceHookSource).toContain('tagDetailRecipes');
     expect(sourceHookSource).toContain('buildIngredientMenuMap');

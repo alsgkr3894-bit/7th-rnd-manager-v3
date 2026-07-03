@@ -1,10 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getSetting, SETTING_CHANGED_EVENT, settingStorageKey } from '@/lib/settings';
+import {
+  getSetting,
+  getSettingDefault,
+  SETTING_CHANGED_EVENT,
+  settingStorageKey,
+} from '@/lib/settings';
 
 export function useSettingValue(key) {
-  const [value, setValue] = useState(() => getSetting(key));
+  const [value, setValue] = useState(() => getSettingDefault(key));
 
   useEffect(() => {
     const sync = () => setValue(getSetting(key));

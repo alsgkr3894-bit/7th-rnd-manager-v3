@@ -38,8 +38,7 @@ const CAT_META = {
 const DRAFT_KEY = 'report_draft_cost';
 
 // ── 메인 컴포넌트 ──────────────────────────────────────────────
-const NOW = new Date();
-const PERIOD_LABEL = `${NOW.getFullYear()}년 ${NOW.getMonth() + 1}월`;
+const PERIOD_LABEL = '현재 원가 기준';
 
 export default function Page() {
   const [riskThreshold, setRiskThreshold] = useState(35);

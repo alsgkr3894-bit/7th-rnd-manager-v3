@@ -21,7 +21,7 @@ import {
 } from '@/lib/stats';
 import { getIssues } from '@/lib/sales';
 import { getIngredientHealthSummary } from '@/lib/ingredient';
-import { getAllNotesCached, normalizeNoteStatus } from '@/lib/note';
+import { getAllNotesCached } from '@/lib/note';
 import { getAllSamples } from '@/lib/sample';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { getUploadFreshness } from '@/lib/stats/upload-status';
@@ -45,7 +45,6 @@ export function useHomeDashboardData({ chartTab }) {
   const [top, setTop] = useState([]);
   const [bottom, setBottom] = useState([]);
   const [activities, setActivities] = useState([]);
-  const [reportingNotes, setReportingNotes] = useState([]);
   const [allNotes, setAllNotes] = useState([]);
   const [recentSamples, setRecentSamples] = useState([]);
   const [costAlertData, setCostAlertData] = useState(null);
@@ -99,7 +98,6 @@ export function useHomeDashboardData({ chartTab }) {
 
         if (an) {
           setAllNotes(an);
-          setReportingNotes(an.filter(x => normalizeNoteStatus(x.status) === '출시예정'));
         }
         if (sm) setRecentSamples(sm);
         if (ca) setCostAlertData(ca);
@@ -251,7 +249,6 @@ export function useHomeDashboardData({ chartTab }) {
     bottom,
     activities,
     setActivities,
-    reportingNotes,
     allNotes,
     recentSamples,
     costAlertData,

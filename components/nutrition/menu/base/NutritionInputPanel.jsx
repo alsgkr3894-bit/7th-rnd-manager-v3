@@ -1,7 +1,9 @@
 'use client';
+import { useEffect, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
 import { CRUST_TYPES, CRUST_DISPLAY_NAMES } from '@/lib/nutrition/values/store';
+import { SERVING_CRUST_TYPE } from '@/lib/nutrition/crust-config';
 import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
 
 /**
@@ -22,6 +24,13 @@ export function NutritionInputPanel({
   onDeleteMenu,
   readOnly = false,
 }) {
+  const isPizza = selMenu ? resolveNutritionGroup(selMenu, masterByCode) === '피자' : true;
+  const crustOptions = useMemo(() => (isPizza ? CRUST_TYPES : [SERVING_CRUST_TYPE]), [isPizza]);
+
+  useEffect(() => {
+    if (selMenu && !crustOptions.includes(selCrust)) setSelCrust(crustOptions[0]);
+  }, [crustOptions, selCrust, selMenu, setSelCrust]);
+
   if (!selMenu) {
     return (
       <div className="card" style={{ display: 'grid', placeItems: 'center', minHeight: 200 }}>
@@ -63,10 +72,14 @@ export function NutritionInputPanel({
       </div>
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
-        {CRUST_TYPES.map(ct => {
+        {crustOptions.map(ct => {
           const key = `${selMenu.menuCode}__${ct}`;
-          const done = !!safeRawMap[key]?.kcal;
-          const cert = !!safeRawMap[key]?.certLinked;
+          const done =
+            !!safeRawMap[key]?.kcal ||
+            (ct === SERVING_CRUST_TYPE && !!safeRawMap[`${selMenu.menuCode}__석쇠L`]?.kcal);
+          const cert =
+            !!safeRawMap[key]?.certLinked ||
+            (ct === SERVING_CRUST_TYPE && !!safeRawMap[`${selMenu.menuCode}__석쇠L`]?.certLinked);
           return (
             <button
               key={ct}
@@ -130,7 +143,7 @@ export function NutritionInputPanel({
         }}
       >
         ※ 영양성분 수치는 <strong>100g 기준</strong>으로 입력하세요.
-        {resolveNutritionGroup(selMenu, masterByCode) === '피자' && (
+        {isPizza && (
           <>
             {' '}
             · <strong>중량</strong>은 이 크러스트의 <strong>한판 총중량(g)</strong>을 입력하면
@@ -172,7 +185,7 @@ export function NutritionInputPanel({
         }}
       >
         <button className="btn primary" onClick={onSave} disabled={saving || readOnly}>
-          {saving ? '저장 중…' : `${selectedMenuName} ${selCrust} 저장`}
+          {saving ? '저장 중…' : `${selectedMenuName} ${CRUST_DISPLAY_NAMES[selCrust] || selCrust} 저장`}
         </button>
       </div>
     </div>

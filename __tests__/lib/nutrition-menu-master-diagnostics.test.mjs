@@ -31,4 +31,32 @@ describe('nutrition menu master diagnostics', () => {
       orphanMenuRefs: [],
     });
   });
+
+  test('영양 메뉴의 베이스 코드가 메뉴마스터 L/R 사이즈 코드와 연결되면 orphan으로 보지 않는다', () => {
+    expect(
+      buildNutritionMenuMasterDiagnostics({
+        menuRefs: [{ id: 1, menuCode: 'P-PS-001', menuName: '샘스테이크 피자 L' }],
+        menuMasters: [
+          {
+            id: 10,
+            menuCode: 'P-PS-001-L',
+            menuName: '샘스테이크 피자',
+            category: '피자',
+            size: 'L',
+          },
+          {
+            id: 11,
+            menuCode: 'P-PS-001-R',
+            menuName: '샘스테이크 피자',
+            category: '피자',
+            size: 'R',
+          },
+        ],
+      })
+    ).toEqual({
+      hasOrphans: false,
+      orphanCount: 0,
+      orphanMenuRefs: [],
+    });
+  });
 });

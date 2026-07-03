@@ -16,6 +16,7 @@ import {
   buildMenuListForOrder,
   buildMenuNameEditMenus,
 } from '@/app/nutrition/allergen/allergenPageOutputUtils';
+import { combineAllergenMenuSources } from '@/app/nutrition/allergen/allergenPageSourceUtils';
 
 describe('allergen page data utils', () => {
   const ingredients = [
@@ -112,6 +113,24 @@ describe('allergen page data utils', () => {
 
     expect(map.get('code:MILK')?.ingredientName).toBe('모짜렐라치즈');
     expect(map.get('name:모짜렐라치즈')?.productCode).toBe('MILK');
+  });
+
+  test('allergen menu sources include nutrition menu refs without overwriting menu master data', () => {
+    const rows = combineAllergenMenuSources(
+      [{ menuCode: 'P-PS-001-L', menuName: '마스터 피자 L', category: '피자/프리미엄', size: 'L' }],
+      [
+        { menuCode: 'P-PS-001', menuName: '출력 피자', category: '피자' },
+        { menuCode: 'P-PS-001-L', menuName: '출력 피자 L', category: '피자' },
+        { menuCode: 'S-001', menuName: '사이드 출력', category: '사이드' },
+      ]
+    );
+
+    expect(rows.map(row => row.menuCode)).toEqual(['P-PS-001-L', 'P-PS-001', 'S-001']);
+    expect(rows.find(row => row.menuCode === 'P-PS-001-L')).toMatchObject({
+      menuName: '마스터 피자 L',
+      category: '피자/프리미엄',
+      size: 'L',
+    });
   });
 
   test('detail and summary helpers build modal rows and stat counts', () => {

@@ -123,25 +123,55 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
       '세트박스·하프앤하프',
       '음료',
     ]);
-    expect(rowsOf(workbook, '피자')[1]).toEqual([
-      '메뉴명',
+    expect(rowsOf(workbook, '피자')[0]).toEqual([
+      'Pizza',
       '크러스트',
-      '사이드',
       '1회중량(g)',
+      '',
       '열량(kcal)',
+      '',
       '당류(g)',
+      '',
       '단백질(g)',
-      '조지방(g)',
+      '',
+      '포화지방(g)',
+      '',
       '나트륨(mg)',
-      '함유알레르기',
+      '',
+      '함유된 알레르기 유발물질',
     ]);
-    expect(rowsOf(workbook, '음료')[1][1]).toBe('용량(ml)');
+    expect(rowsOf(workbook, '피자')[1]).toEqual([
+      '',
+      '',
+      'L',
+      'R',
+      'L',
+      'R',
+      'L',
+      'R',
+      'L',
+      'R',
+      'L',
+      'R',
+      'L',
+      'R',
+      '',
+    ]);
+    expect(rowsOf(workbook, '음료')[0][1]).toBe('총량(ml)');
+    expect(rowsOf(workbook, '세트박스·하프앤하프')[0]).toEqual([
+      '메뉴명',
+      '사이즈',
+      '1회 중량(g)',
+      '최소 열량(kcal)',
+      '최대 열량(kcal)',
+      '함유된 알레르기 유발물질',
+    ]);
     expect(workbook.Sheets['피자'].A3).toMatchObject({ t: 's', v: '=피자' });
     expect(workbook.Sheets['피자'].A3.f).toBeUndefined();
 
     const diskWorkbook = savedWorkbook();
     expect(diskWorkbook.SheetNames).toEqual(workbook.SheetNames);
-    expect(rowsOf(diskWorkbook, '음료')[1][1]).toBe('용량(ml)');
+    expect(rowsOf(diskWorkbook, '음료')[0][1]).toBe('총량(ml)');
     expect(diskWorkbook.Sheets['피자'].A3.f).toBeUndefined();
   });
 
@@ -193,6 +223,8 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
           totalCost: 1200,
           components: [
             {
+              sourceType: 'direct',
+              sourceLabel: '직접 입력',
               ingredientName: '치즈',
               productCode: 'ING-CHEESE',
               quantity: 10,
@@ -216,6 +248,7 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
       'P-001',
       '위험원가',
       'L',
+      '직접 입력',
       '치즈',
       'ING-CHEESE',
       10,
@@ -228,7 +261,71 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
 
     const diskWorkbook = savedWorkbook();
     expect(diskWorkbook.SheetNames).toEqual(workbook.SheetNames);
-    expect(rowsOf(diskWorkbook, '레시피 출력')[1][4]).toBe('치즈');
+    expect(rowsOf(diskWorkbook, '레시피 출력')[1][5]).toBe('치즈');
+  });
+
+  test('원가 보고서 XLSX 메뉴 상세는 피자 L/R을 메뉴 한 줄로 출력한다', async () => {
+    await exportCostXlsx(
+      '2026년 6월',
+      [
+        [
+          'pizza',
+          {
+            label: '피자',
+            menus: [
+              {
+                code: 'P-OR-010-L',
+                name: '샘스테이크 피자 L',
+                category: '피자/오리지널',
+                size: 'L',
+                sale: 32500,
+                cost: 10196,
+                rate: 31.4,
+              },
+              {
+                code: 'P-OR-010-R',
+                name: '샘스테이크 피자 R',
+                category: '피자/오리지널',
+                size: 'R',
+                sale: 25900,
+                cost: 7286,
+                rate: 28.1,
+              },
+            ],
+          },
+        ],
+      ],
+      [],
+      35
+    );
+
+    const { workbook } = lastWrite();
+    expect(rowsOf(workbook, '메뉴 상세')[0]).toEqual([
+      '카테고리',
+      '메뉴명',
+      'L판매가(원)',
+      'L원가(원)',
+      'L원가율(%)',
+      'R판매가(원)',
+      'R원가(원)',
+      'R원가율(%)',
+      '단일판매가(원)',
+      '단일원가(원)',
+      '단일원가율(%)',
+    ]);
+    expect(rowsOf(workbook, '메뉴 상세')[1]).toEqual([
+      '피자',
+      '샘스테이크 피자',
+      32500,
+      10196,
+      31.4,
+      25900,
+      7286,
+      28.1,
+      '',
+      '',
+      '',
+    ]);
   });
 
   test('보고서 목록 XLSX는 실제 workbook으로 저장되고 문자열 수식 셀을 만들지 않는다', async () => {

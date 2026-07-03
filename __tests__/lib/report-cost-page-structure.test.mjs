@@ -4,6 +4,7 @@ import { resolve } from 'path';
 const pageSource = readFileSync(resolve('app/report/cost/page.jsx'), 'utf8');
 const optionsSource = readFileSync(resolve('components/report/cost/CostReportOptions.jsx'), 'utf8');
 const previewSource = readFileSync(resolve('components/report/cost/CostReportPreview.jsx'), 'utf8');
+const costTableSource = readFileSync(resolve('components/report/cost/CostTableView.jsx'), 'utf8');
 const reportViewSource = readFileSync(resolve('components/report/cost/CostReportView.jsx'), 'utf8');
 const summaryStatsSource = readFileSync(
   resolve('components/report/cost/report-view/CostReportSummaryStats.jsx'),
@@ -48,6 +49,11 @@ describe('cost report page structure', () => {
     expect(previewSource).toContain('<CostReportView');
     expect(previewSource).toContain('<CostTableView');
     expect(previewSource).toContain('<RecipePrintView');
+
+    expect(costTableSource).toContain('cost-table-menu-row');
+    expect(costTableSource).toContain('menuRowStyle');
+    expect(costTableSource).toContain('구분');
+    expect(costTableSource).toContain('메뉴 {index + 1}');
 
     expect(reportViewSource).toContain('export function CostReportView');
     expect(reportViewSource).toContain('<CostReportSummaryStats');

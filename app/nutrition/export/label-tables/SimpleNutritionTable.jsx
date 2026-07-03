@@ -1,5 +1,6 @@
 import { LABEL_COLS } from '@/lib/nutrition/label/build';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { displayNutritionMenuName } from '@/lib/nutrition/label/poster';
 import {
   COL_STYLE,
   HEADER_STYLE,
@@ -32,7 +33,7 @@ export function SimpleNutritionTable({ title, rows, cols = LABEL_COLS }) {
           {safeRows.map((row, index) => (
             <tr key={row.menuCode || row.menuName || index}>
               <td style={{ padding: '6px 8px', fontWeight: 600, fontSize: 13 }}>
-                {asDisplayText(row.menuName, `메뉴 ${index + 1}`)}
+                {displayNutritionMenuName(row.menuName, `메뉴 ${index + 1}`)}
               </td>
               {safeCols.map(column => (
                 <td key={column.key} style={COL_STYLE}>

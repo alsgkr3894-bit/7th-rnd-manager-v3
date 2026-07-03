@@ -18,7 +18,15 @@ export function EdgeCard({ edge, canEdit = true, onEdit, onDelete }) {
   return (
     <div
       className="card"
-      style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 }}
+      style={{
+        padding: '14px 18px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+        flexWrap: 'wrap',
+        minWidth: 0,
+        width: '100%',
+      }}
     >
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -88,7 +96,7 @@ export function EdgeCard({ edge, canEdit = true, onEdit, onDelete }) {
         </div>
       </div>
 
-      <div style={{ textAlign: 'right', minWidth: 120 }}>
+      <div style={{ textAlign: 'right', minWidth: 96 }}>
         <div style={{ fontSize: 11, color: 'var(--text-3)' }}>총 원가</div>
         <div
           style={{
@@ -109,7 +117,7 @@ export function EdgeCard({ edge, canEdit = true, onEdit, onDelete }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 4 }}>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
         <button className="btn sm" onClick={onEdit} disabled={!canEdit}>
           <Icon.edit style={{ width: 13, height: 13 }} /> 편집
         </button>

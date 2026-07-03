@@ -6,7 +6,7 @@ import { getJSONLS, setJSONLS } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
-const TAG_LABEL = { report: '출시예정', due: '마감임박' };
+const TAG_LABEL = { due: '마감임박' };
 const LEAVE_MS = 240;
 
 function normalizeDoneIds(value) {
@@ -15,7 +15,7 @@ function normalizeDoneIds(value) {
 }
 
 /**
- * 오늘 할 일 — 출시예정 노트 + 마감 임박 일정.
+ * 오늘 할 일 — 마감 임박 일정.
  * 완료 상태는 localStorage(HOME_TODO_DONE)에 영속. 완료 시 실행취소 토스트 제공.
  *
  * @param {{ todos: Array, router }} props
@@ -45,7 +45,6 @@ export function TodoWidget({ todos = [], router }) {
   const counts = useMemo(
     () => ({
       all: pending.length,
-      report: pending.filter(t => t.f === 'report').length,
       due: pending.filter(t => t.f === 'due').length,
     }),
     [pending]
@@ -77,13 +76,13 @@ export function TodoWidget({ todos = [], router }) {
     <div className="card">
       <div className="card-header">
         <div>
-          <div className="card-title">오늘 할 일 · 출시예정</div>
-          <div className="card-sub">출시예정 노트 · 마감 임박 일정</div>
+          <div className="card-title">오늘 할 일</div>
+          <div className="card-sub">마감 임박 일정</div>
         </div>
         <div className="seg">
-          {['all', 'report', 'due'].map(f => (
+          {['all', 'due'].map(f => (
             <button key={f} className={filter === f ? 'active' : ''} onClick={() => setFilter(f)}>
-              {f === 'all' ? '전체' : f === 'report' ? '보고' : '마감'} {counts[f]}
+              {f === 'all' ? '전체' : '마감'} {counts[f]}
             </button>
           ))}
         </div>

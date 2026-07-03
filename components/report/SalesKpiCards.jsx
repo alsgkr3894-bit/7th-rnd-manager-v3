@@ -11,11 +11,13 @@ import { asObjectArray } from '@/lib/ui/prop-guards';
  * kpi         — { current, previous, deltaPct } | null
  * catShares   — array used to derive category count
  * groupRanking — array used to derive total menu count
+ * showRevenue — true면 매출액 KPI를 함께 표시
  */
-export default function SalesKpiCards({ kpi, catShares, groupRanking }) {
+export default function SalesKpiCards({ kpi, catShares, groupRanking, showRevenue = false }) {
   const safeCatShares = asObjectArray(catShares);
   const safeGroupRanking = asObjectArray(groupRanking);
   const current = Number.isFinite(Number(kpi?.current)) ? Number(kpi.current) : null;
+  const revenue = Number.isFinite(Number(kpi?.revenue)) ? Number(kpi.revenue) : null;
   const deltaPct =
     kpi?.deltaPct == null
       ? null
@@ -32,6 +34,15 @@ export default function SalesKpiCards({ kpi, catShares, groupRanking }) {
           <span className="unit">건</span>
         </div>
       </div>
+      {showRevenue && (
+        <div className="paper-stat">
+          <div className="paper-stat-label">총 매출액</div>
+          <div className="paper-stat-val num">
+            {revenue != null ? formatNumber(revenue) : '—'}
+            <span className="unit">원</span>
+          </div>
+        </div>
+      )}
       <div className="paper-stat">
         <div className="paper-stat-label">전월 대비</div>
         <div

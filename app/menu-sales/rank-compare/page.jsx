@@ -28,7 +28,6 @@ const CompareView = dynamic(
   { ssr: false, loading: () => _loadingFallback }
 );
 import { useRankCompareData } from '@/lib/sales/use-rank-compare-data';
-import { useAvgCostRate } from '@/lib/sales/use-avg-cost-rate';
 import { formatShareText } from '@/lib/sales/share-formatter';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 import { copyText } from '@/lib/ui/clipboard';
@@ -58,7 +57,6 @@ export default function Page() {
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const canEdit = roleReady && isAdmin;
   const { ready, rows, available } = useRankCompareData();
-  const avgCostRate = useAvgCostRate();
 
   const [mode, setMode] = useState('single'); // single | mom | yoy | custom
   const [periodA, setPeriodA] = useState(null);
@@ -211,7 +209,6 @@ export default function Page() {
               categories={singleCategories}
               category={selectedSingleCategory}
               onCategoryChange={setSingleCategory}
-              avgCostRate={avgCostRate}
             />
           ) : (
             <CompareView

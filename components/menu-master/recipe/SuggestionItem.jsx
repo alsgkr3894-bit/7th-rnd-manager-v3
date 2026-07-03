@@ -12,13 +12,13 @@ export function SuggestionItem({ ingredient, unitPriceMap, isActive, onPick }) {
       aria-selected={isActive}
       onMouseDown={onPick}
       style={{
-        padding: '6px 10px',
+        padding: '8px 10px',
         cursor: 'pointer',
-        fontSize: 12,
+        fontSize: 13,
         background: isActive ? 'var(--accent-soft)' : undefined,
       }}
     >
-      {ingredient.ingredientName}
+      <span style={{ fontWeight: 700 }}>{ingredient.ingredientName}</span>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 1 }}>
         {ingredient.productCode && (
           <span style={{ color: 'var(--text-4)', fontSize: 11 }}>{ingredient.productCode}</span>

@@ -1,12 +1,4 @@
 import { useState, useEffect } from 'react';
-import { normalizeNoteStatus } from '@/lib/note/constants';
-
-export function countReportingNotes(notes) {
-  if (!Array.isArray(notes)) return 0;
-  return notes.filter(
-    n => n && typeof n === 'object' && normalizeNoteStatus(n.status) === '출시예정'
-  ).length;
-}
 
 /**
  * 사이드바/탑바 배지에 필요한 카운트를 pathname 변경 시마다 로드.
@@ -16,11 +8,10 @@ export function countReportingNotes(notes) {
  *   - silent catch → 에러 로깅(배지가 0일 때 "데이터 없음" vs "실패" 구분 가능)
  *   - unmount 후 상태 업데이트 방지(alive guard)
  *
- * @returns {{ unmatchedCount: number, reportingCount: number }}
+ * @returns {{ unmatchedCount: number }}
  */
 export function usePageStats(pathname) {
   const [unmatchedCount, setUnmatchedCount] = useState(0);
-  const [reportingCount, setReportingCount] = useState(0);
   const [tick, setTick] = useState(0);
 
   // 탭이 다시 보일 때(다른 탭에서 업로드·노트 변경 후 돌아올 때) 카운트 갱신
@@ -38,18 +29,11 @@ export function usePageStats(pathname) {
       try {
         const { initDB } = await import('@/lib/db');
         await initDB();
-        const [{ getIssues }, { getReportingNoteCount }] = await Promise.all([
-          import('@/lib/sales'),
-          import('@/lib/note'),
-        ]);
-        const [issues, count] = await Promise.all([
-          getIssues({ status: 'open' }),
-          getReportingNoteCount(),
-        ]);
+        const { getIssues } = await import('@/lib/sales');
+        const issues = await getIssues({ status: 'open' });
         if (!alive) return;
         const issueList = Array.isArray(issues) ? issues : [];
         setUnmatchedCount(issueList.length);
-        setReportingCount(typeof count === 'number' ? count : 0);
       } catch (e) {
         if (alive) console.warn('[usePageStats] 배지 로드 실패', e);
       }
@@ -59,5 +43,5 @@ export function usePageStats(pathname) {
     };
   }, [pathname, tick]);
 
-  return { unmatchedCount, reportingCount };
+  return { unmatchedCount };
 }

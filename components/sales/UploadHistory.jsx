@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Icon } from '@/components/icons';
 import { formatNumber, formatRelative } from '@/lib/format';
+import { safeRevenue } from '@/lib/sales/revenue';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
@@ -62,6 +63,7 @@ export function UploadHistory({ files, onDelete, canEdit = false }) {
               <th style={{ width: 110 }}>적용 년월</th>
               <th>파일명 / 업로드 시각</th>
               <th style={{ width: 120, textAlign: 'right' }}>처리 건수</th>
+              <th style={{ width: 130, textAlign: 'right' }}>매출액</th>
               <th style={{ width: 160 }}></th>
             </tr>
           </thead>
@@ -114,6 +116,10 @@ export function UploadHistory({ files, onDelete, canEdit = false }) {
                         {f.issueGroupCount}그룹 미매칭
                       </span>
                     )}
+                  </td>
+                  <td className="num right">
+                    {formatNumber(safeRevenue(f.totalRevenue))}
+                    <span className="unit">원</span>
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     {isConfirming ? (

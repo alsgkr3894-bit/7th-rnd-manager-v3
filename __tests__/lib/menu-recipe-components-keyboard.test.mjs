@@ -24,6 +24,7 @@ const editorHookSrc = readFileSync(
 // 테이블은 행/셀 컴포넌트(recipe/*)로 분리됨 — 배선 문구는 모듈 그룹 전체에서 검사한다.
 const tableSrc = [
   readFileSync(resolve('components/menu-master/MenuRecipeComponentsTable.jsx'), 'utf8'),
+  readFileSync(resolve('components/menu-master/MenuRecipeSectionHeader.jsx'), 'utf8'),
   readFileSync(resolve('components/menu-master/recipe/MenuRecipeTableRow.jsx'), 'utf8'),
   readFileSync(resolve('components/menu-master/recipe/SuggestionItem.jsx'), 'utf8'),
   readFileSync(resolve('components/menu-master/recipe/UnitPriceCell.jsx'), 'utf8'),
@@ -84,6 +85,53 @@ describe('MenuRecipeSection — 수량 Enter 연속 입력', () => {
   test('+ 구성품 추가 버튼도 pending focus를 설정한다', () => {
     expect(sectionSrc).toContain('pendingFocusNewRowRef.current = true');
     expect(sectionSrc).toContain('구성품 추가');
+  });
+});
+
+describe('MenuRecipeSection — 식자재 빠른 추가 패널', () => {
+  test('빠른 추가 검색과 후보 선택 상태를 가진다', () => {
+    expect(sectionSrc).toContain('식자재 빠른 추가');
+    expect(sectionSrc).toContain('quickAddQ');
+    expect(sectionSrc).toContain('quickAddQty');
+    expect(sectionSrc).toContain('quickAddSuggestions');
+    expect(sectionSrc).toContain('quickAddActiveIdx');
+  });
+
+  test('빠른 추가 선택은 새 구성품 row를 만들고 수량 입력으로 focus한다', () => {
+    expect(sectionSrc).toContain('pickQuickIngredient');
+    expect(sectionSrc).toContain('createBlankRecipeComponentRow');
+    expect(sectionSrc).toContain('applyIngredientSuggestionToComponent');
+    expect(sectionSrc).toContain('pendingFocusQuantityKeyRef');
+    expect(sectionSrc).toContain('quantityInputRefs.current[targetKey]?.focus()');
+  });
+
+  test('빠른 추가 수량이 있으면 행 수량을 채우고 검색칸으로 돌아간다', () => {
+    expect(sectionSrc).toContain('quickQuantityValue');
+    expect(sectionSrc).toContain('pendingFocusQuickSearchRef');
+    expect(sectionSrc).toContain('data-menu-recipe-quick-add="search"');
+  });
+
+  test('검색 결과에 없는 식자재는 수동 구성품으로 추가할 수 있다', () => {
+    expect(sectionSrc).toContain('addManualQuickIngredient');
+    expect(sectionSrc).toContain('수동 구성품으로 추가');
+    expect(sectionSrc).toContain('검색어 그대로 수동 추가');
+  });
+
+  test('빠른 추가 검색도 키보드 선택을 처리한다', () => {
+    expect(sectionSrc).toContain('handleQuickAddKeyDown');
+    expect(sectionSrc).toContain("'ArrowDown'");
+    expect(sectionSrc).toContain("'ArrowUp'");
+    expect(sectionSrc).toContain("'Enter'");
+    expect(sectionSrc).toContain("'Escape'");
+  });
+});
+
+describe('MenuRecipeSectionHeader — 요약 카드', () => {
+  test('구성품/원가/원가율/마진 요약 카드를 보여준다', () => {
+    expect(tableSrc).toContain('RecipeSummaryCards');
+    expect(tableSrc).toContain('예상 원가');
+    expect(tableSrc).toContain('원가율');
+    expect(tableSrc).toContain('예상 마진');
   });
 });
 
@@ -321,6 +369,26 @@ describe('recipeComponentRows — 저장/추천 행 변환', () => {
     expect(preview.missingOriginNames).toEqual(['소스', '미연결']);
     expect(preview.missingAllergenNames).toEqual(['소스', '미연결']);
     expect(preview.unmatchedNames).toEqual(['미연결']);
+  });
+
+  test('원산지/알레르기 영향 미리보기는 식자재 표시명으로도 연결한다', () => {
+    const preview = buildRecipeImpactPreview(
+      [{ ingredientName: '토마토소스', productCode: 'OLD-SAUCE' }],
+      [
+        {
+          ingredientName: '',
+          displayName: '토마토 소스',
+          productCode: 'REAL-SAUCE',
+          allergens: ['TEST_AL'],
+          origin: [{ displayName: '토마토소스', country: '국내산' }],
+        },
+      ]
+    );
+
+    expect(preview.linkedIngredientCount).toBe(1);
+    expect(preview.originOutputLabels).toEqual(['토마토소스 국내산']);
+    expect(preview.allergenOutputLabels).toEqual(['TEST_AL']);
+    expect(preview.unmatchedNames).toEqual([]);
   });
 
   test('저장/로드 로직은 useMenuRecipeEditor에 위치한다', () => {

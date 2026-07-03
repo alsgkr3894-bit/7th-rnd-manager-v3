@@ -6,7 +6,7 @@ import { SectionDot, S_EMPTY_STATE, S_SECTION_TITLE_FLEX } from './SalesReportSe
 import { SalesCategoryBarRows } from './SalesCategoryBarRows';
 import { SalesRankTable } from './SalesRankTable';
 
-export function SalesRankTableSection({ opts, periodLabel, catShares, groupRanking }) {
+export function SalesRankTableSection({ opts, periodLabel, catShares, groupRanking, showRevenue }) {
   if (groupRanking.length === 0) {
     return (
       <div className="paper-section">
@@ -31,6 +31,7 @@ export function SalesRankTableSection({ opts, periodLabel, catShares, groupRanki
     const catColor =
       catShares.find(item => asDisplayText(item.name) === category)?.color || '#6B7280';
     const catTotal = items.reduce((sum, item) => sum + safeQuantity(item.quantity), 0);
+    const catRevenue = items.reduce((sum, item) => sum + safeQuantity(item.revenue), 0);
 
     return (
       <div className="paper-section paper-cat-section" key={category}>
@@ -38,7 +39,7 @@ export function SalesRankTableSection({ opts, periodLabel, catShares, groupRanki
           <SectionDot color={catColor} />
           {category} 순위 — {periodLabel}
           <span className="num muted" style={{ fontSize: 11, marginLeft: 'auto' }}>
-            합계 {formatNumber(catTotal)}건
+            합계 {formatNumber(catTotal)}건{showRevenue ? ` · ${formatNumber(catRevenue)}원` : ''}
           </span>
         </div>
 

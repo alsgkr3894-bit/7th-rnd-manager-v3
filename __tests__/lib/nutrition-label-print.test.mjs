@@ -2,12 +2,29 @@ import { describe, expect, test } from '@jest/globals';
 import { buildNutritionLabelPrintHtml } from '../../lib/nutrition/label/print.js';
 
 describe('buildNutritionLabelPrintHtml', () => {
-  test('통합 인쇄 HTML에 조각 기준 피자 페이지와 음료 용량 헤더를 포함한다', () => {
+  test('통합 인쇄 HTML에 포스터형 피자 표와 음료 용량 헤더를 포함한다', () => {
     const html = buildNutritionLabelPrintHtml({
-      pizzaSheet: [],
+      pizzaSheet: [
+        {
+          menuName: '테스트 피자 L',
+          rows: [
+            {
+              crustLabel: '석쇠',
+              side: 'L',
+              weight: 150,
+              kcal: 333,
+              sugar: 12,
+              protein: 21,
+              fat: 5,
+              sodium: 410,
+              allergen: '밀',
+            },
+          ],
+        },
+      ],
       pizzaSliceSheet: [
         {
-          menuName: '테스트 피자',
+          menuName: '테스트 피자 L',
           rows: [
             {
               crustLabel: '석쇠',
@@ -18,7 +35,7 @@ describe('buildNutritionLabelPrintHtml', () => {
               kcal: 200,
               sugar: 10,
               protein: 20,
-              satFat: 4,
+              fat: 4,
               sodium: 300,
               allergen: '밀',
             },
@@ -35,40 +52,51 @@ describe('buildNutritionLabelPrintHtml', () => {
           kcal: 140,
           sugar: 35,
           protein: 0,
-          satFat: 0,
+          fat: 0,
           sodium: 15,
           allergen: '',
         },
       ],
     });
 
-    expect(html).toContain('영양성분표 — 피자 (조각 기준)');
-    expect(html).toContain('<th>조각수</th>');
-    expect(html).toContain('<th>용량(ml)</th>');
+    expect(html).not.toContain('Nutritive components &amp; Origin');
+    expect(html).not.toContain('제품 영양성분 &amp; 원산지 정보');
+    expect(html).not.toContain('background: #d21922');
+    expect(html).toContain('<th colspan="12">150g 기준</th>');
+    expect(html).toContain('<th colspan="16">조각 기준</th>');
+    expect(html).toContain('<th colspan="2">열량(kcal/150g)</th>');
+    expect(html).toContain('<th colspan="2">1회 조각수</th>');
+    expect(html).toContain('<th>총량(ml)</th>');
+    expect(html).toContain('333');
+    expect(html).toContain('포화지방');
+    expect(html).not.toContain('조지방');
     expect(html).toContain('테스트 피자');
+    expect(html).not.toContain('테스트 피자 L</td>');
   });
 
   test('메뉴명과 알레르기 텍스트를 HTML escape한다', () => {
     const html = buildNutritionLabelPrintHtml({
-      pizzaSheet: [
+      pizzaSheet: [],
+      pizzaSliceSheet: [
         {
           menuName: '피자 <script>',
           rows: [
             {
               crustLabel: '석쇠',
               side: 'L',
+              slice: 8,
+              servingLabel: '1조각',
               weight: 150,
               kcal: 250,
               sugar: 10,
               protein: 12,
-              satFat: 5,
+              fat: 5,
               sodium: 400,
               allergen: '밀 & 우유',
             },
           ],
         },
       ],
-      pizzaSliceSheet: [],
       toppingSheet: [],
       sideSheet: [],
       setHalfSheet: [],
@@ -90,9 +118,9 @@ describe('buildNutritionLabelPrintHtml', () => {
       beverageSheet: [{ menuName: '콜라', weight: null, kcal: '', allergen: null }],
     });
 
-    expect(html).toContain('영양성분표 — 피자 (조각 기준)');
+    expect(html).not.toContain('Nutritive components &amp; Origin');
     expect(html).toContain('콜라');
-    expect(html).toContain('<span class="dash">—</span>');
+    expect(html).toContain('>—</td>');
     expect(html).not.toContain('행 없음</td>');
   });
 });

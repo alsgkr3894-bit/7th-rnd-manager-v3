@@ -82,7 +82,7 @@ describe('schedule and todo stats guards', () => {
 
     getAll.mockResolvedValue([
       null,
-      { id: {}, status: '보고예정', title: {}, menuName: 123, category: '피자' },
+      { id: {}, status: '보류', title: {}, menuName: 123, category: '피자' },
       { id: 5, status: '완료', title: '무시' },
     ]);
     getAllSchedules.mockResolvedValue([
@@ -95,15 +95,7 @@ describe('schedule and todo stats guards', () => {
 
     expect(result).toEqual([
       {
-        id: 'note:0',
-        title: '메뉴개발노트',
-        sub: '123',
-        tag: 'report',
-        f: 'report',
-        href: '/note',
-      },
-      {
-        id: 'sch:1',
+        id: 'sch:0',
         title: '일정',
         sub: '오늘 · 7',
         tag: 'due',

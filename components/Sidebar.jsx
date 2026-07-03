@@ -13,13 +13,7 @@ import { normalizeSidebarOpenIds } from '@/lib/ui/sidebar-state';
  * 사이드바 컴포넌트
  * 메뉴 데이터는 @/lib/menu.js에 분리 (이 컴포넌트는 렌더링만 담당)
  */
-export default function Sidebar({
-  onClose,
-  activeCompany,
-  unmatchedCount = 0,
-  reportingCount = 0,
-  canEdit = false,
-}) {
+export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, canEdit = false }) {
   const pathname = usePathname();
   const router = useRouter();
   const sidebarRef = useRef(null);
@@ -43,9 +37,6 @@ export default function Sidebar({
   const dynamicBadge = id => {
     if (id === 'menu-sales' || id === 'menu-sales-unmatched') {
       return unmatchedCount > 0 ? unmatchedCount : null;
-    }
-    if (id === 'note' || id === 'note-list') {
-      return reportingCount > 0 ? reportingCount : null;
     }
     return null;
   };

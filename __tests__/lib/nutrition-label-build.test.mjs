@@ -4,6 +4,8 @@ import {
   buildBeverageSheet,
   buildPizzaSheet,
   buildPizzaSliceSheet,
+  buildSetHalfSheet,
+  buildSideSheet,
   buildToppingSheet,
   parseVolumeMl,
   scaleVal,
@@ -182,6 +184,49 @@ describe('buildPizzaSliceSheet', () => {
       sodium: '—',
     });
   });
+
+  test('엣지 조각 기준은 엣지 중량까지 더한 총중량으로 계산한다', () => {
+    const rows = buildPizzaSliceSheet({
+      menus: [{ menuCode: 'P-EDGE-W', menuName: '엣지 중량 피자', category: '피자' }],
+      rawMap: {
+        'P-EDGE-W__석쇠L': {
+          weight: 800,
+          kcal: 200,
+          sugar: 10,
+          protein: 20,
+          fat: 5,
+          sodium: 300,
+        },
+      },
+      edgeMap: {
+        치즈크러스트L: {
+          weight: 80,
+          kcal: 20,
+          sugar: 2,
+          protein: 3,
+          fat: 1,
+          sodium: 40,
+        },
+      },
+      masterByCode: {},
+      menuAllergenMap,
+      edgeAllergenMap: new Map(),
+      sliceCounts: { 'P-EDGE-W': { L: 8 } },
+    });
+
+    const edgeRow = rows[0].rows.find(
+      row => row.crustLabel === '치즈크러스트' && row.side === 'L'
+    );
+    expect(edgeRow).toMatchObject({
+      servingLabel: '1조각',
+      weight: 110,
+      kcal: 242,
+      sugar: 13,
+      protein: 25,
+      fat: 7,
+      sodium: 374,
+    });
+  });
 });
 
 describe('buildPizzaSheet', () => {
@@ -278,6 +323,39 @@ describe('buildPizzaSheet', () => {
     expect(edgeRow.allergen).toBe('우유, 계란');
   });
 
+  test('출력 포화지방 컬럼은 satFat 값을 우선 사용하고 없으면 fat으로 보정한다', () => {
+    const rows = buildPizzaSheet({
+      menus: [{ menuCode: 'P-SAT', menuName: '포화지방 피자', category: '피자' }],
+      rawMap: {
+        'P-SAT__석쇠L': {
+          weight: 100,
+          kcal: 100,
+          sugar: 1,
+          protein: 2,
+          fat: 99,
+          satFat: 3,
+          sodium: 10,
+        },
+        'P-SAT__석쇠R': {
+          weight: 100,
+          kcal: 90,
+          sugar: 1,
+          protein: 2,
+          fat: 4,
+          sodium: 10,
+        },
+      },
+      edgeMap: {},
+      masterByCode: {},
+      menuAllergenMap,
+      edgeAllergenMap: new Map(),
+    });
+
+    const sheetRows = rows[0].rows;
+    expect(sheetRows.find(row => row.crustLabel === '석쇠' && row.side === 'L').fat).toBe(5);
+    expect(sheetRows.find(row => row.crustLabel === '석쇠' && row.side === 'R').fat).toBe(6);
+  });
+
   test('1인피자는 피자 시트 맨 아래에 배치한다', () => {
     const rows = buildPizzaSheet({
       menus: [
@@ -293,6 +371,43 @@ describe('buildPizzaSheet', () => {
     expect(rows.map(row => row.menuCode)).toEqual(['P-001', 'P-ONE-001']);
     expect(rows[1].rows).toHaveLength(1);
     expect(rows[1].rows[0]).toMatchObject({ crustLabel: '씬바샤삭', side: 'L' });
+  });
+});
+
+describe('buildSetHalfSheet', () => {
+  test('세트박스 행은 계산된 중량 범위를 출력한다', () => {
+    const rows = buildSetHalfSheet({
+      menus: [
+        { menuCode: 'P-A', menuName: '가 피자', category: '피자' },
+        { menuCode: 'P-B', menuName: '나 피자', category: '피자' },
+        { menuCode: 'S-1', menuName: '사이드', category: '사이드' },
+      ],
+      rawMap: {
+        'P-A__석쇠L': { weight: 100, kcal: 100 },
+        'P-B__석쇠L': { weight: 120, kcal: 200 },
+        'S-1__단품': { weight: 80, kcal: 10 },
+      },
+      edgeMap: {
+        치즈크러스트L: { weight: 20, kcal: 50 },
+      },
+      masterByCode: {},
+      menuAllergenMap,
+      setComps: [
+        {
+          kind: 'set',
+          setName: '테스트',
+          setSide: 'L',
+          slots: [{ label: '사이드', menuCodes: ['S-1'] }],
+        },
+      ],
+    });
+
+    expect(rows.find(row => row.kind === 'set')).toMatchObject({
+      menuName: '테스트 L세트',
+      weight: '180~220',
+      minKcal: 108,
+      maxKcal: 358,
+    });
   });
 });
 
@@ -318,6 +433,79 @@ describe('buildBeverageSheet', () => {
         sodium: 63,
       }),
     ]);
+  });
+
+  test('음료 출력도 satFat 값을 포화지방 컬럼에 우선 반영한다', () => {
+    const rows = buildBeverageSheet({
+      menus: [{ menuCode: 'D-ZERO', menuName: '제로콜라 500ml', category: '음료' }],
+      rawMap: {
+        'D-ZERO__석쇠L': { kcal: 0, sugar: 0, protein: 0, fat: 9, satFat: 0.2, sodium: 1 },
+      },
+      masterByCode: {},
+      menuAllergenMap,
+    });
+
+    expect(rows[0]).toMatchObject({
+      weight: 500,
+      fat: 1,
+    });
+  });
+});
+
+describe('buildSideSheet', () => {
+  test('사이드 메뉴는 단품 슬롯의 영양값을 우선 사용한다', () => {
+    const rows = buildSideSheet({
+      menus: [{ menuCode: 'S-WING', menuName: '핫윙', category: '사이드' }],
+      rawMap: {
+        'S-WING__단품': {
+          basis: 'serving',
+          weight: 120,
+          kcal: 250,
+          sugar: 1,
+          protein: 12,
+          fat: 8,
+          sodium: 500,
+        },
+        'S-WING__석쇠L': {
+          basis: 'serving',
+          weight: 1,
+          kcal: 1,
+        },
+      },
+      masterByCode: {},
+      menuAllergenMap,
+    });
+
+    expect(rows[0]).toMatchObject({
+      menuCode: 'S-WING',
+      weight: 120,
+      kcal: 250,
+      protein: 12,
+      fat: 8,
+      sodium: 500,
+    });
+  });
+
+  test('사이드 단품 출력은 satFat이 있으면 포화지방 컬럼에 사용한다', () => {
+    const rows = buildSideSheet({
+      menus: [{ menuCode: 'S-SAT', menuName: '포화지방 사이드', category: '사이드' }],
+      rawMap: {
+        'S-SAT__단품': {
+          basis: 'serving',
+          weight: 120,
+          kcal: 250,
+          sugar: 1,
+          protein: 12,
+          fat: 99,
+          satFat: 2.4,
+          sodium: 500,
+        },
+      },
+      masterByCode: {},
+      menuAllergenMap,
+    });
+
+    expect(rows[0].fat).toBe(2);
   });
 });
 
@@ -384,5 +572,30 @@ describe('buildToppingSheet', () => {
 
     expect(rows.map(row => row.menuName)).toEqual(['신규 토핑', '기존 토핑']);
     expect(rows[1].allergen).toBe('우유');
+  });
+
+  test('추가토핑 출력도 satFat을 포화지방 컬럼에 우선 사용한다', () => {
+    const rows = buildToppingSheet({
+      menus: [],
+      rawMap: {},
+      masterByCode: {},
+      menuAllergenMap,
+      toppings: [
+        {
+          toppingCode: 'TOP-SAT',
+          toppingName: '포화지방 토핑',
+          weight: 30,
+          kcal: 20,
+          sugar: 0,
+          protein: 1,
+          fat: 9,
+          satFat: 1.6,
+          sodium: 5,
+        },
+      ],
+      toppingAllergenMap: new Map(),
+    });
+
+    expect(rows[0].fat).toBe(2);
   });
 });

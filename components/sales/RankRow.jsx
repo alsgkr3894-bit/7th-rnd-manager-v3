@@ -2,6 +2,7 @@
 import { memo } from 'react';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
+import { safeRevenue } from '@/lib/sales/revenue';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 function normalizeShare(value) {
@@ -24,6 +25,7 @@ export const RankRow = memo(function RankRow({ rank, row, total, expanded, onTog
   const name = asDisplayText(safeRow.name, '-');
   const category = asDisplayText(safeRow.category, '-');
   const quantity = Number.isFinite(Number(safeRow.quantity)) ? Number(safeRow.quantity) : 0;
+  const revenue = safeRevenue(safeRow.revenue);
   const safeTotal = Number.isFinite(Number(total)) ? Number(total) : 0;
   const sizes = asObjectArray(safeRow.sizes);
   const share = normalizeShare(safeTotal > 0 ? quantity / safeTotal : 0);
@@ -44,7 +46,7 @@ export const RankRow = memo(function RankRow({ rank, row, total, expanded, onTog
         style={{
           width: '100%',
           display: 'grid',
-          gridTemplateColumns: '50px 1.4fr 90px 110px 1.2fr 80px 30px',
+          gridTemplateColumns: '50px 1.4fr 90px 110px 120px 1.2fr 30px',
           gap: 12,
           alignItems: 'center',
           padding: '14px 12px',
@@ -86,6 +88,10 @@ export const RankRow = memo(function RankRow({ rank, row, total, expanded, onTog
           {formatNumber(quantity)}
           <span className="unit">개</span>
         </div>
+        <div className="num right sales-rank-revenue" style={{ textAlign: 'right' }}>
+          {formatNumber(revenue)}
+          <span className="unit">원</span>
+        </div>
         <div className="sales-rank-share" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div
             style={{
@@ -108,7 +114,6 @@ export const RankRow = memo(function RankRow({ rank, row, total, expanded, onTog
             {(share * 100).toFixed(1)}%
           </span>
         </div>
-        <div className="sales-rank-spacer"></div>
         <Icon.chevDown
           className="sales-rank-chevron"
           style={{
@@ -142,13 +147,14 @@ function SizeDetail({ row }) {
           const size = asDisplayText(s.size, '-');
           const share = normalizeShare(s.share);
           const quantity = Number.isFinite(Number(s.quantity)) ? Number(s.quantity) : 0;
+          const revenue = safeRevenue(s.revenue);
           return (
             <div
               key={`${size}-${index}`}
               className="sales-rank-size-row"
               style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr 80px 60px',
+                gridTemplateColumns: '1fr 1fr 80px 100px 60px',
                 gap: 12,
                 alignItems: 'center',
                 padding: '6px 0',
@@ -191,6 +197,10 @@ function SizeDetail({ row }) {
               <div className="num" style={{ textAlign: 'right', fontWeight: 600 }}>
                 {formatNumber(quantity)}
                 <span className="unit">개</span>
+              </div>
+              <div className="num" style={{ textAlign: 'right', fontWeight: 600 }}>
+                {formatNumber(revenue)}
+                <span className="unit">원</span>
               </div>
               <div
                 className="num"

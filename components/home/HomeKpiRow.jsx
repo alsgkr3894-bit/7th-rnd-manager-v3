@@ -44,8 +44,6 @@ export const HomeKpiRow = memo(function HomeKpiRow({
     salesMonthNumber <= 12;
   const deltaPct = Number(salesKpi?.deltaPct);
   const hasDeltaPct = salesKpi?.deltaPct != null && Number.isFinite(deltaPct);
-  const reportingCount = Number(noteKpi?.reporting);
-  const safeReportingCount = Number.isFinite(reportingCount) ? Math.max(0, reportingCount) : 0;
 
   // 월 비교 미니 막대 (최근 6개월) — 판매 sparkline + 파생 월 라벨
   const momSeries = salesSparkline.slice(-6);
@@ -147,14 +145,7 @@ export const HomeKpiRow = memo(function HomeKpiRow({
             <span className="unit">건</span>
           </div>
           <div className="trend">
-            {safeReportingCount > 0 ? (
-              <>
-                <span style={{ color: 'var(--accent-text)' }}>+{safeReportingCount} 출시예정</span>
-                <span style={{ color: 'var(--text-4)' }}>이번 주</span>
-              </>
-            ) : (
-              <span style={{ color: 'var(--text-4)' }}>아직 출시예정 없음</span>
-            )}
+            <span style={{ color: 'var(--text-4)' }}>최근 작성 흐름</span>
           </div>
         </div>
         <Sparkline data={noteSparkline} color="#3182F6" />

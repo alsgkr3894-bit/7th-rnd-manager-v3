@@ -1,5 +1,6 @@
 'use client';
 import { formatNumber } from '@/lib/format';
+import { safeRevenue } from '@/lib/sales/revenue';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 function normalizeShare(value) {
@@ -23,6 +24,7 @@ function normalizeShare(value) {
  */
 export function CategoryDetailGrid({ detail, onCategoryClick }) {
   const total = Number.isFinite(Number(detail?.total)) ? Number(detail.total) : 0;
+  const revenueTotal = safeRevenue(detail?.revenueTotal);
   const categories = asObjectArray(detail?.categories);
   if (!detail || total === 0) {
     return (
@@ -42,12 +44,21 @@ export function CategoryDetailGrid({ detail, onCategoryClick }) {
           <div className="card-title">카테고리별 판매 비중</div>
           <div className="card-sub">상위 카테고리 · 카테고리별 TOP 3</div>
         </div>
-        <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
-          총{' '}
-          <b className="num" style={{ color: 'var(--text-1)' }}>
-            {formatNumber(total)}
-          </b>
-          개
+        <div style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'right' }}>
+          <div>
+            총{' '}
+            <b className="num" style={{ color: 'var(--text-1)' }}>
+              {formatNumber(total)}
+            </b>
+            개
+          </div>
+          <div>
+            매출{' '}
+            <b className="num" style={{ color: 'var(--text-1)' }}>
+              {formatNumber(revenueTotal)}
+            </b>
+            원
+          </div>
         </div>
       </div>
 
@@ -102,6 +113,7 @@ function CategoryCard({ cat, onClick }) {
   const color = asDisplayText(cat.color, 'var(--surface-3)');
   const share = normalizeShare(cat.share);
   const value = Number.isFinite(Number(cat.value)) ? Number(cat.value) : 0;
+  const revenue = safeRevenue(cat.revenue);
   const topMenus = asObjectArray(cat.topMenus);
   return (
     <button
@@ -142,6 +154,15 @@ function CategoryCard({ cat, onClick }) {
           개
         </span>
       </div>
+      <div
+        className="num"
+        style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)', marginBottom: 8 }}
+      >
+        {formatNumber(revenue)}
+        <span className="unit" style={{ fontSize: 12, opacity: 0.6 }}>
+          원
+        </span>
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {topMenus.length === 0 ? (
           <div style={{ fontSize: 12, color: 'var(--text-4)' }}>판매 기록 없음</div>
@@ -149,6 +170,7 @@ function CategoryCard({ cat, onClick }) {
           topMenus.map((m, i) => {
             const menuName = asDisplayText(m.name, '-');
             const quantity = Number.isFinite(Number(m.quantity)) ? Number(m.quantity) : 0;
+            const menuRevenue = safeRevenue(m.revenue);
 
             return (
               <div
@@ -176,8 +198,10 @@ function CategoryCard({ cat, onClick }) {
                     {menuName}
                   </span>
                 </span>
-                <span className="num" style={{ fontWeight: 600 }}>
+                <span className="num" style={{ fontWeight: 600, textAlign: 'right' }}>
                   {formatNumber(quantity)}
+                  <span style={{ color: 'var(--text-4)' }}> · </span>
+                  {formatNumber(menuRevenue)}원
                 </span>
               </div>
             );

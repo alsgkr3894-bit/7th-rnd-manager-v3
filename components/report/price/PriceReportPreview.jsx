@@ -1,5 +1,7 @@
+'use client';
+
 import { formatNumber } from '@/lib/format';
-import { getProfile } from '@/lib/profile';
+import { useReportGeneratedMeta } from '@/hooks/useReportGeneratedMeta';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 
 const STATUS_COLOR = {
@@ -29,7 +31,7 @@ export function PriceReportPreview({ dateRange, changes, catSummary, opts }) {
   const falling = safeChanges.filter(change => change.changeStatus === '인하').length;
   const newItem = safeChanges.filter(change => change.changeStatus === '신규').length;
   const delItem = safeChanges.filter(change => change.changeStatus === '삭제').length;
-  const todayLabel = new Date().toLocaleDateString('ko-KR').replace(/\. /g, '.').replace(/\.$/, '');
+  const { compactDateLabel, profileName } = useReportGeneratedMeta();
 
   const catOrder = safeCatSummary.map(category => safeCategory(category.cat));
   const byCategory = {};
@@ -51,7 +53,7 @@ export function PriceReportPreview({ dateRange, changes, catSummary, opts }) {
           <span>기간: {dateRange}</span>
           <span>·</span>
           <span className="mono">
-            생성일 {todayLabel} · {getProfile().name}
+            생성일 {compactDateLabel} · {profileName}
           </span>
         </div>
       </div>

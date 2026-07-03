@@ -4,12 +4,27 @@ import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
 import { parseLabExcel, buildImportRows, toRawValueRecord } from '@/lib/nutrition/values/import';
 import { bulkUpsertBaseData } from '@/lib/nutrition/values/store';
+import { SERVING_CRUST_TYPE } from '@/lib/nutrition/crust-config';
+import {
+  loadNutritionImportAliases,
+  rememberNutritionImportAliases,
+  upsertNutritionImportAlias,
+} from '@/lib/nutrition/import-aliases';
 import { asObjectArray, asRecord, noop } from '@/lib/ui/prop-guards';
 import { parseErrorMsg } from '@/lib/upload-policy';
 import { ImportBasePreviewTable } from './import-base/ImportBasePreviewTable';
 import { ImportBaseSummaryBar } from './import-base/ImportBaseSummaryBar';
 import { ImportBaseUploadStep } from './import-base/ImportBaseUploadStep';
 import { categoryForImportRow } from './import-base/importBaseRows';
+
+function existingRawValueForImportRow(rawMap, row) {
+  const primary = rawMap[`${row.menuCode}__${row.crustType}`];
+  if (primary) return primary;
+  if (row.basis === 'serving' || row.crustType === SERVING_CRUST_TYPE) {
+    return rawMap[`${row.menuCode}__석쇠L`];
+  }
+  return null;
+}
 
 export function ImportBaseModal({ menuMasters, rawMap, onClose, onRefresh }) {
   const safeMenuMasters = asObjectArray(menuMasters);
@@ -18,7 +33,21 @@ export function ImportBaseModal({ menuMasters, rawMap, onClose, onRefresh }) {
   const refresh = typeof onRefresh === 'function' ? onRefresh : noop;
   const [step, setStep] = useState('upload');
   const [rows, setRows] = useState([]);
+  const [rawRows, setRawRows] = useState([]);
+  const [overwriteExisting, setOverwriteExisting] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  function buildPreviewRows(nextRawRows, nextOverwrite = overwriteExisting) {
+    const existingKeys = nextOverwrite
+      ? {}
+      : Object.fromEntries(Object.keys(safeRawMap).map(k => [k, true]));
+    return buildImportRows({
+      rawRows: nextRawRows,
+      menuMasters: safeMenuMasters,
+      existingKeys,
+      aliasMap: loadNutritionImportAliases(),
+    });
+  }
 
   const handleFile = async (file, err) => {
     if (err) {
@@ -28,9 +57,9 @@ export function ImportBaseModal({ menuMasters, rawMap, onClose, onRefresh }) {
     if (!file) return;
     try {
       const buf = await file.arrayBuffer();
-      const rawRows = await parseLabExcel(buf);
-      const existingKeys = Object.fromEntries(Object.keys(safeRawMap).map(k => [k, true]));
-      setRows(buildImportRows({ rawRows, menuMasters: safeMenuMasters, existingKeys }));
+      const parsedRows = await parseLabExcel(buf);
+      setRawRows(parsedRows);
+      setRows(buildPreviewRows(parsedRows));
       setStep('preview');
     } catch (e) {
       showToast(parseErrorMsg(e), 'error');
@@ -42,8 +71,23 @@ export function ImportBaseModal({ menuMasters, rawMap, onClose, onRefresh }) {
   }, []);
 
   const updateRow = useCallback((idx, patch) => {
-    setRows(r => r.map((row, i) => (i === idx ? { ...row, ...patch } : row)));
+    setRows(r =>
+      r.map((row, i) => {
+        if (i !== idx) return row;
+        const next = { ...row, ...patch };
+        if (patch?.menuCode) {
+          upsertNutritionImportAlias(row.rawName, next);
+          if (row.baseName && row.baseName !== row.rawName) upsertNutritionImportAlias(row.baseName, next);
+        }
+        return next;
+      })
+    );
   }, []);
+
+  const handleOverwriteChange = checked => {
+    setOverwriteExisting(checked);
+    setRows(buildPreviewRows(rawRows, checked));
+  };
 
   const handleSave = async () => {
     const toSave = rows.filter(r => r.include && r.menuCode && r.crustType);
@@ -55,7 +99,7 @@ export function ImportBaseModal({ menuMasters, rawMap, onClose, onRefresh }) {
     try {
       const payload = toSave.map(row => {
         const normalizedCategory = categoryForImportRow(row);
-        const existing = safeRawMap[`${row.menuCode}__${row.crustType}`];
+        const existing = existingRawValueForImportRow(safeRawMap, row);
         return {
           menuCode: row.menuCode,
           menuName: row.menuName,
@@ -68,6 +112,7 @@ export function ImportBaseModal({ menuMasters, rawMap, onClose, onRefresh }) {
         };
       });
       const { rawValues } = await bulkUpsertBaseData(payload);
+      rememberNutritionImportAliases(toSave);
       const skipped = rows.filter(r => !r.include).length;
       showToast(`${rawValues}건 저장 완료 (${skipped}건 제외)`, 'ok');
       refresh();
@@ -114,6 +159,8 @@ export function ImportBaseModal({ menuMasters, rawMap, onClose, onRefresh }) {
         hasSelectedToggleable={hasSelectedToggleable}
         onSelectAll={handleSelectAll}
         onDeselectAll={handleDeselectAll}
+        overwriteExisting={overwriteExisting}
+        onOverwriteExistingChange={handleOverwriteChange}
       />
 
       <ImportBasePreviewTable

@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { readdirSync, renameSync, rmSync } from 'node:fs';
+import { existsSync, readdirSync, renameSync, rmSync } from 'node:fs';
 import net from 'node:net';
 
 const killExisting = process.argv.includes('--kill');
@@ -28,8 +28,41 @@ function hasNextDevProcess() {
   }
 }
 
+function getWindowsPortPids(ports) {
+  try {
+    const out = execSync('netstat -ano -p tcp', { encoding: 'utf8' });
+    const wanted = new Set(ports.map(String));
+    const pids = new Set();
+    for (const line of out.split(/\r?\n/)) {
+      const parts = line.trim().split(/\s+/);
+      if (parts.length < 5 || parts[0] !== 'TCP') continue;
+      const localAddress = parts[1] || '';
+      const state = parts[3] || '';
+      const pid = parts[4] || '';
+      const port = localAddress.slice(localAddress.lastIndexOf(':') + 1);
+      if (state === 'LISTENING' && wanted.has(port) && /^\d+$/.test(pid) && pid !== '0') {
+        pids.add(pid);
+      }
+    }
+    return [...pids];
+  } catch {
+    return [];
+  }
+}
+
+function killWindowsPortListeners(ports) {
+  for (const pid of getWindowsPortPids(ports)) {
+    try {
+      execSync(`taskkill /PID ${pid} /F`, { stdio: 'ignore' });
+    } catch {}
+  }
+}
+
 function killNextDev() {
-  if (process.platform === 'win32') return;
+  if (process.platform === 'win32') {
+    killWindowsPortListeners([3000, 3001]);
+    return;
+  }
   try {
     execSync("pkill -f 'next dev' 2>/dev/null || true");
     execSync("pkill -f 'next-server' 2>/dev/null || true");
@@ -50,18 +83,24 @@ function cleanupOldStaleDirs() {
 }
 
 function resetNextDir() {
+  if (!existsSync('.next')) {
+    cleanupOldStaleDirs();
+    return true;
+  }
   const staleDir = `.next.dev-stale-${Date.now()}`;
   try {
     renameSync('.next', staleDir);
-  } catch {
+  } catch (err) {
     cleanupOldStaleDirs();
-    return;
+    process.stderr.write(`.next를 정리하지 못했습니다: ${err?.message || err}\n`);
+    return false;
   }
 
   try {
     rmSync(staleDir, { recursive: true, force: true });
   } catch {}
   cleanupOldStaleDirs();
+  return true;
 }
 
 if (killExisting) {
@@ -76,6 +115,7 @@ const anotherDev = hasNextDevProcess();
 if (busy3000 || busy3001 || anotherDev) {
   const source = busy3000 ? '포트 3000' : busy3001 ? '포트 3001' : 'next dev 프로세스';
   process.stderr.write(`${source}이 이미 실행 중이어서 .next를 정리하지 않았습니다.\n`);
+  process.exit(1);
 } else {
-  resetNextDir();
+  if (!resetNextDir()) process.exit(1);
 }

@@ -13,7 +13,7 @@ import {
 } from '@/lib/db';
 import { dbNameFor } from '@/lib/db/constants';
 import { getActiveBrandId } from '@/lib/active-brand';
-import { getSetting, setSetting } from '@/lib/settings';
+import { getSetting, getSettingDefault, setSetting } from '@/lib/settings';
 import { Toggle } from '@/components/ui/Toggle';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
@@ -48,10 +48,16 @@ export default function Page() {
   const [busy, setBusy] = useState(false);
   const reloadTimerRef = useRef(null);
   const [settings, setSettings] = useState(() =>
-    Object.fromEntries(SETTING_KEYS.map(k => [k, getSetting(k)]))
+    Object.fromEntries(SETTING_KEYS.map(k => [k, getSettingDefault(k)]))
   );
+  const [dbName, setDbName] = useState(() => dbNameFor('main'));
 
   useEffect(() => () => clearTimeout(reloadTimerRef.current), []);
+
+  useEffect(() => {
+    setSettings(Object.fromEntries(SETTING_KEYS.map(k => [k, getSetting(k)])));
+    setDbName(dbNameFor(getActiveBrandId()));
+  }, []);
 
   const { data: statsData, reload: reloadStats } = useDBLoad(
     async () => {
@@ -369,7 +375,7 @@ export default function Page() {
 
       <SystemAppInfoCard
         appVersion={APP_VERSION}
-        dbName={dbNameFor(getActiveBrandId())}
+        dbName={dbName}
         dbVersion={String(DB_VERSION)}
         roleReady={roleReady}
         isAdmin={isAdmin}

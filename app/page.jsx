@@ -93,7 +93,6 @@ export default function HomePage() {
     bottom,
     activities,
     setActivities,
-    reportingNotes,
     allNotes,
     recentSamples,
     costAlertData,
@@ -224,7 +223,6 @@ export default function HomePage() {
   const showPipeline = isVisible('pipeline') && pipeline?.columns?.some(c => c.count > 0);
   const showCostAlert =
     costRateAlertEnabled && isVisible('costalert') && (alertCostAlertData?.items?.length ?? 0) > 0;
-  const showNotes = isVisible('notes') && reportingNotes.length > 0;
   const showSamples = isVisible('samples') && recentSamples.length > 0;
 
   // 렌더 순서: 즐겨찾기 우선(effectiveOrder). 포커스 모드면 즐겨찾기 행만.
@@ -286,7 +284,6 @@ export default function HomePage() {
 
       <ActionCenterWidget
         unmatchedCount={unmatchedAlertEnabled ? openIssueCount : 0}
-        reportingCount={reportingNotes.length}
         uploadFreshness={uploadFreshness}
         backupReminder={backupReminder}
         ingredientHealth={ingredientHealth}
@@ -341,8 +338,6 @@ export default function HomePage() {
         }}
         onSaveQuickNote={saveQuickNote}
         onOpenQuickNoteDraft={openDraftInNoteWrite}
-        showNotes={showNotes}
-        reportingNotes={reportingNotes}
         showSamples={showSamples}
         recentSamples={recentSamples}
         allNotes={allNotes}

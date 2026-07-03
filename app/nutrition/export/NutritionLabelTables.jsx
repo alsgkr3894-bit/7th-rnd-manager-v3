@@ -4,6 +4,7 @@ import { PizzaNutritionTable } from './label-tables/PizzaNutritionTable';
 import { PizzaSliceNutritionTable } from './label-tables/PizzaSliceNutritionTable';
 import { SetHalfNutritionTable } from './label-tables/SetHalfNutritionTable';
 import { SimpleNutritionTable } from './label-tables/SimpleNutritionTable';
+import { NutritionPosterBoard } from './NutritionPosterBoard';
 
 const BEVERAGE_COLS = LABEL_COLS.map(column =>
   column.key === 'weight' ? { ...column, label: '용량', unit: 'ml' } : column
@@ -18,7 +19,21 @@ export function NutritionLabelTabContent({
   sideSheet,
   setHalfSheet,
   beverageSheet,
+  originStatementSheet,
 }) {
+  if (tab === 'poster') {
+    return (
+      <NutritionPosterBoard
+        pizzaSheet={pizzaSheet}
+        pizzaSliceSheet={pizzaSliceSheet}
+        toppingSheet={toppingSheet}
+        sideSheet={sideSheet}
+        setHalfSheet={setHalfSheet}
+        beverageSheet={beverageSheet}
+        originStatementSheet={originStatementSheet}
+      />
+    );
+  }
   if (tab === 'pizza') {
     return pizzaView === 'slice' ? (
       <PizzaSliceNutritionTable rows={pizzaSliceSheet} />

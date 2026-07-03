@@ -1,8 +1,10 @@
+'use client';
+
 import { AreaChart } from '@/components/charts/AreaChart';
 import { fmtShort } from '@/lib/format';
-import { getProfile } from '@/lib/profile';
 import { safeQuantity } from '@/lib/report/period';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
+import { useReportGeneratedMeta } from '@/hooks/useReportGeneratedMeta';
 
 function safePercent(value) {
   return asFiniteNumber(value, null);
@@ -42,6 +44,7 @@ export function MenuSalesComparePreview({
       .slice(0, 6) || [];
   const safeSeries = asObjectArray(series);
   const totalPct = safePercent(safeCompareResult?.totalPct);
+  const { compactDateLabel, profileName } = useReportGeneratedMeta();
 
   return (
     <>
@@ -56,8 +59,7 @@ export function MenuSalesComparePreview({
           <span>대상: {scopeLabel(scope)}</span>
           <span>·</span>
           <span className="mono">
-            생성일 {new Date().toLocaleDateString('ko-KR').slice(0, -1).replace(/\. /g, '.')} ·{' '}
-            {getProfile().name}
+            생성일 {compactDateLabel} · {profileName}
           </span>
         </div>
       </div>

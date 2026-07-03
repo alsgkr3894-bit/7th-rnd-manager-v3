@@ -35,7 +35,10 @@ export function AddMenuModal({ newMenuForm, setNewMenuForm, safeMenuMasters, onA
                 ...f,
                 menuCode: code,
                 menuName: code ? (matchedMenu?.menuName ?? f.menuName) : f.menuName,
-                category: normalizeNutritionCategory(meta?.category || f.category, '피자'),
+                category: normalizeNutritionCategory(
+                  meta?.category || matchedMenu?.category || f.category,
+                  '피자'
+                ),
               }));
             }}
           />

@@ -29,7 +29,13 @@ export function useAllergenDerivedData({
     [allergenIngredients, search]
   );
 
-  const { isExcludedMenu, menuMatrixAll, menuMatrix, orderedAllergens } = useAllergenMatrixData({
+  const {
+    isExcludedMenu,
+    menuMatrixAll,
+    menuMatrix,
+    orderedAllergens,
+    allergenMatchedMenuCount,
+  } = useAllergenMatrixData({
     allergenIngredients,
     menuMasters,
     baseMapData,
@@ -74,5 +80,6 @@ export function useAllergenDerivedData({
     menuNameEditMenus,
     totalWithAllergen,
     totalIngredients,
+    allergenMatchedMenuCount,
   };
 }

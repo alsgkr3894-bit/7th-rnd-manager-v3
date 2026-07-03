@@ -4,9 +4,10 @@ import { loadXlsx } from '@/lib/excel';
 import ReportBuilderShell from '@/components/report/ReportBuilderShell';
 import SalesReportControls from '@/components/report/SalesReportControls';
 import { useReportPageState } from '@/hooks/useReportPageState';
-import { getProfile } from '@/lib/profile';
 import { getActiveBrand } from '@/lib/active-brand';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { safeRevenue } from '@/lib/sales/revenue';
+import { useReportGeneratedMeta } from '@/hooks/useReportGeneratedMeta';
 import {
   normalizePeriodMode,
   normalizeScope,
@@ -25,7 +26,7 @@ const DRAFT_KEY = 'report_draft_sales';
 export default function Page() {
   const [periodMode, setPeriodMode] = useState('month');
   const [year, setYear] = useState(2026);
-  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [month, setMonth] = useState(1);
   const [scope, setScope] = useState('all');
   const [viewMode, setViewMode] = useState('rank');
   const [cmpYear, setCmpYear] = useState(null);
@@ -45,6 +46,7 @@ export default function Page() {
       catBar: true,
       prevComp: true,
       variant: false,
+      revenue: false,
       excluded: true,
     },
     draft => {
@@ -65,6 +67,7 @@ export default function Page() {
     isLoading,
     reload,
   } = useSalesReportData();
+  const { compactDateLabel, profileName } = useReportGeneratedMeta();
 
   // Apply defaultPeriod once when data first arrives
   const defaultApplied = useRef(false);
@@ -96,6 +99,7 @@ export default function Page() {
         year: safeYear(r.year, 0),
         month: safeMonth(r.month, 0),
         quantity: safeQuantity(r.quantity),
+        revenue: safeRevenue(r.revenue ?? r.amount ?? r.salesAmount ?? r.totalAmount),
       })),
     [salesRows]
   );
@@ -148,8 +152,6 @@ export default function Page() {
     });
   };
 
-  const todayLabel = new Date().toLocaleDateString('ko-KR').replace(/\. /g, '.').replace(/\.$/, '');
-
   return (
     <ReportBuilderShell
       breadcrumb={['보고서센터', '판매량 보고서']}
@@ -193,8 +195,8 @@ export default function Page() {
           viewMode={safeViewMode}
           cmpYear={safeCmpYear || safeYearValue}
           cmpMonth={safeCmpMonth || safeMonthValue}
-          todayLabel={todayLabel}
-          profileName={getProfile().name}
+          todayLabel={compactDateLabel}
+          profileName={profileName}
           opts={safeOpts}
           kpi={kpi}
           catShares={safeCatShares}

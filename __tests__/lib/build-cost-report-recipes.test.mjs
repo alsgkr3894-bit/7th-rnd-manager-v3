@@ -194,6 +194,71 @@ describe('buildRecipePrintRows', () => {
       R: { quantity: 5, unit: 'g' },
     });
   });
+
+  test('직접 입력 식자재와 공통관리 구성품은 출력에서 별도로 구분한다', () => {
+    const rows = buildRecipePrintRows({
+      detailMaps: {
+        pizza: new Map([
+          [
+            'P-001-L',
+            {
+              menuCode: 'P-001-L',
+              menuName: '공통 분리 피자',
+              category: '피자',
+              size: 'L',
+              components: [
+                { productCode: 'SAUCE', ingredientName: '소스', quantity: 10, unit: 'g' },
+              ],
+              selectedRecipeGroupIds: ['common-1'],
+            },
+          ],
+        ]),
+      },
+      unitPriceMap: new Map([['SAUCE', { unitPrice: 10, baseUnitType: 'g' }]]),
+      recipeGroups: [
+        {
+          id: 'common-1',
+          name: '피자 공통',
+          sizes: ['L'],
+          defaultCategories: ['피자'],
+          ingredients: [
+            {
+              productCode: 'SAUCE',
+              ingredientName: '소스',
+              quantities: { L: 30 },
+              unitType: 'g',
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(rows[0].components).toEqual([
+      expect.objectContaining({
+        sourceType: 'direct',
+        sourceLabel: '직접 입력',
+        productCode: 'SAUCE',
+        quantity: 10,
+        subtotal: 100,
+      }),
+      expect.objectContaining({
+        sourceType: 'common',
+        sourceLabel: '피자 공통',
+        productCode: 'SAUCE',
+        quantity: 30,
+        subtotal: 300,
+      }),
+    ]);
+    expect(rows[0].totalCost).toBe(400);
+
+    const menus = buildRecipePrintMenus(rows);
+    expect(menus[0].components).toHaveLength(2);
+    expect(menus[0].components.map(component => component.sourceType)).toEqual([
+      'direct',
+      'common',
+    ]);
+    expect(menus[0].components.map(component => component.totalCost)).toEqual([100, 300]);
+  });
 });
 
 describe('buildCostReportData recipe precedence', () => {

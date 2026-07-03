@@ -39,6 +39,23 @@ describe('buildIngredientMenuMap', () => {
       expect(menus.has('P-OR-001-L')).toBe(true);
     });
 
+    test('레시피 size를 매핑 meta에 보존한다', () => {
+      const { ingredientToMenus } = buildIngredientMenuMap({
+        menuMasters: MENUS,
+        detailRecipes: [
+          {
+            menuCode: 'P-OR-001-L',
+            menuName: '오리지널콤보 L',
+            category: '피자',
+            size: 'L',
+            components: [{ productCode: 'ING-001', ingredientName: '토마토소스' }],
+          },
+        ],
+      });
+
+      expect(ingredientToMenus.get('code:ING-001')?.get('P-OR-001-L')?.size).toBe('L');
+    });
+
     test('productCode 없는 식자재 → name 키로 매핑', () => {
       const { ingredientToMenus } = buildIngredientMenuMap({
         menuMasters: MENUS,
@@ -63,6 +80,25 @@ describe('buildIngredientMenuMap', () => {
       });
       expect(ingredientToMenus.get('code:OLD-CODE')?.has('S-CHK-001')).toBe(true);
       expect(ingredientToMenus.get('name:닭다리살')?.has('S-CHK-001')).toBe(true);
+    });
+
+    test('productCode 키는 대소문자 차이에도 조회된다', () => {
+      const { ingredientToMenus } = buildIngredientMenuMap({
+        menuMasters: MENUS,
+        detailRecipes: [
+          {
+            menuCode: 'S-CHK-001',
+            menuName: '치킨텐더',
+            category: '사이드',
+            components: [{ productCode: 'ing-mix-01', ingredientName: '소스' }],
+          },
+        ],
+      });
+
+      expect(ingredientToMenus.get('code:ING-MIX-01')?.has('S-CHK-001')).toBe(true);
+      expect(getMenusForIngredient(ingredientToMenus, 'ING-MIX-01', '').has('S-CHK-001')).toBe(
+        true
+      );
     });
 
     test('사이드 레시피도 매핑', () => {

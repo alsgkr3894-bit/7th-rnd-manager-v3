@@ -1,5 +1,9 @@
 import { describe, expect, test } from '@jest/globals';
-import { calcHalfMinMax, calcSetMinMax } from '../../lib/nutrition/values/set-calc.js';
+import {
+  calcHalfMinMax,
+  calcSetMinMax,
+  getPizzaCalorieVariants,
+} from '../../lib/nutrition/values/set-calc.js';
 
 const pizzaMenus = [
   { menuCode: 'P-A', menuName: '가 피자', category: '피자' },
@@ -54,9 +58,66 @@ describe('nutrition set calc', () => {
       edgeMap
     );
 
-    expect(result.bySize.L).toEqual({ minKcal: 90, maxKcal: 260 });
-    expect(result.bySize.R).toEqual({ minKcal: 100, maxKcal: 230 });
+    expect(result.bySize.L).toMatchObject({ minKcal: 90, maxKcal: 260 });
+    expect(result.bySize.R).toMatchObject({ minKcal: 100, maxKcal: 230 });
     expect(result.minKcal).toBe(90);
     expect(result.maxKcal).toBe(260);
+  });
+
+  test('세트박스 구성품은 비피자 단품 슬롯을 우선 사용한다', () => {
+    const result = calcSetMinMax(
+      [{ label: '사이드', menuCodes: ['S-1'] }],
+      [...pizzaMenus, { menuCode: 'S-1', menuName: '사이드', category: '사이드' }],
+      {
+        ...rawMap,
+        'S-1__단품': { weight: 100, kcal: 20 },
+      },
+      {},
+      pizzaMenus,
+      edgeMap
+    );
+
+    expect(result.bySize.L).toMatchObject({ minKcal: 100, maxKcal: 270 });
+    expect(result.bySize.R).toMatchObject({ minKcal: 110, maxKcal: 240 });
+  });
+
+  test('엣지 후보 총열량은 엣지 중량까지 합산한 한판 중량을 사용한다', () => {
+    const variants = getPizzaCalorieVariants(
+      { menuCode: 'P-W', menuName: '중량 피자' },
+      {
+        'P-W__석쇠L': { weight: 100, kcal: 100 },
+      },
+      {
+        치즈크러스트L: { weight: 20, kcal: 50 },
+      }
+    );
+
+    expect(variants.find(row => row.crustType === '치즈크러스트L')).toMatchObject({
+      weight: 120,
+      kcal: 180,
+    });
+  });
+
+  test('세트박스는 피자 후보와 구성품 중량 범위를 함께 계산한다', () => {
+    const result = calcSetMinMax(
+      [{ label: '사이드', menuCodes: ['S-1'] }],
+      [...pizzaMenus, { menuCode: 'S-1', menuName: '사이드', category: '사이드' }],
+      {
+        ...rawMap,
+        'P-B__석쇠L': { weight: 120, kcal: 200 },
+        'S-1__단품': { weight: 80, kcal: 10 },
+      },
+      {},
+      pizzaMenus,
+      {
+        ...edgeMap,
+        치즈크러스트L: { weight: 20, kcal: 50 },
+      }
+    );
+
+    expect(result.bySize.L).toMatchObject({
+      minWeight: 180,
+      maxWeight: 220,
+    });
   });
 });

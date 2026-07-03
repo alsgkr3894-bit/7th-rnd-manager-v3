@@ -111,4 +111,27 @@ describe('nutrition derived menu calc', () => {
       protein: 10,
     });
   });
+
+  test('피자가 아닌 메뉴는 석쇠/씬 변형 대신 단품 결과만 만든다', () => {
+    const results = calcAllResults({
+      menus: [{ menuCode: 'S-WING', menuName: '핫윙', category: '사이드' }],
+      rawMap: {
+        'S-WING__단품': { basis: 'serving', weight: 120, kcal: 250 },
+        'S-WING__석쇠L': { basis: 'serving', weight: 1, kcal: 1 },
+      },
+      edgeMap: {},
+      compositions: [],
+      masterByCode: {
+        'S-WING': { menuCode: 'S-WING', category: '사이드' },
+      },
+    });
+
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({
+      menuCode: 'S-WING',
+      crustType: '단품',
+      weight: 120,
+      kcal: 250,
+    });
+  });
 });

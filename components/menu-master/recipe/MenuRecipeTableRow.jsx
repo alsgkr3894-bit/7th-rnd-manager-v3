@@ -41,7 +41,7 @@ export function MenuRecipeTableRow({
 
   return (
     <tr style={{ borderBottom: '1px solid var(--divider)' }}>
-      <td style={{ padding: '4px 4px', position: 'relative' }}>
+      <td style={{ padding: '7px 8px', position: 'relative' }}>
         <input
           ref={el => {
             if (ingredientInputRefs) {
@@ -50,7 +50,7 @@ export function MenuRecipeTableRow({
             }
           }}
           className="form-input"
-          style={{ width: '100%', fontSize: 12, padding: '4px 6px' }}
+          style={{ width: '100%', height: 34, fontSize: 13, padding: '6px 8px' }}
           value={searchIdx === idx ? searchQ : component.ingredientName || ''}
           onChange={e => onIngredientInputChange(idx, e.target.value)}
           onFocus={() => onIngredientFocus(idx, component.ingredientName || '')}
@@ -69,10 +69,11 @@ export function MenuRecipeTableRow({
               right: 0,
               background: 'var(--surface)',
               border: '1px solid var(--border)',
-              borderRadius: 6,
+              borderRadius: 8,
               zIndex: 50,
-              maxHeight: 160,
+              maxHeight: 220,
               overflowY: 'auto',
+              boxShadow: 'var(--shadow-md)',
             }}
           >
             {suggestions.map((ingredient, suggestionIndex) => (
@@ -87,7 +88,7 @@ export function MenuRecipeTableRow({
           </div>
         )}
       </td>
-      <td style={{ padding: '4px 4px' }}>
+      <td style={{ padding: '7px 6px' }}>
         <input
           ref={el => {
             if (quantityInputRefs) {
@@ -101,8 +102,9 @@ export function MenuRecipeTableRow({
           step="any"
           style={{
             width: '100%',
-            fontSize: 12,
-            padding: '4px 6px',
+            height: 34,
+            fontSize: 13,
+            padding: '6px 8px',
             textAlign: 'right',
             borderColor: quantityNeedsCheck ? 'var(--warn)' : undefined,
           }}
@@ -117,10 +119,10 @@ export function MenuRecipeTableRow({
           }
         />
       </td>
-      <td style={{ padding: '4px 4px' }}>
+      <td style={{ padding: '7px 6px' }}>
         <select
           className="form-input"
-          style={{ width: '100%', fontSize: 12, padding: '4px 4px' }}
+          style={{ width: '100%', height: 34, fontSize: 13, padding: '6px 6px' }}
           value={normalizeCostBaseUnit(component.unit)}
           onChange={e => onUnitChange(idx, e.target.value)}
         >
@@ -131,7 +133,7 @@ export function MenuRecipeTableRow({
           ))}
         </select>
       </td>
-      <td style={{ padding: '4px 4px', textAlign: 'right', fontSize: 11 }}>
+      <td style={{ padding: '7px 6px', textAlign: 'right', fontSize: 12 }}>
         {component.unitPrice != null ? (
           <span style={{ color: 'var(--text-2)' }}>
             {formatUnitPrice(component.unitPrice, normalizeCostBaseUnit(component.unit))}
@@ -144,15 +146,15 @@ export function MenuRecipeTableRow({
           />
         )}
       </td>
-      <td style={{ padding: '4px 4px', textAlign: 'right', fontSize: 11 }}>
+      <td style={{ padding: '7px 6px', textAlign: 'right', fontSize: 12 }}>
         {subtotal != null ? (
           <span style={{ color: 'var(--text-2)' }}>{subtotal.toLocaleString()}원</span>
         ) : (
           <span style={{ color: 'var(--text-4)' }}>—</span>
         )}
       </td>
-      <td style={{ padding: '4px 2px', textAlign: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <td style={{ padding: '7px 6px', textAlign: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
           {typeof onCopyRow === 'function' && (
             <button
               type="button"
@@ -160,13 +162,14 @@ export function MenuRecipeTableRow({
               title="행 복사"
               style={{
                 border: 0,
-                background: 'transparent',
+                background: 'var(--surface-2)',
+                borderRadius: 6,
                 cursor: 'pointer',
                 color: 'var(--text-4)',
-                padding: 2,
+                padding: 5,
               }}
             >
-              <Icon.copy style={{ width: 10, height: 10 }} />
+              <Icon.copy style={{ width: 12, height: 12 }} />
             </button>
           )}
           <button
@@ -175,13 +178,14 @@ export function MenuRecipeTableRow({
             title="구성품 삭제"
             style={{
               border: 0,
-              background: 'transparent',
+              background: 'var(--surface-2)',
+              borderRadius: 6,
               cursor: 'pointer',
               color: 'var(--text-4)',
-              padding: 2,
+              padding: 5,
             }}
           >
-            <Icon.close style={{ width: 10, height: 10 }} />
+            <Icon.close style={{ width: 12, height: 12 }} />
           </button>
         </div>
       </td>

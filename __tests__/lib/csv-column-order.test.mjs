@@ -42,19 +42,27 @@ describe('CSV/XLSX 컬럼 순서 고정', () => {
     expect(reportListSrc).toContain('즐겨찾기:');
   });
 
-  test('영양성분표 LABEL_COLS: 1회중량→열량→당류→단백질→조지방→나트륨 순서', () => {
+  test('영양성분표 LABEL_COLS: 1회중량→열량→당류→단백질→포화지방→나트륨 순서', () => {
     const keys = LABEL_COLS.map(c => c.key);
     expect(keys).toEqual(['weight', 'kcal', 'sugar', 'protein', 'fat', 'sodium']);
   });
 
-  test('영양성분표 엑셀: 피자 시트 메뉴명→크러스트→사이드→HEADERS→함유알레르기 순서', () => {
-    expect(labelExportSrc).toContain(
-      "['메뉴명', '크러스트', '사이드', ...HEADERS, '함유알레르기']"
-    );
+  test('영양성분표 엑셀: 피자 시트 Pizza→크러스트→영양 그룹→함유알레르기 순서', () => {
+    const pizzaIdx = labelExportSrc.indexOf("'Pizza'");
+    const crustIdx = labelExportSrc.indexOf("'크러스트'");
+    const groupIdx = labelExportSrc.indexOf('...groups.flatMap(group => [group.label');
+    const allergenIdx = labelExportSrc.indexOf("'함유된 알레르기 유발물질'");
+
+    expect(pizzaIdx).toBeGreaterThan(-1);
+    expect(pizzaIdx).toBeLessThan(crustIdx);
+    expect(crustIdx).toBeLessThan(groupIdx);
+    expect(groupIdx).toBeLessThan(allergenIdx);
   });
 
-  test('영양성분표 엑셀: 사이드 시트 메뉴명→HEADERS→함유알레르기 순서', () => {
-    expect(labelExportSrc).toContain("['메뉴명', ...HEADERS, '함유알레르기']");
+  test('영양성분표 엑셀: 일반 시트 메뉴명→영양 컬럼→함유알레르기 순서', () => {
+    expect(labelExportSrc).toContain(
+      "['메뉴명', ...cols.map(col => col.label), '함유된 알레르기 유발물질']"
+    );
   });
 
   test('makeFileNameWithBrand 헬퍼가 download.js에서 export됨', () => {

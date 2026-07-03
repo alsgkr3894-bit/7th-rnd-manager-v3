@@ -1,0 +1,1164 @@
+{
+  "generatedAt": "2026-07-02T04:04:15.666Z",
+  "base": "http://127.0.0.1:3000",
+  "runId": "DEEP-AUTH-STORAGE-1782965047022",
+  "counts": {
+    "total": 14,
+    "passed": 13,
+    "failed": 1
+  },
+  "checks": [
+    {
+      "name": "unauthenticated protected route redirects to /login",
+      "ok": true,
+      "path": "/",
+      "status": 307,
+      "location": "http://localhost:3000/login",
+      "contentType": null,
+      "json": null,
+      "text": "http://localhost:3000/login"
+    },
+    {
+      "name": "unauthenticated /login renders",
+      "ok": true,
+      "path": "/login",
+      "status": 200,
+      "location": null,
+      "contentType": "text/html; charset=utf-8",
+      "json": null,
+      "text": "<!DOCTYPE html><html lang=\"ko\" class=\"__variable_9cd628\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=5\"/><link rel=\"preload\" as=\"image\" href=\"/logo-7thst"
+    },
+    {
+      "name": "authenticated /login redirects to /",
+      "ok": true,
+      "path": "/login",
+      "status": 307,
+      "location": "http://localhost:3000/",
+      "contentType": null,
+      "json": null,
+      "text": "http://localhost:3000/"
+    },
+    {
+      "name": "API routes stay public under middleware and return JSON",
+      "ok": true,
+      "path": "/api/db/backups",
+      "status": 200,
+      "location": null,
+      "contentType": "application/json",
+      "json": {
+        "ok": true,
+        "backupDir": "C:\\Users\\user\\Documents\\Codex\\7th-rnd-manager-v3\\7th-rnd-manager-v3\\.db-backups",
+        "backups": [
+          {
+            "name": "rnd_manager-20260623-110457.dump",
+            "path": "C:\\Users\\user\\Documents\\Codex\\7th-rnd-manager-v3\\7th-rnd-manager-v3\\.db-backups\\rnd_manager-20260623-110457.dump",
+            "size": 20016,
+            "modifiedAt": "2026-06-23T02:04:57.374Z",
+            "createdAt": "2026-06-23T02:04:57.381Z",
+            "database": "rnd_manager",
+            "host": "127.0.0.1",
+            "port": "5432"
+          },
+          {
+            "name": "rnd_manager-20260622-175833.dump",
+            "path": "C:\\Users\\user\\Documents\\Codex\\7th-rnd-manager-v3\\7th-rnd-manager-v3\\.db-backups\\rnd_manager-20260622-175833.dump",
+            "size": 20016,
+            "modifiedAt": "2026-06-22T08:58:33.728Z",
+            "createdAt": "2026-06-22T08:58:33.736Z",
+            "database": "rnd_manager",
+            "host": "127.0.0.1",
+            "port": "5432"
+          }
+        ],
+        "count": 2,
+        "totalSize": 40032,
+        "latest": {
+          "name": "rnd_manager-20260623-110457.dump",
+          "path": "C:\\Users\\user\\Documents\\Codex\\7th-rnd-manager-v3\\7th-rnd-manager-v3\\.db-backups\\rnd_manager-20260623-110457.dump",
+          "size": 20016,
+          "modifiedAt": "2026-06-23T02:04:57.374Z",
+          "createdAt": "2026-06-23T02:04:57.381Z",
+          "database": "rnd_manager",
+          "host": "127.0.0.1",
+          "port": "5432"
+        },
+        "latestAgeHours": 217.98719805555555,
+        "stale": true,
+        "staleAfterHours": 26,
+        "checkedAt": "2026-07-02T04:04:11.287Z"
+      },
+      "text": "{\"ok\":true,\"backupDir\":\"C:\\\\Users\\\\user\\\\Documents\\\\Codex\\\\7th-rnd-manager-v3\\\\7th-rnd-manager-v3\\\\.db-backups\",\"backups\":[{\"name\":\"rnd_manager-20260623-110457.dump\",\"path\":\"C:\\\\Users\\\\user\\\\Documents\\\\Codex\\\\7th-rnd-man",
+      "backupCount": 2,
+      "latestBackup": "rnd_manager-20260623-110457.dump",
+      "stale": true
+    },
+    {
+      "name": "favicon is public and served",
+      "ok": true,
+      "path": "/favicon.ico",
+      "status": 200,
+      "location": null,
+      "contentType": "image/x-icon",
+      "json": null
+    },
+    {
+      "name": "DB health API returns live counts",
+      "ok": true,
+      "path": "/api/db/health",
+      "status": 200,
+      "location": null,
+      "contentType": "application/json",
+      "json": {
+        "ok": true,
+        "database": "rnd_manager",
+        "schema": "public",
+        "counts": {
+          "brands": 3,
+          "storeCatalog": 43,
+          "storeRows": 178110,
+          "localStorageEntries": 0,
+          "dataImportJobs": 0
+        },
+        "brands": [
+          {
+            "id": "main",
+            "name": "7번가피자",
+            "code": "main",
+            "isDefault": true,
+            "hidden": false,
+            "updatedAt": "2026-06-22T07:25:12.256Z"
+          },
+          {
+            "id": "icheon",
+            "name": "이천밥쌤",
+            "code": "icheon",
+            "isDefault": false,
+            "hidden": false,
+            "updatedAt": "2026-06-22T07:25:12.387Z"
+          },
+          {
+            "id": "china4",
+            "name": "차이나X4",
+            "code": "china4",
+            "isDefault": false,
+            "hidden": false,
+            "updatedAt": "2026-06-22T07:25:12.386Z"
+          }
+        ],
+        "recentImportJobs": [],
+        "checkedAt": "2026-07-02T04:04:11.825Z"
+      },
+      "text": "{\"ok\":true,\"database\":\"rnd_manager\",\"schema\":\"public\",\"counts\":{\"brands\":3,\"storeCatalog\":43,\"storeRows\":178110,\"localStorageEntries\":0,\"dataImportJobs\":0},\"brands\":[{\"id\":\"main\",\"name\":\"7번가피자\",\"code\":\"main\",\"isDefault\":",
+      "counts": {
+        "brands": 3,
+        "storeCatalog": 43,
+        "storeRows": 178110,
+        "localStorageEntries": 0,
+        "dataImportJobs": 0
+      },
+      "database": "rnd_manager",
+      "schema": "public"
+    },
+    {
+      "name": "DB backup list API returns structured status",
+      "ok": true,
+      "path": "/api/db/backups",
+      "status": 200,
+      "location": null,
+      "contentType": "application/json",
+      "json": {
+        "ok": true,
+        "backupDir": "C:\\Users\\user\\Documents\\Codex\\7th-rnd-manager-v3\\7th-rnd-manager-v3\\.db-backups",
+        "backups": [
+          {
+            "name": "rnd_manager-20260623-110457.dump",
+            "path": "C:\\Users\\user\\Documents\\Codex\\7th-rnd-manager-v3\\7th-rnd-manager-v3\\.db-backups\\rnd_manager-20260623-110457.dump",
+            "size": 20016,
+            "modifiedAt": "2026-06-23T02:04:57.374Z",
+            "createdAt": "2026-06-23T02:04:57.381Z",
+            "database": "rnd_manager",
+            "host": "127.0.0.1",
+            "port": "5432"
+          },
+          {
+            "name": "rnd_manager-20260622-175833.dump",
+            "path": "C:\\Users\\user\\Documents\\Codex\\7th-rnd-manager-v3\\7th-rnd-manager-v3\\.db-backups\\rnd_manager-20260622-175833.dump",
+            "size": 20016,
+            "modifiedAt": "2026-06-22T08:58:33.728Z",
+            "createdAt": "2026-06-22T08:58:33.736Z",
+            "database": "rnd_manager",
+            "host": "127.0.0.1",
+            "port": "5432"
+          }
+        ],
+        "count": 2,
+        "totalSize": 40032,
+        "latest": {
+          "name": "rnd_manager-20260623-110457.dump",
+          "path": "C:\\Users\\user\\Documents\\Codex\\7th-rnd-manager-v3\\7th-rnd-manager-v3\\.db-backups\\rnd_manager-20260623-110457.dump",
+          "size": 20016,
+          "modifiedAt": "2026-06-23T02:04:57.374Z",
+          "createdAt": "2026-06-23T02:04:57.381Z",
+          "database": "rnd_manager",
+          "host": "127.0.0.1",
+          "port": "5432"
+        },
+        "latestAgeHours": 217.987355,
+        "stale": true,
+        "staleAfterHours": 26,
+        "checkedAt": "2026-07-02T04:04:11.852Z"
+      },
+      "text": "{\"ok\":true,\"backupDir\":\"C:\\\\Users\\\\user\\\\Documents\\\\Codex\\\\7th-rnd-manager-v3\\\\7th-rnd-manager-v3\\\\.db-backups\",\"backups\":[{\"name\":\"rnd_manager-20260623-110457.dump\",\"path\":\"C:\\\\Users\\\\user\\\\Documents\\\\Codex\\\\7th-rnd-man",
+      "backupDir": "C:\\Users\\user\\Documents\\Codex\\7th-rnd-manager-v3\\7th-rnd-manager-v3\\.db-backups",
+      "count": 2,
+      "latest": "rnd_manager-20260623-110457.dump",
+      "stale": true
+    },
+    {
+      "name": "latest local DB backup is fresh",
+      "ok": false,
+      "latest": "rnd_manager-20260623-110457.dump",
+      "latestModifiedAt": "2026-06-23T02:04:57.374Z",
+      "latestAgeHours": 217.987355,
+      "staleAfterHours": 26,
+      "stale": true
+    },
+    {
+      "name": "store-row sync no-op POST is accepted",
+      "ok": true,
+      "path": "/api/db/store-rows",
+      "status": 200,
+      "location": null,
+      "contentType": "application/json",
+      "json": {
+        "ok": true,
+        "applied": 0,
+        "upserted": 0,
+        "deleted": 0,
+        "cleared": 0
+      },
+      "text": "{\"ok\":true,\"applied\":0,\"upserted\":0,\"deleted\":0,\"cleared\":0}"
+    },
+    {
+      "name": "store-row sync rejects unknown stores",
+      "ok": true,
+      "path": "/api/db/store-rows",
+      "status": 400,
+      "location": null,
+      "contentType": "application/json",
+      "json": {
+        "ok": false,
+        "error": "Unknown storeName '__missing__'.",
+        "checkedAt": "2026-07-02T04:04:12.047Z"
+      },
+      "text": "{\"ok\":false,\"error\":\"Unknown storeName '__missing__'.\",\"checkedAt\":\"2026-07-02T04:04:12.047Z\"}"
+    },
+    {
+      "name": "store-row sync can upsert a QA row",
+      "ok": true,
+      "path": "/api/db/store-rows",
+      "status": 200,
+      "location": null,
+      "contentType": "application/json",
+      "json": {
+        "ok": true,
+        "applied": 1,
+        "upserted": 1,
+        "deleted": 0,
+        "cleared": 0
+      },
+      "text": "{\"ok\":true,\"applied\":1,\"upserted\":1,\"deleted\":0,\"cleared\":0}"
+    },
+    {
+      "name": "store-row sync can delete the QA row again",
+      "ok": true,
+      "path": "/api/db/store-rows",
+      "status": 200,
+      "location": null,
+      "contentType": "application/json",
+      "json": {
+        "ok": true,
+        "applied": 1,
+        "upserted": 0,
+        "deleted": 1,
+        "cleared": 0
+      },
+      "text": "{\"ok\":true,\"applied\":1,\"upserted\":0,\"deleted\":1,\"cleared\":0}"
+    },
+    {
+      "name": "IndexedDB schema is complete for main",
+      "ok": true,
+      "dbName": "rnd_manager_v3",
+      "version": 23,
+      "stores": [
+        "cost_edge_dough",
+        "cost_ingredient_price_history",
+        "cost_ingredients",
+        "cost_margin_snapshots",
+        "cost_platform_fees",
+        "cost_recipe_groups",
+        "cost_selling_prices",
+        "cost_suppliers",
+        "cost_upload_log",
+        "generated_reports",
+        "menu_dev_notes",
+        "menu_master",
+        "menu_recipes",
+        "menu_sales_issues",
+        "migration_flags",
+        "note_schedules",
+        "nutrition_allergy_master",
+        "nutrition_edge_master",
+        "nutrition_menu_ref",
+        "nutrition_origin_master",
+        "nutrition_pizza_composition",
+        "nutrition_raw_values",
+        "nutrition_set_composition",
+        "nutrition_topping_master",
+        "price_files",
+        "price_rows",
+        "ref_accounts",
+        "ref_discontinued",
+        "ref_event_menus",
+        "ref_excluded",
+        "ref_sales_aliases",
+        "ref_sales_categories",
+        "ref_shipment_products",
+        "ref_shipment_rules",
+        "sales_files",
+        "sales_rows",
+        "sales_rules",
+        "sample_records",
+        "settings",
+        "shipment_files",
+        "shipment_rows",
+        "upload_log",
+        "work_log"
+      ],
+      "details": {
+        "cost_edge_dough": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "edgeType",
+            "size"
+          ]
+        },
+        "cost_ingredient_price_history": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "changedAt",
+            "ingredientId"
+          ]
+        },
+        "cost_ingredients": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "ingredientName",
+            "productCode"
+          ]
+        },
+        "cost_margin_snapshots": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "capturedAt"
+          ]
+        },
+        "cost_platform_fees": {
+          "keyPath": "id",
+          "autoIncrement": false,
+          "indexes": []
+        },
+        "cost_recipe_groups": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "name"
+          ]
+        },
+        "cost_selling_prices": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "menuCode",
+            "menuName",
+            "size"
+          ]
+        },
+        "cost_suppliers": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "name"
+          ]
+        },
+        "cost_upload_log": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "uploadType",
+            "uploadedAt"
+          ]
+        },
+        "generated_reports": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "createdAt",
+            "fav",
+            "kind"
+          ]
+        },
+        "menu_dev_notes": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "brand",
+            "category",
+            "createdAt",
+            "parentId",
+            "status"
+          ]
+        },
+        "menu_master": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "category",
+            "displayOrder",
+            "menuCode",
+            "status"
+          ]
+        },
+        "menu_recipes": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "category",
+            "displayGroupKey",
+            "kind",
+            "menuCode",
+            "updatedAt"
+          ]
+        },
+        "menu_sales_issues": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "fileId",
+            "issueType",
+            "status",
+            "year_month"
+          ]
+        },
+        "migration_flags": {
+          "keyPath": "flag",
+          "autoIncrement": false,
+          "indexes": []
+        },
+        "note_schedules": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "createdAt",
+            "date",
+            "type"
+          ]
+        },
+        "nutrition_allergy_master": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "allergenCode",
+            "displayOrder"
+          ]
+        },
+        "nutrition_edge_master": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "displayOrder",
+            "edgeCode"
+          ]
+        },
+        "nutrition_menu_ref": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "category",
+            "displayOrder",
+            "menuCode"
+          ]
+        },
+        "nutrition_origin_master": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "category",
+            "displayOrder",
+            "ingredientName"
+          ]
+        },
+        "nutrition_pizza_composition": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "baseMenuCode",
+            "menuCode"
+          ]
+        },
+        "nutrition_raw_values": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "crustType",
+            "menuCode",
+            "menu_crust"
+          ]
+        },
+        "nutrition_set_composition": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "kind",
+            "setCode"
+          ]
+        },
+        "nutrition_topping_master": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "displayOrder",
+            "toppingCode"
+          ]
+        },
+        "price_files": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "updateDate"
+          ]
+        },
+        "price_rows": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "fileId",
+            "fileId_productCode",
+            "productCode",
+            "updateDate"
+          ]
+        },
+        "ref_accounts": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "role"
+          ]
+        },
+        "ref_discontinued": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "menuName"
+          ]
+        },
+        "ref_event_menus": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "menuName"
+          ]
+        },
+        "ref_excluded": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "menuName"
+          ]
+        },
+        "ref_sales_aliases": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "enable",
+            "rawName"
+          ]
+        },
+        "ref_sales_categories": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "categoryName",
+            "displayOrder",
+            "enabled"
+          ]
+        },
+        "ref_shipment_products": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "enable",
+            "productCode"
+          ]
+        },
+        "ref_shipment_rules": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "enable",
+            "mappedCode",
+            "rawName"
+          ]
+        },
+        "sales_files": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "year_month"
+          ]
+        },
+        "sales_rows": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "category",
+            "category_normalizedMenuName",
+            "fileId",
+            "normalizedMenuName",
+            "status",
+            "year_month"
+          ]
+        },
+        "sales_rules": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "enable",
+            "rawMenuName"
+          ]
+        },
+        "sample_records": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "category",
+            "createdAt",
+            "menuName",
+            "testDate"
+          ]
+        },
+        "settings": {
+          "keyPath": "key",
+          "autoIncrement": false,
+          "indexes": []
+        },
+        "shipment_files": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": []
+        },
+        "shipment_rows": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "fileId",
+            "productCode",
+            "year_month"
+          ]
+        },
+        "upload_log": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "fileHash",
+            "linkedFileId",
+            "module",
+            "module_fileHash"
+          ]
+        },
+        "work_log": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "at",
+            "date",
+            "type"
+          ]
+        }
+      },
+      "expectedVersion": 23,
+      "expectedStoreCount": 43,
+      "versionOk": true,
+      "missingStores": [],
+      "extraStores": [],
+      "legacyStoresPresent": [],
+      "missingIndexes": [],
+      "diagnostics": {
+        "url": "http://127.0.0.1:3000/note",
+        "title": "7번가 R&D 플랫폼",
+        "bodyHead": "콘텐츠로 건너뛰기 7번가피자 플랫폼 홈 개발 메모 메뉴개발노트 일정 달력 노트 작성 노트 목록 칸반 보드 연구일지 샘플기록 보고서센터 보고서 보고서센터 판매량 보고서 제때 가격 보고서 제때 출고량 보고서 판매량 비교 보고서 원가계산 보고서 원가마진표 보고서 상품 관리 제때데이터 단가 출고량 관리품목 식자재 식자재 관리 제품별 사용 현황 메뉴 메뉴 메뉴 마스터 원가 · 영양 원가계산 공통 원가 관리 원가마진표 영양성분 표 출력 ",
+        "idbOpenCalls": [
+          {
+            "name": "rnd_manager_v3",
+            "version": 23
+          },
+          {
+            "name": "rnd_manager_v3",
+            "version": null
+          }
+        ]
+      },
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "name": "IndexedDB schema is complete for china4",
+      "ok": true,
+      "dbName": "rnd_manager_v3__china4",
+      "version": 23,
+      "stores": [
+        "cost_edge_dough",
+        "cost_ingredient_price_history",
+        "cost_ingredients",
+        "cost_margin_snapshots",
+        "cost_platform_fees",
+        "cost_recipe_groups",
+        "cost_selling_prices",
+        "cost_suppliers",
+        "cost_upload_log",
+        "generated_reports",
+        "menu_dev_notes",
+        "menu_master",
+        "menu_recipes",
+        "menu_sales_issues",
+        "migration_flags",
+        "note_schedules",
+        "nutrition_allergy_master",
+        "nutrition_edge_master",
+        "nutrition_menu_ref",
+        "nutrition_origin_master",
+        "nutrition_pizza_composition",
+        "nutrition_raw_values",
+        "nutrition_set_composition",
+        "nutrition_topping_master",
+        "price_files",
+        "price_rows",
+        "ref_accounts",
+        "ref_discontinued",
+        "ref_event_menus",
+        "ref_excluded",
+        "ref_sales_aliases",
+        "ref_sales_categories",
+        "ref_shipment_products",
+        "ref_shipment_rules",
+        "sales_files",
+        "sales_rows",
+        "sales_rules",
+        "sample_records",
+        "settings",
+        "shipment_files",
+        "shipment_rows",
+        "upload_log",
+        "work_log"
+      ],
+      "details": {
+        "cost_edge_dough": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "edgeType",
+            "size"
+          ]
+        },
+        "cost_ingredient_price_history": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "changedAt",
+            "ingredientId"
+          ]
+        },
+        "cost_ingredients": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "ingredientName",
+            "productCode"
+          ]
+        },
+        "cost_margin_snapshots": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "capturedAt"
+          ]
+        },
+        "cost_platform_fees": {
+          "keyPath": "id",
+          "autoIncrement": false,
+          "indexes": []
+        },
+        "cost_recipe_groups": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "name"
+          ]
+        },
+        "cost_selling_prices": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "menuCode",
+            "menuName",
+            "size"
+          ]
+        },
+        "cost_suppliers": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "name"
+          ]
+        },
+        "cost_upload_log": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "uploadType",
+            "uploadedAt"
+          ]
+        },
+        "generated_reports": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "createdAt",
+            "fav",
+            "kind"
+          ]
+        },
+        "menu_dev_notes": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "brand",
+            "category",
+            "createdAt",
+            "parentId",
+            "status"
+          ]
+        },
+        "menu_master": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "category",
+            "displayOrder",
+            "menuCode",
+            "status"
+          ]
+        },
+        "menu_recipes": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "category",
+            "displayGroupKey",
+            "kind",
+            "menuCode",
+            "updatedAt"
+          ]
+        },
+        "menu_sales_issues": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "fileId",
+            "issueType",
+            "status",
+            "year_month"
+          ]
+        },
+        "migration_flags": {
+          "keyPath": "flag",
+          "autoIncrement": false,
+          "indexes": []
+        },
+        "note_schedules": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "createdAt",
+            "date",
+            "type"
+          ]
+        },
+        "nutrition_allergy_master": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "allergenCode",
+            "displayOrder"
+          ]
+        },
+        "nutrition_edge_master": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "displayOrder",
+            "edgeCode"
+          ]
+        },
+        "nutrition_menu_ref": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "category",
+            "displayOrder",
+            "menuCode"
+          ]
+        },
+        "nutrition_origin_master": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "category",
+            "displayOrder",
+            "ingredientName"
+          ]
+        },
+        "nutrition_pizza_composition": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "baseMenuCode",
+            "menuCode"
+          ]
+        },
+        "nutrition_raw_values": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "crustType",
+            "menuCode",
+            "menu_crust"
+          ]
+        },
+        "nutrition_set_composition": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "kind",
+            "setCode"
+          ]
+        },
+        "nutrition_topping_master": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "displayOrder",
+            "toppingCode"
+          ]
+        },
+        "price_files": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "updateDate"
+          ]
+        },
+        "price_rows": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "fileId",
+            "fileId_productCode",
+            "productCode",
+            "updateDate"
+          ]
+        },
+        "ref_accounts": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "role"
+          ]
+        },
+        "ref_discontinued": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "menuName"
+          ]
+        },
+        "ref_event_menus": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "menuName"
+          ]
+        },
+        "ref_excluded": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "menuName"
+          ]
+        },
+        "ref_sales_aliases": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "enable",
+            "rawName"
+          ]
+        },
+        "ref_sales_categories": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "categoryName",
+            "displayOrder",
+            "enabled"
+          ]
+        },
+        "ref_shipment_products": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "enable",
+            "productCode"
+          ]
+        },
+        "ref_shipment_rules": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "enable",
+            "mappedCode",
+            "rawName"
+          ]
+        },
+        "sales_files": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "year_month"
+          ]
+        },
+        "sales_rows": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "category",
+            "category_normalizedMenuName",
+            "fileId",
+            "normalizedMenuName",
+            "status",
+            "year_month"
+          ]
+        },
+        "sales_rules": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "enable",
+            "rawMenuName"
+          ]
+        },
+        "sample_records": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "category",
+            "createdAt",
+            "menuName",
+            "testDate"
+          ]
+        },
+        "settings": {
+          "keyPath": "key",
+          "autoIncrement": false,
+          "indexes": []
+        },
+        "shipment_files": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": []
+        },
+        "shipment_rows": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "fileId",
+            "productCode",
+            "year_month"
+          ]
+        },
+        "upload_log": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "fileHash",
+            "linkedFileId",
+            "module",
+            "module_fileHash"
+          ]
+        },
+        "work_log": {
+          "keyPath": "id",
+          "autoIncrement": true,
+          "indexes": [
+            "at",
+            "date",
+            "type"
+          ]
+        }
+      },
+      "expectedVersion": 23,
+      "expectedStoreCount": 43,
+      "versionOk": true,
+      "missingStores": [],
+      "extraStores": [],
+      "legacyStoresPresent": [],
+      "missingIndexes": [],
+      "diagnostics": {
+        "url": "http://127.0.0.1:3000/note",
+        "title": "7번가 R&D 플랫폼",
+        "bodyHead": "콘텐츠로 건너뛰기 차이나X4 플랫폼 홈 개발 메모 메뉴개발노트 일정 달력 노트 작성 노트 목록 칸반 보드 연구일지 샘플기록 보고서센터 보고서 보고서센터 판매량 보고서 제때 가격 보고서 제때 출고량 보고서 판매량 비교 보고서 원가계산 보고서 원가마진표 보고서 상품 관리 제때데이터 단가 출고량 관리품목 식자재 식자재 관리 제품별 사용 현황 메뉴 메뉴 메뉴 마스터 원가 · 영양 원가계산 공통 원가 관리 원가마진표 영양성분 표 출력 ",
+        "idbOpenCalls": [
+          {
+            "name": "rnd_manager_v3__china4",
+            "version": 23
+          },
+          {
+            "name": "rnd_manager_v3",
+            "version": 23
+          },
+          {
+            "name": "rnd_manager_v3__china4",
+            "version": null
+          }
+        ]
+      },
+      "consoleErrors": [],
+      "pageErrors": []
+    }
+  ],
+  "failures": [
+    {
+      "name": "latest local DB backup is fresh",
+      "ok": false,
+      "latest": "rnd_manager-20260623-110457.dump",
+      "latestModifiedAt": "2026-06-23T02:04:57.374Z",
+      "latestAgeHours": 217.987355,
+      "staleAfterHours": 26,
+      "stale": true
+    }
+  ]
+}

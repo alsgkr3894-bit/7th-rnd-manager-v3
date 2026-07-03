@@ -39,7 +39,8 @@ export function useAllergenMatrixData({
         isExcludedMenu,
         menuOrder,
         menuNameOverrides,
-        toppings
+        toppings,
+        menuMasters
       ),
     [
       allergenIngredients,
@@ -49,6 +50,7 @@ export function useAllergenMatrixData({
       menuOrder,
       menuNameOverrides,
       toppings,
+      menuMasters,
     ]
   );
 
@@ -62,10 +64,20 @@ export function useAllergenMatrixData({
     [menuMatrixAll, search]
   );
 
+  const allergenMatchedMenuCount = useMemo(() => {
+    const menuCodes = new Set();
+    for (const row of menuMatrixAll) {
+      const allergenCodes = row.allergenCodes instanceof Set ? row.allergenCodes : new Set();
+      if (allergenCodes.size) menuCodes.add(asDisplayText(row.menuCode));
+    }
+    return menuCodes.size;
+  }, [menuMatrixAll]);
+
   return {
     isExcludedMenu,
     menuMatrixAll,
     menuMatrix,
     orderedAllergens,
+    allergenMatchedMenuCount,
   };
 }

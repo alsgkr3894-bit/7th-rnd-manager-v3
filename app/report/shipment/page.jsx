@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import ReportBuilderShell from '@/components/report/ReportBuilderShell';
 import { useReportPageState } from '@/hooks/useReportPageState';
+import { useReportGeneratedMeta } from '@/hooks/useReportGeneratedMeta';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { safeMonth, safeQuantity, safeYear } from '@/lib/report/period';
 import { useShipmentReportData } from '@/hooks/useShipmentReportData';
@@ -13,8 +14,8 @@ const DRAFT_KEY = 'report_draft_shipment';
 
 export default function Page() {
   const periodMode = 'month';
-  const [shipYear, setShipYear] = useState(new Date().getFullYear());
-  const [shipMonth, setShipMonth] = useState(new Date().getMonth() + 1);
+  const [shipYear, setShipYear] = useState(2026);
+  const [shipMonth, setShipMonth] = useState(1);
   const {
     opts,
     updOpts: upd,
@@ -47,6 +48,7 @@ export default function Page() {
     isLoading,
     reload,
   } = useShipmentReportData(shipYear, shipMonth, setShipYear, setShipMonth);
+  const { compactDateLabel } = useReportGeneratedMeta();
 
   const safeAggRows = asObjectArray(aggRows);
   const safeRegProducts = asObjectArray(regProducts);
@@ -149,7 +151,6 @@ export default function Page() {
   );
   const chartColors = chartSeries.map(s => SERIES_COLOR[s.name]);
 
-  const todayLabel = new Date().toLocaleDateString('ko-KR').replace(/\. /g, '.').replace(/\.$/, '');
   const reportMeta = {
     kind: 'shipment',
     period: fileLabel,
@@ -201,7 +202,7 @@ export default function Page() {
           safeSeriesLabels={safeSeriesLabels}
           notShipped={notShipped}
           safeShipMonth={safeShipMonth}
-          todayLabel={todayLabel}
+          todayLabel={compactDateLabel}
           isLoading={isLoading}
           aggRowsLength={safeAggRows.length}
         />

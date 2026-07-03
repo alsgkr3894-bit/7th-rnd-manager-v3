@@ -39,7 +39,7 @@ export default function AppShell({ children }) {
   const router = useRouter();
 
   const { brandOptions, activeCompany, handleCompanyChange } = useAppBrands();
-  const { unmatchedCount, reportingCount } = usePageStats(pathname);
+  const { unmatchedCount } = usePageStats(pathname);
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const canEdit = roleReady && isAdmin;
   const unmatchedAlertEnabled = useSettingValue('unmatchedAlert') !== 'off';
@@ -109,7 +109,6 @@ export default function AppShell({ children }) {
         onClose={() => setMobileNav(false)}
         activeCompany={activeCompany}
         unmatchedCount={visibleUnmatchedCount}
-        reportingCount={reportingCount}
         canEdit={canEdit}
       />
       {mobileNav && <div className="nav-scrim" onClick={() => setMobileNav(false)}></div>}
@@ -122,7 +121,6 @@ export default function AppShell({ children }) {
           companies={brandOptions}
           onCompanyChange={handleCompanyChange}
           unmatchedCount={visibleUnmatchedCount}
-          reportingCount={reportingCount}
           canEdit={canEdit}
         />
         <ErrorBoundary key={pathname}>

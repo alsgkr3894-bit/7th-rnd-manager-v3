@@ -1,6 +1,7 @@
 import { ExportResultActions, ExportResultLoading, ExportResultTabs } from './ExportResultControls';
 
 export const NUTRITION_LABEL_TABS = [
+  { key: 'poster', label: '통합 포스터' },
   { key: 'pizza', label: '피자' },
   { key: 'side', label: '사이드·파스타' },
   { key: 'topping', label: '추가토핑' },

@@ -1,6 +1,5 @@
 'use client';
 import { Icon } from '@/components/icons';
-import { STATUS_COLORS, STATUS_BORDER } from '@/lib/note';
 import { formatNumber } from '@/lib/format';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Sparkline } from '@/components/charts/Sparkline';
@@ -101,13 +100,13 @@ export function RankCard({ title, sub, items, emptyTitle, accent, router }) {
 export function ReportingNotesWidget({ notes, router }) {
   const safeNotes = asObjectArray(notes);
   if (safeNotes.length === 0) return null;
-  const sc = STATUS_COLORS['출시예정'];
-  const sb = STATUS_BORDER['출시예정'];
+  const sc = { bg: 'var(--surface-2)', color: 'var(--text-3)' };
+  const sb = 'var(--border-strong)';
   return (
     <div className="card">
       <div className="card-header">
         <div>
-          <div className="card-title">출시예정 노트</div>
+          <div className="card-title">대기 노트</div>
           <div className="card-sub">{safeNotes.length}개 대기 중</div>
         </div>
         <button className="link accent" onClick={() => router?.push?.('/note')}>
@@ -164,7 +163,7 @@ export function ReportingNotesWidget({ notes, router }) {
                   color: sc.color,
                 }}
               >
-                출시예정
+                보류
               </span>
             </div>
           );

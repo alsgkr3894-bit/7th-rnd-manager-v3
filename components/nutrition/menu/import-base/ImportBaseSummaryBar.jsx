@@ -9,6 +9,8 @@ export function ImportBaseSummaryBar({
   hasSelectedToggleable,
   onSelectAll,
   onDeselectAll,
+  overwriteExisting = false,
+  onOverwriteExistingChange,
 }) {
   return (
     <div
@@ -44,7 +46,30 @@ export function ImportBaseSummaryBar({
           건너뜀 {counts.skipped}
         </span>
       ) : null}
-      <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
+      <label
+        style={{
+          marginLeft: 'auto',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          fontSize: 12,
+          fontWeight: 700,
+          color: 'var(--text-2)',
+          padding: '5px 9px',
+          border: '1px solid var(--border)',
+          borderRadius: 8,
+          background: 'var(--surface)',
+          cursor: 'pointer',
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={overwriteExisting}
+          onChange={event => onOverwriteExistingChange?.(event.target.checked)}
+        />
+        이미 저장 덮어쓰기
+      </label>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
         <button
           className="btn sm ghost"
           style={{ fontSize: 11 }}

@@ -37,6 +37,9 @@ describe('menu sales compare report page structure', () => {
     expect(previewSource).toContain('paper-head');
     expect(previewSource).toContain('paper-table');
     expect(previewSource).toContain('<AreaChart');
-    expect(previewSource).toContain('getProfile');
+    expect(previewSource).toContain('useReportGeneratedMeta');
+    expect(previewSource).toContain('compactDateLabel');
+    expect(previewSource).toContain('profileName');
+    expect(previewSource).not.toContain('getProfile');
   });
 });

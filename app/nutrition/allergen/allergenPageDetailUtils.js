@@ -1,15 +1,9 @@
-import { buildDetailRows, normStr } from '@/lib/nutrition/allergen/matrix';
-import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { buildDetailRows } from '@/lib/nutrition/allergen/matrix';
+import { buildIngredientLookup } from '@/lib/nutrition/allergen/ingredient-lookup';
+import { asObjectArray } from '@/lib/ui/prop-guards';
 
 export function buildIngredientByKey(allergenIngredients) {
-  const map = new Map();
-  for (const ingredient of allergenIngredients) {
-    const productCode = asDisplayText(ingredient.productCode);
-    if (productCode) map.set(`code:${productCode}`, ingredient);
-    const nameKey = normStr(ingredient.ingredientName);
-    if (nameKey) map.set(`name:${nameKey}`, ingredient);
-  }
-  return map;
+  return buildIngredientLookup(allergenIngredients);
 }
 
 export function buildAllergenDetailRows(detailRow, baseMapData, edges, allergenIngredients) {

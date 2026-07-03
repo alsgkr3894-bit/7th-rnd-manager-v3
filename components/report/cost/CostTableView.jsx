@@ -1,22 +1,54 @@
 import { formatNumber } from '@/lib/format';
+import { groupCostMenusBySize } from '@/lib/report/cost-menu-display';
 
 const S_DOT_LABEL = { display: 'inline-flex', alignItems: 'center', gap: 8 };
+const S_GROUP_CELL = {
+  width: 72,
+  fontSize: 11,
+  fontWeight: 800,
+  color: 'var(--text-2)',
+  background: 'color-mix(in oklab, var(--surface-2) 82%, var(--surface))',
+  borderRight: '1px solid var(--border)',
+  whiteSpace: 'nowrap',
+};
+const S_GROUP_BADGE = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: 46,
+  padding: '3px 8px',
+  borderRadius: 6,
+  background: 'var(--surface)',
+  border: '1px solid var(--border)',
+  color: 'var(--text-2)',
+};
 
-function groupPizzaLR(menus) {
-  const map = new Map();
-  for (const m of menus) {
-    const match = m.name.match(/^(.+)\s+(L|R)$/);
-    if (match) {
-      const base = match[1];
-      const sz = match[2];
-      if (!map.has(base)) map.set(base, { name: base });
-      map.get(base)[sz] = m;
-    } else {
-      if (!map.has(m.name)) map.set(m.name, { name: m.name });
-      map.get(m.name)['단일'] = m;
-    }
-  }
-  return [...map.values()];
+function menuRowStyle(index) {
+  return {
+    background:
+      index % 2 === 0
+        ? 'color-mix(in oklab, var(--accent) 4%, var(--surface))'
+        : 'var(--surface)',
+    boxShadow: 'inset 0 1px 0 var(--border)',
+  };
+}
+
+function CostCells({ menu, riskThreshold }) {
+  return (
+    <>
+      <td className="num right muted">{menu?.sale > 0 ? `${formatNumber(menu.sale)}원` : '—'}</td>
+      <td className="num right muted">{menu?.cost > 0 ? `${formatNumber(menu.cost)}원` : '—'}</td>
+      <td
+        className="num right"
+        style={{
+          fontWeight: 700,
+          color: menu?.rate >= riskThreshold ? 'var(--warn)' : 'var(--text-1)',
+        }}
+      >
+        {menu?.rate > 0 ? `${menu.rate.toFixed(1)}%` : '—'}
+      </td>
+    </>
+  );
 }
 
 /**
@@ -27,9 +59,9 @@ export function CostTableView({ activeCats, riskThreshold }) {
   return (
     <>
       {activeCats
-        .filter(([id]) => id === 'pizza' || id === 'personal')
+        .filter(([id]) => id === 'pizza')
         .map(([id, c]) => {
-          const groups = groupPizzaLR(c.menus);
+          const groups = groupCostMenusBySize(c.menus);
           if (!groups.length) return null;
           return (
             <div className="paper-section paper-cat-section" key={id}>
@@ -45,6 +77,9 @@ export function CostTableView({ activeCats, riskThreshold }) {
               <table className="paper-table">
                 <thead>
                   <tr>
+                    <th rowSpan={2} style={{ width: 72, verticalAlign: 'bottom' }}>
+                      구분
+                    </th>
                     <th rowSpan={2} style={{ verticalAlign: 'bottom' }}>
                       메뉴명
                     </th>
@@ -71,39 +106,14 @@ export function CostTableView({ activeCats, riskThreshold }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {groups.map(g => (
-                    <tr key={g.name}>
+                  {groups.map((g, index) => (
+                    <tr key={g.key || g.name} className="cost-table-menu-row" style={menuRowStyle(index)}>
+                      <td style={S_GROUP_CELL}>
+                        <span style={S_GROUP_BADGE}>메뉴 {index + 1}</span>
+                      </td>
                       <td style={{ fontWeight: 600 }}>{g.name}</td>
-                      <td className="num right muted">
-                        {g.L?.sale > 0 ? `${formatNumber(g.L.sale)}원` : '—'}
-                      </td>
-                      <td className="num right muted">
-                        {g.L?.cost > 0 ? `${formatNumber(g.L.cost)}원` : '—'}
-                      </td>
-                      <td
-                        className="num right"
-                        style={{
-                          fontWeight: 700,
-                          color: g.L?.rate >= riskThreshold ? 'var(--warn)' : 'var(--text-1)',
-                        }}
-                      >
-                        {g.L?.rate > 0 ? `${g.L.rate.toFixed(1)}%` : '—'}
-                      </td>
-                      <td className="num right muted">
-                        {g.R?.sale > 0 ? `${formatNumber(g.R.sale)}원` : '—'}
-                      </td>
-                      <td className="num right muted">
-                        {g.R?.cost > 0 ? `${formatNumber(g.R.cost)}원` : '—'}
-                      </td>
-                      <td
-                        className="num right"
-                        style={{
-                          fontWeight: 700,
-                          color: g.R?.rate >= riskThreshold ? 'var(--warn)' : 'var(--text-1)',
-                        }}
-                      >
-                        {g.R?.rate > 0 ? `${g.R.rate.toFixed(1)}%` : '—'}
-                      </td>
+                      <CostCells menu={g.sizes.L} riskThreshold={riskThreshold} />
+                      <CostCells menu={g.sizes.R} riskThreshold={riskThreshold} />
                     </tr>
                   ))}
                 </tbody>
@@ -113,7 +123,7 @@ export function CostTableView({ activeCats, riskThreshold }) {
         })}
 
       {activeCats
-        .filter(([id]) => id !== 'pizza' && id !== 'personal')
+        .filter(([id]) => id !== 'pizza')
         .map(([id, c]) => {
           if (!c.menus.length) return null;
           return (
@@ -130,6 +140,7 @@ export function CostTableView({ activeCats, riskThreshold }) {
               <table className="paper-table">
                 <thead>
                   <tr>
+                    <th style={{ width: 72 }}>구분</th>
                     <th>메뉴명</th>
                     <th style={{ width: 90, textAlign: 'right' }}>판매가</th>
                     <th style={{ width: 90, textAlign: 'right' }}>원가</th>
@@ -137,8 +148,15 @@ export function CostTableView({ activeCats, riskThreshold }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {c.menus.map(m => (
-                    <tr key={m.code || m.name}>
+                  {c.menus.map((m, index) => (
+                    <tr
+                      key={m.code || m.name}
+                      className="cost-table-menu-row"
+                      style={menuRowStyle(index)}
+                    >
+                      <td style={S_GROUP_CELL}>
+                        <span style={S_GROUP_BADGE}>{c.label}</span>
+                      </td>
                       <td style={{ fontWeight: 600 }}>{m.name}</td>
                       <td className="num right muted">
                         {m.sale > 0 ? `${formatNumber(m.sale)}원` : '—'}

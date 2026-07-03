@@ -2,6 +2,7 @@
 import { Fragment } from 'react';
 import { formatNumber } from '@/lib/format';
 import { safeQuantity } from '@/lib/report/period';
+import { safeRevenue } from '@/lib/sales/revenue';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 export function SalesVariantRows({ item, opts }) {
@@ -19,6 +20,11 @@ export function SalesVariantRows({ item, opts }) {
       <td className="num right muted" style={{ fontSize: 11 }}>
         {formatNumber(safeQuantity(size.quantity))}
       </td>
+      {opts.revenue && (
+        <td className="num right muted" style={{ fontSize: 11 }}>
+          {formatNumber(safeRevenue(size.revenue))}
+        </td>
+      )}
       {opts.prevComp && <td />}
       {opts.prevComp && <td />}
     </tr>
@@ -46,6 +52,7 @@ export function SalesRankItemRows({ item, index, opts }) {
         <td className="num">{index + 1}</td>
         <td style={{ fontWeight: 600 }}>{asDisplayText(item.name, '—')}</td>
         <td className="num right">{formatNumber(safeQuantity(item.quantity))}</td>
+        {opts.revenue && <td className="num right">{formatNumber(safeRevenue(item.revenue))}</td>}
         {opts.prevComp && (
           <td className="num right muted">
             {safeQuantity(item.prevQty) > 0 ? formatNumber(safeQuantity(item.prevQty)) : '—'}

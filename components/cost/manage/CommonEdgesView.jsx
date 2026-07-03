@@ -310,9 +310,10 @@ function EdgeRow({ edge, canEdit, selected, onToggle, onEdit, onDelete }) {
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: '24px 1fr',
+        gridTemplateColumns: '24px minmax(0, 1fr)',
         gap: 8,
         alignItems: 'center',
+        minWidth: 0,
       }}
     >
       <input
@@ -322,7 +323,9 @@ function EdgeRow({ edge, canEdit, selected, onToggle, onEdit, onDelete }) {
         disabled={!selectable}
         style={{ width: 16, height: 16, accentColor: 'var(--accent)' }}
       />
-      <EdgeCard edge={edge} canEdit={canEdit} onEdit={onEdit} onDelete={onDelete} />
+      <div style={{ minWidth: 0 }}>
+        <EdgeCard edge={edge} canEdit={canEdit} onEdit={onEdit} onDelete={onDelete} />
+      </div>
     </div>
   );
 }

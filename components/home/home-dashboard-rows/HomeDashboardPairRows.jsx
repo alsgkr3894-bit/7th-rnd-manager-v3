@@ -2,7 +2,6 @@ import {
   CostAlertWidget,
   QuickReportWidget,
   RankCard,
-  ReportingNotesWidget,
   SampleStatsWidget,
 } from '@/components/home/HomeWidgets';
 import { NoteHeatmapWidget } from '@/components/home/NoteHeatmapWidget';
@@ -74,9 +73,7 @@ export function renderPricePairRow(context, rowId) {
 
 export function renderNotesPairRow(context, rowId) {
   return pairDashboardRow(
-    context.showNotes ? (
-      <ReportingNotesWidget key="notes" notes={context.reportingNotes} router={context.router} />
-    ) : null,
+    null,
     context.showSamples ? (
       <SampleStatsWidget key="samples" samples={context.recentSamples} router={context.router} />
     ) : null,

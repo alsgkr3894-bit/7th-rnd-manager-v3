@@ -1,7 +1,9 @@
-import { getProfile } from '@/lib/profile';
+'use client';
+
 import { CostReportView } from './CostReportView';
 import { CostTableView } from './CostTableView';
 import { RecipePrintView } from './RecipePrintView';
+import { useReportGeneratedMeta } from '@/hooks/useReportGeneratedMeta';
 
 export function CostReportPreview({
   viewTab,
@@ -20,6 +22,8 @@ export function CostReportPreview({
   recipeRows,
   viewLabel,
 }) {
+  const { spacedDateLabel, profileName } = useReportGeneratedMeta();
+
   return (
     <>
       <div className="paper-head">
@@ -41,7 +45,7 @@ export function CostReportPreview({
           <span>위험 기준 {riskThreshold}%↑</span>
           <span>·</span>
           <span className="mono">
-            단가 기준 {new Date().toLocaleDateString('ko-KR').slice(0, -1)} · {getProfile().name}
+            단가 기준 {spacedDateLabel} · {profileName}
           </span>
         </div>
       </div>

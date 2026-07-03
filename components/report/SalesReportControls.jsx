@@ -2,6 +2,9 @@
 import { OptGroup, Seg, Check } from '@/components/report/ReportBuilderShell';
 import { asArray } from '@/lib/ui/prop-guards';
 
+const DEFAULT_REPORT_YEAR = 2026;
+const DEFAULT_REPORT_MONTH = 1;
+
 /**
  * SalesReportControls
  * Renders the filter/period control panel used inside ReportBuilderShell `options`.
@@ -49,8 +52,8 @@ export default function SalesReportControls({
   docFormat,
   updFmt,
 }) {
-  const safeYear = toPeriodNumber(year, new Date().getFullYear());
-  const safeMonth = toPeriodNumber(month, new Date().getMonth() + 1);
+  const safeYear = toPeriodNumber(year, DEFAULT_REPORT_YEAR);
+  const safeMonth = toPeriodNumber(month, DEFAULT_REPORT_MONTH);
   const safeCmpYear = toPeriodNumber(cmpYear, safeYear);
   const safeCmpMonth = toPeriodNumber(cmpMonth, safeMonth);
   const safeAvailYears = periodList(availYears, safeYear);
@@ -220,6 +223,12 @@ export default function SalesReportControls({
           value={safeOpts.variant}
           onChange={v => handleUpd('variant', v)}
           hint="순위표 아래 확장"
+        />
+        <Check
+          label="매출액 포함"
+          value={safeOpts.revenue}
+          onChange={v => handleUpd('revenue', v)}
+          hint="미리보기·Excel 출력에 금액 컬럼 표시"
         />
         <Check
           label="전월 대비 증감 컬럼"

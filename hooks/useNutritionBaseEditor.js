@@ -8,6 +8,8 @@ import {
   upsertRawValue,
   CRUST_TYPES,
 } from '@/lib/nutrition/values/store';
+import { SERVING_CRUST_TYPE } from '@/lib/nutrition/crust-config';
+import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
 import { buildNutritionMenuRefPayload } from '@/lib/nutrition/menu-ref-policy';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
@@ -29,8 +31,15 @@ export function useNutritionBaseEditor({ safeRawMap, refresh, canEdit = false })
     displayOrder: '',
   });
 
-  const key = selMenu ? `${selMenu.menuCode}__${selCrust}` : null;
-  const existing = key ? safeRawMap[key] : null;
+  const isServingMenu = selMenu ? resolveNutritionGroup(selMenu) !== '피자' : false;
+  const effectiveCrust = isServingMenu ? SERVING_CRUST_TYPE : selCrust;
+  const key = selMenu ? `${selMenu.menuCode}__${effectiveCrust}` : null;
+  const existing =
+    key && isServingMenu
+      ? safeRawMap[key] || safeRawMap[`${selMenu.menuCode}__석쇠L`] || null
+      : key
+        ? safeRawMap[key]
+        : null;
 
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -56,7 +65,7 @@ export function useNutritionBaseEditor({ safeRawMap, refresh, canEdit = false })
         ...(existing?.id ? { id: existing.id } : {}),
         menuCode: selMenu.menuCode,
         menuName: selMenu.menuName,
-        crustType: selCrust,
+        crustType: effectiveCrust,
         ...form,
       });
       if (!mountedRef.current) return;

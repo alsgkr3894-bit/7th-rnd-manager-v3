@@ -42,6 +42,7 @@ export default function Page() {
     menuNameEditMenus,
     totalWithAllergen,
     totalIngredients,
+    allergenMatchedMenuCount,
     exportCsv,
     applyMenuOrder,
     applyAllergenOrder,
@@ -55,7 +56,7 @@ export default function Page() {
       <AllergenSummaryPanel
         totalWithAllergen={totalWithAllergen}
         totalIngredients={totalIngredients}
-        matchedMenuCount={menuMatrix.length}
+        matchedMenuCount={allergenMatchedMenuCount}
       />
       <AllergenToolbar
         search={search}

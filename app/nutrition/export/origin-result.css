@@ -401,3 +401,300 @@
     margin: 15mm 10mm;
   }
 }
+
+/* ── 제품 영양성분 & 원산지 통합 포스터 ───────────────────── */
+.nutrition-poster-preview {
+  overflow: auto;
+  padding: 12px 0 32px;
+  background: #fff;
+}
+
+.nutrition-poster-sheet {
+  --poster-line: #111;
+  width: 1240px;
+  min-height: auto;
+  margin: 0 auto;
+  padding: 24px 18px;
+  background: #fff;
+  color: #111;
+  font-family:
+    'Pretendard Variable',
+    Pretendard,
+    -apple-system,
+    sans-serif;
+  box-shadow: none;
+}
+
+.nutrition-poster-header {
+  display: none;
+}
+
+.nutrition-poster-title-en {
+  font-size: 46px;
+  font-weight: 950;
+  font-style: italic;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.nutrition-poster-title-ko {
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.nutrition-poster-main-section,
+.nutrition-poster-section {
+  margin-bottom: 20px;
+}
+
+.nutrition-poster-section-title {
+  min-height: 29px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #111;
+  border: 1px solid var(--poster-line);
+  border-bottom: 0;
+  font-size: 18px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.nutrition-poster-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: #111;
+}
+
+.nutrition-poster-table th,
+.nutrition-poster-table td {
+  border: 1px solid var(--poster-line);
+  padding: 2px 4px;
+  vertical-align: middle;
+  line-height: 1.18;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.nutrition-poster-table th {
+  background: #f3f4f6;
+  color: #111;
+  font-size: 8px;
+  font-weight: 950;
+  text-align: center;
+}
+
+.nutrition-poster-table td {
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.nutrition-poster-pizza-table th,
+.nutrition-poster-pizza-table td {
+  padding: 1px 1px;
+  font-size: 5.6px;
+}
+
+.nutrition-poster-pizza-table .poster-pizza-label {
+  width: 96px;
+  font-size: 16px;
+  font-style: italic;
+  text-align: center;
+}
+
+.nutrition-poster-pizza-table th:nth-child(2),
+.nutrition-poster-pizza-table td.poster-crust-name {
+  width: 48px;
+}
+
+.nutrition-poster-pizza-table .poster-menu-name {
+  font-size: 11px !important;
+}
+
+.nutrition-poster-pizza-table .poster-allergen {
+  font-size: 5.2px !important;
+}
+
+.poster-menu-name {
+  font-size: 15px !important;
+  font-weight: 950 !important;
+  line-height: 1.1 !important;
+}
+
+.poster-menu-name.small {
+  font-size: 8px !important;
+  font-weight: 850 !important;
+}
+
+.poster-crust-name {
+  text-align: right;
+  font-size: 7px !important;
+  font-weight: 850 !important;
+}
+
+.poster-num {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.poster-allergen {
+  font-size: 6px !important;
+  font-weight: 750 !important;
+  line-height: 1.1 !important;
+}
+
+.poster-empty-cell {
+  padding: 10px !important;
+  text-align: center;
+  color: #777;
+}
+
+.poster-topping .nutrition-poster-simple-table th,
+.poster-topping .nutrition-poster-simple-table td {
+  font-size: 7px;
+}
+
+.nutrition-poster-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 0.95fr 0.84fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.nutrition-poster-bottom-left,
+.nutrition-poster-bottom-center,
+.nutrition-poster-bottom-right {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nutrition-poster-origin-box .nutrition-poster-section-title {
+  justify-content: flex-start;
+  padding-left: 18px;
+}
+
+.nutrition-poster-origin-lines {
+  min-height: 210px;
+  border: 1px solid var(--poster-line);
+  padding: 12px 14px;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.nutrition-poster-origin-lines p {
+  margin: 0 0 4px;
+}
+
+.nutrition-poster-origin-lines strong {
+  font-weight: 950;
+}
+
+.nutrition-poster-origin-lines span {
+  margin-left: 2px;
+}
+
+.nutrition-poster-notice {
+  margin-top: 8px;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.nutrition-poster-notice p {
+  margin: 0;
+}
+
+.nutrition-poster-footer {
+  margin-top: 18px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+@media screen and (max-width: 900px) {
+  .nutrition-poster-sheet {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+@media print {
+  .nutrition-poster-preview {
+    overflow: visible;
+    padding: 0;
+  }
+
+  .nutrition-poster-sheet {
+    width: 230mm;
+    min-height: auto;
+    padding: 6mm 5mm;
+    box-shadow: none;
+  }
+
+  .nutrition-poster-header {
+    display: none;
+  }
+
+  .nutrition-poster-title-en {
+    font-size: 23pt;
+  }
+
+  .nutrition-poster-title-ko {
+    font-size: 16pt;
+  }
+
+  .nutrition-poster-table th,
+  .nutrition-poster-table td {
+    font-size: 5.2pt;
+    padding: 0.8pt 1.4pt;
+  }
+
+  .nutrition-poster-pizza-table th,
+  .nutrition-poster-pizza-table td {
+    font-size: 3.6pt !important;
+    padding: 0.45pt 0.7pt !important;
+  }
+
+  .nutrition-poster-pizza-table .poster-pizza-label {
+    width: 18mm;
+    font-size: 8pt;
+  }
+
+  .nutrition-poster-pizza-table th:nth-child(2),
+  .nutrition-poster-pizza-table td.poster-crust-name {
+    width: 9mm;
+  }
+
+  .poster-menu-name {
+    font-size: 8pt !important;
+  }
+
+  .poster-menu-name.small {
+    font-size: 5.3pt !important;
+  }
+
+  .poster-allergen {
+    font-size: 4.3pt !important;
+  }
+
+  .nutrition-poster-section-title {
+    min-height: 14pt;
+    font-size: 9pt;
+  }
+
+  .nutrition-poster-origin-lines,
+  .nutrition-poster-notice {
+    font-size: 5.2pt;
+  }
+
+  @page {
+    size: 230mm 319mm;
+    margin: 0;
+  }
+}

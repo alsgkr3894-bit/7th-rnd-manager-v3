@@ -211,7 +211,87 @@ describe('common cost selection results', () => {
     expect(recipeRows[0]).toMatchObject({
       componentCount: 1,
       totalCost: 300,
-      components: [expect.objectContaining({ productCode: 'SAUCE', subtotal: 300 })],
+      components: [
+        expect.objectContaining({
+          sourceType: 'common',
+          sourceLabel: '피자 공통',
+          productCode: 'SAUCE',
+          subtotal: 300,
+        }),
+      ],
     });
+  });
+
+  test('원가보고서 메뉴명은 판매가 이름의 L/R 접미사를 중복 표시하지 않는다', () => {
+    const report = buildCostReportData(
+      [
+        {
+          menuCode: 'P-OR-010-L',
+          menuName: '샘스테이크 피자 L',
+          category: '피자/오리지널',
+          size: 'L',
+          price: 32500,
+        },
+        {
+          menuCode: 'P-OR-010-R',
+          menuName: '샘스테이크 피자 R',
+          category: '피자/오리지널',
+          size: 'R',
+          price: 25900,
+        },
+      ],
+      {
+        detailMaps: {
+          pizza: new Map([
+            [
+              'P-OR-010-L',
+              {
+                menuCode: 'P-OR-010-L',
+                menuName: '샘스테이크 피자 L',
+                category: '피자/오리지널',
+                size: 'L',
+                components: [{ productCode: 'SAUCE', ingredientName: '소스', quantity: 30 }],
+              },
+            ],
+            [
+              'P-OR-010-R',
+              {
+                menuCode: 'P-OR-010-R',
+                menuName: '샘스테이크 피자 R',
+                category: '피자/오리지널',
+                size: 'R',
+                components: [{ productCode: 'SAUCE', ingredientName: '소스', quantity: 20 }],
+              },
+            ],
+          ]),
+          personal: new Map(),
+          side: new Map(),
+          set: new Map(),
+        },
+        edges: [],
+        includeEdge: false,
+        recipeGroups: [],
+        upm: UNIT_PRICE_MAP,
+      },
+      ['피자'],
+      { 피자: { id: 'pizza', label: '피자', color: '#3182F6' } }
+    );
+
+    expect(report.pizza.menus).toEqual([
+      expect.objectContaining({
+        code: 'P-OR-010-L',
+        codeBase: 'P-OR-010',
+        name: '샘스테이크 피자',
+        size: 'L',
+        sale: 32500,
+      }),
+      expect.objectContaining({
+        code: 'P-OR-010-R',
+        codeBase: 'P-OR-010',
+        name: '샘스테이크 피자',
+        size: 'R',
+        sale: 25900,
+      }),
+    ]);
   });
 });

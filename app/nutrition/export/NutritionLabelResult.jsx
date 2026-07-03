@@ -24,9 +24,12 @@ import {
 } from '@/lib/nutrition/allergen/aggregate';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import { loadMenuNames, applyMenuName } from '@/lib/nutrition/menu-name-override';
+import { loadIngredientNames } from '@/lib/nutrition/ingredient-name-override';
 import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
 import { MENU_ORDER_KEY, loadOrder } from '@/lib/nutrition/order';
 import { loadSliceCounts, saveSliceCounts } from '@/lib/nutrition/slice-config';
+import { buildOriginsFromIngredients } from '@/lib/nutrition/origin/build';
+import { buildOriginStatementSheet } from '@/lib/nutrition/origin/output-sheets';
 import { SliceConfigModal } from '@/components/nutrition/SliceConfigModal';
 import { asObjectArray } from '@/lib/ui/prop-guards';
 import {
@@ -52,7 +55,7 @@ import { NutritionLabelTabContent } from './NutritionLabelTables';
 import './origin-result.css';
 
 export default function NutritionLabelResult() {
-  const [tab, setTab] = useState('pizza');
+  const [tab, setTab] = useState('poster');
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
 
@@ -62,6 +65,7 @@ export default function NutritionLabelResult() {
   const [sideSheet, setSideSheet] = useState([]);
   const [setHalfSheet, setSetHalfSheet] = useState([]);
   const [beverageSheet, setBeverageSheet] = useState([]);
+  const [originStatementSheet, setOriginStatementSheet] = useState([]);
 
   const [pizzaView, setPizzaView] = useState('150g'); // '150g' | 'slice'
   const [sliceCounts, setSliceCounts] = useState({});
@@ -134,6 +138,7 @@ export default function NutritionLabelResult() {
         detailRecipes,
         groups,
         edges: [],
+        compositions,
       });
       const menuAllergenMap = buildMenuAllergenMap({ ingredients: ings, ingredientToMenus });
       const edgeAllergenMap = buildEdgeAllergenMap({ ingredients: ings, edges: costEdges });
@@ -146,6 +151,22 @@ export default function NutritionLabelResult() {
       const { excludedMenuCodes, excludedMenuNames } = extractExcludedMenuSets(masters);
       const nameOverrides = loadMenuNames();
       const menuOrder = loadOrder(MENU_ORDER_KEY);
+      const ingredientNameOverrides = loadIngredientNames();
+      const { ingredientToMenus: originIngredientToMenus } = buildIngredientMenuMap({
+        menuMasters: masters,
+        detailRecipes,
+        groups,
+        edges: costEdges,
+        compositions,
+      });
+      const origins = buildOriginsFromIngredients(
+        asObjectArray(ings),
+        originIngredientToMenus,
+        excludedMenuCodes,
+        excludedMenuNames,
+        nameOverrides,
+        masterByCode
+      );
       const baseMenus = sortNutritionLabelMenus(
         menuRefs
           .filter(
@@ -188,6 +209,7 @@ export default function NutritionLabelResult() {
       setSetHalfSheet(buildSetHalfSheet(ctx));
       setBeverageSheet(buildBeverageSheet(ctx));
       setPizzaSliceSheet(buildPizzaSliceSheet({ ...ctx, sliceCounts: loadSliceCounts() }));
+      setOriginStatementSheet(buildOriginStatementSheet(origins, ingredientNameOverrides));
     })()
       .catch(err => {
         if (alive) console.error('[NutritionLabelResult] load failed', err);
@@ -228,6 +250,7 @@ export default function NutritionLabelResult() {
       sideSheet,
       setHalfSheet,
       beverageSheet,
+      originStatementSheet,
     });
   }
 
@@ -262,6 +285,7 @@ export default function NutritionLabelResult() {
           sideSheet={sideSheet}
           setHalfSheet={setHalfSheet}
           beverageSheet={beverageSheet}
+          originStatementSheet={originStatementSheet}
         />
       </div>
 

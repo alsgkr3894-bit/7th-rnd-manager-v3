@@ -46,6 +46,26 @@ describe('익명화 업무 fixture 회귀', () => {
     expect(result.summary).toEqual({ totalRows: 2, validCount: 2, invalidCount: 0 });
   });
 
+  test('판매량 검증은 선택 매출액 컬럼을 행별 revenue로 보존한다', () => {
+    const result = validateSalesFile([
+      ['조회기간', '2026-05-01 ~ 2026-05-31'],
+      ['메뉴명', '판매량(개)', '매출액'],
+      ['익명 콤비네이션 피자', 12, '240,000원'],
+      ['익명 사이드', 3, 15000],
+    ]);
+
+    expect(result.success).toBe(true);
+    expect(result.headerColumns.revenueColumnIndex).toBe(2);
+    expect(result.validRows).toEqual([
+      expect.objectContaining({
+        rawMenuName: '익명 콤비네이션 피자',
+        quantity: 12,
+        revenue: 240000,
+      }),
+      expect.objectContaining({ rawMenuName: '익명 사이드', quantity: 3, revenue: 15000 }),
+    ]);
+  });
+
   test('판매량 fixture의 필수 헤더 누락은 명확히 실패한다', () => {
     const fixture = readFixture('sales-missing-quantity.csv');
     const result = validateSalesFile(fixture.rawRows);

@@ -3,7 +3,7 @@ import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useMounted } from '@/hooks/useMounted';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { STATUSES, getAllNotesCached, updateNote, bulkUpdateBoardOrder } from '@/lib/note';
+import { STATUSES, getAllNotesCached, updateNoteChainStatus, bulkUpdateBoardOrder } from '@/lib/note';
 import { filterKanbanNotes } from '@/lib/note/filter';
 import { buildKanbanBoardCards } from '@/lib/note/kanban';
 
@@ -99,10 +99,13 @@ export function useKanbanBoard({ canEdit = false } = {}) {
   const applyStatusChange = useCallback(
     async (note, newStatus, { bounce = true } = {}) => {
       if (!canEdit) return;
-      setNotes(prev => prev.map(n => (n.id === note.id ? { ...n, status: newStatus } : n)));
+      const optimisticIds = new Set(note._kanbanGroupIds || [note.id]);
+      setNotes(prev =>
+        prev.map(n => (optimisticIds.has(n.id) ? { ...n, status: newStatus } : n))
+      );
       try {
-        await updateNote(note.id, { status: newStatus });
-        showToast(`→ ${newStatus}`, 'ok');
+        await updateNoteChainStatus(note.id, newStatus);
+        showToast(`메뉴 상태 → ${newStatus}`, 'ok');
         await refreshNotes();
         if (bounce) pulseNote(note.id);
       } catch {
@@ -193,7 +196,7 @@ export function useKanbanBoard({ canEdit = false } = {}) {
         const newCol = [...colNotes];
         newCol.splice(Math.min(beforeIdx, newCol.length), 0, note);
         const targetOrder = Math.min(beforeIdx, newCol.length - 1) * 10;
-        await updateNote(note.id, { status, boardOrder: targetOrder });
+        await updateNoteChainStatus(note.id, status, { boardOrder: targetOrder });
         const siblingUpdates = newCol
           .filter(n => n.id !== note.id)
           .map((n, i) => ({
@@ -201,7 +204,7 @@ export function useKanbanBoard({ canEdit = false } = {}) {
             boardOrder: (i >= Math.min(beforeIdx, newCol.length - 1) ? i + 1 : i) * 10,
           }));
         await bulkUpdateBoardOrder(siblingUpdates);
-        showToast(`→ ${status}`, 'ok');
+        showToast(`메뉴 상태 → ${status}`, 'ok');
         await refreshNotes();
         pulseNote(note.id);
       }

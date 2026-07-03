@@ -46,4 +46,14 @@ describe('sales upload guard structure', () => {
     expect(historySource).toContain('if (!canEdit || !handleDeleteFile) return');
     expect(historySource).toContain('canEdit && handleDeleteFile && f.id != null');
   });
+
+  test('upload preview and history expose saved revenue totals', () => {
+    expect(uploadHookSource).toContain('totalRevenue');
+    expect(uploadHookSource).toContain('safeRevenue(row?.revenue)');
+    expect(previewSource).toContain('totalRevenue');
+    expect(previewSource).toContain('safeRevenue(r.revenue)');
+    expect(previewSource).toContain('매출액');
+    expect(historySource).toContain('safeRevenue(f.totalRevenue)');
+    expect(historySource).toContain('매출액');
+  });
 });

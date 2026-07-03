@@ -1,6 +1,7 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
+import { safeRevenue } from '@/lib/sales/revenue';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
@@ -31,6 +32,7 @@ export function UploadPreview({
   const excluded = safeRows.filter(r => r.status === 'excluded').length;
   const unclassified = safeRows.filter(r => r.status === 'unclassified').length;
   const unmatchedGroups = safeIssues.length;
+  const totalRevenue = safeRows.reduce((sum, row) => sum + safeRevenue(row?.revenue), 0);
   const safePeriod = period && typeof period === 'object' ? period : {};
   const periodYear = asDisplayText(safePeriod.year, '-');
   const periodMonth = asDisplayText(safePeriod.month, '-');
@@ -60,7 +62,7 @@ export function UploadPreview({
             {periodYear}년 {periodMonth}월 검증 완료
           </b>{' '}
           — 총 {formatNumber(total)}건 · 정상 {formatNumber(classified)}건 · 제외{' '}
-          {formatNumber(excluded)}건 ·{' '}
+          {formatNumber(excluded)}건 · 매출 {formatNumber(totalRevenue)}원 ·{' '}
           <span style={{ color: unclassified ? 'var(--negative)' : undefined }}>
             미매칭 {formatNumber(unclassified)}건 ({unmatchedGroups}개 그룹)
           </span>
@@ -84,6 +86,7 @@ export function UploadPreview({
                 <th>원본 메뉴명</th>
                 <th>분류 결과</th>
                 <th style={{ width: 100, textAlign: 'right' }}>수량</th>
+                <th style={{ width: 130, textAlign: 'right' }}>매출액</th>
                 <th style={{ width: 120 }}>상태</th>
               </tr>
             </thead>
@@ -106,6 +109,10 @@ export function UploadPreview({
                   <td className="num right">
                     {formatNumber(r.quantity)}
                     <span className="unit">건</span>
+                  </td>
+                  <td className="num right">
+                    {formatNumber(safeRevenue(r.revenue))}
+                    <span className="unit">원</span>
                   </td>
                   <td>
                     <StatusChip status={r.status} />

@@ -51,11 +51,20 @@ export default function SalesReportPreview({
       </div>
 
       {safeOpts.summary && (
-        <SalesKpiCards kpi={kpi} catShares={safeCatShares} groupRanking={safeGroupRanking} />
+        <SalesKpiCards
+          kpi={kpi}
+          catShares={safeCatShares}
+          groupRanking={safeGroupRanking}
+          showRevenue={!!safeOpts.revenue}
+        />
       )}
 
       {safeOpts.catShare && (
-        <SalesCategoryShareSection catShares={safeCatShares} totalShare={totalShare} />
+        <SalesCategoryShareSection
+          catShares={safeCatShares}
+          totalShare={totalShare}
+          showRevenue={!!safeOpts.revenue}
+        />
       )}
 
       {safeOpts.pizzaMover && viewMode === 'rank' && (
@@ -68,6 +77,7 @@ export default function SalesReportPreview({
           periodLabel={periodLabel}
           catShares={safeCatShares}
           groupRanking={safeGroupRanking}
+          showRevenue={!!safeOpts.revenue}
         />
       )}
 

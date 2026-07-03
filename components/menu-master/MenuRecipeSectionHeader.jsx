@@ -52,6 +52,7 @@ export function MenuRecipeSectionHeader({
         </div>
       </div>
 
+      {hasComponents && <RecipeSummaryCards recipeSummary={recipeSummary} />}
       {hasComponents && <RecipeSummaryLine recipeSummary={recipeSummary} />}
     </>
   );
@@ -62,6 +63,80 @@ const COST_RATE_TONE_COLOR = {
   warn: 'var(--warn)',
   ok: 'var(--positive)',
 };
+
+function SummaryCard({ label, value, tone = 'default' }) {
+  const color =
+    tone === 'warn'
+      ? 'var(--warn)'
+      : tone === 'positive'
+        ? 'var(--positive)'
+        : tone === 'negative'
+          ? 'var(--negative)'
+          : 'var(--text-1)';
+  return (
+    <span
+      style={{
+        minWidth: 108,
+        border: '1px solid var(--divider)',
+        borderRadius: 7,
+        background: 'var(--surface-2)',
+        padding: '8px 10px',
+      }}
+    >
+      <span
+        style={{
+          display: 'block',
+          fontSize: 10,
+          fontWeight: 700,
+          color: 'var(--text-4)',
+          marginBottom: 3,
+        }}
+      >
+        {label}
+      </span>
+      <b style={{ display: 'block', fontSize: 13, color }}>{value}</b>
+    </span>
+  );
+}
+
+function RecipeSummaryCards({ recipeSummary }) {
+  const marginTone =
+    recipeSummary.marginAmount == null
+      ? 'default'
+      : recipeSummary.marginAmount >= 0
+        ? 'positive'
+        : 'negative';
+  const rateTone =
+    recipeSummary.costRateTone === 'danger' || recipeSummary.costRateTone === 'warn'
+      ? 'warn'
+      : 'default';
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 6,
+        marginBottom: 8,
+      }}
+    >
+      <SummaryCard label="구성품" value={`${recipeSummary.directComponentCount || 0}개`} />
+      <SummaryCard label="예상 원가" value={`${formatNumber(recipeSummary.totalCost)}원`} />
+      <SummaryCard
+        label="원가율"
+        value={recipeSummary.costRate == null ? '—' : formatPercent(recipeSummary.costRate)}
+        tone={rateTone}
+      />
+      <SummaryCard
+        label="예상 마진"
+        value={
+          recipeSummary.marginAmount == null ? '—' : `${formatNumber(recipeSummary.marginAmount)}원`
+        }
+        tone={marginTone}
+      />
+    </div>
+  );
+}
 
 function RecipeSummaryLine({ recipeSummary }) {
   const costRateColor = COST_RATE_TONE_COLOR[recipeSummary.costRateTone] || 'var(--text-2)';

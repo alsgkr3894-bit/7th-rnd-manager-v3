@@ -43,6 +43,22 @@ function formatIngredientUsage(component, sizes) {
   return `${name}(${formatSizeUsage(component, sizes)})`;
 }
 
+function directComponentsOf(menu) {
+  return (Array.isArray(menu.components) ? menu.components : []).filter(
+    component => component.sourceType !== 'common'
+  );
+}
+
+function commonComponentsOf(menu) {
+  return (Array.isArray(menu.components) ? menu.components : []).filter(
+    component => component.sourceType === 'common'
+  );
+}
+
+function sectionCost(components) {
+  return components.reduce((sum, component) => sum + (component.totalCost || 0), 0);
+}
+
 export function RecipePrintView({ recipeRows, recipeMenus }) {
   const rows = Array.isArray(recipeRows) ? recipeRows : [];
   const menus = Array.isArray(recipeMenus) ? recipeMenus : buildRecipePrintMenus(rows);
@@ -114,6 +130,8 @@ export function RecipePrintView({ recipeRows, recipeMenus }) {
 
 function RecipeMenuPage({ menu }) {
   const components = Array.isArray(menu.components) ? menu.components : [];
+  const directComponents = directComponentsOf(menu);
+  const commonComponents = commonComponentsOf(menu);
   const categoryLabel = menu.categoryLabel || '기타';
   const sizes = Array.isArray(menu.sizes) && menu.sizes.length ? menu.sizes : ['단일'];
 
@@ -143,64 +161,121 @@ function RecipeMenuPage({ menu }) {
       </div>
 
       <div className="recipe-usage-box">
-        <div className="recipe-usage-label">사이즈별 사용량</div>
-        <div className="recipe-usage-summary">
-          {components.length === 0 ? (
+        <div className="recipe-usage-label">직접 입력 식자재</div>
+        <div className="recipe-usage-summary" style={{ marginBottom: commonComponents.length ? 8 : 0 }}>
+          {directComponents.length === 0 ? (
             <span className="muted">구성품 미작성</span>
           ) : (
-            components.map((component, index) => (
+            directComponents.map((component, index) => (
               <span className="recipe-usage-part" key={component.key || index}>
                 <span className="recipe-usage-token">
                   {formatIngredientUsage(component, sizes)}
                 </span>
-                {index < components.length - 1 && <span className="recipe-usage-arrow">→</span>}
+                {index < directComponents.length - 1 && (
+                  <span className="recipe-usage-arrow">→</span>
+                )}
               </span>
             ))
           )}
         </div>
+        {commonComponents.length > 0 && (
+          <>
+            <div className="recipe-usage-label">공통관리 구성</div>
+            <div className="recipe-usage-summary">
+              {commonComponents.map((component, index) => (
+                <span className="recipe-usage-part" key={component.key || index}>
+                  <span className="recipe-usage-token">
+                    {(component.sourceLabel || '공통관리') + ' · '}
+                    {formatIngredientUsage(component, sizes)}
+                  </span>
+                  {index < commonComponents.length - 1 && (
+                    <span className="recipe-usage-arrow">→</span>
+                  )}
+                </span>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
-      <table className="paper-table recipe-print-table">
-        <thead>
-          <tr>
-            <th style={{ width: '24%' }}>원가식자재</th>
-            <th style={{ width: '18%' }}>제품코드</th>
-            <th>사이즈별 사용량</th>
-            <th style={{ width: 84, textAlign: 'right' }}>소계</th>
-            <th style={{ width: '16%' }}>비고</th>
-          </tr>
-        </thead>
+      <RecipeComponentTable
+        title="직접 입력 식자재"
+        emptyText="직접 입력한 식자재가 없습니다"
+        components={directComponents}
+        sizes={sizes}
+        menu={menu}
+      />
+
+      {commonComponents.length > 0 && (
+        <RecipeComponentTable
+          title="공통관리 구성"
+          emptyText="공통관리 구성품이 없습니다"
+          components={commonComponents}
+          sizes={sizes}
+          menu={menu}
+          showSource
+        />
+      )}
+
+      <table className="paper-table recipe-print-table" style={{ marginTop: 8 }}>
         <tbody>
-          {components.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="muted">
-                구성품 미작성
-              </td>
-            </tr>
-          ) : (
-            components.map(component => (
-              <tr key={component.key}>
-                <td style={{ fontWeight: 700 }}>{component.ingredientName || '—'}</td>
-                <td className="mono muted" style={{ fontSize: 10 }}>
-                  {component.productCode || '—'}
-                </td>
-                <td>{formatSizeUsage(component, sizes)}</td>
-                <td className="num right">{money(component.totalCost)}</td>
-                <td className="muted">{component.note || menu.note || '—'}</td>
-              </tr>
-            ))
-          )}
           <tr>
             <td colSpan={3} style={{ fontWeight: 800 }}>
               메뉴 합계
             </td>
-            <td className="num right" style={{ fontWeight: 800 }}>
+            <td className="num right" style={{ width: 84, fontWeight: 800 }}>
               {money(menu.totalCost)}
             </td>
-            <td className="muted">{components.length}개 식자재</td>
+            <td className="muted" style={{ width: '16%' }}>
+              직접 {directComponents.length}개 · 공통 {commonComponents.length}개
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
+  );
+}
+
+function RecipeComponentTable({ title, emptyText, components, sizes, menu, showSource = false }) {
+  return (
+    <table className="paper-table recipe-print-table" style={{ marginTop: 8 }}>
+      <thead>
+        <tr>
+          <th colSpan={5} style={{ fontWeight: 800, background: 'var(--surface-2)' }}>
+            {title} · {money(sectionCost(components))}
+          </th>
+        </tr>
+        <tr>
+          <th style={{ width: '24%' }}>원가식자재</th>
+          <th style={{ width: '18%' }}>제품코드</th>
+          <th>사이즈별 사용량</th>
+          <th style={{ width: 84, textAlign: 'right' }}>소계</th>
+          <th style={{ width: '16%' }}>비고</th>
+        </tr>
+      </thead>
+      <tbody>
+        {components.length === 0 ? (
+          <tr>
+            <td colSpan={5} className="muted">
+              {emptyText}
+            </td>
+          </tr>
+        ) : (
+          components.map(component => (
+            <tr key={component.key}>
+              <td style={{ fontWeight: 700 }}>{component.ingredientName || '—'}</td>
+              <td className="mono muted" style={{ fontSize: 10 }}>
+                {component.productCode || '—'}
+              </td>
+              <td>{formatSizeUsage(component, sizes)}</td>
+              <td className="num right">{money(component.totalCost)}</td>
+              <td className="muted">
+                {showSource ? component.sourceLabel || '공통관리' : component.note || menu.note || '—'}
+              </td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
   );
 }

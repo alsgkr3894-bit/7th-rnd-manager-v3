@@ -167,6 +167,30 @@
   color: var(--text-1);
   box-shadow: var(--shadow-sm);
 }
+.period-selected-month {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 174px;
+  padding: 9px 14px;
+  background: color-mix(in oklab, var(--accent) 8%, var(--surface));
+  border: 1px solid color-mix(in oklab, var(--accent) 24%, var(--border));
+  border-radius: 12px;
+}
+.period-selected-month span {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-3);
+  letter-spacing: 0;
+}
+.period-selected-month strong {
+  font-size: 22px;
+  line-height: 1.1;
+  font-weight: 900;
+  color: var(--text-1);
+  letter-spacing: 0;
+  white-space: nowrap;
+}
 .period-disp {
   display: flex;
   align-items: center;
@@ -212,9 +236,9 @@
   letter-spacing: 0.04em;
 }
 .period-slot-val {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   color: var(--text-1);
   display: flex;
   align-items: center;
@@ -243,7 +267,7 @@
 .period-val {
   font-size: 14px;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 /* ============================================================
@@ -256,16 +280,17 @@
   flex-wrap: wrap;
 }
 .period-select {
-  padding: 8px 14px;
+  min-width: 150px;
+  padding: 10px 14px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-1);
   cursor: pointer;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease;

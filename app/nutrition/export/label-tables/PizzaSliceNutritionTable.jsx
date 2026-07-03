@@ -1,5 +1,6 @@
 import { LABEL_COLS } from '@/lib/nutrition/label/build';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { displayNutritionMenuName } from '@/lib/nutrition/label/poster';
 import {
   COL_STYLE,
   FIXED_TABLE_STYLE,
@@ -76,7 +77,7 @@ export function PizzaSliceNutritionTable({ rows }) {
 
 function PizzaSliceMenuRows({ menuName, crustRows, groupIndex }) {
   const safeCrustRows = asObjectArray(crustRows);
-  const displayMenuName = asDisplayText(menuName, `메뉴 ${groupIndex + 1}`);
+  const displayMenuName = displayNutritionMenuName(menuName, `메뉴 ${groupIndex + 1}`);
 
   return safeCrustRows.map((row, index) => (
     <tr

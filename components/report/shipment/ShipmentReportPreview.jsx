@@ -1,10 +1,10 @@
 'use client';
 import { fmtShort, formatNumber } from '@/lib/format';
 import { AreaChart } from '@/components/charts/AreaChart';
-import { getProfile } from '@/lib/profile';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 import { safeQuantity } from '@/lib/report/period';
 import { ShipmentItemTable, safeProductName, typeLabel } from './ShipmentItemTable';
+import { useReportGeneratedMeta } from '@/hooks/useReportGeneratedMeta';
 
 function safeAmount(v) {
   return safeQuantity(v);
@@ -32,6 +32,7 @@ export function ShipmentReportPreview({
   isLoading,
   aggRowsLength,
 }) {
+  const { profileName } = useReportGeneratedMeta();
   const qtyTxt = v => {
     const n = safeQuantity(v);
     return n ? formatNumber(n) : '—';
@@ -56,7 +57,7 @@ export function ShipmentReportPreview({
           </span>
           <span>·</span>
           <span className="mono">
-            생성일 {todayLabel} · {getProfile().name}
+            생성일 {todayLabel} · {profileName}
           </span>
         </div>
       </div>

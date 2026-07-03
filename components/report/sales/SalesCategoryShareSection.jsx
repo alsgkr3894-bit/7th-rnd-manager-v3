@@ -1,9 +1,10 @@
 'use client';
 import { formatNumber } from '@/lib/format';
 import { safeQuantity } from '@/lib/report/period';
+import { safeRevenue } from '@/lib/sales/revenue';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 
-export function SalesCategoryShareSection({ catShares, totalShare }) {
+export function SalesCategoryShareSection({ catShares, totalShare, showRevenue = false }) {
   if (catShares.length === 0) return null;
 
   return (
@@ -27,6 +28,9 @@ export function SalesCategoryShareSection({ catShares, totalShare }) {
             <span className="dot" style={{ background: category.color }} />
             <span>{asDisplayText(category.name, '미분류')}</span>
             <span className="num muted">{formatNumber(safeQuantity(category.value))}건</span>
+            {showRevenue && (
+              <span className="num muted">{formatNumber(safeRevenue(category.revenue))}원</span>
+            )}
             <span className="num" style={{ fontWeight: 700, minWidth: 40, textAlign: 'right' }}>
               {totalShare > 0 ? ((safeQuantity(category.value) / totalShare) * 100).toFixed(1) : 0}%
             </span>

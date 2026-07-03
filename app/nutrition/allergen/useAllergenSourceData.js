@@ -8,12 +8,13 @@ import { getAllIngredients } from '@/lib/ingredient';
 import { getAllMenuMaster } from '@/lib/menu-master';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { getAllEdges } from '@/lib/cost/edge-dough';
-import { getAllToppings, getAllCompositions } from '@/lib/nutrition/values/store';
+import { getAllMenuRefs, getAllToppings, getAllCompositions } from '@/lib/nutrition/values/store';
 import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 import { loadMenuRecipeArrays } from '@/lib/menu-recipes';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
 import { asObjectArray } from '@/lib/ui/prop-guards';
 import { migrateNutritionToIngredients } from '@/lib/nutrition/migrate-to-ingredient';
+import { combineAllergenMenuSources } from './allergenPageSourceUtils';
 
 function createEmptyMenuMap() {
   return {
@@ -37,12 +38,13 @@ export function useAllergenSourceData() {
     await migrateNutritionToIngredients().catch(e =>
       console.warn('[nutrition/allergen] 마이그레이션 실패', e)
     );
-    const [ings, masters, groups, edges, toppingList, recipeArrays, compositions] =
+    const [ings, masters, groups, edges, menuRefs, toppingList, recipeArrays, compositions] =
       await Promise.all([
         getAllIngredients(),
         getAllMenuMaster(),
         getAllRecipeGroups(),
         getAllEdges(),
+        getAllMenuRefs(),
         getAllToppings(),
         loadMenuRecipeArrays(),
         getAllCompositions(),
@@ -51,9 +53,11 @@ export function useAllergenSourceData() {
 
     const safeIngredients = asObjectArray(ings);
     const safeMenuMasters = asObjectArray(masters);
+    const safeMenuRefs = asObjectArray(menuRefs);
     const safeGroups = asObjectArray(groups);
     const safeEdges = asObjectArray(edges);
     const safeCompositions = asObjectArray(compositions);
+    const displayMenus = combineAllergenMenuSources(safeMenuMasters, safeMenuRefs);
     const detailRecipes = tagDetailRecipes(
       asObjectArray(recipeArrays.pizza),
       asObjectArray(recipeArrays.personal),
@@ -62,7 +66,7 @@ export function useAllergenSourceData() {
     );
 
     setIngredients(safeIngredients);
-    setMenuMasters(safeMenuMasters);
+    setMenuMasters(displayMenus);
     setEdges(safeEdges);
     setToppings(asObjectArray(toppingList));
     setMapData(

@@ -116,7 +116,7 @@ describe('출력 artifact 실행 검증', () => {
 
     const { workbook, fileName } = lastExcelWrite();
     expect(fileName).toBe('테스트브랜드_원가마진표_20260611.xlsx');
-    expect(workbook.SheetNames).toEqual(['원가마진표', '피자', '사이드']);
+    expect(workbook.SheetNames).toEqual(['원가마진표', '피자 원가율 요약', '피자', '사이드']);
     const rows = rowsOf(workbook, '원가마진표');
     expect(rows[0]).toEqual(['다운로드일', '2026-06-11']);
     expect(rows[1]).toEqual(['플랫폼', '기본']);
@@ -166,6 +166,20 @@ describe('출력 artifact 실행 검증', () => {
       1800,
       '20.0%',
     ]);
+    const summaryRows = rowsOf(workbook, '피자 원가율 요약');
+    expect(summaryRows[0]).toEqual(['다운로드일', '2026-06-11']);
+    expect(summaryRows).toContainEqual(['피자 원가율 요약']);
+    expect(summaryRows).toContainEqual(['전체 피자 평균원가율', '22.5%', '2개 가격 기준']);
+    expect(summaryRows).toContainEqual(['L 사이즈 평균원가율', '25.0%', '1개 가격 기준']);
+    expect(summaryRows).toContainEqual(['R 사이즈 평균원가율', '20.0%', '1개 가격 기준']);
+    expect(summaryRows).toContainEqual([
+      '피자 카테고리',
+      '전체 평균원가율',
+      'L 사이즈 평균원가율',
+      'R 사이즈 평균원가율',
+      '기준 가격 수',
+    ]);
+    expect(summaryRows).toContainEqual(['피자', '22.5%', '25.0%', '20.0%', 2]);
     const sideRows = rowsOf(workbook, '사이드');
     const sideHeaderIndex = headerIndex(sideRows);
     expect(sideRows[0]).toEqual(['다운로드일', '2026-06-11']);

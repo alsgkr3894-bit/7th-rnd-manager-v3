@@ -32,6 +32,9 @@ describe('price report page structure', () => {
     expect(previewSource).toContain('paper-stat-row');
     expect(previewSource).toContain('paper-table');
     expect(previewSource).toContain('formatNumber');
-    expect(previewSource).toContain('getProfile');
+    expect(previewSource).toContain('useReportGeneratedMeta');
+    expect(previewSource).toContain('compactDateLabel');
+    expect(previewSource).toContain('profileName');
+    expect(previewSource).not.toContain('getProfile');
   });
 });

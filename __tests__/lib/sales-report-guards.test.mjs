@@ -115,6 +115,7 @@ describe('sales report helper guards', () => {
   test('buildCategoryDetails와 buildCategoryShare는 깨진 입력을 안전하게 무시한다', () => {
     expect(buildCategoryDetails(null, { year: 2026, month: 5 })).toEqual({
       total: 0,
+      revenueTotal: 0,
       categories: [],
     });
 
@@ -122,8 +123,8 @@ describe('sales report helper guards', () => {
       [
         null,
         'bad',
-        row,
-        { ...row, quantity: '3', category: '', groupName: '' },
+        { ...row, revenue: 100000 },
+        { ...row, quantity: '3', revenue: '30000', category: '', groupName: '' },
         {
           ...row,
           category: 'pizza',
@@ -131,6 +132,7 @@ describe('sales report helper guards', () => {
           mappedMenuName: {},
           normalizedMenuName: '정상후보',
           quantity: '2',
+          revenue: 20000,
         },
         { ...row, month: 6, quantity: 99 },
       ],
@@ -139,22 +141,28 @@ describe('sales report helper guards', () => {
     );
 
     expect(details.total).toBe(15);
+    expect(details.revenueTotal).toBe(150000);
     expect(details.categories).toHaveLength(2);
     expect(details.categories[0]).toMatchObject({
       name: 'pizza',
       value: 12,
+      revenue: 120000,
     });
     expect(details.categories[0].topMenus).toEqual([
-      { name: '슈퍼콤비네이션', quantity: 10 },
-      { name: '정상후보', quantity: 2 },
+      { name: '슈퍼콤비네이션', quantity: 10, revenue: 100000 },
+      { name: '정상후보', quantity: 2, revenue: 20000 },
     ]);
 
-    const share = buildCategoryShare([null, row, { ...row, quantity: 'bad' }], {
-      year: 2026,
-      month: 5,
-    });
+    const share = buildCategoryShare(
+      [null, { ...row, revenue: 90000 }, { ...row, quantity: 'bad' }],
+      {
+        year: 2026,
+        month: 5,
+      }
+    );
     expect(share.total).toBe(10);
-    expect(share.items[0]).toMatchObject({ name: 'pizza', value: 10 });
+    expect(share.revenueTotal).toBe(90000);
+    expect(share.items[0]).toMatchObject({ name: 'pizza', value: 10, revenue: 90000 });
   });
 
   test('buildOrderedCategories는 비정상 입력에서도 빈 목록 또는 정렬된 목록을 반환한다', () => {
