@@ -3,9 +3,13 @@ import { resolve } from 'path';
 
 const notePhotoSources = [
   ['note write preview', 'app/note/_NotePhotoSection.jsx'],
+  ['note photo carousel', 'components/note/PhotoCarousel.jsx'],
+  ['journal note card', 'components/note/WebJournalCard.jsx'],
+];
+const carouselConsumers = [
   ['note list card', 'app/note/_NoteCard.jsx'],
   ['note idea group card', 'app/note/_NoteIdeaGroupCard.jsx'],
-  ['journal note card', 'components/note/WebJournalCard.jsx'],
+  ['sample card media', 'components/note/sample-card/SampleCardMedia.jsx'],
 ];
 
 describe('note photo display', () => {
@@ -20,5 +24,11 @@ describe('note photo display', () => {
     const source = readFileSync(resolve('lib/note/report-print.js'), 'utf8');
     expect(source).toContain('object-fit: contain');
     expect(source).not.toContain('object-fit: cover');
+  });
+
+  test.each(carouselConsumers)('%s uses the uncropped photo carousel', (_label, file) => {
+    const source = readFileSync(resolve(file), 'utf8');
+    expect(source).toContain('PhotoCarousel');
+    expect(source).not.toContain("objectFit: 'cover'");
   });
 });

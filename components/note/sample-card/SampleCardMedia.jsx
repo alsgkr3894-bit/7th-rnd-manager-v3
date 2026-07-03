@@ -1,8 +1,10 @@
-export function SampleCardMedia({ thumb, photosCount, category, altText }) {
+import { PhotoCarousel } from '@/components/note/PhotoCarousel';
+
+export function SampleCardMedia({ photos = [], photosCount, category, altText }) {
   return (
     <div
       style={{
-        height: 180,
+        height: 230,
         background: 'var(--surface-2)',
         display: 'flex',
         alignItems: 'center',
@@ -11,34 +13,14 @@ export function SampleCardMedia({ thumb, photosCount, category, altText }) {
         overflow: 'hidden',
       }}
     >
-      {thumb ? (
-        <img
-          src={thumb}
-          alt={altText}
-          loading="lazy"
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-      ) : (
-        <div style={{ fontSize: 40, opacity: 0.3 }}>📷</div>
-      )}
-
-      {photosCount > 1 && (
-        <span
-          style={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            background: 'rgba(0,0,0,0.55)',
-            color: '#fff',
-            fontSize: 10,
-            padding: '2px 7px',
-            borderRadius: 10,
-            fontWeight: 700,
-          }}
-        >
-          📷 {photosCount}
-        </span>
-      )}
+      <PhotoCarousel
+        photos={photos}
+        title={altText}
+        height={230}
+        placeholderSize={40}
+        showCount={photosCount > 1}
+        rounded={0}
+      />
 
       <span
         style={{

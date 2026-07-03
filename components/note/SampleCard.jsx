@@ -78,7 +78,7 @@ export const SampleCard = React.memo(function SampleCard({
         onClick={cardClick}
       >
         <SampleCardMedia
-          thumb={model.thumb}
+          photos={model.photos}
           photosCount={model.photos.length}
           category={model.category}
           altText={`${model.names || model.title} 샘플 사진`}

@@ -1,4 +1,5 @@
 import { imageFileError, isSupportedImageFile, resizePhotos } from '../../lib/image/resize.js';
+import { UPLOAD_MAX_MB } from '../../lib/upload-policy.js';
 
 const ORIGINAL_FILE = globalThis.File;
 
@@ -35,7 +36,10 @@ describe('image resize guards', () => {
     expect(imageFileError(new TestFile({ name: 'doc.txt', type: 'text/plain' }))).toBe(
       '지원하지 않는 이미지 형식입니다'
     );
-    expect(imageFileError(new TestFile({ size: 6 * 1024 * 1024 }))).toContain('5MB를 초과');
+    expect(imageFileError(new TestFile({ size: 8 * 1024 * 1024 }))).toBe('');
+    expect(imageFileError(new TestFile({ size: (UPLOAD_MAX_MB.photo + 1) * 1024 * 1024 }))).toContain(
+      `${UPLOAD_MAX_MB.photo}MB를 초과`
+    );
   });
 
   test('빈 입력 목록은 빈 배열로 처리', async () => {

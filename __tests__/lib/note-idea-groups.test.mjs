@@ -202,7 +202,7 @@ describe('note idea groups', () => {
 
     expect(groups[0].latestNote.id).toBe('n-2');
     expect(collectLatestRoundNotePhotos(groups[0].notes, 1).map(photo => photo.data)).toEqual([
-      'release-photo',
+      'later-test-photo',
     ]);
   });
 

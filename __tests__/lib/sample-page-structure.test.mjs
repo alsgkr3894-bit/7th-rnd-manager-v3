@@ -261,6 +261,7 @@ describe('sample page structure', () => {
     expect(sampleCardSource).toContain('buildSampleCardViewModel');
     expect(sampleCardSource).toContain('<SampleCardSelectionOverlay');
     expect(sampleCardSource).toContain('<SampleCardMedia');
+    expect(sampleCardSource).toContain('photos={model.photos}');
     expect(sampleCardSource).toContain('<SampleCardBody');
     expect(sampleCardSource).not.toContain('function asText');
     expect(sampleCardSource).not.toContain('className="inline-stars"');
@@ -271,7 +272,10 @@ describe('sample page structure', () => {
     expect(sampleCardBodySource).toContain('<SampleCardTags');
     expect(sampleCardBodySource).toContain('<SampleCardActions');
     expect(sampleCardMediaSource).toContain('export function SampleCardMedia');
+    expect(sampleCardMediaSource).toContain("import { PhotoCarousel } from '@/components/note/PhotoCarousel'");
+    expect(sampleCardMediaSource).toContain('<PhotoCarousel');
     expect(sampleCardMediaSource).toContain('photosCount > 1');
+    expect(sampleCardMediaSource).toContain('height={230}');
     expect(sampleCardSelectionSource).toContain('export function SampleCardSelectionOverlay');
     expect(sampleCardSelectionSource).toContain('batch-checkbox-wrap');
     expect(sampleCardSelectionSource).toContain('CompareSelectionBadge');

@@ -1,3 +1,4 @@
+import { describe, expect, test } from '@jest/globals';
 import {
   buildMenuDevelopmentReportHtml,
   buildMenuDevelopmentReportSummary,
@@ -59,15 +60,16 @@ describe('menu development note PDF report', () => {
     expect(html).toContain('메뉴개발노트 전체 보고서_20260623');
     expect(html).toContain('다운로드일 2026-06-23');
     expect(html).toContain('현재 필터 결과');
-    expect(html).toContain('제목 수');
+    expect(html).toContain('메뉴 수');
     expect(html).toContain('치즈 피자 테스트 &lt;script&gt;alert(1)&lt;/script&gt;');
     expect(html).not.toContain('버섯 &amp; 치즈 피자');
     expect(html).not.toContain('<script>alert(1)</script>');
     expect(html).toContain('임시 원가 계산');
     expect(html).toContain('원가 1,000원');
     expect(html).toContain('시식 사진');
-    expect(html).toContain('grid-template-columns: repeat(2, 1fr)');
-    expect(html).toContain('max-height: 240px');
+    expect(html).toContain('최신 차수 기준 메뉴별 상세 보고서');
+    expect(html).toContain('grid-template-columns: repeat(3, 1fr)');
+    expect(html).toContain('max-height: 190px');
     expect(html).toContain('window.print');
   });
 
@@ -100,5 +102,45 @@ describe('menu development note PDF report', () => {
     });
     expect(html).toContain('보류');
     expect(html).not.toContain('폐기</span>');
+  });
+
+  test('PDF 대표 사진은 마지막 차수가 3장 미만이면 이전 차수 사진으로 채운다', () => {
+    const notes = [
+      {
+        id: 1,
+        title: '버섯 피자',
+        menuCode: 'M-001',
+        category: '피자',
+        testRound: '1',
+        testDate: '2026-06-01',
+        photos: [
+          { data: 'data:image/jpeg;base64,OLD1', caption: '1차 사진 A' },
+          { data: 'data:image/jpeg;base64,OLD2', caption: '1차 사진 B' },
+        ],
+      },
+      {
+        id: 2,
+        parentId: 1,
+        title: '버섯 피자',
+        menuCode: 'M-001',
+        category: '피자',
+        testRound: '2',
+        testDate: '2026-06-08',
+        photos: [
+          { data: 'data:image/jpeg;base64,NEW1', caption: '2차 사진 A' },
+          { data: 'data:image/jpeg;base64,NEW2', caption: '2차 사진 B' },
+        ],
+      },
+    ];
+
+    const html = buildMenuDevelopmentReportHtml(notes, {
+      now: new Date('2026-06-23T09:00:00'),
+    });
+
+    expect(html).toContain('2차 사진 A');
+    expect(html).toContain('2차 사진 B');
+    expect(html).toContain('1차 사진 A');
+    expect(html).not.toContain('1차 사진 B');
+    expect(html.indexOf('2차 사진 A')).toBeLessThan(html.indexOf('1차 사진 A'));
   });
 });

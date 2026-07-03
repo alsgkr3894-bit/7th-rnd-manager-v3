@@ -3,26 +3,10 @@ import { useEffect, useRef } from 'react';
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { isSupportedImageFile, resizePhoto } from '@/lib/image/resize';
+import { clipboardImageFiles } from '@/lib/image/clipboard';
+import { UPLOAD_MAX_MB, checkFileSize } from '@/lib/upload-policy';
 
 const MAX_NOTE_PHOTOS = 8;
-
-function clipboardImageFiles(clipboardData) {
-  const itemFiles = Array.from(clipboardData?.items || [])
-    .filter(item => item.kind === 'file' && String(item.type || '').startsWith('image/'))
-    .map((item, index) => {
-      const file = item.getAsFile();
-      if (!file) return null;
-      if (file.name) return file;
-      return new File([file], `pasted-note-photo-${Date.now()}-${index + 1}.png`, {
-        type: file.type || 'image/png',
-      });
-    })
-    .filter(Boolean);
-  if (itemFiles.length > 0) return itemFiles;
-  return Array.from(clipboardData?.files || []).filter(file =>
-    String(file?.type || '').startsWith('image/')
-  );
-}
 
 /** 노트 사진 첨부 카드 (샘플기록과 동일한 base64 JPEG 방식) */
 export function NotePhotoSection({ photos = [], onChange }) {
@@ -43,7 +27,16 @@ export function NotePhotoSection({ photos = [], onChange }) {
       showToast(`사진은 최대 ${MAX_NOTE_PHOTOS}장까지 추가할 수 있습니다`, 'warn');
       return;
     }
-    const targets = imageFiles.slice(0, remaining);
+    const candidates = imageFiles.slice(0, remaining);
+    const targets = [];
+    for (const file of candidates) {
+      const sizeErr = checkFileSize(file, UPLOAD_MAX_MB.photo);
+      if (sizeErr) {
+        showToast(sizeErr, 'warn');
+        continue;
+      }
+      targets.push(file);
+    }
     if (targets.length === 0) return;
     const settled = await Promise.allSettled(targets.map(file => resizePhoto(file)));
     const resized = [];
@@ -58,7 +51,9 @@ export function NotePhotoSection({ photos = [], onChange }) {
   }
 
   function handlePaste(event) {
-    const pastedFiles = clipboardImageFiles(event.clipboardData);
+    const pastedFiles = clipboardImageFiles(event.clipboardData, {
+      namePrefix: 'pasted-note-photo',
+    });
     if (pastedFiles.length === 0) return;
     event.preventDefault();
     addFiles(pastedFiles);
@@ -80,6 +75,12 @@ export function NotePhotoSection({ photos = [], onChange }) {
     change(
       safePhotos.map((photo, index) => (index === idx ? { ...photo, caption: value } : photo))
     );
+  }
+
+  function makePrimary(idx) {
+    if (idx <= 0) return;
+    const selected = safePhotos[idx];
+    change([selected, ...safePhotos.filter((_, index) => index !== idx)]);
   }
 
   return (
@@ -137,7 +138,8 @@ export function NotePhotoSection({ photos = [], onChange }) {
           }}
           onDragOver={event => event.preventDefault()}
         >
-          드래그하거나 클릭해 사진 추가 · Ctrl+V 붙여넣기 · 최대 {MAX_NOTE_PHOTOS}장 · 5MB 이하
+          드래그하거나 클릭해 사진 추가 · Ctrl+V 붙여넣기 · 최대 {MAX_NOTE_PHOTOS}장 ·{' '}
+          {UPLOAD_MAX_MB.photo}MB 이하
         </div>
       )}
 
@@ -162,6 +164,29 @@ export function NotePhotoSection({ photos = [], onChange }) {
                 >
                   대표
                 </span>
+              )}
+              {index > 0 && (
+                <button
+                  type="button"
+                  onClick={() => makePrimary(index)}
+                  aria-label={`${photo.caption || photo.name || '사진'} 대표사진으로 설정`}
+                  style={{
+                    position: 'absolute',
+                    top: 6,
+                    left: 6,
+                    fontSize: 10,
+                    fontWeight: 800,
+                    padding: '2px 7px',
+                    borderRadius: 999,
+                    border: '1px solid rgba(255,255,255,.65)',
+                    background: 'rgba(0,0,0,.58)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    zIndex: 1,
+                  }}
+                >
+                  대표로
+                </button>
               )}
               <button
                 type="button"

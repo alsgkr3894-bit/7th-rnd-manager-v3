@@ -6,6 +6,7 @@ const basicSource = readFileSync(resolve('app/note/sample/_SampleBasicInfoCard.j
 const detailSource = readFileSync(resolve('app/note/sample/_SampleDetailRecordCard.jsx'), 'utf8');
 const linkedSource = readFileSync(resolve('app/note/sample/_SampleLinkedProductsCard.jsx'), 'utf8');
 const photoSource = readFileSync(resolve('app/note/sample/_SamplePhotoCard.jsx'), 'utf8');
+const journalSource = readFileSync(resolve('app/note/journal/page.jsx'), 'utf8');
 
 describe('sample form body structure', () => {
   test('form body keeps data wiring while delegating card rendering', () => {
@@ -33,6 +34,13 @@ describe('sample form body structure', () => {
     expect(basicSource).toContain('function StarPicker');
     expect(basicSource).toContain('<ComboBox');
     expect(basicSource).toContain('<SegGroup');
+    expect(basicSource).toContain('샘플 작성 날짜');
+    expect(basicSource).toContain("type=\"date\"");
+    expect(basicSource).toContain('parseNoteQuickDate');
+    expect(basicSource).toContain('placeholder="240502"');
+    expect(basicSource).toContain('inputMode="numeric"');
+    expect(basicSource).toContain('quickDateError');
+    expect(basicSource).toContain('fontWeight: 800');
     expect(basicSource).toContain('disabled={readOnly}');
     expect(detailSource).toContain('export function SampleDetailRecordCard');
     expect(detailSource).toContain('<TagInput');
@@ -42,6 +50,9 @@ describe('sample form body structure', () => {
     expect(linkedSource).toContain('disabled={readOnly}');
     expect(photoSource).toContain('export function SamplePhotoCard');
     expect(photoSource).toContain('onCaptionChange');
+    expect(photoSource).toContain('onPaste={onPaste}');
+    expect(photoSource).toContain('Ctrl+V 붙여넣기');
+    expect(photoSource).toContain('{maxPhotoMb}MB 이하');
     expect(photoSource).toContain('fileInputRef.current?.click()');
     expect(photoSource).toContain('!readOnly && photos.length < maxPhotos');
   });
@@ -50,6 +61,11 @@ describe('sample form body structure', () => {
     expect(formSource).toContain('if (readOnly) return;');
     expect(formSource).toContain('allFiles.filter(isSupportedImageFile)');
     expect(formSource).toContain('checkFileSize(file, UPLOAD_MAX_MB.photo)');
+    expect(formSource).toContain('clipboardImageFiles');
+    expect(formSource).toContain("namePrefix: 'pasted-sample-photo'");
+    expect(formSource).toContain("document.addEventListener('paste'");
+    expect(formSource).toContain('onPaste={handlePaste}');
+    expect(formSource).toContain('maxPhotoMb={UPLOAD_MAX_MB.photo}');
     expect(formSource.indexOf('allFiles.filter(isSupportedImageFile)')).toBeLessThan(
       formSource.indexOf('checkFileSize(file, UPLOAD_MAX_MB.photo)')
     );
@@ -60,5 +76,13 @@ describe('sample form body structure', () => {
     expect(photoSource).toContain('disabled={readOnly}');
     expect(photoSource).toContain('if (readOnly) return;');
     expect(photoSource).toContain("event.target.value = '';");
+  });
+
+  test('journal also exposes quick date entry without accepting invalid calendar dates', () => {
+    expect(journalSource).toContain('parseNoteQuickDate');
+    expect(journalSource).toContain('quickDateError');
+    expect(journalSource).toContain('placeholder="240502"');
+    expect(journalSource).toContain('inputMode="numeric"');
+    expect(journalSource).toContain("title={quickDateError ? '날짜 확인' : '빠른 날짜 입력'}");
   });
 });

@@ -6,7 +6,7 @@ import { NotePhotoSection } from '@/app/note/_NotePhotoSection';
 function Field({ label, children }) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-2)' }}>{label}</span>
+      <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-2)' }}>{label}</span>
       {children}
     </label>
   );
@@ -97,7 +97,7 @@ export function JournalEntryEditor({
           }}
         >
           <div>
-            <div className="card-title">일지 작성</div>
+            <div className="card-title">오늘 한 일 보고서 작성</div>
             <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{dateLabel}</div>
           </div>
           {existingEntry && (
@@ -117,7 +117,7 @@ export function JournalEntryEditor({
         </div>
 
         <div style={{ display: 'grid', gap: 12 }}>
-          <Field label="오늘 한 일">
+          <Field label="1. 오늘 한 일">
             <TextArea
               value={form.work}
               onChange={value => onChange('work', value)}
@@ -126,7 +126,7 @@ export function JournalEntryEditor({
               placeholder="작업한 내용, 변경한 메뉴, 확인한 데이터를 적으세요"
             />
           </Field>
-          <Field label="일정 내용">
+          <Field label="2. 일정 내용">
             <TextArea
               value={form.schedule}
               onChange={value => onChange('schedule', value)}
@@ -134,7 +134,7 @@ export function JournalEntryEditor({
               placeholder="회의, 보고, 납품, 테스트 일정 내용을 적으세요"
             />
           </Field>
-          <Field label="테스트/시식 결과">
+          <Field label="3. 테스트/시식 결과">
             <TextArea
               value={form.tasting}
               onChange={value => onChange('tasting', value)}
@@ -150,7 +150,7 @@ export function JournalEntryEditor({
               gap: 12,
             }}
           >
-            <Field label="특이사항">
+            <Field label="4. 특이사항">
               <TextArea
                 value={form.issue}
                 onChange={value => onChange('issue', value)}
@@ -158,7 +158,7 @@ export function JournalEntryEditor({
                 placeholder="문제, 보완점, 결정사항"
               />
             </Field>
-            <Field label="다음 할 일">
+            <Field label="5. 다음 할 일">
               <TextArea
                 value={form.next}
                 onChange={value => onChange('next', value)}
@@ -174,7 +174,7 @@ export function JournalEntryEditor({
             <Icon.copy style={{ width: 13, height: 13 }} /> 일정 불러오기
           </button>
           <button className="btn primary" onClick={onSave} disabled={disabled}>
-            <Icon.check style={{ width: 14, height: 14 }} /> {saving ? '저장 중' : '저장'}
+            <Icon.check style={{ width: 14, height: 14 }} /> {saving ? '저장 중' : '보고서 저장'}
           </button>
         </div>
         </section>

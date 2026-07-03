@@ -12,6 +12,7 @@ import { buildJournalPrintHtml } from '@/lib/note/journal-print';
 import { openPrintWindow } from '@/lib/print/window-print';
 import { WebJournalCard } from '@/components/note/WebJournalCard';
 import { todayLocalDate, formatLocalDateInput } from '@/lib/date/local-date';
+import { parseNoteQuickDate } from '@/lib/note/date-input';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { expandOccurrences } from '@/app/note/calendar/_recurrence';
 import { JournalEntryEditor } from './_JournalEntryEditor';
@@ -217,7 +218,9 @@ export default function Page() {
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const canEdit = roleReady && isAdmin;
   const [date, setDate] = useState(() => todayLocalDate());
-  const [month, setMonth] = useState(() => todayLocalDate().slice(0, 7));
+  const [month, setMonth] = useState(() => date.slice(0, 7));
+  const [quickDateDraft, setQuickDateDraft] = useState('');
+  const [quickDateError, setQuickDateError] = useState(false);
   const [journalForm, setJournalForm] = useState(EMPTY_JOURNAL_FORM);
   const [saving, setSaving] = useState(false);
 
@@ -332,11 +335,38 @@ export default function Page() {
 
   function goPrev() {
     const idx = datesWithNotes.indexOf(date);
-    if (idx < datesWithNotes.length - 1) setDate(datesWithNotes[idx + 1]);
+    if (idx < datesWithNotes.length - 1) {
+      const nextDate = datesWithNotes[idx + 1];
+      setDate(nextDate);
+      setMonth(safeMonth(nextDate.slice(0, 7)));
+      setQuickDateError(false);
+    }
   }
   function goNext() {
     const idx = datesWithNotes.indexOf(date);
-    if (idx > 0) setDate(datesWithNotes[idx - 1]);
+    if (idx > 0) {
+      const nextDate = datesWithNotes[idx - 1];
+      setDate(nextDate);
+      setMonth(safeMonth(nextDate.slice(0, 7)));
+      setQuickDateError(false);
+    }
+  }
+
+  function applyQuickDate(value = quickDateDraft) {
+    const raw = String(value || '').trim();
+    if (!raw) {
+      setQuickDateError(false);
+      return;
+    }
+    const parsed = parseNoteQuickDate(raw, { referenceDate: date });
+    if (!parsed) {
+      setQuickDateError(true);
+      return;
+    }
+    setDate(parsed);
+    setMonth(safeMonth(parsed.slice(0, 7)));
+    setQuickDateDraft('');
+    setQuickDateError(false);
   }
 
   const hasPrev = datesWithNotes.indexOf(date) < datesWithNotes.length - 1;
@@ -400,7 +430,7 @@ export default function Page() {
         title="연구일지"
         sub={loading ? '로딩 중…' : `${dateLabel} · 기록 ${dayNotes.length}건 · 일정 ${daySchedules.length}건`}
         actions={
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <button className="btn" onClick={goPrev} disabled={!hasPrev} title="이전 일자">
               <Icon.arrowUp style={{ width: 14, height: 14, transform: 'rotate(-90deg)' }} />
             </button>
@@ -409,9 +439,43 @@ export default function Page() {
               className="form-input"
               value={date}
               onChange={e => {
-                if (e.target.value) setDate(e.target.value);
+                if (e.target.value) {
+                  setDate(e.target.value);
+                  setMonth(safeMonth(e.target.value.slice(0, 7)));
+                  setQuickDateError(false);
+                }
               }}
-              style={{ width: 148 }}
+              style={{
+                width: 190,
+                minHeight: 40,
+                fontSize: 16,
+                fontWeight: 800,
+                padding: '7px 10px',
+              }}
+            />
+            <input
+              className="form-input"
+              value={quickDateDraft}
+              onChange={event => {
+                setQuickDateDraft(event.target.value);
+                setQuickDateError(false);
+              }}
+              onKeyDown={event => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  applyQuickDate();
+                }
+              }}
+              onBlur={() => applyQuickDate()}
+              inputMode="numeric"
+              placeholder="240502"
+              title={quickDateError ? '날짜 확인' : '빠른 날짜 입력'}
+              style={{
+                width: 94,
+                minHeight: 40,
+                fontSize: 13,
+                borderColor: quickDateError ? 'var(--negative)' : undefined,
+              }}
             />
             <button className="btn" onClick={goNext} disabled={!hasNext} title="다음 일자">
               <Icon.arrowDown style={{ width: 14, height: 14, transform: 'rotate(-90deg)' }} />
@@ -426,7 +490,7 @@ export default function Page() {
                   })
                 }
               >
-                <Icon.download style={{ width: 14, height: 14 }} /> PDF 출력
+                <Icon.download style={{ width: 14, height: 14 }} /> 보고서 PDF
               </button>
             )}
           </div>

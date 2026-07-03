@@ -62,7 +62,7 @@ function indexNames(store) {
 
 describe('legacy cost recipe schema cleanup', () => {
   test('DB_VERSION is bumped for legacy recipe store removal', () => {
-    expect(DB_VERSION).toBe(23);
+    expect(DB_VERSION).toBe(24);
   });
 
   test('new cost schema creates canonical menu_recipes only', () => {

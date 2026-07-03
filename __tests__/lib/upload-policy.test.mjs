@@ -36,6 +36,10 @@ describe('UPLOAD_MAX_MB 상수', () => {
   test('backup >= jette (백업은 가장 큼)', () => {
     expect(UPLOAD_MAX_MB.backup).toBeGreaterThanOrEqual(UPLOAD_MAX_MB.jette);
   });
+
+  test('photo는 고해상도 현장 사진 업로드를 위해 50MB 이상 허용한다', () => {
+    expect(UPLOAD_MAX_MB.photo).toBeGreaterThanOrEqual(50);
+  });
 });
 
 describe('UPLOAD_EXT 상수', () => {

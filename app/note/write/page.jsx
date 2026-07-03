@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { addNote, getNoteById, updateNoteChainStatus, CATEGORIES } from '@/lib/note';
+import { addNote, getAllNotesCached, getNoteById, updateNoteChainStatus, CATEGORIES } from '@/lib/note';
 import { buildPreviousRoundDraft } from '@/lib/note/evaluation';
 import { NoteFormBody, INIT, normalizeNoteFormForSave } from '@/app/note/_NoteFormBody';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/note/storage';
@@ -150,13 +150,15 @@ export default function Page() {
     clearTimeout(draftTimer.current);
     try {
       await initDB();
-      const payload = normalizeNoteFormForSave(form);
+      const existingNotes = await getAllNotesCached();
+      const payload = normalizeNoteFormForSave(form, { existingNotes });
       const noteId = await addNote(payload);
       await updateNoteChainStatus(noteId, payload.status);
       clearDraft(KEYS.NOTE_DRAFT_WRITE);
+      isDirtyRef.current = false;
       setIsDirty(false);
       showToast('노트가 저장됐어요', 'ok');
-      window.location.replace('/note');
+      router.replace('/note');
     } catch {
       showToast('저장 중 오류가 발생했어요', 'error');
       setSaving(false);

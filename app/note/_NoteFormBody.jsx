@@ -51,8 +51,14 @@ export const INIT = {
   photos: [],
 };
 
-export function normalizeNoteFormForSave(form) {
-  const menuCode = normalizeNoteMenuCode(form?.menuCode);
+export function normalizeNoteFormForSave(form, options = {}) {
+  const existingNotes = Array.isArray(options.existingNotes) ? options.existingNotes : [];
+  const manualCode = normalizeNoteMenuCode(form?.menuCode);
+  const menuCode =
+    manualCode ||
+    generateNextNoteMenuCode(existingNotes, {
+      date: form?.testDate,
+    });
   const title = String(form?.title || form?.menuName || menuCode || '').trim();
   return {
     ...form,

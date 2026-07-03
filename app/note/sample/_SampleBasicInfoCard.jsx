@@ -3,6 +3,7 @@ import { Icon } from '@/components/icons';
 import { ComboBox } from '@/components/ui/ComboBox';
 import { Field, SegGroup } from '@/components/note/FormFields';
 import { RATING_COLOR, RATING_LABELS } from '@/lib/sample';
+import { parseNoteQuickDate } from '@/lib/note/date-input';
 import { clampInteger, noop } from '@/lib/ui/prop-guards';
 
 export function SampleBasicInfoCard({
@@ -15,6 +16,30 @@ export function SampleBasicInfoCard({
   onRemoveSampleName,
   readOnly = false,
 }) {
+  const [quickDateDraft, setQuickDateDraft] = useState('');
+  const [quickDateError, setQuickDateError] = useState(false);
+
+  function updateTestDate(value) {
+    onUpdate('testDate', value);
+    setQuickDateError(false);
+  }
+
+  function applyQuickDate(value = quickDateDraft) {
+    if (readOnly) return;
+    const raw = String(value || '').trim();
+    if (!raw) {
+      setQuickDateError(false);
+      return;
+    }
+    const parsed = parseNoteQuickDate(raw, { referenceDate: form.testDate });
+    if (!parsed) {
+      setQuickDateError(true);
+      return;
+    }
+    updateTestDate(parsed);
+    setQuickDateDraft('');
+  }
+
   return (
     <div className="card">
       <div className="card-title" style={{ marginBottom: 16 }}>
@@ -68,15 +93,66 @@ export function SampleBasicInfoCard({
         </div>
       </Field>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <Field label="샘플수령날짜">
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1.15fr) minmax(120px, 0.85fr)',
+          gap: 12,
+        }}
+      >
+        <Field label="샘플 작성 날짜">
           <input
             className="form-input"
             type="date"
             value={form.testDate}
-            onChange={event => onUpdate('testDate', event.target.value)}
+            onChange={event => updateTestDate(event.target.value)}
             disabled={readOnly}
+            style={{
+              minHeight: 40,
+              fontSize: 15,
+              fontWeight: 800,
+              padding: '7px 10px',
+            }}
           />
+          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+            <input
+              className="form-input"
+              value={quickDateDraft}
+              onChange={event => {
+                setQuickDateDraft(event.target.value);
+                setQuickDateError(false);
+              }}
+              onKeyDown={event => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  applyQuickDate();
+                }
+              }}
+              onBlur={() => applyQuickDate()}
+              inputMode="numeric"
+              placeholder="240502"
+              disabled={readOnly}
+              style={{
+                minHeight: 34,
+                fontSize: 13,
+                borderColor: quickDateError ? 'var(--negative)' : undefined,
+              }}
+            />
+            <button
+              type="button"
+              className="btn sm"
+              onClick={() => applyQuickDate()}
+              disabled={readOnly}
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              적용
+            </button>
+          </div>
+          {quickDateError && (
+            <div style={{ marginTop: 4, fontSize: 11, color: 'var(--negative)' }}>
+              날짜 확인
+            </div>
+          )}
         </Field>
         <Field label="테스트 차수">
           <input

@@ -4,6 +4,7 @@ import { showToast } from '@/components/Toast';
 import { SAMPLE_CATEGORIES, getAllSamples } from '@/lib/sample';
 import { initDB } from '@/lib/db';
 import { isSupportedImageFile, resizePhoto } from '@/lib/image/resize';
+import { clipboardImageFiles } from '@/lib/image/clipboard';
 import { UPLOAD_MAX_MB, checkFileSize } from '@/lib/upload-policy';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllMenuMaster } from '@/lib/menu-master';
@@ -181,6 +182,26 @@ export function SampleFormBody({ form, setForm, readOnly = false }) {
     handleFiles(e.dataTransfer.files);
   }
 
+  function handlePaste(event) {
+    if (readOnly) return;
+    const pastedFiles = clipboardImageFiles(event.clipboardData, {
+      namePrefix: 'pasted-sample-photo',
+    });
+    if (pastedFiles.length === 0) return;
+    event.preventDefault();
+    handleFiles(pastedFiles);
+  }
+
+  useEffect(() => {
+    if (readOnly) return undefined;
+    function handleDocumentPaste(event) {
+      if (event.defaultPrevented) return;
+      handlePaste(event);
+    }
+    document.addEventListener('paste', handleDocumentPaste);
+    return () => document.removeEventListener('paste', handleDocumentPaste);
+  });
+
   const photos = Array.isArray(form.photos)
     ? form.photos.filter(p => p && typeof p === 'object')
     : [];
@@ -190,7 +211,7 @@ export function SampleFormBody({ form, setForm, readOnly = false }) {
       className="form-layout"
       style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 340px',
+        gridTemplateColumns: 'minmax(0, 1fr) minmax(360px, 420px)',
         gap: 24,
         marginTop: 24,
         alignItems: 'start',
@@ -239,8 +260,10 @@ export function SampleFormBody({ form, setForm, readOnly = false }) {
           maxPhotos={MAX_PHOTOS}
           fileInputRef={fileInputRef}
           onDrop={handleDrop}
+          onPaste={handlePaste}
           onFiles={handleFiles}
           onRemovePhoto={removePhoto}
+          maxPhotoMb={UPLOAD_MAX_MB.photo}
           onCaptionChange={(index, caption) => {
             if (readOnly) return;
             const updated = [...photos];

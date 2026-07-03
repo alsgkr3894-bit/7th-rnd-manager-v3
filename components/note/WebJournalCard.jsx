@@ -1,26 +1,37 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { STATUS_COLORS } from '@/lib/note/constants';
-import { noteDisplayTitle } from '@/lib/note/display';
+import {
+  isJournalNote,
+  noteDetailPairs,
+  noteDisplayTitle,
+  notePrimaryContentLabel,
+} from '@/lib/note/display';
 
-function TwoColFields({ pairs }) {
-  const filled = pairs.filter(([, v]) => v);
+function ReportSections({ sections }) {
+  const filled = sections.filter(([, v]) => v);
   if (!filled.length) return null;
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-      {filled.map(([label, value]) => (
-        <div key={label}>
+    <div style={{ display: 'grid', gap: 10 }}>
+      {filled.map(([label, value], index) => (
+        <section
+          key={label}
+          style={{
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            padding: '10px 12px',
+            background: index === 0 ? 'var(--surface-2)' : 'var(--surface)',
+          }}
+        >
           <div
             style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: 'var(--text-3)',
-              textTransform: 'uppercase',
-              letterSpacing: '.04em',
-              marginBottom: 4,
+              fontSize: 12,
+              fontWeight: 800,
+              color: 'var(--text-2)',
+              marginBottom: 6,
             }}
           >
-            {label}
+            {index + 1}. {label}
           </div>
           <div
             style={{
@@ -32,7 +43,7 @@ function TwoColFields({ pairs }) {
           >
             {value}
           </div>
-        </div>
+        </section>
       ))}
     </div>
   );
@@ -41,33 +52,31 @@ function TwoColFields({ pairs }) {
 export function WebJournalCard({ note, index, onEdit }) {
   const statusStyle = STATUS_COLORS[note.status] || {};
   const title = noteDisplayTitle(note, '(제목 없음)');
+  const contentLabel = notePrimaryContentLabel(note);
+  const detailPairs = noteDetailPairs(note);
+  const reportLabel = isJournalNote(note) ? '오늘 한 일 보고서' : '관련 테스트 보고';
+  const sections = [[contentLabel, note.testContent], ...detailPairs];
 
   return (
-    <div className="card" style={{ overflow: 'hidden', padding: 0 }}>
+    <article className="card" style={{ overflow: 'hidden', padding: 0 }}>
       {/* 헤더 */}
       <div
         style={{
-          background: 'var(--surface-2)',
+          background: 'var(--surface)',
           borderBottom: '1px solid var(--divider)',
-          padding: '10px 16px',
+          padding: '14px 16px',
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
           gap: 10,
         }}
       >
-        <span
-          style={{
-            fontSize: 12,
-            fontWeight: 800,
-            color: 'var(--text-3)',
-            minWidth: 30,
-          }}
-        >
-          No.{index}
-        </span>
-        <span style={{ fontWeight: 700, fontSize: 15, flex: 1 }}>
-          {title}
-        </span>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)', marginBottom: 3 }}>
+            {reportLabel} #{index}
+          </div>
+          <div style={{ fontWeight: 800, fontSize: 17, color: 'var(--text-1)' }}>{title}</div>
+        </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {note.noteType && (
             <span
@@ -103,67 +112,31 @@ export function WebJournalCard({ note, index, onEdit }) {
       </div>
 
       {/* 메타 */}
-      {note.category && (
-        <div
-          style={{
-            padding: '6px 16px',
-            fontSize: 13,
-            color: 'var(--text-2)',
-            display: 'flex',
-            gap: 16,
-            borderBottom: '1px solid var(--divider)',
-          }}
-        >
-          {note.category && (
-            <span>
-              <b>구분:</b> {note.category}
-            </span>
-          )}
-        </div>
-      )}
+      <div
+        style={{
+          padding: '8px 16px',
+          fontSize: 13,
+          color: 'var(--text-2)',
+          display: 'flex',
+          gap: 16,
+          borderBottom: '1px solid var(--divider)',
+          flexWrap: 'wrap',
+        }}
+      >
+        {note.testDate && (
+          <span>
+            <b>작성일:</b> {note.testDate}
+          </span>
+        )}
+        {note.category && (
+          <span>
+            <b>구분:</b> {note.category}
+          </span>
+        )}
+      </div>
 
       <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {/* 핵심 내용 */}
-        {note.testContent && (
-          <div>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'var(--text-3)',
-                textTransform: 'uppercase',
-                letterSpacing: '.04em',
-                marginBottom: 6,
-              }}
-            >
-              핵심 테스트 내용
-            </div>
-            <div
-              style={{
-                background: 'var(--surface-2)',
-                borderRadius: 8,
-                padding: '10px 14px',
-                fontSize: 13,
-                lineHeight: 1.75,
-                whiteSpace: 'pre-wrap',
-              }}
-            >
-              {note.testContent}
-            </div>
-          </div>
-        )}
-
-        {/* 2열 필드 */}
-        <TwoColFields
-          pairs={[
-            ['사용 재료', note.materials],
-            ['맛 평가', note.tasteEval],
-            ['상무님 평가', note.managerEval],
-            ['원가 검토', note.costNote],
-            ['개선점', note.improvements],
-            ['다음 액션', note.nextAction],
-          ]}
-        />
+        <ReportSections sections={sections} />
 
         {/* 사진 */}
         {note.photos?.length > 0 && (
@@ -173,12 +146,10 @@ export function WebJournalCard({ note, index, onEdit }) {
                 fontSize: 11,
                 fontWeight: 700,
                 color: 'var(--text-3)',
-                textTransform: 'uppercase',
-                letterSpacing: '.04em',
                 marginBottom: 8,
               }}
             >
-              사진 ({note.photos.length}장)
+              첨부 사진 ({note.photos.length}장)
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
               {note.photos.map((p, i) => (
@@ -238,6 +209,6 @@ export function WebJournalCard({ note, index, onEdit }) {
           </div>
         )}
       </div>
-    </div>
+    </article>
   );
 }

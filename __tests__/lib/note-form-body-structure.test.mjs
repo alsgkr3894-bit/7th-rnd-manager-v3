@@ -8,6 +8,7 @@ const detailSource = readFileSync(resolve('app/note/_NoteDetailFields.jsx'), 'ut
 const evaluationSource = readFileSync(resolve('app/note/_NoteEvaluationFields.jsx'), 'utf8');
 const cloneSource = readFileSync(resolve('app/note/_NoteClonePreviousCard.jsx'), 'utf8');
 const photoSource = readFileSync(resolve('app/note/_NotePhotoSection.jsx'), 'utf8');
+const clipboardSource = readFileSync(resolve('lib/image/clipboard.js'), 'utf8');
 const reportSource = readFileSync(resolve('app/note/_NoteReportSummaryCard.jsx'), 'utf8');
 const reportTextSource = readFileSync(resolve('lib/note/report.js'), 'utf8');
 const collapsibleSource = readFileSync(resolve('app/note/_CollapsibleCard.jsx'), 'utf8');
@@ -28,6 +29,10 @@ describe('note form body structure', () => {
     expect(formSource).toContain('makeFieldUpdater(setForm)');
     expect(formSource).toContain('normalizeNoteFormForSave');
     expect(formSource).toContain('menuName: title');
+    expect(formSource).toContain(
+      'const existingNotes = Array.isArray(options.existingNotes) ? options.existingNotes : []'
+    );
+    expect(formSource).toContain('generateNextNoteMenuCode(existingNotes');
     expect(formSource).toContain('function updateTitle(value)');
     expect(formSource).toContain('generateNoteReportText(form)');
     expect(reportTextSource).toContain("import { noteDisplayTitle } from './display'");
@@ -87,9 +92,13 @@ describe('note form body structure', () => {
     expect(photoSource).toContain('MAX_NOTE_PHOTOS');
     expect(photoSource).toContain('resizePhoto');
     expect(photoSource).toContain('clipboardImageFiles');
+    expect(photoSource).toContain('UPLOAD_MAX_MB.photo');
+    expect(photoSource).toContain('checkFileSize(file, UPLOAD_MAX_MB.photo)');
     expect(photoSource).toContain('event.clipboardData');
     expect(photoSource).toContain("document.addEventListener('paste'");
     expect(photoSource).toContain('Ctrl+V 붙여넣기');
+    expect(photoSource).toContain('function makePrimary(idx)');
+    expect(photoSource).toContain('대표로');
     expect(reportSource).toContain('export function NoteReportSummaryCard');
     expect(reportSource).toContain('<CollapsibleCard');
     expect(reportSource).toContain('defaultOpen={false}');
@@ -132,17 +141,19 @@ describe('note form body structure', () => {
     expect(photoSource).toContain("showToast('지원하지 않는 이미지 파일은 제외했어요', 'warn')");
     expect(photoSource).toContain('Promise.allSettled(targets.map(file => resizePhoto(file)))');
     expect(photoSource).toContain("event.target.value = '';");
-    expect(photoSource).toContain('item.getAsFile()');
-    expect(photoSource).toContain('new File([file]');
+    expect(clipboardSource).toContain('item.getAsFile()');
+    expect(clipboardSource).toContain('new File([file]');
   });
 
   test('note write draft state is not consumed or cleared for viewer', () => {
     expect(writePageSource).toContain('if (!roleReady) return;');
     expect(writePageSource).toContain('if (!canEdit) return;');
     expect(writePageSource).toContain('}, [canEdit, roleReady]);');
-    expect(writePageSource).toContain('normalizeNoteFormForSave(form)');
+    expect(writePageSource).toContain('getAllNotesCached');
+    expect(writePageSource).toContain('normalizeNoteFormForSave(form, { existingNotes })');
     expect(writePageSource).toContain('if (canEdit) clearDraft(KEYS.NOTE_DRAFT_WRITE);');
-    expect(writePageSource).toContain("window.location.replace('/note')");
+    expect(writePageSource).toContain('isDirtyRef.current = false;');
+    expect(writePageSource).toContain("router.replace('/note')");
     expect(writePageSource).toContain('{canEdit && showDraftBanner && !fromTitle && (');
   });
 });

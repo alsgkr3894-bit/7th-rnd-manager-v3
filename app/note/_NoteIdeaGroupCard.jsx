@@ -6,8 +6,10 @@ import { STATUSES, STATUS_COLORS } from '@/lib/note';
 import { formatFullDate, parseTagList } from '@/lib/note/utils';
 import { clampNoteRating, formatTestRound, NOTE_EVALUATION_FIELDS } from '@/lib/note/evaluation';
 import { noop } from '@/lib/ui/prop-guards';
+import { PhotoCarousel } from '@/components/note/PhotoCarousel';
 import { highlightText } from './_NoteCard';
 import { collectLatestRoundNotePhotos, noteRoundNumber } from './noteIdeaGroups';
+import { NotePhotoLightbox } from './_NotePhotoLightbox';
 
 function asText(value) {
   if (value == null) return '';
@@ -120,7 +122,7 @@ export function NoteIdeaGroupCard({
   const representativeLabel = latestStatus === '출시' ? '완성본' : '최신 차수';
   const representativeInlineLabel = latestStatus === '출시' ? '완성본' : '최신';
   const statusColor = STATUS_COLORS[latestStatus] || STATUS_COLORS['테스트'];
-  const photos = collectLatestRoundNotePhotos(notes, 3);
+  const photos = collectLatestRoundNotePhotos(notes, 99);
   const tags = parseTagList(latest.tags);
   const open = typeof onOpen === 'function' ? onOpen : noop;
   const contextMenu = typeof onContextMenu === 'function' ? onContextMenu : noop;
@@ -135,6 +137,7 @@ export function NoteIdeaGroupCard({
   const unmergeGroup = typeof onUnmergeGroup === 'function' ? onUnmergeGroup : noop;
   const isPinned = pinnedIds.has(latest.id);
   const [expanded, setExpanded] = useState(false);
+  const [previewPhoto, setPreviewPhoto] = useState(null);
   const latestRoundLabel = roundLabel(latest, Math.max(notes.length - 1, 0));
   const latestPreviewRows = previewRows(latest);
   const canUnmergeGroup = canEdit && !batchMode && notes.some(note => note?.parentId != null);
@@ -250,7 +253,7 @@ export function NoteIdeaGroupCard({
             </span>
           )}
           <span style={{ fontSize: 11, color: 'var(--text-4)' }}>
-            {formatFullDate(latest.testDate)}
+            {group.periodLabel || formatFullDate(latest.testDate)}
           </span>
           <button
             className="btn sm"
@@ -281,7 +284,7 @@ export function NoteIdeaGroupCard({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: photos.length ? 'minmax(0,1fr) 96px' : '1fr',
+            gridTemplateColumns: photos.length ? 'minmax(0,1fr) 132px' : '1fr',
             gap: 14,
             alignItems: 'start',
           }}
@@ -315,32 +318,13 @@ export function NoteIdeaGroupCard({
           </div>
 
           {photos.length > 0 && (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateRows: photos.length > 1 ? '1fr 1fr' : '1fr',
-                gridTemplateColumns: photos.length > 2 ? '1fr 1fr' : '1fr',
-                gap: 4,
-                height: 96,
-              }}
-            >
-              {photos.map((photo, index) => (
-                <img
-                  key={`${photo.data?.slice(0, 24) || index}-${index}`}
-                  src={photo.data}
-                  alt={photo.caption || photo.name || group.title}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    minHeight: 0,
-                    objectFit: 'contain',
-                    background: 'var(--surface-2)',
-                    borderRadius: 8,
-                    border: '1px solid var(--border)',
-                    gridRow: photos.length === 3 && index === 0 ? '1 / 3' : undefined,
-                  }}
-                />
-              ))}
+            <div onMouseDown={event => event.stopPropagation()} onDragStart={event => event.preventDefault()}>
+              <PhotoCarousel
+                photos={photos}
+                title={group.title}
+                height={132}
+                onPhotoClick={photo => setPreviewPhoto(photo)}
+              />
             </div>
           )}
         </div>
@@ -354,7 +338,14 @@ export function NoteIdeaGroupCard({
           }}
         >
           <MiniStat label="차수" value={notes.length} />
-          <MiniStat label="사진" value={photos.length} />
+          <MiniStat
+            label="사진"
+            value={(notes || []).reduce(
+              (sum, note) =>
+                sum + (Array.isArray(note?.photos) ? note.photos.filter(photo => photo?.data).length : 0),
+              0
+            )}
+          />
           <MiniStat label="대표" value={roundLabel(latest, Math.max(notes.length - 1, 0))} />
         </div>
       </div>
@@ -423,6 +414,7 @@ export function NoteIdeaGroupCard({
           {notes.map((note, index) => {
             const checked = selected.has(note.id);
             const isLatest = note.id === latest.id;
+            const roundPhotos = collectLatestRoundNotePhotos([note], 99);
             return (
               <div
                 key={note.id}
@@ -505,6 +497,16 @@ export function NoteIdeaGroupCard({
                       '기록 보기'}
                   </span>
                 </span>
+                {roundPhotos.length > 0 && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <PhotoCarousel
+                      photos={roundPhotos}
+                      title={`${group.title} ${roundLabel(note, index)}`}
+                      height={92}
+                      onPhotoClick={photo => setPreviewPhoto(photo)}
+                    />
+                  </div>
+                )}
               </div>
             );
           })}
@@ -583,6 +585,11 @@ export function NoteIdeaGroupCard({
           </div>
         )}
       </div>
+      <NotePhotoLightbox
+        photo={previewPhoto}
+        title={group.title}
+        onClose={() => setPreviewPhoto(null)}
+      />
     </div>
   );
 }

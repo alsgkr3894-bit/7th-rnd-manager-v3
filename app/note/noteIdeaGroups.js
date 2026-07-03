@@ -1,5 +1,5 @@
 import { noteDisplayTitle } from '@/lib/note/display';
-import { isReleasedNote, selectRepresentativeNote } from '@/lib/note/representative';
+import { selectRepresentativeNote } from '@/lib/note/representative';
 
 function asText(value) {
   return value == null ? '' : String(value).trim();
@@ -46,6 +46,25 @@ function compareIdeaNotes(a, b) {
 
 function compareText(a, b) {
   return String(a || '').localeCompare(String(b || ''), 'ko', { numeric: true });
+}
+
+function compactDate(value) {
+  return asText(value).slice(0, 10);
+}
+
+function koreanDate(value) {
+  const date = compactDate(value);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+  const [year, month, day] = date.split('-');
+  return `${year}년${month}월${day}일`;
+}
+
+function periodLabel(notes = []) {
+  const dates = notes.map(note => compactDate(note?.testDate)).filter(Boolean).sort();
+  if (!dates.length) return '';
+  const first = dates[0];
+  const last = dates[dates.length - 1];
+  return first === last ? koreanDate(first) : `${koreanDate(first)} ~ ${koreanDate(last)}`;
 }
 
 function buildNoteLookup(notes = []) {
@@ -173,10 +192,16 @@ export function buildNoteIdeaGroups(filtered = [], visible = [], options = {}) {
     .filter(group => group.isVisible)
     .map(group => {
       const notes = [...group.notes].sort(compareIdeaNotes);
+      const lastRoundNote = notes[notes.length - 1] || null;
+      const latestTitle = noteIdeaTitle(lastRoundNote || {}) || group.title;
       return {
         ...group,
+        title: latestTitle,
+        menuCode: asText(lastRoundNote?.menuCode) || group.menuCode,
+        periodLabel: periodLabel(notes),
         notes,
         latestNote: selectRepresentativeNote(notes),
+        lastRoundNote,
       };
     });
 
@@ -221,25 +246,11 @@ export function collectRecentNotePhotos(notes = [], limit = 3) {
 
 export function collectLatestRoundNotePhotos(notes = [], limit = 3) {
   const source = Array.isArray(notes) ? notes : [];
-  const releasedNote = [...source].reverse().find(isReleasedNote);
-
-  if (releasedNote) {
-    const photos = photosFromNote(releasedNote, source.indexOf(releasedNote))
-      .sort((a, b) => {
-        if (a.sortValue !== b.sortValue) return b.sortValue - a.sortValue;
-        return b.photoIndex - a.photoIndex;
-      })
-      .slice(0, limit)
-      .map(item => item.photo);
-
-    if (photos.length) return photos;
-  }
-
   for (let noteIndex = source.length - 1; noteIndex >= 0; noteIndex -= 1) {
     const photos = photosFromNote(source[noteIndex], noteIndex)
       .sort((a, b) => {
-        if (a.sortValue !== b.sortValue) return b.sortValue - a.sortValue;
-        return b.photoIndex - a.photoIndex;
+        if (a.photoIndex !== b.photoIndex) return a.photoIndex - b.photoIndex;
+        return a.sortValue - b.sortValue;
       })
       .slice(0, limit)
       .map(item => item.photo);

@@ -5,13 +5,15 @@ export function SamplePhotoCard({
   maxPhotos,
   fileInputRef,
   onDrop,
+  onPaste,
   onFiles,
   onRemovePhoto,
+  maxPhotoMb = 20,
   onCaptionChange,
   readOnly = false,
 }) {
   return (
-    <div className="card">
+    <div className="card" onPaste={onPaste}>
       <div
         style={{
           display: 'flex',
@@ -45,8 +47,11 @@ export function SamplePhotoCard({
           onMouseLeave={event => (event.currentTarget.style.borderColor = 'var(--border)')}
         >
           <div style={{ fontSize: 28, marginBottom: 6 }}>📷</div>
-          <div style={{ fontSize: 13, fontWeight: 600 }}>클릭하거나 사진을 끌어다 놓으세요</div>
+          <div style={{ fontSize: 13, fontWeight: 600 }}>
+            클릭하거나 사진을 끌어다 놓으세요
+          </div>
           <div style={{ fontSize: 11, marginTop: 4 }}>JPG · PNG · HEIC · 최대 {maxPhotos}장</div>
+          <div style={{ fontSize: 11, marginTop: 2 }}>Ctrl+V 붙여넣기 · {maxPhotoMb}MB 이하</div>
         </div>
       )}
 
@@ -65,7 +70,13 @@ export function SamplePhotoCard({
       />
 
       {photos.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+            gap: 10,
+          }}
+        >
           {photos.map((photo, index) => (
             <div
               key={index}
@@ -83,7 +94,7 @@ export function SamplePhotoCard({
                 <img
                   src={photo.data}
                   alt={photo.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
                 <button
                   onClick={() => onRemovePhoto(index)}

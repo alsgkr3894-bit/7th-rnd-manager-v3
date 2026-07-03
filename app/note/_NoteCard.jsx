@@ -1,11 +1,14 @@
 'use client';
+import { useState } from 'react';
 import { Icon } from '@/components/icons';
 import { STATUSES, STATUS_COLORS, STATUS_BORDER } from '@/lib/note';
 import { noteDisplayTitle } from '@/lib/note/display';
 import { clampNoteRating, formatTestRound, NOTE_EVALUATION_FIELDS } from '@/lib/note/evaluation';
 import { parseTagList, formatFullDate } from '@/lib/note/utils';
 import { noop } from '@/lib/ui/prop-guards';
-import { collectRecentNotePhotos } from './noteIdeaGroups';
+import { PhotoCarousel } from '@/components/note/PhotoCarousel';
+import { collectLatestRoundNotePhotos } from './noteIdeaGroups';
+import { NotePhotoLightbox } from './_NotePhotoLightbox';
 
 /** 검색어 하이라이트 적용 (React 요소 배열 반환) */
 export function highlightText(text, regex) {
@@ -28,8 +31,8 @@ function asText(value) {
   return '';
 }
 
-function firstPhoto(photos) {
-  return collectRecentNotePhotos([{ photos }], 1)[0] || null;
+function notePhotos(photos) {
+  return collectLatestRoundNotePhotos([{ photos }], 99);
 }
 
 export function NoteCard({
@@ -64,7 +67,8 @@ export function NoteCard({
   const title = noteDisplayTitle(note);
   const menuCode = asText(note.menuCode);
   const testContent = asText(note.testContent);
-  const photo = firstPhoto(note.photos);
+  const photos = notePhotos(note.photos);
+  const [previewPhoto, setPreviewPhoto] = useState(null);
   const tags = parseTagList(note.tags);
   const ratingItems = NOTE_EVALUATION_FIELDS.map(item => ({
     ...item,
@@ -155,24 +159,20 @@ export function NoteCard({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: photo ? '96px minmax(0,1fr)' : '1fr',
+          gridTemplateColumns: photos.length ? '132px minmax(0,1fr)' : '1fr',
           gap: 12,
           padding: '14px 16px 12px',
         }}
       >
-        {photo && (
-          <img
-            src={photo.data}
-            alt={photo.caption || photo.name || title}
-            style={{
-              width: 96,
-              height: 96,
-              borderRadius: 8,
-              objectFit: 'contain',
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-            }}
-          />
+        {photos.length > 0 && (
+          <div onMouseDown={event => event.stopPropagation()} onDragStart={event => event.preventDefault()}>
+            <PhotoCarousel
+              photos={photos}
+              title={title}
+              height={132}
+              onPhotoClick={photo => setPreviewPhoto(photo)}
+            />
+          </div>
         )}
         <div style={{ minWidth: 0 }}>
           <div
@@ -313,6 +313,7 @@ export function NoteCard({
           </div>
         )}
       </div>
+      <NotePhotoLightbox photo={previewPhoto} title={title} onClose={() => setPreviewPhoto(null)} />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import {
   getNoteById,
+  getAllNotesCached,
   updateNote,
   updateNoteChainStatus,
   getNotesInChain,
@@ -128,7 +129,8 @@ export default function Page() {
     }
     setSaving(true);
     try {
-      const payload = normalizeNoteFormForSave(form);
+      const existingNotes = (await getAllNotesCached()).filter(note => note?.id !== noteId);
+      const payload = normalizeNoteFormForSave(form, { existingNotes });
       await updateNote(noteId, payload);
       await updateNoteChainStatus(noteId, payload.status);
       clearDraft(KEYS.NOTE_DRAFT(noteId));
