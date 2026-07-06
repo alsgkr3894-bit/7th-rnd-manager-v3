@@ -299,6 +299,7 @@ export default function Page() {
           <input
             ref={fileRef}
             type="file"
+            aria-label="복원 백업 JSON 파일 선택"
             accept=".json,application/json"
             onChange={handleFile}
             disabled={busy || !canRestore}

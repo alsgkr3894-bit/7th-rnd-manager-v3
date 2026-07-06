@@ -56,12 +56,31 @@ export function PasswordChangeCard() {
         style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 320 }}
       >
         {[
-          { label: '현재 비밀번호', val: cur, set: setCur, auto: 'current-password' },
-          { label: '새 비밀번호', val: next, set: setNext, auto: 'new-password' },
-          { label: '새 비밀번호 확인', val: conf, set: setConf, auto: 'new-password' },
-        ].map(({ label, val, set, auto }) => (
+          {
+            id: 'current-password',
+            label: '현재 비밀번호',
+            val: cur,
+            set: setCur,
+            auto: 'current-password',
+          },
+          {
+            id: 'new-password',
+            label: '새 비밀번호',
+            val: next,
+            set: setNext,
+            auto: 'new-password',
+          },
+          {
+            id: 'confirm-new-password',
+            label: '새 비밀번호 확인',
+            val: conf,
+            set: setConf,
+            auto: 'new-password',
+          },
+        ].map(({ id, label, val, set, auto }) => (
           <div key={label}>
             <label
+              htmlFor={id}
               style={{
                 fontSize: 12,
                 fontWeight: 600,
@@ -73,6 +92,7 @@ export function PasswordChangeCard() {
               {label}
             </label>
             <input
+              id={id}
               type="password"
               value={val}
               onChange={e => {

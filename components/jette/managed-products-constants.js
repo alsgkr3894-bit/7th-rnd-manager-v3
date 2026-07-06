@@ -59,6 +59,7 @@ export const CHANGE_STATUS_STYLE = {
 
 /** 폼 필드용 (패딩 보통) */
 export const inputStyle = {
+  minHeight: 32,
   padding: '6px 10px',
   borderRadius: 6,
   border: '1px solid var(--border)',
@@ -69,6 +70,7 @@ export const inputStyle = {
 
 /** 테이블 셀 내 컴팩트 select용 */
 export const typeSelectStyle = {
+  minHeight: 30,
   padding: '3px 6px',
   borderRadius: 6,
   fontSize: 12,

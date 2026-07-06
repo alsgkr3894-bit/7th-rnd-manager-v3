@@ -66,6 +66,7 @@ export function SliceConfigModal({ pizzaMenus, masterByCode, counts, onApply, on
 
   const inputStyle = {
     fontSize: 13,
+    minHeight: 32,
     padding: '5px 8px',
     border: '1px solid var(--border)',
     borderRadius: 6,

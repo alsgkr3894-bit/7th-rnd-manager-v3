@@ -54,6 +54,7 @@ export function EdgeComponentRow({ component, allMeta, unitPriceMap, onChange, o
             </span>
             <button
               type="button"
+              aria-label="선택한 식자재 지우기"
               onClick={() => onChange({ ingredientName: '', productCode: null, unitPrice: '' })}
               style={{
                 border: 0,
@@ -132,6 +133,7 @@ export function EdgeComponentRow({ component, allMeta, unitPriceMap, onChange, o
 
       <button
         type="button"
+        aria-label="구성품 행 삭제"
         onClick={onRemove}
         style={{
           background: 'transparent',

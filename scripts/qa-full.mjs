@@ -14,9 +14,25 @@ import { spawn } from 'node:child_process';
 
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
+function spawnCommand(command, args, options) {
+  if (process.platform === 'win32' && /\.cmd$/i.test(command)) {
+    return spawn(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', command, ...args], {
+      ...options,
+      shell: false,
+      windowsHide: true,
+    });
+  }
+
+  return spawn(command, args, {
+    ...options,
+    shell: false,
+    windowsHide: process.platform === 'win32',
+  });
+}
+
 function run(script) {
   return new Promise((resolve, reject) => {
-    const child = spawn(npm, ['run', script], { stdio: 'inherit', shell: false });
+    const child = spawnCommand(npm, ['run', script], { stdio: 'inherit' });
     child.on('error', reject);
     child.on('exit', code => {
       if (code === 0) resolve();

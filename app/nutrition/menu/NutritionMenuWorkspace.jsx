@@ -71,7 +71,7 @@ export function NutritionMenuWorkspace({
           flexWrap: 'wrap',
         }}
       >
-        <div className="tabs" style={{ flex: '1 1 auto' }}>
+        <div className="tabs" style={{ flex: '1 1 220px', minWidth: 0, maxWidth: '100%' }}>
           {TABS.map((label, index) => (
             <button
               key={index}
@@ -83,7 +83,7 @@ export function NutritionMenuWorkspace({
           ))}
         </div>
         {(tab === 0 || tab === 3 || tab === 4) && (
-          <div style={{ flex: '0 0 220px' }}>
+          <div style={{ flex: '0 1 220px', minWidth: 0, maxWidth: '100%' }}>
             <SearchBox value={menuSearch} onChange={onMenuSearch} placeholder="메뉴명·코드 검색" />
           </div>
         )}

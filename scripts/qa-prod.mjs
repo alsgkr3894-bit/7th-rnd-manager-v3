@@ -17,13 +17,27 @@ const HOST = process.env.HOST || '127.0.0.1';
 const PORT = process.env.PORT || '3000';
 const BASE = process.env.BASE || process.env.QA_BASE || `http://${HOST}:${PORT}`;
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+
+function spawnCommand(command, args, options) {
+  if (process.platform === 'win32' && /\.cmd$/i.test(command)) {
+    return spawn(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', command, ...args], {
+      ...options,
+      shell: false,
+      windowsHide: true,
+    });
+  }
+
+  return spawn(command, args, {
+    ...options,
+    shell: false,
+    windowsHide: process.platform === 'win32',
+  });
+}
 
 function run(command, args, env = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
+    const child = spawnCommand(command, args, {
       stdio: 'inherit',
-      shell: false,
       cwd: process.cwd(),
       env: { ...process.env, ...env },
     });
@@ -36,7 +50,14 @@ function run(command, args, env = {}) {
 }
 
 function spawnServer() {
-  const child = spawn(npx, ['next', 'start', '-H', HOST, '-p', PORT], {
+  const child = spawnCommand(process.execPath, [
+    'node_modules/next/dist/bin/next',
+    'start',
+    '-H',
+    HOST,
+    '-p',
+    PORT,
+  ], {
     shell: false,
     cwd: process.cwd(),
     env: process.env,
@@ -72,10 +93,19 @@ async function waitForServer(url, timeoutMs = 30_000) {
 
 async function stopServer(child) {
   if (!child || child.killed || child.exitCode !== null) return;
-  child.kill('SIGINT');
+  child.kill(process.platform === 'win32' ? undefined : 'SIGINT');
   await new Promise(resolve => {
     const timer = setTimeout(() => {
-      if (child.exitCode === null) child.kill('SIGTERM');
+      if (child.exitCode === null) {
+        if (process.platform === 'win32') {
+          spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], {
+            stdio: 'ignore',
+            windowsHide: true,
+          });
+        } else {
+          child.kill('SIGTERM');
+        }
+      }
       resolve();
     }, 3_000);
     child.once('exit', () => {
@@ -107,6 +137,7 @@ try {
   });
 
   await waitForServer(BASE);
+  await run(process.execPath, ['scripts/prod-static-chunk-audit.mjs'], { BASE, QA_BASE: BASE });
   await run(npm, ['run', 'qa:smoke'], { BASE, QA_BASE: BASE });
   await run(npm, ['run', 'qa:mobile'], { BASE, QA_BASE: BASE });
   await run(npm, ['run', 'qa:runtime'], { BASE, QA_BASE: BASE });

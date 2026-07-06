@@ -5,6 +5,14 @@ import { SmallStatCard } from '@/components/ui/SmallStatCard';
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 
+const actionLinkStyle = {
+  color: 'inherit',
+  textDecoration: 'underline',
+  display: 'inline-flex',
+  alignItems: 'center',
+  minHeight: 24,
+};
+
 export function AllergenSummaryPanel({ totalWithAllergen, totalIngredients, matchedMenuCount }) {
   return (
     <>
@@ -53,7 +61,7 @@ export function AllergenSummaryPanel({ totalWithAllergen, totalIngredients, matc
         >
           <Icon.alert style={{ width: 16, height: 16, flexShrink: 0 }} />
           알레르기 등록 식자재 없음 —{' '}
-          <Link href="/ingredient/manage" style={{ color: 'inherit', textDecoration: 'underline' }}>
+          <Link href="/ingredient/manage" style={actionLinkStyle}>
             식자재 관리에서 입력
           </Link>
         </div>

@@ -41,6 +41,8 @@ export function WidgetShell({ widgetKey, label, isCollapsed, onToggle, children 
     <div style={{ position: 'relative' }}>
       {children}
       <button
+        type="button"
+        aria-label="위젯 접기"
         onClick={() => handleToggle(widgetKey)}
         title="접기"
         style={{
@@ -50,7 +52,9 @@ export function WidgetShell({ widgetKey, label, isCollapsed, onToggle, children 
           background: 'none',
           border: 'none',
           cursor: 'pointer',
-          padding: '2px 4px',
+          width: 32,
+          height: 32,
+          padding: 0,
           borderRadius: 4,
           color: 'var(--text-4)',
           display: 'flex',

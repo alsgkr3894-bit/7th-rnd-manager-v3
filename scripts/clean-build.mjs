@@ -1,4 +1,4 @@
-import { rmSync, renameSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, renameSync, readdirSync } from 'node:fs';
 import { spawn, execSync } from 'node:child_process';
 import net from 'node:net';
 
@@ -27,12 +27,25 @@ function hasNextDevProcess() {
   }
 }
 
+function spawnCommand(command, args, options) {
+  if (process.platform === 'win32' && /\.cmd$/i.test(command)) {
+    return spawn(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', command, ...args], {
+      ...options,
+      shell: false,
+      windowsHide: true,
+    });
+  }
+
+  return spawn(command, args, {
+    ...options,
+    shell: false,
+    windowsHide: process.platform === 'win32',
+  });
+}
+
 function run(command, args) {
   return new Promise((resolve, reject) => {
-    const child =
-      process.platform === 'win32'
-        ? spawn([command, ...args].join(' '), { stdio: 'inherit', shell: true })
-        : spawn(command, args, { stdio: 'inherit', shell: false });
+    const child = spawnCommand(command, args, { stdio: 'inherit' });
     child.on('error', reject);
     child.on('exit', code => {
       if (code === 0) resolve();
@@ -56,6 +69,23 @@ function cleanupStaleDirs() {
   return cleaned;
 }
 
+function verifyBuildOutput() {
+  const requiredFiles = [
+    '.next/BUILD_ID',
+    '.next/prerender-manifest.json',
+    '.next/server/app-paths-manifest.json',
+    '.next/server/pages/_error.js',
+  ];
+  for (const file of requiredFiles) {
+    if (!existsSync(file)) throw new Error(`missing build output: ${file}`);
+  }
+
+  const appPaths = JSON.parse(readFileSync('.next/server/app-paths-manifest.json', 'utf8'));
+  for (const route of ['/page', '/report/page', '/settings/backup/page']) {
+    if (!appPaths[route]) throw new Error(`missing app route in build manifest: ${route}`);
+  }
+}
+
 // dev 서버 가동 중이면 중단 (포트 3000·3001, 프로세스 감지)
 const [busy3000, busy3001] = await Promise.all([isPortBusy(3000), isPortBusy(3001)]);
 if (busy3000 || busy3001 || hasNextDevProcess()) {
@@ -75,7 +105,8 @@ try {
 
 let buildFailed = false;
 try {
-  await run(process.platform === 'win32' ? 'npx.cmd' : 'npx', ['next', 'build']);
+  await run(process.execPath, ['node_modules/next/dist/bin/next', 'build']);
+  verifyBuildOutput();
 } catch (error) {
   buildFailed = true;
   console.error(`\n✖ clean build failed: ${error.message}`);

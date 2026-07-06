@@ -220,3 +220,30 @@
 7. Triage a11y/interaction candidates from `docs/deep-a11y-interaction-audit-2026-07-02.json`, starting with unlabeled icon buttons/inputs and very short controls.
 8. Keep the production static chunk audit in the release checklist until the transient 404 state is understood.
 9. Run a repository-wide Prettier pass only when the team is ready for large formatting churn.
+
+## 2026-07-06 Fix Pass
+
+- F-001/F-009: `qa:full` and `qa:prod` now use Windows-safe child process launching. `qa:prod` starts Next through the local Next binary instead of `npx.cmd`, terminates the process tree on Windows, and runs the production static chunk audit before route QA.
+- F-002: recipe workflow selector now matches the current accessible button name with `/구성품 추가/`, so it no longer depends on the decorative plus icon being part of the name.
+- F-006/F-013: `start-local-site.ps1` now keeps the launched process handle, redirects hidden server logs, fails if the process exits before readiness, performs a follow-up readiness check, and verifies port 3000 is still listening before reporting ready.
+- F-007/F-012: fixed several high-repeat responsive/accessibility sources: mobile bottom-tab safe padding, home action-center tiny buttons, widget collapse button size/name, calendar previous/next labels and filter target height, nutrition menu add button label, settings/account/restore input labels, jette managed-products table overflow containment, edge action/check controls, and nutrition menu flex wrapping.
+- F-010: current backup freshness is no longer stale in this workspace. `npm.cmd run db:backup:list` shows `rnd_manager-20260706-090236.dump`, modified `2026-07-06T00:02:41.678Z`, size `116509055` bytes.
+- Targeted verification completed so far: QA orchestration Jest test, settings/calendar/nutrition structure tests, jette managed-products structure test, common edge/edge-dough structure tests, destructive-action guard structure test, `node --check` for touched QA scripts, and PowerShell parse check for `start-local-site.ps1`.
+
+### 2026-07-06 Final Fix Pass Verification
+
+- F-001/F-009/F-013 are now fixed for the audited local workflow: `scripts/qa-full.mjs`, `scripts/qa-prod.mjs`, and `scripts/clean-build.mjs` no longer depend on fragile Windows `.cmd` shell spawning. `clean-build` now runs the local Next build entrypoint directly and verifies required production artifacts before reporting success.
+- F-002 is fixed: the recipe workflow uses the current accessible add-control selector and the full workflow pass verifies saved recipe components after reopening the menu editor.
+- F-006 is fixed for this workspace run: `start-local-site.ps1` now detects early process exit, keeps hidden server logs, checks readiness after launch, and verifies the listener before reporting ready.
+- Final server restart found and fixed two additional local-start reliability issues: duplicate `Path`/`PATH` process-environment keys could crash `Start-Process`, and hidden `next dev` could exit after initial readiness. The start scripts now normalize the process path key, and `start-local-site.ps1` launches Next through `scripts/start-next-dev-server.mjs` so the dev server remains alive in a hidden background process.
+- F-007/F-012 are fixed in the current production audit scope: touch targets, labeled controls, mobile overflows, bottom navigation padding, table containment, icon-button names, file/date/search input sizing, range controls, and action link heights were corrected across the affected views.
+- F-010 is fixed for the current workspace state: backup freshness is now current according to the backup listing checked during this pass.
+- `npm.cmd run lint`: passed.
+- `npm.cmd run test:ci`: 319/319 suites passed, 1972/1972 tests passed.
+- `npm.cmd run build:clean`: passed; production artifact verification found the required `BUILD_ID`, prerender manifest, app route manifest, `_error` page, 65 app-route manifest entries, and 60 built app pages.
+- Production static chunk audit: 127/127 manifest JavaScript assets served successfully.
+- Deep a11y/interaction audit: 136/136 route/viewport checks clean; tiny controls 0, unlabeled controls 0, duplicate IDs 0, invalid ARIA references 0, overflow 0, runtime/page errors 0, HTTP 500+ responses 0.
+- `npm.cmd run qa:prod`: passed end to end. Static chunk audit 127/127, smoke QA 22/22, mobile QA 22/22, runtime QA 70/70, workflow QA 21/21.
+- Final local server restart: passed with `scripts/start-local-site.ps1 -ShowStatus -TimeoutSeconds 180`; `/login` returned HTTP 200 and `/api/db/health` returned HTTP 200 at `http://127.0.0.1:3000`.
+- Expected console errors were observed only in the negative restore-file workflow scenarios, where invalid JSON and structurally invalid backup files are deliberately uploaded to verify the user-facing error path.
+- Final status: no reproducible functional, persistence, production chunk, runtime, mobile smoke, or a11y/interaction failure remains in the audited scope after the 2026-07-06 fix pass.

@@ -38,8 +38,15 @@ export function ManagedProductsTable({
   }
 
   return (
-    <div style={{ maxHeight: 480, overflowY: 'auto', borderTop: '1px solid var(--border)' }}>
-      <table className="data-table">
+    <div
+      style={{
+        maxHeight: 480,
+        overflow: 'auto',
+        borderTop: '1px solid var(--border)',
+        maxWidth: '100%',
+      }}
+    >
+      <table className="data-table" style={{ minWidth: 680 }}>
         <thead style={{ position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 1 }}>
           <tr>
             <SortableTh

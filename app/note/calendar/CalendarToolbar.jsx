@@ -27,7 +27,12 @@ export function CalendarToolbar({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <button className="btn sm" onClick={() => onShiftMonth(-1)}>
+        <button
+          type="button"
+          className="btn sm"
+          aria-label="이전 달"
+          onClick={() => onShiftMonth(-1)}
+        >
           <Icon.chevLeft style={{ width: 14, height: 14 }} />
         </button>
         <span
@@ -41,10 +46,20 @@ export function CalendarToolbar({
         >
           {viewYear}년 {viewMonth}월
         </span>
-        <button className="btn sm" onClick={() => onShiftMonth(1)}>
+        <button
+          type="button"
+          className="btn sm"
+          aria-label="다음 달"
+          onClick={() => onShiftMonth(1)}
+        >
           <Icon.chevRight style={{ width: 14, height: 14 }} />
         </button>
-        <button className="btn sm ghost" style={{ fontSize: 11 }} onClick={onResetToToday}>
+        <button
+          type="button"
+          className="btn sm ghost"
+          style={{ fontSize: 11 }}
+          onClick={onResetToToday}
+        >
           오늘
         </button>
       </div>
@@ -78,9 +93,11 @@ export function CalendarToolbar({
         {CALENDAR_VIEW_MODES.map(([key, label]) => (
           <button
             key={key}
+            type="button"
             onClick={() => onViewMode(key)}
             style={{
-              padding: '5px 13px',
+              minHeight: 32,
+              padding: '6px 13px',
               fontSize: 11,
               fontWeight: 700,
               border: 'none',

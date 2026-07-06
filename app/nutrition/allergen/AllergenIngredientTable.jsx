@@ -6,6 +6,8 @@ import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { asMenuMap } from '@/lib/nutrition/allergen/matrix';
 import { asDisplayText, asStringArray } from '@/lib/ui/prop-guards';
 
+const actionLinkStyle = { display: 'inline-flex', alignItems: 'center', minHeight: 24 };
+
 export function AllergenIngredientTable({ ingredientRows, mapData, isExcludedMenu }) {
   if (ingredientRows.length === 0) {
     return (
@@ -15,7 +17,10 @@ export function AllergenIngredientTable({ ingredientRows, mapData, isExcludedMen
         </div>
         <div className="empty-title">알레르기 등록 식자재가 없어요</div>
         <div className="empty-sub">
-          <Link href="/ingredient/manage">식자재 관리</Link>에서 식자재별 알레르기를 체크하세요
+          <Link href="/ingredient/manage" style={actionLinkStyle}>
+            식자재 관리
+          </Link>
+          에서 식자재별 알레르기를 체크하세요
         </div>
       </div>
     );

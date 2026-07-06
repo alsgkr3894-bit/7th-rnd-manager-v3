@@ -41,12 +41,15 @@ export function SearchBox({ value, onChange, placeholder = DEFAULT_SEARCH_PLACEH
         onChange={e => notifyChange(e.target.value)}
         style={{
           width: '100%',
+          minHeight: 32,
           padding: `8px ${getSearchBoxRightPadding(safeValue)}px 8px 32px`,
           borderRadius: 8,
           border: '1px solid var(--border)',
           background: 'var(--surface-2)',
           color: 'var(--text-1)',
           fontSize: 13,
+          lineHeight: 1.4,
+          boxSizing: 'border-box',
         }}
       />
       {safeValue && (

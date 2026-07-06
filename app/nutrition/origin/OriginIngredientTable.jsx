@@ -5,6 +5,7 @@ import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 const EMPTY_MENU_MAP = new Map();
 const asMenuMap = value => (value instanceof Map ? value : EMPTY_MENU_MAP);
+const actionLinkStyle = { display: 'inline-flex', alignItems: 'center', minHeight: 24 };
 
 export function OriginIngredientTable({ ingredientRows, mapData, isExcludedMenu }) {
   if (ingredientRows.length === 0) {
@@ -15,7 +16,10 @@ export function OriginIngredientTable({ ingredientRows, mapData, isExcludedMenu 
         </div>
         <div className="empty-title">원산지 등록 식자재가 없어요</div>
         <div className="empty-sub">
-          <Link href="/ingredient/manage">식자재 관리</Link>에서 식자재별 원산지를 입력하세요
+          <Link href="/ingredient/manage" style={actionLinkStyle}>
+            식자재 관리
+          </Link>
+          에서 식자재별 원산지를 입력하세요
         </div>
       </div>
     );

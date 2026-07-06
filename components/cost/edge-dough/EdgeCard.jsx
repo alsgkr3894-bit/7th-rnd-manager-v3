@@ -124,6 +124,7 @@ export function EdgeCard({ edge, canEdit = true, onEdit, onDelete }) {
         {onDelete && (
           <button
             className="btn sm"
+            aria-label={`${edge.edgeType || edge.edgeCode || 'edge'} 삭제`}
             onClick={onDelete}
             disabled={!canEdit}
             style={{ color: 'var(--text-3)' }}

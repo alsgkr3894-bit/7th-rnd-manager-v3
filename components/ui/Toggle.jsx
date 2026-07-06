@@ -15,7 +15,7 @@ import {
  * @param {Function} onChange(newValue)
  * @param {boolean}  [disabled=false]
  */
-export function Toggle({ value, onChange, disabled = false }) {
+export function Toggle({ value, onChange, disabled = false, label = '설정 토글' }) {
   const checked = normalizeToggleChecked(value);
   const isDisabled = normalizeToggleDisabled(disabled);
   const notifyChange = normalizeToggleOnChange(onChange);
@@ -24,6 +24,7 @@ export function Toggle({ value, onChange, disabled = false }) {
     <button
       type="button"
       onClick={() => !isDisabled && notifyChange(getNextToggleValue(checked))}
+      aria-label={label}
       aria-pressed={checked}
       disabled={isDisabled}
       style={getToggleButtonStyle({ checked, disabled: isDisabled })}

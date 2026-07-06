@@ -43,6 +43,7 @@ export function AccountMembersCard({
         >
           <input
             className="input"
+            aria-label="계정 이름"
             style={{ flex: 1, minWidth: 120 }}
             placeholder="이름"
             value={newAccForm.name}
@@ -50,6 +51,7 @@ export function AccountMembersCard({
           />
           <input
             className="input"
+            aria-label="계정 이메일"
             style={{ flex: 1, minWidth: 140 }}
             placeholder="이메일 (선택)"
             value={newAccForm.email}
@@ -57,6 +59,7 @@ export function AccountMembersCard({
           />
           <select
             className="input"
+            aria-label="계정 역할"
             style={{ width: 100 }}
             value={newAccForm.role}
             onChange={e => onNewAccFormChange('role', e.target.value)}

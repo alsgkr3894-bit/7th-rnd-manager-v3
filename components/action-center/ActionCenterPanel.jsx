@@ -107,7 +107,13 @@ export function ActionCenterPanel({ items = [], allItems = [], onRefresh, compac
               >
                 <button
                   className="btn"
-                  style={{ fontSize: 10, padding: '2px 7px', opacity: 0.7 }}
+                  style={{
+                    fontSize: 11,
+                    minWidth: 48,
+                    minHeight: 32,
+                    padding: '6px 9px',
+                    opacity: 0.7,
+                  }}
                   title="나중에 (7일)"
                   onClick={e => handleSnooze(item.id, '7d', e)}
                 >
@@ -115,7 +121,13 @@ export function ActionCenterPanel({ items = [], allItems = [], onRefresh, compac
                 </button>
                 <button
                   className="btn"
-                  style={{ fontSize: 10, padding: '2px 7px', opacity: 0.7 }}
+                  style={{
+                    fontSize: 11,
+                    minWidth: 48,
+                    minHeight: 32,
+                    padding: '6px 9px',
+                    opacity: 0.7,
+                  }}
                   title="숨기기"
                   onClick={e => handleDismiss(item.id, e)}
                 >

@@ -22,6 +22,28 @@ function Write-Status {
   }
 }
 
+function Normalize-ProcessPathEnvironment {
+  $environment = [Environment]::GetEnvironmentVariables('Process')
+  $pathKeys = @($environment.Keys | Where-Object {
+      [string]::Equals($_, 'Path', [StringComparison]::OrdinalIgnoreCase)
+    })
+
+  if ($pathKeys.Count -le 1) {
+    return
+  }
+
+  $preferredKey = @($pathKeys | Where-Object { $_ -ceq 'Path' } | Select-Object -First 1)[0]
+  if ([string]::IsNullOrWhiteSpace($preferredKey)) {
+    $preferredKey = $pathKeys[0]
+  }
+
+  $pathValue = [string]$environment[$preferredKey]
+  foreach ($pathKey in $pathKeys) {
+    [Environment]::SetEnvironmentVariable($pathKey, $null, 'Process')
+  }
+  [Environment]::SetEnvironmentVariable('Path', $pathValue, 'Process')
+}
+
 function Test-DatabaseReady {
   if (!(Test-Path $psql)) {
     return $false
@@ -80,6 +102,7 @@ $arguments = @('-D', $dataDir, '-h', '127.0.0.1', '-p', '5432')
 
 Write-Status 'Starting local PostgreSQL in the background...'
 
+Normalize-ProcessPathEnvironment
 $process = Start-Process `
   -FilePath $postgres `
   -ArgumentList $arguments `

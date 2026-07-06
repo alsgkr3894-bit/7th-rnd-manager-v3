@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { renameSync, rmSync, writeFileSync } from 'node:fs';
 import { chromium, getQaBase, newAuthedContext, routeUrl } from './qa-browser-utils.mjs';
 import {
   CHINA4_DIRECT_RUNTIME_ROUTES,
@@ -103,8 +103,30 @@ function buildReport({ completed = false, fatal = null } = {}) {
   };
 }
 
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
 function writeReport(options = {}) {
-  writeFileSync(OUT, `${JSON.stringify(buildReport(options), null, 2)}\n`, 'utf8');
+  const payload = `${JSON.stringify(buildReport(options), null, 2)}\n`;
+  const tmp = `${OUT}.${process.pid}.tmp`;
+  let lastError = null;
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      writeFileSync(tmp, payload, 'utf8');
+      renameSync(tmp, OUT);
+      return;
+    } catch (error) {
+      lastError = error;
+      try {
+        rmSync(tmp, { force: true });
+      } catch {}
+      sleepSync(50 * (attempt + 1));
+    }
+  }
+
+  throw lastError;
 }
 
 function recordFatal(prefix, error) {

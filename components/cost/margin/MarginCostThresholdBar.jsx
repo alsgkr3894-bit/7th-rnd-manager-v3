@@ -32,6 +32,7 @@ export function MarginCostThresholdBar({
           onChange={e => setWarnPct(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
           style={{
             width: 56,
+            minHeight: 32,
             padding: '3px 6px',
             borderRadius: 6,
             border: '1px solid var(--border)',
@@ -51,6 +52,7 @@ export function MarginCostThresholdBar({
           onChange={e => setCritPct(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
           style={{
             width: 56,
+            minHeight: 32,
             padding: '3px 6px',
             borderRadius: 6,
             border: '1px solid var(--border)',

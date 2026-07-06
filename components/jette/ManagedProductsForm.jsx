@@ -46,13 +46,14 @@ export function ManagedProductsForm({
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: '150px 1fr 130px 110px auto auto',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
         gap: 8,
         marginBottom: 12,
         alignItems: 'center',
       }}
     >
       <input
+        aria-label="제품코드"
         value={safeForm.productCode}
         onChange={e => updateForm({ ...safeForm, productCode: e.target.value })}
         placeholder="제품코드 (필수)"
@@ -60,6 +61,7 @@ export function ManagedProductsForm({
         disabled={!canEdit}
       />
       <input
+        aria-label="제품명"
         value={safeForm.productName}
         onChange={e => updateForm({ ...safeForm, productName: e.target.value })}
         placeholder="제품명 (필수)"
@@ -67,6 +69,7 @@ export function ManagedProductsForm({
         disabled={!canEdit}
       />
       <select
+        aria-label="제품 분류"
         value={safeForm.productType}
         onChange={e => {
           const productType = normalizeProductType(e.target.value);

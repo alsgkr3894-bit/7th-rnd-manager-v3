@@ -110,7 +110,16 @@ export function CommonEdgesView({
           {edgeFilled}/{displayEdges.length}개 구성 완료
           {missingSeedCount > 0 ? ` · 기본 ${missingSeedCount}개 미등록` : ''}
         </span>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+        <div
+          style={{
+            marginLeft: 'auto',
+            display: 'flex',
+            gap: 6,
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
+            minWidth: 0,
+          }}
+        >
           {resetConfirm ? (
             <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <span style={{ fontSize: 12, color: 'var(--negative)', fontWeight: 600 }}>
@@ -228,10 +237,11 @@ export function CommonEdgesView({
           >
             <input
               type="checkbox"
+              aria-label="현재 페이지 edge 선택"
               checked={allSelectablePageSelected}
               onChange={edgeTable.togglePage}
               disabled={!canEdit || selectablePageEdges.length === 0}
-              style={{ width: 15, height: 15, accentColor: 'var(--accent)' }}
+              style={{ width: 24, height: 24, accentColor: 'var(--accent)' }}
             />
             현재 페이지 선택
           </label>
@@ -318,10 +328,11 @@ function EdgeRow({ edge, canEdit, selected, onToggle, onEdit, onDelete }) {
     >
       <input
         type="checkbox"
+        aria-label={`${edge.edgeType || edge.edgeCode || 'edge'} 선택`}
         checked={!!selected}
         onChange={onToggle}
         disabled={!selectable}
-        style={{ width: 16, height: 16, accentColor: 'var(--accent)' }}
+        style={{ width: 24, height: 24, accentColor: 'var(--accent)' }}
       />
       <div style={{ minWidth: 0 }}>
         <EdgeCard edge={edge} canEdit={canEdit} onEdit={onEdit} onDelete={onDelete} />

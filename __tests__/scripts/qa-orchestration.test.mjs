@@ -43,6 +43,7 @@ describe('QA orchestration scripts', () => {
       "await run(npm, ['run', 'build'])",
       'server = spawnServer()',
       'await waitForServer(BASE)',
+      "await run(process.execPath, ['scripts/prod-static-chunk-audit.mjs'], { BASE, QA_BASE: BASE })",
       "await run(npm, ['run', 'qa:smoke'], { BASE, QA_BASE: BASE })",
       "await run(npm, ['run', 'qa:mobile'], { BASE, QA_BASE: BASE })",
       "await run(npm, ['run', 'qa:runtime'], { BASE, QA_BASE: BASE })",

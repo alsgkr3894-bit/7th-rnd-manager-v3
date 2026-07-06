@@ -56,7 +56,7 @@ export async function scenarioRecipeSaveUI({ page, base, runId }) {
 
   await step(steps, '구성품 추가 버튼 클릭', async () => {
     const dialog = page.getByRole('dialog');
-    const addBtn = dialog.getByRole('button', { name: '+ 구성품 추가' });
+    const addBtn = dialog.getByRole('button', { name: /구성품 추가/ });
     await addBtn.waitFor({ state: 'visible', timeout: 10_000 });
     await addBtn.click();
   });

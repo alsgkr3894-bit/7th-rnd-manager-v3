@@ -430,7 +430,17 @@ export default function Page() {
         title="연구일지"
         sub={loading ? '로딩 중…' : `${dateLabel} · 기록 ${dayNotes.length}건 · 일정 ${daySchedules.length}건`}
         actions={
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              flex: '1 1 100%',
+              minWidth: 0,
+              maxWidth: '100%',
+            }}
+          >
             <button className="btn" onClick={goPrev} disabled={!hasPrev} title="이전 일자">
               <Icon.arrowUp style={{ width: 14, height: 14, transform: 'rotate(-90deg)' }} />
             </button>
@@ -446,7 +456,9 @@ export default function Page() {
                 }
               }}
               style={{
-                width: 190,
+                width: 'min(190px, 100%)',
+                flex: '1 1 150px',
+                minWidth: 0,
                 minHeight: 40,
                 fontSize: 16,
                 fontWeight: 800,
@@ -472,6 +484,8 @@ export default function Page() {
               title={quickDateError ? '날짜 확인' : '빠른 날짜 입력'}
               style={{
                 width: 94,
+                flex: '0 1 94px',
+                minWidth: 0,
                 minHeight: 40,
                 fontSize: 13,
                 borderColor: quickDateError ? 'var(--negative)' : undefined,

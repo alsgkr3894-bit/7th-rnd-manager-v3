@@ -105,7 +105,7 @@
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
-  height: 18px;
+  height: 28px;
 }
 .threshold-bar input[type='range']::-webkit-slider-runnable-track {
   height: 6px;
@@ -114,11 +114,11 @@
 }
 .threshold-bar input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   background: var(--accent);
   border-radius: 50%;
-  margin-top: -6px;
+  margin-top: -9px;
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
@@ -128,8 +128,8 @@
   border-radius: 3px;
 }
 .threshold-bar input[type='range']::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   background: var(--accent);
   border-radius: 50%;
   border: 0;

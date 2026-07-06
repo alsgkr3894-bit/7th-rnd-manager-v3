@@ -4,17 +4,17 @@ import { deleteRecordsByField, goto, MAIN_DB, step } from '../helpers.mjs';
 export async function scenarioNoteCreate({ page, base, runId }) {
   const steps = [];
   const title = `E2E자동노트-${runId}`;
-  const TITLE_PH = '예) 횡성한우 와사비마요 조합 테스트';
-  const CONTENT_PH = '테스트 조건, 온도·시간·재료 비율, 핵심 변경사항 등을 기록하세요.';
 
   await step(steps, '노트 작성 페이지 진입', async () => {
     await goto(page, base, '/note/write');
-    await page.getByPlaceholder(TITLE_PH).waitFor({ state: 'visible', timeout: 15_000 });
+    await page
+      .getByLabel('메뉴명 / 노트 제목')
+      .waitFor({ state: 'visible', timeout: 15_000 });
   });
 
   await step(steps, '필수 항목(제목·내용) 입력', async () => {
-    await page.getByPlaceholder(TITLE_PH).fill(title);
-    await page.getByPlaceholder(CONTENT_PH).fill('E2E 워크플로우 자동 검증용 노트');
+    await page.getByLabel('메뉴명 / 노트 제목').fill(title);
+    await page.getByLabel('시식 테스트 내용').fill('E2E 워크플로우 자동 검증용 노트');
   });
 
   await step(steps, '저장 → 목록으로 이동', async () => {

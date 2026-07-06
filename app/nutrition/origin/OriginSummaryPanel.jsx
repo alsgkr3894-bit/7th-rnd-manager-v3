@@ -2,6 +2,14 @@ import Link from 'next/link';
 import { Icon } from '@/components/icons';
 import { SmallStatCard } from '@/components/ui/SmallStatCard';
 
+const actionLinkStyle = {
+  color: 'inherit',
+  textDecoration: 'underline',
+  display: 'inline-flex',
+  alignItems: 'center',
+  minHeight: 24,
+};
+
 export function OriginSummaryPanel({
   totalWithOrigin,
   totalIngredients,
@@ -38,7 +46,7 @@ export function OriginSummaryPanel({
         >
           <Icon.alert style={{ width: 16, height: 16, flexShrink: 0 }} />
           원산지 미등록 식자재 {withoutOrigin}개 —{' '}
-          <Link href="/ingredient/manage" style={{ color: 'inherit', textDecoration: 'underline' }}>
+          <Link href="/ingredient/manage" style={actionLinkStyle}>
             식자재 관리에서 입력
           </Link>
         </div>

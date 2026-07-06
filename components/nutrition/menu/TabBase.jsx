@@ -48,13 +48,21 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters, canEdit = false
   const selectedMenuName = asDisplayText(selMenu?.menuName, '선택한 메뉴');
 
   return (
-    <div style={{ display: 'flex', gap: 20, marginTop: 20, alignItems: 'flex-start' }}>
+    <div
+      style={{
+        display: 'flex',
+        gap: 20,
+        marginTop: 20,
+        alignItems: 'flex-start',
+        flexWrap: 'wrap',
+      }}
+    >
       {/* 메뉴 목록 */}
       <div
         className="card"
         style={{
-          width: 220,
-          flexShrink: 0,
+          width: 'min(220px, 100%)',
+          flex: '0 1 220px',
           padding: 0,
           overflow: 'hidden',
           display: 'flex',
@@ -83,7 +91,12 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters, canEdit = false
             >
               엑셀
             </button>
-            <button className="btn sm ghost" onClick={() => setAddMenu(true)} disabled={!canEdit}>
+            <button
+              className="btn sm ghost"
+              aria-label="메뉴 추가"
+              onClick={() => setAddMenu(true)}
+              disabled={!canEdit}
+            >
               <Icon.plus style={{ width: 13, height: 13 }} />
             </button>
             <button
@@ -130,7 +143,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters, canEdit = false
       </div>
 
       {/* 영양성분 입력 패널 */}
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: '1 1 280px', minWidth: 0 }}>
         <NutritionInputPanel
           selMenu={selMenu}
           selectedMenuName={selectedMenuName}

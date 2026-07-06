@@ -40,6 +40,7 @@ export function PinGate({ onVerify, onCancel }) {
           <input
             className={`form-input ${error ? 'field-error-shake' : ''}`}
             type="password"
+            aria-label="PIN 입력"
             inputMode="numeric"
             pattern="[0-9]*"
             value={pin}

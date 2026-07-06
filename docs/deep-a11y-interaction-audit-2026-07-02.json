@@ -1,2421 +1,27 @@
 {
-  "generatedAt": "2026-07-02T04:20:57.341Z",
+  "generatedAt": "2026-07-06T01:22:36.590Z",
   "base": "http://127.0.0.1:3001",
   "completed": true,
   "fatal": null,
-  "routeCount": 67,
+  "routeCount": 68,
   "viewportCount": 2,
   "counts": {
-    "total": 134,
-    "expected": 134,
-    "clean": 82,
-    "findings": 52
+    "total": 136,
+    "expected": 136,
+    "clean": 136,
+    "findings": 0
   },
   "summary": {
     "duplicateIdRoutes": 0,
-    "unlabeledControlRoutes": 15,
+    "unlabeledControlRoutes": 0,
     "missingButtonTypeRoutes": 0,
     "invalidAriaRefRoutes": 0,
     "positiveTabIndexRoutes": 0,
-    "tinyControlRoutes": 48,
+    "tinyControlRoutes": 0,
     "overflowRoutes": 0,
     "runtimeErrorRoutes": 0
   },
-  "findings": [
-    {
-      "brand": "main",
-      "route": "/",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 31,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button",
-          "label": "접기",
-          "role": "button",
-          "width": 21,
-          "height": 17
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/pizza",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 307,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 31,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/side",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 307,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 31,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/set",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 307,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 31,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/personal",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 307,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 31,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/edge-dough",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 307,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 29,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "현재 페이지 선택",
-          "role": "input",
-          "width": 15,
-          "height": 15
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/all-summary",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 13,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/margin",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 31,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/recipe",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 18,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/manage",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 307,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 18,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/nutrition/menu",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 22,
-      "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 41,
-          "height": 37
-        }
-      ],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/nutrition/allergen",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 18,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "a",
-          "label": "식자재 관리에서 입력",
-          "role": "a",
-          "width": 106,
-          "height": 15
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/nutrition/origin",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 18,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "a",
-          "label": "식자재 관리",
-          "role": "a",
-          "width": 59,
-          "height": 15
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/note",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 34,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "제목, 테스트 내용, 태그 검색",
-          "role": "input",
-          "width": 305,
-          "height": 17
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/note/calendar",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 25,
-      "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 42,
-          "height": 38
-        },
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 42,
-          "height": 38
-        }
-      ],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "전체",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "노트",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "일정",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "샘플",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/report/cost",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 14,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "35",
-          "role": "input",
-          "width": 232,
-          "height": 18
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/settings/system",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 19,
-      "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        },
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        }
-      ],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": []
-    },
-    {
-      "brand": "main",
-      "route": "/settings/account",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 17,
-      "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "input.form-input",
-          "label": "",
-          "role": "input",
-          "width": 300,
-          "height": 36
-        },
-        {
-          "selector": "input.form-input",
-          "label": "",
-          "role": "input",
-          "width": 300,
-          "height": 36
-        },
-        {
-          "selector": "input.form-input",
-          "label": "",
-          "role": "input",
-          "width": 300,
-          "height": 36
-        }
-      ],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": []
-    },
-    {
-      "brand": "main",
-      "route": "/settings/restore",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 13,
-      "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 246,
-          "height": 21
-        }
-      ],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 246,
-          "height": 21
-        }
-      ]
-    },
-    {
-      "brand": "china4",
-      "route": "/",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 28,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button",
-          "label": "접기",
-          "role": "button",
-          "width": 21,
-          "height": 17
-        }
-      ]
-    },
-    {
-      "brand": "china4",
-      "route": "/cost/edge-dough",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 307,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 19,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
-    },
-    {
-      "brand": "china4",
-      "route": "/note",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 34,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "제목, 테스트 내용, 태그 검색",
-          "role": "input",
-          "width": 305,
-          "height": 17
-        }
-      ]
-    },
-    {
-      "brand": "china4",
-      "route": "/settings/restore",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 13,
-      "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 246,
-          "height": 21
-        }
-      ],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 246,
-          "height": 21
-        }
-      ]
-    },
-    {
-      "brand": "china4-direct",
-      "route": "/note",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 34,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "제목, 테스트 내용, 태그 검색",
-          "role": "input",
-          "width": 305,
-          "height": 17
-        }
-      ]
-    },
-    {
-      "brand": "china4-direct",
-      "route": "/note/calendar",
-      "viewport": "mobile-390",
-      "width": 390,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 390,
-      "innerWidth": 390,
-      "overflowX": false,
-      "controlCount": 25,
-      "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 42,
-          "height": 38
-        },
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 42,
-          "height": 38
-        }
-      ],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "전체",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "노트",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "일정",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "샘플",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 71,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button",
-          "label": "접기",
-          "role": "button",
-          "width": 21,
-          "height": 17
-        },
-        {
-          "selector": "button",
-          "label": "접기",
-          "role": "button",
-          "width": 21,
-          "height": 17
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/jette/settings",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 68,
-      "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        }
-      ],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/pizza",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 307,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 63,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/side",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 307,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 63,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/set",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 307,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 63,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/personal",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 307,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 63,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/edge-dough",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 307,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 67,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "현재 페이지 선택",
-          "role": "input",
-          "width": 15,
-          "height": 15
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/all-summary",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 50,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/margin",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 63,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/recipe",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 50,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/cost/manage",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 307,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 50,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/nutrition/menu",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 52,
-      "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 41,
-          "height": 37
-        }
-      ],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/nutrition/allergen",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 48,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "a",
-          "label": "식자재 관리에서 입력",
-          "role": "a",
-          "width": 106,
-          "height": 15
-        },
-        {
-          "selector": "a",
-          "label": "식자재 관리",
-          "role": "a",
-          "width": 59,
-          "height": 15
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/nutrition/origin",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 47,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "a",
-          "label": "식자재 관리",
-          "role": "a",
-          "width": 59,
-          "height": 15
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/note",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 58,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "제목, 테스트 내용, 태그 검색",
-          "role": "input",
-          "width": 227,
-          "height": 17
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/note/calendar",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 49,
-      "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 42,
-          "height": 38
-        },
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 42,
-          "height": 38
-        }
-      ],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "전체",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "노트",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "일정",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "샘플",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/report",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 55,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "검색",
-          "role": "input",
-          "width": 226,
-          "height": 17
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/report/cost",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 38,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "35",
-          "role": "input",
-          "width": 194,
-          "height": 18
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/settings/system",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 55,
-      "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        },
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        }
-      ],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": []
-    },
-    {
-      "brand": "main",
-      "route": "/settings/account",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 53,
-      "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "input.form-input",
-          "label": "",
-          "role": "input",
-          "width": 320,
-          "height": 36
-        },
-        {
-          "selector": "input.form-input",
-          "label": "",
-          "role": "input",
-          "width": 320,
-          "height": 36
-        },
-        {
-          "selector": "input.form-input",
-          "label": "",
-          "role": "input",
-          "width": 320,
-          "height": 36
-        }
-      ],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": []
-    },
-    {
-      "brand": "main",
-      "route": "/settings/restore",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 49,
-      "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 246,
-          "height": 21
-        }
-      ],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 246,
-          "height": 21
-        }
-      ]
-    },
-    {
-      "brand": "china4",
-      "route": "/",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 68,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button",
-          "label": "접기",
-          "role": "button",
-          "width": 21,
-          "height": 17
-        },
-        {
-          "selector": "button",
-          "label": "접기",
-          "role": "button",
-          "width": 21,
-          "height": 17
-        }
-      ]
-    },
-    {
-      "brand": "china4",
-      "route": "/cost/edge-dough",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 307,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 51,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
-    },
-    {
-      "brand": "china4",
-      "route": "/note",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 58,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "제목, 테스트 내용, 태그 검색",
-          "role": "input",
-          "width": 227,
-          "height": 17
-        }
-      ]
-    },
-    {
-      "brand": "china4",
-      "route": "/settings/restore",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 49,
-      "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 246,
-          "height": 21
-        }
-      ],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 246,
-          "height": 21
-        }
-      ]
-    },
-    {
-      "brand": "china4-direct",
-      "route": "/note",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 58,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "제목, 테스트 내용, 태그 검색",
-          "role": "input",
-          "width": 227,
-          "height": 17
-        }
-      ]
-    },
-    {
-      "brand": "china4-direct",
-      "route": "/note/calendar",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 49,
-      "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 42,
-          "height": 38
-        },
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 42,
-          "height": 38
-        }
-      ],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "전체",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "노트",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "일정",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "샘플",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        }
-      ]
-    }
-  ],
+  "findings": [],
   "results": [
     {
       "brand": "main",
@@ -2438,71 +44,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button",
-          "label": "접기",
-          "role": "button",
-          "width": 21,
-          "height": 17
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -2916,29 +458,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -2961,29 +481,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -3006,29 +504,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -3051,29 +527,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -3096,36 +550,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "현재 페이지 선택",
-          "role": "input",
-          "width": 15,
-          "height": 15
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -3148,15 +573,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -3179,29 +596,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -3224,15 +619,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -3301,15 +688,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -3351,27 +730,11 @@
       "overflowX": false,
       "controlCount": 22,
       "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 41,
-          "height": 37
-        }
-      ],
+      "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -3394,22 +757,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "a",
-          "label": "식자재 관리에서 입력",
-          "role": "a",
-          "width": 106,
-          "height": 15
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -3432,22 +780,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "a",
-          "label": "식자재 관리",
-          "role": "a",
-          "width": 59,
-          "height": 15
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -3493,15 +826,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "제목, 테스트 내용, 태그 검색",
-          "role": "input",
-          "width": 305,
-          "height": 17
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -3518,7 +843,7 @@
       "scrollWidth": 390,
       "innerWidth": 390,
       "overflowX": false,
-      "controlCount": 24,
+      "controlCount": 26,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -3566,55 +891,11 @@
       "overflowX": false,
       "controlCount": 25,
       "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 42,
-          "height": 38
-        },
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 42,
-          "height": 38
-        }
-      ],
+      "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "전체",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "노트",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "일정",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "샘플",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -3631,7 +912,7 @@
       "scrollWidth": 390,
       "innerWidth": 390,
       "overflowX": false,
-      "controlCount": 19,
+      "controlCount": 20,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -3677,7 +958,30 @@
       "scrollWidth": 390,
       "innerWidth": 390,
       "overflowX": false,
-      "controlCount": 30,
+      "controlCount": 32,
+      "duplicateIds": [],
+      "unlabeledControls": [],
+      "buttonsWithoutTypeInForms": [],
+      "invalidAriaRefs": [],
+      "positiveTabIndex": [],
+      "tinyControls": []
+    },
+    {
+      "brand": "main",
+      "route": "/note/market",
+      "viewport": "mobile-390",
+      "width": 390,
+      "status": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "httpProblems": [],
+      "title": "7번가 R&D 플랫폼",
+      "h1": true,
+      "main": true,
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflowX": false,
+      "controlCount": 25,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -3729,15 +1033,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "35",
-          "role": "input",
-          "width": 232,
-          "height": 18
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -3917,22 +1213,7 @@
       "overflowX": false,
       "controlCount": 19,
       "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        },
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        }
-      ],
+      "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
@@ -3955,29 +1236,7 @@
       "overflowX": false,
       "controlCount": 17,
       "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "input.form-input",
-          "label": "",
-          "role": "input",
-          "width": 300,
-          "height": 36
-        },
-        {
-          "selector": "input.form-input",
-          "label": "",
-          "role": "input",
-          "width": 300,
-          "height": 36
-        },
-        {
-          "selector": "input.form-input",
-          "label": "",
-          "role": "input",
-          "width": 300,
-          "height": 36
-        }
-      ],
+      "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
@@ -4023,27 +1282,11 @@
       "overflowX": false,
       "controlCount": 13,
       "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 246,
-          "height": 21
-        }
-      ],
+      "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 246,
-          "height": 21
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -4089,57 +1332,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button",
-          "label": "접기",
-          "role": "button",
-          "width": 21,
-          "height": 17
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "china4",
@@ -4231,15 +1424,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "china4",
@@ -4262,15 +1447,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "제목, 테스트 내용, 태그 검색",
-          "role": "input",
-          "width": 305,
-          "height": 17
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "china4",
@@ -4312,27 +1489,11 @@
       "overflowX": false,
       "controlCount": 13,
       "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 246,
-          "height": 21
-        }
-      ],
+      "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 246,
-          "height": 21
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "china4-direct",
@@ -4355,15 +1516,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "제목, 테스트 내용, 태그 검색",
-          "role": "input",
-          "width": 305,
-          "height": 17
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "china4-direct",
@@ -4380,7 +1533,7 @@
       "scrollWidth": 390,
       "innerWidth": 390,
       "overflowX": false,
-      "controlCount": 24,
+      "controlCount": 26,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -4405,55 +1558,11 @@
       "overflowX": false,
       "controlCount": 25,
       "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 42,
-          "height": 38
-        },
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 42,
-          "height": 38
-        }
-      ],
+      "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "전체",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "노트",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "일정",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "샘플",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "china4-direct",
@@ -4493,84 +1602,13 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 71,
+      "controlCount": 72,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button",
-          "label": "접기",
-          "role": "button",
-          "width": 21,
-          "height": 17
-        },
-        {
-          "selector": "button",
-          "label": "접기",
-          "role": "button",
-          "width": 21,
-          "height": 17
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -4587,7 +1625,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 55,
+      "controlCount": 56,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -4610,7 +1648,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 53,
+      "controlCount": 54,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -4633,7 +1671,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 46,
+      "controlCount": 47,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -4656,7 +1694,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 46,
+      "controlCount": 47,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -4679,7 +1717,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 46,
+      "controlCount": 47,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -4702,7 +1740,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 46,
+      "controlCount": 47,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -4725,7 +1763,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 45,
+      "controlCount": 46,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -4748,7 +1786,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 61,
+      "controlCount": 62,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -4771,7 +1809,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 52,
+      "controlCount": 53,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -4794,7 +1832,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 43,
+      "controlCount": 44,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -4817,7 +1855,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 44,
+      "controlCount": 45,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -4840,120 +1878,13 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 68,
+      "controlCount": 69,
       "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        }
-      ],
+      "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -4970,7 +1901,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 51,
+      "controlCount": 52,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -4993,7 +1924,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 54,
+      "controlCount": 55,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -5016,7 +1947,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 54,
+      "controlCount": 55,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -5039,7 +1970,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 44,
+      "controlCount": 45,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -5062,7 +1993,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 55,
+      "controlCount": 56,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -5085,35 +2016,13 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 63,
+      "controlCount": 64,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -5130,35 +2039,13 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 63,
+      "controlCount": 64,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -5175,35 +2062,13 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 63,
+      "controlCount": 64,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -5220,35 +2085,13 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 63,
+      "controlCount": 64,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -5265,63 +2108,13 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 67,
+      "controlCount": 68,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "현재 페이지 선택",
-          "role": "input",
-          "width": 15,
-          "height": 15
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        },
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 16,
-          "height": 16
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -5338,21 +2131,13 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 50,
+      "controlCount": 51,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -5369,35 +2154,13 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 63,
+      "controlCount": 64,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "input",
-          "label": "30",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        },
-        {
-          "selector": "input",
-          "label": "40",
-          "role": "input",
-          "width": 56,
-          "height": 23
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -5414,21 +2177,13 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 50,
+      "controlCount": 51,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -5445,7 +2200,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 55,
+      "controlCount": 56,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -5468,7 +2223,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 59,
+      "controlCount": 60,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -5491,21 +2246,13 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 50,
+      "controlCount": 51,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -5522,7 +2269,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 53,
+      "controlCount": 54,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -5545,33 +2292,40 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 52,
+      "controlCount": 53,
       "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 41,
-          "height": 37
-        }
-      ],
+      "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
       "route": "/nutrition/allergen",
+      "viewport": "desktop-1280",
+      "width": 1280,
+      "status": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "httpProblems": [],
+      "title": "7번가 R&D 플랫폼",
+      "h1": true,
+      "main": true,
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "overflowX": false,
+      "controlCount": 49,
+      "duplicateIds": [],
+      "unlabeledControls": [],
+      "buttonsWithoutTypeInForms": [],
+      "invalidAriaRefs": [],
+      "positiveTabIndex": [],
+      "tinyControls": []
+    },
+    {
+      "brand": "main",
+      "route": "/nutrition/origin",
       "viewport": "desktop-1280",
       "width": 1280,
       "status": 200,
@@ -5590,67 +2344,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "a",
-          "label": "식자재 관리에서 입력",
-          "role": "a",
-          "width": 106,
-          "height": 15
-        },
-        {
-          "selector": "a",
-          "label": "식자재 관리",
-          "role": "a",
-          "width": 59,
-          "height": 15
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/nutrition/origin",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 47,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        },
-        {
-          "selector": "a",
-          "label": "식자재 관리",
-          "role": "a",
-          "width": 59,
-          "height": 15
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -5667,7 +2361,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 51,
+      "controlCount": 52,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -5696,15 +2390,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "제목, 테스트 내용, 태그 검색",
-          "role": "input",
-          "width": 227,
-          "height": 17
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -5721,7 +2407,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 59,
+      "controlCount": 60,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -5769,55 +2455,11 @@
       "overflowX": false,
       "controlCount": 49,
       "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 42,
-          "height": 38
-        },
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 42,
-          "height": 38
-        }
-      ],
+      "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "전체",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "노트",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "일정",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "샘플",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -5834,7 +2476,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 43,
+      "controlCount": 44,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -5880,7 +2522,30 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 55,
+      "controlCount": 57,
+      "duplicateIds": [],
+      "unlabeledControls": [],
+      "buttonsWithoutTypeInForms": [],
+      "invalidAriaRefs": [],
+      "positiveTabIndex": [],
+      "tinyControls": []
+    },
+    {
+      "brand": "main",
+      "route": "/note/market",
+      "viewport": "desktop-1280",
+      "width": 1280,
+      "status": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "httpProblems": [],
+      "title": "7번가 R&D 플랫폼",
+      "h1": true,
+      "main": true,
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "overflowX": false,
+      "controlCount": 50,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -5903,56 +2568,17 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 55,
+      "controlCount": 56,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "검색",
-          "role": "input",
-          "width": 226,
-          "height": 17
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
       "route": "/report/cost",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 38,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "35",
-          "role": "input",
-          "width": 194,
-          "height": 18
-        }
-      ]
-    },
-    {
-      "brand": "main",
-      "route": "/report/margin",
       "viewport": "desktop-1280",
       "width": 1280,
       "status": 200,
@@ -5975,30 +2601,7 @@
     },
     {
       "brand": "main",
-      "route": "/report/sales",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 43,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": []
-    },
-    {
-      "brand": "main",
-      "route": "/report/price",
+      "route": "/report/margin",
       "viewport": "desktop-1280",
       "width": 1280,
       "status": 200,
@@ -6021,30 +2624,7 @@
     },
     {
       "brand": "main",
-      "route": "/report/shipment",
-      "viewport": "desktop-1280",
-      "width": 1280,
-      "status": 200,
-      "consoleErrors": [],
-      "pageErrors": [],
-      "httpProblems": [],
-      "title": "7번가 R&D 플랫폼",
-      "h1": true,
-      "main": true,
-      "scrollWidth": 1280,
-      "innerWidth": 1280,
-      "overflowX": false,
-      "controlCount": 38,
-      "duplicateIds": [],
-      "unlabeledControls": [],
-      "buttonsWithoutTypeInForms": [],
-      "invalidAriaRefs": [],
-      "positiveTabIndex": [],
-      "tinyControls": []
-    },
-    {
-      "brand": "main",
-      "route": "/report/menu-sales-compare",
+      "route": "/report/sales",
       "viewport": "desktop-1280",
       "width": 1280,
       "status": 200,
@@ -6067,6 +2647,75 @@
     },
     {
       "brand": "main",
+      "route": "/report/price",
+      "viewport": "desktop-1280",
+      "width": 1280,
+      "status": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "httpProblems": [],
+      "title": "7번가 R&D 플랫폼",
+      "h1": true,
+      "main": true,
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "overflowX": false,
+      "controlCount": 41,
+      "duplicateIds": [],
+      "unlabeledControls": [],
+      "buttonsWithoutTypeInForms": [],
+      "invalidAriaRefs": [],
+      "positiveTabIndex": [],
+      "tinyControls": []
+    },
+    {
+      "brand": "main",
+      "route": "/report/shipment",
+      "viewport": "desktop-1280",
+      "width": 1280,
+      "status": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "httpProblems": [],
+      "title": "7번가 R&D 플랫폼",
+      "h1": true,
+      "main": true,
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "overflowX": false,
+      "controlCount": 39,
+      "duplicateIds": [],
+      "unlabeledControls": [],
+      "buttonsWithoutTypeInForms": [],
+      "invalidAriaRefs": [],
+      "positiveTabIndex": [],
+      "tinyControls": []
+    },
+    {
+      "brand": "main",
+      "route": "/report/menu-sales-compare",
+      "viewport": "desktop-1280",
+      "width": 1280,
+      "status": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "httpProblems": [],
+      "title": "7번가 R&D 플랫폼",
+      "h1": true,
+      "main": true,
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "overflowX": false,
+      "controlCount": 45,
+      "duplicateIds": [],
+      "unlabeledControls": [],
+      "buttonsWithoutTypeInForms": [],
+      "invalidAriaRefs": [],
+      "positiveTabIndex": [],
+      "tinyControls": []
+    },
+    {
+      "brand": "main",
       "route": "/settings",
       "viewport": "desktop-1280",
       "width": 1280,
@@ -6080,7 +2729,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 66,
+      "controlCount": 67,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -6103,7 +2752,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 66,
+      "controlCount": 67,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -6126,24 +2775,9 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 55,
+      "controlCount": 56,
       "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        },
-        {
-          "selector": "button",
-          "label": "",
-          "role": "button",
-          "width": 44,
-          "height": 24
-        }
-      ],
+      "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
@@ -6164,31 +2798,9 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 53,
+      "controlCount": 54,
       "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "input.form-input",
-          "label": "",
-          "role": "input",
-          "width": 320,
-          "height": 36
-        },
-        {
-          "selector": "input.form-input",
-          "label": "",
-          "role": "input",
-          "width": 320,
-          "height": 36
-        },
-        {
-          "selector": "input.form-input",
-          "label": "",
-          "role": "input",
-          "width": 320,
-          "height": 36
-        }
-      ],
+      "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
@@ -6209,7 +2821,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 51,
+      "controlCount": 52,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -6232,29 +2844,13 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 49,
+      "controlCount": 50,
       "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 246,
-          "height": 21
-        }
-      ],
+      "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 246,
-          "height": 21
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "main",
@@ -6271,7 +2867,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 50,
+      "controlCount": 51,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -6294,70 +2890,13 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 68,
+      "controlCount": 69,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "나중에 (7일)",
-          "role": "button",
-          "width": 40,
-          "height": 18
-        },
-        {
-          "selector": "button.btn",
-          "label": "숨기기",
-          "role": "button",
-          "width": 31,
-          "height": 18
-        },
-        {
-          "selector": "button",
-          "label": "접기",
-          "role": "button",
-          "width": 21,
-          "height": 17
-        },
-        {
-          "selector": "button",
-          "label": "접기",
-          "role": "button",
-          "width": 21,
-          "height": 17
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "china4",
@@ -6374,7 +2913,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 53,
+      "controlCount": 54,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -6397,7 +2936,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 51,
+      "controlCount": 52,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -6420,7 +2959,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 53,
+      "controlCount": 54,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -6443,21 +2982,13 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 51,
+      "controlCount": 52,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "메뉴코드·분류·판매가는 메뉴 마스터에서 관리됩니다",
-          "role": "button",
-          "width": 128,
-          "height": 21
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "china4",
@@ -6480,15 +3011,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "제목, 테스트 내용, 태그 검색",
-          "role": "input",
-          "width": 227,
-          "height": 17
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "china4",
@@ -6505,7 +3028,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 51,
+      "controlCount": 52,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -6528,29 +3051,13 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 49,
+      "controlCount": 50,
       "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 246,
-          "height": 21
-        }
-      ],
+      "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "",
-          "role": "input",
-          "width": 246,
-          "height": 21
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "china4-direct",
@@ -6573,15 +3080,7 @@
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "input",
-          "label": "제목, 테스트 내용, 태그 검색",
-          "role": "input",
-          "width": 227,
-          "height": 17
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "china4-direct",
@@ -6598,7 +3097,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "overflowX": false,
-      "controlCount": 59,
+      "controlCount": 60,
       "duplicateIds": [],
       "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
@@ -6623,55 +3122,11 @@
       "overflowX": false,
       "controlCount": 49,
       "duplicateIds": [],
-      "unlabeledControls": [
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 42,
-          "height": 38
-        },
-        {
-          "selector": "button.btn.sm",
-          "label": "",
-          "role": "button",
-          "width": 42,
-          "height": 38
-        }
-      ],
+      "unlabeledControls": [],
       "buttonsWithoutTypeInForms": [],
       "invalidAriaRefs": [],
       "positiveTabIndex": [],
-      "tinyControls": [
-        {
-          "selector": "button",
-          "label": "전체",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "노트",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "일정",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        },
-        {
-          "selector": "button",
-          "label": "샘플",
-          "role": "button",
-          "width": 45,
-          "height": 23
-        }
-      ]
+      "tinyControls": []
     },
     {
       "brand": "china4-direct",

@@ -55,6 +55,7 @@ export function ManagedProductsRow({
       <td style={{ textAlign: 'center' }}>
         <Toggle
           value={safeProduct.enable !== false}
+          label={`${productName} 활성 상태`}
           onChange={() => handleToggleEnable(safeProduct)}
           disabled={!canEdit}
         />
@@ -76,13 +77,14 @@ export function ManagedProductsRow({
       <td style={{ textAlign: 'center' }}>
         <input
           type="checkbox"
+          aria-label={`${productName} 관리품목 여부`}
           checked={canToggleManaged && Boolean(safeProduct.isManaged)}
           onChange={() => handleToggleManaged(safeProduct)}
           disabled={!canEdit || !canToggleManaged}
           style={{
             cursor: canEdit && canToggleManaged ? 'pointer' : 'not-allowed',
-            width: 16,
-            height: 16,
+            width: 24,
+            height: 24,
           }}
         />
       </td>
