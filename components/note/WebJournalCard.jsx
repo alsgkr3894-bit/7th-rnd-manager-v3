@@ -49,6 +49,31 @@ function ReportSections({ sections }) {
   );
 }
 
+function tagList(tags) {
+  if (Array.isArray(tags)) return tags.map(tag => String(tag || '').trim()).filter(Boolean);
+  return String(tags || '')
+    .split(',')
+    .map(tag => tag.trim())
+    .filter(Boolean);
+}
+
+function isSampleRecord(note) {
+  return note?._recordKind === 'sample' || String(note?.id || '').startsWith('sample:');
+}
+
+function metaPairs(note) {
+  const pairs = [];
+  if (note?.testDate) pairs.push(['작성일', note.testDate]);
+  if (isSampleRecord(note)) {
+    const type = note?.recordType || note?.noteType;
+    if (type) pairs.push(['유형', type]);
+    if (note?.category) pairs.push(['식자재 분류', note.category]);
+    return pairs;
+  }
+  if (note?.category) pairs.push(['구분', note.category]);
+  return pairs;
+}
+
 export function WebJournalCard({ note, index, onEdit }) {
   const statusStyle = STATUS_COLORS[note.status] || {};
   const title = noteDisplayTitle(note, '(제목 없음)');
@@ -56,6 +81,8 @@ export function WebJournalCard({ note, index, onEdit }) {
   const detailPairs = noteDetailPairs(note);
   const reportLabel = isJournalNote(note) ? '오늘 한 일 보고서' : '관련 테스트 보고';
   const sections = [[contentLabel, note.testContent], ...detailPairs];
+  const tags = tagList(note.tags);
+  const meta = metaPairs(note);
 
   return (
     <article className="card" style={{ overflow: 'hidden', padding: 0 }}>
@@ -123,16 +150,11 @@ export function WebJournalCard({ note, index, onEdit }) {
           flexWrap: 'wrap',
         }}
       >
-        {note.testDate && (
-          <span>
-            <b>작성일:</b> {note.testDate}
+        {meta.map(([label, value]) => (
+          <span key={label}>
+            <b>{label}:</b> {value}
           </span>
-        )}
-        {note.category && (
-          <span>
-            <b>구분:</b> {note.category}
-          </span>
-        )}
+        ))}
       </div>
 
       <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -186,26 +208,22 @@ export function WebJournalCard({ note, index, onEdit }) {
         )}
 
         {/* 태그 */}
-        {note.tags && (
+        {tags.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {note.tags
-              .split(',')
-              .map(t => t.trim())
-              .filter(Boolean)
-              .map(t => (
-                <span
-                  key={t}
-                  style={{
-                    fontSize: 11,
-                    padding: '2px 8px',
-                    borderRadius: 999,
-                    background: 'var(--surface-2)',
-                    color: 'var(--text-3)',
-                  }}
-                >
-                  #{t}
-                </span>
-              ))}
+            {tags.map(t => (
+              <span
+                key={t}
+                style={{
+                  fontSize: 11,
+                  padding: '2px 8px',
+                  borderRadius: 999,
+                  background: 'var(--surface-2)',
+                  color: 'var(--text-3)',
+                }}
+              >
+                #{t}
+              </span>
+            ))}
           </div>
         )}
       </div>

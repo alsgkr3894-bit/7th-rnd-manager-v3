@@ -8,7 +8,13 @@ import { showToast } from '@/components/Toast';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { addNote, getAllNotesCached, updateNote } from '@/lib/note';
 import { getAllSchedules } from '@/lib/note/schedules';
+import { getAllSamples } from '@/lib/sample';
 import { JOURNAL_NOTE_TYPE, NOTE_STATUS } from '@/lib/note/constants';
+import {
+  isUnifiedSampleRecord,
+  sampleToUnifiedRecord,
+  unifiedSampleSourceId,
+} from '@/lib/note/unified-records';
 import { buildJournalPrintHtml } from '@/lib/note/journal-print';
 import { openPrintWindow } from '@/lib/print/window-print';
 import { WebJournalCard } from '@/components/note/WebJournalCard';
@@ -151,12 +157,38 @@ function mergeJournalPhotos(...photoGroups) {
   return merged;
 }
 
-function collectJournalSourcePhotos(dayNotes, journalEntry) {
-  const notes = Array.isArray(dayNotes) ? dayNotes : [];
-  const sourcePhotoGroups = notes
-    .filter(note => note?.id !== journalEntry?.id && note?.noteType !== JOURNAL_NOTE_TYPE)
-    .map(note => note.photos);
-  return mergeJournalPhotos(...sourcePhotoGroups);
+function filterJournalPhotosAgainstSources(photos, sourcePhotos) {
+  const sourceKeys = new Set(
+    (Array.isArray(sourcePhotos) ? sourcePhotos : []).map(journalPhotoKey).filter(Boolean)
+  );
+  if (!sourceKeys.size) return Array.isArray(photos) ? photos : [];
+  return (Array.isArray(photos) ? photos : []).filter(photo => !sourceKeys.has(journalPhotoKey(photo)));
+}
+
+function withoutJournalSourceDuplicatePhotos(records) {
+  const source = Array.isArray(records) ? records : [];
+  if (!source.length) return source;
+
+  const sourcePhotosByDay = new Map();
+  for (const note of source) {
+    if (note?.noteType === JOURNAL_NOTE_TYPE) continue;
+    const day = noteDayKey(note);
+    if (!day) continue;
+    const photos = Array.isArray(note?.photos) ? note.photos : [];
+    if (!photos.length) continue;
+    const bucket = sourcePhotosByDay.get(day) || [];
+    bucket.push(...photos);
+    sourcePhotosByDay.set(day, bucket);
+  }
+
+  if (!sourcePhotosByDay.size) return source;
+
+  return source.map(note => {
+    if (note?.noteType !== JOURNAL_NOTE_TYPE) return note;
+    const sourcePhotos = sourcePhotosByDay.get(noteDayKey(note)) || [];
+    const photos = filterJournalPhotosAgainstSources(note?.photos, sourcePhotos);
+    return photos === note?.photos ? note : { ...note, photos };
+  });
 }
 
 function buildJournalRelatedPhotoLookup(notes) {
@@ -188,20 +220,13 @@ function withRelatedJournalPhotos(dayNotes, allNotes) {
   });
 }
 
-function journalFormFromEntry(journalEntry, sourcePhotos = []) {
-  if (!journalEntry) {
-    return sourcePhotos.length
-      ? { ...EMPTY_JOURNAL_FORM, photos: sourcePhotos }
-      : EMPTY_JOURNAL_FORM;
-  }
+function journalFormFromEntry(journalEntry) {
+  if (!journalEntry) return EMPTY_JOURNAL_FORM;
   return {
     work: journalEntry.testContent || '',
     result: mergeJournalText(journalEntry.tasteEval, journalEntry.improvements),
     next: mergeJournalText(journalEntry.nextAction, journalEntry.materials),
-    photos: mergeJournalPhotos(
-      Array.isArray(journalEntry.photos) ? journalEntry.photos : [],
-      sourcePhotos
-    ),
+    photos: Array.isArray(journalEntry.photos) ? journalEntry.photos : [],
   };
 }
 
@@ -475,27 +500,42 @@ export default function Page() {
   // date 변경은 re-fetch 없이 JS 필터만 하므로 deps 불필요
   const {
     data: notes = [],
-    loading,
+    loading: notesLoading,
     reload: reloadNotes,
   } = useDBLoad(() => getAllNotesCached(), {
     initialData: [],
     onError: err => console.error('[note/journal] load failed', err),
+  });
+  const { data: samples = [], loading: samplesLoading } = useDBLoad(() => getAllSamples(), {
+    initialData: [],
+    onError: err => console.error('[note/journal] samples load failed', err),
   });
   const { data: schedules = [] } = useDBLoad(() => getAllSchedules(), {
     initialData: [],
     onError: err => console.error('[note/journal] schedules load failed', err),
   });
 
+  const sampleRecords = useMemo(
+    () => (Array.isArray(samples) ? samples.map(sampleToUnifiedRecord) : []),
+    [samples]
+  );
+  const journalRecords = useMemo(() => [...notes, ...sampleRecords], [notes, sampleRecords]);
+  const loading = notesLoading || samplesLoading;
+
   const rawDayNotes = useMemo(
     () =>
-      notes
+      journalRecords
         .filter(n => noteDayKey(n) === date)
         .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')),
-    [notes, date]
+    [journalRecords, date]
   );
-  const dayNotes = useMemo(
+  const dayNotesWithRelatedPhotos = useMemo(
     () => withRelatedJournalPhotos(rawDayNotes, notes),
     [rawDayNotes, notes]
+  );
+  const dayNotes = useMemo(
+    () => withoutJournalSourceDuplicatePhotos(dayNotesWithRelatedPhotos),
+    [dayNotesWithRelatedPhotos]
   );
 
   useEffect(() => {
@@ -504,7 +544,7 @@ export default function Page() {
 
   const datesWithNotes = useMemo(() => {
     const s = new Set();
-    notes.forEach(n => {
+    journalRecords.forEach(n => {
       const d = noteDayKey(n);
       if (d) s.add(d);
     });
@@ -512,7 +552,7 @@ export default function Page() {
       if (schedule.date) s.add(String(schedule.date).slice(0, 10));
     });
     return [...s].sort().reverse();
-  }, [notes, schedules]);
+  }, [journalRecords, schedules]);
 
   const daySchedules = useMemo(
     () =>
@@ -533,7 +573,7 @@ export default function Page() {
     const notesByDate = new Map();
     const schedulesByDate = new Map();
 
-    notes.forEach(note => {
+    journalRecords.forEach(note => {
       const day = noteDayKey(note);
       if (!day.startsWith(safe)) return;
       if (!notesByDate.has(day)) notesByDate.set(day, []);
@@ -567,7 +607,7 @@ export default function Page() {
           journal: entryNotes.find(note => note.noteType === JOURNAL_NOTE_TYPE) || null,
         };
       });
-  }, [notes, schedules, month]);
+  }, [journalRecords, schedules, month]);
 
   const filteredMonthEntries = useMemo(
     () => monthEntries.filter(entry => journalEntryMatches(entry, search)),
@@ -596,20 +636,22 @@ export default function Page() {
     [printMode, printRange]
   );
   const printPeriodNotes = useMemo(() => {
-    const periodNotes = notes
+    const periodNotes = journalRecords
       .filter(note => isWithinRange(noteDayKey(note), printRange))
       .sort(
         (a, b) =>
           noteDayKey(a).localeCompare(noteDayKey(b)) ||
           String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
       );
-    if (!currentJournalPrintNote || !isWithinRange(date, printRange)) return periodNotes;
-    return mergeJournalPrintNotesForDate(periodNotes, currentJournalPrintNote, date);
-  }, [notes, printRange, currentJournalPrintNote, date]);
+    const merged =
+      currentJournalPrintNote && isWithinRange(date, printRange)
+        ? mergeJournalPrintNotesForDate(periodNotes, currentJournalPrintNote, date)
+        : periodNotes;
+    return withoutJournalSourceDuplicatePhotos(merged);
+  }, [journalRecords, printRange, currentJournalPrintNote, date]);
 
   useEffect(() => {
-    const sourcePhotos = collectJournalSourcePhotos(dayNotes, journalEntry);
-    setJournalForm(journalFormFromEntry(journalEntry, sourcePhotos));
+    setJournalForm(journalFormFromEntry(journalEntry));
   }, [date, dayNotes, journalEntry]);
 
   function goPrev() {
@@ -673,7 +715,6 @@ export default function Page() {
       return;
     }
     const title = `${date} 연구일지`;
-    const sourcePhotos = collectJournalSourcePhotos(dayNotes, journalEntry);
     const payload = {
       title,
       menuName: title,
@@ -687,7 +728,7 @@ export default function Page() {
       improvements: '',
       nextAction: journalForm.next.trim(),
       tags: '연구일지',
-      photos: mergeJournalPhotos(journalForm.photos, sourcePhotos),
+      photos: Array.isArray(journalForm.photos) ? journalForm.photos : [],
     };
     setSaving(true);
     try {
@@ -891,7 +932,11 @@ export default function Page() {
                   key={note.id}
                   note={note}
                   index={idx + 1}
-                  onEdit={() => router.push(`/note/${note.id}`)}
+                  onEdit={() =>
+                    isUnifiedSampleRecord(note)
+                      ? router.push(`/note/sample/${unifiedSampleSourceId(note)}`)
+                      : router.push(`/note/${note.id}`)
+                  }
                 />
               ))}
             </div>

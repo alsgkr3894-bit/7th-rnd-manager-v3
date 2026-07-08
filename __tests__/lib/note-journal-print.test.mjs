@@ -53,6 +53,40 @@ describe('journal PDF print helpers', () => {
     expect(html).not.toContain('2. 테스트 결과</div>');
     expect(html).not.toContain('3. 다음 일정</div>');
   });
+
+  test('통합 샘플 기록처럼 배열 태그가 들어와도 출력한다', () => {
+    const html = buildJournalPrintHtml('2026-07-03 (금)', [
+      {
+        id: 'sample:10',
+        _recordKind: 'sample',
+        title: '소스 샘플',
+        noteType: '샘플테스트',
+        recordType: '샘플테스트',
+        status: '테스트',
+        category: '소스',
+        testContent: '점도 확인',
+        materials: '치즈바',
+        tasteEval: '표면 갈라짐',
+        company: '공급사',
+        tester: '조홍',
+        tags: ['소스', '재테스트'],
+      },
+    ]);
+
+    expect(html).toContain('#소스');
+    expect(html).toContain('#재테스트');
+    expect(html).toContain('<b>유형:</b> 샘플테스트');
+    expect(html).toContain('<b>식자재 분류:</b> 소스');
+    expect(html).toContain('테스트 내용 / 조건');
+    expect(html).toContain('샘플명');
+    expect(html).toContain('평가 / 결과');
+    expect(html).toContain('업체명');
+    expect(html).toContain('담당자');
+    expect(html).not.toContain('<b>구분:</b> 소스');
+    expect(html).not.toContain('사용 재료');
+    expect(html).not.toContain('상무님 평가');
+  });
+
   test('journal print includes photos and waits for image loading', () => {
     const html = buildJournalPrintHtml('2026-07-07', [
       {

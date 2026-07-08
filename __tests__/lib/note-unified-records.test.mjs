@@ -26,6 +26,8 @@ describe('note unified records', () => {
           sampleNames: ['치즈 A'],
           description: '색상 이슈',
           result: '대체 필요',
+          company: '공급사',
+          tester: '홍길동',
         },
       ]
     );
@@ -49,9 +51,14 @@ describe('note unified records', () => {
       recordType: SAMPLE_RECORD_TYPES.ISSUE,
       status: '보류',
       materials: '치즈 A',
+      testContent: '색상 이슈',
+      tasteEval: '대체 필요',
+      managerEval: '',
     });
-    expect(rows[2].testContent).toContain('색상 이슈');
-    expect(rows[2].testContent).toContain('대체 필요');
+    expect(rows[2].issues).toContain('색상 이슈');
+    expect(rows[2].issues).toContain('대체 필요');
+    expect(rows[2].company).toBe('공급사');
+    expect(rows[2].tester).toBe('홍길동');
   });
 
   test('레거시 이슈 유형과 sample: 표시 ID를 안전하게 정규화한다', () => {

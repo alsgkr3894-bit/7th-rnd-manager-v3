@@ -175,4 +175,34 @@ describe('menu development note PDF report', () => {
     expect(html.indexOf('2차 사진 A')).toBeLessThan(html.indexOf('1차 사진 A'));
     expect(html.match(/<img /g) || []).toHaveLength(4);
   });
+
+  test('통합 샘플 기록은 샘플 작성폼의 실제 라벨로 출력한다', () => {
+    const html = buildMenuDevelopmentReportHtml(
+      [
+        {
+          id: 'sample:1',
+          _recordKind: 'sample',
+          title: '조홍치즈바 테스트',
+          noteType: '샘플테스트',
+          recordType: '샘플테스트',
+          category: '사이드식자재',
+          testDate: '2026-07-08',
+          testContent: '오븐 조리 조건',
+          materials: '치즈바',
+          tasteEval: '표면 갈라짐',
+          company: '공급사',
+          tester: '조홍',
+        },
+      ],
+      { now: new Date('2026-07-08T09:00:00') }
+    );
+
+    expect(html).toContain('테스트 내용 / 조건');
+    expect(html).toContain('샘플명');
+    expect(html).toContain('평가 / 결과');
+    expect(html).toContain('업체명');
+    expect(html).toContain('담당자');
+    expect(html).not.toContain('사용 재료');
+    expect(html).not.toContain('상무님 평가');
+  });
 });
