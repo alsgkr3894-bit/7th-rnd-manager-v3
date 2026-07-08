@@ -322,7 +322,7 @@ describe('파괴적 액션 권한 가드', () => {
     expect(facade).not.toContain('upsertUniqueByIndex');
   });
 
-  test('원가 보조 마스터와 샘플 기록 쓰기 함수가 assertActiveAdmin을 호출한다', () => {
+  test('원가 보조 마스터와 식자재 이슈 및 테스트 /샘플기록 쓰기 함수가 assertActiveAdmin을 호출한다', () => {
     const recipeGroups = src('lib/cost/recipe-groups/store.js');
     expect(functionBody(recipeGroups, 'saveRecipeGroup')).toContain('assertActiveAdmin');
     expect(functionBody(recipeGroups, 'deleteRecipeGroup')).toContain('assertActiveAdmin');

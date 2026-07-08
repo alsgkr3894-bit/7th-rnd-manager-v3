@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { sampleNamesText, RATING_COLOR } from '@/lib/sample';
+import { sampleIngredientGroupName, sampleNamesText, RATING_COLOR } from '@/lib/sample';
 import { formatTestRound } from '@/lib/note/evaluation';
 import {
   asDisplayText,
@@ -11,7 +11,7 @@ import {
 } from '@/lib/ui/prop-guards';
 
 /**
- * SampleListRow — 샘플기록 리스트 뷰의 행(<tr>).
+ * SampleListRow — 식자재 이슈 및 테스트 /샘플기록 리스트 뷰의 행(<tr>).
  * 클릭 시 onClick(배치/비교/상세 분기는 상위에서 처리), 액션은 stopPropagation.
  */
 export const SampleListRow = React.memo(function SampleListRow({
@@ -27,6 +27,8 @@ export const SampleListRow = React.memo(function SampleListRow({
   const photos = asObjectArray(rec.photos).filter(p => asDisplayText(p.data));
   const thumb = asDisplayText(photos[0]?.data);
   const names = sampleNamesText(rec);
+  const ingredientGroupName = sampleIngredientGroupName(rec);
+  const recordType = asDisplayText(rec.recordType || '샘플테스트');
   const title = asDisplayText(rec.title, '제목 없음');
   const category = asDisplayText(rec.category);
   const testDate = asDisplayText(rec.testDate);
@@ -69,8 +71,10 @@ export const SampleListRow = React.memo(function SampleListRow({
       </td>
       <td>
         <div style={{ fontWeight: 700 }}>{title}</div>
-        {(roundLabel || rec.parentId != null) && (
+        {(recordType || ingredientGroupName || roundLabel || rec.parentId != null) && (
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+            {recordType && <span className="chip">{recordType}</span>}
+            {ingredientGroupName && <span className="chip">{ingredientGroupName}</span>}
             {roundLabel && <span className="chip">{roundLabel}</span>}
             {rec.parentId != null && <span className="chip">차수 연결</span>}
           </div>

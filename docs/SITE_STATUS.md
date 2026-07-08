@@ -36,7 +36,7 @@
 
 ## 2. 라우트 및 화면 목록
 
-총 56개 page 파일 (실제 화면 44개 + 리다이렉트 12개). 홈·메뉴마스터·원가계산(허브+공통원가+원가마진+전체원가)·보고서(허브+4종 빌더)·메뉴판매량(허브+분석+업로드+미매칭+설정)·제때(허브+출고+단가+설정)·식자재(허브+관리+사용량)·영양성분(허브+메뉴+알레르기+원산지+표출력)·설정(브랜드·계정·백업·복원·시스템)·노트(목록+작성+상세+캘린더+보드+일지+시제품) 총 10개 섹션 구성.
+총 61개 page 파일 (실제 화면 49개 + 리다이렉트 12개). 홈·메뉴마스터·원가계산(허브+공통원가+원가마진+전체원가)·보고서(허브+4종 빌더)·메뉴판매량(허브+분석+업로드+미매칭+설정)·제때(허브+출고+단가+설정)·식자재(허브+관리+사용량)·영양성분(허브+메뉴+알레르기+원산지+표출력)·설정(브랜드·계정·백업·복원·시스템)·노트(목록+작성+상세+캘린더+보드+일지+시제품+시장조사)·R&D(법인카드+로그인정보) 총 11개 섹션 구성.
 
 ### 홈 / 인증
 
@@ -150,9 +150,9 @@
 
 ## 3. IndexedDB 스키마
 
-DB 버전 23, 총 43개 store. 멀티브랜드 구조는 7번가(main) = 'rnd_manager_v3', 그 외 = 'rnd_manager_v3__<brandId>'로 완전 분리. 노트 패밀리(menu_dev_notes 등 4개)는 예외적으로 main DB에 공유 저장.
+DB 버전 25, 총 46개 store. 멀티브랜드 구조는 7번가(main) = 'rnd_manager_v3', 그 외 = 'rnd_manager_v3__<brandId>'로 완전 분리. 노트 패밀리(menu_dev_notes 등 5개)는 예외적으로 main DB에 공유 저장.
 
-### 스토어 목록 (DB 버전 23, 총 43개)
+### 스토어 목록 (DB 버전 25, 총 46개)
 
 **공통 / 인프라 (3개)**
 
@@ -198,17 +198,17 @@ dbNameFor(brandId): main → 'rnd_manager_v3', 기타 → 'rnd_manager_v3__<bran
 
 ## 4. 상태 관리 및 훅 패턴
 
-총 59개 커스텀 훅(4,661줄). 핵심 패턴은 useDBLoad(IndexedDB 비동기 로드 + cancelled 가드 + reload), useLocalStorage(SSR 하이드레이션 안전 3단계 패턴), 전역 Toast(모듈-레벨 싱글턴 setToasts 레퍼런스). 컨텍스트 없이 CustomEvent + localStorage + window.addEventListener 조합으로 브랜드·설정·역할 상태를 전파.
+총 60개 커스텀 훅(4,867줄). 핵심 패턴은 useDBLoad(IndexedDB 비동기 로드 + cancelled 가드 + reload), useLocalStorage(SSR 하이드레이션 안전 3단계 패턴), 전역 Toast(모듈-레벨 싱글턴 setToasts 레퍼런스). 컨텍스트 없이 CustomEvent + localStorage + window.addEventListener 조합으로 브랜드·설정·역할 상태를 전파.
 
 ### `hooks/ 디렉터리 전체 현황`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/`
 
-총 59개 파일(58 .js + 1 .jsx), 4,661줄. 도메인별로 DB로드·로컬스토리지·브랜드·노트·리포트·홈대시보드·UI(배치·페이지네이션·스크롤·단축키·모달) 등으로 분류됨.
+총 60개 파일(59 .js + 1 .jsx), 4,867줄. 도메인별로 DB로드·로컬스토리지·브랜드·노트·리포트·홈대시보드·UI(배치·페이지네이션·스크롤·단축키·모달) 등으로 분류됨.
 
 ### `useDBLoad — IndexedDB 데이터 로드 패턴`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/useDBLoad.js`
 
-fetchFn + options(initialData, deps, enabled, onError, mapErrorMessage, keepDataOnReload) 를 받아 { data, loading, error, errorMessage, reload } 반환. 내부에서 initDB() → fetchFn() 순으로 실행, cancelled 플래그로 언마운트 race condition 방지, reload()는 tick 카운터 증가 방식. keepDataOnReload=true가 기본값(로딩 중에도 기존 데이터 유지). 정의 파일 포함 25개 파일(소비 기준 24개): app 페이지 18곳 + app 내부 hook/controller 3곳 + hooks 1곳 + components 2곳.
+fetchFn + options(initialData, deps, enabled, onError, mapErrorMessage, keepDataOnReload) 를 받아 { data, loading, error, errorMessage, reload } 반환. 내부에서 initDB() → fetchFn() 순으로 실행, cancelled 플래그로 언마운트 race condition 방지, reload()는 tick 카운터 증가 방식. keepDataOnReload=true가 기본값(로딩 중에도 기존 데이터 유지). 정의 파일 포함 24개 파일(소비 기준 23개): app 페이지 17곳 + app 내부 hook/controller 3곳 + hooks 1곳 + components 2곳.
 
 ### `useLocalStorage — SSR 안전 영속 상태`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/useLocalStorage.js`
@@ -262,7 +262,7 @@ document.visibilitychange 이벤트에서 visibilityState==='visible' 시 콜백
 
 ### `useDBLoad 적용 현황`
 
-소비 기준 24개 파일에서 사용. app/ 페이지 직접 사용 18곳(cost/margin, ingredient, menu-master, menu-sales, nutrition, report, settings/backup|restore|system 등), app 내부 hook/controller 3곳, hooks/ 위임 훅 1곳(useIngredientPriceData), components/ 2곳(SuppliersView, CommonManageView). useIngredientPriceData는 useDBLoad + useVisibilityRefresh를 조합한 파생 데이터 훅 패턴의 대표 사례.
+소비 기준 23개 파일에서 사용. app/ 페이지 직접 사용 17곳(cost, ingredient, menu-master, menu-sales, nutrition, report, settings/backup|restore|system 등), app 내부 hook/controller 3곳, hooks/ 위임 훅 1곳(useIngredientPriceData), components/ 2곳(SuppliersView, CommonManageView). useIngredientPriceData는 useDBLoad + useVisibilityRefresh를 조합한 파생 데이터 훅 패턴의 대표 사례.
 
 ### `useCurrentRole — 권한 상태 관리`
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/hooks/useCurrentRole.js`
@@ -444,7 +444,7 @@ openNamed(name)이 이름별로 IDBDatabase 핸들을 Map에 캐싱(싱글톤/�
 ### lib/db/constants.js — DB 격리 방식
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/lib/db/constants.js`
 
-dbNameFor(brandId): main → 'rnd_manager_v3'(하위호환), 非main → 'rnd_manager_v3__<brandId>'. ALL_STORES에 43개 store 정의(DB_VERSION=23). 비-main 브랜드는 처음 접근 시 빈 DB로 자동 생성됨.
+dbNameFor(brandId): main → 'rnd_manager_v3'(하위호환), 非main → 'rnd_manager_v3__<brandId>'. ALL_STORES에 46개 store 정의(DB_VERSION=25). 비-main 브랜드는 처음 접근 시 빈 DB로 자동 생성됨.
 
 ### lib/db/shared.js — 노트 패밀리 공유 DB
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/lib/db/shared.js`
@@ -495,12 +495,12 @@ isAdmin 아닌 경우 편집 불가(권한 가드). 브랜드 추가/수정 폼(
 
 ## 8. 테스트 및 QA 현황
 
-Jest 단위 테스트 295개 파일(lib 268, hooks 20, scripts 7), QA 명령 6종(qa:smoke 22라우트 702px, qa:mobile 22라우트 390px, qa:runtime 전라우트 67개, qa:workflow 업무흐름 E2E 21시나리오, qa:full dev 전체 QA, qa:prod 프로덕션 전체 QA) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
+Jest 단위 테스트 325개 파일(lib 298, hooks 20, scripts 7), QA 명령 6종(qa:smoke 22라우트 702px, qa:mobile 22라우트 390px, qa:runtime 전라우트 72개, qa:workflow 업무흐름 E2E 21시나리오, qa:full dev 전체 QA, qa:prod 프로덕션 전체 QA) + 문서 수치 검증(audit:docs). 커버리지 수집 비활성화, playwright 기반 브라우저 QA 분리 운용.
 
 ### Jest 단위 테스트 — lib
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/lib/`
 
-__tests__/lib/ 하위 268개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
+__tests__/lib/ 하위 298개 .test.mjs 파일. 유틸, 컴포넌트 구조, DB 가드, 정책 검증 등 도메인 전 영역 커버. jest.config.mjs: testEnvironment=node, transform={}, testMatch=**/__tests__/**/*.test.mjs
 
 ### Jest 단위 테스트 — hooks
 `/Users/lmh/Documents/Codex/7th-rnd-manager-v3/__tests__/hooks/`

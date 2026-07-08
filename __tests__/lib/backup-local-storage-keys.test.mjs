@@ -368,6 +368,8 @@ describe('nutrition backup localStorage keys', () => {
       pickLocalStorageForScopes(
         {
           'v3:nutrition-menu-order': 'nutrition',
+          'v3:nutrition-label-menu-order': 'label-order',
+          'v3:nutrition-label-menu-name-override': 'label-name',
           'v3:profile': 'profile',
           'v3:jette-settings': 'jette',
         },
@@ -375,6 +377,8 @@ describe('nutrition backup localStorage keys', () => {
       )
     ).toEqual({
       'v3:nutrition-menu-order': 'nutrition',
+      'v3:nutrition-label-menu-order': 'label-order',
+      'v3:nutrition-label-menu-name-override': 'label-name',
       'v3:profile': 'profile',
     });
   });

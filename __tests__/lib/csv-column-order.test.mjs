@@ -47,8 +47,8 @@ describe('CSV/XLSX 컬럼 순서 고정', () => {
     expect(keys).toEqual(['weight', 'kcal', 'sugar', 'protein', 'fat', 'sodium']);
   });
 
-  test('영양성분표 엑셀: 피자 시트 Pizza→크러스트→영양 그룹→함유알레르기 순서', () => {
-    const pizzaIdx = labelExportSrc.indexOf("'Pizza'");
+  test('영양성분표 엑셀: 피자 시트 피자→크러스트→영양 그룹→함유알레르기 순서', () => {
+    const pizzaIdx = labelExportSrc.search(/\['피자',\s*'크러스트'/);
     const crustIdx = labelExportSrc.indexOf("'크러스트'");
     const groupIdx = labelExportSrc.indexOf('...groups.flatMap(group => [group.label');
     const allergenIdx = labelExportSrc.indexOf("'함유된 알레르기 유발물질'");

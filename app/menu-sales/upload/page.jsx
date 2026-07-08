@@ -51,6 +51,9 @@ export default function Page() {
       ) : (
         <UploadPreview
           period={safePreview.period}
+          headerColumns={safePreview.headerColumns}
+          revenueSummary={safePreview.revenueSummary}
+          revenueWarningRows={safePreview.revenueWarningRows}
           classifiedRows={safePreview.classifiedRows}
           groupedIssues={safePreview.groupedIssues}
           onCancel={handleCancel}

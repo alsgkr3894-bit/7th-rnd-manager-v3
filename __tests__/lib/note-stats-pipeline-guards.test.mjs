@@ -22,7 +22,8 @@ jest.unstable_mockModule('@/lib/recipe', () => ({
   calcMarginRate: jest.fn(() => null),
 }));
 
-const { getNoteDetailStats, getNoteKpi, getPipelineStats } = await import('../../lib/stats/note-stats.js');
+const { getNoteDetailStats, getNoteKpi, getPipelineStats } =
+  await import('../../lib/stats/note-stats.js');
 
 function toDateOnly(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
@@ -72,7 +73,12 @@ describe('note stats display guards', () => {
     const previousMonthInputDate = toDateOnly(new Date(now.getFullYear(), now.getMonth() - 1, 7));
 
     getAll.mockResolvedValue([
-      { status: undefined, category: undefined, createdAt: previousMonth, testDate: thisMonthInputDate },
+      {
+        status: undefined,
+        category: undefined,
+        createdAt: previousMonth,
+        testDate: thisMonthInputDate,
+      },
       { status: '', category: '', createdAt: thisMonth, testDate: previousMonthInputDate },
       { status: '출시', category: '피자', createdAt: previousMonth },
       { status: 7, category: 9, createdAt: 300 },

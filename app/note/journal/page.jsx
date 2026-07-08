@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { SearchBox } from '@/components/ui/SearchBox';
 import { showToast } from '@/components/Toast';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { addNote, getAllNotesCached, updateNote } from '@/lib/note';
@@ -15,6 +16,7 @@ import { todayLocalDate, formatLocalDateInput } from '@/lib/date/local-date';
 import { parseNoteQuickDate } from '@/lib/note/date-input';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { expandOccurrences } from '@/app/note/calendar/_recurrence';
+import { buildNoteIdeaGroups, collectLatestRoundNotePhotos } from '../noteIdeaGroups';
 import { JournalEntryEditor } from './_JournalEntryEditor';
 
 // 노트의 표시용 날짜 키. testDate는 이미 YYYY-MM-DD(정규형)이라 그대로 쓰고,
@@ -27,9 +29,7 @@ function noteDayKey(n) {
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 const EMPTY_JOURNAL_FORM = {
   work: '',
-  schedule: '',
-  tasting: '',
-  issue: '',
+  result: '',
   next: '',
   photos: [],
 };
@@ -65,6 +65,44 @@ function monthLabel(month) {
   return `${year}년 ${monthNumber}월`;
 }
 
+function addDays(dateStr, days) {
+  const date = new Date(`${dateStr}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return formatLocalDateInput(date);
+}
+
+function weekBounds(dateStr) {
+  const date = new Date(`${dateStr}T00:00:00`);
+  const mondayOffset = (date.getDay() + 6) % 7;
+  const start = addDays(dateStr, -mondayOffset);
+  return { start, end: addDays(start, 6) };
+}
+
+function normalizeRange(start, end) {
+  const safeStart = /^\d{4}-\d{2}-\d{2}$/.test(String(start || '')) ? start : todayLocalDate();
+  const safeEnd = /^\d{4}-\d{2}-\d{2}$/.test(String(end || '')) ? end : safeStart;
+  return safeStart <= safeEnd
+    ? { start: safeStart, end: safeEnd }
+    : { start: safeEnd, end: safeStart };
+}
+
+function printRangeForMode(mode, { date, month, customStart, customEnd }) {
+  if (mode === 'week') return weekBounds(date);
+  if (mode === 'month') return monthBounds(month);
+  if (mode === 'custom') return normalizeRange(customStart, customEnd);
+  return { start: date, end: date };
+}
+
+function printRangeLabel(mode, range) {
+  if (range.start === range.end) return toDateLabel(range.start);
+  const prefix = mode === 'week' ? '주간' : mode === 'month' ? '월간' : '선택기간';
+  return `${prefix} ${range.start} ~ ${range.end}`;
+}
+
+function isWithinRange(day, range) {
+  return Boolean(day && day >= range.start && day <= range.end);
+}
+
 function occursOnDate(schedule, date) {
   return expandOccurrences(schedule, date, date).includes(date);
 }
@@ -79,11 +117,129 @@ function buildScheduleText(schedules) {
   return schedules.map(scheduleLine).filter(Boolean).join('\n');
 }
 
+function mergeJournalText(...values) {
+  return values
+    .map(value => String(value || '').trim())
+    .filter(Boolean)
+    .join('\n');
+}
+
 function hasJournalText(form) {
   return (
     Object.entries(form).some(([key, value]) => key !== 'photos' && String(value || '').trim()) ||
     (Array.isArray(form.photos) && form.photos.length > 0)
   );
+}
+
+function journalPhotoKey(photo) {
+  return [photo?.data, photo?.caption, photo?.name].map(value => String(value || '')).join('|');
+}
+
+function mergeJournalPhotos(...photoGroups) {
+  const merged = [];
+  const seen = new Set();
+  for (const group of photoGroups) {
+    const photos = Array.isArray(group) ? group : [];
+    for (const photo of photos) {
+      if (!photo || typeof photo !== 'object' || !photo.data) continue;
+      const key = journalPhotoKey(photo);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(photo);
+    }
+  }
+  return merged;
+}
+
+function collectJournalSourcePhotos(dayNotes, journalEntry) {
+  const notes = Array.isArray(dayNotes) ? dayNotes : [];
+  const sourcePhotoGroups = notes
+    .filter(note => note?.id !== journalEntry?.id && note?.noteType !== JOURNAL_NOTE_TYPE)
+    .map(note => note.photos);
+  return mergeJournalPhotos(...sourcePhotoGroups);
+}
+
+function buildJournalRelatedPhotoLookup(notes) {
+  const source = Array.isArray(notes) ? notes : [];
+  const lookup = new Map();
+  const groups = buildNoteIdeaGroups(source, source);
+
+  for (const group of groups) {
+    const photos = collectLatestRoundNotePhotos(group.notes, 99);
+    for (const note of group.notes || []) {
+      if (note?.id) lookup.set(note.id, photos);
+    }
+  }
+
+  return lookup;
+}
+
+function withRelatedJournalPhotos(dayNotes, allNotes) {
+  const notes = Array.isArray(dayNotes) ? dayNotes : [];
+  if (!notes.length) return notes;
+
+  const relatedPhotosByNoteId = buildJournalRelatedPhotoLookup(allNotes);
+  return notes.map(note => {
+    const relatedPhotos = note?.id ? relatedPhotosByNoteId.get(note.id) : [];
+    return {
+      ...note,
+      photos: mergeJournalPhotos(note?.photos, relatedPhotos),
+    };
+  });
+}
+
+function journalFormFromEntry(journalEntry, sourcePhotos = []) {
+  if (!journalEntry) {
+    return sourcePhotos.length
+      ? { ...EMPTY_JOURNAL_FORM, photos: sourcePhotos }
+      : EMPTY_JOURNAL_FORM;
+  }
+  return {
+    work: journalEntry.testContent || '',
+    result: mergeJournalText(journalEntry.tasteEval, journalEntry.improvements),
+    next: mergeJournalText(journalEntry.nextAction, journalEntry.materials),
+    photos: mergeJournalPhotos(
+      Array.isArray(journalEntry.photos) ? journalEntry.photos : [],
+      sourcePhotos
+    ),
+  };
+}
+
+function buildJournalNoteFromForm(date, form, existingEntry) {
+  const title = existingEntry?.title || `${date} 연구일지`;
+  return {
+    ...(existingEntry || {}),
+    title,
+    menuName: existingEntry?.menuName || title,
+    testDate: date,
+    category: existingEntry?.category || '기타',
+    noteType: JOURNAL_NOTE_TYPE,
+    status: existingEntry?.status || NOTE_STATUS.TEST,
+    testContent: String(form.work || '').trim(),
+    materials: '',
+    tasteEval: String(form.result || '').trim(),
+    improvements: '',
+    nextAction: String(form.next || '').trim(),
+    tags: existingEntry?.tags || '연구일지',
+    photos: Array.isArray(form.photos) ? form.photos : [],
+  };
+}
+
+function mergeJournalPrintNotesForDate(notes, currentJournalNote, targetDate) {
+  if (!currentJournalNote) return notes;
+  let replaced = false;
+  const merged = notes.map(note => {
+    if (note.noteType !== JOURNAL_NOTE_TYPE || noteDayKey(note) !== targetDate) return note;
+    replaced = true;
+    return { ...note, ...currentJournalNote, id: note.id };
+  });
+  return replaced
+    ? merged
+    : [...merged, currentJournalNote].sort(
+        (a, b) =>
+          noteDayKey(a).localeCompare(noteDayKey(b)) ||
+          String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
+      );
 }
 
 function MonthEntrySummary({ entry }) {
@@ -99,7 +255,65 @@ function MonthEntrySummary({ entry }) {
   return <span>{entry.notes[0]?.title || entry.notes[0]?.menuName || '기록 보기'}</span>;
 }
 
-function JournalMonthList({ month, entries, selectedDate, onMonthChange, onSelectDate }) {
+function noteSearchText(note) {
+  const photoText = (Array.isArray(note?.photos) ? note.photos : [])
+    .map(photo => [photo?.caption, photo?.name].filter(Boolean).join(' '))
+    .join(' ');
+  return [
+    note?.title,
+    note?.menuName,
+    note?.menuCode,
+    note?.category,
+    note?.status,
+    note?.noteType,
+    note?.testContent,
+    note?.materials,
+    note?.tasteEval,
+    note?.improvements,
+    note?.nextAction,
+    note?.tags,
+    photoText,
+  ]
+    .map(value => String(value || '').toLowerCase())
+    .join(' ');
+}
+
+function scheduleSearchText(schedule) {
+  return [
+    schedule?.title,
+    schedule?.description,
+    schedule?.type,
+    schedule?.time,
+    schedule?._occurrenceDate,
+  ]
+    .map(value => String(value || '').toLowerCase())
+    .join(' ');
+}
+
+function journalEntryMatches(entry, query) {
+  const q = String(query || '')
+    .trim()
+    .toLowerCase();
+  if (!q) return true;
+  const haystack = [
+    entry?.date,
+    noteSearchText(entry?.journal),
+    ...(entry?.notes || []).map(noteSearchText),
+    ...(entry?.schedules || []).map(scheduleSearchText),
+  ].join(' ');
+  return haystack.includes(q);
+}
+
+function JournalMonthList({
+  month,
+  entries,
+  totalEntries,
+  selectedDate,
+  onMonthChange,
+  onSelectDate,
+  search,
+  onSearch,
+}) {
   return (
     <section className="card" style={{ padding: 18, marginTop: 16 }}>
       <div
@@ -115,11 +329,18 @@ function JournalMonthList({ month, entries, selectedDate, onMonthChange, onSelec
         <div>
           <div className="card-title">월별 목록</div>
           <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
-            {monthLabel(month)} · {entries.length}일 기록
+            {monthLabel(month)} · {entries.length}일 표시 / 전체 {totalEntries}일
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <button className="btn sm" type="button" onClick={() => onMonthChange(shiftMonth(month, -1))}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ width: 220, flex: '1 1 220px', minWidth: 0 }}>
+            <SearchBox value={search} onChange={onSearch} placeholder="일지·노트·일정 검색" />
+          </div>
+          <button
+            className="btn sm"
+            type="button"
+            onClick={() => onMonthChange(shiftMonth(month, -1))}
+          >
             이전 달
           </button>
           <input
@@ -131,13 +352,17 @@ function JournalMonthList({ month, entries, selectedDate, onMonthChange, onSelec
             }}
             style={{ width: 132 }}
           />
-          <button className="btn sm" type="button" onClick={() => onMonthChange(shiftMonth(month, 1))}>
+          <button
+            className="btn sm"
+            type="button"
+            onClick={() => onMonthChange(shiftMonth(month, 1))}
+          >
             다음 달
           </button>
         </div>
       </div>
 
-      {entries.length === 0 ? (
+      {totalEntries === 0 ? (
         <div
           style={{
             border: '1px dashed var(--border)',
@@ -149,6 +374,19 @@ function JournalMonthList({ month, entries, selectedDate, onMonthChange, onSelec
           }}
         >
           이 달에 저장된 연구일지나 일정이 없습니다.
+        </div>
+      ) : entries.length === 0 ? (
+        <div
+          style={{
+            border: '1px dashed var(--border)',
+            borderRadius: 8,
+            padding: '18px 14px',
+            textAlign: 'center',
+            color: 'var(--text-3)',
+            fontSize: 13,
+          }}
+        >
+          검색 결과가 없습니다. 다른 키워드로 검색해보세요.
         </div>
       ) : (
         <div style={{ display: 'grid', gap: 8 }}>
@@ -173,7 +411,9 @@ function JournalMonthList({ month, entries, selectedDate, onMonthChange, onSelec
                   fontFamily: 'inherit',
                 }}
               >
-                <strong style={{ fontSize: 13, color: selected ? 'var(--accent-text)' : 'var(--text-1)' }}>
+                <strong
+                  style={{ fontSize: 13, color: selected ? 'var(--accent-text)' : 'var(--text-1)' }}
+                >
                   {toDateLabel(entry.date)}
                 </strong>
                 <span style={{ minWidth: 0, display: 'grid', gap: 4 }}>
@@ -188,8 +428,12 @@ function JournalMonthList({ month, entries, selectedDate, onMonthChange, onSelec
                     }}
                   >
                     {entry.journal && <span className="chip">연구일지</span>}
-                    {entry.notes.length > 0 && <span className="chip">노트 {entry.notes.length}</span>}
-                    {entry.schedules.length > 0 && <span className="chip">일정 {entry.schedules.length}</span>}
+                    {entry.notes.length > 0 && (
+                      <span className="chip">노트 {entry.notes.length}</span>
+                    )}
+                    {entry.schedules.length > 0 && (
+                      <span className="chip">일정 {entry.schedules.length}</span>
+                    )}
                   </span>
                   <span
                     style={{
@@ -221,11 +465,19 @@ export default function Page() {
   const [month, setMonth] = useState(() => date.slice(0, 7));
   const [quickDateDraft, setQuickDateDraft] = useState('');
   const [quickDateError, setQuickDateError] = useState(false);
+  const [search, setSearch] = useState('');
+  const [printMode, setPrintMode] = useState('day');
+  const [customStart, setCustomStart] = useState(() => todayLocalDate());
+  const [customEnd, setCustomEnd] = useState(() => todayLocalDate());
   const [journalForm, setJournalForm] = useState(EMPTY_JOURNAL_FORM);
   const [saving, setSaving] = useState(false);
 
   // date 변경은 re-fetch 없이 JS 필터만 하므로 deps 불필요
-  const { data: notes = [], loading, reload: reloadNotes } = useDBLoad(() => getAllNotesCached(), {
+  const {
+    data: notes = [],
+    loading,
+    reload: reloadNotes,
+  } = useDBLoad(() => getAllNotesCached(), {
     initialData: [],
     onError: err => console.error('[note/journal] load failed', err),
   });
@@ -234,12 +486,16 @@ export default function Page() {
     onError: err => console.error('[note/journal] schedules load failed', err),
   });
 
-  const dayNotes = useMemo(
+  const rawDayNotes = useMemo(
     () =>
       notes
         .filter(n => noteDayKey(n) === date)
         .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')),
     [notes, date]
+  );
+  const dayNotes = useMemo(
+    () => withRelatedJournalPhotos(rawDayNotes, notes),
+    [rawDayNotes, notes]
   );
 
   useEffect(() => {
@@ -313,25 +569,48 @@ export default function Page() {
       });
   }, [notes, schedules, month]);
 
+  const filteredMonthEntries = useMemo(
+    () => monthEntries.filter(entry => journalEntryMatches(entry, search)),
+    [monthEntries, search]
+  );
+
   const journalEntry = useMemo(
     () => dayNotes.find(note => note.noteType === JOURNAL_NOTE_TYPE) || null,
     [dayNotes]
   );
 
+  const currentJournalPrintNote = useMemo(
+    () =>
+      hasJournalText(journalForm)
+        ? buildJournalNoteFromForm(date, journalForm, journalEntry)
+        : null,
+    [date, journalForm, journalEntry]
+  );
+
+  const printRange = useMemo(
+    () => printRangeForMode(printMode, { date, month, customStart, customEnd }),
+    [printMode, date, month, customStart, customEnd]
+  );
+  const printRangeTitle = useMemo(
+    () => printRangeLabel(printMode, printRange),
+    [printMode, printRange]
+  );
+  const printPeriodNotes = useMemo(() => {
+    const periodNotes = notes
+      .filter(note => isWithinRange(noteDayKey(note), printRange))
+      .sort(
+        (a, b) =>
+          noteDayKey(a).localeCompare(noteDayKey(b)) ||
+          String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
+      );
+    if (!currentJournalPrintNote || !isWithinRange(date, printRange)) return periodNotes;
+    return mergeJournalPrintNotesForDate(periodNotes, currentJournalPrintNote, date);
+  }, [notes, printRange, currentJournalPrintNote, date]);
+
   useEffect(() => {
-    if (!journalEntry) {
-      setJournalForm(EMPTY_JOURNAL_FORM);
-      return;
-    }
-    setJournalForm({
-      work: journalEntry.testContent || '',
-      schedule: journalEntry.materials || '',
-      tasting: journalEntry.tasteEval || '',
-      issue: journalEntry.improvements || '',
-      next: journalEntry.nextAction || '',
-      photos: Array.isArray(journalEntry.photos) ? journalEntry.photos : [],
-    });
-  }, [date, journalEntry]);
+    const sourcePhotos = collectJournalSourcePhotos(dayNotes, journalEntry);
+    setJournalForm(journalFormFromEntry(journalEntry, sourcePhotos));
+  }, [date, dayNotes, journalEntry]);
 
   function goPrev() {
     const idx = datesWithNotes.indexOf(date);
@@ -383,7 +662,7 @@ export default function Page() {
     if (!text) return;
     setJournalForm(prev => ({
       ...prev,
-      schedule: prev.schedule?.trim() ? `${prev.schedule.trim()}\n${text}` : text,
+      next: prev.next?.trim() ? `${prev.next.trim()}\n${text}` : text,
     }));
   }
 
@@ -394,6 +673,7 @@ export default function Page() {
       return;
     }
     const title = `${date} 연구일지`;
+    const sourcePhotos = collectJournalSourcePhotos(dayNotes, journalEntry);
     const payload = {
       title,
       menuName: title,
@@ -402,12 +682,12 @@ export default function Page() {
       noteType: JOURNAL_NOTE_TYPE,
       status: journalEntry?.status || NOTE_STATUS.TEST,
       testContent: journalForm.work.trim(),
-      materials: journalForm.schedule.trim(),
-      tasteEval: journalForm.tasting.trim(),
-      improvements: journalForm.issue.trim(),
+      materials: '',
+      tasteEval: journalForm.result.trim(),
+      improvements: '',
       nextAction: journalForm.next.trim(),
       tags: '연구일지',
-      photos: Array.isArray(journalForm.photos) ? journalForm.photos : [],
+      photos: mergeJournalPhotos(journalForm.photos, sourcePhotos),
     };
     setSaving(true);
     try {
@@ -426,9 +706,13 @@ export default function Page() {
   return (
     <main className="main">
       <PageHeader
-        breadcrumb={['메뉴개발노트', '연구일지']}
+        breadcrumb={['RND', '연구일지']}
         title="연구일지"
-        sub={loading ? '로딩 중…' : `${dateLabel} · 기록 ${dayNotes.length}건 · 일정 ${daySchedules.length}건`}
+        sub={
+          loading
+            ? '로딩 중…'
+            : `${dateLabel} · 기록 ${dayNotes.length}건 · 일정 ${daySchedules.length}건`
+        }
         actions={
           <div
             style={{
@@ -494,19 +778,58 @@ export default function Page() {
             <button className="btn" onClick={goNext} disabled={!hasNext} title="다음 일자">
               <Icon.arrowDown style={{ width: 14, height: 14, transform: 'rotate(-90deg)' }} />
             </button>
-            {dayNotes.length > 0 && (
-              <button
-                className="btn primary"
-                onClick={() =>
-                  openPrintWindow(buildJournalPrintHtml(dateLabel, dayNotes), {
+            <select
+              className="form-input"
+              value={printMode}
+              onChange={event => setPrintMode(event.target.value)}
+              style={{ width: 118, minHeight: 40, flex: '0 1 118px' }}
+              title="PDF 출력 기간"
+            >
+              <option value="day">오늘/선택일</option>
+              <option value="week">주간</option>
+              <option value="month">월간</option>
+              <option value="custom">선택기간</option>
+            </select>
+            {printMode === 'custom' && (
+              <>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={customStart}
+                  onChange={event => event.target.value && setCustomStart(event.target.value)}
+                  style={{ width: 142, minHeight: 40, flex: '0 1 142px' }}
+                  title="PDF 시작일"
+                />
+                <input
+                  type="date"
+                  className="form-input"
+                  value={customEnd}
+                  onChange={event => event.target.value && setCustomEnd(event.target.value)}
+                  style={{ width: 142, minHeight: 40, flex: '0 1 142px' }}
+                  title="PDF 종료일"
+                />
+              </>
+            )}
+            <button
+              className="btn primary"
+              disabled={printPeriodNotes.length === 0}
+              onClick={() =>
+                openPrintWindow(
+                  buildJournalPrintHtml(printRangeTitle, printPeriodNotes, {
+                    title: printMode === 'day' ? '오늘 한 일 보고서' : '연구일지 종합본',
+                  }),
+                  {
                     width: 800,
                     height: 900,
-                  })
-                }
-              >
-                <Icon.download style={{ width: 14, height: 14 }} /> 보고서 PDF
-              </button>
-            )}
+                  }
+                )
+              }
+              title={
+                printPeriodNotes.length === 0 ? 'PDF로 출력할 연구일지가 없습니다' : printRangeTitle
+              }
+            >
+              <Icon.download style={{ width: 14, height: 14 }} /> 종합 PDF
+            </button>
           </div>
         }
       />
@@ -543,14 +866,20 @@ export default function Page() {
 
           <JournalMonthList
             month={month}
-            entries={monthEntries}
+            entries={filteredMonthEntries}
+            totalEntries={monthEntries.length}
             selectedDate={date}
             onMonthChange={setMonth}
             onSelectDate={setDate}
+            search={search}
+            onSearch={setSearch}
           />
 
           {dayNotes.length === 0 ? (
-            <div className="card" style={{ padding: '32px 24px', textAlign: 'center', marginTop: 16 }}>
+            <div
+              className="card"
+              style={{ padding: '32px 24px', textAlign: 'center', marginTop: 16 }}
+            >
               <div style={{ fontSize: 14, color: 'var(--text-3)' }}>
                 {date}에 저장된 연구일지나 테스트 노트가 없습니다.
               </div>

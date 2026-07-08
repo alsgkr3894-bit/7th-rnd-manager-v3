@@ -35,7 +35,7 @@ describe('sample form body structure', () => {
     expect(basicSource).toContain('<ComboBox');
     expect(basicSource).toContain('<SegGroup');
     expect(basicSource).toContain('샘플 작성 날짜');
-    expect(basicSource).toContain("type=\"date\"");
+    expect(basicSource).toContain('type="date"');
     expect(basicSource).toContain('parseNoteQuickDate');
     expect(basicSource).toContain('placeholder="240502"');
     expect(basicSource).toContain('inputMode="numeric"');
@@ -84,5 +84,18 @@ describe('sample form body structure', () => {
     expect(journalSource).toContain('placeholder="240502"');
     expect(journalSource).toContain('inputMode="numeric"');
     expect(journalSource).toContain("title={quickDateError ? '날짜 확인' : '빠른 날짜 입력'}");
+  });
+
+  test('journal exposes month-list search and period PDF output controls', () => {
+    expect(journalSource).toContain("import { SearchBox } from '@/components/ui/SearchBox'");
+    expect(journalSource).toContain('journalEntryMatches(entry, search)');
+    expect(journalSource).toContain('일지·노트·일정 검색');
+    expect(journalSource).toContain('printRangeForMode(printMode');
+    expect(journalSource).toContain('오늘/선택일');
+    expect(journalSource).toContain('주간');
+    expect(journalSource).toContain('월간');
+    expect(journalSource).toContain('선택기간');
+    expect(journalSource).toContain('연구일지 종합본');
+    expect(journalSource).toContain('종합 PDF');
   });
 });

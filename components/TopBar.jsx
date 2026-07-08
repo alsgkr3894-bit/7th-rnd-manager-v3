@@ -124,9 +124,9 @@ export default function TopBar({
         <kbd aria-hidden="true">⌘K</kbd>
       </button>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
+      <div className="topbar-actions">
         <button
-          className="icon-btn"
+          className="icon-btn topbar-action-note"
           aria-label="새 노트 작성"
           onClick={() => {
             if (canEdit) router.push('/note/write');

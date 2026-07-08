@@ -3,7 +3,12 @@ import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useMounted } from '@/hooks/useMounted';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
-import { STATUSES, getAllNotesCached, updateNoteChainStatus, bulkUpdateBoardOrder } from '@/lib/note';
+import {
+  STATUSES,
+  getAllNotesCached,
+  updateNoteChainStatus,
+  bulkUpdateBoardOrder,
+} from '@/lib/note';
 import { filterKanbanNotes } from '@/lib/note/filter';
 import { buildKanbanBoardCards } from '@/lib/note/kanban';
 
@@ -100,9 +105,7 @@ export function useKanbanBoard({ canEdit = false } = {}) {
     async (note, newStatus, { bounce = true } = {}) => {
       if (!canEdit) return;
       const optimisticIds = new Set(note._kanbanGroupIds || [note.id]);
-      setNotes(prev =>
-        prev.map(n => (optimisticIds.has(n.id) ? { ...n, status: newStatus } : n))
-      );
+      setNotes(prev => prev.map(n => (optimisticIds.has(n.id) ? { ...n, status: newStatus } : n)));
       try {
         await updateNoteChainStatus(note.id, newStatus);
         showToast(`메뉴 상태 → ${newStatus}`, 'ok');

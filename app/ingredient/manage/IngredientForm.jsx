@@ -228,11 +228,16 @@ export function IngredientForm({
             <OriginSection
               origin={form.origin || []}
               originHidden={form.originHidden}
+              originNone={form.originNone}
               originSuggestions={originSuggestions}
               onSet={set}
             />
 
-            <AllergenSection allergens={form.allergens || []} onSet={set} />
+            <AllergenSection
+              allergens={form.allergens || []}
+              allergenNone={form.allergenNone}
+              onSet={set}
+            />
 
             <PhotoSection
               formPhotos={formPhotos}

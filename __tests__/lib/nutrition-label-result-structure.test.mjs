@@ -41,6 +41,16 @@ describe('nutrition label result structure', () => {
     expect(resultSource).toContain('buildPizzaSheet(ctx)');
     expect(resultSource).toContain('exportNutritionLabelToExcel');
     expect(resultSource).toContain('printNutritionLabelAll');
+    expect(resultSource).toContain('saveLabelMenuNames(next)');
+    expect(resultSource).toContain('LABEL_MENU_ORDER_KEY');
+    expect(resultSource).toContain('saveOrder(LABEL_MENU_ORDER_KEY, next)');
+    expect(resultSource).toContain('<MenuNameEditModal');
+    expect(resultSource).toContain('원산지 출력명 가져오기');
+    expect(resultSource).toContain('setMenuNameEditMenus');
+    expect(resultSource).not.toContain('augmentWithDerived');
+    expect(resultSource).not.toContain('getAllCompositions');
+    expect(resultSource).not.toContain('!excludedMenuCodes.has(m.menuCode)');
+    expect(resultSource).toContain('buildOriginStatementSheet(origins, ingredientNameOverrides)');
     expect(resultSource).not.toContain('const SUB_TABS');
     expect(resultSource).not.toContain('function PizzaTable');
     expect(resultSource).not.toContain('function PizzaSliceTable');
@@ -49,22 +59,24 @@ describe('nutrition label result structure', () => {
     expect(resultSource).not.toContain('const BEVERAGE_COLS');
   });
 
-  test('nutrition label allergen and origin mapping include derived menu compositions', () => {
+  test('nutrition label allergen and origin mapping excludes legacy derived menu compositions', () => {
     const mapCalls = [...resultSource.matchAll(/buildIngredientMenuMap\(\{[\s\S]*?\}\)/g)].map(
       match => match[0]
     );
 
     expect(mapCalls.length).toBeGreaterThanOrEqual(2);
     expect(mapCalls[0]).toContain('edges: []');
-    expect(mapCalls[0]).toContain('compositions');
+    expect(mapCalls[0]).toContain('compositions: []');
     expect(mapCalls[1]).toContain('edges: costEdges');
-    expect(mapCalls[1]).toContain('compositions');
+    expect(mapCalls[1]).toContain('compositions: []');
   });
 
   test('nutrition label controls and tables own presentation details', () => {
     expect(controlsSource).toContain('export const NUTRITION_LABEL_TABS');
     expect(controlsSource).toContain('export function NutritionLabelTabs');
     expect(controlsSource).toContain('export function NutritionLabelActions');
+    expect(controlsSource).toContain('extraActions');
+    expect(controlsSource).toContain('출력명·순서');
     expect(controlsSource).toContain('export function PizzaViewControls');
     expect(controlsSource).toContain('<ExportResultLoading');
     expect(controlsSource).toContain('<ExportResultTabs');
@@ -87,10 +99,13 @@ describe('nutrition label result structure', () => {
 
     expect(pizzaTableSource).toContain('export function PizzaNutritionTable');
     expect(pizzaTableSource).toContain('영양성분표 (피자) — 150g 기준');
+    expect(pizzaTableSource).toContain('PIZZA_150_COLS');
+    expect(pizzaTableSource).toContain('중량단위');
     expect(pizzaTableSource).toContain('GroupedMenuNameCell');
     expect(pizzaSliceTableSource).toContain('export function PizzaSliceNutritionTable');
-    expect(pizzaSliceTableSource).toContain('NUTRITION_COLUMNS');
-    expect(pizzaSliceTableSource).toContain('1회제공');
+    expect(pizzaSliceTableSource).toContain('PIZZA_SLICE_COLS');
+    expect(pizzaSliceTableSource).toContain('1회조각수');
+    expect(pizzaSliceTableSource).toContain('총조각중량');
     expect(simpleTableSource).toContain('export function SimpleNutritionTable');
     expect(simpleTableSource).toContain('NutritionLabelColumnHeader');
     expect(setHalfTableSource).toContain('export function SetHalfNutritionTable');

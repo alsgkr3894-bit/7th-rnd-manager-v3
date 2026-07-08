@@ -6,7 +6,15 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { downloadCsv, printCurrentPageWithDownloadDate } from '@/lib/download';
-import { getSampleById, updateSample, sampleNamesOf, RATING_LABELS } from '@/lib/sample';
+import {
+  SAMPLE_RECORD_FILE_LABEL,
+  SAMPLE_RECORD_LABEL,
+  RATING_LABELS,
+  getSampleById,
+  sampleIngredientGroupName,
+  sampleNamesOf,
+  updateSample,
+} from '@/lib/sample';
 import { SampleFormBody, SAMPLE_INIT } from '../_SampleFormBody';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
@@ -41,7 +49,12 @@ export default function Page() {
           return;
         }
         const names = sampleNamesOf(rec);
-        setForm({ ...SAMPLE_INIT, ...rec, sampleNames: names.length ? names : [''] });
+        setForm({
+          ...SAMPLE_INIT,
+          ...rec,
+          ingredientGroupName: rec.ingredientGroupName || sampleIngredientGroupName(rec),
+          sampleNames: names.length ? names : [''],
+        });
       })
       .catch(err => {
         if (alive) console.error('[SampleDetail] load failed', err);
@@ -59,9 +72,8 @@ export default function Page() {
   async function handleSave() {
     if (!canEdit) return;
     if (saving) return;
-    const names = (form.sampleNames || []).map(s => (s || '').trim()).filter(Boolean);
-    if (!form.title.trim() || !names.length) {
-      showToast('제목과 샘플명은 필수입니다', 'warn');
+    if (!form.title.trim()) {
+      showToast('제목은 필수입니다', 'warn');
       return;
     }
     setSaving(true);
@@ -78,6 +90,8 @@ export default function Page() {
   function exportSampleCsv() {
     const headers = [
       '제목',
+      '기록 구분',
+      '식자재 묶음',
       '샘플명',
       '카테고리',
       '수령일',
@@ -102,6 +116,8 @@ export default function Page() {
       .join(', ');
     const row = [
       form.title || '',
+      form.recordType || '',
+      form.ingredientGroupName || '',
       sampleNamesOf(form).join(', '),
       form.category || '',
       form.testDate || '',
@@ -118,12 +134,14 @@ export default function Page() {
       linkedProducts,
       (form.photos || []).length,
     ];
-    downloadCsv([headers, row], `샘플상세_${sampleId || '상세'}.csv`);
+    downloadCsv([headers, row], `${SAMPLE_RECORD_FILE_LABEL}_상세_${sampleId || '상세'}.csv`);
   }
 
   async function copyReportText() {
     const lines = [
-      `[샘플 보고] ${form.title || '-'}`,
+      `[식자재 이슈 및 테스트 /샘플기록] ${form.title || '-'}`,
+      `기록 구분: ${form.recordType || '-'}`,
+      `식자재 묶음: ${form.ingredientGroupName || '-'}`,
       `샘플명: ${sampleNamesOf(form).join(', ') || '-'}`,
       `카테고리: ${form.category || '-'}`,
       `수령일: ${form.testDate || '-'}`,
@@ -161,8 +179,8 @@ export default function Page() {
   return (
     <main className="main">
       <PageHeader
-        breadcrumb={['샘플기록', '샘플 수정']}
-        title="샘플 수정"
+        breadcrumb={[SAMPLE_RECORD_LABEL, '기록 수정']}
+        title="기록 수정"
         sub={form.title || ''}
         actions={
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -174,7 +192,11 @@ export default function Page() {
             </button>
             <button
               className="btn no-print"
-              onClick={() => printCurrentPageWithDownloadDate(`샘플상세_${sampleId || '상세'}`)}
+              onClick={() =>
+                printCurrentPageWithDownloadDate(
+                  `${SAMPLE_RECORD_FILE_LABEL}_상세_${sampleId || '상세'}`
+                )
+              }
               title="인쇄"
             >
               인쇄

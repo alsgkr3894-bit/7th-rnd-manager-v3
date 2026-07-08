@@ -8,7 +8,6 @@ import {
   getAllEdges,
   getAllToppings,
   getAllSetCompositions,
-  getAllCompositions,
 } from '@/lib/nutrition/values/store';
 import { getAllEdges as getCostEdges } from '@/lib/cost/edge-dough';
 import { getAllMenuMaster } from '@/lib/menu-master';
@@ -23,15 +22,21 @@ import {
   buildToppingAllergenMap,
 } from '@/lib/nutrition/allergen/aggregate';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
-import { loadMenuNames, applyMenuName } from '@/lib/nutrition/menu-name-override';
+import {
+  loadLabelMenuNames,
+  saveLabelMenuNames,
+  loadMenuNames,
+  applyMenuName,
+} from '@/lib/nutrition/menu-name-override';
 import { loadIngredientNames } from '@/lib/nutrition/ingredient-name-override';
 import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
-import { MENU_ORDER_KEY, loadOrder } from '@/lib/nutrition/order';
+import { LABEL_MENU_ORDER_KEY, loadOrder, saveOrder } from '@/lib/nutrition/order';
 import { loadSliceCounts, saveSliceCounts } from '@/lib/nutrition/slice-config';
 import { buildOriginsFromIngredients } from '@/lib/nutrition/origin/build';
 import { buildOriginStatementSheet } from '@/lib/nutrition/origin/output-sheets';
 import { SliceConfigModal } from '@/components/nutrition/SliceConfigModal';
-import { asObjectArray } from '@/lib/ui/prop-guards';
+import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
+import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import {
   buildPizzaSheet,
   buildPizzaSliceSheet,
@@ -40,7 +45,6 @@ import {
   buildSetHalfSheet,
   buildBeverageSheet,
   sortNutritionLabelMenus,
-  augmentWithDerived,
 } from '@/lib/nutrition/label/build';
 import { exportNutritionLabelToExcel } from '@/lib/nutrition/label/export';
 import { printNutritionLabelAll } from '@/lib/nutrition/label/print';
@@ -70,6 +74,10 @@ export default function NutritionLabelResult() {
   const [pizzaView, setPizzaView] = useState('150g'); // '150g' | 'slice'
   const [sliceCounts, setSliceCounts] = useState({});
   const [sliceModalOpen, setSliceModalOpen] = useState(false);
+  const [menuNameEditOpen, setMenuNameEditOpen] = useState(false);
+  const [menuNameOverrides, setMenuNameOverrides] = useState(() => loadLabelMenuNames());
+  const [labelMenuOrder, setLabelMenuOrder] = useState(() => loadOrder(LABEL_MENU_ORDER_KEY));
+  const [menuNameEditMenus, setMenuNameEditMenus] = useState([]);
   const [labelContext, setLabelContext] = useState(null);
   const ctxRef = useRef(null); // { menus, rawMap, edgeMap, masterByCode, menuAllergenMap, edgeAllergenMap }
 
@@ -108,7 +116,6 @@ export default function NutritionLabelResult() {
         groups,
         costEdges,
         recipeArrays,
-        compositions,
       ] = await Promise.all([
         getAllMenuRefs(),
         getRawValueMap(),
@@ -120,7 +127,6 @@ export default function NutritionLabelResult() {
         getAllRecipeGroups(),
         getCostEdges(),
         loadMenuRecipeArrays(),
-        getAllCompositions(),
       ]);
 
       const masterByCode = Object.fromEntries(masters.map(m => [m.menuCode, m]));
@@ -138,7 +144,7 @@ export default function NutritionLabelResult() {
         detailRecipes,
         groups,
         edges: [],
-        compositions,
+        compositions: [],
       });
       const menuAllergenMap = buildMenuAllergenMap({ ingredients: ings, ingredientToMenus });
       const edgeAllergenMap = buildEdgeAllergenMap({ ingredients: ings, edges: costEdges });
@@ -149,48 +155,41 @@ export default function NutritionLabelResult() {
 
       // 출력 메뉴 전처리: 제외 필터 → 메뉴명 오버라이드 → 피자/사이드 우선 가나다 정렬
       const { excludedMenuCodes, excludedMenuNames } = extractExcludedMenuSets(masters);
-      const nameOverrides = loadMenuNames();
-      const menuOrder = loadOrder(MENU_ORDER_KEY);
+      const labelNameOverrides = menuNameOverrides;
+      const originNameOverrides = loadMenuNames();
+      const menuOrder = labelMenuOrder;
       const ingredientNameOverrides = loadIngredientNames();
       const { ingredientToMenus: originIngredientToMenus } = buildIngredientMenuMap({
         menuMasters: masters,
         detailRecipes,
         groups,
         edges: costEdges,
-        compositions,
+        compositions: [],
       });
       const origins = buildOriginsFromIngredients(
         asObjectArray(ings),
         originIngredientToMenus,
         excludedMenuCodes,
         excludedMenuNames,
-        nameOverrides,
+        originNameOverrides,
         masterByCode
       );
-      const baseMenus = sortNutritionLabelMenus(
-        menuRefs
-          .filter(
-            m =>
-              !excludedMenuCodes.has(m.menuCode) &&
-              !excludedMenuNames.has((m.menuName || '').trim())
-          )
-          .map(m => ({ ...m, menuName: applyMenuName(m.menuCode, m.menuName, nameOverrides) })),
-        masterByCode,
-        menuOrder
-      );
+      const baseMenus = sortNutritionLabelMenus(menuRefs, masterByCode, menuOrder);
 
-      // 파생 메뉴 병합 후 재정렬 (파생 menuRef의 category=베이스 복사로 동일 그룹 정렬)
-      const { menus: augmentedMenus, rawMap: augmentedRawMap } = augmentWithDerived({
-        menus: baseMenus,
-        rawMap,
-        compositions,
-        masterByCode,
+      const orderedOriginalMenus = sortNutritionLabelMenus(baseMenus, masterByCode, menuOrder);
+      const orderedMenus = orderedOriginalMenus.map(menu => {
+        const menuCode = asDisplayText(menu.menuCode);
+        const originalMenuName = asDisplayText(menu.originalMenuName ?? menu.menuName);
+        return {
+          ...menu,
+          originalMenuName,
+          menuName: applyMenuName(menuCode, originalMenuName, labelNameOverrides),
+        };
       });
-      const orderedMenus = sortNutritionLabelMenus(augmentedMenus, masterByCode, menuOrder);
 
       const ctx = {
         menus: orderedMenus,
-        rawMap: augmentedRawMap,
+        rawMap,
         edgeMap,
         masterByCode,
         menuAllergenMap,
@@ -203,6 +202,14 @@ export default function NutritionLabelResult() {
       if (!alive) return;
       ctxRef.current = ctx;
       setLabelContext(ctx);
+      setMenuNameEditMenus(
+        orderedOriginalMenus
+          .map((menu, index) => ({
+            menuCode: asDisplayText(menu.menuCode),
+            menuName: asDisplayText(menu.originalMenuName ?? menu.menuName, `메뉴 ${index + 1}`),
+          }))
+          .filter(menu => menu.menuCode)
+      );
       setPizzaSheet(buildPizzaSheet(ctx));
       setToppingSheet(buildToppingSheet(ctx));
       setSideSheet(buildSideSheet(ctx));
@@ -221,7 +228,7 @@ export default function NutritionLabelResult() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [menuNameOverrides, labelMenuOrder]);
 
   async function handleExcel() {
     setExporting(true);
@@ -260,12 +267,27 @@ export default function NutritionLabelResult() {
     rebuildSliceSheet(next);
   }
 
+  function applyMenuNameOverrides(next) {
+    saveLabelMenuNames(next);
+    setMenuNameOverrides(next);
+  }
+
+  function applyMenuOrder(next) {
+    saveOrder(LABEL_MENU_ORDER_KEY, next);
+    setLabelMenuOrder(next);
+  }
+
   if (loading) return <NutritionLabelLoading />;
 
   return (
     <div className="origin-result-wrap">
       <NutritionLabelTabs tab={tab} onTabChange={setTab} />
-      <NutritionLabelActions exporting={exporting} onPdf={handlePdf} onExcel={handleExcel} />
+      <NutritionLabelActions
+        exporting={exporting}
+        onPdf={handlePdf}
+        onExcel={handleExcel}
+        onEditMenuNames={() => setMenuNameEditOpen(true)}
+      />
 
       {tab === 'pizza' && (
         <PizzaViewControls
@@ -296,6 +318,21 @@ export default function NutritionLabelResult() {
           counts={sliceCounts}
           onApply={applySliceCounts}
           onClose={() => setSliceModalOpen(false)}
+        />
+      )}
+      {menuNameEditOpen && (
+        <MenuNameEditModal
+          menus={menuNameEditMenus}
+          overrides={menuNameOverrides}
+          onApply={applyMenuNameOverrides}
+          order={labelMenuOrder}
+          onApplyOrder={applyMenuOrder}
+          allowOrder
+          title="영양성분표 출력명·순서 편집"
+          subtitle="영양성분표 출력에만 반영됩니다. 원산지·알레르기 출력명과는 별도로 저장됩니다."
+          importActionLabel="원산지 출력명 가져오기"
+          onImportOverrides={() => loadMenuNames()}
+          onClose={() => setMenuNameEditOpen(false)}
         />
       )}
     </div>

@@ -29,23 +29,18 @@ export function useAllergenDerivedData({
     [allergenIngredients, search]
   );
 
-  const {
-    isExcludedMenu,
-    menuMatrixAll,
-    menuMatrix,
-    orderedAllergens,
-    allergenMatchedMenuCount,
-  } = useAllergenMatrixData({
-    allergenIngredients,
-    menuMasters,
-    baseMapData,
-    edges,
-    toppings,
-    menuOrder,
-    allergenOrder,
-    menuNameOverrides,
-    search,
-  });
+  const { isExcludedMenu, menuMatrixAll, menuMatrix, orderedAllergens, allergenMatchedMenuCount } =
+    useAllergenMatrixData({
+      allergenIngredients,
+      menuMasters,
+      baseMapData,
+      edges,
+      toppings,
+      menuOrder,
+      allergenOrder,
+      menuNameOverrides,
+      search,
+    });
 
   const detailRows = useMemo(
     () => buildAllergenDetailRows(detailRow, baseMapData, edges, allergenIngredients),

@@ -109,6 +109,10 @@ function SampleDetailMeta({ model }) {
         gap: '2px 10px',
       }}
     >
+      {model.recordType && <span style={{ fontWeight: 800 }}>{model.recordType}</span>}
+      {model.ingredientGroupName && (
+        <span style={{ fontWeight: 700, color: 'var(--text-1)' }}>{model.ingredientGroupName}</span>
+      )}
       {model.names && (
         <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{model.names}</span>
       )}

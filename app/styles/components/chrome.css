@@ -117,6 +117,15 @@
 @media (max-width: 768px) {
   .app {
     grid-template-columns: 1fr;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+  .app-main-shell {
+    height: calc(100dvh - max(68px, calc(60px + env(safe-area-inset-bottom))));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
   }
   .sidebar {
     position: fixed;
@@ -145,6 +154,19 @@
     gap: 6px;
     flex-wrap: nowrap;
   }
+  .topbar .icon-btn {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+  }
+  .topbar-actions {
+    margin-left: 0;
+    flex: 0 0 auto;
+  }
+  .topbar-actions .topbar-action-note,
+  .topbar-actions .notif-wrap {
+    display: none;
+  }
   .topbar .company-pick {
     padding: 4px 8px 4px 4px;
     font-size: 12px;
@@ -171,6 +193,18 @@
   }
   .topbar .profile .who {
     display: none;
+  }
+  .topbar .profile {
+    padding: 2px;
+    flex: 0 0 auto;
+  }
+  .topbar .profile-btn {
+    gap: 0 !important;
+    padding: 2px !important;
+  }
+  .topbar .profile .avatar {
+    width: 30px;
+    height: 30px;
   }
 
   .main {
@@ -221,6 +255,15 @@
   .card-header-actions .btn {
     flex: 1 1 auto;
     justify-content: center;
+  }
+
+  .btn {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .btn.sm {
+    padding: 9px 11px;
   }
 
   .hero-row {

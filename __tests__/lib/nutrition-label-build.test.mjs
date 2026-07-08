@@ -1,6 +1,5 @@
 import { describe, expect, test } from '@jest/globals';
 import {
-  augmentWithDerived,
   buildBeverageSheet,
   buildPizzaSheet,
   buildPizzaSliceSheet,
@@ -10,6 +9,7 @@ import {
   parseVolumeMl,
   scaleVal,
 } from '../../lib/nutrition/label/build.js';
+import { buildPosterPizzaRows } from '../../lib/nutrition/label/poster.js';
 
 const menuAllergenMap = new Map();
 
@@ -29,39 +29,27 @@ describe('nutrition label build helpers', () => {
   });
 });
 
-describe('augmentWithDerived', () => {
-  test('파생 출력 rawMap은 식자재 영양값을 더하지 않고 베이스 입력값을 복사한다', () => {
-    const { menus, rawMap } = augmentWithDerived({
-      menus: [{ menuCode: 'P-BASE', menuName: '베이스', category: '피자' }],
-      rawMap: {
-        'P-BASE__석쇠L': { weight: 100, kcal: 100, protein: 10 },
-      },
-      compositions: [
+describe('buildPosterPizzaRows', () => {
+  test('출력명이 같아도 메뉴코드가 다르면 포스터 행을 병합하지 않는다', () => {
+    const rows = buildPosterPizzaRows(
+      [
         {
-          menuCode: 'P-DERIVED',
-          menuName: '파생',
-          baseMenuCode: 'P-BASE',
-          ingredientCodes: ['ING-CHEESE'],
-          ingredientAmounts: { 'ING-CHEESE': { L: 20 } },
+          menuCode: 'P-12PCS',
+          menuName: '치킨바샤삭',
+          rows: [{ crustLabel: '석쇠', side: 'L', weight: 100, servingLabel: '1조각' }],
+        },
+        {
+          menuCode: 'P-6PCS',
+          menuName: '치킨바샤삭',
+          rows: [{ crustLabel: '석쇠', side: 'L', weight: 80, servingLabel: '1조각' }],
         },
       ],
-      ingredientNutritionMap: {
-        'ING-CHEESE': { weight: 100, kcal: 300, protein: 30 },
-      },
-      masterByCode: { 'P-BASE': { menuCode: 'P-BASE', category: '피자' } },
-    });
+      []
+    );
 
-    expect(menus).toEqual([
-      { menuCode: 'P-BASE', menuName: '베이스', category: '피자' },
-      {
-        menuCode: 'P-DERIVED',
-        menuName: '파생',
-        category: '피자',
-        displayOrder: undefined,
-        baseMenuCode: 'P-BASE',
-      },
-    ]);
-    expect(rawMap['P-DERIVED__석쇠L']).toEqual({ weight: 100, kcal: 100, protein: 10 });
+    expect(rows).toHaveLength(2);
+    expect(rows.map(row => row.menuCode)).toEqual(['P-12PCS', 'P-6PCS']);
+    expect(rows.map(row => row.sides.L.weight)).toEqual([100, 80]);
   });
 });
 
@@ -94,12 +82,19 @@ describe('buildPizzaSliceSheet', () => {
       side: 'L',
       slice: 8,
       servingLabel: '1조각',
+      totalWeight: 800,
       weight: 100,
       kcal: 200,
       sugar: 10,
       protein: 20,
       fat: 4,
       sodium: 300,
+      servingTrace: expect.objectContaining({
+        status: 'ok',
+        totalWeight: 800,
+        sliceCount: 8,
+        servingSlices: 1,
+      }),
     });
   });
 
@@ -136,6 +131,7 @@ describe('buildPizzaSliceSheet', () => {
 
     expect(rows[0].rows[0]).toMatchObject({
       servingLabel: '3조각',
+      totalWeight: 800,
       weight: 300,
       kcal: 120,
       sugar: 6,
@@ -176,12 +172,17 @@ describe('buildPizzaSliceSheet', () => {
 
     expect(rows[0].rows[0]).toMatchObject({
       servingLabel: '—',
+      totalWeight: '—',
       weight: '—',
       kcal: '—',
       sugar: '—',
       protein: '—',
       fat: '—',
       sodium: '—',
+      servingTrace: expect.objectContaining({
+        status: 'missing',
+        reason: 'missing-weight-or-kcal',
+      }),
     });
   });
 
@@ -214,11 +215,10 @@ describe('buildPizzaSliceSheet', () => {
       sliceCounts: { 'P-EDGE-W': { L: 8 } },
     });
 
-    const edgeRow = rows[0].rows.find(
-      row => row.crustLabel === '치즈크러스트' && row.side === 'L'
-    );
+    const edgeRow = rows[0].rows.find(row => row.crustLabel === '치즈크러스트' && row.side === 'L');
     expect(edgeRow).toMatchObject({
       servingLabel: '1조각',
+      totalWeight: 880,
       weight: 110,
       kcal: 242,
       sugar: 13,

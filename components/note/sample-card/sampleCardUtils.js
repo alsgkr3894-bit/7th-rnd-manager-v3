@@ -1,4 +1,4 @@
-import { sampleNamesText } from '@/lib/sample';
+import { sampleIngredientGroupName, sampleNamesText } from '@/lib/sample';
 import { formatTestRound } from '@/lib/note/evaluation';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
@@ -19,6 +19,8 @@ export function buildSampleCardViewModel(sample = {}) {
     photos,
     thumb,
     names: sampleNamesText(rec),
+    ingredientGroupName: sampleIngredientGroupName(rec),
+    recordType: asDisplayText(rec.recordType || '샘플테스트'),
     tags,
     title: asDisplayText(rec.title),
     category: asDisplayText(rec.category),

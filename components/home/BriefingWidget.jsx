@@ -4,7 +4,7 @@ import { Sparkline } from '@/components/charts/Sparkline';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 /**
- * 이번 달 브리핑 히어로 — 한 문장 요약 + 통계 칩 4개 + 스파크라인.
+ * 이번 달 브리핑 히어로 — 판매량 한 문장 요약 + 통계 칩 + 스파크라인.
  *
  * @param {{ data: import('@/lib/stats/briefing-stats').MonthlyBriefing | null }} props
  */

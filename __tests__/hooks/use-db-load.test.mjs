@@ -119,9 +119,30 @@ describe('저위험 hub 페이지 useDBLoad 적용', () => {
     expect(journalSrc).toContain('if (!canEdit || saving) return;');
     expect(journalSrc).toContain('await addNote(payload)');
     expect(journalSrc).toContain('await updateNote(journalEntry.id, payload)');
-    expect(journalSrc).toContain('photos: Array.isArray(journalForm.photos) ? journalForm.photos : []');
+    expect(journalSrc).toContain(
+      "import { buildNoteIdeaGroups, collectLatestRoundNotePhotos } from '../noteIdeaGroups'"
+    );
+    expect(journalSrc).toContain('function collectJournalSourcePhotos');
+    expect(journalSrc).toContain('function withRelatedJournalPhotos');
+    expect(journalSrc).toContain('collectLatestRoundNotePhotos(group.notes, 99)');
+    expect(journalSrc).toContain('const rawDayNotes = useMemo');
+    expect(journalSrc).toContain('withRelatedJournalPhotos(rawDayNotes, notes)');
+    expect(journalSrc).toContain(
+      'note?.id !== journalEntry?.id && note?.noteType !== JOURNAL_NOTE_TYPE'
+    );
+    expect(journalSrc).toContain(
+      'setJournalForm(journalFormFromEntry(journalEntry, sourcePhotos))'
+    );
+    expect(journalSrc).toContain('photos: mergeJournalPhotos(journalForm.photos, sourcePhotos)');
+    expect(journalSrc).toContain('const printPeriodNotes = useMemo');
+    expect(journalSrc).toContain(
+      'mergeJournalPrintNotesForDate(periodNotes, currentJournalPrintNote, date)'
+    );
+    expect(journalSrc).toContain('buildJournalPrintHtml(printRangeTitle, printPeriodNotes');
     expect(journalSrc).toContain('canEdit={canEdit}');
-    expect(journalEditorSrc).toContain("import { NotePhotoSection } from '@/app/note/_NotePhotoSection'");
+    expect(journalEditorSrc).toContain(
+      "import { NotePhotoSection } from '@/app/note/_NotePhotoSection'"
+    );
     expect(journalEditorSrc).toContain("onChange={value => onChange('photos', value)}");
   });
 

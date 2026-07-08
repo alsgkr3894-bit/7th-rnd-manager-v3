@@ -160,7 +160,10 @@ describe('note merge helpers', () => {
 
     expect(plan.canUnmerge).toBe(true);
     expect(plan.unmergedCount).toBe(2);
-    expect(plan.changes.map(change => change.patch)).toEqual([{ parentId: null }, { parentId: null }]);
+    expect(plan.changes.map(change => change.patch)).toEqual([
+      { parentId: null },
+      { parentId: null },
+    ]);
     expect(plan.changes[1].note.photos).toEqual([{ data: 'photo-2' }]);
     expect(plan.changes[1].note.testContent).toBe('치즈 유지');
   });

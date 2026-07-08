@@ -8,6 +8,9 @@
 .app > div {
   min-width: 0;
 }
+.app-main-shell {
+  min-width: 0;
+}
 
 /* ===== Sidebar ===== */
 .sidebar {
@@ -247,6 +250,14 @@
   flex: 1;
   min-width: 0;
   max-width: 480px;
+}
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  min-width: 0;
+  flex-shrink: 0;
 }
 .topbar.scrolled {
   box-shadow: var(--shadow-md);

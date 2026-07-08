@@ -10,7 +10,6 @@ import { copyText } from '@/lib/ui/clipboard';
 function buildNoteCopyText(note) {
   const lines = [`[${note.status}] ${noteDisplayTitle(note)}`];
   if (note.testDate) lines.push(`테스트일: ${note.testDate}`);
-  if (note.reportSummary) lines.push(`결과: ${note.reportSummary}`);
   if (note.nextAction) lines.push(`다음 액션: ${note.nextAction}`);
   return lines.join('\n');
 }

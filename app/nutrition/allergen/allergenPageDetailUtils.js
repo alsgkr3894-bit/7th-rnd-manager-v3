@@ -11,10 +11,15 @@ export function buildAllergenDetailRows(detailRow, baseMapData, edges, allergenI
 }
 
 export function buildAllergenSummaryCounts(ingredients, allergenIngredients) {
+  const activeIngredients = asObjectArray(ingredients).filter(
+    ingredient => !ingredient.discontinued && !ingredient.excluded
+  );
   return {
-    totalWithAllergen: allergenIngredients.length,
-    totalIngredients: asObjectArray(ingredients).filter(
-      ingredient => !ingredient.discontinued && !ingredient.excluded
+    totalWithAllergen: activeIngredients.filter(
+      ingredient =>
+        ingredient.allergenNone === true ||
+        (Array.isArray(ingredient.allergens) && ingredient.allergens.length > 0)
     ).length,
+    totalIngredients: activeIngredients.length,
   };
 }

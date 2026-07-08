@@ -77,7 +77,6 @@ export function NoteCard({
   const snippets = [
     ['시식', asText(note.tasteEval)],
     ['다음', asText(note.nextAction)],
-    ['요약', asText(note.reportSummary)],
   ]
     .filter(([, value]) => value)
     .slice(0, 2);
@@ -165,7 +164,10 @@ export function NoteCard({
         }}
       >
         {photos.length > 0 && (
-          <div onMouseDown={event => event.stopPropagation()} onDragStart={event => event.preventDefault()}>
+          <div
+            onMouseDown={event => event.stopPropagation()}
+            onDragStart={event => event.preventDefault()}
+          >
             <PhotoCarousel
               photos={photos}
               title={title}

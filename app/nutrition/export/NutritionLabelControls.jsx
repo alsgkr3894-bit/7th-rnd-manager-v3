@@ -17,8 +17,15 @@ export function NutritionLabelTabs({ tab, onTabChange }) {
   return <ExportResultTabs tabs={NUTRITION_LABEL_TABS} activeKey={tab} onChange={onTabChange} />;
 }
 
-export function NutritionLabelActions({ exporting, onPdf, onExcel }) {
-  return <ExportResultActions exporting={exporting} onPdf={onPdf} onExcel={onExcel} />;
+export function NutritionLabelActions({ exporting, onPdf, onExcel, onEditMenuNames }) {
+  return (
+    <ExportResultActions
+      exporting={exporting}
+      onPdf={onPdf}
+      onExcel={onExcel}
+      extraActions={[{ key: 'menu-names', label: '출력명·순서', onClick: onEditMenuNames }]}
+    />
+  );
 }
 
 export function PizzaViewControls({ pizzaView, onPizzaViewChange, onOpenSliceConfig }) {

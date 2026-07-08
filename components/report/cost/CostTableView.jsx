@@ -26,9 +26,7 @@ const S_GROUP_BADGE = {
 function menuRowStyle(index) {
   return {
     background:
-      index % 2 === 0
-        ? 'color-mix(in oklab, var(--accent) 4%, var(--surface))'
-        : 'var(--surface)',
+      index % 2 === 0 ? 'color-mix(in oklab, var(--accent) 4%, var(--surface))' : 'var(--surface)',
     boxShadow: 'inset 0 1px 0 var(--border)',
   };
 }
@@ -107,7 +105,11 @@ export function CostTableView({ activeCats, riskThreshold }) {
                 </thead>
                 <tbody>
                   {groups.map((g, index) => (
-                    <tr key={g.key || g.name} className="cost-table-menu-row" style={menuRowStyle(index)}>
+                    <tr
+                      key={g.key || g.name}
+                      className="cost-table-menu-row"
+                      style={menuRowStyle(index)}
+                    >
                       <td style={S_GROUP_CELL}>
                         <span style={S_GROUP_BADGE}>메뉴 {index + 1}</span>
                       </td>

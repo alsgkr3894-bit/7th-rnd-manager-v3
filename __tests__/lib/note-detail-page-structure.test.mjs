@@ -79,7 +79,7 @@ describe('note detail page structure', () => {
     expect(pageSource).not.toContain('STATUS_COLORS');
     expect(pageSource).not.toContain('sampleNamesOf');
     expect(pageSource).not.toContain('버전 체인');
-    expect(pageSource).not.toContain('관련 샘플기록');
+    expect(pageSource).not.toContain('관련 SAMPLE_RECORD_LABEL');
     expect(pageSource).not.toContain('<img');
   });
 
@@ -101,6 +101,7 @@ describe('note detail page structure', () => {
     expect(timelineSource).toContain('현재');
 
     expect(relatedSource).toContain('export function RelatedSamplesPanel');
+    expect(relatedSource).toContain('SAMPLE_RECORD_LABEL');
     expect(relatedSource).toContain('function RelatedSampleButton');
     expect(relatedSource).toContain('function RelatedSampleThumbnail');
     expect(relatedSource).toContain('<img');

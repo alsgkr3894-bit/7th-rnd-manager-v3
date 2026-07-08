@@ -5,6 +5,7 @@ import { SettingTile } from '@/components/ui/SettingTile';
 import { ModuleScopeList } from '@/components/settings/ModuleScopeList';
 import { formatNumber, formatRelative } from '@/lib/format';
 import { MODULE_GROUPS, MODULE_KEYS } from '@/lib/db';
+import { SAMPLE_RECORD_LABEL } from '@/lib/sample/constants';
 
 const S_ALERT_WRAP = {
   display: 'flex',
@@ -59,8 +60,8 @@ export function BackupBrandBanner({ activeBrand }) {
           <b>현재 브랜드: {activeBrand.name}</b>
           <span style={{ color: 'var(--warn)', fontWeight: 700 }}>
             {' '}
-            — 개발노트·샘플기록은 7번가피자 DB에 저장됩니다. 노트를 백업하려면 7번가피자로 전환 후
-            백업하세요.
+            — 개발노트·{SAMPLE_RECORD_LABEL}은 7번가피자 DB에 저장됩니다. 노트를 백업하려면
+            7번가피자로 전환 후 백업하세요.
           </span>
         </span>
       </div>
@@ -156,7 +157,11 @@ export function ServerBackupStatusCard({
           <button className="btn sm" onClick={onRefresh} disabled={loading || creating}>
             {loading ? '확인 중...' : '새로고침'}
           </button>
-          <button className="btn sm primary" onClick={onCreateBackup} disabled={loading || creating}>
+          <button
+            className="btn sm primary"
+            onClick={onCreateBackup}
+            disabled={loading || creating}
+          >
             {creating ? (
               <div
                 className="report-loading-spinner"

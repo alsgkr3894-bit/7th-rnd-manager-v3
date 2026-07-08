@@ -6,7 +6,9 @@ import {
 } from '../../lib/nutrition/ingredient-name-override.js';
 import {
   applyMenuName,
+  loadLabelMenuNames,
   loadMenuNames,
+  saveLabelMenuNames,
   saveMenuNames,
 } from '../../lib/nutrition/menu-name-override.js';
 import { saveSliceCounts, SLICE_CONFIG_KEY } from '../../lib/nutrition/slice-config.js';
@@ -40,10 +42,15 @@ describe('nutrition local settings guards', () => {
     installStorage({
       'v3:nutrition-ingredient-name-override': JSON.stringify({ 치즈: ' 모짜 ', 토마토: 123 }),
       'v3:nutrition-menu-name-override': JSON.stringify({ PZ01: ' 대표피자 ', PZ02: null }),
+      'v3:nutrition-label-menu-name-override': JSON.stringify({
+        PZ03: ' 표출력피자 ',
+        PZ04: 100,
+      }),
     });
 
     expect(loadIngredientNames()).toEqual({ 치즈: ' 모짜 ' });
     expect(loadMenuNames()).toEqual({ PZ01: ' 대표피자 ' });
+    expect(loadLabelMenuNames()).toEqual({ PZ03: ' 표출력피자 ' });
   });
 
   test('apply 함수는 비문자 override를 원래 이름으로 돌린다', () => {
@@ -56,10 +63,14 @@ describe('nutrition local settings guards', () => {
 
     saveIngredientNames({ 치즈: '모짜', 토마토: 123 });
     saveMenuNames({ PZ01: '피자', PZ02: false });
+    saveLabelMenuNames({ PZ03: '표피자', PZ04: false });
     saveSliceCounts(null);
 
     expect(JSON.parse(store['v3:nutrition-ingredient-name-override'])).toEqual({ 치즈: '모짜' });
     expect(JSON.parse(store['v3:nutrition-menu-name-override'])).toEqual({ PZ01: '피자' });
+    expect(JSON.parse(store['v3:nutrition-label-menu-name-override'])).toEqual({
+      PZ03: '표피자',
+    });
     expect(JSON.parse(store[SLICE_CONFIG_KEY])).toEqual({});
   });
 

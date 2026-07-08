@@ -22,7 +22,7 @@ describe('allergen page data utils', () => {
   const ingredients = [
     { productCode: 'EGG', ingredientName: '계란액', allergens: ['AL01'] },
     { productCode: 'MILK', ingredientName: '모짜렐라치즈', allergens: ['AL02'] },
-    { productCode: 'NONE', ingredientName: '소금', allergens: [] },
+    { productCode: 'NONE', ingredientName: '소금', allergens: [], allergenNone: true },
     { productCode: 'OLD', ingredientName: '단종치즈', allergens: ['AL02'], discontinued: true },
     { productCode: 'EXC', ingredientName: '제외계란', allergens: ['AL01'], excluded: true },
   ];
@@ -32,6 +32,16 @@ describe('allergen page data utils', () => {
       'EGG',
       'MILK',
     ]);
+  });
+
+  test('allergenNone counts as completed entry without adding a matrix allergen row', () => {
+    const allergenIngredients = filterAllergenIngredients(ingredients);
+
+    expect(allergenIngredients.map(row => row.productCode)).not.toContain('NONE');
+    expect(buildAllergenSummaryCounts(ingredients, allergenIngredients)).toEqual({
+      totalWithAllergen: 3,
+      totalIngredients: 3,
+    });
   });
 
   test('filterIngredientRows matches ingredient name, product code, and allergen name', () => {
@@ -137,7 +147,7 @@ describe('allergen page data utils', () => {
     const allergenIngredients = filterAllergenIngredients(ingredients);
 
     expect(buildAllergenSummaryCounts(ingredients, allergenIngredients)).toEqual({
-      totalWithAllergen: 2,
+      totalWithAllergen: 3,
       totalIngredients: 3,
     });
 

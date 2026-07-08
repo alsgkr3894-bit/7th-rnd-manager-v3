@@ -1,12 +1,45 @@
 'use client';
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 
-export function AllergenSection({ allergens, onSet }) {
+export function AllergenSection({ allergens, allergenNone, onSet }) {
   const selected = Array.isArray(allergens) ? allergens : [];
   return (
     <div style={{ borderTop: '1px solid var(--divider)', paddingTop: 16 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)', marginBottom: 8 }}>
+      <div
+        style={{
+          fontSize: 13,
+          fontWeight: 700,
+          color: 'var(--text-2)',
+          marginBottom: 8,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          flexWrap: 'wrap',
+        }}
+      >
         알레르기 유발물질
+        <label
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            cursor: 'pointer',
+            fontSize: 12,
+            fontWeight: 500,
+            color: allergenNone ? 'var(--positive)' : 'var(--text-3)',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={allergenNone === true}
+            onChange={e => {
+              onSet('allergenNone', e.target.checked);
+              if (e.target.checked) onSet('allergens', []);
+            }}
+            style={{ accentColor: 'var(--positive)', width: 13, height: 13 }}
+          />
+          알레르기 없음
+        </label>
         {selected.length > 0 && (
           <span
             style={{
@@ -30,6 +63,7 @@ export function AllergenSection({ allergens, onSet }) {
             <button
               key={a.allergenCode}
               type="button"
+              disabled={allergenNone === true}
               onClick={() =>
                 onSet(
                   'allergens',
@@ -45,8 +79,9 @@ export function AllergenSection({ allergens, onSet }) {
                 fontWeight: 600,
                 border: active ? 'none' : '1px solid var(--border)',
                 background: active ? 'var(--accent)' : 'transparent',
-                color: active ? '#fff' : 'var(--text-3)',
-                cursor: 'pointer',
+                color: active ? '#fff' : allergenNone ? 'var(--text-4)' : 'var(--text-3)',
+                cursor: allergenNone ? 'not-allowed' : 'pointer',
+                opacity: allergenNone ? 0.55 : 1,
                 transition: 'all 120ms ease',
               }}
             >
@@ -55,6 +90,11 @@ export function AllergenSection({ allergens, onSet }) {
           );
         })}
       </div>
+      {allergenNone && (
+        <div style={{ fontSize: 12, color: 'var(--text-4)', paddingTop: 8 }}>
+          알레르기 없음으로 표시됨
+        </div>
+      )}
       {selected.length > 0 && (
         <button
           type="button"

@@ -1,25 +1,25 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { initDB } from '@/lib/db';
 import { TempCostCalculator } from '@/components/note/TempCostCalculator';
 import {
   CATEGORIES,
-  NOTE_TYPES,
+  MENU_DEVELOPMENT_NOTE_TYPES,
   STATUSES,
+  normalizeNoteCategoryForBrand,
   getAllNotesCached,
   normalizeNoteStatus,
   normalizeNoteType,
 } from '@/lib/note';
 import { generateNextNoteMenuCode, normalizeNoteMenuCode } from '@/lib/note/evaluation';
-import { generateNoteReportText } from '@/lib/note/report';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { noop } from '@/lib/ui/prop-guards';
 import { NoteClonePreviousCard } from '@/app/note/_NoteClonePreviousCard';
 import { NoteDetailFields } from '@/app/note/_NoteDetailFields';
 import { NoteEvaluationFields } from '@/app/note/_NoteEvaluationFields';
 import { NotePhotoSection } from '@/app/note/_NotePhotoSection';
-import { NoteReportSummaryCard } from '@/app/note/_NoteReportSummaryCard';
 import { NoteRequiredFields } from '@/app/note/_NoteRequiredFields';
+import { CollapsibleCard } from '@/app/note/_CollapsibleCard';
 
 // SSR 안전 초기값 — brand와 category는 SSR에서 항상 기본값으로 두고
 // 마운트 후 실제 브랜드/저장값으로 교정한다(hydration 불일치 방지).
@@ -30,7 +30,7 @@ export const INIT = {
   title: '',
   menuName: '',
   category: CATEGORIES[0],
-  noteType: NOTE_TYPES[0],
+  noteType: MENU_DEVELOPMENT_NOTE_TYPES[0],
   status: STATUSES[0],
   testContent: '',
   testDate: '',
@@ -60,12 +60,16 @@ export function normalizeNoteFormForSave(form, options = {}) {
       date: form?.testDate,
     });
   const title = String(form?.title || form?.menuName || menuCode || '').trim();
+  const noteType = normalizeNoteType(form?.noteType);
   return {
     ...form,
     menuCode,
     title,
     menuName: title,
-    noteType: normalizeNoteType(form?.noteType),
+    category: normalizeNoteCategoryForBrand(form?.category, form?.brand),
+    noteType: MENU_DEVELOPMENT_NOTE_TYPES.includes(noteType)
+      ? noteType
+      : MENU_DEVELOPMENT_NOTE_TYPES[0],
     status: normalizeNoteStatus(form?.status),
   };
 }
@@ -74,7 +78,7 @@ function hasText(value) {
   return String(value || '').trim().length > 0;
 }
 
-function NoteWriteProgressCard({ form }) {
+function NoteWriteProgressCard({ form, open, onOpenChange }) {
   const testContent = String(form?.testContent || '').trim();
   const words = testContent ? testContent.split(/\s+/).filter(Boolean).length : 0;
   const items = [
@@ -89,26 +93,23 @@ function NoteWriteProgressCard({ form }) {
   const doneCount = items.filter(item => item.done).length;
 
   return (
-    <div className="card" style={{ padding: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-        <div style={{ minWidth: 0 }}>
-          <div className="card-title" style={{ marginBottom: 2 }}>
-            작성 진행
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
-            {doneCount}/{items.length} 완료 · {testContent.length}자 · {words}단어
-          </div>
-        </div>
+    <CollapsibleCard
+      title="작성 진행"
+      subtitle={`${doneCount}/${items.length} 완료 · ${testContent.length}자 · ${words}단어`}
+      defaultOpen
+      open={open}
+      onOpenChange={onOpenChange}
+      actions={
         <strong
           style={{
-            marginLeft: 'auto',
             color: doneCount === items.length ? 'var(--positive)' : 'var(--accent)',
             fontSize: 18,
           }}
         >
           {Math.round((doneCount / items.length) * 100)}%
         </strong>
-      </div>
+      }
+    >
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         {items.map(item => (
           <span
@@ -131,7 +132,7 @@ function NoteWriteProgressCard({ form }) {
           </span>
         ))}
       </div>
-    </div>
+    </CollapsibleCard>
   );
 }
 
@@ -140,6 +141,7 @@ export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
   const [allTags, setAllTags] = useState([]);
   const [sourceNotes, setSourceNotes] = useState([]);
   const [touched, setTouched] = useState({});
+  const [openRightPanel, setOpenRightPanel] = useState('progress');
 
   function markTouched(key) {
     setTouched(value => ({ ...value, [key]: true }));
@@ -182,8 +184,6 @@ export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
     };
   }, []);
 
-  const reportText = useMemo(() => generateNoteReportText(form), [form]);
-
   return (
     <div
       className="form-layout"
@@ -217,8 +217,11 @@ export function NoteFormBody({ form, setForm, onCategoryChange = noop }) {
         className="form-sticky-right"
         style={{ position: 'sticky', top: 72, display: 'flex', flexDirection: 'column', gap: 12 }}
       >
-        <NoteWriteProgressCard form={form} />
-        <NoteReportSummaryCard reportText={reportText} />
+        <NoteWriteProgressCard
+          form={form}
+          open={openRightPanel === 'progress'}
+          onOpenChange={next => setOpenRightPanel(next ? 'progress' : '')}
+        />
         <NotePhotoSection
           photos={form.photos || []}
           onChange={value => updateField('photos', value)}

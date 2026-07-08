@@ -90,21 +90,31 @@ async function scenarioNoteRoundtrip({ page, base, runId }) {
   });
 
   await step(steps, '목록에서 방금 저장한 제목 표시', async () => {
-    await page.getByText(title, { exact: false }).first().waitFor({ state: 'visible', timeout: 15_000 });
+    await page
+      .getByText(title, { exact: false })
+      .first()
+      .waitFor({ state: 'visible', timeout: 15_000 });
   });
 
   await step(steps, 'IndexedDB에 제목/본문 값 저장 확인', async () => {
     const row = await dbFindOneByField(page, MAIN_DB, 'menu_dev_notes', 'title', title);
     if (!row) throw new Error('menu_dev_notes에 저장된 노트를 찾지 못함');
-    if (!String(row.testContent || '').includes(content)) throw new Error('노트 본문 저장값 불일치');
+    if (!String(row.testContent || '').includes(content))
+      throw new Error('노트 본문 저장값 불일치');
     noteId = row.id;
   });
 
   await step(steps, '상세 페이지 재진입 후 제목/본문 표시', async () => {
     if (noteId == null) throw new Error('noteId 없음');
     await goto(page, base, `/note/${noteId}`);
-    await page.getByText(title, { exact: false }).first().waitFor({ state: 'visible', timeout: 15_000 });
-    await page.getByText(content, { exact: false }).first().waitFor({ state: 'visible', timeout: 15_000 });
+    await page
+      .getByText(title, { exact: false })
+      .first()
+      .waitFor({ state: 'visible', timeout: 15_000 });
+    await page
+      .getByText(content, { exact: false })
+      .first()
+      .waitFor({ state: 'visible', timeout: 15_000 });
   });
 
   await step(steps, '노트 테스트 데이터 정리', async () => {
@@ -134,7 +144,10 @@ async function scenarioCalendarRoundtrip({ page, base, runId }) {
   });
 
   await step(steps, '캘린더 화면에 저장한 일정 제목 표시', async () => {
-    await page.getByText(title, { exact: false }).first().waitFor({ state: 'visible', timeout: 15_000 });
+    await page
+      .getByText(title, { exact: false })
+      .first()
+      .waitFor({ state: 'visible', timeout: 15_000 });
   });
 
   await step(steps, 'IndexedDB에 일정 제목/메모 저장 확인', async () => {
@@ -169,7 +182,10 @@ async function scenarioMenuMasterRoundtrip({ page, base, runId }) {
   });
 
   await step(steps, '목록에 저장한 메뉴명 표시', async () => {
-    await page.getByText(name, { exact: false }).first().waitFor({ state: 'visible', timeout: 15_000 });
+    await page
+      .getByText(name, { exact: false })
+      .first()
+      .waitFor({ state: 'visible', timeout: 15_000 });
   });
 
   await step(steps, 'IndexedDB menu_master 값 확인', async () => {
@@ -193,17 +209,27 @@ async function scenarioIngredientRoundtrip({ page, base, runId }) {
   await step(steps, '식자재 추가 모달에서 재료명 저장', async () => {
     await goto(page, base, '/ingredient/manage');
     await page.waitForFunction(
-      () => [...document.querySelectorAll('button')].some(btn => btn.textContent?.includes('식자재 추가') && !btn.disabled),
+      () =>
+        [...document.querySelectorAll('button')].some(
+          btn => btn.textContent?.includes('식자재 추가') && !btn.disabled
+        ),
       undefined,
       { timeout: 60_000 }
     );
     await page.getByRole('button', { name: '식자재 추가' }).click();
     await page.getByPlaceholder('예) 모짜렐라치즈').fill(name);
-    await page.locator('button.btn.primary').filter({ hasText: /^추가$/ }).last().click();
+    await page
+      .locator('button.btn.primary')
+      .filter({ hasText: /^추가$/ })
+      .last()
+      .click();
   });
 
   await step(steps, '식자재 목록에 저장한 재료명 표시', async () => {
-    await page.getByText(name, { exact: false }).first().waitFor({ state: 'visible', timeout: 15_000 });
+    await page
+      .getByText(name, { exact: false })
+      .first()
+      .waitFor({ state: 'visible', timeout: 15_000 });
   });
 
   await step(steps, 'IndexedDB cost_ingredients 값 확인', async () => {
@@ -259,7 +285,12 @@ async function scenarioRecipeRoundtrip({ page, base, runId }) {
     await dialog.getByRole('button', { name: '구성품 추가' }).click();
     const searchInput = dialog.getByPlaceholder('식자재명 검색 (↑↓ 이동, Enter 선택)').last();
     await searchInput.fill(ingName.slice(0, 8));
-    await dialog.getByRole('listbox').getByRole('option').filter({ hasText: ingName }).first().click();
+    await dialog
+      .getByRole('listbox')
+      .getByRole('option')
+      .filter({ hasText: ingName })
+      .first()
+      .click();
     await dialog.locator('input[type="number"]').last().fill('55');
     await dialog.getByRole('button', { name: '저장' }).click();
     await dialog.waitFor({ state: 'detached', timeout: 15_000 });
@@ -337,7 +368,10 @@ async function scenarioNutritionRoundtrip({ page, base, runId }) {
     await page.getByText(menuName, { exact: false }).last().click();
     await dialog.getByRole('button', { name: '추가' }).click();
     await dialog.waitFor({ state: 'detached', timeout: 15_000 });
-    await page.getByText(menuName, { exact: false }).first().waitFor({ state: 'visible', timeout: 15_000 });
+    await page
+      .getByText(menuName, { exact: false })
+      .first()
+      .waitFor({ state: 'visible', timeout: 15_000 });
   });
 
   await step(steps, '영양 수치 입력 후 저장', async () => {
@@ -354,7 +388,8 @@ async function scenarioNutritionRoundtrip({ page, base, runId }) {
     await numberInputs.nth(9).fill('987');
     await page.getByRole('button', { name: new RegExp(`${menuName}.*저장`) }).click();
     await page.waitForFunction(
-      () => [...document.querySelectorAll('.toast')].some(toast => toast.textContent.includes('저장')),
+      () =>
+        [...document.querySelectorAll('.toast')].some(toast => toast.textContent.includes('저장')),
       undefined,
       { timeout: 10_000 }
     );
@@ -369,9 +404,9 @@ async function scenarioNutritionRoundtrip({ page, base, runId }) {
       { timeout: 15_000 }
     );
     await page.waitForTimeout(250);
-    const values = await page.locator('.card input[type="number"]').evaluateAll(inputs =>
-      inputs.map(input => input.value)
-    );
+    const values = await page
+      .locator('.card input[type="number"]')
+      .evaluateAll(inputs => inputs.map(input => input.value));
     if (values[0] !== '321') throw new Error(`중량 재표시값 불일치: ${values[0]}`);
     if (values[1] !== '654') throw new Error(`열량 재표시값 불일치: ${values[1]}`);
     if (values[9] !== '987') throw new Error(`나트륨 재표시값 불일치: ${values[9]}`);
@@ -379,9 +414,16 @@ async function scenarioNutritionRoundtrip({ page, base, runId }) {
 
   await step(steps, 'IndexedDB nutrition_raw_values/menu_ref 값 확인', async () => {
     const refs = await dbFindByField(page, MAIN_DB, 'nutrition_menu_ref', 'menuCode', menuCode);
-    const rawRows = await dbFindByField(page, MAIN_DB, 'nutrition_raw_values', 'menuCode', menuCode);
+    const rawRows = await dbFindByField(
+      page,
+      MAIN_DB,
+      'nutrition_raw_values',
+      'menuCode',
+      menuCode
+    );
     if (refs.length !== 1) throw new Error(`nutrition_menu_ref 저장 건수 불일치: ${refs.length}`);
-    if (rawRows.length !== 1) throw new Error(`nutrition_raw_values 저장 건수 불일치: ${rawRows.length}`);
+    if (rawRows.length !== 1)
+      throw new Error(`nutrition_raw_values 저장 건수 불일치: ${rawRows.length}`);
     const row = rawRows[0];
     if (Number(row.weight) !== 321 || Number(row.kcal) !== 654 || Number(row.sodium) !== 987) {
       throw new Error(`영양 DB 저장값 불일치: ${JSON.stringify(row)}`);
@@ -447,7 +489,8 @@ try {
 }
 
 const report = summarize(scenarios, browserIssues);
-const outPath = process.env.DEEP_FUNCTIONAL_AUDIT_OUT || 'docs/deep-functional-audit-results-2026-07-02.json';
+const outPath =
+  process.env.DEEP_FUNCTIONAL_AUDIT_OUT || 'docs/deep-functional-audit-results-2026-07-02.json';
 writeFileSync(outPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
 
 console.log('\nDeep functional audit\n');
@@ -464,6 +507,10 @@ console.log(`browser console errors: ${browserIssues.consoleErrors.length}`);
 console.log(`browser http 500+: ${browserIssues.httpErrors.length}`);
 console.log(`result file: ${outPath}`);
 
-if (report.counts.failed > 0 || browserIssues.pageErrors.length > 0 || browserIssues.httpErrors.length > 0) {
+if (
+  report.counts.failed > 0 ||
+  browserIssues.pageErrors.length > 0 ||
+  browserIssues.httpErrors.length > 0
+) {
   process.exitCode = 1;
 }

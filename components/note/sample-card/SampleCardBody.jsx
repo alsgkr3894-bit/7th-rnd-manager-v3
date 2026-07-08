@@ -15,8 +15,20 @@ export function SampleCardBody({
   onDelete,
   canEdit = false,
 }) {
-  const { rec, title, names, testDate, roundLabel, isChained, company, price, description, tags } =
-    model;
+  const {
+    rec,
+    title,
+    names,
+    ingredientGroupName,
+    recordType,
+    testDate,
+    roundLabel,
+    isChained,
+    company,
+    price,
+    description,
+    tags,
+  } = model;
 
   return (
     <div style={{ padding: '12px 14px 14px' }}>
@@ -29,6 +41,8 @@ export function SampleCardBody({
       />
       <SampleCardMeta
         names={names}
+        ingredientGroupName={ingredientGroupName}
+        recordType={recordType}
         testDate={testDate}
         roundLabel={roundLabel}
         isChained={isChained}

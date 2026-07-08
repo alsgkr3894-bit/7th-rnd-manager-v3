@@ -16333,9 +16333,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "horizontalOverflow": false,
-      "loadingMarkers": [
-        "불러오는 중"
-      ],
+      "loadingMarkers": ["불러오는 중"],
       "errorMarkers": [],
       "overflowElements": [],
       "smallControls": [
@@ -34090,9 +34088,7 @@
       "scrollWidth": 1280,
       "innerWidth": 1280,
       "horizontalOverflow": false,
-      "loadingMarkers": [
-        "불러오는 중"
-      ],
+      "loadingMarkers": ["불러오는 중"],
       "errorMarkers": [],
       "overflowElements": [],
       "smallControls": [

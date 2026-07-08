@@ -7,9 +7,7 @@ export async function scenarioNoteCreate({ page, base, runId }) {
 
   await step(steps, '노트 작성 페이지 진입', async () => {
     await goto(page, base, '/note/write');
-    await page
-      .getByLabel('메뉴명 / 노트 제목')
-      .waitFor({ state: 'visible', timeout: 15_000 });
+    await page.getByLabel('메뉴명 / 노트 제목').waitFor({ state: 'visible', timeout: 15_000 });
   });
 
   await step(steps, '필수 항목(제목·내용) 입력', async () => {

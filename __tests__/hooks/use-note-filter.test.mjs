@@ -21,6 +21,8 @@ describe('useNoteFilter helpers', () => {
   });
 
   test('상태 필터는 허용된 노트 상태나 all만 사용한다', () => {
+    expect(normalizeNoteStatusFilter('테스트예정')).toBe('테스트예정');
+    expect(normalizeNoteStatusFilter(' 테스트 예정 ')).toBe('테스트예정');
     expect(normalizeNoteStatusFilter('출시예정')).toBe('보류');
     expect(normalizeNoteStatusFilter(' 출시예정 ')).toBe('보류');
     expect(normalizeNoteStatusFilter('보고예정')).toBe('보류');

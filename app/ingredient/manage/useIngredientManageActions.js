@@ -21,6 +21,7 @@ import {
   bulkSetDiscontinued,
   bulkSetCategory,
   bulkDeleteIngredients,
+  replaceIngredientProductCode,
 } from '@/lib/ingredient';
 import {
   syncManagedScope,
@@ -169,7 +170,7 @@ export function useIngredientManageActions({
 
   const handleExclude = useCallback(
     async row => {
-      if (!canEdit) return;
+      if (!canEdit) return false;
       try {
         if (row.isManual && row.id && !row.productCode) {
           const backup = await deleteIngredient(row.id);
@@ -199,8 +200,10 @@ export function useIngredientManageActions({
           showToast('숨겼습니다', 'ok');
         }
         setDeletePending(null);
+        return true;
       } catch (err) {
         showToast('실패: ' + err.message, 'error');
+        return false;
       }
     },
     [canEdit, load, setRows, setDeletePending]
@@ -237,6 +240,23 @@ export function useIngredientManageActions({
         await load();
       } catch (err) {
         showToast('등록 실패: ' + err.message, 'error');
+      }
+    },
+    [canEdit, load]
+  );
+
+  const handleReplaceJetteProduct = useCallback(
+    async (row, replacement) => {
+      if (!canEdit) return;
+      try {
+        const result = await replaceIngredientProductCode(row?.productCode, replacement);
+        showToast(
+          `대체 연결 완료 · 레시피 ${result.menuRecipeUpdated}건 · 식자재 묶음 ${result.recipeGroupUpdated}건 · 엣지 도우 ${result.edgeUpdated}건`,
+          'ok'
+        );
+        await load();
+      } catch (err) {
+        showToast('대체 연결 실패: ' + err.message, 'error');
       }
     },
     [canEdit, load]
@@ -367,6 +387,7 @@ export function useIngredientManageActions({
     handleExclude,
     handleRestore,
     handleAutoRegister,
+    handleReplaceJetteProduct,
     handleBatchDelete,
     handleBulkDiscontinue,
     handleBulkSetCategory,

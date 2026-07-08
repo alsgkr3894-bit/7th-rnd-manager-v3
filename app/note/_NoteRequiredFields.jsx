@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { SegGroup, Field } from '@/components/note/FormFields';
-import { addLocalDays, formatLocalDateInput, todayLocalDate } from '@/lib/date/local-date';
-import { CATEGORIES, NOTE_TYPES, STATUSES, STATUS_COLORS, NOTE_BRANDS } from '@/lib/note';
+import { STATUSES, NOTE_BRANDS, getNoteCategoryOptionsForBrand } from '@/lib/note';
 import { parseNoteQuickDate } from '@/lib/note/date-input';
 
 const SECTION_STYLE = {
@@ -63,7 +62,7 @@ export function NoteRequiredFields({
   const menuTestMode = form.menuTestMode === 'existing' || form.parentId ? 'existing' : 'new';
   const modeLabel = menuTestMode === 'existing' ? '기존 메뉴 테스트' : '신규 메뉴';
   const [titleDraft, setTitleDraft] = useState(titleValue);
-  const [quickDateDraft, setQuickDateDraft] = useState('');
+  const [dateDraft, setDateDraft] = useState(form.testDate || '');
   const [quickDateError, setQuickDateError] = useState(false);
   const titleFocusedRef = useRef(false);
   const titleComposingRef = useRef(false);
@@ -72,6 +71,10 @@ export function NoteRequiredFields({
     if (titleFocusedRef.current || titleComposingRef.current) return;
     setTitleDraft(titleValue);
   }, [titleValue]);
+
+  useEffect(() => {
+    setDateDraft(form.testDate || '');
+  }, [form.testDate]);
 
   function commitTitle(value) {
     updateTitle(value);
@@ -97,21 +100,11 @@ export function NoteRequiredFields({
     if (nextMode === 'new') updateField('parentId', null);
   }
 
-  function handleBrandChange(name) {
-    const found = NOTE_BRANDS.find(brand => brand.name === name);
-    if (!found || found.id === form.brand) return;
-    updateField('brand', found.id);
-  }
-
   function handleCategoryChange(value) {
-    if (!CATEGORIES.includes(value) || value === form.category) return;
+    const categoryOptions = getNoteCategoryOptionsForBrand(form.brand);
+    if (!categoryOptions.includes(value) || value === form.category) return;
     updateField('category', value);
     onCategoryChange(value);
-  }
-
-  function handleNoteTypeChange(value) {
-    if (!NOTE_TYPES.includes(value) || value === form.noteType) return;
-    updateField('noteType', value);
   }
 
   function updateTestDate(value) {
@@ -119,9 +112,10 @@ export function NoteRequiredFields({
     setQuickDateError(false);
   }
 
-  function applyQuickDate(value = quickDateDraft) {
+  function applyQuickDate(value = dateDraft) {
     const raw = String(value || '').trim();
     if (!raw) {
+      updateTestDate('');
       setQuickDateError(false);
       return;
     }
@@ -133,18 +127,14 @@ export function NoteRequiredFields({
     }
 
     updateTestDate(parsed);
-    setQuickDateDraft('');
+    setDateDraft(parsed);
   }
 
-  function applyPresetDate(value) {
-    updateTestDate(value);
-    setQuickDateDraft('');
-  }
-
-  function applyRelativeDate(days) {
-    updateTestDate(formatLocalDateInput(addLocalDays(new Date(), days)));
-    setQuickDateDraft('');
-  }
+  const activeBrand = NOTE_BRANDS.find(brand => brand.id === form.brand) || NOTE_BRANDS[0];
+  const categoryOptions = getNoteCategoryOptionsForBrand(form.brand);
+  const categoryValue = categoryOptions.includes(form.category)
+    ? form.category
+    : categoryOptions[0];
 
   return (
     <div className="card" style={{ padding: 20 }}>
@@ -159,10 +149,10 @@ export function NoteRequiredFields({
       >
         <div style={{ minWidth: 0 }}>
           <div className="card-title" style={{ marginBottom: 4 }}>
-            필수 항목
+            노트 작성
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
-            메뉴와 테스트 내용을 먼저 잡고, 나머지는 짧게 선택합니다.
+            유형을 먼저 고른 뒤 제목과 테스트 내용을 바로 기록합니다.
           </div>
         </div>
         <span
@@ -181,10 +171,10 @@ export function NoteRequiredFields({
         </span>
       </div>
 
-      <NoteFormSection title="메뉴 정보" caption={menuCodeValue || '코드 미입력'} first>
+      <NoteFormSection title="메뉴 정보" caption={menuCodeValue || '저장 시 자동 코드'} first>
         <Field
           label="작성 방식"
-          hint="신규는 코드를 만들고, 기존 메뉴 테스트는 아래 카드에서 메뉴를 고릅니다."
+          hint="기존 메뉴 테스트는 아래 이전 차수 복제에서 메뉴를 골라 이어갑니다."
         >
           <SegGroup
             options={['신규 메뉴', '기존 메뉴 테스트']}
@@ -194,24 +184,7 @@ export function NoteRequiredFields({
         </Field>
 
         <div style={FIELD_GRID_STYLE}>
-          <Field label="메뉴 코드" hint="신규 메뉴는 자동 생성하거나 직접 입력할 수 있습니다.">
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                className="form-input"
-                value={menuCodeValue}
-                onChange={event => updateField('menuCode', event.target.value)}
-                placeholder="예: RND-260702-1"
-                style={{ minWidth: 0 }}
-              />
-              <button className="btn sm" type="button" onClick={onGenerateMenuCode}>
-                자동 생성
-              </button>
-            </div>
-          </Field>
-          <Field
-            label="메뉴명 / 노트 제목"
-            error={touched.title && !titleValue.trim() && !menuCodeValue.trim()}
-          >
+          <Field label="메뉴명 / 노트 제목">
             <input
               className="form-input"
               value={titleDraft}
@@ -229,70 +202,34 @@ export function NoteRequiredFields({
               }}
               onChange={handleTitleChange}
               onBlur={handleTitleBlur}
-              placeholder="예: 완성새우 떡라비마요 조합 테스트"
+              placeholder="메뉴명 또는 테스트 제목"
             />
           </Field>
         </div>
       </NoteFormSection>
 
       <NoteFormSection title="테스트 기본값" caption={`${form.testRound || 1}차`}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1fr) minmax(120px, 180px)',
-            gap: 12,
-          }}
-        >
-          <Field label="테스트 날짜" hint="YYMMDD · YYYYMMDD">
+        <div className="note-test-grid">
+          <Field label="테스트 날짜">
             <div style={{ display: 'grid', gap: 8 }}>
               <input
                 className="form-input"
-                type="date"
-                value={form.testDate}
-                onChange={event => updateTestDate(event.target.value)}
+                value={dateDraft}
+                inputMode="numeric"
+                aria-label="테스트 날짜"
+                onChange={event => {
+                  setDateDraft(event.target.value);
+                  setQuickDateError(false);
+                }}
+                onKeyDown={event => {
+                  if (event.key !== 'Enter') return;
+                  event.preventDefault();
+                  applyQuickDate();
+                }}
+                onBlur={() => applyQuickDate()}
+                placeholder="날짜"
+                style={{ borderColor: quickDateError ? 'var(--negative)' : undefined }}
               />
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                <input
-                  className="form-input"
-                  value={quickDateDraft}
-                  inputMode="numeric"
-                  aria-label="테스트 날짜 빠른 입력"
-                  onChange={event => {
-                    setQuickDateDraft(event.target.value);
-                    setQuickDateError(false);
-                  }}
-                  onKeyDown={event => {
-                    if (event.key !== 'Enter') return;
-                    event.preventDefault();
-                    applyQuickDate();
-                  }}
-                  onBlur={() => applyQuickDate()}
-                  placeholder="240821"
-                  style={{
-                    flex: '1 1 104px',
-                    minWidth: 0,
-                    borderColor: quickDateError ? 'var(--negative)' : undefined,
-                  }}
-                />
-                <button className="btn sm" type="button" onClick={() => applyQuickDate()}>
-                  적용
-                </button>
-              </div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                <button
-                  className="btn sm xs"
-                  type="button"
-                  onClick={() => applyPresetDate(todayLocalDate())}
-                >
-                  오늘
-                </button>
-                <button className="btn sm xs" type="button" onClick={() => applyRelativeDate(-1)}>
-                  어제
-                </button>
-                <button className="btn sm xs" type="button" onClick={() => applyRelativeDate(-7)}>
-                  7일전
-                </button>
-              </div>
               {quickDateError && (
                 <div role="alert" style={{ fontSize: 11, color: 'var(--negative)' }}>
                   날짜 확인
@@ -305,7 +242,7 @@ export function NoteRequiredFields({
               className="form-input"
               value={form.testRound || ''}
               onChange={event => updateField('testRound', event.target.value)}
-              placeholder="예: 1, 2차"
+              placeholder="차수"
             />
           </Field>
         </div>
@@ -314,72 +251,47 @@ export function NoteRequiredFields({
       <NoteFormSection title="분류와 상태" caption={form.status}>
         <div style={COMPACT_GRID_STYLE}>
           <Field label="브랜드" hint="노트가 속한 브랜드">
-            <SegGroup
-              options={NOTE_BRANDS.map(brand => brand.name)}
-              value={(NOTE_BRANDS.find(brand => brand.id === form.brand) || NOTE_BRANDS[0]).name}
-              onChange={handleBrandChange}
-            />
+            <div
+              style={{
+                minHeight: 38,
+                display: 'flex',
+                alignItems: 'center',
+                padding: '8px 12px',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                background: 'var(--surface-2)',
+                fontSize: 13,
+                fontWeight: 800,
+                color: 'var(--text-1)',
+              }}
+            >
+              {activeBrand.name}
+            </div>
           </Field>
 
           <Field label="개발 구분">
-            <SegGroup options={CATEGORIES} value={form.category} onChange={handleCategoryChange} />
-          </Field>
-
-          <Field label="유형">
-            <SegGroup options={NOTE_TYPES} value={form.noteType} onChange={handleNoteTypeChange} />
+            <SegGroup
+              options={categoryOptions}
+              value={categoryValue}
+              onChange={handleCategoryChange}
+            />
           </Field>
         </div>
 
         <Field label="메뉴 상태" hint="저장하면 같은 메뉴 차수 전체에 적용">
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))',
-              gap: 8,
-            }}
-          >
-            {STATUSES.map(status => {
-              const colors = STATUS_COLORS[status];
-              const active = form.status === status;
-              return (
-                <button
-                  key={status}
-                  type="button"
-                  style={{
-                    minHeight: 34,
-                    padding: '6px 12px',
-                    borderRadius: 8,
-                    border: '1px solid',
-                    borderColor: active ? colors.color : 'var(--border)',
-                    background: active ? colors.bg : 'var(--surface)',
-                    color: active ? colors.color : 'var(--text-3)',
-                    fontFamily: 'inherit',
-                    fontSize: 12,
-                    fontWeight: active ? 800 : 500,
-                    cursor: 'pointer',
-                  }}
-                  onClick={event => {
-                    event.stopPropagation();
-                    if (form.status !== status) updateField('status', status);
-                  }}
-                >
-                  {status}
-                </button>
-              );
-            })}
-          </div>
+          <SegGroup
+            options={STATUSES}
+            value={form.status}
+            onChange={status => updateField('status', status)}
+          />
         </Field>
       </NoteFormSection>
 
       <NoteFormSection
         title="테스트 내용"
-        caption={form.testContent ? `${form.testContent.length}자` : '필수'}
+        caption={form.testContent ? `${form.testContent.length}자` : '작성 대기'}
       >
-        <Field
-          label="시식 테스트 내용"
-          required
-          error={touched.testContent && !form.testContent.trim()}
-        >
+        <Field label="시식 테스트 내용">
           <textarea
             className="form-input"
             style={{ minHeight: 180, resize: 'vertical', lineHeight: 1.65 }}
@@ -396,6 +308,44 @@ export function NoteRequiredFields({
           )}
         </Field>
       </NoteFormSection>
+
+      <details
+        style={{
+          borderTop: '1px solid var(--divider)',
+          paddingTop: 14,
+          marginTop: 16,
+        }}
+      >
+        <summary
+          style={{
+            cursor: 'pointer',
+            color: 'var(--text-3)',
+            fontSize: 12,
+            fontWeight: 800,
+          }}
+        >
+          메뉴코드 설정 · {menuCodeValue || '저장 시 자동 생성'}
+        </summary>
+        <div style={{ marginTop: 12 }}>
+          <Field
+            label="메뉴 코드"
+            hint="필요할 때만 직접 입력합니다. 비워두면 저장 시 자동 등록됩니다."
+          >
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                className="form-input"
+                value={menuCodeValue}
+                onChange={event => updateField('menuCode', event.target.value)}
+                placeholder="자동 생성"
+                style={{ minWidth: 0 }}
+              />
+              <button className="btn sm" type="button" onClick={onGenerateMenuCode}>
+                자동 생성
+              </button>
+            </div>
+          </Field>
+        </div>
+      </details>
     </div>
   );
 }

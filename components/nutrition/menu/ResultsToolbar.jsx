@@ -1,12 +1,10 @@
 'use client';
 
-/** 영양성분 결과 탭의 필터 툴바 — 메뉴 select · 기본/파생 chip · 누락만 · 내보내기. */
+/** 영양성분 결과 탭의 필터 툴바 — 메뉴 select · 누락만 · 내보내기. */
 export function ResultsToolbar({
   filterMenu,
   onFilterMenu,
   menuNames,
-  filterDerived,
-  onFilterDerived,
   missingOnly,
   onToggleMissingOnly,
   onExportCsv,
@@ -26,15 +24,6 @@ export function ResultsToolbar({
           </option>
         ))}
       </select>
-      {['전체', '기본', '파생'].map(v => (
-        <button
-          key={v}
-          className={'chip ' + (filterDerived === v ? 'active' : '')}
-          onClick={() => onFilterDerived(v)}
-        >
-          {v}
-        </button>
-      ))}
       <button className={'chip ' + (missingOnly ? 'active' : '')} onClick={onToggleMissingOnly}>
         입력 누락만
       </button>

@@ -19,6 +19,17 @@ describe('buildNutritionLabelPrintHtml', () => {
               sodium: 410,
               allergen: '밀',
             },
+            {
+              crustLabel: '씬',
+              side: 'L',
+              weight: 150,
+              kcal: 300,
+              sugar: 10,
+              protein: 18,
+              fat: 4,
+              sodium: 350,
+              allergen: '밀',
+            },
           ],
         },
       ],
@@ -37,6 +48,19 @@ describe('buildNutritionLabelPrintHtml', () => {
               protein: 20,
               fat: 4,
               sodium: 300,
+              allergen: '밀',
+            },
+            {
+              crustLabel: '씬',
+              side: 'L',
+              slice: 8,
+              servingLabel: '1조각',
+              weight: 90,
+              kcal: 180,
+              sugar: 8,
+              protein: 17,
+              fat: 3,
+              sodium: 280,
               allergen: '밀',
             },
           ],
@@ -62,16 +86,19 @@ describe('buildNutritionLabelPrintHtml', () => {
     expect(html).not.toContain('Nutritive components &amp; Origin');
     expect(html).not.toContain('제품 영양성분 &amp; 원산지 정보');
     expect(html).not.toContain('background: #d21922');
-    expect(html).toContain('<th colspan="12">150g 기준</th>');
+    expect(html).toContain('<th colspan="14">150g 기준</th>');
     expect(html).toContain('<th colspan="16">조각 기준</th>');
-    expect(html).toContain('<th colspan="2">열량(kcal/150g)</th>');
-    expect(html).toContain('<th colspan="2">1회 조각수</th>');
+    expect(html).toContain('<th rowspan="2" class="poster-pizza-label">메뉴명</th>');
+    expect(html).toContain('중량단위 L');
+    expect(html).toContain('열량(kcal/150g) L');
+    expect(html).toContain('1회조각수 L');
     expect(html).toContain('<th>총량(ml)</th>');
     expect(html).toContain('333');
     expect(html).toContain('포화지방');
     expect(html).not.toContain('조지방');
     expect(html).toContain('테스트 피자');
     expect(html).not.toContain('테스트 피자 L</td>');
+    expect(html.match(/<td class="poster-menu-name">테스트 피자<\/td>/g)).toHaveLength(4);
   });
 
   test('메뉴명과 알레르기 텍스트를 HTML escape한다', () => {

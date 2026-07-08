@@ -11,13 +11,6 @@ const TabEdge = dynamic(
   () => import('@/components/nutrition/menu/TabEdge').then(module => ({ default: module.TabEdge })),
   { ssr: false }
 );
-const TabDerived = dynamic(
-  () =>
-    import('@/components/nutrition/menu/TabDerived').then(module => ({
-      default: module.TabDerived,
-    })),
-  { ssr: false }
-);
 const TabToppings = dynamic(
   () =>
     import('@/components/nutrition/menu/TabToppings').then(module => ({
@@ -40,7 +33,7 @@ const TabSetCalc = dynamic(
   { ssr: false }
 );
 
-const TABS = ['베이스 영양성분', '엣지 설정', '추가토핑', '파생 메뉴', '계산 결과', '세트 계산'];
+const TABS = ['베이스 영양성분', '엣지 설정', '추가토핑', '계산 결과', '세트 계산'];
 
 export function NutritionMenuWorkspace({
   tab,
@@ -54,7 +47,6 @@ export function NutritionMenuWorkspace({
   edgeMap,
   toppings,
   ingredients,
-  compositions,
   setComps,
   menuSearch,
   onMenuSearch,
@@ -82,7 +74,7 @@ export function NutritionMenuWorkspace({
             </button>
           ))}
         </div>
-        {(tab === 0 || tab === 3 || tab === 4) && (
+        {(tab === 0 || tab === 3) && (
           <div style={{ flex: '0 1 220px', minWidth: 0, maxWidth: '100%' }}>
             <SearchBox value={menuSearch} onChange={onMenuSearch} placeholder="메뉴명·코드 검색" />
           </div>
@@ -117,29 +109,16 @@ export function NutritionMenuWorkspace({
         />
       )}
       {tab === 3 && (
-        <TabDerived
-          menus={menus}
-          ingredients={ingredients}
-          compositions={compositions}
-          onRefresh={onRefresh}
-          menuMasters={menuMasters}
-          menuSearch={menuSearch}
-          onOpenBase={() => onTab(0)}
-          canEdit={canEdit}
-        />
-      )}
-      {tab === 4 && (
         <TabResults
           menus={menus}
           rawMap={rawMap}
           edgeMap={edgeMap}
-          compositions={compositions}
           toppings={toppings}
           menuMasters={menuMasters}
           menuSearch={menuSearch}
         />
       )}
-      {tab === 5 && (
+      {tab === 4 && (
         <TabSetCalc
           menus={menus}
           rawMap={rawMap}

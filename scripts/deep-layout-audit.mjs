@@ -58,7 +58,8 @@ async function probePage(page) {
     };
     const labelOf = el => {
       const tag = el.tagName.toLowerCase();
-      const cls = typeof el.className === 'string' ? el.className.split(/\s+/).slice(0, 3).join('.') : '';
+      const cls =
+        typeof el.className === 'string' ? el.className.split(/\s+/).slice(0, 3).join('.') : '';
       const attr =
         el.getAttribute('aria-label') ||
         el.getAttribute('placeholder') ||
@@ -124,7 +125,14 @@ async function probePage(page) {
 
     const rects = controls.map((el, idx) => {
       const r = el.getBoundingClientRect();
-      return { idx, label: labelOf(el), left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+      return {
+        idx,
+        label: labelOf(el),
+        left: r.left,
+        top: r.top,
+        right: r.right,
+        bottom: r.bottom,
+      };
     });
     const overlaps = [];
     for (let i = 0; i < rects.length; i++) {
@@ -139,7 +147,8 @@ async function probePage(page) {
             a.left <= b.left && a.top <= b.top && a.right >= b.right && a.bottom >= b.bottom;
           const bContainsA =
             b.left <= a.left && b.top <= a.top && b.right >= a.right && b.bottom >= a.bottom;
-          if (!aContainsB && !bContainsA) overlaps.push({ a: a.label, b: b.label, area: Math.round(area) });
+          if (!aContainsB && !bContainsA)
+            overlaps.push({ a: a.label, b: b.label, area: Math.round(area) });
         }
       }
       if (overlaps.length >= 8) break;
@@ -152,8 +161,8 @@ async function probePage(page) {
       innerWidth: vw,
       horizontalOverflow: doc.scrollWidth > vw + 1,
       loadingMarkers: ['로딩 중', '불러오는 중'].filter(marker => bodyText.includes(marker)),
-      errorMarkers: ['Application error', 'Unhandled Runtime', 'client-side exception'].filter(marker =>
-        bodyText.includes(marker)
+      errorMarkers: ['Application error', 'Unhandled Runtime', 'client-side exception'].filter(
+        marker => bodyText.includes(marker)
       ),
       overflowElements,
       smallControls,
@@ -170,7 +179,8 @@ async function checkRoute(browser, routeInfo, viewport) {
   const pageErrors = [];
   const httpProblems = [];
   page.on('console', msg => {
-    if (msg.type() === 'error' && relevantConsole(msg.text())) consoleErrors.push(short(msg.text()));
+    if (msg.type() === 'error' && relevantConsole(msg.text()))
+      consoleErrors.push(short(msg.text()));
   });
   page.on('pageerror', err => pageErrors.push(short(err.message)));
   page.on('response', response => {
@@ -180,7 +190,8 @@ async function checkRoute(browser, routeInfo, viewport) {
 
   try {
     await page.addInitScript(
-      brand => localStorage.setItem('v3:active-brand', brand === 'china4-direct' ? 'china4' : brand),
+      brand =>
+        localStorage.setItem('v3:active-brand', brand === 'china4-direct' ? 'china4' : brand),
       routeInfo.brand
     );
     const response = await page.goto(routeUrl(BASE, routeInfo.route), {
@@ -276,7 +287,8 @@ for (const [key, items] of [...grouped.entries()].slice(0, 40)) {
   const first = items[0];
   console.log(`- ${key} @ ${labels}`);
   if (first.fatal) console.log(`  fatal: ${first.fatal}`);
-  if (first.horizontalOverflow) console.log(`  overflow: ${first.scrollWidth} > ${first.innerWidth}`);
+  if (first.horizontalOverflow)
+    console.log(`  overflow: ${first.scrollWidth} > ${first.innerWidth}`);
   if (first.overflowElements?.[0]) console.log(`  offender: ${first.overflowElements[0].label}`);
   if (first.clippedControls?.[0]) console.log(`  clipped: ${first.clippedControls[0].label}`);
   if (first.consoleErrors?.[0]) console.log(`  console: ${first.consoleErrors[0]}`);

@@ -3,6 +3,7 @@ import React from 'react';
 import { Icon } from '@/components/icons';
 import { STATUSES, STATUS_COLORS } from '@/lib/note';
 import { noteDisplayTitle } from '@/lib/note/display';
+import { isUnifiedSampleRecord } from '@/lib/note/unified-records';
 import { formatFullDate } from '@/lib/note/utils';
 
 export const NoteTableRow = React.memo(function NoteTableRow({
@@ -22,6 +23,7 @@ export const NoteTableRow = React.memo(function NoteTableRow({
   const title = noteDisplayTitle(note);
   const menuCode = typeof note.menuCode === 'string' ? note.menuCode.trim() : '';
   const checked = selected?.has(note.id) || false;
+  const canChangeStatus = canEdit && !isUnifiedSampleRecord(note);
   const handleOpen = () => {
     if (canEdit && batchMode) onToggleSelect(note.id);
     else onOpen(note);
@@ -81,7 +83,7 @@ export const NoteTableRow = React.memo(function NoteTableRow({
           value={note.status}
           onChange={e => onStatusChange(note.id, e.target.value, e)}
           onClick={e => e.stopPropagation()}
-          disabled={!canEdit}
+          disabled={!canChangeStatus}
           style={{
             fontSize: 11,
             fontWeight: 700,
@@ -90,7 +92,7 @@ export const NoteTableRow = React.memo(function NoteTableRow({
             background: sc.bg,
             color: sc.color,
             border: `1px solid ${sc.color}40`,
-            cursor: canEdit ? 'pointer' : 'default',
+            cursor: canChangeStatus ? 'pointer' : 'default',
             fontFamily: 'inherit',
             outline: 'none',
           }}

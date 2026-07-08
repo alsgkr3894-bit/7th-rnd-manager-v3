@@ -89,7 +89,11 @@ describe('palette recent items', () => {
 
     const removed = toggleFavoritePaletteItem({ href: '/settings/restore', label: '복원' });
     expect(removed.map(item => item.href)).toEqual(['/settings/backup']);
-    expect(normalizeFavoritePaletteItems([{ href: '/x', label: 'X' }, { href: '/x', label: 'Y' }]))
-      .toEqual([{ href: '/x', label: 'X', kind: 'nav' }]);
+    expect(
+      normalizeFavoritePaletteItems([
+        { href: '/x', label: 'X' },
+        { href: '/x', label: 'Y' },
+      ])
+    ).toEqual([{ href: '/x', label: 'X', kind: 'nav' }]);
   });
 });

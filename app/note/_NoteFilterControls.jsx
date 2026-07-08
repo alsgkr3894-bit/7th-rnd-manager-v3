@@ -1,7 +1,7 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { STATUSES, STATUS_COLORS, STATUS_BORDER } from '@/lib/note';
-import { NOTE_BRANDS } from '@/lib/note/constants';
+import { NOTE_UNIFIED_TYPES, NOTE_UNIFIED_TYPE_ALL } from '@/lib/note/unified-records';
 
 const SORT_OPTIONS = [
   { key: 'createdAt', label: '최신순' },
@@ -10,16 +10,17 @@ const SORT_OPTIONS = [
 ];
 
 export function NoteFilterControls({
-  brandFilter,
   statusFilter,
+  typeFilter = NOTE_UNIFIED_TYPE_ALL,
   counts,
+  typeCounts,
   sortBy,
   viewMode,
   search,
   searchHistory,
   showSearchHistory,
-  onBrandFilter,
   onStatusFilter,
+  onTypeFilter,
   onSort,
   onView,
   onSearchChange,
@@ -29,35 +30,40 @@ export function NoteFilterControls({
   onSearchHistoryPick,
 }) {
   const safeCounts = counts && typeof counts === 'object' ? counts : {};
+  const safeTypeCounts = typeCounts && typeof typeCounts === 'object' ? typeCounts : {};
   const safeSearchHistory = Array.isArray(searchHistory) ? searchHistory : [];
 
   return (
     <>
-      {NOTE_BRANDS.length > 1 && (
-        <div
-          style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12, alignItems: 'center' }}
+      <div
+        className="motion-stagger"
+        style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12, alignItems: 'center' }}
+      >
+        <span style={{ fontSize: 12, fontWeight: 900, color: 'var(--text-3)' }}>유형</span>
+        <button
+          className={'chip' + (typeFilter === NOTE_UNIFIED_TYPE_ALL ? ' active' : '')}
+          onClick={() => onTypeFilter?.(NOTE_UNIFIED_TYPE_ALL)}
         >
-          <span style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 600, marginRight: 2 }}>
-            브랜드
-          </span>
+          전체{' '}
+          {safeTypeCounts[NOTE_UNIFIED_TYPE_ALL] > 0 && (
+            <span style={{ fontSize: 11, opacity: 0.7 }}>
+              {safeTypeCounts[NOTE_UNIFIED_TYPE_ALL]}
+            </span>
+          )}
+        </button>
+        {NOTE_UNIFIED_TYPES.map(type => (
           <button
-            className={'chip' + (brandFilter === 'all' ? ' active' : '')}
-            onClick={() => onBrandFilter('all')}
+            key={type}
+            className={'chip' + (typeFilter === type ? ' active' : '')}
+            onClick={() => onTypeFilter?.(type)}
           >
-            전체
+            {type}{' '}
+            {safeTypeCounts[type] > 0 && (
+              <span style={{ fontSize: 11, opacity: 0.7 }}>{safeTypeCounts[type]}</span>
+            )}
           </button>
-          {NOTE_BRANDS.map(brand => (
-            <button
-              key={brand.id}
-              className={'chip' + (brandFilter === brand.id ? ' active' : '')}
-              onClick={() => onBrandFilter(brand.id)}
-            >
-              {brand.name}
-            </button>
-          ))}
-        </div>
-      )}
-
+        ))}
+      </div>
       <div
         className="motion-stagger"
         style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12, alignItems: 'center' }}

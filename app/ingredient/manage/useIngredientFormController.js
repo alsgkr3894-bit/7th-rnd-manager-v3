@@ -39,7 +39,9 @@ const EMPTY = {
   photos: normalizeIngredientPhotos(null),
   origin: [],
   originHidden: false,
+  originNone: false,
   allergens: [],
+  allergenNone: false,
 };
 
 export function useIngredientFormController({
@@ -195,9 +197,11 @@ export function useIngredientFormController({
       const data = {
         ...form,
         baseQuantity,
-        origin: originValue,
+        origin: form.originNone === true ? null : originValue,
         originHidden: form.originHidden === true,
-        allergens: form.allergens || [],
+        originNone: form.originNone === true,
+        allergens: form.allergenNone === true ? [] : form.allergens || [],
+        allergenNone: form.allergenNone === true,
       };
       data.photos = normalizeIngredientPhotos(form.photos, form.photo);
       data.photo = getPrimaryIngredientPhoto({ photos: data.photos });
@@ -309,7 +313,9 @@ function toForm(r) {
     temperature: r.temperature || '',
     origin: toOriginItems(r.origin),
     originHidden: r.originHidden === true,
+    originNone: r.originNone === true,
     allergens: Array.isArray(r.allergens) ? r.allergens : [],
+    allergenNone: r.allergenNone === true,
   };
 }
 

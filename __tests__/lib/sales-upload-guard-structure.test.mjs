@@ -50,9 +50,17 @@ describe('sales upload guard structure', () => {
   test('upload preview and history expose saved revenue totals', () => {
     expect(uploadHookSource).toContain('totalRevenue');
     expect(uploadHookSource).toContain('safeRevenue(row?.revenue)');
+    expect(uploadHookSource).toContain('headerColumns: result.headerColumns');
+    expect(uploadHookSource).toContain('revenueSummary: result.revenueSummary');
+    expect(uploadHookSource).toContain('revenueWarningRows: result.revenueWarningRows');
+    expect(pageSource).toContain('headerColumns={safePreview.headerColumns}');
+    expect(pageSource).toContain('revenueSummary={safePreview.revenueSummary}');
+    expect(pageSource).toContain('revenueWarningRows={safePreview.revenueWarningRows}');
     expect(previewSource).toContain('totalRevenue');
     expect(previewSource).toContain('safeRevenue(r.revenue)');
     expect(previewSource).toContain('매출액');
+    expect(previewSource).toContain('금액 컬럼 인식');
+    expect(previewSource).toContain('금액 없이 판매량만 반영됩니다');
     expect(historySource).toContain('safeRevenue(f.totalRevenue)');
     expect(historySource).toContain('매출액');
   });

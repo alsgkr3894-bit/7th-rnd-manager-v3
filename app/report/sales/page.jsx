@@ -23,6 +23,19 @@ import { normalizeViewMode } from './salesReportPageUtils';
 
 const DRAFT_KEY = 'report_draft_sales';
 
+function readSalesReportQuery() {
+  if (typeof window === 'undefined') return {};
+  const params = new URLSearchParams(window.location.search);
+  const viewParam = params.get('view');
+  return {
+    year: safeYear(params.get('year'), 0),
+    month: safeMonth(params.get('month'), 0),
+    viewMode: viewParam ? normalizeViewMode(viewParam) : null,
+    cmpYear: safeYear(params.get('cmpYear'), 0),
+    cmpMonth: safeMonth(params.get('cmpMonth'), 0),
+  };
+}
+
 export default function Page() {
   const [periodMode, setPeriodMode] = useState('month');
   const [year, setYear] = useState(2026);
@@ -68,9 +81,32 @@ export default function Page() {
     reload,
   } = useSalesReportData();
   const { compactDateLabel, profileName } = useReportGeneratedMeta();
+  const defaultApplied = useRef(false);
+  const queryAppliedRef = useRef(false);
+
+  useEffect(() => {
+    if (queryAppliedRef.current) return;
+    const query = readSalesReportQuery();
+    if (!query.year && !query.month && !query.viewMode && !query.cmpYear && !query.cmpMonth) return;
+    queryAppliedRef.current = true;
+    if (query.year && query.month) {
+      defaultApplied.current = true;
+      setPeriodMode('month');
+      setYear(query.year);
+      setMonth(query.month);
+      const prevMonth = query.month === 1 ? 12 : query.month - 1;
+      const prevYear = query.month === 1 ? query.year - 1 : query.year;
+      setCmpYear(prevYear);
+      setCmpMonth(prevMonth);
+    }
+    if (query.viewMode) setViewMode(query.viewMode);
+    if (query.viewMode === 'compare' && query.cmpYear && query.cmpMonth) {
+      setCmpYear(query.cmpYear);
+      setCmpMonth(query.cmpMonth);
+    }
+  }, []);
 
   // Apply defaultPeriod once when data first arrives
-  const defaultApplied = useRef(false);
   useEffect(() => {
     if (!defaultPeriod || defaultApplied.current) return;
     defaultApplied.current = true;

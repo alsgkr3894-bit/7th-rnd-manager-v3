@@ -31,6 +31,9 @@ describe('cost report page structure', () => {
   test('page delegates option controls and preview composition', () => {
     expect(pageSource).toContain('<CostReportOptions');
     expect(pageSource).toContain('<CostReportPreview');
+    expect(pageSource).toContain('<ReportModeSwitch value="cost"');
+    expect(pageSource).toContain('<MarginReportBuilderContent');
+    expect(pageSource).toContain('readReportModeFromLocation');
     expect(pageSource).toContain('useSettingValue');
     expect(pageSource).toContain('buildStrictPostingMessage(strictPostingIssues)');
     expect(pageSource).toContain('exportCostXlsx');

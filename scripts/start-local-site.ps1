@@ -84,6 +84,45 @@ function Wait-ForUrl {
   return $false
 }
 
+function Get-PortListener {
+  param([int]$Port)
+
+  try {
+    $listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction Stop |
+      Select-Object -First 1
+
+    if ($listener) {
+      return [pscustomobject]@{
+        OwningProcess = $listener.OwningProcess
+        Source = 'Get-NetTCPConnection'
+      }
+    }
+  } catch {}
+
+  try {
+    $wantedPort = ":$Port"
+    $lines = netstat -ano -p tcp
+    foreach ($line in $lines) {
+      $parts = $line.Trim() -split '\s+'
+      if ($parts.Count -lt 5 -or $parts[0] -ne 'TCP') {
+        continue
+      }
+
+      $localAddress = $parts[1]
+      $state = $parts[3]
+      $pid = $parts[4]
+      if ($state -eq 'LISTENING' -and $localAddress.EndsWith($wantedPort) -and $pid -match '^\d+$') {
+        return [pscustomobject]@{
+          OwningProcess = [int]$pid
+          Source = 'netstat'
+        }
+      }
+    }
+  } catch {}
+
+  return $null
+}
+
 if (!(Test-Path $dbStartScript)) {
   throw "DB start script was not found: $dbStartScript"
 }
@@ -98,8 +137,7 @@ if (Test-UrlReady $siteUrl) {
   Write-Status 'Local site is already running on http://localhost:3000.'
 } else {
   $siteProcess = $null
-  $portOwner = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue |
-    Select-Object -First 1
+  $portOwner = Get-PortListener 3000
 
   if ($portOwner) {
     Write-Status "Port 3000 is already listening by process $($portOwner.OwningProcess). Waiting for the site..."
@@ -130,8 +168,7 @@ if (Test-UrlReady $siteUrl) {
     throw "Local site became ready but failed the follow-up health check: $siteUrl"
   }
 
-  $listener = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue |
-    Select-Object -First 1
+  $listener = Get-PortListener 3000
   if (!$listener) {
     throw 'Local site became ready but port 3000 is no longer listening.'
   }

@@ -1,4 +1,14 @@
-export function SampleCardMeta({ names, testDate, roundLabel, isChained, company, price, priceTaxType }) {
+export function SampleCardMeta({
+  names,
+  ingredientGroupName,
+  recordType,
+  testDate,
+  roundLabel,
+  isChained,
+  company,
+  price,
+  priceTaxType,
+}) {
   return (
     <div
       style={{
@@ -11,6 +21,10 @@ export function SampleCardMeta({ names, testDate, roundLabel, isChained, company
         flexWrap: 'wrap',
       }}
     >
+      {recordType && <span className="chip">{recordType}</span>}
+      {ingredientGroupName && (
+        <span style={{ fontWeight: 700, color: 'var(--text-1)' }}>{ingredientGroupName}</span>
+      )}
       {names && <span style={{ fontWeight: 600, color: 'var(--text-2)' }}>{names}</span>}
       {testDate && <span>· {testDate}</span>}
       {roundLabel && <span>· {roundLabel}</span>}

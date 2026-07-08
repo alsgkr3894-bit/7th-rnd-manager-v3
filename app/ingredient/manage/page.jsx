@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -37,6 +37,13 @@ const IngredientPriceView = dynamic(
   { ssr: false, loading: () => <div className="skeleton" style={{ height: 320 }} /> }
 );
 
+function productCodeKey(rowOrCode) {
+  const value = rowOrCode && typeof rowOrCode === 'object' ? rowOrCode.productCode : rowOrCode;
+  return String(value || '')
+    .trim()
+    .toUpperCase();
+}
+
 export default function Page() {
   const isMain = useIsMainBrand();
   const { isViewer } = useCurrentRole();
@@ -71,6 +78,7 @@ export default function Page() {
   }, []);
   const [highlightId, setHighlightId] = useState(null);
   const [highlightProductCode, setHighlightProductCode] = useState(null);
+  const [hiddenJetteIssueCodes, setHiddenJetteIssueCodes] = useState(() => new Set());
 
   useEffect(() => {
     setView(readInitialManageView());
@@ -186,6 +194,7 @@ export default function Page() {
     handleSetCatFilter,
     handleSetTagFilter,
     handleDeleteCancel,
+    handleReplaceJetteProduct,
   } = useIngredientManageActions({
     load,
     setRows,
@@ -207,6 +216,36 @@ export default function Page() {
     setTagFilter,
     canEdit: !isViewer,
   });
+
+  const visibleNewJetteRows = useMemo(
+    () => newJetteRows.filter(row => !hiddenJetteIssueCodes.has(productCodeKey(row))),
+    [newJetteRows, hiddenJetteIssueCodes]
+  );
+  const visibleJetteRemovedRows = useMemo(
+    () => jetteRemovedRows.filter(row => !hiddenJetteIssueCodes.has(productCodeKey(row))),
+    [jetteRemovedRows, hiddenJetteIssueCodes]
+  );
+  const handleExcludeJetteIssue = useCallback(
+    async row => {
+      const code = productCodeKey(row);
+      if (code) {
+        setHiddenJetteIssueCodes(prev => {
+          const next = new Set(prev);
+          next.add(code);
+          return next;
+        });
+      }
+      const ok = await handleExclude(row);
+      if (!ok && code) {
+        setHiddenJetteIssueCodes(prev => {
+          const next = new Set(prev);
+          next.delete(code);
+          return next;
+        });
+      }
+    },
+    [handleExclude]
+  );
 
   return (
     <main className="main page-enter">
@@ -409,10 +448,12 @@ export default function Page() {
       {view === 'issues' && (
         <>
           <IngredientJetteIssuesPanel
-            newJetteRows={newJetteRows}
-            jetteRemovedRows={jetteRemovedRows}
+            newJetteRows={visibleNewJetteRows}
+            jetteRemovedRows={visibleJetteRemovedRows}
+            replacementRows={latestPriceRows}
             onAutoRegister={handleAutoRegister}
-            onExclude={handleExclude}
+            onExclude={handleExcludeJetteIssue}
+            onReplace={handleReplaceJetteProduct}
             isViewer={isViewer}
           />
           {rows.length > 0 && (

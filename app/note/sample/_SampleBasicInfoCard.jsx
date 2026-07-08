@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Icon } from '@/components/icons';
 import { ComboBox } from '@/components/ui/ComboBox';
 import { Field, SegGroup } from '@/components/note/FormFields';
-import { RATING_COLOR, RATING_LABELS } from '@/lib/sample';
+import { RATING_COLOR, RATING_LABELS, SAMPLE_RECORD_TYPE_OPTIONS } from '@/lib/sample';
 import { parseNoteQuickDate } from '@/lib/note/date-input';
 import { clampInteger, noop } from '@/lib/ui/prop-guards';
 
@@ -14,6 +14,8 @@ export function SampleBasicInfoCard({
   onSampleName,
   onAddSampleName,
   onRemoveSampleName,
+  ingredientGroupOptions = [],
+  onIngredientGroup,
   readOnly = false,
 }) {
   const [quickDateDraft, setQuickDateDraft] = useState('');
@@ -56,7 +58,32 @@ export function SampleBasicInfoCard({
         />
       </Field>
 
-      <Field label="샘플명" required hint="여러 개 추가 가능">
+      <div style={{ display: 'grid', gridTemplateColumns: '0.85fr 1.15fr', gap: 12 }}>
+        <Field label="기록 구분" required>
+          <SegGroup
+            options={SAMPLE_RECORD_TYPE_OPTIONS}
+            value={form.recordType || SAMPLE_RECORD_TYPE_OPTIONS[0]}
+            onChange={value => onUpdate('recordType', value)}
+            disabled={readOnly}
+          />
+        </Field>
+        <Field label="식자재 묶음" hint="목록에 없으면 직접 입력">
+          <ComboBox
+            value={form.ingredientGroupName || ''}
+            onChange={value =>
+              typeof onIngredientGroup === 'function'
+                ? onIngredientGroup(value)
+                : onUpdate('ingredientGroupName', value)
+            }
+            options={ingredientGroupOptions}
+            placeholder="예) 페퍼로니, 한우 불고기, 치즈"
+            inputClassName="form-input"
+            disabled={readOnly}
+          />
+        </Field>
+      </div>
+
+      <Field label="샘플명" hint="샘플테스트일 때 여러 개 추가 가능">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {(form.sampleNames || ['']).map((name, index) => (
             <div key={index} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -93,13 +120,7 @@ export function SampleBasicInfoCard({
         </div>
       </Field>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1.15fr) minmax(120px, 0.85fr)',
-          gap: 12,
-        }}
-      >
+      <div className="sample-date-round-grid">
         <Field label="샘플 작성 날짜">
           <input
             className="form-input"
@@ -114,7 +135,7 @@ export function SampleBasicInfoCard({
               padding: '7px 10px',
             }}
           />
-          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+          <div className="sample-quick-date-row">
             <input
               className="form-input"
               value={quickDateDraft}
@@ -149,9 +170,7 @@ export function SampleBasicInfoCard({
             </button>
           </div>
           {quickDateError && (
-            <div style={{ marginTop: 4, fontSize: 11, color: 'var(--negative)' }}>
-              날짜 확인
-            </div>
+            <div style={{ marginTop: 4, fontSize: 11, color: 'var(--negative)' }}>날짜 확인</div>
           )}
         </Field>
         <Field label="테스트 차수">

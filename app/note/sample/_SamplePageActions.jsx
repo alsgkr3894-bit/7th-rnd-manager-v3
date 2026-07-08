@@ -3,7 +3,13 @@
 import { Icon } from '@/components/icons';
 import { showToast } from '@/components/Toast';
 import { downloadCsv } from '@/lib/download';
-import { sampleNamesText } from '@/lib/sample';
+import {
+  SAMPLE_RECORD_FILE_LABEL,
+  SAMPLE_RECORD_LABEL,
+  SAMPLE_RECORD_REPORT_TITLE,
+  sampleIngredientGroupName,
+  sampleNamesText,
+} from '@/lib/sample';
 import { printSampleRecordsReport } from '@/lib/sample/report-print';
 
 export function SamplePageActions({
@@ -23,30 +29,44 @@ export function SamplePageActions({
   const selectedCount = selected?.size || 0;
 
   function handleExport() {
-    const headers = ['제목', '카테고리', '메뉴명', '업체', '테스트일', '별점', '설명', '태그'];
+    const headers = [
+      '제목',
+      '기록 구분',
+      '식자재 묶음',
+      '샘플명',
+      '카테고리',
+      '업체',
+      '테스트일',
+      '별점',
+      '설명',
+      '태그',
+    ];
     const csvRows = rows.map(sample => [
       sample.title || '',
-      sample.category || '',
+      sample.recordType || '샘플테스트',
+      sampleIngredientGroupName(sample),
       sampleNamesText(sample),
+      sample.category || '',
       sample.company || '',
       sample.testDate || '',
       sample.rating != null ? sample.rating : '',
       sample.description || '',
       sample.tags || '',
     ]);
-    downloadCsv([headers, ...csvRows], '샘플기록.csv');
+    downloadCsv([headers, ...csvRows], `${SAMPLE_RECORD_FILE_LABEL}.csv`);
   }
 
   function handlePrintPdf() {
     if (rows.length === 0) {
-      showToast('PDF로 출력할 샘플기록이 없어요', 'warn');
+      showToast(`PDF로 출력할 ${SAMPLE_RECORD_LABEL}이 없어요`, 'warn');
       return;
     }
     const opened = printSampleRecordsReport(rows, {
-      title: '샘플기록 PDF 보고서',
+      title: SAMPLE_RECORD_REPORT_TITLE,
       scopeLabel: '현재 필터 결과',
     });
-    if (opened) showToast(`샘플기록 ${rows.length}건 PDF 출력 창을 열었어요`, 'ok', 1800);
+    if (opened)
+      showToast(`${SAMPLE_RECORD_LABEL} ${rows.length}건 PDF 출력 창을 열었어요`, 'ok', 1800);
   }
 
   return (

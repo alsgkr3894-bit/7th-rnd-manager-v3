@@ -20,14 +20,14 @@ describe('journal PDF print helpers', () => {
 
     expect(html).toContain(`R&amp;D 연구일지 2026-07-03 (금)_${downloadDateStamp()}.pdf`);
     expect(html).toContain('오늘 한 일 보고서');
-    expect(html).toContain('작성일');
+    expect(html).toContain('대상 기간');
     expect(html).toContain('보고 건수');
     expect(html).toContain('문서 구분');
     expect(html).toContain('오늘 한 일');
-    expect(html).toContain('일정 내용');
-    expect(html).toContain('테스트/시식 결과');
-    expect(html).toContain('특이사항');
-    expect(html).toContain('다음 할 일');
+    expect(html).toContain('테스트 결과');
+    expect(html).toContain('다음 일정');
+    expect(html).not.toContain('일정 내용');
+    expect(html).not.toContain('특이사항');
     expect(html).not.toContain('핵심 테스트 내용');
     expect(html).not.toContain('사용 재료');
     expect(html).not.toContain('다음 액션');
@@ -50,7 +50,46 @@ describe('journal PDF print helpers', () => {
     expect(html).toContain('사용 재료');
     expect(html).toContain('다음 액션');
     expect(html).not.toContain('1. 오늘 한 일</div>');
-    expect(html).not.toContain('2. 일정 내용</div>');
-    expect(html).not.toContain('5. 다음 할 일</div>');
+    expect(html).not.toContain('2. 테스트 결과</div>');
+    expect(html).not.toContain('3. 다음 일정</div>');
+  });
+  test('journal print includes photos and waits for image loading', () => {
+    const html = buildJournalPrintHtml('2026-07-07', [
+      {
+        title: 'Journal with photo',
+        noteType: JOURNAL_NOTE_TYPE,
+        status: 'test',
+        testDate: '2026-07-07',
+        testContent: 'photo check',
+        photos: [
+          { data: 'data:image/png;base64,AAAA', caption: 'lab photo' },
+          { data: '', caption: 'blank photo' },
+        ],
+      },
+    ]);
+
+    expect(html).toContain('data:image/png;base64,AAAA');
+    expect(html).toContain('lab photo');
+    expect(html).toContain('loading="eager"');
+    expect(html).toContain('document.images');
+    expect(html).not.toContain('src=""');
+    expect(html).not.toContain('blank photo');
+  });
+
+  test('기간 종합본은 문서 제목을 바꿔 출력한다', () => {
+    const html = buildJournalPrintHtml(
+      '주간 2026-07-06 ~ 2026-07-12',
+      [
+        {
+          title: '기간 연구일지',
+          noteType: JOURNAL_NOTE_TYPE,
+          testContent: '기간 작업',
+        },
+      ],
+      { title: '연구일지 종합본' }
+    );
+
+    expect(html).toContain('연구일지 종합본');
+    expect(html).toContain('주간 2026-07-06 ~ 2026-07-12');
   });
 });

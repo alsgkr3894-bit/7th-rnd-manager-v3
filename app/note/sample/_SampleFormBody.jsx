@@ -1,7 +1,12 @@
 'use client';
 import { useRef, useState, useEffect } from 'react';
 import { showToast } from '@/components/Toast';
-import { SAMPLE_CATEGORIES, getAllSamples } from '@/lib/sample';
+import {
+  SAMPLE_CATEGORIES,
+  SAMPLE_RECORD_TYPES,
+  getAllSamples,
+  sampleIngredientGroupName,
+} from '@/lib/sample';
 import { initDB } from '@/lib/db';
 import { isSupportedImageFile, resizePhoto } from '@/lib/image/resize';
 import { clipboardImageFiles } from '@/lib/image/clipboard';
@@ -15,6 +20,10 @@ import { SamplePhotoCard } from './_SamplePhotoCard';
 
 export const SAMPLE_INIT = {
   title: '',
+  recordType: SAMPLE_RECORD_TYPES.SAMPLE_TEST,
+  ingredientGroupName: '',
+  ingredientGroupCode: '',
+  ingredientId: null,
   sampleNames: [''],
   category: '',
   testDate: '',
@@ -42,6 +51,8 @@ export function SampleFormBody({ form, setForm, readOnly = false }) {
   const productSearchTimerRef = useRef(null);
   const [allTags, setAllTags] = useState([]);
   const [catOptions, setCatOptions] = useState(SAMPLE_CATEGORIES);
+  const [ingredientGroupOptions, setIngredientGroupOptions] = useState([]);
+  const [ingredientLookup, setIngredientLookup] = useState(new Map());
   const [companyOptions, setCompanyOptions] = useState([]);
   const [productOptions, setProductOptions] = useState([]); // [{kind, code, name, label}]
   const [productSearch, setProductSearch] = useState('');
@@ -80,6 +91,13 @@ export function SampleFormBody({ form, setForm, readOnly = false }) {
         const tags = new Set();
         const cats = new Set(SAMPLE_CATEGORIES);
         const comps = new Set();
+        const groupNames = new Set();
+        const groupLookup = new Map();
+        const normalizeGroupKey = value =>
+          String(value || '')
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, '');
         samples.forEach(s => {
           (s.tags || '')
             .split(',')
@@ -88,9 +106,25 @@ export function SampleFormBody({ form, setForm, readOnly = false }) {
             .forEach(t => tags.add(t));
           if (s.category) cats.add(s.category);
           if (s.company) comps.add(s.company);
+          const groupName = sampleIngredientGroupName(s);
+          if (groupName) groupNames.add(groupName);
         });
+        ings
+          .filter(i => !i.discontinued && !i.excluded)
+          .forEach(i => {
+            const name = i.ingredientName || i.displayName || i.productName || i.productCode;
+            if (!name) return;
+            groupNames.add(name);
+            groupLookup.set(normalizeGroupKey(name), {
+              id: i.id,
+              code: i.productCode || String(i.id || ''),
+              name,
+            });
+          });
         setAllTags([...tags]);
         setCatOptions([...cats]);
+        setIngredientGroupOptions([...groupNames].sort((a, b) => a.localeCompare(b, 'ko')));
+        setIngredientLookup(groupLookup);
         setCompanyOptions([...comps]);
 
         const opts = [
@@ -206,6 +240,35 @@ export function SampleFormBody({ form, setForm, readOnly = false }) {
     ? form.photos.filter(p => p && typeof p === 'object')
     : [];
 
+  function updateIngredientGroup(value) {
+    if (readOnly) return;
+    const name = String(value || '').trim();
+    const key = name.toLowerCase().replace(/\s+/g, '');
+    const matched = ingredientLookup.get(key);
+    setForm(f => {
+      const linkedProducts = Array.isArray(f.linkedProducts) ? f.linkedProducts : [];
+      const next = {
+        ...f,
+        ingredientGroupName: name,
+        ingredientGroupCode: matched?.code || '',
+        ingredientId: matched?.id || null,
+      };
+      if (!matched) return next;
+      const already = linkedProducts.some(
+        item => item.kind === 'ingredient' && item.code === matched.code
+      );
+      return already
+        ? next
+        : {
+            ...next,
+            linkedProducts: [
+              ...linkedProducts,
+              { kind: 'ingredient', code: matched.code, name: matched.name },
+            ],
+          };
+    });
+  }
+
   return (
     <div
       className="form-layout"
@@ -226,6 +289,8 @@ export function SampleFormBody({ form, setForm, readOnly = false }) {
           onSampleName={setSampleName}
           onAddSampleName={addSampleName}
           onRemoveSampleName={removeSampleName}
+          ingredientGroupOptions={ingredientGroupOptions}
+          onIngredientGroup={updateIngredientGroup}
           readOnly={readOnly}
         />
         <SampleDetailRecordCard form={form} allTags={allTags} onUpdate={upd} readOnly={readOnly} />

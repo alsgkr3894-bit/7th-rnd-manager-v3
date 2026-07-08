@@ -1,5 +1,7 @@
 'use client';
 import { useMemo } from 'react';
+import { noteTypeFilterHref } from '@/lib/note/unified-records';
+import { SAMPLE_RECORD_LABEL } from '@/lib/sample/constants';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 
 function toTime(value) {
@@ -34,12 +36,15 @@ export function SampleStatsWidget({ samples, router }) {
     <div className="card">
       <div className="card-header">
         <div>
-          <div className="card-title">샘플기록</div>
+          <div className="card-title">{SAMPLE_RECORD_LABEL}</div>
           <div className="card-sub">
             총 {safeSamples.length}개 · 사진 {withPhoto}개 · 평균 {avg.toFixed(1)}점
           </div>
         </div>
-        <button className="link accent" onClick={() => router?.push?.('/note/sample')}>
+        <button
+          className="link accent"
+          onClick={() => router?.push?.(noteTypeFilterHref('샘플테스트'))}
+        >
           전체 →
         </button>
       </div>

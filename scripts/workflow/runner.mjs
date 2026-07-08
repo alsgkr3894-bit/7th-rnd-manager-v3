@@ -8,32 +8,73 @@ import {
   scenarioPassed,
   summarizeScenarios,
 } from '../workflow-qa-utils.mjs';
+import { createWorkflowDbSafetySnapshot, restoreWorkflowDbSafetySnapshot } from './db-safety.mjs';
 import { workflowScenarios } from './scenarios/index.mjs';
 import { attachWorkflowDiagnostics, installIdbInitInterceptor } from './helpers.mjs';
 
 export async function runWorkflowQa({ base = getQaBase() } = {}) {
-  const browser = await chromium.launch();
-  const ctx = await newAuthedContext(browser, { acceptDownloads: true }, base);
-  const page = await ctx.newPage();
   const tmpDir = mkdtempSync(join(tmpdir(), 'wf-qa-'));
   const runId = String(Date.now());
   const scenarios = [];
-
-  attachWorkflowDiagnostics(page);
-  await installIdbInitInterceptor(page);
+  let browser = null;
+  let ctx = null;
+  let page = null;
+  let safetySnapshotPath = null;
 
   try {
+    safetySnapshotPath = createWorkflowDbSafetySnapshot(tmpDir, runId);
+    browser = await chromium.launch();
+    ctx = await newAuthedContext(browser, { acceptDownloads: true }, base);
+    page = await ctx.newPage();
+
+    attachWorkflowDiagnostics(page);
+    await installIdbInitInterceptor(page);
+
     const context = { page, base, tmpDir, runId };
     for (const scenario of workflowScenarios) {
       scenarios.push(await scenario(context));
     }
   } finally {
-    await page.close();
-    await ctx.close();
-    await browser.close();
+    const cleanupErrors = [];
+
+    if (page) {
+      try {
+        await page.close();
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
+    if (ctx) {
+      try {
+        await ctx.close();
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
+    if (safetySnapshotPath) {
+      try {
+        restoreWorkflowDbSafetySnapshot(safetySnapshotPath);
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
     try {
       rmSync(tmpDir, { recursive: true, force: true });
     } catch {}
+    if (cleanupErrors.length > 0) {
+      throw new Error(
+        `workflow-qa cleanup failed: ${cleanupErrors
+          .map(error => error?.message || String(error))
+          .join('; ')}`
+      );
+    }
   }
 
   printWorkflowResult(scenarios);

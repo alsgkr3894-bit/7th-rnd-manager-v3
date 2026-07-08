@@ -29,11 +29,14 @@ export function useNoteListState({ notes, pinnedIds, pathname }) {
     setSearch,
     statusFilter,
     setStatusFilter,
+    typeFilter,
+    setTypeFilter,
     sortBy,
     setSortBy,
     brandFilter,
     setBrandFilter,
     counts,
+    typeCounts,
     filtered,
   } = useNoteFilter(notes, pinnedIds, { pathname });
 
@@ -68,7 +71,8 @@ export function useNoteListState({ notes, pinnedIds, pathname }) {
     () => (showAllRows ? filtered : filtered.slice(0, visibleCount)),
     [filtered, visibleCount, showAllRows]
   );
-  const hasActiveFilter = statusFilter !== 'all' || search.trim() || sortBy !== 'createdAt';
+  const hasActiveFilter =
+    statusFilter !== 'all' || typeFilter !== 'all' || search.trim() || sortBy !== 'createdAt';
 
   function resetVisibleCount() {
     setVisibleCount(PAGE_SIZE);
@@ -113,6 +117,11 @@ export function useNoteListState({ notes, pinnedIds, pathname }) {
     resetVisibleCount();
   }
 
+  function changeTypeFilter(nextType) {
+    setTypeFilter(nextType);
+    resetVisibleCount();
+  }
+
   function openChecklistList() {
     setStatusFilter('all');
     handleSearchChange('체크리스트');
@@ -132,9 +141,11 @@ export function useNoteListState({ notes, pinnedIds, pathname }) {
     viewMode,
     search,
     statusFilter,
+    typeFilter,
     sortBy,
     brandFilter,
     counts,
+    typeCounts,
     filtered,
     visible,
     hlRe,
@@ -156,6 +167,7 @@ export function useNoteListState({ notes, pinnedIds, pathname }) {
     changeView,
     changeBrandFilter,
     changeStatusFilter,
+    changeTypeFilter,
     openChecklistList,
     handleTagSearch,
     loadMore,

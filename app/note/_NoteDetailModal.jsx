@@ -41,7 +41,6 @@ export function NoteDetailModal({ note = {}, canEdit = false, onClose, onEdit })
     ['이슈', asText(note.issues)],
     ['개선점', asText(note.improvements)],
     ['다음 액션', asText(note.nextAction)],
-    ['보고용 요약', asText(note.reportSummary)],
   ].filter(([, v]) => v);
 
   return (

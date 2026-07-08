@@ -23,6 +23,7 @@ export function ShipmentReportPreview({
   safeOpts,
   qtyStats,
   amtStats,
+  catSummaryRows,
   chartSeries,
   chartColors,
   safeSeriesLabels,
@@ -33,6 +34,7 @@ export function ShipmentReportPreview({
   aggRowsLength,
 }) {
   const { profileName } = useReportGeneratedMeta();
+  const safeCatSummaryRows = Array.isArray(catSummaryRows) ? catSummaryRows : [];
   const qtyTxt = v => {
     const n = safeQuantity(v);
     return n ? formatNumber(n) : '—';
@@ -83,6 +85,33 @@ export function ShipmentReportPreview({
               <div className="paper-stat-val num">{amtTxt(val)}</div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── 분류별 합계 ── */}
+      {safeOpts.catSummary && safeCatSummaryRows.length > 0 && (
+        <div className="paper-section">
+          <div className="paper-section-title">분류별 합계</div>
+          <table className="paper-table">
+            <thead>
+              <tr>
+                <th>분류</th>
+                <th style={{ width: 80, textAlign: 'right' }}>제품수</th>
+                <th style={{ width: 110, textAlign: 'right' }}>출고량</th>
+                <th style={{ width: 120, textAlign: 'right' }}>출고금액</th>
+              </tr>
+            </thead>
+            <tbody>
+              {safeCatSummaryRows.map(([label, count, qty, amount]) => (
+                <tr key={label}>
+                  <td>{label}</td>
+                  <td className="num right">{formatNumber(count)}</td>
+                  <td className="num right">{qtyTxt(qty)}</td>
+                  <td className="num right">{amtTxt(amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

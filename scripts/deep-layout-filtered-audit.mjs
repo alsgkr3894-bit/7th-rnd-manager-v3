@@ -7,7 +7,8 @@ import {
 } from '../lib/navigation/route-classification.js';
 
 const BASE = getQaBase();
-const OUT = process.env.DEEP_LAYOUT_FILTERED_OUT || 'docs/deep-layout-filtered-audit-2026-07-02.json';
+const OUT =
+  process.env.DEEP_LAYOUT_FILTERED_OUT || 'docs/deep-layout-filtered-audit-2026-07-02.json';
 const VIEWPORTS = [
   { name: 'mobile-320', width: 320, height: 900 },
   { name: 'mobile-390', width: 390, height: 900 },
@@ -43,14 +44,48 @@ async function probe(page) {
       '[aria-hidden="true"]',
     ].join(',');
     const ignored = el => Boolean(el.closest(ignoredSelector));
-    const visible = el => {
+    const viewportRect = () => ({ left: 0, top: 0, right: vw, bottom: vh });
+    const intersects = rect => rect.right > rect.left && rect.bottom > rect.top;
+    const intersectRect = (rect, clip, axis = 'both') => ({
+      left: axis === 'y' ? rect.left : Math.max(rect.left, clip.left),
+      top: axis === 'x' ? rect.top : Math.max(rect.top, clip.top),
+      right: axis === 'y' ? rect.right : Math.min(rect.right, clip.right),
+      bottom: axis === 'x' ? rect.bottom : Math.min(rect.bottom, clip.bottom),
+    });
+    const visibleRectFor = el => {
       const rect = el.getBoundingClientRect();
       const style = getComputedStyle(el);
+      if (
+        !(
+          rect.width > 0 &&
+          rect.height > 0 &&
+          style.visibility !== 'hidden' &&
+          style.display !== 'none'
+        )
+      ) {
+        return null;
+      }
+      let visibleRect = intersectRect(rect, viewportRect());
+      if (!intersects(visibleRect)) return null;
+      for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+        if (parent === document.body || parent === document.documentElement) continue;
+        const parentStyle = getComputedStyle(parent);
+        const clipX = /auto|scroll|hidden|clip/.test(parentStyle.overflowX);
+        const clipY = /auto|scroll|hidden|clip/.test(parentStyle.overflowY);
+        if (!clipX && !clipY) continue;
+        const parentRect = parent.getBoundingClientRect();
+        const axis = clipX && clipY ? 'both' : clipX ? 'x' : 'y';
+        visibleRect = intersectRect(visibleRect, parentRect, axis);
+        if (!intersects(visibleRect)) return null;
+      }
+      return visibleRect;
+    };
+    const visible = el => {
+      const rect = visibleRectFor(el);
       return (
-        rect.width > 0 &&
-        rect.height > 0 &&
-        style.visibility !== 'hidden' &&
-        style.display !== 'none' &&
+        rect &&
+        rect.right > rect.left &&
+        rect.bottom > rect.top &&
         rect.bottom >= 0 &&
         rect.right >= 0 &&
         rect.top <= vh &&
@@ -59,8 +94,15 @@ async function probe(page) {
     };
     const label = el => {
       const tag = el.tagName.toLowerCase();
-      const cls = typeof el.className === 'string' ? el.className.split(/\s+/).filter(Boolean).slice(0, 3).join('.') : '';
-      const attr = el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('title') || '';
+      const cls =
+        typeof el.className === 'string'
+          ? el.className.split(/\s+/).filter(Boolean).slice(0, 3).join('.')
+          : '';
+      const attr =
+        el.getAttribute('aria-label') ||
+        el.getAttribute('placeholder') ||
+        el.getAttribute('title') ||
+        '';
       const text = (el.innerText || el.value || '').replace(/\s+/g, ' ').trim();
       return `${tag}${cls ? `.${cls}` : ''}${attr ? ` [${attr}]` : ''}${text ? ` "${text.slice(0, 80)}"` : ''}`;
     };
@@ -69,14 +111,14 @@ async function probe(page) {
     const all = [...document.querySelectorAll('body *')].filter(el => visible(el) && !ignored(el));
     const overflowElements = all
       .map(el => {
-        const rect = el.getBoundingClientRect();
+        const rect = visibleRectFor(el);
         const left = Math.floor(rect.left);
         const right = Math.ceil(rect.right);
         return {
           label: label(el),
           left,
           right,
-          width: Math.round(rect.width),
+          width: Math.round(rect.right - rect.left),
           overLeft: Math.max(0, -left),
           overRight: Math.max(0, right - vw),
         };
@@ -85,25 +127,28 @@ async function probe(page) {
       .sort((a, b) => b.overLeft + b.overRight - (a.overLeft + a.overRight))
       .slice(0, 10);
 
-    const controls = [...document.querySelectorAll('button,a,input,select,textarea,[role="button"],[role="link"]')]
-      .filter(el => visible(el) && !ignored(el));
+    const controls = [
+      ...document.querySelectorAll('button,a,input,select,textarea,[role="button"],[role="link"]'),
+    ].filter(el => visible(el) && !ignored(el));
 
     const clippedControls = controls
       .filter(el => {
         const style = getComputedStyle(el);
         const text = (el.innerText || el.value || '').trim();
-        return text.length > 1 && el.scrollWidth > el.clientWidth + 2 && style.overflow !== 'visible';
+        return (
+          text.length > 1 && el.scrollWidth > el.clientWidth + 2 && style.overflow !== 'visible'
+        );
       })
       .map(el => ({ label: label(el), clientWidth: el.clientWidth, scrollWidth: el.scrollWidth }))
       .slice(0, 10);
 
     const smallTextControls = controls
       .map(el => {
-        const rect = el.getBoundingClientRect();
+        const rect = visibleRectFor(el);
         return {
           label: label(el),
-          width: Math.round(rect.width),
-          height: Math.round(rect.height),
+          width: Math.round(rect.right - rect.left),
+          height: Math.round(rect.bottom - rect.top),
           text: (el.innerText || el.value || '').trim(),
         };
       })
@@ -111,8 +156,14 @@ async function probe(page) {
       .slice(0, 10);
 
     const rects = controls.map(el => {
-      const rect = el.getBoundingClientRect();
-      return { label: label(el), left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
+      const rect = visibleRectFor(el);
+      return {
+        label: label(el),
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+      };
     });
     const overlaps = [];
     for (let i = 0; i < rects.length; i++) {
@@ -138,8 +189,8 @@ async function probe(page) {
       scrollWidth: document.documentElement.scrollWidth,
       innerWidth: vw,
       loadingMarkers: ['로딩 중', '불러오는 중'].filter(marker => bodyText.includes(marker)),
-      errorMarkers: ['Application error', 'Unhandled Runtime', 'client-side exception'].filter(marker =>
-        bodyText.includes(marker)
+      errorMarkers: ['Application error', 'Unhandled Runtime', 'client-side exception'].filter(
+        marker => bodyText.includes(marker)
       ),
       overflowElements,
       clippedControls,
@@ -156,7 +207,8 @@ async function check(browser, routeInfo, viewport) {
   const pageErrors = [];
   const httpProblems = [];
   page.on('console', msg => {
-    if (msg.type() === 'error' && relevantConsole(msg.text())) consoleErrors.push(short(msg.text()));
+    if (msg.type() === 'error' && relevantConsole(msg.text()))
+      consoleErrors.push(short(msg.text()));
   });
   page.on('pageerror', error => pageErrors.push(short(error.message)));
   page.on('response', response => {
@@ -165,7 +217,8 @@ async function check(browser, routeInfo, viewport) {
   });
   try {
     await page.addInitScript(
-      brand => localStorage.setItem('v3:active-brand', brand === 'china4-direct' ? 'china4' : brand),
+      brand =>
+        localStorage.setItem('v3:active-brand', brand === 'china4-direct' ? 'china4' : brand),
       routeInfo.brand
     );
     const response = await page.goto(routeUrl(BASE, routeInfo.route), {
@@ -203,17 +256,17 @@ async function check(browser, routeInfo, viewport) {
 function isProblem(result) {
   return Boolean(
     result.fatal ||
-      result.status >= 500 ||
-      !result.h1 ||
-      !result.main ||
-      result.loadingMarkers?.length ||
-      result.errorMarkers?.length ||
-      result.consoleErrors?.length ||
-      result.pageErrors?.length ||
-      result.httpProblems?.length ||
-      result.overflowElements?.length ||
-      result.clippedControls?.length ||
-      result.overlaps?.length
+    result.status >= 500 ||
+    !result.h1 ||
+    !result.main ||
+    result.loadingMarkers?.length ||
+    result.errorMarkers?.length ||
+    result.consoleErrors?.length ||
+    result.pageErrors?.length ||
+    result.httpProblems?.length ||
+    result.overflowElements?.length ||
+    result.clippedControls?.length ||
+    result.overlaps?.length
   );
 }
 
@@ -249,9 +302,11 @@ console.log(`Result file: ${OUT}`);
 for (const problem of problems.slice(0, 40)) {
   console.log(`- ${problem.brand} ${problem.route} ${problem.viewport}`);
   if (problem.fatal) console.log(`  fatal: ${problem.fatal}`);
-  if (problem.overflowElements?.[0]) console.log(`  overflow: ${problem.overflowElements[0].label}`);
+  if (problem.overflowElements?.[0])
+    console.log(`  overflow: ${problem.overflowElements[0].label}`);
   if (problem.clippedControls?.[0]) console.log(`  clipped: ${problem.clippedControls[0].label}`);
-  if (problem.overlaps?.[0]) console.log(`  overlap: ${problem.overlaps[0].a} / ${problem.overlaps[0].b}`);
+  if (problem.overlaps?.[0])
+    console.log(`  overlap: ${problem.overlaps[0].a} / ${problem.overlaps[0].b}`);
   if (problem.consoleErrors?.[0]) console.log(`  console: ${problem.consoleErrors[0]}`);
 }
 

@@ -174,7 +174,11 @@ export default function Page() {
               </button>
               <button
                 className="btn primary"
-                onClick={() => router.push('/report/menu-sales-compare')}
+                onClick={() =>
+                  router.push(
+                    `/report/sales?view=compare&year=${safePeriodA.year}&month=${safePeriodA.month}&cmpYear=${safePeriodB.year}&cmpMonth=${safePeriodB.month}`
+                  )
+                }
               >
                 <Icon.doc style={{ width: 14, height: 14 }} />
                 보고서 생성

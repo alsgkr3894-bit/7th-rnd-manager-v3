@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import ReportBuilderShell from '@/components/report/ReportBuilderShell';
+import { ReportModeSwitch } from '@/components/report/ReportModeSwitch';
 import { MarginReportOptions } from '@/components/report/margin/MarginReportOptions';
 import { MarginReportPreview } from '@/components/report/margin/MarginReportPreview';
 import { showToast } from '@/components/Toast';
@@ -35,7 +36,7 @@ function buildDiscount(enabled, type, value) {
   return { type: 'fixed', value: num };
 }
 
-export default function Page() {
+export function MarginReportBuilderContent({ onReportModeChange }) {
   const { rows, platforms, loading, dbError, load } = useMarginData();
   const { opts, setOpts, updOpts, docFormat, updFmt } = useReportPageState(DRAFT_KEY, {
     categorySelection: {},
@@ -87,6 +88,7 @@ export default function Page() {
     name: '원가마진표 보고서',
     period: '현재 원가 데이터',
     options: {
+      reportMode: 'margin',
       viewMode,
       activePlatform: activePlatform?.name || '기본',
       discount,
@@ -99,11 +101,11 @@ export default function Page() {
 
   return (
     <ReportBuilderShell
-      breadcrumb={['보고서센터', '원가마진표 보고서']}
-      title="원가마진표 보고서 생성"
-      sub="원가마진표를 카테고리·엣지·사이즈 조건으로 미리보고 PDF/Excel로 출력합니다."
-      kind="margin"
-      exportNote="엑셀 출력은 카테고리와 메뉴명만 유지하고, 중분류 컬럼은 제외됩니다."
+      breadcrumb={['보고서센터', '원가 보고서', '원가마진표']}
+      title="원가 보고서 생성"
+      sub="원가계산과 원가마진표를 한 화면에서 전환해 PDF/Excel로 출력합니다."
+      kind="cost"
+      exportNote="원가마진표 엑셀 출력은 카테고리와 메뉴명만 유지하고, 중분류 컬럼은 제외됩니다."
       reportMeta={reportMeta}
       dataError={dbError}
       isLoading={loading}
@@ -111,34 +113,37 @@ export default function Page() {
       docFormat={docFormat}
       onExcelExport={handleExcelExport}
       options={
-        <MarginReportOptions
-          categories={categories}
-          categorySelection={opts.categorySelection}
-          onCategoryChange={(key, value) =>
-            updateSelection(setOpts, 'categorySelection', key, value)
-          }
-          edgeOptions={edgeOptions}
-          edgeSelection={opts.edgeSelection}
-          onEdgeChange={(key, value) => updateSelection(setOpts, 'edgeSelection', key, value)}
-          sizeOptions={sizeOptions}
-          sizeSelection={opts.sizeSelection}
-          onSizeChange={(key, value) => updateSelection(setOpts, 'sizeSelection', key, value)}
-          platforms={safePlatforms}
-          activePlatId={activePlatform.id}
-          onActivePlatId={setActivePlatId}
-          viewMode={viewMode}
-          onViewMode={setViewMode}
-          discountEnabled={discountEnabled}
-          onDiscountEnabled={setDiscountEnabled}
-          discountType={discountType}
-          onDiscountType={setDiscountType}
-          discountValue={discountValue}
-          onDiscountValue={setDiscountValue}
-          includeHidden={opts.includeHidden}
-          onIncludeHidden={value => updOpts('includeHidden', value)}
-          docFormat={docFormat}
-          onFormatChange={updFmt}
-        />
+        <>
+          <ReportModeSwitch value="margin" onChange={onReportModeChange} />
+          <MarginReportOptions
+            categories={categories}
+            categorySelection={opts.categorySelection}
+            onCategoryChange={(key, value) =>
+              updateSelection(setOpts, 'categorySelection', key, value)
+            }
+            edgeOptions={edgeOptions}
+            edgeSelection={opts.edgeSelection}
+            onEdgeChange={(key, value) => updateSelection(setOpts, 'edgeSelection', key, value)}
+            sizeOptions={sizeOptions}
+            sizeSelection={opts.sizeSelection}
+            onSizeChange={(key, value) => updateSelection(setOpts, 'sizeSelection', key, value)}
+            platforms={safePlatforms}
+            activePlatId={activePlatform.id}
+            onActivePlatId={setActivePlatId}
+            viewMode={viewMode}
+            onViewMode={setViewMode}
+            discountEnabled={discountEnabled}
+            onDiscountEnabled={setDiscountEnabled}
+            discountType={discountType}
+            onDiscountType={setDiscountType}
+            discountValue={discountValue}
+            onDiscountValue={setDiscountValue}
+            includeHidden={opts.includeHidden}
+            onIncludeHidden={value => updOpts('includeHidden', value)}
+            docFormat={docFormat}
+            onFormatChange={updFmt}
+          />
+        </>
       }
       preview={
         <MarginReportPreview

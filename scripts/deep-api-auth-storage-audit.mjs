@@ -133,7 +133,9 @@ async function auditAuthAndApi() {
 
   const authedLogin = await request('/login', { headers: { cookie: 'v3:auth=1' } });
   checks.push(
-    authedLogin.status >= 300 && authedLogin.status < 400 && locationPath(authedLogin.location) === '/'
+    authedLogin.status >= 300 &&
+      authedLogin.status < 400 &&
+      locationPath(authedLogin.location) === '/'
       ? pass('authenticated /login redirects to /', authedLogin)
       : fail('authenticated /login redirects to /', authedLogin)
   );
@@ -159,7 +161,9 @@ async function auditAuthAndApi() {
 
   const health = await request('/api/db/health');
   checks.push(
-    health.status === 200 && health.json?.ok === true && typeof health.json?.counts?.storeRows === 'number'
+    health.status === 200 &&
+      health.json?.ok === true &&
+      typeof health.json?.counts?.storeRows === 'number'
       ? pass('DB health API returns live counts', {
           ...health,
           counts: health.json.counts,
@@ -216,7 +220,9 @@ async function auditAuthAndApi() {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       brandId: 'main',
-      operations: [{ type: 'upsert', storeName: '__missing__', recordKey: RUN_ID, data: { runId: RUN_ID } }],
+      operations: [
+        { type: 'upsert', storeName: '__missing__', recordKey: RUN_ID, data: { runId: RUN_ID } },
+      ],
     }),
   });
   checks.push(
@@ -307,37 +313,38 @@ async function inspectIndexedDb(page, dbName) {
         openExisting();
 
         function openExisting() {
-        const request = indexedDB.open(dbName);
-        request.onerror = () => reject(new Error(request.error?.message || 'IndexedDB open failed'));
-        request.onsuccess = () => {
-          const db = request.result;
-          const stores = [...db.objectStoreNames].sort();
-          const details = {};
+          const request = indexedDB.open(dbName);
+          request.onerror = () =>
+            reject(new Error(request.error?.message || 'IndexedDB open failed'));
+          request.onsuccess = () => {
+            const db = request.result;
+            const stores = [...db.objectStoreNames].sort();
+            const details = {};
 
-          if (stores.length === 0) {
-            db.close();
-            resolve({ dbName, version: db.version, stores, details });
-            return;
-          }
+            if (stores.length === 0) {
+              db.close();
+              resolve({ dbName, version: db.version, stores, details });
+              return;
+            }
 
-          const tx = db.transaction(stores, 'readonly');
-          for (const storeName of stores) {
-            const store = tx.objectStore(storeName);
-            details[storeName] = {
-              keyPath: store.keyPath,
-              autoIncrement: store.autoIncrement,
-              indexes: [...store.indexNames].sort(),
+            const tx = db.transaction(stores, 'readonly');
+            for (const storeName of stores) {
+              const store = tx.objectStore(storeName);
+              details[storeName] = {
+                keyPath: store.keyPath,
+                autoIncrement: store.autoIncrement,
+                indexes: [...store.indexNames].sort(),
+              };
+            }
+            tx.oncomplete = () => {
+              db.close();
+              resolve({ dbName, version: db.version, stores, details });
             };
-          }
-          tx.oncomplete = () => {
-            db.close();
-            resolve({ dbName, version: db.version, stores, details });
+            tx.onerror = () => {
+              db.close();
+              reject(new Error(tx.error?.message || 'IndexedDB inspection failed'));
+            };
           };
-          tx.onerror = () => {
-            db.close();
-            reject(new Error(tx.error?.message || 'IndexedDB inspection failed'));
-          };
-        };
         }
       }),
     { dbName }
@@ -421,7 +428,12 @@ async function auditIndexedDb() {
       });
       page.on('pageerror', error => pageErrors.push(short(error.message)));
       try {
-        for (const initRoute of [target.route, '/menu-master', '/ingredient/manage', '/settings/backup']) {
+        for (const initRoute of [
+          target.route,
+          '/menu-master',
+          '/ingredient/manage',
+          '/settings/backup',
+        ]) {
           await page.goto(routeUrl(BASE, initRoute), { waitUntil: 'networkidle', timeout: 90_000 });
           await page.waitForSelector('main, h1', { timeout: 15_000 }).catch(() => {});
           if (await waitForExistingIndexedDb(page, target.dbName)) break;
@@ -490,8 +502,10 @@ for (const failure of failures) {
   if (failure.status) console.log(`  status: ${failure.status}`);
   if (failure.location) console.log(`  location: ${failure.location}`);
   if (failure.error) console.log(`  error: ${failure.error}`);
-  if (failure.missingStores?.length) console.log(`  missing stores: ${failure.missingStores.join(', ')}`);
-  if (failure.missingIndexes?.length) console.log(`  missing indexes: ${JSON.stringify(failure.missingIndexes.slice(0, 8))}`);
+  if (failure.missingStores?.length)
+    console.log(`  missing stores: ${failure.missingStores.join(', ')}`);
+  if (failure.missingIndexes?.length)
+    console.log(`  missing indexes: ${JSON.stringify(failure.missingIndexes.slice(0, 8))}`);
 }
 
 if (failures.length > 0) process.exitCode = 1;

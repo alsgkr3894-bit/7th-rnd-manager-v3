@@ -14,6 +14,8 @@ describe('sample report print helpers', () => {
       testRound: '2',
       company: '테스트업체',
       rating: 4,
+      price: '12000',
+      priceTaxType: 'excl',
       description: '고소함 확인',
       photos: [{ data: 'data:image/png;base64,abc', caption: '완성 사진' }],
       tags: '소스,시식',
@@ -42,17 +44,24 @@ describe('sample report print helpers', () => {
     expect(summary.companyCounts).toContainEqual(['테스트업체', 1]);
   });
 
-  test('buildSampleRecordsReportHtml renders PDF report with download date and uncropped photos', () => {
+  test('buildSampleRecordsReportHtml renders only list content without front summary or price columns', () => {
     const html = buildSampleRecordsReportHtml(samples, {
       now: new Date(2026, 5, 29),
       scopeLabel: '현재 필터 결과',
     });
 
-    expect(html).toContain('샘플기록 PDF 보고서');
-    expect(html).toContain('다운로드일 2026-06-29');
-    expect(html).toContain('현재 필터 결과');
+    expect(html).toContain('식자재 이슈 및 테스트 /샘플기록 PDF 보고서');
     expect(html).toContain('치즈 소스 샘플');
     expect(html).toContain('멘보샤');
+    expect(html).toContain(`<div class="category-title"><h2>${samples[0].sampleNames[0]}</h2>`);
+    expect(html).toContain('.sample-summary { display: grid; grid-template-columns: 1fr;');
+    expect(html).toContain('.field-grid { display: grid; grid-template-columns: 1fr; }');
+    expect(html).not.toContain('다운로드일 2026-06-29');
+    expect(html).not.toContain('현재 필터 결과');
+    expect(html).not.toContain('summary-grid');
+    expect(html).not.toContain('count-grid');
+    expect(html).not.toContain('가격</span>');
+    expect(html).not.toContain('12000');
     expect(html).toContain('object-fit: contain');
     expect(html).toContain('data:image/png;base64,abc');
   });

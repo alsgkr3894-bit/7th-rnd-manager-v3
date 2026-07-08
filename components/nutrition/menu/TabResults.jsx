@@ -7,7 +7,7 @@ import { NutritionResultRow } from './NutritionResultRow';
 import { ResultsToolbar } from './ResultsToolbar';
 import { NUTRITION_FIELDS, calcAllResults } from '@/lib/nutrition/values/store';
 import { downloadCsv } from '@/lib/download';
-import { resolveNutritionGroup, NUTRITION_GROUP_ORDER } from '@/lib/nutrition/menu-group';
+import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
 import { asDisplayText, asObjectArray, asRecord } from '@/lib/ui/prop-guards';
 
 const PAGE_SIZE = 100;
@@ -21,12 +21,10 @@ const GROUP_HEADER_STYLE = {
   textTransform: 'uppercase',
 };
 
-export function TabResults({ menus, rawMap, edgeMap, compositions, menuMasters, menuSearch = '' }) {
+export function TabResults({ menus, rawMap, edgeMap, menuMasters, menuSearch = '' }) {
   const [filterMenu, setFilterMenu] = useState('전체');
-  const [filterDerived, setFilterDerived] = useState('전체');
   const [missingOnly, setMissingOnly] = useState(false);
   const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
-  const safeCompositions = useMemo(() => asObjectArray(compositions), [compositions]);
   const safeMenuMasters = useMemo(() => asObjectArray(menuMasters), [menuMasters]);
   const safeRawMap = asRecord(rawMap);
   const safeEdgeMap = asRecord(edgeMap);
@@ -43,52 +41,36 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, menuMasters, 
         menus: safeMenus,
         rawMap: safeRawMap,
         edgeMap: safeEdgeMap,
-        compositions: safeCompositions,
+        compositions: [],
         masterByCode,
       }),
-    [safeMenus, safeRawMap, safeEdgeMap, safeCompositions, masterByCode]
+    [safeMenus, safeRawMap, safeEdgeMap, masterByCode]
   );
 
-  const menuNames = useMemo(
-    () => ['전체', ...safeMenus.map(m => m.menuName), ...safeCompositions.map(c => c.menuName)],
-    [safeMenus, safeCompositions]
-  );
+  const menuNames = useMemo(() => ['전체', ...safeMenus.map(m => m.menuName)], [safeMenus]);
 
   const filtered = useMemo(() => {
     let r = results;
     if (searchText) {
       r = r.filter(row =>
-        [
-          row.menuName,
-          row.menuCode,
-          row.baseMenuName,
-          row.baseMenuCode,
-          row.crustType,
-          row.isDerived ? '파생' : '기본',
-        ]
+        [row.menuName, row.menuCode, row.crustType]
           .map(value => asDisplayText(value).toLowerCase())
           .some(value => value.includes(searchText))
       );
     }
     if (filterMenu !== '전체') r = r.filter(x => x.menuName === filterMenu);
-    if (filterDerived === '기본') r = r.filter(x => !x.isDerived);
-    if (filterDerived === '파생') r = r.filter(x => x.isDerived);
     if (missingOnly) r = r.filter(isMissingResult);
     return r;
-  }, [results, searchText, filterMenu, filterDerived, missingOnly]);
+  }, [results, searchText, filterMenu, missingOnly]);
 
   // 그룹 헤더 삽입용 — menuCode 단위로 그룹을 추적
-  const allMenusForGroup = useMemo(
-    () => [...safeMenus, ...safeCompositions],
-    [safeMenus, safeCompositions]
-  );
   const menuGroupMap = useMemo(() => {
     const map = {};
-    allMenusForGroup.forEach(m => {
+    safeMenus.forEach(m => {
       map[m.menuCode] = resolveNutritionGroup(m, masterByCode);
     });
     return map;
-  }, [allMenusForGroup, masterByCode]);
+  }, [safeMenus, masterByCode]);
 
   const { page, goTo, totalPages, paged, total } = usePagination(filtered, PAGE_SIZE);
 
@@ -98,16 +80,12 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, menuMasters, 
   function exportCsv() {
     const headers = [
       '메뉴명',
-      '베이스 메뉴',
       '크러스트 타입',
-      '구분',
       ...NUTRITION_FIELDS.map(f => `${f.label}(${f.unit})`),
     ];
     const rows = filtered.map(r => [
       r.menuName || '',
-      r.baseMenuName || '',
       r.crustType || '',
-      r.isDerived ? '파생' : '기본',
       ...NUTRITION_FIELDS.map(f => (isMissingResult(r) ? '' : (r[f.key] ?? ''))),
     ]);
     downloadCsv(
@@ -138,8 +116,6 @@ export function TabResults({ menus, rawMap, edgeMap, compositions, menuMasters, 
         filterMenu={filterMenu}
         onFilterMenu={setFilterMenu}
         menuNames={menuNames}
-        filterDerived={filterDerived}
-        onFilterDerived={setFilterDerived}
         missingOnly={missingOnly}
         onToggleMissingOnly={() => setMissingOnly(v => !v)}
         onExportCsv={exportCsv}

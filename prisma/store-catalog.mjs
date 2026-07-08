@@ -219,6 +219,16 @@ const STORE_OPTIONS = {
       index('createdAt', 'createdAt'),
     ],
   },
+  market_research: {
+    keyPath: 'id',
+    autoIncrement: true,
+    indexes: [
+      index('date', 'date'),
+      index('type', 'type'),
+      index('brand', 'brand'),
+      index('createdAt', 'createdAt'),
+    ],
+  },
   note_schedules: {
     keyPath: 'id',
     autoIncrement: true,
@@ -290,6 +300,20 @@ const STORE_OPTIONS = {
     keyPath: 'id',
     autoIncrement: true,
     indexes: [index('role', 'role')],
+  },
+  rnd_corporate_card_entries: {
+    keyPath: 'id',
+    autoIncrement: true,
+    indexes: [index('usedAt', 'usedAt'), index('vendor', 'vendor'), index('category', 'category')],
+  },
+  rnd_login_credentials: {
+    keyPath: 'id',
+    autoIncrement: true,
+    indexes: [
+      index('siteName', 'siteName'),
+      index('category', 'category'),
+      index('isIsp', 'isIsp'),
+    ],
   },
 };
 

@@ -29,12 +29,7 @@ function SummaryPill({ label, value, tone = 'neutral' }) {
   );
 }
 
-export function RestoreImpactPanel({
-  impact,
-  dangerRows,
-  wipeRows,
-  unchangedSelectedStores = [],
-}) {
+export function RestoreImpactPanel({ impact, dangerRows, wipeRows, unchangedSelectedStores = [] }) {
   if (!impact || impact.rows.length === 0) return null;
   const increaseRows = impact.rows.filter(row => row.diff > 0);
   const unchangedRows = impact.rows.filter(row => row.diff === 0);

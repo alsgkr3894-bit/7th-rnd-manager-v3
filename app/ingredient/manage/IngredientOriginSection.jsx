@@ -111,7 +111,7 @@ function OriginSuggest({ value, onChange, suggestions = [], placeholder = '' }) 
   );
 }
 
-export function OriginSection({ origin, originHidden, originSuggestions, onSet }) {
+export function OriginSection({ origin, originHidden, originNone, originSuggestions, onSet }) {
   const items = Array.isArray(origin) ? origin : [];
   return (
     <div style={{ borderTop: '1px solid var(--divider)', paddingTop: 16 }}>
@@ -134,6 +134,28 @@ export function OriginSection({ origin, originHidden, originSuggestions, onSet }
           }}
         >
           원산지 정보
+          <label
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              cursor: 'pointer',
+              fontSize: 12,
+              fontWeight: 500,
+              color: originNone ? 'var(--positive)' : 'var(--text-3)',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={originNone === true}
+              onChange={e => {
+                onSet('originNone', e.target.checked);
+                if (e.target.checked) onSet('origin', []);
+              }}
+              style={{ accentColor: 'var(--positive)', width: 13, height: 13 }}
+            />
+            원산지 없음
+          </label>
           <label
             style={{
               display: 'inline-flex',
@@ -172,6 +194,7 @@ export function OriginSection({ origin, originHidden, originSuggestions, onSet }
         <button
           type="button"
           className="btn sm"
+          disabled={originNone === true}
           onClick={() => onSet('origin', [...items, { displayName: '', country: '' }])}
         >
           <Icon.plus style={{ width: 12, height: 12 }} /> 추가
@@ -248,7 +271,7 @@ export function OriginSection({ origin, originHidden, originSuggestions, onSet }
       ))}
       {items.length === 0 && (
         <div style={{ fontSize: 12, color: 'var(--text-4)', padding: '4px 0 8px' }}>
-          미등록 — 추가 버튼으로 입력하세요
+          {originNone ? '원산지 없음으로 표시됨' : '미등록 — 추가 버튼으로 입력하세요'}
         </div>
       )}
     </div>

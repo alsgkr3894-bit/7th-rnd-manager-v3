@@ -31,6 +31,8 @@ const { exportOriginToExcel } = await import('@/lib/nutrition/origin/export.js')
 const { exportNutritionLabelToExcel } = await import('@/lib/nutrition/label/export.js');
 const { exportSingleMonthXlsx } = await import('@/lib/sales/export-xlsx.js');
 const { exportCostXlsx } = await import('@/lib/report/export-cost-xlsx.js');
+const { exportPriceReportXlsx } = await import('@/lib/report/price-export.js');
+const { exportShipmentReportXlsx } = await import('@/lib/report/shipment-export.js');
 const { exportReportListToExcel } = await import('@/lib/report/report-list-utils.js');
 const { exportSalesReportWorkbook } = await import('@/lib/report/sales-export.js');
 
@@ -90,7 +92,7 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
     await exportNutritionLabelToExcel({
       pizzaSheet: [
         {
-          menuName: '=피자',
+          menuName: '=피자 L',
           rows: [
             {
               crustLabel: '석쇠',
@@ -103,10 +105,77 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
               sodium: 500,
               allergen: '밀',
             },
+            {
+              crustLabel: '석쇠',
+              side: 'R',
+              weight: 150,
+              kcal: 230,
+              sugar: 3,
+              protein: 11,
+              fat: 8,
+              sodium: 450,
+              allergen: '우유',
+            },
+            {
+              crustLabel: '씬',
+              side: 'L',
+              weight: 150,
+              kcal: 210,
+              sugar: 2,
+              protein: 10,
+              fat: 7,
+              sodium: 400,
+              allergen: '밀',
+            },
           ],
         },
       ],
-      pizzaSliceSheet: [],
+      pizzaSliceSheet: [
+        {
+          menuName: '=피자 L',
+          rows: [
+            {
+              crustLabel: '석쇠',
+              side: 'L',
+              slice: 8,
+              servingLabel: '1조각',
+              weight: 112,
+              kcal: 280,
+              sugar: 5,
+              protein: 13,
+              fat: 10,
+              sodium: 520,
+              allergen: '밀',
+            },
+            {
+              crustLabel: '석쇠',
+              side: 'R',
+              slice: 8,
+              servingLabel: '1조각',
+              weight: 92,
+              kcal: 230,
+              sugar: 4,
+              protein: 10,
+              fat: 8,
+              sodium: 460,
+              allergen: '우유',
+            },
+            {
+              crustLabel: '씬',
+              side: 'L',
+              slice: 8,
+              servingLabel: '1조각',
+              weight: 100,
+              kcal: 210,
+              sugar: 2,
+              protein: 10,
+              fat: 7,
+              sodium: 400,
+              allergen: '밀',
+            },
+          ],
+        },
+      ],
       sideSheet: [{ menuName: '사이드', weight: 100, kcal: 200, allergen: '대두' }],
       toppingSheet: [],
       setHalfSheet: [{ menuName: '세트', weight: 300, minKcal: 500, maxKcal: 700, allergen: '밀' }],
@@ -124,19 +193,21 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
       '음료',
     ]);
     expect(rowsOf(workbook, '피자')[0]).toEqual([
-      'Pizza',
+      '피자',
       '크러스트',
-      '1회중량(g)',
+      '총중량',
       '',
-      '열량(kcal)',
+      '중량단위',
       '',
-      '당류(g)',
+      '열량(kcal/150g)',
       '',
-      '단백질(g)',
+      '단백질(g/150g)',
       '',
-      '포화지방(g)',
+      '포화지방(g/150g)',
       '',
-      '나트륨(mg)',
+      '나트륨(mg/150g)',
+      '',
+      '당류(g/150g)',
       '',
       '함유된 알레르기 유발물질',
     ]);
@@ -155,7 +226,130 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
       'R',
       'L',
       'R',
+      'L',
+      'R',
       '',
+    ]);
+    expect(rowsOf(workbook, '피자')[2]).toEqual([
+      '=피자',
+      '석쇠',
+      150,
+      150,
+      'g',
+      'g',
+      250,
+      230,
+      12,
+      11,
+      9,
+      8,
+      500,
+      450,
+      4,
+      3,
+      '밀, 우유',
+    ]);
+    expect(rowsOf(workbook, '피자')[3]).toEqual([
+      '=피자',
+      '씬',
+      150,
+      '—',
+      'g',
+      '—',
+      210,
+      '—',
+      10,
+      '—',
+      7,
+      '—',
+      400,
+      '—',
+      2,
+      '—',
+      '밀',
+    ]);
+    expect(rowsOf(workbook, '피자(조각)')[0]).toEqual([
+      '피자',
+      '크러스트',
+      '1회중량(g)',
+      '',
+      '1회조각수',
+      '',
+      '총조각중량(g)',
+      '',
+      '열량(kcal/1회분)',
+      '',
+      '당류(g/1회분)',
+      '',
+      '단백질(g/1회분)',
+      '',
+      '포화지방(g/1회분)',
+      '',
+      '나트륨(mg/1회분)',
+      '',
+      '함유된 알레르기 유발물질',
+    ]);
+    expect(rowsOf(workbook, '피자(조각)')[2]).toEqual([
+      '=피자',
+      '석쇠',
+      112,
+      92,
+      '1조각',
+      '1조각',
+      896,
+      736,
+      280,
+      230,
+      5,
+      4,
+      13,
+      10,
+      10,
+      8,
+      520,
+      460,
+      '밀, 우유',
+    ]);
+    expect(rowsOf(workbook, '피자(조각)')[3]).toEqual([
+      '=피자',
+      '씬',
+      100,
+      '—',
+      '1조각',
+      '—',
+      800,
+      '—',
+      210,
+      '—',
+      2,
+      '—',
+      10,
+      '—',
+      7,
+      '—',
+      400,
+      '—',
+      '밀',
+    ]);
+    expect(rowsOf(workbook, '사이드·파스타')[0]).toEqual([
+      '메뉴명',
+      '1회 중량(g)',
+      '열량(kcal/1회분)',
+      '당류(g/1회분)',
+      '단백질(g/1회분)',
+      '포화지방(g/1회분)',
+      '나트륨(mg/1회분)',
+      '함유된 알레르기 유발물질',
+    ]);
+    expect(rowsOf(workbook, '사이드·파스타')[1]).toEqual([
+      '사이드',
+      100,
+      200,
+      '',
+      '',
+      '',
+      '',
+      '대두',
     ]);
     expect(rowsOf(workbook, '음료')[0][1]).toBe('총량(ml)');
     expect(rowsOf(workbook, '세트박스·하프앤하프')[0]).toEqual([
@@ -326,6 +520,149 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
       '',
       '',
     ]);
+  });
+
+  test('제때 가격 보고서 XLSX는 옵션별 시트와 한글 변동 품목을 보존한다', async () => {
+    await exportPriceReportXlsx({
+      dateRange: '2026-06-01 ~ 2026-06-30',
+      opts: { catSummary: true, costImpact: false },
+      catSummary: [
+        { cat: '전체', total: 1, up: 1, down: 0, newItem: 0, del: 0, sum: 12.5, count: 1 },
+      ],
+      changes: [
+        {
+          temperature: '냉장',
+          productCode: 'P-001',
+          productName: '=치즈 블렌드',
+          changeStatus: '인상',
+          basePrice: 1000,
+          latestPrice: 1125,
+          changeRate: 0.125,
+        },
+      ],
+    });
+
+    const { workbook, fileName } = lastWrite();
+    expect(fileName).toMatch(/^테스트브랜드_2026-06-01 ~ 2026-06-30 제때 가격 변동 보고서_\d{8}\.xlsx$/);
+    expect(workbook.SheetNames).toEqual(['요약', '전체 식자재 변동 요약', '변동 품목']);
+    expect(rowsOf(workbook, '요약')[1]).toEqual(['기간', '2026-06-01 ~ 2026-06-30']);
+    expect(rowsOf(workbook, '전체 식자재 변동 요약')[1]).toEqual([
+      '전체',
+      1,
+      1,
+      0,
+      0,
+      0,
+      12.5,
+    ]);
+    expect(rowsOf(workbook, '변동 품목')[1]).toEqual([
+      '냉장',
+      'P-001',
+      '=치즈 블렌드',
+      '인상',
+      1000,
+      1125,
+      125,
+      12.5,
+    ]);
+    expect(workbook.Sheets['변동 품목'].C2).toMatchObject({ t: 's', v: '=치즈 블렌드' });
+    expect(workbook.Sheets['변동 품목'].C2.f).toBeUndefined();
+
+    const diskWorkbook = savedWorkbook();
+    expect(diskWorkbook.SheetNames).toEqual(workbook.SheetNames);
+    expect(rowsOf(diskWorkbook, '변동 품목')[1][2]).toBe('=치즈 블렌드');
+    expect(diskWorkbook.Sheets['변동 품목'].C2.f).toBeUndefined();
+  });
+
+  test('제때 출고량 보고서 XLSX는 미리보기 옵션 시트와 한글 품목명을 보존한다', async () => {
+    await exportShipmentReportXlsx({
+      fileLabel: '2026년 6월',
+      scope: 'all',
+      opts: {
+        chart: true,
+        catSummary: true,
+        amountSummary: true,
+        fullList: true,
+        notShippedList: true,
+      },
+      qtyStats: [
+        ['총 출고량', 30],
+        ['전용상품', 10],
+        ['범용상품', 20],
+      ],
+      amtStats: [
+        ['총 출고금액', 30000],
+        ['전용상품 출고금액', 10000],
+        ['범용상품 출고금액', 20000],
+      ],
+      catSummaryRows: [
+        ['전용상품', 1, 10, 10000],
+        ['범용상품 전체', 1, 20, 20000],
+      ],
+      chartSeries: [
+        { name: '전용상품', data: [7, 10] },
+        { name: '범용상품', data: [15, 20] },
+      ],
+      safeSeriesLabels: ['2026.05', '2026.06'],
+      showExclusive: true,
+      showGeneric: true,
+      exclusive: [
+        {
+          productType: 'exclusive',
+          productCode: 'EX-001',
+          normalizedProductName: '=전용 치즈',
+          totalQuantity: 10,
+          totalAmount: 10000,
+        },
+      ],
+      genericAll: [
+        {
+          productType: 'generic',
+          productCode: 'GN-001',
+          normalizedProductName: '범용 소스',
+          totalQuantity: 20,
+          totalAmount: 20000,
+          isManaged: true,
+        },
+      ],
+      managed: [],
+      notShipped: [
+        {
+          productType: 'generic',
+          productCode: 'NS-001',
+          normalizedProductName: '미출고 토핑',
+        },
+      ],
+    });
+
+    const { workbook, fileName } = lastWrite();
+    expect(fileName).toMatch(/^테스트브랜드_2026년 6월 제때 출고량 보고서_\d{8}\.xlsx$/);
+    expect(workbook.SheetNames).toEqual([
+      '요약',
+      '분류별 합계',
+      '월별 출고량 추이',
+      '전용상품 목록',
+      '범용상품 목록',
+      '미출고 품목',
+    ]);
+    expect(rowsOf(workbook, '분류별 합계')[1]).toEqual(['전용상품', 1, 10, 10000]);
+    expect(rowsOf(workbook, '월별 출고량 추이')[2]).toEqual(['2026.06', 10, 20]);
+    expect(rowsOf(workbook, '전용상품 목록')[1]).toEqual([
+      1,
+      '=전용 치즈',
+      '전용',
+      'EX-001',
+      10,
+      10000,
+    ]);
+    expect(rowsOf(workbook, '범용상품 목록')[1][2]).toBe('관리품목');
+    expect(workbook.Sheets['전용상품 목록'].B2).toMatchObject({ t: 's', v: '=전용 치즈' });
+    expect(workbook.Sheets['전용상품 목록'].B2.f).toBeUndefined();
+
+    const diskWorkbook = savedWorkbook();
+    expect(diskWorkbook.SheetNames).toEqual(workbook.SheetNames);
+    expect(rowsOf(diskWorkbook, '미출고 품목')[1][1]).toBe('미출고 토핑');
+    expect(diskWorkbook.Sheets['전용상품 목록'].B2.f).toBeUndefined();
   });
 
   test('보고서 목록 XLSX는 실제 workbook으로 저장되고 문자열 수식 셀을 만들지 않는다', async () => {

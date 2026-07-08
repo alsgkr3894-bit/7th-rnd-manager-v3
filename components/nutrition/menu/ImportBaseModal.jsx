@@ -77,7 +77,8 @@ export function ImportBaseModal({ menuMasters, rawMap, onClose, onRefresh }) {
         const next = { ...row, ...patch };
         if (patch?.menuCode) {
           upsertNutritionImportAlias(row.rawName, next);
-          if (row.baseName && row.baseName !== row.rawName) upsertNutritionImportAlias(row.baseName, next);
+          if (row.baseName && row.baseName !== row.rawName)
+            upsertNutritionImportAlias(row.baseName, next);
         }
         return next;
       })

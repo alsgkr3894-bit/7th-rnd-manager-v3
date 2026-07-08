@@ -8,14 +8,8 @@ import { NotePageDialogs } from './_NotePageDialogs';
 import { useNoteContentController } from '@/hooks/useNoteContentController';
 
 export function NoteContent() {
-  const {
-    dialogsProps,
-    headerProps,
-    filterProps,
-    presetProps,
-    statesProps,
-    bodyProps,
-  } = useNoteContentController();
+  const { dialogsProps, headerProps, filterProps, presetProps, statesProps, bodyProps } =
+    useNoteContentController();
 
   return (
     <main className="main page-enter">

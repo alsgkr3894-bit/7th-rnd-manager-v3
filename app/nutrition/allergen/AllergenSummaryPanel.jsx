@@ -17,7 +17,7 @@ export function AllergenSummaryPanel({ totalWithAllergen, totalIngredients, matc
   return (
     <>
       <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
-        <SmallStatCard label="알레르기 등록 식자재" value={totalWithAllergen} />
+        <SmallStatCard label="알레르기 입력 완료" value={totalWithAllergen} />
         <SmallStatCard label="전체 식자재" value={totalIngredients} />
         <SmallStatCard label="알레르기 매칭 메뉴" value={matchedMenuCount} />
       </div>
@@ -60,7 +60,7 @@ export function AllergenSummaryPanel({ totalWithAllergen, totalIngredients, matc
           }}
         >
           <Icon.alert style={{ width: 16, height: 16, flexShrink: 0 }} />
-          알레르기 등록 식자재 없음 —{' '}
+          알레르기 입력 완료 식자재 없음 —{' '}
           <Link href="/ingredient/manage" style={actionLinkStyle}>
             식자재 관리에서 입력
           </Link>

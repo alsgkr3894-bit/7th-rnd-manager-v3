@@ -78,7 +78,7 @@ function createInputs(overrides = {}) {
 }
 
 describe('buildSamplePageControllerProps', () => {
-  test('샘플기록 화면 props와 route callback을 조립한다', () => {
+  test('식자재 이슈 및 테스트 /샘플기록 화면 props와 route callback을 조립한다', () => {
     const inputs = createInputs();
 
     const props = buildSamplePageControllerProps(inputs);
@@ -100,12 +100,12 @@ describe('buildSamplePageControllerProps', () => {
     props.dialogsProps.onNextRoundDetail();
     props.recordsProps.onEditSample({});
 
-    expect(inputs.router.push).toHaveBeenNthCalledWith(1, '/note/sample/write');
-    expect(inputs.router.push).toHaveBeenNthCalledWith(2, '/note/sample/write');
+    expect(inputs.router.push).toHaveBeenNthCalledWith(1, '/note/write?type=sample');
+    expect(inputs.router.push).toHaveBeenNthCalledWith(2, '/note/write?type=sample');
     expect(inputs.router.push).toHaveBeenNthCalledWith(3, '/note/sample/s-1');
-    expect(inputs.router.push).toHaveBeenNthCalledWith(4, '/note/sample/write');
+    expect(inputs.router.push).toHaveBeenNthCalledWith(4, '/note/write?type=sample');
     expect(inputs.router.push).toHaveBeenNthCalledWith(5, '/note/sample/s-2');
-    expect(inputs.router.push).toHaveBeenNthCalledWith(6, '/note/sample/write');
+    expect(inputs.router.push).toHaveBeenNthCalledWith(6, '/note/write?type=sample');
     expect(inputs.router.push).toHaveBeenCalledTimes(6);
     expect(inputs.pageState.setDetailRec).toHaveBeenCalledWith(null);
   });

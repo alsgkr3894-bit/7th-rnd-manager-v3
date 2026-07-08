@@ -2,7 +2,8 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 const pageSource = readFileSync(resolve('app/note/sample/page.jsx'), 'utf8');
-const writePageSource = readFileSync(resolve('app/note/sample/write/page.jsx'), 'utf8');
+const legacyWritePageSource = readFileSync(resolve('app/note/sample/write/page.jsx'), 'utf8');
+const noteWritePageSource = readFileSync(resolve('app/note/write/page.jsx'), 'utf8');
 const detailPageSource = readFileSync(resolve('app/note/sample/[id]/page.jsx'), 'utf8');
 const actionsSource = readFileSync(resolve('app/note/sample/_SamplePageActions.jsx'), 'utf8');
 const filtersSource = readFileSync(resolve('app/note/sample/_SampleFilterControls.jsx'), 'utf8');
@@ -186,6 +187,8 @@ describe('sample page structure', () => {
   test('extracted components own their sample page rendering responsibilities', () => {
     expect(actionsSource).toContain('export function SamplePageActions');
     expect(actionsSource).toContain('downloadCsv');
+    expect(actionsSource).toContain('SAMPLE_RECORD_FILE_LABEL');
+    expect(actionsSource).toContain('SAMPLE_RECORD_REPORT_TITLE');
     expect(actionsSource).toContain('printSampleRecordsReport');
     expect(actionsSource).toContain('PDF 출력');
     expect(actionsSource).toContain('엑셀로 내보내기');
@@ -194,7 +197,7 @@ describe('sample page structure', () => {
     expect(filtersSource).toContain('<SampleRatingViewControls');
     expect(filtersSource).toContain('<SampleSearchField');
     expect(filtersSource).not.toContain('className="sample-filter-row"');
-    expect(filtersSource).not.toContain('제목, 메뉴명, 내용, 태그 검색');
+    expect(filtersSource).not.toContain('제목, 식자재 묶음, 기록 구분, 내용, 태그 검색');
     expect(categoryFilterSource).toContain('export function SampleCategoryFilter');
     expect(categoryFilterSource).toContain(
       "className={'chip' + (catFilter === key ? ' active' : '')}"
@@ -215,7 +218,7 @@ describe('sample page structure', () => {
     expect(ratingFilterGroupSource).toContain('className="sample-rating-row"');
     expect(ratingFilterGroupSource).toContain('className="sample-rating-dist"');
     expect(searchFieldSource).toContain('export function SampleSearchField');
-    expect(searchFieldSource).toContain('제목, 메뉴명, 내용, 태그 검색');
+    expect(searchFieldSource).toContain('제목, 식자재 묶음, 기록 구분, 내용, 태그 검색');
     expect(searchFieldSource).toContain('<Icon.search');
     expect(calendarSource).toContain('export function SampleCalendarView');
     expect(calendarSource).toContain('className="cal-grid"');
@@ -250,11 +253,19 @@ describe('sample page structure', () => {
     expect(loadingGridSource).toContain('SampleCardSkeleton');
     expect(emptyStateSource).toContain('export function SampleEmptyState');
     expect(emptyStateSource).toContain('첫 샘플 작성하기');
-    expect(emptyStateSource).toContain('샘플 기록이 없어요');
+    expect(emptyStateSource).toContain('SAMPLE_RECORD_LABEL');
     expect(gridViewSource).toContain('export function SampleGridView');
+    expect(gridViewSource).toContain('buildSampleIngredientGroups');
+    expect(gridViewSource).toContain(
+      '샘플테스트 {group.sampleTestCount}건 · 이슈 {group.issueCount}건'
+    );
     expect(gridViewSource).toContain('<SampleCard');
     expect(gridViewSource).toContain('animDelay={Math.min(index, 8) * 40}');
     expect(listViewSource).toContain('export function SampleListView');
+    expect(listViewSource).toContain('buildSampleIngredientGroups');
+    expect(listViewSource).toContain(
+      '샘플테스트 {group.sampleTestCount}건 · 이슈 {group.issueCount}건'
+    );
     expect(listViewSource).toContain('<SampleListRow');
     expect(listViewSource).toContain('className="data-table"');
     expect(sampleCardSource).toContain('export const SampleCard');
@@ -272,7 +283,9 @@ describe('sample page structure', () => {
     expect(sampleCardBodySource).toContain('<SampleCardTags');
     expect(sampleCardBodySource).toContain('<SampleCardActions');
     expect(sampleCardMediaSource).toContain('export function SampleCardMedia');
-    expect(sampleCardMediaSource).toContain("import { PhotoCarousel } from '@/components/note/PhotoCarousel'");
+    expect(sampleCardMediaSource).toContain(
+      "import { PhotoCarousel } from '@/components/note/PhotoCarousel'"
+    );
     expect(sampleCardMediaSource).toContain('<PhotoCarousel');
     expect(sampleCardMediaSource).toContain('photosCount > 1');
     expect(sampleCardMediaSource).toContain('height={230}');
@@ -284,6 +297,8 @@ describe('sample page structure', () => {
     expect(sampleRatingStarsSource).toContain('export function SampleRatingStars');
     expect(sampleRatingStarsSource).toContain('className="inline-stars"');
     expect(sampleCardMetaSource).toContain('export function SampleCardMeta');
+    expect(sampleCardMetaSource).toContain('recordType');
+    expect(sampleCardMetaSource).toContain('ingredientGroupName');
     expect(sampleCardMetaSource).toContain('priceTaxType ===');
     expect(sampleCardMetaSource).toContain('roundLabel');
     expect(sampleCardMetaSource).toContain('isChained');
@@ -294,9 +309,13 @@ describe('sample page structure', () => {
     expect(sampleCardActionsSource).toContain('다음 차수');
     expect(sampleCardActionsSource).toContain('event.stopPropagation()');
     expect(sampleCardUtilsSource).toContain('export function buildSampleCardViewModel');
+    expect(sampleCardUtilsSource).toContain('sampleIngredientGroupName(rec)');
     expect(sampleCardUtilsSource).toContain('sampleNamesText(rec)');
     expect(sampleCardUtilsSource).toContain('formatTestRound(rec.testRound)');
     expect(sampleCardUtilsSource).toContain('isChained: rec.parentId != null');
+    expect(basicInfoSource).toContain('SAMPLE_RECORD_TYPE_OPTIONS');
+    expect(basicInfoSource).toContain('기록 구분');
+    expect(basicInfoSource).toContain('식자재 묶음');
     expect(basicInfoSource).toContain('테스트 차수');
     expect(basicInfoSource).toContain("onUpdate('testRound'");
     expect(sampleListRowSource).toContain('formatTestRound(rec.testRound)');
@@ -306,6 +325,16 @@ describe('sample page structure', () => {
     expect(sampleDetailHeaderSource).toContain('다음 차수');
     expect(sampleDetailHeaderSource).toContain('model.roundLabel');
     expect(sampleDetailHeaderSource).toContain('model.isChained');
+  });
+
+  test('sample export filenames use the shared record label', () => {
+    expect(actionsSource).toContain('`${SAMPLE_RECORD_FILE_LABEL}.csv`');
+    expect(actionsSource).toContain('sampleIngredientGroupName(sample)');
+    expect(actionsSource).toContain("'기록 구분'");
+    expect(actionsSource).toContain("'식자재 묶음'");
+    expect(detailPageSource).toContain('SAMPLE_RECORD_FILE_LABEL');
+    expect(detailPageSource).toContain('`${SAMPLE_RECORD_FILE_LABEL}_상세_${sampleId ||');
+    expect(detailPageSource).toContain('printCurrentPageWithDownloadDate');
   });
 
   test('sample hooks own page data state and record mutations', () => {
@@ -337,7 +366,7 @@ describe('sample page structure', () => {
     expect(controllerPropsSource).toContain('buildSampleActionsProps(context)');
     expect(controllerPropsSource).toContain('buildSampleFilterProps(context)');
     expect(controllerPropsSource).toContain('buildSampleDialogsProps(context)');
-    expect(controllerPropsSource).toContain("router.push('/note/sample/write')");
+    expect(controllerPropsSource).toContain("router.push('/note/write?type=sample')");
     expect(controllerPropsSource).toContain('if (!canEdit) return');
     expect(controllerPropsSource).toContain('if (!canEdit || sample?.id == null) return');
     expect(controllerPropsSource).toContain('router.push(`/note/sample/${sample.id}`)');
@@ -457,23 +486,24 @@ describe('sample page structure', () => {
     expect(pageDialogsSource).toContain('canEdit = false');
     expect(sampleDetailModalSource).toContain('canEdit = false');
     expect(sampleDetailHeaderSource).toContain('disabled={!canEdit}');
-    expect(writePageSource).toContain('consumeSampleFrom');
-    expect(writePageSource).toContain('buildNextSampleRoundDraft');
-    expect(writePageSource).toContain('getSampleById');
-    expect(writePageSource).toContain('const fromSampleId = Number(consumeSampleFrom())');
-    expect(writePageSource).toContain('const d = consumeSampleFromNote()');
-    expect(writePageSource.indexOf('const fromSampleId = Number(consumeSampleFrom())')).toBeLessThan(
-      writePageSource.indexOf('const d = consumeSampleFromNote()')
+    expect(legacyWritePageSource).toContain("router.replace('/note/write?type=sample')");
+    expect(noteWritePageSource).toContain('consumeSampleFrom');
+    expect(noteWritePageSource).toContain('buildNextSampleRoundDraft');
+    expect(noteWritePageSource).toContain('getSampleById');
+    expect(noteWritePageSource).toContain('const fromSampleId = Number(consumeSampleFrom())');
+    expect(noteWritePageSource).toContain('const sampleDraft = consumeSampleFromNote()');
+    expect(
+      noteWritePageSource.indexOf('const fromSampleId = Number(consumeSampleFrom())')
+    ).toBeLessThan(noteWritePageSource.indexOf('const sampleDraft = consumeSampleFromNote()'));
+    expect(noteWritePageSource.indexOf('getSampleById(fromSampleId)')).toBeLessThan(
+      noteWritePageSource.indexOf('const sampleDraft = consumeSampleFromNote()')
     );
-    expect(writePageSource.indexOf('getSampleById(fromSampleId)')).toBeLessThan(
-      writePageSource.indexOf('const d = consumeSampleFromNote()')
-    );
-    expect(writePageSource).toContain("from '@/hooks/useCurrentRole'");
-    expect(writePageSource).toContain('if (!roleReady) return');
-    expect(writePageSource).toContain('}, [canEdit, roleReady]);');
-    expect(writePageSource).toContain('if (!canEdit) return');
-    expect(writePageSource).toContain('disabled={saving || !canEdit}');
-    expect(writePageSource).toContain('readOnly={!canEdit}');
+    expect(noteWritePageSource).toContain("from '@/hooks/useCurrentRole'");
+    expect(noteWritePageSource).toContain('if (!roleReady) return');
+    expect(noteWritePageSource).toContain('}, [canEdit, roleReady]);');
+    expect(noteWritePageSource).toContain('if (!canEdit) return');
+    expect(noteWritePageSource).toContain('disabled={saving || !canEdit}');
+    expect(noteWritePageSource).toContain('readOnly={!canEdit}');
     expect(detailPageSource).toContain("from '@/hooks/useCurrentRole'");
     expect(detailPageSource).toContain('if (!canEdit) return');
     expect(detailPageSource).toContain('disabled={saving || !canEdit}');

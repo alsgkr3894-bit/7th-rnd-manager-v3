@@ -60,7 +60,10 @@ function koreanDate(value) {
 }
 
 function periodLabel(notes = []) {
-  const dates = notes.map(note => compactDate(note?.testDate)).filter(Boolean).sort();
+  const dates = notes
+    .map(note => compactDate(note?.testDate))
+    .filter(Boolean)
+    .sort();
   if (!dates.length) return '';
   const first = dates[0];
   const last = dates[dates.length - 1];

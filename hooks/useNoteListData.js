@@ -4,6 +4,8 @@ import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { getAllNotes } from '@/lib/note';
 import { filterNoteListNotes } from '@/lib/note/filter';
+import { buildUnifiedNoteRecords } from '@/lib/note/unified-records';
+import { getAllSamples } from '@/lib/sample';
 import { getNoteDetailStats } from '@/lib/stats/note-stats';
 import { useMounted } from '@/hooks/useMounted';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
@@ -16,9 +18,13 @@ export function useNoteListData() {
 
   const load = useCallback(async () => {
     await initDB();
-    const [data, nextStats] = await Promise.all([getAllNotes(), getNoteDetailStats()]);
+    const [noteData, sampleData, nextStats] = await Promise.all([
+      getAllNotes(),
+      getAllSamples(),
+      getNoteDetailStats(),
+    ]);
     if (!mountedRef.current) return;
-    setNotes(filterNoteListNotes(data));
+    setNotes(buildUnifiedNoteRecords(filterNoteListNotes(noteData), sampleData));
     setStats(nextStats);
   }, [mountedRef]);
 

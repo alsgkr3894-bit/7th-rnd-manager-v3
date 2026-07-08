@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { isUnifiedSampleRecord } from '@/lib/note/unified-records';
 import { NoteIdeaGroupCard } from './_NoteIdeaGroupCard';
 import { buildNoteIdeaGroups } from './noteIdeaGroups';
 
@@ -21,6 +22,10 @@ function parseDragPayload(event, fallback) {
   } catch {
     return fallback;
   }
+}
+
+function groupHasSampleRecord(group = {}) {
+  return (group.notes || []).some(note => isUnifiedSampleRecord(note));
 }
 
 export function NoteCardGrid({
@@ -109,45 +114,48 @@ export function NoteCardGrid({
           marginTop: 16,
         }}
       >
-        {groups.map((group, i) => (
-          <div
-            key={group.key}
-            className="stagger note-card-wrap"
-            style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
-          >
-            <NoteIdeaGroupCard
-              group={group}
-              draggable={canDragMerge}
-              isDragging={dragGroup?.key === group.key}
-              isDropTarget={dropKey === group.key && dragGroup?.key !== group.key}
-              canEdit={canEdit}
-              batchMode={batchMode}
-              selected={selected}
-              pinnedIds={pinnedIds}
-              popIds={popIds}
-              hlRe={hlRe}
-              onContextMenu={onContextMenu}
-              onToggleSelect={onToggleSelect}
-              onOpen={onOpen}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onCopy={onCopy}
-              onStatusChange={onStatusChange}
-              onNewVersion={onNewVersion}
-              onPin={onPin}
-              onTagClick={onTagClick}
-              onUnmergeGroup={onUnmergeGroup}
-              onDragStartGroup={event => handleDragStart(group, event)}
-              onDragOverGroup={event => handleDragOver(group, event)}
-              onDragLeaveGroup={event => handleDragLeave(group, event)}
-              onDropGroup={event => handleDrop(group, event)}
-              onDragEndGroup={() => {
-                setDragGroup(null);
-                setDropKey(null);
-              }}
-            />
-          </div>
-        ))}
+        {groups.map((group, i) => {
+          const groupCanDragMerge = canDragMerge && !groupHasSampleRecord(group);
+          return (
+            <div
+              key={group.key}
+              className="stagger note-card-wrap"
+              style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
+            >
+              <NoteIdeaGroupCard
+                group={group}
+                draggable={groupCanDragMerge}
+                isDragging={dragGroup?.key === group.key}
+                isDropTarget={dropKey === group.key && dragGroup?.key !== group.key}
+                canEdit={canEdit}
+                batchMode={batchMode}
+                selected={selected}
+                pinnedIds={pinnedIds}
+                popIds={popIds}
+                hlRe={hlRe}
+                onContextMenu={onContextMenu}
+                onToggleSelect={onToggleSelect}
+                onOpen={onOpen}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onCopy={onCopy}
+                onStatusChange={onStatusChange}
+                onNewVersion={onNewVersion}
+                onPin={onPin}
+                onTagClick={onTagClick}
+                onUnmergeGroup={onUnmergeGroup}
+                onDragStartGroup={event => groupCanDragMerge && handleDragStart(group, event)}
+                onDragOverGroup={event => groupCanDragMerge && handleDragOver(group, event)}
+                onDragLeaveGroup={event => handleDragLeave(group, event)}
+                onDropGroup={event => groupCanDragMerge && handleDrop(group, event)}
+                onDragEndGroup={() => {
+                  setDragGroup(null);
+                  setDropKey(null);
+                }}
+              />
+            </div>
+          );
+        })}
       </div>
       {groups.length < allGroups.length && (
         <button className="load-more-btn" onClick={onLoadMore}>

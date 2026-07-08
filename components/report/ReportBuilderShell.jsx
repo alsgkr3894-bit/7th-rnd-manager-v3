@@ -127,6 +127,10 @@ export default function ReportBuilderShell({
       showToast('문서 형식을 하나 이상 선택해 주세요', 'error');
       return;
     }
+    if (safeDocFormat.excel && !handleExcelExport) {
+      showToast('Excel 출력 연결이 준비되지 않았습니다', 'error');
+      return;
+    }
     let started = false;
     try {
       if (handleBeforeGenerate) {

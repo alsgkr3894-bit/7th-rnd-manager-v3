@@ -53,6 +53,38 @@ describe('QA orchestration scripts', () => {
     expect(script).toContain('await stopServer(server)');
   });
 
+  test('QA scripts restore DB safety snapshots after browser scenarios', () => {
+    const prod = src('scripts/qa-prod.mjs');
+    const full = src('scripts/qa-full.mjs');
+    const runner = src('scripts/workflow/runner.mjs');
+    const safety = src('scripts/workflow/db-safety.mjs');
+
+    expect(prod).toContain(
+      'qaSafetySnapshotPath = createQaDbSafetySnapshot(qaSafetyDir, `prod-${Date.now()}`)'
+    );
+    expect(prod.indexOf('await stopServer(server)')).toBeLessThan(
+      prod.lastIndexOf('restoreQaSafetySnapshotOnce()')
+    );
+    expect(full).toContain(
+      'qaSafetySnapshotPath = createQaDbSafetySnapshot(qaSafetyDir, `full-${Date.now()}`)'
+    );
+    expect(full.indexOf("await run('qa:workflow')")).toBeLessThan(
+      full.lastIndexOf('restoreQaSafetySnapshotOnce()')
+    );
+    expect(prod).toContain("process.once('exit'");
+    expect(full).toContain("process.once('exit'");
+    expectInOrder(runner, [
+      'safetySnapshotPath = createWorkflowDbSafetySnapshot(tmpDir, runId)',
+      'await browser.close()',
+      'restoreWorkflowDbSafetySnapshot(safetySnapshotPath)',
+    ]);
+    expect(safety).toContain("'pg_dump'");
+    expect(safety).toContain("'pg_restore'");
+    expect(safety).toContain("'--clean'");
+    expect(safety).toContain("'--single-transaction'");
+    expect(safety).toContain("'--exit-on-error'");
+  });
+
   test('production start 오류 fallback을 위한 pages/_error.js가 있다', () => {
     const errorPage = src('pages/_error.js');
 

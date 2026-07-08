@@ -35,9 +35,7 @@ export function SetHalfNutritionTable({ rows }) {
               <td style={{ padding: '6px 8px', fontWeight: 600, fontSize: 13 }}>
                 {displayNutritionMenuName(row.menuName, `메뉴 ${index + 1}`)}
               </td>
-              <td style={COL_STYLE}>
-                {asDisplayText(row.side, '—')}
-              </td>
+              <td style={COL_STYLE}>{asDisplayText(row.side, '—')}</td>
               <td style={COL_STYLE}>
                 <NutritionValueText value={row.weight} />
               </td>

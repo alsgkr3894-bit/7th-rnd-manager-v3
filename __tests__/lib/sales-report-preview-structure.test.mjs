@@ -48,6 +48,11 @@ describe('sales report preview structure', () => {
     expect(pageSource).toContain(
       "SalesReportPreview from '@/components/report/sales/SalesReportPreview'"
     );
+    expect(pageSource).toContain('readSalesReportQuery');
+    expect(pageSource).toContain('new URLSearchParams(window.location.search)');
+    expect(pageSource).toContain("params.get('year')");
+    expect(pageSource).toContain("params.get('view')");
+    expect(pageSource).toContain("params.get('cmpYear')");
     expect(pageSource).toContain('<SalesReportPreview');
     expect(pageSource).not.toContain('피자 전월 대비 상승 / 하락 TOP 5');
     expect(previewSource).toContain("from './SalesPizzaMoverSection'");

@@ -1,8 +1,10 @@
 'use client';
-import { useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import ReportBuilderShell from '@/components/report/ReportBuilderShell';
+import { ReportModeSwitch } from '@/components/report/ReportModeSwitch';
 import { CostReportOptions } from '@/components/report/cost/CostReportOptions';
 import { CostReportPreview } from '@/components/report/cost/CostReportPreview';
+import { MarginReportBuilderContent } from '@/components/report/margin/MarginReportBuilderContent';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { showToast } from '@/components/Toast';
 import { exportCostXlsx } from '@/lib/report/export-cost-xlsx';
@@ -40,7 +42,39 @@ const DRAFT_KEY = 'report_draft_cost';
 // ── 메인 컴포넌트 ──────────────────────────────────────────────
 const PERIOD_LABEL = '현재 원가 기준';
 
+function readReportModeFromLocation() {
+  if (typeof window === 'undefined') return 'cost';
+  const params = new URLSearchParams(window.location.search);
+  return params.get('mode') === 'margin' ? 'margin' : 'cost';
+}
+
+function setReportModeUrl(mode) {
+  if (typeof window === 'undefined') return;
+  const nextUrl = mode === 'margin' ? '/report/cost?mode=margin' : '/report/cost';
+  window.history.replaceState(null, '', nextUrl);
+}
+
 export default function Page() {
+  const [reportMode, setReportMode] = useState('cost');
+
+  useEffect(() => {
+    setReportMode(readReportModeFromLocation());
+  }, []);
+
+  const handleReportModeChange = mode => {
+    const nextMode = mode === 'margin' ? 'margin' : 'cost';
+    setReportMode(nextMode);
+    setReportModeUrl(nextMode);
+  };
+
+  if (reportMode === 'margin') {
+    return <MarginReportBuilderContent onReportModeChange={handleReportModeChange} />;
+  }
+
+  return <CostReportBuilderContent onReportModeChange={handleReportModeChange} />;
+}
+
+function CostReportBuilderContent({ onReportModeChange }) {
   const [riskThreshold, setRiskThreshold] = useState(35);
   const [cats, setCats] = useState({
     pizza: true,
@@ -190,6 +224,7 @@ export default function Page() {
     period: periodLabel,
     name: `${periodLabel} ${viewLabel}`,
     options: {
+      reportMode: 'cost',
       riskThreshold,
       cats,
       opts,
@@ -211,9 +246,9 @@ export default function Page() {
 
   return (
     <ReportBuilderShell
-      breadcrumb={['보고서센터', '원가계산 보고서']}
-      title="원가계산 보고서 생성"
-      sub="5개 카테고리(피자·1인피자·세트박스·사이드·엣지&도우)의 종합 원가를 한 장에 모아요."
+      breadcrumb={['보고서센터', '원가 보고서', '원가계산']}
+      title="원가 보고서 생성"
+      sub="원가계산과 원가마진표를 한 화면에서 전환해 PDF/Excel로 출력합니다."
       kind="cost"
       exportNote={
         strictPostingEnabled && strictPostingIssues.length > 0
@@ -228,16 +263,19 @@ export default function Page() {
       onExcelExport={handleExcelExport}
       onBeforeGenerate={guardStrictPosting}
       options={
-        <CostReportOptions
-          cats={cats}
-          onCatChange={updCat}
-          opts={opts}
-          onOptionChange={updOpt}
-          riskThreshold={riskThreshold}
-          onRiskThreshold={setRiskThreshold}
-          docFormat={docFormat}
-          onFormatChange={updFmt}
-        />
+        <>
+          <ReportModeSwitch value="cost" onChange={onReportModeChange} />
+          <CostReportOptions
+            cats={cats}
+            onCatChange={updCat}
+            opts={opts}
+            onOptionChange={updOpt}
+            riskThreshold={riskThreshold}
+            onRiskThreshold={setRiskThreshold}
+            docFormat={docFormat}
+            onFormatChange={updFmt}
+          />
+        </>
       }
       preview={
         <CostReportPreview

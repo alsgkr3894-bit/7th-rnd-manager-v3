@@ -65,6 +65,11 @@ describe('route classification', () => {
           kind: ROUTE_KIND.REDIRECT,
           target: '/menu-master',
         }),
+        expect.objectContaining({
+          route: '/report/menu-sales-compare',
+          kind: ROUTE_KIND.REDIRECT,
+          target: '/report/sales?view=compare',
+        }),
       ])
     );
   });
@@ -84,6 +89,15 @@ describe('route classification', () => {
       '/note/calendar',
       '/note/sample',
     ]);
+  });
+
+  test('hidden note write and board routes stay internal flows', () => {
+    expect(ROUTE_CLASSIFICATIONS).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ route: '/note/write', kind: ROUTE_KIND.INTERNAL_FLOW }),
+        expect.objectContaining({ route: '/note/board', kind: ROUTE_KIND.INTERNAL_FLOW }),
+      ])
+    );
   });
 
   test('모바일 primary route는 하단 탭 정의와 같은 marker로 분류한다', () => {

@@ -46,7 +46,9 @@ const ALLERGEN_NAME_BY_CODE = Object.fromEntries(
 );
 
 function asText(value) {
-  return String(value ?? '').normalize('NFKC').trim();
+  return String(value ?? '')
+    .normalize('NFKC')
+    .trim();
 }
 
 function textKey(value) {
@@ -119,7 +121,11 @@ function searchIngredientOptions(input, options, limit = 8) {
     .slice(0, limit);
 }
 
-function resolveIngredientOption(input, options, { allowSingleMatch = false, allowFirst = false } = {}) {
+function resolveIngredientOption(
+  input,
+  options,
+  { allowSingleMatch = false, allowFirst = false } = {}
+) {
   const exact = findIngredientOption(input, options);
   if (exact) return exact;
   const matches = searchIngredientOptions(input, options);
@@ -297,7 +303,9 @@ function IngredientConnectInput({ row, index, options, onIngredientInput }) {
                   cursor: 'pointer',
                 }}
               >
-                <span style={{ fontSize: 12, fontWeight: 800 }}>{option.ingredientName || option.productCode}</span>
+                <span style={{ fontSize: 12, fontWeight: 800 }}>
+                  {option.ingredientName || option.productCode}
+                </span>
                 <span className="mono muted" style={{ fontSize: 11 }}>
                   {option.productCode || '코드 없음'}
                   {option.allergenText ? ` · ${option.allergenText}` : ''}
@@ -328,26 +336,31 @@ function ToppingPreviewTable({ rows, ingredientOptions, onToggle, onPatchRow, on
       <table style={{ width: '100%', minWidth: 1440, borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
           <tr>
-            {['포함', '상태', '추가토핑', '식자재 연결', '알레르기', ...PREVIEW_FIELDS.map(key => FIELD_BY_KEY[key]?.label || key)].map(
-              (label, index) => (
-                <th
-                  key={`${label}-${index}`}
-                  style={{
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 1,
-                    padding: '9px 10px',
-                    background: 'var(--surface-2)',
-                    borderBottom: '1px solid var(--border)',
-                    color: 'var(--text-2)',
-                    textAlign: index >= 5 ? 'right' : 'left',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {label}
-                </th>
-              )
-            )}
+            {[
+              '포함',
+              '상태',
+              '추가토핑',
+              '식자재 연결',
+              '알레르기',
+              ...PREVIEW_FIELDS.map(key => FIELD_BY_KEY[key]?.label || key),
+            ].map((label, index) => (
+              <th
+                key={`${label}-${index}`}
+                style={{
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 1,
+                  padding: '9px 10px',
+                  background: 'var(--surface-2)',
+                  borderBottom: '1px solid var(--border)',
+                  color: 'var(--text-2)',
+                  textAlign: index >= 5 ? 'right' : 'left',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {label}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
@@ -376,7 +389,8 @@ function ToppingPreviewTable({ rows, ingredientOptions, onToggle, onPatchRow, on
                 <StatusBadge status={row.status} />
                 {row.sourceRow && (
                   <div style={{ marginTop: 3, fontSize: 10, color: 'var(--text-4)' }}>
-                    {row.sourceSheet ? `${row.sourceSheet} ` : ''}{row.sourceRow}행
+                    {row.sourceSheet ? `${row.sourceSheet} ` : ''}
+                    {row.sourceRow}행
                   </div>
                 )}
               </td>
@@ -414,7 +428,13 @@ function ToppingPreviewTable({ rows, ingredientOptions, onToggle, onPatchRow, on
                   </div>
                 </div>
               </td>
-              <td style={{ padding: '8px 10px', borderBottom: '1px solid var(--divider)', minWidth: 160 }}>
+              <td
+                style={{
+                  padding: '8px 10px',
+                  borderBottom: '1px solid var(--divider)',
+                  minWidth: 160,
+                }}
+              >
                 <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-2)' }}>
                   {ingredientAllergenText(row, ingredientOptions) || '-'}
                 </span>
@@ -566,7 +586,10 @@ export function ToppingImportModal({ toppings, ingredients, onClose, onRefresh }
   }
 
   const included = rows.filter(row => row.include && row.status !== 'invalid').length;
-  const counts = rows.reduce((acc, row) => ({ ...acc, [row.status]: (acc[row.status] || 0) + 1 }), {});
+  const counts = rows.reduce(
+    (acc, row) => ({ ...acc, [row.status]: (acc[row.status] || 0) + 1 }),
+    {}
+  );
 
   return (
     <ModalFrame
@@ -589,8 +612,14 @@ export function ToppingImportModal({ toppings, ingredients, onClose, onRefresh }
             title="추가토핑 영양성분 엑셀을 넣으세요"
             subText="양식의 식자재코드를 넣으면 식자재 관리의 알레르기/원산지 정보와 연결됩니다."
             rules={[
-              { type: 'ok', text: '양식 파일에는 입력 시트와 현재 식자재코드 목록 시트가 함께 들어갑니다.' },
-              { type: 'ok', text: '식자재코드는 공백·대소문자 차이가 있어도 가능한 범위에서 연결합니다.' },
+              {
+                type: 'ok',
+                text: '양식 파일에는 입력 시트와 현재 식자재코드 목록 시트가 함께 들어갑니다.',
+              },
+              {
+                type: 'ok',
+                text: '식자재코드는 공백·대소문자 차이가 있어도 가능한 범위에서 연결합니다.',
+              },
               { type: 'warn', text: '추가토핑명은 반드시 필요합니다.' },
             ]}
           />
@@ -624,10 +653,20 @@ export function ToppingImportModal({ toppings, ingredients, onClose, onRefresh }
             onIngredientInput={handleIngredientInput}
           />
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-            <button className="btn" type="button" onClick={() => setStep('upload')} disabled={saving}>
+            <button
+              className="btn"
+              type="button"
+              onClick={() => setStep('upload')}
+              disabled={saving}
+            >
               다시 선택
             </button>
-            <button className="btn primary" type="button" onClick={saveRows} disabled={saving || included === 0}>
+            <button
+              className="btn primary"
+              type="button"
+              onClick={saveRows}
+              disabled={saving || included === 0}
+            >
               {saving ? '저장 중...' : `${included}건 저장`}
             </button>
           </div>

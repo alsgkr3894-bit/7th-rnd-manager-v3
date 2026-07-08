@@ -6,6 +6,7 @@ const pageSource = readFileSync(resolve('app/report/sales/page.jsx'), 'utf8');
 const dataHookSource = readFileSync(resolve('app/report/sales/useSalesReportData.js'), 'utf8');
 const utilsSource = readFileSync(resolve('app/report/sales/salesReportPageUtils.js'), 'utf8');
 const computedSource = readFileSync(resolve('app/report/sales/useSalesReportComputed.js'), 'utf8');
+const builderCssSource = readFileSync(resolve('app/styles/features/report/builder.css'), 'utf8');
 
 describe('sales report page structure', () => {
   test('page delegates data loading to useSalesReportData', () => {
@@ -41,5 +42,14 @@ describe('sales report page structure', () => {
     expect(computedSource).toContain('buildSalesStats');
     expect(computedSource).toContain('buildPeriodCompare');
     expect(computedSource).toContain('export function useSalesReportComputed');
+  });
+
+  test('report options panel scrolls independently on desktop', () => {
+    expect(builderCssSource).toContain('.report-options');
+    expect(builderCssSource).toContain('max-height: calc(100vh - 104px)');
+    expect(builderCssSource).toContain('overflow-y: auto');
+    expect(builderCssSource).toContain('overscroll-behavior: contain');
+    expect(builderCssSource).toContain('@media (max-width: 1100px)');
+    expect(builderCssSource).toContain('position: static');
   });
 });

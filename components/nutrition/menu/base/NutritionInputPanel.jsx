@@ -185,7 +185,9 @@ export function NutritionInputPanel({
         }}
       >
         <button className="btn primary" onClick={onSave} disabled={saving || readOnly}>
-          {saving ? '저장 중…' : `${selectedMenuName} ${CRUST_DISPLAY_NAMES[selCrust] || selCrust} 저장`}
+          {saving
+            ? '저장 중…'
+            : `${selectedMenuName} ${CRUST_DISPLAY_NAMES[selCrust] || selCrust} 저장`}
         </button>
       </div>
     </div>

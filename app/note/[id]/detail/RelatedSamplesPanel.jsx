@@ -1,13 +1,15 @@
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable react/no-unescaped-entities */
 
+import { SAMPLE_RECORD_LABEL } from '@/lib/sample/constants';
+
 export function RelatedSamplesPanel({ samples, menuName, onOpenSample }) {
   if (samples.length === 0) return null;
 
   return (
     <div className="card" style={{ marginTop: 24 }}>
       <div className="card-title" style={{ marginBottom: 12 }}>
-        관련 샘플기록
+        관련 {SAMPLE_RECORD_LABEL}
         <span style={{ fontWeight: 400, fontSize: 12, color: 'var(--text-3)', marginLeft: 8 }}>
           제목 "{menuName}" 기준
         </span>

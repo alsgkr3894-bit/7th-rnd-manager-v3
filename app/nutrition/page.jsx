@@ -79,7 +79,6 @@ export default function Page() {
           value: stats.originMissing,
           valueColor: stats.originMissing > 0 ? 'var(--warn)' : 'var(--positive)',
         },
-        { label: '파생 메뉴', value: stats.compositionCount },
       ]
     : [];
 

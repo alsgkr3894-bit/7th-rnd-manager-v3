@@ -60,7 +60,12 @@ describe('menu sales navigation', () => {
   });
 
   test('검색 팔레트 쓰기 전용 진입점은 viewer에게 숨긴다', () => {
-    const writeHrefs = ['/note/write', '/note/sample/write', '/menu-sales/upload'];
+    const writeHrefs = [
+      '/note/write',
+      '/note/write?type=sample',
+      '/note/sample/write',
+      '/menu-sales/upload',
+    ];
 
     for (const href of writeHrefs) {
       expect(isPaletteItemVisibleForRole({ href, label: href }, false)).toBe(false);
@@ -71,6 +76,7 @@ describe('menu sales navigation', () => {
       isPaletteItemVisibleForRole(item, false)
     );
     expect(visibleForViewer.map(item => item.href)).not.toContain('/note/write');
+    expect(visibleForViewer.map(item => item.href)).not.toContain('/note/write?type=sample');
     expect(visibleForViewer.map(item => item.href)).not.toContain('/note/sample/write');
     expect(visibleForViewer.map(item => item.href)).not.toContain('/menu-sales/upload');
   });

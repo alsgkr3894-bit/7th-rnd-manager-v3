@@ -7,6 +7,7 @@ import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price/store';
 import { buildPriceReportData } from '@/lib/report/build-price-report';
+import { exportPriceReportXlsx } from '@/lib/report/price-export';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { useDraftRestore } from '@/hooks/useDraftRestore';
 import { todayLocalDate, localDateBefore } from '@/lib/date/local-date';
@@ -95,6 +96,13 @@ export default function Page() {
     name: `제때 가격 변동 보고서 (${dateRange})`,
     options: { periodMode, opts },
   };
+  const handleExcelExport = () =>
+    exportPriceReportXlsx({
+      dateRange,
+      changes,
+      catSummary,
+      opts,
+    });
 
   return (
     <ReportBuilderShell
@@ -107,6 +115,7 @@ export default function Page() {
       isLoading={isLoading}
       onRetry={reload}
       docFormat={docFormat}
+      onExcelExport={handleExcelExport}
       options={
         <PriceReportOptions
           periodMode={periodMode}

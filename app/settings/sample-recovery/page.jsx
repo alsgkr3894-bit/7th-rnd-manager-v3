@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { downloadJson } from '@/lib/download';
 import { getAll, initDB, runTransaction } from '@/lib/db';
+import { SAMPLE_RECORD_LABEL } from '@/lib/sample/constants';
 
 const STORE_NAME = 'sample_records';
 
@@ -132,7 +133,10 @@ function putRecoveredSamples(operations) {
 function planRecovery(rows, candidates) {
   const now = new Date().toISOString();
   const currentKeys = new Set(
-    rows.filter(row => !isBlankSample(row)).map(row => duplicateKey(row)).filter(Boolean)
+    rows
+      .filter(row => !isBlankSample(row))
+      .map(row => duplicateKey(row))
+      .filter(Boolean)
   );
   const planned = [];
   const skipped = [];
@@ -147,7 +151,9 @@ function planRecovery(rows, candidates) {
 
     const byCreatedAt =
       candidate.createdAt &&
-      rows.find(row => row.createdAt === candidate.createdAt && isBlankSample(row) && !usedIds.has(row.id));
+      rows.find(
+        row => row.createdAt === candidate.createdAt && isBlankSample(row) && !usedIds.has(row.id)
+      );
 
     if (byCreatedAt) {
       usedIds.add(byCreatedAt.id);
@@ -192,7 +198,10 @@ export default function SampleRecoveryPage() {
     }
   }, []);
 
-  const candidates = useMemo(() => (Array.isArray(payload?.records) ? payload.records : []), [payload]);
+  const candidates = useMemo(
+    () => (Array.isArray(payload?.records) ? payload.records : []),
+    [payload]
+  );
 
   useEffect(() => {
     if (!candidates.length) return;
@@ -202,7 +211,11 @@ export default function SampleRecoveryPage() {
         const rows = await getAll(STORE_NAME);
         if (!cancelled) setPreview({ rows, ...planRecovery(rows, candidates) });
       })
-      .catch(err => setError(err instanceof Error ? err.message : '현재 샘플기록을 읽지 못했습니다.'));
+      .catch(err =>
+        setError(
+          err instanceof Error ? err.message : `현재 ${SAMPLE_RECORD_LABEL}을 읽지 못했습니다.`
+        )
+      );
     return () => {
       cancelled = true;
     };
@@ -244,8 +257,8 @@ export default function SampleRecoveryPage() {
   return (
     <main className="page settings-page">
       <PageHeader
-        title="샘플기록 복구"
-        description="현재 샘플기록을 먼저 백업한 뒤, 복구 후보를 빈 레코드에 병합합니다."
+        title={`${SAMPLE_RECORD_LABEL} 복구`}
+        description={`현재 ${SAMPLE_RECORD_LABEL}을 먼저 백업한 뒤, 복구 후보를 빈 레코드에 병합합니다.`}
       />
 
       {error && (
@@ -259,7 +272,8 @@ export default function SampleRecoveryPage() {
           <div>
             <strong>복구 후보</strong>
             <p className="muted">
-              후보 {candidates.length}건 · 현재 샘플기록 {preview?.rows?.length ?? '-'}건
+              후보 {candidates.length}건 · 현재 {SAMPLE_RECORD_LABEL} {preview?.rows?.length ?? '-'}
+              건
             </p>
           </div>
           <button
@@ -313,8 +327,10 @@ export default function SampleRecoveryPage() {
           <ul>
             {preview.skipped.map((item, index) => (
               <li key={index}>
-                {text(item.candidate?.title) || normalizeNames(item.candidate).join(', ') || '제목 없음'} ·{' '}
-                {item.reason}
+                {text(item.candidate?.title) ||
+                  normalizeNames(item.candidate).join(', ') ||
+                  '제목 없음'}{' '}
+                · {item.reason}
               </li>
             ))}
           </ul>

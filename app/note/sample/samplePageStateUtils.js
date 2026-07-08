@@ -1,4 +1,9 @@
-import { sampleNamesText } from '@/lib/sample';
+import {
+  LEGACY_SAMPLE_RECORD_TYPES,
+  SAMPLE_RECORD_TYPES,
+  sampleIngredientGroupName,
+  sampleNamesText,
+} from '@/lib/sample';
 import { buildCalendarDays } from '@/lib/note/calendar-utils';
 
 export const SAMPLE_SORT_OPTIONS = [
@@ -27,6 +32,8 @@ export function filterSortSamples(samples, { catFilter, ratingMin, search, sortB
     list = list.filter(
       sample =>
         (sample.title || '').toLowerCase().includes(query) ||
+        sampleIngredientGroupName(sample).toLowerCase().includes(query) ||
+        (sample.recordType || '').toLowerCase().includes(query) ||
         sampleNamesText(sample).toLowerCase().includes(query) ||
         (sample.company || '').toLowerCase().includes(query) ||
         (sample.testRound || '').toLowerCase().includes(query) ||
@@ -40,6 +47,28 @@ export function filterSortSamples(samples, { catFilter, ratingMin, search, sortB
     // createdAt은 ISO 문자열 → 문자열 비교로 안정 정렬(누락 시 NaN으로 정렬 깨지던 문제 방지)
     return (b.createdAt || '').localeCompare(a.createdAt || '');
   });
+}
+
+export function buildSampleIngredientGroups(samples) {
+  const groups = [];
+  const byName = new Map();
+  for (const sample of Array.isArray(samples) ? samples : []) {
+    const name = sampleIngredientGroupName(sample);
+    if (!byName.has(name)) {
+      const group = { name, rows: [], issueCount: 0, sampleTestCount: 0 };
+      byName.set(name, group);
+      groups.push(group);
+    }
+    const group = byName.get(name);
+    group.rows.push(sample);
+    if (
+      sample.recordType === SAMPLE_RECORD_TYPES.ISSUE ||
+      sample.recordType === LEGACY_SAMPLE_RECORD_TYPES.ISSUE
+    )
+      group.issueCount += 1;
+    else group.sampleTestCount += 1;
+  }
+  return groups.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 }
 
 export function buildSampleCategoryCounts(samples) {

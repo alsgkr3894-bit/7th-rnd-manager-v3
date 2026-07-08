@@ -127,6 +127,21 @@ describe('saved views state helpers', () => {
 });
 
 describe('monthly close package plan', () => {
+  test('월마감 패키지는 선택 월의 전월을 집계 대상으로 계산한다', () => {
+    expect(packagePlan.getMonthlyCloseTargetPeriod({ year: 2026, month: 7 })).toEqual({
+      year: 2026,
+      month: 6,
+    });
+    expect(packagePlan.getMonthlyCloseTargetPeriod({ year: 2026, month: 1 })).toEqual({
+      year: 2025,
+      month: 12,
+    });
+    expect(packagePlan.monthRangeLabel({ year: 2026, month: 6 })).toBe('2026년 6월 1일 ~ 6월 말일');
+    expect(
+      packagePlan.buildPackageItemHref({ href: '/report/sales' }, { year: 2026, month: 6 })
+    ).toBe('/report/sales?year=2026&month=6');
+  });
+
   test('판매량 가용성은 실제 sales_files store를 기준으로 판단한다', async () => {
     salesFiles = [{ year: 2026, month: 6, fileName: 'sales.xlsx' }];
     shipmentFiles = [{ year: 2026, month: 6, fileName: 'ship.xlsx' }];
@@ -310,7 +325,9 @@ describe('change log state helpers', () => {
     expect(source).toContain("import { useCurrentRole } from '@/hooks/useCurrentRole'");
     expect(source).toContain("const [brand, setBrand] = useState('main')");
     expect(source).toContain('const [entries, setEntries] = useState([])');
-    expect(source).toContain('setEntries(brandFilter ? filterChangeLogs({ brand: nextBrand }) : getChangeLogs())');
+    expect(source).toContain(
+      'setEntries(brandFilter ? filterChangeLogs({ brand: nextBrand }) : getChangeLogs())'
+    );
     expect(source).toContain('const canClear = roleReady && isAdmin');
     expect(source).toContain('if (!canClear) return;');
     expect(source).toContain('disabled={!canClear}');

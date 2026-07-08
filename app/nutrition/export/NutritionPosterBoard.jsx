@@ -13,23 +13,24 @@ import {
 } from '@/lib/nutrition/label/poster';
 
 const PIZZA_150_GROUPS = [
-  { label: '1회 중량(g)', key: 'weight' },
+  { label: '총중량', key: 'weight' },
+  { label: '중량단위', key: 'weightUnit' },
   { label: '열량(kcal/150g)', key: 'kcal' },
-  { label: '당류(g/150g)', key: 'sugar' },
   { label: '단백질(g/150g)', key: 'protein' },
   { label: '포화지방(g/150g)', key: 'fat' },
   { label: '나트륨(mg/150g)', key: 'sodium' },
+  { label: '당류(g/150g)', key: 'sugar' },
 ];
 
 const PIZZA_SLICE_GROUPS = [
-  { label: '1회 조각수', key: 'servingLabel' },
-  { label: '총 조각중량(g)', key: 'totalWeight' },
-  { label: '조각 중량(g)', key: 'weight' },
-  { label: '열량(kcal/조각)', key: 'kcal' },
-  { label: '당류(g/조각)', key: 'sugar' },
-  { label: '단백질(g/조각)', key: 'protein' },
-  { label: '포화지방(g/조각)', key: 'fat' },
-  { label: '나트륨(mg/조각)', key: 'sodium' },
+  { label: '1회중량(g)', key: 'weight' },
+  { label: '1회조각수', key: 'servingLabel' },
+  { label: '총조각중량(g)', key: 'totalWeight' },
+  { label: '열량(kcal/1회분)', key: 'kcal' },
+  { label: '당류(g/1회분)', key: 'sugar' },
+  { label: '단백질(g/1회분)', key: 'protein' },
+  { label: '포화지방(g/1회분)', key: 'fat' },
+  { label: '나트륨(mg/1회분)', key: 'sodium' },
 ];
 
 const SIMPLE_COLS = [
@@ -41,10 +42,7 @@ const SIMPLE_COLS = [
   { label: '나트륨(mg/1회분)', key: 'sodium' },
 ];
 
-const BEVERAGE_COLS = [
-  { label: '총량(ml)', key: 'weight' },
-  ...SIMPLE_COLS.slice(1),
-];
+const BEVERAGE_COLS = [{ label: '총량(ml)', key: 'weight' }, ...SIMPLE_COLS.slice(1)];
 
 function CellText({ children }) {
   return <>{nutritionValue(children)}</>;
@@ -64,60 +62,103 @@ function EmptyRow({ colSpan, label = '데이터 없음' }) {
   );
 }
 
-function PizzaPosterTable({ sliceRows, rows150 }) {
-  const posterRows = buildPosterPizzaRows(sliceRows, rows150);
+function pair150PosterValue(row, key, side) {
+  if (key === 'weightUnit') return row?.per150Sides?.[side] ? 'g' : '—';
+  return pair150Value(row, key, side);
+}
+
+function PizzaPoster150Table({ rows }) {
+  const posterRows = buildPosterPizzaRows([], rows);
   return (
     <section className="nutrition-poster-main-section">
       <table className="nutrition-poster-table nutrition-poster-pizza-table">
         <thead>
           <tr>
-            <th rowSpan="3" className="poster-pizza-label">
-              Pizza
+            <th rowSpan="2" className="poster-pizza-label">
+              메뉴명
             </th>
-            <th rowSpan="3">크러스트</th>
+            <th rowSpan="2">크러스트</th>
             <th colSpan={PIZZA_150_GROUPS.length * 2}>150g 기준</th>
-            <th colSpan={PIZZA_SLICE_GROUPS.length * 2}>조각 기준</th>
-            <th rowSpan="3">함유된 알레르기 유발물질</th>
+            <th rowSpan="2">함유된 알레르기 유발물질</th>
           </tr>
           <tr>
-            {[...PIZZA_150_GROUPS, ...PIZZA_SLICE_GROUPS].map(group => (
-              <th key={`${group.key}-${group.label}`} colSpan="2">
-                {group.label}
-              </th>
-            ))}
-          </tr>
-          <tr>
-            {[...PIZZA_150_GROUPS, ...PIZZA_SLICE_GROUPS].flatMap(group => [
-              <th key={`${group.key}-${group.label}-L`}>L</th>,
-              <th key={`${group.key}-${group.label}-R`}>R</th>,
+            {PIZZA_150_GROUPS.flatMap(group => [
+              <th key={`${group.key}-L`}>{group.label} L</th>,
+              <th key={`${group.key}-R`}>{group.label} R</th>,
             ])}
           </tr>
         </thead>
         <tbody>
           {posterRows.length ? (
             posterRows.map((row, index) => (
-              <tr key={`${row.menuName}-${row.crustLabel}-${index}`}>
-                {row.firstOfMenu && (
-                  <td rowSpan={row.rowSpan} className="poster-menu-name">
-                    <CellText>{row.menuName}</CellText>
-                  </td>
-                )}
+              <tr key={`${row.menuName}-${row.crustLabel}-150-${index}`}>
+                <td className="poster-menu-name">
+                  <CellText>{row.menuName}</CellText>
+                </td>
                 <td className="poster-crust-name">
                   <CellText>{row.crustLabel}</CellText>
                 </td>
                 {PIZZA_150_GROUPS.flatMap(group => [
-                  <td key={`150-${group.key}-L`} className="poster-num">
-                    <CellText>{pair150Value(row, group.key, 'L')}</CellText>
+                  <td key={`${group.key}-L`} className="poster-num">
+                    <CellText>{pair150PosterValue(row, group.key, 'L')}</CellText>
                   </td>,
-                  <td key={`150-${group.key}-R`} className="poster-num">
-                    <CellText>{pair150Value(row, group.key, 'R')}</CellText>
+                  <td key={`${group.key}-R`} className="poster-num">
+                    <CellText>{pair150PosterValue(row, group.key, 'R')}</CellText>
                   </td>,
                 ])}
+                <td className="poster-allergen">
+                  <CellText>{pairAllergen(row)}</CellText>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <EmptyRow
+              colSpan={PIZZA_150_GROUPS.length * 2 + 3}
+              label="피자 150g 기준 영양성분 데이터가 없습니다"
+            />
+          )}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
+function PizzaPosterSliceTable({ rows }) {
+  const posterRows = buildPosterPizzaRows(rows, []);
+  return (
+    <section className="nutrition-poster-main-section">
+      <table className="nutrition-poster-table nutrition-poster-pizza-table">
+        <thead>
+          <tr>
+            <th rowSpan="2" className="poster-pizza-label">
+              메뉴명
+            </th>
+            <th rowSpan="2">크러스트</th>
+            <th colSpan={PIZZA_SLICE_GROUPS.length * 2}>조각 기준</th>
+            <th rowSpan="2">함유된 알레르기 유발물질</th>
+          </tr>
+          <tr>
+            {PIZZA_SLICE_GROUPS.flatMap(group => [
+              <th key={`${group.key}-L`}>{group.label} L</th>,
+              <th key={`${group.key}-R`}>{group.label} R</th>,
+            ])}
+          </tr>
+        </thead>
+        <tbody>
+          {posterRows.length ? (
+            posterRows.map((row, index) => (
+              <tr key={`${row.menuName}-${row.crustLabel}-slice-${index}`}>
+                <td className="poster-menu-name">
+                  <CellText>{row.menuName}</CellText>
+                </td>
+                <td className="poster-crust-name">
+                  <CellText>{row.crustLabel}</CellText>
+                </td>
                 {PIZZA_SLICE_GROUPS.flatMap(group => [
-                  <td key={`slice-${group.key}-L`} className="poster-num">
+                  <td key={`${group.key}-L`} className="poster-num">
                     <CellText>{pairValue(row, group.key, 'L')}</CellText>
                   </td>,
-                  <td key={`slice-${group.key}-R`} className="poster-num">
+                  <td key={`${group.key}-R`} className="poster-num">
                     <CellText>{pairValue(row, group.key, 'R')}</CellText>
                   </td>,
                 ])}
@@ -127,7 +168,10 @@ function PizzaPosterTable({ sliceRows, rows150 }) {
               </tr>
             ))
           ) : (
-            <EmptyRow colSpan={31} label="피자 영양성분 데이터가 없습니다" />
+            <EmptyRow
+              colSpan={PIZZA_SLICE_GROUPS.length * 2 + 3}
+              label="피자 조각 기준 영양성분 데이터가 없습니다"
+            />
           )}
         </tbody>
       </table>
@@ -264,7 +308,8 @@ export function NutritionPosterBoard({
   return (
     <div className="nutrition-poster-preview">
       <article className="nutrition-poster-sheet" aria-label="제품 영양성분 원산지 통합표">
-        <PizzaPosterTable sliceRows={pizzaSliceSheet} rows150={pizzaSheet} />
+        <PizzaPoster150Table rows={pizzaSheet} />
+        <PizzaPosterSliceTable rows={pizzaSliceSheet} />
 
         <SimplePosterTable title="추가 토핑" rows={toppingSheet} className="poster-topping" />
 

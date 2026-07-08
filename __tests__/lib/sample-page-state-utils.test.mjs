@@ -5,6 +5,7 @@ import {
   SAMPLE_VIEW_KEYS,
   buildSampleCalendarDays,
   buildSampleCategoryCounts,
+  buildSampleIngredientGroups,
   buildSampleRatingDist,
   buildSamplesByDate,
   filterSortSamples,
@@ -107,6 +108,33 @@ describe('sample page state utils', () => {
     expect(buildSampleRatingDist(samples)).toEqual({ 1: 0, 2: 0, 3: 0, 4: 1, 5: 1, none: 1 });
     expect(Object.keys(buildSamplesByDate(samples))).toEqual(['2026-06-10', '2026-06-12']);
     expect(buildSampleCalendarDays(new Date(2026, 5, 1))).toHaveLength(42);
+  });
+
+  test('ingredient grouping keeps legacy samples together and counts issue/test records', () => {
+    const groups = buildSampleIngredientGroups([
+      { id: 'a', ingredientGroupName: '치즈', recordType: '샘플테스트' },
+      { id: 'b', sampleNames: ['치즈'], recordType: '이슈' },
+      { id: 'c', category: '소스' },
+    ]);
+
+    expect(groups).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: '치즈',
+          issueCount: 1,
+          sampleTestCount: 1,
+          rows: expect.arrayContaining([
+            expect.objectContaining({ id: 'a' }),
+            expect.objectContaining({ id: 'b' }),
+          ]),
+        }),
+        expect.objectContaining({
+          name: '소스',
+          issueCount: 0,
+          sampleTestCount: 1,
+        }),
+      ])
+    );
   });
 
   test('helpers tolerate non-array input', () => {

@@ -22,16 +22,16 @@ export function AllergenMenuMatrixTable({ menuMatrix, orderedAllergens, onDetail
       style={{
         overflowX: 'auto',
         overflowY: 'auto',
-        maxHeight: 'calc(100vh - 400px)',
-        minHeight: 300,
+        maxHeight: 'calc(100vh - 260px)',
+        minHeight: 480,
       }}
     >
-      <table className="data-table" style={{ minWidth: 900 }}>
+      <table className="data-table" style={{ minWidth: 1180 }}>
         <thead>
           <tr>
             <th
               style={{
-                minWidth: 160,
+                minWidth: 220,
                 position: 'sticky',
                 left: 0,
                 top: 0,

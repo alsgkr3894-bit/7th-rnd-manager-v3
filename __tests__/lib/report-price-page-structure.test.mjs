@@ -16,6 +16,8 @@ describe('price report page structure', () => {
     expect(pageSource).toContain('<PriceReportOptions');
     expect(pageSource).toContain('<PriceReportPreview');
     expect(pageSource).toContain('buildPriceReportData');
+    expect(pageSource).toContain('exportPriceReportXlsx');
+    expect(pageSource).toContain('onExcelExport={handleExcelExport}');
     expect(pageSource).not.toContain('<OptGroup');
     expect(pageSource).not.toContain('<Seg');
     expect(pageSource).not.toContain('<Check');
@@ -27,6 +29,8 @@ describe('price report page structure', () => {
     expect(optionsSource).toContain('<Seg');
     expect(optionsSource).toContain('<Check');
     expect(optionsSource).toContain('원가 영향 메뉴 수');
+    expect(optionsSource).toContain('Excel (.xlsx)');
+    expect(optionsSource).toContain("onFormatChange('excel', value)");
 
     expect(previewSource).toContain('export function PriceReportPreview');
     expect(previewSource).toContain('paper-stat-row');

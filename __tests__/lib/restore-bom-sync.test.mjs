@@ -86,13 +86,13 @@ describe('체크리스트↔연구일지 동기화 타이틀·콘텐츠', () => 
     expect(content).toContain('완료한 것');
   });
 
-  test('모든 항목이 미완료면 doneItems=[] → journal 삭제 조건', () => {
-    // syncChecklistJournal: doneItems.length === 0 → deleteNote
+  test('모든 항목이 미완료면 doneItems=[] → 체크리스트 블록 제거 조건', () => {
+    // syncChecklistJournal: doneItems.length === 0 → 연구일지는 보존하고 체크리스트 블록만 제거
     const allItems = [
       { id: '1', text: '미완료', done: false },
       { id: '2', text: '또 미완료', done: false },
     ];
     const doneItems = allItems.filter(i => i.done && i.text);
-    expect(doneItems.length).toBe(0); // → deleteNote 경로 진입
+    expect(doneItems.length).toBe(0); // → 체크리스트 블록 제거 경로 진입
   });
 });

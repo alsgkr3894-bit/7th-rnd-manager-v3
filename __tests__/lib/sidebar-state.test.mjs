@@ -1,4 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { normalizeSidebarOpenIds } from '../../lib/ui/sidebar-state.js';
 import {
   MOBILE_TAB_DEFS,
@@ -7,7 +9,7 @@ import {
   filterNavSectionsForRole,
   isNavItemVisibleForRole,
 } from '../../lib/menu.js';
-import { KIND_META } from '../../lib/report/constants.js';
+import { REPORT_LAUNCHER_KINDS } from '../../lib/report/constants.js';
 import {
   COST_COMMON_EDGES_ROUTE,
   COST_COMMON_GROUPS_ROUTE,
@@ -19,6 +21,7 @@ const knownGroupId = NAV_SECTIONS[0].groups[0].id;
 const navChildren = NAV_SECTIONS.flatMap(section =>
   section.groups.flatMap(group => group.children || [group])
 );
+const sidebarSource = readFileSync(resolve('components/Sidebar.jsx'), 'utf8');
 
 describe('sidebar navigation order', () => {
   test('요청한 카테고리 흐름대로 사이드바 그룹을 노출한다', () => {
@@ -30,6 +33,7 @@ describe('sidebar navigation order', () => {
     expect(visibleOrder).toEqual([
       '홈',
       '메뉴개발노트',
+      'RND 업무',
       '보고서',
       '제때데이터',
       '식자재',
@@ -48,6 +52,29 @@ describe('sidebar navigation order', () => {
       '보고서',
       '원가',
       '판매량',
+    ]);
+  });
+
+  test('연구일지와 시장조사는 개발 메모가 아니라 RND 업무에 노출한다', () => {
+    const noteGroup = NAV_SECTIONS.flatMap(section => section.groups).find(
+      group => group.id === 'note'
+    );
+    const rndGroup = NAV_SECTIONS.flatMap(section => section.groups).find(
+      group => group.id === 'rnd'
+    );
+    const noteHrefs = (noteGroup?.children || []).map(item => item.href);
+    const rndHrefs = (rndGroup?.children || []).map(item => item.href);
+
+    expect(noteHrefs).not.toContain('/note/journal');
+    expect(noteHrefs).not.toContain('/note/market');
+    expect(noteHrefs).not.toContain('/note/write');
+    expect(noteHrefs).not.toContain('/note/board');
+    expect(noteHrefs).toContain('/note');
+    expect(rndHrefs).toEqual([
+      '/note/journal',
+      '/note/market',
+      '/rnd/corporate-card',
+      '/rnd/login-info',
     ]);
   });
 });
@@ -122,8 +149,9 @@ describe('normalizeSidebarOpenIds', () => {
     );
     const reportHrefs = (reportGroup?.children || []).map(item => item.href);
 
-    expect(reportHrefs).toEqual(['/report', ...Object.values(KIND_META).map(kind => kind.href)]);
-    expect(reportHrefs).toContain('/report/menu-sales-compare');
+    expect(reportHrefs).toEqual(['/report', ...REPORT_LAUNCHER_KINDS.map(kind => kind.href)]);
+    expect(reportHrefs).not.toContain('/report/menu-sales-compare');
+    expect(reportHrefs).not.toContain('/report/sales?view=compare');
   });
 
   test('모바일 원가 탭도 구형 피자 원가표 대신 원가마진표로 이동한다', () => {
@@ -133,7 +161,7 @@ describe('normalizeSidebarOpenIds', () => {
   });
 
   test('사이드바 쓰기 전용 진입점은 viewer에게 숨긴다', () => {
-    const editOnlyHrefs = ['/note/write', '/menu-sales/upload', '/settings/restore'];
+    const editOnlyHrefs = ['/menu-sales/upload', '/settings/restore'];
     const adminHrefs = filterNavSectionsForRole(NAV_SECTIONS, true)
       .flatMap(section => section.groups)
       .flatMap(group => group.children || [group])
@@ -151,5 +179,15 @@ describe('normalizeSidebarOpenIds', () => {
       expect(adminHrefs).toContain(href);
       expect(viewerHrefs).not.toContain(href);
     }
+    expect(adminHrefs).not.toContain('/note/write');
+    expect(adminHrefs).not.toContain('/note/board');
+  });
+
+  test('사이드바 수동 펼침/접힘은 현재 스크롤 위치를 활성 메뉴로 되돌리지 않는다', () => {
+    expect(sidebarSource).toContain('lastActiveScrollPathRef');
+    expect(sidebarSource).toContain('lastActiveScrollPathRef.current === pathname');
+    expect(sidebarSource).toContain('lastActiveScrollPathRef.current = pathname');
+    expect(sidebarSource).toContain('innerRafId = requestAnimationFrame');
+    expect(sidebarSource).toContain('scrollIntoView({ block:');
   });
 });

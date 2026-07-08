@@ -67,10 +67,7 @@ export function useIngredientManageView({
     [rows]
   );
 
-  const noPriceCount = useMemo(
-    () => rows.filter(isIngredientMissingPackagePrice).length,
-    [rows]
-  );
+  const noPriceCount = useMemo(() => rows.filter(isIngredientMissingPackagePrice).length, [rows]);
 
   const issueRows = useMemo(
     () => computeIngredientIssues(rows, prevPriceMap),

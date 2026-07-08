@@ -11,6 +11,10 @@
  * 하나라도 실패하면 즉시 종료 (exit 1).
  */
 import { spawn } from 'node:child_process';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createQaDbSafetySnapshot, restoreQaDbSafetySnapshot } from './workflow/db-safety.mjs';
 
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
@@ -41,12 +45,65 @@ function run(script) {
   });
 }
 
+const qaSafetyDir = mkdtempSync(join(tmpdir(), 'qa-full-db-'));
+let qaSafetySnapshotPath = null;
+let qaSafetyRestored = false;
+let failure = null;
+
+function restoreQaSafetySnapshotOnce() {
+  if (!qaSafetySnapshotPath || qaSafetyRestored) return;
+  restoreQaDbSafetySnapshot(qaSafetySnapshotPath);
+  qaSafetyRestored = true;
+}
+
+process.once('exit', () => {
+  try {
+    restoreQaSafetySnapshotOnce();
+  } catch (error) {
+    process.stderr.write(`qa:full exit DB restore failed: ${error?.message || error}\n`);
+  }
+});
+
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.once(signal, () => {
+    try {
+      restoreQaSafetySnapshotOnce();
+    } catch (error) {
+      process.stderr.write(`qa:full ${signal} DB restore failed: ${error?.message || error}\n`);
+    } finally {
+      process.exit(1);
+    }
+  });
+}
+
 try {
+  qaSafetySnapshotPath = createQaDbSafetySnapshot(qaSafetyDir, `full-${Date.now()}`);
   await run('qa:smoke');
   await run('qa:mobile');
   await run('qa:runtime');
   await run('qa:workflow');
 } catch (e) {
+  failure = e;
   console.error('\n  qa:full 실패:', e.message, '\n');
-  process.exit(1);
+} finally {
+  const cleanupErrors = [];
+  if (qaSafetySnapshotPath) {
+    try {
+      restoreQaSafetySnapshotOnce();
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+  }
+  try {
+    rmSync(qaSafetyDir, { recursive: true, force: true });
+  } catch {}
+  if (cleanupErrors.length > 0) {
+    throw new Error(
+      `qa:full cleanup failed: ${cleanupErrors
+        .map(error => error?.message || String(error))
+        .join('; ')}`
+    );
+  }
 }
+
+if (failure) process.exit(1);

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReportBuilderShell from '@/components/report/ReportBuilderShell';
 import { useReportPageState } from '@/hooks/useReportPageState';
 import { useReportGeneratedMeta } from '@/hooks/useReportGeneratedMeta';
@@ -9,13 +9,27 @@ import { useShipmentReportData } from '@/hooks/useShipmentReportData';
 import { ShipmentReportOptions } from '@/components/report/shipment/ShipmentReportOptions';
 import { ShipmentReportPreview } from '@/components/report/shipment/ShipmentReportPreview';
 import { safeProductName } from '@/components/report/shipment/ShipmentItemTable';
+import {
+  buildShipmentCategorySummaryRows,
+  exportShipmentReportXlsx,
+} from '@/lib/report/shipment-export';
 
 const DRAFT_KEY = 'report_draft_shipment';
+
+function readShipmentReportQuery() {
+  if (typeof window === 'undefined') return {};
+  const params = new URLSearchParams(window.location.search);
+  return {
+    year: safeYear(params.get('year'), 0),
+    month: safeMonth(params.get('month'), 0),
+  };
+}
 
 export default function Page() {
   const periodMode = 'month';
   const [shipYear, setShipYear] = useState(2026);
   const [shipMonth, setShipMonth] = useState(1);
+  const queryAppliedRef = useRef(false);
   const {
     opts,
     updOpts: upd,
@@ -36,6 +50,15 @@ export default function Page() {
       if (draft.shipMonth) setShipMonth(safeMonth(draft.shipMonth));
     }
   );
+
+  useEffect(() => {
+    if (queryAppliedRef.current) return;
+    const query = readShipmentReportQuery();
+    if (!query.year || !query.month) return;
+    queryAppliedRef.current = true;
+    setShipYear(query.year);
+    setShipMonth(query.month);
+  }, []);
 
   const {
     aggRows,
@@ -89,6 +112,13 @@ export default function Page() {
   const scope = ['all', 'exclusive', 'generic'].includes(safeOpts.scope) ? safeOpts.scope : 'all';
   const showExclusive = scope !== 'generic';
   const showGeneric = scope !== 'exclusive';
+  const catSummaryRows = buildShipmentCategorySummaryRows({
+    showExclusive,
+    showGeneric,
+    exclusive,
+    genericAll,
+    managed,
+  });
 
   const qtyStats =
     scope === 'exclusive'
@@ -157,6 +187,23 @@ export default function Page() {
     name: `${fileLabel} 제때 출고량 보고서`,
     options: { periodMode, shipYear: safeShipYear, shipMonth: safeShipMonth, opts: safeOpts },
   };
+  const handleExcelExport = () =>
+    exportShipmentReportXlsx({
+      fileLabel,
+      scope,
+      opts: safeOpts,
+      qtyStats,
+      amtStats,
+      catSummaryRows,
+      chartSeries,
+      safeSeriesLabels,
+      showExclusive,
+      showGeneric,
+      exclusive,
+      genericAll,
+      managed,
+      notShipped,
+    });
 
   return (
     <ReportBuilderShell
@@ -169,6 +216,7 @@ export default function Page() {
       isLoading={isLoading}
       onRetry={reload}
       docFormat={docFormat}
+      onExcelExport={handleExcelExport}
       options={
         <ShipmentReportOptions
           safeAvailPeriods={safeAvailPeriods}
@@ -197,6 +245,7 @@ export default function Page() {
           safeOpts={safeOpts}
           qtyStats={qtyStats}
           amtStats={amtStats}
+          catSummaryRows={catSummaryRows}
           chartSeries={chartSeries}
           chartColors={chartColors}
           safeSeriesLabels={safeSeriesLabels}

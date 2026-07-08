@@ -113,7 +113,7 @@ export default function AppShell({ children }) {
       />
       {mobileNav && <div className="nav-scrim" onClick={() => setMobileNav(false)}></div>}
 
-      <div>
+      <div className="app-main-shell">
         <TopBar
           onOpenPalette={() => setPaletteOpen(true)}
           onToggleSidebar={() => setMobileNav(v => !v)}

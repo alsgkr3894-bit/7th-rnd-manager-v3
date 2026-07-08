@@ -8,7 +8,6 @@ const G_NAV = {
   n: '/note',
   c: '/cost',
   r: '/report',
-  s: '/note/sample',
   i: '/ingredient',
   u: '/nutrition',
   b: '/report',

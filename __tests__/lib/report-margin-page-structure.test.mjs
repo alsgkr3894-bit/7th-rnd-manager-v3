@@ -1,8 +1,12 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { KIND_META } from '../../lib/report/constants.js';
 
-const pageSource = readFileSync(resolve('app/report/margin/page.jsx'), 'utf8');
+const pagePath = resolve('app/report/margin/page.jsx');
+const builderSource = readFileSync(
+  resolve('components/report/margin/MarginReportBuilderContent.jsx'),
+  'utf8'
+);
 const optionsSource = readFileSync(
   resolve('components/report/margin/MarginReportOptions.jsx'),
   'utf8'
@@ -18,24 +22,35 @@ const filterToolbarSource = readFileSync(
 );
 
 describe('margin report page structure', () => {
-  test('보고서센터에 원가마진표 보고서 종류를 노출한다', () => {
+  test('보고서센터에서 원가마진표는 원가 보고서로 통합된다', () => {
     expect(KIND_META.margin).toMatchObject({
       id: 'margin',
       title: '원가마진표 보고서',
-      href: '/report/margin',
+      href: '/report/cost?mode=margin',
+      mergedInto: 'cost',
+      hideInLauncher: true,
     });
-    expect(filterToolbarSource).toContain("{ id: 'margin', label: '마진표' }");
+    expect(KIND_META.cost).toMatchObject({
+      id: 'cost',
+      title: '원가 보고서',
+    });
+    expect(filterToolbarSource).not.toContain("{ id: 'margin', label: '마진표' }");
   });
 
-  test('원가마진표 보고서는 기존 마진표 데이터와 export 함수를 재사용한다', () => {
-    expect(pageSource).toContain('ReportBuilderShell');
-    expect(pageSource).toContain('<MarginReportOptions');
-    expect(pageSource).toContain('<MarginReportPreview');
-    expect(pageSource).toContain('useMarginData');
-    expect(pageSource).toContain('filterMarginReportRows');
-    expect(pageSource).toContain('exportMarginExcel');
-    expect(pageSource).toContain('kind="margin"');
-    expect(pageSource).toContain('중분류 컬럼은 제외');
+  test('별도 원가마진표 보고서 route는 삭제하고 원가 보고서 내부 모드만 사용한다', () => {
+    expect(existsSync(pagePath)).toBe(false);
+  });
+
+  test('원가마진표 빌더는 기존 마진표 데이터와 export 함수를 재사용한다', () => {
+    expect(builderSource).toContain('ReportBuilderShell');
+    expect(builderSource).toContain('<ReportModeSwitch value="margin"');
+    expect(builderSource).toContain('<MarginReportOptions');
+    expect(builderSource).toContain('<MarginReportPreview');
+    expect(builderSource).toContain('useMarginData');
+    expect(builderSource).toContain('filterMarginReportRows');
+    expect(builderSource).toContain('exportMarginExcel');
+    expect(builderSource).toContain('kind="cost"');
+    expect(builderSource).toContain('중분류 컬럼은 제외');
   });
 
   test('옵션 패널은 카테고리·엣지·사이즈·문서 형식을 제공한다', () => {

@@ -47,9 +47,7 @@ export function SamplePhotoCard({
           onMouseLeave={event => (event.currentTarget.style.borderColor = 'var(--border)')}
         >
           <div style={{ fontSize: 28, marginBottom: 6 }}>📷</div>
-          <div style={{ fontSize: 13, fontWeight: 600 }}>
-            클릭하거나 사진을 끌어다 놓으세요
-          </div>
+          <div style={{ fontSize: 13, fontWeight: 600 }}>클릭하거나 사진을 끌어다 놓으세요</div>
           <div style={{ fontSize: 11, marginTop: 4 }}>JPG · PNG · HEIC · 최대 {maxPhotos}장</div>
           <div style={{ fontSize: 11, marginTop: 2 }}>Ctrl+V 붙여넣기 · {maxPhotoMb}MB 이하</div>
         </div>

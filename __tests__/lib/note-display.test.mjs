@@ -11,9 +11,7 @@ describe('note display helpers', () => {
 
   test('noteDisplayTitle hides accidental leading zero prefixes before menu text', () => {
     expect(noteDisplayTitle({ title: '0노엣지' })).toBe('노엣지');
-    expect(noteDisplayTitle({ title: '00메리칸 핫도그 스타일' })).toBe(
-      '메리칸 핫도그 스타일'
-    );
+    expect(noteDisplayTitle({ title: '00메리칸 핫도그 스타일' })).toBe('메리칸 핫도그 스타일');
     expect(noteDisplayTitle({ title: '0NEW 칠리크림불갈비' })).toBe('NEW 칠리크림불갈비');
     expect(noteDisplayTitle({ title: '\u200B0텍사스 쉬림프' })).toBe('텍사스 쉬림프');
     expect(noteDisplayTitle({ title: '01차 테스트' })).toBe('01차 테스트');

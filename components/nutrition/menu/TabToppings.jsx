@@ -10,35 +10,30 @@ import { ToppingImportModal } from './toppings/ToppingImportModal';
 import { ToppingsEmptyState } from './toppings/ToppingsEmptyState';
 import { ToppingsHeader } from './toppings/ToppingsHeader';
 import { ToppingsTable } from './toppings/ToppingsTable';
-import {
-  buildToppingIngredientLookups,
-  buildToppingSavePayload,
-  EMPTY_TOPPING_FORM,
-  normalizeToppingIngredientName,
-  normalizeToppingIngredients,
-  toppingFormFromRecord,
-  toppingValuesFromRecord,
-} from './toppings/toppingUtils';
+import * as utils from './toppings/toppingUtils';
 
 export function TabToppings({ toppings, ingredients, onRefresh, canEdit = false }) {
   const { showConfirm, confirmElement } = useConfirmDialog();
   const safeToppings = useMemo(() => asObjectArray(toppings), [toppings]);
-  const safeIngredients = useMemo(() => normalizeToppingIngredients(ingredients), [ingredients]);
+  const safeIngredients = useMemo(
+    () => utils.normalizeToppingIngredients(ingredients),
+    [ingredients]
+  );
   const refresh = typeof onRefresh === 'function' ? onRefresh : noop;
   const [modal, setModal] = useState(null);
-  const [form, setForm] = useState(EMPTY_TOPPING_FORM);
+  const [form, setForm] = useState(utils.EMPTY_TOPPING_FORM);
   const [values, setValues] = useState({});
   const [saving, setSaving] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
 
   const ingredientLookups = useMemo(
-    () => buildToppingIngredientLookups(safeIngredients),
+    () => utils.buildToppingIngredientLookups(safeIngredients),
     [safeIngredients]
   );
 
   const openAdd = () => {
     if (!canEdit) return;
-    setForm(EMPTY_TOPPING_FORM);
+    setForm(utils.EMPTY_TOPPING_FORM);
     setValues({});
     setModal('add');
   };
@@ -55,13 +50,13 @@ export function TabToppings({ toppings, ingredients, onRefresh, canEdit = false 
 
   const openEdit = topping => {
     if (!canEdit) return;
-    setForm(toppingFormFromRecord(topping));
-    setValues(toppingValuesFromRecord(topping));
+    setForm(utils.toppingFormFromRecord(topping));
+    setValues(utils.toppingValuesFromRecord(topping));
     setModal(topping);
   };
 
   const selectIngredient = ingredient => {
-    const ingredientName = normalizeToppingIngredientName(ingredient);
+    const ingredientName = utils.normalizeToppingIngredientName(ingredient);
     setForm(prev => ({
       ...prev,
       productCode: asDisplayText(ingredient.productCode),
@@ -83,7 +78,7 @@ export function TabToppings({ toppings, ingredients, onRefresh, canEdit = false 
     }
     setSaving(true);
     try {
-      await upsertTopping(buildToppingSavePayload({ modal, form, values }));
+      await upsertTopping(utils.buildToppingSavePayload({ modal, form, values }));
       showToast('추가토핑 저장 완료', 'ok');
       setModal(null);
       await refresh();
@@ -106,7 +101,12 @@ export function TabToppings({ toppings, ingredients, onRefresh, canEdit = false 
 
   return (
     <div style={{ marginTop: 20 }}>
-      <ToppingsHeader onAdd={openAdd} onImport={openImport} onTemplate={downloadTemplate} canEdit={canEdit} />
+      <ToppingsHeader
+        onAdd={openAdd}
+        onImport={openImport}
+        onTemplate={downloadTemplate}
+        canEdit={canEdit}
+      />
 
       {safeToppings.length === 0 ? (
         <ToppingsEmptyState />

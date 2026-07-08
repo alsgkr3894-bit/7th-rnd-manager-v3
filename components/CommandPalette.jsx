@@ -13,6 +13,7 @@ import {
 import { useDebounce } from '@/hooks/useDebounce';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { formatRelative } from '@/lib/format';
+import { SAMPLE_RECORD_LABEL } from '@/lib/sample/constants';
 
 function getRecent() {
   return getRecentPaletteItems();
@@ -141,7 +142,7 @@ export default function CommandPalette({ open, onClose, canEdit = false }) {
     : safeAllItems.slice(0, 9);
 
   const GROUPS = [
-    { kind: 'sample', label: '샘플기록' },
+    { kind: 'sample', label: SAMPLE_RECORD_LABEL },
     { kind: 'note', label: '메뉴개발 노트' },
     { kind: 'ingredient', label: '식자재' },
     { kind: 'menu', label: '메뉴' },

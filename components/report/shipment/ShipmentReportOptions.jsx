@@ -121,6 +121,7 @@ export function ShipmentReportOptions({
 
       <OptGroup label="문서 형식">
         <Check label="PDF" value={docFormat.pdf} onChange={v => updFmt('pdf', v)} />
+        <Check label="Excel (.xlsx)" value={docFormat.excel} onChange={v => updFmt('excel', v)} />
       </OptGroup>
     </>
   );

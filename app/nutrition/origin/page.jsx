@@ -177,7 +177,7 @@ export default function Page() {
 
   // showHidden 여부와 무관하게 실제 원산지 등록 항목 수 계산 (미표시대상도 포함)
   const totalWithOrigin = asObjectArray(ingredients).filter(
-    i => asObjectArray(i.origin).length && !i.discontinued && !i.excluded
+    i => (asObjectArray(i.origin).length || i.originNone === true) && !i.discontinued && !i.excluded
   ).length;
   const totalIngredients = asObjectArray(ingredients).filter(
     i => !i.discontinued && !i.excluded

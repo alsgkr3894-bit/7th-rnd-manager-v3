@@ -9,6 +9,9 @@ import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
  *
  * @param {object} props
  * @param {{year, month}} props.period
+ * @param {object} props.headerColumns
+ * @param {object} props.revenueSummary
+ * @param {Array}  props.revenueWarningRows
  * @param {Array}  props.classifiedRows
  * @param {Array}  props.groupedIssues
  * @param {Function} props.onCancel
@@ -18,6 +21,9 @@ import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
  */
 export function UploadPreview({
   period,
+  headerColumns,
+  revenueSummary,
+  revenueWarningRows,
   classifiedRows,
   groupedIssues,
   onCancel,
@@ -27,6 +33,15 @@ export function UploadPreview({
 }) {
   const safeRows = asObjectArray(classifiedRows);
   const safeIssues = asObjectArray(groupedIssues);
+  const safeRevenueWarnings = asObjectArray(revenueWarningRows);
+  const safeHeaderColumns =
+    headerColumns && typeof headerColumns === 'object' && !Array.isArray(headerColumns)
+      ? headerColumns
+      : {};
+  const safeRevenueSummary =
+    revenueSummary && typeof revenueSummary === 'object' && !Array.isArray(revenueSummary)
+      ? revenueSummary
+      : {};
   const total = safeRows.length;
   const classified = safeRows.filter(r => r.status === 'classified').length;
   const excluded = safeRows.filter(r => r.status === 'excluded').length;
@@ -36,6 +51,17 @@ export function UploadPreview({
   const safePeriod = period && typeof period === 'object' ? period : {};
   const periodYear = asDisplayText(safePeriod.year, '-');
   const periodMonth = asDisplayText(safePeriod.month, '-');
+  const hasRevenueColumn =
+    safeRevenueSummary.hasRevenueColumn === true ||
+    (Number.isInteger(safeHeaderColumns.revenueColumnIndex) &&
+      safeHeaderColumns.revenueColumnIndex >= 0);
+  const revenueWarningCount =
+    safeRevenueWarnings.length || Number(safeRevenueSummary.warningCount) || 0;
+  const menuColumnName = asDisplayText(safeHeaderColumns.menuColumnName, '메뉴명');
+  const quantityColumnName = asDisplayText(safeHeaderColumns.quantityColumnName, '판매량(개)');
+  const revenueColumnName = hasRevenueColumn
+    ? asDisplayText(safeHeaderColumns.revenueColumnName, '매출액')
+    : '';
   const handleCancel = typeof onCancel === 'function' ? onCancel : undefined;
   const handleConfirm = typeof onConfirm === 'function' ? onConfirm : undefined;
 
@@ -66,6 +92,57 @@ export function UploadPreview({
           <span style={{ color: unclassified ? 'var(--negative)' : undefined }}>
             미매칭 {formatNumber(unclassified)}건 ({unmatchedGroups}개 그룹)
           </span>
+        </div>
+      </div>
+
+      <div
+        className="info-banner"
+        style={{
+          marginTop: 10,
+          background: hasRevenueColumn ? 'var(--surface-2)' : 'var(--warn-soft)',
+          borderColor: hasRevenueColumn ? 'var(--line)' : 'var(--warn-soft)',
+        }}
+      >
+        <div
+          className="info-banner-ico"
+          style={{
+            background: hasRevenueColumn ? 'var(--positive-soft)' : 'var(--warn)',
+            color: hasRevenueColumn ? 'var(--positive)' : '#fff',
+          }}
+        >
+          {hasRevenueColumn ? (
+            <Icon.check style={{ width: 16, height: 16 }} />
+          ) : (
+            <Icon.alert style={{ width: 16, height: 16 }} />
+          )}
+        </div>
+        <div>
+          <b>{hasRevenueColumn ? `금액 컬럼 인식: ${revenueColumnName}` : '금액 컬럼 미인식'}</b>{' '}
+          {hasRevenueColumn ? (
+            <>
+              메뉴 <ColumnChip>{menuColumnName}</ColumnChip> · 판매량{' '}
+              <ColumnChip>{quantityColumnName}</ColumnChip> · 매출액{' '}
+              <ColumnChip>{revenueColumnName}</ColumnChip>
+              {revenueWarningCount > 0 && (
+                <span style={{ color: 'var(--warn)', marginLeft: 8 }}>
+                  금액 확인 필요 {formatNumber(revenueWarningCount)}건
+                </span>
+              )}
+            </>
+          ) : (
+            <span style={{ color: 'var(--warn)' }}>
+              금액 없이 판매량만 반영됩니다. 엑셀 헤더명을 확인하거나 금액 컬럼을 추가해 주세요.
+            </span>
+          )}
+          {hasRevenueColumn && safeRevenueWarnings.length > 0 && (
+            <div style={{ color: 'var(--text-3)', fontSize: 12, marginTop: 4 }}>
+              예:{' '}
+              {safeRevenueWarnings
+                .slice(0, 3)
+                .map(row => `${row.originalIndex}행 ${row.reason}`)
+                .join(', ')}
+            </div>
+          )}
         </div>
       </div>
 
@@ -134,6 +211,23 @@ export function UploadPreview({
         </button>
       </div>
     </>
+  );
+}
+
+function ColumnChip({ children }) {
+  return (
+    <span
+      className="chip"
+      style={{
+        background: 'var(--surface)',
+        color: 'var(--text-2)',
+        border: '1px solid var(--line)',
+        marginLeft: 2,
+        marginRight: 2,
+      }}
+    >
+      {children}
+    </span>
   );
 }
 

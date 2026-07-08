@@ -74,16 +74,6 @@ export function NoteDetailFields({ form, updateField }) {
           />
         </Field>
       </div>
-
-      <Field label="보고용 요약" hint="직접 입력 또는 우측 자동 생성 복사">
-        <textarea
-          className="form-input"
-          style={{ minHeight: 72, resize: 'vertical' }}
-          value={form.reportSummary}
-          onChange={event => updateField('reportSummary', event.target.value)}
-          placeholder="보고 시 사용할 요약 문구를 입력하세요."
-        />
-      </Field>
     </CollapsibleCard>
   );
 }

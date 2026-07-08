@@ -9,8 +9,6 @@ const evaluationSource = readFileSync(resolve('app/note/_NoteEvaluationFields.js
 const cloneSource = readFileSync(resolve('app/note/_NoteClonePreviousCard.jsx'), 'utf8');
 const photoSource = readFileSync(resolve('app/note/_NotePhotoSection.jsx'), 'utf8');
 const clipboardSource = readFileSync(resolve('lib/image/clipboard.js'), 'utf8');
-const reportSource = readFileSync(resolve('app/note/_NoteReportSummaryCard.jsx'), 'utf8');
-const reportTextSource = readFileSync(resolve('lib/note/report.js'), 'utf8');
 const collapsibleSource = readFileSync(resolve('app/note/_CollapsibleCard.jsx'), 'utf8');
 const tempCostSource = readFileSync(resolve('components/note/TempCostCalculator.jsx'), 'utf8');
 const fieldSource = readFileSync(resolve('components/note/FormFields.jsx'), 'utf8');
@@ -22,22 +20,28 @@ describe('note form body structure', () => {
     expect(formSource).toContain('<NoteEvaluationFields');
     expect(formSource).toContain('<NoteDetailFields');
     expect(formSource).toContain('<NotePhotoSection');
-    expect(formSource).toContain('<NoteReportSummaryCard');
     expect(formSource).toContain('function NoteWriteProgressCard');
-    expect(formSource).toContain('<NoteWriteProgressCard form={form} />');
+    expect(formSource).toContain(
+      "const [openRightPanel, setOpenRightPanel] = useState('progress')"
+    );
+    expect(formSource).toContain("open={openRightPanel === 'progress'}");
+    expect(formSource).toContain("setOpenRightPanel(next ? 'progress' : '')");
     expect(formSource).toContain("gridTemplateColumns: 'minmax(0, 1fr) clamp(320px, 27vw, 390px)'");
     expect(formSource).toContain('makeFieldUpdater(setForm)');
     expect(formSource).toContain('normalizeNoteFormForSave');
     expect(formSource).toContain('menuName: title');
     expect(formSource).toContain(
+      'category: normalizeNoteCategoryForBrand(form?.category, form?.brand)'
+    );
+    expect(formSource).toContain('MENU_DEVELOPMENT_NOTE_TYPES.includes(noteType)');
+    expect(formSource).toContain(
       'const existingNotes = Array.isArray(options.existingNotes) ? options.existingNotes : []'
     );
     expect(formSource).toContain('generateNextNoteMenuCode(existingNotes');
     expect(formSource).toContain('function updateTitle(value)');
-    expect(formSource).toContain('generateNoteReportText(form)');
-    expect(reportTextSource).toContain("import { noteDisplayTitle } from './display'");
-    expect(reportTextSource).toContain("const title = noteDisplayTitle(form, '—')");
-    expect(reportTextSource).not.toContain("form.title || form.menuName || '—'");
+    expect(formSource).not.toContain('generateNoteReportText(form)');
+    expect(formSource).not.toContain("from '@/lib/note/report'");
+    expect(formSource).not.toContain("from '@/app/note/_NoteReportSummaryCard'");
     expect(formSource).toContain('getAllNotesCached');
     expect(formSource).toContain('setSourceNotes(notes)');
     expect(formSource).toContain('let alive = true;');
@@ -52,14 +56,14 @@ describe('note form body structure', () => {
   test('note form section components own their presentation details', () => {
     expect(requiredSource).toContain('export function NoteRequiredFields');
     expect(requiredSource).toContain('function NoteFormSection');
+    expect(requiredSource).toContain('노트 작성');
+    expect(requiredSource).not.toContain('필수 항목');
     expect(requiredSource).toContain('title="메뉴 정보"');
     expect(requiredSource).toContain('title="테스트 기본값"');
     expect(requiredSource).toContain('title="분류와 상태"');
     expect(requiredSource).toContain('title="테스트 내용"');
     expect(requiredSource).toContain('const titleValue = form.title || form.menuName ||');
     expect(requiredSource).toContain("gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))'");
-    expect(requiredSource).toContain('placeholder="예: RND-260702-1"');
-    expect(requiredSource).toContain("gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))'");
     expect(requiredSource).toContain('minHeight: 180');
     expect(requiredSource).toContain('testRound');
     expect(requiredSource).toContain('시식 테스트 내용');
@@ -71,10 +75,41 @@ describe('note form body structure', () => {
     expect(requiredSource).toContain('onCompositionEnd');
     expect(requiredSource).toContain('onChange={handleTitleChange}');
     expect(requiredSource).toContain('commitTitle(titleDraft)');
-    expect(requiredSource).toContain('function handleBrandChange');
+    expect(requiredSource).toContain('placeholder="메뉴명 또는 테스트 제목"');
+    expect(requiredSource).toContain('placeholder="차수"');
+    expect(requiredSource).not.toContain('placeholder="예: 완성새우 떡라비마요 조합 테스트"');
+    expect(requiredSource).not.toContain('placeholder="예: 1, 2차"');
+    expect(requiredSource).toContain('activeBrand.name');
+    expect(requiredSource).toContain('getNoteCategoryOptionsForBrand(form.brand)');
+    expect(writePageSource).toContain('function WriteTypeStep');
+    expect(writePageSource).toContain('WRITE_TYPE_OPTIONS');
+    expect(writePageSource).toContain('메뉴개발');
+    expect(writePageSource).toContain('메뉴개선');
+    expect(writePageSource).toContain('샘플테스트');
+    expect(writePageSource).toContain('제품이슈');
+    expect(writePageSource).toContain('SAMPLE_RECORD_TYPE_BY_WRITE_TYPE');
+    expect(requiredSource).not.toContain('<Field label="유형">');
     expect(requiredSource).toContain('function handleCategoryChange');
-    expect(requiredSource).toContain('function handleNoteTypeChange');
+    expect(requiredSource).not.toContain('function handleNoteTypeChange');
+    expect(requiredSource).not.toContain('function handleBrandChange');
     expect(requiredSource).not.toContain("updateField('brand', found ? found.id : 'main')");
+    expect(requiredSource).toContain('<details');
+    expect(requiredSource).toContain('메뉴코드 설정');
+    expect(requiredSource).toContain("caption={menuCodeValue || '저장 시 자동 코드'}");
+    expect(requiredSource).not.toContain("caption={menuCodeValue || '코드 미입력'}");
+    expect(requiredSource).not.toContain('placeholder="예: RND-260702-1"');
+    expect(requiredSource).toContain('placeholder="자동 생성"');
+    expect(requiredSource).toContain('const [dateDraft, setDateDraft]');
+    expect(requiredSource).toContain('value={dateDraft}');
+    expect(requiredSource).not.toContain('quickDateDraft');
+    expect(requiredSource).not.toContain('type="date"');
+    expect(requiredSource).not.toContain('placeholder="240821"');
+    expect(requiredSource).not.toContain('hint="YYMMDD · YYYYMMDD"');
+    expect(requiredSource).not.toContain('STATUS_COLORS');
+    expect(requiredSource).toContain('options={STATUSES}');
+    expect(requiredSource).not.toContain(
+      "caption={form.testContent ? `${form.testContent.length}자` : '필수'}"
+    );
     expect(detailSource).toContain('export function NoteDetailFields');
     expect(detailSource).toContain('<CollapsibleCard');
     expect(detailSource).toContain('defaultOpen={false}');
@@ -99,11 +134,6 @@ describe('note form body structure', () => {
     expect(photoSource).toContain('Ctrl+V 붙여넣기');
     expect(photoSource).toContain('function makePrimary(idx)');
     expect(photoSource).toContain('대표로');
-    expect(reportSource).toContain('export function NoteReportSummaryCard');
-    expect(reportSource).toContain('<CollapsibleCard');
-    expect(reportSource).toContain('defaultOpen={false}');
-    expect(reportSource).toContain('copyText(reportText)');
-    expect(reportSource).toContain('보고용 복사');
     expect(tempCostSource).toContain('<CollapsibleCard');
     expect(tempCostSource).toContain('defaultOpen={false}');
   });
@@ -129,9 +159,12 @@ describe('note form body structure', () => {
 
   test('optional note sections use closed collapsible cards by default', () => {
     expect(collapsibleSource).toContain('defaultOpen = false');
+    expect(collapsibleSource).toContain('open: controlledOpen');
+    expect(collapsibleSource).toContain('const controlled = typeof controlledOpen ===');
     expect(collapsibleSource).toContain('aria-expanded={open}');
-    expect(collapsibleSource).toContain('{open &&');
-    expect(collapsibleSource).toContain('setOpen(value => !value)');
+    expect(collapsibleSource).toContain('gridTemplateRows: open ?');
+    expect(collapsibleSource).toContain('color: open ?');
+    expect(collapsibleSource).toContain('setOpen(!open)');
   });
 
   test('note photo upload keeps unsupported files out before resize', () => {

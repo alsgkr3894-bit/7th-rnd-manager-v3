@@ -45,6 +45,7 @@ describe('buildAutoPrintScript — 이미지 로드 실패 안전', () => {
   test('waitForImages=true면 onerror도 resolve해 인쇄가 멈추지 않는다', () => {
     const script = buildAutoPrintScript({ waitForImages: true });
     expect(script).toContain('img.onerror = resolve');
+    expect(script).toContain('img.decode');
     expect(script).toContain('Promise.all');
     expect(script).toContain('window.print()');
   });

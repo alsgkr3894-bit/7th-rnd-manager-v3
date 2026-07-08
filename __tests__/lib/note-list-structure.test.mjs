@@ -161,7 +161,9 @@ describe('note list structure', () => {
     expect(ideaGroupCardSource).toContain('+ 다음 차수');
     expect(ideaGroupCardSource).toContain('label="차수"');
     expect(ideaGroupCardSource).toContain('collectLatestRoundNotePhotos(notes, 99)');
-    expect(ideaGroupCardSource).toContain("import { PhotoCarousel } from '@/components/note/PhotoCarousel'");
+    expect(ideaGroupCardSource).toContain(
+      "import { PhotoCarousel } from '@/components/note/PhotoCarousel'"
+    );
     expect(ideaGroupCardSource).toContain('group.periodLabel || formatFullDate(latest.testDate)');
     expect(ideaGroupCardSource).toContain('STATUSES.map(status');
     expect(ideaGroupCardSource).toContain('onStatusChange');
@@ -169,7 +171,9 @@ describe('note list structure', () => {
     expect(ideaGroupCardSource).toContain('onMouseDown={event => event.stopPropagation()}');
     expect(ideaGroupCardSource).toContain("import { useState } from 'react'");
     expect(ideaGroupCardSource).toContain('const [expanded, setExpanded] = useState(false)');
-    expect(ideaGroupCardSource).toContain("import { NotePhotoLightbox } from './_NotePhotoLightbox'");
+    expect(ideaGroupCardSource).toContain(
+      "import { NotePhotoLightbox } from './_NotePhotoLightbox'"
+    );
     expect(ideaGroupCardSource).toContain('const [previewPhoto, setPreviewPhoto] = useState(null)');
     expect(ideaGroupCardSource).toContain('setPreviewPhoto(photo)');
     expect(photoCarouselSource).toContain('draggable={false}');
@@ -179,7 +183,9 @@ describe('note list structure', () => {
     expect(ideaGroupCardSource).toContain('{expanded && (');
     expect(ideaGroupCardSource).toContain('latestPreviewRows.map');
     expect(ideaGroupCardSource).toContain('onClick={event => openRound(note, event)}');
-    expect(ideaGroupCardSource).toContain('const roundPhotos = collectLatestRoundNotePhotos([note], 99)');
+    expect(ideaGroupCardSource).toContain(
+      'const roundPhotos = collectLatestRoundNotePhotos([note], 99)'
+    );
     expect(ideaGroupCardSource).toContain('height={92}');
     expect(ideaGroupsSource).toContain('export function buildNoteIdeaGroups');
     expect(ideaGroupsSource).toContain('export function noteIdeaTitle');

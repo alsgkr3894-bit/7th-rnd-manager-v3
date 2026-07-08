@@ -1,4 +1,4 @@
-import { sampleNamesText } from '@/lib/sample';
+import { sampleIngredientGroupName, sampleNamesText } from '@/lib/sample';
 import { formatTestRound } from '@/lib/note/evaluation';
 import {
   asDisplayText,
@@ -24,6 +24,8 @@ export function buildSampleDetailModel(sample = {}) {
     photos,
     tags,
     names,
+    ingredientGroupName: sampleIngredientGroupName(safeSample),
+    recordType: asDisplayText(safeSample.recordType || '샘플테스트'),
     title,
     category: asDisplayText(safeSample.category),
     testDate: asDisplayText(safeSample.testDate),

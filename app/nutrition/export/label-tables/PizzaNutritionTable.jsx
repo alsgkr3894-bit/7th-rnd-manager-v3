@@ -1,4 +1,3 @@
-import { LABEL_COLS } from '@/lib/nutrition/label/build';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { displayNutritionMenuName } from '@/lib/nutrition/label/poster';
 import {
@@ -11,6 +10,16 @@ import {
   NutritionLabelScrollArea,
   NutritionValueText,
 } from './NutritionLabelTablePrimitives';
+
+const PIZZA_150_COLS = [
+  { key: 'weight', label: '총중량', unit: 'g' },
+  { key: 'weightUnit', label: '중량단위', unit: '' },
+  { key: 'kcal', label: '열량', unit: 'kcal/150g' },
+  { key: 'protein', label: '단백질', unit: 'g/150g' },
+  { key: 'fat', label: '포화지방', unit: 'g/150g' },
+  { key: 'sodium', label: '나트륨', unit: 'mg/150g' },
+  { key: 'sugar', label: '당류', unit: 'g/150g' },
+];
 
 export function PizzaNutritionTable({ rows }) {
   const safeRows = asObjectArray(rows);
@@ -28,7 +37,7 @@ export function PizzaNutritionTable({ rows }) {
           <col style={{ width: 160 }} />
           <col style={{ width: 90 }} />
           <col style={{ width: 40 }} />
-          {LABEL_COLS.map(column => (
+          {PIZZA_150_COLS.map(column => (
             <col key={column.key} style={{ width: 75 }} />
           ))}
           <col style={{ width: 220 }} />
@@ -38,7 +47,7 @@ export function PizzaNutritionTable({ rows }) {
             <th style={HEADER_STYLE}>메뉴명</th>
             <th style={HEADER_STYLE}>크러스트</th>
             <th style={HEADER_STYLE}>L/R</th>
-            {LABEL_COLS.map(column => (
+            {PIZZA_150_COLS.map(column => (
               <NutritionLabelColumnHeader key={column.key} column={column} />
             ))}
             <th style={HEADER_STYLE}>함유알레르기</th>
@@ -72,9 +81,9 @@ function PizzaMenuRows({ menuName, crustRows, groupIndex }) {
       <td style={{ padding: '5px 6px', fontSize: 11, textAlign: 'center', color: '#666' }}>
         {asDisplayText(row.side, '—')}
       </td>
-      {LABEL_COLS.map(column => (
+      {PIZZA_150_COLS.map(column => (
         <td key={column.key} style={COL_STYLE}>
-          <NutritionValueText value={row[column.key]} />
+          <NutritionValueText value={column.key === 'weightUnit' ? 'g' : row[column.key]} />
         </td>
       ))}
       <td style={{ padding: '5px 8px', fontSize: 11 }}>{asDisplayText(row.allergen, '—')}</td>

@@ -8,7 +8,7 @@ import { UPLOAD_MAX_MB, checkFileSize } from '@/lib/upload-policy';
 
 const MAX_NOTE_PHOTOS = 8;
 
-/** 노트 사진 첨부 카드 (샘플기록과 동일한 base64 JPEG 방식) */
+/** 노트 사진 첨부 카드 (식자재 이슈 및 테스트 /샘플기록과 동일한 base64 JPEG 방식) */
 export function NotePhotoSection({ photos = [], onChange }) {
   const fileRef = useRef(null);
   const safePhotos = Array.isArray(photos)

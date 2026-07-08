@@ -187,7 +187,11 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
   const pickQuickIngredient = useCallback(
     ingredient => {
       addQuickRow(
-        applyIngredientSuggestionToComponent(createBlankRecipeComponentRow(), ingredient, unitPriceMap)
+        applyIngredientSuggestionToComponent(
+          createBlankRecipeComponentRow(),
+          ingredient,
+          unitPriceMap
+        )
       );
     },
     [addQuickRow, unitPriceMap]
@@ -312,7 +316,7 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
 
   // 빠른 추가는 수량, 빈 행 추가는 식자재 input으로 focus.
   useEffect(() => {
-        if (pendingFocusQuantityKeyRef.current) {
+    if (pendingFocusQuantityKeyRef.current) {
       const targetKey = pendingFocusQuantityKeyRef.current;
       pendingFocusQuantityKeyRef.current = null;
       quantityInputRefs.current[targetKey]?.focus();

@@ -1,11 +1,13 @@
 'use client';
 
+import { SAMPLE_RECORD_LABEL } from '@/lib/sample/constants';
+
 function getEmptyMessage({ search, ratingMin, catFilter }) {
   if (search) return `"${search}" 검색 결과가 없어요`;
   if (ratingMin === -1) return '별점 없는 샘플이 없어요';
   if (ratingMin > 0) return `별점 ${ratingMin}점 이상 샘플이 없어요`;
   if (catFilter !== 'all') return `${catFilter} 카테고리 샘플이 없어요`;
-  return '샘플 기록이 없어요';
+  return `${SAMPLE_RECORD_LABEL}이 없어요`;
 }
 
 export function SampleEmptyState({ search, ratingMin, catFilter, onCreateSample }) {

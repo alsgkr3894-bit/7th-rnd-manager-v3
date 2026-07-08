@@ -5,7 +5,7 @@ import {
 } from '../../lib/sample/rounds.js';
 
 describe('sample round helpers', () => {
-  test('sample round draft carries only title, next round, and linkage from source', () => {
+  test('sample round draft carries title, ingredient grouping, next round, and linkage from source', () => {
     const draft = buildNextSampleRoundDraft(
       {
         id: 12,
@@ -29,6 +29,7 @@ describe('sample round helpers', () => {
     expect(draft).toMatchObject({
       brand: 'main',
       title: '치즈 샘플',
+      ingredientGroupName: '치즈',
       testRound: '3차',
       parentId: 12,
       testDate: '2026-06-25',

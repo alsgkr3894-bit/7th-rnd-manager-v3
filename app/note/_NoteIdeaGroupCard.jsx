@@ -5,6 +5,7 @@ import { Icon } from '@/components/icons';
 import { STATUSES, STATUS_COLORS } from '@/lib/note';
 import { formatFullDate, parseTagList } from '@/lib/note/utils';
 import { clampNoteRating, formatTestRound, NOTE_EVALUATION_FIELDS } from '@/lib/note/evaluation';
+import { isUnifiedSampleRecord } from '@/lib/note/unified-records';
 import { noop } from '@/lib/ui/prop-guards';
 import { PhotoCarousel } from '@/components/note/PhotoCarousel';
 import { highlightText } from './_NoteCard';
@@ -70,11 +71,7 @@ function MiniStat({ label, value }) {
 }
 
 function latestSummary(note, hlRe) {
-  const value =
-    asText(note.reportSummary) ||
-    asText(note.testContent) ||
-    asText(note.tasteEval) ||
-    asText(note.nextAction);
+  const value = asText(note.testContent) || asText(note.tasteEval) || asText(note.nextAction);
   return value ? highlightText(value, hlRe) : '최근 테스트 기록이 정리되어 있습니다';
 }
 
@@ -82,7 +79,6 @@ function previewRows(note = {}) {
   return [
     ['테스트 내용', asText(note.testContent)],
     ['맛 평가', asText(note.tasteEval)],
-    ['보고용 요약', asText(note.reportSummary)],
     ['다음 액션', asText(note.nextAction)],
   ]
     .filter(([, value]) => value)
@@ -140,7 +136,10 @@ export function NoteIdeaGroupCard({
   const [previewPhoto, setPreviewPhoto] = useState(null);
   const latestRoundLabel = roundLabel(latest, Math.max(notes.length - 1, 0));
   const latestPreviewRows = previewRows(latest);
-  const canUnmergeGroup = canEdit && !batchMode && notes.some(note => note?.parentId != null);
+  const hasSampleRecord = notes.some(note => isUnifiedSampleRecord(note));
+  const canChangeStatus = canEdit && latest.id != null && !hasSampleRecord;
+  const canUnmergeGroup =
+    canEdit && !batchMode && !hasSampleRecord && notes.some(note => note?.parentId != null);
 
   function toggleExpanded(event) {
     if (batchMode || event.defaultPrevented) return;
@@ -199,7 +198,7 @@ export function NoteIdeaGroupCard({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <select
             value={latestStatus}
-            disabled={!canEdit || latest.id == null}
+            disabled={!canChangeStatus}
             aria-label={`${group.title} 상태 변경`}
             onMouseDown={event => event.stopPropagation()}
             onClick={event => event.stopPropagation()}
@@ -212,7 +211,7 @@ export function NoteIdeaGroupCard({
               background: statusColor.bg,
               color: statusColor.color,
               border: `1px solid ${statusColor.color}40`,
-              cursor: canEdit && latest.id != null ? 'pointer' : 'default',
+              cursor: canChangeStatus ? 'pointer' : 'default',
               fontFamily: 'inherit',
               outline: 'none',
               maxWidth: 108,
@@ -318,7 +317,10 @@ export function NoteIdeaGroupCard({
           </div>
 
           {photos.length > 0 && (
-            <div onMouseDown={event => event.stopPropagation()} onDragStart={event => event.preventDefault()}>
+            <div
+              onMouseDown={event => event.stopPropagation()}
+              onDragStart={event => event.preventDefault()}
+            >
               <PhotoCarousel
                 photos={photos}
                 title={group.title}
@@ -342,7 +344,8 @@ export function NoteIdeaGroupCard({
             label="사진"
             value={(notes || []).reduce(
               (sum, note) =>
-                sum + (Array.isArray(note?.photos) ? note.photos.filter(photo => photo?.data).length : 0),
+                sum +
+                (Array.isArray(note?.photos) ? note.photos.filter(photo => photo?.data).length : 0),
               0
             )}
           />

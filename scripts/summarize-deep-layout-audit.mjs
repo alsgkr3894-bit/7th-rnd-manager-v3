@@ -20,10 +20,12 @@ function pushFindings(result) {
   if (result.status >= 500) findings.push(['http-status', String(result.status)]);
   if (!result.h1) findings.push(['missing-h1', 'missing h1']);
   if (!result.main) findings.push(['missing-main', 'missing main']);
-  if (result.horizontalOverflow) findings.push(['overflow', `${result.scrollWidth} > ${result.innerWidth}`]);
+  if (result.horizontalOverflow)
+    findings.push(['overflow', `${result.scrollWidth} > ${result.innerWidth}`]);
   for (const item of result.overflowElements || []) findings.push(['overflow-element', item.label]);
   for (const item of result.clippedControls || []) findings.push(['clipped-control', item.label]);
-  for (const item of result.overlaps || []) findings.push(['control-overlap', `${item.a} / ${item.b}`]);
+  for (const item of result.overlaps || [])
+    findings.push(['control-overlap', `${item.a} / ${item.b}`]);
   for (const item of result.consoleErrors || []) findings.push(['console-error', item]);
   for (const item of result.pageErrors || []) findings.push(['page-error', item]);
   for (const item of result.httpProblems || []) findings.push(['http-problem', item]);
@@ -58,7 +60,10 @@ for (const [type, count] of countBy(flatFindings, item => item.type)) {
 
 console.log('');
 console.log('top repeated details:');
-for (const [detail, count] of countBy(flatFindings, item => `${item.type}: ${item.detail}`).slice(0, 30)) {
+for (const [detail, count] of countBy(flatFindings, item => `${item.type}: ${item.detail}`).slice(
+  0,
+  30
+)) {
   console.log(`${count}\t${detail}`);
 }
 
@@ -66,7 +71,8 @@ console.log('');
 console.log('routes with non-sidebar/table overflow or runtime findings:');
 const routeCandidates = new Map();
 for (const finding of flatFindings) {
-  const isCommonSidebar = finding.type === 'overflow-element' && finding.detail.startsWith('aside.sidebar');
+  const isCommonSidebar =
+    finding.type === 'overflow-element' && finding.detail.startsWith('aside.sidebar');
   const isSkipLink = finding.type === 'clipped-control' && finding.detail.startsWith('a.skip-link');
   if (isCommonSidebar || isSkipLink) continue;
   const key = `${finding.brand} ${finding.route}`;

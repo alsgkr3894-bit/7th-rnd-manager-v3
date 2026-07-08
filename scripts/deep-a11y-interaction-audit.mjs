@@ -7,7 +7,8 @@ import {
 } from '../lib/navigation/route-classification.js';
 
 const BASE = getQaBase();
-const OUT = process.env.DEEP_A11Y_INTERACTION_OUT || 'docs/deep-a11y-interaction-audit-2026-07-02.json';
+const OUT =
+  process.env.DEEP_A11Y_INTERACTION_OUT || 'docs/deep-a11y-interaction-audit-2026-07-02.json';
 const ROUTE_LIMIT = Number.parseInt(process.env.DEEP_A11Y_ROUTE_LIMIT || '', 10) || null;
 const VIEWPORT_FILTER = new Set(
   String(process.env.DEEP_A11Y_VIEWPORTS || '')
@@ -55,19 +56,19 @@ const results = [];
 function hasFinding(result) {
   return Boolean(
     result.fatal ||
-      result.status >= 500 ||
-      !result.h1 ||
-      !result.main ||
-      result.overflowX ||
-      result.consoleErrors?.length ||
-      result.pageErrors?.length ||
-      result.httpProblems?.length ||
-      result.duplicateIds?.length ||
-      result.unlabeledControls?.length ||
-      result.buttonsWithoutTypeInForms?.length ||
-      result.invalidAriaRefs?.length ||
-      result.positiveTabIndex?.length ||
-      result.tinyControls?.length
+    result.status >= 500 ||
+    !result.h1 ||
+    !result.main ||
+    result.overflowX ||
+    result.consoleErrors?.length ||
+    result.pageErrors?.length ||
+    result.httpProblems?.length ||
+    result.duplicateIds?.length ||
+    result.unlabeledControls?.length ||
+    result.buttonsWithoutTypeInForms?.length ||
+    result.invalidAriaRefs?.length ||
+    result.positiveTabIndex?.length ||
+    result.tinyControls?.length
   );
 }
 
@@ -89,13 +90,18 @@ function buildReport({ completed = false, fatal = null } = {}) {
     summary: {
       duplicateIdRoutes: findings.filter(item => item.duplicateIds?.length).length,
       unlabeledControlRoutes: findings.filter(item => item.unlabeledControls?.length).length,
-      missingButtonTypeRoutes: findings.filter(item => item.buttonsWithoutTypeInForms?.length).length,
+      missingButtonTypeRoutes: findings.filter(item => item.buttonsWithoutTypeInForms?.length)
+        .length,
       invalidAriaRefRoutes: findings.filter(item => item.invalidAriaRefs?.length).length,
       positiveTabIndexRoutes: findings.filter(item => item.positiveTabIndex?.length).length,
       tinyControlRoutes: findings.filter(item => item.tinyControls?.length).length,
       overflowRoutes: findings.filter(item => item.overflowX).length,
       runtimeErrorRoutes: findings.filter(
-        item => item.fatal || item.consoleErrors?.length || item.pageErrors?.length || item.httpProblems?.length
+        item =>
+          item.fatal ||
+          item.consoleErrors?.length ||
+          item.pageErrors?.length ||
+          item.httpProblems?.length
       ).length,
     },
     findings,
@@ -166,7 +172,10 @@ async function probePage(page) {
         style.opacity !== '0'
       );
     };
-    const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
+    const clean = value =>
+      String(value || '')
+        .replace(/\s+/g, ' ')
+        .trim();
     const cssName = el => {
       const tag = el.tagName.toLowerCase();
       const id = el.id ? `#${el.id}` : '';
@@ -363,11 +372,15 @@ console.log(`Result file: ${OUT}`);
 for (const finding of findings.slice(0, 50)) {
   console.log(`- ${finding.brand} ${finding.route} ${finding.viewport}`);
   if (finding.fatal) console.log(`  fatal: ${finding.fatal}`);
-  if (finding.overflowX) console.log(`  overflow: scrollWidth ${finding.scrollWidth} > ${finding.innerWidth}`);
+  if (finding.overflowX)
+    console.log(`  overflow: scrollWidth ${finding.scrollWidth} > ${finding.innerWidth}`);
   if (finding.duplicateIds?.[0]) console.log(`  duplicate id: ${finding.duplicateIds[0].id}`);
-  if (finding.unlabeledControls?.[0]) console.log(`  unlabeled: ${finding.unlabeledControls[0].selector}`);
-  if (finding.buttonsWithoutTypeInForms?.[0]) console.log(`  form button missing type: ${finding.buttonsWithoutTypeInForms[0].selector}`);
-  if (finding.invalidAriaRefs?.[0]) console.log(`  aria ref: ${JSON.stringify(finding.invalidAriaRefs[0])}`);
+  if (finding.unlabeledControls?.[0])
+    console.log(`  unlabeled: ${finding.unlabeledControls[0].selector}`);
+  if (finding.buttonsWithoutTypeInForms?.[0])
+    console.log(`  form button missing type: ${finding.buttonsWithoutTypeInForms[0].selector}`);
+  if (finding.invalidAriaRefs?.[0])
+    console.log(`  aria ref: ${JSON.stringify(finding.invalidAriaRefs[0])}`);
   if (finding.tinyControls?.[0]) console.log(`  tiny: ${finding.tinyControls[0].selector}`);
 }
 

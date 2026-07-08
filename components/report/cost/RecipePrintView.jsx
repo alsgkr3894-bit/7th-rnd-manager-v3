@@ -162,7 +162,10 @@ function RecipeMenuPage({ menu }) {
 
       <div className="recipe-usage-box">
         <div className="recipe-usage-label">직접 입력 식자재</div>
-        <div className="recipe-usage-summary" style={{ marginBottom: commonComponents.length ? 8 : 0 }}>
+        <div
+          className="recipe-usage-summary"
+          style={{ marginBottom: commonComponents.length ? 8 : 0 }}
+        >
           {directComponents.length === 0 ? (
             <span className="muted">구성품 미작성</span>
           ) : (
@@ -270,7 +273,9 @@ function RecipeComponentTable({ title, emptyText, components, sizes, menu, showS
               <td>{formatSizeUsage(component, sizes)}</td>
               <td className="num right">{money(component.totalCost)}</td>
               <td className="muted">
-                {showSource ? component.sourceLabel || '공통관리' : component.note || menu.note || '—'}
+                {showSource
+                  ? component.sourceLabel || '공통관리'
+                  : component.note || menu.note || '—'}
               </td>
             </tr>
           ))

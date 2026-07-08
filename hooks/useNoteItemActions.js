@@ -4,7 +4,9 @@ import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { sharedRestoreRecord as restoreRecord } from '@/lib/db/shared';
 import { addNote, deleteNote, updateNoteChainStatus, invalidateNotesCache } from '@/lib/note';
-import { setNoteFrom } from '@/lib/note/keys';
+import { setNoteFrom, setSampleFrom } from '@/lib/note/keys';
+import { isUnifiedSampleRecord, unifiedSampleSourceId } from '@/lib/note/unified-records';
+import { addSample, deleteSample } from '@/lib/sample';
 
 async function restoreDeletedNotes(records = []) {
   const failures = [];
@@ -57,6 +59,15 @@ export function useNoteItemActions({
       setSingleDeleteNote(null);
       if (!canEdit) return;
       try {
+        if (isUnifiedSampleRecord(note)) {
+          const sourceId = unifiedSampleSourceId(note);
+          await deleteSample(sourceId);
+          setNotes(prev => prev.filter(n => n.id !== note.id));
+          if (detailNote?.id === note.id) setDetailNote(null);
+          showToast('샘플/제품이슈 기록을 삭제했어요', 'ok');
+          return;
+        }
+
         const removed = await deleteNote(note.id);
         const removedIds = new Set((removed || []).map(rec => rec.id));
         setNotes(prev => prev.filter(n => !removedIds.has(n.id)));
@@ -92,6 +103,18 @@ export function useNoteItemActions({
       if (!canEdit) return;
       try {
         await initDB();
+        if (isUnifiedSampleRecord(note)) {
+          const source = note._sourceRecord || {};
+          await addSample({
+            ...source,
+            title: `${source.title || note.title || '샘플 기록'} (복사)`,
+            parentId: null,
+          });
+          showToast('샘플/제품이슈 기록을 복사했어요', 'ok');
+          load();
+          return;
+        }
+
         await addNote({
           ...note,
           title: `${note.title} (복사)`,
@@ -112,13 +135,15 @@ export function useNoteItemActions({
     async function handleStatusChange(noteId, newStatus, e) {
       e?.stopPropagation();
       if (!canEdit) return;
+      if (isUnifiedSampleRecord(noteId)) {
+        showToast('샘플/제품이슈 기록은 유형 필터에서 관리해 주세요', 'warn');
+        return;
+      }
       try {
         const changedIds = await updateNoteChainStatus(noteId, newStatus);
         const changedSet = new Set(changedIds);
         showToast(`메뉴 상태 → ${newStatus}`, 'ok');
-        setNotes(prev =>
-          prev.map(n => (changedSet.has(n.id) ? { ...n, status: newStatus } : n))
-        );
+        setNotes(prev => prev.map(n => (changedSet.has(n.id) ? { ...n, status: newStatus } : n)));
         setPopIds(s => new Set([...s, ...changedIds]));
         const timer = setTimeout(() => {
           setPopIds(s => {
@@ -142,6 +167,11 @@ export function useNoteItemActions({
     function handleNewVersion(note, e) {
       e?.stopPropagation();
       if (!canEdit) return;
+      if (isUnifiedSampleRecord(note)) {
+        setSampleFrom(unifiedSampleSourceId(note));
+        router.push('/note/write?type=sample');
+        return;
+      }
       setNoteFrom(note.id);
       router.push('/note/write');
     },

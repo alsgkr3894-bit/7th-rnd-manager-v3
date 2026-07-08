@@ -17,6 +17,7 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, ca
   const pathname = usePathname();
   const router = useRouter();
   const sidebarRef = useRef(null);
+  const lastActiveScrollPathRef = useRef('');
   const [latestPrice, setLatestPrice] = useState(null);
   const visibleSections = useMemo(() => filterNavSectionsForRole(NAV_SECTIONS, canEdit), [canEdit]);
 
@@ -85,20 +86,28 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, ca
 
   // 활성 항목이 보이는 영역 밖이면 스크롤로 노출 (active 표시는 CSS .active 배경·좌측바가 담당)
   useEffect(() => {
+    if (lastActiveScrollPathRef.current === pathname) return undefined;
+    lastActiveScrollPathRef.current = pathname;
     const sidebar = sidebarRef.current;
-    if (!sidebar) return;
+    if (!sidebar) return undefined;
+    let innerRafId = 0;
     const rafId = requestAnimationFrame(() => {
-      const activeEl =
-        sidebar.querySelector('.nav-children.open .nav-child.active') ||
-        sidebar.querySelector('.nav-item.active');
-      if (!activeEl) return;
-      const sRect = sidebar.getBoundingClientRect();
-      const eRect = activeEl.getBoundingClientRect();
-      // 이미 보이는 항목 클릭 시 점프 방지 — 영역 밖일 때만 스크롤
-      const outOfView = eRect.top < sRect.top || eRect.bottom > sRect.bottom;
-      if (outOfView) activeEl.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+      innerRafId = requestAnimationFrame(() => {
+        const activeEl =
+          sidebar.querySelector('.nav-children.open .nav-child.active') ||
+          sidebar.querySelector('.nav-item.active');
+        if (!activeEl) return;
+        const sRect = sidebar.getBoundingClientRect();
+        const eRect = activeEl.getBoundingClientRect();
+        // 이미 보이는 항목 클릭 시 점프 방지 — 영역 밖일 때만 스크롤
+        const outOfView = eRect.top < sRect.top || eRect.bottom > sRect.bottom;
+        if (outOfView) activeEl.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+      });
     });
-    return () => cancelAnimationFrame(rafId);
+    return () => {
+      cancelAnimationFrame(rafId);
+      cancelAnimationFrame(innerRafId);
+    };
   }, [pathname, openIds]);
 
   // openIds 변경 시 localStorage 동기화 (toggle/pathname 변경 모두 포함)

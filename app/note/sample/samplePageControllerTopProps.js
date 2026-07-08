@@ -1,3 +1,5 @@
+import { SAMPLE_RECORD_LABEL } from '@/lib/sample/constants';
+
 export function buildSampleLoadErrorProps({ pageState }) {
   const { loadError, reload } = pageState;
 
@@ -11,8 +13,8 @@ export function buildSampleHeaderProps({ pageState }) {
   const { samples } = pageState;
 
   return {
-    breadcrumb: ['샘플기록'],
-    title: '샘플기록',
+    breadcrumb: [SAMPLE_RECORD_LABEL],
+    title: SAMPLE_RECORD_LABEL,
     sub: `총 ${samples.length}개 샘플`,
   };
 }

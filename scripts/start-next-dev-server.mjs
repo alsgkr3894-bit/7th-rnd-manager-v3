@@ -10,6 +10,7 @@ const child = spawn(
     windowsHide: true,
   }
 );
+const keepAlive = setInterval(() => {}, 1_000_000_000);
 
 function stopChild() {
   if (!child.killed) child.kill();
@@ -20,6 +21,7 @@ process.on('SIGTERM', stopChild);
 process.on('exit', stopChild);
 
 child.on('exit', (code, signal) => {
+  clearInterval(keepAlive);
   if (signal) {
     process.exitCode = 1;
     return;

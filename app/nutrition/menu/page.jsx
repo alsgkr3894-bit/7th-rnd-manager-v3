@@ -11,7 +11,6 @@ import {
   getRawValueMap,
   getAllEdges,
   getAllToppings,
-  getAllCompositions,
   getAllSetCompositions,
   getNutritionBaseDuplicateDiagnostics,
   repairNutritionBaseDuplicates,
@@ -41,7 +40,6 @@ export default function Page() {
         rawValues,
         edgeList,
         toppingList,
-        compositionList,
         masters,
         ingredientList,
         setCompList,
@@ -51,7 +49,6 @@ export default function Page() {
         getRawValueMap(),
         getAllEdges(),
         getAllToppings(),
-        getAllCompositions(),
         getAllMenuMaster(),
         getAllIngredients(),
         getAllSetCompositions(),
@@ -76,7 +73,6 @@ export default function Page() {
         edgeMap,
         toppings: asObjectArray(toppingList),
         ingredients: asObjectArray(ingredientList),
-        compositions: asObjectArray(compositionList),
         setComps: asObjectArray(setCompList),
         duplicateDiagnostics: duplicateDiag,
         menuMasterDiagnostics: buildNutritionMenuMasterDiagnostics({
@@ -94,7 +90,6 @@ export default function Page() {
   const edgeMap = data?.edgeMap ?? {};
   const toppings = data?.toppings ?? [];
   const ingredients = data?.ingredients ?? [];
-  const compositions = data?.compositions ?? [];
   const setComps = data?.setComps ?? [];
   const duplicateDiagnostics = data?.duplicateDiagnostics ?? null;
   const menuMasterDiagnostics = data?.menuMasterDiagnostics ?? null;
@@ -168,7 +163,7 @@ export default function Page() {
         breadcrumb={['영양성분', '영양성분 정보 및 계산']}
         title="영양성분 정보 및 계산"
         masterSource
-        sub="베이스 영양성분 입력 → 엣지 설정 → 파생 메뉴 → 계산 결과 확인"
+        sub="베이스 영양성분 입력 → 엣지 설정 → 계산 결과 확인"
       />
 
       <DuplicateNotice
@@ -209,7 +204,6 @@ export default function Page() {
           edgeMap={edgeMap}
           toppings={toppings}
           ingredients={ingredients}
-          compositions={compositions}
           setComps={setComps}
           menuSearch={menuSearch}
           onMenuSearch={setMenuSearch}

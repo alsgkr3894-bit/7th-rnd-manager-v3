@@ -90,6 +90,9 @@
     gap: 4px;
     border-bottom-width: 1px;
   }
+  .origin-result-tabs-top {
+    margin-bottom: 6px;
+  }
   .origin-result-tab,
   .origin-result-tabs-top .origin-result-tab,
   .origin-result-subtab {
@@ -98,6 +101,11 @@
     padding: 8px 10px;
     font-size: 12px;
     text-align: center;
+  }
+  .origin-result-tab.active,
+  .origin-result-subtab.active {
+    margin-bottom: 0;
+    border-bottom-width: 1px;
   }
 }
 

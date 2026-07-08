@@ -13,14 +13,7 @@ import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guard
  *   2. 메뉴 순위 테이블 (검색 + 카테고리 필터 + 판매 비중)
  *   3. 카테고리별 판매 비중 그리드 (각 카드에 TOP 3)
  */
-export function SingleMonthView({
-  period,
-  detail,
-  menus,
-  categories,
-  category,
-  onCategoryChange,
-}) {
+export function SingleMonthView({ period, detail, menus, categories, category, onCategoryChange }) {
   const safePeriod = period && typeof period === 'object' ? period : null;
   const safeDetail = detail && typeof detail === 'object' && !Array.isArray(detail) ? detail : null;
   const total = Number.isFinite(Number(safeDetail?.total)) ? Number(safeDetail.total) : 0;

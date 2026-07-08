@@ -3,15 +3,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { addNote, deleteNote, updateNote } from '@/lib/note';
+import { CATEGORIES, JOURNAL_NOTE_TYPE, NOTE_STATUS } from '@/lib/note/constants';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 import { getJSONLS, setJSONLS } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
 import {
-  checklistJournalContent,
   checklistJournalTitle,
   normalizeChecklistMap,
   rollOverChecklistMap,
 } from './_calendar-utils';
+import { mergeChecklistJournalContent } from './checklistJournalMerge';
+
+function noteDateKey(note) {
+  return asDisplayText(note?.testDate || note?.createdAt).slice(0, 10);
+}
 
 export function useTodayChecklist({ today, notes, load, canEdit = false }) {
   const [checklistMap, setChecklistMap] = useState({});
@@ -52,31 +57,50 @@ export function useTodayChecklist({ today, notes, load, canEdit = false }) {
     async items => {
       if (!canEdit) return;
       const doneItems = (Array.isArray(items) ? items : []).filter(item => item.done && item.text);
-      const title = checklistJournalTitle(today);
-      const existing = notes.find(
-        note =>
-          asDisplayText(note.title) === title && asDisplayText(note.testDate).slice(0, 10) === today
+      const legacyTitle = checklistJournalTitle(today);
+      const todayNotes = Array.isArray(notes)
+        ? notes.filter(note => noteDateKey(note) === today)
+        : [];
+      const journalEntry = todayNotes.find(note => note?.noteType === JOURNAL_NOTE_TYPE);
+      const legacyChecklistNotes = todayNotes.filter(
+        note => asDisplayText(note.title) === legacyTitle
       );
+      const existingContent =
+        journalEntry?.testContent || legacyChecklistNotes[0]?.testContent || '';
+      const mergedContent = mergeChecklistJournalContent(existingContent, doneItems);
 
       if (doneItems.length === 0) {
-        if (existing?.id != null) await deleteNote(existing.id);
+        if (journalEntry?.id != null && journalEntry.testContent !== mergedContent) {
+          await updateNote(journalEntry.id, { ...journalEntry, testContent: mergedContent });
+        }
+        await Promise.all(
+          legacyChecklistNotes
+            .filter(note => note?.id != null && note.id !== journalEntry?.id)
+            .map(note => deleteNote(note.id))
+        );
         await load();
         return;
       }
 
+      const title = journalEntry?.title || `${today} ${JOURNAL_NOTE_TYPE}`;
       const data = {
+        ...(journalEntry || {}),
         title,
-        menuName: '체크리스트',
-        category: '기타',
-        noteType: '체크리스트',
-        status: '보류',
+        menuName: journalEntry?.menuName || title,
+        category: journalEntry?.category || CATEGORIES[CATEGORIES.length - 1],
+        noteType: JOURNAL_NOTE_TYPE,
+        status: journalEntry?.status || NOTE_STATUS.TEST,
         testDate: today,
-        testContent: checklistJournalContent(doneItems),
-        reportSummary: `${doneItems.length}개 완료`,
-        tags: '체크리스트',
+        testContent: mergedContent,
+        tags: journalEntry?.tags || JOURNAL_NOTE_TYPE,
       };
-      if (existing?.id != null) await updateNote(existing.id, data);
+      if (journalEntry?.id != null) await updateNote(journalEntry.id, data);
       else await addNote(data);
+      await Promise.all(
+        legacyChecklistNotes
+          .filter(note => note?.id != null && note.id !== journalEntry?.id)
+          .map(note => deleteNote(note.id))
+      );
       await load();
     },
     [canEdit, load, notes, today]

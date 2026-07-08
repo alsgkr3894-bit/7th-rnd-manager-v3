@@ -4,6 +4,7 @@ import { Icon } from '@/components/icons';
 import { STATUSES, STATUS_COLORS } from '@/lib/note';
 import { noteDisplayTitle } from '@/lib/note/display';
 import { formatTestRound } from '@/lib/note/evaluation';
+import { isUnifiedSampleRecord } from '@/lib/note/unified-records';
 import { formatFullDate } from '@/lib/note/utils';
 import { NoteTableRow } from './_NoteTableRow';
 import { buildNoteIdeaGroups, noteRoundNumber } from './noteIdeaGroups';
@@ -103,8 +104,13 @@ export function NoteTableView({
               const representativeLabel = latestStatus === '출시' ? '완성본' : '최신';
               const colors = STATUS_COLORS[latestStatus] || STATUS_COLORS['테스트'];
               const expanded = expandedGroups.has(group.key);
+              const hasSampleRecord = group.notes.some(note => isUnifiedSampleRecord(note));
+              const canChangeStatus = canEdit && latest.id != null && !hasSampleRecord;
               const canUnmergeGroup =
-                canEdit && !batchMode && group.notes.some(note => note?.parentId != null);
+                canEdit &&
+                !batchMode &&
+                !hasSampleRecord &&
+                group.notes.some(note => note?.parentId != null);
 
               return (
                 <Fragment key={group.key}>
@@ -144,7 +150,7 @@ export function NoteTableView({
                       <select
                         value={latestStatus}
                         onChange={event => onStatusChange(latest.id, event.target.value, event)}
-                        disabled={!canEdit || latest.id == null}
+                        disabled={!canChangeStatus}
                         style={{
                           fontSize: 11,
                           fontWeight: 700,
@@ -153,7 +159,7 @@ export function NoteTableView({
                           background: colors.bg,
                           color: colors.color,
                           border: `1px solid ${colors.color}40`,
-                          cursor: canEdit && latest.id != null ? 'pointer' : 'default',
+                          cursor: canChangeStatus ? 'pointer' : 'default',
                           fontFamily: 'inherit',
                           outline: 'none',
                         }}

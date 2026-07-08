@@ -22,7 +22,7 @@ describe('home widgets structure', () => {
   test('split home widgets own their presentation details', () => {
     expect(sampleSource).toContain('export function SampleStatsWidget');
     expect(sampleSource).toContain('function toTime');
-    expect(sampleSource).toContain('샘플기록');
+    expect(sampleSource).toContain('SAMPLE_RECORD_LABEL');
     expect(costAlertSource).toContain('export function CostAlertWidget');
     expect(costAlertSource).toContain('getCostRateStyles');
     expect(costAlertSource).toContain('원가율 경보');

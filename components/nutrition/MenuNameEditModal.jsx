@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { asDisplayText, asObjectArray, asRecord, noop } from '@/lib/ui/prop-guards';
 
@@ -9,7 +9,19 @@ import { asDisplayText, asObjectArray, asRecord, noop } from '@/lib/ui/prop-guar
  * overrides: { [menuCode]: string } — 현재 저장된 override
  * onApply(newOverrides) — 변경 후 전체 map 전달
  */
-export function MenuNameEditModal({ menus, overrides, onApply, onClose }) {
+export function MenuNameEditModal({
+  menus,
+  overrides,
+  onApply,
+  onClose,
+  title = '출력용 메뉴명 편집',
+  subtitle = '출력·표시에만 반영됩니다. 비우면 원래 이름으로 복원됩니다.',
+  order = [],
+  onApplyOrder,
+  allowOrder = false,
+  importActionLabel = '',
+  onImportOverrides,
+}) {
   const safeMenus = asObjectArray(menus)
     .map((menu, index) => ({
       ...menu,
@@ -17,9 +29,30 @@ export function MenuNameEditModal({ menus, overrides, onApply, onClose }) {
       menuName: asDisplayText(menu.menuName, `메뉴 ${index + 1}`),
     }))
     .filter(menu => menu.menuCode);
+  const menuByCode = useMemo(
+    () => new Map(safeMenus.map(menu => [menu.menuCode, menu])),
+    [safeMenus]
+  );
+  const initialOrder = useMemo(() => {
+    const seen = new Set();
+    const ordered = [];
+    (Array.isArray(order) ? order : []).forEach(code => {
+      const key = asDisplayText(code);
+      if (key && menuByCode.has(key) && !seen.has(key)) {
+        seen.add(key);
+        ordered.push(key);
+      }
+    });
+    safeMenus.forEach(menu => {
+      if (!seen.has(menu.menuCode)) ordered.push(menu.menuCode);
+    });
+    return ordered;
+  }, [menuByCode, order, safeMenus]);
   const safeOverrides = asRecord(overrides);
   const close = typeof onClose === 'function' ? onClose : noop;
   const applyOverrides = typeof onApply === 'function' ? onApply : null;
+  const applyOrder = typeof onApplyOrder === 'function' ? onApplyOrder : null;
+  const importOverrides = typeof onImportOverrides === 'function' ? onImportOverrides : null;
   const [vals, setVals] = useState(() => {
     const m = {};
     for (const { menuCode } of safeMenus) {
@@ -27,6 +60,28 @@ export function MenuNameEditModal({ menus, overrides, onApply, onClose }) {
     }
     return m;
   });
+  const [orderedCodes, setOrderedCodes] = useState(() => initialOrder);
+
+  const orderedMenus = useMemo(
+    () =>
+      orderedCodes
+        .map(code => menuByCode.get(code))
+        .filter(Boolean)
+        .concat(safeMenus.filter(menu => !orderedCodes.includes(menu.menuCode))),
+    [menuByCode, orderedCodes, safeMenus]
+  );
+
+  function moveMenu(menuCode, direction) {
+    setOrderedCodes(prev => {
+      const current = prev.filter(code => menuByCode.has(code));
+      const index = current.indexOf(menuCode);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) return prev;
+      const next = [...current];
+      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+      return next;
+    });
+  }
 
   function apply() {
     const next = { ...safeOverrides };
@@ -36,7 +91,21 @@ export function MenuNameEditModal({ menus, overrides, onApply, onClose }) {
       else delete next[menuCode];
     }
     applyOverrides?.(next);
+    if (allowOrder && applyOrder) {
+      applyOrder(orderedCodes.filter(code => menuByCode.has(code)));
+    }
     close();
+  }
+
+  function importFromSource() {
+    const imported = asRecord(importOverrides?.());
+    setVals(prev => {
+      const next = { ...prev };
+      for (const { menuCode } of safeMenus) {
+        next[menuCode] = asDisplayText(imported[menuCode]);
+      }
+      return next;
+    });
   }
 
   function resetAll() {
@@ -49,11 +118,18 @@ export function MenuNameEditModal({ menus, overrides, onApply, onClose }) {
 
   return (
     <ModalFrame
-      title="출력용 메뉴명 편집"
-      subtitle="출력·표시에만 반영됩니다. 비우면 원래 이름으로 복원됩니다."
+      title={title}
+      subtitle={subtitle}
       onClose={close}
-      width="min(560px, 95vw)"
+      width={allowOrder ? 'min(720px, 95vw)' : 'min(560px, 95vw)'}
     >
+      {importOverrides && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <button type="button" className="btn sm" onClick={importFromSource}>
+            {importActionLabel || '기존 출력명 가져오기'}
+          </button>
+        </div>
+      )}
       <div
         style={{
           display: 'flex',
@@ -63,12 +139,12 @@ export function MenuNameEditModal({ menus, overrides, onApply, onClose }) {
           overflowY: 'auto',
         }}
       >
-        {safeMenus.map(({ menuCode, menuName }) => (
+        {orderedMenus.map(({ menuCode, menuName }, index) => (
           <div
             key={menuCode}
             style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
+              gridTemplateColumns: allowOrder ? '70px 1fr 1fr' : '1fr 1fr',
               gap: 8,
               alignItems: 'center',
               padding: '6px 10px',
@@ -77,6 +153,28 @@ export function MenuNameEditModal({ menus, overrides, onApply, onClose }) {
               border: '1px solid var(--border)',
             }}
           >
+            {allowOrder && (
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button
+                  type="button"
+                  className="btn icon sm"
+                  aria-label={`${menuName} 위로 이동`}
+                  onClick={() => moveMenu(menuCode, -1)}
+                  disabled={index === 0}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  className="btn icon sm"
+                  aria-label={`${menuName} 아래로 이동`}
+                  onClick={() => moveMenu(menuCode, 1)}
+                  disabled={index === orderedMenus.length - 1}
+                >
+                  ↓
+                </button>
+              </div>
+            )}
             <span
               style={{
                 fontSize: 13,

@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-07-06T01:24:29.642Z",
+  "generatedAt": "2026-07-08T04:52:39.334Z",
   "base": "http://127.0.0.1:3000",
   "counts": {
-    "total": 127,
-    "ok": 127,
+    "total": 128,
+    "ok": 128,
     "problems": 0
   },
   "problems": [],
   "results": [
     {
-      "asset": "static/chunks/1539-30518dd65e16ed6d.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/1539-30518dd65e16ed6d.js",
+      "asset": "static/chunks/1539-7b4cb9eec0786dd6.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/1539-7b4cb9eec0786dd6.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 8028,
@@ -23,21 +23,26 @@
         "/menu-master/page",
         "/nutrition/allergen/page",
         "/nutrition/origin/page",
-        "/report/cost/page",
-        "/report/margin/page"
+        "/report/cost/page"
       ]
     },
     {
-      "asset": "static/chunks/1786-5533f0bff7caf1b9.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/1786-5533f0bff7caf1b9.js",
+      "asset": "static/chunks/1786-25fbb0d90324ba0f.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/1786-25fbb0d90324ba0f.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 14460,
+      "bytes": 15965,
       "ok": true,
-      "pages": [
-        "/nutrition/allergen/page",
-        "/nutrition/origin/page"
-      ]
+      "pages": ["/nutrition/allergen/page", "/nutrition/origin/page"]
+    },
+    {
+      "asset": "static/chunks/1827-0441f4b8df84e2a6.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/1827-0441f4b8df84e2a6.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "bytes": 32549,
+      "ok": true,
+      "pages": ["/note/sample/[id]/page", "/note/sample/write/page"]
     },
     {
       "asset": "static/chunks/2117-61548c3fe96ae625.js",
@@ -125,6 +130,8 @@
         "/report/sales/loading",
         "/report/sales/page",
         "/report/shipment/page",
+        "/rnd/corporate-card/page",
+        "/rnd/login-info/page",
         "/settings/account/page",
         "/settings/backup/page",
         "/settings/brands/page",
@@ -138,11 +145,20 @@
       ]
     },
     {
-      "asset": "static/chunks/249-1aff048c31f7125e.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/249-1aff048c31f7125e.js",
+      "asset": "static/chunks/2266-8bb03f75ab542504.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/2266-8bb03f75ab542504.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 16317,
+      "bytes": 17451,
+      "ok": true,
+      "pages": ["/note/calendar/page", "/note/journal/page"]
+    },
+    {
+      "asset": "static/chunks/249-3f7561bd905a6f32.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/249-3f7561bd905a6f32.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "bytes": 16019,
       "ok": true,
       "pages": [
         "/ingredient/manage/page",
@@ -186,28 +202,13 @@
       ]
     },
     {
-      "asset": "static/chunks/3086-a22e24fe63cee787.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/3086-a22e24fe63cee787.js",
+      "asset": "static/chunks/3086-9305c478ad48be43.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/3086-9305c478ad48be43.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 20609,
+      "bytes": 20881,
       "ok": true,
-      "pages": [
-        "/cost/margin/page",
-        "/report/margin/page"
-      ]
-    },
-    {
-      "asset": "static/chunks/3233-23b165eeef7a0eb6.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/3233-23b165eeef7a0eb6.js",
-      "status": 200,
-      "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 36479,
-      "ok": true,
-      "pages": [
-        "/note/sample/[id]/page",
-        "/note/sample/write/page"
-      ]
+      "pages": ["/cost/margin/page", "/report/cost/page"]
     },
     {
       "asset": "static/chunks/3448-151a00d2f037ff6c.js",
@@ -230,10 +231,7 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 17234,
       "ok": true,
-      "pages": [
-        "/settings/backup/page",
-        "/settings/restore/page"
-      ]
+      "pages": ["/settings/backup/page", "/settings/restore/page"]
     },
     {
       "asset": "static/chunks/3662-f9be41e7ca12673b.js",
@@ -242,8 +240,20 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 45264,
       "ok": true,
+      "pages": ["/page"]
+    },
+    {
+      "asset": "static/chunks/3747-38d8b74b14c217a0.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/3747-38d8b74b14c217a0.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "bytes": 8506,
+      "ok": true,
       "pages": [
-        "/page"
+        "/cost/all-summary/page",
+        "/cost/margin/page",
+        "/menu-master/page",
+        "/report/cost/page"
       ]
     },
     {
@@ -253,17 +263,14 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 7799,
       "ok": true,
-      "pages": [
-        "/jette/price-compare/page",
-        "/jette/shipment/page"
-      ]
+      "pages": ["/jette/price-compare/page", "/jette/shipment/page"]
     },
     {
-      "asset": "static/chunks/4278-94b66fb349c63d87.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/4278-94b66fb349c63d87.js",
+      "asset": "static/chunks/4278-f1c1c1cc9b430e3b.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/4278-f1c1c1cc9b430e3b.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 91666,
+      "bytes": 92862,
       "ok": true,
       "pages": [
         "/menu-sales/rank-compare/page",
@@ -276,24 +283,11 @@
       ]
     },
     {
-      "asset": "static/chunks/4354-174e68e02f686a10.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/4354-174e68e02f686a10.js",
+      "asset": "static/chunks/4481-bac605c535c816d9.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/4481-bac605c535c816d9.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 13072,
-      "ok": true,
-      "pages": [
-        "/note/[id]/page",
-        "/note/journal/page",
-        "/note/write/page"
-      ]
-    },
-    {
-      "asset": "static/chunks/4481-cf1dad9b223a9025.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/4481-cf1dad9b223a9025.js",
-      "status": 200,
-      "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 11283,
+      "bytes": 11921,
       "ok": true,
       "pages": [
         "/note/[id]/page",
@@ -306,32 +300,26 @@
       ]
     },
     {
-      "asset": "static/chunks/5511-8847e2d4da4807c5.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/5511-8847e2d4da4807c5.js",
+      "asset": "static/chunks/5511-5bda92217397314c.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/5511-5bda92217397314c.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 17944,
       "ok": true,
-      "pages": [
-        "/note/page",
-        "/page"
-      ]
+      "pages": ["/note/page", "/page"]
     },
     {
-      "asset": "static/chunks/6090-f227287e598fe5ea.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/6090-f227287e598fe5ea.js",
+      "asset": "static/chunks/6090-29085af061be64cb.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/6090-29085af061be64cb.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 8456,
+      "bytes": 8662,
       "ok": true,
-      "pages": [
-        "/note/page",
-        "/note/sample/page"
-      ]
+      "pages": ["/note/page", "/note/sample/page"]
     },
     {
-      "asset": "static/chunks/6095-2ea2d478836e4ff8.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/6095-2ea2d478836e4ff8.js",
+      "asset": "static/chunks/6095-16f4cc3c76cef254.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/6095-16f4cc3c76cef254.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 16813,
@@ -347,22 +335,7 @@
         "/nutrition/allergen/page",
         "/nutrition/menu/page",
         "/nutrition/origin/page",
-        "/report/cost/page",
-        "/report/margin/page"
-      ]
-    },
-    {
-      "asset": "static/chunks/6106-e806c18645bda342.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/6106-e806c18645bda342.js",
-      "status": 200,
-      "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 8778,
-      "ok": true,
-      "pages": [
-        "/cost/all-summary/page",
-        "/cost/margin/page",
-        "/report/cost/page",
-        "/report/margin/page"
+        "/report/cost/page"
       ]
     },
     {
@@ -427,6 +400,8 @@
         "/report/price/page",
         "/report/sales/page",
         "/report/shipment/page",
+        "/rnd/corporate-card/page",
+        "/rnd/login-info/page",
         "/settings/account/page",
         "/settings/backup/page",
         "/settings/brands/page",
@@ -452,36 +427,8 @@
         "/layout",
         "/note/page",
         "/page",
-        "/report/margin/page",
-        "/report/page"
-      ]
-    },
-    {
-      "asset": "static/chunks/7536-bdad72d23ab4ad40.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/7536-bdad72d23ab4ad40.js",
-      "status": 200,
-      "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 46374,
-      "ok": true,
-      "pages": [
-        "/cost/all-summary/page",
-        "/cost/margin/page",
-        "/cost/recipe/page",
-        "/ingredient/manage/page",
-        "/ingredient/page",
-        "/ingredient/usage/page",
-        "/menu-master/page",
-        "/note/[id]/page",
-        "/note/sample/[id]/page",
-        "/note/sample/write/page",
-        "/note/write/page",
-        "/nutrition/allergen/page",
-        "/nutrition/menu/page",
-        "/nutrition/origin/page",
-        "/nutrition/page",
-        "/page",
         "/report/cost/page",
-        "/report/margin/page"
+        "/report/page"
       ]
     },
     {
@@ -491,46 +438,28 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 18684,
       "ok": true,
-      "pages": [
-        "/jette/price-compare/page",
-        "/jette/settings/page",
-        "/jette/shipment/page"
-      ]
+      "pages": ["/jette/price-compare/page", "/jette/settings/page", "/jette/shipment/page"]
     },
     {
-      "asset": "static/chunks/8008-1a3cdbf768608b04.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/8008-1a3cdbf768608b04.js",
+      "asset": "static/chunks/8506-a303ce7ef39eb715.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/8506-a303ce7ef39eb715.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 45345,
-      "ok": true,
-      "pages": [
-        "/note/[id]/page",
-        "/note/write/page"
-      ]
-    },
-    {
-      "asset": "static/chunks/8506-018943a1903c866d.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/8506-018943a1903c866d.js",
-      "status": 200,
-      "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 18576,
+      "bytes": 18697,
       "ok": true,
       "pages": [
         "/report/cost/page",
-        "/report/margin/page",
-        "/report/menu-sales-compare/page",
         "/report/price/page",
         "/report/sales/page",
         "/report/shipment/page"
       ]
     },
     {
-      "asset": "static/chunks/8588-3d7b8f8616b810a9.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/8588-3d7b8f8616b810a9.js",
+      "asset": "static/chunks/8588-ba83c9d842c87c03.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/8588-ba83c9d842c87c03.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 52031,
+      "bytes": 53672,
       "ok": true,
       "pages": [
         "/cost/all-summary/page",
@@ -566,12 +495,12 @@
         "/nutrition/page",
         "/page",
         "/report/cost/page",
-        "/report/margin/page",
-        "/report/menu-sales-compare/page",
         "/report/page",
         "/report/price/page",
         "/report/sales/page",
         "/report/shipment/page",
+        "/rnd/corporate-card/page",
+        "/rnd/login-info/page",
         "/settings/account/page",
         "/settings/backup/page",
         "/settings/brands/page",
@@ -581,41 +510,31 @@
       ]
     },
     {
-      "asset": "static/chunks/8677-19d13a891ca8b9c0.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/8677-19d13a891ca8b9c0.js",
+      "asset": "static/chunks/8667-5c30ed122d269c34.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/8667-5c30ed122d269c34.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 8493,
+      "bytes": 49631,
       "ok": true,
-      "pages": [
-        "/note/calendar/page",
-        "/note/journal/page"
-      ]
+      "pages": ["/note/[id]/page", "/note/write/page"]
     },
     {
-      "asset": "static/chunks/8680-94ed2fd60ae8e74f.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/8680-94ed2fd60ae8e74f.js",
+      "asset": "static/chunks/8680-7b29a64155a45c74.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/8680-7b29a64155a45c74.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 9960,
       "ok": true,
-      "pages": [
-        "/menu-master/page",
-        "/nutrition/allergen/page"
-      ]
+      "pages": ["/menu-master/page", "/nutrition/allergen/page"]
     },
     {
-      "asset": "static/chunks/8714-684cd39137f04e67.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/8714-684cd39137f04e67.js",
+      "asset": "static/chunks/8714-82dc8a846650d717.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/8714-82dc8a846650d717.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 7229,
+      "bytes": 7443,
       "ok": true,
-      "pages": [
-        "/menu-master/page",
-        "/nutrition/allergen/page",
-        "/nutrition/origin/page"
-      ]
+      "pages": ["/menu-master/page", "/nutrition/allergen/page", "/nutrition/origin/page"]
     },
     {
       "asset": "static/chunks/9015-6ab0cb16f83b1826.js",
@@ -624,10 +543,7 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 9336,
       "ok": true,
-      "pages": [
-        "/menu-sales/settings/page",
-        "/menu-sales/unmatched/page"
-      ]
+      "pages": ["/menu-sales/settings/page", "/menu-sales/unmatched/page"]
     },
     {
       "asset": "static/chunks/9158-eb34f34276c966a9.js",
@@ -652,67 +568,88 @@
       ]
     },
     {
-      "asset": "static/chunks/9532-229bc421197d9f87.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/9532-229bc421197d9f87.js",
+      "asset": "static/chunks/9391-6206568b8d526fb1.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/9391-6206568b8d526fb1.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 7645,
+      "bytes": 50804,
       "ok": true,
       "pages": [
+        "/cost/all-summary/page",
+        "/cost/margin/page",
+        "/cost/recipe/page",
+        "/ingredient/manage/page",
+        "/ingredient/page",
+        "/ingredient/usage/page",
+        "/menu-master/page",
+        "/note/[id]/page",
+        "/note/sample/[id]/page",
+        "/note/sample/write/page",
+        "/note/write/page",
+        "/nutrition/allergen/page",
+        "/nutrition/menu/page",
+        "/nutrition/origin/page",
+        "/nutrition/page",
         "/page",
-        "/report/menu-sales-compare/page",
-        "/report/shipment/page"
+        "/report/cost/page"
       ]
     },
     {
-      "asset": "static/chunks/9606-4dd70fc6cfd67ccd.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/9606-4dd70fc6cfd67ccd.js",
+      "asset": "static/chunks/9474-5f4ea59d2eca8bc9.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/9474-5f4ea59d2eca8bc9.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 10128,
-      "ok": true,
-      "pages": [
-        "/note/board/page",
-        "/note/page"
-      ]
-    },
-    {
-      "asset": "static/chunks/9857-bf59410e8afcff08.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/9857-bf59410e8afcff08.js",
-      "status": 200,
-      "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 10303,
+      "bytes": 8202,
       "ok": true,
       "pages": [
         "/note/[id]/page",
-        "/note/journal/page",
         "/note/sample/[id]/page",
         "/note/sample/write/page",
         "/note/write/page"
       ]
     },
     {
-      "asset": "static/chunks/9981-9743835abf9c1af1.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/9981-9743835abf9c1af1.js",
+      "asset": "static/chunks/9606-bc3be3641a730407.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/9606-bc3be3641a730407.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 23672,
+      "bytes": 10058,
+      "ok": true,
+      "pages": ["/note/board/page", "/note/page"]
+    },
+    {
+      "asset": "static/chunks/9779-aa3861803fc4ddd8.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/9779-aa3861803fc4ddd8.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "bytes": 8707,
       "ok": true,
       "pages": [
-        "/menu-sales/page",
-        "/page"
+        "/note/[id]/page",
+        "/note/journal/page",
+        "/note/market/page",
+        "/note/sample/[id]/page",
+        "/note/sample/write/page",
+        "/note/write/page"
       ]
     },
     {
-      "asset": "static/chunks/app/_not-found/page-bf0939584119ea6d.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/_not-found/page-bf0939584119ea6d.js",
+      "asset": "static/chunks/9981-f4eec3c7d179c625.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/9981-f4eec3c7d179c625.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "bytes": 24924,
+      "ok": true,
+      "pages": ["/menu-sales/page", "/page"]
+    },
+    {
+      "asset": "static/chunks/app/_not-found/page-9e2556070435ba6a.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/_not-found/page-9e2556070435ba6a.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 228,
       "ok": true,
-      "pages": [
-        "/_not-found/page"
-      ]
+      "pages": ["/_not-found/page"]
     },
     {
       "asset": "static/chunks/app/cost/all-summary/error-2ff2f4f2ead91db4.js",
@@ -721,64 +658,52 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 1469,
       "ok": true,
-      "pages": [
-        "/cost/all-summary/error"
-      ]
+      "pages": ["/cost/all-summary/error"]
     },
     {
-      "asset": "static/chunks/app/cost/all-summary/loading-a7c2259b1ef7c769.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/all-summary/loading-a7c2259b1ef7c769.js",
+      "asset": "static/chunks/app/cost/all-summary/loading-0a25b9a170b385ff.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/all-summary/loading-0a25b9a170b385ff.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 401,
       "ok": true,
-      "pages": [
-        "/cost/all-summary/loading"
-      ]
+      "pages": ["/cost/all-summary/loading"]
     },
     {
-      "asset": "static/chunks/app/cost/all-summary/page-5ef92efda2bc2b24.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/all-summary/page-5ef92efda2bc2b24.js",
+      "asset": "static/chunks/app/cost/all-summary/page-1fc5e1b52a3c68d7.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/all-summary/page-1fc5e1b52a3c68d7.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 29735,
+      "bytes": 30020,
       "ok": true,
-      "pages": [
-        "/cost/all-summary/page"
-      ]
+      "pages": ["/cost/all-summary/page"]
     },
     {
-      "asset": "static/chunks/app/cost/edge-dough/page-d77f36ef0a49123e.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/edge-dough/page-d77f36ef0a49123e.js",
+      "asset": "static/chunks/app/cost/edge-dough/page-a10c007bad7463e3.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/edge-dough/page-a10c007bad7463e3.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 228,
       "ok": true,
-      "pages": [
-        "/cost/edge-dough/page"
-      ]
+      "pages": ["/cost/edge-dough/page"]
     },
     {
-      "asset": "static/chunks/app/cost/ingredient-price/page-baeb44de4ba1ad72.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/ingredient-price/page-baeb44de4ba1ad72.js",
+      "asset": "static/chunks/app/cost/ingredient-price/page-419ec591fec98524.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/ingredient-price/page-419ec591fec98524.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 228,
       "ok": true,
-      "pages": [
-        "/cost/ingredient-price/page"
-      ]
+      "pages": ["/cost/ingredient-price/page"]
     },
     {
-      "asset": "static/chunks/app/cost/manage/page-1b039fa74d2ff3b9.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/manage/page-1b039fa74d2ff3b9.js",
+      "asset": "static/chunks/app/cost/manage/page-9caa05a4a1f15a7f.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/manage/page-9caa05a4a1f15a7f.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 228,
       "ok": true,
-      "pages": [
-        "/cost/manage/page"
-      ]
+      "pages": ["/cost/manage/page"]
     },
     {
       "asset": "static/chunks/app/cost/margin/error-9c40d8af06f355d0.js",
@@ -787,31 +712,25 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 1468,
       "ok": true,
-      "pages": [
-        "/cost/margin/error"
-      ]
+      "pages": ["/cost/margin/error"]
     },
     {
-      "asset": "static/chunks/app/cost/margin/loading-2eee18e7af99a813.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/margin/loading-2eee18e7af99a813.js",
+      "asset": "static/chunks/app/cost/margin/loading-e64ee08b5603de0d.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/margin/loading-e64ee08b5603de0d.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 401,
       "ok": true,
-      "pages": [
-        "/cost/margin/loading"
-      ]
+      "pages": ["/cost/margin/loading"]
     },
     {
-      "asset": "static/chunks/app/cost/margin/page-591045c95dfb8fa2.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/margin/page-591045c95dfb8fa2.js",
+      "asset": "static/chunks/app/cost/margin/page-8cff39573f46ae7c.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/margin/page-8cff39573f46ae7c.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 46154,
       "ok": true,
-      "pages": [
-        "/cost/margin/page"
-      ]
+      "pages": ["/cost/margin/page"]
     },
     {
       "asset": "static/chunks/app/cost/page-4b8a0f82f7b42ee0.js",
@@ -820,42 +739,34 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 3432,
       "ok": true,
-      "pages": [
-        "/cost/page"
-      ]
+      "pages": ["/cost/page"]
     },
     {
-      "asset": "static/chunks/app/cost/personal/page-c7f4dc713177d532.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/personal/page-c7f4dc713177d532.js",
+      "asset": "static/chunks/app/cost/personal/page-a55e8061ee550d3a.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/personal/page-a55e8061ee550d3a.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 228,
       "ok": true,
-      "pages": [
-        "/cost/personal/page"
-      ]
+      "pages": ["/cost/personal/page"]
     },
     {
-      "asset": "static/chunks/app/cost/pizza/page-42053002fe40d336.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/pizza/page-42053002fe40d336.js",
+      "asset": "static/chunks/app/cost/pizza/page-b6b5bc6678cd0ce4.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/pizza/page-b6b5bc6678cd0ce4.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 228,
       "ok": true,
-      "pages": [
-        "/cost/pizza/page"
-      ]
+      "pages": ["/cost/pizza/page"]
     },
     {
-      "asset": "static/chunks/app/cost/recipe-master/page-57660c38de34293a.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/recipe-master/page-57660c38de34293a.js",
+      "asset": "static/chunks/app/cost/recipe-master/page-bb3b2d3b296a9947.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/recipe-master/page-bb3b2d3b296a9947.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 228,
       "ok": true,
-      "pages": [
-        "/cost/recipe-master/page"
-      ]
+      "pages": ["/cost/recipe-master/page"]
     },
     {
       "asset": "static/chunks/app/cost/recipe/error-4ea4b8c00161d12b.js",
@@ -864,53 +775,43 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 1469,
       "ok": true,
-      "pages": [
-        "/cost/recipe/error"
-      ]
+      "pages": ["/cost/recipe/error"]
     },
     {
-      "asset": "static/chunks/app/cost/recipe/loading-db77721f466f9053.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/recipe/loading-db77721f466f9053.js",
+      "asset": "static/chunks/app/cost/recipe/loading-9167780d1dd96805.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/recipe/loading-9167780d1dd96805.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 401,
       "ok": true,
-      "pages": [
-        "/cost/recipe/loading"
-      ]
+      "pages": ["/cost/recipe/loading"]
     },
     {
-      "asset": "static/chunks/app/cost/recipe/page-01f40ef5694a1977.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/recipe/page-01f40ef5694a1977.js",
+      "asset": "static/chunks/app/cost/recipe/page-f1ad1533a48b88cc.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/recipe/page-f1ad1533a48b88cc.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 48258,
       "ok": true,
-      "pages": [
-        "/cost/recipe/page"
-      ]
+      "pages": ["/cost/recipe/page"]
     },
     {
-      "asset": "static/chunks/app/cost/set/page-38816c9f885c57d1.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/set/page-38816c9f885c57d1.js",
+      "asset": "static/chunks/app/cost/set/page-adc915fbf904ea76.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/set/page-adc915fbf904ea76.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 228,
       "ok": true,
-      "pages": [
-        "/cost/set/page"
-      ]
+      "pages": ["/cost/set/page"]
     },
     {
-      "asset": "static/chunks/app/cost/side/page-0c21fc6ac1a76722.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/side/page-0c21fc6ac1a76722.js",
+      "asset": "static/chunks/app/cost/side/page-9f0ef7309426fdbf.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/cost/side/page-9f0ef7309426fdbf.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 228,
       "ok": true,
-      "pages": [
-        "/cost/side/page"
-      ]
+      "pages": ["/cost/side/page"]
     },
     {
       "asset": "static/chunks/app/error-35ad235ea47f69a6.js",
@@ -919,9 +820,7 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 4897,
       "ok": true,
-      "pages": [
-        "/error"
-      ]
+      "pages": ["/error"]
     },
     {
       "asset": "static/chunks/app/global-error-260bb48359119758.js",
@@ -930,42 +829,34 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 2065,
       "ok": true,
-      "pages": [
-        "/global-error"
-      ]
+      "pages": ["/global-error"]
     },
     {
-      "asset": "static/chunks/app/ingredient/list/page-1ace11397d8faf87.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/ingredient/list/page-1ace11397d8faf87.js",
+      "asset": "static/chunks/app/ingredient/list/page-f968aca183c42fb2.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/ingredient/list/page-f968aca183c42fb2.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 228,
       "ok": true,
-      "pages": [
-        "/ingredient/list/page"
-      ]
+      "pages": ["/ingredient/list/page"]
     },
     {
-      "asset": "static/chunks/app/ingredient/manage/page-8cc2d27ccc9adb9e.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/ingredient/manage/page-8cc2d27ccc9adb9e.js",
+      "asset": "static/chunks/app/ingredient/manage/page-9c6babd2948ebc85.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/ingredient/manage/page-9c6babd2948ebc85.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 156495,
+      "bytes": 160358,
       "ok": true,
-      "pages": [
-        "/ingredient/manage/page"
-      ]
+      "pages": ["/ingredient/manage/page"]
     },
     {
-      "asset": "static/chunks/app/ingredient/page-ca41d5eb6fed0882.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/ingredient/page-ca41d5eb6fed0882.js",
+      "asset": "static/chunks/app/ingredient/page-4a61b5b476f67098.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/ingredient/page-4a61b5b476f67098.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 14142,
       "ok": true,
-      "pages": [
-        "/ingredient/page"
-      ]
+      "pages": ["/ingredient/page"]
     },
     {
       "asset": "static/chunks/app/ingredient/usage/error-93fe3d865ef50367.js",
@@ -974,31 +865,25 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 1469,
       "ok": true,
-      "pages": [
-        "/ingredient/usage/error"
-      ]
+      "pages": ["/ingredient/usage/error"]
     },
     {
-      "asset": "static/chunks/app/ingredient/usage/loading-08c94df7e8a709a4.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/ingredient/usage/loading-08c94df7e8a709a4.js",
+      "asset": "static/chunks/app/ingredient/usage/loading-07a0dd50dacba904.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/ingredient/usage/loading-07a0dd50dacba904.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 401,
       "ok": true,
-      "pages": [
-        "/ingredient/usage/loading"
-      ]
+      "pages": ["/ingredient/usage/loading"]
     },
     {
-      "asset": "static/chunks/app/ingredient/usage/page-a002083901500d61.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/ingredient/usage/page-a002083901500d61.js",
+      "asset": "static/chunks/app/ingredient/usage/page-82c05eafd14a904c.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/ingredient/usage/page-82c05eafd14a904c.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 40319,
+      "bytes": 40525,
       "ok": true,
-      "pages": [
-        "/ingredient/usage/page"
-      ]
+      "pages": ["/ingredient/usage/page"]
     },
     {
       "asset": "static/chunks/app/jette/page-d798f3ca76818705.js",
@@ -1007,9 +892,7 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 15918,
       "ok": true,
-      "pages": [
-        "/jette/page"
-      ]
+      "pages": ["/jette/page"]
     },
     {
       "asset": "static/chunks/app/jette/price-compare/error-0588ea3694c588b0.js",
@@ -1018,20 +901,16 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 1469,
       "ok": true,
-      "pages": [
-        "/jette/price-compare/error"
-      ]
+      "pages": ["/jette/price-compare/error"]
     },
     {
-      "asset": "static/chunks/app/jette/price-compare/loading-e92b925c831285e9.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/jette/price-compare/loading-e92b925c831285e9.js",
+      "asset": "static/chunks/app/jette/price-compare/loading-d99fac63e6965411.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/jette/price-compare/loading-d99fac63e6965411.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 401,
       "ok": true,
-      "pages": [
-        "/jette/price-compare/loading"
-      ]
+      "pages": ["/jette/price-compare/loading"]
     },
     {
       "asset": "static/chunks/app/jette/price-compare/page-fd7c9ef47952f32a.js",
@@ -1040,9 +919,7 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 41054,
       "ok": true,
-      "pages": [
-        "/jette/price-compare/page"
-      ]
+      "pages": ["/jette/price-compare/page"]
     },
     {
       "asset": "static/chunks/app/jette/settings/page-0368c140d9656374.js",
@@ -1051,9 +928,7 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 24549,
       "ok": true,
-      "pages": [
-        "/jette/settings/page"
-      ]
+      "pages": ["/jette/settings/page"]
     },
     {
       "asset": "static/chunks/app/jette/shipment/page-5fed0fad9c7b889a.js",
@@ -1062,97 +937,79 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 31138,
       "ok": true,
-      "pages": [
-        "/jette/shipment/page"
-      ]
+      "pages": ["/jette/shipment/page"]
     },
     {
-      "asset": "static/chunks/app/layout-4f80a4df5705b107.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/layout-4f80a4df5705b107.js",
+      "asset": "static/chunks/app/layout-d18281515375b27c.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/layout-d18281515375b27c.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 72258,
+      "bytes": 72736,
       "ok": true,
-      "pages": [
-        "/layout"
-      ]
+      "pages": ["/layout"]
     },
     {
-      "asset": "static/chunks/app/login/layout-47a3aaf58debf0b2.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/login/layout-47a3aaf58debf0b2.js",
+      "asset": "static/chunks/app/login/layout-d9dba29527eecdf7.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/login/layout-d9dba29527eecdf7.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 228,
       "ok": true,
-      "pages": [
-        "/login/layout"
-      ]
+      "pages": ["/login/layout"]
     },
     {
-      "asset": "static/chunks/app/login/page-98ecdbdb8f59cf1f.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/login/page-98ecdbdb8f59cf1f.js",
+      "asset": "static/chunks/app/login/page-f516046d2bf74241.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/login/page-f516046d2bf74241.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 14809,
       "ok": true,
-      "pages": [
-        "/login/page"
-      ]
+      "pages": ["/login/page"]
     },
     {
-      "asset": "static/chunks/app/menu-master/page-66a3718cb21d73e0.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/menu-master/page-66a3718cb21d73e0.js",
+      "asset": "static/chunks/app/menu-master/page-768b526ba21ecf68.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/menu-master/page-768b526ba21ecf68.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 154885,
+      "bytes": 146399,
       "ok": true,
-      "pages": [
-        "/menu-master/page"
-      ]
+      "pages": ["/menu-master/page"]
     },
     {
-      "asset": "static/chunks/app/menu-sales/compare/page-e40b5936491922f6.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/menu-sales/compare/page-e40b5936491922f6.js",
+      "asset": "static/chunks/app/menu-sales/compare/page-2de6321fc8bf5afb.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/menu-sales/compare/page-2de6321fc8bf5afb.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 228,
       "ok": true,
-      "pages": [
-        "/menu-sales/compare/page"
-      ]
+      "pages": ["/menu-sales/compare/page"]
     },
     {
-      "asset": "static/chunks/app/menu-sales/page-f56afae86dcc3f3a.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/menu-sales/page-f56afae86dcc3f3a.js",
+      "asset": "static/chunks/app/menu-sales/page-7415396eeec3a8f5.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/menu-sales/page-7415396eeec3a8f5.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 17815,
+      "bytes": 16479,
       "ok": true,
-      "pages": [
-        "/menu-sales/page"
-      ]
+      "pages": ["/menu-sales/page"]
     },
     {
-      "asset": "static/chunks/app/menu-sales/rank-compare/page-7cd45ca175b77771.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/menu-sales/rank-compare/page-7cd45ca175b77771.js",
+      "asset": "static/chunks/app/menu-sales/rank-compare/page-9618eba8babf9cf1.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/menu-sales/rank-compare/page-9618eba8babf9cf1.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 20539,
+      "bytes": 20642,
       "ok": true,
-      "pages": [
-        "/menu-sales/rank-compare/page"
-      ]
+      "pages": ["/menu-sales/rank-compare/page"]
     },
     {
-      "asset": "static/chunks/app/menu-sales/rank/page-a61733c03ace7899.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/menu-sales/rank/page-a61733c03ace7899.js",
+      "asset": "static/chunks/app/menu-sales/rank/page-c67f1ccc554d7f75.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/menu-sales/rank/page-c67f1ccc554d7f75.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 228,
       "ok": true,
-      "pages": [
-        "/menu-sales/rank/page"
-      ]
+      "pages": ["/menu-sales/rank/page"]
     },
     {
       "asset": "static/chunks/app/menu-sales/settings/page-b00584bd706958b9.js",
@@ -1161,9 +1018,7 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 34919,
       "ok": true,
-      "pages": [
-        "/menu-sales/settings/page"
-      ]
+      "pages": ["/menu-sales/settings/page"]
     },
     {
       "asset": "static/chunks/app/menu-sales/unmatched/page-ab78dea225756c19.js",
@@ -1172,20 +1027,16 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 24472,
       "ok": true,
-      "pages": [
-        "/menu-sales/unmatched/page"
-      ]
+      "pages": ["/menu-sales/unmatched/page"]
     },
     {
-      "asset": "static/chunks/app/menu-sales/upload/page-d102446ff2cd597c.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/menu-sales/upload/page-d102446ff2cd597c.js",
+      "asset": "static/chunks/app/menu-sales/upload/page-03162339c87799ed.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/menu-sales/upload/page-03162339c87799ed.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 31390,
+      "bytes": 33702,
       "ok": true,
-      "pages": [
-        "/menu-sales/upload/page"
-      ]
+      "pages": ["/menu-sales/upload/page"]
     },
     {
       "asset": "static/chunks/app/not-found-f837bf75b58abf58.js",
@@ -1194,20 +1045,16 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 4720,
       "ok": true,
-      "pages": [
-        "/not-found"
-      ]
+      "pages": ["/not-found"]
     },
     {
-      "asset": "static/chunks/app/note/[id]/page-d925ec5206f7eb7b.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/[id]/page-d925ec5206f7eb7b.js",
+      "asset": "static/chunks/app/note/[id]/page-925a12f7051ae344.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/[id]/page-925a12f7051ae344.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 19528,
+      "bytes": 20478,
       "ok": true,
-      "pages": [
-        "/note/[id]/page"
-      ]
+      "pages": ["/note/[id]/page"]
     },
     {
       "asset": "static/chunks/app/note/board/error-177b24f7a18863a0.js",
@@ -1216,31 +1063,25 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 1469,
       "ok": true,
-      "pages": [
-        "/note/board/error"
-      ]
+      "pages": ["/note/board/error"]
     },
     {
-      "asset": "static/chunks/app/note/board/loading-c38aaaa62ac1d79b.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/board/loading-c38aaaa62ac1d79b.js",
+      "asset": "static/chunks/app/note/board/loading-d483d53ca210fc89.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/board/loading-d483d53ca210fc89.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 401,
       "ok": true,
-      "pages": [
-        "/note/board/loading"
-      ]
+      "pages": ["/note/board/loading"]
     },
     {
-      "asset": "static/chunks/app/note/board/page-682818596f3c4934.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/board/page-682818596f3c4934.js",
+      "asset": "static/chunks/app/note/board/page-4ad36a1ef1e3a743.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/board/page-4ad36a1ef1e3a743.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 30167,
+      "bytes": 30091,
       "ok": true,
-      "pages": [
-        "/note/board/page"
-      ]
+      "pages": ["/note/board/page"]
     },
     {
       "asset": "static/chunks/app/note/calendar/error-317aa5eca66450bc.js",
@@ -1249,130 +1090,106 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 1469,
       "ok": true,
-      "pages": [
-        "/note/calendar/error"
-      ]
+      "pages": ["/note/calendar/error"]
     },
     {
-      "asset": "static/chunks/app/note/calendar/loading-c71f06df9cf97ff6.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/calendar/loading-c71f06df9cf97ff6.js",
+      "asset": "static/chunks/app/note/calendar/loading-02f5a5b0dd59887e.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/calendar/loading-02f5a5b0dd59887e.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 401,
       "ok": true,
-      "pages": [
-        "/note/calendar/loading"
-      ]
+      "pages": ["/note/calendar/loading"]
     },
     {
-      "asset": "static/chunks/app/note/calendar/page-e8aa48d425bb0e73.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/calendar/page-e8aa48d425bb0e73.js",
+      "asset": "static/chunks/app/note/calendar/page-c4303fad197754f3.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/calendar/page-c4303fad197754f3.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 64235,
+      "bytes": 56269,
       "ok": true,
-      "pages": [
-        "/note/calendar/page"
-      ]
+      "pages": ["/note/calendar/page"]
     },
     {
-      "asset": "static/chunks/app/note/journal/page-a82eeebc085da8ea.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/journal/page-a82eeebc085da8ea.js",
+      "asset": "static/chunks/app/note/journal/page-b9dd15a5b907f6bd.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/journal/page-b9dd15a5b907f6bd.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 25156,
+      "bytes": 42643,
       "ok": true,
-      "pages": [
-        "/note/journal/page"
-      ]
+      "pages": ["/note/journal/page"]
     },
     {
-      "asset": "static/chunks/app/note/market/page-3465742424164449.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/market/page-3465742424164449.js",
+      "asset": "static/chunks/app/note/market/page-095e819ea95d206f.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/market/page-095e819ea95d206f.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 17293,
+      "bytes": 17325,
       "ok": true,
-      "pages": [
-        "/note/market/page"
-      ]
+      "pages": ["/note/market/page"]
     },
     {
-      "asset": "static/chunks/app/note/page-165b51f4808b3992.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/page-165b51f4808b3992.js",
+      "asset": "static/chunks/app/note/page-9780bfd282b71cc2.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/page-9780bfd282b71cc2.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 85028,
+      "bytes": 84375,
       "ok": true,
-      "pages": [
-        "/note/page"
-      ]
+      "pages": ["/note/page"]
     },
     {
-      "asset": "static/chunks/app/note/sample/[id]/page-40ef732a4cb49d48.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/sample/[id]/page-40ef732a4cb49d48.js",
+      "asset": "static/chunks/app/note/sample/[id]/page-19e688fa78b6445b.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/sample/[id]/page-19e688fa78b6445b.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 8206,
+      "bytes": 8568,
       "ok": true,
-      "pages": [
-        "/note/sample/[id]/page"
-      ]
+      "pages": ["/note/sample/[id]/page"]
     },
     {
-      "asset": "static/chunks/app/note/sample/page-03f1cd8a8e03aa41.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/sample/page-03f1cd8a8e03aa41.js",
+      "asset": "static/chunks/app/note/sample/page-a353ed6261e4971c.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/sample/page-a353ed6261e4971c.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 83667,
+      "bytes": 83811,
       "ok": true,
-      "pages": [
-        "/note/sample/page"
-      ]
+      "pages": ["/note/sample/page"]
     },
     {
-      "asset": "static/chunks/app/note/sample/write/page-03c038e99a92e2d8.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/sample/write/page-03c038e99a92e2d8.js",
+      "asset": "static/chunks/app/note/sample/write/page-eb06f66f63b2b997.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/sample/write/page-eb06f66f63b2b997.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 5693,
+      "bytes": 5717,
       "ok": true,
-      "pages": [
-        "/note/sample/write/page"
-      ]
+      "pages": ["/note/sample/write/page"]
     },
     {
-      "asset": "static/chunks/app/note/write/page-4c983d399ae6f83d.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/write/page-4c983d399ae6f83d.js",
+      "asset": "static/chunks/app/note/write/page-10313cd3303f82c7.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/note/write/page-10313cd3303f82c7.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 5742,
+      "bytes": 5809,
       "ok": true,
-      "pages": [
-        "/note/write/page"
-      ]
+      "pages": ["/note/write/page"]
     },
     {
-      "asset": "static/chunks/app/nutrition/allergen/page-d1a94729c315d9fd.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/nutrition/allergen/page-d1a94729c315d9fd.js",
+      "asset": "static/chunks/app/nutrition/allergen/page-bb943b8c4b37441a.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/nutrition/allergen/page-bb943b8c4b37441a.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 23246,
+      "bytes": 23366,
       "ok": true,
-      "pages": [
-        "/nutrition/allergen/page"
-      ]
+      "pages": ["/nutrition/allergen/page"]
     },
     {
-      "asset": "static/chunks/app/nutrition/export/page-4cf7147e0ea9b91d.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/nutrition/export/page-4cf7147e0ea9b91d.js",
+      "asset": "static/chunks/app/nutrition/export/page-b7424f6291b59cf1.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/nutrition/export/page-b7424f6291b59cf1.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 4468,
+      "bytes": 4462,
       "ok": true,
-      "pages": [
-        "/nutrition/export/page"
-      ]
+      "pages": ["/nutrition/export/page"]
     },
     {
       "asset": "static/chunks/app/nutrition/menu/error-dd7e3862c01bc8c1.js",
@@ -1381,64 +1198,52 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 1467,
       "ok": true,
-      "pages": [
-        "/nutrition/menu/error"
-      ]
+      "pages": ["/nutrition/menu/error"]
     },
     {
-      "asset": "static/chunks/app/nutrition/menu/loading-b61b375da90dd1e3.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/nutrition/menu/loading-b61b375da90dd1e3.js",
+      "asset": "static/chunks/app/nutrition/menu/loading-8ca1263c45a3e860.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/nutrition/menu/loading-8ca1263c45a3e860.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 401,
       "ok": true,
-      "pages": [
-        "/nutrition/menu/loading"
-      ]
+      "pages": ["/nutrition/menu/loading"]
     },
     {
-      "asset": "static/chunks/app/nutrition/menu/page-14cc3511232146bf.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/nutrition/menu/page-14cc3511232146bf.js",
+      "asset": "static/chunks/app/nutrition/menu/page-4ee2866402ab10a7.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/nutrition/menu/page-4ee2866402ab10a7.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 21130,
+      "bytes": 20676,
       "ok": true,
-      "pages": [
-        "/nutrition/menu/page"
-      ]
+      "pages": ["/nutrition/menu/page"]
     },
     {
-      "asset": "static/chunks/app/nutrition/origin/page-c53f4de362ff8695.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/nutrition/origin/page-c53f4de362ff8695.js",
+      "asset": "static/chunks/app/nutrition/origin/page-27066b151c0f5708.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/nutrition/origin/page-27066b151c0f5708.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 15216,
+      "bytes": 15237,
       "ok": true,
-      "pages": [
-        "/nutrition/origin/page"
-      ]
+      "pages": ["/nutrition/origin/page"]
     },
     {
-      "asset": "static/chunks/app/nutrition/page-98fab43fd3589ece.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/nutrition/page-98fab43fd3589ece.js",
+      "asset": "static/chunks/app/nutrition/page-d196da10902e5701.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/nutrition/page-d196da10902e5701.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 15603,
+      "bytes": 15600,
       "ok": true,
-      "pages": [
-        "/nutrition/page"
-      ]
+      "pages": ["/nutrition/page"]
     },
     {
-      "asset": "static/chunks/app/page-e56a1be996f28036.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/page-e56a1be996f28036.js",
+      "asset": "static/chunks/app/page-6df6494c05313579.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/page-6df6494c05313579.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 110455,
+      "bytes": 117310,
       "ok": true,
-      "pages": [
-        "/page"
-      ]
+      "pages": ["/page"]
     },
     {
       "asset": "static/chunks/app/report/cost/error-e3f03e1ff8644b19.js",
@@ -1447,64 +1252,52 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 1469,
       "ok": true,
-      "pages": [
-        "/report/cost/error"
-      ]
+      "pages": ["/report/cost/error"]
     },
     {
-      "asset": "static/chunks/app/report/cost/loading-09368610b73f301d.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/report/cost/loading-09368610b73f301d.js",
+      "asset": "static/chunks/app/report/cost/loading-d5a80f5051847d88.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/report/cost/loading-d5a80f5051847d88.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 401,
       "ok": true,
-      "pages": [
-        "/report/cost/loading"
-      ]
+      "pages": ["/report/cost/loading"]
     },
     {
-      "asset": "static/chunks/app/report/cost/page-212cca4512807dcf.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/report/cost/page-212cca4512807dcf.js",
+      "asset": "static/chunks/app/report/cost/page-e99fa6ccfb5288ac.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/report/cost/page-e99fa6ccfb5288ac.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 65407,
+      "bytes": 72231,
       "ok": true,
-      "pages": [
-        "/report/cost/page"
-      ]
+      "pages": ["/report/cost/page"]
     },
     {
-      "asset": "static/chunks/app/report/margin/page-8fee58c5e899a0fe.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/report/margin/page-8fee58c5e899a0fe.js",
+      "asset": "static/chunks/app/report/margin/page-23188b6e71af9646.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/report/margin/page-23188b6e71af9646.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 24947,
+      "bytes": 1334,
       "ok": true,
-      "pages": [
-        "/report/margin/page"
-      ]
+      "pages": ["/report/margin/page"]
     },
     {
-      "asset": "static/chunks/app/report/menu-sales-compare/page-e61cba66480d1189.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/report/menu-sales-compare/page-e61cba66480d1189.js",
+      "asset": "static/chunks/app/report/menu-sales-compare/page-89c3ad98872083b2.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/report/menu-sales-compare/page-89c3ad98872083b2.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 20620,
+      "bytes": 1840,
       "ok": true,
-      "pages": [
-        "/report/menu-sales-compare/page"
-      ]
+      "pages": ["/report/menu-sales-compare/page"]
     },
     {
-      "asset": "static/chunks/app/report/page-ecfd1429c67e17d0.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/report/page-ecfd1429c67e17d0.js",
+      "asset": "static/chunks/app/report/page-c143618fac10dbfa.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/report/page-c143618fac10dbfa.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 54085,
+      "bytes": 53512,
       "ok": true,
-      "pages": [
-        "/report/page"
-      ]
+      "pages": ["/report/page"]
     },
     {
       "asset": "static/chunks/app/report/price/page-ea4d021aa338b92d.js",
@@ -1513,9 +1306,7 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 20427,
       "ok": true,
-      "pages": [
-        "/report/price/page"
-      ]
+      "pages": ["/report/price/page"]
     },
     {
       "asset": "static/chunks/app/report/sales/error-0cfbc018fba8d751.js",
@@ -1524,64 +1315,70 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 1467,
       "ok": true,
-      "pages": [
-        "/report/sales/error"
-      ]
+      "pages": ["/report/sales/error"]
     },
     {
-      "asset": "static/chunks/app/report/sales/loading-f54f9e480437b5ce.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/report/sales/loading-f54f9e480437b5ce.js",
+      "asset": "static/chunks/app/report/sales/loading-f6e2214897636b5c.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/report/sales/loading-f6e2214897636b5c.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 401,
       "ok": true,
-      "pages": [
-        "/report/sales/loading"
-      ]
+      "pages": ["/report/sales/loading"]
     },
     {
-      "asset": "static/chunks/app/report/sales/page-953241fc01ce91a9.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/report/sales/page-953241fc01ce91a9.js",
+      "asset": "static/chunks/app/report/sales/page-f7f6f9d2a8b9cc6c.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/report/sales/page-f7f6f9d2a8b9cc6c.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 40220,
+      "bytes": 40846,
       "ok": true,
-      "pages": [
-        "/report/sales/page"
-      ]
+      "pages": ["/report/sales/page"]
     },
     {
-      "asset": "static/chunks/app/report/shipment/page-6f40243467a2b4e9.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/report/shipment/page-6f40243467a2b4e9.js",
+      "asset": "static/chunks/app/report/shipment/page-330463471290d08e.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/report/shipment/page-330463471290d08e.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 22131,
+      "bytes": 29982,
       "ok": true,
-      "pages": [
-        "/report/shipment/page"
-      ]
+      "pages": ["/report/shipment/page"]
     },
     {
-      "asset": "static/chunks/app/settings/account/page-bd8a711b5914470a.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/settings/account/page-bd8a711b5914470a.js",
+      "asset": "static/chunks/app/rnd/corporate-card/page-e4403fb04f708203.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/rnd/corporate-card/page-e4403fb04f708203.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "bytes": 28168,
+      "ok": true,
+      "pages": ["/rnd/corporate-card/page"]
+    },
+    {
+      "asset": "static/chunks/app/rnd/login-info/page-c15a1de2f6f18d83.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/rnd/login-info/page-c15a1de2f6f18d83.js",
+      "status": 200,
+      "contentType": "application/javascript; charset=UTF-8",
+      "bytes": 13152,
+      "ok": true,
+      "pages": ["/rnd/login-info/page"]
+    },
+    {
+      "asset": "static/chunks/app/settings/account/page-80ec9c6f18e1db3a.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/settings/account/page-80ec9c6f18e1db3a.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 31087,
       "ok": true,
-      "pages": [
-        "/settings/account/page"
-      ]
+      "pages": ["/settings/account/page"]
     },
     {
-      "asset": "static/chunks/app/settings/backup/page-d40e75e676cfd173.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/settings/backup/page-d40e75e676cfd173.js",
+      "asset": "static/chunks/app/settings/backup/page-d83b0375386afc58.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/settings/backup/page-d83b0375386afc58.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 29495,
+      "bytes": 29502,
       "ok": true,
-      "pages": [
-        "/settings/backup/page"
-      ]
+      "pages": ["/settings/backup/page"]
     },
     {
       "asset": "static/chunks/app/settings/brands/page-aacbfa021fdfdc97.js",
@@ -1590,9 +1387,7 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 27165,
       "ok": true,
-      "pages": [
-        "/settings/brands/page"
-      ]
+      "pages": ["/settings/brands/page"]
     },
     {
       "asset": "static/chunks/app/settings/layout-63a531f24986405f.js",
@@ -1601,20 +1396,16 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 9740,
       "ok": true,
-      "pages": [
-        "/settings/layout"
-      ]
+      "pages": ["/settings/layout"]
     },
     {
-      "asset": "static/chunks/app/settings/page-d419e841f9039840.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/settings/page-d419e841f9039840.js",
+      "asset": "static/chunks/app/settings/page-4e829409f243d9e1.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/settings/page-4e829409f243d9e1.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 228,
       "ok": true,
-      "pages": [
-        "/settings/page"
-      ]
+      "pages": ["/settings/page"]
     },
     {
       "asset": "static/chunks/app/settings/restore/error-fda16047ed3781b9.js",
@@ -1623,20 +1414,16 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 1469,
       "ok": true,
-      "pages": [
-        "/settings/restore/error"
-      ]
+      "pages": ["/settings/restore/error"]
     },
     {
-      "asset": "static/chunks/app/settings/restore/loading-87778f43ea38bdf8.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/settings/restore/loading-87778f43ea38bdf8.js",
+      "asset": "static/chunks/app/settings/restore/loading-261985dca3da02f8.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/settings/restore/loading-261985dca3da02f8.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 401,
       "ok": true,
-      "pages": [
-        "/settings/restore/loading"
-      ]
+      "pages": ["/settings/restore/loading"]
     },
     {
       "asset": "static/chunks/app/settings/restore/page-bd870b606f139475.js",
@@ -1645,31 +1432,25 @@
       "contentType": "application/javascript; charset=UTF-8",
       "bytes": 38532,
       "ok": true,
-      "pages": [
-        "/settings/restore/page"
-      ]
+      "pages": ["/settings/restore/page"]
     },
     {
-      "asset": "static/chunks/app/settings/sample-recovery/page-2a8dd9e7064738ab.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/settings/sample-recovery/page-2a8dd9e7064738ab.js",
+      "asset": "static/chunks/app/settings/sample-recovery/page-9c5d90d93d587905.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/settings/sample-recovery/page-9c5d90d93d587905.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 13755,
+      "bytes": 13774,
       "ok": true,
-      "pages": [
-        "/settings/sample-recovery/page"
-      ]
+      "pages": ["/settings/sample-recovery/page"]
     },
     {
-      "asset": "static/chunks/app/settings/system/page-000a97a003fe2898.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/app/settings/system/page-000a97a003fe2898.js",
+      "asset": "static/chunks/app/settings/system/page-ee2528d7948b3ab3.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/app/settings/system/page-ee2528d7948b3ab3.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 30320,
+      "bytes": 30334,
       "ok": true,
-      "pages": [
-        "/settings/system/page"
-      ]
+      "pages": ["/settings/system/page"]
     },
     {
       "asset": "static/chunks/fd9d1056-18a7660e530f01be.js",
@@ -1757,6 +1538,8 @@
         "/report/sales/loading",
         "/report/sales/page",
         "/report/shipment/page",
+        "/rnd/corporate-card/page",
+        "/rnd/login-info/page",
         "/settings/account/page",
         "/settings/backup/page",
         "/settings/brands/page",
@@ -1855,6 +1638,8 @@
         "/report/sales/loading",
         "/report/sales/page",
         "/report/shipment/page",
+        "/rnd/corporate-card/page",
+        "/rnd/login-info/page",
         "/settings/account/page",
         "/settings/backup/page",
         "/settings/brands/page",
@@ -1868,11 +1653,11 @@
       ]
     },
     {
-      "asset": "static/chunks/webpack-e5fce6193b253dcf.js",
-      "url": "http://127.0.0.1:3000/_next/static/chunks/webpack-e5fce6193b253dcf.js",
+      "asset": "static/chunks/webpack-ffafd4464c2dc7b8.js",
+      "url": "http://127.0.0.1:3000/_next/static/chunks/webpack-ffafd4464c2dc7b8.js",
       "status": 200,
       "contentType": "application/javascript; charset=UTF-8",
-      "bytes": 5992,
+      "bytes": 5965,
       "ok": true,
       "pages": [
         "/_not-found/page",
@@ -1953,6 +1738,8 @@
         "/report/sales/loading",
         "/report/sales/page",
         "/report/shipment/page",
+        "/rnd/corporate-card/page",
+        "/rnd/login-info/page",
         "/settings/account/page",
         "/settings/backup/page",
         "/settings/brands/page",

@@ -1,6 +1,7 @@
 'use client';
 
 import { SampleListRow } from '@/components/note/SampleListRow';
+import { buildSampleIngredientGroups } from './samplePageStateUtils';
 
 export function SampleListView({
   rows,
@@ -18,6 +19,8 @@ export function SampleListView({
   onNextRoundSample,
   onDeleteSample,
 }) {
+  const groups = buildSampleIngredientGroups(rows);
+
   return (
     <div
       key={`list|${catFilter}|${ratingMin}|${sortBy}`}
@@ -52,29 +55,39 @@ export function SampleListView({
             </tr>
           </thead>
           <tbody>
-            {rows.map(sample => (
-              <SampleListRow
-                key={sample.id}
-                sample={sample}
-                onClick={() => {
-                  if (batchMode) {
-                    if (!canEdit) return;
-                    toggleSelect(sample.id);
-                    return;
-                  }
-                  if (compareMode) {
-                    toggleCompare(sample.id);
-                    return;
-                  }
-                  onOpenSample(sample);
-                }}
-                onEdit={() => onEditSample(sample)}
-                onCopy={event => onCopySample(sample, event)}
-                onNextRound={event => onNextRoundSample(sample, event)}
-                onDelete={() => onDeleteSample(sample)}
-                canEdit={canEdit}
-              />
-            ))}
+            {groups.flatMap(group => [
+              <tr key={`group-${group.name}`}>
+                <td colSpan={10} style={{ background: 'var(--surface-2)', fontWeight: 800 }}>
+                  {group.name}
+                  <span style={{ marginLeft: 8, color: 'var(--text-3)', fontWeight: 500 }}>
+                    샘플테스트 {group.sampleTestCount}건 · 이슈 {group.issueCount}건
+                  </span>
+                </td>
+              </tr>,
+              ...group.rows.map(sample => (
+                <SampleListRow
+                  key={sample.id}
+                  sample={sample}
+                  onClick={() => {
+                    if (batchMode) {
+                      if (!canEdit) return;
+                      toggleSelect(sample.id);
+                      return;
+                    }
+                    if (compareMode) {
+                      toggleCompare(sample.id);
+                      return;
+                    }
+                    onOpenSample(sample);
+                  }}
+                  onEdit={() => onEditSample(sample)}
+                  onCopy={event => onCopySample(sample, event)}
+                  onNextRound={event => onNextRoundSample(sample, event)}
+                  onDelete={() => onDeleteSample(sample)}
+                  canEdit={canEdit}
+                />
+              )),
+            ])}
           </tbody>
         </table>
       </div>

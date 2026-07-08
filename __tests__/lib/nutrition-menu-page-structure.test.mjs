@@ -40,7 +40,11 @@ describe('nutrition menu page structure', () => {
     expect(workspaceSource).toContain("import dynamic from 'next/dynamic'");
     expect(workspaceSource).toContain('<SearchBox');
     expect(workspaceSource).toContain('<TabBase');
+    expect(workspaceSource).not.toContain('TabDerived');
+    expect(workspaceSource).not.toContain('파생 메뉴');
     expect(workspaceSource).toContain('<TabSetCalc');
+    expect(pageSource).not.toContain('getAllCompositions');
+    expect(pageSource).not.toContain('파생 메뉴');
   });
 
   test('nutrition menu write controls follow admin role state', () => {

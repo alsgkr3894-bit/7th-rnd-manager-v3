@@ -1,10 +1,10 @@
 'use client';
 
 import { Icon } from '@/components/icons';
-import { KIND_META } from '@/lib/report/constants';
+import { REPORT_LAUNCHER_KINDS } from '@/lib/report/constants';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
-const REPORT_KINDS = Object.values(KIND_META);
+const REPORT_KINDS = REPORT_LAUNCHER_KINDS;
 
 export function ReportKindGrid({ reports, onOpenKind }) {
   const rows = asObjectArray(reports);

@@ -67,6 +67,11 @@ export function PriceReportOptions({
 
       <OptGroup label="문서 형식">
         <Check label="PDF" value={docFormat.pdf} onChange={value => onFormatChange('pdf', value)} />
+        <Check
+          label="Excel (.xlsx)"
+          value={docFormat.excel}
+          onChange={value => onFormatChange('excel', value)}
+        />
       </OptGroup>
     </>
   );

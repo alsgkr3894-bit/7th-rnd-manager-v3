@@ -1,5 +1,6 @@
 'use client';
 import { STATUSES } from '@/lib/note';
+import { isUnifiedSampleRecord } from '@/lib/note/unified-records';
 
 export function NoteContextMenu({
   ctxMenu,
@@ -15,6 +16,7 @@ export function NoteContextMenu({
   if (!ctxMenu) return null;
 
   const note = ctxMenu.note;
+  const canChangeStatus = canEdit && !isUnifiedSampleRecord(note);
   const close = typeof onClose === 'function' ? onClose : () => {};
 
   return (
@@ -94,7 +96,7 @@ export function NoteContextMenu({
             {STATUSES.map(status => (
               <button
                 key={status}
-                disabled={!canEdit}
+                disabled={!canChangeStatus}
                 style={{
                   fontSize: 10,
                   padding: '2px 7px',
@@ -102,12 +104,12 @@ export function NoteContextMenu({
                   background: 'var(--surface-2)',
                   color: 'var(--text-2)',
                   border: '1px solid var(--border)',
-                  cursor: canEdit ? 'pointer' : 'not-allowed',
+                  cursor: canChangeStatus ? 'pointer' : 'not-allowed',
                   fontFamily: 'inherit',
                 }}
                 onMouseDown={e => {
                   e.preventDefault();
-                  if (!canEdit) {
+                  if (!canChangeStatus) {
                     close();
                     return;
                   }

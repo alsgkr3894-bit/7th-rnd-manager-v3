@@ -1,4 +1,3 @@
-import { LABEL_COLS } from '@/lib/nutrition/label/build';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { displayNutritionMenuName } from '@/lib/nutrition/label/poster';
 import {
@@ -12,7 +11,16 @@ import {
   NutritionValueText,
 } from './NutritionLabelTablePrimitives';
 
-const NUTRITION_COLUMNS = LABEL_COLS.filter(column => column.key !== 'weight');
+const PIZZA_SLICE_COLS = [
+  { key: 'weight', label: '1회중량', unit: 'g' },
+  { key: 'servingLabel', label: '1회조각수', unit: '' },
+  { key: 'totalWeight', label: '총조각중량', unit: 'g' },
+  { key: 'kcal', label: '열량', unit: 'kcal/1회분' },
+  { key: 'sugar', label: '당류', unit: 'g/1회분' },
+  { key: 'protein', label: '단백질', unit: 'g/1회분' },
+  { key: 'fat', label: '포화지방', unit: 'g/1회분' },
+  { key: 'sodium', label: '나트륨', unit: 'mg/1회분' },
+];
 
 export function PizzaSliceNutritionTable({ rows }) {
   const safeRows = asObjectArray(rows);
@@ -34,10 +42,7 @@ export function PizzaSliceNutritionTable({ rows }) {
           <col style={{ width: 150 }} />
           <col style={{ width: 84 }} />
           <col style={{ width: 36 }} />
-          <col style={{ width: 52 }} />
-          <col style={{ width: 64 }} />
-          <col style={{ width: 64 }} />
-          {NUTRITION_COLUMNS.map(column => (
+          {PIZZA_SLICE_COLS.map(column => (
             <col key={column.key} style={{ width: 70 }} />
           ))}
           <col style={{ width: 200 }} />
@@ -47,14 +52,7 @@ export function PizzaSliceNutritionTable({ rows }) {
             <th style={HEADER_STYLE}>메뉴명</th>
             <th style={HEADER_STYLE}>크러스트</th>
             <th style={HEADER_STYLE}>L/R</th>
-            <th style={HEADER_STYLE}>조각수</th>
-            <th style={HEADER_STYLE}>1회제공</th>
-            <th style={HEADER_STYLE}>
-              중량
-              <br />
-              <span style={{ fontWeight: 400, fontSize: 9 }}>(g)</span>
-            </th>
-            {NUTRITION_COLUMNS.map(column => (
+            {PIZZA_SLICE_COLS.map(column => (
               <NutritionLabelColumnHeader key={column.key} column={column} />
             ))}
             <th style={HEADER_STYLE}>함유알레르기</th>
@@ -82,22 +80,14 @@ function PizzaSliceMenuRows({ menuName, crustRows, groupIndex }) {
   return safeCrustRows.map((row, index) => (
     <tr
       key={`${displayMenuName}-${asDisplayText(row.crustLabel)}-${asDisplayText(row.side)}-${index}`}
+      title={sliceTraceTitle(row)}
     >
       {index === 0 && <GroupedMenuNameCell name={displayMenuName} rowSpan={safeCrustRows.length} />}
       <td style={{ padding: '5px 8px', fontSize: 12 }}>{asDisplayText(row.crustLabel, '—')}</td>
       <td style={{ padding: '5px 6px', fontSize: 11, textAlign: 'center', color: '#666' }}>
         {asDisplayText(row.side, '—')}
       </td>
-      <td style={{ ...COL_STYLE, textAlign: 'center' }}>
-        <NutritionValueText value={row.slice} />
-      </td>
-      <td style={{ ...COL_STYLE, textAlign: 'center', fontWeight: 600 }}>
-        <NutritionValueText value={row.servingLabel} />
-      </td>
-      <td style={COL_STYLE}>
-        <NutritionValueText value={row.weight} />
-      </td>
-      {NUTRITION_COLUMNS.map(column => (
+      {PIZZA_SLICE_COLS.map(column => (
         <td key={column.key} style={COL_STYLE}>
           <NutritionValueText value={row[column.key]} />
         </td>
@@ -105,4 +95,17 @@ function PizzaSliceMenuRows({ menuName, crustRows, groupIndex }) {
       <td style={{ padding: '5px 8px', fontSize: 11 }}>{asDisplayText(row.allergen, '—')}</td>
     </tr>
   ));
+}
+
+function sliceTraceTitle(row) {
+  const trace = row?.servingTrace;
+  if (!trace || trace.status !== 'ok')
+    return '중량 또는 열량 미입력으로 조각 기준을 계산할 수 없습니다.';
+  return [
+    `한판 총중량 ${trace.totalWeight}g`,
+    `${trace.sliceCount}조각`,
+    `1조각 약 ${trace.perSliceWeight}g`,
+    `1조각 약 ${Number(trace.perSliceKcal || 0).toFixed(1)}kcal`,
+    `1회 제공량 ${trace.servingSlices}조각`,
+  ].join(' · ');
 }

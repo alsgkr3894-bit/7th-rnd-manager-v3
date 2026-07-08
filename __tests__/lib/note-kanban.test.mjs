@@ -102,6 +102,23 @@ describe('note kanban board cards', () => {
     expect(cards[0]._kanbanGroupCount).toBe(2);
   });
 
+  test('보고용 요약은 숨김 필드로 남더라도 칸반 검색 대상에서 제외한다', () => {
+    const cards = buildKanbanBoardCards(
+      [
+        {
+          id: 1,
+          title: '소스 테스트',
+          reportSummary: '숨은 보고 요약',
+          testContent: '산미 조정',
+          testDate: '2026-02-01',
+        },
+      ],
+      '숨은 보고'
+    );
+
+    expect(cards).toHaveLength(0);
+  });
+
   test('연결되지 않아도 제목 차수 표현이 같으면 대표 카드로 묶는다', () => {
     const cards = buildKanbanBoardCards([
       { id: 'a', title: '불고기 피자 1차', testDate: '2026-03-01' },

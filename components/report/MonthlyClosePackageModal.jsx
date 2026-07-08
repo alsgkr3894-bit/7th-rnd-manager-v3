@@ -5,20 +5,27 @@ import {
   PACKAGE_ITEMS,
   checkPeriodDataAvailability,
   applyAvailability,
+  buildPackageItemHref,
+  getMonthlyCloseTargetPeriod,
   saveCloseLog,
   getCloseLog,
   getCloseLogs,
+  monthLabel,
+  monthRangeLabel,
 } from '@/lib/report/package-plan';
-import { previousMonthOf } from '@/lib/stats/upload-status';
 
 /**
  * MonthlyClosePackageModal — 월마감 패키지 생성 모달
  */
 export function MonthlyClosePackageModal({ open, onClose }) {
   const router = useRouter();
-  const prev = previousMonthOf();
-  const [year, setYear] = useState(prev.year);
-  const [month, setMonth] = useState(prev.month);
+  const now = new Date();
+  const current = { year: now.getFullYear(), month: now.getMonth() + 1 };
+  const [year, setYear] = useState(current.year);
+  const [month, setMonth] = useState(current.month);
+  const targetPeriod = getMonthlyCloseTargetPeriod({ year, month }) || current;
+  const targetYear = targetPeriod.year;
+  const targetMonth = targetPeriod.month;
   const [availability, setAvailability] = useState(null);
   const [loadingAvailability, setLoadingAvailability] = useState(false);
   const [selectedIds, setSelectedIds] = useState(PACKAGE_ITEMS.map(i => i.id));
@@ -41,14 +48,14 @@ export function MonthlyClosePackageModal({ open, onClose }) {
       return;
     }
     setLoadingAvailability(true);
-    checkPeriodDataAvailability({ year, month })
+    checkPeriodDataAvailability({ year: targetYear, month: targetMonth })
       .then(av => {
         setAvailability(av);
-        setExistingLog(getCloseLog(year, month));
+        setExistingLog(getCloseLog(targetYear, targetMonth));
       })
       .finally(() => setLoadingAvailability(false));
     setRecentLogs(getCloseLogs().slice(0, 5));
-  }, [open, year, month]);
+  }, [open, targetYear, targetMonth]);
 
   const items = availability ? applyAvailability(PACKAGE_ITEMS, availability) : PACKAGE_ITEMS;
 
@@ -66,15 +73,15 @@ export function MonthlyClosePackageModal({ open, onClose }) {
       // 브라우저 팝업 차단으로 첫 항목만 열리는 경우를 대비해 router.push로 마지막 항목으로 이동
       const navItem = toGenerate[toGenerate.length - 1];
       saveCloseLog(
-        year,
-        month,
+        targetYear,
+        targetMonth,
         toGenerate.map(i => i.id)
       );
       setDone(true);
-      setExistingLog(getCloseLog(year, month));
+      setExistingLog(getCloseLog(targetYear, targetMonth));
 
       navTimerRef.current = setTimeout(() => {
-        router.push(`${navItem.href}?year=${year}&month=${month}`);
+        router.push(buildPackageItemHref(navItem, { year: targetYear, month: targetMonth }));
         onClose?.();
       }, 800);
     } finally {
@@ -84,7 +91,9 @@ export function MonthlyClosePackageModal({ open, onClose }) {
 
   if (!open) return null;
 
-  const monthLabel = `${year}년 ${month}월`;
+  const closeMonthLabel = `${year}년 ${month}월`;
+  const targetMonthLabel = monthLabel({ year: targetYear, month: targetMonth });
+  const targetRangeLabel = monthRangeLabel({ year: targetYear, month: targetMonth });
   const missingItems = items.filter(i => selectedIds.includes(i.id) && i.missing);
 
   return (
@@ -133,7 +142,7 @@ export function MonthlyClosePackageModal({ open, onClose }) {
               월마감 패키지 생성
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
-              기준 월의 출력물을 한 번에 준비합니다
+              선택 월의 전월 자료를 자동 집계합니다
             </div>
           </div>
           <button className="icon-btn" onClick={onClose} aria-label="닫기">
@@ -144,7 +153,7 @@ export function MonthlyClosePackageModal({ open, onClose }) {
         {/* 기준 월 선택 */}
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--divider)' }}>
           <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: 'var(--text-2)' }}>
-            기준 월
+            마감 실행 월
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <select
@@ -159,7 +168,7 @@ export function MonthlyClosePackageModal({ open, onClose }) {
                 fontSize: 14,
               }}
             >
-              {[prev.year - 1, prev.year, prev.year + 1].map(y => (
+              {[current.year - 1, current.year, current.year + 1].map(y => (
                 <option key={y} value={y}>
                   {y}년
                 </option>
@@ -183,7 +192,20 @@ export function MonthlyClosePackageModal({ open, onClose }) {
                 </option>
               ))}
             </select>
-            <span style={{ fontSize: 13, color: 'var(--text-2)' }}>= {monthLabel}</span>
+            <span style={{ fontSize: 13, color: 'var(--text-2)' }}>= {closeMonthLabel}</span>
+          </div>
+          <div
+            style={{
+              marginTop: 8,
+              fontSize: 12,
+              color: 'var(--text-2)',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--divider)',
+              borderRadius: 6,
+              padding: '8px 10px',
+            }}
+          >
+            집계 대상: <b>{targetMonthLabel}</b> ({targetRangeLabel}) 자동 합계
           </div>
           {existingLog && (
             <div style={{ marginTop: 8, fontSize: 12, color: 'var(--positive)' }}>
@@ -245,8 +267,8 @@ export function MonthlyClosePackageModal({ open, onClose }) {
                 color: 'var(--warn)',
               }}
             >
-              ⚠️ 선택 항목 중 {missingItems.length}개는 {monthLabel} 데이터가 없어 불완전한 출력이
-              될 수 있습니다
+              ⚠️ 선택 항목 중 {missingItems.length}개는 {targetMonthLabel} 데이터가 없어 불완전한
+              출력이 될 수 있습니다
             </div>
           )}
         </div>

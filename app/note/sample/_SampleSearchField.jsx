@@ -32,7 +32,7 @@ export function SampleSearchField({
           onChange={event => onSearchChange(event.target.value)}
           onFocus={onSearchFocus}
           onBlur={onSearchBlur}
-          placeholder="제목, 메뉴명, 내용, 태그 검색"
+          placeholder="제목, 식자재 묶음, 기록 구분, 내용, 태그 검색"
         />
         {showSearchHist && searchHistory.length > 0 && (
           <div

@@ -56,6 +56,12 @@ describe('익명화 업무 fixture 회귀', () => {
 
     expect(result.success).toBe(true);
     expect(result.headerColumns.revenueColumnIndex).toBe(2);
+    expect(result.headerColumns.revenueColumnName).toBe('매출액');
+    expect(result.revenueSummary).toMatchObject({
+      hasRevenueColumn: true,
+      totalRevenue: 255000,
+      warningCount: 0,
+    });
     expect(result.validRows).toEqual([
       expect.objectContaining({
         rawMenuName: '익명 콤비네이션 피자',
@@ -63,6 +69,65 @@ describe('익명화 업무 fixture 회귀', () => {
         revenue: 240000,
       }),
       expect.objectContaining({ rawMenuName: '익명 사이드', quantity: 3, revenue: 15000 }),
+    ]);
+  });
+
+  test('판매량 검증은 현장 엑셀의 금액 헤더 별칭을 매출액으로 인식한다', () => {
+    for (const header of [
+      '매출금액',
+      '실매출',
+      '순매출',
+      '총판매금액',
+      '주문금액',
+      '결제총액',
+      '상품금액',
+      '총액',
+    ]) {
+      const result = validateSalesFile([
+        ['조회기간', '2026-05-01 ~ 2026-05-31'],
+        ['메뉴명', '판매량(개)', header],
+        ['익명 콤비네이션 피자', 2, '20,000'],
+      ]);
+
+      expect(result.success).toBe(true);
+      expect(result.headerColumns.revenueColumnIndex).toBe(2);
+      expect(result.headerColumns.revenueColumnName).toBe(header);
+      expect(result.validRows[0].revenue).toBe(20000);
+    }
+  });
+
+  test('판매량 검증은 금액 컬럼 누락과 금액 빈칸을 저장 전 메타데이터로 알려준다', () => {
+    const missingColumn = validateSalesFile([
+      ['조회기간', '2026-05-01 ~ 2026-05-31'],
+      ['메뉴명', '판매량(개)'],
+      ['익명 콤비네이션 피자', 2],
+    ]);
+
+    expect(missingColumn.success).toBe(true);
+    expect(missingColumn.headerColumns.revenueColumnIndex).toBe(-1);
+    expect(missingColumn.revenueSummary).toMatchObject({
+      hasRevenueColumn: false,
+      totalRevenue: 0,
+      warningCount: 0,
+    });
+
+    const blankRevenue = validateSalesFile([
+      ['조회기간', '2026-05-01 ~ 2026-05-31'],
+      ['메뉴명', '판매량(개)', '주문금액'],
+      ['익명 콤비네이션 피자', 2, ''],
+      ['익명 사이드', 1, '무료'],
+      ['익명 음료', 1, 0],
+    ]);
+
+    expect(blankRevenue.success).toBe(true);
+    expect(blankRevenue.revenueSummary).toMatchObject({
+      hasRevenueColumn: true,
+      totalRevenue: 0,
+      warningCount: 2,
+    });
+    expect(blankRevenue.revenueWarningRows).toEqual([
+      expect.objectContaining({ rawMenuName: '익명 콤비네이션 피자', reason: '금액 빈 칸' }),
+      expect.objectContaining({ rawMenuName: '익명 사이드', reason: '금액 인식 실패' }),
     ]);
   });
 

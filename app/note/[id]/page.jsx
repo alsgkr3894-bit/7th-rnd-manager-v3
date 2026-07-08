@@ -158,7 +158,7 @@ export default function Page() {
       tags: form.tags,
       noteId,
     });
-    router.push('/note/sample/write');
+    router.push('/note/write?type=sample');
   }
 
   function handlePrint() {

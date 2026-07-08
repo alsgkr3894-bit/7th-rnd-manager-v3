@@ -122,9 +122,9 @@ describe('buildMenuAllergenMap', () => {
     expect(pizzaRows).toHaveLength(4);
     expect(pizzaRows[0].sourceMenuCodes.sort()).toEqual(['P-PS-001-L', 'P-PS-001-R']);
     expect(pizzaRows.find(row => row.crust === '석쇠').allergenCodes.size).toBe(0);
-    expect([...(pizzaRows.find(row => row.crust === '치즈크러스트').allergenCodes || [])]).toEqual(
-      ['AL02']
-    );
+    expect([...(pizzaRows.find(row => row.crust === '치즈크러스트').allergenCodes || [])]).toEqual([
+      'AL02',
+    ]);
     expect(matrixRows.find(row => row.menuCode === 'S-CHK-001')).toMatchObject({
       menuName: '치킨텐더',
       category: '사이드',
