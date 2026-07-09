@@ -86,7 +86,7 @@ export function useIngredientManageData() {
         jetteRemovedRows = [...prevCodeSet]
           .filter(c => c && !priceCodeSet.has(c))
           .map(c => metaMap.get(c))
-          .filter(Boolean)
+          .filter(meta => meta && !meta.discontinued)
           .map(buildMetaOnlyRow);
       }
 
