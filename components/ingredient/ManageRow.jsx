@@ -26,6 +26,7 @@ export const ManageRow = memo(function ManageRow({
   onToggleSelect,
   isHighlighted,
   isViewer = false,
+  codeNameMap,
 }) {
   const model = buildManageRowModel(rawRow);
   const {
@@ -103,6 +104,9 @@ export const ManageRow = memo(function ManageRow({
         discontinued={r.discontinued}
         originCount={originCount}
         allergenCount={allergenCount}
+        replacedByProductCode={r.replacedByProductCode}
+        replacedFromProductCode={r.replacedFromProductCode}
+        codeNameMap={codeNameMap}
       />
       <td style={{ fontSize: 12, color: 'var(--text-2)' }}>{temperature}</td>
       <td style={{ fontSize: 12, color: 'var(--text-2)' }}>{unitLabel}</td>

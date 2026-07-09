@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { FilterBar } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
 import { usePagination } from '@/hooks/usePagination';
@@ -53,6 +53,13 @@ export function IngredientManagePanel({
   isViewer = false,
 }) {
   const { page, goTo, totalPages, paged, total } = usePagination(filtered, PAGE_SIZE);
+  const codeNameMap = useMemo(() => {
+    const map = new Map();
+    for (const row of rows) {
+      if (row.productCode) map.set(row.productCode, row.ingredientName || row.displayName || row.productName || row.productCode);
+    }
+    return map;
+  }, [rows]);
   const highlightIdKey = highlightId != null ? String(highlightId) : '';
   const highlightProductCodeKey =
     highlightProductCode != null ? String(highlightProductCode).trim().toLowerCase() : '';
@@ -275,6 +282,7 @@ export function IngredientManagePanel({
                       isSelected={selected.has(row.id)}
                       onToggleSelect={toggleSelect}
                       isHighlighted={isHighlightedRow(row)}
+                      codeNameMap={codeNameMap}
                     />
                   );
                 })}
