@@ -49,7 +49,9 @@ function SubstituteLinkModalBody({ sourceRow, candidates, onConfirm, onClose }) 
   const options = useMemo(
     () =>
       (candidates || [])
-        .filter(row => rowCode(row) && rowCode(row) !== sourceCode)
+        .filter(
+          row => rowCode(row) && rowCode(row) !== sourceCode && !row.discontinued && !row.excluded
+        )
         .sort((a, b) => rowLabel(a).localeCompare(rowLabel(b), 'ko')),
     [candidates, sourceCode]
   );

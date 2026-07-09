@@ -40,6 +40,14 @@ export function ManageRowActionCell({
               알레르기 링크 {deletePreview.allergenLinkCount}건도 삭제됩니다
             </span>
           )}
+          {(deletePreview?.menuRecipeCount > 0 ||
+            deletePreview?.recipeGroupCount > 0 ||
+            deletePreview?.edgeCount > 0) && (
+            <span style={{ fontSize: 10, color: 'var(--negative)' }}>
+              레시피 {deletePreview.menuRecipeCount}개 · 세트/그룹 {deletePreview.recipeGroupCount}개
+              · 엣지/도우 {deletePreview.edgeCount}개에서 참조가 제거됩니다
+            </span>
+          )}
         </span>
       ) : (
         <span style={{ display: 'inline-flex', gap: 3 }}>

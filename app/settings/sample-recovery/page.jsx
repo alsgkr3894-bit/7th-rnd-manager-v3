@@ -10,6 +10,7 @@ import {
   sharedRunTransaction as runTransaction,
 } from '@/lib/db/shared';
 import { SAMPLE_RECORD_LABEL } from '@/lib/sample/constants';
+import { assertActiveAdmin } from '@/lib/auth/guard';
 
 const STORE_NAME = 'sample_records';
 
@@ -229,6 +230,7 @@ export default function SampleRecoveryPage() {
     if (!preview?.planned?.length) return;
     setBusy(true);
     try {
+      await assertActiveAdmin('샘플 기록 복구');
       await initSharedDB();
       const beforeRows = await getAll(STORE_NAME);
       downloadJson(

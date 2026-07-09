@@ -272,6 +272,46 @@ describe('menu master price sync policy', () => {
     });
   });
 
+  test('판매가 목록에서 사라진 메뉴코드는 메뉴마스터 price를 null로 비운다', async () => {
+    stores.menu_master = [
+      {
+        id: 1,
+        menuCode: 'PZ-011-L',
+        menuName: '제거된 피자',
+        category: '피자',
+        subCategory: '',
+        size: 'L',
+        price: 15000,
+        status: 'active',
+        source: 'price-sync',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        id: 2,
+        menuCode: 'PZ-012-L',
+        menuName: '유지되는 피자',
+        category: '피자',
+        subCategory: '',
+        size: 'L',
+        price: 16000,
+        status: 'active',
+        source: 'price-sync',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    ];
+
+    const result = await syncMenuMasterFromPrices([
+      { menuCode: 'PZ-012-L', menuName: '유지되는 피자', category: '피자', size: 'L', price: 16000 },
+    ]);
+
+    expect(result).toMatchObject({ priceUpdated: 1, unchanged: 1 });
+    expect(stores.menu_master.find(r => r.menuCode === 'PZ-011-L')).toMatchObject({
+      price: null,
+      menuName: '제거된 피자',
+    });
+    expect(stores.menu_master.find(r => r.menuCode === 'PZ-012-L')).toMatchObject({ price: 16000 });
+  });
+
   test('메뉴마스터 push는 discontinued 메뉴를 판매가 mirror에서 제거한다', async () => {
     stores.menu_master = [
       {

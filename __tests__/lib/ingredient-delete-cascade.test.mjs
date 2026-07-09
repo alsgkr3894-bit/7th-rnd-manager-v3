@@ -151,6 +151,30 @@ describe('deleteIngredient cascade (B-15)', () => {
     expect(result.failures).toEqual([{ id: 999, message: '항목을 찾을 수 없습니다' }]);
     expect(result.removed.every(item => item.cascadeErrors.length === 0)).toBe(true);
   });
+
+  test('productCode를 가진 식자재 삭제 시 레시피/세트그룹/엣지도우에 남은 참조를 제거한다', async () => {
+    stores.menu_recipes = [
+      { id: 10, menuCode: 'PZ-001', components: [{ productCode: 'PC-001' }, { productCode: 'PC-999' }] },
+      { id: 11, menuCode: 'PZ-002', components: [{ productCode: 'PC-999' }] },
+    ];
+    stores.cost_recipe_groups = [
+      { id: 20, ingredients: [{ productCode: 'pc-001' }] },
+    ];
+    stores.cost_edge_dough = [{ id: 30, components: [{ productCode: 'PC-001' }] }];
+
+    const result = await deleteIngredient(1);
+
+    expect(result).toMatchObject({ recipeRemoved: 1, groupRemoved: 1, edgeRemoved: 1 });
+    expect(stores.menu_recipes.find(r => r.id === 10).components).toEqual([
+      { productCode: 'PC-999' },
+    ]);
+    expect(stores.menu_recipes.find(r => r.id === 11).components).toEqual([
+      { productCode: 'PC-999' },
+    ]);
+    expect(stores.cost_recipe_groups[0].ingredients).toEqual([]);
+    expect(stores.cost_edge_dough[0].components).toEqual([]);
+    expect(stores.cost_ingredients.find(r => r.id === 1)).toBeUndefined();
+  });
 });
 
 // ── deleteMenuRefsByMenuCode ─────────────────────────────

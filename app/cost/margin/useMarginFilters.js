@@ -7,6 +7,14 @@ import { getMenuCodeRank } from '@/lib/menu-categories';
 import { applyDiscount, calcNetRevenue, calcPlatformMargin } from '@/lib/cost/margin/platforms';
 import { KEYS } from '@/lib/note/keys';
 
+// costMap은 키 존재 여부로 "원가 데이터 있음"을 나타낸다 — 키가 없으면 0원이 아니라
+// "원가 미입력"이므로 0으로 대체하면 안 된다(집계·정렬 모두 MarginRow의 getCostEntry와 동일 기준).
+function readCostEntry(costMap, label) {
+  if (!Object.prototype.hasOwnProperty.call(costMap || {}, label)) return null;
+  const cost = Number(costMap[label]);
+  return Number.isFinite(cost) ? cost : null;
+}
+
 export function useMarginFilters({ rows, activePlatform, discount, warnPct, critPct, viewMode }) {
   const [catFilter, setCatFilter] = useLocalStorage(KEYS.MARGIN_CAT_FILTER, '전체');
   const [sortKey, setSortKey] = useState('code');
@@ -95,7 +103,8 @@ export function useMarginFilters({ rows, activePlatform, discount, warnPct, crit
       badMarginCount = 0;
     for (const r of edgeFiltered) {
       for (const s of r.sizes || []) {
-        const cost = r.costMap?.[s.label] || 0;
+        const cost = readCostEntry(r.costMap, s.label);
+        if (cost == null) continue;
         const eff = applyDiscount(s.sellingPrice, discount);
         const net = calcNetRevenue(eff, activePlatform.fees, s.label);
         const m = calcPlatformMargin(cost, net);
@@ -157,7 +166,9 @@ export function useMarginFilters({ rows, activePlatform, discount, warnPct, crit
       const net = calcNetRevenue(eff, activePlatform.fees, size);
       if (type === 'net') return net ?? Infinity;
       if (type === 'rate') {
-        const cr = calcPlatformMargin(r.costMap?.[size] ?? 0, net);
+        const rateCost = readCostEntry(r.costMap, size);
+        if (rateCost == null) return Infinity;
+        const cr = calcPlatformMargin(rateCost, net);
         if (cr == null) return Infinity;
         return viewMode === 'margin' ? 100 - cr : cr;
       }
