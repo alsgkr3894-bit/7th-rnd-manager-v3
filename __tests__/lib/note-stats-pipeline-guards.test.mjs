@@ -11,6 +11,25 @@ const dbMock = {
 jest.unstable_mockModule('@/lib/db', () => dbMock);
 jest.unstable_mockModule('../../lib/db/index.js', () => dbMock);
 
+// menu_dev_notes는 이제 getAllNotesCached(브랜드 공유 main DB)로 읽는다 — @/lib/db/shared를 목한다.
+const sharedGetAll = jest.fn();
+jest.unstable_mockModule('@/lib/db/shared', () => ({
+  initSharedDB: jest.fn(async () => {}),
+  sharedHasStore: jest.fn(() => true),
+  sharedGetAll: (...args) => sharedGetAll(...args),
+  sharedGetById: jest.fn(async () => null),
+  sharedGetByIndex: jest.fn(async () => []),
+  sharedDeleteById: jest.fn(async () => {}),
+  sharedRunTransaction: jest.fn(async () => {}),
+}));
+jest.unstable_mockModule('@/lib/work-log', () => ({ logWork: jest.fn(async () => {}) }));
+jest.unstable_mockModule('@/lib/active-brand', () => ({
+  getActiveBrandId: jest.fn(() => 'main'),
+}));
+jest.unstable_mockModule('@/lib/auth/guard', () => ({
+  assertActiveAdmin: jest.fn(async () => {}),
+}));
+
 jest.unstable_mockModule('@/lib/price', () => ({
   getPriceFiles: jest.fn(),
   getPriceRowsByFileId: jest.fn(),
@@ -22,6 +41,7 @@ jest.unstable_mockModule('@/lib/recipe', () => ({
   calcMarginRate: jest.fn(() => null),
 }));
 
+const noteStore = await import('@/lib/note/store');
 const { getNoteDetailStats, getNoteKpi, getPipelineStats } =
   await import('../../lib/stats/note-stats.js');
 
@@ -35,6 +55,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   hasStore.mockReturnValue(true);
   getAll.mockResolvedValue([]);
+  sharedGetAll.mockResolvedValue([]);
+  noteStore.invalidateNotesCache();
 });
 
 describe('note stats display guards', () => {
@@ -46,7 +68,7 @@ describe('note stats display guards', () => {
       2
     ).toISOString();
 
-    getAll.mockResolvedValue([
+    sharedGetAll.mockResolvedValue([
       null,
       'bad',
       { status: '아이디어', menuName: 123, createdAt: 200 },
@@ -72,7 +94,7 @@ describe('note stats display guards', () => {
     const thisMonthInputDate = toDateOnly(new Date(now.getFullYear(), now.getMonth(), 7));
     const previousMonthInputDate = toDateOnly(new Date(now.getFullYear(), now.getMonth() - 1, 7));
 
-    getAll.mockResolvedValue([
+    sharedGetAll.mockResolvedValue([
       {
         status: undefined,
         category: undefined,
@@ -102,7 +124,7 @@ describe('note stats display guards', () => {
     const thisMonthInputDate = toDateOnly(new Date(now.getFullYear(), now.getMonth(), 8));
     const previousMonthInputDate = toDateOnly(new Date(now.getFullYear(), now.getMonth() - 1, 8));
 
-    getAll.mockResolvedValue([
+    sharedGetAll.mockResolvedValue([
       { createdAt: previousMonth, testDate: thisMonthInputDate },
       { createdAt: thisMonth, testDate: previousMonthInputDate },
     ]);
