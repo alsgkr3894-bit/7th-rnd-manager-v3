@@ -34,6 +34,18 @@ const ISSUE_META = {
     color: 'var(--warn)',
     bg: 'var(--warn-soft)',
   },
+  'missing-origin': {
+    label: '원산지 미표기',
+    Ico: Icon.alert,
+    color: 'var(--warn)',
+    bg: 'var(--warn-soft)',
+  },
+  'missing-allergen': {
+    label: '알레르기 미표기',
+    Ico: Icon.alert,
+    color: 'var(--warn)',
+    bg: 'var(--warn-soft)',
+  },
 };
 
 function fmtPriceDiff({ oldPrice, newPrice, diff, pct }) {
@@ -47,11 +59,16 @@ function hasIssue(row, issue) {
   return Array.isArray(row.issues) && row.issues.includes(issue);
 }
 
-function IssueCard({ r, onEdit, isViewer = false }) {
+function IssueCard({ r, onEdit, onConfirmPriceManual, isViewer = false }) {
   const row = r && typeof r === 'object' ? r : {};
   const issues = Array.isArray(row.issues) ? row.issues : [];
   const name = row.ingredientName || row.displayName || row.productName || '-';
   const handleEdit = typeof onEdit === 'function' ? onEdit : () => {};
+  const confirmPriceManual =
+    typeof onConfirmPriceManual === 'function' ? onConfirmPriceManual : () => {};
+  // 제때 연동은 없지만 수동으로 단가를 입력한 항목만 "확인" 버튼을 보여준다.
+  const canConfirmPriceManual =
+    issues.includes('no-price-link') && !row.jetteLinked && row.priceOverride != null;
 
   return (
     <div
@@ -97,6 +114,16 @@ function IssueCard({ r, onEdit, isViewer = false }) {
           })}
         </div>
       </div>
+      {canConfirmPriceManual && (
+        <button
+          className="btn sm"
+          onClick={() => confirmPriceManual(row)}
+          disabled={isViewer}
+          title="제때 연동 없이 수동 입력한 단가임을 확인 처리 — 이슈 목록에서 제외됩니다"
+        >
+          <Icon.check style={{ width: 13, height: 13 }} /> 단가 미연동 확인
+        </button>
+      )}
       <button className="btn sm" onClick={() => handleEdit(row)} disabled={isViewer}>
         <Icon.edit style={{ width: 13, height: 13 }} /> 수정
       </button>
@@ -104,7 +131,7 @@ function IssueCard({ r, onEdit, isViewer = false }) {
   );
 }
 
-export function IssuesView({ issueRows, onEdit, isViewer = false }) {
+export function IssuesView({ issueRows, onEdit, onConfirmPriceManual, isViewer = false }) {
   const [filter, setFilter] = useState('all');
   const safeIssueRows = useMemo(
     () => (Array.isArray(issueRows) ? issueRows.filter(r => r && typeof r === 'object') : []),
@@ -118,6 +145,8 @@ export function IssuesView({ issueRows, onEdit, isViewer = false }) {
       uncategorized: safeIssueRows.filter(r => hasIssue(r, 'uncategorized')).length,
       'no-unit': safeIssueRows.filter(r => hasIssue(r, 'no-unit')).length,
       'no-price-link': safeIssueRows.filter(r => hasIssue(r, 'no-price-link')).length,
+      'missing-origin': safeIssueRows.filter(r => hasIssue(r, 'missing-origin')).length,
+      'missing-allergen': safeIssueRows.filter(r => hasIssue(r, 'missing-allergen')).length,
     }),
     [safeIssueRows]
   );
@@ -128,6 +157,8 @@ export function IssuesView({ issueRows, onEdit, isViewer = false }) {
     { id: 'uncategorized', label: '미분류', count: counts.uncategorized },
     { id: 'no-unit', label: '포장수량 없음', count: counts['no-unit'] },
     { id: 'no-price-link', label: '단가 미연동', count: counts['no-price-link'] },
+    { id: 'missing-origin', label: '원산지 미표기', count: counts['missing-origin'] },
+    { id: 'missing-allergen', label: '알레르기 미표기', count: counts['missing-allergen'] },
   ];
 
   const filtered =
@@ -164,6 +195,7 @@ export function IssuesView({ issueRows, onEdit, isViewer = false }) {
             key={`${r.productCode ?? r.id ?? 'm'}-${i}`}
             r={r}
             onEdit={onEdit}
+            onConfirmPriceManual={onConfirmPriceManual}
             isViewer={isViewer}
           />
         ))}

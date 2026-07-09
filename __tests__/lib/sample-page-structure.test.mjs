@@ -256,16 +256,15 @@ describe('sample page structure', () => {
     expect(emptyStateSource).toContain('SAMPLE_RECORD_LABEL');
     expect(gridViewSource).toContain('export function SampleGridView');
     expect(gridViewSource).toContain('buildSampleIngredientGroups');
-    expect(gridViewSource).toContain(
-      '샘플테스트 {group.sampleTestCount}건 · 이슈 {group.issueCount}건'
-    );
+    // 그룹 헤더 건수는 현재 페이지가 아니라 전체 filtered 집합(countsOf) 기준으로 계산한다.
+    expect(gridViewSource).toContain('countsOf(group.name)');
+    expect(gridViewSource).toContain('샘플테스트');
     expect(gridViewSource).toContain('<SampleCard');
     expect(gridViewSource).toContain('animDelay={Math.min(index, 8) * 40}');
     expect(listViewSource).toContain('export function SampleListView');
     expect(listViewSource).toContain('buildSampleIngredientGroups');
-    expect(listViewSource).toContain(
-      '샘플테스트 {group.sampleTestCount}건 · 이슈 {group.issueCount}건'
-    );
+    expect(listViewSource).toContain('countsOf(group.name)');
+    expect(listViewSource).toContain('샘플테스트');
     expect(listViewSource).toContain('<SampleListRow');
     expect(listViewSource).toContain('className="data-table"');
     expect(sampleCardSource).toContain('export const SampleCard');
@@ -299,7 +298,8 @@ describe('sample page structure', () => {
     expect(sampleCardMetaSource).toContain('export function SampleCardMeta');
     expect(sampleCardMetaSource).toContain('recordType');
     expect(sampleCardMetaSource).toContain('ingredientGroupName');
-    expect(sampleCardMetaSource).toContain('priceTaxType ===');
+    // 단가 포맷(원/별도)은 공통 formatSamplePrice로 이동 — 여기선 사전 포맷된 price를 표시만 한다.
+    expect(sampleCardMetaSource).toContain('price');
     expect(sampleCardMetaSource).toContain('roundLabel');
     expect(sampleCardMetaSource).toContain('isChained');
     expect(sampleCardTagsSource).toContain('export function SampleCardTags');
@@ -415,7 +415,8 @@ describe('sample page structure', () => {
     expect(stateHookSource).toContain('buildSampleCategoryCounts(samples)');
     expect(stateHookSource).toContain('buildSampleRatingDist(samples)');
     expect(stateHookSource).toContain('buildSampleCalendarDays(calMonth)');
-    expect(stateHookSource).toContain('buildSamplesByDate(samples)');
+    // 캘린더도 활성 필터를 반영해야 하므로 filtered 기준으로 빌드한다.
+    expect(stateHookSource).toContain('buildSamplesByDate(filtered)');
     expect(stateHookSource).not.toContain('sampleNamesText(sample)');
     expect(stateHookSource).not.toContain('buildCalendarDays(calMonth, CALENDAR_CELLS)');
     expect(stateHookSource).not.toContain('useSearchHistory(KEYS.SAMPLE_SEARCH_HISTORY)');

@@ -1,11 +1,12 @@
 'use client';
 import { Fragment, useState } from 'react';
 import { Icon } from '@/components/icons';
-import { STATUSES, STATUS_COLORS } from '@/lib/note';
+import { MENU_DEVELOPMENT_NOTE_TYPES, STATUSES, STATUS_COLORS } from '@/lib/note';
 import { noteDisplayTitle } from '@/lib/note/display';
 import { formatTestRound } from '@/lib/note/evaluation';
 import { isUnifiedSampleRecord } from '@/lib/note/unified-records';
 import { formatFullDate } from '@/lib/note/utils';
+import { SAMPLE_RECORD_TYPE_OPTIONS } from '@/lib/sample';
 import { NoteTableRow } from './_NoteTableRow';
 import { buildNoteIdeaGroups, noteRoundNumber } from './noteIdeaGroups';
 
@@ -28,6 +29,7 @@ export function NoteTableView({
   onToggleSelect,
   onDelete,
   onStatusChange,
+  onTypeChange,
   onUnmergeGroup,
   onLoadMore,
 }) {
@@ -91,6 +93,9 @@ export function NoteTableView({
                 메뉴 상태
               </th>
               <th scope="col" style={{ width: 90 }}>
+                유형
+              </th>
+              <th scope="col" style={{ width: 90 }}>
                 최신 날짜
               </th>
               <th scope="col" style={{ width: 132 }} aria-label="액션" />
@@ -105,7 +110,14 @@ export function NoteTableView({
               const colors = STATUS_COLORS[latestStatus] || STATUS_COLORS['테스트'];
               const expanded = expandedGroups.has(group.key);
               const hasSampleRecord = group.notes.some(note => isUnifiedSampleRecord(note));
-              const canChangeStatus = canEdit && latest.id != null && !hasSampleRecord;
+              // 샘플/제품이슈도 상태 변경 허용(개별 샘플에 저장). 단 언머지는 노트 차수에만.
+              const canChangeStatus = canEdit && latest.id != null;
+              const typeOptions = hasSampleRecord
+                ? SAMPLE_RECORD_TYPE_OPTIONS
+                : MENU_DEVELOPMENT_NOTE_TYPES;
+              const latestType = typeOptions.includes(latest.noteType)
+                ? latest.noteType
+                : typeOptions[0];
               const canUnmergeGroup =
                 canEdit &&
                 !batchMode &&
@@ -171,6 +183,31 @@ export function NoteTableView({
                         ))}
                       </select>
                     </td>
+                    <td onClick={event => event.stopPropagation()}>
+                      <select
+                        value={latestType}
+                        onChange={event => onTypeChange(latest.id, event.target.value, event)}
+                        disabled={!canChangeStatus}
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: '2px 6px',
+                          borderRadius: 12,
+                          background: 'var(--surface-2)',
+                          color: 'var(--text-2)',
+                          border: '1px solid var(--border)',
+                          cursor: canChangeStatus ? 'pointer' : 'default',
+                          fontFamily: 'inherit',
+                          outline: 'none',
+                        }}
+                      >
+                        {typeOptions.map(type => (
+                          <option key={type} value={type}>
+                            {type}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
                     <td style={{ fontSize: 12, color: 'var(--text-3)' }}>
                       {formatFullDate(latest.testDate)}
                     </td>
@@ -210,6 +247,7 @@ export function NoteTableView({
                         onToggleSelect={onToggleSelect}
                         onDelete={onDelete}
                         onStatusChange={onStatusChange}
+                        onTypeChange={onTypeChange}
                         canEdit={canEdit}
                       />
                     ))}

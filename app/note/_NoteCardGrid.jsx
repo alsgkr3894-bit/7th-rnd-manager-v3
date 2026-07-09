@@ -45,6 +45,7 @@ export function NoteCardGrid({
   onDelete,
   onCopy,
   onStatusChange,
+  onTypeChange,
   onNewVersion,
   onPin,
   onTagClick,
@@ -140,6 +141,7 @@ export function NoteCardGrid({
                 onDelete={onDelete}
                 onCopy={onCopy}
                 onStatusChange={onStatusChange}
+                onTypeChange={onTypeChange}
                 onNewVersion={onNewVersion}
                 onPin={onPin}
                 onTagClick={onTagClick}

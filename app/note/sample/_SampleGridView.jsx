@@ -5,6 +5,7 @@ import { buildSampleIngredientGroups } from './samplePageStateUtils';
 
 export function SampleGridView({
   rows,
+  allRows,
   catFilter,
   ratingMin,
   sortBy,
@@ -23,6 +24,10 @@ export function SampleGridView({
   onRatingChange,
 }) {
   const groups = buildSampleIngredientGroups(rows);
+  // 그룹 헤더 건수는 현재 페이지가 아니라 전체 filtered 집합 기준이어야 정확하다.
+  const fullGroups = buildSampleIngredientGroups(Array.isArray(allRows) ? allRows : rows);
+  const fullByName = new Map(fullGroups.map(group => [group.name, group]));
+  const countsOf = name => fullByName.get(name) || null;
 
   return (
     <div
@@ -48,10 +53,11 @@ export function SampleGridView({
             <div>
               <div style={{ fontSize: 16, fontWeight: 800 }}>{group.name}</div>
               <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
-                샘플테스트 {group.sampleTestCount}건 · 이슈 {group.issueCount}건
+                샘플테스트 {(countsOf(group.name) || group).sampleTestCount}건 · 이슈{' '}
+                {(countsOf(group.name) || group).issueCount}건
               </div>
             </div>
-            <span className="chip">{group.rows.length}건</span>
+            <span className="chip">{(countsOf(group.name) || group).rows.length}건</span>
           </div>
           <div
             style={{

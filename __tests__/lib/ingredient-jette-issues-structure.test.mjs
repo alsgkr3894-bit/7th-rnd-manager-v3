@@ -53,7 +53,8 @@ describe('ingredient jette issues structure', () => {
   });
 
   test('product replacement keeps dependent recipe data on the new product code', () => {
-    expect(ingredientStoreSource).toContain('export { replaceIngredientProductCode }');
+    expect(ingredientStoreSource).toContain('replaceIngredientProductCode');
+    expect(ingredientStoreSource).toContain('previewIngredientProductReplace');
     expect(replaceSource).toContain('export async function replaceIngredientProductCode');
     expect(replaceSource).toContain("'menu_recipes'");
     expect(replaceSource).toContain("'cost_recipe_groups'");

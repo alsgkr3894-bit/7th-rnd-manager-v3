@@ -7,6 +7,7 @@ import { usePagination } from '@/hooks/usePagination';
 import { ManageRow } from '@/components/ingredient/ManageRow';
 import {
   DISCONTINUED_FILTER,
+  EXCLUDED_FILTER,
   NO_PRICE_FILTER,
   UNCATEGORIZED_FILTER,
 } from '@/lib/ingredient/constants';
@@ -27,6 +28,7 @@ export function IngredientManagePanel({
   uncategorized,
   noPriceCount,
   discontinuedCount,
+  excludedCount,
   catFilter,
   tagFilter,
   search,
@@ -44,6 +46,7 @@ export function IngredientManagePanel({
   onDeleteCancel,
   onDeleteConfirm,
   onRestore,
+  onLinkSubstitute,
   highlightId,
   highlightProductCode,
   onHighlightClear,
@@ -141,14 +144,25 @@ export function IngredientManagePanel({
               단가 없음 {noPriceCount}
             </button>
           )}
+          {excludedCount > 0 && (
+            <button
+              className={'chip' + (catFilter === EXCLUDED_FILTER ? ' active' : '')}
+              style={{
+                color: catFilter !== EXCLUDED_FILTER ? 'var(--text-3)' : undefined,
+                marginLeft: 'auto',
+              }}
+              onClick={() => onCatFilter(catFilter === EXCLUDED_FILTER ? 'all' : EXCLUDED_FILTER)}
+            >
+              숨김 {excludedCount}
+            </button>
+          )}
           {discontinuedCount > 0 && (
             <button
               className={'chip' + (catFilter === DISCONTINUED_FILTER ? ' active' : '')}
-              style={
-                catFilter !== DISCONTINUED_FILTER
-                  ? { color: 'var(--text-3)', marginLeft: 'auto' }
-                  : { marginLeft: 'auto' }
-              }
+              style={{
+                color: catFilter !== DISCONTINUED_FILTER ? 'var(--text-3)' : undefined,
+                marginLeft: excludedCount > 0 ? undefined : 'auto',
+              }}
               onClick={() =>
                 onCatFilter(catFilter === DISCONTINUED_FILTER ? 'all' : DISCONTINUED_FILTER)
               }
@@ -255,6 +269,7 @@ export function IngredientManagePanel({
                       onDeleteCancel={onDeleteCancel}
                       onDeleteConfirm={() => onDeleteConfirm(row)}
                       onRestore={() => onRestore(row.productCode)}
+                      onLinkSubstitute={onLinkSubstitute ? () => onLinkSubstitute(row) : undefined}
                       isViewer={isViewer}
                       batchMode={batchMode}
                       isSelected={selected.has(row.id)}

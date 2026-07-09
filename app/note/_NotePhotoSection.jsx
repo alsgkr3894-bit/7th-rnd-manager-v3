@@ -15,6 +15,9 @@ export function NotePhotoSection({ photos = [], onChange }) {
     ? photos.filter(photo => photo && typeof photo === 'object')
     : [];
   const change = typeof onChange === 'function' ? onChange : () => {};
+  // 비동기 리사이즈 완료 시점의 최신 photos를 읽기 위한 ref (연속 붙여넣기 스냅샷 경쟁 완화).
+  const photosRef = useRef(safePhotos);
+  photosRef.current = safePhotos;
 
   async function addFiles(files) {
     const allFiles = files ? Array.from(files) : [];
@@ -22,7 +25,7 @@ export function NotePhotoSection({ photos = [], onChange }) {
     const rejected = allFiles.length - imageFiles.length;
     if (rejected > 0) showToast('지원하지 않는 이미지 파일은 제외했어요', 'warn');
 
-    const remaining = MAX_NOTE_PHOTOS - safePhotos.length;
+    const remaining = MAX_NOTE_PHOTOS - photosRef.current.length;
     if (remaining <= 0) {
       showToast(`사진은 최대 ${MAX_NOTE_PHOTOS}장까지 추가할 수 있습니다`, 'warn');
       return;
@@ -46,7 +49,7 @@ export function NotePhotoSection({ photos = [], onChange }) {
       if (result.status === 'fulfilled') resized.push({ ...result.value, caption: '', uploadedAt });
       else failed.push(targets[index].name);
     });
-    if (resized.length) change([...safePhotos, ...resized]);
+    if (resized.length) change([...photosRef.current, ...resized]);
     if (failed.length) showToast(`사진 처리 실패: ${failed.join(', ')}`, 'warn');
   }
 
@@ -226,7 +229,7 @@ export function NotePhotoSection({ photos = [], onChange }) {
               />
               <input
                 className="form-input"
-                value={photo.caption}
+                value={photo.caption || ''}
                 onChange={event => setCaption(index, event.target.value)}
                 placeholder="캡션 (선택)"
                 style={{ marginTop: 4, fontSize: 12 }}

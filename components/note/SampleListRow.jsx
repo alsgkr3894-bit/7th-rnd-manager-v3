@@ -1,14 +1,13 @@
 'use client';
 import React from 'react';
-import { sampleIngredientGroupName, sampleNamesText, RATING_COLOR } from '@/lib/sample';
-import { formatTestRound } from '@/lib/note/evaluation';
 import {
-  asDisplayText,
-  asFiniteNumber,
-  asObjectArray,
-  clampInteger,
-  noop,
-} from '@/lib/ui/prop-guards';
+  sampleIngredientGroupName,
+  sampleNamesText,
+  RATING_COLOR,
+  formatSamplePrice,
+} from '@/lib/sample';
+import { formatTestRound } from '@/lib/note/evaluation';
+import { asDisplayText, asObjectArray, clampInteger, noop } from '@/lib/ui/prop-guards';
 
 /**
  * SampleListRow — 식자재 이슈 및 테스트 /샘플기록 리스트 뷰의 행(<tr>).
@@ -22,6 +21,10 @@ export const SampleListRow = React.memo(function SampleListRow({
   onNextRound,
   onDelete,
   canEdit = false,
+  batchMode = false,
+  isBatchSelected = false,
+  compareMode = false,
+  compareIdx = -1,
 }) {
   const rec = sample && typeof sample === 'object' ? sample : {};
   const photos = asObjectArray(rec.photos).filter(p => asDisplayText(p.data));
@@ -40,32 +43,88 @@ export const SampleListRow = React.memo(function SampleListRow({
   const nextRound = typeof onNextRound === 'function' ? onNextRound : noop;
   const remove = typeof onDelete === 'function' ? onDelete : noop;
   const rating = clampInteger(rec.rating, { min: 0, max: 5, fallback: 0 });
-  const price = asFiniteNumber(rec.price);
-  const hasPrice = Number.isFinite(price) && price > 0;
+  const priceLabel = formatSamplePrice(rec);
   const roundLabel = formatTestRound(rec.testRound);
+  const isCompareSelected = compareMode && compareIdx >= 0;
+  const selectionActive = (batchMode && isBatchSelected) || isCompareSelected;
   return (
-    <tr onClick={click} style={{ cursor: 'pointer' }}>
+    <tr
+      onClick={click}
+      aria-selected={selectionActive}
+      style={{
+        cursor: 'pointer',
+        background: selectionActive ? 'var(--accent-soft, rgba(120,140,255,0.12))' : undefined,
+        boxShadow: selectionActive ? 'inset 3px 0 0 var(--accent, #6f9bd1)' : undefined,
+      }}
+    >
       <td style={{ width: 48 }}>
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 6,
-            overflow: 'hidden',
-            background: 'var(--surface-2)',
-            display: 'grid',
-            placeItems: 'center',
-          }}
-        >
-          {thumb ? (
-            <img
-              src={thumb}
-              alt=""
-              loading="lazy"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          ) : (
-            <span style={{ fontSize: 16, opacity: 0.4 }}>📷</span>
+        <div style={{ position: 'relative', width: 40, height: 40 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 6,
+              overflow: 'hidden',
+              background: 'var(--surface-2)',
+              display: 'grid',
+              placeItems: 'center',
+              outline: selectionActive ? '2px solid var(--accent, #6f9bd1)' : 'none',
+            }}
+          >
+            {thumb ? (
+              <img
+                src={thumb}
+                alt=""
+                loading="lazy"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              <span style={{ fontSize: 16, opacity: 0.4 }}>📷</span>
+            )}
+          </div>
+          {batchMode && (
+            <span
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                top: -4,
+                left: -4,
+                width: 18,
+                height: 18,
+                borderRadius: 4,
+                display: 'grid',
+                placeItems: 'center',
+                fontSize: 12,
+                fontWeight: 800,
+                color: isBatchSelected ? '#fff' : 'var(--text-3)',
+                background: isBatchSelected ? 'var(--accent, #6f9bd1)' : 'var(--surface-1, #fff)',
+                border: '1px solid var(--accent, #6f9bd1)',
+              }}
+            >
+              {isBatchSelected ? '✓' : ''}
+            </span>
+          )}
+          {isCompareSelected && (
+            <span
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                top: -4,
+                left: -4,
+                minWidth: 18,
+                height: 18,
+                padding: '0 4px',
+                borderRadius: 9,
+                display: 'grid',
+                placeItems: 'center',
+                fontSize: 11,
+                fontWeight: 800,
+                color: '#fff',
+                background: 'var(--accent, #6f9bd1)',
+              }}
+            >
+              {compareIdx + 1}
+            </span>
           )}
         </div>
       </td>
@@ -102,9 +161,7 @@ export const SampleListRow = React.memo(function SampleListRow({
         {rating > 0 ? '★'.repeat(Math.min(5, rating)) : '—'}
       </td>
       <td style={{ textAlign: 'right', whiteSpace: 'nowrap', color: 'var(--text-2)' }}>
-        {hasPrice
-          ? `${price.toLocaleString('ko-KR')}원${rec.priceTaxType === 'excl' ? '(별도)' : ''}`
-          : '—'}
+        {priceLabel}
       </td>
       <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>

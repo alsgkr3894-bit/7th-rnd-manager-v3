@@ -22,21 +22,23 @@ export function SampleCardMedia({ photos = [], photosCount, category, altText })
         rounded={0}
       />
 
-      <span
-        style={{
-          position: 'absolute',
-          bottom: 8,
-          left: 8,
-          background: 'rgba(0,0,0,0.5)',
-          color: '#fff',
-          fontSize: 10,
-          padding: '2px 8px',
-          borderRadius: 6,
-          fontWeight: 700,
-        }}
-      >
-        {category}
-      </span>
+      {category ? (
+        <span
+          style={{
+            position: 'absolute',
+            bottom: 8,
+            left: 8,
+            background: 'rgba(0,0,0,0.5)',
+            color: '#fff',
+            fontSize: 10,
+            padding: '2px 8px',
+            borderRadius: 6,
+            fontWeight: 700,
+          }}
+        >
+          {category}
+        </span>
+      ) : null}
     </div>
   );
 }

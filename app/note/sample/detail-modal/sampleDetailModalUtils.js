@@ -1,12 +1,7 @@
 import { sampleIngredientGroupName, sampleNamesText } from '@/lib/sample';
+import { parseSamplePrice } from '@/lib/sample/price';
 import { formatTestRound } from '@/lib/note/evaluation';
-import {
-  asDisplayText,
-  asFiniteNumber,
-  asObjectArray,
-  clampInteger,
-  noop,
-} from '@/lib/ui/prop-guards';
+import { asDisplayText, asObjectArray, clampInteger, noop } from '@/lib/ui/prop-guards';
 
 export function buildSampleDetailModel(sample = {}) {
   const safeSample = sample && typeof sample === 'object' ? sample : {};
@@ -17,7 +12,7 @@ export function buildSampleDetailModel(sample = {}) {
     .filter(Boolean);
   const names = sampleNamesText(safeSample);
   const title = asDisplayText(safeSample.title, '제목 없음');
-  const price = asFiniteNumber(safeSample.price);
+  const price = parseSamplePrice(safeSample);
 
   return {
     sample: safeSample,

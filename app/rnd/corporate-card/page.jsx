@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { UploadDropzone } from '@/components/ui/UploadDropzone';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showToast } from '@/components/Toast';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { readSpreadsheetFile } from '@/lib/excel';
@@ -44,6 +45,7 @@ export default function CorporateCardPage() {
   const [uploading, setUploading] = useState(false);
   const [lastImport, setLastImport] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState('all');
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -87,11 +89,13 @@ export default function CorporateCardPage() {
       setLastImport({
         fileName: file.name,
         inserted: saved.inserted,
+        skipped: saved.skipped || 0,
         warnings: result.warnings,
         columns: result.columns,
       });
       await load();
-      showToast(`법인카드 내역 ${saved.inserted}건을 업로드했습니다`, 'ok');
+      const skippedNote = saved.skipped ? ` (중복 ${saved.skipped}건 제외)` : '';
+      showToast(`법인카드 내역 ${saved.inserted}건을 업로드했습니다${skippedNote}`, 'ok');
     } catch (err) {
       console.error('[corporate-card] upload failed', err);
       showToast('엑셀 업로드 실패: ' + (err?.message || '알 수 없는 오류'), 'error');
@@ -102,8 +106,14 @@ export default function CorporateCardPage() {
 
   async function handleDelete(id) {
     if (!canEdit) return;
-    await removeCorporateCardEntry(id);
-    await load();
+    try {
+      await removeCorporateCardEntry(id);
+      await load();
+      showToast('법인카드 내역을 삭제했습니다', 'ok');
+    } catch (err) {
+      console.error('[corporate-card] delete failed', err);
+      showToast('삭제에 실패했습니다: ' + (err?.message || '알 수 없는 오류'), 'error');
+    }
   }
 
   async function handleExport() {
@@ -271,7 +281,7 @@ export default function CorporateCardPage() {
                         <td>
                           <button
                             className="btn sm"
-                            onClick={() => handleDelete(row.id)}
+                            onClick={() => setConfirmDelete(row)}
                             disabled={!canEdit}
                           >
                             삭제
@@ -286,6 +296,24 @@ export default function CorporateCardPage() {
           </section>
         </>
       )}
+
+      <ConfirmDialog
+        open={Boolean(confirmDelete)}
+        title="법인카드 내역 삭제"
+        message={
+          confirmDelete
+            ? `${confirmDelete.usedAt || '날짜 미상'} · ${confirmDelete.vendor || '사용처 미상'} 내역을 삭제할까요? 되돌릴 수 없습니다.`
+            : ''
+        }
+        confirmLabel="삭제"
+        danger
+        onConfirm={() => {
+          const target = confirmDelete;
+          setConfirmDelete(null);
+          if (target) handleDelete(target.id);
+        }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </main>
   );
 }

@@ -55,6 +55,7 @@ export function SampleRecordsView({
       <>
         <SampleGridView
           rows={paged}
+          allRows={rows}
           catFilter={catFilter}
           ratingMin={ratingMin}
           sortBy={sortBy}
@@ -88,14 +89,17 @@ export function SampleRecordsView({
       <>
         <SampleListView
           rows={paged}
+          allRows={rows}
           catFilter={catFilter}
           ratingMin={ratingMin}
           sortBy={sortBy}
           batchMode={batchMode}
+          selected={selected}
           canEdit={canEdit}
           toggleSelect={toggleSelect}
           compareMode={compareMode}
           toggleCompare={toggleCompare}
+          compareIdxMap={compareIdxMap}
           onOpenSample={onOpenSample}
           onEditSample={onEditSample}
           onCopySample={onCopySample}

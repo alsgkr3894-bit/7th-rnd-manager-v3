@@ -11,6 +11,7 @@ export function ManageRowActionCell({
   onDeleteCancel,
   onDeleteConfirm,
   onRestore,
+  onLinkSubstitute,
   isViewer = false,
 }) {
   return (
@@ -42,6 +43,18 @@ export function ManageRowActionCell({
         </span>
       ) : (
         <span style={{ display: 'inline-flex', gap: 3 }}>
+          {onLinkSubstitute && (
+            <button
+              className="btn sm"
+              aria-label="대체상품 연결"
+              title="다른 식자재로 대체 연결(레시피·원가 자동 재연결, 기존 항목 단종)"
+              onClick={onLinkSubstitute}
+              disabled={isViewer || !productCode}
+              style={{ color: 'var(--text-3)' }}
+            >
+              <Icon.chevRight style={{ width: 13, height: 13 }} />
+            </button>
+          )}
           {onCopy && (
             <button
               className="btn sm"

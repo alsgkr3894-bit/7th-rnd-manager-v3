@@ -11,6 +11,7 @@ import {
 } from '@/lib/brand-master';
 import { setActiveBrandId } from '@/lib/active-brand';
 import { exportAllForBrand, importAllToBrand, MODULE_KEYS } from '@/lib/db';
+import { drainServerStoreSyncQueue } from '@/lib/db/server-sync';
 import { validateBackupPayload } from '@/lib/backup/validation';
 import { backupSourceMetadataOf, isBackupSourceMismatch } from '@/lib/backup/brand-source';
 import { addEntry } from '@/lib/backup-history';
@@ -40,6 +41,16 @@ export function useBrandActions({
 }) {
   const restoreFrameRef = useRef(null);
   const reloadTimerRef = useRef(null);
+
+  // 전환/숨김 직후 window.reload()로 메모리 큐가 사라지기 전에 서버 동기화를 최대한 비운다.
+  // 실패(API 미가용 등)해도 전환 자체를 막지 않도록 best-effort로 처리한다.
+  async function flushSyncBestEffort() {
+    try {
+      await drainServerStoreSyncQueue();
+    } catch (err) {
+      console.warn('[brand] reload 전 서버 동기화 flush 실패(무시):', err?.message || String(err));
+    }
+  }
 
   useEffect(
     () => () => {
@@ -72,7 +83,7 @@ export function useBrandActions({
     }
   }
 
-  function handleHide(brand, hidden) {
+  async function handleHide(brand, hidden) {
     if (!isAdmin) return;
     try {
       setBrandHidden(brand.id, hidden);
@@ -80,6 +91,7 @@ export function useBrandActions({
         const next = getBrands().find(item => item.isDefault && !item.hidden);
         if (next && setActiveBrandId(next.id)) {
           showToast('활성 브랜드가 숨김 처리되어 기본 브랜드로 전환합니다.', 'warn');
+          await flushSyncBestEffort();
           window.location.reload();
           return;
         }
@@ -102,13 +114,16 @@ export function useBrandActions({
     }
   }
 
-  function handleSwitch(brand) {
+  async function handleSwitch(brand) {
     if (brand.hidden) {
       showToast('숨김 브랜드는 상단 전환 대상이 아닙니다.', 'warn');
       return;
     }
     if (brand.id === activeId) return;
-    if (setActiveBrandId(brand.id)) window.location.reload();
+    if (setActiveBrandId(brand.id)) {
+      await flushSyncBestEffort();
+      window.location.reload();
+    }
   }
 
   async function handleBackup(brand) {

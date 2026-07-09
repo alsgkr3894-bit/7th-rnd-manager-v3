@@ -49,6 +49,7 @@ const MAX_PHOTOS = 8;
 export function SampleFormBody({ form, setForm, readOnly = false }) {
   const fileInputRef = useRef(null);
   const productSearchTimerRef = useRef(null);
+  const formPhotosRef = useRef([]);
   const [allTags, setAllTags] = useState([]);
   const [catOptions, setCatOptions] = useState(SAMPLE_CATEGORIES);
   const [ingredientGroupOptions, setIngredientGroupOptions] = useState([]);
@@ -162,11 +163,14 @@ export function SampleFormBody({ form, setForm, readOnly = false }) {
     }, 160);
   }
 
+  // 비동기 리사이즈 완료 시점의 최신 form.photos를 읽어 연속 붙여넣기 스냅샷 경쟁을 완화한다.
+  formPhotosRef.current = Array.isArray(form.photos)
+    ? form.photos.filter(p => p && typeof p === 'object')
+    : [];
+
   async function handleFiles(files) {
     if (readOnly) return;
-    const current = Array.isArray(form.photos)
-      ? form.photos.filter(p => p && typeof p === 'object')
-      : [];
+    const current = formPhotosRef.current;
     const slots = MAX_PHOTOS - current.length;
     if (slots <= 0) {
       showToast(`사진은 최대 ${MAX_PHOTOS}장까지만 등록할 수 있어요`, 'warn');
@@ -195,7 +199,7 @@ export function SampleFormBody({ form, setForm, readOnly = false }) {
       if (res.status === 'fulfilled') resized.push(res.value);
       else failed.push(toAdd[i].name);
     });
-    if (resized.length) upd('photos', [...current, ...resized]);
+    if (resized.length) upd('photos', [...formPhotosRef.current, ...resized]);
     if (failed.length) showToast(`사진 처리 실패: ${failed.join(', ')}`, 'warn');
   }
 

@@ -23,8 +23,14 @@ export function buildSampleFilterProps({ pageState }) {
     ratingDist,
   } = pageState;
 
+  // 폼은 자유 입력 카테고리를 허용하므로, 정적 목록에 없는 데이터 기반 카테고리도 칩으로 노출한다.
+  const extraCategories = Object.keys(catCounts || {})
+    .filter(key => key && key !== 'all' && !SAMPLE_CATEGORIES.includes(key))
+    .sort((a, b) => a.localeCompare(b, 'ko'));
+  const categories = [...SAMPLE_CATEGORIES, ...extraCategories];
+
   return {
-    categories: SAMPLE_CATEGORIES,
+    categories,
     catCounts,
     catFilter,
     onCatFilterChange: setCatFilter,

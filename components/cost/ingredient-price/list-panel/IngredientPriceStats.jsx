@@ -3,12 +3,20 @@
 export function IngredientPriceStats({ stats, onDeltaFilter }) {
   return (
     <div className="stat-row">
-      <div className="stat-card">
+      <div
+        className="stat-card"
+        role="button"
+        tabIndex={0}
+        style={{ cursor: 'pointer' }}
+        onClick={() => onDeltaFilter('all')}
+        onKeyDown={event => event.key === 'Enter' && onDeltaFilter('all')}
+      >
         <div className="stat-label">전체 제품</div>
         <div className="stat-value">
           {stats.total}
           <span className="unit">개</span>
         </div>
+        <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>클릭하여 전체보기</div>
       </div>
       <div
         className="stat-card"

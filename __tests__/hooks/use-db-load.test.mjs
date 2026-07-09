@@ -122,18 +122,21 @@ describe('저위험 hub 페이지 useDBLoad 적용', () => {
     expect(journalSrc).toContain(
       "import { buildNoteIdeaGroups, collectLatestRoundNotePhotos } from '../noteIdeaGroups'"
     );
-    expect(journalSrc).toContain('function collectJournalSourcePhotos');
+    expect(journalSrc).toContain('function buildJournalRelatedPhotoLookup');
     expect(journalSrc).toContain('function withRelatedJournalPhotos');
+    expect(journalSrc).toContain('function withoutJournalSourceDuplicatePhotos');
     expect(journalSrc).toContain('collectLatestRoundNotePhotos(group.notes, 99)');
     expect(journalSrc).toContain('const rawDayNotes = useMemo');
     expect(journalSrc).toContain('withRelatedJournalPhotos(rawDayNotes, notes)');
     expect(journalSrc).toContain(
-      'note?.id !== journalEntry?.id && note?.noteType !== JOURNAL_NOTE_TYPE'
+      'withoutJournalSourceDuplicatePhotos(dayNotesWithRelatedPhotos)'
     );
+    expect(journalSrc).toContain('if (note?.noteType !== JOURNAL_NOTE_TYPE) return note;');
+    expect(journalSrc).toContain('setJournalForm(journalFormFromEntry(journalEntry))');
+    expect(journalSrc).toContain('photos: mergeJournalPhotos(note?.photos, relatedPhotos)');
     expect(journalSrc).toContain(
-      'setJournalForm(journalFormFromEntry(journalEntry, sourcePhotos))'
+      'photos: Array.isArray(journalForm.photos) ? journalForm.photos : []'
     );
-    expect(journalSrc).toContain('photos: mergeJournalPhotos(journalForm.photos, sourcePhotos)');
     expect(journalSrc).toContain('const printPeriodNotes = useMemo');
     expect(journalSrc).toContain(
       'mergeJournalPrintNotesForDate(periodNotes, currentJournalPrintNote, date)'

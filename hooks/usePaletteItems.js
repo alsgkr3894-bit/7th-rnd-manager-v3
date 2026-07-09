@@ -24,6 +24,8 @@ export const PALETTE_STATIC_ITEMS = [
   { kind: 'menu', label: '노트 작성', href: '/note/write', requiresEdit: true },
   { kind: 'menu', label: '판매량 보고서', href: '/report/sales' },
   { kind: 'menu', label: '원가계산 보고서', href: '/report/cost' },
+  { kind: 'menu', label: '법인카드 내역서', href: '/rnd/corporate-card', requiresEdit: true },
+  { kind: 'menu', label: '계정 로그인정보', href: '/rnd/login-info', requiresEdit: true },
   { kind: 'menu', label: '시스템 설정', href: '/settings/system' },
   { kind: 'menu', label: '데이터 백업', href: '/settings/backup' },
   { kind: 'action', label: '제때판매가 업로드', href: '/menu-sales/upload', requiresEdit: true },

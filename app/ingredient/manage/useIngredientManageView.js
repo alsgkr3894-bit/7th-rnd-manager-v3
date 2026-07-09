@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import {
   DISCONTINUED_FILTER,
+  EXCLUDED_FILTER,
   NO_PRICE_FILTER,
   UNCATEGORIZED_FILTER,
 } from '@/lib/ingredient/constants';
@@ -22,6 +23,11 @@ export function useIngredientManageView({
   const activeRows = useMemo(() => rows.filter(row => !row.discontinued), [rows]);
   const managedCount = useMemo(() => rows.filter(row => row.hasRecord).length, [rows]);
   const discontinuedCount = rows.length - activeRows.length;
+  // 단종되지 않았지만 숨김(excluded) 처리된 항목 — 지금까지 어느 필터에서도 보이지 않던 항목.
+  const excludedCount = useMemo(
+    () => rows.filter(row => row.excluded && !row.discontinued).length,
+    [rows]
+  );
 
   const categoryCounts = useMemo(() => {
     const counts = new Map();
@@ -99,6 +105,8 @@ export function useIngredientManageView({
     let list;
     if (catFilter === DISCONTINUED_FILTER) {
       list = rows.filter(row => row.discontinued);
+    } else if (catFilter === EXCLUDED_FILTER) {
+      list = rows.filter(row => row.excluded && !row.discontinued);
     } else {
       list = rows.filter(row => !row.discontinued && !row.excluded);
       if (catFilter === UNCATEGORIZED_FILTER) {
@@ -134,12 +142,13 @@ export function useIngredientManageView({
       ? `제때 단가 기준 ${priceDate} · 전체 ${rows.length}개 · 관리 중 ${managedCount}개${discontinuedCount ? ` · 단종 ${discontinuedCount}개` : ''}`
       : rows.length > 0
         ? `제때 가격 파일 없음 · 메타 ${rows.length}개`
-        : '제때 가격 파일이 없습니다 — 마스터 시드 적용 또는 가격파일 업로드 필요';
+        : '제때 가격 파일이 없습니다 — 식자재 추가 또는 가격파일 업로드 필요';
 
   return {
     activeCount: activeRows.length,
     managedCount,
     discontinuedCount,
+    excludedCount,
     categoryCounts,
     mainCats,
     tagCounts,

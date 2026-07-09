@@ -16,6 +16,7 @@ export function buildNoteCardGridProps({
   onCopy,
   onDelete,
   onStatusChange,
+  onTypeChange,
   onNewVersion,
   onTagClick,
   onDropMerge,
@@ -43,6 +44,7 @@ export function buildNoteCardGridProps({
     onDelete,
     onCopy,
     onStatusChange,
+    onTypeChange,
     onNewVersion,
     onPin: onTogglePin,
     onTagClick,
@@ -67,6 +69,7 @@ export function buildNoteTableViewProps({
   onToggleSelect,
   onDelete,
   onStatusChange,
+  onTypeChange,
   onUnmergeGroup,
   onLoadMore,
 }) {
@@ -85,6 +88,7 @@ export function buildNoteTableViewProps({
     onToggleSelect,
     onDelete,
     onStatusChange,
+    onTypeChange,
     onUnmergeGroup,
     onLoadMore,
   };

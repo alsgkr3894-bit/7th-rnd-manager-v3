@@ -10,6 +10,7 @@ import {
   getAllNotesCached,
   updateNote,
   updateNoteChainStatus,
+  updateNoteChainType,
   getNotesInChain,
   duplicateNote,
 } from '@/lib/note';
@@ -133,6 +134,7 @@ export default function Page() {
       const payload = normalizeNoteFormForSave(form, { existingNotes });
       await updateNote(noteId, payload);
       await updateNoteChainStatus(noteId, payload.status);
+      await updateNoteChainType(noteId, payload.noteType);
       clearDraft(KEYS.NOTE_DRAFT(noteId));
       setIsDirty(false);
       showToast('노트가 수정됐어요', 'ok');

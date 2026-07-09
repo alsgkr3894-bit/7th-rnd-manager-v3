@@ -7,7 +7,6 @@ export function SampleCardMeta({
   isChained,
   company,
   price,
-  priceTaxType,
 }) {
   return (
     <div
@@ -30,11 +29,7 @@ export function SampleCardMeta({
       {roundLabel && <span>· {roundLabel}</span>}
       {isChained && <span>· 차수 연결</span>}
       {company && <span>· {company}</span>}
-      {price && (
-        <span>
-          · {price}원{priceTaxType === 'excl' ? '(별도)' : ''}
-        </span>
-      )}
+      {price && price !== '—' && <span>· {price}</span>}
     </div>
   );
 }

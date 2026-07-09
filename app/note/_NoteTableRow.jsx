@@ -1,10 +1,11 @@
 'use client';
 import React from 'react';
 import { Icon } from '@/components/icons';
-import { STATUSES, STATUS_COLORS } from '@/lib/note';
+import { MENU_DEVELOPMENT_NOTE_TYPES, STATUSES, STATUS_COLORS } from '@/lib/note';
 import { noteDisplayTitle } from '@/lib/note/display';
 import { isUnifiedSampleRecord } from '@/lib/note/unified-records';
 import { formatFullDate } from '@/lib/note/utils';
+import { SAMPLE_RECORD_TYPE_OPTIONS } from '@/lib/sample';
 
 export const NoteTableRow = React.memo(function NoteTableRow({
   note,
@@ -17,13 +18,18 @@ export const NoteTableRow = React.memo(function NoteTableRow({
   onToggleSelect,
   onDelete,
   onStatusChange,
+  onTypeChange,
   canEdit = false,
 }) {
   const sc = STATUS_COLORS[note.status] || STATUS_COLORS['테스트'];
   const title = noteDisplayTitle(note);
   const menuCode = typeof note.menuCode === 'string' ? note.menuCode.trim() : '';
   const checked = selected?.has(note.id) || false;
-  const canChangeStatus = canEdit && !isUnifiedSampleRecord(note);
+  const canChangeStatus = canEdit;
+  const typeOptions = isUnifiedSampleRecord(note)
+    ? SAMPLE_RECORD_TYPE_OPTIONS
+    : MENU_DEVELOPMENT_NOTE_TYPES;
+  const noteType = typeOptions.includes(note.noteType) ? note.noteType : typeOptions[0];
   const handleOpen = () => {
     if (canEdit && batchMode) onToggleSelect(note.id);
     else onOpen(note);
@@ -100,6 +106,32 @@ export const NoteTableRow = React.memo(function NoteTableRow({
           {STATUSES.map(s => (
             <option key={s} value={s}>
               {s}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td>
+        <select
+          value={noteType}
+          onChange={e => onTypeChange(note.id, e.target.value, e)}
+          onClick={e => e.stopPropagation()}
+          disabled={!canChangeStatus}
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            padding: '2px 6px',
+            borderRadius: 12,
+            background: 'var(--surface-2)',
+            color: 'var(--text-2)',
+            border: '1px solid var(--border)',
+            cursor: canChangeStatus ? 'pointer' : 'default',
+            fontFamily: 'inherit',
+            outline: 'none',
+          }}
+        >
+          {typeOptions.map(t => (
+            <option key={t} value={t}>
+              {t}
             </option>
           ))}
         </select>

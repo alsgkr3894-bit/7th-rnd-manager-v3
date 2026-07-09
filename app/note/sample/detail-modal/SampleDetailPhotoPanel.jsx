@@ -124,7 +124,12 @@ function SamplePhotoThumbnails({ photos, currentPhotoIdx, setPhotoIdx }) {
             background: '#222',
           }}
         >
-          <img src={photo.data} alt="" loading="lazy" />
+          <img
+            src={photo.data}
+            alt=""
+            loading="lazy"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
         </button>
       ))}
     </div>

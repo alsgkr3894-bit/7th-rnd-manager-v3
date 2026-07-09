@@ -66,7 +66,8 @@ export function useSamplePageState({ searchParams, pathname }) {
 
   const calDays = useMemo(() => buildSampleCalendarDays(calMonth), [calMonth]);
 
-  const samplesByDate = useMemo(() => buildSamplesByDate(samples), [samples]);
+  // 캘린더도 grid/list와 동일하게 활성 필터(카테고리·검색·평점)를 반영해야 한다.
+  const samplesByDate = useMemo(() => buildSamplesByDate(filtered), [filtered]);
 
   return {
     samples,

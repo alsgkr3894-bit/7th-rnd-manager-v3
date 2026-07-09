@@ -3,10 +3,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { sharedRestoreRecord as restoreRecord } from '@/lib/db/shared';
-import { addNote, deleteNote, updateNoteChainStatus, invalidateNotesCache } from '@/lib/note';
+import {
+  addNote,
+  deleteNote,
+  updateNoteChainStatus,
+  updateNoteChainType,
+  invalidateNotesCache,
+} from '@/lib/note';
 import { setNoteFrom, setSampleFrom } from '@/lib/note/keys';
 import { isUnifiedSampleRecord, unifiedSampleSourceId } from '@/lib/note/unified-records';
-import { addSample, deleteSample } from '@/lib/sample';
+import { addSample, deleteSample, updateSample, updateSampleStatus } from '@/lib/sample';
 
 async function restoreDeletedNotes(records = []) {
   const failures = [];
@@ -135,12 +141,15 @@ export function useNoteItemActions({
     async function handleStatusChange(noteId, newStatus, e) {
       e?.stopPropagation();
       if (!canEdit) return;
-      if (isUnifiedSampleRecord(noteId)) {
-        showToast('샘플/제품이슈 기록은 유형 필터에서 관리해 주세요', 'warn');
-        return;
-      }
       try {
-        const changedIds = await updateNoteChainStatus(noteId, newStatus);
+        let changedIds;
+        if (isUnifiedSampleRecord(noteId)) {
+          // 샘플/제품이슈 레코드는 sample_records에 저장 — 개별 샘플 상태를 갱신한다.
+          await updateSampleStatus(unifiedSampleSourceId(noteId), newStatus);
+          changedIds = [noteId];
+        } else {
+          changedIds = await updateNoteChainStatus(noteId, newStatus);
+        }
         const changedSet = new Set(changedIds);
         showToast(`메뉴 상태 → ${newStatus}`, 'ok');
         setNotes(prev => prev.map(n => (changedSet.has(n.id) ? { ...n, status: newStatus } : n)));
@@ -158,6 +167,41 @@ export function useNoteItemActions({
       } catch (err) {
         console.error('[useNoteItemActions] handleStatusChange', err);
         showToast('상태 변경 실패', 'error');
+      }
+    },
+    [canEdit, setDetailNote, setNotes]
+  );
+
+  const handleTypeChange = useCallback(
+    async function handleTypeChange(noteId, newType, e) {
+      e?.stopPropagation();
+      if (!canEdit) return;
+      try {
+        let changedIds;
+        if (isUnifiedSampleRecord(noteId)) {
+          // 샘플/제품이슈는 recordType 전환(단일 레코드) — sample_records에 저장.
+          await updateSample(unifiedSampleSourceId(noteId), { recordType: newType });
+          changedIds = [noteId];
+        } else {
+          changedIds = await updateNoteChainType(noteId, newType);
+        }
+        const changedSet = new Set(changedIds);
+        showToast(`유형 → ${newType}`, 'ok');
+        setNotes(prev => prev.map(n => (changedSet.has(n.id) ? { ...n, noteType: newType } : n)));
+        setPopIds(s => new Set([...s, ...changedIds]));
+        const timer = setTimeout(() => {
+          setPopIds(s => {
+            const n = new Set(s);
+            changedIds.forEach(id => n.delete(id));
+            return n;
+          });
+          popTimersRef.current.delete(timer);
+        }, 400);
+        popTimersRef.current.add(timer);
+        setDetailNote(n => (n && changedSet.has(n.id) ? { ...n, noteType: newType } : n));
+      } catch (err) {
+        console.error('[useNoteItemActions] handleTypeChange', err);
+        showToast('유형 변경 실패', 'error');
       }
     },
     [canEdit, setDetailNote, setNotes]
@@ -186,6 +230,7 @@ export function useNoteItemActions({
     execDelete,
     handleCopy,
     handleStatusChange,
+    handleTypeChange,
     handleNewVersion,
   };
 }

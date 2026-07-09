@@ -20,6 +20,7 @@ export const ManageRow = memo(function ManageRow({
   onDeleteCancel,
   onDeleteConfirm,
   onRestore,
+  onLinkSubstitute,
   batchMode,
   isSelected,
   onToggleSelect,
@@ -51,6 +52,8 @@ export const ManageRow = memo(function ManageRow({
   const handleDeleteCancel = typeof onDeleteCancel === 'function' ? onDeleteCancel : undefined;
   const handleDeleteConfirm = typeof onDeleteConfirm === 'function' ? onDeleteConfirm : undefined;
   const handleRestore = typeof onRestore === 'function' ? onRestore : undefined;
+  const handleLinkSubstitute =
+    typeof onLinkSubstitute === 'function' ? onLinkSubstitute : undefined;
   const toggleSelect = typeof onToggleSelect === 'function' ? onToggleSelect : undefined;
 
   return (
@@ -119,6 +122,7 @@ export const ManageRow = memo(function ManageRow({
         onDeleteCancel={handleDeleteCancel}
         onDeleteConfirm={handleDeleteConfirm}
         onRestore={handleRestore}
+        onLinkSubstitute={handleLinkSubstitute}
         isViewer={isViewer}
       />
     </tr>

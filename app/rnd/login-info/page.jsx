@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showToast } from '@/components/Toast';
 import { copyText } from '@/lib/ui/clipboard';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
@@ -33,6 +34,7 @@ export default function LoginInfoPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [showPasswords, setShowPasswords] = useState(false);
   const [search, setSearch] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -88,8 +90,14 @@ export default function LoginInfoPage() {
 
   async function handleDelete(id) {
     if (!canEdit) return;
-    await removeLoginCredential(id);
-    await load();
+    try {
+      await removeLoginCredential(id);
+      await load();
+      showToast('로그인정보를 삭제했습니다', 'ok');
+    } catch (err) {
+      console.error('[login-info] delete failed', err);
+      showToast('삭제에 실패했습니다: ' + (err?.message || '알 수 없는 오류'), 'error');
+    }
   }
 
   return (
@@ -246,7 +254,7 @@ export default function LoginInfoPage() {
                             </button>
                             <button
                               className="btn sm"
-                              onClick={() => handleDelete(row.id)}
+                              onClick={() => setConfirmDelete(row)}
                               disabled={!canEdit}
                             >
                               삭제
@@ -262,6 +270,24 @@ export default function LoginInfoPage() {
           </section>
         </>
       )}
+
+      <ConfirmDialog
+        open={Boolean(confirmDelete)}
+        title="로그인정보 삭제"
+        message={
+          confirmDelete
+            ? `'${confirmDelete.siteName || '사이트'}' 로그인정보를 삭제할까요? 되돌릴 수 없습니다.`
+            : ''
+        }
+        confirmLabel="삭제"
+        danger
+        onConfirm={() => {
+          const target = confirmDelete;
+          setConfirmDelete(null);
+          if (target) handleDelete(target.id);
+        }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </main>
   );
 }

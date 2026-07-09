@@ -26,15 +26,13 @@ describe('파괴적 액션 권한 가드', () => {
     expect(functionBody(s, 'bulkDeleteIngredients')).toContain('assertActiveAdmin');
   });
 
-  test('식자재 저장/시드 함수가 assertActiveAdmin을 호출한다', () => {
+  test('식자재 저장 함수가 assertActiveAdmin을 호출한다', () => {
     const crud = src('lib/ingredient/crud.js');
     expect(crud).toContain("from '@/lib/auth/guard'");
     expect(functionBody(crud, 'addIngredient')).toContain('assertActiveAdmin');
     expect(functionBody(crud, 'updateIngredient')).toContain('assertActiveAdmin');
     expect(functionBody(crud, 'upsertIngredientMeta')).toContain('assertActiveAdmin');
-    expect(functionBody(src('lib/ingredient/seed.js'), 'seedMasterIngredients')).toContain(
-      'assertActiveAdmin'
-    );
+    expect(functionBody(crud, 'setIngredientPriceManualConfirmed')).toContain('assertActiveAdmin');
   });
 
   test('메뉴마스터 삭제/초기화/시드가 assertActiveAdmin을 호출한다', () => {

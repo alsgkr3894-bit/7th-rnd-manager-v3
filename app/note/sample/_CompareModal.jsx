@@ -1,9 +1,9 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { Stars } from './_Stars';
-import { sampleNamesText } from '@/lib/sample';
+import { sampleNamesText, formatSamplePrice } from '@/lib/sample';
 import { useModalShell } from '@/hooks/useModalShell';
-import { asDisplayText, asFiniteNumber, asObjectArray, clampInteger } from '@/lib/ui/prop-guards';
+import { asDisplayText, asObjectArray, clampInteger } from '@/lib/ui/prop-guards';
 
 function getSamplePhoto(sample) {
   const photos = asObjectArray(sample?.photos).filter(p => asDisplayText(p.data));
@@ -26,12 +26,7 @@ export function CompareModal({ samples, onClose }) {
     { label: '업체명', key: 'company' },
     {
       label: '단가',
-      get: s => {
-        const price = asFiniteNumber(s.price);
-        return price != null
-          ? `${price.toLocaleString('ko-KR')}원${s.priceTaxType === 'excl' ? '(별도)' : ''}`
-          : '';
-      },
+      get: s => formatSamplePrice(s, { dash: '' }),
     },
     { label: '별점', key: 'rating', render: v => (v > 0 ? <Stars value={v} /> : '-') },
     { label: '테스트 내용', key: 'description' },

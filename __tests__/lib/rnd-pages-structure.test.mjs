@@ -24,7 +24,8 @@ describe('RND 업무 페이지 구조', () => {
     expect(schemaSource).toContain("createObjectStore('rnd_corporate_card_entries'");
     expect(schemaSource).toContain("createObjectStore('rnd_login_credentials'");
     expect(schemaSource).toContain("s.createIndex('usedAt', 'usedAt')");
-    expect(schemaSource).toContain("s.createIndex('isIsp', 'isIsp')");
+    // isIsp는 boolean이라 IndexedDB 인덱스 키로 부적합 — 인덱스를 두지 않는다.
+    expect(schemaSource).not.toContain("s.createIndex('isIsp', 'isIsp')");
     expect(schemaIndexSource).toContain('createRndStores(idb)');
     expect(moduleStoresSource).toContain('rnd: {');
     expect(moduleStoresSource).toContain("'rnd_corporate_card_entries'");

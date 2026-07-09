@@ -48,7 +48,6 @@ export function SampleCardBody({
         isChained={isChained}
         company={company}
         price={price}
-        priceTaxType={rec.priceTaxType}
       />
       {description && <SampleCardDescription description={description} />}
       <SampleCardTags tags={tags} />

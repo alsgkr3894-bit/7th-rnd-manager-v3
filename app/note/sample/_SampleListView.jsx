@@ -5,14 +5,17 @@ import { buildSampleIngredientGroups } from './samplePageStateUtils';
 
 export function SampleListView({
   rows,
+  allRows,
   catFilter,
   ratingMin,
   sortBy,
   batchMode,
+  selected,
   canEdit = false,
   toggleSelect,
   compareMode,
   toggleCompare,
+  compareIdxMap,
   onOpenSample,
   onEditSample,
   onCopySample,
@@ -20,6 +23,12 @@ export function SampleListView({
   onDeleteSample,
 }) {
   const groups = buildSampleIngredientGroups(rows);
+  // 그룹 헤더 건수는 현재 페이지가 아니라 전체 filtered 집합 기준이어야 정확하다.
+  const fullGroups = buildSampleIngredientGroups(Array.isArray(allRows) ? allRows : rows);
+  const fullByName = new Map(fullGroups.map(group => [group.name, group]));
+  const countsOf = name => fullByName.get(name) || null;
+  const selectedSet = selected instanceof Set ? selected : null;
+  const compareMap = compareIdxMap instanceof Map ? compareIdxMap : null;
 
   return (
     <div
@@ -60,7 +69,8 @@ export function SampleListView({
                 <td colSpan={10} style={{ background: 'var(--surface-2)', fontWeight: 800 }}>
                   {group.name}
                   <span style={{ marginLeft: 8, color: 'var(--text-3)', fontWeight: 500 }}>
-                    샘플테스트 {group.sampleTestCount}건 · 이슈 {group.issueCount}건
+                    샘플테스트 {(countsOf(group.name) || group).sampleTestCount}건 · 이슈{' '}
+                    {(countsOf(group.name) || group).issueCount}건
                   </span>
                 </td>
               </tr>,
@@ -68,6 +78,12 @@ export function SampleListView({
                 <SampleListRow
                   key={sample.id}
                   sample={sample}
+                  batchMode={batchMode}
+                  isBatchSelected={selectedSet ? selectedSet.has(sample.id) : false}
+                  compareMode={compareMode}
+                  compareIdx={
+                    compareMap && compareMap.has(sample.id) ? compareMap.get(sample.id) : -1
+                  }
                   onClick={() => {
                     if (batchMode) {
                       if (!canEdit) return;

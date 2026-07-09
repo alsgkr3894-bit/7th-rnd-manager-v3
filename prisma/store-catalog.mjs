@@ -304,7 +304,12 @@ const STORE_OPTIONS = {
   rnd_corporate_card_entries: {
     keyPath: 'id',
     autoIncrement: true,
-    indexes: [index('usedAt', 'usedAt'), index('vendor', 'vendor'), index('category', 'category')],
+    indexes: [
+      index('usedAt', 'usedAt'),
+      index('cardName', 'cardName'),
+      index('category', 'category'),
+      index('createdAt', 'createdAt'),
+    ],
   },
   rnd_login_credentials: {
     keyPath: 'id',
@@ -312,7 +317,7 @@ const STORE_OPTIONS = {
     indexes: [
       index('siteName', 'siteName'),
       index('category', 'category'),
-      index('isIsp', 'isIsp'),
+      index('createdAt', 'createdAt'),
     ],
   },
 };

@@ -4,14 +4,14 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { INGREDIENT_MASTER_SEED, previewIngredientDelete } from '@/lib/ingredient';
-import { useIsMainBrand } from '@/hooks/useIsMainBrand';
+import { previewIngredientDelete } from '@/lib/ingredient';
 import { useBatchSelection } from '@/hooks/useBatchSelection';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { IngredientForm } from './IngredientForm';
 import { IssuesView } from '@/components/ingredient/IssuesView';
 import { IngredientJetteIssuesPanel } from '@/components/ingredient/IngredientJetteIssuesPanel';
 import { IngredientBatchToolbar } from '@/components/ingredient/BatchToolbar';
+import { SubstituteLinkModal } from '@/components/ingredient/SubstituteLinkModal';
 import { TabButton } from '@/components/cost/shared/TabButton';
 import { IngredientManagePanel } from './IngredientManagePanel';
 import { IngredientSettingsPanel } from './IngredientSettingsPanel';
@@ -45,7 +45,6 @@ function productCodeKey(rowOrCode) {
 }
 
 export default function Page() {
-  const isMain = useIsMainBrand();
   const { isViewer } = useCurrentRole();
   const {
     rows,
@@ -111,10 +110,10 @@ export default function Page() {
   const [deletePending, setDeletePending] = useState(null);
   const [deletePreview, setDeletePreview] = useState(null);
   const deletePreviewRequestRef = useRef(0);
-  const [seeding, setSeeding] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(null);
+  const [substituteSource, setSubstituteSource] = useState(null);
   const [dedupeConfirm, setDedupeConfirm] = useState(false);
   const [dedupeBusy, setDedupeBusy] = useState(false);
   const { batchMode, selected, clearSelection, startBatch, exitBatch, toggleSelect } =
@@ -123,6 +122,7 @@ export default function Page() {
     activeCount,
     managedCount,
     discontinuedCount,
+    excludedCount,
     categoryCounts,
     mainCats,
     tagCounts,
@@ -176,7 +176,6 @@ export default function Page() {
   }, []);
 
   const {
-    handleSeed,
     handleReset,
     handleRemoveCategory,
     handleRemoveTag,
@@ -187,6 +186,7 @@ export default function Page() {
     handleSave,
     handleExclude,
     handleRestore,
+    handleConfirmPriceManual,
     handleAutoRegister,
     handleBatchDelete,
     handleBulkDiscontinue,
@@ -200,8 +200,6 @@ export default function Page() {
     setRows,
     formTarget,
     setFormTarget,
-    seeding,
-    setSeeding,
     resetting,
     setResetting,
     setResetConfirm,
@@ -304,12 +302,6 @@ export default function Page() {
                 >
                   선택
                 </button>
-                {isMain && (
-                  <button className="btn" onClick={handleSeed} disabled={seeding || isViewer}>
-                    <Icon.download style={{ width: 14, height: 14 }} />
-                    {seeding ? '시드 중…' : `마스터 시드 (${INGREDIENT_MASTER_SEED.length})`}
-                  </button>
-                )}
                 <button
                   className="btn primary"
                   onClick={() => setFormTarget('new')}
@@ -368,16 +360,7 @@ export default function Page() {
               <Icon.box style={{ width: 32, height: 32, marginBottom: 12, opacity: 0.4 }} />
               <div style={{ fontWeight: 600, marginBottom: 4 }}>아직 데이터가 없습니다</div>
               <div style={{ fontSize: 13 }}>
-                {isMain ? (
-                  <>
-                    상단의 <b>마스터 시드</b> 버튼으로 80개 마스터 품목을 일괄 등록하거나, 제때 가격
-                    파일을 업로드해주세요.
-                  </>
-                ) : (
-                  <>
-                    <b>식자재 추가</b> 버튼으로 직접 등록하거나, 제때 가격 파일을 업로드해주세요.
-                  </>
-                )}
+                <b>식자재 추가</b> 버튼으로 직접 등록하거나, 제때 가격 파일을 업로드해주세요.
               </div>
             </div>
           </div>
@@ -418,6 +401,7 @@ export default function Page() {
           uncategorized={uncategorized}
           noPriceCount={noPriceCount}
           discontinuedCount={discontinuedCount}
+          excludedCount={excludedCount}
           catFilter={catFilter}
           tagFilter={tagFilter}
           search={search}
@@ -435,6 +419,7 @@ export default function Page() {
           onDeleteCancel={handleDeleteCancel}
           onDeleteConfirm={handleExclude}
           onRestore={handleRestore}
+          onLinkSubstitute={setSubstituteSource}
           onHighlightClear={() => {
             setHighlightId(null);
             setHighlightProductCode(null);
@@ -457,7 +442,12 @@ export default function Page() {
             isViewer={isViewer}
           />
           {rows.length > 0 && (
-            <IssuesView issueRows={issueRows} onEdit={setFormTarget} isViewer={isViewer} />
+            <IssuesView
+              issueRows={issueRows}
+              onEdit={setFormTarget}
+              onConfirmPriceManual={handleConfirmPriceManual}
+              isViewer={isViewer}
+            />
           )}
         </>
       )}
@@ -507,6 +497,16 @@ export default function Page() {
             else handleRemoveTag(value);
           }}
           onCancel={() => setConfirmRemove(null)}
+        />
+      )}
+
+      {!isViewer && (
+        <SubstituteLinkModal
+          open={!!substituteSource}
+          sourceRow={substituteSource}
+          candidates={rows}
+          onConfirm={target => handleReplaceJetteProduct(substituteSource, target)}
+          onClose={() => setSubstituteSource(null)}
         />
       )}
 

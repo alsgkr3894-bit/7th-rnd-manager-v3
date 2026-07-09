@@ -1,7 +1,12 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { SegGroup, Field } from '@/components/note/FormFields';
-import { STATUSES, NOTE_BRANDS, getNoteCategoryOptionsForBrand } from '@/lib/note';
+import {
+  STATUSES,
+  NOTE_BRANDS,
+  MENU_DEVELOPMENT_NOTE_TYPES,
+  getNoteCategoryOptionsForBrand,
+} from '@/lib/note';
 import { parseNoteQuickDate } from '@/lib/note/date-input';
 
 const SECTION_STYLE = {
@@ -277,6 +282,18 @@ export function NoteRequiredFields({
             />
           </Field>
         </div>
+
+        <Field label="유형" hint="저장하면 같은 메뉴 차수 전체에 적용">
+          <SegGroup
+            options={MENU_DEVELOPMENT_NOTE_TYPES}
+            value={
+              MENU_DEVELOPMENT_NOTE_TYPES.includes(form.noteType)
+                ? form.noteType
+                : MENU_DEVELOPMENT_NOTE_TYPES[0]
+            }
+            onChange={noteType => updateField('noteType', noteType)}
+          />
+        </Field>
 
         <Field label="메뉴 상태" hint="저장하면 같은 메뉴 차수 전체에 적용">
           <SegGroup

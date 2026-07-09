@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { Icon } from '@/components/icons';
-import { STATUSES, STATUS_COLORS } from '@/lib/note';
+import { MENU_DEVELOPMENT_NOTE_TYPES, STATUSES, STATUS_COLORS } from '@/lib/note';
+import { SAMPLE_RECORD_TYPE_OPTIONS } from '@/lib/sample';
 import { formatFullDate, parseTagList } from '@/lib/note/utils';
 import { clampNoteRating, formatTestRound, NOTE_EVALUATION_FIELDS } from '@/lib/note/evaluation';
-import { isUnifiedSampleRecord } from '@/lib/note/unified-records';
 import { noop } from '@/lib/ui/prop-guards';
 import { PhotoCarousel } from '@/components/note/PhotoCarousel';
 import { highlightText } from './_NoteCard';
+import { isUnifiedSampleRecord } from '@/lib/note/unified-records';
 import { collectLatestRoundNotePhotos, noteRoundNumber } from './noteIdeaGroups';
 import { NotePhotoLightbox } from './_NotePhotoLightbox';
 
@@ -102,6 +103,7 @@ export function NoteIdeaGroupCard({
   onDelete,
   onCopy,
   onStatusChange,
+  onTypeChange,
   onNewVersion,
   onPin,
   onTagClick,
@@ -127,6 +129,7 @@ export function NoteIdeaGroupCard({
   const remove = typeof onDelete === 'function' ? onDelete : noop;
   const copy = typeof onCopy === 'function' ? onCopy : noop;
   const statusChange = typeof onStatusChange === 'function' ? onStatusChange : noop;
+  const typeChange = typeof onTypeChange === 'function' ? onTypeChange : noop;
   const newVersion = typeof onNewVersion === 'function' ? onNewVersion : noop;
   const pin = typeof onPin === 'function' ? onPin : noop;
   const tagClick = typeof onTagClick === 'function' ? onTagClick : noop;
@@ -136,8 +139,11 @@ export function NoteIdeaGroupCard({
   const [previewPhoto, setPreviewPhoto] = useState(null);
   const latestRoundLabel = roundLabel(latest, Math.max(notes.length - 1, 0));
   const latestPreviewRows = previewRows(latest);
+  // 샘플/제품이슈도 상태 변경 허용(개별 샘플에 저장). 단 언머지는 노트 차수에만.
   const hasSampleRecord = notes.some(note => isUnifiedSampleRecord(note));
-  const canChangeStatus = canEdit && latest.id != null && !hasSampleRecord;
+  const canChangeStatus = canEdit && latest.id != null;
+  const typeOptions = hasSampleRecord ? SAMPLE_RECORD_TYPE_OPTIONS : MENU_DEVELOPMENT_NOTE_TYPES;
+  const latestType = typeOptions.includes(latest.noteType) ? latest.noteType : typeOptions[0];
   const canUnmergeGroup =
     canEdit && !batchMode && !hasSampleRecord && notes.some(note => note?.parentId != null);
 
@@ -195,7 +201,16 @@ export function NoteIdeaGroupCard({
           background: 'var(--surface-2)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            marginBottom: 12,
+            flexWrap: 'wrap',
+            rowGap: 6,
+          }}
+        >
           <select
             value={latestStatus}
             disabled={!canChangeStatus}
@@ -215,11 +230,40 @@ export function NoteIdeaGroupCard({
               fontFamily: 'inherit',
               outline: 'none',
               maxWidth: 108,
+              flexShrink: 0,
             }}
           >
             {STATUSES.map(status => (
               <option key={status} value={status}>
                 {status}
+              </option>
+            ))}
+          </select>
+          <select
+            value={latestType}
+            disabled={!canChangeStatus}
+            aria-label={`${group.title} 유형 변경`}
+            onMouseDown={event => event.stopPropagation()}
+            onClick={event => event.stopPropagation()}
+            onChange={event => typeChange(latest.id, event.target.value, event)}
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              padding: '3px 24px 3px 9px',
+              borderRadius: 999,
+              background: 'var(--surface-2)',
+              color: 'var(--text-2)',
+              border: '1px solid var(--border)',
+              cursor: canChangeStatus ? 'pointer' : 'default',
+              fontFamily: 'inherit',
+              outline: 'none',
+              maxWidth: 108,
+              flexShrink: 0,
+            }}
+          >
+            {typeOptions.map(type => (
+              <option key={type} value={type}>
+                {type}
               </option>
             ))}
           </select>
@@ -232,6 +276,8 @@ export function NoteIdeaGroupCard({
               borderRadius: 999,
               background: 'var(--surface)',
               border: '1px solid var(--border)',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
             }}
           >
             {group.category || '미분류'}
@@ -246,12 +292,14 @@ export function NoteIdeaGroupCard({
                 borderRadius: 999,
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
               }}
             >
               {group.menuCode}
             </span>
           )}
-          <span style={{ fontSize: 11, color: 'var(--text-4)' }}>
+          <span style={{ fontSize: 11, color: 'var(--text-4)', whiteSpace: 'nowrap' }}>
             {group.periodLabel || formatFullDate(latest.testDate)}
           </span>
           <button

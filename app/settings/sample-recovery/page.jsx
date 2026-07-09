@@ -4,7 +4,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
 import { downloadJson } from '@/lib/download';
-import { getAll, initDB, runTransaction } from '@/lib/db';
+import {
+  initSharedDB,
+  sharedGetAll as getAll,
+  sharedRunTransaction as runTransaction,
+} from '@/lib/db/shared';
 import { SAMPLE_RECORD_LABEL } from '@/lib/sample/constants';
 
 const STORE_NAME = 'sample_records';
@@ -206,7 +210,7 @@ export default function SampleRecoveryPage() {
   useEffect(() => {
     if (!candidates.length) return;
     let cancelled = false;
-    initDB()
+    initSharedDB()
       .then(async () => {
         const rows = await getAll(STORE_NAME);
         if (!cancelled) setPreview({ rows, ...planRecovery(rows, candidates) });
@@ -225,7 +229,7 @@ export default function SampleRecoveryPage() {
     if (!preview?.planned?.length) return;
     setBusy(true);
     try {
-      await initDB();
+      await initSharedDB();
       const beforeRows = await getAll(STORE_NAME);
       downloadJson(
         {

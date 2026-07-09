@@ -47,7 +47,7 @@ describe('importAll 구조 방어', () => {
     });
   });
 
-  test('현재 schema에서 제거된 legacy store는 복원 시 건너뛴다', async () => {
+  test('현재 schema에서 제거된 legacy store는 복원 시 건너뛰고 데이터가 있으면 정보성으로 알린다', async () => {
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       const result = await importAll({
@@ -57,7 +57,28 @@ describe('importAll 구조 방어', () => {
         },
       });
 
-      expect(result).toEqual({ imported: 0, skipped: 2, errors: [] });
+      expect(result.imported).toBe(0);
+      expect(result.skipped).toBe(2);
+      // 데이터가 있는 legacy store는 조용히 넘기지 않고 __legacy_skipped__로 사용자에게 알린다.
+      expect(result.errors).toEqual([
+        { store: '__legacy_skipped__', error: expect.stringContaining('cost_recipes') },
+        { store: '__legacy_skipped__', error: expect.stringContaining('cost_pizza_detail') },
+      ]);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  test('데이터가 없는 legacy store는 조용히 건너뛴다(정보성 알림 없음)', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const result = await importAll({
+        stores: {
+          cost_recipes: [],
+        },
+      });
+
+      expect(result).toEqual({ imported: 0, skipped: 1, errors: [] });
     } finally {
       warnSpy.mockRestore();
     }

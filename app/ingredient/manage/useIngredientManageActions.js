@@ -5,12 +5,11 @@ import { logIngredientSave, logIngredientDelete, logIngredientBulkDelete } from 
 import {
   addIngredient,
   updateIngredient,
+  setIngredientPriceManualConfirmed,
   upsertIngredientMeta,
   excludeIngredientByCode,
   restoreIngredientByCode,
   deleteIngredient,
-  seedMasterIngredients,
-  INGREDIENT_MASTER_SEED,
   resetAllIngredients,
   repairIngredientProductCodeDuplicates,
   removeCategoryFromAll,
@@ -40,8 +39,6 @@ export function useIngredientManageActions({
   setRows,
   formTarget,
   setFormTarget,
-  seeding,
-  setSeeding,
   resetting,
   setResetting,
   setResetConfirm,
@@ -56,21 +53,6 @@ export function useIngredientManageActions({
   setTagFilter,
   canEdit = false,
 }) {
-  async function handleSeed() {
-    if (!canEdit) return;
-    if (seeding) return;
-    setSeeding(true);
-    try {
-      const result = await seedMasterIngredients(INGREDIENT_MASTER_SEED);
-      showToast(`마스터 시드 적용 완료 — 신규 ${result.inserted} · 갱신 ${result.updated}`, 'ok');
-      await load();
-    } catch (err) {
-      showToast('시드 실패: ' + err.message, 'error');
-    } finally {
-      setSeeding(false);
-    }
-  }
-
   async function handleReset() {
     if (!canEdit) return;
     if (resetting) return;
@@ -218,6 +200,22 @@ export function useIngredientManageActions({
           prev.map(r => (r.productCode === productCode ? { ...r, excluded: false } : r))
         );
         showToast('복원됐습니다', 'ok');
+      } catch (err) {
+        showToast('실패: ' + err.message, 'error');
+      }
+    },
+    [canEdit, setRows]
+  );
+
+  const handleConfirmPriceManual = useCallback(
+    async row => {
+      if (!canEdit || !row?.id) return;
+      try {
+        await setIngredientPriceManualConfirmed(row.id, true);
+        setRows(prev =>
+          prev.map(r => (r.id === row.id ? { ...r, priceManualConfirmed: true } : r))
+        );
+        showToast('단가 미연동 확인 처리했습니다', 'ok');
       } catch (err) {
         showToast('실패: ' + err.message, 'error');
       }
@@ -375,7 +373,6 @@ export function useIngredientManageActions({
   );
 
   return {
-    handleSeed,
     handleReset,
     handleRemoveCategory,
     handleRemoveTag,
@@ -386,6 +383,7 @@ export function useIngredientManageActions({
     handleSave,
     handleExclude,
     handleRestore,
+    handleConfirmPriceManual,
     handleAutoRegister,
     handleReplaceJetteProduct,
     handleBatchDelete,
