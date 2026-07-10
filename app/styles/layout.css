@@ -129,14 +129,18 @@
 .nav-children {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  opacity: 0;
+  transition:
+    grid-template-rows 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 220ms ease;
 }
 .nav-children.open {
   grid-template-rows: 1fr;
+  opacity: 1;
 }
 /* 펼침 시 자식은 은은한 페이드만 (개별 stagger 제거 → repaint storm 방지, grid-rows 펼침과 충돌 없음) */
 .nav-children.open .nav-child {
-  animation: fade-in 160ms ease both;
+  animation: fade-in 200ms ease both;
 }
 .nav-children-inner {
   overflow: hidden;

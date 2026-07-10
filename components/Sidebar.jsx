@@ -70,16 +70,21 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, ca
   }, []);
 
   // pathname 변경 시 active 그룹 자동 열기 (클라이언트 라우팅 대응)
+  // 아코디언 방식 — 한 번에 하나의 그룹만 열리므로 active 그룹만 남기고 나머지는 접는다.
   useEffect(() => {
     setOpenIds(o => {
-      const updates = {};
-      visibleSections.forEach(section => {
-        section.groups.forEach(g => {
-          if (isGroupActive(g) && !o[g.id]) updates[g.id] = true;
-        });
-      });
-      if (!Object.keys(updates).length) return o;
-      return { ...o, ...updates };
+      let activeId = null;
+      for (const section of visibleSections) {
+        const found = section.groups.find(isGroupActive);
+        if (found) {
+          activeId = found.id;
+          break;
+        }
+      }
+      if (!activeId) return o;
+      const alreadySoleOpen = o[activeId] && Object.values(o).filter(Boolean).length === 1;
+      if (alreadySoleOpen) return o;
+      return { [activeId]: true };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, visibleSections, isGroupActive]);
@@ -115,8 +120,12 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, ca
     if (Object.keys(openIds).length > 0) setJSONLS(KEYS.SIDEBAR_OPEN, openIds);
   }, [openIds]);
 
+  // 아코디언 방식 — 한 번에 하나의 그룹만 열림. 열려있던 그룹을 다시 누르면 닫힘.
   const toggle = (id, forceOpen = false) =>
-    setOpenIds(o => ({ ...o, [id]: forceOpen ? true : !o[id] }));
+    setOpenIds(o => {
+      if (forceOpen) return { [id]: true };
+      return o[id] ? {} : { [id]: true };
+    });
 
   // Escape 키로 열린 아코디언 닫기 (active 그룹 제외)
   useEffect(() => {
@@ -179,7 +188,7 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, ca
                 height: 14,
                 marginLeft: itemBadge ? 6 : 'auto',
                 transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
-                transition: 'transform 160ms ease',
+                transition: 'transform 260ms cubic-bezier(0.16, 1, 0.3, 1)',
                 color: 'var(--text-4)',
               }}
             />

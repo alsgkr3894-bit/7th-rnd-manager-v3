@@ -101,6 +101,16 @@ describe('normalizeSidebarOpenIds', () => {
     });
   });
 
+  test('아코디언 — 이전 저장값에 여러 그룹이 열려있어도 첫 번째만 남긴다', () => {
+    const otherGroupId = NAV_SECTIONS[0].groups[1]?.id || NAV_SECTIONS[1].groups[0].id;
+    expect(
+      normalizeSidebarOpenIds({
+        [knownGroupId]: true,
+        [otherGroupId]: true,
+      })
+    ).toEqual({ [knownGroupId]: true });
+  });
+
   test('통합 후 중복 레시피/세부 원가 route를 사이드바에 노출하지 않는다', () => {
     const hrefs = navChildren.map(item => item.href).filter(Boolean);
 
