@@ -48,6 +48,12 @@ const ISSUE_META = {
   },
 };
 
+// 이 두 이슈 필터에서만 전체선택 + 일괄 "없음" 적용 UI를 보여준다.
+const BULK_NONE_ACTIONS = {
+  'missing-origin': { field: 'originNone', label: '원산지 없음' },
+  'missing-allergen': { field: 'allergenNone', label: '알레르기 없음' },
+};
+
 function fmtPriceDiff({ oldPrice, newPrice, diff, pct }) {
   const safeDiff = Number.isFinite(Number(diff)) ? Number(diff) : 0;
   const safePct = Number.isFinite(Number(pct)) ? Number(pct) : 0;
@@ -59,7 +65,15 @@ function hasIssue(row, issue) {
   return Array.isArray(row.issues) && row.issues.includes(issue);
 }
 
-function IssueCard({ r, onEdit, onConfirmPriceManual, isViewer = false }) {
+function IssueCard({
+  r,
+  onEdit,
+  onConfirmPriceManual,
+  isViewer = false,
+  selectable = false,
+  selected = false,
+  onToggleSelect,
+}) {
   const row = r && typeof r === 'object' ? r : {};
   const issues = Array.isArray(row.issues) ? row.issues : [];
   const name = row.ingredientName || row.displayName || row.productName || '-';
@@ -75,6 +89,16 @@ function IssueCard({ r, onEdit, onConfirmPriceManual, isViewer = false }) {
       className="card"
       style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 18px' }}
     >
+      {selectable && (
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={() => onToggleSelect?.(row.id)}
+          disabled={isViewer || row.id == null}
+          style={{ width: 16, height: 16, flexShrink: 0, cursor: 'pointer' }}
+          aria-label={`${name} 선택`}
+        />
+      )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span style={{ fontWeight: 700, fontSize: 14 }}>{name}</span>
@@ -131,8 +155,16 @@ function IssueCard({ r, onEdit, onConfirmPriceManual, isViewer = false }) {
   );
 }
 
-export function IssuesView({ issueRows, onEdit, onConfirmPriceManual, isViewer = false }) {
+export function IssuesView({
+  issueRows,
+  onEdit,
+  onConfirmPriceManual,
+  onBulkApplyOriginAllergenNone,
+  isViewer = false,
+}) {
   const [filter, setFilter] = useState('all');
+  const [selected, setSelected] = useState(() => new Set());
+  const [applying, setApplying] = useState(false);
   const safeIssueRows = useMemo(
     () => (Array.isArray(issueRows) ? issueRows.filter(r => r && typeof r === 'object') : []),
     [issueRows]
@@ -164,6 +196,44 @@ export function IssuesView({ issueRows, onEdit, onConfirmPriceManual, isViewer =
   const filtered =
     filter === 'all' ? safeIssueRows : safeIssueRows.filter(r => hasIssue(r, filter));
 
+  const bulkAction = BULK_NONE_ACTIONS[filter];
+  const selectableIds = useMemo(
+    () => (bulkAction ? filtered.filter(r => r.id != null).map(r => r.id) : []),
+    [bulkAction, filtered]
+  );
+  const allSelected = selectableIds.length > 0 && selectableIds.every(id => selected.has(id));
+
+  function changeFilter(nextFilter) {
+    setFilter(nextFilter);
+    setSelected(new Set());
+  }
+
+  function toggleSelectAll() {
+    setSelected(prev => (allSelected ? new Set() : new Set(selectableIds)));
+  }
+
+  function toggleSelectOne(id) {
+    if (id == null) return;
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function applyBulkNone() {
+    if (!bulkAction || applying || !selected.size) return;
+    if (typeof onBulkApplyOriginAllergenNone !== 'function') return;
+    setApplying(true);
+    try {
+      await onBulkApplyOriginAllergenNone([...selected], { [bulkAction.field]: true });
+      setSelected(new Set());
+    } finally {
+      setApplying(false);
+    }
+  }
+
   if (safeIssueRows.length === 0) {
     return (
       <div className="card" style={{ minHeight: 160, display: 'grid', placeItems: 'center' }}>
@@ -183,12 +253,55 @@ export function IssuesView({ issueRows, onEdit, onConfirmPriceManual, isViewer =
           <button
             key={t.id}
             className={'chip' + (filter === t.id ? ' active' : '')}
-            onClick={() => setFilter(t.id)}
+            onClick={() => changeFilter(t.id)}
           >
             {t.label} {t.count}
           </button>
         ))}
       </div>
+
+      {bulkAction && (
+        <div
+          className="card"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '10px 18px',
+            background: 'var(--surface-2)',
+          }}
+        >
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: selectableIds.length ? 'pointer' : 'default',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleSelectAll}
+              disabled={isViewer || !selectableIds.length}
+              style={{ width: 16, height: 16 }}
+            />
+            전체선택 ({selected.size}/{selectableIds.length})
+          </label>
+          <button
+            className="btn sm primary"
+            onClick={applyBulkNone}
+            disabled={isViewer || !selected.size || applying}
+            style={{ marginLeft: 'auto' }}
+          >
+            <Icon.check style={{ width: 13, height: 13 }} />
+            {applying ? '적용 중…' : `선택 항목 ${bulkAction.label} 일괄 적용`}
+          </button>
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {filtered.map((r, i) => (
           <IssueCard
@@ -197,6 +310,9 @@ export function IssuesView({ issueRows, onEdit, onConfirmPriceManual, isViewer =
             onEdit={onEdit}
             onConfirmPriceManual={onConfirmPriceManual}
             isViewer={isViewer}
+            selectable={!!bulkAction}
+            selected={r.id != null && selected.has(r.id)}
+            onToggleSelect={toggleSelectOne}
           />
         ))}
       </div>

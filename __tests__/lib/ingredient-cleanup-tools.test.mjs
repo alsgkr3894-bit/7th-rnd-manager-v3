@@ -60,8 +60,10 @@ const {
   renameTagInAll,
   bulkSetDiscontinued,
   bulkSetCategory,
+  bulkSetOriginAllergenNone,
   removeManyTagsFromAll,
 } = await import('../../lib/ingredient/store.js');
+const { computeIngredientIssues } = await import('../../lib/ingredient/index.js');
 
 beforeEach(() => {
   ingredientRows = [];
@@ -236,6 +238,106 @@ describe('bulkSetCategory', () => {
     ingredientRows = [{ id: 1, ingredientName: 'A', category: '' }];
     await bulkSetCategory([1], '소스류');
     expect(assertActiveAdmin).toHaveBeenCalledWith('식자재 일괄 분류 변경');
+  });
+});
+
+// ── bulkSetOriginAllergenNone ─────────────────────────────────────────────────
+
+describe('bulkSetOriginAllergenNone', () => {
+  test('선택한 id 목록에 원산지 없음을 일괄 적용한다', async () => {
+    ingredientRows = [
+      { id: 1, ingredientName: 'A', originNone: false },
+      { id: 2, ingredientName: 'B', originNone: false },
+      { id: 3, ingredientName: 'C', originNone: false },
+    ];
+
+    const result = await bulkSetOriginAllergenNone([1, 2], { originNone: true });
+    expect(result).toEqual({ updated: 2 });
+    expect(ingredientRows.find(r => r.id === 1).originNone).toBe(true);
+    expect(ingredientRows.find(r => r.id === 2).originNone).toBe(true);
+    expect(ingredientRows.find(r => r.id === 3).originNone).toBe(false);
+  });
+
+  test('알레르기 없음을 일괄 적용해도 원산지 필드는 건드리지 않는다', async () => {
+    ingredientRows = [
+      { id: 1, ingredientName: 'A', originNone: true, allergenNone: false },
+    ];
+
+    const result = await bulkSetOriginAllergenNone([1], { allergenNone: true });
+    expect(result).toEqual({ updated: 1 });
+    expect(ingredientRows[0].allergenNone).toBe(true);
+    expect(ingredientRows[0].originNone).toBe(true);
+  });
+
+  test('두 플래그를 동시에 적용할 수 있다', async () => {
+    ingredientRows = [{ id: 1, ingredientName: 'A', originNone: false, allergenNone: false }];
+
+    await bulkSetOriginAllergenNone([1], { originNone: true, allergenNone: true });
+    expect(ingredientRows[0].originNone).toBe(true);
+    expect(ingredientRows[0].allergenNone).toBe(true);
+  });
+
+  test('다른 필드(카테고리·태그 등)는 그대로 보존한다', async () => {
+    ingredientRows = [
+      { id: 1, ingredientName: 'A', category: '소스류', tags: ['냉동'], originNone: false },
+    ];
+
+    await bulkSetOriginAllergenNone([1], { originNone: true });
+    expect(ingredientRows[0].category).toBe('소스류');
+    expect(ingredientRows[0].tags).toEqual(['냉동']);
+  });
+
+  test('ids가 빈 배열이면 updated:0 반환', async () => {
+    ingredientRows = [{ id: 1, ingredientName: 'A' }];
+    const result = await bulkSetOriginAllergenNone([], { originNone: true });
+    expect(result).toEqual({ updated: 0 });
+  });
+
+  test('플래그가 없으면 updated:0 반환(아무 필드도 건드리지 않음)', async () => {
+    ingredientRows = [{ id: 1, ingredientName: 'A', originNone: false }];
+    const result = await bulkSetOriginAllergenNone([1], {});
+    expect(result).toEqual({ updated: 0 });
+    expect(ingredientRows[0].originNone).toBe(false);
+  });
+
+  test('assertActiveAdmin을 호출한다', async () => {
+    ingredientRows = [{ id: 1, ingredientName: 'A' }];
+    await bulkSetOriginAllergenNone([1], { originNone: true });
+    expect(assertActiveAdmin).toHaveBeenCalledWith('원산지/알레르기 없음 일괄 적용');
+  });
+
+  test('일괄 적용 후 computeIngredientIssues에서 원산지/알레르기 미표기 이슈가 사라진다', async () => {
+    const rows = [
+      {
+        id: 1,
+        productCode: 'PC-001',
+        ingredientName: '치즈',
+        hasRecord: true,
+        category: '소스류',
+        baseQuantity: 1000,
+        jetteLinked: true,
+        priceManualConfirmed: true,
+        origin: [],
+        allergens: [],
+        originNone: false,
+        allergenNone: false,
+        scope: '전용',
+      },
+    ];
+
+    const before = computeIngredientIssues(rows, null);
+    expect(before[0].issues).toEqual(
+      expect.arrayContaining(['missing-origin', 'missing-allergen'])
+    );
+
+    ingredientRows = [{ ...rows[0] }];
+    await bulkSetOriginAllergenNone([1], { originNone: true, allergenNone: true });
+
+    const after = computeIngredientIssues(
+      [{ ...rows[0], originNone: true, allergenNone: true }],
+      null
+    );
+    expect(after).toEqual([]);
   });
 });
 

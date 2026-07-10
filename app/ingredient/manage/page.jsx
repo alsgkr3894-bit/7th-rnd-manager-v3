@@ -191,6 +191,7 @@ export default function Page() {
     handleBatchDelete,
     handleBulkDiscontinue,
     handleBulkSetCategory,
+    handleBulkApplyOriginAllergenNone,
     handleSetCatFilter,
     handleSetTagFilter,
     handleDeleteCancel,
@@ -446,6 +447,7 @@ export default function Page() {
               issueRows={issueRows}
               onEdit={setFormTarget}
               onConfirmPriceManual={handleConfirmPriceManual}
+              onBulkApplyOriginAllergenNone={handleBulkApplyOriginAllergenNone}
               isViewer={isViewer}
             />
           )}

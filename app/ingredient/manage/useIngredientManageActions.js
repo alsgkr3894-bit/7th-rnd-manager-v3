@@ -19,6 +19,7 @@ import {
   renameTagInAll,
   bulkSetDiscontinued,
   bulkSetCategory,
+  bulkSetOriginAllergenNone,
   bulkDeleteIngredients,
   replaceIngredientProductCode,
 } from '@/lib/ingredient';
@@ -372,6 +373,26 @@ export function useIngredientManageActions({
     [canEdit, selected, load, exitBatch, clearSelection]
   );
 
+  /** 이슈탭에서 선택한 항목에 원산지/알레르기 "없음"을 일괄 적용 */
+  const handleBulkApplyOriginAllergenNone = useCallback(
+    async (ids, flags) => {
+      if (!canEdit) return;
+      try {
+        if (!ids?.length) return;
+        const { updated } = await bulkSetOriginAllergenNone(ids, flags);
+        const labels = [
+          flags?.originNone ? '원산지 없음' : null,
+          flags?.allergenNone ? '알레르기 없음' : null,
+        ].filter(Boolean);
+        showToast(`${updated}개 항목에 ${labels.join(' · ')} 적용 완료`, 'ok');
+        await load();
+      } catch (err) {
+        showToast('실패: ' + err.message, 'error');
+      }
+    },
+    [canEdit, load]
+  );
+
   return {
     handleReset,
     handleRemoveCategory,
@@ -389,6 +410,7 @@ export function useIngredientManageActions({
     handleBatchDelete,
     handleBulkDiscontinue,
     handleBulkSetCategory,
+    handleBulkApplyOriginAllergenNone,
     handleSetCatFilter,
     handleSetTagFilter,
     handleDeleteCancel,
