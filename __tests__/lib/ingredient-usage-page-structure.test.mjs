@@ -85,4 +85,15 @@ describe('ingredient usage page structure', () => {
     expect(displayUtilsSource).toContain('export const USAGE_CATS');
     expect(displayUtilsSource).toContain('export function usageCountStyle');
   });
+
+  test('미사용 뷰 전환 시 검색어를 초기화해 이전 뷰의 검색 의미가 넘어오지 않는다', () => {
+    // 검색창은 '사용 재료' 뷰에서 메뉴명, '미사용' 뷰에서 식자재명·코드로 의미가 바뀐다.
+    // 전환 시 menuSearch를 비우지 않으면 이전 뷰의 검색어가 다른 의미로 필터링되어
+    // 미사용 목록이 비어 보이는 버그가 재현된다 — 이를 막는 토글 핸들러가 있어야 한다.
+    expect(pageSource).toContain('function toggleShowUnused(updater)');
+    expect(pageSource).toContain('setShowUnused(updater)');
+    expect(pageSource).toContain("setMenuSearch('')");
+    expect(pageSource).toContain('onShowUnused={toggleShowUnused}');
+    expect(pageSource).not.toContain('onShowUnused={setShowUnused}');
+  });
 });

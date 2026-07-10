@@ -49,6 +49,15 @@ export default function Page() {
   );
   const excludedMenus = useMemo(() => toStringSet(excludedMenuList), [excludedMenuList]);
 
+  // 검색창은 "사용 재료" 뷰에서는 메뉴명, "미사용" 뷰에서는 식자재명·코드로 의미가 바뀐다.
+  // 뷰를 전환할 때 이전 뷰의 검색어가 그대로 남아있으면 다른 의미로 잘못 필터링되어
+  // (예: 메뉴명으로 검색해두고 미사용을 누르면 그 텍스트가 식자재명에 안 걸려 결과가 0건이 됨)
+  // 목록이 비어 보이는 문제가 생기므로, 전환 시 검색어를 초기화한다.
+  function toggleShowUnused(updater) {
+    setShowUnused(updater);
+    setMenuSearch('');
+  }
+
   const { data, loading, error, reload } = useDBLoad(
     async () => {
       const [meta, menuMasters, recipes, groups, edges, compositions, managed] = await Promise.all([
@@ -231,7 +240,7 @@ export default function Page() {
           onlyOne={onlyOne}
           onOnlyOne={setOnlyOne}
           showUnused={showUnused}
-          onShowUnused={setShowUnused}
+          onShowUnused={toggleShowUnused}
           excludedMenus={excludedMenus}
           onExcludeMenu={excludeMenu}
           onRestoreMenu={restoreMenu}
