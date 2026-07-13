@@ -555,9 +555,9 @@ describe('buildBeverageSheet', () => {
 });
 
 describe('1인용 피자 조각수', () => {
-  test('1인용 피자는 sliceCounts 오버라이드가 없으면 6조각 기준으로 계산한다', () => {
-    // 1인용 피자 기본 6조각(일반 피자 8조각과 다름). 300g / 6조각 = 50g/조각.
-    // servingSlices: 50<100, 2조각=100g≥100 → 2조각 서빙(factor 2/6).
+  test('1인용 피자는 6조각 기준이며 한판(6조각) 전체를 1회 제공량으로 표기한다', () => {
+    // 1인용은 1인분 제품이라 조각 묶음 규칙을 적용하지 않고 통판 전체가 1회분.
+    // 6조각 기준, 300g/100g당 200kcal → 6조각 = 300g / 600kcal.
     const sheet = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-ONE-1', menuName: '더블치즈 1인용', category: '피자', personal: true }],
       rawMap: {
@@ -571,12 +571,26 @@ describe('1인용 피자 조각수', () => {
     const row = sheet[0].rows[0];
     expect(row).toMatchObject({
       slice: 6,
-      servingLabel: '2조각',
+      servingLabel: '6조각',
       totalWeight: 300,
-      weight: 100, // 300 × 2/6
-      kcal: 200, // 200 × 300/100 × 2/6 = 200
-      sodium: 300, // 300 × 300/100 × 2/6 = 300
+      weight: 300, // 통판 전체 (factor 6/6=1)
+      kcal: 600, // 200 × 300/100
+      sodium: 900, // 300 × 300/100
     });
+  });
+
+  test('일반 피자는 100g 기준 조각 묶음 규칙을 그대로 적용한다(1인용 예외 아님)', () => {
+    // 일반 피자 8조각, 320g → 1조각 40g<100 → 2조각도 80g<100 → 3조각.
+    const sheet = buildPizzaSliceSheet({
+      menus: [{ menuCode: 'P-REG', menuName: '일반피자', category: '피자' }],
+      rawMap: { 'P-REG__석쇠L': { weight: 320, kcal: 200, sugar: 8, protein: 16, satFat: 4, sodium: 320 } },
+      edgeMap: {},
+      masterByCode: {},
+      menuAllergenMap,
+      sliceCounts: { 'P-REG': { L: 8 } },
+    });
+    const row = sheet[0].rows.find(r => r.crustLabel === '석쇠' && r.side === 'L');
+    expect(row).toMatchObject({ slice: 8, servingLabel: '3조각', totalWeight: 320, weight: 120 });
   });
 });
 
