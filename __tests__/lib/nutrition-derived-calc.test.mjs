@@ -45,21 +45,22 @@ describe('nutrition derived menu calc', () => {
       protein: 10,
     });
 
+    // 엣지값은 절대 총량: 한판 총 100kcal + 30kcal = 130kcal / 110g → 100g당 118.2
     const edgeVariant = results.find(
       row => row.menuCode === 'PZ-DERIVED' && row.crustType === '치즈크러스트L'
     );
     expect(edgeVariant).toMatchObject({
       baseMenuCode: 'PZ-BASE',
       weight: 110,
-      kcal: 130,
-      protein: 13,
+      kcal: 118.2,
+      protein: 11.8,
     });
     expect(
       results.some(row => row.menuCode === 'PZ-DERIVED' && row.crustType === '씬바사삭' + 'R')
     ).toBe(false);
   });
 
-  test('파생 메뉴 엣지는 베이스 사이즈별 값에 엣지 조정값만 더한다', () => {
+  test('파생 메뉴 엣지는 베이스 사이즈별 한판 총량에 엣지 절대 총량만 합산한다', () => {
     const results = calcAllResults({
       menus: [{ menuCode: 'PZ-BASE', menuName: '베이스 피자', category: '피자' }],
       rawMap: {
@@ -103,12 +104,13 @@ describe('nutrition derived menu calc', () => {
       kcal: 90,
       protein: 9,
     });
+    // 한판 총 81kcal(90g×0.9) + 절대 16kcal = 97kcal / 98g → 100g당 99
     expect(
       results.find(row => row.menuCode === 'PZ-DERIVED' && row.crustType === '치즈크러스트R')
     ).toMatchObject({
       weight: 98,
-      kcal: 106,
-      protein: 10,
+      kcal: 99,
+      protein: 9.3,
     });
   });
 

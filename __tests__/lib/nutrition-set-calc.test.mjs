@@ -81,7 +81,7 @@ describe('nutrition set calc', () => {
     expect(result.bySize.R).toMatchObject({ minKcal: 110, maxKcal: 240 });
   });
 
-  test('엣지 후보 총열량은 엣지 중량까지 합산한 한판 중량을 사용한다', () => {
+  test('엣지 후보 총열량은 베이스 한판 총량에 엣지 절대 총량을 더하고 중량도 합산한다', () => {
     const variants = getPizzaCalorieVariants(
       { menuCode: 'P-W', menuName: '중량 피자' },
       {
@@ -92,9 +92,10 @@ describe('nutrition set calc', () => {
       }
     );
 
+    // 한판 총 100kcal + 엣지 절대 50kcal = 150kcal (과거 밀도 합산이면 180으로 부풀려짐)
     expect(variants.find(row => row.crustType === '치즈크러스트L')).toMatchObject({
       weight: 120,
-      kcal: 180,
+      kcal: 150,
     });
   });
 

@@ -220,27 +220,29 @@ describe('buildPizzaSliceSheet', () => {
     });
   });
 
-  test('엣지 조각 기준은 엣지 중량까지 더한 총중량으로 계산한다', () => {
+  test('엣지 조각 기준은 베이스 한판 총량 + 엣지 절대 총량을 합산해 조각수로 나눈다', () => {
+    // 실제 신고 시나리오: 한판 1000g(100g당 200kcal → 총 2000kcal) + 치즈링 170g/총 459kcal.
+    // 정답은 (2000+459) ÷ 8조각 = 307kcal. 과거 밀도 합산 방식이면 687kcal로 부풀려졌다.
     const rows = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-EDGE-W', menuName: '엣지 중량 피자', category: '피자' }],
       rawMap: {
         'P-EDGE-W__석쇠L': {
-          weight: 800,
+          weight: 1000,
           kcal: 200,
-          sugar: 10,
-          protein: 20,
-          fat: 5,
-          sodium: 300,
+          sugar: 8,
+          protein: 16,
+          fat: 4,
+          sodium: 320,
         },
       },
       edgeMap: {
         치즈크러스트L: {
-          weight: 80,
-          kcal: 20,
+          weight: 170,
+          kcal: 459,
           sugar: 2,
-          protein: 3,
-          fat: 1,
-          sodium: 40,
+          protein: 29,
+          fat: 22,
+          sodium: 1559,
         },
       },
       masterByCode: {},
@@ -252,19 +254,25 @@ describe('buildPizzaSliceSheet', () => {
     const edgeRow = rows[0].rows.find(row => row.crustLabel === '치즈크러스트' && row.side === 'L');
     expect(edgeRow).toMatchObject({
       servingLabel: '1조각',
-      totalWeight: 880,
-      weight: 110,
-      kcal: 242,
-      sugar: 13,
-      protein: 25,
-      fat: 7,
-      sodium: 374,
+      totalWeight: 1170,
+      weight: 146,
+      kcal: 307,
+      sugar: 10,
+      protein: 24,
+      fat: 8,
+      sodium: 595,
+      servingTrace: expect.objectContaining({
+        totalWeight: 1170,
+        sliceCount: 8,
+        perSliceWeight: 146,
+        servingSlices: 1,
+      }),
     });
   });
 });
 
 describe('buildPizzaSheet', () => {
-  test('엣지 영양성분은 베이스 메뉴 값에 사이즈별 엣지값을 더하고 씬바샤삭은 별도 입력값을 쓴다', () => {
+  test('엣지 영양성분은 베이스 한판 총량에 엣지 절대 총량을 합산해 150g 기준으로 환산하고 씬바샤삭은 별도 입력값을 쓴다', () => {
     const rows = buildPizzaSheet({
       menus: [{ menuCode: 'P-NUTRI-EDGE', menuName: '엣지 영양 피자', category: '피자' }],
       rawMap: {
@@ -311,23 +319,24 @@ describe('buildPizzaSheet', () => {
       fat: 8,
       sodium: 450,
     });
+    // 치즈크러스트L: 엣지 절대 총량(kcal 20 등)이 한판 총량(1600kcal 등)에 더해진 뒤 150g 기준 환산.
     expect(
       sheetRows.find(row => row.crustLabel === '치즈크러스트' && row.side === 'L')
     ).toMatchObject({
       weight: 150,
-      kcal: 330,
-      sugar: 18,
-      protein: 35,
-      fat: 9,
-      sodium: 510,
+      kcal: 304,
+      sugar: 15,
+      protein: 31,
+      fat: 8,
+      sodium: 458,
     });
     expect(sheetRows.find(row => row.crustLabel === '골드스윗' && row.side === 'R')).toMatchObject({
       weight: 150,
-      kcal: 315,
-      sugar: 20,
-      protein: 29,
-      fat: 9,
-      sodium: 420,
+      kcal: 278,
+      sugar: 13,
+      protein: 27,
+      fat: 6,
+      sodium: 383,
     });
     expect(sheetRows.find(row => row.crustLabel === '씬바샤삭' && row.side === 'L')).toMatchObject({
       weight: 150,
@@ -436,11 +445,12 @@ describe('buildSetHalfSheet', () => {
       ],
     });
 
+    // max = 나 피자 총 240kcal + 치즈크러스트 절대 총량 50kcal + 사이드 8kcal = 298
     expect(rows.find(row => row.kind === 'set')).toMatchObject({
       menuName: '테스트 L세트',
       weight: '180~220',
       minKcal: 108,
-      maxKcal: 358,
+      maxKcal: 298,
     });
   });
 });
