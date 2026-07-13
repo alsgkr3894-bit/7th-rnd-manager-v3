@@ -525,6 +525,76 @@ describe('buildBeverageSheet', () => {
       fat: 1,
     });
   });
+
+  test('basis=serving 음료(가져오기 입력=1회분 총량)는 용량으로 다시 스케일하지 않고 저장값 그대로 쓴다', () => {
+    // 콜라 500ml를 "1회분 총량"으로 입력. 과거엔 volMl(500)로 다시 곱해 5배 부풀려짐(1050).
+    const rows = buildBeverageSheet({
+      menus: [{ menuCode: 'D-COLA', menuName: '콜라 500ml', category: '음료' }],
+      rawMap: {
+        'D-COLA__단품': {
+          basis: 'serving',
+          weight: 500,
+          kcal: 210,
+          sugar: 53,
+          protein: 0,
+          satFat: 0,
+          sodium: 20,
+        },
+      },
+      masterByCode: { 'D-COLA': { category: '음료' } },
+      menuAllergenMap,
+    });
+
+    expect(rows[0]).toMatchObject({
+      weight: 500,
+      kcal: 210,
+      sugar: 53,
+      sodium: 20,
+    });
+  });
+});
+
+describe('1인용 피자 조각수', () => {
+  test('1인용 피자는 sliceCounts 오버라이드가 없으면 통판 1조각으로 표기한다', () => {
+    // 250g 1인용 피자. 과거엔 8조각 기준으로 나뉘어 "3조각 94g 244kcal"로 잘못 표기됨.
+    const sheet = buildPizzaSliceSheet({
+      menus: [{ menuCode: 'P-ONE-1', menuName: '더블치즈 1인용', category: '피자', personal: true }],
+      rawMap: {
+        'P-ONE-1__씬바사삭L': { weight: 250, kcal: 260, sugar: 10, protein: 12, satFat: 6, sodium: 400 },
+      },
+      edgeMap: {},
+      masterByCode: { 'P-ONE-1': { category: '피자' } },
+      menuAllergenMap,
+      sliceCounts: {},
+    });
+    const row = sheet[0].rows[0];
+    expect(row).toMatchObject({
+      servingLabel: '1조각',
+      totalWeight: 250,
+      weight: 250,
+      kcal: 650, // 260 × 250/100
+      sodium: 1000, // 400 × 250/100
+    });
+  });
+});
+
+describe('조각 1회분 값 이중 반올림 방지', () => {
+  test('100g값×총중량×factor를 마지막에 한 번만 반올림한다', () => {
+    // 베이스 120g, 100g당 103kcal, 8조각 → 1조각 15g<100 → 3조각(factor 3/8).
+    // 이중반올림: round(round(103×1.2)×0.375)=round(124×0.375)=47
+    // 한번반올림(정답): round(103×120/100×0.375)=round(46.35)=46
+    const sheet = buildPizzaSliceSheet({
+      menus: [{ menuCode: 'P-RND', menuName: '반올림피자', category: '피자' }],
+      rawMap: { 'P-RND__석쇠L': { weight: 120, kcal: 103, sugar: 7, protein: 11, satFat: 5, sodium: 251 } },
+      edgeMap: {},
+      masterByCode: {},
+      menuAllergenMap,
+      sliceCounts: { 'P-RND': { L: 8 } },
+    });
+    const row = sheet[0].rows.find(r => r.crustLabel === '석쇠' && r.side === 'L');
+    expect(row.servingLabel).toBe('3조각');
+    expect(row.kcal).toBe(46); // 47(이중반올림) 아님
+  });
 });
 
 describe('buildSideSheet', () => {

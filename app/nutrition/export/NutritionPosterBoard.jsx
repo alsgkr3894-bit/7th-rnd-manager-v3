@@ -187,7 +187,9 @@ function SimplePosterTable({
   className = '',
   nameHeader = '메뉴명',
 }) {
+  const allRows = asObjectArray(rows);
   const safeRows = compactRows(rows, limit);
+  const hidden = allRows.length - safeRows.length;
   return (
     <section className={`nutrition-poster-section ${className}`}>
       <SectionTitle>{title}</SectionTitle>
@@ -203,21 +205,33 @@ function SimplePosterTable({
         </thead>
         <tbody>
           {safeRows.length ? (
-            safeRows.map((row, index) => (
-              <tr key={`${asDisplayText(row?.menuCode) || asDisplayText(row?.menuName)}-${index}`}>
-                <td className="poster-menu-name small">
-                  <CellText>{displayNutritionMenuName(row?.menuName)}</CellText>
-                </td>
-                {cols.map(col => (
-                  <td key={col.key} className="poster-num">
-                    <CellText>{row?.[col.key]}</CellText>
+            <>
+              {safeRows.map((row, index) => (
+                <tr key={`${asDisplayText(row?.menuCode) || asDisplayText(row?.menuName)}-${index}`}>
+                  <td className="poster-menu-name small">
+                    <CellText>{displayNutritionMenuName(row?.menuName)}</CellText>
                   </td>
-                ))}
-                <td className="poster-allergen">
-                  <CellText>{row?.allergen}</CellText>
-                </td>
-              </tr>
-            ))
+                  {cols.map(col => (
+                    <td key={col.key} className="poster-num">
+                      <CellText>{row?.[col.key]}</CellText>
+                    </td>
+                  ))}
+                  <td className="poster-allergen">
+                    <CellText>{row?.allergen}</CellText>
+                  </td>
+                </tr>
+              ))}
+              {hidden > 0 && (
+                <tr>
+                  <td
+                    colSpan={cols.length + 2}
+                    style={{ textAlign: 'center', color: '#999', fontStyle: 'italic' }}
+                  >
+                    외 {hidden}건 (전체 {allRows.length}건) — 전체 목록은 엑셀·카테고리 표에서 확인
+                  </td>
+                </tr>
+              )}
+            </>
           ) : (
             <EmptyRow colSpan={cols.length + 2} />
           )}
