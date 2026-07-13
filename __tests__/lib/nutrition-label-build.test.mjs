@@ -51,6 +51,37 @@ describe('buildPosterPizzaRows', () => {
     expect(rows.map(row => row.menuCode)).toEqual(['P-12PCS', 'P-6PCS']);
     expect(rows.map(row => row.sides.L.weight)).toEqual([100, 80]);
   });
+
+  test('총조각중량은 시트가 계산한 실제 한판중량을 그대로 쓴다(화면=엑셀 일치)', () => {
+    // 한판 1170g, 8조각 → 1회중량 146(146.25 반올림). 역산하면 1168로 어긋나므로
+    // 시트의 totalWeight(1170)를 우선 사용해야 화면 표와 엑셀이 같은 값이 된다.
+    const sheet = buildPizzaSliceSheet({
+      menus: [{ menuCode: 'P-1170', menuName: '검증피자', category: '피자' }],
+      rawMap: { 'P-1170__석쇠L': { weight: 1170, kcal: 200, sugar: 8, protein: 16, fat: 4, sodium: 300 } },
+      edgeMap: {},
+      masterByCode: {},
+      menuAllergenMap: new Map(),
+      sliceCounts: { 'P-1170': { L: 8 } },
+    });
+    const screenTotal = sheet[0].rows.find(r => r.crustLabel === '석쇠' && r.side === 'L').totalWeight;
+    const excelRows = buildPosterPizzaRows(sheet);
+    const excelTotal = excelRows.find(r => r.crustLabel === '석쇠').sides.L.totalWeight;
+
+    expect(screenTotal).toBe(1170);
+    expect(excelTotal).toBe(1170);
+    expect(excelTotal).toBe(screenTotal);
+  });
+
+  test('totalWeight가 없는 행은 기존처럼 1회중량×조각수로 역산한다(하위호환)', () => {
+    const rows = buildPosterPizzaRows([
+      {
+        menuCode: 'P-NOTOTAL',
+        menuName: '중량없는피자',
+        rows: [{ crustLabel: '석쇠', side: 'L', weight: 112, slice: 8, servingLabel: '1조각' }],
+      },
+    ]);
+    expect(rows[0].sides.L.totalWeight).toBe(896);
+  });
 });
 
 describe('buildPizzaSliceSheet', () => {
