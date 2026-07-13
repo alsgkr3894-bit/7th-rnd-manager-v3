@@ -54,11 +54,11 @@ describe('buildPosterPizzaRows', () => {
 });
 
 describe('buildPizzaSliceSheet', () => {
-  test('1조각 열량이 100kcal를 넘으면 1회제공량을 1조각으로 만든다', () => {
+  test('1조각 중량이 100g을 넘으면 1회제공량을 1조각으로 만든다', () => {
     const rows = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-001', menuName: '테스트 피자', category: '피자' }],
       rawMap: {
-        'P-001__석쇠L': { weight: 800, kcal: 200, sugar: 10, protein: 20, fat: 4, sodium: 300 },
+        'P-001__석쇠L': { weight: 1000, kcal: 200, sugar: 8, protein: 16, fat: 4, sodium: 320 },
         'P-001__석쇠R': { weight: 640, kcal: 180, sugar: 8, protein: 18, fat: 3, sodium: 280 },
         'P-001__씬바사삭L': {
           weight: 720,
@@ -82,23 +82,24 @@ describe('buildPizzaSliceSheet', () => {
       side: 'L',
       slice: 8,
       servingLabel: '1조각',
-      totalWeight: 800,
-      weight: 100,
-      kcal: 200,
+      totalWeight: 1000,
+      weight: 125,
+      kcal: 250,
       sugar: 10,
       protein: 20,
-      fat: 4,
-      sodium: 300,
+      fat: 5,
+      sodium: 400,
       servingTrace: expect.objectContaining({
         status: 'ok',
-        totalWeight: 800,
+        totalWeight: 1000,
         sliceCount: 8,
+        perSliceWeight: 125,
         servingSlices: 1,
       }),
     });
   });
 
-  test('1조각 열량이 정확히 100kcal이면 1조각으로 만든다', () => {
+  test('1조각 중량이 정확히 100g이면 1조각으로 만든다', () => {
     const rows = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-100', menuName: '경계값 피자', category: '피자' }],
       rawMap: {
@@ -114,14 +115,15 @@ describe('buildPizzaSliceSheet', () => {
       servingLabel: '1조각',
       weight: 100,
       kcal: 100,
+      servingTrace: expect.objectContaining({ perSliceWeight: 100, servingSlices: 1 }),
     });
   });
 
-  test('1조각 열량이 100kcal 이하이고 2조각도 100kcal 이하이면 3조각으로 만든다', () => {
+  test('1조각 중량이 100g 이하이고 2조각 중량도 100g 밑이면 3조각으로 만든다', () => {
     const rows = buildPizzaSliceSheet({
-      menus: [{ menuCode: 'P-LOW', menuName: '저열량 피자', category: '피자' }],
+      menus: [{ menuCode: 'P-LOW', menuName: '저중량 피자', category: '피자' }],
       rawMap: {
-        'P-LOW__석쇠L': { weight: 800, kcal: 40, sugar: 2, protein: 4, fat: 1, sodium: 80 },
+        'P-LOW__석쇠L': { weight: 320, kcal: 200, sugar: 10, protein: 20, fat: 5, sodium: 200 },
       },
       edgeMap: {},
       masterByCode: {},
@@ -131,21 +133,22 @@ describe('buildPizzaSliceSheet', () => {
 
     expect(rows[0].rows[0]).toMatchObject({
       servingLabel: '3조각',
-      totalWeight: 800,
-      weight: 300,
-      kcal: 120,
-      sugar: 6,
-      protein: 12,
-      fat: 3,
+      totalWeight: 320,
+      weight: 120,
+      kcal: 240,
+      sugar: 12,
+      protein: 24,
+      fat: 6,
       sodium: 240,
+      servingTrace: expect.objectContaining({ perSliceWeight: 40, servingSlices: 3 }),
     });
   });
 
-  test('1조각은 100kcal 이하이고 2조각은 100kcal 초과이면 2조각으로 만든다', () => {
+  test('1조각 중량은 100g 이하이고 2조각 중량은 100g 이상이면 2조각으로 만든다', () => {
     const rows = buildPizzaSliceSheet({
-      menus: [{ menuCode: 'P-MID', menuName: '중간열량 피자', category: '피자' }],
+      menus: [{ menuCode: 'P-MID', menuName: '중간중량 피자', category: '피자' }],
       rawMap: {
-        'P-MID__석쇠L': { weight: 800, kcal: 60, sugar: 2, protein: 4, fat: 1, sodium: 80 },
+        'P-MID__석쇠L': { weight: 600, kcal: 200, sugar: 8, protein: 16, fat: 4, sodium: 200 },
       },
       edgeMap: {},
       masterByCode: {},
@@ -155,8 +158,39 @@ describe('buildPizzaSliceSheet', () => {
 
     expect(rows[0].rows[0]).toMatchObject({
       servingLabel: '2조각',
-      weight: 200,
-      kcal: 120,
+      totalWeight: 600,
+      weight: 150,
+      kcal: 300,
+      sugar: 12,
+      protein: 24,
+      fat: 6,
+      sodium: 300,
+      servingTrace: expect.objectContaining({ perSliceWeight: 75, servingSlices: 2 }),
+    });
+  });
+
+  test('2조각 중량이 정확히 100g이면 3조각이 아니라 2조각으로 만든다 (경계값)', () => {
+    const rows = buildPizzaSliceSheet({
+      menus: [{ menuCode: 'P-EDGE-100', menuName: '2조각 경계값 피자', category: '피자' }],
+      rawMap: {
+        'P-EDGE-100__석쇠L': { weight: 400, kcal: 200, sugar: 8, protein: 16, fat: 4, sodium: 200 },
+      },
+      edgeMap: {},
+      masterByCode: {},
+      menuAllergenMap,
+      sliceCounts: { 'P-EDGE-100': { L: 8 } },
+    });
+
+    expect(rows[0].rows[0]).toMatchObject({
+      servingLabel: '2조각',
+      totalWeight: 400,
+      weight: 100,
+      kcal: 200,
+      sugar: 8,
+      protein: 16,
+      fat: 4,
+      sodium: 200,
+      servingTrace: expect.objectContaining({ perSliceWeight: 50, servingSlices: 2 }),
     });
   });
 

@@ -34,8 +34,8 @@ export function PizzaSliceNutritionTable({ rows }) {
     <NutritionLabelScrollArea>
       <div className="origin-result-title large">영양성분표 (피자) — 조각 기준</div>
       <div style={{ fontSize: 11, color: '#888', margin: '0 0 6px' }}>
-        ※ 한판 총중량 ÷ 조각수로 1조각 산출. 1조각이 100kcal 이상이면 1조각, 미만이면 2조각, 2조각도
-        100kcal 이하면 3조각을 1회 제공량으로 표기. 중량 미입력 시 &apos;—&apos;.
+        ※ 한판 총중량 ÷ 조각수로 1조각 산출. 1조각이 100g 이상이면 1조각, 100g 이하면 2조각, 2조각도
+        100g 밑이면 3조각을 1회 제공량으로 표기. 중량 미입력 시 &apos;—&apos;.
       </div>
       <table className="origin-result-table" style={FIXED_TABLE_STYLE}>
         <colgroup>
