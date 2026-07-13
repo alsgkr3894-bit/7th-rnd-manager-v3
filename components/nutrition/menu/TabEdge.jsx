@@ -7,6 +7,7 @@ import {
   EDGE_NAMES,
   NUTRITION_EDGE_GROUPS,
   CRUST_DISPLAY_NAMES,
+  convertEdgeTotalToPer100g,
 } from '@/lib/nutrition/values/store';
 import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
 import { asRecord, noop } from '@/lib/ui/prop-guards';
@@ -55,6 +56,16 @@ export function TabEdge({ edges, edgeMap, rawMap, menus, onRefresh, onOpenBase }
   }, [selCode, existing]);
 
   const setField = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleConvertTotalToPer100g = () => {
+    const converted = convertEdgeTotalToPer100g(form);
+    if (!converted) {
+      showToast('중량(g)을 먼저 입력하세요.', 'warn');
+      return;
+    }
+    setForm(converted);
+    showToast('중량 기준 총량 → 100g 기준으로 환산했습니다. 값을 확인한 뒤 저장하세요.', 'ok');
+  };
 
   const handleSave = async () => {
     if (!isAdmin) {
@@ -202,10 +213,31 @@ export function TabEdge({ edges, edgeMap, rawMap, menus, onRefresh, onOpenBase }
       <div className="card" style={{ padding: 20 }}>
         <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{EDGE_NAMES[selCode]}</div>
         <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 16 }}>
-          석쇠 베이스 대비 조정 영양성분 값. 자동계산 없이 직접 입력/검수합니다.
+          석쇠 베이스 대비 조정 영양성분 값. <strong>중량(g)</strong>은 이 크러스트가 한판(해당 사이즈)에
+          실제로 추가하는 중량, 나머지 항목은 <strong>100g 기준</strong>으로 입력합니다.
+          <br />
+          중량 전체에 들어간 총 영양성분으로 입력했다면, 아래 버튼으로 100g 기준으로 환산한 뒤
+          저장하세요.
         </div>
         <NutritionGrid values={form} onChange={setField} disabled={!isAdmin || saving} />
-        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+        <div
+          style={{
+            marginTop: 16,
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: 8,
+            flexWrap: 'wrap',
+          }}
+        >
+          <button
+            className="btn sm"
+            type="button"
+            onClick={handleConvertTotalToPer100g}
+            disabled={saving || !isAdmin}
+            title="중량(g) 전체에 들어간 총 영양성분으로 입력한 값을 100g 기준으로 환산합니다"
+          >
+            중량 기준 총량 → 100g 기준 환산
+          </button>
           <button className="btn primary" onClick={handleSave} disabled={saving || !isAdmin}>
             {saving ? '저장 중…' : `${EDGE_NAMES[selCode]} ${existing ? '덮어쓰기 저장' : '저장'}`}
           </button>
