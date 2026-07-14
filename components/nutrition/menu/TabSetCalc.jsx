@@ -46,8 +46,14 @@ export function TabSetCalc({
     [safeMenuMasters]
   );
 
+  // 1인용 피자는 한 사람 몫의 완제품이라 하프앤하프(반반)·세트박스(자동 피자 후보) 모두에서 제외한다.
   const pizzaMenus = useMemo(
-    () => safeMenus.filter(m => resolveNutritionGroup(m, masterByCode) === '피자'),
+    () =>
+      safeMenus.filter(
+        m =>
+          resolveNutritionGroup(m, masterByCode) === '피자' &&
+          !isPersonalPizzaMenu(m, masterByCode)
+      ),
     [safeMenus, masterByCode]
   );
 
@@ -56,16 +62,9 @@ export function TabSetCalc({
     [safeMenus, masterByCode]
   );
 
-  // 1인용 피자는 한 사람 몫의 완제품이라 반반 결합 대상이 아니므로 하프앤하프 후보에서 제외한다.
-  // (세트박스의 피자 슬롯은 그대로 1인용을 포함할 수 있어 pizzaMenus는 건드리지 않는다.)
-  const halfPizzaMenus = useMemo(
-    () => pizzaMenus.filter(m => !isPersonalPizzaMenu(m, masterByCode)),
-    [pizzaMenus, masterByCode]
-  );
-
   const halfResult = useMemo(
-    () => calcHalfMinMax(halfPizzaMenus, safeRawMap, safeEdgeMap),
-    [halfPizzaMenus, safeRawMap, safeEdgeMap]
+    () => calcHalfMinMax(pizzaMenus, safeRawMap, safeEdgeMap),
+    [pizzaMenus, safeRawMap, safeEdgeMap]
   );
 
   const setsWithCalc = useMemo(() => {
@@ -105,7 +104,7 @@ export function TabSetCalc({
 
   return (
     <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <HalfAndHalfCard pizzaMenus={halfPizzaMenus} halfResult={halfResult} />
+      <HalfAndHalfCard pizzaMenus={pizzaMenus} halfResult={halfResult} />
 
       <SetCompositionList
         groups={groupedSets}

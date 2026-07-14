@@ -545,6 +545,30 @@ describe('buildSetHalfSheet', () => {
     ]);
   });
 
+  test('세트박스 자동 피자 후보에서도 1인용 피자는 제외한다', () => {
+    const rows = buildSetHalfSheet({
+      menus: [
+        { menuCode: 'P-REG', menuName: '일반 피자', category: '피자' },
+        { menuCode: 'P-ONE-001', menuName: '1인용 테스트피자', category: '1인피자' },
+      ],
+      rawMap: {
+        // 일반 피자: 총 600kcal (200kcal/100g × 300g) — L/R 동일
+        'P-REG__석쇠L': { weight: 300, kcal: 200 },
+        'P-REG__석쇠R': { weight: 300, kcal: 200 },
+        // 1인용 피자: 총 125kcal — 훨씬 낮아서 후보에 남으면 세트박스 최저값을 지배함
+        'P-ONE-001__씬바사삭L': { weight: 250, kcal: 50 },
+      },
+      edgeMap: {},
+      masterByCode: {},
+      menuAllergenMap,
+      setComps: [{ kind: 'set', setName: '테스트세트', setSide: 'L', slots: [] }],
+    });
+
+    const setRow = rows.find(row => row.kind === 'set');
+    // 1인용이 제외됐다면 자동 피자 후보는 일반 피자 1개뿐 → 최저=최고=600.
+    expect(setRow).toMatchObject({ menuName: '테스트세트 L세트', minKcal: 600, maxKcal: 600 });
+  });
+
   test('nameOverrides로 세트박스 이름을 바꿀 수 있다', () => {
     const rows = buildSetHalfSheet({
       menus: [],

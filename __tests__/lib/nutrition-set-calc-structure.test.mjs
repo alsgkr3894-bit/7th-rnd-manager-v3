@@ -36,18 +36,19 @@ describe('nutrition set calc structure', () => {
     expect(tabSource).not.toContain('메뉴명 또는 코드로 검색…');
   });
 
-  test('하프앤하프는 1인용 피자를 후보에서 제외하고, 세트박스 피자 슬롯은 그대로 둔다', () => {
+  test('하프앤하프·세트박스 모두 1인용 피자를 자동 피자 후보에서 제외한다', () => {
     expect(tabSource).toContain('isPersonalPizzaMenu');
-    expect(tabSource).toContain(
-      'pizzaMenus.filter(m => !isPersonalPizzaMenu(m, masterByCode))'
+    expect(tabSource.replace(/\s+/g, ' ')).toContain(
+      "resolveNutritionGroup(m, masterByCode) === '피자' && !isPersonalPizzaMenu(m, masterByCode)"
     );
-    expect(tabSource).toContain('calcHalfMinMax(halfPizzaMenus, safeRawMap, safeEdgeMap)');
-    expect(tabSource).toContain('<HalfAndHalfCard pizzaMenus={halfPizzaMenus}');
-    // 세트박스(calcSetMinMax)는 여전히 1인용 포함 pizzaMenus를 그대로 쓴다.
+    expect(tabSource).toContain('calcHalfMinMax(pizzaMenus, safeRawMap, safeEdgeMap)');
+    expect(tabSource).toContain('<HalfAndHalfCard pizzaMenus={pizzaMenus}');
+    // 세트박스(calcSetMinMax)도 1인용이 제외된 pizzaMenus를 그대로 쓴다.
     expect(tabSource.replace(/\s+/g, ' ')).toContain(
       'masterByCode, pizzaMenus, safeEdgeMap'
     );
-    expect(tabSource).toContain('pizzaMenus={pizzaMenus}'); // SetCompositionModal도 1인용 포함
+    expect(tabSource).toContain('pizzaMenus={pizzaMenus}'); // SetCompositionModal도 1인용 제외
+    expect(tabSource).not.toContain('halfPizzaMenus');
   });
 
   test('set calc child components own cards, modal, slot editor, and kcal formatting', () => {
