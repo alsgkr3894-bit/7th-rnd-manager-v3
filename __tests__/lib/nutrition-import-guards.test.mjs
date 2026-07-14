@@ -77,6 +77,40 @@ describe('nutrition import guards', () => {
     });
   });
 
+  test('동일 베이스명의 일반/1인용 피자는 서로 다른 메뉴코드로 매칭되고 합쳐지지 않는다', () => {
+    const menuMasters = [
+      { menuCode: 'P-PEP-010-L', menuName: '페페로니', category: '피자/오리지널', size: 'L' },
+      { menuCode: 'P-PEP-010-R', menuName: '페페로니', category: '피자/오리지널', size: 'R' },
+      { menuCode: 'P-ONE-010', menuName: '페페로니(1인용)', category: '1인피자' },
+    ];
+    const rows = buildImportRows({
+      rawRows: [
+        { rawName: '페페로니 (석쇠 L)', kcal: 250 },
+        { rawName: '페페로니 (1인용)', kcal: 200 },
+      ],
+      menuMasters,
+      existingKeys: {},
+    });
+
+    expect(rows.map(row => row.status)).toEqual(['matched', 'matched']);
+    expect(rows[0]).toMatchObject({ menuCode: 'P-PEP-010', crustType: '석쇠L', personal: false });
+    expect(rows[1]).toMatchObject({
+      menuCode: 'P-ONE-010',
+      crustType: '씬바사삭L',
+      personal: true,
+      menuName: '페페로니 (1인용)',
+    });
+    // 서로 다른 메뉴코드이므로 dup(중복 덮어쓰기) 상태가 되면 안 된다.
+    expect(rows.every(row => row.status !== 'dup')).toBe(true);
+  });
+
+  test('1인용 표식이 있으면 괄호를 제거해도 일반 메뉴와 다른 매칭 키를 갖는다', () => {
+    expect(normalizeImportMatchKey('페페로니(1인용)')).not.toBe(normalizeImportMatchKey('페페로니'));
+    expect(normalizeImportMatchKey('페페로니 (1인용)')).toBe(
+      normalizeImportMatchKey('페페로니(1인용)')
+    );
+  });
+
   test('연구기관 파일의 축약 제품명도 메뉴마스터 피자명에 매칭한다', () => {
     const rows = buildImportRows({
       rawRows: [

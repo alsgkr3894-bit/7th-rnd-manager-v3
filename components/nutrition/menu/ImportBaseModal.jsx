@@ -77,8 +77,11 @@ export function ImportBaseModal({ menuMasters, rawMap, onClose, onRefresh }) {
         const next = { ...row, ...patch };
         if (patch?.menuCode) {
           upsertNutritionImportAlias(row.rawName, next);
-          if (row.baseName && row.baseName !== row.rawName)
-            upsertNutritionImportAlias(row.baseName, next);
+          // baseName은 1인용 표식이 빠진 이름이라, 그대로 저장하면 일반 피자와
+          // 매칭 키가 같아져 서로 다른 제품이 이 alias로 합쳐질 수 있다.
+          const baseNameForAlias = row.personal ? `${row.baseName} (1인용)` : row.baseName;
+          if (row.baseName && baseNameForAlias !== row.rawName)
+            upsertNutritionImportAlias(baseNameForAlias, next);
         }
         return next;
       })
