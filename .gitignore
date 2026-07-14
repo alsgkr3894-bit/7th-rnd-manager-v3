@@ -47,6 +47,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# jette downloader (credentials / session / downloaded files)
+/scripts/jette/jette.config.json
+/scripts/jette/.jette-session.json
+/.jette-downloads/
+/scripts/jette/logs/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

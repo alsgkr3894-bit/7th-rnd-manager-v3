@@ -1,0 +1,24 @@
+{
+  "baseUrl": "https://ebiz.jette.co.kr",
+  "loginPath": "/Home/LogOn?ReturnUrl=%2f",
+  "credentials": {
+    "userId": "",
+    "password": ""
+  },
+  "downloadDir": ".jette-downloads",
+  "sessionFile": "scripts/jette/.jette-session.json",
+  "reports": {
+    "price": {
+      "label": "제때 단가",
+      "url": "",
+      "trigger": "",
+      "waitAfterLoadMs": 1500
+    },
+    "shipment": {
+      "label": "제때 출고량",
+      "url": "",
+      "trigger": "",
+      "waitAfterLoadMs": 1500
+    }
+  }
+}
