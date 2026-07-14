@@ -14,6 +14,12 @@ export const EMPTY_TOPPING_FORM = {
 export const ALLERGEN_NAME_BY_CODE = Object.fromEntries(
   ALLERGEN_SEED.map(item => [asDisplayText(item.allergenCode), asDisplayText(item.allergenName)])
 );
+const ALLERGEN_ORDER_BY_CODE = Object.fromEntries(
+  ALLERGEN_SEED.map((item, index) => [asDisplayText(item.allergenCode), index])
+);
+function allergenOrderOf(code) {
+  return code in ALLERGEN_ORDER_BY_CODE ? ALLERGEN_ORDER_BY_CODE[code] : Number.MAX_SAFE_INTEGER;
+}
 
 export function normalizeToppingIngredientName(row) {
   return asDisplayText(
@@ -59,7 +65,8 @@ export function findLinkedToppingIngredient(topping, lookups) {
 
 export function toppingAllergenText(topping, lookups) {
   const ingredient = findLinkedToppingIngredient(topping, lookups);
-  const names = asStringArray(ingredient?.allergens)
+  const names = [...asStringArray(ingredient?.allergens)]
+    .sort((a, b) => allergenOrderOf(a) - allergenOrderOf(b))
     .map(code => ALLERGEN_NAME_BY_CODE[code] || code)
     .filter(Boolean);
   return names.length ? names.join(', ') : '없음';

@@ -44,6 +44,12 @@ const NUMERIC_INPUT_STYLE = {
 const ALLERGEN_NAME_BY_CODE = Object.fromEntries(
   ALLERGEN_SEED.map(item => [asText(item.allergenCode), asText(item.allergenName)])
 );
+const ALLERGEN_ORDER_BY_CODE = Object.fromEntries(
+  ALLERGEN_SEED.map((item, index) => [asText(item.allergenCode), index])
+);
+function allergenOrderOf(code) {
+  return code in ALLERGEN_ORDER_BY_CODE ? ALLERGEN_ORDER_BY_CODE[code] : Number.MAX_SAFE_INTEGER;
+}
 
 function asText(value) {
   return String(value ?? '')
@@ -81,7 +87,10 @@ function buildIngredientOptions(ingredients) {
         productCode,
         ingredientName,
         allergens,
-        allergenText: allergens.map(code => ALLERGEN_NAME_BY_CODE[code] || code).join(', '),
+        allergenText: [...allergens]
+          .sort((a, b) => allergenOrderOf(a) - allergenOrderOf(b))
+          .map(code => ALLERGEN_NAME_BY_CODE[code] || code)
+          .join(', '),
         label,
         labelKey: textKey(label),
         codeKey: textKey(productCode),

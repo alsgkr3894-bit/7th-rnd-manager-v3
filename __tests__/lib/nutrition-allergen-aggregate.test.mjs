@@ -278,9 +278,43 @@ describe('buildMenuAllergenMap', () => {
 });
 
 describe('allergenNames', () => {
-  test('코드 Set을 한글 이름 쉼표 문자열로 변환', () => {
-    expect(allergenNames(new Set(['AL01', 'AL02']))).toBe('계란, 우유');
+  test('코드 Set을 한글 이름 쉼표 문자열로 변환하며 기본 표시 순서(ALLERGEN_SEED)를 따른다', () => {
+    // ALLERGEN_SEED 기본 순서: 밀·대두·우유·... → 우유(AL02)가 계란(AL01)보다 앞선다.
+    expect(allergenNames(new Set(['AL01', 'AL02']))).toBe('우유, 계란');
   });
+  test('삽입 순서와 무관하게 항상 ALLERGEN_SEED 기본 순서로 정렬한다', () => {
+    // Set에 역순으로 넣어도(삽입 순서 의존 X) 결과는 항상 동일한 기본 순서.
+    const reversed = new Set(
+      [
+        'AL22', // 아몬드
+        'AL18', // 굴
+        'AL19', // 전복
+        'AL20', // 홍합
+        'AL21', // 잣
+        'AL11', // 복숭아
+        'AL07', // 고등어
+        'AL03', // 메밀
+        'AL13', // 아황산류
+        'AL04', // 땅콩
+        'AL01', // 계란
+        'AL14', // 호두
+        'AL17', // 오징어
+        'AL16', // 쇠고기
+        'AL15', // 닭고기
+        'AL08', // 게
+        'AL09', // 새우
+        'AL10', // 돼지고기
+        'AL12', // 토마토
+        'AL02', // 우유
+        'AL05', // 대두
+        'AL06', // 밀
+      ].reverse()
+    );
+    expect(allergenNames(reversed)).toBe(
+      '밀, 대두, 우유, 토마토, 돼지고기, 새우, 게, 닭고기, 쇠고기, 오징어, 호두, 계란, 땅콩, 아황산류, 메밀, 고등어, 복숭아, 잣, 홍합, 전복, 굴, 아몬드'
+    );
+  });
+
   test('알 수 없는 코드는 코드 그대로 폴백', () => {
     expect(allergenNames(new Set(['ZZ99']))).toBe('ZZ99');
   });

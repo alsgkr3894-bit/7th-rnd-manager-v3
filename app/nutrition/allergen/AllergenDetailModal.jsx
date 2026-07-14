@@ -3,6 +3,13 @@ import { ModalFrame } from '@/components/ui/ModalFrame';
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 
+const ALLERGEN_ORDER_BY_CODE = Object.fromEntries(
+  ALLERGEN_SEED.map((item, index) => [asDisplayText(item.allergenCode), index])
+);
+function allergenOrderOf(code) {
+  return code in ALLERGEN_ORDER_BY_CODE ? ALLERGEN_ORDER_BY_CODE[code] : Number.MAX_SAFE_INTEGER;
+}
+
 export function AllergenDetailModal({ detailRow, detailRows, onClose }) {
   if (!detailRow) return null;
 
@@ -47,7 +54,9 @@ export function AllergenDetailModal({ detailRow, detailRows, onClose }) {
                   <td>{row.category || '—'}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      {row.allergens.map(code => {
+                      {[...row.allergens]
+                        .sort((a, b) => allergenOrderOf(a) - allergenOrderOf(b))
+                        .map(code => {
                         const allergen = ALLERGEN_SEED.find(
                           item => asDisplayText(item.allergenCode) === code
                         );
