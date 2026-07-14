@@ -9,10 +9,14 @@ import { useDBLoad } from '@/hooks/useDBLoad';
 import { addNote, getAllNotesCached, updateNote } from '@/lib/note';
 import { getAllSchedules } from '@/lib/note/schedules';
 import { getAllSamples } from '@/lib/sample';
+import { getAllMarketResearch } from '@/lib/note/market-research';
 import { JOURNAL_NOTE_TYPE, NOTE_STATUS } from '@/lib/note/constants';
 import {
+  isUnifiedMarketResearchRecord,
   isUnifiedSampleRecord,
+  marketResearchToUnifiedRecord,
   sampleToUnifiedRecord,
+  unifiedMarketResearchSourceId,
   unifiedSampleSourceId,
 } from '@/lib/note/unified-records';
 import { buildJournalPrintHtml } from '@/lib/note/journal-print';
@@ -510,6 +514,13 @@ export default function Page() {
     initialData: [],
     onError: err => console.error('[note/journal] samples load failed', err),
   });
+  const {
+    data: marketResearchRows = [],
+    loading: marketResearchLoading,
+  } = useDBLoad(() => getAllMarketResearch(), {
+    initialData: [],
+    onError: err => console.error('[note/journal] market research load failed', err),
+  });
   const { data: schedules = [] } = useDBLoad(() => getAllSchedules(), {
     initialData: [],
     onError: err => console.error('[note/journal] schedules load failed', err),
@@ -519,8 +530,15 @@ export default function Page() {
     () => (Array.isArray(samples) ? samples.map(sampleToUnifiedRecord) : []),
     [samples]
   );
-  const journalRecords = useMemo(() => [...notes, ...sampleRecords], [notes, sampleRecords]);
-  const loading = notesLoading || samplesLoading;
+  const marketResearchRecords = useMemo(
+    () => (Array.isArray(marketResearchRows) ? marketResearchRows.map(marketResearchToUnifiedRecord) : []),
+    [marketResearchRows]
+  );
+  const journalRecords = useMemo(
+    () => [...notes, ...sampleRecords, ...marketResearchRecords],
+    [notes, sampleRecords, marketResearchRecords]
+  );
+  const loading = notesLoading || samplesLoading || marketResearchLoading;
 
   const rawDayNotes = useMemo(
     () =>
@@ -932,11 +950,15 @@ export default function Page() {
                   key={note.id}
                   note={note}
                   index={idx + 1}
-                  onEdit={() =>
-                    isUnifiedSampleRecord(note)
-                      ? router.push(`/note/sample/${unifiedSampleSourceId(note)}`)
-                      : router.push(`/note/${note.id}`)
-                  }
+                  onEdit={() => {
+                    if (isUnifiedSampleRecord(note)) {
+                      router.push(`/note/sample/${unifiedSampleSourceId(note)}`);
+                    } else if (isUnifiedMarketResearchRecord(note)) {
+                      router.push(`/note/market?edit=${unifiedMarketResearchSourceId(note)}`);
+                    } else {
+                      router.push(`/note/${note.id}`);
+                    }
+                  }}
                 />
               ))}
             </div>

@@ -61,6 +61,10 @@ function isSampleRecord(note) {
   return note?._recordKind === 'sample' || String(note?.id || '').startsWith('sample:');
 }
 
+function isMarketResearchRecord(note) {
+  return note?._recordKind === 'market_research' || String(note?.id || '').startsWith('market:');
+}
+
 function metaPairs(note) {
   const pairs = [];
   if (note?.testDate) pairs.push(['작성일', note.testDate]);
@@ -68,6 +72,11 @@ function metaPairs(note) {
     const type = note?.recordType || note?.noteType;
     if (type) pairs.push(['유형', type]);
     if (note?.category) pairs.push(['식자재 분류', note.category]);
+    return pairs;
+  }
+  if (isMarketResearchRecord(note)) {
+    if (note?.type) pairs.push(['유형', note.type]);
+    if (note?.brand) pairs.push(['브랜드 / 출처', note.brand]);
     return pairs;
   }
   if (note?.category) pairs.push(['구분', note.category]);
@@ -79,7 +88,11 @@ export function WebJournalCard({ note, index, onEdit }) {
   const title = noteDisplayTitle(note, '(제목 없음)');
   const contentLabel = notePrimaryContentLabel(note);
   const detailPairs = noteDetailPairs(note);
-  const reportLabel = isJournalNote(note) ? '오늘 한 일 보고서' : '관련 테스트 보고';
+  const reportLabel = isJournalNote(note)
+    ? '오늘 한 일 보고서'
+    : isMarketResearchRecord(note)
+      ? '시장조사 보고'
+      : '관련 테스트 보고';
   const sections = [[contentLabel, note.testContent], ...detailPairs];
   const tags = tagList(note.tags);
   const meta = metaPairs(note);

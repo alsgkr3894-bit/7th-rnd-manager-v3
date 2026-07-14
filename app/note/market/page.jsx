@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { showToast } from '@/components/Toast';
@@ -81,8 +82,25 @@ function Field({ label, children }) {
 }
 
 export default function MarketResearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="main">
+          <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-3)' }}>로딩 중…</div>
+        </main>
+      }
+    >
+      <MarketResearchContent />
+    </Suspense>
+  );
+}
+
+function MarketResearchContent() {
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const canEdit = roleReady && isAdmin;
+  const searchParams = useSearchParams();
+  const editIdParam = searchParams.get('edit');
+  const appliedEditIdRef = useRef(null);
   const [rows, setRows] = useState([]);
   const [form, setForm] = useState(() => withToday());
   const [query, setQuery] = useState('');
@@ -107,6 +125,17 @@ export default function MarketResearchPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // 연구일지 카드의 "수정" 클릭(?edit=<id>)으로 들어왔으면 해당 기록의 작성 폼을 자동으로 연다.
+  useEffect(() => {
+    if (!editIdParam || !canEdit) return;
+    if (appliedEditIdRef.current === editIdParam) return;
+    const target = rows.find(row => String(row.id) === String(editIdParam));
+    if (!target) return;
+    appliedEditIdRef.current = editIdParam;
+    setForm(withToday(target));
+    setWriting(true);
+  }, [editIdParam, rows, canEdit]);
 
   function update(field, value) {
     if (!canEdit) return;

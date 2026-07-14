@@ -9,7 +9,9 @@ describe('note journal page linkage', () => {
     expect(journalPageSource).toContain('sampleToUnifiedRecord');
     expect(journalPageSource).toContain('const sampleRecords = useMemo(');
     expect(journalPageSource).toContain('samples.map(sampleToUnifiedRecord)');
-    expect(journalPageSource).toContain('const journalRecords = useMemo(() => [...notes, ...sampleRecords]');
+    expect(journalPageSource).toContain(
+      '[...notes, ...sampleRecords, ...marketResearchRecords]'
+    );
     expect(journalPageSource).toContain('journalRecords');
     expect(journalPageSource).toContain('journalRecords.forEach(note =>');
     expect(journalPageSource).toContain('journalRecords.forEach(n =>');
@@ -17,10 +19,23 @@ describe('note journal page linkage', () => {
     expect(journalPageSource).toContain('withRelatedJournalPhotos(rawDayNotes, notes)');
   });
 
-  test('통합 샘플 기록의 수정 버튼은 원본 샘플 상세로 이동한다', () => {
+  test('연구일지는 시장조사 기록도 같은 날짜 기록으로 읽는다', () => {
+    expect(journalPageSource).toContain(
+      "import { getAllMarketResearch } from '@/lib/note/market-research'"
+    );
+    expect(journalPageSource).toContain('marketResearchToUnifiedRecord');
+    expect(journalPageSource).toContain('const marketResearchRecords = useMemo(');
+    expect(journalPageSource).toContain('marketResearchRows.map(marketResearchToUnifiedRecord)');
+  });
+
+  test('통합 샘플/시장조사 기록의 수정 버튼은 각각의 원본 화면으로 이동한다', () => {
     expect(journalPageSource).toContain('isUnifiedSampleRecord(note)');
     expect(journalPageSource).toContain('router.push(`/note/sample/${unifiedSampleSourceId(note)}`)');
-    expect(journalPageSource).toContain(': router.push(`/note/${note.id}`)');
+    expect(journalPageSource).toContain('isUnifiedMarketResearchRecord(note)');
+    expect(journalPageSource).toContain(
+      'router.push(`/note/market?edit=${unifiedMarketResearchSourceId(note)}`)'
+    );
+    expect(journalPageSource).toContain('router.push(`/note/${note.id}`)');
   });
 
   test('연구일지 사진은 원본 샘플/노트 사진을 자동 병합하지 않는다', () => {
