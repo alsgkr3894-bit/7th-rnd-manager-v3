@@ -12,9 +12,9 @@ import {
 } from './NutritionLabelTablePrimitives';
 
 const PIZZA_SLICE_COLS = [
-  { key: 'weight', label: '1회중량', unit: 'g' },
-  { key: 'servingLabel', label: '1회조각수', unit: '' },
-  { key: 'totalWeight', label: '총조각중량', unit: 'g' },
+  { key: 'weight', label: '1회 중량', unit: 'g' },
+  { key: 'servingLabel', label: '1회 조각수', unit: '' },
+  { key: 'totalWeight', label: '총 조각중량', unit: 'g' },
   { key: 'kcal', label: '열량', unit: 'kcal/1회분' },
   { key: 'sugar', label: '당류', unit: 'g/1회분' },
   { key: 'protein', label: '단백질', unit: 'g/1회분' },

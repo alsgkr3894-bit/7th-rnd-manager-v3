@@ -109,8 +109,8 @@ describe('nutrition label result structure', () => {
     expect(pizzaTableSource).toContain('GroupedMenuNameCell');
     expect(pizzaSliceTableSource).toContain('export function PizzaSliceNutritionTable');
     expect(pizzaSliceTableSource).toContain('PIZZA_SLICE_COLS');
-    expect(pizzaSliceTableSource).toContain('1회조각수');
-    expect(pizzaSliceTableSource).toContain('총조각중량');
+    expect(pizzaSliceTableSource).toContain('1회 조각수');
+    expect(pizzaSliceTableSource).toContain('총 조각중량');
     expect(simpleTableSource).toContain('export function SimpleNutritionTable');
     expect(simpleTableSource).toContain('NutritionLabelColumnHeader');
     expect(setHalfTableSource).toContain('export function SetHalfNutritionTable');

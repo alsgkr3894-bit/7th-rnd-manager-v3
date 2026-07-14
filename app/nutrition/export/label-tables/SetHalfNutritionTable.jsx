@@ -23,9 +23,9 @@ export function SetHalfNutritionTable({ rows }) {
           <tr>
             <th style={{ ...HEADER_STYLE, width: 200 }}>메뉴명</th>
             <th style={HEADER_STYLE}>사이즈</th>
-            <th style={HEADER_STYLE}>1회중량(g)</th>
-            <th style={HEADER_STYLE}>최소열량(kcal)</th>
-            <th style={HEADER_STYLE}>최대열량(kcal)</th>
+            <th style={HEADER_STYLE}>1회 중량(g)</th>
+            <th style={HEADER_STYLE}>최소 열량(kcal)</th>
+            <th style={HEADER_STYLE}>최대 열량(kcal)</th>
             <th style={HEADER_STYLE}>함유알레르기</th>
           </tr>
         </thead>

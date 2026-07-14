@@ -91,7 +91,7 @@ describe('buildNutritionLabelPrintHtml', () => {
     expect(html).toContain('<th rowspan="2" class="poster-pizza-label">메뉴명</th>');
     expect(html).toContain('중량단위 L');
     expect(html).toContain('열량(kcal/150g) L');
-    expect(html).toContain('1회조각수 L');
+    expect(html).toContain('1회 조각수 L');
     expect(html).toContain('<th>총량(ml)</th>');
     expect(html).toContain('333');
     expect(html).toContain('포화지방');
