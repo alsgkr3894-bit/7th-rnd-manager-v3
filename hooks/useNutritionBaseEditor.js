@@ -32,6 +32,8 @@ export function useNutritionBaseEditor({ safeRawMap, refresh, canEdit = false })
   });
 
   const isServingMenu = selMenu ? resolveNutritionGroup(selMenu) !== '피자' : false;
+  // 음료는 100g 기준으로 환산하지 않고 1병/캔 전체(1회 제공량) 값을 그대로 저장한다.
+  const isBeverage = selMenu ? resolveNutritionGroup(selMenu) === '음료' : false;
   const effectiveCrust = isServingMenu ? SERVING_CRUST_TYPE : selCrust;
   const key = selMenu ? `${selMenu.menuCode}__${effectiveCrust}` : null;
   const existing =
@@ -67,6 +69,7 @@ export function useNutritionBaseEditor({ safeRawMap, refresh, canEdit = false })
         menuName: selMenu.menuName,
         crustType: effectiveCrust,
         ...form,
+        ...(isBeverage ? { basis: 'serving' } : {}),
       });
       if (!mountedRef.current) return;
       showToast('저장 완료', 'ok');

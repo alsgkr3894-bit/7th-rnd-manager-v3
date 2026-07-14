@@ -65,4 +65,15 @@ describe('nutrition menu page structure', () => {
     expect(inputPanelSource).toContain('disabled={saving || readOnly}');
     expect(inputPanelSource).toContain('disabled={readOnly}');
   });
+
+  test('음료는 100g 환산 없이 1회 제공량(basis: serving) 그대로 저장한다', () => {
+    expect(baseEditorSource).toContain(
+      "const isBeverage = selMenu ? resolveNutritionGroup(selMenu) === '음료' : false;"
+    );
+    expect(baseEditorSource).toContain("...(isBeverage ? { basis: 'serving' } : {})");
+    expect(inputPanelSource).toContain(
+      "const isBeverage = selMenu ? resolveNutritionGroup(selMenu, masterByCode) === '음료' : false;"
+    );
+    expect(inputPanelSource).toContain('100g 기준으로 환산하지 않습니다');
+  });
 });

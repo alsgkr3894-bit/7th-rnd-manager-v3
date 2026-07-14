@@ -25,6 +25,7 @@ export function NutritionInputPanel({
   readOnly = false,
 }) {
   const isPizza = selMenu ? resolveNutritionGroup(selMenu, masterByCode) === '피자' : true;
+  const isBeverage = selMenu ? resolveNutritionGroup(selMenu, masterByCode) === '음료' : false;
   const crustOptions = useMemo(() => (isPizza ? CRUST_TYPES : [SERVING_CRUST_TYPE]), [isPizza]);
 
   useEffect(() => {
@@ -142,12 +143,21 @@ export function NutritionInputPanel({
           lineHeight: 1.5,
         }}
       >
-        ※ 영양성분 수치는 <strong>100g 기준</strong>으로 입력하세요.
-        {isPizza && (
+        {isBeverage ? (
           <>
-            {' '}
-            · <strong>중량</strong>은 이 크러스트의 <strong>한판 총중량(g)</strong>을 입력하면
-            하프앤하프·세트·조각 계산에 사용됩니다.
+            ※ 음료는 <strong>100g 기준으로 환산하지 않습니다.</strong> 1병/캔{' '}
+            <strong>전체(1회 제공량)</strong> 값을 그대로 입력하세요.
+          </>
+        ) : (
+          <>
+            ※ 영양성분 수치는 <strong>100g 기준</strong>으로 입력하세요.
+            {isPizza && (
+              <>
+                {' '}
+                · <strong>중량</strong>은 이 크러스트의 <strong>한판 총중량(g)</strong>을 입력하면
+                하프앤하프·세트·조각 계산에 사용됩니다.
+              </>
+            )}
           </>
         )}
       </div>
