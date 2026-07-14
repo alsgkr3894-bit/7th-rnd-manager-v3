@@ -22,11 +22,11 @@ export function SimpleNutritionTable({ title, rows, cols = LABEL_COLS }) {
       <table className="origin-result-table" style={TABLE_STYLE}>
         <thead>
           <tr>
-            <th style={{ ...HEADER_STYLE, textAlign: 'left', width: 200 }}>메뉴명</th>
+            <th style={{ ...HEADER_STYLE, width: 200 }}>메뉴명</th>
             {safeCols.map(column => (
               <NutritionLabelColumnHeader key={column.key} column={column} />
             ))}
-            <th style={{ ...HEADER_STYLE, textAlign: 'left' }}>함유알레르기</th>
+            <th style={HEADER_STYLE}>함유알레르기</th>
           </tr>
         </thead>
         <tbody>

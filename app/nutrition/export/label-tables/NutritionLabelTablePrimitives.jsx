@@ -3,9 +3,16 @@ import { asDisplayText } from '@/lib/ui/prop-guards';
 export const COL_STYLE = { textAlign: 'right', minWidth: 70, fontSize: 12, padding: '6px 8px' };
 export const HEADER_STYLE = {
   ...COL_STYLE,
+  textAlign: 'center',
   background: '#f0f0f0',
   fontWeight: 700,
   fontSize: 11,
+  // 표를 내려도 컬럼명이 계속 보이도록 상단에 고정한다.
+  // 이 sticky는 NutritionLabelScrollArea의 스크롤 영역 기준으로 동작해야
+  // 앱 상단 고정바(.topbar, position:sticky top:0)와 겹치지 않는다.
+  position: 'sticky',
+  top: 0,
+  zIndex: 1,
 };
 export const TABLE_STYLE = { borderCollapse: 'collapse', width: '100%' };
 export const FIXED_TABLE_STYLE = { ...TABLE_STYLE, tableLayout: 'fixed' };
@@ -40,7 +47,13 @@ export function NutritionLabelEmpty({ msg }) {
 }
 
 export function NutritionLabelScrollArea({ children }) {
-  return <div style={{ overflowX: 'auto' }}>{children}</div>;
+  // 세로 스크롤 컨테이너를 이 div로 한정해야 헤더 sticky(top:0)가 앱 상단 고정바가 아니라
+  // 이 영역 기준으로 붙는다. maxHeight는 다른 큰 표(AllergenMenuMatrixTable)와 동일 기준.
+  return (
+    <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 260px)' }}>
+      {children}
+    </div>
+  );
 }
 
 export function GroupedMenuNameCell({ name, rowSpan }) {

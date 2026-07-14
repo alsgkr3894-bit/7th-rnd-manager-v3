@@ -6,8 +6,7 @@ import { buildRecipeImpactPreview } from '@/lib/menu-master/recipe-impact-previe
 function listLabel(values, fallback) {
   const list = Array.isArray(values) ? values.filter(Boolean) : [];
   if (!list.length) return fallback;
-  const shown = list.slice(0, 4).join(', ');
-  return list.length > 4 ? `${shown} 외 ${list.length - 4}개` : shown;
+  return list.join(', ');
 }
 
 function PreviewStat({ label, value, tone }) {
