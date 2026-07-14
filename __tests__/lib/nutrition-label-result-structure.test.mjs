@@ -43,10 +43,15 @@ describe('nutrition label result structure', () => {
     expect(resultSource).toContain('printNutritionLabelAll');
     expect(resultSource).toContain('saveLabelMenuNames(next)');
     expect(resultSource).toContain('LABEL_MENU_ORDER_KEY');
-    expect(resultSource).toContain('saveOrder(LABEL_MENU_ORDER_KEY, next)');
+    expect(resultSource).toContain('LABEL_SIDE_ORDER_KEY');
+    expect(resultSource).toContain('LABEL_TOPPING_ORDER_KEY');
+    expect(resultSource).toContain('LABEL_SET_ORDER_KEY');
+    expect(resultSource).toContain('LABEL_BEVERAGE_ORDER_KEY');
+    expect(resultSource).toContain('saveOrder(entry.key, next)');
+    expect(resultSource).toContain('function applyCategoryOrder(category, next)');
     expect(resultSource).toContain('<MenuNameEditModal');
     expect(resultSource).toContain('원산지 출력명 가져오기');
-    expect(resultSource).toContain('setMenuNameEditMenus');
+    expect(resultSource).toContain('setCategoryEditMenus');
     expect(resultSource).not.toContain('augmentWithDerived');
     expect(resultSource).not.toContain('getAllCompositions');
     expect(resultSource).not.toContain('!excludedMenuCodes.has(m.menuCode)');

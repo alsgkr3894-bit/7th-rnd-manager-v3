@@ -484,6 +484,80 @@ describe('buildSetHalfSheet', () => {
       maxKcal: 298,
     });
   });
+
+  test('setOrder(카테고리 전용 순서)로 여러 세트박스의 출력 순서를 바꿀 수 있다', () => {
+    const commonArgs = {
+      menus: [],
+      rawMap: {},
+      edgeMap: {},
+      masterByCode: {},
+      menuAllergenMap,
+      setComps: [
+        { kind: 'set', setName: '가나다세트', setSide: 'L', slots: [] },
+        { kind: 'set', setName: '가나다세트', setSide: 'R', slots: [] },
+        { kind: 'set', setName: '기본세트', setSide: 'L', slots: [] },
+        { kind: 'set', setName: '기본세트', setSide: 'R', slots: [] },
+      ],
+    };
+
+    const defaultRows = buildSetHalfSheet(commonArgs);
+    // 저장된 순서가 없으면 setComps 배열 순서(가나다세트 먼저) 그대로.
+    expect(defaultRows.filter(r => r.kind === 'set').map(r => r.menuName)).toEqual([
+      '가나다세트 L세트',
+      '가나다세트 R세트',
+      '기본세트 L세트',
+      '기본세트 R세트',
+    ]);
+
+    const orderedRows = buildSetHalfSheet({ ...commonArgs, setOrder: ['기본세트', '가나다세트'] });
+    expect(orderedRows.filter(r => r.kind === 'set').map(r => r.menuName)).toEqual([
+      '기본세트 L세트',
+      '기본세트 R세트',
+      '가나다세트 L세트',
+      '가나다세트 R세트',
+    ]);
+  });
+
+  test('하프앤하프 후보에서 1인용 피자는 제외한다(한 사람 몫 완제품이라 반반 결합 대상 아님)', () => {
+    const rows = buildSetHalfSheet({
+      menus: [
+        { menuCode: 'P-REG', menuName: '일반 피자', category: '피자' },
+        { menuCode: 'P-ONE-001', menuName: '1인용 테스트피자', category: '1인피자' },
+      ],
+      rawMap: {
+        // 일반 피자: 총 600kcal (200kcal/100g × 300g) — L/R 동일하게 입력
+        'P-REG__석쇠L': { weight: 300, kcal: 200 },
+        'P-REG__석쇠R': { weight: 300, kcal: 200 },
+        // 1인용 피자: 총 125kcal (50kcal/100g × 250g) — 훨씬 낮아서 포함되면 반반 최저값을 지배함
+        'P-ONE-001__씬바사삭L': { weight: 250, kcal: 50 },
+      },
+      edgeMap: {},
+      masterByCode: {},
+      menuAllergenMap,
+      setComps: [],
+    });
+
+    const halfRows = rows.filter(row => row.kind === 'half');
+    // 1인용이 제외됐다면 후보는 일반 피자 1개뿐 → 반반해도 같은 피자라 최저=최고=600.
+    expect(halfRows).toEqual([
+      expect.objectContaining({ side: 'L', minKcal: 600, maxKcal: 600 }),
+      expect.objectContaining({ side: 'R', minKcal: 600, maxKcal: 600 }),
+    ]);
+  });
+
+  test('nameOverrides로 세트박스 이름을 바꿀 수 있다', () => {
+    const rows = buildSetHalfSheet({
+      menus: [],
+      rawMap: {},
+      edgeMap: {},
+      masterByCode: {},
+      menuAllergenMap,
+      setComps: [{ kind: 'set', setName: '기본세트', setSide: 'L', slots: [] }],
+      nameOverrides: { 기본세트: '패밀리박스' },
+    });
+
+    expect(rows.find(row => row.kind === 'set')).toMatchObject({ menuName: '패밀리박스 L세트' });
+  });
 });
 
 describe('buildBeverageSheet', () => {
@@ -758,5 +832,36 @@ describe('buildToppingSheet', () => {
     });
 
     expect(rows[0].fat).toBe(2);
+  });
+
+  test('toppingOrder(카테고리 전용 순서)가 있으면 displayOrder보다 우선한다', () => {
+    const rows = buildToppingSheet({
+      menus: [],
+      rawMap: {},
+      masterByCode: {},
+      menuAllergenMap,
+      toppings: [
+        { toppingCode: 'TOP-A', toppingName: 'A토핑', displayOrder: 1 },
+        { toppingCode: 'TOP-B', toppingName: 'B토핑', displayOrder: 2 },
+      ],
+      toppingAllergenMap: new Map(),
+      toppingOrder: ['TOP-B', 'TOP-A'], // displayOrder와 반대 순서로 저장된 사용자 지정 순서
+    });
+
+    expect(rows.map(row => row.menuCode)).toEqual(['TOP-B', 'TOP-A']);
+  });
+
+  test('nameOverrides로 추가토핑 출력명을 바꿀 수 있다(원래 이름은 originalMenuName에 보존)', () => {
+    const rows = buildToppingSheet({
+      menus: [],
+      rawMap: {},
+      masterByCode: {},
+      menuAllergenMap,
+      toppings: [{ toppingCode: 'TOP-A', toppingName: '원래이름' }],
+      toppingAllergenMap: new Map(),
+      nameOverrides: { 'TOP-A': '바뀐이름' },
+    });
+
+    expect(rows[0]).toMatchObject({ menuName: '바뀐이름', originalMenuName: '원래이름' });
   });
 });

@@ -26,6 +26,13 @@ export function SlotEditor({ slot = {}, allMenus, onChange = noop, onRemove = no
 
   const selected = useMemo(() => asStringArray(safeSlot.menuCodes), [safeSlot.menuCodes]);
 
+  const qtyNum = parseFloat(safeSlot.qty);
+  const baseQtyNum = parseFloat(safeSlot.baseQty);
+  const hasRatio = !isNaN(qtyNum) && qtyNum > 0 && !isNaN(baseQtyNum) && baseQtyNum > 0;
+  const ratioHint = hasRatio
+    ? `${baseQtyNum}개 중 ${qtyNum}개 → 영양값 ${Math.round((qtyNum / baseQtyNum) * 100)}%`
+    : '전체 수량(100%) 반영';
+
   const matches = useMemo(() => {
     const lowerQuery = asDisplayText(query).trim().toLowerCase();
     if (!lowerQuery) return [];
@@ -69,13 +76,28 @@ export function SlotEditor({ slot = {}, allMenus, onChange = noop, onRemove = no
       }}
     >
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-        <input
-          className="input"
-          style={{ flex: 1 }}
-          value={asDisplayText(safeSlot.label)}
-          onChange={event => onChange({ label: event.target.value })}
-          placeholder="구성품 이름 (예: 사이드, 음료)"
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, flexWrap: 'wrap' }}>
+          <input
+            type="number"
+            min="0"
+            className="input"
+            style={{ width: 64, fontSize: 12 }}
+            value={safeSlot.qty ?? ''}
+            onChange={event => onChange({ qty: event.target.value })}
+            placeholder="세트 수량"
+          />
+          <span style={{ fontSize: 12, color: 'var(--text-4)' }}>/</span>
+          <input
+            type="number"
+            min="0"
+            className="input"
+            style={{ width: 64, fontSize: 12 }}
+            value={safeSlot.baseQty ?? ''}
+            onChange={event => onChange({ baseQty: event.target.value })}
+            placeholder="기준 수량"
+          />
+          <span style={{ fontSize: 11, color: 'var(--text-4)' }}>{ratioHint}</span>
+        </div>
         <button
           type="button"
           className="btn sm ghost"

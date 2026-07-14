@@ -30,7 +30,15 @@ import {
 } from '@/lib/nutrition/menu-name-override';
 import { loadIngredientNames } from '@/lib/nutrition/ingredient-name-override';
 import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
-import { LABEL_MENU_ORDER_KEY, loadOrder, saveOrder } from '@/lib/nutrition/order';
+import {
+  LABEL_MENU_ORDER_KEY,
+  LABEL_SIDE_ORDER_KEY,
+  LABEL_TOPPING_ORDER_KEY,
+  LABEL_SET_ORDER_KEY,
+  LABEL_BEVERAGE_ORDER_KEY,
+  loadOrder,
+  saveOrder,
+} from '@/lib/nutrition/order';
 import { loadSliceCounts, saveSliceCounts } from '@/lib/nutrition/slice-config';
 import { buildOriginsFromIngredients } from '@/lib/nutrition/origin/build';
 import { buildOriginStatementSheet } from '@/lib/nutrition/origin/output-sheets';
@@ -53,6 +61,7 @@ import {
   NutritionLabelActions,
   NutritionLabelLoading,
   NutritionLabelTabs,
+  NUTRITION_LABEL_ORDER_CATEGORY_NAMES,
   PizzaViewControls,
 } from './NutritionLabelControls';
 import { NutritionLabelTabContent } from './NutritionLabelTables';
@@ -75,11 +84,31 @@ export default function NutritionLabelResult() {
   const [sliceCounts, setSliceCounts] = useState({});
   const [sliceModalOpen, setSliceModalOpen] = useState(false);
   const [menuNameEditOpen, setMenuNameEditOpen] = useState(false);
+  const [menuNameEditCategory, setMenuNameEditCategory] = useState(null);
   const [menuNameOverrides, setMenuNameOverrides] = useState(() => loadLabelMenuNames());
-  const [labelMenuOrder, setLabelMenuOrder] = useState(() => loadOrder(LABEL_MENU_ORDER_KEY));
-  const [menuNameEditMenus, setMenuNameEditMenus] = useState([]);
+  // 카테고리별 출력 순서 — 피자/사이드·파스타/추가토핑/세트박스·하프앤하프/음료를 각각 독립적으로 저장한다.
+  const [pizzaOrder, setPizzaOrder] = useState(() => loadOrder(LABEL_MENU_ORDER_KEY));
+  const [sideOrder, setSideOrder] = useState(() => loadOrder(LABEL_SIDE_ORDER_KEY));
+  const [toppingOrder, setToppingOrder] = useState(() => loadOrder(LABEL_TOPPING_ORDER_KEY));
+  const [setBoxOrder, setSetBoxOrder] = useState(() => loadOrder(LABEL_SET_ORDER_KEY));
+  const [beverageOrder, setBeverageOrder] = useState(() => loadOrder(LABEL_BEVERAGE_ORDER_KEY));
+  const [categoryEditMenus, setCategoryEditMenus] = useState({
+    pizza: [],
+    side: [],
+    topping: [],
+    set: [],
+    drink: [],
+  });
   const [labelContext, setLabelContext] = useState(null);
   const ctxRef = useRef(null); // { menus, rawMap, edgeMap, masterByCode, menuAllergenMap, edgeAllergenMap }
+
+  const CATEGORY_ORDER_STATE = {
+    pizza: { order: pizzaOrder, setOrder: setPizzaOrder, key: LABEL_MENU_ORDER_KEY },
+    side: { order: sideOrder, setOrder: setSideOrder, key: LABEL_SIDE_ORDER_KEY },
+    topping: { order: toppingOrder, setOrder: setToppingOrder, key: LABEL_TOPPING_ORDER_KEY },
+    set: { order: setBoxOrder, setOrder: setSetBoxOrder, key: LABEL_SET_ORDER_KEY },
+    drink: { order: beverageOrder, setOrder: setBeverageOrder, key: LABEL_BEVERAGE_ORDER_KEY },
+  };
 
   // 조각 시트 재계산 (sliceCounts 변경 시 DB 재조회 없이)
   const rebuildSliceSheet = counts => {
@@ -157,7 +186,10 @@ export default function NutritionLabelResult() {
       const { excludedMenuCodes, excludedMenuNames } = extractExcludedMenuSets(masters);
       const labelNameOverrides = menuNameOverrides;
       const originNameOverrides = loadMenuNames();
-      const menuOrder = labelMenuOrder;
+      // nutrition_menu_ref 기반 카테고리(피자/사이드·파스타/음료)는 하나의 목록을 함께 정렬하므로
+      // 각 카테고리 순서를 이어붙여도(orderRank가 그룹 순위보다 우선하지만, 그룹 순서대로 이어붙였으므로
+      // 결과적으로 그룹 순서와 충돌하지 않는다) 카테고리별 순서가 그대로 반영된다.
+      const menuOrder = [...pizzaOrder, ...sideOrder, ...beverageOrder];
       const ingredientNameOverrides = loadIngredientNames();
       const { ingredientToMenus: originIngredientToMenus } = buildIngredientMenuMap({
         menuMasters: masters,
@@ -196,20 +228,52 @@ export default function NutritionLabelResult() {
         edgeAllergenMap,
         toppingAllergenMap,
         toppings: asObjectArray(toppingList),
+        toppingOrder,
         setComps,
+        setOrder: setBoxOrder,
+        nameOverrides: labelNameOverrides,
         menuOrder,
       };
       if (!alive) return;
       ctxRef.current = ctx;
       setLabelContext(ctx);
-      setMenuNameEditMenus(
-        orderedOriginalMenus
-          .map((menu, index) => ({
-            menuCode: asDisplayText(menu.menuCode),
-            menuName: asDisplayText(menu.originalMenuName ?? menu.menuName, `메뉴 ${index + 1}`),
-          }))
-          .filter(menu => menu.menuCode)
-      );
+
+      // 카테고리별 "출력명·순서" 편집 목록 — 각 탭에서 그 카테고리 항목만 보이게 분리한다.
+      const toEditItem = (code, name, index) => ({
+        menuCode: asDisplayText(code),
+        menuName: asDisplayText(name, `항목 ${index + 1}`),
+      });
+      const byGroup = group =>
+        orderedOriginalMenus.filter(m => resolveNutritionGroup(m, masterByCode) === group);
+      const pizzaEditMenus = byGroup('피자')
+        .map((m, i) => toEditItem(m.menuCode, m.originalMenuName ?? m.menuName, i))
+        .filter(m => m.menuCode);
+      const sideEditMenus = byGroup('사이드')
+        .map((m, i) => toEditItem(m.menuCode, m.originalMenuName ?? m.menuName, i))
+        .filter(m => m.menuCode);
+      const beverageEditMenus = byGroup('음료')
+        .map((m, i) => toEditItem(m.menuCode, m.originalMenuName ?? m.menuName, i))
+        .filter(m => m.menuCode);
+      const toppingEditMenus = asObjectArray(toppingList)
+        .map((t, i) => toEditItem(t.toppingCode, t.toppingName, i))
+        .filter(m => m.menuCode);
+      const setNames = [
+        ...new Set(
+          asObjectArray(setComps)
+            .filter(c => c.kind === 'set')
+            .map(c => asDisplayText(c.setName))
+            .filter(Boolean)
+        ),
+      ];
+      const setEditMenus = setNames.map((name, i) => toEditItem(name, name, i));
+      setCategoryEditMenus({
+        pizza: pizzaEditMenus,
+        side: sideEditMenus,
+        topping: toppingEditMenus,
+        set: setEditMenus,
+        drink: beverageEditMenus,
+      });
+
       setPizzaSheet(buildPizzaSheet(ctx));
       setToppingSheet(buildToppingSheet(ctx));
       setSideSheet(buildSideSheet(ctx));
@@ -228,7 +292,7 @@ export default function NutritionLabelResult() {
     return () => {
       alive = false;
     };
-  }, [menuNameOverrides, labelMenuOrder]);
+  }, [menuNameOverrides, pizzaOrder, sideOrder, toppingOrder, setBoxOrder, beverageOrder]);
 
   async function handleExcel() {
     setExporting(true);
@@ -272,9 +336,11 @@ export default function NutritionLabelResult() {
     setMenuNameOverrides(next);
   }
 
-  function applyMenuOrder(next) {
-    saveOrder(LABEL_MENU_ORDER_KEY, next);
-    setLabelMenuOrder(next);
+  function applyCategoryOrder(category, next) {
+    const entry = CATEGORY_ORDER_STATE[category];
+    if (!entry) return;
+    saveOrder(entry.key, next);
+    entry.setOrder(next);
   }
 
   if (loading) return <NutritionLabelLoading />;
@@ -286,7 +352,11 @@ export default function NutritionLabelResult() {
         exporting={exporting}
         onPdf={handlePdf}
         onExcel={handleExcel}
-        onEditMenuNames={() => setMenuNameEditOpen(true)}
+        tab={tab}
+        onEditMenuNames={category => {
+          setMenuNameEditCategory(category);
+          setMenuNameEditOpen(true);
+        }}
       />
 
       {tab === 'pizza' && (
@@ -320,16 +390,16 @@ export default function NutritionLabelResult() {
           onClose={() => setSliceModalOpen(false)}
         />
       )}
-      {menuNameEditOpen && (
+      {menuNameEditOpen && menuNameEditCategory && (
         <MenuNameEditModal
-          menus={menuNameEditMenus}
+          menus={categoryEditMenus[menuNameEditCategory] || []}
           overrides={menuNameOverrides}
           onApply={applyMenuNameOverrides}
-          order={labelMenuOrder}
-          onApplyOrder={applyMenuOrder}
+          order={CATEGORY_ORDER_STATE[menuNameEditCategory]?.order || []}
+          onApplyOrder={next => applyCategoryOrder(menuNameEditCategory, next)}
           allowOrder
-          title="영양성분표 출력명·순서 편집"
-          subtitle="영양성분표 출력에만 반영됩니다. 원산지·알레르기 출력명과는 별도로 저장됩니다."
+          title={`${NUTRITION_LABEL_ORDER_CATEGORY_NAMES[menuNameEditCategory]} 출력명·순서 편집`}
+          subtitle="영양성분표 출력에만 반영됩니다. 카테고리별로 별도 저장되며, 원산지·알레르기 출력명과도 별도입니다."
           importActionLabel="원산지 출력명 가져오기"
           onImportOverrides={() => loadMenuNames()}
           onClose={() => setMenuNameEditOpen(false)}

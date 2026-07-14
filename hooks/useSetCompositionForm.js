@@ -5,52 +5,66 @@ import { upsertSetComposition, deleteSetComposition } from '@/lib/nutrition/valu
 import { showToast } from '@/components/Toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
+const emptySide = () => ({ id: undefined, setCode: '', slots: [] });
+const emptyForm = () => ({ setName: '', L: emptySide(), R: emptySide() });
+
 export function useSetCompositionForm({ onRefresh = noop, canEdit = false } = {}) {
   const { showConfirm, confirmElement } = useConfirmDialog();
   const [modal, setModal] = useState(null);
-  const [form, setForm] = useState({
-    setCode: '',
-    setName: '',
-    kind: 'set',
-    setSide: 'L',
-    slots: [],
-  });
+  const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
 
   const openAdd = () => {
     if (!canEdit) return;
-    setForm({ setCode: '', setName: '', kind: 'set', setSide: 'L', slots: [] });
+    setForm(emptyForm());
     setModal('add');
   };
 
-  const openEdit = comp => {
+  const openEdit = group => {
     if (!canEdit) return;
+    const sideForm = comp =>
+      comp
+        ? {
+            id: comp.id,
+            setCode: asDisplayText(comp.setCode),
+            slots: Array.isArray(comp.slots) ? comp.slots : [],
+          }
+        : emptySide();
     setForm({
-      ...comp,
-      setSide: asDisplayText(comp.setSide, 'L') === 'R' ? 'R' : 'L',
-      slots: Array.isArray(comp.slots) ? comp.slots : [],
+      setName: asDisplayText(group.setName),
+      L: sideForm(group.L),
+      R: sideForm(group.R),
     });
-    setModal(comp);
+    setModal(group);
   };
 
-  const addSlot = () =>
+  const addSlot = side =>
     setForm(f => ({
       ...f,
-      slots: [...(Array.isArray(f.slots) ? f.slots : []), { label: '', menuCodes: [] }],
+      [side]: {
+        ...f[side],
+        slots: [...(Array.isArray(f[side].slots) ? f[side].slots : []), { menuCodes: [] }],
+      },
     }));
 
-  const removeSlot = i =>
+  const removeSlot = (side, i) =>
     setForm(f => ({
       ...f,
-      slots: (Array.isArray(f.slots) ? f.slots : []).filter((_, idx) => idx !== i),
+      [side]: {
+        ...f[side],
+        slots: (Array.isArray(f[side].slots) ? f[side].slots : []).filter((_, idx) => idx !== i),
+      },
     }));
 
-  const updateSlot = (i, patch) =>
+  const updateSlot = (side, i, patch) =>
     setForm(f => ({
       ...f,
-      slots: (Array.isArray(f.slots) ? f.slots : []).map((s, idx) =>
-        idx === i ? { ...s, ...patch } : s
-      ),
+      [side]: {
+        ...f[side],
+        slots: (Array.isArray(f[side].slots) ? f[side].slots : []).map((s, idx) =>
+          idx === i ? { ...s, ...patch } : s
+        ),
+      },
     }));
 
   const handleSave = async () => {
@@ -61,16 +75,20 @@ export function useSetCompositionForm({ onRefresh = noop, canEdit = false } = {}
     }
     setSaving(true);
     try {
-      const id = modal !== 'add' ? modal.id : undefined;
-      const side = asDisplayText(form.setSide, 'L') === 'R' ? 'R' : 'L';
-      const code = String(form.setCode || '').trim() || `SET-${side}-${Date.now()}`;
-      await upsertSetComposition({
-        ...(id ? { id } : {}),
-        ...form,
-        kind: 'set',
-        setSide: side,
-        setCode: code,
-      });
+      await Promise.all(
+        ['L', 'R'].map(side => {
+          const sideForm = form[side] || emptySide();
+          const code = String(sideForm.setCode || '').trim() || `SET-${side}-${Date.now()}`;
+          return upsertSetComposition({
+            ...(sideForm.id ? { id: sideForm.id } : {}),
+            setName: form.setName,
+            kind: 'set',
+            setSide: side,
+            setCode: code,
+            slots: Array.isArray(sideForm.slots) ? sideForm.slots : [],
+          });
+        })
+      );
       showToast('저장 완료', 'ok');
       setModal(null);
       onRefresh();
@@ -80,15 +98,16 @@ export function useSetCompositionForm({ onRefresh = noop, canEdit = false } = {}
     setSaving(false);
   };
 
-  const handleDelete = async comp => {
+  const handleDelete = async group => {
     if (!canEdit) return;
     const ok = await showConfirm({
-      message: `'${comp.setName || '세트'}' 세트가 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`,
+      message: `'${group.setName || '세트'}' 세트가 L/R 모두 삭제됩니다. 되돌릴 수 없습니다. 계속할까요?`,
       danger: true,
     });
     if (!ok) return;
-    await deleteSetComposition(comp.id);
-    showToast(`'${comp.setName}' 삭제`, 'ok');
+    const ids = ['L', 'R'].map(side => group[side]?.id).filter(Boolean);
+    await Promise.all(ids.map(id => deleteSetComposition(id)));
+    showToast(`'${group.setName}' 삭제`, 'ok');
     onRefresh();
   };
 

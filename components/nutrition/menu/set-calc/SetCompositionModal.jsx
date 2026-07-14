@@ -5,6 +5,8 @@ import { asDisplayText } from '@/lib/ui/prop-guards';
 import { formatKcalRange } from './format';
 import { SlotEditor } from './SlotEditor';
 
+const SIDES = ['L', 'R'];
+
 export function SetCompositionModal({
   mode,
   form,
@@ -22,26 +24,21 @@ export function SetCompositionModal({
   onUpdateSlot,
   onSave,
 }) {
-  const preview = calcSetMinMax(
-    Array.isArray(form.slots) ? form.slots : [],
-    safeMenus,
-    safeRawMap,
-    masterByCode,
-    pizzaMenus,
-    safeEdgeMap
-  );
-  const side = asDisplayText(form.setSide, 'L') === 'R' ? 'R' : 'L';
-  const sidePreview = preview.bySize?.[side];
+  const previewOf = side => {
+    const slots = Array.isArray(form[side]?.slots) ? form[side].slots : [];
+    return calcSetMinMax(slots, safeMenus, safeRawMap, masterByCode, pizzaMenus, safeEdgeMap)
+      .bySize?.[side];
+  };
 
   return (
     <ModalFrame
       title={mode === 'add' ? '세트 추가' : `${asDisplayText(form.setName, '세트')} 편집`}
       onClose={onClose}
-      width="min(520px,95vw)"
+      width="min(640px,95vw)"
       zIndex={300}
       padding="24px 28px"
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
           <label
             style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 4 }}
@@ -56,100 +53,88 @@ export function SetCompositionModal({
           />
         </div>
 
-        <div>
-          <label
-            style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 6 }}
-          >
-            세트 구분 *
-          </label>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {['L', 'R'].map(size => (
-              <button
-                key={size}
-                type="button"
-                className={`btn sm${side === size ? ' primary' : ''}`}
-                onClick={() => setForm(current => ({ ...current, setSide: size }))}
-                style={{ flex: 1, justifyContent: 'center' }}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {SIDES.map(side => {
+            const sideSlots = Array.isArray(form[side]?.slots) ? form[side].slots : [];
+            const preview = previewOf(side);
+            return (
+              <div
+                key={side}
+                style={{
+                  flex: '1 1 260px',
+                  minWidth: 260,
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  padding: 12,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}
               >
-                {size}세트
-              </button>
-            ))}
-          </div>
-        </div>
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{side}세트</div>
+                  {preview?.minKcal != null && (
+                    <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                      {formatKcalRange(preview)}
+                    </span>
+                  )}
+                </div>
 
-        <div
-          style={{
-            background: 'var(--surface-2)',
-            borderRadius: 8,
-            padding: '10px 12px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <Icon.box style={{ width: 14, height: 14, color: 'var(--accent-text)', flexShrink: 0 }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, fontWeight: 600 }}>피자</div>
-            <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
-              선택한 {side} 사이즈와 전체 엣지 기준으로 최저/최고 피자 자동 산출
-            </div>
-          </div>
-          <span
-            style={{
-              fontSize: 10,
-              color: 'var(--text-4)',
-              background: 'var(--surface)',
-              padding: '2px 6px',
-              borderRadius: 4,
-            }}
-          >
-            자동
-          </span>
-        </div>
+                <div
+                  style={{
+                    background: 'var(--surface-2)',
+                    borderRadius: 8,
+                    padding: '8px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <Icon.box
+                    style={{ width: 14, height: 14, color: 'var(--accent-text)', flexShrink: 0 }}
+                  />
+                  <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
+                    피자 {side} 사이즈와 전체 엣지 기준으로 최저/최고 자동 산출
+                  </div>
+                </div>
 
-        <div>
-          <label
-            style={{ fontSize: 12, color: 'var(--text-3)', display: 'block', marginBottom: 6 }}
-          >
-            추가 구성품 <span style={{ color: 'var(--text-4)' }}>(메뉴명·코드로 검색해 추가)</span>
-          </label>
-          {(Array.isArray(form.slots) ? form.slots : []).map((slot, index) => (
-            <SlotEditor
-              key={index}
-              slot={slot}
-              allMenus={allMenus}
-              onChange={patch => onUpdateSlot(index, patch)}
-              onRemove={() => onRemoveSlot(index)}
-            />
-          ))}
-          <button
-            type="button"
-            className="btn sm ghost"
-            onClick={onAddSlot}
-            style={{ fontSize: 12, marginTop: 4 }}
-          >
-            <Icon.plus style={{ width: 12, height: 12 }} />
-            구성품 추가
-          </button>
+                <div>
+                  <label
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--text-3)',
+                      display: 'block',
+                      marginBottom: 6,
+                    }}
+                  >
+                    {side}세트 추가 구성품{' '}
+                    <span style={{ color: 'var(--text-4)' }}>(메뉴명·코드로 검색해 추가)</span>
+                  </label>
+                  {sideSlots.map((slot, index) => (
+                    <SlotEditor
+                      key={index}
+                      slot={slot}
+                      allMenus={allMenus}
+                      onChange={patch => onUpdateSlot(side, index, patch)}
+                      onRemove={() => onRemoveSlot(side, index)}
+                    />
+                  ))}
+                  <button
+                    type="button"
+                    className="btn sm ghost"
+                    onClick={() => onAddSlot(side)}
+                    style={{ fontSize: 12, marginTop: 4 }}
+                  >
+                    <Icon.plus style={{ width: 12, height: 12 }} />
+                    구성품 추가
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
-
-        {sidePreview?.minKcal != null && (
-          <div
-            style={{
-              background: 'var(--surface-2)',
-              borderRadius: 8,
-              padding: '10px 12px',
-              display: 'flex',
-              gap: 16,
-              fontSize: 12,
-            }}
-          >
-            <span style={{ color: 'var(--text-3)' }}>미리보기</span>
-            <span>
-              {side}세트 <strong>{formatKcalRange(sidePreview)}</strong>
-            </span>
-          </div>
-        )}
       </div>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
         <button type="button" className="btn" onClick={onClose}>

@@ -99,6 +99,35 @@ describe('nutrition set calc', () => {
     });
   });
 
+  test('세트박스 구성품에 부분 수량(qty/baseQty)이 있으면 영양값을 비율만큼만 반영한다', () => {
+    // S-1__석쇠L = weight 100, kcal 10 → 완제품 기여분 10kcal/100g. qty 2 / baseQty 4 = 절반만 반영.
+    const result = calcSetMinMax(
+      [{ menuCodes: ['S-1'], qty: 2, baseQty: 4 }],
+      [...pizzaMenus, { menuCode: 'S-1', menuName: '사이드', category: '사이드' }],
+      rawMap,
+      {},
+      pizzaMenus,
+      edgeMap
+    );
+
+    // 전체 수량 기준 결과(90/260, 100/230)에서 사이드 기여분(10)의 절반(5)만큼만 줄어든다.
+    expect(result.bySize.L).toMatchObject({ minKcal: 85, maxKcal: 255 });
+    expect(result.bySize.R).toMatchObject({ minKcal: 95, maxKcal: 225 });
+  });
+
+  test('세트박스 구성품에 qty/baseQty가 없으면 기존과 동일하게 전체 수량을 반영한다', () => {
+    const withoutRatio = calcSetMinMax(
+      [{ menuCodes: ['S-1'] }],
+      [...pizzaMenus, { menuCode: 'S-1', menuName: '사이드', category: '사이드' }],
+      rawMap,
+      {},
+      pizzaMenus,
+      edgeMap
+    );
+    expect(withoutRatio.bySize.L).toMatchObject({ minKcal: 90, maxKcal: 260 });
+    expect(withoutRatio.bySize.R).toMatchObject({ minKcal: 100, maxKcal: 230 });
+  });
+
   test('세트박스는 피자 후보와 구성품 중량 범위를 함께 계산한다', () => {
     const result = calcSetMinMax(
       [{ label: '사이드', menuCodes: ['S-1'] }],
