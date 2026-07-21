@@ -66,7 +66,8 @@ describe('sales report preview structure', () => {
     expect(previewSource).not.toContain('피자 전월 대비 상승 / 하락 TOP 5');
     expect(previewSource).toContain("scope === 'all' ? '전체 메뉴'");
     expect(previewSource).not.toContain("safeScope === 'pizza' ? '피자' : '사이드'");
-    expect(moverSource).toContain('피자 전월 대비 상승 / 하락 TOP 5');
+    expect(moverSource).toContain('피자 {compareLabel} 대비 상승 / 하락 TOP 5');
+    expect(moverSource).toContain('periodCompareLabel');
     expect(rankSource).toContain('export function SalesRankTableSection');
     expect(rankSource).toContain("from './SalesCategoryBarRows'");
     expect(rankSource).toContain("from './SalesRankTable'");

@@ -1,5 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
 import {
+  buildSetPreviewRows,
   calcHalfMinMax,
   calcSetMinMax,
   getPizzaCalorieVariants,
@@ -149,5 +150,40 @@ describe('nutrition set calc', () => {
       minWeight: 180,
       maxWeight: 220,
     });
+  });
+});
+
+describe('buildSetPreviewRows', () => {
+  const menuRefs = [...pizzaMenus, { menuCode: 'S-1', menuName: '사이드', category: '사이드' }];
+  const setComps = [
+    { kind: 'set', setName: '세트A', setSide: 'L', slots: [{ label: '사이드', menuCodes: ['S-1'] }] },
+    { kind: 'set', setName: '세트A', setSide: 'R', slots: [{ label: '사이드', menuCodes: ['S-1'] }] },
+  ];
+
+  test('세트박스 L/R 사이드별로 한 행씩 min/max 열량을 반환한다 ("계산 결과" 미리보기용)', () => {
+    const rows = buildSetPreviewRows(setComps, menuRefs, rawMap, {}, pizzaMenus, edgeMap);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({ setName: '세트A', side: 'L', minKcal: 90, maxKcal: 260 });
+    expect(rows[1]).toMatchObject({ setName: '세트A', side: 'R', minKcal: 100, maxKcal: 230 });
+  });
+
+  test('kind가 set이 아니거나 setSide가 L/R이 아니면 제외한다', () => {
+    const rows = buildSetPreviewRows(
+      [
+        { kind: 'half', setSide: 'L' },
+        { kind: 'set', setSide: 'X' },
+      ],
+      menuRefs,
+      rawMap,
+      {},
+      pizzaMenus,
+      edgeMap
+    );
+    expect(rows).toEqual([]);
+  });
+
+  test('setComps가 비어있으면 빈 배열을 반환한다', () => {
+    expect(buildSetPreviewRows([], menuRefs, rawMap, {}, pizzaMenus, edgeMap)).toEqual([]);
+    expect(buildSetPreviewRows(null, menuRefs, rawMap, {}, pizzaMenus, edgeMap)).toEqual([]);
   });
 });

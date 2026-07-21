@@ -38,9 +38,10 @@ describe('sales report page structure', () => {
     expect(dataHookSource).toContain('export function useSalesReportData');
   });
 
-  test('useSalesReportComputed contains buildSalesStats and buildPeriodCompare', () => {
+  test('useSalesReportComputed contains buildSalesStats and buildRangeCompare (분기·연 통합 비교)', () => {
     expect(computedSource).toContain('buildSalesStats');
-    expect(computedSource).toContain('buildPeriodCompare');
+    expect(computedSource).toContain('buildRangeCompare');
+    expect(computedSource).toContain('monthsInPeriod');
     expect(computedSource).toContain('export function useSalesReportComputed');
   });
 

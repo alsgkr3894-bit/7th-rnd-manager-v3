@@ -98,6 +98,28 @@ describe('note calendar grid helpers', () => {
     expect(model.shown).toEqual([{ ...samples[0], _kind: 'sample' }]);
     expect(buildCalendarCellModel({ cell: null })).toBeNull();
   });
+
+  test('cell model attaches the KR holiday name when the date is a public holiday', () => {
+    const holidayModel = buildCalendarCellModel({
+      cell: { key: '2026-01-01', dayNum: 1, dow: 4, notes: [], schedules: [] },
+      viewMode: 'all',
+      selectedDay: null,
+      today: '2026-01-01',
+      isPast: () => false,
+      isToday: () => false,
+    });
+    expect(holidayModel.holidayName).toBe('신정');
+
+    const plainModel = buildCalendarCellModel({
+      cell: { key: '2026-06-16', dayNum: 16, dow: 2, notes: [], schedules: [] },
+      viewMode: 'all',
+      selectedDay: null,
+      today: '2026-06-16',
+      isPast: () => false,
+      isToday: () => false,
+    });
+    expect(plainModel.holidayName).toBeNull();
+  });
 });
 
 describe('note calendar grid structure', () => {
@@ -132,6 +154,7 @@ describe('note calendar grid structure', () => {
 
     expect(dayHeaderSource).toContain('export function CalendarDayHeader');
     expect(dayHeaderSource).toContain('dayNumColor');
+    expect(dayHeaderSource).toContain('model.holidayName');
     expect(dayHeaderSource).toContain('cal-add-btn');
     expect(dayHeaderSource).toContain('onAddSchedule(model.key)');
 

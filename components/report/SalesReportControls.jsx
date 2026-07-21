@@ -1,5 +1,6 @@
 'use client';
 import { OptGroup, Seg, Check } from '@/components/report/ReportBuilderShell';
+import { periodCompareLabel } from '@/lib/report/period';
 import { asArray } from '@/lib/ui/prop-guards';
 
 const DEFAULT_REPORT_YEAR = 2026;
@@ -11,13 +12,17 @@ const DEFAULT_REPORT_MONTH = 1;
  *
  * Props
  * ─────
- * year, month, scope, viewMode, periodMode          — current values
- * availYears, availMonthsByYear                     — available data periods
- * onYear, onMonth, onScope, onViewMode, onPeriodMode — setters
- * cmpYear, cmpMonth, onCmpYear, onCmpMonth          — compare-mode period
- * opts, upd                                         — section checkboxes state + updater
- * docFormat, updFmt                                 — document format state + updater
+ * year, month, quarter, scope, viewMode, periodMode           — current values
+ * availYears, availMonthsByYear                              — available data periods
+ * onYear, onMonth, onQuarter, onScope, onViewMode, onPeriodMode — setters
+ * cmpYear, cmpMonth, cmpQuarter, onCmpYear, onCmpMonth, onCmpQuarter — compare-mode period
+ *   (periodMode='quarter'면 month/cmpMonth 자리 대신 quarter/cmpQuarter가 쓰인다.
+ *    periodMode='year'면 두 값 모두 무시된다.)
+ * opts, upd                                                  — section checkboxes state + updater
+ * docFormat, updFmt                                          — document format state + updater
  */
+const QUARTERS = [1, 2, 3, 4];
+
 function toPeriodNumber(value, fallback) {
   const n = Number(value);
   return Number.isFinite(n) ? Math.floor(n) : fallback;
@@ -30,9 +35,16 @@ function periodList(value, fallback) {
   return list.length > 0 ? list : [fallback];
 }
 
+function periodModeUnitLabel(periodMode) {
+  if (periodMode === 'quarter') return '분기';
+  if (periodMode === 'year') return '년도';
+  return '월';
+}
+
 export default function SalesReportControls({
   year,
   month,
+  quarter,
   scope,
   viewMode,
   periodMode,
@@ -40,13 +52,16 @@ export default function SalesReportControls({
   availMonthsByYear,
   onYear,
   onMonth,
+  onQuarter,
   onScope,
   onViewMode,
   onPeriodMode,
   cmpYear,
   cmpMonth,
+  cmpQuarter,
   onCmpYear,
   onCmpMonth,
+  onCmpQuarter,
   opts,
   upd,
   docFormat,
@@ -54,8 +69,10 @@ export default function SalesReportControls({
 }) {
   const safeYear = toPeriodNumber(year, DEFAULT_REPORT_YEAR);
   const safeMonth = toPeriodNumber(month, DEFAULT_REPORT_MONTH);
+  const safeQuarter = toPeriodNumber(quarter, 1);
   const safeCmpYear = toPeriodNumber(cmpYear, safeYear);
   const safeCmpMonth = toPeriodNumber(cmpMonth, safeMonth);
+  const safeCmpQuarter = toPeriodNumber(cmpQuarter, safeQuarter);
   const safeAvailYears = periodList(availYears, safeYear);
   const safeAvailMonthsByYear =
     availMonthsByYear && typeof availMonthsByYear === 'object' ? availMonthsByYear : {};
@@ -66,12 +83,13 @@ export default function SalesReportControls({
   const monthsFor = (targetYear, fallbackMonth) => {
     return periodList(safeAvailMonthsByYear[targetYear], fallbackMonth);
   };
-  const hasMonth = (targetYear, targetMonth) => monthsFor(targetYear, null).includes(targetMonth);
-  const isSameCompareMonth =
+  const unitLabel = periodModeUnitLabel(periodMode);
+  const isSameComparePeriod =
     viewMode === 'compare' &&
-    periodMode === 'month' &&
     safeCmpYear === safeYear &&
-    safeCmpMonth === safeMonth;
+    (periodMode === 'year' ||
+      (periodMode === 'quarter' && safeCmpQuarter === safeQuarter) ||
+      (periodMode === 'month' && safeCmpMonth === safeMonth));
 
   return (
     <>
@@ -80,8 +98,8 @@ export default function SalesReportControls({
           value={viewMode}
           onChange={onViewMode}
           options={[
-            { value: 'rank', label: '해당 월 순위' },
-            { value: 'compare', label: '다른 월 비교' },
+            { value: 'rank', label: `해당 ${unitLabel} 순위` },
+            { value: 'compare', label: `다른 ${unitLabel} 비교` },
           ]}
         />
       </OptGroup>
@@ -92,6 +110,7 @@ export default function SalesReportControls({
           onChange={onPeriodMode}
           options={[
             { value: 'month', label: '월 단위' },
+            { value: 'quarter', label: '분기 단위' },
             { value: 'year', label: '년 단위' },
           ]}
         />
@@ -102,8 +121,10 @@ export default function SalesReportControls({
             onChange={e => {
               const y = parseInt(e.target.value, 10);
               onYear?.(y);
-              const ms = monthsFor(y, safeMonth);
-              if (ms.length > 0 && !ms.includes(safeMonth)) onMonth?.(ms.at(-1));
+              if (periodMode === 'month') {
+                const ms = monthsFor(y, safeMonth);
+                if (ms.length > 0 && !ms.includes(safeMonth)) onMonth?.(ms.at(-1));
+              }
             }}
           >
             {safeAvailYears.map(y => (
@@ -125,11 +146,24 @@ export default function SalesReportControls({
               ))}
             </select>
           )}
+          {periodMode === 'quarter' && (
+            <select
+              className="period-select num"
+              value={safeQuarter}
+              onChange={e => onQuarter?.(parseInt(e.target.value, 10))}
+            >
+              {QUARTERS.map(q => (
+                <option key={q} value={q}>
+                  {q}분기
+                </option>
+              ))}
+            </select>
+          )}
         </div>
         {viewMode === 'compare' && (
           <div style={{ marginTop: 8 }}>
             <div className="opt-label" style={{ fontSize: 11, marginBottom: 4 }}>
-              비교 월
+              비교 {unitLabel}
             </div>
             <div className="opt-period-row">
               <select
@@ -138,8 +172,10 @@ export default function SalesReportControls({
                 onChange={e => {
                   const y = parseInt(e.target.value, 10);
                   onCmpYear?.(y);
-                  const ms = monthsFor(y, safeCmpMonth);
-                  if (ms.length > 0 && !ms.includes(safeCmpMonth)) onCmpMonth?.(ms.at(-1));
+                  if (periodMode === 'month') {
+                    const ms = monthsFor(y, safeCmpMonth);
+                    if (ms.length > 0 && !ms.includes(safeCmpMonth)) onCmpMonth?.(ms.at(-1));
+                  }
                 }}
               >
                 {safeAvailYears.map(y => (
@@ -148,21 +184,36 @@ export default function SalesReportControls({
                   </option>
                 ))}
               </select>
-              <select
-                className="period-select num"
-                value={safeCmpMonth}
-                onChange={e => onCmpMonth?.(parseInt(e.target.value, 10))}
-              >
-                {monthsFor(safeCmpYear, safeCmpMonth).map(m => (
-                  <option key={m} value={m}>
-                    {m}월
-                  </option>
-                ))}
-              </select>
+              {periodMode === 'month' && (
+                <select
+                  className="period-select num"
+                  value={safeCmpMonth}
+                  onChange={e => onCmpMonth?.(parseInt(e.target.value, 10))}
+                >
+                  {monthsFor(safeCmpYear, safeCmpMonth).map(m => (
+                    <option key={m} value={m}>
+                      {m}월
+                    </option>
+                  ))}
+                </select>
+              )}
+              {periodMode === 'quarter' && (
+                <select
+                  className="period-select num"
+                  value={safeCmpQuarter}
+                  onChange={e => onCmpQuarter?.(parseInt(e.target.value, 10))}
+                >
+                  {QUARTERS.map(q => (
+                    <option key={q} value={q}>
+                      {q}분기
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
-            {isSameCompareMonth && (
+            {isSameComparePeriod && (
               <div className="opt-help" role="alert" style={{ color: 'var(--warn)', marginTop: 6 }}>
-                기준 월과 비교 월이 같습니다.
+                기준 {unitLabel}과 비교 {unitLabel}이 같습니다.
               </div>
             )}
           </div>
@@ -194,7 +245,7 @@ export default function SalesReportControls({
 
       <OptGroup label="포함 섹션">
         <Check
-          label="요약 (총 판매량·전월 대비)"
+          label={`요약 (총 판매량·${periodCompareLabel(periodMode)} 대비)`}
           value={safeOpts.summary}
           onChange={v => handleUpd('summary', v)}
         />
@@ -204,7 +255,7 @@ export default function SalesReportControls({
           onChange={v => handleUpd('catShare', v)}
         />
         <Check
-          label="피자 전월 대비 상승/하락 TOP 5"
+          label={`피자 ${periodCompareLabel(periodMode)} 대비 상승/하락 TOP 5`}
           value={safeOpts.pizzaMover}
           onChange={v => handleUpd('pizzaMover', v)}
         />
@@ -231,7 +282,7 @@ export default function SalesReportControls({
           hint="미리보기·Excel 출력에 금액 컬럼 표시"
         />
         <Check
-          label="전월 대비 증감 컬럼"
+          label={`${periodCompareLabel(periodMode)} 대비 증감 컬럼`}
           value={safeOpts.prevComp}
           onChange={v => handleUpd('prevComp', v)}
         />

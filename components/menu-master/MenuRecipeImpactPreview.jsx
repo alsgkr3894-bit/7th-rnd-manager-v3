@@ -63,7 +63,14 @@ export function MenuRecipeImpactPreview({ components, allIngredients }) {
           원산지/알레르기 영향 미리보기
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <PreviewStat label="구성품" value={`${preview.componentCount}개`} />
+          <PreviewStat
+            label="구성품"
+            value={
+              preview.groupComponentCount > 0
+                ? `${preview.componentCount}개 (공통원가 ${preview.groupComponentCount}개 포함)`
+                : `${preview.componentCount}개`
+            }
+          />
           <PreviewStat
             label="원산지"
             value={`${preview.originRegisteredCount}/${preview.componentCount}`}

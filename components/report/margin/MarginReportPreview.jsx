@@ -1,7 +1,7 @@
 'use client';
 
 import { formatNumber } from '@/lib/format';
-import { buildMarginExcelRows } from '@/lib/cost/margin/export';
+import { buildMarginExcelRows, buildMarginExcelRowsAllPlatforms } from '@/lib/cost/margin/export';
 import {
   buildMarginPizzaCostRateSummary,
   buildMarginReportSummary,
@@ -14,42 +14,83 @@ function displayCell(value) {
   return String(value);
 }
 
-function PreviewTable({ rows, sizeLabels, viewMode, activePlatform, discount }) {
-  const sheetRows = buildMarginExcelRows(rows, sizeLabels, viewMode, activePlatform, discount);
+const CATEGORY_COL_WIDTH = 130;
+const MENU_NAME_COL_WIDTH = 220;
+
+function dataColWidth(headerCount) {
+  return headerCount > 10 ? 72 : 84;
+}
+
+function columnWidths(headers) {
+  const dataWidth = dataColWidth(headers.length);
+  return headers.map((_, index) => {
+    if (index === 0) return CATEGORY_COL_WIDTH;
+    if (index === 1) return MENU_NAME_COL_WIDTH;
+    return dataWidth;
+  });
+}
+
+function PreviewTable({ rows, sizeLabels, viewMode, activePlatform, platforms, isAllPlatforms, discount }) {
+  const sheetRows = isAllPlatforms
+    ? buildMarginExcelRowsAllPlatforms(rows, sizeLabels, viewMode, platforms, discount)
+    : buildMarginExcelRows(rows, sizeLabels, viewMode, activePlatform, discount);
   const headers = sheetRows[0] || [];
   const bodyRows = sheetRows.slice(1);
+  const widths = columnWidths(headers);
+  const totalWidth = widths.reduce((sum, w) => sum + w, 0);
+
+  const clipStyle = {
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  };
 
   return (
-    <table className="paper-table" style={{ tableLayout: 'fixed' }}>
-      <thead>
-        <tr>
-          {headers.map((header, index) => (
-            <th key={`${header}-${index}`} style={index >= 2 ? { textAlign: 'right' } : null}>
-              {header}
-            </th>
+    <div className="paper-table-scroll" style={{ overflowX: 'auto' }}>
+      <table className="paper-table" style={{ tableLayout: 'fixed', width: totalWidth }}>
+        <colgroup>
+          {widths.map((width, index) => (
+            <col key={index} style={{ width }} />
           ))}
-        </tr>
-      </thead>
-      <tbody>
-        {bodyRows.length ? (
-          bodyRows.map((row, rowIndex) => (
-            <tr key={rowIndex}>
-              {headers.map((_, index) => (
-                <td key={index} style={index >= 2 ? { textAlign: 'right' } : null}>
-                  {displayCell(row[index])}
-                </td>
-              ))}
-            </tr>
-          ))
-        ) : (
+        </colgroup>
+        <thead>
           <tr>
-            <td colSpan={Math.max(headers.length, 1)} style={{ textAlign: 'center' }}>
-              출력할 메뉴가 없습니다
-            </td>
+            {headers.map((header, index) => (
+              <th
+                key={`${header}-${index}`}
+                title={header}
+                style={{ ...clipStyle, ...(index >= 2 ? { textAlign: 'right' } : null) }}
+              >
+                {header}
+              </th>
+            ))}
           </tr>
-        )}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {bodyRows.length ? (
+            bodyRows.map((row, rowIndex) => (
+              <tr key={rowIndex}>
+                {headers.map((_, index) => (
+                  <td
+                    key={index}
+                    title={displayCell(row[index])}
+                    style={{ ...clipStyle, ...(index >= 2 ? { textAlign: 'right' } : null) }}
+                  >
+                    {displayCell(row[index])}
+                  </td>
+                ))}
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={Math.max(headers.length, 1)} style={{ textAlign: 'center' }}>
+                출력할 메뉴가 없습니다
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -140,6 +181,8 @@ export function MarginReportPreview({
   rows,
   sections,
   activePlatform,
+  platforms,
+  isAllPlatforms,
   discount,
   viewMode,
   selectedCategoryCount,
@@ -147,8 +190,16 @@ export function MarginReportPreview({
   selectedSizeCount,
 }) {
   const summary = buildMarginReportSummary(rows, activePlatform, discount, viewMode);
-  const pizzaCostRateSummary = buildMarginPizzaCostRateSummary(rows, activePlatform, discount);
+  const pizzaCostRateSummary = isAllPlatforms
+    ? null
+    : buildMarginPizzaCostRateSummary(rows, activePlatform, discount);
   const modeLabel = viewMode === 'margin' ? '마진율' : '원가율';
+  const platformCount = platforms?.length || 0;
+  const platformLabel = !isAllPlatforms
+    ? activePlatform?.name || '기본'
+    : platformCount
+      ? `선택 비교 (${platformCount}개)`
+      : '선택 없음';
   const { isoDateLabel, profileName } = useReportGeneratedMeta();
 
   return (
@@ -174,12 +225,22 @@ export function MarginReportPreview({
       <div className="paper-stat-row">
         <SummaryCard label="출력 메뉴" value={`${formatNumber(summary.rowCount)}개`} />
         <SummaryCard label="카테고리" value={`${formatNumber(summary.categoryCount)}개`} />
-        <SummaryCard label="플랫폼" value={activePlatform?.name || '기본'} />
-        <SummaryCard
-          label={`평균 ${modeLabel}`}
-          value={summary.metricCount ? `${summary.avgMetric.toFixed(1)}%` : '—'}
-          sub={`${formatNumber(summary.metricCount)}개 가격 기준`}
-        />
+        <SummaryCard label="플랫폼" value={platformLabel} />
+        {isAllPlatforms ? (
+          <SummaryCard
+            label={`플랫폼별 ${modeLabel}`}
+            value={platformCount ? '아래 표 참고' : '—'}
+            sub={
+              platformCount ? '메뉴별 표에서 플랫폼 컬럼을 비교하세요' : '플랫폼을 1개 이상 선택하세요'
+            }
+          />
+        ) : (
+          <SummaryCard
+            label={`평균 ${modeLabel}`}
+            value={summary.metricCount ? `${summary.avgMetric.toFixed(1)}%` : '—'}
+            sub={`${formatNumber(summary.metricCount)}개 가격 기준`}
+          />
+        )}
       </div>
 
       <PizzaCostRateSummary summary={pizzaCostRateSummary} />
@@ -206,6 +267,8 @@ export function MarginReportPreview({
               sizeLabels={section.sizeLabels}
               viewMode={viewMode}
               activePlatform={activePlatform}
+              platforms={platforms}
+              isAllPlatforms={isAllPlatforms}
               discount={discount}
             />
           </section>

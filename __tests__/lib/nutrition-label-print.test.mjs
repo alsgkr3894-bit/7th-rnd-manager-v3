@@ -86,10 +86,11 @@ describe('buildNutritionLabelPrintHtml', () => {
     expect(html).not.toContain('Nutritive components &amp; Origin');
     expect(html).not.toContain('제품 영양성분 &amp; 원산지 정보');
     expect(html).not.toContain('background: #d21922');
-    expect(html).toContain('<th colspan="14">150g 기준</th>');
+    expect(html).toContain('<th colspan="12">150g 기준</th>');
     expect(html).toContain('<th colspan="16">조각 기준</th>');
     expect(html).toContain('<th rowspan="2" class="poster-pizza-label">메뉴명</th>');
-    expect(html).toContain('중량단위 L');
+    expect(html).toContain('총중량 L');
+    expect(html).not.toContain('중량단위');
     expect(html).toContain('열량(kcal/150g) L');
     expect(html).toContain('1회 조각수 L');
     expect(html).toContain('<th>총량(ml)</th>');

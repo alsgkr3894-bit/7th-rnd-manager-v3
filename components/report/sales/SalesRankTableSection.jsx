@@ -6,7 +6,14 @@ import { SectionDot, S_EMPTY_STATE, S_SECTION_TITLE_FLEX } from './SalesReportSe
 import { SalesCategoryBarRows } from './SalesCategoryBarRows';
 import { SalesRankTable } from './SalesRankTable';
 
-export function SalesRankTableSection({ opts, periodLabel, catShares, groupRanking, showRevenue }) {
+export function SalesRankTableSection({
+  opts,
+  periodLabel,
+  catShares,
+  groupRanking,
+  showRevenue,
+  compareLabel = '전월',
+}) {
   if (groupRanking.length === 0) {
     return (
       <div className="paper-section">
@@ -47,7 +54,7 @@ export function SalesRankTableSection({ opts, periodLabel, catShares, groupRanki
           <SalesCategoryBarRows items={items} catColor={catColor} catTotal={catTotal} />
         )}
 
-        <SalesRankTable items={items} opts={opts} />
+        <SalesRankTable items={items} opts={opts} compareLabel={compareLabel} />
       </div>
     );
   });

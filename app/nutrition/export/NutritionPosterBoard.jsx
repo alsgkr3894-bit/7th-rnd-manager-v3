@@ -14,7 +14,6 @@ import {
 
 const PIZZA_150_GROUPS = [
   { label: '총중량', key: 'weight' },
-  { label: '중량단위', key: 'weightUnit' },
   { label: '열량(kcal/150g)', key: 'kcal' },
   { label: '단백질(g/150g)', key: 'protein' },
   { label: '포화지방(g/150g)', key: 'fat' },
@@ -62,11 +61,6 @@ function EmptyRow({ colSpan, label = '데이터 없음' }) {
   );
 }
 
-function pair150PosterValue(row, key, side) {
-  if (key === 'weightUnit') return row?.per150Sides?.[side] ? 'g' : '—';
-  return pair150Value(row, key, side);
-}
-
 function PizzaPoster150Table({ rows }) {
   const posterRows = buildPosterPizzaRows([], rows);
   return (
@@ -100,10 +94,10 @@ function PizzaPoster150Table({ rows }) {
                 </td>
                 {PIZZA_150_GROUPS.flatMap(group => [
                   <td key={`${group.key}-L`} className="poster-num">
-                    <CellText>{pair150PosterValue(row, group.key, 'L')}</CellText>
+                    <CellText>{pair150Value(row, group.key, 'L')}</CellText>
                   </td>,
                   <td key={`${group.key}-R`} className="poster-num">
-                    <CellText>{pair150PosterValue(row, group.key, 'R')}</CellText>
+                    <CellText>{pair150Value(row, group.key, 'R')}</CellText>
                   </td>,
                 ])}
                 <td className="poster-allergen">

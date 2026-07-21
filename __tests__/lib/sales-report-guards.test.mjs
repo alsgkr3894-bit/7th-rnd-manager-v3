@@ -1,8 +1,8 @@
 import { describe, expect, test } from '@jest/globals';
 import { buildCategoryDetails, buildCategoryShare } from '../../lib/sales/category.js';
 import { buildOrderedCategories } from '../../lib/sales/categories.js';
-import { buildPeriodCompare, deriveCompareB } from '../../lib/sales/compare.js';
-import { buildGroupRanking, extractSize } from '../../lib/sales/ranking.js';
+import { buildPeriodCompare, buildRangeCompare, deriveCompareB } from '../../lib/sales/compare.js';
+import { buildGroupRanking, extractSize, mergeGroupRankings } from '../../lib/sales/ranking.js';
 import { formatShareText } from '../../lib/sales/share-formatter.js';
 
 const row = {
@@ -32,6 +32,30 @@ describe('sales report helper guards', () => {
       quantity: 10,
     });
     expect(result[0].sizes[0]).toMatchObject({ size: 'L', quantity: 10, share: 1 });
+  });
+
+  test('mergeGroupRankings는 여러 달의 순위를 그룹명·카테고리 기준으로 합산한다 (분기·연 통합용)', () => {
+    const may = buildGroupRanking([row], { year: 2026, month: 5 });
+    const june = buildGroupRanking(
+      [{ ...row, month: 6, quantity: 4, detailName: '슈퍼콤비네이션 R' }],
+      { year: 2026, month: 6 }
+    );
+
+    const merged = mergeGroupRankings([may, june]);
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0]).toMatchObject({ name: '슈퍼콤비네이션', category: 'pizza', quantity: 14 });
+    expect(merged[0].sizes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ size: 'L', quantity: 10 }),
+        expect.objectContaining({ size: 'R', quantity: 4 }),
+      ])
+    );
+  });
+
+  test('mergeGroupRankings는 비배열 입력을 빈 목록으로 처리한다', () => {
+    expect(mergeGroupRankings(null)).toEqual([]);
+    expect(mergeGroupRankings([null, 'bad', []])).toEqual([]);
   });
 
   test('buildPeriodCompare는 비배열 입력과 잘못된 옵션을 안전하게 처리한다', () => {
@@ -110,6 +134,49 @@ describe('sales report helper guards', () => {
       }),
     ]);
     expect(result.rows[0].name).toBe('고구마피자');
+  });
+
+  test('buildRangeCompare는 여러 달을 하나의 기간으로 묶어 비교한다 (분기·연 비교용)', () => {
+    // 1분기(1~3월) vs 4분기(작년 10~12월)
+    const rows = [
+      { status: 'classified', year: 2026, month: 1, category: '피자', groupName: 'A', quantity: 10 },
+      { status: 'classified', year: 2026, month: 2, category: '피자', groupName: 'A', quantity: 5 },
+      { status: 'classified', year: 2026, month: 3, category: '피자', groupName: 'A', quantity: 3 },
+      { status: 'classified', year: 2025, month: 10, category: '피자', groupName: 'A', quantity: 4 },
+      { status: 'classified', year: 2025, month: 11, category: '피자', groupName: 'A', quantity: 2 },
+      { status: 'classified', year: 2025, month: 12, category: '피자', groupName: 'A', quantity: 1 },
+      // 범위 밖 — 어느 쪽에도 포함되지 않아야 함
+      { status: 'classified', year: 2026, month: 4, category: '피자', groupName: 'A', quantity: 99 },
+    ];
+    const monthsA = [
+      { year: 2026, month: 1 },
+      { year: 2026, month: 2 },
+      { year: 2026, month: 3 },
+    ];
+    const monthsB = [
+      { year: 2025, month: 10 },
+      { year: 2025, month: 11 },
+      { year: 2025, month: 12 },
+    ];
+
+    const result = buildRangeCompare(rows, monthsA, monthsB, { groupBy: 'group' });
+
+    expect(result.totalA).toBe(18);
+    expect(result.totalB).toBe(7);
+    expect(result.totalDiff).toBe(11);
+    expect(result.monthsA).toEqual(monthsA);
+    expect(result.monthsB).toEqual(monthsB);
+    expect(result.rows[0]).toMatchObject({ name: 'A', a: 18, b: 7 });
+  });
+
+  test('buildRangeCompare는 비배열 입력을 안전하게 처리한다', () => {
+    expect(buildRangeCompare(null, null, null)).toMatchObject({
+      totalA: 0,
+      totalB: 0,
+      rows: [],
+      monthsA: [],
+      monthsB: [],
+    });
   });
 
   test('buildCategoryDetails와 buildCategoryShare는 깨진 입력을 안전하게 무시한다', () => {

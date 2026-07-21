@@ -1,3 +1,5 @@
+import { getKrHolidayName } from '@/lib/note/kr-holidays';
+
 export const MAX_VISIBLE_ITEMS = 3;
 
 export function shouldShowCalendarKind(viewMode, kind) {
@@ -52,5 +54,6 @@ export function buildCalendarCellModel({
     isSelected: selectedDay === cell.key,
     hasToday: isToday(cell.key, today),
     past: isPast(cell.key, today),
+    holidayName: getKrHolidayName(cell.key),
   };
 }

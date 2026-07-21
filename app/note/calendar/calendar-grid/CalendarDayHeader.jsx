@@ -8,12 +8,14 @@ export function CalendarDayHeader({ model, canEdit = false, onAddSchedule, onSel
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 4,
+        gap: 4,
       }}
     >
       <span
         style={{
           width: model.hasToday ? 24 : 22,
           height: model.hasToday ? 24 : 22,
+          flexShrink: 0,
           borderRadius: '50%',
           display: 'flex',
           alignItems: 'center',
@@ -21,11 +23,32 @@ export function CalendarDayHeader({ model, canEdit = false, onAddSchedule, onSel
           fontSize: model.hasToday ? 13 : 12,
           fontWeight: model.hasToday ? 900 : 600,
           background: model.hasToday ? 'var(--accent)' : 'transparent',
-          color: dayNumColor({ hasToday: model.hasToday, dow: model.dow, past: model.past }),
+          color: dayNumColor({
+            hasToday: model.hasToday,
+            dow: model.dow,
+            past: model.past,
+            isHoliday: Boolean(model.holidayName),
+          }),
         }}
       >
         {model.dayNum}
       </span>
+      {model.holidayName && (
+        <span
+          title={model.holidayName}
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            color: '#EF4444',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            flex: 1,
+          }}
+        >
+          {model.holidayName}
+        </span>
+      )}
       <button
         disabled={!canEdit}
         onClick={event => {

@@ -5,9 +5,22 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 const INITIAL_YEAR = 2026;
 const INITIAL_MONTH = 1;
 
+export function shiftMonthYear({ year, month }, delta) {
+  let nextMonth = month + delta;
+  let nextYear = year;
+  if (nextMonth < 1) {
+    nextMonth = 12;
+    nextYear -= 1;
+  } else if (nextMonth > 12) {
+    nextMonth = 1;
+    nextYear += 1;
+  }
+  return { year: nextYear, month: nextMonth };
+}
+
 export function useCalendarNavigation() {
-  const [viewYear, setViewYear] = useState(INITIAL_YEAR);
-  const [viewMonth, setViewMonth] = useState(INITIAL_MONTH);
+  const [view, setView] = useState({ year: INITIAL_YEAR, month: INITIAL_MONTH });
+  const { year: viewYear, month: viewMonth } = view;
   const [selectedDay, setSelectedDay] = useState(null);
   const [panelClosing, setPanelClosing] = useState(false);
   const [monthDir, setMonthDir] = useState(0);
@@ -26,8 +39,7 @@ export function useCalendarNavigation() {
 
   useEffect(() => {
     const now = new Date();
-    setViewYear(now.getFullYear());
-    setViewMonth(now.getMonth() + 1);
+    setView({ year: now.getFullYear(), month: now.getMonth() + 1 });
   }, []);
 
   const shiftMonth = useCallback(delta => {
@@ -40,25 +52,13 @@ export function useCalendarNavigation() {
 
     setMonthDir(delta);
     calKey.current += 1;
-    setViewMonth(prev => {
-      let month = prev + delta;
-      if (month < 1) {
-        setViewYear(year => year - 1);
-        return 12;
-      }
-      if (month > 12) {
-        setViewYear(year => year + 1);
-        return 1;
-      }
-      return month;
-    });
+    setView(prev => shiftMonthYear(prev, delta));
     setSelectedDay(null);
   }, []);
 
   const resetToToday = useCallback(() => {
     const now = new Date();
-    setViewYear(now.getFullYear());
-    setViewMonth(now.getMonth() + 1);
+    setView({ year: now.getFullYear(), month: now.getMonth() + 1 });
     setSelectedDay(null);
   }, []);
 

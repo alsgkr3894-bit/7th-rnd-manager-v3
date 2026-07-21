@@ -6,9 +6,18 @@ import { usePagination } from '@/hooks/usePagination';
 import { NutritionResultRow } from './NutritionResultRow';
 import { ResultsToolbar } from './ResultsToolbar';
 import { NUTRITION_FIELDS, calcAllResults } from '@/lib/nutrition/values/store';
+import { buildSetPreviewRows } from '@/lib/nutrition/values/set-calc';
 import { downloadCsv } from '@/lib/download';
-import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
+import { isPersonalPizzaMenu, resolveNutritionGroup } from '@/lib/nutrition/menu-group';
 import { asDisplayText, asObjectArray, asRecord } from '@/lib/ui/prop-guards';
+
+const SET_GROUP_LABEL = '세트박스 (총열량·총중량 기준, 100g 아님)';
+
+function formatRangeCell(min, max) {
+  if (min == null && max == null) return null;
+  if (min === max) return min;
+  return `${min}~${max}`;
+}
 
 const PAGE_SIZE = 100;
 
@@ -21,11 +30,19 @@ const GROUP_HEADER_STYLE = {
   textTransform: 'uppercase',
 };
 
-export function TabResults({ menus, rawMap, edgeMap, menuMasters, menuSearch = '' }) {
+export function TabResults({
+  menus,
+  rawMap,
+  edgeMap,
+  menuMasters,
+  setComps,
+  menuSearch = '',
+}) {
   const [filterMenu, setFilterMenu] = useState('전체');
   const [missingOnly, setMissingOnly] = useState(false);
   const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
   const safeMenuMasters = useMemo(() => asObjectArray(menuMasters), [menuMasters]);
+  const safeSetComps = useMemo(() => asObjectArray(setComps), [setComps]);
   const safeRawMap = asRecord(rawMap);
   const safeEdgeMap = asRecord(edgeMap);
   const searchText = asDisplayText(menuSearch).trim().toLowerCase();
@@ -35,7 +52,17 @@ export function TabResults({ menus, rawMap, edgeMap, menuMasters, menuSearch = '
     [safeMenuMasters]
   );
 
-  const results = useMemo(
+  const pizzaMenus = useMemo(
+    () =>
+      safeMenus.filter(
+        m =>
+          resolveNutritionGroup(m, masterByCode) === '피자' &&
+          !isPersonalPizzaMenu(m, masterByCode)
+      ),
+    [safeMenus, masterByCode]
+  );
+
+  const menuResults = useMemo(
     () =>
       calcAllResults({
         menus: safeMenus,
@@ -47,7 +74,28 @@ export function TabResults({ menus, rawMap, edgeMap, menuMasters, menuSearch = '
     [safeMenus, safeRawMap, safeEdgeMap, masterByCode]
   );
 
-  const menuNames = useMemo(() => ['전체', ...safeMenus.map(m => m.menuName)], [safeMenus]);
+  const setResults = useMemo(
+    () =>
+      buildSetPreviewRows(safeSetComps, safeMenus, safeRawMap, masterByCode, pizzaMenus, safeEdgeMap).map(
+        (r, index) => ({
+          menuCode: `__set__${r.setName}__${r.side}__${index}`,
+          menuName: `${r.setName} (${r.side}세트)`,
+          crustType: '세트',
+          groupLabel: SET_GROUP_LABEL,
+          isDerived: false,
+          weight: formatRangeCell(r.minWeight, r.maxWeight),
+          kcal: formatRangeCell(r.minKcal, r.maxKcal),
+        })
+      ),
+    [safeSetComps, safeMenus, safeRawMap, masterByCode, pizzaMenus, safeEdgeMap]
+  );
+
+  const results = useMemo(() => [...menuResults, ...setResults], [menuResults, setResults]);
+
+  const menuNames = useMemo(
+    () => ['전체', ...safeMenus.map(m => m.menuName), ...setResults.map(r => r.menuName)],
+    [safeMenus, setResults]
+  );
 
   const filtered = useMemo(() => {
     let r = results;
@@ -100,7 +148,7 @@ export function TabResults({ menus, rawMap, edgeMap, menuMasters, menuSearch = '
     const result = [];
     let lastGroup = null;
     paged.forEach(r => {
-      const g = menuGroupMap[r.menuCode] || '기타';
+      const g = r.groupLabel || menuGroupMap[r.menuCode] || '기타';
       if (g !== lastGroup) {
         result.push({ type: 'group', label: g });
         lastGroup = g;

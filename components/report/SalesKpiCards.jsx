@@ -8,12 +8,19 @@ import { asObjectArray } from '@/lib/ui/prop-guards';
  *
  * Props
  * ─────
- * kpi         — { current, previous, deltaPct } | null
- * catShares   — array used to derive category count
+ * kpi          — { current, previous, deltaPct } | null
+ * catShares    — array used to derive category count
  * groupRanking — array used to derive total menu count
- * showRevenue — true면 매출액 KPI를 함께 표시
+ * showRevenue  — true면 매출액 KPI를 함께 표시
+ * compareLabel — 직전 기간 비교 라벨 ("전월"/"전분기"/"전년", 기본 "전월")
  */
-export default function SalesKpiCards({ kpi, catShares, groupRanking, showRevenue = false }) {
+export default function SalesKpiCards({
+  kpi,
+  catShares,
+  groupRanking,
+  showRevenue = false,
+  compareLabel = '전월',
+}) {
   const safeCatShares = asObjectArray(catShares);
   const safeGroupRanking = asObjectArray(groupRanking);
   const current = Number.isFinite(Number(kpi?.current)) ? Number(kpi.current) : null;
@@ -44,7 +51,7 @@ export default function SalesKpiCards({ kpi, catShares, groupRanking, showRevenu
         </div>
       )}
       <div className="paper-stat">
-        <div className="paper-stat-label">전월 대비</div>
+        <div className="paper-stat-label">{compareLabel} 대비</div>
         <div
           className="paper-stat-val num"
           style={{

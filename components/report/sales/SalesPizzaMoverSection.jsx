@@ -1,11 +1,12 @@
 'use client';
 import { SalesMoverRow, SalesRankRow } from '@/components/report/sales/SalesChartRows';
 import { isPizzaCategory } from '@/lib/menu-master/category-policy';
-import { safeQuantity } from '@/lib/report/period';
+import { periodCompareLabel, safeQuantity } from '@/lib/report/period';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 import { SectionDot, S_MOVER_LABEL, S_SECTION_TITLE_FLEX } from './SalesReportSectionParts';
 
-export function SalesPizzaMoverSection({ catShares, groupRanking }) {
+export function SalesPizzaMoverSection({ catShares, groupRanking, periodMode }) {
+  const compareLabel = periodCompareLabel(periodMode);
   const all = groupRanking.filter(item =>
     isPizzaCategory(item.category, { includePersonal: false })
   );
@@ -28,7 +29,7 @@ export function SalesPizzaMoverSection({ catShares, groupRanking }) {
     <div className="paper-section">
       <div className="paper-section-title" style={S_SECTION_TITLE_FLEX}>
         <SectionDot color={pizzaColor} />
-        피자 전월 대비 상승 / 하락 TOP 5
+        피자 {compareLabel} 대비 상승 / 하락 TOP 5
       </div>
 
       {pizzaItems.length > 0 ? (
@@ -49,7 +50,7 @@ export function SalesPizzaMoverSection({ catShares, groupRanking }) {
         </div>
       ) : (
         <div style={{ fontSize: 12, color: 'var(--text-3)', padding: '10px 0' }}>
-          전월 데이터가 없어 전월 대비를 표시할 수 없습니다.
+          {compareLabel} 데이터가 없어 {compareLabel} 대비를 표시할 수 없습니다.
         </div>
       )}
 

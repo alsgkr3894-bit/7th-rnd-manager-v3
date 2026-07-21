@@ -2,6 +2,7 @@ import { describe, expect, test } from '@jest/globals';
 import {
   checklistJournalContent,
   checklistJournalTitle,
+  dayNumColor,
   daysInMonth,
   firstDow,
   groupByDate,
@@ -93,6 +94,14 @@ describe('calendar utils', () => {
     ).toEqual({
       '2026-06-23': [{ id: 'same', text: '반복 방지', done: false }],
     });
+  });
+
+  test('공휴일(평일)은 일요일과 같은 빨간색으로 표시한다', () => {
+    expect(dayNumColor({ dow: 3, isHoliday: true })).toBe('#EF4444');
+    expect(dayNumColor({ dow: 0, isHoliday: false })).toBe('#EF4444');
+    expect(dayNumColor({ dow: 6, isHoliday: false })).toBe('#3B82F6');
+    expect(dayNumColor({ hasToday: true, dow: 3, isHoliday: true })).toBe('#fff');
+    expect(dayNumColor({ dow: 3, isHoliday: false, past: true })).toBe('var(--text-4)');
   });
 
   test('체크리스트 연구일지 텍스트를 생성한다', () => {

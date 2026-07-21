@@ -4,6 +4,14 @@ import { SearchBox } from '@/components/ui/SearchBox';
 import { DiscountSimulator } from '@/components/cost/margin/DiscountSimulator';
 import { asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
 import { formatNumber } from '@/lib/format';
+import { fixedFeeDisplayAmounts } from '@/lib/cost/margin/calc';
+
+function feeAmountText(fee) {
+  if (fee.type === 'pct') return `${fee.value}%`;
+  const amounts = fixedFeeDisplayAmounts(fee);
+  if ('common' in amounts) return `${formatNumber(amounts.common)}원`;
+  return `L ${formatNumber(amounts.L)}원 / R ${formatNumber(amounts.R)}원`;
+}
 
 /**
  * 마진 페이지 상단 필터 바 (플랫폼 선택, 할인 시뮬레이터, 카테고리·검색).
@@ -145,7 +153,7 @@ export function MarginFilterBar({
               }}
             >
               <b style={{ color: 'var(--text-2)' }}>{f.label}</b>
-              {f.type === 'pct' ? `${f.value}%` : `${formatNumber(f.value)}원`}
+              {feeAmountText(f)}
             </span>
           ))}
         </div>

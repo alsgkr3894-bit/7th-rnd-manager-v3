@@ -12,6 +12,7 @@ import {
   collectMarginReportEdgeOptions,
   collectMarginReportSizeOptions,
   filterMarginReportRows,
+  isMarginReportOptionSelected,
 } from '@/lib/cost/margin/report-options';
 import { useReportPageState } from '@/hooks/useReportPageState';
 import { buildMarginTableSections } from '@/app/cost/margin/marginTableSections';
@@ -42,21 +43,27 @@ export function MarginReportBuilderContent({ onReportModeChange }) {
     categorySelection: {},
     edgeSelection: {},
     sizeSelection: {},
+    platformSelection: {},
     includeHidden: false,
   });
-  const [activePlatId, setActivePlatId] = useState('default');
   const [viewMode, setViewMode] = useState('cost');
   const [discountEnabled, setDiscountEnabled] = useState(false);
   const [discountType, setDiscountType] = useState('pct');
   const [discountValue, setDiscountValue] = useState('');
 
   const safePlatforms = platforms?.length ? platforms : loadPlatforms();
-  const activePlatform = useMemo(
+  const selectedPlatforms = useMemo(
     () =>
-      safePlatforms.find(platform => platform.id === activePlatId) ||
-      safePlatforms[0] || { id: 'default', name: '기본', fees: [] },
-    [safePlatforms, activePlatId]
+      safePlatforms.filter(platform =>
+        isMarginReportOptionSelected(opts.platformSelection, platform.id)
+      ),
+    [safePlatforms, opts.platformSelection]
   );
+  const isSinglePlatform = selectedPlatforms.length === 1;
+  const isAllPlatforms = !isSinglePlatform;
+  const activePlatform = isSinglePlatform
+    ? selectedPlatforms[0]
+    : selectedPlatforms[0] || { id: 'default', name: '기본', fees: [] };
   const discount = useMemo(
     () => buildDiscount(discountEnabled, discountType, discountValue),
     [discountEnabled, discountType, discountValue]
@@ -80,9 +87,20 @@ export function MarginReportBuilderContent({ onReportModeChange }) {
   const sections = useMemo(() => buildMarginTableSections(reportRows), [reportRows]);
 
   const handleExcelExport = () =>
-    exportMarginExcel(reportRows, reportSizeLabels, viewMode, activePlatform, discount).catch(err =>
-      showToast('엑셀 내보내기 실패: ' + (err?.message || '알 수 없는 오류'), 'error')
-    );
+    exportMarginExcel(
+      reportRows,
+      reportSizeLabels,
+      viewMode,
+      activePlatform,
+      discount,
+      isAllPlatforms ? { allPlatforms: selectedPlatforms } : undefined
+    ).catch(err => showToast('엑셀 내보내기 실패: ' + (err?.message || '알 수 없는 오류'), 'error'));
+
+  const platformLabel = isSinglePlatform
+    ? activePlatform?.name || '기본'
+    : selectedPlatforms.length
+      ? `선택 비교 (${selectedPlatforms.length}개)`
+      : '선택 없음';
 
   const reportMeta = {
     name: '원가마진표 보고서',
@@ -90,7 +108,7 @@ export function MarginReportBuilderContent({ onReportModeChange }) {
     options: {
       reportMode: 'margin',
       viewMode,
-      activePlatform: activePlatform?.name || '기본',
+      activePlatform: platformLabel,
       discount,
       categorySelection: opts.categorySelection,
       edgeSelection: opts.edgeSelection,
@@ -128,8 +146,18 @@ export function MarginReportBuilderContent({ onReportModeChange }) {
             sizeSelection={opts.sizeSelection}
             onSizeChange={(key, value) => updateSelection(setOpts, 'sizeSelection', key, value)}
             platforms={safePlatforms}
-            activePlatId={activePlatform.id}
-            onActivePlatId={setActivePlatId}
+            platformSelection={opts.platformSelection}
+            onPlatformChange={(key, value) =>
+              updateSelection(setOpts, 'platformSelection', key, value)
+            }
+            onPlatformSelectAll={value =>
+              setOpts(prev => ({
+                ...prev,
+                platformSelection: Object.fromEntries(
+                  safePlatforms.map(platform => [platform.id, value])
+                ),
+              }))
+            }
             viewMode={viewMode}
             onViewMode={setViewMode}
             discountEnabled={discountEnabled}
@@ -150,6 +178,8 @@ export function MarginReportBuilderContent({ onReportModeChange }) {
           rows={reportRows}
           sections={sections}
           activePlatform={activePlatform}
+          platforms={selectedPlatforms}
+          isAllPlatforms={isAllPlatforms}
           discount={discount}
           viewMode={viewMode}
           selectedCategoryCount={

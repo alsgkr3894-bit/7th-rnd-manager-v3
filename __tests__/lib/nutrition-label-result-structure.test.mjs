@@ -105,7 +105,8 @@ describe('nutrition label result structure', () => {
     expect(pizzaTableSource).toContain('export function PizzaNutritionTable');
     expect(pizzaTableSource).toContain('영양성분표 (피자) — 150g 기준');
     expect(pizzaTableSource).toContain('PIZZA_150_COLS');
-    expect(pizzaTableSource).toContain('중량단위');
+    expect(pizzaTableSource).toContain('총중량');
+    expect(pizzaTableSource).not.toContain('중량단위');
     expect(pizzaTableSource).toContain('GroupedMenuNameCell');
     expect(pizzaSliceTableSource).toContain('export function PizzaSliceNutritionTable');
     expect(pizzaSliceTableSource).toContain('PIZZA_SLICE_COLS');

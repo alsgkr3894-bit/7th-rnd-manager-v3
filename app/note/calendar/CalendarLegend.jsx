@@ -17,6 +17,18 @@ export function CalendarLegend() {
       }}
     >
       <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-3)' }}>범례</span>
+      <span
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          fontSize: 11,
+          color: 'var(--text-2)',
+        }}
+      >
+        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#EF4444', flexShrink: 0 }} />
+        공휴일·일요일
+      </span>
       <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>── 노트</span>
       {STATUSES.map(status => (
         <span

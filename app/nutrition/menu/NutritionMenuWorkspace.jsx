@@ -115,6 +115,7 @@ export function NutritionMenuWorkspace({
           edgeMap={edgeMap}
           toppings={toppings}
           menuMasters={menuMasters}
+          setComps={setComps}
           menuSearch={menuSearch}
         />
       )}

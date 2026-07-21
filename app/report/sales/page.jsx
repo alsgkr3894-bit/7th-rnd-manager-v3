@@ -9,10 +9,15 @@ import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { safeRevenue } from '@/lib/sales/revenue';
 import { useReportGeneratedMeta } from '@/hooks/useReportGeneratedMeta';
 import {
+  formatPeriodLabel,
+  monthsOfQuarter,
   normalizePeriodMode,
   normalizeScope,
+  previousPeriod,
+  quarterOfMonth,
   safeMonth,
   safeQuantity,
+  safeQuarter,
   safeYear,
 } from '@/lib/report/period';
 import SalesReportPreview from '@/components/report/sales/SalesReportPreview';
@@ -40,10 +45,12 @@ export default function Page() {
   const [periodMode, setPeriodMode] = useState('month');
   const [year, setYear] = useState(2026);
   const [month, setMonth] = useState(1);
+  const [quarter, setQuarter] = useState(1);
   const [scope, setScope] = useState('all');
   const [viewMode, setViewMode] = useState('rank');
   const [cmpYear, setCmpYear] = useState(null);
   const [cmpMonth, setCmpMonth] = useState(null);
+  const [cmpQuarter, setCmpQuarter] = useState(null);
   const {
     opts,
     updOpts: upd,
@@ -84,6 +91,38 @@ export default function Page() {
   const defaultApplied = useRef(false);
   const queryAppliedRef = useRef(false);
 
+  const safePeriodMode = normalizePeriodMode(periodMode);
+  const safeYearValue = safeYear(year);
+  const safeMonthValue = safeMonth(month);
+  const safeQuarterValue = safeQuarter(quarter);
+  const safeScope = normalizeScope(scope);
+  const safeViewMode = normalizeViewMode(viewMode);
+  const safeCmpYear = safeYear(cmpYear, 0);
+  const safeCmpMonth = safeMonth(cmpMonth, 0);
+  const safeCmpQuarter = safeQuarter(cmpQuarter, 0);
+  const safeExcludedList = Array.isArray(excludedList)
+    ? excludedList.map(item => asDisplayText(item)).filter(Boolean)
+    : [];
+  const monthOrQuarter = safePeriodMode === 'quarter' ? safeQuarterValue : safeMonthValue;
+  const cmpMonthOrQuarter = safePeriodMode === 'quarter' ? safeCmpQuarter : safeCmpMonth;
+
+  // periodMode 전환 시 월<->분기 값을 서로 맞춰 변환한다 (예: 5월 → 2분기, 2분기 → 4월)
+  function handlePeriodMode(nextMode) {
+    const safeNext = normalizePeriodMode(nextMode);
+    if (safeNext === periodMode) return;
+    if (safeNext === 'quarter') setQuarter(quarterOfMonth(month));
+    else if (safeNext === 'month' && periodMode === 'quarter') setMonth(monthsOfQuarter(quarter)[0]);
+    setPeriodMode(safeNext);
+  }
+
+  // 기준 기간(연/월/분기)이 바뀌면 비교 기간을 자동으로 직전 기간(전월/전분기/전년)으로 맞춘다.
+  useEffect(() => {
+    const prev = previousPeriod(safePeriodMode, safeYearValue, monthOrQuarter);
+    setCmpYear(prev.year);
+    if (safePeriodMode === 'quarter') setCmpQuarter(prev.monthOrQuarter);
+    else if (safePeriodMode === 'month') setCmpMonth(prev.monthOrQuarter);
+  }, [safePeriodMode, safeYearValue, monthOrQuarter]);
+
   useEffect(() => {
     if (queryAppliedRef.current) return;
     const query = readSalesReportQuery();
@@ -94,10 +133,6 @@ export default function Page() {
       setPeriodMode('month');
       setYear(query.year);
       setMonth(query.month);
-      const prevMonth = query.month === 1 ? 12 : query.month - 1;
-      const prevYear = query.month === 1 ? query.year - 1 : query.year;
-      setCmpYear(prevYear);
-      setCmpMonth(prevMonth);
     }
     if (query.viewMode) setViewMode(query.viewMode);
     if (query.viewMode === 'compare' && query.cmpYear && query.cmpMonth) {
@@ -112,20 +147,7 @@ export default function Page() {
     defaultApplied.current = true;
     setYear(defaultPeriod.year);
     setMonth(defaultPeriod.month);
-    setCmpYear(defaultPeriod.cmpYear);
-    setCmpMonth(defaultPeriod.cmpMonth);
   }, [defaultPeriod]);
-
-  const safePeriodMode = normalizePeriodMode(periodMode);
-  const safeYearValue = safeYear(year);
-  const safeMonthValue = safeMonth(month);
-  const safeScope = normalizeScope(scope);
-  const safeViewMode = normalizeViewMode(viewMode);
-  const safeCmpYear = safeYear(cmpYear, 0);
-  const safeCmpMonth = safeMonth(cmpMonth, 0);
-  const safeExcludedList = Array.isArray(excludedList)
-    ? excludedList.map(item => asDisplayText(item)).filter(Boolean)
-    : [];
 
   // Normalise raw rows once — shared by stats and compare
   const normRows = useMemo(
@@ -143,10 +165,11 @@ export default function Page() {
   const { catShares, groupRanking, kpi, compareData } = useSalesReportComputed({
     normRows,
     safeViewMode,
+    safePeriodMode,
     safeYearValue,
-    safeMonthValue,
+    safeMonthValue: monthOrQuarter,
     safeCmpYear,
-    safeCmpMonth,
+    safeCmpMonth: cmpMonthOrQuarter,
     safeScope,
   });
 
@@ -157,8 +180,8 @@ export default function Page() {
     compareData && typeof compareData === 'object' && !Array.isArray(compareData)
       ? compareData
       : null;
-  const periodLabel =
-    safePeriodMode === 'year' ? `${safeYearValue}년` : `${safeYearValue}년 ${safeMonthValue}월`;
+  const periodLabel = formatPeriodLabel(safePeriodMode, safeYearValue, monthOrQuarter);
+  const cmpPeriodLabel = formatPeriodLabel(safePeriodMode, safeCmpYear || safeYearValue, cmpMonthOrQuarter);
   const totalShare = safeCatShares.reduce((s, c) => s + safeQuantity(c.value), 0);
   const reportMeta = {
     kind: 'sales',
@@ -169,6 +192,7 @@ export default function Page() {
       periodMode: safePeriodMode,
       year: safeYearValue,
       month: safeMonthValue,
+      quarter: safeQuarterValue,
       scope: safeScope,
       opts: safeOpts,
     },
@@ -179,6 +203,7 @@ export default function Page() {
     const XLSX = await loadXlsx();
     exportSalesReportWorkbook(XLSX, {
       periodLabel,
+      periodMode: safePeriodMode,
       scope: safeScope,
       kpi,
       catShares: safeCatShares,
@@ -204,6 +229,7 @@ export default function Page() {
         <SalesReportControls
           year={safeYearValue}
           month={safeMonthValue}
+          quarter={safeQuarterValue}
           scope={safeScope}
           viewMode={safeViewMode}
           periodMode={safePeriodMode}
@@ -211,13 +237,16 @@ export default function Page() {
           availMonthsByYear={availMonthsByYear}
           onYear={value => setYear(safeYear(value, safeYearValue))}
           onMonth={value => setMonth(safeMonth(value, safeMonthValue))}
+          onQuarter={value => setQuarter(safeQuarter(value, safeQuarterValue))}
           onScope={value => setScope(normalizeScope(value))}
           onViewMode={value => setViewMode(normalizeViewMode(value))}
-          onPeriodMode={value => setPeriodMode(normalizePeriodMode(value))}
+          onPeriodMode={handlePeriodMode}
           cmpYear={safeCmpYear || safeYearValue}
           cmpMonth={safeCmpMonth || safeMonthValue}
+          cmpQuarter={safeCmpQuarter || safeQuarterValue}
           onCmpYear={value => setCmpYear(safeYear(value, safeCmpYear || safeYearValue))}
           onCmpMonth={value => setCmpMonth(safeMonth(value, safeCmpMonth || safeMonthValue))}
+          onCmpQuarter={value => setCmpQuarter(safeQuarter(value, safeCmpQuarter || safeQuarterValue))}
           opts={safeOpts}
           upd={upd}
           docFormat={docFormat}
@@ -229,8 +258,8 @@ export default function Page() {
           periodLabel={periodLabel}
           scope={safeScope}
           viewMode={safeViewMode}
-          cmpYear={safeCmpYear || safeYearValue}
-          cmpMonth={safeCmpMonth || safeMonthValue}
+          periodMode={safePeriodMode}
+          cmpPeriodLabel={cmpPeriodLabel}
           todayLabel={compactDateLabel}
           profileName={profileName}
           opts={safeOpts}

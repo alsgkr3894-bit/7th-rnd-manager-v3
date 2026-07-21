@@ -397,6 +397,42 @@ describe('buildPizzaSheet', () => {
     expect(edgeRow.allergen).toBe('우유, 계란');
   });
 
+  test('메뉴별 엣지 알레르기 예외: 고르곤졸라는 씬도우로 바뀌면 대두가 빠지고, 다른 메뉴/석쇠는 그대로 유지된다', () => {
+    // 대두(AL05)가 기본 레시피(menuAllergenMap)에서 온 알레르기라 도우 종류와 무관하게
+    // 모든 크러스트에 그대로 합산되는 게 기본 동작 — 고르곤졸라만 예외로 씬도우에서 뺀다.
+    const menuAllergenMapWithSoy = new Map([
+      ['P-GORGONZOLA', new Set(['AL05', 'AL06'])],
+      ['P-OTHER', new Set(['AL05', 'AL06'])],
+    ]);
+
+    const rows = buildPizzaSheet({
+      menus: [
+        { menuCode: 'P-GORGONZOLA', menuName: '고르곤졸라 피자', category: '피자' },
+        { menuCode: 'P-OTHER', menuName: '테스트 피자', category: '피자' },
+      ],
+      rawMap: {
+        'P-GORGONZOLA__석쇠L': { weight: 150, kcal: 200 },
+        'P-GORGONZOLA__씬바사삭L': { weight: 150, kcal: 180 },
+        'P-OTHER__석쇠L': { weight: 150, kcal: 200 },
+        'P-OTHER__씬바사삭L': { weight: 150, kcal: 180 },
+      },
+      edgeMap: {},
+      masterByCode: {},
+      menuAllergenMap: menuAllergenMapWithSoy,
+      edgeAllergenMap: new Map(),
+    });
+
+    const gorgonzolaRows = rows.find(r => r.menuCode === 'P-GORGONZOLA').rows;
+    const otherRows = rows.find(r => r.menuCode === 'P-OTHER').rows;
+
+    expect(
+      gorgonzolaRows.find(r => r.crustLabel === '석쇠' && r.side === 'L').allergen
+    ).toBe('밀, 대두');
+    expect(gorgonzolaRows.find(r => r.crustLabel === '씬바샤삭').allergen).toBe('밀');
+    // 다른 메뉴는 씬바샤삭이어도 대두가 그대로 유지된다 (메뉴 스코프 확인 — 전역 규칙 아님)
+    expect(otherRows.find(r => r.crustLabel === '씬바샤삭').allergen).toBe('밀, 대두');
+  });
+
   test('출력 포화지방 컬럼은 satFat 값을 우선 사용하고 없으면 fat으로 보정한다', () => {
     const rows = buildPizzaSheet({
       menus: [{ menuCode: 'P-SAT', menuName: '포화지방 피자', category: '피자' }],
@@ -449,7 +485,7 @@ describe('buildPizzaSheet', () => {
 });
 
 describe('buildSetHalfSheet', () => {
-  test('세트박스 행은 계산된 중량 범위를 출력한다', () => {
+  test('세트박스 행의 1회 중량은 최소/최대의 평균값으로 출력한다', () => {
     const rows = buildSetHalfSheet({
       menus: [
         { menuCode: 'P-A', menuName: '가 피자', category: '피자' },
@@ -477,9 +513,10 @@ describe('buildSetHalfSheet', () => {
     });
 
     // max = 나 피자 총 240kcal + 치즈크러스트 절대 총량 50kcal + 사이드 8kcal = 298
+    // 중량 180~220 → 평균 200
     expect(rows.find(row => row.kind === 'set')).toMatchObject({
       menuName: '테스트 L세트',
-      weight: '180~220',
+      weight: 200,
       minKcal: 108,
       maxKcal: 298,
     });

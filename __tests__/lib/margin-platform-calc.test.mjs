@@ -1,4 +1,9 @@
-import { applyDiscount, calcNetRevenue, calcPlatformMargin } from '../../lib/cost/margin/calc.js';
+import {
+  applyDiscount,
+  calcNetRevenue,
+  calcPlatformMargin,
+  fixedFeeDisplayAmounts,
+} from '../../lib/cost/margin/calc.js';
 
 // ─── applyDiscount ───────────────────────────────────────────────────────────
 
@@ -118,5 +123,32 @@ describe('calcPlatformMargin', () => {
 
   test('원가 0 → 원가율 0%', () => {
     expect(calcPlatformMargin(0, 10000)).toBe(0);
+  });
+});
+
+// ─── fixedFeeDisplayAmounts ────────────────────────────────────────────────
+
+describe('fixedFeeDisplayAmounts', () => {
+  test('사이즈 오버라이드가 없으면 공통값 하나만 반환한다', () => {
+    expect(fixedFeeDisplayAmounts({ value: 7000 })).toEqual({ common: 7000 });
+  });
+
+  test('공통값이 비어있어도 L/R 오버라이드가 있으면 사이즈별로 반환한다 (0원 표시 버그 방지)', () => {
+    expect(fixedFeeDisplayAmounts({ value: '', sizeOverrides: { L: 7000, R: 6000 } })).toEqual({
+      L: 7000,
+      R: 6000,
+    });
+  });
+
+  test('한쪽 사이즈만 오버라이드되면 나머지는 공통값으로 채운다', () => {
+    expect(fixedFeeDisplayAmounts({ value: 5000, sizeOverrides: { L: 7000 } })).toEqual({
+      L: 7000,
+      R: 5000,
+    });
+  });
+
+  test('value와 sizeOverrides 모두 없으면 0으로 처리한다', () => {
+    expect(fixedFeeDisplayAmounts({})).toEqual({ common: 0 });
+    expect(fixedFeeDisplayAmounts(null)).toEqual({ common: 0 });
   });
 });

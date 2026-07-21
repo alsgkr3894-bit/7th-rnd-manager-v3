@@ -5,6 +5,7 @@ import {
   collectMarginReportEdgeOptions,
   collectMarginReportSizeOptions,
   filterMarginReportRows,
+  isMarginReportOptionSelected,
 } from '../../lib/cost/margin/report-options.js';
 
 const ROWS = [
@@ -35,6 +36,19 @@ const ROWS = [
     costMap: { 단품: 1200 },
   },
 ];
+
+describe('isMarginReportOptionSelected', () => {
+  test('선택 정보가 없으면(빈 객체) 기본적으로 선택된 것으로 취급한다', () => {
+    expect(isMarginReportOptionSelected({}, 'baemin')).toBe(true);
+    expect(isMarginReportOptionSelected(undefined, 'baemin')).toBe(true);
+  });
+
+  test('명시적으로 false인 항목만 제외한다', () => {
+    const selection = { baemin: false };
+    expect(isMarginReportOptionSelected(selection, 'baemin')).toBe(false);
+    expect(isMarginReportOptionSelected(selection, 'coupang')).toBe(true);
+  });
+});
 
 describe('margin report options helpers', () => {
   test('카테고리, 엣지, 사이즈 옵션을 출력용 값으로 수집한다', () => {

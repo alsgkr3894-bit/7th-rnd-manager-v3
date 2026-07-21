@@ -12,8 +12,9 @@ export function MarginReportOptions({
   sizeSelection,
   onSizeChange,
   platforms,
-  activePlatId,
-  onActivePlatId,
+  platformSelection,
+  onPlatformChange,
+  onPlatformSelectAll,
   viewMode,
   onViewMode,
   discountEnabled,
@@ -89,31 +90,44 @@ export function MarginReportOptions({
         />
       </OptGroup>
 
-      <OptGroup label="플랫폼 · 할인">
-        <label style={{ display: 'block' }}>
-          <span style={{ display: 'block', fontSize: 11, color: 'var(--text-3)', marginBottom: 4 }}>
-            플랫폼
-          </span>
-          <select
-            value={activePlatId}
-            onChange={event => onActivePlatId(event.target.value)}
+      <OptGroup
+        label="플랫폼 · 할인"
+        hint="체크한 플랫폼만 원가율/마진율에 반영됩니다 — 1개면 단일 표, 2개 이상이면 비교 컬럼으로 출력됩니다"
+      >
+        <div>
+          <div
             style={{
-              width: '100%',
-              height: 36,
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              background: 'var(--surface)',
-              color: 'var(--text-1)',
-              padding: '0 10px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 4,
             }}
           >
-            {safePlatforms.map(platform => (
-              <option key={platform.id} value={platform.id}>
-                {platform.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            <span style={{ fontSize: 11, color: 'var(--text-3)' }}>비교할 플랫폼</span>
+            <button
+              type="button"
+              className="btn sm ghost"
+              style={{ fontSize: 10, padding: '2px 8px' }}
+              onClick={() =>
+                onPlatformSelectAll(
+                  !safePlatforms.every(platform => checked(platformSelection, platform.id))
+                )
+              }
+            >
+              {safePlatforms.every(platform => checked(platformSelection, platform.id))
+                ? '전체 해제'
+                : '전체 선택'}
+            </button>
+          </div>
+          {safePlatforms.map(platform => (
+            <Check
+              key={platform.id}
+              label={platform.name}
+              value={checked(platformSelection, platform.id)}
+              onChange={value => onPlatformChange(platform.id, value)}
+            />
+          ))}
+        </div>
         <Check
           label="할인 적용"
           value={discountEnabled}

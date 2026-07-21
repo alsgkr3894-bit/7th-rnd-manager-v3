@@ -9,8 +9,7 @@ export function SalesCompareTableSection({
   catShares,
   groupRanking,
   periodLabel,
-  cmpYear,
-  cmpMonth,
+  cmpPeriodLabel,
 }) {
   if (!compareData) {
     return (
@@ -50,7 +49,7 @@ export function SalesCompareTableSection({
           <div className="paper-section paper-cat-section" key={category}>
             <div className="paper-section-title" style={S_SECTION_TITLE_FLEX}>
               <SectionDot color={catColor} />
-              {category} — {periodLabel} vs {cmpYear}년 {cmpMonth}월
+              {category} — {periodLabel} vs {cmpPeriodLabel}
             </div>
             <table className="paper-table">
               <thead>
@@ -58,9 +57,7 @@ export function SalesCompareTableSection({
                   <th style={{ width: 36 }}>#</th>
                   <th>메뉴명 (중분류)</th>
                   <th style={{ width: 90, textAlign: 'right' }}>{periodLabel}</th>
-                  <th style={{ width: 90, textAlign: 'right' }}>
-                    {cmpYear}년{cmpMonth}월
-                  </th>
+                  <th style={{ width: 90, textAlign: 'right' }}>{cmpPeriodLabel}</th>
                   <th style={{ width: 80, textAlign: 'right' }}>증감</th>
                   <th style={{ width: 70, textAlign: 'right' }}>증감%</th>
                 </tr>
@@ -114,7 +111,7 @@ export function SalesCompareTableSection({
         {asFiniteNumber(compareData.totalPct, null) != null
           ? ` ${compareData.totalPct >= 0 ? '+' : ''}${compareData.totalPct.toFixed(1)}%`
           : ' —'}
-        (전월 {formatNumber(safeQuantity(compareData.totalB))}건)
+        ({cmpPeriodLabel} {formatNumber(safeQuantity(compareData.totalB))}건)
       </div>
     </>
   );

@@ -52,7 +52,7 @@ describe('sumCompositePrice', () => {
 });
 
 describe('buildIngredientUsageMap', () => {
-  test('직접 레시피, 공통묶음, 엣지, 파생메뉴를 단일 매핑 기준으로 포함한다', () => {
+  test('직접 레시피·파생메뉴만 사용량에 포함하고, 공통묶음·엣지로만 연결된 메뉴는 제외한다', () => {
     const { byCode, byName } = buildIngredientUsageMap({
       menuMasters: [
         { menuCode: 'PZ-001-L', menuName: '슈퍼콤비네이션 L', category: '피자' },
@@ -98,16 +98,40 @@ describe('buildIngredientUsageMap', () => {
       ],
     });
 
+    // 직접 레시피 구성품 — 그대로 포함
     expect(byCode.get('ING-SAUCE')).toEqual(new Map([['슈퍼콤비네이션', '피자']]));
     expect(byName.get('토마토소스')).toEqual(new Map([['슈퍼콤비네이션', '피자']]));
-    expect(byCode.get('ING-GROUP')).toEqual(new Map([['치즈볼', '사이드']]));
-    expect(byCode.get('ING-EDGE')).toEqual(
-      new Map([
-        ['슈퍼콤비네이션', '피자'],
-        ['파생피자', '피자'],
-      ])
-    );
+    // 공통묶음(묶음관리)으로만 연결 — 사용량에서 제외
+    expect(byCode.get('ING-GROUP')).toBeUndefined();
+    // 엣지(엣지관리)로만 연결 — 사용량에서 제외
+    expect(byCode.get('ING-EDGE')).toBeUndefined();
+    // 파생메뉴 연결 — 직접 사용으로 취급해 그대로 포함
     expect(byCode.get('ING-DERIVED')).toEqual(new Map([['파생피자', '피자']]));
+  });
+
+  test('레시피에 직접 들어있으면서 같은 메뉴가 공통묶음에도 걸려도 사용량에 포함한다', () => {
+    const { byCode } = buildIngredientUsageMap({
+      menuMasters: [{ menuCode: 'SIDE-001', menuName: '치즈볼', category: '사이드' }],
+      detailRecipes: [
+        {
+          menuCode: 'SIDE-001',
+          menuName: '치즈볼',
+          category: '사이드',
+          components: [{ productCode: 'ING-BOTH', ingredientName: '둘다' }],
+          selectedRecipeGroupIds: ['20'],
+        },
+      ],
+      groups: [
+        {
+          id: 20,
+          name: '사이드 공통',
+          defaultCategories: ['사이드'],
+          ingredients: [{ productCode: 'ING-BOTH', ingredientName: '둘다' }],
+        },
+      ],
+    });
+
+    expect(byCode.get('ING-BOTH')).toEqual(new Map([['치즈볼', '사이드']]));
   });
 
   test('기존 pizza/personal/side 입력도 호환한다', () => {

@@ -1,5 +1,6 @@
 'use client';
 import SalesKpiCards from '@/components/report/SalesKpiCards';
+import { periodCompareLabel } from '@/lib/report/period';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { SalesCategoryShareSection } from './SalesCategoryShareSection';
 import { SalesCompareTableSection } from './SalesCompareTableSection';
@@ -15,8 +16,8 @@ export default function SalesReportPreview({
   periodLabel,
   scope,
   viewMode,
-  cmpYear,
-  cmpMonth,
+  periodMode,
+  cmpPeriodLabel,
   todayLabel,
   profileName,
   opts,
@@ -31,6 +32,8 @@ export default function SalesReportPreview({
   const safeCatShares = asObjectArray(catShares);
   const safeGroupRanking = asObjectArray(groupRanking);
   const safeExcludedList = Array.isArray(excludedList) ? excludedList : [];
+  const compareLabel = periodCompareLabel(periodMode);
+  const unitLabel = periodMode === 'quarter' ? '분기' : periodMode === 'year' ? '년도' : '월';
 
   return (
     <>
@@ -40,9 +43,7 @@ export default function SalesReportPreview({
         <div className="paper-meta">
           <span>대상: {scopeLabel(scope)}</span>
           <span>·</span>
-          <span>
-            {viewMode === 'compare' ? `비교: ${cmpYear}년 ${cmpMonth}월` : '해당 월 순위'}
-          </span>
+          <span>{viewMode === 'compare' ? `비교: ${cmpPeriodLabel}` : `해당 ${unitLabel} 순위`}</span>
           <span>·</span>
           <span className="mono">
             생성일 {todayLabel} · {asDisplayText(profileName, '')}
@@ -56,6 +57,7 @@ export default function SalesReportPreview({
           catShares={safeCatShares}
           groupRanking={safeGroupRanking}
           showRevenue={!!safeOpts.revenue}
+          compareLabel={compareLabel}
         />
       )}
 
@@ -68,7 +70,11 @@ export default function SalesReportPreview({
       )}
 
       {safeOpts.pizzaMover && viewMode === 'rank' && (
-        <SalesPizzaMoverSection catShares={safeCatShares} groupRanking={safeGroupRanking} />
+        <SalesPizzaMoverSection
+          catShares={safeCatShares}
+          groupRanking={safeGroupRanking}
+          periodMode={periodMode}
+        />
       )}
 
       {safeOpts.rankTable && viewMode === 'rank' && (
@@ -78,6 +84,7 @@ export default function SalesReportPreview({
           catShares={safeCatShares}
           groupRanking={safeGroupRanking}
           showRevenue={!!safeOpts.revenue}
+          compareLabel={compareLabel}
         />
       )}
 
@@ -87,8 +94,7 @@ export default function SalesReportPreview({
           catShares={safeCatShares}
           groupRanking={safeGroupRanking}
           periodLabel={periodLabel}
-          cmpYear={cmpYear}
-          cmpMonth={cmpMonth}
+          cmpPeriodLabel={cmpPeriodLabel}
         />
       )}
 

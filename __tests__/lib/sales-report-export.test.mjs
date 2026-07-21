@@ -123,6 +123,32 @@ describe('sales report export helpers', () => {
     ]);
   });
 
+  test('periodMode가 quarter/year이면 전월 대신 전분기/전년 라벨을 쓴다', () => {
+    const quarterSheets = buildSalesReportWorkbookSheets({
+      periodLabel: '2026년 2분기',
+      periodMode: 'quarter',
+      scope: '전체',
+      kpi: { current: 30, previous: 20, deltaPct: 50 },
+      catShares: [],
+      groupRanking: [{ rank: 1, name: 'A', category: '피자', quantity: 5, prevQty: 3, delta: 2 }],
+      opts: { prevComp: true },
+    });
+    expect(quarterSheets[0].rows).toContainEqual(['전분기 판매량', 20]);
+    expect(quarterSheets[0].rows).toContainEqual(['전분기 대비(%)', '+50.0%']);
+    expect(quarterSheets[2].rows[0]).toContain('전분기');
+
+    const yearSheets = buildSalesReportWorkbookSheets({
+      periodLabel: '2026년',
+      periodMode: 'year',
+      scope: '전체',
+      kpi: { current: 100, previous: 80, deltaPct: 25 },
+      catShares: [],
+      groupRanking: [],
+      opts: { prevComp: true },
+    });
+    expect(yearSheets[0].rows).toContainEqual(['전년 판매량', 80]);
+  });
+
   test('잘못된 입력과 충돌하는 긴 카테고리명도 다운로드 가능한 시트로 정리한다', () => {
     const longA = '카테고리/충돌?이름*테스트[긴이름]A';
     const longB = '카테고리/충돌?이름*테스트[긴이름]B';

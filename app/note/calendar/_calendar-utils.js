@@ -20,9 +20,9 @@ const DATE_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export const toKey = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
 
-export function dayNumColor({ hasToday, dow, past }) {
+export function dayNumColor({ hasToday, dow, past, isHoliday }) {
   if (hasToday) return '#fff';
-  if (dow === 0) return '#EF4444';
+  if (isHoliday || dow === 0) return '#EF4444';
   if (dow === 6) return '#3B82F6';
   return past ? 'var(--text-4)' : 'var(--text-1)';
 }
