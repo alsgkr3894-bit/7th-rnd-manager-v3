@@ -1,4 +1,4 @@
-# scripts/jette/scheduled-download.ps1
+﻿# scripts/jette/scheduled-download.ps1
 # Windows 작업 스케줄러에서 매일 실행되는 래퍼: 제때 단가 엑셀 자동 다운로드.
 # 결과(성공/실패)를 scripts/jette/logs/price-download.log 에 이어서 기록한다.
 

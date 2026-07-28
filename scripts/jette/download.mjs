@@ -88,6 +88,12 @@ function sanitize(name) {
   return String(name || '').replace(/[\\/:*?"<>|]+/g, '_').trim() || 'download';
 }
 
+// ROOT 안쪽이면 상대경로, 밖(예: 바탕화면)이면 절대경로로 보기 좋게 표시
+function displayPath(p) {
+  const rel = path.relative(ROOT, p);
+  return rel.startsWith('..') ? p : rel;
+}
+
 // ── mode: login ─────────────────────────────────────────────────────────────
 // 로그인 완료를 자동 감지한다: URL이 LogOn 을 벗어나면 성공으로 보고 세션 저장.
 // (터미널 Enter 입력이 필요 없으므로 무인 실행기에서도 브라우저만 띄워 로그인 가능)
@@ -346,7 +352,7 @@ async function downloadOne(context, cfg, key, report) {
     const outName = `${stamp()}-${sanitize(download.suggestedFilename())}`;
     const outPath = path.join(outDir, outName);
     await download.saveAs(outPath);
-    log(`✓ [${key}] ${report.label || key} → ${path.relative(ROOT, outPath)}`);
+    log(`✓ [${key}] ${report.label || key} → ${displayPath(outPath)}`);
     return { key, path: outPath };
   } catch (e) {
     log(`✗ [${key}] 실패: ${e.message}`);
@@ -386,7 +392,7 @@ async function runDownload(cfg, target) {
     console.log('\n다음 단계 — 앱에 업로드:');
     console.log('  • 단가:  /jette/price-compare 업로드 화면에 내려받은 파일을 올리세요.');
     console.log('  • 출고량: /jette/shipment 업로드 화면에 올리세요.');
-    console.log(`  • 파일 위치: ${path.relative(ROOT, cfg.downloadDir)}\\<price|shipment>\\`);
+    console.log(`  • 파일 위치: ${displayPath(cfg.downloadDir)}\\<price|shipment>\\`);
   }
   if (errored.length) process.exitCode = 1;
 }

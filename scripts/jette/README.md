@@ -17,6 +17,11 @@
   `scripts/jette/scheduled-download.ps1` 실행 → `download price`. 로그는
   `scripts/jette/logs/price-download.log` 에 누적 기록(성공/실패 모두). 세션 만료로 실패하면
   로그에 안내가 남으니, 그럴 땐 `npm run jette:login` 재실행.
+- ✅ **다운로드 위치 & 바탕화면 버튼**: `downloadDir` 이 `C:\Users\user\Desktop\제때 단가 다운로드`
+  로 설정됨 (스케줄 작업도 동일 경로로 저장). 실제 파일은 그 안의 `price\` 하위 폴더에 쌓임.
+  바탕화면의 **"제때 단가 다운로드"** 아이콘(엑셀 아이콘)을 더블클릭하면 콘솔 창이 뜨면서
+  즉시 수동 다운로드 실행 → 완료/실패를 메시지 박스로 알려주고 성공 시 폴더를 자동으로 엶.
+  아이콘 실체는 [scripts/jette/manual-download.ps1](manual-download.ps1) 을 실행하는 바로가기.
 
 ### 스케줄 관리
 
@@ -80,8 +85,12 @@ npm run jette:download -- price   # 단가만
 npm run jette:download -- shipment
 ```
 
-내려받은 파일은 `.jette-downloads/price/` , `.jette-downloads/shipment/` 에
-`날짜-원본파일명.xlsx` 형태로 저장됩니다.
+내려받은 파일은 `jette.config.json` 의 `downloadDir` 하위 `price/`, `shipment/` 폴더에
+`날짜-원본파일명.xlsx` 형태로 저장됩니다. 현재 `downloadDir` 은 바탕화면의
+`제때 단가 다운로드` 폴더로 설정돼 있습니다 (즉 실제 경로는
+`바탕화면\제때 단가 다운로드\price\...`).
+
+바탕화면의 **"제때 단가 다운로드"** 아이콘을 더블클릭해도 동일한 다운로드가 실행됩니다(수동 버튼).
 
 ## 5. 앱에 업로드
 
