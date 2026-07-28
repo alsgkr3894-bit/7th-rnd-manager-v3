@@ -75,6 +75,33 @@ describe('margin report options helpers', () => {
     });
   });
 
+  // "석쇠기본"/"단일" 해제는 피자에서만 뜻이 있다. 사이드·1인피자처럼 엣지·L/R 구분이
+  // 없는 카테고리는 카테고리 체크박스가 켜져 있으면 이 필터와 무관하게 항상 남아야 한다.
+  test('엣지 선택(석쇠기본 해제)은 피자에만 적용되고 사이드는 그대로 남는다', () => {
+    const rows = filterMarginReportRows(ROWS, {
+      categorySelection: { 피자: true, 사이드: true },
+      edgeSelection: { [BASE_EDGE_KEY]: false, 씬도우: true },
+      sizeSelection: { L: true, R: true, 단일: true },
+    });
+
+    const names = rows.map(row => row.menuName);
+    expect(names).toContain('오리지널 피자 씬도우');
+    expect(names).toContain('사이드');
+    expect(names).not.toContain('오리지널 피자');
+  });
+
+  test('사이즈 선택(단일 해제)은 피자에만 적용되고 사이드는 그대로 남는다', () => {
+    const rows = filterMarginReportRows(ROWS, {
+      categorySelection: { 피자: true, 사이드: true },
+      edgeSelection: { [BASE_EDGE_KEY]: true, 씬도우: true },
+      sizeSelection: { L: true, R: true, 단일: false },
+    });
+
+    const sideRow = rows.find(row => row.menuName === '사이드');
+    expect(sideRow).toMatchObject({ sizes: [{ label: '단일', sellingPrice: 6000 }] });
+    expect(rows.some(row => row.menuName === '오리지널 피자')).toBe(true);
+  });
+
   test('단품·세트 같은 비 L/R 사이즈는 단일 컬럼으로 정규화한다', () => {
     const rows = filterMarginReportRows(ROWS, {
       categorySelection: { 피자: false, 사이드: true },
