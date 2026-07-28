@@ -6,6 +6,7 @@ import { describe, expect, test } from '@jest/globals';
 
 import {
   FORKED_KEY_MARKER,
+  LAN_EXCLUDED_STORE_NAMES,
   normalizeStoreRowQuery,
   readStoreRowManifest,
   readStoreRowPage,
@@ -75,6 +76,42 @@ describe('normalizeStoreRowQuery', () => {
     );
     expect(on.includeForked).toBe(true);
     expect(off.includeForked).toBe(false);
+  });
+});
+
+// 이 API에는 인증이 없다. 평문 비밀번호가 든 store가 네트워크로 나가면 안 된다.
+describe('민감 store 차단', () => {
+  test('로그인정보·법인카드는 제외 목록에 있다', () => {
+    expect(LAN_EXCLUDED_STORE_NAMES.has('rnd_login_credentials')).toBe(true);
+    expect(LAN_EXCLUDED_STORE_NAMES.has('rnd_corporate_card_entries')).toBe(true);
+  });
+
+  test('제외 store는 페이지 조회를 거부한다', () => {
+    for (const storeName of LAN_EXCLUDED_STORE_NAMES) {
+      expect(() => normalizeStoreRowQuery(params({ storeName }))).toThrow(
+        /not readable over the network/
+      );
+    }
+  });
+
+  test('제외 store는 매니페스트 집계 대상에서도 빠진다', async () => {
+    const askedFor = [];
+    const prisma = {
+      storeRow: {
+        groupBy: async args => {
+          askedFor.push(...args.where.storeName.in);
+          return [];
+        },
+      },
+    };
+    await readStoreRowManifest(prisma, { brandId: 'main' });
+
+    for (const storeName of LAN_EXCLUDED_STORE_NAMES) {
+      expect(askedFor).not.toContain(storeName);
+    }
+    // 일반 store는 정상적으로 조회 대상이어야 한다(과도한 제외 방지)
+    expect(askedFor).toContain('cost_ingredients');
+    expect(askedFor).toContain('menu_dev_notes');
   });
 });
 
