@@ -1,7 +1,11 @@
 import { useMemo } from 'react';
 import { scopeLabelFor } from '@/lib/ingredient';
 import { SCOPE_UNASSIGNED } from '@/lib/ingredient/constants';
-import { getUsageMenuCounts, getUsageRowsMenuCounts } from '@/lib/cost/usage-counts';
+import {
+  countIngredientsWithQualifyingUsage,
+  getUsageMenuCounts,
+  getUsageRowsMenuCounts,
+} from '@/lib/cost/usage-counts';
 
 function normStr(s) {
   return (s || '').trim().toLowerCase().replace(/\s+/g, '');
@@ -121,14 +125,14 @@ export function useIngredientUsageRows({
 
   const menuCounts = useMemo(() => getUsageRowsMenuCounts(displayRows), [displayRows]);
 
-  const totalUsedCount = useMemo(() => {
-    const { byCode, byName } = usageMap;
-    return allMeta.filter(m => {
-      const fromCode = (m.productCode ? byCode.get(m.productCode) : null) || new Map();
-      const fromName = byName.get(normStr(m.ingredientName)) || new Map();
-      return fromCode.size > 0 || fromName.size > 0;
-    }).length;
-  }, [allMeta, usageMap]);
+  // "미사용" 배지(allMetaCount - totalUsedCount)가 카테고리를 바꿔도 그대로였던 버그 —
+  // usageRows는 usageCat/excludedMenus/discontinued를 반영하는데 이 값은 그렇지 않아서,
+  // 카테고리 필터를 걸면 "사용 재료"는 줄어드는데 "미사용"은 그대로라 더해도 전체 개수가
+  // 안 맞았다. countIngredientsWithQualifyingUsage가 같은 기준을 적용한다.
+  const totalUsedCount = useMemo(
+    () => countIngredientsWithQualifyingUsage(allMeta, usageMap, { usageCat, excludedMenus }),
+    [allMeta, usageMap, usageCat, excludedMenus]
+  );
 
   return {
     usageRows,
