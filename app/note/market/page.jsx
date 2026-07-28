@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useSearchParams } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
 import { todayLocalDate } from '@/lib/date/local-date';
 import {
@@ -81,6 +82,85 @@ function Field({ label, children }) {
   );
 }
 
+function DetailField({ label, value }) {
+  if (!String(value || '').trim()) return null;
+  return (
+    <div>
+      <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-3)', marginBottom: 4 }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--text-1)', whiteSpace: 'pre-wrap' }}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function MarketDetailModal({ row, onClose, onEdit, canEdit }) {
+  const photos = Array.isArray(row.photos) ? row.photos.filter(photo => photo?.data) : [];
+  return (
+    <ModalFrame
+      title={row.title || row.type}
+      subtitle={`${row.date || '날짜 없음'}${row.brand ? ` · ${row.brand}` : ''} · ${row.type}`}
+      onClose={onClose}
+      width="min(640px, 96vw)"
+      zIndex={300}
+    >
+      <div style={{ display: 'grid', gap: 16 }}>
+        <DetailField label="경쟁사 / 시장 키워드" value={row.competitor} />
+        <DetailField label="시장분석 / 피해 트렌드 방향" value={row.marketTrend} />
+        <DetailField label="타브랜드 참고 포인트" value={row.referencePoint} />
+        <DetailField label="개발 방향 / 적용 아이디어" value={row.developmentDirection} />
+        <DetailField label="다음 액션" value={row.actionIdea} />
+        <DetailField label="태그" value={row.tags} />
+        {photos.length > 0 && (
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-3)', marginBottom: 4 }}>
+              사진 ({photos.length})
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+              {photos.map((photo, index) => (
+                <figure key={index} style={{ margin: 0 }}>
+                  <img
+                    src={photo.data}
+                    alt={photo.caption || photo.name || '시장조사 사진'}
+                    style={{
+                      width: '100%',
+                      aspectRatio: '4/3',
+                      objectFit: 'contain',
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      display: 'block',
+                    }}
+                  />
+                  {photo.caption && (
+                    <figcaption
+                      style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4, textAlign: 'center' }}
+                    >
+                      {photo.caption}
+                    </figcaption>
+                  )}
+                </figure>
+              ))}
+            </div>
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button type="button" className="btn" onClick={onClose}>
+            닫기
+          </button>
+          {canEdit && (
+            <button type="button" className="btn primary" onClick={onEdit}>
+              수정
+            </button>
+          )}
+        </div>
+      </div>
+    </ModalFrame>
+  );
+}
+
 export default function MarketResearchPage() {
   return (
     <Suspense
@@ -107,6 +187,7 @@ function MarketResearchContent() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [writing, setWriting] = useState(false);
+  const [detailRow, setDetailRow] = useState(null);
 
   const filtered = useMemo(() => rows.filter(row => includesQuery(row, query)), [rows, query]);
 
@@ -144,6 +225,7 @@ function MarketResearchContent() {
 
   function startWrite(row = null) {
     if (!canEdit) return;
+    setDetailRow(null);
     setForm(withToday(row || {}));
     setWriting(true);
   }
@@ -197,31 +279,14 @@ function MarketResearchContent() {
         title="시장조사"
         sub="경쟁사, 시장 흐름, 피해 트렌드, 타브랜드 참고 포인트를 기록합니다."
         actions={
-          writing ? (
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button className="btn" type="button" onClick={closeWrite}>
-                취소
-              </button>
-              <button
-                className="btn primary"
-                type="button"
-                onClick={handleSave}
-                disabled={saving || !canEdit}
-              >
-                <Icon.check style={{ width: 14, height: 14 }} />
-                {saving ? '저장 중' : form.id ? '수정 저장' : '저장'}
-              </button>
-            </div>
-          ) : (
-            <button
-              className="btn primary"
-              type="button"
-              onClick={() => startWrite()}
-              disabled={!canEdit}
-            >
-              <Icon.plus style={{ width: 14, height: 14 }} /> 작성하기
-            </button>
-          )
+          <button
+            className="btn primary"
+            type="button"
+            onClick={() => startWrite()}
+            disabled={!canEdit}
+          >
+            <Icon.plus style={{ width: 14, height: 14 }} /> 작성하기
+          </button>
         }
       />
 
@@ -230,7 +295,7 @@ function MarketResearchContent() {
           관리자만 시장조사를 작성할 수 있습니다.
         </section>
       ) : (
-        <div className={'form-layout market-layout' + (writing ? ' is-writing' : '')}>
+        <div className="form-layout market-layout">
           <section className="card table-card market-list-card">
             <div className="market-list-toolbar">
               <div className="market-list-title">
@@ -329,7 +394,15 @@ function MarketResearchContent() {
                       </div>
                     )}
                     <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-                      <button type="button" className="btn sm" onClick={() => startWrite(row)}>
+                      <button type="button" className="btn sm" onClick={() => setDetailRow(row)}>
+                        자세히
+                      </button>
+                      <button
+                        type="button"
+                        className="btn sm"
+                        onClick={() => startWrite(row)}
+                        disabled={!canEdit}
+                      >
                         수정
                       </button>
                       <button
@@ -347,11 +420,18 @@ function MarketResearchContent() {
               })}
             </div>
           </section>
+        </div>
+      )}
 
-          {writing && (
-            <div className="market-write-panel">
-              <section className="card market-write-card">
-                <div className="card-title">{form.id ? '시장조사 수정' : '시장조사 작성'}</div>
+      {writing && (
+        <ModalFrame
+          title={form.id ? '시장조사 수정' : '시장조사 작성'}
+          onClose={closeWrite}
+          width="min(720px, 96vw)"
+          zIndex={300}
+        >
+          <div className="market-write-panel">
+              <section className="market-write-card">
                 <div className="market-type-row">
                   {MARKET_RESEARCH_TYPES.map(type => (
                     <button
@@ -459,9 +539,36 @@ function MarketResearchContent() {
                 photos={form.photos || []}
                 onChange={value => update('photos', value)}
               />
-            </div>
-          )}
-        </div>
+
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button className="btn" type="button" onClick={closeWrite}>
+                  취소
+                </button>
+                <button
+                  className="btn primary"
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving || !canEdit}
+                >
+                  <Icon.check style={{ width: 14, height: 14 }} />
+                  {saving ? '저장 중' : form.id ? '수정 저장' : '저장'}
+                </button>
+              </div>
+          </div>
+        </ModalFrame>
+      )}
+
+      {detailRow && (
+        <MarketDetailModal
+          row={detailRow}
+          canEdit={canEdit}
+          onClose={() => setDetailRow(null)}
+          onEdit={() => {
+            const row = detailRow;
+            setDetailRow(null);
+            startWrite(row);
+          }}
+        />
       )}
     </main>
   );
