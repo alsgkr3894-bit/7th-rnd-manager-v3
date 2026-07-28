@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, jest, test } from '@jest/globals';
 import { importAll } from '../../lib/db/operations.js';
-import { replaceStoresInDbTransaction } from '../../lib/db/backup.js';
+import {
+  replaceStoresInDbTransaction,
+  writeStoresInDbTransaction,
+} from '../../lib/db/backup.js';
 
 const originalLocalStorage = globalThis.localStorage;
 
@@ -156,6 +159,28 @@ describe('importAll 구조 방어', () => {
       sales_files: [{ id: 1, year: 2026, month: 5 }],
       sales_rows: [{ id: 10, fileId: 1 }],
     });
+  });
+
+  // 하이드레이션은 서버에서 여러 페이지를 이어 받으므로, 첫 페이지만 clear하고
+  // 이후 페이지는 기존 행에 덧붙여야 한다.
+  test('clear:false면 기존 행을 지우지 않고 이어 붙인다', async () => {
+    const state = { sales_rows: [{ id: 10, fileId: 1 }] };
+    const db = makeFakeDb(state);
+
+    await writeStoresInDbTransaction(db, [['sales_rows', [{ id: 20, fileId: 2 }]]], {
+      clear: false,
+    });
+
+    expect(state.sales_rows).toEqual([{ id: 10, fileId: 1 }, { id: 20, fileId: 2 }]);
+  });
+
+  test('clear 기본값은 true라 기존 동작과 같다', async () => {
+    const state = { sales_rows: [{ id: 10, fileId: 1 }] };
+    const db = makeFakeDb(state);
+
+    await writeStoresInDbTransaction(db, [['sales_rows', [{ id: 20, fileId: 2 }]]]);
+
+    expect(state.sales_rows).toEqual([{ id: 20, fileId: 2 }]);
   });
 });
 

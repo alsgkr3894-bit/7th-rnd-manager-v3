@@ -2,6 +2,9 @@
 param(
   [switch]$OpenBrowser,
   [switch]$ShowStatus,
+  # 사내 LAN의 다른 PC가 접속할 수 있도록 0.0.0.0 에 바인딩하고 API의 LAN 허용을 켠다.
+  # 방화벽 TCP 3000 인바운드 규칙은 관리자 권한이 필요하므로 별도로 한 번 등록해야 한다.
+  [switch]$Lan,
   [int]$TimeoutSeconds = 180
 )
 
@@ -142,7 +145,14 @@ if (Test-UrlReady $siteUrl) {
   if ($portOwner) {
     Write-Status "Port 3000 is already listening by process $($portOwner.OwningProcess). Waiting for the site..."
   } else {
-    Write-Status 'Starting local site server on http://localhost:3000...'
+    if ($Lan) {
+      # Start-Process는 부모 프로세스 환경을 상속하므로 여기서 설정하면 dev 서버에 전달된다.
+      $env:RND_SITE_HOST = '0.0.0.0'
+      $env:RND_ALLOW_LAN = '1'
+      Write-Status 'Starting local site server on 0.0.0.0:3000 (LAN enabled)...'
+    } else {
+      Write-Status 'Starting local site server on http://localhost:3000...'
+    }
     Normalize-ProcessPathEnvironment
     & $node 'scripts/prepare-dev.mjs' '--kill'
     if ($LASTEXITCODE -ne 0) {

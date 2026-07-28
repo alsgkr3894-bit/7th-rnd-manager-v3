@@ -47,6 +47,7 @@
     "db:pg:stop": "node prisma/local-postgres.mjs stop",
     "db:studio": "prisma studio",
     "site:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-local-site.ps1 -OpenBrowser -ShowStatus",
+    "site:start:lan": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-local-site.ps1 -Lan -OpenBrowser -ShowStatus",
     "site:autostart": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/register-site-autostart.ps1",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
