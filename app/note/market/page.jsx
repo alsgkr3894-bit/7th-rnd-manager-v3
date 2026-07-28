@@ -1,5 +1,6 @@
 'use client';
 
+import { createPortal } from 'react-dom';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Icon } from '@/components/icons';
@@ -7,6 +8,8 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
 import { todayLocalDate } from '@/lib/date/local-date';
+import { useModalShell } from '@/hooks/useModalShell';
+import { OVERLAY_COLOR } from '@/lib/ui/styles';
 import {
   MARKET_RESEARCH_TYPES,
   deleteMarketResearch,
@@ -15,6 +18,102 @@ import {
 } from '@/lib/note/market-research';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { NotePhotoSection } from '@/app/note/_NotePhotoSection';
+
+const COMPETITOR_ID = '미지정';
+// 경쟁사 이름을 안정적으로 색으로 매핑 — 매번 다른 순서로 렌더링돼도 같은 경쟁사는 같은 색.
+const COMPETITOR_COLORS = [
+  '#E1101F',
+  '#2563EB',
+  '#059669',
+  '#D97706',
+  '#7C3AED',
+  '#DB2777',
+  '#0891B2',
+  '#65A30D',
+];
+
+function colorForCompetitor(label) {
+  if (!label || label === COMPETITOR_ID) return 'var(--text-4)';
+  let hash = 0;
+  for (let i = 0; i < label.length; i += 1) hash = (hash * 31 + label.charCodeAt(i)) >>> 0;
+  return COMPETITOR_COLORS[hash % COMPETITOR_COLORS.length];
+}
+
+/** 경쟁사별로 묶어 카테고리처럼 보여준다. 미지정(빈 값)은 항상 맨 뒤. */
+function groupByCompetitor(rows) {
+  const groups = new Map();
+  for (const row of rows) {
+    const label = String(row.competitor || '').trim() || COMPETITOR_ID;
+    if (!groups.has(label)) groups.set(label, []);
+    groups.get(label).push(row);
+  }
+  return [...groups.entries()]
+    .map(([label, items]) => ({ label, items, color: colorForCompetitor(label) }))
+    .sort((a, b) => {
+      if (a.label === COMPETITOR_ID) return 1;
+      if (b.label === COMPETITOR_ID) return -1;
+      if (b.items.length !== a.items.length) return b.items.length - a.items.length;
+      return a.label.localeCompare(b.label, 'ko');
+    });
+}
+
+function PhotoLightbox({ photo, onClose }) {
+  const { containerRef, isClosing, close } = useModalShell(onClose);
+  if (!photo) return null;
+
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: OVERLAY_COLOR,
+        display: 'grid',
+        placeItems: 'center',
+        zIndex: 400,
+        padding: 24,
+      }}
+      onClick={close}
+    >
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="사진 크게 보기"
+        className={'modal-anim' + (isClosing ? ' modal-exit' : '')}
+        style={{ maxWidth: '92vw', maxHeight: '92vh', display: 'grid', gap: 10 }}
+        onClick={event => event.stopPropagation()}
+      >
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            type="button"
+            className="btn"
+            style={{ padding: '4px 8px' }}
+            onClick={close}
+            aria-label="닫기"
+          >
+            <Icon.close style={{ width: 16, height: 16 }} />
+          </button>
+        </div>
+        <img
+          src={photo.data}
+          alt={photo.caption || photo.name || '시장조사 사진'}
+          style={{
+            maxWidth: '92vw',
+            maxHeight: '80vh',
+            objectFit: 'contain',
+            borderRadius: 8,
+            display: 'block',
+            margin: '0 auto',
+          }}
+        />
+        {photo.caption && (
+          <div style={{ color: '#fff', textAlign: 'center', fontSize: 13 }}>{photo.caption}</div>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
+}
 
 const EMPTY_FORM = {
   id: null,
@@ -96,7 +195,7 @@ function DetailField({ label, value }) {
   );
 }
 
-function MarketDetailModal({ row, onClose, onEdit, canEdit }) {
+function MarketDetailModal({ row, onClose, onEdit, canEdit, onPhotoClick }) {
   const photos = Array.isArray(row.photos) ? row.photos.filter(photo => photo?.data) : [];
   return (
     <ModalFrame
@@ -121,19 +220,31 @@ function MarketDetailModal({ row, onClose, onEdit, canEdit }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
               {photos.map((photo, index) => (
                 <figure key={index} style={{ margin: 0 }}>
-                  <img
-                    src={photo.data}
-                    alt={photo.caption || photo.name || '시장조사 사진'}
+                  <button
+                    type="button"
+                    onClick={() => onPhotoClick(photo)}
+                    aria-label={`${photo.caption || photo.name || '사진'} 크게 보기`}
                     style={{
-                      width: '100%',
-                      aspectRatio: '4/3',
-                      objectFit: 'contain',
-                      background: 'var(--surface-2)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 8,
+                      all: 'unset',
+                      cursor: 'zoom-in',
                       display: 'block',
+                      width: '100%',
                     }}
-                  />
+                  >
+                    <img
+                      src={photo.data}
+                      alt={photo.caption || photo.name || '시장조사 사진'}
+                      style={{
+                        width: '100%',
+                        aspectRatio: '4/3',
+                        objectFit: 'contain',
+                        background: 'var(--surface-2)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        display: 'block',
+                      }}
+                    />
+                  </button>
                   {photo.caption && (
                     <figcaption
                       style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4, textAlign: 'center' }}
@@ -188,8 +299,16 @@ function MarketResearchContent() {
   const [loading, setLoading] = useState(true);
   const [writing, setWriting] = useState(false);
   const [detailRow, setDetailRow] = useState(null);
+  const [lightboxPhoto, setLightboxPhoto] = useState(null);
 
   const filtered = useMemo(() => rows.filter(row => includesQuery(row, query)), [rows, query]);
+  const groupedRows = useMemo(() => groupByCompetitor(filtered), [filtered]);
+  const competitorOptions = useMemo(() => {
+    const values = new Set(
+      rows.map(row => String(row.competitor || '').trim()).filter(Boolean)
+    );
+    return [...values].sort((a, b) => a.localeCompare(b, 'ko'));
+  }, [rows]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -302,14 +421,6 @@ function MarketResearchContent() {
                 <div className="card-title">시장조사 목록</div>
                 <div className="card-sub">총 {rows.length}건</div>
               </div>
-              <button
-                className="btn"
-                type="button"
-                onClick={() => startWrite()}
-                disabled={!canEdit}
-              >
-                <Icon.plus style={{ width: 14, height: 14 }} /> 작성하기
-              </button>
             </div>
             <input
               className="form-input"
@@ -325,102 +436,168 @@ function MarketResearchContent() {
                   저장된 시장조사가 없습니다.
                 </div>
               )}
-              {filtered.map(row => {
-                const photos = Array.isArray(row.photos)
-                  ? row.photos.filter(photo => photo?.data)
-                  : [];
-                return (
-                  <article
-                    key={row.id}
-                    className="market-record-card"
+              {groupedRows.map(group => (
+                <div key={group.label} style={{ display: 'grid', gap: 8 }}>
+                  <div
                     style={{
-                      border: '1px solid var(--border)',
-                      borderRadius: 8,
-                      padding: 12,
-                      background: form.id === row.id ? 'var(--accent-soft)' : 'var(--surface-2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      marginTop: 4,
+                      paddingBottom: 4,
+                      borderBottom: '1px solid var(--border)',
                     }}
                   >
-                    <div className="market-record-head">
-                      <strong className="market-record-title">{row.title || row.type}</strong>
-                      {photos.length > 0 && <span className="chip">사진 {photos.length}</span>}
-                      <span className="chip">{row.type}</span>
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 5 }}>
-                      {row.date || '날짜 없음'} {row.brand ? `· ${row.brand}` : ''}
-                    </div>
-                    <p
+                    <span
                       style={{
-                        margin: '8px 0 0',
-                        fontSize: 12,
-                        lineHeight: 1.5,
-                        color: 'var(--text-2)',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        background: group.color,
+                        display: 'inline-block',
+                        flexShrink: 0,
                       }}
-                    >
-                      {row.marketTrend ||
-                        row.referencePoint ||
-                        row.developmentDirection ||
-                        '내용 없음'}
-                    </p>
-                    {photos.length > 0 && (
-                      <div
+                    />
+                    <strong style={{ fontSize: 13 }}>{group.label}</strong>
+                    <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                      {group.items.length}건
+                    </span>
+                  </div>
+                  {group.items.map(row => {
+                    const photos = Array.isArray(row.photos)
+                      ? row.photos.filter(photo => photo?.data)
+                      : [];
+                    return (
+                      <article
+                        key={row.id}
+                        className="market-record-card"
                         style={{
-                          display: 'flex',
-                          gap: 6,
-                          overflowX: 'auto',
-                          marginTop: 10,
-                          paddingBottom: 2,
+                          border: '1px solid var(--border)',
+                          borderRadius: 8,
+                          padding: 12,
+                          background: form.id === row.id ? 'var(--accent-soft)' : 'var(--surface-2)',
                         }}
                       >
-                        {photos.slice(0, 4).map((photo, index) => (
-                          <img
-                            key={index}
-                            src={photo.data}
-                            alt={photo.caption || photo.name || '시장조사 사진'}
+                        <div className="market-record-head">
+                          <strong className="market-record-title">{row.title || row.type}</strong>
+                          {photos.length > 0 && <span className="chip">사진 {photos.length}</span>}
+                          <span className="chip">{row.type}</span>
+                        </div>
+                        {row.competitor && (
+                          <div style={{ marginTop: 6 }}>
+                            <span
+                              className="chip"
+                              style={{
+                                background: 'var(--surface)',
+                                border: `1px solid ${group.color}`,
+                                color: group.color,
+                                fontWeight: 800,
+                              }}
+                            >
+                              {row.competitor}
+                            </span>
+                          </div>
+                        )}
+                        <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 5 }}>
+                          {row.date || '날짜 없음'} {row.brand ? `· ${row.brand}` : ''}
+                        </div>
+                        <p
+                          style={{
+                            margin: '8px 0 0',
+                            fontSize: 12,
+                            lineHeight: 1.5,
+                            color: 'var(--text-2)',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {row.marketTrend ||
+                            row.referencePoint ||
+                            row.developmentDirection ||
+                            '내용 없음'}
+                        </p>
+                        {photos.length > 0 && (
+                          <div
                             style={{
-                              width: 72,
-                              height: 54,
-                              objectFit: 'cover',
-                              borderRadius: 6,
-                              border: '1px solid var(--border)',
-                              background: 'var(--surface)',
-                              flex: '0 0 auto',
+                              display: 'flex',
+                              gap: 6,
+                              overflowX: 'auto',
+                              marginTop: 10,
+                              paddingBottom: 2,
                             }}
-                          />
-                        ))}
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-                      <button type="button" className="btn sm" onClick={() => setDetailRow(row)}>
-                        자세히
-                      </button>
-                      <button
-                        type="button"
-                        className="btn sm"
-                        onClick={() => startWrite(row)}
-                        disabled={!canEdit}
-                      >
-                        수정
-                      </button>
-                      <button
-                        type="button"
-                        className="btn sm"
-                        onClick={() => handleDelete(row)}
-                        disabled={!canEdit}
-                        style={{ color: 'var(--negative)' }}
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
+                          >
+                            {photos.slice(0, 4).map((photo, index) => (
+                              <button
+                                key={index}
+                                type="button"
+                                onClick={() => setLightboxPhoto(photo)}
+                                aria-label={`${photo.caption || photo.name || '사진'} 크게 보기`}
+                                style={{ all: 'unset', cursor: 'zoom-in', flex: '0 0 auto' }}
+                              >
+                                <img
+                                  src={photo.data}
+                                  alt={photo.caption || photo.name || '시장조사 사진'}
+                                  style={{
+                                    width: 72,
+                                    height: 54,
+                                    objectFit: 'cover',
+                                    borderRadius: 6,
+                                    border: '1px solid var(--border)',
+                                    background: 'var(--surface)',
+                                    display: 'block',
+                                  }}
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+                          <button
+                            type="button"
+                            className="btn sm"
+                            onClick={() => setDetailRow(row)}
+                          >
+                            자세히
+                          </button>
+                          <button
+                            type="button"
+                            className="btn sm"
+                            onClick={() => startWrite(row)}
+                            disabled={!canEdit}
+                          >
+                            수정
+                          </button>
+                          <button
+                            type="button"
+                            className="btn sm"
+                            onClick={() => handleDelete(row)}
+                            disabled={!canEdit}
+                            style={{ color: 'var(--negative)' }}
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           </section>
         </div>
+      )}
+
+      {canEdit && !writing && (
+        <button
+          type="button"
+          className="btn primary market-fab"
+          onClick={() => startWrite()}
+          title="시장조사 작성하기"
+        >
+          <Icon.plus style={{ width: 16, height: 16 }} /> 작성하기
+        </button>
       )}
 
       {writing && (
@@ -478,11 +655,17 @@ function MarketResearchContent() {
                   <Field label="경쟁사 / 시장 키워드">
                     <input
                       className="form-input"
+                      list="market-competitor-options"
                       value={form.competitor}
                       onChange={event => update('competitor', event.target.value)}
                       placeholder="예: 피자, 냉동 토핑, 가성비"
                       disabled={!canEdit}
                     />
+                    <datalist id="market-competitor-options">
+                      {competitorOptions.map(option => (
+                        <option key={option} value={option} />
+                      ))}
+                    </datalist>
                   </Field>
                 </div>
                 <Field label="시장분석 / 피해 트렌드 방향">
@@ -568,8 +751,11 @@ function MarketResearchContent() {
             setDetailRow(null);
             startWrite(row);
           }}
+          onPhotoClick={setLightboxPhoto}
         />
       )}
+
+      <PhotoLightbox photo={lightboxPhoto} onClose={() => setLightboxPhoto(null)} />
     </main>
   );
 }

@@ -245,6 +245,22 @@
 .market-page {
   overflow-x: hidden;
 }
+/* 스크롤해도 항상 눌러 저장할 수 있는 작성 버튼. 전역 .scroll-top-btn(맨 위로, 24px)과
+   같은 코너에서 겹치지 않도록 그 위쪽에 둔다. */
+.market-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 84px;
+  z-index: 55;
+  box-shadow: var(--shadow-md);
+  animation: fade-in 160ms ease both;
+}
+@media (max-width: 768px) {
+  .market-fab {
+    right: 16px;
+    bottom: 140px;
+  }
+}
 .market-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
