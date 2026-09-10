@@ -62,7 +62,9 @@ function indexNames(store) {
 
 describe('legacy cost recipe schema cleanup', () => {
   test('DB_VERSION is bumped for legacy recipe store removal', () => {
-    expect(DB_VERSION).toBe(26);
+    // v22에서 구형 레시피 store를 제거했다 — 그 이후 버전이기만 하면 된다.
+    // 매 버전업마다 이 테스트를 고쳐야 하는 하드코딩(예: toBe(26))은 피한다.
+    expect(DB_VERSION).toBeGreaterThanOrEqual(23);
   });
 
   test('new cost schema creates canonical menu_recipes only', () => {

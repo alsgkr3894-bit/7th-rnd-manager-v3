@@ -13,6 +13,7 @@ import {
   normalizeSelectedRecipeGroupIds,
   upsertMenuRecipeForMenu,
 } from '@/lib/menu-recipes';
+import { saveRecipeVersionSnapshot } from '@/lib/menu-master/recipe-versions';
 import { recipeStoreKindForCategory } from '@/lib/recipe-master/sync';
 import {
   buildSavableRecipeComponents,
@@ -161,15 +162,27 @@ export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellin
       if (!supported || !loaded) return { skipped: true };
       setSaving(true);
       try {
+        const savableComponents = buildSavableRecipeComponents(components, unitPriceMap);
         await upsertMenuRecipeForMenu({
           menuCode,
           menuName: menuName || '',
           category,
           kind: recipeKind,
           size: size || '단일',
-          components: buildSavableRecipeComponents(components, unitPriceMap),
+          components: savableComponents,
           selectedRecipeGroupIds: savableRecipeGroupIds,
         });
+        // 이력 스냅샷은 부수 기록이다 — 실패해도 레시피 저장 자체는 이미 끝났으므로
+        // 조용히 무시한다(사용자에게 저장 실패로 보이면 안 됨).
+        saveRecipeVersionSnapshot({
+          menuCode,
+          menuName: menuName || '',
+          size: size || '단일',
+          components: savableComponents,
+          selectedRecipeGroupIds: savableRecipeGroupIds,
+          totalCost: recipeSummary?.totalCost,
+          costRate: recipeSummary?.costRate,
+        }).catch(err => console.warn('[useMenuRecipeEditor] 버전 스냅샷 저장 실패', err));
         if (runOnSaved) await onSaved?.();
         if (showSuccessToast) showToast('레시피 저장됨', 'ok');
         return { saved: true };
@@ -192,6 +205,7 @@ export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellin
       components,
       savableRecipeGroupIds,
       unitPriceMap,
+      recipeSummary,
       onSaved,
     ]
   );

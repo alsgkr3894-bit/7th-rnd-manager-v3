@@ -21,6 +21,7 @@ import { Icon } from '@/components/icons';
 import { MenuRecipeComponentsTable } from '@/components/menu-master/MenuRecipeComponentsTable';
 import { MenuRecipeGroupSelector } from '@/components/menu-master/MenuRecipeGroupSelector';
 import { MenuRecipeImpactPreview } from '@/components/menu-master/MenuRecipeImpactPreview';
+import { MenuRecipeVersionHistory } from '@/components/menu-master/recipe';
 import { MenuRecipeSectionHeader } from '@/components/menu-master/MenuRecipeSectionHeader';
 import { useMenuRecipeEditor } from '@/components/menu-master/useMenuRecipeEditor';
 import { useRecipeIngredientSearch } from '@/components/menu-master/useRecipeIngredientSearch';
@@ -797,6 +798,15 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
         />
 
         <MenuRecipeImpactPreview components={previewComponents} allIngredients={allIngredients} />
+
+        <div style={{ marginTop: 12 }}>
+          <MenuRecipeVersionHistory
+            menuCode={menuCode}
+            currentComponents={components}
+            currentTotalCost={recipeSummary?.totalCost}
+            currentCostRate={recipeSummary?.costRate}
+          />
+        </div>
       </div>
     </div>
   );
