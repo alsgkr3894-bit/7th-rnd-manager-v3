@@ -24,6 +24,7 @@ import {
   buildNutritionMenuMasterDiagnostics,
   isNutritionMenuDiscontinued,
 } from '@/lib/nutrition/menu-master-diagnostics';
+import { migratePersonalPizzaCrustType } from '@/lib/nutrition/values/personal-pizza-migration';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { DuplicateNotice, MissingMasterNotice } from './NutritionMenuNotices';
 import { NutritionMenuSkeleton } from './NutritionMenuSkeleton';
@@ -39,6 +40,11 @@ export default function Page() {
 
   const { data, loading, error, reload } = useDBLoad(
     async () => {
+      // 1인용피자 영양성분이 과거엔 일반 씬바샤삭에 섞여 있었다 — 전용 슬롯으로
+      // 옮긴다. 멱등적이라 매번 불러도 안전하고, 옮길 게 없으면 즉시 반환한다.
+      await migratePersonalPizzaCrustType().catch(e =>
+        console.warn('[NutritionMenu] 1인용피자 크러스트 이관 실패', e)
+      );
       const [
         menuRefs,
         rawValues,

@@ -91,12 +91,13 @@ describe('EDGE_VARIANTS — EDGE_CODES와 동기화 불변식', () => {
 });
 
 describe('NUTRITION_EDGE_GROUPS — 운영 기준 총엣지', () => {
-  test('석쇠, 치즈크러스트, 골드스윗, 씬바샤삭 4개 그룹을 가진다', () => {
+  test('석쇠, 치즈크러스트, 골드스윗, 씬바샤삭, 1인용피자 5개 그룹을 가진다', () => {
     expect(NUTRITION_EDGE_GROUPS.map(group => group.label)).toEqual([
       '석쇠',
       '치즈크러스트',
       '골드스윗',
       '씬바샤삭',
+      '1인용피자',
     ]);
   });
 

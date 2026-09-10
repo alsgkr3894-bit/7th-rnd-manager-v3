@@ -71,7 +71,7 @@ describe('nutrition import guards', () => {
       menuCode: 'P-ONE-001',
       menuName: '더블치즈 (1인용)',
       category: '피자',
-      crustType: '씬바사삭L',
+      crustType: '1인용피자',
       personal: true,
       include: true,
     });
@@ -96,7 +96,8 @@ describe('nutrition import guards', () => {
     expect(rows[0]).toMatchObject({ menuCode: 'P-PEP-010', crustType: '석쇠L', personal: false });
     expect(rows[1]).toMatchObject({
       menuCode: 'P-ONE-010',
-      crustType: '씬바사삭L',
+      // 1인용피자는 이제 전용 크러스트 슬롯에 들어간다(일반 씬바사삭L과 분리).
+      crustType: '1인용피자',
       personal: true,
       menuName: '페페로니 (1인용)',
     });

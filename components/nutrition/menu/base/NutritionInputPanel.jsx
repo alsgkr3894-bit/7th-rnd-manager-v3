@@ -3,8 +3,11 @@ import { useEffect, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
 import { CRUST_TYPES, CRUST_DISPLAY_NAMES } from '@/lib/nutrition/values/store';
-import { SERVING_CRUST_TYPE } from '@/lib/nutrition/crust-config';
-import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
+import { PERSONAL_PIZZA_CRUST_CODE, SERVING_CRUST_TYPE } from '@/lib/nutrition/crust-config';
+import { isPersonalPizzaMenu, resolveNutritionGroup } from '@/lib/nutrition/menu-group';
+
+// 1인용피자는 L/R 구분도, 엣지 옵션도 없다 — 전용 슬롯 하나만 보여준다.
+const PERSONAL_CRUST_OPTIONS = [PERSONAL_PIZZA_CRUST_CODE];
 
 /**
  * 선택한 메뉴의 영양성분 입력 패널(크러스트 탭 + NutritionGrid + 계산/저장 버튼).
@@ -27,7 +30,11 @@ export function NutritionInputPanel({
 }) {
   const isPizza = selMenu ? resolveNutritionGroup(selMenu, masterByCode) === '피자' : true;
   const isBeverage = selMenu ? resolveNutritionGroup(selMenu, masterByCode) === '음료' : false;
-  const crustOptions = useMemo(() => (isPizza ? CRUST_TYPES : [SERVING_CRUST_TYPE]), [isPizza]);
+  const isPersonal = selMenu ? isPersonalPizzaMenu(selMenu, masterByCode) : false;
+  const crustOptions = useMemo(() => {
+    if (isPersonal) return PERSONAL_CRUST_OPTIONS;
+    return isPizza ? CRUST_TYPES : [SERVING_CRUST_TYPE];
+  }, [isPersonal, isPizza]);
 
   useEffect(() => {
     if (selMenu && !crustOptions.includes(selCrust)) setSelCrust(crustOptions[0]);

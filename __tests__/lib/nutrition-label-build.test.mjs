@@ -484,7 +484,8 @@ describe('buildPizzaSheet', () => {
 
     expect(rows.map(row => row.menuCode)).toEqual(['P-001', 'P-ONE-001']);
     expect(rows[1].rows).toHaveLength(1);
-    expect(rows[1].rows[0]).toMatchObject({ crustLabel: '씬바샤삭', side: 'L' });
+    // 1인용피자는 전용 크러스트 라벨로 출력된다(일반 씬바샤삭과 분리).
+    expect(rows[1].rows[0]).toMatchObject({ crustLabel: '1인용피자', side: 'L' });
   });
 });
 
