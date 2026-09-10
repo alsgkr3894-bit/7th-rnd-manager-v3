@@ -11,10 +11,20 @@ export function useMenuMasterFilters(rows, brandCats) {
   const [statusFilter, setStatusFilter] = useState('active');
   const [subFilter, setSubFilter] = useState('all');
   const [search, setSearch] = useState('');
+  // 숨김(hidden)은 단종과 별개인 임시 노출 제어 필드다 — 기본은 완전히 숨기고,
+  // 필요할 때만 숨김 개수 배지를 눌러 잠깐 보이게 한다(원가마진표 showHidden과 동일 패턴).
+  const [showHidden, setShowHidden] = useState(false);
+  const hiddenCount = useMemo(() => rows.filter(r => r.hidden).length, [rows]);
+
+  const visibleRows = useMemo(
+    () => (showHidden ? rows : rows.filter(r => !r.hidden)),
+    [rows, showHidden]
+  );
 
   const statusFiltered = useMemo(
-    () => (statusFilter === 'all' ? rows : rows.filter(r => r.status === statusFilter)),
-    [rows, statusFilter]
+    () =>
+      statusFilter === 'all' ? visibleRows : visibleRows.filter(r => r.status === statusFilter),
+    [visibleRows, statusFilter]
   );
 
   const displayCategories = useMemo(() => {
@@ -33,7 +43,8 @@ export function useMenuMasterFilters(rows, brandCats) {
   }, [statusFiltered, displayCategories]);
 
   const filtered = useMemo(() => {
-    let list = statusFilter === 'all' ? rows : rows.filter(r => r.status === statusFilter);
+    let list =
+      statusFilter === 'all' ? visibleRows : visibleRows.filter(r => r.status === statusFilter);
     if (catFilter !== 'all') list = list.filter(r => (r.category || '').startsWith(catFilter));
     if (catFilter === MENU_CATEGORY.PIZZA && subFilter !== 'all')
       list = list.filter(r => rowSubCategory(r) === subFilter);
@@ -46,7 +57,7 @@ export function useMenuMasterFilters(rows, brandCats) {
           rowSubCategory(r).toLowerCase().includes(q)
       );
     return list;
-  }, [rows, catFilter, subFilter, statusFilter, search]);
+  }, [visibleRows, catFilter, subFilter, statusFilter, search]);
 
   return {
     catFilter,
@@ -61,5 +72,9 @@ export function useMenuMasterFilters(rows, brandCats) {
     displayCategories,
     catCounts,
     filtered,
+    visibleRows,
+    showHidden,
+    setShowHidden,
+    hiddenCount,
   };
 }

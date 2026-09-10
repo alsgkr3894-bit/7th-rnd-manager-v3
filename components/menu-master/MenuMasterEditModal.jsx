@@ -62,6 +62,7 @@ export function MenuMasterEditModal({
     status: row?.status || 'active',
     note: row?.note || '',
     excludeFromOrigin: row?.excludeFromOrigin === true,
+    hidden: row?.hidden === true,
   });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -122,6 +123,7 @@ export function MenuMasterEditModal({
       status: form.status,
       note: form.note,
       excludeFromOrigin: form.excludeFromOrigin,
+      hidden: form.hidden,
     };
     try {
       const result = await onSave(payload, {

@@ -4,6 +4,28 @@ import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { safeRevenue } from '@/lib/sales/revenue';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { useDiscontinuedMenuNames } from '@/hooks/useDiscontinuedMenuNames';
+import { isDiscontinuedMenuName } from '@/lib/menu-master/discontinued-lookup';
+
+/** 메뉴마스터 단종 배지 — 판매 데이터 유무와 무관한, 메뉴마스터 status 기준 표시. */
+function DiscontinuedBadge() {
+  return (
+    <span
+      className="chip"
+      style={{
+        marginLeft: 6,
+        fontSize: 10,
+        padding: '1px 6px',
+        background: 'var(--surface-2)',
+        color: 'var(--text-3)',
+        fontWeight: 700,
+      }}
+      title="메뉴마스터에서 단종 처리된 메뉴입니다"
+    >
+      단종
+    </span>
+  );
+}
 
 function normalizeShare(value) {
   const share = Number(value);
@@ -30,6 +52,8 @@ export const RankRow = memo(function RankRow({ rank, row, total, expanded, onTog
   const sizes = asObjectArray(safeRow.sizes);
   const share = normalizeShare(safeTotal > 0 ? quantity / safeTotal : 0);
   const handleToggle = typeof onToggle === 'function' ? onToggle : undefined;
+  const discontinuedNames = useDiscontinuedMenuNames();
+  const isDiscontinued = isDiscontinuedMenuName(name, discontinuedNames);
 
   return (
     <div
@@ -63,6 +87,7 @@ export const RankRow = memo(function RankRow({ rank, row, total, expanded, onTog
         </div>
         <div className="sales-rank-name" style={{ fontWeight: 700 }}>
           {name}
+          {isDiscontinued && <DiscontinuedBadge />}
           <span
             style={{
               marginLeft: 8,

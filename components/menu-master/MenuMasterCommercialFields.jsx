@@ -97,3 +97,33 @@ export function OriginAllergenExcludeField({ value, setField }) {
     </div>
   );
 }
+
+// 숨김은 단종과 다르다 — 단종은 판매종료(이력 유지, 판매량/보고서엔 배지로 계속 표시),
+// 숨김은 목록에서 완전히 감추는 임시 처리다(테스트 항목, 오등록 등). 상태(status)는
+// 그대로 두고 hidden 필드만 토글한다.
+export function HiddenField({ value, setField }) {
+  return (
+    <div>
+      <label
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 8,
+          cursor: 'pointer',
+          fontSize: 13,
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={!!value}
+          onChange={e => setField('hidden', e.target.checked)}
+          style={{ accentColor: 'var(--text-3)', width: 15, height: 15 }}
+        />
+        <span style={{ fontWeight: 600 }}>목록에서 숨김</span>
+        <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+          (단종과 다름 — 임시로 완전히 감춥니다. 원가마진표에도 함께 적용)
+        </span>
+      </label>
+    </div>
+  );
+}

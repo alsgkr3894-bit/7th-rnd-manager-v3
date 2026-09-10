@@ -110,6 +110,10 @@ export default function Page() {
     displayCategories,
     catCounts,
     filtered,
+    visibleRows,
+    showHidden,
+    setShowHidden,
+    hiddenCount,
   } = useMenuMasterFilters(rows, brandCats);
 
   const { handleDeleteRow, openDeleteDialog, handleResetAndSeed, handleSeed, handleSaveRow } =
@@ -135,9 +139,10 @@ export default function Page() {
     setEditRow(row);
   }
 
-  const active = rows.filter(r => r.status === 'active');
-  const discontinued = rows.filter(r => r.status === 'discontinued');
-  const testRows = rows.filter(r => r.status === 'test');
+  // 숨김 처리한 메뉴는 상단 통계/상태 탭 개수에서도 제외한다(완전 숨김 의도).
+  const active = visibleRows.filter(r => r.status === 'active');
+  const discontinued = visibleRows.filter(r => r.status === 'discontinued');
+  const testRows = visibleRows.filter(r => r.status === 'test');
   const recipeSummaries = [...recipeSummaryMap.values()].filter(
     summary => summary.status !== MENU_RECIPE_SUMMARY_STATUS.UNSUPPORTED
   );
@@ -203,7 +208,7 @@ export default function Page() {
       />
 
       <MenuMasterStatsRow
-        rows={rows}
+        rows={visibleRows}
         activeRows={active}
         discontinuedRows={discontinued}
         testRows={testRows}
@@ -292,7 +297,7 @@ export default function Page() {
           ) : (
             <>
               <MenuMasterFilterPanel
-                rows={rows}
+                rows={visibleRows}
                 activeRows={active}
                 discontinuedRows={discontinued}
                 testRows={testRows}
@@ -306,6 +311,9 @@ export default function Page() {
                 onSearch={setSearch}
                 displayCategories={displayCategories}
                 catCounts={catCounts}
+                showHidden={showHidden}
+                onToggleShowHidden={() => setShowHidden(v => !v)}
+                hiddenCount={hiddenCount}
               />
 
               <MenuMasterTablePanel

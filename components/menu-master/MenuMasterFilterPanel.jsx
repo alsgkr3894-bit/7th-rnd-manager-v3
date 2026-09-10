@@ -19,6 +19,9 @@ export function MenuMasterFilterPanel({
   onSearch,
   displayCategories,
   catCounts,
+  showHidden,
+  onToggleShowHidden,
+  hiddenCount = 0,
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -51,6 +54,16 @@ export function MenuMasterFilterPanel({
             placeholder="코드·메뉴명 검색"
           />
         </div>
+        {hiddenCount > 0 && typeof onToggleShowHidden === 'function' && (
+          <button
+            type="button"
+            className="chip"
+            onClick={onToggleShowHidden}
+            title="숨김 처리한 메뉴는 목록에서 완전히 감춰집니다"
+          >
+            {showHidden ? '숨김 항목 감추기' : `숨김 ${hiddenCount}개 보기`}
+          </button>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>

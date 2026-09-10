@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  HiddenField,
   NoteField,
   OriginAllergenExcludeField,
   PriceField,
@@ -97,8 +98,9 @@ export function MenuMasterEditFields({
           />
           <StatusField value={form.status} setField={setField} />
         </div>
-        <div style={{ marginTop: 12 }}>
+        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <OriginAllergenExcludeField value={form.excludeFromOrigin} setField={setField} />
+          <HiddenField value={form.hidden} setField={setField} />
         </div>
       </div>
 
