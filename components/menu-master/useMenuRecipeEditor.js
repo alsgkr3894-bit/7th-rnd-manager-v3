@@ -200,6 +200,7 @@ export function useMenuRecipeEditor({
           selectedRecipeGroupIds: savableRecipeGroupIds,
           totalCost: recipeSummary?.totalCost,
           costRate: recipeSummary?.costRate,
+          sellingPrice,
         }).catch(err => console.warn('[useMenuRecipeEditor] 버전 스냅샷 저장 실패', err));
         logWork('RECIPE_SAVE', menuName || menuCode || '레시피');
         if (runOnSaved) await onSaved?.();
@@ -225,6 +226,7 @@ export function useMenuRecipeEditor({
       savableRecipeGroupIds,
       unitPriceMap,
       recipeSummary,
+      sellingPrice,
       onSaved,
     ]
   );

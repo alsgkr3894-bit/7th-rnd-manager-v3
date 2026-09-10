@@ -76,6 +76,38 @@ describe('diffRecipeVersions', () => {
     const diff = diffRecipeVersions({ components: [] }, { components: [] });
     expect(diff.costDelta).toBeNull();
   });
+
+  test('원가율 변화(costRateDelta)와 구성품별 소계 변화를 함께 계산한다', () => {
+    const before = {
+      totalCost: 1000,
+      costRate: 20,
+      components: [{ productCode: 'A', ingredientName: '치즈', quantity: 10, unitPrice: 50 }],
+    };
+    const after = {
+      totalCost: 1500,
+      costRate: 25,
+      // 수량은 그대로, 단가만 올랐다 — priceChanged만 true여야 한다.
+      components: [{ productCode: 'A', ingredientName: '치즈', quantity: 10, unitPrice: 80 }],
+    };
+    const diff = diffRecipeVersions(before, after);
+
+    expect(diff.beforeCostRate).toBe(20);
+    expect(diff.afterCostRate).toBe(25);
+    expect(diff.costRateDelta).toBe(5);
+
+    expect(diff.changed).toHaveLength(1);
+    const [changed] = diff.changed;
+    expect(changed.quantityChanged).toBe(false);
+    expect(changed.priceChanged).toBe(true);
+    expect(changed.subtotalBefore).toBe(500);
+    expect(changed.subtotalAfter).toBe(800);
+    expect(changed.subtotalDelta).toBe(300);
+  });
+
+  test('원가율 정보가 한쪽만 없으면 costRateDelta는 null이다', () => {
+    const diff = diffRecipeVersions({ components: [], costRate: 20 }, { components: [] });
+    expect(diff.costRateDelta).toBeNull();
+  });
 });
 
 describe('레시피 저장 시 버전 스냅샷을 남긴다', () => {
@@ -91,6 +123,26 @@ describe('레시피 저장 시 버전 스냅샷을 남긴다', () => {
     const s = src('components/menu-master/MenuRecipeSection.jsx');
     expect(s).toContain('MenuRecipeVersionHistory');
     expect(s).toContain('currentTotalCost={recipeSummary?.totalCost}');
+  });
+
+  test('스냅샷에 판매가(sellingPrice)를 함께 남겨 원가율 재계산·표시에 쓴다', () => {
+    const editor = src('components/menu-master/useMenuRecipeEditor.js');
+    expect(editor).toMatch(/saveRecipeVersionSnapshot\(\{[\s\S]*?sellingPrice,[\s\S]*?\}\)/);
+
+    const versions = src('lib/menu-master/recipe-versions.js');
+    expect(versions).toContain('sellingPrice: Number.isFinite(Number(snapshot?.sellingPrice))');
+  });
+});
+
+describe('getRecipeVersionsForMenu — menuCode 인덱스 + 브랜드 격리', () => {
+  test('getAll 전체 스캔 대신 menuCode 인덱스로 조회한다', () => {
+    const s = src('lib/menu-master/recipe-versions.js');
+    expect(s).toContain("await getByIndex(RECIPE_VERSIONS_STORE, 'menuCode', code)");
+  });
+
+  test('brandId가 없는 레거시 행은 보존하고, 있는 행은 활성 브랜드만 남긴다', () => {
+    const s = src('lib/menu-master/recipe-versions.js');
+    expect(s).toContain('r.brandId == null || r.brandId === activeBrandId');
   });
 });
 

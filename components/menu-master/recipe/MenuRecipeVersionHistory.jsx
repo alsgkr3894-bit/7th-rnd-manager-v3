@@ -1,7 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CollapsibleCard } from '@/app/note/_CollapsibleCard';
 import { diffRecipeVersions, getRecipeVersionsForMenu } from '@/lib/menu-master/recipe-versions';
+
+const CURRENT_ID = '__current__';
 
 function formatAt(at) {
   const s = String(at || '');
@@ -15,6 +17,17 @@ function formatCost(value) {
 
 function formatRate(value) {
   return value == null ? '—' : `${value.toFixed(1)}%`;
+}
+
+function formatSignedCost(value) {
+  if (value == null) return '';
+  const rounded = Math.round(value);
+  return `${rounded > 0 ? '+' : ''}${rounded.toLocaleString()}원`;
+}
+
+function formatSignedRate(value) {
+  if (value == null) return '';
+  return `${value > 0 ? '+' : ''}${value.toFixed(1)}%p`;
 }
 
 function DiffList({ title, items, tone }) {
@@ -43,10 +56,40 @@ function DiffList({ title, items, tone }) {
   );
 }
 
+function ChangedList({ items }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <div style={{ marginTop: 6 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', marginBottom: 3 }}>
+        수량/단가 변경
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {items.map(c => (
+          <div key={c.key} style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>
+              {c.label}: 수량 {c.before.quantity ?? '-'} → {c.after.quantity ?? '-'} · 단가{' '}
+              {c.before.unitPrice ?? '-'}원 → {c.after.unitPrice ?? '-'}원
+              {c.subtotalDelta ? ` (소계 ${formatSignedCost(c.subtotalDelta)})` : ''}
+            </span>
+            {!c.quantityChanged && c.priceChanged && (
+              <span
+                className="chip"
+                style={{ fontSize: 10, background: 'var(--accent-soft)', color: 'var(--accent)' }}
+              >
+                단가 변동
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /**
  * 원가/레시피 변경 이력 — menu_recipe_versions 스냅샷을 목록으로 보여주고,
- * 선택한 과거 시점과 "현재 화면에 입력된 값"을 비교한다.
- * 저장 전 미리보기 용도이므로 currentComponents는 저장된 값이 아니라 화면 상태를 쓴다.
+ * 목록의 아무 두 시점("현재 화면(미저장)" 포함)이나 기준/비교로 골라 비교한다.
+ * 기본값은 "직전 저장 대비 최신 저장" — 방금 뭐가 바뀌었는지가 가장 흔한 질문이라서다.
  */
 export function MenuRecipeVersionHistory({
   menuCode,
@@ -57,7 +100,8 @@ export function MenuRecipeVersionHistory({
   const [open, setOpen] = useState(false);
   const [versions, setVersions] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [compareId, setCompareId] = useState(null);
+  const [baseId, setBaseId] = useState(null);
+  const [targetId, setTargetId] = useState(CURRENT_ID);
 
   useEffect(() => {
     if (!open || !menuCode) return;
@@ -65,7 +109,10 @@ export function MenuRecipeVersionHistory({
     setLoading(true);
     getRecipeVersionsForMenu(menuCode)
       .then(rows => {
-        if (alive) setVersions(rows);
+        if (!alive) return;
+        setVersions(rows);
+        setBaseId(rows[1]?.id ?? null);
+        setTargetId(rows[0]?.id ?? CURRENT_ID);
       })
       .catch(() => {
         if (alive) setVersions([]);
@@ -78,13 +125,24 @@ export function MenuRecipeVersionHistory({
     };
   }, [open, menuCode]);
 
-  const compareVersion = versions.find(v => v.id === compareId) || null;
-  const diff = compareVersion
-    ? diffRecipeVersions(compareVersion, {
-        components: currentComponents,
-        totalCost: currentTotalCost,
-      })
-    : null;
+  const entries = useMemo(() => {
+    const current = {
+      id: CURRENT_ID,
+      at: null,
+      isCurrent: true,
+      totalCost: currentTotalCost,
+      costRate: currentCostRate,
+      components: currentComponents,
+    };
+    return [current, ...versions];
+  }, [versions, currentComponents, currentTotalCost, currentCostRate]);
+
+  const baseEntry = entries.find(e => e.id === baseId) || null;
+  const targetEntry = entries.find(e => e.id === targetId) || null;
+  const diff =
+    baseEntry && targetEntry && baseEntry.id !== targetEntry.id
+      ? diffRecipeVersions(baseEntry, targetEntry)
+      : null;
 
   return (
     <CollapsibleCard
@@ -106,46 +164,61 @@ export function MenuRecipeVersionHistory({
       )}
       {!loading && versions.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {versions.slice(0, 20).map((v, i) => (
-            <div
-              key={v.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '6px 8px',
-                borderRadius: 6,
-                background: compareId === v.id ? 'var(--accent-soft)' : 'var(--surface-2)',
-                fontSize: 12,
-              }}
-            >
-              <span style={{ color: 'var(--text-3)', flexShrink: 0 }}>{formatAt(v.at)}</span>
-              {i === 0 && (
-                <span
-                  className="chip"
-                  style={{
-                    fontSize: 10,
-                    background: 'var(--positive-soft)',
-                    color: 'var(--positive)',
-                  }}
-                >
-                  최신
-                </span>
-              )}
-              <span style={{ flex: 1 }} />
-              <span className="num">{formatCost(v.totalCost)}</span>
-              <span className="num" style={{ color: 'var(--text-3)' }}>
-                {formatRate(v.costRate)}
-              </span>
-              <button
-                type="button"
-                className="btn xs"
-                onClick={() => setCompareId(id => (id === v.id ? null : v.id))}
+          {entries.slice(0, 21).map(e => {
+            const isBase = baseId === e.id;
+            const isTarget = targetId === e.id;
+            return (
+              <div
+                key={e.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '6px 8px',
+                  borderRadius: 6,
+                  background: isBase || isTarget ? 'var(--accent-soft)' : 'var(--surface-2)',
+                  fontSize: 12,
+                }}
               >
-                {compareId === v.id ? '비교 해제' : '현재와 비교'}
-              </button>
-            </div>
-          ))}
+                <span style={{ color: 'var(--text-3)', flexShrink: 0 }}>
+                  {e.isCurrent ? '현재 화면(미저장)' : formatAt(e.at)}
+                </span>
+                {e.id === versions[0]?.id && (
+                  <span
+                    className="chip"
+                    style={{
+                      fontSize: 10,
+                      background: 'var(--positive-soft)',
+                      color: 'var(--positive)',
+                    }}
+                  >
+                    최신 저장
+                  </span>
+                )}
+                <span style={{ flex: 1 }} />
+                <span className="num">{formatCost(e.totalCost)}</span>
+                <span className="num" style={{ color: 'var(--text-3)' }}>
+                  {formatRate(e.costRate)}
+                </span>
+                <button
+                  type="button"
+                  className={'btn xs' + (isBase ? ' primary' : '')}
+                  onClick={() => setBaseId(id => (id === e.id ? null : e.id))}
+                  title="이 시점을 비교 기준으로"
+                >
+                  기준
+                </button>
+                <button
+                  type="button"
+                  className={'btn xs' + (isTarget ? ' primary' : '')}
+                  onClick={() => setTargetId(id => (id === e.id ? null : e.id))}
+                  title="이 시점을 비교 대상으로"
+                >
+                  비교
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -158,7 +231,8 @@ export function MenuRecipeVersionHistory({
           }}
         >
           <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-            {formatAt(compareVersion.at)} 대비 현재 화면
+            {baseEntry.isCurrent ? '현재 화면(미저장)' : formatAt(baseEntry.at)} 대비{' '}
+            {targetEntry.isCurrent ? '현재 화면(미저장)' : formatAt(targetEntry.at)}
             {diff.costDelta != null && (
               <span
                 style={{
@@ -167,38 +241,33 @@ export function MenuRecipeVersionHistory({
                   fontWeight: 800,
                 }}
               >
-                {diff.costDelta > 0 ? '+' : ''}
-                {Math.round(diff.costDelta).toLocaleString()}원
+                {formatSignedCost(diff.costDelta)}
               </span>
             )}
           </div>
+          {diff.beforeCostRate != null && diff.afterCostRate != null && (
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4 }}>
+              원가율 {formatRate(diff.beforeCostRate)} → {formatRate(diff.afterCostRate)}
+              {diff.costRateDelta != null && diff.costRateDelta !== 0 && (
+                <span
+                  style={{
+                    marginLeft: 4,
+                    color: diff.costRateDelta > 0 ? 'var(--negative)' : 'var(--positive)',
+                    fontWeight: 700,
+                  }}
+                >
+                  ({formatSignedRate(diff.costRateDelta)})
+                </span>
+              )}
+            </div>
+          )}
           {diff.added.length === 0 && diff.removed.length === 0 && diff.changed.length === 0 ? (
             <div style={{ fontSize: 12, color: 'var(--text-4)' }}>구성품 차이가 없습니다.</div>
           ) : (
             <>
               <DiffList title="추가된 구성품" items={diff.added} tone="add" />
               <DiffList title="삭제된 구성품" items={diff.removed} tone="remove" />
-              {diff.changed.length > 0 && (
-                <div style={{ marginTop: 6 }}>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: 'var(--text-3)',
-                      marginBottom: 3,
-                    }}
-                  >
-                    수량/단가 변경
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    {diff.changed.map(c => (
-                      <div key={c.key} style={{ fontSize: 12 }}>
-                        {c.label}: {c.before.quantity ?? '-'} → {c.after.quantity ?? '-'}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <ChangedList items={diff.changed} />
             </>
           )}
         </div>
