@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, jest, test } from '@jest/globals';
 import { importAll } from '../../lib/db/operations.js';
-import {
-  replaceStoresInDbTransaction,
-  writeStoresInDbTransaction,
-} from '../../lib/db/backup.js';
+import { replaceStoresInDbTransaction, writeStoresInDbTransaction } from '../../lib/db/backup.js';
 
 const originalLocalStorage = globalThis.localStorage;
 
@@ -171,7 +168,10 @@ describe('importAll 구조 방어', () => {
       clear: false,
     });
 
-    expect(state.sales_rows).toEqual([{ id: 10, fileId: 1 }, { id: 20, fileId: 2 }]);
+    expect(state.sales_rows).toEqual([
+      { id: 10, fileId: 1 },
+      { id: 20, fileId: 2 },
+    ]);
   });
 
   test('clear 기본값은 true라 기존 동작과 같다', async () => {

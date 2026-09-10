@@ -185,4 +185,3 @@ describe('민감 store 쓰기 차단', () => {
     expect(operation.storeName).toBe('cost_ingredients');
   });
 });
-

@@ -156,8 +156,18 @@ describe('nutrition set calc', () => {
 describe('buildSetPreviewRows', () => {
   const menuRefs = [...pizzaMenus, { menuCode: 'S-1', menuName: '사이드', category: '사이드' }];
   const setComps = [
-    { kind: 'set', setName: '세트A', setSide: 'L', slots: [{ label: '사이드', menuCodes: ['S-1'] }] },
-    { kind: 'set', setName: '세트A', setSide: 'R', slots: [{ label: '사이드', menuCodes: ['S-1'] }] },
+    {
+      kind: 'set',
+      setName: '세트A',
+      setSide: 'L',
+      slots: [{ label: '사이드', menuCodes: ['S-1'] }],
+    },
+    {
+      kind: 'set',
+      setName: '세트A',
+      setSide: 'R',
+      slots: [{ label: '사이드', menuCodes: ['S-1'] }],
+    },
   ];
 
   test('세트박스 L/R 사이드별로 한 행씩 min/max 열량을 반환한다 ("계산 결과" 미리보기용)', () => {

@@ -57,25 +57,25 @@ export function AllergenDetailModal({ detailRow, detailRows, onClose }) {
                       {[...row.allergens]
                         .sort((a, b) => allergenOrderOf(a) - allergenOrderOf(b))
                         .map(code => {
-                        const allergen = ALLERGEN_SEED.find(
-                          item => asDisplayText(item.allergenCode) === code
-                        );
-                        return (
-                          <span
-                            key={code}
-                            style={{
-                              fontSize: 11,
-                              fontWeight: 700,
-                              padding: '2px 7px',
-                              borderRadius: 999,
-                              background: 'var(--warn-soft)',
-                              color: 'var(--warn)',
-                            }}
-                          >
-                            {asDisplayText(allergen?.allergenName, code)}
-                          </span>
-                        );
-                      })}
+                          const allergen = ALLERGEN_SEED.find(
+                            item => asDisplayText(item.allergenCode) === code
+                          );
+                          return (
+                            <span
+                              key={code}
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                padding: '2px 7px',
+                                borderRadius: 999,
+                                background: 'var(--warn-soft)',
+                                color: 'var(--warn)',
+                              }}
+                            >
+                              {asDisplayText(allergen?.allergenName, code)}
+                            </span>
+                          );
+                        })}
                     </div>
                   </td>
                 </tr>

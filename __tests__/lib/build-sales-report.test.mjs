@@ -2,7 +2,16 @@ import { describe, expect, test } from '@jest/globals';
 import { buildSalesStats } from '../../lib/report/build-sales-report.js';
 
 function row({ year, month, category = '피자', groupName = 'A', quantity, revenue = 0 }) {
-  return { status: 'classified', year, month, category, groupName, mappedMenuName: groupName, quantity, revenue };
+  return {
+    status: 'classified',
+    year,
+    month,
+    category,
+    groupName,
+    mappedMenuName: groupName,
+    quantity,
+    revenue,
+  };
 }
 
 describe('buildSalesStats', () => {
@@ -62,7 +71,12 @@ describe('buildSalesStats', () => {
       row({ year: 2025, month: 11, quantity: 1 }),
       row({ year: 2025, month: 12, quantity: 1 }),
     ];
-    const { kpi } = buildSalesStats(rows, { year: 2026, month: 1, periodMode: 'quarter', scope: 'all' });
+    const { kpi } = buildSalesStats(rows, {
+      year: 2026,
+      month: 1,
+      periodMode: 'quarter',
+      scope: 'all',
+    });
 
     expect(kpi.current).toBe(15);
     expect(kpi.previous).toBe(3);
@@ -73,7 +87,12 @@ describe('buildSalesStats', () => {
       ...Array.from({ length: 12 }, (_, i) => row({ year: 2026, month: i + 1, quantity: 1 })),
       ...Array.from({ length: 12 }, (_, i) => row({ year: 2025, month: i + 1, quantity: 2 })),
     ];
-    const { kpi } = buildSalesStats(rows, { year: 2026, month: 1, periodMode: 'year', scope: 'all' });
+    const { kpi } = buildSalesStats(rows, {
+      year: 2026,
+      month: 1,
+      periodMode: 'year',
+      scope: 'all',
+    });
 
     expect(kpi.current).toBe(12);
     expect(kpi.previous).toBe(24);

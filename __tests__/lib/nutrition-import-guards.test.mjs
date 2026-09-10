@@ -105,7 +105,9 @@ describe('nutrition import guards', () => {
   });
 
   test('1인용 표식이 있으면 괄호를 제거해도 일반 메뉴와 다른 매칭 키를 갖는다', () => {
-    expect(normalizeImportMatchKey('페페로니(1인용)')).not.toBe(normalizeImportMatchKey('페페로니'));
+    expect(normalizeImportMatchKey('페페로니(1인용)')).not.toBe(
+      normalizeImportMatchKey('페페로니')
+    );
     expect(normalizeImportMatchKey('페페로니 (1인용)')).toBe(
       normalizeImportMatchKey('페페로니(1인용)')
     );

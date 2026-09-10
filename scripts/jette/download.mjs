@@ -85,7 +85,11 @@ function stamp() {
 }
 
 function sanitize(name) {
-  return String(name || '').replace(/[\\/:*?"<>|]+/g, '_').trim() || 'download';
+  return (
+    String(name || '')
+      .replace(/[\\/:*?"<>|]+/g, '_')
+      .trim() || 'download'
+  );
 }
 
 // ROOT 안쪽이면 상대경로, 밖(예: 바탕화면)이면 절대경로로 보기 좋게 표시
@@ -118,7 +122,9 @@ async function runLogin(cfg) {
   console.log('  ┌──────────────────────────────────────────────────────────────┐');
   console.log('  │ 브라우저에서 로그인을 완료하세요 (인증번호가 있으면 입력).      │');
   console.log('  │ 로그인이 끝나면 자동으로 감지해 세션을 저장하고 종료합니다.     │');
-  console.log(`  │ (최대 ${String(timeoutSec).padEnd(3)}초 대기)                                        │`);
+  console.log(
+    `  │ (최대 ${String(timeoutSec).padEnd(3)}초 대기)                                        │`
+  );
   console.log('  └──────────────────────────────────────────────────────────────┘');
   console.log('');
 
@@ -142,7 +148,9 @@ async function runLogin(cfg) {
 
   if (!loggedIn) {
     await browser.close();
-    fail(`제한시간(${timeoutSec}s) 내 로그인이 감지되지 않았습니다. 다시 시도하세요 (--timeout 으로 시간 조절).`);
+    fail(
+      `제한시간(${timeoutSec}s) 내 로그인이 감지되지 않았습니다. 다시 시도하세요 (--timeout 으로 시간 조절).`
+    );
   }
 
   // 로그인 후 페이지가 안정될 시간을 잠깐 준다
@@ -161,7 +169,10 @@ async function runInspect(cfg, targetUrl) {
   if (!fs.existsSync(cfg.sessionFile)) fail('세션이 없습니다. 먼저 `login` 을 실행하세요.');
 
   const browser = await chromium.launch({ headless: !HEADED });
-  const context = await browser.newContext({ storageState: cfg.sessionFile, acceptDownloads: true });
+  const context = await browser.newContext({
+    storageState: cfg.sessionFile,
+    acceptDownloads: true,
+  });
   const page = await context.newPage();
   await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(1500);
@@ -174,16 +185,21 @@ async function runInspect(cfg, targetUrl) {
   const candidates = await page.evaluate(() => {
     const kw = /(엑셀|excel|xls|다운|download|내려받기|추출|export)/i;
     const out = [];
-    const els = Array.from(document.querySelectorAll('a, button, input[type=button], input[type=submit], [onclick]'));
+    const els = Array.from(
+      document.querySelectorAll('a, button, input[type=button], input[type=submit], [onclick]')
+    );
     for (const el of els) {
-      const text = (el.innerText || el.value || el.getAttribute('title') || '').replace(/\s+/g, ' ').trim();
+      const text = (el.innerText || el.value || el.getAttribute('title') || '')
+        .replace(/\s+/g, ' ')
+        .trim();
       const oc = el.getAttribute('onclick') || '';
       const href = el.getAttribute('href') || '';
       if (kw.test(text) || kw.test(oc) || kw.test(href)) {
         const id = el.id ? `#${el.id}` : '';
-        const cls = el.className && typeof el.className === 'string'
-          ? '.' + el.className.trim().split(/\s+/).join('.')
-          : '';
+        const cls =
+          el.className && typeof el.className === 'string'
+            ? '.' + el.className.trim().split(/\s+/).join('.')
+            : '';
         out.push({
           tag: el.tagName.toLowerCase(),
           text: text.slice(0, 60),
@@ -206,7 +222,9 @@ async function runInspect(cfg, targetUrl) {
       if (c.onclick) console.log(`    onclick  : ${c.onclick}`);
       if (c.href) console.log(`    href     : ${c.href}`);
     });
-    console.log('\n→ 위 selector(또는 `text=<버튼문구>`)를 config의 해당 report.trigger 에 넣으세요.');
+    console.log(
+      '\n→ 위 selector(또는 `text=<버튼문구>`)를 config의 해당 report.trigger 에 넣으세요.'
+    );
     console.log(`→ 이 페이지 URL을 report.url 에 넣으세요: ${page.url()}`);
   }
 
@@ -267,12 +285,17 @@ async function runSteps(page, cfg, key, steps) {
         await page.waitForTimeout(step.ms ?? 1000);
         break;
       case 'openCombo':
-        await page.locator('.ui-igcombo-button').nth(step.nth ?? 0).click({ timeout: 10000 });
+        await page
+          .locator('.ui-igcombo-button')
+          .nth(step.nth ?? 0)
+          .click({ timeout: 10000 });
         await page.waitForTimeout(step.ms ?? 900);
         break;
       case 'pickItem': {
         const picked = await page.evaluate(txt => {
-          const lis = Array.from(document.querySelectorAll('li')).filter(e => e.offsetParent !== null);
+          const lis = Array.from(document.querySelectorAll('li')).filter(
+            e => e.offsetParent !== null
+          );
           const t = lis.find(e => (e.innerText || e.textContent || '').trim() === txt);
           if (!t) return false;
           t.scrollIntoView();
@@ -345,7 +368,8 @@ async function downloadOne(context, cfg, key, report) {
       ]);
     }
 
-    if (!download) throw new Error('다운로드가 발생하지 않았습니다 (steps 에 download step 이 있는지 확인).');
+    if (!download)
+      throw new Error('다운로드가 발생하지 않았습니다 (steps 에 download step 이 있는지 확인).');
 
     const outDir = path.join(cfg.downloadDir, key);
     fs.mkdirSync(outDir, { recursive: true });
@@ -370,12 +394,17 @@ async function runDownload(cfg, target) {
       ? Object.keys(cfg.reports)
       : cfg.reports[target]
         ? [target]
-        : fail(`알 수 없는 대상: ${target} (사용 가능: ${Object.keys(cfg.reports).join(', ')}, all)`);
+        : fail(
+            `알 수 없는 대상: ${target} (사용 가능: ${Object.keys(cfg.reports).join(', ')}, all)`
+          );
 
   if (!keys.length) fail('config.reports 가 비어 있습니다.');
 
   const browser = await chromium.launch({ headless: !HEADED });
-  const context = await browser.newContext({ storageState: cfg.sessionFile, acceptDownloads: true });
+  const context = await browser.newContext({
+    storageState: cfg.sessionFile,
+    acceptDownloads: true,
+  });
 
   const results = [];
   for (const key of keys) {

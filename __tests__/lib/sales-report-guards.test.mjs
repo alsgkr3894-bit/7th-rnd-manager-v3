@@ -139,14 +139,49 @@ describe('sales report helper guards', () => {
   test('buildRangeCompare는 여러 달을 하나의 기간으로 묶어 비교한다 (분기·연 비교용)', () => {
     // 1분기(1~3월) vs 4분기(작년 10~12월)
     const rows = [
-      { status: 'classified', year: 2026, month: 1, category: '피자', groupName: 'A', quantity: 10 },
+      {
+        status: 'classified',
+        year: 2026,
+        month: 1,
+        category: '피자',
+        groupName: 'A',
+        quantity: 10,
+      },
       { status: 'classified', year: 2026, month: 2, category: '피자', groupName: 'A', quantity: 5 },
       { status: 'classified', year: 2026, month: 3, category: '피자', groupName: 'A', quantity: 3 },
-      { status: 'classified', year: 2025, month: 10, category: '피자', groupName: 'A', quantity: 4 },
-      { status: 'classified', year: 2025, month: 11, category: '피자', groupName: 'A', quantity: 2 },
-      { status: 'classified', year: 2025, month: 12, category: '피자', groupName: 'A', quantity: 1 },
+      {
+        status: 'classified',
+        year: 2025,
+        month: 10,
+        category: '피자',
+        groupName: 'A',
+        quantity: 4,
+      },
+      {
+        status: 'classified',
+        year: 2025,
+        month: 11,
+        category: '피자',
+        groupName: 'A',
+        quantity: 2,
+      },
+      {
+        status: 'classified',
+        year: 2025,
+        month: 12,
+        category: '피자',
+        groupName: 'A',
+        quantity: 1,
+      },
       // 범위 밖 — 어느 쪽에도 포함되지 않아야 함
-      { status: 'classified', year: 2026, month: 4, category: '피자', groupName: 'A', quantity: 99 },
+      {
+        status: 'classified',
+        year: 2026,
+        month: 4,
+        category: '피자',
+        groupName: 'A',
+        quantity: 99,
+      },
     ];
     const monthsA = [
       { year: 2026, month: 1 },

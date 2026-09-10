@@ -111,7 +111,8 @@ export default function Page() {
     const safeNext = normalizePeriodMode(nextMode);
     if (safeNext === periodMode) return;
     if (safeNext === 'quarter') setQuarter(quarterOfMonth(month));
-    else if (safeNext === 'month' && periodMode === 'quarter') setMonth(monthsOfQuarter(quarter)[0]);
+    else if (safeNext === 'month' && periodMode === 'quarter')
+      setMonth(monthsOfQuarter(quarter)[0]);
     setPeriodMode(safeNext);
   }
 
@@ -181,7 +182,11 @@ export default function Page() {
       ? compareData
       : null;
   const periodLabel = formatPeriodLabel(safePeriodMode, safeYearValue, monthOrQuarter);
-  const cmpPeriodLabel = formatPeriodLabel(safePeriodMode, safeCmpYear || safeYearValue, cmpMonthOrQuarter);
+  const cmpPeriodLabel = formatPeriodLabel(
+    safePeriodMode,
+    safeCmpYear || safeYearValue,
+    cmpMonthOrQuarter
+  );
   const totalShare = safeCatShares.reduce((s, c) => s + safeQuantity(c.value), 0);
   const reportMeta = {
     kind: 'sales',
@@ -246,7 +251,9 @@ export default function Page() {
           cmpQuarter={safeCmpQuarter || safeQuarterValue}
           onCmpYear={value => setCmpYear(safeYear(value, safeCmpYear || safeYearValue))}
           onCmpMonth={value => setCmpMonth(safeMonth(value, safeCmpMonth || safeMonthValue))}
-          onCmpQuarter={value => setCmpQuarter(safeQuarter(value, safeCmpQuarter || safeQuarterValue))}
+          onCmpQuarter={value =>
+            setCmpQuarter(safeQuarter(value, safeCmpQuarter || safeQuarterValue))
+          }
           opts={safeOpts}
           upd={upd}
           docFormat={docFormat}

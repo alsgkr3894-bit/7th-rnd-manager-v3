@@ -9,9 +9,7 @@ describe('note journal page linkage', () => {
     expect(journalPageSource).toContain('sampleToUnifiedRecord');
     expect(journalPageSource).toContain('const sampleRecords = useMemo(');
     expect(journalPageSource).toContain('samples.map(sampleToUnifiedRecord)');
-    expect(journalPageSource).toContain(
-      '[...notes, ...sampleRecords, ...marketResearchRecords]'
-    );
+    expect(journalPageSource).toContain('[...notes, ...sampleRecords, ...marketResearchRecords]');
     expect(journalPageSource).toContain('journalRecords');
     expect(journalPageSource).toContain('journalRecords.forEach(note =>');
     expect(journalPageSource).toContain('journalRecords.forEach(n =>');
@@ -30,7 +28,9 @@ describe('note journal page linkage', () => {
 
   test('통합 샘플/시장조사 기록의 수정 버튼은 각각의 원본 화면으로 이동한다', () => {
     expect(journalPageSource).toContain('isUnifiedSampleRecord(note)');
-    expect(journalPageSource).toContain('router.push(`/note/sample/${unifiedSampleSourceId(note)}`)');
+    expect(journalPageSource).toContain(
+      'router.push(`/note/sample/${unifiedSampleSourceId(note)}`)'
+    );
     expect(journalPageSource).toContain('isUnifiedMarketResearchRecord(note)');
     expect(journalPageSource).toContain(
       'router.push(`/note/market?edit=${unifiedMarketResearchSourceId(note)}`)'

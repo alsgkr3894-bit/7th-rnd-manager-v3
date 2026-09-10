@@ -154,12 +154,14 @@ describe('deleteIngredient cascade (B-15)', () => {
 
   test('productCode를 가진 식자재 삭제 시 레시피/세트그룹/엣지도우에 남은 참조를 제거한다', async () => {
     stores.menu_recipes = [
-      { id: 10, menuCode: 'PZ-001', components: [{ productCode: 'PC-001' }, { productCode: 'PC-999' }] },
+      {
+        id: 10,
+        menuCode: 'PZ-001',
+        components: [{ productCode: 'PC-001' }, { productCode: 'PC-999' }],
+      },
       { id: 11, menuCode: 'PZ-002', components: [{ productCode: 'PC-999' }] },
     ];
-    stores.cost_recipe_groups = [
-      { id: 20, ingredients: [{ productCode: 'pc-001' }] },
-    ];
+    stores.cost_recipe_groups = [{ id: 20, ingredients: [{ productCode: 'pc-001' }] }];
     stores.cost_edge_dough = [{ id: 30, components: [{ productCode: 'PC-001' }] }];
 
     const result = await deleteIngredient(1);

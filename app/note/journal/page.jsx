@@ -166,7 +166,9 @@ function filterJournalPhotosAgainstSources(photos, sourcePhotos) {
     (Array.isArray(sourcePhotos) ? sourcePhotos : []).map(journalPhotoKey).filter(Boolean)
   );
   if (!sourceKeys.size) return Array.isArray(photos) ? photos : [];
-  return (Array.isArray(photos) ? photos : []).filter(photo => !sourceKeys.has(journalPhotoKey(photo)));
+  return (Array.isArray(photos) ? photos : []).filter(
+    photo => !sourceKeys.has(journalPhotoKey(photo))
+  );
 }
 
 function withoutJournalSourceDuplicatePhotos(records) {
@@ -514,13 +516,13 @@ export default function Page() {
     initialData: [],
     onError: err => console.error('[note/journal] samples load failed', err),
   });
-  const {
-    data: marketResearchRows = [],
-    loading: marketResearchLoading,
-  } = useDBLoad(() => getAllMarketResearch(), {
-    initialData: [],
-    onError: err => console.error('[note/journal] market research load failed', err),
-  });
+  const { data: marketResearchRows = [], loading: marketResearchLoading } = useDBLoad(
+    () => getAllMarketResearch(),
+    {
+      initialData: [],
+      onError: err => console.error('[note/journal] market research load failed', err),
+    }
+  );
   const { data: schedules = [] } = useDBLoad(() => getAllSchedules(), {
     initialData: [],
     onError: err => console.error('[note/journal] schedules load failed', err),
@@ -531,7 +533,10 @@ export default function Page() {
     [samples]
   );
   const marketResearchRecords = useMemo(
-    () => (Array.isArray(marketResearchRows) ? marketResearchRows.map(marketResearchToUnifiedRecord) : []),
+    () =>
+      Array.isArray(marketResearchRows)
+        ? marketResearchRows.map(marketResearchToUnifiedRecord)
+        : [],
     [marketResearchRows]
   );
   const journalRecords = useMemo(

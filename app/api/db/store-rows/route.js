@@ -1,5 +1,9 @@
 import { applyStoreRowOperations } from '@/lib/server/store-row-sync';
-import { normalizeStoreRowQuery, readStoreRowManifest, readStoreRowPage } from '@/lib/server/store-row-read';
+import {
+  normalizeStoreRowQuery,
+  readStoreRowManifest,
+  readStoreRowPage,
+} from '@/lib/server/store-row-read';
 import { getPrismaClient } from '@/lib/server/prisma';
 import { assertLocalRequest, RequestNotLocalError } from '@/lib/server/request-guard';
 

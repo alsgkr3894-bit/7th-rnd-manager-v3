@@ -205,8 +205,8 @@ export function TabEdge({ edges, edgeMap, rawMap, menus, onRefresh, onOpenBase }
           이 엣지가 해당 사이즈 <strong>한판에 추가하는 총량 그대로</strong> 입력합니다 — 중량(g)은
           추가되는 엣지 재료의 총 중량, 나머지 항목은 그 엣지 전체에 들어있는 영양성분 총량.
           <br />
-          (베이스와 달리 <strong>100g 기준으로 나누지 않습니다.</strong> 계산 시 베이스 한판
-          총량과 합산한 뒤 조각수로 나눠 표기됩니다.)
+          (베이스와 달리 <strong>100g 기준으로 나누지 않습니다.</strong> 계산 시 베이스 한판 총량과
+          합산한 뒤 조각수로 나눠 표기됩니다.)
         </div>
         <NutritionGrid values={form} onChange={setField} disabled={!isAdmin || saving} />
         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>

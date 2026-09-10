@@ -535,18 +535,12 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
     });
 
     const { workbook, fileName } = lastWrite();
-    expect(fileName).toMatch(/^테스트브랜드_2026-06-01 ~ 2026-06-30 제때 가격 변동 보고서_\d{8}\.xlsx$/);
+    expect(fileName).toMatch(
+      /^테스트브랜드_2026-06-01 ~ 2026-06-30 제때 가격 변동 보고서_\d{8}\.xlsx$/
+    );
     expect(workbook.SheetNames).toEqual(['요약', '전체 식자재 변동 요약', '변동 품목']);
     expect(rowsOf(workbook, '요약')[1]).toEqual(['기간', '2026-06-01 ~ 2026-06-30']);
-    expect(rowsOf(workbook, '전체 식자재 변동 요약')[1]).toEqual([
-      '전체',
-      1,
-      1,
-      0,
-      0,
-      0,
-      12.5,
-    ]);
+    expect(rowsOf(workbook, '전체 식자재 변동 요약')[1]).toEqual(['전체', 1, 1, 0, 0, 0, 12.5]);
     expect(rowsOf(workbook, '변동 품목')[1]).toEqual([
       '냉장',
       'P-001',

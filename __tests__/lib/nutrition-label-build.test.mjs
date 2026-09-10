@@ -57,13 +57,17 @@ describe('buildPosterPizzaRows', () => {
     // 시트의 totalWeight(1170)를 우선 사용해야 화면 표와 엑셀이 같은 값이 된다.
     const sheet = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-1170', menuName: '검증피자', category: '피자' }],
-      rawMap: { 'P-1170__석쇠L': { weight: 1170, kcal: 200, sugar: 8, protein: 16, fat: 4, sodium: 300 } },
+      rawMap: {
+        'P-1170__석쇠L': { weight: 1170, kcal: 200, sugar: 8, protein: 16, fat: 4, sodium: 300 },
+      },
       edgeMap: {},
       masterByCode: {},
       menuAllergenMap: new Map(),
       sliceCounts: { 'P-1170': { L: 8 } },
     });
-    const screenTotal = sheet[0].rows.find(r => r.crustLabel === '석쇠' && r.side === 'L').totalWeight;
+    const screenTotal = sheet[0].rows.find(
+      r => r.crustLabel === '석쇠' && r.side === 'L'
+    ).totalWeight;
     const excelRows = buildPosterPizzaRows(sheet);
     const excelTotal = excelRows.find(r => r.crustLabel === '석쇠').sides.L.totalWeight;
 
@@ -425,9 +429,9 @@ describe('buildPizzaSheet', () => {
     const gorgonzolaRows = rows.find(r => r.menuCode === 'P-GORGONZOLA').rows;
     const otherRows = rows.find(r => r.menuCode === 'P-OTHER').rows;
 
-    expect(
-      gorgonzolaRows.find(r => r.crustLabel === '석쇠' && r.side === 'L').allergen
-    ).toBe('밀, 대두');
+    expect(gorgonzolaRows.find(r => r.crustLabel === '석쇠' && r.side === 'L').allergen).toBe(
+      '밀, 대두'
+    );
     expect(gorgonzolaRows.find(r => r.crustLabel === '씬바샤삭').allergen).toBe('밀');
     // 다른 메뉴는 씬바샤삭이어도 대두가 그대로 유지된다 (메뉴 스코프 확인 — 전역 규칙 아님)
     expect(otherRows.find(r => r.crustLabel === '씬바샤삭').allergen).toBe('밀, 대두');
@@ -694,9 +698,18 @@ describe('1인용 피자 조각수', () => {
     // 1인용은 1인분 제품이라 조각 묶음 규칙을 적용하지 않고 통판 전체가 1회분.
     // 6조각 기준, 300g/100g당 200kcal → 6조각 = 300g / 600kcal.
     const sheet = buildPizzaSliceSheet({
-      menus: [{ menuCode: 'P-ONE-1', menuName: '더블치즈 1인용', category: '피자', personal: true }],
+      menus: [
+        { menuCode: 'P-ONE-1', menuName: '더블치즈 1인용', category: '피자', personal: true },
+      ],
       rawMap: {
-        'P-ONE-1__씬바사삭L': { weight: 300, kcal: 200, sugar: 9, protein: 12, satFat: 6, sodium: 300 },
+        'P-ONE-1__씬바사삭L': {
+          weight: 300,
+          kcal: 200,
+          sugar: 9,
+          protein: 12,
+          satFat: 6,
+          sodium: 300,
+        },
       },
       edgeMap: {},
       masterByCode: { 'P-ONE-1': { category: '피자' } },
@@ -718,7 +731,9 @@ describe('1인용 피자 조각수', () => {
     // 일반 피자 8조각, 320g → 1조각 40g<100 → 2조각도 80g<100 → 3조각.
     const sheet = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-REG', menuName: '일반피자', category: '피자' }],
-      rawMap: { 'P-REG__석쇠L': { weight: 320, kcal: 200, sugar: 8, protein: 16, satFat: 4, sodium: 320 } },
+      rawMap: {
+        'P-REG__석쇠L': { weight: 320, kcal: 200, sugar: 8, protein: 16, satFat: 4, sodium: 320 },
+      },
       edgeMap: {},
       masterByCode: {},
       menuAllergenMap,
@@ -736,7 +751,9 @@ describe('조각 1회분 값 이중 반올림 방지', () => {
     // 한번반올림(정답): round(103×120/100×0.375)=round(46.35)=46
     const sheet = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-RND', menuName: '반올림피자', category: '피자' }],
-      rawMap: { 'P-RND__석쇠L': { weight: 120, kcal: 103, sugar: 7, protein: 11, satFat: 5, sodium: 251 } },
+      rawMap: {
+        'P-RND__석쇠L': { weight: 120, kcal: 103, sugar: 7, protein: 11, satFat: 5, sodium: 251 },
+      },
       edgeMap: {},
       masterByCode: {},
       menuAllergenMap,

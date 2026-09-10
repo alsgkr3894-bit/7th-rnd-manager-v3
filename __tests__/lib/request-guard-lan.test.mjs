@@ -48,8 +48,9 @@ describe('isPrivateLanHostname — RFC1918 경계', () => {
 
 describe('assertLocalRequest — 기본(루프백 전용)', () => {
   test.each(['http://localhost:3000', 'http://127.0.0.1:3000'])('%s 는 통과', origin => {
-    expect(() => assertLocalRequest(req({ origin, host: origin.replace(/^https?:\/\//, '') })))
-      .not.toThrow();
+    expect(() =>
+      assertLocalRequest(req({ origin, host: origin.replace(/^https?:\/\//, '') }))
+    ).not.toThrow();
   });
 
   test('플래그가 없으면 사설 대역도 거부한다', () => {
@@ -89,9 +90,9 @@ describe('assertLocalRequest — RND_ALLOW_LAN=1', () => {
   });
 
   test('공인 IP·외부 도메인은 여전히 거부한다', () => {
-    expect(() =>
-      assertLocalRequest(req({ origin: 'http://8.8.8.8', host: '8.8.8.8' }))
-    ).toThrow(RequestNotLocalError);
+    expect(() => assertLocalRequest(req({ origin: 'http://8.8.8.8', host: '8.8.8.8' }))).toThrow(
+      RequestNotLocalError
+    );
     expect(() =>
       assertLocalRequest(req({ origin: 'https://evil.example.com', host: 'evil.example.com' }))
     ).toThrow(RequestNotLocalError);

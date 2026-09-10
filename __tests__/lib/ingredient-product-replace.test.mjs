@@ -81,7 +81,13 @@ describe('replaceIngredientProductCode', () => {
 
   test('연쇄 대체(A→B→C) 시 A의 배지도 최종 목적지 C로 갱신된다', async () => {
     stores.cost_ingredients = [
-      { id: 1, productCode: 'A', ingredientName: 'A', discontinued: true, replacedByProductCode: 'B' },
+      {
+        id: 1,
+        productCode: 'A',
+        ingredientName: 'A',
+        discontinued: true,
+        replacedByProductCode: 'B',
+      },
       { id: 2, productCode: 'B', ingredientName: 'B', replacedFromProductCode: 'A' },
       { id: 3, productCode: 'C', ingredientName: 'C' },
     ];

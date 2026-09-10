@@ -14,9 +14,8 @@ function installMemoryLocalStorage() {
 
 installMemoryLocalStorage();
 
-const { rememberNutritionImportAliases, loadNutritionImportAliases } = await import(
-  '../../lib/nutrition/import-aliases.js'
-);
+const { rememberNutritionImportAliases, loadNutritionImportAliases } =
+  await import('../../lib/nutrition/import-aliases.js');
 const { normalizeImportMatchKey } = await import('../../lib/nutrition/values/import.js');
 
 describe('rememberNutritionImportAliases', () => {

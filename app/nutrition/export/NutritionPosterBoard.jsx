@@ -201,7 +201,9 @@ function SimplePosterTable({
           {safeRows.length ? (
             <>
               {safeRows.map((row, index) => (
-                <tr key={`${asDisplayText(row?.menuCode) || asDisplayText(row?.menuName)}-${index}`}>
+                <tr
+                  key={`${asDisplayText(row?.menuCode) || asDisplayText(row?.menuName)}-${index}`}
+                >
                   <td className="poster-menu-name small">
                     <CellText>{displayNutritionMenuName(row?.menuName)}</CellText>
                   </td>

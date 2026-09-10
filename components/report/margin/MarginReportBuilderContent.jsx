@@ -94,7 +94,9 @@ export function MarginReportBuilderContent({ onReportModeChange }) {
       activePlatform,
       discount,
       isAllPlatforms ? { allPlatforms: selectedPlatforms } : undefined
-    ).catch(err => showToast('엑셀 내보내기 실패: ' + (err?.message || '알 수 없는 오류'), 'error'));
+    ).catch(err =>
+      showToast('엑셀 내보내기 실패: ' + (err?.message || '알 수 없는 오류'), 'error')
+    );
 
   const platformLabel = isSinglePlatform
     ? activePlatform?.name || '기본'

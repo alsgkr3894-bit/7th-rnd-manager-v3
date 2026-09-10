@@ -26,7 +26,9 @@ export function CalendarLegend() {
           color: 'var(--text-2)',
         }}
       >
-        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#EF4444', flexShrink: 0 }} />
+        <span
+          style={{ width: 7, height: 7, borderRadius: '50%', background: '#EF4444', flexShrink: 0 }}
+        />
         공휴일·일요일
       </span>
       <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>── 노트</span>

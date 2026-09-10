@@ -20,7 +20,10 @@ function slotDisplayText(slot, nameByCode) {
 
 export function SetCompositionList({ groups, menus, onAdd, onEdit, onDelete, canEdit = false }) {
   const nameByCode = Object.fromEntries(
-    asObjectArray(menus).map(m => [asDisplayText(m.menuCode), asDisplayText(m.menuName, m.menuCode)])
+    asObjectArray(menus).map(m => [
+      asDisplayText(m.menuCode),
+      asDisplayText(m.menuName, m.menuCode),
+    ])
   );
 
   return (

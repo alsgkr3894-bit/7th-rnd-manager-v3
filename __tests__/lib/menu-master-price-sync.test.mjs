@@ -301,7 +301,13 @@ describe('menu master price sync policy', () => {
     ];
 
     const result = await syncMenuMasterFromPrices([
-      { menuCode: 'PZ-012-L', menuName: '유지되는 피자', category: '피자', size: 'L', price: 16000 },
+      {
+        menuCode: 'PZ-012-L',
+        menuName: '유지되는 피자',
+        category: '피자',
+        size: 'L',
+        price: 16000,
+      },
     ]);
 
     expect(result).toMatchObject({ priceUpdated: 1, unchanged: 1 });

@@ -128,9 +128,7 @@ describe('저위험 hub 페이지 useDBLoad 적용', () => {
     expect(journalSrc).toContain('collectLatestRoundNotePhotos(group.notes, 99)');
     expect(journalSrc).toContain('const rawDayNotes = useMemo');
     expect(journalSrc).toContain('withRelatedJournalPhotos(rawDayNotes, notes)');
-    expect(journalSrc).toContain(
-      'withoutJournalSourceDuplicatePhotos(dayNotesWithRelatedPhotos)'
-    );
+    expect(journalSrc).toContain('withoutJournalSourceDuplicatePhotos(dayNotesWithRelatedPhotos)');
     expect(journalSrc).toContain('if (note?.noteType !== JOURNAL_NOTE_TYPE) return note;');
     expect(journalSrc).toContain('setJournalForm(journalFormFromEntry(journalEntry))');
     expect(journalSrc).toContain('photos: mergeJournalPhotos(note?.photos, relatedPhotos)');

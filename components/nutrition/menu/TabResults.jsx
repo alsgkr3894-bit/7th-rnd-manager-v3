@@ -30,14 +30,7 @@ const GROUP_HEADER_STYLE = {
   textTransform: 'uppercase',
 };
 
-export function TabResults({
-  menus,
-  rawMap,
-  edgeMap,
-  menuMasters,
-  setComps,
-  menuSearch = '',
-}) {
+export function TabResults({ menus, rawMap, edgeMap, menuMasters, setComps, menuSearch = '' }) {
   const [filterMenu, setFilterMenu] = useState('전체');
   const [missingOnly, setMissingOnly] = useState(false);
   const safeMenus = useMemo(() => asObjectArray(menus), [menus]);
@@ -56,8 +49,7 @@ export function TabResults({
     () =>
       safeMenus.filter(
         m =>
-          resolveNutritionGroup(m, masterByCode) === '피자' &&
-          !isPersonalPizzaMenu(m, masterByCode)
+          resolveNutritionGroup(m, masterByCode) === '피자' && !isPersonalPizzaMenu(m, masterByCode)
       ),
     [safeMenus, masterByCode]
   );
@@ -76,17 +68,22 @@ export function TabResults({
 
   const setResults = useMemo(
     () =>
-      buildSetPreviewRows(safeSetComps, safeMenus, safeRawMap, masterByCode, pizzaMenus, safeEdgeMap).map(
-        (r, index) => ({
-          menuCode: `__set__${r.setName}__${r.side}__${index}`,
-          menuName: `${r.setName} (${r.side}세트)`,
-          crustType: '세트',
-          groupLabel: SET_GROUP_LABEL,
-          isDerived: false,
-          weight: formatRangeCell(r.minWeight, r.maxWeight),
-          kcal: formatRangeCell(r.minKcal, r.maxKcal),
-        })
-      ),
+      buildSetPreviewRows(
+        safeSetComps,
+        safeMenus,
+        safeRawMap,
+        masterByCode,
+        pizzaMenus,
+        safeEdgeMap
+      ).map((r, index) => ({
+        menuCode: `__set__${r.setName}__${r.side}__${index}`,
+        menuName: `${r.setName} (${r.side}세트)`,
+        crustType: '세트',
+        groupLabel: SET_GROUP_LABEL,
+        isDerived: false,
+        weight: formatRangeCell(r.minWeight, r.maxWeight),
+        kcal: formatRangeCell(r.minKcal, r.maxKcal),
+      })),
     [safeSetComps, safeMenus, safeRawMap, masterByCode, pizzaMenus, safeEdgeMap]
   );
 

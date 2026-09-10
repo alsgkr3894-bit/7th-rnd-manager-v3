@@ -43,7 +43,9 @@ export default function SalesReportPreview({
         <div className="paper-meta">
           <span>대상: {scopeLabel(scope)}</span>
           <span>·</span>
-          <span>{viewMode === 'compare' ? `비교: ${cmpPeriodLabel}` : `해당 ${unitLabel} 순위`}</span>
+          <span>
+            {viewMode === 'compare' ? `비교: ${cmpPeriodLabel}` : `해당 ${unitLabel} 순위`}
+          </span>
           <span>·</span>
           <span className="mono">
             생성일 {todayLabel} · {asDisplayText(profileName, '')}

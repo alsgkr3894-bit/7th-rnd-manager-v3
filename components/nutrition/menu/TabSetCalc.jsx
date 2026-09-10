@@ -51,8 +51,7 @@ export function TabSetCalc({
     () =>
       safeMenus.filter(
         m =>
-          resolveNutritionGroup(m, masterByCode) === '피자' &&
-          !isPersonalPizzaMenu(m, masterByCode)
+          resolveNutritionGroup(m, masterByCode) === '피자' && !isPersonalPizzaMenu(m, masterByCode)
       ),
     [safeMenus, masterByCode]
   );

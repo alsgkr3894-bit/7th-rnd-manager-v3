@@ -41,7 +41,12 @@ export function NutritionLabelActions({ exporting, onPdf, onExcel, onEditMenuNam
       ]
     : [];
   return (
-    <ExportResultActions exporting={exporting} onPdf={onPdf} onExcel={onExcel} extraActions={extraActions} />
+    <ExportResultActions
+      exporting={exporting}
+      onPdf={onPdf}
+      onExcel={onExcel}
+      extraActions={extraActions}
+    />
   );
 }
 

@@ -259,9 +259,7 @@ describe('bulkSetOriginAllergenNone', () => {
   });
 
   test('알레르기 없음을 일괄 적용해도 원산지 필드는 건드리지 않는다', async () => {
-    ingredientRows = [
-      { id: 1, ingredientName: 'A', originNone: true, allergenNone: false },
-    ];
+    ingredientRows = [{ id: 1, ingredientName: 'A', originNone: true, allergenNone: false }];
 
     const result = await bulkSetOriginAllergenNone([1], { allergenNone: true });
     expect(result).toEqual({ updated: 1 });

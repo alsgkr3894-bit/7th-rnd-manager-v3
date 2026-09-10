@@ -56,7 +56,11 @@ export function IngredientManagePanel({
   const codeNameMap = useMemo(() => {
     const map = new Map();
     for (const row of rows) {
-      if (row.productCode) map.set(row.productCode, row.ingredientName || row.displayName || row.productName || row.productCode);
+      if (row.productCode)
+        map.set(
+          row.productCode,
+          row.ingredientName || row.displayName || row.productName || row.productCode
+        );
     }
     return map;
   }, [rows]);

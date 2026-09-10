@@ -60,9 +60,7 @@ describe('normalizeStoreRowQuery', () => {
   });
 
   test('숫자가 아닌 값은 기본값으로 되돌린다', () => {
-    const query = normalizeStoreRowQuery(
-      params({ storeName: 'cost_ingredients', maxRows: 'abc' })
-    );
+    const query = normalizeStoreRowQuery(params({ storeName: 'cost_ingredients', maxRows: 'abc' }));
     expect(Number.isInteger(query.maxRows)).toBe(true);
     expect(query.maxRows).toBeGreaterThan(0);
   });
@@ -124,7 +122,9 @@ describe('resolveReadBrandId', () => {
     expect(resolveReadBrandId('cost_ingredients', '')).toBe('main');
   });
   test('지나치게 긴 brandId는 거부한다', () => {
-    expect(() => resolveReadBrandId('cost_ingredients', 'x'.repeat(200))).toThrow(/Invalid brandId/);
+    expect(() => resolveReadBrandId('cost_ingredients', 'x'.repeat(200))).toThrow(
+      /Invalid brandId/
+    );
   });
 });
 

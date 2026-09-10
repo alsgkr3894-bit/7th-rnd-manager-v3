@@ -30,7 +30,15 @@ function columnWidths(headers) {
   });
 }
 
-function PreviewTable({ rows, sizeLabels, viewMode, activePlatform, platforms, isAllPlatforms, discount }) {
+function PreviewTable({
+  rows,
+  sizeLabels,
+  viewMode,
+  activePlatform,
+  platforms,
+  isAllPlatforms,
+  discount,
+}) {
   const sheetRows = isAllPlatforms
     ? buildMarginExcelRowsAllPlatforms(rows, sizeLabels, viewMode, platforms, discount)
     : buildMarginExcelRows(rows, sizeLabels, viewMode, activePlatform, discount);
@@ -231,7 +239,9 @@ export function MarginReportPreview({
             label={`플랫폼별 ${modeLabel}`}
             value={platformCount ? '아래 표 참고' : '—'}
             sub={
-              platformCount ? '메뉴별 표에서 플랫폼 컬럼을 비교하세요' : '플랫폼을 1개 이상 선택하세요'
+              platformCount
+                ? '메뉴별 표에서 플랫폼 컬럼을 비교하세요'
+                : '플랫폼을 1개 이상 선택하세요'
             }
           />
         ) : (

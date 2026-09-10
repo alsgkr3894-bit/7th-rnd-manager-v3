@@ -10,11 +10,7 @@ import {
   resolveSyncMode,
   setSyncModeOverride,
 } from '@/lib/db/sync-mode';
-import {
-  hydrateFromServer,
-  readHydrateJournal,
-  readServerManifest,
-} from '@/lib/db/server-hydrate';
+import { hydrateFromServer, readHydrateJournal, readServerManifest } from '@/lib/db/server-hydrate';
 import { formatNumber } from '@/lib/format';
 
 function ModeBadge({ mode }) {
@@ -171,9 +167,7 @@ export default function ServerSyncPage() {
             이 브라우저의 모드
           </div>
           <ModeBadge mode={mode} />
-          {overridden && (
-            <span style={{ fontSize: 11, color: 'var(--text-3)' }}>수동 지정됨</span>
-          )}
+          {overridden && <span style={{ fontSize: 11, color: 'var(--text-3)' }}>수동 지정됨</span>}
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
             <button className="btn sm" type="button" onClick={toggleOverride}>
               {isReadonly ? '운영 PC로 지정' : '읽기 전용으로 지정'}
@@ -188,13 +182,13 @@ export default function ServerSyncPage() {
         <div style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.6 }}>
           {isReadonly ? (
             <>
-              이 브라우저는 서버로 아무것도 저장하지 않습니다. 여기서 입력·수정한 내용은 이
-              PC에만 남고, 다시 불러오면 사라집니다. 데이터 수정은 운영 PC에서 해주세요.
+              이 브라우저는 서버로 아무것도 저장하지 않습니다. 여기서 입력·수정한 내용은 이 PC에만
+              남고, 다시 불러오면 사라집니다. 데이터 수정은 운영 PC에서 해주세요.
             </>
           ) : (
             <>
-              이 브라우저의 변경 사항은 서버 DB에 자동 저장됩니다. 다른 PC는 이 데이터를
-              내려받아 보게 됩니다.
+              이 브라우저의 변경 사항은 서버 DB에 자동 저장됩니다. 다른 PC는 이 데이터를 내려받아
+              보게 됩니다.
             </>
           )}
         </div>
@@ -289,10 +283,7 @@ export default function ServerSyncPage() {
             >
               <StatRow label="서버 총 행" value={formatNumber(manifest.totalRows)} />
               <StatRow label="스토어" value={formatNumber(rows.length)} />
-              <StatRow
-                label="무시된 중복"
-                value={formatNumber(manifest.totalForkedRows || 0)}
-              />
+              <StatRow label="무시된 중복" value={formatNumber(manifest.totalForkedRows || 0)} />
             </div>
             <div className="paper-table-scroll" style={{ overflowX: 'auto' }}>
               <table className="paper-table">
@@ -313,10 +304,7 @@ export default function ServerSyncPage() {
                         <td>
                           {row.storeName}
                           {row.shared && (
-                            <span
-                              className="chip"
-                              style={{ marginLeft: 6, fontSize: 10 }}
-                            >
+                            <span className="chip" style={{ marginLeft: 6, fontSize: 10 }}>
                               공용
                             </span>
                           )}
@@ -395,19 +383,21 @@ export default function ServerSyncPage() {
             lineHeight: 1.8,
           }}
         >
-          <li>불러오기는 이 PC의 로컬 데이터를 서버 내용으로 <b>덮어씁니다</b>.</li>
+          <li>
+            불러오기는 이 PC의 로컬 데이터를 서버 내용으로 <b>덮어씁니다</b>.
+          </li>
           <li>서버 데이터는 그 시점의 사본입니다. 최신 내용을 보려면 다시 불러와야 합니다.</li>
           <li>
-            브랜드 목록과 화면 설정(테마·필터·출력 옵션 등)은 브라우저에만 저장되어 함께
-            내려오지 않습니다. 이 PC에서 처음 보는 화면은 기본값으로 표시될 수 있습니다.
+            브랜드 목록과 화면 설정(테마·필터·출력 옵션 등)은 브라우저에만 저장되어 함께 내려오지
+            않습니다. 이 PC에서 처음 보는 화면은 기본값으로 표시될 수 있습니다.
           </li>
           <li>
-            &quot;무시된 중복&quot;은 과거에 여러 브라우저가 같은 항목을 각자 올려서 서버가
-            갈라 놓은 행입니다. 불러올 때 제외됩니다.
+            &quot;무시된 중복&quot;은 과거에 여러 브라우저가 같은 항목을 각자 올려서 서버가 갈라
+            놓은 행입니다. 불러올 때 제외됩니다.
           </li>
           <li>
-            <b>사이트 로그인정보와 법인카드 내역서는 내려오지 않습니다.</b> 비밀번호·결제
-            내역이라 네트워크로 내보내지 않으며, 운영 PC에서만 볼 수 있습니다.
+            <b>사이트 로그인정보와 법인카드 내역서는 내려오지 않습니다.</b> 비밀번호·결제 내역이라
+            네트워크로 내보내지 않으며, 운영 PC에서만 볼 수 있습니다.
           </li>
         </ul>
       </section>
