@@ -4,9 +4,9 @@ import {
   RankCard,
   SampleStatsWidget,
 } from '@/components/home/HomeWidgets';
+import { MenuCostChangeWidget } from '@/components/home/MenuCostChangeWidget';
 import { NoteHeatmapWidget } from '@/components/home/NoteHeatmapWidget';
 import { PipelineWidget } from '@/components/home/PipelineWidget';
-import { PriceChangeWidget } from '@/components/home/PriceChangeWidget';
 import { ScheduleWidget } from '@/components/home/ScheduleWidget';
 import { TodoWidget } from '@/components/home/TodoWidget';
 import { UnmatchedWidget } from '@/components/home/UnmatchedWidget';
@@ -62,7 +62,7 @@ export function renderRanksRow(context) {
 export function renderPricePairRow(context, rowId) {
   return pairDashboardRow(
     context.isVisible('pricechange') ? (
-      <PriceChangeWidget key="price" items={context.priceChanges} router={context.router} />
+      <MenuCostChangeWidget key="price" data={context.menuCostChanges} router={context.router} />
     ) : null,
     context.showCostAlert ? (
       <CostAlertWidget key="costalert" data={context.alertCostAlertData} router={context.router} />

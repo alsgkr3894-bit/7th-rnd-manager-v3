@@ -100,7 +100,7 @@ export default function HomePage() {
     todos,
     pipeline,
     weekSchedule,
-    priceChanges,
+    menuCostChanges,
     issues,
     ingredientHealth,
     uploadFreshness,
@@ -325,7 +325,7 @@ export default function HomePage() {
         setChartTab={setChartTab}
         chartKey={chartKey}
         isTrendEmpty={isTrendEmpty}
-        priceChanges={priceChanges}
+        menuCostChanges={menuCostChanges}
         showUnmatched={showUnmatched}
         showPipeline={showPipeline}
         showCostAlert={showCostAlert}
