@@ -4,6 +4,7 @@ import {
   applyStoreRowOperations,
   normalizeStoreRowOperations,
 } from '../../lib/server/store-row-sync.js';
+import { LAN_EXCLUDED_STORE_NAMES } from '../../lib/server/sensitive-stores.js';
 
 describe('server store row sync', () => {
   test('normalizes shared stores into the main brand', () => {
@@ -139,3 +140,49 @@ describe('server store row sync', () => {
     expect(collisionRows[0].sourceBackupId).toBe('client:browser:fresh-profile');
   });
 });
+
+// 이 API에는 인증이 없다. 평문 비밀번호가 든 store가 쓰기(upsert/delete/clear)로도
+// 생성·수정·삭제되면 안 된다 — 읽기 차단(server-store-row-read.test.mjs)과 짝을 이룬다.
+describe('민감 store 쓰기 차단', () => {
+  test('로그인정보·법인카드는 upsert를 거부한다', () => {
+    for (const storeName of LAN_EXCLUDED_STORE_NAMES) {
+      expect(() =>
+        normalizeStoreRowOperations({
+          operations: [
+            {
+              type: 'upsert',
+              storeName,
+              recordKey: '1',
+              data: { id: 1 },
+            },
+          ],
+        })
+      ).toThrow(/Unknown storeName/);
+    }
+  });
+
+  test('로그인정보·법인카드는 clear를 거부한다', () => {
+    for (const storeName of LAN_EXCLUDED_STORE_NAMES) {
+      expect(() =>
+        normalizeStoreRowOperations({
+          operations: [{ type: 'clear', storeName }],
+        })
+      ).toThrow(/Unknown storeName/);
+    }
+  });
+
+  test('일반 store는 계속 정상 처리된다(과도한 차단 방지)', () => {
+    const [operation] = normalizeStoreRowOperations({
+      operations: [
+        {
+          type: 'upsert',
+          storeName: 'cost_ingredients',
+          recordKey: '1',
+          data: { id: 1, name: 'test' },
+        },
+      ],
+    });
+    expect(operation.storeName).toBe('cost_ingredients');
+  });
+});
+
