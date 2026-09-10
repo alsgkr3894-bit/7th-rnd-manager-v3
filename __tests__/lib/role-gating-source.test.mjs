@@ -50,6 +50,18 @@ describe('role gating source guards', () => {
     expect(hookSource).toContain('refreshSeqRef.current += 1');
   });
 
+  test('데이터 백업 다운로드는 admin 역할 기준을 사용한다', () => {
+    // rnd_login_credentials(평문 비밀번호)·rnd_corporate_card_entries가 내보내기 대상에
+    // 포함될 수 있어, viewer가 백업 파일을 내려받지 못하도록 UI에서도 막는다
+    // (실행함수 레이어 가드는 lib/db/backup.js exportSelectedForBrand, 관련 테스트는
+    // destructive-action-guard-structure.test.mjs).
+    const pageSource = sourceOf('app/settings/backup/page.jsx');
+
+    expect(pageSource).toContain("from '@/hooks/useCurrentRole'");
+    expect(pageSource).toContain('canExport');
+    expect(pageSource).toContain('!canExport');
+  });
+
   test('엣지 영양 화면은 베이스 입력 상태와 베이스 탭 이동을 노출한다', () => {
     const pageSource = sourceOf('app/nutrition/menu/page.jsx');
     const workspaceSource = sourceOf('app/nutrition/menu/NutritionMenuWorkspace.jsx');

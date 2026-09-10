@@ -24,8 +24,13 @@ import {
   BackupDiagnosticsCard,
 } from './_BackupPagePanels';
 import { ChangeHistoryPanel } from '@/components/change-log/ChangeHistoryPanel';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 export default function Page() {
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  // rnd_login_credentials/rnd_corporate_card_entries는 평문 비밀번호·결제내역을 담고 있어
+  // 내보내기(JSON 다운로드)는 admin만 실행 가능해야 한다 (lib/db/backup.js의 assertActiveAdmin과 이중 방어).
+  const canExport = roleReady && isAdmin;
   const [activeBrand, setActiveBrand] = useState(null);
   const [busy, setBusy] = useState(false);
   const { scopes, toggleScope, setAllScopes } = useModuleScopes();
@@ -88,7 +93,8 @@ export default function Page() {
         actions={
           <button
             className="btn primary"
-            disabled={!ready || busy || selectedKeys.length === 0}
+            disabled={!ready || busy || selectedKeys.length === 0 || !canExport}
+            title={!canExport && roleReady ? '관리자 권한이 필요합니다' : undefined}
             onClick={handleBackup}
           >
             {busy ? (

@@ -66,9 +66,17 @@ describe('파괴적 액션 권한 가드', () => {
     expect(functionBody(s, 'importAllToBrand')).toContain('failed_partial');
   });
 
-  test('백업 export 함수에는 가드가 없다(비파괴)', () => {
+  // rnd_login_credentials(평문 비밀번호)·rnd_corporate_card_entries가 내보내기 대상에
+  // 포함될 수 있어, 실제 구현체인 exportSelectedForBrand에 가드를 둔다.
+  // exportAll/exportSelected/exportAllForBrand는 모두 이를 경유하므로 자체 본문에는 없다.
+  test('백업 export 함수는 실제 구현체(exportSelectedForBrand)에서 assertActiveAdmin을 호출한다', () => {
     const s = src('lib/db/backup.js');
+    expect(s).toContain("from '@/lib/auth/guard'");
+    expect(functionBody(s, 'exportSelectedForBrand')).toContain('assertActiveAdmin');
+    // 얇은 래퍼들은 위임만 하므로 자체 본문에는 가드 호출이 없다(중복 방지)
     expect(functionBody(s, 'exportAllForBrand')).not.toContain('assertActiveAdmin');
+    expect(functionBody(s, 'exportSelected')).not.toContain('assertActiveAdmin');
+    expect(functionBody(s, 'exportAll')).not.toContain('assertActiveAdmin');
   });
 
   test('계정 add/update/delete가 assertActiveAdmin을 호출한다', () => {
