@@ -22,6 +22,7 @@ export function NutritionInputPanel({
   saving,
   onSave,
   onDeleteMenu,
+  onEditMenu,
   readOnly = false,
 }) {
   const isPizza = selMenu ? resolveNutritionGroup(selMenu, masterByCode) === '피자' : true;
@@ -61,15 +62,28 @@ export function NutritionInputPanel({
             영양성분 수치 입력 (업체 분석값)
           </div>
         </div>
-        <button
-          className="btn sm ghost"
-          style={{ color: 'var(--danger)' }}
-          onClick={() => onDeleteMenu(selMenu)}
-          disabled={readOnly}
-        >
-          <Icon.trash style={{ width: 13, height: 13 }} />
-          메뉴 삭제
-        </button>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {typeof onEditMenu === 'function' && (
+            <button
+              className="btn sm ghost"
+              onClick={() => onEditMenu(selMenu)}
+              disabled={readOnly}
+              title="메뉴명·코드 수정"
+            >
+              <Icon.edit style={{ width: 13, height: 13 }} />
+              수정
+            </button>
+          )}
+          <button
+            className="btn sm ghost"
+            style={{ color: 'var(--danger)' }}
+            onClick={() => onDeleteMenu(selMenu)}
+            disabled={readOnly}
+          >
+            <Icon.trash style={{ width: 13, height: 13 }} />
+            메뉴 삭제
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>

@@ -19,7 +19,11 @@ import {
 import { asDisplayText, asObjectArray, asRecord } from '@/lib/ui/prop-guards';
 import { getMenuCodeRank } from '@/lib/menu-categories';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
-import { buildNutritionMenuMasterDiagnostics } from '@/lib/nutrition/menu-master-diagnostics';
+import {
+  buildDiscontinuedBaseCodeSet,
+  buildNutritionMenuMasterDiagnostics,
+  isNutritionMenuDiscontinued,
+} from '@/lib/nutrition/menu-master-diagnostics';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { DuplicateNotice, MissingMasterNotice } from './NutritionMenuNotices';
 import { NutritionMenuSkeleton } from './NutritionMenuSkeleton';
@@ -83,8 +87,20 @@ export default function Page() {
     },
     { initialData: null, onError: err => console.error('[NutritionMenu] load failed', err) }
   );
-  const menus = useMemo(() => data?.menus ?? [], [data?.menus]);
   const menuMasters = data?.menuMasters ?? [];
+  // base 코드(L/R 등 사이즈 통합) 기준으로 연결된 메뉴마스터 행이 "전부" 단종일
+  // 때만 숨긴다 — 하나라도 판매 중이면 영양성분은 계속 노출한다.
+  // dep은 data?.menuMasters(참조 안정) 기준 — menuMasters 로컬 변수는 data가
+  // null일 때마다 새 []를 만들어 매 렌더 재계산을 유발한다.
+  const discontinuedBaseCodes = useMemo(
+    () => buildDiscontinuedBaseCodeSet(data?.menuMasters ?? []),
+    [data?.menuMasters]
+  );
+  const menus = useMemo(() => {
+    const all = data?.menus ?? [];
+    if (discontinuedBaseCodes.size === 0) return all;
+    return all.filter(m => !isNutritionMenuDiscontinued(m.menuCode, discontinuedBaseCodes));
+  }, [data?.menus, discontinuedBaseCodes]);
   const rawMap = data?.rawMap ?? {};
   const edges = data?.edges ?? [];
   const edgeMap = data?.edgeMap ?? {};

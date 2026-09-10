@@ -6,6 +6,7 @@ import { ImportBaseModal } from '@/components/nutrition/menu/ImportBaseModal';
 import { MenuGroupList } from '@/components/nutrition/menu/base/MenuGroupList';
 import { NutritionInputPanel } from '@/components/nutrition/menu/base/NutritionInputPanel';
 import { AddMenuModal } from '@/components/nutrition/menu/base/AddMenuModal';
+import { EditMenuModal } from '@/components/nutrition/menu/base/EditMenuModal';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { asRecord, noop } from '@/lib/nutrition/values/base-helpers';
 import { clearAllBaseData } from '@/lib/nutrition/values/store';
@@ -45,6 +46,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters, canEdit = false
   const { showConfirm, confirmElement } = useConfirmDialog();
 
   const [importOpen, setImportOpen] = useState(false);
+  const [editMenuOpen, setEditMenuOpen] = useState(false);
   const selectedMenuName = asDisplayText(selMenu?.menuName, '선택한 메뉴');
 
   return (
@@ -156,6 +158,7 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters, canEdit = false
           saving={saving}
           onSave={handleSave}
           onDeleteMenu={handleDeleteMenu}
+          onEditMenu={() => setEditMenuOpen(true)}
           readOnly={!canEdit}
         />
       </div>
@@ -177,6 +180,20 @@ export function TabBase({ menus, rawMap, onRefresh, menuMasters, canEdit = false
           safeMenuMasters={safeMenuMasters}
           onAdd={handleAddMenu}
           onClose={() => setAddMenu(false)}
+        />
+      )}
+
+      {canEdit && editMenuOpen && selMenu && (
+        <EditMenuModal
+          menu={selMenu}
+          safeMenuMasters={safeMenuMasters}
+          onSaved={updated => {
+            // 코드가 바뀌면 selMenu가 옛 코드를 가리켜 패널이 빈 상태로 보이므로
+            // 새 코드로 선택을 갱신한다.
+            if (updated) setSelMenu(prev => ({ ...prev, ...updated }));
+            refresh();
+          }}
+          onClose={() => setEditMenuOpen(false)}
         />
       )}
 
