@@ -36,6 +36,22 @@ describe('buildDiscontinuedMenuNameSet / isDiscontinuedMenuName', () => {
     expect(buildDiscontinuedMenuNameSet(null).size).toBe(0);
     expect(buildDiscontinuedMenuNameSet(undefined).size).toBe(0);
   });
+
+  test('판매 분류 규칙에 매칭되는 피자는 판매 화면 축약 그룹명으로도 조회된다', () => {
+    // 판매량 "월별 순위" 화면은 menu_master 원본명("고구마 피자")이 아니라
+    // 판매 분류 규칙의 groupName("고구마")으로 표시한다 — 두 이름 모두로 조회돼야 한다.
+    const set = buildDiscontinuedMenuNameSet([{ menuName: '고구마 피자', status: 'discontinued' }]);
+    expect(isDiscontinuedMenuName('고구마 피자', set)).toBe(true);
+    expect(isDiscontinuedMenuName('고구마', set)).toBe(true);
+  });
+
+  test('판매 분류 규칙에 없는 메뉴는 원본명으로만 조회되고 다른 메뉴와 충돌하지 않는다', () => {
+    const set = buildDiscontinuedMenuNameSet([
+      { menuName: '전혀 매칭 안 되는 임의 메뉴명 XYZ', status: 'discontinued' },
+    ]);
+    expect(set.size).toBe(1);
+    expect(isDiscontinuedMenuName('전혀 매칭 안 되는 임의 메뉴명 XYZ', set)).toBe(true);
+  });
 });
 
 describe('판매 순위 화면에 단종 배지가 연결돼 있다', () => {
