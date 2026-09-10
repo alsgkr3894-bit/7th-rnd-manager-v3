@@ -1,5 +1,6 @@
 'use client';
 import { Icon } from '@/components/icons';
+import { PARENT_COMPANY } from '@/lib/companies';
 
 export function CompanyPicker({
   companyRef,
@@ -49,7 +50,10 @@ export function CompanyPicker({
 
       {companyOpen && (
         <div className="company-drop" role="menu" aria-label="브랜드 목록">
-          <div className="company-drop-label">브랜드 선택</div>
+          <div className="company-drop-label">
+            {activeCompany.parent || PARENT_COMPANY.name}
+            <span style={{ opacity: 0.6, fontWeight: 500 }}> · 브랜드 선택</span>
+          </div>
           {companies.map(c => (
             <button
               key={c.id}

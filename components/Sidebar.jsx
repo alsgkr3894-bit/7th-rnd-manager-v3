@@ -8,6 +8,7 @@ import { getPriceFiles } from '@/lib/price';
 import { getJSONLS, setJSONLS } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
 import { normalizeSidebarOpenIds } from '@/lib/ui/sidebar-state';
+import { PARENT_COMPANY } from '@/lib/companies';
 
 /**
  * 사이드바 컴포넌트
@@ -253,8 +254,8 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, ca
           </span>
         )}
         <div className="brand-text">
-          <div className="brand-line1">{activeCompany?.name || '7번가 R&D'}</div>
-          <div className="brand-line2">플랫폼</div>
+          <div className="brand-line1">{activeCompany?.parent || PARENT_COMPANY.name}</div>
+          <div className="brand-line2">{activeCompany?.name || '7번가 R&D'}</div>
         </div>
       </a>
 

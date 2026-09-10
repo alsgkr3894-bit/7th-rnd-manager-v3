@@ -49,7 +49,7 @@ export default function ErrorPage({ error, reset }) {
           <div className={styles.logoBadge}>7th</div>
           <span className={styles.logoText}>R&amp;D Manager</span>
           <div className={styles.logoDivider} />
-          <span className={styles.logoSub}>7번가 연구개발</span>
+          <span className={styles.logoSub}>태명F&amp;T · 7번가피자</span>
         </div>
 
         <div className={styles.errBadge}>

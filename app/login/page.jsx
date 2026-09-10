@@ -128,6 +128,16 @@ function LoginForm() {
               <circle cx="14" cy="13" r="1" />
             </svg>
           </div>
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: 'var(--text-4)',
+              letterSpacing: '0.02em',
+            }}
+          >
+            태명F&T
+          </div>
           <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--text-1)', lineHeight: 1.2 }}>
             7번가 R&D 플랫폼
           </div>
