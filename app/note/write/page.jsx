@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { StickySaveBar } from '@/components/ui/StickySaveBar';
 import { SegGroup } from '@/components/note/FormFields';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
@@ -411,7 +412,10 @@ export default function Page() {
     isDirtyRef.current = false;
     if (canEdit && isMenuWriteType(writeType)) clearDraft(KEYS.NOTE_DRAFT_WRITE);
     setIsDirty(false);
-    router.push(
+    // 저장(replace)과 동일하게 replace를 써야 취소 후 "뒤로가기"가 다시 이 작성
+    // 화면으로 돌아오지 않는다(push였을 때 취소해도 히스토리에 남아 뒤로가기가
+    // 어색했던 문제).
+    router.replace(
       isMenuWriteType(writeType)
         ? '/note'
         : noteListTypeHref(
@@ -442,26 +446,18 @@ export default function Page() {
         title="노트 작성"
         sub={fromTitle ? `"${fromTitle}" 기반 새 버전` : '테스트 조건과 평가를 기록하세요'}
         actions={
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span aria-live="polite" aria-atomic="true">
-              {draftStatus === 'saving' && (
-                <span style={{ fontSize: 12, color: 'var(--text-3)' }}>임시저장 중…</span>
-              )}
-              {draftStatus === 'saved' && (
-                <span
-                  style={{ fontSize: 12, color: 'var(--positive)', animation: 'fade 200ms ease' }}
-                >
-                  ✓ 임시저장됨
-                </span>
-              )}
-            </span>
-            <button className="btn" onClick={handleCancel}>
-              취소
-            </button>
-            <button className="btn primary" onClick={handleSave} disabled={saving || !canEdit}>
-              {saving ? '저장 중…' : '저장하기'}
-            </button>
-          </div>
+          <span aria-live="polite" aria-atomic="true">
+            {draftStatus === 'saving' && (
+              <span style={{ fontSize: 12, color: 'var(--text-3)' }}>임시저장 중…</span>
+            )}
+            {draftStatus === 'saved' && (
+              <span
+                style={{ fontSize: 12, color: 'var(--positive)', animation: 'fade 200ms ease' }}
+              >
+                ✓ 임시저장됨
+              </span>
+            )}
+          </span>
         }
       />
       <WriteTypeStep value={writeType} onChange={handleWriteTypeChange} disabled={!canEdit} />
@@ -515,6 +511,13 @@ export default function Page() {
       ) : (
         <SampleFormBody form={sampleForm} setForm={handleSampleFormChange} readOnly={!canEdit} />
       )}
+      <StickySaveBar
+        onCancel={handleCancel}
+        onSave={handleSave}
+        saving={saving}
+        canSave={canEdit}
+        saveLabel="저장하기"
+      />
     </main>
   );
 }

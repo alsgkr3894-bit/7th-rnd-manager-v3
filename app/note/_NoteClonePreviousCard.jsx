@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { buildPreviousRoundDraft, formatTestRound } from '@/lib/note/evaluation';
 import { noteDisplayTitle } from '@/lib/note/display';
 import { formatFullDate } from '@/lib/note/utils';
+import { CollapsibleCard } from './_CollapsibleCard';
 
 function noteSearchText(note) {
   return [
@@ -120,22 +121,12 @@ export function NoteClonePreviousCard({ form, notes, setForm }) {
   if (sourceMenus.length === 0) return null;
 
   return (
-    <div className="card">
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          gap: 12,
-          alignItems: 'flex-start',
-          marginBottom: 12,
-        }}
-      >
-        <div>
-          <div className="card-title">이전 차수 복제</div>
-          <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 3 }}>
-            기존 메뉴 테스트를 선택하면 이전 노트의 제목과 차수만 가져와 새 차수로 이어 작성합니다.
-          </div>
-        </div>
+    <CollapsibleCard
+      title="이전 차수 복제"
+      subtitle="기존 메뉴 테스트를 선택하면 이전 노트의 제목과 차수만 가져와 새 차수로 이어 작성합니다."
+      defaultOpen={false}
+    >
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
         <button className="btn sm" type="button" onClick={applyClone} disabled={!selected}>
           복제 적용
         </button>
@@ -184,6 +175,6 @@ export function NoteClonePreviousCard({ form, notes, setForm }) {
           작성합니다.
         </div>
       )}
-    </div>
+    </CollapsibleCard>
   );
 }

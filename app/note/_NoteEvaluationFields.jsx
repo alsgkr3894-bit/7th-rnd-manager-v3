@@ -3,17 +3,11 @@ import { TagInput } from '@/components/ui/TagInput';
 import { Field } from '@/components/note/FormFields';
 import { NOTE_EVALUATION_FIELDS } from '@/lib/note/evaluation';
 import { NoteRatingPicker } from '@/app/note/_NoteRatingPicker';
+import { CollapsibleCard } from './_CollapsibleCard';
 
 export function NoteEvaluationFields({ form, allTags, updateField }) {
   return (
-    <div className="card">
-      <div className="card-title" style={{ marginBottom: 14 }}>
-        항목별 평가
-        <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-3)', marginLeft: 6 }}>
-          별점과 태그
-        </span>
-      </div>
-
+    <CollapsibleCard title="항목별 평가" subtitle="별점과 태그" defaultOpen={false}>
       <div style={{ display: 'grid', gap: 6, marginBottom: 14 }}>
         {NOTE_EVALUATION_FIELDS.map(item => (
           <NoteRatingPicker
@@ -33,6 +27,6 @@ export function NoteEvaluationFields({ form, allTags, updateField }) {
           placeholder="예: 소스개선, 시식완료"
         />
       </Field>
-    </div>
+    </CollapsibleCard>
   );
 }

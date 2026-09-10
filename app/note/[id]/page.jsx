@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { StickySaveBar } from '@/components/ui/StickySaveBar';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import {
@@ -14,7 +15,7 @@ import {
   getNotesInChain,
   duplicateNote,
 } from '@/lib/note';
-import { noteDisplayTitle } from '@/lib/note/display';
+import { noteDisplayTitle, isJournalNote } from '@/lib/note/display';
 import { getAllSamples } from '@/lib/sample';
 import { printCurrentPageWithDownloadDate } from '@/lib/download';
 import { NoteFormBody, INIT, normalizeNoteFormForSave } from '@/app/note/_NoteFormBody';
@@ -118,6 +119,13 @@ export default function Page() {
 
   useKeyboardSave(handleSave);
 
+  // 연구일지 노트는 노트목록(filterNoteListNotes)에서 걸러지므로, 저장/취소 후
+  // 무조건 /note로 보내면 "방금 수정한 항목이 없는" 목록에 떨어진 것처럼 보인다.
+  // 노트 타입에 따라 실제로 그 노트가 보이는 화면으로 보낸다.
+  function noteListDestination() {
+    return isJournalNote(form) ? '/note/journal' : '/note';
+  }
+
   async function handleSave() {
     if (!canEdit) {
       showToast('노트 수정은 관리자만 가능합니다', 'warn');
@@ -138,7 +146,8 @@ export default function Page() {
       clearDraft(KEYS.NOTE_DRAFT(noteId));
       setIsDirty(false);
       showToast('노트가 수정됐어요', 'ok');
-      router.push('/note');
+      // replace: 저장 후 "뒤로가기"가 이 수정 화면으로 다시 돌아오지 않게 한다.
+      router.replace(noteListDestination());
     } catch {
       showToast('저장 중 오류가 발생했어요', 'error');
       setSaving(false);
@@ -148,7 +157,7 @@ export default function Page() {
   function handleCancel() {
     clearTimeout(timerRef.current);
     if (canEdit) clearDraft(KEYS.NOTE_DRAFT(noteId));
-    router.push('/note');
+    router.replace(noteListDestination());
   }
 
   function handleCreateSample() {
@@ -179,7 +188,7 @@ export default function Page() {
       const newId = await duplicateNote(noteId);
       showToast('노트가 복사됐어요', 'ok');
       if (newId) router.push(`/note/${newId}`);
-      else router.push('/note');
+      else router.push(noteListDestination());
     } catch {
       showToast('복사 중 오류가 발생했어요', 'error');
     } finally {
@@ -213,7 +222,6 @@ export default function Page() {
         sub={noteDisplayTitle(form, '')}
         actions={
           <NoteDetailActions
-            saving={saving}
             duplicating={duplicating}
             costMenuOpen={costMenuOpen}
             onPrint={handlePrint}
@@ -222,8 +230,6 @@ export default function Page() {
             onCloseCostMenu={() => setCostMenuOpen(false)}
             onNavigateCostLink={handleCostNavigation}
             onCreateSample={handleCreateSample}
-            onCancel={handleCancel}
-            onSave={handleSave}
             canEdit={canEdit}
           />
         }
@@ -241,6 +247,13 @@ export default function Page() {
         samples={relatedSamples}
         menuName={form.menuName}
         onOpenSample={id => router.push(`/note/sample/${id}`)}
+      />
+      <StickySaveBar
+        onCancel={handleCancel}
+        onSave={handleSave}
+        saving={saving}
+        canSave={canEdit}
+        saveLabel="저장하기"
       />
     </main>
   );

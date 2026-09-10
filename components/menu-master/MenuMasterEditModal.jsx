@@ -203,9 +203,8 @@ export function MenuMasterEditModal({
         padding: '24px 16px',
         boxSizing: 'border-box',
       }}
-      onClick={e => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      // 바깥 클릭으로 닫지 않는다 — 작성 중인 내용을 실수로 잃지 않도록
+      // 취소/닫기 버튼 또는 Esc로만 닫는다.
     >
       <div
         ref={containerRef}
@@ -213,8 +212,8 @@ export function MenuMasterEditModal({
         aria-modal="true"
         className="card"
         style={{
-          width: 'min(960px, 96vw)',
-          height: '85vh',
+          width: 'min(1280px, 97vw)',
+          height: '92vh',
           display: 'flex',
           flexDirection: 'column',
           padding: 0,

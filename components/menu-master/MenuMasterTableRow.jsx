@@ -19,7 +19,14 @@ export function MenuMasterTableRow({ row, recipeSummary, isViewer, onEdit, onDel
     : row.subCategory || <span style={{ color: 'var(--text-4)' }}>-</span>;
 
   return (
-    <tr style={{ opacity: row.status === 'discontinued' ? 0.5 : 1 }}>
+    <tr
+      style={{
+        opacity: row.status === 'discontinued' ? 0.5 : 1,
+        cursor: isViewer ? 'default' : 'pointer',
+      }}
+      onClick={isViewer ? undefined : () => onEdit(row)}
+      title={isViewer ? undefined : '클릭하여 수정'}
+    >
       <td
         style={{
           fontFamily: 'monospace',
@@ -65,7 +72,10 @@ export function MenuMasterTableRow({ row, recipeSummary, isViewer, onEdit, onDel
               font: 'inherit',
               color: 'inherit',
             }}
-            onClick={() => onEdit(row)}
+            onClick={e => {
+              e.stopPropagation();
+              onEdit(row);
+            }}
             title="클릭하여 수정"
           >
             {row.menuName}
@@ -128,12 +138,22 @@ export function MenuMasterTableRow({ row, recipeSummary, isViewer, onEdit, onDel
           justifyContent: 'flex-end',
         }}
       >
-        <button className="btn sm ghost" onClick={() => onEdit(row)} disabled={isViewer}>
+        <button
+          className="btn sm ghost"
+          onClick={e => {
+            e.stopPropagation();
+            onEdit(row);
+          }}
+          disabled={isViewer}
+        >
           <Icon.edit style={{ width: 13, height: 13 }} />
         </button>
         <button
           className="btn sm ghost"
-          onClick={() => onDelete(row)}
+          onClick={e => {
+            e.stopPropagation();
+            onDelete(row);
+          }}
           style={{ color: 'var(--negative)' }}
           title="삭제"
           disabled={isViewer}

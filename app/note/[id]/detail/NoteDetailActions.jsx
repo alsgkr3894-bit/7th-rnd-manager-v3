@@ -6,9 +6,10 @@ const COST_LINKS = [
   { label: '원가마진표', href: COST_MARGIN_ROUTE },
 ];
 
+// 취소/저장 버튼은 여기 없다 — 스크롤을 따라오는 하단 StickySaveBar
+// (app/note/[id]/page.jsx)가 전담한다. 화면 어디서든 저장할 수 있게 하기 위한 분리.
 export function NoteDetailActions({
   canEdit = false,
-  saving,
   duplicating,
   costMenuOpen,
   onPrint,
@@ -17,8 +18,6 @@ export function NoteDetailActions({
   onCloseCostMenu,
   onNavigateCostLink,
   onCreateSample,
-  onCancel,
-  onSave,
 }) {
   return (
     <>
@@ -41,12 +40,6 @@ export function NoteDetailActions({
       />
       <button className="btn no-print" onClick={onCreateSample} disabled={!canEdit}>
         📷 샘플 작성
-      </button>
-      <button className="btn no-print" onClick={onCancel}>
-        취소
-      </button>
-      <button className="btn primary no-print" onClick={onSave} disabled={saving || !canEdit}>
-        {saving ? '저장 중…' : '저장하기'}
       </button>
     </>
   );

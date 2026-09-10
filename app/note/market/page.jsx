@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ModalFrame } from '@/components/ui/ModalFrame';
+import { StickySaveBar } from '@/components/ui/StickySaveBar';
 import { showToast } from '@/components/Toast';
 import { todayLocalDate } from '@/lib/date/local-date';
 import { useModalShell } from '@/hooks/useModalShell';
@@ -729,20 +730,14 @@ function MarketResearchContent() {
               onChange={value => update('photos', value)}
             />
 
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button className="btn" type="button" onClick={closeWrite}>
-                취소
-              </button>
-              <button
-                className="btn primary"
-                type="button"
-                onClick={handleSave}
-                disabled={saving || !canEdit}
-              >
-                <Icon.check style={{ width: 14, height: 14 }} />
-                {saving ? '저장 중' : form.id ? '수정 저장' : '저장'}
-              </button>
-            </div>
+            <StickySaveBar
+              onCancel={closeWrite}
+              onSave={handleSave}
+              saving={saving}
+              canSave={canEdit}
+              savingLabel="저장 중"
+              saveLabel={form.id ? '수정 저장' : '저장'}
+            />
           </div>
         </ModalFrame>
       )}

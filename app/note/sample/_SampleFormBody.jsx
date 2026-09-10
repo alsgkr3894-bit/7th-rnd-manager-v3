@@ -25,7 +25,7 @@ export const SAMPLE_INIT = {
   ingredientGroupCode: '',
   ingredientId: null,
   sampleNames: [''],
-  category: '',
+  category: SAMPLE_CATEGORIES[0],
   testDate: '',
   testRound: '',
   company: '',

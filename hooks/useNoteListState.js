@@ -8,6 +8,7 @@ import { useNoteFilter } from '@/hooks/useNoteFilter';
 import { useNotePresets } from '@/hooks/useNotePresets';
 import { buildHighlightRegex } from '@/lib/note/utils';
 import { normalizeNoteView, shouldShowAllNoteRows } from '@/lib/note/list-state';
+import { NOTE_UNIFIED_TYPE_ALL } from '@/lib/note/unified-records';
 
 const PAGE_SIZE = 20;
 
@@ -137,6 +138,15 @@ export function useNoteListState({ notes, pinnedIds, pathname }) {
     setVisibleCount(v => v + PAGE_SIZE);
   }
 
+  // 검색어/상태/유형/정렬을 전부 기본값으로 되돌린다 — localStorage에 영속된 값도
+  // 각 setter의 저장 effect를 통해 함께 초기화된다(useNoteFilter.js 참고).
+  function resetFilters() {
+    setStatusFilter('all');
+    setTypeFilter(NOTE_UNIFIED_TYPE_ALL);
+    setSortBy('createdAt');
+    handleSearchChange('');
+  }
+
   return {
     viewMode,
     search,
@@ -172,5 +182,6 @@ export function useNoteListState({ notes, pinnedIds, pathname }) {
     handleTagSearch,
     loadMore,
     hasActiveFilter,
+    resetFilters,
   };
 }

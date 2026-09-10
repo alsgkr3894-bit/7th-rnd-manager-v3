@@ -242,7 +242,9 @@ describe('note list structure', () => {
     expect(headerSource).toContain('disabled={reportExportCount === 0}');
     expect(headerSource).not.toContain('출시예정 일괄복사');
     expect(headerSource).toContain('체크리스트 목록');
-    expect(detailPageSource).toContain("import { noteDisplayTitle } from '@/lib/note/display'");
+    expect(detailPageSource).toContain(
+      "import { noteDisplayTitle, isJournalNote } from '@/lib/note/display'"
+    );
     expect(detailPageSource).toContain("sub={noteDisplayTitle(form, '')}");
     expect(chainTimelineSource).toContain("import { noteDisplayTitle } from '@/lib/note/display'");
     expect(chainTimelineSource).toContain('const title = noteDisplayTitle(note)');

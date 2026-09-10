@@ -5,12 +5,13 @@ import { useState, useRef } from 'react';
  * Filter preset chips bar.
  * Props:
  *   presets        — array of { name, status, search, sort }
- *   hasActiveFilter — boolean — show "현재 필터 저장" button when true
+ *   hasActiveFilter — boolean — show "현재 필터 저장"/"필터 초기화" buttons when true
  *   onApply(preset) — apply a saved preset
  *   onSave(name)    — save current filter under given name
  *   onDelete(idx)   — request deletion of preset at index (parent shows ConfirmDialog)
+ *   onReset()       — clear search/status/type/sort back to defaults
  */
-export function NotePresetBar({ presets, hasActiveFilter, onApply, onSave, onDelete }) {
+export function NotePresetBar({ presets, hasActiveFilter, onApply, onSave, onDelete, onReset }) {
   const [savingPreset, setSavingPreset] = useState(false);
   const [presetName, setPresetName] = useState('');
   const presetInputRef = useRef(null);
@@ -90,13 +91,26 @@ export function NotePresetBar({ presets, hasActiveFilter, onApply, onSave, onDel
             </button>
           </div>
         ) : (
-          <button
-            className="chip"
-            style={{ fontSize: 11, color: 'var(--text-3)' }}
-            onClick={() => setSavingPreset(true)}
-          >
-            + 현재 필터 저장
-          </button>
+          <>
+            <button
+              className="chip"
+              style={{ fontSize: 11, color: 'var(--text-3)' }}
+              onClick={() => setSavingPreset(true)}
+            >
+              + 현재 필터 저장
+            </button>
+            {typeof onReset === 'function' && (
+              <button
+                type="button"
+                className="chip"
+                style={{ fontSize: 11, color: 'var(--text-3)' }}
+                onClick={onReset}
+                title="검색어·상태·유형·정렬을 기본값으로 되돌립니다"
+              >
+                ↺ 필터 초기화
+              </button>
+            )}
+          </>
         ))}
     </div>
   );
