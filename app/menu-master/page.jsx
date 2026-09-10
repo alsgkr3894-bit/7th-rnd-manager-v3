@@ -29,7 +29,10 @@ import {
   normalizeMenuCodeCategories,
   normalizePersonalPizzaCodes,
 } from '@/lib/menu-master/normalize';
-import { buildMenuReadinessMap } from '@/lib/menu-master/readiness';
+import {
+  buildMenuReadinessMap,
+  buildNutritionLinkedMenuCodeSet,
+} from '@/lib/menu-master/readiness';
 import { MenuDataQualityPanel } from '@/components/menu-master/MenuDataQualityPanel';
 import { MenuReadinessPanel } from '@/components/menu-master/MenuReadinessPanel';
 import { useMenuMasterActions } from './useMenuMasterActions';
@@ -50,6 +53,7 @@ const PIZZA_CATEGORIES = [
 
 const EMPTY_ROWS = [];
 const EMPTY_RECIPE_SUMMARY_MAP = new Map();
+const EMPTY_NUTRITION_LINKED_CODES = new Set();
 
 /* ── 메인 페이지 ── */
 export default function Page() {
@@ -92,12 +96,23 @@ export default function Page() {
       } catch (err) {
         console.warn('[menu-master] 레시피 원가 요약 계산 실패', err);
       }
-      return { rows: nextRows, recipeSummaryMap: nextRecipeSummaryMap };
+      let nextNutritionLinkedCodes = EMPTY_NUTRITION_LINKED_CODES;
+      try {
+        nextNutritionLinkedCodes = await buildNutritionLinkedMenuCodeSet();
+      } catch (err) {
+        console.warn('[menu-master] 영양성분 연동 여부 계산 실패', err);
+      }
+      return {
+        rows: nextRows,
+        recipeSummaryMap: nextRecipeSummaryMap,
+        nutritionLinkedCodes: nextNutritionLinkedCodes,
+      };
     },
     { initialData: null, onError: err => console.error('[MenuMaster] load failed', err) }
   );
   const rows = data?.rows ?? EMPTY_ROWS;
   const recipeSummaryMap = data?.recipeSummaryMap ?? EMPTY_RECIPE_SUMMARY_MAP;
+  const nutritionLinkedCodes = data?.nutritionLinkedCodes ?? EMPTY_NUTRITION_LINKED_CODES;
   useVisibilityRefresh(reload);
 
   const {
@@ -335,6 +350,7 @@ export default function Page() {
                 pagedRows={paged}
                 totalRows={rows}
                 recipeSummaryMap={recipeSummaryMap}
+                nutritionLinkedCodes={nutritionLinkedCodes}
                 isViewer={isViewer}
                 onEdit={openEdit}
                 onDelete={openDeleteDialog}

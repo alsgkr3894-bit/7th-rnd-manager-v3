@@ -2,25 +2,9 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { initDB } from '@/lib/db';
-import {
-  getAllMenuRefs,
-  getRawValueMap,
-  getAllEdges,
-  getAllToppings,
-  getAllSetCompositions,
-} from '@/lib/nutrition/values/store';
-import { getAllEdges as getCostEdges } from '@/lib/cost/edge-dough';
-import { getAllMenuMaster } from '@/lib/menu-master';
-import { getAllIngredients } from '@/lib/ingredient';
-import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
+import { getAllSetCompositions } from '@/lib/nutrition/values/store';
 import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
-import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
-import { loadMenuRecipeArrays } from '@/lib/menu-recipes';
-import {
-  buildEdgeAllergenMap,
-  buildMenuAllergenMap,
-  buildToppingAllergenMap,
-} from '@/lib/nutrition/allergen/aggregate';
+import { buildNutritionLabelContext } from '@/lib/nutrition/label/context';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import {
   loadLabelMenuNames,
@@ -134,53 +118,25 @@ export default function NutritionLabelResult() {
 
     (async () => {
       await initDB();
-      const [
+      const [setComps, labelCtx] = await Promise.all([
+        getAllSetCompositions(),
+        buildNutritionLabelContext(),
+      ]);
+      const {
         menuRefs,
         rawMap,
-        edgeList,
-        toppingList,
-        setComps,
+        edgeMap,
+        masterByCode,
+        menuAllergenMap,
+        edgeAllergenMap,
+        toppingAllergenMap,
+        toppings: toppingList,
         masters,
         ings,
         groups,
         costEdges,
-        recipeArrays,
-      ] = await Promise.all([
-        getAllMenuRefs(),
-        getRawValueMap(),
-        getAllEdges(),
-        getAllToppings(),
-        getAllSetCompositions(),
-        getAllMenuMaster(),
-        getAllIngredients(),
-        getAllRecipeGroups(),
-        getCostEdges(),
-        loadMenuRecipeArrays(),
-      ]);
-
-      const masterByCode = Object.fromEntries(masters.map(m => [m.menuCode, m]));
-      const edgeMap = Object.fromEntries(edgeList.map(e => [e.edgeCode, e]));
-
-      // 알레르기 집계 — 메뉴 기본 알레르기와 엣지별 알레르기를 분리해 행별로 합산
-      const detailRecipes = tagDetailRecipes(
-        asObjectArray(recipeArrays.pizza),
-        asObjectArray(recipeArrays.personal),
-        asObjectArray(recipeArrays.side),
-        asObjectArray(recipeArrays.set)
-      );
-      const { ingredientToMenus } = buildIngredientMenuMap({
-        menuMasters: masters,
         detailRecipes,
-        groups,
-        edges: [],
-        compositions: [],
-      });
-      const menuAllergenMap = buildMenuAllergenMap({ ingredients: ings, ingredientToMenus });
-      const edgeAllergenMap = buildEdgeAllergenMap({ ingredients: ings, edges: costEdges });
-      const toppingAllergenMap = buildToppingAllergenMap({
-        ingredients: ings,
-        toppings: toppingList,
-      });
+      } = labelCtx;
 
       // 출력 메뉴 전처리: 제외 필터 → 메뉴명 오버라이드 → 피자/사이드 우선 가나다 정렬
       const { excludedMenuCodes, excludedMenuNames } = extractExcludedMenuSets(masters);

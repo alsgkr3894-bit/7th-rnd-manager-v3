@@ -31,6 +31,7 @@ const tablePrimitivesSource = readFileSync(
   resolve('app/nutrition/export/label-tables/NutritionLabelTablePrimitives.jsx'),
   'utf8'
 );
+const labelContextSource = readFileSync(resolve('lib/nutrition/label/context.js'), 'utf8');
 
 describe('nutrition label result structure', () => {
   test('NutritionLabelResult keeps data loading and delegates controls and table rendering', () => {
@@ -65,15 +66,22 @@ describe('nutrition label result structure', () => {
   });
 
   test('nutrition label allergen and origin mapping excludes legacy derived menu compositions', () => {
-    const mapCalls = [...resultSource.matchAll(/buildIngredientMenuMap\(\{[\s\S]*?\}\)/g)].map(
-      match => match[0]
-    );
+    // 알레르기 집계용 buildIngredientMenuMap 호출은 공용 컨텍스트(lib/nutrition/label/context.js)로
+    // 옮겨져 전체 출력 페이지와 메뉴마스터의 단일 메뉴 미리보기가 같은 값을 쓴다 — 그쪽에서 확인한다.
+    const allergenMapCalls = [
+      ...labelContextSource.matchAll(/buildIngredientMenuMap\(\{[\s\S]*?\}\)/g),
+    ].map(match => match[0]);
+    expect(allergenMapCalls.length).toBeGreaterThanOrEqual(1);
+    expect(allergenMapCalls[0]).toContain('edges: []');
+    expect(allergenMapCalls[0]).toContain('compositions: []');
 
-    expect(mapCalls.length).toBeGreaterThanOrEqual(2);
-    expect(mapCalls[0]).toContain('edges: []');
-    expect(mapCalls[0]).toContain('compositions: []');
-    expect(mapCalls[1]).toContain('edges: costEdges');
-    expect(mapCalls[1]).toContain('compositions: []');
+    // 원산지 집계용 호출은 전체 출력 페이지 전용 로직이라 여기 그대로 남아있다.
+    const originMapCalls = [
+      ...resultSource.matchAll(/buildIngredientMenuMap\(\{[\s\S]*?\}\)/g),
+    ].map(match => match[0]);
+    expect(originMapCalls.length).toBeGreaterThanOrEqual(1);
+    expect(originMapCalls[0]).toContain('edges: costEdges');
+    expect(originMapCalls[0]).toContain('compositions: []');
   });
 
   test('nutrition label controls and tables own presentation details', () => {

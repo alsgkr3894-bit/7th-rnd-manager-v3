@@ -10,6 +10,7 @@ export function MenuMasterTablePanel({
   pagedRows,
   totalRows,
   recipeSummaryMap,
+  nutritionLinkedCodes,
   isViewer,
   onEdit,
   onDelete,
@@ -53,6 +54,7 @@ export function MenuMasterTablePanel({
                   key={row.id}
                   row={row}
                   recipeSummary={recipeSummaryMap.get(row.menuCode)}
+                  nutritionLinkedCodes={nutritionLinkedCodes}
                   isViewer={isViewer}
                   onEdit={onEdit}
                   onDelete={onDelete}

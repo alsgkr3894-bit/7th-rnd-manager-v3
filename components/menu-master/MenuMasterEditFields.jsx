@@ -14,6 +14,7 @@ import {
 } from '@/components/menu-master/MenuMasterIdentityFields';
 import { MenuMasterPhotoField } from '@/components/menu-master/MenuMasterPhotoField';
 import { MenuRecipeSection } from '@/components/menu-master/MenuRecipeSection';
+import { MenuNutritionPreview } from '@/components/menu-master/MenuNutritionPreview';
 
 function SectionDivider({ title }) {
   return (
@@ -127,6 +128,17 @@ export function MenuMasterEditFields({
             size={form.size || '단일'}
             sellingPrice={form.price}
             onSaved={onRecipeSaved}
+          />
+        </div>
+      )}
+
+      {/* ── 영양성분 출력 미리보기 ────────────── */}
+      {!isNew && row?.menuCode && (
+        <div style={{ borderTop: '1px solid var(--divider)', paddingTop: 20 }}>
+          <MenuNutritionPreview
+            menuCode={row.menuCode}
+            menuName={row.menuName}
+            category={row.category}
           />
         </div>
       )}

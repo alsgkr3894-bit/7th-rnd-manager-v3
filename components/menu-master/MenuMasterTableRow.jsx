@@ -4,6 +4,7 @@ import { Icon } from '@/components/icons';
 import { CategoryTags } from '@/components/menu-master/MenuCategoryTags';
 import { MenuRecipeCostCell } from '@/components/menu-master/MenuRecipeCostCell';
 import { getMenuSubCategoryFromCode } from '@/lib/cost/menu-price';
+import { isMenuNutritionLinked } from '@/lib/menu-master/readiness';
 
 const STATUS_LABEL = { active: '활성', discontinued: '단종', test: '테스트' };
 const STATUS_STYLE = {
@@ -12,11 +13,19 @@ const STATUS_STYLE = {
   test: { background: 'var(--accent-soft)', color: 'var(--accent)' },
 };
 
-export function MenuMasterTableRow({ row, recipeSummary, isViewer, onEdit, onDelete }) {
+export function MenuMasterTableRow({
+  row,
+  recipeSummary,
+  isViewer,
+  onEdit,
+  onDelete,
+  nutritionLinkedCodes,
+}) {
   const subMeta = getMenuSubCategoryFromCode(row.menuCode);
   const subLabel = subMeta
     ? `${subMeta.code} ${subMeta.label}`
     : row.subCategory || <span style={{ color: 'var(--text-4)' }}>-</span>;
+  const nutritionLinked = isMenuNutritionLinked(row, nutritionLinkedCodes);
 
   return (
     <tr
@@ -133,17 +142,33 @@ export function MenuMasterTableRow({ row, recipeSummary, isViewer, onEdit, onDel
         <MenuRecipeCostCell summary={recipeSummary} />
       </td>
       <td>
-        <span
-          style={{
-            padding: '2px 8px',
-            borderRadius: 6,
-            fontSize: 11,
-            fontWeight: 600,
-            ...STATUS_STYLE[row.status],
-          }}
-        >
-          {STATUS_LABEL[row.status] || row.status}
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+          <span
+            style={{
+              padding: '2px 8px',
+              borderRadius: 6,
+              fontSize: 11,
+              fontWeight: 600,
+              ...STATUS_STYLE[row.status],
+            }}
+          >
+            {STATUS_LABEL[row.status] || row.status}
+          </span>
+          <span
+            style={{
+              padding: '1px 6px',
+              borderRadius: 6,
+              fontSize: 10,
+              fontWeight: 600,
+              ...(nutritionLinked
+                ? { background: 'var(--positive-soft)', color: 'var(--positive)' }
+                : { background: 'var(--warn-soft)', color: 'var(--warn)' }),
+            }}
+            title={nutritionLinked ? '영양성분 데이터 연동됨' : '영양성분 데이터 미입력'}
+          >
+            영양 {nutritionLinked ? '연동' : '누락'}
+          </span>
+        </div>
       </td>
       <td
         style={{
