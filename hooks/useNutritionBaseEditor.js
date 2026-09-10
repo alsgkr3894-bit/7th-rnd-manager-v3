@@ -12,6 +12,7 @@ import { SERVING_CRUST_TYPE } from '@/lib/nutrition/crust-config';
 import { resolveNutritionGroup } from '@/lib/nutrition/menu-group';
 import { buildNutritionMenuRefPayload } from '@/lib/nutrition/menu-ref-policy';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import { logWork } from '@/lib/work-log';
 
 /**
  * 베이스 영양성분 에디터의 핵심 상태와 메뉴 CRUD/저장 로직.
@@ -71,6 +72,7 @@ export function useNutritionBaseEditor({ safeRawMap, refresh, canEdit = false })
         ...form,
         ...(isBeverage ? { basis: 'serving' } : {}),
       });
+      logWork('NUTRITION_SAVE', selMenu.menuName || selMenu.menuCode || '영양성분');
       if (!mountedRef.current) return;
       showToast('저장 완료', 'ok');
       refresh();

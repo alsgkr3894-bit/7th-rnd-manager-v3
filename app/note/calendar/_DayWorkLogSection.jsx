@@ -1,14 +1,28 @@
 'use client';
+import { useState } from 'react';
 import { Icon } from '@/components/icons';
 import { WORK_LOG_TYPES } from '@/lib/work-log';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 
-export function DayWorkLogSection({ logs, open, onToggle }) {
-  const sortedLogs = [...logs].sort((a, b) =>
-    asDisplayText(a.at).localeCompare(asDisplayText(b.at))
-  );
+function groupLogsByType(logs) {
+  const byType = new Map();
+  for (const log of logs) {
+    const type = asDisplayText(log.type) || 'OTHER';
+    if (!byType.has(type)) byType.set(type, []);
+    byType.get(type).push(log);
+  }
+  for (const group of byType.values()) {
+    group.sort((a, b) => asDisplayText(b.at).localeCompare(asDisplayText(a.at)));
+  }
+  // 개수 많은 유형(가장 활발했던 작업)이 먼저 보이도록 정렬
+  return Array.from(byType.entries()).sort((a, b) => b[1].length - a[1].length);
+}
 
-  if (sortedLogs.length === 0) return null;
+export function DayWorkLogSection({ logs, open, onToggle }) {
+  const groups = groupLogsByType(logs || []);
+  const total = (logs || []).length;
+
+  if (total === 0) return null;
 
   return (
     <div style={{ marginTop: 12, borderTop: '1px solid var(--divider)', paddingTop: 8 }}>
@@ -31,7 +45,7 @@ export function DayWorkLogSection({ logs, open, onToggle }) {
           letterSpacing: '0.04em',
         }}
       >
-        자동 일지 · {sortedLogs.length}
+        자동 일지 · {total}
         <Icon.arrowDown
           style={{
             width: 12,
@@ -44,7 +58,64 @@ export function DayWorkLogSection({ logs, open, onToggle }) {
       </button>
       {open && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
-          {sortedLogs.map((log, i) => (
+          {groups.map(([type, groupLogs]) => (
+            <WorkLogTypeGroup key={type} type={type} logs={groupLogs} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WorkLogTypeGroup({ type, logs }) {
+  const [expanded, setExpanded] = useState(false);
+  const t = WORK_LOG_TYPES[type] || WORK_LOG_TYPES.OTHER;
+  const single = logs.length === 1;
+
+  return (
+    <div>
+      <button
+        onClick={() => setExpanded(v => !v)}
+        disabled={single}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          width: '100%',
+          padding: '6px 10px',
+          borderRadius: 8,
+          background: 'var(--surface-2)',
+          border: 'none',
+          cursor: single ? 'default' : 'pointer',
+          font: 'inherit',
+          textAlign: 'left',
+        }}
+      >
+        <span style={{ fontSize: 13, flexShrink: 0 }}>{t.icon}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: t.color }}>{t.label}</span>
+          <span style={{ fontSize: 11, color: 'var(--text-3)', marginLeft: 6 }}>
+            {logs.length}건{single ? ` · ${asDisplayText(logs[0].summary)}` : ''}
+          </span>
+        </div>
+        {!single && (
+          <Icon.arrowDown
+            style={{
+              width: 11,
+              height: 11,
+              flexShrink: 0,
+              color: 'var(--text-4)',
+              transform: expanded ? 'rotate(180deg)' : undefined,
+              transition: 'transform 0.15s',
+            }}
+          />
+        )}
+      </button>
+      {!single && expanded && (
+        <div
+          style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4, paddingLeft: 8 }}
+        >
+          {logs.map((log, i) => (
             <WorkLogItem key={asDisplayText(log.id, `work-${i}`)} log={log} />
           ))}
         </div>

@@ -14,6 +14,7 @@ import {
   upsertMenuRecipeForMenu,
 } from '@/lib/menu-recipes';
 import { saveRecipeVersionSnapshot } from '@/lib/menu-master/recipe-versions';
+import { logWork } from '@/lib/work-log';
 import { recipeStoreKindForCategory } from '@/lib/recipe-master/sync';
 import {
   buildSavableRecipeComponents,
@@ -183,6 +184,7 @@ export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellin
           totalCost: recipeSummary?.totalCost,
           costRate: recipeSummary?.costRate,
         }).catch(err => console.warn('[useMenuRecipeEditor] 버전 스냅샷 저장 실패', err));
+        logWork('RECIPE_SAVE', menuName || menuCode || '레시피');
         if (runOnSaved) await onSaved?.();
         if (showSuccessToast) showToast('레시피 저장됨', 'ok');
         return { saved: true };

@@ -30,6 +30,7 @@ function workLogHref(log) {
   if (type === 'INGREDIENT_SAVE') return '/ingredient/manage';
   if (type === 'RECIPE_SAVE') return '/cost/recipe';
   if (type === 'ORIGIN_SAVE') return '/nutrition/origin';
+  if (type === 'NUTRITION_SAVE') return '/nutrition/menu';
   if (type === 'BACKUP') return '/settings/backup';
   if (type === 'RESTORE') return '/settings/restore';
   if (type === 'UPLOAD') return '/menu-sales/upload';
