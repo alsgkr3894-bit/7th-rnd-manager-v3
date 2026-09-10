@@ -12,6 +12,7 @@ import {
   MenuCodeField,
   MenuNameField,
 } from '@/components/menu-master/MenuMasterIdentityFields';
+import { MenuMasterPhotoField } from '@/components/menu-master/MenuMasterPhotoField';
 import { MenuRecipeSection } from '@/components/menu-master/MenuRecipeSection';
 
 function SectionDivider({ title }) {
@@ -49,29 +50,34 @@ export function MenuMasterEditFields({
       {/* ── 기본 정보 ─────────────────────────── */}
       <div>
         <SectionDivider title="기본 정보" />
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: 12,
-          }}
-        >
-          <MenuCodeField
-            row={row}
-            isNew={isNew}
-            value={form.menuCode}
-            error={errors.menuCode}
-            setField={setField}
-            setErrors={setErrors}
-            autoFocus={isNew}
-          />
-          <MenuNameField
-            value={form.menuName}
-            error={errors.menuName}
-            setField={setField}
-            setErrors={setErrors}
-            autoFocus={!isNew}
-          />
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          <MenuMasterPhotoField photo={form.photo} onChange={photo => setField('photo', photo)} />
+          <div
+            style={{
+              flex: 1,
+              minWidth: 0,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: 12,
+            }}
+          >
+            <MenuCodeField
+              row={row}
+              isNew={isNew}
+              value={form.menuCode}
+              error={errors.menuCode}
+              setField={setField}
+              setErrors={setErrors}
+              autoFocus={isNew}
+            />
+            <MenuNameField
+              value={form.menuName}
+              error={errors.menuName}
+              setField={setField}
+              setErrors={setErrors}
+              autoFocus={!isNew}
+            />
+          </div>
         </div>
       </div>
 

@@ -38,7 +38,21 @@ export function MenuMasterTableRow({ row, recipeSummary, isViewer, onEdit, onDel
       >
         {row.menuCode}
       </td>
-      <td className="cell-name">
+      <td className="cell-name" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {row.photo?.data && (
+          <img
+            src={row.photo.data}
+            alt=""
+            style={{
+              width: 24,
+              height: 24,
+              objectFit: 'cover',
+              borderRadius: 5,
+              flexShrink: 0,
+              border: '1px solid var(--border)',
+            }}
+          />
+        )}
         {isViewer ? (
           <div className="menu-name">
             {row.menuName}
@@ -68,7 +82,8 @@ export function MenuMasterTableRow({ row, recipeSummary, isViewer, onEdit, onDel
               cursor: 'pointer',
               textAlign: 'left',
               padding: 0,
-              width: '100%',
+              flex: 1,
+              minWidth: 0,
               font: 'inherit',
               color: 'inherit',
             }}
