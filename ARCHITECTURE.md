@@ -1,6 +1,6 @@
 # 7번가 R&D 플랫폼 아키텍처
 
-작성: 2026-06-12 · 최종 갱신: 2026-06-15
+작성: 2026-06-12 · 최종 갱신: 2026-09-10
 상태: 현재 Next.js App Router 구현 기준
 
 ## 구조
@@ -14,6 +14,8 @@ hooks/               클라이언트 상태, 브라우저 이벤트, 화면 공�
 lib/                 도메인 store, 계산, 파싱, export, 순수 helper
 lib/ui/              React 없는 UI normalizer, prop guard, helper
 lib/db/              IndexedDB 초기화, schema, CRUD, 백업 범위
+lib/server/          서버 전용: Prisma client, LAN 요청 가드, store_rows 읽기/쓰기, DB health/백업
+prisma/              Postgres schema·migrations (운영 PC 서버 DB, LAN 공유용)
 scripts/             QA, smoke, build 정리 스크립트
 __tests__/           Jest 단위/회귀 테스트
 ```
@@ -28,7 +30,7 @@ __tests__/           Jest 단위/회귀 테스트
 
 ## 라우트 구조
 
-App Router 기준 page route 56개. 주요 그룹:
+App Router 기준 page route 61개(실제 화면 48개 + 레거시 리다이렉트 13개). 주요 그룹:
 
 - `app/menu-sales/` — 판매량 업로드·순위·비교·미매칭·설정
 - `app/cost/` — 원가허브·레시피·피자/1인피자/사이드/세트 세부·엣지도우·식자재단가·마진·전체요약
@@ -42,7 +44,7 @@ App Router 기준 page route 56개. 주요 그룹:
 
 ## IndexedDB 스키마
 
-현재 DB 버전: **v23**. 주요 store 그룹:
+현재 DB 버전: **v26**, 총 46개 store. 주요 store 그룹:
 
 | 그룹 | 대표 store |
 |------|-----------|
@@ -56,6 +58,17 @@ App Router 기준 page route 56개. 주요 그룹:
 | 공통 | `upload_log`, `migration_flags`, `menu_master`, `generated_reports`, `ref_accounts` |
 
 브랜드별 DB (`7번가`, `차이나X4`, `이천밥썜`) — 비-main 브랜드는 빈 상태로 시작.
+
+## 서버 DB (Postgres, LAN 공유)
+
+운영 PC 1대에서 Next 서버 + PostgreSQL을 함께 띄우고, 다른 브라우저는 `/api/db/store-rows`로
+자기 IndexedDB를 채운다(`lib/db/server-hydrate.js`). 쓰기는 운영 PC(loopback 접속)만
+`lib/db/server-sync.js`로 밀어 올린다(`lib/db/sync-mode.js`가 호스트 기준으로 판정).
+`app/api/db/*`에는 세션 인증이 없다 — `lib/server/request-guard.js`의 Origin/Host
+허용목록(기본 루프백 전용, `RND_ALLOW_LAN=1`일 때만 사내 LAN 확대)만 있다. 평문 비밀번호를
+담은 `rnd_login_credentials`·`rnd_corporate_card_entries`는 읽기·쓰기 양쪽에서
+`lib/server/sensitive-stores.js`의 `LAN_EXCLUDED_STORE_NAMES`로 항상 제외한다.
+자세한 내용은 `docs/SECURITY_POLICY.md`, `docs/DEFERRED_WORK.md`(외부 배포 보안 강화) 참고.
 
 ## QA 스크립트
 

@@ -9,7 +9,12 @@
 
 - 역할: `admin`(관리자) / `viewer`(조회자) 2종.
 - 활성 계정 조회: `getActiveRole()`(`lib/auth/accounts.js`) — IndexedDB `ref_accounts` 조회. 계정 0개이면 `'admin'` 폴백(신규 설치 보호), DB 오류 시 `'viewer'` 폴백(fail-closed).
-- 클라이언트 사이드 전용 구현. 서버가 없으므로 JWT/세션 없음.
+- 역할 판정 자체는 클라이언트(IndexedDB) 조회이며 JWT/세션 토큰은 쓰지 않는다.
+- **2026-09-10 정정**: "서버가 없다"는 더 이상 사실이 아니다 — `prisma/` + `app/api/db/*`(health·backups·store-rows)로
+  Postgres 서버 DB가 존재한다(LAN 공유 Phase 1, `3e60ab77`). 다만 그 API들에도 세션 인증은 없다:
+  `middleware.ts`의 `PUBLIC_PATHS`가 `/api/`를 공개 경로로 두기 때문이다. 유일한 방어는
+  `lib/server/request-guard.js`의 Origin/Host 허용목록(기본값 루프백 전용)이며, 이는 CSRF 방어이지 인증이 아니다.
+  자세한 내용과 착수 게이트는 `docs/DEFERRED_WORK.md`의 "외부 배포 보안 강화" 항목 참고.
 
 ---
 

@@ -406,8 +406,17 @@
 - **세션·쿠키 강화**: 서버 발급 랜덤 토큰, Secure 플래그(HTTPS), HttpOnly 플래그, 세션 만료, 서버 측 세션 저장소
 - **서버 사이드 라우트 가드**: API route handler 토큰 검증, admin API endpoint 서버 role 확인, `/api/` PUBLIC_PATHS 제외
 - **XSS·CSRF 방어**: CSP 헤더, CORS 정책
-- **왜 보류**: 현재 단일 LAN HTTP 내부 환경이므로 아래 항목은 의도적으로 허용된 상태: 솔트 없는 SHA-256(단일 계정 LAN), Secure/HttpOnly 미적용(LAN HTTP + 클라이언트 JS 로그아웃 구조), `/api/` 인증 없음(현재 API route 없음), PIN localStorage(물리 기기 접근 환경).
-- **착수 게이트**: 외부 인터넷 배포 또는 HTTPS LAN 다중 사용자 전환 결정 시.
+- **현재 상태 (2026-09-10 정정)**: `3e60ab77`(LAN 공유 Phase 1)부터 `app/api/db/{health,backups,store-rows}/route.js` 3개 API route가 **존재한다.**
+  `middleware.ts`의 `PUBLIC_PATHS`가 `/api/`를 공개 경로로 두므로 이 라우트들은 로그인 쿠키(`v3:auth`) 검사를 받지 않는다 — 이전 버전 문서의
+  "`/api/` 인증 없음(현재 API route 없음)"이라는 근거는 더 이상 사실이 아니다.
+  유일한 방어는 `lib/server/request-guard.js`의 Origin/Host 허용목록(`assertLocalRequest`)이며, 이는 CSRF 방어이지 인증이 아니다
+  (헤더 주석: "여전히 인증을 대체하지는 않는다 — 포트에 닿을 수 있는 사람은 데이터를 읽을 수 있다"). 기본값은 루프백 전용이라
+  `RND_ALLOW_LAN`을 켜지 않는 한 실제 노출은 없다. 쓰기 경로(`POST /api/db/store-rows`)는 2026-09-10에 `rnd_login_credentials`·
+  `rnd_corporate_card_entries`를 `LAN_EXCLUDED_STORE_NAMES`로 차단했다(`lib/server/sensitive-stores.js`, 읽기·쓰기 공유).
+- **왜 보류**: 현재 단일 LAN HTTP 내부 환경이므로 아래 항목은 의도적으로 허용된 상태: 솔트 없는 SHA-256(단일 계정 LAN), Secure/HttpOnly 미적용(LAN HTTP + 클라이언트 JS 로그아웃 구조), `/api/` 요청 인증 없음(Origin/Host 허용목록만 — 루프백 전용 기본값에 한해 허용), PIN localStorage(물리 기기 접근 환경).
+- **착수 게이트**: **LAN 공유 기능(`RND_ALLOW_LAN=1`)을 실제로 켜기 전에 반드시 `/api/` 요청 인증(세션 토큰 검증)을 먼저 붙인다.**
+  그 전까지는 사무실 LAN이라도 포트에 닿는 모든 기기가 전체 데이터를 읽고, 인증 없는 쓰기 요청으로 브랜드 스토어를 통째로 지울 수 있다.
+  외부 인터넷 배포는 이보다 상위 조건으로 별도 검토.
 
 ---
 

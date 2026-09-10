@@ -12,7 +12,7 @@
     "build": "next build",
     "build:clean": "node scripts/clean-build.mjs",
     "start": "next start",
-    "demo": "rm -rf .next && next build && next start -H 0.0.0.0 -p 3000",
+    "demo": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next build && next start -H 0.0.0.0 -p 3000",
     "lint": "next lint",
     "jette:login": "node scripts/jette/download.mjs login",
     "jette:inspect": "node scripts/jette/download.mjs inspect",
