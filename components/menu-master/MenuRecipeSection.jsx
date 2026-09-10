@@ -218,6 +218,26 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     addQuickRow({ ...createBlankRecipeComponentRow(), ingredientName: name });
   }, [addQuickRow, quickAddQ]);
 
+  // 레시피출력(lib/report/recipe-print-rows.js)이 components 배열 순서 그대로
+  // lineNo를 매기므로, 여기서 배열 순서만 바꾸면 출력 순서도 함께 바뀐다.
+  // _key로 찾는다 — displayedComponents는 단가없음 필터로 밀린 인덱스를 쓸 수 있어
+  // 화면 인덱스가 아니라 항상 원본 components 배열에서 위치를 다시 찾는다.
+  const handleReorderRows = useCallback(
+    (activeKey, overKey) => {
+      if (!activeKey || !overKey || activeKey === overKey) return;
+      setComponents(prev => {
+        const oldIdx = prev.findIndex(c => c._key === activeKey);
+        const newIdx = prev.findIndex(c => c._key === overKey);
+        if (oldIdx < 0 || newIdx < 0 || oldIdx === newIdx) return prev;
+        const next = prev.slice();
+        const [moved] = next.splice(oldIdx, 1);
+        next.splice(newIdx, 0, moved);
+        return next;
+      });
+    },
+    [setComponents]
+  );
+
   const focusQuickSearchInput = useCallback(() => {
     setTimeout(() => {
       const input = document.querySelector('[data-menu-recipe-quick-add="search"]');
@@ -769,6 +789,8 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
           onRemoveRow={removeRow}
           onCopyRow={copyRow}
           onUnitPriceOverride={(idx, price) => updateRow(idx, 'unitPrice', price)}
+          onReorderRows={handleReorderRows}
+          reorderDisabled={onlyMissingPrice}
           emptyMessage={
             onlyMissingPrice ? '단가 없는 구성품이 없습니다. 전체 보기로 돌아가세요.' : undefined
           }

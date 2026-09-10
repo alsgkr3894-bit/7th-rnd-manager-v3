@@ -1,5 +1,7 @@
 'use client';
 
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Icon } from '@/components/icons';
 import { formatUnitPrice } from '@/lib/format';
 import { COST_BASE_UNITS, normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
@@ -31,6 +33,9 @@ export function MenuRecipeTableRow({
   onRemoveRow,
   onCopyRow,
   onUnitPriceOverride,
+  // 레시피출력 순서를 바꾸는 용도의 드래그 핸들. null이면 드래그 비활성(단가없음
+  // 필터 등으로 화면 순서가 원본과 달라졌을 때) — MenuRecipeComponentsTable 참고.
+  dragHandleId = null,
 }) {
   const subtotal =
     component.unitPrice != null && Number(component.quantity) > 0
@@ -39,8 +44,44 @@ export function MenuRecipeTableRow({
   const quantityNeedsCheck =
     hasRecipeComponentIdentity(component) && isRecipeComponentMissingQuantity(component);
 
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: dragHandleId || component._key,
+    disabled: !dragHandleId,
+  });
+  const rowStyle = {
+    borderBottom: '1px solid var(--divider)',
+    ...(dragHandleId
+      ? {
+          transform: CSS.Transform.toString(transform),
+          transition,
+          background: isDragging ? 'var(--accent-soft)' : undefined,
+          position: 'relative',
+          zIndex: isDragging ? 1 : undefined,
+        }
+      : null),
+  };
+
   return (
-    <tr style={{ borderBottom: '1px solid var(--divider)' }}>
+    <tr ref={dragHandleId ? setNodeRef : undefined} style={rowStyle}>
+      {dragHandleId && (
+        <td style={{ padding: '7px 2px', textAlign: 'center', width: 28 }}>
+          <span
+            {...attributes}
+            {...listeners}
+            style={{
+              cursor: isDragging ? 'grabbing' : 'grab',
+              color: 'var(--text-4)',
+              display: 'inline-block',
+              lineHeight: 1,
+              padding: '4px 2px',
+              touchAction: 'none',
+            }}
+            title="드래그로 순서 변경 (레시피출력 순서에 반영됩니다)"
+          >
+            ⠿
+          </span>
+        </td>
+      )}
       <td style={{ padding: '7px 8px', position: 'relative' }}>
         <input
           ref={el => {

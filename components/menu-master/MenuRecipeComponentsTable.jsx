@@ -1,5 +1,7 @@
 'use client';
 
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { MenuRecipeTableRow } from '@/components/menu-master/recipe';
 
 export function MenuRecipeComponentsTable({
@@ -22,8 +24,20 @@ export function MenuRecipeComponentsTable({
   onRemoveRow,
   onCopyRow,
   onUnitPriceOverride,
+  onReorderRows,
+  // 단가없음 등으로 필터링된 화면에서는 순서가 원본 배열과 달라 보여
+  // 드래그 결과가 혼란스러울 수 있으므로 그럴 때는 드래그를 막는다.
+  reorderDisabled = false,
   emptyMessage = '구성품이 없습니다. 구성품 추가 후 식자재를 검색해 입력하세요.',
 }) {
+  const canReorder = typeof onReorderRows === 'function' && !reorderDisabled;
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  function handleDragEnd(event) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    onReorderRows(active.id, over.id);
+  }
   if (components.length === 0) {
     return (
       <div
@@ -54,6 +68,7 @@ export function MenuRecipeComponentsTable({
       <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse', fontSize: 12 }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--divider)', background: 'var(--surface-2)' }}>
+            {canReorder && <th style={{ width: 28 }} aria-hidden="true" />}
             <th
               style={{
                 textAlign: 'left',
@@ -112,34 +127,48 @@ export function MenuRecipeComponentsTable({
           </tr>
         </thead>
         <tbody>
-          {components.map((component, idx) => {
-            const sourceIdx = Number.isInteger(component._sourceIdx) ? component._sourceIdx : idx;
-            return (
-              <MenuRecipeTableRow
-                key={component._key}
-                component={component}
-                idx={sourceIdx}
-                searchIdx={searchIdx}
-                searchQ={searchQ}
-                suggestions={suggestions}
-                activeSuggestionIdx={activeSuggestionIdx}
-                unitPriceMap={unitPriceMap}
-                ingredientInputRefs={ingredientInputRefs}
-                quantityInputRefs={quantityInputRefs}
-                onIngredientInputChange={onIngredientInputChange}
-                onIngredientFocus={onIngredientFocus}
-                onIngredientBlur={onIngredientBlur}
-                onIngredientKeyDown={onIngredientKeyDown}
-                onPickSuggestion={onPickSuggestion}
-                onQuantityChange={onQuantityChange}
-                onQuantityKeyDown={onQuantityKeyDown}
-                onUnitChange={onUnitChange}
-                onRemoveRow={onRemoveRow}
-                onCopyRow={onCopyRow}
-                onUnitPriceOverride={onUnitPriceOverride}
-              />
-            );
-          })}
+          <DndContext
+            sensors={canReorder ? sensors : undefined}
+            collisionDetection={closestCenter}
+            onDragEnd={canReorder ? handleDragEnd : undefined}
+          >
+            <SortableContext
+              items={components.map(c => c._key)}
+              strategy={verticalListSortingStrategy}
+            >
+              {components.map((component, idx) => {
+                const sourceIdx = Number.isInteger(component._sourceIdx)
+                  ? component._sourceIdx
+                  : idx;
+                return (
+                  <MenuRecipeTableRow
+                    key={component._key}
+                    component={component}
+                    idx={sourceIdx}
+                    searchIdx={searchIdx}
+                    searchQ={searchQ}
+                    suggestions={suggestions}
+                    activeSuggestionIdx={activeSuggestionIdx}
+                    unitPriceMap={unitPriceMap}
+                    ingredientInputRefs={ingredientInputRefs}
+                    quantityInputRefs={quantityInputRefs}
+                    onIngredientInputChange={onIngredientInputChange}
+                    onIngredientFocus={onIngredientFocus}
+                    onIngredientBlur={onIngredientBlur}
+                    onIngredientKeyDown={onIngredientKeyDown}
+                    onPickSuggestion={onPickSuggestion}
+                    onQuantityChange={onQuantityChange}
+                    onQuantityKeyDown={onQuantityKeyDown}
+                    onUnitChange={onUnitChange}
+                    onRemoveRow={onRemoveRow}
+                    onCopyRow={onCopyRow}
+                    onUnitPriceOverride={onUnitPriceOverride}
+                    dragHandleId={canReorder ? component._key : null}
+                  />
+                );
+              })}
+            </SortableContext>
+          </DndContext>
         </tbody>
       </table>
     </div>

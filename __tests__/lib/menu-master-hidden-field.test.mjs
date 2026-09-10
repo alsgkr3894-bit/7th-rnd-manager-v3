@@ -39,7 +39,7 @@ describe('메뉴마스터 숨김 필드', () => {
     expect(fields).toContain("from '@/components/menu-master/MenuMasterCommercialFields'");
 
     const modal = src('components/menu-master/MenuMasterEditModal.jsx');
-    expect(modal).toContain("hidden: row?.hidden === true");
+    expect(modal).toContain('hidden: row?.hidden === true');
     expect(modal).toContain('hidden: form.hidden');
   });
 
