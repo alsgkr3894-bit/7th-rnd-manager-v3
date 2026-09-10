@@ -493,6 +493,7 @@ export default function Page() {
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const canEdit = roleReady && isAdmin;
   const [date, setDate] = useState(() => todayLocalDate());
+  const [dateDraft, setDateDraft] = useState(() => todayLocalDate());
   const [month, setMonth] = useState(() => date.slice(0, 7));
   const [quickDateDraft, setQuickDateDraft] = useState('');
   const [quickDateError, setQuickDateError] = useState(false);
@@ -563,6 +564,7 @@ export default function Page() {
 
   useEffect(() => {
     setMonth(date.slice(0, 7));
+    setDateDraft(date);
   }, [date]);
 
   const datesWithNotes = useMemo(() => {
@@ -696,6 +698,14 @@ export default function Page() {
     }
   }
 
+  function applyDate(value = dateDraft) {
+    const raw = String(value || '').trim();
+    if (!raw) return;
+    setDate(raw);
+    setMonth(safeMonth(raw.slice(0, 7)));
+    setQuickDateError(false);
+  }
+
   function applyQuickDate(value = quickDateDraft) {
     const raw = String(value || '').trim();
     if (!raw) {
@@ -795,12 +805,14 @@ export default function Page() {
             <input
               type="date"
               className="form-input"
-              value={date}
+              value={dateDraft}
               onChange={e => {
-                if (e.target.value) {
-                  setDate(e.target.value);
-                  setMonth(safeMonth(e.target.value.slice(0, 7)));
-                  setQuickDateError(false);
+                if (e.target.value) setDateDraft(e.target.value);
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  applyDate();
                 }
               }}
               style={{
@@ -813,6 +825,14 @@ export default function Page() {
                 padding: '7px 10px',
               }}
             />
+            <button
+              className={'btn' + (dateDraft !== date ? ' primary' : '')}
+              onClick={() => applyDate()}
+              disabled={!dateDraft || dateDraft === date}
+              title="입력한 날짜로 조회"
+            >
+              조회
+            </button>
             <input
               className="form-input"
               value={quickDateDraft}

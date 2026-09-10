@@ -49,3 +49,25 @@ describe('note journal page linkage', () => {
     expect(journalPageSource).not.toContain('journalFormFromEntry(journalEntry, sourcePhotos)');
   });
 });
+
+describe('연구일지 날짜 선택에 조회 버튼이 있다', () => {
+  test('날짜 입력은 즉시 조회하지 않고 초안(dateDraft)에만 반영된다', () => {
+    expect(journalPageSource).toContain(
+      'const [dateDraft, setDateDraft] = useState(() => todayLocalDate());'
+    );
+    expect(journalPageSource).toContain('value={dateDraft}');
+    expect(journalPageSource).toContain('if (e.target.value) setDateDraft(e.target.value);');
+    // date가 바뀌면(빠른 날짜 입력·이전/다음 화살표 포함) dateDraft도 함께 동기화돼야
+    // 조회 버튼이 "아직 조회 안 됨" 상태로 잘못 남지 않는다.
+    expect(journalPageSource).toMatch(
+      /useEffect\(\(\) => \{\s*setMonth\(date\.slice\(0, 7\)\);\s*setDateDraft\(date\);\s*\}, \[date\]\);/
+    );
+  });
+
+  test('조회 버튼은 Enter 또는 클릭으로 dateDraft를 date에 반영한다', () => {
+    expect(journalPageSource).toContain('function applyDate(value = dateDraft) {');
+    expect(journalPageSource).toContain("if (e.key === 'Enter') {");
+    expect(journalPageSource).toContain('onClick={() => applyDate()}');
+    expect(journalPageSource).toContain('disabled={!dateDraft || dateDraft === date}');
+  });
+});
