@@ -247,12 +247,13 @@ input:checked + .toggle-box::after {
     box-shadow: none !important;
     border: none !important;
     margin: 0 !important;
-    padding: 24px !important;
-    page-break-after: always;
+    padding: 0 !important;
+    page-break-after: auto;
   }
 
   .paper-section {
-    page-break-inside: avoid;
+    page-break-inside: auto;
+    break-inside: auto;
   }
 
   .no-print {

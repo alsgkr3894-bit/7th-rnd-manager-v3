@@ -90,12 +90,12 @@ function GroupedCategoryMenuTable({ category, riskThreshold }) {
           </th>
         </tr>
         <tr>
-          <th style={{ width: 90, textAlign: 'right' }}>판매가</th>
-          <th style={{ width: 90, textAlign: 'right' }}>원가</th>
-          <th style={{ width: 80, textAlign: 'right' }}>원가율</th>
-          <th style={{ width: 90, textAlign: 'right' }}>판매가</th>
-          <th style={{ width: 90, textAlign: 'right' }}>원가</th>
-          <th style={{ width: 80, textAlign: 'right' }}>원가율</th>
+          <th style={{ width: 74, textAlign: 'right' }}>판매가</th>
+          <th style={{ width: 74, textAlign: 'right' }}>원가</th>
+          <th style={{ width: 64, textAlign: 'right' }}>원가율</th>
+          <th style={{ width: 74, textAlign: 'right' }}>판매가</th>
+          <th style={{ width: 74, textAlign: 'right' }}>원가</th>
+          <th style={{ width: 64, textAlign: 'right' }}>원가율</th>
         </tr>
       </thead>
       <tbody>
@@ -119,9 +119,9 @@ function SingleCategoryMenuTable({ category, riskThreshold }) {
         <tr>
           <th style={{ width: 36 }}>#</th>
           <th>메뉴명</th>
-          <th style={{ width: 90, textAlign: 'right' }}>판매가</th>
-          <th style={{ width: 90, textAlign: 'right' }}>원가</th>
-          <th style={{ width: 80, textAlign: 'right' }}>원가율</th>
+          <th style={{ width: 80, textAlign: 'right' }}>판매가</th>
+          <th style={{ width: 80, textAlign: 'right' }}>원가</th>
+          <th style={{ width: 70, textAlign: 'right' }}>원가율</th>
         </tr>
       </thead>
       <tbody>

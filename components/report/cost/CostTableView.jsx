@@ -95,12 +95,12 @@ export function CostTableView({ activeCats, riskThreshold }) {
                     </th>
                   </tr>
                   <tr>
-                    <th style={{ textAlign: 'right', width: 80 }}>판매가</th>
-                    <th style={{ textAlign: 'right', width: 80 }}>원가</th>
-                    <th style={{ textAlign: 'right', width: 70 }}>원가율</th>
-                    <th style={{ textAlign: 'right', width: 80 }}>판매가</th>
-                    <th style={{ textAlign: 'right', width: 80 }}>원가</th>
-                    <th style={{ textAlign: 'right', width: 70 }}>원가율</th>
+                    <th style={{ textAlign: 'right', width: 74 }}>판매가</th>
+                    <th style={{ textAlign: 'right', width: 74 }}>원가</th>
+                    <th style={{ textAlign: 'right', width: 64 }}>원가율</th>
+                    <th style={{ textAlign: 'right', width: 74 }}>판매가</th>
+                    <th style={{ textAlign: 'right', width: 74 }}>원가</th>
+                    <th style={{ textAlign: 'right', width: 64 }}>원가율</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -144,9 +144,9 @@ export function CostTableView({ activeCats, riskThreshold }) {
                   <tr>
                     <th style={{ width: 72 }}>구분</th>
                     <th>메뉴명</th>
-                    <th style={{ width: 90, textAlign: 'right' }}>판매가</th>
-                    <th style={{ width: 90, textAlign: 'right' }}>원가</th>
-                    <th style={{ width: 80, textAlign: 'right' }}>원가율</th>
+                    <th style={{ width: 80, textAlign: 'right' }}>판매가</th>
+                    <th style={{ width: 80, textAlign: 'right' }}>원가</th>
+                    <th style={{ width: 70, textAlign: 'right' }}>원가율</th>
                   </tr>
                 </thead>
                 <tbody>
