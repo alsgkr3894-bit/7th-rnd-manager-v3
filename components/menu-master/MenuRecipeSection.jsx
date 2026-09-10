@@ -53,7 +53,16 @@ function quickQuantityValue(value) {
 }
 
 export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
-  { menuCode, menuName, category, size, sellingPrice, onSaved, initialFocus = null },
+  {
+    menuCode,
+    sourceMenuCode,
+    menuName,
+    category,
+    size,
+    sellingPrice,
+    onSaved,
+    initialFocus = null,
+  },
   ref
 ) {
   const [copyOpen, setCopyOpen] = useState(false);
@@ -86,6 +95,7 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     copyFromMenu,
   } = useMenuRecipeEditor({
     menuCode,
+    sourceMenuCode,
     menuName,
     category,
     size,
@@ -389,7 +399,21 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     [addRow, components, displayedComponents, onlyMissingPrice]
   );
 
-  if (!supported) return null;
+  if (!supported) {
+    return (
+      <div
+        style={{
+          fontSize: 12,
+          color: 'var(--text-4)',
+          padding: '10px 12px',
+          border: '1px dashed var(--divider)',
+          borderRadius: 8,
+        }}
+      >
+        이 카테고리는 레시피 원가를 지원하지 않습니다. (카테고리를 확인해 주세요)
+      </div>
+    );
+  }
 
   if (!loaded) {
     return (

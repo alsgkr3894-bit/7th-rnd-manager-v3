@@ -14,6 +14,7 @@ import { MenuMasterHeaderActions } from '@/components/menu-master/MenuMasterHead
 import { MenuMasterIssuesPanel } from '@/components/menu-master/MenuMasterIssuesPanel';
 import { MenuMasterLoadingTable } from '@/components/menu-master/MenuMasterLoadingTable';
 import { MenuMasterStatsRow } from '@/components/menu-master/MenuMasterStatsRow';
+import { MenuRecipeOrphanBanner } from '@/components/menu-master/MenuRecipeOrphanBanner';
 import { MenuMasterTablePanel } from '@/components/menu-master/MenuMasterTablePanel';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { getActiveBrandId } from '@/lib/active-brand';
@@ -206,6 +207,8 @@ export default function Page() {
           />
         }
       />
+
+      <MenuRecipeOrphanBanner isViewer={isViewer} />
 
       <MenuMasterStatsRow
         rows={visibleRows}

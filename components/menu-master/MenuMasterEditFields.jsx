@@ -121,6 +121,7 @@ export function MenuMasterEditFields({
             ref={recipeSectionRef}
             initialFocus={initialFocus}
             menuCode={form.menuCode}
+            sourceMenuCode={row?.menuCode || form.menuCode}
             menuName={form.menuName}
             category={form.category}
             size={form.size || '단일'}

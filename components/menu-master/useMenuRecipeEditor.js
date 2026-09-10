@@ -23,7 +23,15 @@ import {
   hydrateRecipeComponent,
 } from '@/components/menu-master/recipeComponentRows';
 
-export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellingPrice, onSaved }) {
+export function useMenuRecipeEditor({
+  menuCode,
+  sourceMenuCode,
+  menuName,
+  category,
+  size,
+  sellingPrice,
+  onSaved,
+}) {
   const [components, setComponents] = useState([]);
   const [selectedRecipeGroupIds, setSelectedRecipeGroupIds] = useState([]);
   const [loaded, setLoaded] = useState(false);
@@ -33,6 +41,15 @@ export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellin
   const [recipeGroups, setRecipeGroups] = useState([]);
   const [unitPriceMap, setUnitPriceMap] = useState(new Map());
 
+  // 조회는 모달을 열 때의 원래 코드(sourceMenuCode) 기준, 저장은 현재 입력된 menuCode
+  // 기준으로 분리한다. 메뉴마스터에서 중분류를 바꾸면 피자류는 menuCode 자체가 바뀌는데
+  // (예: P-OR-005-L → P-PR-001-L), 조회까지 menuCode를 따라가면 새 코드로는 아직 저장된
+  // 레시피가 없어 화면의 구성품이 비워지고, 그 상태로 저장하면 메뉴마스터 저장이 먼저
+  // menu_recipes 행을 새 코드로 옮긴 직후 이 빈 상태가 그 위를 덮어써 구성품이
+  // 영구 삭제된다. sourceMenuCode는 모달이 열려 있는 동안 바뀌지 않으므로, 조회 키를
+  // 고정해두면 중분류를 바꿔도 이미 불러온 구성품이 그대로 남고, 저장 시 캐스케이드로
+  // 옮겨진 행에 동일한 구성품이 다시 쓰인다.
+  const loadMenuCode = sourceMenuCode || menuCode;
   const recipeKind = recipeStoreKindForCategory(category);
   const supported = Boolean(recipeKind && menuCode);
 
@@ -44,11 +61,11 @@ export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellin
     setAllMenuItems([]);
     setRecipeGroups([]);
     setUnitPriceMap(new Map());
-    if (!supported) return;
+    if (!loadMenuCode) return;
     let ignore = false;
     initDB().then(async () => {
       const [existing, ingredients, latestUnitPriceMap, groups, menuItems] = await Promise.all([
-        getMenuRecipeForMenu({ menuCode, menuName, category, size }),
+        getMenuRecipeForMenu({ menuCode: loadMenuCode, menuName, category, size }),
         getAllIngredients(),
         loadLatestUnitPriceMap(),
         getAllRecipeGroups(),
@@ -70,9 +87,9 @@ export function useMenuRecipeEditor({ menuCode, menuName, category, size, sellin
     return () => {
       ignore = true;
     };
-    // api functions are stable module-level imports, category/menuCode cover the relevant deps
+    // api functions are stable module-level imports, loadMenuCode/category cover the relevant deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [menuCode, category]);
+  }, [loadMenuCode, category]);
 
   const updateRow = useCallback((idx, field, val) => {
     setComponents(prev => prev.map((c, i) => (i === idx ? { ...c, [field]: val } : c)));
