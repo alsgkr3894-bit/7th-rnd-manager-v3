@@ -42,6 +42,33 @@ describe('buildDetailRows 그룹핑 (H-2 회귀)', () => {
     expect(rows[0].menuCodes.sort()).toEqual(['PZ-001-L', 'PZ-001-R']);
   });
 
+  test('추가토핑(T-ETC-*)은 toppingMap 레시피로 원가가 계산되고 누락되지 않는다', () => {
+    // 회귀: DETAIL_STORE_MAP에 '추가토핑' 매핑이 빠져 있어 toppingMap을 넘겨도
+    // 조용히 continue되며 마진표에서 추가토핑 메뉴 전체가 통째로 사라지던 버그.
+    const toppingMap = new Map([
+      ['T-ETC-002', { menuCode: 'T-ETC-002', components: [{ productCode: 'CHZ', quantity: 80 }] }],
+    ]);
+    const unitPriceMap = new Map([['CHZ', { unitPrice: 10 }]]);
+
+    const rows = buildDetailRows(
+      [
+        {
+          menuCode: 'T-ETC-002',
+          menuName: '치즈 80g',
+          category: '추가토핑',
+          size: '단일',
+          price: 500,
+        },
+      ],
+      { ...emptyMaps, toppingMap },
+      unitPriceMap
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ menuCode: 'T-ETC-002', menuCategory: '추가토핑' });
+    expect(rows[0].costMap['단일']).toBe(800); // 80 * 10
+  });
+
   test('피자 중분류는 판매가 분류보다 메뉴코드 값을 우선한다', () => {
     const rows = buildDetailRows(
       [

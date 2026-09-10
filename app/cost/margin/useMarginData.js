@@ -56,6 +56,7 @@ export function useMarginData() {
           personalMap: recipeMaps.personal,
           sideMap: recipeMaps.side,
           setMap: recipeMaps.set,
+          toppingMap: recipeMaps.topping,
         },
         upm,
         recipeGroups
