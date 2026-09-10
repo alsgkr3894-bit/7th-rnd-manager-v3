@@ -167,11 +167,23 @@ describe('recipe master sync helpers', () => {
           note: '',
         },
       },
+      {
+        kind: 'topping',
+        payload: {
+          menuCode: 'ET-001',
+          menuName: '추가토핑',
+          category: '추가토핑',
+          size: '단일',
+          components: [],
+          note: '',
+        },
+      },
     ]);
   });
 
   test('대상 라벨을 반환한다', () => {
     expect(recipeSyncTargetLabel('pizza')).toBe('피자 원가');
+    expect(recipeSyncTargetLabel('topping')).toBe('추가토핑 원가');
     expect(recipeSyncTargetLabel(null)).toBe('미지원');
   });
 });

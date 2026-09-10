@@ -45,6 +45,7 @@ const PIZZA_CATEGORIES = [
   MENU_CATEGORY.SAUCE,
   MENU_CATEGORY.DRINK,
   MENU_CATEGORY.EDGE,
+  MENU_CATEGORY.EXTRA_TOPPING,
 ];
 
 const EMPTY_ROWS = [];
@@ -59,6 +60,7 @@ export default function Page() {
   const [readinessLoading, setReadinessLoading] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [importingToppings, setImportingToppings] = useState(false);
   const [editRow, setEditRow] = useState(null);
   const [editIntent, setEditIntent] = useState(null);
   const [addOpen, setAddOpen] = useState(false);
@@ -117,18 +119,25 @@ export default function Page() {
     hiddenCount,
   } = useMenuMasterFilters(rows, brandCats);
 
-  const { handleDeleteRow, openDeleteDialog, handleResetAndSeed, handleSeed, handleSaveRow } =
-    useMenuMasterActions({
-      reload,
-      setDeleteTarget,
-      setDeletePlan,
-      setDeletePlanLoading,
-      setSeeding,
-      setResetting,
-      setEditRow,
-      setAddOpen,
-      canEdit: !isViewer,
-    });
+  const {
+    handleDeleteRow,
+    openDeleteDialog,
+    handleResetAndSeed,
+    handleSeed,
+    handleImportToppings,
+    handleSaveRow,
+  } = useMenuMasterActions({
+    reload,
+    setDeleteTarget,
+    setDeletePlan,
+    setDeletePlanLoading,
+    setSeeding,
+    setResetting,
+    setImportingToppings,
+    setEditRow,
+    setAddOpen,
+    canEdit: !isViewer,
+  });
 
   function handleExportCsv() {
     exportMenuMasterCsv(filtered);
@@ -199,9 +208,11 @@ export default function Page() {
             isMain={isMain}
             seeding={seeding}
             resetting={resetting}
+            importingToppings={importingToppings}
             onExportCsv={handleExportCsv}
             onOpenBulkPrice={() => setBulkModal(true)}
             onSeed={handleSeed}
+            onImportToppings={handleImportToppings}
             onReset={() => setConfirmReset(true)}
             onAdd={() => setAddOpen(true)}
           />

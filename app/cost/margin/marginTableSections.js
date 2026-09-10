@@ -1,6 +1,6 @@
 const LR_SIZE_LABELS = ['L', 'R'];
 const SINGLE_SIZE_LABEL = '단일';
-const SINGLE_SIZE_CATEGORIES = new Set(['1인피자', '사이드', '소스', '음료', '엣지']);
+const SINGLE_SIZE_CATEGORIES = new Set(['1인피자', '사이드', '소스', '음료', '엣지', '추가토핑']);
 const SIZE_ORDER = ['L', 'R', '단일', '단품', '세트'];
 const CATEGORY_SECTIONS = [
   {
@@ -15,6 +15,7 @@ const CATEGORY_SECTIONS = [
   { id: 'sauce', title: '소스', sizeMode: 'single', matches: cat => cat === '소스' },
   { id: 'drink', title: '음료', sizeMode: 'single', matches: cat => cat === '음료' },
   { id: 'edge', title: '엣지', sizeMode: 'single', matches: cat => cat === '엣지' },
+  { id: 'topping', title: '추가토핑', sizeMode: 'single', matches: cat => cat === '추가토핑' },
 ];
 const OTHER_SECTION = { id: 'other', title: '기타', sizeMode: 'mixed' };
 

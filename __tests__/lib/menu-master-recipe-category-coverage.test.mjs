@@ -35,7 +35,10 @@ describe('카테고리별 레시피 저장소 라우팅', () => {
 
   test('지원하지 않는 카테고리는 null을 반환한다', () => {
     expect(recipeKindForMenu({ category: '엣지' })).toBeNull();
-    expect(recipeKindForMenu({ category: '추가토핑' })).toBeNull();
+  });
+
+  test('추가토핑은 topping으로 라우팅된다', () => {
+    expect(recipeKindForMenu({ category: '추가토핑' })).toBe('topping');
   });
 });
 

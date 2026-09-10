@@ -3,6 +3,7 @@ import { showToast } from '@/components/Toast';
 import { logMenuMasterSave, logMenuMasterDelete } from '@/lib/change-log';
 import {
   deleteMenuMaster,
+  getAllMenuMaster,
   getMenuDeletePlan,
   resetAllMenuMaster,
   pushMasterToPrices,
@@ -10,6 +11,8 @@ import {
 } from '@/lib/menu-master';
 import { resetAllMenuPrices } from '@/lib/cost/menu-price';
 import { seedMenuMaster } from '@/lib/menu-master/seed';
+import { buildToppingImportPlan } from '@/lib/menu-master/topping-import';
+import { getAllToppings } from '@/lib/nutrition/values/topping';
 
 export function useMenuMasterActions({
   reload,
@@ -18,6 +21,7 @@ export function useMenuMasterActions({
   setDeletePlanLoading,
   setSeeding,
   setResetting,
+  setImportingToppings,
   setEditRow,
   setAddOpen,
   canEdit = false,
@@ -103,6 +107,35 @@ export function useMenuMasterActions({
     }
   }
 
+  /**
+   * 영양 토핑 마스터(nutrition_topping_master)에 등록된 토핑을 메뉴마스터
+   * 추가토핑 메뉴로 일괄 등록한다. 판매가는 비워둔 채 등록만 하고(등록 후
+   * 메뉴마스터에서 직접 입력), 이미 등록된 이름은 건너뛴다(멱등 — 몇 번
+   * 실행해도 중복 등록되지 않는다).
+   */
+  async function handleImportToppings() {
+    if (!requireEdit()) return;
+    if (setImportingToppings) setImportingToppings(true);
+    try {
+      const [toppings, existingMenus] = await Promise.all([getAllToppings(), getAllMenuMaster()]);
+      const plan = buildToppingImportPlan(toppings, existingMenus);
+      if (plan.length === 0) {
+        showToast('새로 가져올 토핑이 없습니다(이미 모두 등록됨)', 'ok');
+        return;
+      }
+      for (const draft of plan) {
+        await upsertMenuMaster(draft);
+      }
+      await syncMirror();
+      reload();
+      showToast(`추가토핑 ${plan.length}개 등록됨 — 판매가·사용량을 입력해 주세요`, 'ok');
+    } catch (err) {
+      showToast('가져오기 실패: ' + err.message, 'error');
+    } finally {
+      if (setImportingToppings) setImportingToppings(false);
+    }
+  }
+
   async function handleSaveRow(data, options = {}) {
     if (!requireEdit()) return null;
     const { closeModal = true, reloadAfter = true, toast = true, throwOnError = false } = options;
@@ -129,5 +162,12 @@ export function useMenuMasterActions({
     }
   }
 
-  return { handleDeleteRow, openDeleteDialog, handleResetAndSeed, handleSeed, handleSaveRow };
+  return {
+    handleDeleteRow,
+    openDeleteDialog,
+    handleResetAndSeed,
+    handleSeed,
+    handleImportToppings,
+    handleSaveRow,
+  };
 }

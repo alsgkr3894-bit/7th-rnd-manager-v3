@@ -8,9 +8,11 @@ export function MenuMasterHeaderActions({
   isMain,
   seeding,
   resetting,
+  importingToppings,
   onExportCsv,
   onOpenBulkPrice,
   onSeed,
+  onImportToppings,
   onReset,
   onAdd,
 }) {
@@ -31,6 +33,17 @@ export function MenuMasterHeaderActions({
         <button className="btn" onClick={onSeed} disabled={seeding || isViewer}>
           <Icon.download style={{ width: 14, height: 14 }} />
           {seeding ? '등록 중…' : '기본 코드 등록'}
+        </button>
+      )}
+      {isMain && (
+        <button
+          className="btn"
+          onClick={onImportToppings}
+          disabled={importingToppings || isViewer}
+          title="영양 토핑 마스터에 등록된 토핑을 추가토핑 메뉴로 가져옵니다"
+        >
+          <Icon.download style={{ width: 14, height: 14 }} />
+          {importingToppings ? '가져오는 중…' : '추가토핑 가져오기'}
         </button>
       )}
       <button
