@@ -509,7 +509,9 @@ describe('sample page structure', () => {
     expect(noteWritePageSource).toContain('readOnly={!canEdit}');
     expect(detailPageSource).toContain("from '@/hooks/useCurrentRole'");
     expect(detailPageSource).toContain('if (!canEdit) return');
-    expect(detailPageSource).toContain('disabled={saving || !canEdit}');
+    // 저장/취소 버튼은 StickySaveBar(스크롤 고정)로 이동 — canEdit는 canSave prop으로 전달된다.
+    expect(detailPageSource).toContain('saving={saving}');
+    expect(detailPageSource).toContain('canSave={canEdit}');
     expect(detailPageSource).toContain('readOnly={!canEdit}');
   });
 });

@@ -46,7 +46,7 @@ export const SAMPLE_INIT = {
 
 const MAX_PHOTOS = 8;
 
-export function SampleFormBody({ form, setForm, readOnly = false }) {
+export function SampleFormBody({ form, setForm, readOnly = false, showRecordTypeField = true }) {
   const fileInputRef = useRef(null);
   const productSearchTimerRef = useRef(null);
   const formPhotosRef = useRef([]);
@@ -278,13 +278,13 @@ export function SampleFormBody({ form, setForm, readOnly = false }) {
       className="form-layout"
       style={{
         display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1fr) minmax(360px, 420px)',
-        gap: 24,
+        gridTemplateColumns: 'minmax(0, 1fr) clamp(320px, 27vw, 390px)',
+        gap: 20,
         marginTop: 24,
         alignItems: 'start',
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
         <SampleBasicInfoCard
           form={form}
           catOptions={catOptions}
@@ -296,11 +296,15 @@ export function SampleFormBody({ form, setForm, readOnly = false }) {
           ingredientGroupOptions={ingredientGroupOptions}
           onIngredientGroup={updateIngredientGroup}
           readOnly={readOnly}
+          showRecordTypeField={showRecordTypeField}
         />
         <SampleDetailRecordCard form={form} allTags={allTags} onUpdate={upd} readOnly={readOnly} />
       </div>
 
-      <div className="form-sticky-right" style={{ position: 'sticky', top: 80 }}>
+      <div
+        className="form-sticky-right"
+        style={{ position: 'sticky', top: 72, display: 'flex', flexDirection: 'column', gap: 12 }}
+      >
         <SampleLinkedProductsCard
           linked={form.linkedProducts || []}
           options={productOptions}

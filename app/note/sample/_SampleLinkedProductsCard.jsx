@@ -35,7 +35,7 @@ export function SampleLinkedProductsCard({
       : [];
 
   return (
-    <div className="card" style={{ marginBottom: 12 }}>
+    <div className="card">
       <div className="card-title" style={{ marginBottom: 10 }}>
         연결 제품
       </div>

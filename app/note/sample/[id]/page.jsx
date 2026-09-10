@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { StickySaveBar } from '@/components/ui/StickySaveBar';
 import { showToast } from '@/components/Toast';
 import { initDB } from '@/lib/db';
 import { downloadCsv, printCurrentPageWithDownloadDate } from '@/lib/download';
@@ -201,20 +202,17 @@ export default function Page() {
             >
               인쇄
             </button>
-            <button className="btn no-print" onClick={() => router.push('/note/sample')}>
-              취소
-            </button>
-            <button
-              className="btn primary no-print"
-              onClick={handleSave}
-              disabled={saving || !canEdit}
-            >
-              {saving ? '저장 중…' : '저장하기'}
-            </button>
           </div>
         }
       />
       <SampleFormBody form={form} setForm={setForm} readOnly={!canEdit} />
+      <StickySaveBar
+        onCancel={() => router.push('/note/sample')}
+        onSave={handleSave}
+        saving={saving}
+        canSave={canEdit}
+        saveLabel="저장하기"
+      />
     </main>
   );
 }

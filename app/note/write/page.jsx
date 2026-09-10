@@ -509,7 +509,12 @@ export default function Page() {
       {isMenuWriteType(writeType) ? (
         <NoteFormBody form={form} setForm={handleFormChange} onCategoryChange={setLastCategory} />
       ) : (
-        <SampleFormBody form={sampleForm} setForm={handleSampleFormChange} readOnly={!canEdit} />
+        <SampleFormBody
+          form={sampleForm}
+          setForm={handleSampleFormChange}
+          readOnly={!canEdit}
+          showRecordTypeField={false}
+        />
       )}
       <StickySaveBar
         onCancel={handleCancel}

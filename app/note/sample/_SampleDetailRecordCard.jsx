@@ -1,14 +1,10 @@
 import { TagInput } from '@/components/ui/TagInput';
 import { Field } from '@/components/note/FormFields';
+import { CollapsibleCard } from '@/app/note/_CollapsibleCard';
 
 export function SampleDetailRecordCard({ form, allTags, onUpdate, readOnly = false }) {
   return (
-    <div className="card">
-      <div className="card-title" style={{ marginBottom: 16 }}>
-        상세 기록{' '}
-        <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-3)' }}>선택</span>
-      </div>
-
+    <CollapsibleCard title="상세 기록" subtitle="선택 입력 항목 · 기본 접힘" defaultOpen={false}>
       <Field label="테스트 내용 / 조건">
         <textarea
           className="form-input"
@@ -62,6 +58,6 @@ export function SampleDetailRecordCard({ form, allTags, onUpdate, readOnly = fal
           disabled={readOnly}
         />
       </Field>
-    </div>
+    </CollapsibleCard>
   );
 }

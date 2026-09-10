@@ -17,6 +17,10 @@ export function SampleBasicInfoCard({
   ingredientGroupOptions = [],
   onIngredientGroup,
   readOnly = false,
+  // 작성 화면(/note/write)은 상단 "작성 유형선택"에서 이미 샘플테스트/제품이슈를
+  // 고르므로 여기서 또 고르게 하지 않는다(중복 선택기). 기존 기록 수정
+  // (/note/sample/[id])에는 그런 상위 단계가 없어 계속 노출한다.
+  showRecordTypeField = true,
 }) {
   const [quickDateDraft, setQuickDateDraft] = useState('');
   const [quickDateError, setQuickDateError] = useState(false);
@@ -42,10 +46,41 @@ export function SampleBasicInfoCard({
     setQuickDateDraft('');
   }
 
+  const recordTypeValue = form.recordType || SAMPLE_RECORD_TYPE_OPTIONS[0];
+
   return (
-    <div className="card">
-      <div className="card-title" style={{ marginBottom: 16 }}>
-        기본 정보
+    <div className="card" style={{ padding: 20 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 12,
+          marginBottom: 18,
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <div className="card-title" style={{ marginBottom: 4 }}>
+            기본 정보
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+            제목과 샘플명, 연결 식자재를 기록합니다.
+          </div>
+        </div>
+        <span
+          style={{
+            flex: '0 0 auto',
+            border: '1px solid var(--border)',
+            borderRadius: 999,
+            padding: '5px 10px',
+            background: 'var(--surface-2)',
+            color: 'var(--text-2)',
+            fontSize: 12,
+            fontWeight: 800,
+          }}
+        >
+          {recordTypeValue}
+        </span>
       </div>
 
       <Field label="제목" required>
@@ -58,15 +93,23 @@ export function SampleBasicInfoCard({
         />
       </Field>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '0.85fr 1.15fr', gap: 12 }}>
-        <Field label="기록 구분" required>
-          <SegGroup
-            options={SAMPLE_RECORD_TYPE_OPTIONS}
-            value={form.recordType || SAMPLE_RECORD_TYPE_OPTIONS[0]}
-            onChange={value => onUpdate('recordType', value)}
-            disabled={readOnly}
-          />
-        </Field>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: showRecordTypeField ? '0.85fr 1.15fr' : '1fr',
+          gap: 12,
+        }}
+      >
+        {showRecordTypeField && (
+          <Field label="기록 구분" required>
+            <SegGroup
+              options={SAMPLE_RECORD_TYPE_OPTIONS}
+              value={recordTypeValue}
+              onChange={value => onUpdate('recordType', value)}
+              disabled={readOnly}
+            />
+          </Field>
+        )}
         <Field label="식자재 묶음" hint="목록에 없으면 직접 입력">
           <ComboBox
             value={form.ingredientGroupName || ''}
