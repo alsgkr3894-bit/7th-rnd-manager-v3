@@ -12,7 +12,8 @@ export function SalesPizzaMoverSection({ catShares, groupRanking, periodMode }) 
   );
   if (all.length === 0) return null;
 
-  // 단종 메뉴는 상승·하락·베스트·워스트 집계에서 제외한다(순위표 자체에는 배지와 함께 그대로 나온다).
+  // 단종·비정규 메뉴는 상승·하락·베스트·워스트 집계에서 제외한다
+  // (순위표 자체에는 배지와 함께 그대로 나온다).
   const eligible = all.filter(item => !item.discontinued);
   const excludedCount = all.length - eligible.length;
 
@@ -36,7 +37,7 @@ export function SalesPizzaMoverSection({ catShares, groupRanking, periodMode }) 
         피자 {compareLabel} 대비 상승 / 하락 TOP 5
       </div>
       <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 2 }}>
-        단종 메뉴는 상승·하락·베스트·워스트 집계에서 제외됩니다
+        단종·비정규 메뉴는 상승·하락·베스트·워스트 집계에서 제외됩니다
         {excludedCount > 0 ? ` (단종 ${excludedCount}개 제외)` : ''}
       </div>
 

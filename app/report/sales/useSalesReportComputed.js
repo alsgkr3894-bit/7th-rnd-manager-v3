@@ -20,6 +20,8 @@ export function useSalesReportComputed({
   safeCmpMonth,
   safeScope,
   discontinuedNameSet,
+  menuMasterNameSet,
+  irregularNameSet,
 }) {
   const [compareData, setCompareData] = useState(null);
 
@@ -31,8 +33,19 @@ export function useSalesReportComputed({
         periodMode: safePeriodMode,
         scope: safeScope,
         discontinuedNameSet,
+        menuMasterNameSet,
+        irregularNameSet,
       }),
-    [normRows, safeYearValue, safeMonthValue, safePeriodMode, safeScope, discontinuedNameSet]
+    [
+      normRows,
+      safeYearValue,
+      safeMonthValue,
+      safePeriodMode,
+      safeScope,
+      discontinuedNameSet,
+      menuMasterNameSet,
+      irregularNameSet,
+    ]
   );
 
   useEffect(() => {

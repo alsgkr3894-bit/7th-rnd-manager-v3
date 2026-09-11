@@ -5,6 +5,7 @@ import { safeQuantity } from '@/lib/report/period';
 import { safeRevenue } from '@/lib/sales/revenue';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { DiscontinuedBadge } from '@/components/sales/DiscontinuedBadge';
+import { IrregularMenuBadge } from '@/components/sales/IrregularMenuBadge';
 
 export function SalesVariantRows({ item, opts }) {
   if (!opts.variant) return null;
@@ -46,14 +47,35 @@ export function SalesRankDeltaCell({ delta }) {
   );
 }
 
-export function SalesRankItemRows({ item, index, opts }) {
+export function SalesRankItemRows({ item, index, opts, canEdit = false, onMarkIrregular }) {
+  const canMark = typeof onMarkIrregular === 'function';
   return (
     <Fragment>
       <tr>
         <td className="num">{index + 1}</td>
         <td style={{ fontWeight: 600 }}>
           {asDisplayText(item.name, '—')}
-          {item.discontinued && <DiscontinuedBadge />}
+          {item.irregular ? <IrregularMenuBadge /> : item.discontinued && <DiscontinuedBadge />}
+          {item.unregistered && canEdit && canMark && (
+            <button
+              type="button"
+              className="chip"
+              onClick={() => onMarkIrregular(item.name)}
+              title="메뉴마스터에 없는 판매명입니다 — 눌러서 단종(비정규메뉴) 처리"
+              style={{
+                marginLeft: 6,
+                fontSize: 10,
+                padding: '1px 6px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: '1px dashed var(--border)',
+                background: 'transparent',
+                color: 'var(--text-3)',
+              }}
+            >
+              단종 처리
+            </button>
+          )}
         </td>
         <td className="num right">{formatNumber(safeQuantity(item.quantity))}</td>
         {opts.revenue && <td className="num right">{formatNumber(safeRevenue(item.revenue))}</td>}

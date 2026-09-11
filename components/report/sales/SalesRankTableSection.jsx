@@ -13,6 +13,8 @@ export function SalesRankTableSection({
   groupRanking,
   showRevenue,
   compareLabel = '전월',
+  canEdit = false,
+  onMarkIrregular,
 }) {
   if (groupRanking.length === 0) {
     return (
@@ -54,7 +56,13 @@ export function SalesRankTableSection({
           <SalesCategoryBarRows items={items} catColor={catColor} catTotal={catTotal} />
         )}
 
-        <SalesRankTable items={items} opts={opts} compareLabel={compareLabel} />
+        <SalesRankTable
+          items={items}
+          opts={opts}
+          compareLabel={compareLabel}
+          canEdit={canEdit}
+          onMarkIrregular={onMarkIrregular}
+        />
       </div>
     );
   });

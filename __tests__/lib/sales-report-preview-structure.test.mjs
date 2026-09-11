@@ -70,9 +70,16 @@ describe('sales report preview structure', () => {
     expect(moverSource).toContain('periodCompareLabel');
     // 단종 메뉴는 상승/하락/베스트/워스트 집계에서 제외되고, 그 사실을 안내 문구로 알린다.
     expect(moverSource).toContain('eligible = all.filter(item => !item.discontinued)');
-    expect(moverSource).toContain('단종 메뉴는 상승·하락·베스트·워스트 집계에서 제외됩니다');
+    expect(moverSource).toContain('단종·비정규 메뉴는 상승·하락·베스트·워스트 집계에서 제외됩니다');
     expect(rankTableRowsSource).toContain("from '@/components/sales/DiscontinuedBadge'");
-    expect(rankTableRowsSource).toContain('{item.discontinued && <DiscontinuedBadge />}');
+    expect(rankTableRowsSource).toContain("from '@/components/sales/IrregularMenuBadge'");
+    // menu_master에 없는 판매명(unregistered)은 관리자에게 "단종 처리" 버튼을 보여주고,
+    // 이미 단종 처리된 비정규메뉴는 DiscontinuedBadge 대신 IrregularMenuBadge로 구분한다.
+    expect(rankTableRowsSource).toContain(
+      'item.irregular ? <IrregularMenuBadge /> : item.discontinued && <DiscontinuedBadge />'
+    );
+    expect(rankTableRowsSource).toContain('item.unregistered && canEdit && canMark');
+    expect(rankTableRowsSource).toContain('onMarkIrregular(item.name)');
     expect(rankSource).toContain('export function SalesRankTableSection');
     expect(rankSource).toContain("from './SalesCategoryBarRows'");
     expect(rankSource).toContain("from './SalesRankTable'");
@@ -108,5 +115,50 @@ describe('sales report preview structure', () => {
     expect(rankTableRowsSource).toContain('safeQuantity(item.prevQty)');
     expect(compareSource).toContain('export function SalesCompareTableSection');
     expect(excludedSource).toContain('export function SalesExcludedListSection');
+  });
+
+  test('비정규메뉴 단종 처리 — canEdit·onMarkIrregular가 page부터 순위행까지 배선돼 있다', () => {
+    const pageSource = readFileSync(resolve('app/report/sales/page.jsx'), 'utf8');
+    const previewSource = readFileSync(
+      resolve('components/report/sales/SalesReportPreview.jsx'),
+      'utf8'
+    );
+    const rankSectionSource = readFileSync(
+      resolve('components/report/sales/SalesRankTableSection.jsx'),
+      'utf8'
+    );
+    const rankTableSource = readFileSync(
+      resolve('components/report/sales/SalesRankTable.jsx'),
+      'utf8'
+    );
+    const rankTableRowsSource = readFileSync(
+      resolve('components/report/sales/SalesRankTableRows.jsx'),
+      'utf8'
+    );
+    const irregularHookSource = readFileSync(resolve('hooks/useIrregularMenuNames.js'), 'utf8');
+    const nameSetsHookSource = readFileSync(resolve('hooks/useMenuMasterNameSets.js'), 'utf8');
+
+    expect(pageSource).toContain("from '@/hooks/useMenuMasterNameSets'");
+    expect(pageSource).toContain("from '@/hooks/useIrregularMenuNames'");
+    expect(pageSource).toContain("from '@/hooks/useCurrentRole'");
+    expect(pageSource).toContain('async function handleMarkIrregular(menuName)');
+    expect(pageSource).toContain('addRefDiscontinued({ menuName })');
+    expect(pageSource).toContain('canEdit={canEdit}');
+    expect(pageSource).toContain('onMarkIrregular={handleMarkIrregular}');
+
+    expect(previewSource).toContain('canEdit={canEdit}');
+    expect(previewSource).toContain('onMarkIrregular={onMarkIrregular}');
+    expect(rankSectionSource).toContain('canEdit={canEdit}');
+    expect(rankSectionSource).toContain('onMarkIrregular={onMarkIrregular}');
+    expect(rankTableSource).toContain('canEdit={canEdit}');
+    expect(rankTableSource).toContain('onMarkIrregular={onMarkIrregular}');
+    expect(rankTableRowsSource).toContain('canEdit = false');
+    expect(rankTableRowsSource).toContain('onMarkIrregular');
+
+    expect(irregularHookSource).toContain('export function useIrregularMenuNames');
+    expect(irregularHookSource).toContain('EMPTY_SET');
+    expect(nameSetsHookSource).toContain('export function useMenuMasterNameSets');
+    expect(nameSetsHookSource).toContain('buildDiscontinuedMenuNameSet');
+    expect(nameSetsHookSource).toContain('buildMenuMasterNameSet');
   });
 });

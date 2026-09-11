@@ -24,7 +24,11 @@ import SalesReportPreview from '@/components/report/sales/SalesReportPreview';
 import { exportSalesReportWorkbook } from '@/lib/report/sales-export';
 import { useSalesReportData } from './useSalesReportData';
 import { useSalesReportComputed } from './useSalesReportComputed';
-import { useDiscontinuedMenuNames } from '@/hooks/useDiscontinuedMenuNames';
+import { useMenuMasterNameSets } from '@/hooks/useMenuMasterNameSets';
+import { useIrregularMenuNames } from '@/hooks/useIrregularMenuNames';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
+import { showToast } from '@/components/Toast';
+import { addRefDiscontinued } from '@/lib/sales';
 import { normalizeViewMode } from './salesReportPageUtils';
 
 const DRAFT_KEY = 'report_draft_sales';
@@ -164,7 +168,10 @@ export default function Page() {
     [salesRows]
   );
 
-  const discontinuedNameSet = useDiscontinuedMenuNames();
+  const { discontinuedNameSet, menuMasterNameSet } = useMenuMasterNameSets();
+  const { irregularNameSet, reload: reloadIrregular } = useIrregularMenuNames();
+  const { isAdmin, ready: roleReady } = useCurrentRole();
+  const canEdit = roleReady && isAdmin;
 
   const { catShares, groupRanking, kpi, compareData } = useSalesReportComputed({
     normRows,
@@ -176,7 +183,21 @@ export default function Page() {
     safeCmpMonth: cmpMonthOrQuarter,
     safeScope,
     discontinuedNameSet,
+    menuMasterNameSet,
+    irregularNameSet,
   });
+
+  // 순위표에서 menu_master에 없는 판매명을 골라 단종(비정규메뉴) 처리한다.
+  // 다음에 같은 이름이 다시 매칭되도 상관없이 ref_discontinued에 남아 계속 제외된다.
+  async function handleMarkIrregular(menuName) {
+    try {
+      await addRefDiscontinued({ menuName });
+      showToast(`"${menuName}" 단종(비정규메뉴) 처리했습니다`, 'ok');
+      reloadIrregular();
+    } catch (err) {
+      showToast('처리 실패: ' + err.message, 'error');
+    }
+  }
 
   const safeOpts = opts && typeof opts === 'object' && !Array.isArray(opts) ? opts : {};
   const safeCatShares = asObjectArray(catShares);
@@ -280,6 +301,8 @@ export default function Page() {
           totalShare={totalShare}
           compareData={safeCompareData}
           excludedList={safeExcludedList}
+          canEdit={canEdit}
+          onMarkIrregular={handleMarkIrregular}
         />
       }
     />

@@ -1,6 +1,10 @@
 import { describe, expect, test } from '@jest/globals';
 import { buildSalesStats } from '../../lib/report/build-sales-report.js';
-import { buildDiscontinuedMenuNameSet } from '../../lib/menu-master/discontinued-lookup.js';
+import {
+  buildDiscontinuedMenuNameSet,
+  buildMenuMasterNameSet,
+} from '../../lib/menu-master/discontinued-lookup.js';
+import { buildIrregularMenuNameSet } from '../../lib/sales/irregular-menu.js';
 
 function row({ year, month, category = '피자', groupName = 'A', quantity, revenue = 0 }) {
   return {
@@ -62,6 +66,71 @@ describe('buildSalesStats', () => {
     const byName = Object.fromEntries(groupRanking.map(r => [r.name, r.discontinued]));
     expect(byName.A).toBe(true);
     expect(byName.B).toBe(false);
+  });
+
+  test('menuMasterNameSet·irregularNameSet이 없으면 irregular/unregistered가 전부 false다(하위 호환)', () => {
+    const rows = [row({ year: 2026, month: 5, groupName: 'A', quantity: 10 })];
+    const { groupRanking } = buildSalesStats(rows, { year: 2026, month: 5, scope: 'all' });
+    expect(groupRanking[0].irregular).toBe(false);
+    expect(groupRanking[0].unregistered).toBe(false);
+  });
+
+  test('menuMasterNameSet에 없는 이름은 unregistered:true — "단종 처리" 버튼 후보', () => {
+    const rows = [
+      row({ year: 2026, month: 5, groupName: 'A', quantity: 10 }),
+      row({ year: 2026, month: 5, groupName: 'B', quantity: 5 }),
+    ];
+    const menuMasterNameSet = buildMenuMasterNameSet([{ menuName: 'A', status: 'active' }]);
+    const { groupRanking } = buildSalesStats(rows, {
+      year: 2026,
+      month: 5,
+      scope: 'all',
+      menuMasterNameSet,
+    });
+    const byName = Object.fromEntries(groupRanking.map(r => [r.name, r.unregistered]));
+    expect(byName.A).toBe(false); // menu_master에 있음
+    expect(byName.B).toBe(true); // menu_master에 없음 — 후보
+  });
+
+  test('irregularNameSet에 있는 이름은 irregular:true·discontinued:true이고 unregistered는 false로 닫힌다', () => {
+    const rows = [row({ year: 2026, month: 5, groupName: 'C', quantity: 10 })];
+    const menuMasterNameSet = buildMenuMasterNameSet([{ menuName: 'X', status: 'active' }]);
+    const irregularNameSet = buildIrregularMenuNameSet([{ menuName: 'C' }]);
+    const { groupRanking } = buildSalesStats(rows, {
+      year: 2026,
+      month: 5,
+      scope: 'all',
+      menuMasterNameSet,
+      irregularNameSet,
+    });
+    expect(groupRanking[0]).toMatchObject({
+      irregular: true,
+      discontinued: true,
+      unregistered: false,
+    });
+  });
+
+  test('menu_master 단종 메뉴와 비정규(irregular) 메뉴 모두 discontinued로 합산된다', () => {
+    const rows = [
+      row({ year: 2026, month: 5, groupName: 'D1', quantity: 10 }),
+      row({ year: 2026, month: 5, groupName: 'D2', quantity: 5 }),
+    ];
+    const discontinuedNameSet = buildDiscontinuedMenuNameSet([
+      { menuName: 'D1', status: 'discontinued' },
+    ]);
+    const irregularNameSet = buildIrregularMenuNameSet([{ menuName: 'D2' }]);
+    const { groupRanking } = buildSalesStats(rows, {
+      year: 2026,
+      month: 5,
+      scope: 'all',
+      discontinuedNameSet,
+      irregularNameSet,
+    });
+    const byName = Object.fromEntries(groupRanking.map(r => [r.name, r]));
+    expect(byName.D1.discontinued).toBe(true);
+    expect(byName.D1.irregular).toBe(false);
+    expect(byName.D2.discontinued).toBe(true);
+    expect(byName.D2.irregular).toBe(true);
   });
 
   test('periodMode=quarter는 분기 3개월을 통합 집계하고 전분기와 비교한다', () => {

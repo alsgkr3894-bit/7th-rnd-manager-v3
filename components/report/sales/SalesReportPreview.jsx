@@ -27,6 +27,8 @@ export default function SalesReportPreview({
   totalShare,
   compareData,
   excludedList,
+  canEdit = false,
+  onMarkIrregular,
 }) {
   const safeOpts = opts && typeof opts === 'object' && !Array.isArray(opts) ? opts : {};
   const safeCatShares = asObjectArray(catShares);
@@ -87,6 +89,8 @@ export default function SalesReportPreview({
           groupRanking={safeGroupRanking}
           showRevenue={!!safeOpts.revenue}
           compareLabel={compareLabel}
+          canEdit={canEdit}
+          onMarkIrregular={onMarkIrregular}
         />
       )}
 

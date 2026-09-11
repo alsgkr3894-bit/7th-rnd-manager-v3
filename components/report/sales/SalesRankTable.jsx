@@ -1,7 +1,13 @@
 'use client';
 import { SalesRankItemRows } from './SalesRankTableRows';
 
-export function SalesRankTable({ items, opts, compareLabel = '전월' }) {
+export function SalesRankTable({
+  items,
+  opts,
+  compareLabel = '전월',
+  canEdit = false,
+  onMarkIrregular,
+}) {
   return (
     <table className="paper-table">
       <thead>
@@ -16,7 +22,14 @@ export function SalesRankTable({ items, opts, compareLabel = '전월' }) {
       </thead>
       <tbody>
         {items.map((item, index) => (
-          <SalesRankItemRows key={item.name} item={item} index={index} opts={opts} />
+          <SalesRankItemRows
+            key={item.name}
+            item={item}
+            index={index}
+            opts={opts}
+            canEdit={canEdit}
+            onMarkIrregular={onMarkIrregular}
+          />
         ))}
       </tbody>
     </table>
