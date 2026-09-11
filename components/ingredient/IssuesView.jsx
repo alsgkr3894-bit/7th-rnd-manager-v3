@@ -54,6 +54,9 @@ const BULK_NONE_ACTIONS = {
   'missing-allergen': { field: 'allergenNone', label: '알레르기 없음' },
 };
 
+// 단가 인상/인하 필터에서는 전체 확인 버튼만 보여준다(개별 선택 불필요).
+const ACK_PRICE_FILTERS = new Set(['price-up', 'price-down']);
+
 function fmtPriceDiff({ oldPrice, newPrice, diff, pct }) {
   const safeDiff = Number.isFinite(Number(diff)) ? Number(diff) : 0;
   const safePct = Number.isFinite(Number(pct)) ? Number(pct) : 0;
@@ -69,6 +72,7 @@ function IssueCard({
   r,
   onEdit,
   onConfirmPriceManual,
+  onAckPriceChange,
   isViewer = false,
   selectable = false,
   selected = false,
@@ -80,9 +84,13 @@ function IssueCard({
   const handleEdit = typeof onEdit === 'function' ? onEdit : () => {};
   const confirmPriceManual =
     typeof onConfirmPriceManual === 'function' ? onConfirmPriceManual : () => {};
+  const ackPriceChange = typeof onAckPriceChange === 'function' ? onAckPriceChange : () => {};
   // 제때 연동은 없지만 수동으로 단가를 입력한 항목만 "확인" 버튼을 보여준다.
   const canConfirmPriceManual =
     issues.includes('no-price-link') && !row.jetteLinked && row.priceOverride != null;
+  // 단가 인상/인하 이슈 확인 — 지금 확인해도 다음에 단가가 또 바뀌면 자동으로 재표시된다.
+  const canAckPriceChange =
+    (issues.includes('price-up') || issues.includes('price-down')) && row.priceWithTax != null;
 
   return (
     <div
@@ -148,6 +156,16 @@ function IssueCard({
           <Icon.check style={{ width: 13, height: 13 }} /> 단가 미연동 확인
         </button>
       )}
+      {canAckPriceChange && (
+        <button
+          className="btn sm"
+          onClick={() => ackPriceChange(row)}
+          disabled={isViewer}
+          title="단가 변동 확인 — 다음에 단가가 또 바뀌면 자동으로 다시 표시됩니다"
+        >
+          <Icon.check style={{ width: 13, height: 13 }} /> 확인
+        </button>
+      )}
       <button className="btn sm" onClick={() => handleEdit(row)} disabled={isViewer}>
         <Icon.edit style={{ width: 13, height: 13 }} /> 수정
       </button>
@@ -159,12 +177,15 @@ export function IssuesView({
   issueRows,
   onEdit,
   onConfirmPriceManual,
+  onAckPriceChange,
+  onAckAllPriceChanges,
   onBulkApplyOriginAllergenNone,
   isViewer = false,
 }) {
   const [filter, setFilter] = useState('all');
   const [selected, setSelected] = useState(() => new Set());
   const [applying, setApplying] = useState(false);
+  const [acking, setAcking] = useState(false);
   const safeIssueRows = useMemo(
     () => (Array.isArray(issueRows) ? issueRows.filter(r => r && typeof r === 'object') : []),
     [issueRows]
@@ -234,6 +255,23 @@ export function IssuesView({
     }
   }
 
+  const canAckAllPrice = ACK_PRICE_FILTERS.has(filter);
+  const ackablePriceRows = useMemo(
+    () => (canAckAllPrice ? filtered.filter(r => r.id != null && r.priceWithTax != null) : []),
+    [canAckAllPrice, filtered]
+  );
+
+  async function ackAllPriceChanges() {
+    if (!canAckAllPrice || acking || !ackablePriceRows.length) return;
+    if (typeof onAckAllPriceChanges !== 'function') return;
+    setAcking(true);
+    try {
+      await onAckAllPriceChanges(ackablePriceRows);
+    } finally {
+      setAcking(false);
+    }
+  }
+
   if (safeIssueRows.length === 0) {
     return (
       <div className="card" style={{ minHeight: 160, display: 'grid', placeItems: 'center' }}>
@@ -259,6 +297,32 @@ export function IssuesView({
           </button>
         ))}
       </div>
+
+      {canAckAllPrice && (
+        <div
+          className="card"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '10px 18px',
+            background: 'var(--surface-2)',
+          }}
+        >
+          <span style={{ fontSize: 13, color: 'var(--text-2)' }}>
+            다음에 단가가 또 바뀌면 자동으로 다시 표시됩니다
+          </span>
+          <button
+            className="btn sm primary"
+            onClick={ackAllPriceChanges}
+            disabled={isViewer || !ackablePriceRows.length || acking}
+            style={{ marginLeft: 'auto' }}
+          >
+            <Icon.check style={{ width: 13, height: 13 }} />
+            {acking ? '확인 처리 중…' : `전체 확인 (${ackablePriceRows.length})`}
+          </button>
+        </div>
+      )}
 
       {bulkAction && (
         <div
@@ -309,6 +373,7 @@ export function IssuesView({
             r={r}
             onEdit={onEdit}
             onConfirmPriceManual={onConfirmPriceManual}
+            onAckPriceChange={onAckPriceChange}
             isViewer={isViewer}
             selectable={!!bulkAction}
             selected={r.id != null && selected.has(r.id)}

@@ -6,6 +6,8 @@ import {
   addIngredient,
   updateIngredient,
   setIngredientPriceManualConfirmed,
+  setIngredientPriceChangeAcked,
+  setIngredientPriceChangeAckedMany,
   upsertIngredientMeta,
   excludeIngredientByCode,
   restoreIngredientByCode,
@@ -224,6 +226,56 @@ export function useIngredientManageActions({
     [canEdit, setRows]
   );
 
+  const handleAckPriceChange = useCallback(
+    async row => {
+      if (!canEdit || !row?.id) return;
+      try {
+        await setIngredientPriceChangeAcked(row.id, row.priceWithTax);
+        setRows(prev =>
+          prev.map(r =>
+            r.id === row.id
+              ? {
+                  ...r,
+                  priceChangeAckedPrice: row.priceWithTax,
+                  priceChangeAckedAt: new Date().toISOString(),
+                }
+              : r
+          )
+        );
+        showToast('단가 변동을 확인 처리했습니다', 'ok');
+      } catch (err) {
+        showToast('실패: ' + err.message, 'error');
+      }
+    },
+    [canEdit, setRows]
+  );
+
+  const handleAckAllPriceChanges = useCallback(
+    async rows => {
+      if (!canEdit || !Array.isArray(rows) || rows.length === 0) return;
+      const entries = rows
+        .filter(r => r?.id != null)
+        .map(r => ({ id: r.id, price: r.priceWithTax }));
+      if (!entries.length) return;
+      try {
+        const { acked } = await setIngredientPriceChangeAckedMany(entries);
+        const ackedAt = new Date().toISOString();
+        const priceById = new Map(entries.map(e => [e.id, e.price]));
+        setRows(prev =>
+          prev.map(r =>
+            priceById.has(r.id)
+              ? { ...r, priceChangeAckedPrice: priceById.get(r.id), priceChangeAckedAt: ackedAt }
+              : r
+          )
+        );
+        showToast(`단가 변동 ${acked}건을 확인 처리했습니다`, 'ok');
+      } catch (err) {
+        showToast('실패: ' + err.message, 'error');
+      }
+    },
+    [canEdit, setRows]
+  );
+
   const handleAutoRegister = useCallback(
     async row => {
       if (!canEdit) return;
@@ -405,6 +457,8 @@ export function useIngredientManageActions({
     handleExclude,
     handleRestore,
     handleConfirmPriceManual,
+    handleAckPriceChange,
+    handleAckAllPriceChanges,
     handleAutoRegister,
     handleReplaceJetteProduct,
     handleBatchDelete,

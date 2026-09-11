@@ -187,6 +187,8 @@ export default function Page() {
     handleExclude,
     handleRestore,
     handleConfirmPriceManual,
+    handleAckPriceChange,
+    handleAckAllPriceChanges,
     handleAutoRegister,
     handleBatchDelete,
     handleBulkDiscontinue,
@@ -447,6 +449,8 @@ export default function Page() {
               issueRows={issueRows}
               onEdit={setFormTarget}
               onConfirmPriceManual={handleConfirmPriceManual}
+              onAckPriceChange={handleAckPriceChange}
+              onAckAllPriceChanges={handleAckAllPriceChanges}
               onBulkApplyOriginAllergenNone={handleBulkApplyOriginAllergenNone}
               isViewer={isViewer}
             />
