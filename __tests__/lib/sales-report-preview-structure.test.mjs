@@ -77,7 +77,7 @@ describe('sales report preview structure', () => {
     // 이미 단종 처리된 비정규메뉴는 DiscontinuedBadge 대신 IrregularMenuBadge로 구분하며
     // 배지 자체에서 onUnmark로 되돌릴 수 있다.
     expect(rankTableRowsSource).toContain('item.irregular ? (');
-    expect(rankTableRowsSource).toContain('item.discontinued && <DiscontinuedBadge />');
+    expect(rankTableRowsSource).toContain('item.discontinued && (');
     expect(rankTableRowsSource).toContain(
       'onUnmark={canUnmark ? () => onUnmarkIrregular(item.name) : undefined}'
     );
@@ -150,22 +150,34 @@ describe('sales report preview structure', () => {
     expect(pageSource).toContain('addRefDiscontinued({ menuName })');
     expect(pageSource).toContain('async function handleUnmarkIrregular(menuName)');
     expect(pageSource).toContain('deleteRefDiscontinuedByName(menuName)');
+    expect(pageSource).toContain('async function handleUndiscontinue(menuName)');
+    expect(pageSource).toContain('findDiscontinuedMenuMasterIds(latestMenuMaster, menuName)');
+    expect(pageSource).toContain("setMenuMasterStatusMany(ids, 'active')");
     expect(pageSource).toContain('canEdit={canEdit}');
     expect(pageSource).toContain('onMarkIrregular={handleMarkIrregular}');
     expect(pageSource).toContain('onUnmarkIrregular={handleUnmarkIrregular}');
+    expect(pageSource).toContain('onUndiscontinue={handleUndiscontinue}');
 
     expect(previewSource).toContain('canEdit={canEdit}');
     expect(previewSource).toContain('onMarkIrregular={onMarkIrregular}');
     expect(previewSource).toContain('onUnmarkIrregular={onUnmarkIrregular}');
+    expect(previewSource).toContain('onUndiscontinue={onUndiscontinue}');
     expect(rankSectionSource).toContain('canEdit={canEdit}');
     expect(rankSectionSource).toContain('onMarkIrregular={onMarkIrregular}');
     expect(rankSectionSource).toContain('onUnmarkIrregular={onUnmarkIrregular}');
+    expect(rankSectionSource).toContain('onUndiscontinue={onUndiscontinue}');
     expect(rankTableSource).toContain('canEdit={canEdit}');
     expect(rankTableSource).toContain('onMarkIrregular={onMarkIrregular}');
     expect(rankTableSource).toContain('onUnmarkIrregular={onUnmarkIrregular}');
+    expect(rankTableSource).toContain('onUndiscontinue={onUndiscontinue}');
     expect(rankTableRowsSource).toContain('canEdit = false');
     expect(rankTableRowsSource).toContain('onMarkIrregular');
     expect(rankTableRowsSource).toContain('onUnmarkIrregular');
+    expect(rankTableRowsSource).toContain('onUndiscontinue');
+    // 일반(menu_master 기반) 단종 배지도 관리자에게 해제 버튼을 보여준다.
+    expect(rankTableRowsSource).toContain(
+      'onUnmark={canUndiscontinue ? () => onUndiscontinue(item.name) : undefined}'
+    );
 
     expect(irregularHookSource).toContain('export function useIrregularMenuNames');
     expect(irregularHookSource).toContain('EMPTY_SET');
@@ -177,6 +189,13 @@ describe('sales report preview structure', () => {
   test('IrregularMenuBadge는 onUnmark가 있을 때만 해제 버튼을 보여준다', () => {
     const badgeSource = readFileSync(resolve('components/sales/IrregularMenuBadge.jsx'), 'utf8');
     expect(badgeSource).toContain('export function IrregularMenuBadge({ onUnmark })');
+    expect(badgeSource).toContain("const canUnmark = typeof onUnmark === 'function'");
+    expect(badgeSource).toContain('{canUnmark && (');
+  });
+
+  test('DiscontinuedBadge도 onUnmark가 있을 때만 해제 버튼을 보여준다', () => {
+    const badgeSource = readFileSync(resolve('components/sales/DiscontinuedBadge.jsx'), 'utf8');
+    expect(badgeSource).toContain('export function DiscontinuedBadge({ onUnmark })');
     expect(badgeSource).toContain("const canUnmark = typeof onUnmark === 'function'");
     expect(badgeSource).toContain('{canUnmark && (');
   });

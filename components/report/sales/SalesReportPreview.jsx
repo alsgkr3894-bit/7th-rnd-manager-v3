@@ -30,6 +30,7 @@ export default function SalesReportPreview({
   canEdit = false,
   onMarkIrregular,
   onUnmarkIrregular,
+  onUndiscontinue,
 }) {
   const safeOpts = opts && typeof opts === 'object' && !Array.isArray(opts) ? opts : {};
   const safeCatShares = asObjectArray(catShares);
@@ -93,6 +94,7 @@ export default function SalesReportPreview({
           canEdit={canEdit}
           onMarkIrregular={onMarkIrregular}
           onUnmarkIrregular={onUnmarkIrregular}
+          onUndiscontinue={onUndiscontinue}
         />
       )}
 

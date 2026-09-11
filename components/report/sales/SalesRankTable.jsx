@@ -8,6 +8,7 @@ export function SalesRankTable({
   canEdit = false,
   onMarkIrregular,
   onUnmarkIrregular,
+  onUndiscontinue,
 }) {
   return (
     <table className="paper-table">
@@ -31,6 +32,7 @@ export function SalesRankTable({
             canEdit={canEdit}
             onMarkIrregular={onMarkIrregular}
             onUnmarkIrregular={onUnmarkIrregular}
+            onUndiscontinue={onUndiscontinue}
           />
         ))}
       </tbody>

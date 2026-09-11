@@ -6,6 +6,7 @@ import {
   isDiscontinuedMenuName,
   buildMenuMasterNameSet,
   isKnownMenuMasterName,
+  findDiscontinuedMenuMasterIds,
 } from '../../lib/menu-master/discontinued-lookup.js';
 
 const src = f => readFileSync(resolve(f), 'utf8');
@@ -86,6 +87,37 @@ describe('buildMenuMasterNameSet / isKnownMenuMasterName', () => {
     expect(isKnownMenuMasterName('아무거나', new Set())).toBe(false);
     expect(isKnownMenuMasterName('아무거나', null)).toBe(false);
     expect(buildMenuMasterNameSet(null).size).toBe(0);
+  });
+});
+
+describe('findDiscontinuedMenuMasterIds', () => {
+  test('표시명과 일치하는 discontinued 행의 id만 반환한다', () => {
+    const rows = [
+      { id: 1, menuName: '단종메뉴', status: 'discontinued' },
+      { id: 2, menuName: '단종메뉴', status: 'active' }, // active는 제외
+      { id: 3, menuName: '다른메뉴', status: 'discontinued' }, // 이름 불일치라 제외
+    ];
+    expect(findDiscontinuedMenuMasterIds(rows, '단종메뉴')).toEqual([1]);
+  });
+
+  test('피자 그룹명(축약)으로도 원본 menu_master 행을 찾는다', () => {
+    const rows = [
+      { id: 10, menuName: '고구마 피자 L', status: 'discontinued' },
+      { id: 11, menuName: '고구마 피자 R', status: 'discontinued' },
+    ];
+    expect(findDiscontinuedMenuMasterIds(rows, '고구마').sort()).toEqual([10, 11]);
+  });
+
+  test('빈 이름·잘못된 입력에는 빈 배열을 반환한다', () => {
+    expect(findDiscontinuedMenuMasterIds(null, '아무거나')).toEqual([]);
+    expect(
+      findDiscontinuedMenuMasterIds([{ id: 1, menuName: 'A', status: 'discontinued' }], '')
+    ).toEqual([]);
+  });
+
+  test('일치하는 discontinued 행이 없으면 빈 배열', () => {
+    const rows = [{ id: 1, menuName: 'A', status: 'active' }];
+    expect(findDiscontinuedMenuMasterIds(rows, 'A')).toEqual([]);
   });
 });
 

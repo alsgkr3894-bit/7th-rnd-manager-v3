@@ -54,9 +54,11 @@ export function SalesRankItemRows({
   canEdit = false,
   onMarkIrregular,
   onUnmarkIrregular,
+  onUndiscontinue,
 }) {
   const canMark = typeof onMarkIrregular === 'function';
   const canUnmark = canEdit && typeof onUnmarkIrregular === 'function';
+  const canUndiscontinue = canEdit && typeof onUndiscontinue === 'function';
   return (
     <Fragment>
       <tr>
@@ -68,7 +70,11 @@ export function SalesRankItemRows({
               onUnmark={canUnmark ? () => onUnmarkIrregular(item.name) : undefined}
             />
           ) : (
-            item.discontinued && <DiscontinuedBadge />
+            item.discontinued && (
+              <DiscontinuedBadge
+                onUnmark={canUndiscontinue ? () => onUndiscontinue(item.name) : undefined}
+              />
+            )
           )}
           {item.unregistered && canEdit && canMark && (
             <button

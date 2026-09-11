@@ -29,6 +29,8 @@ import { useIrregularMenuNames } from '@/hooks/useIrregularMenuNames';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { showToast } from '@/components/Toast';
 import { addRefDiscontinued, deleteRefDiscontinuedByName } from '@/lib/sales';
+import { getAllMenuMaster, setMenuMasterStatusMany } from '@/lib/menu-master';
+import { findDiscontinuedMenuMasterIds } from '@/lib/menu-master/discontinued-lookup';
 import { normalizeViewMode } from './salesReportPageUtils';
 
 const DRAFT_KEY = 'report_draft_sales';
@@ -168,7 +170,11 @@ export default function Page() {
     [salesRows]
   );
 
-  const { discontinuedNameSet, menuMasterNameSet } = useMenuMasterNameSets();
+  const {
+    discontinuedNameSet,
+    menuMasterNameSet,
+    reload: reloadMenuMasterSets,
+  } = useMenuMasterNameSets();
   const { irregularNameSet, reload: reloadIrregular } = useIrregularMenuNames();
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const canEdit = roleReady && isAdmin;
@@ -205,6 +211,25 @@ export default function Page() {
       await deleteRefDiscontinuedByName(menuName);
       showToast(`"${menuName}" 단종 처리를 해제했습니다`, 'ok');
       reloadIrregular();
+    } catch (err) {
+      showToast('해제 실패: ' + err.message, 'error');
+    }
+  }
+
+  // 메뉴마스터에서 잘못 단종 처리(status:'discontinued')된 항목을 순위표에서 바로
+  // active로 되돌린다. 판매량 화면 표시명이 판매 분류 그룹명(예: "고구마")일 수 있어
+  // 최신 menu_master를 다시 읽어 findDiscontinuedMenuMasterIds로 실제 행을 찾는다.
+  async function handleUndiscontinue(menuName) {
+    try {
+      const latestMenuMaster = await getAllMenuMaster();
+      const ids = findDiscontinuedMenuMasterIds(latestMenuMaster, menuName);
+      if (!ids.length) {
+        showToast(`"${menuName}"에 해당하는 메뉴마스터 항목을 찾지 못했습니다`, 'warn');
+        return;
+      }
+      await setMenuMasterStatusMany(ids, 'active');
+      showToast(`"${menuName}" 단종 상태를 해제했습니다`, 'ok');
+      reloadMenuMasterSets();
     } catch (err) {
       showToast('해제 실패: ' + err.message, 'error');
     }
@@ -315,6 +340,7 @@ export default function Page() {
           canEdit={canEdit}
           onMarkIrregular={handleMarkIrregular}
           onUnmarkIrregular={handleUnmarkIrregular}
+          onUndiscontinue={handleUndiscontinue}
         />
       }
     />

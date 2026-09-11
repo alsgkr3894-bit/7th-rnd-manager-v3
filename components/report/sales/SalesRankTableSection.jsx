@@ -16,6 +16,7 @@ export function SalesRankTableSection({
   canEdit = false,
   onMarkIrregular,
   onUnmarkIrregular,
+  onUndiscontinue,
 }) {
   if (groupRanking.length === 0) {
     return (
@@ -64,6 +65,7 @@ export function SalesRankTableSection({
           canEdit={canEdit}
           onMarkIrregular={onMarkIrregular}
           onUnmarkIrregular={onUnmarkIrregular}
+          onUndiscontinue={onUndiscontinue}
         />
       </div>
     );

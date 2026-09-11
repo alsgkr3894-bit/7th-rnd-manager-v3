@@ -16,7 +16,7 @@ const EMPTY = { discontinuedNameSet: new Set(), menuMasterNameSet: new Set() };
  * 실패해도 화면이 깨지면 안 되므로 실패 시 빈 Set들로 조용히 폴백한다.
  */
 export function useMenuMasterNameSets() {
-  const { data } = useDBLoad(
+  const { data, reload } = useDBLoad(
     () =>
       initDB()
         .then(getAllMenuMaster)
@@ -26,5 +26,5 @@ export function useMenuMasterNameSets() {
         })),
     { initialData: EMPTY, onError: () => {} }
   );
-  return data || EMPTY;
+  return { ...(data || EMPTY), reload };
 }
