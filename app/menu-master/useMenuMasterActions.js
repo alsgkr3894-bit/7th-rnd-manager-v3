@@ -12,6 +12,9 @@ import {
 import { resetAllMenuPrices } from '@/lib/cost/menu-price';
 import { seedMenuMaster } from '@/lib/menu-master/seed';
 import { buildToppingImportPlan } from '@/lib/menu-master/topping-import';
+import { buildToppingRecipePrefillPlan } from '@/lib/menu-master/topping-recipe-prefill';
+import { loadLatestUnitPriceMap } from '@/lib/menu-master/recipe-summary';
+import { loadMenuRecipeMaps, upsertMenuRecipeForMenu } from '@/lib/menu-recipes';
 import { getAllToppings } from '@/lib/nutrition/values/topping';
 
 export function useMenuMasterActions({
@@ -109,9 +112,11 @@ export function useMenuMasterActions({
 
   /**
    * 영양 토핑 마스터(nutrition_topping_master)에 등록된 토핑을 메뉴마스터
-   * 추가토핑 메뉴로 일괄 등록한다. 판매가는 비워둔 채 등록만 하고(등록 후
-   * 메뉴마스터에서 직접 입력), 이미 등록된 이름은 건너뛴다(멱등 — 몇 번
-   * 실행해도 중복 등록되지 않는다).
+   * 추가토핑 메뉴로 일괄 등록한다. 이미 등록된 이름은 건너뛰고(멱등 — 몇 번
+   * 실행해도 중복 등록되지 않는다), 새로 등록되는 메뉴든 기존 메뉴든 아직
+   * 식자재가 연결 안 된 것은 토핑마스터의 productCode로 함께 이어준다
+   * (buildToppingRecipePrefillPlan — 사용자가 이미 입력한 구성품은 절대
+   * 덮어쓰지 않는다). 판매가·사용량(수량)은 여전히 사용자가 직접 입력한다.
    */
   async function handleImportToppings() {
     if (!requireEdit()) return;
@@ -119,16 +124,36 @@ export function useMenuMasterActions({
     try {
       const [toppings, existingMenus] = await Promise.all([getAllToppings(), getAllMenuMaster()]);
       const plan = buildToppingImportPlan(toppings, existingMenus);
-      if (plan.length === 0) {
-        showToast('새로 가져올 토핑이 없습니다(이미 모두 등록됨)', 'ok');
-        return;
-      }
       for (const draft of plan) {
         await upsertMenuMaster(draft);
       }
+
+      const menusForPrefill = plan.length > 0 ? await getAllMenuMaster() : existingMenus;
+      const [recipeMaps, unitPriceMap] = await Promise.all([
+        loadMenuRecipeMaps(),
+        loadLatestUnitPriceMap(),
+      ]);
+      const recipePlan = buildToppingRecipePrefillPlan(
+        toppings,
+        menusForPrefill,
+        recipeMaps.topping,
+        unitPriceMap
+      );
+      for (const draft of recipePlan) {
+        await upsertMenuRecipeForMenu(draft);
+      }
+
+      if (plan.length === 0 && recipePlan.length === 0) {
+        showToast('새로 가져올 토핑이 없습니다(이미 모두 등록·연결됨)', 'ok');
+        return;
+      }
+
       await syncMirror();
       reload();
-      showToast(`추가토핑 ${plan.length}개 등록됨 — 판매가·사용량을 입력해 주세요`, 'ok');
+      const parts = [];
+      if (plan.length > 0) parts.push(`메뉴 ${plan.length}개 등록`);
+      if (recipePlan.length > 0) parts.push(`식자재 ${recipePlan.length}건 연결`);
+      showToast(`${parts.join(' · ')} — 판매가·사용량을 확인해 주세요`, 'ok');
     } catch (err) {
       showToast('가져오기 실패: ' + err.message, 'error');
     } finally {
