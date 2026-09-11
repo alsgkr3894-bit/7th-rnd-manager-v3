@@ -6,6 +6,7 @@ import {
   COST_COMMON_EDGES_ROUTE,
   COST_COMMON_GROUPS_ROUTE,
   COST_MARGIN_ROUTE,
+  COST_TOPPING_ROUTE,
   MENU_MASTER_ROUTE,
 } from '@/lib/cost/routes';
 
@@ -36,6 +37,12 @@ const GROUPS = [
         icon: 'box',
         title: '엣지 원가 관리',
         sub: '엣지·도우 항목별 원가',
+      },
+      {
+        href: COST_TOPPING_ROUTE,
+        icon: 'box',
+        title: '추가토핑 원가',
+        sub: '토핑별 사용량·판매가·원가율',
       },
     ],
   },
