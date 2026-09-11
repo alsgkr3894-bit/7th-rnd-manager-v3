@@ -7,6 +7,7 @@ export function SalesRankTable({
   compareLabel = '전월',
   canEdit = false,
   onMarkIrregular,
+  onUnmarkIrregular,
 }) {
   return (
     <table className="paper-table">
@@ -29,6 +30,7 @@ export function SalesRankTable({
             opts={opts}
             canEdit={canEdit}
             onMarkIrregular={onMarkIrregular}
+            onUnmarkIrregular={onUnmarkIrregular}
           />
         ))}
       </tbody>

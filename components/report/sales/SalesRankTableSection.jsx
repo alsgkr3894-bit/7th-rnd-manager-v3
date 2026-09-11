@@ -15,6 +15,7 @@ export function SalesRankTableSection({
   compareLabel = '전월',
   canEdit = false,
   onMarkIrregular,
+  onUnmarkIrregular,
 }) {
   if (groupRanking.length === 0) {
     return (
@@ -62,6 +63,7 @@ export function SalesRankTableSection({
           compareLabel={compareLabel}
           canEdit={canEdit}
           onMarkIrregular={onMarkIrregular}
+          onUnmarkIrregular={onUnmarkIrregular}
         />
       </div>
     );

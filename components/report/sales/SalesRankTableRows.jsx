@@ -47,15 +47,29 @@ export function SalesRankDeltaCell({ delta }) {
   );
 }
 
-export function SalesRankItemRows({ item, index, opts, canEdit = false, onMarkIrregular }) {
+export function SalesRankItemRows({
+  item,
+  index,
+  opts,
+  canEdit = false,
+  onMarkIrregular,
+  onUnmarkIrregular,
+}) {
   const canMark = typeof onMarkIrregular === 'function';
+  const canUnmark = canEdit && typeof onUnmarkIrregular === 'function';
   return (
     <Fragment>
       <tr>
         <td className="num">{index + 1}</td>
         <td style={{ fontWeight: 600 }}>
           {asDisplayText(item.name, '—')}
-          {item.irregular ? <IrregularMenuBadge /> : item.discontinued && <DiscontinuedBadge />}
+          {item.irregular ? (
+            <IrregularMenuBadge
+              onUnmark={canUnmark ? () => onUnmarkIrregular(item.name) : undefined}
+            />
+          ) : (
+            item.discontinued && <DiscontinuedBadge />
+          )}
           {item.unregistered && canEdit && canMark && (
             <button
               type="button"
@@ -73,7 +87,7 @@ export function SalesRankItemRows({ item, index, opts, canEdit = false, onMarkIr
                 color: 'var(--text-3)',
               }}
             >
-              단종 처리
+              단종
             </button>
           )}
         </td>

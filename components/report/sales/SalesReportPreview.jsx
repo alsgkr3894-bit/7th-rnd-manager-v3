@@ -29,6 +29,7 @@ export default function SalesReportPreview({
   excludedList,
   canEdit = false,
   onMarkIrregular,
+  onUnmarkIrregular,
 }) {
   const safeOpts = opts && typeof opts === 'object' && !Array.isArray(opts) ? opts : {};
   const safeCatShares = asObjectArray(catShares);
@@ -91,6 +92,7 @@ export default function SalesReportPreview({
           compareLabel={compareLabel}
           canEdit={canEdit}
           onMarkIrregular={onMarkIrregular}
+          onUnmarkIrregular={onUnmarkIrregular}
         />
       )}
 

@@ -28,7 +28,7 @@ import { useMenuMasterNameSets } from '@/hooks/useMenuMasterNameSets';
 import { useIrregularMenuNames } from '@/hooks/useIrregularMenuNames';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { showToast } from '@/components/Toast';
-import { addRefDiscontinued } from '@/lib/sales';
+import { addRefDiscontinued, deleteRefDiscontinuedByName } from '@/lib/sales';
 import { normalizeViewMode } from './salesReportPageUtils';
 
 const DRAFT_KEY = 'report_draft_sales';
@@ -199,6 +199,17 @@ export default function Page() {
     }
   }
 
+  // 잘못 단종 처리한 비정규메뉴를 되돌린다 — 다시 "단종" 버튼이 뜨는 상태로 돌아간다.
+  async function handleUnmarkIrregular(menuName) {
+    try {
+      await deleteRefDiscontinuedByName(menuName);
+      showToast(`"${menuName}" 단종 처리를 해제했습니다`, 'ok');
+      reloadIrregular();
+    } catch (err) {
+      showToast('해제 실패: ' + err.message, 'error');
+    }
+  }
+
   const safeOpts = opts && typeof opts === 'object' && !Array.isArray(opts) ? opts : {};
   const safeCatShares = asObjectArray(catShares);
   const safeGroupRanking = asObjectArray(groupRanking);
@@ -303,6 +314,7 @@ export default function Page() {
           excludedList={safeExcludedList}
           canEdit={canEdit}
           onMarkIrregular={handleMarkIrregular}
+          onUnmarkIrregular={handleUnmarkIrregular}
         />
       }
     />

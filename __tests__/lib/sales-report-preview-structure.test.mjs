@@ -73,13 +73,18 @@ describe('sales report preview structure', () => {
     expect(moverSource).toContain('단종·비정규 메뉴는 상승·하락·베스트·워스트 집계에서 제외됩니다');
     expect(rankTableRowsSource).toContain("from '@/components/sales/DiscontinuedBadge'");
     expect(rankTableRowsSource).toContain("from '@/components/sales/IrregularMenuBadge'");
-    // menu_master에 없는 판매명(unregistered)은 관리자에게 "단종 처리" 버튼을 보여주고,
-    // 이미 단종 처리된 비정규메뉴는 DiscontinuedBadge 대신 IrregularMenuBadge로 구분한다.
+    // menu_master에 없는 판매명(unregistered)은 관리자에게 "단종" 버튼을 보여주고,
+    // 이미 단종 처리된 비정규메뉴는 DiscontinuedBadge 대신 IrregularMenuBadge로 구분하며
+    // 배지 자체에서 onUnmark로 되돌릴 수 있다.
+    expect(rankTableRowsSource).toContain('item.irregular ? (');
+    expect(rankTableRowsSource).toContain('item.discontinued && <DiscontinuedBadge />');
     expect(rankTableRowsSource).toContain(
-      'item.irregular ? <IrregularMenuBadge /> : item.discontinued && <DiscontinuedBadge />'
+      'onUnmark={canUnmark ? () => onUnmarkIrregular(item.name) : undefined}'
     );
     expect(rankTableRowsSource).toContain('item.unregistered && canEdit && canMark');
     expect(rankTableRowsSource).toContain('onMarkIrregular(item.name)');
+    // 버튼 라벨은 "단종"(짧은 명칭) — "단종 처리"라는 옛 라벨 문구는 더 이상 없어야 한다.
+    expect(rankTableRowsSource).not.toContain('단종 처리');
     expect(rankSource).toContain('export function SalesRankTableSection');
     expect(rankSource).toContain("from './SalesCategoryBarRows'");
     expect(rankSource).toContain("from './SalesRankTable'");
@@ -143,22 +148,36 @@ describe('sales report preview structure', () => {
     expect(pageSource).toContain("from '@/hooks/useCurrentRole'");
     expect(pageSource).toContain('async function handleMarkIrregular(menuName)');
     expect(pageSource).toContain('addRefDiscontinued({ menuName })');
+    expect(pageSource).toContain('async function handleUnmarkIrregular(menuName)');
+    expect(pageSource).toContain('deleteRefDiscontinuedByName(menuName)');
     expect(pageSource).toContain('canEdit={canEdit}');
     expect(pageSource).toContain('onMarkIrregular={handleMarkIrregular}');
+    expect(pageSource).toContain('onUnmarkIrregular={handleUnmarkIrregular}');
 
     expect(previewSource).toContain('canEdit={canEdit}');
     expect(previewSource).toContain('onMarkIrregular={onMarkIrregular}');
+    expect(previewSource).toContain('onUnmarkIrregular={onUnmarkIrregular}');
     expect(rankSectionSource).toContain('canEdit={canEdit}');
     expect(rankSectionSource).toContain('onMarkIrregular={onMarkIrregular}');
+    expect(rankSectionSource).toContain('onUnmarkIrregular={onUnmarkIrregular}');
     expect(rankTableSource).toContain('canEdit={canEdit}');
     expect(rankTableSource).toContain('onMarkIrregular={onMarkIrregular}');
+    expect(rankTableSource).toContain('onUnmarkIrregular={onUnmarkIrregular}');
     expect(rankTableRowsSource).toContain('canEdit = false');
     expect(rankTableRowsSource).toContain('onMarkIrregular');
+    expect(rankTableRowsSource).toContain('onUnmarkIrregular');
 
     expect(irregularHookSource).toContain('export function useIrregularMenuNames');
     expect(irregularHookSource).toContain('EMPTY_SET');
     expect(nameSetsHookSource).toContain('export function useMenuMasterNameSets');
     expect(nameSetsHookSource).toContain('buildDiscontinuedMenuNameSet');
     expect(nameSetsHookSource).toContain('buildMenuMasterNameSet');
+  });
+
+  test('IrregularMenuBadge는 onUnmark가 있을 때만 해제 버튼을 보여준다', () => {
+    const badgeSource = readFileSync(resolve('components/sales/IrregularMenuBadge.jsx'), 'utf8');
+    expect(badgeSource).toContain('export function IrregularMenuBadge({ onUnmark })');
+    expect(badgeSource).toContain("const canUnmark = typeof onUnmark === 'function'");
+    expect(badgeSource).toContain('{canUnmark && (');
   });
 });
