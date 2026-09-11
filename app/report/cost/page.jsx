@@ -26,8 +26,8 @@ import { useSettingValue } from '@/hooks/useSettingValue';
 import { buildStrictPostingMessage, collectStrictPostingIssues } from '@/lib/report/strict-posting';
 
 // ── 상수 ──────────────────────────────────────────────────────
-// 카테고리 순서: 원가마진표와 동일
-const CAT_KEYS = ['피자', '1인피자', '세트박스', '사이드', '엣지'];
+// 카테고리 순서: 원가마진표(app/cost/margin/marginTableSections.js CATEGORY_SECTIONS)와 동일
+const CAT_KEYS = ['피자', '1인피자', '세트박스', '사이드', '엣지', '추가토핑'];
 
 const CAT_META = {
   피자: { id: 'pizza', color: '#3182F6', label: '피자' },
@@ -35,6 +35,7 @@ const CAT_META = {
   세트박스: { id: 'set', color: '#EC4899', label: '세트박스' },
   사이드: { id: 'side', color: '#F59E0B', label: '사이드' },
   엣지: { id: 'edge', color: '#8B5CF6', label: '엣지 & 도우' },
+  추가토핑: { id: 'topping', color: '#14B8A6', label: '추가토핑' },
 };
 
 const DRAFT_KEY = 'report_draft_cost';
@@ -82,6 +83,7 @@ function CostReportBuilderContent({ onReportModeChange }) {
     side: true,
     set: true,
     edge: true,
+    topping: true,
   });
   const updCat = makeFieldUpdater(setCats);
   const {

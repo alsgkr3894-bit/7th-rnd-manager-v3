@@ -46,7 +46,7 @@ export default function Page() {
         breadcrumb={['원가계산', '종합전메뉴원가']}
         title="종합전메뉴원가"
         masterSource
-        sub="모든 메뉴(피자/1인피자/사이드/세트박스)의 원가를 한 화면에서 비교"
+        sub="모든 메뉴(피자/1인피자/사이드/세트박스/추가토핑)의 원가를 한 화면에서 비교"
         actions={
           hasAnyData && (
             <button className="btn" onClick={() => exportAllSummaryCsv(filtered)}>

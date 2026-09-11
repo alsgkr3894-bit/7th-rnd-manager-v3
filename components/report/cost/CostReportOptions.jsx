@@ -26,6 +26,11 @@ export function CostReportOptions({
           value={cats.edge}
           onChange={value => onCatChange('edge', value)}
         />
+        <Check
+          label="추가토핑"
+          value={cats.topping}
+          onChange={value => onCatChange('topping', value)}
+        />
       </OptGroup>
 
       <OptGroup label="피자 옵션">

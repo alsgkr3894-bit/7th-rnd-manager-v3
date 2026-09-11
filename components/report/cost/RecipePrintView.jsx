@@ -6,6 +6,7 @@ const CATEGORY_COLORS = {
   '1인피자': '#10B981',
   세트박스: '#EC4899',
   사이드: '#F59E0B',
+  추가토핑: '#14B8A6',
 };
 
 function formatQty(value) {
