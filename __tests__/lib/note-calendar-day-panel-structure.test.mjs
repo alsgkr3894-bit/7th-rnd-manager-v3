@@ -21,6 +21,8 @@ describe('note calendar day panel structure', () => {
     expect(panelSource).not.toContain('SCHEDULE_COLORS');
     expect(panelSource).not.toContain('WORK_LOG_TYPES');
     expect(panelSource).not.toContain('sampleNamesText');
+    // 자동 일지가 기본 펼침 상태로 보여야 변동 기록이 비어 보이지 않는다.
+    expect(panelSource).toContain('useState(true)');
   });
 
   test('day panel section responsibilities remain separated', () => {

@@ -217,6 +217,11 @@ const ALLOWED_SILENT_CATCHES = [
     reason: 'price upload work log is best-effort after upload succeeds',
   },
   {
+    file: 'lib/price/use-price-upload.js',
+    snippets: ['logPriceChangeToWorkLog()'],
+    reason: 'price/cost change summary work log is best-effort after upload succeeds',
+  },
+  {
     file: 'lib/print/window-print.js',
     snippets: ['팝업이 차단되었습니다'],
     reason: 'toast module load failure should not throw from print fallback',
@@ -250,6 +255,11 @@ const ALLOWED_SILENT_CATCHES = [
     file: 'lib/shipment/use-shipment.js',
     snippets: ['setManagedProducts(products)'],
     reason: 'managed product listener refresh is optional',
+  },
+  {
+    file: 'lib/shipment/use-shipment.js',
+    snippets: ['출고량 업로드:'],
+    reason: 'shipment upload work log is best-effort after upload succeeds',
   },
 ];
 

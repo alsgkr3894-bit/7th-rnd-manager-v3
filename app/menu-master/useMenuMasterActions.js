@@ -1,6 +1,8 @@
 'use client';
 import { showToast } from '@/components/Toast';
+import { logWork } from '@/lib/work-log';
 import { logMenuMasterSave, logMenuMasterDelete } from '@/lib/change-log';
+import { summarizeMenuMasterChange } from '@/lib/menu-master/change-summary';
 import {
   deleteMenuMaster,
   getAllMenuMaster,
@@ -47,6 +49,7 @@ export function useMenuMasterActions({
     if (!requireEdit()) return;
     try {
       const result = await deleteMenuMaster(row.id);
+      logWork('DELETE', `메뉴 삭제: ${row.menuName || row.menuCode || '메뉴'}`, { ref: row.id });
       if (result?.cascadeErrors?.length) {
         showToast(
           `"${row.menuName}" 삭제됨 · 연관 영양 데이터 정리 ${result.cascadeErrors.length}건 확인 필요`,
@@ -172,6 +175,12 @@ export function useMenuMasterActions({
         setEditRow(null);
         setAddOpen(false);
       }
+      const summary = summarizeMenuMasterChange(
+        result.previous,
+        { menuName: data.menuName, price: data.price },
+        result.mode
+      );
+      logWork('MENU_MASTER', summary, { ref: result.id });
       if (!toast) return result;
       if (result.mode === 'update' && !data.id) {
         showToast(`기존 항목(${data.menuCode}) 갱신됨 — 새 항목으로 추가되지 않았습니다`, 'warn');

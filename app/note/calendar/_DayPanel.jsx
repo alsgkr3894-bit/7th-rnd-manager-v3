@@ -36,7 +36,7 @@ export function DayPanel({
   const editSchedule = typeof onEditSchedule === 'function' ? onEditSchedule : noop;
   const addNote = typeof onAddNote === 'function' ? onAddNote : noop;
   const push = typeof router?.push === 'function' ? router.push.bind(router) : noop;
-  const [logsOpen, setLogsOpen] = useState(false);
+  const [logsOpen, setLogsOpen] = useState(true);
   const openNote = typeof onOpenNote === 'function' ? onOpenNote : id => push(`/note/${id}`);
   const openSample =
     typeof onOpenSample === 'function' ? onOpenSample : id => push(`/note/sample/${id}`);

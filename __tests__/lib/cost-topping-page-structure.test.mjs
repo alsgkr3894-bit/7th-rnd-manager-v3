@@ -27,8 +27,16 @@ describe('추가토핑 원가 페이지 배선', () => {
   test('페이지가 menu_master 저장 뒤 cost_selling_prices 미러(pushMasterToPrices)를 호출한다', () => {
     // menu_master → menu_recipes 순서를 지켜야 코드 변경 캐스케이드가 레시피를 덮어쓰지 않는다
     // (item 1의 데이터 손실 버그와 같은 종류의 함정).
-    expect(pageSource).toContain('upsertMenuMaster(buildToppingMenuPatch(row, changes))');
+    expect(pageSource).toContain('buildToppingMenuPatch(row, changes)');
+    expect(pageSource).toContain('await upsertMenuMaster(patch)');
     expect(pageSource).toContain('pushMasterToPrices({ skipAdminGuard: true })');
+  });
+
+  test('메뉴 저장·삭제가 자동 일지(work_log)에도 기록된다', () => {
+    expect(pageSource).toContain("import { logWork } from '@/lib/work-log'");
+    expect(pageSource).toContain('summarizeMenuMasterChange');
+    expect(pageSource).toContain("logWork('MENU_MASTER'");
+    expect(pageSource).toContain("logWork('DELETE'");
   });
 
   test('레시피(식자재·수량) 저장은 menu_recipes만 건드리고 판매가 미러를 다시 부르지 않는다', () => {

@@ -19,6 +19,8 @@ import { buildToppingRecipePrefillPlan } from '@/lib/menu-master/topping-recipe-
 import { generateMenuCode } from '@/lib/cost/menu-price';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { logMenuMasterSave, logMenuMasterDelete } from '@/lib/change-log';
+import { logWork } from '@/lib/work-log';
+import { summarizeMenuMasterChange } from '@/lib/menu-master/change-summary';
 import {
   buildToppingCostRows,
   buildToppingMenuPatch,
@@ -63,7 +65,7 @@ export default function Page() {
         { category: MENU_CATEGORY.EXTRA_TOPPING, size: '단일', menuName: '새 토핑' },
         existingMenus
       );
-      await upsertMenuMaster({
+      const result = await upsertMenuMaster({
         menuCode,
         menuName: '새 토핑',
         category: MENU_CATEGORY.EXTRA_TOPPING,
@@ -74,6 +76,7 @@ export default function Page() {
       });
       await pushMasterToPrices({ skipAdminGuard: true });
       logMenuMasterSave('새 토핑', true);
+      logWork('MENU_MASTER', '등록: 새 토핑', { ref: result.id });
       reload();
       showToast('토핑 1건 추가됨 — 이름·식자재·수량·판매가를 입력해 주세요', 'ok');
     } catch (err) {
@@ -109,9 +112,16 @@ export default function Page() {
     async (row, changes) => {
       if (!requireEdit()) return;
       try {
-        await upsertMenuMaster(buildToppingMenuPatch(row, changes));
+        const patch = buildToppingMenuPatch(row, changes);
+        const result = await upsertMenuMaster(patch);
         await pushMasterToPrices({ skipAdminGuard: true });
         logMenuMasterSave(changes.menuName ?? row.menuName, false);
+        const summary = summarizeMenuMasterChange(
+          result.previous,
+          { menuName: patch.menuName, price: patch.price },
+          result.mode
+        );
+        logWork('MENU_MASTER', summary, { ref: result.id });
         reload();
       } catch (err) {
         showToast('저장 실패: ' + err.message, 'error');
@@ -140,6 +150,7 @@ export default function Page() {
         await deleteMenuMaster(row.id);
         await pushMasterToPrices({ skipAdminGuard: true });
         logMenuMasterDelete(row.menuName);
+        logWork('DELETE', `메뉴 삭제: ${row.menuName}`, { ref: row.id });
         reload();
         showToast('삭제됨', 'ok');
       } catch (err) {

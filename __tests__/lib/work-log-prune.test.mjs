@@ -50,6 +50,14 @@ describe('work-log 타입 라벨 무결성', () => {
     }
   });
 
+  test('3차 확장 타입(메뉴마스터·단가변동)이 정의됨', () => {
+    for (const t of ['MENU_MASTER', 'PRICE_CHANGE']) {
+      expect(WORK_LOG_TYPES[t]).toBeDefined();
+      expect(typeof WORK_LOG_TYPES[t].label).toBe('string');
+      expect(WORK_LOG_TYPES[t].label.length).toBeGreaterThan(0);
+    }
+  });
+
   test('모든 타입은 label·color·icon을 가진다', () => {
     for (const [, meta] of Object.entries(WORK_LOG_TYPES)) {
       expect(meta.label && meta.color && meta.icon).toBeTruthy();
