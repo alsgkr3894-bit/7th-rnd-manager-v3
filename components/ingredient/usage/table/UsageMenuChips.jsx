@@ -5,6 +5,15 @@ const FALLBACK_MENU_COLOR = {
   color: 'var(--text-3)',
 };
 
+// 직접(레시피 직접 구성품) 외 출처만 작은 태그로 보여준다 — 라벨은
+// lib/ingredient/usage-summary.js normalizeSource와 같은 표기를 쓴다.
+const SOURCE_LABELS = { 묶음관리: '공통묶음', 엣지관리: '엣지', 파생메뉴: '파생메뉴' };
+
+function indirectSourceLabels(sources) {
+  if (!Array.isArray(sources)) return [];
+  return [...new Set(sources.filter(s => s !== '직접').map(s => SOURCE_LABELS[s] || s))];
+}
+
 export function UsageMenuChips({
   row,
   open,
@@ -57,6 +66,7 @@ export function UsageMenuChips({
 
 function UsageMenuChip({ menu, onExcludeMenu }) {
   const color = CAT_COLORS[menu.cat] || FALLBACK_MENU_COLOR;
+  const indirectLabels = indirectSourceLabels(menu.sources);
 
   return (
     <span
@@ -74,6 +84,21 @@ function UsageMenuChip({ menu, onExcludeMenu }) {
       }}
     >
       {menu.menuName}
+      {indirectLabels.length > 0 && (
+        <span
+          title={`${indirectLabels.join(', ')}에서 연결됨`}
+          style={{
+            fontSize: 10,
+            fontWeight: 500,
+            opacity: 0.75,
+            padding: '0 4px',
+            borderRadius: 99,
+            background: 'rgba(0,0,0,0.08)',
+          }}
+        >
+          {indirectLabels.join('·')}
+        </span>
+      )}
       <button
         onClick={() => onExcludeMenu(menu.menuName)}
         title="이 메뉴를 사용현황 목록에서 제외"

@@ -5,6 +5,8 @@ import {
   countIngredientsWithQualifyingUsage,
   getUsageMenuCounts,
   getUsageRowsMenuCounts,
+  hasQualifyingUsage,
+  usageEntryCategory,
 } from '@/lib/cost/usage-counts';
 
 function normStr(s) {
@@ -45,13 +47,19 @@ export function useIngredientUsageRows({
         if (!menuMap.size) return null;
 
         const menus = [...menuMap.entries()]
-          .filter(
-            ([menuName, cat]) =>
+          .filter(([menuName, v]) => {
+            const cat = usageEntryCategory(v);
+            return (
               !excludedMenus.has(menuName) &&
               (usageCat === '전체' || cat === usageCat) &&
               (!q || menuName.toLowerCase().includes(q))
-          )
-          .map(([menuName, cat]) => ({ menuName, cat }))
+            );
+          })
+          .map(([menuName, v]) => ({
+            menuName,
+            cat: usageEntryCategory(v),
+            sources: v?.sources instanceof Set ? [...v.sources] : ['직접'],
+          }))
           .sort((a, b) => a.menuName.localeCompare(b.menuName, 'ko'));
         if (!menus.length) return null;
 
@@ -77,16 +85,20 @@ export function useIngredientUsageRows({
       .filter(m => m && !m.discontinued)
       .map(m => {
         const code = m.productCode || '';
-        const name = m.ingredientName || '';
+        const name = m.ingredientName || m.productName || m.displayName || '';
         const fromCode = (code ? byCode.get(code) : null) || new Map();
-        const fromName = byName.get(normStr(name)) || new Map();
-        if (fromCode.size > 0 || fromName.size > 0) return null;
-        if (q && !name.toLowerCase().includes(q) && !code.toLowerCase().includes(q)) return null;
+        const fromName = byName.get(normStr(m.ingredientName || '')) || new Map();
+        const menuMap = new Map([...fromName, ...fromCode]);
+        // usageRows/배지와 같은 기준(usageCat·excludedMenus)으로 판정해야 "이 필터에서
+        // 미사용"이 정확하다 — 원본 usage map에 항목이 있어도 이 필터에서 걸러지면 미사용.
+        if (hasQualifyingUsage(menuMap, { usageCat, excludedMenus })) return null;
+        const label = name || code;
+        if (q && !label.toLowerCase().includes(q) && !code.toLowerCase().includes(q)) return null;
         const scope = code ? scopeLabelFor(typeMap, code) : m.scope || SCOPE_UNASSIGNED;
-        return { code, name, scope, count: 0, menus: [] };
+        return { code, name: label, scope, count: 0, menus: [] };
       })
       .filter(Boolean);
-  }, [allMeta, menuSearch, typeMap, usageMap]);
+  }, [allMeta, menuSearch, typeMap, usageMap, usageCat, excludedMenus]);
 
   const sorted = useMemo(() => {
     const arr = [...(showUnused ? unusedRows : usageRows)];

@@ -1,4 +1,8 @@
-import { getUsageMenuCounts, getUsageRowsMenuCounts } from '@/lib/cost/usage-counts';
+import {
+  getUsageMenuCounts,
+  getUsageRowsMenuCounts,
+  usageEntryCategory,
+} from '@/lib/cost/usage-counts';
 
 export const TIER_LABELS = ['많이 쓰는 재료 (8개 이상)', '보통 (4–7개)', '적게 쓰는 재료 (1–3개)'];
 export const USAGE_CATS = ['전체', '피자', '사이드', '1인피자'];
@@ -36,8 +40,12 @@ export function buildIngredientUsageRows({ rows, usageMap, usageCat }) {
       if (!menuMap.size) return { code, name, count: 0, menus: [] };
 
       const menus = [...menuMap.entries()]
-        .filter(([, cat]) => usageCat === '전체' || cat === usageCat)
-        .map(([menuName, cat]) => ({ menuName, cat }))
+        .filter(([, v]) => usageCat === '전체' || usageEntryCategory(v) === usageCat)
+        .map(([menuName, v]) => ({
+          menuName,
+          cat: usageEntryCategory(v),
+          sources: v?.sources instanceof Set ? [...v.sources] : ['직접'],
+        }))
         .sort((a, b) => a.menuName.localeCompare(b.menuName, 'ko'));
       const menuCounts = getUsageMenuCounts(menus);
 

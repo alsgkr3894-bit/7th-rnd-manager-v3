@@ -124,6 +124,31 @@ describe('제품별 사용현황 메뉴수 집계', () => {
     ).toBe(1);
   });
 
+  test('usageMap 값이 {category,sources} 객체여도(공통묶음/엣지 포함) 문자열 값과 동일하게 집계한다', () => {
+    const allMeta = [
+      { productCode: 'A', ingredientName: '엣지전용재료' },
+      { productCode: 'B', ingredientName: '미사용재료' },
+    ];
+    const usageMap = {
+      byCode: new Map([
+        ['A', new Map([['슈퍼콤비네이션', { category: '피자', sources: new Set(['엣지관리']) }]])],
+      ]),
+      byName: new Map(),
+    };
+    expect(
+      countIngredientsWithQualifyingUsage(allMeta, usageMap, {
+        usageCat: '전체',
+        excludedMenus: new Set(),
+      })
+    ).toBe(1);
+    expect(
+      countIngredientsWithQualifyingUsage(allMeta, usageMap, {
+        usageCat: '사이드',
+        excludedMenus: new Set(),
+      })
+    ).toBe(0);
+  });
+
   test('제품별 사용현황 PDF 제목과 요약에 다운로드 날짜와 피자/사이드 수를 넣는다', () => {
     const previousWindow = global.window;
     const previousAlert = global.alert;

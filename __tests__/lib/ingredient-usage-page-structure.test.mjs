@@ -80,6 +80,10 @@ describe('ingredient usage page structure', () => {
     expect(tableRowSource).toContain('TIER_LABEL');
     expect(menuChipsSource).toContain('CAT_COLORS');
     expect(menuChipsSource).toContain('onExcludeMenu(menu.menuName)');
+    // 공통묶음·엣지로만 연결된 메뉴도 사용 중으로 집계되므로(커밋 4391bc10 규칙 되돌림)
+    // 직접 레시피가 아닌 출처는 작은 태그로 구분해 보여준다.
+    expect(menuChipsSource).toContain('indirectSourceLabels');
+    expect(menuChipsSource).toContain('공통묶음');
     expect(emptyStateSource).toContain('조건에 맞는 미사용 식자재가 없습니다.');
 
     expect(displayUtilsSource).toContain('export const USAGE_CATS');
