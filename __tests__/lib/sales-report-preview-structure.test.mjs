@@ -68,6 +68,11 @@ describe('sales report preview structure', () => {
     expect(previewSource).not.toContain("safeScope === 'pizza' ? '피자' : '사이드'");
     expect(moverSource).toContain('피자 {compareLabel} 대비 상승 / 하락 TOP 5');
     expect(moverSource).toContain('periodCompareLabel');
+    // 단종 메뉴는 상승/하락/베스트/워스트 집계에서 제외되고, 그 사실을 안내 문구로 알린다.
+    expect(moverSource).toContain('eligible = all.filter(item => !item.discontinued)');
+    expect(moverSource).toContain('단종 메뉴는 상승·하락·베스트·워스트 집계에서 제외됩니다');
+    expect(rankTableRowsSource).toContain("from '@/components/sales/DiscontinuedBadge'");
+    expect(rankTableRowsSource).toContain('{item.discontinued && <DiscontinuedBadge />}');
     expect(rankSource).toContain('export function SalesRankTableSection');
     expect(rankSource).toContain("from './SalesCategoryBarRows'");
     expect(rankSource).toContain("from './SalesRankTable'");

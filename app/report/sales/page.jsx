@@ -24,6 +24,7 @@ import SalesReportPreview from '@/components/report/sales/SalesReportPreview';
 import { exportSalesReportWorkbook } from '@/lib/report/sales-export';
 import { useSalesReportData } from './useSalesReportData';
 import { useSalesReportComputed } from './useSalesReportComputed';
+import { useDiscontinuedMenuNames } from '@/hooks/useDiscontinuedMenuNames';
 import { normalizeViewMode } from './salesReportPageUtils';
 
 const DRAFT_KEY = 'report_draft_sales';
@@ -163,6 +164,8 @@ export default function Page() {
     [salesRows]
   );
 
+  const discontinuedNameSet = useDiscontinuedMenuNames();
+
   const { catShares, groupRanking, kpi, compareData } = useSalesReportComputed({
     normRows,
     safeViewMode,
@@ -172,6 +175,7 @@ export default function Page() {
     safeCmpYear,
     safeCmpMonth: cmpMonthOrQuarter,
     safeScope,
+    discontinuedNameSet,
   });
 
   const safeOpts = opts && typeof opts === 'object' && !Array.isArray(opts) ? opts : {};

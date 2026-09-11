@@ -1,5 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
 import { buildSalesStats } from '../../lib/report/build-sales-report.js';
+import { buildDiscontinuedMenuNameSet } from '../../lib/menu-master/discontinued-lookup.js';
 
 function row({ year, month, category = '피자', groupName = 'A', quantity, revenue = 0 }) {
   return {
@@ -34,6 +35,33 @@ describe('buildSalesStats', () => {
     expect(kpi.current).toBe(10);
     expect(kpi.previous).toBe(4);
     expect(groupRanking[0]).toMatchObject({ name: 'A', quantity: 10, prevQty: 4 });
+  });
+
+  test('discontinuedNameSet이 없으면 discontinued가 전부 false다(하위 호환)', () => {
+    const rows = [row({ year: 2026, month: 5, groupName: 'A', quantity: 10 })];
+    const { groupRanking } = buildSalesStats(rows, { year: 2026, month: 5, scope: 'all' });
+    expect(groupRanking[0].discontinued).toBe(false);
+  });
+
+  test('discontinuedNameSet에 있는 메뉴명은 discontinued:true로 표시된다', () => {
+    const rows = [
+      row({ year: 2026, month: 5, groupName: 'A', quantity: 10 }),
+      row({ year: 2026, month: 5, groupName: 'B', quantity: 5 }),
+    ];
+    const discontinuedNameSet = buildDiscontinuedMenuNameSet([
+      { menuName: 'A', status: 'discontinued' },
+      { menuName: 'B', status: 'active' },
+    ]);
+    const { groupRanking } = buildSalesStats(rows, {
+      year: 2026,
+      month: 5,
+      scope: 'all',
+      discontinuedNameSet,
+    });
+
+    const byName = Object.fromEntries(groupRanking.map(r => [r.name, r.discontinued]));
+    expect(byName.A).toBe(true);
+    expect(byName.B).toBe(false);
   });
 
   test('periodMode=quarter는 분기 3개월을 통합 집계하고 전분기와 비교한다', () => {

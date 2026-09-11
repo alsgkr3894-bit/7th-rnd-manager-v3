@@ -4,6 +4,7 @@ import { formatNumber } from '@/lib/format';
 import { safeQuantity } from '@/lib/report/period';
 import { safeRevenue } from '@/lib/sales/revenue';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { DiscontinuedBadge } from '@/components/sales/DiscontinuedBadge';
 
 export function SalesVariantRows({ item, opts }) {
   if (!opts.variant) return null;
@@ -50,7 +51,10 @@ export function SalesRankItemRows({ item, index, opts }) {
     <Fragment>
       <tr>
         <td className="num">{index + 1}</td>
-        <td style={{ fontWeight: 600 }}>{asDisplayText(item.name, '—')}</td>
+        <td style={{ fontWeight: 600 }}>
+          {asDisplayText(item.name, '—')}
+          {item.discontinued && <DiscontinuedBadge />}
+        </td>
         <td className="num right">{formatNumber(safeQuantity(item.quantity))}</td>
         {opts.revenue && <td className="num right">{formatNumber(safeRevenue(item.revenue))}</td>}
         {opts.prevComp && (
