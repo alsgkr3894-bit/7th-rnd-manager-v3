@@ -238,6 +238,34 @@ export default function Page() {
   const safeOpts = opts && typeof opts === 'object' && !Array.isArray(opts) ? opts : {};
   const safeCatShares = asObjectArray(catShares);
   const safeGroupRanking = asObjectArray(groupRanking);
+
+  // 순위표에 잘못 붙은 메뉴마스터 "단종" 배지를 한 번에 되돌린다 — 항목이 많을 때
+  // 하나씩 해제 버튼을 누르지 않아도 되게 한다. 비정규메뉴(irregular)는 대상이 아니다.
+  async function handleUndiscontinueAll() {
+    try {
+      const names = [
+        ...new Set(
+          safeGroupRanking.filter(item => item.discontinued && !item.irregular).map(i => i.name)
+        ),
+      ];
+      if (!names.length) return;
+      const latestMenuMaster = await getAllMenuMaster();
+      const idSet = new Set();
+      for (const name of names) {
+        for (const id of findDiscontinuedMenuMasterIds(latestMenuMaster, name)) idSet.add(id);
+      }
+      if (!idSet.size) {
+        showToast('해당하는 메뉴마스터 항목을 찾지 못했습니다', 'warn');
+        return;
+      }
+      const { updated } = await setMenuMasterStatusMany([...idSet], 'active');
+      showToast(`${updated}개 항목의 단종 상태를 해제했습니다`, 'ok');
+      reloadMenuMasterSets();
+    } catch (err) {
+      showToast('처리 실패: ' + err.message, 'error');
+    }
+  }
+
   const safeCompareData =
     compareData && typeof compareData === 'object' && !Array.isArray(compareData)
       ? compareData
@@ -341,6 +369,7 @@ export default function Page() {
           onMarkIrregular={handleMarkIrregular}
           onUnmarkIrregular={handleUnmarkIrregular}
           onUndiscontinue={handleUndiscontinue}
+          onUndiscontinueAll={handleUndiscontinueAll}
         />
       }
     />

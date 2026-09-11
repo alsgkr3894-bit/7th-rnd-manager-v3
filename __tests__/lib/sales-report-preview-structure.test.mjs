@@ -199,4 +199,31 @@ describe('sales report preview structure', () => {
     expect(badgeSource).toContain("const canUnmark = typeof onUnmark === 'function'");
     expect(badgeSource).toContain('{canUnmark && (');
   });
+
+  test('단종 배지가 여러 개일 때 한 번에 해제하는 SalesDiscontinuedBulkFix가 배선돼 있다', () => {
+    const pageSource = readFileSync(resolve('app/report/sales/page.jsx'), 'utf8');
+    const previewSource = readFileSync(
+      resolve('components/report/sales/SalesReportPreview.jsx'),
+      'utf8'
+    );
+    const bulkFixSource = readFileSync(
+      resolve('components/report/sales/SalesDiscontinuedBulkFix.jsx'),
+      'utf8'
+    );
+
+    expect(pageSource).toContain('async function handleUndiscontinueAll()');
+    expect(pageSource).toContain('item.discontinued && !item.irregular');
+    expect(pageSource).toContain("setMenuMasterStatusMany([...idSet], 'active')");
+    expect(pageSource).toContain('onUndiscontinueAll={handleUndiscontinueAll}');
+
+    expect(previewSource).toContain("from './SalesDiscontinuedBulkFix'");
+    expect(previewSource).toContain('<SalesDiscontinuedBulkFix');
+    expect(previewSource).toContain('onUndiscontinueAll={onUndiscontinueAll}');
+    // irregular(비정규메뉴)는 별도 흐름이므로 일괄 해제 대상 집계에서 제외한다.
+    expect(previewSource).toContain('item.discontinued && !item.irregular');
+
+    expect(bulkFixSource).toContain('export function SalesDiscontinuedBulkFix');
+    expect(bulkFixSource).toContain('if (!canEdit || !count');
+    expect(bulkFixSource).toContain('onClick={onUndiscontinueAll}');
+  });
 });

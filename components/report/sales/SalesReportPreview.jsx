@@ -7,6 +7,7 @@ import { SalesCompareTableSection } from './SalesCompareTableSection';
 import { SalesExcludedListSection } from './SalesExcludedListSection';
 import { SalesPizzaMoverSection } from './SalesPizzaMoverSection';
 import { SalesRankTableSection } from './SalesRankTableSection';
+import { SalesDiscontinuedBulkFix } from './SalesDiscontinuedBulkFix';
 
 function scopeLabel(scope) {
   return scope === 'all' ? '전체 메뉴' : asDisplayText(scope, '전체 메뉴');
@@ -31,10 +32,16 @@ export default function SalesReportPreview({
   onMarkIrregular,
   onUnmarkIrregular,
   onUndiscontinue,
+  onUndiscontinueAll,
 }) {
   const safeOpts = opts && typeof opts === 'object' && !Array.isArray(opts) ? opts : {};
   const safeCatShares = asObjectArray(catShares);
   const safeGroupRanking = asObjectArray(groupRanking);
+  // 비정규메뉴(irregular)는 별도의 배지·해제 흐름이 있으므로 여기 집계에서는 제외 —
+  // "메뉴마스터 status=discontinued"로 표시된 항목만 일괄 해제 대상이다.
+  const discontinuedRegisteredCount = safeGroupRanking.filter(
+    item => item.discontinued && !item.irregular
+  ).length;
   const safeExcludedList = Array.isArray(excludedList) ? excludedList : [];
   const compareLabel = periodCompareLabel(periodMode);
   const unitLabel = periodMode === 'quarter' ? '분기' : periodMode === 'year' ? '년도' : '월';
@@ -80,6 +87,14 @@ export default function SalesReportPreview({
           catShares={safeCatShares}
           groupRanking={safeGroupRanking}
           periodMode={periodMode}
+        />
+      )}
+
+      {safeOpts.rankTable && viewMode === 'rank' && (
+        <SalesDiscontinuedBulkFix
+          count={discontinuedRegisteredCount}
+          canEdit={canEdit}
+          onUndiscontinueAll={onUndiscontinueAll}
         />
       )}
 
