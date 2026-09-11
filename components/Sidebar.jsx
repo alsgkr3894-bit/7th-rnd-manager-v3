@@ -7,7 +7,7 @@ import { initDB } from '@/lib/db';
 import { getPriceFiles } from '@/lib/price';
 import { getJSONLS, setJSONLS } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
-import { normalizeSidebarOpenIds } from '@/lib/ui/sidebar-state';
+import { findActiveNavGroupId, normalizeSidebarOpenIds } from '@/lib/ui/sidebar-state';
 import { PARENT_COMPANY } from '@/lib/companies';
 
 /**
@@ -49,16 +49,13 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, ca
     return pathname === item.href;
   };
 
-  // pathname에만 의존 — useCallback으로 안정화해 Escape 리스너 effect의 매 렌더 재등록 방지
-  const isGroupActive = useCallback(
-    group => {
-      if (group.href) return pathname === group.href || pathname.startsWith(group.href + '/');
-      return group.children?.some(
-        c => c.href && (pathname === c.href || pathname.startsWith(c.href + '/'))
-      );
-    },
-    [pathname]
+  // pathname에 대해 "가장 잘 맞는" 그룹 하나만 활성으로 삼는다 — prefix 매칭만 쓰면
+  // "/note" 같은 짧은 자식 href가 "/note/journal"(다른 그룹) 같은 경로까지 삼켜버린다.
+  const activeGroupId = useMemo(
+    () => findActiveNavGroupId(visibleSections, pathname),
+    [visibleSections, pathname]
   );
+  const isGroupActive = useCallback(group => group.id === activeGroupId, [activeGroupId]);
 
   const [openIds, setOpenIds] = useState({});
 
@@ -74,21 +71,12 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, ca
   // 아코디언 방식 — 한 번에 하나의 그룹만 열리므로 active 그룹만 남기고 나머지는 접는다.
   useEffect(() => {
     setOpenIds(o => {
-      let activeId = null;
-      for (const section of visibleSections) {
-        const found = section.groups.find(isGroupActive);
-        if (found) {
-          activeId = found.id;
-          break;
-        }
-      }
-      if (!activeId) return o;
-      const alreadySoleOpen = o[activeId] && Object.values(o).filter(Boolean).length === 1;
+      if (!activeGroupId) return o;
+      const alreadySoleOpen = o[activeGroupId] && Object.values(o).filter(Boolean).length === 1;
       if (alreadySoleOpen) return o;
-      return { [activeId]: true };
+      return { [activeGroupId]: true };
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, visibleSections, isGroupActive]);
+  }, [activeGroupId]);
 
   // 활성 항목이 보이는 영역 밖이면 스크롤로 노출 (active 표시는 CSS .active 배경·좌측바가 담당)
   useEffect(() => {

@@ -74,8 +74,10 @@ const ALLOWED_DISABLES = [
   {
     file: 'components/Sidebar.jsx',
     rule: 'react-hooks/exhaustive-deps',
-    count: 2,
-    reason: 'sidebar storage restore and active-group sync intentionally use narrow triggers',
+    count: 1,
+    reason:
+      'sidebar storage restore intentionally runs once on mount; active-group sync now depends ' +
+      'cleanly on activeGroupId (findActiveNavGroupId) and no longer needs a disable',
   },
   {
     file: 'components/home/ActionCenterWidget.jsx',

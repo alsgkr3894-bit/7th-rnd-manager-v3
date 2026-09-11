@@ -1,7 +1,7 @@
 import { describe, expect, test } from '@jest/globals';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { normalizeSidebarOpenIds } from '../../lib/ui/sidebar-state.js';
+import { findActiveNavGroupId, normalizeSidebarOpenIds } from '../../lib/ui/sidebar-state.js';
 import {
   MOBILE_TAB_DEFS,
   NAV_HOME,
@@ -76,6 +76,32 @@ describe('sidebar navigation order', () => {
       '/rnd/corporate-card',
       '/rnd/login-info',
     ]);
+  });
+});
+
+describe('findActiveNavGroupId', () => {
+  // 회귀: "/note"(메뉴개발노트의 자식) prefix가 "/note/journal","/note/market"(RND 업무 소속)까지
+  // 삼켜서, 연구일지·시장조사 클릭 시 "메뉴개발노트" 그룹이 열리던 버그.
+  test('RND 업무 하위 경로는 메뉴개발노트가 아니라 RND 업무를 활성으로 고른다', () => {
+    expect(findActiveNavGroupId(NAV_SECTIONS, '/note/journal')).toBe('rnd');
+    expect(findActiveNavGroupId(NAV_SECTIONS, '/note/market')).toBe('rnd');
+    expect(findActiveNavGroupId(NAV_SECTIONS, '/rnd/corporate-card')).toBe('rnd');
+  });
+
+  test('메뉴개발노트 자신의 경로는 여전히 메뉴개발노트를 고른다', () => {
+    expect(findActiveNavGroupId(NAV_SECTIONS, '/note')).toBe('note');
+    expect(findActiveNavGroupId(NAV_SECTIONS, '/note/calendar')).toBe('note');
+    // 노트 상세(/note/123)는 "/note"의 prefix 매칭으로만 걸린다 — RND 자식 경로와 겹치지 않음.
+    expect(findActiveNavGroupId(NAV_SECTIONS, '/note/123')).toBe('note');
+  });
+
+  test('다른 그룹 경로와 일치하지 않으면 null을 반환한다', () => {
+    expect(findActiveNavGroupId(NAV_SECTIONS, '/')).toBeNull();
+    expect(findActiveNavGroupId(NAV_SECTIONS, '/does-not-exist')).toBeNull();
+  });
+
+  test('원가마진표처럼 자식 href의 정확 일치도 올바른 그룹을 고른다', () => {
+    expect(findActiveNavGroupId(NAV_SECTIONS, COST_MARGIN_ROUTE)).toBe('cost');
   });
 });
 
