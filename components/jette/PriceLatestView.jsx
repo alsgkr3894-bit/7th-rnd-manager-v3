@@ -7,6 +7,8 @@ import { PriceLatestKpi } from './PriceLatestKpi';
 import { useTableSearchSort } from '@/hooks/useTableSearchSort';
 import { PriceLatestEmptyState } from './price-latest/PriceLatestEmptyState';
 import { PriceLatestListCard } from './price-latest/PriceLatestListCard';
+import { PriceLatestChangeCard } from './price-latest/PriceLatestChangeCard';
+import { usePriceLatestChangeSummary } from './price-latest/usePriceLatestChangeSummary';
 import {
   buildLatestPriceCsvRows,
   filterAndSortLatestRows,
@@ -34,7 +36,6 @@ export function PriceLatestView({
   );
 
   const latestFile = files.find(f => f.id === latestFileId);
-
   useEffect(() => {
     setTypeFilter('all');
     setTaxFilter('all');
@@ -62,6 +63,7 @@ export function PriceLatestView({
       alive = false;
     };
   }, [latestFileId]);
+  const { prevFile, priceChangeSummary } = usePriceLatestChangeSummary(files, latestFileId, rows);
 
   const typeCounts = useMemo(
     () => getLatestTypeCounts(rows, productTypeLookup),
@@ -107,8 +109,10 @@ export function PriceLatestView({
         files={files}
         latestFileId={latestFileId}
         onLatestChange={onLatestChange}
+        prevFile={prevFile}
+        priceChangeSummary={priceChangeSummary}
       />
-
+      <PriceLatestChangeCard prevFile={prevFile} summary={priceChangeSummary} />
       <PriceLatestListCard
         rows={rows}
         filtered={filtered}
