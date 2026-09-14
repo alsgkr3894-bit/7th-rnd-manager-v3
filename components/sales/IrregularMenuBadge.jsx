@@ -10,7 +10,7 @@ export function IrregularMenuBadge({ onUnmark }) {
   const canUnmark = typeof onUnmark === 'function';
   return (
     <span
-      className="chip"
+      className="chip irregular-menu-badge"
       style={{
         marginLeft: 6,
         fontSize: 10,

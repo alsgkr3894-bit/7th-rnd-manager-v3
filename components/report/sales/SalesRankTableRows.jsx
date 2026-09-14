@@ -79,7 +79,7 @@ export function SalesRankItemRows({
           {item.unregistered && canEdit && canMark && (
             <button
               type="button"
-              className="chip"
+              className="chip mark-irregular-btn no-print"
               onClick={() => onMarkIrregular(item.name)}
               title="메뉴마스터에 없는 판매명입니다 — 아직 단종 등록 전이에요. 눌러서 단종(비정규메뉴)으로 등록"
               style={{

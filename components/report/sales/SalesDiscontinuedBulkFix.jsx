@@ -9,7 +9,7 @@ export function SalesDiscontinuedBulkFix({ count, canEdit, onUndiscontinueAll })
   if (!canEdit || !count || typeof onUndiscontinueAll !== 'function') return null;
   return (
     <div
-      className="card"
+      className="card no-print"
       style={{
         display: 'flex',
         alignItems: 'center',

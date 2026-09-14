@@ -9,7 +9,7 @@ export function DiscontinuedBadge({ onUnmark }) {
   const canUnmark = typeof onUnmark === 'function';
   return (
     <span
-      className="chip"
+      className="chip discontinued-badge"
       style={{
         marginLeft: 6,
         fontSize: 10,
