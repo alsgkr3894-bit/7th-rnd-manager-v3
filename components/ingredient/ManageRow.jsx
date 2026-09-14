@@ -47,8 +47,8 @@ export const ManageRow = memo(function ManageRow({
     unitPrice,
     pieceWeightGrams,
     perGramPrice,
-    originCount,
-    allergenCount,
+    originText,
+    allergenText,
     deletable,
   } = model;
   const handleEdit = typeof onEdit === 'function' ? onEdit : undefined;
@@ -106,8 +106,8 @@ export const ManageRow = memo(function ManageRow({
         name={name}
         productName={productName}
         discontinued={r.discontinued}
-        originCount={originCount}
-        allergenCount={allergenCount}
+        originText={originText}
+        allergenText={allergenText}
         replacedByProductCode={r.replacedByProductCode}
         replacedFromProductCode={r.replacedFromProductCode}
         codeNameMap={codeNameMap}

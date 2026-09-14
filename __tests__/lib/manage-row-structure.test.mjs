@@ -70,6 +70,12 @@ describe('ingredient manage row structure', () => {
     expect(utilsSource).toContain('getPrimaryIngredientPhoto(r)');
     expect(utilsSource).toContain('countIngredientPhotos(r)');
     expect(utilsSource).toContain('deletable: r.isManual && r.id != null && !productCode');
+    // 목록 행에 원산지·알레르기를 개수 대신 실제 이름으로 보여준다 — 인쇄용 포매터를 재사용.
+    expect(utilsSource).toContain(
+      "import { allergensLabel, originLabel } from '@/lib/ingredient/manage-print/formatters'"
+    );
+    expect(utilsSource).toContain('originText: originText(r)');
+    expect(utilsSource).toContain('allergenText: allergenText(r)');
   });
 
   test('extracted cells keep table interactions and display details separated', () => {
@@ -83,6 +89,9 @@ describe('ingredient manage row structure', () => {
     expect(nameSource).toContain('export function ManageRowNameCell');
     expect(nameSource).toContain('IngredientStatusBadge');
     expect(nameSource).toContain('알레르기');
+    expect(nameSource).toContain('ingredient-row-dash');
+    expect(nameSource).toContain('originText');
+    expect(nameSource).toContain('allergenText');
     expect(scopeSource).toContain('SCOPE_STYLES');
     expect(priceSource).toContain('formatNumber(priceWithTax)');
     expect(categorySource).toContain('getCategoryStyle(category)');

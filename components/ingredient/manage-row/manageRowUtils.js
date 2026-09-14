@@ -1,8 +1,27 @@
 import { formatNumber } from '@/lib/format';
 import { countIngredientPhotos, getPrimaryIngredientPhoto, sortHashTags } from '@/lib/ingredient';
 import { getIngredientPackagePrice } from '@/lib/ingredient/price-status';
+import { allergensLabel, originLabel } from '@/lib/ingredient/manage-print/formatters';
 import { roundUnitPrice } from '@/lib/cost/unit-policy';
 import { asDisplayText, asStringArray } from '@/lib/ui/prop-guards';
+
+/**
+ * 목록 행에 표시할 원산지·알레르기 요약 텍스트.
+ * - "없음"/"비표기"로 명시된 경우는 그 문구를 그대로 보여준다.
+ * - 아무 정보도 없고 명시도 안 됐으면(입력 전) 빈 문자열 — 줄 자체를 숨긴다.
+ */
+function originText(r) {
+  if (r.originHidden) return '비표기';
+  if (r.originNone) return '없음';
+  const label = originLabel(r);
+  return label === '-' ? '' : label;
+}
+
+function allergenText(r) {
+  if (r.allergenNone) return '없음';
+  const label = allergensLabel(r);
+  return label === '-' ? '' : label;
+}
 
 export function buildManageRowModel(rawRow = {}) {
   const r = rawRow && typeof rawRow === 'object' ? rawRow : {};
@@ -47,8 +66,8 @@ export function buildManageRowModel(rawRow = {}) {
     unitPrice,
     pieceWeightGrams,
     perGramPrice,
-    originCount: Array.isArray(r.origin) ? r.origin.length : 0,
-    allergenCount: Array.isArray(r.allergens) ? r.allergens.length : 0,
+    originText: originText(r),
+    allergenText: allergenText(r),
     deletable: r.isManual && r.id != null && !productCode,
   };
 }

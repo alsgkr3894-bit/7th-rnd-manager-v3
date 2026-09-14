@@ -2,8 +2,8 @@ export function ManageRowNameCell({
   name,
   productName,
   discontinued,
-  originCount,
-  allergenCount,
+  originText,
+  allergenText,
   replacedByProductCode,
   replacedFromProductCode,
   codeNameMap,
@@ -32,9 +32,21 @@ export function ManageRowNameCell({
           title={`이전 제품: ${replacedFromName || '-'} (${replacedFromProductCode})`}
         />
       )}
-      {originCount > 0 && <IngredientStatusBadge label="원산지" tone="origin" />}
-      {allergenCount > 0 && (
-        <IngredientStatusBadge label={`알레르기 ${allergenCount}`} tone="allergen" />
+      {(originText || allergenText) && (
+        <div className="ingredient-row-dash">
+          {originText && (
+            <div className="ingredient-row-dash-item">
+              <span className="ingredient-row-dash-label">원산지</span>
+              <span className="ingredient-row-dash-value">{originText}</span>
+            </div>
+          )}
+          {allergenText && (
+            <div className="ingredient-row-dash-item">
+              <span className="ingredient-row-dash-label allergen">알레르기</span>
+              <span className="ingredient-row-dash-value">{allergenText}</span>
+            </div>
+          )}
+        </div>
       )}
     </td>
   );
