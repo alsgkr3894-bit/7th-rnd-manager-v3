@@ -33,6 +33,7 @@ import {
   buildMenuReadinessMap,
   buildNutritionLinkedMenuCodeSet,
 } from '@/lib/menu-master/readiness';
+import { loadMenuAllergenMap } from '@/lib/menu-master/allergen-summary';
 import { MenuDataQualityPanel } from '@/components/menu-master/MenuDataQualityPanel';
 import { MenuReadinessPanel } from '@/components/menu-master/MenuReadinessPanel';
 import { useMenuMasterActions } from './useMenuMasterActions';
@@ -54,6 +55,7 @@ const PIZZA_CATEGORIES = [
 const EMPTY_ROWS = [];
 const EMPTY_RECIPE_SUMMARY_MAP = new Map();
 const EMPTY_NUTRITION_LINKED_CODES = new Set();
+const EMPTY_MENU_ALLERGEN_MAP = new Map();
 
 /* ── 메인 페이지 ── */
 export default function Page() {
@@ -102,10 +104,17 @@ export default function Page() {
       } catch (err) {
         console.warn('[menu-master] 영양성분 연동 여부 계산 실패', err);
       }
+      let nextMenuAllergenMap = EMPTY_MENU_ALLERGEN_MAP;
+      try {
+        nextMenuAllergenMap = await loadMenuAllergenMap(nextRows);
+      } catch (err) {
+        console.warn('[menu-master] 메뉴별 알레르기 집계 실패', err);
+      }
       return {
         rows: nextRows,
         recipeSummaryMap: nextRecipeSummaryMap,
         nutritionLinkedCodes: nextNutritionLinkedCodes,
+        menuAllergenMap: nextMenuAllergenMap,
       };
     },
     { initialData: null, onError: err => console.error('[MenuMaster] load failed', err) }
@@ -113,6 +122,7 @@ export default function Page() {
   const rows = data?.rows ?? EMPTY_ROWS;
   const recipeSummaryMap = data?.recipeSummaryMap ?? EMPTY_RECIPE_SUMMARY_MAP;
   const nutritionLinkedCodes = data?.nutritionLinkedCodes ?? EMPTY_NUTRITION_LINKED_CODES;
+  const menuAllergenMap = data?.menuAllergenMap ?? EMPTY_MENU_ALLERGEN_MAP;
   useVisibilityRefresh(reload);
 
   const {
@@ -155,7 +165,7 @@ export default function Page() {
   });
 
   function handleExportCsv() {
-    exportMenuMasterCsv(filtered);
+    exportMenuMasterCsv(filtered, { menuAllergenMap, recipeSummaryMap });
     showToast(`CSV ${filtered.length}개 내보내기 완료`, 'ok');
   }
 
@@ -351,6 +361,7 @@ export default function Page() {
                 totalRows={rows}
                 recipeSummaryMap={recipeSummaryMap}
                 nutritionLinkedCodes={nutritionLinkedCodes}
+                menuAllergenMap={menuAllergenMap}
                 isViewer={isViewer}
                 onEdit={openEdit}
                 onDelete={openDeleteDialog}

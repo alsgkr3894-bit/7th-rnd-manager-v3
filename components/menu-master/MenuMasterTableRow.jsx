@@ -20,6 +20,7 @@ export function MenuMasterTableRow({
   onEdit,
   onDelete,
   nutritionLinkedCodes,
+  allergenLabel,
 }) {
   const subMeta = getMenuSubCategoryFromCode(row.menuCode);
   const subLabel = subMeta
@@ -140,6 +141,20 @@ export function MenuMasterTableRow({
       </td>
       <td>
         <MenuRecipeCostCell summary={recipeSummary} />
+      </td>
+      <td
+        style={{
+          fontSize: 11,
+          lineHeight: 1.4,
+          color:
+            allergenLabel && allergenLabel !== '—' && allergenLabel !== '레시피 없음'
+              ? 'var(--text-2)'
+              : 'var(--text-4)',
+          whiteSpace: 'normal',
+          wordBreak: 'keep-all',
+        }}
+      >
+        {allergenLabel}
       </td>
       <td>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>

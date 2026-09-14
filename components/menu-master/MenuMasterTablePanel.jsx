@@ -2,6 +2,7 @@
 
 import { Pagination } from '@/components/ui/Pagination';
 import { MenuMasterTableRow } from '@/components/menu-master/MenuMasterTableRow';
+import { menuAllergenLabel } from '@/lib/menu-master/allergen-summary';
 
 const PAGE_SIZE = 60;
 
@@ -11,6 +12,7 @@ export function MenuMasterTablePanel({
   totalRows,
   recipeSummaryMap,
   nutritionLinkedCodes,
+  menuAllergenMap,
   isViewer,
   onEdit,
   onDelete,
@@ -44,6 +46,7 @@ export function MenuMasterTablePanel({
                 <th style={{ width: 60 }}>사이즈</th>
                 <th style={{ width: 100, textAlign: 'right' }}>판매가</th>
                 <th style={{ width: 120 }}>레시피/원가</th>
+                <th style={{ width: 150 }}>알레르기</th>
                 <th style={{ width: 80 }}>상태</th>
                 <th style={{ width: 60 }}></th>
               </tr>
@@ -55,6 +58,11 @@ export function MenuMasterTablePanel({
                   row={row}
                   recipeSummary={recipeSummaryMap.get(row.menuCode)}
                   nutritionLinkedCodes={nutritionLinkedCodes}
+                  allergenLabel={menuAllergenLabel(
+                    row.menuCode,
+                    menuAllergenMap,
+                    recipeSummaryMap.get(row.menuCode)
+                  )}
                   isViewer={isViewer}
                   onEdit={onEdit}
                   onDelete={onDelete}

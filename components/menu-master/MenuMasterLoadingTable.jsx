@@ -15,6 +15,7 @@ export function MenuMasterLoadingTable() {
               <th style={{ width: 60 }}>사이즈</th>
               <th style={{ width: 100 }}>판매가</th>
               <th style={{ width: 120 }}>레시피/원가</th>
+              <th style={{ width: 150 }}>알레르기</th>
               <th style={{ width: 80 }}>상태</th>
               <th style={{ width: 60 }}></th>
             </tr>
@@ -42,6 +43,9 @@ export function MenuMasterLoadingTable() {
                 </td>
                 <td>
                   <Skeleton width={70} height={20} radius={6} />
+                </td>
+                <td>
+                  <Skeleton width="70%" height={13} />
                 </td>
                 <td>
                   <Skeleton width={44} height={20} radius={6} />
