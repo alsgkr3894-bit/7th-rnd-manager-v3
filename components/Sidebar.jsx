@@ -14,7 +14,14 @@ import { PARENT_COMPANY } from '@/lib/companies';
  * 사이드바 컴포넌트
  * 메뉴 데이터는 @/lib/menu.js에 분리 (이 컴포넌트는 렌더링만 담당)
  */
-export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, canEdit = false }) {
+export default function Sidebar({
+  onClose,
+  activeCompany,
+  unmatchedCount = 0,
+  canEdit = false,
+  collapsed = false,
+  onToggleCollapse,
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const sidebarRef = useRef(null);
@@ -155,7 +162,10 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, ca
     const handle = () => {
       // 자식 있는 상위 그룹은 펼치기/접기만 (자동 페이지 이동 X — 이동은 하위 항목 클릭으로)
       if (hasKids) {
-        toggle(item.id);
+        // 아이콘 레일(접힘) 상태에서는 자식이 안 보이므로, 그룹을 누르면 사이드바를
+        // 먼저 펼치고 그 그룹을 열어서 자식이 바로 보이게 한다.
+        if (collapsed) onToggleCollapse?.(false);
+        toggle(item.id, collapsed);
       } else if (item.href) {
         navigate(item.href);
       }
@@ -165,7 +175,12 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, ca
 
     return (
       <div key={item.id}>
-        <button className={'nav-item ' + (active ? 'active' : '')} onClick={handle}>
+        <button
+          className={'nav-item ' + (active ? 'active' : '')}
+          onClick={handle}
+          title={collapsed ? item.label : undefined}
+          aria-label={collapsed ? item.label : undefined}
+        >
           <IconComp className="ico" />
           <span>{item.label}</span>
           {itemBadge && <span className="badge">{itemBadge}</span>}
@@ -247,11 +262,27 @@ export default function Sidebar({ onClose, activeCompany, unmatchedCount = 0, ca
         </div>
       </a>
 
+      <button
+        type="button"
+        className="sidebar-collapse-btn"
+        onClick={() => onToggleCollapse?.(!collapsed)}
+        title={collapsed ? '사이드바 펼치기' : '사이드바 접기'}
+        aria-label={collapsed ? '사이드바 펼치기' : '사이드바 접기'}
+      >
+        {collapsed ? (
+          <Icon.chevRight style={{ width: 16, height: 16 }} />
+        ) : (
+          <Icon.chevLeft style={{ width: 16, height: 16 }} />
+        )}
+      </button>
+
       {/* 홈은 섹션 외 단일 항목 */}
       <nav aria-label="기본 내비게이션">
         <button
           className={'nav-item ' + (isActive(NAV_HOME) ? 'active' : '')}
           onClick={() => navigate(NAV_HOME.href)}
+          title={collapsed ? NAV_HOME.label : undefined}
+          aria-label={collapsed ? NAV_HOME.label : undefined}
         >
           <HomeIcon className="ico" />
           <span>{NAV_HOME.label}</span>

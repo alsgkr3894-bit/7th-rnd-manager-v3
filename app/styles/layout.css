@@ -4,6 +4,7 @@
   grid-template-columns: 260px 1fr;
   min-height: 100vh;
   min-width: 0;
+  transition: grid-template-columns 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .app > div {
   min-width: 0;
@@ -235,6 +236,62 @@
 .sidebar-footer b {
   color: var(--text-1);
   font-weight: 700;
+}
+
+/* ===== Sidebar collapse (desktop only — 모바일은 chrome.css의 슬라이드 오버레이 그대로 유지) ===== */
+.sidebar-collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0 0 8px auto;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+.sidebar-collapse-btn:hover {
+  background: var(--surface-2);
+  color: var(--text-1);
+  border-color: var(--border);
+}
+
+@media (min-width: 769px) {
+  .app.sidebar-collapsed {
+    grid-template-columns: 64px 1fr;
+  }
+  .app.sidebar-collapsed .sidebar {
+    padding: 16px 8px;
+    overflow-x: hidden;
+  }
+  .app.sidebar-collapsed .sidebar .brand {
+    justify-content: center;
+    padding: 4px 0 16px;
+  }
+  .app.sidebar-collapsed .sidebar-collapse-btn {
+    margin: 0 auto 8px;
+  }
+  .app.sidebar-collapsed .sidebar .brand-text,
+  .app.sidebar-collapsed .sidebar .section-label,
+  .app.sidebar-collapsed .sidebar .nav-item span,
+  .app.sidebar-collapsed .sidebar .nav-item .caret,
+  .app.sidebar-collapsed .sidebar .nav-item .badge,
+  .app.sidebar-collapsed .sidebar .nav-children,
+  .app.sidebar-collapsed .sidebar .sidebar-footer {
+    display: none;
+  }
+  .app.sidebar-collapsed .sidebar .nav-item {
+    justify-content: center;
+    gap: 0;
+    padding: 10px;
+  }
 }
 
 /* ===== Top bar ===== */

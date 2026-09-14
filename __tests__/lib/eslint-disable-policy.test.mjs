@@ -72,6 +72,12 @@ const ALLOWED_DISABLES = [
     reason: 'nutrition table text intentionally contains apostrophe-like punctuation',
   },
   {
+    file: 'components/AppShell.jsx',
+    rule: 'react-hooks/exhaustive-deps',
+    count: 1,
+    reason: 'sidebar collapsed-state storage restore intentionally runs once on mount',
+  },
+  {
     file: 'components/Sidebar.jsx',
     rule: 'react-hooks/exhaustive-deps',
     count: 1,

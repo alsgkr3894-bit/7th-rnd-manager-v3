@@ -14,6 +14,8 @@ const ShortcutsHelp = dynamic(
 import { ScrollToTop } from './ui/ScrollToTop';
 import { applyAllSettings } from '@/lib/settings';
 import { KEYS } from '@/lib/note/keys';
+import { tryLS, setLS } from '@/lib/note/storage';
+import { normalizeSidebarCollapsed } from '@/lib/ui/sidebar-state';
 import { ensureSession } from '@/lib/session';
 import { pruneOldWorkLogs } from '@/lib/work-log';
 import { hydratePlatformsFromDB } from '@/lib/cost/margin/platforms';
@@ -33,6 +35,7 @@ import { useCurrentRole } from '@/hooks/useCurrentRole';
 
 export default function AppShell({ children }) {
   const [mobileNav, setMobileNav] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const pathname = usePathname();
@@ -92,6 +95,17 @@ export default function AppShell({ children }) {
     setMobileNav(false);
   }, [pathname]);
 
+  // 마운트 후 localStorage 복원 (SSR 불일치 방지 — components/Sidebar.jsx의 openIds 복원과 같은 패턴)
+  useEffect(() => {
+    setSidebarCollapsed(normalizeSidebarCollapsed(tryLS(KEYS.SIDEBAR_COLLAPSED, '0')));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function toggleSidebarCollapsed(next) {
+    setSidebarCollapsed(next);
+    setLS(KEYS.SIDEBAR_COLLAPSED, next ? '1' : '0');
+  }
+
   useVisualEffects();
 
   const isTabActive = href => {
@@ -100,7 +114,12 @@ export default function AppShell({ children }) {
   };
 
   return (
-    <div className={'app ' + (mobileNav ? 'nav-open' : '')} suppressHydrationWarning>
+    <div
+      className={
+        'app ' + (mobileNav ? 'nav-open ' : '') + (sidebarCollapsed ? 'sidebar-collapsed' : '')
+      }
+      suppressHydrationWarning
+    >
       <a href="#main-content" className="skip-link">
         콘텐츠로 건너뛰기
       </a>
@@ -110,6 +129,8 @@ export default function AppShell({ children }) {
         activeCompany={activeCompany}
         unmatchedCount={visibleUnmatchedCount}
         canEdit={canEdit}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={toggleSidebarCollapsed}
       />
       {mobileNav && <div className="nav-scrim" onClick={() => setMobileNav(false)}></div>}
 

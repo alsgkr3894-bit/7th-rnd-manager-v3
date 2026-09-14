@@ -1,7 +1,11 @@
 import { describe, expect, test } from '@jest/globals';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { findActiveNavGroupId, normalizeSidebarOpenIds } from '../../lib/ui/sidebar-state.js';
+import {
+  findActiveNavGroupId,
+  normalizeSidebarCollapsed,
+  normalizeSidebarOpenIds,
+} from '../../lib/ui/sidebar-state.js';
 import {
   MOBILE_TAB_DEFS,
   NAV_HOME,
@@ -102,6 +106,16 @@ describe('findActiveNavGroupId', () => {
 
   test('원가마진표처럼 자식 href의 정확 일치도 올바른 그룹을 고른다', () => {
     expect(findActiveNavGroupId(NAV_SECTIONS, COST_MARGIN_ROUTE)).toBe('cost');
+  });
+});
+
+describe('normalizeSidebarCollapsed', () => {
+  test("'1'만 접힘(true)으로 취급한다", () => {
+    expect(normalizeSidebarCollapsed('1')).toBe(true);
+    expect(normalizeSidebarCollapsed('0')).toBe(false);
+    expect(normalizeSidebarCollapsed(null)).toBe(false);
+    expect(normalizeSidebarCollapsed(undefined)).toBe(false);
+    expect(normalizeSidebarCollapsed('true')).toBe(false);
   });
 });
 
