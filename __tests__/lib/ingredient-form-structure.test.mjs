@@ -35,6 +35,10 @@ const jetteLinkedSourcePanelSource = readFileSync(
   resolve('app/ingredient/manage/JetteLinkedSourcePanel.jsx'),
   'utf8'
 );
+const originAllergenSummaryPanelSource = readFileSync(
+  resolve('app/ingredient/manage/IngredientOriginAllergenSummaryPanel.jsx'),
+  'utf8'
+);
 const primitiveSource = readFileSync(
   resolve('app/ingredient/manage/IngredientFieldPrimitives.jsx'),
   'utf8'
@@ -65,8 +69,14 @@ describe('ingredient form structure', () => {
     expect(formSource).toContain("from './IngredientFormFields'");
     expect(formSource).toContain("from './JetteLinkedSourcePanel'");
     expect(formSource).toContain("from './JettePriceImportField'");
+    expect(formSource).toContain("from './IngredientOriginAllergenSummaryPanel'");
     expect(formSource).toContain('<JetteLinkedSourcePanel');
     expect(formSource).toContain('<JettePriceImportField');
+    expect(formSource).toContain('<IngredientOriginAllergenSummaryPanel form={form} />');
+    // 원산지·알레르기 요약 박스는 제때 연동 박스 바로 뒤(수정 모드에서만)에 온다.
+    expect(formSource.indexOf('<JetteLinkedSourcePanel')).toBeLessThan(
+      formSource.indexOf('<IngredientOriginAllergenSummaryPanel')
+    );
     expect(formSource).toContain('<IngredientNameField');
     expect(formSource).toContain('<BasicIngredientFields');
     expect(formSource).toContain('<IngredientCostFields');
@@ -129,6 +139,15 @@ describe('ingredient form structure', () => {
     expect(jetteLinkedSourcePanelSource).toContain('label="부가세포함단가"');
     expect(jetteLinkedSourcePanelSource).toContain('formatNumber');
     expect(jetteLinkedSourcePanelSource).toContain("from './IngredientFieldPrimitives'");
+    expect(originAllergenSummaryPanelSource).toContain(
+      'export function IngredientOriginAllergenSummaryPanel'
+    );
+    expect(originAllergenSummaryPanelSource).toContain('원산지 없음');
+    expect(originAllergenSummaryPanelSource).toContain('미표시대상');
+    expect(originAllergenSummaryPanelSource).toContain("from './IngredientFieldPrimitives'");
+    expect(originAllergenSummaryPanelSource).toContain(
+      "from '@/lib/ingredient/origin-allergen-text'"
+    );
     expect(radioOptionSource).toContain('export function IngredientRadioOption');
     expect(radioOptionSource).toContain('type="radio"');
     expect(radioOptionSource).toContain('accentColor');

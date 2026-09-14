@@ -10,6 +10,7 @@ import {
 } from './IngredientFormFields';
 import { IngredientUsageSection } from './IngredientUsageSection';
 import { useIngredientUsageSummary } from './useIngredientUsageSummary';
+import { IngredientOriginAllergenSummaryPanel } from './IngredientOriginAllergenSummaryPanel';
 import { JetteLinkedSourcePanel } from './JetteLinkedSourcePanel';
 import { JettePriceImportField } from './JettePriceImportField';
 import { useIngredientFormController } from './useIngredientFormController';
@@ -130,6 +131,7 @@ export function IngredientForm({
         {/* 스크롤 본문 */}
         <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '20px 24px' }}>
           {isJetteLinked && <JetteLinkedSourcePanel ingredient={initial} />}
+          {initial && <IngredientOriginAllergenSummaryPanel form={form} />}
 
           {isJetteLinked && (
             <div

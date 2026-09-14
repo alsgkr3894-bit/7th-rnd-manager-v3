@@ -70,9 +70,10 @@ describe('ingredient manage row structure', () => {
     expect(utilsSource).toContain('getPrimaryIngredientPhoto(r)');
     expect(utilsSource).toContain('countIngredientPhotos(r)');
     expect(utilsSource).toContain('deletable: r.isManual && r.id != null && !productCode');
-    // 목록 행에 원산지·알레르기를 개수 대신 실제 이름으로 보여준다 — 인쇄용 포매터를 재사용.
+    // 원산지·알레르기 요약은 수정 창 상단 박스로 옮겨갔지만(IngredientOriginAllergenSummaryPanel),
+    // 모델 필드 자체는 CSV 등 다른 소비처를 위해 남겨둔다 — 공용 순수 모듈에서 가져온다.
     expect(utilsSource).toContain(
-      "import { allergensLabel, originLabel } from '@/lib/ingredient/manage-print/formatters'"
+      "import { allergenText, originText } from '@/lib/ingredient/origin-allergen-text'"
     );
     expect(utilsSource).toContain('originText: originText(r)');
     expect(utilsSource).toContain('allergenText: allergenText(r)');
@@ -88,10 +89,10 @@ describe('ingredient manage row structure', () => {
     expect(photoSource).toContain('photoCount > 1');
     expect(nameSource).toContain('export function ManageRowNameCell');
     expect(nameSource).toContain('IngredientStatusBadge');
-    expect(nameSource).toContain('알레르기');
-    expect(nameSource).toContain('ingredient-row-dash');
-    expect(nameSource).toContain('originText');
-    expect(nameSource).toContain('allergenText');
+    // 원산지·알레르기 카드는 수정 창 상단 요약 박스로 옮겨갔다 — 목록 행에는 더 이상 없다.
+    expect(nameSource).not.toContain('ingredient-row-dash');
+    expect(nameSource).not.toContain('originText');
+    expect(nameSource).not.toContain('allergenText');
     expect(scopeSource).toContain('SCOPE_STYLES');
     expect(priceSource).toContain('formatNumber(priceWithTax)');
     expect(categorySource).toContain('getCategoryStyle(category)');
