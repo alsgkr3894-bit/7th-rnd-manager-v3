@@ -14,9 +14,10 @@ import { SupplierModal } from './suppliers/SupplierModal';
 import { SuppliersListPanel } from './suppliers/SuppliersListPanel';
 import { SuppliersToolbar } from './suppliers/SuppliersToolbar';
 import { filterSuppliers } from './suppliers/supplierViewUtils';
+import { buildSupplierIngredientMap } from '@/lib/cost/suppliers/link';
 
 // ── 공급업체 뷰 (식자재 단가 마스터 탭) ────────────────────────
-export function SuppliersView() {
+export function SuppliersView({ ingredientRows = [] }) {
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const canEdit = roleReady && isAdmin;
   const [search, setSearch] = useState('');
@@ -63,6 +64,10 @@ export function SuppliersView() {
   }
 
   const filtered = useMemo(() => filterSuppliers(suppliers, search), [suppliers, search]);
+  const linkedMap = useMemo(
+    () => buildSupplierIngredientMap(suppliers, ingredientRows),
+    [suppliers, ingredientRows]
+  );
 
   if (dbError)
     return (
@@ -94,6 +99,7 @@ export function SuppliersView() {
         filteredSuppliers={filtered}
         search={search}
         canEdit={canEdit}
+        linkedMap={linkedMap}
         onEdit={supplier => {
           if (canEdit) setModalTarget(supplier);
         }}

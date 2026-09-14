@@ -58,6 +58,7 @@ export default function Page() {
     newJetteRows,
     jetteRemovedRows,
     latestPriceRows,
+    supplierNames,
   } = useIngredientManageData();
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 200);
@@ -471,7 +472,7 @@ export default function Page() {
         />
       )}
 
-      {view === 'suppliers' && <SuppliersView />}
+      {view === 'suppliers' && <SuppliersView ingredientRows={rows} />}
 
       {view === 'report' && (
         <IngredientReportPanel
@@ -526,6 +527,7 @@ export default function Page() {
           originSuggestions={originSuggestions}
           existingProductCodes={rows.filter(r => r.productCode).map(r => r.productCode)}
           jettePriceRows={latestPriceRows}
+          supplierNames={supplierNames}
         />
       )}
     </main>

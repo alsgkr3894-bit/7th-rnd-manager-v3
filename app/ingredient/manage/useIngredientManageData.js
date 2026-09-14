@@ -5,6 +5,8 @@ import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { getPriceFiles, getPriceRowsByFileId } from '@/lib/price';
 import { getManagedProducts, seedManagedProductsIfEmpty } from '@/lib/shipment';
+import { getAllSuppliers } from '@/lib/cost/suppliers/store';
+import { supplierNameOptions } from '@/lib/cost/suppliers/link';
 import {
   buildMetaOnlyRow,
   getAllIngredients,
@@ -39,12 +41,17 @@ export function useIngredientManageData() {
       const prev = files[1] ?? null;
       const priceDate = latest?.updateDate || null;
 
-      const [allMeta, metaMap, managed, productCodeDupes] = await Promise.all([
+      const [allMeta, metaMap, managed, productCodeDupes, suppliers] = await Promise.all([
         getAllIngredients(),
         getIngredientMetaMap(),
         seedManagedProductsIfEmpty().then(() => getManagedProducts()),
         getIngredientProductCodeDuplicateDiagnostics(),
+        getAllSuppliers().catch(err => {
+          console.warn('[ingredient/manage] 공급업체 로드 실패', err);
+          return [];
+        }),
       ]);
+      const supplierNames = supplierNameOptions(suppliers);
 
       const typeMap = new Map(
         managed
@@ -62,6 +69,7 @@ export function useIngredientManageData() {
           newJetteRows: [],
           jetteRemovedRows: [],
           latestPriceRows: [],
+          supplierNames,
         };
       }
 
@@ -99,6 +107,7 @@ export function useIngredientManageData() {
         newJetteRows: allMerged.filter(row => !row.hasRecord),
         jetteRemovedRows,
         latestPriceRows: priceRows,
+        supplierNames,
       };
     },
     { initialData: null, onError: err => console.error('[ingredient/manage] 로드 실패', err) }
@@ -123,5 +132,6 @@ export function useIngredientManageData() {
     newJetteRows: data?.newJetteRows ?? [],
     jetteRemovedRows: data?.jetteRemovedRows ?? [],
     latestPriceRows: data?.latestPriceRows ?? [],
+    supplierNames: data?.supplierNames ?? [],
   };
 }

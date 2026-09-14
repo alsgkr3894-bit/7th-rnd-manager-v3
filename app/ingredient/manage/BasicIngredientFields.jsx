@@ -11,12 +11,14 @@ export function BasicIngredientFields({
   customCat,
   tagInput,
   datalistId,
+  supplierNames = [],
   onSet,
   onToggleCustomCat,
   onTagInputChange,
   onAddTag,
   onRemoveTag,
 }) {
+  const manufacturerDatalistId = `${datalistId}-manufacturer`;
   const tags = form.tags || [];
 
   return (
@@ -138,13 +140,19 @@ export function BasicIngredientFields({
         </div>
       </Field>
 
-      <Field label="제조사">
+      <Field label="제조사" hint="등록된 공급업체와 이름이 같으면 공급업체 탭에서 자동 연결됩니다">
         <input
           className="form-input"
+          list={manufacturerDatalistId}
           value={form.manufacturer}
           onChange={e => onSet('manufacturer', e.target.value)}
           placeholder="예) CJ제일제당, 매일유업"
         />
+        <datalist id={manufacturerDatalistId}>
+          {supplierNames.map(name => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
       </Field>
 
       <Field label="단종 처리" hint="단종 카테고리에만 표시되며, 일반 목록에서 제외됩니다">

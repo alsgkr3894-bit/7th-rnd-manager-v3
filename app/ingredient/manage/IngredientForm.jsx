@@ -24,6 +24,7 @@ export function IngredientForm({
   originSuggestions = { names: [], countries: [] },
   existingProductCodes = [],
   jettePriceRows = [],
+  supplierNames = [],
 }) {
   const ctrl = useIngredientFormController({
     initial,
@@ -175,6 +176,7 @@ export function IngredientForm({
               customCat={customCat}
               tagInput={tagInput}
               datalistId={datalistId}
+              supplierNames={supplierNames}
               onSet={set}
               onToggleCustomCat={() => {
                 setCustomCat(v => !v);
