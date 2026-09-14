@@ -94,7 +94,9 @@ export function useIngredientManageData() {
         jetteRemovedRows = [...prevCodeSet]
           .filter(c => c && !priceCodeSet.has(c))
           .map(c => metaMap.get(c))
-          .filter(meta => meta && !meta.discontinued)
+          // "단종 처리" 버튼은 excluded만 세우므로(excludeIngredientByCode), discontinued만
+          // 걸러내면 처리한 항목이 새로고침 때마다 다시 나타난다 — excluded도 함께 제외한다.
+          .filter(meta => meta && !meta.discontinued && !meta.excluded)
           .map(buildMetaOnlyRow);
       }
 

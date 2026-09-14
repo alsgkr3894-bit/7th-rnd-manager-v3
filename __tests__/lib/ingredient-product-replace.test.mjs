@@ -102,4 +102,46 @@ describe('replaceIngredientProductCode', () => {
     expect(b.replacedByProductCode).toBe('C');
     expect(c.replacedFromProductCode).toBe('B');
   });
+
+  test('대체 대상에 이미 있는 분류·알레르기 정보는 기존 항목이 덮어쓰지 않는다', async () => {
+    stores.cost_ingredients = [
+      {
+        id: 1,
+        productCode: 'OLD01',
+        ingredientName: '옛제품',
+        category: '토핑',
+        allergens: ['AL01'],
+        baseQuantity: 500,
+      },
+      {
+        id: 2,
+        productCode: 'NEW01',
+        ingredientName: '새제품',
+        category: '치즈',
+        allergens: ['AL05'],
+        baseQuantity: null,
+      },
+    ];
+
+    await replaceIngredientProductCode('OLD01', { productCode: 'NEW01', ingredientName: '새제품' });
+
+    const merged = stores.cost_ingredients.find(r => r.id === 2);
+    // 대체 대상(새제품)이 이미 가진 분류·알레르기는 옛제품 값으로 덮어써지지 않는다
+    expect(merged.category).toBe('치즈');
+    expect(merged.allergens).toEqual(['AL05']);
+    // 대체 대상에 없는 값(baseQuantity)만 기존 항목에서 이어받는다
+    expect(merged.baseQuantity).toBe(500);
+  });
+
+  test('대체 대상에 없는 값만 기존 항목에서 이어받는다', async () => {
+    stores.cost_ingredients = [
+      { id: 1, productCode: 'OLD01', ingredientName: '옛제품', origin: [{ country: '국내산' }] },
+      { id: 2, productCode: 'NEW01', ingredientName: '새제품' },
+    ];
+
+    await replaceIngredientProductCode('OLD01', { productCode: 'NEW01', ingredientName: '새제품' });
+
+    const merged = stores.cost_ingredients.find(r => r.id === 2);
+    expect(merged.origin).toEqual([{ country: '국내산' }]);
+  });
 });
