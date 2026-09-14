@@ -81,7 +81,7 @@ export function SalesRankItemRows({
               type="button"
               className="chip"
               onClick={() => onMarkIrregular(item.name)}
-              title="메뉴마스터에 없는 판매명입니다 — 눌러서 단종(비정규메뉴) 처리"
+              title="메뉴마스터에 없는 판매명입니다 — 아직 단종 등록 전이에요. 눌러서 단종(비정규메뉴)으로 등록"
               style={{
                 marginLeft: 6,
                 fontSize: 10,
@@ -93,7 +93,7 @@ export function SalesRankItemRows({
                 color: 'var(--text-3)',
               }}
             >
-              단종
+              + 단종
             </button>
           )}
         </td>

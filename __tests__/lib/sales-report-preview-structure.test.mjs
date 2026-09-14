@@ -83,7 +83,11 @@ describe('sales report preview structure', () => {
     );
     expect(rankTableRowsSource).toContain('item.unregistered && canEdit && canMark');
     expect(rankTableRowsSource).toContain('onMarkIrregular(item.name)');
-    // 버튼 라벨은 "단종"(짧은 명칭) — "단종 처리"라는 옛 라벨 문구는 더 이상 없어야 한다.
+    // 버튼 라벨은 "+ 단종" — 배지 문구("단종")와 똑같으면 "이미 단종 처리된 상태인데 ×가
+    // 없다"고 오해하기 쉬워, 액션 버튼임을 "+"로 구분한다. "단종 처리"라는 옛 라벨 문구는
+    // 더 이상 없어야 한다.
+    expect(rankTableRowsSource).toContain('+ 단종');
+    expect(rankTableRowsSource).toContain('아직 단종 등록 전');
     expect(rankTableRowsSource).not.toContain('단종 처리');
     expect(rankSource).toContain('export function SalesRankTableSection');
     expect(rankSource).toContain("from './SalesCategoryBarRows'");
