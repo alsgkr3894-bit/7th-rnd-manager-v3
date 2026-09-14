@@ -36,6 +36,18 @@ const importModalSource = readFileSync(
   resolve('components/nutrition/menu/toppings/ToppingImportModal.jsx'),
   'utf8'
 );
+const importInputsSource = readFileSync(
+  resolve('components/nutrition/menu/toppings/ToppingImportInputs.jsx'),
+  'utf8'
+);
+const importPreviewSource = readFileSync(
+  resolve('components/nutrition/menu/toppings/ToppingPreviewTable.jsx'),
+  'utf8'
+);
+const importUtilsSource = readFileSync(
+  resolve('components/nutrition/menu/toppings/toppingImportUtils.js'),
+  'utf8'
+);
 const utilsSource = readFileSync(
   resolve('components/nutrition/menu/toppings/toppingUtils.js'),
   'utf8'
@@ -72,13 +84,14 @@ describe('nutrition toppings tab structure', () => {
     expect(importModalSource).toContain('parseToppingExcel');
     expect(importModalSource).toContain('downloadToppingImportTemplate');
     expect(importModalSource).toContain('UploadDropzone');
-    expect(importModalSource).toContain('onPatchRow');
-    expect(importModalSource).toContain('onIngredientInput');
-    expect(importModalSource).toContain('ingredientAllergenText');
-    expect(importModalSource).toContain('searchIngredientOptions');
-    expect(importModalSource).toContain('onCompositionStart');
-    expect(importModalSource).toContain('role="listbox"');
-    expect(importModalSource).toContain('type="number"');
+    // 미리보기 표·입력 컨트롤·순수 헬퍼는 별도 파일로 분리됐다(모달은 조립만).
+    expect(importPreviewSource).toContain('onPatchRow');
+    expect(importPreviewSource).toContain('onIngredientInput');
+    expect(importUtilsSource).toContain('export function ingredientAllergenText');
+    expect(importUtilsSource).toContain('export function searchIngredientOptions');
+    expect(importInputsSource).toContain('onCompositionStart');
+    expect(importInputsSource).toContain('role="listbox"');
+    expect(importInputsSource).toContain('type="number"');
     expect(utilsSource).toContain('export function buildToppingSavePayload');
   });
 
@@ -161,5 +174,27 @@ describe('nutrition toppings tab structure', () => {
       basis: 'serving',
       weight: 30,
     });
+  });
+});
+
+// 추가토핑 가져오기 모달은 상수·식자재 매칭 헬퍼·입력 컨트롤·미리보기 표가 한 파일
+// (686줄)에 몰려 있었다. 역할별로 나누고 모달은 업로드/저장 흐름만 담당한다.
+describe('추가토핑 가져오기 모달 파일 분리', () => {
+  test('모달은 250줄을 넘지 않고 분리된 구현을 다시 품지 않는다', () => {
+    expect(importModalSource.split('\n').length).toBeLessThanOrEqual(250);
+    expect(importModalSource).not.toContain('function ToppingPreviewTable');
+    expect(importModalSource).not.toContain('function IngredientConnectInput');
+    expect(importModalSource).not.toContain('function buildIngredientOptions');
+  });
+
+  test('분리된 파일이 각자 한 책임을 갖고 200줄을 넘지 않는다', () => {
+    expect(importUtilsSource).toContain('export function buildIngredientOptions');
+    expect(importUtilsSource).toContain('export const STATUS');
+    expect(importInputsSource).toContain('export function IngredientConnectInput');
+    expect(importInputsSource).toContain('export function NumberImportInput');
+    expect(importPreviewSource).toContain('export function ToppingPreviewTable');
+    for (const source of [importUtilsSource, importInputsSource, importPreviewSource]) {
+      expect(source.split('\n').length).toBeLessThanOrEqual(200);
+    }
   });
 });
