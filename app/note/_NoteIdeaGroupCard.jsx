@@ -12,79 +12,8 @@ import { highlightText } from './_NoteCard';
 import { isUnifiedSampleRecord } from '@/lib/note/unified-records';
 import { collectLatestRoundNotePhotos, noteRoundNumber } from './noteIdeaGroups';
 import { NotePhotoLightbox } from './_NotePhotoLightbox';
-
-function asText(value) {
-  if (value == null) return '';
-  if (typeof value === 'string' || typeof value === 'number') return String(value);
-  return '';
-}
-
-function roundLabel(note, index) {
-  return formatTestRound(note.testRound) || `${noteRoundNumber(note) || index + 1}차`;
-}
-
-function ratingSummary(note) {
-  const ratings = NOTE_EVALUATION_FIELDS.map(item => clampNoteRating(note[item.key])).filter(
-    value => value > 0
-  );
-  if (!ratings.length) return '';
-  const avg = ratings.reduce((sum, value) => sum + value, 0) / ratings.length;
-  return `평균 ${avg.toFixed(1)}/5`;
-}
-
-function MiniStat({ label, value }) {
-  return (
-    <div
-      style={{
-        minWidth: 0,
-        padding: '8px 9px',
-        borderRadius: 8,
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-      }}
-    >
-      <span
-        style={{
-          display: 'block',
-          fontSize: 10,
-          color: 'var(--text-4)',
-          fontWeight: 800,
-          marginBottom: 2,
-        }}
-      >
-        {label}
-      </span>
-      <strong
-        style={{
-          display: 'block',
-          minWidth: 0,
-          fontSize: 13,
-          color: 'var(--text-1)',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {value}
-      </strong>
-    </div>
-  );
-}
-
-function latestSummary(note, hlRe) {
-  const value = asText(note.testContent) || asText(note.tasteEval) || asText(note.nextAction);
-  return value ? highlightText(value, hlRe) : '최근 테스트 기록이 정리되어 있습니다';
-}
-
-function previewRows(note = {}) {
-  return [
-    ['테스트 내용', asText(note.testContent)],
-    ['맛 평가', asText(note.tasteEval)],
-    ['다음 액션', asText(note.nextAction)],
-  ]
-    .filter(([, value]) => value)
-    .slice(0, 4);
-}
+import { NoteIdeaGroupDetails } from './_NoteIdeaGroupDetails';
+import { MiniStat, latestSummary, previewRows, roundLabel } from './_noteIdeaGroupCardParts';
 
 export function NoteIdeaGroupCard({
   group,
@@ -402,166 +331,23 @@ export function NoteIdeaGroupCard({
       </div>
 
       {expanded && (
-        <div
-          style={{ padding: '12px 14px 14px', display: 'grid', gap: 10, flex: 1 }}
-          onClick={event => event.stopPropagation()}
-        >
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={event => openRound(latest, event)}
-            onKeyDown={event => handleRoundKeyDown(latest, event)}
-            style={{
-              display: 'grid',
-              gap: 8,
-              padding: '12px 13px',
-              borderRadius: 8,
-              background: statusColor.bg,
-              border: `1px solid ${statusColor.color}40`,
-              cursor: 'pointer',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <strong style={{ fontSize: 12, color: statusColor.color }}>{latestRoundLabel}</strong>
-              <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 800 }}>
-                {representativeLabel}
-              </span>
-              <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-4)' }}>
-                {formatFullDate(latest.testDate)}
-              </span>
-            </div>
-            {latestPreviewRows.length > 0 ? (
-              <div style={{ display: 'grid', gap: 6 }}>
-                {latestPreviewRows.map(([label, value]) => (
-                  <div
-                    key={label}
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '72px minmax(0,1fr)',
-                      gap: 8,
-                      fontSize: 12,
-                      lineHeight: 1.55,
-                      color: 'var(--text-2)',
-                    }}
-                  >
-                    <span style={{ color: 'var(--text-3)', fontWeight: 800 }}>{label}</span>
-                    <span
-                      style={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {highlightText(value, hlRe)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <span style={{ fontSize: 12, color: 'var(--text-3)' }}>상세 기록 없음</span>
-            )}
-          </div>
-
-          {notes.map((note, index) => {
-            const checked = selected.has(note.id);
-            const isLatest = note.id === latest.id;
-            const roundPhotos = collectLatestRoundNotePhotos([note], 99);
-            return (
-              <div
-                key={note.id}
-                role="button"
-                tabIndex={0}
-                onClick={event => openRound(note, event)}
-                onContextMenu={event => contextMenu(note, event)}
-                onKeyDown={event => handleRoundKeyDown(note, event)}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: batchMode ? '24px 64px minmax(0,1fr)' : '64px minmax(0,1fr)',
-                  gap: 9,
-                  alignItems: 'center',
-                  minHeight: 50,
-                  padding: '9px 10px',
-                  borderRadius: 8,
-                  border: `1px solid ${checked || isLatest ? statusColor.color : 'var(--border)'}`,
-                  background: checked
-                    ? 'var(--accent-soft)'
-                    : isLatest
-                      ? statusColor.bg
-                      : 'var(--surface)',
-                  cursor: 'pointer',
-                }}
-              >
-                {batchMode && (
-                  <span
-                    style={{
-                      width: 18,
-                      height: 18,
-                      borderRadius: 5,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: `1px solid ${checked ? 'var(--accent)' : 'var(--border-strong)'}`,
-                      fontSize: 12,
-                      fontWeight: 900,
-                      color: 'var(--accent)',
-                    }}
-                  >
-                    {checked ? '✓' : ''}
-                  </span>
-                )}
-                <span
-                  style={{
-                    justifySelf: 'start',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    fontSize: 12,
-                    fontWeight: 900,
-                    color: isLatest ? statusColor.color : 'var(--accent)',
-                  }}
-                >
-                  {roundLabel(note, index)}
-                  {isLatest && (
-                    <span style={{ fontSize: 10, color: 'var(--text-4)' }}>
-                      {representativeInlineLabel}
-                    </span>
-                  )}
-                </span>
-                <span style={{ minWidth: 0, color: 'var(--text-2)', fontSize: 12 }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                    <span style={{ color: 'var(--text-4)' }}>{formatFullDate(note.testDate)}</span>
-                    {ratingSummary(note) && (
-                      <span style={{ color: 'var(--accent)', fontWeight: 800 }}>
-                        {ratingSummary(note)}
-                      </span>
-                    )}
-                  </span>
-                  <span
-                    style={{
-                      display: 'block',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {highlightText(asText(note.nextAction) || asText(note.testContent), hlRe) ||
-                      '기록 보기'}
-                  </span>
-                </span>
-                {roundPhotos.length > 0 && (
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <PhotoCarousel
-                      photos={roundPhotos}
-                      title={`${group.title} ${roundLabel(note, index)}`}
-                      height={92}
-                      onPhotoClick={photo => setPreviewPhoto(photo)}
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <NoteIdeaGroupDetails
+          group={group}
+          notes={notes}
+          latest={latest}
+          latestPreviewRows={latestPreviewRows}
+          selected={selected}
+          batchMode={batchMode}
+          hlRe={hlRe}
+          statusColor={statusColor}
+          openRound={openRound}
+          handleRoundKeyDown={handleRoundKeyDown}
+          onContextMenu={contextMenu}
+          onPreviewPhoto={setPreviewPhoto}
+          latestRoundLabel={latestRoundLabel}
+          representativeLabel={representativeLabel}
+          representativeInlineLabel={representativeInlineLabel}
+        />
       )}
 
       <div

@@ -157,7 +157,10 @@ describe('note list structure', () => {
     expect(cardGridSource).not.toContain('전체 기록');
     expect(cardGridSource).toContain('gridTemplateColumns:');
     expect(ideaGroupCardSource).toContain('export function NoteIdeaGroupCard');
-    expect(ideaGroupCardSource).toContain('function MiniStat');
+    // MiniStat 등 작은 표시 조각은 _noteIdeaGroupCardParts.jsx로 분리됐다.
+    expect(readFileSync(resolve('app/note/_noteIdeaGroupCardParts.jsx'), 'utf8')).toContain(
+      'export function MiniStat'
+    );
     expect(ideaGroupCardSource).toContain('+ 다음 차수');
     expect(ideaGroupCardSource).toContain('label="차수"');
     expect(ideaGroupCardSource).toContain('collectLatestRoundNotePhotos(notes, 99)');
@@ -181,12 +184,18 @@ describe('note list structure', () => {
     expect(ideaGroupCardSource).toContain('function openRound(note, event)');
     expect(ideaGroupCardSource).toContain('aria-expanded={expanded}');
     expect(ideaGroupCardSource).toContain('{expanded && (');
-    expect(ideaGroupCardSource).toContain('latestPreviewRows.map');
-    expect(ideaGroupCardSource).toContain('onClick={event => openRound(note, event)}');
-    expect(ideaGroupCardSource).toContain(
+    // 최신 차수 요약·차수 목록 렌더링은 펼침 상세(_NoteIdeaGroupDetails.jsx)로 옮겨갔다.
+    // (openRound·handleRoundKeyDown 등 동작은 카드가 소유하고 prop으로 내려준다)
+    const ideaGroupDetailsSource = readFileSync(
+      resolve('app/note/_NoteIdeaGroupDetails.jsx'),
+      'utf8'
+    );
+    expect(ideaGroupDetailsSource).toContain('latestPreviewRows.map');
+    expect(ideaGroupDetailsSource).toContain('onClick={event => openRound(note, event)}');
+    expect(ideaGroupDetailsSource).toContain(
       'const roundPhotos = collectLatestRoundNotePhotos([note], 99)'
     );
-    expect(ideaGroupCardSource).toContain('height={92}');
+    expect(ideaGroupDetailsSource).toContain('height={92}');
     expect(ideaGroupsSource).toContain('export function buildNoteIdeaGroups');
     expect(ideaGroupsSource).toContain('export function noteIdeaTitle');
     expect(ideaGroupsSource).toContain('export function collectRecentNotePhotos');
@@ -339,5 +348,28 @@ describe('note list structure', () => {
     expect(listStateHelperSource).toContain('export function normalizeNoteView');
     expect(listStateHelperSource).toContain('export function shouldShowAllNoteRows');
     expect(listStateHelperSource).toContain("return statusFilter === 'all'");
+  });
+});
+
+// 아이디어 묶음 카드는 헬퍼·요약 조각·펼침 상세가 한 파일(646줄)에 몰려 있었다.
+describe('아이디어 묶음 카드 파일 분리', () => {
+  const cardSource = readFileSync(resolve('app/note/_NoteIdeaGroupCard.jsx'), 'utf8');
+  const partsSource = readFileSync(resolve('app/note/_noteIdeaGroupCardParts.jsx'), 'utf8');
+  const detailsSource = readFileSync(resolve('app/note/_NoteIdeaGroupDetails.jsx'), 'utf8');
+
+  test('카드는 450줄을 넘지 않고 분리된 구현을 다시 품지 않는다', () => {
+    expect(cardSource.split('\n').length).toBeLessThanOrEqual(450);
+    expect(cardSource).toContain('<NoteIdeaGroupDetails');
+    expect(cardSource).not.toContain('function MiniStat');
+    expect(cardSource).not.toContain('function previewRows');
+  });
+
+  test('표시 조각과 펼침 상세가 각자 파일로 나뉜다', () => {
+    expect(partsSource).toContain('export function MiniStat');
+    expect(partsSource).toContain('export function previewRows');
+    expect(partsSource).toContain('export function ratingSummary');
+    expect(detailsSource).toContain('export function NoteIdeaGroupDetails');
+    expect(detailsSource.split('\n').length).toBeLessThanOrEqual(200);
+    expect(partsSource.split('\n').length).toBeLessThanOrEqual(120);
   });
 });
