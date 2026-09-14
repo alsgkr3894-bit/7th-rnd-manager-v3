@@ -1,14 +1,12 @@
 'use client';
 import { useCallback } from 'react';
 import { showToast } from '@/components/Toast';
-import { logIngredientSave, logIngredientDelete, logIngredientBulkDelete } from '@/lib/change-log';
+import { logIngredientDelete, logIngredientBulkDelete } from '@/lib/change-log';
 import {
   addIngredient,
-  updateIngredient,
   setIngredientPriceManualConfirmed,
   setIngredientPriceChangeAcked,
   setIngredientPriceChangeAckedMany,
-  upsertIngredientMeta,
   excludeIngredientByCode,
   restoreIngredientByCode,
   deleteIngredient,
@@ -26,12 +24,12 @@ import {
   replaceIngredientProductCode,
 } from '@/lib/ingredient';
 import {
-  syncManagedScope,
   restoreDeletedIngredientBackup,
   restoreDeletedIngredientBackups,
   warnIngredientCascadeFailures,
   buildBulkDeleteToast,
 } from './ingredientManageUtils';
+import { useIngredientSaveAction } from './useIngredientSaveAction';
 
 /**
  * 식자재관리 핸들러 훅.
@@ -122,37 +120,7 @@ export function useIngredientManageActions({
     }
   }
 
-  const handleSave = useCallback(
-    async formData => {
-      if (!canEdit) return;
-      try {
-        const name =
-          formData.ingredientName || formData.displayName || formData.productCode || '식자재';
-        if (formTarget === 'new' || formTarget?.__copyFrom) {
-          await addIngredient(formData);
-          logIngredientSave(name, true);
-          showToast('식자재 추가 완료', 'ok');
-        } else if (formTarget.isManual && formTarget.id) {
-          await updateIngredient(formTarget.id, formData);
-          logIngredientSave(name, false);
-          showToast('저장 완료', 'ok');
-        } else {
-          if (!formTarget.productCode)
-            throw new Error('제때 연동 항목에 productCode가 없습니다. 데이터를 확인해 주세요.');
-          await upsertIngredientMeta({ productCode: formTarget.productCode, ...formData });
-          await syncManagedScope(formTarget, formData.scope);
-          logIngredientSave(name, false);
-          showToast('저장 완료', 'ok');
-        }
-        setFormTarget(null);
-        await load();
-      } catch (err) {
-        showToast('저장 실패: ' + err.message, 'error');
-        throw err;
-      }
-    },
-    [canEdit, formTarget, load, setFormTarget]
-  );
+  const handleSave = useIngredientSaveAction({ canEdit, formTarget, setFormTarget, load });
 
   const handleExclude = useCallback(
     async row => {

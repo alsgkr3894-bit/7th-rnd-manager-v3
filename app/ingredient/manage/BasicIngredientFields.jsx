@@ -2,6 +2,7 @@
 import { Icon } from '@/components/icons';
 import { SEED_HASH_TAGS } from '@/lib/ingredient';
 import { Field } from './IngredientFieldPrimitives';
+import { IngredientReplacementField } from './IngredientReplacementField';
 
 export function BasicIngredientFields({
   form,
@@ -12,11 +13,17 @@ export function BasicIngredientFields({
   tagInput,
   datalistId,
   supplierNames = [],
+  sourceProductCode = '',
+  replacementCandidates = [],
+  replacePreview = null,
+  replacePreviewLoading = false,
+  replacePreviewError = null,
   onSet,
   onToggleCustomCat,
   onTagInputChange,
   onAddTag,
   onRemoveTag,
+  onDiscontinuedChange,
 }) {
   const manufacturerDatalistId = `${datalistId}-manufacturer`;
   const tags = form.tags || [];
@@ -173,12 +180,29 @@ export function BasicIngredientFields({
           <input
             type="checkbox"
             checked={!!form.discontinued}
-            onChange={e => onSet('discontinued', e.target.checked)}
+            onChange={e =>
+              onDiscontinuedChange
+                ? onDiscontinuedChange(e.target.checked)
+                : onSet('discontinued', e.target.checked)
+            }
             style={{ accentColor: 'var(--accent)', width: 16, height: 16 }}
           />
           단종된 제품으로 표시
         </label>
       </Field>
+
+      {form.discontinued === true && sourceProductCode && (
+        <IngredientReplacementField
+          form={form}
+          errors={errors}
+          sourceProductCode={sourceProductCode}
+          candidates={replacementCandidates}
+          preview={replacePreview}
+          previewLoading={replacePreviewLoading}
+          previewError={replacePreviewError}
+          onSet={onSet}
+        />
+      )}
 
       {!isJetteLinked && (
         <Field

@@ -4,22 +4,12 @@ import { ComboBox } from '@/components/ui/ComboBox';
 import { useModalShell } from '@/hooks/useModalShell';
 import { OVERLAY_COLOR } from '@/lib/ui/styles';
 import { previewIngredientProductReplace } from '@/lib/ingredient';
-
-function rowLabel(row) {
-  return row?.ingredientName || row?.displayName || row?.productName || row?.productCode || '';
-}
-
-function rowCode(row) {
-  return String(row?.productCode || '').trim();
-}
-
-function optionLabel(row) {
-  const label = rowLabel(row);
-  const code = rowCode(row);
-  if (!label && !code) return '';
-  if (!code) return label;
-  return `${label} (${code})`;
-}
+import {
+  buildSubstituteOptions,
+  substituteOptionLabel as optionLabel,
+  substituteRowCode as rowCode,
+  substituteRowLabel as rowLabel,
+} from '@/lib/ingredient/substitute-options';
 
 /**
  * 대체상품 연결 모달 — 식자재 하나를 선택해 다른(이미 등록된) 식자재로 대체 연결한다.
@@ -47,12 +37,7 @@ function SubstituteLinkModalBody({ sourceRow, candidates, onConfirm, onClose }) 
 
   const sourceCode = rowCode(sourceRow);
   const options = useMemo(
-    () =>
-      (candidates || [])
-        .filter(
-          row => rowCode(row) && rowCode(row) !== sourceCode && !row.discontinued && !row.excluded
-        )
-        .sort((a, b) => rowLabel(a).localeCompare(rowLabel(b), 'ko')),
+    () => buildSubstituteOptions(candidates, sourceCode),
     [candidates, sourceCode]
   );
   const optionLabels = useMemo(() => options.map(optionLabel).filter(Boolean), [options]);

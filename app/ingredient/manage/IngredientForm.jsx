@@ -14,6 +14,7 @@ import { IngredientOriginAllergenSummaryPanel } from './IngredientOriginAllergen
 import { JetteLinkedSourcePanel } from './JetteLinkedSourcePanel';
 import { JettePriceImportField } from './JettePriceImportField';
 import { useIngredientFormController } from './useIngredientFormController';
+import { useIngredientReplacePreview } from './useIngredientReplacePreview';
 import { ImpactPreviewPanel } from '@/components/impact/ImpactPreviewPanel';
 
 export function IngredientForm({
@@ -26,6 +27,7 @@ export function IngredientForm({
   existingProductCodes = [],
   jettePriceRows = [],
   supplierNames = [],
+  replacementCandidates = [],
 }) {
   const ctrl = useIngredientFormController({
     initial,
@@ -37,6 +39,11 @@ export function IngredientForm({
   });
 
   const usageSummary = useIngredientUsageSummary(initial);
+  const {
+    preview: replacePreview,
+    loading: replacePreviewLoading,
+    error: replacePreviewError,
+  } = useIngredientReplacePreview(initial?.productCode, ctrl.form.discontinued === true);
 
   const packagingPhotoInputRef = useRef(null);
   const detailPhotoInputRef = useRef(null);
@@ -62,6 +69,7 @@ export function IngredientForm({
     formPhotos,
     datalistId,
     set,
+    setDiscontinued,
     addTag,
     removeTag,
     applyJettePriceDraft,
@@ -180,7 +188,13 @@ export function IngredientForm({
               tagInput={tagInput}
               datalistId={datalistId}
               supplierNames={supplierNames}
+              sourceProductCode={initial?.productCode || ''}
+              replacementCandidates={replacementCandidates}
+              replacePreview={replacePreview}
+              replacePreviewLoading={replacePreviewLoading}
+              replacePreviewError={replacePreviewError}
               onSet={set}
+              onDiscontinuedChange={setDiscontinued}
               onToggleCustomCat={() => {
                 setCustomCat(v => !v);
                 set('category', '');

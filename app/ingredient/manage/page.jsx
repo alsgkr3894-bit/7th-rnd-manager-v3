@@ -529,6 +529,7 @@ export default function Page() {
           existingProductCodes={rows.filter(r => r.productCode).map(r => r.productCode)}
           jettePriceRows={latestPriceRows}
           supplierNames={supplierNames}
+          replacementCandidates={rows}
         />
       )}
     </main>

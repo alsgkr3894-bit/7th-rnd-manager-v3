@@ -60,7 +60,8 @@ describe('IngredientForm 레이아웃 구조', () => {
   test('저장 payload 로직(handleSubmit)은 컨트롤러에 있다', () => {
     expect(ctrlSrc).toContain('normalizeIngredientPhotos');
     expect(ctrlSrc).toContain('getPrimaryIngredientPhoto');
-    expect(ctrlSrc).toContain('await onSave(data)');
+    expect(ctrlSrc).toContain('await onSave(data, saveOptions)');
+    expect(ctrlSrc).toContain('delete data.replacementProductCode');
     expect(ctrlSrc).toContain('setLastUnitType');
   });
 

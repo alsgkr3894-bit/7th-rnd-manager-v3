@@ -63,6 +63,18 @@ const sectionSource = readFileSync(
   resolve('app/ingredient/manage/IngredientFormSections.jsx'),
   'utf8'
 );
+const replacementFieldSource = readFileSync(
+  resolve('app/ingredient/manage/IngredientReplacementField.jsx'),
+  'utf8'
+);
+const replacePreviewHookSource = readFileSync(
+  resolve('app/ingredient/manage/useIngredientReplacePreview.js'),
+  'utf8'
+);
+const substituteOptionsSource = readFileSync(
+  resolve('lib/ingredient/substitute-options.js'),
+  'utf8'
+);
 
 describe('ingredient form structure', () => {
   test('IngredientForm delegates basic and cost inputs to field components', () => {
@@ -80,6 +92,8 @@ describe('ingredient form structure', () => {
     expect(formSource).toContain('<IngredientNameField');
     expect(formSource).toContain('<BasicIngredientFields');
     expect(formSource).toContain('<IngredientCostFields');
+    expect(formSource).toContain('useIngredientReplacePreview');
+    expect(formSource).toContain('replacementCandidates');
     expect(formSource).not.toContain('label="부가세포함단가"');
     expect(formSource).not.toContain('const TEMP_OPTIONS = [');
     expect(formSource).not.toContain('SEED_HASH_TAGS.map');
@@ -106,6 +120,22 @@ describe('ingredient form structure', () => {
     expect(basicFieldSource).toContain('SEED_HASH_TAGS.map');
     expect(basicFieldSource).toContain('label="#태그"');
     expect(basicFieldSource).toContain("from './IngredientFieldPrimitives'");
+    expect(basicFieldSource).toContain('<IngredientReplacementField');
+    expect(basicFieldSource).toContain('onDiscontinuedChange');
+
+    expect(replacementFieldSource).toContain('export function IngredientReplacementField');
+    expect(replacementFieldSource).toContain('<ComboBox');
+    expect(replacementFieldSource).toContain('대체 식자재');
+    expect(replacementFieldSource).toContain('buildSubstituteOptions');
+    expect(replacementFieldSource).toContain("from './IngredientFieldPrimitives'");
+
+    expect(replacePreviewHookSource).toContain('export function useIngredientReplacePreview');
+    expect(replacePreviewHookSource).toContain('previewIngredientProductReplace');
+    expect(replacePreviewHookSource).not.toContain('catch {}');
+
+    expect(substituteOptionsSource).toContain('export function buildSubstituteOptions');
+    expect(substituteOptionsSource).toContain('export function substituteOptionLabel');
+    expect(substituteOptionsSource).toContain('export function findSubstituteByLabel');
     expect(costFieldSource).toContain('export function IngredientCostFields');
     expect(costFieldSource).toContain('<IngredientPackageQuantityField');
     expect(costFieldSource).toContain('<IngredientManualCostFields');

@@ -43,6 +43,8 @@ const EMPTY = {
   originNone: false,
   allergens: [],
   allergenNone: false,
+  replacementProductCode: '',
+  replacementIngredientName: '',
 };
 
 export function useIngredientFormController({
@@ -118,6 +120,16 @@ export function useIngredientFormController({
     setForm(f => ({ ...f, [key]: val }));
   }
 
+  // 단종 체크를 해제하면 골라뒀던 대체 식자재도 함께 지운다 — 체크 해제 상태로 대체
+  // 코드만 남아 있으면 다음에 다시 체크할 때 의도치 않게 재연결될 수 있다.
+  function setDiscontinued(value) {
+    setForm(f =>
+      value === true
+        ? { ...f, discontinued: true }
+        : { ...f, discontinued: false, replacementProductCode: '', replacementIngredientName: '' }
+    );
+  }
+
   function addTag(t) {
     const tag = (t || '').trim();
     if (!tag) return;
@@ -171,6 +183,10 @@ export function useIngredientFormController({
       (existingProductCodes || []).some(c => c.toUpperCase() === newCode.toUpperCase())
     ) {
       e.productCode = `이미 등록된 제품코드입니다: ${newCode}`;
+    }
+    const replacementCode = (form.replacementProductCode || '').trim();
+    if (replacementCode && replacementCode.toUpperCase() === origCode.toUpperCase()) {
+      e.replacementProductCode = '같은 제품코드로는 대체할 수 없습니다.';
     }
     return e;
   }
@@ -226,7 +242,19 @@ export function useIngredientFormController({
       } else {
         data.priceOverride = priceOverride;
       }
-      await onSave(data);
+      const replacementCode = (form.replacementProductCode || '').trim();
+      const saveOptions = {
+        replacement:
+          form.discontinued === true && replacementCode
+            ? { productCode: replacementCode, ingredientName: form.replacementIngredientName || '' }
+            : null,
+      };
+      // replacementProductCode/replacementIngredientName은 폼 전용 임시 필드라
+      // 식자재 레코드 화이트리스트(buildRecord/upsertIngredientMeta)에 넣지 않는다 —
+      // saveOptions로 이미 넘겼으니 data에서는 지운다.
+      delete data.replacementProductCode;
+      delete data.replacementIngredientName;
+      await onSave(data, saveOptions);
       setLastUnitType(data.baseUnitType || 'g');
     } finally {
       setSaving(false);
@@ -295,6 +323,7 @@ export function useIngredientFormController({
     title,
     formPhotos,
     set,
+    setDiscontinued,
     addTag,
     removeTag,
     applyJettePriceDraft,
@@ -334,6 +363,9 @@ function toForm(r) {
     originNone: r.originNone === true,
     allergens: Array.isArray(r.allergens) ? r.allergens : [],
     allergenNone: r.allergenNone === true,
+    // 대체 식자재는 레코드에 저장되는 값이 아니라 이번 저장 시 실행할 액션이라 항상 빈 값으로 시작
+    replacementProductCode: '',
+    replacementIngredientName: '',
   };
 }
 

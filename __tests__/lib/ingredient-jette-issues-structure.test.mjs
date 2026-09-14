@@ -12,6 +12,10 @@ const actionsSource = readFileSync(
 );
 const replaceSource = readFileSync(resolve('lib/ingredient/product-replace.js'), 'utf8');
 const ingredientStoreSource = readFileSync(resolve('lib/ingredient/store.js'), 'utf8');
+const saveActionSource = readFileSync(
+  resolve('app/ingredient/manage/useIngredientSaveAction.js'),
+  'utf8'
+);
 
 describe('ingredient jette issues structure', () => {
   test('issues panel supports ignoring new jette rows and replacing removed products', () => {
@@ -50,6 +54,15 @@ describe('ingredient jette issues structure', () => {
     expect(actionsSource).toContain('row?.productCode, replacement');
     expect(actionsSource).toContain('result.menuRecipeUpdated');
     expect(actionsSource).toContain('await load()');
+  });
+
+  test('수정 폼에서 단종+대체 식자재를 선택해 저장하면 저장 훅이 대체 연결까지 이어서 실행한다', () => {
+    expect(saveActionSource).toContain('export function useIngredientSaveAction');
+    expect(saveActionSource).toContain('replaceIngredientProductCode');
+    expect(saveActionSource).toContain('saveOptions?.replacement');
+    expect(saveActionSource).toContain('식자재는 저장됐지만 대체 연결 실패');
+    expect(saveActionSource).toContain('setFormTarget(null)');
+    expect(actionsSource).toContain('useIngredientSaveAction');
   });
 
   test('product replacement keeps dependent recipe data on the new product code', () => {
