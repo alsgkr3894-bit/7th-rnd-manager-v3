@@ -50,6 +50,7 @@ export function buildManageRowModel(rawRow = {}) {
     perGramPrice,
     originText: originText(r),
     allergenText: allergenText(r),
+    jetteMissing: r.jetteMissing === true,
     deletable: r.isManual && r.id != null && !productCode,
     // 일괄 삭제(deletable)와 달리 단종/분류 변경은 실제 cost_ingredients 레코드(id)만 있으면
     // 제때 연동 행에도 안전하게 적용된다 — bulkSetDiscontinued/bulkSetCategory는 id 기준이라

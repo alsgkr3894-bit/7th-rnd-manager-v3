@@ -60,8 +60,9 @@ export function useIngredientManageData() {
       );
 
       if (!latest) {
+        // 가격파일이 아예 없으면 비교 기준이 없다 — meta 레코드를 전부 그대로 보여준다.
         return {
-          rows: allMeta.filter(meta => meta.isManual || meta.isSeeded).map(buildMetaOnlyRow),
+          rows: allMeta.map(meta => buildMetaOnlyRow(meta, { jetteMissing: false })),
           prevPriceMap: null,
           priceDate,
           brokenRefs: findBrokenCompositeRefs(allMeta),
@@ -77,13 +78,13 @@ export function useIngredientManageData() {
       const allMerged = mergeIngredientRows(priceRows, metaMap, typeMap);
       const merged = allMerged.filter(row => row.hasRecord);
       const priceCodeSet = new Set(priceRows.map(row => row.productCode).filter(Boolean));
+      // isManual/isSeeded 게이트를 걸면 "제때 연동으로 만들어졌지만(upsertIngredientMeta) 최신
+      // 가격파일에서 코드가 사라진" 레코드가 어느 목록에도 뜨지 않게 된다 — 단종 처리해도
+      // 관리/이슈 탭 어디서도 "대체 연결" 버튼에 닿을 방법이 없어진다. 게이트를 없애고, 코드가
+      // 있었는데 최신 파일에 없는 행은 jetteMissing으로 표시해 구분한다.
       const orphanMetaRows = allMeta
-        .filter(
-          meta =>
-            (meta.isManual || meta.isSeeded) &&
-            (!meta.productCode || !priceCodeSet.has(meta.productCode))
-        )
-        .map(buildMetaOnlyRow);
+        .filter(meta => !meta.productCode || !priceCodeSet.has(meta.productCode))
+        .map(meta => buildMetaOnlyRow(meta, { jetteMissing: !!meta.productCode }));
 
       let prevPriceMap = null;
       let jetteRemovedRows = [];

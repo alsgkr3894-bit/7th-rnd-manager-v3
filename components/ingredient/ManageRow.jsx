@@ -48,6 +48,7 @@ export const ManageRow = memo(function ManageRow({
     pieceWeightGrams,
     perGramPrice,
     selectable,
+    jetteMissing,
   } = model;
   const handleEdit = typeof onEdit === 'function' ? onEdit : undefined;
   const handleCopy = typeof onCopy === 'function' ? onCopy : undefined;
@@ -98,6 +99,7 @@ export const ManageRow = memo(function ManageRow({
         productCode={productCode}
         isManual={r.isManual}
         jetteLinked={r.jetteLinked}
+        jetteMissing={jetteMissing}
       />
       <ManageRowPhotoCell photo={photo} photoCount={photoCount} name={name} />
       <ManageRowNameCell

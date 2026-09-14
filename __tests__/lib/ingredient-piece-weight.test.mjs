@@ -81,6 +81,13 @@ describe('mergeIngredientRows / buildMetaOnlyRow — pieceWeightGrams 전달', (
     });
     expect(row.pieceWeightGrams).toBe(60);
   });
+
+  test('buildMetaOnlyRow는 두 번째 인자로 jetteMissing을 받는다(기본 false)', () => {
+    const plain = buildMetaOnlyRow({ id: 3, ingredientName: '소금' });
+    expect(plain.jetteMissing).toBe(false);
+    const missing = buildMetaOnlyRow({ id: 3, ingredientName: '소금' }, { jetteMissing: true });
+    expect(missing.jetteMissing).toBe(true);
+  });
 });
 
 describe('1개당 g 필드가 저장 경로·폼·표시에 배선돼 있다', () => {

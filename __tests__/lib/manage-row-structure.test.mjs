@@ -87,6 +87,7 @@ describe('ingredient manage row structure', () => {
     expect(selectionSource).toContain('아직 등록되지 않은 항목이라 일괄 작업 대상이 아니에요');
     expect(codeSource).toContain('export function ManageRowCodeCell');
     expect(codeSource).toContain("jetteLinked ? '연동' : '수동'");
+    expect(codeSource).toContain('제때 미존재');
     expect(photoSource).toContain('export function ManageRowPhotoCell');
     expect(photoSource).toContain('photoCount > 1');
     expect(nameSource).toContain('export function ManageRowNameCell');
