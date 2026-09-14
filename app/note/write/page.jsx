@@ -39,107 +39,21 @@ import { getActiveBrandId } from '@/lib/active-brand';
 import { todayLocalDate } from '@/lib/date/local-date';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
-
-function normalizeStoredNoteCategory(value) {
-  return CATEGORIES.includes(value) || value === '메뉴' ? value : CATEGORIES[0];
-}
-
-const DEFAULT_FIRST_TEST_ROUND = '1';
-const WRITE_TYPES = {
-  MENU_DEVELOPMENT: '메뉴개발',
-  MENU_IMPROVEMENT: '메뉴개선',
-  SAMPLE_TEST: '샘플테스트',
-  PRODUCT_ISSUE: '제품이슈',
-};
-const WRITE_TYPE_OPTIONS = [
-  WRITE_TYPES.MENU_DEVELOPMENT,
-  WRITE_TYPES.MENU_IMPROVEMENT,
-  WRITE_TYPES.SAMPLE_TEST,
-  WRITE_TYPES.PRODUCT_ISSUE,
-];
-const SAMPLE_RECORD_TYPE_BY_WRITE_TYPE = {
-  [WRITE_TYPES.SAMPLE_TEST]: SAMPLE_RECORD_TYPES.SAMPLE_TEST,
-  [WRITE_TYPES.PRODUCT_ISSUE]: SAMPLE_RECORD_TYPES.ISSUE,
-};
-const WRITE_TYPE_PARAM_MAP = {
-  'menu-development': WRITE_TYPES.MENU_DEVELOPMENT,
-  development: WRITE_TYPES.MENU_DEVELOPMENT,
-  menu: WRITE_TYPES.MENU_DEVELOPMENT,
-  'menu-improvement': WRITE_TYPES.MENU_IMPROVEMENT,
-  improvement: WRITE_TYPES.MENU_IMPROVEMENT,
-  sample: WRITE_TYPES.SAMPLE_TEST,
-  'sample-test': WRITE_TYPES.SAMPLE_TEST,
-  issue: WRITE_TYPES.PRODUCT_ISSUE,
-  'product-issue': WRITE_TYPES.PRODUCT_ISSUE,
-};
-
-function isMenuWriteType(value) {
-  return value === WRITE_TYPES.MENU_DEVELOPMENT || value === WRITE_TYPES.MENU_IMPROVEMENT;
-}
-
-function writeTypeFromParam(value) {
-  const key = String(value || '')
-    .trim()
-    .toLowerCase();
-  return WRITE_TYPE_PARAM_MAP[key] || null;
-}
-
-function writeTypeFromSample(sample) {
-  return sample?.recordType === SAMPLE_RECORD_TYPES.ISSUE ||
-    sample?.recordType === LEGACY_SAMPLE_RECORD_TYPES.ISSUE
-    ? WRITE_TYPES.PRODUCT_ISSUE
-    : WRITE_TYPES.SAMPLE_TEST;
-}
-
-function noteListTypeHref(recordType) {
-  return `/note?type=${encodeURIComponent(recordType || SAMPLE_RECORD_TYPES.SAMPLE_TEST)}`;
-}
-
-function withDefaultFirstTestRound(value = {}) {
-  const testRound = String(value.testRound || '').trim() || DEFAULT_FIRST_TEST_ROUND;
-  return { ...value, testRound };
-}
-
-function makeSampleInitial(writeType = WRITE_TYPES.SAMPLE_TEST) {
-  return {
-    ...SAMPLE_INIT,
-    recordType: SAMPLE_RECORD_TYPE_BY_WRITE_TYPE[writeType] || SAMPLE_RECORD_TYPES.SAMPLE_TEST,
-    testDate: todayLocalDate(),
-  };
-}
-
-function WriteTypeStep({ value, onChange, disabled = false }) {
-  const descriptions = {
-    [WRITE_TYPES.MENU_DEVELOPMENT]: '신규 메뉴 개발 노트를 작성합니다.',
-    [WRITE_TYPES.MENU_IMPROVEMENT]: '기존 메뉴 개선과 차수 테스트를 기록합니다.',
-    [WRITE_TYPES.SAMPLE_TEST]: '식자재 샘플 테스트 기록 양식으로 작성합니다.',
-    [WRITE_TYPES.PRODUCT_ISSUE]: '제품 변경, 불량, 대체 등 식자재 이슈 양식으로 작성합니다.',
-  };
-
-  return (
-    <section className="card" style={{ padding: 20, marginTop: 16 }}>
-      <div style={{ display: 'grid', gap: 10 }}>
-        <div>
-          <div className="card-title" style={{ marginBottom: 4 }}>
-            작성 유형 선택
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
-            먼저 기록 유형을 선택하면 그 유형에 맞는 작성 양식이 열립니다.
-          </div>
-        </div>
-        <SegGroup
-          options={WRITE_TYPE_OPTIONS}
-          value={value}
-          onChange={onChange}
-          disabled={disabled}
-        />
-        <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 700 }}>
-          {descriptions[value]}
-        </div>
-      </div>
-    </section>
-  );
-}
+import { WriteTypeStep } from './_WriteTypeStep';
+import {
+  DEFAULT_FIRST_TEST_ROUND,
+  SAMPLE_RECORD_TYPE_BY_WRITE_TYPE,
+  WRITE_TYPES,
+  WRITE_TYPE_OPTIONS,
+  WRITE_TYPE_PARAM_MAP,
+  isMenuWriteType,
+  makeSampleInitial,
+  noteListTypeHref,
+  normalizeStoredNoteCategory,
+  withDefaultFirstTestRound,
+  writeTypeFromParam,
+  writeTypeFromSample,
+} from './writeTypes';
 
 export default function Page() {
   const router = useRouter();

@@ -3,6 +3,9 @@ import { resolve } from 'path';
 
 const formSource = readFileSync(resolve('app/note/_NoteFormBody.jsx'), 'utf8');
 const writePageSource = readFileSync(resolve('app/note/write/page.jsx'), 'utf8');
+// 작성 유형 상수·변환과 유형 선택 단계는 별도 파일로 분리됐다.
+const writeTypesSource = readFileSync(resolve('app/note/write/writeTypes.js'), 'utf8');
+const writeTypeStepSource = readFileSync(resolve('app/note/write/_WriteTypeStep.jsx'), 'utf8');
 const requiredSource = readFileSync(resolve('app/note/_NoteRequiredFields.jsx'), 'utf8');
 const detailSource = readFileSync(resolve('app/note/_NoteDetailFields.jsx'), 'utf8');
 const evaluationSource = readFileSync(resolve('app/note/_NoteEvaluationFields.jsx'), 'utf8');
@@ -81,13 +84,13 @@ describe('note form body structure', () => {
     expect(requiredSource).not.toContain('placeholder="예: 1, 2차"');
     expect(requiredSource).toContain('activeBrand.name');
     expect(requiredSource).toContain('getNoteCategoryOptionsForBrand(form.brand)');
-    expect(writePageSource).toContain('function WriteTypeStep');
-    expect(writePageSource).toContain('WRITE_TYPE_OPTIONS');
-    expect(writePageSource).toContain('메뉴개발');
-    expect(writePageSource).toContain('메뉴개선');
-    expect(writePageSource).toContain('샘플테스트');
-    expect(writePageSource).toContain('제품이슈');
-    expect(writePageSource).toContain('SAMPLE_RECORD_TYPE_BY_WRITE_TYPE');
+    expect(writeTypeStepSource).toContain('function WriteTypeStep');
+    expect(writeTypeStepSource).toContain('WRITE_TYPE_OPTIONS');
+    expect(writeTypesSource).toContain('메뉴개발');
+    expect(writeTypesSource).toContain('메뉴개선');
+    expect(writeTypesSource).toContain('샘플테스트');
+    expect(writeTypesSource).toContain('제품이슈');
+    expect(writeTypesSource).toContain('SAMPLE_RECORD_TYPE_BY_WRITE_TYPE');
     expect(requiredSource).not.toContain('<Field label="유형">');
     expect(requiredSource).toContain('function handleCategoryChange');
     expect(requiredSource).not.toContain('function handleNoteTypeChange');
@@ -149,9 +152,9 @@ describe('note form body structure', () => {
   });
 
   test('note write page defaults a fresh note to first test round', () => {
-    expect(writePageSource).toContain("const DEFAULT_FIRST_TEST_ROUND = '1';");
-    expect(writePageSource).toContain('function withDefaultFirstTestRound');
-    expect(writePageSource).toContain(
+    expect(writeTypesSource).toContain("export const DEFAULT_FIRST_TEST_ROUND = '1';");
+    expect(writeTypesSource).toContain('function withDefaultFirstTestRound');
+    expect(writeTypesSource).toContain(
       "String(value.testRound || '').trim() || DEFAULT_FIRST_TEST_ROUND"
     );
     expect(writePageSource).toContain('withDefaultFirstTestRound({');
