@@ -75,6 +75,10 @@ export function ComboBox({
       e.preventDefault();
       pick(filtered[active]);
     } else if (e.key === 'Escape') {
+      // 목록이 열려 있을 때만 버블을 막는다 — 닫혀 있으면 상위(모달 등)의 Escape 처리로
+      // 정상적으로 넘어가야 한다. 열려 있는데 막지 않으면 드롭다운을 닫으려던 Escape가
+      // 모달까지 닫아 편집 중이던 내용을 잃는다.
+      if (open) e.stopPropagation();
       setOpen(false);
       setActive(-1);
     }

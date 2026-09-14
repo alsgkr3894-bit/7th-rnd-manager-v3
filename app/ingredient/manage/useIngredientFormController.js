@@ -86,6 +86,8 @@ export function useIngredientFormController({
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const datalistId = useId();
+  // saving state는 다음 렌더까지 반영이 늦을 수 있어(Enter 연타·Ctrl+S 겹침) ref로 즉시 막는다.
+  const submittingRef = useRef(false);
 
   const initialFormRef = useRef(JSON.stringify(buildInitialForm()));
   const isDirty = JSON.stringify(form) !== initialFormRef.current;
@@ -185,11 +187,13 @@ export function useIngredientFormController({
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (submittingRef.current) return;
     const errs = validate();
     if (Object.keys(errs).length) {
       setErrors(errs);
       return;
     }
+    submittingRef.current = true;
     setSaving(true);
     try {
       const baseQuantity = parseOptionalNonNegativeNumber(form.baseQuantity).value;
@@ -198,9 +202,12 @@ export function useIngredientFormController({
         form.baseUnitType === '개'
           ? parseOptionalNonNegativeNumber(form.pieceWeightGrams).value
           : null;
+      // normalizeOrigin(lib/ingredient/normalize.js)과 동일하게 country만 있어도 유효한 항목으로
+      // 취급한다 — 표시품목명 없이 국가만 입력한 행을 여기서 걸러내면 저장 직후 "미입력"으로
+      // 되돌아가고 원산지 미표기 이슈가 다시 뜬다(표시명 없이 "국내산"만 적는 경우가 실제로 있다).
       const origin = (form.origin || [])
-        .filter(it => it.country?.trim() && it.displayName?.trim())
-        .map(it => ({ displayName: it.displayName.trim(), country: it.country.trim() }));
+        .filter(it => it.country?.trim())
+        .map(it => ({ displayName: (it.displayName || '').trim(), country: it.country.trim() }));
       const originValue = origin.length ? origin : null;
       const data = {
         ...form,
@@ -223,6 +230,7 @@ export function useIngredientFormController({
       setLastUnitType(data.baseUnitType || 'g');
     } finally {
       setSaving(false);
+      submittingRef.current = false;
     }
   }
 

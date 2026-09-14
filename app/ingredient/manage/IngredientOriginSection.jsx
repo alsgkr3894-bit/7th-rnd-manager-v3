@@ -46,6 +46,9 @@ function OriginSuggest({ value, onChange, suggestions = [], placeholder = '' }) 
       setOpen(false);
       setHi(-1);
     } else if (e.key === 'Escape') {
+      // stopPropagation 없으면 이 Escape가 상위 document 리스너까지 버블돼 폼 전체가
+      // 닫히고(저장 안 한) 입력 내용을 잃는다 — 여기서는 드롭다운만 닫는다.
+      e.stopPropagation();
       setOpen(false);
       setHi(-1);
     }
