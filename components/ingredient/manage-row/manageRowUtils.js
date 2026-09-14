@@ -51,5 +51,9 @@ export function buildManageRowModel(rawRow = {}) {
     originText: originText(r),
     allergenText: allergenText(r),
     deletable: r.isManual && r.id != null && !productCode,
+    // 일괄 삭제(deletable)와 달리 단종/분류 변경은 실제 cost_ingredients 레코드(id)만 있으면
+    // 제때 연동 행에도 안전하게 적용된다 — bulkSetDiscontinued/bulkSetCategory는 id 기준이라
+    // isManual 여부를 가리지 않는다. 선택 가능 범위를 deletable보다 넓힌다.
+    selectable: r.id != null,
   };
 }

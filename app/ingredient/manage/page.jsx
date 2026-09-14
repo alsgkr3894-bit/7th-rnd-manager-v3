@@ -200,6 +200,7 @@ export default function Page() {
     handleDeleteCancel,
     handleReplaceJetteProduct,
   } = useIngredientManageActions({
+    rows,
     load,
     setRows,
     formTarget,

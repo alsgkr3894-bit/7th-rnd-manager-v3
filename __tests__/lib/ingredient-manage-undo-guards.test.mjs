@@ -113,6 +113,13 @@ describe('ingredient manage undo guards', () => {
     expect(batchToolbarSource).toContain('삭제 후 토스트에서 실행취소할 수 있습니다.');
   });
 
+  test('일괄 삭제는 선택 목록에서 수동·제품코드 없는 행만 걸러 실행한다', () => {
+    // 단종/분류 변경(선택 가능 범위 = selectable = id만 있으면 됨)과 달리
+    // 일괄 삭제는 제때 연동 행을 대상에서 제외해야 한다.
+    expect(actionsSource).toContain('r.isManual && r.id != null && !r.productCode).map(r => r.id)');
+    expect(actionsSource).toContain('deletableIds.has(id)');
+  });
+
   test('viewer는 식자재 행/이슈/설정 쓰기 액션을 화면과 훅에서 먼저 차단한다', () => {
     expect(pageSource).toContain('canEdit: !isViewer');
     expect(pageSource).toContain('isViewer={isViewer}');

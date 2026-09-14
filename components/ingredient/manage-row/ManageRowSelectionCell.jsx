@@ -1,5 +1,5 @@
 export function ManageRowSelectionCell({
-  deletable,
+  selectable,
   isSelected,
   rowId,
   onToggleSelect,
@@ -7,7 +7,7 @@ export function ManageRowSelectionCell({
 }) {
   return (
     <td style={{ width: 36, textAlign: 'center' }} onClick={event => event.stopPropagation()}>
-      {deletable ? (
+      {selectable ? (
         <input
           type="checkbox"
           checked={Boolean(isSelected)}
@@ -18,7 +18,7 @@ export function ManageRowSelectionCell({
       ) : (
         <span
           style={{ color: 'var(--text-4)', fontSize: 11 }}
-          title="제때 연동 항목은 일괄 삭제 대상이 아니에요"
+          title="아직 등록되지 않은 항목이라 일괄 작업 대상이 아니에요"
         >
           –
         </span>

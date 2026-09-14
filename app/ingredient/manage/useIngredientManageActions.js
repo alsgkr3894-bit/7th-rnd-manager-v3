@@ -38,6 +38,7 @@ import {
  * 저장·삭제·복원·시드·초기화·일괄삭제·필터 핸들러를 반환한다.
  */
 export function useIngredientManageActions({
+  rows,
   load,
   setRows,
   formTarget,
@@ -316,7 +317,19 @@ export function useIngredientManageActions({
   const handleBatchDelete = useCallback(async () => {
     if (!canEdit) return;
     if (selected.size === 0) return;
-    const ids = Array.from(selected);
+    // 선택(selected)은 단종/분류 변경까지 함께 쓰는 넓은 범위(모든 id 있는 행)지만, 일괄
+    // 삭제는 수동으로 등록한(제품코드 없는) 행만 지원한다 — 제때 연동 행은 여기서 걸러낸다.
+    const deletableIds = new Set(
+      (rows || []).filter(r => r.isManual && r.id != null && !r.productCode).map(r => r.id)
+    );
+    const ids = Array.from(selected).filter(id => deletableIds.has(id));
+    if (!ids.length) {
+      showToast(
+        '선택한 항목 중 일괄 삭제 대상이 없습니다 — 제때 연동 항목은 단종/분류 변경을 이용해 주세요',
+        'warn'
+      );
+      return;
+    }
     try {
       const { removed, failures } = await bulkDeleteIngredients(ids);
       warnIngredientCascadeFailures(removed);
@@ -347,7 +360,7 @@ export function useIngredientManageActions({
     } catch (err) {
       showToast('삭제 실패: ' + err.message, 'error');
     }
-  }, [canEdit, selected, load, exitBatch, setRows]);
+  }, [canEdit, rows, selected, load, exitBatch, setRows]);
 
   const handleSetCatFilter = useCallback(
     val => {

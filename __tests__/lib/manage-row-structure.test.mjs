@@ -70,6 +70,8 @@ describe('ingredient manage row structure', () => {
     expect(utilsSource).toContain('getPrimaryIngredientPhoto(r)');
     expect(utilsSource).toContain('countIngredientPhotos(r)');
     expect(utilsSource).toContain('deletable: r.isManual && r.id != null && !productCode');
+    // 단종/분류 일괄 변경은 삭제보다 넓게(id만 있으면) 허용된다 — deletable과 분리된 필드
+    expect(utilsSource).toContain('selectable: r.id != null');
     // 원산지·알레르기 요약은 수정 창 상단 박스로 옮겨갔지만(IngredientOriginAllergenSummaryPanel),
     // 모델 필드 자체는 CSV 등 다른 소비처를 위해 남겨둔다 — 공용 순수 모듈에서 가져온다.
     expect(utilsSource).toContain(
@@ -82,7 +84,7 @@ describe('ingredient manage row structure', () => {
   test('extracted cells keep table interactions and display details separated', () => {
     expect(selectionSource).toContain('export function ManageRowSelectionCell');
     expect(selectionSource).toContain('event.stopPropagation()');
-    expect(selectionSource).toContain('제때 연동 항목은 일괄 삭제 대상이 아니에요');
+    expect(selectionSource).toContain('아직 등록되지 않은 항목이라 일괄 작업 대상이 아니에요');
     expect(codeSource).toContain('export function ManageRowCodeCell');
     expect(codeSource).toContain("jetteLinked ? '연동' : '수동'");
     expect(photoSource).toContain('export function ManageRowPhotoCell');

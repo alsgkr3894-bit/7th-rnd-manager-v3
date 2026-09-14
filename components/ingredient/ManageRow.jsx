@@ -47,7 +47,7 @@ export const ManageRow = memo(function ManageRow({
     unitPrice,
     pieceWeightGrams,
     perGramPrice,
-    deletable,
+    selectable,
   } = model;
   const handleEdit = typeof onEdit === 'function' ? onEdit : undefined;
   const handleCopy = typeof onCopy === 'function' ? onCopy : undefined;
@@ -73,11 +73,11 @@ export const ManageRow = memo(function ManageRow({
               : undefined,
         outline: isHighlighted ? '2px solid var(--positive)' : undefined,
         outlineOffset: isHighlighted ? '-1px' : undefined,
-        cursor: isViewer || (batchMode && !deletable) ? 'default' : 'pointer',
+        cursor: isViewer || (batchMode && !selectable) ? 'default' : 'pointer',
       }}
       onClick={
         batchMode
-          ? !isViewer && deletable && toggleSelect
+          ? !isViewer && selectable && toggleSelect
             ? () => toggleSelect(r.id)
             : undefined
           : isViewer
@@ -87,7 +87,7 @@ export const ManageRow = memo(function ManageRow({
     >
       {batchMode && (
         <ManageRowSelectionCell
-          deletable={deletable}
+          selectable={selectable}
           isSelected={isSelected}
           rowId={r.id}
           onToggleSelect={toggleSelect}

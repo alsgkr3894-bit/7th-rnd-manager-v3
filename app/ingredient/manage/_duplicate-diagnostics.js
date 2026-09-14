@@ -4,7 +4,10 @@ const DUPLICATE_CHECKS = [
   {
     key: 'displayName',
     label: '표시명',
-    get: r => r.ingredientName || r.displayName || r.productName,
+    // displayName은 productName에서 simplifyIngredientName으로 용량 표기(2.5kg 등)를
+    // 지운 값이라, 용량만 다른 서로 다른 제품(모짜렐라 치즈 2.5kg / 1kg)이 여기서 같은
+    // 표시명으로 뭉쳐 오탐 중복으로 뜬다 — 원본 productName을 우선 사용해 피한다.
+    get: r => r.ingredientName || r.productName || r.displayName,
   },
 ];
 
