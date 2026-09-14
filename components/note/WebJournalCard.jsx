@@ -83,7 +83,7 @@ function metaPairs(note) {
   return pairs;
 }
 
-export function WebJournalCard({ note, index, onEdit }) {
+export function WebJournalCard({ note, index, onEdit, onPhotoClick }) {
   const statusStyle = STATUS_COLORS[note.status] || {};
   const title = noteDisplayTitle(note, '(제목 없음)');
   const contentLabel = notePrimaryContentLabel(note);
@@ -186,22 +186,42 @@ export function WebJournalCard({ note, index, onEdit }) {
             >
               첨부 사진 ({note.photos.length}장)
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                gap: 8,
+              }}
+            >
               {note.photos.map((p, i) => (
                 <div key={i}>
-                  <img
-                    src={p.data}
-                    alt={p.caption || p.name}
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => onPhotoClick?.(p)}
+                    disabled={!onPhotoClick}
                     style={{
                       width: '100%',
-                      aspectRatio: '4/3',
-                      objectFit: 'contain',
-                      background: 'var(--surface-2)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 6,
-                      display: 'block',
+                      padding: 0,
+                      border: 0,
+                      background: 'transparent',
+                      cursor: onPhotoClick ? 'zoom-in' : 'default',
                     }}
-                  />
+                  >
+                    <img
+                      src={p.data}
+                      alt={p.caption || p.name}
+                      style={{
+                        width: '100%',
+                        aspectRatio: '4/3',
+                        objectFit: 'contain',
+                        background: 'var(--surface-2)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 6,
+                        display: 'block',
+                      }}
+                    />
+                  </button>
                   {p.caption && (
                     <div
                       style={{

@@ -3,16 +3,21 @@
 import { Icon } from '@/components/icons';
 import { NotePhotoSection } from '@/app/note/_NotePhotoSection';
 
-function Field({ label, children }) {
+function Field({ label, action, children }) {
   return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-2)' }}>{label}</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
+      >
+        <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-2)' }}>{label}</span>
+        {action}
+      </div>
       {children}
-    </label>
+    </div>
   );
 }
 
-function TextArea({ value, onChange, disabled, placeholder, rows = 3 }) {
+function TextArea({ value, onChange, disabled, placeholder, rows = 6 }) {
   return (
     <textarea
       className="form-input"
@@ -21,7 +26,7 @@ function TextArea({ value, onChange, disabled, placeholder, rows = 3 }) {
       onChange={event => onChange(event.target.value)}
       disabled={disabled}
       placeholder={placeholder}
-      style={{ resize: 'vertical', minHeight: rows * 34 }}
+      style={{ resize: 'vertical', minHeight: rows * 34, fontSize: 14, lineHeight: 1.6 }}
     />
   );
 }
@@ -66,41 +71,56 @@ export function JournalEntryEditor({
   dateLabel,
   form,
   onChange,
-  onSave,
   onUseSchedules,
+  onScrollToRecords,
   saving = false,
   canEdit = false,
   existingEntry = null,
+  dirty = false,
   daySchedules = [],
 }) {
   const disabled = !canEdit || saving;
 
   return (
-    <>
+    <section
+      className="card"
+      style={{
+        padding: 18,
+        marginTop: 16,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}
+    >
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))',
-          gap: 14,
-          alignItems: 'start',
-          marginTop: 16,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
         }}
       >
-        <section className="card" style={{ padding: 18 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 12,
-              marginBottom: 14,
-            }}
-          >
-            <div>
-              <div className="card-title">오늘 한 일 보고서 작성</div>
-              <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{dateLabel}</div>
-            </div>
-            {existingEntry && (
+        <div>
+          <div className="card-title">오늘 한 일 보고서 작성</div>
+          <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{dateLabel}</div>
+        </div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+          {dirty ? (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 800,
+                color: 'var(--warn)',
+                background: 'var(--warn-soft)',
+                borderRadius: 999,
+                padding: '3px 8px',
+              }}
+            >
+              수정 중
+            </span>
+          ) : (
+            existingEntry && (
               <span
                 style={{
                   fontSize: 11,
@@ -113,76 +133,66 @@ export function JournalEntryEditor({
               >
                 저장됨
               </span>
-            )}
-          </div>
-
-          <div style={{ display: 'grid', gap: 12 }}>
-            <Field label="1. 오늘 한 일">
-              <TextArea
-                value={form.work}
-                onChange={value => onChange('work', value)}
-                disabled={disabled}
-                rows={4}
-                placeholder="작업한 내용, 변경한 메뉴, 확인한 데이터를 적으세요"
-              />
-            </Field>
-            <Field label="2. 테스트 결과">
-              <TextArea
-                value={form.result}
-                onChange={value => onChange('result', value)}
-                disabled={disabled}
-                rows={4}
-                placeholder="맛, 식감, 온도, 조리감, 반응을 적으세요"
-              />
-            </Field>
-            <Field label="3. 다음 일정">
-              <TextArea
-                value={form.next}
-                onChange={value => onChange('next', value)}
-                disabled={disabled}
-                rows={4}
-                placeholder="다음 테스트 일정, 이어서 할 일, 확인할 내용을 적으세요"
-              />
-            </Field>
-          </div>
-        </section>
-
-        <aside
-          style={{
-            position: 'sticky',
-            top: 72,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 14,
-            minWidth: 0,
-          }}
-        >
-          <NotePhotoSection
-            photos={form.photos || []}
-            onChange={value => onChange('photos', value)}
-          />
-
-          <section className="card" style={{ padding: 18 }}>
-            <div className="card-title" style={{ marginBottom: 12 }}>
-              선택 날짜 일정
-            </div>
-            <ScheduleList schedules={daySchedules} />
-            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-              <button
-                className="btn"
-                onClick={onUseSchedules}
-                disabled={disabled || !daySchedules.length}
-              >
-                <Icon.copy style={{ width: 13, height: 13 }} /> 일정 불러오기
-              </button>
-              <button className="btn primary" onClick={onSave} disabled={disabled}>
-                <Icon.check style={{ width: 14, height: 14 }} />{' '}
-                {saving ? '저장 중' : '보고서 저장'}
-              </button>
-            </div>
-          </section>
-        </aside>
+            )
+          )}
+          {onScrollToRecords && (
+            <button type="button" className="btn sm" onClick={onScrollToRecords}>
+              저장된 일지 보기
+            </button>
+          )}
+        </div>
       </div>
-    </>
+
+      <Field label="1. 오늘 한 일">
+        <TextArea
+          value={form.work}
+          onChange={value => onChange('work', value)}
+          disabled={disabled}
+          placeholder="작업한 내용, 변경한 메뉴, 확인한 데이터를 적으세요"
+        />
+      </Field>
+
+      <Field label="2. 테스트 결과">
+        <TextArea
+          value={form.result}
+          onChange={value => onChange('result', value)}
+          disabled={disabled}
+          placeholder="맛, 식감, 온도, 조리감, 반응을 적으세요"
+        />
+      </Field>
+
+      <Field
+        label="3. 다음 일정"
+        action={
+          <button
+            type="button"
+            className="btn sm"
+            onClick={onUseSchedules}
+            disabled={disabled || !daySchedules.length}
+          >
+            <Icon.copy style={{ width: 12, height: 12 }} /> 일정 불러오기
+          </button>
+        }
+      >
+        <TextArea
+          value={form.next}
+          onChange={value => onChange('next', value)}
+          disabled={disabled}
+          placeholder="다음 테스트 일정, 이어서 할 일, 확인할 내용을 적으세요"
+        />
+        {daySchedules.length > 0 && (
+          <details>
+            <summary style={{ fontSize: 12, color: 'var(--text-3)', cursor: 'pointer' }}>
+              선택 날짜 일정 {daySchedules.length}건
+            </summary>
+            <div style={{ marginTop: 8 }}>
+              <ScheduleList schedules={daySchedules} />
+            </div>
+          </details>
+        )}
+      </Field>
+
+      <NotePhotoSection photos={form.photos || []} onChange={value => onChange('photos', value)} />
+    </section>
   );
 }

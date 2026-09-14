@@ -4,8 +4,10 @@ import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SearchBox } from '@/components/ui/SearchBox';
+import { StickySaveBar } from '@/components/ui/StickySaveBar';
 import { showToast } from '@/components/Toast';
 import { useDBLoad } from '@/hooks/useDBLoad';
+import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { addNote, getAllNotesCached, updateNote } from '@/lib/note';
 import { getAllSchedules } from '@/lib/note/schedules';
 import { getAllSamples } from '@/lib/sample';
@@ -22,6 +24,7 @@ import {
 import { buildJournalPrintHtml } from '@/lib/note/journal-print';
 import { openPrintWindow } from '@/lib/print/window-print';
 import { WebJournalCard } from '@/components/note/WebJournalCard';
+import { NotePhotoLightbox } from '@/app/note/_NotePhotoLightbox';
 import { todayLocalDate, formatLocalDateInput } from '@/lib/date/local-date';
 import { parseNoteQuickDate } from '@/lib/note/date-input';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
@@ -503,6 +506,7 @@ export default function Page() {
   const [customEnd, setCustomEnd] = useState(() => todayLocalDate());
   const [journalForm, setJournalForm] = useState(EMPTY_JOURNAL_FORM);
   const [saving, setSaving] = useState(false);
+  const [previewPhoto, setPreviewPhoto] = useState(null);
 
   // date 변경은 re-fetch 없이 JS 필터만 하므로 deps 불필요
   const {
@@ -644,6 +648,12 @@ export default function Page() {
     [dayNotes]
   );
 
+  // 저장 안 된 변경사항이 있는지 — 하단 저장바 상태 표시·저장 버튼 활성화에 쓴다.
+  const journalDirty = useMemo(
+    () => JSON.stringify(journalForm) !== JSON.stringify(journalFormFromEntry(journalEntry)),
+    [journalForm, journalEntry]
+  );
+
   const currentJournalPrintNote = useMemo(
     () =>
       hasJournalText(journalForm)
@@ -727,8 +737,29 @@ export default function Page() {
   const hasNext = datesWithNotes.indexOf(date) > 0;
   const dateLabel = toDateLabel(date);
 
+  useKeyboardSave(saveJournalEntry);
+
   function updateJournalForm(field, value) {
     setJournalForm(prev => ({ ...prev, [field]: value }));
+  }
+
+  function revertJournalForm() {
+    setJournalForm(journalFormFromEntry(journalEntry));
+  }
+
+  function openJournalPdf() {
+    openPrintWindow(
+      buildJournalPrintHtml(printRangeTitle, printPeriodNotes, {
+        title: printMode === 'day' ? '오늘 한 일 보고서' : '연구일지 종합본',
+      }),
+      { width: 800, height: 900 }
+    );
+  }
+
+  function scrollToDayRecords() {
+    document
+      .getElementById('journal-day-records')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function useSchedulesInJournal() {
@@ -897,17 +928,7 @@ export default function Page() {
             <button
               className="btn primary"
               disabled={printPeriodNotes.length === 0}
-              onClick={() =>
-                openPrintWindow(
-                  buildJournalPrintHtml(printRangeTitle, printPeriodNotes, {
-                    title: printMode === 'day' ? '오늘 한 일 보고서' : '연구일지 종합본',
-                  }),
-                  {
-                    width: 800,
-                    height: 900,
-                  }
-                )
-              }
+              onClick={openJournalPdf}
               title={
                 printPeriodNotes.length === 0 ? 'PDF로 출력할 연구일지가 없습니다' : printRangeTitle
               }
@@ -940,11 +961,12 @@ export default function Page() {
             dateLabel={dateLabel}
             form={journalForm}
             onChange={updateJournalForm}
-            onSave={saveJournalEntry}
             onUseSchedules={useSchedulesInJournal}
+            onScrollToRecords={scrollToDayRecords}
             saving={saving}
             canEdit={canEdit}
             existingEntry={journalEntry}
+            dirty={journalDirty}
             daySchedules={daySchedules}
           />
 
@@ -959,36 +981,81 @@ export default function Page() {
             onSearch={setSearch}
           />
 
-          {dayNotes.length === 0 ? (
-            <div
-              className="card"
-              style={{ padding: '32px 24px', textAlign: 'center', marginTop: 16 }}
-            >
-              <div style={{ fontSize: 14, color: 'var(--text-3)' }}>
-                {date}에 저장된 연구일지나 테스트 노트가 없습니다.
+          <div id="journal-day-records">
+            {dayNotes.length === 0 ? (
+              <div
+                className="card"
+                style={{ padding: '32px 24px', textAlign: 'center', marginTop: 16 }}
+              >
+                <div style={{ fontSize: 14, color: 'var(--text-3)' }}>
+                  {date}에 저장된 연구일지나 테스트 노트가 없습니다.
+                </div>
               </div>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 }}>
-              {dayNotes.map((note, idx) => (
-                <WebJournalCard
-                  key={note.id}
-                  note={note}
-                  index={idx + 1}
-                  onEdit={() => {
-                    if (isUnifiedSampleRecord(note)) {
-                      router.push(`/note/sample/${unifiedSampleSourceId(note)}`);
-                    } else if (isUnifiedMarketResearchRecord(note)) {
-                      router.push(`/note/market?edit=${unifiedMarketResearchSourceId(note)}`);
-                    } else {
-                      router.push(`/note/${note.id}`);
-                    }
-                  }}
-                />
-              ))}
-            </div>
-          )}
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 }}>
+                {dayNotes.map((note, idx) => (
+                  <WebJournalCard
+                    key={note.id}
+                    note={note}
+                    index={idx + 1}
+                    onPhotoClick={setPreviewPhoto}
+                    onEdit={() => {
+                      if (isUnifiedSampleRecord(note)) {
+                        router.push(`/note/sample/${unifiedSampleSourceId(note)}`);
+                      } else if (isUnifiedMarketResearchRecord(note)) {
+                        router.push(`/note/market?edit=${unifiedMarketResearchSourceId(note)}`);
+                      } else {
+                        router.push(`/note/${note.id}`);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </>
+      )}
+
+      {!loading && (
+        <StickySaveBar
+          onCancel={revertJournalForm}
+          onSave={saveJournalEntry}
+          saving={saving}
+          canSave={canEdit && (journalDirty || !journalEntry)}
+          cancelLabel="되돌리기"
+          saveLabel="보고서 저장"
+          savingLabel="저장 중"
+          status={
+            !canEdit
+              ? '관리자만 저장할 수 있습니다'
+              : journalDirty
+                ? `${dateLabel} · 저장 안 된 변경사항`
+                : journalEntry
+                  ? `${dateLabel} · 저장됨`
+                  : `${dateLabel} · 새 일지`
+          }
+          extra={
+            <button
+              type="button"
+              className="btn"
+              onClick={openJournalPdf}
+              disabled={printPeriodNotes.length === 0}
+              title={
+                printPeriodNotes.length === 0 ? 'PDF로 출력할 연구일지가 없습니다' : printRangeTitle
+              }
+            >
+              <Icon.download style={{ width: 13, height: 13 }} /> PDF
+            </button>
+          }
+        />
+      )}
+
+      {previewPhoto && (
+        <NotePhotoLightbox
+          photo={previewPhoto}
+          title={previewPhoto.caption || previewPhoto.name || '사진 보기'}
+          onClose={() => setPreviewPhoto(null)}
+        />
       )}
     </main>
   );
