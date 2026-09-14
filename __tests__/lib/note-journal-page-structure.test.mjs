@@ -40,7 +40,10 @@ describe('note journal page linkage', () => {
 
   test('연구일지 사진은 원본 샘플/노트 사진을 자동 병합하지 않는다', () => {
     expect(journalPageSource).toContain('withoutJournalSourceDuplicatePhotos');
-    expect(journalPageSource).toContain('filterJournalPhotosAgainstSources');
+    // 사진 중복 필터 구현은 journalPhotos.js로 분리됐다.
+    expect(readFileSync(resolve('app/note/journal/journalPhotos.js'), 'utf8')).toContain(
+      'filterJournalPhotosAgainstSources'
+    );
     expect(journalPageSource).toContain('setJournalForm(journalFormFromEntry(journalEntry))');
     expect(journalPageSource).toContain(
       'photos: Array.isArray(journalForm.photos) ? journalForm.photos : []'

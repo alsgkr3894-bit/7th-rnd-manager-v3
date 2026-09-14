@@ -87,9 +87,16 @@ describe('sample form body structure', () => {
   });
 
   test('journal exposes month-list search and period PDF output controls', () => {
-    expect(journalSource).toContain("import { SearchBox } from '@/components/ui/SearchBox'");
+    // 월별 목록 검색 UI는 _JournalMonthList.jsx로 분리됐다(매칭 호출은 page에 남음).
+    const journalMonthListSource = readFileSync(
+      resolve('app/note/journal/_JournalMonthList.jsx'),
+      'utf8'
+    );
+    expect(journalMonthListSource).toContain(
+      "import { SearchBox } from '@/components/ui/SearchBox'"
+    );
+    expect(journalMonthListSource).toContain('일지·노트·일정 검색');
     expect(journalSource).toContain('journalEntryMatches(entry, search)');
-    expect(journalSource).toContain('일지·노트·일정 검색');
     expect(journalSource).toContain('printRangeForMode(printMode');
     expect(journalSource).toContain('오늘/선택일');
     expect(journalSource).toContain('주간');
