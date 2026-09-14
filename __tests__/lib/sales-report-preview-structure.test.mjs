@@ -182,6 +182,12 @@ describe('sales report preview structure', () => {
     expect(rankTableRowsSource).toContain(
       'onUnmark={canUndiscontinue ? () => onUndiscontinue(item.name) : undefined}'
     );
+    // 미등록(아직 단종 등록 전) 항목은 "+ 단종" 버튼과 별개로 미등록 배지를 렌더한다 —
+    // 버튼은 no-print라 PDF에서 사라지므로 배지가 그 자리를 대신한다.
+    expect(rankTableRowsSource).toContain(
+      "import { UnregisteredBadge } from '@/components/sales/UnregisteredBadge'"
+    );
+    expect(rankTableRowsSource).toContain('<UnregisteredBadge printOnly={canEdit && canMark} />');
 
     expect(irregularHookSource).toContain('export function useIrregularMenuNames');
     expect(irregularHookSource).toContain('EMPTY_SET');

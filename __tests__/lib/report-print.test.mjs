@@ -62,6 +62,7 @@ describe('판매량 보고서 인쇄 — 단종/비정규메뉴 배지 가독성
   const irregularBadgeSrc = src('components/sales/IrregularMenuBadge.jsx');
   const rankRowsSrc = src('components/report/sales/SalesRankTableRows.jsx');
   const bulkFixSrc = src('components/report/sales/SalesDiscontinuedBulkFix.jsx');
+  const unregisteredBadgeSrc = src('components/sales/UnregisteredBadge.jsx');
 
   test('배지 컴포넌트가 인쇄 CSS에서 타겟팅할 클래스명을 갖는다', () => {
     expect(discontinuedBadgeSrc).toContain('discontinued-badge');
@@ -79,5 +80,22 @@ describe('판매량 보고서 인쇄 — 단종/비정규메뉴 배지 가독성
   test('클릭 전용 액션(단종 마크 버튼·전체 해제 바)은 no-print로 인쇄에서 빠진다', () => {
     expect(rankRowsSrc).toContain('mark-irregular-btn no-print');
     expect(bulkFixSrc).toContain('card no-print');
+  });
+
+  // 회귀: "+ 단종" 마크 버튼은 no-print라 인쇄/PDF에서 사라져, 아직 단종 등록 전인
+  // (미등록) 항목이 PDF에는 아무 표시도 없이 나오던 문제가 있었다 — 화면에서는
+  // 필요할 때만(뷰어) 보이는 print-only 배지를 두고, 인쇄 중에는 항상 보이게 한다.
+  test('미등록 배지가 인쇄에서 항상 보이도록 고정 스타일이 있다', () => {
+    expect(unregisteredBadgeSrc).toContain('unregistered-badge');
+    expect(unregisteredBadgeSrc).toContain('print-only');
+    expect(printSrc).toContain('.unregistered-badge');
+    expect(printSrc).toContain('display: inline-flex !important');
+  });
+
+  test('순위표 행이 미등록 배지를 렌더한다', () => {
+    expect(rankRowsSrc).toContain(
+      "import { UnregisteredBadge } from '@/components/sales/UnregisteredBadge'"
+    );
+    expect(rankRowsSrc).toContain('<UnregisteredBadge printOnly={canEdit && canMark} />');
   });
 });

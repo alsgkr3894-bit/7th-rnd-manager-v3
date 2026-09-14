@@ -6,6 +6,7 @@ import { safeRevenue } from '@/lib/sales/revenue';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { DiscontinuedBadge } from '@/components/sales/DiscontinuedBadge';
 import { IrregularMenuBadge } from '@/components/sales/IrregularMenuBadge';
+import { UnregisteredBadge } from '@/components/sales/UnregisteredBadge';
 
 export function SalesVariantRows({ item, opts }) {
   if (!opts.variant) return null;
@@ -76,6 +77,7 @@ export function SalesRankItemRows({
               />
             )
           )}
+          {item.unregistered && <UnregisteredBadge printOnly={canEdit && canMark} />}
           {item.unregistered && canEdit && canMark && (
             <button
               type="button"
