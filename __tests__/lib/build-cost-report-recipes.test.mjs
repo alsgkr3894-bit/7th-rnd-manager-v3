@@ -174,6 +174,7 @@ describe('buildRecipePrintRows', () => {
 
     expect(menus).toHaveLength(1);
     expect(menus[0]).toMatchObject({
+      kind: 'pizza',
       categoryLabel: '피자',
       menuCode: 'P-OR-001',
       menuName: '테스트 피자',
