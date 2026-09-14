@@ -82,6 +82,40 @@ describe('menu-master page structure', () => {
     expect(editModalSource).toContain('!codeConflict');
   });
 
+  // 회귀: 메뉴 추가 모달은 저장 후에만 레시피를 입력할 수 있었다(추가 → 수정 재진입).
+  // 카테고리만 선택하면 추가 모달에서도 바로 레시피를 입력할 수 있게 하고,
+  // 메뉴 저장은 성공했는데 레시피 저장만 실패하면 모달을 유지해 재시도할 수 있게 한다.
+  test('추가 모달에서도 카테고리만 있으면 레시피 섹션을 보여준다(draft 모드)', () => {
+    expect(editFieldsSource).toContain('(isNew ? form.category : form.menuCode && form.category)');
+    expect(editFieldsSource).toContain('draft={isNew}');
+    expect(editFieldsSource).toContain('sourceMenuCode={row?.menuCode || form.menuCode}');
+  });
+
+  test('메뉴 저장 성공 + 레시피 저장 실패 시 모달을 유지하고 재시도할 수 있게 한다', () => {
+    expect(editModalSource).toContain('persistedRow');
+    expect(editModalSource).toContain('if (result?.id != null && !persistedRow?.id)');
+    expect(editModalSource).toContain('메뉴는 저장됐지만 레시피 저장 실패');
+  });
+
+  test('레시피 에디터는 draft 모드에서 편집 중 초기화되지 않는다', () => {
+    const editorSource = readFileSync(
+      resolve('components/menu-master/useMenuRecipeEditor.js'),
+      'utf8'
+    );
+    expect(editorSource).toContain('draft = false');
+    expect(editorSource).toContain('loadedKeyRef');
+    expect(editorSource).toContain('loadSeqRef');
+    expect(editorSource).toContain("draft ? '__draft__' : loadMenuCode");
+    expect(editorSource).not.toContain('let ignore = false');
+
+    const sectionSource2 = readFileSync(
+      resolve('components/menu-master/MenuRecipeSection.jsx'),
+      'utf8'
+    );
+    expect(sectionSource2).toContain('supportedCategory');
+    expect(sectionSource2).toContain('메뉴코드를 입력하면 저장 시 이 레시피가 함께 저장됩니다');
+  });
+
   test('buildMenuMasterCsvRows produces correct 2D array', () => {
     const rows = [
       {

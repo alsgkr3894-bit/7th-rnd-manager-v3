@@ -112,7 +112,9 @@ export function MenuMasterEditFields({
       </div>
 
       {/* ── 레시피 / 원가 ─────────────────────── */}
-      {!isNew && form.menuCode && form.category && (
+      {/* 메뉴 추가 중(isNew)에는 아직 코드를 안 적었어도 카테고리만 있으면 레시피를 먼저
+          입력할 수 있다 — 저장 시 메뉴 기본정보와 함께 저장된다(draft 모드). */}
+      {(isNew ? form.category : form.menuCode && form.category) && (
         <div
           data-menu-master-section="recipe"
           style={{ borderTop: '1px solid var(--divider)', paddingTop: 20 }}
@@ -128,6 +130,7 @@ export function MenuMasterEditFields({
             size={form.size || '단일'}
             sellingPrice={form.price}
             onSaved={onRecipeSaved}
+            draft={isNew}
           />
         </div>
       )}

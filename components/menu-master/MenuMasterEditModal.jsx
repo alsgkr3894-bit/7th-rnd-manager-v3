@@ -73,6 +73,10 @@ export function MenuMasterEditModal({
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [missingConfirm, setMissingConfirm] = useState(null);
+  // 새 메뉴 추가 중 메뉴 저장은 성공했는데(insert) 이어지는 레시피 저장이 실패하면,
+  // 모달을 닫지 않고 그대로 유지해 재시도할 수 있게 한다 — 재시도부터는 이미 만들어진
+  // 행을 갱신하는(update) 흐름이어야 하므로 그 id를 기억해둔다.
+  const [persistedRow, setPersistedRow] = useState(row);
   const savingRef = useRef(false);
   const skipMissingCheckRef = useRef(false);
   const containerRef = useRef(null);
@@ -82,7 +86,7 @@ export function MenuMasterEditModal({
   const trimmedMenuCode = form.menuCode.trim();
   const { rows: allMenuRows, conflict: codeConflict } = useMenuCodeConflict(
     trimmedMenuCode,
-    row?.id
+    persistedRow?.id ?? row?.id
   );
   const codeChanged = !isNew && !!row?.menuCode && trimmedMenuCode !== row.menuCode;
   const canSave = trimmedMenuCode && form.menuName.trim() && !codeConflict;
@@ -125,7 +129,7 @@ export function MenuMasterEditModal({
     savingRef.current = true;
     setSaving(true);
     const payload = {
-      ...(row || {}),
+      ...(persistedRow || {}),
       menuCode: form.menuCode.trim(),
       menuName: form.menuName.trim(),
       category: form.category,
@@ -145,12 +149,26 @@ export function MenuMasterEditModal({
         toast: false,
         throwOnError: true,
       });
-      await recipeSectionRef.current?.saveRecipe?.({
-        showSuccessToast: false,
-        showErrorToast: false,
-        runOnSaved: false,
-        throwOnError: true,
-      });
+      if (result?.id != null && !persistedRow?.id) {
+        setPersistedRow({ ...payload, id: result.id });
+      }
+      try {
+        await recipeSectionRef.current?.saveRecipe?.({
+          showSuccessToast: false,
+          showErrorToast: false,
+          runOnSaved: false,
+          throwOnError: true,
+        });
+      } catch (recipeErr) {
+        // 메뉴 기본정보는 이미 저장됐다 — 모달을 닫지 않고 레시피만 다시 저장할 수
+        // 있게 둔다(위 setPersistedRow로 다음 저장은 update 경로를 탄다).
+        await onRecipeSaved?.();
+        showToast(
+          `메뉴는 저장됐지만 레시피 저장 실패: ${recipeErr?.message || recipeErr} — 다시 저장을 누르면 레시피만 재시도됩니다`,
+          'error'
+        );
+        return;
+      }
       await onRecipeSaved?.();
       onClose();
       if (result?.mode === 'update' && !payload.id) {
@@ -250,6 +268,11 @@ export function MenuMasterEditModal({
         >
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontWeight: 700, fontSize: 15 }}>{isNew ? '메뉴 추가' : '메뉴 수정'}</div>
+            {isNew && (
+              <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
+                기본정보와 레시피가 함께 저장됩니다
+              </div>
+            )}
             {!isNew && (
               <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
                 <span style={{ fontFamily: 'monospace' }}>{row?.menuCode}</span>

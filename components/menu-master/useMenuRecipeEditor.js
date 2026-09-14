@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { eligibleRecipeGroupsForMenu } from '@/lib/cost/recipe-groups/effective';
@@ -31,6 +31,7 @@ export function useMenuRecipeEditor({
   size,
   sellingPrice,
   onSaved,
+  draft = false,
 }) {
   const [components, setComponents] = useState([]);
   const [selectedRecipeGroupIds, setSelectedRecipeGroupIds] = useState([]);
@@ -51,10 +52,25 @@ export function useMenuRecipeEditor({
   // 고정해두면 중분류를 바꿔도 이미 불러온 구성품이 그대로 남고, 저장 시 캐스케이드로
   // 옮겨진 행에 동일한 구성품이 다시 쓰인다.
   const loadMenuCode = sourceMenuCode || menuCode;
+  // 새 메뉴 추가(draft) 모드는 아직 저장된 코드가 없어 loadMenuCode가 매 키 입력마다
+  // 바뀐다 — 이 경우 조회 자체를 하지 않고 loadKey를 고정값으로 둬, 구성품을 입력하는
+  // 도중 코드를 고쳐도 초기화되지 않게 한다.
+  const loadKey = draft ? '__draft__' : loadMenuCode;
   const recipeKind = recipeStoreKindForCategory(category);
+  const supportedCategory = Boolean(recipeKind);
   const supported = Boolean(recipeKind && menuCode);
 
+  const loadedKeyRef = useRef(null);
+  const loadSeqRef = useRef(0);
+
   useEffect(() => {
+    // 같은 조회 키로 이미 한 번 불러왔다면(중분류 변경으로 category만 바뀌어 이 effect가
+    // 재실행된 경우) 다시 초기화하지 않는다 — 편집 중이던 구성품이 DB 상태로 되돌아가던
+    // 버그를 여기서 막는다. draft 모드는 loadKey가 항상 '__draft__'로 고정돼 있어
+    // 모달이 열려 있는 동안 이 effect가 실질적으로 한 번만 실행된다.
+    if (loadedKeyRef.current === loadKey) return;
+    loadedKeyRef.current = loadKey;
+
     setLoaded(false);
     setComponents([]);
     setSelectedRecipeGroupIds([]);
@@ -62,17 +78,17 @@ export function useMenuRecipeEditor({
     setAllMenuItems([]);
     setRecipeGroups([]);
     setUnitPriceMap(new Map());
-    if (!loadMenuCode) return;
-    let ignore = false;
+    if (!loadKey) return;
+    const seq = ++loadSeqRef.current;
     initDB().then(async () => {
       const [existing, ingredients, latestUnitPriceMap, groups, menuItems] = await Promise.all([
-        getMenuRecipeForMenu({ menuCode: loadMenuCode, menuName, category, size }),
+        draft ? null : getMenuRecipeForMenu({ menuCode: loadMenuCode, menuName, category, size }),
         getAllIngredients(),
         loadLatestUnitPriceMap(),
         getAllRecipeGroups(),
         getAllMenuMaster(),
       ]);
-      if (ignore) return;
+      if (seq !== loadSeqRef.current) return;
       setComponents(
         existing?.components?.length
           ? existing.components.map(c => hydrateRecipeComponent(c, latestUnitPriceMap))
@@ -85,9 +101,6 @@ export function useMenuRecipeEditor({
       setUnitPriceMap(latestUnitPriceMap);
       setLoaded(true);
     });
-    return () => {
-      ignore = true;
-    };
     // api functions are stable module-level imports, loadMenuCode/category cover the relevant deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadMenuCode, category]);
@@ -241,6 +254,7 @@ export function useMenuRecipeEditor({
     loaded,
     saving,
     supported,
+    supportedCategory,
     addRow,
     copyRow,
     removeRow,

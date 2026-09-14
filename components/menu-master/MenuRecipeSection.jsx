@@ -62,6 +62,7 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     sellingPrice,
     onSaved,
     initialFocus = null,
+    draft = false,
   },
   ref
 ) {
@@ -83,6 +84,7 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     unitPriceMap,
     loaded,
     supported,
+    supportedCategory,
     addRow,
     copyRow,
     removeRow,
@@ -101,6 +103,7 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     size,
     sellingPrice,
     onSaved,
+    draft,
   });
 
   // 원산지/알레르기 미리보기는 직접 넣은 구성품뿐 아니라 체크된 공통원가(공통묶음)
@@ -399,7 +402,7 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     [addRow, components, displayedComponents, onlyMissingPrice]
   );
 
-  if (!supported) {
+  if (!supportedCategory) {
     return (
       <div
         style={{
@@ -411,6 +414,25 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
         }}
       >
         이 카테고리는 레시피 원가를 지원하지 않습니다. (카테고리를 확인해 주세요)
+      </div>
+    );
+  }
+
+  if (!supported) {
+    // supportedCategory는 만족하지만 menuCode가 아직 비어 있는 경우 — 새 메뉴를 추가하는
+    // 중이라 코드를 아직 안 적었을 때다(draft 모드). 카테고리 문제로 오해하지 않도록
+    // 별도 안내를 보여준다.
+    return (
+      <div
+        style={{
+          fontSize: 12,
+          color: 'var(--text-4)',
+          padding: '10px 12px',
+          border: '1px dashed var(--divider)',
+          borderRadius: 8,
+        }}
+      >
+        메뉴코드를 입력하면 저장 시 이 레시피가 함께 저장됩니다.
       </div>
     );
   }
