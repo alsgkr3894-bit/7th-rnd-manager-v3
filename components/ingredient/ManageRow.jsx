@@ -112,8 +112,12 @@ export const ManageRow = memo(function ManageRow({
         replacedFromProductCode={r.replacedFromProductCode}
         codeNameMap={codeNameMap}
       />
-      <td style={{ fontSize: 12, color: 'var(--text-2)' }}>{temperature}</td>
-      <td style={{ fontSize: 12, color: 'var(--text-2)' }}>{unitLabel}</td>
+      <td className="cell-nowrap" style={{ fontSize: 12, color: 'var(--text-2)' }}>
+        {temperature}
+      </td>
+      <td className="cell-nowrap" style={{ fontSize: 12, color: 'var(--text-2)' }}>
+        {unitLabel}
+      </td>
       <ManageRowScopeCell scope={scope} />
       <ManageRowPriceCell
         priceWithTax={priceWithTax}
@@ -124,7 +128,9 @@ export const ManageRow = memo(function ManageRow({
       />
       <ManageRowCategoryCell category={category} />
       <ManageRowTagsCell tags={tags} />
-      <td style={{ fontSize: 12, color: 'var(--text-2)' }}>{manufacturer}</td>
+      <td className="cell-nowrap" style={{ fontSize: 12, color: 'var(--text-2)' }}>
+        {manufacturer}
+      </td>
       <ManageRowActionCell
         excluded={r.excluded}
         deletePending={deletePending}

@@ -147,6 +147,7 @@ export function IngredientForm({
           )}
 
           <form
+            className="ingredient-form"
             onSubmit={handleSubmit}
             aria-busy={saving}
             style={{ display: 'flex', flexDirection: 'column', gap: 16 }}

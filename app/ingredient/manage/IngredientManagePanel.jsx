@@ -114,7 +114,7 @@ export function IngredientManagePanel({
   }, [highlightIdKey, highlightProductCodeKey, rows.length]);
   return (
     <>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div className="ingredient-filter-rows">
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ fontSize: 12, color: 'var(--text-3)', marginRight: 4, fontWeight: 600 }}>
             분류
@@ -245,7 +245,7 @@ export function IngredientManagePanel({
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table className="data-table stagger-rows">
+            <table className="data-table stagger-rows ingredient-manage-table">
               <thead>
                 <tr>
                   {batchMode && <th style={{ width: 36 }} />}

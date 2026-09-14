@@ -4,7 +4,7 @@ import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 export function AllergenSection({ allergens, allergenNone, onSet }) {
   const selected = Array.isArray(allergens) ? allergens : [];
   return (
-    <div style={{ borderTop: '1px solid var(--divider)', paddingTop: 16 }}>
+    <div className="ingredient-form-section">
       <div
         style={{
           fontSize: 13,

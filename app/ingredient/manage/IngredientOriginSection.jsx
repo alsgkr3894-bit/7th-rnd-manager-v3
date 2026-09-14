@@ -114,7 +114,7 @@ function OriginSuggest({ value, onChange, suggestions = [], placeholder = '' }) 
 export function OriginSection({ origin, originHidden, originNone, originSuggestions, onSet }) {
   const items = Array.isArray(origin) ? origin : [];
   return (
-    <div style={{ borderTop: '1px solid var(--divider)', paddingTop: 16 }}>
+    <div className="ingredient-form-section">
       <div
         style={{
           display: 'flex',

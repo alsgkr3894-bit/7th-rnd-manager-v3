@@ -500,3 +500,53 @@
   color: var(--text-1);
   line-height: 1.3;
 }
+
+/* ============================================================
+   식자재 관리 UI 정리 — 모달 + 목록 표 + 상단 필터 (4차 1-4)
+   기능/데이터는 그대로 두고 간격·크기만 정리한다.
+============================================================ */
+
+/* 모달: 짧은 필드 쌍(분류/제조사, 보관 온도/과세구분)을 2열로 묶어 입력 동선을 줄인다 */
+.ingredient-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+@media (max-width: 760px) {
+  .ingredient-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 모달: 원산지/알레르기 섹션 공통 구분선 (기존 인라인 스타일을 클래스로 통일) */
+.ingredient-form-section {
+  border-top: 1px solid var(--divider);
+  padding-top: 16px;
+}
+
+/* 모달: 입력칸 높이를 살짝 키워 터치·클릭 여유를 준다 */
+.ingredient-form .form-input {
+  min-height: 38px;
+}
+
+/* 목록 표: 행 간격을 넓혀 읽기 편하게, 짧은 값 칸은 줄바꿈 방지 */
+.ingredient-manage-table th {
+  padding: 10px 12px;
+}
+.ingredient-manage-table td {
+  padding: 9px 12px;
+}
+.cell-nowrap {
+  white-space: nowrap;
+}
+
+/* 상단 필터·칩 영역: 행 간 여백 정리 + 칩 높이를 살짝 키워 클릭하기 편하게 */
+.ingredient-filter-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ingredient-filter-rows .chip {
+  min-height: 30px;
+  padding: 5px 10px;
+}

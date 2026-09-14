@@ -23,41 +23,61 @@ export function BasicIngredientFields({
 
   return (
     <>
-      <Field label="분류" hint="메인 카테고리 1개 (예: 토핑재료, 엣지, 사이드)">
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          {customCat ? (
-            <input
-              className="form-input"
-              value={form.category}
-              onChange={e => onSet('category', e.target.value)}
-              placeholder="직접 입력"
-              style={{ flex: 1 }}
-            />
-          ) : (
-            <select
-              className="form-input"
-              value={form.category}
-              onChange={e => onSet('category', e.target.value)}
-              style={{ flex: 1 }}
+      <div className="ingredient-form-grid">
+        <Field label="분류" hint="메인 카테고리 1개 (예: 토핑재료, 엣지, 사이드)">
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            {customCat ? (
+              <input
+                className="form-input"
+                value={form.category}
+                onChange={e => onSet('category', e.target.value)}
+                placeholder="직접 입력"
+                style={{ flex: 1 }}
+              />
+            ) : (
+              <select
+                className="form-input"
+                value={form.category}
+                onChange={e => onSet('category', e.target.value)}
+                style={{ flex: 1 }}
+              >
+                <option value="">미분류</option>
+                {catOptions.map(c => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            )}
+            <button
+              type="button"
+              className="btn"
+              style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+              onClick={onToggleCustomCat}
             >
-              <option value="">미분류</option>
-              {catOptions.map(c => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          )}
-          <button
-            type="button"
-            className="btn"
-            style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
-            onClick={onToggleCustomCat}
-          >
-            {customCat ? '목록에서 선택' : '직접 입력'}
-          </button>
-        </div>
-      </Field>
+              {customCat ? '목록에서 선택' : '직접 입력'}
+            </button>
+          </div>
+        </Field>
+
+        <Field
+          label="제조사"
+          hint="등록된 공급업체와 이름이 같으면 공급업체 탭에서 자동 연결됩니다"
+        >
+          <input
+            className="form-input"
+            list={manufacturerDatalistId}
+            value={form.manufacturer}
+            onChange={e => onSet('manufacturer', e.target.value)}
+            placeholder="예) CJ제일제당, 매일유업"
+          />
+          <datalist id={manufacturerDatalistId}>
+            {supplierNames.map(name => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
+        </Field>
+      </div>
 
       <Field label="#태그" hint="여러 개 입력 가능 (예: 육가공류, 수산류, 치즈류)">
         <div
@@ -138,21 +158,6 @@ export function BasicIngredientFields({
             ))}
           </datalist>
         </div>
-      </Field>
-
-      <Field label="제조사" hint="등록된 공급업체와 이름이 같으면 공급업체 탭에서 자동 연결됩니다">
-        <input
-          className="form-input"
-          list={manufacturerDatalistId}
-          value={form.manufacturer}
-          onChange={e => onSet('manufacturer', e.target.value)}
-          placeholder="예) CJ제일제당, 매일유업"
-        />
-        <datalist id={manufacturerDatalistId}>
-          {supplierNames.map(name => (
-            <option key={name} value={name} />
-          ))}
-        </datalist>
       </Field>
 
       <Field label="단종 처리" hint="단종 카테고리에만 표시되며, 일반 목록에서 제외됩니다">

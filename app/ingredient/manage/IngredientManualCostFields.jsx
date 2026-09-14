@@ -8,43 +8,45 @@ const TAX_OPTIONS = ['과세', '면세'];
 export function IngredientManualCostFields({ form, errors, onSet }) {
   return (
     <>
-      <Field label="보관 온도">
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <IngredientRadioOption
-            value=""
-            checked={form.temperature === ''}
-            onChange={() => onSet('temperature', '')}
-            muted
-          >
-            미지정
-          </IngredientRadioOption>
-          {TEMP_OPTIONS.map(option => (
+      <div className="ingredient-form-grid">
+        <Field label="보관 온도">
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <IngredientRadioOption
-              key={option}
-              value={option}
-              checked={form.temperature === option}
-              onChange={() => onSet('temperature', option)}
+              value=""
+              checked={form.temperature === ''}
+              onChange={() => onSet('temperature', '')}
+              muted
             >
-              {option}
+              미지정
             </IngredientRadioOption>
-          ))}
-        </div>
-      </Field>
+            {TEMP_OPTIONS.map(option => (
+              <IngredientRadioOption
+                key={option}
+                value={option}
+                checked={form.temperature === option}
+                onChange={() => onSet('temperature', option)}
+              >
+                {option}
+              </IngredientRadioOption>
+            ))}
+          </div>
+        </Field>
 
-      <Field label="과세구분">
-        <div style={{ display: 'flex', gap: 12 }}>
-          {TAX_OPTIONS.map(option => (
-            <IngredientRadioOption
-              key={option}
-              value={option}
-              checked={form.taxType === option}
-              onChange={() => onSet('taxType', option)}
-            >
-              {option}
-            </IngredientRadioOption>
-          ))}
-        </div>
-      </Field>
+        <Field label="과세구분">
+          <div style={{ display: 'flex', gap: 12 }}>
+            {TAX_OPTIONS.map(option => (
+              <IngredientRadioOption
+                key={option}
+                value={option}
+                checked={form.taxType === option}
+                onChange={() => onSet('taxType', option)}
+              >
+                {option}
+              </IngredientRadioOption>
+            ))}
+          </div>
+        </Field>
+      </div>
 
       <Field
         label="수동 단가 (부가세포함)"
