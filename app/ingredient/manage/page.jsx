@@ -18,6 +18,7 @@ import { IngredientSettingsPanel } from './IngredientSettingsPanel';
 import { IngredientDiagnostics } from './IngredientDiagnostics';
 import { useIngredientManageData } from './useIngredientManageData';
 import { useIngredientManageView } from './useIngredientManageView';
+import { useDiscontinuedRefs } from './useDiscontinuedRefs';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { IngredientReportPanel } from './IngredientReportPanel';
 import { KEYS } from '@/lib/note/keys';
@@ -60,6 +61,10 @@ export default function Page() {
     latestPriceRows,
     supplierNames,
   } = useIngredientManageData();
+  const { refs: discontinuedRefs, loading: discontinuedRefsLoading } = useDiscontinuedRefs(
+    rows,
+    priceDate
+  );
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 200);
   const [catFilter, setCatFilter] = useLocalStorage(KEYS.INGREDIENT_CAT_FILTER, 'all', value =>
@@ -373,6 +378,11 @@ export default function Page() {
 
       <IngredientDiagnostics
         brokenRefs={brokenRefs}
+        discontinuedRefs={discontinuedRefs}
+        discontinuedRefsLoading={discontinuedRefsLoading}
+        onLinkSubstitute={ref =>
+          setSubstituteSource(rows.find(r => productCodeKey(r) === productCodeKey(ref)) || ref)
+        }
         productCodeDupes={productCodeDupes}
         duplicateGroupCount={duplicateGroupCount}
         duplicateDiagnostics={duplicateDiagnostics}

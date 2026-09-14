@@ -1,6 +1,7 @@
 'use client';
 import {
   BrokenRefsBanner,
+  DiscontinuedRefsBanner,
   ProductCodeDupesBanner,
   UnusedCleanupBanner,
   DuplicateGroupsBanner,
@@ -8,6 +9,9 @@ import {
 
 export function IngredientDiagnostics({
   brokenRefs,
+  discontinuedRefs = [],
+  discontinuedRefsLoading = false,
+  onLinkSubstitute,
   productCodeDupes,
   duplicateGroupCount,
   duplicateDiagnostics,
@@ -27,6 +31,12 @@ export function IngredientDiagnostics({
 }) {
   return (
     <>
+      <DiscontinuedRefsBanner
+        refs={discontinuedRefs}
+        loading={discontinuedRefsLoading}
+        onLinkSubstitute={onLinkSubstitute}
+        isViewer={!isAdmin}
+      />
       <BrokenRefsBanner brokenRefs={brokenRefs} />
       <ProductCodeDupesBanner
         productCodeDupes={productCodeDupes}
