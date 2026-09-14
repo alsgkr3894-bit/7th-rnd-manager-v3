@@ -417,3 +417,212 @@ describe('upsertMenuMaster menuCode cascade', () => {
     expect(dbModule.runTransaction).not.toHaveBeenCalled();
   });
 });
+
+// ── upsertMenuMaster — 영양성분 base 코드(피자 L/R 형제 규격) + 레시피 이력 캐스케이드 ──
+//
+// nutrition_menu_ref/nutrition_raw_values는 사이즈 접미사를 뗀 "base" 코드로 저장된다
+// (P-OR-005-L, P-OR-005-R 둘 다 P-OR-005 하나를 공유). 한쪽 규격만 코드를 바꾸면 다른
+// 규격이 아직 옛 base를 쓰고 있으므로 영양 데이터는 그대로 둬야 하고, 두 규격이 모두
+// 옮겨졌을 때만(형제가 없을 때) 영양 데이터도 함께 옮긴다. menu_recipe_versions는
+// history라 항상 함께 옮기되(충돌해도 병합), 메뉴 삭제 시에는 지우지 않는다.
+describe('upsertMenuMaster — 영양성분 base 코드·레시피 이력 캐스케이드', () => {
+  beforeEach(() => {
+    deleteByIdError = null;
+    dbModule.runTransaction.mockClear();
+    stores = {
+      menu_master: [
+        {
+          id: 100,
+          menuCode: 'P-OR-005-L',
+          menuName: '오리지널피자',
+          category: '피자',
+          size: 'L',
+        },
+        {
+          id: 101,
+          menuCode: 'P-OR-005-R',
+          menuName: '오리지널피자',
+          category: '피자',
+          size: 'R',
+        },
+      ],
+      cost_selling_prices: [
+        { id: 1, menuCode: 'P-OR-005-L', price: 19000 },
+        { id: 2, menuCode: 'P-OR-005-R', price: 15000 },
+      ],
+      menu_recipes: [
+        { id: 3, menuCode: 'P-OR-005-L', components: [] },
+        { id: 4, menuCode: 'P-OR-005-R', components: [] },
+      ],
+      menu_recipe_versions: [{ id: 9, menuCode: 'P-OR-005-L', menuName: '오리지널피자' }],
+      nutrition_menu_ref: [{ id: 5, menuCode: 'P-OR-005', menuName: '오리지널피자' }],
+      nutrition_raw_values: [{ id: 7, menuCode: 'P-OR-005', crustType: '석쇠L' }],
+    };
+  });
+
+  test('1. L만 코드를 바꾸면 R이 아직 같은 base를 써서 영양성분은 옮기지 않는다', async () => {
+    const result = await upsertMenuMaster({
+      id: 100,
+      menuCode: 'P-PS-005-L',
+      menuName: '프리미엄피자',
+      category: '피자',
+      size: 'L',
+    });
+
+    expect(result.cascadedMenuCode).toMatchObject({
+      from: 'P-OR-005-L',
+      to: 'P-PS-005-L',
+      updated: { cost_selling_prices: 1, menu_recipes: 1, menu_recipe_versions: 1 },
+      skipped: { nutrition: 'sibling' },
+    });
+    expect(result.cascadedMenuCode.updated.nutrition_menu_ref).toBeUndefined();
+    expect(stores.cost_selling_prices.find(r => r.id === 1)).toMatchObject({
+      menuCode: 'P-PS-005-L',
+    });
+    expect(stores.menu_recipe_versions.find(r => r.id === 9)).toMatchObject({
+      menuCode: 'P-PS-005-L',
+    });
+    expect(stores.nutrition_menu_ref.find(r => r.id === 5)).toMatchObject({
+      menuCode: 'P-OR-005',
+    });
+    expect(stores.nutrition_raw_values.find(r => r.id === 7)).toMatchObject({
+      menuCode: 'P-OR-005',
+    });
+  });
+
+  test('2. 이어서 R도 같은 base로 바꾸면(더 이상 형제가 없음) 영양성분이 함께 옮겨간다', async () => {
+    await upsertMenuMaster({
+      id: 100,
+      menuCode: 'P-PS-005-L',
+      menuName: '프리미엄피자',
+      category: '피자',
+      size: 'L',
+    });
+
+    const result = await upsertMenuMaster({
+      id: 101,
+      menuCode: 'P-PS-005-R',
+      menuName: '프리미엄피자',
+      category: '피자',
+      size: 'R',
+    });
+
+    expect(result.cascadedMenuCode).toMatchObject({
+      updated: {
+        cost_selling_prices: 1,
+        menu_recipes: 1,
+        nutrition_menu_ref: 1,
+        nutrition_raw_values: 1,
+      },
+      skipped: {},
+    });
+    expect(stores.nutrition_menu_ref.find(r => r.id === 5)).toMatchObject({
+      menuCode: 'P-PS-005',
+    });
+    expect(stores.nutrition_raw_values.find(r => r.id === 7)).toMatchObject({
+      menuCode: 'P-PS-005',
+    });
+  });
+
+  test('3. 형제 규격이 없는 단일 규격 메뉴는 코드 변경 시 영양성분도 바로 옮겨간다', async () => {
+    stores.menu_master = [{ id: 200, menuCode: 'S-001', menuName: '사이드', category: '사이드' }];
+    stores.nutrition_menu_ref = [{ id: 50, menuCode: 'S-001', menuName: '사이드' }];
+    stores.nutrition_raw_values = [];
+    stores.cost_selling_prices = [];
+    stores.menu_recipes = [];
+    stores.menu_recipe_versions = [];
+
+    const result = await upsertMenuMaster({
+      id: 200,
+      menuCode: 'S-002',
+      menuName: '사이드',
+      category: '사이드',
+    });
+
+    expect(result.cascadedMenuCode.skipped).toEqual({});
+    expect(stores.nutrition_menu_ref.find(r => r.id === 50)).toMatchObject({ menuCode: 'S-002' });
+  });
+
+  test('4. 옮기려는 영양성분 base 코드가 이미 다른 메뉴 것이면 저장을 막는다', async () => {
+    stores.nutrition_menu_ref.push({ id: 51, menuCode: 'P-PS-005', menuName: '다른 메뉴' });
+    // R도 함께 옮겨서(형제 없음) moveBase가 true가 되게 한다.
+    stores.menu_master[1] = { ...stores.menu_master[1], menuCode: 'P-PS-005-R' };
+
+    await expect(
+      upsertMenuMaster({
+        id: 100,
+        menuCode: 'P-PS-005-L',
+        menuName: '프리미엄피자',
+        category: '피자',
+        size: 'L',
+      })
+    ).rejects.toThrow('연결 데이터에 같은 menuCode가 이미 있습니다: nutrition_menu_ref');
+    expect(stores.menu_master.find(r => r.id === 100)).toMatchObject({ menuCode: 'P-OR-005-L' });
+  });
+
+  test('5. 레시피 이력은 대상 코드에 이미 다른 스냅샷이 있어도 충돌 없이 병합 이동한다', async () => {
+    stores.menu_recipe_versions.push({ id: 10, menuCode: 'P-PS-005-L', menuName: '이전 스냅샷' });
+
+    const result = await upsertMenuMaster({
+      id: 100,
+      menuCode: 'P-PS-005-L',
+      menuName: '프리미엄피자',
+      category: '피자',
+      size: 'L',
+    });
+
+    expect(result.cascadedMenuCode.updated.menu_recipe_versions).toBe(1);
+    const versionCodes = stores.menu_recipe_versions.map(r => r.menuCode).sort();
+    expect(versionCodes).toEqual(['P-PS-005-L', 'P-PS-005-L']);
+  });
+});
+
+describe('getMenuDeletePlan / deleteMenuMaster — base 코드 형제 규칙 + 레시피 이력 보존', () => {
+  beforeEach(() => {
+    deleteByIdError = null;
+    dbModule.runTransaction.mockClear();
+    stores = {
+      menu_master: [
+        { id: 100, menuCode: 'P-OR-005-L', menuName: '오리지널피자', category: '피자', size: 'L' },
+        { id: 101, menuCode: 'P-OR-005-R', menuName: '오리지널피자', category: '피자', size: 'R' },
+      ],
+      cost_selling_prices: [{ id: 1, menuCode: 'P-OR-005-L', price: 19000 }],
+      menu_recipes: [{ id: 3, menuCode: 'P-OR-005-L', components: [] }],
+      menu_recipe_versions: [{ id: 9, menuCode: 'P-OR-005-L', menuName: '오리지널피자' }],
+      nutrition_menu_ref: [{ id: 5, menuCode: 'P-OR-005', menuName: '오리지널피자' }],
+      nutrition_raw_values: [{ id: 7, menuCode: 'P-OR-005', crustType: '석쇠L' }],
+    };
+  });
+
+  test('6. R이 남아있는 동안 L을 삭제해도 영양성분은 형제가 쓰고 있어 지우지 않는다', async () => {
+    const plan = await getMenuDeletePlan(100);
+    expect(plan.linkedCounts).toMatchObject({
+      cost_selling_prices: 1,
+      menu_recipes: 1,
+      nutrition_menu_ref: 0,
+      nutrition_raw_values: 0,
+    });
+
+    await deleteMenuMaster(100);
+    expect(stores.menu_master.find(r => r.id === 100)).toBeUndefined();
+    expect(stores.cost_selling_prices).toEqual([]);
+    expect(stores.menu_recipes).toEqual([]);
+    // 형제(R)가 아직 같은 base를 쓰므로 영양성분은 그대로 남는다.
+    expect(stores.nutrition_menu_ref).toHaveLength(1);
+    expect(stores.nutrition_raw_values).toHaveLength(1);
+    // 레시피 이력은 애초에 삭제 대상이 아니다(복구 배너가 참조).
+    expect(stores.menu_recipe_versions).toHaveLength(1);
+  });
+
+  test('형제가 없으면(마지막 규격) 삭제 시 영양성분도 함께 지운다', async () => {
+    stores.menu_master = [stores.menu_master[0]]; // R 제거 — L이 유일한 규격
+
+    const plan = await getMenuDeletePlan(100);
+    expect(plan.linkedCounts).toMatchObject({ nutrition_menu_ref: 1, nutrition_raw_values: 1 });
+
+    await deleteMenuMaster(100);
+    expect(stores.nutrition_menu_ref).toEqual([]);
+    expect(stores.nutrition_raw_values).toEqual([]);
+    expect(stores.menu_recipe_versions).toHaveLength(1);
+  });
+});

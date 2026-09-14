@@ -70,6 +70,18 @@ describe('menu-master page structure', () => {
     expect(recipeSectionSource).not.toContain('onSave={handleSave}');
   });
 
+  // 회귀: 메뉴코드를 바꿔도 저장 전 경고나 이동 결과 안내가 전혀 없었다. 저장 성공 토스트에
+  // 캐스케이드 요약을 보여주고, 저장 전 코드 변경/중복 경고를 표시한다.
+  test('메뉴코드 변경 시 캐스케이드 요약·중복 경고를 보여준다', () => {
+    expect(editModalSource).toContain("from '@/components/menu-master/useMenuCodeConflict'");
+    expect(editModalSource).toContain("from '@/lib/menu-master/linked-code-plan'");
+    expect(editModalSource).toContain('useMenuCodeConflict(');
+    expect(editModalSource).toContain('formatMenuCodeCascadeSummary(result?.cascadedMenuCode)');
+    expect(editModalSource).toContain('코드 변경');
+    expect(editModalSource).toContain('codeConflict');
+    expect(editModalSource).toContain('!codeConflict');
+  });
+
   test('buildMenuMasterCsvRows produces correct 2D array', () => {
     const rows = [
       {

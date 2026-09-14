@@ -183,6 +183,15 @@ describe('중분류 변경 시 레시피 구성품이 삭제되던 버그 — �
       /if \('kind' in row\) next\.kind = recipeStoreKindForCategory\(next\.category\) \|\| row\.kind;/
     );
   });
+
+  // 회귀: 영양성분 store(base 코드)가 캐스케이드에서 full 코드로만 매칭돼, 피자 L/R
+  // 메뉴의 코드를 바꾸면 영양 연결이 끊기던 버그 + 레시피 이력이 옛 코드에 남아
+  // 고아 배너가 잘못 뜨던 버그를 수정했다.
+  test('menu_recipe_versions가 캐스케이드 대상 store 목록에 있다', () => {
+    const s = src('lib/menu-master/store.js');
+    expect(s).toContain("'menu_recipe_versions'");
+    expect(s).toContain("from './linked-code-plan'");
+  });
 });
 
 describe('고아 레시피 스냅샷 감지·복구', () => {

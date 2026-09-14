@@ -10,6 +10,11 @@ import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { MenuMasterEditFields } from '@/components/menu-master/MenuMasterEditFields';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showToast } from '@/components/Toast';
+import { useMenuCodeConflict } from '@/components/menu-master/useMenuCodeConflict';
+import {
+  formatMenuCodeCascadeSummary,
+  hasSiblingSharingBase,
+} from '@/lib/menu-master/linked-code-plan';
 
 function summarizeMissingNames(names = []) {
   const list = names.filter(Boolean);
@@ -74,7 +79,13 @@ export function MenuMasterEditModal({
   const recipeSectionRef = useRef(null);
   const set = makeFieldUpdater(setForm);
   const defaultPrice = getDefaultPrice(form.menuCode);
-  const canSave = form.menuCode.trim() && form.menuName.trim();
+  const trimmedMenuCode = form.menuCode.trim();
+  const { rows: allMenuRows, conflict: codeConflict } = useMenuCodeConflict(
+    trimmedMenuCode,
+    row?.id
+  );
+  const codeChanged = !isNew && !!row?.menuCode && trimmedMenuCode !== row.menuCode;
+  const canSave = trimmedMenuCode && form.menuName.trim() && !codeConflict;
 
   async function submit() {
     if (savingRef.current) return; // 저장 진행 중 재진입(Ctrl+S 연타) 방지
@@ -148,7 +159,7 @@ export function MenuMasterEditModal({
           'warn'
         );
       } else {
-        showToast('저장 완료', 'ok');
+        showToast(formatMenuCodeCascadeSummary(result?.cascadedMenuCode), 'ok');
       }
     } catch (err) {
       showToast('저장 실패: ' + (err?.message || err), 'error');
@@ -245,6 +256,19 @@ export function MenuMasterEditModal({
                 {row?.menuName && (
                   <span style={{ marginLeft: 8, color: 'var(--text-2)' }}>{row.menuName}</span>
                 )}
+              </div>
+            )}
+            {codeChanged && (
+              <div style={{ fontSize: 11, color: 'var(--warn)', marginTop: 4 }}>
+                코드 변경 {row.menuCode} → {trimmedMenuCode} — 판매가·레시피·레시피 이력·영양
+                데이터가 함께 이동합니다
+                {hasSiblingSharingBase(row, allMenuRows) &&
+                  ` (영양성분은 ${row.size || '다른'} 규격이 같은 코드를 쓰고 있어 그대로 남습니다)`}
+              </div>
+            )}
+            {codeConflict && (
+              <div style={{ fontSize: 11, color: 'var(--negative)', marginTop: 4 }}>
+                {trimmedMenuCode} 코드가 이미 있습니다 ({codeConflict.menuName})
               </div>
             )}
           </div>
