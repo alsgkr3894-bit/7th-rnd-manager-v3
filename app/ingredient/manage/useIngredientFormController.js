@@ -31,6 +31,7 @@ const EMPTY = {
   temperature: '',
   baseQuantity: '',
   baseUnitType: 'g',
+  pieceWeightGrams: '',
   taxType: '과세',
   priceOverride: '',
   scope: '',
@@ -154,6 +155,9 @@ export function useIngredientFormController({
     if (!parseOptionalNonNegativeNumber(form.baseQuantity).ok) {
       e.baseQuantity = '0 이상의 숫자만 입력하세요';
     }
+    if (form.baseUnitType === '개' && !parseOptionalNonNegativeNumber(form.pieceWeightGrams).ok) {
+      e.pieceWeightGrams = '0 이상의 숫자만 입력하세요';
+    }
     if (!isJetteLinked && !parseOptionalNonNegativeNumber(form.priceOverride).ok) {
       e.priceOverride = '0 이상의 숫자만 입력하세요';
     }
@@ -190,6 +194,10 @@ export function useIngredientFormController({
     try {
       const baseQuantity = parseOptionalNonNegativeNumber(form.baseQuantity).value;
       const priceOverride = parseOptionalNonNegativeNumber(form.priceOverride).value;
+      const pieceWeightGrams =
+        form.baseUnitType === '개'
+          ? parseOptionalNonNegativeNumber(form.pieceWeightGrams).value
+          : null;
       const origin = (form.origin || [])
         .filter(it => it.country?.trim() && it.displayName?.trim())
         .map(it => ({ displayName: it.displayName.trim(), country: it.country.trim() }));
@@ -197,6 +205,7 @@ export function useIngredientFormController({
       const data = {
         ...form,
         baseQuantity,
+        pieceWeightGrams,
         origin: form.originNone === true ? null : originValue,
         originHidden: form.originHidden === true,
         originNone: form.originNone === true,
@@ -304,6 +313,7 @@ function toForm(r) {
     discontinued: r.discontinued === true,
     baseQuantity: r.baseQuantity != null ? String(r.baseQuantity) : '',
     baseUnitType: r.baseUnitType || 'g',
+    pieceWeightGrams: r.pieceWeightGrams != null ? String(r.pieceWeightGrams) : '',
     taxType: r.taxType || '과세',
     priceOverride: r.priceOverride != null ? String(r.priceOverride) : '',
     scope: r.scope && r.scope !== SCOPE_UNASSIGNED ? r.scope : '',

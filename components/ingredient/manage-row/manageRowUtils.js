@@ -1,6 +1,7 @@
 import { formatNumber } from '@/lib/format';
 import { countIngredientPhotos, getPrimaryIngredientPhoto, sortHashTags } from '@/lib/ingredient';
 import { getIngredientPackagePrice } from '@/lib/ingredient/price-status';
+import { roundUnitPrice } from '@/lib/cost/unit-policy';
 import { asDisplayText, asStringArray } from '@/lib/ui/prop-guards';
 
 export function buildManageRowModel(rawRow = {}) {
@@ -16,6 +17,17 @@ export function buildManageRowModel(rawRow = {}) {
       ? `${formatNumber(baseQuantity)}${baseUnitType}`
       : salesUnit;
   const priceWithTax = getIngredientPackagePrice(r);
+  const isPieceUnit = baseUnitType === '개';
+  const unitPrice = Number.isFinite(Number(r.unitPrice)) ? Number(r.unitPrice) : null;
+  const pieceWeightGrams = Number.isFinite(Number(r.pieceWeightGrams))
+    ? Number(r.pieceWeightGrams)
+    : null;
+  // unitPrice는 baseUnitType이 '개'일 때 이미 "1개당 원가"다(calcUnitPrice가 baseQuantity로 나눔) —
+  // 여기에 1개당 g을 더 나누면 g당 환산 원가가 나온다.
+  const perGramPrice =
+    isPieceUnit && unitPrice != null && pieceWeightGrams != null && pieceWeightGrams > 0
+      ? roundUnitPrice(unitPrice / pieceWeightGrams)
+      : null;
 
   return {
     r,
@@ -31,6 +43,10 @@ export function buildManageRowModel(rawRow = {}) {
     photo: getPrimaryIngredientPhoto(r),
     photoCount: countIngredientPhotos(r),
     priceWithTax,
+    isPieceUnit,
+    unitPrice,
+    pieceWeightGrams,
+    perGramPrice,
     originCount: Array.isArray(r.origin) ? r.origin.length : 0,
     allergenCount: Array.isArray(r.allergens) ? r.allergens.length : 0,
     deletable: r.isManual && r.id != null && !productCode,

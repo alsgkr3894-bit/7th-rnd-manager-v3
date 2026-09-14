@@ -43,6 +43,10 @@ export const ManageRow = memo(function ManageRow({
     photo,
     photoCount,
     priceWithTax,
+    isPieceUnit,
+    unitPrice,
+    pieceWeightGrams,
+    perGramPrice,
     originCount,
     allergenCount,
     deletable,
@@ -111,7 +115,13 @@ export const ManageRow = memo(function ManageRow({
       <td style={{ fontSize: 12, color: 'var(--text-2)' }}>{temperature}</td>
       <td style={{ fontSize: 12, color: 'var(--text-2)' }}>{unitLabel}</td>
       <ManageRowScopeCell scope={scope} />
-      <ManageRowPriceCell priceWithTax={priceWithTax} />
+      <ManageRowPriceCell
+        priceWithTax={priceWithTax}
+        isPieceUnit={isPieceUnit}
+        unitPrice={unitPrice}
+        pieceWeightGrams={pieceWeightGrams}
+        perGramPrice={perGramPrice}
+      />
       <ManageRowCategoryCell category={category} />
       <ManageRowTagsCell tags={tags} />
       <td style={{ fontSize: 12, color: 'var(--text-2)' }}>{manufacturer}</td>
