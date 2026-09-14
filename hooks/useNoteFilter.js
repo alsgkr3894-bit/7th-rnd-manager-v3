@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { tryLS, setLS } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
+import { buildNoteListQuery } from '@/lib/note/list-state';
 import {
   buildNoteSearchIndex,
   countNotesByStatus,
@@ -58,9 +59,12 @@ export function normalizeNoteBrandFilter(value, fallback = 'all') {
 /**
  * 노트 목록의 검색/상태필터/정렬 상태와 파생 데이터를 관리하는 훅.
  *
- * - 초기값: URL query(q/status) > localStorage > 기본값 순.
- * - search/statusFilter/sortBy 변경 시 localStorage에 영속,
- *   search/statusFilter는 URL(replaceState)에도 동기화.
+ * - 초기값: search/statusFilter/typeFilter는 URL query만 본다(없으면 기본값 "전체") —
+ *   `/note`로 바로 가면 항상 기본값으로 열리게 하기 위해 localStorage는 더 이상 안 씀.
+ *   sortBy만 localStorage에 남아 있다.
+ * - search/statusFilter/typeFilter는 URL(replaceState)에 동기화, sortBy는 localStorage에 영속.
+ * - 같은 라우트로 다시 이동(예: 사이드바 "노트 목록" 재클릭)해도 리마운트가 안 돼 위 마운트
+ *   효과가 재실행되지 않으므로, URL이 바뀌면 그 값으로 state를 되돌리는 역동기화 효과가 있다.
  * - 파생: counts(상태별 개수), searchIndex(검색 인덱스), filtered(필터·정렬된 목록).
  *
  * @param {Array<object>} notes
@@ -99,15 +103,9 @@ export function useNoteFilter(notes, pinnedIds, { pathname } = {}) {
 
   useEffect(() => {
     const initialParams = new URLSearchParams(initialQueryRef.current);
-    setRawSearch(normalizeNoteFilterText(initialParams.get('q') || tryLS(KEYS.NOTE_SEARCH, '')));
-    setRawStatusFilter(
-      normalizeNoteStatusFilter(initialParams.get('status') || tryLS(KEYS.NOTE_STATUS, 'all'))
-    );
-    setRawTypeFilter(
-      normalizeNoteTypeFilter(
-        initialParams.get('type') || tryLS(KEYS.NOTE_TYPE_FILTER, NOTE_UNIFIED_TYPE_ALL)
-      )
-    );
+    setRawSearch(normalizeNoteFilterText(initialParams.get('q') || ''));
+    setRawStatusFilter(normalizeNoteStatusFilter(initialParams.get('status') || 'all'));
+    setRawTypeFilter(normalizeNoteTypeFilter(initialParams.get('type') || NOTE_UNIFIED_TYPE_ALL));
     setRawSortBy(normalizeNoteSortKey(tryLS(KEYS.NOTE_SORT, 'createdAt')));
     setFiltersReady(true);
   }, []);
@@ -118,19 +116,10 @@ export function useNoteFilter(notes, pinnedIds, { pathname } = {}) {
     setBrandReady(true);
   }, []);
 
-  // 영속화 (기존 동작과 동일한 키)
-  useEffect(() => {
-    if (!filtersReady) return;
-    setLS(KEYS.NOTE_SEARCH, safeSearch);
-  }, [safeSearch, filtersReady]);
-  useEffect(() => {
-    if (!filtersReady) return;
-    setLS(KEYS.NOTE_STATUS, safeStatusFilter);
-  }, [safeStatusFilter, filtersReady]);
-  useEffect(() => {
-    if (!filtersReady) return;
-    setLS(KEYS.NOTE_TYPE_FILTER, safeTypeFilter);
-  }, [safeTypeFilter, filtersReady]);
+  // 영속화 — search/statusFilter/typeFilter는 더 이상 localStorage에 저장하지 않는다.
+  // "정본"은 URL이고, 이 값들이 남아 있으면 /note로 바로 가도 지난 필터가 복원돼
+  // "전체 기본값"으로 안 열리는 문제가 있었다. sortBy(정렬)만 화면을 옮겨다녀도 유지되는 게
+  // 자연스러워 그대로 localStorage에 남긴다.
   useEffect(() => {
     if (!filtersReady) return;
     setLS(KEYS.NOTE_SORT, safeSortBy);
@@ -140,17 +129,40 @@ export function useNoteFilter(notes, pinnedIds, { pathname } = {}) {
     if (brandReady) setLS(KEYS.NOTE_BRAND_FILTER, safeBrandFilter);
   }, [safeBrandFilter, brandReady]);
 
-  // URL 동기화 (검색/상태만)
+  // URL 동기화 (검색/상태/유형)
   useEffect(() => {
     if (!filtersReady) return;
     if (!pathname) return;
-    const p = new URLSearchParams();
-    if (safeSearch) p.set('q', safeSearch);
-    if (safeStatusFilter !== 'all') p.set('status', safeStatusFilter);
-    if (safeTypeFilter !== NOTE_UNIFIED_TYPE_ALL) p.set('type', safeTypeFilter);
-    const qs = p.toString();
+    const qs = buildNoteListQuery({
+      search: safeSearch,
+      statusFilter: safeStatusFilter,
+      typeFilter: safeTypeFilter,
+    });
     window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
   }, [safeSearch, safeStatusFilter, safeTypeFilter, pathname, filtersReady]);
+
+  // URL → state 역동기화. 사이드바 "노트 목록"처럼 같은 라우트(/note)로 다시 이동하면
+  // Next.js가 리마운트하지 않아 위 마운트 효과가 다시 돌지 않는다 — 주소창이 실제로
+  // 바뀌었는데(예: ?status=보류 → 그냥 /note) 우리 상태가 그대로면, 이 효과가 주소창
+  // 값으로 되돌린다. replaceState 직후의 searchParams는 stale할 수 있어 실제 주소창
+  // (window.location.search)과 비교한다.
+  const filterStateRef = useRef(null);
+  filterStateRef.current = {
+    search: safeSearch,
+    statusFilter: safeStatusFilter,
+    typeFilter: safeTypeFilter,
+  };
+  const searchParamsKey = searchParams.toString();
+  useEffect(() => {
+    if (!filtersReady) return;
+    if (typeof window === 'undefined') return;
+    const current = window.location.search.replace(/^\?/, '');
+    if (current === buildNoteListQuery(filterStateRef.current)) return;
+    const params = new URLSearchParams(current);
+    setRawSearch(normalizeNoteFilterText(params.get('q') || ''));
+    setRawStatusFilter(normalizeNoteStatusFilter(params.get('status') || 'all'));
+    setRawTypeFilter(normalizeNoteTypeFilter(params.get('type') || NOTE_UNIFIED_TYPE_ALL));
+  }, [searchParamsKey, filtersReady]);
 
   const listNotes = useMemo(() => filterNoteListNotes(notes), [notes]);
 
