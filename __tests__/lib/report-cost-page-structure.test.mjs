@@ -26,6 +26,14 @@ const diagnosticsSource = readFileSync(
   resolve('components/report/cost/report-view/CostReportDiagnostics.jsx'),
   'utf8'
 );
+const recipePrintSource = readFileSync(
+  resolve('components/report/cost/RecipePrintView.jsx'),
+  'utf8'
+);
+const recipeOptionsSource = readFileSync(
+  resolve('components/report/cost/CostRecipeOptions.jsx'),
+  'utf8'
+);
 
 describe('cost report page structure', () => {
   test('page delegates option controls and preview composition', () => {
@@ -46,12 +54,24 @@ describe('cost report page structure', () => {
     expect(optionsSource).toContain('<OptGroup');
     expect(optionsSource).toContain('<Check');
     expect(optionsSource).toContain('threshold-bar');
+    expect(optionsSource).toContain('<CostRecipeOptions');
+
+    expect(recipeOptionsSource).toContain('export function CostRecipeOptions');
+    expect(recipeOptionsSource).toContain('<details');
+    expect(recipeOptionsSource).toContain('전체 선택');
+    expect(recipeOptionsSource).toContain('피자 메뉴당 1페이지');
+
+    expect(recipePrintSource).toContain('export function RecipePrintView');
+    expect(recipePrintSource).toContain('<RecipeCategorySection');
+    expect(recipePrintSource).not.toContain('CATEGORY_COLORS');
 
     expect(previewSource).toContain('export function CostReportPreview');
     expect(previewSource).toContain('paper-head');
     expect(previewSource).toContain('<CostReportView');
     expect(previewSource).toContain('<CostTableView');
     expect(previewSource).toContain('<RecipePrintView');
+    expect(previewSource).toContain('recipe-print-appendix');
+    expect(previewSource).toContain('hideOverview');
 
     expect(costTableSource).toContain('cost-table-menu-row');
     expect(costTableSource).toContain('menuRowStyle');

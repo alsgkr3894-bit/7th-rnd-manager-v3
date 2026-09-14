@@ -22,6 +22,13 @@ import {
   buildRecipePrintMenus,
   buildRecipePrintRows,
 } from '@/lib/report/build-cost-report';
+import {
+  buildRecipeMenuGroups,
+  buildRecipePrintSections,
+  filterRecipePrintMenus,
+  filterRecipePrintRows,
+  pruneRecipeSelection,
+} from '@/lib/report/recipe-print-selection';
 import { useSettingValue } from '@/hooks/useSettingValue';
 import { buildStrictPostingMessage, collectStrictPostingIssues } from '@/lib/report/strict-posting';
 
@@ -95,7 +102,16 @@ function CostReportBuilderContent({ onReportModeChange }) {
     updFmt,
   } = useReportPageState(
     DRAFT_KEY,
-    { summary: true, catTable: true, perCategory: true, riskList: true, includeEdge: false },
+    {
+      summary: true,
+      catTable: true,
+      perCategory: true,
+      riskList: true,
+      includeEdge: false,
+      recipeAppendix: false,
+      recipePagePerMenu: true,
+      recipeSelection: {},
+    },
     draft => {
       if (draft.riskThreshold) setRiskThreshold(draft.riskThreshold);
       if (draft.cats) setCats(c => ({ ...c, ...draft.cats }));
@@ -214,7 +230,60 @@ function CostReportBuilderContent({ onReportModeChange }) {
         .map(m => ({ ...m, catLabel: c.label, catColor: c.color }))
     )
     .sort((a, b) => b.rate - a.rate);
+  // recipeRows는 필터하지 않은 채로 둔다 — collectStrictPostingIssues(아래)가 카테고리/메뉴
+  // 선택과 무관하게 "레시피에 미연동 재료가 있으면 무조건 차단"해야 하는데, 필터링된 배열을
+  // 넘기면 선택에서 빠진 메뉴의 미연동 재료를 놓쳐 가드가 조용히 약해진다.
   const recipeMenus = useMemo(() => buildRecipePrintMenus(recipeRows), [recipeRows]);
+  const selectedRecipeMenus = useMemo(
+    () => filterRecipePrintMenus(recipeMenus, { cats, recipeSelection: opts.recipeSelection }),
+    [recipeMenus, cats, opts.recipeSelection]
+  );
+  const recipeMenuGroups = useMemo(
+    () =>
+      buildRecipeMenuGroups(filterRecipePrintMenus(recipeMenus, { cats }), opts.recipeSelection),
+    [recipeMenus, cats, opts.recipeSelection]
+  );
+  const recipeSections = useMemo(
+    () =>
+      buildRecipePrintSections(selectedRecipeMenus, {
+        pagePerMenu: opts.recipePagePerMenu !== false,
+      }),
+    [selectedRecipeMenus, opts.recipePagePerMenu]
+  );
+  const selectedRecipeRows = useMemo(
+    () => filterRecipePrintRows(recipeRows, { cats, recipeSelection: opts.recipeSelection }),
+    [recipeRows, cats, opts.recipeSelection]
+  );
+
+  const updRecipeMenuChange = useCallback(
+    (menuId, value) => {
+      setOpts(prev => ({
+        ...prev,
+        recipeSelection: pruneRecipeSelection({
+          ...(prev.recipeSelection || {}),
+          [menuId]: value,
+        }),
+      }));
+    },
+    [setOpts]
+  );
+  const updRecipeGroupSelectAll = useCallback(
+    (kind, value) => {
+      const group = recipeMenuGroups.find(g => g.kind === kind);
+      if (!group) return;
+      setOpts(prev => {
+        const next = { ...(prev.recipeSelection || {}) };
+        for (const menu of group.menus) next[menu.id] = value;
+        return { ...prev, recipeSelection: pruneRecipeSelection(next) };
+      });
+    },
+    [recipeMenuGroups, setOpts]
+  );
+  const updRecipePagePerMenu = useCallback(
+    value => setOpts(prev => ({ ...prev, recipePagePerMenu: value })),
+    [setOpts]
+  );
+
   const viewLabel =
     viewTab === 'costTable'
       ? '제품원가표'
@@ -242,7 +311,7 @@ function CostReportBuilderContent({ onReportModeChange }) {
   }, [strictPostingEnabled, strictPostingIssues]);
 
   const handleExcelExport = () =>
-    exportCostXlsx(periodLabel, activeCats, recipeRows, riskThreshold).catch(err =>
+    exportCostXlsx(periodLabel, activeCats, selectedRecipeRows, riskThreshold).catch(err =>
       showToast('엑셀 내보내기 실패: ' + (err?.message || '알 수 없는 오류'), 'error')
     );
 
@@ -276,6 +345,10 @@ function CostReportBuilderContent({ onReportModeChange }) {
             onRiskThreshold={setRiskThreshold}
             docFormat={docFormat}
             onFormatChange={updFmt}
+            recipeMenuGroups={recipeMenuGroups}
+            onRecipeMenuChange={updRecipeMenuChange}
+            onRecipeGroupSelectAll={updRecipeGroupSelectAll}
+            onRecipePagePerMenu={updRecipePagePerMenu}
           />
         </>
       }
@@ -285,7 +358,8 @@ function CostReportBuilderContent({ onReportModeChange }) {
           onViewTab={setViewTab}
           activeCats={activeCats}
           totalCount={totalCount}
-          recipeMenus={recipeMenus}
+          recipeSections={recipeSections}
+          recipeMenuCount={selectedRecipeMenus.length}
           riskThreshold={riskThreshold}
           opts={opts}
           catStats={catStats}
@@ -294,7 +368,6 @@ function CostReportBuilderContent({ onReportModeChange }) {
           allMaxRate={allMaxRate}
           riskMenus={riskMenus}
           diagnostics={diagnostics}
-          recipeRows={recipeRows}
           viewLabel={viewLabel}
         />
       }

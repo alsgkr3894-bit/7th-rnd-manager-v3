@@ -379,6 +379,30 @@
   page-break-inside: avoid;
 }
 
+/* pagePerMenu가 꺼진 카테고리(세트박스·사이드·추가토핑)의 메뉴 블록 — 페이지 중간에서
+   끊겨도 되고, 다음 메뉴가 바로 이어 붙는다(recipe-print-menu-page와 반대). */
+.recipe-print-menu-block {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.recipe-print-cat-section {
+  break-inside: auto;
+}
+
+.recipe-print-appendix {
+  margin-top: 24px;
+  border-top: 2px solid var(--divider);
+  padding-top: 16px;
+}
+
+.recipe-print-appendix-head {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-3);
+  margin-bottom: 8px;
+}
+
 .recipe-print-menu-title {
   display: flex;
   align-items: flex-end;
@@ -460,6 +484,21 @@
   .recipe-print-menu-page + .recipe-print-menu-page {
     break-before: page;
     page-break-before: always;
+  }
+
+  .recipe-print-cat-section + .recipe-print-cat-section {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .recipe-print-appendix {
+    break-before: page;
+    page-break-before: always;
+    border-top: 0;
+  }
+
+  .recipe-print-appendix-head {
+    display: none !important;
   }
 
   .recipe-usage-box {

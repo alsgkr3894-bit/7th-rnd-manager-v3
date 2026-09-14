@@ -10,7 +10,8 @@ export function CostReportPreview({
   onViewTab,
   activeCats,
   totalCount,
-  recipeMenus,
+  recipeSections,
+  recipeMenuCount,
   riskThreshold,
   opts,
   catStats,
@@ -19,7 +20,6 @@ export function CostReportPreview({
   allMaxRate,
   riskMenus,
   diagnostics,
-  recipeRows,
   viewLabel,
 }) {
   const { spacedDateLabel, profileName } = useReportGeneratedMeta();
@@ -38,7 +38,7 @@ export function CostReportPreview({
           {viewTab === 'recipe' && (
             <>
               <span>·</span>
-              <span>레시피 {recipeMenus.length}메뉴</span>
+              <span>레시피 {recipeMenuCount}메뉴</span>
             </>
           )}
           <span>·</span>
@@ -72,27 +72,33 @@ export function CostReportPreview({
       </div>
 
       {viewTab === 'report' && (
-        <CostReportView
-          opts={opts}
-          catStats={catStats}
-          totalCount={totalCount}
-          allAvg={allAvg}
-          allRisk={allRisk}
-          allMaxRate={allMaxRate}
-          riskThreshold={riskThreshold}
-          activeCats={activeCats}
-          riskMenus={riskMenus}
-          diagnostics={diagnostics}
-        />
+        <>
+          <CostReportView
+            opts={opts}
+            catStats={catStats}
+            totalCount={totalCount}
+            allAvg={allAvg}
+            allRisk={allRisk}
+            allMaxRate={allMaxRate}
+            riskThreshold={riskThreshold}
+            activeCats={activeCats}
+            riskMenus={riskMenus}
+            diagnostics={diagnostics}
+          />
+          {opts.recipeAppendix && (
+            <div className="recipe-print-appendix">
+              <div className="recipe-print-appendix-head no-print">부록 · 레시피 출력</div>
+              <RecipePrintView sections={recipeSections} hideOverview />
+            </div>
+          )}
+        </>
       )}
 
       {viewTab === 'costTable' && (
         <CostTableView activeCats={activeCats} riskThreshold={riskThreshold} />
       )}
 
-      {viewTab === 'recipe' && (
-        <RecipePrintView recipeRows={recipeRows} recipeMenus={recipeMenus} />
-      )}
+      {viewTab === 'recipe' && <RecipePrintView sections={recipeSections} />}
 
       <div className="paper-foot">
         <span>{viewLabel}</span>

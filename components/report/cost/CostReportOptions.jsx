@@ -1,4 +1,5 @@
 import { Check, OptGroup } from '@/components/report/ReportBuilderShell';
+import { CostRecipeOptions } from './CostRecipeOptions';
 
 export function CostReportOptions({
   cats,
@@ -9,6 +10,10 @@ export function CostReportOptions({
   onRiskThreshold,
   docFormat,
   onFormatChange,
+  recipeMenuGroups,
+  onRecipeMenuChange,
+  onRecipeGroupSelectAll,
+  onRecipePagePerMenu,
 }) {
   return (
     <>
@@ -80,7 +85,22 @@ export function CostReportOptions({
           value={opts.riskList}
           onChange={value => onOptionChange('riskList', value)}
         />
+        <Check
+          label="레시피 출력 (부록)"
+          value={opts.recipeAppendix === true}
+          onChange={value => onOptionChange('recipeAppendix', value)}
+          hint="원가계산 보고서 PDF 뒤에 레시피 페이지를 부록으로 붙입니다"
+        />
       </OptGroup>
+
+      <CostRecipeOptions
+        recipeMenuGroups={recipeMenuGroups}
+        recipeSelection={opts.recipeSelection}
+        recipePagePerMenu={opts.recipePagePerMenu}
+        onRecipeMenuChange={onRecipeMenuChange}
+        onRecipeGroupSelectAll={onRecipeGroupSelectAll}
+        onRecipePagePerMenu={onRecipePagePerMenu}
+      />
 
       <OptGroup label="문서 형식">
         <Check label="PDF" value={docFormat.pdf} onChange={value => onFormatChange('pdf', value)} />

@@ -99,3 +99,22 @@ describe('판매량 보고서 인쇄 — 단종/비정규메뉴 배지 가독성
     expect(rankRowsSrc).toContain('<UnregisteredBadge printOnly={canEdit && canMark} />');
   });
 });
+
+// 레시피 출력 페이지 분할 — 피자/1인피자는 메뉴당 1페이지(recipe-print-menu-page, 기존),
+// 세트박스/사이드/추가토핑은 카테고리 안에서 이어붙이는 블록(recipe-print-menu-block, 신규).
+// 카테고리 섹션 사이·부록 앞에서는 항상 새 페이지로 넘어간다.
+describe('레시피 출력 페이지 분할', () => {
+  const printSrc = src('lib/report/print.js');
+
+  test('피자/1인피자 메뉴당 1페이지 규칙은 그대로 유지된다', () => {
+    expect(printSrc).toContain('.recipe-print-menu-page');
+    expect(printSrc).toContain('.recipe-print-menu-page + .recipe-print-menu-page');
+  });
+
+  test('세트박스 등 나머지 카테고리는 블록 단위로 이어붙이고, 카테고리 사이·부록 앞에서 페이지를 나눈다', () => {
+    expect(printSrc).toContain('.recipe-print-menu-block');
+    expect(printSrc).toContain('.recipe-print-cat-section');
+    expect(printSrc).toContain('.recipe-print-cat-section + .recipe-print-cat-section');
+    expect(printSrc).toContain('.recipe-print-appendix');
+  });
+});

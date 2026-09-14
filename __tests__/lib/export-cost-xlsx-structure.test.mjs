@@ -41,6 +41,8 @@ describe('export-cost-xlsx 분리 구조', () => {
   });
 
   test('page.jsx가 exportCostXlsx에 riskThreshold를 전달한다', () => {
-    expect(pageSrc).toContain('exportCostXlsx(periodLabel, activeCats, recipeRows, riskThreshold)');
+    expect(pageSrc).toContain(
+      'exportCostXlsx(periodLabel, activeCats, selectedRecipeRows, riskThreshold)'
+    );
   });
 });
