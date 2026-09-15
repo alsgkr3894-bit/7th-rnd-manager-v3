@@ -144,4 +144,53 @@ describe('replaceIngredientProductCode', () => {
     const merged = stores.cost_ingredients.find(r => r.id === 2);
     expect(merged.origin).toEqual([{ country: '국내산' }]);
   });
+
+  test('대체 대상에 사진이 없으면 기존 항목 사진을 유지한다 (슬롯 객체는 항상 non-null이라 통째로 덮어쓰면 안 됨)', async () => {
+    stores.cost_ingredients = [
+      {
+        id: 1,
+        productCode: 'OLD01',
+        ingredientName: '옛제품',
+        photos: { packaging: { data: 'old-packaging', name: 'a.jpg' }, detail: null, actual: null },
+      },
+      { id: 2, productCode: 'NEW01', ingredientName: '새제품' },
+    ];
+
+    await replaceIngredientProductCode('OLD01', { productCode: 'NEW01', ingredientName: '새제품' });
+
+    const merged = stores.cost_ingredients.find(r => r.id === 2);
+    expect(merged.photos.packaging).toMatchObject({ data: 'old-packaging' });
+    expect(merged.photo).toMatchObject({ data: 'old-packaging' });
+  });
+
+  test('대체 대상에 있는 사진 슬롯은 기존 항목 사진이 덮어쓰지 않고, 없는 슬롯만 이어받는다', async () => {
+    stores.cost_ingredients = [
+      {
+        id: 1,
+        productCode: 'OLD01',
+        ingredientName: '옛제품',
+        photos: {
+          packaging: { data: 'old-packaging', name: 'a.jpg' },
+          detail: { data: 'old-detail', name: 'b.jpg' },
+          actual: null,
+        },
+      },
+      {
+        id: 2,
+        productCode: 'NEW01',
+        ingredientName: '새제품',
+        photos: {
+          packaging: { data: 'new-packaging', name: 'c.jpg' },
+          detail: null,
+          actual: null,
+        },
+      },
+    ];
+
+    await replaceIngredientProductCode('OLD01', { productCode: 'NEW01', ingredientName: '새제품' });
+
+    const merged = stores.cost_ingredients.find(r => r.id === 2);
+    expect(merged.photos.packaging).toMatchObject({ data: 'new-packaging' });
+    expect(merged.photos.detail).toMatchObject({ data: 'old-detail' });
+  });
 });

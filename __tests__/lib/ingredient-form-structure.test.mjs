@@ -128,6 +128,15 @@ describe('ingredient form structure', () => {
     expect(replacementFieldSource).toContain('대체 식자재');
     expect(replacementFieldSource).toContain('buildSubstituteOptions');
     expect(replacementFieldSource).toContain("from './IngredientFieldPrimitives'");
+    // 입력이 후보와 일치하지 않으면(타이핑 중/오타) 선택을 무조건 비운다 — 옛 선택이
+    // 화면 텍스트와 다르게 그대로 저장되는 사고 방지 (조건부로 지우면 안 됨).
+    expect(replacementFieldSource).toContain(
+      "onSet('replacementProductCode', picked ? picked.productCode || '' : '')"
+    );
+    expect(replacementFieldSource).toContain(
+      "onSet('replacementIngredientName', picked ? substituteRowLabel(picked) : '')"
+    );
+    expect(replacementFieldSource).not.toContain('else if (!value.trim())');
 
     expect(replacePreviewHookSource).toContain('export function useIngredientReplacePreview');
     expect(replacePreviewHookSource).toContain('previewIngredientProductReplace');

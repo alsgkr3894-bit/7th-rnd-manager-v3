@@ -34,13 +34,12 @@ export function IngredientReplacementField({
   function handleChange(value) {
     setQuery(value);
     const picked = findSubstituteByLabel(options, value);
-    if (picked) {
-      onSet('replacementProductCode', picked.productCode || '');
-      onSet('replacementIngredientName', substituteRowLabel(picked));
-    } else if (!value.trim()) {
-      onSet('replacementProductCode', '');
-      onSet('replacementIngredientName', '');
-    }
+    // 입력이 후보와 정확히 일치하지 않으면(타이핑 중 or 오타) 무조건 선택을 비운다.
+    // ComboBox는 blur 시 입력값을 유효한 옵션으로 되돌리지 않으므로, "빈 문자열일 때만
+    // 지우기"로 두면 예전에 고른 대체 식자재가 화면 텍스트와 다르게 그대로 저장에 실려간다
+    // — 사용자가 의도하지 않은 식자재로 레시피가 재연결되는 사고로 이어진다.
+    onSet('replacementProductCode', picked ? picked.productCode || '' : '');
+    onSet('replacementIngredientName', picked ? substituteRowLabel(picked) : '');
   }
 
   const hasTarget = !!form.replacementProductCode;
