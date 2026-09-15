@@ -11,6 +11,7 @@ import { IngredientForm } from './IngredientForm';
 import { IssuesView } from '@/components/ingredient/IssuesView';
 import { IngredientJetteIssuesPanel } from '@/components/ingredient/IngredientJetteIssuesPanel';
 import { IngredientBatchToolbar } from '@/components/ingredient/BatchToolbar';
+import { isDeletableIngredientRow } from '@/components/ingredient/manage-row/manageRowUtils';
 import { SubstituteLinkModal } from '@/components/ingredient/SubstituteLinkModal';
 import { TabButton } from '@/components/cost/shared/TabButton';
 import { IngredientManagePanel } from './IngredientManagePanel';
@@ -124,6 +125,13 @@ export default function Page() {
   const [dedupeBusy, setDedupeBusy] = useState(false);
   const { batchMode, selected, clearSelection, startBatch, exitBatch, toggleSelect } =
     useBatchSelection();
+  // 선택(selected)은 단종/분류 변경까지 포함하는 넓은 범위라, 일괄 삭제 확인 문구/버튼은
+  // 실제로 삭제될 개수(수동+제품코드 없는 행)를 따로 계산해 보여준다 — 안 그러면
+  // "5개를 삭제할까요?"라고 물어놓고 실제론 일부만(제때 연동 행은 제외) 지워진다.
+  const deletableSelectedCount = useMemo(
+    () => rows.filter(r => selected.has(r.id) && isDeletableIngredientRow(r)).length,
+    [rows, selected]
+  );
   const {
     activeCount,
     managedCount,
@@ -266,6 +274,7 @@ export default function Page() {
             {batchMode ? (
               <IngredientBatchToolbar
                 selected={selected}
+                deletableCount={deletableSelectedCount}
                 mainCats={mainCats}
                 onDelete={handleBatchDelete}
                 onBulkDiscontinue={handleBulkDiscontinue}

@@ -113,10 +113,26 @@ describe('ingredient manage undo guards', () => {
     expect(batchToolbarSource).toContain('삭제 후 토스트에서 실행취소할 수 있습니다.');
   });
 
+  test('일괄 삭제 확인 문구·버튼은 선택 전체가 아니라 실제 삭제 가능 개수를 보여준다', () => {
+    // selected.size(단종/분류변경까지 포함하는 넓은 선택)를 그대로 쓰면 "5개를 삭제할까요?"
+    // 라고 물어놓고 제때 연동 행은 제외돼 실제론 더 적게 지워지는 것처럼 보인다.
+    expect(batchToolbarSource).toContain('deletableCount');
+    expect(batchToolbarSource).toContain('safeDeletableCount');
+    expect(batchToolbarSource).toContain('제때 연동');
+    expect(pageSource).toContain('deletableSelectedCount');
+    expect(pageSource).toContain('isDeletableIngredientRow');
+    expect(pageSource).toContain('deletableCount={deletableSelectedCount}');
+  });
+
   test('일괄 삭제는 선택 목록에서 수동·제품코드 없는 행만 걸러 실행한다', () => {
     // 단종/분류 변경(선택 가능 범위 = selectable = id만 있으면 됨)과 달리
-    // 일괄 삭제는 제때 연동 행을 대상에서 제외해야 한다.
-    expect(actionsSource).toContain('r.isManual && r.id != null && !r.productCode).map(r => r.id)');
+    // 일괄 삭제는 제때 연동 행을 대상에서 제외해야 한다 — manageRowUtils의 공용 판정
+    // 함수(isDeletableIngredientRow)를 재사용해 판정 기준이 목록/배치삭제/확인문구에서
+    // 어긋나지 않게 한다.
+    expect(actionsSource).toContain(
+      "import { isDeletableIngredientRow } from '@/components/ingredient/manage-row/manageRowUtils'"
+    );
+    expect(actionsSource).toContain('(rows || []).filter(isDeletableIngredientRow).map(r => r.id)');
     expect(actionsSource).toContain('deletableIds.has(id)');
   });
 

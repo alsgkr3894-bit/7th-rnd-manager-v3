@@ -72,6 +72,8 @@ describe('ingredient manage row structure', () => {
     expect(utilsSource).toContain('deletable: r.isManual && r.id != null && !productCode');
     // 단종/분류 일괄 변경은 삭제보다 넓게(id만 있으면) 허용된다 — deletable과 분리된 필드
     expect(utilsSource).toContain('selectable: r.id != null');
+    // raw row 배열에서 직접 개수를 세야 하는 곳(배치삭제 확인 문구)이 재사용하는 공용 판정 함수
+    expect(utilsSource).toContain('export function isDeletableIngredientRow');
     // 원산지·알레르기 요약은 수정 창 상단 박스로 옮겨갔지만(IngredientOriginAllergenSummaryPanel),
     // 모델 필드 자체는 CSV 등 다른 소비처를 위해 남겨둔다 — 공용 순수 모듈에서 가져온다.
     expect(utilsSource).toContain(

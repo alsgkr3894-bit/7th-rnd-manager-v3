@@ -7,6 +7,7 @@ import { useState } from 'react';
  */
 export function IngredientBatchToolbar({
   selected,
+  deletableCount,
   mainCats = [],
   onDelete,
   onBulkDiscontinue,
@@ -14,6 +15,9 @@ export function IngredientBatchToolbar({
   onExit,
 }) {
   const selectedCount = selected instanceof Set ? selected.size : 0;
+  // deletableCount 미전달 시(과거 호출부 호환) selectedCount로 폴백 — 실제 삭제 가능
+  // 개수를 모르면 최소한 이전 동작(선택 전체 = 삭제 대상)을 유지한다.
+  const safeDeletableCount = Number.isFinite(deletableCount) ? deletableCount : selectedCount;
   const [showCatPicker, setShowCatPicker] = useState(false);
   // confirm 상태: null | { type: 'delete' } | { type: 'discontinue', discontinued: boolean } | { type: 'category', newCategory: string }
   const [confirm, setConfirm] = useState(null);
@@ -32,13 +36,17 @@ export function IngredientBatchToolbar({
 
   // confirm 모드일 때는 확인/취소만 표시
   if (confirm) {
-    const msg =
-      confirm.type === 'delete'
-        ? `${selectedCount}개를 삭제할까요? 삭제 후 토스트에서 실행취소할 수 있습니다.`
-        : confirm.type === 'discontinue'
-          ? `${selectedCount}개를 ${confirm.discontinued ? '단종' : '단종 복구'} 처리할까요?`
-          : `${selectedCount}개의 분류를 '${confirm.newCategory || '(없음)'}' 으로 변경할까요?`;
     const isDelete = confirm.type === 'delete';
+    // 삭제는 선택 전체가 아니라 실제 삭제 가능한(수동·제품코드 없는) 개수만 지워진다 —
+    // 문구가 다른 개수를 말하면 사용자가 "5개 삭제"라고 확인했는데 2개만 지워지는
+    // 것처럼 보인다.
+    const skippedCount = selectedCount - safeDeletableCount;
+    const msg = isDelete
+      ? `${safeDeletableCount}개를 삭제할까요? 삭제 후 토스트에서 실행취소할 수 있습니다.` +
+        (skippedCount > 0 ? ` (제때 연동 ${skippedCount}개는 제외됩니다)` : '')
+      : confirm.type === 'discontinue'
+        ? `${selectedCount}개를 ${confirm.discontinued ? '단종' : '단종 복구'} 처리할까요?`
+        : `${selectedCount}개의 분류를 '${confirm.newCategory || '(없음)'}' 으로 변경할까요?`;
     return (
       <>
         <span style={{ fontSize: 12, color: 'var(--text-2)', marginRight: 4 }}>{msg}</span>
@@ -50,7 +58,7 @@ export function IngredientBatchToolbar({
             border: 0,
           }}
           onClick={handleConfirm}
-          disabled={selectedCount === 0}
+          disabled={isDelete ? safeDeletableCount === 0 : selectedCount === 0}
         >
           {isDelete ? '삭제' : '확인'}
         </button>
@@ -151,9 +159,14 @@ export function IngredientBatchToolbar({
         className="btn sm"
         style={{ color: 'var(--negative)' }}
         onClick={typeof onDelete === 'function' ? () => setConfirm({ type: 'delete' }) : undefined}
-        disabled={selectedCount === 0}
+        disabled={safeDeletableCount === 0}
+        title={
+          selectedCount > safeDeletableCount
+            ? '선택한 항목 중 제때 연동 항목은 일괄 삭제 대상이 아니에요'
+            : undefined
+        }
       >
-        선택 삭제 {selectedCount > 0 && `(${selectedCount})`}
+        선택 삭제 {safeDeletableCount > 0 && `(${safeDeletableCount})`}
       </button>
       <button className="btn sm" onClick={typeof onExit === 'function' ? onExit : undefined}>
         취소

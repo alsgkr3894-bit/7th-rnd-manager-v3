@@ -30,6 +30,7 @@ import {
   buildBulkDeleteToast,
 } from './ingredientManageUtils';
 import { useIngredientSaveAction } from './useIngredientSaveAction';
+import { isDeletableIngredientRow } from '@/components/ingredient/manage-row/manageRowUtils';
 
 /**
  * 식자재관리 핸들러 훅.
@@ -287,9 +288,7 @@ export function useIngredientManageActions({
     if (selected.size === 0) return;
     // 선택(selected)은 단종/분류 변경까지 함께 쓰는 넓은 범위(모든 id 있는 행)지만, 일괄
     // 삭제는 수동으로 등록한(제품코드 없는) 행만 지원한다 — 제때 연동 행은 여기서 걸러낸다.
-    const deletableIds = new Set(
-      (rows || []).filter(r => r.isManual && r.id != null && !r.productCode).map(r => r.id)
-    );
+    const deletableIds = new Set((rows || []).filter(isDeletableIngredientRow).map(r => r.id));
     const ids = Array.from(selected).filter(id => deletableIds.has(id));
     if (!ids.length) {
       showToast(

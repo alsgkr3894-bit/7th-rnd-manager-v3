@@ -49,6 +49,11 @@ describe('cost report page structure', () => {
     expect(pageSource).not.toContain('<Check');
     expect(pageSource).not.toContain('threshold-bar');
     expect(pageSource).not.toContain('paper-head');
+    // 레시피 부록을 켜면 report 탭으로 되돌려, "보고서 생성"이 부록 없이 다른 탭 내용만
+    // 찍는 함정을 막는다.
+    expect(pageSource).toContain("key === 'recipeAppendix' && value === true");
+    expect(pageSource).toContain("setViewTab('report')");
+    expect(pageSource).toContain('onOptionChange={handleOptionChange}');
 
     expect(optionsSource).toContain('export function CostReportOptions');
     expect(optionsSource).toContain('<OptGroup');
@@ -72,6 +77,8 @@ describe('cost report page structure', () => {
     expect(previewSource).toContain('<RecipePrintView');
     expect(previewSource).toContain('recipe-print-appendix');
     expect(previewSource).toContain('hideOverview');
+    // 선택된 레시피가 없으면(카테고리/메뉴 전부 해제) 빈 부록 페이지를 강제로 넣지 않는다.
+    expect(previewSource).toContain('opts.recipeAppendix && recipeSections.length > 0');
 
     expect(costTableSource).toContain('cost-table-menu-row');
     expect(costTableSource).toContain('menuRowStyle');

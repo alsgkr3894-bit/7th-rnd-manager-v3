@@ -284,6 +284,18 @@ function CostReportBuilderContent({ onReportModeChange }) {
     [setOpts]
   );
 
+  // "보고서 생성"은 항상 현재 viewTab이 보여주는 .report-paper만 인쇄한다(ReportBuilderShell
+  // triggerPrint). 부록은 'report' 탭에서만 렌더되므로, 레시피 탭에서 부록을 켜고 바로
+  // 생성을 누르면 본문도 부록도 없이 레시피 탭 내용만 찍혀 나간다 — 부록을 켜는 순간
+  // report 탭으로 되돌려 이 함정을 막는다.
+  const handleOptionChange = useCallback(
+    (key, value) => {
+      updOpt(key, value);
+      if (key === 'recipeAppendix' && value === true) setViewTab('report');
+    },
+    [updOpt]
+  );
+
   const viewLabel =
     viewTab === 'costTable'
       ? '제품원가표'
@@ -340,7 +352,7 @@ function CostReportBuilderContent({ onReportModeChange }) {
             cats={cats}
             onCatChange={updCat}
             opts={opts}
-            onOptionChange={updOpt}
+            onOptionChange={handleOptionChange}
             riskThreshold={riskThreshold}
             onRiskThreshold={setRiskThreshold}
             docFormat={docFormat}

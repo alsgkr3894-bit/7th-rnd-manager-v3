@@ -5,6 +5,16 @@ import { allergenText, originText } from '@/lib/ingredient/origin-allergen-text'
 import { roundUnitPrice } from '@/lib/cost/unit-policy';
 import { asDisplayText, asStringArray } from '@/lib/ui/prop-guards';
 
+/**
+ * 일괄 삭제 가능한 행인지 — 수동으로 등록했고(isManual) 실제 레코드(id)가 있고 제품코드가
+ * 없는 행만 지원한다(제때 연동 행은 삭제 대신 단종 처리). buildManageRowModel의 `deletable`
+ * 필드와 같은 규칙이지만, rows 배열(raw row) 단위로 직접 개수를 세야 하는 곳
+ * (배치 삭제 확인 문구·버튼 라벨)에서 모델을 거치지 않고 쓸 수 있도록 분리해 둔다.
+ */
+export function isDeletableIngredientRow(row) {
+  return !!(row?.isManual && row?.id != null && !row?.productCode);
+}
+
 export function buildManageRowModel(rawRow = {}) {
   const r = rawRow && typeof rawRow === 'object' ? rawRow : {};
   const productCode = asDisplayText(r.productCode);

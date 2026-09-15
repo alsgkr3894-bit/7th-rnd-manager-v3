@@ -85,7 +85,7 @@ export function CostReportPreview({
             riskMenus={riskMenus}
             diagnostics={diagnostics}
           />
-          {opts.recipeAppendix && (
+          {opts.recipeAppendix && recipeSections.length > 0 && (
             <div className="recipe-print-appendix">
               <div className="recipe-print-appendix-head no-print">부록 · 레시피 출력</div>
               <RecipePrintView sections={recipeSections} hideOverview />

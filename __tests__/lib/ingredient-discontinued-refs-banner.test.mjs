@@ -32,7 +32,15 @@ describe('단종 식자재 참조 진단 배너 배선', () => {
   test('useDiscontinuedRefs 훅은 단종/숨김 행이 없으면 레시피 스토어를 읽지 않는다', () => {
     const hook = src('app/ingredient/manage/useDiscontinuedRefs.js');
     expect(hook).toContain('export function useDiscontinuedRefs');
-    expect(hook).toContain('hasFlaggedRow');
+    expect(hook).toContain('flaggedKey');
     expect(hook).not.toContain('catch {}');
+  });
+
+  test('useDiscontinuedRefs는 rows 참조 변화가 아니라 단종/숨김 productCode 집합 변화에만 재조회한다', () => {
+    const hook = src('app/ingredient/manage/useDiscontinuedRefs.js');
+    // 무관한 rows 갱신마다 재조회하던 성능 회귀 방지 — effect deps에서 rows를 제거하고
+    // flaggedKey(짧은 요약 문자열) + refreshKey로만 재실행한다.
+    expect(hook).toContain('}, [flaggedKey, refreshKey]);');
+    expect(hook).not.toContain('}, [rows, hasFlaggedRow, refreshKey]);');
   });
 });
