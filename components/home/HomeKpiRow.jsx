@@ -25,7 +25,9 @@ export const HomeKpiRow = memo(function HomeKpiRow({
   noteCount,
 }) {
   const router = useRouter();
-  const isMain = useIsMainBrand(); // 평균 원가율 '피자 카테고리' 배지는 7번가만
+  // 평균 원가율 '전체' 배지는 7번가만 — getCostRateKpi()가 카테고리 필터 없이 전 메뉴를
+  // 평균하는데(사이드·음료·소스·세트박스·추가토핑 포함) 이전엔 "피자 카테고리"로 잘못 표시했었다.
+  const isMain = useIsMainBrand();
   const [salesPopped, setSalesPopped] = useState(false);
   const [notePopped, setNotePopped] = useState(false);
   const salesSparkline = normalizeNumberSeries(salesKpi?.sparkline);
@@ -119,9 +121,7 @@ export const HomeKpiRow = memo(function HomeKpiRow({
 
       <div className="card kpi-card">
         <div>
-          <div className="label">
-            평균 원가율{isMain && <span className="pill">피자 카테고리</span>}
-          </div>
+          <div className="label">평균 원가율{isMain && <span className="pill">전체</span>}</div>
           <div
             className="value num"
             style={{ color: safeCostRate == null ? 'var(--text-4)' : undefined }}
