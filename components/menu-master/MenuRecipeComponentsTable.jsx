@@ -56,82 +56,87 @@ export function MenuRecipeComponentsTable({
     );
   }
 
+  // DndContext는 자식 뒤에 스크린리더 안내용 <div>(HiddenText)를 렌더한다. <tbody> 안에 두면
+  // div가 tbody의 자식이 되어 hydration 경고("<div> cannot be a child of <tbody>")가 나므로
+  // 표 바깥 컨테이너를 감싼다. SortableContext는 DOM을 만들지 않아 tbody 안에 둬도 된다.
   return (
-    <div
-      style={{
-        border: '1px solid var(--divider)',
-        borderRadius: 8,
-        overflowX: 'auto',
-        background: 'var(--surface)',
-      }}
+    <DndContext
+      sensors={canReorder ? sensors : undefined}
+      collisionDetection={closestCenter}
+      onDragEnd={canReorder ? handleDragEnd : undefined}
     >
-      <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse', fontSize: 12 }}>
-        <thead>
-          <tr style={{ borderBottom: '1px solid var(--divider)', background: 'var(--surface-2)' }}>
-            {canReorder && <th style={{ width: 28 }} aria-hidden="true" />}
-            <th
-              style={{
-                textAlign: 'left',
-                padding: '8px 8px',
-                fontWeight: 700,
-                color: 'var(--text-3)',
-              }}
+      <div
+        style={{
+          border: '1px solid var(--divider)',
+          borderRadius: 8,
+          overflowX: 'auto',
+          background: 'var(--surface)',
+        }}
+      >
+        <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse', fontSize: 12 }}>
+          <thead>
+            <tr
+              style={{ borderBottom: '1px solid var(--divider)', background: 'var(--surface-2)' }}
             >
-              식자재명
-            </th>
-            <th
-              style={{
-                width: 90,
-                textAlign: 'right',
-                padding: '8px 6px',
-                fontWeight: 700,
-                color: 'var(--text-3)',
-              }}
-            >
-              수량
-            </th>
-            <th
-              style={{
-                width: 58,
-                textAlign: 'right',
-                padding: '8px 6px',
-                fontWeight: 700,
-                color: 'var(--text-3)',
-              }}
-            >
-              단위
-            </th>
-            <th
-              style={{
-                width: 104,
-                textAlign: 'right',
-                padding: '8px 6px',
-                fontWeight: 700,
-                color: 'var(--text-3)',
-              }}
-            >
-              단가
-            </th>
-            <th
-              style={{
-                width: 104,
-                textAlign: 'right',
-                padding: '8px 6px',
-                fontWeight: 700,
-                color: 'var(--text-3)',
-              }}
-            >
-              원가
-            </th>
-            <th style={{ width: 60 }} />
-          </tr>
-        </thead>
-        <tbody>
-          <DndContext
-            sensors={canReorder ? sensors : undefined}
-            collisionDetection={closestCenter}
-            onDragEnd={canReorder ? handleDragEnd : undefined}
-          >
+              {canReorder && <th style={{ width: 28 }} aria-hidden="true" />}
+              <th
+                style={{
+                  textAlign: 'left',
+                  padding: '8px 8px',
+                  fontWeight: 700,
+                  color: 'var(--text-3)',
+                }}
+              >
+                식자재명
+              </th>
+              <th
+                style={{
+                  width: 90,
+                  textAlign: 'right',
+                  padding: '8px 6px',
+                  fontWeight: 700,
+                  color: 'var(--text-3)',
+                }}
+              >
+                수량
+              </th>
+              <th
+                style={{
+                  width: 58,
+                  textAlign: 'right',
+                  padding: '8px 6px',
+                  fontWeight: 700,
+                  color: 'var(--text-3)',
+                }}
+              >
+                단위
+              </th>
+              <th
+                style={{
+                  width: 104,
+                  textAlign: 'right',
+                  padding: '8px 6px',
+                  fontWeight: 700,
+                  color: 'var(--text-3)',
+                }}
+              >
+                단가
+              </th>
+              <th
+                style={{
+                  width: 104,
+                  textAlign: 'right',
+                  padding: '8px 6px',
+                  fontWeight: 700,
+                  color: 'var(--text-3)',
+                }}
+              >
+                원가
+              </th>
+              <th style={{ width: 60 }} />
+            </tr>
+          </thead>
+          <tbody>
             <SortableContext
               items={components.map(c => c._key)}
               strategy={verticalListSortingStrategy}
@@ -168,9 +173,9 @@ export function MenuRecipeComponentsTable({
                 );
               })}
             </SortableContext>
-          </DndContext>
-        </tbody>
-      </table>
-    </div>
+          </tbody>
+        </table>
+      </div>
+    </DndContext>
   );
 }
