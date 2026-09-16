@@ -24,7 +24,7 @@ export function AllergenSummaryPanel({ totalWithAllergen, totalIngredients, matc
 
       <div className="card" style={{ marginTop: 16, padding: '12px 20px' }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-3)', marginBottom: 8 }}>
-          한국 법정 알레르기 22종
+          한국 법정 알레르기 {ALLERGEN_SEED.length}종
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {ALLERGEN_SEED.map(al => (

@@ -17,7 +17,7 @@ import { useAllergenPageData } from './useAllergenPageData';
  *
  * 두 가지 뷰:
  *   - 식자재별: 각 식자재의 알레르기 항목 + 매칭된 메뉴 수
- *   - 메뉴별 매트릭스: 메뉴 × 22종 알레르기 체크 (출력용)
+ *   - 메뉴별 매트릭스: 메뉴 × 법정 알레르기 21종 체크 (출력용)
  */
 export default function Page() {
   const [search, setSearch] = useState('');
@@ -90,7 +90,7 @@ export default function Page() {
       )}
       {reorderTarget === 'allergen' && (
         <ReorderModal
-          title="알레르기 22종 순서"
+          title="알레르기 21종 순서"
           items={allergenListForOrder}
           onApply={applyAllergenOrder}
           onClose={() => setReorderTarget(null)}

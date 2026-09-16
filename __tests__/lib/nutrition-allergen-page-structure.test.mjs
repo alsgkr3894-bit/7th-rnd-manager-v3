@@ -68,7 +68,7 @@ describe('nutrition allergen page structure', () => {
     expect(pageSource).not.toContain('<PageHeader');
     expect(pageSource).not.toContain('<SearchBox');
     expect(pageSource).not.toContain('<SmallStatCard');
-    expect(pageSource).not.toContain('한국 법정 알레르기 22종');
+    expect(pageSource).not.toContain('한국 법정 알레르기 {ALLERGEN_SEED.length}종');
     expect(pageSource).not.toContain('불러오는 중…');
     expect(pageSource).not.toContain('getMenusForIngredient');
     expect(pageSource).not.toContain('title="식자재 알레르기 상세 보기"');
@@ -88,7 +88,7 @@ describe('nutrition allergen page structure', () => {
     expect(headerSource).toContain('엑셀로 내보내기');
     expect(summarySource).toContain('export function AllergenSummaryPanel');
     expect(summarySource).toContain('<SmallStatCard');
-    expect(summarySource).toContain('한국 법정 알레르기 22종');
+    expect(summarySource).toContain('한국 법정 알레르기 {ALLERGEN_SEED.length}종');
     expect(toolbarSource).toContain('export function AllergenToolbar');
     expect(toolbarSource).toContain('<SearchBox');
     expect(toolbarSource).toContain('메뉴명 편집');

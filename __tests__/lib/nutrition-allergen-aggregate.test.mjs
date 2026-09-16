@@ -286,7 +286,6 @@ describe('allergenNames', () => {
     // Set에 역순으로 넣어도(삽입 순서 의존 X) 결과는 항상 동일한 기본 순서.
     const reversed = new Set(
       [
-        'AL22', // 아몬드
         'AL18', // 굴
         'AL19', // 전복
         'AL20', // 홍합
@@ -311,7 +310,7 @@ describe('allergenNames', () => {
       ].reverse()
     );
     expect(allergenNames(reversed)).toBe(
-      '밀, 대두, 우유, 토마토, 돼지고기, 새우, 게, 닭고기, 쇠고기, 오징어, 호두, 계란, 땅콩, 아황산류, 메밀, 고등어, 복숭아, 잣, 홍합, 전복, 굴, 아몬드'
+      '밀, 대두, 우유, 토마토, 돼지고기, 새우, 게, 닭고기, 쇠고기, 오징어, 호두, 계란, 땅콩, 아황산류, 메밀, 고등어, 복숭아, 잣, 홍합, 전복, 굴'
     );
   });
 
@@ -386,17 +385,17 @@ describe('buildEdgeAllergenMap', () => {
 
   test('골드스윗은 사이즈별 엣지 구성품 알레르기를 유지한다', () => {
     const map = buildEdgeAllergenMap({
-      ingredients: [{ productCode: 'ALMOND', ingredientName: '아몬드분태', allergens: ['AL22'] }],
+      ingredients: [{ productCode: 'BUTTER', ingredientName: '버터', allergens: ['AL02'] }],
       edges: [
         {
           edgeType: '골드스윗크러스트',
           size: 'R',
-          components: [{ productCode: 'ALMOND' }],
+          components: [{ productCode: 'BUTTER' }],
         },
       ],
     });
 
-    expect([...(map.get('골드스윗R') || [])]).toEqual(['AL22']);
+    expect([...(map.get('골드스윗R') || [])]).toEqual(['AL02']);
   });
 
   test('씬바샤삭은 기본 도우 알레르기를 빼고 씬도우 알레르기와 비도우 알레르기를 합산한다 (N-42)', () => {
