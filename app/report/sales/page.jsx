@@ -26,9 +26,15 @@ import { useSalesReportData } from './useSalesReportData';
 import { useSalesReportComputed } from './useSalesReportComputed';
 import { useMenuMasterNameSets } from '@/hooks/useMenuMasterNameSets';
 import { useIrregularMenuNames } from '@/hooks/useIrregularMenuNames';
+import { useRegisteredOverrideNames } from '@/hooks/useRegisteredOverrideNames';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { showToast } from '@/components/Toast';
-import { addRefDiscontinued, deleteRefDiscontinuedByName } from '@/lib/sales';
+import {
+  addRefDiscontinued,
+  deleteRefDiscontinuedByName,
+  addRefRegisteredOverride,
+  deleteRefRegisteredOverrideByName,
+} from '@/lib/sales';
 import { getAllMenuMaster, setMenuMasterStatusMany } from '@/lib/menu-master';
 import { findDiscontinuedMenuMasterIds } from '@/lib/menu-master/discontinued-lookup';
 import { normalizeViewMode } from './salesReportPageUtils';
@@ -176,6 +182,7 @@ export default function Page() {
     reload: reloadMenuMasterSets,
   } = useMenuMasterNameSets();
   const { irregularNameSet, reload: reloadIrregular } = useIrregularMenuNames();
+  const { registeredOverrideNameSet, reload: reloadOverrides } = useRegisteredOverrideNames();
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const canEdit = roleReady && isAdmin;
 
@@ -191,6 +198,7 @@ export default function Page() {
     discontinuedNameSet,
     menuMasterNameSet,
     irregularNameSet,
+    registeredOverrideNameSet,
   });
 
   // 순위표에서 menu_master에 없는 판매명을 골라 단종(비정규메뉴) 처리한다.
@@ -213,6 +221,23 @@ export default function Page() {
       reloadIrregular();
     } catch (err) {
       showToast('해제 실패: ' + err.message, 'error');
+    }
+  }
+
+  // 순위표 체크박스로 "미등록" 자동 판정을 개별 해제/복원한다 — 이름 매칭 실패로 실제로는
+  // 등록된 메뉴가 미등록으로 잘못 판정된 경우를 사용자가 직접 바로잡는다.
+  async function handleToggleUnregistered(menuName, nextUnregistered) {
+    try {
+      if (nextUnregistered) {
+        await deleteRefRegisteredOverrideByName(menuName);
+        showToast(`"${menuName}" 다시 미등록으로 표시합니다`, 'ok');
+      } else {
+        await addRefRegisteredOverride({ menuName });
+        showToast(`"${menuName}" 미등록 판정을 해제했습니다`, 'ok');
+      }
+      reloadOverrides();
+    } catch (err) {
+      showToast('처리 실패: ' + err.message, 'error');
     }
   }
 
@@ -370,6 +395,7 @@ export default function Page() {
           onUnmarkIrregular={handleUnmarkIrregular}
           onUndiscontinue={handleUndiscontinue}
           onUndiscontinueAll={handleUndiscontinueAll}
+          onToggleUnregistered={handleToggleUnregistered}
         />
       }
     />

@@ -9,6 +9,7 @@ export function SalesRankTable({
   onMarkIrregular,
   onUnmarkIrregular,
   onUndiscontinue,
+  onToggleUnregistered,
 }) {
   return (
     <table className="paper-table">
@@ -33,6 +34,7 @@ export function SalesRankTable({
             onMarkIrregular={onMarkIrregular}
             onUnmarkIrregular={onUnmarkIrregular}
             onUndiscontinue={onUndiscontinue}
+            onToggleUnregistered={onToggleUnregistered}
           />
         ))}
       </tbody>

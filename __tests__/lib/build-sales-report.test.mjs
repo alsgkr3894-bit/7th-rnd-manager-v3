@@ -5,6 +5,7 @@ import {
   buildMenuMasterNameSet,
 } from '../../lib/menu-master/discontinued-lookup.js';
 import { buildIrregularMenuNameSet } from '../../lib/sales/irregular-menu.js';
+import { buildRegisteredOverrideNameSet } from '../../lib/sales/registered-override.js';
 
 function row({ year, month, category = '피자', groupName = 'A', quantity, revenue = 0 }) {
   return {
@@ -107,6 +108,61 @@ describe('buildSalesStats', () => {
       irregular: true,
       discontinued: true,
       unregistered: false,
+    });
+  });
+
+  test('registeredOverrideNameSet에 있는 이름은 unregistered:false·registeredOverride:true로 바뀐다', () => {
+    const rows = [row({ year: 2026, month: 5, groupName: 'B', quantity: 5 })];
+    const menuMasterNameSet = buildMenuMasterNameSet([{ menuName: 'A', status: 'active' }]);
+    const registeredOverrideNameSet = buildRegisteredOverrideNameSet([{ menuName: 'B' }]);
+    const { groupRanking } = buildSalesStats(rows, {
+      year: 2026,
+      month: 5,
+      scope: 'all',
+      menuMasterNameSet,
+      registeredOverrideNameSet,
+    });
+    expect(groupRanking[0]).toMatchObject({ unregistered: false, registeredOverride: true });
+  });
+
+  test('registeredOverrideNameSet에 없으면 registeredOverride:false — 기존 unregistered 판정 그대로', () => {
+    const rows = [
+      row({ year: 2026, month: 5, groupName: 'A', quantity: 10 }),
+      row({ year: 2026, month: 5, groupName: 'B', quantity: 5 }),
+    ];
+    const menuMasterNameSet = buildMenuMasterNameSet([{ menuName: 'A', status: 'active' }]);
+    const registeredOverrideNameSet = buildRegisteredOverrideNameSet([
+      { menuName: '전혀다른이름' },
+    ]);
+    const { groupRanking } = buildSalesStats(rows, {
+      year: 2026,
+      month: 5,
+      scope: 'all',
+      menuMasterNameSet,
+      registeredOverrideNameSet,
+    });
+    const byName = Object.fromEntries(groupRanking.map(r => [r.name, r]));
+    expect(byName.A).toMatchObject({ unregistered: false, registeredOverride: false });
+    expect(byName.B).toMatchObject({ unregistered: true, registeredOverride: false });
+  });
+
+  test('irregular이면 registeredOverride가 있어도 unregistered/registeredOverride 둘 다 false다', () => {
+    const rows = [row({ year: 2026, month: 5, groupName: 'C', quantity: 10 })];
+    const menuMasterNameSet = buildMenuMasterNameSet([{ menuName: 'X', status: 'active' }]);
+    const irregularNameSet = buildIrregularMenuNameSet([{ menuName: 'C' }]);
+    const registeredOverrideNameSet = buildRegisteredOverrideNameSet([{ menuName: 'C' }]);
+    const { groupRanking } = buildSalesStats(rows, {
+      year: 2026,
+      month: 5,
+      scope: 'all',
+      menuMasterNameSet,
+      irregularNameSet,
+      registeredOverrideNameSet,
+    });
+    expect(groupRanking[0]).toMatchObject({
+      irregular: true,
+      unregistered: false,
+      registeredOverride: false,
     });
   });
 

@@ -22,6 +22,7 @@ export function useSalesReportComputed({
   discontinuedNameSet,
   menuMasterNameSet,
   irregularNameSet,
+  registeredOverrideNameSet,
 }) {
   const [compareData, setCompareData] = useState(null);
 
@@ -35,6 +36,7 @@ export function useSalesReportComputed({
         discontinuedNameSet,
         menuMasterNameSet,
         irregularNameSet,
+        registeredOverrideNameSet,
       }),
     [
       normRows,
@@ -45,6 +47,7 @@ export function useSalesReportComputed({
       discontinuedNameSet,
       menuMasterNameSet,
       irregularNameSet,
+      registeredOverrideNameSet,
     ]
   );
 

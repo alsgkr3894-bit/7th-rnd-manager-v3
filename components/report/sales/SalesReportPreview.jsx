@@ -33,6 +33,7 @@ export default function SalesReportPreview({
   onUnmarkIrregular,
   onUndiscontinue,
   onUndiscontinueAll,
+  onToggleUnregistered,
 }) {
   const safeOpts = opts && typeof opts === 'object' && !Array.isArray(opts) ? opts : {};
   const safeCatShares = asObjectArray(catShares);
@@ -110,6 +111,7 @@ export default function SalesReportPreview({
           onMarkIrregular={onMarkIrregular}
           onUnmarkIrregular={onUnmarkIrregular}
           onUndiscontinue={onUndiscontinue}
+          onToggleUnregistered={onToggleUnregistered}
         />
       )}
 

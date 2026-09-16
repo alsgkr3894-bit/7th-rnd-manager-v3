@@ -196,6 +196,51 @@ describe('sales report preview structure', () => {
     expect(nameSetsHookSource).toContain('buildMenuMasterNameSet');
   });
 
+  test('미등록 판정 개별 해제 — onToggleUnregistered가 page부터 순위행까지 배선돼 있고 체크박스로 노출된다', () => {
+    const pageSource = readFileSync(resolve('app/report/sales/page.jsx'), 'utf8');
+    const previewSource = readFileSync(
+      resolve('components/report/sales/SalesReportPreview.jsx'),
+      'utf8'
+    );
+    const rankSectionSource = readFileSync(
+      resolve('components/report/sales/SalesRankTableSection.jsx'),
+      'utf8'
+    );
+    const rankTableSource = readFileSync(
+      resolve('components/report/sales/SalesRankTable.jsx'),
+      'utf8'
+    );
+    const rankTableRowsSource = readFileSync(
+      resolve('components/report/sales/SalesRankTableRows.jsx'),
+      'utf8'
+    );
+    const overrideHookSource = readFileSync(resolve('hooks/useRegisteredOverrideNames.js'), 'utf8');
+
+    expect(pageSource).toContain("from '@/hooks/useRegisteredOverrideNames'");
+    expect(pageSource).toContain(
+      'async function handleToggleUnregistered(menuName, nextUnregistered)'
+    );
+    expect(pageSource).toContain('addRefRegisteredOverride({ menuName })');
+    expect(pageSource).toContain('deleteRefRegisteredOverrideByName(menuName)');
+    expect(pageSource).toContain('onToggleUnregistered={handleToggleUnregistered}');
+
+    expect(previewSource).toContain('onToggleUnregistered={onToggleUnregistered}');
+    expect(rankSectionSource).toContain('onToggleUnregistered={onToggleUnregistered}');
+    expect(rankTableSource).toContain('onToggleUnregistered={onToggleUnregistered}');
+    expect(rankTableRowsSource).toContain('onToggleUnregistered');
+    expect(rankTableRowsSource).toContain(
+      "const canToggleUnregistered = canEdit && typeof onToggleUnregistered === 'function'"
+    );
+    expect(rankTableRowsSource).toContain('type="checkbox"');
+    expect(rankTableRowsSource).toContain(
+      'onChange={e => onToggleUnregistered(item.name, e.target.checked)}'
+    );
+    expect(rankTableRowsSource).toContain('item.unregistered || item.registeredOverride');
+
+    expect(overrideHookSource).toContain('export function useRegisteredOverrideNames');
+    expect(overrideHookSource).toContain('EMPTY_SET');
+  });
+
   test('IrregularMenuBadge는 onUnmark가 있을 때만 해제 버튼을 보여준다', () => {
     const badgeSource = readFileSync(resolve('components/sales/IrregularMenuBadge.jsx'), 'utf8');
     expect(badgeSource).toContain('export function IrregularMenuBadge({ onUnmark })');

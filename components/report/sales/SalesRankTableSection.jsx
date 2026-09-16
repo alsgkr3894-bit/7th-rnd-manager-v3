@@ -17,6 +17,7 @@ export function SalesRankTableSection({
   onMarkIrregular,
   onUnmarkIrregular,
   onUndiscontinue,
+  onToggleUnregistered,
 }) {
   if (groupRanking.length === 0) {
     return (
@@ -66,6 +67,7 @@ export function SalesRankTableSection({
           onMarkIrregular={onMarkIrregular}
           onUnmarkIrregular={onUnmarkIrregular}
           onUndiscontinue={onUndiscontinue}
+          onToggleUnregistered={onToggleUnregistered}
         />
       </div>
     );

@@ -57,6 +57,11 @@ const STORE_OPTIONS = {
       index('updatedAt', 'updatedAt'),
     ],
   },
+  menu_recipe_versions: {
+    keyPath: 'id',
+    autoIncrement: true,
+    indexes: [index('menuCode', 'menuCode'), index('at', 'at')],
+  },
   sales_files: {
     keyPath: 'id',
     autoIncrement: true,
@@ -109,6 +114,11 @@ const STORE_OPTIONS = {
     indexes: [index('menuName', 'menuName')],
   },
   ref_discontinued: {
+    keyPath: 'id',
+    autoIncrement: true,
+    indexes: [index('menuName', 'menuName')],
+  },
+  ref_registered_overrides: {
     keyPath: 'id',
     autoIncrement: true,
     indexes: [index('menuName', 'menuName')],

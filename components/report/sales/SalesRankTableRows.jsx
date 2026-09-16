@@ -56,10 +56,12 @@ export function SalesRankItemRows({
   onMarkIrregular,
   onUnmarkIrregular,
   onUndiscontinue,
+  onToggleUnregistered,
 }) {
   const canMark = typeof onMarkIrregular === 'function';
   const canUnmark = canEdit && typeof onUnmarkIrregular === 'function';
   const canUndiscontinue = canEdit && typeof onUndiscontinue === 'function';
+  const canToggleUnregistered = canEdit && typeof onToggleUnregistered === 'function';
   return (
     <Fragment>
       <tr>
@@ -76,6 +78,33 @@ export function SalesRankItemRows({
                 onUnmark={canUndiscontinue ? () => onUndiscontinue(item.name) : undefined}
               />
             )
+          )}
+          {canToggleUnregistered && (item.unregistered || item.registeredOverride) && (
+            <label
+              className="chip no-print unregistered-toggle"
+              title="체크 해제: 메뉴마스터에 등록된 메뉴로 간주(미등록 아님) / 다시 체크: 미등록으로 되돌림"
+              style={{
+                marginLeft: 6,
+                fontSize: 10,
+                padding: '1px 6px',
+                gap: 4,
+                cursor: 'pointer',
+                border: '1px dashed var(--border)',
+                background: 'transparent',
+                color: item.unregistered ? 'var(--text-3)' : 'var(--text-4)',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={!!item.unregistered}
+                onChange={e => onToggleUnregistered(item.name, e.target.checked)}
+                style={{ margin: 0 }}
+              />
+              미등록
+            </label>
           )}
           {item.unregistered && <UnregisteredBadge printOnly={canEdit && canMark} />}
           {item.unregistered && canEdit && canMark && (
