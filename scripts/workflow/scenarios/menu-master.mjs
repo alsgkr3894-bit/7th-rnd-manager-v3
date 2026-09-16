@@ -29,7 +29,8 @@ export async function scenarioMenuMasterCreate({ page, base, runId }) {
   });
 
   await step(steps, '저장(모달 닫힘)', async () => {
-    await page.getByRole('dialog').getByRole('button', { name: '저장' }).click();
+    // exact: 레시피 섹션의 "변경 이력 저장하면 기록이 쌓입니다 펼치기" 접기 버튼과 부분 일치 방지
+    await page.getByRole('dialog').getByRole('button', { name: '저장', exact: true }).click();
     await page.getByRole('dialog').waitFor({ state: 'detached', timeout: 15_000 });
   });
 
@@ -59,7 +60,7 @@ export async function scenarioMenuFormValidation({ page, base, runId }) {
     await page.getByRole('button', { name: '메뉴 추가' }).click();
     await page.getByPlaceholder('예) P-OR-005-L').waitFor({ state: 'visible', timeout: 15_000 });
 
-    const saveBtn = page.getByRole('dialog').getByRole('button', { name: '저장' });
+    const saveBtn = page.getByRole('dialog').getByRole('button', { name: '저장', exact: true });
     await saveBtn.waitFor({ state: 'visible', timeout: 5_000 });
     const disabled = await saveBtn.evaluate(el => el.disabled);
     if (!disabled) throw new Error('빈 폼에서 저장 버튼이 활성화됨 — 필수 항목 가드 누락');
@@ -67,14 +68,14 @@ export async function scenarioMenuFormValidation({ page, base, runId }) {
 
   await step(steps, '코드만 입력 시 "저장" 버튼 비활성화 유지', async () => {
     await page.getByPlaceholder('예) P-OR-005-L').fill(code);
-    const saveBtn = page.getByRole('dialog').getByRole('button', { name: '저장' });
+    const saveBtn = page.getByRole('dialog').getByRole('button', { name: '저장', exact: true });
     const disabled = await saveBtn.evaluate(el => el.disabled);
     if (!disabled) throw new Error('메뉴명 없이 저장 버튼 활성화됨');
   });
 
   await step(steps, '코드+메뉴명 입력 후 저장 완료', async () => {
     await page.getByPlaceholder('예) 슈퍼콤비네이션').fill(name);
-    await page.getByRole('dialog').getByRole('button', { name: '저장' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: '저장', exact: true }).click();
     await page.getByRole('dialog').waitFor({ state: 'detached', timeout: 15_000 });
     await page
       .getByText(name, { exact: false })
@@ -82,18 +83,24 @@ export async function scenarioMenuFormValidation({ page, base, runId }) {
       .waitFor({ state: 'visible', timeout: 15_000 });
   });
 
-  await step(steps, '중복 코드 추가 시 갱신 경고 토스트', async () => {
+  // 중복 코드는 저장 시점의 "갱신됨" 토스트가 아니라 입력 즉시 인라인 경고 + 저장 버튼
+  // 비활성화로 막는다(useMenuCodeConflict, MenuMasterEditModal.canSave).
+  await step(steps, '중복 코드 입력 시 인라인 경고 + 저장 차단', async () => {
     await page.getByRole('button', { name: '메뉴 추가' }).click();
     await page.getByPlaceholder('예) P-OR-005-L').waitFor({ state: 'visible', timeout: 15_000 });
     await page.getByPlaceholder('예) P-OR-005-L').fill(code);
     await page.getByPlaceholder('예) 슈퍼콤비네이션').fill(`${name}-복사`);
-    await page.getByRole('dialog').getByRole('button', { name: '저장' }).click();
 
-    await page.waitForFunction(
-      () => [...document.querySelectorAll('.toast')].some(t => t.textContent.includes('갱신됨')),
-      undefined,
-      { timeout: 10_000 }
-    );
+    const dialog = page.getByRole('dialog');
+    await dialog
+      .getByText(`${code} 코드가 이미 있습니다`, { exact: false })
+      .waitFor({ state: 'visible', timeout: 10_000 });
+    const saveBtn = dialog.getByRole('button', { name: '저장', exact: true });
+    const disabled = await saveBtn.evaluate(el => el.disabled);
+    if (!disabled) throw new Error('중복 코드인데 저장 버튼이 활성화됨 — 코드 충돌 가드 누락');
+
+    await dialog.getByRole('button', { name: '취소', exact: true }).click();
+    await dialog.waitFor({ state: 'detached', timeout: 15_000 });
   });
 
   await step(steps, '테스트 메뉴 정리', async () => {

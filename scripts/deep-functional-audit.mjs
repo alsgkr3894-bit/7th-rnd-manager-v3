@@ -177,7 +177,7 @@ async function scenarioMenuMasterRoundtrip({ page, base, runId }) {
     const dialog = page.getByRole('dialog');
     await dialog.getByPlaceholder('예) P-OR-005-L').fill(code);
     await dialog.getByPlaceholder('예) 슈퍼콤비네이션').fill(name);
-    await dialog.getByRole('button', { name: '저장' }).click();
+    await dialog.getByRole('button', { name: '저장', exact: true }).click();
     await dialog.waitFor({ state: 'detached', timeout: 15_000 });
   });
 
@@ -292,7 +292,7 @@ async function scenarioRecipeRoundtrip({ page, base, runId }) {
       .first()
       .click();
     await dialog.locator('input[type="number"]').last().fill('55');
-    await dialog.getByRole('button', { name: '저장' }).click();
+    await dialog.getByRole('button', { name: '저장', exact: true }).click();
     await dialog.waitFor({ state: 'detached', timeout: 15_000 });
   });
 

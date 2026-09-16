@@ -101,7 +101,8 @@ export async function scenarioRecipeSaveUI({ page, base, runId }) {
 
   await step(steps, '모달 저장', async () => {
     const dialog = page.getByRole('dialog');
-    const saveBtn = dialog.getByRole('button', { name: '저장' });
+    // exact: 레시피 섹션의 "변경 이력 저장하면 기록이 쌓입니다 펼치기" 접기 버튼과 부분 일치 방지
+    const saveBtn = dialog.getByRole('button', { name: '저장', exact: true });
     await saveBtn.waitFor({ state: 'visible', timeout: 5_000 });
     await saveBtn.click();
     await dialog.waitFor({ state: 'detached', timeout: 15_000 });
