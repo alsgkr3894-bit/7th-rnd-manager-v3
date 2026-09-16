@@ -4,8 +4,9 @@
 import { asDisplayText } from '@/lib/ui/prop-guards';
 import { nutritionValue } from '@/lib/nutrition/label/poster';
 
+// weight 열은 한판 총중량이 아니라 환산 기준량(150g)이라 "기준중량"으로 표기한다.
 export const PIZZA_150_GROUPS = [
-  { label: '총중량', key: 'weight' },
+  { label: '기준중량', key: 'weight' },
   { label: '열량(kcal/150g)', key: 'kcal' },
   { label: '단백질(g/150g)', key: 'protein' },
   { label: '포화지방(g/150g)', key: 'fat' },

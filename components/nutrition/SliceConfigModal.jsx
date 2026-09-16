@@ -11,7 +11,7 @@ import { asDisplayText, asObjectArray, asRecord, noop } from '@/lib/ui/prop-guar
  * counts: { [menuCode]: { L, R } } — 현재 저장된 오버라이드
  * onApply(nextCounts) — 변경 후 전체 map 전달
  *
- * 빈칸이면 기본값(피자 8조각)으로 복원.
+ * 빈칸이면 기본값(L 8조각 · R 6조각, 1인용 피자 6조각)으로 복원.
  */
 export function SliceConfigModal({ pizzaMenus, masterByCode, counts, onApply, onClose }) {
   const safePizzaMenus = asObjectArray(pizzaMenus)
@@ -80,7 +80,7 @@ export function SliceConfigModal({ pizzaMenus, masterByCode, counts, onApply, on
   return (
     <ModalFrame
       title="피자 조각수 설정"
-      subtitle="한판 = 몇 조각인지 설정합니다. 비우면 기본값(피자 8조각)을 사용합니다."
+      subtitle="한판 = 몇 조각인지 설정합니다. 비우면 기본값(L 8조각 · R 6조각, 1인용 피자 6조각)을 사용합니다."
       onClose={close}
       width="min(560px, 95vw)"
     >

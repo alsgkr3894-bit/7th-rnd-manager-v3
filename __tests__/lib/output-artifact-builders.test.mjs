@@ -195,7 +195,7 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
     expect(rowsOf(workbook, '피자')[0]).toEqual([
       '피자',
       '크러스트',
-      '총중량',
+      '기준중량',
       '',
       '열량(kcal/150g)',
       '',

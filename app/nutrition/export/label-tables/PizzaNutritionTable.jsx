@@ -11,8 +11,9 @@ import {
   NutritionValueText,
 } from './NutritionLabelTablePrimitives';
 
+// weight 열은 한판 총중량이 아니라 환산 기준량(150g)이라 "기준중량"으로 표기한다.
 const PIZZA_150_COLS = [
-  { key: 'weight', label: '총중량', unit: 'g' },
+  { key: 'weight', label: '기준중량', unit: 'g' },
   { key: 'kcal', label: '열량', unit: 'kcal/150g' },
   { key: 'protein', label: '단백질', unit: 'g/150g' },
   { key: 'fat', label: '포화지방', unit: 'g/150g' },

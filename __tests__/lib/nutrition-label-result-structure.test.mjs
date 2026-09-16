@@ -113,7 +113,9 @@ describe('nutrition label result structure', () => {
     expect(pizzaTableSource).toContain('export function PizzaNutritionTable');
     expect(pizzaTableSource).toContain('영양성분표 (피자) — 150g 기준');
     expect(pizzaTableSource).toContain('PIZZA_150_COLS');
-    expect(pizzaTableSource).toContain('총중량');
+    // 150g 표의 weight 열은 환산 기준량(150)이라 "총중량"이 아닌 "기준중량"으로 표기한다.
+    expect(pizzaTableSource).toContain("label: '기준중량'");
+    expect(pizzaTableSource).not.toContain("label: '총중량'");
     expect(pizzaTableSource).not.toContain('중량단위');
     expect(pizzaTableSource).toContain('GroupedMenuNameCell');
     expect(pizzaSliceTableSource).toContain('export function PizzaSliceNutritionTable');
