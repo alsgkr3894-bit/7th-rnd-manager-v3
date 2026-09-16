@@ -177,7 +177,10 @@ export function MenuMasterEditModal({
           'warn'
         );
       } else {
-        showToast(formatMenuCodeCascadeSummary(result?.cascadedMenuCode), 'ok');
+        showToast(
+          formatMenuCodeCascadeSummary(result?.cascadedMenuCode, result?.cascadedIdentity),
+          'ok'
+        );
       }
     } catch (err) {
       showToast('저장 실패: ' + (err?.message || err), 'error');

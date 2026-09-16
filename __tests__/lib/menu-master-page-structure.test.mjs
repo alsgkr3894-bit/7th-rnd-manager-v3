@@ -76,7 +76,9 @@ describe('menu-master page structure', () => {
     expect(editModalSource).toContain("from '@/components/menu-master/useMenuCodeConflict'");
     expect(editModalSource).toContain("from '@/lib/menu-master/linked-code-plan'");
     expect(editModalSource).toContain('useMenuCodeConflict(');
-    expect(editModalSource).toContain('formatMenuCodeCascadeSummary(result?.cascadedMenuCode)');
+    expect(editModalSource).toContain('formatMenuCodeCascadeSummary(');
+    expect(editModalSource).toContain('result?.cascadedMenuCode');
+    expect(editModalSource).toContain('result?.cascadedIdentity');
     expect(editModalSource).toContain('코드 변경');
     expect(editModalSource).toContain('codeConflict');
     expect(editModalSource).toContain('!codeConflict');
