@@ -3,6 +3,7 @@ import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { CRUST_TYPES } from '@/lib/nutrition/values/store';
 import { PERSONAL_PIZZA_CRUST_CODE, SERVING_CRUST_TYPE } from '@/lib/nutrition/crust-config';
 import {
+  buildMasterByCode,
   groupMenusOrdered,
   isPersonalPizzaMenu,
   normalizeNutritionCategory,
@@ -27,7 +28,7 @@ const GROUP_HEADER_STYLE = {
 export function MenuGroupList({ menus, rawMap, menuMasters, selMenu, onSelect }) {
   const safeMenus = asObjectArray(menus);
   const safeRawMap = asRecord(rawMap);
-  const masterByCode = Object.fromEntries(asObjectArray(menuMasters).map(m => [m.menuCode, m]));
+  const masterByCode = buildMasterByCode(asObjectArray(menuMasters));
   const groups = groupMenusOrdered(safeMenus, masterByCode);
   const multiGroup = groups.length > 1;
   const selectMenu = typeof onSelect === 'function' ? onSelect : noop;

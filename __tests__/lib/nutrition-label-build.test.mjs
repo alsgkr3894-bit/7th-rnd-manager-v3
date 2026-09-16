@@ -58,7 +58,7 @@ describe('buildPosterPizzaRows', () => {
     const sheet = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-1170', menuName: '검증피자', category: '피자' }],
       rawMap: {
-        'P-1170__석쇠L': { weight: 1170, kcal: 200, sugar: 8, protein: 16, fat: 4, sodium: 300 },
+        'P-1170__석쇠L': { weight: 1170, kcal: 200, sugar: 8, protein: 16, satFat: 4, sodium: 300 },
       },
       edgeMap: {},
       masterByCode: {},
@@ -93,14 +93,14 @@ describe('buildPizzaSliceSheet', () => {
     const rows = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-001', menuName: '테스트 피자', category: '피자' }],
       rawMap: {
-        'P-001__석쇠L': { weight: 1000, kcal: 200, sugar: 8, protein: 16, fat: 4, sodium: 320 },
-        'P-001__석쇠R': { weight: 640, kcal: 180, sugar: 8, protein: 18, fat: 3, sodium: 280 },
+        'P-001__석쇠L': { weight: 1000, kcal: 200, sugar: 8, protein: 16, satFat: 4, sodium: 320 },
+        'P-001__석쇠R': { weight: 640, kcal: 180, sugar: 8, protein: 18, satFat: 3, sodium: 280 },
         'P-001__씬바사삭L': {
           weight: 720,
           kcal: 160,
           sugar: 6,
           protein: 16,
-          fat: 2,
+          satFat: 2,
           sodium: 240,
         },
       },
@@ -138,7 +138,7 @@ describe('buildPizzaSliceSheet', () => {
     const rows = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-100', menuName: '경계값 피자', category: '피자' }],
       rawMap: {
-        'P-100__석쇠L': { weight: 800, kcal: 100, sugar: 1, protein: 2, fat: 1, sodium: 50 },
+        'P-100__석쇠L': { weight: 800, kcal: 100, sugar: 1, protein: 2, satFat: 1, sodium: 50 },
       },
       edgeMap: {},
       masterByCode: {},
@@ -158,7 +158,7 @@ describe('buildPizzaSliceSheet', () => {
     const rows = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-LOW', menuName: '저중량 피자', category: '피자' }],
       rawMap: {
-        'P-LOW__석쇠L': { weight: 320, kcal: 200, sugar: 10, protein: 20, fat: 5, sodium: 200 },
+        'P-LOW__석쇠L': { weight: 320, kcal: 200, sugar: 10, protein: 20, satFat: 5, sodium: 200 },
       },
       edgeMap: {},
       masterByCode: {},
@@ -183,7 +183,7 @@ describe('buildPizzaSliceSheet', () => {
     const rows = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-MID', menuName: '중간중량 피자', category: '피자' }],
       rawMap: {
-        'P-MID__석쇠L': { weight: 600, kcal: 200, sugar: 8, protein: 16, fat: 4, sodium: 200 },
+        'P-MID__석쇠L': { weight: 600, kcal: 200, sugar: 8, protein: 16, satFat: 4, sodium: 200 },
       },
       edgeMap: {},
       masterByCode: {},
@@ -208,7 +208,14 @@ describe('buildPizzaSliceSheet', () => {
     const rows = buildPizzaSliceSheet({
       menus: [{ menuCode: 'P-EDGE-100', menuName: '2조각 경계값 피자', category: '피자' }],
       rawMap: {
-        'P-EDGE-100__석쇠L': { weight: 400, kcal: 200, sugar: 8, protein: 16, fat: 4, sodium: 200 },
+        'P-EDGE-100__석쇠L': {
+          weight: 400,
+          kcal: 200,
+          sugar: 8,
+          protein: 16,
+          satFat: 4,
+          sodium: 200,
+        },
       },
       edgeMap: {},
       masterByCode: {},
@@ -266,7 +273,7 @@ describe('buildPizzaSliceSheet', () => {
           kcal: 200,
           sugar: 8,
           protein: 16,
-          fat: 4,
+          satFat: 4,
           sodium: 320,
         },
       },
@@ -276,7 +283,7 @@ describe('buildPizzaSliceSheet', () => {
           kcal: 459,
           sugar: 2,
           protein: 29,
-          fat: 22,
+          satFat: 22,
           sodium: 1559,
         },
       },
@@ -316,7 +323,7 @@ describe('buildPizzaSheet', () => {
           kcal: 200,
           sugar: 10,
           protein: 20,
-          fat: 5,
+          satFat: 5,
           sodium: 300,
         },
         'P-NUTRI-EDGE__석쇠R': {
@@ -324,7 +331,7 @@ describe('buildPizzaSheet', () => {
           kcal: 180,
           sugar: 8,
           protein: 18,
-          fat: 4,
+          satFat: 4,
           sodium: 250,
         },
         'P-NUTRI-EDGE__씬바사삭L': {
@@ -332,13 +339,13 @@ describe('buildPizzaSheet', () => {
           kcal: 160,
           sugar: 6,
           protein: 16,
-          fat: 3,
+          satFat: 3,
           sodium: 220,
         },
       },
       edgeMap: {
-        치즈크러스트L: { kcal: 20, sugar: 2, protein: 3, fat: 1, sodium: 40 },
-        골드스윗R: { kcal: 30, sugar: 5, protein: 1, fat: 2, sodium: 30 },
+        치즈크러스트L: { kcal: 20, sugar: 2, protein: 3, satFat: 1, sodium: 40 },
+        골드스윗R: { kcal: 30, sugar: 5, protein: 1, satFat: 2, sodium: 30 },
       },
       masterByCode: {},
       menuAllergenMap,
@@ -437,7 +444,7 @@ describe('buildPizzaSheet', () => {
     expect(otherRows.find(r => r.crustLabel === '씬바샤삭').allergen).toBe('밀, 대두');
   });
 
-  test('출력 포화지방 컬럼은 satFat 값을 우선 사용하고 없으면 fat으로 보정한다', () => {
+  test('출력 포화지방 컬럼은 satFat만 쓰고, 없으면 조지방(fat)으로 대체하지 않고 빈값으로 둔다', () => {
     const rows = buildPizzaSheet({
       menus: [{ menuCode: 'P-SAT', menuName: '포화지방 피자', category: '피자' }],
       rawMap: {
@@ -467,7 +474,8 @@ describe('buildPizzaSheet', () => {
 
     const sheetRows = rows[0].rows;
     expect(sheetRows.find(row => row.crustLabel === '석쇠' && row.side === 'L').fat).toBe(5);
-    expect(sheetRows.find(row => row.crustLabel === '석쇠' && row.side === 'R').fat).toBe(6);
+    // R은 satFat 미입력 — 조지방 4g(150g 환산 6)을 포화지방으로 찍으면 안 된다
+    expect(sheetRows.find(row => row.crustLabel === '석쇠' && row.side === 'R').fat).toBe('');
   });
 
   test('1인피자는 피자 시트 맨 아래에 배치한다', () => {
@@ -627,11 +635,12 @@ describe('buildSetHalfSheet', () => {
 });
 
 describe('buildBeverageSheet', () => {
-  test('음료는 g 중량 대신 파싱한 용량 ml 기준으로 환산한다', () => {
+  test('음료는 저장값(1병/캔 전체)을 그대로 쓰고, 중량이 비면 이름의 용량(ml)만 표시용으로 쓴다', () => {
+    // 예전엔 basis 없는 행을 100ml 기준으로 보고 용량으로 다시 곱했다(40kcal → 500kcal).
     const rows = buildBeverageSheet({
       menus: [{ menuCode: 'D-COLA', menuName: '콜라 1.25L', category: '음료' }],
       rawMap: {
-        'D-COLA__석쇠L': { kcal: 40, sugar: 9, protein: 0, fat: 0, sodium: 5 },
+        'D-COLA__석쇠L': { kcal: 40, sugar: 9, protein: 0, satFat: 0, sodium: 5 },
       },
       masterByCode: {},
       menuAllergenMap,
@@ -641,29 +650,58 @@ describe('buildBeverageSheet', () => {
       expect.objectContaining({
         menuCode: 'D-COLA',
         weight: 1250,
-        kcal: 500,
-        sugar: 113,
+        kcal: 40,
+        sugar: 9,
         protein: 0,
         fat: 0,
-        sodium: 63,
+        sodium: 5,
       }),
     ]);
   });
 
-  test('음료 출력도 satFat 값을 포화지방 컬럼에 우선 반영한다', () => {
+  test('실데이터 회귀: basis 플래그 없이 1회분 총량으로 저장된 1.25L 콜라(550kcal)가 6875kcal로 부풀려지지 않는다', () => {
     const rows = buildBeverageSheet({
-      menus: [{ menuCode: 'D-ZERO', menuName: '제로콜라 500ml', category: '음료' }],
+      menus: [{ menuCode: 'D-CC-001-1250', menuName: '코카콜라1.25L', category: '음료' }],
+      rawMap: {
+        'D-CC-001-1250__단품': {
+          kcal: '550',
+          sugar: '137.5',
+          satFat: '0',
+          sodium: '37.5',
+          weight: '1250',
+          protein: '0',
+          crustType: '단품',
+        },
+      },
+      masterByCode: {},
+      menuAllergenMap,
+    });
+    expect(rows[0]).toMatchObject({
+      weight: 1250,
+      kcal: 550,
+      sugar: 138,
+      protein: 0,
+      fat: 0,
+      sodium: 38,
+    });
+  });
+
+  test('음료 포화지방 열은 satFat만 쓰고 조지방(fat)으로 대체하지 않는다', () => {
+    const rows = buildBeverageSheet({
+      menus: [
+        { menuCode: 'D-ZERO', menuName: '제로콜라 500ml', category: '음료' },
+        { menuCode: 'D-NOSAT', menuName: '우유 200ml', category: '음료' },
+      ],
       rawMap: {
         'D-ZERO__석쇠L': { kcal: 0, sugar: 0, protein: 0, fat: 9, satFat: 0.2, sodium: 1 },
+        'D-NOSAT__석쇠L': { kcal: 120, sugar: 9, protein: 6, fat: 7, sodium: 90 },
       },
       masterByCode: {},
       menuAllergenMap,
     });
 
-    expect(rows[0]).toMatchObject({
-      weight: 500,
-      fat: 1,
-    });
+    expect(rows.find(r => r.menuCode === 'D-ZERO')).toMatchObject({ weight: 500, fat: 0 });
+    expect(rows.find(r => r.menuCode === 'D-NOSAT')).toMatchObject({ weight: 200, fat: '—' });
   });
 
   test('basis=serving 음료(가져오기 입력=1회분 총량)는 용량으로 다시 스케일하지 않고 저장값 그대로 쓴다', () => {
@@ -728,6 +766,34 @@ describe('1인용 피자 조각수', () => {
     });
   });
 
+  test('1인용 피자는 전용 슬롯(1인용피자)을 우선 읽는다 — 이관 후 데이터가 조각 표에서 "—"로 비던 회귀', () => {
+    const sheet = buildPizzaSliceSheet({
+      menus: [
+        { menuCode: 'P-ONE-2', menuName: '고르곤졸라 (1인용)', category: '피자', personal: true },
+      ],
+      rawMap: {
+        'P-ONE-2__1인용피자': {
+          weight: 186,
+          kcal: 366.23,
+          sugar: 2.47,
+          protein: 16.83,
+          satFat: 8.98,
+          sodium: 430.05,
+        },
+      },
+      edgeMap: {},
+      masterByCode: {},
+      menuAllergenMap,
+      sliceCounts: {},
+    });
+    const row = sheet[0].rows[0];
+    expect(row.crustLabel).toBe('1인용피자');
+    expect(row).toMatchObject({ slice: 6, servingLabel: '6조각', totalWeight: 186, weight: 186 });
+    expect(row.kcal).toBe(Math.round((366.23 * 186) / 100));
+    expect(row.fat).toBe(Math.round((8.98 * 186) / 100));
+    expect(row.sodium).toBe(Math.round((430.05 * 186) / 100));
+  });
+
   test('일반 피자는 100g 기준 조각 묶음 규칙을 그대로 적용한다(1인용 예외 아님)', () => {
     // 일반 피자 8조각, 320g → 1조각 40g<100 → 2조각도 80g<100 → 3조각.
     const sheet = buildPizzaSliceSheet({
@@ -777,7 +843,7 @@ describe('buildSideSheet', () => {
           kcal: 250,
           sugar: 1,
           protein: 12,
-          fat: 8,
+          satFat: 8,
           sodium: 500,
         },
         'S-WING__석쇠L': {
@@ -840,7 +906,7 @@ describe('buildToppingSheet', () => {
           kcal: 55.4,
           sugar: 1.2,
           protein: 3.6,
-          fat: 0.4,
+          satFat: 0.4,
           sodium: 120.2,
         },
       ],
@@ -874,7 +940,7 @@ describe('buildToppingSheet', () => {
           kcal: 40,
           sugar: 1,
           protein: 2,
-          fat: 0,
+          satFat: 0,
           sodium: 30,
         },
       },
