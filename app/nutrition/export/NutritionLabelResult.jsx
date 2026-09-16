@@ -28,6 +28,8 @@ import { buildOriginsFromIngredients } from '@/lib/nutrition/origin/build';
 import { buildOriginStatementSheet } from '@/lib/nutrition/origin/output-sheets';
 import { SliceConfigModal } from '@/components/nutrition/SliceConfigModal';
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
+import { AllergenCoverageNotice } from '@/components/nutrition/AllergenCoverageNotice';
+import { buildAllergenCoverageWarnings } from '@/lib/nutrition/allergen/coverage';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import {
   buildPizzaSheet,
@@ -63,6 +65,7 @@ export default function NutritionLabelResult() {
   const [setHalfSheet, setSetHalfSheet] = useState([]);
   const [beverageSheet, setBeverageSheet] = useState([]);
   const [originStatementSheet, setOriginStatementSheet] = useState([]);
+  const [allergenWarnings, setAllergenWarnings] = useState(null);
 
   const [pizzaView, setPizzaView] = useState('150g'); // '150g' | 'slice'
   const [sliceCounts, setSliceCounts] = useState({});
@@ -237,6 +240,15 @@ export default function NutritionLabelResult() {
       setBeverageSheet(buildBeverageSheet(ctx));
       setPizzaSliceSheet(buildPizzaSliceSheet({ ...ctx, sliceCounts: loadSliceCounts() }));
       setOriginStatementSheet(buildOriginStatementSheet(origins, ingredientNameOverrides));
+      setAllergenWarnings(
+        buildAllergenCoverageWarnings({
+          menus: orderedMenus,
+          masterByCode,
+          ingredients: ings,
+          detailRecipes,
+          costEdges,
+        })
+      );
     })()
       .catch(err => {
         if (alive) console.error('[NutritionLabelResult] load failed', err);
@@ -314,6 +326,8 @@ export default function NutritionLabelResult() {
           setMenuNameEditOpen(true);
         }}
       />
+
+      <AllergenCoverageNotice warnings={allergenWarnings} />
 
       {tab === 'pizza' && (
         <PizzaViewControls
