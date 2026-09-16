@@ -113,6 +113,21 @@ describe('ingredient manage undo guards', () => {
     expect(batchToolbarSource).toContain('삭제 후 토스트에서 실행취소할 수 있습니다.');
   });
 
+  test('배치 모드 전체 선택은 현재 페이지가 아니라 검색·필터가 적용된 목록 전체를 대상으로 한다', () => {
+    expect(pageSource).toContain('setSelected');
+    expect(pageSource).toContain('filtered.filter(r => r.id != null).map(r => r.id)');
+    expect(pageSource).toContain('selectableIds.every(id => selected.has(id))');
+    expect(pageSource).toContain(
+      'setSelected(allFilteredSelected ? new Set() : new Set(selectableIds))'
+    );
+    expect(pageSource).toContain('selectableCount={selectableIds.length}');
+    expect(pageSource).toContain('allSelected={allFilteredSelected}');
+    expect(pageSource).toContain('onToggleSelectAll={toggleSelectAll}');
+    expect(batchToolbarSource).toContain('onToggleSelectAll');
+    expect(batchToolbarSource).toContain('전체 선택 (${selectableCount})');
+    expect(batchToolbarSource).toContain('전체 해제');
+  });
+
   test('일괄 삭제 확인 문구·버튼은 선택 전체가 아니라 실제 삭제 가능 개수를 보여준다', () => {
     // selected.size(단종/분류변경까지 포함하는 넓은 선택)를 그대로 쓰면 "5개를 삭제할까요?"
     // 라고 물어놓고 제때 연동 행은 제외돼 실제론 더 적게 지워지는 것처럼 보인다.

@@ -9,12 +9,16 @@ export function IngredientBatchToolbar({
   selected,
   deletableCount,
   mainCats = [],
+  selectableCount = 0,
+  allSelected = false,
+  onToggleSelectAll,
   onDelete,
   onBulkDiscontinue,
   onBulkSetCategory,
   onExit,
 }) {
   const selectedCount = selected instanceof Set ? selected.size : 0;
+  const canSelectAll = typeof onToggleSelectAll === 'function' && selectableCount > 0;
   // deletableCount 미전달 시(과거 호출부 호환) selectedCount로 폴백 — 실제 삭제 가능
   // 개수를 모르면 최소한 이전 동작(선택 전체 = 삭제 대상)을 유지한다.
   const safeDeletableCount = Number.isFinite(deletableCount) ? deletableCount : selectedCount;
@@ -74,6 +78,21 @@ export function IngredientBatchToolbar({
       <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600, marginRight: 4 }}>
         {selectedCount}개 선택됨
       </span>
+
+      {/* 전체 선택 — 현재 탭·분류·태그·검색이 적용된 목록 전체(페이지 무관) */}
+      {canSelectAll && (
+        <button
+          className="btn sm"
+          onClick={onToggleSelectAll}
+          title={
+            allSelected
+              ? '선택을 모두 해제'
+              : `현재 목록(검색·필터 적용) ${selectableCount}개를 모두 선택`
+          }
+        >
+          {allSelected ? '전체 해제' : `전체 선택 (${selectableCount})`}
+        </button>
+      )}
 
       {/* 단종 토글 */}
       {typeof onBulkDiscontinue === 'function' && (

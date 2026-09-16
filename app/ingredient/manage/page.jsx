@@ -123,7 +123,7 @@ export default function Page() {
   const [substituteSource, setSubstituteSource] = useState(null);
   const [dedupeConfirm, setDedupeConfirm] = useState(false);
   const [dedupeBusy, setDedupeBusy] = useState(false);
-  const { batchMode, selected, clearSelection, startBatch, exitBatch, toggleSelect } =
+  const { batchMode, selected, setSelected, clearSelection, startBatch, exitBatch, toggleSelect } =
     useBatchSelection();
   // 선택(selected)은 단종/분류 변경까지 포함하는 넓은 범위라, 일괄 삭제 확인 문구/버튼은
   // 실제로 삭제될 개수(수동+제품코드 없는 행)를 따로 계산해 보여준다 — 안 그러면
@@ -164,6 +164,18 @@ export default function Page() {
   useEffect(() => {
     clearSelection();
   }, [debouncedSearch, clearSelection]);
+
+  // 전체 선택은 화면에 보이는 페이지가 아니라 현재 탭·분류·태그·검색이 적용된 목록 전체를
+  // 대상으로 한다(IssuesView의 전체 선택과 같은 범위).
+  const selectableIds = useMemo(
+    () => filtered.filter(r => r.id != null).map(r => r.id),
+    [filtered]
+  );
+  const allFilteredSelected =
+    selectableIds.length > 0 && selectableIds.every(id => selected.has(id));
+  const toggleSelectAll = useCallback(() => {
+    setSelected(allFilteredSelected ? new Set() : new Set(selectableIds));
+  }, [allFilteredSelected, selectableIds, setSelected]);
 
   useEffect(() => {
     if (!deletePending) {
@@ -276,6 +288,9 @@ export default function Page() {
                 selected={selected}
                 deletableCount={deletableSelectedCount}
                 mainCats={mainCats}
+                selectableCount={selectableIds.length}
+                allSelected={allFilteredSelected}
+                onToggleSelectAll={toggleSelectAll}
                 onDelete={handleBatchDelete}
                 onBulkDiscontinue={handleBulkDiscontinue}
                 onBulkSetCategory={handleBulkSetCategory}
