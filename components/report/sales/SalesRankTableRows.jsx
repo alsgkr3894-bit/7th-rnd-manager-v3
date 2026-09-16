@@ -7,6 +7,7 @@ import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { DiscontinuedBadge } from '@/components/sales/DiscontinuedBadge';
 import { IrregularMenuBadge } from '@/components/sales/IrregularMenuBadge';
 import { UnregisteredBadge } from '@/components/sales/UnregisteredBadge';
+import { FlagToggleChip } from '@/components/sales/FlagToggleChip';
 
 export function SalesVariantRows({ item, opts }) {
   if (!opts.variant) return null;
@@ -58,10 +59,15 @@ export function SalesRankItemRows({
   onUndiscontinue,
   onToggleUnregistered,
 }) {
-  const canMark = typeof onMarkIrregular === 'function';
   const canUnmark = canEdit && typeof onUnmarkIrregular === 'function';
   const canUndiscontinue = canEdit && typeof onUndiscontinue === 'function';
   const canToggleUnregistered = canEdit && typeof onToggleUnregistered === 'function';
+  const canToggleIrregular =
+    canEdit && typeof onMarkIrregular === 'function' && typeof onUnmarkIrregular === 'function';
+  // 메뉴마스터 미등록 후보(자동 판정·해제·비정규메뉴 단종 처리) 행에만 토글 칩을 붙인다.
+  // 칩이 보이는 관리자 화면에서는 같은 뜻의 배지를 인쇄 전용으로 돌려 표시가 겹치지 않게 한다.
+  const isCandidate = !!(item.irregular || item.unregistered || item.registeredOverride);
+  const showToggles = isCandidate && (canToggleUnregistered || canToggleIrregular);
   return (
     <Fragment>
       <tr>
@@ -70,6 +76,7 @@ export function SalesRankItemRows({
           {asDisplayText(item.name, '—')}
           {item.irregular ? (
             <IrregularMenuBadge
+              printOnly={showToggles}
               onUnmark={canUnmark ? () => onUnmarkIrregular(item.name) : undefined}
             />
           ) : (
@@ -79,53 +86,28 @@ export function SalesRankItemRows({
               />
             )
           )}
-          {canToggleUnregistered && (item.unregistered || item.registeredOverride) && (
-            <label
-              className="chip no-print unregistered-toggle"
-              title="체크 해제: 메뉴마스터에 등록된 메뉴로 간주(미등록 아님) / 다시 체크: 미등록으로 되돌림"
-              style={{
-                marginLeft: 6,
-                fontSize: 10,
-                padding: '1px 6px',
-                gap: 4,
-                cursor: 'pointer',
-                border: '1px dashed var(--border)',
-                background: 'transparent',
-                color: item.unregistered ? 'var(--text-3)' : 'var(--text-4)',
-                fontWeight: 700,
-                display: 'inline-flex',
-                alignItems: 'center',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={!!item.unregistered}
-                onChange={e => onToggleUnregistered(item.name, e.target.checked)}
-                style={{ margin: 0 }}
-              />
-              미등록
-            </label>
+          {item.unregistered && <UnregisteredBadge printOnly={showToggles} />}
+          {showToggles && canToggleUnregistered && (
+            <FlagToggleChip
+              label="미등록"
+              checked={!!item.unregistered}
+              disabled={!!item.irregular}
+              onChange={v => onToggleUnregistered(item.name, v)}
+              title={
+                item.irregular
+                  ? '단종 처리된 항목 — 단종을 해제하면 다시 미등록 판정으로 돌아갑니다'
+                  : '체크 해제: 메뉴마스터에 등록된 메뉴로 간주(미등록 아님) / 다시 체크: 미등록으로 되돌림'
+              }
+            />
           )}
-          {item.unregistered && <UnregisteredBadge printOnly={canEdit && canMark} />}
-          {item.unregistered && canEdit && canMark && (
-            <button
-              type="button"
-              className="chip mark-irregular-btn no-print"
-              onClick={() => onMarkIrregular(item.name)}
-              title="메뉴마스터에 없는 판매명입니다 — 아직 단종 등록 전이에요. 눌러서 단종(비정규메뉴)으로 등록"
-              style={{
-                marginLeft: 6,
-                fontSize: 10,
-                padding: '1px 6px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                border: '1px dashed var(--border)',
-                background: 'transparent',
-                color: 'var(--text-3)',
-              }}
-            >
-              + 단종
-            </button>
+          {showToggles && canToggleIrregular && (
+            <FlagToggleChip
+              label="단종"
+              tone="warn"
+              checked={!!item.irregular}
+              onChange={v => (v ? onMarkIrregular(item.name) : onUnmarkIrregular(item.name))}
+              title="체크: 메뉴마스터에 없는 판매명을 단종(비정규메뉴)으로 등록 / 해제: 되돌림"
+            />
           )}
         </td>
         <td className="num right">{formatNumber(safeQuantity(item.quantity))}</td>

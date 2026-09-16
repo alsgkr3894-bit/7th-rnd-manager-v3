@@ -77,9 +77,29 @@ describe('판매량 보고서 인쇄 — 단종/비정규메뉴 배지 가독성
     expect(printSrc).toContain('display: none !important');
   });
 
-  test('클릭 전용 액션(단종 마크 버튼·전체 해제 바)은 no-print로 인쇄에서 빠진다', () => {
-    expect(rankRowsSrc).toContain('mark-irregular-btn no-print');
+  test('클릭 전용 액션(미등록/단종 토글 칩·전체 해제 바)은 no-print로 인쇄에서 빠진다', () => {
+    const chipSrc = src('components/sales/FlagToggleChip.jsx');
+    expect(chipSrc).toContain('chip no-print flag-toggle-chip');
+    expect(rankRowsSrc).toContain("from '@/components/sales/FlagToggleChip'");
     expect(bulkFixSrc).toContain('card no-print');
+  });
+
+  test('세 배지 모두 인쇄에서 전역 .chip 크기(min-height 36px)를 눌러 작은 태그로 나온다', () => {
+    expect(printSrc).toContain('min-height: 0 !important');
+    const compactBlockStart = printSrc.indexOf('min-height: 0 !important');
+    const compactBlock = printSrc.slice(compactBlockStart - 400, compactBlockStart);
+    expect(compactBlock).toContain('.discontinued-badge');
+    expect(compactBlock).toContain('.irregular-menu-badge');
+    expect(compactBlock).toContain('.unregistered-badge');
+  });
+
+  test('비정규메뉴 배지도 관리자 화면에서는 print-only가 될 수 있고, 인쇄 중엔 인라인으로 펴진다', () => {
+    expect(irregularBadgeSrc).toContain(
+      "className={'chip irregular-menu-badge' + (printOnly ? ' print-only' : '')}"
+    );
+    const irregularRuleStart = printSrc.indexOf('.irregular-menu-badge {');
+    const irregularRule = printSrc.slice(irregularRuleStart, irregularRuleStart + 400);
+    expect(irregularRule).toContain('display: inline-flex !important');
   });
 
   // 회귀: "+ 단종" 마크 버튼은 no-print라 인쇄/PDF에서 사라져, 아직 단종 등록 전인
@@ -96,7 +116,7 @@ describe('판매량 보고서 인쇄 — 단종/비정규메뉴 배지 가독성
     expect(rankRowsSrc).toContain(
       "import { UnregisteredBadge } from '@/components/sales/UnregisteredBadge'"
     );
-    expect(rankRowsSrc).toContain('<UnregisteredBadge printOnly={canEdit && canMark} />');
+    expect(rankRowsSrc).toContain('<UnregisteredBadge printOnly={showToggles} />');
   });
 });
 

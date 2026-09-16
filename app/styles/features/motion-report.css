@@ -507,7 +507,8 @@ tr.deleting td {
 
 /* ── 인쇄 뷰 ── */
 .print-only {
-  display: none;
+  /* 컴포넌트 인라인 display(inline-flex 등)보다 우선해야 화면에서 확실히 숨는다 */
+  display: none !important;
 }
 @media print {
   .print-only {
