@@ -6,6 +6,9 @@ import { buildImportPlan } from './backup-import-core.mjs';
 import { seedStoreCatalogDefaults } from './seed-store-catalog.mjs';
 
 const CHUNK_SIZE = 500;
+// 한 store를 한 트랜잭션(삭제+삽입)으로 넣는다. Prisma 기본 interactive transaction 제한(5초)은
+// shipment_rows처럼 수십만 행인 store에서 터지므로 넉넉히 늘린다(실측: 236k행 ≈ 수십 초).
+const STORE_TX_OPTIONS = { maxWait: 30_000, timeout: 30 * 60_000 };
 
 function usage() {
   return [
@@ -111,7 +114,7 @@ async function writeStoreRows(prisma, plan, jobId) {
           })),
         });
       }
-    });
+    }, STORE_TX_OPTIONS);
     inserted += storePlan.rows.length;
   }
   return inserted;
@@ -130,7 +133,7 @@ async function writeLocalStorage(prisma, plan) {
     for (const batch of chunks(plan.localStorageEntries)) {
       await tx.localStorageEntry.createMany({ data: batch });
     }
-  });
+  }, STORE_TX_OPTIONS);
   return plan.localStorageEntries.length;
 }
 
