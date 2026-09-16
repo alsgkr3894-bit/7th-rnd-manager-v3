@@ -14,6 +14,7 @@ import {
   getIngredientProductCodeDuplicateDiagnostics,
   mergeIngredientRows,
 } from '@/lib/ingredient';
+import { isGhostIngredientMeta } from '@/lib/ingredient/normalize';
 import { migrateNutritionToIngredients } from '@/lib/nutrition/migrate-to-ingredient';
 
 function findBrokenCompositeRefs(allMeta) {
@@ -42,7 +43,8 @@ export function useIngredientManageData() {
       const priceDate = latest?.updateDate || null;
 
       const [allMeta, metaMap, managed, productCodeDupes, suppliers] = await Promise.all([
-        getAllIngredients(),
+        // 코드도 이름도 없는 고스트 행은 목록(가격파일 유무 양쪽 분기)과 참조 진단에서 모두 뺀다.
+        getAllIngredients().then(list => list.filter(meta => !isGhostIngredientMeta(meta))),
         getIngredientMetaMap(),
         seedManagedProductsIfEmpty().then(() => getManagedProducts()),
         getIngredientProductCodeDuplicateDiagnostics(),

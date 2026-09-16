@@ -1,8 +1,29 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, test } from '@jest/globals';
+import { isGhostIngredientMeta } from '../../lib/ingredient/normalize.js';
 
 const src = readFileSync(resolve('app/ingredient/manage/useIngredientManageData.js'), 'utf8');
+
+describe('고스트(코드·이름 모두 없는) 메타 행은 목록에서 숨긴다', () => {
+  test('isGhostIngredientMeta — 코드도 이름도 비어 있을 때만 true', () => {
+    expect(isGhostIngredientMeta({ productCode: '', ingredientName: '' })).toBe(true);
+    expect(isGhostIngredientMeta({ productCode: '  ', ingredientName: ' \t' })).toBe(true);
+    expect(isGhostIngredientMeta({ productCode: null, ingredientName: undefined })).toBe(true);
+    expect(isGhostIngredientMeta({})).toBe(true);
+    expect(isGhostIngredientMeta(null)).toBe(true);
+    // 코드만 있거나 이름만 있으면 정상 행(orphan/jetteMissing 흐름이 처리)
+    expect(isGhostIngredientMeta({ productCode: 'CC1', ingredientName: '' })).toBe(false);
+    expect(isGhostIngredientMeta({ productCode: '', ingredientName: '수동 재료' })).toBe(false);
+  });
+
+  test('allMeta 로드 시점에 한 번 걸러 가격파일 유무 양쪽 분기와 참조 진단에 모두 적용된다', () => {
+    expect(src).toContain("import { isGhostIngredientMeta } from '@/lib/ingredient/normalize'");
+    expect(src).toContain(
+      'getAllIngredients().then(list => list.filter(meta => !isGhostIngredientMeta(meta)))'
+    );
+  });
+});
 
 // isManual/isSeeded 게이트가 있으면 "제때 연동으로 만들어졌지만 최신 가격파일에서
 // 코드가 사라진" 레코드가 관리 화면 어디에도 뜨지 않는다 — 단종 처리해도 대체 연결
