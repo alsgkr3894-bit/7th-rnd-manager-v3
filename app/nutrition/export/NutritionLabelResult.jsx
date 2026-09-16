@@ -7,6 +7,10 @@ import { buildIngredientMenuMap } from '@/lib/cost/ingredient-menu-map';
 import { buildNutritionLabelContext } from '@/lib/nutrition/label/context';
 import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import {
+  buildDiscontinuedBaseCodeSet,
+  isNutritionMenuDiscontinued,
+} from '@/lib/nutrition/menu-master-diagnostics';
+import {
   loadLabelMenuNames,
   saveLabelMenuNames,
   loadMenuNames,
@@ -165,7 +169,13 @@ export default function NutritionLabelResult() {
         originNameOverrides,
         masterByCode
       );
-      const baseMenus = sortNutritionLabelMenus(menuRefs, masterByCode, menuOrder);
+      // 메뉴마스터에서 단종된 메뉴는 영양성분표에서 자동 제외 — /nutrition/menu와 같은 규칙
+      // (베이스 코드에 묶인 L/R 행이 전부 단종일 때만; 하나라도 판매 중이면 유지).
+      const discontinuedBaseCodes = buildDiscontinuedBaseCodeSet(masters);
+      const activeMenuRefs = menuRefs.filter(
+        m => !isNutritionMenuDiscontinued(m.menuCode, discontinuedBaseCodes)
+      );
+      const baseMenus = sortNutritionLabelMenus(activeMenuRefs, masterByCode, menuOrder);
 
       const orderedOriginalMenus = sortNutritionLabelMenus(baseMenus, masterByCode, menuOrder);
       const orderedMenus = orderedOriginalMenus.map(menu => {
