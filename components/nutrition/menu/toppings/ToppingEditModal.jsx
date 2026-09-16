@@ -3,7 +3,7 @@
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { IngredientSearch } from '@/components/cost/shared/IngredientSearch';
 import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
-import { EMPTY_TOPPING_PRICE_MAP } from './toppingUtils';
+import { EMPTY_TOPPING_PRICE_MAP, scaleToppingValuesToWeight } from './toppingUtils';
 
 function ToppingFieldLabel({ children, marginBottom = 4 }) {
   return (
@@ -61,7 +61,10 @@ export function ToppingEditModal({
   saving,
   onSave,
   onClose,
+  baseline = null,
 }) {
+  const baselineWeight = parseFloat(baseline?.weight);
+  const canAutoScale = baselineWeight > 0;
   return (
     <ModalFrame
       title={modal === 'add' ? '추가토핑 추가' : '추가토핑 편집'}
@@ -108,10 +111,21 @@ export function ToppingEditModal({
         </div>
 
         <div>
-          <ToppingFieldLabel marginBottom={8}>영양성분 (1회 제공량 기준)</ToppingFieldLabel>
+          <ToppingFieldLabel marginBottom={4}>영양성분 (1회 제공량 기준)</ToppingFieldLabel>
+          <div style={{ fontSize: 11, color: 'var(--text-4)', marginBottom: 8 }}>
+            {canAutoScale
+              ? `중량을 바꾸면 나머지 값이 저장값(${baselineWeight}g 기준)에 비례해 자동 계산됩니다`
+              : '저장 후 다시 열면 중량 변경 시 나머지 값이 자동 계산됩니다'}
+          </div>
           <NutritionGrid
             values={values}
-            onChange={(key, value) => onValues(prev => ({ ...prev, [key]: value }))}
+            onChange={(key, value) =>
+              onValues(prev => {
+                if (key !== 'weight') return { ...prev, [key]: value };
+                const scaled = scaleToppingValuesToWeight(baseline, value);
+                return scaled ? { ...prev, ...scaled, weight: value } : { ...prev, weight: value };
+              })
+            }
           />
         </div>
       </div>

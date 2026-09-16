@@ -9,6 +9,7 @@ import {
   formatToppingNutritionValue,
   normalizeToppingIngredientName,
   normalizeToppingIngredients,
+  scaleToppingValuesToWeight,
   toppingAllergenText,
   toppingFormFromRecord,
   toppingIngredientNameKey,
@@ -93,6 +94,57 @@ describe('nutrition toppings tab structure', () => {
     expect(importInputsSource).toContain('role="listbox"');
     expect(importInputsSource).toContain('type="number"');
     expect(utilsSource).toContain('export function buildToppingSavePayload');
+  });
+
+  test('중량을 바꾸면 나머지 영양성분이 저장값 비율로 자동 계산된다(모달 배선)', () => {
+    // 기본값(baseline)은 모달을 열 때의 저장값 — TabToppings가 record에서 만들어 내려준다.
+    expect(tabSource).toContain(
+      "baseline={modal && modal !== 'add' ? utils.toppingValuesFromRecord(modal) : null}"
+    );
+    expect(modalSource).toContain('scaleToppingValuesToWeight');
+    expect(modalSource).toContain("if (key !== 'weight') return { ...prev, [key]: value };");
+    expect(modalSource).toContain('scaleToppingValuesToWeight(baseline, value)');
+    expect(modalSource).toContain('에 비례해 자동 계산됩니다');
+  });
+
+  test('scaleToppingValuesToWeight — 저장 중량 대비 비율로 0.1 단위 비례 계산', () => {
+    const baseline = {
+      weight: 80,
+      kcal: 200,
+      carbs: '3.3',
+      sugar: '',
+      fat: 0,
+      satFat: 10,
+      transFat: null,
+      cholesterol: 30,
+      protein: '12',
+      sodium: 400,
+    };
+    // 80g → 100g: ×1.25
+    expect(scaleToppingValuesToWeight(baseline, 100)).toEqual({
+      kcal: 250,
+      carbs: 4.1, // 3.3 × 1.25 = 4.125 → 4.1
+      sugar: '', // 빈칸 유지
+      fat: 0,
+      satFat: 12.5,
+      transFat: '', // null도 빈칸으로
+      cholesterol: 37.5,
+      protein: 15,
+      sodium: 500,
+    });
+    // 여러 번 바꿔도 항상 저장값 기준(누적 아님): 80 → 90 = ×1.125
+    expect(scaleToppingValuesToWeight(baseline, '90').satFat).toBe(11.3);
+    // 문자열 중량도 처리, 0g은 전부 0
+    expect(scaleToppingValuesToWeight({ ...baseline, weight: '80' }, 0).satFat).toBe(0);
+    // 비율을 구할 수 없으면 null — 저장 중량 없음/0, 새 중량이 숫자 아님/음수
+    expect(scaleToppingValuesToWeight({ ...baseline, weight: '' }, 100)).toBeNull();
+    expect(scaleToppingValuesToWeight({ ...baseline, weight: 0 }, 100)).toBeNull();
+    expect(scaleToppingValuesToWeight(null, 100)).toBeNull();
+    expect(scaleToppingValuesToWeight(baseline, '')).toBeNull();
+    expect(scaleToppingValuesToWeight(baseline, 'abc')).toBeNull();
+    expect(scaleToppingValuesToWeight(baseline, -5)).toBeNull();
+    // weight 자체는 결과에 포함하지 않는다(호출부가 입력값 그대로 유지)
+    expect(scaleToppingValuesToWeight(baseline, 100)).not.toHaveProperty('weight');
   });
 
   test('toppings write controls follow canEdit role state', () => {

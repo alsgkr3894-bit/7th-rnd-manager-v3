@@ -95,6 +95,33 @@ export function toppingValuesFromRecord(topping) {
   return NUTRITION_FIELDS.reduce((acc, { key }) => ({ ...acc, [key]: topping[key] ?? '' }), {});
 }
 
+function hasNumericValue(value) {
+  return value !== '' && value != null && Number.isFinite(parseFloat(value));
+}
+
+/**
+ * 기본값(baseline, 모달을 열 때의 저장값)의 중량 대비 새 중량 비율로 나머지 영양성분을 비례
+ * 계산한다 — 토핑 값은 해당 중량 1회분의 절대값(basis:'serving')이라 단순 비례가 맞다.
+ * 항상 저장값 기준으로 계산해 여러 번 바꿔도 반올림 오차가 쌓이지 않는다. 0.1 단위 반올림,
+ * 빈칸은 빈칸 유지. 비율을 구할 수 없으면(저장 중량 없음/0, 새 중량이 숫자 아님) null.
+ * @returns {Record<string, number|string>|null} weight를 제외한 필드들
+ */
+export function scaleToppingValuesToWeight(baseline, nextWeight) {
+  const baseWeight = parseFloat(baseline?.weight);
+  const weight = parseFloat(nextWeight);
+  if (!(baseWeight > 0) || !Number.isFinite(weight) || weight < 0) return null;
+  const ratio = weight / baseWeight;
+  const out = {};
+  for (const { key } of NUTRITION_FIELDS) {
+    if (key === 'weight') continue;
+    const value = baseline?.[key];
+    out[key] = hasNumericValue(value)
+      ? Math.round(parseFloat(value) * ratio * 10) / 10
+      : (value ?? '');
+  }
+  return out;
+}
+
 export function buildToppingSavePayload({ modal, form, values, now = Date.now() }) {
   const toppingName = asDisplayText(form.toppingName).trim();
   const toppingCode = asDisplayText(form.toppingCode).trim() || `TOP-${now}`;

@@ -65,9 +65,7 @@ export function TabToppings({ toppings, ingredients, onRefresh, canEdit = false 
     }));
   };
 
-  const clearIngredient = () => {
-    setForm(prev => ({ ...prev, productCode: '', ingredientName: '' }));
-  };
+  const clearIngredient = () => setForm(prev => ({ ...prev, productCode: '', ingredientName: '' }));
 
   const save = async () => {
     if (!canEdit) return;
@@ -127,6 +125,7 @@ export function TabToppings({ toppings, ingredients, onRefresh, canEdit = false 
           onForm={setForm}
           values={values}
           onValues={setValues}
+          baseline={modal && modal !== 'add' ? utils.toppingValuesFromRecord(modal) : null}
           safeIngredients={safeIngredients}
           onIngredient={selectIngredient}
           onClearIngredient={clearIngredient}
