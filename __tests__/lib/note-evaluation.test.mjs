@@ -92,4 +92,13 @@ describe('note evaluation helpers', () => {
       'RND-260702-2'
     );
   });
+
+  test('date가 없으면 UTC가 아니라 로컬 오늘 날짜로 코드를 만든다 (밤 9시 이후 전날 날짜 방지)', async () => {
+    const { generateNextNoteMenuCode } = await import('../../lib/note/evaluation.js');
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const localYmd = `${String(now.getFullYear()).slice(2)}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+
+    expect(generateNextNoteMenuCode([], {})).toBe(`RND-${localYmd}-1`);
+  });
 });
