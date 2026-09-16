@@ -15,6 +15,7 @@ import {
   mergeIngredientRows,
 } from '@/lib/ingredient';
 import { isGhostIngredientMeta } from '@/lib/ingredient/normalize';
+import { backfillProductCodeCase } from '@/lib/ingredient/migrate-product-code-case';
 import { migrateNutritionToIngredients } from '@/lib/nutrition/migrate-to-ingredient';
 
 function findBrokenCompositeRefs(allMeta) {
@@ -35,6 +36,10 @@ export function useIngredientManageData() {
     async () => {
       await migrateNutritionToIngredients().catch(error =>
         console.warn('[ingredient/manage] 마이그레이션 실패', error)
+      );
+      // 소문자·공백 섞인 상품코드를 대문자로 1회 정리(멱등, 대상 없으면 즉시 종료)
+      await backfillProductCodeCase().catch(error =>
+        console.warn('[ingredient/manage] 상품코드 대문자 백필 실패', error)
       );
 
       const files = await getPriceFiles();

@@ -80,4 +80,18 @@ describe('upsertIngredientMeta — baseQuantity/pieceWeightGrams 비우기', () 
     expect(saved.baseQuantity).toBe(30);
     expect(saved.pieceWeightGrams).toBe(60);
   });
+
+  test('소문자·공백 섞인 코드는 대문자로 정규화해 저장하고 기존 행(대소문자 무관)을 갱신한다', async () => {
+    await upsertIngredientMeta({ productCode: ' jt01 ', note: '소문자로 들어옴' });
+    expect(stores.cost_ingredients).toHaveLength(1);
+    const saved = stores.cost_ingredients.find(r => r.id === 1);
+    expect(saved.productCode).toBe('JT01');
+    expect(saved.note).toBe('소문자로 들어옴');
+  });
+
+  test('신규 행도 대문자 코드로 만들어진다', async () => {
+    await upsertIngredientMeta({ productCode: 'cc999x', ingredientName: '새 재료' });
+    const created = stores.cost_ingredients.find(r => r.ingredientName === '새 재료');
+    expect(created.productCode).toBe('CC999X');
+  });
 });
