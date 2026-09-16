@@ -11,6 +11,7 @@ import {
   setSyncModeOverride,
 } from '@/lib/db/sync-mode';
 import { hydrateFromServer, readHydrateJournal, readServerManifest } from '@/lib/db/server-hydrate';
+import { getServerStoreSyncDeadLetters } from '@/lib/db/server-sync';
 import { formatNumber } from '@/lib/format';
 
 function ModeBadge({ mode }) {
@@ -51,6 +52,7 @@ export default function ServerSyncPage() {
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState(null);
   const [journal, setJournal] = useState(null);
+  const [deadLetters, setDeadLetters] = useState([]);
 
   const isReadonly = mode === SYNC_MODE.READONLY;
 
@@ -59,6 +61,7 @@ export default function ServerSyncPage() {
     setLoadError('');
     const activeBrand = getActiveBrandId();
     setBrandId(activeBrand);
+    setDeadLetters(getServerStoreSyncDeadLetters());
     try {
       const [serverManifest, stats] = await Promise.all([
         readServerManifest(activeBrand),
@@ -342,6 +345,30 @@ export default function ServerSyncPage() {
           </>
         )}
       </section>
+
+      {deadLetters.length > 0 && (
+        <section
+          className="card"
+          style={{ marginTop: 16, borderColor: 'var(--negative)' }}
+          data-testid="sync-dead-letters"
+        >
+          <div className="card-title" style={{ color: 'var(--negative)' }}>
+            서버가 거절해 건너뛴 저장 {deadLetters.length}건 (이 브라우저 세션)
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+            아래 항목은 로컬에는 저장됐지만 서버가 받지 않았습니다. 이 브라우저의 다른 저장은 계속
+            서버로 전송됩니다. 반복되면 개발자에게 알려주세요.
+          </div>
+          <ul style={{ margin: '8px 0 0 16px', fontSize: 12, color: 'var(--text-3)' }}>
+            {deadLetters.slice(-10).map((item, index) => (
+              <li key={`${item.at}-${index}`}>
+                {item.at.slice(11, 19)} · {item.storeName}
+                {item.recordKey != null ? `#${item.recordKey}` : ''} · {item.type} — {item.error}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="card" style={{ marginTop: 16 }}>
         <div className="card-title">마지막 불러오기</div>
