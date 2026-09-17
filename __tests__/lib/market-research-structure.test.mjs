@@ -2,6 +2,9 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 const pageSource = readFileSync(resolve('app/note/market/page.jsx'), 'utf8');
+const writeFormSource = readFileSync(resolve('app/note/market/useMarketWriteForm.js'), 'utf8');
+const writeModalSource = readFileSync(resolve('app/note/market/_MarketWriteModal.jsx'), 'utf8');
+const listPanelSource = readFileSync(resolve('app/note/market/_MarketListPanel.jsx'), 'utf8');
 const storeSource = readFileSync(resolve('lib/note/market-research.js'), 'utf8');
 const constantsSource = readFileSync(resolve('lib/db/constants.js'), 'utf8');
 const noteSchemaSource = readFileSync(resolve('lib/db/schema/note.js'), 'utf8');
@@ -36,13 +39,16 @@ describe('market research note page structure', () => {
   });
 
   test('market research page opens on the list and writes from the list action', () => {
+    // page는 조립만: 헤더·작성 버튼·목록/작성 모달 wiring. 상태·저장 호출은 훅/컴포넌트에 있다.
     expect(pageSource).toContain("breadcrumb={['RND', '시장조사']}");
-    expect(pageSource).toContain('const [writing, setWriting] = useState(false)');
-    expect(pageSource).toContain('시장조사 목록');
     expect(pageSource).toContain('작성하기');
     expect(pageSource).toContain('startWrite(row)');
-    expect(pageSource).toContain('<NotePhotoSection');
-    expect(pageSource).toContain("onChange={value => update('photos', value)}");
-    expect(pageSource).toContain('await saveMarketResearch(form)');
+    expect(pageSource).toContain('<MarketListPanel');
+    expect(pageSource).toContain('<MarketWriteModal');
+    expect(listPanelSource).toContain('시장조사 목록');
+    expect(writeFormSource).toContain('const [writing, setWriting] = useState(false)');
+    expect(writeFormSource).toContain('await saveMarketResearch(form)');
+    expect(writeModalSource).toContain('<NotePhotoSection');
+    expect(writeModalSource).toContain("onChange={value => update('photos', value)}");
   });
 });
