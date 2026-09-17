@@ -4,6 +4,10 @@ import { resolve } from 'path';
 const pageSource = readFileSync(resolve('app/page.jsx'), 'utf8');
 const appShellSource = readFileSync(resolve('components/AppShell.jsx'), 'utf8');
 const paletteSource = readFileSync(resolve('components/CommandPalette.jsx'), 'utf8');
+const paletteStateSource = readFileSync(
+  resolve('components/command-palette/useCommandPaletteState.js'),
+  'utf8'
+);
 const keyboardShortcutsSource = readFileSync(resolve('hooks/useKeyboardShortcuts.js'), 'utf8');
 const rowsSource = readFileSync(resolve('components/home/HomeDashboardRows.jsx'), 'utf8');
 const rowRendererSource = readFileSync(
@@ -92,8 +96,9 @@ describe('home page structure', () => {
     expect(appShellSource).toContain('<CommandPalette open={paletteOpen}');
 
     expect(paletteSource).toContain('canEdit = false');
-    expect(paletteSource).toContain('usePaletteItems(open, { canEdit })');
-    expect(paletteSource).toContain('isPaletteItemVisibleForRole(item, canEdit)');
+    expect(paletteSource).toContain('useCommandPaletteState({ open, onClose, canEdit })');
+    expect(paletteStateSource).toContain('usePaletteItems(open, { canEdit })');
+    expect(paletteStateSource).toContain('isPaletteItemVisibleForRole(item, canEdit)');
 
     expect(keyboardShortcutsSource).toContain('canEdit = false');
     expect(keyboardShortcutsSource).toContain("useSettingValue('keyboardShortcuts')");
