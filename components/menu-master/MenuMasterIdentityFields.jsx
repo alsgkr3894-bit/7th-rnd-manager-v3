@@ -4,6 +4,7 @@ import { ComboBox } from '@/components/ui/ComboBox';
 import { CategoryTags } from '@/components/menu-master/MenuCategoryTags';
 import { FieldError, FieldLabel } from '@/components/menu-master/MenuMasterFieldPrimitives';
 import { isPizzaCategory, isSetCategory } from '@/lib/menu-master/category-policy';
+import { EDGE_FAMILIES, resolveMenuEdgeFamily } from '@/lib/menu-master/edge-family';
 import {
   PIZZA_SUB_CATEGORY_OPTIONS,
   parseCategoryFromCode,
@@ -165,6 +166,29 @@ export function CategoryAndSizeFields({ form, presetCategories, setField }) {
           inputClassName="input"
         />
       </div>
+      {form.category === '엣지' && (
+        <div>
+          <FieldLabel>엣지 종류</FieldLabel>
+          <select
+            className="input"
+            value={form.edgeKey || ''}
+            onChange={e => setField('edgeKey', e.target.value)}
+          >
+            <option value="">
+              자동 판정
+              {resolveMenuEdgeFamily(form) ? ` (${resolveMenuEdgeFamily(form).label})` : ''}
+            </option>
+            {EDGE_FAMILIES.map(family => (
+              <option key={family.key} value={family.key}>
+                {family.label}
+              </option>
+            ))}
+          </select>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>
+            공통 원가 관리(엣지 관리)·영양성분(엣지 설정)의 원가·영양정보를 이 값으로 연결합니다.
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -32,6 +32,7 @@ const RECIPE_STATUS_LABEL = {
   [MENU_RECIPE_SUMMARY_STATUS.NEEDS_PRICE]: '단가 확인',
   [MENU_RECIPE_SUMMARY_STATUS.NEEDS_QUANTITY]: '수량 확인',
   [MENU_RECIPE_SUMMARY_STATUS.UNSUPPORTED]: '미지원',
+  [MENU_RECIPE_SUMMARY_STATUS.EDGE]: '엣지 원가',
 };
 
 function recipeStatusLabel(summary) {
@@ -47,7 +48,21 @@ function recipeStatusLabel(summary) {
     if (common > 0 && direct === 0) return '공통단가 확인';
     if (common > 0 && direct > 0) return '단가/공통 확인';
   }
+  if (summary?.status === MENU_RECIPE_SUMMARY_STATUS.EDGE && !summary.hasRecipe)
+    return '엣지 미등록';
   return RECIPE_STATUS_LABEL[summary?.status] || '확인';
+}
+
+/** 엣지 원가 셀 본문: 석쇠(추가 원가 없음)·L만 있는 경우(씬바사삭)·L/R(치즈·골드) 세 형태. */
+function edgeDetailText(summary) {
+  const sizeCosts = summary.sizeCosts || {};
+  const sizes = Object.keys(sizeCosts);
+  if (sizes.length === 0) return '기본 도우 · 추가 원가 없음';
+  const parts = ['L', 'R']
+    .filter(s => sizeCosts[s] != null)
+    .map(s => `${s} ${formatNumber(sizeCosts[s])}원`);
+  const rate = summary.costRate != null ? ` · ${formatPercent(summary.costRate)}` : '';
+  return `${parts.join(' / ')}${rate}`;
 }
 
 export function MenuRecipeCostCell({ summary }) {
@@ -55,8 +70,14 @@ export function MenuRecipeCostCell({ summary }) {
     return <span style={{ fontSize: 11, color: 'var(--text-4)' }}>계산 중</span>;
   }
 
+  const isEdge = summary.status === MENU_RECIPE_SUMMARY_STATUS.EDGE;
+  const styleStatus = isEdge
+    ? summary.hasRecipe
+      ? MENU_RECIPE_SUMMARY_STATUS.READY
+      : MENU_RECIPE_SUMMARY_STATUS.MISSING
+    : summary.status;
   const style =
-    RECIPE_STATUS_STYLE[summary.status] || RECIPE_STATUS_STYLE[MENU_RECIPE_SUMMARY_STATUS.MISSING];
+    RECIPE_STATUS_STYLE[styleStatus] || RECIPE_STATUS_STYLE[MENU_RECIPE_SUMMARY_STATUS.MISSING];
   const label = recipeStatusLabel(summary);
 
   return (
@@ -72,7 +93,12 @@ export function MenuRecipeCostCell({ summary }) {
       >
         {label}
       </span>
-      {summary.hasRecipe && (
+      {isEdge && summary.hasRecipe && (
+        <span style={{ fontSize: 11, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
+          {edgeDetailText(summary)}
+        </span>
+      )}
+      {!isEdge && summary.hasRecipe && (
         <span style={{ fontSize: 11, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
           {formatNumber(summary.totalCost)}원
           {summary.costRate != null ? ` · ${formatPercent(summary.costRate)}` : ''}

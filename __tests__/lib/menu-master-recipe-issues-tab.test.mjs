@@ -93,6 +93,20 @@ describe('buildRecipeIssues — 이슈 분류 로직', () => {
     expect(issues).toHaveLength(0);
   });
 
+  test('EDGE 상태(엣지 원가 연동) 메뉴는 판매가 0이어도 이슈 목록에서 제외한다', () => {
+    // 실데이터: 석쇠·씬바사삭은 판매가 0원이 정상이다 — MENU_RECIPE_SUMMARY_STATUS.EDGE로
+    // 바뀌면서 UNSUPPORTED 전용 제외 조건에 걸리지 않아 "판매가 누락" 이슈가 오탐될 뻔했다.
+    const menus = [makeMenu({ menuCode: 'OPT-EDGE-001', category: '엣지', price: 0 })];
+    const map = makeSummaryMap([
+      [
+        'OPT-EDGE-001',
+        { status: MENU_RECIPE_SUMMARY_STATUS.EDGE, hasRecipe: true, sizeCosts: {}, totalCost: 0 },
+      ],
+    ]);
+    const issues = buildRecipeIssues(menus, map);
+    expect(issues).toHaveLength(0);
+  });
+
   test('summary가 없는 메뉴는 이슈 목록에서 제외한다', () => {
     const menus = [makeMenu({ menuCode: 'X001' })];
     const map = makeSummaryMap([]);
