@@ -2,7 +2,17 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 const formSource = readFileSync(resolve('app/note/_NoteFormBody.jsx'), 'utf8');
-const writePageSource = readFileSync(resolve('app/note/write/page.jsx'), 'utf8');
+// page.jsx는 조립만 담당하도록 분리됐다(useNoteWriteController 등) — 기존 검증 의도(문자열
+// 포함 여부)는 그대로 유지하기 위해 분리된 구현 파일까지 합쳐서 검사한다.
+const writePageSource = [
+  'app/note/write/page.jsx',
+  'app/note/write/useNoteWriteController.js',
+  'app/note/write/useNoteWriteSourceLoad.js',
+  'app/note/write/useNoteWriteDraftAutosave.js',
+  'app/note/write/_NoteWriteBanners.jsx',
+]
+  .map(p => readFileSync(resolve(p), 'utf8'))
+  .join('\n');
 // 작성 유형 상수·변환과 유형 선택 단계는 별도 파일로 분리됐다.
 const writeTypesSource = readFileSync(resolve('app/note/write/writeTypes.js'), 'utf8');
 const writeTypeStepSource = readFileSync(resolve('app/note/write/_WriteTypeStep.jsx'), 'utf8');

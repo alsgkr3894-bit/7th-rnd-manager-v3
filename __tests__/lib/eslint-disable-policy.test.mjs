@@ -54,10 +54,24 @@ const ALLOWED_DISABLES = [
     reason: 'sample photos are user-supplied IndexedDB data URLs',
   },
   {
-    file: 'app/note/write/page.jsx',
+    file: 'app/note/write/_NoteWriteBanners.jsx',
     rule: 'react/no-unescaped-entities',
     count: 1,
     reason: 'Korean UI copy intentionally contains apostrophe-like punctuation',
+  },
+  {
+    file: 'app/note/write/useNoteWriteSourceLoad.js',
+    rule: 'react-hooks/exhaustive-deps',
+    count: 1,
+    reason:
+      'mount-time source load (sample/note/home draft) intentionally runs only on canEdit/roleReady change; setter props are stable',
+  },
+  {
+    file: 'app/note/write/useNoteWriteDraftAutosave.js',
+    rule: 'react-hooks/exhaustive-deps',
+    count: 1,
+    reason:
+      'debounced draft autosave intentionally depends only on canEdit/form/writeType; ref/setter props are stable',
   },
   {
     file: 'app/nutrition/export/NutritionLabelResult.jsx',

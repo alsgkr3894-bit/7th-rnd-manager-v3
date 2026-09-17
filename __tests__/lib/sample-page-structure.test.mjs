@@ -3,7 +3,17 @@ import { resolve } from 'path';
 
 const pageSource = readFileSync(resolve('app/note/sample/page.jsx'), 'utf8');
 const legacyWritePageSource = readFileSync(resolve('app/note/sample/write/page.jsx'), 'utf8');
-const noteWritePageSource = readFileSync(resolve('app/note/write/page.jsx'), 'utf8');
+// page.jsx는 조립만 담당하도록 분리됐다 — 기존 검증 의도(문자열 포함 여부)는 그대로 유지하기
+// 위해 분리된 구현 파일(useNoteWriteController 등)까지 합쳐서 검사한다.
+const noteWritePageSource = [
+  'app/note/write/page.jsx',
+  'app/note/write/useNoteWriteController.js',
+  'app/note/write/useNoteWriteSourceLoad.js',
+  'app/note/write/useNoteWriteDraftAutosave.js',
+  'app/note/write/_NoteWriteBanners.jsx',
+]
+  .map(p => readFileSync(resolve(p), 'utf8'))
+  .join('\n');
 const detailPageSource = readFileSync(resolve('app/note/sample/[id]/page.jsx'), 'utf8');
 const actionsSource = readFileSync(resolve('app/note/sample/_SamplePageActions.jsx'), 'utf8');
 const filtersSource = readFileSync(resolve('app/note/sample/_SampleFilterControls.jsx'), 'utf8');
