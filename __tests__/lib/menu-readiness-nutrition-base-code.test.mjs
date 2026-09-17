@@ -10,10 +10,13 @@ const src = f => readFileSync(resolve(f), 'utf8');
  * 저장되는데, 메뉴마스터의 menuCode(full, 예: P-PS-001-L)와 그대로 비교해
  * 정상 입력된 메뉴도 전부 누락으로 잘못 표시됐다.
  * (lib/nutrition/menu-master-diagnostics.js의 반대 방향 버그와 같은 원인.)
+ *
+ * checkNutrition/stripSizeSuffix는 파일 크기 관리를 위해 lib/menu-master/
+ * readiness-nutrition.js로 분리됐다(readiness.js가 export해 재사용).
  */
 describe('readiness 영양성분 체크 — base 코드 폴백', () => {
   test('checkNutrition이 사이즈 접미사를 벗겨낸 base 코드로도 조회한다', () => {
-    const s = src('lib/menu-master/readiness.js');
+    const s = src('lib/menu-master/readiness-nutrition.js');
     expect(s).toContain('function stripSizeSuffix(code)');
     expect(s).toContain(
       'if (!rawValueMenuCodes.has(menuCode) && !rawValueMenuCodes.has(stripSizeSuffix(menuCode)))'

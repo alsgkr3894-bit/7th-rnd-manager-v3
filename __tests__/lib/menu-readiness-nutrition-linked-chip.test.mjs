@@ -19,6 +19,7 @@ const state = {
   edges: [],
   toppings: [],
   compositions: [],
+  nutritionEdges: [],
   recipeArrays: { pizza: [], personal: [], side: [], set: [] },
   stores: new Set([
     'cost_selling_prices',
@@ -29,6 +30,7 @@ const state = {
     'menu_recipes',
     'nutrition_topping_master',
     'nutrition_pizza_composition',
+    'nutrition_edge_master',
   ]),
 };
 
@@ -43,6 +45,7 @@ const getAllRecipeGroups = jest.fn(async () => state.groups);
 const getAllEdges = jest.fn(async () => state.edges);
 const getAllToppings = jest.fn(async () => state.toppings);
 const getAllCompositions = jest.fn(async () => state.compositions);
+const getAllNutritionEdges = jest.fn(async () => state.nutritionEdges);
 const loadMenuRecipeArrays = jest.fn(async () => state.recipeArrays);
 
 jest.unstable_mockModule('@/lib/db', () => ({
@@ -59,6 +62,7 @@ jest.unstable_mockModule('@/lib/cost/edge-dough', () => ({ getAllEdges }));
 jest.unstable_mockModule('@/lib/nutrition/values/store', () => ({
   getAllCompositions,
   getAllToppings,
+  getAllEdges: getAllNutritionEdges,
   toppingNameMatchKey: value =>
     String(value ?? '')
       .replace(/\s+/g, '')
@@ -81,9 +85,16 @@ const { buildNutritionLinkedMenuCodeSet, isMenuNutritionLinked } =
 beforeEach(() => {
   state.rawValues = [];
   state.toppings = [];
-  [hasStore, getAll, getByIndex, runTransaction, getAllRawValues, getAllToppings].forEach(fn =>
-    fn.mockClear()
-  );
+  state.nutritionEdges = [];
+  [
+    hasStore,
+    getAll,
+    getByIndex,
+    runTransaction,
+    getAllRawValues,
+    getAllToppings,
+    getAllNutritionEdges,
+  ].forEach(fn => fn.mockClear());
 });
 
 describe('buildNutritionLinkedMenuCodeSet / isMenuNutritionLinked', () => {
@@ -136,5 +147,47 @@ describe('buildNutritionLinkedMenuCodeSet / isMenuNutritionLinked', () => {
     expect(isMenuNutritionLinked({ menuCode: 'T-ETC-001', menuName: '치즈 100g' }, linked)).toBe(
       true
     );
+  });
+
+  test('메뉴마스터 엣지 행(치즈크러스트·골드스윗)은 nutrition_edge_master의 L/R 코드가 모두 있어야 연동된다', async () => {
+    state.nutritionEdges = [{ edgeCode: '치즈크러스트L' }, { edgeCode: '치즈크러스트R' }];
+
+    const linked = await buildNutritionLinkedMenuCodeSet();
+
+    expect(
+      isMenuNutritionLinked(
+        { menuCode: 'OPT-EDGE-002', menuName: '치즈크러스트', category: '엣지' },
+        linked
+      )
+    ).toBe(true);
+    // 골드스윗은 L만 있고 R이 없어 아직 미연동이어야 한다.
+    state.nutritionEdges.push({ edgeCode: '골드스윗L' });
+    const partialLinked = await buildNutritionLinkedMenuCodeSet();
+    expect(
+      isMenuNutritionLinked(
+        { menuCode: 'OPT-EDGE-003', menuName: '골드스윗', category: '엣지' },
+        partialLinked
+      )
+    ).toBe(false);
+  });
+
+  test('메뉴마스터 엣지 행(석쇠·씬바사삭)은 nutrition_raw_values에 해당 베이스 crustType이 하나라도 있으면 연동된다', async () => {
+    state.rawValues = [{ menuCode: 'P-OR-001', crustType: '석쇠L' }];
+
+    const linked = await buildNutritionLinkedMenuCodeSet();
+
+    expect(
+      isMenuNutritionLinked(
+        { menuCode: 'OPT-EDGE-001', menuName: '석쇠', category: '엣지' },
+        linked
+      )
+    ).toBe(true);
+    // 씬바사삭 crustType은 아직 없으므로 미연동.
+    expect(
+      isMenuNutritionLinked(
+        { menuCode: 'OPT-EDGE-004', menuName: '씬바사삭', category: '엣지' },
+        linked
+      )
+    ).toBe(false);
   });
 });

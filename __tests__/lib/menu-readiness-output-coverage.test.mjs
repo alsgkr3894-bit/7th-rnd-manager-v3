@@ -8,6 +8,7 @@ const state = {
   edges: [],
   toppings: [],
   compositions: [],
+  nutritionEdges: [],
   recipeArrays: { pizza: [], personal: [], side: [], set: [] },
   stores: new Set([
     'cost_selling_prices',
@@ -32,6 +33,7 @@ const getAllRecipeGroups = jest.fn(async () => state.groups);
 const getAllEdges = jest.fn(async () => state.edges);
 const getAllToppings = jest.fn(async () => state.toppings);
 const getAllCompositions = jest.fn(async () => state.compositions);
+const getAllNutritionEdges = jest.fn(async () => state.nutritionEdges);
 const loadMenuRecipeArrays = jest.fn(async () => state.recipeArrays);
 
 jest.unstable_mockModule('@/lib/db', () => ({
@@ -48,6 +50,7 @@ jest.unstable_mockModule('@/lib/cost/edge-dough', () => ({ getAllEdges }));
 jest.unstable_mockModule('@/lib/nutrition/values/store', () => ({
   getAllCompositions,
   getAllToppings,
+  getAllEdges: getAllNutritionEdges,
   toppingNameMatchKey: value =>
     String(value ?? '')
       .replace(/\s+/g, '')
@@ -83,6 +86,7 @@ beforeEach(() => {
   state.edges = [];
   state.toppings = [];
   state.compositions = [];
+  state.nutritionEdges = [];
   state.recipeArrays = { pizza: [], personal: [], side: [], set: [] };
   state.stores = new Set([
     'cost_selling_prices',
@@ -93,6 +97,7 @@ beforeEach(() => {
     'menu_recipes',
     'nutrition_topping_master',
     'nutrition_pizza_composition',
+    'nutrition_edge_master',
   ]);
   [
     hasStore,
@@ -106,6 +111,7 @@ beforeEach(() => {
     getAllEdges,
     getAllToppings,
     getAllCompositions,
+    getAllNutritionEdges,
     loadMenuRecipeArrays,
   ].forEach(fn => fn.mockClear());
 });
@@ -165,5 +171,34 @@ describe('menu readiness output coverage', () => {
     expect(row.dims.origin).toEqual({ status: 'missing', detail: '원산지 데이터 없음' });
     expect(row.dims.allergen).toEqual({ status: 'missing', detail: '알레르기 데이터 없음' });
     expect(row.overall).toBe('missing');
+  });
+
+  test('메뉴마스터 엣지(카테고리 "엣지") 행은 원산지·알레르기가 "확인 불가"(unknown)로 잡히고, 미작성 처리되지 않는다', async () => {
+    // OPT-EDGE 코드로는 원산지/알레르기 출력 row가 절대 생기지 않아, 엣지 행은 그
+    // 차원에서 항상 '누락' 오탐이 나던 문제(계획 4단계) — unknown으로 빼야 한다.
+    const menus = [{ menuCode: 'OPT-EDGE-002', menuName: '치즈크러스트', category: '엣지' }];
+    state.prices = [{ menuCode: 'OPT-EDGE-002', price: 4000 }];
+    state.rawValues = [];
+    state.nutritionEdges = [{ edgeCode: '치즈크러스트L' }, { edgeCode: '치즈크러스트R' }];
+
+    const map = await buildMenuReadinessMap(menus, new Map());
+    const row = map.get('OPT-EDGE-002');
+
+    expect(row.dims.nutrition).toEqual({ status: 'ok', detail: '엣지 기준 영양정보 연동' });
+    expect(row.dims.origin.status).toBe('unknown');
+    expect(row.dims.allergen.status).toBe('unknown');
+    expect(row.overall).not.toBe('missing');
+  });
+
+  test('엣지 행은 nutrition_edge_master/raw_values crustType이 없으면 영양성분도 미작성이다', async () => {
+    const menus = [{ menuCode: 'OPT-EDGE-003', menuName: '골드스윗', category: '엣지' }];
+    state.prices = [{ menuCode: 'OPT-EDGE-003', price: 4000 }];
+    state.rawValues = [];
+    state.nutritionEdges = [];
+
+    const map = await buildMenuReadinessMap(menus, new Map());
+    const row = map.get('OPT-EDGE-003');
+
+    expect(row.dims.nutrition).toEqual({ status: 'missing', detail: '영양성분 값 미입력' });
   });
 });
