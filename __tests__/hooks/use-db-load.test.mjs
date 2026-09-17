@@ -20,6 +20,9 @@ const journalSrc = readFileSync(resolve('app/note/journal/page.jsx'), 'utf8');
 const journalEditorSrc = readFileSync(resolve('app/note/journal/_JournalEntryEditor.jsx'), 'utf8');
 const journalPhotosSrc = readFileSync(resolve('app/note/journal/journalPhotos.js'), 'utf8');
 const journalMonthListSrc = readFileSync(resolve('app/note/journal/_JournalMonthList.jsx'), 'utf8');
+const journalDataSrc = readFileSync(resolve('app/note/journal/useJournalData.js'), 'utf8');
+const journalFormHookSrc = readFileSync(resolve('app/note/journal/useJournalForm.js'), 'utf8');
+const journalPrintHookSrc = readFileSync(resolve('app/note/journal/useJournalPrint.js'), 'utf8');
 const salesSettingsSrc = readFileSync(resolve('app/menu-sales/settings/page.jsx'), 'utf8');
 const ingredientUsageSrc = readFileSync(resolve('app/ingredient/usage/page.jsx'), 'utf8');
 const marginDataSrc = readFileSync(resolve('app/cost/margin/useMarginData.js'), 'utf8');
@@ -104,24 +107,24 @@ describe('저위험 hub 페이지 useDBLoad 적용', () => {
     expect(jetteSrc).not.toContain('setLoading(');
   });
 
-  test('note/journal/page.jsx가 useDBLoad를 사용하고 date 변경은 re-fetch를 유발하지 않는다', () => {
-    expect(journalSrc).toContain('useDBLoad');
+  test('note/journal/useJournalData.js가 useDBLoad를 사용하고 date 변경은 re-fetch를 유발하지 않는다', () => {
+    expect(journalDataSrc).toContain('useDBLoad');
     expect(journalSrc).not.toContain('import { initDB }');
-    expect(journalSrc).not.toContain('setLoading(');
+    expect(journalDataSrc).not.toContain('setLoading(');
     // date는 deps에 넣지 않고 useMemo 필터로만 처리함
-    expect(journalSrc).toContain('initialData: []');
-    expect(journalSrc).not.toContain('onError: console.error');
-    expect(journalSrc).toContain("console.error('[note/journal] load failed'");
+    expect(journalDataSrc).toContain('initialData: []');
+    expect(journalDataSrc).not.toContain('onError: console.error');
+    expect(journalDataSrc).toContain("console.error('[note/journal] load failed'");
   });
 
-  test('note/journal/page.jsx는 자체 연구일지 작성 폼을 사용하고 viewer 저장을 막는다', () => {
+  test('note/journal 페이지는 자체 연구일지 작성 폼을 사용하고 viewer 저장을 막는다', () => {
     expect(journalSrc).toContain("from '@/hooks/useCurrentRole'");
     expect(journalSrc).toContain('const canEdit = roleReady && isAdmin');
     expect(journalSrc).toContain("import { JournalEntryEditor } from './_JournalEntryEditor'");
-    expect(journalSrc).toContain('if (!canEdit || saving) return;');
-    expect(journalSrc).toContain('await addNote(payload)');
-    expect(journalSrc).toContain('await updateNote(journalEntry.id, payload)');
-    // 사진 병합·중복 제거 순수 함수는 journalPhotos.js로 분리됐다(page는 호출만).
+    expect(journalFormHookSrc).toContain('if (!canEdit || saving) return;');
+    expect(journalFormHookSrc).toContain('await addNote(payload)');
+    expect(journalFormHookSrc).toContain('await updateNote(journalEntry.id, payload)');
+    // 사진 병합·중복 제거 순수 함수는 journalPhotos.js로 분리됐다(useJournalData는 호출만).
     expect(journalPhotosSrc).toContain(
       "import { buildNoteIdeaGroups, collectLatestRoundNotePhotos } from '../noteIdeaGroups'"
     );
@@ -129,20 +132,24 @@ describe('저위험 hub 페이지 useDBLoad 적용', () => {
     expect(journalPhotosSrc).toContain('export function withRelatedJournalPhotos');
     expect(journalPhotosSrc).toContain('export function withoutJournalSourceDuplicatePhotos');
     expect(journalPhotosSrc).toContain('collectLatestRoundNotePhotos(group.notes, 99)');
-    expect(journalSrc).toContain('const rawDayNotes = useMemo');
-    expect(journalSrc).toContain('withRelatedJournalPhotos(rawDayNotes, notes)');
-    expect(journalSrc).toContain('withoutJournalSourceDuplicatePhotos(dayNotesWithRelatedPhotos)');
+    expect(journalDataSrc).toContain('const rawDayNotes = useMemo');
+    expect(journalDataSrc).toContain('withRelatedJournalPhotos(rawDayNotes, notes)');
+    expect(journalDataSrc).toContain(
+      'withoutJournalSourceDuplicatePhotos(dayNotesWithRelatedPhotos)'
+    );
     expect(journalPhotosSrc).toContain('if (note?.noteType !== JOURNAL_NOTE_TYPE) return note;');
-    expect(journalSrc).toContain('setJournalForm(journalFormFromEntry(journalEntry))');
+    expect(journalFormHookSrc).toContain('setJournalForm(journalFormFromEntry(journalEntry))');
     expect(journalPhotosSrc).toContain('photos: mergeJournalPhotos(note?.photos, relatedPhotos)');
-    expect(journalSrc).toContain(
+    expect(journalFormHookSrc).toContain(
       'photos: Array.isArray(journalForm.photos) ? journalForm.photos : []'
     );
-    expect(journalSrc).toContain('const printPeriodNotes = useMemo');
-    expect(journalSrc).toContain(
+    expect(journalPrintHookSrc).toContain('const printPeriodNotes = useMemo');
+    expect(journalPrintHookSrc).toContain(
       'mergeJournalPrintNotesForDate(periodNotes, currentJournalPrintNote, date)'
     );
-    expect(journalSrc).toContain('buildJournalPrintHtml(printRangeTitle, printPeriodNotes');
+    expect(journalPrintHookSrc).toContain(
+      'buildJournalPrintHtml(printRangeTitle, printPeriodNotes'
+    );
     expect(journalSrc).toContain('canEdit={canEdit}');
     expect(journalEditorSrc).toContain(
       "import { NotePhotoSection } from '@/app/note/_NotePhotoSection'"
@@ -150,16 +157,15 @@ describe('저위험 hub 페이지 useDBLoad 적용', () => {
     expect(journalEditorSrc).toContain("onChange={value => onChange('photos', value)}");
   });
 
-  test('note/journal/page.jsx는 월별 목록으로 일지·노트·일정을 날짜별로 모아본다', () => {
-    // 월별 목록 UI는 _JournalMonthList.jsx로 분리됐고, 데이터 조립은 page에 남는다.
+  test('note/journal은 월별 목록으로 일지·노트·일정을 날짜별로 모아본다', () => {
+    // 월별 목록 UI는 _JournalMonthList.jsx로, 날짜별 조립은 useJournalData.js로 분리됐다.
     expect(journalMonthListSrc).toContain('export function JournalMonthList');
     expect(journalMonthListSrc).toContain('type="month"');
     expect(journalMonthListSrc).toContain('월별 목록');
-    expect(journalSrc).toContain('const [month, setMonth]');
-    expect(journalSrc).toContain('const monthEntries = useMemo');
-    expect(journalSrc).toContain('expandOccurrences(schedule, start, end)');
+    expect(journalDataSrc).toContain('const monthEntries = useMemo');
+    expect(journalDataSrc).toContain('expandOccurrences(schedule, start, end)');
     expect(journalSrc).toContain('<JournalMonthList');
-    expect(journalSrc).toContain('onSelectDate={setDate}');
+    expect(journalSrc).toContain('onSelectDate={nav.setDate}');
   });
 });
 

@@ -4,6 +4,8 @@ import { resolve } from 'node:path';
 const editorSource = readFileSync(resolve('app/note/journal/_JournalEntryEditor.jsx'), 'utf8');
 const pageSource = readFileSync(resolve('app/note/journal/page.jsx'), 'utf8');
 const cardSource = readFileSync(resolve('components/note/WebJournalCard.jsx'), 'utf8');
+const journalFormHookSrc = readFileSync(resolve('app/note/journal/useJournalForm.js'), 'utf8');
+const journalPrintHookSrc = readFileSync(resolve('app/note/journal/useJournalPrint.js'), 'utf8');
 
 // 회귀: 연구일지 작성 폼이 2열 그리드 + sticky aside였다 — 좁은 화면에서 입력칸이
 // 작아지고, "보고서 저장" 버튼이 스크롤하면 화면 밖으로 사라졌다. 1열 세로 배치 +
@@ -32,7 +34,7 @@ describe('연구일지 작성 UI — 1열 세로 + 하단 고정 저장바', () 
     expect(pageSource).toContain("from '@/components/ui/StickySaveBar'");
     expect(pageSource).toContain('<StickySaveBar');
     expect(pageSource).toContain("from '@/hooks/useKeyboardSave'");
-    expect(pageSource).toContain('useKeyboardSave(saveJournalEntry)');
+    expect(pageSource).toContain('useKeyboardSave(form.saveJournalEntry)');
     expect(pageSource).toContain('cancelLabel="되돌리기"');
     expect(pageSource).toContain('saveLabel="보고서 저장"');
     expect(pageSource).toContain("from '@/app/note/_NotePhotoLightbox'");
@@ -40,16 +42,22 @@ describe('연구일지 작성 UI — 1열 세로 + 하단 고정 저장바', () 
     expect(pageSource).toContain('onPhotoClick={setPreviewPhoto}');
   });
 
-  test('PDF 출력은 공용 함수(openJournalPdf)로 헤더·저장바에서 함께 쓴다', () => {
-    expect(pageSource).toContain('function openJournalPdf()');
-    expect(pageSource).toContain('onClick={openJournalPdf}');
-    expect(pageSource).toContain('buildJournalPrintHtml(printRangeTitle, printPeriodNotes');
+  test('PDF 출력은 공용 훅(useJournalPrint)의 openJournalPdf로 헤더·저장바에서 함께 쓴다', () => {
+    // openJournalPdf 구현은 useJournalPrint.js로 분리됐고, page는 두 곳에서 호출만 한다.
+    expect(journalPrintHookSrc).toContain('function openJournalPdf()');
+    expect(pageSource).toContain('onClick={print.openJournalPdf}');
+    expect(journalPrintHookSrc).toContain(
+      'buildJournalPrintHtml(printRangeTitle, printPeriodNotes'
+    );
   });
 
   test('저장 안 된 변경사항 여부(journalDirty)를 계산해 저장바 상태에 반영한다', () => {
-    expect(pageSource).toContain('const journalDirty = useMemo(');
-    expect(pageSource).toContain('canSave={canEdit && (journalDirty || !journalEntry)}');
-    expect(pageSource).toContain('function revertJournalForm()');
+    // journalDirty·revertJournalForm은 useJournalForm.js로 분리됐다.
+    expect(journalFormHookSrc).toContain('const journalDirty = useMemo(');
+    expect(pageSource).toContain(
+      'canSave={canEdit && (form.journalDirty || !journal.journalEntry)}'
+    );
+    expect(journalFormHookSrc).toContain('function revertJournalForm()');
   });
 
   test('일지 카드 사진 클릭 시 확대 미리보기를 연다', () => {

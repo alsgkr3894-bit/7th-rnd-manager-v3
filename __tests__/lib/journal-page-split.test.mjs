@@ -7,15 +7,18 @@ const src = f => readFileSync(resolve(f), 'utf8');
 // 연구일지 페이지는 순수 헬퍼 25개 + 월별 목록 컴포넌트 + 페이지 조립이 한 파일
 // (1062줄)에 몰려 있었다. 역할별로 나누고 page는 조립만 담당한다.
 describe('연구일지 페이지 파일 분리', () => {
-  test('page.jsx는 조립만 담당하고 650줄을 넘지 않는다', () => {
+  test('page.jsx는 조립만 담당하고 200줄을 넘지 않는다', () => {
     const page = src('app/note/journal/page.jsx');
-    expect(page.split('\n').length).toBeLessThanOrEqual(650);
-    // 분리된 순수 헬퍼 구현이 page로 되돌아오지 않게 고정한다.
+    expect(page.split('\n').length).toBeLessThanOrEqual(200);
+    // 분리된 순수 헬퍼·훅 구현이 page로 되돌아오지 않게 고정한다.
     expect(page).not.toContain('function withRelatedJournalPhotos');
     expect(page).not.toContain('function journalFormFromEntry');
     expect(page).not.toContain('function printRangeForMode');
     expect(page).not.toContain('function journalEntryMatches');
     expect(page).not.toContain('function JournalMonthList');
+    expect(page).not.toContain('function saveJournalEntry');
+    expect(page).not.toContain('function openJournalPdf');
+    expect(page).not.toContain('function applyQuickDate');
   });
 
   test('날짜·기간 계산은 journalDates.js가 갖는다', () => {
@@ -52,6 +55,12 @@ describe('연구일지 페이지 파일 분리', () => {
       'app/note/journal/journalSearch.js',
       'app/note/journal/_JournalMonthList.jsx',
       'app/note/journal/_JournalEntryEditor.jsx',
+      'app/note/journal/useJournalData.js',
+      'app/note/journal/useJournalNavigation.js',
+      'app/note/journal/useJournalForm.js',
+      'app/note/journal/useJournalPrint.js',
+      'app/note/journal/_JournalHeaderActions.jsx',
+      'app/note/journal/_JournalDayRecords.jsx',
     ];
     for (const file of files) {
       expect(src(file).split('\n').length).toBeLessThanOrEqual(200);

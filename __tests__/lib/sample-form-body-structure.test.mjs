@@ -7,6 +7,12 @@ const detailSource = readFileSync(resolve('app/note/sample/_SampleDetailRecordCa
 const linkedSource = readFileSync(resolve('app/note/sample/_SampleLinkedProductsCard.jsx'), 'utf8');
 const photoSource = readFileSync(resolve('app/note/sample/_SamplePhotoCard.jsx'), 'utf8');
 const journalSource = readFileSync(resolve('app/note/journal/page.jsx'), 'utf8');
+const journalHeaderActionsSource = readFileSync(
+  resolve('app/note/journal/_JournalHeaderActions.jsx'),
+  'utf8'
+);
+const journalDataSource = readFileSync(resolve('app/note/journal/useJournalData.js'), 'utf8');
+const journalPrintHookSource = readFileSync(resolve('app/note/journal/useJournalPrint.js'), 'utf8');
 
 describe('sample form body structure', () => {
   test('form body keeps data wiring while delegating card rendering', () => {
@@ -79,15 +85,20 @@ describe('sample form body structure', () => {
   });
 
   test('journal also exposes quick date entry without accepting invalid calendar dates', () => {
-    expect(journalSource).toContain('parseNoteQuickDate');
-    expect(journalSource).toContain('quickDateError');
-    expect(journalSource).toContain('placeholder="240502"');
-    expect(journalSource).toContain('inputMode="numeric"');
-    expect(journalSource).toContain("title={quickDateError ? '날짜 확인' : '빠른 날짜 입력'}");
+    // 빠른 날짜 입력 UI는 _JournalHeaderActions.jsx로, 파싱 로직은 useJournalNavigation.js로 분리됐다.
+    expect(readFileSync(resolve('app/note/journal/useJournalNavigation.js'), 'utf8')).toContain(
+      'parseNoteQuickDate'
+    );
+    expect(journalHeaderActionsSource).toContain('quickDateError');
+    expect(journalHeaderActionsSource).toContain('placeholder="240502"');
+    expect(journalHeaderActionsSource).toContain('inputMode="numeric"');
+    expect(journalHeaderActionsSource).toContain(
+      "title={quickDateError ? '날짜 확인' : '빠른 날짜 입력'}"
+    );
   });
 
   test('journal exposes month-list search and period PDF output controls', () => {
-    // 월별 목록 검색 UI는 _JournalMonthList.jsx로 분리됐다(매칭 호출은 page에 남음).
+    // 월별 목록 검색 UI는 _JournalMonthList.jsx로, 매칭 호출은 useJournalData.js로 분리됐다.
     const journalMonthListSource = readFileSync(
       resolve('app/note/journal/_JournalMonthList.jsx'),
       'utf8'
@@ -96,13 +107,14 @@ describe('sample form body structure', () => {
       "import { SearchBox } from '@/components/ui/SearchBox'"
     );
     expect(journalMonthListSource).toContain('일지·노트·일정 검색');
-    expect(journalSource).toContain('journalEntryMatches(entry, search)');
-    expect(journalSource).toContain('printRangeForMode(printMode');
-    expect(journalSource).toContain('오늘/선택일');
-    expect(journalSource).toContain('주간');
-    expect(journalSource).toContain('월간');
-    expect(journalSource).toContain('선택기간');
-    expect(journalSource).toContain('연구일지 종합본');
-    expect(journalSource).toContain('종합 PDF');
+    expect(journalDataSource).toContain('journalEntryMatches(entry, search)');
+    // PDF 출력 기간 선택은 _JournalHeaderActions.jsx, 범위 계산은 useJournalPrint.js에 있다.
+    expect(journalPrintHookSource).toContain('printRangeForMode(printMode');
+    expect(journalHeaderActionsSource).toContain('오늘/선택일');
+    expect(journalHeaderActionsSource).toContain('주간');
+    expect(journalHeaderActionsSource).toContain('월간');
+    expect(journalHeaderActionsSource).toContain('선택기간');
+    expect(journalPrintHookSource).toContain('연구일지 종합본');
+    expect(journalHeaderActionsSource).toContain('종합 PDF');
   });
 });
