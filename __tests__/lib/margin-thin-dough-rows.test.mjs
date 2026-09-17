@@ -34,6 +34,24 @@ describe('margin thin dough rows', () => {
     expect(meta.edgePriceByType).toEqual({ 씬도우: 1000 });
   });
 
+  test('메뉴마스터 엣지 판매가 이름이 edgeType과 완전히 같지 않아도 패밀리로 매칭한다 (실사용 오탐 재현)', () => {
+    // 실데이터: menu_master/cost_selling_prices 이름 '골드스윗'·'씬바사삭' vs
+    // cost_edge_dough edgeType '골드스윗크러스트'·'씬도우' — 예전엔 정확 일치만 봐서
+    // 골드스윗 파생행에 판매가가 안 붙었다(원가율이 실제보다 낮게 나옴).
+    const meta = buildEdgeMetadata(
+      [
+        { edgeType: '골드스윗크러스트', size: 'L', components: [{ quantity: 10, unitPrice: 100 }] },
+        { edgeType: '씬도우', size: 'L', components: [{ quantity: 5, unitPrice: 20 }] },
+      ],
+      [
+        { category: '엣지', menuName: '골드스윗', price: 4000 },
+        { category: '엣지', menuName: '씬바사삭', price: 1500 },
+      ]
+    );
+
+    expect(meta.edgePriceByType).toEqual({ 골드스윗크러스트: 4000, 씬도우: 1500 });
+  });
+
   test('thin dough metadata creates derived margin rows', () => {
     const meta = buildEdgeMetadata(
       [
