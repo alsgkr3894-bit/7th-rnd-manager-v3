@@ -9,7 +9,7 @@ const tableCardSrc = readFileSync(resolve('app/cost/margin/_MarginTableCard.jsx'
 const tableSectionsSrc = readFileSync(resolve('app/cost/margin/marginTableSections.js'), 'utf-8');
 const rowSrc = readFileSync(resolve('components/cost/margin/MarginRow.jsx'), 'utf-8');
 const trendSrc = readFileSync(resolve('components/cost/margin/MarginTrendModal.jsx'), 'utf-8');
-const exportSrc = readFileSync(resolve('lib/cost/margin/export.js'), 'utf-8');
+const exportSrc = readFileSync(resolve('lib/cost/margin/export-rows.js'), 'utf-8');
 
 describe('margin 훅 분리 구조', () => {
   test('useMarginFilters.js가 catFilter/search/sortKey/showHidden 상태를 관리한다', () => {

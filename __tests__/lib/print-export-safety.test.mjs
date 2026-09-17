@@ -33,11 +33,14 @@ describe('인쇄 HTML 빌더 — esc() 적용 여부', () => {
     expect(s).toMatch(/\.replace\(\/<\/g,\s*'&lt;'\)/);
   });
 
-  test('원가마진표 PDF 빌더가 escaping 함수를 로컬에 정의한다', () => {
-    const s = src('lib/cost/margin/export.js');
-    expect(s).toMatch(/\.replace\(\/&\/g,\s*'&amp;'\)/);
-    expect(s).toMatch(/\.replace\(\/<\/g,\s*'&lt;'\)/);
-    expect(s).toContain('buildMarginPrintHtml');
+  test('원가마진표 PDF 빌더가 escaping 함수를 쓴다 (export-format.js에 정의, export-print.js가 import)', () => {
+    const formatSrc = src('lib/cost/margin/export-format.js');
+    expect(formatSrc).toMatch(/\.replace\(\/&\/g,\s*'&amp;'\)/);
+    expect(formatSrc).toMatch(/\.replace\(\/<\/g,\s*'&lt;'\)/);
+    const printSrc = src('lib/cost/margin/export-print.js');
+    expect(printSrc).toContain("from './export-format'");
+    expect(printSrc).toMatch(/esc\(/);
+    expect(printSrc).toContain('buildMarginPrintHtml');
   });
 
   test('식자재 테이블 인쇄 빌더가 formatters의 esc()를 import해 사용한다', () => {
@@ -67,6 +70,10 @@ describe('CSV 수식 인젝션 방지 (rowsToCsv)', () => {
   test('downloadCsvText가 lib/download.js에만 선언되고 다른 export 파일에서 직접 호출되지 않는다', () => {
     const exportFiles = [
       'lib/cost/margin/export.js',
+      'lib/cost/margin/export-format.js',
+      'lib/cost/margin/export-rows.js',
+      'lib/cost/margin/export-sheets.js',
+      'lib/cost/margin/export-print.js',
       'lib/sales/export-xlsx.js',
       'lib/report/export-cost-xlsx.js',
       'lib/nutrition/origin/export.js',
@@ -106,7 +113,7 @@ describe('출력 실패 toast — 폴백 메시지 포함', () => {
 
 describe('다운로드 파일명 — makeFileNameWithBrand 사용', () => {
   test('원가마진표 XLSX 파일명이 makeFileNameWithBrand로 생성된다', () => {
-    const s = src('lib/cost/margin/export.js');
+    const s = src('lib/cost/margin/export-sheets.js');
     expect(s).toContain('makeFileNameWithBrand');
   });
 

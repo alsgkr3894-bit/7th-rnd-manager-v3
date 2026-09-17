@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { LABEL_COLS } from '../../lib/nutrition/label/_utils.js';
 
 const allSummarySrc = readFileSync(resolve('app/cost/all-summary/allSummaryUtils.js'), 'utf-8');
-const marginSrc = readFileSync(resolve('lib/cost/margin/export.js'), 'utf-8');
+const marginSrc = readFileSync(resolve('lib/cost/margin/export-rows.js'), 'utf-8');
 const reportListSrc = readFileSync(resolve('lib/report/report-list-utils.js'), 'utf-8');
 const labelExportSrc = readFileSync(resolve('lib/nutrition/label/export.js'), 'utf-8');
 

@@ -1,7 +1,18 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const marginExportSrc = readFileSync(resolve('lib/cost/margin/export.js'), 'utf-8');
+// lib/cost/margin/export.js는 재export 허브로 분리됐다(export-format/export-rows/export-sheets/
+// export-print.js). 기존 검증 의도(문자열 포함 여부)는 그대로 유지하기 위해 4개 구현 파일을
+// 합쳐서 검사한다 — 어느 파일로 옮겨졌는지는 이 구조 테스트의 관심사가 아니다.
+const marginExportSrc = [
+  'lib/cost/margin/export.js',
+  'lib/cost/margin/export-format.js',
+  'lib/cost/margin/export-rows.js',
+  'lib/cost/margin/export-sheets.js',
+  'lib/cost/margin/export-print.js',
+]
+  .map(p => readFileSync(resolve(p), 'utf-8'))
+  .join('\n');
 const marginPageSrc = readFileSync(resolve('app/cost/margin/page.jsx'), 'utf-8');
 const printWindowSrc = readFileSync(resolve('lib/print/window-print.js'), 'utf-8');
 
