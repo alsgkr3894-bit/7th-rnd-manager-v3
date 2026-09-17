@@ -1,571 +1,117 @@
 'use client';
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { useDebounce } from '@/hooks/useDebounce';
-import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { previewIngredientDelete } from '@/lib/ingredient';
-import { useBatchSelection } from '@/hooks/useBatchSelection';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { IngredientForm } from './IngredientForm';
-import { IssuesView } from '@/components/ingredient/IssuesView';
-import { IngredientJetteIssuesPanel } from '@/components/ingredient/IngredientJetteIssuesPanel';
-import { IngredientBatchToolbar } from '@/components/ingredient/BatchToolbar';
-import { isDeletableIngredientRow } from '@/components/ingredient/manage-row/manageRowUtils';
-import { SubstituteLinkModal } from '@/components/ingredient/SubstituteLinkModal';
-import { TabButton } from '@/components/cost/shared/TabButton';
-import { IngredientManagePanel } from './IngredientManagePanel';
-import { IngredientSettingsPanel } from './IngredientSettingsPanel';
 import { IngredientDiagnostics } from './IngredientDiagnostics';
-import { useIngredientManageData } from './useIngredientManageData';
-import { useIngredientManageView } from './useIngredientManageView';
-import { useDiscontinuedRefs } from './useDiscontinuedRefs';
-import { useCurrentRole } from '@/hooks/useCurrentRole';
-import { IngredientReportPanel } from './IngredientReportPanel';
-import { KEYS } from '@/lib/note/keys';
-import { useIngredientManageActions } from './useIngredientManageActions';
-import { normalizeManageView, readInitialManageView } from './ingredientManageUtils';
-import dynamic from 'next/dynamic';
-
-const SuppliersView = dynamic(
-  () => import('@/components/cost/ingredient-price/SuppliersView').then(m => m.SuppliersView),
-  { ssr: false, loading: () => <div className="skeleton" style={{ height: 200 }} /> }
-);
-const IngredientPriceView = dynamic(
-  () =>
-    import('@/components/cost/ingredient-price/IngredientPriceView').then(
-      m => m.IngredientPriceView
-    ),
-  { ssr: false, loading: () => <div className="skeleton" style={{ height: 320 }} /> }
-);
-
-function productCodeKey(rowOrCode) {
-  const value = rowOrCode && typeof rowOrCode === 'object' ? rowOrCode.productCode : rowOrCode;
-  return String(value || '')
-    .trim()
-    .toUpperCase();
-}
+import { useIngredientManagePage } from './useIngredientManagePage';
+import { IngredientManagePageHeaderActions } from './IngredientManagePageHeaderActions';
+import { IngredientManageTabs } from './IngredientManageTabs';
+import { IngredientManageEmptyState } from './IngredientManageEmptyState';
+import { IngredientManageViewContent } from './IngredientManageViewContent';
+import { IngredientManagePageDialogs } from './IngredientManagePageDialogs';
 
 export default function Page() {
-  const { isViewer } = useCurrentRole();
+  const p = useIngredientManagePage();
   const {
-    rows,
-    setRows,
-    prevPriceMap,
-    priceDate,
-    loading,
-    load,
-    brokenRefs,
-    productCodeDupes,
-    newJetteRows,
-    jetteRemovedRows,
-    latestPriceRows,
-    supplierNames,
-  } = useIngredientManageData();
-  const { refs: discontinuedRefs, loading: discontinuedRefsLoading } = useDiscontinuedRefs(
-    rows,
-    priceDate
-  );
-  const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounce(search, 200);
-  const [catFilter, setCatFilter] = useLocalStorage(KEYS.INGREDIENT_CAT_FILTER, 'all', value =>
-    typeof value === 'string' && value ? value : 'all'
-  );
-  const [tagFilter, setTagFilter] = useState('all');
-  const [view, setViewState] = useState('manage');
-  const setView = useCallback(nextView => {
-    const normalized = normalizeManageView(nextView);
-    setViewState(normalized);
-    if (typeof window === 'undefined') return;
-    const url = new URL(window.location.href);
-    if (normalized === 'manage') url.searchParams.delete('view');
-    else url.searchParams.set('view', normalized);
-    window.history.replaceState(null, '', url);
-  }, []);
-  const [highlightId, setHighlightId] = useState(null);
-  const [highlightProductCode, setHighlightProductCode] = useState(null);
-  const [hiddenJetteIssueCodes, setHiddenJetteIssueCodes] = useState(() => new Set());
-
-  useEffect(() => {
-    setView(readInitialManageView());
-    // URL 파라미터 일괄 처리(한 번만): catFilter, query(검색어), highlight/productCode(행 강조)
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const catParam = params.get('catFilter');
-      const queryParam = params.get('query');
-      const highlightParam = params.get('highlight');
-      const productCodeParam = params.get('productCode');
-      if (catParam) setCatFilter(catParam);
-      if (queryParam) setSearch(queryParam);
-      if (highlightParam) setHighlightId(highlightParam);
-      if (productCodeParam) setHighlightProductCode(productCodeParam);
-      if (catParam || queryParam || highlightParam || productCodeParam) {
-        const url = new URL(window.location.href);
-        url.searchParams.delete('catFilter');
-        url.searchParams.delete('query');
-        url.searchParams.delete('highlight');
-        url.searchParams.delete('productCode');
-        window.history.replaceState(null, '', url);
-      }
-    }
-    // setView(useCallback)·setCatFilter(useState setter) 모두 안정적 참조 → 사실상 mount 1회 실행.
-  }, [setView, setCatFilter]);
-
-  // highlightId 자동 해제는 IngredientManagePanel에서 rows 로드 후 처리 (onHighlightClear)
-
-  const [formTarget, setFormTarget] = useState(null);
-  const [deletePending, setDeletePending] = useState(null);
-  const [deletePreview, setDeletePreview] = useState(null);
-  const deletePreviewRequestRef = useRef(0);
-  const [resetConfirm, setResetConfirm] = useState(false);
-  const [resetting, setResetting] = useState(false);
-  const [confirmRemove, setConfirmRemove] = useState(null);
-  const [substituteSource, setSubstituteSource] = useState(null);
-  const [dedupeConfirm, setDedupeConfirm] = useState(false);
-  const [dedupeBusy, setDedupeBusy] = useState(false);
-  const { batchMode, selected, setSelected, clearSelection, startBatch, exitBatch, toggleSelect } =
-    useBatchSelection();
-  // 선택(selected)은 단종/분류 변경까지 포함하는 넓은 범위라, 일괄 삭제 확인 문구/버튼은
-  // 실제로 삭제될 개수(수동+제품코드 없는 행)를 따로 계산해 보여준다 — 안 그러면
-  // "5개를 삭제할까요?"라고 물어놓고 실제론 일부만(제때 연동 행은 제외) 지워진다.
-  const deletableSelectedCount = useMemo(
-    () => rows.filter(r => selected.has(r.id) && isDeletableIngredientRow(r)).length,
-    [rows, selected]
-  );
-  const {
-    activeCount,
-    managedCount,
-    discontinuedCount,
-    excludedCount,
-    categoryCounts,
-    mainCats,
-    tagCounts,
-    hashTags,
-    originSuggestions,
-    uncategorized,
-    noPriceCount,
-    issueRows,
-    duplicateDiagnostics,
-    duplicateGroupCount,
-    unusedCategories,
-    unusedTags,
-    filtered,
-    sub,
-  } = useIngredientManageView({
-    rows,
-    prevPriceMap,
-    catFilter,
-    tagFilter,
-    debouncedSearch,
-    loading,
-    priceDate,
-  });
-
-  useEffect(() => {
-    clearSelection();
-  }, [debouncedSearch, clearSelection]);
-
-  // 전체 선택은 화면에 보이는 페이지가 아니라 현재 탭·분류·태그·검색이 적용된 목록 전체를
-  // 대상으로 한다(IssuesView의 전체 선택과 같은 범위).
-  const selectableIds = useMemo(
-    () => filtered.filter(r => r.id != null).map(r => r.id),
-    [filtered]
-  );
-  const allFilteredSelected =
-    selectableIds.length > 0 && selectableIds.every(id => selected.has(id));
-  const toggleSelectAll = useCallback(() => {
-    setSelected(allFilteredSelected ? new Set() : new Set(selectableIds));
-  }, [allFilteredSelected, selectableIds, setSelected]);
-
-  useEffect(() => {
-    if (!deletePending) {
-      deletePreviewRequestRef.current += 1;
-      setDeletePreview(null);
-    }
-  }, [deletePending]);
-
-  const handleDeleteStart = useCallback(async row => {
-    const requestId = deletePreviewRequestRef.current + 1;
-    deletePreviewRequestRef.current = requestId;
-    setDeletePending(row);
-    setDeletePreview(null);
-    if (row?.id && row?.isManual && !row?.productCode) {
-      try {
-        const preview = await previewIngredientDelete(row.id);
-        if (deletePreviewRequestRef.current === requestId) {
-          setDeletePreview(preview?.ingredient?.id === row.id ? preview : null);
-        }
-      } catch {
-        // preview 실패는 삭제 흐름에 영향 없음
-      }
-    }
-  }, []);
-
-  const {
-    handleReset,
-    handleRemoveCategory,
-    handleRemoveTag,
-    handleRemoveAllUnusedTags,
-    handleRenameCategory,
-    handleRenameTag,
-    handleRepairProductCodeDuplicates,
-    handleSave,
-    handleExclude,
-    handleRestore,
-    handleConfirmPriceManual,
-    handleAckPriceChange,
-    handleAckAllPriceChanges,
-    handleAutoRegister,
-    handleBatchDelete,
-    handleBulkDiscontinue,
-    handleBulkSetCategory,
-    handleBulkApplyOriginAllergenNone,
-    handleSetCatFilter,
-    handleSetTagFilter,
-    handleDeleteCancel,
-    handleReplaceJetteProduct,
-  } = useIngredientManageActions({
-    rows,
-    load,
-    setRows,
-    formTarget,
-    setFormTarget,
-    resetting,
-    setResetting,
-    setResetConfirm,
-    setDeletePending,
-    dedupeBusy,
-    setDedupeBusy,
-    setDedupeConfirm,
-    selected,
-    exitBatch,
-    clearSelection,
-    setCatFilter,
-    setTagFilter,
-    canEdit: !isViewer,
-  });
-
-  const visibleNewJetteRows = useMemo(
-    () => newJetteRows.filter(row => !hiddenJetteIssueCodes.has(productCodeKey(row))),
-    [newJetteRows, hiddenJetteIssueCodes]
-  );
-  const visibleJetteRemovedRows = useMemo(
-    () => jetteRemovedRows.filter(row => !hiddenJetteIssueCodes.has(productCodeKey(row))),
-    [jetteRemovedRows, hiddenJetteIssueCodes]
-  );
-  const handleExcludeJetteIssue = useCallback(
-    async row => {
-      const code = productCodeKey(row);
-      if (code) {
-        setHiddenJetteIssueCodes(prev => {
-          const next = new Set(prev);
-          next.add(code);
-          return next;
-        });
-      }
-      const ok = await handleExclude(row);
-      if (!ok && code) {
-        setHiddenJetteIssueCodes(prev => {
-          const next = new Set(prev);
-          next.delete(code);
-          return next;
-        });
-      }
-    },
-    [handleExclude]
-  );
+    isViewer,
+    data,
+    discontinuedRefs,
+    discontinuedRefsLoading,
+    pageState,
+    view,
+    batch,
+    actions,
+  } = p;
+  const { rows, brokenRefs, productCodeDupes, loading } = data;
+  const currentView = pageState.view;
 
   return (
     <main className="main page-enter">
       <PageHeader
         breadcrumb={['식자재', '식자재 관리']}
         title="식자재 관리"
-        sub={sub}
+        sub={view.sub}
         actions={
-          <>
-            {batchMode ? (
-              <IngredientBatchToolbar
-                selected={selected}
-                deletableCount={deletableSelectedCount}
-                mainCats={mainCats}
-                selectableCount={selectableIds.length}
-                allSelected={allFilteredSelected}
-                onToggleSelectAll={toggleSelectAll}
-                onDelete={handleBatchDelete}
-                onBulkDiscontinue={handleBulkDiscontinue}
-                onBulkSetCategory={handleBulkSetCategory}
-                onExit={exitBatch}
-              />
-            ) : (
-              <>
-                {resetConfirm ? (
-                  <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, color: 'var(--negative)', fontWeight: 600 }}>
-                      모든 식자재 데이터({rows.length}개)를 삭제할까요?
-                    </span>
-                    <button
-                      className="btn"
-                      style={{
-                        background: 'var(--negative)',
-                        color: 'var(--surface)',
-                        border: 'none',
-                      }}
-                      onClick={handleReset}
-                      disabled={resetting || isViewer}
-                    >
-                      {resetting ? '삭제 중…' : '삭제'}
-                    </button>
-                    <button className="btn" onClick={() => setResetConfirm(false)}>
-                      취소
-                    </button>
-                  </span>
-                ) : (
-                  <button
-                    className="btn"
-                    onClick={() => setResetConfirm(true)}
-                    style={{ color: 'var(--text-3)' }}
-                    disabled={rows.length === 0 || isViewer}
-                  >
-                    <Icon.trash style={{ width: 14, height: 14 }} /> 데이터 초기화
-                  </button>
-                )}
-                <button
-                  className="btn"
-                  onClick={startBatch}
-                  disabled={rows.length === 0 || isViewer}
-                >
-                  선택
-                </button>
-                <button
-                  className="btn primary"
-                  onClick={() => setFormTarget('new')}
-                  disabled={isViewer}
-                >
-                  <Icon.plus style={{ width: 14, height: 14 }} /> 식자재 추가
-                </button>
-              </>
-            )}
-          </>
+          <IngredientManagePageHeaderActions
+            batchMode={batch.batchMode}
+            selected={batch.selected}
+            deletableSelectedCount={batch.deletableSelectedCount}
+            mainCats={view.mainCats}
+            selectableCount={batch.selectableIds.length}
+            allSelected={batch.allFilteredSelected}
+            onToggleSelectAll={batch.toggleSelectAll}
+            onBatchDelete={actions.handleBatchDelete}
+            onBulkDiscontinue={actions.handleBulkDiscontinue}
+            onBulkSetCategory={actions.handleBulkSetCategory}
+            onExitBatch={batch.exitBatch}
+            resetConfirm={pageState.resetConfirm}
+            onResetConfirmChange={pageState.setResetConfirm}
+            rowsCount={rows.length}
+            resetting={pageState.resetting}
+            onReset={actions.handleReset}
+            isViewer={isViewer}
+            onStartBatch={batch.startBatch}
+            onAddNew={() => pageState.setFormTarget('new')}
+          />
         }
       />
 
       {!loading && (
-        <div
-          style={{
-            display: 'flex',
-            gap: 2,
-            borderBottom: '1px solid var(--divider)',
-            marginBottom: -12,
-            overflowX: 'auto',
-          }}
-        >
-          <TabButton active={view === 'manage'} onClick={() => setView('manage')}>
-            관리 {activeCount}
-          </TabButton>
-          <TabButton active={view === 'price'} onClick={() => setView('price')}>
-            단가
-          </TabButton>
-          <TabButton
-            active={view === 'issues'}
-            onClick={() => setView('issues')}
-            badge={issueRows.length > 0 ? issueRows.length : null}
-          >
-            이슈
-          </TabButton>
-          <TabButton active={view === 'settings'} onClick={() => setView('settings')}>
-            분류·태그
-          </TabButton>
-          <TabButton active={view === 'suppliers'} onClick={() => setView('suppliers')}>
-            공급업체
-          </TabButton>
-          <TabButton active={view === 'report'} onClick={() => setView('report')}>
-            보고서
-          </TabButton>
-        </div>
+        <IngredientManageTabs
+          view={currentView}
+          onView={pageState.setView}
+          activeCount={view.activeCount}
+          issueCount={view.issueRows.length}
+        />
       )}
 
       {!loading &&
         rows.length === 0 &&
-        view !== 'price' &&
-        view !== 'suppliers' &&
-        view !== 'report' && (
-          <div className="card" style={{ minHeight: 180, display: 'grid', placeItems: 'center' }}>
-            <div style={{ textAlign: 'center', color: 'var(--text-3)' }}>
-              <Icon.box style={{ width: 32, height: 32, marginBottom: 12, opacity: 0.4 }} />
-              <div style={{ fontWeight: 600, marginBottom: 4 }}>아직 데이터가 없습니다</div>
-              <div style={{ fontSize: 13 }}>
-                <b>식자재 추가</b> 버튼으로 직접 등록하거나, 제때 가격 파일을 업로드해주세요.
-              </div>
-            </div>
-          </div>
-        )}
+        currentView !== 'price' &&
+        currentView !== 'suppliers' &&
+        currentView !== 'report' && <IngredientManageEmptyState />}
 
       <IngredientDiagnostics
         brokenRefs={brokenRefs}
         discontinuedRefs={discontinuedRefs}
         discontinuedRefsLoading={discontinuedRefsLoading}
-        onLinkSubstitute={ref =>
-          setSubstituteSource(rows.find(r => productCodeKey(r) === productCodeKey(ref)) || ref)
-        }
+        onLinkSubstitute={p.onLinkSubstitute}
         productCodeDupes={productCodeDupes}
-        duplicateGroupCount={duplicateGroupCount}
-        duplicateDiagnostics={duplicateDiagnostics}
-        unusedCategories={unusedCategories}
-        unusedTags={unusedTags}
-        dedupeConfirm={dedupeConfirm}
-        dedupeBusy={dedupeBusy}
-        onDedupeConfirm={() => setDedupeConfirm(true)}
-        onDedupeCancel={() => setDedupeConfirm(false)}
-        onRepairProductCodeDuplicates={handleRepairProductCodeDuplicates}
-        onRemoveCategory={handleRemoveCategory}
-        onRemoveTag={handleRemoveTag}
-        onRemoveAllUnusedTags={handleRemoveAllUnusedTags}
-        onRenameCategory={handleRenameCategory}
-        onRenameTag={handleRenameTag}
+        duplicateGroupCount={view.duplicateGroupCount}
+        duplicateDiagnostics={view.duplicateDiagnostics}
+        unusedCategories={view.unusedCategories}
+        unusedTags={view.unusedTags}
+        dedupeConfirm={pageState.dedupeConfirm}
+        dedupeBusy={pageState.dedupeBusy}
+        onDedupeConfirm={() => pageState.setDedupeConfirm(true)}
+        onDedupeCancel={() => pageState.setDedupeConfirm(false)}
+        onRepairProductCodeDuplicates={actions.handleRepairProductCodeDuplicates}
+        onRemoveCategory={actions.handleRemoveCategory}
+        onRemoveTag={actions.handleRemoveTag}
+        onRemoveAllUnusedTags={actions.handleRemoveAllUnusedTags}
+        onRenameCategory={actions.handleRenameCategory}
+        onRenameTag={actions.handleRenameTag}
         isAdmin={!isViewer}
       />
 
-      {rows.length > 0 && view === 'manage' && (
-        <IngredientManagePanel
-          rows={rows}
-          filtered={filtered}
-          highlightId={highlightId}
-          highlightProductCode={highlightProductCode}
-          activeCount={activeCount}
-          managedCount={managedCount}
-          mainCats={mainCats}
-          categoryCounts={categoryCounts}
-          hashTags={hashTags}
-          tagCounts={tagCounts}
-          uncategorized={uncategorized}
-          noPriceCount={noPriceCount}
-          discontinuedCount={discontinuedCount}
-          excludedCount={excludedCount}
-          catFilter={catFilter}
-          tagFilter={tagFilter}
-          search={search}
-          onSearch={setSearch}
-          onCatFilter={handleSetCatFilter}
-          onTagFilter={handleSetTagFilter}
-          batchMode={batchMode}
-          selected={selected}
-          toggleSelect={toggleSelect}
-          deletePending={deletePending}
-          deletePreview={deletePreview}
-          onEdit={setFormTarget}
-          onCopy={row => setFormTarget({ __copyFrom: row })}
-          onDeleteStart={handleDeleteStart}
-          onDeleteCancel={handleDeleteCancel}
-          onDeleteConfirm={handleExclude}
-          onRestore={handleRestore}
-          onLinkSubstitute={setSubstituteSource}
-          onHighlightClear={() => {
-            setHighlightId(null);
-            setHighlightProductCode(null);
-          }}
-          isViewer={isViewer}
-        />
-      )}
+      <IngredientManageViewContent p={p} />
 
-      {view === 'price' && <IngredientPriceView embedded />}
-
-      {view === 'issues' && (
-        <>
-          <IngredientJetteIssuesPanel
-            newJetteRows={visibleNewJetteRows}
-            jetteRemovedRows={visibleJetteRemovedRows}
-            replacementRows={latestPriceRows}
-            onAutoRegister={handleAutoRegister}
-            onExclude={handleExcludeJetteIssue}
-            onReplace={handleReplaceJetteProduct}
-            isViewer={isViewer}
-          />
-          {rows.length > 0 && (
-            <IssuesView
-              issueRows={issueRows}
-              onEdit={setFormTarget}
-              onConfirmPriceManual={handleConfirmPriceManual}
-              onAckPriceChange={handleAckPriceChange}
-              onAckAllPriceChanges={handleAckAllPriceChanges}
-              onBulkApplyOriginAllergenNone={handleBulkApplyOriginAllergenNone}
-              isViewer={isViewer}
-            />
-          )}
-        </>
-      )}
-
-      {rows.length > 0 && view === 'settings' && (
-        <IngredientSettingsPanel
-          mainCats={mainCats}
-          categoryCounts={categoryCounts}
-          hashTags={hashTags}
-          tagCounts={tagCounts}
-          uncategorized={uncategorized}
-          discontinuedCount={discontinuedCount}
-          onRemoveRequest={setConfirmRemove}
-          canEdit={!isViewer}
-        />
-      )}
-
-      {view === 'suppliers' && <SuppliersView ingredientRows={rows} />}
-
-      {view === 'report' && (
-        <IngredientReportPanel
-          filtered={filtered}
-          rows={rows}
-          catFilter={catFilter}
-          tagFilter={tagFilter}
-          search={debouncedSearch || search}
-          managedCount={managedCount}
-          priceDate={priceDate}
-        />
-      )}
-
-      {!isViewer && confirmRemove && (
-        <ConfirmDialog
-          open
-          danger
-          message={
-            confirmRemove.type === 'cat'
-              ? `'${confirmRemove.value}' 분류를 모든 식자재에서 제거할까요?`
-              : `'#${confirmRemove.value}' 태그를 모든 식자재에서 제거할까요?`
-          }
-          confirmLabel="삭제"
-          onConfirm={() => {
-            const { type, value } = confirmRemove;
-            setConfirmRemove(null);
-            if (isViewer) return;
-            if (type === 'cat') handleRemoveCategory(value);
-            else handleRemoveTag(value);
-          }}
-          onCancel={() => setConfirmRemove(null)}
-        />
-      )}
-
-      {!isViewer && (
-        <SubstituteLinkModal
-          open={!!substituteSource}
-          sourceRow={substituteSource}
-          candidates={rows}
-          onConfirm={target => handleReplaceJetteProduct(substituteSource, target)}
-          onClose={() => setSubstituteSource(null)}
-        />
-      )}
-
-      {!isViewer && formTarget !== null && (
-        <IngredientForm
-          initial={formTarget === 'new' || formTarget?.__copyFrom ? null : formTarget}
-          copyFrom={formTarget?.__copyFrom || null}
-          onSave={handleSave}
-          onClose={() => setFormTarget(null)}
-          extraCategories={mainCats}
-          originSuggestions={originSuggestions}
-          existingProductCodes={rows.filter(r => r.productCode).map(r => r.productCode)}
-          jettePriceRows={latestPriceRows}
-          supplierNames={supplierNames}
-          replacementCandidates={rows}
-        />
-      )}
+      <IngredientManagePageDialogs
+        isViewer={isViewer}
+        confirmRemove={pageState.confirmRemove}
+        onConfirmRemoveClose={() => pageState.setConfirmRemove(null)}
+        onRemoveCategory={actions.handleRemoveCategory}
+        onRemoveTag={actions.handleRemoveTag}
+        substituteSource={pageState.substituteSource}
+        onSubstituteClose={() => pageState.setSubstituteSource(null)}
+        rows={rows}
+        onReplaceJetteProduct={actions.handleReplaceJetteProduct}
+        formTarget={pageState.formTarget}
+        onFormClose={() => pageState.setFormTarget(null)}
+        onSave={actions.handleSave}
+        mainCats={view.mainCats}
+        originSuggestions={view.originSuggestions}
+        latestPriceRows={data.latestPriceRows}
+        supplierNames={data.supplierNames}
+      />
     </main>
   );
 }

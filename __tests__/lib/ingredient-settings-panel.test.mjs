@@ -6,7 +6,11 @@ const src = readFileSync(
   'utf-8'
 );
 
-const pageSrc = readFileSync(resolve(process.cwd(), 'app/ingredient/manage/page.jsx'), 'utf-8');
+// settings 뷰 렌더 블록은 page.jsx 조립부에서 IngredientManageViewContent로 분리됨
+const pageSrc = readFileSync(
+  resolve(process.cwd(), 'app/ingredient/manage/IngredientManageViewContent.jsx'),
+  'utf-8'
+);
 
 describe('IngredientSettingsPanel 구조 검증', () => {
   test("'use client' 선언이 있다", () => {
@@ -67,7 +71,7 @@ describe('IngredientSettingsPanel 구조 검증', () => {
 describe('page.jsx - IngredientSettingsPanel에 uncategorized/discontinuedCount 전달', () => {
   // IngredientSettingsPanel 렌더 블록 추출 (rows.length > 0 && view === 'settings')
   function getSettingsBlock() {
-    const marker = "view === 'settings' && (";
+    const marker = "currentView === 'settings' && (";
     // 마지막으로 등장하는 settings view 블록(IngredientSettingsPanel)을 찾는다
     const lastIdx = pageSrc.lastIndexOf(marker);
     return lastIdx >= 0 ? pageSrc.slice(lastIdx, lastIdx + 600) : '';

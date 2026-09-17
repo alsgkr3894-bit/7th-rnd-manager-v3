@@ -112,7 +112,8 @@ describe('테이블 가로 스크롤 처리', () => {
 
 describe('식자재 관리 탭 컨테이너', () => {
   test('탭 컨테이너에 overflowX: auto 가 있다 (390px 탭 잘림 방지)', () => {
-    const s = src('app/ingredient/manage/page.jsx');
+    // 탭 렌더는 page.jsx 조립부에서 IngredientManageTabs로 분리됨
+    const s = src('app/ingredient/manage/IngredientManageTabs.jsx');
     // 탭 6개를 담는 flex 컨테이너에 overflowX 처리가 있어야 함
     expect(s).toContain("overflowX: 'auto'");
   });

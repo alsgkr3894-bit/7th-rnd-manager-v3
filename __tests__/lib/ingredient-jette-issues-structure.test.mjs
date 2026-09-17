@@ -6,6 +6,14 @@ const panelSource = readFileSync(
   'utf8'
 );
 const pageSource = readFileSync(resolve('app/ingredient/manage/page.jsx'), 'utf8');
+const viewContentSource = readFileSync(
+  resolve('app/ingredient/manage/IngredientManageViewContent.jsx'),
+  'utf8'
+);
+const jetteVisibilitySource = readFileSync(
+  resolve('app/ingredient/manage/useIngredientJetteIssueVisibility.js'),
+  'utf8'
+);
 const actionsSource = readFileSync(
   resolve('app/ingredient/manage/useIngredientManageActions.js'),
   'utf8'
@@ -34,16 +42,16 @@ describe('ingredient jette issues structure', () => {
   });
 
   test('ingredient manage page wires latest jette rows to replacement action', () => {
-    expect(pageSource).toContain('handleReplaceJetteProduct');
-    expect(pageSource).toContain('hiddenJetteIssueCodes');
-    expect(pageSource).toContain('visibleNewJetteRows');
-    expect(pageSource).toContain('visibleJetteRemovedRows');
-    expect(pageSource).toContain('handleExcludeJetteIssue');
-    expect(pageSource).toContain('next.add(code)');
-    expect(pageSource).toContain('next.delete(code)');
-    expect(pageSource).toContain('replacementRows={latestPriceRows}');
-    expect(pageSource).toContain('onExclude={handleExcludeJetteIssue}');
-    expect(pageSource).toContain('onReplace={handleReplaceJetteProduct}');
+    expect(pageSource).toContain('onReplaceJetteProduct={actions.handleReplaceJetteProduct}');
+    expect(jetteVisibilitySource).toContain('hiddenJetteIssueCodes');
+    expect(jetteVisibilitySource).toContain('visibleNewJetteRows');
+    expect(jetteVisibilitySource).toContain('visibleJetteRemovedRows');
+    expect(jetteVisibilitySource).toContain('handleExcludeJetteIssue');
+    expect(jetteVisibilitySource).toContain('next.add(code)');
+    expect(jetteVisibilitySource).toContain('next.delete(code)');
+    expect(viewContentSource).toContain('replacementRows={latestPriceRows}');
+    expect(viewContentSource).toContain('onExclude={jette.handleExcludeJetteIssue}');
+    expect(viewContentSource).toContain('onReplace={actions.handleReplaceJetteProduct}');
   });
 
   test('manage actions delegate product replacement and refresh data after linking', () => {

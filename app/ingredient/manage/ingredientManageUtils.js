@@ -22,6 +22,14 @@ export function readInitialManageView() {
   return normalizeManageView(new URLSearchParams(window.location.search).get('view'));
 }
 
+// 제때 이슈/대체 연결 매칭에 쓰는 productCode 정규화(대소문자·공백 무시).
+export function productCodeKey(rowOrCode) {
+  const value = rowOrCode && typeof rowOrCode === 'object' ? rowOrCode.productCode : rowOrCode;
+  return String(value || '')
+    .trim()
+    .toUpperCase();
+}
+
 // scope 라벨('전용'/'범용'/'범용관리') → productType 코드
 const scopeToType = label =>
   Object.keys(TYPE_LABEL).find(code => TYPE_LABEL[code] === label) || null;

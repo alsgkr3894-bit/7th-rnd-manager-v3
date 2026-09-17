@@ -8,6 +8,30 @@ const actionsSource = readFileSync(
 );
 const utilsSource = readFileSync(resolve('app/ingredient/manage/ingredientManageUtils.js'), 'utf8');
 const pageSource = readFileSync(resolve('app/ingredient/manage/page.jsx'), 'utf8');
+const pageHookSource = readFileSync(
+  resolve('app/ingredient/manage/useIngredientManagePage.js'),
+  'utf8'
+);
+const pageStateSource = readFileSync(
+  resolve('app/ingredient/manage/useIngredientManagePageState.js'),
+  'utf8'
+);
+const batchSelectionSource = readFileSync(
+  resolve('app/ingredient/manage/useIngredientBatchSelection.js'),
+  'utf8'
+);
+const headerActionsSource = readFileSync(
+  resolve('app/ingredient/manage/IngredientManagePageHeaderActions.jsx'),
+  'utf8'
+);
+const dialogsSource = readFileSync(
+  resolve('app/ingredient/manage/IngredientManagePageDialogs.jsx'),
+  'utf8'
+);
+const viewContentSource = readFileSync(
+  resolve('app/ingredient/manage/IngredientManageViewContent.jsx'),
+  'utf8'
+);
 const panelSource = readFileSync(
   resolve('app/ingredient/manage/IngredientManagePanel.jsx'),
   'utf8'
@@ -29,8 +53,9 @@ describe('ingredient manage undo guards', () => {
   test('page는 actions 훅에 위임하고 직접 restore를 호출하지 않는다', () => {
     expect(pageSource).not.toContain("restoreRecord('cost_ingredients', backup.ingredient).catch");
     expect(pageSource).not.toContain("restoreRecord('cost_ingredients', rec.ingredient).catch");
-    // page는 훅을 import
-    expect(pageSource).toContain('useIngredientManageActions');
+    // page는 조립 훅(useIngredientManagePage)을 통해 useIngredientManageActions를 로드한다
+    expect(pageSource).toContain('useIngredientManagePage');
+    expect(pageHookSource).toContain('useIngredientManageActions');
   });
 
   test('삭제 실행취소는 restoreRecord 실패를 숨기지 않는다', () => {
@@ -78,16 +103,18 @@ describe('ingredient manage undo guards', () => {
   });
 
   test('삭제 preview는 최신 삭제 대상 요청만 반영한다', () => {
-    expect(pageSource).toContain('deletePreviewRequestRef');
-    expect(pageSource).toContain('deletePreviewRequestRef.current === requestId');
-    expect(pageSource).toContain('preview?.ingredient?.id === row.id');
+    expect(pageStateSource).toContain('deletePreviewRequestRef');
+    expect(pageStateSource).toContain('deletePreviewRequestRef.current === requestId');
+    expect(pageStateSource).toContain('preview?.ingredient?.id === row.id');
   });
 
   test('highlightId state는 URL 파라미터 소비 effect보다 먼저 선언된다', () => {
-    const stateIndex = pageSource.indexOf('const [highlightId, setHighlightId] = useState(null);');
+    const stateIndex = pageStateSource.indexOf(
+      'const [highlightId, setHighlightId] = useState(null);'
+    );
     expect(stateIndex).toBeGreaterThan(-1);
     expect(stateIndex).toBeLessThan(
-      pageSource.indexOf('if (highlightParam) setHighlightId(highlightParam);')
+      pageStateSource.indexOf('if (highlightParam) setHighlightId(highlightParam);')
     );
     // rows 로드 후 자동 해제 로직은 IngredientManagePanel로 이동됨
     expect(panelSource).toContain('onHighlightClear');
@@ -96,9 +123,9 @@ describe('ingredient manage undo guards', () => {
 
   test('식자재 팔레트 deep link는 제품코드 fallback과 페이지 이동 하이라이트를 지원한다', () => {
     expect(paletteSource).toContain('&productCode=');
-    expect(pageSource).toContain('const [highlightProductCode, setHighlightProductCode]');
-    expect(pageSource).toContain("params.get('productCode')");
-    expect(pageSource).toContain("url.searchParams.delete('productCode')");
+    expect(pageStateSource).toContain('const [highlightProductCode, setHighlightProductCode]');
+    expect(pageStateSource).toContain("params.get('productCode')");
+    expect(pageStateSource).toContain("url.searchParams.delete('productCode')");
     expect(panelSource).toContain('highlightProductCode');
     expect(panelSource).toContain('const targetPage = Math.floor(index / PAGE_SIZE) + 1;');
     expect(panelSource).toContain('if (targetPage !== page) goTo(targetPage);');
@@ -114,15 +141,18 @@ describe('ingredient manage undo guards', () => {
   });
 
   test('배치 모드 전체 선택은 현재 페이지가 아니라 검색·필터가 적용된 목록 전체를 대상으로 한다', () => {
-    expect(pageSource).toContain('setSelected');
-    expect(pageSource).toContain('filtered.filter(r => r.id != null).map(r => r.id)');
-    expect(pageSource).toContain('selectableIds.every(id => selected.has(id))');
-    expect(pageSource).toContain(
+    expect(batchSelectionSource).toContain('setSelected');
+    expect(batchSelectionSource).toContain('filtered.filter(r => r.id != null).map(r => r.id)');
+    expect(batchSelectionSource).toContain('selectableIds.every(id => selected.has(id))');
+    expect(batchSelectionSource).toContain(
       'setSelected(allFilteredSelected ? new Set() : new Set(selectableIds))'
     );
-    expect(pageSource).toContain('selectableCount={selectableIds.length}');
-    expect(pageSource).toContain('allSelected={allFilteredSelected}');
-    expect(pageSource).toContain('onToggleSelectAll={toggleSelectAll}');
+    expect(headerActionsSource).toContain('selectableCount={selectableCount}');
+    expect(headerActionsSource).toContain('allSelected={allSelected}');
+    expect(headerActionsSource).toContain('onToggleSelectAll={onToggleSelectAll}');
+    expect(pageSource).toContain('selectableCount={batch.selectableIds.length}');
+    expect(pageSource).toContain('allSelected={batch.allFilteredSelected}');
+    expect(pageSource).toContain('onToggleSelectAll={batch.toggleSelectAll}');
     expect(batchToolbarSource).toContain('onToggleSelectAll');
     expect(batchToolbarSource).toContain('전체 선택 (${selectableCount})');
     expect(batchToolbarSource).toContain('전체 해제');
@@ -134,9 +164,10 @@ describe('ingredient manage undo guards', () => {
     expect(batchToolbarSource).toContain('deletableCount');
     expect(batchToolbarSource).toContain('safeDeletableCount');
     expect(batchToolbarSource).toContain('제때 연동');
-    expect(pageSource).toContain('deletableSelectedCount');
-    expect(pageSource).toContain('isDeletableIngredientRow');
-    expect(pageSource).toContain('deletableCount={deletableSelectedCount}');
+    expect(batchSelectionSource).toContain('deletableSelectedCount');
+    expect(batchSelectionSource).toContain('isDeletableIngredientRow');
+    expect(headerActionsSource).toContain('deletableCount={deletableSelectedCount}');
+    expect(pageSource).toContain('deletableSelectedCount={batch.deletableSelectedCount}');
   });
 
   test('일괄 삭제는 선택 목록에서 수동·제품코드 없는 행만 걸러 실행한다', () => {
@@ -152,11 +183,14 @@ describe('ingredient manage undo guards', () => {
   });
 
   test('viewer는 식자재 행/이슈/설정 쓰기 액션을 화면과 훅에서 먼저 차단한다', () => {
-    expect(pageSource).toContain('canEdit: !isViewer');
+    expect(pageHookSource).toContain('canEdit: !isViewer');
     expect(pageSource).toContain('isViewer={isViewer}');
-    expect(pageSource).toContain('canEdit={!isViewer}');
-    expect(pageSource).toContain('!isViewer && confirmRemove');
-    expect(pageSource).toContain('!isViewer && formTarget !== null');
+    expect(viewContentSource).toContain('canEdit={!isViewer}');
+    // 분류/태그 제거 확인 다이얼로그·수정 폼은 IngredientManagePageDialogs로 분리됐고,
+    // 그 컴포넌트가 최상단에서 viewer 여부로 렌더 자체를 막는다.
+    expect(dialogsSource).toContain('if (isViewer) return null;');
+    expect(dialogsSource).toContain('{confirmRemove && (');
+    expect(dialogsSource).toContain('{formTarget !== null && (');
     expect(actionsSource).toContain('canEdit = false');
     expect(actionsSource).toContain('if (!canEdit) return');
     expect(panelSource).toContain('isViewer = false');

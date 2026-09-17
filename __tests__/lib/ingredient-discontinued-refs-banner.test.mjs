@@ -24,9 +24,11 @@ describe('단종 식자재 참조 진단 배너 배선', () => {
 
   test('page가 useDiscontinuedRefs를 로드해 배너에 연결하고 기존 SubstituteLinkModal을 재사용한다', () => {
     const page = src('app/ingredient/manage/page.jsx');
-    expect(page).toContain('useDiscontinuedRefs');
     expect(page).toContain('onLinkSubstitute={');
-    expect(page).toContain('setSubstituteSource');
+    // useDiscontinuedRefs 호출·substituteSource 상태는 조립 훅(useIngredientManagePage)으로 이동됨
+    const pageHook = src('app/ingredient/manage/useIngredientManagePage.js');
+    expect(pageHook).toContain('useDiscontinuedRefs');
+    expect(pageHook).toContain('setSubstituteSource');
   });
 
   test('useDiscontinuedRefs 훅은 단종/숨김 행이 없으면 레시피 스토어를 읽지 않는다', () => {

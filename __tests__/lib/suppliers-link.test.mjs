@@ -102,7 +102,10 @@ describe('supplierNameOptions', () => {
 });
 
 describe('공급업체 ↔ 제조사 연결이 배선돼 있다', () => {
-  const pageSrc = src('app/ingredient/manage/page.jsx');
+  // 공급업체 탭 렌더와 폼 전달은 page.jsx 조립부에서 각각
+  // IngredientManageViewContent/IngredientManagePageDialogs로 분리됨
+  const viewContentSrc = src('app/ingredient/manage/IngredientManageViewContent.jsx');
+  const dialogsSrc = src('app/ingredient/manage/IngredientManagePageDialogs.jsx');
   const dataHookSrc = src('app/ingredient/manage/useIngredientManageData.js');
   const viewSrc = src('components/cost/ingredient-price/SuppliersView.jsx');
   const listSrc = src('components/cost/ingredient-price/suppliers/SuppliersListPanel.jsx');
@@ -118,8 +121,8 @@ describe('공급업체 ↔ 제조사 연결이 배선돼 있다', () => {
   });
 
   test('page.jsx가 식자재 행을 공급업체 탭에, 공급업체 이름을 폼에 전달한다', () => {
-    expect(pageSrc).toContain('<SuppliersView ingredientRows={rows} />');
-    expect(pageSrc).toContain('supplierNames={supplierNames}');
+    expect(viewContentSrc).toContain('<SuppliersView ingredientRows={rows} />');
+    expect(dialogsSrc).toContain('supplierNames={supplierNames}');
   });
 
   test('SuppliersView가 ingredientRows로 연결 맵을 계산해 목록에 전달한다', () => {
