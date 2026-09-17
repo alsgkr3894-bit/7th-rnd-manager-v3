@@ -11,10 +11,13 @@ const src = f => readFileSync(resolve(f), 'utf8');
  */
 describe('레시피 구성품 드래그 순서변경', () => {
   test('MenuRecipeSection이 _key 기준으로 components 배열을 재정렬한다', () => {
+    // 재정렬 로직 자체는 useMenuRecipeRowFocus 훅으로 옮겨졌고, MenuRecipeSection은
+    // 그 훅의 handleReorderRows를 테이블에 그대로 배선만 한다.
     const s = src('components/menu-master/MenuRecipeSection.jsx');
-    expect(s).toContain('const handleReorderRows');
-    expect(s).toContain('prev.findIndex(c => c._key === activeKey)');
-    expect(s).toContain('prev.findIndex(c => c._key === overKey)');
+    const hookSrc = src('components/menu-master/recipe/hooks/useMenuRecipeRowFocus.js');
+    expect(hookSrc).toContain('const handleReorderRows');
+    expect(hookSrc).toContain('prev.findIndex(c => c._key === activeKey)');
+    expect(hookSrc).toContain('prev.findIndex(c => c._key === overKey)');
     expect(s).toContain('onReorderRows={handleReorderRows}');
     expect(s).toContain('reorderDisabled={onlyMissingPrice}');
   });

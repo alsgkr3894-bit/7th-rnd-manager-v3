@@ -18,6 +18,14 @@ const recipeSectionSource = readFileSync(
   resolve('components/menu-master/MenuRecipeSection.jsx'),
   'utf8'
 );
+// ref API(saveRecipe/getRecipeSummary/getRecipeValidation/focusRecipeIssue)를 만드는
+// useImperativeHandle은 useMenuRecipeRowFocus 훅으로 옮겨졌다 — 배선 문구는 두 파일을
+// 합쳐서 검사한다(recipe/hooks/useMenuRecipeQuickAdd.js 등과 같은 분리 패턴).
+const recipeRowFocusSource = readFileSync(
+  resolve('components/menu-master/recipe/hooks/useMenuRecipeRowFocus.js'),
+  'utf8'
+);
+const recipeSectionAndHooksSource = `${recipeSectionSource}\n${recipeRowFocusSource}`;
 const recipeHeaderSource = readFileSync(
   resolve('components/menu-master/MenuRecipeSectionHeader.jsx'),
   'utf8'
@@ -61,8 +69,8 @@ describe('menu-master page structure', () => {
     expect(editModalSource).toContain('reloadAfter: false');
     expect(editModalSource).toContain('throwOnError: true');
     expect(editFieldsSource).toContain('ref={recipeSectionRef}');
-    expect(recipeSectionSource).toContain('useImperativeHandle');
-    expect(recipeSectionSource).toContain('saveRecipe: handleSave');
+    expect(recipeSectionAndHooksSource).toContain('useImperativeHandle');
+    expect(recipeSectionAndHooksSource).toContain('saveRecipe: handleSave');
   });
 
   test('레시피 섹션에는 별도 레시피 저장 버튼을 노출하지 않는다', () => {

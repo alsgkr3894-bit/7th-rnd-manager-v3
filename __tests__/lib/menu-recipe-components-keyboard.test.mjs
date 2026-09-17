@@ -12,7 +12,14 @@ import {
 } from '../../components/menu-master/recipeComponentRows.js';
 import { buildRecipeImpactPreview } from '../../lib/menu-master/recipe-impact-preview.js';
 
-const sectionSrc = readFileSync(resolve('components/menu-master/MenuRecipeSection.jsx'), 'utf8');
+// MenuRecipeSection은 "빠른 추가"/"행 포커스" 로직을 recipe/hooks 및 recipe/*Panel로
+// 옮겨 조립만 한다 — 배선 문구는 그 모듈 그룹 전체에서 검사한다(위 tableSrc와 같은 패턴).
+const sectionSrc = [
+  readFileSync(resolve('components/menu-master/MenuRecipeSection.jsx'), 'utf8'),
+  readFileSync(resolve('components/menu-master/recipe/hooks/useMenuRecipeQuickAdd.js'), 'utf8'),
+  readFileSync(resolve('components/menu-master/recipe/hooks/useMenuRecipeRowFocus.js'), 'utf8'),
+  readFileSync(resolve('components/menu-master/recipe/MenuRecipeQuickAddPanel.jsx'), 'utf8'),
+].join('\n');
 const searchHookSrc = readFileSync(
   resolve('components/menu-master/useRecipeIngredientSearch.js'),
   'utf8'
