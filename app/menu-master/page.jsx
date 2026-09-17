@@ -25,6 +25,7 @@ import {
   loadMenuRecipeSummaryMap,
   MENU_RECIPE_SUMMARY_STATUS,
 } from '@/lib/menu-master/recipe-summary';
+import { isRecipeSummaryExcludedFromTracking } from '@/lib/menu-master/recipe-issues';
 import {
   normalizeMenuCodeCategories,
   normalizePersonalPizzaCodes,
@@ -178,8 +179,10 @@ export default function Page() {
   const active = visibleRows.filter(r => r.status === 'active');
   const discontinued = visibleRows.filter(r => r.status === 'discontinued');
   const testRows = visibleRows.filter(r => r.status === 'test');
+  // buildRecipeIssues와 같은 기준(UNSUPPORTED·EDGE 제외)으로 "레시피 작성" 진행률을 센다 —
+  // 따로 구현하면 엣지처럼 상태가 늘어날 때 한쪽만 갱신되는 버그가 생기기 쉽다.
   const recipeSummaries = [...recipeSummaryMap.values()].filter(
-    summary => summary.status !== MENU_RECIPE_SUMMARY_STATUS.UNSUPPORTED
+    summary => !isRecipeSummaryExcludedFromTracking(summary)
   );
   const recipeWritten = recipeSummaries.filter(summary => summary.hasRecipe).length;
   const recipeNeedsCheck = recipeSummaries.filter(

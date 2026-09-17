@@ -76,6 +76,7 @@ jest.unstable_mockModule('@/lib/menu-master/recipe-summary', () => ({
     NEEDS_PRICE: 'needs-price',
     NEEDS_QUANTITY: 'needs-quantity',
     UNSUPPORTED: 'unsupported',
+    EDGE: 'edge',
   },
 }));
 

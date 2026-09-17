@@ -58,8 +58,17 @@ export function MenuNutritionPreview({ menuCode, menuName, category }) {
       )}
       {!loading && !error && preview && !preview.supported && (
         <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
-          세트박스·하프앤하프는 여러 메뉴를 합산한 범위로 계산되어 메뉴 단위 미리보기를 지원하지
-          않습니다.{' '}
+          {category === '엣지' ? (
+            <>
+              엣지는 별도의 영양성분 출력 행이 없고, 이 값이 각 피자 메뉴의 출력 행에 합산돼
+              반영됩니다.{' '}
+            </>
+          ) : (
+            <>
+              세트박스·하프앤하프는 여러 메뉴를 합산한 범위로 계산되어 메뉴 단위 미리보기를 지원하지
+              않습니다.{' '}
+            </>
+          )}
           <a href="/nutrition/export" target="_blank" rel="noreferrer">
             전체 출력 페이지에서 확인
           </a>

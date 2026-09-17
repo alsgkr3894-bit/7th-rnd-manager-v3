@@ -64,10 +64,12 @@ jest.unstable_mockModule('@/lib/menu-master/recipe-summary', () => ({
     NEEDS_PRICE: 'needs-price',
     NEEDS_QUANTITY: 'needs-quantity',
     UNSUPPORTED: 'unsupported',
+    EDGE: 'edge',
   },
 }));
 
 const { buildMenuReadinessMap } = await import('@/lib/menu-master/readiness');
+const { MENU_RECIPE_SUMMARY_STATUS } = await import('@/lib/menu-master/recipe-summary');
 
 function readySummary() {
   return {
@@ -200,5 +202,32 @@ describe('menu readiness output coverage', () => {
     const row = map.get('OPT-EDGE-003');
 
     expect(row.dims.nutrition).toEqual({ status: 'missing', detail: '영양성분 값 미입력' });
+  });
+
+  test('엣지 관리에 원가 구성이 없는 엣지 행은 "레시피 구성품 없음"이 아니라 엣지 관리로 안내한다', async () => {
+    // 실사용 오탐 방지: 메뉴마스터 편집창의 "레시피/원가" 섹션은 엣지 카테고리를 아예
+    // 지원하지 않는다("이 카테고리는 레시피 원가를 지원하지 않습니다") — recipe 차원
+    // 안내 문구가 "레시피 구성품 없음"이면 사용자가 고칠 수 없는 화면을 가리키게 된다.
+    const menus = [{ menuCode: 'OPT-EDGE-003', menuName: '골드스윗', category: '엣지' }];
+    state.prices = [{ menuCode: 'OPT-EDGE-003', price: 4000 }];
+    const recipeSummaryMap = new Map([
+      [
+        'OPT-EDGE-003',
+        {
+          status: MENU_RECIPE_SUMMARY_STATUS.EDGE,
+          hasRecipe: false,
+          sizeCosts: {},
+          totalCost: 0,
+        },
+      ],
+    ]);
+
+    const map = await buildMenuReadinessMap(menus, recipeSummaryMap);
+    const row = map.get('OPT-EDGE-003');
+
+    expect(row.dims.recipe).toEqual({
+      status: 'missing',
+      detail: '엣지 관리(공통 원가 관리)에 원가 구성이 없습니다',
+    });
   });
 });

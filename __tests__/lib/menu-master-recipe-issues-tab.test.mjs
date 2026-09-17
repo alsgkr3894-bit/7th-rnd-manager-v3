@@ -4,6 +4,7 @@ import { resolve } from 'path';
 import {
   buildRecipeIssues,
   filterIssuesByKind,
+  isRecipeSummaryExcludedFromTracking,
   ISSUE_KINDS,
   ISSUE_LABELS,
 } from '../../lib/menu-master/recipe-issues.js';
@@ -151,6 +152,40 @@ describe('buildRecipeIssues — 이슈 분류 로직', () => {
 
   test('빈 배열을 받으면 빈 배열을 반환한다', () => {
     expect(buildRecipeIssues([], new Map())).toHaveLength(0);
+  });
+});
+
+describe('isRecipeSummaryExcludedFromTracking — 레시피 작성 진행률 집계 배제 기준', () => {
+  test('summary가 없거나 UNSUPPORTED·EDGE면 제외한다', () => {
+    expect(isRecipeSummaryExcludedFromTracking(null)).toBe(true);
+    expect(
+      isRecipeSummaryExcludedFromTracking({ status: MENU_RECIPE_SUMMARY_STATUS.UNSUPPORTED })
+    ).toBe(true);
+    expect(isRecipeSummaryExcludedFromTracking({ status: MENU_RECIPE_SUMMARY_STATUS.EDGE })).toBe(
+      true
+    );
+  });
+
+  test('그 외 상태는 집계 대상이다', () => {
+    expect(isRecipeSummaryExcludedFromTracking({ status: MENU_RECIPE_SUMMARY_STATUS.READY })).toBe(
+      false
+    );
+    expect(
+      isRecipeSummaryExcludedFromTracking({ status: MENU_RECIPE_SUMMARY_STATUS.MISSING })
+    ).toBe(false);
+  });
+});
+
+describe('app/menu-master/page — "레시피 작성" 진행률이 이슈 탭과 같은 배제 기준을 쓴다 (회귀)', () => {
+  test('recipeSummaries 필터가 isRecipeSummaryExcludedFromTracking을 재사용한다', () => {
+    // 실사용 재현 버그: page.jsx가 UNSUPPORTED만 걸러내고 EDGE는 안 걸러내던 시절,
+    // 정상 연동된 엣지 행까지 status!==READY라는 이유로 "확인 필요" 배지에 잘못
+    // 잡혔다(예: 엣지 3개뿐인데 "이슈 3"). 두 곳이 각자 기준을 구현하면 이런 드리프트가
+    // 다시 생기기 쉬워, page.jsx가 recipe-issues.js의 공유 판정 함수를 쓰는지 고정한다.
+    expect(menuMasterPageSrc).toContain('isRecipeSummaryExcludedFromTracking');
+    expect(menuMasterPageSrc).toContain(
+      "import { isRecipeSummaryExcludedFromTracking } from '@/lib/menu-master/recipe-issues';"
+    );
   });
 });
 
