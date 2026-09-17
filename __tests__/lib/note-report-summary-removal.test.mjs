@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 
 function source(path) {
@@ -13,7 +13,14 @@ describe('menu note report summary removal', () => {
     const noteCard = source('app/note/_NoteCard.jsx');
     const ideaGroupCard = source('app/note/_NoteIdeaGroupCard.jsx');
     const kanbanCard = source('components/note/KanbanCard.jsx');
-    const reportPrint = source('lib/note/report-print.js');
+    // report-print.js는 재수출 허브이므로 실제 구현 파일(report-print/*.js)까지 함께 검사한다
+    const reportPrintDir = 'lib/note/report-print';
+    const reportPrint = [
+      source('lib/note/report-print.js'),
+      ...readdirSync(resolve(reportPrintDir))
+        .filter(file => file.endsWith('.js'))
+        .map(file => source(`${reportPrintDir}/${file}`)),
+    ].join('\n');
 
     expect(form).not.toContain('NoteReportSummaryCard');
     expect(form).not.toContain('generateNoteReportText');

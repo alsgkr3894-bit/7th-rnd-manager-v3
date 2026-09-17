@@ -21,7 +21,7 @@ describe('note photo display', () => {
   });
 
   test('note report print keeps photos uncropped', () => {
-    const source = readFileSync(resolve('lib/note/report-print.js'), 'utf8');
+    const source = readFileSync(resolve('lib/note/report-print/styles.js'), 'utf8');
     expect(source).toContain('object-fit: contain');
     expect(source).not.toContain('object-fit: cover');
   });
