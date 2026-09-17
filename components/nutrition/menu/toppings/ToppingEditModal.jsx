@@ -1,6 +1,7 @@
 'use client';
 
 import { ModalFrame } from '@/components/ui/ModalFrame';
+import MenuCodePicker from '@/components/ui/MenuCodePicker';
 import { IngredientSearch } from '@/components/cost/shared/IngredientSearch';
 import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
 import { EMPTY_TOPPING_PRICE_MAP, scaleToppingValuesToWeight } from './toppingUtils';
@@ -62,6 +63,7 @@ export function ToppingEditModal({
   onSave,
   onClose,
   baseline = null,
+  extraToppingMenus = [],
 }) {
   const baselineWeight = parseFloat(baseline?.weight);
   const canAutoScale = baselineWeight > 0;
@@ -92,6 +94,22 @@ export function ToppingEditModal({
               onChange={event => onForm(prev => ({ ...prev, toppingCode: event.target.value }))}
               placeholder="미입력 시 자동 생성"
             />
+          </div>
+        </div>
+
+        <div>
+          <ToppingFieldLabel marginBottom={6}>
+            메뉴마스터 연결 (추가토핑 메뉴코드)
+          </ToppingFieldLabel>
+          <MenuCodePicker
+            menuMasters={extraToppingMenus}
+            value={form.menuCode}
+            onChange={code => onForm(prev => ({ ...prev, menuCode: code || '' }))}
+            placeholder="예: T-ETC-002 — 미연결 시 이름으로만 매칭됩니다"
+          />
+          <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 4 }}>
+            메뉴마스터의 추가토핑 코드를 연결하면 이름이 조금 달라도(공백·표기 차이) 영양성분표에
+            정확히 연동됩니다. 비워두면 추가토핑명이 메뉴마스터와 똑같을 때만 연동됩니다.
           </div>
         </div>
 

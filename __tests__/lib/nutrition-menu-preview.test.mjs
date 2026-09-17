@@ -111,4 +111,39 @@ describe('buildMenuNutritionPreview', () => {
     expect(result.missing).toBe(true);
     expect(result.rows).toEqual([]);
   });
+
+  test('토핑에 linkedMenuCode가 있으면 이름이 달라도 그 코드로만 매칭한다', () => {
+    const ctx = baseCtx({
+      toppings: [
+        { toppingCode: 'ET-001', toppingName: '까망베르 치즈', menuCode: 'T-ETC-001' },
+        // 이름이 비슷해도 다른 메뉴에 명시적으로 연결된 토핑은 매칭되면 안 된다.
+        { toppingCode: 'ET-002', toppingName: '치즈 100g', menuCode: 'T-ETC-002' },
+      ],
+      masterByCode: { 'T-ETC-001': { category: '추가토핑' } },
+    });
+
+    const result = buildMenuNutritionPreview(ctx, {
+      menuCode: 'T-ETC-001',
+      menuName: '치즈 100g', // menu_master 이름은 다르게 등록돼 있어도
+      category: '추가토핑',
+    });
+
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].menuName).toBe('까망베르 치즈');
+  });
+
+  test('추가토핑 이름 매칭은 공백 위치·대소문자 차이를 무시한다', () => {
+    const ctx = baseCtx({
+      toppings: [{ toppingCode: 'ET-004', toppingName: '블랙올리브32개 (32g)' }],
+      masterByCode: { 'T-ETC-004': { category: '추가토핑' } },
+    });
+
+    const result = buildMenuNutritionPreview(ctx, {
+      menuCode: 'T-ETC-004',
+      menuName: '블랙올리브 32개(32g)',
+      category: '추가토핑',
+    });
+
+    expect(result.rows).toHaveLength(1);
+  });
 });

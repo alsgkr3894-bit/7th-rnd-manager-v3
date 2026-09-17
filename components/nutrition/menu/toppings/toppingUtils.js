@@ -1,6 +1,12 @@
 import { ALLERGEN_SEED } from '@/lib/nutrition/allergen/store';
 import { NUTRITION_FIELDS } from '@/lib/nutrition/values/store';
+import { isExtraToppingCategory } from '@/lib/menu-master/category-policy';
 import { asDisplayText, asObjectArray, asStringArray } from '@/lib/ui/prop-guards';
+
+/** 토핑 메뉴코드 연결 선택지 — 추가토핑 카테고리로만 좁혀 엉뚱한 메뉴 연결을 막는다. */
+export function filterExtraToppingMenus(menuMasters) {
+  return asObjectArray(menuMasters).filter(m => isExtraToppingCategory(m?.category));
+}
 
 export const EMPTY_TOPPING_PRICE_MAP = new Map();
 
@@ -9,6 +15,7 @@ export const EMPTY_TOPPING_FORM = {
   toppingName: '',
   productCode: '',
   ingredientName: '',
+  menuCode: '',
 };
 
 export const ALLERGEN_NAME_BY_CODE = Object.fromEntries(
@@ -87,6 +94,7 @@ export function toppingFormFromRecord(topping) {
     toppingName: asDisplayText(topping.toppingName),
     productCode: asDisplayText(topping.productCode),
     ingredientName: asDisplayText(topping.ingredientName),
+    menuCode: asDisplayText(topping.menuCode),
   };
 }
 
@@ -125,6 +133,7 @@ export function scaleToppingValuesToWeight(baseline, nextWeight) {
 export function buildToppingSavePayload({ modal, form, values, now = Date.now() }) {
   const toppingName = asDisplayText(form.toppingName).trim();
   const toppingCode = asDisplayText(form.toppingCode).trim() || `TOP-${now}`;
+  const menuCode = asDisplayText(form.menuCode).trim();
   const id = modal !== 'add' ? modal?.id : undefined;
 
   return {
@@ -132,6 +141,7 @@ export function buildToppingSavePayload({ modal, form, values, now = Date.now() 
     ...form,
     toppingName,
     toppingCode,
+    menuCode,
     basis: 'serving',
     ...values,
   };

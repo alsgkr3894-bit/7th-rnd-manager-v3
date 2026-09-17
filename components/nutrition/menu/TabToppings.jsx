@@ -12,20 +12,20 @@ import { ToppingsHeader } from './toppings/ToppingsHeader';
 import { ToppingsTable } from './toppings/ToppingsTable';
 import * as utils from './toppings/toppingUtils';
 
-export function TabToppings({ toppings, ingredients, onRefresh, canEdit = false }) {
+export function TabToppings({ toppings, ingredients, menuMasters, onRefresh, canEdit = false }) {
   const { showConfirm, confirmElement } = useConfirmDialog();
   const safeToppings = useMemo(() => asObjectArray(toppings), [toppings]);
   const safeIngredients = useMemo(
     () => utils.normalizeToppingIngredients(ingredients),
     [ingredients]
   );
+  const extraMenus = useMemo(() => utils.filterExtraToppingMenus(menuMasters), [menuMasters]);
   const refresh = typeof onRefresh === 'function' ? onRefresh : noop;
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState(utils.EMPTY_TOPPING_FORM);
   const [values, setValues] = useState({});
   const [saving, setSaving] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
-
   const ingredientLookups = useMemo(
     () => utils.buildToppingIngredientLookups(safeIngredients),
     [safeIngredients]
@@ -126,6 +126,7 @@ export function TabToppings({ toppings, ingredients, onRefresh, canEdit = false 
           values={values}
           onValues={setValues}
           baseline={modal && modal !== 'add' ? utils.toppingValuesFromRecord(modal) : null}
+          extraToppingMenus={extraMenus}
           safeIngredients={safeIngredients}
           onIngredient={selectIngredient}
           onClearIngredient={clearIngredient}

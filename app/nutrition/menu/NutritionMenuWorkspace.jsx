@@ -104,6 +104,7 @@ export function NutritionMenuWorkspace({
         <TabToppings
           toppings={toppings}
           ingredients={ingredients}
+          menuMasters={menuMasters}
           onRefresh={onRefresh}
           canEdit={canEdit}
         />

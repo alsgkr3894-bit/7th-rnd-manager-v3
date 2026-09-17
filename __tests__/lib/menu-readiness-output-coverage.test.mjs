@@ -48,6 +48,10 @@ jest.unstable_mockModule('@/lib/cost/edge-dough', () => ({ getAllEdges }));
 jest.unstable_mockModule('@/lib/nutrition/values/store', () => ({
   getAllCompositions,
   getAllToppings,
+  toppingNameMatchKey: value =>
+    String(value ?? '')
+      .replace(/\s+/g, '')
+      .toLowerCase(),
 }));
 jest.unstable_mockModule('@/lib/menu-recipes', () => ({ loadMenuRecipeArrays }));
 jest.unstable_mockModule('@/lib/menu-master/recipe-summary', () => ({

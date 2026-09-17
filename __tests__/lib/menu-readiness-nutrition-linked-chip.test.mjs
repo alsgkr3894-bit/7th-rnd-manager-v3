@@ -59,6 +59,10 @@ jest.unstable_mockModule('@/lib/cost/edge-dough', () => ({ getAllEdges }));
 jest.unstable_mockModule('@/lib/nutrition/values/store', () => ({
   getAllCompositions,
   getAllToppings,
+  toppingNameMatchKey: value =>
+    String(value ?? '')
+      .replace(/\s+/g, '')
+      .toLowerCase(),
 }));
 jest.unstable_mockModule('@/lib/menu-recipes', () => ({ loadMenuRecipeArrays }));
 jest.unstable_mockModule('@/lib/menu-master/recipe-summary', () => ({
@@ -109,5 +113,28 @@ describe('buildNutritionLinkedMenuCodeSet / isMenuNutritionLinked', () => {
     expect(
       isMenuNutritionLinked({ menuCode: 'T-ETC-099', menuName: '아직 안 만든 토핑' }, linked)
     ).toBe(false);
+  });
+
+  test('추가토핑 이름 매칭은 공백 위치·대소문자 차이를 무시한다 (실사용 오탐 재현)', async () => {
+    // 메뉴마스터와 영양 토핑 마스터는 서로 다른 화면에서 입력돼 공백이 자주 어긋난다.
+    state.toppings = [{ toppingCode: 'ET-004', toppingName: '블랙올리브32개 (32g)' }];
+
+    const linked = await buildNutritionLinkedMenuCodeSet();
+
+    expect(
+      isMenuNutritionLinked({ menuCode: 'T-ETC-004', menuName: '블랙올리브 32개(32g)' }, linked)
+    ).toBe(true);
+  });
+
+  test('토핑 편집 화면에서 메뉴마스터 코드를 직접 연결하면 이름이 달라도 연동을 인정한다', async () => {
+    state.toppings = [
+      { toppingCode: 'ET-001', toppingName: '까망베르 치즈', menuCode: 'T-ETC-001' },
+    ];
+
+    const linked = await buildNutritionLinkedMenuCodeSet();
+
+    expect(isMenuNutritionLinked({ menuCode: 'T-ETC-001', menuName: '치즈 100g' }, linked)).toBe(
+      true
+    );
   });
 });

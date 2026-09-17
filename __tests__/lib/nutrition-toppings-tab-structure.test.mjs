@@ -195,6 +195,7 @@ describe('nutrition toppings tab structure', () => {
       toppingName: '페퍼로니',
       productCode: 'ING-2',
       ingredientName: '페퍼 로니',
+      menuCode: '',
     });
     expect(toppingValuesFromRecord({ kcal: 10, weight: 20 })).toMatchObject({
       kcal: 10,
