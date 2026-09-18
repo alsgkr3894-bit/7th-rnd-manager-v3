@@ -12,10 +12,12 @@
 
 # testing
 /coverage
+/.qa-tmp/
 
 # next.js
 /.next/
 /.next.stale-*/
+/.next-sandbox/
 /out/
 
 # production
