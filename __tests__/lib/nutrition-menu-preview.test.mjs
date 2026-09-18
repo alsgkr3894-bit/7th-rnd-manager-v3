@@ -147,3 +147,80 @@ describe('buildMenuNutritionPreview', () => {
     expect(result.rows).toHaveLength(1);
   });
 });
+
+describe('buildMenuNutritionPreview — 엣지(크러스트) 카테고리', () => {
+  test('치즈크러스트는 nutrition_edge_master의 L/R 값을 크러스트별 행으로 반환한다', () => {
+    const ctx = baseCtx({
+      edgeMap: {
+        치즈크러스트L: { edgeCode: '치즈크러스트L', weight: 170, kcal: 459, satFat: 21.76 },
+        치즈크러스트R: { edgeCode: '치즈크러스트R', weight: 140, kcal: 378, satFat: 17.92 },
+      },
+    });
+
+    const result = buildMenuNutritionPreview(ctx, {
+      menuCode: 'OPT-EDGE-002',
+      menuName: '치즈크러스트',
+      category: '엣지',
+    });
+
+    expect(result.supported).toBe(true);
+    expect(result.group).toBe('엣지');
+    expect(result.missing).toBe(false);
+    expect(result.note).toBeTruthy();
+    expect(result.rows).toHaveLength(2);
+    const bySide = Object.fromEntries(result.rows.map(row => [row.side, row]));
+    // 'fat' 열은 satFat만 쓰고(labelFieldValue) 정수로 반올림한다(roundLabelValue) — 21.76→22.
+    expect(bySide.L).toMatchObject({ crustLabel: '치즈크러스트', weight: 170, kcal: 459, fat: 22 });
+    expect(bySide.R).toMatchObject({ crustLabel: '치즈크러스트', weight: 140, kcal: 378, fat: 18 });
+  });
+
+  test('골드스윗은 edgeMap에 값이 없으면 missing:true를 반환한다', () => {
+    const ctx = baseCtx();
+
+    const result = buildMenuNutritionPreview(ctx, {
+      menuCode: 'OPT-EDGE-003',
+      menuName: '골드스윗',
+      category: '엣지',
+    });
+
+    expect(result.supported).toBe(true);
+    expect(result.group).toBe('엣지');
+    expect(result.missing).toBe(true);
+    expect(result.rows).toEqual([]);
+  });
+
+  test('석쇠·씬바사삭은 베이스 크러스트라 미리보기를 지원하지 않는다', () => {
+    const stoneResult = buildMenuNutritionPreview(baseCtx(), {
+      menuCode: 'OPT-EDGE-001',
+      menuName: '석쇠',
+      category: '엣지',
+    });
+    const thinResult = buildMenuNutritionPreview(baseCtx(), {
+      menuCode: 'OPT-EDGE-004',
+      menuName: '씬바사삭',
+      category: '엣지',
+    });
+
+    expect(stoneResult).toEqual({ supported: false, group: '엣지', rows: [] });
+    expect(thinResult).toEqual({ supported: false, group: '엣지', rows: [] });
+  });
+
+  test('edgeKey 오버라이드가 이름 자동 판정보다 우선한다', () => {
+    const ctx = baseCtx({
+      edgeMap: {
+        골드스윗L: { edgeCode: '골드스윗L', weight: 190, kcal: 539.11 },
+        골드스윗R: { edgeCode: '골드스윗R', weight: 145, kcal: 411.42 },
+      },
+    });
+
+    const result = buildMenuNutritionPreview(ctx, {
+      menuCode: 'OPT-EDGE-999',
+      menuName: '이름만으론 알 수 없는 엣지',
+      category: '엣지',
+      edgeKey: '골드스윗',
+    });
+
+    expect(result.supported).toBe(true);
+    expect(result.rows).toHaveLength(2);
+  });
+});

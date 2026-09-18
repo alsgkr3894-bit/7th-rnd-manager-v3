@@ -45,10 +45,12 @@ function PreviewTable({ rows, showCrust }) {
   );
 }
 
-export function MenuNutritionPreview({ menuCode, menuName, category }) {
+export function MenuNutritionPreview({ menuCode, menuName, category, edgeKey }) {
   const { data: ctx, loading, error } = useDBLoad(buildNutritionLabelContext);
 
-  const preview = ctx ? buildMenuNutritionPreview(ctx, { menuCode, menuName, category }) : null;
+  const preview = ctx
+    ? buildMenuNutritionPreview(ctx, { menuCode, menuName, category, edgeKey })
+    : null;
 
   return (
     <CollapsibleCard title="영양성분 출력 미리보기" subtitle="실제 라벨 출력에 나가는 값 그대로">
@@ -83,7 +85,17 @@ export function MenuNutritionPreview({ menuCode, menuName, category }) {
         </div>
       )}
       {!loading && !error && preview?.supported && !preview.missing && (
-        <PreviewTable rows={preview.rows} showCrust={preview.group === '피자'} />
+        <>
+          {preview.note && (
+            <div style={{ fontSize: 11, color: 'var(--text-4)', marginBottom: 6 }}>
+              {preview.note}
+            </div>
+          )}
+          <PreviewTable
+            rows={preview.rows}
+            showCrust={preview.group === '피자' || preview.group === '엣지'}
+          />
+        </>
       )}
     </CollapsibleCard>
   );
