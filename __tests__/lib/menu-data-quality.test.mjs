@@ -48,6 +48,34 @@ describe('menu data quality report', () => {
     expect(report.categories.find(c => c.kind === QUALITY_KINDS.MISSING_RECIPE).count).toBe(0);
   });
 
+  test('엣지(석쇠·씬바사삭)는 판매가 0원이 정상이라 판매가 누락으로 잡히지 않는다', () => {
+    const menus = [
+      { menuCode: 'OPT-EDGE-001', menuName: '석쇠', category: '엣지', price: 0 },
+      { menuCode: 'OPT-EDGE-002', menuName: '치즈크러스트', category: '엣지', price: 4000 },
+    ];
+    const report = buildMenuDataQualityReport(menus, new Map(), new Map());
+
+    expect(report.categories.find(c => c.kind === QUALITY_KINDS.MISSING_SELLING_PRICE).count).toBe(
+      0
+    );
+  });
+
+  test('엣지라도 readiness가 판매가 누락이라고 하면 그대로 반영한다', () => {
+    const menus = [{ menuCode: 'OPT-EDGE-001', menuName: '석쇠', category: '엣지', price: 0 }];
+    const readinessMap = new Map([
+      [
+        'OPT-EDGE-001',
+        readiness({ price: { status: 'missing', detail: '판매가가 등록되지 않았습니다' } }),
+      ],
+    ]);
+
+    const report = buildMenuDataQualityReport(menus, new Map(), readinessMap);
+
+    expect(report.categories.find(c => c.kind === QUALITY_KINDS.MISSING_SELLING_PRICE).count).toBe(
+      1
+    );
+  });
+
   test('uses readiness output coverage for nutrition, origin, and allergen diagnostics', () => {
     const menus = [{ menuCode: 'P-002-L', menuName: '출시 피자', category: '피자', price: 21000 }];
     const readinessMap = new Map([

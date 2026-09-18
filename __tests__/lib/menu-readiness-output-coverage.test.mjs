@@ -230,4 +230,34 @@ describe('menu readiness output coverage', () => {
       detail: '엣지 관리(공통 원가 관리)에 원가 구성이 없습니다',
     });
   });
+
+  test('엣지(석쇠)는 판매가 0원이 정상이라 "판매가" 차원이 ok다', async () => {
+    const menus = [{ menuCode: 'OPT-EDGE-001', menuName: '석쇠', category: '엣지' }];
+    state.prices = [{ menuCode: 'OPT-EDGE-001', price: 0 }];
+
+    const map = await buildMenuReadinessMap(menus, new Map());
+    const row = map.get('OPT-EDGE-001');
+
+    expect(row.dims.price).toEqual({ status: 'ok', detail: '추가 요금 없음' });
+  });
+
+  test('엣지라도 판매가 항목 자체가 없으면 여전히 미작성이다', async () => {
+    const menus = [{ menuCode: 'OPT-EDGE-001', menuName: '석쇠', category: '엣지' }];
+    state.prices = [];
+
+    const map = await buildMenuReadinessMap(menus, new Map());
+    const row = map.get('OPT-EDGE-001');
+
+    expect(row.dims.price).toEqual({ status: 'missing', detail: '판매가가 등록되지 않았습니다' });
+  });
+
+  test('엣지가 아닌 카테고리는 판매가 0원이 여전히 경고다', async () => {
+    const menus = [{ menuCode: 'S-002', menuName: '테스트사이드', category: '사이드' }];
+    state.prices = [{ menuCode: 'S-002', price: 0 }];
+
+    const map = await buildMenuReadinessMap(menus, new Map());
+    const row = map.get('S-002');
+
+    expect(row.dims.price).toEqual({ status: 'warn', detail: '판매가가 0 이하입니다' });
+  });
 });
