@@ -123,3 +123,39 @@ describe('오버라이드', () => {
     expect(setSyncModeOverride(SYNC_MODE.READONLY)).toBe(false);
   });
 });
+
+describe('NEXT_PUBLIC_SERVER_SYNC_FORCE_READONLY — 샌드박스 강제 읽기전용', () => {
+  const ENV_KEY = 'NEXT_PUBLIC_SERVER_SYNC_FORCE_READONLY';
+  const originalEnv = process.env[ENV_KEY];
+
+  afterEach(() => {
+    if (originalEnv === undefined) delete process.env[ENV_KEY];
+    else process.env[ENV_KEY] = originalEnv;
+  });
+
+  test('localhost + authoritative 오버라이드여도 강제로 readonly가 된다', async () => {
+    // 2026-09-17 사고 재현 방지: 샌드박스(3002)도 localhost라 자동 판정은 authoritative고,
+    // 사용자가 "운영 PC로 지정"을 눌러도 이 플래그가 켜져 있으면 뒤집을 수 없어야 한다.
+    process.env[ENV_KEY] = '1';
+    installBrowser('localhost', { 'v3:server-sync-mode': 'authoritative' });
+    const { resolveSyncMode, isAuthoritativeClient, isSyncModeForcedReadonly, SYNC_MODE } =
+      await loadFresh();
+    expect(isSyncModeForcedReadonly()).toBe(true);
+    expect(resolveSyncMode()).toBe(SYNC_MODE.READONLY);
+    expect(isAuthoritativeClient()).toBe(false);
+  });
+
+  test('플래그가 꺼져 있으면(기본) localhost는 그대로 authoritative', async () => {
+    delete process.env[ENV_KEY];
+    installBrowser('localhost');
+    const { resolveSyncMode, isSyncModeForcedReadonly, SYNC_MODE } = await loadFresh();
+    expect(isSyncModeForcedReadonly()).toBe(false);
+    expect(resolveSyncMode()).toBe(SYNC_MODE.AUTHORITATIVE);
+  });
+
+  test('SSR(window 없음)에서도 강제 readonly가 우선한다', async () => {
+    process.env[ENV_KEY] = '1';
+    const { resolveSyncMode, SYNC_MODE } = await loadFresh();
+    expect(resolveSyncMode()).toBe(SYNC_MODE.READONLY);
+  });
+});

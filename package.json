@@ -9,6 +9,7 @@
     "predev:lan": "node scripts/prepare-dev.mjs",
     "dev:lan": "next dev -H 0.0.0.0 -p 3000",
     "dev:clean": "node scripts/prepare-dev.mjs --kill && next dev -H 127.0.0.1 -p 3000",
+    "dev:sandbox": "node scripts/dev-sandbox.mjs",
     "build": "next build",
     "build:clean": "node scripts/clean-build.mjs",
     "start": "next start",

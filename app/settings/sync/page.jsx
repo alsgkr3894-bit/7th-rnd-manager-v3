@@ -7,6 +7,7 @@ import { collectStoreStats } from '@/lib/db';
 import {
   SYNC_MODE,
   hasSyncModeOverride,
+  isSyncModeForcedReadonly,
   resolveSyncMode,
   setSyncModeOverride,
 } from '@/lib/db/sync-mode';
@@ -55,6 +56,7 @@ export default function ServerSyncPage() {
   const [deadLetters, setDeadLetters] = useState([]);
 
   const isReadonly = mode === SYNC_MODE.READONLY;
+  const forcedReadonly = isSyncModeForcedReadonly();
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -170,20 +172,31 @@ export default function ServerSyncPage() {
             이 브라우저의 모드
           </div>
           <ModeBadge mode={mode} />
-          {overridden && <span style={{ fontSize: 11, color: 'var(--text-3)' }}>수동 지정됨</span>}
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-            <button className="btn sm" type="button" onClick={toggleOverride}>
-              {isReadonly ? '운영 PC로 지정' : '읽기 전용으로 지정'}
-            </button>
-            {overridden && (
-              <button className="btn sm" type="button" onClick={clearOverride}>
-                자동 판정
+          {forcedReadonly ? (
+            <span style={{ fontSize: 11, color: 'var(--text-3)' }}>환경변수로 고정됨</span>
+          ) : (
+            overridden && <span style={{ fontSize: 11, color: 'var(--text-3)' }}>수동 지정됨</span>
+          )}
+          {!forcedReadonly && (
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+              <button className="btn sm" type="button" onClick={toggleOverride}>
+                {isReadonly ? '운영 PC로 지정' : '읽기 전용으로 지정'}
               </button>
-            )}
-          </div>
+              {overridden && (
+                <button className="btn sm" type="button" onClick={clearOverride}>
+                  자동 판정
+                </button>
+              )}
+            </div>
+          )}
         </div>
         <div style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.6 }}>
-          {isReadonly ? (
+          {forcedReadonly ? (
+            <>
+              NEXT_PUBLIC_SERVER_SYNC_FORCE_READONLY 환경변수로 이 서버는 항상 읽기 전용으로 고정돼
+              있습니다(샌드박스/검증용 서버). 서버로 아무것도 저장하지 않습니다.
+            </>
+          ) : isReadonly ? (
             <>
               이 브라우저는 서버로 아무것도 저장하지 않습니다. 여기서 입력·수정한 내용은 이 PC에만
               남고, 다시 불러오면 사라집니다. 데이터 수정은 운영 PC에서 해주세요.
