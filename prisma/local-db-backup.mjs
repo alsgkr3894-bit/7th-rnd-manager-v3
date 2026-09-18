@@ -2,12 +2,18 @@ import 'dotenv/config';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const ROOT = process.cwd();
 const BACKUP_DIR = resolve(ROOT, process.env.DB_BACKUP_DIR || '.db-backups');
 const DEFAULT_KEEP = 14;
 const DEFAULT_MAX_AGE_DAYS = 30;
 const DEFAULT_AUTO_INTERVAL_HOURS = 20;
+// 로그인 직후 자동 시작(register-db-backup-autostart.ps1)으로 실행되면 로컬 Postgres가
+// 아직 안 떠 있어 pg_dump가 곧바로 실패하는 경우가 실제로 여러 번 있었다(2026-09-14~18에
+// 0바이트 백업 4개 발생) — 곧장 포기하지 않고 잠깐씩 기다렸다 재시도한다.
+export const DEFAULT_AUTO_RETRY_ATTEMPTS = 20;
+export const DEFAULT_AUTO_RETRY_DELAY_MS = 30_000;
 
 function usage() {
   return [
@@ -36,8 +42,8 @@ function numberArg(name, fallback) {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
-function getBackupDir() {
-  return resolve(ROOT, argValue('--dir', BACKUP_DIR));
+export function getBackupDir(overrideDir) {
+  return resolve(ROOT, overrideDir || argValue('--dir', BACKUP_DIR));
 }
 
 function parseDatabaseUrl() {
@@ -74,7 +80,12 @@ function timestamp() {
   ].join('');
 }
 
-function backupFiles(dir = getBackupDir()) {
+/**
+ * .dump 파일 중 "쓸 수 있는" 백업만 돌려준다 — 0바이트이거나 .json 사이드카가 없는 파일은
+ * 실패한 pg_dump가 남긴 잔해로 보고 list/auto/prune 어디서도 정상 백업으로 세지 않는다.
+ * (실패 원인: 사이드카는 pg_dump 성공 *이후*에만 쓰인다 — createBackup 참고.)
+ */
+export function backupFiles(dir = getBackupDir()) {
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
     .filter(name => name.endsWith('.dump'))
@@ -87,13 +98,15 @@ function backupFiles(dir = getBackupDir()) {
         size: stat.size,
         mtimeMs: stat.mtimeMs,
         mtime: stat.mtime.toISOString(),
+        hasMeta: existsSync(`${path}.json`),
       };
     })
+    .filter(file => file.size > 0 && file.hasMeta)
     .sort((a, b) => b.mtimeMs - a.mtimeMs);
 }
 
-function createBackup() {
-  const dir = getBackupDir();
+export function createBackup(overrideDir) {
+  const dir = getBackupDir(overrideDir);
   const db = parseDatabaseUrl();
   mkdirSync(dir, { recursive: true });
 
@@ -126,8 +139,15 @@ function createBackup() {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
-  if (result.error) throw result.error;
-  if (result.status !== 0) {
+  if (result.error || result.status !== 0) {
+    // pg_dump가 실패해도 -f로 지정한 파일이 만들어졌을 수 있다(보통 0바이트) — 다음
+    // backupFiles() 스캔이 이를 최신 백업으로 오인하지 않도록 즉시 지운다.
+    try {
+      rmSync(file, { force: true });
+    } catch {
+      // 애초에 안 만들어졌으면 무시.
+    }
+    if (result.error) throw result.error;
     throw new Error(
       result.stderr || result.stdout || `pg_dump failed with status ${result.status}`
     );
@@ -147,11 +167,12 @@ function createBackup() {
   return { ok: true, backup: meta, path: file };
 }
 
-function listBackups() {
-  const files = backupFiles();
+export function listBackups(overrideDir) {
+  const dir = getBackupDir(overrideDir);
+  const files = backupFiles(dir);
   return {
     ok: true,
-    backupDir: getBackupDir(),
+    backupDir: dir,
     backups: files.map(file => ({
       name: file.name,
       size: file.size,
@@ -160,8 +181,8 @@ function listBackups() {
   };
 }
 
-function pruneBackups() {
-  const dir = getBackupDir();
+export function pruneBackups(overrideDir) {
+  const dir = getBackupDir(overrideDir);
   const keep = numberArg('--keep', DEFAULT_KEEP);
   const days = numberArg('--days', DEFAULT_MAX_AGE_DAYS);
   const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
@@ -185,9 +206,18 @@ function pruneBackups() {
   };
 }
 
-function autoBackup() {
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export async function autoBackup(options = {}) {
+  const {
+    dir,
+    retryAttempts = DEFAULT_AUTO_RETRY_ATTEMPTS,
+    retryDelayMs = DEFAULT_AUTO_RETRY_DELAY_MS,
+  } = options;
   const hours = numberArg('--hours', DEFAULT_AUTO_INTERVAL_HOURS);
-  const newest = backupFiles()[0];
+  const newest = backupFiles(getBackupDir(dir))[0];
   if (newest && Date.now() - newest.mtimeMs < hours * 60 * 60 * 1000) {
     return {
       ok: true,
@@ -201,16 +231,25 @@ function autoBackup() {
     };
   }
 
-  const created = createBackup();
-  const pruned = pruneBackups();
-  return { ...created, pruned };
+  let lastError = null;
+  for (let attempt = 1; attempt <= retryAttempts; attempt++) {
+    try {
+      const created = createBackup(dir);
+      const pruned = pruneBackups(dir);
+      return { ...created, pruned, attempts: attempt };
+    } catch (err) {
+      lastError = err;
+      if (attempt < retryAttempts) await delay(retryDelayMs);
+    }
+  }
+  throw lastError;
 }
 
 function print(result) {
   console.log(JSON.stringify(result, null, 2));
 }
 
-function main() {
+async function main() {
   const command = process.argv[2] || 'help';
   if (command === 'help' || command === '--help' || command === '-h') {
     console.log(usage());
@@ -219,9 +258,16 @@ function main() {
   if (command === 'create') return print(createBackup());
   if (command === 'list') return print(listBackups());
   if (command === 'prune') return print(pruneBackups());
-  if (command === 'auto') return print(autoBackup());
+  if (command === 'auto') return print(await autoBackup());
 
   throw new Error(`Unknown command: ${command}`);
 }
 
-main();
+// 이 파일을 테스트에서 import해도 CLI가 실행되지 않도록, 직접 실행됐을 때만 main()을 돈다.
+const isDirectRun = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isDirectRun) {
+  main().catch(err => {
+    console.error(err?.message || err);
+    process.exitCode = 1;
+  });
+}
