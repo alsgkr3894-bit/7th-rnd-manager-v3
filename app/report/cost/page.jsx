@@ -107,7 +107,6 @@ function CostReportBuilderContent({ onReportModeChange }) {
       catTable: true,
       perCategory: true,
       riskList: true,
-      includeEdge: false,
       recipeAppendix: false,
       recipePagePerMenu: true,
       recipeSelection: {},
@@ -175,7 +174,6 @@ function CostReportBuilderContent({ onReportModeChange }) {
 
   const recipeRows = useMemo(() => data?.recipeRows ?? [], [data?.recipeRows]);
 
-  // includeEdge 토글 시 재fetch 없이 재계산
   const costByCategory = useMemo(() => {
     if (!data?.prices || !data?.ctx) {
       return Object.fromEntries(
@@ -185,13 +183,8 @@ function CostReportBuilderContent({ onReportModeChange }) {
         ])
       );
     }
-    return buildCostReportData(
-      data.prices,
-      { ...data.ctx, includeEdge: opts.includeEdge },
-      CAT_KEYS,
-      CAT_META
-    );
-  }, [data?.prices, data?.ctx, opts.includeEdge]);
+    return buildCostReportData(data.prices, data.ctx, CAT_KEYS, CAT_META);
+  }, [data?.prices, data?.ctx]);
 
   const periodLabel = PERIOD_LABEL;
 

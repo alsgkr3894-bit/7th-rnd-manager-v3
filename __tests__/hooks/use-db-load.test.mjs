@@ -256,8 +256,7 @@ describe('고위험 단계 5: report/cost', () => {
     expect(reportCostSrc).not.toContain('loadedCtxRef');
     expect(reportCostSrc).toContain('keepDataOnReload');
     expect(reportCostSrc).toContain('mapErrorMessage');
-    // includeEdge 재계산은 useMemo로
-    expect(reportCostSrc).toContain('opts.includeEdge');
+    expect(reportCostSrc).toContain('useMemo');
   });
 });
 

@@ -194,7 +194,6 @@ describe('common cost selection results', () => {
       {
         detailMaps: RECIPE_MAPS,
         edges: [],
-        includeEdge: false,
         recipeGroups: RECIPE_GROUPS,
         upm: UNIT_PRICE_MAP,
       },
@@ -269,7 +268,6 @@ describe('common cost selection results', () => {
           set: new Map(),
         },
         edges: [],
-        includeEdge: false,
         recipeGroups: [],
         upm: UNIT_PRICE_MAP,
       },

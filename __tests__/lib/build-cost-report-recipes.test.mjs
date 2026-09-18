@@ -282,7 +282,6 @@ describe('buildCostReportData recipe precedence', () => {
       [price],
       {
         ...baseCtx,
-        includeEdge: false,
         detailMaps: {
           pizza: new Map([
             [
@@ -308,7 +307,6 @@ describe('buildCostReportData recipe precedence', () => {
       [price],
       {
         ...baseCtx,
-        includeEdge: false,
         detailMaps: {
           pizza: new Map([
             ['P-001-L', { menuCode: 'P-001-L', menuName: '중복 피자', components: [] }],

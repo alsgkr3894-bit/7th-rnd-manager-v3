@@ -38,15 +38,6 @@ export function CostReportOptions({
         />
       </OptGroup>
 
-      <OptGroup label="피자 옵션">
-        <Check
-          label="피자 원가에 기본 엣지 포함"
-          value={opts.includeEdge}
-          onChange={value => onOptionChange('includeEdge', value)}
-          hint="석쇠 기준 엣지 원가를 피자 원가에 합산합니다"
-        />
-      </OptGroup>
-
       <OptGroup label="위험 메뉴 기준" hint="이 원가율을 초과하는 메뉴는 ⚠ 표시">
         <div className="threshold-bar">
           <input

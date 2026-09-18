@@ -39,7 +39,6 @@ describe('buildCostReportData — 추가토핑', () => {
         edges: [],
         recipeGroups: [],
         upm: new Map([['C1', { unitPrice: 5 }]]),
-        includeEdge: false,
       },
       catKeys,
       catMeta
@@ -71,7 +70,6 @@ describe('buildCostReportData — 추가토핑', () => {
         edges: [],
         recipeGroups: [],
         upm: new Map(),
-        includeEdge: false,
       },
       catKeys,
       catMeta
@@ -81,50 +79,5 @@ describe('buildCostReportData — 추가토핑', () => {
     expect(report._diagnostics).toEqual([
       expect.objectContaining({ code: 'T-ETC-099', reason: '레시피 미등록' }),
     ]);
-  });
-
-  test('엣지 원가 포함 옵션이 켜져 있어도 추가토핑 원가에는 엣지가 합산되지 않는다', () => {
-    const price = {
-      menuCode: 'T-ETC-001',
-      menuName: '치즈 80g',
-      category: '추가토핑',
-      size: '단일',
-      price: 2000,
-    };
-    const report = buildCostReportData(
-      [price],
-      {
-        detailMaps: {
-          pizza: new Map(),
-          personal: new Map(),
-          side: new Map(),
-          set: new Map(),
-          topping: new Map([
-            [
-              'T-ETC-001',
-              {
-                menuCode: 'T-ETC-001',
-                category: '추가토핑',
-                components: [{ productCode: 'C1', quantity: 80, unit: 'g' }],
-              },
-            ],
-          ]),
-        },
-        edges: [
-          { edgeType: '석쇠', size: '단일', components: [{ productCode: 'DOE', quantity: 1000 }] },
-        ],
-        recipeGroups: [],
-        upm: new Map([
-          ['C1', { unitPrice: 5 }],
-          ['DOE', { unitPrice: 1000 }],
-        ]),
-        includeEdge: true,
-      },
-      catKeys,
-      catMeta
-    );
-
-    // includeEdge:true라도 isPizzaCategory('추가토핑')이 false이므로 엣지 원가(석쇠 1,000,000원)가 합산되면 안 된다.
-    expect(report.topping.menus[0].cost).toBe(400);
   });
 });
