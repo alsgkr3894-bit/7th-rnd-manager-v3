@@ -1,11 +1,13 @@
 'use client';
 import { forwardRef, useRef, useState } from 'react';
 import { normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
+import { resolveMenuEdgeFamily } from '@/lib/menu-master/edge-family';
 import { MenuRecipeComponentsTable } from '@/components/menu-master/MenuRecipeComponentsTable';
 import { MenuRecipeGroupSelector } from '@/components/menu-master/MenuRecipeGroupSelector';
 import { MenuRecipeImpactPreview } from '@/components/menu-master/MenuRecipeImpactPreview';
 import {
   MenuRecipeCopyPanel,
+  MenuRecipeEdgeNotice,
   MenuRecipeGuardNotice,
   MenuRecipeQuickAddPanel,
   MenuRecipeVersionHistory,
@@ -26,6 +28,7 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     category,
     size,
     sellingPrice,
+    edgeKey,
     onSaved,
     initialFocus = null,
     draft = false,
@@ -155,6 +158,10 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
   };
 
   if (!supportedCategory) {
+    const edgeFamily = resolveMenuEdgeFamily({ category, menuName, edgeKey });
+    if (edgeFamily) {
+      return <MenuRecipeEdgeNotice menu={{ category, menuName, edgeKey, price: sellingPrice }} />;
+    }
     return (
       <MenuRecipeGuardNotice message="이 카테고리는 레시피 원가를 지원하지 않습니다. (카테고리를 확인해 주세요)" />
     );

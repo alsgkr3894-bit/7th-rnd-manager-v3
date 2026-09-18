@@ -5,3 +5,4 @@ export { MenuRecipeVersionHistory } from './MenuRecipeVersionHistory';
 export { MenuRecipeQuickAddPanel } from './MenuRecipeQuickAddPanel';
 export { MenuRecipeCopyPanel } from './MenuRecipeCopyPanel';
 export { MenuRecipeGuardNotice } from './MenuRecipeGuardNotice';
+export { MenuRecipeEdgeNotice } from './MenuRecipeEdgeNotice';

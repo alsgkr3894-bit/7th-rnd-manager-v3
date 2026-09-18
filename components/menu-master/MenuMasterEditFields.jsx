@@ -129,6 +129,7 @@ export function MenuMasterEditFields({
             category={form.category}
             size={form.size || '단일'}
             sellingPrice={form.price}
+            edgeKey={form.edgeKey}
             onSaved={onRecipeSaved}
             draft={isNew}
           />
