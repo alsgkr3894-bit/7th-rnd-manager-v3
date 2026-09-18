@@ -80,4 +80,18 @@ describe('autoBackup — 실패 시 재시도 후 포기한다', () => {
   test('기본 재시도 지연은 30초다(상수 확인 — 실제로 기다리지 않음)', () => {
     expect(DEFAULT_AUTO_RETRY_DELAY_MS).toBe(30_000);
   });
+
+  test('DATABASE_URL 미설정처럼 재시도해도 나아지지 않는 오류는 즉시 포기한다(1회만 시도)', async () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'rnd-auto-backup-config-'));
+    const originalUrl = process.env.DATABASE_URL;
+    delete process.env.DATABASE_URL;
+
+    try {
+      await expect(
+        autoBackup({ dir: tempDir, retryAttempts: 5, retryDelayMs: 10_000 })
+      ).rejects.toThrow('DATABASE_URL is required');
+    } finally {
+      process.env.DATABASE_URL = originalUrl;
+    }
+  }, 2_000);
 });

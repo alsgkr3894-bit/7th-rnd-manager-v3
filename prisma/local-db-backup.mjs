@@ -210,6 +210,12 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// DATABASE_URL 미설정 같은 구성 오류는 시간이 지난다고 나아지지 않는다 — 재시도 대상은
+// "로컬 Postgres가 아직 안 뜬" 것 같은 일시적 연결 실패뿐이다.
+function isTransientBackupError(err) {
+  return !/DATABASE_URL is required/.test(err?.message || '');
+}
+
 export async function autoBackup(options = {}) {
   const {
     dir,
@@ -239,6 +245,7 @@ export async function autoBackup(options = {}) {
       return { ...created, pruned, attempts: attempt };
     } catch (err) {
       lastError = err;
+      if (!isTransientBackupError(err)) break;
       if (attempt < retryAttempts) await delay(retryDelayMs);
     }
   }
