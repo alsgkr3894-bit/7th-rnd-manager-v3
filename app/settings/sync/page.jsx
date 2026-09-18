@@ -13,6 +13,7 @@ import {
 } from '@/lib/db/sync-mode';
 import { hydrateFromServer, readHydrateJournal, readServerManifest } from '@/lib/db/server-hydrate';
 import { getServerStoreSyncDeadLetters } from '@/lib/db/server-sync';
+import { clearSyncGuard, evaluateSyncGuard, getSyncGuardState } from '@/lib/db/sync-guard';
 import { formatNumber } from '@/lib/format';
 
 function ModeBadge({ mode }) {
@@ -54,6 +55,7 @@ export default function ServerSyncPage() {
   const [progress, setProgress] = useState(null);
   const [journal, setJournal] = useState(null);
   const [deadLetters, setDeadLetters] = useState([]);
+  const [guardState, setGuardState] = useState(getSyncGuardState());
 
   const isReadonly = mode === SYNC_MODE.READONLY;
   const forcedReadonly = isSyncModeForcedReadonly();
@@ -64,6 +66,7 @@ export default function ServerSyncPage() {
     const activeBrand = getActiveBrandId();
     setBrandId(activeBrand);
     setDeadLetters(getServerStoreSyncDeadLetters());
+    evaluateSyncGuard(activeBrand).then(setGuardState);
     try {
       const [serverManifest, stats] = await Promise.all([
         readServerManifest(activeBrand),
@@ -86,6 +89,14 @@ export default function ServerSyncPage() {
     setJournal(readHydrateJournal());
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    function onGuardEvent(event) {
+      setGuardState(event?.detail || getSyncGuardState());
+    }
+    window.addEventListener('server-sync:guard', onGuardEvent);
+    return () => window.removeEventListener('server-sync:guard', onGuardEvent);
+  }, []);
 
   const rows = useMemo(() => {
     const serverStores = manifest?.stores || [];
@@ -135,6 +146,9 @@ export default function ServerSyncPage() {
     try {
       const result = await hydrateFromServer(brandId, { onProgress: setProgress });
       setJournal(result);
+      // 서버에서 실제로 불러왔으니 "로컬이 비어 있는 authoritative" 가드는 해제한다 —
+      // 안 그러면 방금 받아온 데이터도 계속 서버로 안 밀린다(lib/db/sync-guard.js).
+      clearSyncGuard();
       if (result.ok) {
         showToast(`서버 데이터 ${formatNumber(result.totalRows)}건을 불러왔습니다`, 'ok');
       } else {
@@ -208,6 +222,24 @@ export default function ServerSyncPage() {
             </>
           )}
         </div>
+        {!forcedReadonly && !isReadonly && guardState.blocked && (
+          <div
+            role="alert"
+            style={{
+              border: '1px solid var(--negative)',
+              borderRadius: 8,
+              padding: '10px 12px',
+              fontSize: 12,
+              color: 'var(--negative)',
+              lineHeight: 1.6,
+            }}
+          >
+            이 브라우저는 서버에 {formatNumber(guardState.serverRows)}건이 있는데 로컬은 비어
+            있습니다. 서버 행을 덮어쓰지 않도록 &ldquo;서버에서 불러오기&rdquo; 전까지 이 브라우저의
+            변경은 서버에 저장되지 않습니다
+            {guardState.heldCount > 0 ? ` (보류 ${formatNumber(guardState.heldCount)}건)` : ''}.
+          </div>
+        )}
       </section>
 
       <section className="card" style={{ marginTop: 16 }}>

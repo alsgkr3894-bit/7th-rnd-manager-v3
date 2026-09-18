@@ -21,4 +21,9 @@ describe('AppShell hydration guards', () => {
     expect(shellSource).toContain('pruneOldWorkLogs().catch(() => {});');
     expect(shellSource).toContain('}, [canEdit]);');
   });
+
+  test('SyncGuardNotice(로컬이 비어 있는 authoritative 브라우저 덮어쓰기 가드 배너)가 마운트된다', () => {
+    expect(shellSource).toContain("import SyncGuardNotice from './SyncGuardNotice';");
+    expect(shellSource).toContain('<SyncGuardNotice />');
+  });
 });

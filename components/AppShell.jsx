@@ -25,6 +25,7 @@ import { Icon } from './icons';
 import ProgressBar from './ProgressBar';
 import OfflineIndicator from './OfflineIndicator';
 import DbVersionNotice from './DbVersionNotice';
+import SyncGuardNotice from './SyncGuardNotice';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useVisualEffects } from '@/hooks/useVisualEffects';
 import { usePageStats } from '@/hooks/usePageStats';
@@ -154,6 +155,7 @@ export default function AppShell({ children }) {
       <ProgressBar />
       <OfflineIndicator />
       <DbVersionNotice />
+      <SyncGuardNotice />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} canEdit={canEdit} />
       {shortcutsOpen && <ShortcutsHelp onClose={() => setShortcutsOpen(false)} canEdit={canEdit} />}
 
