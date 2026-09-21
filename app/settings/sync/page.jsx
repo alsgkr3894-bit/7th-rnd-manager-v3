@@ -15,6 +15,7 @@ import { hydrateFromServer, readHydrateJournal, readServerManifest } from '@/lib
 import { getServerStoreSyncDeadLetters } from '@/lib/db/server-sync';
 import { clearSyncGuard, evaluateSyncGuard, getSyncGuardState } from '@/lib/db/sync-guard';
 import { formatNumber } from '@/lib/format';
+import { ServerRepushCard } from './_ServerRepushCard';
 
 function ModeBadge({ mode }) {
   const readonly = mode === SYNC_MODE.READONLY;
@@ -390,6 +391,16 @@ export default function ServerSyncPage() {
           </>
         )}
       </section>
+
+      {!forcedReadonly && !isReadonly && (
+        <ServerRepushCard
+          disabled={running || loading || guardState.blocked}
+          onDone={async () => {
+            setDeadLetters(getServerStoreSyncDeadLetters());
+            await refresh();
+          }}
+        />
+      )}
 
       {deadLetters.length > 0 && (
         <section
