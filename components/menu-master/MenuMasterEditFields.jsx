@@ -40,7 +40,6 @@ export function MenuMasterEditFields({
   errors,
   setField,
   setErrors,
-  defaultPrice,
   presetCategories,
   onRecipeSaved,
   recipeSectionRef,
@@ -97,12 +96,7 @@ export function MenuMasterEditFields({
             presetCategories={presetCategories}
             setField={setField}
           />
-          <PriceField
-            value={form.price}
-            error={errors.price}
-            defaultPrice={defaultPrice}
-            setField={setField}
-          />
+          <PriceField value={form.price} error={errors.price} setField={setField} />
           <StatusField value={form.status} setField={setField} />
         </div>
         <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>

@@ -2,17 +2,10 @@
 
 import { FieldLabel } from '@/components/menu-master/MenuMasterFieldPrimitives';
 
-export function PriceField({ value, error, defaultPrice, setField }) {
+export function PriceField({ value, error, setField }) {
   return (
     <div>
-      <FieldLabel>
-        판매가 (부가세 포함)
-        {defaultPrice && (
-          <span style={{ marginLeft: 8, color: 'var(--text-4)' }}>
-            기본가 {defaultPrice.toLocaleString()}원
-          </span>
-        )}
-      </FieldLabel>
+      <FieldLabel>판매가 (부가세 포함)</FieldLabel>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         <input
           className="input"
@@ -22,15 +15,10 @@ export function PriceField({ value, error, defaultPrice, setField }) {
           value={value}
           aria-describedby={error ? 'menu-master-price-error' : undefined}
           onChange={e => setField('price', e.target.value)}
-          placeholder={defaultPrice ? String(defaultPrice) : '직접 입력'}
+          placeholder="직접 입력"
           style={{ flex: 1 }}
         />
         <span style={{ fontSize: 13, color: 'var(--text-3)' }}>원</span>
-        {defaultPrice && !value && (
-          <button className="btn sm" onClick={() => setField('price', String(defaultPrice))}>
-            기본가 적용
-          </button>
-        )}
       </div>
       {error && (
         <div

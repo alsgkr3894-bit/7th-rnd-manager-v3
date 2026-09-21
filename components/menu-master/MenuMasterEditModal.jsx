@@ -4,7 +4,6 @@ import { createPortal } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { OVERLAY_COLOR } from '@/lib/ui/styles';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
-import { getDefaultPrice } from '@/lib/cost/menu-price';
 import { parseOptionalNonNegativeNumber } from '@/lib/parse';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { MenuMasterEditFields } from '@/components/menu-master/MenuMasterEditFields';
@@ -83,7 +82,6 @@ export function MenuMasterEditModal({
   const containerRef = useRef(null);
   const recipeSectionRef = useRef(null);
   const set = makeFieldUpdater(setForm);
-  const defaultPrice = getDefaultPrice(form.menuCode);
   const trimmedMenuCode = form.menuCode.trim();
   const { rows: allMenuRows, conflict: codeConflict } = useMenuCodeConflict(
     trimmedMenuCode,
@@ -341,7 +339,6 @@ export function MenuMasterEditModal({
             errors={errors}
             setField={set}
             setErrors={setErrors}
-            defaultPrice={defaultPrice}
             presetCategories={presetCategories}
             onRecipeSaved={onRecipeSaved}
             recipeSectionRef={recipeSectionRef}

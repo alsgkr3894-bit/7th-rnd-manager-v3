@@ -10,7 +10,6 @@ export function MenuMasterHeaderActions({
   resetting,
   importingToppings,
   onExportCsv,
-  onOpenBulkPrice,
   onSeed,
   onImportToppings,
   onReset,
@@ -25,9 +24,6 @@ export function MenuMasterHeaderActions({
         style={{ color: 'var(--text-2)' }}
       >
         <Icon.download style={{ width: 14, height: 14 }} /> 엑셀로 내보내기
-      </button>
-      <button className="btn" onClick={onOpenBulkPrice} disabled={!hasRows || isViewer}>
-        <Icon.calc style={{ width: 14, height: 14 }} /> 코드별 일괄 가격
       </button>
       {isMain && (
         <button className="btn" onClick={onSeed} disabled={seeding || isViewer}>

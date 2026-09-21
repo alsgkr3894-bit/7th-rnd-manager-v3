@@ -71,7 +71,6 @@ export default function Page() {
   const [editRow, setEditRow] = useState(null);
   const [editIntent, setEditIntent] = useState(null);
   const [addOpen, setAddOpen] = useState(false);
-  const [bulkModal, setBulkModal] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deletePlan, setDeletePlan] = useState(null);
@@ -238,7 +237,6 @@ export default function Page() {
             resetting={resetting}
             importingToppings={importingToppings}
             onExportCsv={handleExportCsv}
-            onOpenBulkPrice={() => setBulkModal(true)}
             onSeed={handleSeed}
             onImportToppings={handleImportToppings}
             onReset={() => setConfirmReset(true)}
@@ -384,7 +382,6 @@ export default function Page() {
         editRow={editRow}
         editIntent={editIntent}
         addOpen={addOpen}
-        bulkOpen={bulkModal}
         deleteTarget={deleteTarget}
         deletePlan={deletePlan}
         deletePlanLoading={deletePlanLoading}
@@ -398,7 +395,6 @@ export default function Page() {
           setEditIntent(null);
         }}
         onCloseAdd={() => setAddOpen(false)}
-        onCloseBulk={() => setBulkModal(false)}
         onConfirmDelete={handleDeleteRow}
         onCancelDelete={() => {
           setDeleteTarget(null);

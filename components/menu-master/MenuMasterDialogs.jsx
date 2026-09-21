@@ -1,7 +1,6 @@
 'use client';
 
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { BulkPriceModal } from '@/components/cost/menu-price/BulkPriceModal';
 import { MenuMasterEditModal } from '@/components/menu-master/MenuMasterEditModal';
 
 const DELETE_PLAN_LABELS = {
@@ -36,7 +35,6 @@ export function MenuMasterDialogs({
   editRow,
   editIntent = null,
   addOpen,
-  bulkOpen,
   deleteTarget,
   deletePlan,
   deletePlanLoading,
@@ -47,7 +45,6 @@ export function MenuMasterDialogs({
   onRecipeSaved,
   onCloseEdit,
   onCloseAdd,
-  onCloseBulk,
   onConfirmDelete,
   onCancelDelete,
   onConfirmReset,
@@ -77,8 +74,6 @@ export function MenuMasterDialogs({
           onRecipeSaved={onRecipeSaved}
         />
       )}
-
-      {!isViewer && bulkOpen && <BulkPriceModal onClose={onCloseBulk} onDone={onRecipeSaved} />}
 
       {!isViewer && deleteTarget && (
         <ConfirmDialog
