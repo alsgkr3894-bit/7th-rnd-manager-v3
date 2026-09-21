@@ -42,10 +42,8 @@ export function CostReportPreview({
             </>
           )}
           <span>·</span>
-          <span>위험 기준 {riskThreshold}%↑</span>
-          <span>·</span>
           <span className="mono">
-            단가 기준 {spacedDateLabel} · {profileName}
+            적용단가기준일 {spacedDateLabel} · {profileName}
           </span>
         </div>
       </div>

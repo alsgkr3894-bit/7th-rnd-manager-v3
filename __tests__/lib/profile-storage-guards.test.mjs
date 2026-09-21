@@ -30,7 +30,7 @@ describe('profile storage guards', () => {
     installStorage({ [KEYS.PROFILE]: JSON.stringify(['bad']) });
 
     expect(getProfile()).toMatchObject({
-      name: '이민학 주임',
+      name: 'R&D 이민학주임',
       email: 'rnd@7thpizza.com',
     });
   });
