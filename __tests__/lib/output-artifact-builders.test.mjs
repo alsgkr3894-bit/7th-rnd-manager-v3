@@ -485,6 +485,34 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
     expect(stylesXml).toMatch(/<left style="thin">/);
   });
 
+  test('영양성분 XLSX Beverage 고정표: 같은 음료는 이름 병합, 용량 내림차순', async () => {
+    const { FIXED_BEVERAGE_SHEET } = await import('@/lib/nutrition/label/fixed-beverages.js');
+    await exportNutritionLabelToExcel({ ...labelInput, beverageSheet: FIXED_BEVERAGE_SHEET });
+    const { workbook } = lastWrite();
+    const rows = rowsOf(workbook, '영양성분_알레르기');
+    const bev = rows.findIndex(row => row[1] === 'Beverage');
+    const body = rows.slice(bev + 1, bev + 14).map(row => row.slice(1, 8));
+    expect(body).toEqual([
+      ['코카-콜라', 1250, 550, 138, 0, 0, 38],
+      ['', 500, 216, 54, 0, 0, 15],
+      ['', 355, 152, 38, 0, 0, 11],
+      ['코카-콜라 제로', 1250, 0, 0, 0, 0, 75],
+      ['', 500, 0, 0, 0, 0, 30],
+      ['', 355, 0, 0, 0, 0, 22],
+      ['스프라이트', 1500, 660, 165, 0, 0, 135],
+      ['', 500, 228, 57, 0, 0, 47],
+      ['', 355, 160, 40, 0, 0, 33],
+      ['환타(오렌지)', 355, 164, 41, 0, 0, 11],
+      ['환타(포도)', 355, 192, 48, 0, 0, 23],
+      ['환타(파인)', 355, 192, 48, 0, 0, 24],
+      ['오렌지쥬스', 1500, 720, 158, 8, 8, 323],
+    ]);
+    const merges = workbook.Sheets['영양성분_알레르기']['!merges'];
+    expect(merges).toContainEqual({ s: { r: bev + 1, c: 1 }, e: { r: bev + 3, c: 1 } });
+    expect(merges).toContainEqual({ s: { r: bev + 7, c: 1 }, e: { r: bev + 9, c: 1 } });
+    expect(merges.some(m => m.s.r === bev + 10 && m.s.c === 1)).toBe(false);
+  });
+
   test('영양성분 XLSX는 150g 기준을 고르면 Pizza 블록만 150g 열로 바뀐다', async () => {
     await exportNutritionLabelToExcel({ ...labelInput, basis: '150g' });
     const rows = rowsOf(lastWrite().workbook, '영양성분_알레르기');

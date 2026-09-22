@@ -44,6 +44,9 @@ describe('nutrition label result structure', () => {
     // 2026-09-22: 기본은 조각 기준, 엑셀은 화면의 기준 선택(basis)과 원산지 표기문까지 함께 받는다
     expect(resultSource).toContain("useState('slice'); // '150g' | 'slice'");
     expect(resultSource).toContain('basis: pizzaView,');
+    // 음료는 고정표(fixed-beverages.js) — 입력값 기반 buildBeverageSheet를 쓰지 않는다
+    expect(resultSource).toContain('setBeverageSheet(FIXED_BEVERAGE_SHEET)');
+    expect(resultSource).not.toContain('buildBeverageSheet(ctx)');
     expect(resultSource).toMatch(
       /exportNutritionLabelToExcel\(\{[\s\S]*?originStatementSheet,[\s\S]*?\}\)/
     );

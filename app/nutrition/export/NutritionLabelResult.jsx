@@ -41,9 +41,9 @@ import {
   buildToppingSheet,
   buildSideSheet,
   buildSetHalfSheet,
-  buildBeverageSheet,
   sortNutritionLabelMenus,
 } from '@/lib/nutrition/label/build';
+import { FIXED_BEVERAGE_SHEET } from '@/lib/nutrition/label/fixed-beverages';
 import { exportNutritionLabelToExcel } from '@/lib/nutrition/label/export';
 import { printNutritionLabelAll } from '@/lib/nutrition/label/print';
 import { showToast } from '@/components/Toast';
@@ -248,7 +248,8 @@ export default function NutritionLabelResult() {
       setToppingSheet(buildToppingSheet(ctx));
       setSideSheet(buildSideSheet(ctx));
       setSetHalfSheet(buildSetHalfSheet(ctx));
-      setBeverageSheet(buildBeverageSheet(ctx));
+      // 음료는 매장 양식의 고정표를 그대로 쓴다(2026-09-22 주임님 지시) — 입력값과 무관
+      setBeverageSheet(FIXED_BEVERAGE_SHEET);
       setPizzaSliceSheet(buildPizzaSliceSheet({ ...ctx, sliceCounts: loadSliceCounts() }));
       setOriginStatementSheet(buildOriginStatementSheet(origins, ingredientNameOverrides));
       setAllergenWarnings(
