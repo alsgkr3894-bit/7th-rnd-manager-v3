@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeEach, describe, expect, jest, test } from '@jest/globals';
 import XLSX from 'xlsx';
+import XLSX_STYLED from 'xlsx-js-style';
 
 const writes = [];
 const outputDir = mkdtempSync(join(tmpdir(), 'output-artifacts-'));
@@ -18,8 +19,21 @@ const xlsxMock = {
   }),
 };
 
+// 테두리 등 셀 스타일을 실제로 쓰는 writer(xlsx-js-style) — 원산지 출력이 쓴다.
+const xlsxStyledMock = {
+  ...XLSX_STYLED,
+  utils: XLSX_STYLED.utils,
+  writeFile: jest.fn((workbook, fileName) => {
+    const safeName = String(fileName || 'export.xlsx').replace(/[^\w가-힣 ._-]+/g, '_');
+    const outputPath = join(outputDir, safeName);
+    writeFileSync(outputPath, XLSX_STYLED.write(workbook, { type: 'buffer', bookType: 'xlsx' }));
+    writes.push({ workbook, fileName, outputPath });
+  }),
+};
+
 jest.unstable_mockModule('@/lib/excel', () => ({
   loadXlsx: jest.fn(async () => xlsxMock),
+  loadXlsxStyled: jest.fn(async () => xlsxStyledMock),
 }));
 
 jest.unstable_mockModule('@/lib/active-brand', () => ({
@@ -35,6 +49,28 @@ const { exportPriceReportXlsx } = await import('@/lib/report/price-export.js');
 const { exportShipmentReportXlsx } = await import('@/lib/report/shipment-export.js');
 const { exportReportListToExcel } = await import('@/lib/report/report-list-utils.js');
 const { exportSalesReportWorkbook } = await import('@/lib/report/sales-export.js');
+
+// xlsx = zip. 라이브러리 없이 로컬 파일 헤더를 따라가며 원하는 항목 하나만 inflate한다.
+async function readZipEntry(path, entryName) {
+  const { readFileSync } = await import('node:fs');
+  const { inflateRawSync } = await import('node:zlib');
+  const buf = readFileSync(path);
+  let offset = 0;
+  while (offset + 30 <= buf.length && buf.readUInt32LE(offset) === 0x04034b50) {
+    const method = buf.readUInt16LE(offset + 8);
+    const compressedSize = buf.readUInt32LE(offset + 18);
+    const nameLength = buf.readUInt16LE(offset + 26);
+    const extraLength = buf.readUInt16LE(offset + 28);
+    const name = buf.toString('utf8', offset + 30, offset + 30 + nameLength);
+    const dataStart = offset + 30 + nameLength + extraLength;
+    const data = buf.subarray(dataStart, dataStart + compressedSize);
+    if (name === entryName) {
+      return (method === 8 ? inflateRawSync(data) : data).toString('utf8');
+    }
+    offset = dataStart + compressedSize;
+  }
+  throw new Error(`${entryName} not found in ${path}`);
+}
 
 function lastWrite() {
   return writes[writes.length - 1];
@@ -72,25 +108,38 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
     const { workbook, fileName } = lastWrite();
     expect(fileName).toMatch(/^테스트브랜드_원산지표시판_\d{8}\.xlsx$/);
     expect(workbook.SheetNames).toEqual([
-      '매장비치용',
-      '냉장고부착용',
+      '원산지(매장)',
+      '원산지(냉장고)',
       '배달플랫폼용',
       '원산지정보',
     ]);
-    expect(rowsOf(workbook, '매장비치용')[0]).toEqual(['원산지 표시판']);
-    expect(rowsOf(workbook, '매장비치용')[1]).toEqual(['표시품목', '원산지', '메뉴명']);
-    expect(workbook.Sheets['매장비치용']['!merges'][0]).toEqual({
-      s: { r: 0, c: 0 },
-      e: { r: 0, c: 2 },
-    });
-    expect(rowsOf(workbook, '매장비치용')[2]).toEqual(['=돼지고기', '+국내산', '페퍼로니피자']);
-    expect(workbook.Sheets['매장비치용'].A3).toMatchObject({ t: 's', v: '=돼지고기' });
-    expect(workbook.Sheets['매장비치용'].A3.f).toBeUndefined();
+    const store = workbook.Sheets['원산지(매장)'];
+    expect(rowsOf(workbook, '원산지(매장)')[0]).toEqual(['원산지 표시판']);
+    expect(rowsOf(workbook, '원산지(매장)')[1]).toEqual(['표시품목', '원산지', '메뉴명']);
+    expect(store['!merges'][0]).toEqual({ s: { r: 0, c: 0 }, e: { r: 0, c: 2 } });
+    expect(rowsOf(workbook, '원산지(매장)')[2]).toEqual(['=돼지고기', '+국내산', '페퍼로니피자']);
+    expect(store.A3).toMatchObject({ t: 's', v: '=돼지고기' });
+    expect(store.A3.f).toBeUndefined();
+    // 2026-09-22: 표 칸 테두리 — 헤더·데이터 셀 전부, 제목 행은 제외
+    expect(store.A2.s.border.top).toEqual({ style: 'thin', color: { rgb: '000000' } });
+    expect(store.C3.s.border.bottom.style).toBe('thin');
+    expect(store.A2.s.font.bold).toBe(true);
+    expect(store.A1.s.border).toBeUndefined();
+    expect(rowsOf(workbook, '원산지(냉장고)')[1]).toEqual(['음식명', '표시품목', '원산지']);
 
     const diskWorkbook = savedWorkbook();
     expect(diskWorkbook.SheetNames).toEqual(workbook.SheetNames);
-    expect(rowsOf(diskWorkbook, '매장비치용')[2]).toEqual(['=돼지고기', '+국내산', '페퍼로니피자']);
-    expect(diskWorkbook.Sheets['매장비치용'].A3.f).toBeUndefined();
+    expect(rowsOf(diskWorkbook, '원산지(매장)')[2]).toEqual([
+      '=돼지고기',
+      '+국내산',
+      '페퍼로니피자',
+    ]);
+    expect(diskWorkbook.Sheets['원산지(매장)'].A3.f).toBeUndefined();
+    // 파일에도 테두리가 실제로 기록됐는지(xlsx 커뮤니티판 writer는 s를 조용히 버린다) —
+    // xlsx 계열 reader는 스타일을 복원하지 않으므로 xl/styles.xml을 직접 본다.
+    const stylesXml = await readZipEntry(lastWrite().outputPath, 'xl/styles.xml');
+    expect(stylesXml).toMatch(/<top style="thin">/);
+    expect(stylesXml).toMatch(/<bottom style="thin">/);
   });
 
   test('영양성분 XLSX는 전 출력 탭을 만들고 음료 헤더를 용량 기준으로 표시한다', async () => {

@@ -133,6 +133,41 @@ describe('upsertMenuMaster — 이름/카테고리만 바뀐 경우 연결 store
     expect(stores.nutrition_menu_ref[0].menuName).toBe('오리지널피자(리뉴얼)');
   });
 
+  // 2026-09-22: 표출력의 "메뉴명 수정" 오버라이드(localStorage)가 예전 마스터명을 그대로 들고
+  // 있으면 연결 store를 새로고침해도 화면엔 옛 이름이 남는다 — 같이 지운다.
+  test('이름을 바꾸면 예전 마스터명과 같은 출력용 메뉴명 오버라이드(full/base 코드)도 지운다', async () => {
+    const ls = {
+      'v3:nutrition-menu-name-override': JSON.stringify({
+        'X-OR-001': '오리지널피자',
+        'X-OR-001-L': '오리지널피자',
+        'X-OR-002': '오리지널피자',
+      }),
+      'v3:nutrition-label-menu-name-override': JSON.stringify({ 'X-OR-001': '내가 정한 이름' }),
+    };
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      value: { getItem: k => ls[k] ?? null, setItem: (k, v) => (ls[k] = v) },
+    });
+    try {
+      await upsertMenuMaster({
+        id: 1,
+        menuCode: 'X-OR-001-L',
+        menuName: '오리지널피자(리뉴얼)',
+        category: '피자',
+        size: 'L',
+      });
+    } finally {
+      delete globalThis.localStorage;
+    }
+
+    expect(JSON.parse(ls['v3:nutrition-menu-name-override'])).toEqual({
+      'X-OR-002': '오리지널피자',
+    });
+    expect(JSON.parse(ls['v3:nutrition-label-menu-name-override'])).toEqual({
+      'X-OR-001': '내가 정한 이름',
+    });
+  });
+
   test('base 코드를 공유하는 형제 규격(L)의 이름만 바꿔도 nutrition_menu_ref(base) 1건이 갱신된다', async () => {
     await upsertMenuMaster({
       id: 1,

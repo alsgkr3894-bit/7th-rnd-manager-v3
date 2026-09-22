@@ -74,7 +74,7 @@ describe('nutrition origin output sheets', () => {
     expect(fridgeSheet[0]).toMatchObject({
       ingredientName: '양념 돼지고기',
       itemText: '돼지고기',
-      originText: '국내산',
+      originText: '(돼지고기:국내산)',
     });
     expect(deliverySheet[0]).toMatchObject({
       menuCode: 'P-OR-001',
@@ -147,6 +147,46 @@ describe('nutrition origin output sheets', () => {
         '새우 피자',
         '포크 피자',
         '포크 사이드',
+      ]);
+    });
+  });
+
+  describe('냉장고부착용 양식 (2026-09-22 — 냉장고원산지.xlsx)', () => {
+    test('표시품목과 원산지가 완전히 같은 재료는 한 행으로 합치고 원산지는 괄호 표기', () => {
+      const sheet = buildOriginFridgeSheet(
+        [
+          {
+            ingredientName: '미트소스',
+            items: [
+              { displayName: '돼지고기', country: '국내산' },
+              { displayName: '쇠고기', country: '호주산' },
+            ],
+          },
+          {
+            ingredientName: '페페로니',
+            items: [
+              { displayName: '돼지고기', country: '국내산' },
+              { displayName: '쇠고기', country: '호주산' },
+            ],
+          },
+          { ingredientName: '양념포크', items: [{ displayName: '돼지고기', country: '국내산' }] },
+          {
+            ingredientName: '세블락소시지',
+            items: [{ displayName: '돼지고기', country: '국내산' }],
+          },
+          { ingredientName: '베이컨', items: [{ displayName: '돼지고기', country: '미국산' }] },
+          {
+            ingredientName: '스테이크',
+            items: [{ displayName: '쇠고기', country: '호주산,뉴질랜드산' }],
+          },
+        ],
+        {}
+      );
+      expect(sheet.map(r => [r.ingredientName, r.itemText, r.originText])).toEqual([
+        ['베이컨', '돼지고기', '(돼지고기:미국산)'],
+        ['양념포크, 세블락소시지', '돼지고기', '(돼지고기:국내산)'],
+        ['미트소스, 페페로니', '돼지고기, 쇠고기', '(돼지고기:국내산/쇠고기:호주산)'],
+        ['스테이크', '쇠고기', '(쇠고기:호주산,뉴질랜드산 섞음)'],
       ]);
     });
   });
@@ -259,6 +299,23 @@ describe('nutrition origin output sheets', () => {
       expect(sheet.map(r => r.displayName)).toEqual([
         '돼지고기(고추장불고기)',
         '돼지고기(스모크햄)',
+      ]);
+    });
+
+    test('하프앤하프는 피자처럼 "피자" 단어를 빼고, 피자공통 뒤에 따로 나열하지 않는다', () => {
+      const half = {
+        menuCode: 'P-HH-001-L',
+        menuName: '하프앤하프 피자 L',
+        category: '피자/하프앤하프',
+      };
+      const withHalf = sampleOrigins.map(row => ({ ...row, menuCodes: [...row.menuCodes, half] }));
+      const sheet = buildOriginStoreSheet(withHalf, [], {});
+      expect(sheet.find(r => r.displayName === '밀, 흑미(도우)').menus).toEqual(['피자공통']);
+      // 순서는 기존 규칙 그대로(하프앤하프는 저장된 메뉴 순서가 없으면 사이드 뒤)
+      expect(sheet.find(r => r.displayName === '돼지고기(베이컨)').menus).toEqual([
+        '새우',
+        '오븐 스파게티',
+        '하프앤하프',
       ]);
     });
 

@@ -76,7 +76,7 @@ function Sheet2({ rows }) {
 
   return (
     <div id="origin-print-area">
-      <div className="origin-result-title large">원산지 표시판 (냉장고부착용)</div>
+      <div className="origin-result-title large">원산지 표시판</div>
       <table className="origin-result-table origin-fridge-table">
         <colgroup>
           <col className="col-food" />
@@ -85,7 +85,7 @@ function Sheet2({ rows }) {
         </colgroup>
         <thead>
           <tr>
-            <th>재료명</th>
+            <th>음식명</th>
             <th>표시품목</th>
             <th>원산지</th>
           </tr>
