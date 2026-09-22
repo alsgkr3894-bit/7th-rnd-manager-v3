@@ -81,7 +81,7 @@ describe('nutrition local settings guards', () => {
     const store = installStorage({
       'v3:nutrition-menu-name-override': JSON.stringify({
         'P-ONE-002': '페페로니 피자(1인용)',
-        'P-ONE-001': '하와이안 피자(1인용)',
+        'P-ONE-001': '하와이안 (1인용)',
         'P-OR-001': '내가 정한 이름',
       }),
       'v3:nutrition-label-menu-name-override': JSON.stringify({
@@ -93,10 +93,16 @@ describe('nutrition local settings guards', () => {
 
     expect(cleared).toBe(2);
     expect(JSON.parse(store['v3:nutrition-menu-name-override'])).toEqual({
-      'P-ONE-001': '하와이안 피자(1인용)',
+      'P-ONE-001': '하와이안 (1인용)',
       'P-OR-001': '내가 정한 이름',
     });
     expect(JSON.parse(store['v3:nutrition-label-menu-name-override'])).toEqual({});
+
+    // 공백·"피자" 단어만 다른 변형("하와이안 (1인용)")도 예전 마스터명("하와이안 피자(1인용)")으로 본다
+    expect(clearStaleMenuNameOverrides(['P-ONE-001'], '하와이안 피자(1인용)')).toBe(1);
+    expect(JSON.parse(store['v3:nutrition-menu-name-override'])).toEqual({
+      'P-OR-001': '내가 정한 이름',
+    });
     expect(clearStaleMenuNameOverrides(['P-OR-001'], '포크 피자')).toBe(0);
     expect(clearStaleMenuNameOverrides([], '포크 피자')).toBe(0);
   });
