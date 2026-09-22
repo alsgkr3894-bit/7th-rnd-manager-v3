@@ -45,11 +45,11 @@ function PreviewTable({ rows, showCrust }) {
   );
 }
 
-export function MenuNutritionPreview({ menuCode, menuName, category, edgeKey }) {
+export function MenuNutritionPreview({ menuCode, menuName, category, edgeKey, size }) {
   const { data: ctx, loading, error } = useDBLoad(buildNutritionLabelContext);
 
   const preview = ctx
-    ? buildMenuNutritionPreview(ctx, { menuCode, menuName, category, edgeKey })
+    ? buildMenuNutritionPreview(ctx, { menuCode, menuName, category, edgeKey, size })
     : null;
 
   return (

@@ -160,7 +160,9 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
   if (!supportedCategory) {
     const edgeFamily = resolveMenuEdgeFamily({ category, menuName, edgeKey });
     if (edgeFamily) {
-      return <MenuRecipeEdgeNotice menu={{ category, menuName, edgeKey, price: sellingPrice }} />;
+      return (
+        <MenuRecipeEdgeNotice menu={{ category, menuName, edgeKey, size, price: sellingPrice }} />
+      );
     }
     return (
       <MenuRecipeGuardNotice message="이 카테고리는 레시피 원가를 지원하지 않습니다. (카테고리를 확인해 주세요)" />

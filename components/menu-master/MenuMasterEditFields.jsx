@@ -138,6 +138,7 @@ export function MenuMasterEditFields({
             menuName={row.menuName}
             category={row.category}
             edgeKey={row.edgeKey}
+            size={row.size}
           />
         </div>
       )}

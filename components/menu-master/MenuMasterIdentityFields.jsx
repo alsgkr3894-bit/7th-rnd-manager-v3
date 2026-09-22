@@ -14,6 +14,8 @@ import {
 
 function defaultSizesFor(category) {
   if (isPizzaCategory(category) || isSetCategory(category)) return ['L', 'R'];
+  // 엣지: 치즈크러스트·골드스윗은 L/R 행, 석쇠·씬바사삭은 사이즈 없음(단일) — 둘 다 허용.
+  if (String(category || '').trim() === '엣지') return ['L', 'R', '단일'];
   return ['단일'];
 }
 

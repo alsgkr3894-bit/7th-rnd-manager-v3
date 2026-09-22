@@ -58,7 +58,8 @@ function edgeDetailText(summary) {
   const sizeCosts = summary.sizeCosts || {};
   const sizes = Object.keys(sizeCosts);
   if (sizes.length === 0) return '기본 도우 · 추가 원가 없음';
-  const parts = ['L', 'R']
+  const shownSizes = summary.size ? [summary.size] : ['L', 'R'];
+  const parts = shownSizes
     .filter(s => sizeCosts[s] != null)
     .map(s => `${s} ${formatNumber(sizeCosts[s])}원`);
   const rate = summary.costRate != null ? ` · ${formatPercent(summary.costRate)}` : '';

@@ -1,5 +1,5 @@
 import { formatNumber } from '@/lib/format';
-import { groupCostMenusBySize } from '@/lib/report/cost-menu-display';
+import { costReportMenuLabel, groupCostMenusBySize } from '@/lib/report/cost-menu-display';
 
 const S_DOT_LABEL = { display: 'inline-flex', alignItems: 'center', gap: 8 };
 
@@ -128,7 +128,7 @@ function SingleCategoryMenuTable({ category, riskThreshold }) {
         {category.menus.map((menu, index) => (
           <tr key={menu.code || menu.name}>
             <td className="num">{index + 1}</td>
-            <td>{menu.name}</td>
+            <td>{costReportMenuLabel(menu)}</td>
             <CostCells menu={menu} riskThreshold={riskThreshold} />
           </tr>
         ))}

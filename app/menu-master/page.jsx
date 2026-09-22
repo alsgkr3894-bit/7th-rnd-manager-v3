@@ -30,6 +30,7 @@ import {
   normalizeMenuCodeCategories,
   normalizePersonalPizzaCodes,
 } from '@/lib/menu-master/normalize';
+import { splitEdgeMenuSizes } from '@/lib/menu-master/edge-size-split';
 import {
   buildMenuReadinessMap,
   buildNutritionLinkedMenuCodeSet,
@@ -91,6 +92,7 @@ export default function Page() {
       await normalizeMenuCodeCategories().catch(e =>
         console.warn('[menu-master] 코드 분류 정규화 실패', e)
       );
+      await splitEdgeMenuSizes().catch(e => console.warn('[menu-master] 엣지 사이즈 분리 실패', e));
       const nextRows = await getAllMenuMaster();
       let nextRecipeSummaryMap = new Map();
       try {

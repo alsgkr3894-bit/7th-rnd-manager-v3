@@ -20,7 +20,9 @@ export function MenuRecipeEdgeNotice({ menu }) {
 
   const summary = summarizeMenuEdge(menu, edges);
   const sizeCosts = summary?.sizeCosts || {};
-  const sizeEntries = ['L', 'R'].filter(size => sizeCosts[size] != null);
+  const sizeEntries = (summary?.size ? [summary.size] : ['L', 'R']).filter(
+    size => sizeCosts[size] != null
+  );
 
   return (
     <div

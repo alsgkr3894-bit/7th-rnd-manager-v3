@@ -1,5 +1,6 @@
 import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
+import { costReportMenuLabel } from '@/lib/report/cost-menu-display';
 
 const S_DOT_LABEL = { display: 'inline-flex', alignItems: 'center', gap: 8 };
 
@@ -38,7 +39,7 @@ function RiskMenuRow({ menu, index }) {
   return (
     <tr>
       <td className="num">{index + 1}</td>
-      <td style={{ fontWeight: 700 }}>{menu.name}</td>
+      <td style={{ fontWeight: 700 }}>{costReportMenuLabel(menu)}</td>
       <td>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <span

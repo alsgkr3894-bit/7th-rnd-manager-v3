@@ -1,5 +1,5 @@
 import { formatNumber } from '@/lib/format';
-import { groupCostMenusBySize } from '@/lib/report/cost-menu-display';
+import { costReportMenuLabel, groupCostMenusBySize } from '@/lib/report/cost-menu-display';
 
 const S_DOT_LABEL = { display: 'inline-flex', alignItems: 'center', gap: 8 };
 const S_GROUP_CELL = {
@@ -159,7 +159,7 @@ export function CostTableView({ activeCats, riskThreshold }) {
                       <td style={S_GROUP_CELL}>
                         <span style={S_GROUP_BADGE}>{c.label}</span>
                       </td>
-                      <td style={{ fontWeight: 600 }}>{m.name}</td>
+                      <td style={{ fontWeight: 600 }}>{costReportMenuLabel(m)}</td>
                       <td className="num right muted">
                         {m.sale > 0 ? `${formatNumber(m.sale)}원` : '—'}
                       </td>

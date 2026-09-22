@@ -31,7 +31,7 @@ describe('margin thin dough rows', () => {
     expect(meta.EXPAND_EDGES).toEqual(['씬도우']);
     expect(meta.edgeSuffixByType).toEqual({ 씬도우: 's' });
     expect(meta.edgeCostByType).toEqual({ 씬도우: { L: 250 } });
-    expect(meta.edgePriceByType).toEqual({ 씬도우: 1000 });
+    expect(meta.edgePriceByType).toEqual({ 씬도우: { single: 1000 } });
   });
 
   test('메뉴마스터 엣지 판매가 이름이 edgeType과 완전히 같지 않아도 패밀리로 매칭한다 (실사용 오탐 재현)', () => {
@@ -49,7 +49,10 @@ describe('margin thin dough rows', () => {
       ]
     );
 
-    expect(meta.edgePriceByType).toEqual({ 골드스윗크러스트: 4000, 씬도우: 1500 });
+    expect(meta.edgePriceByType).toEqual({
+      골드스윗크러스트: { single: 4000 },
+      씬도우: { single: 1500 },
+    });
   });
 
   test('thin dough metadata creates derived margin rows', () => {
@@ -125,5 +128,43 @@ describe('margin thin dough rows', () => {
 
     expect(meta.edgeSuffixByType).toEqual({ 씬도우: 's' });
     expect(rows[0].menuCode).toBe('P-002-L-s');
+  });
+});
+
+describe('엣지 사이즈별 판매가 (2026-09-22 치즈크러스트·골드스윗 L 5,000 / R 4,000)', () => {
+  test('L/R 판매가 행이 따로 있으면 파생 행의 사이즈별 판매가에 각각 더한다', () => {
+    const meta = buildEdgeMetadata(
+      [
+        { edgeType: '치즈크러스트', size: 'L', components: [{ quantity: 1, unitPrice: 1559 }] },
+        { edgeType: '치즈크러스트', size: 'R', components: [{ quantity: 1, unitPrice: 1421 }] },
+      ],
+      [
+        { category: '엣지', menuName: '치즈크러스트 L', size: 'L', price: 5000 },
+        { category: '엣지', menuName: '치즈크러스트 R', size: 'R', price: 4000 },
+      ]
+    );
+    expect(meta.edgePriceByType).toEqual({ 치즈크러스트: { L: 5000, R: 4000 } });
+
+    const rows = buildDerivedRows(
+      [
+        {
+          id: 'p1',
+          menuName: '페페로니 피자',
+          menuCategory: '피자',
+          sizes: [
+            { label: 'L', sellingPrice: 26900 },
+            { label: 'R', sellingPrice: 20900 },
+          ],
+          costMap: { L: 6043, R: 4474 },
+        },
+      ],
+      meta,
+      new Set()
+    );
+    expect(rows[0].sizes).toEqual([
+      { label: 'L', sellingPrice: 31900 },
+      { label: 'R', sellingPrice: 24900 },
+    ]);
+    expect(rows[0].costMap).toEqual({ L: 7602, R: 5895 });
   });
 });

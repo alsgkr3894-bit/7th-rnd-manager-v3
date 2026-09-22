@@ -107,7 +107,7 @@ describe('common cost selection results', () => {
         EXPAND_EDGES: ['엣지'],
         edgeSuffixByType: { 엣지: 'ED' },
         edgeCostByType: { 엣지: { L: -200 } },
-        edgePriceByType: { 엣지: 1000 },
+        edgePriceByType: { 엣지: { single: 1000 } },
       },
       new Set()
     );
