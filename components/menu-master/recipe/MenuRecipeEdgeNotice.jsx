@@ -1,9 +1,14 @@
 'use client';
 import { useDBLoad } from '@/hooks/useDBLoad';
 import { getAllEdges } from '@/lib/cost/edge-dough';
-import { summarizeMenuEdge } from '@/lib/menu-master/recipe-summary';
+import { loadLatestUnitPriceMap, summarizeMenuEdge } from '@/lib/menu-master/recipe-summary';
 import { formatNumber, formatPercent } from '@/lib/format';
 import { MenuRecipeGuardNotice } from './MenuRecipeGuardNotice';
+
+async function loadEdgeCostInputs() {
+  const [edges, unitPriceMap] = await Promise.all([getAllEdges(), loadLatestUnitPriceMap()]);
+  return { edges, unitPriceMap };
+}
 
 /**
  * MenuRecipeSection이 카테고리 '엣지'라 식자재 레시피 편집을 지원하지 않을 때 대신
@@ -11,14 +16,17 @@ import { MenuRecipeGuardNotice } from './MenuRecipeGuardNotice';
  * 엣지는 실제로 공통 원가 관리(엣지 관리)에 원가가 있어서 오해하기 쉬웠다
  * (components/menu-master/MenuRecipeCostCell.jsx와 같은 데이터 소스: summarizeMenuEdge).
  */
+const EMPTY_EDGE_COST_INPUTS = { edges: [], unitPriceMap: new Map() };
+
 export function MenuRecipeEdgeNotice({ menu }) {
-  const { data: edges, loading } = useDBLoad(getAllEdges, { initialData: [] });
+  const { data, loading } = useDBLoad(loadEdgeCostInputs, { initialData: EMPTY_EDGE_COST_INPUTS });
+  const { edges, unitPriceMap } = data || EMPTY_EDGE_COST_INPUTS;
 
   if (loading) {
     return <MenuRecipeGuardNotice message="엣지 원가를 불러오는 중…" />;
   }
 
-  const summary = summarizeMenuEdge(menu, edges);
+  const summary = summarizeMenuEdge(menu, edges, unitPriceMap);
   const sizeCosts = summary?.sizeCosts || {};
   const sizeEntries = (summary?.size ? [summary.size] : ['L', 'R']).filter(
     size => sizeCosts[size] != null

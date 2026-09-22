@@ -22,6 +22,7 @@ const EdgeEditModal = dynamic(
 
 export function CommonEdgesView({
   edges = [],
+  unitPriceMap,
   loading = false,
   search = '',
   onSearch,
@@ -67,9 +68,9 @@ export function CommonEdgesView({
       { id: 'name', label: '이름', key: edge => edge.edgeType },
       { id: 'code', label: '코드', key: edge => edge.edgeCode },
       { id: 'size', label: '규격', key: edge => edge.size },
-      { id: 'cost', label: '원가', key: edge => edgeTotalCost(edge) },
+      { id: 'cost', label: '원가', key: edge => edgeTotalCost(edge, unitPriceMap) },
     ],
-    []
+    [unitPriceMap]
   );
 
   const edgeTable = useCostManageTable(filteredEdges, {
@@ -249,6 +250,7 @@ export function CommonEdgesView({
             <EdgeRow
               key={edge.__key || edge.id}
               edge={edge}
+              unitPriceMap={unitPriceMap}
               canEdit={canEdit}
               selected={edge.id != null && edgeTable.selected.has(edge.id)}
               onToggle={() => edgeTable.toggle(edge.id)}
@@ -313,7 +315,7 @@ export function CommonEdgesView({
   );
 }
 
-function EdgeRow({ edge, canEdit, selected, onToggle, onEdit, onDelete }) {
+function EdgeRow({ edge, unitPriceMap, canEdit, selected, onToggle, onEdit, onDelete }) {
   const selectable = canEdit && !edge.__seedPlaceholder && edge.id != null;
 
   return (
@@ -335,7 +337,13 @@ function EdgeRow({ edge, canEdit, selected, onToggle, onEdit, onDelete }) {
         style={{ width: 24, height: 24, accentColor: 'var(--accent)' }}
       />
       <div style={{ minWidth: 0 }}>
-        <EdgeCard edge={edge} canEdit={canEdit} onEdit={onEdit} onDelete={onDelete} />
+        <EdgeCard
+          edge={edge}
+          unitPriceMap={unitPriceMap}
+          canEdit={canEdit}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
       </div>
     </div>
   );

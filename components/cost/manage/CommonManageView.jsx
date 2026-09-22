@@ -252,6 +252,7 @@ export function CommonManageView({ tab = 'groups' }) {
       {tab === 'edges' && (
         <CommonEdgesView
           edges={edges}
+          unitPriceMap={unitPriceMap}
           loading={loading}
           search={edgeSearch}
           onSearch={setEdgeSearch}

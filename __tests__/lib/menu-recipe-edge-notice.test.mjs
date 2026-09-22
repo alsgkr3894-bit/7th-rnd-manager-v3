@@ -39,8 +39,15 @@ describe('MenuRecipeEdgeNotice — 실제 엣지 원가 데이터 사용', () =>
   test('summarizeMenuEdge와 getAllEdges(cost_edge_dough)로 원가를 계산한다', () => {
     expect(noticeSrc).toContain("import { getAllEdges } from '@/lib/cost/edge-dough';");
     expect(noticeSrc).toContain(
-      "import { summarizeMenuEdge } from '@/lib/menu-master/recipe-summary';"
+      "import { loadLatestUnitPriceMap, summarizeMenuEdge } from '@/lib/menu-master/recipe-summary';"
     );
+  });
+
+  // 2026-09-22: 엣지 원가가 저장된 단가에만 의존해 최신 제때 단가를 반영하지 않던 문제 수정 —
+  // 이 안내도 메뉴마스터 요약·원가보고서와 같은 unitPriceMap을 넘겨 최신 값을 보여준다.
+  test('최신 제때 단가(unitPriceMap)를 함께 불러와 summarizeMenuEdge에 넘긴다', () => {
+    expect(noticeSrc).toContain('loadLatestUnitPriceMap()');
+    expect(noticeSrc).toContain('summarizeMenuEdge(menu, edges, unitPriceMap)');
   });
 
   test('원가 구성 수정은 공통 원가 관리(/cost/recipe)로 안내한다', () => {

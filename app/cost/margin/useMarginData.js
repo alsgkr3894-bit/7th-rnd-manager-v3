@@ -66,7 +66,7 @@ export function useMarginData() {
       const PIZZA_EDGE_CATS = new Set(PIZZA_CATEGORY_VARIANTS);
       const pizzaSources = detailRows.filter(r => PIZZA_EDGE_CATS.has(r.menuCategory || ''));
 
-      const edgeMeta = buildEdgeMetadata(edges, allMenuPrices);
+      const edgeMeta = buildEdgeMetadata(edges, allMenuPrices, upm);
       const derivedRows = buildDerivedRows(pizzaSources, edgeMeta, detailKeySet);
 
       const allRows = [...detailRows, ...derivedRows];

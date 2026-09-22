@@ -3,8 +3,8 @@ import { Icon } from '@/components/icons';
 import { formatNumber } from '@/lib/format';
 import { edgeTotalCost, edgeIssues } from '@/lib/cost/edge-dough';
 
-export function EdgeCard({ edge, canEdit = true, onEdit, onDelete }) {
-  const total = edgeTotalCost(edge);
+export function EdgeCard({ edge, unitPriceMap, canEdit = true, onEdit, onDelete }) {
+  const total = edgeTotalCost(edge, unitPriceMap);
   const issues = edgeIssues(edge);
   const compCount = edge.components?.length || 0;
   const sizeLabel = edge.size ? ` ${edge.size}` : '';

@@ -346,8 +346,8 @@ d('모듈 간 연동 값 전수 대조', () => {
     expect(diffs.length).toBe(0);
   });
 
-  test('엣지 원가 — 저장된 component.unitPrice 기준 vs 최신 제때 단가로 재계산', async () => {
-    const { componentEffectiveUnitPrice } = await import('@/lib/cost/shared/effective-cost');
+  test('엣지 원가 — 저장된 component.unitPrice 기준 vs 최신 제때 단가로 재계산 (2026-09-22 수정 후: edgeTotalCost가 unitPriceMap을 받으면 최신 단가로 계산)', async () => {
+    const { edgeTotalCost } = await import('@/lib/cost/edge-dough/calc');
     const ingredients = await getAllIngredients();
     const files = [...snapshot.price_files].sort((a, b) =>
       String(b.updateDate || '').localeCompare(String(a.updateDate || ''))
@@ -364,15 +364,8 @@ d('모듈 간 연동 값 전수 대조', () => {
 
     const diffs = [];
     for (const edge of snapshot.cost_edge_dough) {
-      let storedCost = 0;
-      let freshCost = 0;
-      for (const c of edge.components || []) {
-        const qty = Number(c.quantity) || 0;
-        storedCost += qty * (Number(c.unitPrice) || 0);
-        freshCost += qty * (componentEffectiveUnitPrice(c, upm) ?? (Number(c.unitPrice) || 0));
-      }
-      storedCost = Math.round(storedCost);
-      freshCost = Math.round(freshCost);
+      const storedCost = edgeTotalCost(edge);
+      const freshCost = edgeTotalCost(edge, upm);
       if (Math.abs(storedCost - freshCost) >= 1) {
         diffs.push({
           edgeType: edge.edgeType,
