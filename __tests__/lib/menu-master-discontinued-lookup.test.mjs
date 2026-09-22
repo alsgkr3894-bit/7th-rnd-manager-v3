@@ -55,6 +55,30 @@ describe('buildDiscontinuedMenuNameSet / isDiscontinuedMenuName', () => {
     expect(set.size).toBe(1);
     expect(isDiscontinuedMenuName('전혀 매칭 안 되는 임의 메뉴명 XYZ', set)).toBe(true);
   });
+
+  test('L/R 행은 사이즈 없는 이름으로도 등록·단종 조회된다 (엣지 L/R 분리·세트박스)', () => {
+    // 2026-09-22 치즈크러스트·골드스윗이 L/R 행으로 나뉘었다 — 판매량 화면의 표시명은
+    // 사이즈 없는 '치즈크러스트'라, 접미사를 못 떼면 "메뉴마스터 미등록"으로 오탐된다.
+    const rows = [
+      { id: 1, menuName: '치즈크러스트 L', size: 'L', status: 'active' },
+      { id: 2, menuName: '치즈크러스트 R', size: 'R', status: 'active' },
+      { id: 3, menuName: '골드스윗 L', size: 'L', status: 'discontinued' },
+      { id: 4, menuName: '골드스윗 R', size: 'R', status: 'active' },
+      { id: 5, menuName: '패밀리박스 L', size: 'L', status: 'discontinued' },
+      { id: 6, menuName: '패밀리박스 R', size: 'R', status: 'discontinued' },
+    ];
+    const known = buildMenuMasterNameSet(rows);
+    expect(isKnownMenuMasterName('치즈크러스트', known)).toBe(true);
+    expect(isKnownMenuMasterName('골드스윗', known)).toBe(true);
+
+    const discontinued = buildDiscontinuedMenuNameSet(rows);
+    // 한 사이즈만 단종이면 사이즈 없는 이름은 단종이 아니다(R은 아직 판매 중).
+    expect(isDiscontinuedMenuName('골드스윗', discontinued)).toBe(false);
+    expect(isDiscontinuedMenuName('골드스윗 L', discontinued)).toBe(true);
+    // 두 사이즈 모두 단종이면 사이즈 없는 이름도 단종.
+    expect(isDiscontinuedMenuName('패밀리박스', discontinued)).toBe(true);
+    expect(findDiscontinuedMenuMasterIds(rows, '패밀리박스')).toEqual([5, 6]);
+  });
 });
 
 describe('buildMenuMasterNameSet / isKnownMenuMasterName', () => {
