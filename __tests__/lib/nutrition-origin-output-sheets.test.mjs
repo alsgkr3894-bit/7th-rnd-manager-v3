@@ -151,6 +151,24 @@ describe('nutrition origin output sheets', () => {
     });
   });
 
+  test('원산지 출력 재료명에서 "토핑" 단어를 뺀다 (매장·냉장고·배달·표기문 전부)', () => {
+    const toppingOrigins = [
+      {
+        ingredientName: '의성마늘 불고기토핑',
+        items: [{ displayName: '돼지고기', country: '국내산' }],
+        menuCodes: [{ menuCode: 'P-OR-001-L', menuName: '불고기 피자 L', category: '피자' }],
+      },
+    ];
+    expect(buildOriginStoreSheet(toppingOrigins, [], {})[0].displayName).toBe(
+      '돼지고기(의성마늘 불고기)'
+    );
+    expect(buildOriginFridgeSheet(toppingOrigins, {})[0].ingredientName).toBe('의성마늘 불고기');
+    expect(buildOriginDeliverySheet(toppingOrigins, {}, [])[0].parts).toEqual([
+      '의성마늘 불고기(국내산)',
+    ]);
+    expect(buildOriginStatementSheet(toppingOrigins, {})[0].names).toBe('의성마늘 불고기');
+  });
+
   describe('냉장고부착용 양식 (2026-09-22 — 냉장고원산지.xlsx)', () => {
     test('표시품목과 원산지가 완전히 같은 재료는 한 행으로 합치고 원산지는 괄호 표기', () => {
       const sheet = buildOriginFridgeSheet(

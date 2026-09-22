@@ -4,6 +4,7 @@ import {
   formatStoreMixedCountry,
   formatStoreOriginCountry,
   stripPizzaWord,
+  stripToppingWord,
 } from '@/lib/nutrition/origin/store-display-format';
 
 // 2026-09-22 주임님이 준 양식(원산지 매장비치용.xlsx) 기준
@@ -41,5 +42,12 @@ describe('origin store display format', () => {
     expect(stripPizzaWord('샘스테이크 피자')).toBe('샘스테이크');
     expect(stripPizzaWord('페페로니 피자(1인용)')).toBe('페페로니(1인용)');
     expect(stripPizzaWord('피자')).toBe('피자');
+  });
+
+  test('재료명의 "토핑" 단어를 뺀다', () => {
+    expect(stripToppingWord('의성마늘 불고기토핑')).toBe('의성마늘 불고기');
+    expect(stripToppingWord('의성마늘 포크토핑')).toBe('의성마늘 포크');
+    expect(stripToppingWord('베이컨')).toBe('베이컨');
+    expect(stripToppingWord('토핑')).toBe('토핑');
   });
 });
