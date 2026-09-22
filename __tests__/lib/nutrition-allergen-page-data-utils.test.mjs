@@ -17,6 +17,7 @@ import {
   buildMenuNameEditMenus,
 } from '@/app/nutrition/allergen/allergenPageOutputUtils';
 import { combineAllergenMenuSources } from '@/app/nutrition/allergen/allergenPageSourceUtils';
+import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 
 describe('allergen page data utils', () => {
   const ingredients = [
@@ -141,6 +142,39 @@ describe('allergen page data utils', () => {
       category: '피자/프리미엄',
       size: 'L',
     });
+  });
+
+  // 2026-09-22: 영양 메뉴(base 코드, status 없음)가 마스터 L/R 전부 단종인 메뉴를 "단종 아님"으로
+  // 새어 들어가게 해 알레르기 표에 고구마·흥부박포테이토 등 빈 행이 생기던 문제.
+  test('allergen menu sources inherit discontinued status onto base-code nutrition refs', () => {
+    const rows = combineAllergenMenuSources(
+      [
+        {
+          menuCode: 'P-PR-001-L',
+          menuName: '고구마 피자 L',
+          category: '피자',
+          status: 'discontinued',
+        },
+        {
+          menuCode: 'P-PR-001-R',
+          menuName: '고구마 피자 R',
+          category: '피자',
+          status: 'discontinued',
+        },
+        { menuCode: 'P-PS-001-L', menuName: '샘 피자 L', category: '피자', status: 'active' },
+        { menuCode: 'P-PS-001-R', menuName: '샘 피자 R', category: '피자', status: 'discontinued' },
+      ],
+      [
+        { menuCode: 'P-PR-001', menuName: '고구마 피자 L', category: '피자' },
+        { menuCode: 'P-PS-001', menuName: '샘 피자 L', category: '피자' },
+      ]
+    );
+    expect(rows.find(row => row.menuCode === 'P-PR-001').status).toBe('discontinued');
+    // 한 사이즈라도 판매 중이면 단종으로 물려주지 않는다
+    expect(rows.find(row => row.menuCode === 'P-PS-001').status).toBeUndefined();
+    const { excludedMenuCodes } = extractExcludedMenuSets(rows);
+    expect(excludedMenuCodes.has('P-PR-001')).toBe(true);
+    expect(excludedMenuCodes.has('P-PS-001')).toBe(false);
   });
 
   test('detail and summary helpers build modal rows and stat counts', () => {

@@ -90,6 +90,7 @@ d('판매량↔영양성분↔원산지↔알레르기 연동 값 전수 대조'
   let buildDiscontinuedMenuNameSet, isDiscontinuedMenuName;
   let mapAliasStatic, matchRuleStatic, buildClassifierFromDB;
   let extractExcludedMenuSets, combineAllergenMenuSources;
+  let buildDiscontinuedBaseCodeSet, isNutritionMenuDiscontinued;
   let isMenuNutritionLinked, buildNutritionLinkedMenuCodeSet;
   let normalizeMenuName;
   let buildMenuReadinessMap;
@@ -101,6 +102,8 @@ d('판매량↔영양성분↔원산지↔알레르기 연동 값 전수 대조'
     ({ matchRule: matchRuleStatic } = await import('@/lib/sales/rule-matcher'));
     ({ buildClassifierFromDB } = await import('@/lib/sales/classifier-db'));
     ({ extractExcludedMenuSets } = await import('@/lib/nutrition/menu-exclusion'));
+    ({ buildDiscontinuedBaseCodeSet, isNutritionMenuDiscontinued } =
+      await import('@/lib/nutrition/menu-master-diagnostics'));
     ({ combineAllergenMenuSources } =
       await import('@/app/nutrition/allergen/allergenPageSourceUtils'));
     ({ isMenuNutritionLinked, buildNutritionLinkedMenuCodeSet } =
@@ -170,12 +173,24 @@ d('판매량↔영양성분↔원산지↔알레르기 연동 값 전수 대조'
         diffs.push({ code, reason: '마스터 기준으론 제외 대상인데 병합 목록에선 빠짐' });
       }
     }
+    // 2026-09-22 실제 버그: 영양 메뉴의 base 코드(P-PR-001)는 status가 없어 마스터 L/R 전부 단종이어도
+    // 병합 목록에서 "단종 아님"으로 남았고, 알레르기 매트릭스에 고구마·흥부박포테이토·고추장불고기·
+    // 고르곤졸라 빈 행이 생겼다 — 병합 시 base 코드 기준 단종을 물려주도록 고침. 코드 집합 비교만으로는
+    // 못 잡던 케이스라 base 코드 단종 메뉴가 병합 목록에서 "제외"로 잡히는지 직접 확인한다.
+    const discontinuedBases = buildDiscontinuedBaseCodeSet(snapshot.menu_master);
+    const leaked = combined.filter(
+      m =>
+        isNutritionMenuDiscontinued(m.menuCode, discontinuedBases) &&
+        !combinedExcluded.excludedMenuCodes.has(m.menuCode)
+    );
     // eslint-disable-next-line no-console
     console.log(
-      `[audit] 알레르기 페이지 단종/원산지제외 집합(마스터 단독 vs menu_ref 병합) 불일치: ${diffs.length}건`
+      `[audit] 알레르기 페이지 단종/원산지제외 집합(마스터 단독 vs menu_ref 병합) 불일치: ${diffs.length}건, 단종 base 코드 누수: ${leaked.length}건`
     );
     if (diffs.length) console.log(JSON.stringify(diffs.slice(0, 20), null, 2));
-    expect(Array.isArray(diffs)).toBe(true);
+    if (leaked.length) console.log(JSON.stringify(leaked.map(m => [m.menuCode, m.menuName])));
+    expect(diffs).toEqual([]);
+    expect(leaked).toEqual([]);
   });
 
   test('A2-9(수정 후 회귀 확인): 출시 준비 탭의 영양성분 판정 vs 목록 "영양 연동" 칩 — 같은 isMenuNutritionLinked를 쓰므로 항상 일치해야 한다', async () => {
