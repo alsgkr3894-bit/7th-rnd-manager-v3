@@ -39,6 +39,7 @@ if (hasSnapshot) {
     'nutrition_topping_master',
     'nutrition_edge_master',
     'nutrition_set_composition',
+    'menu_recipes',
     'sales_rows',
     'sales_rules',
     'ref_sales_aliases',
@@ -89,8 +90,9 @@ d('판매량↔영양성분↔원산지↔알레르기 연동 값 전수 대조'
   let buildDiscontinuedMenuNameSet, isDiscontinuedMenuName;
   let mapAliasStatic, matchRuleStatic, buildClassifierFromDB;
   let extractExcludedMenuSets, combineAllergenMenuSources;
-  let checkNutrition, isMenuNutritionLinked, buildNutritionLinkedMenuCodeSet;
+  let isMenuNutritionLinked, buildNutritionLinkedMenuCodeSet;
   let normalizeMenuName;
+  let buildMenuReadinessMap;
 
   beforeAll(async () => {
     ({ buildDiscontinuedMenuNameSet, isDiscontinuedMenuName } =
@@ -101,9 +103,10 @@ d('판매량↔영양성분↔원산지↔알레르기 연동 값 전수 대조'
     ({ extractExcludedMenuSets } = await import('@/lib/nutrition/menu-exclusion'));
     ({ combineAllergenMenuSources } =
       await import('@/app/nutrition/allergen/allergenPageSourceUtils'));
-    ({ checkNutrition, isMenuNutritionLinked, buildNutritionLinkedMenuCodeSet } =
+    ({ isMenuNutritionLinked, buildNutritionLinkedMenuCodeSet } =
       await import('@/lib/menu-master/readiness-nutrition'));
     ({ normalizeMenuName } = await import('@/lib/sales/normalize'));
+    ({ buildMenuReadinessMap } = await import('@/lib/menu-master/readiness'));
   });
 
   test('A2-1: 단종 메뉴 그룹명 — 정적 matchRule(discontinued-lookup.js가 씀) vs DB 규칙 포함 classifier(실제 판매량 분류가 씀)', async () => {
@@ -176,33 +179,35 @@ d('판매량↔영양성분↔원산지↔알레르기 연동 값 전수 대조'
     expect(Array.isArray(diffs)).toBe(true);
   });
 
-  test('A2-9: readiness "영양 연동" 칩 — checkNutrition(원산지·알레르기 커버리지 등이 씀, raw_values만) vs isMenuNutritionLinked(목록 칩이 씀, 토핑명·엣지 패밀리 포함)', async () => {
-    const rawValueMenuCodes = new Set(
-      snapshot.nutrition_raw_values.map(r => r.menuCode).filter(Boolean)
-    );
+  test('A2-9(수정 후 회귀 확인): 출시 준비 탭의 영양성분 판정 vs 목록 "영양 연동" 칩 — 같은 isMenuNutritionLinked를 쓰므로 항상 일치해야 한다', async () => {
+    // 2026-09-22 수정 전엔 출시 준비 탭이 raw_values 코드 정확 일치만 보는 좁은
+    // checkNutrition을 썼다 — 엣지·추가토핑처럼 토핑명/엣지 패밀리로만 연동된 메뉴가
+    // 목록 칩(isMenuNutritionLinked)에는 "연동됨"으로 뜨는데 출시 준비 탭엔 "미작성"으로
+    // 잘못 표시됐다. readiness.js가 이제 같은 isMenuNutritionLinked를 쓰도록 고쳤다.
+    const readinessMap = await buildMenuReadinessMap(snapshot.menu_master, new Map());
     const linkedSet = await buildNutritionLinkedMenuCodeSet();
 
     const diffs = [];
     for (const menu of snapshot.menu_master) {
       if (!menu.menuCode) continue;
-      const narrow = checkNutrition(menu.menuCode, rawValueMenuCodes).status === 'ok';
-      const broad = isMenuNutritionLinked(menu, linkedSet);
-      if (narrow !== broad) {
+      const readinessOk = readinessMap.get(menu.menuCode)?.dims?.nutrition?.status === 'ok';
+      const chipLinked = isMenuNutritionLinked(menu, linkedSet);
+      if (readinessOk !== chipLinked) {
         diffs.push({
           code: menu.menuCode,
           name: menu.menuName,
           category: menu.category,
-          narrow,
-          broad,
+          readinessOk,
+          chipLinked,
         });
       }
     }
     // eslint-disable-next-line no-console
     console.log(
-      `[audit] 영양 연동 판정(readiness narrow vs 목록칩 broad) 불일치: ${diffs.length}건 / 전체 ${snapshot.menu_master.length}개`
+      `[audit] 영양 연동 판정(출시 준비 탭 vs 목록 칩) 불일치: ${diffs.length}건 / 전체 ${snapshot.menu_master.length}개`
     );
     if (diffs.length) console.log(JSON.stringify(diffs.slice(0, 20), null, 2));
-    expect(Array.isArray(diffs)).toBe(true);
+    expect(diffs).toEqual([]);
   });
 
   test('A2-3: 판매량 보고서 제외 목록 키 — rawMenuName 기준 표시 vs 실제 분류에 쓰이는 normalizedMenuName 기준', async () => {
