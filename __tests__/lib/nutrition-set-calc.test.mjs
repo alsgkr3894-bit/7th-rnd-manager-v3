@@ -125,6 +125,18 @@ describe('nutrition set calc', () => {
     expect(result.bySize.R).toMatchObject({ minKcal: 1267, maxKcal: 1397 });
   });
 
+  test('세트박스 슬롯이 출력 대표 메뉴로 연결된 변형 코드를 가리키면 대표 코드의 행으로 찾는다', () => {
+    const result = calcSetMinMax(
+      [{ menuCodes: ['S-SPG-002-1'] }],
+      [...pizzaMenus, { menuCode: 'S-SPG-002', menuName: '오븐 스파게티', category: '사이드' }],
+      { ...rawMap, 'S-SPG-002__석쇠L': { weight: 432, kcal: 627, basis: 'serving' } },
+      { 'S-SPG-002-1': { menuCode: 'S-SPG-002-1', outputMenuCode: 'S-SPG-002' } },
+      pizzaMenus,
+      edgeMap
+    );
+    expect(result.bySize.L).toMatchObject({ minKcal: 707, maxKcal: 877 });
+  });
+
   test('세트박스 구성품에 부분 수량(qty/baseQty)이 있으면 영양값을 비율만큼만 반영한다', () => {
     // S-1__석쇠L = weight 100, kcal 10 → 완제품 기여분 10kcal/100g. qty 2 / baseQty 4 = 절반만 반영.
     const result = calcSetMinMax(
