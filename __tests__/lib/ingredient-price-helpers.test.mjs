@@ -185,4 +185,34 @@ describe('buildIngredientUsageMap', () => {
       new Map([['사이드', { category: '사이드', sources: new Set(['직접']) }]])
     );
   });
+
+  test('메뉴마스터에서 단종된 메뉴는 레시피가 남아 있어도 사용 현황에 나오지 않는다', () => {
+    const { byCode } = buildIngredientUsageMap({
+      menuMasters: [
+        { menuCode: 'S-001', menuName: '치즈볼', category: '사이드', status: 'active' },
+        { menuCode: 'S-002', menuName: '핫윙', category: '사이드', status: 'discontinued' },
+      ],
+      detailRecipes: [
+        {
+          menuCode: 'S-001',
+          menuName: '치즈볼',
+          category: '사이드',
+          components: [{ productCode: 'ING-OIL', ingredientName: '식용유' }],
+        },
+        {
+          menuCode: 'S-002',
+          menuName: '핫윙',
+          category: '사이드',
+          components: [
+            { productCode: 'ING-OIL', ingredientName: '식용유' },
+            { productCode: 'ING-WING', ingredientName: '닭날개' },
+          ],
+        },
+      ],
+    });
+
+    expect([...byCode.get('ING-OIL').keys()]).toEqual(['치즈볼']);
+    // 단종 메뉴에서만 쓰던 식자재는 사용 메뉴가 아예 없어야 한다(미사용으로 분류).
+    expect(byCode.has('ING-WING')).toBe(false);
+  });
 });
