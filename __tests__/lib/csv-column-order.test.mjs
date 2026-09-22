@@ -47,21 +47,21 @@ describe('CSV/XLSX 컬럼 순서 고정', () => {
     expect(keys).toEqual(['weight', 'kcal', 'sugar', 'protein', 'fat', 'sodium']);
   });
 
-  test('영양성분표 엑셀: 피자 시트 피자→크러스트→영양 그룹→함유알레르기 순서', () => {
-    const pizzaIdx = labelExportSrc.search(/\['피자',\s*'크러스트'/);
-    const crustIdx = labelExportSrc.indexOf("'크러스트'");
-    const groupIdx = labelExportSrc.indexOf('...groups.flatMap(group => [group.label');
-    const allergenIdx = labelExportSrc.indexOf("'함유된 알레르기 유발물질'");
+  // 2026-09-22 단일 시트 양식(통합 문서3.xlsx): Pizza 블록은 Pizza(메뉴·크러스트 2열) → 영양 그룹
+  // L/R 쌍 → 함유 알레르기, 단순 표는 제목(=메뉴명 열) → 영양 컬럼 → 함유 알레르기 순서.
+  test('영양성분표 엑셀: Pizza 블록 메뉴·크러스트→영양 그룹(L/R)→함유알레르기 순서', () => {
+    const pizzaIdx = labelExportSrc.indexOf("['Pizza', ''");
+    const groupIdx = labelExportSrc.indexOf('...groups.flatMap(g => [g.label');
+    const allergenIdx = labelExportSrc.indexOf('ALLERGEN_HEADER]');
 
     expect(pizzaIdx).toBeGreaterThan(-1);
-    expect(pizzaIdx).toBeLessThan(crustIdx);
-    expect(crustIdx).toBeLessThan(groupIdx);
+    expect(pizzaIdx).toBeLessThan(groupIdx);
     expect(groupIdx).toBeLessThan(allergenIdx);
   });
 
-  test('영양성분표 엑셀: 일반 시트 메뉴명→영양 컬럼→함유알레르기 순서', () => {
+  test('영양성분표 엑셀: 일반 표 제목→영양 컬럼→함유알레르기 순서', () => {
     expect(labelExportSrc).toContain(
-      "['메뉴명', ...cols.map(col => col.label), '함유된 알레르기 유발물질']"
+      '[title, ...cols.map(col => col.label), ...(allergen ? [ALLERGEN_HEADER] : [])]'
     );
   });
 

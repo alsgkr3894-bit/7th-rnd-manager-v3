@@ -152,277 +152,352 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
     expect(stylesXml).toMatch(/<bottom style="thin">/);
   });
 
-  test('영양성분 XLSX는 전 출력 탭을 만들고 음료 헤더를 용량 기준으로 표시한다', async () => {
-    await exportNutritionLabelToExcel({
-      pizzaSheet: [
-        {
-          menuName: '=피자 L',
-          rows: [
-            {
-              crustLabel: '석쇠',
-              side: 'L',
-              weight: 150,
-              kcal: 250,
-              sugar: 4,
-              protein: 12,
-              fat: 9,
-              sodium: 500,
-              allergen: '밀',
-            },
-            {
-              crustLabel: '석쇠',
-              side: 'R',
-              weight: 150,
-              kcal: 230,
-              sugar: 3,
-              protein: 11,
-              fat: 8,
-              sodium: 450,
-              allergen: '우유',
-            },
-            {
-              crustLabel: '씬',
-              side: 'L',
-              weight: 150,
-              kcal: 210,
-              sugar: 2,
-              protein: 10,
-              fat: 7,
-              sodium: 400,
-              allergen: '밀',
-            },
-          ],
-        },
-      ],
-      pizzaSliceSheet: [
-        {
-          menuName: '=피자 L',
-          rows: [
-            {
-              crustLabel: '석쇠',
-              side: 'L',
-              slice: 8,
-              servingLabel: '1조각',
-              weight: 112,
-              kcal: 280,
-              sugar: 5,
-              protein: 13,
-              fat: 10,
-              sodium: 520,
-              allergen: '밀',
-            },
-            {
-              crustLabel: '석쇠',
-              side: 'R',
-              slice: 8,
-              servingLabel: '1조각',
-              weight: 92,
-              kcal: 230,
-              sugar: 4,
-              protein: 10,
-              fat: 8,
-              sodium: 460,
-              allergen: '우유',
-            },
-            {
-              crustLabel: '씬',
-              side: 'L',
-              slice: 8,
-              servingLabel: '1조각',
-              weight: 100,
-              kcal: 210,
-              sugar: 2,
-              protein: 10,
-              fat: 7,
-              sodium: 400,
-              allergen: '밀',
-            },
-          ],
-        },
-      ],
-      sideSheet: [{ menuName: '사이드', weight: 100, kcal: 200, allergen: '대두' }],
-      toppingSheet: [],
-      setHalfSheet: [{ menuName: '세트', weight: 300, minKcal: 500, maxKcal: 700, allergen: '밀' }],
-      beverageSheet: [{ menuName: '콜라', weight: 355, kcal: 120, sodium: 10, allergen: '' }],
-    });
+  // 2026-09-22 주임님 양식(통합 문서3.xlsx): 시트 1개에 제목 → Pizza(L/R 쌍, 메뉴명 세로 병합,
+  // 1인용은 "씬바샤삭(1인용)") → 추가 토핑 → Side → Pasta → Beverage(같은 음료 용량 병합)
+  // → Set Box → 하프앤하프 → 원산지 표기문 → 주석 4줄 → 기준월. A열은 비우고 B열부터, 표 칸 전부 테두리.
+  const labelInput = {
+    pizzaSheet: [
+      {
+        menuName: '포크 피자 L',
+        menuCode: 'P-OR-001',
+        rows: [
+          {
+            crustLabel: '석쇠',
+            side: 'L',
+            weight: 150,
+            kcal: 250,
+            sugar: 4,
+            protein: 12,
+            fat: 9,
+            sodium: 500,
+            allergen: '밀',
+          },
+          {
+            crustLabel: '석쇠',
+            side: 'R',
+            weight: 150,
+            kcal: 230,
+            sugar: 3,
+            protein: 11,
+            fat: 8,
+            sodium: 450,
+            allergen: '우유',
+          },
+        ],
+      },
+    ],
+    pizzaSliceSheet: [
+      {
+        menuName: '포크 피자',
+        menuCode: 'P-OR-001',
+        rows: [
+          {
+            crustLabel: '석쇠',
+            side: 'L',
+            slice: 8,
+            servingLabel: '1조각',
+            weight: 112,
+            totalWeight: 896,
+            kcal: 280,
+            sugar: 5,
+            protein: 13,
+            fat: 10,
+            sodium: 520,
+            allergen: '밀',
+          },
+          {
+            crustLabel: '석쇠',
+            side: 'R',
+            slice: 6,
+            servingLabel: '1조각',
+            weight: 92,
+            totalWeight: 552,
+            kcal: 230,
+            sugar: 4,
+            protein: 10,
+            fat: 8,
+            sodium: 460,
+            allergen: '우유',
+          },
+          {
+            crustLabel: '씬바샤삭',
+            side: 'L',
+            slice: 8,
+            servingLabel: '1조각',
+            weight: 100,
+            totalWeight: 800,
+            kcal: 210,
+            sugar: 2,
+            protein: 10,
+            fat: 7,
+            sodium: 400,
+            allergen: '밀',
+          },
+        ],
+      },
+      {
+        menuName: '하와이안 피자(1인)',
+        menuCode: 'P-ONE-001',
+        rows: [
+          {
+            crustLabel: '1인용피자',
+            side: 'L',
+            slice: 6,
+            servingLabel: '6조각',
+            weight: 255,
+            totalWeight: 255,
+            kcal: 640,
+            sugar: 9,
+            protein: 30,
+            fat: 12,
+            sodium: 1100,
+            allergen: '밀, 우유',
+          },
+        ],
+      },
+    ],
+    sideSheet: [
+      {
+        menuName: '핫윙 (4pcs)',
+        weight: 138,
+        kcal: 279,
+        sugar: 3,
+        protein: 29,
+        fat: 5,
+        sodium: 763,
+        allergen: '밀, 닭고기',
+      },
+      {
+        menuName: '오븐 스파게티',
+        weight: 432,
+        kcal: 627,
+        sugar: 7,
+        protein: 28,
+        fat: 10,
+        sodium: 1474,
+        allergen: '밀',
+      },
+    ],
+    toppingSheet: [
+      {
+        menuName: '치즈 80g',
+        weight: 80,
+        kcal: 246,
+        sugar: 0,
+        protein: 20,
+        fat: 10,
+        sodium: 372,
+        allergen: '우유',
+      },
+    ],
+    setHalfSheet: [
+      {
+        kind: 'set',
+        side: 'L',
+        menuName: '패밀리박스 L세트',
+        weight: 299,
+        minKcal: 3741,
+        maxKcal: 5573,
+        allergen: '',
+      },
+      {
+        kind: 'half',
+        side: 'R',
+        menuName: '하프앤하프 R',
+        weight: '90~110',
+        minKcal: 1236,
+        maxKcal: 2392,
+        allergen: '',
+      },
+    ],
+    beverageSheet: [
+      {
+        menuName: '코카콜라355ml',
+        menuCode: 'D-CC-001-355',
+        weight: 355,
+        kcal: 152,
+        sugar: 38,
+        protein: 0,
+        fat: 0,
+        sodium: 11,
+      },
+      {
+        menuName: '코카콜라1.25L',
+        menuCode: 'D-CC-001-1250',
+        weight: 1250,
+        kcal: 550,
+        sugar: 138,
+        protein: 0,
+        fat: 0,
+        sodium: 38,
+      },
+      {
+        menuName: '환타(오렌지)355ml',
+        menuCode: 'D-FO-001-355',
+        weight: 355,
+        kcal: 164,
+        sugar: 41,
+        protein: 0,
+        fat: 0,
+        sodium: 11,
+      },
+    ],
+    originStatementSheet: [
+      { names: '도우', breakdown: '밀 : 미국산, 캐나다산 섞음', pizzaCommon: true },
+      { names: '베이컨', breakdown: '돼지고기 : 미국산', pizzaCommon: false },
+    ],
+  };
+
+  test('영양성분 XLSX는 양식대로 시트 하나에 세로로 쌓고(조각 기준 기본) 칸마다 테두리를 친다', async () => {
+    await exportNutritionLabelToExcel(labelInput);
 
     const { workbook, fileName } = lastWrite();
     expect(fileName).toMatch(/^테스트브랜드_제품 영양성분표_\d{8}\.xlsx$/);
-    expect(workbook.SheetNames).toEqual([
-      '피자',
-      '피자(조각)',
-      '사이드·파스타',
-      '추가토핑',
-      '세트박스·하프앤하프',
-      '음료',
-    ]);
-    expect(rowsOf(workbook, '피자')[0]).toEqual([
-      '피자',
-      '크러스트',
-      '기준중량',
+    expect(workbook.SheetNames).toEqual(['영양성분_알레르기']);
+    const ws = workbook.Sheets['영양성분_알레르기'];
+    const rows = rowsOf(workbook, '영양성분_알레르기');
+    const findRow = text => rows.findIndex(row => row[1] === text);
+
+    // 제목: B2, 표 전체 폭으로 병합
+    expect(rows[1][1]).toBe('제품영양성분 / 알레르기 유발 성분');
+    expect(ws['!merges']).toContainEqual({ s: { r: 1, c: 1 }, e: { r: 1, c: 19 } });
+
+    // Pizza 헤더 2행 + L/R
+    const pizzaHead = findRow('Pizza');
+    expect(rows[pizzaHead].slice(1)).toEqual([
+      'Pizza',
       '',
-      '열량(kcal/150g)',
-      '',
-      '단백질(g/150g)',
-      '',
-      '포화지방(g/150g)',
-      '',
-      '나트륨(mg/150g)',
-      '',
-      '당류(g/150g)',
-      '',
-      '함유된 알레르기 유발물질',
-    ]);
-    expect(rowsOf(workbook, '피자')[1]).toEqual([
-      '',
-      '',
-      'L',
-      'R',
-      'L',
-      'R',
-      'L',
-      'R',
-      'L',
-      'R',
-      'L',
-      'R',
-      'L',
-      'R',
-      '',
-    ]);
-    expect(rowsOf(workbook, '피자')[2]).toEqual([
-      '=피자',
-      '석쇠',
-      150,
-      150,
-      250,
-      230,
-      12,
-      11,
-      9,
-      8,
-      500,
-      450,
-      4,
-      3,
-      '밀, 우유',
-    ]);
-    expect(rowsOf(workbook, '피자')[3]).toEqual([
-      '=피자',
-      '씬',
-      150,
-      '—',
-      210,
-      '—',
-      10,
-      '—',
-      7,
-      '—',
-      400,
-      '—',
-      2,
-      '—',
-      '밀',
-    ]);
-    expect(rowsOf(workbook, '피자(조각)')[0]).toEqual([
-      '피자',
-      '크러스트',
       '1회 중량(g)',
       '',
       '1회 조각수',
       '',
-      '총 조각중량(g)',
+      '총 조각 중량 (g)',
       '',
-      '열량(kcal/1회분)',
+      '열량 (kcal/1회분)',
       '',
-      '당류(g/1회분)',
+      '당류 (g/1회분)',
       '',
-      '단백질(g/1회분)',
+      '단백질 (g/1회분)',
       '',
-      '포화지방(g/1회분)',
+      '포화지방 (g/1회분)',
       '',
-      '나트륨(mg/1회분)',
+      '나트륨 (mg/1회분)',
       '',
       '함유된 알레르기 유발물질',
     ]);
-    expect(rowsOf(workbook, '피자(조각)')[2]).toEqual([
-      '=피자',
+    expect(rows[pizzaHead + 1].slice(3, 7)).toEqual(['L', 'R', 'L', 'R']);
+    expect(ws['!merges']).toContainEqual({ s: { r: pizzaHead, c: 3 }, e: { r: pizzaHead, c: 4 } });
+    expect(ws['!merges']).toContainEqual({
+      s: { r: pizzaHead, c: 19 },
+      e: { r: pizzaHead + 1, c: 19 },
+    });
+
+    // 메뉴 행: 이름은 첫 크러스트 행에만, 세로 병합, "피자" 단어 제거, 씬바샤삭 R은 빈칸
+    expect(rows[pizzaHead + 2].slice(1, 9)).toEqual([
+      '포크',
       '석쇠',
       112,
       92,
       '1조각',
       '1조각',
       896,
-      736,
-      280,
-      230,
-      5,
-      4,
-      13,
-      10,
-      10,
-      8,
-      520,
-      460,
-      '밀, 우유',
+      552,
     ]);
-    expect(rowsOf(workbook, '피자(조각)')[3]).toEqual([
-      '=피자',
-      '씬',
-      100,
-      '—',
-      '1조각',
-      '—',
-      800,
-      '—',
-      210,
-      '—',
-      2,
-      '—',
-      10,
-      '—',
-      7,
-      '—',
-      400,
-      '—',
-      '밀',
-    ]);
-    expect(rowsOf(workbook, '사이드·파스타')[0]).toEqual([
-      '메뉴명',
-      '1회 중량(g)',
-      '열량(kcal/1회분)',
-      '당류(g/1회분)',
-      '단백질(g/1회분)',
-      '포화지방(g/1회분)',
-      '나트륨(mg/1회분)',
-      '함유된 알레르기 유발물질',
-    ]);
-    expect(rowsOf(workbook, '사이드·파스타')[1]).toEqual([
-      '사이드',
-      100,
-      200,
+    expect(rows[pizzaHead + 3].slice(1, 5)).toEqual(['', '씬바샤삭', 100, '']);
+    expect(rows[pizzaHead + 2][19]).toBe('밀, 우유');
+    expect(ws['!merges']).toContainEqual({
+      s: { r: pizzaHead + 2, c: 1 },
+      e: { r: pizzaHead + 3, c: 1 },
+    });
+    // 1인용: 이름에서 "(1인)"을 떼고 크러스트에 "씬바샤삭(1인용)"
+    expect(rows[pizzaHead + 4].slice(1, 6)).toEqual([
+      '하와이안',
+      '씬바샤삭(1인용)',
+      255,
       '',
-      '',
-      '',
-      '',
-      '대두',
+      '6조각',
     ]);
-    expect(rowsOf(workbook, '음료')[0][1]).toBe('총량(ml)');
-    expect(rowsOf(workbook, '세트박스·하프앤하프')[0]).toEqual([
-      '메뉴명',
-      '사이즈',
-      '1회 중량(g)',
-      '최소 열량(kcal)',
-      '최대 열량(kcal)',
-      '함유된 알레르기 유발물질',
+
+    // 추가 토핑 / Side / Pasta 분리
+    expect(rows[findRow('추가 토핑')].slice(1, 3)).toEqual(['추가 토핑', '1회 중량 (g)']);
+    expect(rows[findRow('추가 토핑') + 1].slice(1, 4)).toEqual(['치즈 80g', 80, 246]);
+    expect(rows[findRow('Side') + 1][1]).toBe('핫윙 (4pcs)');
+    expect(rows[findRow('Pasta')].slice(1, 3)).toEqual(['Pasta', '총 중량 (g)']);
+    expect(rows[findRow('Pasta') + 1][1]).toBe('오븐 스파게티');
+
+    // Beverage: 알레르기 열 없음, 같은 음료는 용량 내림차순 + 이름 세로 병합
+    const bev = findRow('Beverage');
+    expect(rows[bev].slice(1)).toEqual([
+      'Beverage',
+      '총 용량 (ml)',
+      '열량 (kcal/1회분)',
+      '당류 (g/1회분)',
+      '단백질 (g/1회분)',
+      '포화지방 (g/1회분)',
+      '나트륨 (mg/1회분)',
     ]);
-    expect(workbook.Sheets['피자'].A3).toMatchObject({ t: 's', v: '=피자' });
-    expect(workbook.Sheets['피자'].A3.f).toBeUndefined();
+    expect(rows[bev + 1].slice(1, 3)).toEqual(['코카콜라', 1250]);
+    expect(rows[bev + 2].slice(1, 3)).toEqual(['', 355]);
+    expect(rows[bev + 3].slice(1, 3)).toEqual(['환타(오렌지)', 355]);
+    expect(ws['!merges']).toContainEqual({ s: { r: bev + 1, c: 1 }, e: { r: bev + 2, c: 1 } });
+
+    // Set Box / 하프앤하프
+    expect(rows[findRow('Set Box')].slice(1)).toEqual([
+      'Set Box',
+      '최소 열량 (kcal)',
+      '최대 열량 (kcal)',
+      '1회 중량 (g)',
+    ]);
+    expect(rows[findRow('Set Box') + 1].slice(1)).toEqual(['패밀리박스 (L)', 3741, 5573, 299]);
+    expect(rows[findRow('하프앤하프') + 1].slice(1)).toEqual([
+      '하프앤하프 (R)',
+      1236,
+      2392,
+      '90~110',
+    ]);
+
+    // 원산지 표기문 셀 + 주석 + 기준월
+    const origin = findRow('원산지');
+    expect(rows[origin + 1][1]).toBe(
+      '※ 피자공통\n도우(밀 : 미국산, 캐나다산 섞음)\n\n베이컨(돼지고기 : 미국산)'
+    );
+    expect(
+      rows[
+        findRow('1.위 제품은 재료의 수급 상황에 따라 구성 성분이 다소 차이가 날 수 있습니다.') + 3
+      ][1]
+    ).toMatch(/^4\.위 원산지/);
+    expect(rows[rows.length - 1][1]).toMatch(/^\d{4}년 \d{1,2}월 기준$/);
+
+    // 테두리: 헤더·데이터 칸(병합 범위의 빈 칸 포함), 제목 행은 제외
+    const at = (r, c) => ws[XLSX.utils.encode_cell({ r, c })];
+    expect(at(pizzaHead, 1).s.border.top.style).toBe('thin');
+    expect(at(pizzaHead, 2).s.border.left.style).toBe('thin');
+    expect(at(pizzaHead + 3, 1).s.border.bottom.style).toBe('thin');
+    expect(at(pizzaHead, 1).s.font.bold).toBe(true);
+    expect(at(1, 1).s.border).toBeUndefined();
+    expect(at(1, 1).s.font.sz).toBe(14);
+    expect(at(pizzaHead + 2, 1).f).toBeUndefined();
 
     const diskWorkbook = savedWorkbook();
-    expect(diskWorkbook.SheetNames).toEqual(workbook.SheetNames);
-    expect(rowsOf(diskWorkbook, '음료')[0][1]).toBe('총량(ml)');
-    expect(diskWorkbook.Sheets['피자'].A3.f).toBeUndefined();
+    expect(diskWorkbook.SheetNames).toEqual(['영양성분_알레르기']);
+    expect(rowsOf(diskWorkbook, '영양성분_알레르기')[pizzaHead + 2][1]).toBe('포크');
+    const stylesXml = await readZipEntry(lastWrite().outputPath, 'xl/styles.xml');
+    expect(stylesXml).toMatch(/<left style="thin">/);
+  });
+
+  test('영양성분 XLSX는 150g 기준을 고르면 Pizza 블록만 150g 열로 바뀐다', async () => {
+    await exportNutritionLabelToExcel({ ...labelInput, basis: '150g' });
+    const rows = rowsOf(lastWrite().workbook, '영양성분_알레르기');
+    const pizzaHead = rows.findIndex(row => row[1] === 'Pizza');
+    expect(rows[pizzaHead].slice(1, 6)).toEqual([
+      'Pizza',
+      '',
+      '기준중량(g)',
+      '',
+      '열량 (kcal/150g)',
+    ]);
+    expect(rows[pizzaHead + 2].slice(1, 6)).toEqual(['포크', '석쇠', 150, 150, 250]);
+    expect(rows.findIndex(row => row[1] === 'Beverage')).toBeGreaterThan(pizzaHead);
   });
 
   test('판매량 XLSX는 카테고리 비중을 백분율로 쓰고 안전한 시트명을 만든다', async () => {

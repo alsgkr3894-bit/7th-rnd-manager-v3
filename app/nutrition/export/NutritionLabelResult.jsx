@@ -71,7 +71,8 @@ export default function NutritionLabelResult() {
   const [originStatementSheet, setOriginStatementSheet] = useState([]);
   const [allergenWarnings, setAllergenWarnings] = useState(null);
 
-  const [pizzaView, setPizzaView] = useState('150g'); // '150g' | 'slice'
+  // 기본은 조각 기준(2026-09-22 주임님 결정) — 엑셀도 이 선택을 따른다
+  const [pizzaView, setPizzaView] = useState('slice'); // '150g' | 'slice'
   const [sliceCounts, setSliceCounts] = useState({});
   const [sliceModalOpen, setSliceModalOpen] = useState(false);
   const [menuNameEditOpen, setMenuNameEditOpen] = useState(false);
@@ -276,12 +277,14 @@ export default function NutritionLabelResult() {
     setExporting(true);
     try {
       await exportNutritionLabelToExcel({
+        basis: pizzaView,
         pizzaSheet,
         pizzaSliceSheet,
         toppingSheet,
         sideSheet,
         setHalfSheet,
         beverageSheet,
+        originStatementSheet,
       });
       showToast('엑셀 다운로드 완료', 'ok');
     } catch (e) {

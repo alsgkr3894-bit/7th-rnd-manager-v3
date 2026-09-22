@@ -41,6 +41,12 @@ describe('nutrition label result structure', () => {
     expect(resultSource).toContain('<NutritionLabelTabContent');
     expect(resultSource).toContain('buildPizzaSheet(ctx)');
     expect(resultSource).toContain('exportNutritionLabelToExcel');
+    // 2026-09-22: 기본은 조각 기준, 엑셀은 화면의 기준 선택(basis)과 원산지 표기문까지 함께 받는다
+    expect(resultSource).toContain("useState('slice'); // '150g' | 'slice'");
+    expect(resultSource).toContain('basis: pizzaView,');
+    expect(resultSource).toMatch(
+      /exportNutritionLabelToExcel\(\{[\s\S]*?originStatementSheet,[\s\S]*?\}\)/
+    );
     expect(resultSource).toContain('printNutritionLabelAll');
     expect(resultSource).toContain('saveLabelMenuNames(next)');
     expect(resultSource).toContain('LABEL_MENU_ORDER_KEY');
