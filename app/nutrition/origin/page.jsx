@@ -17,6 +17,7 @@ import { extractExcludedMenuSets } from '@/lib/nutrition/menu-exclusion';
 import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
 import { loadMenuNames, saveMenuNames } from '@/lib/nutrition/menu-name-override';
 import { buildOriginIngredientRows, buildOriginMenuRows } from '@/lib/nutrition/origin/build';
+import { buildOutputAliasMap, foldIngredientToMenus } from '@/lib/menu-master/output-alias';
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { OriginSummaryPanel } from './OriginSummaryPanel';
@@ -85,14 +86,20 @@ export default function Page() {
         );
         setIngredients(safeIngredients);
         setMenuMasters(safeMenuMasters);
-        setMapData(
-          buildIngredientMenuMap({
-            menuMasters: safeMenuMasters,
-            detailRecipes,
-            groups: safeGroups,
-            edges: safeEdges,
-          })
-        );
+        const mapData = buildIngredientMenuMap({
+          menuMasters: safeMenuMasters,
+          detailRecipes,
+          groups: safeGroups,
+          edges: safeEdges,
+        });
+        // 출력 대표 메뉴 연결: 변형(매장별 재료 차이) 행의 재료를 대표 메뉴에 합친다
+        setMapData({
+          ...mapData,
+          ingredientToMenus: foldIngredientToMenus(
+            mapData.ingredientToMenus,
+            buildOutputAliasMap(safeMenuMasters)
+          ),
+        });
         lastLoadedAtRef.current = Date.now();
       } finally {
         loadingRef.current = false;

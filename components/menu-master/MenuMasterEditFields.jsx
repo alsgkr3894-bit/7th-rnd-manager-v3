@@ -13,6 +13,7 @@ import {
   MenuNameField,
 } from '@/components/menu-master/MenuMasterIdentityFields';
 import { MenuMasterPhotoField } from '@/components/menu-master/MenuMasterPhotoField';
+import { OutputMenuLinkField } from '@/components/menu-master/OutputMenuLinkField';
 import { MenuRecipeSection } from '@/components/menu-master/MenuRecipeSection';
 import { MenuNutritionPreview } from '@/components/menu-master/MenuNutritionPreview';
 
@@ -102,6 +103,12 @@ export function MenuMasterEditFields({
         <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <OriginAllergenExcludeField value={form.excludeFromOrigin} setField={setField} />
           <HiddenField value={form.hidden} setField={setField} />
+          <OutputMenuLinkField
+            value={form.outputMenuCode}
+            menuCode={form.menuCode}
+            category={form.category}
+            setField={setField}
+          />
         </div>
       </div>
 

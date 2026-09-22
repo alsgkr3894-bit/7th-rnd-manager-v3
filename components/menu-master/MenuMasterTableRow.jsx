@@ -81,6 +81,22 @@ export function MenuMasterTableRow({
                 원산지제외
               </span>
             )}
+            {row.outputMenuCode && (
+              <span
+                title={`출력(영양성분표·알레르기·원산지)은 ${row.outputMenuCode}에 합쳐 나갑니다`}
+                style={{
+                  marginLeft: 6,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '1px 5px',
+                  borderRadius: 3,
+                  background: 'var(--accent-soft)',
+                  color: 'var(--accent)',
+                }}
+              >
+                출력→{row.outputMenuCode}
+              </span>
+            )}
           </div>
         ) : (
           <button
@@ -117,6 +133,22 @@ export function MenuMasterTableRow({
                 }}
               >
                 원산지제외
+              </span>
+            )}
+            {row.outputMenuCode && (
+              <span
+                title={`출력(영양성분표·알레르기·원산지)은 ${row.outputMenuCode}에 합쳐 나갑니다`}
+                style={{
+                  marginLeft: 6,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '1px 5px',
+                  borderRadius: 3,
+                  background: 'var(--accent-soft)',
+                  color: 'var(--accent)',
+                }}
+              >
+                출력→{row.outputMenuCode}
               </span>
             )}
           </button>

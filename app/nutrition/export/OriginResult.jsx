@@ -24,6 +24,7 @@ import {
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { buildOriginsFromIngredients } from '@/lib/nutrition/origin/build';
+import { buildOutputAliasMap, foldIngredientToMenus } from '@/lib/menu-master/output-alias';
 import {
   OriginResultActions,
   OriginResultLoading,
@@ -68,12 +69,17 @@ export default function OriginResult() {
         asObjectArray(recipeArrays.side),
         asObjectArray(recipeArrays.set)
       );
-      const { ingredientToMenus } = buildIngredientMenuMap({
+      const { ingredientToMenus: rawIngredientToMenus } = buildIngredientMenuMap({
         menuMasters: safeMenuMasters,
         detailRecipes,
         groups: safeGroups,
         edges: safeEdges,
       });
+      // 출력 대표 메뉴 연결: 변형(매장별 재료 차이) 행의 재료를 대표 메뉴에 합친다
+      const ingredientToMenus = foldIngredientToMenus(
+        rawIngredientToMenus,
+        buildOutputAliasMap(safeMenuMasters)
+      );
       const { excludedMenuCodes, excludedMenuNames } = extractExcludedMenuSets(safeMenuMasters);
       if (!alive) return;
       setMenuOrder(loadOrder(MENU_ORDER_KEY));

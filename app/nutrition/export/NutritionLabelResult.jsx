@@ -29,6 +29,7 @@ import {
 } from '@/lib/nutrition/order';
 import { loadSliceCounts, saveSliceCounts } from '@/lib/nutrition/slice-config';
 import { buildOriginsFromIngredients } from '@/lib/nutrition/origin/build';
+import { foldIngredientToMenus } from '@/lib/menu-master/output-alias';
 import { buildOriginStatementSheet } from '@/lib/nutrition/origin/output-sheets';
 import { SliceConfigModal } from '@/components/nutrition/SliceConfigModal';
 import { MenuNameEditModal } from '@/components/nutrition/MenuNameEditModal';
@@ -155,13 +156,18 @@ export default function NutritionLabelResult() {
       // 결과적으로 그룹 순서와 충돌하지 않는다) 카테고리별 순서가 그대로 반영된다.
       const menuOrder = [...pizzaOrder, ...sideOrder, ...beverageOrder];
       const ingredientNameOverrides = loadIngredientNames();
-      const { ingredientToMenus: originIngredientToMenus } = buildIngredientMenuMap({
+      const { ingredientToMenus: originIngredientToMenusRaw } = buildIngredientMenuMap({
         menuMasters: masters,
         detailRecipes,
         groups,
         edges: costEdges,
         compositions: [],
       });
+      // 출력 대표 메뉴 연결: 변형(매장별 재료 차이) 행의 재료를 대표 메뉴에 합친다
+      const originIngredientToMenus = foldIngredientToMenus(
+        originIngredientToMenusRaw,
+        labelCtx.aliasMap
+      );
       const origins = buildOriginsFromIngredients(
         asObjectArray(ings),
         originIngredientToMenus,

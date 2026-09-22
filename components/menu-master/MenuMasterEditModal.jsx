@@ -68,6 +68,7 @@ export function MenuMasterEditModal({
     note: row?.note || '',
     excludeFromOrigin: row?.excludeFromOrigin === true,
     hidden: row?.hidden === true,
+    outputMenuCode: row?.outputMenuCode || '',
     photo: row?.photo && row.photo.data ? row.photo : null,
   });
   const [errors, setErrors] = useState({});
@@ -140,6 +141,7 @@ export function MenuMasterEditModal({
       note: form.note,
       excludeFromOrigin: form.excludeFromOrigin,
       hidden: form.hidden,
+      outputMenuCode: form.outputMenuCode,
       photo: form.photo,
     };
     try {

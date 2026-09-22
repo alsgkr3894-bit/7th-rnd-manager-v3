@@ -15,6 +15,11 @@ import { tagDetailRecipes } from '@/lib/cost/recipe-categories';
 import { asObjectArray } from '@/lib/ui/prop-guards';
 import { migrateNutritionToIngredients } from '@/lib/nutrition/migrate-to-ingredient';
 import { combineAllergenMenuSources } from './allergenPageSourceUtils';
+import {
+  buildOutputAliasMap,
+  dropOutputVariants,
+  foldIngredientToMenus,
+} from '@/lib/menu-master/output-alias';
 
 function createEmptyMenuMap() {
   return {
@@ -57,7 +62,16 @@ export function useAllergenSourceData() {
     const safeGroups = asObjectArray(groups);
     const safeEdges = asObjectArray(edges);
     const safeCompositions = asObjectArray(compositions);
-    const displayMenus = combineAllergenMenuSources(safeMenuMasters, safeMenuRefs);
+    const aliasMap = buildOutputAliasMap(safeMenuMasters);
+    // 출력 대표 메뉴 연결: 변형 행은 목록에서 빼고(대표 한 행만), 재료는 대표 메뉴에 합친다
+    const displayMenus = dropOutputVariants(
+      combineAllergenMenuSources(safeMenuMasters, safeMenuRefs),
+      aliasMap
+    );
+    const foldMap = mapData => ({
+      ...mapData,
+      ingredientToMenus: foldIngredientToMenus(mapData.ingredientToMenus, aliasMap),
+    });
     const detailRecipes = tagDetailRecipes(
       asObjectArray(recipeArrays.pizza),
       asObjectArray(recipeArrays.personal),
@@ -70,22 +84,26 @@ export function useAllergenSourceData() {
     setEdges(safeEdges);
     setToppings(asObjectArray(toppingList));
     setMapData(
-      buildIngredientMenuMap({
-        menuMasters: safeMenuMasters,
-        detailRecipes,
-        groups: safeGroups,
-        edges: safeEdges,
-        compositions: safeCompositions,
-      })
+      foldMap(
+        buildIngredientMenuMap({
+          menuMasters: safeMenuMasters,
+          detailRecipes,
+          groups: safeGroups,
+          edges: safeEdges,
+          compositions: safeCompositions,
+        })
+      )
     );
     setBaseMapData(
-      buildIngredientMenuMap({
-        menuMasters: safeMenuMasters,
-        detailRecipes,
-        groups: safeGroups,
-        edges: [],
-        compositions: safeCompositions,
-      })
+      foldMap(
+        buildIngredientMenuMap({
+          menuMasters: safeMenuMasters,
+          detailRecipes,
+          groups: safeGroups,
+          edges: [],
+          compositions: safeCompositions,
+        })
+      )
     );
   }, [mountedRef]);
 
