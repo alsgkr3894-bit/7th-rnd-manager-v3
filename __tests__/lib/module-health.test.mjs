@@ -105,6 +105,32 @@ describe('module-health', () => {
     expect(countModuleHealth(modules)).toEqual({ good: 2, warn: 1, bad: 2 });
   });
 
+  // 2026-09-22: 홈 원가율 경보 위젯·원가마진표·원가계산보고서와 기준(v3:margin-cost-warn/-crit)을
+  // 공유하도록 warnPct/critPct를 파라미터로 받게 했다 — 넘기지 않으면 예전과 같은 기본값(30/40).
+  test('warnPct/critPct로 원가 모듈 경보 기준을 조정할 수 있다', () => {
+    const defaultRun = buildModuleHealth({
+      freshness: { sales: freshStatus, price: freshStatus, shipment: freshStatus },
+      backupReminder: { stale: false, daysSince: 3, never: false },
+      issues: [],
+      costAlertData: { items: [{ costRate: 32 }] },
+      todos: [],
+      isMain: true,
+    }).find(item => item.id === 'cost');
+    expect(defaultRun.status).toBe('warn');
+
+    const customRun = buildModuleHealth({
+      freshness: { sales: freshStatus, price: freshStatus, shipment: freshStatus },
+      backupReminder: { stale: false, daysSince: 3, never: false },
+      issues: [],
+      costAlertData: { items: [{ costRate: 32 }] },
+      todos: [],
+      isMain: true,
+      warnPct: 35,
+      critPct: 45,
+    }).find(item => item.id === 'cost');
+    expect(customRun.status).toBe('good');
+  });
+
   test('손상된 배열 입력은 기본 상태로 복구한다', () => {
     const modules = buildModuleHealth({
       freshness: { sales: freshStatus, price: freshStatus, shipment: freshStatus },

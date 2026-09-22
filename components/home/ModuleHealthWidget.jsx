@@ -2,6 +2,12 @@
 import { Icon } from '@/components/icons';
 import { buildModuleHealth, countModuleHealth } from '@/lib/stats/module-health';
 import { asDisplayText } from '@/lib/ui/prop-guards';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { KEYS } from '@/lib/note/keys';
+import {
+  normalizeWarnPercentSetting,
+  normalizeCritPercentSetting,
+} from '@/app/cost/margin/marginPageUtils';
 
 const TONE = {
   good: {
@@ -70,6 +76,9 @@ export function ModuleHealthWidget({
   router,
   canEdit = false,
 }) {
+  // 홈 원가율 경보 위젯·원가마진표·원가계산보고서와 같은 기준을 공유한다.
+  const [warnPct] = useLocalStorage(KEYS.MARGIN_COST_WARN, 30, normalizeWarnPercentSetting);
+  const [critPct] = useLocalStorage(KEYS.MARGIN_COST_CRIT, 40, normalizeCritPercentSetting);
   const modules = buildModuleHealth({
     freshness,
     backupReminder,
@@ -80,6 +89,8 @@ export function ModuleHealthWidget({
     pipeline,
     isMain,
     canEdit,
+    warnPct,
+    critPct,
   });
   const counts = countModuleHealth(modules);
 

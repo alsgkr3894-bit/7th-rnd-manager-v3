@@ -2,18 +2,29 @@
 import { formatNumber } from '@/lib/format';
 import { getCostRateStyles } from '@/lib/cost/rate-color';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { KEYS } from '@/lib/note/keys';
+import {
+  normalizeWarnPercentSetting,
+  normalizeCritPercentSetting,
+} from '@/app/cost/margin/marginPageUtils';
 
 export function CostAlertWidget({ data, router }) {
+  // 원가마진표·원가계산보고서와 같은 기준(v3:margin-cost-warn/-crit)을 공유한다 — 전엔
+  // 이 위젯만 30/40으로 고정돼 있어, 사용자가 마진표에서 기준을 바꿔도 홈 경보 수는
+  // 안 바뀌었다.
+  const [warnPct] = useLocalStorage(KEYS.MARGIN_COST_WARN, 30, normalizeWarnPercentSetting);
+  const [critPct] = useLocalStorage(KEYS.MARGIN_COST_CRIT, 40, normalizeCritPercentSetting);
   const items = asObjectArray(data?.items).map(item => ({
     ...item,
     costRate: asFiniteNumber(item.costRate, 0),
   }));
   if (items.length === 0) return null;
 
-  const allAlerts = items.filter(item => item.costRate > 40);
+  const allAlerts = items.filter(item => item.costRate > critPct);
   const alerts = allAlerts.slice(0, 5);
-  const caution = items.filter(item => item.costRate > 30 && item.costRate <= 40).length;
-  const good = items.filter(item => item.costRate <= 30).length;
+  const caution = items.filter(item => item.costRate > warnPct && item.costRate <= critPct).length;
+  const good = items.filter(item => item.costRate <= warnPct).length;
   const total = asFiniteNumber(data?.total, items.length);
   const goMargin = () => router?.push?.('/cost/margin');
 
@@ -25,7 +36,7 @@ export function CostAlertWidget({ data, router }) {
           <div className="card-sub">
             레시피 등록 {total}개 ·{' '}
             <span style={{ color: 'var(--negative)', fontWeight: 700 }}>
-              경보 {alerts.length}개
+              경보 {allAlerts.length}개
             </span>
             {caution > 0 && <span style={{ color: 'var(--warn)' }}> · 주의 {caution}개</span>}
             {good > 0 && <span style={{ color: 'var(--positive)' }}> · 양호 {good}개</span>}
@@ -38,16 +49,18 @@ export function CostAlertWidget({ data, router }) {
 
       <div className="alert-summary">
         <div className="alert-pill bad">
-          <div className="n">{alerts.length}</div>
-          <div className="t">경보 · 40%↑</div>
+          <div className="n">{allAlerts.length}</div>
+          <div className="t">경보 · {critPct}%↑</div>
         </div>
         <div className="alert-pill warn">
           <div className="n">{caution}</div>
-          <div className="t">주의 · 30–40%</div>
+          <div className="t">
+            주의 · {warnPct}–{critPct}%
+          </div>
         </div>
         <div className="alert-pill good">
           <div className="n">{good}</div>
-          <div className="t">양호 · 30%↓</div>
+          <div className="t">양호 · {warnPct}%↓</div>
         </div>
       </div>
 
@@ -58,7 +71,9 @@ export function CostAlertWidget({ data, router }) {
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--positive)' }}>
               경보 메뉴 없음
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>모든 메뉴 원가율 40% 이하</div>
+            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
+              모든 메뉴 원가율 {critPct}% 이하
+            </div>
           </div>
         </div>
       ) : (

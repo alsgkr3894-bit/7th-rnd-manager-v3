@@ -13,17 +13,20 @@ export function exportAllSummaryCsv(rows) {
   downloadCsv([headers, ...body], makeFileNameWithBrand('전메뉴원가종합', 'csv'));
 }
 
-export function buildAllSummaryStats(rows) {
+// threshold 기본값(40)은 홈 원가율 경보 위젯·원가마진표·원가계산보고서와 같은 기준
+// (v3:margin-cost-crit)의 기본값과 동일 — 호출부(page.jsx)가 그 값을 읽어 넘긴다.
+export function buildAllSummaryStats(rows, threshold = 40) {
   const withCost = rows.filter(row => row.hasCost);
   const rates = withCost.filter(row => row.costRate != null).map(row => row.costRate);
   const avgRate = rates.length ? rates.reduce((sum, rate) => sum + rate, 0) / rates.length : null;
-  const alertCnt = rates.filter(rate => rate > 40).length;
+  const alertCnt = rates.filter(rate => rate > threshold).length;
 
   return {
     total: rows.length,
     withCost: withCost.length,
     avgRate,
     alertCnt,
+    threshold,
   };
 }
 

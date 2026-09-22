@@ -38,7 +38,10 @@ export function CostReportOptions({
         />
       </OptGroup>
 
-      <OptGroup label="위험 메뉴 기준" hint="이 원가율을 초과하는 메뉴는 ⚠ 표시">
+      <OptGroup
+        label="위험 메뉴 기준"
+        hint="이 원가율을 초과하는 메뉴는 ⚠ 표시 (홈·원가마진표와 공유되는 기준입니다)"
+      >
         <div className="threshold-bar">
           <input
             type="range"

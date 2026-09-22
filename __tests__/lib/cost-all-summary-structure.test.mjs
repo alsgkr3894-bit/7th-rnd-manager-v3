@@ -51,7 +51,19 @@ describe('cost all summary helpers', () => {
       withCost: 2,
       avgRate: 35,
       alertCnt: 1,
+      threshold: 40,
     });
+  });
+
+  // 2026-09-22: 홈 원가율 경보 위젯·원가마진표·원가계산보고서와 기준(v3:margin-cost-crit)을
+  // 공유하도록 threshold를 파라미터로 받게 했다 — 기준을 바꾸면 경보 수도 같이 바뀌어야 한다.
+  test('threshold 파라미터로 경보 기준을 조정할 수 있다', () => {
+    const rows = [
+      { hasCost: true, costRate: 32 },
+      { hasCost: true, costRate: 50 },
+    ];
+    expect(buildAllSummaryStats(rows, 30).alertCnt).toBe(2);
+    expect(buildAllSummaryStats(rows, 40).alertCnt).toBe(1);
   });
 
   test('category and filter helpers keep display order and 전체 fallback', () => {
@@ -67,7 +79,7 @@ describe('cost all summary structure', () => {
   test('page delegates data loading, stats, filters, states, and table rendering', () => {
     expect(pageSource).toContain('export default function Page');
     expect(pageSource).toContain('loadAllSummaryRows()');
-    expect(pageSource).toContain('buildAllSummaryStats(rows)');
+    expect(pageSource).toContain('buildAllSummaryStats(rows, critPct)');
     expect(pageSource).toContain('buildAllSummaryCategories(rows)');
     expect(pageSource).toContain('filterAllSummaryRows(rows, catFilter)');
     expect(pageSource).toContain('<AllSummaryStats');

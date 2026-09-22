@@ -2,6 +2,21 @@
 
 import { Icon } from '@/components/icons';
 import { formatNumber, formatPercent } from '@/lib/format';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { KEYS } from '@/lib/note/keys';
+import {
+  normalizeWarnPercentSetting,
+  normalizeCritPercentSetting,
+} from '@/app/cost/margin/marginPageUtils';
+
+// 홈 원가율 경보 위젯·원가마진표·원가계산보고서와 같은 기준을 공유한다 — 전엔 여기만
+// (>=40 danger, >=35 warn)로 따로 고정돼 있었다.
+function costRateToneOf(costRate, warnPct, critPct) {
+  if (costRate == null) return null;
+  if (costRate >= critPct) return 'danger';
+  if (costRate >= warnPct) return 'warn';
+  return 'ok';
+}
 
 export function MenuRecipeSectionHeader({
   hasComponents,
@@ -12,6 +27,9 @@ export function MenuRecipeSectionHeader({
   missingPriceFilterCount = 0,
   onToggleMissingPrice,
 }) {
+  const [warnPct] = useLocalStorage(KEYS.MARGIN_COST_WARN, 30, normalizeWarnPercentSetting);
+  const [critPct] = useLocalStorage(KEYS.MARGIN_COST_CRIT, 40, normalizeCritPercentSetting);
+  const costRateTone = costRateToneOf(recipeSummary?.costRate, warnPct, critPct);
   return (
     <>
       <div
@@ -52,8 +70,12 @@ export function MenuRecipeSectionHeader({
         </div>
       </div>
 
-      {hasComponents && <RecipeSummaryCards recipeSummary={recipeSummary} />}
-      {hasComponents && <RecipeSummaryLine recipeSummary={recipeSummary} />}
+      {hasComponents && (
+        <RecipeSummaryCards recipeSummary={recipeSummary} costRateTone={costRateTone} />
+      )}
+      {hasComponents && (
+        <RecipeSummaryLine recipeSummary={recipeSummary} costRateTone={costRateTone} />
+      )}
     </>
   );
 }
@@ -99,17 +121,14 @@ function SummaryCard({ label, value, tone = 'default' }) {
   );
 }
 
-function RecipeSummaryCards({ recipeSummary }) {
+function RecipeSummaryCards({ recipeSummary, costRateTone }) {
   const marginTone =
     recipeSummary.marginAmount == null
       ? 'default'
       : recipeSummary.marginAmount >= 0
         ? 'positive'
         : 'negative';
-  const rateTone =
-    recipeSummary.costRateTone === 'danger' || recipeSummary.costRateTone === 'warn'
-      ? 'warn'
-      : 'default';
+  const rateTone = costRateTone === 'danger' || costRateTone === 'warn' ? 'warn' : 'default';
 
   return (
     <div
@@ -138,8 +157,8 @@ function RecipeSummaryCards({ recipeSummary }) {
   );
 }
 
-function RecipeSummaryLine({ recipeSummary }) {
-  const costRateColor = COST_RATE_TONE_COLOR[recipeSummary.costRateTone] || 'var(--text-2)';
+function RecipeSummaryLine({ recipeSummary, costRateTone }) {
+  const costRateColor = COST_RATE_TONE_COLOR[costRateTone] || 'var(--text-2)';
   const missingDirectQuantityCount = recipeSummary.missingDirectQuantityCount || 0;
   const missingCommonQuantityCount = recipeSummary.missingCommonQuantityCount || 0;
   const missingDirectPriceCount = recipeSummary.missingDirectPriceCount || 0;

@@ -19,6 +19,9 @@ import { AllSummaryLoadingSkeleton } from './components/AllSummaryLoadingSkeleto
 import { AllSummaryRecipeNotice } from './components/AllSummaryRecipeNotice';
 import { AllSummaryStats } from './components/AllSummaryStats';
 import { AllSummaryTable } from './components/AllSummaryTable';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { KEYS } from '@/lib/note/keys';
+import { normalizeCritPercentSetting } from '@/app/cost/margin/marginPageUtils';
 
 const PAGE_SIZE = 60;
 
@@ -29,9 +32,10 @@ export default function Page() {
 
   useEffect(() => onPriceUpload(reload), [reload]);
 
+  const [critPct] = useLocalStorage(KEYS.MARGIN_COST_CRIT, 40, normalizeCritPercentSetting);
   const rows = useMemo(() => rawData ?? [], [rawData]);
   const dbError = dbErrorObj?.message ?? null;
-  const stats = useMemo(() => buildAllSummaryStats(rows), [rows]);
+  const stats = useMemo(() => buildAllSummaryStats(rows, critPct), [rows, critPct]);
   const categories = useMemo(() => buildAllSummaryCategories(rows), [rows]);
   const filtered = useMemo(() => filterAllSummaryRows(rows, catFilter), [rows, catFilter]);
   const hasAnyData = rows.length > 0;

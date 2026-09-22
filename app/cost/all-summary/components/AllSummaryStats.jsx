@@ -12,7 +12,7 @@ export function AllSummaryStats({ stats }) {
         color={stats.avgRate != null ? costRateColor(stats.avgRate) : undefined}
       />
       <AllSummaryStatCard
-        label="원가율 경보 (40% 초과)"
+        label={`원가율 경보 (${stats.threshold ?? 40}% 초과)`}
         value={stats.alertCnt}
         unit="개"
         color={stats.alertCnt > 0 ? 'var(--negative)' : undefined}

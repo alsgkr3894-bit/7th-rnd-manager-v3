@@ -31,6 +31,9 @@ import {
 } from '@/lib/report/recipe-print-selection';
 import { useSettingValue } from '@/hooks/useSettingValue';
 import { buildStrictPostingMessage, collectStrictPostingIssues } from '@/lib/report/strict-posting';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { KEYS } from '@/lib/note/keys';
+import { normalizeCritPercentSetting } from '@/app/cost/margin/marginPageUtils';
 
 // ── 상수 ──────────────────────────────────────────────────────
 // 카테고리 순서: 원가마진표(app/cost/margin/marginTableSections.js CATEGORY_SECTIONS)와 동일
@@ -83,7 +86,14 @@ export default function Page() {
 }
 
 function CostReportBuilderContent({ onReportModeChange }) {
-  const [riskThreshold, setRiskThreshold] = useState(35);
+  // 원가율 위험 기준 — 홈 경보 위젯·원가마진표와 같은 값을 공유한다(v3:margin-cost-crit).
+  // 전엔 이 화면만 저장 안 되는 35%로 따로 고정돼 있어, 마진표(기본 40%)와 위험 메뉴
+  // 집계가 갈렸다(기준값 차이만으로 12개 메뉴가 위험군 여부가 달랐음).
+  const [riskThreshold, setRiskThreshold] = useLocalStorage(
+    KEYS.MARGIN_COST_CRIT,
+    40,
+    normalizeCritPercentSetting
+  );
   const [cats, setCats] = useState({
     pizza: true,
     personal: true,
@@ -112,7 +122,8 @@ function CostReportBuilderContent({ onReportModeChange }) {
       recipeSelection: {},
     },
     draft => {
-      if (draft.riskThreshold) setRiskThreshold(draft.riskThreshold);
+      // riskThreshold는 더 이상 이 화면의 draft가 아니라 공유 설정(v3:margin-cost-crit)에서
+      // 온다 — 여기서 복원하면 예전 초안 값이 홈·마진표와 다시 어긋난다.
       if (draft.cats) setCats(c => ({ ...c, ...draft.cats }));
     }
   );

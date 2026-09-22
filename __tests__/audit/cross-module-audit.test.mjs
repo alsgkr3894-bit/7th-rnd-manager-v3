@@ -384,7 +384,32 @@ d('모듈 간 연동 값 전수 대조', () => {
     expect(Array.isArray(diffs)).toBe(true);
   });
 
-  test('원가율 위험 기준 — 홈(35%) vs 원가마진표(40%) 기준으로 위험 판정이 갈리는 메뉴 수', async () => {
+  // 2026-09-22 수정 후: 홈 경보 위젯·인사말·헬스체크·전체요약·원가마진표·원가계산보고서·
+  // 메뉴마스터 레시피 요약이 전부 같은 설정(v3:margin-cost-warn/-crit, 기본 30/40)을 읽는다.
+  // 전엔 보고서만 35% 고정이라 12개 메뉴가 기준 차이만으로 위험군 여부가 갈렸다.
+  test('원가율 위험 기준 — 모든 화면이 같은 설정 키를 읽고, 하드코딩 기준이 남아 있지 않다', () => {
+    const readSrc = f => readFileSync(join(process.cwd(), f), 'utf8');
+    const sharedReaders = [
+      'components/home/CostAlertWidget.jsx',
+      'components/home/ModuleHealthWidget.jsx',
+      'components/menu-master/MenuRecipeSectionHeader.jsx',
+      'app/page.jsx',
+      'app/cost/all-summary/page.jsx',
+      'app/cost/margin/page.jsx',
+      'app/report/cost/page.jsx',
+    ];
+    for (const f of sharedReaders) {
+      expect(readSrc(f)).toContain('KEYS.MARGIN_COST_CRIT');
+    }
+    expect(readSrc('app/report/cost/page.jsx')).not.toContain('useState(35)');
+    expect(readSrc('components/home/CostAlertWidget.jsx')).not.toMatch(/costRate > 40\b/);
+    expect(readSrc('app/page.jsx')).not.toMatch(/costRate > 40\b/);
+    expect(readSrc('app/cost/all-summary/allSummaryUtils.js')).not.toMatch(/rate > 40\b/);
+    expect(readSrc('lib/stats/module-health.js')).not.toMatch(/> 40\b|<= 40\b|> 30 &&/);
+    expect(readSrc('lib/menu-master/recipe-summary.js')).not.toContain('costRateTone');
+  });
+
+  test('원가율 위험 기준 — 통일된 기본 기준(40%)으로 본 위험 메뉴 수(참고용)', async () => {
     const menus = snapshot.menu_master.filter(m => m.status === 'active');
     const ingredients = await getAllIngredients();
     const prices = await getAllMenuPrices();
@@ -414,19 +439,16 @@ d('모듈 간 연동 값 전수 대조', () => {
           rates.push({ code: menu.code, name: menu.name, rate: menu.rate });
       }
     }
-    const over35 = rates.filter(r => r.rate >= 35);
-    const over40 = rates.filter(r => r.rate > 40);
-    const onlyInBoth = new Set(over40.map(r => r.code));
-    const between35And40 = over35.filter(r => !onlyInBoth.has(r.code));
+    const { normalizeCritPercentSetting } = await import('@/app/cost/margin/marginPageUtils');
+    const crit = normalizeCritPercentSetting(undefined);
+    const reportRisk = rates.filter(r => r.rate >= crit);
+    const homeAlert = rates.filter(r => r.rate > crit);
 
     // eslint-disable-next-line no-console
     console.log(
-      `[audit] 원가율 위험 기준: 보고서(>=35%) ${over35.length}개 vs 홈/마진표(>40%) ${over40.length}개 — 기준 차이로만 위험군에 들어가는 메뉴 ${between35And40.length}개`
+      `[audit] 원가율 위험 기준 ${crit}%: 보고서(>=) ${reportRisk.length}개 / 홈·마진표(>) ${homeAlert.length}개 — 정확히 ${crit}%인 메뉴 ${reportRisk.length - homeAlert.length}개만 경계 차이`
     );
-    if (between35And40.length) {
-      // eslint-disable-next-line no-console
-      console.log(JSON.stringify(between35And40.slice(0, 10), null, 2));
-    }
+    expect(crit).toBe(40);
     expect(rates.length).toBeGreaterThan(0);
   });
 
