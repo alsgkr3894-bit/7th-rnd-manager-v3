@@ -498,7 +498,8 @@ describe('buildPizzaSheet', () => {
 });
 
 describe('buildSetHalfSheet', () => {
-  test('세트박스 행의 1회 중량은 최소/최대의 평균값으로 출력한다', () => {
+  // 2026-09-22: 1회 중량은 계산 범위 대신 매장 표기 기준 299g 고정(세트박스·하프앤하프 공통)
+  test('세트박스·하프앤하프 행의 1회 중량은 299g으로 고정하고 열량은 구성 전체 기준이다', () => {
     const rows = buildSetHalfSheet({
       menus: [
         { menuCode: 'P-A', menuName: '가 피자', category: '피자' },
@@ -526,12 +527,14 @@ describe('buildSetHalfSheet', () => {
     });
 
     // max = 나 피자 총 240kcal + 치즈크러스트 절대 총량 50kcal + 사이드 8kcal = 298
-    // 중량 180~220 → 평균 200
     expect(rows.find(row => row.kind === 'set')).toMatchObject({
       menuName: '테스트 L세트',
-      weight: 200,
+      weight: 299,
       minKcal: 108,
       maxKcal: 298,
+    });
+    expect(rows.find(row => row.kind === 'half' && row.side === 'L')).toMatchObject({
+      weight: 299,
     });
   });
 

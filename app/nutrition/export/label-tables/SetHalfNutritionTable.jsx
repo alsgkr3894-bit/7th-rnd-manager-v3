@@ -16,7 +16,7 @@ export function SetHalfNutritionTable({ rows }) {
   return (
     <NutritionLabelScrollArea>
       <div className="origin-result-title large">
-        영양성분표 (세트박스·하프앤하프) — 입력 총중량 기준
+        영양성분표 (세트박스·하프앤하프) — 1회 중량 299g 표기, 열량은 구성 전체 기준
       </div>
       <table className="origin-result-table" style={TABLE_STYLE}>
         <thead>

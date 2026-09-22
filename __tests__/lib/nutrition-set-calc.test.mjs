@@ -100,6 +100,31 @@ describe('nutrition set calc', () => {
     });
   });
 
+  // 2026-09-22: 사이드(basis 'serving')·음료의 저장 kcal은 1회 제공량 총열량 — 100g당으로 보고
+  // ×중량/100을 하면 패밀리박스 열량이 3~4배로 부풀려졌다(콜라 1.25L 550kcal → 6875kcal).
+  test('세트박스 구성품 중 사이드(serving)·음료는 저장 kcal을 총열량으로 그대로 더한다', () => {
+    const result = calcSetMinMax(
+      [{ menuCodes: ['S-SIDE'] }, { menuCodes: ['D-CC-001-1250'] }],
+      [
+        ...pizzaMenus,
+        { menuCode: 'S-SIDE', menuName: '스파게티', category: '사이드' },
+        { menuCode: 'D-CC-001-1250', menuName: '콜라 1.25L', category: '음료' },
+      ],
+      {
+        ...rawMap,
+        'S-SIDE__석쇠L': { weight: 432, kcal: 627, basis: 'serving' },
+        'D-CC-001-1250__단품': { weight: 1250, kcal: 550 },
+      },
+      {},
+      pizzaMenus,
+      edgeMap
+    );
+
+    // L 피자 80(씬)~250(나 피자+치즈크러스트) + 627 + 550, R 피자 90~220 + 1177
+    expect(result.bySize.L).toMatchObject({ minKcal: 1257, maxKcal: 1427 });
+    expect(result.bySize.R).toMatchObject({ minKcal: 1267, maxKcal: 1397 });
+  });
+
   test('세트박스 구성품에 부분 수량(qty/baseQty)이 있으면 영양값을 비율만큼만 반영한다', () => {
     // S-1__석쇠L = weight 100, kcal 10 → 완제품 기여분 10kcal/100g. qty 2 / baseQty 4 = 절반만 반영.
     const result = calcSetMinMax(

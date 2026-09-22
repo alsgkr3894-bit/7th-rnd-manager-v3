@@ -135,7 +135,7 @@ describe('nutrition label result structure', () => {
     expect(simpleTableSource).toContain('NutritionLabelColumnHeader');
     expect(setHalfTableSource).toContain('export function SetHalfNutritionTable');
     expect(setHalfTableSource).toContain('영양성분표 (세트박스·하프앤하프)');
-    expect(setHalfTableSource).toContain('입력 총중량 기준');
+    expect(setHalfTableSource).toContain('1회 중량 299g 표기');
     expect(setHalfTableSource).not.toContain('150g 기준');
     expect(tablePrimitivesSource).toContain('export function NutritionValueText');
     expect(tablePrimitivesSource).toContain('export function NutritionLabelEmpty');
