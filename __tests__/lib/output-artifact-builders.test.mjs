@@ -77,7 +77,12 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
       '배달플랫폼용',
       '원산지정보',
     ]);
-    expect(rowsOf(workbook, '매장비치용')[1]).toEqual(['표시품목', '원산지', '음식명']);
+    expect(rowsOf(workbook, '매장비치용')[0]).toEqual(['원산지 표시판']);
+    expect(rowsOf(workbook, '매장비치용')[1]).toEqual(['표시품목', '원산지', '메뉴명']);
+    expect(workbook.Sheets['매장비치용']['!merges'][0]).toEqual({
+      s: { r: 0, c: 0 },
+      e: { r: 0, c: 2 },
+    });
     expect(rowsOf(workbook, '매장비치용')[2]).toEqual(['=돼지고기', '+국내산', '페퍼로니피자']);
     expect(workbook.Sheets['매장비치용'].A3).toMatchObject({ t: 's', v: '=돼지고기' });
     expect(workbook.Sheets['매장비치용'].A3.f).toBeUndefined();

@@ -1,4 +1,5 @@
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
+import { buildPizzaCommonSpans } from '@/lib/nutrition/origin/output-sheets';
 
 const EMPTY_SET = new Set();
 const asSet = value => (value instanceof Set ? value : EMPTY_SET);
@@ -22,9 +23,17 @@ function Sheet1({ rows }) {
     );
   }
 
+  // 연속된 "피자공통" 행은 메뉴명 칸을 세로로 합친다 (양식의 치즈·도우 행)
+  const spanStart = new Map();
+  const spanned = new Set();
+  for (const span of buildPizzaCommonSpans(safeRows)) {
+    spanStart.set(span.start, span.length);
+    for (let i = span.start + 1; i < span.start + span.length; i++) spanned.add(i);
+  }
+
   return (
     <div id="origin-print-area">
-      <div className="origin-result-title large">원산지 표시판 (매장비치용)</div>
+      <div className="origin-result-title large">원산지 표시판</div>
       <table className="origin-result-table origin-sign-table">
         <colgroup>
           <col className="col-item" />
@@ -35,7 +44,7 @@ function Sheet1({ rows }) {
           <tr>
             <th>표시품목</th>
             <th>원산지</th>
-            <th>음식명</th>
+            <th>메뉴명</th>
           </tr>
         </thead>
         <tbody>
@@ -45,9 +54,13 @@ function Sheet1({ rows }) {
             >
               <td>{asDisplayText(row.displayName)}</td>
               <td>{asDisplayText(row.originCountry)}</td>
-              <td>
-                {Array.isArray(row.menus) ? row.menus.join(', ') : [...asSet(row.menus)].join(', ')}
-              </td>
+              {!spanned.has(index) && (
+                <td rowSpan={spanStart.get(index) || undefined}>
+                  {Array.isArray(row.menus)
+                    ? row.menus.join(', ')
+                    : [...asSet(row.menus)].join(', ')}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
