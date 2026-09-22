@@ -55,7 +55,7 @@ describe('nutrition export origin result structure', () => {
     expect(tablesSource).toContain('function Sheet4');
     expect(tablesSource).toContain('원산지 표시판</div>');
     expect(tablesSource).toContain('<th>메뉴명</th>');
-    expect(tablesSource).toContain('원산지 정보');
+    expect(tablesSource).toContain('buildOriginStatementLines');
     expect(sheetsSource).toContain('export function buildOriginStoreSheet');
     expect(sheetsSource).toContain('export function buildOriginFridgeSheet');
     expect(sheetsSource).toContain('export function buildOriginDeliverySheet');

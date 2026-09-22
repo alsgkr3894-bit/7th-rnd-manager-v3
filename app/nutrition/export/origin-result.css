@@ -337,6 +337,7 @@
 .origin-statement-box {
   border: 1px solid #333;
   border-bottom: none;
+  white-space: pre-wrap;
   padding: 16px 22px;
   background: #fff;
   font-size: 15px;
@@ -348,15 +349,6 @@
 }
 .origin-statement-line:last-child {
   margin-bottom: 0;
-}
-.origin-statement-names {
-  font-weight: 800;
-  color: #111;
-}
-.origin-statement-paren {
-  font-weight: 500;
-  color: #333;
-  margin-left: 1px;
 }
 
 /* ── 냉장고부착용 복수 원산지 줄바꿈 ─────────────────────── */

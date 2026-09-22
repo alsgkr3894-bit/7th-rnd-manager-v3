@@ -100,7 +100,10 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
         sheet1: [{ displayName: '=돼지고기', originCountry: '+국내산', menus: ['페퍼로니피자'] }],
         sheet2: [{ ingredientName: '치즈', itemText: '치즈', originText: '미국산' }],
         sheet3: [{ group: '피자', menuName: '페퍼로니피자', parts: ['치즈(미국산)'] }],
-        sheet4: [{ names: '치즈', breakdown: '치즈 : 미국산' }],
+        sheet4: [
+          { names: '도우', breakdown: '밀 : 미국산, 캐나다산 섞음', pizzaCommon: true },
+          { names: '치즈', breakdown: '치즈 : 미국산', pizzaCommon: false },
+        ],
       },
       '원산지표시판'
     );
@@ -126,6 +129,13 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
     expect(store.A2.s.font.bold).toBe(true);
     expect(store.A1.s.border).toBeUndefined();
     expect(rowsOf(workbook, '원산지(냉장고)')[1]).toEqual(['음식명', '표시품목', '원산지']);
+    // 원산지정보: 제목 + 표기문 셀 하나("※ 피자공통" 줄 / 공통 재료 / 빈 줄 / 나머지 문단)
+    expect(rowsOf(workbook, '원산지정보')[0]).toEqual(['원산지']);
+    expect(rowsOf(workbook, '원산지정보')[1]).toEqual([
+      '※ 피자공통\n도우(밀 : 미국산, 캐나다산 섞음)\n\n치즈(치즈 : 미국산)',
+    ]);
+    expect(workbook.Sheets['원산지정보'].A2.s.alignment.wrapText).toBe(true);
+    expect(workbook.Sheets['원산지정보'].A2.s.border.left.style).toBe('thin');
 
     const diskWorkbook = savedWorkbook();
     expect(diskWorkbook.SheetNames).toEqual(workbook.SheetNames);

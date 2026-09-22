@@ -1,5 +1,8 @@
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
-import { buildPizzaCommonSpans } from '@/lib/nutrition/origin/output-sheets';
+import {
+  buildOriginStatementLines,
+  buildPizzaCommonSpans,
+} from '@/lib/nutrition/origin/output-sheets';
 
 const EMPTY_SET = new Set();
 const asSet = value => (value instanceof Set ? value : EMPTY_SET);
@@ -150,12 +153,11 @@ function Sheet4({ rows }) {
 
   return (
     <div id="origin-print-area">
-      <div className="origin-result-title large">원산지 정보</div>
+      <div className="origin-result-title large">원산지</div>
       <div className="origin-statement-box">
-        {safeRows.map((row, index) => (
-          <p className="origin-statement-line" key={`${asDisplayText(row.names)}-${index}`}>
-            <span className="origin-statement-names">{asDisplayText(row.names)}</span>
-            <span className="origin-statement-paren">({asDisplayText(row.breakdown)})</span>
+        {buildOriginStatementLines(safeRows).map((line, index) => (
+          <p className="origin-statement-line" key={index}>
+            {line || ' '}
           </p>
         ))}
       </div>

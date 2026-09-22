@@ -1,6 +1,7 @@
 import {
   buildOriginDeliverySheet,
   buildOriginFridgeSheet,
+  buildOriginStatementLines,
   buildOriginStatementSheet,
   buildOriginStoreSheet,
   buildPizzaCommonSpans,
@@ -335,6 +336,60 @@ describe('nutrition origin output sheets', () => {
         '오븐 스파게티',
         '하프앤하프',
       ]);
+    });
+
+    test('원산지정보 표기문: 피자공통 재료는 "※ 피자공통" 아래 한 줄씩, 나머지는 한 문단', () => {
+      const sheet = buildOriginStatementSheet(sampleOrigins, {});
+      expect(sheet.map(r => [r.names, r.breakdown, r.pizzaCommon])).toEqual([
+        ['까망베르', '치즈 : 덴마크산', true],
+        ['도우', '밀 : 미국산, 캐나다산 섞음, 흑미 : 국내산', true],
+        ['모짜렐라', '치즈 : 덴마크산, 미국산 섞음', true],
+        ['베이컨', '돼지고기 : 미국산', false],
+        ['페페로니', '돼지고기 : 국내산, 쇠고기 : 호주산', false],
+      ]);
+      expect(buildOriginStatementLines(sheet)).toEqual([
+        '※ 피자공통',
+        '까망베르(치즈 : 덴마크산)',
+        '도우(밀 : 미국산, 캐나다산 섞음, 흑미 : 국내산)',
+        '모짜렐라(치즈 : 덴마크산, 미국산 섞음)',
+        '',
+        '베이컨(돼지고기 : 미국산) 페페로니(돼지고기 : 국내산, 쇠고기 : 호주산)',
+      ]);
+    });
+
+    test('원산지정보 표기문: 표기가 같은 재료는 이름을 합치고, 공통/비공통은 섞지 않는다', () => {
+      const pork = [{ displayName: '돼지고기', country: '국내산' }];
+      const sheet = buildOriginStatementSheet(
+        [
+          { ingredientName: '양념포크', items: pork, menuCodes: allPizzas },
+          { ingredientName: '세블락소시지', items: pork, menuCodes: allPizzas },
+          { ingredientName: '양념불고기', items: pork, menuCodes: [allPizzas[0]] },
+        ],
+        {}
+      );
+      expect(sheet.map(r => [r.names, r.pizzaCommon])).toEqual([
+        ['세블락소시지, 양념포크', true],
+        ['양념불고기', false],
+      ]);
+      expect(
+        buildOriginStatementLines([{ names: '베이컨', breakdown: '돼지고기 : 미국산' }])
+      ).toEqual(['베이컨(돼지고기 : 미국산)']);
+      // 원산지 값 자체가 "호주산,뉴질랜드산"이면 나눠서 "섞음"을 붙인다(이미 붙어 있어도 중복 없음)
+      expect(
+        buildOriginStatementSheet(
+          [
+            {
+              ingredientName: '스테이크',
+              items: [{ displayName: '쇠고기', country: '호주산,뉴질랜드산' }],
+            },
+            {
+              ingredientName: '스모크햄',
+              items: [{ displayName: '돼지고기', country: '국내산, 외국산 섞음' }],
+            },
+          ],
+          {}
+        ).map(r => r.breakdown)
+      ).toEqual(['돼지고기 : 국내산, 외국산 섞음', '쇠고기 : 호주산, 뉴질랜드산 섞음']);
     });
 
     test('피자가 한 종류뿐이면 피자공통으로 뭉개지 않는다', () => {
