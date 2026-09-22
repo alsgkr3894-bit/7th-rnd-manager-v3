@@ -131,33 +131,32 @@ d('판매량↔영양성분↔원산지↔알레르기 연동 값 전수 대조'
     expect(Array.isArray(diffs)).toBe(true);
   });
 
-  test('A2-2: 판매량 화면의 "단종" 정의 — 순위/비교(메뉴마스터만) vs 보고서(메뉴마스터 ∪ ref_discontinued)', async () => {
+  test('A2-2(수정 후 회귀 확인): 판매량 "단종" 판정에 비정규메뉴(ref_discontinued)가 메뉴마스터 단종과 함께 반영된다', async () => {
+    // 2026-09-22 수정 전엔 순위/비교 화면(RankRow.jsx)이 메뉴마스터 단종만 봐서, 사용자가
+    // 순위표에서 "단종 처리"한 비정규메뉴는 판매량 보고서에만 배지가 뜨고 순위/비교엔 안
+    // 떴다. RankRow.jsx가 이제 build-sales-report.js와 같은 조합
+    // (isDiscontinuedMenuName || isIrregularMenuName)을 쓰도록 고쳤다 — 그 조합이 실제
+    // ref_discontinued에 등록된 이름들을 빠짐없이 단종으로 잡는지 데이터로 고정한다.
     const { buildIrregularMenuNameSet, isIrregularMenuName } =
       await import('@/lib/sales/irregular-menu');
     const discontinuedNameSet = buildDiscontinuedMenuNameSet(snapshot.menu_master);
     const irregularNameSet = buildIrregularMenuNameSet(snapshot.ref_discontinued);
 
-    // 실제 판매 데이터에 등장하는 표시명(그룹명 우선, 없으면 원본명) 집합만 대상으로 한다 —
-    // 팔린 적 없는 이름까지 비교하면 노이즈만 늘어난다.
-    const displayNames = new Set(
-      snapshot.sales_rows.map(r => r.groupName || r.mappedMenuName || r.rawMenuName).filter(Boolean)
-    );
+    const combinedDiscontinued = name =>
+      isDiscontinuedMenuName(name, discontinuedNameSet) ||
+      isIrregularMenuName(name, irregularNameSet);
 
-    const diffs = [];
-    for (const name of displayNames) {
-      const rankCompareDiscontinued = isDiscontinuedMenuName(name, discontinuedNameSet);
-      const reportDiscontinued =
-        rankCompareDiscontinued || isIrregularMenuName(name, irregularNameSet);
-      if (rankCompareDiscontinued !== reportDiscontinued) {
-        diffs.push({ name, rankCompareDiscontinued, reportDiscontinued });
-      }
-    }
+    const missed = snapshot.ref_discontinued
+      .map(r => r.menuName)
+      .filter(Boolean)
+      .filter(name => !combinedDiscontinued(name));
+
     // eslint-disable-next-line no-console
     console.log(
-      `[audit] 판매량 "단종" 정의(순위/비교 vs 보고서) 불일치: ${diffs.length}건 / 판매 데이터 표시명 ${displayNames.size}개`
+      `[audit] 비정규메뉴 단종 처리(ref_discontinued) 중 조합 판정에서 빠지는 이름: ${missed.length}건 / 전체 ${snapshot.ref_discontinued.length}개`
     );
-    if (diffs.length) console.log(JSON.stringify(diffs.slice(0, 30), null, 2));
-    expect(Array.isArray(diffs)).toBe(true);
+    if (missed.length) console.log(JSON.stringify(missed, null, 2));
+    expect(missed).toEqual([]);
   });
 
   test('A2-6: 알레르기 페이지 — status 없는 nutrition_menu_ref 병합이 단종 제외를 깨는지', async () => {

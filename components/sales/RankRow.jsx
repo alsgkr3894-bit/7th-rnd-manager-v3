@@ -5,7 +5,9 @@ import { formatNumber } from '@/lib/format';
 import { safeRevenue } from '@/lib/sales/revenue';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 import { useDiscontinuedMenuNames } from '@/hooks/useDiscontinuedMenuNames';
+import { useIrregularMenuNames } from '@/hooks/useIrregularMenuNames';
 import { isDiscontinuedMenuName } from '@/lib/menu-master/discontinued-lookup';
+import { isIrregularMenuName } from '@/lib/sales/irregular-menu';
 import { DiscontinuedBadge } from '@/components/sales/DiscontinuedBadge';
 
 function normalizeShare(value) {
@@ -34,7 +36,12 @@ export const RankRow = memo(function RankRow({ rank, row, total, expanded, onTog
   const share = normalizeShare(safeTotal > 0 ? quantity / safeTotal : 0);
   const handleToggle = typeof onToggle === 'function' ? onToggle : undefined;
   const discontinuedNames = useDiscontinuedMenuNames();
-  const isDiscontinued = isDiscontinuedMenuName(name, discontinuedNames);
+  const { irregularNameSet } = useIrregularMenuNames();
+  // 판매량 보고서(lib/report/build-sales-report.js)와 같은 기준 — 메뉴마스터 단종뿐 아니라
+  // 사용자가 순위표에서 "단종 처리"한 비정규메뉴(ref_discontinued)도 단종으로 본다. 전엔
+  // 여기만 메뉴마스터만 봐서, 보고서에선 단종 배지가 뜨는데 순위/비교에선 안 뜨는 메뉴가 있었다.
+  const isDiscontinued =
+    isDiscontinuedMenuName(name, discontinuedNames) || isIrregularMenuName(name, irregularNameSet);
 
   return (
     <div

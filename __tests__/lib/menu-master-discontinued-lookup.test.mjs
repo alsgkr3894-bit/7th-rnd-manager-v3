@@ -153,6 +153,17 @@ describe('판매 순위 화면에 단종 배지가 연결돼 있다', () => {
     expect(s).toContain('DiscontinuedBadge');
   });
 
+  // 2026-09-22: 판매량 보고서(lib/report/build-sales-report.js: discontinued = registeredDiscontinued
+  // || irregular)와 기준이 달라, 사용자가 순위표에서 "단종 처리"한 비정규메뉴가 보고서엔 뜨는데
+  // 순위/비교엔 단종 배지가 안 뜨던 문제 수정.
+  test('RankRow는 메뉴마스터 단종뿐 아니라 비정규메뉴 단종 처리(ref_discontinued)도 함께 본다', () => {
+    const s = src('components/sales/RankRow.jsx');
+    expect(s).toContain("from '@/hooks/useIrregularMenuNames'");
+    expect(s).toContain("from '@/lib/sales/irregular-menu'");
+    expect(s).toContain('useIrregularMenuNames()');
+    expect(s).toContain('isIrregularMenuName(name, irregularNameSet)');
+  });
+
   test('useDiscontinuedMenuNames는 실패해도 빈 Set으로 폴백한다', () => {
     const s = src('hooks/useDiscontinuedMenuNames.js');
     expect(s).toContain('EMPTY_SET');
