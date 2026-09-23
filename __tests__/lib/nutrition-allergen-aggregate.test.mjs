@@ -485,3 +485,69 @@ describe('buildToppingAllergenMap', () => {
     expect([...(map.get('TOP-CHZ') || [])]).toEqual(['AL02']);
   });
 });
+
+/**
+ * 알레르기 매트릭스의 "빈 행" 회귀 방지 (2026-09-23 주임님 PDF 대조에서 발견).
+ * - 엣지 옵션 메뉴(석쇠·치즈크러스트·골드스윗·씬바사삭)는 레시피가 없어 알레르기가 빈칸으로
+ *   나왔지만, 실제로는 해당 크러스트 구성품의 알레르기를 가진다.
+ * - 추가토핑은 전용 토핑 행과 메뉴마스터 행이 겹쳐 같은 토핑이 두 줄(빈칸 + 정상)로 나왔다.
+ */
+describe('buildMenuMatrix — 엣지·추가토핑 행', () => {
+  const ingredients = [
+    { productCode: 'DOUGH', ingredientName: '도우', allergens: ['AL05', 'AL06'], category: '도우' },
+    { productCode: 'STR', ingredientName: '스트링치즈', allergens: ['AL02'], category: '치즈류' },
+    { productCode: 'PEP', ingredientName: '페페로니', allergens: ['AL10'], category: '토핑재료' },
+  ];
+  const menuMasters = [
+    { menuCode: 'P-001-L', menuName: '페페로니 피자 L', category: '피자' },
+    { menuCode: 'OPT-EDGE-001', menuName: '석쇠', category: '엣지' },
+    { menuCode: 'OPT-EDGE-002-L', menuName: '치즈크러스트', category: '엣지' },
+    { menuCode: 'T-ETC-002', menuName: '페페로니 12장 (29g)', category: '추가토핑' },
+    { menuCode: 'T-ETC-004', menuName: '블랙올리브 32개', category: '추가토핑' },
+  ];
+  const mapData = buildIngredientMenuMap({
+    menuMasters,
+    detailRecipes: [
+      {
+        menuCode: 'P-001-L',
+        menuName: '페페로니 피자 L',
+        category: '피자',
+        components: [
+          { productCode: 'DOUGH', ingredientName: '도우' },
+          { productCode: 'PEP', ingredientName: '페페로니' },
+        ],
+      },
+    ],
+  });
+  const edges = [{ edgeType: '치즈크러스트', components: [{ productCode: 'STR' }] }];
+  const toppings = [
+    { toppingCode: 'T-ETC-002', toppingName: '페페로니 12(29g)', productCode: 'PEP' },
+    { toppingCode: 'T-ETC-004', toppingName: '블랙올리브 32개', productCode: 'NONE' },
+  ];
+
+  const rowsOf = () =>
+    buildMenuMatrix(ingredients, mapData, edges, () => false, [], {}, toppings, menuMasters);
+
+  test('엣지 옵션 행은 그 크러스트 구성품의 알레르기를 보여준다', () => {
+    const rows = rowsOf();
+    const grill = rows.find(r => r.menuCode === 'OPT-EDGE-001');
+    const cheese = rows.find(r => r.menuCode === 'OPT-EDGE-002-L');
+    // 석쇠 = 기본 도우(대두·밀), 치즈크러스트 = 엣지 구성품(우유)
+    expect([...grill.allergenCodes].sort()).toEqual(['AL05', 'AL06']);
+    expect([...cheese.allergenCodes].sort()).toEqual(['AL02']);
+  });
+
+  test('전용 토핑 행이 있는 추가토핑은 메뉴마스터 빈 행을 만들지 않는다', () => {
+    const rows = rowsOf();
+    const pepperoniRows = rows.filter(r => /페페로니 12/.test(r.menuName));
+    expect(pepperoniRows).toHaveLength(1);
+    expect(pepperoniRows[0].rowKey).toBe('topping__T-ETC-002');
+    expect([...pepperoniRows[0].allergenCodes]).toEqual(['AL10']);
+
+    // 알레르기가 없어 전용 행이 안 생기는 토핑은 메뉴마스터 행으로 남는다
+    const olive = rows.filter(r => /블랙올리브/.test(r.menuName));
+    expect(olive).toHaveLength(1);
+    expect(olive[0].rowKey).toBe('T-ETC-004');
+    expect([...olive[0].allergenCodes]).toEqual([]);
+  });
+});
