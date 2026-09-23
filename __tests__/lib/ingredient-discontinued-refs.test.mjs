@@ -57,3 +57,72 @@ describe('collectDiscontinuedIngredientRefs', () => {
     expect(collectDiscontinuedIngredientRefs({ ingredients: [] })).toEqual([]);
   });
 });
+
+/**
+ * 회귀 방지(2026-09-23): 단종 메뉴에서만 쓰이는 단종 식자재가 "재연결 필요"로 계속 배너에
+ * 남아 지울 방법이 없었다. 단종 메뉴는 원가·알레르기·원산지 출력에 안 나가므로 세지 않는다.
+ */
+describe('collectDiscontinuedIngredientRefs — 단종 메뉴 레시피 제외', () => {
+  const ingredients = [{ productCode: 'OLD01', ingredientName: '고구마 맛탕', discontinued: true }];
+  const menuMasters = [
+    { menuCode: 'P-PR-001-L', menuName: '고구마 피자 L', status: 'discontinued' },
+    { menuCode: 'P-PR-001-R', menuName: '고구마 피자 R', status: 'discontinued' },
+    { menuCode: 'P-OR-006-L', menuName: '페페로니 피자 L', status: 'active' },
+  ];
+
+  test('단종 메뉴에서만 참조되면 목록에서 빠진다', () => {
+    const rows = collectDiscontinuedIngredientRefs({
+      ingredients,
+      menuRecipes: [
+        {
+          menuCode: 'P-PR-001-L',
+          menuName: '고구마 피자 L',
+          components: [{ productCode: 'OLD01' }],
+        },
+        {
+          menuCode: 'P-PR-001-R',
+          menuName: '고구마 피자 R',
+          components: [{ productCode: 'OLD01' }],
+        },
+      ],
+      menuMasters,
+    });
+    expect(rows).toHaveLength(0);
+  });
+
+  test('판매 중 메뉴가 하나라도 참조하면 그 건수만 남는다', () => {
+    const rows = collectDiscontinuedIngredientRefs({
+      ingredients,
+      menuRecipes: [
+        {
+          menuCode: 'P-PR-001-L',
+          menuName: '고구마 피자 L',
+          components: [{ productCode: 'OLD01' }],
+        },
+        {
+          menuCode: 'P-OR-006-L',
+          menuName: '페페로니 피자 L',
+          components: [{ productCode: 'OLD01' }],
+        },
+      ],
+      menuMasters,
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ menuRecipeCount: 1, totalCount: 1 });
+    expect(rows[0].sampleMenuNames).toEqual(['페페로니 피자 L']);
+  });
+
+  test('menuMasters를 안 넘기면 기존처럼 전부 센다', () => {
+    const rows = collectDiscontinuedIngredientRefs({
+      ingredients,
+      menuRecipes: [
+        {
+          menuCode: 'P-PR-001-L',
+          menuName: '고구마 피자 L',
+          components: [{ productCode: 'OLD01' }],
+        },
+      ],
+    });
+    expect(rows).toHaveLength(1);
+  });
+});

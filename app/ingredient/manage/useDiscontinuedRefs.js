@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getAllMenuRecipes } from '@/lib/menu-recipes';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { getAllEdges } from '@/lib/cost/edge-dough';
+import { getAllMenuMaster } from '@/lib/menu-master';
 import { collectDiscontinuedIngredientRefs } from '@/lib/ingredient/discontinued-refs';
 
 /**
@@ -41,8 +42,8 @@ export function useDiscontinuedRefs(rows, refreshKey) {
     }
     let alive = true;
     setLoading(true);
-    Promise.all([getAllMenuRecipes(), getAllRecipeGroups(), getAllEdges()])
-      .then(([menuRecipes, recipeGroups, edges]) => {
+    Promise.all([getAllMenuRecipes(), getAllRecipeGroups(), getAllEdges(), getAllMenuMaster()])
+      .then(([menuRecipes, recipeGroups, edges, menuMasters]) => {
         if (!alive) return;
         setRefs(
           collectDiscontinuedIngredientRefs({
@@ -50,6 +51,7 @@ export function useDiscontinuedRefs(rows, refreshKey) {
             menuRecipes,
             recipeGroups,
             edges,
+            menuMasters,
           })
         );
         setError(null);
