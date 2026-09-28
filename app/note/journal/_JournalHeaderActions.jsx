@@ -116,6 +116,7 @@ export function JournalHeaderActions({
         <option value="day">오늘/선택일</option>
         <option value="week">주간</option>
         <option value="month">월간</option>
+        <option value="year">연간</option>
         <option value="custom">선택기간</option>
       </select>
       {printMode === 'custom' && (

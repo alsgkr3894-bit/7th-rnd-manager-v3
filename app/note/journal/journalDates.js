@@ -64,16 +64,23 @@ export function normalizeRange(start, end) {
     : { start: safeEnd, end: safeStart };
 }
 
+export function yearBounds(month) {
+  const year = safeMonth(month).slice(0, 4);
+  return { start: `${year}-01-01`, end: `${year}-12-31` };
+}
+
 export function printRangeForMode(mode, { date, month, customStart, customEnd }) {
   if (mode === 'week') return weekBounds(date);
   if (mode === 'month') return monthBounds(month);
+  if (mode === 'year') return yearBounds(month);
   if (mode === 'custom') return normalizeRange(customStart, customEnd);
   return { start: date, end: date };
 }
 
 export function printRangeLabel(mode, range) {
   if (range.start === range.end) return toDateLabel(range.start);
-  const prefix = mode === 'week' ? '주간' : mode === 'month' ? '월간' : '선택기간';
+  const prefix =
+    mode === 'week' ? '주간' : mode === 'month' ? '월간' : mode === 'year' ? '연간' : '선택기간';
   return `${prefix} ${range.start} ~ ${range.end}`;
 }
 

@@ -67,3 +67,20 @@ describe('연구일지 페이지 파일 분리', () => {
     }
   });
 });
+
+/** 2026-09-28 주임님: PDF 출력 기간에 연간 추가. */
+describe('연구일지 출력 기간 — 연간', () => {
+  test('연간은 해당 연도 1/1~12/31이고 라벨에 "연간"이 붙는다', async () => {
+    const { printRangeForMode, printRangeLabel, yearBounds } =
+      await import('../../app/note/journal/journalDates.js');
+    expect(yearBounds('2026-09')).toEqual({ start: '2026-01-01', end: '2026-12-31' });
+    const range = printRangeForMode('year', { date: '2026-09-28', month: '2026-09' });
+    expect(range).toEqual({ start: '2026-01-01', end: '2026-12-31' });
+    expect(printRangeLabel('year', range)).toBe('연간 2026-01-01 ~ 2026-12-31');
+  });
+
+  test('선택기에 연간 항목이 있다', () => {
+    const src = readFileSync(resolve('app/note/journal/_JournalHeaderActions.jsx'), 'utf8');
+    expect(src).toContain('<option value="year">연간</option>');
+  });
+});

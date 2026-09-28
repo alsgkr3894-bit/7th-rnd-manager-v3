@@ -46,6 +46,8 @@ export function useJournalPrint({ journalRecords, date, month, currentJournalPri
       buildJournalPrintHtml(printRangeTitle, printPeriodNotes, {
         title: printMode === 'day' ? '오늘 한 일 보고서' : '연구일지 종합본',
         brandName: getActiveBrand()?.name,
+        logoSrc:
+          typeof window === 'undefined' ? '' : `${window.location.origin}/logo-taemyeong.png`,
       }),
       { width: 800, height: 900 }
     );

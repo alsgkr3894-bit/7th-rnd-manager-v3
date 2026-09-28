@@ -143,6 +143,22 @@ describe('journal PDF print helpers', () => {
     expect(html).toContain('<div class="doc-brand">브랜드 : 7번가피자</div>');
   });
 
+  // 인쇄 창은 about:blank라 상대경로가 안 풀려 호출 측이 절대 URL을 넘긴다.
+  test('logoSrc를 주면 오른쪽 기간 블록 위에 로고가 들어간다', () => {
+    const html = buildJournalPrintHtml('연간 2026-01-01 ~ 2026-12-31', [], {
+      logoSrc: 'http://localhost:3000/logo-taemyeong.png',
+    });
+    expect(html).toMatch(
+      /<img class="doc-logo" src="http:\/\/localhost:3000\/logo-taemyeong\.png"/
+    );
+    // 로고가 기간(doc-date)보다 먼저 나와야 위에 얹힌다
+    expect(html.indexOf('doc-logo')).toBeLessThan(html.indexOf('class="doc-date"'));
+  });
+
+  test('logoSrc가 없으면 이미지 태그를 내지 않는다', () => {
+    expect(buildJournalPrintHtml('2026-07-06', [], {})).not.toMatch(/<img class="doc-logo"/);
+  });
+
   test('브랜드명이 없으면 그 줄을 아예 내지 않는다', () => {
     expect(buildJournalPrintHtml('2026-07-06', [], {})).not.toMatch(/<div class="doc-brand">/);
     expect(buildJournalPrintHtml('2026-07-06', [], { brandName: '  ' })).not.toMatch(
