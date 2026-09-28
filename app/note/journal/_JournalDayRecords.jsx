@@ -52,11 +52,13 @@ export function JournalDayRecords({ date, dayNotes, onPhotoClick, router }) {
               onPhotoClick={onPhotoClick}
               onEdit={() => {
                 if (isUnifiedSampleRecord(note)) {
-                  router.push(`/note/sample/${unifiedSampleSourceId(note)}`);
+                  router.push(`/note/sample/${unifiedSampleSourceId(note)}?from=journal`);
                 } else if (isUnifiedMarketResearchRecord(note)) {
-                  router.push(`/note/market?edit=${unifiedMarketResearchSourceId(note)}`);
+                  router.push(
+                    `/note/market?edit=${unifiedMarketResearchSourceId(note)}&from=journal`
+                  );
                 } else {
-                  router.push(`/note/${note.id}`);
+                  router.push(`/note/${note.id}?from=journal`);
                 }
               }}
             />

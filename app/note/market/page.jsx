@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
@@ -11,6 +11,7 @@ import { MarketPhotoLightbox } from './_MarketPhotoLightbox';
 import { MarketWriteModal } from './_MarketWriteModal';
 import { useMarketResearchList } from './useMarketResearchList';
 import { useMarketWriteForm } from './useMarketWriteForm';
+import { resolveEditReturn } from '@/lib/note/edit-return';
 
 export default function MarketResearchPage() {
   return (
@@ -29,6 +30,7 @@ export default function MarketResearchPage() {
 function MarketResearchContent() {
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const canEdit = roleReady && isAdmin;
+  const router = useRouter();
   const searchParams = useSearchParams();
   const editIdParam = searchParams.get('edit');
   const [detailRow, setDetailRow] = useState(null);
@@ -41,6 +43,10 @@ function MarketResearchContent() {
     reload: list.load,
     editIdParam,
     closeDetail: () => setDetailRow(null),
+    onFinishDeepLinkEdit: () => {
+      const back = resolveEditReturn(`?from=${searchParams.get('from') || ''}`, '');
+      if (back) router.push(back);
+    },
   });
   const { form, writing, startWrite, closeWrite } = write;
 

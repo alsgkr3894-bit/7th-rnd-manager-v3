@@ -11,7 +11,14 @@ import { findRowById } from './marketPageUtils';
  * - editIdParam: 연구일지 카드의 "수정"(?edit=<id>)으로 들어오면 해당 기록의 폼을 자동으로 연다.
  * - closeDetail: 작성 시작 시 열려 있던 상세 모달을 닫는 page 쪽 콜백.
  */
-export function useMarketWriteForm({ canEdit, rows, reload, editIdParam, closeDetail }) {
+export function useMarketWriteForm({
+  canEdit,
+  rows,
+  reload,
+  editIdParam,
+  closeDetail,
+  onFinishDeepLinkEdit,
+}) {
   const appliedEditIdRef = useRef(null);
   const [form, setForm] = useState(() => withToday());
   const [saving, setSaving] = useState(false);
@@ -57,8 +64,11 @@ export function useMarketWriteForm({ canEdit, rows, reload, editIdParam, closeDe
     try {
       await saveMarketResearch(form);
       showToast(form.id ? '시장조사를 수정했습니다' : '시장조사를 저장했습니다', 'ok');
+      const cameFromDeepLink = Boolean(editIdParam) && String(form.id) === String(editIdParam);
       closeWrite();
       await reload();
+      // 연구일지 등에서 "수정"으로 건너온 경우엔 원래 보던 화면으로 되돌린다.
+      if (cameFromDeepLink) onFinishDeepLinkEdit?.();
     } catch (error) {
       console.error('[note/market] save failed', error);
       showToast('시장조사 저장 실패', 'error');

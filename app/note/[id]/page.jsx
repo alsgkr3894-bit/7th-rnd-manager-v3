@@ -16,6 +16,7 @@ import {
   duplicateNote,
 } from '@/lib/note';
 import { noteDisplayTitle, isJournalNote } from '@/lib/note/display';
+import { resolveEditReturn } from '@/lib/note/edit-return';
 import { getAllSamples } from '@/lib/sample';
 import { printCurrentPageWithDownloadDate } from '@/lib/download';
 import { NoteFormBody, INIT, normalizeNoteFormForSave } from '@/app/note/_NoteFormBody';
@@ -119,11 +120,13 @@ export default function Page() {
 
   useKeyboardSave(handleSave);
 
-  // 연구일지 노트는 노트목록(filterNoteListNotes)에서 걸러지므로, 저장/취소 후
-  // 무조건 /note로 보내면 "방금 수정한 항목이 없는" 목록에 떨어진 것처럼 보인다.
-  // 노트 타입에 따라 실제로 그 노트가 보이는 화면으로 보낸다.
+  // 저장/취소 후 돌아갈 곳. 달력·보드 등에서 열었으면 그 화면으로 돌려보내고,
+  // 출처가 없으면 그 노트가 실제로 보이는 목록으로 보낸다 — 연구일지 노트는
+  // 노트목록(filterNoteListNotes)에서 걸러져 "방금 수정한 항목이 없는" 목록이 된다.
   function noteListDestination() {
-    return isJournalNote(form) ? '/note/journal' : '/note';
+    const fallback = isJournalNote(form) ? '/note/journal' : '/note';
+    if (typeof window === 'undefined') return fallback;
+    return resolveEditReturn(window.location.search, fallback);
   }
 
   async function handleSave() {
@@ -246,7 +249,7 @@ export default function Page() {
       <RelatedSamplesPanel
         samples={relatedSamples}
         menuName={form.menuName}
-        onOpenSample={id => router.push(`/note/sample/${id}`)}
+        onOpenSample={id => router.push(`/note/sample/${id}?from=note&backId=${noteId}`)}
       />
       <StickySaveBar
         onCancel={handleCancel}

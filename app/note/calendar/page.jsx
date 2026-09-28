@@ -217,8 +217,8 @@ export default function Page() {
         onEditSchedule={schedule => {
           if (canEdit) setModal({ mode: 'edit', schedule });
         }}
-        onOpenNote={id => router.push(`/note/${id}`)}
-        onOpenSample={id => router.push(`/note/sample/${id}`)}
+        onOpenNote={id => router.push(`/note/${id}?from=calendar`)}
+        onOpenSample={id => router.push(`/note/sample/${id}?from=calendar`)}
         onAddNote={date => {
           if (canEdit) router.push(`/note/write?testDate=${date}`);
         }}

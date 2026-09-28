@@ -235,21 +235,20 @@ describe('buildNoteContentProps', () => {
 
 /**
  * 샘플 편집 화면이 출처를 실제로 해석하는지 — 소스 기준 확인.
- * (화면 전체 렌더는 IndexedDB·라우터 의존이 커서 라우팅 규칙만 고정한다.)
+ * (화면 전체 렌더는 IndexedDB·라우터 의존이 커서 라우팅 규칙만 고정한다.
+ *  출처 → 경로 매핑 자체는 note-edit-return.test.mjs가 다룬다.)
  */
 describe('샘플 편집 화면의 돌아갈 곳', () => {
   const src = readFileSync(resolve('app/note/sample/[id]/page.jsx'), 'utf8');
 
-  test('아는 출처만 매핑하고 기본값은 샘플 목록', () => {
-    expect(src).toContain("const BACK_TO = { note: '/note' };");
+  test('공용 헬퍼로 출처를 풀고 기본값은 샘플 목록', () => {
     expect(src).toContain("const SAMPLE_LIST = '/note/sample';");
-    expect(src).toContain("get('from')");
+    expect(src).toContain('resolveEditReturn(window.location.search, SAMPLE_LIST)');
   });
 
   test('저장·취소·로드실패가 모두 backTo를 쓴다 (하드코딩 경로 없음)', () => {
     expect(src).toContain('router.push(backTo)');
     expect(src).toContain('router.replace(backTo)');
-    // 상수 정의를 뺀 나머지 자리에 '/note/sample' 하드코딩이 남아있으면 안 된다
     const withoutConst = src.replace("const SAMPLE_LIST = '/note/sample';", '');
     expect(withoutConst).not.toContain("'/note/sample'");
   });

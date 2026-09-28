@@ -205,7 +205,7 @@ export default function Page() {
                         maxIdx={STATUSES.length - 1}
                         onMove={moveStatus}
                         onStatusChange={changeStatus}
-                        onEdit={router.push}
+                        onEdit={href => router.push(`${href}?from=board`)}
                         canEdit={canEdit}
                         isDragging={dragId === note.id}
                         bouncing={bouncingIds.has(note.id)}

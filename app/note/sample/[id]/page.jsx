@@ -20,10 +20,8 @@ import { SampleFormBody, SAMPLE_INIT } from '../_SampleFormBody';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { copyText } from '@/lib/ui/clipboard';
+import { resolveEditReturn } from '@/lib/note/edit-return';
 
-// 어디서 이 화면을 열었는지 — 저장/취소 후 돌아갈 목록. 임의 경로를 받지 않고
-// 아는 출처만 매핑한다(잘못된 값이면 기본값인 샘플 목록).
-const BACK_TO = { note: '/note' };
 const SAMPLE_LIST = '/note/sample';
 
 export default function Page() {
@@ -35,7 +33,7 @@ export default function Page() {
   const [backTo] = useState(() =>
     typeof window === 'undefined'
       ? SAMPLE_LIST
-      : BACK_TO[new URLSearchParams(window.location.search).get('from') || ''] || SAMPLE_LIST
+      : resolveEditReturn(window.location.search, SAMPLE_LIST)
   );
   const parsedSampleId = Number(id);
   const sampleId =
