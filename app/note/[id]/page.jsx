@@ -176,7 +176,7 @@ export default function Page() {
       tags: form.tags,
       noteId,
     });
-    router.push('/note/write?type=sample');
+    router.push(`/note/write?type=sample&from=note&backId=${noteId}`);
   }
 
   function handlePrint() {

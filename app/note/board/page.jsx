@@ -53,7 +53,7 @@ export default function Page() {
             <button
               className="btn primary no-print"
               onClick={() => {
-                if (canEdit) router.push('/note/write');
+                if (canEdit) router.push('/note/write?from=board');
               }}
               disabled={!canEdit}
             >
@@ -251,7 +251,7 @@ export default function Page() {
             className="btn primary"
             style={{ marginTop: 12 }}
             onClick={() => {
-              if (canEdit) router.push('/note/write');
+              if (canEdit) router.push('/note/write?from=board');
             }}
             disabled={!canEdit}
           >

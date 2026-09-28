@@ -52,7 +52,7 @@ describe('kanban board error visibility guards', () => {
   test('칸반 빈 상태 작성 버튼도 viewer에서 비활성화된다', () => {
     expect(pageSource).toContain("from '@/hooks/useCurrentRole'");
     expect(pageSource).toContain('const canEdit = roleReady && isAdmin');
-    expect(pageSource).toContain("if (canEdit) router.push('/note/write')");
+    expect(pageSource).toContain("if (canEdit) router.push('/note/write?from=board')");
     expect(pageSource).toContain('disabled={!canEdit}');
   });
 });

@@ -57,6 +57,22 @@ describe('편집 화면을 여는 곳들이 출처를 넘긴다', () => {
     );
   });
 
+  test('새로 작성할 때도 출처를 넘기고, 작성 화면이 그걸 해석한다', () => {
+    expect(src('app/note/board/page.jsx')).toContain("'/note/write?from=board'");
+    expect(src('app/note/calendar/page.jsx')).toContain("'/note/write?from=calendar'");
+    expect(src('app/note/calendar/page.jsx')).toContain('&from=calendar`');
+    expect(src('app/note/sample/samplePageControllerProps.js')).toContain(
+      "'/note/write?type=sample&from=sample'"
+    );
+    expect(src('app/note/[id]/page.jsx')).toContain('?type=sample&from=note&backId=');
+
+    const controller = src('app/note/write/useNoteWriteController.js');
+    expect(controller).toContain('afterWriteDestination');
+    expect(controller).toContain('resolveEditReturn(window.location.search, fallback)');
+    // 저장(노트/샘플)·취소 3곳 모두 출처를 거친다
+    expect(controller.match(/afterWriteDestination\(/g) || []).toHaveLength(4);
+  });
+
   test('시장조사는 딥링크 수정이 끝나면 원래 화면으로 돌아간다', () => {
     expect(src('app/note/market/useMarketWriteForm.js')).toContain('onFinishDeepLinkEdit');
     expect(src('app/note/market/page.jsx')).toContain('resolveEditReturn');

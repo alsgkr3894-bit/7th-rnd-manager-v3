@@ -167,7 +167,7 @@ export default function Page() {
               if (canEdit) setModal({ mode: 'add', date: selectedDay || today });
             }}
             onAddNote={() => {
-              if (canEdit) router.push('/note/write');
+              if (canEdit) router.push('/note/write?from=calendar');
             }}
           />
         }
@@ -220,7 +220,7 @@ export default function Page() {
         onOpenNote={id => router.push(`/note/${id}?from=calendar`)}
         onOpenSample={id => router.push(`/note/sample/${id}?from=calendar`)}
         onAddNote={date => {
-          if (canEdit) router.push(`/note/write?testDate=${date}`);
+          if (canEdit) router.push(`/note/write?testDate=${date}&from=calendar`);
         }}
       />
 

@@ -27,7 +27,7 @@ export function buildSamplePageControllerProps({
 
   const openWrite = () => {
     if (!canEdit) return;
-    router.push('/note/write?type=sample');
+    router.push('/note/write?type=sample&from=sample');
   };
   const openSampleEditor = sample => {
     if (!canEdit || sample?.id == null) return;
@@ -36,7 +36,7 @@ export function buildSamplePageControllerProps({
   const openSampleNextRound = sample => {
     if (!canEdit || sample?.id == null) return;
     setSampleFrom(sample.id);
-    router.push('/note/write?type=sample');
+    router.push('/note/write?type=sample&from=sample');
   };
   const editDetail = () => {
     if (!canEdit || !detailRec) return;

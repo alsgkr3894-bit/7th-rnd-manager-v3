@@ -7,7 +7,7 @@ export default function SampleWriteRedirectPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/note/write?type=sample');
+    router.replace('/note/write?type=sample&from=sample');
   }, [router]);
 
   return (

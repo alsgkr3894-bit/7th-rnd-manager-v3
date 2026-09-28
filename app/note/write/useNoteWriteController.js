@@ -39,6 +39,7 @@ import {
 import { isNoteFormValid, isSampleFormValid, resolveSampleRecordType } from './noteWriteUtils';
 import { useNoteWriteSourceLoad } from './useNoteWriteSourceLoad';
 import { useNoteWriteDraftAutosave } from './useNoteWriteDraftAutosave';
+import { resolveEditReturn } from '@/lib/note/edit-return';
 
 export function useNoteWriteController() {
   const router = useRouter();
@@ -69,6 +70,13 @@ export function useNoteWriteController() {
   );
 
   useBeforeUnload(isDirty);
+
+  // 작성 화면도 달력·보드 등에서 열 수 있다. 출처가 있으면 그 화면으로 돌아가고,
+  // 없으면 종전대로 방금 만든 기록이 보이는 목록으로 간다.
+  function afterWriteDestination(fallback) {
+    if (typeof window === 'undefined') return fallback;
+    return resolveEditReturn(window.location.search, fallback);
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -185,7 +193,7 @@ export function useNoteWriteController() {
         isDirtyRef.current = false;
         setIsDirty(false);
         showToast('기록이 저장됐어요', 'ok');
-        router.replace(noteListTypeHref(recordType));
+        router.replace(afterWriteDestination(noteListTypeHref(recordType)));
       } catch {
         showToast('저장 중 오류가 발생했어요', 'error');
         setSaving(false);
@@ -209,7 +217,7 @@ export function useNoteWriteController() {
       isDirtyRef.current = false;
       setIsDirty(false);
       showToast('노트가 저장됐어요', 'ok');
-      router.replace('/note');
+      router.replace(afterWriteDestination('/note'));
     } catch {
       showToast('저장 중 오류가 발생했어요', 'error');
       setSaving(false);
@@ -228,11 +236,13 @@ export function useNoteWriteController() {
     // 화면으로 돌아오지 않는다(push였을 때 취소해도 히스토리에 남아 뒤로가기가
     // 어색했던 문제).
     router.replace(
-      isMenuWriteType(writeType)
-        ? '/note'
-        : noteListTypeHref(
-            resolveSampleRecordType(sampleForm, SAMPLE_RECORD_TYPE_BY_WRITE_TYPE[writeType])
-          )
+      afterWriteDestination(
+        isMenuWriteType(writeType)
+          ? '/note'
+          : noteListTypeHref(
+              resolveSampleRecordType(sampleForm, SAMPLE_RECORD_TYPE_BY_WRITE_TYPE[writeType])
+            )
+      )
     );
   }
 

@@ -100,12 +100,13 @@ describe('buildSamplePageControllerProps', () => {
     props.dialogsProps.onNextRoundDetail();
     props.recordsProps.onEditSample({});
 
-    expect(inputs.router.push).toHaveBeenNthCalledWith(1, '/note/write?type=sample');
-    expect(inputs.router.push).toHaveBeenNthCalledWith(2, '/note/write?type=sample');
+    // 샘플 목록에서 작성하면 저장 후 샘플 목록으로 돌아오도록 출처를 단다
+    expect(inputs.router.push).toHaveBeenNthCalledWith(1, '/note/write?type=sample&from=sample');
+    expect(inputs.router.push).toHaveBeenNthCalledWith(2, '/note/write?type=sample&from=sample');
     expect(inputs.router.push).toHaveBeenNthCalledWith(3, '/note/sample/s-1');
-    expect(inputs.router.push).toHaveBeenNthCalledWith(4, '/note/write?type=sample');
+    expect(inputs.router.push).toHaveBeenNthCalledWith(4, '/note/write?type=sample&from=sample');
     expect(inputs.router.push).toHaveBeenNthCalledWith(5, '/note/sample/s-2');
-    expect(inputs.router.push).toHaveBeenNthCalledWith(6, '/note/write?type=sample');
+    expect(inputs.router.push).toHaveBeenNthCalledWith(6, '/note/write?type=sample&from=sample');
     expect(inputs.router.push).toHaveBeenCalledTimes(6);
     expect(inputs.pageState.setDetailRec).toHaveBeenCalledWith(null);
   });

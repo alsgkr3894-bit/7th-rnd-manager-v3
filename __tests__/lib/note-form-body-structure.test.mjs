@@ -199,7 +199,8 @@ describe('note form body structure', () => {
     expect(writePageSource).toContain('normalizeNoteFormForSave(form, { existingNotes })');
     expect(writePageSource).toContain('if (canEdit) clearDraft(KEYS.NOTE_DRAFT_WRITE);');
     expect(writePageSource).toContain('isDirtyRef.current = false;');
-    expect(writePageSource).toContain("router.replace('/note')");
+    // 출처가 없을 때의 기본값 — 출처가 있으면 afterWriteDestination이 그 화면으로 보낸다
+    expect(writePageSource).toContain("afterWriteDestination('/note')");
     expect(writePageSource).toContain('{canEdit && showDraftBanner && !fromTitle && (');
   });
 });

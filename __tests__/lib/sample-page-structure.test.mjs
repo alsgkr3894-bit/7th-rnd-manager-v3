@@ -376,7 +376,7 @@ describe('sample page structure', () => {
     expect(controllerPropsSource).toContain('buildSampleActionsProps(context)');
     expect(controllerPropsSource).toContain('buildSampleFilterProps(context)');
     expect(controllerPropsSource).toContain('buildSampleDialogsProps(context)');
-    expect(controllerPropsSource).toContain("router.push('/note/write?type=sample')");
+    expect(controllerPropsSource).toContain("router.push('/note/write?type=sample&from=sample')");
     expect(controllerPropsSource).toContain('if (!canEdit) return');
     expect(controllerPropsSource).toContain('if (!canEdit || sample?.id == null) return');
     expect(controllerPropsSource).toContain('router.push(`/note/sample/${sample.id}`)');
@@ -497,7 +497,9 @@ describe('sample page structure', () => {
     expect(pageDialogsSource).toContain('canEdit = false');
     expect(sampleDetailModalSource).toContain('canEdit = false');
     expect(sampleDetailHeaderSource).toContain('disabled={!canEdit}');
-    expect(legacyWritePageSource).toContain("router.replace('/note/write?type=sample')");
+    expect(legacyWritePageSource).toContain(
+      "router.replace('/note/write?type=sample&from=sample')"
+    );
     expect(noteWritePageSource).toContain('consumeSampleFrom');
     expect(noteWritePageSource).toContain('buildNextSampleRoundDraft');
     expect(noteWritePageSource).toContain('getSampleById');
