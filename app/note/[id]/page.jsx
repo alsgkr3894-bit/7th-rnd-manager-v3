@@ -69,8 +69,12 @@ export default function Page() {
   }
 
   useEffect(() => {
+    // 아직 노트를 못 읽어 연구일지 여부를 모르므로 기본값은 노트 목록이지만,
+    // 달력·보드 등에서 열었으면 그 화면으로 돌려보낸다.
+    const loadFailDestination =
+      typeof window === 'undefined' ? '/note' : resolveEditReturn(window.location.search, '/note');
     if (!noteId) {
-      router.replace('/note');
+      router.replace(loadFailDestination);
       return;
     }
     let alive = true;
@@ -80,7 +84,7 @@ export default function Page() {
         if (!alive) return;
         if (!note) {
           showToast('노트를 찾을 수 없어요', 'warn');
-          router.replace('/note');
+          router.replace(loadFailDestination);
           return;
         }
         const merged = { ...INIT, ...note };
