@@ -3,6 +3,7 @@
 import { KIND_COLOR, KIND_EMOJI, KIND_LABEL } from '@/lib/report/constants';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 import { formatReportDate } from './reportPreviewPageUtils';
+import { PARENT_COMPANY } from '@/lib/companies';
 
 export function ReportCover({ report }) {
   const kind = asDisplayText(report.kind);
@@ -48,7 +49,7 @@ export function ReportCover({ report }) {
           textTransform: 'uppercase',
         }}
       >
-        7번가피자 본사 · R&amp;D팀
+        {PARENT_COMPANY.name} 본사 · R&amp;D팀
       </div>
       <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 10, lineHeight: 1.3 }}>{name}</h1>
       <div

@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './error.module.css';
+import { PARENT_COMPANY } from '@/lib/companies';
 
 export default function ErrorPage({ error, reset }) {
   const [countdown, setCountdown] = useState(null);
@@ -49,7 +50,7 @@ export default function ErrorPage({ error, reset }) {
           <div className={styles.logoBadge}>7th</div>
           <span className={styles.logoText}>R&amp;D Manager</span>
           <div className={styles.logoDivider} />
-          <span className={styles.logoSub}>태명F&amp;T · 7번가피자</span>
+          <span className={styles.logoSub}>{PARENT_COMPANY.name}</span>
         </div>
 
         <div className={styles.errBadge}>

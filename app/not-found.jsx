@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './not-found.module.css';
+import { PARENT_COMPANY } from '@/lib/companies';
 
 export default function NotFound() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export default function NotFound() {
           <div className={styles.logoBadge}>7th</div>
           <span className={styles.logoText}>R&amp;D Manager</span>
           <div className={styles.logoDivider} />
-          <span className={styles.logoSub}>태명F&amp;T · 7번가피자</span>
+          <span className={styles.logoSub}>{PARENT_COMPANY.name}</span>
         </div>
 
         <div className={styles.errorNum} role="img" aria-label="404 오류">

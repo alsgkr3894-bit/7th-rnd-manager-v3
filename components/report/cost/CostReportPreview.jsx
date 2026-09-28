@@ -4,6 +4,7 @@ import { CostReportView } from './CostReportView';
 import { CostTableView } from './CostTableView';
 import { RecipePrintView } from './RecipePrintView';
 import { useReportGeneratedMeta } from '@/hooks/useReportGeneratedMeta';
+import { PARENT_COMPANY } from '@/lib/companies';
 
 export function CostReportPreview({
   viewTab,
@@ -27,9 +28,11 @@ export function CostReportPreview({
   return (
     <>
       <div className="paper-head">
-        <div className="paper-eyebrow">7번가피자 본사 · 원가관리</div>
+        <div className="paper-eyebrow">{PARENT_COMPANY.name} 본사 · 원가관리</div>
         <h2 className="paper-title">
-          {viewTab === 'recipe' ? '7번가피자 레시피 출력' : '7번가피자 제품원가표 (단가 기준)'}
+          {viewTab === 'recipe'
+            ? `${PARENT_COMPANY.name} 레시피 출력`
+            : `${PARENT_COMPANY.name} 제품원가표 (단가 기준)`}
         </h2>
         <div className="paper-meta">
           <span>

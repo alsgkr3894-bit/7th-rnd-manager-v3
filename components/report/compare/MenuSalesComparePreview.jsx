@@ -5,6 +5,7 @@ import { fmtShort } from '@/lib/format';
 import { safeQuantity } from '@/lib/report/period';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
 import { useReportGeneratedMeta } from '@/hooks/useReportGeneratedMeta';
+import { PARENT_COMPANY } from '@/lib/companies';
 
 function safePercent(value) {
   return asFiniteNumber(value, null);
@@ -49,7 +50,7 @@ export function MenuSalesComparePreview({
   return (
     <>
       <div className="paper-head">
-        <div className="paper-eyebrow">7번가피자 본사 · R&amp;D팀</div>
+        <div className="paper-eyebrow">{PARENT_COMPANY.name} 본사 · R&amp;D팀</div>
         <h2 className="paper-title">
           판매량 비교 보고서 — {periodALabel} vs {periodBLabel}
         </h2>

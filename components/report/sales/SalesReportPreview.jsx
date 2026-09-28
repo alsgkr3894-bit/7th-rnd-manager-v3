@@ -8,6 +8,7 @@ import { SalesExcludedListSection } from './SalesExcludedListSection';
 import { SalesPizzaMoverSection } from './SalesPizzaMoverSection';
 import { SalesRankTableSection } from './SalesRankTableSection';
 import { SalesDiscontinuedBulkFix } from './SalesDiscontinuedBulkFix';
+import { PARENT_COMPANY } from '@/lib/companies';
 
 function scopeLabel(scope) {
   return scope === 'all' ? '전체 메뉴' : asDisplayText(scope, '전체 메뉴');
@@ -50,7 +51,7 @@ export default function SalesReportPreview({
   return (
     <>
       <div className="paper-head">
-        <div className="paper-eyebrow">7번가피자 본사 · R&amp;D팀</div>
+        <div className="paper-eyebrow">{PARENT_COMPANY.name} 본사 · R&amp;D팀</div>
         <h2 className="paper-title">{periodLabel} 판매량 보고서</h2>
         <div className="paper-meta">
           <span>대상: {scopeLabel(scope)}</span>

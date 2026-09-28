@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { getProfile } from '@/lib/profile';
 import { isAuthSetup, verifyPassword, savePassword, setAuthCookie } from '@/lib/auth';
 import { PasswordField } from './PasswordField';
+import { PARENT_COMPANY } from '@/lib/companies';
 
 // useSearchParams()는 Suspense 경계 안에서만 사용 가능 (Next.js 14 빌드 요구사항)
 export default function LoginPage() {
@@ -136,7 +137,7 @@ function LoginForm() {
               letterSpacing: '0.02em',
             }}
           >
-            태명F&T
+            {PARENT_COMPANY.name}
           </div>
           <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--text-1)', lineHeight: 1.2 }}>
             7번가 R&D 플랫폼

@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import { showToast } from '@/components/Toast';
 import { printMenuDevelopmentReport } from '@/lib/note/report-print';
+import { getActiveBrand } from '@/lib/active-brand';
 
 export function useNoteReportPdf(notes, options = {}) {
   return useCallback(() => {
@@ -16,6 +17,7 @@ export function useNoteReportPdf(notes, options = {}) {
       const opened = printMenuDevelopmentReport(safeNotes, {
         title: '메뉴개발노트 전체 보고서',
         scopeLabel: options.scopeLabel || '현재 목록 전체',
+        brandName: getActiveBrand()?.name,
       });
       if (opened)
         showToast(`메뉴개발노트 ${safeNotes.length}건 PDF 출력 창을 열었어요`, 'ok', 1800);

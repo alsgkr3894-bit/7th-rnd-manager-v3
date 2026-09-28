@@ -128,13 +128,25 @@ describe('journal PDF print helpers', () => {
   });
 
   // 2026-09-28 주임님: 연구일지는 브랜드(7번가피자)가 아니라 모회사 이름으로 낸다.
-  test('머리말·꼬리말에 모회사명(태명F&T)을 쓴다', () => {
+  test('머리말·꼬리말에 모회사명((주)태명에프앤티)을 쓴다', () => {
     const html = buildJournalPrintHtml('2026-07-06', [
       { title: '일지', noteType: JOURNAL_NOTE_TYPE, testContent: '내용' },
     ]);
 
-    expect(html).toContain('태명F&amp;T R&amp;D 연구일지');
-    expect(html).toContain('태명F&amp;T R&amp;D 플랫폼');
-    expect(html).not.toContain('7번가피자');
+    expect(html).toContain('(주)태명에프앤티 R&amp;D 연구일지');
+    expect(html).toContain('(주)태명에프앤티 R&amp;D 플랫폼');
+  });
+
+  // 대표(모회사) 아래에 어느 브랜드의 일지인지 밝힌다.
+  test('브랜드명을 주면 대표 아래에 "브랜드 : X" 줄이 붙는다', () => {
+    const html = buildJournalPrintHtml('2026-07-06', [], { brandName: '7번가피자' });
+    expect(html).toContain('<div class="doc-brand">브랜드 : 7번가피자</div>');
+  });
+
+  test('브랜드명이 없으면 그 줄을 아예 내지 않는다', () => {
+    expect(buildJournalPrintHtml('2026-07-06', [], {})).not.toMatch(/<div class="doc-brand">/);
+    expect(buildJournalPrintHtml('2026-07-06', [], { brandName: '  ' })).not.toMatch(
+      /<div class="doc-brand">/
+    );
   });
 });

@@ -3,6 +3,7 @@
 import { formatNumber } from '@/lib/format';
 import { useReportGeneratedMeta } from '@/hooks/useReportGeneratedMeta';
 import { asDisplayText, asFiniteNumber, asObjectArray } from '@/lib/ui/prop-guards';
+import { PARENT_COMPANY } from '@/lib/companies';
 
 const STATUS_COLOR = {
   인상: 'var(--negative)',
@@ -47,7 +48,7 @@ export function PriceReportPreview({ dateRange, changes, catSummary, opts }) {
   return (
     <>
       <div className="paper-head">
-        <div className="paper-eyebrow">7번가피자 본사 · 제때 단가 관리</div>
+        <div className="paper-eyebrow">{PARENT_COMPANY.name} 본사 · 제때 단가 관리</div>
         <h2 className="paper-title">제때 가격 변동 보고서</h2>
         <div className="paper-meta">
           <span>기간: {dateRange}</span>

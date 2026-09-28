@@ -11,6 +11,7 @@ import { todayLocalDate } from '@/lib/date/local-date';
 import { isWithinRange, noteDayKey, printRangeForMode, printRangeLabel } from './journalDates';
 import { mergeJournalPrintNotesForDate } from './journalForm';
 import { withoutJournalSourceDuplicatePhotos } from './journalPhotos';
+import { getActiveBrand } from '@/lib/active-brand';
 
 export function useJournalPrint({ journalRecords, date, month, currentJournalPrintNote }) {
   const [printMode, setPrintMode] = useState('day');
@@ -44,6 +45,7 @@ export function useJournalPrint({ journalRecords, date, month, currentJournalPri
     openPrintWindow(
       buildJournalPrintHtml(printRangeTitle, printPeriodNotes, {
         title: printMode === 'day' ? '오늘 한 일 보고서' : '연구일지 종합본',
+        brandName: getActiveBrand()?.name,
       }),
       { width: 800, height: 900 }
     );

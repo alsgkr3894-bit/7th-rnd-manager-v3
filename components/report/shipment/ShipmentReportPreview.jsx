@@ -5,6 +5,7 @@ import { asDisplayText } from '@/lib/ui/prop-guards';
 import { safeQuantity } from '@/lib/report/period';
 import { ShipmentItemTable, safeProductName, typeLabel } from './ShipmentItemTable';
 import { useReportGeneratedMeta } from '@/hooks/useReportGeneratedMeta';
+import { PARENT_COMPANY } from '@/lib/companies';
 
 function safeAmount(v) {
   return safeQuantity(v);
@@ -48,7 +49,7 @@ export function ShipmentReportPreview({
     <>
       {/* ── 헤더 ── */}
       <div className="paper-head">
-        <div className="paper-eyebrow">7번가피자 본사 · 제때상품관리</div>
+        <div className="paper-eyebrow">{PARENT_COMPANY.name} 본사 · 제때상품관리</div>
         <h2 className="paper-title">{fileLabel} 제때 출고량 보고서</h2>
         <div className="paper-meta">
           <span>

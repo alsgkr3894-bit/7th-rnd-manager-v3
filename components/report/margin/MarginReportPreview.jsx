@@ -7,6 +7,7 @@ import {
   buildMarginReportSummary,
 } from '@/lib/cost/margin/report-options';
 import { useReportGeneratedMeta } from '@/hooks/useReportGeneratedMeta';
+import { PARENT_COMPANY } from '@/lib/companies';
 
 function displayCell(value) {
   if (value === '' || value == null) return '—';
@@ -213,7 +214,7 @@ export function MarginReportPreview({
   return (
     <>
       <div className="paper-head">
-        <div className="paper-eyebrow">7번가피자 본사 · 원가마진표</div>
+        <div className="paper-eyebrow">{PARENT_COMPANY.name} 본사 · 원가마진표</div>
         <h2 className="paper-title">메뉴 원가마진표</h2>
         <div className="paper-meta">
           <span>대상: {summary.rowCount}개 메뉴</span>

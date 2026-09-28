@@ -63,7 +63,7 @@ describe('report preview modal structure', () => {
     expect(pagesSource).not.toContain('REPORT_OPTION_RENDERERS');
     expect(pagesSource.split('\n').length).toBeLessThanOrEqual(40);
     expect(coverSource).toContain('export function ReportCover');
-    expect(coverSource).toContain('7번가피자 본사');
+    expect(coverSource).toContain('{PARENT_COMPANY.name} 본사');
     expect(optionsSource).toContain('export function ReportOptionsPage');
     expect(optionsSource).toContain('REPORT_OPTION_RENDERERS');
     expect(summarySource).toContain('export function ReportSummaryPage');
