@@ -126,4 +126,15 @@ describe('journal PDF print helpers', () => {
     expect(html).toContain('연구일지 종합본');
     expect(html).toContain('주간 2026-07-06 ~ 2026-07-12');
   });
+
+  // 2026-09-28 주임님: 연구일지는 브랜드(7번가피자)가 아니라 모회사 이름으로 낸다.
+  test('머리말·꼬리말에 모회사명(태명F&T)을 쓴다', () => {
+    const html = buildJournalPrintHtml('2026-07-06', [
+      { title: '일지', noteType: JOURNAL_NOTE_TYPE, testContent: '내용' },
+    ]);
+
+    expect(html).toContain('태명F&amp;T R&amp;D 연구일지');
+    expect(html).toContain('태명F&amp;T R&amp;D 플랫폼');
+    expect(html).not.toContain('7번가피자');
+  });
 });
