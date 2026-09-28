@@ -234,28 +234,14 @@ export default function Sidebar({
           navigate('/');
         }}
       >
-        {activeCompany?.logo ? (
-          <img
-            className="logo-img"
-            src={activeCompany.logo}
-            alt={activeCompany?.name || '로고'}
-            style={{ objectFit: 'contain', background: 'white', padding: 2 }}
-          />
-        ) : (
-          <span
-            className="logo-img"
-            style={{
-              background: activeCompany?.color || '#E1101F',
-              display: 'grid',
-              placeItems: 'center',
-              color: 'white',
-              fontWeight: 800,
-              fontSize: 14,
-            }}
-          >
-            {activeCompany?.name?.[0] || '7'}
-          </span>
-        )}
+        {/* 바로 아래 줄에 브랜드명이 나오므로 여기 로고는 대표(모회사) 마크를 쓴다.
+            브랜드별 로고는 상단 브랜드 전환 메뉴(CompanyPicker)에서 계속 구분된다. */}
+        <img
+          className="logo-img"
+          src="/logo-taemyeong-mark.png"
+          alt={PARENT_COMPANY.name}
+          style={{ objectFit: 'contain', background: 'white', padding: 2 }}
+        />
         <div className="brand-text">
           <div className="brand-line1">{activeCompany?.parent || PARENT_COMPANY.name}</div>
           <div className="brand-line2">{activeCompany?.name || '7번가 R&D'}</div>
