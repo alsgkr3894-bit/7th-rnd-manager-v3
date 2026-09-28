@@ -234,17 +234,11 @@ export default function Sidebar({
           navigate('/');
         }}
       >
-        {/* 바로 아래 줄에 브랜드명이 나오므로 여기 로고는 대표(모회사) 마크를 쓴다.
-            브랜드별 로고는 상단 브랜드 전환 메뉴(CompanyPicker)에서 계속 구분된다. */}
-        <img
-          className="logo-img"
-          src="/logo-taemyeong-mark.png"
-          alt={PARENT_COMPANY.name}
-          style={{ objectFit: 'contain', background: 'white', padding: 2 }}
-        />
+        {/* 사이드바는 대표(모회사)만 밝힌다 — 현재 브랜드는 상단 브랜드 전환 메뉴가
+            로고·이름으로 보여주므로 여기서 또 적으면 겹친다. */}
+        <img className="logo-img" src="/logo-taemyeong-mark.png" alt={PARENT_COMPANY.name} />
         <div className="brand-text">
           <div className="brand-line1">{activeCompany?.parent || PARENT_COMPANY.name}</div>
-          <div className="brand-line2">{activeCompany?.name || '7번가 R&D'}</div>
         </div>
       </a>
 
