@@ -1,4 +1,6 @@
 import { jest } from '@jest/globals';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { buildNoteContentProps } from '@/lib/note/content-props';
 import {
   buildNoteDialogProps,
@@ -208,5 +210,47 @@ describe('buildNoteContentProps', () => {
     expect(inputs.batchActions.confirmUnmergeGroup).toHaveBeenCalled();
     expect(inputs.listState.deletePreset).toHaveBeenCalledWith(1);
     expect(inputs.listState.setConfirmDeletePreset).toHaveBeenCalledWith(null);
+  });
+
+  /**
+   * 회귀 방지(2026-09-28): 노트 목록에서 샘플 기록을 수정하면 저장 후 샘플 목록으로
+   * 튕겨 "수정했더니 다른 화면으로 갔다"가 됐다. 출처를 ?from=note로 넘겨 돌아오게 한다.
+   */
+  test('노트 목록에서 연 샘플 편집은 돌아올 출처(from=note)를 달고 간다', () => {
+    const inputs = createInputs();
+    const props = buildNoteContentProps(inputs);
+
+    props.bodyProps.onEditNote({ id: 'sample:7', _recordKind: 'sample' });
+    expect(inputs.router.push).toHaveBeenCalledWith('/note/sample/7?from=note');
+  });
+
+  test('일반 노트는 기존대로 노트 편집 화면으로 간다', () => {
+    const inputs = createInputs();
+    const props = buildNoteContentProps(inputs);
+
+    props.bodyProps.onEditNote({ id: 'n-9' });
+    expect(inputs.router.push).toHaveBeenCalledWith('/note/n-9');
+  });
+});
+
+/**
+ * 샘플 편집 화면이 출처를 실제로 해석하는지 — 소스 기준 확인.
+ * (화면 전체 렌더는 IndexedDB·라우터 의존이 커서 라우팅 규칙만 고정한다.)
+ */
+describe('샘플 편집 화면의 돌아갈 곳', () => {
+  const src = readFileSync(resolve('app/note/sample/[id]/page.jsx'), 'utf8');
+
+  test('아는 출처만 매핑하고 기본값은 샘플 목록', () => {
+    expect(src).toContain("const BACK_TO = { note: '/note' };");
+    expect(src).toContain("const SAMPLE_LIST = '/note/sample';");
+    expect(src).toContain("get('from')");
+  });
+
+  test('저장·취소·로드실패가 모두 backTo를 쓴다 (하드코딩 경로 없음)', () => {
+    expect(src).toContain('router.push(backTo)');
+    expect(src).toContain('router.replace(backTo)');
+    // 상수 정의를 뺀 나머지 자리에 '/note/sample' 하드코딩이 남아있으면 안 된다
+    const withoutConst = src.replace("const SAMPLE_LIST = '/note/sample';", '');
+    expect(withoutConst).not.toContain("'/note/sample'");
   });
 });

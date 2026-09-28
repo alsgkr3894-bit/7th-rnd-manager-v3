@@ -21,11 +21,22 @@ import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { copyText } from '@/lib/ui/clipboard';
 
+// 어디서 이 화면을 열었는지 — 저장/취소 후 돌아갈 목록. 임의 경로를 받지 않고
+// 아는 출처만 매핑한다(잘못된 값이면 기본값인 샘플 목록).
+const BACK_TO = { note: '/note' };
+const SAMPLE_LIST = '/note/sample';
+
 export default function Page() {
   const router = useRouter();
   const { isAdmin, ready: roleReady } = useCurrentRole();
   const canEdit = roleReady && isAdmin;
   const { id } = useParams();
+  // 첫 렌더부터 확정돼 있어야 로드 실패 시 되돌아갈 곳도 맞는다.
+  const [backTo] = useState(() =>
+    typeof window === 'undefined'
+      ? SAMPLE_LIST
+      : BACK_TO[new URLSearchParams(window.location.search).get('from') || ''] || SAMPLE_LIST
+  );
   const parsedSampleId = Number(id);
   const sampleId =
     Number.isSafeInteger(parsedSampleId) && parsedSampleId > 0 ? parsedSampleId : null;
@@ -36,7 +47,7 @@ export default function Page() {
 
   useEffect(() => {
     if (!sampleId) {
-      router.replace('/note/sample');
+      router.replace(backTo);
       return;
     }
     let alive = true;
@@ -46,7 +57,7 @@ export default function Page() {
         if (!alive) return;
         if (!rec) {
           showToast('샘플을 찾을 수 없어요', 'warn');
-          router.replace('/note/sample');
+          router.replace(backTo);
           return;
         }
         const names = sampleNamesOf(rec);
@@ -66,7 +77,7 @@ export default function Page() {
     return () => {
       alive = false;
     };
-  }, [sampleId, router]);
+  }, [sampleId, router, backTo]);
 
   useKeyboardSave(handleSave);
 
@@ -81,7 +92,7 @@ export default function Page() {
     try {
       await updateSample(sampleId, form);
       showToast('샘플이 수정됐어요', 'ok');
-      router.push('/note/sample');
+      router.push(backTo);
     } catch {
       showToast('저장 중 오류가 발생했어요', 'error');
       setSaving(false);
@@ -207,7 +218,7 @@ export default function Page() {
       />
       <SampleFormBody form={form} setForm={setForm} readOnly={!canEdit} />
       <StickySaveBar
-        onCancel={() => router.push('/note/sample')}
+        onCancel={() => router.push(backTo)}
         onSave={handleSave}
         saving={saving}
         canSave={canEdit}
