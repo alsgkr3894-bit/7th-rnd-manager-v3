@@ -64,23 +64,25 @@ export function normalizeRange(start, end) {
     : { start: safeEnd, end: safeStart };
 }
 
-export function yearBounds(month) {
-  const year = safeMonth(month).slice(0, 4);
+/** 'YYYY' 또는 'YYYY-MM' 아무거나 받아 그 해 1/1~12/31을 돌려준다. */
+export function yearBounds(value) {
+  const text = String(value || '');
+  const year = /^\d{4}/.test(text) ? text.slice(0, 4) : todayLocalDate().slice(0, 4);
   return { start: `${year}-01-01`, end: `${year}-12-31` };
 }
 
-export function printRangeForMode(mode, { date, month, customStart, customEnd }) {
+export function printRangeForMode(mode, { date, month, year, customStart, customEnd }) {
   if (mode === 'week') return weekBounds(date);
   if (mode === 'month') return monthBounds(month);
-  if (mode === 'year') return yearBounds(month);
+  if (mode === 'year') return yearBounds(year || month);
   if (mode === 'custom') return normalizeRange(customStart, customEnd);
   return { start: date, end: date };
 }
 
 export function printRangeLabel(mode, range) {
   if (range.start === range.end) return toDateLabel(range.start);
-  const prefix =
-    mode === 'week' ? '주간' : mode === 'month' ? '월간' : mode === 'year' ? '연간' : '선택기간';
+  if (mode === 'year') return `연간 ${range.start.slice(0, 4)}년`;
+  const prefix = mode === 'week' ? '주간' : mode === 'month' ? '월간' : '선택기간';
   return `${prefix} ${range.start} ~ ${range.end}`;
 }
 

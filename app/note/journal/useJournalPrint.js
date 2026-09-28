@@ -17,10 +17,21 @@ export function useJournalPrint({ journalRecords, date, month, currentJournalPri
   const [printMode, setPrintMode] = useState('day');
   const [customStart, setCustomStart] = useState(() => todayLocalDate());
   const [customEnd, setCustomEnd] = useState(() => todayLocalDate());
+  const [printYear, setPrintYear] = useState(() => todayLocalDate().slice(0, 4));
+
+  // 연간에서 고를 수 있는 연도 — 일지가 있는 해 + 올해(기록이 없어도 올해는 고를 수 있게)
+  const yearOptions = useMemo(() => {
+    const years = new Set([todayLocalDate().slice(0, 4)]);
+    for (const note of journalRecords) {
+      const key = noteDayKey(note);
+      if (/^\d{4}/.test(key)) years.add(key.slice(0, 4));
+    }
+    return [...years].sort((a, b) => b.localeCompare(a));
+  }, [journalRecords]);
 
   const printRange = useMemo(
-    () => printRangeForMode(printMode, { date, month, customStart, customEnd }),
-    [printMode, date, month, customStart, customEnd]
+    () => printRangeForMode(printMode, { date, month, year: printYear, customStart, customEnd }),
+    [printMode, date, month, printYear, customStart, customEnd]
   );
   const printRangeTitle = useMemo(
     () => printRangeLabel(printMode, printRange),
@@ -56,6 +67,9 @@ export function useJournalPrint({ journalRecords, date, month, currentJournalPri
   return {
     printMode,
     setPrintMode,
+    printYear,
+    setPrintYear,
+    yearOptions,
     customStart,
     setCustomStart,
     customEnd,

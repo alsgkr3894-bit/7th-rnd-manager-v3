@@ -68,19 +68,54 @@ describe('연구일지 페이지 파일 분리', () => {
   });
 });
 
-/** 2026-09-28 주임님: PDF 출력 기간에 연간 추가. */
+/** 2026-09-28 주임님: PDF 출력 기간에 연간 추가 + 연도 직접 선택. */
 describe('연구일지 출력 기간 — 연간', () => {
-  test('연간은 해당 연도 1/1~12/31이고 라벨에 "연간"이 붙는다', async () => {
+  test('고른 연도의 1/1~12/31을 쓰고 라벨은 "연간 YYYY년"', async () => {
     const { printRangeForMode, printRangeLabel, yearBounds } =
       await import('../../app/note/journal/journalDates.js');
+    // 'YYYY'와 'YYYY-MM' 둘 다 받는다
+    expect(yearBounds('2024')).toEqual({ start: '2024-01-01', end: '2024-12-31' });
     expect(yearBounds('2026-09')).toEqual({ start: '2026-01-01', end: '2026-12-31' });
-    const range = printRangeForMode('year', { date: '2026-09-28', month: '2026-09' });
-    expect(range).toEqual({ start: '2026-01-01', end: '2026-12-31' });
-    expect(printRangeLabel('year', range)).toBe('연간 2026-01-01 ~ 2026-12-31');
+
+    const range = printRangeForMode('year', { date: '2026-09-28', month: '2026-09', year: '2024' });
+    expect(range).toEqual({ start: '2024-01-01', end: '2024-12-31' });
+    expect(printRangeLabel('year', range)).toBe('연간 2024년');
   });
 
-  test('선택기에 연간 항목이 있다', () => {
+  test('연도를 안 넘기면 보고 있던 달의 연도를 쓴다', async () => {
+    const { printRangeForMode } = await import('../../app/note/journal/journalDates.js');
+    expect(printRangeForMode('year', { date: '2026-09-28', month: '2026-09' })).toEqual({
+      start: '2026-01-01',
+      end: '2026-12-31',
+    });
+  });
+
+  test('연간을 고르면 연도 선택기가 뜬다', () => {
     const src = readFileSync(resolve('app/note/journal/_JournalHeaderActions.jsx'), 'utf8');
     expect(src).toContain('<option value="year">연간</option>');
+    expect(src).toContain("{printMode === 'year' && (");
+    expect(src).toContain('setPrintYear(event.target.value)');
+  });
+
+  test('연도 목록은 일지가 있는 해 + 올해를 내림차순으로 준다', () => {
+    const src = readFileSync(resolve('app/note/journal/useJournalPrint.js'), 'utf8');
+    expect(src).toContain('yearOptions');
+    expect(src).toContain('years.add(key.slice(0, 4))');
+  });
+
+  // page → 툴바 props가 하나라도 빠지면 연도 선택기가 조용히 안 뜬다.
+  test('page.jsx가 연도 props를 툴바에 넘긴다', () => {
+    const page = readFileSync(resolve('app/note/journal/page.jsx'), 'utf8');
+    for (const prop of [
+      'printYear={print.printYear}',
+      'setPrintYear={print.setPrintYear}',
+      'yearOptions={print.yearOptions}',
+    ]) {
+      expect(page).toContain(prop);
+    }
+    const toolbar = readFileSync(resolve('app/note/journal/_JournalHeaderActions.jsx'), 'utf8');
+    for (const prop of ['printYear,', 'setPrintYear,', 'yearOptions,']) {
+      expect(toolbar).toContain(prop);
+    }
   });
 });

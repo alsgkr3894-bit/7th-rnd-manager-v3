@@ -23,6 +23,9 @@ export function JournalHeaderActions({
   applyQuickDate,
   printMode,
   setPrintMode,
+  printYear,
+  setPrintYear,
+  yearOptions,
   customStart,
   setCustomStart,
   customEnd,
@@ -119,6 +122,21 @@ export function JournalHeaderActions({
         <option value="year">연간</option>
         <option value="custom">선택기간</option>
       </select>
+      {printMode === 'year' && (
+        <select
+          className="form-input"
+          value={printYear}
+          onChange={event => setPrintYear(event.target.value)}
+          style={{ width: 110, minHeight: 40, flex: '0 1 110px' }}
+          title="PDF 출력 연도"
+        >
+          {(yearOptions || []).map(year => (
+            <option key={year} value={year}>
+              {year}년
+            </option>
+          ))}
+        </select>
+      )}
       {printMode === 'custom' && (
         <>
           <input

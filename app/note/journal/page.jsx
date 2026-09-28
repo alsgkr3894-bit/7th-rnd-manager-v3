@@ -91,6 +91,9 @@ export default function Page() {
             applyQuickDate={nav.applyQuickDate}
             printMode={print.printMode}
             setPrintMode={print.setPrintMode}
+            printYear={print.printYear}
+            setPrintYear={print.setPrintYear}
+            yearOptions={print.yearOptions}
             customStart={print.customStart}
             setCustomStart={print.setCustomStart}
             customEnd={print.customEnd}
