@@ -81,16 +81,19 @@
 
 /* ----- 스켈레톤 로딩 ----- */
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--surface-2) 0%,
-    color-mix(in oklab, var(--bg-2) 80%, var(--surface)) 50%,
-    var(--surface-2) 100%
-  );
-  background-size: 1000px 100%;
-  animation: shimmer 1.6s ease infinite;
+  background: var(--surface-2);
   border-radius: 6px;
   display: block;
+}
+.skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--bg-2) 80%, var(--surface)),
+    transparent
+  );
+  animation-duration: 1.6s;
+  animation-timing-function: ease;
 }
 .skeleton-text {
   height: 13px;
@@ -378,11 +381,11 @@
 }
 @keyframes tab-indicator {
   from {
-    width: 0;
+    transform: translateX(-50%) scaleX(0);
     opacity: 0;
   }
   to {
-    width: 24px;
+    transform: translateX(-50%) scaleX(1);
     opacity: 1;
   }
 }
