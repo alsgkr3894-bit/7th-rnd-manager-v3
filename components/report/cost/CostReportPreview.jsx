@@ -5,6 +5,8 @@ import { CostTableView } from './CostTableView';
 import { RecipePrintView } from './RecipePrintView';
 import { useReportGeneratedMeta } from '@/hooks/useReportGeneratedMeta';
 import { PARENT_COMPANY } from '@/lib/companies';
+import { useActiveBrandName } from '@/hooks/useActiveBrandName';
+import { reportTitleWithBrand } from '@/lib/report/report-title';
 
 export function CostReportPreview({
   viewTab,
@@ -24,6 +26,7 @@ export function CostReportPreview({
   viewLabel,
 }) {
   const { spacedDateLabel, profileName } = useReportGeneratedMeta();
+  const brandName = useActiveBrandName();
 
   return (
     <>
@@ -31,8 +34,8 @@ export function CostReportPreview({
         <div className="paper-eyebrow">{PARENT_COMPANY.name} 본사 · 원가관리</div>
         <h2 className="paper-title">
           {viewTab === 'recipe'
-            ? `${PARENT_COMPANY.name} 레시피 출력`
-            : `${PARENT_COMPANY.name} 제품원가표 (단가 기준)`}
+            ? reportTitleWithBrand(brandName, '레시피 출력')
+            : reportTitleWithBrand(brandName, '제품원가표 (단가 기준)')}
         </h2>
         <div className="paper-meta">
           <span>
