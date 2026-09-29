@@ -18,7 +18,7 @@ describe('menu sales compare report page structure', () => {
     expect(pageSource).toContain("params.set('view', 'compare')");
     expect(pageSource).toContain("params.set('year', params.get('yearA'))");
     expect(pageSource).toContain("params.set('cmpYear', params.get('yearB'))");
-    expect(pageSource).toContain('redirect(buildSalesCompareHref(searchParams))');
+    expect(pageSource).toContain('redirect(buildSalesCompareHref(await searchParams))');
     expect(pageSource).toContain('/report/sales?');
     expect(pageSource).not.toContain("'use client'");
     expect(pageSource).not.toContain('useEffect');

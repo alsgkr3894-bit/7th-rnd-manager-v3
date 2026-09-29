@@ -27,6 +27,7 @@ export function buildSalesCompareHref(searchParams = {}) {
   return `/report/sales?${params.toString()}`;
 }
 
-export default function Page({ searchParams }) {
-  redirect(buildSalesCompareHref(searchParams));
+// Next 15부터 searchParams는 Promise다.
+export default async function Page({ searchParams }) {
+  redirect(buildSalesCompareHref(await searchParams));
 }
