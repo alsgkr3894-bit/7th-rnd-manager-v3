@@ -14,6 +14,8 @@ import { buildUnitPriceMap } from '@/lib/recipe';
 import { getAllIngredients } from '@/lib/ingredient';
 import { getAllEdges } from '@/lib/cost/edge-dough';
 import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
+import { getAllMenuMaster } from '@/lib/menu-master';
+import { buildDiscontinuedMenuCodeSet } from '@/lib/report/recipe-print-rows';
 import { buildLatestPriceLookup } from '@/lib/price/price-lookup';
 import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
 import { useReportPageState } from '@/hooks/useReportPageState';
@@ -137,7 +139,7 @@ function CostReportBuilderContent({ onReportModeChange }) {
     reload,
   } = useDBLoad(
     async () => {
-      const [prices, ingredients, recipeMaps, edges, latestPriceLookup, recipeGroups] =
+      const [prices, ingredients, recipeMaps, edges, latestPriceLookup, recipeGroups, masters] =
         await Promise.all([
           getAllMenuPrices(),
           getAllIngredients(),
@@ -145,6 +147,7 @@ function CostReportBuilderContent({ onReportModeChange }) {
           getAllEdges(),
           buildLatestPriceLookup(),
           getAllRecipeGroups(),
+          getAllMenuMaster(),
         ]);
 
       if (prices.length === 0) {
@@ -167,6 +170,8 @@ function CostReportBuilderContent({ onReportModeChange }) {
         detailMaps: ctx.detailMaps,
         unitPriceMap: ctx.upm,
         recipeGroups: ctx.recipeGroups,
+        // 단종 메뉴의 레시피는 남아 있어도 레시피 출력·엑셀에 내지 않는다
+        excludeMenuCodes: buildDiscontinuedMenuCodeSet(masters),
       });
       return { prices, ctx, recipeRows };
     },
