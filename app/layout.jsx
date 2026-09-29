@@ -1,17 +1,11 @@
+import './fonts/pretendard.css';
 import './globals.css';
-import localFont from 'next/font/local';
 import AppShell from '@/components/AppShell';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { PARENT_COMPANY } from '@/lib/companies';
 
-const pretendard = localFont({
-  src: '../public/fonts/PretendardVariable.woff2',
-  display: 'swap',
-  variable: '--font-pretendard',
-  weight: '100 900',
-  preload: false, // subset preload 경고 방지 — variable 폰트는 전체 범위 사용
-});
-
+// 폰트는 글자 조각(unicode-range) 8개로 나뉘어 있어 화면에 쓰인 글자의 조각만 받는다.
+// 원본(2MB)은 fonts-src/, 조각 생성은 scripts/build-font-slices.py. --font-pretendard는 pretendard.css가 정의한다.
 export const metadata = {
   title: '7번가 R&D 플랫폼',
   description: `${PARENT_COMPANY.name} R&D팀 원가계산 · 식자재 · 메뉴개발 통합 플랫폼`,
@@ -28,7 +22,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ko" className={pretendard.variable} suppressHydrationWarning>
+    <html lang="ko" suppressHydrationWarning>
       <head>
         {/* FOUC 방지 — 렌더 전 다크모드 즉시 적용
             suppressHydrationWarning: localStorage 접근은 서버에서 실행 불가이므로

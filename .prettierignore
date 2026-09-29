@@ -3,3 +3,6 @@
 node_modules
 public
 *.md
+
+# 스크립트가 만든 파일(scripts/build-font-slices.py)
+app/fonts/pretendard.css
