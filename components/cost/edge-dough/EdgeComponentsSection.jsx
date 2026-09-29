@@ -7,6 +7,7 @@ export function EdgeComponentsSection({
   components,
   allMeta,
   unitPriceMap,
+  refreshedCount = 0,
   errors,
   onPatch,
   onRemove,
@@ -20,6 +21,12 @@ export function EdgeComponentsSection({
           (수량에 −(마이너스) 입력 시 차감 — 예: 기존 도우 빼기)
         </span>
       </FieldLabel>
+
+      {refreshedCount > 0 && (
+        <div role="status" style={{ fontSize: 12, color: 'var(--accent-text)', marginBottom: 6 }}>
+          구성품 {refreshedCount}개의 단가를 최신 식자재 단가로 갱신했습니다 — 저장하면 반영됩니다.
+        </div>
+      )}
 
       <div
         style={{

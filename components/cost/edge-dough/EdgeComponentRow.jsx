@@ -3,6 +3,7 @@ import { Icon } from '@/components/icons';
 import { IngredientSearch } from '@/components/cost/shared/IngredientSearch';
 import { formatNumber } from '@/lib/format';
 import { UNIT_OPTIONS } from '@/lib/cost/shared/unit-options';
+import { edgePatchForIngredient } from '@/lib/cost/edge-dough/price-sync';
 
 export function EdgeComponentRow({ component, allMeta, unitPriceMap, onChange, onRemove }) {
   const quantity = Number(component.quantity);
@@ -72,16 +73,8 @@ export function EdgeComponentRow({ component, allMeta, unitPriceMap, onChange, o
           <IngredientSearch
             allMeta={allMeta}
             unitPriceMap={unitPriceMap}
-            onSelect={meta => {
-              const info = unitPriceMap.get(meta.productCode);
-              const patch = {
-                ingredientName: meta.ingredientName || '',
-                productCode: meta.productCode || null,
-                unit: info?.baseUnitType || meta.baseUnitType || 'g',
-              };
-              if (info?.unitPrice != null) patch.unitPrice = String(info.unitPrice);
-              onChange(patch);
-            }}
+            // 제품코드가 없는 수동 식자재도 id 키로 최신 단가를 가져온다(price-sync.js)
+            onSelect={meta => onChange(edgePatchForIngredient(meta, unitPriceMap))}
             style={{ marginTop: 0 }}
           />
         )}

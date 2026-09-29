@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   EDGE_TYPES,
   edgeTotalCost,
@@ -16,6 +16,7 @@ import { ModalFrame } from '@/components/ui/ModalFrame';
 import { showToast } from '@/components/Toast';
 import { useMounted } from '@/hooks/useMounted';
 import { parseOptionalNonNegativeNumber, parseOptionalNumber } from '@/lib/parse';
+import { refreshEdgeComponentPrices } from '@/lib/cost/edge-dough/price-sync';
 import { EdgeComponentsSection } from './EdgeComponentsSection';
 import { EdgeIdentityFields } from './EdgeIdentityFields';
 import { EdgeMarginSettings } from './EdgeMarginSettings';
@@ -37,6 +38,9 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
   const [comps, setComps] = useState(() =>
     (initial?.components || []).map(c => ({ ...EMPTY_COMP(), ...c }))
   );
+  // 비동기 로드가 끝나는 시점의 최신 구성품을 읽기 위해(그 사이 사용자가 고친 값을 덮지 않게)
+  const compsRef = useRef(comps);
+  compsRef.current = comps;
   const [note, setNote] = useState(initial?.note || '');
   const [expandInMargin, setExpandInMargin] = useState(
     initial?.expandInMargin != null
@@ -50,6 +54,8 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
   );
   const [allMeta, setAllMeta] = useState([]);
   const [upm, setUpm] = useState(new Map());
+  // 열 때 최신 식자재 단가로 바뀐 구성품 수 — 저장해야 반영되므로 안내만 한다
+  const [refreshedCount, setRefreshedCount] = useState(0);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState([]);
   const mountedRef = useMounted();
@@ -66,8 +72,13 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
         priceRowMap = buildPriceRowMap(rows).map;
       }
       if (!alive) return;
+      const nextUpm = buildUnitPriceMap(meta, priceRowMap);
       setAllMeta(meta);
-      setUpm(buildUnitPriceMap(meta, priceRowMap));
+      setUpm(nextUpm);
+      // 이미 저장된 구성품의 단가도 최신 식자재 단가로 맞춘다(코드 없는 옛 구성품은 이름으로 연결)
+      const result = refreshEdgeComponentPrices(compsRef.current, meta, nextUpm);
+      if (result.components.some((c, i) => c !== compsRef.current[i])) setComps(result.components);
+      if (result.changed > 0) setRefreshedCount(result.changed);
     })().catch(err => {
       if (!alive) return;
       console.error('[EdgeEditModal] 단가 데이터 로드 실패', err);
@@ -155,6 +166,7 @@ export function EdgeEditModal({ initial, onSave, onClose }) {
           components={comps}
           allMeta={allMeta}
           unitPriceMap={upm}
+          refreshedCount={refreshedCount}
           errors={errors}
           onPatch={patch}
           onRemove={handleRemoveItem}
