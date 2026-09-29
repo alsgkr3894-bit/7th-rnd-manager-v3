@@ -11,6 +11,7 @@ export function SystemDangerZoneCard({
   totalRows,
   onReset,
   onRecreate,
+  isSharedDataProtected = false,
 }) {
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [confirmingRecreate, setConfirmingRecreate] = useState(false);
@@ -26,6 +27,13 @@ export function SystemDangerZoneCard({
         <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 12 }}>
           모든 store의 데이터를 삭제합니다. schema는 유지되며 빈 store로 남습니다.
           <br />
+          {isSharedDataProtected && (
+            <>
+              <b>노트·샘플기록·일정·작업일지·법인카드·로그인정보</b>는 회사 공용 데이터라 이
+              브랜드에서는 삭제하지 않습니다(7번가 브랜드에서만 초기화됩니다).
+              <br />
+            </>
+          )}
           백업이 필요한 경우 먼저 <b>데이터 백업</b> 메뉴에서 다운로드하세요.
           <br />
           초기화 후 기본 메뉴 코드를 다시 등록하려면 <b>메뉴 마스터 → 기본 코드 등록</b>을

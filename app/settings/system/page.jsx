@@ -12,6 +12,7 @@ import {
   collectStoreStats,
 } from '@/lib/db';
 import { dbNameFor } from '@/lib/db/constants';
+import { MAIN_BRAND_ID, planBrandReset } from '@/lib/db/reset-plan';
 import { getActiveBrandId } from '@/lib/active-brand';
 import { getSetting, getSettingDefault, setSetting } from '@/lib/settings';
 import { Toggle } from '@/components/ui/Toggle';
@@ -126,7 +127,10 @@ export default function Page() {
     }
     setBusy(true);
     try {
-      for (const name of ALL_STORES) {
+      // 공유 store(노트·샘플·법인카드 등)는 7번가에서만 초기화한다 — 다른 브랜드에서 비우면
+      // 서버의 7번가 공유 데이터가 삭제된다(lib/db/reset-plan.js).
+      const { stores, skippedShared } = planBrandReset(ALL_STORES, getActiveBrandId());
+      for (const name of stores) {
         if (!hasStore(name)) continue;
         try {
           await clearStore(name);
@@ -135,7 +139,12 @@ export default function Page() {
         }
       }
       reloadStats();
-      showToast('모든 데이터가 초기화되었습니다.', 'ok');
+      showToast(
+        skippedShared.length
+          ? `이 브랜드의 데이터가 초기화되었습니다. 공유 데이터 ${skippedShared.length}개(노트·샘플·법인카드 등)는 7번가 데이터 보호를 위해 유지했습니다.`
+          : '모든 데이터가 초기화되었습니다.',
+        'ok'
+      );
     } catch (err) {
       console.error('[Reset] 실패:', err);
       showToast('초기화 중 오류가 발생했습니다.', 'error');
@@ -398,6 +407,7 @@ export default function Page() {
         isAdmin={isAdmin}
         totalRows={totalRows}
         onReset={handleReset}
+        isSharedDataProtected={getActiveBrandId() !== MAIN_BRAND_ID}
         onRecreate={handleRecreate}
       />
     </main>
