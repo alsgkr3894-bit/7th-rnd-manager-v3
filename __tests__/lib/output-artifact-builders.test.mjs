@@ -682,6 +682,188 @@ describe('출력 artifact builder 실제 workbook 검증', () => {
     ]);
   });
 
+  // 2026-09-29 주임님: 원가보고서 엑셀에 테두리·통일된 글자 크기·깔끔한 구분.
+  // 커뮤니티판 xlsx는 셀 스타일을 버리므로 loadXlsxStyled로 써야 하고, 값·구성은 그대로여야 한다.
+  describe('원가 보고서 XLSX 서식', () => {
+    const cats = [
+      [
+        'pizza',
+        {
+          label: '피자',
+          menus: [
+            { code: 'P-002', name: '낮은원가', sale: 10000, cost: 2000, rate: 20 },
+            { code: 'P-001', name: '위험원가', sale: 10000, cost: 4200, rate: 42 },
+          ],
+        },
+      ],
+      [
+        'side',
+        {
+          label: '사이드',
+          menus: [{ code: 'S-001', name: '사이드메뉴', sale: 5000, cost: 1000, rate: 20 }],
+        },
+      ],
+    ];
+    const recipeRows = [
+      {
+        categoryLabel: '피자',
+        menuCode: 'P-001',
+        menuName: '위험원가',
+        size: 'L',
+        totalCost: 518,
+        components: [
+          {
+            ingredientName: '치즈',
+            productCode: 'C1',
+            quantity: 10,
+            unit: 'g',
+            unitPrice: 45.8333,
+            subtotal: 458,
+          },
+          {
+            ingredientName: '소스',
+            productCode: 'S1',
+            quantity: 5,
+            unit: 'g',
+            unitPrice: 12,
+            subtotal: 60,
+          },
+        ],
+      },
+      {
+        categoryLabel: '피자',
+        menuCode: 'P-002',
+        menuName: '낮은원가',
+        size: 'L',
+        totalCost: 137,
+        components: [
+          {
+            ingredientName: '치즈',
+            productCode: 'C1',
+            quantity: 3,
+            unit: 'g',
+            unitPrice: 45.8333,
+            subtotal: 137,
+          },
+        ],
+      },
+    ];
+    const cellOf = (sheet, r, c) => sheet[XLSX.utils.encode_cell({ r, c })];
+
+    test('모든 표 칸에 얇은 테두리·통일된 글꼴, 헤더는 회색 배경 굵게', async () => {
+      await exportCostXlsx('2026년 9월', cats, recipeRows, 35);
+      const wb = lastWrite().workbook;
+      for (const name of ['카테고리 요약', '메뉴 상세', '레시피 출력']) {
+        const ws = wb.Sheets[name];
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let r = range.s.r; r <= range.e.r; r++) {
+          for (let c = range.s.c; c <= range.e.c; c++) {
+            const s = cellOf(ws, r, c)?.s;
+            // 값이 비어 있는 칸에도 테두리가 있어야 표가 끊기지 않는다
+            expect(s?.border?.top?.style).toMatch(/thin|medium/);
+            expect(s?.border?.left?.style).toMatch(/thin|medium/);
+            expect(s?.font?.name).toBe('맑은 고딕');
+          }
+        }
+        const header = cellOf(ws, 0, 0).s;
+        expect(header.font).toMatchObject({ bold: true, sz: 11 });
+        expect(header.fill.fgColor.rgb).toMatch(/F2F2F2$/); // 저장 시 알파(FF)가 앞에 붙는다
+        // 본문은 10pt로 통일
+        expect(cellOf(ws, 1, 0).s.font.sz).toBe(10);
+      }
+    });
+
+    test('파일에 테두리·회색 채움·숫자 서식이 실제로 기록된다', async () => {
+      await exportCostXlsx('2026년 9월', cats, recipeRows, 35);
+      const xml = await readZipEntry(lastWrite().outputPath, 'xl/styles.xml');
+      expect(xml).toMatch(/<top style="thin">/);
+      expect(xml).toMatch(/<top style="medium">/);
+      expect(xml).toContain('rgb="FFF2F2F2"');
+      expect(xml).toContain('formatCode="0.0"');
+      // #,##0(3번)·#,##0.00(4번)은 엑셀 내장 서식이라 numFmtId로만 나타난다
+      expect(xml).toMatch(/numFmtId="3"/);
+      expect(xml).toMatch(/numFmtId="4"/);
+    });
+
+    test('금액은 천 단위, 단가는 소수 2자리, 원가율은 소수 1자리 서식 (값은 그대로)', async () => {
+      await exportCostXlsx('2026년 9월', cats, recipeRows, 35);
+      const wb = lastWrite().workbook;
+      const detail = wb.Sheets['메뉴 상세'];
+      expect(cellOf(detail, 1, 2).s.numFmt).toBeUndefined(); // L 칸은 피자에 L이 없어 빈 칸 — 서식 대상 아님
+      expect(cellOf(detail, 1, 8).s.numFmt).toBe('#,##0'); // 단일 판매가
+      expect(cellOf(detail, 1, 10).s.numFmt).toBe('0.0'); // 단일 원가율
+      const recipe = wb.Sheets['레시피 출력'];
+      expect(cellOf(recipe, 1, 9).s.numFmt).toBe('#,##0.00');
+      expect(cellOf(recipe, 1, 9).v).toBe(45.8333); // 반올림해서 저장하지 않는다
+      expect(cellOf(recipe, 1, 10).s.numFmt).toBe('#,##0');
+    });
+
+    test('위험 원가율만 강조하고, 기준 미만은 강조하지 않는다', async () => {
+      await exportCostXlsx('2026년 9월', cats, recipeRows, 35);
+      const wb = lastWrite().workbook;
+      const detail = wb.Sheets['메뉴 상세'];
+      // 코드순 정렬: P-001(42%) 먼저, P-002(20%) 다음 — 단일 원가율은 10열
+      const danger = cellOf(detail, 1, 10);
+      const safe = cellOf(detail, 2, 10);
+      expect(danger.v).toBe(42);
+      expect(danger.s.fill.fgColor.rgb).toMatch(/FDECEA$/);
+      expect(danger.s.font.color.rgb).toMatch(/C62828$/);
+      expect(safe.v).toBe(20);
+      expect(safe.s.fill).toBeUndefined();
+      // 요약 시트: 위험 메뉴 수가 0인 카테고리는 강조하지 않는다
+      const summary = wb.Sheets['카테고리 요약'];
+      expect(cellOf(summary, 1, 5).s.font.color?.rgb).toMatch(/C62828$/); // 피자 1건
+      expect(cellOf(summary, 2, 5).s.font.color).toBeUndefined(); // 사이드 0건
+    });
+
+    test('구분은 병합이 아니라 굵은 선 — 카테고리·메뉴 경계, L/R/단일 그룹 경계', async () => {
+      await exportCostXlsx('2026년 9월', cats, recipeRows, 35);
+      const wb = lastWrite().workbook;
+      // 병합이 없어야 엑셀 필터·정렬이 그대로 된다
+      for (const name of ['카테고리 요약', '메뉴 상세', '레시피 출력']) {
+        expect(wb.Sheets[name]['!merges']).toBeUndefined();
+      }
+      const detail = wb.Sheets['메뉴 상세'];
+      // 피자→사이드로 바뀌는 3행(0-based)의 위쪽선이 굵고, 같은 카테고리 안(2행)은 얇다
+      expect(cellOf(detail, 3, 1).s.border.top.style).toBe('medium');
+      expect(cellOf(detail, 2, 1).s.border.top.style).toBe('thin');
+      // 맞닿는 위 행의 아래선도 같은 굵기여야 끊기지 않는다
+      expect(cellOf(detail, 2, 1).s.border.bottom.style).toBe('medium');
+      // L(2~4) / R(5~7) / 단일(8~10) 그룹 경계
+      expect(cellOf(detail, 1, 2).s.border.left.style).toBe('medium');
+      expect(cellOf(detail, 1, 5).s.border.left.style).toBe('medium');
+      expect(cellOf(detail, 1, 8).s.border.left.style).toBe('medium');
+      expect(cellOf(detail, 1, 3).s.border.left.style).toBe('thin');
+      // 레시피: 메뉴가 바뀌는 3행(P-002 시작)의 위쪽선만 굵다
+      const recipe = wb.Sheets['레시피 출력'];
+      expect(cellOf(recipe, 3, 0).s.border.top.style).toBe('medium');
+      expect(cellOf(recipe, 2, 0).s.border.top.style).toBe('thin');
+    });
+
+    test('자동 필터가 헤더~마지막 행 전체를 덮는다', async () => {
+      await exportCostXlsx('2026년 9월', cats, recipeRows, 35);
+      const wb = lastWrite().workbook;
+      expect(wb.Sheets['카테고리 요약']['!autofilter'].ref).toBe('A1:F3');
+      expect(wb.Sheets['메뉴 상세']['!autofilter'].ref).toBe('A1:K4');
+      expect(wb.Sheets['레시피 출력']['!autofilter'].ref).toBe('A1:M4');
+    });
+
+    test('시트 구성·헤더는 서식을 입혀도 그대로다', async () => {
+      await exportCostXlsx('2026년 9월', cats, recipeRows, 35);
+      const wb = lastWrite().workbook;
+      expect(wb.SheetNames).toEqual(['카테고리 요약', '메뉴 상세', '레시피 출력']);
+      expect(rowsOf(wb, '카테고리 요약')[0]).toEqual([
+        '카테고리',
+        '메뉴 수',
+        '평균 원가율(%)',
+        '최저(%)',
+        '최고(%)',
+        '위험 메뉴',
+      ]);
+      expect(rowsOf(wb, '레시피 출력')[0]).toHaveLength(13);
+    });
+  });
+
   test('제때 가격 보고서 XLSX는 옵션별 시트와 한글 변동 품목을 보존한다', async () => {
     await exportPriceReportXlsx({
       dateRange: '2026-06-01 ~ 2026-06-30',
