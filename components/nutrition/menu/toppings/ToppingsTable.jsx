@@ -33,6 +33,7 @@ function ToppingRow({ topping, index, lookups, onEdit, onRemove, canEdit = false
       <td>
         <div style={{ display: 'flex', gap: 4 }}>
           <button
+            aria-label="토핑 수정"
             className="btn sm ghost"
             type="button"
             onClick={() => onEdit(topping)}
@@ -41,6 +42,7 @@ function ToppingRow({ topping, index, lookups, onEdit, onRemove, canEdit = false
             <Icon.edit style={{ width: 13, height: 13 }} />
           </button>
           <button
+            aria-label="토핑 삭제"
             className="btn sm ghost"
             type="button"
             onClick={() => onRemove(topping)}

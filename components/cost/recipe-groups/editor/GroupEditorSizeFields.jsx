@@ -21,6 +21,7 @@ export function GroupEditorSizeFields({ sizes, readOnly = false, onSize, onAdd, 
               />
               {sizes.length > 1 && (
                 <button
+                  aria-label="사이즈 삭제"
                   className="btn"
                   style={{ padding: '3px 6px' }}
                   onClick={() => onRemove(index)}

@@ -20,7 +20,12 @@ export function ReportPreviewSidebar({ report, currentPage, onPage, onClose, onS
 
   return (
     <div className="preview-meta">
-      <button className="modal-close" onClick={onClose} style={{ marginBottom: 24 }}>
+      <button
+        aria-label="닫기"
+        className="modal-close"
+        onClick={onClose}
+        style={{ marginBottom: 24 }}
+      >
         <Icon.x style={{ width: 20, height: 20 }} />
       </button>
       <div style={{ marginBottom: 20 }}>

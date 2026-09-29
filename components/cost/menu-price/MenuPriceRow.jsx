@@ -96,10 +96,15 @@ export function MenuPriceRow({
           </span>
         ) : (
           <span style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
-            <button className="btn sm" onClick={edit}>
+            <button aria-label="판매가 수정" className="btn sm" onClick={edit}>
               <Icon.edit style={{ width: 13, height: 13 }} />
             </button>
-            <button className="btn sm" onClick={deleteStart} style={{ color: 'var(--text-3)' }}>
+            <button
+              aria-label="판매가 삭제"
+              className="btn sm"
+              onClick={deleteStart}
+              style={{ color: 'var(--text-3)' }}
+            >
               <Icon.trash style={{ width: 13, height: 13 }} />
             </button>
           </span>

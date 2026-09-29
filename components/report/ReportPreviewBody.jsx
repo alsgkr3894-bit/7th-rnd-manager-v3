@@ -15,13 +15,23 @@ export function ReportPreviewBody({
       <div className="preview-body">
         <ReportPaper report={report} pageIndex={currentPage - 1} />
         <div className="preview-pager">
-          <button className="pager-btn" onClick={onPrev} disabled={currentPage === 1}>
+          <button
+            aria-label="이전 페이지"
+            className="pager-btn"
+            onClick={onPrev}
+            disabled={currentPage === 1}
+          >
             <Icon.chevLeft style={{ width: 16, height: 16 }} />
           </button>
           <div className="pager-info">
             {currentPage} / {totalPages}
           </div>
-          <button className="pager-btn" onClick={onNext} disabled={currentPage === totalPages}>
+          <button
+            aria-label="다음 페이지"
+            className="pager-btn"
+            onClick={onNext}
+            disabled={currentPage === totalPages}
+          >
             <Icon.chevRight style={{ width: 16, height: 16 }} />
           </button>
         </div>

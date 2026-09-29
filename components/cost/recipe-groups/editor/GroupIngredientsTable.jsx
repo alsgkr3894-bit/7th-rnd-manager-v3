@@ -109,6 +109,7 @@ function GroupIngredientRow({
       <td style={{ padding: '6px 4px', fontSize: 12, color: 'var(--text-3)' }}>{line.unitType}</td>
       <td style={{ padding: '6px 2px', textAlign: 'center' }}>
         <button
+          aria-label="구성품 삭제"
           onClick={() => onRemove(lineIndex)}
           disabled={readOnly}
           style={{

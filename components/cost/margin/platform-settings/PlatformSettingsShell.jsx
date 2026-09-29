@@ -36,7 +36,13 @@ export function PlatformSettingsShell({ onClose, onSave, children }) {
           }}
         >
           <span style={{ fontWeight: 700, fontSize: 15 }}>플랫폼 수수료 설정</span>
-          <button type="button" className="btn" style={{ padding: '4px 8px' }} onClick={onClose}>
+          <button
+            aria-label="닫기"
+            type="button"
+            className="btn"
+            style={{ padding: '4px 8px' }}
+            onClick={onClose}
+          >
             <Icon.close style={{ width: 15, height: 15 }} />
           </button>
         </div>

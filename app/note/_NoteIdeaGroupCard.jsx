@@ -408,10 +408,16 @@ export function NoteIdeaGroupCard({
             >
               복사
             </button>
-            <button className="btn sm" onClick={event => edit(latest, event)} disabled={!canEdit}>
+            <button
+              aria-label="노트 수정"
+              className="btn sm"
+              onClick={event => edit(latest, event)}
+              disabled={!canEdit}
+            >
               <Icon.edit style={{ width: 12, height: 12 }} />
             </button>
             <button
+              aria-label="노트 삭제"
               className="btn sm"
               onClick={event => remove(latest, event)}
               style={{ color: 'var(--negative)' }}

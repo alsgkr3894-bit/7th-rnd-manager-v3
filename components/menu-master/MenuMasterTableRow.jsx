@@ -226,6 +226,7 @@ export function MenuMasterTableRow({
         }}
       >
         <button
+          aria-label="메뉴 수정"
           className="btn sm ghost"
           onClick={e => {
             e.stopPropagation();

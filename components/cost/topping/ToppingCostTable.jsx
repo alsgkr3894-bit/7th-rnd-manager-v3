@@ -147,6 +147,7 @@ function ToppingCostRow({
           </span>
         ) : (
           <button
+            aria-label="토핑 삭제"
             className="btn sm"
             onClick={() => setDeleting(true)}
             disabled={!canEdit}

@@ -85,6 +85,7 @@ export function FeeRow({ f, onPatch, onSizeOverride, onDelete }) {
 
         {/* 삭제 */}
         <button
+          aria-label="수수료 항목 삭제"
           type="button"
           className="btn sm"
           onClick={onDelete}

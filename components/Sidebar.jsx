@@ -236,7 +236,7 @@ export default function Sidebar({
       >
         {/* 사이드바는 대표(모회사)만 밝힌다 — 현재 브랜드는 상단 브랜드 전환 메뉴가
             로고·이름으로 보여주므로 여기서 또 적으면 겹친다. */}
-        <img className="logo-img" src="/logo-taemyeong-mark.png" alt={PARENT_COMPANY.name} />
+        <img className="logo-img" src="/logo-taemyeong-mark.png" alt="" />
         <div className="brand-text">
           <div className="brand-line1">{activeCompany?.parent || PARENT_COMPANY.name}</div>
         </div>

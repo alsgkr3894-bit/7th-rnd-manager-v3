@@ -69,6 +69,7 @@ export function ModalFrame({
             )}
           </div>
           <button
+            aria-label="닫기"
             type="button"
             className="btn"
             style={{ padding: '4px 8px' }}

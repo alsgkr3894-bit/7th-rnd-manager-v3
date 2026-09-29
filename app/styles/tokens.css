@@ -23,7 +23,7 @@
 
   --positive: #1a8917;
   --positive-soft: #e6f4e6;
-  --negative: #e03131;
+  --negative: #c92a2a; /* 연회색·연빨강 배경 위 글자도 WCAG AA(4.5:1) — 옛 #e03131은 4.25/3.89였다 */
   --negative-soft: #fceaea;
   --warn: #c76a00;
   --warn-soft: #fff1e0;

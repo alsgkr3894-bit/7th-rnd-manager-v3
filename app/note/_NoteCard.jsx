@@ -301,10 +301,11 @@ export function NoteCard({
             >
               복사
             </button>
-            <button className="btn sm" onClick={edit} disabled={!canEdit}>
+            <button aria-label="노트 수정" className="btn sm" onClick={edit} disabled={!canEdit}>
               <Icon.edit style={{ width: 12, height: 12 }} />
             </button>
             <button
+              aria-label="노트 삭제"
               className="btn sm"
               onClick={remove}
               style={{ color: 'var(--negative)' }}

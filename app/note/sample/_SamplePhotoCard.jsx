@@ -95,6 +95,7 @@ export function SamplePhotoCard({
                   style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
                 <button
+                  aria-label="사진 삭제"
                   onClick={() => onRemovePhoto(index)}
                   disabled={readOnly}
                   style={{

@@ -73,6 +73,7 @@ export function SetCompositionList({ groups, menus, onAdd, onEdit, onDelete, can
                   <div style={CARD_TITLE_STYLE}>{setName}</div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     <button
+                      aria-label="구성 수정"
                       type="button"
                       className="btn sm ghost"
                       onClick={() => onEdit(group)}
@@ -81,6 +82,7 @@ export function SetCompositionList({ groups, menus, onAdd, onEdit, onDelete, can
                       <Icon.edit style={{ width: 13, height: 13 }} />
                     </button>
                     <button
+                      aria-label="구성 삭제"
                       type="button"
                       className="btn sm ghost"
                       style={{ color: 'var(--danger)' }}

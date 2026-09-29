@@ -135,6 +135,7 @@ export function SampleLinkedProductsCard({
               >
                 {name}
                 <button
+                  aria-label="연결 제품 삭제"
                   type="button"
                   onClick={() => {
                     if (!readOnly) remove(sourceIndex);

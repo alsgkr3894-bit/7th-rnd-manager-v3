@@ -127,6 +127,7 @@ export function IngredientForm({
             )}
           </div>
           <button
+            aria-label="닫기"
             type="button"
             className="btn ghost"
             style={{ padding: '4px 8px', flexShrink: 0 }}

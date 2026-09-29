@@ -74,7 +74,12 @@ export function ShortcutsHelp({ onClose, canEdit = false }) {
           }}
         >
           <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--text-1)' }}>키보드 단축키</div>
-          <button className="btn" style={{ padding: '4px 8px' }} onClick={onClose}>
+          <button
+            aria-label="닫기"
+            className="btn"
+            style={{ padding: '4px 8px' }}
+            onClick={onClose}
+          >
             <Icon.close style={{ width: 15, height: 15 }} />
           </button>
         </div>

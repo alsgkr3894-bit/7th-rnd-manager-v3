@@ -26,7 +26,7 @@ export function DayPanelHeader({ dateKey, today, notesCount, schedulesCount, onC
           )}
         </div>
       </div>
-      <button className="btn sm ghost xs" onClick={onClose}>
+      <button aria-label="닫기" className="btn sm ghost xs" onClick={onClose}>
         <Icon.close style={{ width: 13, height: 13 }} />
       </button>
     </div>

@@ -249,6 +249,7 @@ export function OriginSection({ origin, originHidden, originNone, originSuggesti
             }}
           />
           <button
+            aria-label="원산지 항목 삭제"
             type="button"
             onClick={() =>
               onSet(

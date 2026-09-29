@@ -96,6 +96,7 @@ export function UnitPriceCell({ idx, component, onOverride }) {
         }}
       />
       <button
+        aria-label="단가 편집 닫기"
         type="button"
         style={{
           background: 'none',

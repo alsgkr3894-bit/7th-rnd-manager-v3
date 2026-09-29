@@ -48,6 +48,7 @@ export function PasswordField({
           }}
         />
         <button
+          aria-label={show ? '비밀번호 숨기기' : '비밀번호 표시'}
           type="button"
           onClick={onToggleShow}
           style={{

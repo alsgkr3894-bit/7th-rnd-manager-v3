@@ -99,6 +99,7 @@ export function SlotEditor({ slot = {}, allMenus, onChange = noop, onRemove = no
           <span style={{ fontSize: 11, color: 'var(--text-4)' }}>{ratioHint}</span>
         </div>
         <button
+          aria-label="슬롯 삭제"
           type="button"
           className="btn sm ghost"
           style={{ color: 'var(--danger)', flexShrink: 0 }}
@@ -130,6 +131,7 @@ export function SlotEditor({ slot = {}, allMenus, onChange = noop, onRemove = no
               >
                 {menuName}
                 <button
+                  aria-label="메뉴 제거"
                   type="button"
                   onClick={() => removeMenu(menuCode)}
                   style={{

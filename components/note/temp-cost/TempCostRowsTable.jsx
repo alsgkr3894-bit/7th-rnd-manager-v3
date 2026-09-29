@@ -62,6 +62,7 @@ function TempCostRow({ row, onUpdateRow, onRemoveRow }) {
       </td>
       <td style={{ padding: '6px 4px' }}>
         <button
+          aria-label="행 삭제"
           type="button"
           onClick={() => onRemoveRow(row.id)}
           style={{

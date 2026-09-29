@@ -117,6 +117,7 @@ export function BasicIngredientFields({
             >
               #{t}
               <button
+                aria-label={`태그 ${t} 삭제`}
                 type="button"
                 onClick={() => onRemoveTag(t)}
                 style={{
