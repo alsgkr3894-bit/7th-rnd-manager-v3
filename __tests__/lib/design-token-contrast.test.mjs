@@ -46,3 +46,50 @@ describe('--negative(빨강 글자)의 색 대비', () => {
     expect(contrast('#e03131', token('surface-2'))).toBeLessThan(4.5);
   });
 });
+
+// 2026-09-29 색 대비 2차: 초록·주황·가장 옅은 글자색(text-4)도 연회색 배경 위에서 AA에 못 미쳤다.
+describe('--positive / --warn / --text-4(라이트)의 색 대비', () => {
+  test.each(['surface', 'surface-2', 'surface-3', 'bg', 'positive-soft'])(
+    '--positive는 %s 위에서 WCAG AA(4.5:1) 이상',
+    bg => {
+      expect(contrast(token('positive'), token(bg))).toBeGreaterThanOrEqual(4.5);
+    }
+  );
+
+  test.each(['surface', 'surface-2', 'surface-3', 'bg', 'warn-soft'])(
+    '--warn은 %s 위에서 WCAG AA(4.5:1) 이상',
+    bg => {
+      expect(contrast(token('warn'), token(bg))).toBeGreaterThanOrEqual(4.5);
+    }
+  );
+
+  test.each(['surface', 'surface-2', 'surface-3', 'bg'])(
+    '--text-4는 %s 위에서 WCAG AA(4.5:1) 이상',
+    bg => {
+      expect(contrast(token('text-4'), token(bg))).toBeGreaterThanOrEqual(4.5);
+    }
+  );
+
+  test('흰 글자를 얹는 초록·주황 배경(토스트 아이콘·버튼)도 AA', () => {
+    expect(contrast('#ffffff', token('positive'))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast('#ffffff', token('warn'))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  test('계산이 맞는지 — 옛 값들은 실제로 미달이었다', () => {
+    expect(contrast('#1a8917', token('surface-2'))).toBeLessThan(4.5);
+    expect(contrast('#c76a00', token('surface'))).toBeLessThan(4.5);
+    expect(contrast('#767676', token('surface-2'))).toBeLessThan(4.5);
+  });
+});
+
+describe('다크 모드 --text-4', () => {
+  const dark = css.slice(css.indexOf("[data-theme='dark']"));
+  const hexOf = name => {
+    const start = dark.indexOf(`--${name}:`);
+    return dark.slice(start).match(/#[0-9a-fA-F]{6}/)[0];
+  };
+
+  test.each(['surface', 'surface-2', 'surface-3', 'bg'])('%s 위에서 AA', bg => {
+    expect(contrast(hexOf('text-4'), hexOf(bg))).toBeGreaterThanOrEqual(4.5);
+  });
+});

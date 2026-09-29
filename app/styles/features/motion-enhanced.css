@@ -170,7 +170,7 @@
   flex-shrink: 0;
 }
 .toast.ok .toast-icon {
-  background: #1a8917;
+  background: #177a14;
 }
 .toast.error .toast-icon {
   background: #e03131;
@@ -179,7 +179,7 @@
   background: #3182f6;
 }
 .toast.warn .toast-icon {
-  background: #c76a00;
+  background: #a85800;
 }
 
 /* ----- 원가율 게이지 바 ----- */

@@ -11,7 +11,7 @@
   --text-1: #191f28;
   --text-2: #4e5968;
   --text-3: #5c6472; /* #F7F8FA 배경 기준 5.1:1 — WCAG AA ✓ */
-  --text-4: #767676;
+  --text-4: #6b6b6b; /* 연회색 배경(#F7F8FA·#F1F3F5·#F2F4F6) 위에서도 AA 4.5:1 — 옛 #767676은 4.27/4.08/4.12 */
   --border: #ebeef1;
   --border-strong: #d1d6db;
   --divider: #f1f3f5;
@@ -21,11 +21,11 @@
   --accent-soft: #fee8ea;
   --accent-text: #b80d18;
 
-  --positive: #1a8917;
+  --positive: #177a14; /* 옛 #1a8917은 연회색 4.26·연초록 3.98 — 새 값은 5.16/4.82 */
   --positive-soft: #e6f4e6;
   --negative: #c92a2a; /* 연회색·연빨강 배경 위 글자도 WCAG AA(4.5:1) — 옛 #e03131은 4.25/3.89였다 */
   --negative-soft: #fceaea;
-  --warn: #c76a00;
+  --warn: #a85800; /* 옛 #c76a00은 흰 배경 3.83·연주황 3.44 — 새 값은 5.17/4.66 */
   --warn-soft: #fff1e0;
   --scope-generic: #6d28d9; /* 범용 계열 — 보라 (전용/미지정과 구분) */
   --scope-generic-soft: #f1ecfd; /* 범용: 외곽(연보라) */
@@ -78,7 +78,7 @@
   --text-1: #f4f6f9;
   --text-2: #b0b8c1;
   --text-3: #8b95a1;
-  --text-4: #858fa0; /* #6B7682에서 상향 — dark surface 대비 4.5:1 충족 */
+  --text-4: #909aaa; /* #6B7682→#858FA0→상향 — surface-3(#272C35) 위에서도 AA (옛 값 4.30) */
   --border: #2a2f37;
   --border-strong: #3a4049;
   --divider: #23282f;
