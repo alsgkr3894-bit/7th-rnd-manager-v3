@@ -5,6 +5,7 @@ import { IngredientSearch } from '@/components/cost/shared/IngredientSearch';
 import { InlineEditCell } from '@/components/cost/manage/table-utils';
 import { formatNumber } from '@/lib/format';
 import { getCostRateStyles } from '@/lib/cost/rate-color';
+import { toppingComponentChangesForIngredient } from '@/lib/cost/topping/rows';
 
 function formatCost(value) {
   return value != null ? `${formatNumber(value)}원` : '—';
@@ -84,14 +85,10 @@ function ToppingCostRow({
           <IngredientSearch
             allMeta={allIngredients}
             unitPriceMap={unitPriceMap}
-            onSelect={meta => {
-              const info = unitPriceMap.get(meta.productCode);
-              onRecipeSave(row, {
-                productCode: meta.productCode || null,
-                ingredientName: meta.ingredientName || '',
-                unit: info?.baseUnitType || meta.baseUnitType || 'g',
-              });
-            }}
+            // 제품코드 없는 수동 식자재도 id 키로 연결해 최신 단가를 가져온다
+            onSelect={meta =>
+              onRecipeSave(row, toppingComponentChangesForIngredient(meta, unitPriceMap))
+            }
             style={{ marginTop: 0 }}
           />
         ) : (

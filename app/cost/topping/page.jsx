@@ -48,6 +48,7 @@ export default function Page() {
         menus: data.menus,
         recipeMap: data.recipeMap,
         unitPriceMap: data.unitPriceMap,
+        allIngredients: data.ingredients,
       })
     : [];
 

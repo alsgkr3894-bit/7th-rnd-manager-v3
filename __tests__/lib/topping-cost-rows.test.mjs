@@ -4,7 +4,11 @@ import {
   buildToppingMenuPatch,
   buildToppingRecipePatch,
   filterToppingMenus,
+  toppingComponentChangesForIngredient,
 } from '@/lib/cost/topping/rows';
+import { buildUnitPriceMap } from '@/lib/recipe';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const menus = [
   { id: 1, menuCode: 'T-ETC-002', menuName: '치즈 80g', category: '추가토핑', price: 2000 },
@@ -130,5 +134,174 @@ describe('buildToppingMenuPatch / buildToppingRecipePatch', () => {
   test('변경분을 안 주면 기존 행 값을 그대로 유지한다', () => {
     const patch = buildToppingRecipePatch(row, {});
     expect(patch.components[0]).toEqual(row.component);
+  });
+});
+
+/**
+ * 추가토핑 원가표도 엣지 관리와 같은 결함이 있었다(2026-09-29): 식자재를 고를 때 제품코드로만
+ * 연결해서 제품코드 없는 수동 식자재는 단가를 못 가져오고, 구성품을 다시 저장할 때 unitPrice가
+ * 버려져 원가가 사라졌다. 실데이터: 양파(id 107)·청피망(id 108) 토핑이 코드 없이 연결돼 있다.
+ */
+describe('추가토핑 — 제품코드 없는 수동 식자재', () => {
+  const allIngredients = [
+    {
+      id: 107,
+      ingredientName: '양파',
+      productCode: null,
+      baseQuantity: 12750,
+      baseUnitType: 'g',
+      priceOverride: 12180,
+    },
+    {
+      id: 49,
+      ingredientName: '양송이 버섯',
+      productCode: 'CC320908',
+      baseQuantity: 1000,
+      baseUnitType: 'g',
+    },
+    {
+      id: 200,
+      ingredientName: '중복',
+      productCode: null,
+      baseQuantity: 1000,
+      baseUnitType: 'g',
+      priceOverride: 1000,
+    },
+    {
+      id: 201,
+      ingredientName: '중복',
+      productCode: null,
+      baseQuantity: 1000,
+      baseUnitType: 'g',
+      priceOverride: 2000,
+    },
+  ];
+  const upm = buildUnitPriceMap(allIngredients, new Map([['CC320908', { priceWithTax: 5200 }]]));
+  const menus = [
+    {
+      id: 1,
+      menuCode: 'T-ETC-008',
+      menuName: '양파 100g',
+      category: '추가토핑',
+      price: 1000,
+      status: 'active',
+    },
+  ];
+  const codeless = {
+    ingredientName: '양파',
+    productCode: null,
+    quantity: 100,
+    unit: 'g',
+    unitPrice: 1,
+  };
+  const recipeMap = new Map([['T-ETC-008', { components: [codeless] }]]);
+
+  test('식자재를 고를 때 제품코드가 없으면 id 키로 연결하고 단위를 채운다', () => {
+    expect(toppingComponentChangesForIngredient(allIngredients[0], upm)).toEqual({
+      productCode: '107',
+      ingredientName: '양파',
+      unit: 'g',
+    });
+    expect(toppingComponentChangesForIngredient(allIngredients[1], upm).productCode).toBe(
+      'CC320908'
+    );
+    // 단가는 저장하지 않는다 — 화면이 unitPriceMap에서 실시간 계산
+    expect(toppingComponentChangesForIngredient(allIngredients[0], upm)).not.toHaveProperty(
+      'unitPrice'
+    );
+  });
+
+  test('id 키로 연결하면 최신 단가로 원가가 계산된다', () => {
+    const linked = { ...codeless, productCode: '107', unitPrice: undefined };
+    const [row] = buildToppingCostRows({
+      menus,
+      recipeMap: new Map([['T-ETC-008', { components: [linked] }]]),
+      unitPriceMap: upm,
+    });
+    expect(row.unitPrice).toBe(upm.get('107').unitPrice);
+    expect(row.cost).toBeGreaterThan(0);
+  });
+
+  test('코드 빈 옛 구성품은 이름으로 식자재를 찾아 단가를 실시간으로 쓴다(저장은 하지 않는다)', () => {
+    const [row] = buildToppingCostRows({ menus, recipeMap, unitPriceMap: upm, allIngredients });
+    expect(row.linkedProductCode).toBe('107');
+    expect(row.unitPrice).toBe(upm.get('107').unitPrice);
+    expect(row.component.productCode).toBeNull(); // 원본 구성품은 그대로
+  });
+
+  test('이름이 겹치면(모호) 연결하지 않고 저장된 단가를 그대로 쓴다', () => {
+    const ambiguous = new Map([
+      [
+        'T-ETC-008',
+        {
+          components: [
+            { ingredientName: '중복', productCode: null, quantity: 1, unit: 'g', unitPrice: 7 },
+          ],
+        },
+      ],
+    ]);
+    const [row] = buildToppingCostRows({
+      menus,
+      recipeMap: ambiguous,
+      unitPriceMap: upm,
+      allIngredients,
+    });
+    expect(row.linkedProductCode).toBeNull();
+    expect(row.unitPrice).toBe(7);
+  });
+
+  test('allIngredients를 안 주면 종전 동작 그대로', () => {
+    const [row] = buildToppingCostRows({ menus, recipeMap, unitPriceMap: upm });
+    expect(row.linkedProductCode).toBeNull();
+    expect(row.unitPrice).toBe(1);
+  });
+
+  test('수량만 고쳐 저장해도 기존 단가가 버려지지 않고, 이름으로 찾은 연결 키가 함께 저장된다', () => {
+    const [row] = buildToppingCostRows({ menus, recipeMap, unitPriceMap: upm, allIngredients });
+    const patch = buildToppingRecipePatch(row, { quantity: 120 });
+    expect(patch.components[0]).toMatchObject({ productCode: '107', quantity: 120, unitPrice: 1 });
+  });
+
+  test('새 식자재를 고르면 낡은 단가를 끌고 가지 않는다', () => {
+    const [row] = buildToppingCostRows({ menus, recipeMap, unitPriceMap: upm, allIngredients });
+    const patch = buildToppingRecipePatch(
+      row,
+      toppingComponentChangesForIngredient(allIngredients[1], upm)
+    );
+    expect(patch.components[0].productCode).toBe('CC320908');
+    expect(patch.components[0]).not.toHaveProperty('unitPrice');
+  });
+
+  test('이미 제품코드가 있는 구성품은 연결 키로 덮지 않는다', () => {
+    const coded = new Map([
+      [
+        'T-ETC-008',
+        {
+          components: [
+            { ingredientName: '양송이 버섯', productCode: 'CC320908', quantity: 50, unit: 'g' },
+          ],
+        },
+      ],
+    ]);
+    const [row] = buildToppingCostRows({
+      menus,
+      recipeMap: coded,
+      unitPriceMap: upm,
+      allIngredients,
+    });
+    expect(row.linkedProductCode).toBeNull();
+    expect(buildToppingRecipePatch(row, { quantity: 60 }).components[0].productCode).toBe(
+      'CC320908'
+    );
+  });
+});
+
+describe('추가토핑 화면 연결', () => {
+  const src = f => readFileSync(resolve(f), 'utf8');
+  test('표는 헬퍼로 식자재를 연결하고, 페이지는 식자재 목록을 행 조립에 넘긴다', () => {
+    const table = src('components/cost/topping/ToppingCostTable.jsx');
+    expect(table).toContain('toppingComponentChangesForIngredient(meta, unitPriceMap)');
+    expect(table).not.toContain('unitPriceMap.get(meta.productCode)');
+    expect(src('app/cost/topping/page.jsx')).toContain('allIngredients: data.ingredients');
   });
 });

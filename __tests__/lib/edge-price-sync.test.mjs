@@ -9,9 +9,9 @@ import { describe, expect, test } from '@jest/globals';
 import { buildUnitPriceMap } from '../../lib/recipe/index.js';
 import {
   edgePatchForIngredient,
-  ingredientPriceKey,
   refreshEdgeComponentPrices,
 } from '../../lib/cost/edge-dough/price-sync.js';
+import { ingredientPriceKey } from '../../lib/cost/shared/ingredient-price-key.js';
 
 // 실제 식자재 관리 모양: 코드 있는 것(제때 단가) + 코드 없는 수동 식자재(priceOverride)
 const allMeta = [
