@@ -1,7 +1,7 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { formatNumber, formatPercent } from '@/lib/format';
-import { useCountUp } from '@/hooks/useCountUp';
+import { CountUp } from '@/components/ui/CountUp';
 import { AreaChart } from '@/components/charts/AreaChart';
 import { Donut } from '@/components/charts/Donut';
 import { MENU_SALES_ANALYSIS_ROUTE } from '@/lib/sales/navigation';
@@ -161,7 +161,6 @@ export function HomeChartRow({
 }
 
 function DonutSection({ donut, hoveredCat, setHoveredCat }) {
-  const center = useCountUp(donut?.total ?? 0, { duration: 1400, delay: 250 });
   const safeHoveredCat = Number.isInteger(hoveredCat) ? hoveredCat : null;
 
   return (
@@ -169,7 +168,9 @@ function DonutSection({ donut, hoveredCat, setHoveredCat }) {
       <div className="ring">
         <Donut items={donut.items} onSegmentHover={setHoveredCat} />
         <div className="center">
-          <div className="v num">{formatNumber(center)}</div>
+          <div className="v num">
+            <CountUp value={donut?.total ?? 0} duration={1400} delay={250} format={formatNumber} />
+          </div>
           <div className="l">개</div>
         </div>
       </div>

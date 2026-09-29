@@ -38,8 +38,6 @@ export function renderKpiRow(context) {
           salesKpi={context.salesKpi}
           costKpi={context.costKpi}
           noteKpi={context.noteKpi}
-          salesCount={context.salesCount}
-          noteCount={context.noteCount}
         />
       )
     : null;

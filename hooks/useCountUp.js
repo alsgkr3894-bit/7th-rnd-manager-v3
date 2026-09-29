@@ -20,12 +20,25 @@ export function normalizeCountUpOptions(options = {}) {
   };
 }
 
+/** 모션 줄이기 설정이면 애니메이션 없이 최종값을 바로 보여 준다. */
+function prefersReducedMotion() {
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch {
+    return false;
+  }
+}
+
 export function useCountUp(target, options = {}) {
   const [val, setVal] = useState(0);
   const safeTarget = normalizeCountUpNumber(target, 0);
   const opts = normalizeCountUpOptions(options);
 
   useEffect(() => {
+    if (prefersReducedMotion()) {
+      setVal(safeTarget);
+      return undefined;
+    }
     let startTime = null,
       rafId;
     const run = () => {

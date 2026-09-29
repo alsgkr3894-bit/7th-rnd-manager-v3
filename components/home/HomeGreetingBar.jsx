@@ -25,7 +25,8 @@ export function HomeGreetingBar({
         <h1>
           {greeting}, <span className="accent">{userName}</span>님
         </h1>
-        <div className="sub">{greetSub}</div>
+        {/* 데이터 도착 전에도 한 줄 높이를 잡아 둬 문구가 채워질 때 아래가 밀리지 않게 한다 */}
+        <div className="sub">{greetSub ?? ' '}</div>
       </div>
       <div className="right">
         {favoritesCount > 0 && (

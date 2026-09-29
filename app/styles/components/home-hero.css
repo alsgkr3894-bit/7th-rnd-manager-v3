@@ -263,3 +263,26 @@
   min-width: 0;
   display: block;
 }
+
+/* 홈 대시보드 자리표시자 — 데이터 도착 전 고정 높이로 자리를 잡아 레이아웃 시프트를 막는다 */
+.home-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 1100px;
+}
+.home-skeleton-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.home-skeleton-card {
+  display: block;
+  min-height: 132px;
+  border-radius: var(--radius-xl);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.home-skeleton-wide {
+  min-height: 320px;
+}

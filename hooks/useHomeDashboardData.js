@@ -62,6 +62,10 @@ export function useHomeDashboardData({ chartTab }) {
   const [anchor, setAnchor] = useState(null);
   const [detectedPeriod, setDetectedPeriod] = useState(null);
   const [chartKey, setChartKey] = useState(0);
+  // 1차(라이브 위젯)·2차(판매 통계) 조회가 모두 끝났는지 — 끝나기 전에 위젯을 조금씩
+  // 끼워 넣으면 아래 내용이 계속 밀려(CLS) 화면이 출렁인다. 페이지는 이 값이 true가 될 때까지
+  // 고정 높이 자리표시자를 보여 주고 한 번에 교체한다.
+  const [initialLoaded, setInitialLoaded] = useState(false);
 
   const dbReadyRef = useRef(false);
   const chartTabRef = useRef(chartTab);
@@ -147,6 +151,9 @@ export function useHomeDashboardData({ chartTab }) {
         if (!mountedRef.current) return;
         devError('[Home] 데이터 로드 실패:', err);
         showToast('데이터를 불러오는 중 문제가 발생했어요. 새로고침해 주세요.', 'error', 5000);
+      } finally {
+        // 실패해도 자리표시자에 갇히지 않게 — 비어 있는 위젯은 각자 빈 상태를 그린다.
+        if (mountedRef.current) setInitialLoaded(true);
       }
     },
     // anchor는 의존성 — anchor 변경 시 판매 데이터 분기 결정
@@ -270,6 +277,7 @@ export function useHomeDashboardData({ chartTab }) {
     detectedPeriod,
     shiftAnchor,
     chartKey,
+    initialLoaded,
     loadData,
     mountedRef,
   };

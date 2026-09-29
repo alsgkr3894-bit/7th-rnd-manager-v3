@@ -7,6 +7,7 @@ import { Sparkline } from '@/components/charts/Sparkline';
 import { normalizeNumberSeries } from '@/lib/ui/chart-data';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 import { MomBars } from './MomBars';
+import { CountUp } from '@/components/ui/CountUp';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 
 const kpiButtonStyle = {
@@ -17,13 +18,7 @@ const kpiButtonStyle = {
   width: '100%',
 };
 
-export const HomeKpiRow = memo(function HomeKpiRow({
-  salesKpi,
-  costKpi,
-  noteKpi,
-  salesCount,
-  noteCount,
-}) {
+export const HomeKpiRow = memo(function HomeKpiRow({ salesKpi, costKpi, noteKpi }) {
   const router = useRouter();
   // 평균 원가율 '전체' 배지는 7번가만 — getCostRateKpi()가 카테고리 필터 없이 전 메뉴를
   // 평균하는데(사이드·음료·소스·세트박스·추가토핑 포함) 이전엔 "피자 카테고리"로 잘못 표시했었다.
@@ -33,8 +28,9 @@ export const HomeKpiRow = memo(function HomeKpiRow({
   const salesSparkline = normalizeNumberSeries(salesKpi?.sparkline);
   const costSparkline = normalizeNumberSeries(costKpi?.sparkline);
   const noteSparkline = normalizeNumberSeries(noteKpi?.sparkline);
-  const safeSalesCount = Number.isFinite(Number(salesCount)) ? Number(salesCount) : 0;
-  const safeNoteCount = Number.isFinite(Number(noteCount)) ? Number(noteCount) : 0;
+  // 목표값만 받아 숫자 한 조각(<CountUp>)에서 애니메이션한다 — 여기서 프레임마다 상태를 바꾸면 홈 전체가 다시 그려진다.
+  const safeSalesCount = Number.isFinite(Number(salesKpi?.current)) ? Number(salesKpi.current) : 0;
+  const safeNoteCount = Number.isFinite(Number(noteKpi?.total)) ? Number(noteKpi.total) : 0;
   const rawCostRate = Number(costKpi?.rate);
   const safeCostRate = Number.isFinite(rawCostRate) ? rawCostRate : null;
   const salesYear = asDisplayText(salesKpi?.year);
@@ -81,7 +77,7 @@ export const HomeKpiRow = memo(function HomeKpiRow({
             {hasSalesPeriod ? `${salesYear}년 ${salesMonthNumber}월 판매량` : '최근 판매량'}
           </div>
           <div className={salesPopped ? 'value num count-landed' : 'value num'}>
-            {formatNumber(safeSalesCount)}
+            <CountUp value={safeSalesCount} duration={1400} delay={250} format={formatNumber} />
             <span className="unit">개</span>
           </div>
           <div className="trend">
@@ -141,7 +137,7 @@ export const HomeKpiRow = memo(function HomeKpiRow({
         <div>
           <div className="label">진행 중 R&amp;D 노트</div>
           <div className={notePopped ? 'value num count-landed' : 'value num'}>
-            {safeNoteCount}
+            <CountUp value={safeNoteCount} duration={900} delay={460} />
             <span className="unit">건</span>
           </div>
           <div className="trend">

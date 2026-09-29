@@ -7,11 +7,11 @@ const devError = (...a) => {
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCountUp } from '@/hooks/useCountUp';
 import { showToast } from '@/components/Toast';
 import { HomeGreetingBar } from '@/components/home/HomeGreetingBar';
 import { HomePeriodNav } from '@/components/home/HomePeriodNav';
 import { HomeDashboardRows } from '@/components/home/HomeDashboardRows';
+import { HomeDashboardSkeleton } from '@/components/home/HomeDashboardSkeleton';
 import { WidgetConfigModal } from '@/components/home/WidgetConfigModal';
 import { buildGreetingSubline } from '@/components/home/buildGreetingSubline';
 import { useWidgetConfig } from '@/hooks/useWidgetConfig';
@@ -117,12 +117,10 @@ export default function HomePage() {
     detectedPeriod,
     shiftAnchor,
     chartKey,
+    initialLoaded,
     loadData,
     mountedRef,
   } = useHomeDashboardData({ chartTab });
-
-  const salesCount = useCountUp(salesKpi?.current ?? 0, { duration: 1400, delay: 250 });
-  const noteCount = useCountUp(noteKpi?.total ?? 0, { duration: 900, delay: 460 });
 
   useEffect(() => {
     setTodayStr(todayLabel());
@@ -261,7 +259,7 @@ export default function HomePage() {
         todayStr={todayStr}
         greeting={greeting}
         userName={userName}
-        greetSub={greetSub}
+        greetSub={initialLoaded ? greetSub : null}
         favoritesCount={favorites.length}
         favOnly={favOnly}
         onToggleFavOnly={() => setFavOnly(!favOnly)}
@@ -292,68 +290,72 @@ export default function HomePage() {
         onResetAnchor={() => setAnchor(null)}
       />
 
-      <ActionCenterWidget
-        unmatchedCount={unmatchedAlertEnabled ? openIssueCount : 0}
-        uploadFreshness={uploadFreshness}
-        backupReminder={backupReminder}
-        ingredientHealth={ingredientHealth}
-        costAlertData={costRateAlertEnabled ? costAlertData : null}
-        riskThreshold={costAlertCritPct}
-        isMain={isMain}
-        canEdit={canEdit}
-      />
+      {initialLoaded ? (
+        <>
+          <ActionCenterWidget
+            unmatchedCount={unmatchedAlertEnabled ? openIssueCount : 0}
+            uploadFreshness={uploadFreshness}
+            backupReminder={backupReminder}
+            ingredientHealth={ingredientHealth}
+            costAlertData={costRateAlertEnabled ? costAlertData : null}
+            riskThreshold={costAlertCritPct}
+            isMain={isMain}
+            canEdit={canEdit}
+          />
 
-      <HomeDashboardRows
-        rowsToRender={rowsToRender}
-        isVisible={isVisible}
-        hasRecentVisits={hasRecentVisits}
-        isCollapsed={isCollapsed}
-        toggleCollapse={toggleCollapse}
-        briefing={briefing}
-        salesKpi={salesKpi}
-        costKpi={costKpi}
-        noteKpi={noteKpi}
-        salesCount={salesCount}
-        noteCount={noteCount}
-        uploadFreshness={uploadFreshness}
-        backupReminder={backupReminder}
-        isMain={isMain}
-        router={router}
-        alertIssues={alertIssues}
-        alertCostAlertData={alertCostAlertData}
-        ingredientHealth={ingredientHealth}
-        todos={todos}
-        pipeline={pipeline}
-        weekSchedule={weekSchedule}
-        rankSub={rankSub}
-        top={top}
-        bottom={bottom}
-        trend={trend}
-        donut={donut}
-        hoveredCat={hoveredCat}
-        setHoveredCat={setHoveredCat}
-        chartTab={chartTab}
-        setChartTab={setChartTab}
-        chartKey={chartKey}
-        isTrendEmpty={isTrendEmpty}
-        menuCostChanges={menuCostChanges}
-        showUnmatched={showUnmatched}
-        showPipeline={showPipeline}
-        showCostAlert={showCostAlert}
-        quickNote={quickNote}
-        quickSaved={quickSaved}
-        canEdit={canEdit}
-        onQuickNoteChange={value => {
-          setQuickNote(value);
-          setQuickSaved(false);
-        }}
-        onSaveQuickNote={saveQuickNote}
-        onOpenQuickNoteDraft={openDraftInNoteWrite}
-        showSamples={showSamples}
-        recentSamples={recentSamples}
-        allNotes={allNotes}
-        activities={activities}
-      />
+          <HomeDashboardRows
+            rowsToRender={rowsToRender}
+            isVisible={isVisible}
+            hasRecentVisits={hasRecentVisits}
+            isCollapsed={isCollapsed}
+            toggleCollapse={toggleCollapse}
+            briefing={briefing}
+            salesKpi={salesKpi}
+            costKpi={costKpi}
+            noteKpi={noteKpi}
+            uploadFreshness={uploadFreshness}
+            backupReminder={backupReminder}
+            isMain={isMain}
+            router={router}
+            alertIssues={alertIssues}
+            alertCostAlertData={alertCostAlertData}
+            ingredientHealth={ingredientHealth}
+            todos={todos}
+            pipeline={pipeline}
+            weekSchedule={weekSchedule}
+            rankSub={rankSub}
+            top={top}
+            bottom={bottom}
+            trend={trend}
+            donut={donut}
+            hoveredCat={hoveredCat}
+            setHoveredCat={setHoveredCat}
+            chartTab={chartTab}
+            setChartTab={setChartTab}
+            chartKey={chartKey}
+            isTrendEmpty={isTrendEmpty}
+            menuCostChanges={menuCostChanges}
+            showUnmatched={showUnmatched}
+            showPipeline={showPipeline}
+            showCostAlert={showCostAlert}
+            quickNote={quickNote}
+            quickSaved={quickSaved}
+            canEdit={canEdit}
+            onQuickNoteChange={value => {
+              setQuickNote(value);
+              setQuickSaved(false);
+            }}
+            onSaveQuickNote={saveQuickNote}
+            onOpenQuickNoteDraft={openDraftInNoteWrite}
+            showSamples={showSamples}
+            recentSamples={recentSamples}
+            allNotes={allNotes}
+            activities={activities}
+          />
+        </>
+      ) : (
+        <HomeDashboardSkeleton />
+      )}
     </main>
   );
 }
