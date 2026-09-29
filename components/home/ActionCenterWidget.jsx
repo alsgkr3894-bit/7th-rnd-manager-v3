@@ -15,6 +15,7 @@ export function ActionCenterWidget({
   backupReminder,
   ingredientHealth,
   costAlertData,
+  riskThreshold,
   isMain = true,
   canEdit = false,
 }) {
@@ -29,6 +30,7 @@ export function ActionCenterWidget({
         backupReminder,
         ingredientHealth,
         costAlertData,
+        riskThreshold,
         canEdit,
       }),
     [
@@ -37,6 +39,7 @@ export function ActionCenterWidget({
       backupReminder,
       ingredientHealth,
       costAlertData,
+      riskThreshold,
       canEdit,
       isMain,
     ]

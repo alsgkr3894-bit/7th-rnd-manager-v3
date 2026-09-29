@@ -30,12 +30,17 @@ describe('action center action identity', () => {
 
   test('원가율 경보와 미매칭 action도 원인 규모가 id에 반영된다', () => {
     const [unmatched] = buildUnmatchedActions({ unmatchedCount: 3 });
+    // getCostAlertData()의 실제 반환 모양: { items: [{ costRate, ... }], total }
     const [costAlert] = buildCostAlertActions({
-      costAlertData: { threshold: 35, alertMenus: [{ menuCode: 'A' }, { menuCode: 'B' }] },
+      costAlertData: {
+        items: [{ costRate: 41 }, { costRate: 37 }, { costRate: 36 }, { costRate: 20 }],
+        total: 4,
+      },
+      riskThreshold: 35,
     });
 
     expect(unmatched.id).toBe('unmatched-menu__3');
-    expect(costAlert.id).toBe('cost-alert__2__35');
+    expect(costAlert.id).toBe('cost-alert__3__35');
   });
 
   test('판매량 업로드 필요 action은 viewer에게 숨긴다', () => {
@@ -49,5 +54,44 @@ describe('action center action identity', () => {
       ])
     );
     expect(viewerItems.map(item => item.href)).not.toContain('/menu-sales/upload');
+  });
+});
+
+/**
+ * 회귀 방지(2026-09-29): 홈 액션센터의 원가율 경보 카드가 한 번도 안 떴다.
+ * buildCostAlertActions가 존재하지 않는 costAlertData.alertMenus를 읽었고, 실제
+ * getCostAlertData() 반환은 { items, total }이다. 기존 테스트도 alertMenus를 넣어 통과해 왔다.
+ */
+describe('buildCostAlertActions — 실제 반환 모양 { items, total }', () => {
+  const data = {
+    items: [{ costRate: 55 }, { costRate: 41 }, { costRate: 40 }, { costRate: 22 }],
+    total: 4,
+  };
+
+  test('기준을 초과한 메뉴 수로 카드를 만든다 (경계값 40은 초과가 아니다)', () => {
+    const [card] = buildCostAlertActions({ costAlertData: data, riskThreshold: 40 });
+    expect(card.title).toBe('원가율 경보 메뉴 2개');
+    expect(card.href).toBe('/cost/margin');
+  });
+
+  test('기준을 낮추면 카드의 메뉴 수가 따라간다 — 홈 경보 위젯과 같은 설정을 쓴다', () => {
+    expect(buildCostAlertActions({ costAlertData: data, riskThreshold: 30 })[0].title).toBe(
+      '원가율 경보 메뉴 3개'
+    );
+  });
+
+  test('경보 메뉴가 없거나 데이터가 없으면 카드를 만들지 않는다', () => {
+    expect(buildCostAlertActions({ costAlertData: data, riskThreshold: 60 })).toEqual([]);
+    expect(buildCostAlertActions({ costAlertData: null })).toEqual([]);
+    expect(buildCostAlertActions({ costAlertData: { items: [] } })).toEqual([]);
+  });
+
+  test('기준을 안 넘기면 설정 기본값(40)을 쓴다', () => {
+    expect(buildCostAlertActions({ costAlertData: data })).toHaveLength(1);
+  });
+
+  test('buildAllActions가 기준을 그대로 전달해 홈에서 카드가 실제로 나온다', () => {
+    const items = buildAllActions({ costAlertData: data, riskThreshold: 40, canEdit: true });
+    expect(items.some(item => item.source === 'cost')).toBe(true);
   });
 });

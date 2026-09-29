@@ -298,6 +298,7 @@ export default function HomePage() {
         backupReminder={backupReminder}
         ingredientHealth={ingredientHealth}
         costAlertData={costRateAlertEnabled ? costAlertData : null}
+        riskThreshold={costAlertCritPct}
         isMain={isMain}
         canEdit={canEdit}
       />
