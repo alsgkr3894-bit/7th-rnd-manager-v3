@@ -108,7 +108,12 @@ export function calcTempCostSummary(rows, sellingPrice) {
   return { totalCost, costRate: calcCostRate(totalCost, sellNum) };
 }
 
-export function tempCostRateColor(costRate) {
+/**
+ * 임시원가 계산기의 원가율 색. 기준(critPct)은 홈·마진표·원가보고서와 같은 공유 설정
+ * (원가율 경고선, 기본 40)이다 — 여기만 35로 고정돼 있어 같은 원가율이 화면마다 다른
+ * 색으로 보였다. 판정은 다른 화면과 같이 "초과(>)".
+ */
+export function tempCostRateColor(costRate, critPct = 40) {
   if (costRate == null) return 'var(--text-3)';
-  return Number(costRate) > 35 ? 'var(--negative)' : 'var(--positive)';
+  return Number(costRate) > critPct ? 'var(--negative)' : 'var(--positive)';
 }

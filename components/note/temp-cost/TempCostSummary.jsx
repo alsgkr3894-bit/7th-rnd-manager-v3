@@ -1,8 +1,12 @@
 'use client';
 
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { KEYS } from '@/lib/note/keys';
+import { normalizeCritPercentSetting } from '@/app/cost/margin/marginPageUtils';
 import { nonNeg, tempCostRateColor } from './tempCostUtils';
 
 export function TempCostSummary({ totalCost, costRate, sellingPrice, onSellingPriceChange }) {
+  const [critPct] = useLocalStorage(KEYS.MARGIN_COST_CRIT, 40, normalizeCritPercentSetting);
   return (
     <div
       style={{
@@ -39,7 +43,7 @@ export function TempCostSummary({ totalCost, costRate, sellingPrice, onSellingPr
           fontSize: 14,
           fontWeight: 700,
           textAlign: 'right',
-          color: tempCostRateColor(costRate),
+          color: tempCostRateColor(costRate, critPct),
         }}
       >
         {costRate != null ? `${costRate}%` : '—'}

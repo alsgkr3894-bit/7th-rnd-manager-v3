@@ -8,6 +8,7 @@ import {
   hasLinkedTempCostRows,
   parseTempCost,
   refreshLinkedTempCostRows,
+  tempCostRateColor,
   unitPriceFromIngredient,
 } from '../../components/note/temp-cost/tempCostUtils.js';
 
@@ -115,5 +116,29 @@ describe('temp cost calculator structure', () => {
       totalCost: 125,
       costRate: 12.5,
     });
+  });
+});
+
+/**
+ * 원가율 위험 기준 통일의 마지막 잔재(2026-09-29): 임시원가 색만 35%로 고정돼 있었다.
+ * 홈·마진표·원가보고서는 공유 설정(KEYS.MARGIN_COST_CRIT, 기본 40)을 쓴다.
+ */
+describe('임시원가 원가율 색은 공유 위험 기준을 따른다', () => {
+  test('기준 초과일 때만 빨강, 경계값은 초록 (기본 40)', () => {
+    expect(tempCostRateColor(41)).toBe('var(--negative)');
+    expect(tempCostRateColor(40)).toBe('var(--positive)');
+    expect(tempCostRateColor(36)).toBe('var(--positive)'); // 예전엔 35 초과라 빨강이었다
+    expect(tempCostRateColor(null)).toBe('var(--text-3)');
+  });
+
+  test('설정을 바꾸면 색 기준이 따라간다', () => {
+    expect(tempCostRateColor(36, 30)).toBe('var(--negative)');
+    expect(tempCostRateColor(36, 45)).toBe('var(--positive)');
+  });
+
+  test('요약 컴포넌트가 공유 설정을 읽어 넘긴다', () => {
+    expect(summarySource).toContain('KEYS.MARGIN_COST_CRIT');
+    expect(summarySource).toContain('tempCostRateColor(costRate, critPct)');
+    expect(utilsSource).not.toContain('> 35');
   });
 });
