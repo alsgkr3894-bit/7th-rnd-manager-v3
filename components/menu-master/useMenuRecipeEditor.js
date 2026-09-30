@@ -21,6 +21,7 @@ import {
   copyRecipeComponentRow,
   createBlankRecipeComponentRow,
   hydrateRecipeComponent,
+  linkTypedIngredientByName,
 } from '@/components/menu-master/recipeComponentRows';
 
 export function useMenuRecipeEditor({
@@ -194,7 +195,11 @@ export function useMenuRecipeEditor({
       if (!supported || !loaded) return { skipped: true };
       setSaving(true);
       try {
-        const savableComponents = buildSavableRecipeComponents(components, unitPriceMap);
+        // 이름을 고쳐 쓴 직후 칸을 벗어나지 않고 바로 저장(Ctrl+S)해도 연결을 마무리한다.
+        const resolvedComponents = components.map(c =>
+          linkTypedIngredientByName(c, allIngredients, unitPriceMap)
+        );
+        const savableComponents = buildSavableRecipeComponents(resolvedComponents, unitPriceMap);
         await upsertMenuRecipeForMenu({
           menuCode,
           menuName: menuName || '',
@@ -237,6 +242,7 @@ export function useMenuRecipeEditor({
       recipeKind,
       size,
       components,
+      allIngredients,
       savableRecipeGroupIds,
       unitPriceMap,
       recipeSummary,

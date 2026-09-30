@@ -1,7 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { applyIngredientSuggestionToComponent } from '@/components/menu-master/recipeComponentRows';
+import {
+  applyIngredientSuggestionToComponent,
+  applyTypedIngredientName,
+  linkTypedIngredientByName,
+} from '@/components/menu-master/recipeComponentRows';
 
 export function useRecipeIngredientSearch({
   allIngredients,
@@ -42,6 +46,19 @@ export function useRecipeIngredientSearch({
     setActiveSuggestionIdx(-1);
   }, [searchQ]);
 
+  // 제안을 고르지 않고 칸을 벗어나도, 입력한 이름이 식자재 하나와 정확히 같으면 연결한다.
+  const linkTypedRow = useCallback(
+    idx => {
+      setComponents(prev => {
+        const row = prev[idx];
+        if (!row?._typed) return prev;
+        const linked = linkTypedIngredientByName(row, allIngredients, unitPriceMap);
+        return prev.map((c, i) => (i === idx ? linked : c));
+      });
+    },
+    [allIngredients, setComponents, unitPriceMap]
+  );
+
   const pickSuggestion = useCallback(
     (idx, ing) => {
       setComponents(prev =>
@@ -77,6 +94,7 @@ export function useRecipeIngredientSearch({
         // 행이 멈춘 것처럼 보인다.
         if (e.key === 'Enter' && searchQ.trim()) {
           e.preventDefault();
+          linkTypedRow(idx);
           setSearchIdx(null);
           setActiveSuggestionIdx(-1);
           setComponents(prev => {
@@ -117,6 +135,7 @@ export function useRecipeIngredientSearch({
     },
     [
       activeSuggestionIdx,
+      linkTypedRow,
       pickSuggestion,
       quantityInputRefs,
       searchIdx,
@@ -126,14 +145,21 @@ export function useRecipeIngredientSearch({
     ]
   );
 
-  const handleIngredientInputChange = useCallback((idx, value, updateRow) => {
-    // 이전 blur에서 예약된 닫기 타이머가 이번 입력 뒤에 뒤늦게 발동해 searchIdx를
-    // 지우지 않도록 취소한다.
-    clearTimeout(blurTimerRef.current);
-    setSearchIdx(idx);
-    setSearchQ(value);
-    updateRow(idx, 'ingredientName', value);
-  }, []);
+  const handleIngredientInputChange = useCallback(
+    (idx, value) => {
+      // 이전 blur에서 예약된 닫기 타이머가 이번 입력 뒤에 뒤늦게 발동해 searchIdx를
+      // 지우지 않도록 취소한다.
+      clearTimeout(blurTimerRef.current);
+      setSearchIdx(idx);
+      setSearchQ(value);
+      // 이미 식자재에 연결된 행을 고쳐 쓰면 옛 제품코드·단가를 끊는다 — 이름만 바뀌고
+      // 원가는 옛 식자재로 저장되던 문제(applyTypedIngredientName 참고).
+      setComponents(prev =>
+        prev.map((c, i) => (i === idx ? applyTypedIngredientName(c, value, allIngredients) : c))
+      );
+    },
+    [allIngredients, setComponents]
+  );
 
   const handleIngredientFocus = useCallback((idx, value) => {
     // Enter로 다음 행에 포커스가 옮겨갈 때, 직전 행에서 pickSuggestion이 예약한
@@ -143,13 +169,17 @@ export function useRecipeIngredientSearch({
     setSearchQ(value);
   }, []);
 
-  const handleIngredientBlur = useCallback(() => {
-    clearTimeout(blurTimerRef.current);
-    blurTimerRef.current = setTimeout(() => {
-      setSearchIdx(null);
-      blurTimerRef.current = null;
-    }, 150);
-  }, []);
+  const handleIngredientBlur = useCallback(
+    idx => {
+      if (Number.isInteger(idx)) linkTypedRow(idx);
+      clearTimeout(blurTimerRef.current);
+      blurTimerRef.current = setTimeout(() => {
+        setSearchIdx(null);
+        blurTimerRef.current = null;
+      }, 150);
+    },
+    [linkTypedRow]
+  );
 
   return {
     searchIdx,

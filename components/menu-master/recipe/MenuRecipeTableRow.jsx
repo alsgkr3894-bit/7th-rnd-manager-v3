@@ -95,7 +95,7 @@ export function MenuRecipeTableRow({
           value={searchIdx === idx ? searchQ : component.ingredientName || ''}
           onChange={e => onIngredientInputChange(idx, e.target.value)}
           onFocus={() => onIngredientFocus(idx, component.ingredientName || '')}
-          onBlur={onIngredientBlur}
+          onBlur={() => onIngredientBlur(idx)}
           onKeyDown={e => onIngredientKeyDown?.(idx, e)}
           placeholder="식자재명 검색 (↑↓ 이동, Enter 선택)"
           aria-autocomplete="list"

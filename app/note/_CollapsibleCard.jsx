@@ -92,7 +92,7 @@ export function CollapsibleCard({
       </button>
       <div
         aria-hidden={!open}
-        inert={open ? undefined : ''}
+        inert={!open}
         style={{
           display: 'grid',
           gridTemplateRows: open ? '1fr' : '0fr',

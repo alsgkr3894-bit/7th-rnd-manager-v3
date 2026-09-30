@@ -260,9 +260,7 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
           unitPriceMap={unitPriceMap}
           ingredientInputRefs={ingredientInputRefs}
           quantityInputRefs={quantityInputRefs}
-          onIngredientInputChange={(idx, value) =>
-            handleIngredientInputChange(idx, value, updateRow)
-          }
+          onIngredientInputChange={handleIngredientInputChange}
           onIngredientFocus={handleIngredientFocus}
           onIngredientBlur={handleIngredientBlur}
           onIngredientKeyDown={handleIngredientKeyDown}

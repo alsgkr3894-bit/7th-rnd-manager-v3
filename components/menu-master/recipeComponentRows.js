@@ -1,6 +1,7 @@
 import { normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
 import { parseOptionalNonNegativeNumber } from '@/lib/parse';
 import { asDisplayText, asFiniteNumber } from '@/lib/ui/prop-guards';
+import { findIngredientByUniqueName } from '@/lib/cost/shared/ingredient-price-key';
 
 let rowKey = 0;
 
@@ -113,6 +114,13 @@ export function buildSavableRecipeComponents(components = [], unitPriceMap = new
     .map(component => buildRecipeComponentForSave(component, unitPriceMap));
 }
 
+// 입력 중 표시(_typed)는 화면 상태일 뿐 — 식자재를 고르거나 연결을 마치면 지운다.
+function withoutTypedFlag(component) {
+  const rest = { ...(component || {}) };
+  delete rest._typed;
+  return rest;
+}
+
 export function unitPriceKeyForIngredient(ingredient) {
   return ingredient?.productCode || (ingredient?.id != null ? String(ingredient.id) : null);
 }
@@ -120,11 +128,41 @@ export function unitPriceKeyForIngredient(ingredient) {
 export function applyIngredientSuggestionToComponent(component, ingredient, unitPriceMap) {
   const upmKey = unitPriceKeyForIngredient(ingredient);
   const priceInfo = upmKey ? unitPriceMap.get(upmKey) : null;
+  const rest = withoutTypedFlag(component);
   return {
-    ...component,
+    ...rest,
     ingredientName: ingredient?.ingredientName || '',
     productCode: ingredient?.productCode || '',
     unit: normalizeCostBaseUnit(priceInfo?.baseUnitType || ingredient?.baseUnitType),
     unitPrice: priceInfo?.unitPrice ?? null,
   };
+}
+
+/**
+ * 식자재명 칸을 직접 고쳐 쓸 때의 행 변환.
+ *
+ * 기존 행은 이미 식자재(제품코드·단가)에 연결돼 있어, 이름만 바꾸면 화면엔 새 이름이 보여도
+ * 저장·원가·알레르기는 옛 식자재로 계산됐다(2026-09-30 "기존 구성품을 바꾸면 적용이 안 돼서
+ * 삭제 후 새로 등록해야 한다"). 연결된 행을 고쳐 쓰면 연결을 끊고, 칸을 벗어날 때
+ * linkTypedIngredientByName이 이름이 정확히 일치하는 식자재에 다시 연결한다.
+ * 식자재에 없는 이름으로 직접 입력한 수동 구성품은 입력해 둔 단가를 유지한다.
+ */
+export function applyTypedIngredientName(component, value, allIngredients = []) {
+  const next = { ...component, ingredientName: value, _typed: true };
+  const linked =
+    Boolean(recipeComponentProductCode(component)) ||
+    Boolean(findIngredientByUniqueName(allIngredients, component?.ingredientName));
+  return linked ? { ...next, productCode: '', unitPrice: null } : next;
+}
+
+/** 직접 입력한 이름이 사용 중인 식자재 하나와 정확히 일치하면 그 식자재로 연결한다. */
+export function linkTypedIngredientByName(
+  component,
+  allIngredients = [],
+  unitPriceMap = new Map()
+) {
+  if (!component?._typed) return component;
+  const match = findIngredientByUniqueName(allIngredients, component.ingredientName);
+  if (match) return applyIngredientSuggestionToComponent(component, match, unitPriceMap);
+  return withoutTypedFlag(component);
 }
