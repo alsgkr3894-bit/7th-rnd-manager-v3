@@ -160,18 +160,20 @@ function CostReportBuilderContent({ onReportModeChange }) {
           { productCode, priceWithTax },
         ])
       );
+      const discontinuedCodes = buildDiscontinuedMenuCodeSet(masters);
       const ctx = {
         detailMaps: recipeMaps,
         edges,
         recipeGroups,
         upm: buildUnitPriceMap(ingredients, latestPriceRows),
+        discontinuedCodes,
       };
       const recipeRows = buildRecipePrintRows({
         detailMaps: ctx.detailMaps,
         unitPriceMap: ctx.upm,
         recipeGroups: ctx.recipeGroups,
         // 단종 메뉴의 레시피는 남아 있어도 레시피 출력·엑셀에 내지 않는다
-        excludeMenuCodes: buildDiscontinuedMenuCodeSet(masters),
+        excludeMenuCodes: discontinuedCodes,
       });
       return { prices, ctx, recipeRows };
     },

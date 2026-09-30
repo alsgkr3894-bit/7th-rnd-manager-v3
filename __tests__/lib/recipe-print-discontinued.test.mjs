@@ -82,6 +82,8 @@ describe('원가보고서 화면이 단종 메뉴를 넘긴다', () => {
   test('page.jsx가 메뉴마스터를 읽어 excludeMenuCodes로 전달한다', () => {
     const page = readFileSync(resolve('app/report/cost/page.jsx'), 'utf8');
     expect(page).toContain('getAllMenuMaster()');
-    expect(page).toContain('excludeMenuCodes: buildDiscontinuedMenuCodeSet(masters)');
+    // 단종 코드는 하프앤하프 원가 후보에서도 빼야 해서 변수로 한 번 만들어 같이 쓴다
+    expect(page).toContain('const discontinuedCodes = buildDiscontinuedMenuCodeSet(masters)');
+    expect(page).toContain('excludeMenuCodes: discontinuedCodes');
   });
 });

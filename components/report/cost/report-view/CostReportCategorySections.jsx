@@ -1,5 +1,6 @@
 import { formatNumber } from '@/lib/format';
 import { costReportMenuLabel, groupCostMenusBySize } from '@/lib/report/cost-menu-display';
+import { HalfHalfNote } from '../HalfHalfNote';
 
 const S_DOT_LABEL = { display: 'inline-flex', alignItems: 'center', gap: 8 };
 
@@ -7,7 +8,7 @@ export function CostReportCategorySections({ catStats, riskThreshold }) {
   return catStats
     .filter(c => c.count > 0)
     .map(c => (
-      <div className="paper-section paper-cat-section" key={c.id}>
+      <div className="paper-section paper-cat-section print-keep-together" key={c.id}>
         <CategorySectionTitle category={c} />
         {c.id === 'pizza' ? (
           <GroupedCategoryMenuTable category={c} riskThreshold={riskThreshold} />
@@ -102,7 +103,10 @@ function GroupedCategoryMenuTable({ category, riskThreshold }) {
         {groups.map((group, index) => (
           <tr key={group.key || group.name}>
             <td className="num">{index + 1}</td>
-            <td>{group.name}</td>
+            <td>
+              {group.name}
+              <HalfHalfNote sizes={group.sizes} />
+            </td>
             <CostCells menu={group.sizes.L} riskThreshold={riskThreshold} />
             <CostCells menu={group.sizes.R} riskThreshold={riskThreshold} />
           </tr>
@@ -128,7 +132,10 @@ function SingleCategoryMenuTable({ category, riskThreshold }) {
         {category.menus.map((menu, index) => (
           <tr key={menu.code || menu.name}>
             <td className="num">{index + 1}</td>
-            <td>{costReportMenuLabel(menu)}</td>
+            <td>
+              {costReportMenuLabel(menu)}
+              <HalfHalfNote sizes={menu.halfHalf ? { [menu.size || '단일']: menu } : null} />
+            </td>
             <CostCells menu={menu} riskThreshold={riskThreshold} />
           </tr>
         ))}

@@ -12,7 +12,12 @@ import { getAllRecipeGroups } from '@/lib/cost/recipe-groups/store';
 import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { onPriceUpload } from '@/lib/price/price-events';
-import { buildDetailRows, buildEdgeMetadata, buildDerivedRows } from '@/lib/cost/margin/build-rows';
+import {
+  applyHalfHalfCosts,
+  buildDetailRows,
+  buildEdgeMetadata,
+  buildDerivedRows,
+} from '@/lib/cost/margin/build-rows';
 import { useDBLoad } from '@/hooks/useDBLoad';
 
 /**
@@ -61,6 +66,13 @@ export function useMarginData() {
         upm,
         recipeGroups
       );
+      // 하프앤하프는 레시피 대신 오리지널 피자 (최대 + 최소) ÷ 2 — 단종 메뉴는 후보에서 뺀다.
+      const discontinuedCodes = new Set(
+        [...masterByCode.values()]
+          .filter(m => m?.status === 'discontinued' && m?.menuCode)
+          .map(m => m.menuCode)
+      );
+      applyHalfHalfCosts(detailRows, { discontinuedCodes });
 
       const detailKeySet = new Set(detailRows.map(r => `${r.menuName}||${r.menuCategory}`));
       const PIZZA_EDGE_CATS = new Set(PIZZA_CATEGORY_VARIANTS);

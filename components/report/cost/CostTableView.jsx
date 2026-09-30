@@ -1,5 +1,6 @@
 import { formatNumber } from '@/lib/format';
 import { costReportMenuLabel, groupCostMenusBySize } from '@/lib/report/cost-menu-display';
+import { HalfHalfNote } from './HalfHalfNote';
 
 const S_DOT_LABEL = { display: 'inline-flex', alignItems: 'center', gap: 8 };
 const S_GROUP_CELL = {
@@ -62,7 +63,7 @@ export function CostTableView({ activeCats, riskThreshold }) {
           const groups = groupCostMenusBySize(c.menus);
           if (!groups.length) return null;
           return (
-            <div className="paper-section paper-cat-section" key={id}>
+            <div className="paper-section paper-cat-section print-keep-together" key={id}>
               <div className="paper-section-title" style={{ borderBottomColor: c.color }}>
                 <span style={S_DOT_LABEL}>
                   <span
@@ -113,7 +114,10 @@ export function CostTableView({ activeCats, riskThreshold }) {
                       <td style={S_GROUP_CELL}>
                         <span style={S_GROUP_BADGE}>메뉴 {index + 1}</span>
                       </td>
-                      <td style={{ fontWeight: 600 }}>{g.name}</td>
+                      <td style={{ fontWeight: 600 }}>
+                        {g.name}
+                        <HalfHalfNote sizes={g.sizes} />
+                      </td>
                       <CostCells menu={g.sizes.L} riskThreshold={riskThreshold} />
                       <CostCells menu={g.sizes.R} riskThreshold={riskThreshold} />
                     </tr>
@@ -129,7 +133,7 @@ export function CostTableView({ activeCats, riskThreshold }) {
         .map(([id, c]) => {
           if (!c.menus.length) return null;
           return (
-            <div className="paper-section paper-cat-section" key={id}>
+            <div className="paper-section paper-cat-section print-keep-together" key={id}>
               <div className="paper-section-title" style={{ borderBottomColor: c.color }}>
                 <span style={S_DOT_LABEL}>
                   <span
@@ -159,7 +163,10 @@ export function CostTableView({ activeCats, riskThreshold }) {
                       <td style={S_GROUP_CELL}>
                         <span style={S_GROUP_BADGE}>{c.label}</span>
                       </td>
-                      <td style={{ fontWeight: 600 }}>{costReportMenuLabel(m)}</td>
+                      <td style={{ fontWeight: 600 }}>
+                        {costReportMenuLabel(m)}
+                        <HalfHalfNote sizes={m.halfHalf ? { [m.size || '단일']: m } : null} />
+                      </td>
                       <td className="num right muted">
                         {m.sale > 0 ? `${formatNumber(m.sale)}원` : '—'}
                       </td>

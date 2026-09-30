@@ -3,6 +3,7 @@ import { memo, Fragment } from 'react';
 import { formatNumber } from '@/lib/format';
 import { applyDiscount, calcNetRevenue, calcPlatformMargin } from '@/lib/cost/margin/platforms';
 import { copyText } from '@/lib/ui/clipboard';
+import { HALF_HALF_COST_NOTE, formatHalfHalfBasis } from '@/lib/cost/half-half';
 
 // 임계값(경고/비상) 기본 30/40 — 사용자 조절값을 받으면 그 값 사용
 const MC_COST = (pct, warn = 30, crit = 40) => {
@@ -134,7 +135,15 @@ export const MarginRow = memo(function MarginRow({
               )}
             </td>
             {netCell}
-            <td className="mt-num" style={{ textAlign: 'right', color: 'var(--text-2)' }}>
+            <td
+              className="mt-num"
+              style={{ textAlign: 'right', color: 'var(--text-2)' }}
+              title={
+                r.halfHalf?.[l]
+                  ? `${HALF_HALF_COST_NOTE} ${formatHalfHalfBasis(r.halfHalf[l])}`
+                  : undefined
+              }
+            >
               {hasCost ? (
                 <>
                   {formatNumber(Math.round(cost))}
@@ -142,6 +151,20 @@ export const MarginRow = memo(function MarginRow({
                 </>
               ) : (
                 '—'
+              )}
+              {r.halfHalf?.[l] && (
+                <div
+                  className="mt-half-basis"
+                  style={{
+                    fontSize: 10,
+                    color: 'var(--text-4)',
+                    whiteSpace: 'normal',
+                    maxWidth: 180,
+                    marginLeft: 'auto',
+                  }}
+                >
+                  {formatHalfHalfBasis(r.halfHalf[l])}
+                </div>
               )}
             </td>
             <td style={{ textAlign: 'right' }}>
