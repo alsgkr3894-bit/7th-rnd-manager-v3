@@ -1,6 +1,7 @@
 import { formatNumber } from '@/lib/format';
 import { costReportMenuLabel, groupCostMenusBySize } from '@/lib/report/cost-menu-display';
 import { HalfHalfNote } from '../HalfHalfNote';
+import { isCostRateOverThreshold } from '@/lib/cost/risk-threshold';
 
 const S_DOT_LABEL = { display: 'inline-flex', alignItems: 'center', gap: 8 };
 
@@ -52,7 +53,7 @@ function CategorySectionTitle({ category }) {
 }
 
 function CostCells({ menu, riskThreshold }) {
-  const risk = menu?.rate >= riskThreshold;
+  const risk = isCostRateOverThreshold(menu?.rate, riskThreshold);
   return (
     <>
       <td className="num right muted">{menu?.sale > 0 ? `${formatNumber(menu.sale)}원` : '—'}</td>
@@ -105,9 +106,14 @@ function GroupedCategoryMenuTable({ category, riskThreshold }) {
             <td className="num">{index + 1}</td>
             <td>
               {group.name}
+              {!group.sizes.L && !group.sizes.R && group.single ? ' (단일)' : ''}
               <HalfHalfNote sizes={group.sizes} />
             </td>
-            <CostCells menu={group.sizes.L} riskThreshold={riskThreshold} />
+            {/* 피자 분류인데 L/R이 아닌 메뉴(단일)는 L 자리에 보여 준다 — 전엔 표에서 사라졌다 */}
+            <CostCells
+              menu={group.sizes.L || (!group.sizes.R ? group.single : null)}
+              riskThreshold={riskThreshold}
+            />
             <CostCells menu={group.sizes.R} riskThreshold={riskThreshold} />
           </tr>
         ))}

@@ -4,6 +4,7 @@ import { Icon } from '@/components/icons';
 import { formatNumber, formatPercent } from '@/lib/format';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { KEYS } from '@/lib/note/keys';
+import { isCostRateOverThreshold } from '@/lib/cost/risk-threshold';
 import {
   normalizeWarnPercentSetting,
   normalizeCritPercentSetting,
@@ -13,7 +14,7 @@ import {
 // (>=40 danger, >=35 warn)로 따로 고정돼 있었다.
 function costRateToneOf(costRate, warnPct, critPct) {
   if (costRate == null) return null;
-  if (costRate >= critPct) return 'danger';
+  if (isCostRateOverThreshold(costRate, critPct)) return 'danger';
   if (costRate >= warnPct) return 'warn';
   return 'ok';
 }

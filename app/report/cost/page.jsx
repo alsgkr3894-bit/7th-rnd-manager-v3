@@ -36,6 +36,7 @@ import { buildStrictPostingMessage, collectStrictPostingIssues } from '@/lib/rep
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { KEYS } from '@/lib/note/keys';
 import { normalizeCritPercentSetting } from '@/app/cost/margin/marginPageUtils';
+import { isCostRateOverThreshold } from '@/lib/cost/risk-threshold';
 
 // ── 상수 ──────────────────────────────────────────────────────
 // 카테고리 순서: 원가마진표(app/cost/margin/marginTableSections.js CATEGORY_SECTIONS)와 동일
@@ -217,7 +218,7 @@ function CostReportBuilderContent({ onReportModeChange }) {
   const catStats = activeCats.map(([k, c]) => {
     const rates = c.menus.filter(m => m.rate > 0).map(m => m.rate);
     const avg = rates.length ? rates.reduce((s, v) => s + v, 0) / rates.length : 0;
-    const risk = c.menus.filter(m => m.rate >= riskThreshold).length;
+    const risk = c.menus.filter(m => isCostRateOverThreshold(m.rate, riskThreshold)).length;
     return {
       id: k,
       ...c,
@@ -231,13 +232,18 @@ function CostReportBuilderContent({ onReportModeChange }) {
 
   const allMenus = activeCats.flatMap(([, c]) => c.menus);
   const totalCount = allMenus.length;
-  const allAvg = totalCount ? allMenus.reduce((s, m) => s + m.rate, 0) / totalCount : 0;
-  const allRisk = allMenus.filter(m => m.rate >= riskThreshold).length;
+  // 카테고리 평균과 같은 기준 — 원가·판매가가 없어 rate 0인 메뉴는 평균에서 뺀다(전엔 분모에 들어가
+  // 전체 평균이 모든 카테고리 평균보다 낮게 나왔다).
+  const ratedMenus = allMenus.filter(m => m.rate > 0);
+  const allAvg = ratedMenus.length
+    ? ratedMenus.reduce((s, m) => s + m.rate, 0) / ratedMenus.length
+    : 0;
+  const allRisk = allMenus.filter(m => isCostRateOverThreshold(m.rate, riskThreshold)).length;
   const allMaxRate = totalCount ? Math.max(...allMenus.map(m => m.rate)) : 0;
   const riskMenus = activeCats
     .flatMap(([, c]) =>
       c.menus
-        .filter(m => m.rate >= riskThreshold)
+        .filter(m => isCostRateOverThreshold(m.rate, riskThreshold))
         .map(m => ({ ...m, catLabel: c.label, catColor: c.color }))
     )
     .sort((a, b) => b.rate - a.rate);

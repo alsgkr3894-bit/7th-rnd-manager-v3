@@ -1,6 +1,7 @@
 import { formatNumber } from '@/lib/format';
 import { costReportMenuLabel, groupCostMenusBySize } from '@/lib/report/cost-menu-display';
 import { HalfHalfNote } from './HalfHalfNote';
+import { isCostRateOverThreshold } from '@/lib/cost/risk-threshold';
 
 const S_DOT_LABEL = { display: 'inline-flex', alignItems: 'center', gap: 8 };
 const S_GROUP_CELL = {
@@ -41,7 +42,9 @@ function CostCells({ menu, riskThreshold }) {
         className="num right"
         style={{
           fontWeight: 700,
-          color: menu?.rate >= riskThreshold ? 'var(--warn)' : 'var(--text-1)',
+          color: isCostRateOverThreshold(menu?.rate, riskThreshold)
+            ? 'var(--warn)'
+            : 'var(--text-1)',
         }}
       >
         {menu?.rate > 0 ? `${menu.rate.toFixed(1)}%` : '—'}
@@ -116,9 +119,14 @@ export function CostTableView({ activeCats, riskThreshold }) {
                       </td>
                       <td style={{ fontWeight: 600 }}>
                         {g.name}
+                        {!g.sizes.L && !g.sizes.R && g.single ? ' (단일)' : ''}
                         <HalfHalfNote sizes={g.sizes} />
                       </td>
-                      <CostCells menu={g.sizes.L} riskThreshold={riskThreshold} />
+                      {/* 피자 분류인데 L/R이 아닌 메뉴(단일)는 L 자리에 보여 준다 — 전엔 표에서 사라졌다 */}
+                      <CostCells
+                        menu={g.sizes.L || (!g.sizes.R ? g.single : null)}
+                        riskThreshold={riskThreshold}
+                      />
                       <CostCells menu={g.sizes.R} riskThreshold={riskThreshold} />
                     </tr>
                   ))}
@@ -177,7 +185,9 @@ export function CostTableView({ activeCats, riskThreshold }) {
                         className="num right"
                         style={{
                           fontWeight: 700,
-                          color: m.rate >= riskThreshold ? 'var(--warn)' : 'var(--text-1)',
+                          color: isCostRateOverThreshold(m.rate, riskThreshold)
+                            ? 'var(--warn)'
+                            : 'var(--text-1)',
                         }}
                       >
                         {m.rate > 0 ? `${m.rate.toFixed(1)}%` : '—'}

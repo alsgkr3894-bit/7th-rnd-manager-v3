@@ -6,6 +6,7 @@ import { getMenuPriceCategories } from '@/lib/cost/menu-price';
 import { getMenuCodeRank } from '@/lib/menu-categories';
 import { applyDiscount, calcNetRevenue, calcPlatformMargin } from '@/lib/cost/margin/platforms';
 import { KEYS } from '@/lib/note/keys';
+import { isCostRateOverThreshold } from '@/lib/cost/risk-threshold';
 
 // costMap은 키 존재 여부로 "원가 데이터 있음"을 나타낸다 — 키가 없으면 0원이 아니라
 // "원가 미입력"이므로 0으로 대체하면 안 된다(집계·정렬 모두 MarginRow의 getCostEntry와 동일 기준).
@@ -112,15 +113,42 @@ export function useMarginFilters({ rows, activePlatform, discount, warnPct, crit
         sum += m;
         count++;
         if (m < warnPct) lowCostCount++;
-        if (m >= critPct) highCostCount++;
+        if (isCostRateOverThreshold(m, critPct)) highCostCount++;
         const margin = 100 - m;
         if (margin >= 100 - warnPct) goodMarginCount++;
-        if (margin < 100 - critPct) badMarginCount++;
+        if (isCostRateOverThreshold(100 - margin, critPct)) badMarginCount++;
       }
     }
     if (!count) return null;
     return { avg: sum / count, lowCostCount, highCostCount, goodMarginCount, badMarginCount };
   }, [edgeFiltered, activePlatform, discount, warnPct, critPct]);
+
+  // 추이 스냅샷용 기준 평균 — 플랫폼 수수료·할인 시뮬레이션·검색어·엣지 필터를 적용하지 않은
+  // 정가 기준(카테고리 필터·숨김 제외만 반영). 전엔 화면 stats를 그대로 저장해 배민 수수료나
+  // 10% 할인을 켜 둔 채 저장하면 '전체 메뉴' 추이에 시뮬레이션 값이 섞였다.
+  const snapshotStats = useMemo(() => {
+    let base = rows.filter(r => !r.hidden);
+    if (catFilter !== '전체') {
+      base = base.filter(r => {
+        const cat = r.menuCategory || '기타';
+        return cat === catFilter || (catFilter === '피자' && cat.startsWith('피자/'));
+      });
+    }
+    let sum = 0;
+    let count = 0;
+    for (const r of base) {
+      for (const s of r.sizes || []) {
+        const cost = readCostEntry(r.costMap, s.label);
+        if (cost == null) continue;
+        const m = calcPlatformMargin(cost, s.sellingPrice);
+        if (m == null) continue;
+        sum += m;
+        count++;
+      }
+    }
+    if (!count) return null;
+    return { avg: sum / count, menuCount: base.length };
+  }, [rows, catFilter]);
 
   const handleSort = useCallback(
     key => {
@@ -207,6 +235,7 @@ export function useMarginFilters({ rows, activePlatform, discount, warnPct, crit
     edgeFiltered,
     sizeLabels,
     stats,
+    snapshotStats,
     handleSort,
     sortedFiltered,
     hiddenCount,

@@ -7,6 +7,7 @@ import { showToast } from '@/components/Toast';
 
 export function useMarginActions({
   stats,
+  snapshotStats,
   edgeFiltered,
   catFilter,
   load,
@@ -18,13 +19,15 @@ export function useMarginActions({
 }) {
   async function handleSaveSnapshot() {
     if (!canEdit) return;
-    if (!stats) {
+    // 추이는 정가 기준(수수료·할인·검색 미적용)으로 저장해야 시점 간 비교가 된다.
+    const source = snapshotStats || stats;
+    if (!source) {
       showToast('집계할 메뉴 데이터가 없어요', 'error');
       return;
     }
-    const avgCostRate = stats.avg;
+    const avgCostRate = source.avg;
     const avgMargin = 100 - avgCostRate;
-    const menuCount = edgeFiltered.length;
+    const menuCount = snapshotStats ? snapshotStats.menuCount : edgeFiltered.length;
     const label = catFilter !== '전체' ? catFilter : '전체 메뉴';
     try {
       await saveSnapshot({ avgCostRate, avgMargin, menuCount, label });

@@ -36,7 +36,8 @@ describe('export-cost-xlsx 분리 구조', () => {
   // R2-H3 회귀: 위험 메뉴 카운트가 riskThreshold 임계값을 사용한다 (rate>0 전수 카운트 아님)
   test('exportCostXlsx가 riskThreshold 인자를 받고 위험메뉴를 임계값으로 카운트한다', () => {
     expect(libSrc).toContain('riskThreshold');
-    expect(libSrc).toContain('m.rate >= riskThreshold');
+    // 2026-09-30: 판정은 lib/cost/risk-threshold.js("초과" >)로 통일했다
+    expect(libSrc).toContain('isCostRateOverThreshold(m.rate, riskThreshold)');
     expect(libSrc).not.toContain('c.menus.filter(m => m.rate > 0).length');
   });
 

@@ -13,6 +13,7 @@ import { loadMenuRecipeMaps } from '@/lib/menu-recipes';
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh';
 import { onPriceUpload } from '@/lib/price/price-events';
 import {
+  applyEdgeMenuCosts,
   applyHalfHalfCosts,
   buildDetailRows,
   buildEdgeMetadata,
@@ -66,6 +67,8 @@ export function useMarginData() {
         upm,
         recipeGroups
       );
+      // 엣지 메뉴(치즈크러스트 등)는 레시피가 없고 cost_edge_dough가 원가다.
+      applyEdgeMenuCosts(detailRows, edges, upm);
       // 하프앤하프는 레시피 대신 오리지널 피자 (최대 + 최소) ÷ 2 — 단종 메뉴는 후보에서 뺀다.
       const discontinuedCodes = new Set(
         [...masterByCode.values()]

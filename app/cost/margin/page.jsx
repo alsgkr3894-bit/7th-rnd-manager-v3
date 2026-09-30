@@ -82,6 +82,7 @@ export default function Page() {
     edgeFiltered,
     sizeLabels,
     stats,
+    snapshotStats,
     handleSort,
     sortedFiltered,
     hiddenCount,
@@ -89,6 +90,7 @@ export default function Page() {
 
   const { handleSaveSnapshot, handleSavePlatforms, handleToggleHide } = useMarginActions({
     stats,
+    snapshotStats,
     edgeFiltered,
     catFilter,
     load,
