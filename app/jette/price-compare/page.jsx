@@ -150,6 +150,7 @@ export default function Page() {
                 canEdit={canEdit}
                 onTypeChange={handleTypeChange}
                 externalFilter={cardFilter}
+                onFilterChange={setCardFilter}
                 priceAlertThreshold={jetteSettings.priceAlertThreshold}
               />
             </>

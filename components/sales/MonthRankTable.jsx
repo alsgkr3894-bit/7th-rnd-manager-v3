@@ -25,11 +25,13 @@ export function MonthRankTable({ menus, categories, category, onCategoryChange, 
   const filtered = useMemo(() => {
     let list = safeMenus;
     if (selectedCategory) list = list.filter(m => asDisplayText(m.category) === selectedCategory);
+    // 순위는 검색 전에 매긴다 — 검색으로 좁힌 목록을 1위부터 다시 세면 7위 메뉴가 '1위'로 보였다
+    let ranked = list.map((m, i) => ({ ...m, rank: i + 1 }));
     if (query.trim()) {
       const q = query.trim().toLowerCase();
-      list = list.filter(m => asDisplayText(m.name).toLowerCase().includes(q));
+      ranked = ranked.filter(m => asDisplayText(m.name).toLowerCase().includes(q));
     }
-    return list;
+    return ranked;
   }, [safeMenus, selectedCategory, query]);
 
   // 비중 기준: 전체 탭이면 전체 total, 카테고리 선택 시 그 카테고리 합계 (검색 무관)
@@ -126,7 +128,7 @@ export function MonthRankTable({ menus, categories, category, onCategoryChange, 
           {filtered.map((m, i) => (
             <RankRow
               key={`${asDisplayText(m.name, 'menu')}__${asDisplayText(m.category, 'category')}__${i}`}
-              rank={i + 1}
+              rank={m.rank}
               row={m}
               total={shareBase}
               expanded={expanded.has(asDisplayText(m.name))}

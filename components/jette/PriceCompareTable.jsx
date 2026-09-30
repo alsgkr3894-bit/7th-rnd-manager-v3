@@ -22,6 +22,7 @@ export function PriceCompareTable({
   canEdit = false,
   onTypeChange,
   externalFilter,
+  onFilterChange,
   priceAlertThreshold,
 }) {
   const [filter, setFilter] = useState(externalFilter || 'all');
@@ -40,11 +41,19 @@ export function PriceCompareTable({
     [priceAlertThreshold]
   );
 
+  // 표 안에서 필터가 바뀌면(칩 클릭·비교 파일 변경으로 초기화) 페이지의 카드 상태도 같이 되돌린다 —
+  // 안 그러면 카드가 '인상'인 채로 남아 같은 카드를 다시 눌러도 표가 거르지 않았다.
+  const changeFilter = value => {
+    setFilter(value);
+    if (typeof onFilterChange === 'function') onFilterChange(value);
+  };
+
   useEffect(() => {
     setTypeFilter('all');
     setFilter('all');
+    if (typeof onFilterChange === 'function') onFilterChange('all');
     setSearch('');
-  }, [safeDiffRows, setSearch]);
+  }, [safeDiffRows, setSearch, onFilterChange]);
 
   useEffect(() => {
     if (externalFilter) setFilter(externalFilter);
@@ -105,7 +114,7 @@ export function PriceCompareTable({
         onTypeFilter={setTypeFilter}
         counts={counts}
         filter={filter}
-        onFilter={setFilter}
+        onFilter={changeFilter}
         search={search}
         onSearch={setSearch}
       />

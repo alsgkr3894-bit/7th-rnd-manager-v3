@@ -115,6 +115,8 @@ export function formatChangeRate(value) {
 }
 
 function toFiniteOrNull(value) {
+  // Number(null)은 0이라 신규(이전 단가 없음)·삭제(현재 단가 없음) 행이 '0원 / ▲ 0.0%'로 보였다
+  if (value == null || value === '') return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 }
