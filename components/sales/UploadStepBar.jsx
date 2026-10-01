@@ -50,8 +50,10 @@ function stageIndex(stage) {
     case 'parsing':
       return 1;
     case 'preview':
+    case 'fill-preview':
       return 2;
     case 'saving':
+    case 'fill-saving':
       return 3;
     case 'done':
       return 3;

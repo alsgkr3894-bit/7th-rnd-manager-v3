@@ -32,43 +32,57 @@ export default function SalesKpiCards({
         ? Number(kpi.deltaPct)
         : null;
 
+  // 금액 칸을 못 알아보던 때 올린 달은 매출액이 0으로 저장돼 있다 — 채우는 방법을 화면에만 안내
+  const revenueMissing = showRevenue && (current ?? 0) > 0 && !revenue;
+
   return (
-    <div className="paper-stat-row">
-      <div className="paper-stat">
-        <div className="paper-stat-label">총 판매량</div>
-        <div className="paper-stat-val num">
-          {current != null ? formatNumber(current) : '—'}
-          <span className="unit">건</span>
-        </div>
-      </div>
-      {showRevenue && (
+    <>
+      <div className="paper-stat-row">
         <div className="paper-stat">
-          <div className="paper-stat-label">총 매출액</div>
+          <div className="paper-stat-label">총 판매량</div>
           <div className="paper-stat-val num">
-            {revenue != null ? formatNumber(revenue) : '—'}
-            <span className="unit">원</span>
+            {current != null ? formatNumber(current) : '—'}
+            <span className="unit">건</span>
           </div>
         </div>
-      )}
-      <div className="paper-stat">
-        <div className="paper-stat-label">{compareLabel} 대비</div>
-        <div
-          className="paper-stat-val num"
-          style={{
-            color: deltaPct == null || deltaPct >= 0 ? 'var(--positive)' : 'var(--negative)',
-          }}
-        >
-          {deltaPct != null ? `${deltaPct >= 0 ? '+' : ''}${deltaPct.toFixed(1)}%` : '—'}
+        {showRevenue && (
+          <div className="paper-stat">
+            <div className="paper-stat-label">총 매출액</div>
+            <div className="paper-stat-val num">
+              {revenue != null ? formatNumber(revenue) : '—'}
+              <span className="unit">원</span>
+            </div>
+          </div>
+        )}
+        <div className="paper-stat">
+          <div className="paper-stat-label">{compareLabel} 대비</div>
+          <div
+            className="paper-stat-val num"
+            style={{
+              color: deltaPct == null || deltaPct >= 0 ? 'var(--positive)' : 'var(--negative)',
+            }}
+          >
+            {deltaPct != null ? `${deltaPct >= 0 ? '+' : ''}${deltaPct.toFixed(1)}%` : '—'}
+          </div>
+        </div>
+        <div className="paper-stat">
+          <div className="paper-stat-label">카테고리 수</div>
+          <div className="paper-stat-val num">{safeCatShares.length || '—'}</div>
+        </div>
+        <div className="paper-stat">
+          <div className="paper-stat-label">총 메뉴 수</div>
+          <div className="paper-stat-val num">{safeGroupRanking.length || '—'}</div>
         </div>
       </div>
-      <div className="paper-stat">
-        <div className="paper-stat-label">카테고리 수</div>
-        <div className="paper-stat-val num">{safeCatShares.length || '—'}</div>
-      </div>
-      <div className="paper-stat">
-        <div className="paper-stat-label">총 메뉴 수</div>
-        <div className="paper-stat-val num">{safeGroupRanking.length || '—'}</div>
-      </div>
-    </div>
+      {revenueMissing && (
+        <div
+          className="no-print"
+          style={{ fontSize: 12, color: 'var(--warn)', margin: '6px 0 12px' }}
+        >
+          이 기간 판매량 파일에 매출액이 없습니다 — 판매량 업로드에서 같은 엑셀을 다시 올리면
+          매출액만 채워집니다.
+        </div>
+      )}
+    </>
   );
 }
