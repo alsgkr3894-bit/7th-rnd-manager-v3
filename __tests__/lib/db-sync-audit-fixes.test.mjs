@@ -22,9 +22,8 @@ describe('서버 오류 응답 구분', () => {
 
   test('라우트는 검증 오류·깨진 JSON만 400, 나머지(DB 다운 등)는 503', () => {
     const route = read('app/api/db/store-rows/route.js');
-    expect(route).toContain(
-      'error instanceof StoreRowValidationError || error instanceof SyntaxError'
-    );
+    expect(route).toContain('error instanceof StoreRowValidationError ||');
+    expect(route).toContain("error?.name === 'SyntaxError'");
     expect(route).toContain('status: badRequest ? 400 : 503');
   });
 

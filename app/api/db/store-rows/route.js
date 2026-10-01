@@ -74,7 +74,11 @@ export async function POST(request) {
     // 요청 자체가 잘못된 경우(검증 실패·깨진 JSON)만 400 — 클라이언트가 그 작업을 영구 거절로 격리한다.
     // DB 다운·연결 실패·교착 같은 서버 쪽 일시 오류는 503으로 답해 큐에 남겨 재시도하게 한다
     // (전엔 전부 400이라 Postgres가 잠깐 내려가면 그 사이 저장이 재시도 없이 버려졌다).
-    const badRequest = error instanceof StoreRowValidationError || error instanceof SyntaxError;
+    // instanceof는 실행 환경(realm)이 다르면 어긋나므로 이름으로도 판별한다(깨진 JSON = SyntaxError)
+    const badRequest =
+      error instanceof StoreRowValidationError ||
+      error?.name === 'StoreRowValidationError' ||
+      error?.name === 'SyntaxError';
     return Response.json(
       {
         ok: false,
