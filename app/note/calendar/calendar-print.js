@@ -10,16 +10,37 @@ export function escapeCalendarPrintValue(value) {
     .replace(/>/g, '&gt;');
 }
 
+/** 노트 '내용' 칸 — 노트에는 result/summary가 없고 testContent(없으면 다음 액션)가 본문이다. */
+export function calendarNoteContent(note) {
+  return String(note?.testContent || note?.nextAction || note?.result || note?.summary || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120);
+}
+
+function viewIncludes(viewMode, kind) {
+  const mode = viewMode || 'all';
+  if (mode === 'all') return true;
+  return mode === kind;
+}
+
 export function buildCalendarMonthEventDates({
   viewYear,
   viewMonth,
   notesByDate,
   schedulesByDate,
+  samplesByDate,
+  workLogsByDate,
+  viewMode = 'all',
 }) {
   const prefix = `${viewYear}-${pad(viewMonth)}`;
   const dateSet = new Set([
-    ...Array.from((notesByDate || new Map()).keys()),
-    ...Array.from((schedulesByDate || new Map()).keys()),
+    ...(viewIncludes(viewMode, 'notes') ? Array.from((notesByDate || new Map()).keys()) : []),
+    ...(viewIncludes(viewMode, 'schedules')
+      ? Array.from((schedulesByDate || new Map()).keys())
+      : []),
+    ...(viewIncludes(viewMode, 'samples') ? Array.from((samplesByDate || new Map()).keys()) : []),
+    ...((viewMode || 'all') === 'all' ? Array.from((workLogsByDate || new Map()).keys()) : []),
   ]);
   return [...dateSet].filter(date => date.startsWith(prefix)).sort();
 }
@@ -36,28 +57,80 @@ function buildCalendarNoteRow(note) {
   return `<tr><td class="type note">노트</td><td>—</td><td>${escapeCalendarPrintValue(
     noteDisplayTitle(note, '')
   )}</td><td>${escapeCalendarPrintValue(note.status || '')}</td><td>${escapeCalendarPrintValue(
-    note.result || note.summary || ''
+    calendarNoteContent(note)
   )}</td></tr>`;
 }
 
-export function buildCalendarMonthDaySection({ date, viewMonth, schedules = [], notes = [] }) {
+function buildCalendarSampleRow(sample) {
+  const names = Array.isArray(sample.sampleNames) ? sample.sampleNames.join(', ') : '';
+  const title = names || sample.menuName || sample.title || '';
+  return `<tr><td class="type sample">샘플</td><td>—</td><td>${escapeCalendarPrintValue(
+    title
+  )}</td><td>${escapeCalendarPrintValue(
+    sample.company || sample.category || ''
+  )}</td><td>${escapeCalendarPrintValue(
+    String(sample.result || sample.description || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 120)
+  )}</td></tr>`;
+}
+
+function buildCalendarWorkLogRow(log) {
+  return `<tr><td class="type log">작업일지</td><td>${escapeCalendarPrintValue(
+    log.time || '—'
+  )}</td><td>${escapeCalendarPrintValue(log.title || log.type || '')}</td><td>${escapeCalendarPrintValue(
+    log.type || ''
+  )}</td><td>${escapeCalendarPrintValue(log.summary || log.detail || '')}</td></tr>`;
+}
+
+export function buildCalendarMonthDaySection({
+  date,
+  viewMonth,
+  schedules = [],
+  notes = [],
+  samples = [],
+  workLogs = [],
+  viewMode = 'all',
+}) {
   const [, , day] = date.split('-');
   const rows = [
-    ...schedules.map(buildCalendarScheduleRow),
-    ...notes.map(buildCalendarNoteRow),
+    ...(viewIncludes(viewMode, 'schedules') ? schedules.map(buildCalendarScheduleRow) : []),
+    ...(viewIncludes(viewMode, 'notes') ? notes.map(buildCalendarNoteRow) : []),
+    ...(viewIncludes(viewMode, 'samples') ? samples.map(buildCalendarSampleRow) : []),
+    ...((viewMode || 'all') === 'all' ? workLogs.map(buildCalendarWorkLogRow) : []),
   ].join('');
   if (!rows) return '';
   return `<section class="day"><div class="day-head">${viewMonth}/${day}</div><table><thead><tr><th style="width:48px">구분</th><th style="width:50px">시간</th><th>제목</th><th style="width:72px">상태</th><th>내용</th></tr></thead><tbody>${rows}</tbody></table></section>`;
 }
 
-export function buildCalendarMonthRowsHtml({ viewYear, viewMonth, notesByDate, schedulesByDate }) {
-  return buildCalendarMonthEventDates({ viewYear, viewMonth, notesByDate, schedulesByDate })
+export function buildCalendarMonthRowsHtml({
+  viewYear,
+  viewMonth,
+  notesByDate,
+  schedulesByDate,
+  samplesByDate,
+  workLogsByDate,
+  viewMode = 'all',
+}) {
+  return buildCalendarMonthEventDates({
+    viewYear,
+    viewMonth,
+    notesByDate,
+    schedulesByDate,
+    samplesByDate,
+    workLogsByDate,
+    viewMode,
+  })
     .map(date =>
       buildCalendarMonthDaySection({
         date,
         viewMonth,
         schedules: schedulesByDate?.get(date) || [],
         notes: notesByDate?.get(date) || [],
+        samples: samplesByDate?.get(date) || [],
+        workLogs: workLogsByDate?.get(date) || [],
+        viewMode,
       })
     )
     .filter(Boolean)
@@ -69,6 +142,9 @@ export function buildCalendarMonthPrintHtml({
   viewMonth,
   notesByDate,
   schedulesByDate,
+  samplesByDate,
+  workLogsByDate,
+  viewMode = 'all',
   title = withDownloadDateSuffix(`${viewYear}년 ${viewMonth}월 달력`),
 } = {}) {
   const body = buildCalendarMonthRowsHtml({
@@ -76,6 +152,9 @@ export function buildCalendarMonthPrintHtml({
     viewMonth,
     notesByDate,
     schedulesByDate,
+    samplesByDate,
+    workLogsByDate,
+    viewMode,
   });
   const safeTitle = escapeCalendarPrintValue(title);
 
@@ -89,7 +168,7 @@ table{width:100%;border-collapse:collapse;font-size:9pt;}
 th,td{border:1px solid #ddd;padding:4px 6px;vertical-align:top;}
 th{background:#f5f5f5;font-weight:800;text-align:center;}
 .type{font-weight:700;text-align:center;white-space:nowrap;}
-.type.sched{color:#0369A1;}.type.note{color:#7C3AED;}
+.type.sched{color:#0369A1;}.type.note{color:#7C3AED;}.type.sample{color:#047857;}.type.log{color:#B45309;}
 </style></head><body><h1>${safeTitle}</h1>${body || '<p style="color:#999">이번 달 항목이 없습니다</p>'}${buildAutoPrintScript()}</body></html>`;
 }
 

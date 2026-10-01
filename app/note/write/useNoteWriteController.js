@@ -81,6 +81,12 @@ export function useNoteWriteController() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setRouteTypeParam(params.get('type') || '');
+    // 달력에서 특정 날짜의 '노트 추가'로 들어오면 그 날짜를 테스트일로 쓴다
+    const testDate = params.get('testDate') || '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(testDate)) {
+      setForm(prev => ({ ...prev, testDate }));
+      setSampleForm(prev => ({ ...prev, testDate }));
+    }
   }, []);
 
   useEffect(() => {

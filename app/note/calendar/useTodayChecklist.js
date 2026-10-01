@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { showToast } from '@/components/Toast';
-import { addNote, deleteNote, updateNote } from '@/lib/note';
+import { addNote, deleteNote, getAllNotes, updateNote } from '@/lib/note';
+import { noteDayKey } from '@/app/note/journal/journalDates';
 import { CATEGORIES, JOURNAL_NOTE_TYPE, NOTE_STATUS } from '@/lib/note/constants';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 import { getJSONLS, setJSONLS } from '@/lib/note/storage';
@@ -14,11 +15,11 @@ import {
 } from './_calendar-utils';
 import { mergeChecklistJournalContent } from './checklistJournalMerge';
 
-function noteDateKey(note) {
-  return asDisplayText(note?.testDate || note?.createdAt).slice(0, 10);
-}
+// 로컬 달력 일자 기준(createdAt UTC 앞 10자리를 쓰면 오전 9시 전 작성분이 전날로 잡혔다)
+const noteDateKey = noteDayKey;
 
-export function useTodayChecklist({ today, notes, load, canEdit = false }) {
+export function useTodayChecklist({ today, load, canEdit = false }) {
+  const syncQueueRef = useRef(Promise.resolve());
   const [checklistMap, setChecklistMap] = useState({});
   const [checkInput, setCheckInput] = useState('');
   const todayChecklist = useMemo(() => checklistMap[today] || [], [checklistMap, today]);
@@ -53,14 +54,13 @@ export function useTodayChecklist({ today, notes, load, canEdit = false }) {
     setCheckInput('');
   }, [canEdit, checkInput, saveTodayChecklist, today, todayChecklist]);
 
-  const syncChecklistJournal = useCallback(
+  const runChecklistJournalSync = useCallback(
     async items => {
       if (!canEdit) return;
       const doneItems = (Array.isArray(items) ? items : []).filter(item => item.done && item.text);
       const legacyTitle = checklistJournalTitle(today);
-      const todayNotes = Array.isArray(notes)
-        ? notes.filter(note => noteDateKey(note) === today)
-        : [];
+      // 직전 체크가 아직 저장 중일 수 있어 화면 상태(notes)가 아니라 저장소에서 다시 읽는다
+      const todayNotes = (await getAllNotes()).filter(note => noteDateKey(note) === today);
       const journalEntry = todayNotes.find(note => note?.noteType === JOURNAL_NOTE_TYPE);
       const legacyChecklistNotes = todayNotes.filter(
         note => asDisplayText(note.title) === legacyTitle
@@ -103,7 +103,20 @@ export function useTodayChecklist({ today, notes, load, canEdit = false }) {
       );
       await load();
     },
-    [canEdit, load, notes, today]
+    [canEdit, load, today]
+  );
+
+  // 연속 체크가 한꺼번에 '일지 없음'으로 보고 각각 노트를 만들지 않도록 한 번에 하나씩 처리한다
+  const syncChecklistJournal = useCallback(
+    items => {
+      // 앞선 저장이 실패해도(그 호출자가 이미 오류를 알렸다) 다음 저장은 이어서 진행한다
+      const run = syncQueueRef.current
+        .catch(error => console.warn('[checklist] 이전 일지 저장 실패:', error?.message))
+        .then(() => runChecklistJournalSync(items));
+      syncQueueRef.current = run;
+      return run;
+    },
+    [runChecklistJournalSync]
   );
 
   const toggleChecklistItem = useCallback(

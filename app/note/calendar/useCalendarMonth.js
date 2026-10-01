@@ -6,6 +6,7 @@ import { noteDisplayTitle } from '@/lib/note/display';
 import { sampleNamesText } from '@/lib/sample';
 import { WORK_LOG_TYPES } from '@/lib/work-log';
 import { daysInMonth, firstDow, groupByDate, isPast, toKey } from './_calendar-utils';
+import { calendarNoteContent } from './calendar-print';
 import { expandOccurrences } from './_recurrence';
 
 function buildGridRange(viewYear, viewMonth) {
@@ -165,7 +166,7 @@ export function useCalendarMonth({
             '노트',
             noteDisplayTitle(item, ''),
             item.status || '',
-            item.result || item.summary || '',
+            calendarNoteContent(item),
           ]);
         }
       }

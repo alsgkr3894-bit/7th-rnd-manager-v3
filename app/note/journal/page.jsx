@@ -12,6 +12,7 @@ import { JournalMonthList } from './_JournalMonthList';
 import { JournalHeaderActions } from './_JournalHeaderActions';
 import { JournalDayRecords, JournalLoadingSkeleton } from './_JournalDayRecords';
 import { useJournalNavigation } from './useJournalNavigation';
+import { adjacentJournalDate } from './journalDates';
 import { useJournalData } from './useJournalData';
 import { useJournalForm } from './useJournalForm';
 import { useJournalPrint } from './useJournalPrint';
@@ -55,8 +56,8 @@ export default function Page() {
   function goNext() {
     nav.goToAdjacentDate(datesWithNotes, 'next');
   }
-  const hasPrev = datesWithNotes.indexOf(date) < datesWithNotes.length - 1;
-  const hasNext = datesWithNotes.indexOf(date) > 0;
+  const hasPrev = adjacentJournalDate(datesWithNotes, date, 'prev') != null;
+  const hasNext = adjacentJournalDate(datesWithNotes, date, 'next') != null;
 
   function scrollToDayRecords() {
     document

@@ -82,9 +82,10 @@ describe('note calendar page structure', () => {
     expect(pageSource).toContain('<CalendarToolbar');
     expect(pageSource).toContain('<CalendarWorkspace');
     expect(pageSource).toContain('<CalendarPageDialogs');
-    expect(pageSource).toContain(
-      'printCalendarMonth({ viewYear, viewMonth, notesByDate, schedulesByDate })'
-    );
+    // 샘플·작업일지·보기 모드까지 넘겨 화면과 같은 내용을 출력한다
+    expect(pageSource).toContain('printCalendarMonth({');
+    expect(pageSource).toContain('samplesByDate,');
+    expect(pageSource).toContain('workLogsByDate,');
 
     expect(pageSource).not.toContain('buildAutoPrintScript');
     expect(pageSource).not.toContain('openPrintWindow');

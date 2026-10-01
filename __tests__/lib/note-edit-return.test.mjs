@@ -60,7 +60,8 @@ describe('편집 화면을 여는 곳들이 출처를 넘긴다', () => {
   test('새로 작성할 때도 출처를 넘기고, 작성 화면이 그걸 해석한다', () => {
     expect(src('app/note/board/page.jsx')).toContain("'/note/write?from=board'");
     expect(src('app/note/calendar/page.jsx')).toContain("'/note/write?from=calendar'");
-    expect(src('app/note/calendar/page.jsx')).toContain('&from=calendar`');
+    // 달력은 보던 달·날짜(returnView)까지 함께 넘겨 돌아올 때 복원한다
+    expect(src('app/note/calendar/page.jsx')).toContain('&from=calendar${returnView}`');
     expect(src('app/note/sample/samplePageControllerProps.js')).toContain(
       "'/note/write?type=sample&from=sample'"
     );

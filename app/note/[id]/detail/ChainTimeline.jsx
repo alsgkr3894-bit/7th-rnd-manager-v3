@@ -1,5 +1,6 @@
 import { STATUS_COLORS } from '@/lib/note';
 import { noteDisplayTitle } from '@/lib/note/display';
+import { noteDayKey } from '@/app/note/journal/journalDates';
 
 export function ChainTimeline({ chain, currentId, onNavigate }) {
   if (!chain || chain.length < 2) return null;
@@ -91,9 +92,7 @@ function TimelineItem({ note, menuStatus, isCurrent, showConnector, onNavigate }
         >
           {title}
         </div>
-        <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 3 }}>
-          {note.testDate || (note.createdAt ? note.createdAt.slice(0, 10) : '')}
-        </div>
+        <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 3 }}>{noteDayKey(note)}</div>
       </button>
     </div>
   );

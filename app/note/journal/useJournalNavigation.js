@@ -8,7 +8,7 @@
 import { useEffect, useState } from 'react';
 import { todayLocalDate } from '@/lib/date/local-date';
 import { parseNoteQuickDate } from '@/lib/note/date-input';
-import { safeMonth, toDateLabel } from './journalDates';
+import { adjacentJournalDate, safeMonth, toDateLabel } from './journalDates';
 
 export function useJournalNavigation() {
   const [date, setDate] = useState(() => todayLocalDate());
@@ -22,6 +22,14 @@ export function useJournalNavigation() {
     setDateDraft(date);
   }, [date]);
 
+  // 수정 화면에서 돌아오면(?date=) 보던 날짜로 복원한다 — 전엔 항상 오늘로 시작했다
+  useEffect(() => {
+    const back = new URLSearchParams(window.location.search).get('date') || '';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(back)) return;
+    setDate(back);
+    setMonth(safeMonth(back.slice(0, 7)));
+  }, []);
+
   function jumpToDate(value) {
     setDate(value);
     setMonth(safeMonth(value.slice(0, 7)));
@@ -30,12 +38,8 @@ export function useJournalNavigation() {
 
   // 일지·노트가 있는 날짜 목록(datesWithNotes)은 데이터 훅에서 오므로 호출 시점에 받는다.
   function goToAdjacentDate(datesWithNotes, direction) {
-    const idx = datesWithNotes.indexOf(date);
-    if (direction === 'prev' && idx < datesWithNotes.length - 1) {
-      jumpToDate(datesWithNotes[idx + 1]);
-    } else if (direction === 'next' && idx > 0) {
-      jumpToDate(datesWithNotes[idx - 1]);
-    }
+    const target = adjacentJournalDate(datesWithNotes, date, direction);
+    if (target) jumpToDate(target);
   }
 
   function applyDate(value = dateDraft) {

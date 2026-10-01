@@ -107,7 +107,12 @@ export function useKanbanBoard({ canEdit = false } = {}) {
       const optimisticIds = new Set(note._kanbanGroupIds || [note.id]);
       setNotes(prev => prev.map(n => (optimisticIds.has(n.id) ? { ...n, status: newStatus } : n)));
       try {
-        await updateNoteChainStatus(note.id, newStatus);
+        // 같은 제목으로 묶인 카드는 체인이 각각 따로라, 화면의 모든 노트(_kanbanGroupIds)를
+        // 저장해야 한다. 대표 노트만 저장하면 나머지가 옛 열에 남아 드롭이 실패한 것처럼 보였다.
+        const groupIds = [
+          ...new Set(note._kanbanGroupIds?.length ? note._kanbanGroupIds : [note.id]),
+        ];
+        for (const id of groupIds) await updateNoteChainStatus(id, newStatus);
         showToast(`메뉴 상태 → ${newStatus}`, 'ok');
         await refreshNotes();
         if (bounce) pulseNote(note.id);

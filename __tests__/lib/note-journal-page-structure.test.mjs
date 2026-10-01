@@ -42,13 +42,15 @@ describe('note journal page linkage', () => {
     expect(journalDayRecordsSource).toContain('isUnifiedSampleRecord(note)');
     // 저장 후 연구일지로 되돌아오도록 출처(?from=journal)를 달고 이동한다.
     expect(journalDayRecordsSource).toContain(
-      'router.push(`/note/sample/${unifiedSampleSourceId(note)}?from=journal`)'
+      '`/note/sample/${unifiedSampleSourceId(note)}?from=journal&date=${date}`'
     );
     expect(journalDayRecordsSource).toContain('isUnifiedMarketResearchRecord(note)');
     expect(journalDayRecordsSource).toContain(
-      '`/note/market?edit=${unifiedMarketResearchSourceId(note)}&from=journal`'
+      '`/note/market?edit=${unifiedMarketResearchSourceId(note)}&from=journal&date=${date}`'
     );
-    expect(journalDayRecordsSource).toContain('router.push(`/note/${note.id}?from=journal`)');
+    expect(journalDayRecordsSource).toContain(
+      'router.push(`/note/${note.id}?from=journal&date=${date}`)'
+    );
   });
 
   test('연구일지 사진은 원본 샘플/노트 사진을 자동 병합하지 않는다', () => {

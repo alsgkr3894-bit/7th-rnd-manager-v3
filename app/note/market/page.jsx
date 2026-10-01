@@ -44,7 +44,7 @@ function MarketResearchContent() {
     editIdParam,
     closeDetail: () => setDetailRow(null),
     onFinishDeepLinkEdit: () => {
-      const back = resolveEditReturn(`?from=${searchParams.get('from') || ''}`, '');
+      const back = resolveEditReturn(window.location.search, '');
       if (back) router.push(back);
     },
   });

@@ -56,7 +56,7 @@ export default function Page() {
     addChecklistItem,
     toggleChecklistItem,
     removeChecklistItem,
-  } = useTodayChecklist({ today, notes, load, canEdit });
+  } = useTodayChecklist({ today, load, canEdit });
 
   /* 키보드: ← → 월 이동 / Escape 패널 닫기 */
   useEffect(() => {
@@ -138,8 +138,21 @@ export default function Page() {
     setModal(null);
   }
 
+  // 수정 화면에서 돌아올 때 보던 달·날짜로 복원하기 위해 함께 넘긴다
+  const returnView =
+    `&month=${viewYear}-${String(viewMonth).padStart(2, '0')}` +
+    (selectedDay ? `&day=${selectedDay}` : '');
+
   function exportMonthPdf() {
-    printCalendarMonth({ viewYear, viewMonth, notesByDate, schedulesByDate });
+    printCalendarMonth({
+      viewYear,
+      viewMonth,
+      notesByDate,
+      schedulesByDate,
+      samplesByDate,
+      workLogsByDate,
+      viewMode,
+    });
   }
 
   if (loading)
@@ -217,10 +230,10 @@ export default function Page() {
         onEditSchedule={schedule => {
           if (canEdit) setModal({ mode: 'edit', schedule });
         }}
-        onOpenNote={id => router.push(`/note/${id}?from=calendar`)}
-        onOpenSample={id => router.push(`/note/sample/${id}?from=calendar`)}
+        onOpenNote={id => router.push(`/note/${id}?from=calendar${returnView}`)}
+        onOpenSample={id => router.push(`/note/sample/${id}?from=calendar${returnView}`)}
         onAddNote={date => {
-          if (canEdit) router.push(`/note/write?testDate=${date}&from=calendar`);
+          if (canEdit) router.push(`/note/write?testDate=${date}&from=calendar${returnView}`);
         }}
       />
 

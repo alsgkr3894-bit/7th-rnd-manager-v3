@@ -38,6 +38,16 @@ export function useCalendarNavigation() {
   );
 
   useEffect(() => {
+    // 수정 화면에서 돌아오면(?month=&day=) 보던 달·날짜로 복원한다 — 전엔 항상 이번 달이었다
+    const params = new URLSearchParams(window.location.search);
+    const back = params.get('month') || '';
+    const match = /^(\d{4})-(\d{2})$/.exec(back);
+    if (match && Number(match[2]) >= 1 && Number(match[2]) <= 12) {
+      setView({ year: Number(match[1]), month: Number(match[2]) });
+      const day = params.get('day') || '';
+      if (/^\d{4}-\d{2}-\d{2}$/.test(day) && day.startsWith(back)) setSelectedDay(day);
+      return;
+    }
     const now = new Date();
     setView({ year: now.getFullYear(), month: now.getMonth() + 1 });
   }, []);

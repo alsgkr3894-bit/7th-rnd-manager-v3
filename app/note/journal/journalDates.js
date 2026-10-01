@@ -12,6 +12,20 @@ export function noteDayKey(n) {
   return n?.createdAt ? formatLocalDateInput(new Date(n.createdAt)) : '';
 }
 
+/**
+ * 기록이 있는 날짜 목록(내림차순)에서 현재 날짜의 이전/다음 기록일(없으면 null).
+ * 현재 날짜 자체에 기록이 없어도(indexOf -1) 가장 가까운 날로 이동한다.
+ */
+export function adjacentJournalDate(datesDesc, current, direction) {
+  const asc = [...(Array.isArray(datesDesc) ? datesDesc : [])].filter(Boolean).sort();
+  if (direction === 'prev') {
+    for (let i = asc.length - 1; i >= 0; i -= 1) if (asc[i] < current) return asc[i];
+    return null;
+  }
+  for (const d of asc) if (d > current) return d;
+  return null;
+}
+
 export function toDateLabel(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   return `${dateStr} (${DAY_LABELS[d.getDay()]})`;
