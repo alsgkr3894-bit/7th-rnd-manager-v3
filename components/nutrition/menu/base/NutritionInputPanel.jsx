@@ -2,7 +2,7 @@
 import { useEffect, useMemo } from 'react';
 import { Icon } from '@/components/icons';
 import { NutritionGrid } from '@/components/nutrition/NutritionGrid';
-import { CRUST_TYPES, CRUST_DISPLAY_NAMES } from '@/lib/nutrition/values/store';
+import { REGULAR_PIZZA_CRUST_TYPES, CRUST_DISPLAY_NAMES } from '@/lib/nutrition/values/store';
 import { PERSONAL_PIZZA_CRUST_CODE, SERVING_CRUST_TYPE } from '@/lib/nutrition/crust-config';
 import { isPersonalPizzaMenu, resolveNutritionGroup } from '@/lib/nutrition/menu-group';
 
@@ -33,7 +33,7 @@ export function NutritionInputPanel({
   const isPersonal = selMenu ? isPersonalPizzaMenu(selMenu, masterByCode) : false;
   const crustOptions = useMemo(() => {
     if (isPersonal) return PERSONAL_CRUST_OPTIONS;
-    return isPizza ? CRUST_TYPES : [SERVING_CRUST_TYPE];
+    return isPizza ? REGULAR_PIZZA_CRUST_TYPES : [SERVING_CRUST_TYPE];
   }, [isPersonal, isPizza]);
 
   useEffect(() => {
@@ -168,6 +168,11 @@ export function NutritionInputPanel({
           <>
             ※ 음료는 <strong>100g 기준으로 환산하지 않습니다.</strong> 1병/캔{' '}
             <strong>전체(1회 제공량)</strong> 값을 그대로 입력하세요.
+          </>
+        ) : !isPizza ? (
+          <>
+            ※ 사이드는 <strong>100g 기준으로 환산하지 않습니다.</strong> 1접시/1회{' '}
+            <strong>전체(1회 제공량)</strong> 값과 그 <strong>총중량</strong>을 그대로 입력하세요.
           </>
         ) : (
           <>

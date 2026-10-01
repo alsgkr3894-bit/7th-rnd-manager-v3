@@ -70,7 +70,8 @@ describe('nutrition menu page structure', () => {
     expect(baseEditorSource).toContain(
       "const isBeverage = selMenu ? resolveNutritionGroup(selMenu) === '음료' : false;"
     );
-    expect(baseEditorSource).toContain("...(isBeverage ? { basis: 'serving' } : {})");
+    // 2026-09-30: 사이드도 1회 제공량 전체 값이라 피자가 아닌 메뉴 전부 serving으로 저장한다
+    expect(baseEditorSource).toContain("...(isServingMenu ? { basis: 'serving' } : {})");
     expect(inputPanelSource).toContain(
       "const isBeverage = selMenu ? resolveNutritionGroup(selMenu, masterByCode) === '음료' : false;"
     );

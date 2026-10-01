@@ -70,7 +70,9 @@ export function useNutritionBaseEditor({ safeRawMap, refresh, canEdit = false })
         menuName: selMenu.menuName,
         crustType: effectiveCrust,
         ...form,
-        ...(isBeverage ? { basis: 'serving' } : {}),
+        // 피자가 아닌 메뉴(사이드·음료)는 100g 환산 없이 1회 제공량 전체 값을 저장한다 —
+        // 전엔 음료만 표시해, 손으로 만든 사이드는 중량÷100로 환산돼 기존 사이드와 다르게 찍혔다.
+        ...(isServingMenu ? { basis: 'serving' } : {}),
       });
       logWork('NUTRITION_SAVE', selMenu.menuName || selMenu.menuCode || '영양성분');
       if (!mountedRef.current) return;

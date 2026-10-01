@@ -1,6 +1,6 @@
 'use client';
 import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
-import { CRUST_TYPES } from '@/lib/nutrition/values/store';
+import { REGULAR_PIZZA_CRUST_TYPES } from '@/lib/nutrition/values/store';
 import { PERSONAL_PIZZA_CRUST_CODE, SERVING_CRUST_TYPE } from '@/lib/nutrition/crust-config';
 import {
   buildMasterByCode,
@@ -47,7 +47,7 @@ export function MenuGroupList({ menus, rawMap, menuMasters, selMenu, onSelect })
             const crustSlots = isPersonal
               ? PERSONAL_CRUST_SLOTS
               : isPizza
-                ? CRUST_TYPES
+                ? REGULAR_PIZZA_CRUST_TYPES
                 : [SERVING_CRUST_TYPE];
             const selected = selMenu?.id === m.id || (menuCode && selMenu?.menuCode === menuCode);
             return (

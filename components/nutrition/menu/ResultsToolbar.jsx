@@ -42,7 +42,7 @@ export function ResultsToolbar({
           borderRadius: 12,
         }}
       >
-        100g 기준
+        피자 100g 기준 · 사이드·음료 1회 제공량
       </span>
     </div>
   );
