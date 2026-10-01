@@ -84,7 +84,7 @@ describe('sales report preview structure', () => {
     // 관리자 화면의 미등록 후보 행은 "미등록"/"단종" 토글 칩 두 개만 보인다 — 옛 "+ 단종" 버튼과
     // 화면용 배지 중복은 없어야 한다. 단종 칩은 체크/해제가 곧 비정규메뉴 단종 처리/되돌리기다.
     expect(rankTableRowsSource).toContain("from '@/components/sales/FlagToggleChip'");
-    expect(rankTableRowsSource).toContain('label="미등록"');
+    expect(rankTableRowsSource).toContain('label="비정규"');
     expect(rankTableRowsSource).toContain('label="단종"');
     expect(rankTableRowsSource).toContain('tone="warn"');
     expect(rankTableRowsSource).toContain('disabled={!!item.irregular}');
