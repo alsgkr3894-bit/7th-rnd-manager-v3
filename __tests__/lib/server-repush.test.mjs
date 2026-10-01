@@ -108,8 +108,10 @@ beforeEach(async () => {
   // 서버 menu_master: 1..88 (87·88은 PC에서 지운 행)
   fetchAppJson.mockImplementation(async url => {
     const params = new URL(`http://x${url}`).searchParams;
-    expect(params.get('storeName')).toBe('menu_master');
-    return { rows: rows(88).map(r => ({ recordKey: String(r.id) })), nextCursor: null };
+    // 행 수가 같아도 키를 비교하므로 cost_selling_prices도 내려받는다(서버·로컬 모두 1..86)
+    const storeName = params.get('storeName');
+    const serverCount = storeName === 'menu_master' ? 88 : 86;
+    return { rows: rows(serverCount).map(r => ({ recordKey: String(r.id) })), nextCursor: null };
   });
   repush = await import('../../lib/db/server-repush.js');
 });
@@ -120,15 +122,16 @@ afterEach(() => {
 });
 
 describe('planServerRepush', () => {
-  test('로컬 전체를 upsert 대상으로 잡고, 행 수가 다른 store만 서버 키를 비교해 삭제 대상을 찾는다', async () => {
+  test('로컬 전체를 upsert 대상으로 잡고, 서버에 행이 있는 store는 키를 비교해 삭제 대상을 찾는다', async () => {
     const plan = await repush.planServerRepush('main');
 
     expect(plan.totalUpserts).toBe(86 + 86);
     const menuMaster = plan.stores.find(s => s.storeName === 'menu_master');
     expect(menuMaster.deleteKeys).toEqual(['87', '88']);
     expect(plan.totalDeletes).toBe(2);
-    // 행 수가 같은 store는 서버 키를 내려받지 않는다.
-    expect(fetchAppJson).toHaveBeenCalledTimes(1);
+    // 행 수가 같아도 키가 다를 수 있어(로컬에서 A를 지우고 B가 못 올라간 경우) 같은 수의 store도 비교한다.
+    expect(fetchAppJson).toHaveBeenCalledTimes(2);
+    expect(plan.stores.find(s => s.storeName === 'cost_selling_prices').deleteKeys).toEqual([]);
   });
 
   test('민감 store는 계획에서 제외하고, 로컬이 빈 store는 서버 행을 지우지 않는다', async () => {

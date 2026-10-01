@@ -12,6 +12,7 @@ import {
   setSyncModeOverride,
 } from '@/lib/db/sync-mode';
 import { hydrateFromServer, readHydrateJournal, readServerManifest } from '@/lib/db/server-hydrate';
+import { useCurrentRole } from '@/hooks/useCurrentRole';
 import { getServerStoreSyncDeadLetters } from '@/lib/db/server-sync';
 import { clearSyncGuard, evaluateSyncGuard, getSyncGuardState } from '@/lib/db/sync-guard';
 import { formatNumber } from '@/lib/format';
@@ -45,6 +46,7 @@ function StatRow({ label, value }) {
 }
 
 export default function ServerSyncPage() {
+  const { isAdmin, ready: roleReady } = useCurrentRole();
   const [mode, setMode] = useState(SYNC_MODE.AUTHORITATIVE);
   const [overridden, setOverridden] = useState(false);
   const [brandId, setBrandId] = useState('main');
@@ -109,6 +111,17 @@ export default function ServerSyncPage() {
 
   function toggleOverride() {
     const next = isReadonly ? SYNC_MODE.AUTHORITATIVE : SYNC_MODE.READONLY;
+    // 읽기 전용을 운영 PC로 바꾸면 이 브라우저의 쓰기가 서버를 덮어쓴다 — 관리자만, 확인 후에만
+    if (next === SYNC_MODE.AUTHORITATIVE) {
+      if (!roleReady || !isAdmin) {
+        showToast('관리자만 운영 PC로 지정할 수 있습니다', 'error');
+        return;
+      }
+      const ok = window.confirm(
+        '이 PC를 운영 PC(쓰기 가능)로 지정합니다.\n이 브라우저에서 저장한 내용이 서버 데이터를 덮어씁니다.\n\n운영 PC가 아닌 곳에서는 지정하지 마세요. 진행할까요?'
+      );
+      if (!ok) return;
+    }
     if (!setSyncModeOverride(next)) {
       showToast('모드를 저장하지 못했습니다', 'error');
       return;

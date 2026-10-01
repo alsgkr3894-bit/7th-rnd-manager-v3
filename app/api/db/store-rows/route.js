@@ -1,4 +1,4 @@
-import { applyStoreRowOperations } from '@/lib/server/store-row-sync';
+import { StoreRowValidationError, applyStoreRowOperations } from '@/lib/server/store-row-sync';
 import {
   normalizeStoreRowQuery,
   readStoreRowManifest,
@@ -71,13 +71,17 @@ export async function POST(request) {
     }
     // 내부 오류 상세(DB 제약·컬럼명·경로 등)는 서버 로그에만 남기고 클라이언트에는 일반 메시지.
     console.error('[api/db/store-rows] 처리 실패:', error);
+    // 요청 자체가 잘못된 경우(검증 실패·깨진 JSON)만 400 — 클라이언트가 그 작업을 영구 거절로 격리한다.
+    // DB 다운·연결 실패·교착 같은 서버 쪽 일시 오류는 503으로 답해 큐에 남겨 재시도하게 한다
+    // (전엔 전부 400이라 Postgres가 잠깐 내려가면 그 사이 저장이 재시도 없이 버려졌다).
+    const badRequest = error instanceof StoreRowValidationError || error instanceof SyntaxError;
     return Response.json(
       {
         ok: false,
         error: '스토어 동기화 처리에 실패했습니다.',
         checkedAt: new Date().toISOString(),
       },
-      { status: 400 }
+      { status: badRequest ? 400 : 503 }
     );
   }
 }

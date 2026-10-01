@@ -14,6 +14,7 @@ import {
 import { dbNameFor } from '@/lib/db/constants';
 import { MAIN_BRAND_ID, planBrandReset } from '@/lib/db/reset-plan';
 import { getActiveBrandId } from '@/lib/active-brand';
+import { clearHydrateJournal } from '@/lib/db/server-hydrate';
 import { getSetting, getSettingDefault, setSetting } from '@/lib/settings';
 import { Toggle } from '@/components/ui/Toggle';
 import { useDBLoad } from '@/hooks/useDBLoad';
@@ -52,12 +53,16 @@ export default function Page() {
     Object.fromEntries(SETTING_KEYS.map(k => [k, getSettingDefault(k)]))
   );
   const [dbName, setDbName] = useState(() => dbNameFor('main'));
+  // 서버(빌드) HTML은 main 기준이라 첫 렌더는 false로 두고 마운트 뒤에 실제 브랜드로 교정한다 —
+  // 렌더 중 getActiveBrandId()를 읽으면 이천밥쌤·차이나X4에서 문구가 달라 하이드레이션 에러(#418)가 났다.
+  const [isSharedDataProtected, setIsSharedDataProtected] = useState(false);
 
   useEffect(() => () => clearTimeout(reloadTimerRef.current), []);
 
   useEffect(() => {
     setSettings(Object.fromEntries(SETTING_KEYS.map(k => [k, getSetting(k)])));
     setDbName(dbNameFor(getActiveBrandId()));
+    setIsSharedDataProtected(getActiveBrandId() !== MAIN_BRAND_ID);
   }, []);
 
   const { data: statsData, reload: reloadStats } = useDBLoad(
@@ -108,6 +113,9 @@ export default function Page() {
     setBusy(true);
     try {
       await deleteDatabase(dbNameFor(getActiveBrandId()));
+      // 비운 DB에서 '이미 불러온 적 있다'는 기록이 남아 있으면 동기화 가드가 풀려 id가 1부터 다시
+      // 시작하는 쓰기가 서버 행을 덮어쓸 수 있다 — 기록을 지워 다시 불러오기 전까지 막는다.
+      clearHydrateJournal();
       showToast('DB 삭제 완료. 새로고침합니다…', 'ok');
       scheduleReload(1000);
     } catch (err) {
@@ -407,7 +415,7 @@ export default function Page() {
         isAdmin={isAdmin}
         totalRows={totalRows}
         onReset={handleReset}
-        isSharedDataProtected={getActiveBrandId() !== MAIN_BRAND_ID}
+        isSharedDataProtected={isSharedDataProtected}
         onRecreate={handleRecreate}
       />
     </main>
