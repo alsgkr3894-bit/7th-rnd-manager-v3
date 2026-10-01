@@ -166,7 +166,7 @@ export function ShipmentReportPreview({
 
       {/* ── 전용상품 목록 ── */}
       {showExclusive && safeOpts.fullList && exclusive.length > 0 && (
-        <div className="paper-section paper-cat-section">
+        <div className="paper-section paper-cat-section print-keep-together">
           <div
             className="paper-section-title"
             style={{ display: 'flex', alignItems: 'center', gap: 8 }}
@@ -192,7 +192,7 @@ export function ShipmentReportPreview({
 
       {/* ── 범용상품 목록 (관리품목은 한 시트 안에서 색·배지로 구분) ── */}
       {showGeneric && safeOpts.fullList && genericAll.length > 0 && (
-        <div className="paper-section paper-cat-section">
+        <div className="paper-section paper-cat-section print-keep-together">
           <div
             className="paper-section-title"
             style={{ display: 'flex', alignItems: 'center', gap: 8 }}
@@ -242,7 +242,7 @@ export function ShipmentReportPreview({
 
       {/* ── 금월 미출고 품목 (등록됐으나 이번 달 출고 없음) ── */}
       {safeOpts.notShippedList && notShipped.length > 0 && (
-        <div className="paper-section paper-cat-section">
+        <div className="paper-section paper-cat-section print-keep-together">
           <div
             className="paper-section-title"
             style={{ display: 'flex', alignItems: 'center', gap: 8 }}

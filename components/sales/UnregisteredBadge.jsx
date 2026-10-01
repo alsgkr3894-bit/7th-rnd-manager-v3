@@ -24,9 +24,9 @@ export function UnregisteredBadge({ printOnly = false }) {
         display: 'inline-flex',
         alignItems: 'center',
       }}
-      title="메뉴마스터에 없는 판매명 — 아직 단종 등록 전"
+      title="메뉴마스터에 없는 판매명(비정규) — 아직 단종 등록 전"
     >
-      미등록
+      비정규
     </span>
   );
 }

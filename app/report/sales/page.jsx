@@ -230,10 +230,10 @@ export default function Page() {
     try {
       if (nextUnregistered) {
         await deleteRefRegisteredOverrideByName(menuName);
-        showToast(`"${menuName}" 다시 미등록으로 표시합니다`, 'ok');
+        showToast(`"${menuName}" 다시 비정규로 표시합니다`, 'ok');
       } else {
         await addRefRegisteredOverride({ menuName });
-        showToast(`"${menuName}" 미등록 판정을 해제했습니다`, 'ok');
+        showToast(`"${menuName}" 비정규 판정을 해제했습니다`, 'ok');
       }
       reloadOverrides();
     } catch (err) {

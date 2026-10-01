@@ -163,7 +163,7 @@ export function PriceReportPreview({ dateRange, changes, catSummary, opts }) {
         cats.map(cat => {
           const rows = asObjectArray(byCategory[cat]);
           return (
-            <div className="paper-section paper-cat-section" key={cat}>
+            <div className="paper-section paper-cat-section print-keep-together" key={cat}>
               <div className="paper-section-title">{cat} — 변동 품목</div>
               <table className="paper-table">
                 <thead>

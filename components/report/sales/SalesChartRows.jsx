@@ -54,7 +54,7 @@ export function SalesMoverRow({ m, up, maxAbs }) {
             fontVariantNumeric: 'tabular-nums',
           }}
         >
-          {up ? '+' : ''}
+          {delta > 0 ? '+' : ''}
           {formatNumber(delta)}
         </div>
         <div style={{ fontSize: 10, color: 'var(--text-4)', fontVariantNumeric: 'tabular-nums' }}>

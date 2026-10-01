@@ -8,7 +8,7 @@ export function SalesCategoryShareSection({ catShares, totalShare, showRevenue =
   if (catShares.length === 0) return null;
 
   return (
-    <div className="paper-section">
+    <div className="paper-section print-keep-together">
       <div className="paper-section-title">카테고리별 판매 비중</div>
       <div className="share-stack" style={{ marginTop: 10 }}>
         {catShares.map(category => (

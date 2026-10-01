@@ -46,7 +46,7 @@ export function SalesCompareTableSection({
         const catColor =
           catShares.find(item => asDisplayText(item.name) === category)?.color || '#6B7280';
         return (
-          <div className="paper-section paper-cat-section" key={category}>
+          <div className="paper-section paper-cat-section print-keep-together" key={category}>
             <div className="paper-section-title" style={S_SECTION_TITLE_FLEX}>
               <SectionDot color={catColor} />
               {category} — {periodLabel} vs {cmpPeriodLabel}

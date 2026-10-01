@@ -89,14 +89,14 @@ export function SalesRankItemRows({
           {item.unregistered && <UnregisteredBadge printOnly={showToggles} />}
           {showToggles && canToggleUnregistered && (
             <FlagToggleChip
-              label="미등록"
+              label="비정규"
               checked={!!item.unregistered}
               disabled={!!item.irregular}
               onChange={v => onToggleUnregistered(item.name, v)}
               title={
                 item.irregular
-                  ? '단종 처리된 항목 — 단종을 해제하면 다시 미등록 판정으로 돌아갑니다'
-                  : '체크 해제: 메뉴마스터에 등록된 메뉴로 간주(미등록 아님) / 다시 체크: 미등록으로 되돌림'
+                  ? '단종 처리된 항목 — 단종을 해제하면 다시 비정규 판정으로 돌아갑니다'
+                  : '체크 해제: 메뉴마스터에 등록된 메뉴로 간주(비정규 아님) / 다시 체크: 비정규로 되돌림'
               }
             />
           )}

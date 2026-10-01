@@ -46,7 +46,7 @@ export function SalesRankTableSection({
     const catRevenue = items.reduce((sum, item) => sum + safeQuantity(item.revenue), 0);
 
     return (
-      <div className="paper-section paper-cat-section" key={category}>
+      <div className="paper-section paper-cat-section print-keep-together" key={category}>
         <div className="paper-section-title" style={S_SECTION_TITLE_FLEX}>
           <SectionDot color={catColor} />
           {category} 순위 — {periodLabel}
