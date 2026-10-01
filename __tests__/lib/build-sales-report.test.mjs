@@ -266,3 +266,61 @@ describe('buildSalesStats', () => {
     expect(kpi.current).toBe(7);
   });
 });
+
+// 2026-10-01 주임님: 판매량 보고서에서 슈퍼콤비네이션의 '전월'이 1로 나왔다. 전월(8월)에 같은 이름이
+// 피자(33,852건)와 1인피자(1건) 두 카테고리로 있었는데, 전월 값을 이름만으로 저장해 판매량 순으로
+// 뒤에 오는 1건이 33,852건을 덮어썼다.
+describe('같은 이름이 여러 카테고리에 있을 때의 전월 비교', () => {
+  const rows = [
+    row({
+      year: 2026,
+      month: 8,
+      category: '피자',
+      groupName: '슈퍼콤비네이션',
+      quantity: 33852,
+      revenue: 100,
+    }),
+    row({
+      year: 2026,
+      month: 8,
+      category: '1인피자',
+      groupName: '슈퍼콤비네이션',
+      quantity: 1,
+      revenue: 7,
+    }),
+    row({ year: 2026, month: 8, category: '피자', groupName: '불고기', quantity: 16922 }),
+    row({
+      year: 2026,
+      month: 9,
+      category: '피자',
+      groupName: '슈퍼콤비네이션',
+      quantity: 28140,
+      revenue: 90,
+    }),
+    row({ year: 2026, month: 9, category: '피자', groupName: '불고기', quantity: 13748 }),
+  ];
+  const stats = buildSalesStats(rows, { year: 2026, month: 9, scope: 'all' });
+  const find = (name, category) =>
+    stats.groupRanking.find(m => m.name === name && m.category === category);
+
+  test('전월 판매량은 같은 카테고리의 값이다(1건이 아니라 33,852건)', () => {
+    const super_ = find('슈퍼콤비네이션', '피자');
+    expect(super_.prevQty).toBe(33852);
+    expect(super_.delta).toBe(28140 - 33852);
+    expect(super_.deltaPct).toBeCloseTo(((28140 - 33852) / 33852) * 100, 5);
+    expect(super_.prevRevenue).toBe(100);
+  });
+
+  test('다른 메뉴의 전월 비교는 그대로다', () => {
+    expect(find('불고기', '피자').prevQty).toBe(16922);
+    expect(find('불고기', '피자').delta).toBe(13748 - 16922);
+  });
+
+  test('이번 달에 없는 카테고리 항목은 목록에 나오지 않는다', () => {
+    expect(find('슈퍼콤비네이션', '1인피자')).toBeUndefined();
+  });
+
+  test('전체 KPI의 전월 합계는 두 카테고리를 모두 더한다', () => {
+    expect(stats.kpi.previous).toBe(33852 + 1 + 16922);
+  });
+});
