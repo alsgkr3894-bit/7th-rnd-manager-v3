@@ -1,9 +1,16 @@
 import { useState, useMemo } from 'react';
-import { parseCategoryFromCode } from '@/lib/cost/menu-price';
+import { getMenuSubCategoryFromCode, parseCategoryFromCode } from '@/lib/cost/menu-price';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
 
+// 피자 중분류는 메뉴코드(P-PM-…)가 기준이다 — 중분류 칸에 코드('PM')만 적어 둔 행도
+// 표시(MenuMasterTableRow)와 같은 이름(프로모션)으로 걸러지게 코드 판정을 먼저 쓴다.
 function rowSubCategory(row) {
-  return row?.subCategory || parseCategoryFromCode(row?.menuCode).subCategory || '';
+  return (
+    getMenuSubCategoryFromCode(row?.menuCode)?.label ||
+    row?.subCategory ||
+    parseCategoryFromCode(row?.menuCode).subCategory ||
+    ''
+  );
 }
 
 export function useMenuMasterFilters(rows, brandCats) {
