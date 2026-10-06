@@ -23,7 +23,8 @@ describe('연구일지 페이지 파일 분리', () => {
 
   test('날짜·기간 계산은 journalDates.js가 갖는다', () => {
     const dates = src('app/note/journal/journalDates.js');
-    expect(dates).toContain('export function noteDayKey');
+    // noteDayKey는 다른 화면도 써서 lib/note/day-key.js로 옮겼고, 여기서는 다시 내보낸다
+    expect(dates).toContain("export { noteDayKey } from '@/lib/note/day-key';");
     expect(dates).toContain('export function toDateLabel');
     expect(dates).toContain('export function printRangeForMode');
     expect(dates).toContain('export function printRangeLabel');
