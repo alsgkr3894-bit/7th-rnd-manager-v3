@@ -124,9 +124,10 @@ describe('저위험 hub 페이지 useDBLoad 적용', () => {
     expect(journalSrc).toContain("from '@/hooks/useCurrentRole'");
     expect(journalSrc).toContain('const canEdit = roleReady && isAdmin');
     expect(journalSrc).toContain("import { JournalEntryEditor } from './_JournalEntryEditor'");
-    expect(journalFormHookSrc).toContain('if (!canEdit || saving) return;');
+    expect(journalFormHookSrc).toContain('if (!canEdit || saving || savingRef.current) return;');
     expect(journalFormHookSrc).toContain('await addNote(payload)');
-    expect(journalFormHookSrc).toContain('await updateNote(journalEntry.id, payload)');
+    expect(journalFormHookSrc).toContain('await updateNote(targetId, payload)');
+    expect(journalFormHookSrc).toContain('const targetId = journalEntry?.id ?? createdId');
     // 사진 병합·중복 제거 순수 함수는 journalPhotos.js로 분리됐다(useJournalData는 호출만).
     expect(journalPhotosSrc).toContain(
       "import { buildNoteIdeaGroups, collectLatestRoundNotePhotos } from '../noteIdeaGroups'"
@@ -164,7 +165,7 @@ describe('저위험 hub 페이지 useDBLoad 적용', () => {
     expect(journalMonthListSrc).toContain('type="month"');
     expect(journalMonthListSrc).toContain('연구일지 목록');
     expect(journalDataSrc).toContain('const monthEntries = useMemo');
-    expect(journalDataSrc).toContain('expandOccurrences(schedule, start, end)');
+    expect(journalDataSrc).toContain('expandInWindows(schedule, start, end)');
     expect(journalSrc).toContain('<JournalMonthList');
     expect(journalSrc).toContain('onSelectDate={leave.selectDate}');
   });

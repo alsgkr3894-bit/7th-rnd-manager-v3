@@ -22,6 +22,17 @@ export function useJournalNavigation() {
     setDateDraft(date);
   }, [date]);
 
+  // 화면 안에서 날짜를 바꾸면 주소의 ?date=도 맞춘다 — 예전 ?date=가 남아 새로고침하면
+  // 그 날짜로 되돌아갔다. (효과가 아니라 바꾸는 순간에 해서 첫 로드 복원과 섞이지 않는다)
+  function changeDate(value) {
+    setDate(value);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('date') && url.searchParams.get('date') !== value) {
+      url.searchParams.set('date', value);
+      window.history.replaceState(window.history.state, '', url);
+    }
+  }
+
   // 수정 화면에서 돌아오면(?date=) 보던 날짜로 복원한다 — 전엔 항상 오늘로 시작했다
   useEffect(() => {
     const back = new URLSearchParams(window.location.search).get('date') || '';
@@ -31,7 +42,7 @@ export function useJournalNavigation() {
   }, []);
 
   function jumpToDate(value) {
-    setDate(value);
+    changeDate(value);
     setMonth(safeMonth(value.slice(0, 7)));
     setQuickDateError(false);
   }
@@ -67,7 +78,7 @@ export function useJournalNavigation() {
 
   return {
     date,
-    setDate,
+    setDate: changeDate,
     dateDraft,
     setDateDraft,
     month,

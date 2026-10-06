@@ -22,22 +22,10 @@ export function EntryRow({ entry, selected, expanded, query, onSelect, onToggle,
           type="button"
           onClick={() => onSelect(entry.date)}
           title="이 날짜로 이동해 위에서 보고/수정"
-          style={{
-            flex: 1,
-            minWidth: 0,
-            display: 'grid',
-            gridTemplateColumns: '118px minmax(0, 1fr) auto',
-            gap: 12,
-            alignItems: 'center',
-            textAlign: 'left',
-            border: 'none',
-            background: 'transparent',
-            padding: '10px 12px',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-          }}
+          className="journal-list-row"
         >
           <strong
+            className="journal-list-row-date"
             style={{ fontSize: 13, color: selected ? 'var(--accent-text)' : 'var(--text-1)' }}
           >
             {toDateLabel(entry.date)}
@@ -79,7 +67,7 @@ export function EntryRow({ entry, selected, expanded, query, onSelect, onToggle,
             </span>
           </span>
           {photos.length > 0 ? (
-            <span style={{ display: 'flex', gap: 4, alignItems: 'center' }} aria-hidden="true">
+            <span className="journal-list-row-thumbs" aria-hidden="true">
               {photos.slice(0, 2).map((photo, index) => (
                 <img
                   key={index}

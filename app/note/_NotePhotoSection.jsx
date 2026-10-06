@@ -9,12 +9,14 @@ import { UPLOAD_MAX_MB, checkFileSize } from '@/lib/upload-policy';
 const MAX_NOTE_PHOTOS = 8;
 
 /** 노트 사진 첨부 카드 (식자재 이슈 및 테스트 /샘플기록과 동일한 base64 JPEG 방식) */
-export function NotePhotoSection({ photos = [], onChange }) {
+export function NotePhotoSection({ photos = [], onChange, disabled = false }) {
   const fileRef = useRef(null);
   const safePhotos = Array.isArray(photos)
     ? photos.filter(photo => photo && typeof photo === 'object')
     : [];
-  const change = typeof onChange === 'function' ? onChange : () => {};
+  // disabled(뷰어·저장 중)면 사진은 보기만 — 문서 전체 붙여넣기도 받지 않는다
+  const editable = !disabled && typeof onChange === 'function';
+  const change = editable ? onChange : () => {};
   // 비동기 리사이즈 완료 시점의 최신 photos를 읽기 위한 ref (연속 붙여넣기 스냅샷 경쟁 완화).
   const photosRef = useRef(safePhotos);
   photosRef.current = safePhotos;
@@ -63,6 +65,7 @@ export function NotePhotoSection({ photos = [], onChange }) {
   }
 
   useEffect(() => {
+    if (!editable) return undefined;
     function handleDocumentPaste(event) {
       if (event.defaultPrevented) return;
       handlePaste(event);
@@ -87,7 +90,7 @@ export function NotePhotoSection({ photos = [], onChange }) {
   }
 
   return (
-    <div className="card" onPaste={handlePaste}>
+    <div className="card" onPaste={editable ? handlePaste : undefined}>
       <div
         style={{
           display: 'flex',
@@ -104,7 +107,7 @@ export function NotePhotoSection({ photos = [], onChange }) {
             </span>
           )}
         </div>
-        {safePhotos.length < MAX_NOTE_PHOTOS && (
+        {editable && safePhotos.length < MAX_NOTE_PHOTOS && (
           <button type="button" className="btn sm" onClick={() => fileRef.current?.click()}>
             <Icon.plus style={{ width: 12, height: 12 }} /> 사진 추가
           </button>
@@ -122,7 +125,7 @@ export function NotePhotoSection({ photos = [], onChange }) {
         }}
       />
 
-      {safePhotos.length < MAX_NOTE_PHOTOS && (
+      {editable && safePhotos.length < MAX_NOTE_PHOTOS && (
         <div
           style={{
             border: '2px dashed var(--border)',
@@ -168,7 +171,7 @@ export function NotePhotoSection({ photos = [], onChange }) {
                   대표
                 </span>
               )}
-              {index > 0 && (
+              {editable && index > 0 && (
                 <button
                   type="button"
                   onClick={() => makePrimary(index)}
@@ -191,29 +194,31 @@ export function NotePhotoSection({ photos = [], onChange }) {
                   대표로
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => removePhoto(index)}
-                aria-label={`${photo.caption || photo.name || '사진'} 삭제`}
-                style={{
-                  position: 'absolute',
-                  top: 6,
-                  right: 6,
-                  width: 22,
-                  height: 22,
-                  borderRadius: '50%',
-                  border: 'none',
-                  background: 'rgba(0,0,0,.55)',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 1,
-                }}
-              >
-                <Icon.close style={{ width: 11, height: 11 }} />
-              </button>
+              {editable && (
+                <button
+                  type="button"
+                  onClick={() => removePhoto(index)}
+                  aria-label={`${photo.caption || photo.name || '사진'} 삭제`}
+                  style={{
+                    position: 'absolute',
+                    top: 6,
+                    right: 6,
+                    width: 22,
+                    height: 22,
+                    borderRadius: '50%',
+                    border: 'none',
+                    background: 'rgba(0,0,0,.55)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1,
+                  }}
+                >
+                  <Icon.close style={{ width: 11, height: 11 }} />
+                </button>
+              )}
               <img
                 src={photo.data}
                 alt={photo.name}
@@ -231,7 +236,8 @@ export function NotePhotoSection({ photos = [], onChange }) {
                 className="form-input"
                 value={photo.caption || ''}
                 onChange={event => setCaption(index, event.target.value)}
-                placeholder="캡션 (선택)"
+                readOnly={!editable}
+                placeholder={editable ? '캡션 (선택)' : ''}
                 style={{ marginTop: 4, fontSize: 12 }}
               />
             </div>

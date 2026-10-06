@@ -17,6 +17,7 @@ import {
 } from '@/lib/note';
 import { noteDisplayTitle, isJournalNote } from '@/lib/note/display';
 import { resolveEditReturn } from '@/lib/note/edit-return';
+import { noteDayKey } from '@/app/note/journal/journalDates';
 import { getAllSamples } from '@/lib/sample';
 import { printCurrentPageWithDownloadDate } from '@/lib/download';
 import { NoteFormBody, INIT, normalizeNoteFormForSave } from '@/app/note/_NoteFormBody';
@@ -90,7 +91,8 @@ export default function Page() {
         // 연구일지는 '오늘 내용 보고서' 한 칸으로 연구일지 화면에서만 고친다 — 여기서 저장하면
         // 노트 유형이 메뉴개발로 바뀌고 옛 칸(맛 평가·다음 액션)이 다시 생기던 문제를 막는다.
         if (isJournalNote(note)) {
-          const day = String(note.testDate || note.createdAt || '').slice(0, 10);
+          // 날짜는 연구일지 화면과 같은 로컬 기준(noteDayKey) — createdAt을 잘라 쓰면 UTC라 하루 밀릴 수 있다
+          const day = noteDayKey(note);
           router.replace(
             /^\d{4}-\d{2}-\d{2}$/.test(day) ? `/note/journal?date=${day}` : '/note/journal'
           );

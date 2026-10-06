@@ -61,7 +61,11 @@ export function useTodayChecklist({ today, load, canEdit = false }) {
       const legacyTitle = checklistJournalTitle(today);
       // 직전 체크가 아직 저장 중일 수 있어 화면 상태(notes)가 아니라 저장소에서 다시 읽는다
       const todayNotes = (await getAllNotes()).filter(note => noteDateKey(note) === today);
-      const journalEntry = todayNotes.find(note => note?.noteType === JOURNAL_NOTE_TYPE);
+      // 같은 날 일지가 둘이면 연구일지 화면과 같은 것(가장 먼저 만든 일지)에 써야 한다 —
+      // getAllNotes는 최신순이라 그대로 find하면 화면에서 고칠 수 없는 다른 일지에 들어갔다.
+      const journalEntry = todayNotes
+        .filter(note => note?.noteType === JOURNAL_NOTE_TYPE)
+        .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')))[0];
       const legacyChecklistNotes = todayNotes.filter(
         note => asDisplayText(note.title) === legacyTitle
       );

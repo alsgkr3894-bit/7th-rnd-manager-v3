@@ -190,6 +190,6 @@ describe('연구일지 목록', () => {
     expect(list).not.toContain('dangerouslySetInnerHTML');
     const page = read('app/note/journal/page.jsx');
     expect(page).toContain('onPhotoClick={setPreviewPhoto}');
-    expect(page).toContain('useJournalData({ date, month, search, listFilter })');
+    expect(page).toContain('useJournalData({ date, month, search: deferredSearch, listFilter })');
   });
 });

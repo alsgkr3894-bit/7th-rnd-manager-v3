@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useDeferredValue, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { StickySaveBar } from '@/components/ui/StickySaveBar';
@@ -30,7 +30,9 @@ export default function Page() {
   const nav = useJournalNavigation();
   const { date, month } = nav;
 
-  const journal = useJournalData({ date, month, search, listFilter });
+  // 검색 계산은 미뤄 입력이 끊기지 않게 한다(전체 기간 검색은 묶기·필터가 무겁다)
+  const deferredSearch = useDeferredValue(search);
+  const journal = useJournalData({ date, month, search: deferredSearch, listFilter });
   const { loading, dayNotes, daySchedules, datesWithNotes, monthEntries, filteredMonthEntries } =
     journal;
 

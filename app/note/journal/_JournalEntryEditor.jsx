@@ -175,7 +175,11 @@ export function JournalEntryEditor({
         )}
       </Field>
 
-      <NotePhotoSection photos={form.photos || []} onChange={value => onChange('photos', value)} />
+      <NotePhotoSection
+        photos={form.photos || []}
+        onChange={value => onChange('photos', value)}
+        disabled={disabled}
+      />
     </section>
   );
 }

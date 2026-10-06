@@ -1,9 +1,11 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SearchBox } from '@/components/ui/SearchBox';
 import { monthLabel, safeMonth, shiftMonth } from './journalDates';
 import { JOURNAL_LIST_FILTERS } from './journalSearch';
 import { EntryRow } from './_JournalListRow';
+
+const LIST_PAGE_SIZE = 50;
 
 const S_EMPTY = {
   border: '1px dashed var(--border)',
@@ -29,6 +31,9 @@ export function JournalMonthList({
   onPhotoClick,
 }) {
   const [expandedDates, setExpandedDates] = useState(() => new Set());
+  // 넓은 검색어('2026' 등)는 거의 모든 날이 걸려 사진 썸네일이 한꺼번에 그려졌다 — 50일씩 보여준다
+  const [visibleCount, setVisibleCount] = useState(LIST_PAGE_SIZE);
+  useEffect(() => setVisibleCount(LIST_PAGE_SIZE), [search, month, listFilter]);
   const query = String(search || '').trim();
   const searchingAll = searchScope === 'all';
 
@@ -126,7 +131,7 @@ export function JournalMonthList({
         </div>
       ) : (
         <div style={{ display: 'grid', gap: 8 }}>
-          {entries.map(entry => (
+          {entries.slice(0, visibleCount).map(entry => (
             <EntryRow
               key={entry.date}
               entry={entry}
@@ -138,6 +143,15 @@ export function JournalMonthList({
               onPhotoClick={onPhotoClick}
             />
           ))}
+          {entries.length > visibleCount && (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setVisibleCount(count => count + LIST_PAGE_SIZE)}
+            >
+              더 보기 ({entries.length - visibleCount}일 남음)
+            </button>
+          )}
         </div>
       )}
     </section>

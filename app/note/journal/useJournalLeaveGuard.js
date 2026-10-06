@@ -6,6 +6,7 @@
  */
 'use client';
 import { useBeforeUnload } from '@/hooks/useBeforeUnload';
+import { parseNoteQuickDate } from '@/lib/note/date-input';
 
 export const JOURNAL_LEAVE_MESSAGE =
   '저장하지 않은 보고서 내용이 있습니다. 이동하면 작성한 내용이 사라집니다. 이동할까요?';
@@ -40,9 +41,12 @@ export function useJournalLeaveGuard(dirty, { nav, router, datesWithNotes }) {
       if (next && next !== nav.date && !confirmLeave()) return;
       nav.applyDate(value);
     },
+    // 빠른 입력은 칸을 벗어날 때도 불린다 — 실제로 다른 날짜로 읽힐 때만 묻는다
+    // (잘못된 입력·같은 날짜면 묻지 않고, 저장 버튼 클릭이 확인창에 먹히지 않게)
     applyQuickDate(value) {
-      const next = String(value ?? nav.quickDateDraft ?? '').trim();
-      if (next && !confirmLeave()) return;
+      const raw = String(value ?? nav.quickDateDraft ?? '').trim();
+      const target = raw ? parseNoteQuickDate(raw, { referenceDate: nav.date }) : null;
+      if (target && target !== nav.date && !confirmLeave()) return;
       nav.applyQuickDate(value);
     },
   };

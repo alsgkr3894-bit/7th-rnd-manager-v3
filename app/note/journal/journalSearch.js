@@ -76,7 +76,15 @@ export function entryPhotos(entry) {
 }
 
 export function journalEntryMatchesFilter(entry, filter) {
-  if (filter === 'journal') return Boolean(entry?.journal);
+  // 체크리스트를 모두 해제해 본문이 빈 일지는 '쓴 날'로 세지 않는다
+  if (filter === 'journal') {
+    const journal = entry?.journal;
+    if (!journal) return false;
+    return (
+      journalReportFromEntry(journal).trim().length > 0 ||
+      (Array.isArray(journal.photos) && journal.photos.length > 0)
+    );
+  }
   if (filter === 'photos') return entryPhotos(entry).length > 0;
   return true;
 }
