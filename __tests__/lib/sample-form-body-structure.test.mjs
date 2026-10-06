@@ -7,10 +7,13 @@ const detailSource = readFileSync(resolve('app/note/sample/_SampleDetailRecordCa
 const linkedSource = readFileSync(resolve('app/note/sample/_SampleLinkedProductsCard.jsx'), 'utf8');
 const photoSource = readFileSync(resolve('app/note/sample/_SamplePhotoCard.jsx'), 'utf8');
 const journalSource = readFileSync(resolve('app/note/journal/page.jsx'), 'utf8');
-const journalHeaderActionsSource = readFileSync(
-  resolve('app/note/journal/_JournalHeaderActions.jsx'),
-  'utf8'
-);
+const journalHeaderActionsSource = [
+  '_JournalHeaderActions.jsx',
+  '_JournalDateNav.jsx',
+  '_JournalPrintControls.jsx',
+]
+  .map(file => readFileSync(resolve(`app/note/journal/${file}`), 'utf8'))
+  .join('\n');
 const journalDataSource = readFileSync(resolve('app/note/journal/useJournalData.js'), 'utf8');
 const journalPrintHookSource = readFileSync(resolve('app/note/journal/useJournalPrint.js'), 'utf8');
 

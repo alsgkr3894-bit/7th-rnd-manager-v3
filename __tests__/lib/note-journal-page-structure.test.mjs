@@ -8,10 +8,13 @@ const journalDataSource =
   readFileSync(resolve('app/note/journal/journalEntries.js'), 'utf8');
 const journalFormHookSource = readFileSync(resolve('app/note/journal/useJournalForm.js'), 'utf8');
 const journalNavSource = readFileSync(resolve('app/note/journal/useJournalNavigation.js'), 'utf8');
-const journalHeaderActionsSource = readFileSync(
-  resolve('app/note/journal/_JournalHeaderActions.jsx'),
-  'utf8'
-);
+const journalHeaderActionsSource = [
+  '_JournalHeaderActions.jsx',
+  '_JournalDateNav.jsx',
+  '_JournalPrintControls.jsx',
+]
+  .map(file => readFileSync(resolve(`app/note/journal/${file}`), 'utf8'))
+  .join('\n');
 const journalDayRecordsSource = readFileSync(
   resolve('app/note/journal/_JournalDayRecords.jsx'),
   'utf8'

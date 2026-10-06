@@ -65,6 +65,8 @@ describe('연구일지 페이지 파일 분리', () => {
       'app/note/journal/useJournalForm.js',
       'app/note/journal/useJournalPrint.js',
       'app/note/journal/_JournalHeaderActions.jsx',
+      'app/note/journal/_JournalDateNav.jsx',
+      'app/note/journal/_JournalPrintControls.jsx',
       'app/note/journal/_JournalDayRecords.jsx',
     ];
     for (const file of files) {
@@ -96,7 +98,9 @@ describe('연구일지 출력 기간 — 연간', () => {
   });
 
   test('연간을 고르면 연도 선택기가 뜬다', () => {
-    const src = readFileSync(resolve('app/note/journal/_JournalHeaderActions.jsx'), 'utf8');
+    const src = ['_JournalHeaderActions.jsx', '_JournalDateNav.jsx', '_JournalPrintControls.jsx']
+      .map(file => readFileSync(resolve(`app/note/journal/${file}`), 'utf8'))
+      .join('\n');
     expect(src).toContain('<option value="year">연간</option>');
     expect(src).toContain("{printMode === 'year' && (");
     expect(src).toContain('setPrintYear(event.target.value)');
@@ -118,7 +122,13 @@ describe('연구일지 출력 기간 — 연간', () => {
     ]) {
       expect(page).toContain(prop);
     }
-    const toolbar = readFileSync(resolve('app/note/journal/_JournalHeaderActions.jsx'), 'utf8');
+    const toolbar = [
+      '_JournalHeaderActions.jsx',
+      '_JournalDateNav.jsx',
+      '_JournalPrintControls.jsx',
+    ]
+      .map(file => readFileSync(resolve(`app/note/journal/${file}`), 'utf8'))
+      .join('\n');
     for (const prop of ['printYear,', 'setPrintYear,', 'yearOptions,']) {
       expect(toolbar).toContain(prop);
     }
