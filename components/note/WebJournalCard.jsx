@@ -1,7 +1,14 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { STATUS_COLORS } from '@/lib/note/constants';
-import { isJournalNote, noteContentSections, noteDisplayTitle } from '@/lib/note/display';
+import {
+  isJournalNote,
+  isMarketResearchNote,
+  noteContentSections,
+  noteDisplayTitle,
+  noteMetaPairs,
+  noteTagList,
+} from '@/lib/note/display';
 
 function ReportSections({ sections }) {
   const filled = sections.filter(([, v]) => v);
@@ -44,51 +51,17 @@ function ReportSections({ sections }) {
   );
 }
 
-function tagList(tags) {
-  if (Array.isArray(tags)) return tags.map(tag => String(tag || '').trim()).filter(Boolean);
-  return String(tags || '')
-    .split(',')
-    .map(tag => tag.trim())
-    .filter(Boolean);
-}
-
-function isSampleRecord(note) {
-  return note?._recordKind === 'sample' || String(note?.id || '').startsWith('sample:');
-}
-
-function isMarketResearchRecord(note) {
-  return note?._recordKind === 'market_research' || String(note?.id || '').startsWith('market:');
-}
-
-function metaPairs(note) {
-  const pairs = [];
-  if (note?.testDate) pairs.push(['작성일', note.testDate]);
-  if (isSampleRecord(note)) {
-    const type = note?.recordType || note?.noteType;
-    if (type) pairs.push(['유형', type]);
-    if (note?.category) pairs.push(['식자재 분류', note.category]);
-    return pairs;
-  }
-  if (isMarketResearchRecord(note)) {
-    if (note?.type) pairs.push(['유형', note.type]);
-    if (note?.brand) pairs.push(['브랜드 / 출처', note.brand]);
-    return pairs;
-  }
-  if (note?.category) pairs.push(['구분', note.category]);
-  return pairs;
-}
-
 export function WebJournalCard({ note, index, onEdit, onPhotoClick }) {
   const statusStyle = STATUS_COLORS[note.status] || {};
   const title = noteDisplayTitle(note, '(제목 없음)');
   const reportLabel = isJournalNote(note)
     ? '오늘 내용 보고서'
-    : isMarketResearchRecord(note)
+    : isMarketResearchNote(note)
       ? '시장조사 보고'
       : '관련 테스트 보고';
   const sections = noteContentSections(note);
-  const tags = tagList(note.tags);
-  const meta = metaPairs(note);
+  const tags = noteTagList(note.tags);
+  const meta = noteMetaPairs(note);
 
   return (
     <article className="card" style={{ overflow: 'hidden', padding: 0 }}>
