@@ -167,7 +167,8 @@ describe('저위험 hub 페이지 useDBLoad 적용', () => {
     expect(journalDataSrc).toContain('const monthEntries = useMemo');
     expect(journalDataSrc).toContain('expandInWindows(schedule, start, end)');
     expect(journalSrc).toContain('<JournalMonthList');
-    expect(journalSrc).toContain('onSelectDate={leave.selectDate}');
+    expect(journalSrc).toContain('onSelectDate={openDate}');
+    expect(journalSrc).toContain('if (!leave.selectDate(day)) return;');
   });
 });
 

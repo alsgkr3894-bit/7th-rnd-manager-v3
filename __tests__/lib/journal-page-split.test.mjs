@@ -67,6 +67,8 @@ describe('연구일지 페이지 파일 분리', () => {
       'app/note/journal/_JournalHeaderActions.jsx',
       'app/note/journal/_JournalDateNav.jsx',
       'app/note/journal/_JournalPrintControls.jsx',
+      'app/note/journal/_JournalTabs.jsx',
+      'app/note/journal/_JournalSaveBar.jsx',
       'app/note/journal/_JournalDayRecords.jsx',
     ];
     for (const file of files) {

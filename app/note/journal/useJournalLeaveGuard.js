@@ -32,8 +32,14 @@ export function useJournalLeaveGuard(dirty, { nav, router, datesWithNotes }) {
   return {
     goPrev: guard(() => nav.goToAdjacentDate(datesWithNotes, 'prev')),
     goNext: guard(() => nav.goToAdjacentDate(datesWithNotes, 'next')),
-    // 목록에서 지금 날짜를 다시 누르면 묻지 않는다
-    selectDate: day => (day === nav.date ? undefined : guard(nav.setDate)(day)),
+    // 목록에서 날짜 고르기 — 지금 날짜면 묻지 않는다. 이동했으면(또는 같은 날짜면) true,
+    // 확인창에서 취소하면 false(목록 탭에 그대로 남는다)
+    selectDate(day) {
+      if (day === nav.date) return true;
+      if (!confirmLeave()) return false;
+      nav.setDate(day);
+      return true;
+    },
     guardedRouter: { push: guard(url => router.push(url)) },
     // 날짜 조회·빠른 입력은 실제로 날짜가 바뀔 때만 묻는다(빠른 입력은 칸을 벗어날 때도 불린다)
     applyDate(value) {

@@ -46,14 +46,14 @@ describe('저장 안 한 보고서가 날짜 이동으로 사라지던 문제', 
     const page = read('app/note/journal/page.jsx');
     expect(page).toContain('useJournalLeaveGuard(canEdit && form.journalDirty');
     expect(guard).toContain("goPrev: guard(() => nav.goToAdjacentDate(datesWithNotes, 'prev'))");
-    expect(guard).toContain('guard(nav.setDate)(day)');
+    expect(guard).toContain('if (!confirmLeave()) return false;');
     expect(guard).toContain('guardedRouter: { push: guard(url => router.push(url)) }');
     for (const prop of [
       'goPrev={leave.goPrev}',
       'goNext={leave.goNext}',
       'applyDate={leave.applyDate}',
       'applyQuickDate={leave.applyQuickDate}',
-      'onSelectDate={leave.selectDate}',
+      'onSelectDate={openDate}',
       'router={leave.guardedRouter}',
     ]) {
       expect(page).toContain(prop);

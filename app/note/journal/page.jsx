@@ -2,8 +2,6 @@
 import { useDeferredValue, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { StickySaveBar } from '@/components/ui/StickySaveBar';
-import { Icon } from '@/components/icons';
 import { useKeyboardSave } from '@/hooks/useKeyboardSave';
 import { NotePhotoLightbox } from '@/app/note/_NotePhotoLightbox';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
@@ -17,6 +15,8 @@ import { useJournalData } from './useJournalData';
 import { useJournalForm } from './useJournalForm';
 import { useJournalPrint } from './useJournalPrint';
 import { useJournalLeaveGuard } from './useJournalLeaveGuard';
+import { JournalTabs, useJournalTab } from './_JournalTabs';
+import { JournalSaveBar } from './_JournalSaveBar';
 
 // ── 메인 페이지 ─────────────────────────────────────────────
 export default function Page() {
@@ -26,6 +26,7 @@ export default function Page() {
   const [search, setSearch] = useState('');
   const [listFilter, setListFilter] = useState('all');
   const [previewPhoto, setPreviewPhoto] = useState(null);
+  const [tab, setTab] = useJournalTab();
 
   const nav = useJournalNavigation();
   const { date, month } = nav;
@@ -66,6 +67,12 @@ export default function Page() {
     document
       .getElementById('journal-day-records')
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  // 목록에서 날짜를 고르면 그 날짜 보고서(작성 탭)를 연다 — 확인창에서 취소하면 목록에 남는다
+  function openDate(day) {
+    if (!leave.selectDate(day)) return;
+    setTab('write');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   return (
@@ -109,9 +116,11 @@ export default function Page() {
         }
       />
 
+      <JournalTabs tab={tab} onTab={setTab} listCount={monthEntries.length} />
+
       {showSkeleton ? (
         <JournalLoadingSkeleton />
-      ) : (
+      ) : tab === 'write' ? (
         <>
           <JournalEntryEditor
             dateLabel={nav.dateLabel}
@@ -125,22 +134,6 @@ export default function Page() {
             dirty={form.journalDirty}
             daySchedules={daySchedules}
           />
-
-          <JournalMonthList
-            month={month}
-            entries={filteredMonthEntries}
-            totalEntries={monthEntries.length}
-            selectedDate={date}
-            onMonthChange={nav.setMonth}
-            onSelectDate={leave.selectDate}
-            search={search}
-            onSearch={setSearch}
-            listFilter={listFilter}
-            onListFilter={setListFilter}
-            searchScope={journal.searchScope}
-            onPhotoClick={setPreviewPhoto}
-          />
-
           <JournalDayRecords
             date={date}
             dayNotes={dayNotes}
@@ -149,41 +142,30 @@ export default function Page() {
             onEditJournal={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           />
         </>
+      ) : (
+        <JournalMonthList
+          month={month}
+          entries={filteredMonthEntries}
+          totalEntries={monthEntries.length}
+          selectedDate={date}
+          onMonthChange={nav.setMonth}
+          onSelectDate={openDate}
+          search={search}
+          onSearch={setSearch}
+          listFilter={listFilter}
+          onListFilter={setListFilter}
+          searchScope={journal.searchScope}
+          onPhotoClick={setPreviewPhoto}
+        />
       )}
 
       {!showSkeleton && (
-        <StickySaveBar
-          onCancel={form.revertJournalForm}
-          onSave={form.saveJournalEntry}
-          saving={form.saving}
-          canSave={canEdit && (form.journalDirty || !journal.journalEntry)}
-          cancelLabel="되돌리기"
-          saveLabel="보고서 저장"
-          savingLabel="저장 중"
-          status={
-            !canEdit
-              ? '관리자만 저장할 수 있습니다'
-              : form.journalDirty
-                ? `${nav.dateLabel} · 저장 안 된 변경사항`
-                : journal.journalEntry
-                  ? `${nav.dateLabel} · 저장됨`
-                  : `${nav.dateLabel} · 새 일지`
-          }
-          extra={
-            <button
-              type="button"
-              className="btn"
-              onClick={print.openJournalPdf}
-              disabled={print.printPeriodNotes.length === 0}
-              title={
-                print.printPeriodNotes.length === 0
-                  ? 'PDF로 출력할 연구일지가 없습니다'
-                  : print.printRangeTitle
-              }
-            >
-              <Icon.download style={{ width: 13, height: 13 }} /> PDF
-            </button>
-          }
+        <JournalSaveBar
+          form={form}
+          canEdit={canEdit}
+          journalEntry={journal.journalEntry}
+          dateLabel={nav.dateLabel}
+          print={print}
         />
       )}
 

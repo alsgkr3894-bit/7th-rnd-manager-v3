@@ -2,7 +2,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const editorSource = readFileSync(resolve('app/note/journal/_JournalEntryEditor.jsx'), 'utf8');
-const pageSource = readFileSync(resolve('app/note/journal/page.jsx'), 'utf8');
+// 하단 저장 바·탭은 _JournalSaveBar.jsx·_JournalTabs.jsx로 분리됐다 — page와 함께 읽는다
+const pageSource = ['page.jsx', '_JournalSaveBar.jsx', '_JournalTabs.jsx']
+  .map(file => readFileSync(resolve(`app/note/journal/${file}`), 'utf8'))
+  .join('\n');
 const cardSource = readFileSync(resolve('components/note/WebJournalCard.jsx'), 'utf8');
 const journalFormHookSrc = readFileSync(resolve('app/note/journal/useJournalForm.js'), 'utf8');
 const journalPrintHookSrc = readFileSync(resolve('app/note/journal/useJournalPrint.js'), 'utf8');
@@ -52,9 +55,7 @@ describe('연구일지 작성 UI — 1열 세로 + 하단 고정 저장바', () 
   test('저장 안 된 변경사항 여부(journalDirty)를 계산해 저장바 상태에 반영한다', () => {
     // journalDirty·revertJournalForm은 useJournalForm.js로 분리됐다.
     expect(journalFormHookSrc).toContain('const journalDirty = useMemo(');
-    expect(pageSource).toContain(
-      'canSave={canEdit && (form.journalDirty || !journal.journalEntry)}'
-    );
+    expect(pageSource).toContain('canSave={canEdit && (form.journalDirty || !journalEntry)}');
     expect(journalFormHookSrc).toContain('function revertJournalForm()');
   });
 

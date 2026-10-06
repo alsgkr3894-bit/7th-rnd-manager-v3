@@ -21,7 +21,7 @@ export function EntryRow({ entry, selected, expanded, query, onSelect, onToggle,
         <button
           type="button"
           onClick={() => onSelect(entry.date)}
-          title="이 날짜로 이동해 위에서 보고/수정"
+          title="이 날짜 보고서 열기(작성 탭)"
           className="journal-list-row"
         >
           <strong
