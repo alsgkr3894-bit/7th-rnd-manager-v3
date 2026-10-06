@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { addNote, deleteNote, getAllNotes, updateNote } from '@/lib/note';
-import { noteDayKey } from '@/app/note/journal/journalDates';
+import { noteDayKey } from '@/lib/note/day-key';
 import { CATEGORIES, JOURNAL_NOTE_TYPE, NOTE_STATUS } from '@/lib/note/constants';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 import { getJSONLS, setJSONLS } from '@/lib/note/storage';

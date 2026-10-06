@@ -1,6 +1,6 @@
 import { STATUS_COLORS } from '@/lib/note';
 import { noteDisplayTitle } from '@/lib/note/display';
-import { noteDayKey } from '@/app/note/journal/journalDates';
+import { noteDayKey } from '@/lib/note/day-key';
 
 export function ChainTimeline({ chain, currentId, onNavigate }) {
   if (!chain || chain.length < 2) return null;

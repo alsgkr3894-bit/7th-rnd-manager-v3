@@ -17,7 +17,7 @@ import {
 } from '@/lib/note';
 import { noteDisplayTitle, isJournalNote } from '@/lib/note/display';
 import { resolveEditReturn } from '@/lib/note/edit-return';
-import { noteDayKey } from '@/app/note/journal/journalDates';
+import { noteDayKey } from '@/lib/note/day-key';
 import { getAllSamples } from '@/lib/sample';
 import { printCurrentPageWithDownloadDate } from '@/lib/download';
 import { NoteFormBody, INIT, normalizeNoteFormForSave } from '@/app/note/_NoteFormBody';

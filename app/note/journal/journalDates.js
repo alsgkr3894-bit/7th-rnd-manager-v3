@@ -3,14 +3,10 @@
  */
 import { todayLocalDate, formatLocalDateInput } from '@/lib/date/local-date';
 
-export const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
+// 노트 날짜 키는 다른 화면도 써서 lib/note/day-key.js로 옮겼다 — 연구일지 안에서는 여기서 그대로 가져다 쓴다
+export { noteDayKey } from '@/lib/note/day-key';
 
-// 노트의 표시용 날짜 키. testDate는 이미 YYYY-MM-DD(정규형)이라 그대로 쓰고,
-// createdAt 폴백만 로컬 달력일자로 변환한다(UTC slice 시 자정 부근 전날로 새던 문제 방지).
-export function noteDayKey(n) {
-  if (n?.testDate) return String(n.testDate).slice(0, 10);
-  return n?.createdAt ? formatLocalDateInput(new Date(n.createdAt)) : '';
-}
+export const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
 /**
  * 기록이 있는 날짜 목록(내림차순)에서 현재 날짜의 이전/다음 기록일(없으면 null).
