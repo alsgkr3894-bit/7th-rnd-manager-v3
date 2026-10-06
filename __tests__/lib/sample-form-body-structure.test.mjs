@@ -106,7 +106,7 @@ describe('sample form body structure', () => {
     expect(journalMonthListSource).toContain(
       "import { SearchBox } from '@/components/ui/SearchBox'"
     );
-    expect(journalMonthListSource).toContain('일지·노트·일정 검색');
+    expect(journalMonthListSource).toContain('전체 기간 검색 (일지·노트·일정)');
     expect(journalDataSource).toContain('journalEntryMatches(entry, search)');
     // PDF 출력 기간 선택은 _JournalHeaderActions.jsx, 범위 계산은 useJournalPrint.js에 있다.
     expect(journalPrintHookSource).toContain('printRangeForMode(printMode');

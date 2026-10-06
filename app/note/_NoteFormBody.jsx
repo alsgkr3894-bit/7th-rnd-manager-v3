@@ -11,6 +11,7 @@ import {
   normalizeNoteStatus,
   normalizeNoteType,
 } from '@/lib/note';
+import { JOURNAL_NOTE_TYPE } from '@/lib/note/constants';
 import { generateNextNoteMenuCode, normalizeNoteMenuCode } from '@/lib/note/evaluation';
 import { makeFieldUpdater } from '@/lib/ui/form-state';
 import { noop } from '@/lib/ui/prop-guards';
@@ -67,9 +68,11 @@ export function normalizeNoteFormForSave(form, options = {}) {
     title,
     menuName: title,
     category: normalizeNoteCategoryForBrand(form?.category, form?.brand),
-    noteType: MENU_DEVELOPMENT_NOTE_TYPES.includes(noteType)
-      ? noteType
-      : MENU_DEVELOPMENT_NOTE_TYPES[0],
+    // 연구일지는 메뉴개발 유형으로 바꾸지 않는다(연구일지 화면·캘린더 체크리스트가 유형으로 찾는다)
+    noteType:
+      MENU_DEVELOPMENT_NOTE_TYPES.includes(noteType) || noteType === JOURNAL_NOTE_TYPE
+        ? noteType
+        : MENU_DEVELOPMENT_NOTE_TYPES[0],
     status: normalizeNoteStatus(form?.status),
   };
 }

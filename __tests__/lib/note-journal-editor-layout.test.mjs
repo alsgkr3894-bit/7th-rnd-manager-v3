@@ -46,9 +46,7 @@ describe('연구일지 작성 UI — 1열 세로 + 하단 고정 저장바', () 
     // openJournalPdf 구현은 useJournalPrint.js로 분리됐고, page는 두 곳에서 호출만 한다.
     expect(journalPrintHookSrc).toContain('function openJournalPdf()');
     expect(pageSource).toContain('onClick={print.openJournalPdf}');
-    expect(journalPrintHookSrc).toContain(
-      'buildJournalPrintHtml(printRangeTitle, printPeriodNotes'
-    );
+    expect(journalPrintHookSrc).toContain('withoutJournalSourceDuplicatePhotos(printPeriodNotes)');
   });
 
   test('저장 안 된 변경사항 여부(journalDirty)를 계산해 저장바 상태에 반영한다', () => {

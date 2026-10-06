@@ -1,6 +1,7 @@
 import { withDownloadDateSuffix } from '@/lib/download';
 import { pad } from '@/lib/format';
-import { noteDisplayTitle } from '@/lib/note/display';
+import { isJournalNote, noteDisplayTitle } from '@/lib/note/display';
+import { journalReportText } from '@/lib/note/journal-report';
 import { buildAutoPrintScript, openPrintWindow } from '@/lib/print/window-print';
 
 export function escapeCalendarPrintValue(value) {
@@ -10,9 +11,13 @@ export function escapeCalendarPrintValue(value) {
     .replace(/>/g, '&gt;');
 }
 
-/** 노트 '내용' 칸 — 노트에는 result/summary가 없고 testContent(없으면 다음 액션)가 본문이다. */
+/** 노트 '내용' 칸 — 노트에는 result/summary가 없고 testContent(없으면 다음 액션)가 본문이다.
+ * 연구일지는 보고서 한 칸(옛 테스트 결과·다음 일정 포함)을 쓴다. */
 export function calendarNoteContent(note) {
-  return String(note?.testContent || note?.nextAction || note?.result || note?.summary || '')
+  const body = isJournalNote(note)
+    ? journalReportText(note)
+    : note?.testContent || note?.nextAction || note?.result || note?.summary;
+  return String(body || '')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 120);

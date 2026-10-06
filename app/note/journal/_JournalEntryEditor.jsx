@@ -102,7 +102,7 @@ export function JournalEntryEditor({
         }}
       >
         <div>
-          <div className="card-title">오늘 한 일 보고서 작성</div>
+          <div className="card-title">오늘 내용 보고서 작성</div>
           <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{dateLabel}</div>
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -143,26 +143,8 @@ export function JournalEntryEditor({
         </div>
       </div>
 
-      <Field label="1. 오늘 한 일">
-        <TextArea
-          value={form.work}
-          onChange={value => onChange('work', value)}
-          disabled={disabled}
-          placeholder="작업한 내용, 변경한 메뉴, 확인한 데이터를 적으세요"
-        />
-      </Field>
-
-      <Field label="2. 테스트 결과">
-        <TextArea
-          value={form.result}
-          onChange={value => onChange('result', value)}
-          disabled={disabled}
-          placeholder="맛, 식감, 온도, 조리감, 반응을 적으세요"
-        />
-      </Field>
-
       <Field
-        label="3. 다음 일정"
+        label="오늘 내용 보고서"
         action={
           <button
             type="button"
@@ -175,10 +157,11 @@ export function JournalEntryEditor({
         }
       >
         <TextArea
-          value={form.next}
-          onChange={value => onChange('next', value)}
+          value={form.report}
+          onChange={value => onChange('report', value)}
           disabled={disabled}
-          placeholder="다음 테스트 일정, 이어서 할 일, 확인할 내용을 적으세요"
+          rows={12}
+          placeholder="오늘 한 일, 테스트 결과, 다음 일정을 한 번에 적으세요"
         />
         {daySchedules.length > 0 && (
           <details>

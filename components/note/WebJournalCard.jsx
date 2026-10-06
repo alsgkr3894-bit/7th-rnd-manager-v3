@@ -1,12 +1,7 @@
 'use client';
 import { Icon } from '@/components/icons';
 import { STATUS_COLORS } from '@/lib/note/constants';
-import {
-  isJournalNote,
-  noteDetailPairs,
-  noteDisplayTitle,
-  notePrimaryContentLabel,
-} from '@/lib/note/display';
+import { isJournalNote, noteContentSections, noteDisplayTitle } from '@/lib/note/display';
 
 function ReportSections({ sections }) {
   const filled = sections.filter(([, v]) => v);
@@ -86,14 +81,12 @@ function metaPairs(note) {
 export function WebJournalCard({ note, index, onEdit, onPhotoClick }) {
   const statusStyle = STATUS_COLORS[note.status] || {};
   const title = noteDisplayTitle(note, '(제목 없음)');
-  const contentLabel = notePrimaryContentLabel(note);
-  const detailPairs = noteDetailPairs(note);
   const reportLabel = isJournalNote(note)
-    ? '오늘 한 일 보고서'
+    ? '오늘 내용 보고서'
     : isMarketResearchRecord(note)
       ? '시장조사 보고'
       : '관련 테스트 보고';
-  const sections = [[contentLabel, note.testContent], ...detailPairs];
+  const sections = noteContentSections(note);
   const tags = tagList(note.tags);
   const meta = metaPairs(note);
 

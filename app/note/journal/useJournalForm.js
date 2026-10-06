@@ -13,6 +13,8 @@ import {
   EMPTY_JOURNAL_FORM,
   buildJournalNoteFromForm,
   hasJournalText,
+  isJournalFormChanged,
+  journalContentFields,
   journalFormFromEntry,
 } from './journalForm';
 import { buildScheduleText } from './journalSchedules';
@@ -34,7 +36,7 @@ export function useJournalForm({
 
   // 저장 안 된 변경사항이 있는지 — 하단 저장바 상태 표시·저장 버튼 활성화에 쓴다.
   const journalDirty = useMemo(
-    () => JSON.stringify(journalForm) !== JSON.stringify(journalFormFromEntry(journalEntry)),
+    () => isJournalFormChanged(journalForm, journalFormFromEntry(journalEntry)),
     [journalForm, journalEntry]
   );
 
@@ -60,7 +62,7 @@ export function useJournalForm({
     if (!text) return;
     setJournalForm(prev => ({
       ...prev,
-      next: prev.next?.trim() ? `${prev.next.trim()}\n${text}` : text,
+      report: prev.report?.trim() ? `${prev.report.trim()}\n\n${text}` : text,
     }));
   }
 
@@ -78,11 +80,8 @@ export function useJournalForm({
       category: '기타',
       noteType: JOURNAL_NOTE_TYPE,
       status: journalEntry?.status || NOTE_STATUS.TEST,
-      testContent: journalForm.work.trim(),
-      materials: '',
-      tasteEval: journalForm.result.trim(),
-      improvements: '',
-      nextAction: journalForm.next.trim(),
+      // 본문은 testContent 한 칸 — 예전 보조 칸 내용은 report에 이미 합쳐져 있어 비운다
+      ...journalContentFields(journalForm),
       tags: '연구일지',
       photos: Array.isArray(journalForm.photos) ? journalForm.photos : [],
     };

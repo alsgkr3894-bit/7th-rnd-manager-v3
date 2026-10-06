@@ -1,6 +1,7 @@
 'use client';
 import { STATUS_BORDER, STATUS_COLORS } from '@/lib/note/constants';
-import { noteDisplayTitle } from '@/lib/note/display';
+import { isJournalNote, noteDisplayTitle } from '@/lib/note/display';
+import { journalReportText } from '@/lib/note/journal-report';
 import { asDisplayText } from '@/lib/ui/prop-guards';
 
 export function DayNoteSection({ notes, canEdit = false, onAdd, onOpen }) {
@@ -73,7 +74,10 @@ function NoteItem({ note, onOpen }) {
   const status = asDisplayText(note.status, '테스트');
   const noteType = asDisplayText(note.noteType);
   const title = noteDisplayTitle(note, '(제목 없음)');
-  const testContent = asDisplayText(note.testContent);
+  // 연구일지는 보고서 한 칸(옛 테스트 결과·다음 일정 포함)을 미리보기로 쓴다
+  const testContent = asDisplayText(
+    isJournalNote(note) ? journalReportText(note) : note.testContent
+  );
   const sc = STATUS_COLORS[status] || STATUS_COLORS['테스트'];
   const sb = STATUS_BORDER[status] || 'var(--border)';
 

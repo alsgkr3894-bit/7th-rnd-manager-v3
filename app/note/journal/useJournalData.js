@@ -7,19 +7,22 @@
 'use client';
 import { useMemo } from 'react';
 import { useDBLoad } from '@/hooks/useDBLoad';
+import { todayLocalDate } from '@/lib/date/local-date';
 import { getAllNotesCached } from '@/lib/note';
 import { getAllSchedules } from '@/lib/note/schedules';
 import { getAllSamples } from '@/lib/sample';
 import { getAllMarketResearch } from '@/lib/note/market-research';
 import { JOURNAL_NOTE_TYPE } from '@/lib/note/constants';
 import { marketResearchToUnifiedRecord, sampleToUnifiedRecord } from '@/lib/note/unified-records';
-import { expandOccurrences } from '@/app/note/calendar/_recurrence';
-import { monthBounds, noteDayKey, safeMonth } from './journalDates';
+import { addDays, monthBounds, noteDayKey, safeMonth } from './journalDates';
 import { occursOnDate } from './journalSchedules';
 import { withRelatedJournalPhotos, withoutJournalSourceDuplicatePhotos } from './journalPhotos';
-import { journalEntryMatches } from './journalSearch';
+import { journalEntryMatches, journalEntryMatchesFilter } from './journalSearch';
+import { groupJournalEntries } from './journalEntries';
 
-export function useJournalData({ date, month, search }) {
+export { groupJournalEntries };
+
+export function useJournalData({ date, month, search, listFilter = 'all' }) {
   // date 변경은 re-fetch 없이 JS 필터만 하므로 deps 불필요
   const {
     data: notes = [],
@@ -104,55 +107,40 @@ export function useJournalData({ date, month, search }) {
   );
 
   const monthEntries = useMemo(() => {
-    const safe = safeMonth(month);
-    const { start, end } = monthBounds(safe);
-    const notesByDate = new Map();
-    const schedulesByDate = new Map();
-
-    journalRecords.forEach(note => {
-      const day = noteDayKey(note);
-      if (!day.startsWith(safe)) return;
-      if (!notesByDate.has(day)) notesByDate.set(day, []);
-      notesByDate.get(day).push(note);
-    });
-
-    schedules.forEach(schedule => {
-      expandOccurrences(schedule, start, end).forEach(day => {
-        if (!day.startsWith(safe)) return;
-        if (!schedulesByDate.has(day)) schedulesByDate.set(day, []);
-        schedulesByDate.get(day).push({ ...schedule, _occurrenceDate: day });
-      });
-    });
-
-    const dates = new Set([...notesByDate.keys(), ...schedulesByDate.keys()]);
-    return [...dates]
-      .sort((a, b) => b.localeCompare(a))
-      .map(day => {
-        const entryNotes = (notesByDate.get(day) || []).sort((a, b) =>
-          (a.createdAt || '').localeCompare(b.createdAt || '')
-        );
-        const entrySchedules = (schedulesByDate.get(day) || []).sort(
-          (a, b) =>
-            String(a.time || '').localeCompare(String(b.time || '')) ||
-            String(a.title || '').localeCompare(String(b.title || ''), 'ko')
-        );
-        return {
-          date: day,
-          notes: entryNotes,
-          schedules: entrySchedules,
-          journal: entryNotes.find(note => note.noteType === JOURNAL_NOTE_TYPE) || null,
-        };
-      });
+    const { start, end } = monthBounds(safeMonth(month));
+    return groupJournalEntries(journalRecords, schedules, start, end);
   }, [journalRecords, schedules, month]);
 
+  // 검색어가 있으면 달과 관계없이 전체 기간에서 찾는다. 반복 일정이 끝없이 펼쳐지지 않게
+  // 가장 이른 기록·일정 ~ (가장 늦은 기록·일정, 오늘+1년 중 늦은 날)까지만 펼친다.
+  const hasSearch = String(search || '').trim().length > 0;
+  const allEntries = useMemo(() => {
+    if (!hasSearch) return [];
+    const days = [
+      ...journalRecords.map(noteDayKey),
+      ...schedules.map(schedule => String(schedule?.date || '').slice(0, 10)),
+    ]
+      .filter(day => /^\d{4}-\d{2}-\d{2}$/.test(day))
+      .sort();
+    if (days.length === 0) return [];
+    const horizon = addDays(todayLocalDate(), 366);
+    const last = days[days.length - 1];
+    return groupJournalEntries(journalRecords, schedules, days[0], last > horizon ? last : horizon);
+  }, [hasSearch, journalRecords, schedules]);
+
   const filteredMonthEntries = useMemo(
-    () => monthEntries.filter(entry => journalEntryMatches(entry, search)),
-    [monthEntries, search]
+    () =>
+      (hasSearch ? allEntries : monthEntries)
+        .filter(entry => journalEntryMatches(entry, search))
+        .filter(entry => journalEntryMatchesFilter(entry, listFilter)),
+    [hasSearch, allEntries, monthEntries, search, listFilter]
   );
 
+  // 작성 칸은 저장된 원본에서 만든다 — dayNotes는 화면용으로 관련 노트 사진을 합치고 같은 날 노트와
+  // 겹치는 사진을 빼 둔 사본이라, 그걸로 저장하면 일지 사진이 지워지거나 남의 사진이 붙었다.
   const journalEntry = useMemo(
-    () => dayNotes.find(note => note.noteType === JOURNAL_NOTE_TYPE) || null,
-    [dayNotes]
+    () => rawDayNotes.find(note => note.noteType === JOURNAL_NOTE_TYPE) || null,
+    [rawDayNotes]
   );
 
   return {
@@ -165,6 +153,7 @@ export function useJournalData({ date, month, search }) {
     daySchedules,
     monthEntries,
     filteredMonthEntries,
+    searchScope: hasSearch ? 'all' : 'month',
     journalEntry,
   };
 }

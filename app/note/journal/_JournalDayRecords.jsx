@@ -6,6 +6,7 @@
  */
 'use client';
 import { WebJournalCard } from '@/components/note/WebJournalCard';
+import { JOURNAL_NOTE_TYPE } from '@/lib/note/constants';
 import {
   isUnifiedMarketResearchRecord,
   isUnifiedSampleRecord,
@@ -33,7 +34,7 @@ export function JournalLoadingSkeleton() {
   );
 }
 
-export function JournalDayRecords({ date, dayNotes, onPhotoClick, router }) {
+export function JournalDayRecords({ date, dayNotes, onPhotoClick, router, onEditJournal }) {
   return (
     <div id="journal-day-records">
       {dayNotes.length === 0 ? (
@@ -51,7 +52,10 @@ export function JournalDayRecords({ date, dayNotes, onPhotoClick, router }) {
               index={idx + 1}
               onPhotoClick={onPhotoClick}
               onEdit={() => {
-                if (isUnifiedSampleRecord(note)) {
+                if (note.noteType === JOURNAL_NOTE_TYPE) {
+                  // 연구일지는 이 화면 위쪽 '오늘 내용 보고서' 칸에서 고친다(노트 수정 화면 X)
+                  onEditJournal?.();
+                } else if (isUnifiedSampleRecord(note)) {
                   router.push(
                     `/note/sample/${unifiedSampleSourceId(note)}?from=journal&date=${date}`
                   );

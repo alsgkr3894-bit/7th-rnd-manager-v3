@@ -3,7 +3,7 @@ import { JOURNAL_NOTE_TYPE } from '../../lib/note/constants.js';
 import { downloadDateStamp } from '../../lib/download.js';
 
 describe('journal PDF print helpers', () => {
-  test('연구일지 타입은 오늘 한 일 보고서 형식으로 출력한다', () => {
+  test('연구일지 타입은 오늘 내용 보고서 한 칸으로, 예전 칸 내용까지 빠짐없이 출력한다', () => {
     const html = buildJournalPrintHtml('2026-07-03 (금)', [
       {
         title: '2026-07-03 연구일지',
@@ -19,15 +19,24 @@ describe('journal PDF print helpers', () => {
     ]);
 
     expect(html).toContain(`R&amp;D 연구일지 2026-07-03 (금)_${downloadDateStamp()}.pdf`);
-    expect(html).toContain('오늘 한 일 보고서');
+    expect(html).toContain('오늘 내용 보고서');
     expect(html).toContain('대상 기간');
     expect(html).toContain('보고 건수');
     expect(html).toContain('문서 구분');
-    expect(html).toContain('오늘 한 일');
-    expect(html).toContain('테스트 결과');
-    expect(html).toContain('다음 일정');
+    // 다시 저장하지 않은 옛 일지: 예전 칸은 소제목과 함께 보고서 칸 안에 전부 나온다
+    for (const text of [
+      '오늘 작업',
+      '시식 결과',
+      '특이사항 메모',
+      '다음 할 일 메모',
+      '회의 및 보고 일정',
+    ]) {
+      expect(html).toContain(text);
+    }
+    expect(html).toContain('[테스트 결과]');
+    expect(html).toContain('[다음 일정]');
+    expect(html).not.toContain('2. 테스트 결과</div>');
     expect(html).not.toContain('일정 내용');
-    expect(html).not.toContain('특이사항');
     expect(html).not.toContain('핵심 테스트 내용');
     expect(html).not.toContain('사용 재료');
     expect(html).not.toContain('다음 액션');

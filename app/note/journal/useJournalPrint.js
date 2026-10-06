@@ -45,21 +45,24 @@ export function useJournalPrint({ journalRecords, date, month, currentJournalPri
           noteDayKey(a).localeCompare(noteDayKey(b)) ||
           String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
       );
-    const merged =
-      currentJournalPrintNote && isWithinRange(date, printRange)
-        ? mergeJournalPrintNotesForDate(periodNotes, currentJournalPrintNote, date)
-        : periodNotes;
-    return withoutJournalSourceDuplicatePhotos(merged);
+    // 사진 중복 제거(base64 비교)는 무거워서 글자마다 돌지 않게 PDF를 열 때 한다
+    return currentJournalPrintNote && isWithinRange(date, printRange)
+      ? mergeJournalPrintNotesForDate(periodNotes, currentJournalPrintNote, date)
+      : periodNotes;
   }, [journalRecords, printRange, currentJournalPrintNote, date]);
 
   function openJournalPdf() {
     openPrintWindow(
-      buildJournalPrintHtml(printRangeTitle, printPeriodNotes, {
-        title: printMode === 'day' ? '오늘 한 일 보고서' : '연구일지 종합본',
-        brandName: getActiveBrand()?.name,
-        logoSrc:
-          typeof window === 'undefined' ? '' : `${window.location.origin}/logo-taemyeong.png`,
-      }),
+      buildJournalPrintHtml(
+        printRangeTitle,
+        withoutJournalSourceDuplicatePhotos(printPeriodNotes),
+        {
+          title: printMode === 'day' ? '오늘 내용 보고서' : '연구일지 종합본',
+          brandName: getActiveBrand()?.name,
+          logoSrc:
+            typeof window === 'undefined' ? '' : `${window.location.origin}/logo-taemyeong.png`,
+        }
+      ),
       { width: 800, height: 900 }
     );
   }

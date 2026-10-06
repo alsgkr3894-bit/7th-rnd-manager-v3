@@ -2,7 +2,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const journalPageSource = readFileSync(resolve('app/note/journal/page.jsx'), 'utf8');
-const journalDataSource = readFileSync(resolve('app/note/journal/useJournalData.js'), 'utf8');
+// 날짜별 묶기는 journalEntries.js로 분리됐다 — 데이터 훅과 함께 읽는다
+const journalDataSource =
+  readFileSync(resolve('app/note/journal/useJournalData.js'), 'utf8') +
+  readFileSync(resolve('app/note/journal/journalEntries.js'), 'utf8');
 const journalFormHookSource = readFileSync(resolve('app/note/journal/useJournalForm.js'), 'utf8');
 const journalNavSource = readFileSync(resolve('app/note/journal/useJournalNavigation.js'), 'utf8');
 const journalHeaderActionsSource = readFileSync(

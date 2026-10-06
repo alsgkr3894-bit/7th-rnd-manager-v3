@@ -87,6 +87,15 @@ export default function Page() {
           router.replace(loadFailDestination);
           return;
         }
+        // 연구일지는 '오늘 내용 보고서' 한 칸으로 연구일지 화면에서만 고친다 — 여기서 저장하면
+        // 노트 유형이 메뉴개발로 바뀌고 옛 칸(맛 평가·다음 액션)이 다시 생기던 문제를 막는다.
+        if (isJournalNote(note)) {
+          const day = String(note.testDate || note.createdAt || '').slice(0, 10);
+          router.replace(
+            /^\d{4}-\d{2}-\d{2}$/.test(day) ? `/note/journal?date=${day}` : '/note/journal'
+          );
+          return;
+        }
         const merged = { ...INIT, ...note };
         setForm(merged);
         originalRef.current = merged;
