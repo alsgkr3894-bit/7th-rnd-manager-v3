@@ -1,6 +1,7 @@
 # 7번가 R&D 플랫폼 사이트 현황 (집중 탐색 결과)
 
 > 작성일: 2026-06-17  
+> ⚠️ 2026-06 시점 탐색 결과다. 최신 전체 안내는 [`AI_SITE_GUIDE.md`](../AI_SITE_GUIDE.md)(2026-10-08). 아래 DB 수치만 2026-10-08에 정정했다.  
 > 탐색 방식: 7개 영역 병렬 에이전트 → 종합 정리  
 > 대상 브랜치: master (HEAD)
 
@@ -151,9 +152,9 @@
 
 ## 3. IndexedDB 스키마
 
-DB 버전 26, 총 46개 store. 멀티브랜드 구조는 7번가(main) = 'rnd_manager_v3', 그 외 = 'rnd_manager_v3__<brandId>'로 완전 분리. 노트 패밀리(menu_dev_notes 등 5개)는 예외적으로 main DB에 공유 저장.
+DB 버전 29, 총 48개 store(2026-10-08 기준). 멀티브랜드 구조는 7번가(main) = 'rnd_manager_v3', 그 외 = 'rnd_manager_v3__<brandId>'로 완전 분리. 노트 패밀리(menu_dev_notes 등 5개)와 RND 2개(rnd_corporate_card_entries·rnd_login_credentials)는 예외적으로 main DB에 공유 저장.
 
-### 스토어 목록 (DB 버전 26, 총 46개)
+### 스토어 목록 (2026-06 시점 — 현재는 DB 버전 29, 총 48개. 최신 목록은 `AI_SITE_GUIDE.md` §9)
 
 **공통 / 인프라 (3개)**
 
@@ -445,7 +446,7 @@ openNamed(name)이 이름별로 IDBDatabase 핸들을 Map에 캐싱(싱글톤/�
 ### lib/db/constants.js — DB 격리 방식
 `lib/db/constants.js`
 
-dbNameFor(brandId): main → 'rnd_manager_v3'(하위호환), 非main → 'rnd_manager_v3__<brandId>'. ALL_STORES에 46개 store 정의(DB_VERSION=25). 비-main 브랜드는 처음 접근 시 빈 DB로 자동 생성됨.
+dbNameFor(brandId): main → 'rnd_manager_v3'(하위호환), 非main → 'rnd_manager_v3__<brandId>'. ALL_STORES에 48개 store 정의(DB_VERSION=29, 2026-10-08 기준). 비-main 브랜드는 처음 접근 시 빈 DB로 자동 생성됨.
 
 ### lib/db/shared.js — 노트 패밀리 공유 DB
 `lib/db/shared.js`

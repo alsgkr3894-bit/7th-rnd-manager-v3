@@ -45,7 +45,7 @@ UI `disabled`에만 의존하지 않고 **실행함수 레이어에도 viewer �
 | 대상 | 이유 |
 |------|------|
 | 저수준 DB 프리미티브 (`clearStore` / `deleteDatabase`) | 정상 경로에서도 호출됨 — 상위 함수에서 가드 |
-| Export 함수 (`exportAllForBrand` 등) | 비파괴 (읽기전용) |
+| Export 함수 (`exportAllForBrand` 등) | 비파괴 (읽기전용). 단 민감 store가 포함될 수 있는 `exportSelectedForBrand`(`lib/db/backup.js`)는 마지막 방어선으로 `assertActiveAdmin`을 둔다(2026-10-08 정정) |
 | `seedDefaultAdminIfEmpty` | 초기화 전용 — 호출 시점에 항상 계정 0개 |
 
 ### 2-4. sync 함수 가드 정책
