@@ -10,6 +10,7 @@ import {
 } from '@/lib/palette-recent';
 import { useDebounce } from '@/hooks/useDebounce';
 import { asDisplayText } from '@/lib/ui/prop-guards';
+import { confirmUnsavedLeave } from '@/lib/ui/unsaved-changes';
 import {
   buildFavoriteHrefSet,
   buildPaletteNavItems,
@@ -103,6 +104,7 @@ export function useCommandPaletteState({ open, onClose, canEdit = false }) {
     const label = asDisplayText(item?.label, href);
     if (!href) return;
     saveRecent({ ...item, href, label, kind: asDisplayText(item?.kind, 'nav') });
+    if (!confirmUnsavedLeave()) return;
     onClose?.();
     router.push(href);
   };

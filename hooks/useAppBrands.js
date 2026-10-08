@@ -4,6 +4,7 @@ import { BRAND_MASTER_EVENT, BRAND_MASTER_KEY, getVisibleBrands } from '@/lib/br
 import { getActiveBrand, getActiveBrandId, setActiveBrandId } from '@/lib/active-brand';
 import { COMPANIES } from '@/lib/companies';
 import { drainServerStoreSyncQueue } from '@/lib/db/server-sync';
+import { confirmUnsavedLeave } from '@/lib/ui/unsaved-changes';
 
 const SSR_ACTIVE_COMPANY = COMPANIES.find(company => company.id === 'main') ||
   COMPANIES[0] || {
@@ -89,6 +90,8 @@ export function useAppBrands() {
 
   const handleCompanyChange = async c => {
     if (!c || c.id === getActiveBrandId()) return;
+    // 브랜드를 바꾸면 페이지가 새로고침되어 작성 중이던 내용이 사라진다 — 먼저 확인
+    if (!confirmUnsavedLeave()) return;
     // 대기 중인 저장을 전환 전에 서버로 비운다 — 새로고침과 함께 메모리 큐가 사라져 마지막 저장이
     // 유실되던 문제(sendBeacon은 크기 제한이 있어 믿을 수 없다). 실패해도 전환은 막지 않는다.
     try {

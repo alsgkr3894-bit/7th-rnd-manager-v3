@@ -9,6 +9,7 @@ import { CompanyPicker } from './topbar/CompanyPicker';
 import { ThemeToggle } from './topbar/ThemeToggle';
 import { NotificationPopover } from './topbar/NotificationPopover';
 import { ProfileMenu } from './topbar/ProfileMenu';
+import { confirmUnsavedLeave } from '@/lib/ui/unsaved-changes';
 
 export default function TopBar({
   onOpenPalette,
@@ -129,7 +130,7 @@ export default function TopBar({
           className="icon-btn topbar-action-note"
           aria-label="새 노트 작성"
           onClick={() => {
-            if (canEdit) router.push('/note/write');
+            if (canEdit && confirmUnsavedLeave()) router.push('/note/write');
           }}
           disabled={!canEdit}
         >

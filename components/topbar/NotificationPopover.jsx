@@ -1,6 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
+import { confirmUnsavedLeave } from '@/lib/ui/unsaved-changes';
 
 const meta = {
   alert: {
@@ -72,7 +73,7 @@ export function NotificationPopover({ notifRef, notifOpen, onToggle, notifs }) {
                     key={i}
                     onClick={() => {
                       if (n.href) {
-                        router.push(n.href);
+                        if (confirmUnsavedLeave()) router.push(n.href);
                         onToggle();
                       }
                     }}

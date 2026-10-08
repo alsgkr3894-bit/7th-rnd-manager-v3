@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Sidebar from './Sidebar';
@@ -26,6 +26,8 @@ import ProgressBar from './ProgressBar';
 import OfflineIndicator from './OfflineIndicator';
 import DbVersionNotice from './DbVersionNotice';
 import SyncGuardNotice from './SyncGuardNotice';
+import { UnsavedLinkGuard } from './UnsavedLinkGuard';
+import { confirmUnsavedLeave } from '@/lib/ui/unsaved-changes';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useVisualEffects } from '@/hooks/useVisualEffects';
 import { usePageStats } from '@/hooks/usePageStats';
@@ -41,6 +43,16 @@ export default function AppShell({ children }) {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  // 단축키(g+키, n)로 이동할 때도 저장 안 한 변경이 있으면 확인한다
+  const guardedRouter = useMemo(
+    () => ({
+      ...router,
+      push: (...args) => {
+        if (confirmUnsavedLeave()) router.push(...args);
+      },
+    }),
+    [router]
+  );
 
   const { brandOptions, activeCompany, handleCompanyChange } = useAppBrands();
   const { unmatchedCount } = usePageStats(pathname);
@@ -50,7 +62,7 @@ export default function AppShell({ children }) {
   const visibleUnmatchedCount = unmatchedAlertEnabled ? unmatchedCount : 0;
 
   useKeyboardShortcuts({
-    router,
+    router: guardedRouter,
     onOpenPalette: () => setPaletteOpen(true),
     onToggleShortcuts: () => setShortcutsOpen(v => !v),
     onClosePalette: () => setPaletteOpen(false),
@@ -156,6 +168,7 @@ export default function AppShell({ children }) {
       <OfflineIndicator />
       <DbVersionNotice />
       <SyncGuardNotice />
+      <UnsavedLinkGuard />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} canEdit={canEdit} />
       {shortcutsOpen && <ShortcutsHelp onClose={() => setShortcutsOpen(false)} canEdit={canEdit} />}
 
@@ -168,7 +181,9 @@ export default function AppShell({ children }) {
               <button
                 key={tab.href}
                 className={'bottom-tab ' + (isTabActive(tab.href) ? 'active' : '')}
-                onClick={() => router.push(tab.href)}
+                onClick={() => {
+                  if (confirmUnsavedLeave()) router.push(tab.href);
+                }}
               >
                 {badge > 0 && <span className="tab-badge">{badge}</span>}
                 <TabIcon className="tab-ico" />

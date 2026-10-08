@@ -25,7 +25,8 @@ describe('TopBar 서브컴포넌트 분리 구조', () => {
 
   test('TopBar.jsx 새 노트 버튼은 viewer에서 비활성화된다', () => {
     expect(topBarSrc).toContain('canEdit = false');
-    expect(topBarSrc).toContain("if (canEdit) router.push('/note/write')");
+    // viewer 차단 + 저장 안 한 변경이 있으면 이동 전에 확인(2026-10-08)
+    expect(topBarSrc).toContain("if (canEdit && confirmUnsavedLeave()) router.push('/note/write')");
     expect(topBarSrc).toContain('disabled={!canEdit}');
   });
 

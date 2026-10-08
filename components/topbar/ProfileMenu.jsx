@@ -3,11 +3,13 @@ import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { getInitial } from '@/lib/profile';
 import { clearAuthCookie } from '@/lib/auth';
+import { confirmUnsavedLeave } from '@/lib/ui/unsaved-changes';
 
 export function ProfileMenu({ profileRef, profileOpen, onToggle, profile }) {
   const router = useRouter();
 
   function handleLogout() {
+    if (!confirmUnsavedLeave()) return;
     clearAuthCookie();
     window.location.href = '/login';
   }
@@ -59,7 +61,7 @@ export function ProfileMenu({ profileRef, profileOpen, onToggle, profile }) {
             role="menuitem"
             onClick={() => {
               onToggle();
-              router.push('/settings/account');
+              if (confirmUnsavedLeave()) router.push('/settings/account');
             }}
             style={{
               width: '100%',

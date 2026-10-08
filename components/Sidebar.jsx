@@ -9,6 +9,7 @@ import { getJSONLS, setJSONLS } from '@/lib/note/storage';
 import { KEYS } from '@/lib/note/keys';
 import { findActiveNavGroupId, normalizeSidebarOpenIds } from '@/lib/ui/sidebar-state';
 import { PARENT_COMPANY } from '@/lib/companies';
+import { confirmUnsavedLeave } from '@/lib/ui/unsaved-changes';
 
 /**
  * 사이드바 컴포넌트
@@ -148,6 +149,7 @@ export default function Sidebar({
   }, [isGroupActive, visibleSections]);
 
   const navigate = href => {
+    if (!confirmUnsavedLeave()) return;
     router.push(href);
     onClose?.();
   };
