@@ -46,6 +46,26 @@ describe('nutrition origin output sheets', () => {
     ).toEqual([{ displayName: '돼지고기', country: '국내산' }]);
   });
 
+  test('배달플랫폼 재료명은 표시품목이 하나여도 "베이컨(돼지고기:미국산)"처럼 표시품목:원산지로 쓴다', () => {
+    expect(formatOriginCountries([{ displayName: '돼지고기', country: '미국산' }])).toBe(
+      '돼지고기:미국산'
+    );
+    // 표시품목이 비어 있으면 원산지만, 원산지가 없으면 빈 칸
+    expect(formatOriginCountries([{ displayName: '', country: '국내산' }])).toBe('국내산');
+    expect(formatOriginCountries([{ displayName: '돼지고기', country: '' }])).toBe('');
+    expect(formatOriginCountries([])).toBe('');
+    const bacon = [
+      {
+        ingredientName: '베이컨',
+        items: [{ displayName: '돼지고기', country: '미국산' }],
+        menuCodes: [
+          { menuCode: 'P-PR-001-L', menuName: '베이컨 피자 L', category: '피자/프리미엄' },
+        ],
+      },
+    ];
+    expect(buildOriginDeliverySheet(bacon, {}, [])[0].parts).toEqual(['베이컨(돼지고기:미국산)']);
+  });
+
   test('formats multiple origin countries with display item labels', () => {
     expect(
       formatOriginCountries([
@@ -80,7 +100,7 @@ describe('nutrition origin output sheets', () => {
     expect(deliverySheet[0]).toMatchObject({
       menuCode: 'P-OR-001',
       menuName: '포크 피자',
-      parts: ['양념 돼지고기(국내산)', '치즈(치즈:미국산, 치즈:뉴질랜드산)'],
+      parts: ['양념 돼지고기(돼지고기:국내산)', '치즈(치즈:미국산, 치즈:뉴질랜드산)'],
     });
     expect(statementSheet).toEqual(
       expect.arrayContaining([
@@ -165,7 +185,7 @@ describe('nutrition origin output sheets', () => {
     );
     expect(buildOriginFridgeSheet(toppingOrigins, {})[0].ingredientName).toBe('의성마늘 불고기');
     expect(buildOriginDeliverySheet(toppingOrigins, {}, [])[0].parts).toEqual([
-      '의성마늘 불고기(국내산)',
+      '의성마늘 불고기(돼지고기:국내산)',
     ]);
     expect(buildOriginStatementSheet(toppingOrigins, {})[0].names).toBe('의성마늘 불고기');
   });
