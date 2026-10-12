@@ -72,7 +72,7 @@ describe('피자공통: 도우 → 씬도우 → 치즈', () => {
         true,
       ],
       [
-        '치즈(까망베르, 모짜렐라, 고다)',
+        '치즈블렌드(까망베르, 모짜렐라, 고다)',
         '(까망베르:덴마크산/모짜렐라:덴마크산,미국산섞음/고다:네덜란드산)',
         true,
       ],
@@ -103,8 +103,8 @@ describe('피자공통: 도우 → 씬도우 → 치즈', () => {
         '(밀:말레이시아산/그레인:미국산,캐나다산,호주산 섞음/흑미:태국산)',
       ],
       [
-        '치즈',
-        '치즈(까망베르, 모짜렐라, 고다)',
+        '치즈블렌드',
+        '치즈블렌드(까망베르, 모짜렐라, 고다)',
         '(까망베르:덴마크산/모짜렐라:덴마크산,미국산섞음/고다:네덜란드산)',
       ],
     ]);
@@ -137,11 +137,15 @@ describe('피자공통: 도우 → 씬도우 → 치즈', () => {
     expect(sheet.slice(0, 3).map(row => [row.names, row.pizzaCommon])).toEqual([
       ['도우', true],
       ['씬도우', true],
-      ['치즈', true],
+      ['치즈블렌드', true],
     ]);
     const lines = buildOriginStatementLines(sheet);
     expect(lines[0]).toBe('※ 피자공통');
-    expect(lines.slice(1, 4).map(line => line.split('(')[0])).toEqual(['도우', '씬도우', '치즈']);
+    expect(lines.slice(1, 4).map(line => line.split('(')[0])).toEqual([
+      '도우',
+      '씬도우',
+      '치즈블렌드',
+    ]);
     expect(lines.slice(4)).toEqual(['', '베이컨(돼지고기 : 미국산)']);
   });
 
