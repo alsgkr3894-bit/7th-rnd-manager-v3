@@ -125,6 +125,8 @@ describe('피자공통: 도우 → 씬도우 → 치즈', () => {
     const spaghetti = sheet.find(row => row.menuName === '오븐 스파게티');
     expect(spaghetti.parts).toHaveLength(1);
     expect(spaghetti.parts[0]).toContain('까망베르치즈:덴마크산');
+    // 피자가 아닌 메뉴에 남는 치즈도 다른 표와 같은 "치즈블렌드" 이름으로 쓴다
+    expect(spaghetti.parts[0].startsWith('치즈블렌드(')).toBe(true);
   });
 
   test('배달플랫폼용 — 피자공통 재료가 없으면 맨 위 행도 없다', () => {
