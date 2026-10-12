@@ -48,6 +48,7 @@ import { FIXED_BEVERAGE_SHEET } from '@/lib/nutrition/label/fixed-beverages';
 import { exportNutritionLabelToExcel } from '@/lib/nutrition/label/export';
 import { printNutritionLabelAll } from '@/lib/nutrition/label/print';
 import { showToast } from '@/components/Toast';
+import { useRefreshOnReturn } from '@/hooks/useRefreshOnReturn';
 import {
   NutritionLabelActions,
   NutritionLabelLoading,
@@ -93,6 +94,10 @@ export default function NutritionLabelResult() {
     drink: [],
   });
   const [labelContext, setLabelContext] = useState(null);
+  // 값은 이 화면이 열릴 때 한 번 읽는다 — 계산 화면(다른 탭·창)에서 입력한 뒤 이 탭으로 돌아오면
+  // 다시 읽어 포스터·표에 바로 반영한다(reloadTick이 바뀌면 아래 불러오기 효과가 다시 돈다)
+  const [reloadTick, setReloadTick] = useState(0);
+  useRefreshOnReturn(() => setReloadTick(tick => tick + 1));
   const ctxRef = useRef(null); // { menus, rawMap, edgeMap, masterByCode, menuAllergenMap, edgeAllergenMap }
 
   const CATEGORY_ORDER_STATE = {
@@ -278,7 +283,15 @@ export default function NutritionLabelResult() {
     return () => {
       alive = false;
     };
-  }, [menuNameOverrides, pizzaOrder, sideOrder, toppingOrder, setBoxOrder, beverageOrder]);
+  }, [
+    menuNameOverrides,
+    pizzaOrder,
+    sideOrder,
+    toppingOrder,
+    setBoxOrder,
+    beverageOrder,
+    reloadTick,
+  ]);
 
   async function handleExcel() {
     setExporting(true);
