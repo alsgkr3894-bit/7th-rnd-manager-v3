@@ -10,7 +10,7 @@ import {
 import { buildOriginsFromIngredients } from '../../lib/nutrition/origin/build.js';
 
 // 2026-10-12 주임님 지시(원산지표시판정리파일_B타입_260403.xlsx 양식): 도우·씬도우·까망베르 치즈를
-// "피자공통"으로 분류해서 치즈 → 도우 → 씬도우 순으로 내보낸다.
+// "피자공통"으로 분류해서 도우 → 씬도우 → 치즈 순으로 내보낸다.
 // 실데이터: 도우는 일반 피자 16개에만 들어가고 1인피자 3개에는 없다(그래서 "모든 피자" 조건에서
 // 빠졌다), 흑미씬도우는 어떤 메뉴에도 연결돼 있지 않다.
 const read = p => readFileSync(new URL(`../../${p}`, import.meta.url), 'utf8');
@@ -58,34 +58,36 @@ const bacon = {
 // 입력 순서를 일부러 섞는다(정렬이 입력 순서에 기대면 안 됨)
 const origins = [bacon, thinDough, cheese, dough];
 
-describe('피자공통: 치즈 → 도우 → 씬도우', () => {
+describe('피자공통: 도우 → 씬도우 → 치즈', () => {
   test('매장비치용 — 세 재료가 맨 앞 피자공통 행으로, 양식 순서와 표기 그대로', () => {
     const sheet = buildOriginStoreSheet(origins, [], {});
     expect(
       sheet.slice(0, 3).map(row => [row.displayName, row.originCountry, row.pizzaCommon])
     ).toEqual([
-      [
-        '치즈(까망베르, 모짜렐라, 고다)',
-        '(까망베르:덴마크산/모짜렐라:덴마크산,미국산섞음/고다:네덜란드산)',
-        true,
-      ],
       ['밀, 흑미(도우)', '(밀:미국산,캐나다산 섞음/흑미:국내산)', true],
       [
         '밀, 그레인, 흑미(씬도우)',
         '(밀:말레이시아산/그레인:미국산,캐나다산,호주산 섞음/흑미:태국산)',
         true,
       ],
+      [
+        '치즈(까망베르, 모짜렐라, 고다)',
+        '(까망베르:덴마크산/모짜렐라:덴마크산,미국산섞음/고다:네덜란드산)',
+        true,
+      ],
     ]);
     expect(sheet[3]).toMatchObject({ displayName: '돼지고기(베이컨)', pizzaCommon: false });
   });
 
-  test('도우·씬도우의 메뉴명 칸은 "피자공통"만, 치즈는 쓰이는 사이드를 뒤에 덧붙인다(기존 규칙)', () => {
+  test('피자공통 행의 메뉴명 칸은 "피자공통"만 — 치즈가 쓰이는 스파게티 등은 덧붙이지 않는다', () => {
     const sheet = buildOriginStoreSheet(origins, [], {});
-    expect(sheet[0].menus).toEqual(['피자공통', '오븐 스파게티']);
+    expect(sheet[0].menus).toEqual(['피자공통']);
     expect(sheet[1].menus).toEqual(['피자공통']);
     expect(sheet[2].menus).toEqual(['피자공통']);
-    // 메뉴명이 같은 연속 행(도우·씬도우)은 한 칸으로 합친다
-    expect(buildPizzaCommonSpans(sheet)).toEqual([{ start: 1, length: 2 }]);
+    // 메뉴명이 같은 연속 행(도우·씬도우·치즈)은 기준 양식처럼 한 칸으로 합친다
+    expect(buildPizzaCommonSpans(sheet)).toEqual([{ start: 0, length: 3 }]);
+    // 피자공통이 아닌 재료는 쓰이는 메뉴를 그대로 나열한다
+    expect(sheet[3].menus).toEqual(['베이컨']);
   });
 
   test('냉장고부착용 — 양식 순서(도우 → 씬도우 → 치즈)와 음식명·표시품목', () => {
@@ -108,16 +110,16 @@ describe('피자공통: 치즈 → 도우 → 씬도우', () => {
     expect(sheet[3].ingredientName).toBe('베이컨');
   });
 
-  test('원산지정보 표기문 — ※ 피자공통 아래 치즈·도우·씬도우 한 줄씩', () => {
+  test('원산지정보 표기문 — ※ 피자공통 아래 도우·씬도우·치즈 한 줄씩', () => {
     const sheet = buildOriginStatementSheet(origins, {});
     expect(sheet.slice(0, 3).map(row => [row.names, row.pizzaCommon])).toEqual([
-      ['치즈', true],
       ['도우', true],
       ['씬도우', true],
+      ['치즈', true],
     ]);
     const lines = buildOriginStatementLines(sheet);
     expect(lines[0]).toBe('※ 피자공통');
-    expect(lines.slice(1, 4).map(line => line.split('(')[0])).toEqual(['치즈', '도우', '씬도우']);
+    expect(lines.slice(1, 4).map(line => line.split('(')[0])).toEqual(['도우', '씬도우', '치즈']);
     expect(lines.slice(4)).toEqual(['', '베이컨(돼지고기 : 미국산)']);
   });
 
@@ -132,7 +134,7 @@ describe('피자공통: 치즈 → 도우 → 씬도우', () => {
       buildOriginStatementSheet(origins, overrides)
         .slice(0, 3)
         .map(r => r.names)
-    ).toEqual(['슈레드치즈', '도우', '흑미 씬도우']);
+    ).toEqual(['도우', '흑미 씬도우', '슈레드치즈']);
   });
 });
 
