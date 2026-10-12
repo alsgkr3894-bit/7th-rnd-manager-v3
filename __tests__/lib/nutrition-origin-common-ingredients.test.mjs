@@ -1,6 +1,7 @@
 import { describe, expect, test } from '@jest/globals';
 import { readFileSync } from 'node:fs';
 import {
+  buildOriginDeliverySheet,
   buildOriginFridgeSheet,
   buildOriginStatementLines,
   buildOriginStatementSheet,
@@ -108,6 +109,27 @@ describe('피자공통: 도우 → 씬도우 → 치즈', () => {
       ],
     ]);
     expect(sheet[3].ingredientName).toBe('베이컨');
+  });
+
+  test('배달플랫폼용 — 맨 위 "피자공통" 한 행에 도우·씬도우·치즈블렌드를 표기문 형식으로, 피자 행엔 반복 안 함', () => {
+    const sheet = buildOriginDeliverySheet(origins, {}, []);
+    expect(sheet[0]).toMatchObject({ group: '피자', menuName: '피자공통' });
+    expect(sheet[0].parts).toEqual([
+      '도우(밀 : 미국산, 캐나다산 섞음, 흑미 : 국내산)',
+      '씬도우(밀 : 말레이시아산, 그레인 : 미국산, 캐나다산, 호주산 섞음, 흑미 : 태국산)',
+      '치즈블렌드(까망베르치즈 : 덴마크산, 모짜렐라치즈 : 덴마크산, 미국산 섞음, 고다치즈 : 네덜란드산)',
+    ]);
+    // 피자 메뉴 행에는 공통 재료가 빠지고, 피자가 아닌 메뉴(스파게티)는 치즈를 그대로 가진다
+    const bacon = sheet.find(row => row.menuName === '베이컨 피자');
+    expect(bacon.parts).toEqual(['베이컨(돼지고기:미국산)']);
+    const spaghetti = sheet.find(row => row.menuName === '오븐 스파게티');
+    expect(spaghetti.parts).toHaveLength(1);
+    expect(spaghetti.parts[0]).toContain('까망베르치즈:덴마크산');
+  });
+
+  test('배달플랫폼용 — 피자공통 재료가 없으면 맨 위 행도 없다', () => {
+    const sheet = buildOriginDeliverySheet([bacon], {}, []);
+    expect(sheet.every(row => row.menuName !== '피자공통')).toBe(true);
   });
 
   test('원산지정보 표기문 — ※ 피자공통 아래 도우·씬도우·치즈 한 줄씩', () => {
