@@ -20,6 +20,7 @@ export function MenuRecipeTableRow({
   suggestions,
   activeSuggestionIdx,
   unitPriceMap,
+  flaggedIngredients,
   ingredientInputRefs,
   quantityInputRefs,
   onIngredientInputChange,
@@ -41,6 +42,11 @@ export function MenuRecipeTableRow({
     component.unitPrice != null && Number(component.quantity) > 0
       ? Math.round(component.unitPrice * Number(component.quantity))
       : null;
+  // 식자재 관리에서 단종·제외 처리된 식자재가 이 줄에 들어 있으면 표시한다
+  const flaggedCode = String(component.productCode ?? '')
+    .trim()
+    .toUpperCase();
+  const isFlaggedIngredient = !!flaggedCode && flaggedIngredients?.has?.(flaggedCode) === true;
   const quantityNeedsCheck =
     hasRecipeComponentIdentity(component) && isRecipeComponentMissingQuantity(component);
 
@@ -91,7 +97,13 @@ export function MenuRecipeTableRow({
             }
           }}
           className="form-input"
-          style={{ width: '100%', height: 34, fontSize: 13, padding: '6px 8px' }}
+          style={{
+            width: '100%',
+            height: 34,
+            fontSize: 13,
+            padding: '6px 8px',
+            ...(isFlaggedIngredient ? { borderColor: 'var(--negative)' } : null),
+          }}
           value={searchIdx === idx ? searchQ : component.ingredientName || ''}
           onChange={e => onIngredientInputChange(idx, e.target.value)}
           onFocus={() => onIngredientFocus(idx, component.ingredientName || '')}
@@ -100,6 +112,11 @@ export function MenuRecipeTableRow({
           placeholder="식자재명 검색 (↑↓ 이동, Enter 선택)"
           aria-autocomplete="list"
         />
+        {isFlaggedIngredient && (
+          <div style={{ marginTop: 3, fontSize: 11, fontWeight: 700, color: 'var(--negative)' }}>
+            ⚠ 단종 처리된 식자재입니다 — 다른 식자재로 교체하거나 삭제하세요
+          </div>
+        )}
         {searchIdx === idx && suggestions.length > 0 && (
           <div
             role="listbox"

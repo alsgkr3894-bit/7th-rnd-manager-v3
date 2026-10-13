@@ -15,6 +15,8 @@ import { MenuMasterIssuesPanel } from '@/components/menu-master/MenuMasterIssues
 import { MenuMasterLoadingTable } from '@/components/menu-master/MenuMasterLoadingTable';
 import { MenuMasterStatsRow } from '@/components/menu-master/MenuMasterStatsRow';
 import { MenuRecipeOrphanBanner } from '@/components/menu-master/MenuRecipeOrphanBanner';
+import { MenuDiscontinuedIngredientBanner } from '@/components/menu-master/MenuDiscontinuedIngredientBanner';
+import { QUALITY_KINDS } from '@/lib/menu-master/data-quality';
 import { MenuMasterTablePanel } from '@/components/menu-master/MenuMasterTablePanel';
 import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { getActiveBrandId } from '@/lib/active-brand';
@@ -64,6 +66,8 @@ export default function Page() {
   const isMain = useIsMainBrand();
   const { isViewer } = useCurrentRole();
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'issues' | 'readiness' | 'quality'
+  // 품질 점검 탭을 열 때 미리 걸어 둘 진단 종류(단종 식자재 배너에서 열면 그 종류만 보인다)
+  const [qualityKind, setQualityKind] = useState('all');
   const [readinessMap, setReadinessMap] = useState(new Map());
   const [readinessLoading, setReadinessLoading] = useState(false);
   const [seeding, setSeeding] = useState(false);
@@ -249,6 +253,17 @@ export default function Page() {
 
       <MenuRecipeOrphanBanner isViewer={isViewer} />
 
+      {!loading && (
+        <MenuDiscontinuedIngredientBanner
+          rows={rows}
+          recipeSummaryMap={recipeSummaryMap}
+          onOpen={() => {
+            setQualityKind(QUALITY_KINDS.DISCONTINUED_INGREDIENT);
+            setViewMode('quality');
+          }}
+        />
+      )}
+
       <MenuMasterStatsRow
         rows={visibleRows}
         activeRows={active}
@@ -306,7 +321,10 @@ export default function Page() {
             </button>
             <button
               className={'chip' + (viewMode === 'quality' ? ' active' : '')}
-              onClick={() => setViewMode('quality')}
+              onClick={() => {
+                setQualityKind('all');
+                setViewMode('quality');
+              }}
             >
               품질 점검
             </button>
@@ -314,6 +332,8 @@ export default function Page() {
 
           {viewMode === 'quality' ? (
             <MenuDataQualityPanel
+              key={qualityKind}
+              initialKind={qualityKind}
               rows={rows}
               recipeSummaryMap={recipeSummaryMap}
               readinessMap={readinessMap}

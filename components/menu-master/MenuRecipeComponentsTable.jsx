@@ -11,6 +11,7 @@ export function MenuRecipeComponentsTable({
   suggestions,
   activeSuggestionIdx = -1,
   unitPriceMap,
+  flaggedIngredients,
   ingredientInputRefs,
   quantityInputRefs,
   onIngredientInputChange,
@@ -155,6 +156,7 @@ export function MenuRecipeComponentsTable({
                     suggestions={suggestions}
                     activeSuggestionIdx={activeSuggestionIdx}
                     unitPriceMap={unitPriceMap}
+                    flaggedIngredients={flaggedIngredients}
                     ingredientInputRefs={ingredientInputRefs}
                     quantityInputRefs={quantityInputRefs}
                     onIngredientInputChange={onIngredientInputChange}

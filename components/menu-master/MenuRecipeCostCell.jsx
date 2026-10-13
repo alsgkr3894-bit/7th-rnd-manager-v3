@@ -80,6 +80,9 @@ export function MenuRecipeCostCell({ summary }) {
   const style =
     RECIPE_STATUS_STYLE[styleStatus] || RECIPE_STATUS_STYLE[MENU_RECIPE_SUMMARY_STATUS.MISSING];
   const label = recipeStatusLabel(summary);
+  const discontinuedNames = Array.isArray(summary.discontinuedIngredientNames)
+    ? summary.discontinuedIngredientNames
+    : [];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
@@ -97,6 +100,22 @@ export function MenuRecipeCostCell({ summary }) {
       {isEdge && summary.hasRecipe && (
         <span style={{ fontSize: 11, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
           {edgeDetailText(summary)}
+        </span>
+      )}
+      {discontinuedNames.length > 0 && (
+        <span
+          title={`단종 처리된 식자재가 레시피에 있습니다: ${discontinuedNames.join(', ')}`}
+          style={{
+            padding: '2px 7px',
+            borderRadius: 6,
+            fontSize: 11,
+            fontWeight: 700,
+            background: 'var(--negative-soft)',
+            color: 'var(--negative)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          ⚠ 단종 식자재 {discontinuedNames.length}
         </span>
       )}
       {!isEdge && summary.hasRecipe && (

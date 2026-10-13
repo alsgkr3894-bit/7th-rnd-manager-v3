@@ -1,5 +1,6 @@
 'use client';
-import { forwardRef, useRef, useState } from 'react';
+import { forwardRef, useMemo, useRef, useState } from 'react';
+import { buildFlaggedIngredientMap } from '@/lib/menu-master/recipe-summary';
 import { normalizeCostBaseUnit } from '@/lib/cost/unit-policy';
 import { resolveMenuEdgeFamily } from '@/lib/menu-master/edge-family';
 import { MenuRecipeComponentsTable } from '@/components/menu-master/MenuRecipeComponentsTable';
@@ -68,6 +69,12 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
     onSaved,
     draft,
   });
+
+  // 식자재 관리에서 단종·제외 처리된 식자재(품목코드) — 레시피 줄에 경고를 띄우는 데 쓴다
+  const flaggedIngredients = useMemo(
+    () => buildFlaggedIngredientMap(allIngredients),
+    [allIngredients]
+  );
 
   const previewComponents = useMenuRecipePreviewComponents({
     components,
@@ -258,6 +265,7 @@ export const MenuRecipeSection = forwardRef(function MenuRecipeSection(
           suggestions={suggestions}
           activeSuggestionIdx={activeSuggestionIdx}
           unitPriceMap={unitPriceMap}
+          flaggedIngredients={flaggedIngredients}
           ingredientInputRefs={ingredientInputRefs}
           quantityInputRefs={quantityInputRefs}
           onIngredientInputChange={handleIngredientInputChange}

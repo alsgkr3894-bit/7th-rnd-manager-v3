@@ -14,9 +14,10 @@ export function MenuDataQualityPanel({
   readinessMap = new Map(),
   loading = false,
   isViewer = false,
+  initialKind = 'all',
   onEdit,
 }) {
-  const [kindFilter, setKindFilter] = useState('all');
+  const [kindFilter, setKindFilter] = useState(initialKind);
   const [searchQ, setSearchQ] = useState('');
   const report = useMemo(
     () => buildMenuDataQualityReport(rows, recipeSummaryMap, readinessMap),
