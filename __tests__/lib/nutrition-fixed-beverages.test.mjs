@@ -7,10 +7,11 @@ const find = (name, weight) =>
   FIXED_BEVERAGE_SHEET.find(row => row.menuName === name && row.weight === weight);
 
 describe('영양성분표 고정 음료표', () => {
-  test('코카-콜라 510ml: 열량 219 · 당류 55 · 단백질 0 · 포화지방 0 · 나트륨 15', () => {
+  // 2026-10-13 주임님 지시: 열량 219 → 220 (당류·나트륨 등 나머지는 그대로)
+  test('코카-콜라 510ml: 열량 220 · 당류 55 · 단백질 0 · 포화지방 0 · 나트륨 15', () => {
     expect(find('코카-콜라', 510)).toMatchObject({
       menuCode: 'D-CC-510',
-      kcal: 219,
+      kcal: 220,
       sugar: 55,
       protein: 0,
       fat: 0,
