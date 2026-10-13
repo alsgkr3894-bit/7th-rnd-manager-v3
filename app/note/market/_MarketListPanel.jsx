@@ -1,12 +1,17 @@
 'use client';
 
+import { MARKET_RESEARCH_REGIONS } from '@/lib/note/market-research';
 import { MarketRecordCard } from './_MarketRecordCard';
+import { REGION_FILTER_ALL, REGION_FILTER_NONE } from './marketUtils';
 
 /** 시장조사 목록 카드 — 건수/검색 툴바와 경쟁사별로 묶인 기록 카드 스택. */
 export function MarketListPanel({
   rows,
   query,
   onQueryChange,
+  region = REGION_FILTER_ALL,
+  onRegionChange,
+  regionCounts = {},
   loading,
   filtered,
   groupedRows,
@@ -25,6 +30,24 @@ export function MarketListPanel({
             <div className="card-title">시장조사 목록</div>
             <div className="card-sub">총 {rows.length}건</div>
           </div>
+        </div>
+        <div className="market-region-row" style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+          {[
+            [REGION_FILTER_ALL, '전체'],
+            ...MARKET_RESEARCH_REGIONS.map(value => [value, value]),
+            ...((regionCounts[REGION_FILTER_NONE] || 0) > 0
+              ? [[REGION_FILTER_NONE, '미분류']]
+              : []),
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={'chip' + (region === value ? ' active' : '')}
+              onClick={() => onRegionChange?.(value)}
+            >
+              {label} {regionCounts[value] ?? 0}
+            </button>
+          ))}
         </div>
         <input
           className="form-input"

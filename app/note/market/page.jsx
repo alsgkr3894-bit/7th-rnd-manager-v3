@@ -77,6 +77,9 @@ function MarketResearchContent() {
           rows={list.rows}
           query={list.query}
           onQueryChange={list.setQuery}
+          region={list.region}
+          onRegionChange={list.setRegion}
+          regionCounts={list.regionCounts}
           loading={list.loading}
           filtered={list.filtered}
           groupedRows={list.groupedRows}

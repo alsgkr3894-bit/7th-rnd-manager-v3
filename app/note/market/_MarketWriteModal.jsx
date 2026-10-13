@@ -2,9 +2,8 @@
 
 import { ModalFrame } from '@/components/ui/ModalFrame';
 import { StickySaveBar } from '@/components/ui/StickySaveBar';
-import { MARKET_RESEARCH_TYPES } from '@/lib/note/market-research';
 import { NotePhotoSection } from '@/app/note/_NotePhotoSection';
-import { Field } from './_MarketFields';
+import { Field, RegionField, TypeRow } from './_MarketFields';
 
 /** 시장조사 작성/수정 모달 — 유형 선택, 기본/본문 필드, 사진, 저장 바. */
 export function MarketWriteModal({
@@ -25,19 +24,8 @@ export function MarketWriteModal({
     >
       <div className="market-write-panel">
         <section className="market-write-card">
-          <div className="market-type-row">
-            {MARKET_RESEARCH_TYPES.map(type => (
-              <button
-                key={type}
-                type="button"
-                className={'btn sm' + (form.type === type ? ' primary' : '')}
-                onClick={() => update('type', type)}
-                disabled={!canEdit}
-              >
-                {type}
-              </button>
-            ))}
-          </div>
+          <TypeRow form={form} update={update} canEdit={canEdit} />
+          <RegionField form={form} update={update} canEdit={canEdit} />
           <div className="market-form-row market-form-row-date-title">
             <Field label="조사 날짜">
               <input

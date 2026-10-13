@@ -3,16 +3,27 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { showToast } from '@/components/Toast';
 import { getAllMarketResearch } from '@/lib/note/market-research';
-import { groupByCompetitor, includesQuery } from './marketUtils';
+import {
+  countByRegion,
+  groupByCompetitor,
+  includesQuery,
+  matchesRegion,
+  REGION_FILTER_ALL,
+} from './marketUtils';
 import { competitorOptionsOf } from './marketPageUtils';
 
 /** 시장조사 목록 로드 + 키워드 검색/경쟁사 그룹핑 파생 상태. */
 export function useMarketResearchList() {
   const [rows, setRows] = useState([]);
   const [query, setQuery] = useState('');
+  const [region, setRegion] = useState(REGION_FILTER_ALL);
   const [loading, setLoading] = useState(true);
 
-  const filtered = useMemo(() => rows.filter(row => includesQuery(row, query)), [rows, query]);
+  const regionCounts = useMemo(() => countByRegion(rows), [rows]);
+  const filtered = useMemo(
+    () => rows.filter(row => matchesRegion(row, region) && includesQuery(row, query)),
+    [rows, query, region]
+  );
   const groupedRows = useMemo(() => groupByCompetitor(filtered), [filtered]);
   const competitorOptions = useMemo(() => competitorOptionsOf(rows), [rows]);
 
@@ -32,5 +43,17 @@ export function useMarketResearchList() {
     load();
   }, [load]);
 
-  return { rows, query, setQuery, loading, filtered, groupedRows, competitorOptions, load };
+  return {
+    rows,
+    query,
+    setQuery,
+    region,
+    setRegion,
+    regionCounts,
+    loading,
+    filtered,
+    groupedRows,
+    competitorOptions,
+    load,
+  };
 }
