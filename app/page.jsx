@@ -17,15 +17,13 @@ import { buildGreetingSubline } from '@/components/home/buildGreetingSubline';
 import { useWidgetConfig } from '@/hooks/useWidgetConfig';
 import { useSettingValue } from '@/hooks/useSettingValue';
 import { addNote } from '@/lib/note';
-import { KEYS, setHomeNoteDraft } from '@/lib/note/keys';
+import { setHomeNoteDraft } from '@/lib/note/keys';
 import { useIsMainBrand } from '@/hooks/useIsMainBrand';
 import { getRecentPaletteItems } from '@/lib/palette-recent';
 import { getNoteKpi, getRecentActivities } from '@/lib/stats';
 import { useHomeDashboardData } from '@/hooks/useHomeDashboardData';
 import { ActionCenterWidget } from '@/components/home/ActionCenterWidget';
 import { useCurrentRole } from '@/hooks/useCurrentRole';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { normalizeCritPercentSetting } from '@/app/cost/margin/marginPageUtils';
 
 const INITIAL_TODAY_LABEL = '오늘';
 const INITIAL_GREETING = '안녕하세요';
@@ -55,11 +53,6 @@ export default function HomePage() {
   const canEdit = roleReady && isAdmin;
   const unmatchedAlertEnabled = useSettingValue('unmatchedAlert') !== 'off';
   const costRateAlertEnabled = useSettingValue('costRateAlert') !== 'off';
-  const [costAlertCritPct] = useLocalStorage(
-    KEYS.MARGIN_COST_CRIT,
-    40,
-    normalizeCritPercentSetting
-  );
 
   const [chartTab, setChartTab] = useState('month');
   const [hoveredCat, setHoveredCat] = useState(null);
@@ -206,10 +199,6 @@ export default function HomePage() {
   const alertCostAlertData = costRateAlertEnabled
     ? costAlertData
     : { ...(costAlertData || {}), items: [] };
-  // 홈 원가율 경보 위젯(CostAlertWidget)·원가마진표와 같은 기준을 공유한다 — 전엔 여기만
-  // 40 고정이라, 마진표에서 기준을 바꾸면 인사말 문구의 경보 수와 위젯의 경보 수가 갈렸다.
-  const alertCount =
-    alertCostAlertData?.items?.filter(i => i.costRate > costAlertCritPct).length ?? 0;
   const noPriceCount = ingredientHealth?.noPriceCount ?? 0;
   const openIssueCount = alertIssues.filter(i => i.status === 'open').length;
   const staleModules = [
@@ -219,7 +208,6 @@ export default function HomePage() {
   ].filter(Boolean);
   const greetSub = buildGreetingSubline({
     todosCount: todos.length,
-    alertCount,
     openIssueCount,
     noPriceCount,
     staleModules,
@@ -229,8 +217,6 @@ export default function HomePage() {
   // 표시 여부 (데이터 없으면 null 반환하는 위젯은 미리 거른다)
   const showUnmatched = unmatchedAlertEnabled && isVisible('unmatched') && openIssueCount > 0;
   const showPipeline = isVisible('pipeline') && pipeline?.columns?.some(c => c.count > 0);
-  const showCostAlert =
-    costRateAlertEnabled && isVisible('costalert') && (alertCostAlertData?.items?.length ?? 0) > 0;
   const showSamples = isVisible('samples') && recentSamples.length > 0;
 
   // 렌더 순서: 즐겨찾기 우선(effectiveOrder). 포커스 모드면 즐겨찾기 행만.
@@ -274,9 +260,6 @@ export default function HomePage() {
           }
         }}
         onOpenWidgetConfig={() => setWidgetConfigOpen(true)}
-        onUploadSales={() => {
-          if (canEdit) router.push('/menu-sales/upload');
-        }}
         onNewNote={() => {
           if (canEdit) router.push('/note/write');
         }}
@@ -297,8 +280,6 @@ export default function HomePage() {
             uploadFreshness={uploadFreshness}
             backupReminder={backupReminder}
             ingredientHealth={ingredientHealth}
-            costAlertData={costRateAlertEnabled ? costAlertData : null}
-            riskThreshold={costAlertCritPct}
             isMain={isMain}
             canEdit={canEdit}
           />
@@ -337,7 +318,6 @@ export default function HomePage() {
             menuCostChanges={menuCostChanges}
             showUnmatched={showUnmatched}
             showPipeline={showPipeline}
-            showCostAlert={showCostAlert}
             quickNote={quickNote}
             quickSaved={quickSaved}
             canEdit={canEdit}

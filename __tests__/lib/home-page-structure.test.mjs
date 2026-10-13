@@ -63,7 +63,7 @@ describe('home page structure', () => {
   test('home presentation components own greeting, period, rows, and quick note UI', () => {
     expect(greetingSource).toContain('export function HomeGreetingBar');
     expect(greetingSource).toContain('className="greet"');
-    expect(greetingSource).toContain('판매량 업로드');
+    expect(greetingSource).not.toContain('판매량 업로드'); // 2026-10-13 홈 인사말의 업로드 버튼 삭제
     expect(periodSource).toContain('export function HomePeriodNav');
     expect(periodSource).toContain('home-period-nav');
     expect(rowsSource).toContain('export function HomeDashboardRows');

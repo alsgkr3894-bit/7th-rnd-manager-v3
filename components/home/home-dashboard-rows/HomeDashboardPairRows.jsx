@@ -1,9 +1,4 @@
-import {
-  CostAlertWidget,
-  QuickReportWidget,
-  RankCard,
-  SampleStatsWidget,
-} from '@/components/home/HomeWidgets';
+import { QuickReportWidget, RankCard, SampleStatsWidget } from '@/components/home/HomeWidgets';
 import { MenuCostChangeWidget } from '@/components/home/MenuCostChangeWidget';
 import { NoteHeatmapWidget } from '@/components/home/NoteHeatmapWidget';
 import { PipelineWidget } from '@/components/home/PipelineWidget';
@@ -15,7 +10,12 @@ import { pairDashboardRow } from './HomeDashboardRowShell';
 export function renderTodoPairRow(context, rowId) {
   return pairDashboardRow(
     context.isVisible('todo') ? (
-      <TodoWidget key="todo" todos={context.todos} router={context.router} />
+      <TodoWidget
+        key="todo"
+        todos={context.todos}
+        router={context.router}
+        canEdit={context.canEdit}
+      />
     ) : null,
     context.showUnmatched ? (
       <UnmatchedWidget key="unmatched" issues={context.alertIssues} router={context.router} />
@@ -64,9 +64,7 @@ export function renderPricePairRow(context, rowId) {
     context.isVisible('pricechange') ? (
       <MenuCostChangeWidget key="price" data={context.menuCostChanges} router={context.router} />
     ) : null,
-    context.showCostAlert ? (
-      <CostAlertWidget key="costalert" data={context.alertCostAlertData} router={context.router} />
-    ) : null,
+    null,
     rowId
   );
 }

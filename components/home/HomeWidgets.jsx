@@ -7,7 +7,6 @@ import { asDisplayText, asObjectArray } from '@/lib/ui/prop-guards';
 
 // 정식 위치는 @/components/ui/EmptyState — 기존 import 경로 호환을 위해 재export
 export { EmptyState };
-export { CostAlertWidget } from '@/components/home/CostAlertWidget';
 export { QuickReportWidget } from '@/components/home/QuickReportWidget';
 export { SampleStatsWidget } from '@/components/home/SampleStatsWidget';
 

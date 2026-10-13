@@ -11,7 +11,6 @@ export function HomeGreetingBar({
   refreshing,
   onRefresh,
   onOpenWidgetConfig,
-  onUploadSales,
   onNewNote,
   canEdit = false,
 }) {
@@ -71,9 +70,6 @@ export function HomeGreetingBar({
         </button>
         <button type="button" className="btn" title="위젯 설정" onClick={onOpenWidgetConfig}>
           <Icon.gear style={{ width: 15, height: 15 }} />
-        </button>
-        <button type="button" className="btn" onClick={onUploadSales} disabled={!canEdit}>
-          <Icon.upload style={{ width: 16, height: 16 }} /> 판매량 업로드
         </button>
         <button type="button" className="btn primary" onClick={onNewNote} disabled={!canEdit}>
           <Icon.plus style={{ width: 16, height: 16 }} /> 새 테스트 노트

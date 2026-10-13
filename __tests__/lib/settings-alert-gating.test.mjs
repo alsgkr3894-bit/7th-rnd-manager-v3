@@ -20,7 +20,7 @@ describe('settings alert gating', () => {
     expect(homeSource).toContain('const alertIssues = unmatchedAlertEnabled ? issues : []');
     expect(homeSource).toContain('const alertCostAlertData = costRateAlertEnabled');
     expect(homeSource).toContain('const showUnmatched = unmatchedAlertEnabled');
-    expect(homeSource).toContain('const showCostAlert =');
-    expect(homeSource).toContain('costRateAlertEnabled && isVisible');
+    // 2026-10-13: 홈의 원가율 경보 위젯·인사말 문구·액션센터 카드는 삭제됐다
+    expect(homeSource).not.toContain('showCostAlert');
   });
 });

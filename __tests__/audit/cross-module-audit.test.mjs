@@ -390,10 +390,8 @@ d('모듈 간 연동 값 전수 대조', () => {
   test('원가율 위험 기준 — 모든 화면이 같은 설정 키를 읽고, 하드코딩 기준이 남아 있지 않다', () => {
     const readSrc = f => readFileSync(join(process.cwd(), f), 'utf8');
     const sharedReaders = [
-      'components/home/CostAlertWidget.jsx',
       'components/home/ModuleHealthWidget.jsx',
       'components/menu-master/MenuRecipeSectionHeader.jsx',
-      'app/page.jsx',
       'app/cost/all-summary/page.jsx',
       'app/cost/margin/page.jsx',
       'app/report/cost/page.jsx',
@@ -402,7 +400,6 @@ d('모듈 간 연동 값 전수 대조', () => {
       expect(readSrc(f)).toContain('KEYS.MARGIN_COST_CRIT');
     }
     expect(readSrc('app/report/cost/page.jsx')).not.toContain('useState(35)');
-    expect(readSrc('components/home/CostAlertWidget.jsx')).not.toMatch(/costRate > 40\b/);
     expect(readSrc('app/page.jsx')).not.toMatch(/costRate > 40\b/);
     expect(readSrc('app/cost/all-summary/allSummaryUtils.js')).not.toMatch(/rate > 40\b/);
     expect(readSrc('lib/stats/module-health.js')).not.toMatch(/> 40\b|<= 40\b|> 30 &&/);
