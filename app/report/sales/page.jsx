@@ -71,16 +71,17 @@ export default function Page() {
     updFmt,
   } = useReportPageState(
     DRAFT_KEY,
+    // 2026-10-13: 기본은 "메뉴 순위표 (전체)"만 체크 — 요약·비교·비중 등은 필요할 때 직접 켠다
     {
-      summary: true,
-      catShare: true,
-      pizzaMover: true,
+      summary: false,
+      catShare: false,
+      pizzaMover: false,
       rankTable: true,
-      catBar: true,
-      prevComp: true,
+      catBar: false,
+      prevComp: false,
       variant: false,
       revenue: false,
-      excluded: true,
+      excluded: false,
     },
     draft => {
       if (draft.periodMode) setPeriodMode(normalizePeriodMode(draft.periodMode));

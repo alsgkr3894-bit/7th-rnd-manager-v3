@@ -116,10 +116,11 @@ function CostReportBuilderContent({ onReportModeChange }) {
   } = useReportPageState(
     DRAFT_KEY,
     {
-      summary: true,
-      catTable: true,
+      // 2026-10-13: 기본은 "카테고리별 메뉴 전체"만 체크 — 요약·비교표·위험 메뉴 등은 직접 켠다
+      summary: false,
+      catTable: false,
       perCategory: true,
-      riskList: true,
+      riskList: false,
       recipeAppendix: false,
       recipePagePerMenu: true,
       recipeSelection: {},

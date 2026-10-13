@@ -21,9 +21,10 @@ function safeDateInput(value, fallback) {
 
 export default function Page() {
   const [periodMode, setPeriodMode] = useState('week');
+  // 2026-10-13: 기본은 "전체 식자재 변동 요약"만 체크 — 원가 영향 메뉴 수는 직접 켠다
   const [opts, setOpts] = useState({
     catSummary: true,
-    costImpact: true,
+    costImpact: false,
   });
   const upd = makeFieldUpdater(setOpts);
   const [docFormat, setDocFormat] = useState({ pdf: true, excel: false });

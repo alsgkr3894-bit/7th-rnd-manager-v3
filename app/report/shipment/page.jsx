@@ -38,12 +38,13 @@ export default function Page() {
   } = useReportPageState(
     DRAFT_KEY,
     {
+      // 2026-10-13: 기본은 "전체 제품 목록"만 체크 — 차트·요약 등은 필요할 때 직접 켠다
       scope: 'all',
-      chart: true,
-      catSummary: true,
-      amountSummary: true,
+      chart: false,
+      catSummary: false,
+      amountSummary: false,
       fullList: true,
-      notShippedList: true,
+      notShippedList: false,
     },
     draft => {
       if (draft.shipYear) setShipYear(safeYear(draft.shipYear));
