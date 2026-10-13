@@ -8,6 +8,8 @@ import {
   matchesRegion,
 } from '../../app/note/market/marketUtils.js';
 import { marketResearchToUnifiedRecord } from '../../lib/note/unified-records.js';
+import { noteMetaPairs } from '../../lib/note/display.js';
+import { buildJournalPrintHtml } from '../../lib/note/journal-print.js';
 
 // 2026-10-13 주임님 요청: 시장조사를 국내 / 해외로 구분한다(표기는 "해외").
 const read = p => readFileSync(new URL(`../../${p}`, import.meta.url), 'utf8');
@@ -50,6 +52,47 @@ describe('시장조사 국내/해외 구분', () => {
     expect(marketResearchToUnifiedRecord({ id: 10, title: '구기록' }).testContent).not.toContain(
       '('
     );
+  });
+
+  // 2026-10-13: 시장조사가 연구일지 보고서(웹 카드·PDF)에 들어갈 때 국내/해외가 머리 줄에 나온다.
+  test('보고서 머리 줄에 "시장 구분"이 나온다(구분 없는 이전 기록은 줄 없음)', () => {
+    const overseas = marketResearchToUnifiedRecord({
+      id: 11,
+      title: '벌집 토핑',
+      date: '2026-10-13',
+      type: '시장분석',
+      brand: '도미노',
+      region: '해외',
+    });
+    expect(noteMetaPairs(overseas)).toEqual([
+      ['작성일', '2026-10-13'],
+      ['시장 구분', '해외'],
+      ['유형', '시장분석'],
+      ['브랜드 / 출처', '도미노'],
+    ]);
+    const legacy = marketResearchToUnifiedRecord({ id: 12, title: '구기록', type: '시장분석' });
+    expect(noteMetaPairs(legacy).map(([label]) => label)).not.toContain('시장 구분');
+  });
+
+  test('연구일지 PDF HTML에 시장 구분이 실제로 렌더된다', () => {
+    const html = buildJournalPrintHtml('2026-10-13', [
+      marketResearchToUnifiedRecord({
+        id: 13,
+        title: '벌집 토핑',
+        date: '2026-10-13',
+        type: '시장분석',
+        region: '해외',
+      }),
+      marketResearchToUnifiedRecord({
+        id: 14,
+        title: '국내 신메뉴',
+        date: '2026-10-13',
+        type: '시장분석',
+        region: '국내',
+      }),
+    ]);
+    expect(html).toContain('<b>시장 구분:</b> 해외');
+    expect(html).toContain('<b>시장 구분:</b> 국내');
   });
 
   test('저장 정규화·작성 모달·목록·카드가 구분을 다룬다', () => {
