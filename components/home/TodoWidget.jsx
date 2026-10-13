@@ -171,7 +171,7 @@ export function TodoWidget({ todos = [], router, canEdit = false }) {
       </div>
 
       {shown.length === 0 ? (
-        <div className="todo-empty">🎉 오늘 챙길 일을 모두 끝냈어요!</div>
+        <div className="todo-empty">🎉 마감 임박 일정이 없어요</div>
       ) : (
         <div className="todo-list">
           {shown.map((t, index) => {
