@@ -8,14 +8,8 @@ export const CAT_COLORS = {
   기타: { bg: 'var(--surface-2)', color: 'var(--text-3)' },
 };
 
-export const USAGE_CATS = [
-  '전체',
-  MENU_CATEGORY.PIZZA,
-  MENU_CATEGORY.SIDE,
-  MENU_CATEGORY.PERSONAL,
-  MENU_CATEGORY.SET,
-  MENU_CATEGORY.ETC,
-];
+// 피자·사이드 메뉴만 다룬다(세트·기타·엣지·추가토핑은 사용현황에서 뺀다 — 2026-10-13)
+export const USAGE_CATS = ['전체', MENU_CATEGORY.PIZZA, MENU_CATEGORY.SIDE, MENU_CATEGORY.PERSONAL];
 
 export const USAGE_THRESHOLD = { HIGH: 8, MID: 4 };
 export const TIER_LABEL = ['많이 쓰는 재료 (8개 이상)', '보통 (4–7개)', '적게 쓰는 재료 (1–3개)'];

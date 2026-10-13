@@ -216,3 +216,63 @@ describe('buildIngredientUsageMap', () => {
     expect(byCode.has('ING-WING')).toBe(false);
   });
 });
+
+// 2026-10-13 주임님 지시: 제품별 사용현황에는 피자·사이드 메뉴 레시피에 실제로 들어간 경우만 —
+// 엣지(엣지 관리로 전 피자에 붙는 구성품)와 추가토핑 등 그 밖의 메뉴는 안 나오게 한다.
+describe('buildIngredientUsageMap — 피자·사이드 레시피만(options)', () => {
+  const data = {
+    menuMasters: [
+      { menuCode: 'PZ-001-L', menuName: '포크 피자 L', category: '피자' },
+      { menuCode: 'SIDE-001', menuName: '치즈볼', category: '사이드' },
+      { menuCode: 'TOP-001', menuName: '추가 베이컨', category: '추가토핑' },
+    ],
+    detailRecipes: [
+      {
+        menuCode: 'PZ-001-L',
+        menuName: '포크 피자 L',
+        category: '피자',
+        components: [{ productCode: 'ING-CHEESE', ingredientName: '모짜렐라' }],
+      },
+      {
+        menuCode: 'SIDE-001',
+        menuName: '치즈볼',
+        category: '사이드',
+        components: [{ productCode: 'ING-CHEESE', ingredientName: '모짜렐라' }],
+      },
+      {
+        menuCode: 'TOP-001',
+        menuName: '추가 베이컨',
+        category: '추가토핑',
+        components: [
+          { productCode: 'ING-BACON', ingredientName: '베이컨' },
+          { productCode: 'ING-CHEESE', ingredientName: '모짜렐라' },
+        ],
+      },
+    ],
+    edges: [
+      {
+        edgeType: '치즈크러스트',
+        expandInMargin: true,
+        components: [{ productCode: 'ING-EDGE', ingredientName: '엣지치즈' }],
+      },
+    ],
+  };
+  const options = { categories: ['피자', '1인피자', '사이드'], excludeSourceTypes: ['엣지관리'] };
+
+  test('추가토핑 메뉴는 사용처에서 빠지고 피자·사이드는 그대로 남는다', () => {
+    const { byCode } = buildIngredientUsageMap(data, options);
+    expect([...byCode.get('ING-CHEESE').keys()].sort()).toEqual(['치즈볼', '포크 피자']);
+    expect(byCode.has('ING-BACON')).toBe(false); // 추가토핑에만 쓰는 재료
+  });
+
+  test('엣지 관리로만 연결된 사용처는 안 나온다', () => {
+    const { byCode } = buildIngredientUsageMap(data, options);
+    expect(byCode.has('ING-EDGE')).toBe(false);
+  });
+
+  test('옵션이 없으면 기존처럼 전부 포함한다', () => {
+    const { byCode } = buildIngredientUsageMap(data);
+    expect(byCode.has('ING-EDGE')).toBe(true);
+    expect(byCode.has('ING-BACON')).toBe(true);
+  });
+});

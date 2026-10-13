@@ -15,6 +15,7 @@ import { getAllMenuMaster } from '@/lib/menu-master/store';
 import { getAllMenuRecipes } from '@/lib/menu-recipes';
 import { getAllCompositions } from '@/lib/nutrition/values/store';
 import { KEYS } from '@/lib/note/keys';
+import { MENU_CATEGORY } from '@/lib/menu-categories';
 import { IngredientUsageDashboard } from '@/components/ingredient/usage/IngredientUsageDashboard';
 import { keyOf } from '@/components/ingredient/usage/usage-display-utils';
 
@@ -72,13 +73,21 @@ export default function Page() {
       return {
         allMeta: meta,
         typeMap: buildProductTypeMap(managed),
-        usageMap: buildIngredientUsageMap({
-          menuMasters,
-          detailRecipes: recipes,
-          groups,
-          edges,
-          compositions,
-        }),
+        // 피자·1인피자·사이드 메뉴 레시피에 실제로 들어간 경우만 — 엣지(엣지 관리로 전 피자에
+        // 붙는 구성품)와 추가토핑·세트 등 그 밖의 메뉴는 뺀다(2026-10-13 주임님 지시)
+        usageMap: buildIngredientUsageMap(
+          {
+            menuMasters,
+            detailRecipes: recipes,
+            groups,
+            edges,
+            compositions,
+          },
+          {
+            categories: [MENU_CATEGORY.PIZZA, MENU_CATEGORY.PERSONAL, MENU_CATEGORY.SIDE],
+            excludeSourceTypes: ['엣지관리'],
+          }
+        ),
       };
     },
     {
@@ -181,7 +190,7 @@ export default function Page() {
       <PageHeader
         breadcrumb={['식자재', '제품별 사용현황']}
         title="제품별 사용현황"
-        sub="각 식자재가 어느 메뉴 레시피에서 사용되는지 확인할 수 있어요."
+        sub="각 식자재가 어느 피자·사이드 메뉴 레시피에서 사용되는지 확인할 수 있어요. (엣지·추가토핑·세트는 제외 — 미사용도 이 기준이에요)"
       />
 
       {loading ? (
