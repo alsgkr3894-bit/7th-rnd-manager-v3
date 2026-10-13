@@ -37,7 +37,8 @@ describe('RND 업무 페이지 구조', () => {
   test('RND pages are reachable from navigation and hidden from viewer roles', () => {
     expect(menuSource).toContain("id: 'rnd'");
     expect(menuSource).not.toContain("id: 'rnd-sample-records'");
-    expect(menuSource).toContain("href: '/rnd/corporate-card'");
+    // 2026-10-13: 법인카드 내역서는 메뉴에서 숨겼다(페이지는 주소로만 접근)
+    expect(menuSource).not.toContain("href: '/rnd/corporate-card'");
     expect(menuSource).toContain("href: '/rnd/login-info'");
     expect(routeClassificationSource).toContain("route: '/rnd/corporate-card'");
     expect(routeClassificationSource).toContain("route: '/rnd/login-info'");

@@ -74,12 +74,7 @@ describe('sidebar navigation order', () => {
     expect(noteHrefs).not.toContain('/note/write');
     expect(noteHrefs).not.toContain('/note/board');
     expect(noteHrefs).toContain('/note');
-    expect(rndHrefs).toEqual([
-      '/note/journal',
-      '/note/market',
-      '/rnd/corporate-card',
-      '/rnd/login-info',
-    ]);
+    expect(rndHrefs).toEqual(['/note/journal', '/note/market', '/rnd/login-info']);
   });
 });
 
@@ -89,7 +84,7 @@ describe('findActiveNavGroupId', () => {
   test('RND 업무 하위 경로는 메뉴개발노트가 아니라 RND 업무를 활성으로 고른다', () => {
     expect(findActiveNavGroupId(NAV_SECTIONS, '/note/journal')).toBe('rnd');
     expect(findActiveNavGroupId(NAV_SECTIONS, '/note/market')).toBe('rnd');
-    expect(findActiveNavGroupId(NAV_SECTIONS, '/rnd/corporate-card')).toBe('rnd');
+    expect(findActiveNavGroupId(NAV_SECTIONS, '/rnd/login-info')).toBe('rnd');
   });
 
   test('메뉴개발노트 자신의 경로는 여전히 메뉴개발노트를 고른다', () => {
