@@ -244,19 +244,25 @@
 /* ===== Market research ===== */
 .market-page {
   overflow-x: hidden;
+  /* 떠 있는 작성 버튼(.market-fab)에 맨 아래 카드의 자세히·수정·삭제 버튼이 가려지지 않게,
+     스크롤 끝에서 마지막 카드가 버튼 위로 올라올 만큼 아래 여백을 둔다 */
+  padding-bottom: 160px;
 }
 /* 스크롤해도 항상 눌러 저장할 수 있는 작성 버튼. 전역 .scroll-top-btn(맨 위로, 24px)과
-   같은 코너에서 겹치지 않도록 그 위쪽에 둔다. */
-.market-fab {
+   같은 코너에서 겹치지 않도록 그 위쪽에 둔다. 전역 .btn의 position: relative가 이기면 버튼이
+   목록 맨 아래 카드 위에 겹쳐 올라앉아(맨 아래 카드의 자세히·수정·삭제가 가려짐) .btn.market-fab로
+   선택자를 높여 fixed가 확실히 적용되게 한다. */
+.btn.market-fab {
   position: fixed;
   right: 24px;
   bottom: 84px;
   z-index: 55;
+  width: auto;
   box-shadow: var(--shadow-md);
   animation: fade-in 160ms ease both;
 }
 @media (max-width: 768px) {
-  .market-fab {
+  .btn.market-fab {
     right: 16px;
     bottom: 140px;
   }
