@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { buildAllActions } from '@/lib/action-center/build';
 import { partitionByState } from '@/lib/action-center/state';
 import { ActionCenterPanel } from '@/components/action-center/ActionCenterPanel';
+import { TodayChecklistSection } from '@/components/home/TodayChecklistSection';
 
 /**
  * ActionCenterWidget — 홈 대시보드 업무 액션 위젯
@@ -39,8 +40,7 @@ export function ActionCenterWidget({
     [allItems, rev]
   );
 
-  // 처리할 항목이 없고, 숨긴 항목도 없으면 위젯 자체를 숨긴다
-  if (allItems.length === 0) return null;
+  // 경고 항목이 없어도 카드는 보인다 — 오늘 하루 체크리스트가 같은 카드에 붙어 있다
 
   const criticalCount = visibleItems.filter(i => i.severity === 'critical').length;
   const warnCount = visibleItems.filter(i => i.severity === 'warn').length;
@@ -69,19 +69,22 @@ export function ActionCenterWidget({
             {visibleItems.length}
           </span>
         )}
-        {visibleItems.length === 0 && hiddenItems.length === 0 && (
+        {allItems.length > 0 && visibleItems.length === 0 && hiddenItems.length === 0 && (
           <span style={{ fontSize: 12, color: 'var(--positive)', fontWeight: 600 }}>
             ✓ 모두 처리됨
           </span>
         )}
       </div>
-      <ActionCenterPanel
-        key={rev}
-        items={visibleItems}
-        allItems={allItems}
-        onRefresh={refresh}
-        compact
-      />
+      {allItems.length > 0 && (
+        <ActionCenterPanel
+          key={rev}
+          items={visibleItems}
+          allItems={allItems}
+          onRefresh={refresh}
+          compact
+        />
+      )}
+      <TodayChecklistSection canEdit={canEdit} />
     </section>
   );
 }

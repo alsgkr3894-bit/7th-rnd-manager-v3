@@ -10,12 +10,7 @@ import { pairDashboardRow } from './HomeDashboardRowShell';
 export function renderTodoPairRow(context, rowId) {
   return pairDashboardRow(
     context.isVisible('todo') ? (
-      <TodoWidget
-        key="todo"
-        todos={context.todos}
-        router={context.router}
-        canEdit={context.canEdit}
-      />
+      <TodoWidget key="todo" todos={context.todos} router={context.router} />
     ) : null,
     context.showUnmatched ? (
       <UnmatchedWidget key="unmatched" issues={context.alertIssues} router={context.router} />
