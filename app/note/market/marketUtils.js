@@ -66,11 +66,17 @@ export function countByRegion(rows) {
   return counts;
 }
 
+export function matchesCountry(row, country) {
+  if (!country) return true;
+  return String(row?.country || '').trim() === country;
+}
+
 export const EMPTY_FORM = {
   id: null,
   type: MARKET_RESEARCH_TYPES[0],
   // 새 기록의 기본은 국내 — 이전 기록(값 없음)은 수정할 때 그대로 비어 있다가 고르면 정해진다
   region: MARKET_RESEARCH_REGIONS[0],
+  country: '',
   date: '',
   brand: '',
   title: '',
@@ -100,6 +106,7 @@ export function includesQuery(row, query) {
   const haystack = [
     row.type,
     row.region,
+    row.country,
     row.date,
     row.brand,
     row.title,

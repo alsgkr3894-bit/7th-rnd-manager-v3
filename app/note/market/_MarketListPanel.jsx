@@ -12,6 +12,9 @@ export function MarketListPanel({
   region = REGION_FILTER_ALL,
   onRegionChange,
   regionCounts = {},
+  country = '',
+  onCountryChange,
+  usedCountries = [],
   loading,
   filtered,
   groupedRows,
@@ -49,6 +52,22 @@ export function MarketListPanel({
             </button>
           ))}
         </div>
+        {usedCountries.length > 0 && (
+          <select
+            className="form-input"
+            value={country}
+            onChange={event => onCountryChange?.(event.target.value)}
+            aria-label="국가별 보기"
+            style={{ marginBottom: 10 }}
+          >
+            <option value="">모든 국가</option>
+            {usedCountries.map(item => (
+              <option key={item.country} value={item.country}>
+                {item.country} ({item.count})
+              </option>
+            ))}
+          </select>
+        )}
         <input
           className="form-input"
           value={query}

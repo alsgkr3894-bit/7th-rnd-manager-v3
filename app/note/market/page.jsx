@@ -80,6 +80,9 @@ function MarketResearchContent() {
           region={list.region}
           onRegionChange={list.setRegion}
           regionCounts={list.regionCounts}
+          country={list.country}
+          onCountryChange={list.setCountry}
+          usedCountries={list.usedCountries}
           loading={list.loading}
           filtered={list.filtered}
           groupedRows={list.groupedRows}
@@ -109,6 +112,7 @@ function MarketResearchContent() {
           canEdit={canEdit}
           saving={write.saving}
           competitorOptions={list.competitorOptions}
+          countryOptions={list.countryOptions}
           onUpdate={write.update}
           onClose={closeWrite}
           onSave={write.handleSave}

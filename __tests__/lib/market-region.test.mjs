@@ -102,3 +102,59 @@ describe('시장조사 국내/해외 구분', () => {
     expect(read('app/note/market/_MarketRecordCard.jsx')).toContain('row.region');
   });
 });
+
+// 2026-10-19 주임님 요청: 시장조사 작성에서 국가(한국·미국·일본 등)를 직접 입력할 수 있게 한다.
+describe('시장조사 국가 입력', () => {
+  const countryRows = [
+    { id: 1, country: '일본', title: 'a' },
+    { id: 2, country: '미국', title: 'b' },
+    { id: 3, country: '일본', title: 'c' },
+    { id: 4, title: '국가 없음' },
+  ];
+
+  test('국가는 자유 입력이라 목록에 없는 나라도 그대로 저장된다', async () => {
+    const { MARKET_COUNTRY_SUGGESTIONS } = await import('../../lib/note/market-research.js');
+    expect(MARKET_COUNTRY_SUGGESTIONS).toEqual(expect.arrayContaining(['한국', '미국', '일본']));
+    expect(read('lib/note/market-research.js')).toContain('country: clean(data.country)');
+  });
+
+  test('쓴 나라는 자주 쓴 순, 입력 추천은 쓴 나라가 먼저 + 기본 추천(중복 제외)', async () => {
+    const { usedCountriesOf, countryOptionsOf } =
+      await import('../../app/note/market/marketPageUtils.js');
+    expect(usedCountriesOf(countryRows)).toEqual([
+      { country: '일본', count: 2 },
+      { country: '미국', count: 1 },
+    ]);
+    expect(countryOptionsOf(countryRows, ['한국', '미국', '일본'])).toEqual([
+      '일본',
+      '미국',
+      '한국',
+    ]);
+    expect(countryOptionsOf([], ['한국'])).toEqual(['한국']);
+  });
+
+  test('국가 필터·키워드 검색', async () => {
+    const { matchesCountry } = await import('../../app/note/market/marketUtils.js');
+    expect(countryRows.filter(r => matchesCountry(r, '일본')).map(r => r.id)).toEqual([1, 3]);
+    expect(countryRows.filter(r => matchesCountry(r, '')).length).toBe(4);
+    expect(includesQuery(countryRows[0], '일본')).toBe(true);
+    expect(includesQuery(countryRows[1], '일본')).toBe(false);
+  });
+
+  test('연구일지 요약에 구분·국가가 함께 붙는다', () => {
+    const record = marketResearchToUnifiedRecord({
+      id: 11,
+      title: '벌집 토핑',
+      region: '해외',
+      country: '일본',
+    });
+    expect(record.testContent).toContain('시장조사 기록 작성 — 벌집 토핑 (해외·일본)');
+  });
+
+  test('작성 모달·목록·카드가 국가를 다룬다', () => {
+    expect(read('app/note/market/_MarketWriteModal.jsx')).toContain('<CountryField');
+    expect(read('app/note/market/_MarketFields.jsx')).toContain('list="market-country-options"');
+    expect(read('app/note/market/_MarketListPanel.jsx')).toContain('모든 국가');
+    expect(read('app/note/market/_MarketRecordCard.jsx')).toContain('row.country');
+  });
+});

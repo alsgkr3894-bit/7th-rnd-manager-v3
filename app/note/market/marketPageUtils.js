@@ -13,6 +13,24 @@ export function competitorOptionsOf(rows) {
   return [...values].sort((a, b) => a.localeCompare(b, 'ko'));
 }
 
+/** 저장된 기록에 쓴 나라 이름(자주 쓴 순). 필터 목록과 입력 추천에 쓴다. */
+export function usedCountriesOf(rows) {
+  const counts = new Map();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const country = String(row?.country || '').trim();
+    if (country) counts.set(country, (counts.get(country) || 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ko'))
+    .map(([country, count]) => ({ country, count }));
+}
+
+/** 국가 입력 추천 — 이미 쓴 나라를 먼저, 그다음 기본 추천(중복 제외). */
+export function countryOptionsOf(rows, suggestions = []) {
+  const used = usedCountriesOf(rows).map(item => item.country);
+  return [...new Set([...used, ...suggestions])];
+}
+
 /** 카드에 보여줄 유효한(data 있는) 사진만 남긴다. */
 export function photosOf(row) {
   return Array.isArray(row?.photos) ? row.photos.filter(photo => photo?.data) : [];

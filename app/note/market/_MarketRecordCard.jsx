@@ -28,6 +28,7 @@ export function MarketRecordCard({
         <strong className="market-record-title">{row.title || row.type}</strong>
         {photos.length > 0 && <span className="chip">사진 {photos.length}</span>}
         {row.region && <span className="chip">{row.region}</span>}
+        {row.country && <span className="chip">{row.country}</span>}
         <span className="chip">{row.type}</span>
       </div>
       {row.competitor && (

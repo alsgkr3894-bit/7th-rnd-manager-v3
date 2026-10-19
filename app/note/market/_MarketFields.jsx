@@ -31,6 +31,27 @@ export function TypeRow({ form, update, canEdit }) {
   );
 }
 
+/** 국가 입력 — 한국·미국·일본 등 추천을 고르거나 다른 나라를 직접 입력한다. */
+export function CountryField({ form, update, canEdit, options = [] }) {
+  return (
+    <Field label="국가 (직접 입력 가능)">
+      <input
+        className="form-input"
+        list="market-country-options"
+        value={form.country || ''}
+        onChange={event => update('country', event.target.value)}
+        placeholder="예: 일본, 미국, 한국"
+        disabled={!canEdit}
+      />
+      <datalist id="market-country-options">
+        {options.map(option => (
+          <option key={option} value={option} />
+        ))}
+      </datalist>
+    </Field>
+  );
+}
+
 /** 시장 구분(국내/해외) 선택 — 작성 모달에서 쓴다. */
 export function RegionField({ form, update, canEdit }) {
   return (

@@ -8,7 +8,7 @@ export function MarketDetailModal({ row, onClose, onEdit, canEdit, onPhotoClick 
   return (
     <ModalFrame
       title={row.title || row.type}
-      subtitle={`${row.date || '날짜 없음'}${row.brand ? ` · ${row.brand}` : ''}${row.region ? ` · ${row.region}` : ''} · ${row.type}`}
+      subtitle={`${row.date || '날짜 없음'}${row.brand ? ` · ${row.brand}` : ''}${row.region ? ` · ${row.region}` : ''}${row.country ? ` · ${row.country}` : ''} · ${row.type}`}
       onClose={onClose}
       width="min(640px, 96vw)"
       zIndex={300}
